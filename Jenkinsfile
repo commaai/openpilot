@@ -65,9 +65,11 @@ cd ${env.TEST_DIR} || true
 
 # if not on master and no diffs in changed paths then we can skip the tests
 if [[("$GIT_BRANCH" != "master")]]; then
-  if git diff --exit-code origin/master ${changed_paths}; then
-    echo "skipping tests due to no changes in ${changed_paths}..."
-    exit 0
+  if [[ -n "${changed_paths}" ]]; then
+    if git diff --exit-code origin/master ${changed_paths}; then
+      echo "skipping tests due to no changes in ${changed_paths}..."
+      exit 0
+    fi
   fi
 fi
 
