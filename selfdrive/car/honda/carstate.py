@@ -276,9 +276,10 @@ class CarState(CarStateBase):
     ]
 
     if CP.carFingerprint in HONDA_BOSCH_RADARLESS:
-      messages.append(("LKAS_HUD", 10))
-      if not CP.openpilotLongitudinalControl:
-        messages.append(("ACC_HUD", 10))
+      messages += [
+        ("ACC_HUD", 10),
+        ("LKAS_HUD", 10),
+      ]
 
     elif CP.carFingerprint not in HONDA_BOSCH:
       messages += [
