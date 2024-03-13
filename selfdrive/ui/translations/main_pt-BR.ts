@@ -1108,10 +1108,6 @@ Isso pode levar até um minuto.</translation>
         <translation>Temperamento de Direção</translation>
     </message>
     <message>
-        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars.</source>
-        <translation>Neutro é o recomendado. No modo disputa o openpilot seguirá o carro da frente mais de perto e será mais agressivo com a aceleração e frenagem. No modo calmo o openpilot se manterá mais longe do carro da frente.</translation>
-    </message>
-    <message>
         <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
         <translation>Uma versão embrionária do controle longitudinal openpilot pode ser testada em conjunto com o modo Experimental, em branches que não sejam de produção.</translation>
     </message>
@@ -1134,6 +1130,10 @@ Isso pode levar até um minuto.</translation>
     <message>
         <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
         <translation>A visualização de condução fará a transição para a câmera grande angular voltada para a estrada em baixas velocidades para mostrar melhor algumas curvas. O logotipo do modo Experimental também será mostrado no canto superior direito. Quando um destino de navegação é definido e o modelo de condução o utiliza como entrada o caminho de condução no mapa fica verde.</translation>
+    </message>
+    <message>
+        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
