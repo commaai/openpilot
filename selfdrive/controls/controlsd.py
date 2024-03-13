@@ -829,7 +829,7 @@ class Controls:
 
     self.CS_prev = CS
 
-  def read_personality_param(self) -> int:
+  def read_personality_param(self):
     try:
       return int(self.params.get('LongitudinalPersonality'))
     except (ValueError, TypeError):
