@@ -9,7 +9,7 @@ def retryWithDelay(int maxRetries, int delay, Closure body) {
   throw Exception("Failed after ${maxRetries} retries")
 }
 
-def device(String ip, String step_label, String cmd) {
+def device(String ip, String step_label, String cmd, String changed_paths = "") {
   withCredentials([file(credentialsId: 'id_rsa', variable: 'key_file')]) {
     def ssh_cmd = """
 ssh -tt -o ConnectTimeout=5 -o ServerAliveInterval=5 -o ServerAliveCountMax=2 -o BatchMode=yes -o StrictHostKeyChecking=no -i ${key_file} 'comma@${ip}' /usr/bin/bash <<'END'
@@ -62,6 +62,15 @@ fi
 ln -snf ${env.TEST_DIR} /data/pythonpath
 
 cd ${env.TEST_DIR} || true
+
+# if not on master and no diffs in changed paths then we can skip the tests
+if [[("$GIT_BRANCH" != "master")]]; then
+  if git diff --exit-code origin/master ${changed_paths}; then
+    echo "skipping tests due to no changes in ${changed_paths}..."
+    exit 0
+  fi
+fi
+
 ${cmd}
 exit 0
 
@@ -87,7 +96,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
             device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
           }
           steps.each { item ->
-            device(device_ip, item[0], item[1])
+            device(device_ip, item[0], item[1], (item.size() == 3 ? item[2].join(" ") : ""))
           }
         }
       }
@@ -191,7 +200,7 @@ node {
       'HW + Unit Tests': {
         deviceStage("tici-hardware", "tici-common", ["UNSAFE=1"], [
           ["build", "cd selfdrive/manager && ./build.py"],
-          ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
+          ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py", ["panda/", "selfdrive/boardd/"]],
           ["test power draw", "pytest -s system/hardware/tici/tests/test_power_draw.py"],
           ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py"],
           ["test pigeond", "pytest system/ubloxd/tests/test_pigeond.py"],
@@ -236,10 +245,10 @@ node {
         deviceStage("tizi", "tizi", ["UNSAFE=1"], [
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
           ["test boardd loopback", "SINGLE_PANDA=1 pytest selfdrive/boardd/tests/test_boardd_loopback.py"],
-          ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
+          ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py", ["panda/", "selfdrive/boardd/"]],
           ["test amp", "pytest system/hardware/tici/tests/test_amplifier.py"],
           ["test hw", "pytest system/hardware/tici/tests/test_hardware.py"],
-          ["test qcomgpsd", "pytest system/qcomgpsd/tests/test_qcomgpsd.py"],
+          ["test qcomgpsd", "pytest system/qcomgpsd/tests/test_qcomgpsd.py", ["system/qcomgpsd/"]],
         ])
       },
 
