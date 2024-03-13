@@ -751,7 +751,7 @@ class Controls:
     controlsState.longitudinalPlanMonoTime = self.sm.logMonoTime['longitudinalPlan']
     controlsState.lateralPlanMonoTime = self.sm.logMonoTime['modelV2']
     controlsState.enabled = self.enabled
-    controlsState.active = self.active
+    controlsState.active = True #self.active
     controlsState.curvature = curvature
     controlsState.desiredCurvature = self.desired_curvature
     controlsState.state = self.state
