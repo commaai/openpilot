@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from functools import partial
 import os
 import time
 import copy
@@ -317,12 +318,12 @@ class ProcessContainer:
     return output_msgs
 
 
-def controlsd_fingerprint_callback(rc, pm, msgs, fingerprint):
+def fingerprint_callback(rc, pm, msgs, fingerprint):
   print("start fingerprinting")
   params = Params()
   canmsgs = [msg for msg in msgs if msg.which() == "can"][:300]
 
-  # controlsd expects one arbitrary can and pandaState
+  # expects one arbitrary can and pandaState
   rc.send_sync(pm, "can", messaging.new_message("can", 1))
   pm.send("pandaStates", messaging.new_message("pandaStates", 1))
   rc.send_sync(pm, "can", messaging.new_message("can", 1))
@@ -356,23 +357,17 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
     for m in canmsgs[:300]:
       can.send(m.as_builder().to_bytes())
     _, CP = get_car(can, sendcan, Params().get_bool("ExperimentalLongitudinalEnabled"))
+
+
+  if not params.get_bool("DisengageOnAccelerator"):
+    CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
+
   params.put("CarParams", CP.to_bytes())
   return CP
 
 
-def controlsd_rcv_callback(msg, cfg, frame):
-  # no sendcan until controlsd is initialized
-  if msg.which() != "can":
-    return False
-
-  socks = [
-    s for s in cfg.subs if
-    frame % int(SERVICE_LIST[msg.which()].frequency / SERVICE_LIST[s].frequency) == 0
-  ]
-  if "sendcan" in socks and (frame - 1) < 2000:
-    socks.remove("sendcan")
-  return len(socks) > 0
-
+def poll_rcv_callback(msg_to_poll, msg, cfg, frame):
+  return (frame - 1) == 0 or msg.which() == msg_to_poll
 
 def calibration_rcv_callback(msg, cfg, frame):
   # calibrationd publishes 1 calibrationData every 5 cameraOdometry packets.
@@ -457,20 +452,44 @@ def locationd_config_pubsub_callback(params, cfg, lr):
   cfg.pubs = set(cfg.pubs) - sub_keys
 
 
+def card_rcv_callback(msg, cfg, frame):
+  if msg.which() != "can":
+    return False
+
+  socks = [
+    s for s in cfg.subs if
+    frame % int(SERVICE_LIST[msg.which()].frequency / SERVICE_LIST[s].frequency) == 0
+  ]
+  if "sendcan" in socks and (frame - 1) < 2000:
+    socks.remove("sendcan")
+  return len(socks) > 0
+
+
 CONFIGS = [
   ProcessConfig(
     proc_name="controlsd",
     pubs=[
-      "can", "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
+      "carOutput", "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
       "longitudinalPlan", "liveLocationKalman", "liveParameters", "radarState",
       "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
-      "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope"
+      "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope", "carState",
     ],
-    subs=["controlsState", "carState", "carControl", "sendcan", "onroadEvents", "carParams"],
+    subs=["controlsState", "carControl", "onroadEvents", "carParams"],
     ignore=["logMonoTime", "controlsState.startMonoTime", "controlsState.cumLagMs"],
     config_callback=controlsd_config_callback,
-    init_callback=controlsd_fingerprint_callback,
-    should_recv_callback=controlsd_rcv_callback,
+    init_callback=get_car_params_callback,
+    should_recv_callback=partial(poll_rcv_callback, "carState"),
+    tolerance=NUMPY_TOLERANCE,
+    processing_time=0.004,
+  ),
+  ProcessConfig(
+    proc_name="card",
+    pubs=["can", "carControl", "pandaStates"],
+    subs=["carState", "sendcan", "carOutput"],
+    ignore=["logMonoTime", "valid"],
+    config_callback=controlsd_config_callback,
+    init_callback=fingerprint_callback,
+    should_recv_callback=card_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
     main_pub="can",
