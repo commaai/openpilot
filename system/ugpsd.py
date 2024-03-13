@@ -48,6 +48,8 @@ def build_msg(state):
   """
     NMEA sentences:
       https://campar.in.tum.de/twiki/pub/Chair/NaviGpsDemon/nmea.html#RMC
+    NAV messages:
+      https://www.unicorecomm.com/assets/upload/file/UFirebird_Standard_Positioning_Products_Protocol_Specification_CH.pdf
   """
 
   msg = messaging.new_message('gpsLocation', valid=True)
