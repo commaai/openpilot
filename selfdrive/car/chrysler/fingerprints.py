@@ -570,6 +570,7 @@ FW_VERSIONS = {
       b'68525487AB',
       b'68525498AB',
       b'68528791AF',
+      b'68620919AB',
       b'68628474AB',
     ],
     (Ecu.srs, 0x744, None): [
@@ -613,9 +614,13 @@ FW_VERSIONS = {
       b'52401032AE',
       b'52421132AF',
       b'52421332AF',
+      b'52421492AA',
       b'68527616AD ',
       b'M2370131MB',
       b'M2421132MB',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'68582289AB',
     ],
   },
   CAR.DODGE_DURANGO: {

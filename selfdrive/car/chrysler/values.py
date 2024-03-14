@@ -92,7 +92,7 @@ class CAR(Platforms):
     "RAM HD 5TH GEN",
     [
       ChryslerCarInfo("Ram 2500 2020-24", car_parts=CarParts.common([CarHarness.ram])),
-      ChryslerCarInfo("Ram 3500 2019-22", car_parts=CarParts.common([CarHarness.ram])),
+      ChryslerCarInfo("Ram 3500 2019-24", car_parts=CarParts.common([CarHarness.ram])),
     ],
     ChryslerCarSpecs(mass=3405., wheelbase=3.785, steerRatio=15.61, minSteerSpeed=16.),
     dbc_dict('chrysler_ram_hd_generated', None),
