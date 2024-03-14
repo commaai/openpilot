@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag
-from typing import NamedTuple
 
 import panda.python.uds as uds
 from cereal import car
@@ -70,7 +69,8 @@ class FordCarInfo(CarInfo):
       self.car_parts = CarParts([Device.threex, harness])
 
 
-class CarProperties(NamedTuple):
+@dataclass
+class CarProperties:
   name: str
   years: str
   electrification: tuple[str, ...] | None = None
