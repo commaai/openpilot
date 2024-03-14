@@ -12,6 +12,10 @@ class CameraConfig:
   focal_length: float
 
   @property
+  def size(self):
+    return (self.width, self.height)
+
+  @property
   def intrinsics(self):
     # aka 'K' aka camera_frame_from_view_frame
     return np.array([
@@ -26,32 +30,44 @@ class CameraConfig:
     return np.linalg.inv(self.intrinsics)
 
 @dataclass(frozen=True)
+class _NoneCameraConfig(CameraConfig):
+  width: int = 0
+  height: int = 0
+  focal_length: float = 0
+
+@dataclass(frozen=True)
 class DeviceCameraConfig:
   fcam: CameraConfig
   dcam: CameraConfig
   ecam: CameraConfig
 
-ar_ox_fisheye = CameraConfig(1928, 1208, 567.0)  # focal length probably wrong? magnification is not consistent across frame
-ar_ox_config = DeviceCameraConfig(CameraConfig(1928, 1208, 2648.0), ar_ox_fisheye, ar_ox_fisheye)
-os_fisheye = CameraConfig(2688, 1520, 567.0 / 2 * 3)
-os_config = DeviceCameraConfig(CameraConfig(2688, 1520, 2648.0 * 2 / 3), os_fisheye, os_fisheye)
+  def all_cams(self):
+    for cam in ['fcam', 'dcam', 'ecam']:
+      if not isinstance(getattr(self, cam), _NoneCameraConfig):
+        yield cam, getattr(self, cam)
+
+_ar_ox_fisheye = CameraConfig(1928, 1208, 567.0)  # focal length probably wrong? magnification is not consistent across frame
+_os_fisheye = CameraConfig(2688, 1520, 567.0 / 2 * 3)
+_ar_ox_config = DeviceCameraConfig(CameraConfig(1928, 1208, 2648.0), _ar_ox_fisheye, _ar_ox_fisheye)
+_os_config = DeviceCameraConfig(CameraConfig(2688, 1520, 2648.0 * 2 / 3), _os_fisheye, _os_fisheye)
+_neo_config = DeviceCameraConfig(CameraConfig(1164, 874, 910.0), CameraConfig(816, 612, 650.0), _NoneCameraConfig())
 
 DEVICE_CAMERAS = {
   # A "device camera" is defined by a device type and sensor
 
   # sensor type was never set on eon/neo/two
-  ("neo", "unknown"): DeviceCameraConfig(CameraConfig(1164, 874, 910.0), CameraConfig(816, 612, 650.0), CameraConfig(0, 0, 0.)),
+  ("neo", "unknown"): _neo_config,
   # unknown here is AR0231, field was added with OX03C10 support
-  ("tici", "unknown"): ar_ox_config,
+  ("tici", "unknown"): _ar_ox_config,
 
   # before deviceState.deviceType was set, assume tici AR config
-  ("unknown", "ar0231"): ar_ox_config,
-  ("unknown", "ox03c10"): ar_ox_config,
+  ("unknown", "ar0231"): _ar_ox_config,
+  ("unknown", "ox03c10"): _ar_ox_config,
 
   # simulator (emulates a tici)
-  ("pc", "unknown"): ar_ox_config,
+  ("pc", "unknown"): _ar_ox_config,
 }
-prods = itertools.product(('tici', 'tizi', 'mici'), (('ar0231', ar_ox_config), ('ox03c10', ar_ox_config), ('os04c10', os_config)))
+prods = itertools.product(('tici', 'tizi', 'mici'), (('ar0231', _ar_ox_config), ('ox03c10', _ar_ox_config), ('os04c10', _os_config)))
 DEVICE_CAMERAS.update({(d, c[0]): c[1] for d, c in prods})
 
 # device/mesh : x->forward, y-> right, z->down
