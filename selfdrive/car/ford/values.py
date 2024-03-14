@@ -81,10 +81,10 @@ class CarProperties:
 def make_car_info(cars: CarProperties | list[CarProperties]) -> list[CarInfo]:
   car_infos: list[CarInfo] = []
   for properties in cars if isinstance(cars, list) else [cars]:
-    car_info = properties.car_info or {}
+    car_info = {} if properties.car_info is None else deepcopy(properties.car_info)
     electrification = ('', ) if properties.electrification is None else properties.electrification
     for level in electrification:
-      car_infos.append(FordCarInfo(f'{properties.name} {level + " " if level else ""}{properties.years}', **deepcopy(car_info)))
+      car_infos.append(FordCarInfo(f'{properties.name} {level + " " if level else ""}{properties.years}', **car_info))
   return car_infos
 
 
