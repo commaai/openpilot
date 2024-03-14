@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag
+from typing import NamedTuple
 
 import panda.python.uds as uds
 from cereal import car
@@ -69,15 +70,19 @@ class FordCarInfo(CarInfo):
       self.car_parts = CarParts([Device.threex, harness])
 
 
-def make_car_info(properties: dict | list[dict]) -> list[FordCarInfo]:
+class CarProperties(NamedTuple):
+  name: str
+  years: str
+  electrification: tuple[str, ...] | None = None
+  car_info: dict | None = None
+
+
+def make_car_info(cars: CarProperties | list[CarProperties]) -> list[FordCarInfo]:
   car_info = []
-  for properties_ in properties if isinstance(properties, list) else [properties]:
-    name, years = properties_.pop('name'), properties_.pop('years')
-    electrification = properties_.pop('electrification', None)
-    if electrification is None:
-      electrification = ('', )
+  for properties in cars if isinstance(cars, list) else [cars]:
+    electrification = ('', ) if properties.electrification is None else properties.electrification
     for level in electrification:
-      car_info.append(FordCarInfo(f'{name} {level + " " if level else ""}{years}', **properties_))
+      car_info.append(FordCarInfo(f'{properties.name} {level + " " if level else ""}{properties.years}', **(properties.car_info or {})))
   return car_info
 
 
@@ -104,22 +109,22 @@ class CAR(Platforms):
   ESCAPE_MK4 = FordPlatformConfig(
     "FORD ESCAPE 4TH GEN",
     make_car_info([
-      dict(name="Ford Escape", years="2020-22", electrification=["", "Hybrid", "Plug-in Hybrid"]),
-      dict(name="Ford Kuga", years="2020-22", electrification=["", "Hybrid", "Plug-in Hybrid"], package="Adaptive Cruise Control with Lane Centering"),
+      CarProperties("Ford Escape", "2020-22", ("", "Hybrid", "Plug-in Hybrid")),
+      CarProperties("Ford Kuga", "2020-22", ("", "Hybrid", "Plug-in Hybrid"), dict(package="Adaptive Cruise Control with Lane Centering")),
     ]),
     CarSpecs(mass=1750, wheelbase=2.71, steerRatio=16.7),
   )
   EXPLORER_MK6 = FordPlatformConfig(
     "FORD EXPLORER 6TH GEN",
     make_car_info([
-      dict(name="Ford Explorer", years="2020-23", electrification=["", "Hybrid"]),  # HEV: Limited and Platinum only
-      dict(name="Lincoln Aviator", years="2020-23", electrification=["", "Plug-in Hybrid"], package="Co-Pilot360 Plus"),  # PHEV: Grand Touring only
+      CarProperties("Ford Explorer", "2020-23", ("", "Hybrid")),  # HEV: Limited and Platinum only
+      CarProperties("Lincoln Aviator", "2020-23", ("", "Plug-in Hybrid"), dict(package="Co-Pilot360 Plus")),  # PHEV: Grand Touring only
     ]),
     CarSpecs(mass=2050, wheelbase=3.025, steerRatio=16.8),
   )
   F_150_MK14 = FordCANFDPlatformConfig(
     "FORD F-150 14TH GEN",
-    make_car_info(dict(name="Ford F-150", years="2022-23", electrification=["", "Hybrid"])),
+    make_car_info(CarProperties("Ford F-150", "2022-23", ("", "Hybrid"))),
     CarSpecs(mass=2000, wheelbase=3.69, steerRatio=17.0),
   )
   F_150_LIGHTNING_MK1 = FordCANFDPlatformConfig(
@@ -129,15 +134,15 @@ class CAR(Platforms):
   )
   FOCUS_MK4 = FordPlatformConfig(
     "FORD FOCUS 4TH GEN",
-    make_car_info(dict(name="Ford Focus", years="2018", electrification=["", "Hybrid"], package="Adaptive Cruise Control with Lane Centering",
-                       footnotes=[Footnote.FOCUS])),  # mHEV only
+    make_car_info(CarProperties("Ford Focus", "2018", ("", "Hybrid"), dict(package="Adaptive Cruise Control with Lane Centering",
+                                                                           footnotes=[Footnote.FOCUS]))),  # mHEV only
     CarSpecs(mass=1350, wheelbase=2.7, steerRatio=15.0),
   )
   MAVERICK_MK1 = FordPlatformConfig(
     "FORD MAVERICK 1ST GEN",
     make_car_info([
-      dict(name="Ford Maverick", years="2022", electrification=["", "Hybrid"], package="LARIAT Luxury"),
-      dict(name="Ford Maverick", years="2023-24", electrification=["", "Hybrid"], package="Co-Pilot360 Assist"),
+      CarProperties("Ford Maverick", "2022", ("", "Hybrid"), dict(package="LARIAT Luxury")),
+      CarProperties("Ford Maverick", "2023-24", ("", "Hybrid"), dict(package="Co-Pilot360 Assist")),
     ]),
     CarSpecs(mass=1650, wheelbase=3.076, steerRatio=17.0),
   )
