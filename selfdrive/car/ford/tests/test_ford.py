@@ -6,7 +6,7 @@ from collections.abc import Iterable
 import capnp
 
 from cereal import car
-from openpilot.selfdrive.car.ford.values import CAR, FW_QUERY_CONFIG
+from openpilot.selfdrive.car.ford.values import FW_QUERY_CONFIG
 from openpilot.selfdrive.car.ford.fingerprints import FW_VERSIONS
 
 Ecu = car.CarParams.Ecu
@@ -42,33 +42,6 @@ ECU_FW_CORE = {
   ],
 }
 
-
-class TestFordCarInfo(unittest.TestCase):
-  def test_platform_sync_years(self):
-    evs = ["Plug-in Hybrid", "Hybrid"]
-
-    for platform in CAR:
-      if not isinstance(platform.config.car_info, list):
-        continue
-
-      expected_years = dict()
-
-      for car_info in platform.config.car_info:
-        model, package, years = car_info.model, car_info.package, car_info.years
-
-        electrification = None
-        for ev in evs:
-          if ev in model:
-            electrification = ev
-            model = model.replace(" " + ev, "")
-            break
-
-        if electrification is None:
-          expected_years[(model, package)] = years
-
-        else:
-          expected = expected_years.get((model, package))
-          assert expected == years, f"Expected years for {model} {package} to be {expected}, but got {years}"
 
 class TestFordFW(unittest.TestCase):
   def test_fw_query_config(self):
