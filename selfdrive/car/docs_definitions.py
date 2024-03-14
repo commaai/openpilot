@@ -247,6 +247,7 @@ class CarInfo:
   def __post_init__(self):
     self.make, self.model, self.years = split_name(self.name)
     self.year_list = get_year_list(self.years)
+    self.footnotes = self.footnotes.copy()
 
   def init(self, CP: car.CarParams, all_footnotes: dict[Enum, int]):
     self.car_name = CP.carName

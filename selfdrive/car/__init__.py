@@ -1,8 +1,8 @@
 # functions common among cars
 from collections import defaultdict, namedtuple
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from enum import IntFlag, ReprEnum
-from dataclasses import replace
+from typing import Sequence
 
 import capnp
 
@@ -245,7 +245,7 @@ class CanSignalRateCalculator:
     return self.rate
 
 
-CarInfos = CarInfo | list[CarInfo] | None
+CarInfos = CarInfo | Sequence[CarInfo] | None
 
 
 @dataclass(frozen=True, kw_only=True)

@@ -69,6 +69,18 @@ class FordCarInfo(CarInfo):
       self.car_parts = CarParts([Device.threex, harness])
 
 
+def make_car_info(properties: dict | list[dict]) -> list[FordCarInfo]:
+  car_info = []
+  for properties_ in properties if isinstance(properties, list) else [properties]:
+    name, years = properties_.pop('name'), properties_.pop('years')
+    electrification = properties_.pop('electrification', None)
+    if electrification is None:
+      electrification = ('', )
+    for level in electrification:
+      car_info.append(FordCarInfo(f'{name} {level + " " if level else ""}{years}', **properties_))
+  return car_info
+
+
 @dataclass
 class FordPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('ford_lincoln_base_pt', RADAR.DELPHI_MRR))
@@ -91,32 +103,23 @@ class CAR(Platforms):
   )
   ESCAPE_MK4 = FordPlatformConfig(
     "FORD ESCAPE 4TH GEN",
-    [
-      FordCarInfo("Ford Escape 2020-22"),
-      FordCarInfo("Ford Escape Hybrid 2020-22"),
-      FordCarInfo("Ford Escape Plug-in Hybrid 2020-22"),
-      FordCarInfo("Ford Kuga 2020-22", "Adaptive Cruise Control with Lane Centering"),
-      FordCarInfo("Ford Kuga Hybrid 2020-22", "Adaptive Cruise Control with Lane Centering"),
-      FordCarInfo("Ford Kuga Plug-in Hybrid 2020-22", "Adaptive Cruise Control with Lane Centering"),
-    ],
+    make_car_info([
+      dict(name="Ford Escape", years="2020-22", electrification=["", "Hybrid", "Plug-in Hybrid"]),
+      dict(name="Ford Kuga", years="2020-22", electrification=["", "Hybrid", "Plug-in Hybrid"], package="Adaptive Cruise Control with Lane Centering"),
+    ]),
     CarSpecs(mass=1750, wheelbase=2.71, steerRatio=16.7),
   )
   EXPLORER_MK6 = FordPlatformConfig(
     "FORD EXPLORER 6TH GEN",
-    [
-      FordCarInfo("Ford Explorer 2020-23"),
-      FordCarInfo("Ford Explorer Hybrid 2020-23"),  # Limited and Platinum only
-      FordCarInfo("Lincoln Aviator 2020-23", "Co-Pilot360 Plus"),
-      FordCarInfo("Lincoln Aviator Plug-in Hybrid 2020-23", "Co-Pilot360 Plus"),  # Grand Touring only
-    ],
+    make_car_info([
+      dict(name="Ford Explorer", years="2020-23", electrification=["", "Hybrid"]),  # HEV: Limited and Platinum only
+      dict(name="Lincoln Aviator", years="2020-23", electrification=["", "Plug-in Hybrid"], package="Co-Pilot360 Plus"),  # PHEV: Grand Touring only
+    ]),
     CarSpecs(mass=2050, wheelbase=3.025, steerRatio=16.8),
   )
   F_150_MK14 = FordCANFDPlatformConfig(
     "FORD F-150 14TH GEN",
-    [
-      FordCarInfo("Ford F-150 2022-23", "Co-Pilot360 Active 2.0"),
-      FordCarInfo("Ford F-150 Hybrid 2022-23", "Co-Pilot360 Active 2.0"),
-    ],
+    make_car_info(dict(name="Ford F-150", years="2022-23", electrification=["", "Hybrid"])),
     CarSpecs(mass=2000, wheelbase=3.69, steerRatio=17.0),
   )
   F_150_LIGHTNING_MK1 = FordCANFDPlatformConfig(
@@ -126,20 +129,16 @@ class CAR(Platforms):
   )
   FOCUS_MK4 = FordPlatformConfig(
     "FORD FOCUS 4TH GEN",
-    [
-      FordCarInfo("Ford Focus 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS]),
-      FordCarInfo("Ford Focus Hybrid 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS]),  # mHEV only
-    ],
+    make_car_info(dict(name="Ford Focus", years="2018", electrification=["", "Hybrid"], package="Adaptive Cruise Control with Lane Centering",
+                       footnotes=[Footnote.FOCUS])),  # mHEV only
     CarSpecs(mass=1350, wheelbase=2.7, steerRatio=15.0),
   )
   MAVERICK_MK1 = FordPlatformConfig(
     "FORD MAVERICK 1ST GEN",
-    [
-      FordCarInfo("Ford Maverick 2022", "LARIAT Luxury"),
-      FordCarInfo("Ford Maverick Hybrid 2022", "LARIAT Luxury"),
-      FordCarInfo("Ford Maverick 2023-24", "Co-Pilot360 Assist"),
-      FordCarInfo("Ford Maverick Hybrid 2023-24", "Co-Pilot360 Assist"),
-    ],
+    make_car_info([
+      dict(name="Ford Maverick", years="2022", electrification=["", "Hybrid"], package="LARIAT Luxury"),
+      dict(name="Ford Maverick", years="2023-24", electrification=["", "Hybrid"], package="Co-Pilot360 Assist"),
+    ]),
     CarSpecs(mass=1650, wheelbase=3.076, steerRatio=17.0),
   )
   MUSTANG_MACH_E_MK1 = FordCANFDPlatformConfig(
