@@ -31,7 +31,8 @@ testpaths = [
   "system/webrtc",
   "tools/lib/tests",
   "tools/replay",
-  "tools/cabana"
+  "tools/cabana",
+  "selfdrive/test/test_relcache.py"
 ]
 
 [tool.mypy]

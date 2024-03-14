@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 import sys
+import os
 import unittest
-
-OUTPUT_FILE = sys.argv[1]
-WORKSPACE = sys.argv[2]
-
+OUTPUT_FILE = "build.log"
+WORKSPACE = os.getcwd()
 class Test_RelCached(unittest.TestCase):
 
   def test_relcache(self):
