@@ -619,9 +619,6 @@ FW_VERSIONS = {
       b'M2370131MB',
       b'M2421132MB',
     ],
-    (Ecu.transmission, 0x7e1, None): [
-      b'68582289AB',
-    ],
   },
   CAR.DODGE_DURANGO: {
     (Ecu.combinationMeter, 0x742, None): [
