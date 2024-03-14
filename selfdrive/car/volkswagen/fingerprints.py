@@ -403,7 +403,6 @@ FW_VERSIONS = {
       b'\xf1\x870GC300042H \xf1\x891404',
       b'\xf1\x870GC300043  \xf1\x892301',
       b'\xf1\x870GC300046P \xf1\x892805',
-      b'\xf1\x873Q0907572C \xf1\x890195',
       b'\xf1\x870CW300041E \xf1\x891006',
     ],
     (Ecu.srs, 0x715, None): [
