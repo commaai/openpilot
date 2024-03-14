@@ -2,7 +2,6 @@
 from collections import defaultdict, namedtuple
 from dataclasses import dataclass, replace
 from enum import IntFlag, ReprEnum
-from typing import Sequence
 
 import capnp
 
@@ -245,7 +244,7 @@ class CanSignalRateCalculator:
     return self.rate
 
 
-CarInfos = CarInfo | Sequence[CarInfo] | None
+CarInfos = CarInfo | list[CarInfo] | None
 
 
 @dataclass(frozen=True, kw_only=True)

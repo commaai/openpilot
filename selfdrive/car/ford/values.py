@@ -1,3 +1,4 @@
+from copy import deepcopy
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag
 
@@ -77,13 +78,14 @@ class CarProperties:
   car_info: dict | None = None
 
 
-def make_car_info(cars: CarProperties | list[CarProperties]) -> list[FordCarInfo]:
-  car_info = []
+def make_car_info(cars: CarProperties | list[CarProperties]) -> list[CarInfo]:
+  car_infos: list[CarInfo] = []
   for properties in cars if isinstance(cars, list) else [cars]:
+    car_info = properties.car_info or {}
     electrification = ('', ) if properties.electrification is None else properties.electrification
     for level in electrification:
-      car_info.append(FordCarInfo(f'{properties.name} {level + " " if level else ""}{properties.years}', **(properties.car_info or {})))
-  return car_info
+      car_infos.append(FordCarInfo(f'{properties.name} {level + " " if level else ""}{properties.years}', **deepcopy(car_info)))
+  return car_infos
 
 
 @dataclass
