@@ -1,5 +1,6 @@
 #define UV_WIDTH RGB_WIDTH / 2
 #define UV_HEIGHT RGB_HEIGHT / 2
+#define HDR_OFFSET 20
 
 #define RGB_TO_Y(r, g, b) ((((mul24(b, 13) + mul24(g, 65) + mul24(r, 33)) + 64) >> 7) + 16)
 #define RGB_TO_U(r, g, b) ((mul24(b, 56) - mul24(g, 37) - mul24(r, 19) + 0x8080) >> 8)
@@ -161,6 +162,13 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   }
   dat[2] = vload8(0, in + start_idx + FRAME_STRIDE*2);
   dat[3] = vload8(0, in + start_idx + FRAME_STRIDE*row_after_offset);
+  #if IS_HDR
+    uchar8 short_dat[4];
+    short_dat[0] = vload8(0, in + start_idx + FRAME_STRIDE*(row_before_offset+HDR_OFFSET) + FRAME_STRIDE/2);
+    short_dat[1] = vload8(0, in + start_idx + FRAME_STRIDE*(1+HDR_OFFSET) + FRAME_STRIDE/2);
+    short_dat[2] = vload8(0, in + start_idx + FRAME_STRIDE*(2+HDR_OFFSET) + FRAME_STRIDE/2);
+    short_dat[3] = vload8(0, in + start_idx + FRAME_STRIDE*(row_after_offset+HDR_OFFSET) + FRAME_STRIDE/2);
+  #endif
 
   // need extra bit for 10-bit
   #if IS_10BIT
@@ -171,6 +179,15 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
       extra[2] = in[start_idx + FRAME_STRIDE*2 + 8];
       extra[3] = in[start_idx + FRAME_STRIDE*row_after_offset + 8];
 		}
+    #if IS_HDR
+      uchar short_extra[4];
+      if (!aligned10) {
+        short_extra[0] = in[start_idx + FRAME_STRIDE*(row_before_offset+HDR_OFFSET) + FRAME_STRIDE/2 + 8];
+        short_extra[1] = in[start_idx + FRAME_STRIDE*(1+HDR_OFFSET) + FRAME_STRIDE/2 + 8];
+        short_extra[2] = in[start_idx + FRAME_STRIDE*(2+HDR_OFFSET) + FRAME_STRIDE/2 + 8];
+        short_extra[3] = in[start_idx + FRAME_STRIDE*(row_after_offset+HDR_OFFSET) + FRAME_STRIDE/2 + 8];
+      }
+    #endif
   #endif
 
   // correct vignetting
@@ -185,10 +202,17 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   float4 v_rows[4];
   // parse into floats
   #if IS_10BIT
-    v_rows[row_read_order[0]] = val4_from_10(dat[0], extra[0], aligned10, 1.0);
-    v_rows[row_read_order[1]] = val4_from_10(dat[1], extra[1], aligned10, 1.0);
-    v_rows[row_read_order[2]] = val4_from_10(dat[2], extra[2], aligned10, 1.0);
-    v_rows[row_read_order[3]] = val4_from_10(dat[3], extra[3], aligned10, 1.0);
+    #if IS_HDR
+      v_rows[row_read_order[0]] = val4_from_10(short_dat[0], short_extra[0], aligned10, 1.0);
+      v_rows[row_read_order[1]] = val4_from_10(short_dat[1], short_extra[1], aligned10, 1.0);
+      v_rows[row_read_order[2]] = val4_from_10(short_dat[2], short_extra[2], aligned10, 1.0);
+      v_rows[row_read_order[3]] = val4_from_10(short_dat[3], short_extra[3], aligned10, 1.0);
+    #else
+      v_rows[row_read_order[0]] = val4_from_10(dat[0], extra[0], aligned10, 1.0);
+      v_rows[row_read_order[1]] = val4_from_10(dat[1], extra[1], aligned10, 1.0);
+      v_rows[row_read_order[2]] = val4_from_10(dat[2], extra[2], aligned10, 1.0);
+      v_rows[row_read_order[3]] = val4_from_10(dat[3], extra[3], aligned10, 1.0);
+    #endif
   #else
     v_rows[row_read_order[0]] = val4_from_12(dat[0], gain);
     v_rows[row_read_order[1]] = val4_from_12(dat[1], gain);
