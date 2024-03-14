@@ -83,7 +83,10 @@ libacados_ocp_solver_pxd = File(f'{gen}/acados_solver.pxd')
 libacados_ocp_solver_c = File(f'{gen}/acados_ocp_solver_pyx.c')
 
 lenv2 = envCython.Clone()
-lenv2["LINKFLAGS"] += [File(lib_solver[0]).relpath]
+lenv2["LIBPATH"] += [Dir(gen).abspath]
+lenv2["RPATH"] += [lenv2.Literal('\\$$ORIGIN')]
+lenv2["LIBS"] += [lib_solver[0].name]
+
 lenv2.Command(libacados_ocp_solver_c,
   [acados_ocp_solver_pyx, acados_ocp_solver_common, libacados_ocp_solver_pxd],
   f'cython' + \
