@@ -15,7 +15,7 @@ from openpilot.common.numpy_fast import clip
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, STD_CARGO_KG
 from openpilot.selfdrive.car.mock.values import CAR as MOCK
-from openpilot.selfdrive.car.values import PLATFORMS, Platform
+from openpilot.selfdrive.car.values import PLATFORMS
 from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, get_friction
 from openpilot.selfdrive.controls.lib.events import Events
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -124,7 +124,7 @@ class CarInterfaceBase(ABC):
     ret.tireStiffnessFactor = platform.config.specs.tireStiffnessFactor
     ret.flags |= int(platform.config.flags)
 
-    ret = cls._get_params(ret, platform, fingerprint, car_fw, experimental_long, docs)
+    ret = cls._get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs)
 
     # Vehicle mass is published curb weight plus assumed payload such as a human driver; notCars have no assumed payload
     if not ret.notCar:
@@ -138,7 +138,7 @@ class CarInterfaceBase(ABC):
 
   @staticmethod
   @abstractmethod
-  def _get_params(ret: car.CarParams, candidate: Platform, fingerprint: dict[int, dict[int, int]],
+  def _get_params(ret: car.CarParams, candidate, fingerprint: dict[int, dict[int, int]],
                   car_fw: list[car.CarParams.CarFw], experimental_long: bool, docs: bool):
     raise NotImplementedError
 
