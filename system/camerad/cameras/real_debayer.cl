@@ -113,6 +113,43 @@ float4 val4_from_10(uchar8 pvs, uchar ext, bool aligned, float gain) {
   return clamp(pv*gain, 0.0, 1.0);
 }
 
+float4 val4_from_210(uchar8 long_pvs, uchar long_ext, uchar8 short_pvs, uchar short_ext, bool aligned, float gain) {
+  uint4 parsed_long;
+  uint4 parsed_short;
+  if (aligned) {
+    parsed_long = (uint4)(((uint)long_pvs.s0 << 2) + (long_pvs.s1 & 0b00000011),
+                     ((uint)long_pvs.s2 << 2) + ((long_pvs.s6 & 0b11000000) / 64),
+                     ((uint)long_pvs.s3 << 2) + ((long_pvs.s6 & 0b00110000) / 16),
+                     ((uint)long_pvs.s4 << 2) + ((long_pvs.s6 & 0b00001100) / 4));
+    parsed_short = (uint4)(((uint)short_pvs.s0 << 2) + (short_pvs.s1 & 0b00000011),
+                     ((uint)short_pvs.s2 << 2) + ((short_pvs.s6 & 0b11000000) / 64),
+                     ((uint)short_pvs.s3 << 2) + ((short_pvs.s6 & 0b00110000) / 16),
+                     ((uint)short_pvs.s4 << 2) + ((short_pvs.s6 & 0b00001100) / 4));
+  } else {
+    parsed_long = (uint4)(((uint)long_pvs.s0 << 2) + ((long_pvs.s3 & 0b00110000) / 16),
+                     ((uint)long_pvs.s1 << 2) + ((long_pvs.s3 & 0b00001100) / 4),
+                     ((uint)long_pvs.s2 << 2) + ((long_pvs.s3 & 0b00000011)),
+                     ((uint)long_pvs.s4 << 2) + ((long_ext & 0b11000000) / 64));
+    parsed_short = (uint4)(((uint)short_pvs.s0 << 2) + ((short_pvs.s3 & 0b00110000) / 16),
+                     ((uint)short_pvs.s1 << 2) + ((short_pvs.s3 & 0b00001100) / 4),
+                     ((uint)short_pvs.s2 << 2) + ((short_pvs.s3 & 0b00000011)),
+                     ((uint)short_pvs.s4 << 2) + ((short_ext & 0b11000000) / 64));
+  }
+
+  float4 pv;
+  // 16-bits?
+  if (parsed_long > 1000) {
+    if (parsed_short <= 273) {
+      pv = (convert_float4(parsed_short) * 240.0 - 64.0) / (65536.0 - 64.0);
+    } else {
+      pv = 1.0;
+    }
+  } else {
+    pv = (convert_float4(parsed_long) - 64.0) / (65536.0 - 64.0);
+  }
+  return clamp(pv*gain, 0.0, 1.0);
+}
+
 float get_k(float a, float b, float c, float d) {
   return 2.0 - (fabs(a - b) + fabs(c - d));
 }
@@ -203,10 +240,10 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   // parse into floats
   #if IS_10BIT
     #if IS_HDR
-      v_rows[row_read_order[0]] = val4_from_10(short_dat[0], short_extra[0], aligned10, 1.0);
-      v_rows[row_read_order[1]] = val4_from_10(short_dat[1], short_extra[1], aligned10, 1.0);
-      v_rows[row_read_order[2]] = val4_from_10(short_dat[2], short_extra[2], aligned10, 1.0);
-      v_rows[row_read_order[3]] = val4_from_10(short_dat[3], short_extra[3], aligned10, 1.0);
+      v_rows[row_read_order[0]] = val4_from_210(dat[0], extra[0], short_dat[0], short_extra[0], aligned10, 1.0);
+      v_rows[row_read_order[1]] = val4_from_210(dat[1], extra[1], short_dat[1], short_extra[1], aligned10, 1.0);
+      v_rows[row_read_order[2]] = val4_from_210(dat[2], extra[2], short_dat[2], short_extra[2], aligned10, 1.0);
+      v_rows[row_read_order[3]] = val4_from_210(dat[3], extra[3], short_dat[3], short_extra[3], aligned10, 1.0);
     #else
       v_rows[row_read_order[0]] = val4_from_10(dat[0], extra[0], aligned10, 1.0);
       v_rows[row_read_order[1]] = val4_from_10(dat[1], extra[1], aligned10, 1.0);
