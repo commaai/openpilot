@@ -5,6 +5,7 @@ import jinja2
 import os
 from enum import Enum
 from natsort import natsorted
+from typing import Sequence
 
 from cereal import car
 from openpilot.common.basedir import BASEDIR
@@ -38,7 +39,7 @@ def get_all_car_info() -> list[CarInfo]:
       continue
 
     # A platform can include multiple car models
-    if not isinstance(car_info, list):
+    if not isinstance(car_info, Sequence):
       car_info = [car_info,]
 
     for _car_info in car_info:
