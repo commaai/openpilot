@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from cereal import car
 from panda.python import uds
 from openpilot.selfdrive.car import AngleRateLimit, CarSpecs, DbcDict, PlatformConfig, Platforms, dbc_dict
-from openpilot.selfdrive.car.docs_definitions import CarInfo, CarHarness, CarParts
+from openpilot.selfdrive.car.docs_definitions import CarDocs, CarHarness, CarParts
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
@@ -20,7 +20,7 @@ class CarControllerParams:
 
 
 @dataclass
-class NissanCarInfo(CarInfo):
+class NissanCarDocs(CarDocs):
   package: str = "ProPILOT Assist"
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.nissan_a]))
 
@@ -39,12 +39,12 @@ class NissanPlaformConfig(PlatformConfig):
 class CAR(Platforms):
   XTRAIL = NissanPlaformConfig(
     "NISSAN X-TRAIL 2017",
-    [NissanCarInfo("Nissan X-Trail 2017")],
+    [NissanCarDocs("Nissan X-Trail 2017")],
     NissanCarSpecs(mass=1610, wheelbase=2.705)
   )
   LEAF = NissanPlaformConfig(
     "NISSAN LEAF 2018",
-    [NissanCarInfo("Nissan Leaf 2018-23", video_link="https://youtu.be/vaMbtAh_0cY")],
+    [NissanCarDocs("Nissan Leaf 2018-23", video_link="https://youtu.be/vaMbtAh_0cY")],
     NissanCarSpecs(mass=1610, wheelbase=2.705),
     dbc_dict('nissan_leaf_2018_generated', None),
   )
@@ -53,12 +53,12 @@ class CAR(Platforms):
   LEAF_IC = LEAF.override(platform_str="NISSAN LEAF 2018 Instrument Cluster", car_info=[])
   ROGUE = NissanPlaformConfig(
     "NISSAN ROGUE 2019",
-    [NissanCarInfo("Nissan Rogue 2018-20")],
+    [NissanCarDocs("Nissan Rogue 2018-20")],
     NissanCarSpecs(mass=1610, wheelbase=2.705)
   )
   ALTIMA = NissanPlaformConfig(
     "NISSAN ALTIMA 2020",
-    [NissanCarInfo("Nissan Altima 2019-20", car_parts=CarParts.common([CarHarness.nissan_b]))],
+    [NissanCarDocs("Nissan Altima 2019-20", car_parts=CarParts.common([CarHarness.nissan_b]))],
     NissanCarSpecs(mass=1492, wheelbase=2.824)
   )
 
