@@ -64,6 +64,7 @@ class TestSimBridgeBase(unittest.TestCase):
 
       q.put("cruise_down")  # Try engaging
 
+      print("sm['controlsState'].active: "+str(sm['controlsState'].active))
       if sm.all_alive() and sm['controlsState'].active:
         control_active += 1
 

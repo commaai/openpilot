@@ -127,7 +127,7 @@ class Controls:
     elif self.CP.lateralTuning.which() == 'torque':
       self.LaC = LatControlTorque(self.CP, self.CI)
 
-    print("KONJO #130 self.state="+str(self.state))
+    #print("KONJO #130 self.state="+str(self.state))
     self.initialized = False
     self.state = State.disabled
     self.enabled = False
