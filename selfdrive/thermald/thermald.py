@@ -216,6 +216,7 @@ def thermald_thread(end_event, hw_queue) -> None:
     peripheral_panda_present = peripheralState.pandaType != log.PandaState.PandaType.unknown
 
     msg = read_thermal(thermal_config)
+    msg.deviceState.deviceType = HARDWARE.get_device_type()
 
     if sm.updated['pandaStates'] and len(pandaStates) > 0:
 
