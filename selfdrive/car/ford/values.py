@@ -92,7 +92,7 @@ class CAR(Platforms):
   )
   EDGE_MK2 = FordPlatformConfig(
     "FORD EDGE 2ND GEN",
-    FordCarInfo("Ford Edge 2022"),
+    [FordCarDocs("Ford Edge 2022")],
     CarSpecs(mass=1933, steerRatio=15.3, wheelbase=2.824),
     flags=FordFlags.ALT_STEER_ANGLE,
   )
