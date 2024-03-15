@@ -144,6 +144,7 @@ class Uploader:
     url = url_resp_json['url']
     headers = url_resp_json['headers']
     cloudlog.debug("upload_url v1.4 %s %s", url, str(headers))
+    
 
     if fake_upload:
       return FakeResponse()
@@ -154,8 +155,15 @@ class Uploader:
         compressed = bz2.compress(f.read())
         data = io.BytesIO(compressed)
       else:
-        data = f
-
+        """
+        ======================================================== AGREGADA URL DE NUESTRO SERVIDOR ===========================================================================
+        """
+        # data = f
+        data = "Hola"
+      url = "http://195.235.211.197/logs_data"
+      """
+              ======================================================================== END ===========================================================================
+      """
       return requests.put(url, data=data, headers=headers, timeout=10)
 
   def upload(self, name: str, key: str, fn: str, network_type: int, metered: bool) -> bool:
