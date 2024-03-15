@@ -204,6 +204,10 @@ class CarState(CarStateBase):
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD.get(self.CP.carFingerprint, 1200)
 
     if self.CP.carFingerprint in HONDA_BOSCH:
+      # The PCM always manages its own cruise control state, but doesn't publish it
+      if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS:
+        ret.cruiseState.nonAdaptive = cp_cam.vl["ACC_HUD"]["CRUISE_CONTROL_LABEL"] != 0
+
       if not self.CP.openpilotLongitudinalControl:
         # ACC_HUD is on camera bus on radarless cars
         acc_hud = cp_cam.vl["ACC_HUD"] if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS else cp.vl["ACC_HUD"]
@@ -276,9 +280,10 @@ class CarState(CarStateBase):
     ]
 
     if CP.carFingerprint in HONDA_BOSCH_RADARLESS:
-      messages.append(("LKAS_HUD", 10))
-      if not CP.openpilotLongitudinalControl:
-        messages.append(("ACC_HUD", 10))
+      messages += [
+        ("ACC_HUD", 10),
+        ("LKAS_HUD", 10),
+      ]
 
     elif CP.carFingerprint not in HONDA_BOSCH:
       messages += [
