@@ -1,4 +1,5 @@
-from dataclasses import dataclass, field
+import copy
+from dataclasses import dataclass, field, replace
 from enum import Enum, IntFlag
 
 import panda.python.uds as uds
@@ -60,6 +61,8 @@ class Footnote(Enum):
 @dataclass
 class FordCarDocs(CarDocs):
   package: str = "Co-Pilot360 Assist+"
+  hybrid: bool = False
+  plug_in_hybrid: bool = False
 
   def init_make(self, CP: car.CarParams):
     harness = CarHarness.ford_q4 if CP.flags & FordFlags.CANFD else CarHarness.ford_q3
@@ -72,6 +75,15 @@ class FordCarDocs(CarDocs):
 @dataclass
 class FordPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('ford_lincoln_base_pt', RADAR.DELPHI_MRR))
+
+  def init(self):
+    for car_info in list(self.car_info):
+      if car_info.hybrid:
+        name = f"{car_info.make} {car_info.model} Hybrid {car_info.years}"
+        self.car_info.append(replace(copy.deepcopy(car_info), name=name))
+      if car_info.plug_in_hybrid:
+        name = f"{car_info.make} {car_info.model} Plug-in Hybrid {car_info.years}"
+        self.car_info.append(replace(copy.deepcopy(car_info), name=name))
 
 
 @dataclass
@@ -92,31 +104,22 @@ class CAR(Platforms):
   ESCAPE_MK4 = FordPlatformConfig(
     "FORD ESCAPE 4TH GEN",
     [
-      FordCarDocs("Ford Escape 2020-22"),
-      FordCarDocs("Ford Escape Hybrid 2020-22"),
-      FordCarDocs("Ford Escape Plug-in Hybrid 2020-22"),
-      FordCarDocs("Ford Kuga 2020-22", "Adaptive Cruise Control with Lane Centering"),
-      FordCarDocs("Ford Kuga Hybrid 2020-22", "Adaptive Cruise Control with Lane Centering"),
-      FordCarDocs("Ford Kuga Plug-in Hybrid 2020-22", "Adaptive Cruise Control with Lane Centering"),
+      FordCarDocs("Ford Escape 2020-22", hybrid=True, plug_in_hybrid=True),
+      FordCarDocs("Ford Kuga 2020-22", "Adaptive Cruise Control with Lane Centering", hybrid=True, plug_in_hybrid=True),
     ],
     CarSpecs(mass=1750, wheelbase=2.71, steerRatio=16.7),
   )
   EXPLORER_MK6 = FordPlatformConfig(
     "FORD EXPLORER 6TH GEN",
     [
-      FordCarDocs("Ford Explorer 2020-23"),
-      FordCarDocs("Ford Explorer Hybrid 2020-23"),  # Limited and Platinum only
-      FordCarDocs("Lincoln Aviator 2020-23", "Co-Pilot360 Plus"),
-      FordCarDocs("Lincoln Aviator Plug-in Hybrid 2020-23", "Co-Pilot360 Plus"),  # Grand Touring only
+      FordCarDocs("Ford Explorer 2020-23", hybrid=True),  # Hybrid: Limited and Platinum only
+      FordCarDocs("Lincoln Aviator 2020-23", "Co-Pilot360 Plus", plug_in_hybrid=True),  # Hybrid: Grand Touring only
     ],
     CarSpecs(mass=2050, wheelbase=3.025, steerRatio=16.8),
   )
   F_150_MK14 = FordCANFDPlatformConfig(
     "FORD F-150 14TH GEN",
-    [
-      FordCarDocs("Ford F-150 2022-23", "Co-Pilot360 Active 2.0"),
-      FordCarDocs("Ford F-150 Hybrid 2022-23", "Co-Pilot360 Active 2.0"),
-    ],
+    [FordCarDocs("Ford F-150 2022-23", "Co-Pilot360 Active 2.0", hybrid=True)],
     CarSpecs(mass=2000, wheelbase=3.69, steerRatio=17.0),
   )
   F_150_LIGHTNING_MK1 = FordCANFDPlatformConfig(
@@ -126,19 +129,14 @@ class CAR(Platforms):
   )
   FOCUS_MK4 = FordPlatformConfig(
     "FORD FOCUS 4TH GEN",
-    [
-      FordCarDocs("Ford Focus 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS]),
-      FordCarDocs("Ford Focus Hybrid 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS]),  # mHEV only
-    ],
+    [FordCarDocs("Ford Focus 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS], hybrid=True)],  # mHEV only
     CarSpecs(mass=1350, wheelbase=2.7, steerRatio=15.0),
   )
   MAVERICK_MK1 = FordPlatformConfig(
     "FORD MAVERICK 1ST GEN",
     [
-      FordCarDocs("Ford Maverick 2022", "LARIAT Luxury"),
-      FordCarDocs("Ford Maverick Hybrid 2022", "LARIAT Luxury"),
-      FordCarDocs("Ford Maverick 2023-24", "Co-Pilot360 Assist"),
-      FordCarDocs("Ford Maverick Hybrid 2023-24", "Co-Pilot360 Assist"),
+      FordCarDocs("Ford Maverick 2022", "LARIAT Luxury", hybrid=True),
+      FordCarDocs("Ford Maverick 2023-24", "Co-Pilot360 Assist", hybrid=True),
     ],
     CarSpecs(mass=1650, wheelbase=3.076, steerRatio=17.0),
   )
