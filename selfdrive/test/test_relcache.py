@@ -7,7 +7,7 @@ WORKSPACE = os.getcwd()
 class Test_RelCached(unittest.TestCase):
 
   def test_relcache(self):
-    valid_start_strings = ('Compiling /', '[1/1] Cythonizing', 'Scanning directory ')
+    valid_start_strings = ('Compiling /', '[1/1] Cythonizing', 'Scanning directory ', 'clang++ -o tools/cabana')
     with open(OUTPUT_FILE, 'r') as f:
       for index, line in enumerate(f):
         if line.startswith(valid_start_strings):
