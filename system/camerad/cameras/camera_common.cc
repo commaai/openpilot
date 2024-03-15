@@ -27,7 +27,7 @@ public:
              "-cl-fast-relaxed-math -cl-denorms-are-zero "
              "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d -DFRAME_OFFSET=%d "
              "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DYUV_STRIDE=%d -DUV_OFFSET=%d "
-             "-DIS_OX=%d -DIS_OS=%d -DIS_10BIT -DIS_BGGR=%d -DCAM_NUM=%d%s",
+             "-DIS_OX=%d -DIS_OS=%d -DIS_10BIT -DIS_HDR -DIS_BGGR=%d -DCAM_NUM=%d%s",
              ci->frame_width, ci->frame_height, ci->frame_stride * 2, ci->frame_offset,
              b->rgb_width, b->rgb_height, buf_width, uv_offset,
              ci->image_sensor == cereal::FrameData::ImageSensor::OX03C10,
@@ -42,7 +42,7 @@ public:
   }
 
   void queue(cl_command_queue q, VisionBuf cam_buff, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, cl_event *debayer_event, bool todump) {
-    if (todump && false) {
+    if (todump && 0) {
       uint8_t *cam_buf = (uint8_t *)cam_buff.addr;
       printf("queueing buf %zu \n", cam_buff.len);
       FILE *dump_raw_file = fopen("/tmp/os.raw", "wb");

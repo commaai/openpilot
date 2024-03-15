@@ -1,6 +1,6 @@
 #define UV_WIDTH RGB_WIDTH / 2
 #define UV_HEIGHT RGB_HEIGHT / 2
-#define HDR_OFFSET 20
+#define HDR_OFFSET 12
 
 #define RGB_TO_Y(r, g, b) ((((mul24(b, 13) + mul24(g, 65) + mul24(r, 33)) + 64) >> 7) + 16)
 #define RGB_TO_U(r, g, b) ((mul24(b, 56) - mul24(g, 37) - mul24(r, 19) + 0x8080) >> 8)
@@ -26,7 +26,7 @@ float3 color_correct(float3 rgb) {
   #if IS_OX
   return -0.507089*exp(-12.54124638*x)+0.9655*powr(x,0.5)-0.472597*x+0.507089;
   #elif IS_OS
-  return powr(x,0.7);
+  return clamp(log(1+x*65536.0) * 28.8 - 65, 0.0, 255.0) / 255.0;
   #else
   // tone mapping params
   const float gamma_k = 0.75;
@@ -138,15 +138,31 @@ float4 val4_from_210(uchar8 long_pvs, uchar long_ext, uchar8 short_pvs, uchar sh
 
   float4 pv;
   // 16-bits?
-  if (parsed_long > 1000) {
-    if (parsed_short <= 273) {
-      pv = (convert_float4(parsed_short) * 240.0 - 64.0) / (65536.0 - 64.0);
-    } else {
-      pv = 1.0;
-    }
+  if (parsed_long.s0 > 1022) {
+    pv.s0 = (convert_float(parsed_short.s0) * 300.0 - 64.0) / (65536.0 - 64.0);
   } else {
-    pv = (convert_float4(parsed_long) - 64.0) / (65536.0 - 64.0);
+    pv.s0 = (convert_float(parsed_long.s0) - 64.0) / (65536.0 - 64.0);
   }
+
+  if (parsed_long.s1 > 1022) {
+    pv.s1 = (convert_float(parsed_short.s1) * 300.0 - 64.0) / (65536.0 - 64.0);
+  } else {
+    pv.s1 = (convert_float(parsed_long.s1) - 64.0) / (65536.0 - 64.0);
+  }
+
+  if (parsed_long.s2 > 1022) {
+    pv.s2 = (convert_float(parsed_short.s2) * 300.0 - 64.0) / (65536.0 - 64.0);
+  } else {
+    pv.s2 = (convert_float(parsed_long.s2) - 64.0) / (65536.0 - 64.0);
+  }
+
+  if (parsed_long.s3 > 1022) {
+    pv.s3 = (convert_float(parsed_short.s3) * 300.0 - 64.0) / (65536.0 - 64.0);
+  } else {
+    pv.s3 = (convert_float(parsed_long.s3) - 64.0) / (65536.0 - 64.0);
+  }
+
+
   return clamp(pv*gain, 0.0, 1.0);
 }
 
