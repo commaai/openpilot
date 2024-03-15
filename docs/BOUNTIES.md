@@ -10,7 +10,7 @@ Get paid to improve openpilot!
 * open a ticket at [comma.ai/support](https://comma.ai/support/shop-order) with links to your PRs to claim
 * get an extra 20% if you redeem your bounty in [comma shop](https://comma.ai/shop) credit (including refunds on previous orders)
 
-We put up each bounty with the intention that it'll get merged, but ocasionally the right resolution is to close the bounty, which only becomes clear once some effort is put in. 
+We put up each bounty with the intention that it'll get merged, but occasionally the right resolution is to close the bounty, which only becomes clear once some effort is put in. 
 This is still valuable work, so we'll pay out $100 for getting any bounty closed with a good explanation.
 
 ## Issue bounties
