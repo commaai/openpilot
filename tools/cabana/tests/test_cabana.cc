@@ -4,11 +4,14 @@
 
 #include "catch2/catch.hpp"
 #include "tools/cabana/dbc/dbcmanager.h"
+#include "tools/cabana/utils/get_opendbc_file_path.h"
+
+#define DIST_TO_ROOT 3
 
 const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
 
 TEST_CASE("DBCFile::generateDBC") {
-  QString fn = QString("%1/%2.dbc").arg(OPENDBC_FILE_PATH, "tesla_can");
+  QString fn = QString("%1/%2.dbc").arg(get_opendbc_file_path(DIST_TO_ROOT), "tesla_can");
   DBCFile dbc_origin(fn);
   DBCFile dbc_from_generated("", dbc_origin.generateDBC());
 
@@ -87,7 +90,7 @@ CM_ SG_ 160 signal_2 "multiple line comment
 }
 
 TEST_CASE("parse_opendbc") {
-  QDir dir(OPENDBC_FILE_PATH);
+  QDir dir(get_opendbc_file_path(DIST_TO_ROOT));
   QStringList errors;
   for (auto fn : dir.entryList({"*.dbc"}, QDir::Files, QDir::Name)) {
     try {

@@ -24,6 +24,9 @@
 #include "tools/cabana/tools/findsignal.h"
 #include "tools/cabana/utils/export.h"
 #include "tools/replay/replay.h"
+#include "tools/cabana/utils/get_opendbc_file_path.h"
+
+#define DIST_TO_ROOT 2
 
 MainWindow::MainWindow() : QMainWindow() {
   loadFingerprints();
@@ -77,7 +80,7 @@ void MainWindow::loadFingerprints() {
     fingerprint_to_dbc = QJsonDocument::fromJson(json_file.readAll());
   }
   // get opendbc names
-  for (auto fn : QDir(OPENDBC_FILE_PATH).entryList({"*.dbc"}, QDir::Files, QDir::Name)) {
+  for (auto fn : QDir(get_opendbc_file_path(DIST_TO_ROOT)).entryList({"*.dbc"}, QDir::Files, QDir::Name)) {
     opendbc_names << QFileInfo(fn).baseName();
   }
 }
@@ -327,7 +330,7 @@ void MainWindow::openRecentFile() {
 }
 
 void MainWindow::loadDBCFromOpendbc(const QString &name) {
-  QString opendbc_file_path = QString("%1/%2.dbc").arg(OPENDBC_FILE_PATH, name);
+  QString opendbc_file_path = QString("%1/%2.dbc").arg(get_opendbc_file_path(DIST_TO_ROOT), name);
   loadFile(opendbc_file_path);
 }
 
