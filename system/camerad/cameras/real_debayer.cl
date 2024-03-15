@@ -170,7 +170,7 @@ float get_k(float a, float b, float c, float d) {
   return 2.0 - (fabs(a - b) + fabs(c - d));
 }
 
-__kernel void debayer10(const __global uchar * in, __global uchar * out)
+__kernel void debayer10(const __global uchar * in, __global uchar * out, int expo_time)
 {
   const int gid_x = get_global_id(0);
   const int gid_y = get_global_id(1);
