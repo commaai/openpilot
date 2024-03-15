@@ -61,6 +61,7 @@ class ModelState:
       'nav_features': np.zeros(ModelConstants.NAV_FEATURE_LEN, dtype=np.float32),
       'nav_instructions': np.zeros(ModelConstants.NAV_INSTRUCTION_LEN, dtype=np.float32),
       'features_buffer': np.zeros(ModelConstants.HISTORY_BUFFER_LEN * ModelConstants.FEATURE_LEN, dtype=np.float32),
+      'radar_tracks': np.zeros(ModelConstants.RADAR_TRACKS_LEN * ModelConstants.RADAR_TRACKS_WIDTH, dtype=np.float32),
     }
 
     with open(METADATA_PATH, 'rb') as f:
@@ -95,6 +96,7 @@ class ModelState:
     self.inputs['lateral_control_params'][:] = inputs['lateral_control_params']
     self.inputs['nav_features'][:] = inputs['nav_features']
     self.inputs['nav_instructions'][:] = inputs['nav_instructions']
+    self.inputs['radar_tracks'][:] = inputs['radar_tracks']
 
     # if getCLBuffer is not None, frame will be None
     self.model.setInputBuffer("input_imgs", self.frame.prepare(buf, transform.flatten(), self.model.getCLBuffer("input_imgs")))
@@ -153,7 +155,7 @@ def main(demo=False):
 
   # messaging
   pm = PubMaster(["modelV2", "cameraOdometry"])
-  sm = SubMaster(["carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel", "navInstruction", "carControl"])
+  sm = SubMaster(["carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel", "navInstruction", "carControl", "liveTracks"])
 
   publish_state = PublishState()
   params = Params()
@@ -238,6 +240,14 @@ def main(demo=False):
     if desire >= 0 and desire < ModelConstants.DESIRE_LEN:
       vec_desire[desire] = 1
 
+    radar_tracks = np.zeros(ModelConstants.RADAR_TRACKS_LEN * ModelConstants.RADAR_TRACKS_WIDTH, dtype=np.float32)
+    if sm.updated["liveTracks"]:
+      for i, track in enumerate(sm["liveTracks"].tracks):
+        if i >= ModelConstants.RADAR_TRACKS_LEN:
+          break
+        vec_index = i * ModelConstants.RADAR_TRACKS_WIDTH
+        radar_tracks[vec_index:vec_index+ModelConstants.RADAR_TRACKS_WIDTH] = [track.dRel, track.yRel, track.vRel]
+
     # Enable/disable nav features
     timestamp_llk = sm["navModel"].locationMonoTime
     nav_valid = sm.valid["navModel"] # and (nanos_since_boot() - timestamp_llk < 1e9)
@@ -279,8 +289,10 @@ def main(demo=False):
       'desire': vec_desire,
       'traffic_convention': traffic_convention,
       'lateral_control_params': lateral_control_params,
+      'radar_tracks': radar_tracks,
       'nav_features': nav_features,
-      'nav_instructions': nav_instructions}
+      'nav_instructions': nav_instructions,
+    }
 
     mt1 = time.perf_counter()
     model_output = model.run(buf_main, buf_extra, model_transform_main, model_transform_extra, inputs, prepare_only)
