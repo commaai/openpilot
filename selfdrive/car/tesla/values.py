@@ -2,7 +2,7 @@ from collections import namedtuple
 
 from cereal import car
 from openpilot.selfdrive.car import AngleRateLimit, CarSpecs, PlatformConfig, Platforms, dbc_dict
-from openpilot.selfdrive.car.docs_definitions import CarInfo
+from openpilot.selfdrive.car.docs_definitions import CarDocs
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
@@ -12,19 +12,19 @@ Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 class CAR(Platforms):
   AP1_MODELS = PlatformConfig(
     'TESLA AP1 MODEL S',
-    [CarInfo("Tesla AP1 Model S", "All")],
+    [CarDocs("Tesla AP1 Model S", "All")],
     CarSpecs(mass=2100., wheelbase=2.959, steerRatio=15.0),
     dbc_dict('tesla_powertrain', 'tesla_radar_bosch_generated', chassis_dbc='tesla_can')
   )
   AP2_MODELS = PlatformConfig(
     'TESLA AP2 MODEL S',
-    [CarInfo("Tesla AP2 Model S", "All")],
+    [CarDocs("Tesla AP2 Model S", "All")],
     AP1_MODELS.specs,
     AP1_MODELS.dbc_dict
   )
   MODELS_RAVEN = PlatformConfig(
     'TESLA MODEL S RAVEN',
-    [CarInfo("Tesla Model S Raven", "All")],
+    [CarDocs("Tesla Model S Raven", "All")],
     AP1_MODELS.specs,
     dbc_dict('tesla_powertrain', 'tesla_radar_continental_generated', chassis_dbc='tesla_can')
   )
