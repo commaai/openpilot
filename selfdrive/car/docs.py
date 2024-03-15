@@ -34,13 +34,10 @@ def get_all_car_info() -> list[CarInfo]:
     CP = interfaces[model][0].get_params(platform, fingerprint=gen_empty_fingerprint(),
                                          car_fw=[car.CarParams.CarFw(ecu="unknown")], experimental_long=True, docs=True)
 
-    if CP.dashcamOnly or car_info is None:
+    if CP.dashcamOnly or not len(car_info):
       continue
 
     # A platform can include multiple car models
-    if not isinstance(car_info, list):
-      car_info = [car_info,]
-
     for _car_info in car_info:
       if not hasattr(_car_info, "row"):
         _car_info.init_make(CP)

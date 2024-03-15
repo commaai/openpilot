@@ -34,22 +34,22 @@ class CAR(Platforms):
   # Chrysler
   PACIFICA_2017_HYBRID = ChryslerPlatformConfig(
     "CHRYSLER PACIFICA HYBRID 2017",
-    ChryslerCarInfo("Chrysler Pacifica Hybrid 2017"),
+    [ChryslerCarInfo("Chrysler Pacifica Hybrid 2017")],
     ChryslerCarSpecs(mass=2242., wheelbase=3.089, steerRatio=16.2),
   )
   PACIFICA_2018_HYBRID = ChryslerPlatformConfig(
     "CHRYSLER PACIFICA HYBRID 2018",
-    ChryslerCarInfo("Chrysler Pacifica Hybrid 2018"),
+    [ChryslerCarInfo("Chrysler Pacifica Hybrid 2018")],
     PACIFICA_2017_HYBRID.specs,
   )
   PACIFICA_2019_HYBRID = ChryslerPlatformConfig(
     "CHRYSLER PACIFICA HYBRID 2019",
-    ChryslerCarInfo("Chrysler Pacifica Hybrid 2019-23"),
+    [ChryslerCarInfo("Chrysler Pacifica Hybrid 2019-23")],
     PACIFICA_2017_HYBRID.specs,
   )
   PACIFICA_2018 = ChryslerPlatformConfig(
     "CHRYSLER PACIFICA 2018",
-    ChryslerCarInfo("Chrysler Pacifica 2017-18"),
+    [ChryslerCarInfo("Chrysler Pacifica 2017-18")],
     PACIFICA_2017_HYBRID.specs,
   )
   PACIFICA_2020 = ChryslerPlatformConfig(
@@ -64,27 +64,27 @@ class CAR(Platforms):
   # Dodge
   DODGE_DURANGO = ChryslerPlatformConfig(
     "DODGE DURANGO 2021",
-    ChryslerCarInfo("Dodge Durango 2020-21"),
+    [ChryslerCarInfo("Dodge Durango 2020-21")],
     PACIFICA_2017_HYBRID.specs,
   )
 
   # Jeep
   JEEP_GRAND_CHEROKEE = ChryslerPlatformConfig(  # includes 2017 Trailhawk
     "JEEP GRAND CHEROKEE V6 2018",
-    ChryslerCarInfo("Jeep Grand Cherokee 2016-18", video_link="https://www.youtube.com/watch?v=eLR9o2JkuRk"),
+    [ChryslerCarInfo("Jeep Grand Cherokee 2016-18", video_link="https://www.youtube.com/watch?v=eLR9o2JkuRk")],
     ChryslerCarSpecs(mass=1778., wheelbase=2.71, steerRatio=16.7),
   )
 
   JEEP_GRAND_CHEROKEE_2019 = ChryslerPlatformConfig(  # includes 2020 Trailhawk
     "JEEP GRAND CHEROKEE 2019",
-    ChryslerCarInfo("Jeep Grand Cherokee 2019-21", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4"),
+    [ChryslerCarInfo("Jeep Grand Cherokee 2019-21", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4")],
     JEEP_GRAND_CHEROKEE.specs,
   )
 
   # Ram
   RAM_1500 = ChryslerPlatformConfig(
     "RAM 1500 5TH GEN",
-    ChryslerCarInfo("Ram 1500 2019-24", car_parts=CarParts.common([CarHarness.ram])),
+    [ChryslerCarInfo("Ram 1500 2019-24", car_parts=CarParts.common([CarHarness.ram]))],
     ChryslerCarSpecs(mass=2493., wheelbase=3.88, steerRatio=16.3, minSteerSpeed=14.5),
     dbc_dict('chrysler_ram_dt_generated', None),
   )
