@@ -154,9 +154,37 @@ class CarInterface(CarInterfaceBase):
       tune.kiBP = [0., 5., 12., 20., 27.]
       tune.kiV = [.35, .23, .20, .17, .1]
       if candidate in TSS2_CAR:
-        ret.vEgoStopping = 0.25
-        ret.vEgoStarting = 0.25
+        ret.vEgoStopping = 0.1
+        ret.vEgoStarting = 0.1
         ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
+
+        # some notes:
+        # longcontrol has smart accel calculation that takes into account the difference between:
+        # - ideal accel given current planned speed and future planned speed from actuator delay
+        # - the current planned accel
+        # and outputs an acceleration to move your current planned accel towards the ideal accel from the speeds.
+        # this likely accounts for slightly incorrect actuator delay, but i'm guessing it can't account for sudden changes in accel and will undershoot
+
+        # try playing around with this:
+        """
+        t = 0.15  # + 0.2
+        ideal_accel = (23.2273 - 23.7665) / t  # future - current plan
+        a_target_now = -1.16447  # current plan
+        print(f'{ideal_accel=}')
+        comp_accel = 2 * ideal_accel - a_target_now
+        print(f'{comp_accel=}')  # this generally matched the accel at plan index 6/7 (0.35s/0.48s)
+
+        Out: ideal_accel=-1.5337244444444473  # current plan undershooting this, so longcontrol decreases feedforward accel:
+        Out: comp_accel=-1.9029788888888948
+        """
+
+        # by getting the delay more dialed in, a_target_now should move towards ideal_accel, causing its effect to lessen and lag to go down
+
+        # TODO: is the reason current planned accel doesn't match future planned speeds because the planner is constrained to start near the ego?
+
+        # TODO: we add 0.2s delay to lat, why not long?
+        ret.longitudinalActuatorDelayLowerBound = 0.15 + 0.25
+        ret.longitudinalActuatorDelayUpperBound = 0.15 + 0.25
     else:
       tune.kpBP = [0., 5., 35.]
       tune.kiBP = [0., 35.]
