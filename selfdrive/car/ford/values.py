@@ -79,11 +79,12 @@ class FordPlatformConfig(PlatformConfig):
   def init(self):
     for car_info in list(self.car_info) if isinstance(self.car_info, list) else [self.car_info]:
       if car_info.hybrid:
-        new_name = car_info.name.replace(car_info.model, car_info.model + " Hybrid")
-        self.car_info.append(replace(copy.deepcopy(car_info), name=new_name))
+        name = f"{car_info.make} {car_info.model} Hybrid {car_info.year}"
+        self.car_info.append(replace(copy.deepcopy(car_info), name=name))
+
       if car_info.plug_in_hybrid:
-        new_name = car_info.name.replace(car_info.model, car_info.model + " Plug-in Hybrid")
-        self.car_info.append(replace(copy.deepcopy(car_info), name=new_name))
+        name = f"{car_info.make} {car_info.model} Plug-in Hybrid {car_info.year}"
+        self.car_info.append(replace(copy.deepcopy(car_info), name=name))
 
 
 @dataclass
