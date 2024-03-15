@@ -2,6 +2,7 @@ import os
 import pathlib
 import shutil
 import signal
+import stat
 import subprocess
 import tempfile
 import time
@@ -29,8 +30,12 @@ def update_release(directory, name, version, agnos_version, release_notes):
   with open(directory / "common" / "version.h", "w") as f:
     f.write(f'#define COMMA_VERSION "{version}"')
 
-  with open(directory / "launch_env.sh", "w") as f:
+  launch_env = directory / "launch_env.sh"
+  with open(launch_env, "w") as f:
     f.write(f'export AGNOS_VERSION="{agnos_version}"')
+
+  st = os.stat(launch_env)
+  os.chmod(launch_env, st.st_mode | stat.S_IEXEC)
 
   test_symlink = directory / "test_symlink"
   if not os.path.exists(str(test_symlink)):
@@ -123,6 +128,7 @@ class BaseUpdateTest(unittest.TestCase):
     self.assertEqual(self.params.get("UpdaterNewReleaseNotes", encoding="utf-8"), f"<p>{release_notes}</p>\n")
     self.assertEqual(get_version(str(self.staging_root / "finalized")), version)
     self.assertEqual(get_consistent_flag(str(self.staging_root / "finalized")), True)
+    self.assertTrue(os.access(str(self.staging_root / "finalized" / "launch_env.sh"), os.X_OK))
 
     with open(self.staging_root / "finalized" / "test_symlink") as f:
       self.assertIn(version, f.read())
