@@ -256,15 +256,15 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out, int exp
   // parse into floats
   #if IS_10BIT
     #if IS_HDR
-      v_rows[row_read_order[0]] = val4_from_210(dat[0], extra[0], short_dat[0], short_extra[0], aligned10, 1.0);
-      v_rows[row_read_order[1]] = val4_from_210(dat[1], extra[1], short_dat[1], short_extra[1], aligned10, 1.0);
-      v_rows[row_read_order[2]] = val4_from_210(dat[2], extra[2], short_dat[2], short_extra[2], aligned10, 1.0);
-      v_rows[row_read_order[3]] = val4_from_210(dat[3], extra[3], short_dat[3], short_extra[3], aligned10, 1.0);
+      v_rows[row_read_order[0]] = val4_from_210(dat[0], extra[0], short_dat[0], short_extra[0], aligned10, gain);
+      v_rows[row_read_order[1]] = val4_from_210(dat[1], extra[1], short_dat[1], short_extra[1], aligned10, gain);
+      v_rows[row_read_order[2]] = val4_from_210(dat[2], extra[2], short_dat[2], short_extra[2], aligned10, gain);
+      v_rows[row_read_order[3]] = val4_from_210(dat[3], extra[3], short_dat[3], short_extra[3], aligned10, gain);
     #else
-      v_rows[row_read_order[0]] = val4_from_10(dat[0], extra[0], aligned10, 1.0);
-      v_rows[row_read_order[1]] = val4_from_10(dat[1], extra[1], aligned10, 1.0);
-      v_rows[row_read_order[2]] = val4_from_10(dat[2], extra[2], aligned10, 1.0);
-      v_rows[row_read_order[3]] = val4_from_10(dat[3], extra[3], aligned10, 1.0);
+      v_rows[row_read_order[0]] = val4_from_10(dat[0], extra[0], aligned10, gain);
+      v_rows[row_read_order[1]] = val4_from_10(dat[1], extra[1], aligned10, gain);
+      v_rows[row_read_order[2]] = val4_from_10(dat[2], extra[2], aligned10, gain);
+      v_rows[row_read_order[3]] = val4_from_10(dat[3], extra[3], aligned10, gain);
     #endif
   #else
     v_rows[row_read_order[0]] = val4_from_12(dat[0], gain);
