@@ -23,7 +23,7 @@ OS04C10::OS04C10() {
   data_word = false;
 
   frame_width = 2688;
-  frame_height = 1520 * 2 + 24; // stagger separated by 24 rows
+  frame_height = 1520 * 2 + 136; // stagger 64*2 + 8
   frame_stride = (frame_width * 10 / 8); // no alignment
 
   extra_height = 0;
