@@ -9,7 +9,7 @@ import capnp
 from cereal import car
 from openpilot.common.numpy_fast import clip, interp
 from openpilot.common.utils import Freezable
-from openpilot.selfdrive.car.docs_definitions import CarInfo
+from openpilot.selfdrive.car.docs_definitions import CarDocs
 
 
 # kg of standard extra cargo to count for drive, gas, etc...
@@ -262,7 +262,7 @@ class CarSpecs:
 @dataclass(order=True)
 class PlatformConfig(Freezable):
   platform_str: str
-  car_info: list[CarInfo]
+  car_info: list[CarDocs]
   specs: CarSpecs
 
   dbc_dict: DbcDict
