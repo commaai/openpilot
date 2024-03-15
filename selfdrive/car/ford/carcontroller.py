@@ -1,9 +1,10 @@
 from cereal import car
-from openpilot.common.numpy_fast import clip
 from opendbc.can.packer import CANPacker
+from openpilot.common.numpy_fast import clip
 from openpilot.selfdrive.car import apply_std_steer_angle_limits
 from openpilot.selfdrive.car.ford import fordcan
-from openpilot.selfdrive.car.ford.values import CANFD_CAR, CarControllerParams
+from openpilot.selfdrive.car.ford.values import CarControllerParams, FordFlags
+from openpilot.selfdrive.car.interfaces import CarControllerBase
 from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
@@ -22,7 +23,7 @@ def apply_ford_curvature_limits(apply_curvature, apply_curvature_last, current_c
   return clip(apply_curvature, -CarControllerParams.CURVATURE_MAX, CarControllerParams.CURVATURE_MAX)
 
 
-class CarController:
+class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
     self.VM = VM
@@ -34,6 +35,7 @@ class CarController:
     self.main_on_last = False
     self.lkas_enabled_last = False
     self.steer_alert_last = False
+    self.lead_distance_bars_last = None
 
   def update(self, CC, CS, now_nanos):
     can_sends = []
@@ -69,10 +71,10 @@ class CarController:
 
       self.apply_curvature_last = apply_curvature
 
-      if self.CP.carFingerprint in CANFD_CAR:
+      if self.CP.flags & FordFlags.CANFD:
         # TODO: extended mode
         mode = 1 if CC.latActive else 0
-        counter = (self.frame // CarControllerParams.STEER_STEP) % 0xF
+        counter = (self.frame // CarControllerParams.STEER_STEP) % 0x10
         can_sends.append(fordcan.create_lat_ctl2_msg(self.packer, self.CAN, mode, 0., 0., -apply_curvature, 0., counter))
       else:
         can_sends.append(fordcan.create_lat_ctl_msg(self.packer, self.CAN, CC.latActive, 0., 0., -apply_curvature, 0.))
@@ -97,15 +99,19 @@ class CarController:
     # send lkas ui msg at 1Hz or if ui state changes
     if (self.frame % CarControllerParams.LKAS_UI_STEP) == 0 or send_ui:
       can_sends.append(fordcan.create_lkas_ui_msg(self.packer, self.CAN, main_on, CC.latActive, steer_alert, hud_control, CS.lkas_status_stock_values))
+
     # send acc ui msg at 5Hz or if ui state changes
+    if hud_control.leadDistanceBars != self.lead_distance_bars_last:
+      send_ui = True
     if (self.frame % CarControllerParams.ACC_UI_STEP) == 0 or send_ui:
       can_sends.append(fordcan.create_acc_ui_msg(self.packer, self.CAN, self.CP, main_on, CC.latActive,
-                                         fcw_alert, CS.out.cruiseState.standstill, hud_control,
-                                         CS.acc_tja_status_stock_values))
+                                                 fcw_alert, CS.out.cruiseState.standstill, hud_control,
+                                                 CS.acc_tja_status_stock_values))
 
     self.main_on_last = main_on
     self.lkas_enabled_last = CC.latActive
     self.steer_alert_last = steer_alert
+    self.lead_distance_bars_last = hud_control.leadDistanceBars
 
     new_actuators = actuators.copy()
     new_actuators.curvature = self.apply_curvature_last

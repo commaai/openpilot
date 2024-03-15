@@ -27,4 +27,5 @@ if __name__ == "__main__":
   outputs = sorted(inputs + outputs, key=lambda x: x.logMonoTime)
 
   fn = f"{args.route.replace('/', '_')}_{args.process}.bz2"
+  print(f"Saved log to {fn}")
   save_log(fn, outputs)

@@ -2,13 +2,11 @@
 import argparse
 import json
 
-from openpilot.selfdrive.car.car_helpers import get_interface_attr
+from openpilot.selfdrive.car.values import create_platform_map
 
 
 def generate_dbc_json() -> str:
-  all_cars_by_brand = get_interface_attr("CAR_INFO")
-  all_dbcs_by_brand = get_interface_attr("DBC")
-  dbc_map = {car: all_dbcs_by_brand[brand][car]['pt'] for brand, cars in all_cars_by_brand.items() for car in cars if car != 'mock'}
+  dbc_map = create_platform_map(lambda platform: platform.config.dbc_dict["pt"] if platform != "mock" else None)
   return json.dumps(dict(sorted(dbc_map.items())), indent=2)
 
 

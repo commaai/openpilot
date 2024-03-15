@@ -16,7 +16,12 @@
 #define V4L2_QCOM_BUF_FLAG_CODECCONFIG 0x00020000
 #define V4L2_QCOM_BUF_FLAG_EOS 0x02000000
 
-// echo 0x7fffffff > /sys/kernel/debug/msm_vidc/debug_level
+/*
+  kernel debugging:
+  echo 0xff > /sys/module/videobuf2_core/parameters/debug
+  echo 0x7fffffff > /sys/kernel/debug/msm_vidc/debug_level
+  echo 0xff > /sys/devices/platform/soc/aa00000.qcom,vidc/video4linux/video33/dev_debug
+*/
 const int env_debug_encoder = (getenv("DEBUG_ENCODER") != NULL) ? atoi(getenv("DEBUG_ENCODER")) : 0;
 
 static void checked_ioctl(int fd, unsigned long request, void *argp) {

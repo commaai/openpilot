@@ -98,6 +98,23 @@ class TestHyundaiFingerprint(unittest.TestCase):
     fws = data.draw(fw_strategy)
     get_platform_codes(fws)
 
+  def test_expected_platform_codes(self):
+    # Ensures we don't accidentally add multiple platform codes for a car unless it is intentional
+    for car_model, ecus in FW_VERSIONS.items():
+      with self.subTest(car_model=car_model.value):
+        for ecu, fws in ecus.items():
+          if ecu[0] not in PLATFORM_CODE_ECUS:
+            continue
+
+          # Third and fourth character are usually EV/hybrid identifiers
+          codes = {code.split(b"-")[0][:2] for code, _ in get_platform_codes(fws)}
+          if car_model == CAR.PALISADE:
+            self.assertEqual(codes, {b"LX", b"ON"}, f"Car has unexpected platform codes: {car_model} {codes}")
+          elif car_model == CAR.KONA_EV and ecu[0] == Ecu.fwdCamera:
+            self.assertEqual(codes, {b"OE", b"OS"}, f"Car has unexpected platform codes: {car_model} {codes}")
+          else:
+            self.assertEqual(len(codes), 1, f"Car has multiple platform codes: {car_model} {codes}")
+
   # Tests for platform codes, part numbers, and FW dates which Hyundai will use to fuzzy
   # fingerprint in the absence of full FW matches:
   def test_platform_code_ecus_available(self):
