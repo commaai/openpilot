@@ -250,7 +250,7 @@ class CAR(Platforms):
   )
   PASSAT_NMS = VolkswagenPQPlatformConfig(
     "VOLKSWAGEN PASSAT NMS",  # Chassis A3
-    VWCarInfo("Volkswagen Passat NMS 2017-22"),
+    [VWCarInfo("Volkswagen Passat NMS 2017-22")],
     VolkswagenCarSpecs(mass=1503, wheelbase=2.80, minSteerSpeed=50*CV.KPH_TO_MS, minEnableSpeed=20*CV.KPH_TO_MS),
   )
   POLO_MK6 = VolkswagenMQBPlatformConfig(
@@ -271,12 +271,12 @@ class CAR(Platforms):
   )
   TAOS_MK1 = VolkswagenMQBPlatformConfig(
     "VOLKSWAGEN TAOS 1ST GEN",  # Chassis B2
-    VWCarInfo("Volkswagen Taos 2022-23"),
+    [VWCarInfo("Volkswagen Taos 2022-23")],
     VolkswagenCarSpecs(mass=1498, wheelbase=2.69),
   )
   TCROSS_MK1 = VolkswagenMQBPlatformConfig(
     "VOLKSWAGEN T-CROSS 1ST GEN",  # Chassis C1
-    VWCarInfo("Volkswagen T-Cross 2021", footnotes=[Footnote.VW_MQB_A0]),
+    [VWCarInfo("Volkswagen T-Cross 2021", footnotes=[Footnote.VW_MQB_A0])],
     VolkswagenCarSpecs(mass=1150, wheelbase=2.60),
   )
   TIGUAN_MK2 = VolkswagenMQBPlatformConfig(
@@ -289,7 +289,7 @@ class CAR(Platforms):
   )
   TOURAN_MK2 = VolkswagenMQBPlatformConfig(
     "VOLKSWAGEN TOURAN 2ND GEN",  # Chassis 1T
-    VWCarInfo("Volkswagen Touran 2016-23"),
+    [VWCarInfo("Volkswagen Touran 2016-23")],
     VolkswagenCarSpecs(mass=1516, wheelbase=2.79),
   )
   TRANSPORTER_T61 = VolkswagenMQBPlatformConfig(
@@ -302,7 +302,7 @@ class CAR(Platforms):
   )
   TROC_MK1 = VolkswagenMQBPlatformConfig(
     "VOLKSWAGEN T-ROC 1ST GEN",  # Chassis A1
-    VWCarInfo("Volkswagen T-Roc 2018-22", footnotes=[Footnote.VW_MQB_A0]),
+    [VWCarInfo("Volkswagen T-Roc 2018-22", footnotes=[Footnote.VW_MQB_A0])],
     VolkswagenCarSpecs(mass=1413, wheelbase=2.63),
   )
   AUDI_A3_MK3 = VolkswagenMQBPlatformConfig(
@@ -317,42 +317,42 @@ class CAR(Platforms):
   )
   AUDI_Q2_MK1 = VolkswagenMQBPlatformConfig(
     "AUDI Q2 1ST GEN",  # Chassis GA
-    VWCarInfo("Audi Q2 2018"),
+    [VWCarInfo("Audi Q2 2018")],
     VolkswagenCarSpecs(mass=1205, wheelbase=2.61),
   )
   AUDI_Q3_MK2 = VolkswagenMQBPlatformConfig(
     "AUDI Q3 2ND GEN",  # Chassis 8U/F3/FS
-    VWCarInfo("Audi Q3 2019-23"),
+    [VWCarInfo("Audi Q3 2019-23")],
     VolkswagenCarSpecs(mass=1623, wheelbase=2.68),
   )
   SEAT_ATECA_MK1 = VolkswagenMQBPlatformConfig(
     "SEAT ATECA 1ST GEN",  # Chassis 5F
-    VWCarInfo("SEAT Ateca 2018"),
+    [VWCarInfo("SEAT Ateca 2018")],
     VolkswagenCarSpecs(mass=1900, wheelbase=2.64),
   )
   SEAT_LEON_MK3 = VolkswagenMQBPlatformConfig(
     "SEAT LEON 3RD GEN",  # Chassis 5F
-    VWCarInfo("SEAT Leon 2014-20"),
+    [VWCarInfo("SEAT Leon 2014-20")],
     VolkswagenCarSpecs(mass=1227, wheelbase=2.64),
   )
   SKODA_FABIA_MK4 = VolkswagenMQBPlatformConfig(
     "SKODA FABIA 4TH GEN",  # Chassis PJ
-    VWCarInfo("Škoda Fabia 2022-23", footnotes=[Footnote.VW_MQB_A0]),
+    [VWCarInfo("Škoda Fabia 2022-23", footnotes=[Footnote.VW_MQB_A0])],
     VolkswagenCarSpecs(mass=1266, wheelbase=2.56),
   )
   SKODA_KAMIQ_MK1 = VolkswagenMQBPlatformConfig(
     "SKODA KAMIQ 1ST GEN",  # Chassis NW
-    VWCarInfo("Škoda Kamiq 2021-23", footnotes=[Footnote.VW_MQB_A0, Footnote.KAMIQ]),
+    [VWCarInfo("Škoda Kamiq 2021-23", footnotes=[Footnote.VW_MQB_A0, Footnote.KAMIQ])],
     VolkswagenCarSpecs(mass=1265, wheelbase=2.66),
   )
   SKODA_KAROQ_MK1 = VolkswagenMQBPlatformConfig(
     "SKODA KAROQ 1ST GEN",  # Chassis NU
-    VWCarInfo("Škoda Karoq 2019-23"),
+    [VWCarInfo("Škoda Karoq 2019-23")],
     VolkswagenCarSpecs(mass=1278, wheelbase=2.66),
   )
   SKODA_KODIAQ_MK1 = VolkswagenMQBPlatformConfig(
     "SKODA KODIAQ 1ST GEN",  # Chassis NS
-    VWCarInfo("Škoda Kodiaq 2017-23"),
+    [VWCarInfo("Škoda Kodiaq 2017-23")],
     VolkswagenCarSpecs(mass=1569, wheelbase=2.79),
   )
   SKODA_OCTAVIA_MK3 = VolkswagenMQBPlatformConfig(
@@ -365,12 +365,12 @@ class CAR(Platforms):
   )
   SKODA_SCALA_MK1 = VolkswagenMQBPlatformConfig(
     "SKODA SCALA 1ST GEN",  # Chassis NW
-    VWCarInfo("Škoda Scala 2020-23", footnotes=[Footnote.VW_MQB_A0]),
+    [VWCarInfo("Škoda Scala 2020-23", footnotes=[Footnote.VW_MQB_A0])],
     VolkswagenCarSpecs(mass=1192, wheelbase=2.65),
   )
   SKODA_SUPERB_MK3 = VolkswagenMQBPlatformConfig(
     "SKODA SUPERB 3RD GEN",  # Chassis 3V/NP
-    VWCarInfo("Škoda Superb 2015-22"),
+    [VWCarInfo("Škoda Superb 2015-22")],
     VolkswagenCarSpecs(mass=1505, wheelbase=2.84),
   )
 
