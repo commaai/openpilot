@@ -265,9 +265,7 @@ class CarInfo:
 
     # min steer & enable speed columns
     # TODO: set all the min steer speeds in carParams and remove this
-    if self.min_steer_speed is not None:
-      assert CP.minSteerSpeed == 0, f"{CP.carFingerprint}: Minimum steer speed set in both CarInfo and CarParams"
-    else:
+    if self.min_steer_speed is None:
       self.min_steer_speed = CP.minSteerSpeed
 
     # TODO: set all the min enable speeds in carParams correctly and remove this
