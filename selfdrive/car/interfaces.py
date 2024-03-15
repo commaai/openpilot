@@ -111,10 +111,9 @@ class CarInterfaceBase(ABC):
 
   @classmethod
   def get_params(cls, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[car.CarParams.CarFw], experimental_long: bool, docs: bool):
-    platform = PLATFORMS.get(candidate, MOCK.MOCK)
-
     ret = CarInterfaceBase.get_std_params(candidate)
 
+    platform = PLATFORMS[candidate]
     ret.mass = platform.config.specs.mass
     ret.wheelbase = platform.config.specs.wheelbase
     ret.steerRatio = platform.config.specs.steerRatio
