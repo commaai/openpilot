@@ -31,7 +31,6 @@ def update_release(directory, name, version, agnos_version, release_notes):
     f.write(f'#define COMMA_VERSION "{version}"')
 
   launch_env = directory / "launch_env.sh"
-
   with open(launch_env, "w") as f:
     f.write(f'export AGNOS_VERSION="{agnos_version}"')
 
