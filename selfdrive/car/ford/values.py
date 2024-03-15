@@ -119,9 +119,7 @@ class CAR(Platforms):
   )
   F_150_MK14 = FordCANFDPlatformConfig(
     "FORD F-150 14TH GEN",
-    [
-      FordCarDocs("Ford F-150 2022-23", "Co-Pilot360 Active 2.0", hybrid=True),
-    ],
+    [FordCarDocs("Ford F-150 2022-23", "Co-Pilot360 Active 2.0", hybrid=True)],
     CarSpecs(mass=2000, wheelbase=3.69, steerRatio=17.0),
   )
   F_150_LIGHTNING_MK1 = FordCANFDPlatformConfig(
@@ -131,9 +129,7 @@ class CAR(Platforms):
   )
   FOCUS_MK4 = FordPlatformConfig(
     "FORD FOCUS 4TH GEN",
-    [
-      FordCarDocs("Ford Focus 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS], hybrid=True),  # mHEV only
-    ],
+    [FordCarDocs("Ford Focus 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS], hybrid=True)],  # mHEV only
     CarSpecs(mass=1350, wheelbase=2.7, steerRatio=15.0),
   )
   MAVERICK_MK1 = FordPlatformConfig(
