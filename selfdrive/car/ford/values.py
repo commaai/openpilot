@@ -77,13 +77,13 @@ class FordPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('ford_lincoln_base_pt', RADAR.DELPHI_MRR))
 
   def init(self):
-    for car_info in list(self.car_info):
-      if car_info.hybrid:
-        name = f"{car_info.make} {car_info.model} Hybrid {car_info.years}"
-        self.car_info.append(replace(copy.deepcopy(car_info), name=name))
-      if car_info.plug_in_hybrid:
-        name = f"{car_info.make} {car_info.model} Plug-in Hybrid {car_info.years}"
-        self.car_info.append(replace(copy.deepcopy(car_info), name=name))
+    for car_docs in list(self.car_docs):
+      if car_docs.hybrid:
+        name = f"{car_docs.make} {car_docs.model} Hybrid {car_docs.years}"
+        self.car_docs.append(replace(copy.deepcopy(car_docs), name=name))
+      if car_docs.plug_in_hybrid:
+        name = f"{car_docs.make} {car_docs.model} Plug-in Hybrid {car_docs.years}"
+        self.car_docs.append(replace(copy.deepcopy(car_docs), name=name))
 
 
 @dataclass
