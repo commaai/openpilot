@@ -1229,7 +1229,7 @@ FW_VERSIONS = {
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x816U3J9051\x00\x00\xf1\x006U3H1_C2\x00\x006U3J9051\x00\x00HDE0G16NL3\x00\x00\x00\x00',
       b'\xf1\x816U3J9051\x00\x00\xf1\x006U3H1_C2\x00\x006U3J9051\x00\x00HDE0G16NL3\xb9\xd3\xfaW',
-      b'\xf1\x816U3J7051\x00\x00\xf1\x006U3H1_C2\x00\x006U3J7051\x00\x00HDE0G16KL1}\x1f\xad\xa4',
+      b'\xf1\x006U3H1_C2\x00\x006U3J7051\x00\x00HDE0G16KL1}\x1f\xad\xa4',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00DE  MDPS C 1.00 1.01 56310G5520\x00 4DEPC101',
