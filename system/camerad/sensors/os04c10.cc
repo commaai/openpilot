@@ -42,7 +42,7 @@ OS04C10::OS04C10() {
   dc_gain_max_weight = 1;
   dc_gain_on_grey = 0.9;
   dc_gain_off_grey = 1.0;
-  exposure_time_min = 128;
+  exposure_time_min = 2;
   exposure_time_max = 2400;
   analog_gain_min_idx = 0x0;
   analog_gain_rec_idx = 0x0;  // 1x
