@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum, IntFlag
 
 import panda.python.uds as uds
@@ -60,6 +60,8 @@ class Footnote(Enum):
 @dataclass
 class FordCarInfo(CarInfo):
   package: str = "Co-Pilot360 Assist+"
+  hybrid: bool = False
+  plug_in_hybrid: bool = False
 
   def init_make(self, CP: car.CarParams):
     harness = CarHarness.ford_q4 if CP.flags & FordFlags.CANFD else CarHarness.ford_q3
@@ -72,6 +74,19 @@ class FordCarInfo(CarInfo):
 @dataclass
 class FordPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('ford_lincoln_base_pt', RADAR.DELPHI_MRR))
+
+  def init(self):
+    for car_info in list(self.car_info) if isinstance(self.car_info, list) else [self.car_info]:
+      if car_info.hybrid:
+        print((car_info.make, car_info.model, car_info.years))
+        new_name = f"{car_info.make} {car_info.model} Hybrid {car_info.years}"
+        self.car_info.append(replace(car_info, name=new_name))
+      if car_info.plug_in_hybrid:
+        new_name = f"{car_info.make} {car_info.model} Plug-in Hybrid {car_info.years}"
+        self.car_info.append(replace(car_info, name=new_name))
+      print('hi')
+      # car_info.init_make(self
+    # print(self.car_info)
 
 
 @dataclass
@@ -92,12 +107,12 @@ class CAR(Platforms):
   ESCAPE_MK4 = FordPlatformConfig(
     "FORD ESCAPE 4TH GEN",
     [
-      FordCarInfo("Ford Escape 2020-22"),
-      FordCarInfo("Ford Escape Hybrid 2020-22"),
-      FordCarInfo("Ford Escape Plug-in Hybrid 2020-22"),
-      FordCarInfo("Ford Kuga 2020-22", "Adaptive Cruise Control with Lane Centering"),
-      FordCarInfo("Ford Kuga Hybrid 2020-22", "Adaptive Cruise Control with Lane Centering"),
-      FordCarInfo("Ford Kuga Plug-in Hybrid 2020-22", "Adaptive Cruise Control with Lane Centering"),
+      FordCarInfo("Ford Escape 2020-22", hybrid=True, plug_in_hybrid=True),
+      # FordCarInfo("Ford Escape Hybrid 2020-22"),
+      # FordCarInfo("Ford Escape Plug-in Hybrid 2020-22"),
+      FordCarInfo("Ford Kuga 2020-22", "Adaptive Cruise Control with Lane Centering", hybrid=True, plug_in_hybrid=True),
+      # FordCarInfo("Ford Kuga Hybrid 2020-22", "Adaptive Cruise Control with Lane Centering"),
+      # FordCarInfo("Ford Kuga Plug-in Hybrid 2020-22", "Adaptive Cruise Control with Lane Centering"),
     ],
     CarSpecs(mass=1750, wheelbase=2.71, steerRatio=16.7),
   )
