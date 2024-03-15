@@ -127,10 +127,12 @@ class Controls:
     elif self.CP.lateralTuning.which() == 'torque':
       self.LaC = LatControlTorque(self.CP, self.CI)
 
+    print("KONJO #130 self.state="+str(self.state))
     self.initialized = False
     self.state = State.disabled
     self.enabled = False
     self.active = False
+    print("KONJO #135 self.state="+str(self.state))
     self.soft_disable_timer = 0
     self.mismatch_counter = 0
     self.cruise_mismatch_counter = 0
@@ -175,7 +177,9 @@ class Controls:
           self.v_cruise_helper.v_cruise_kph = controls_state.vCruise
 
       if any(ps.controlsAllowed for ps in self.sm['pandaStates']):
+        print("KONJO #179 self.state="+str(self.state))
         self.state = State.enabled
+        print("KONJO #181 self.state="+str(self.state))
 
   def update_events(self, CS):
     """Compute onroadEvents from carState"""
@@ -456,25 +460,31 @@ class Controls:
 
     # ENABLED, SOFT DISABLING, PRE ENABLING, OVERRIDING
     if self.state != State.disabled:
+      print("KONJO #462 self.state="+str(self.state))
       # user and immediate disable always have priority in a non-disabled state
       if self.events.contains(ET.USER_DISABLE):
         self.state = State.disabled
+        print("KONJO #466 self.state="+str(self.state))
         self.current_alert_types.append(ET.USER_DISABLE)
 
       elif self.events.contains(ET.IMMEDIATE_DISABLE):
+        print("KONJO #470 self.state="+str(self.state))
         self.state = State.disabled
         self.current_alert_types.append(ET.IMMEDIATE_DISABLE)
 
       else:
         # ENABLED
+        print("KONJO #476 self.state="+str(self.state))
         if self.state == State.enabled:
           if self.events.contains(ET.SOFT_DISABLE):
             self.state = State.softDisabling
+            print("KONJO #480 self.state="+str(self.state))
             self.soft_disable_timer = int(SOFT_DISABLE_TIME / DT_CTRL)
             self.current_alert_types.append(ET.SOFT_DISABLE)
 
           elif self.events.contains(ET.OVERRIDE_LATERAL) or self.events.contains(ET.OVERRIDE_LONGITUDINAL):
             self.state = State.overriding
+            print("KONJO #486 self.state="+str(self.state))
             self.current_alert_types += [ET.OVERRIDE_LATERAL, ET.OVERRIDE_LONGITUDINAL]
 
         # SOFT DISABLING
@@ -482,33 +492,42 @@ class Controls:
           if not self.events.contains(ET.SOFT_DISABLE):
             # no more soft disabling condition, so go back to ENABLED
             self.state = State.enabled
+            print("KONJO #494 self.state="+str(self.state))
 
           elif self.soft_disable_timer > 0:
             self.current_alert_types.append(ET.SOFT_DISABLE)
 
           elif self.soft_disable_timer <= 0:
+            print("KONJO #500 self.state="+str(self.state))
             self.state = State.disabled
 
         # PRE ENABLING
         elif self.state == State.preEnabled:
           if not self.events.contains(ET.PRE_ENABLE):
             self.state = State.enabled
+            print("KONJO #507 self.state="+str(self.state))
           else:
             self.current_alert_types.append(ET.PRE_ENABLE)
+            print("KONJO #510 self.state="+str(self.state))
 
         # OVERRIDING
         elif self.state == State.overriding:
+          print("KONJO #514 self.state="+str(self.state))
           if self.events.contains(ET.SOFT_DISABLE):
             self.state = State.softDisabling
+            print("KONJO #517 self.state="+str(self.state))
             self.soft_disable_timer = int(SOFT_DISABLE_TIME / DT_CTRL)
             self.current_alert_types.append(ET.SOFT_DISABLE)
           elif not (self.events.contains(ET.OVERRIDE_LATERAL) or self.events.contains(ET.OVERRIDE_LONGITUDINAL)):
             self.state = State.enabled
+            print("KONJO #522 self.state="+str(self.state))
           else:
             self.current_alert_types += [ET.OVERRIDE_LATERAL, ET.OVERRIDE_LONGITUDINAL]
+            print("KONJO #525 self.state="+str(self.state))
 
     # DISABLED
     elif self.state == State.disabled:
+      print("KONJO #528 self.state="+str(self.state))
       if self.events.contains(ET.ENABLE):
         if self.events.contains(ET.NO_ENTRY):
           self.current_alert_types.append(ET.NO_ENTRY)
@@ -526,6 +545,7 @@ class Controls:
     # Check if openpilot is engaged and actuators are enabled
     self.enabled = self.state in ENABLED_STATES
     self.active = self.state in ACTIVE_STATES
+    print("KONJO #547 self.state="+str(self.state))
     if self.active:
       self.current_alert_types.append(ET.WARNING)
 
@@ -751,10 +771,11 @@ class Controls:
     controlsState.longitudinalPlanMonoTime = self.sm.logMonoTime['longitudinalPlan']
     controlsState.lateralPlanMonoTime = self.sm.logMonoTime['modelV2']
     controlsState.enabled = self.enabled
-    controlsState.active = True #self.active
+    controlsState.active = self.active
     controlsState.curvature = curvature
     controlsState.desiredCurvature = self.desired_curvature
     controlsState.state = self.state
+    print("KONJO #777self.state="+str(self.state))
     controlsState.engageable = not self.events.contains(ET.NO_ENTRY)
     controlsState.longControlState = self.LoC.long_control_state
     controlsState.vPid = float(self.LoC.v_pid)
