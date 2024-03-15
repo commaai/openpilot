@@ -220,7 +220,7 @@ def split_name(name: str) -> tuple[str, str, str]:
 
 
 @dataclass
-class CarInfo:
+class CarDocs:
   # make + model + model years
   name: str
 
@@ -266,7 +266,7 @@ class CarInfo:
     # min steer & enable speed columns
     # TODO: set all the min steer speeds in carParams and remove this
     if self.min_steer_speed is not None:
-      assert CP.minSteerSpeed == 0, f"{CP.carFingerprint}: Minimum steer speed set in both CarInfo and CarParams"
+      assert CP.minSteerSpeed == 0, f"{CP.carFingerprint}: Minimum steer speed set in both CarDocs and CarParams"
     else:
       self.min_steer_speed = CP.minSteerSpeed
 
@@ -317,7 +317,7 @@ class CarInfo:
     return self
 
   def init_make(self, CP: car.CarParams):
-    """CarInfo subclasses can add make-specific logic for harness selection, footnotes, etc."""
+    """CarDocs subclasses can add make-specific logic for harness selection, footnotes, etc."""
 
   def get_detail_sentence(self, CP):
     if not CP.notCar:

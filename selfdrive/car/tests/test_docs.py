@@ -46,7 +46,7 @@ class TestCarDocs(unittest.TestCase):
     all_car_info_platforms = [name for name, config in PLATFORMS.items()]
     for platform in sorted(interfaces.keys()):
       with self.subTest(platform=platform):
-        self.assertTrue(platform in all_car_info_platforms, f"Platform: {platform} doesn't have a CarInfo entry")
+        self.assertTrue(platform in all_car_info_platforms, f"Platform: {platform} doesn't have a CarDocs entry")
 
   def test_naming_conventions(self):
     # Asserts market-standard car naming conventions by brand
