@@ -360,7 +360,7 @@ class CAR(Platforms):
   )
   SANTA_CRUZ_1ST_GEN = HyundaiCanFDPlatformConfig(
     "HYUNDAI SANTA CRUZ 1ST GEN",
-    HyundaiCarInfo("Hyundai Santa Cruz 2022-23", car_parts=CarParts.common([CarHarness.hyundai_n])),
+    HyundaiCarInfo("Hyundai Santa Cruz 2022-24", car_parts=CarParts.common([CarHarness.hyundai_n])),
     # weight from Limited trim - the only supported trim, steering ratio according to Hyundai News https://www.hyundainews.com/assets/documents/original/48035-2022SantaCruzProductGuideSpecsv2081521.pdf
     CarSpecs(mass=1870, wheelbase=3, steerRatio=14.2),
   )
