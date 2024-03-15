@@ -1,3 +1,4 @@
+import copy
 from dataclasses import dataclass, field, replace
 from enum import Enum, IntFlag
 
@@ -78,12 +79,14 @@ class FordPlatformConfig(PlatformConfig):
   def init(self):
     for car_info in list(self.car_info) if isinstance(self.car_info, list) else [self.car_info]:
       if car_info.hybrid:
+        print(car_info.__dict__)
         print((car_info.make, car_info.model, car_info.years))
         new_name = f"{car_info.make} {car_info.model} Hybrid {car_info.years}"
-        self.car_info.append(replace(car_info, name=new_name))
+        # new_name = car_info.name.replace(car_info.model, car_info.model + " Hybrid")
+        self.car_info.append(replace(copy.deepcopy(car_info), name=new_name))
       if car_info.plug_in_hybrid:
         new_name = f"{car_info.make} {car_info.model} Plug-in Hybrid {car_info.years}"
-        self.car_info.append(replace(car_info, name=new_name))
+        self.car_info.append(replace(copy.deepcopy(car_info), name=new_name))
       print('hi')
       # car_info.init_make(self
     # print(self.car_info)
