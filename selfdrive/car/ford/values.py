@@ -105,29 +105,22 @@ class CAR(Platforms):
     "FORD ESCAPE 4TH GEN",
     [
       FordCarInfo("Ford Escape 2020-22", hybrid=True, plug_in_hybrid=True),
-      # FordCarInfo("Ford Escape Hybrid 2020-22"),
-      # FordCarInfo("Ford Escape Plug-in Hybrid 2020-22"),
       FordCarInfo("Ford Kuga 2020-22", "Adaptive Cruise Control with Lane Centering", hybrid=True, plug_in_hybrid=True),
-      # FordCarInfo("Ford Kuga Hybrid 2020-22", "Adaptive Cruise Control with Lane Centering"),
-      # FordCarInfo("Ford Kuga Plug-in Hybrid 2020-22", "Adaptive Cruise Control with Lane Centering"),
     ],
     CarSpecs(mass=1750, wheelbase=2.71, steerRatio=16.7),
   )
   EXPLORER_MK6 = FordPlatformConfig(
     "FORD EXPLORER 6TH GEN",
     [
-      FordCarInfo("Ford Explorer 2020-23"),
-      FordCarInfo("Ford Explorer Hybrid 2020-23"),  # Limited and Platinum only
-      FordCarInfo("Lincoln Aviator 2020-23", "Co-Pilot360 Plus"),
-      FordCarInfo("Lincoln Aviator Plug-in Hybrid 2020-23", "Co-Pilot360 Plus"),  # Grand Touring only
+      FordCarInfo("Ford Explorer 2020-23", hybrid=True),  # Hybrid: Limited and Platinum only
+      FordCarInfo("Lincoln Aviator 2020-23", "Co-Pilot360 Plus", plug_in_hybrid=True),  # Hybrid: Grand Touring only
     ],
     CarSpecs(mass=2050, wheelbase=3.025, steerRatio=16.8),
   )
   F_150_MK14 = FordCANFDPlatformConfig(
     "FORD F-150 14TH GEN",
     [
-      FordCarInfo("Ford F-150 2022-23", "Co-Pilot360 Active 2.0"),
-      FordCarInfo("Ford F-150 Hybrid 2022-23", "Co-Pilot360 Active 2.0"),
+      FordCarInfo("Ford F-150 2022-23", "Co-Pilot360 Active 2.0", hybrid=True),
     ],
     CarSpecs(mass=2000, wheelbase=3.69, steerRatio=17.0),
   )
@@ -139,18 +132,15 @@ class CAR(Platforms):
   FOCUS_MK4 = FordPlatformConfig(
     "FORD FOCUS 4TH GEN",
     [
-      FordCarInfo("Ford Focus 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS]),
-      FordCarInfo("Ford Focus Hybrid 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS]),  # mHEV only
+      FordCarInfo("Ford Focus 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS], hybrid=True),  # mHEV only
     ],
     CarSpecs(mass=1350, wheelbase=2.7, steerRatio=15.0),
   )
   MAVERICK_MK1 = FordPlatformConfig(
     "FORD MAVERICK 1ST GEN",
     [
-      FordCarInfo("Ford Maverick 2022", "LARIAT Luxury"),
-      FordCarInfo("Ford Maverick Hybrid 2022", "LARIAT Luxury"),
-      FordCarInfo("Ford Maverick 2023-24", "Co-Pilot360 Assist"),
-      FordCarInfo("Ford Maverick Hybrid 2023-24", "Co-Pilot360 Assist"),
+      FordCarInfo("Ford Maverick 2022", "LARIAT Luxury", hybrid=True),
+      FordCarInfo("Ford Maverick 2023-24", "Co-Pilot360 Assist", hybrid=True),
     ],
     CarSpecs(mass=1650, wheelbase=3.076, steerRatio=17.0),
   )
