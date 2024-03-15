@@ -122,17 +122,17 @@ class CAR(Platforms):
   # Global platform
   ASCENT = SubaruPlatformConfig(
     "SUBARU ASCENT LIMITED 2019",
-    SubaruCarInfo("Subaru Ascent 2019-21", "All"),
+    [SubaruCarInfo("Subaru Ascent 2019-21", "All")],
     CarSpecs(mass=2031, wheelbase=2.89, steerRatio=13.5),
   )
   OUTBACK = SubaruGen2PlatformConfig(
     "SUBARU OUTBACK 6TH GEN",
-    SubaruCarInfo("Subaru Outback 2020-22", "All", car_parts=CarParts.common([CarHarness.subaru_b])),
+    [SubaruCarInfo("Subaru Outback 2020-22", "All", car_parts=CarParts.common([CarHarness.subaru_b]))],
     CarSpecs(mass=1568, wheelbase=2.67, steerRatio=17),
   )
   LEGACY = SubaruGen2PlatformConfig(
     "SUBARU LEGACY 7TH GEN",
-    SubaruCarInfo("Subaru Legacy 2020-22", "All", car_parts=CarParts.common([CarHarness.subaru_b])),
+    [SubaruCarInfo("Subaru Legacy 2020-22", "All", car_parts=CarParts.common([CarHarness.subaru_b]))],
     OUTBACK.specs,
   )
   IMPREZA = SubaruPlatformConfig(
@@ -157,47 +157,47 @@ class CAR(Platforms):
   # TODO: is there an XV and Impreza too?
   CROSSTREK_HYBRID = SubaruPlatformConfig(
     "SUBARU CROSSTREK HYBRID 2020",
-    SubaruCarInfo("Subaru Crosstrek Hybrid 2020", car_parts=CarParts.common([CarHarness.subaru_b])),
+    [SubaruCarInfo("Subaru Crosstrek Hybrid 2020", car_parts=CarParts.common([CarHarness.subaru_b]))],
     CarSpecs(mass=1668, wheelbase=2.67, steerRatio=17),
     flags=SubaruFlags.HYBRID,
   )
   FORESTER = SubaruPlatformConfig(
     "SUBARU FORESTER 2019",
-    SubaruCarInfo("Subaru Forester 2019-21", "All"),
+    [SubaruCarInfo("Subaru Forester 2019-21", "All")],
     CarSpecs(mass=1568, wheelbase=2.67, steerRatio=17),
     flags=SubaruFlags.STEER_RATE_LIMITED,
   )
   FORESTER_HYBRID = SubaruPlatformConfig(
     "SUBARU FORESTER HYBRID 2020",
-    SubaruCarInfo("Subaru Forester Hybrid 2020"),
+    [SubaruCarInfo("Subaru Forester Hybrid 2020")],
     FORESTER.specs,
     flags=SubaruFlags.HYBRID,
   )
   # Pre-global
   FORESTER_PREGLOBAL = SubaruPlatformConfig(
     "SUBARU FORESTER 2017 - 2018",
-    SubaruCarInfo("Subaru Forester 2017-18"),
+    [SubaruCarInfo("Subaru Forester 2017-18")],
     CarSpecs(mass=1568, wheelbase=2.67, steerRatio=20),
     dbc_dict('subaru_forester_2017_generated', None),
     flags=SubaruFlags.PREGLOBAL,
   )
   LEGACY_PREGLOBAL = SubaruPlatformConfig(
     "SUBARU LEGACY 2015 - 2018",
-    SubaruCarInfo("Subaru Legacy 2015-18"),
+    [SubaruCarInfo("Subaru Legacy 2015-18")],
     CarSpecs(mass=1568, wheelbase=2.67, steerRatio=12.5),
     dbc_dict('subaru_outback_2015_generated', None),
     flags=SubaruFlags.PREGLOBAL,
   )
   OUTBACK_PREGLOBAL = SubaruPlatformConfig(
     "SUBARU OUTBACK 2015 - 2017",
-    SubaruCarInfo("Subaru Outback 2015-17"),
+    [SubaruCarInfo("Subaru Outback 2015-17")],
     FORESTER_PREGLOBAL.specs,
     dbc_dict('subaru_outback_2015_generated', None),
     flags=SubaruFlags.PREGLOBAL,
   )
   OUTBACK_PREGLOBAL_2018 = SubaruPlatformConfig(
     "SUBARU OUTBACK 2018 - 2019",
-    SubaruCarInfo("Subaru Outback 2018-19"),
+    [SubaruCarInfo("Subaru Outback 2018-19")],
     FORESTER_PREGLOBAL.specs,
     dbc_dict('subaru_outback_2019_generated', None),
     flags=SubaruFlags.PREGLOBAL,
@@ -205,19 +205,19 @@ class CAR(Platforms):
   # Angle LKAS
   FORESTER_2022 = SubaruPlatformConfig(
     "SUBARU FORESTER 2022",
-    SubaruCarInfo("Subaru Forester 2022-24", "All", car_parts=CarParts.common([CarHarness.subaru_c])),
+    [SubaruCarInfo("Subaru Forester 2022-24", "All", car_parts=CarParts.common([CarHarness.subaru_c]))],
     FORESTER.specs,
     flags=SubaruFlags.LKAS_ANGLE,
   )
   OUTBACK_2023 = SubaruGen2PlatformConfig(
     "SUBARU OUTBACK 7TH GEN",
-    SubaruCarInfo("Subaru Outback 2023", "All", car_parts=CarParts.common([CarHarness.subaru_d])),
+    [SubaruCarInfo("Subaru Outback 2023", "All", car_parts=CarParts.common([CarHarness.subaru_d]))],
     OUTBACK.specs,
     flags=SubaruFlags.LKAS_ANGLE,
   )
   ASCENT_2023 = SubaruGen2PlatformConfig(
     "SUBARU ASCENT 2023",
-    SubaruCarInfo("Subaru Ascent 2023", "All", car_parts=CarParts.common([CarHarness.subaru_d])),
+    [SubaruCarInfo("Subaru Ascent 2023", "All", car_parts=CarParts.common([CarHarness.subaru_d]))],
     ASCENT.specs,
     flags=SubaruFlags.LKAS_ANGLE,
   )

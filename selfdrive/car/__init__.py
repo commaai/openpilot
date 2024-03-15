@@ -245,9 +245,6 @@ class CanSignalRateCalculator:
     return self.rate
 
 
-CarInfos = CarInfo | list[CarInfo] | None
-
-
 @dataclass(frozen=True, kw_only=True)
 class CarSpecs:
   mass: float  # kg, curb weight
@@ -265,7 +262,7 @@ class CarSpecs:
 @dataclass(order=True)
 class PlatformConfig(Freezable):
   platform_str: str
-  car_info: CarInfos
+  car_info: list[CarInfo]
   specs: CarSpecs
 
   dbc_dict: DbcDict
