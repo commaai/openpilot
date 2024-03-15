@@ -77,7 +77,7 @@ class FordPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('ford_lincoln_base_pt', RADAR.DELPHI_MRR))
 
   def init(self):
-    for car_info in list(self.car_info) if isinstance(self.car_info, list) else [self.car_info]:
+    for car_info in list(self.car_info):
       if car_info.hybrid:
         name = f"{car_info.make} {car_info.model} Hybrid {car_info.years}"
         self.car_info.append(replace(copy.deepcopy(car_info), name=name))
