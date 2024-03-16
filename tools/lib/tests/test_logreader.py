@@ -173,7 +173,7 @@ class TestLogReader(unittest.TestCase):
   @pytest.mark.slow
   def test_helpers(self):
     lr = LogReader(f"{TEST_ROUTE}/0/q")
-    self.assertEqual(lr.first("carParams").carFingerprint, "SUBARU OUTBACK 6TH GEN")
+    self.assertEqual(lr.first("carParams").carFingerprint, "OUTBACK")
     self.assertTrue(0 < len(list(lr.filter("carParams"))) < len(list(lr)))
 
   @parameterized.expand([(True,), (False,)])

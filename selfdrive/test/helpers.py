@@ -14,7 +14,7 @@ from openpilot.system.version import training_version, terms_version
 
 
 def set_params_enabled():
-  os.environ['FINGERPRINT'] = "TOYOTA COROLLA TSS2 2019"
+  os.environ['FINGERPRINT'] = "COROLLA_TSS2"
   os.environ['LOGPRINT'] = "debug"
 
   params = Params()
