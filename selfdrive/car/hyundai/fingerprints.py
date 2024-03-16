@@ -293,7 +293,6 @@ FW_VERSIONS = {
       b'\xf1\x00DN8 MFC  AT USA LHD 1.00 1.05 99211-L1000 201109',
       b'\xf1\x00DN8 MFC  AT USA LHD 1.00 1.06 99211-L1000 210325',
       b'\xf1\x00DN8 MFC  AT USA LHD 1.00 1.07 99211-L1000 211223',
-      b'\xf1\x00HI  MFC  AT USA LHD 1.00 1.03 99211-D2000 190831',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x00HT6TA260BLHT6TA800A1TDN8C20KS4\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -911,6 +910,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00HI  LKAS AT USA LHD 1.00 1.00 95895-D2020 160302',
       b'\xf1\x00HI  LKAS AT USA LHD 1.00 1.00 95895-D2030 170208',
+      b'\xf1\x00HI  MFC  AT USA LHD 1.00 1.03 99211-D2000 190831',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x810000000000\x00',
