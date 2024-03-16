@@ -183,7 +183,7 @@ class CarInterface(CarInterfaceBase):
         # TODO: is the reason current planned accel doesn't match future planned speeds because the planner is constrained to start near the ego?
 
         # TODO: we add 0.2s delay to lat, why not long?
-        ret.longitudinalActuatorDelayLowerBound = 0.15 + 0.25
+        ret.longitudinalActuatorDelayLowerBound = 0.15 + 0.15
         ret.longitudinalActuatorDelayUpperBound = 0.15 + 0.25
     else:
       tune.kpBP = [0., 5., 35.]
