@@ -39,6 +39,7 @@ BO_ 162 message_1: 8 XXX
   SG_ signal_2 M4 : 12|1@1+ (1.0,0.0) [0.0|1] "" XXX
 
 VAL_ 160 signal_1 0 "disabled" 1.2 "initializing" 2 "fault";
+VAL_ 160 signal_2 1 "";
 
 CM_ BO_ 160 "message comment" ;
 CM_ SG_ 160 signal_1 "signal comment";
@@ -77,6 +78,8 @@ CM_ SG_ 162 signal_1 "signal comment with \"escaped quotes\"";
 
   auto &sig_2 = msg->sigs[1];
   REQUIRE(sig_2->comment == "multiple line comment \n1\n2");
+  REQUIRE(sig_2->val_desc.size() == 1);
+  REQUIRE(sig_2->val_desc[0] == std::pair<double, QString>{1, ""});
 
   // multiplexed signals
   msg = file.msg(162);
