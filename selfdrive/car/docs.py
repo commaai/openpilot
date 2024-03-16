@@ -9,7 +9,7 @@ from natsort import natsorted
 from cereal import car
 from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.car import gen_empty_fingerprint
-from openpilot.selfdrive.car.docs_definitions import CarInfo, Column, CommonFootnote, PartType
+from openpilot.selfdrive.car.docs_definitions import CarDocs, Column, CommonFootnote, PartType
 from openpilot.selfdrive.car.car_helpers import interfaces, get_interface_attr
 from openpilot.selfdrive.car.values import PLATFORMS
 
@@ -25,8 +25,8 @@ CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS.md")
 CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
 
 
-def get_all_car_info() -> list[CarInfo]:
-  all_car_info: list[CarInfo] = []
+def get_all_car_info() -> list[CarDocs]:
+  all_car_info: list[CarDocs] = []
   footnotes = get_all_footnotes()
   for model, platform in PLATFORMS.items():
     car_info = platform.config.car_info
@@ -45,18 +45,18 @@ def get_all_car_info() -> list[CarInfo]:
       all_car_info.append(_car_info)
 
   # Sort cars by make and model + year
-  sorted_cars: list[CarInfo] = natsorted(all_car_info, key=lambda car: car.name.lower())
+  sorted_cars: list[CarDocs] = natsorted(all_car_info, key=lambda car: car.name.lower())
   return sorted_cars
 
 
-def group_by_make(all_car_info: list[CarInfo]) -> dict[str, list[CarInfo]]:
+def group_by_make(all_car_info: list[CarDocs]) -> dict[str, list[CarDocs]]:
   sorted_car_info = defaultdict(list)
   for car_info in all_car_info:
     sorted_car_info[car_info.make].append(car_info)
   return dict(sorted_car_info)
 
 
-def generate_cars_md(all_car_info: list[CarInfo], template_fn: str) -> str:
+def generate_cars_md(all_car_info: list[CarDocs], template_fn: str) -> str:
   with open(template_fn) as f:
     template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)
 
