@@ -113,7 +113,23 @@ float4 val4_from_10(uchar8 pvs, uchar ext, bool aligned, float gain) {
   return clamp(pv*gain, 0.0, 1.0);
 }
 
-float4 val4_from_210(uchar8 long_pvs, uchar long_ext, uchar8 short_pvs, uchar short_ext, bool aligned, float gain) {
+float combine_pvs(float lv, float sv, int expo) {
+  if (expo > 64) {
+    if (lv < 1023) {
+      return (lv) / (65536.0 - 64.0);
+    } else {
+      return ((sv - 64.0) * expo / 64 ) / (65536.0 - 64.0);
+    }
+  } else {
+    if (sv < 1023) {
+      return (sv) / (65536.0 - 64.0);
+    } else {
+      return ((lv - 64.0) * 64 / expo ) / (65536.0 - 64.0);
+    }
+  }
+}
+
+float4 val4_from_210(uchar8 long_pvs, uchar long_ext, uchar8 short_pvs, uchar short_ext, bool aligned, float gain, int expo) {
   uint4 parsed_long;
   uint4 parsed_short;
   if (aligned) {
@@ -136,33 +152,15 @@ float4 val4_from_210(uchar8 long_pvs, uchar long_ext, uchar8 short_pvs, uchar sh
                      ((uint)short_pvs.s4 << 2) + ((short_ext & 0b11000000) / 64));
   }
 
+  float4 pl = convert_float4(parsed_long);
+  float4 ps = convert_float4(parsed_short);
   float4 pv;
   // 16-bits?
-  if (parsed_long.s0 > 1022) {
-    pv.s0 = (convert_float(parsed_short.s0) * 300.0 - 64.0) / (65536.0 - 64.0);
-  } else {
-    pv.s0 = (convert_float(parsed_long.s0) - 64.0) / (65536.0 - 64.0);
-  }
 
-  if (parsed_long.s1 > 1022) {
-    pv.s1 = (convert_float(parsed_short.s1) * 300.0 - 64.0) / (65536.0 - 64.0);
-  } else {
-    pv.s1 = (convert_float(parsed_long.s1) - 64.0) / (65536.0 - 64.0);
-  }
-
-  if (parsed_long.s2 > 1022) {
-    pv.s2 = (convert_float(parsed_short.s2) * 300.0 - 64.0) / (65536.0 - 64.0);
-  } else {
-    pv.s2 = (convert_float(parsed_long.s2) - 64.0) / (65536.0 - 64.0);
-  }
-
-  if (parsed_long.s3 > 1022) {
-    pv.s3 = (convert_float(parsed_short.s3) * 300.0 - 64.0) / (65536.0 - 64.0);
-  } else {
-    pv.s3 = (convert_float(parsed_long.s3) - 64.0) / (65536.0 - 64.0);
-  }
-
-
+  pv.s0 = combine_pvs(pl.s0, ps.s0, expo);
+  pv.s1 = combine_pvs(pl.s1, ps.s1, expo);
+  pv.s2 = combine_pvs(pl.s2, ps.s2, expo);
+  pv.s3 = combine_pvs(pl.s3, ps.s3, expo);
   return clamp(pv*gain, 0.0, 1.0);
 }
 
@@ -256,10 +254,10 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out, int exp
   // parse into floats
   #if IS_10BIT
     #if IS_HDR
-      v_rows[row_read_order[0]] = val4_from_210(dat[0], extra[0], short_dat[0], short_extra[0], aligned10, gain);
-      v_rows[row_read_order[1]] = val4_from_210(dat[1], extra[1], short_dat[1], short_extra[1], aligned10, gain);
-      v_rows[row_read_order[2]] = val4_from_210(dat[2], extra[2], short_dat[2], short_extra[2], aligned10, gain);
-      v_rows[row_read_order[3]] = val4_from_210(dat[3], extra[3], short_dat[3], short_extra[3], aligned10, gain);
+      v_rows[row_read_order[0]] = val4_from_210(dat[0], extra[0], short_dat[0], short_extra[0], aligned10, gain, expo_time);
+      v_rows[row_read_order[1]] = val4_from_210(dat[1], extra[1], short_dat[1], short_extra[1], aligned10, gain, expo_time);
+      v_rows[row_read_order[2]] = val4_from_210(dat[2], extra[2], short_dat[2], short_extra[2], aligned10, gain, expo_time);
+      v_rows[row_read_order[3]] = val4_from_210(dat[3], extra[3], short_dat[3], short_extra[3], aligned10, gain, expo_time);
     #else
       v_rows[row_read_order[0]] = val4_from_10(dat[0], extra[0], aligned10, gain);
       v_rows[row_read_order[1]] = val4_from_10(dat[1], extra[1], aligned10, gain);
