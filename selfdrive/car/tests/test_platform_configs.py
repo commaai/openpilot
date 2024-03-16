@@ -12,7 +12,7 @@ class TestPlatformConfigs(unittest.TestCase):
       with self.subTest(platform=str(platform)):
         self.assertTrue(platform.config._frozen)
 
-        if platform != "mock":
+        if platform != "MOCK":
           self.assertIn("pt", platform.config.dbc_dict)
         self.assertTrue(len(platform.config.platform_str) > 0)
 
