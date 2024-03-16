@@ -114,17 +114,19 @@ float4 val4_from_10(uchar8 pvs, uchar ext, bool aligned, float gain) {
 }
 
 float combine_pvs(float lv, float sv, int expo) {
+  float llv = lv - 64.0;
+  float lsv = sv - 64.0;
   if (expo > 64) {
     if (lv < 1023) {
-      return (lv) / (65536.0 - 64.0);
+      return (llv) / (65536.0 - 64.0);
     } else {
-      return ((sv - 64.0) * expo / 64 ) / (65536.0 - 64.0);
+      return ((lsv) * expo / 64) / (65536.0 - 64.0);
     }
   } else {
     if (sv < 1023) {
-      return (sv) / (65536.0 - 64.0);
+      return (lsv) / (65536.0 - 64.0);
     } else {
-      return ((lv - 64.0) * 64 / expo ) / (65536.0 - 64.0);
+      return ((llv) * 64 / expo) / (65536.0 - 64.0);
     }
   }
 }
