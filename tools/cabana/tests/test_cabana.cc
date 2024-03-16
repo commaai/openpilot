@@ -26,6 +26,15 @@ TEST_CASE("DBCFile::generateDBC") {
       REQUIRE(*sigs[i] == *new_sigs[i]);
     }
   }
+
+  QString content = R"(BO_ 160 message_1: 8 EON
+ SG_ signal_1 : 0|12@1+ (1,0) [0|4095] "unit" XXX
+
+CM_ BO_ 160 "message comment with \"escaped quotes\"";
+CM_ SG_ 160 signal_1 "signal comment with \"escaped quotes\"";
+)";
+  DBCFile dbc("", content);
+  REQUIRE(dbc.generateDBC() == content);
 }
 
 TEST_CASE("parse_dbc") {
