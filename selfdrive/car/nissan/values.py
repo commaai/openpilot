@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from cereal import car
 from panda.python import uds
 from openpilot.selfdrive.car import AngleRateLimit, CarSpecs, DbcDict, PlatformConfig, Platforms, dbc_dict
-from openpilot.selfdrive.car.docs_definitions import CarInfo, CarHarness, CarParts
+from openpilot.selfdrive.car.docs_definitions import CarDocs, CarHarness, CarParts
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
@@ -20,7 +20,7 @@ class CarControllerParams:
 
 
 @dataclass
-class NissanCarInfo(CarInfo):
+class NissanCarDocs(CarDocs):
   package: str = "ProPILOT Assist"
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.nissan_a]))
 
@@ -38,23 +38,23 @@ class NissanPlaformConfig(PlatformConfig):
 
 class CAR(Platforms):
   XTRAIL = NissanPlaformConfig(
-    NissanCarInfo("Nissan X-Trail 2017"),
+    [NissanCarDocs("Nissan X-Trail 2017")],
     NissanCarSpecs(mass=1610, wheelbase=2.705)
   )
   LEAF = NissanPlaformConfig(
-    NissanCarInfo("Nissan Leaf 2018-23", video_link="https://youtu.be/vaMbtAh_0cY"),
+    [NissanCarDocs("Nissan Leaf 2018-23", video_link="https://youtu.be/vaMbtAh_0cY")],
     NissanCarSpecs(mass=1610, wheelbase=2.705),
     dbc_dict('nissan_leaf_2018_generated', None),
   )
   # Leaf with ADAS ECU found behind instrument cluster instead of glovebox
   # Currently the only known difference between them is the inverted seatbelt signal.
-  LEAF_IC = LEAF.override(car_info=None)
+  LEAF_IC = LEAF.override(platform_str="NISSAN LEAF 2018 Instrument Cluster", car_info=[])
   ROGUE = NissanPlaformConfig(
-    NissanCarInfo("Nissan Rogue 2018-20"),
+    [NissanCarDocs("Nissan Rogue 2018-20")],
     NissanCarSpecs(mass=1610, wheelbase=2.705)
   )
   ALTIMA = NissanPlaformConfig(
-    NissanCarInfo("Nissan Altima 2019-20", car_parts=CarParts.common([CarHarness.nissan_b])),
+    [NissanCarDocs("Nissan Altima 2019-20", car_parts=CarParts.common([CarHarness.nissan_b]))],
     NissanCarSpecs(mass=1492, wheelbase=2.824)
   )
 
