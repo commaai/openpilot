@@ -11,7 +11,6 @@ from collections.abc import Sequence
 import openpilot.system.loggerd.deleter as deleter
 from openpilot.common.timeout import Timeout, TimeoutException
 from openpilot.system.loggerd.tests.loggerd_tests_common import UploaderTestCase
-from typing import List
 from openpilot.system.hardware.hw import Paths
 Stats = namedtuple("Stats", ['f_bavail', 'f_blocks', 'f_frsize'])
 
@@ -123,14 +122,14 @@ class TestDeleter(UploaderTestCase):
     self.assertTrue(f_path.exists(), "File deleted when locked")
   def generate_random_text(self, num):
       return ''.join(random.choices(string.ascii_letters + string.digits, k=num))
-  def create_random_files(self, directory: Path, num_files: int) -> List[Path]:
+  def create_random_files(self, directory: Path, num_files: int) -> list[Path]:
       file_paths = []
       for _ in range(num_files):
           file_path = directory / self.generate_random_text(10)
           file_path.write_text(self.generate_random_text(100))
           file_paths.append(file_path)
       return file_paths
-  def create_directories(self, base_dir: Path, depth: int, dirs_per_level: int, files_per_dir: int) -> List[Path]:
+  def create_directories(self, base_dir: Path, depth: int, dirs_per_level: int, files_per_dir: int) -> list[Path]:
       if depth <= 0:
           return []
       top_level_paths = []
