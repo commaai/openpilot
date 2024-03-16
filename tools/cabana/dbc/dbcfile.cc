@@ -170,7 +170,7 @@ void DBCFile::parse(const QString &content) {
       auto match = msg_comment_regexp.match(line);
       dbc_assert(match.hasMatch());
       if (auto m = (cabana::Msg *)msg(match.captured(1).toUInt())) {
-        m->comment = match.captured(2).trimmed();
+        m->comment = match.captured(2).trimmed().replace("\\\"", "\"");
       }
     } else if (line.startsWith("CM_ SG_ ")) {
       if (!line.endsWith("\";")) {
@@ -180,7 +180,7 @@ void DBCFile::parse(const QString &content) {
       auto match = sg_comment_regexp.match(line);
       dbc_assert(match.hasMatch());
       if (auto s = get_sig(match.captured(1).toUInt(), match.captured(2))) {
-        s->comment = match.captured(3).trimmed();
+        s->comment = match.captured(3).trimmed().replace("\\\"", "\"");
       }
     }
   }
@@ -196,7 +196,7 @@ QString DBCFile::generateDBC() {
     const QString transmitter = m.transmitter.isEmpty() ? DEFAULT_NODE_NAME : m.transmitter;
     dbc_string += QString("BO_ %1 %2: %3 %4\n").arg(address).arg(m.name).arg(m.size).arg(transmitter);
     if (!m.comment.isEmpty()) {
-      message_comment += QString("CM_ BO_ %1 \"%2\";\n").arg(address).arg(m.comment);
+      message_comment += QString("CM_ BO_ %1 \"%2\";\n").arg(address).arg(QString(m.comment).replace("\"", "\\\""));
     }
     for (auto sig : m.getSignals()) {
       QString multiplexer_indicator;
@@ -219,7 +219,7 @@ QString DBCFile::generateDBC() {
                         .arg(sig->unit)
                         .arg(sig->receiver_name.isEmpty() ? DEFAULT_NODE_NAME : sig->receiver_name);
       if (!sig->comment.isEmpty()) {
-        signal_comment += QString("CM_ SG_ %1 %2 \"%3\";\n").arg(address).arg(sig->name).arg(sig->comment);
+        signal_comment += QString("CM_ SG_ %1 %2 \"%3\";\n").arg(address).arg(sig->name).arg(QString(sig->comment).replace("\"", "\\\""));
       }
       if (!sig->val_desc.empty()) {
         QStringList text;

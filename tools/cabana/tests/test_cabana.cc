@@ -45,7 +45,11 @@ CM_ SG_ 160 signal_1 "signal comment";
 CM_ SG_ 160 signal_2 "multiple line comment 
 1
 2
-";)";
+";
+
+CM_ BO_ 162 "message comment with \"escaped quotes\"";
+CM_ SG_ 162 signal_1 "signal comment with \"escaped quotes\"";
+)";
 
   DBCFile file("", content);
   auto msg = file.msg(160);
@@ -84,6 +88,10 @@ CM_ SG_ 160 signal_2 "multiple line comment
   REQUIRE(msg->sigs[1]->start_bit == 12);
   REQUIRE(msg->sigs[1]->size == 1);
   REQUIRE(msg->sigs[1]->receiver_name == "XXX");
+
+  // escaped quotes
+  REQUIRE(msg->comment == "message comment with \"escaped quotes\"");
+  REQUIRE(msg->sigs[0]->comment == "signal comment with \"escaped quotes\"");
 }
 
 TEST_CASE("parse_opendbc") {
