@@ -483,7 +483,7 @@ class CAR(Platforms):
   KIA_SPORTAGE_5TH_GEN = HyundaiCanFDPlatformConfig(
     "KIA SPORTAGE 5TH GEN",
     [
-      HyundaiCarDocs("Kia Sportage 2023", car_parts=CarParts.common([CarHarness.hyundai_n])),
+      HyundaiCarDocs("Kia Sportage 2023-24", car_parts=CarParts.common([CarHarness.hyundai_n])),
       HyundaiCarDocs("Kia Sportage Hybrid 2023", car_parts=CarParts.common([CarHarness.hyundai_n])),
     ],
     # weight from SX and above trims, average of FWD and AWD version, steering ratio according to Kia News https://www.kiamedia.com/us/en/models/sportage/2023/specifications
