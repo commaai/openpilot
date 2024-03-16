@@ -11,7 +11,7 @@ from openpilot.selfdrive.car.nissan.values import CAR as NISSAN
 from openpilot.selfdrive.car.subaru.values import CAR as SUBARU
 from openpilot.selfdrive.car.tesla.values import CAR as TESLA
 from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
-from openpilot.selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN # start from this
+from openpilot.selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
 
 Platform = BODY | CHRYSLER | FORD | GM | HONDA | HYUNDAI | MAZDA | MOCK | NISSAN | SUBARU | TESLA | TOYOTA | VOLKSWAGEN
 BRANDS = [BODY, CHRYSLER, FORD, GM, HONDA, HYUNDAI, MAZDA, MOCK, NISSAN, SUBARU, TESLA, TOYOTA, VOLKSWAGEN]
