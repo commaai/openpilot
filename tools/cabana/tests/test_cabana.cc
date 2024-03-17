@@ -28,6 +28,23 @@ TEST_CASE("DBCFile::generateDBC") {
   }
 }
 
+TEST_CASE("DBCFile::generateDBC - comment order") {
+  // Ensure that message comments are followed by signal comments and in the correct order
+  auto content = R"(BO_ 160 message_1: 8 EON
+ SG_ signal_1 : 0|12@1+ (1,0) [0|4095] "unit" XXX
+
+BO_ 162 message_2: 8 EON
+ SG_ signal_2 : 0|12@1+ (1,0) [0|4095] "unit" XXX
+
+CM_ BO_ 160 "message comment";
+CM_ SG_ 160 signal_1 "signal comment";
+CM_ BO_ 162 "message comment";
+CM_ SG_ 162 signal_2 "signal comment";
+)";
+  DBCFile dbc("", content);
+  REQUIRE(dbc.generateDBC() == content);
+}
+
 TEST_CASE("parse_dbc") {
   QString content = R"(
 BO_ 160 message_1: 8 EON
