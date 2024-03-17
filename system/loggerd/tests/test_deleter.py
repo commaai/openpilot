@@ -149,7 +149,7 @@ class TestDeleter(UploaderTestCase):
     return top_level_paths
 
   def test_delete_files_and_dirs(self):
-    created = [
+    created_files = [
       self.create_random_files(Path(Paths.log_root()), 10),
       self.create_directories(Path(Paths.log_root()), 3, 3, 3),
       [
@@ -158,11 +158,11 @@ class TestDeleter(UploaderTestCase):
         self.make_file_with_data(f_dir=self.seg_format2.format(0), fn=self.f_type),
       ],
     ]
-    flattened = [item for group in created for item in group]
+    flattened = [item for group in created_files for item in group]
     delete_order = self.get_delete_order(flattened)
 
     index = 0
-    for candidate_for_deletion in created:
+    for candidate_for_deletion in created_files:
       offset = len(candidate_for_deletion)
       deleted = delete_order[index:index + offset] # Checking if the file has been deleted in the correct order.
       self.assertCountEqual(candidate_for_deletion, deleted, "Some files or directories were deleted in a different order.")
