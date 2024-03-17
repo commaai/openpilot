@@ -67,7 +67,7 @@ class TestToyotaFingerprint(unittest.TestCase):
     # Asserts all FW versions are valid
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model.value):
-        for ecu, fws in ecus.items():
+        for fws in ecus.values():
           for fw in fws:
             self.assertTrue(check_fw_version(fw), fw)
 
