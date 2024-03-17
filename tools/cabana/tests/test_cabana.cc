@@ -71,7 +71,7 @@ VAL_ 160 signal_2 1 "";
 
 CM_ BO_ 160 "message comment" ;
 CM_ SG_ 160 signal_1 "signal comment";
-CM_ SG_ 160 signal_2 "multiple line comment
+CM_ SG_ 160 signal_2 "multiple line comment 
 1
 2
 ";
