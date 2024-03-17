@@ -590,7 +590,7 @@ class CAR(Platforms):
   )
   GENESIS_G90 = HyundaiPlatformConfig(
     "GENESIS G90 2017",
-    [HyundaiCarDocs("Genesis G90 2017-18", "All", car_parts=CarParts.common([CarHarness.hyundai_c]))],
+    [HyundaiCarDocs("Genesis G90 2017-20", "All", car_parts=CarParts.common([CarHarness.hyundai_c]))],
     CarSpecs(mass=2200, wheelbase=3.15, steerRatio=12.069),
   )
   GENESIS_GV80 = HyundaiCanFDPlatformConfig(
