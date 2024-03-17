@@ -26,7 +26,9 @@ TEST_CASE("DBCFile::generateDBC") {
       REQUIRE(*sigs[i] == *new_sigs[i]);
     }
   }
+}
 
+TEST_CASE("DBCFile::generateDBC - escaped quotes") {
   QString content = R"(BO_ 160 message_1: 8 EON
  SG_ signal_1 : 0|12@1+ (1,0) [0|4095] "unit" XXX
 
