@@ -37,6 +37,7 @@ class CarController(CarControllerBase):
     self.last_standstill = False
     self.standstill_req = False
     self.steer_rate_counter = 0
+    self.pcm_accel_comp = 0
     self.distance_button = 0
 
     self.packer = CANPacker(dbc_name)
@@ -116,7 +117,15 @@ class CarController(CarControllerBase):
       interceptor_gas_cmd = clip(pedal_command, 0., MAX_INTERCEPTOR_GAS)
     else:
       interceptor_gas_cmd = 0.
-    pcm_accel_cmd = clip(actuators.accel, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
+
+    # we will throw out PCM's compensations, but that may be a good thing. for example:
+    # we lose things like pitch compensation, gas to maintain speed, brake to compensate for creeping, etc.
+    # but also remove undesirable "snap to standstill" behavior when not requesting enough accel at low speeds.
+    # PI should compensate for lack of the desirable behaviors, but might be worse
+    self.pcm_accel_comp = clip(actuators.accel - CS.pcm_accel_net, self.pcm_accel_comp - 0.05, self.pcm_accel_comp + 0.05)
+    pcm_accel_cmd = actuators.accel + self.pcm_accel_comp
+
+    pcm_accel_cmd = clip(pcm_accel_cmd, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
 
     # TODO: probably can delete this. CS.pcm_acc_status uses a different signal
     # than CS.cruiseState.enabled. confirm they're not meaningfully different
