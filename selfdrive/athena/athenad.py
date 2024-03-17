@@ -751,7 +751,7 @@ def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
       onroad_prev = onroad
 
       if sock is not None:
-        if sys.platform == 'Darwin':  # macOS
+        if sys.platform == 'darwin':  # macOS
           sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
           sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPALIVE, 7 if onroad else 30)
         else:
