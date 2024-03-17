@@ -1,6 +1,8 @@
 from cereal import car
 from panda import Panda
 from panda.python import uds
+from openpilot.common.params import Params
+from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, CarControllerParams, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, \
                                         MIN_ACC_SPEED, EPS_SCALE, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR
 from openpilot.selfdrive.car import create_button_events, get_safety_config
@@ -52,6 +54,10 @@ class CarInterface(CarInterfaceBase):
     if 0x2AA in fingerprint[0] and candidate in NO_DSU_CAR:
       ret.flags |= ToyotaFlags.RADAR_CAN_FILTER.value
 
+    # Detect missing GEAR_PACKET msg, but has GEAR_PACKET_HYBRID
+    if 0x3BC not in fingerprint[0] and 0x127 in fingerprint[0]:
+      ret.flags |= ToyotaFlags.GEAR_PACKET_HYBRID.value
+
     # In TSS2 cars, the camera does long control
     found_ecus = [fw.ecu for fw in car_fw]
     ret.enableDsu = len(found_ecus) > 0 and Ecu.dsu not in found_ecus and candidate not in (NO_DSU_CAR | UNSUPPORTED_DSU_CAR) \
@@ -74,7 +80,7 @@ class CarInterface(CarInterfaceBase):
       # https://engage.toyota.com/static/images/toyota_safety_sense/TSS_Applicability_Chart.pdf
       stop_and_go = candidate != CAR.TOYOTA_AVALON
 
-    elif candidate in (CAR.TOYOTA_RAV4_TSS2, CAR.TOYOTA_RAV4_TSS2_2022, CAR.TOYOTA_RAV4_TSS2_2023):
+    elif candidate in (CAR.TOYOTA_RAV4_TSS2, CAR.TOYOTA_RAV4_TSS2_2022, CAR.TOYOTA_RAV4_TSS2_2023, CAR.TOYOTA_RAV4_PRIME):
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kiBP = [0.0]
       ret.lateralTuning.pid.kpBP = [0.0]
@@ -131,7 +137,15 @@ class CarInterface(CarInterfaceBase):
     #  - TSS2 radar ACC cars w/ smartDSU installed
     #  - TSS2 radar ACC cars w/o smartDSU installed (disables radar)
     #  - TSS-P DSU-less cars w/ CAN filter installed (no radar parser yet)
-    ret.openpilotLongitudinalControl = use_sdsu or ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR) or bool(ret.flags & ToyotaFlags.DISABLE_RADAR.value)
+
+    if ret.flags & ToyotaFlags.SECOC.value: # Lateral only for now
+      ret.openpilotLongitudinalControl = False
+    else:
+      ret.openpilotLongitudinalControl = use_sdsu or \
+        ret.enableDsu or \
+        candidate in (TSS2_CAR - RADAR_ACC_CAR) or \
+        bool(ret.flags & ToyotaFlags.DISABLE_RADAR.value)
+
     ret.autoResumeSng = ret.openpilotLongitudinalControl and candidate in NO_STOP_TIMER_CAR
 
     if not ret.openpilotLongitudinalControl:
@@ -140,6 +154,17 @@ class CarInterface(CarInterfaceBase):
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter.
     ret.minEnableSpeed = -1. if stop_and_go else MIN_ACC_SPEED
+
+    # Read SecOC key from param
+    if ret.flags & ToyotaFlags.SECOC.value:
+      key = Params().get("SecOCKey", encoding='utf8')
+
+      # TODO: show warning, and handle setting key in CI
+      if key is None:
+        cloudlog.warning("SecOCKey is not set")
+        key = "0" * 32
+
+      ret.secOCKey = bytes.fromhex(key.strip())
 
     tune = ret.longitudinalTuning
     tune.deadzoneBP = [0., 9.]
