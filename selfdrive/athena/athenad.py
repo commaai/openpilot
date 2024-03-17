@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import platform
 import base64
 import bz2
 import hashlib
@@ -16,6 +15,7 @@ import sys
 import tempfile
 import threading
 import time
+import platform
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from functools import partial
