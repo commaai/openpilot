@@ -52,11 +52,11 @@ def deleter_thread(exit_event):
     if out_of_percent or out_of_bytes:
       listdir = os.listdir(Paths.log_root())
 
-      dirs = [f for f in listdir if os.path.isdir(os.path.join(Paths.log_root(), f))]  # Retrieve only directories.
-      dirs = sorted(dirs, key=get_directory_sort)  # Sort them by creation time.
-      only_files = [f for f in listdir if os.path.isfile(os.path.join(Paths.log_root(), f))]  # get just files.
+      directories = [directory for directory in listdir if os.path.isdir(os.path.join(Paths.log_root(), directory))]  # Retrieve only directories.
+      directories = sorted(directories, key=get_directory_sort)  # Sort them by creation time.
+      files = [file for file in listdir if os.path.isfile(os.path.join(Paths.log_root(), file))]  # get just files.
 
-      all_contents = only_files + dirs  # form list of files for deletion from that.
+      all_contents = files + directories  # form list of files for deletion from that.
       # skip deleting most recent N preserved segments (and their prior segment)
       preserved_segments = get_preserved_segments(all_contents)
 
