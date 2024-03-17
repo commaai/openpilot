@@ -15,7 +15,6 @@ import sys
 import tempfile
 import threading
 import time
-import platform
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from functools import partial
@@ -752,7 +751,7 @@ def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
       onroad_prev = onroad
 
       if sock is not None:
-        if platform.system() == 'Darwin':  # macOS
+        if sys.platform == 'Darwin':  # macOS
           sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
           sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPALIVE, 7 if onroad else 30)
         else:
