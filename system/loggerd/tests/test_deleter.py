@@ -4,8 +4,8 @@ import threading
 import unittest
 import random
 import string
-from collections import namedtuple
 from pathlib import Path
+from collections import namedtuple
 from collections.abc import Sequence
 
 import openpilot.system.loggerd.deleter as deleter
@@ -163,8 +163,8 @@ class TestDeleter(UploaderTestCase):
 
     index = 0
     for candidate_for_deletion in created:
-      deleted = delete_order[index:index + len(candidate_for_deletion)]  # Retrieve the file that was deleted from the index of the file to be deleted.
-      self.assertCountEqual(candidate_for_deletion, deleted, "Some files or directories were not deleted or were deleted in a different order.")
+      deleted = delete_order[index:index + len(candidate_for_deletion)] # Checking if the file has been deleted in the correct order.
+      self.assertCountEqual(candidate_for_deletion, deleted, "Some files or directories were deleted in a different order.")
       index += len(candidate_for_deletion)
 
 
