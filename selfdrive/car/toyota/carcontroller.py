@@ -120,10 +120,15 @@ class CarController(CarControllerBase):
 
     # we will throw out PCM's compensations, but that may be a good thing. for example:
     # we lose things like pitch compensation, gas to maintain speed, brake to compensate for creeping, etc.
-    # but also remove undesirable "snap to standstill" behavior when not requesting enough accel at low speeds.
-    # PI should compensate for lack of the desirable behaviors, but might be worse
+    # but also remove undesirable "snap to standstill" behavior when not requesting enough accel at low speeds,
+    # lag to start moving, lag to start braking, etc.
+    # PI should compensate for lack of the desirable behaviors, but might be worse than the PCM doing them
     self.pcm_accel_comp = clip(actuators.accel - CS.pcm_accel_net, self.pcm_accel_comp - 0.05, self.pcm_accel_comp + 0.05)
     pcm_accel_cmd = actuators.accel + self.pcm_accel_comp
+
+    # add back gas to maintain speed
+    # accel_offset = CS.pcm_neutral_force / self.CP.mass
+    # pcm_accel_cmd += accel_offset
 
     pcm_accel_cmd = clip(pcm_accel_cmd, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
 
