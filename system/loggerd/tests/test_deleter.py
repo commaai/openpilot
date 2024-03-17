@@ -162,10 +162,10 @@ class TestDeleter(UploaderTestCase):
     delete_order = self.get_delete_order(flattened)
 
     index = 0
-    for candidate_for_deletion in created_files:
-      offset = len(candidate_for_deletion)
+    for candidates_for_deletion in created_files:
+      offset = len(candidates_for_deletion)
       deleted = delete_order[index:index + offset] # Checking if the file has been deleted in the correct order.
-      self.assertCountEqual(candidate_for_deletion, deleted, "Some files or directories were deleted in a different order.")
+      self.assertCountEqual(candidates_for_deletion, deleted, "Some files or directories were deleted in a different order.")
       index += offset
 
 
