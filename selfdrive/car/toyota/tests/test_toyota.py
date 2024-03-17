@@ -13,7 +13,7 @@ Ecu = car.CarParams.Ecu
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 
 
-def check_fw_version(fw_version: bytes):
+def check_fw_version(fw_version: bytes) -> bool:
   return b'?' not in fw_version
 
 
