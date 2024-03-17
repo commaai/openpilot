@@ -158,7 +158,7 @@ class TestDeleter(UploaderTestCase):
         self.make_file_with_data(f_dir=self.seg_format2.format(0), fn=self.f_type),
       ],
     ]
-    flattened = [item for group in created_files for item in group]
+    flattened = [item for group in created_files for item in group] # convert created_files to flat array
     delete_order = self.get_delete_order(flattened)
 
     index = 0
