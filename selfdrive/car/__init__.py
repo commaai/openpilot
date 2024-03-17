@@ -262,7 +262,7 @@ class CarSpecs:
 @dataclass(order=True)
 class PlatformConfig(Freezable):
   platform_str: str
-  car_info: list[CarDocs]
+  car_docs: list[CarDocs]
   specs: CarSpecs
 
   dbc_dict: DbcDict
