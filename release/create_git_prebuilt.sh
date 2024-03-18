@@ -23,7 +23,7 @@ git checkout --orphan $OPENPILOT_CHANNEL
 # do the files copy
 echo "[-] copying files T=$SECONDS"
 cd $SOURCE_DIR
-release/copy_channel_files.sh $SOURCE_DIR $BUILD_DIR
+release/copy_build_files.sh $SOURCE_DIR $BUILD_DIR
 
 cd $BUILD_DIR
 VERSION=$(cat common/version.h | awk -F[\"-]  '{print $2}')

@@ -14,7 +14,7 @@ mkdir -p $CASYNC_DIR
 rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR
 
-release/copy_channel_files.sh $SOURCE_DIR $BUILD_DIR
+release/copy_build_files.sh $SOURCE_DIR $BUILD_DIR
 release/create_prebuilt.sh $BUILD_DIR
 
 cd $SOURCE_DIR
