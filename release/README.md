@@ -36,3 +36,4 @@ to create a release channel, set `RELEASE=1` environment variable when running b
 | staging      | release     | staging channel for release3                             |
 | nightly      | release     | generated nightly from last commit passing CI tests      |
 | master       | prebuilt    | current master commit with experimental features enabled |
+| git branches | none        | installed manually, experimental features enabled        |
