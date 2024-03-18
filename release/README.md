@@ -9,7 +9,7 @@
 
 ## creating casync channel
 
-`build_casync_channel.sh` - creates a `prebuilt` openpilot channel, ready to upload to `openpilot-channels`
+`create_casync_prebuilt.sh` - creates a `prebuilt` casync openpilot channel, ready to upload to `openpilot-channels`
 
 ```bash
 # run on a tici, within the directory you want to create the channel from
@@ -18,7 +18,7 @@
 BUILD_DIR=/data/openpilot_build    \
 CASYNC_DIR=/data/casync            \
 OPENPILOT_CHANNEL=nightly          \
-release/build_casync_channel.sh
+release/create_casync_prebuilt.sh
 ```
 
 `upload_casync_channel.sh` - helper for uploading a casync channel to `openpilot-channels`
