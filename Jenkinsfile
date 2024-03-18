@@ -146,12 +146,12 @@ def build_channel(String channel_name) {
   return parallel (
     "${channel_name} (git)": {
       deviceStage("build git", "tici-needs-can", [], [
-        ["build ${channel_name}", "RELEASE_BRANCH=nightly $SOURCE_DIR/release/build_git_channel.sh"],
+        ["build ${channel_name}", "RELEASE=1 OPENPILOT_CHANNEL=${channel_name} $SOURCE_DIR/release/build_git_channel.sh"],
       ])
     },
     "${channel_name} (casync)": {
       deviceStage("build casync", "tici-needs-can", [], [
-        ["build ${channel_name}", "BUILD_DIR=/data/openpilot_build OUTPUT_DIR=/data/casync OPENPILOT_CHANNEL=${channel_name} $SOURCE_DIR/release/build_casync_channel.sh"],
+        ["build ${channel_name}", "RELEASE=1 OPENPILOT_CHANNEL=${channel_name} BUILD_DIR=/data/openpilot_build OUTPUT_DIR=/data/casync $SOURCE_DIR/release/build_casync_channel.sh"],
         //["upload ${channel_name}", "OPENPILOT_CHANNEL=${channel_name} $SOURCE_DIR/release/upload_casync_channel.sh"],
       ])
     }

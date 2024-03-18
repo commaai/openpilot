@@ -18,12 +18,12 @@ mkdir -p $BUILD_DIR
 cd $BUILD_DIR
 git init
 git remote add origin git@github.com:commaai/openpilot.git
-git checkout --orphan $RELEASE_BRANCH
+git checkout --orphan $OPENPILOT_CHANNEL
 
 # do the files copy
 echo "[-] copying files T=$SECONDS"
 cd $SOURCE_DIR
-release/copy_channel_Files.sh $SOURCE_DIR $BUILD_DIR
+release/copy_channel_files.sh $SOURCE_DIR $BUILD_DIR
 
 cd $BUILD_DIR
 VERSION=$(cat common/version.h | awk -F[\"-]  '{print $2}')
@@ -55,14 +55,14 @@ TEST_FILES="tools/"
 cd $SOURCE_DIR
 cp -pR -n --parents $TEST_FILES $BUILD_DIR/
 cd $BUILD_DIR
-RELEASE=1 selfdrive/test/test_onroad.py
+selfdrive/test/test_onroad.py
 #selfdrive/manager/test/test_manager.py
 #selfdrive/car/tests/test_car_interfaces.py
 rm -rf $TEST_FILES
 
-if [ ! -z "$RELEASE_BRANCH" ]; then
+if [ ! -z "$OPENPILOT_CHANNEL" ]; then
   echo "[-] pushing release T=$SECONDS"
-  git push -f origin $RELEASE_BRANCH:$RELEASE_BRANCH
+  git push -f origin $OPENPILOT_CHANNEL:$OPENPILOT_CHANNEL
 fi
 
 echo "[-] done T=$SECONDS"
