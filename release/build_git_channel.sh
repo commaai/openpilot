@@ -36,7 +36,7 @@ git commit -a -m "openpilot v$VERSION release"
 echo "[-] creating prebuilt T=$SECONDS"
 release/create_prebuilt.sh $BUILD_DIR
 
-cd $SOURCE_DIR
+cd $BUILD_DIR
 
 # Ensure no submodules in release
 if test "$(git submodule--helper list | wc -l)" -gt "0"; then
