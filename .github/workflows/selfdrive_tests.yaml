@@ -340,7 +340,7 @@ jobs:
       - uses: ./.github/workflows/setup-with-retry
       - name: Get base car info
         run: |
-          ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/debug/dump_car_info.py --path /tmp/openpilot_cache/base_car_info"
+          ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/debug/dump_car_docs.py --path /tmp/openpilot_cache/base_car_docs"
           sudo chown -R $USER:$USER ${{ github.workspace }}
       - uses: actions/checkout@v4
         with:
@@ -352,7 +352,7 @@ jobs:
         run: |
           cd current
           ${{ env.RUN }} "scons -j$(nproc)"
-          output=$(${{ env.RUN }} "python selfdrive/debug/print_docs_diff.py --path /tmp/openpilot_cache/base_car_info")
+          output=$(${{ env.RUN }} "python selfdrive/debug/print_docs_diff.py --path /tmp/openpilot_cache/base_car_docs")
           output="${output//$'\n'/'%0A'}"
           echo "::set-output name=diff::$output"
       - name: Find comment

@@ -73,7 +73,7 @@ def migrate_pandaStates(lr):
   # TODO: safety param migration should be handled automatically
   safety_param_migration = {
     "PRIUS": EPS_SCALE["PRIUS"] | Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL,
-    "RAV4": EPS_SCALE["RAV4"] | Panda.FLAG_TOYOTA_ALT_BRAKE | Panda.FLAG_TOYOTA_GAS_INTERCEPTOR,
+    "RAV4": EPS_SCALE["RAV4"] | Panda.FLAG_TOYOTA_ALT_BRAKE,
     "KIA_EV6": Panda.FLAG_HYUNDAI_EV_GAS | Panda.FLAG_HYUNDAI_CANFD_HDA2,
   }
 

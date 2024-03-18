@@ -1,11 +1,10 @@
 from cereal import car
-from openpilot.common.numpy_fast import clip, interp
-from openpilot.selfdrive.car import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, common_fault_avoidance, \
-                          create_gas_interceptor_command, make_can_msg
+from openpilot.common.numpy_fast import clip
+from openpilot.selfdrive.car import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, common_fault_avoidance, make_can_msg
 from openpilot.selfdrive.car.interfaces import CarControllerBase
 from openpilot.selfdrive.car.toyota import toyotacan
 from openpilot.selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
-                                        MIN_ACC_SPEED, PEDAL_TRANSITION, CarControllerParams, ToyotaFlags, \
+                                        CarControllerParams, ToyotaFlags, \
                                         UNSUPPORTED_DSU_CAR
 from opendbc.can.packer import CANPacker
 
@@ -101,21 +100,6 @@ class CarController(CarControllerBase):
                                                           lta_active, self.frame // 2, torque_wind_down))
 
     # *** gas and brake ***
-    if self.CP.enableGasInterceptor and CC.longActive:
-      MAX_INTERCEPTOR_GAS = 0.5
-      # RAV4 has very sensitive gas pedal
-      if self.CP.carFingerprint in (CAR.RAV4, CAR.RAV4H, CAR.HIGHLANDER):
-        PEDAL_SCALE = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_TRANSITION], [0.15, 0.3, 0.0])
-      elif self.CP.carFingerprint in (CAR.COROLLA,):
-        PEDAL_SCALE = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_TRANSITION], [0.3, 0.4, 0.0])
-      else:
-        PEDAL_SCALE = interp(CS.out.vEgo, [0.0, MIN_ACC_SPEED, MIN_ACC_SPEED + PEDAL_TRANSITION], [0.4, 0.5, 0.0])
-      # offset for creep and windbrake
-      pedal_offset = interp(CS.out.vEgo, [0.0, 2.3, MIN_ACC_SPEED + PEDAL_TRANSITION], [-.4, 0.0, 0.2])
-      pedal_command = PEDAL_SCALE * (actuators.accel + pedal_offset)
-      interceptor_gas_cmd = clip(pedal_command, 0., MAX_INTERCEPTOR_GAS)
-    else:
-      interceptor_gas_cmd = 0.
     pcm_accel_cmd = clip(actuators.accel, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
 
     # TODO: probably can delete this. CS.pcm_acc_status uses a different signal
@@ -124,7 +108,7 @@ class CarController(CarControllerBase):
       pcm_cancel_cmd = 1
 
     # on entering standstill, send standstill request
-    if CS.out.standstill and not self.last_standstill and (self.CP.carFingerprint not in NO_STOP_TIMER_CAR or self.CP.enableGasInterceptor):
+    if CS.out.standstill and not self.last_standstill and (self.CP.carFingerprint not in NO_STOP_TIMER_CAR):
       self.standstill_req = True
     if CS.pcm_acc_status != 8:
       # pcm entered standstill or it's disabled
@@ -157,12 +141,6 @@ class CarController(CarControllerBase):
         self.accel = pcm_accel_cmd
       else:
         can_sends.append(toyotacan.create_accel_command(self.packer, 0, pcm_cancel_cmd, False, lead, CS.acc_type, False, self.distance_button))
-
-    if self.frame % 2 == 0 and self.CP.enableGasInterceptor and self.CP.openpilotLongitudinalControl:
-      # send exactly zero if gas cmd is zero. Interceptor will send the max between read value and gas cmd.
-      # This prevents unexpected pedal range rescaling
-      can_sends.append(create_gas_interceptor_command(self.packer, interceptor_gas_cmd, self.frame // 2))
-      self.gas = interceptor_gas_cmd
 
     # *** hud ui ***
     if self.CP.carFingerprint != CAR.PRIUS_V:

@@ -324,7 +324,7 @@ class CAR(Platforms):
       HyundaiCarDocs("Hyundai Tucson 2023", "All", car_parts=CarParts.common([CarHarness.hyundai_n])),
       HyundaiCarDocs("Hyundai Tucson Hybrid 2022-24", "All", car_parts=CarParts.common([CarHarness.hyundai_n])),
     ],
-    CarSpecs(mass=1630, wheelbase=2.756, steerRatio=16, tireStiffnessFactor=0.385),
+    CarSpecs(mass=1630, wheelbase=2.756, steerRatio=13.7, tireStiffnessFactor=0.385),
   )
   SANTA_CRUZ_1ST_GEN = HyundaiCanFDPlatformConfig(
     [HyundaiCarDocs("Hyundai Santa Cruz 2022-24", car_parts=CarParts.common([CarHarness.hyundai_n]))],
@@ -526,7 +526,7 @@ class CAR(Platforms):
     flags=HyundaiFlags.LEGACY,
   )
   GENESIS_G90 = HyundaiPlatformConfig(
-    [HyundaiCarDocs("Genesis G90 2017-18", "All", car_parts=CarParts.common([CarHarness.hyundai_c]))],
+    [HyundaiCarDocs("Genesis G90 2017-20", "All", car_parts=CarParts.common([CarHarness.hyundai_c]))],
     CarSpecs(mass=2200, wheelbase=3.15, steerRatio=12.069),
   )
   GENESIS_GV80 = HyundaiCanFDPlatformConfig(
