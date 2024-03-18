@@ -133,7 +133,7 @@ class Controls:
     self.enabled = False
     self.active = False
     print("ENABLED: #133 "+str(self.enabled))
-    print("ENABLED: #134 "+str(self.active))
+    print("ACTIVE: #134 "+str(self.active))
     print("KONJO #135 self.state="+str(self.state)+" Disabled")
     self.soft_disable_timer = 0
     self.mismatch_counter = 0
