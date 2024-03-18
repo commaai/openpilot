@@ -109,8 +109,8 @@ class CarControllerParams:
 
 STEER_THRESHOLD = 120
 
-RAM_DT = {CAR.RAM_1500, }
-RAM_HD = {CAR.RAM_HD, }
+RAM_DT = {CAR.RAM_1500_5TH_GEN, }
+RAM_HD = {CAR.RAM_HD_5TH_GEN, }
 RAM_CARS = RAM_DT | RAM_HD
 
 

@@ -21,7 +21,7 @@ class CarInterface(CarInterfaceBase):
 
     # safety config
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.chrysler)]
-    if candidate in RAM_HD:
+    if candidate in RAM_HD_5TH_GEN:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_CHRYSLER_RAM_HD
     elif candidate in RAM_DT:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_CHRYSLER_RAM_DT
@@ -51,14 +51,14 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00006
 
     # Ram
-    elif candidate == CAR.RAM_1500:
+    elif candidate == CAR.RAM_1500_5TH_GEN:
       ret.steerActuatorDelay = 0.2
       ret.wheelbase = 3.88
       # Older EPS FW allow steer to zero
       if any(fw.ecu == 'eps' and b"68" < fw.fwVersion[:4] <= b"6831" for fw in car_fw):
         ret.minSteerSpeed = 0.
 
-    elif candidate == CAR.RAM_HD:
+    elif candidate == CAR.RAM_HD_5TH_GEN:
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, 1.0, False)
 
