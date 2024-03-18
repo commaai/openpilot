@@ -181,9 +181,7 @@ node {
 
   try {
     if (env.BRANCH_NAME == 'devel-staging') {
-      deviceStage("build release3-staging", "tici-needs-can", [], [
-        ["build release3-staging", "RELEASE_BRANCH=release3-staging $SOURCE_DIR/release/build_git_channel.sh"],
-      ])
+      build_channel("release3-staging")
     }
 
     if (env.BRANCH_NAME == 'master-ci') {
