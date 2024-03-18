@@ -127,14 +127,10 @@ class Controls:
     elif self.CP.lateralTuning.which() == 'torque':
       self.LaC = LatControlTorque(self.CP, self.CI)
 
-    #print("KONJO #130 self.state="+str(self.state))
     self.initialized = False
     self.state = State.disabled
     self.enabled = False
     self.active = False
-    print("ENABLED: #133 "+str(self.enabled))
-    print("ACTIVE: #134 "+str(self.active))
-    print("KONJO #135 self.state="+str(self.state)+" Disabled")
     self.soft_disable_timer = 0
     self.mismatch_counter = 0
     self.cruise_mismatch_counter = 0
@@ -146,10 +142,10 @@ class Controls:
     self.current_alert_types = [ET.PERMANENT]
     self.logged_comm_issue = None
     self.not_running_prev = None
-    self.last_actuators = car.CarControl.Actuators.new_message()
     self.steer_limited = False
     self.desired_curvature = 0.0
     self.experimental_mode = False
+    self.personality = self.read_personality_param()
     self.v_cruise_helper = VCruiseHelper(self.CP)
     self.recalibrating_seen = False
 
@@ -179,9 +175,7 @@ class Controls:
           self.v_cruise_helper.v_cruise_kph = controls_state.vCruise
 
       if any(ps.controlsAllowed for ps in self.sm['pandaStates']):
-        print("KONJO #179 self.state="+str(self.state))
         self.state = State.enabled
-        print("KONJO #181 self.state="+str(self.state))
 
   def update_events(self, CS):
     """Compute onroadEvents from carState"""
@@ -462,33 +456,25 @@ class Controls:
 
     # ENABLED, SOFT DISABLING, PRE ENABLING, OVERRIDING
     if self.state != State.disabled:
-      print("KONJO #462 self.state="+str(self.state))
       # user and immediate disable always have priority in a non-disabled state
       if self.events.contains(ET.USER_DISABLE):
         self.state = State.disabled
-        print("KONJO #466 self.state="+str(self.state)+" Disabled")
         self.current_alert_types.append(ET.USER_DISABLE)
 
       elif self.events.contains(ET.IMMEDIATE_DISABLE):
-        print("KONJO #470 self.state="+str(self.state))
         self.state = State.disabled
-        print("KONJO #473 self.state="+str(self.state)+" Disabled")
         self.current_alert_types.append(ET.IMMEDIATE_DISABLE)
 
       else:
         # ENABLED
-        print("KONJO #476 self.state="+str(self.state))
         if self.state == State.enabled:
-          print("KONJO #476 self.state="+str(self.state)+" Enabled")
           if self.events.contains(ET.SOFT_DISABLE):
             self.state = State.softDisabling
-            print("KONJO #480 self.state="+str(self.state)+" Soft Disabling")
             self.soft_disable_timer = int(SOFT_DISABLE_TIME / DT_CTRL)
             self.current_alert_types.append(ET.SOFT_DISABLE)
 
           elif self.events.contains(ET.OVERRIDE_LATERAL) or self.events.contains(ET.OVERRIDE_LONGITUDINAL):
             self.state = State.overriding
-            print("KONJO #486 self.state="+str(self.state)+" Overriding")
             self.current_alert_types += [ET.OVERRIDE_LATERAL, ET.OVERRIDE_LONGITUDINAL]
 
         # SOFT DISABLING
@@ -496,42 +482,33 @@ class Controls:
           if not self.events.contains(ET.SOFT_DISABLE):
             # no more soft disabling condition, so go back to ENABLED
             self.state = State.enabled
-            print("KONJO #494 self.state="+str(self.state)+" Enabled")
 
           elif self.soft_disable_timer > 0:
             self.current_alert_types.append(ET.SOFT_DISABLE)
 
           elif self.soft_disable_timer <= 0:
-            print("KONJO #500 self.state="+str(self.state))
             self.state = State.disabled
 
         # PRE ENABLING
         elif self.state == State.preEnabled:
           if not self.events.contains(ET.PRE_ENABLE):
             self.state = State.enabled
-            print("KONJO #507 self.state="+str(self.state))
           else:
             self.current_alert_types.append(ET.PRE_ENABLE)
-            print("KONJO #510 self.state="+str(self.state))
 
         # OVERRIDING
         elif self.state == State.overriding:
-          print("KONJO #514 self.state="+str(self.state)+" Overriding")
           if self.events.contains(ET.SOFT_DISABLE):
             self.state = State.softDisabling
-            print("KONJO #517 self.state="+str(self.state)+" Soft Disablig")
             self.soft_disable_timer = int(SOFT_DISABLE_TIME / DT_CTRL)
             self.current_alert_types.append(ET.SOFT_DISABLE)
           elif not (self.events.contains(ET.OVERRIDE_LATERAL) or self.events.contains(ET.OVERRIDE_LONGITUDINAL)):
             self.state = State.enabled
-            print("KONJO #522 self.state="+str(self.state)+" Enabled")
           else:
             self.current_alert_types += [ET.OVERRIDE_LATERAL, ET.OVERRIDE_LONGITUDINAL]
-            print("KONJO #525 self.state="+str(self.state))
 
     # DISABLED
     elif self.state == State.disabled:
-      print("KONJO #528 self.state="+str(self.state)+" Disabled")
       if self.events.contains(ET.ENABLE):
         if self.events.contains(ET.NO_ENTRY):
           self.current_alert_types.append(ET.NO_ENTRY)
@@ -548,10 +525,7 @@ class Controls:
 
     # Check if openpilot is engaged and actuators are enabled
     self.enabled = self.state in ENABLED_STATES
-    print("ENABLED: #548 "+str(self.enabled))
     self.active = self.state in ACTIVE_STATES
-    print("ACTIVE: #551 "+str(self.active))
-    print("KONJO #547 self.state="+str(self.state))
     if self.active:
       self.current_alert_types.append(ET.WARNING)
 
@@ -646,7 +620,7 @@ class Controls:
         undershooting = abs(lac_log.desiredLateralAccel) / abs(1e-3 + lac_log.actualLateralAccel) > 1.2
         turning = abs(lac_log.desiredLateralAccel) > 1.0
         good_speed = CS.vEgo > 5
-        max_torque = abs(self.last_actuators.steer) > 0.99
+        max_torque = abs(actuators.steer) > 0.99
         if undershooting and turning and good_speed and max_torque:
           lac_log.active and self.events.add(EventName.steerSaturated)
       elif lac_log.saturated:
@@ -675,6 +649,12 @@ class Controls:
       if not math.isfinite(attr):
         cloudlog.error(f"actuators.{p} not finite {actuators.to_dict()}")
         setattr(actuators, p, 0.0)
+
+    # decrement personality on distance button press
+    if self.CP.openpilotLongitudinalControl:
+      if any(not be.pressed and be.type == ButtonType.gapAdjustCruise for be in CS.buttonEvents):
+        self.personality = (self.personality - 1) % 3
+        self.params.put_nonblocking('LongitudinalPersonality', str(self.personality))
 
     return CC, lac_log
 
@@ -706,6 +686,7 @@ class Controls:
     hudControl.speedVisible = self.enabled
     hudControl.lanesVisible = self.enabled
     hudControl.leadVisible = self.sm['longitudinalPlan'].hasLead
+    hudControl.leadDistanceBars = self.personality + 1
 
     hudControl.rightLaneVisible = True
     hudControl.leftLaneVisible = True
@@ -777,13 +758,10 @@ class Controls:
     controlsState.longitudinalPlanMonoTime = self.sm.logMonoTime['longitudinalPlan']
     controlsState.lateralPlanMonoTime = self.sm.logMonoTime['modelV2']
     controlsState.enabled = self.enabled
-    print("ENABLED: #778 "+str(self.enabled))
     controlsState.active = self.active
-    print("ACTIVE: #780 "+str(self.active))
     controlsState.curvature = curvature
     controlsState.desiredCurvature = self.desired_curvature
     controlsState.state = self.state
-    print("KONJO #777self.state="+str(self.state))
     controlsState.engageable = not self.events.contains(ET.NO_ENTRY)
     controlsState.longControlState = self.LoC.long_control_state
     controlsState.vPid = float(self.LoC.v_pid)
@@ -797,6 +775,7 @@ class Controls:
     controlsState.forceDecel = bool(force_decel)
     controlsState.canErrorCounter = self.card.can_rcv_cum_timeout_counter
     controlsState.experimentalMode = self.experimental_mode
+    controlsState.personality = self.personality
 
     lat_tuning = self.CP.lateralTuning.which()
     if self.joystick_mode:
@@ -849,10 +828,17 @@ class Controls:
 
     self.CS_prev = CS
 
+  def read_personality_param(self):
+    try:
+      return int(self.params.get('LongitudinalPersonality'))
+    except (ValueError, TypeError):
+      return log.LongitudinalPersonality.standard
+
   def params_thread(self, evt):
     while not evt.is_set():
       self.is_metric = self.params.get_bool("IsMetric")
       self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
+      self.personality = self.read_personality_param()
       if self.CP.notCar:
         self.joystick_mode = self.params.get_bool("JoystickDebugMode")
       time.sleep(0.1)
