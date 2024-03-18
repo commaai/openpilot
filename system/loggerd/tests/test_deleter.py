@@ -12,6 +12,7 @@ import openpilot.system.loggerd.deleter as deleter
 from openpilot.common.timeout import Timeout, TimeoutException
 from openpilot.system.loggerd.tests.loggerd_tests_common import UploaderTestCase
 from openpilot.system.hardware.hw import Paths
+
 Stats = namedtuple("Stats", ['f_bavail', 'f_blocks', 'f_frsize'])
 
 
