@@ -142,6 +142,23 @@ def setupCredentials() {
 }
 
 
+def build_channel(String channel_name, def prebuilt) {
+  return parallel (
+    "${channel_name} (git)": {
+      deviceStage("build git", "tici-needs-can", [], [
+        ["build ${channel_name}", "RELEASE_BRANCH=nightly $SOURCE_DIR/release/build_git_channel.sh"],
+      ])
+    },
+    "${channel_name} (casync)": {
+      deviceStage("build casync", "tici-needs-can", [], [
+        ["build ${channel_name}", "BUILD_DIR=/data/releasepilot OUTPUT_DIR=/data/casync RELEASE_CHANNEL=${channel_name} $SOURCE_DIR/release/build_casync_channel.sh"],
+        //["upload ${channel_name}", "RELEASE_CHANNEL=${channel_name} $SOURCE_DIR/release/upload_casync_channel.sh"],
+      ])
+    }
+  )
+}
+
+
 node {
   env.CI = "1"
   env.PYTHONWARNINGS = "error"
@@ -165,14 +182,12 @@ node {
   try {
     if (env.BRANCH_NAME == 'devel-staging') {
       deviceStage("build release3-staging", "tici-needs-can", [], [
-        ["build release3-staging", "RELEASE_BRANCH=release3-staging $SOURCE_DIR/release/build_release.sh"],
+        ["build release3-staging", "RELEASE_BRANCH=release3-staging $SOURCE_DIR/release/build_git_channel.sh"],
       ])
     }
 
     if (env.BRANCH_NAME == 'master-ci') {
-      deviceStage("build nightly", "tici-needs-can", [], [
-        ["build nightly", "RELEASE_BRANCH=nightly $SOURCE_DIR/release/build_release.sh"],
-      ])
+      build_channel("nightly", true)
     }
 
     if (!env.BRANCH_NAME.matches(excludeRegex)) {

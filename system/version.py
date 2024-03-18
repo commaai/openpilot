@@ -69,11 +69,15 @@ def get_normalized_origin() -> str:
     .replace(":", "/", 1)
 
 
-@cache
-def get_version() -> str:
-  with open(os.path.join(BASEDIR, "common", "version.h")) as _versionf:
-    version = _versionf.read().split('"')[1]
-  return version
+def get_version(path: str = BASEDIR) -> str:
+  with open(os.path.join(path, "common", "version.h")) as _versionf:
+    return _versionf.read().split('"')[1]
+
+
+def get_release_notes(path: str = BASEDIR) -> str:
+  with open(os.path.join(path, "RELEASES.md"), "r") as f:
+    return f.read().split('\n\n', 1)[0]
+
 
 @cache
 def get_short_version() -> str:
