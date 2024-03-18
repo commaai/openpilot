@@ -1,6 +1,6 @@
 #include <cassert>
 #include <set>
-
+#include "tobiaslocker/base64.hpp"
 #include "nlohmann/json.hpp"
 #include "common/util.h"
 #include "common/clutil.h"
@@ -27,10 +27,9 @@ void Thneed::load(const char *filename) {
     auto mobj = obj;
     int sz = mobj["size"].template get<int>();
     cl_mem clbuf = NULL;
-
     if (mobj["buffer_id"].template get<std::string>().size() > 0) {
       // image buffer must already be allocated
-      clbuf = real_mem[*(cl_mem*)(mobj["buffer_id"].template get<std::string>().data())];
+      clbuf = real_mem[*(cl_mem*)(base64::decode_into<std::vector<std::uint8_t>>(mobj["buffer_id"].template get<std::string>()).data())];
       assert(mobj["needs_load"].template get<bool>() == false);
     } else {
       if (mobj["needs_load"].template get<bool>()) {
@@ -81,7 +80,7 @@ void Thneed::load(const char *filename) {
       assert(clbuf != NULL);
     }
 
-    real_mem[*(cl_mem*)(mobj["id"].template get<std::string>().data())] = clbuf;
+    real_mem[*(cl_mem*)(base64::decode_into<std::vector<std::uint8_t>>(mobj["id"].template get<std::string>()).data())] = clbuf;
   }
 
   map<string, cl_program> g_programs;
@@ -93,7 +92,7 @@ void Thneed::load(const char *filename) {
   for (auto &obj : jdat["inputs"]) {
     auto mobj = obj;
     int sz = mobj["size"].template get<int>();
-    cl_mem aa = real_mem[*(cl_mem*)(mobj["buffer_id"].template get<std::string>().data())];
+    cl_mem aa = real_mem[*(cl_mem*)(base64::decode_into<std::vector<std::uint8_t>>(mobj["buffer_id"].template get<std::string>()).data())];
     input_clmem.push_back(aa);
     input_sizes.push_back(sz);
     LOGD("Thneed::load: adding input %s with size %d\n", mobj["name"].template get<std::string>().data(), sz);
@@ -110,7 +109,7 @@ void Thneed::load(const char *filename) {
     int sz = mobj["size"].template get<int>();
     LOGD("Thneed::save: adding output with size %d\n", sz);
     // TODO: support multiple outputs
-    output = real_mem[*(cl_mem*)(mobj["buffer_id"].template get<std::string>().data())];
+    output = real_mem[*(cl_mem*)(base64::decode_into<std::vector<std::uint8_t>>(mobj["buffer_id"].template get<std::string>()).data())];
     assert(output != NULL);
   }
 
@@ -140,7 +139,7 @@ void Thneed::load(const char *filename) {
       int arg_size = obj["args_size"][i].template get<int>();
       kk->args_size.push_back(arg_size);
       if (arg_size == 8) {
-        cl_mem val = *(cl_mem*)(arg.data());
+        cl_mem val = *(cl_mem*)(base64::decode_into<std::vector<std::uint8_t>>(arg).data());
         val = real_mem[val];
         kk->args.push_back(string((char*)&val, sizeof(val)));
       } else {
