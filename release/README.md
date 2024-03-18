@@ -3,9 +3,9 @@
 
 ## terms
 
-`channel` - a named version of openpilot (git branches or casync caidx)<br>
+`channel` - a named version of openpilot with only required files for running openpilot and identifying the channel<br>
 `prebuilt` - a channel prebuilt for the tici, no building required on device<br>
-`release` - a channel that is prebuilt and also has `ALLOW_DEBUG` false. (`nightly`, `release3`)<br>
+`release` - prebuilt with `ALLOW_DEBUG` false (RELEASE=1 when building panda). (`nightly`, `release3`)<br>
 
 ## creating casync channel
 
@@ -17,7 +17,7 @@
 # and other casync files into CASYNC_DIR for uploading to openpilot-channels
 BUILD_DIR=/data/openpilot_build    \
 CASYNC_DIR=/data/casync            \
-RELEASE_CHANNEL=nightly            \
+OPENPILOT_CHANNEL=nightly            \
 release/build_casync_channel.sh
 ```
 

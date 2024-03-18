@@ -151,8 +151,8 @@ def build_channel(String channel_name) {
     },
     "${channel_name} (casync)": {
       deviceStage("build casync", "tici-needs-can", [], [
-        ["build ${channel_name}", "BUILD_DIR=/data/openpilot_build OUTPUT_DIR=/data/casync RELEASE_CHANNEL=${channel_name} $SOURCE_DIR/release/build_casync_channel.sh"],
-        //["upload ${channel_name}", "RELEASE_CHANNEL=${channel_name} $SOURCE_DIR/release/upload_casync_channel.sh"],
+        ["build ${channel_name}", "BUILD_DIR=/data/openpilot_build OUTPUT_DIR=/data/casync OPENPILOT_CHANNEL=${channel_name} $SOURCE_DIR/release/build_casync_channel.sh"],
+        //["upload ${channel_name}", "OPENPILOT_CHANNEL=${channel_name} $SOURCE_DIR/release/upload_casync_channel.sh"],
       ])
     }
   )

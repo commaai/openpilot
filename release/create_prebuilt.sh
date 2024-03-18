@@ -6,17 +6,17 @@ set -ex
 
 BUILD_DIR=$1
 
-rm -f panda/board/obj/panda.bin.signed
-rm -f panda/board/obj/panda_h7.bin.signed
-
 cd $BUILD_DIR
 
 # Build
 export PYTHONPATH="$BUILD_DIR"
 scons -j$(nproc)
 
-# release panda fw
-CERT=/data/pandaextra/certs/release RELEASE=1 scons -j$(nproc) panda/
+if [ -n "$RELEASE" ]; then
+  rm -f panda/board/obj/panda.bin.signed
+  rm -f panda/board/obj/panda_h7.bin.signed
+  CERT=/data/pandaextra/certs/release scons -j$(nproc) panda/
+fi
 
 # Cleanup
 find . -name '*.a' -delete
