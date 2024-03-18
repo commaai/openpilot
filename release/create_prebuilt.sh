@@ -10,13 +10,14 @@ cd $BUILD_DIR
 
 # Build
 export PYTHONPATH="$BUILD_DIR"
-scons -j$(nproc)
 
 if [ -n "$RELEASE" ]; then
   rm -f panda/board/obj/panda.bin.signed
   rm -f panda/board/obj/panda_h7.bin.signed
-  CERT=/data/pandaextra/certs/release scons -j$(nproc) panda/
+  export CERT=/data/pandaextra/certs/release
 fi
+
+scons -j$(nproc)
 
 # Cleanup
 find . -name '*.a' -delete
