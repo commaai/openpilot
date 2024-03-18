@@ -3,8 +3,8 @@
 
 ## terms
 
-`channel` - a named version of openpilot with only required files for running openpilot and identifying the channel<br>
-`prebuilt` - a channel prebuilt for the tici, no building required on device<br>
+`channel` - a named version of openpilot (git branch, casync caidx)<br>
+`prebuilt` - a channel prebuilt for the tici with only required files for running openpilot and identifying the channel<br>
 `release` - prebuilt with `ALLOW_DEBUG` false (`RELEASE=1` when building panda, `nightly`, `release3`)<br>
 
 ## creating casync channel
