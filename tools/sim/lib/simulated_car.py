@@ -6,7 +6,6 @@ from openpilot.common.params import Params
 from openpilot.selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp
 from openpilot.selfdrive.car import crc8_pedal
 from openpilot.tools.sim.lib.common import SimulatorState
-from panda.python import Panda
 
 
 class SimulatedCar:
