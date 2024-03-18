@@ -50,18 +50,19 @@ def deleter_thread(exit_event):
     out_of_percent = get_available_percent(default=MIN_PERCENT + 1) < MIN_PERCENT
 
     if out_of_percent or out_of_bytes:
-      listdir = os.listdir(Paths.log_root())
+      all_contents_in_logs_dir = os.listdir(Paths.log_root())
 
-      directories = [directory for directory in listdir if os.path.isdir(os.path.join(Paths.log_root(), directory))]  # Retrieve only directories.
-      directories = sorted(directories, key=get_directory_sort)  # Sort them by creation time.
-      files = [file for file in listdir if os.path.isfile(os.path.join(Paths.log_root(), file))]  # get just files.
+      directories = [directory for directory in all_contents_in_logs_dir if os.path.isdir(os.path.join(Paths.log_root(), directory))]
+      directories = sorted(directories, key=get_directory_sort)  # Sort directories by creation time.
+      files = [file for file in all_contents_in_logs_dir if os.path.isfile(os.path.join(Paths.log_root(), file))]
 
-      all_contents = files + directories  # form list of files for deletion from that.
+      files_sorted_for_deletion = files + directories  # form list of files for deletion from that.
+
       # skip deleting most recent N preserved segments (and their prior segment)
-      preserved_segments = get_preserved_segments(all_contents)
+      preserved_segments = get_preserved_segments(files_sorted_for_deletion)
 
       # remove the earliest directory we can
-      for delete_item in sorted(all_contents, key=lambda d: (d in DELETE_LAST, d in preserved_segments)):
+      for delete_item in sorted(files_sorted_for_deletion, key=lambda d: (d in DELETE_LAST, d in preserved_segments)):
         delete_path = os.path.join(Paths.log_root(), delete_item)
         if os.path.isdir(delete_path) and any(name.endswith(".lock") for name in os.listdir(delete_path)):
           continue
