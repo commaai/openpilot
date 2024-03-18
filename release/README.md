@@ -7,6 +7,18 @@
 `prebuilt` - a channel which is built for the tici and contains only required files for running openpilot and identifying the channel<br>
 `release` - a `prebuilt` channel with `ALLOW_DEBUG=false` (`RELEASE=1` when building panda, ex: `nightly`, `release3`)<br>
 
+
+## openpilot channels
+
+| channel      | type        | description                                                       |
+| -----------  | ----------- | ----------                                                        |
+| release3     | release     | channel for end users                                             |
+| staging      | release     | staging channel for release3                                      |
+| nightly      | release     | generated nightly from last commit passing CI tests               |
+| master       | prebuilt    | current master commit with experimental features enabled          |
+| git branches | none        | installed manually, experimental features enabled, build required |
+
+
 ## creating casync channel
 
 `create_casync_prebuilt.sh` - creates a `prebuilt` casync openpilot channel, ready to upload to `openpilot-channels`
@@ -23,17 +35,7 @@ release/create_casync_prebuilt.sh
 
 `upload_casync_channel.sh` - helper for uploading a casync channel to `openpilot-channels`
 
+
 ## release channel
 
 to create a release channel, set `RELEASE=1` environment variable when running build script
-
-
-## openpilot channels
-
-| channel      | type        | description                                                       |
-| -----------  | ----------- | ----------                                                        |
-| release3     | release     | channel for end users                                             |
-| staging      | release     | staging channel for release3                                      |
-| nightly      | release     | generated nightly from last commit passing CI tests               |
-| master       | prebuilt    | current master commit with experimental features enabled          |
-| git branches | none        | installed manually, experimental features enabled, build required |
