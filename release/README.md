@@ -17,7 +17,7 @@
 # and other casync files into CASYNC_DIR for uploading to openpilot-channels
 BUILD_DIR=/data/openpilot_build    \
 CASYNC_DIR=/data/casync            \
-OPENPILOT_CHANNEL=nightly            \
+OPENPILOT_CHANNEL=nightly          \
 release/build_casync_channel.sh
 ```
 
