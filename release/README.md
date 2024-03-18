@@ -3,7 +3,7 @@
 
 ## terms
 
-`channel` - a named version of openpilot (git branch, casync caidx)<br>
+`channel` - a named version of openpilot (git branch, casync caidx) which receives updates<br>
 `prebuilt` - a channel which is built for the tici and contains only required files for running openpilot and identifying the channel<br>
 `release` - a `prebuilt` channel with `ALLOW_DEBUG=false` (`RELEASE=1` when building panda, ex: `nightly`, `release3`)<br>
 
