@@ -1,0 +1,72 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Generated schema for Root",
+    "type": "object",
+    "properties": {
+      "onroadEvents": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "enable": {
+              "type": "boolean"
+            },
+            "noEntry": {
+              "type": "boolean"
+            },
+            "warning": {
+              "type": "boolean"
+            },
+            "userDisable": {
+              "type": "boolean"
+            },
+            "softDisable": {
+              "type": "boolean"
+            },
+            "immediateDisable": {
+              "type": "boolean"
+            },
+            "preEnable": {
+              "type": "boolean"
+            },
+            "permanent": {
+              "type": "boolean"
+            },
+            "overrideLongitudinal": {
+              "type": "boolean"
+            },
+            "overrideLateral": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "name",
+            "enable",
+            "noEntry",
+            "warning",
+            "userDisable",
+            "softDisable",
+            "immediateDisable",
+            "preEnable",
+            "permanent",
+            "overrideLongitudinal",
+            "overrideLateral"
+          ]
+        }
+      },
+      "logMonoTime": {
+        "type": "number"
+      },
+      "valid": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "onroadEvents",
+      "logMonoTime",
+      "valid"
+    ]
+  }

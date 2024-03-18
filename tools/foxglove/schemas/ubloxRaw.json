@@ -1,0 +1,21 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Generated schema for Root",
+    "type": "object",
+    "properties": {
+      "ubloxRaw": {
+        "type": "string"
+      },
+      "logMonoTime": {
+        "type": "number"
+      },
+      "valid": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "ubloxRaw",
+      "logMonoTime",
+      "valid"
+    ]
+  }

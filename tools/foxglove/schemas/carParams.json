@@ -1,0 +1,448 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Generated schema for Root",
+    "type": "object",
+    "properties": {
+      "carParams": {
+        "type": "object",
+        "properties": {
+          "carName": {
+            "type": "string"
+          },
+          "carFingerprint": {
+            "type": "string"
+          },
+          "enableGasInterceptor": {
+            "type": "boolean"
+          },
+          "pcmCruise": {
+            "type": "boolean"
+          },
+          "enableCameraDEPRECATED": {
+            "type": "boolean"
+          },
+          "enableDsu": {
+            "type": "boolean"
+          },
+          "enableApgsDEPRECATED": {
+            "type": "boolean"
+          },
+          "minEnableSpeed": {
+            "type": "number"
+          },
+          "minSteerSpeed": {
+            "type": "number"
+          },
+          "safetyModelDEPRECATED": {
+            "type": "string"
+          },
+          "safetyParamDEPRECATED": {
+            "type": "number"
+          },
+          "mass": {
+            "type": "number"
+          },
+          "wheelbase": {
+            "type": "number"
+          },
+          "centerToFront": {
+            "type": "number"
+          },
+          "steerRatio": {
+            "type": "number"
+          },
+          "steerRatioRear": {
+            "type": "number"
+          },
+          "rotationalInertia": {
+            "type": "number"
+          },
+          "tireStiffnessFront": {
+            "type": "number"
+          },
+          "tireStiffnessRear": {
+            "type": "number"
+          },
+          "longitudinalTuning": {
+            "type": "object",
+            "properties": {
+              "kpBP": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "kpV": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "kiBP": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "kiV": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "deadzoneBP": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "deadzoneV": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "kf": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "kpBP",
+              "kpV",
+              "kiBP",
+              "kiV",
+              "deadzoneBP",
+              "deadzoneV",
+              "kf"
+            ]
+          },
+          "lateralTuning": {
+            "type": "object",
+            "properties": {
+              "torque": {
+                "type": "object",
+                "properties": {
+                  "useSteeringAngle": {
+                    "type": "boolean"
+                  },
+                  "kp": {
+                    "type": "number"
+                  },
+                  "ki": {
+                    "type": "number"
+                  },
+                  "friction": {
+                    "type": "number"
+                  },
+                  "kf": {
+                    "type": "number"
+                  },
+                  "steeringAngleDeadzoneDeg": {
+                    "type": "number"
+                  },
+                  "latAccelFactor": {
+                    "type": "number"
+                  },
+                  "latAccelOffset": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "useSteeringAngle",
+                  "kp",
+                  "ki",
+                  "friction",
+                  "kf",
+                  "steeringAngleDeadzoneDeg",
+                  "latAccelFactor",
+                  "latAccelOffset"
+                ]
+              }
+            },
+            "required": [
+              "torque"
+            ]
+          },
+          "steerLimitAlert": {
+            "type": "boolean"
+          },
+          "vEgoStopping": {
+            "type": "number"
+          },
+          "directAccelControlDEPRECATED": {
+            "type": "boolean"
+          },
+          "stoppingControl": {
+            "type": "boolean"
+          },
+          "startAccel": {
+            "type": "number"
+          },
+          "steerRateCostDEPRECATED": {
+            "type": "number"
+          },
+          "steerControlType": {
+            "type": "string"
+          },
+          "radarUnavailable": {
+            "type": "boolean"
+          },
+          "steerActuatorDelay": {
+            "type": "number"
+          },
+          "openpilotLongitudinalControl": {
+            "type": "boolean"
+          },
+          "carVin": {
+            "type": "string"
+          },
+          "isPandaBlackDEPRECATED": {
+            "type": "boolean"
+          },
+          "dashcamOnly": {
+            "type": "boolean"
+          },
+          "safetyModelPassiveDEPRECATED": {
+            "type": "string"
+          },
+          "transmissionType": {
+            "type": "string"
+          },
+          "carFw": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "ecu": {
+                  "type": "string"
+                },
+                "fwVersion": {
+                  "type": "string"
+                },
+                "address": {
+                  "type": "number"
+                },
+                "subAddress": {
+                  "type": "number"
+                },
+                "responseAddress": {
+                  "type": "number"
+                },
+                "request": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "brand": {
+                  "type": "string"
+                },
+                "bus": {
+                  "type": "number"
+                },
+                "logging": {
+                  "type": "boolean"
+                },
+                "obdMultiplexing": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "ecu",
+                "fwVersion",
+                "address",
+                "subAddress",
+                "responseAddress",
+                "request",
+                "brand",
+                "bus",
+                "logging",
+                "obdMultiplexing"
+              ]
+            }
+          },
+          "radarTimeStep": {
+            "type": "number"
+          },
+          "communityFeatureDEPRECATED": {
+            "type": "boolean"
+          },
+          "steerLimitTimer": {
+            "type": "number"
+          },
+          "fingerprintSource": {
+            "type": "string"
+          },
+          "networkLocation": {
+            "type": "string"
+          },
+          "minSpeedCanDEPRECATED": {
+            "type": "number"
+          },
+          "stoppingDecelRate": {
+            "type": "number"
+          },
+          "startingAccelRateDEPRECATED": {
+            "type": "number"
+          },
+          "maxSteeringAngleDegDEPRECATED": {
+            "type": "number"
+          },
+          "fuzzyFingerprint": {
+            "type": "boolean"
+          },
+          "enableBsm": {
+            "type": "boolean"
+          },
+          "hasStockCameraDEPRECATED": {
+            "type": "boolean"
+          },
+          "longitudinalActuatorDelayUpperBound": {
+            "type": "number"
+          },
+          "vEgoStarting": {
+            "type": "number"
+          },
+          "stopAccel": {
+            "type": "number"
+          },
+          "longitudinalActuatorDelayLowerBound": {
+            "type": "number"
+          },
+          "safetyConfigs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "safetyModel": {
+                  "type": "string"
+                },
+                "safetyParamDEPRECATED": {
+                  "type": "number"
+                },
+                "safetyParam2DEPRECATED": {
+                  "type": "number"
+                },
+                "safetyParam": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "safetyModel",
+                "safetyParamDEPRECATED",
+                "safetyParam2DEPRECATED",
+                "safetyParam"
+              ]
+            }
+          },
+          "wheelSpeedFactor": {
+            "type": "number"
+          },
+          "flags": {
+            "type": "number"
+          },
+          "alternativeExperience": {
+            "type": "number"
+          },
+          "notCar": {
+            "type": "boolean"
+          },
+          "maxLateralAccel": {
+            "type": "number"
+          },
+          "autoResumeSng": {
+            "type": "boolean"
+          },
+          "startingState": {
+            "type": "boolean"
+          },
+          "experimentalLongitudinalAvailable": {
+            "type": "boolean"
+          },
+          "tireStiffnessFactor": {
+            "type": "number"
+          },
+          "passive": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "carName",
+          "carFingerprint",
+          "enableGasInterceptor",
+          "pcmCruise",
+          "enableCameraDEPRECATED",
+          "enableDsu",
+          "enableApgsDEPRECATED",
+          "minEnableSpeed",
+          "minSteerSpeed",
+          "safetyModelDEPRECATED",
+          "safetyParamDEPRECATED",
+          "mass",
+          "wheelbase",
+          "centerToFront",
+          "steerRatio",
+          "steerRatioRear",
+          "rotationalInertia",
+          "tireStiffnessFront",
+          "tireStiffnessRear",
+          "longitudinalTuning",
+          "lateralTuning",
+          "steerLimitAlert",
+          "vEgoStopping",
+          "directAccelControlDEPRECATED",
+          "stoppingControl",
+          "startAccel",
+          "steerRateCostDEPRECATED",
+          "steerControlType",
+          "radarUnavailable",
+          "steerActuatorDelay",
+          "openpilotLongitudinalControl",
+          "carVin",
+          "isPandaBlackDEPRECATED",
+          "dashcamOnly",
+          "safetyModelPassiveDEPRECATED",
+          "transmissionType",
+          "carFw",
+          "radarTimeStep",
+          "communityFeatureDEPRECATED",
+          "steerLimitTimer",
+          "fingerprintSource",
+          "networkLocation",
+          "minSpeedCanDEPRECATED",
+          "stoppingDecelRate",
+          "startingAccelRateDEPRECATED",
+          "maxSteeringAngleDegDEPRECATED",
+          "fuzzyFingerprint",
+          "enableBsm",
+          "hasStockCameraDEPRECATED",
+          "longitudinalActuatorDelayUpperBound",
+          "vEgoStarting",
+          "stopAccel",
+          "longitudinalActuatorDelayLowerBound",
+          "safetyConfigs",
+          "wheelSpeedFactor",
+          "flags",
+          "alternativeExperience",
+          "notCar",
+          "maxLateralAccel",
+          "autoResumeSng",
+          "startingState",
+          "experimentalLongitudinalAvailable",
+          "tireStiffnessFactor",
+          "passive"
+        ]
+      },
+      "logMonoTime": {
+        "type": "number"
+      },
+      "valid": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "carParams",
+      "logMonoTime",
+      "valid"
+    ]
+  }

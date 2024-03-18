@@ -1,0 +1,57 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Generated schema for Root",
+    "type": "object",
+    "properties": {
+      "ubloxGnss": {
+        "type": "object",
+        "properties": {
+          "hwStatus": {
+            "type": "object",
+            "properties": {
+              "noisePerMS": {
+                "type": "number"
+              },
+              "agcCnt": {
+                "type": "number"
+              },
+              "aStatus": {
+                "type": "string"
+              },
+              "aPower": {
+                "type": "string"
+              },
+              "jamInd": {
+                "type": "number"
+              },
+              "flags": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "noisePerMS",
+              "agcCnt",
+              "aStatus",
+              "aPower",
+              "jamInd",
+              "flags"
+            ]
+          }
+        },
+        "required": [
+          "hwStatus"
+        ]
+      },
+      "logMonoTime": {
+        "type": "number"
+      },
+      "valid": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "ubloxGnss",
+      "logMonoTime",
+      "valid"
+    ]
+  }

@@ -1,0 +1,153 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Generated schema for Root",
+    "type": "object",
+    "properties": {
+      "lateralPlanDEPRECATED": {
+        "type": "object",
+        "properties": {
+          "laneWidthDEPRECATED": {
+            "type": "number"
+          },
+          "cProbDEPRECATED": {
+            "type": "number"
+          },
+          "lProbDEPRECATED": {
+            "type": "number"
+          },
+          "rProbDEPRECATED": {
+            "type": "number"
+          },
+          "steeringAngleDegDEPRECATED": {
+            "type": "number"
+          },
+          "mpcSolutionValid": {
+            "type": "boolean"
+          },
+          "paramsValidDEPRECATED": {
+            "type": "boolean"
+          },
+          "angleOffsetDegDEPRECATED": {
+            "type": "number"
+          },
+          "modelValidDEPRECATED": {
+            "type": "boolean"
+          },
+          "steeringRateDegDEPRECATED": {
+            "type": "number"
+          },
+          "sensorValidDEPRECATED": {
+            "type": "boolean"
+          },
+          "commIssueDEPRECATED": {
+            "type": "boolean"
+          },
+          "posenetValidDEPRECATED": {
+            "type": "boolean"
+          },
+          "desire": {
+            "type": "string"
+          },
+          "laneChangeState": {
+            "type": "string"
+          },
+          "laneChangeDirection": {
+            "type": "string"
+          },
+          "dPathPoints": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "dProbDEPRECATED": {
+            "type": "number"
+          },
+          "curvatureDEPRECATED": {
+            "type": "number"
+          },
+          "curvatureRateDEPRECATED": {
+            "type": "number"
+          },
+          "rawCurvatureDEPRECATED": {
+            "type": "number"
+          },
+          "rawCurvatureRateDEPRECATED": {
+            "type": "number"
+          },
+          "psis": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "curvatures": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "curvatureRates": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "useLaneLines": {
+            "type": "boolean"
+          },
+          "solverExecutionTime": {
+            "type": "number"
+          },
+          "modelMonoTime": {
+            "type": "number"
+          },
+          "solverCost": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "laneWidthDEPRECATED",
+          "cProbDEPRECATED",
+          "lProbDEPRECATED",
+          "rProbDEPRECATED",
+          "steeringAngleDegDEPRECATED",
+          "mpcSolutionValid",
+          "paramsValidDEPRECATED",
+          "angleOffsetDegDEPRECATED",
+          "modelValidDEPRECATED",
+          "steeringRateDegDEPRECATED",
+          "sensorValidDEPRECATED",
+          "commIssueDEPRECATED",
+          "posenetValidDEPRECATED",
+          "desire",
+          "laneChangeState",
+          "laneChangeDirection",
+          "dPathPoints",
+          "dProbDEPRECATED",
+          "curvatureDEPRECATED",
+          "curvatureRateDEPRECATED",
+          "rawCurvatureDEPRECATED",
+          "rawCurvatureRateDEPRECATED",
+          "psis",
+          "curvatures",
+          "curvatureRates",
+          "useLaneLines",
+          "solverExecutionTime",
+          "modelMonoTime",
+          "solverCost"
+        ]
+      },
+      "logMonoTime": {
+        "type": "number"
+      },
+      "valid": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "lateralPlanDEPRECATED",
+      "logMonoTime",
+      "valid"
+    ]
+  }

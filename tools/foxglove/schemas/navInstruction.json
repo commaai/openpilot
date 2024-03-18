@@ -1,0 +1,53 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Generated schema for Root",
+    "type": "object",
+    "properties": {
+      "navInstruction": {
+        "type": "object",
+        "properties": {
+          "maneuverDistance": {
+            "type": "number"
+          },
+          "distanceRemaining": {
+            "type": "number"
+          },
+          "timeRemaining": {
+            "type": "number"
+          },
+          "timeRemainingTypical": {
+            "type": "number"
+          },
+          "showFull": {
+            "type": "boolean"
+          },
+          "speedLimit": {
+            "type": "number"
+          },
+          "speedLimitSign": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "maneuverDistance",
+          "distanceRemaining",
+          "timeRemaining",
+          "timeRemainingTypical",
+          "showFull",
+          "speedLimit",
+          "speedLimitSign"
+        ]
+      },
+      "logMonoTime": {
+        "type": "number"
+      },
+      "valid": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "navInstruction",
+      "logMonoTime",
+      "valid"
+    ]
+  }

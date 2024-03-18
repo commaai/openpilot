@@ -1,0 +1,65 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Generated schema for Root",
+    "type": "object",
+    "properties": {
+      "radarState": {
+        "type": "object",
+        "properties": {
+          "angleOffsetDEPRECATED": {
+            "type": "number"
+          },
+          "calStatusDEPRECATED": {
+            "type": "number"
+          },
+          "cumLagMs": {
+            "type": "number"
+          },
+          "mdMonoTime": {
+            "type": "number"
+          },
+          "ftMonoTimeDEPRECATED": {
+            "type": "number"
+          },
+          "calCycleDEPRECATED": {
+            "type": "number"
+          },
+          "calPercDEPRECATED": {
+            "type": "number"
+          },
+          "carStateMonoTime": {
+            "type": "number"
+          },
+          "radarErrors": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": ["canError", "fault", "wrongConfig"]
+            }
+          }
+        },
+        "required": [
+          "angleOffsetDEPRECATED",
+          "calStatusDEPRECATED",
+          "cumLagMs",
+          "mdMonoTime",
+          "ftMonoTimeDEPRECATED",
+          "calCycleDEPRECATED",
+          "calPercDEPRECATED",
+          "carStateMonoTime",
+          "radarErrors"
+        ]
+      },
+      "logMonoTime": {
+        "type": "number"
+      },
+      "valid": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "radarState",
+      "logMonoTime",
+      "valid"
+    ]
+  }

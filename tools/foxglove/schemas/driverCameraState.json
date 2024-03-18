@@ -1,0 +1,113 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Generated schema for Root",
+    "type": "object",
+    "properties": {
+      "driverCameraState": {
+        "type": "object",
+        "properties": {
+          "frameId": {
+            "type": "number"
+          },
+          "encodeId": {
+            "type": "number"
+          },
+          "timestampEof": {
+            "type": "number"
+          },
+          "frameLengthDEPRECATED": {
+            "type": "number"
+          },
+          "integLines": {
+            "type": "number"
+          },
+          "globalGainDEPRECATED": {
+            "type": "number"
+          },
+          "frameType": {
+            "type": "string"
+          },
+          "timestampSof": {
+            "type": "number"
+          },
+          "lensPosDEPRECATED": {
+            "type": "number"
+          },
+          "lensSagDEPRECATED": {
+            "type": "number"
+          },
+          "lensErrDEPRECATED": {
+            "type": "number"
+          },
+          "lensTruePosDEPRECATED": {
+            "type": "number"
+          },
+          "gain": {
+            "type": "number"
+          },
+          "recoverStateDEPRECATED": {
+            "type": "number"
+          },
+          "highConversionGain": {
+            "type": "boolean"
+          },
+          "measuredGreyFraction": {
+            "type": "number"
+          },
+          "targetGreyFraction": {
+            "type": "number"
+          },
+          "processingTime": {
+            "type": "number"
+          },
+          "frameIdSensor": {
+            "type": "number"
+          },
+          "sensor": {
+            "type": "string"
+          },
+          "exposureValPercent": {
+            "type": "number"
+          },
+          "requestId": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "frameId",
+          "encodeId",
+          "timestampEof",
+          "frameLengthDEPRECATED",
+          "integLines",
+          "globalGainDEPRECATED",
+          "frameType",
+          "timestampSof",
+          "lensPosDEPRECATED",
+          "lensSagDEPRECATED",
+          "lensErrDEPRECATED",
+          "lensTruePosDEPRECATED",
+          "gain",
+          "recoverStateDEPRECATED",
+          "highConversionGain",
+          "measuredGreyFraction",
+          "targetGreyFraction",
+          "processingTime",
+          "frameIdSensor",
+          "sensor",
+          "exposureValPercent",
+          "requestId"
+        ]
+      },
+      "logMonoTime": {
+        "type": "number"
+      },
+      "valid": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "driverCameraState",
+      "logMonoTime",
+      "valid"
+    ]
+  }

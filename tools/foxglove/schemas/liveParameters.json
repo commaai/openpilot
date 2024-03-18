@@ -1,0 +1,85 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Generated schema for Root",
+    "type": "object",
+    "properties": {
+      "liveParameters": {
+        "type": "object",
+        "properties": {
+          "valid": {
+            "type": "boolean"
+          },
+          "gyroBias": {
+            "type": "number"
+          },
+          "angleOffsetDeg": {
+            "type": "number"
+          },
+          "angleOffsetAverageDeg": {
+            "type": "number"
+          },
+          "stiffnessFactor": {
+            "type": "number"
+          },
+          "steerRatio": {
+            "type": "number"
+          },
+          "sensorValid": {
+            "type": "boolean"
+          },
+          "yawRateDEPRECATED": {
+            "type": "number"
+          },
+          "posenetSpeed": {
+            "type": "number"
+          },
+          "posenetValid": {
+            "type": "boolean"
+          },
+          "angleOffsetFastStd": {
+            "type": "number"
+          },
+          "angleOffsetAverageStd": {
+            "type": "number"
+          },
+          "stiffnessFactorStd": {
+            "type": "number"
+          },
+          "steerRatioStd": {
+            "type": "number"
+          },
+          "roll": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "valid",
+          "gyroBias",
+          "angleOffsetDeg",
+          "angleOffsetAverageDeg",
+          "stiffnessFactor",
+          "steerRatio",
+          "sensorValid",
+          "yawRateDEPRECATED",
+          "posenetSpeed",
+          "posenetValid",
+          "angleOffsetFastStd",
+          "angleOffsetAverageStd",
+          "stiffnessFactorStd",
+          "steerRatioStd",
+          "roll"
+        ]
+      },
+      "logMonoTime": {
+        "type": "number"
+      },
+      "valid": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "liveParameters",
+      "logMonoTime",
+      "valid"
+    ]
+  }

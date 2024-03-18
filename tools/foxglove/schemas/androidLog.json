@@ -1,0 +1,53 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Generated schema for Root",
+    "type": "object",
+    "properties": {
+      "androidLog": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "number"
+          },
+          "ts": {
+            "type": "number"
+          },
+          "priority": {
+            "type": "number"
+          },
+          "pid": {
+            "type": "number"
+          },
+          "tid": {
+            "type": "number"
+          },
+          "tag": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "ts",
+          "priority",
+          "pid",
+          "tid",
+          "tag",
+          "message"
+        ]
+      },
+      "logMonoTime": {
+        "type": "number"
+      },
+      "valid": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "androidLog",
+      "logMonoTime",
+      "valid"
+    ]
+  }

@@ -1,0 +1,41 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Generated schema for Root",
+    "type": "object",
+    "properties": {
+      "microphone": {
+        "type": "object",
+        "properties": {
+          "soundPressure": {
+            "type": "number"
+          },
+          "soundPressureWeightedDb": {
+            "type": "number"
+          },
+          "filteredSoundPressureWeightedDb": {
+            "type": "number"
+          },
+          "soundPressureWeighted": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "soundPressure",
+          "soundPressureWeightedDb",
+          "filteredSoundPressureWeightedDb",
+          "soundPressureWeighted"
+        ]
+      },
+      "logMonoTime": {
+        "type": "number"
+      },
+      "valid": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "microphone",
+      "logMonoTime",
+      "valid"
+    ]
+  }

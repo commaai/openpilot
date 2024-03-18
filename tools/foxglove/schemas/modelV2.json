@@ -1,0 +1,590 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Generated schema for Root",
+    "type": "object",
+    "properties": {
+      "modelV2": {
+        "type": "object",
+        "properties": {
+          "frameId": {
+            "type": "number"
+          },
+          "frameAge": {
+            "type": "number"
+          },
+          "frameDropPerc": {
+            "type": "number"
+          },
+          "timestampEof": {
+            "type": "number"
+          },
+          "position": {
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "y": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "z": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "t": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "xStd": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "yStd": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "zStd": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z",
+              "t",
+              "xStd",
+              "yStd",
+              "zStd"
+            ]
+          },
+          "orientation": {
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "y": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "z": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "t": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z",
+              "t"
+            ]
+          },
+          "velocity": {
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "y": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "z": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "t": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z",
+              "t"
+            ]
+          },
+          "orientationRate": {
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "y": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "z": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "t": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z",
+              "t"
+            ]
+          },
+          "laneLines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "y": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "z": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "t": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                }
+              },
+              "required": [
+                "x",
+                "y",
+                "z",
+                "t"
+              ]
+            }
+          },
+          "laneLineProbs": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "roadEdges": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "x": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "y": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "z": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "t": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                }
+              },
+              "required": [
+                "x",
+                "y",
+                "z",
+                "t"
+              ]
+            }
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "engagedProb": {
+                "type": "number"
+              },
+              "desirePrediction": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "brakeDisengageProbDEPRECATED": {
+                "type": "number"
+              },
+              "gasDisengageProbDEPRECATED": {
+                "type": "number"
+              },
+              "steerOverrideProbDEPRECATED": {
+                "type": "number"
+              },
+              "desireState": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "disengagePredictions": {
+                "type": "object",
+                "properties": {
+                  "t": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  },
+                  "brakeDisengageProbs": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  },
+                  "gasDisengageProbs": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  },
+                  "steerOverrideProbs": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  },
+                  "brake3MetersPerSecondSquaredProbs": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  },
+                  "brake4MetersPerSecondSquaredProbs": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  },
+                  "brake5MetersPerSecondSquaredProbs": {
+                    "type": "array",
+                    "items": {
+                      "type": "number"
+                    }
+                  }
+                },
+                "required": [
+                  "t",
+                  "brakeDisengageProbs",
+                  "gasDisengageProbs",
+                  "steerOverrideProbs",
+                  "brake3MetersPerSecondSquaredProbs",
+                  "brake4MetersPerSecondSquaredProbs",
+                  "brake5MetersPerSecondSquaredProbs"
+                ]
+              },
+              "hardBrakePredicted": {
+                "type": "boolean"
+              },
+              "laneChangeState": {
+                "type": "string"
+              },
+              "laneChangeDirection": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "engagedProb",
+              "desirePrediction",
+              "brakeDisengageProbDEPRECATED",
+              "gasDisengageProbDEPRECATED",
+              "steerOverrideProbDEPRECATED",
+              "desireState",
+              "disengagePredictions",
+              "hardBrakePredicted",
+              "laneChangeState",
+              "laneChangeDirection"
+            ]
+          },
+          "laneLineStds": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "roadEdgeStds": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "modelExecutionTime": {
+            "type": "number"
+          },
+          "gpuExecutionTime": {
+            "type": "number"
+          },
+          "leadsV3": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "prob": {
+                  "type": "number"
+                },
+                "probTime": {
+                  "type": "number"
+                },
+                "t": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "x": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "xStd": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "y": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "yStd": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "v": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "vStd": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "a": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                },
+                "aStd": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                }
+              },
+              "required": [
+                "prob",
+                "probTime",
+                "t",
+                "x",
+                "xStd",
+                "y",
+                "yStd",
+                "v",
+                "vStd",
+                "a",
+                "aStd"
+              ]
+            }
+          },
+          "acceleration": {
+            "type": "object",
+            "properties": {
+              "x": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "y": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "z": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "t": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "required": [
+              "x",
+              "y",
+              "z",
+              "t"
+            ]
+          },
+          "frameIdExtra": {
+            "type": "number"
+          },
+          "temporalPose": {
+            "type": "object",
+            "properties": {
+              "trans": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "rot": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "transStd": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              },
+              "rotStd": {
+                "type": "array",
+                "items": {
+                  "type": "number"
+                }
+              }
+            },
+            "required": [
+              "trans",
+              "rot",
+              "transStd",
+              "rotStd"
+            ]
+          },
+          "navEnabled": {
+            "type": "boolean"
+          },
+          "confidence": {
+            "type": "string"
+          },
+          "locationMonoTime": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "frameId",
+          "frameAge",
+          "frameDropPerc",
+          "timestampEof",
+          "position",
+          "orientation",
+          "velocity",
+          "orientationRate",
+          "laneLines",
+          "laneLineProbs",
+          "roadEdges",
+          "meta",
+          "laneLineStds",
+          "roadEdgeStds",
+          "modelExecutionTime",
+          "gpuExecutionTime",
+          "leadsV3",
+          "acceleration",
+          "frameIdExtra",
+          "temporalPose",
+          "navEnabled",
+          "confidence",
+          "locationMonoTime"
+        ]
+      },
+      "logMonoTime": {
+        "type": "number"
+      },
+      "valid": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "modelV2",
+      "logMonoTime",
+      "valid"
+    ]
+  }

@@ -1,0 +1,80 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Generated schema for Root",
+    "type": "object",
+    "properties": {
+      "gpsLocationExternal": {
+        "type": "object",
+        "properties": {
+          "flags": {
+            "type": "number"
+          },
+          "latitude": {
+            "type": "number"
+          },
+          "longitude": {
+            "type": "number"
+          },
+          "altitude": {
+            "type": "number"
+          },
+          "speed": {
+            "type": "number"
+          },
+          "bearingDeg": {
+            "type": "number"
+          },
+          "horizontalAccuracy": {
+            "type": "number"
+          },
+          "unixTimestampMillis": {
+            "type": "number"
+          },
+          "source": {
+            "type": "string"
+          },
+          "vNED": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "verticalAccuracy": {
+            "type": "number"
+          },
+          "bearingAccuracyDeg": {
+            "type": "number"
+          },
+          "speedAccuracy": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "flags",
+          "latitude",
+          "longitude",
+          "altitude",
+          "speed",
+          "bearingDeg",
+          "horizontalAccuracy",
+          "unixTimestampMillis",
+          "source",
+          "vNED",
+          "verticalAccuracy",
+          "bearingAccuracyDeg",
+          "speedAccuracy"
+        ]
+      },
+      "logMonoTime": {
+        "type": "number"
+      },
+      "valid": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "gpsLocationExternal",
+      "logMonoTime",
+      "valid"
+    ]
+  }

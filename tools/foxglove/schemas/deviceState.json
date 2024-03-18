@@ -1,0 +1,256 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Generated schema for Root",
+    "type": "object",
+    "properties": {
+      "deviceState": {
+        "type": "object",
+        "properties": {
+          "cpu0DEPRECATED": {
+            "type": "number"
+          },
+          "cpu1DEPRECATED": {
+            "type": "number"
+          },
+          "cpu2DEPRECATED": {
+            "type": "number"
+          },
+          "cpu3DEPRECATED": {
+            "type": "number"
+          },
+          "memDEPRECATED": {
+            "type": "number"
+          },
+          "gpuDEPRECATED": {
+            "type": "number"
+          },
+          "batDEPRECATED": {
+            "type": "number"
+          },
+          "freeSpacePercent": {
+            "type": "number"
+          },
+          "batteryPercentDEPRECATED": {
+            "type": "number"
+          },
+          "fanSpeedPercentDesired": {
+            "type": "number"
+          },
+          "started": {
+            "type": "boolean"
+          },
+          "usbOnlineDEPRECATED": {
+            "type": "boolean"
+          },
+          "startedMonoTime": {
+            "type": "number"
+          },
+          "thermalStatus": {
+            "type": "string"
+          },
+          "batteryCurrentDEPRECATED": {
+            "type": "number"
+          },
+          "batteryVoltageDEPRECATED": {
+            "type": "number"
+          },
+          "chargingErrorDEPRECATED": {
+            "type": "boolean"
+          },
+          "chargingDisabledDEPRECATED": {
+            "type": "boolean"
+          },
+          "memoryUsagePercent": {
+            "type": "number"
+          },
+          "cpuUsagePercentDEPRECATED": {
+            "type": "number"
+          },
+          "pa0DEPRECATED": {
+            "type": "number"
+          },
+          "networkType": {
+            "type": "string"
+          },
+          "offroadPowerUsageUwh": {
+            "type": "number"
+          },
+          "networkStrength": {
+            "type": "string"
+          },
+          "carBatteryCapacityUwh": {
+            "type": "number"
+          },
+          "cpuTempC": {
+            "type": "object",
+            "properties": {
+              "0": {
+                "type": "number"
+              },
+              "1": {
+                "type": "number"
+              },
+              "2": {
+                "type": "number"
+              },
+              "3": {
+                "type": "number"
+              },
+              "4": {
+                "type": "number"
+              },
+              "5": {
+                "type": "number"
+              },
+              "6": {
+                "type": "number"
+              },
+              "7": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "0",
+              "1",
+              "2",
+              "3",
+              "4",
+              "5",
+              "6",
+              "7"
+            ]
+          },
+          "gpuTempC": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "memoryTempC": {
+            "type": "number"
+          },
+          "batteryTempCDEPRECATED": {
+            "type": "number"
+          },
+          "ambientTempCDEPRECATED": {
+            "type": "number"
+          },
+          "lastAthenaPingTime": {
+            "type": "number"
+          },
+          "gpuUsagePercent": {
+            "type": "number"
+          },
+          "cpuUsagePercent": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "nvmeTempC": {
+            "type": "array",
+            "items": {
+              "type":"number"
+            }
+          },
+          "modemTempC": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "screenBrightnessPercent": {
+            "type": "number"
+          },
+          "pmicTempC": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "powerDrawW": {
+            "type": "number"
+          },
+          "networkMetered": {
+            "type": "boolean"
+          },
+          "somPowerDrawW": {
+            "type": "number"
+          },
+          "networkStats": {
+            "type": "object",
+            "properties": {
+              "wwanTx": {
+                "type": "number"
+              },
+              "wwanRx": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "wwanTx",
+              "wwanRx"
+            ]
+          },
+          "maxTempC": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "cpu0DEPRECATED",
+          "cpu1DEPRECATED",
+          "cpu2DEPRECATED",
+          "cpu3DEPRECATED",
+          "memDEPRECATED",
+          "gpuDEPRECATED",
+          "batDEPRECATED",
+          "freeSpacePercent",
+          "batteryPercentDEPRECATED",
+          "fanSpeedPercentDesired",
+          "started",
+          "usbOnlineDEPRECATED",
+          "startedMonoTime",
+          "thermalStatus",
+          "batteryCurrentDEPRECATED",
+          "batteryVoltageDEPRECATED",
+          "chargingErrorDEPRECATED",
+          "chargingDisabledDEPRECATED",
+          "memoryUsagePercent",
+          "cpuUsagePercentDEPRECATED",
+          "pa0DEPRECATED",
+          "networkType",
+          "offroadPowerUsageUwh",
+          "networkStrength",
+          "carBatteryCapacityUwh",
+          "cpuTempC",
+          "gpuTempC",
+          "memoryTempC",
+          "batteryTempCDEPRECATED",
+          "ambientTempCDEPRECATED",
+          "lastAthenaPingTime",
+          "gpuUsagePercent",
+          "cpuUsagePercent",
+          "nvmeTempC",
+          "modemTempC",
+          "screenBrightnessPercent",
+          "pmicTempC",
+          "powerDrawW",
+          "networkMetered",
+          "somPowerDrawW",
+          "networkStats",
+          "maxTempC"
+        ]
+      },
+      "logMonoTime": {
+        "type": "number"
+      },
+      "valid": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "deviceState",
+      "logMonoTime",
+      "valid"
+    ]
+  }

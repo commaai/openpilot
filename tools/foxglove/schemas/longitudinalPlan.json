@@ -1,0 +1,170 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Generated schema for Root",
+    "type": "object",
+    "properties": {
+      "longitudinalPlan": {
+        "type": "object",
+        "properties": {
+          "lateralValidDEPRECATED": {
+            "type": "boolean"
+          },
+          "longitudinalValidDEPRECATED": {
+            "type": "boolean"
+          },
+          "vTargetDEPRECATED": {
+            "type": "number"
+          },
+          "aTargetMinDEPRECATED": {
+            "type": "number"
+          },
+          "aTargetMaxDEPRECATED": {
+            "type": "number"
+          },
+          "jerkFactorDEPRECATED": {
+            "type": "number"
+          },
+          "hasLead": {
+            "type": "boolean"
+          },
+          "fcw": {
+            "type": "boolean"
+          },
+          "modelMonoTime": {
+            "type": "number"
+          },
+          "radarStateMonoTimeDEPRECATED": {
+            "type": "number"
+          },
+          "laneWidthDEPRECATED": {
+            "type": "number"
+          },
+          "vTargetFutureDEPRECATED": {
+            "type": "number"
+          },
+          "longitudinalPlanSource": {
+            "type": "string"
+          },
+          "vCruiseDEPRECATED": {
+            "type": "number"
+          },
+          "aCruiseDEPRECATED": {
+            "type": "number"
+          },
+          "aTargetDEPRECATED": {
+            "type": "number"
+          },
+          "gpsPlannerActiveDEPRECATED": {
+            "type": "boolean"
+          },
+          "vMaxDEPRECATED": {
+            "type": "number"
+          },
+          "vCurvatureDEPRECATED": {
+            "type": "number"
+          },
+          "decelForTurnDEPRECATED": {
+            "type": "boolean"
+          },
+          "hasLeftLaneDEPRECATED": {
+            "type": "boolean"
+          },
+          "hasRightLaneDEPRECATED": {
+            "type": "boolean"
+          },
+          "mapValidDEPRECATED": {
+            "type": "boolean"
+          },
+          "vStartDEPRECATED": {
+            "type": "number"
+          },
+          "aStartDEPRECATED": {
+            "type": "number"
+          },
+          "radarValidDEPRECATED": {
+            "type": "boolean"
+          },
+          "processingDelay": {
+            "type": "number"
+          },
+          "radarCanErrorDEPRECATED": {
+            "type": "boolean"
+          },
+          "commIssueDEPRECATED": {
+            "type": "boolean"
+          },
+          "accels": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "speeds": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "jerks": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "solverExecutionTime": {
+            "type": "number"
+          },
+          "personality": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "lateralValidDEPRECATED",
+          "longitudinalValidDEPRECATED",
+          "vTargetDEPRECATED",
+          "aTargetMinDEPRECATED",
+          "aTargetMaxDEPRECATED",
+          "jerkFactorDEPRECATED",
+          "hasLead",
+          "fcw",
+          "modelMonoTime",
+          "radarStateMonoTimeDEPRECATED",
+          "laneWidthDEPRECATED",
+          "vTargetFutureDEPRECATED",
+          "longitudinalPlanSource",
+          "vCruiseDEPRECATED",
+          "aCruiseDEPRECATED",
+          "aTargetDEPRECATED",
+          "gpsPlannerActiveDEPRECATED",
+          "vMaxDEPRECATED",
+          "vCurvatureDEPRECATED",
+          "decelForTurnDEPRECATED",
+          "hasLeftLaneDEPRECATED",
+          "hasRightLaneDEPRECATED",
+          "mapValidDEPRECATED",
+          "vStartDEPRECATED",
+          "aStartDEPRECATED",
+          "radarValidDEPRECATED",
+          "processingDelay",
+          "radarCanErrorDEPRECATED",
+          "commIssueDEPRECATED",
+          "accels",
+          "speeds",
+          "jerks",
+          "solverExecutionTime",
+          "personality"
+        ]
+      },
+      "logMonoTime": {
+        "type": "number"
+      },
+      "valid": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "longitudinalPlan",
+      "logMonoTime",
+      "valid"
+    ]
+  }

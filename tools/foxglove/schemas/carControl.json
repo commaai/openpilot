@@ -1,0 +1,203 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Generated schema for Root",
+    "type": "object",
+    "properties": {
+      "carControl": {
+        "type": "object",
+        "properties": {
+          "enabled": {
+            "type": "boolean"
+          },
+          "gasDEPRECATED": {
+            "type": "number"
+          },
+          "brakeDEPRECATED": {
+            "type": "number"
+          },
+          "steeringTorqueDEPRECATED": {
+            "type": "number"
+          },
+          "cruiseControl": {
+            "type": "object",
+            "properties": {
+              "cancel": {
+                "type": "boolean"
+              },
+              "resume": {
+                "type": "boolean"
+              },
+              "speedOverrideDEPRECATED": {
+                "type": "number"
+              },
+              "accelOverrideDEPRECATED": {
+                "type": "number"
+              },
+              "override": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "cancel",
+              "resume",
+              "speedOverrideDEPRECATED",
+              "accelOverrideDEPRECATED",
+              "override"
+            ]
+          },
+          "hudControl": {
+            "type": "object",
+            "properties": {
+              "speedVisible": {
+                "type": "boolean"
+              },
+              "setSpeed": {
+                "type": "number"
+              },
+              "lanesVisible": {
+                "type": "boolean"
+              },
+              "leadVisible": {
+                "type": "boolean"
+              },
+              "visualAlert": {
+                "type": "string"
+              },
+              "audibleAlert": {
+                "type": "string"
+              },
+              "rightLaneVisible": {
+                "type": "boolean"
+              },
+              "leftLaneVisible": {
+                "type": "boolean"
+              },
+              "rightLaneDepart": {
+                "type": "boolean"
+              },
+              "leftLaneDepart": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "speedVisible",
+              "setSpeed",
+              "lanesVisible",
+              "leadVisible",
+              "visualAlert",
+              "audibleAlert",
+              "rightLaneVisible",
+              "leftLaneVisible",
+              "rightLaneDepart",
+              "leftLaneDepart"
+            ]
+          },
+          "actuators": {
+            "type": "object",
+            "properties": {
+              "gas": {
+                "type": "number"
+              },
+              "brake": {
+                "type": "number"
+              },
+              "steer": {
+                "type": "number"
+              },
+              "steeringAngleDeg": {
+                "type": "number"
+              },
+              "accel": {
+                "type": "number"
+              },
+              "longControlState": {
+                "type": "string"
+              },
+              "speed": {
+                "type": "number"
+              },
+              "curvature": {
+                "type": "number"
+              },
+              "steerOutputCan": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "gas",
+              "brake",
+              "steer",
+              "steeringAngleDeg",
+              "accel",
+              "longControlState",
+              "speed",
+              "curvature",
+              "steerOutputCan"
+            ]
+          },
+          "activeDEPRECATED": {
+            "type": "boolean"
+          },
+          "rollDEPRECATED": {
+            "type": "number"
+          },
+          "pitchDEPRECATED": {
+            "type": "number"
+          },
+          "latActive": {
+            "type": "boolean"
+          },
+          "longActive": {
+            "type": "boolean"
+          },
+          "orientationNED": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "angularVelocity": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            }
+          },
+          "leftBlinker": {
+            "type": "boolean"
+          },
+          "rightBlinker": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled",
+          "gasDEPRECATED",
+          "brakeDEPRECATED",
+          "steeringTorqueDEPRECATED",
+          "cruiseControl",
+          "hudControl",
+          "actuators",
+          "activeDEPRECATED",
+          "rollDEPRECATED",
+          "pitchDEPRECATED",
+          "latActive",
+          "longActive",
+          "orientationNED",
+          "angularVelocity",
+          "leftBlinker",
+          "rightBlinker"
+        ]
+      },
+      "logMonoTime": {
+        "type": "number"
+      },
+      "valid": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "carControl",
+      "logMonoTime",
+      "valid"
+    ]
+  }

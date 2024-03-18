@@ -1,0 +1,53 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Generated schema for Root",
+    "type": "object",
+    "properties": {
+      "uploaderState": {
+        "type": "object",
+        "properties": {
+          "immediateQueueSize": {
+            "type": "number"
+          },
+          "immediateQueueCount": {
+            "type": "number"
+          },
+          "rawQueueSize": {
+            "type": "number"
+          },
+          "rawQueueCount": {
+            "type": "number"
+          },
+          "lastTime": {
+            "type": "number"
+          },
+          "lastSpeed": {
+            "type": "number"
+          },
+          "lastFilename": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "immediateQueueSize",
+          "immediateQueueCount",
+          "rawQueueSize",
+          "rawQueueCount",
+          "lastTime",
+          "lastSpeed",
+          "lastFilename"
+        ]
+      },
+      "logMonoTime": {
+        "type": "number"
+      },
+      "valid": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "uploaderState",
+      "logMonoTime",
+      "valid"
+    ]
+  }

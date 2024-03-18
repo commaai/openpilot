@@ -1,0 +1,520 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Generated schema for Root",
+    "type": "object",
+    "properties": {
+      "pandaStates": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "voltage": {
+              "type": "number"
+            },
+            "current": {
+              "type": "number"
+            },
+            "ignitionLine": {
+              "type": "boolean"
+            },
+            "controlsAllowed": {
+              "type": "boolean"
+            },
+            "gasInterceptorDetectedDEPRECATED": {
+              "type": "boolean"
+            },
+            "startedSignalDetectedDEPRECATED": {
+              "type": "boolean"
+            },
+            "hasGpsDEPRECATED": {
+              "type": "boolean"
+            },
+            "rxBufferOverflow": {
+              "type": "number"
+            },
+            "txBufferOverflow": {
+              "type": "number"
+            },
+            "gmlanSendErrs": {
+              "type": "number"
+            },
+            "pandaType": {
+              "type": "string"
+            },
+            "fanSpeedRpmDEPRECATED": {
+              "type": "number"
+            },
+            "usbPowerModeDEPRECATED": {
+              "type": "string"
+            },
+            "ignitionCan": {
+              "type": "boolean"
+            },
+            "safetyModel": {
+              "type": "string"
+            },
+            "faultStatus": {
+              "type": "string"
+            },
+            "powerSaveEnabled": {
+              "type": "boolean"
+            },
+            "uptime": {
+              "type": "number"
+            },
+            "faults": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "relayMalfunction",
+                  "unusedInterruptHandled",
+                  "interruptRateCan1",
+                  "interruptRateCan2",
+                  "interruptRateCan3",
+                  "interruptRateTach",
+                  "interruptRateGmlan",
+                  "interruptRateInterrupts",
+                  "interruptRateSpiDma",
+                  "interruptRateSpiCs",
+                  "interruptRateUart1",
+                  "interruptRateUart2",
+                  "interruptRateUart3",
+                  "interruptRateUart5",
+                  "interruptRateUartDma",
+                  "interruptRateUsb",
+                  "interruptRateTim1",
+                  "interruptRateTim3",
+                  "registerDivergent",
+                  "interruptRateKlineInit",
+                  "interruptRateClockSource",
+                  "interruptRateTick",
+                  "interruptRateExti",
+                  "interruptRateSpi",
+                  "interruptRateUart7",
+                  "sirenMalfunction",
+                  "heartbeatLoopWatchdog"
+                ]
+              }
+            },
+            "safetyRxInvalid": {
+              "type": "number"
+            },
+            "safetyParamDEPRECATED": {
+              "type": "number"
+            },
+            "harnessStatus": {
+              "type": "string"
+            },
+            "heartbeatLost": {
+              "type": "boolean"
+            },
+            "alternativeExperience": {
+              "type": "number"
+            },
+            "safetyTxBlocked": {
+              "type": "number"
+            },
+            "interruptLoad": {
+              "type": "number"
+            },
+            "safetyParam2DEPRECATED": {
+              "type": "number"
+            },
+            "safetyParam": {
+              "type": "number"
+            },
+            "fanPower": {
+              "type": "number"
+            },
+            "canState0": {
+              "type": "object",
+              "properties": {
+                "busOff": {
+                  "type": "boolean"
+                },
+                "busOffCnt": {
+                  "type": "number"
+                },
+                "errorWarning": {
+                  "type": "boolean"
+                },
+                "errorPassive": {
+                  "type": "boolean"
+                },
+                "lastError": {
+                  "type": "string"
+                },
+                "lastStoredError": {
+                  "type": "string"
+                },
+                "lastDataError": {
+                  "type": "string"
+                },
+                "lastDataStoredError": {
+                  "type": "string"
+                },
+                "receiveErrorCnt": {
+                  "type": "number"
+                },
+                "transmitErrorCnt": {
+                  "type": "number"
+                },
+                "totalErrorCnt": {
+                  "type": "number"
+                },
+                "totalTxLostCnt": {
+                  "type": "number"
+                },
+                "totalRxLostCnt": {
+                  "type": "number"
+                },
+                "totalTxCnt": {
+                  "type": "number"
+                },
+                "totalRxCnt": {
+                  "type": "number"
+                },
+                "totalFwdCnt": {
+                  "type": "number"
+                },
+                "canSpeed": {
+                  "type": "number"
+                },
+                "canDataSpeed": {
+                  "type": "number"
+                },
+                "canfdEnabled": {
+                  "type": "boolean"
+                },
+                "brsEnabled": {
+                  "type": "boolean"
+                },
+                "canfdNonIso": {
+                  "type": "boolean"
+                },
+                "irq0CallRate": {
+                  "type": "number"
+                },
+                "irq1CallRate": {
+                  "type": "number"
+                },
+                "irq2CallRate": {
+                  "type": "number"
+                },
+                "canCoreResetCnt": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "busOff",
+                "busOffCnt",
+                "errorWarning",
+                "errorPassive",
+                "lastError",
+                "lastStoredError",
+                "lastDataError",
+                "lastDataStoredError",
+                "receiveErrorCnt",
+                "transmitErrorCnt",
+                "totalErrorCnt",
+                "totalTxLostCnt",
+                "totalRxLostCnt",
+                "totalTxCnt",
+                "totalRxCnt",
+                "totalFwdCnt",
+                "canSpeed",
+                "canDataSpeed",
+                "canfdEnabled",
+                "brsEnabled",
+                "canfdNonIso",
+                "irq0CallRate",
+                "irq1CallRate",
+                "irq2CallRate",
+                "canCoreResetCnt"
+              ]
+            },
+            "canState1": {
+              "type": "object",
+              "properties": {
+                "busOff": {
+                  "type": "boolean"
+                },
+                "busOffCnt": {
+                  "type": "number"
+                },
+                "errorWarning": {
+                  "type": "boolean"
+                },
+                "errorPassive": {
+                  "type": "boolean"
+                },
+                "lastError": {
+                  "type": "string"
+                },
+                "lastStoredError": {
+                  "type": "string"
+                },
+                "lastDataError": {
+                  "type": "string"
+                },
+                "lastDataStoredError": {
+                  "type": "string"
+                },
+                "receiveErrorCnt": {
+                  "type": "number"
+                },
+                "transmitErrorCnt": {
+                  "type": "number"
+                },
+                "totalErrorCnt": {
+                  "type": "number"
+                },
+                "totalTxLostCnt": {
+                  "type": "number"
+                },
+                "totalRxLostCnt": {
+                  "type": "number"
+                },
+                "totalTxCnt": {
+                  "type": "number"
+                },
+                "totalRxCnt": {
+                  "type": "number"
+                },
+                "totalFwdCnt": {
+                  "type": "number"
+                },
+                "canSpeed": {
+                  "type": "number"
+                },
+                "canDataSpeed": {
+                  "type": "number"
+                },
+                "canfdEnabled": {
+                  "type": "boolean"
+                },
+                "brsEnabled": {
+                  "type": "boolean"
+                },
+                "canfdNonIso": {
+                  "type": "boolean"
+                },
+                "irq0CallRate": {
+                  "type": "number"
+                },
+                "irq1CallRate": {
+                  "type": "number"
+                },
+                "irq2CallRate": {
+                  "type": "number"
+                },
+                "canCoreResetCnt": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "busOff",
+                "busOffCnt",
+                "errorWarning",
+                "errorPassive",
+                "lastError",
+                "lastStoredError",
+                "lastDataError",
+                "lastDataStoredError",
+                "receiveErrorCnt",
+                "transmitErrorCnt",
+                "totalErrorCnt",
+                "totalTxLostCnt",
+                "totalRxLostCnt",
+                "totalTxCnt",
+                "totalRxCnt",
+                "totalFwdCnt",
+                "canSpeed",
+                "canDataSpeed",
+                "canfdEnabled",
+                "brsEnabled",
+                "canfdNonIso",
+                "irq0CallRate",
+                "irq1CallRate",
+                "irq2CallRate",
+                "canCoreResetCnt"
+              ]
+            },
+            "canState2": {
+              "type": "object",
+              "properties": {
+                "busOff": {
+                  "type": "boolean"
+                },
+                "busOffCnt": {
+                  "type": "number"
+                },
+                "errorWarning": {
+                  "type": "boolean"
+                },
+                "errorPassive": {
+                  "type": "boolean"
+                },
+                "lastError": {
+                  "type": "string"
+                },
+                "lastStoredError": {
+                  "type": "string"
+                },
+                "lastDataError": {
+                  "type": "string"
+                },
+                "lastDataStoredError": {
+                  "type": "string"
+                },
+                "receiveErrorCnt": {
+                  "type": "number"
+                },
+                "transmitErrorCnt": {
+                  "type": "number"
+                },
+                "totalErrorCnt": {
+                  "type": "number"
+                },
+                "totalTxLostCnt": {
+                  "type": "number"
+                },
+                "totalRxLostCnt": {
+                  "type": "number"
+                },
+                "totalTxCnt": {
+                  "type": "number"
+                },
+                "totalRxCnt": {
+                  "type": "number"
+                },
+                "totalFwdCnt": {
+                  "type": "number"
+                },
+                "canSpeed": {
+                  "type": "number"
+                },
+                "canDataSpeed": {
+                  "type": "number"
+                },
+                "canfdEnabled": {
+                  "type": "boolean"
+                },
+                "brsEnabled": {
+                  "type": "boolean"
+                },
+                "canfdNonIso": {
+                  "type": "boolean"
+                },
+                "irq0CallRate": {
+                  "type": "number"
+                },
+                "irq1CallRate": {
+                  "type": "number"
+                },
+                "irq2CallRate": {
+                  "type": "number"
+                },
+                "canCoreResetCnt": {
+                  "type": "number"
+                }
+              },
+              "required": [
+                "busOff",
+                "busOffCnt",
+                "errorWarning",
+                "errorPassive",
+                "lastError",
+                "lastStoredError",
+                "lastDataError",
+                "lastDataStoredError",
+                "receiveErrorCnt",
+                "transmitErrorCnt",
+                "totalErrorCnt",
+                "totalTxLostCnt",
+                "totalRxLostCnt",
+                "totalTxCnt",
+                "totalRxCnt",
+                "totalFwdCnt",
+                "canSpeed",
+                "canDataSpeed",
+                "canfdEnabled",
+                "brsEnabled",
+                "canfdNonIso",
+                "irq0CallRate",
+                "irq1CallRate",
+                "irq2CallRate",
+                "canCoreResetCnt"
+              ]
+            },
+            "safetyRxChecksInvalid": {
+              "type": "boolean"
+            },
+            "spiChecksumErrorCount": {
+              "type": "number"
+            },
+            "fanStallCount": {
+              "type": "number"
+            },
+            "sbu1Voltage": {
+              "type": "number"
+            },
+            "sbu2Voltage": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "voltage",
+            "current",
+            "ignitionLine",
+            "controlsAllowed",
+            "gasInterceptorDetectedDEPRECATED",
+            "startedSignalDetectedDEPRECATED",
+            "hasGpsDEPRECATED",
+            "rxBufferOverflow",
+            "txBufferOverflow",
+            "gmlanSendErrs",
+            "pandaType",
+            "fanSpeedRpmDEPRECATED",
+            "usbPowerModeDEPRECATED",
+            "ignitionCan",
+            "safetyModel",
+            "faultStatus",
+            "powerSaveEnabled",
+            "uptime",
+            "faults",
+            "safetyRxInvalid",
+            "safetyParamDEPRECATED",
+            "harnessStatus",
+            "heartbeatLost",
+            "alternativeExperience",
+            "safetyTxBlocked",
+            "interruptLoad",
+            "safetyParam2DEPRECATED",
+            "safetyParam",
+            "fanPower",
+            "canState0",
+            "canState1",
+            "canState2",
+            "safetyRxChecksInvalid",
+            "spiChecksumErrorCount",
+            "fanStallCount",
+            "sbu1Voltage",
+            "sbu2Voltage"
+          ]
+        }
+      },
+      "logMonoTime": {
+        "type": "number"
+      },
+      "valid": {
+        "type": "boolean"
+      }
+    },
+    "required": [
+      "pandaStates",
+      "logMonoTime",
+      "valid"
+    ]
+  }
