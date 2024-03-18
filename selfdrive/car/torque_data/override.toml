@@ -3,7 +3,7 @@ legend = ["LAT_ACCEL_FACTOR", "MAX_LAT_ACCEL_MEASURED", "FRICTION"]
 # Nissan appears to have torque
 "XTRAIL" = [nan, 1.5, nan]
 "ALTIMA" = [nan, 1.5, nan]
-"NISSAN LEAF 2018 Instrument Cluster" = [nan, 1.5, nan]
+"LEAF_IC" = [nan, 1.5, nan]
 "LEAF" = [nan, 1.5, nan]
 "ROGUE" = [nan, 1.5, nan]
 
@@ -69,7 +69,7 @@ legend = ["LAT_ACCEL_FACTOR", "MAX_LAT_ACCEL_MEASURED", "FRICTION"]
 "STARIA_4TH_GEN" = [1.8, 2.0, 0.15]
 
 # Dashcam or fallback configured as ideal car
-"mock" = [10.0, 10, 0.0]
+"MOCK" = [10.0, 10, 0.0]
 
 # Manually checked
 "CIVIC_2022" = [2.5, 1.2, 0.15]
