@@ -5,7 +5,7 @@
 
 `channel` - a named version of openpilot (git branch, casync caidx)<br>
 `prebuilt` - a channel prebuilt for the tici with only required files for running openpilot and identifying the channel<br>
-`release` - prebuilt with `ALLOW_DEBUG` false (`RELEASE=1` when building panda, `nightly`, `release3`)<br>
+`release` - a prebuilt channel with `ALLOW_DEBUG=false` (`RELEASE=1` when building panda, ex: `nightly`, `release3`)<br>
 
 ## creating casync channel
 
@@ -25,4 +25,4 @@ release/create_casync_prebuilt.sh
 
 ## release channel
 
-to create a release channel, set `RELEASE=1` environment variable
+to create a release channel, set `RELEASE=1` environment variable when running build script
