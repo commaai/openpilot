@@ -116,7 +116,7 @@ class SimulatedCar:
       'controlsAllowed': True,
       'safetyModel': 'hondaNidec',
       'alternativeExperience': self.sm["carParams"].alternativeExperience,
-      'safetyParam': Panda.FLAG_HONDA_GAS_INTERCEPTOR
+      'safetyParam': 0,
     }
     self.pm.send('pandaStates', dat)
 
