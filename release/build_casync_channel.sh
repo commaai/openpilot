@@ -4,9 +4,9 @@ set -ex
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
-export CASYNC_DIR="${CASYNC_DIR:=/tmp/casync}"
-export SOURCE_DIR="$(git -C $DIR rev-parse --show-toplevel)"
-export BUILD_DIR="${BUILD_DIR:=$(mktemp -d)}"
+CASYNC_DIR="${CASYNC_DIR:=/tmp/casync}"
+SOURCE_DIR="$(git -C $DIR rev-parse --show-toplevel)"
+BUILD_DIR="${BUILD_DIR:=$(mktemp -d)}"
 
 echo "Creating casync channel from $SOURCE_DIR to $CASYNC_DIR"
 

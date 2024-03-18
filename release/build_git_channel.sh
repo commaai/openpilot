@@ -6,8 +6,8 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
 cd $DIR
 
-BUILD_DIR=/data/openpilot
-SOURCE_DIR="$(git rev-parse --show-toplevel)"
+SOURCE_DIR="$(git -C $DIR rev-parse --show-toplevel)"
+BUILD_DIR="${BUILD_DIR:=$(mktemp -d)}"
 
 # set git identity
 source $DIR/identity.sh
