@@ -15,7 +15,6 @@
 # run on a tici, within the directory you want to create the channel from
 # creates a prebuilt version of openpilot into BUILD_DIR and outputs the caidx
 # and other casync files into CASYNC_DIR for uploading to openpilot-channels
-RELEASE=1                          \
 BUILD_DIR=/data/openpilot_build    \
 CASYNC_DIR=/data/casync            \
 OPENPILOT_CHANNEL=nightly          \
@@ -23,3 +22,7 @@ release/build_casync_channel.sh
 ```
 
 `upload_casync_channel.sh` - helper for uploading a casync channel to `openpilot-channels`
+
+## release channel
+
+to create a release channel, set `RELEASE=1` environment variable

@@ -11,9 +11,10 @@ cd $BUILD_DIR
 # Build
 export PYTHONPATH="$BUILD_DIR"
 
+rm -f panda/board/obj/panda.bin.signed
+rm -f panda/board/obj/panda_h7.bin.signed
+
 if [ -n "$RELEASE" ]; then
-  rm -f panda/board/obj/panda.bin.signed
-  rm -f panda/board/obj/panda_h7.bin.signed
   export CERT=/data/pandaextra/certs/release
 fi
 
