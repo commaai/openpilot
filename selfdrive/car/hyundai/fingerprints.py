@@ -900,16 +900,19 @@ FW_VERSIONS = {
   },
   CAR.GENESIS_G90: {
     (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x00bcsh8p54  E25\x00\x00\x00\x00\x00\x00\x00SHI0G50NH0\xff\x80\xc2*',
       b'\xf1\x87VDGMD15352242DD3w\x87gxwvgv\x87wvw\x88wXwffVfffUfw\x88o\xff\x06J\xf1\x81E14\x00\x00\x00\x00\x00\x00\x00\xf1\x00bcshcm49  E14\x00\x00\x00\x00\x00\x00\x00SHI0G50NB1tc5\xb7',
       b'\xf1\x87VDGMD15866192DD3x\x88x\x89wuFvvfUf\x88vWwgwwwvfVgx\x87o\xff\xbc^\xf1\x81E14\x00\x00\x00\x00\x00\x00\x00\xf1\x00bcshcm49  E14\x00\x00\x00\x00\x00\x00\x00SHI0G50NB1tc5\xb7',
       b'\xf1\x87VDHMD16446682DD3WwwxxvGw\x88\x88\x87\x88\x88whxx\x87\x87\x87\x85fUfwu_\xffT\xf8\xf1\x81E14\x00\x00\x00\x00\x00\x00\x00\xf1\x00bcshcm49  E14\x00\x00\x00\x00\x00\x00\x00SHI0G50NB1tc5\xb7',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00HI__ SCC F-CUP      1.00 1.01 96400-D2100         ',
+      b'\xf1\x00HI__ SCC FHCUP      1.00 1.02 99110-D2100         ',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00HI  LKAS AT USA LHD 1.00 1.00 95895-D2020 160302',
       b'\xf1\x00HI  LKAS AT USA LHD 1.00 1.00 95895-D2030 170208',
+      b'\xf1\x00HI  MFC  AT USA LHD 1.00 1.03 99211-D2000 190831',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x810000000000\x00',
