@@ -89,7 +89,8 @@ class CarInterfaceBase(ABC):
     self.cp_loopback = self.CS.get_loopback_can_parser(CP)
     self.can_parsers = [self.cp, self.cp_cam, self.cp_adas, self.cp_body, self.cp_loopback]
 
-    self.CC: CarControllerBase = CarController(self.cp.dbc_name, CP, self.VM)
+    dbc_name = "" if self.cp is None else self.cp.dbc_anme
+    self.CC: CarControllerBase = CarController(dbc_name, CP, self.VM)
 
   def apply(self, c: car.CarControl, now_nanos: int) -> tuple[car.CarControl.Actuators, list[tuple[int, int, bytes, int]]]:
     return self.CC.update(c, self.CS, now_nanos)
@@ -433,6 +434,10 @@ class CarStateBase(ABC):
     return d.get(gear.upper(), GearShifter.unknown)
 
   @staticmethod
+  def get_can_parser(CP):
+    return None
+
+  @staticmethod
   def get_cam_can_parser(CP):
     return None
 
@@ -453,6 +458,9 @@ SendCan = tuple[int, int, bytes, int]
 
 
 class CarControllerBase(ABC):
+  def __init__(self, dbc_name: str, CP, VM):
+    pass
+
   @abstractmethod
   def update(self, CC: car.CarControl.Actuators, CS: car.CarState, now_nanos: int) -> tuple[car.CarControl.Actuators, list[SendCan]]:
     pass
