@@ -97,6 +97,9 @@ class CarInterfaceBase(ABC):
     if CarController is not None:
       self.CC = CarController(self.cp.dbc_name, CP, self.VM)
 
+  def apply(self, c: car.CarControl, now_nanos: int) -> tuple[car.CarControl.Actuators, list[bytes]]:
+    return self.CC.update(c, self.CS, now_nanos)
+
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
     return ACCEL_MIN, ACCEL_MAX
@@ -250,9 +253,6 @@ class CarInterfaceBase(ABC):
 
     return reader
 
-  @abstractmethod
-  def apply(self, c: car.CarControl, now_nanos: int) -> tuple[car.CarControl.Actuators, list[bytes]]:
-    pass
 
   def create_common_events(self, cs_out, extra_gears=None, pcm_enable=True, allow_enable=True,
                            enable_buttons=(ButtonType.accelCruise, ButtonType.decelCruise)):

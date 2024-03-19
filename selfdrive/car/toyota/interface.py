@@ -203,5 +203,3 @@ class CarInterface(CarInterfaceBase):
 
   # pass in a car.CarControl
   # to be called @ 100hz
-  def apply(self, c, now_nanos):
-    return self.CC.update(c, self.CS, now_nanos)

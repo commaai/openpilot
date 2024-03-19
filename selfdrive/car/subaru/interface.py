@@ -115,5 +115,3 @@ class CarInterface(CarInterfaceBase):
     if CP.flags & SubaruFlags.DISABLE_EYESIGHT:
       disable_ecu(logcan, sendcan, bus=2, addr=GLOBAL_ES_ADDR, com_cont_req=b'\x28\x03\x01')
 
-  def apply(self, c, now_nanos):
-    return self.CC.update(c, self.CS, now_nanos)
