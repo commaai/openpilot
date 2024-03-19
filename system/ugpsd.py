@@ -11,6 +11,7 @@ from cereal import log
 import cereal.messaging as messaging
 from openpilot.common.retry import retry
 from openpilot.common.swaglog import cloudlog
+from openpilot.system.hardware import PC
 from openpilot.system.qcomgpsd.qcomgpsd import at_cmd, wait_for_modem
 
 
@@ -25,7 +26,8 @@ def checksum(s: str):
 
 class Unicore:
   def __init__(self):
-    self.s = serial.Serial('/dev/ttyHS0', 115200)
+    tty = "USB0" if PC else "HS0"
+    self.s = serial.Serial('/dev/tty' + tty, 115200)
     self.s.timeout = 1
     self.s.writeTimeout = 1
     self.s.newline = b'\r\n'
@@ -148,8 +150,10 @@ def setup(u):
   if "SKIP_SETUP" in os.environ:
     return
 
-  #at_cmd('AT+CGPS=0')
-  at_cmd('AT+CGPS=1')
+  if not PC:
+    wait_for_modem("AT+CGPS?")
+    #at_cmd('AT+CGPS=0')
+    at_cmd('AT+CGPS=1')
   time.sleep(1.0)
 
   # reset with cold start
@@ -189,8 +193,6 @@ def setup(u):
 
 
 def main():
-  wait_for_modem("AT+CGPS?")
-
   u = Unicore()
   setup(u)
 
