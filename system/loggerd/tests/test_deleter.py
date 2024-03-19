@@ -159,13 +159,15 @@ class TestDeleter(UploaderTestCase):
         self.make_file_with_data(f_dir=self.seg_format2.format(0), fn=self.f_type),
       ],
     ]
-    flattened = [item for group in created_files for item in group]  # convert created_files to flat array
+    # convert created_files to flat array
+    flattened = [item for group in created_files for item in group]
     delete_order = self.get_delete_order(flattened)
 
     index = 0
     for candidates_for_deletion in created_files:
       offset = len(candidates_for_deletion)
-      deleted = delete_order[index:index + offset]  # Checking if the files have been deleted in the correct order.
+      # Checking if the files have been deleted in the correct order.
+      deleted = delete_order[index:index + offset]
       self.assertCountEqual(candidates_for_deletion, deleted, "Some files or directories have been deleted in a different order.")
       index += offset
 

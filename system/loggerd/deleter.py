@@ -53,10 +53,11 @@ def deleter_thread(exit_event):
       all_contents_in_logs_dir = os.listdir(Paths.log_root())
 
       directories = [directory for directory in all_contents_in_logs_dir if os.path.isdir(os.path.join(Paths.log_root(), directory))]
-      directories = sorted(directories, key=get_directory_sort)  # Sort directories by creation time.
+      # Sort directories by creation time.
+      directories = sorted(directories, key=get_directory_sort)
       files = [file for file in all_contents_in_logs_dir if os.path.isfile(os.path.join(Paths.log_root(), file))]
-
-      files_sorted_for_deletion = files + directories  # form list of files for deletion from files and directories.
+      # form list of files for deletion from files and directories.
+      files_sorted_for_deletion = files + directories
 
       # skip deleting most recent N preserved segments (and their prior segment)
       preserved_segments = get_preserved_segments(files_sorted_for_deletion)
