@@ -4,7 +4,7 @@ from openpilot.selfdrive.car.ford.values import CAR
 Ecu = car.CarParams.Ecu
 
 FW_VERSIONS = {
-  CAR.BRONCO_SPORT_MK1: {
+  CAR.FORD_BRONCO_SPORT_MK1: {
     (Ecu.eps, 0x730, None): [
       b'LX6C-14D003-AH\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LX6C-14D003-AK\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -23,7 +23,7 @@ FW_VERSIONS = {
       b'M1PT-14F397-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
-  CAR.ESCAPE_MK4: {
+  CAR.FORD_ESCAPE_MK4: {
     (Ecu.eps, 0x730, None): [
       b'LX6C-14D003-AF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LX6C-14D003-AH\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -46,7 +46,7 @@ FW_VERSIONS = {
       b'LV4T-14F397-GG\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
-  CAR.EXPLORER_MK6: {
+  CAR.FORD_EXPLORER_MK6: {
     (Ecu.eps, 0x730, None): [
       b'L1MC-14D003-AJ\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'L1MC-14D003-AK\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -74,7 +74,7 @@ FW_VERSIONS = {
       b'LC5T-14F397-AH\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
-  CAR.F_150_MK14: {
+  CAR.FORD_F_150_MK14: {
     (Ecu.eps, 0x730, None): [
       b'ML3V-14D003-BC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
@@ -89,7 +89,7 @@ FW_VERSIONS = {
       b'PJ6T-14H102-ABJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
-  CAR.F_150_LIGHTNING_MK1: {
+  CAR.FORD_F_150_LIGHTNING_MK1: {
     (Ecu.abs, 0x760, None): [
       b'PL38-2D053-AA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
@@ -100,7 +100,7 @@ FW_VERSIONS = {
       b'ML3T-14D049-AL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
-  CAR.MUSTANG_MACH_E_MK1: {
+  CAR.FORD_MUSTANG_MACH_E_MK1: {
     (Ecu.eps, 0x730, None): [
       b'LJ9C-14D003-AM\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'LJ9C-14D003-CC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -115,7 +115,7 @@ FW_VERSIONS = {
       b'ML3T-14H102-ABS\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
-  CAR.FOCUS_MK4: {
+  CAR.FORD_FOCUS_MK4: {
     (Ecu.eps, 0x730, None): [
       b'JX6C-14D003-AH\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
@@ -129,7 +129,7 @@ FW_VERSIONS = {
       b'JX7T-14F397-AH\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
-  CAR.MAVERICK_MK1: {
+  CAR.FORD_MAVERICK_MK1: {
     (Ecu.eps, 0x730, None): [
       b'NZ6C-14D003-AL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],

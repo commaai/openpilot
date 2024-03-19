@@ -10,19 +10,19 @@ Ecu = car.CarParams.Ecu
 Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 
 class CAR(Platforms):
-  AP1_MODELS = PlatformConfig(
+  TESLA_AP1_MODELS = PlatformConfig(
     [CarDocs("Tesla AP1 Model S", "All")],
     CarSpecs(mass=2100., wheelbase=2.959, steerRatio=15.0),
     dbc_dict('tesla_powertrain', 'tesla_radar_bosch_generated', chassis_dbc='tesla_can')
   )
-  AP2_MODELS = PlatformConfig(
+  TESLA_AP2_MODELS = PlatformConfig(
     [CarDocs("Tesla AP2 Model S", "All")],
-    AP1_MODELS.specs,
-    AP1_MODELS.dbc_dict
+    TESLA_AP1_MODELS.specs,
+    TESLA_AP1_MODELS.dbc_dict
   )
-  MODELS_RAVEN = PlatformConfig(
+  TESLA_MODELS_RAVEN = PlatformConfig(
     [CarDocs("Tesla Model S Raven", "All")],
-    AP1_MODELS.specs,
+    TESLA_AP1_MODELS.specs,
     dbc_dict('tesla_powertrain', 'tesla_radar_continental_generated', chassis_dbc='tesla_can')
   )
 
