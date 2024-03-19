@@ -4,7 +4,6 @@ from collections.abc import Callable
 
 from cereal import car
 from openpilot.common.params import Params
-from openpilot.common.basedir import BASEDIR
 from openpilot.system.version import is_comma_remote, is_tested_branch
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
@@ -48,17 +47,8 @@ def load_interfaces(brand_names):
   for brand_name in brand_names:
     path = f'openpilot.selfdrive.car.{brand_name}'
     CarInterface = __import__(path + '.interface', fromlist=['CarInterface']).CarInterface
-
-    if os.path.exists(BASEDIR + '/' + path.replace('.', '/') + '/carstate.py'):
-      CarState = __import__(path + '.carstate', fromlist=['CarState']).CarState
-    else:
-      CarState = None
-
-    if os.path.exists(BASEDIR + '/' + path.replace('.', '/') + '/carcontroller.py'):
-      CarController = __import__(path + '.carcontroller', fromlist=['CarController']).CarController
-    else:
-      CarController = None
-
+    CarState = __import__(path + '.carstate', fromlist=['CarState']).CarState
+    CarController = __import__(path + '.carcontroller', fromlist=['CarController']).CarController
     for model_name in brand_names[brand_name]:
       ret[model_name] = (CarInterface, CarController, CarState)
   return ret
