@@ -29,4 +29,3 @@ class CarInterface(CarInterfaceBase):
     ret.vEgoRaw = self.sm[gps_sock].speed
 
     return ret
-

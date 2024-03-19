@@ -200,6 +200,3 @@ class CarInterface(CarInterfaceBase):
     ret.events = events.to_msg()
 
     return ret
-
-  # pass in a car.CarControl
-  # to be called @ 100hz

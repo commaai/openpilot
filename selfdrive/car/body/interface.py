@@ -37,4 +37,3 @@ class CarInterface(CarInterfaceBase):
     self.frame += 1
 
     return ret
-
