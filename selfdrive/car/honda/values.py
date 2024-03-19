@@ -209,7 +209,7 @@ class CAR(Platforms):
     dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
     flags=HondaFlags.NIDEC_ALT_SCM_MESSAGES,
   )
-  FREED = HondaNidecPlatformConfig(
+  HONDA_FREED = HondaNidecPlatformConfig(
     [HondaCarDocs("Honda Freed 2020", min_steer_speed=12. * CV.MPH_TO_MS)],
     CarSpecs(mass=3086. * CV.LB_TO_KG, wheelbase=2.74, steerRatio=13.06, centerToFrontRatio=0.39, tireStiffnessFactor=0.75),  # mostly copied from FIT
     dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),

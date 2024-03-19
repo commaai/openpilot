@@ -774,7 +774,7 @@ FW_VERSIONS = {
       b'77959-T5R-A230\x00\x00',
     ],
   },
-  CAR.FREED: {
+  CAR.HONDA_FREED: {
     (Ecu.gateway, 0x18daeff1, None): [
       b'38897-TDK-J010\x00\x00',
     ],
