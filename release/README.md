@@ -12,8 +12,8 @@
 
 | channel      | type        | description                                                       |
 | -----------  | ----------- | ----------                                                        |
-| release3     | `release`   | channel for end users                                             |
-| staging      | `release`   | staging channel for release3                                      |
+| release3     | `release`   | stable release of openpilot                                       |
+| staging      | `release`   | release candidate of openpilot for final verification             |
 | nightly      | `release`   | generated nightly from last commit passing CI tests               |
 | master       | `prebuilt`  | current master commit with experimental features enabled          |
 | git branches | `git`       | installed manually, experimental features enabled, build required |
@@ -33,7 +33,7 @@ OPENPILOT_CHANNEL=nightly          \
 release/create_casync_prebuilt.sh
 ```
 
-`upload_casync_release.sh` - helper for uploading a casync release to `openpilot-releases`
+`upload_casync_release.sh` - helper for uploading a casync build to `openpilot-releases`
 
 
 ## release builds
