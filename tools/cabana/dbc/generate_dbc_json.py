@@ -6,7 +6,7 @@ from openpilot.selfdrive.car.values import create_platform_map
 
 
 def generate_dbc_json() -> str:
-  dbc_map = create_platform_map(lambda platform: platform.config.dbc_dict["pt"] if platform != "mock" else None)
+  dbc_map = create_platform_map(lambda platform: platform.config.dbc_dict["pt"] if platform != "MOCK" else None)
   return json.dumps(dict(sorted(dbc_map.items())), indent=2)
 
 

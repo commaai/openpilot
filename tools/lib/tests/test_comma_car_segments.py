@@ -19,7 +19,7 @@ class TestCommaCarSegments(unittest.TestCase):
   def test_download_segment(self):
     database = get_comma_car_segments_database()
 
-    fp = "SUBARU FORESTER 2019"
+    fp = "FORESTER"
 
     segment = database[fp][0]
 

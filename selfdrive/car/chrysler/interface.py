@@ -51,14 +51,14 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 0.00006
 
     # Ram
-    elif candidate == CAR.RAM_1500:
+    elif candidate == CAR.RAM_1500_5TH_GEN:
       ret.steerActuatorDelay = 0.2
       ret.wheelbase = 3.88
       # Older EPS FW allow steer to zero
       if any(fw.ecu == 'eps' and b"68" < fw.fwVersion[:4] <= b"6831" for fw in car_fw):
         ret.minSteerSpeed = 0.
 
-    elif candidate == CAR.RAM_HD:
+    elif candidate == CAR.RAM_HD_5TH_GEN:
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, 1.0, False)
 
