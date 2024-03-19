@@ -1,5 +1,6 @@
 import sys
 import json
+import base64
 from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.logreader import LogReader
 from mcap.writer import Writer
@@ -34,21 +35,41 @@ def transform_json(json_data, arr_key):
     json_data[arr_key] = newTempC
     return json_data
 
+def transformToFoxgloveSchema(jsonMsg):
+    bytesImgData = jsonMsg.get("thumbnail").get("thumbnail").encode('latin1')
+    base64ImgData = base64.b64encode(bytesImgData)
+    base64_string = base64ImgData.decode('utf-8')
+    foxMsg = {
+        "timestamp":{
+            "sec":"0",
+            "nsec":jsonMsg.get("logMonoTime")
+        },
+        "frame_id":str(jsonMsg.get("thumbnail").get("frameId")),
+        "data": base64_string,
+        "format": "jpeg"
+    }
+    return foxMsg
+
 # Get logs from a path, and convert them into mcap
 def createMcap(logPaths):
     segment_counter = 0
     for logPath in logPaths:
         print(segment_counter)
+        # if segment_counter == 1:
+        #     break
         segment_counter+=1
         rlog = LogReader(logPath)
         for msg in rlog:
             jsonMsg = json.loads(json.dumps(convertBytesToString(msg.to_dict())))
-            if msg.which() == "deviceState":
+            if msg.which() == "thumbnail":
+                jsonMsg = transformToFoxgloveSchema(jsonMsg)
+            elif msg.which() == "deviceState":
                 jsonMsg["deviceState"] = transform_json(jsonMsg.get("deviceState"), "cpuTempC")
+
             if msg.which() not in schemas:
                 schema = loadSchema(msg.which())
                 schema_id = writer.register_schema(
-                    name= msg.which(),
+                    name= json.loads(schema).get("title"),
                     encoding="jsonschema",
                     data=schema.encode()
                 )
@@ -62,9 +83,9 @@ def createMcap(logPaths):
                 channels[msg.which()] = channel_id
             writer.add_message(
                 channel_id=channels[msg.which()],
-                log_time=jsonMsg.get("logMonoTime"),
+                log_time=msg.logMonoTime,
                 data=json.dumps(jsonMsg).encode("utf-8"),
-                publish_time=jsonMsg.get("logMonoTime")
+                publish_time=msg.logMonoTime
             )
 
 # TODO: Check if foxglove is installed
