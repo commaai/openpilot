@@ -27,7 +27,7 @@ void Thneed::load(const char *filename) {
     auto mobj = obj;
     int sz = mobj["size"].template get<int>();
     cl_mem clbuf = NULL;
-    if (mobj["buffer_id"].template get<std::string>().size() > 0) {
+    if (!mobj["buffer_id"].is_null() && mobj["buffer_id"].template get<std::string>().size() > 0) {
       // image buffer must already be allocated
       clbuf = real_mem[*(cl_mem*)(base64::decode_into<std::vector<std::uint8_t>>(mobj["buffer_id"].template get<std::string>()).data())];
       assert(mobj["needs_load"].template get<bool>() == false);
