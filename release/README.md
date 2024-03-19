@@ -12,7 +12,7 @@
 
 | channel      | type        | description                                                       |
 | -----------  | ----------- | ----------                                                        |
-| release3     | `release`   | stable release of openpilot                                       |
+| release      | `release`   | stable release of openpilot                                       |
 | staging      | `release`   | release candidate of openpilot for final verification             |
 | nightly      | `release`   | generated nightly from last commit passing CI tests               |
 | master       | `prebuilt`  | current master commit with experimental features enabled          |
