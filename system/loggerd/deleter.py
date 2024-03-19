@@ -65,6 +65,7 @@ def deleter_thread(exit_event):
       # remove the earliest directory we can
       for delete_item in sorted(files_sorted_for_deletion, key=lambda d: (d in DELETE_LAST, d in preserved_segments)):
         delete_path = os.path.join(Paths.log_root(), delete_item)
+
         if os.path.isdir(delete_path) and any(name.endswith(".lock") for name in os.listdir(delete_path)):
           continue
 
