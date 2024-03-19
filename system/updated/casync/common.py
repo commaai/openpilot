@@ -54,7 +54,7 @@ def create_version_metadata_file(path: pathlib.Path, channel: str):
     f.write(json.dumps(create_version_metadata(channel, version, release_notes)))
 
 
-def create_casync_channel(target_dir: pathlib.Path, output_dir: pathlib.Path, channel: str):
+def create_casync_release(target_dir: pathlib.Path, output_dir: pathlib.Path, channel: str):
   caidx_file = output_dir / f"{channel}.caidx"
   run(["casync", "make", *CASYNC_ARGS, caidx_file, target_dir])
   digest = run(["casync", "digest", *CASYNC_ARGS, target_dir]).decode("utf-8").strip()
