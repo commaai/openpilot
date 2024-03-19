@@ -261,6 +261,7 @@ class PlatformConfig(Freezable):
   def __post_init__(self):
     self.init()
 
+
 class PlatformsType(EnumType):
   def __new__(metacls, cls, bases, classdict, *, boundary=None, _simple=False, **kwds):
     for key in classdict._member_names.keys():
