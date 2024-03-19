@@ -1,72 +1,19 @@
 #!/usr/bin/env python3
 import os
 import subprocess
-from typing import TypeVar
-from collections.abc import Callable
-from functools import lru_cache
+
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.swaglog import cloudlog
+from openpilot.common.utils import cache
+from openpilot.common.git import get_origin, get_branch, get_short_branch, get_normalized_origin, get_commit_date
+
 
 RELEASE_BRANCHES = ['release3-staging', 'release3', 'nightly']
 TESTED_BRANCHES = RELEASE_BRANCHES + ['devel', 'devel-staging']
 
 training_version: bytes = b"0.2.0"
 terms_version: bytes = b"2"
-
-_RT = TypeVar("_RT")
-def cache(user_function: Callable[..., _RT], /) -> Callable[..., _RT]:
-  return lru_cache(maxsize=None)(user_function)
-
-
-def run_cmd(cmd: list[str]) -> str:
-  return subprocess.check_output(cmd, encoding='utf8').strip()
-
-
-def run_cmd_default(cmd: list[str], default: str = "") -> str:
-  try:
-    return run_cmd(cmd)
-  except subprocess.CalledProcessError:
-    return default
-
-
-@cache
-def get_commit(branch: str = "HEAD") -> str:
-  return run_cmd_default(["git", "rev-parse", branch])
-
-
-@cache
-def get_commit_date(commit: str = "HEAD") -> str:
-  return run_cmd_default(["git", "show", "--no-patch", "--format='%ct %ci'", commit])
-
-
-@cache
-def get_short_branch() -> str:
-  return run_cmd_default(["git", "rev-parse", "--abbrev-ref", "HEAD"])
-
-
-@cache
-def get_branch() -> str:
-  return run_cmd_default(["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"])
-
-
-@cache
-def get_origin() -> str:
-  try:
-    local_branch = run_cmd(["git", "name-rev", "--name-only", "HEAD"])
-    tracking_remote = run_cmd(["git", "config", "branch." + local_branch + ".remote"])
-    return run_cmd(["git", "config", "remote." + tracking_remote + ".url"])
-  except subprocess.CalledProcessError:  # Not on a branch, fallback
-    return run_cmd_default(["git", "config", "--get", "remote.origin.url"])
-
-
-@cache
-def get_normalized_origin() -> str:
-  return get_origin() \
-    .replace("git@", "", 1) \
-    .replace(".git", "", 1) \
-    .replace("https://", "", 1) \
-    .replace(":", "/", 1)
 
 
 @cache
