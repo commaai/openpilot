@@ -67,7 +67,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     # Tucson having Santa Cruz camera and EPS for example
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model.value):
-        if car_model == CAR.SANTA_CRUZ_1ST_GEN:
+        if car_model == CAR.HYUNDAI_SANTA_CRUZ_1ST_GEN:
           raise unittest.SkipTest("Skip checking Santa Cruz for its parts")
 
         for code, _ in get_platform_codes(ecus[(Ecu.fwdCamera, 0x7c4, None)]):
@@ -108,9 +108,9 @@ class TestHyundaiFingerprint(unittest.TestCase):
 
           # Third and fourth character are usually EV/hybrid identifiers
           codes = {code.split(b"-")[0][:2] for code, _ in get_platform_codes(fws)}
-          if car_model == CAR.PALISADE:
+          if car_model == CAR.HYUNDAI_PALISADE:
             self.assertEqual(codes, {b"LX", b"ON"}, f"Car has unexpected platform codes: {car_model} {codes}")
-          elif car_model == CAR.KONA_EV and ecu[0] == Ecu.fwdCamera:
+          elif car_model == CAR.HYUNDAI_KONA_EV and ecu[0] == Ecu.fwdCamera:
             self.assertEqual(codes, {b"OE", b"OS"}, f"Car has unexpected platform codes: {car_model} {codes}")
           else:
             self.assertEqual(len(codes), 1, f"Car has multiple platform codes: {car_model} {codes}")
