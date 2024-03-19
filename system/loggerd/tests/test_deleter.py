@@ -135,7 +135,7 @@ class TestDeleter(UploaderTestCase):
     return file_paths
 
   def create_directories(self, base_dir: Path, depth: int, dirs_per_level: int, files_per_dir: int) -> list[Path]:
-    if depth <= 0:
+    if depth == 0:
       return []
     top_level_paths = []
     for _ in range(dirs_per_level):
