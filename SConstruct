@@ -203,6 +203,7 @@ env = Environment(
     "#third_party/catch2/include",
     "#third_party/libyuv/include",
     "#third_party/nlohmann",
+    "#third_party/tobiaslocker",
     "#third_party/linux/include",
     "#third_party/snpe/include",
     "#third_party/qrcode",
