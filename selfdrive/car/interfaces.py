@@ -89,7 +89,7 @@ class CarInterfaceBase(ABC):
     self.cp_loopback = self.CS.get_loopback_can_parser(CP)
     self.can_parsers = [self.cp, self.cp_cam, self.cp_adas, self.cp_body, self.cp_loopback]
 
-    self.CC = CarController(self.cp.dbc_name, CP, self.VM)
+    self.CC: CarControllerBase = CarController(self.cp.dbc_name, CP, self.VM)
 
   def apply(self, c: car.CarControl, now_nanos: int) -> tuple[car.CarControl.Actuators, list[tuple[int, int, bytes, int]]]:
     return self.CC.update(c, self.CS, now_nanos)
