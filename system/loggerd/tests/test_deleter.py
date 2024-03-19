@@ -135,7 +135,7 @@ class TestDeleter(UploaderTestCase):
     return file_paths
 
   def create_directories(self, base_dir: Path, depth: int, dirs_per_level: int, files_per_dir: int) -> list[Path]:
-    if depth == 0:
+    if depth <= 0:
       return []
     top_level_paths = []
     for _ in range(dirs_per_level):
@@ -159,13 +159,13 @@ class TestDeleter(UploaderTestCase):
         self.make_file_with_data(f_dir=self.seg_format2.format(0), fn=self.f_type),
       ],
     ]
-    flattened = [item for group in created_files for item in group] # convert created_files to flat array
+    flattened = [item for group in created_files for item in group]  # convert created_files to flat array
     delete_order = self.get_delete_order(flattened)
 
     index = 0
     for candidates_for_deletion in created_files:
       offset = len(candidates_for_deletion)
-      deleted = delete_order[index:index + offset] # Checking if the files have been deleted in the correct order.
+      deleted = delete_order[index:index + offset]  # Checking if the files have been deleted in the correct order.
       self.assertCountEqual(candidates_for_deletion, deleted, "Some files or directories have been deleted in a different order.")
       index += offset
 
