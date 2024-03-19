@@ -47,6 +47,7 @@ class ToyotaFlags(IntFlag):
   SMART_DSU = 2
   DISABLE_RADAR = 4
   RADAR_CAN_FILTER = 1024
+  GEAR_PACKET_HYBRID = 2048
 
   # Static flags
   TSS2 = 8
@@ -58,6 +59,8 @@ class ToyotaFlags(IntFlag):
   NO_STOP_TIMER = 256
   # these cars are speculated to allow stop and go when the DSU is unplugged or disabled with sDSU
   SNG_WITHOUT_DSU = 512
+  SECOC = 4096
+  ALT_GAS_MSG = 8192
 
 
 class Footnote(Enum):
@@ -264,6 +267,13 @@ class CAR(Platforms):
     ],
     RAV4_TSS2.specs,
     flags=ToyotaFlags.RADAR_ACC | ToyotaFlags.ANGLE_CONTROL,
+  )
+  RAV4_PRIME = PlatformConfig(
+    "TOYOTA RAV4 PRIME 2021",
+    [],
+    CarSpecs(mass=3650. * CV.LB_TO_KG, wheelbase=2.65, steerRatio=16.88, tireStiffnessFactor=0.5533),
+    dbc_dict('toyota_rav4_prime_generated', 'toyota_tss2_adas'),
+    flags=ToyotaFlags.TSS2 | ToyotaFlags.NO_STOP_TIMER | ToyotaFlags.NO_DSU | ToyotaFlags.SECOC | ToyotaFlags.ALT_GAS_MSG,
   )
   MIRAI = ToyotaTSS2PlatformConfig(
     "TOYOTA MIRAI 2021",  # TSS 2.5
