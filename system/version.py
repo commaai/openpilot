@@ -16,11 +16,16 @@ training_version: bytes = b"0.2.0"
 terms_version: bytes = b"2"
 
 
-@cache
-def get_version() -> str:
-  with open(os.path.join(BASEDIR, "common", "version.h")) as _versionf:
+def get_version(path: str = BASEDIR) -> str:
+  with open(os.path.join(path, "common", "version.h")) as _versionf:
     version = _versionf.read().split('"')[1]
   return version
+
+
+def get_release_notes(path: str = BASEDIR) -> str:
+  with open(os.path.join(path, "RELEASES.md"), "r") as f:
+    return f.read().split('\n\n', 1)[0]
+
 
 @cache
 def get_short_version() -> str:
