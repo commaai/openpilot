@@ -6,8 +6,8 @@ from openpilot.system.version import get_release_notes, get_version
 
 
 CASYNC_ARGS = ["--with=symlinks", "--with=permissions"]
-CHANNEL_MANIFEST_FILE = "channel.json" # file that contains details of the current release
-CASYNC_FILES = [CHANNEL_MANIFEST_FILE, ".caexclude"]
+VERSION_METADATA_FILE = "version.json" # file that contains details of the current release
+CASYNC_FILES = [VERSION_METADATA_FILE, ".caexclude"]
 
 
 def run(cmd):
@@ -38,7 +38,7 @@ def create_caexclude_file(path: pathlib.Path):
       f.write(f"!{file}\n")
 
 
-def create_manifest(channel, version, release_notes):
+def create_version_metadata(channel, version, release_notes):
   return {
     "name": channel,
     "openpilot": {
@@ -47,11 +47,11 @@ def create_manifest(channel, version, release_notes):
     }
   }
 
-def create_manifest_file(path: pathlib.Path, channel: str):
+def create_version_metadata_file(path: pathlib.Path, channel: str):
   version = get_version(str(path))
   release_notes = get_release_notes(str(path))
-  with open(path / CHANNEL_MANIFEST_FILE, "w") as f:
-    f.write(json.dumps(create_manifest(channel, version, release_notes)))
+  with open(path / VERSION_METADATA_FILE, "w") as f:
+    f.write(json.dumps(create_version_metadata(channel, version, release_notes)))
 
 
 def create_casync_channel(target_dir: pathlib.Path, output_dir: pathlib.Path, channel: str):
