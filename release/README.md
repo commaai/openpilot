@@ -38,4 +38,4 @@ release/create_casync_prebuilt.sh
 
 ## release channel
 
-to create a release channel, set `RELEASE=1` environment variable when running build script
+to create a release build, set `RELEASE=1` environment variable when running the build script
