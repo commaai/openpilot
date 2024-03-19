@@ -1,16 +1,21 @@
 #!/usr/bin/env python3
+import json
 import os
+import pathlib
 import subprocess
+from typing import TypedDict, cast
 
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.utils import cache
-from openpilot.common.git import get_origin, get_branch, get_short_branch, get_normalized_origin, get_commit_date
+from openpilot.common.git import get_commit, get_origin, get_branch, get_short_branch, get_normalized_origin, get_commit_date
 
 
 RELEASE_BRANCHES = ['release3-staging', 'release3', 'nightly']
 TESTED_BRANCHES = RELEASE_BRANCHES + ['devel', 'devel-staging']
+
+BUILD_METADATA_FILENAME = "build.json"
 
 training_version: bytes = b"0.2.0"
 terms_version: bytes = b"2"
@@ -73,6 +78,43 @@ def is_dirty() -> bool:
     dirty = True
 
   return dirty
+
+
+
+class OpenpilotMetadata(TypedDict):
+  version: str
+  release_notes: str
+  git_commit: str
+
+
+class BuildMetadata(TypedDict):
+  name: str
+  openpilot: OpenpilotMetadata
+
+
+def create_build_metadata(channel, version, release_notes, commit) -> BuildMetadata:
+  return {
+    "name": channel,
+    "openpilot": {
+      "version": version,
+      "release_notes": release_notes,
+      "git_commit": commit
+    }
+  }
+
+
+def get_build_metadata(path: str = BASEDIR) -> BuildMetadata | None:
+  build_metadata_path = pathlib.Path(path) / BUILD_METADATA_FILENAME
+
+  if build_metadata_path.exists():
+    return cast(BuildMetadata, json.loads(build_metadata_path.read_text()))
+
+  git_folder = pathlib.Path(path) / ".git"
+
+  if git_folder.exists():
+    return create_build_metadata(get_short_branch(path), get_version(path), get_release_notes(path), get_commit(path))
+
+  return None
 
 
 if __name__ == "__main__":

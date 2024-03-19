@@ -1,26 +1,27 @@
 import subprocess
+from openpilot.common.basedir import BASEDIR
 from openpilot.common.utils import cache
 from openpilot.common.run import run_cmd, run_cmd_default
 
 
 @cache
-def get_commit(branch: str = "HEAD") -> str:
-  return run_cmd_default(["git", "rev-parse", branch])
+def get_commit(path: str = BASEDIR, branch: str = "HEAD") -> str:
+  return run_cmd_default(["git", "rev-parse", branch], cwd=path)
 
 
 @cache
-def get_commit_date(commit: str = "HEAD") -> str:
-  return run_cmd_default(["git", "show", "--no-patch", "--format='%ct %ci'", commit])
+def get_commit_date(path: str = BASEDIR, commit: str = "HEAD") -> str:
+  return run_cmd_default(["git", "show", "--no-patch", "--format='%ct %ci'", commit], cwd=path)
 
 
 @cache
-def get_short_branch() -> str:
-  return run_cmd_default(["git", "rev-parse", "--abbrev-ref", "HEAD"])
+def get_short_branch(path: str = BASEDIR) -> str:
+  return run_cmd_default(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=path)
 
 
 @cache
-def get_branch() -> str:
-  return run_cmd_default(["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"])
+def get_branch(path: str = BASEDIR) -> str:
+  return run_cmd_default(["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"], cwd=path)
 
 
 @cache
