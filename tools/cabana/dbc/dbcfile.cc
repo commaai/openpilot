@@ -98,10 +98,13 @@ void DBCFile::parse(const QString &content) {
   QTextStream stream((QString *)&content);
   cabana::Msg *current_msg = nullptr;
   int multiplexor_cnt = 0;
+  bool seen_first = false;
   while (!stream.atEnd()) {
     ++line_num;
     QString raw_line = stream.readLine();
     line = raw_line.trimmed();
+
+    bool seen = true;
     if (line.startsWith("BO_ ")) {
       multiplexor_cnt = 0;
       auto match = bo_regexp.match(line);
@@ -182,6 +185,14 @@ void DBCFile::parse(const QString &content) {
       if (auto s = get_sig(match.captured(1).toUInt(), match.captured(2))) {
         s->comment = match.captured(3).trimmed();
       }
+    } else {
+      seen = false;
+    }
+
+    if (seen) {
+      seen_first = true;
+    } else if (!seen_first) {
+      header += raw_line + "\n";
     }
   }
 
@@ -231,5 +242,5 @@ QString DBCFile::generateDBC() {
     }
     dbc_string += "\n";
   }
-  return dbc_string + comment + val_desc;
+  return header + dbc_string + comment + val_desc;
 }
