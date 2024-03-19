@@ -7,11 +7,11 @@ from collections import defaultdict
 from tqdm import tqdm
 from typing import Any
 
+from openpilot.common.git import get_commit
 from openpilot.selfdrive.car.car_helpers import interface_names
 from openpilot.tools.lib.openpilotci import get_url, upload_file
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, check_openpilot_enabled, replay_process
-from openpilot.system.version import get_commit
 from openpilot.tools.lib.filereader import FileReader
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.helpers import save_log
