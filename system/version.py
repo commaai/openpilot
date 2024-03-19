@@ -80,7 +80,6 @@ def is_dirty() -> bool:
   return dirty
 
 
-
 class OpenpilotMetadata(TypedDict):
   version: str
   release_notes: str
