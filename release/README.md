@@ -16,7 +16,7 @@
 | staging      | `release`   | staging channel for release3                                      |
 | nightly      | `release`   | generated nightly from last commit passing CI tests               |
 | master       | `prebuilt`  | current master commit with experimental features enabled          |
-| git branches | none        | installed manually, experimental features enabled, build required |
+| git branches | `git`       | installed manually, experimental features enabled, build required |
 
 
 ## creating casync channel
