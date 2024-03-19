@@ -1,6 +1,7 @@
 from collections import defaultdict
 
 from cereal import messaging
+from openpilot.selfdrive.car.fingerprints import MIGRATION
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
 from openpilot.selfdrive.car.toyota.values import EPS_SCALE
 from openpilot.selfdrive.manager.process_config import managed_processes
@@ -185,6 +186,7 @@ def migrate_carParams(lr, old_logtime=False):
       CP = messaging.new_message('carParams')
       CP.valid = True
       CP.carParams = msg.carParams.as_builder()
+      CP.carParams.carFingerprint = MIGRATION.get(CP.carParams.carFingerprint, CP.carParams.carFingerprint)
       for car_fw in CP.carParams.carFw:
         car_fw.brand = CP.carParams.carName
       if old_logtime:
