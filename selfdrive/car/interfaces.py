@@ -93,9 +93,12 @@ class CarInterfaceBase(ABC):
       self.cp_loopback = self.CS.get_loopback_can_parser(CP)
       self.can_parsers = [self.cp, self.cp_cam, self.cp_adas, self.cp_body, self.cp_loopback]
 
-    self.CC = None
+    self.CC: CarControllerBase = None
     if CarController is not None:
       self.CC = CarController(self.cp.dbc_name, CP, self.VM)
+
+  def apply(self, c: car.CarControl, now_nanos: int) -> tuple[car.CarControl.Actuators, list[tuple[int, int, bytes, int]]]:
+    return self.CC.update(c, self.CS, now_nanos)
 
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
@@ -250,9 +253,6 @@ class CarInterfaceBase(ABC):
 
     return reader
 
-  @abstractmethod
-  def apply(self, c: car.CarControl, now_nanos: int) -> tuple[car.CarControl.Actuators, list[bytes]]:
-    pass
 
   def create_common_events(self, cs_out, extra_gears=None, pcm_enable=True, allow_enable=True,
                            enable_buttons=(ButtonType.accelCruise, ButtonType.decelCruise)):
@@ -460,7 +460,7 @@ SendCan = tuple[int, int, bytes, int]
 
 class CarControllerBase(ABC):
   @abstractmethod
-  def update(self, CC, CS, now_nanos) -> tuple[car.CarControl.Actuators, list[SendCan]]:
+  def update(self, CC: car.CarControl.Actuators, CS: car.CarState, now_nanos: int) -> tuple[car.CarControl.Actuators, list[SendCan]]:
     pass
 
 
