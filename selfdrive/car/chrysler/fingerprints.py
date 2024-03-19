@@ -409,6 +409,7 @@ FW_VERSIONS = {
       b'68527403AD',
       b'68546047AF',
       b'68631938AA',
+      b'68631940AA',
       b'68631942AA',
     ],
     (Ecu.srs, 0x744, None): [
@@ -530,6 +531,7 @@ FW_VERSIONS = {
       b'68586101AA ',
       b'68586105AB ',
       b'68629922AC ',
+      b'68629925AC ',
       b'68629926AC ',
     ],
     (Ecu.transmission, 0x7e1, None): [
