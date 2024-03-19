@@ -3,9 +3,9 @@
 
 ## terms
 
-`channel` - a named version of openpilot (git branch, casync caidx) which receives updates<br>
-`prebuilt` - a channel which is already built for the comma 3/3x and contains only required files for running openpilot and identifying the channel<br>
-`release` - a `prebuilt` channel with `ALLOW_DEBUG=false` (`RELEASE=1` when building panda, ex: `nightly`, `release3`)<br>
+- `channel` - a named version of openpilot (git branch, casync caidx) which receives updates<br>
+- `prebuilt` - a channel which is already built for the comma 3/3x and contains only required files for running openpilot and identifying the channel<br>
+- `release` - a `prebuilt` channel with `ALLOW_DEBUG=false` (`RELEASE=1` when building panda, ex: `nightly`, `release3`)<br>
 
 
 ## openpilot channels
