@@ -306,6 +306,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
   # We lose these ECUs without the comma power on these cars.
   # Note that we still attempt to match with them when they are present
+
   non_essential_ecus={
     Ecu.programmedFuelInjection: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G, CAR.HONDA_PILOT],
     Ecu.transmission: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G, CAR.HONDA_PILOT],
