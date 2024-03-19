@@ -1,6 +1,7 @@
 from collections import defaultdict
 
 from cereal import messaging
+from openpilot.selfdrive.car.fingerprints import MIGRATION
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
 from openpilot.selfdrive.car.toyota.values import EPS_SCALE
 from openpilot.selfdrive.manager.process_config import managed_processes
@@ -72,9 +73,9 @@ def migrate_pandaStates(lr):
   all_msgs = []
   # TODO: safety param migration should be handled automatically
   safety_param_migration = {
-    "TOYOTA PRIUS 2017": EPS_SCALE["TOYOTA PRIUS 2017"] | Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL,
-    "TOYOTA RAV4 2017": EPS_SCALE["TOYOTA RAV4 2017"] | Panda.FLAG_TOYOTA_ALT_BRAKE,
-    "KIA EV6 2022": Panda.FLAG_HYUNDAI_EV_GAS | Panda.FLAG_HYUNDAI_CANFD_HDA2,
+    "PRIUS": EPS_SCALE["PRIUS"] | Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL,
+    "RAV4": EPS_SCALE["RAV4"] | Panda.FLAG_TOYOTA_ALT_BRAKE,
+    "KIA_EV6": Panda.FLAG_HYUNDAI_EV_GAS | Panda.FLAG_HYUNDAI_CANFD_HDA2,
   }
 
   # Migrate safety param base on carState
@@ -185,6 +186,7 @@ def migrate_carParams(lr, old_logtime=False):
       CP = messaging.new_message('carParams')
       CP.valid = True
       CP.carParams = msg.carParams.as_builder()
+      CP.carParams.carFingerprint = MIGRATION.get(CP.carParams.carFingerprint, CP.carParams.carFingerprint)
       for car_fw in CP.carParams.carFw:
         car_fw.brand = CP.carParams.carName
       if old_logtime:

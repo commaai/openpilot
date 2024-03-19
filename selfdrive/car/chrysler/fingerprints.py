@@ -363,7 +363,7 @@ FW_VERSIONS = {
       b'68503664AC',
     ],
   },
-  CAR.RAM_1500: {
+  CAR.RAM_1500_5TH_GEN: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68294051AG',
       b'68294051AI',
@@ -567,7 +567,7 @@ FW_VERSIONS = {
       b'68629936AC',
     ],
   },
-  CAR.RAM_HD: {
+  CAR.RAM_HD_5TH_GEN: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68361606AH',
       b'68437735AC',
