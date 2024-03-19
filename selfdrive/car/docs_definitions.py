@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 from cereal import car
+from openpilot.selfdrive.car.body.values import CAR as BODY
 from openpilot.common.conversions import Conversions as CV
 
 GOOD_TORQUE_THRESHOLD = 1.0  # m/s^2
@@ -346,7 +347,7 @@ class CarDocs:
       return sentence_builder.format(car_model=f"{self.make} {self.model}", alc=alc, acc=acc)
 
     else:
-      if CP.carFingerprint == "BODY":
+      if CP.carFingerprint == BODY.BODY:
         return "The body is a robotics dev kit that can run openpilot. <a href='https://www.commabody.com'>Learn more.</a>"
       else:
         raise Exception(f"This notCar does not have a detail sentence: {CP.carFingerprint}")
