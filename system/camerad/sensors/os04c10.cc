@@ -80,6 +80,6 @@ float OS04C10::getExposureScore(float desired_ev, int exp_t, int exp_g_idx, floa
   score += std::abs(exp_g_idx - (int)analog_gain_rec_idx) * m;
   score += ((1 - analog_gain_cost_delta) +
             analog_gain_cost_delta * (exp_g_idx - analog_gain_min_idx) / (analog_gain_max_idx - analog_gain_min_idx)) *
-           std::abs(exp_g_idx - gain_idx) * 5.0;
+           std::abs(exp_g_idx - gain_idx) * 3.0;
   return score;
 }
