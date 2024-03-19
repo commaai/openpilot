@@ -118,7 +118,7 @@ def ui_thread(addr):
 
     sm.update(0)
 
-    camera = DEVICE_CAMERAS[("three", str(sm['roadCameraState'].sensor))]
+    camera = DEVICE_CAMERAS[("tici", str(sm['roadCameraState'].sensor))]
 
     imgff = np.frombuffer(yuv_img_raw.data, dtype=np.uint8).reshape((len(yuv_img_raw.data) // vipc_client.stride, vipc_client.stride))
     num_px = vipc_client.width * vipc_client.height
