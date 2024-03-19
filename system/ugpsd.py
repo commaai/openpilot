@@ -118,6 +118,7 @@ def build_msg(state):
       sfloat(navvel[6]),
     ]
 
+    # ECEF velocity -> NED
     lat = np.radians(gps.latitude)
     lon = np.radians(gps.longitude)
     R = np.array([
@@ -125,8 +126,8 @@ def build_msg(state):
       [-np.sin(lat) * np.sin(lon), np.cos(lon), -np.cos(lat) * np.sin(lon)],
       [np.cos(lat), 0, -np.sin(lat)]
     ])
-
     vNED = [float(x) for x in R.dot(vECEF)]
+
     gps.vNED = vNED
     gps.speed = float(np.linalg.norm(vNED))
 
@@ -136,7 +137,8 @@ def build_msg(state):
   gps.horizontalAccuracy = 1.
   gps.verticalAccuracy = 1.
 
-  print(gps)
+  if "DEBUG" in os.environ:
+    print(gps)
 
   return msg
 
@@ -146,9 +148,12 @@ def setup(u):
   if "SKIP_SETUP" in os.environ:
     return
 
-  at_cmd('AT+CGPS=0')
+  #at_cmd('AT+CGPS=0')
   at_cmd('AT+CGPS=1')
   time.sleep(1.0)
+
+  # reset with cold start
+  u.send("$RESET,0,hff")
 
   # NMEA outputs
   #for i in range(8):
@@ -159,20 +164,23 @@ def setup(u):
     u.send(f"$CFGMSG,1,{i},1")
 
   # atenna status outputs
-  #for i in (1, 3):
-  #  u.send(f"$CFGMSG,3,{i},1")
+  for i in (1, 3):
+    u.send(f"$CFGMSG,3,{i},1")
 
   # 10Hz NAV outputs
   #u.send("$CFGNAV,100,100,1000")
 
   # AGPS
-  import datetime
   now = datetime.datetime.utcnow()
-  u.send(f"$AIDTIME,{now.year},{now.month},{now.day},{now.hour},{now.minute},{now.second},{int(now.microsecond/1000)}")
+  if now.year == 2024 and now.month == 3:
+    u.send(f"$AIDTIME,{now.year},{now.month},{now.day},{now.hour},{now.minute},{now.second},{int(now.microsecond/1000)}")
 
   # dynamic config
-  static = 1 # 0 for portable
+  static = 0 # 0 for portable
   u.send(f"$CFGDYN,2,{static},0")
+
+  # elevation output is altitude
+  u.send("$CFGGEOID,1")
 
   # debug info
   #u.send("$CFGPRT,1")
@@ -206,8 +214,6 @@ def main():
         # publish on new position
         if '$NAVPOS' in msg:
           pm.send('gpsLocation', build_msg(state))
-
-          #print(u.send('$AIDINFO'))
     except Exception:
       traceback.print_exc()
       cloudlog.exception("gps.issue")
