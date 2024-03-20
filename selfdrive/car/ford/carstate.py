@@ -14,6 +14,7 @@ class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
+    self.steering_msg = "SteeringPinion_Data_Alt" if CP.flags & FordFlags.ALT_STEER_ANGLE else "SteeringPinion_Data"
     if CP.transmissionType == TransmissionType.automatic:
       self.shifter_values = can_define.dv["Gear_Shift_by_Wire_FD1"]["TrnRng_D_RqGsm"]
 
@@ -27,9 +28,7 @@ class CarState(CarStateBase):
 
     # Occasionally on startup, the ABS module recalibrates the steering pinion offset, so we need to block engagement
     # The vehicle usually recovers out of this state within a minute of normal driving
-    if self.CP.flags & FordFlags.ALT_STEER_ANGLE:
-      self.vehicle_sensors_valid = int((cp.vl["ParkAid_Data"]["ExtSteeringAngleReq2"] + 1000) * 10) not in (32766, 32767)
-    else:
+    if not (self.CP.flags & FordFlags.ALT_STEER_ANGLE):
       self.vehicle_sensors_valid = cp.vl["SteeringPinion_Data"]["StePinCompAnEst_D_Qf"] == 3
 
     # car speed
@@ -48,10 +47,8 @@ class CarState(CarStateBase):
     ret.parkingBrake = cp.vl["DesiredTorqBrk"]["PrkBrkStatus"] in (1, 2)
 
     # steering wheel
-    if self.CP.flags & FordFlags.ALT_STEER_ANGLE:
-      ret.steeringAngleDeg = cp.vl["ParkAid_Data"]["ExtSteeringAngleReq2"]
-    else:
-      ret.steeringAngleDeg = cp.vl["SteeringPinion_Data"]["StePinComp_An_Est"]
+    steering_sig = "StePinRelInit_An_Sns" if self.CP.flags & FordFlags.ALT_STEER_ANGLE else "StePinComp_An_Est"
+    ret.steeringAngleDeg = cp.vl[self.steering_msg][steering_sig]
     ret.steeringTorque = cp.vl["EPAS_INFO"]["SteeringColumnTorque"]
     ret.steeringPressed = self.update_steering_pressed(abs(ret.steeringTorque) > CarControllerParams.STEER_DRIVER_ALLOWANCE, 5)
     ret.steerFaultTemporary = cp.vl["EPAS_INFO"]["EPAS_Failure"] == 1
@@ -114,8 +111,7 @@ class CarState(CarStateBase):
 
     return ret
 
-  @staticmethod
-  def get_can_parser(CP):
+  def get_can_parser(self, CP):
     messages = [
       # sig_address, frequency
       ("VehicleOperatingModes", 100),
@@ -126,20 +122,12 @@ class CarState(CarStateBase):
       ("BrakeSnData_4", 50),
       ("EngBrakeData", 10),
       ("Cluster_Info1_FD1", 10),
+      (self.steering_msg, 100),
       ("EPAS_INFO", 50),
       ("Steering_Data_FD1", 10),
       ("BodyInfo_3_FD1", 2),
       ("RCMStatusMessage2_FD1", 10),
     ]
-
-    if CP.flags & FordFlags.ALT_STEER_ANGLE:
-      messages += [
-        ("ParkAid_Data", 50),
-      ]
-    else:
-      messages += [
-        ("SteeringPinion_Data", 100),
-      ]
 
     if CP.flags & FordFlags.CANFD:
       messages += [
