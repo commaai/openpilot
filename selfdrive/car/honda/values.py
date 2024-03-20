@@ -310,7 +310,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
 
   # ACURA_RDX:
   # ('combinationMeter', 'fwdRadar', 'srs', 'vsa'): routes: 919, dongles: {'f41a6f453a4beb95', 'a00bae406fe65d1c', '6354b3a74b9ac09d', '06f3955838b745c8', '569e73e7fca0e803'}
-  # ('combinationMeter', 'fwdRadar', 'srs'): routes: 8, dongles: {'6354b3a74b9ac09d', 'a00bae406fe65d1c'}
 
   # CRV_HYBRID:
   # ('eps', 'fwdCamera', 'fwdRadar', 'srs'): routes: 1794, dongles: {'9b19234732591434', 'e906fc18a593603a', 'c2b195c154e0ba54', 'd6c98b1ebf9916b9', 'db6ce4711c1b4ccb', 'a3367c53243b7b6a', '8f3f4683d7cfda74', 'b9ecad3ab8b3ed53', '11fa019479471a0a', '420cb5afd2f5f563', '16981d0978378bfe', '6ca0bbb0b026b5a5'}
