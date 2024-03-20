@@ -15,7 +15,7 @@ from openpilot.selfdrive.manager.helpers import unblock_stdout, write_onroad_par
 from openpilot.selfdrive.manager.process import ensure_running
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
-from openpilot.common.swaglog import cloudlog, add_file_handler
+from openpilot.common.swaglog import bind_context, cloudlog, add_file_handler
 from openpilot.common.git import get_commit, get_origin, get_short_branch, get_commit_date
 from openpilot.system.version import is_dirty, get_version, \
                            get_normalized_origin, terms_version, training_version, \
@@ -89,13 +89,7 @@ def manager_init() -> None:
 
   # init logging
   sentry.init(sentry.SentryProject.SELFDRIVE)
-  cloudlog.bind_global(dongle_id=dongle_id,
-                       version=get_version(),
-                       origin=get_normalized_origin(),
-                       branch=get_short_branch(),
-                       commit=get_commit(),
-                       dirty=is_dirty(),
-                       device=HARDWARE.get_device_type())
+  bind_context(cloudlog)
 
   # preimport all processes
   for p in managed_processes.values():

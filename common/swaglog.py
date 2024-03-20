@@ -8,6 +8,8 @@ from logging.handlers import BaseRotatingHandler
 import zmq
 
 from openpilot.common.logging_extra import SwagLogger, SwagFormatter, SwagLogFileFormatter
+from openpilot.common.params import Params
+from openpilot.system.hardware import HARDWARE
 from openpilot.system.hardware.hw import Paths
 
 
@@ -133,3 +135,18 @@ ipchandler = UnixDomainSocketHandler(SwagFormatter(log))
 log.addHandler(outhandler)
 # logs are sent through IPC before writing to disk to prevent disk I/O blocking
 log.addHandler(ipchandler)
+
+
+def bind_context(cloudlog):
+  from openpilot.common.git import get_commit, get_normalized_origin, get_short_branch
+  from openpilot.system.version import get_version, is_dirty
+
+  params = Params()
+  dongle_id = params.get("DongleId").decode('utf-8')
+  cloudlog.bind_global(dongle_id=dongle_id,
+                       version=get_version(),
+                       origin=get_normalized_origin(),
+                       branch=get_short_branch(),
+                       commit=get_commit(),
+                       dirty=is_dirty(),
+                       device=HARDWARE.get_device_type())
