@@ -5,7 +5,7 @@ from openpilot.selfdrive.car.hyundai.values import CAR
 Ecu = car.CarParams.Ecu
 
 FINGERPRINTS = {
-  CAR.SANTA_FE: [{
+  CAR.HYUNDAI_SANTA_FE: [{
     67: 8, 127: 8, 304: 8, 320: 8, 339: 8, 356: 4, 544: 8, 593: 8, 608: 8, 688: 6, 809: 8, 832: 8, 854: 7, 870: 7, 871: 8, 872: 8, 897: 8, 902: 8, 903: 8, 905: 8, 909: 8, 916: 8, 1040: 8, 1042: 8, 1056: 8, 1057: 8, 1078: 4, 1107: 5, 1136: 8, 1151: 6, 1155: 8, 1156: 8, 1162: 8, 1164: 8, 1168: 7, 1170: 8, 1173: 8, 1183: 8, 1186: 2, 1191: 2, 1227: 8, 1265: 4, 1280: 1, 1287: 4, 1290: 8, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1342: 6, 1345: 8, 1348: 8, 1363: 8, 1369: 8, 1379: 8, 1384: 8, 1407: 8, 1414: 3, 1419: 8, 1427: 6, 1456: 4, 1470: 8
   },
   {
@@ -14,7 +14,7 @@ FINGERPRINTS = {
   {
     67: 8, 68: 8, 80: 4, 160: 8, 161: 8, 272: 8, 288: 4, 339: 8, 356: 8, 357: 8, 399: 8, 544: 8, 608: 8, 672: 8, 688: 5, 704: 1, 790: 8, 809: 8, 848: 8, 880: 8, 898: 8, 900: 8, 901: 8, 904: 8, 1056: 8, 1064: 8, 1065: 8, 1072: 8, 1075: 8, 1087: 8, 1088: 8, 1151: 8, 1200: 8, 1201: 8, 1232: 4, 1264: 8, 1265: 8, 1266: 8, 1296: 8, 1306: 8, 1312: 8, 1322: 8, 1331: 8, 1332: 8, 1333: 8, 1348: 8, 1349: 8, 1369: 8, 1370: 8, 1371: 8, 1407: 8, 1415: 8, 1419: 8, 1440: 8, 1442: 4, 1461: 8, 1470: 8
   }],
-  CAR.SONATA: [{
+  CAR.HYUNDAI_SONATA: [{
     67: 8, 68: 8, 127: 8, 304: 8, 320: 8, 339: 8, 356: 4, 544: 8, 546: 8, 549: 8, 550: 8, 576: 8, 593: 8, 608: 8, 688: 6, 809: 8, 832: 8, 854: 8, 865: 8, 870: 7, 871: 8, 872: 8, 897: 8, 902: 8, 903: 8, 905: 8, 908: 8, 909: 8, 912: 7, 913: 8, 916: 8, 1040: 8, 1042: 8, 1056: 8, 1057: 8, 1078: 4, 1089: 5, 1096: 8, 1107: 5, 1108: 8, 1114: 8, 1136: 8, 1145: 8, 1151: 8, 1155: 8, 1156: 8, 1157: 4, 1162: 8, 1164: 8, 1168: 8, 1170: 8, 1173: 8, 1180: 8, 1183: 8, 1184: 8, 1186: 2, 1191: 2, 1193: 8, 1210: 8, 1225: 8, 1227: 8, 1265: 4, 1268: 8, 1280: 8, 1287: 4, 1290: 8, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1330: 8, 1339: 8, 1342: 6, 1343: 8, 1345: 8, 1348: 8, 1363: 8, 1369: 8, 1371: 8, 1378: 8, 1379: 8, 1384: 8, 1394: 8, 1407: 8, 1419: 8, 1427: 6, 1446: 8, 1456: 4, 1460: 8, 1470: 8, 1485: 8, 1504: 3, 1988: 8, 1996: 8, 2000: 8, 2004: 8, 2008: 8, 2012: 8, 2015: 8
   }],
   CAR.KIA_STINGER: [{
@@ -23,13 +23,13 @@ FINGERPRINTS = {
   CAR.GENESIS_G90: [{
     67: 8, 68: 8, 127: 8, 304: 8, 320: 8, 339: 8, 356: 4, 358: 6, 359: 8, 544: 8, 593: 8, 608: 8, 688: 5, 809: 8, 854: 7, 870: 7, 871: 8, 872: 8, 897: 8, 902: 8, 903: 8, 916: 8, 1040: 8, 1056: 8, 1057: 8, 1078: 4, 1107: 5, 1136: 8, 1151: 6, 1162: 4, 1168: 7, 1170: 8, 1173: 8, 1184: 8, 1265: 4, 1280: 1, 1281: 3, 1287: 4, 1290: 8, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1345: 8, 1348: 8, 1363: 8, 1369: 8, 1370: 8, 1371: 8, 1378: 4, 1384: 8, 1407: 8, 1419: 8, 1425: 2, 1427: 6, 1434: 2, 1456: 4, 1470: 8, 1988: 8, 2000: 8, 2003: 8, 2004: 8, 2005: 8, 2008: 8, 2011: 8, 2012: 8, 2013: 8
   }],
-  CAR.IONIQ_EV_2020: [{
+  CAR.HYUNDAI_IONIQ_EV_2020: [{
     127: 8, 304: 8, 320: 8, 339: 8, 352: 8, 356: 4, 524: 8, 544: 7, 593: 8, 688: 5, 832: 8, 881: 8, 882: 8, 897: 8, 902: 8, 903: 8, 905: 8, 909: 8, 916: 8, 1040: 8, 1042: 8, 1056: 8, 1057: 8, 1078: 4, 1136: 8, 1151: 6, 1155: 8, 1156: 8, 1157: 4, 1164: 8, 1168: 7, 1173: 8, 1183: 8, 1186: 2, 1191: 2, 1225: 8, 1265: 4, 1280: 1, 1287: 4, 1290: 8, 1291: 8, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1342: 6, 1345: 8, 1348: 8, 1355: 8, 1363: 8, 1369: 8, 1379: 8, 1407: 8, 1419: 8, 1426: 8, 1427: 6, 1429: 8, 1430: 8, 1456: 4, 1470: 8, 1473: 8, 1507: 8, 1535: 8, 1988: 8, 1996: 8, 2000: 8, 2004: 8, 2005: 8, 2008: 8, 2012: 8, 2013: 8
   }],
-  CAR.KONA_EV: [{
+  CAR.HYUNDAI_KONA_EV: [{
     127: 8, 304: 8, 320: 8, 339: 8, 352: 8, 356: 4, 544: 8, 549: 8, 593: 8, 688: 5, 832: 8, 881: 8, 882: 8, 897: 8, 902: 8, 903: 8, 905: 8, 909: 8, 916: 8, 1040: 8, 1042: 8, 1056: 8, 1057: 8, 1078: 4, 1136: 8, 1151: 6, 1168: 7, 1173: 8, 1183: 8, 1186: 2, 1191: 2, 1225: 8, 1265: 4, 1280: 1, 1287: 4, 1290: 8, 1291: 8, 1292: 8, 1294: 8, 1307: 8, 1312: 8, 1322: 8, 1342: 6, 1345: 8, 1348: 8, 1355: 8, 1363: 8, 1369: 8, 1378: 4, 1407: 8, 1419: 8, 1426: 8, 1427: 6, 1429: 8, 1430: 8, 1456: 4, 1470: 8, 1473: 8, 1507: 8, 1535: 8, 2000: 8, 2004: 8, 2008: 8, 2012: 8, 1157: 4, 1193: 8, 1379: 8, 1988: 8, 1996: 8
   }],
-  CAR.KONA_EV_2022: [{
+  CAR.HYUNDAI_KONA_EV_2022: [{
     127: 8, 304: 8, 320: 8, 339: 8, 352: 8, 356: 4, 544: 8, 593: 8, 688: 5, 832: 8, 881: 8, 882: 8, 897: 8, 902: 8, 903: 8, 905: 8, 909: 8, 913: 8, 916: 8, 1040: 8, 1042: 8, 1056: 8, 1057: 8, 1069: 8, 1078: 4, 1136: 8, 1145: 8, 1151: 8, 1155: 8, 1156: 8, 1157: 4, 1162: 8, 1164: 8, 1168: 8, 1173: 8, 1183: 8, 1188: 8, 1191: 2, 1193: 8, 1225: 8, 1227: 8, 1265: 4, 1280: 1, 1287: 4, 1290: 8, 1291: 8, 1292: 8, 1294: 8, 1312: 8, 1322: 8, 1339: 8, 1342: 8, 1343: 8, 1345: 8, 1348: 8, 1355: 8, 1363: 8, 1369: 8, 1379: 8, 1407: 8, 1419: 8, 1426: 8, 1427: 6, 1429: 8, 1430: 8, 1446: 8, 1456: 4, 1470: 8, 1473: 8, 1485: 8, 1507: 8, 1535: 8, 1990: 8, 1998: 8
   }],
   CAR.KIA_NIRO_EV: [{
@@ -44,7 +44,7 @@ FINGERPRINTS = {
 }
 
 FW_VERSIONS = {
-  CAR.AZERA_6TH_GEN: {
+  CAR.HYUNDAI_AZERA_6TH_GEN: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00IG__ SCC F-CU-      1.00 1.00 99110-G8100         ',
     ],
@@ -61,7 +61,7 @@ FW_VERSIONS = {
       b'\xf1\x81641KA051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
-  CAR.AZERA_HEV_6TH_GEN: {
+  CAR.HYUNDAI_AZERA_HEV_6TH_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00IGH MFC  AT KOR LHD 1.00 1.00 99211-G8000 180903',
       b'\xf1\x00IGH MFC  AT KOR LHD 1.00 1.01 99211-G8000 181109',
@@ -93,7 +93,7 @@ FW_VERSIONS = {
       b'\xf1\x00DH LKAS 1.5 -140425',
     ],
   },
-  CAR.IONIQ: {
+  CAR.HYUNDAI_IONIQ: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2000         ',
     ],
@@ -110,7 +110,7 @@ FW_VERSIONS = {
       b'\xf1\x816U3H1051\x00\x00\xf1\x006U3H0_C2\x00\x006U3H1051\x00\x00HAE0G16US2\x00\x00\x00\x00',
     ],
   },
-  CAR.IONIQ_PHEV_2019: {
+  CAR.HYUNDAI_IONIQ_PHEV_2019: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2100         ',
     ],
@@ -128,7 +128,7 @@ FW_VERSIONS = {
       b'\xf1\x816U3J2051\x00\x00\xf1\x006U3H0_C2\x00\x006U3J2051\x00\x00PAE0G16NS1\xdbD\r\x81',
     ],
   },
-  CAR.IONIQ_PHEV: {
+  CAR.HYUNDAI_IONIQ_PHEV: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00AEhe SCC F-CUP      1.00 1.00 99110-G2200         ',
       b'\xf1\x00AEhe SCC F-CUP      1.00 1.00 99110-G2600         ',
@@ -162,7 +162,7 @@ FW_VERSIONS = {
       b'\xf1\x816U3J9051\x00\x00\xf1\x006U3H1_C2\x00\x006U3J9051\x00\x00PAE0G16NL2\x00\x00\x00\x00',
     ],
   },
-  CAR.IONIQ_EV_2020: {
+  CAR.HYUNDAI_IONIQ_EV_2020: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00AEev SCC F-CUP      1.00 1.00 99110-G7200         ',
       b'\xf1\x00AEev SCC F-CUP      1.00 1.00 99110-G7500         ',
@@ -180,7 +180,7 @@ FW_VERSIONS = {
       b'\xf1\x00AEE MFC  AT EUR RHD 1.00 1.01 95740-G2600 190819',
     ],
   },
-  CAR.IONIQ_EV_LTD: {
+  CAR.HYUNDAI_IONIQ_EV_LTD: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00AEev SCC F-CUP      1.00 1.00 96400-G7000         ',
       b'\xf1\x00AEev SCC F-CUP      1.00 1.00 96400-G7100         ',
@@ -199,7 +199,7 @@ FW_VERSIONS = {
       b'\xf1\x00AEE MFC  AT USA LHD 1.00 1.00 95740-G2400 180222',
     ],
   },
-  CAR.IONIQ_HEV_2022: {
+  CAR.HYUNDAI_IONIQ_HEV_2022: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00AEhe SCC F-CUP      1.00 1.00 99110-G2600         ',
       b'\xf1\x00AEhe SCC FHCUP      1.00 1.00 99110-G2600         ',
@@ -218,7 +218,7 @@ FW_VERSIONS = {
       b'\xf1\x816U3J9051\x00\x00\xf1\x006U3H1_C2\x00\x006U3J9051\x00\x00HAE0G16NL2\x00\x00\x00\x00',
     ],
   },
-  CAR.SONATA: {
+  CAR.HYUNDAI_SONATA: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00DN8_ SCC F-CU-      1.00 1.00 99110-L0000         ',
       b'\xf1\x00DN8_ SCC F-CUP      1.00 1.00 99110-L0000         ',
@@ -361,7 +361,7 @@ FW_VERSIONS = {
       b'\xf1\x87SANFB45889451GC7wx\x87\x88gw\x87x\x88\x88x\x88\x87wxw\x87wxw\x87\x8f\xfc\xffeU\x8f\xff+Q\xf1\x81U913\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  U913\x00\x00\x00\x00\x00\x00SDN8T16NB2\n\xdd^\xbc',
     ],
   },
-  CAR.SONATA_LF: {
+  CAR.HYUNDAI_SONATA_LF: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00LF__ SCC F-CUP      1.00 1.00 96401-C2200         ',
     ],
@@ -389,7 +389,7 @@ FW_VERSIONS = {
       b'\xf1\x87\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xf1\x816T6B4051\x00\x00\xf1\x006T6H0_C2\x00\x006T6B4051\x00\x00TLF0G24SL2n\x8d\xbe\xd8',
     ],
   },
-  CAR.TUCSON: {
+  CAR.HYUNDAI_TUCSON: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00TL__ FCA F-CUP      1.00 1.01 99110-D3500         ',
       b'\xf1\x00TL__ FCA F-CUP      1.00 1.02 99110-D3510         ',
@@ -407,7 +407,7 @@ FW_VERSIONS = {
       b'\xf1\x87LBJXAN202299KF22\x87x\x87\x88ww\x87xx\x88\x97\x88\x87\x88\x98x\x88\x99\x98\x89\x87o\xf6\xff\x87w\x7f\xff\x12\x9a\xf1\x81U083\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  U083\x00\x00\x00\x00\x00\x00TTL2V20KL1\x8fRn\x8a',
     ],
   },
-  CAR.SANTA_FE: {
+  CAR.HYUNDAI_SANTA_FE: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00TM__ SCC F-CUP      1.00 1.00 99110-S1210         ',
       b'\xf1\x00TM__ SCC F-CUP      1.00 1.01 99110-S2000         ',
@@ -470,7 +470,7 @@ FW_VERSIONS = {
       b'\xf1\x87SDKXAA2443414GG1vfvgwv\x87h\x88\x88\x88\x88ww\x87wwwww\x99_\xfc\xffvD?\xffl\xd2\xf1\x816W3E1051\x00\x00\xf1\x006W351_C2\x00\x006W3E1051\x00\x00TTM4G24NS6\x00\x00\x00\x00',
     ],
   },
-  CAR.SANTA_FE_2022: {
+  CAR.HYUNDAI_SANTA_FE_2022: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00TM__ SCC F-CUP      1.00 1.00 99110-S1500         ',
       b'\xf1\x00TM__ SCC FHCUP      1.00 1.00 99110-S1500         ',
@@ -532,7 +532,7 @@ FW_VERSIONS = {
       b'\xf1\x87SDMXCA9087684GN1VfvgUUeVwwgwwwwwffffU?\xfb\xff\x97\x88\x7f\xff+\xa4\xf1\x89HT6WAD00A1\xf1\x82STM4G25NH1\x00\x00\x00\x00\x00\x00',
     ],
   },
-  CAR.SANTA_FE_HEV_2022: {
+  CAR.HYUNDAI_SANTA_FE_HEV_2022: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00TMhe SCC FHCUP      1.00 1.00 99110-CL500         ',
       b'\xf1\x00TMhe SCC FHCUP      1.00 1.01 99110-CL500         ',
@@ -565,7 +565,7 @@ FW_VERSIONS = {
       b'\xf1\x87391312MTL0',
     ],
   },
-  CAR.SANTA_FE_PHEV_2022: {
+  CAR.HYUNDAI_SANTA_FE_PHEV_2022: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00TMhe SCC F-CUP      1.00 1.00 99110-CL500         ',
       b'\xf1\x00TMhe SCC FHCUP      1.00 1.01 99110-CL500         ',
@@ -591,7 +591,7 @@ FW_VERSIONS = {
       b'\xf1\x87391312MTF1',
     ],
   },
-  CAR.CUSTIN_1ST_GEN: {
+  CAR.HYUNDAI_CUSTIN_1ST_GEN: {
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x00KU ESC \x01 101!\x02\x03 58910-O3200',
     ],
@@ -685,7 +685,7 @@ FW_VERSIONS = {
       b'\xf1\x87VCNLF11383972DK1vffV\x99\x99\x89\x98\x86eUU\x88wg\x89vfff\x97fff\x99\x87o\xff"\xc1\xf1\x81E30\x00\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  E30\x00\x00\x00\x00\x00\x00\x00SCK0T33GH0\xbe`\xfb\xc6',
     ],
   },
-  CAR.PALISADE: {
+  CAR.HYUNDAI_PALISADE: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00LX2 SCC FHCUP      1.00 1.04 99110-S8100         ',
       b'\xf1\x00LX2_ SCC F-CUP      1.00 1.04 99110-S8100         ',
@@ -792,7 +792,7 @@ FW_VERSIONS = {
       b'\xf1\x87LDMVBN950669KF37\x97www\x96fffy\x99\xa7\x99\xa9\x99\xaa\x99g\x88\x96x\xb8\x8f\xf9\xffTD/\xff\xa7\xcb\xf1\x81U922\x00\x00\x00\x00\x00\x00\xf1\x00bcsh8p54  U922\x00\x00\x00\x00\x00\x00SLX4G38NB5\xb9\x94\xe8\x89',
     ],
   },
-  CAR.VELOSTER: {
+  CAR.HYUNDAI_VELOSTER: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00JS__ SCC H-CUP      1.00 1.02 95650-J3200         ',
       b'\xf1\x00JS__ SCC HNCUP      1.00 1.02 95650-J3100         ',
@@ -918,7 +918,7 @@ FW_VERSIONS = {
       b'\xf1\x810000000000\x00',
     ],
   },
-  CAR.KONA: {
+  CAR.HYUNDAI_KONA: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00OS__ SCC F-CUP      1.00 1.00 95655-J9200         ',
     ],
@@ -1063,7 +1063,7 @@ FW_VERSIONS = {
       b'\xf1\x00PSBG2333  E16\x00\x00\x00\x00\x00\x00\x00TDL2H20KA5T\xf2\xc9\xc2',
     ],
   },
-  CAR.KONA_EV: {
+  CAR.HYUNDAI_KONA_EV: {
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x00OS IEB \x01 212 \x11\x13 58520-K4000',
       b'\xf1\x00OS IEB \x02 212 \x11\x13 58520-K4000',
@@ -1091,7 +1091,7 @@ FW_VERSIONS = {
       b'\xf1\x00OSev SCC FNCUP      1.00 1.01 99110-K4000         ',
     ],
   },
-  CAR.KONA_EV_2022: {
+  CAR.HYUNDAI_KONA_EV_2022: {
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x00OS IEB \x02 102"\x05\x16 58520-K4010',
       b'\xf1\x00OS IEB \x03 102"\x05\x16 58520-K4010',
@@ -1120,7 +1120,7 @@ FW_VERSIONS = {
       b'\xf1\x00YB__ FCA -----      1.00 1.01 99110-K4500      \x00\x00\x00',
     ],
   },
-  CAR.KONA_EV_2ND_GEN: {
+  CAR.HYUNDAI_KONA_EV_2ND_GEN: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00SXev RDR -----      1.00 1.00 99110-BF000         ',
     ],
@@ -1320,7 +1320,7 @@ FW_VERSIONS = {
       b'\xf1\x816H6D1051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
-  CAR.ELANTRA: {
+  CAR.HYUNDAI_ELANTRA: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00AD  LKAS AT USA LHD 1.01 1.01 95895-F2000 251',
       b'\xf1\x00ADP LKAS AT USA LHD 1.00 1.03 99211-F2000 X31',
@@ -1347,7 +1347,7 @@ FW_VERSIONS = {
       b'\xf1\x00AD__ SCC H-CUP      1.00 1.01 96400-F2100         ',
     ],
   },
-  CAR.ELANTRA_GT_I30: {
+  CAR.HYUNDAI_ELANTRA_GT_I30: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00PD  LKAS AT KOR LHD 1.00 1.02 95740-G3000 A51',
       b'\xf1\x00PD  LKAS AT USA LHD 1.00 1.02 95740-G3000 A51',
@@ -1375,7 +1375,7 @@ FW_VERSIONS = {
       b'\xf1\x00PD__ SCC FNCUP      1.01 1.00 96400-G3000         ',
     ],
   },
-  CAR.ELANTRA_2021: {
+  CAR.HYUNDAI_ELANTRA_2021: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00CN7_ SCC F-CUP      1.00 1.01 99110-AA000         ',
       b'\xf1\x00CN7_ SCC FHCUP      1.00 1.01 99110-AA000         ',
@@ -1417,7 +1417,7 @@ FW_VERSIONS = {
       b'\xf1\x870\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xf1\x81HM6M2_0a0_HC0',
     ],
   },
-  CAR.ELANTRA_HEV_2021: {
+  CAR.HYUNDAI_ELANTRA_HEV_2021: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00CN7HMFC  AT USA LHD 1.00 1.03 99210-AA000 200819',
       b'\xf1\x00CN7HMFC  AT USA LHD 1.00 1.05 99210-AA000 210930',
@@ -1448,7 +1448,7 @@ FW_VERSIONS = {
       b'\xf1\x816H6G8051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
-  CAR.KONA_HEV: {
+  CAR.HYUNDAI_KONA_HEV: {
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x00OS IEB \x01 104 \x11  58520-CM000',
     ],
@@ -1468,7 +1468,7 @@ FW_VERSIONS = {
       b'\xf1\x816H6F6051\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
-  CAR.SONATA_HYBRID: {
+  CAR.HYUNDAI_SONATA_HYBRID: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00DNhe SCC F-CUP      1.00 1.02 99110-L5000         ',
       b'\xf1\x00DNhe SCC FHCUP      1.00 1.00 99110-L5000         ',
@@ -1544,7 +1544,7 @@ FW_VERSIONS = {
       b'\xf1\x00CV1 MFC  AT USA LHD 1.00 1.06 99210-CV000 220328',
     ],
   },
-  CAR.IONIQ_5: {
+  CAR.HYUNDAI_IONIQ_5: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00NE1_ RDR -----      1.00 1.00 99110-GI000         ',
     ],
@@ -1564,7 +1564,7 @@ FW_VERSIONS = {
       b'\xf1\x00NE1 MFC  AT USA LHD 1.00 1.06 99211-GI010 230110',
     ],
   },
-  CAR.IONIQ_6: {
+  CAR.HYUNDAI_IONIQ_6: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00CE__ RDR -----      1.00 1.01 99110-KL000         ',
     ],
@@ -1574,7 +1574,7 @@ FW_VERSIONS = {
       b'\xf1\x00CE  MFC  AT USA LHD 1.00 1.04 99211-KL000 221213',
     ],
   },
-  CAR.TUCSON_4TH_GEN: {
+  CAR.HYUNDAI_TUCSON_4TH_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00NX4 FR_CMR AT CAN LHD 1.00 1.01 99211-N9100 14A',
       b'\xf1\x00NX4 FR_CMR AT EUR LHD 1.00 1.00 99211-N9220 14K',
@@ -1594,7 +1594,7 @@ FW_VERSIONS = {
       b'\xf1\x00NX4__               1.01 1.00 99110-N9100         ',
     ],
   },
-  CAR.SANTA_CRUZ_1ST_GEN: {
+  CAR.HYUNDAI_SANTA_CRUZ_1ST_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-CW000 14M',
       b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-CW010 14X',
@@ -1708,7 +1708,7 @@ FW_VERSIONS = {
       b'\xf1\x00GL3_ RDR -----      1.00 1.02 99110-L8000         ',
     ],
   },
-  CAR.STARIA_4TH_GEN: {
+  CAR.HYUNDAI_STARIA_4TH_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00US4 MFC  AT KOR LHD 1.00 1.06 99211-CG000 230524',
     ],

@@ -85,7 +85,9 @@ MessagesWidget::MessagesWidget(QWidget *parent) : menu(new QMenu(this)), QWidget
     <span style="color:gray">Byte color</span><br />
     <span style="color:gray;">■ </span> constant changing<br />
     <span style="color:blue;">■ </span> increasing<br />
-    <span style="color:red;">■ </span> decreasing
+    <span style="color:red;">■ </span> decreasing<br />
+    <span style="color:gray">Shortcuts</span><br />
+    Horizontal Scrolling: <span style="background-color:lightGray;color:gray">&nbsp;shift+wheel&nbsp;</span>
   )"));
 }
 
@@ -389,6 +391,14 @@ void MessageView::updateBytesSectionSize() {
     }
   }
   header()->resizeSection(MessageListModel::Column::DATA, delegate->sizeForBytes(max_bytes).width());
+}
+
+void MessageView::wheelEvent(QWheelEvent *event) {
+  if (event->modifiers() == Qt::ShiftModifier) {
+    QApplication::sendEvent(horizontalScrollBar(), event);
+  } else {
+    QTreeView::wheelEvent(event);
+  }
 }
 
 // MessageViewHeader
