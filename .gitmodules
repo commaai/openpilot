@@ -19,3 +19,5 @@
 [submodule "tinygrad"]
   path = tinygrad_repo
   url = https://github.com/geohot/tinygrad.git
+[submodule "tinygrad_repo"]
+	branch = ae5d1407ee844a97a52ad3756835d38e7e2b9e1b
