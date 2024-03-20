@@ -28,7 +28,7 @@ class CarState(CarStateBase):
     # Occasionally on startup, the ABS module recalibrates the steering pinion offset, so we need to block engagement
     # The vehicle usually recovers out of this state within a minute of normal driving
     if self.CP.flags & FordFlags.ALT_STEER_ANGLE:
-      self.vehicle_sensors_valid = ((cp.vl["ParkAid_Data"]["ExtSteeringAngleReq2"] + 1000) * 10) < 32766
+      self.vehicle_sensors_valid = int((cp.vl["ParkAid_Data"]["ExtSteeringAngleReq2"] + 1000) * 10) not in (32766, 32767)
     else:
       self.vehicle_sensors_valid = cp.vl["SteeringPinion_Data"]["StePinCompAnEst_D_Qf"] == 3
 
