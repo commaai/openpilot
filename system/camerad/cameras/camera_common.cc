@@ -269,14 +269,14 @@ static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
   pm->send("thumbnail", msg);
 }
 
-float set_exposure_target(const CameraBuf *b, int x_start, int x_end, int x_skip, int y_start, int y_end, int y_skip) {
+float set_exposure_target(const CameraBuf *b, int x_start, int x_len, int x_skip, int y_start, int y_len, int y_skip) {
   int lum_med;
   uint32_t lum_binning[256] = {0};
   const uint8_t *pix_ptr = b->cur_yuv_buf->y;
 
   unsigned int lum_total = 0;
-  for (int y = y_start; y < y_end; y += y_skip) {
-    for (int x = x_start; x < x_end; x += x_skip) {
+  for (int y = y_start; y < y_start + y_len; y += y_skip) {
+    for (int x = x_start; x < x_start + x_len; x += x_skip) {
       uint8_t lum = pix_ptr[(y * b->rgb_width) + x];
       lum_binning[lum]++;
       lum_total += 1;

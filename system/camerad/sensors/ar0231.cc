@@ -17,6 +17,10 @@ const float sensor_analog_gains_AR0231[] = {
     5.0 / 4.0, 6.0 / 4.0, 6.0 / 3.0, 7.0 / 3.0,  // 8, 9, 10, 11
     7.0 / 2.0, 8.0 / 2.0, 8.0 / 1.0};            // 12, 13, 14, 15 = bypass
 
+const int ar0231_road_ae_xywh[] = {96, 160, 1734, 986};
+const int ar0231_wide_ae_xywh[] = {96, 250, 1734, 524};
+const int ar0231_driver_ae_xywh[] = {96, 242, 1736, 906};
+
 std::map<uint16_t, std::pair<int, int>> ar0231_build_register_lut(CameraState *c, uint8_t *data) {
   // This function builds a lookup table from register address, to a pair of indices in the
   // buffer where to read this address. The buffer contains padding bytes,
@@ -116,6 +120,11 @@ AR0231::AR0231() {
   min_ev = exposure_time_min * sensor_analog_gains[analog_gain_min_idx];
   max_ev = exposure_time_max * dc_gain_factor * sensor_analog_gains[analog_gain_max_idx];
   target_grey_factor = 1.0;
+  for (int i = 0; i < 4; i++) {
+    road_ae_xywh[i] = ar0231_road_ae_xywh[i];
+    wide_ae_xywh[i] = ar0231_wide_ae_xywh[i];
+    driver_ae_xywh[i] = ar0231_driver_ae_xywh[i];
+  }
 }
 
 void AR0231::processRegisters(CameraState *c, cereal::FrameData::Builder &framed) const {

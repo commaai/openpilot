@@ -16,6 +16,10 @@ const uint32_t ox03c10_analog_gains_reg[] = {
     0x5C0, 0x600, 0x640, 0x680, 0x700, 0x780, 0x800, 0x880, 0x900, 0x980, 0xA00,
     0xA80, 0xB00, 0xB80, 0xC00, 0xC80, 0xD00, 0xD80, 0xE00, 0xE80, 0xF00, 0xF80};
 
+const int ox03c10_road_ae_xywh[] = {96, 160, 1734, 986};
+const int ox03c10_wide_ae_xywh[] = {96, 250, 1734, 524};
+const int ox03c10_driver_ae_xywh[] = {96, 242, 1736, 906};
+
 const uint32_t VS_TIME_MIN_OX03C10 = 1;
 const uint32_t VS_TIME_MAX_OX03C10 = 34;  // vs < 35
 
@@ -57,6 +61,11 @@ OX03C10::OX03C10() {
   min_ev = (exposure_time_min + VS_TIME_MIN_OX03C10) * sensor_analog_gains[analog_gain_min_idx];
   max_ev = exposure_time_max * dc_gain_factor * sensor_analog_gains[analog_gain_max_idx];
   target_grey_factor = 0.01;
+  for (int i = 0; i < 4; i++) {
+    road_ae_xywh[i] = ox03c10_road_ae_xywh[i];
+    wide_ae_xywh[i] = ox03c10_wide_ae_xywh[i];
+    driver_ae_xywh[i] = ox03c10_driver_ae_xywh[i];
+  }
 }
 
 std::vector<i2c_random_wr_payload> OX03C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {
