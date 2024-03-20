@@ -89,7 +89,7 @@ function launch {
   ./manager.py
 
   # if broken, keep on screen error
-  while true; do sleep 1; done
+  #while true; do sleep 1; done
 }
 
 launch
