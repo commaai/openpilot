@@ -307,16 +307,20 @@ FW_QUERY_CONFIG = FwQueryConfig(
   # We lose these ECUs without the comma power on these cars.
   # Note that we still attempt to match with them when they are present
   non_essential_ecus={
-    Ecu.programmedFuelInjection: [CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
-    Ecu.transmission: [CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
-    Ecu.srs: [CAR.HONDA_ACCORD],
-    Ecu.eps: [CAR.HONDA_ACCORD],
-    Ecu.vsa: [CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
-    Ecu.combinationMeter: [CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
-    Ecu.gateway: [CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
-    Ecu.electricBrakeBooster: [CAR.HONDA_ACCORD, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
-    Ecu.shiftByWire: [CAR.HONDA_ACCORD],  # existence correlates with transmission type for ICE
-    Ecu.hud: [CAR.HONDA_ACCORD],  # existence correlates with trim level
+    Ecu.programmedFuelInjection: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
+    Ecu.transmission: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
+    Ecu.srs: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD],
+    Ecu.eps: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD],
+    Ecu.vsa: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
+    Ecu.combinationMeter: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH,
+                           CAR.HONDA_HRV, CAR.HONDA_CRV_5G, CAR.HONDA_ODYSSEY_CHN],
+    Ecu.gateway: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_FREED,
+                  CAR.HONDA_HRV, CAR.HONDA_CRV_5G, CAR.HONDA_ODYSSEY_CHN],
+    Ecu.electricBrakeBooster: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
+    # existence correlates with transmission type for Accord ICE
+    Ecu.shiftByWire: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD],
+    # existence correlates with trim level
+    Ecu.hud: [CAR.HONDA_ACCORD],
   },
   extra_ecus=[
     # The only other ECU on PT bus accessible by camera on radarless Civic
