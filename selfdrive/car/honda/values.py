@@ -306,13 +306,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
   # We lose these ECUs without the comma power on these cars.
   # Note that we still attempt to match with them when they are present
-
-  # cars have these ecus:
-  # HONDA_ODYSSEY_CHN: ('eps', 'fwdRadar', 'srs'): routes: 125, dongles: 3
-  # HONDA_FREED: ('combinationMeter', 'eps', 'fwdRadar', 'vsa'): routes: 326, dongles: 1
-  # ACURA_RDX_3G: ('fwdCamera', 'fwdRadar'): routes: 3932, dongles: 17
-  # HONDA_HRV: ('eps', 'fwdRadar', 'srs'): routes: 1436, dongles: 5
-
   non_essential_ecus={
     Ecu.programmedFuelInjection: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
     Ecu.transmission: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
