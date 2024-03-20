@@ -3,7 +3,7 @@ import json
 import os
 import pathlib
 import subprocess
-from typing import TypedDict, cast
+from typing import TypedDict
 
 
 from openpilot.common.basedir import BASEDIR
@@ -106,7 +106,14 @@ def get_build_metadata(path: str = BASEDIR) -> BuildMetadata | None:
   build_metadata_path = pathlib.Path(path) / BUILD_METADATA_FILENAME
 
   if build_metadata_path.exists():
-    return cast(BuildMetadata, json.loads(build_metadata_path.read_text()))
+    build_metadata = json.loads(build_metadata_path.read_text())
+    openpilot_metadata = build_metadata.get("openpilot", {})
+
+    channel = build_metadata.get("channel", "unknown")
+    version = openpilot_metadata.get("version", "unknown")
+    release_notes = openpilot_metadata.get("release_notes", "unknown")
+    git_commit = openpilot_metadata.get("git_commit", "unknown")
+    return create_build_metadata(channel, version, release_notes, git_commit)
 
   git_folder = pathlib.Path(path) / ".git"
 
