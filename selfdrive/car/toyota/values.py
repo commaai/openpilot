@@ -220,7 +220,8 @@ class CAR(Platforms):
     ],
     TOYOTA_RAV4.specs,
     dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
-    flags=ToyotaFlags.NO_STOP_TIMER,
+    # Note that the ICE RAV4 does not respect positive acceleration commands under 19 mph
+    flags=ToyotaFlags.NO_STOP_TIMER | ToyotaFlags.SNG_WITHOUT_DSU,
   )
   TOYOTA_RAV4_TSS2 = ToyotaTSS2PlatformConfig(
     [
