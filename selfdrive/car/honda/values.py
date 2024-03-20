@@ -306,6 +306,20 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
   # We lose these ECUs without the comma power on these cars.
   # Note that we still attempt to match with them when they are present
+
+  # RIDGELINE
+  # ready for PR!
+  # ('combinationMeter', 'eps', 'fwdRadar', 'srs', 'vsa'): routes: 17109, dongles: {'c5e0d17adaaefd82', '1b45e552040c796b', 'bad4ac6254c650b7', '7f34938a5e86a378', 'f53658bd0c1ccf07', 'ac97f88de8b23b6b', '35bc9ea7179f80dd', 'b3d7eee4b125d7b6', 'aaa8dcc35bcea08f', 'a050c5221639b008', '4d09b970840d3f08', 'd084ea2309575a71', 'ea5b4d9ab5ecd245', '24187316e568f2ec', '701b7d276e45a7bf', 'f55d4cc06d920e27', 'bf0fac55013ab937', '565d371991091752', '3aa992e52b91bf8f', 'b3c88ee6c378a66e', '732c29f8108b54a9', '441dd16054acf306', '7f498d0d7b378766', '9bdc08e34137d504', '93c3794271c0a6c1', 'adbbce5339634eae', '715416e4439e555e', '1551280de648df83', 'f3f2fc37c69f2311', '600ed71b1d966e6f', 'b6d146e61d3a64b2', '9b29873dd03e9357', 'a203050ebd930a6f', 'd5dd26679a932af9', 'da3ab625d901eb2b', '1a074a6025c49094', 'd319fb90bf4c979d', '27ffb245d4fc2f39', '123bb10637490c9b', 'a30ea383d0e05350', '3cc94a71a1c61666', 'a8a2f1ff07c9ab11', '6e2f19b5263c9d65', 'e51512df42d845d0', '49eb8c6a69caa049', 'e52c055a77cac84c', '19fe0c3f46444eeb', 'bbd41ebd2179ae49', '1ce6e69a54819ac9', 'e36f7195f1bb11c7', '1697535ec227491d', '97bbe58ea225ad1d', '1ce42f7a69e4b11c', '7952acf99389e037', 'a9648fa1431cf7a8', '0ddc5f974851a022', '07f62799f4e6944b', '6b8635e52c3e4e73', '4a080fe908e25eb2', 'ff6a03d8e5bab6bc', 'aaa226a738d37659', '263d65b0fd18f5c4', '69410e74ad24dda3', '0231272ec6feef74', 'e4bcdeea7c6f1fd3', '5d9a427622c55b6c', '1eb0e8547f8ff382', '6acf79c245a32eb3', '805f226ab2a8b1d7', '93f7c48437b4cc0f', '758cfd09da38d125', 'bf72e541df745f48', '9e334ca61b5089ee', 'be8ff657d8e5179f', '3c1a2c5bfa0fc55d', '9824e24dd1574abc', 'cbcc412104157ab0', 'd169250d735e1346', '306b1963ae64982a', 'a7252f38a01fc213'}
+  # (): routes: 21, dongles: {'1eb0e8547f8ff382', '1a074a6025c49094'}
+  # ('combinationMeter', 'eps', 'fwdRadar', 'srs'): routes: 1, dongles: {'b3d7eee4b125d7b6'}
+
+  # INSIGHT
+  # ready for PR!
+  # ('eps', 'fwdCamera', 'fwdRadar', 'srs'): routes: 4114, dongles: {'018c9e8786f70889', 'fdf1eae234f98180', 'c1a906e7bdbac9fe', 'a411418e62a4d6f7', '21726e67ee95b707', '6ca0bbb0b026b5a5', 'baeb84fd6ad76707', '9dae484044b3cfe8', 'df113ca24ae4dbb5', '76abc19439073a17', '8958942b212e8cd9', '64d21f4115f0e66a', 'bfde60a60008c36d', '907c91003e36d85d', 'f28026c92de2742e', 'b93205748d65caff', '29c9d54d036ce5ac', 'b41ccf51a762d116', 'bad28a64a886f4c5', 'acdb227003c7aee1', 'ba9a88a070809873', '61ced3dc823c6830', '63a8c388394d258f', '9c63237c6c04ec9a', 'f7d92a003486dc37', 'b77d071405389d2a', '13c9a6610b7d0c4f', 'eb5e7e06aa56a47f', 'f9b412667f9b0669', '663bc1c495789296', '46ed1f05072e029a'}
+  # (): routes: 146, dongles: {'29c9d54d036ce5ac'}
+  # ('fwdRadar',): routes: 5, dongles: {'eb5e7e06aa56a47f'}
+  # ('combinationMeter', 'eps', 'fwdCamera', 'fwdRadar', 'gateway', 'shiftByWire', 'srs', 'vsa'): routes: 1, dongles: {'baeb84fd6ad76707'}
+
   non_essential_ecus={
     Ecu.programmedFuelInjection: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
     Ecu.transmission: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
