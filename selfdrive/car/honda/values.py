@@ -306,6 +306,24 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
   # We lose these ECUs without the comma power on these cars.
   # Note that we still attempt to match with them when they are present
+
+
+  # ACURA_RDX:
+  # ('combinationMeter', 'fwdRadar', 'srs', 'vsa'): routes: 919, dongles: {'f41a6f453a4beb95', 'a00bae406fe65d1c', '6354b3a74b9ac09d', '06f3955838b745c8', '569e73e7fca0e803'}
+  # ('combinationMeter', 'fwdRadar', 'srs'): routes: 8, dongles: {'6354b3a74b9ac09d', 'a00bae406fe65d1c'}
+
+  # CRV_HYBRID:
+  # ('eps', 'fwdCamera', 'fwdRadar', 'srs'): routes: 1794, dongles: {'9b19234732591434', 'e906fc18a593603a', 'c2b195c154e0ba54', 'd6c98b1ebf9916b9', 'db6ce4711c1b4ccb', 'a3367c53243b7b6a', '8f3f4683d7cfda74', 'b9ecad3ab8b3ed53', '11fa019479471a0a', '420cb5afd2f5f563', '16981d0978378bfe', '6ca0bbb0b026b5a5'}
+  # (): routes: 84, dongles: {'fe90f3d7403f2411'}  # NOTE: shouldn't be possible, but user has some old routes with everything except srs, ignoring for now
+
+  # FIT
+  # ('eps', 'fwdRadar', 'srs', 'vsa'): routes: 1545, dongles: {'df67bf140583e302', '8411411300bf023d', '48536bafa6cabe3e', 'ac04cdfc0c735c0b', '445d1ade497345f3', 'd98f9841b9db8943', 'a6883439bbd3d975', 'e56002a2b1eeed4d', '0ac44bcb111aed3f', 'f4cc9d3bfec4e712', '8085a4d3c9416184', '8a867b1f51563696'}
+  # ('eps', 'fwdRadar', 'srs'): routes: 4, dongles: {'d98f9841b9db8943', 'e56002a2b1eeed4d'}
+
+  # CRV
+  # ('combinationMeter', 'fwdRadar', 'srs', 'vsa'): routes: 599, dongles: {'46c19dcb28afcb5a', 'bd96755604115d4c', '7689c363dfd8d1dc'}
+  # ('combinationMeter', 'fwdRadar', 'srs'): routes: 13, dongles: {'46c19dcb28afcb5a', 'bd96755604115d4c'}
+
   non_essential_ecus={
     Ecu.programmedFuelInjection: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
     Ecu.transmission: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
