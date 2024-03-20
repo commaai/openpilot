@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
+from dataclasses import dataclass
 import json
 import os
 import pathlib
 import subprocess
-from typing import TypedDict
 
 
 from openpilot.common.basedir import BASEDIR
@@ -80,26 +80,18 @@ def is_dirty() -> bool:
   return dirty
 
 
-class OpenpilotMetadata(TypedDict):
+@dataclass(frozen=True)
+class OpenpilotMetadata:
   version: str
   release_notes: str
   git_commit: str
 
 
-class BuildMetadata(TypedDict):
+@dataclass(frozen=True)
+class BuildMetadata:
   channel: str
   openpilot: OpenpilotMetadata
 
-
-def create_build_metadata(channel, version, release_notes, commit) -> BuildMetadata:
-  return {
-    "channel": channel,
-    "openpilot": {
-      "version": version,
-      "release_notes": release_notes,
-      "git_commit": commit
-    }
-  }
 
 
 def get_build_metadata(path: str = BASEDIR) -> BuildMetadata | None:
@@ -113,12 +105,12 @@ def get_build_metadata(path: str = BASEDIR) -> BuildMetadata | None:
     version = openpilot_metadata.get("version", "unknown")
     release_notes = openpilot_metadata.get("release_notes", "unknown")
     git_commit = openpilot_metadata.get("git_commit", "unknown")
-    return create_build_metadata(channel, version, release_notes, git_commit)
+    return BuildMetadata(channel, OpenpilotMetadata(version, release_notes, git_commit))
 
   git_folder = pathlib.Path(path) / ".git"
 
   if git_folder.exists():
-    return create_build_metadata(get_short_branch(path), get_version(path), get_release_notes(path), get_commit(path))
+    return BuildMetadata(get_short_branch(path), OpenpilotMetadata(get_version(path), get_release_notes(path), get_commit(path)))
 
   return None
 
