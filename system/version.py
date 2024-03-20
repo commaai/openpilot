@@ -87,13 +87,13 @@ class OpenpilotMetadata(TypedDict):
 
 
 class BuildMetadata(TypedDict):
-  name: str
+  channel: str
   openpilot: OpenpilotMetadata
 
 
 def create_build_metadata(channel, version, release_notes, commit) -> BuildMetadata:
   return {
-    "name": channel,
+    "channel": channel,
     "openpilot": {
       "version": version,
       "release_notes": release_notes,
