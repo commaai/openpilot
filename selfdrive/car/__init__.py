@@ -1,7 +1,7 @@
 # functions common among cars
 from collections import defaultdict, namedtuple
 from dataclasses import dataclass
-from enum import IntFlag, ReprEnum
+from enum import IntFlag, ReprEnum, EnumType
 from dataclasses import replace
 
 import capnp
@@ -179,27 +179,6 @@ def crc8_pedal(data):
   return crc
 
 
-def create_gas_interceptor_command(packer, gas_amount, idx):
-  # Common gas pedal msg generator
-  enable = gas_amount > 0.001
-
-  values = {
-    "ENABLE": enable,
-    "COUNTER_PEDAL": idx & 0xF,
-  }
-
-  if enable:
-    values["GAS_COMMAND"] = gas_amount * 255.
-    values["GAS_COMMAND2"] = gas_amount * 255.
-
-  dat = packer.make_can_msg("GAS_COMMAND", 0, values)[2]
-
-  checksum = crc8_pedal(dat[:-1])
-  values["CHECKSUM_PEDAL"] = checksum
-
-  return packer.make_can_msg("GAS_COMMAND", 0, values)
-
-
 def make_can_msg(addr, dat, bus):
   return [addr, 0, dat, bus]
 
@@ -261,13 +240,14 @@ class CarSpecs:
 
 @dataclass(order=True)
 class PlatformConfig(Freezable):
-  platform_str: str
-  car_info: list[CarDocs]
+  car_docs: list[CarDocs]
   specs: CarSpecs
 
   dbc_dict: DbcDict
 
   flags: int = 0
+
+  platform_str: str | None = None
 
   def __hash__(self) -> int:
     return hash(self.platform_str)
@@ -280,10 +260,18 @@ class PlatformConfig(Freezable):
 
   def __post_init__(self):
     self.init()
-    self.freeze()
 
 
-class Platforms(str, ReprEnum):
+class PlatformsType(EnumType):
+  def __new__(metacls, cls, bases, classdict, *, boundary=None, _simple=False, **kwds):
+    for key in classdict._member_names.keys():
+      cfg: PlatformConfig = classdict[key]
+      cfg.platform_str = key
+      cfg.freeze()
+    return super().__new__(metacls, cls, bases, classdict, boundary=boundary, _simple=_simple, **kwds)
+
+
+class Platforms(str, ReprEnum, metaclass=PlatformsType):
   config: PlatformConfig
 
   def __new__(cls, platform_config: PlatformConfig):

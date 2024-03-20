@@ -18,22 +18,22 @@ ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 NO_DATES_PLATFORMS = {
   # CAN FD
   CAR.KIA_SPORTAGE_5TH_GEN,
-  CAR.SANTA_CRUZ_1ST_GEN,
-  CAR.TUCSON_4TH_GEN,
+  CAR.HYUNDAI_SANTA_CRUZ_1ST_GEN,
+  CAR.HYUNDAI_TUCSON_4TH_GEN,
   # CAN
-  CAR.ELANTRA,
-  CAR.ELANTRA_GT_I30,
+  CAR.HYUNDAI_ELANTRA,
+  CAR.HYUNDAI_ELANTRA_GT_I30,
   CAR.KIA_CEED,
   CAR.KIA_FORTE,
   CAR.KIA_OPTIMA_G4,
   CAR.KIA_OPTIMA_G4_FL,
   CAR.KIA_SORENTO,
-  CAR.KONA,
-  CAR.KONA_EV,
-  CAR.KONA_EV_2022,
-  CAR.KONA_HEV,
-  CAR.SONATA_LF,
-  CAR.VELOSTER,
+  CAR.HYUNDAI_KONA,
+  CAR.HYUNDAI_KONA_EV,
+  CAR.HYUNDAI_KONA_EV_2022,
+  CAR.HYUNDAI_KONA_HEV,
+  CAR.HYUNDAI_SONATA_LF,
+  CAR.HYUNDAI_VELOSTER,
 }
 
 
@@ -67,7 +67,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     # Tucson having Santa Cruz camera and EPS for example
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model.value):
-        if car_model == CAR.SANTA_CRUZ_1ST_GEN:
+        if car_model == CAR.HYUNDAI_SANTA_CRUZ_1ST_GEN:
           raise unittest.SkipTest("Skip checking Santa Cruz for its parts")
 
         for code, _ in get_platform_codes(ecus[(Ecu.fwdCamera, 0x7c4, None)]):
@@ -108,9 +108,9 @@ class TestHyundaiFingerprint(unittest.TestCase):
 
           # Third and fourth character are usually EV/hybrid identifiers
           codes = {code.split(b"-")[0][:2] for code, _ in get_platform_codes(fws)}
-          if car_model == CAR.PALISADE:
+          if car_model == CAR.HYUNDAI_PALISADE:
             self.assertEqual(codes, {b"LX", b"ON"}, f"Car has unexpected platform codes: {car_model} {codes}")
-          elif car_model == CAR.KONA_EV and ecu[0] == Ecu.fwdCamera:
+          elif car_model == CAR.HYUNDAI_KONA_EV and ecu[0] == Ecu.fwdCamera:
             self.assertEqual(codes, {b"OE", b"OS"}, f"Car has unexpected platform codes: {car_model} {codes}")
           else:
             self.assertEqual(len(codes), 1, f"Car has multiple platform codes: {car_model} {codes}")
@@ -120,7 +120,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
   def test_platform_code_ecus_available(self):
     # TODO: add queries for these non-CAN FD cars to get EPS
     no_eps_platforms = CANFD_CAR | {CAR.KIA_SORENTO, CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL, CAR.KIA_OPTIMA_H,
-                                    CAR.KIA_OPTIMA_H_G4_FL, CAR.SONATA_LF, CAR.TUCSON, CAR.GENESIS_G90, CAR.GENESIS_G80, CAR.ELANTRA}
+                                    CAR.KIA_OPTIMA_H_G4_FL, CAR.HYUNDAI_SONATA_LF, CAR.HYUNDAI_TUCSON, CAR.GENESIS_G90, CAR.GENESIS_G80, CAR.HYUNDAI_ELANTRA}
 
     # Asserts ECU keys essential for fuzzy fingerprinting are available on all platforms
     for car_model, ecus in FW_VERSIONS.items():

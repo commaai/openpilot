@@ -25,43 +25,43 @@ CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS.md")
 CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
 
 
-def get_all_car_info() -> list[CarDocs]:
-  all_car_info: list[CarDocs] = []
+def get_all_car_docs() -> list[CarDocs]:
+  all_car_docs: list[CarDocs] = []
   footnotes = get_all_footnotes()
   for model, platform in PLATFORMS.items():
-    car_info = platform.config.car_info
+    car_docs = platform.config.car_docs
     # If available, uses experimental longitudinal limits for the docs
     CP = interfaces[model][0].get_params(platform, fingerprint=gen_empty_fingerprint(),
                                          car_fw=[car.CarParams.CarFw(ecu="unknown")], experimental_long=True, docs=True)
 
-    if CP.dashcamOnly or not len(car_info):
+    if CP.dashcamOnly or not len(car_docs):
       continue
 
     # A platform can include multiple car models
-    for _car_info in car_info:
-      if not hasattr(_car_info, "row"):
-        _car_info.init_make(CP)
-        _car_info.init(CP, footnotes)
-      all_car_info.append(_car_info)
+    for _car_docs in car_docs:
+      if not hasattr(_car_docs, "row"):
+        _car_docs.init_make(CP)
+        _car_docs.init(CP, footnotes)
+      all_car_docs.append(_car_docs)
 
   # Sort cars by make and model + year
-  sorted_cars: list[CarDocs] = natsorted(all_car_info, key=lambda car: car.name.lower())
+  sorted_cars: list[CarDocs] = natsorted(all_car_docs, key=lambda car: car.name.lower())
   return sorted_cars
 
 
-def group_by_make(all_car_info: list[CarDocs]) -> dict[str, list[CarDocs]]:
-  sorted_car_info = defaultdict(list)
-  for car_info in all_car_info:
-    sorted_car_info[car_info.make].append(car_info)
-  return dict(sorted_car_info)
+def group_by_make(all_car_docs: list[CarDocs]) -> dict[str, list[CarDocs]]:
+  sorted_car_docs = defaultdict(list)
+  for car_docs in all_car_docs:
+    sorted_car_docs[car_docs.make].append(car_docs)
+  return dict(sorted_car_docs)
 
 
-def generate_cars_md(all_car_info: list[CarDocs], template_fn: str) -> str:
+def generate_cars_md(all_car_docs: list[CarDocs], template_fn: str) -> str:
   with open(template_fn) as f:
     template = jinja2.Template(f.read(), trim_blocks=True, lstrip_blocks=True)
 
   footnotes = [fn.value.text for fn in get_all_footnotes()]
-  cars_md: str = template.render(all_car_info=all_car_info, PartType=PartType,
+  cars_md: str = template.render(all_car_docs=all_car_docs, PartType=PartType,
                                  group_by_make=group_by_make, footnotes=footnotes,
                                  Column=Column)
   return cars_md
@@ -76,5 +76,5 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   with open(args.out, 'w') as f:
-    f.write(generate_cars_md(get_all_car_info(), args.template))
+    f.write(generate_cars_md(get_all_car_docs(), args.template))
   print(f"Generated and written to {args.out}")
