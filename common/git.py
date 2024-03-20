@@ -4,23 +4,23 @@ from openpilot.common.run import run_cmd, run_cmd_default
 
 
 @cache
-def get_commit(branch: str = "HEAD") -> str:
-  return run_cmd_default(["git", "rev-parse", branch])
+def get_commit(cwd: str = None, branch: str = "HEAD") -> str:
+  return run_cmd_default(["git", "rev-parse", branch], cwd=cwd)
 
 
 @cache
-def get_commit_date(commit: str = "HEAD") -> str:
-  return run_cmd_default(["git", "show", "--no-patch", "--format='%ct %ci'", commit])
+def get_commit_date(cwd: str = None, commit: str = "HEAD") -> str:
+  return run_cmd_default(["git", "show", "--no-patch", "--format='%ct %ci'", commit], cwd=cwd)
 
 
 @cache
-def get_short_branch() -> str:
-  return run_cmd_default(["git", "rev-parse", "--abbrev-ref", "HEAD"])
+def get_short_branch(cwd: str = None) -> str:
+  return run_cmd_default(["git", "rev-parse", "--abbrev-ref", "HEAD"], cwd=cwd)
 
 
 @cache
-def get_branch() -> str:
-  return run_cmd_default(["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"])
+def get_branch(cwd: str = None) -> str:
+  return run_cmd_default(["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"], cwd=cwd)
 
 
 @cache
