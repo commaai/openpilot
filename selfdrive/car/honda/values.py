@@ -317,8 +317,10 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Ecu.gateway: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_FREED,
                   CAR.HONDA_HRV, CAR.HONDA_CRV_5G, CAR.HONDA_ODYSSEY_CHN],
     Ecu.electricBrakeBooster: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
-    Ecu.shiftByWire: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD],  # existence correlates with transmission type for ICE
-    Ecu.hud: [CAR.HONDA_ACCORD],  # existence correlates with trim level
+    # existence correlates with transmission type for Accord ICE
+    Ecu.shiftByWire: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD],
+    # existence correlates with trim level
+    Ecu.hud: [CAR.HONDA_ACCORD],
   },
   extra_ecus=[
     # The only other ECU on PT bus accessible by camera on radarless Civic
