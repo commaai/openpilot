@@ -4,7 +4,7 @@ from openpilot.selfdrive.car.toyota.values import CAR
 Ecu = car.CarParams.Ecu
 
 FW_VERSIONS = {
-  CAR.AVALON: {
+  CAR.TOYOTA_AVALON: {
     (Ecu.abs, 0x7b0, None): [
       b'F152607060\x00\x00\x00\x00\x00\x00',
     ],
@@ -30,7 +30,7 @@ FW_VERSIONS = {
       b'8646F0703000\x00\x00\x00\x00',
     ],
   },
-  CAR.AVALON_2019: {
+  CAR.TOYOTA_AVALON_2019: {
     (Ecu.abs, 0x7b0, None): [
       b'F152607110\x00\x00\x00\x00\x00\x00',
       b'F152607140\x00\x00\x00\x00\x00\x00',
@@ -71,7 +71,7 @@ FW_VERSIONS = {
       b'8646F0702100\x00\x00\x00\x00',
     ],
   },
-  CAR.AVALON_TSS2: {
+  CAR.TOYOTA_AVALON_TSS2: {
     (Ecu.abs, 0x7b0, None): [
       b'\x01F152607240\x00\x00\x00\x00\x00\x00',
       b'\x01F152607250\x00\x00\x00\x00\x00\x00',
@@ -95,7 +95,7 @@ FW_VERSIONS = {
       b'\x028646F4104100\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
     ],
   },
-  CAR.CAMRY: {
+  CAR.TOYOTA_CAMRY: {
     (Ecu.engine, 0x700, None): [
       b'\x018966306L3100\x00\x00\x00\x00',
       b'\x018966306L4200\x00\x00\x00\x00',
@@ -222,7 +222,7 @@ FW_VERSIONS = {
       b'8646F0607100    ',
     ],
   },
-  CAR.CAMRY_TSS2: {
+  CAR.TOYOTA_CAMRY_TSS2: {
     (Ecu.eps, 0x7a1, None): [
       b'8965B33630\x00\x00\x00\x00\x00\x00',
       b'8965B33640\x00\x00\x00\x00\x00\x00',
@@ -268,7 +268,7 @@ FW_VERSIONS = {
       b'\x028646F3305500\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
     ],
   },
-  CAR.CHR: {
+  CAR.TOYOTA_CHR: {
     (Ecu.engine, 0x700, None): [
       b'\x01896631017100\x00\x00\x00\x00',
       b'\x01896631017200\x00\x00\x00\x00',
@@ -353,7 +353,7 @@ FW_VERSIONS = {
       b'8646FF407100    ',
     ],
   },
-  CAR.CHR_TSS2: {
+  CAR.TOYOTA_CHR_TSS2: {
     (Ecu.abs, 0x7b0, None): [
       b'F152610041\x00\x00\x00\x00\x00\x00',
       b'F152610260\x00\x00\x00\x00\x00\x00',
@@ -385,7 +385,7 @@ FW_VERSIONS = {
       b'\x028646FF413100\x00\x00\x00\x008646GF411100\x00\x00\x00\x00',
     ],
   },
-  CAR.COROLLA: {
+  CAR.TOYOTA_COROLLA: {
     (Ecu.engine, 0x7e0, None): [
       b'\x0230ZC2000\x00\x00\x00\x00\x00\x00\x00\x0050212000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x0230ZC2100\x00\x00\x00\x00\x00\x00\x00\x0050212000\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -419,7 +419,7 @@ FW_VERSIONS = {
       b'8646F0201200\x00\x00\x00\x00',
     ],
   },
-  CAR.COROLLA_TSS2: {
+  CAR.TOYOTA_COROLLA_TSS2: {
     (Ecu.engine, 0x700, None): [
       b'\x01896630A22000\x00\x00\x00\x00',
       b'\x01896630ZG2000\x00\x00\x00\x00',
@@ -594,7 +594,7 @@ FW_VERSIONS = {
       b'\x028646F7605100\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
     ],
   },
-  CAR.HIGHLANDER: {
+  CAR.TOYOTA_HIGHLANDER: {
     (Ecu.engine, 0x700, None): [
       b'\x01896630E09000\x00\x00\x00\x00',
       b'\x01896630E43000\x00\x00\x00\x00',
@@ -650,7 +650,7 @@ FW_VERSIONS = {
       b'8646F0E01300\x00\x00\x00\x00',
     ],
   },
-  CAR.HIGHLANDER_TSS2: {
+  CAR.TOYOTA_HIGHLANDER_TSS2: {
     (Ecu.eps, 0x7a1, None): [
       b'8965B48241\x00\x00\x00\x00\x00\x00',
       b'8965B48310\x00\x00\x00\x00\x00\x00',
@@ -796,7 +796,7 @@ FW_VERSIONS = {
       b'\x028646F5303400\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
     ],
   },
-  CAR.PRIUS: {
+  CAR.TOYOTA_PRIUS: {
     (Ecu.engine, 0x700, None): [
       b'\x02896634761000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x02896634761100\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
@@ -894,7 +894,7 @@ FW_VERSIONS = {
       b'8646F4705200\x00\x00\x00\x00',
     ],
   },
-  CAR.PRIUS_V: {
+  CAR.TOYOTA_PRIUS_V: {
     (Ecu.abs, 0x7b0, None): [
       b'F152647280\x00\x00\x00\x00\x00\x00',
     ],
@@ -911,7 +911,7 @@ FW_VERSIONS = {
       b'8646F4703300\x00\x00\x00\x00',
     ],
   },
-  CAR.RAV4: {
+  CAR.TOYOTA_RAV4: {
     (Ecu.engine, 0x7e0, None): [
       b'\x02342Q1000\x00\x00\x00\x00\x00\x00\x00\x0054212000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x02342Q1100\x00\x00\x00\x00\x00\x00\x00\x0054212000\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -952,7 +952,7 @@ FW_VERSIONS = {
       b'8646F4204000\x00\x00\x00\x00',
     ],
   },
-  CAR.RAV4H: {
+  CAR.TOYOTA_RAV4H: {
     (Ecu.engine, 0x7e0, None): [
       b'\x02342N9000\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x02342N9100\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -989,7 +989,7 @@ FW_VERSIONS = {
       b'8646F4204000\x00\x00\x00\x00',
     ],
   },
-  CAR.RAV4_TSS2: {
+  CAR.TOYOTA_RAV4_TSS2: {
     (Ecu.engine, 0x700, None): [
       b'\x01896630R58000\x00\x00\x00\x00',
       b'\x01896630R58100\x00\x00\x00\x00',
@@ -1099,7 +1099,7 @@ FW_VERSIONS = {
       b'\x028646F4203800\x00\x00\x00\x008646G2601500\x00\x00\x00\x00',
     ],
   },
-  CAR.RAV4_TSS2_2022: {
+  CAR.TOYOTA_RAV4_TSS2_2022: {
     (Ecu.abs, 0x7b0, None): [
       b'\x01F15260R350\x00\x00\x00\x00\x00\x00',
       b'\x01F15260R361\x00\x00\x00\x00\x00\x00',
@@ -1135,7 +1135,7 @@ FW_VERSIONS = {
       b'\x028646F0R02100\x00\x00\x00\x008646G0R01100\x00\x00\x00\x00',
     ],
   },
-  CAR.RAV4_TSS2_2023: {
+  CAR.TOYOTA_RAV4_TSS2_2023: {
     (Ecu.abs, 0x7b0, None): [
       b'\x01F15260R450\x00\x00\x00\x00\x00\x00',
       b'\x01F15260R51000\x00\x00\x00\x00',
@@ -1167,7 +1167,7 @@ FW_VERSIONS = {
       b'\x028646F0R11000\x00\x00\x00\x008646G0R04000\x00\x00\x00\x00',
     ],
   },
-  CAR.SIENNA: {
+  CAR.TOYOTA_SIENNA: {
     (Ecu.engine, 0x700, None): [
       b'\x01896630832100\x00\x00\x00\x00',
       b'\x01896630832200\x00\x00\x00\x00',
@@ -1591,7 +1591,7 @@ FW_VERSIONS = {
       b'\x028646F4810400\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
     ],
   },
-  CAR.PRIUS_TSS2: {
+  CAR.TOYOTA_PRIUS_TSS2: {
     (Ecu.engine, 0x700, None): [
       b'\x028966347B1000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
       b'\x028966347C4000\x00\x00\x00\x008966A4703000\x00\x00\x00\x00',
@@ -1622,7 +1622,7 @@ FW_VERSIONS = {
       b'\x028646F4712000\x00\x00\x00\x008646G2601500\x00\x00\x00\x00',
     ],
   },
-  CAR.MIRAI: {
+  CAR.TOYOTA_MIRAI: {
     (Ecu.abs, 0x7d1, None): [
       b'\x01898A36203000\x00\x00\x00\x00',
     ],
@@ -1640,7 +1640,7 @@ FW_VERSIONS = {
       b'\x028646F6201400\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
     ],
   },
-  CAR.ALPHARD_TSS2: {
+  CAR.TOYOTA_ALPHARD_TSS2: {
     (Ecu.engine, 0x7e0, None): [
       b'\x0235870000\x00\x00\x00\x00\x00\x00\x00\x00A0202000\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\x0235879000\x00\x00\x00\x00\x00\x00\x00\x00A4701000\x00\x00\x00\x00\x00\x00\x00\x00',
