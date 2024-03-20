@@ -83,8 +83,8 @@ def createMcap(logPaths):
     for logPath in logPaths:
         segment_counter+=1
         print(segment_counter)
-        if segment_counter != 2:
-            continue
+        # if segment_counter != 2:
+        #     continue
         rlog = LogReader(logPath)
         for msg in rlog:
             jsonMsg = json.loads(json.dumps(convertBytesToString(msg.to_dict())))
