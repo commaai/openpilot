@@ -117,13 +117,13 @@ float combine_pvs(float lv, float sv, int expo) {
   float llv = lv - 64.0;
   float lsv = sv - 64.0;
   if (expo > 64) {
-    if (lv < 1023) {
+    if (lv < 1023 || sv < 61376 / expo + 64) {
       return (llv) / (65536.0 - 64.0);
     } else {
       return ((lsv) * expo / 64) / (65536.0 - 64.0);
     }
   } else {
-    if (sv < 1023) {
+    if (sv < 1023 || lv < 15 * expo + 64) {
       return (lsv) / (65536.0 - 64.0);
     } else {
       return ((llv) * 64 / expo) / (65536.0 - 64.0);
