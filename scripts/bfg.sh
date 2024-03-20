@@ -16,83 +16,83 @@ fi
 
 if [ ! -d $SRC ]; then
   git clone --bare --mirror https://github.com/commaai/openpilot.git $SRC
+
+  cd $SRC
+
+  echo "starting size $(du -sh .)"
+
+  # why?
+  # git remote update
+
+  # the git-filter-repo analysis is bliss - can be found in the repo root/filter-repo/analysis
+  /tmp/git-filter-repo --force --analyze
+fi
+
+if [ ! -d $SRC_ARCHIVE ]; then
+  git clone --bare --mirror https://github.com/commaai/openpilot-release-archive.git $SRC_ARCHIVE
+
+  cd $SRC
+
+  # Add openpilot-release-archive as a remote
+  git remote add archive $SRC_ARCHIVE
+
+  # Fetch the content from the archive remote
+  git fetch archive
 fi
 
 if [ ! -d $SRC_CLONE ]; then
   git clone $SRC $SRC_CLONE
+
+  cd $SRC_CLONE
+
+  # git checkout --track origin/devel
+  # WIP: seems we might not need the archive repo at all - since we already have the history of the tags in the main repo
+  git checkout tags/v0.7.1
+  git checkout -b archive
+
+  # rm these so that we don't get an error when adding them as submodules later
+  git rm -r cereal opendbc panda
+  git commit -m "removed unmergeable files and directories before merge"
+
+  # skip-smudge to get rid of some lfs errors that it can't find the reference of some lfs files
+  git lfs install --skip-smudge --local
+
+  # go to master
+  git checkout master
+
+  # rebase previous "devel" history
+  # WIP - this doesn't complete, it currently errors after ~20 commits rebased
+  # git rebase -X ours archive
+  handle_conflicts() {
+    # If there's a conflict, find deleted files and delete them
+    git status --porcelain | grep '^UD' | cut -c4- | while read -r file; do
+      git rm -- "$file"
+    done
+    # Add all changes (this will mark conflicts as resolved)
+    git add -u
+  }
+
+  git rebase -X ours archive
+
+  # Start with an infinite loop
+  while true; do
+    # Attempt to continue the rebase
+    GIT_EDITOR=true git rebase --continue
+
+    # Check the exit status of the rebase command
+    if [ $? -eq 0 ]; then
+      # If the rebase was successful, break out of the loop
+      break
+    else
+      # If there was an error (e.g., a conflict), handle the conflict
+      handle_conflicts
+    fi
+  done
 fi
-
-# if [ ! -d $SRC_ARCHIVE ]; then
-#   git clone --bare --mirror https://github.com/commaai/openpilot-release-archive.git $SRC_ARCHIVE
-# fi
-
-cd $SRC
-
-echo "starting size $(du -sh .)"
-
-git remote update
-
-# the git-filter-repo analysis is bliss - can be found in the repo root/filter-repo/analysis
-/tmp/git-filter-repo --force --analyze
-
-# # Add openpilot-release-archive as a remote
-# git remote add archive $SRC_ARCHIVE
-
-# # Fetch the content from the archive remote
-# git fetch archive
 
 cd $SRC_CLONE
 
-# git checkout --track origin/devel
-# WIP: seems we might not need the archive repo at all - since we already have the history of the tags in the main repo
-git checkout tags/v0.7.1
-git checkout -b archive
-
-# rm these so that we don't get an error when adding them as submodules later
-git rm -r cereal opendbc panda
-git commit -m "removed unmergeable files and directories before merge"
-
-# skip-smudge to get rid of some lfs errors that it can't find the reference of some lfs files
-git lfs install --skip-smudge --local
-
-# go to master
-git checkout master
-
-# rebase previous "devel" history
-# WIP - this doesn't complete, it currently errors after ~20 commits rebased
-# git rebase -X ours archive
-handle_conflicts() {
-  # If there's a conflict, find deleted files and delete them
-  git status --porcelain | grep '^UD' | cut -c4- | while read -r file; do
-    git rm -- "$file"
-  done
-  # Add all changes (this will mark conflicts as resolved)
-  git add -u
-}
-
-git rebase -X ours archive
-
-# Start with an infinite loop
-while true; do
-  # Attempt to continue the rebase
-  GIT_EDITOR=true git rebase --continue
-
-  # Check the exit status of the rebase command
-  if [ $? -eq 0 ]; then
-    # If the rebase was successful, break out of the loop
-    break
-  else
-    # If there was an error (e.g., a conflict), handle the conflict
-    handle_conflicts
-  fi
-done
-
-# # While there are conflicts, try to resolve them and continue the rebase
-# while [ $? -ne 0 ]; do
-#   handle_conflicts
-#   # Continue the rebase without opening an editor
-#   git rebase --continue --no-edit
-# done
+git push --force
 
 exit
 
