@@ -50,14 +50,41 @@ def transformToFoxgloveSchema(jsonMsg):
     }
     return foxMsg
 
+# TODO: Check if there is a tool to build GEOJson
+def transformMapCoordinates(jsonMsg):
+    coordinates = []
+    for jsonCoords in jsonMsg.get("navRoute").get("coordinates"):
+        coordinates.append([jsonCoords.get("longitude"), jsonCoords.get("latitude")])
+
+    # Define the GeoJSON
+    geojson_data = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "geometry": {
+                    "type": "LineString",
+                    "coordinates": coordinates
+                }
+            }
+        ]
+    }
+
+    # Create the final JSON with the GeoJSON data encoded as a string
+    geoJson = {
+        "geojson": json.dumps(geojson_data)
+    }
+
+    return geoJson
+
 # Get logs from a path, and convert them into mcap
 def createMcap(logPaths):
     segment_counter = 0
     for logPath in logPaths:
-        print(segment_counter)
-        # if segment_counter == 1:
-        #     break
         segment_counter+=1
+        print(segment_counter)
+        if segment_counter != 2:
+            continue
         rlog = LogReader(logPath)
         for msg in rlog:
             jsonMsg = json.loads(json.dumps(convertBytesToString(msg.to_dict())))
@@ -65,7 +92,8 @@ def createMcap(logPaths):
                 jsonMsg = transformToFoxgloveSchema(jsonMsg)
             elif msg.which() == "deviceState":
                 jsonMsg["deviceState"] = transform_json(jsonMsg.get("deviceState"), "cpuTempC")
-
+            elif msg.which() == "navRoute":
+                jsonMsg = transformMapCoordinates(jsonMsg)
             if msg.which() not in schemas:
                 schema = loadSchema(msg.which())
                 schema_id = writer.register_schema(
@@ -87,6 +115,9 @@ def createMcap(logPaths):
                 data=json.dumps(jsonMsg).encode("utf-8"),
                 publish_time=msg.logMonoTime
             )
+            # if msg.which() == "navRoute":
+            #     print(json.dumps(jsonMsg))
+            #     exit(0)
 
 # TODO: Check if foxglove is installed
 if __name__ == '__main__':
