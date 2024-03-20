@@ -66,7 +66,7 @@ class FordCarDocs(CarDocs):
 
   def init_make(self, CP: car.CarParams):
     harness = CarHarness.ford_q4 if CP.flags & FordFlags.CANFD else CarHarness.ford_q3
-    if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.MAVERICK_MK1, CAR.F_150_MK14, CAR.F_150_LIGHTNING_MK1):
+    if CP.carFingerprint in (CAR.FORD_BRONCO_SPORT_MK1, CAR.FORD_MAVERICK_MK1, CAR.FORD_F_150_MK14, CAR.FORD_F_150_LIGHTNING_MK1):
       self.car_parts = CarParts([Device.threex_angled_mount, harness])
     else:
       self.car_parts = CarParts([Device.threex, harness])
@@ -96,44 +96,44 @@ class FordCANFDPlatformConfig(FordPlatformConfig):
 
 
 class CAR(Platforms):
-  BRONCO_SPORT_MK1 = FordPlatformConfig(
+  FORD_BRONCO_SPORT_MK1 = FordPlatformConfig(
     [FordCarDocs("Ford Bronco Sport 2021-23")],
     CarSpecs(mass=1625, wheelbase=2.67, steerRatio=17.7),
   )
-  ESCAPE_MK4 = FordPlatformConfig(
+  FORD_ESCAPE_MK4 = FordPlatformConfig(
     [
       FordCarDocs("Ford Escape 2020-22", hybrid=True, plug_in_hybrid=True),
       FordCarDocs("Ford Kuga 2020-22", "Adaptive Cruise Control with Lane Centering", hybrid=True, plug_in_hybrid=True),
     ],
     CarSpecs(mass=1750, wheelbase=2.71, steerRatio=16.7),
   )
-  EXPLORER_MK6 = FordPlatformConfig(
+  FORD_EXPLORER_MK6 = FordPlatformConfig(
     [
       FordCarDocs("Ford Explorer 2020-23", hybrid=True),  # Hybrid: Limited and Platinum only
       FordCarDocs("Lincoln Aviator 2020-23", "Co-Pilot360 Plus", plug_in_hybrid=True),  # Hybrid: Grand Touring only
     ],
     CarSpecs(mass=2050, wheelbase=3.025, steerRatio=16.8),
   )
-  F_150_MK14 = FordCANFDPlatformConfig(
+  FORD_F_150_MK14 = FordCANFDPlatformConfig(
     [FordCarDocs("Ford F-150 2022-23", "Co-Pilot360 Active 2.0", hybrid=True)],
     CarSpecs(mass=2000, wheelbase=3.69, steerRatio=17.0),
   )
-  F_150_LIGHTNING_MK1 = FordCANFDPlatformConfig(
+  FORD_F_150_LIGHTNING_MK1 = FordCANFDPlatformConfig(
     [FordCarDocs("Ford F-150 Lightning 2021-23", "Co-Pilot360 Active 2.0")],
     CarSpecs(mass=2948, wheelbase=3.70, steerRatio=16.9),
   )
-  FOCUS_MK4 = FordPlatformConfig(
+  FORD_FOCUS_MK4 = FordPlatformConfig(
     [FordCarDocs("Ford Focus 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS], hybrid=True)],  # mHEV only
     CarSpecs(mass=1350, wheelbase=2.7, steerRatio=15.0),
   )
-  MAVERICK_MK1 = FordPlatformConfig(
+  FORD_MAVERICK_MK1 = FordPlatformConfig(
     [
       FordCarDocs("Ford Maverick 2022", "LARIAT Luxury", hybrid=True),
       FordCarDocs("Ford Maverick 2023-24", "Co-Pilot360 Assist", hybrid=True),
     ],
     CarSpecs(mass=1650, wheelbase=3.076, steerRatio=17.0),
   )
-  MUSTANG_MACH_E_MK1 = FordCANFDPlatformConfig(
+  FORD_MUSTANG_MACH_E_MK1 = FordCANFDPlatformConfig(
     [FordCarDocs("Ford Mustang Mach-E 2021-23", "Co-Pilot360 Active 2.0")],
     CarSpecs(mass=2200, wheelbase=2.984, steerRatio=17.0),  # TODO: check steer ratio
   )

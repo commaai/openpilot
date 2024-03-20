@@ -57,7 +57,7 @@ class CarInterface(CarInterfaceBase):
     ret.enableDsu = len(found_ecus) > 0 and Ecu.dsu not in found_ecus and candidate not in (NO_DSU_CAR | UNSUPPORTED_DSU_CAR) \
                                         and not (ret.flags & ToyotaFlags.SMART_DSU)
 
-    if candidate == CAR.PRIUS:
+    if candidate == CAR.TOYOTA_PRIUS:
       stop_and_go = True
       # Only give steer angle deadzone to for bad angle sensor prius
       for fw in car_fw:
@@ -69,12 +69,12 @@ class CarInterface(CarInterfaceBase):
       stop_and_go = True
       ret.wheelSpeedFactor = 1.035
 
-    elif candidate in (CAR.AVALON, CAR.AVALON_2019, CAR.AVALON_TSS2):
+    elif candidate in (CAR.TOYOTA_AVALON, CAR.TOYOTA_AVALON_2019, CAR.TOYOTA_AVALON_TSS2):
       # starting from 2019, all Avalon variants have stop and go
       # https://engage.toyota.com/static/images/toyota_safety_sense/TSS_Applicability_Chart.pdf
-      stop_and_go = candidate != CAR.AVALON
+      stop_and_go = candidate != CAR.TOYOTA_AVALON
 
-    elif candidate in (CAR.RAV4_TSS2, CAR.RAV4_TSS2_2022, CAR.RAV4_TSS2_2023):
+    elif candidate in (CAR.TOYOTA_RAV4_TSS2, CAR.TOYOTA_RAV4_TSS2_2022, CAR.TOYOTA_RAV4_TSS2_2023):
       ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kiBP = [0.0]
       ret.lateralTuning.pid.kpBP = [0.0]
@@ -91,7 +91,7 @@ class CarInterface(CarInterfaceBase):
           ret.lateralTuning.pid.kf = 0.00004
           break
 
-    elif candidate in (CAR.RAV4H, CAR.CHR, CAR.CAMRY, CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_NX):
+    elif candidate in (CAR.TOYOTA_RAV4H, CAR.TOYOTA_CHR, CAR.TOYOTA_CAMRY, CAR.TOYOTA_SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_NX):
       # TODO: Some of these platforms are not advertised to have full range ACC, are they similar to SNG_WITHOUT_DSU cars?
       stop_and_go = True
 

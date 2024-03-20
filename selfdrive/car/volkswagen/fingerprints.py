@@ -7,7 +7,7 @@ Ecu = car.CarParams.Ecu
 
 
 FW_VERSIONS = {
-  CAR.ARTEON_MK1: {
+  CAR.VOLKSWAGEN_ARTEON_MK1: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x873G0906259AH\xf1\x890001',
       b'\xf1\x873G0906259F \xf1\x890004',
@@ -49,7 +49,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0907572R \xf1\x890771',
     ],
   },
-  CAR.ATLAS_MK1: {
+  CAR.VOLKSWAGEN_ATLAS_MK1: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8703H906026AA\xf1\x899970',
       b'\xf1\x8703H906026AG\xf1\x899973',
@@ -101,7 +101,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0907572P \xf1\x890682',
     ],
   },
-  CAR.CADDY_MK3: {
+  CAR.VOLKSWAGEN_CADDY_MK3: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704E906027T \xf1\x892363',
     ],
@@ -112,7 +112,7 @@ FW_VERSIONS = {
       b'\xf1\x877N0907572C \xf1\x890211\xf1\x82\x0155',
     ],
   },
-  CAR.CRAFTER_MK2: {
+  CAR.VOLKSWAGEN_CRAFTER_MK2: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704L906056BP\xf1\x894729',
       b'\xf1\x8704L906056EK\xf1\x896391',
@@ -134,7 +134,7 @@ FW_VERSIONS = {
       b'\xf1\x872Q0907572M \xf1\x890233',
     ],
   },
-  CAR.GOLF_MK7: {
+  CAR.VOLKSWAGEN_GOLF_MK7: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704E906016A \xf1\x897697',
       b'\xf1\x8704E906016AD\xf1\x895758',
@@ -325,7 +325,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0907572S \xf1\x890780',
     ],
   },
-  CAR.JETTA_MK7: {
+  CAR.VOLKSWAGEN_JETTA_MK7: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704E906024AK\xf1\x899937',
       b'\xf1\x8704E906024AS\xf1\x899912',
@@ -377,7 +377,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0907572R \xf1\x890771',
     ],
   },
-  CAR.PASSAT_MK8: {
+  CAR.VOLKSWAGEN_PASSAT_MK8: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8703N906026E \xf1\x892114',
       b'\xf1\x8704E906023AH\xf1\x893379',
@@ -450,7 +450,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0907572R \xf1\x890771',
     ],
   },
-  CAR.PASSAT_NMS: {
+  CAR.VOLKSWAGEN_PASSAT_NMS: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8706K906016C \xf1\x899609',
       b'\xf1\x8706K906016E \xf1\x899830',
@@ -472,7 +472,7 @@ FW_VERSIONS = {
       b'\xf1\x877N0907572C \xf1\x890211\xf1\x82\x0152',
     ],
   },
-  CAR.POLO_MK6: {
+  CAR.VOLKSWAGEN_POLO_MK6: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704C906025H \xf1\x895177',
       b'\xf1\x8705C906032J \xf1\x891702',
@@ -496,7 +496,7 @@ FW_VERSIONS = {
       b'\xf1\x872Q0907572R \xf1\x890372',
     ],
   },
-  CAR.SHARAN_MK2: {
+  CAR.VOLKSWAGEN_SHARAN_MK2: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704L906016HE\xf1\x894635',
     ],
@@ -507,7 +507,7 @@ FW_VERSIONS = {
       b'\xf1\x877N0907572C \xf1\x890211\xf1\x82\x0153',
     ],
   },
-  CAR.TAOS_MK1: {
+  CAR.VOLKSWAGEN_TAOS_MK1: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704E906025CK\xf1\x892228',
       b'\xf1\x8704E906027NJ\xf1\x891445',
@@ -537,7 +537,7 @@ FW_VERSIONS = {
       b'\xf1\x872Q0907572T \xf1\x890383',
     ],
   },
-  CAR.TCROSS_MK1: {
+  CAR.VOLKSWAGEN_TCROSS_MK1: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704C906025AK\xf1\x897053',
     ],
@@ -554,7 +554,7 @@ FW_VERSIONS = {
       b'\xf1\x872Q0907572T \xf1\x890383',
     ],
   },
-  CAR.TIGUAN_MK2: {
+  CAR.VOLKSWAGEN_TIGUAN_MK2: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8703N906026D \xf1\x893680',
       b'\xf1\x8704E906024AP\xf1\x891461',
@@ -641,7 +641,7 @@ FW_VERSIONS = {
       b'\xf1\x872Q0907572T \xf1\x890383',
     ],
   },
-  CAR.TOURAN_MK2: {
+  CAR.VOLKSWAGEN_TOURAN_MK2: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704E906025BE\xf1\x890720',
       b'\xf1\x8704E906027HQ\xf1\x893746',
@@ -671,7 +671,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0907572R \xf1\x890771',
     ],
   },
-  CAR.TRANSPORTER_T61: {
+  CAR.VOLKSWAGEN_TRANSPORTER_T61: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704L906056AG\xf1\x899970',
       b'\xf1\x8704L906056AL\xf1\x899970',
@@ -703,7 +703,7 @@ FW_VERSIONS = {
       b'\xf1\x872Q0907572R \xf1\x890372',
     ],
   },
-  CAR.TROC_MK1: {
+  CAR.VOLKSWAGEN_TROC_MK1: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8705E906018AT\xf1\x899640',
       b'\xf1\x8705E906018CK\xf1\x890863',
