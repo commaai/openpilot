@@ -15,49 +15,58 @@ static inline bool is_base64(uint8_t c)
 
 inline std::vector<uint8_t> base64_decode(std::string const &encoded_string)
 {
-  int in_len = encoded_string.size();
-  int i = 0;
-  int j = 0;
-  int in_ = 0;
+  size_t input_length = encoded_string.size();
+  int char_index = 0;
+  int padding_index = 0;
+  int index_of_current_character = 0;
   uint8_t char_array_4[4], char_array_3[3];
-  std::vector<uint8_t> ret;
+  std::vector<uint8_t> output;
 
-  while (in_len-- && (encoded_string[in_] != '=') && is_base64(encoded_string[in_]))
+  while (input_length-- && (encoded_string[index_of_current_character] != '=') && is_base64(encoded_string[index_of_current_character]))
   {
-    char_array_4[i++] = encoded_string[in_];
-    in_++;
-    if (i == 4)
+    char_array_4[char_index++] = encoded_string[index_of_current_character];
+    index_of_current_character++;
+    if (char_index == 4)
     {
-      for (i = 0; i < 4; i++)
-        char_array_4[i] = base64_chars.find(char_array_4[i]);
+      for (char_index = 0; char_index < 4; char_index++)
+      {
+        char_array_4[char_index] = base64_chars.find(char_array_4[char_index]);
+      }
 
       char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
       char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
       char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
-      for (i = 0; (i < 3); i++)
-        ret.push_back(char_array_3[i]);
-      i = 0;
+      for (char_index = 0; (char_index < 3); char_index++)
+      {
+        output.push_back(char_array_3[char_index]);
+      }
+      char_index = 0;
     }
   }
 
-  if (i)
+  if (char_index)
   {
-    for (j = i; j < 4; j++)
-      char_array_4[j] = 0;
-
-    for (j = 0; j < 4; j++)
-      char_array_4[j] = base64_chars.find(char_array_4[j]);
+    for (padding_index = char_index; padding_index < 4; padding_index++)
+    {
+      char_array_4[padding_index] = 0;
+    }
+    for (padding_index = 0; padding_index < 4; padding_index++)
+    {
+      char_array_4[padding_index] = base64_chars.find(char_array_4[padding_index]);
+    }
 
     char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
     char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
     char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
-    for (j = 0; (j < i - 1); j++)
-      ret.push_back(char_array_3[j]);
+    for (padding_index = 0; (padding_index < char_index - 1); padding_index++)
+    {
+      output.push_back(char_array_3[padding_index]);
+    }
   }
 
-  return ret;
+  return output;
 }
 
 #endif
