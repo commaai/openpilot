@@ -61,7 +61,7 @@ class CarState(CarStateBase):
         self.steering_angle_offset_deg = steering_angle_est - steering_angle_init
       ret.steeringAngleDeg = steering_angle_init + self.steering_angle_offset_deg
     else:
-      ret.steeringAngleDeg = cp.vl[self.steering_msg]["StePinCompAnEst_D_Actl"] - self.steering_angle_offset_deg
+      ret.steeringAngleDeg = cp.vl[self.steering_msg]["StePinComp_An_Est"]
     ret.steeringTorque = cp.vl["EPAS_INFO"]["SteeringColumnTorque"]
     ret.steeringPressed = self.update_steering_pressed(abs(ret.steeringTorque) > CarControllerParams.STEER_DRIVER_ALLOWANCE, 5)
     ret.steerFaultTemporary = cp.vl["EPAS_INFO"]["EPAS_Failure"] == 1
