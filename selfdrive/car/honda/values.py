@@ -115,7 +115,7 @@ class HondaNidecPlatformConfig(PlatformConfig):
 
 class CAR(Platforms):
   # Bosch Cars
-  ACCORD = HondaBoschPlatformConfig(
+  HONDA_ACCORD = HondaBoschPlatformConfig(
     [
       HondaCarDocs("Honda Accord 2018-22", "All", video_link="https://www.youtube.com/watch?v=mrUwlj3Mi58", min_steer_speed=3. * CV.MPH_TO_MS),
       HondaCarDocs("Honda Inspire 2018", "All", min_steer_speed=3. * CV.MPH_TO_MS),
@@ -125,7 +125,7 @@ class CAR(Platforms):
     CarSpecs(mass=3279 * CV.LB_TO_KG, wheelbase=2.83, steerRatio=16.33, centerToFrontRatio=0.39, tireStiffnessFactor=0.8467),
     dbc_dict('honda_accord_2018_can_generated', None),
   )
-  CIVIC_BOSCH = HondaBoschPlatformConfig(
+  HONDA_CIVIC_BOSCH = HondaBoschPlatformConfig(
     [
       HondaCarDocs("Honda Civic 2019-21", "All", video_link="https://www.youtube.com/watch?v=4Iz1Mz5LGF8",
                    footnotes=[Footnote.CIVIC_DIESEL], min_steer_speed=2. * CV.MPH_TO_MS),
@@ -134,34 +134,34 @@ class CAR(Platforms):
     CarSpecs(mass=1326, wheelbase=2.7, steerRatio=15.38, centerToFrontRatio=0.4),  # steerRatio: 10.93 is end-to-end spec
     dbc_dict('honda_civic_hatchback_ex_2017_can_generated', None),
   )
-  CIVIC_BOSCH_DIESEL = HondaBoschPlatformConfig(
+  HONDA_CIVIC_BOSCH_DIESEL = HondaBoschPlatformConfig(
     [],  # don't show in docs
-    CIVIC_BOSCH.specs,
+    HONDA_CIVIC_BOSCH.specs,
     dbc_dict('honda_accord_2018_can_generated', None),
   )
-  CIVIC_2022 = HondaBoschPlatformConfig(
+  HONDA_CIVIC_2022 = HondaBoschPlatformConfig(
     [
       HondaCarDocs("Honda Civic 2022-23", "All", video_link="https://youtu.be/ytiOT5lcp6Q"),
       HondaCarDocs("Honda Civic Hatchback 2022-23", "All", video_link="https://youtu.be/ytiOT5lcp6Q"),
     ],
-    CIVIC_BOSCH.specs,
+    HONDA_CIVIC_BOSCH.specs,
     dbc_dict('honda_civic_ex_2022_can_generated', None),
     flags=HondaFlags.BOSCH_RADARLESS,
   )
-  CRV_5G = HondaBoschPlatformConfig(
+  HONDA_CRV_5G = HondaBoschPlatformConfig(
     [HondaCarDocs("Honda CR-V 2017-22", min_steer_speed=12. * CV.MPH_TO_MS)],
     # steerRatio: 12.3 is spec end-to-end
     CarSpecs(mass=3410 * CV.LB_TO_KG, wheelbase=2.66, steerRatio=16.0, centerToFrontRatio=0.41, tireStiffnessFactor=0.677),
     dbc_dict('honda_crv_ex_2017_can_generated', None, body_dbc='honda_crv_ex_2017_body_generated'),
     flags=HondaFlags.BOSCH_ALT_BRAKE,
   )
-  CRV_HYBRID = HondaBoschPlatformConfig(
+  HONDA_CRV_HYBRID = HondaBoschPlatformConfig(
     [HondaCarDocs("Honda CR-V Hybrid 2017-20", min_steer_speed=12. * CV.MPH_TO_MS)],
     # mass: mean of 4 models in kg, steerRatio: 12.3 is spec end-to-end
     CarSpecs(mass=1667, wheelbase=2.66, steerRatio=16, centerToFrontRatio=0.41, tireStiffnessFactor=0.677),
     dbc_dict('honda_accord_2018_can_generated', None),
   )
-  HRV_3G = HondaBoschPlatformConfig(
+  HONDA_HRV_3G = HondaBoschPlatformConfig(
     [HondaCarDocs("Honda HR-V 2023", "All")],
     CarSpecs(mass=3125 * CV.LB_TO_KG, wheelbase=2.61, steerRatio=15.2, centerToFrontRatio=0.41, tireStiffnessFactor=0.5),
     dbc_dict('honda_civic_ex_2022_can_generated', None),
@@ -173,7 +173,7 @@ class CAR(Platforms):
     dbc_dict('acura_rdx_2020_can_generated', None),
     flags=HondaFlags.BOSCH_ALT_BRAKE,
   )
-  INSIGHT = HondaBoschPlatformConfig(
+  HONDA_INSIGHT = HondaBoschPlatformConfig(
     [HondaCarDocs("Honda Insight 2019-22", "All", min_steer_speed=3. * CV.MPH_TO_MS)],
     CarSpecs(mass=2987 * CV.LB_TO_KG, wheelbase=2.7, steerRatio=15.0, centerToFrontRatio=0.39, tireStiffnessFactor=0.82),  # as spec
     dbc_dict('honda_insight_ex_2019_can_generated', None),
@@ -191,45 +191,45 @@ class CAR(Platforms):
     dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
     flags=HondaFlags.NIDEC_ALT_SCM_MESSAGES,
   )
-  CRV = HondaNidecPlatformConfig(
+  HONDA_CRV = HondaNidecPlatformConfig(
     [HondaCarDocs("Honda CR-V 2015-16", "Touring Trim", min_steer_speed=12. * CV.MPH_TO_MS)],
     CarSpecs(mass=3572 * CV.LB_TO_KG, wheelbase=2.62, steerRatio=16.89, centerToFrontRatio=0.41, tireStiffnessFactor=0.444),  # as spec
     dbc_dict('honda_crv_touring_2016_can_generated', 'acura_ilx_2016_nidec'),
     flags=HondaFlags.NIDEC_ALT_SCM_MESSAGES,
   )
-  CRV_EU = HondaNidecPlatformConfig(
+  HONDA_CRV_EU = HondaNidecPlatformConfig(
     [],  # Euro version of CRV Touring, don't show in docs
-    CRV.specs,
+    HONDA_CRV.specs,
     dbc_dict('honda_crv_executive_2016_can_generated', 'acura_ilx_2016_nidec'),
     flags=HondaFlags.NIDEC_ALT_SCM_MESSAGES,
   )
-  FIT = HondaNidecPlatformConfig(
+  HONDA_FIT = HondaNidecPlatformConfig(
     [HondaCarDocs("Honda Fit 2018-20", min_steer_speed=12. * CV.MPH_TO_MS)],
     CarSpecs(mass=2644 * CV.LB_TO_KG, wheelbase=2.53, steerRatio=13.06, centerToFrontRatio=0.39, tireStiffnessFactor=0.75),
     dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
     flags=HondaFlags.NIDEC_ALT_SCM_MESSAGES,
   )
-  FREED = HondaNidecPlatformConfig(
+  HONDA_FREED = HondaNidecPlatformConfig(
     [HondaCarDocs("Honda Freed 2020", min_steer_speed=12. * CV.MPH_TO_MS)],
     CarSpecs(mass=3086. * CV.LB_TO_KG, wheelbase=2.74, steerRatio=13.06, centerToFrontRatio=0.39, tireStiffnessFactor=0.75),  # mostly copied from FIT
     dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
     flags=HondaFlags.NIDEC_ALT_SCM_MESSAGES,
   )
-  HRV = HondaNidecPlatformConfig(
+  HONDA_HRV = HondaNidecPlatformConfig(
     [HondaCarDocs("Honda HR-V 2019-22", min_steer_speed=12. * CV.MPH_TO_MS)],
-    HRV_3G.specs,
+    HONDA_HRV_3G.specs,
     dbc_dict('honda_fit_ex_2018_can_generated', 'acura_ilx_2016_nidec'),
     flags=HondaFlags.NIDEC_ALT_SCM_MESSAGES,
   )
-  ODYSSEY = HondaNidecPlatformConfig(
+  HONDA_ODYSSEY = HondaNidecPlatformConfig(
     [HondaCarDocs("Honda Odyssey 2018-20")],
     CarSpecs(mass=1900, wheelbase=3.0, steerRatio=14.35, centerToFrontRatio=0.41, tireStiffnessFactor=0.82),
     dbc_dict('honda_odyssey_exl_2018_generated', 'acura_ilx_2016_nidec'),
     flags=HondaFlags.NIDEC_ALT_PCM_ACCEL,
   )
-  ODYSSEY_CHN = HondaNidecPlatformConfig(
+  HONDA_ODYSSEY_CHN = HondaNidecPlatformConfig(
     [],  # Chinese version of Odyssey, don't show in docs
-    ODYSSEY.specs,
+    HONDA_ODYSSEY.specs,
     dbc_dict('honda_odyssey_extreme_edition_2018_china_can_generated', 'acura_ilx_2016_nidec'),
     flags=HondaFlags.NIDEC_ALT_SCM_MESSAGES,
   )
@@ -239,7 +239,7 @@ class CAR(Platforms):
     dbc_dict('acura_rdx_2018_can_generated', 'acura_ilx_2016_nidec'),
     flags=HondaFlags.NIDEC_ALT_SCM_MESSAGES,
   )
-  PILOT = HondaNidecPlatformConfig(
+  HONDA_PILOT = HondaNidecPlatformConfig(
     [
       HondaCarDocs("Honda Pilot 2016-22", min_steer_speed=12. * CV.MPH_TO_MS),
       HondaCarDocs("Honda Passport 2019-23", "All", min_steer_speed=12. * CV.MPH_TO_MS),
@@ -248,13 +248,13 @@ class CAR(Platforms):
     dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
     flags=HondaFlags.NIDEC_ALT_SCM_MESSAGES,
   )
-  RIDGELINE = HondaNidecPlatformConfig(
+  HONDA_RIDGELINE = HondaNidecPlatformConfig(
     [HondaCarDocs("Honda Ridgeline 2017-24", min_steer_speed=12. * CV.MPH_TO_MS)],
     CarSpecs(mass=4515 * CV.LB_TO_KG, wheelbase=3.18, centerToFrontRatio=0.41, steerRatio=15.59, tireStiffnessFactor=0.444),  # as spec
     dbc_dict('acura_ilx_2016_can_generated', 'acura_ilx_2016_nidec'),
     flags=HondaFlags.NIDEC_ALT_SCM_MESSAGES,
   )
-  CIVIC = HondaNidecPlatformConfig(
+  HONDA_CIVIC = HondaNidecPlatformConfig(
     [HondaCarDocs("Honda Civic 2016-18", min_steer_speed=12. * CV.MPH_TO_MS, video_link="https://youtu.be/-IkImTe1NYE")],
     CarSpecs(mass=1326, wheelbase=2.70, centerToFrontRatio=0.4, steerRatio=15.38),  # 10.93 is end-to-end spec
     dbc_dict('honda_civic_touring_2016_can_generated', 'acura_ilx_2016_nidec'),
@@ -307,16 +307,16 @@ FW_QUERY_CONFIG = FwQueryConfig(
   # We lose these ECUs without the comma power on these cars.
   # Note that we still attempt to match with them when they are present
   non_essential_ecus={
-    Ecu.programmedFuelInjection: [CAR.ACCORD, CAR.CIVIC, CAR.CIVIC_BOSCH, CAR.CRV_5G],
-    Ecu.transmission: [CAR.ACCORD, CAR.CIVIC, CAR.CIVIC_BOSCH, CAR.CRV_5G],
-    Ecu.srs: [CAR.ACCORD],
-    Ecu.eps: [CAR.ACCORD],
-    Ecu.vsa: [CAR.ACCORD, CAR.CIVIC, CAR.CIVIC_BOSCH, CAR.CRV_5G],
-    Ecu.combinationMeter: [CAR.ACCORD, CAR.CIVIC, CAR.CIVIC_BOSCH, CAR.CRV_5G],
-    Ecu.gateway: [CAR.ACCORD, CAR.CIVIC, CAR.CIVIC_BOSCH, CAR.CRV_5G],
-    Ecu.electricBrakeBooster: [CAR.ACCORD, CAR.CIVIC_BOSCH, CAR.CRV_5G],
-    Ecu.shiftByWire: [CAR.ACCORD],  # existence correlates with transmission type for ICE
-    Ecu.hud: [CAR.ACCORD],  # existence correlates with trim level
+    Ecu.programmedFuelInjection: [CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
+    Ecu.transmission: [CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
+    Ecu.srs: [CAR.HONDA_ACCORD],
+    Ecu.eps: [CAR.HONDA_ACCORD],
+    Ecu.vsa: [CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
+    Ecu.combinationMeter: [CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
+    Ecu.gateway: [CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
+    Ecu.electricBrakeBooster: [CAR.HONDA_ACCORD, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
+    Ecu.shiftByWire: [CAR.HONDA_ACCORD],  # existence correlates with transmission type for ICE
+    Ecu.hud: [CAR.HONDA_ACCORD],  # existence correlates with trim level
   },
   extra_ecus=[
     # The only other ECU on PT bus accessible by camera on radarless Civic
@@ -327,7 +327,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
 STEER_THRESHOLD = {
   # default is 1200, overrides go here
   CAR.ACURA_RDX: 400,
-  CAR.CRV_EU: 400,
+  CAR.HONDA_CRV_EU: 400,
 }
 
 HONDA_NIDEC_ALT_PCM_ACCEL = CAR.with_flags(HondaFlags.NIDEC_ALT_PCM_ACCEL)

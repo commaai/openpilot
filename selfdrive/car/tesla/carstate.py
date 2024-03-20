@@ -37,7 +37,7 @@ class CarState(CarStateBase):
     ret.brakePressed = bool(cp.vl["BrakeMessage"]["driverBrakeStatus"] != 1)
 
     # Steering wheel
-    epas_status = cp_cam.vl["EPAS3P_sysStatus"] if self.CP.carFingerprint == CAR.MODELS_RAVEN else cp.vl["EPAS_sysStatus"]
+    epas_status = cp_cam.vl["EPAS3P_sysStatus"] if self.CP.carFingerprint == CAR.TESLA_MODELS_RAVEN else cp.vl["EPAS_sysStatus"]
 
     self.hands_on_level = epas_status["EPAS_handsOnLevel"]
     self.steer_warning = self.can_define.dv["EPAS_sysStatus"]["EPAS_eacErrorCode"].get(int(epas_status["EPAS_eacErrorCode"]), None)
@@ -87,7 +87,7 @@ class CarState(CarStateBase):
     ret.rightBlinker = (cp.vl["GTW_carState"]["BC_indicatorRStatus"] == 1)
 
     # Seatbelt
-    if self.CP.carFingerprint == CAR.MODELS_RAVEN:
+    if self.CP.carFingerprint == CAR.TESLA_MODELS_RAVEN:
       ret.seatbeltUnlatched = (cp.vl["DriverSeat"]["buckleStatus"] != 1)
     else:
       ret.seatbeltUnlatched = (cp.vl["SDM1"]["SDM_bcklDrivStatus"] != 1)
@@ -119,7 +119,7 @@ class CarState(CarStateBase):
       ("BrakeMessage", 50),
     ]
 
-    if CP.carFingerprint == CAR.MODELS_RAVEN:
+    if CP.carFingerprint == CAR.TESLA_MODELS_RAVEN:
       messages.append(("DriverSeat", 20))
     else:
       messages.append(("SDM1", 10))
@@ -133,7 +133,7 @@ class CarState(CarStateBase):
       ("DAS_control", 40),
     ]
 
-    if CP.carFingerprint == CAR.MODELS_RAVEN:
+    if CP.carFingerprint == CAR.TESLA_MODELS_RAVEN:
       messages.append(("EPAS3P_sysStatus", 100))
 
     return CANParser(DBC[CP.carFingerprint]['chassis'], messages, CANBUS.autopilot_chassis)
