@@ -306,22 +306,15 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
   # We lose these ECUs without the comma power on these cars.
   # Note that we still attempt to match with them when they are present
-
-  # FIT
-  # ('eps', 'fwdRadar', 'srs', 'vsa'): routes: 1545, dongles: {'df67bf140583e302', '8411411300bf023d', '48536bafa6cabe3e', 'ac04cdfc0c735c0b', '445d1ade497345f3', 'd98f9841b9db8943', 'a6883439bbd3d975', 'e56002a2b1eeed4d', '0ac44bcb111aed3f', 'f4cc9d3bfec4e712', '8085a4d3c9416184', '8a867b1f51563696'}
-
-  # CRV
-  # ('combinationMeter', 'fwdRadar', 'srs', 'vsa'): routes: 599, dongles: {'46c19dcb28afcb5a', 'bd96755604115d4c', '7689c363dfd8d1dc'}
-
   non_essential_ecus={
     Ecu.programmedFuelInjection: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
     Ecu.transmission: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
     Ecu.srs: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_E],
     Ecu.eps: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_E],
     Ecu.vsa: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G, CAR.HONDA_CRV_HYBRID, CAR.HONDA_E],
-    Ecu.combinationMeter: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH,
+    Ecu.combinationMeter: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_FIT,
                            CAR.HONDA_HRV, CAR.HONDA_CRV_5G, CAR.HONDA_CRV_HYBRID, CAR.HONDA_E, CAR.HONDA_ODYSSEY_CHN],
-    Ecu.gateway: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_FREED,
+    Ecu.gateway: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_FIT, CAR.HONDA_FREED,
                   CAR.HONDA_HRV, CAR.HONDA_CRV_5G, CAR.HONDA_CRV_HYBRID, CAR.HONDA_E, CAR.HONDA_ODYSSEY_CHN],
     Ecu.electricBrakeBooster: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
     # existence correlates with transmission type for Accord ICE
