@@ -11,7 +11,6 @@ import argparse
 from functools import partial
 
 from openpilot.common.basedir import BASEDIR
-from openpilot.selfdrive.car.fingerprints import MIGRATION
 from openpilot.tools.lib.helpers import save_log
 
 from openpilot.tools.lib.logreader import LogReader, ReadMode
@@ -83,7 +82,7 @@ def juggle_route(route_or_segment_name, can, layout, dbc=None):
     for cp in [m for m in all_data if m.which() == 'carParams']:
       try:
         DBC = __import__(f"openpilot.selfdrive.car.{cp.carParams.carName}.values", fromlist=['DBC']).DBC
-        dbc = DBC[MIGRATION.get(cp.carParams.carFingerprint, cp.carParams.carFingerprint)]['pt']
+        dbc = DBC[cp.carParams.carFingerprint]['pt']
       except Exception:
         pass
       break
