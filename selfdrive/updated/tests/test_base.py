@@ -2,6 +2,7 @@ import os
 import pathlib
 import shutil
 import signal
+import stat
 import subprocess
 import tempfile
 import time
@@ -29,8 +30,26 @@ def update_release(directory, name, version, agnos_version, release_notes):
   with open(directory / "common" / "version.h", "w") as f:
     f.write(f'#define COMMA_VERSION "{version}"')
 
-  with open(directory / "launch_env.sh", "w") as f:
+  launch_env = directory / "launch_env.sh"
+  with open(launch_env, "w") as f:
     f.write(f'export AGNOS_VERSION="{agnos_version}"')
+
+  st = os.stat(launch_env)
+  os.chmod(launch_env, st.st_mode | stat.S_IEXEC)
+
+  test_symlink = directory / "test_symlink"
+  if not os.path.exists(str(test_symlink)):
+    os.symlink("common/version.h", test_symlink)
+
+
+def get_version(path: str) -> str:
+  with open(os.path.join(path, "common", "version.h")) as f:
+    return f.read().split('"')[1]
+
+
+def get_consistent_flag(path: str) -> bool:
+  consistent_file = pathlib.Path(os.path.join(path, ".overlay_consistent"))
+  return consistent_file.is_file()
 
 
 @pytest.mark.slow # TODO: can we test overlayfs in GHA?
@@ -105,11 +124,14 @@ class BaseUpdateTest(unittest.TestCase):
     self.assertEqual(self.params.get_bool("UpdateAvailable"), update_available)
 
   def _test_finalized_update(self, branch, version, agnos_version, release_notes):
-    from openpilot.selfdrive.updated.common import get_version, get_consistent_flag # this needs to be inline because common uses environment variables
     self.assertTrue(self.params.get("UpdaterNewDescription", encoding="utf-8").startswith(f"{version} / {branch}"))
     self.assertEqual(self.params.get("UpdaterNewReleaseNotes", encoding="utf-8"), f"<p>{release_notes}</p>\n")
     self.assertEqual(get_version(str(self.staging_root / "finalized")), version)
-    self.assertEqual(get_consistent_flag(), True)
+    self.assertEqual(get_consistent_flag(str(self.staging_root / "finalized")), True)
+    self.assertTrue(os.access(str(self.staging_root / "finalized" / "launch_env.sh"), os.X_OK))
+
+    with open(self.staging_root / "finalized" / "test_symlink") as f:
+      self.assertIn(version, f.read())
 
   def wait_for_condition(self, condition, timeout=12):
     start = time.monotonic()

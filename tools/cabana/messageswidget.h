@@ -12,6 +12,7 @@
 #include <QMenu>
 #include <QToolBar>
 #include <QTreeView>
+#include <QWheelEvent>
 
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
@@ -65,10 +66,13 @@ class MessageView : public QTreeView {
   Q_OBJECT
 public:
   MessageView(QWidget *parent) : QTreeView(parent) {}
+  void updateBytesSectionSize();
+
+protected:
   void drawRow(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
   void drawBranches(QPainter *painter, const QRect &rect, const QModelIndex &index) const override {}
   void dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles = QVector<int>()) override;
-  void updateBytesSectionSize();
+  void wheelEvent(QWheelEvent *event) override;
 };
 
 class MessageViewHeader : public QHeaderView {

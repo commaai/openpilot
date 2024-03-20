@@ -11,8 +11,8 @@ from typing import NoReturn
 
 import openpilot.selfdrive.sentry as sentry
 from openpilot.system.hardware.hw import Paths
+from openpilot.common.git import get_commit
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.version import get_commit
 
 MAX_SIZE = 1_000_000 * 100  # allow up to 100M
 MAX_TOMBSTONE_FN_LEN = 62  # 85 - 23 ("<dongle id>/crash/")

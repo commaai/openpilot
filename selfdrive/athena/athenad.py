@@ -32,12 +32,13 @@ from cereal import log
 from cereal.services import SERVICE_LIST
 from openpilot.common.api import Api
 from openpilot.common.file_helpers import CallbackReader
+from openpilot.common.git import get_commit, get_normalized_origin, get_short_branch
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
 from openpilot.system.hardware import HARDWARE, PC
 from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.version import get_commit, get_normalized_origin, get_short_branch, get_version
+from openpilot.system.version import get_version
 from openpilot.system.hardware.hw import Paths
 
 
