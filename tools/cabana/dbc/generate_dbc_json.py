@@ -2,7 +2,7 @@
 import argparse
 import json
 
-from openpilot.selfdrive.car.values import create_platform_map
+from openpilot.selfdrive.car.fingerprints import create_platform_map
 
 
 def generate_dbc_json() -> str:
