@@ -1,13 +1,12 @@
-import json
 import pathlib
 import subprocess
 
-from openpilot.system.version import get_release_notes, get_version
+from openpilot.common.utils import json_dump_dataclass
+from openpilot.system.version import BUILD_METADATA_FILENAME, BuildMetadata
 
 
 CASYNC_ARGS = ["--with=symlinks", "--with=permissions"]
-VERSION_METADATA_FILE = "version.json" # file that contains details of the current release
-CASYNC_FILES = [VERSION_METADATA_FILE, ".caexclude"]
+CASYNC_FILES = [BUILD_METADATA_FILENAME, ".caexclude"]
 
 
 def run(cmd):
@@ -38,20 +37,9 @@ def create_caexclude_file(path: pathlib.Path):
       f.write(f"!{file}\n")
 
 
-def create_version_metadata(channel, version, release_notes):
-  return {
-    "name": channel,
-    "openpilot": {
-      "version": version,
-      "release_notes": release_notes
-    }
-  }
-
-def create_version_metadata_file(path: pathlib.Path, channel: str):
-  version = get_version(str(path))
-  release_notes = get_release_notes(str(path))
-  with open(path / VERSION_METADATA_FILE, "w") as f:
-    f.write(json.dumps(create_version_metadata(channel, version, release_notes)))
+def create_version_metadata_file(path: pathlib.Path, build_metadata: BuildMetadata):
+  with open(path / BUILD_METADATA_FILENAME, "w") as f:
+    f.write(json_dump_dataclass(build_metadata))
 
 
 def create_casync_release(target_dir: pathlib.Path, output_dir: pathlib.Path, channel: str):
