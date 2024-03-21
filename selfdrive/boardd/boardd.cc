@@ -49,12 +49,6 @@ std::atomic<bool> ignition(false);
 
 ExitHandler do_exit;
 
-static std::string get_time_str(const struct tm &time) {
-  char s[30] = {'\0'};
-  std::strftime(s, std::size(s), "%Y-%m-%d %H:%M:%S", &time);
-  return s;
-}
-
 bool check_all_connected(const std::vector<Panda *> &pandas) {
   for (const auto& panda : pandas) {
     if (!panda->connected()) {
@@ -63,36 +57,6 @@ bool check_all_connected(const std::vector<Panda *> &pandas) {
     }
   }
   return true;
-}
-
-enum class SyncTimeDir { TO_PANDA, FROM_PANDA };
-
-void sync_time(Panda *panda, SyncTimeDir dir) {
-  if (!panda->has_rtc) return;
-
-  setenv("TZ", "UTC", 1);
-  struct tm sys_time = util::get_time();
-  struct tm rtc_time = panda->get_rtc();
-
-  if (dir == SyncTimeDir::TO_PANDA) {
-    if (util::time_valid(sys_time)) {
-      // Write time to RTC if it looks reasonable
-      double seconds = difftime(mktime(&rtc_time), mktime(&sys_time));
-      if (std::abs(seconds) > 1.1) {
-        panda->set_rtc(sys_time);
-        LOGW("Updating panda RTC. dt = %.2f System: %s RTC: %s",
-              seconds, get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
-      }
-    }
-  } else if (dir == SyncTimeDir::FROM_PANDA) {
-    LOGW("System time: %s, RTC time: %s", get_time_str(sys_time).c_str(), get_time_str(rtc_time).c_str());
-
-    if (!util::time_valid(sys_time) && util::time_valid(rtc_time)) {
-      const struct timeval tv = {mktime(&rtc_time), 0};
-      settimeofday(&tv, 0);
-      LOGE("System time wrong, setting from RTC.");
-    }
-  }
 }
 
 bool safety_setter_thread(std::vector<Panda *> pandas) {
@@ -195,7 +159,6 @@ Panda *connect(std::string serial="", uint32_t index=0) {
     throw std::runtime_error("Panda firmware out of date. Run pandad.py to update.");
   }
 
-  sync_time(panda.get(), SyncTimeDir::FROM_PANDA);
   return panda.release();
 }
 
@@ -580,11 +543,6 @@ void peripheral_control_thread(Panda *panda, bool no_fan_control) {
     if (ir_pwr != prev_ir_pwr || sm.frame % 100 == 0 || ir_pwr >= 50.0) {
       panda->set_ir_pwr(ir_pwr);
       prev_ir_pwr = ir_pwr;
-    }
-
-    // Write to rtc once per minute when no ignition present
-    if (!ignition && (sm.frame % 120 == 1)) {
-      sync_time(panda, SyncTimeDir::TO_PANDA);
     }
   }
 }

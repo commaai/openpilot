@@ -8,7 +8,7 @@ if __name__ == "__main__":
     batt = 1.
     while True:
       msg = messaging.new_message('carParams')
-      msg.carParams.carName = "COMMA BODY"
+      msg.carParams.carName = "BODY"
       msg.carParams.notCar = True
       pm.send('carParams', msg)
 

@@ -35,6 +35,7 @@ class CarController(CarControllerBase):
     self.main_on_last = False
     self.lkas_enabled_last = False
     self.steer_alert_last = False
+    self.lead_distance_bars_last = None
 
   def update(self, CC, CS, now_nanos):
     can_sends = []
@@ -98,15 +99,19 @@ class CarController(CarControllerBase):
     # send lkas ui msg at 1Hz or if ui state changes
     if (self.frame % CarControllerParams.LKAS_UI_STEP) == 0 or send_ui:
       can_sends.append(fordcan.create_lkas_ui_msg(self.packer, self.CAN, main_on, CC.latActive, steer_alert, hud_control, CS.lkas_status_stock_values))
+
     # send acc ui msg at 5Hz or if ui state changes
+    if hud_control.leadDistanceBars != self.lead_distance_bars_last:
+      send_ui = True
     if (self.frame % CarControllerParams.ACC_UI_STEP) == 0 or send_ui:
       can_sends.append(fordcan.create_acc_ui_msg(self.packer, self.CAN, self.CP, main_on, CC.latActive,
-                                         fcw_alert, CS.out.cruiseState.standstill, hud_control,
-                                         CS.acc_tja_status_stock_values))
+                                                 fcw_alert, CS.out.cruiseState.standstill, hud_control,
+                                                 CS.acc_tja_status_stock_values))
 
     self.main_on_last = main_on
     self.lkas_enabled_last = CC.latActive
     self.steer_alert_last = steer_alert
+    self.lead_distance_bars_last = hud_control.leadDistanceBars
 
     new_actuators = actuators.copy()
     new_actuators.curvature = self.apply_curvature_last

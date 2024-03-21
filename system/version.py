@@ -1,79 +1,36 @@
 #!/usr/bin/env python3
+from dataclasses import dataclass
+import json
 import os
+import pathlib
 import subprocess
-from typing import TypeVar
-from collections.abc import Callable
-from functools import lru_cache
+
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.swaglog import cloudlog
+from openpilot.common.utils import cache
+from openpilot.common.git import get_commit, get_origin, get_branch, get_short_branch, get_normalized_origin, get_commit_date
+
 
 RELEASE_BRANCHES = ['release3-staging', 'release3', 'nightly']
 TESTED_BRANCHES = RELEASE_BRANCHES + ['devel', 'devel-staging']
 
+BUILD_METADATA_FILENAME = "build.json"
+
 training_version: bytes = b"0.2.0"
 terms_version: bytes = b"2"
 
-_RT = TypeVar("_RT")
-def cache(user_function: Callable[..., _RT], /) -> Callable[..., _RT]:
-  return lru_cache(maxsize=None)(user_function)
 
-
-def run_cmd(cmd: list[str]) -> str:
-  return subprocess.check_output(cmd, encoding='utf8').strip()
-
-
-def run_cmd_default(cmd: list[str], default: str = "") -> str:
-  try:
-    return run_cmd(cmd)
-  except subprocess.CalledProcessError:
-    return default
-
-
-@cache
-def get_commit(branch: str = "HEAD") -> str:
-  return run_cmd_default(["git", "rev-parse", branch])
-
-
-@cache
-def get_commit_date(commit: str = "HEAD") -> str:
-  return run_cmd_default(["git", "show", "--no-patch", "--format='%ct %ci'", commit])
-
-
-@cache
-def get_short_branch() -> str:
-  return run_cmd_default(["git", "rev-parse", "--abbrev-ref", "HEAD"])
-
-
-@cache
-def get_branch() -> str:
-  return run_cmd_default(["git", "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}"])
-
-
-@cache
-def get_origin() -> str:
-  try:
-    local_branch = run_cmd(["git", "name-rev", "--name-only", "HEAD"])
-    tracking_remote = run_cmd(["git", "config", "branch." + local_branch + ".remote"])
-    return run_cmd(["git", "config", "remote." + tracking_remote + ".url"])
-  except subprocess.CalledProcessError:  # Not on a branch, fallback
-    return run_cmd_default(["git", "config", "--get", "remote.origin.url"])
-
-
-@cache
-def get_normalized_origin() -> str:
-  return get_origin() \
-    .replace("git@", "", 1) \
-    .replace(".git", "", 1) \
-    .replace("https://", "", 1) \
-    .replace(":", "/", 1)
-
-
-@cache
-def get_version() -> str:
-  with open(os.path.join(BASEDIR, "common", "version.h")) as _versionf:
+def get_version(path: str = BASEDIR) -> str:
+  with open(os.path.join(path, "common", "version.h")) as _versionf:
     version = _versionf.read().split('"')[1]
   return version
+
+
+def get_release_notes(path: str = BASEDIR) -> str:
+  with open(os.path.join(path, "RELEASES.md"), "r") as f:
+    return f.read().split('\n\n', 1)[0]
+
 
 @cache
 def get_short_version() -> str:
@@ -121,6 +78,41 @@ def is_dirty() -> bool:
     dirty = True
 
   return dirty
+
+
+@dataclass(frozen=True)
+class OpenpilotMetadata:
+  version: str
+  release_notes: str
+  git_commit: str
+
+
+@dataclass(frozen=True)
+class BuildMetadata:
+  channel: str
+  openpilot: OpenpilotMetadata
+
+
+
+def get_build_metadata(path: str = BASEDIR) -> BuildMetadata | None:
+  build_metadata_path = pathlib.Path(path) / BUILD_METADATA_FILENAME
+
+  if build_metadata_path.exists():
+    build_metadata = json.loads(build_metadata_path.read_text())
+    openpilot_metadata = build_metadata.get("openpilot", {})
+
+    channel = build_metadata.get("channel", "unknown")
+    version = openpilot_metadata.get("version", "unknown")
+    release_notes = openpilot_metadata.get("release_notes", "unknown")
+    git_commit = openpilot_metadata.get("git_commit", "unknown")
+    return BuildMetadata(channel, OpenpilotMetadata(version, release_notes, git_commit))
+
+  git_folder = pathlib.Path(path) / ".git"
+
+  if git_folder.exists():
+    return BuildMetadata(get_short_branch(path), OpenpilotMetadata(get_version(path), get_release_notes(path), get_commit(path)))
+
+  return None
 
 
 if __name__ == "__main__":

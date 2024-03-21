@@ -1104,10 +1104,6 @@ This may take up to a minute.</source>
         <translation>驾驶风格</translation>
     </message>
     <message>
-        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars.</source>
-        <translation>推荐使用标准模式。在积极模式中，openpilot 会更靠近前车并在加速和刹车方面更积极。在舒适模式中，openpilot 会与前车保持较远的距离。</translation>
-    </message>
-    <message>
         <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
         <translation>在正式（release）版本以外的分支上，可以测试 openpilot 纵向控制的 Alpha 版本以及实验模式。</translation>
     </message>
@@ -1130,6 +1126,10 @@ This may take up to a minute.</source>
     <message>
         <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
         <translation>行驶画面将在低速时切换到道路朝向的广角摄像头，以更好地显示一些转弯。实验模式标志也将显示在右上角。当设置了导航目的地并且驾驶模型正在使用它作为输入时，地图上的驾驶路径将变为绿色。</translation>
+    </message>
+    <message>
+        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
