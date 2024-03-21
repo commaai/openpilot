@@ -144,7 +144,7 @@ bool safety_setter_thread(std::vector<Panda *> pandas) {
 Panda *connect(std::string serial="", uint32_t index=0) {
   std::unique_ptr<Panda> panda;
   try {
-    panda = std::make_unique<Panda>(serial, (index * PANDA_BUS_CNT));
+    panda = std::make_unique<Panda>(serial, (index * PANDA_BUS_OFFSET));
   } catch (std::exception &e) {
     return nullptr;
   }
