@@ -62,13 +62,14 @@ def is_dirty(cwd: str = BASEDIR) -> bool:
   return dirty
 
 
-@dataclass(frozen=True)
+@dataclass
 class OpenpilotMetadata:
   version: str
   release_notes: str
   git_commit: str
   git_origin: str
   git_commit_date: str
+  build_style: str
   is_dirty: bool  # whether there are local changes
 
   @property
@@ -90,7 +91,7 @@ class OpenpilotMetadata:
       .replace(":", "/", 1)
 
 
-@dataclass(frozen=True)
+@dataclass
 class BuildMetadata:
   channel: str
   openpilot: OpenpilotMetadata
@@ -103,6 +104,10 @@ class BuildMetadata:
   def release_channel(self) -> bool:
     return self.channel in RELEASE_BRANCHES
 
+  @property
+  def canonical(self) -> str:
+    return f"{self.openpilot.version}-{self.openpilot.git_commit}-{self.openpilot.build_style}"
+
 
 def build_metadata_from_dict(build_metadata: dict) -> BuildMetadata:
   channel = build_metadata.get("channel", "unknown")
@@ -112,6 +117,7 @@ def build_metadata_from_dict(build_metadata: dict) -> BuildMetadata:
   git_commit = openpilot_metadata.get("git_commit", "unknown")
   git_origin = openpilot_metadata.get("git_origin", "unknown")
   git_commit_date = openpilot_metadata.get("git_commit_date", "unknown")
+  build_style = openpilot_metadata.get("build_style", "unknown")
   return BuildMetadata(channel,
             OpenpilotMetadata(
               version=version,
@@ -119,6 +125,7 @@ def build_metadata_from_dict(build_metadata: dict) -> BuildMetadata:
               git_commit=git_commit,
               git_origin=git_origin,
               git_commit_date=git_commit_date,
+              build_style=build_style,
               is_dirty=False))
 
 
@@ -139,6 +146,7 @@ def get_build_metadata(path: str = BASEDIR) -> BuildMetadata:
                       git_commit=get_commit(path),
                       git_origin=get_origin(path),
                       git_commit_date=get_commit_date(path),
+                      build_style="unknown",
                       is_dirty=is_dirty(path)))
 
   cloudlog.exception("unable to get build metadata")
