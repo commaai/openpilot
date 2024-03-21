@@ -33,12 +33,12 @@ class TestPandad(unittest.TestCase):
     sm = messaging.SubMaster(['pandaStates'])
     while (time.monotonic() - st) > timeout:
       sm.update(100)
-      if sm['pandaStates'][0].pandaType != log.PandaState.PandaType.unknown:
+      if len(sm['pandaStates']) and sm['pandaStates'][0].pandaType != log.PandaState.PandaType.unknown:
         break
 
     managed_processes['pandad'].stop()
 
-    if sm['pandaStates'][0].pandaType == log.PandaState.PandaType.unknown:
+    if len(sm['pandaStates']) == 0 or sm['pandaStates'][0].pandaType == log.PandaState.PandaType.unknown:
       raise Exception("boardd failed to start")
 
   def _go_to_dfu(self):
