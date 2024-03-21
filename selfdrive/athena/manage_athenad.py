@@ -19,7 +19,7 @@ def main():
 
   cloudlog.bind_global(dongle_id=dongle_id,
                        version=build_metadata.openpilot.version,
-                       origin=build_metadata.openpilot.git_origin,
+                       origin=build_metadata.openpilot.git_normalized_origin,
                        branch=build_metadata.channel,
                        commit=build_metadata.openpilot.git_commit,
                        dirty=build_metadata.openpilot.git_dirty,
