@@ -33,7 +33,7 @@
 BUILD_DIR=/data/openpilot_build    \
 CASYNC_DIR=/data/casync            \
 OPENPILOT_CHANNEL=nightly          \
-release/create_casync_prebuilt.sh
+release/create_casync_build.sh
 ```
 
 `upload_casync_release.sh` - helper for uploading a casync build to `openpilot-releases`
