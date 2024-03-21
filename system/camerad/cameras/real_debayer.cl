@@ -26,21 +26,8 @@ float3 color_correct(float3 rgb, int expo) {
   #if IS_OX
   return -0.507089*exp(-12.54124638*x)+0.9655*powr(x,0.5)-0.472597*x+0.507089;
   #elif IS_OS
-  if (expo < 64) {
-    return clamp(log(1+x*65536.0) * 54.432 - 122.85, 0.0, 255.0) / 255.0;
-  } else if (expo < 128) {
-    return clamp(log(1+x*65536.0) * 47.5 - 107.21, 0.0, 255.0) / 255.0;
-  } else if (expo < 256) {
-    return clamp(log(1+x*65536.0) * 42.07 - 94.96, 0.0, 255.0) / 255.0;
-  } else if (expo < 512) {
-    return clamp(log(1+x*65536.0) * 37.82 - 85.37, 0.0, 255.0) / 255.0;
-  } else if (expo < 1024) {
-    return clamp(log(1+x*65536.0) * 34.24 - 77.29, 0.0, 255.0) / 255.0;
-  } else if (expo < 2048) {
-    return clamp(log(1+x*65536.0) * 31.33 - 70.71, 0.0, 255.0) / 255.0;
-  } else {
-    return clamp(log(1+x*65536.0) * 28.8 - 65, 0.0, 255.0) / 255.0;
-  }
+  float s = log2((float)expo);
+  return clamp(log(1 + x*65536.0) * (0.43*s*s - 11.9*s + 110.0) - (0.96*s*s - 26.8*s + 248.0), 0.0, 255.0) / 255.0;
   #else
   // tone mapping params
   const float gamma_k = 0.75;
