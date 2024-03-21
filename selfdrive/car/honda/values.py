@@ -306,33 +306,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
   # We lose these ECUs without the comma power on these cars.
   # Note that we still attempt to match with them when they are present
-
-  # ACURA_ILX
-  # ('fwdRadar', 'srs'): routes: 146, dongles: {'23893c6e32ab0d30', '2c5ec6ab9c348a77'}
-  # ---
-  # ('combinationMeter', 'fwdRadar', 'srs'): routes: 36, dongles: {'692d65abf7666482', '9d091e299fc54701'}
-  # ---
-  # ('combinationMeter', 'srs'): routes: 1, dongles: {'9d091e299fc54701'}
-  # ---
-
-  # ODYSSEY
-  # ('combinationMeter', 'eps', 'fwdRadar', 'programmedFuelInjection', 'shiftByWire', 'srs', 'transmission', 'vsa'): routes: 22018, dongles: {'dd8e9caf07f5b828', '6da2ceb7bf6a818c', '2e90c996d0ba97a2', '349a10da75da84b3', '5a28fb7518234651', '20994bc5331f98c0', 'c28699378e81deb4', 'd1a0dab0337a49bb', '772b833c28f493b5', '83670f5527f21a71', '2c81142b45056e26', '0c23034a3a1e7bf4', '49a8f288f2c70bd9', '17b629a57688957e', '105a691de81f5d0a', '0ffff9faf2699ebc', '180ead4c4c126f9d', 'b14eb1e87e5c7b04', '1b83b62ce1e15374', '23d8d880f7936549', '4b830dcb5a64ac09', 'a3636d74d9353700', '564e1c4005971631', 'e1e997c8166094ce', '44af831cccaf24f6', '9b7e78f7511c0d95', '0e4bac1d711fd551', '2069b4092db64099', '7074dfeeffbb7f3b', 'f70097378779394a', '6993681710231e24', '550b1bafb9c53324', 'e462034ac9e0c71d', '89ae461c07c586a3', '59ca2e25c9f03aae', '3eb25233bf8777b2', '20999527e9966d57', '499ab6011a6f0115', '568f8a1ce998fe8c', '0494ab1688baf0d1', 'c7fa6fb6f4d42407', 'b700d19967c0136b', 'b95acf45b72e104d', 'c549a7d0ddceb251', '7d1b9fb1892e3415', 'ff001cab8ff97dd1', '75d1c547e2d4725b', '4480efadd4e5e9b0', '67cc68f0290328c2', 'f30eee173ffa893d', '761e1503448b32d5', '8eb3d1f10274ac44', 'a064118e09822a5e', '967aaf3f479fd2fb', '633911d60cf45223', '1af3445804c80894', '5de06f504727ef4e', '0c21c391abd382af', 'b288b21f47092c68', '394f8443c72ba946', '10702b68bb2db4f7', '3a02fd61e8d654b9', '7e870a7ec3860511', '326e5318a0ce5357', '131c0a3222186596', 'fa0bfc645891d426', '10d6a69109431519', '9954025f3a2aec2d', '24f032bbbc29f607', 'b83fc39362bdde40', '20608a5877a0b57d', '8906faebfc695953', '7a7eba6f9ce36254', '2e531d8181892032', '76b6bcf9925e9293', 'cf748e7031d411c8', 'e67fa35fcc6db9d5', 'b15734b667e40249', '94ad75c81a0d530d', '6d3b5e3ce824a6be', 'c57d8a1adaecd30e', 'e1aa4eae17f7b626', '98e0ab15472d3642', 'aa7176d108cb2f97', '4b5b4f473fae352b'}
-  # ---
-  # (): routes: 6, dongles: {'0ffff9faf2699ebc', '20608a5877a0b57d'}
-  # ---
-  # ('programmedFuelInjection',): routes: 2, dongles: {'75d1c547e2d4725b'}
-  # ---
-  # ('combinationMeter', 'eps', 'programmedFuelInjection', 'shiftByWire', 'srs', 'transmission', 'vsa'): routes: 2, dongles: {'20999527e9966d57'}
-  # ---
-  # ('programmedFuelInjection', 'srs'): routes: 1, dongles: {'633911d60cf45223'}
-  # ---
-  # ('programmedFuelInjection', 'srs', 'vsa'): routes: 1, dongles: {'633911d60cf45223'}
-  # ---
-
-  # ODYSSEY (filtered with a minimum of 5 routes per ECU group)
-  # ('combinationMeter', 'eps', 'fwdRadar', 'programmedFuelInjection', 'shiftByWire', 'srs', 'transmission', 'vsa'): routes: 21613, dongles: {'dd8e9caf07f5b828', '6da2ceb7bf6a818c', '2e90c996d0ba97a2', '349a10da75da84b3', '5a28fb7518234651', '20994bc5331f98c0', 'c28699378e81deb4', 'd1a0dab0337a49bb', '772b833c28f493b5', '2c81142b45056e26', '0c23034a3a1e7bf4', '49a8f288f2c70bd9', '17b629a57688957e', '105a691de81f5d0a', '0ffff9faf2699ebc', '180ead4c4c126f9d', 'b14eb1e87e5c7b04', '1b83b62ce1e15374', '23d8d880f7936549', '4b830dcb5a64ac09', 'a3636d74d9353700', '564e1c4005971631', '44af831cccaf24f6', '9b7e78f7511c0d95', '0e4bac1d711fd551', '2069b4092db64099', '7074dfeeffbb7f3b', 'f70097378779394a', '6993681710231e24', '550b1bafb9c53324', 'e462034ac9e0c71d', '89ae461c07c586a3', '59ca2e25c9f03aae', '3eb25233bf8777b2', '20999527e9966d57', '499ab6011a6f0115', '0494ab1688baf0d1', 'c7fa6fb6f4d42407', 'b700d19967c0136b', 'b95acf45b72e104d', 'c549a7d0ddceb251', '7d1b9fb1892e3415', 'ff001cab8ff97dd1', '75d1c547e2d4725b', '4480efadd4e5e9b0', '67cc68f0290328c2', 'f30eee173ffa893d', '761e1503448b32d5', '8eb3d1f10274ac44', 'a064118e09822a5e', '967aaf3f479fd2fb', '633911d60cf45223', '1af3445804c80894', '5de06f504727ef4e', '0c21c391abd382af', 'b288b21f47092c68', '394f8443c72ba946', '3a02fd61e8d654b9', '7e870a7ec3860511', '131c0a3222186596', 'fa0bfc645891d426', '10d6a69109431519', '9954025f3a2aec2d', '24f032bbbc29f607', 'b83fc39362bdde40', '20608a5877a0b57d', '7a7eba6f9ce36254', '2e531d8181892032', '76b6bcf9925e9293', 'cf748e7031d411c8', 'e67fa35fcc6db9d5', 'b15734b667e40249', '94ad75c81a0d530d', '6d3b5e3ce824a6be', 'c57d8a1adaecd30e', 'e1aa4eae17f7b626', '98e0ab15472d3642', 'aa7176d108cb2f97', '4b5b4f473fae352b'}
-
-
   non_essential_ecus={
     Ecu.programmedFuelInjection: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G, CAR.HONDA_PILOT],
     Ecu.transmission: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G, CAR.HONDA_PILOT],
