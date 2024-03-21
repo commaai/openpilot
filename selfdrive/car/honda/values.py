@@ -320,6 +320,9 @@ FW_QUERY_CONFIG = FwQueryConfig(
   },
   extra_ecus=[
     # The only other ECU on PT bus accessible by camera on radarless Civic
+    # This is likely a manufacturer-specific sub-address implementation: the camera responds to this and 0x18dab0f1
+    # Unsure what the part number refers to: 8S103 is 'Camera Set Mono', while 36160 is 'Camera Monocular - Honda'
+    # TODO: add query back, camera does not support querying both in parallel and 0x18dab0f1 often fails to respond
     # (Ecu.unknown, 0x18DAB3F1, None),
   ],
 )
