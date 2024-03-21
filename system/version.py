@@ -33,12 +33,12 @@ def get_release_notes(path: str = BASEDIR) -> str:
 
 
 @cache
-def is_prebuilt() -> bool:
-  return os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
+def is_prebuilt(path: str = BASEDIR) -> bool:
+  return os.path.exists(os.path.join(path, 'prebuilt'))
 
 
 @cache
-def is_dirty(cwd: str = None) -> bool:
+def is_dirty(cwd: str = BASEDIR) -> bool:
   origin = get_origin()
   branch = get_branch()
   if not origin or not branch:
@@ -47,14 +47,14 @@ def is_dirty(cwd: str = None) -> bool:
   dirty = False
   try:
     # Actually check dirty files
-    if not is_prebuilt():
+    if not is_prebuilt(cwd):
       # This is needed otherwise touched files might show up as modified
       try:
         subprocess.check_call(["git", "update-index", "--refresh"], cwd=cwd)
       except subprocess.CalledProcessError:
         pass
 
-      dirty = (subprocess.call(["git", "diff-index", "--quiet", branch, "--"], cwd=cwd) != 0)
+      dirty = (subprocess.call(["git", "diff-index", "--quiet", branch, "--"], cwd=cwd)) != 0
   except subprocess.CalledProcessError:
     cloudlog.exception("git subprocess failed while checking dirty")
     dirty = True
@@ -69,7 +69,7 @@ class OpenpilotMetadata:
   git_commit: str
   git_origin: str
   git_commit_date: str
-  git_dirty: bool
+  is_dirty: bool  # whether there are local changes
 
   @property
   def short_version(self) -> str:
@@ -125,13 +125,19 @@ def get_build_metadata(path: str = BASEDIR) -> BuildMetadata:
                 git_commit=git_commit,
                 git_origin=git_origin,
                 git_commit_date=git_commit_date,
-                git_dirty=False))
+                is_dirty=False))
 
   git_folder = pathlib.Path(path) / ".git"
 
   if git_folder.exists():
-    return BuildMetadata(get_short_branch(path), OpenpilotMetadata(get_version(path), get_release_notes(path), get_commit(path), \
-                                                                   get_origin(path), get_commit_date(path), is_dirty(path)))
+    return BuildMetadata(get_short_branch(path),
+                    OpenpilotMetadata(
+                      version=get_version(path),
+                      release_notes=get_release_notes(path),
+                      git_commit=get_commit(path),
+                      git_origin=get_origin(path),
+                      git_commit_date=get_commit_date(path),
+                      is_dirty=is_dirty(path)))
 
   cloudlog.exception("unable to get build metadata")
   raise Exception("invalid build metadata")

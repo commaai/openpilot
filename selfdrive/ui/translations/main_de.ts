@@ -598,6 +598,10 @@
         <source>ft</source>
         <translation>fuß</translation>
     </message>
+    <message>
+        <source>now</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Reset</name>

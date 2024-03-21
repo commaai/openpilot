@@ -66,7 +66,7 @@ def init(project: SentryProject) -> bool:
   build_metadata = get_build_metadata()
 
   sentry_sdk.set_user({"id": dongle_id})
-  sentry_sdk.set_tag("dirty", build_metadata.openpilot.git_dirty)
+  sentry_sdk.set_tag("dirty", build_metadata.openpilot.is_dirty)
   sentry_sdk.set_tag("origin", build_metadata.openpilot.git_origin)
   sentry_sdk.set_tag("branch", build_metadata.channel)
   sentry_sdk.set_tag("commit", build_metadata.openpilot.git_commit)

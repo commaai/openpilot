@@ -22,7 +22,7 @@ def main():
                        origin=build_metadata.openpilot.git_normalized_origin,
                        branch=build_metadata.channel,
                        commit=build_metadata.openpilot.git_commit,
-                       dirty=build_metadata.openpilot.git_dirty,
+                       dirty=build_metadata.openpilot.is_dirty,
                        device=HARDWARE.get_device_type())
 
   try:
