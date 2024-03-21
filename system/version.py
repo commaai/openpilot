@@ -104,28 +104,30 @@ class BuildMetadata:
     return self.channel in RELEASE_BRANCHES
 
 
+def build_metadata_from_dict(build_metadata: dict) -> BuildMetadata:
+  channel = build_metadata.get("channel", "unknown")
+  openpilot_metadata = build_metadata.get("openpilot", {})
+  version = openpilot_metadata.get("version", "unknown")
+  release_notes = openpilot_metadata.get("release_notes", "unknown")
+  git_commit = openpilot_metadata.get("git_commit", "unknown")
+  git_origin = openpilot_metadata.get("git_origin", "unknown")
+  git_commit_date = openpilot_metadata.get("git_commit_date", "unknown")
+  return BuildMetadata(channel,
+            OpenpilotMetadata(
+              version=version,
+              release_notes=release_notes,
+              git_commit=git_commit,
+              git_origin=git_origin,
+              git_commit_date=git_commit_date,
+              is_dirty=False))
+
 
 def get_build_metadata(path: str = BASEDIR) -> BuildMetadata:
   build_metadata_path = pathlib.Path(path) / BUILD_METADATA_FILENAME
 
   if build_metadata_path.exists():
     build_metadata = json.loads(build_metadata_path.read_text())
-    openpilot_metadata = build_metadata.get("openpilot", {})
-
-    channel = build_metadata.get("channel", "unknown")
-    version = openpilot_metadata.get("version", "unknown")
-    release_notes = openpilot_metadata.get("release_notes", "unknown")
-    git_commit = openpilot_metadata.get("git_commit", "unknown")
-    git_origin = openpilot_metadata.get("git_origin", "unknown")
-    git_commit_date = openpilot_metadata.get("git_commit_date", "unknown")
-    return BuildMetadata(channel,
-              OpenpilotMetadata(
-                version=version,
-                release_notes=release_notes,
-                git_commit=git_commit,
-                git_origin=git_origin,
-                git_commit_date=git_commit_date,
-                is_dirty=False))
+    return build_metadata_from_dict(build_metadata)
 
   git_folder = pathlib.Path(path) / ".git"
 
