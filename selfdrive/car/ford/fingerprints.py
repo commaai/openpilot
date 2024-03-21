@@ -146,4 +146,14 @@ FW_VERSIONS = {
       b'NZ6T-14F397-AC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
+  CAR.FORD_RANGER_MK2: {
+    (Ecu.eps, 0x730, None): [
+    ],
+    (Ecu.abs, 0x760, None): [
+    ],
+    (Ecu.fwdRadar, 0x764, None): [
+    ],
+    (Ecu.fwdCamera, 0x706, None): [
+    ],
+  }
 }
