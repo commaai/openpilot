@@ -290,7 +290,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       bus=1,
       obd_multiplexing=False,
     ),
-    # Log extra identifiers for current ECUs
+    # Log manufacturer-specific identifier for current ECUs
     Request(
       [HONDA_ALT_VERSION_REQUEST],
       [HONDA_ALT_VERSION_RESPONSE],
