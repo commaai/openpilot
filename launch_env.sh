@@ -11,4 +11,3 @@ if [ -z "$AGNOS_VERSION" ]; then
 fi
 
 export STAGING_ROOT="/data/safe_staging"
-export FINGERPRINT="FORD_RANGER_MK2"
