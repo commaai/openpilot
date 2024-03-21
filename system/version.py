@@ -78,7 +78,7 @@ class OpenpilotMetadata:
 
   @property
   def short_commit(self) -> str:
-    return self.git_commit[:6]
+    return self.git_commit[:9]
 
   @property
   def comma_remote(self) -> bool:
