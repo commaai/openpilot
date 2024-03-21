@@ -1,7 +1,7 @@
 # functions common among cars
 from collections import defaultdict, namedtuple
 from dataclasses import dataclass
-from enum import IntFlag, ReprEnum
+from enum import IntFlag, ReprEnum, EnumType
 from dataclasses import replace
 
 import capnp
@@ -9,7 +9,7 @@ import capnp
 from cereal import car
 from openpilot.common.numpy_fast import clip, interp
 from openpilot.common.utils import Freezable
-from openpilot.selfdrive.car.docs_definitions import CarInfo
+from openpilot.selfdrive.car.docs_definitions import CarDocs
 
 
 # kg of standard extra cargo to count for drive, gas, etc...
@@ -165,41 +165,6 @@ def common_fault_avoidance(fault_condition: bool, request: bool, above_limit_fra
   return above_limit_frames, request
 
 
-def crc8_pedal(data):
-  crc = 0xFF    # standard init value
-  poly = 0xD5   # standard crc8: x8+x7+x6+x4+x2+1
-  size = len(data)
-  for i in range(size - 1, -1, -1):
-    crc ^= data[i]
-    for _ in range(8):
-      if ((crc & 0x80) != 0):
-        crc = ((crc << 1) ^ poly) & 0xFF
-      else:
-        crc <<= 1
-  return crc
-
-
-def create_gas_interceptor_command(packer, gas_amount, idx):
-  # Common gas pedal msg generator
-  enable = gas_amount > 0.001
-
-  values = {
-    "ENABLE": enable,
-    "COUNTER_PEDAL": idx & 0xF,
-  }
-
-  if enable:
-    values["GAS_COMMAND"] = gas_amount * 255.
-    values["GAS_COMMAND2"] = gas_amount * 255.
-
-  dat = packer.make_can_msg("GAS_COMMAND", 0, values)[2]
-
-  checksum = crc8_pedal(dat[:-1])
-  values["CHECKSUM_PEDAL"] = checksum
-
-  return packer.make_can_msg("GAS_COMMAND", 0, values)
-
-
 def make_can_msg(addr, dat, bus):
   return [addr, 0, dat, bus]
 
@@ -245,9 +210,6 @@ class CanSignalRateCalculator:
     return self.rate
 
 
-CarInfos = CarInfo | list[CarInfo] | None
-
-
 @dataclass(frozen=True, kw_only=True)
 class CarSpecs:
   mass: float  # kg, curb weight
@@ -264,13 +226,14 @@ class CarSpecs:
 
 @dataclass(order=True)
 class PlatformConfig(Freezable):
-  platform_str: str
-  car_info: CarInfos
+  car_docs: list[CarDocs]
   specs: CarSpecs
 
   dbc_dict: DbcDict
 
   flags: int = 0
+
+  platform_str: str | None = None
 
   def __hash__(self) -> int:
     return hash(self.platform_str)
@@ -283,10 +246,18 @@ class PlatformConfig(Freezable):
 
   def __post_init__(self):
     self.init()
-    self.freeze()
 
 
-class Platforms(str, ReprEnum):
+class PlatformsType(EnumType):
+  def __new__(metacls, cls, bases, classdict, *, boundary=None, _simple=False, **kwds):
+    for key in classdict._member_names.keys():
+      cfg: PlatformConfig = classdict[key]
+      cfg.platform_str = key
+      cfg.freeze()
+    return super().__new__(metacls, cls, bases, classdict, boundary=boundary, _simple=_simple, **kwds)
+
+
+class Platforms(str, ReprEnum, metaclass=PlatformsType):
   config: PlatformConfig
 
   def __new__(cls, platform_config: PlatformConfig):

@@ -13,7 +13,7 @@ from openpilot.system.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE
 from openpilot.common.file_helpers import atomic_write_in_dir
-from openpilot.system.version import get_normalized_origin, get_short_branch, get_short_version, is_dirty
+from openpilot.system.version import get_build_metadata
 from openpilot.system.loggerd.config import STATS_DIR_FILE_LIMIT, STATS_SOCKET, STATS_FLUSH_TIME_S
 
 
@@ -86,13 +86,15 @@ def main() -> NoReturn:
   # initialize stats directory
   Path(STATS_DIR).mkdir(parents=True, exist_ok=True)
 
+  build_metadata = get_build_metadata()
+
   # initialize tags
   tags = {
     'started': False,
-    'version': get_short_version(),
-    'branch': get_short_branch(),
-    'dirty': is_dirty(),
-    'origin': get_normalized_origin(),
+    'version': build_metadata.openpilot.version,
+    'branch': build_metadata.channel,
+    'dirty': build_metadata.openpilot.is_dirty,
+    'origin': build_metadata.openpilot.git_normalized_origin,
     'deviceType': HARDWARE.get_device_type(),
   }
 

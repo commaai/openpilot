@@ -19,7 +19,7 @@ runs:
   using: "composite"
   steps:
     - name: setup namespace cache
-      if: ${{ contains(runner.name, 'nsc') }} 
+      if: ${{ contains(runner.name, 'nsc') }}
       uses: namespacelabs/nscloud-cache-action@v1
       with:
         path: ${{ inputs.path }}

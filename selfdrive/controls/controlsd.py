@@ -12,6 +12,7 @@ from cereal.visionipc import VisionIpcClient, VisionStreamType
 
 
 from openpilot.common.conversions import Conversions as CV
+from openpilot.common.git import get_short_branch
 from openpilot.common.numpy_fast import clip
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper, DT_CTRL
@@ -30,7 +31,6 @@ from openpilot.selfdrive.controls.lib.longcontrol import LongControl
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 
 from openpilot.system.hardware import HARDWARE
-from openpilot.system.version import get_short_branch
 
 SOFT_DISABLE_TIME = 3  # seconds
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
@@ -142,10 +142,10 @@ class Controls:
     self.current_alert_types = [ET.PERMANENT]
     self.logged_comm_issue = None
     self.not_running_prev = None
-    self.last_actuators = car.CarControl.Actuators.new_message()
     self.steer_limited = False
     self.desired_curvature = 0.0
     self.experimental_mode = False
+    self.personality = self.read_personality_param()
     self.v_cruise_helper = VCruiseHelper(self.CP)
     self.recalibrating_seen = False
 
@@ -620,7 +620,7 @@ class Controls:
         undershooting = abs(lac_log.desiredLateralAccel) / abs(1e-3 + lac_log.actualLateralAccel) > 1.2
         turning = abs(lac_log.desiredLateralAccel) > 1.0
         good_speed = CS.vEgo > 5
-        max_torque = abs(self.last_actuators.steer) > 0.99
+        max_torque = abs(actuators.steer) > 0.99
         if undershooting and turning and good_speed and max_torque:
           lac_log.active and self.events.add(EventName.steerSaturated)
       elif lac_log.saturated:
@@ -649,6 +649,12 @@ class Controls:
       if not math.isfinite(attr):
         cloudlog.error(f"actuators.{p} not finite {actuators.to_dict()}")
         setattr(actuators, p, 0.0)
+
+    # decrement personality on distance button press
+    if self.CP.openpilotLongitudinalControl:
+      if any(not be.pressed and be.type == ButtonType.gapAdjustCruise for be in CS.buttonEvents):
+        self.personality = (self.personality - 1) % 3
+        self.params.put_nonblocking('LongitudinalPersonality', str(self.personality))
 
     return CC, lac_log
 
@@ -680,7 +686,7 @@ class Controls:
     hudControl.speedVisible = self.enabled
     hudControl.lanesVisible = self.enabled
     hudControl.leadVisible = self.sm['longitudinalPlan'].hasLead
-    hudControl.leadDistanceBars = self.sm['longitudinalPlan'].personality.raw + 1
+    hudControl.leadDistanceBars = self.personality + 1
 
     hudControl.rightLaneVisible = True
     hudControl.leftLaneVisible = True
@@ -769,6 +775,7 @@ class Controls:
     controlsState.forceDecel = bool(force_decel)
     controlsState.canErrorCounter = self.card.can_rcv_cum_timeout_counter
     controlsState.experimentalMode = self.experimental_mode
+    controlsState.personality = self.personality
 
     lat_tuning = self.CP.lateralTuning.which()
     if self.joystick_mode:
@@ -821,10 +828,17 @@ class Controls:
 
     self.CS_prev = CS
 
+  def read_personality_param(self):
+    try:
+      return int(self.params.get('LongitudinalPersonality'))
+    except (ValueError, TypeError):
+      return log.LongitudinalPersonality.standard
+
   def params_thread(self, evt):
     while not evt.is_set():
       self.is_metric = self.params.get_bool("IsMetric")
       self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
+      self.personality = self.read_personality_param()
       if self.CP.notCar:
         self.joystick_mode = self.params.get_bool("JoystickDebugMode")
       time.sleep(0.1)

@@ -293,6 +293,18 @@
         <source>Review</source>
         <translation>確認</translation>
     </message>
+    <message>
+        <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
+        <translation>デバイスを comma connect (connect.comma.ai)でペアリングし、comma primeの特典を申請してください。</translation>
+    </message>
+    <message>
+        <source>Pair Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pair</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DriverViewWindow</name>
@@ -593,6 +605,10 @@
     <message>
         <source>ft</source>
         <translation>ﾌｨｰﾄ</translation>
+    </message>
+    <message>
+        <source>now</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1098,10 +1114,6 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>End-to-End Longitudinal Control</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1127,6 +1139,10 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
