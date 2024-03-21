@@ -1,7 +1,8 @@
+import dataclasses
+import json
 import pathlib
 import subprocess
 
-from openpilot.common.utils import json_dump_dataclass
 from openpilot.system.version import BUILD_METADATA_FILENAME, BuildMetadata
 
 
@@ -39,7 +40,9 @@ def create_caexclude_file(path: pathlib.Path):
 
 def create_build_metadata_file(path: pathlib.Path, build_metadata: BuildMetadata):
   with open(path / BUILD_METADATA_FILENAME, "w") as f:
-    f.write(json_dump_dataclass(build_metadata))
+    build_metadata_dict = dataclasses.asdict(build_metadata)
+    build_metadata_dict["openpilot"].pop("is_dirty")  # this is determined at runtime
+    f.write(json.dumps(build_metadata_dict))
 
 
 def create_casync_release(target_dir: pathlib.Path, output_dir: pathlib.Path, channel: str):
