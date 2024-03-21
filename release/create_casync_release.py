@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import os
 import pathlib
 
 from openpilot.system.updated.casync.common import create_caexclude_file, create_casync_release, create_build_metadata_file
@@ -18,6 +19,7 @@ if __name__ == "__main__":
   output_dir = pathlib.Path(args.output_dir)
 
   build_metadata = get_build_metadata()
+  build_metadata.openpilot.build_style = "release" if os.environ.get("RELEASE", None) is not None else "debug"
 
   create_build_metadata_file(target_dir, build_metadata, args.channel)
   create_caexclude_file(target_dir)
