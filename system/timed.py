@@ -56,7 +56,6 @@ def main() -> NoReturn:
   """
 
   params = Params()
-  tf = TimezoneFinder()
 
   # Restore timezone from param
   tz = params.get("Timezone", encoding='utf8')

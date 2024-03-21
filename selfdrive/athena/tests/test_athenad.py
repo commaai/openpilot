@@ -12,7 +12,6 @@ import unittest
 from dataclasses import asdict, replace
 from datetime import datetime, timedelta
 from parameterized import parameterized
-from typing import Optional
 
 from unittest import mock
 from websocket import ABNF
@@ -24,9 +23,9 @@ from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.athena import athenad
 from openpilot.selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
-from openpilot.selfdrive.athena.tests.helpers import MockWebsocket, MockApi, EchoSocket, with_http_server
+from openpilot.selfdrive.athena.tests.helpers import HTTPRequestHandler, MockWebsocket, MockApi, EchoSocket
+from openpilot.selfdrive.test.helpers import with_http_server
 from openpilot.system.hardware.hw import Paths
-from openpilot.selfdrive.athena.tests.helpers import HTTPRequestHandler
 
 
 def seed_athena_server(host, port):
@@ -97,7 +96,7 @@ class TestAthenadMethods(unittest.TestCase):
         break
 
   @staticmethod
-  def _create_file(file: str, parent: Optional[str] = None, data: bytes = b'') -> str:
+  def _create_file(file: str, parent: str = None, data: bytes = b'') -> str:
     fn = os.path.join(Paths.log_root() if parent is None else parent, file)
     os.makedirs(os.path.dirname(fn), exist_ok=True)
     with open(fn, 'wb') as f:

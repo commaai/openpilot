@@ -11,7 +11,6 @@ import time
 import threading
 from collections import defaultdict
 from pathlib import Path
-from typing import List, Union, Optional
 from markdown_it import MarkdownIt
 
 from openpilot.common.basedir import BASEDIR
@@ -20,7 +19,7 @@ from openpilot.common.time import system_time_valid
 from openpilot.system.hardware import AGNOS, HARDWARE
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
-from openpilot.system.version import is_tested_branch
+from openpilot.system.version import get_build_metadata
 
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
@@ -64,7 +63,7 @@ def write_time_to_param(params, param) -> None:
   t = datetime.datetime.utcnow()
   params.put(param, t.isoformat().encode('utf8'))
 
-def read_time_from_param(params, param) -> Optional[datetime.datetime]:
+def read_time_from_param(params, param) -> datetime.datetime | None:
   t = params.get(param, encoding='utf8')
   try:
     return datetime.datetime.fromisoformat(t)
@@ -72,7 +71,7 @@ def read_time_from_param(params, param) -> Optional[datetime.datetime]:
     pass
   return None
 
-def run(cmd: List[str], cwd: Optional[str] = None) -> str:
+def run(cmd: list[str], cwd: str = None) -> str:
   return subprocess.check_output(cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
 
 
@@ -234,7 +233,7 @@ def handle_agnos_update() -> None:
 class Updater:
   def __init__(self):
     self.params = Params()
-    self.branches = defaultdict(lambda: '')
+    self.branches = defaultdict(str)
     self._has_internet: bool = False
 
   @property
@@ -243,7 +242,7 @@ class Updater:
 
   @property
   def target_branch(self) -> str:
-    b: Union[str, None] = self.params.get("UpdaterTargetBranch", encoding='utf-8')
+    b: str | None = self.params.get("UpdaterTargetBranch", encoding='utf-8')
     if b is None:
       b = self.get_branch(BASEDIR)
     return b
@@ -272,7 +271,7 @@ class Updater:
   def get_commit_hash(self, path: str = OVERLAY_MERGED) -> str:
     return run(["git", "rev-parse", "HEAD"], path).rstrip()
 
-  def set_params(self, update_success: bool, failed_count: int, exception: Optional[str]) -> None:
+  def set_params(self, update_success: bool, failed_count: int, exception: str | None) -> None:
     self.params.put("UpdateFailedCount", str(failed_count))
     self.params.put("UpdaterTargetBranch", self.target_branch)
 
@@ -326,8 +325,9 @@ class Updater:
 
     now = datetime.datetime.utcnow()
     dt = now - last_update
+    build_metadata = get_build_metadata()
     if failed_count > 15 and exception is not None and self.has_internet:
-      if is_tested_branch():
+      if build_metadata.tested_channel:
         extra_text = "Ensure the software is correctly installed. Uninstall and re-install if this error persists."
       else:
         extra_text = exception

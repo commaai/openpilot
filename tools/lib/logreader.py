@@ -11,7 +11,7 @@ import tqdm
 import urllib.parse
 import warnings
 
-from typing import Callable, Dict, Iterable, Iterator, List, Optional, Type
+from collections.abc import Callable, Iterable, Iterator
 from urllib.parse import parse_qs, urlparse
 
 from cereal import log as capnp_log
@@ -21,7 +21,7 @@ from openpilot.tools.lib.openpilotci import get_url
 from openpilot.tools.lib.filereader import FileReader, file_exists, internal_source_available
 from openpilot.tools.lib.route import Route, SegmentRange
 
-LogMessage = Type[capnp._DynamicStructReader]
+LogMessage = type[capnp._DynamicStructReader]
 LogIterable = Iterable[LogMessage]
 RawLogIterable = Iterable[bytes]
 
@@ -76,8 +76,8 @@ class ReadMode(enum.StrEnum):
   AUTO_INTERACTIVE = "i"  # default to rlogs, fallback to qlogs with a prompt from the user
 
 
-LogPath = Optional[str]
-LogPaths = List[LogPath]
+LogPath = str | None
+LogPaths = list[LogPath]
 ValidFileCallable = Callable[[LogPath], bool]
 Source = Callable[[SegmentRange, ReadMode], LogPaths]
 
@@ -89,7 +89,7 @@ def default_valid_file(fn: LogPath) -> bool:
 
 def auto_strategy(rlog_paths: LogPaths, qlog_paths: LogPaths, interactive: bool, valid_file: ValidFileCallable) -> LogPaths:
   # auto select logs based on availability
-  if any(rlog is None or not valid_file(rlog) for rlog in rlog_paths):
+  if any(rlog is None or not valid_file(rlog) for rlog in rlog_paths) and all(qlog is not None and valid_file(qlog) for qlog in qlog_paths):
     if interactive:
       if input("Some rlogs were not found, would you like to fallback to qlogs for those segments? (y/n) ").lower() != "y":
         return rlog_paths
@@ -170,8 +170,17 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
   if mode == ReadMode.SANITIZED:
     return comma_car_segments_source(sr, mode)
 
-  SOURCES: List[Source] = [internal_source, openpilotci_source, comma_api_source, comma_car_segments_source,]
+  SOURCES: list[Source] = [internal_source, openpilotci_source, comma_api_source, comma_car_segments_source,]
   exceptions = []
+
+  # for automatic fallback modes, auto_source needs to first check if rlogs exist for any source
+  if mode in [ReadMode.AUTO, ReadMode.AUTO_INTERACTIVE]:
+    for source in SOURCES:
+      try:
+        return check_source(source, sr, ReadMode.RLOG)
+      except Exception:
+        pass
+
   # Automatically determine viable source
   for source in SOURCES:
     try:
@@ -212,7 +221,7 @@ def parse_indirect(identifier: str):
 
 
 class LogReader:
-  def _parse_identifiers(self, identifier: str | List[str]):
+  def _parse_identifiers(self, identifier: str | list[str]):
     if isinstance(identifier, list):
       return [i for j in identifier for i in self._parse_identifiers(j)]
 
@@ -234,7 +243,7 @@ class LogReader:
 are uploaded or auto fallback to qlogs with '/a' selector at the end of the route name."
     return identifiers
 
-  def __init__(self, identifier: str | List[str], default_mode: ReadMode = ReadMode.RLOG,
+  def __init__(self, identifier: str | list[str], default_mode: ReadMode = ReadMode.RLOG,
                default_source=auto_source, sort_by_time=False, only_union_types=False):
     self.default_mode = default_mode
     self.default_source = default_source
@@ -243,12 +252,12 @@ are uploaded or auto fallback to qlogs with '/a' selector at the end of the rout
     self.sort_by_time = sort_by_time
     self.only_union_types = only_union_types
 
-    self.__lrs: Dict[int, _LogFileReader] = {}
+    self.__lrs: dict[int, _LogFileReader] = {}
     self.reset()
 
   def _get_lr(self, i):
     if i not in self.__lrs:
-      self.__lrs[i] = _LogFileReader(self.logreader_identifiers[i])
+      self.__lrs[i] = _LogFileReader(self.logreader_identifiers[i], sort_by_time=self.sort_by_time, only_union_types=self.only_union_types)
     return self.__lrs[i]
 
   def __iter__(self):

@@ -1,7 +1,5 @@
 import http.server
-import threading
 import socket
-from functools import wraps
 
 
 class MockResponse:
@@ -65,25 +63,3 @@ class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     self.rfile.read(length)
     self.send_response(201, "Created")
     self.end_headers()
-
-
-def with_http_server(func, handler=http.server.BaseHTTPRequestHandler, setup=None):
-  @wraps(func)
-  def inner(*args, **kwargs):
-    host = '127.0.0.1'
-    server = http.server.HTTPServer((host, 0), handler)
-    port = server.server_port
-    t = threading.Thread(target=server.serve_forever)
-    t.start()
-
-    if setup is not None:
-      setup(host, port)
-
-    try:
-      return func(*args, f'http://{host}:{port}', **kwargs)
-    finally:
-      server.shutdown()
-      server.server_close()
-      t.join()
-
-  return inner

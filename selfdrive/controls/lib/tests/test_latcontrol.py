@@ -17,7 +17,7 @@ from openpilot.common.mock.generators import generate_liveLocationKalman
 
 class TestLatControl(unittest.TestCase):
 
-  @parameterized.expand([(HONDA.CIVIC, LatControlPID), (TOYOTA.RAV4, LatControlTorque),  (NISSAN.LEAF, LatControlAngle)])
+  @parameterized.expand([(HONDA.HONDA_CIVIC, LatControlPID), (TOYOTA.TOYOTA_RAV4, LatControlTorque),  (NISSAN.NISSAN_LEAF, LatControlAngle)])
   def test_saturation(self, car_name, controller):
     CarInterface, CarController, CarState = interfaces[car_name]
     CP = CarInterface.get_non_essential_params(car_name)
