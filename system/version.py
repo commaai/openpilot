@@ -69,7 +69,7 @@ class OpenpilotMetadata:
   git_commit: str
   git_origin: str
   git_commit_date: str
-  git_dirty: bool
+  is_dirty: bool  # whether there are local changes
 
   @property
   def short_version(self) -> str:
@@ -125,13 +125,19 @@ def get_build_metadata(path: str = BASEDIR) -> BuildMetadata:
                 git_commit=git_commit,
                 git_origin=git_origin,
                 git_commit_date=git_commit_date,
-                git_dirty=False))
+                is_dirty=False))
 
   git_folder = pathlib.Path(path) / ".git"
 
   if git_folder.exists():
-    return BuildMetadata(get_short_branch(path), OpenpilotMetadata(get_version(path), get_release_notes(path), get_commit(path), \
-                                                                   get_origin(path), get_commit_date(path), is_dirty(path)))
+    return BuildMetadata(get_short_branch(path),
+                    OpenpilotMetadata(
+                      version=get_version(path),
+                      release_notes=get_release_notes(path),
+                      git_commit=get_commit(path),
+                      git_origin=get_origin(path),
+                      git_commit_date=get_commit_date(path),
+                      is_dirty=is_dirty(path)))
 
   cloudlog.exception("unable to get build metadata")
   raise Exception("invalid build metadata")

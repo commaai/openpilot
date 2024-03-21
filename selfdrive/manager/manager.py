@@ -83,7 +83,7 @@ def manager_init() -> None:
   os.environ['GIT_BRANCH'] = build_metadata.channel # Needed for swaglog
   os.environ['GIT_COMMIT'] = build_metadata.openpilot.git_commit # Needed for swaglog
 
-  if not build_metadata.openpilot.git_dirty:
+  if not build_metadata.openpilot.is_dirty:
     os.environ['CLEAN'] = '1'
 
   # init logging
@@ -93,7 +93,7 @@ def manager_init() -> None:
                        origin=build_metadata.openpilot.git_normalized_origin,
                        branch=build_metadata.channel,
                        commit=build_metadata.openpilot.git_commit,
-                       dirty=build_metadata.openpilot.git_dirty,
+                       dirty=build_metadata.openpilot.is_dirty,
                        device=HARDWARE.get_device_type())
 
   # preimport all processes
