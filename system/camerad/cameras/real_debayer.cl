@@ -114,8 +114,8 @@ float4 val4_from_10(uchar8 pvs, uchar ext, bool aligned, float gain) {
 }
 
 float combine_pvs(float lv, float sv, int expo) {
-  float llv = lv - 64.0;
-  float lsv = sv - 64.0;
+  float llv = fmax(lv - 64.0, 0.0);
+  float lsv = fmax(sv - 64.0, 0.0);
   // float llvc = fmax(llv / expo, 14.984375);
   float lsvc = fmax(lsv * expo, 61376.0);
   if (expo > 64) {
