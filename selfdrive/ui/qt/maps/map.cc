@@ -138,12 +138,15 @@ void MapWindow::updateState(const UIState &s) {
     auto locationd_pos = locationd_location.getPositionGeodetic();
     auto locationd_orientation = locationd_location.getCalibratedOrientationNED();
     auto locationd_velocity = locationd_location.getVelocityCalibrated();
+    auto locationd_ecef = locationd_location.getPositionECEF();
 
-    // Check std norm
-    auto pos_ecef_std = locationd_location.getPositionECEF().getStd();
-    bool pos_accurate_enough = sqrt(pow(pos_ecef_std[0], 2) + pow(pos_ecef_std[1], 2) + pow(pos_ecef_std[2], 2)) < 100;
-
-    locationd_valid = (locationd_pos.getValid() && locationd_orientation.getValid() && locationd_velocity.getValid() && pos_accurate_enough);
+    locationd_valid = (locationd_pos.getValid() && locationd_orientation.getValid() && locationd_velocity.getValid() && locationd_ecef.getValid());
+    if (locationd_valid) {
+      // Check std norm
+      auto pos_ecef_std = locationd_ecef.getStd();
+      bool pos_accurate_enough = sqrt(pow(pos_ecef_std[0], 2) + pow(pos_ecef_std[1], 2) + pow(pos_ecef_std[2], 2)) < 100;
+      locationd_valid = pos_accurate_enough;
+    }
 
     if (locationd_valid) {
       last_position = QMapLibre::Coordinate(locationd_pos.getValue()[0], locationd_pos.getValue()[1]);
