@@ -9,7 +9,7 @@ import subprocess
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.utils import cache
-from openpilot.common.git import get_commit, get_origin, get_branch, get_short_branch, get_normalized_origin, get_commit_date
+from openpilot.common.git import get_commit, get_origin, get_branch, get_short_branch, get_commit_date
 
 
 RELEASE_BRANCHES = ['release3-staging', 'release3', 'nightly']
@@ -79,7 +79,15 @@ class OpenpilotMetadata:
   def comma_remote(self) -> bool:
     # note to fork maintainers, this is used for release metrics. please do not
     # touch this to get rid of the orange startup alert. there's better ways to do that
-    return self.git_origin == "github.com/commaai/openpilot"
+    return self.git_normalized_origin == "github.com/commaai/openpilot"
+
+  @property
+  def git_normalized_origin(self) -> str:
+    return self.git_origin \
+      .replace("git@", "", 1) \
+      .replace(".git", "", 1) \
+      .replace("https://", "", 1) \
+      .replace(":", "/", 1)
 
 
 @dataclass(frozen=True)
@@ -123,7 +131,7 @@ def get_build_metadata(path: str = BASEDIR) -> BuildMetadata:
 
   if git_folder.exists():
     return BuildMetadata(get_short_branch(path), OpenpilotMetadata(get_version(path), get_release_notes(path), get_commit(path), \
-                                                                   get_normalized_origin(path), get_commit_date(path), is_dirty(path)))
+                                                                   get_origin(path), get_commit_date(path), is_dirty(path)))
 
   cloudlog.exception("unable to get build metadata")
   raise Exception("invalid build metadata")

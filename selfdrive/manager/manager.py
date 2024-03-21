@@ -79,7 +79,7 @@ def manager_init() -> None:
     serial = params.get("HardwareSerial")
     raise Exception(f"Registration failed for device {serial}")
   os.environ['DONGLE_ID'] = dongle_id  # Needed for swaglog
-  os.environ['GIT_ORIGIN'] = build_metadata.openpilot.git_origin # Needed for swaglog
+  os.environ['GIT_ORIGIN'] = build_metadata.openpilot.git_normalized_origin # Needed for swaglog
   os.environ['GIT_BRANCH'] = build_metadata.channel # Needed for swaglog
   os.environ['GIT_COMMIT'] = build_metadata.openpilot.git_commit # Needed for swaglog
 
@@ -90,7 +90,7 @@ def manager_init() -> None:
   sentry.init(sentry.SentryProject.SELFDRIVE)
   cloudlog.bind_global(dongle_id=dongle_id,
                        version=build_metadata.openpilot.version,
-                       origin=build_metadata.openpilot.git_origin,
+                       origin=build_metadata.openpilot.git_normalized_origin,
                        branch=build_metadata.channel,
                        commit=build_metadata.openpilot.git_commit,
                        dirty=build_metadata.openpilot.git_dirty,

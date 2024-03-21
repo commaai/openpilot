@@ -94,7 +94,7 @@ def main() -> NoReturn:
     'version': build_metadata.openpilot.version,
     'branch': build_metadata.channel,
     'dirty': build_metadata.openpilot.git_dirty,
-    'origin': build_metadata.openpilot.git_origin,
+    'origin': build_metadata.openpilot.git_normalized_origin,
     'deviceType': HARDWARE.get_device_type(),
   }
 
