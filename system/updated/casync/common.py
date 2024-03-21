@@ -37,7 +37,7 @@ def create_caexclude_file(path: pathlib.Path):
       f.write(f"!{file}\n")
 
 
-def create_version_metadata_file(path: pathlib.Path, build_metadata: BuildMetadata):
+def create_build_metadata_file(path: pathlib.Path, build_metadata: BuildMetadata):
   with open(path / BUILD_METADATA_FILENAME, "w") as f:
     f.write(json_dump_dataclass(build_metadata))
 

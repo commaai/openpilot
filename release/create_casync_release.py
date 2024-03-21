@@ -3,7 +3,7 @@
 import argparse
 import pathlib
 
-from openpilot.system.updated.casync.common import create_caexclude_file, create_casync_release, create_version_metadata_file
+from openpilot.system.updated.casync.common import create_caexclude_file, create_casync_release, create_build_metadata_file
 from openpilot.system.version import get_build_metadata
 
 
@@ -17,7 +17,7 @@ if __name__ == "__main__":
   target_dir = pathlib.Path(args.target_dir)
   output_dir = pathlib.Path(args.output_dir)
 
-  create_version_metadata_file(target_dir, get_build_metadata())
+  create_build_metadata_file(target_dir, get_build_metadata())
   create_caexclude_file(target_dir)
 
   digest, caidx = create_casync_release(target_dir, output_dir, args.channel)
