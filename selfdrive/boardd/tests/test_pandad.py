@@ -27,10 +27,11 @@ class TestPandad(unittest.TestCase):
     managed_processes['pandad'].stop()
 
   def _run_test(self, timeout=30):
+    st = time.monotonic()
     managed_processes['pandad'].start()
 
     sm = messaging.SubMaster(['pandaStates'])
-    for _ in range(timeout*10):
+    while (time.monotonic() - st) > timeout:
       sm.update(100)
       if sm['pandaStates'][0].pandaType != log.PandaState.PandaType.unknown:
         break
@@ -92,7 +93,8 @@ class TestPandad(unittest.TestCase):
     self._run_test(60)
 
     # should be nearly instant this time
-    self._run_test(2)
+    for _ in range(10):
+      self._run_test(3)
 
   def test_protocol_version_check(self):
     if HARDWARE.get_device_type() == 'tici':
