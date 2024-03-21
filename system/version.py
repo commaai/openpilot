@@ -104,6 +104,7 @@ class BuildMetadata:
   def release_channel(self) -> bool:
     return self.channel in RELEASE_BRANCHES
 
+  @property
   def canonical(self) -> str:
     return f"{self.openpilot.version}-{self.openpilot.git_commit}-{self.openpilot.build_style}"
 

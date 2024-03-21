@@ -24,6 +24,6 @@ if __name__ == "__main__":
   create_build_metadata_file(target_dir, build_metadata, args.channel)
   create_caexclude_file(target_dir)
 
-  digest, caidx = create_casync_release(target_dir, output_dir, build_metadata.canonical())
+  digest, caidx = create_casync_release(target_dir, output_dir, build_metadata.canonical)
 
   print(f"Created casync release from {target_dir} to {caidx} with digest {digest}")
