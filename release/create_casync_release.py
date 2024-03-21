@@ -11,6 +11,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="creates a casync release")
   parser.add_argument("target_dir", type=str, help="target directory to build channel from")
   parser.add_argument("output_dir", type=str, help="output directory for the channel")
+  parser.add_argument("channel", type=str, help="what channel this build is")
   args = parser.parse_args()
 
   target_dir = pathlib.Path(args.target_dir)
