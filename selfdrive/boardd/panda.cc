@@ -172,7 +172,7 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
   for (auto cmsg : can_data_list) {
     // check if the message is intended for this panda
     uint8_t bus = cmsg.getSrc();
-    if (bus < bus_offset || bus >= (bus_offset + PANDA_BUS_CNT)) {
+    if (bus < bus_offset || bus >= (bus_offset + PANDA_BUS_OFFSET)) {
       continue;
     }
     auto can_data = cmsg.getDat();
