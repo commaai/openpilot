@@ -1,5 +1,6 @@
 import dataclasses
 import json
+import os
 import pathlib
 import subprocess
 
@@ -42,12 +43,14 @@ def create_build_metadata_file(path: pathlib.Path, build_metadata: BuildMetadata
   with open(path / BUILD_METADATA_FILENAME, "w") as f:
     build_metadata_dict = dataclasses.asdict(build_metadata)
     build_metadata_dict["channel"] = channel
+    build_style = "release" if os.environ.get("RELEASE", None) is not None else "debug"
+    build_metadata_dict["openpilot"]["build_style"] = build_style
     build_metadata_dict["openpilot"].pop("is_dirty")  # this is determined at runtime
     f.write(json.dumps(build_metadata_dict))
 
 
-def create_casync_release(target_dir: pathlib.Path, output_dir: pathlib.Path, channel: str):
-  caidx_file = output_dir / f"{channel}.caidx"
+def create_casync_release(target_dir: pathlib.Path, output_dir: pathlib.Path, caidx_name: str):
+  caidx_file = output_dir / f"{caidx_name}.caidx"
   run(["casync", "make", *CASYNC_ARGS, caidx_file, target_dir])
   digest = run(["casync", "digest", *CASYNC_ARGS, target_dir]).decode("utf-8").strip()
   return digest, caidx_file
