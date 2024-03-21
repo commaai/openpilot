@@ -599,6 +599,10 @@
         <source>ft</source>
         <translation>pés</translation>
     </message>
+    <message>
+        <source>now</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Reset</name>
