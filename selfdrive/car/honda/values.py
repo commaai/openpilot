@@ -276,6 +276,13 @@ FW_QUERY_CONFIG = FwQueryConfig(
     ),
 
     # Data collection requests:
+    # Log manufacturer-specific identifier for current ECUs
+    Request(
+      [HONDA_ALT_VERSION_REQUEST],
+      [HONDA_ALT_VERSION_RESPONSE],
+      bus=1,
+      logging=True,
+    ),
     # Attempt to get the radarless Civic 2022+ camera FW
     # Nidec PT bus
     Request(
@@ -289,13 +296,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [StdQueries.UDS_VERSION_RESPONSE],
       bus=1,
       obd_multiplexing=False,
-    ),
-    # Log manufacturer-specific identifier for current ECUs
-    Request(
-      [HONDA_ALT_VERSION_REQUEST],
-      [HONDA_ALT_VERSION_RESPONSE],
-      bus=1,
-      logging=True,
     ),
   ],
   # We lose these ECUs without the comma power on these cars.
