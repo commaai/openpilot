@@ -62,7 +62,7 @@ def is_dirty(cwd: str = BASEDIR) -> bool:
   return dirty
 
 
-@dataclass(frozen=True)
+@dataclass
 class OpenpilotMetadata:
   version: str
   release_notes: str
@@ -75,10 +75,6 @@ class OpenpilotMetadata:
   @property
   def short_version(self) -> str:
     return self.version.split('-')[0]
-
-  @property
-  def short_commit(self) -> str:
-    return self.git_commit[:9]
 
   @property
   def comma_remote(self) -> bool:
@@ -95,7 +91,7 @@ class OpenpilotMetadata:
       .replace(":", "/", 1)
 
 
-@dataclass(frozen=True)
+@dataclass
 class BuildMetadata:
   channel: str
   openpilot: OpenpilotMetadata
@@ -109,7 +105,7 @@ class BuildMetadata:
     return self.channel in RELEASE_BRANCHES
 
   def canonical(self) -> str:
-    return f"{self.openpilot.version}-{self.openpilot.short_commit}-{self.openpilot.build_style}"
+    return f"{self.openpilot.version}-{self.openpilot.git_commit}-{self.openpilot.build_style}"
 
 
 def build_metadata_from_dict(build_metadata: dict) -> BuildMetadata:
@@ -149,7 +145,7 @@ def get_build_metadata(path: str = BASEDIR) -> BuildMetadata:
                       git_commit=get_commit(path),
                       git_origin=get_origin(path),
                       git_commit_date=get_commit_date(path),
-                      build_style="debug",
+                      build_style="unknown",
                       is_dirty=is_dirty(path)))
 
   cloudlog.exception("unable to get build metadata")
