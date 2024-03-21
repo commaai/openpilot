@@ -38,9 +38,10 @@ def create_caexclude_file(path: pathlib.Path):
       f.write(f"!{file}\n")
 
 
-def create_build_metadata_file(path: pathlib.Path, build_metadata: BuildMetadata):
+def create_build_metadata_file(path: pathlib.Path, build_metadata: BuildMetadata, channel: str):
   with open(path / BUILD_METADATA_FILENAME, "w") as f:
     build_metadata_dict = dataclasses.asdict(build_metadata)
+    build_metadata_dict["channel"] = channel
     build_metadata_dict["openpilot"].pop("is_dirty")  # this is determined at runtime
     f.write(json.dumps(build_metadata_dict))
 
