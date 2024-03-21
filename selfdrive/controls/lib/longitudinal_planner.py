@@ -8,14 +8,15 @@ from cereal import log
 import cereal.messaging as messaging
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.common.simple_kalman import KF1D
 from openpilot.common.realtime import DT_MDL
+from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.car.interfaces import ACCEL_MIN, ACCEL_MAX
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
 from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL_N, get_speed_error
-from openpilot.common.swaglog import cloudlog
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
 A_CRUISE_MIN = -1.2
@@ -25,6 +26,11 @@ A_CRUISE_MAX_BP = [0., 10.0, 25., 40.]
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.7, 3.2]
 _A_TOTAL_MAX_BP = [20., 40.]
+
+# Default lead acceleration decay set to 50% at 1s
+LEAD_ACCEL_TAU = 1.5
+# Kalman filter states enum
+LEAD_KALMAN_SPEED, LEAD_KALMAN_ACCEL = 0, 1
 
 
 def get_max_accel(v_ego):
@@ -46,6 +52,72 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   return [a_target[0], min(a_target[1], a_x_allowed)]
 
 
+def lead_kf(v_lead: float, dt: float = 0.05):
+  # Lead Kalman Filter params, calculating K from A, C, Q, R requires the control library.
+  # hardcoding a lookup table to compute K for values of radar_ts between 0.01s and 0.2s
+  assert dt > .01 and dt < .2, "Radar time step must be between .01s and 0.2s"
+  A = [[1.0, dt], [0.0, 1.0]]
+  C = [1.0, 0.0]
+  #Q = np.matrix([[10., 0.0], [0.0, 100.]])
+  #R = 1e3
+  #K = np.matrix([[ 0.05705578], [ 0.03073241]])
+  dts = [dt * 0.01 for dt in range(1, 21)]
+  K0 = [0.12287673, 0.14556536, 0.16522756, 0.18281627, 0.1988689,  0.21372394,
+        0.22761098, 0.24069424, 0.253096,   0.26491023, 0.27621103, 0.28705801,
+        0.29750003, 0.30757767, 0.31732515, 0.32677158, 0.33594201, 0.34485814,
+        0.35353899, 0.36200124]
+  K1 = [0.29666309, 0.29330885, 0.29042818, 0.28787125, 0.28555364, 0.28342219,
+        0.28144091, 0.27958406, 0.27783249, 0.27617149, 0.27458948, 0.27307714,
+        0.27162685, 0.27023228, 0.26888809, 0.26758976, 0.26633338, 0.26511557,
+        0.26393339, 0.26278425]
+  K = [[interp(dt, dts, K0)], [interp(dt, dts, K1)]]
+
+  kf = KF1D([[v_lead], [0.0]], A, C, K)
+  return kf
+
+
+class Lead:
+  def __init__(self):
+    self.dRel = 0.0
+    self.yRel = 0.0
+    self.vLead = 0.0
+    self.aLead = 0.0
+    self.vLeadK = 0.0
+    self.aLeadK = 0.0
+    self.aLeadTau = LEAD_ACCEL_TAU
+    self.prob = 0.0
+    self.status = False
+
+    self.kf: KF1D | None = None
+
+  def reset(self):
+    self.status = False
+    self.kf = None
+    self.aLeadTau = LEAD_ACCEL_TAU
+
+  def update(self, dRel: float, yRel: float, vLead: float, aLead: float, prob: float):
+    self.dRel = dRel
+    self.yRel = yRel
+    self.vLead = vLead
+    self.aLead = aLead
+    self.prob = prob
+    self.status = True
+
+    if self.kf is None:
+      self.kf = lead_kf(self.vLead)
+    else:
+      self.kf.update(self.vLead)
+
+    self.vLeadK = float(self.kf.x[LEAD_KALMAN_SPEED][0])
+    self.aLeadK = float(self.kf.x[LEAD_KALMAN_ACCEL][0])
+
+    # Learn if constant acceleration
+    if abs(self.aLeadK) < 0.5:
+      self.aLeadTau = LEAD_ACCEL_TAU
+    else:
+      self.aLeadTau *= 0.9
+
+
 class LongitudinalPlanner:
   def __init__(self, CP, init_v=0.0, init_a=0.0, dt=DT_MDL):
     self.CP = CP
@@ -56,6 +128,9 @@ class LongitudinalPlanner:
     self.a_desired = init_a
     self.v_desired_filter = FirstOrderFilter(init_v, 2.0, self.dt)
     self.v_model_error = 0.0
+
+    self.lead_one = Lead()
+    self.lead_two = Lead()
 
     self.v_desired_trajectory = np.zeros(CONTROL_N)
     self.a_desired_trajectory = np.zeros(CONTROL_N)
@@ -130,11 +205,21 @@ class LongitudinalPlanner:
     accel_limits_turns[0] = min(accel_limits_turns[0], self.a_desired + 0.05)
     accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.05)
 
+    model_leads = list(sm['modelV2'].leadsV3)
+    # TODO lead state should be invalidated if its different car than the previous one
+    lead_states = [self.lead_one, self.lead_two]
+    for index in range(len(lead_states)):
+      if len(model_leads) > index:
+        model_lead = model_leads[index]
+        lead_states[index].update(model_lead.x[0], model_lead.y[0], model_lead.v[0], model_lead.a[0], model_lead.prob)
+      else:
+        lead_states[index].reset()
+
     self.mpc.set_weights(prev_accel_constraint, personality=self.personality)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
     x, v, a, j = self.parse_model(sm['modelV2'], self.v_model_error)
-    self.mpc.update(sm['radarState'], v_cruise, x, v, a, j, personality=self.personality)
+    self.mpc.update(self.lead_one, self.lead_two, v_cruise, x, v, a, j, personality=self.personality)
 
     self.v_desired_trajectory_full = np.interp(ModelConstants.T_IDXS, T_IDXS_MPC, self.mpc.v_solution)
     self.a_desired_trajectory_full = np.interp(ModelConstants.T_IDXS, T_IDXS_MPC, self.mpc.a_solution)
@@ -165,7 +250,7 @@ class LongitudinalPlanner:
     longitudinalPlan.accels = self.a_desired_trajectory.tolist()
     longitudinalPlan.jerks = self.j_desired_trajectory.tolist()
 
-    longitudinalPlan.hasLead = sm['radarState'].leadOne.status
+    longitudinalPlan.hasLead = self.lead_one.status
     longitudinalPlan.longitudinalPlanSource = self.mpc.source
     longitudinalPlan.fcw = self.fcw
 
