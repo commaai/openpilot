@@ -257,6 +257,7 @@ bool starts_with(const std::string &s1, const std::string &s2) {
 }
 
 bool ends_with(const std::string &s1, const std::string &s2) {
+  if (s2.size() > s1.size()) return false;
   return strcmp(s1.c_str() + (s1.size() - s2.size()), s2.c_str()) == 0;
 }
 
