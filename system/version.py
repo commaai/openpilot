@@ -77,6 +77,10 @@ class OpenpilotMetadata:
     return self.version.split('-')[0]
 
   @property
+  def short_commit(self) -> str:
+    return self.git_commit[:6]
+
+  @property
   def comma_remote(self) -> bool:
     # note to fork maintainers, this is used for release metrics. please do not
     # touch this to get rid of the orange startup alert. there's better ways to do that
@@ -105,7 +109,7 @@ class BuildMetadata:
     return self.channel in RELEASE_BRANCHES
 
   def canonical(self) -> str:
-    return f"{self.openpilot.version}-{self.openpilot.git_commit}-{self.openpilot.build_style}"
+    return f"{self.openpilot.version}-{self.openpilot.short_commit}-{self.openpilot.build_style}"
 
 
 def build_metadata_from_dict(build_metadata: dict) -> BuildMetadata:
