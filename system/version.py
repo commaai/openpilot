@@ -57,8 +57,8 @@ def is_release_branch() -> bool:
 
 @cache
 def is_dirty(cwd: str = None) -> bool:
-  origin = get_origin()
-  branch = get_branch()
+  origin = get_origin(cwd)
+  branch = get_branch(cwd)
   if not origin or not branch:
     return True
 
