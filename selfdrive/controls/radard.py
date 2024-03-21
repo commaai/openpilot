@@ -35,17 +35,17 @@ class RadarD:
 
     self.points = {}
     for pt in radar_points:
-      self.points[pt.trackId] = [pt.dRel, pt.yRel, pt.vRel]
+      self.points[pt.trackId] = (pt.dRel, pt.yRel, pt.vRel)
 
   def publish(self):
-    tracks_msg = messaging.new_message('liveTracks', len(self.tracks))
+    tracks_msg = messaging.new_message('liveTracks', len(self.points))
     tracks_msg.valid = self.radar_tracks_valid
-    for index, tid in enumerate(sorted(self.tracks.keys())):
+    for index, tid in enumerate(sorted(self.points.keys())):
       tracks_msg.liveTracks[index] = {
         "trackId": tid,
-        "dRel": float(self.tracks[tid][0]),
-        "yRel": float(self.tracks[tid][1]),
-        "vRel": float(self.tracks[tid][2]),
+        "dRel": float(self.points[tid][0]),
+        "yRel": float(self.points[tid][1]),
+        "vRel": float(self.points[tid][2]),
       }
 
     return tracks_msg
@@ -83,7 +83,7 @@ def main():
       continue
 
     RD.update(rr)
-    msg = RD.publish(-rk.remaining*1000.0)
+    msg = RD.publish()
     pub_sock.send(msg.to_bytes())
 
     rk.monitor_time()

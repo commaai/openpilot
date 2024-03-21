@@ -477,8 +477,8 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="radard",
-    pubs=["can", "carState", "modelV2"],
-    subs=["radarState", "liveTracks"],
+    pubs=["can"],
+    subs=["liveTracks"],
     ignore=["logMonoTime", "radarState.cumLagMs"],
     init_callback=get_car_params_callback,
     should_recv_callback=MessageBasedRcvCallback("can"),
@@ -486,7 +486,7 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="plannerd",
-    pubs=["modelV2", "carControl", "carState", "controlsState", "radarState"],
+    pubs=["modelV2", "carControl", "carState", "controlsState"],
     subs=["longitudinalPlan", "uiPlan"],
     ignore=["logMonoTime", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime"],
     init_callback=get_car_params_callback,
