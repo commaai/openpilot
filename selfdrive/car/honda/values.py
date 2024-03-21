@@ -283,7 +283,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
       bus=1,
       logging=True,
     ),
-    # Attempt to get the radarless Civic 2022+ camera FW
     # Nidec PT bus
     Request(
       [StdQueries.UDS_VERSION_REQUEST],
