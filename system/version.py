@@ -9,7 +9,7 @@ import subprocess
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.utils import cache
-from openpilot.common.git import get_commit, get_origin, get_branch, get_short_branch, get_normalized_origin, get_commit_date
+from openpilot.common.git import get_commit, get_origin, get_branch, get_short_branch, get_commit_date
 
 
 RELEASE_BRANCHES = ['release3-staging', 'release3', 'nightly']
@@ -33,32 +33,14 @@ def get_release_notes(path: str = BASEDIR) -> str:
 
 
 @cache
-def get_short_version() -> str:
-  return get_version().split('-')[0]
-
-@cache
 def is_prebuilt(path: str = BASEDIR) -> bool:
   return os.path.exists(os.path.join(path, 'prebuilt'))
 
 
 @cache
-def is_comma_remote() -> bool:
-  # note to fork maintainers, this is used for release metrics. please do not
-  # touch this to get rid of the orange startup alert. there's better ways to do that
-  return get_normalized_origin() == "github.com/commaai/openpilot"
-
-@cache
-def is_tested_branch() -> bool:
-  return get_short_branch() in TESTED_BRANCHES
-
-@cache
-def is_release_branch() -> bool:
-  return get_short_branch() in RELEASE_BRANCHES
-
-@cache
 def is_dirty(cwd: str = BASEDIR) -> bool:
-  origin = get_origin(cwd)
-  branch = get_branch(cwd)
+  origin = get_origin()
+  branch = get_branch()
   if not origin or not branch:
     return True
 
@@ -85,6 +67,27 @@ class OpenpilotMetadata:
   version: str
   release_notes: str
   git_commit: str
+  git_origin: str
+  git_commit_date: str
+  is_dirty: bool  # whether there are local changes
+
+  @property
+  def short_version(self) -> str:
+    return self.version.split('-')[0]
+
+  @property
+  def comma_remote(self) -> bool:
+    # note to fork maintainers, this is used for release metrics. please do not
+    # touch this to get rid of the orange startup alert. there's better ways to do that
+    return self.git_normalized_origin == "github.com/commaai/openpilot"
+
+  @property
+  def git_normalized_origin(self) -> str:
+    return self.git_origin \
+      .replace("git@", "", 1) \
+      .replace(".git", "", 1) \
+      .replace("https://", "", 1) \
+      .replace(":", "/", 1)
 
 
 @dataclass(frozen=True)
@@ -92,9 +95,17 @@ class BuildMetadata:
   channel: str
   openpilot: OpenpilotMetadata
 
+  @property
+  def tested_channel(self) -> bool:
+    return self.channel in TESTED_BRANCHES
+
+  @property
+  def release_channel(self) -> bool:
+    return self.channel in RELEASE_BRANCHES
 
 
-def get_build_metadata(path: str = BASEDIR) -> BuildMetadata | None:
+
+def get_build_metadata(path: str = BASEDIR) -> BuildMetadata:
   build_metadata_path = pathlib.Path(path) / BUILD_METADATA_FILENAME
 
   if build_metadata_path.exists():
@@ -105,14 +116,31 @@ def get_build_metadata(path: str = BASEDIR) -> BuildMetadata | None:
     version = openpilot_metadata.get("version", "unknown")
     release_notes = openpilot_metadata.get("release_notes", "unknown")
     git_commit = openpilot_metadata.get("git_commit", "unknown")
-    return BuildMetadata(channel, OpenpilotMetadata(version, release_notes, git_commit))
+    git_origin = openpilot_metadata.get("git_origin", "unknown")
+    git_commit_date = openpilot_metadata.get("git_commit_date", "unknown")
+    return BuildMetadata(channel,
+              OpenpilotMetadata(
+                version=version,
+                release_notes=release_notes,
+                git_commit=git_commit,
+                git_origin=git_origin,
+                git_commit_date=git_commit_date,
+                is_dirty=False))
 
   git_folder = pathlib.Path(path) / ".git"
 
   if git_folder.exists():
-    return BuildMetadata(get_short_branch(path), OpenpilotMetadata(get_version(path), get_release_notes(path), get_commit(path)))
+    return BuildMetadata(get_short_branch(path),
+                    OpenpilotMetadata(
+                      version=get_version(path),
+                      release_notes=get_release_notes(path),
+                      git_commit=get_commit(path),
+                      git_origin=get_origin(path),
+                      git_commit_date=get_commit_date(path),
+                      is_dirty=is_dirty(path)))
 
-  return None
+  cloudlog.exception("unable to get build metadata")
+  raise Exception("invalid build metadata")
 
 
 if __name__ == "__main__":
@@ -122,12 +150,4 @@ if __name__ == "__main__":
   params.put("TermsVersion", terms_version)
   params.put("TrainingVersion", training_version)
 
-  print(f"Dirty: {is_dirty()}")
-  print(f"Version: {get_version()}")
-  print(f"Short version: {get_short_version()}")
-  print(f"Origin: {get_origin()}")
-  print(f"Normalized origin: {get_normalized_origin()}")
-  print(f"Branch: {get_branch()}")
-  print(f"Short branch: {get_short_branch()}")
-  print(f"Prebuilt: {is_prebuilt()}")
-  print(f"Commit date: {get_commit_date()}")
+  print(get_build_metadata())
