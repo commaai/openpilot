@@ -322,7 +322,7 @@ def getVersion() -> dict[str, str]:
   build_metadata = get_build_metadata()
   return {
     "version": build_metadata.openpilot.version,
-    "remote": build_metadata.openpilot.git_origin,
+    "remote": build_metadata.openpilot.git_normalized_origin,
     "branch": build_metadata.channel,
     "commit": build_metadata.openpilot.git_commit,
   }
