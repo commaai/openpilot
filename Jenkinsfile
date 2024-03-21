@@ -146,7 +146,7 @@ def build_release(String channel_name) {
   return parallel (
     "${channel_name} (git)": {
       deviceStage("build git", "tici-needs-can", [], [
-        ["build ${channel_name}", "RELEASE=1 RELEASE_BRANCH=${channel_name} BUILD_DIR=/data/openpilot_build $SOURCE_DIR/release/build_release.sh"],
+        ["build ${channel_name}", "RELEASE_BRANCH=${channel_name} BUILD_DIR=/data/openpilot_build $SOURCE_DIR/release/build_release.sh"],
       ])
     },
     "${channel_name} (casync)": {
