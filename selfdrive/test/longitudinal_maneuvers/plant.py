@@ -7,7 +7,8 @@ import cereal.messaging as messaging
 from openpilot.common.realtime import Ratekeeper, DT_MDL
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.modeld.constants import ModelConstants
-from openpilot.selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner, LEAD_ACCEL_TAU
+from openpilot.selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
+from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LEAD_ACCEL_TAU
 
 
 class Plant:

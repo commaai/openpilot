@@ -15,7 +15,7 @@ from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.car.interfaces import ACCEL_MIN, ACCEL_MAX
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc
-from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
+from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC, LEAD_ACCEL_TAU
 from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL_N, get_speed_error
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
@@ -27,8 +27,6 @@ A_CRUISE_MAX_BP = [0., 10.0, 25., 40.]
 _A_TOTAL_MAX_V = [1.7, 3.2]
 _A_TOTAL_MAX_BP = [20., 40.]
 
-# Default lead acceleration decay set to 50% at 1s
-LEAD_ACCEL_TAU = 1.5
 # Kalman filter states enum
 LEAD_KALMAN_SPEED, LEAD_KALMAN_ACCEL = 0, 1
 

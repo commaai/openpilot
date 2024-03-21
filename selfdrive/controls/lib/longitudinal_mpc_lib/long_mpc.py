@@ -8,7 +8,6 @@ from openpilot.common.swaglog import cloudlog
 # WARNING: imports outside of constants will not trigger a rebuild
 from openpilot.selfdrive.modeld.constants import index_function
 from openpilot.selfdrive.car.interfaces import ACCEL_MIN
-from openpilot.selfdrive.controls.lib.longitudinal_planner import LEAD_ACCEL_TAU
 
 if __name__ == '__main__':  # generating code
   from openpilot.third_party.acados.acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
@@ -42,7 +41,8 @@ CRASH_DISTANCE = .25
 LEAD_DANGER_FACTOR = 0.75
 LIMIT_COST = 1e6
 ACADOS_SOLVER_TYPE = 'SQP_RTI'
-
+# Default lead acceleration decay set to 50% at 1s
+LEAD_ACCEL_TAU = 1.5
 
 # Fewer timestamps don't hurt performance and lead to
 # much better convergence of the MPC with low iterations
