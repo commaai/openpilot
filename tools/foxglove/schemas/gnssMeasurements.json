@@ -1,76 +1,76 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Generated schema for Root",
+    "title": "gnssMeasurements",
     "type": "object",
     "properties": {
-      "gnssMeasurements": {
-        "type": "object",
-        "properties": {
-          "measTime": {
-            "type": "number"
-          },
-          "gpsWeek": {
-            "type": "number"
-          },
-          "gpsTimeOfWeek": {
-            "type": "number"
-          },
-          "timeToFirstFix": {
-            "type": "number"
-          },
-          "ephemerisStatuses": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "constellationId": {
-                  "type": "string"
-                },
-                "svId": {
-                  "type": "number"
-                },
-                "type": {
-                  "type": "string"
-                },
-                "source": {
-                  "type": "string"
+        "gnssMeasurements": {
+            "type": "object",
+            "properties": {
+                "measTime": {
+                    "type": "number"
                 },
                 "gpsWeek": {
-                  "type": "number"
+                    "type": "number"
                 },
-                "tow": {
-                  "type": "number"
+                "gpsTimeOfWeek": {
+                    "type": "number"
+                },
+                "timeToFirstFix": {
+                    "type": "number"
+                },
+                "ephemerisStatuses": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "constellationId": {
+                                "type": "string"
+                            },
+                            "svId": {
+                                "type": "number"
+                            },
+                            "type": {
+                                "type": "string"
+                            },
+                            "source": {
+                                "type": "string"
+                            },
+                            "gpsWeek": {
+                                "type": "number"
+                            },
+                            "tow": {
+                                "type": "number"
+                            }
+                        },
+                        "required": [
+                            "constellationId",
+                            "svId",
+                            "type",
+                            "source",
+                            "gpsWeek",
+                            "tow"
+                        ]
+                    }
                 }
-              },
-              "required": [
-                "constellationId",
-                "svId",
-                "type",
-                "source",
+            },
+            "required": [
+                "measTime",
                 "gpsWeek",
-                "tow"
-              ]
-            }
-          }
+                "gpsTimeOfWeek",
+                "timeToFirstFix",
+                "ephemerisStatuses"
+            ]
         },
-        "required": [
-          "measTime",
-          "gpsWeek",
-          "gpsTimeOfWeek",
-          "timeToFirstFix",
-          "ephemerisStatuses"
-        ]
-      },
-      "logMonoTime": {
-        "type": "number"
-      },
-      "valid": {
-        "type": "boolean"
-      }
+        "logMonoTime": {
+            "type": "number"
+        },
+        "valid": {
+            "type": "boolean"
+        }
     },
     "required": [
-      "gnssMeasurements",
-      "logMonoTime",
-      "valid"
+        "gnssMeasurements",
+        "logMonoTime",
+        "valid"
     ]
-  }
+}

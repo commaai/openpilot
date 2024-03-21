@@ -1,313 +1,313 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Generated schema for Root",
+    "title": "controlsState",
     "type": "object",
     "properties": {
-      "controlsState": {
-        "type": "object",
-        "properties": {
-          "vEgoDEPRECATED": {
-            "type": "number"
-          },
-          "aEgoDEPRECATED": {
-            "type": "number"
-          },
-          "vPid": {
-            "type": "number"
-          },
-          "vTargetLead": {
-            "type": "number"
-          },
-          "upAccelCmd": {
-            "type": "number"
-          },
-          "uiAccelCmd": {
-            "type": "number"
-          },
-          "yActualDEPRECATED": {
-            "type": "number"
-          },
-          "yDesDEPRECATED": {
-            "type": "number"
-          },
-          "upSteerDEPRECATED": {
-            "type": "number"
-          },
-          "uiSteerDEPRECATED": {
-            "type": "number"
-          },
-          "aTargetMinDEPRECATED": {
-            "type": "number"
-          },
-          "aTargetMaxDEPRECATED": {
-            "type": "number"
-          },
-          "jerkFactorDEPRECATED": {
-            "type": "number"
-          },
-          "angleSteersDEPRECATED": {
-            "type": "number"
-          },
-          "hudLeadDEPRECATED": {
-            "type": "number"
-          },
-          "cumLagMs": {
-            "type": "number"
-          },
-          "canMonoTimeDEPRECATED": {
-            "type": "number"
-          },
-          "radarStateMonoTimeDEPRECATED": {
-            "type": "number"
-          },
-          "mdMonoTimeDEPRECATED": {
-            "type": "number"
-          },
-          "enabled": {
-            "type": "boolean"
-          },
-          "steerOverrideDEPRECATED": {
-            "type": "boolean"
-          },
-          "vCruise": {
-            "type": "number"
-          },
-          "rearViewCamDEPRECATED": {
-            "type": "boolean"
-          },
-          "alertText1": {
-            "type": "string"
-          },
-          "alertText2": {
-            "type": "string"
-          },
-          "awarenessStatusDEPRECATED": {
-            "type": "number"
-          },
-          "angleModelBiasDEPRECATED": {
-            "type": "number"
-          },
-          "longitudinalPlanMonoTime": {
-            "type": "number"
-          },
-          "steeringAngleDesiredDegDEPRECATED": {
-            "type": "number"
-          },
-          "longControlState": {
-            "type": "string"
-          },
-          "state": {
-            "type": "string"
-          },
-          "vEgoRawDEPRECATED": {
-            "type": "number"
-          },
-          "ufAccelCmd": {
-            "type": "number"
-          },
-          "ufSteerDEPRECATED": {
-            "type": "number"
-          },
-          "aTarget": {
-            "type": "number"
-          },
-          "active": {
-            "type": "boolean"
-          },
-          "curvature": {
-            "type": "number"
-          },
-          "alertStatus": {
-            "type": "string"
-          },
-          "alertSize": {
-            "type": "string"
-          },
-          "gpsPlannerActiveDEPRECATED": {
-            "type": "boolean"
-          },
-          "engageable": {
-            "type": "boolean"
-          },
-          "alertBlinkingRate": {
-            "type": "number"
-          },
-          "driverMonitoringOnDEPRECATED": {
-            "type": "boolean"
-          },
-          "alertType": {
-            "type": "string"
-          },
-          "vCurvatureDEPRECATED": {
-            "type": "number"
-          },
-          "decelForTurnDEPRECATED": {
-            "type": "boolean"
-          },
-          "startMonoTime": {
-            "type": "number"
-          },
-          "mapValidDEPRECATED": {
-            "type": "boolean"
-          },
-          "lateralPlanMonoTime": {
-            "type": "number"
-          },
-          "forceDecel": {
-            "type": "boolean"
-          },
-          "lateralControlState": {
+        "controlsState": {
             "type": "object",
             "properties": {
-              "torqueState": {
-                "type": "object",
-                "properties": {
-                  "active": {
-                    "type": "boolean"
-                  },
-                  "error": {
+                "vEgoDEPRECATED": {
                     "type": "number"
-                  },
-                  "p": {
-                    "type": "number"
-                  },
-                  "i": {
-                    "type": "number"
-                  },
-                  "d": {
-                    "type": "number"
-                  },
-                  "f": {
-                    "type": "number"
-                  },
-                  "output": {
-                    "type": "number"
-                  },
-                  "saturated": {
-                    "type": "boolean"
-                  },
-                  "errorRate": {
-                    "type": "number"
-                  },
-                  "actualLateralAccel": {
-                    "type": "number"
-                  },
-                  "desiredLateralAccel": {
-                    "type": "number"
-                  }
                 },
-                "required": [
-                  "active",
-                  "error",
-                  "p",
-                  "i",
-                  "d",
-                  "f",
-                  "output",
-                  "saturated",
-                  "errorRate",
-                  "actualLateralAccel",
-                  "desiredLateralAccel"
-                ]
-              }
+                "aEgoDEPRECATED": {
+                    "type": "number"
+                },
+                "vPid": {
+                    "type": "number"
+                },
+                "vTargetLead": {
+                    "type": "number"
+                },
+                "upAccelCmd": {
+                    "type": "number"
+                },
+                "uiAccelCmd": {
+                    "type": "number"
+                },
+                "yActualDEPRECATED": {
+                    "type": "number"
+                },
+                "yDesDEPRECATED": {
+                    "type": "number"
+                },
+                "upSteerDEPRECATED": {
+                    "type": "number"
+                },
+                "uiSteerDEPRECATED": {
+                    "type": "number"
+                },
+                "aTargetMinDEPRECATED": {
+                    "type": "number"
+                },
+                "aTargetMaxDEPRECATED": {
+                    "type": "number"
+                },
+                "jerkFactorDEPRECATED": {
+                    "type": "number"
+                },
+                "angleSteersDEPRECATED": {
+                    "type": "number"
+                },
+                "hudLeadDEPRECATED": {
+                    "type": "number"
+                },
+                "cumLagMs": {
+                    "type": "number"
+                },
+                "canMonoTimeDEPRECATED": {
+                    "type": "number"
+                },
+                "radarStateMonoTimeDEPRECATED": {
+                    "type": "number"
+                },
+                "mdMonoTimeDEPRECATED": {
+                    "type": "number"
+                },
+                "enabled": {
+                    "type": "boolean"
+                },
+                "steerOverrideDEPRECATED": {
+                    "type": "boolean"
+                },
+                "vCruise": {
+                    "type": "number"
+                },
+                "rearViewCamDEPRECATED": {
+                    "type": "boolean"
+                },
+                "alertText1": {
+                    "type": "string"
+                },
+                "alertText2": {
+                    "type": "string"
+                },
+                "awarenessStatusDEPRECATED": {
+                    "type": "number"
+                },
+                "angleModelBiasDEPRECATED": {
+                    "type": "number"
+                },
+                "longitudinalPlanMonoTime": {
+                    "type": "number"
+                },
+                "steeringAngleDesiredDegDEPRECATED": {
+                    "type": "number"
+                },
+                "longControlState": {
+                    "type": "string"
+                },
+                "state": {
+                    "type": "string"
+                },
+                "vEgoRawDEPRECATED": {
+                    "type": "number"
+                },
+                "ufAccelCmd": {
+                    "type": "number"
+                },
+                "ufSteerDEPRECATED": {
+                    "type": "number"
+                },
+                "aTarget": {
+                    "type": "number"
+                },
+                "active": {
+                    "type": "boolean"
+                },
+                "curvature": {
+                    "type": "number"
+                },
+                "alertStatus": {
+                    "type": "string"
+                },
+                "alertSize": {
+                    "type": "string"
+                },
+                "gpsPlannerActiveDEPRECATED": {
+                    "type": "boolean"
+                },
+                "engageable": {
+                    "type": "boolean"
+                },
+                "alertBlinkingRate": {
+                    "type": "number"
+                },
+                "driverMonitoringOnDEPRECATED": {
+                    "type": "boolean"
+                },
+                "alertType": {
+                    "type": "string"
+                },
+                "vCurvatureDEPRECATED": {
+                    "type": "number"
+                },
+                "decelForTurnDEPRECATED": {
+                    "type": "boolean"
+                },
+                "startMonoTime": {
+                    "type": "number"
+                },
+                "mapValidDEPRECATED": {
+                    "type": "boolean"
+                },
+                "lateralPlanMonoTime": {
+                    "type": "number"
+                },
+                "forceDecel": {
+                    "type": "boolean"
+                },
+                "lateralControlState": {
+                    "type": "object",
+                    "properties": {
+                        "torqueState": {
+                            "type": "object",
+                            "properties": {
+                                "active": {
+                                    "type": "boolean"
+                                },
+                                "error": {
+                                    "type": "number"
+                                },
+                                "p": {
+                                    "type": "number"
+                                },
+                                "i": {
+                                    "type": "number"
+                                },
+                                "d": {
+                                    "type": "number"
+                                },
+                                "f": {
+                                    "type": "number"
+                                },
+                                "output": {
+                                    "type": "number"
+                                },
+                                "saturated": {
+                                    "type": "boolean"
+                                },
+                                "errorRate": {
+                                    "type": "number"
+                                },
+                                "actualLateralAccel": {
+                                    "type": "number"
+                                },
+                                "desiredLateralAccel": {
+                                    "type": "number"
+                                }
+                            },
+                            "required": [
+                                "active",
+                                "error",
+                                "p",
+                                "i",
+                                "d",
+                                "f",
+                                "output",
+                                "saturated",
+                                "errorRate",
+                                "actualLateralAccel",
+                                "desiredLateralAccel"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "torqueState"
+                    ]
+                },
+                "decelForModelDEPRECATED": {
+                    "type": "boolean"
+                },
+                "alertSound": {
+                    "type": "string"
+                },
+                "canErrorCounter": {
+                    "type": "number"
+                },
+                "desiredCurvature": {
+                    "type": "number"
+                },
+                "desiredCurvatureRateDEPRECATED": {
+                    "type": "number"
+                },
+                "vCruiseCluster": {
+                    "type": "number"
+                },
+                "experimentalMode": {
+                    "type": "boolean"
+                }
             },
             "required": [
-              "torqueState"
+                "vEgoDEPRECATED",
+                "aEgoDEPRECATED",
+                "vPid",
+                "vTargetLead",
+                "upAccelCmd",
+                "uiAccelCmd",
+                "yActualDEPRECATED",
+                "yDesDEPRECATED",
+                "upSteerDEPRECATED",
+                "uiSteerDEPRECATED",
+                "aTargetMinDEPRECATED",
+                "aTargetMaxDEPRECATED",
+                "jerkFactorDEPRECATED",
+                "angleSteersDEPRECATED",
+                "hudLeadDEPRECATED",
+                "cumLagMs",
+                "canMonoTimeDEPRECATED",
+                "radarStateMonoTimeDEPRECATED",
+                "mdMonoTimeDEPRECATED",
+                "enabled",
+                "steerOverrideDEPRECATED",
+                "vCruise",
+                "rearViewCamDEPRECATED",
+                "alertText1",
+                "alertText2",
+                "awarenessStatusDEPRECATED",
+                "angleModelBiasDEPRECATED",
+                "longitudinalPlanMonoTime",
+                "steeringAngleDesiredDegDEPRECATED",
+                "longControlState",
+                "state",
+                "vEgoRawDEPRECATED",
+                "ufAccelCmd",
+                "ufSteerDEPRECATED",
+                "aTarget",
+                "active",
+                "curvature",
+                "alertStatus",
+                "alertSize",
+                "gpsPlannerActiveDEPRECATED",
+                "engageable",
+                "alertBlinkingRate",
+                "driverMonitoringOnDEPRECATED",
+                "alertType",
+                "vCurvatureDEPRECATED",
+                "decelForTurnDEPRECATED",
+                "startMonoTime",
+                "mapValidDEPRECATED",
+                "lateralPlanMonoTime",
+                "forceDecel",
+                "lateralControlState",
+                "decelForModelDEPRECATED",
+                "alertSound",
+                "canErrorCounter",
+                "desiredCurvature",
+                "desiredCurvatureRateDEPRECATED",
+                "vCruiseCluster",
+                "experimentalMode"
             ]
-          },
-          "decelForModelDEPRECATED": {
-            "type": "boolean"
-          },
-          "alertSound": {
-            "type": "string"
-          },
-          "canErrorCounter": {
-            "type": "number"
-          },
-          "desiredCurvature": {
-            "type": "number"
-          },
-          "desiredCurvatureRateDEPRECATED": {
-            "type": "number"
-          },
-          "vCruiseCluster": {
-            "type": "number"
-          },
-          "experimentalMode": {
-            "type": "boolean"
-          }
         },
-        "required": [
-          "vEgoDEPRECATED",
-          "aEgoDEPRECATED",
-          "vPid",
-          "vTargetLead",
-          "upAccelCmd",
-          "uiAccelCmd",
-          "yActualDEPRECATED",
-          "yDesDEPRECATED",
-          "upSteerDEPRECATED",
-          "uiSteerDEPRECATED",
-          "aTargetMinDEPRECATED",
-          "aTargetMaxDEPRECATED",
-          "jerkFactorDEPRECATED",
-          "angleSteersDEPRECATED",
-          "hudLeadDEPRECATED",
-          "cumLagMs",
-          "canMonoTimeDEPRECATED",
-          "radarStateMonoTimeDEPRECATED",
-          "mdMonoTimeDEPRECATED",
-          "enabled",
-          "steerOverrideDEPRECATED",
-          "vCruise",
-          "rearViewCamDEPRECATED",
-          "alertText1",
-          "alertText2",
-          "awarenessStatusDEPRECATED",
-          "angleModelBiasDEPRECATED",
-          "longitudinalPlanMonoTime",
-          "steeringAngleDesiredDegDEPRECATED",
-          "longControlState",
-          "state",
-          "vEgoRawDEPRECATED",
-          "ufAccelCmd",
-          "ufSteerDEPRECATED",
-          "aTarget",
-          "active",
-          "curvature",
-          "alertStatus",
-          "alertSize",
-          "gpsPlannerActiveDEPRECATED",
-          "engageable",
-          "alertBlinkingRate",
-          "driverMonitoringOnDEPRECATED",
-          "alertType",
-          "vCurvatureDEPRECATED",
-          "decelForTurnDEPRECATED",
-          "startMonoTime",
-          "mapValidDEPRECATED",
-          "lateralPlanMonoTime",
-          "forceDecel",
-          "lateralControlState",
-          "decelForModelDEPRECATED",
-          "alertSound",
-          "canErrorCounter",
-          "desiredCurvature",
-          "desiredCurvatureRateDEPRECATED",
-          "vCruiseCluster",
-          "experimentalMode"
-        ]
-      },
-      "logMonoTime": {
-        "type": "number"
-      },
-      "valid": {
-        "type": "boolean"
-      }
+        "logMonoTime": {
+            "type": "number"
+        },
+        "valid": {
+            "type": "boolean"
+        }
     },
     "required": [
-      "controlsState",
-      "logMonoTime",
-      "valid"
+        "controlsState",
+        "logMonoTime",
+        "valid"
     ]
-  }
+}

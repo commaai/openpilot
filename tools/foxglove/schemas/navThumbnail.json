@@ -1,37 +1,37 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Generated schema for Root",
+    "title": "navThumbnail",
     "type": "object",
     "properties": {
-      "navThumbnail": {
-        "type": "object",
-        "properties": {
-          "frameId": {
-            "type": "number"
-          },
-          "timestampEof": {
-            "type": "number"
-          },
-          "thumbnail": {
-            "type": "string"
-          }
+        "navThumbnail": {
+            "type": "object",
+            "properties": {
+                "frameId": {
+                    "type": "number"
+                },
+                "timestampEof": {
+                    "type": "number"
+                },
+                "thumbnail": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "frameId",
+                "timestampEof",
+                "thumbnail"
+            ]
         },
-        "required": [
-          "frameId",
-          "timestampEof",
-          "thumbnail"
-        ]
-      },
-      "logMonoTime": {
-        "type": "number"
-      },
-      "valid": {
-        "type": "boolean"
-      }
+        "logMonoTime": {
+            "type": "number"
+        },
+        "valid": {
+            "type": "boolean"
+        }
     },
     "required": [
-      "navThumbnail",
-      "logMonoTime",
-      "valid"
+        "navThumbnail",
+        "logMonoTime",
+        "valid"
     ]
-  }
+}

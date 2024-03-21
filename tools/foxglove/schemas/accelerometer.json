@@ -1,68 +1,68 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Generated schema for Root",
+    "title": "accelerometer",
     "type": "object",
     "properties": {
-      "accelerometer": {
-        "type": "object",
-        "properties": {
-          "acceleration": {
+        "accelerometer": {
             "type": "object",
             "properties": {
-              "v": {
-                "type": "array",
-                "items": {
-                  "type": "number"
+                "acceleration": {
+                    "type": "object",
+                    "properties": {
+                        "v": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            }
+                        },
+                        "status": {
+                            "type": "number"
+                        }
+                    },
+                    "required": [
+                        "v",
+                        "status"
+                    ]
+                },
+                "version": {
+                    "type": "number"
+                },
+                "sensor": {
+                    "type": "number"
+                },
+                "type": {
+                    "type": "number"
+                },
+                "timestamp": {
+                    "type": "number"
+                },
+                "source": {
+                    "type": "string"
+                },
+                "uncalibratedDEPRECATED": {
+                    "type": "boolean"
                 }
-              },
-              "status": {
-                "type": "number"
-              }
             },
             "required": [
-              "v",
-              "status"
+                "acceleration",
+                "version",
+                "sensor",
+                "type",
+                "timestamp",
+                "source",
+                "uncalibratedDEPRECATED"
             ]
-          },
-          "version": {
-            "type": "number"
-          },
-          "sensor": {
-            "type": "number"
-          },
-          "type": {
-            "type": "number"
-          },
-          "timestamp": {
-            "type": "number"
-          },
-          "source": {
-            "type": "string"
-          },
-          "uncalibratedDEPRECATED": {
-            "type": "boolean"
-          }
         },
-        "required": [
-          "acceleration",
-          "version",
-          "sensor",
-          "type",
-          "timestamp",
-          "source",
-          "uncalibratedDEPRECATED"
-        ]
-      },
-      "logMonoTime": {
-        "type": "number"
-      },
-      "valid": {
-        "type": "boolean"
-      }
+        "logMonoTime": {
+            "type": "number"
+        },
+        "valid": {
+            "type": "boolean"
+        }
     },
     "required": [
-      "accelerometer",
-      "logMonoTime",
-      "valid"
+        "accelerometer",
+        "logMonoTime",
+        "valid"
     ]
-  }
+}

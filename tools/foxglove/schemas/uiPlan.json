@@ -1,65 +1,65 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Generated schema for Root",
+    "title": "uiPlan",
     "type": "object",
     "properties": {
-      "uiPlan": {
-        "type": "object",
-        "properties": {
-          "position": {
+        "uiPlan": {
             "type": "object",
             "properties": {
-              "x": {
-                "type": "array",
-                "items": {
-                  "type": "number"
+                "position": {
+                    "type": "object",
+                    "properties": {
+                        "x": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            }
+                        },
+                        "y": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            }
+                        },
+                        "z": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            }
+                        }
+                    },
+                    "required": [
+                        "x",
+                        "y",
+                        "z"
+                    ]
+                },
+                "accel": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "frameId": {
+                    "type": "number"
                 }
-              },
-              "y": {
-                "type": "array",
-                "items": {
-                  "type": "number"
-                }
-              },
-              "z": {
-                "type": "array",
-                "items": {
-                  "type": "number"
-                }
-              }
             },
             "required": [
-              "x",
-              "y",
-              "z"
+                "position",
+                "accel",
+                "frameId"
             ]
-          },
-          "accel": {
-            "type": "array",
-            "items": {
-              "type": "number"
-            }
-          },
-          "frameId": {
-            "type": "number"
-          }
         },
-        "required": [
-          "position",
-          "accel",
-          "frameId"
-        ]
-      },
-      "logMonoTime": {
-        "type": "number"
-      },
-      "valid": {
-        "type": "boolean"
-      }
+        "logMonoTime": {
+            "type": "number"
+        },
+        "valid": {
+            "type": "boolean"
+        }
     },
     "required": [
-      "uiPlan",
-      "logMonoTime",
-      "valid"
+        "uiPlan",
+        "logMonoTime",
+        "valid"
     ]
-  }
+}

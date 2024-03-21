@@ -1,201 +1,201 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Generated schema for Root",
+    "title": "driverStateV2",
     "type": "object",
     "properties": {
-      "driverStateV2": {
-        "type": "object",
-        "properties": {
-          "frameId": {
-            "type": "number"
-          },
-          "modelExecutionTime": {
-            "type": "number"
-          },
-          "dspExecutionTime": {
-            "type": "number"
-          },
-          "poorVisionProb": {
-            "type": "number"
-          },
-          "wheelOnRightProb": {
-            "type": "number"
-          },
-          "leftDriverData": {
+        "driverStateV2": {
             "type": "object",
             "properties": {
-              "faceOrientation": {
-                "type": "array",
-                "items": {
-                  "type": "number"
+                "frameId": {
+                    "type": "number"
+                },
+                "modelExecutionTime": {
+                    "type": "number"
+                },
+                "dspExecutionTime": {
+                    "type": "number"
+                },
+                "poorVisionProb": {
+                    "type": "number"
+                },
+                "wheelOnRightProb": {
+                    "type": "number"
+                },
+                "leftDriverData": {
+                    "type": "object",
+                    "properties": {
+                        "faceOrientation": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            }
+                        },
+                        "faceOrientationStd": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            }
+                        },
+                        "facePosition": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            }
+                        },
+                        "facePositionStd": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            }
+                        },
+                        "faceProb": {
+                            "type": "number"
+                        },
+                        "leftEyeProb": {
+                            "type": "number"
+                        },
+                        "rightEyeProb": {
+                            "type": "number"
+                        },
+                        "leftBlinkProb": {
+                            "type": "number"
+                        },
+                        "rightBlinkProb": {
+                            "type": "number"
+                        },
+                        "sunglassesProb": {
+                            "type": "number"
+                        },
+                        "occludedProb": {
+                            "type": "number"
+                        },
+                        "readyProb": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            }
+                        },
+                        "notReadyProb": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            }
+                        }
+                    },
+                    "required": [
+                        "faceOrientation",
+                        "faceOrientationStd",
+                        "facePosition",
+                        "facePositionStd",
+                        "faceProb",
+                        "leftEyeProb",
+                        "rightEyeProb",
+                        "leftBlinkProb",
+                        "rightBlinkProb",
+                        "sunglassesProb",
+                        "occludedProb",
+                        "readyProb",
+                        "notReadyProb"
+                    ]
+                },
+                "rightDriverData": {
+                    "type": "object",
+                    "properties": {
+                        "faceOrientation": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            }
+                        },
+                        "faceOrientationStd": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            }
+                        },
+                        "facePosition": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            }
+                        },
+                        "facePositionStd": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            }
+                        },
+                        "faceProb": {
+                            "type": "number"
+                        },
+                        "leftEyeProb": {
+                            "type": "number"
+                        },
+                        "rightEyeProb": {
+                            "type": "number"
+                        },
+                        "leftBlinkProb": {
+                            "type": "number"
+                        },
+                        "rightBlinkProb": {
+                            "type": "number"
+                        },
+                        "sunglassesProb": {
+                            "type": "number"
+                        },
+                        "occludedProb": {
+                            "type": "number"
+                        },
+                        "readyProb": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            }
+                        },
+                        "notReadyProb": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            }
+                        }
+                    },
+                    "required": [
+                        "faceOrientation",
+                        "faceOrientationStd",
+                        "facePosition",
+                        "facePositionStd",
+                        "faceProb",
+                        "leftEyeProb",
+                        "rightEyeProb",
+                        "leftBlinkProb",
+                        "rightBlinkProb",
+                        "sunglassesProb",
+                        "occludedProb",
+                        "readyProb",
+                        "notReadyProb"
+                    ]
                 }
-              },
-              "faceOrientationStd": {
-                "type": "array",
-                "items": {
-                  "type": "number"
-                }
-              },
-              "facePosition": {
-                "type": "array",
-                "items": {
-                  "type": "number"
-                }
-              },
-              "facePositionStd": {
-                "type": "array",
-                "items": {
-                  "type": "number"
-                }
-              },
-              "faceProb": {
-                "type": "number"
-              },
-              "leftEyeProb": {
-                "type": "number"
-              },
-              "rightEyeProb": {
-                "type": "number"
-              },
-              "leftBlinkProb": {
-                "type": "number"
-              },
-              "rightBlinkProb": {
-                "type": "number"
-              },
-              "sunglassesProb": {
-                "type": "number"
-              },
-              "occludedProb": {
-                "type": "number"
-              },
-              "readyProb": {
-                "type": "array",
-                "items": {
-                  "type": "number"
-                }
-              },
-              "notReadyProb": {
-                "type": "array",
-                "items": {
-                  "type": "number"
-                }
-              }
             },
             "required": [
-              "faceOrientation",
-              "faceOrientationStd",
-              "facePosition",
-              "facePositionStd",
-              "faceProb",
-              "leftEyeProb",
-              "rightEyeProb",
-              "leftBlinkProb",
-              "rightBlinkProb",
-              "sunglassesProb",
-              "occludedProb",
-              "readyProb",
-              "notReadyProb"
+                "frameId",
+                "modelExecutionTime",
+                "dspExecutionTime",
+                "poorVisionProb",
+                "wheelOnRightProb",
+                "leftDriverData",
+                "rightDriverData"
             ]
-          },
-          "rightDriverData": {
-            "type": "object",
-            "properties": {
-              "faceOrientation": {
-                "type": "array",
-                "items": {
-                  "type": "number"
-                }
-              },
-              "faceOrientationStd": {
-                "type": "array",
-                "items": {
-                  "type": "number"
-                }
-              },
-              "facePosition": {
-                "type": "array",
-                "items": {
-                  "type": "number"
-                }
-              },
-              "facePositionStd": {
-                "type": "array",
-                "items": {
-                  "type": "number"
-                }
-              },
-              "faceProb": {
-                "type": "number"
-              },
-              "leftEyeProb": {
-                "type": "number"
-              },
-              "rightEyeProb": {
-                "type": "number"
-              },
-              "leftBlinkProb": {
-                "type": "number"
-              },
-              "rightBlinkProb": {
-                "type": "number"
-              },
-              "sunglassesProb": {
-                "type": "number"
-              },
-              "occludedProb": {
-                "type": "number"
-              },
-              "readyProb": {
-                "type": "array",
-                "items": {
-                  "type": "number"
-                }
-              },
-              "notReadyProb": {
-                "type": "array",
-                "items": {
-                  "type": "number"
-                }
-              }
-            },
-            "required": [
-              "faceOrientation",
-              "faceOrientationStd",
-              "facePosition",
-              "facePositionStd",
-              "faceProb",
-              "leftEyeProb",
-              "rightEyeProb",
-              "leftBlinkProb",
-              "rightBlinkProb",
-              "sunglassesProb",
-              "occludedProb",
-              "readyProb",
-              "notReadyProb"
-            ]
-          }
         },
-        "required": [
-          "frameId",
-          "modelExecutionTime",
-          "dspExecutionTime",
-          "poorVisionProb",
-          "wheelOnRightProb",
-          "leftDriverData",
-          "rightDriverData"
-        ]
-      },
-      "logMonoTime": {
-        "type": "number"
-      },
-      "valid": {
-        "type": "boolean"
-      }
+        "logMonoTime": {
+            "type": "number"
+        },
+        "valid": {
+            "type": "boolean"
+        }
     },
     "required": [
-      "driverStateV2",
-      "logMonoTime",
-      "valid"
+        "driverStateV2",
+        "logMonoTime",
+        "valid"
     ]
-  }
+}

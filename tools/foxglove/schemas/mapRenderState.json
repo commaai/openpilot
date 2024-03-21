@@ -1,37 +1,37 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Generated schema for Root",
+    "title": "mapRenderState",
     "type": "object",
     "properties": {
-      "mapRenderState": {
-        "type": "object",
-        "properties": {
-          "locationMonoTime": {
-            "type": "number"
-          },
-          "renderTime": {
-            "type": "number"
-          },
-          "frameId": {
-            "type": "number"
-          }
+        "mapRenderState": {
+            "type": "object",
+            "properties": {
+                "locationMonoTime": {
+                    "type": "number"
+                },
+                "renderTime": {
+                    "type": "number"
+                },
+                "frameId": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "locationMonoTime",
+                "renderTime",
+                "frameId"
+            ]
         },
-        "required": [
-          "locationMonoTime",
-          "renderTime",
-          "frameId"
-        ]
-      },
-      "logMonoTime": {
-        "type": "number"
-      },
-      "valid": {
-        "type": "boolean"
-      }
+        "logMonoTime": {
+            "type": "number"
+        },
+        "valid": {
+            "type": "boolean"
+        }
     },
     "required": [
-      "mapRenderState",
-      "logMonoTime",
-      "valid"
+        "mapRenderState",
+        "logMonoTime",
+        "valid"
     ]
-  }
+}

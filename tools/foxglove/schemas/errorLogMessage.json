@@ -1,21 +1,21 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Generated schema for Root",
+    "title": "errorLogMessage",
     "type": "object",
     "properties": {
-      "errorLogMessage": {
-        "type": "string"
-      },
-      "logMonoTime": {
-        "type": "number"
-      },
-      "valid": {
-        "type": "boolean"
-      }
+        "errorLogMessage": {
+            "type": "string"
+        },
+        "logMonoTime": {
+            "type": "number"
+        },
+        "valid": {
+            "type": "boolean"
+        }
     },
     "required": [
-      "errorLogMessage",
-      "logMonoTime",
-      "valid"
+        "errorLogMessage",
+        "logMonoTime",
+        "valid"
     ]
-  }
+}

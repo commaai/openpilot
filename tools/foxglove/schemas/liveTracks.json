@@ -1,68 +1,68 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Generated schema for Root",
+    "title": "liveTracks",
     "type": "object",
     "properties": {
-      "liveTracks": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "trackId": {
-              "type": "number"
-            },
-            "dRel": {
-              "type": "number"
-            },
-            "yRel": {
-              "type": "number"
-            },
-            "vRel": {
-              "type": "number"
-            },
-            "aRel": {
-              "type": "number"
-            },
-            "timeStamp": {
-              "type": "number"
-            },
-            "status": {
-              "type": "number"
-            },
-            "currentTime": {
-              "type": "number"
-            },
-            "stationary": {
-              "type": "boolean"
-            },
-            "oncoming": {
-              "type": "boolean"
+        "liveTracks": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "trackId": {
+                        "type": "number"
+                    },
+                    "dRel": {
+                        "type": "number"
+                    },
+                    "yRel": {
+                        "type": "number"
+                    },
+                    "vRel": {
+                        "type": "number"
+                    },
+                    "aRel": {
+                        "type": "number"
+                    },
+                    "timeStamp": {
+                        "type": "number"
+                    },
+                    "status": {
+                        "type": "number"
+                    },
+                    "currentTime": {
+                        "type": "number"
+                    },
+                    "stationary": {
+                        "type": "boolean"
+                    },
+                    "oncoming": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "trackId",
+                    "dRel",
+                    "yRel",
+                    "vRel",
+                    "aRel",
+                    "timeStamp",
+                    "status",
+                    "currentTime",
+                    "stationary",
+                    "oncoming"
+                ]
             }
-          },
-          "required": [
-            "trackId",
-            "dRel",
-            "yRel",
-            "vRel",
-            "aRel",
-            "timeStamp",
-            "status",
-            "currentTime",
-            "stationary",
-            "oncoming"
-          ]
+        },
+        "logMonoTime": {
+            "type": "number"
+        },
+        "valid": {
+            "type": "boolean"
         }
-      },
-      "logMonoTime": {
-        "type": "number"
-      },
-      "valid": {
-        "type": "boolean"
-      }
     },
     "required": [
-      "liveTracks",
-      "logMonoTime",
-      "valid"
+        "liveTracks",
+        "logMonoTime",
+        "valid"
     ]
-  }
+}

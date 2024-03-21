@@ -1,65 +1,65 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Generated schema for Root",
+    "title": "roadEncodeIdx",
     "type": "object",
     "properties": {
-      "roadEncodeIdx": {
-        "type": "object",
-        "properties": {
-          "frameId": {
-            "type": "number"
-          },
-          "type": {
-            "type": "string"
-          },
-          "encodeId": {
-            "type": "number"
-          },
-          "segmentNum": {
-            "type": "number"
-          },
-          "segmentId": {
-            "type": "number"
-          },
-          "segmentIdEncode": {
-            "type": "number"
-          },
-          "timestampSof": {
-            "type": "number"
-          },
-          "timestampEof": {
-            "type": "number"
-          },
-          "flags": {
-            "type": "number"
-          },
-          "len": {
-            "type": "number"
-          }
+        "roadEncodeIdx": {
+            "type": "object",
+            "properties": {
+                "frameId": {
+                    "type": "number"
+                },
+                "type": {
+                    "type": "string"
+                },
+                "encodeId": {
+                    "type": "number"
+                },
+                "segmentNum": {
+                    "type": "number"
+                },
+                "segmentId": {
+                    "type": "number"
+                },
+                "segmentIdEncode": {
+                    "type": "number"
+                },
+                "timestampSof": {
+                    "type": "number"
+                },
+                "timestampEof": {
+                    "type": "number"
+                },
+                "flags": {
+                    "type": "number"
+                },
+                "len": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "frameId",
+                "type",
+                "encodeId",
+                "segmentNum",
+                "segmentId",
+                "segmentIdEncode",
+                "timestampSof",
+                "timestampEof",
+                "flags",
+                "len"
+            ]
         },
-        "required": [
-          "frameId",
-          "type",
-          "encodeId",
-          "segmentNum",
-          "segmentId",
-          "segmentIdEncode",
-          "timestampSof",
-          "timestampEof",
-          "flags",
-          "len"
-        ]
-      },
-      "logMonoTime": {
-        "type": "number"
-      },
-      "valid": {
-        "type": "boolean"
-      }
+        "logMonoTime": {
+            "type": "number"
+        },
+        "valid": {
+            "type": "boolean"
+        }
     },
     "required": [
-      "roadEncodeIdx",
-      "logMonoTime",
-      "valid"
+        "roadEncodeIdx",
+        "logMonoTime",
+        "valid"
     ]
-  }
+}

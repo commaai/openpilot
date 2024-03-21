@@ -1,44 +1,44 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Generated schema for Root",
+    "title": "sendcan",
     "type": "object",
     "properties": {
-      "sendcan": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "address": {
-              "type": "number"
-            },
-            "busTime": {
-              "type": "number"
-            },
-            "dat": {
-              "type": "string"
-            },
-            "src": {
-              "type": "number"
+        "sendcan": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "address": {
+                        "type": "number"
+                    },
+                    "busTime": {
+                        "type": "number"
+                    },
+                    "dat": {
+                        "type": "string"
+                    },
+                    "src": {
+                        "type": "number"
+                    }
+                },
+                "required": [
+                    "address",
+                    "busTime",
+                    "dat",
+                    "src"
+                ]
             }
-          },
-          "required": [
-            "address",
-            "busTime",
-            "dat",
-            "src"
-          ]
+        },
+        "logMonoTime": {
+            "type": "number"
+        },
+        "valid": {
+            "type": "boolean"
         }
-      },
-      "logMonoTime": {
-        "type": "number"
-      },
-      "valid": {
-        "type": "boolean"
-      }
     },
     "required": [
-      "sendcan",
-      "logMonoTime",
-      "valid"
+        "sendcan",
+        "logMonoTime",
+        "valid"
     ]
-  }
+}

@@ -1,45 +1,45 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Generated schema for Root",
+    "title": "clocks",
     "type": "object",
     "properties": {
-      "clocks": {
-        "type": "object",
-        "properties": {
-          "bootTimeNanosDEPRECATED": {
-            "type": "number"
-          },
-          "monotonicNanosDEPRECATED": {
-            "type": "number"
-          },
-          "monotonicRawNanosDEPRECATD": {
-            "type": "number"
-          },
-          "wallTimeNanos": {
-            "type": "number"
-          },
-          "modemUptimeMillisDEPRECATED": {
-            "type": "number"
-          }
+        "clocks": {
+            "type": "object",
+            "properties": {
+                "bootTimeNanosDEPRECATED": {
+                    "type": "number"
+                },
+                "monotonicNanosDEPRECATED": {
+                    "type": "number"
+                },
+                "monotonicRawNanosDEPRECATD": {
+                    "type": "number"
+                },
+                "wallTimeNanos": {
+                    "type": "number"
+                },
+                "modemUptimeMillisDEPRECATED": {
+                    "type": "number"
+                }
+            },
+            "required": [
+                "bootTimeNanosDEPRECATED",
+                "monotonicNanosDEPRECATED",
+                "monotonicRawNanosDEPRECATD",
+                "wallTimeNanos",
+                "modemUptimeMillisDEPRECATED"
+            ]
         },
-        "required": [
-          "bootTimeNanosDEPRECATED",
-          "monotonicNanosDEPRECATED",
-          "monotonicRawNanosDEPRECATD",
-          "wallTimeNanos",
-          "modemUptimeMillisDEPRECATED"
-        ]
-      },
-      "logMonoTime": {
-        "type": "number"
-      },
-      "valid": {
-        "type": "boolean"
-      }
+        "logMonoTime": {
+            "type": "number"
+        },
+        "valid": {
+            "type": "boolean"
+        }
     },
     "required": [
-      "clocks",
-      "logMonoTime",
-      "valid"
+        "clocks",
+        "logMonoTime",
+        "valid"
     ]
-  }
+}

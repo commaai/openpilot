@@ -1,190 +1,190 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Generated schema for Root",
+    "title": "procLog",
     "type": "object",
     "properties": {
-      "procLog": {
-        "type": "object",
-        "properties": {
-          "cpuTimes": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "cpuNum": {
-                  "type": "number"
-                },
-                "user": {
-                  "type": "number"
-                },
-                "nice": {
-                  "type": "number"
-                },
-                "system": {
-                  "type": "number"
-                },
-                "idle": {
-                  "type": "number"
-                },
-                "iowait": {
-                  "type": "number"
-                },
-                "irq": {
-                  "type": "number"
-                },
-                "softirq": {
-                  "type": "number"
-                }
-              },
-              "required": [
-                "cpuNum",
-                "user",
-                "nice",
-                "system",
-                "idle",
-                "iowait",
-                "irq",
-                "softirq"
-              ]
-            }
-          },
-          "mem": {
+        "procLog": {
             "type": "object",
             "properties": {
-              "total": {
-                "type": "number"
-              },
-              "free": {
-                "type": "number"
-              },
-              "available": {
-                "type": "number"
-              },
-              "buffers": {
-                "type": "number"
-              },
-              "cached": {
-                "type": "number"
-              },
-              "active": {
-                "type": "number"
-              },
-              "inactive": {
-                "type": "number"
-              },
-              "shared": {
-                "type": "number"
-              }
+                "cpuTimes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "cpuNum": {
+                                "type": "number"
+                            },
+                            "user": {
+                                "type": "number"
+                            },
+                            "nice": {
+                                "type": "number"
+                            },
+                            "system": {
+                                "type": "number"
+                            },
+                            "idle": {
+                                "type": "number"
+                            },
+                            "iowait": {
+                                "type": "number"
+                            },
+                            "irq": {
+                                "type": "number"
+                            },
+                            "softirq": {
+                                "type": "number"
+                            }
+                        },
+                        "required": [
+                            "cpuNum",
+                            "user",
+                            "nice",
+                            "system",
+                            "idle",
+                            "iowait",
+                            "irq",
+                            "softirq"
+                        ]
+                    }
+                },
+                "mem": {
+                    "type": "object",
+                    "properties": {
+                        "total": {
+                            "type": "number"
+                        },
+                        "free": {
+                            "type": "number"
+                        },
+                        "available": {
+                            "type": "number"
+                        },
+                        "buffers": {
+                            "type": "number"
+                        },
+                        "cached": {
+                            "type": "number"
+                        },
+                        "active": {
+                            "type": "number"
+                        },
+                        "inactive": {
+                            "type": "number"
+                        },
+                        "shared": {
+                            "type": "number"
+                        }
+                    },
+                    "required": [
+                        "total",
+                        "free",
+                        "available",
+                        "buffers",
+                        "cached",
+                        "active",
+                        "inactive",
+                        "shared"
+                    ]
+                },
+                "procs": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "pid": {
+                                "type": "number"
+                            },
+                            "name": {
+                                "type": "string"
+                            },
+                            "state": {
+                                "type": "number"
+                            },
+                            "ppid": {
+                                "type": "number"
+                            },
+                            "cpuUser": {
+                                "type": "number"
+                            },
+                            "cpuSystem": {
+                                "type": "number"
+                            },
+                            "cpuChildrenUser": {
+                                "type": "number"
+                            },
+                            "cpuChildrenSystem": {
+                                "type": "number"
+                            },
+                            "priority": {
+                                "type": "number"
+                            },
+                            "nice": {
+                                "type": "number"
+                            },
+                            "numThreads": {
+                                "type": "number"
+                            },
+                            "startTime": {
+                                "type": "number"
+                            },
+                            "memVms": {
+                                "type": "number"
+                            },
+                            "memRss": {
+                                "type": "number"
+                            },
+                            "processor": {
+                                "type": "number"
+                            },
+                            "cmdline": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "exe": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "pid",
+                            "name",
+                            "state",
+                            "ppid",
+                            "cpuUser",
+                            "cpuSystem",
+                            "cpuChildrenUser",
+                            "cpuChildrenSystem",
+                            "priority",
+                            "nice",
+                            "numThreads",
+                            "startTime",
+                            "memVms",
+                            "memRss",
+                            "processor",
+                            "cmdline",
+                            "exe"
+                        ]
+                    }
+                }
             },
             "required": [
-              "total",
-              "free",
-              "available",
-              "buffers",
-              "cached",
-              "active",
-              "inactive",
-              "shared"
+                "cpuTimes",
+                "mem",
+                "procs"
             ]
-          },
-          "procs": {
-            "type": "array",
-            "items": {
-              "type": "object",
-              "properties": {
-                "pid": {
-                  "type": "number"
-                },
-                "name": {
-                  "type": "string"
-                },
-                "state": {
-                  "type": "number"
-                },
-                "ppid": {
-                  "type": "number"
-                },
-                "cpuUser": {
-                  "type": "number"
-                },
-                "cpuSystem": {
-                  "type": "number"
-                },
-                "cpuChildrenUser": {
-                  "type": "number"
-                },
-                "cpuChildrenSystem": {
-                  "type": "number"
-                },
-                "priority": {
-                  "type": "number"
-                },
-                "nice": {
-                  "type": "number"
-                },
-                "numThreads": {
-                  "type": "number"
-                },
-                "startTime": {
-                  "type": "number"
-                },
-                "memVms": {
-                  "type": "number"
-                },
-                "memRss": {
-                  "type": "number"
-                },
-                "processor": {
-                  "type": "number"
-                },
-                "cmdline": {
-                  "type": "array",
-                  "items": {
-                    "type": "string"
-                  }
-                },
-                "exe": {
-                  "type": "string"
-                }
-              },
-              "required": [
-                "pid",
-                "name",
-                "state",
-                "ppid",
-                "cpuUser",
-                "cpuSystem",
-                "cpuChildrenUser",
-                "cpuChildrenSystem",
-                "priority",
-                "nice",
-                "numThreads",
-                "startTime",
-                "memVms",
-                "memRss",
-                "processor",
-                "cmdline",
-                "exe"
-              ]
-            }
-          }
         },
-        "required": [
-          "cpuTimes",
-          "mem",
-          "procs"
-        ]
-      },
-      "logMonoTime": {
-        "type": "number"
-      },
-      "valid": {
-        "type": "boolean"
-      }
+        "logMonoTime": {
+            "type": "number"
+        },
+        "valid": {
+            "type": "boolean"
+        }
     },
     "required": [
-      "procLog",
-      "logMonoTime",
-      "valid"
+        "procLog",
+        "logMonoTime",
+        "valid"
     ]
-  }
+}

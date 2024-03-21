@@ -1,57 +1,57 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Generated schema for Root",
+    "title": "ubloxGnss",
     "type": "object",
     "properties": {
-      "ubloxGnss": {
-        "type": "object",
-        "properties": {
-          "hwStatus": {
+        "ubloxGnss": {
             "type": "object",
             "properties": {
-              "noisePerMS": {
-                "type": "number"
-              },
-              "agcCnt": {
-                "type": "number"
-              },
-              "aStatus": {
-                "type": "string"
-              },
-              "aPower": {
-                "type": "string"
-              },
-              "jamInd": {
-                "type": "number"
-              },
-              "flags": {
-                "type": "number"
-              }
+                "hwStatus": {
+                    "type": "object",
+                    "properties": {
+                        "noisePerMS": {
+                            "type": "number"
+                        },
+                        "agcCnt": {
+                            "type": "number"
+                        },
+                        "aStatus": {
+                            "type": "string"
+                        },
+                        "aPower": {
+                            "type": "string"
+                        },
+                        "jamInd": {
+                            "type": "number"
+                        },
+                        "flags": {
+                            "type": "number"
+                        }
+                    },
+                    "required": [
+                        "noisePerMS",
+                        "agcCnt",
+                        "aStatus",
+                        "aPower",
+                        "jamInd",
+                        "flags"
+                    ]
+                }
             },
             "required": [
-              "noisePerMS",
-              "agcCnt",
-              "aStatus",
-              "aPower",
-              "jamInd",
-              "flags"
+                "hwStatus"
             ]
-          }
         },
-        "required": [
-          "hwStatus"
-        ]
-      },
-      "logMonoTime": {
-        "type": "number"
-      },
-      "valid": {
-        "type": "boolean"
-      }
+        "logMonoTime": {
+            "type": "number"
+        },
+        "valid": {
+            "type": "boolean"
+        }
     },
     "required": [
-      "ubloxGnss",
-      "logMonoTime",
-      "valid"
+        "ubloxGnss",
+        "logMonoTime",
+        "valid"
     ]
-  }
+}

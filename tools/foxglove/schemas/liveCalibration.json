@@ -1,73 +1,73 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Generated schema for Root",
+    "title": "liveCalibration",
     "type": "object",
     "properties": {
-      "liveCalibration": {
-        "type": "object",
-        "properties": {
-          "calStatusDEPRECATED": {
-            "type": "number"
-          },
-          "calCycle": {
-            "type": "number"
-          },
-          "calPerc": {
-            "type": "number"
-          },
-          "rpyCalib": {
-            "type": "array",
-            "items": {
-              "type": "number"
-            }
-          },
-          "rpyCalibSpread": {
-            "type": "array",
-            "items": {
-              "type": "number"
-            }
-          },
-          "validBlocks": {
-            "type": "number"
-          },
-          "wideFromDeviceEuler": {
-            "type": "array",
-            "items": {
-              "type": "number"
-            }
-          },
-          "calStatus": {
-            "type": "string"
-          },
-          "height": {
-            "type": "array",
-            "items": {
-              "type": "number"
-            }
-          }
+        "liveCalibration": {
+            "type": "object",
+            "properties": {
+                "calStatusDEPRECATED": {
+                    "type": "number"
+                },
+                "calCycle": {
+                    "type": "number"
+                },
+                "calPerc": {
+                    "type": "number"
+                },
+                "rpyCalib": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "rpyCalibSpread": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "validBlocks": {
+                    "type": "number"
+                },
+                "wideFromDeviceEuler": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "calStatus": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                }
+            },
+            "required": [
+                "calStatusDEPRECATED",
+                "calCycle",
+                "calPerc",
+                "rpyCalib",
+                "rpyCalibSpread",
+                "validBlocks",
+                "wideFromDeviceEuler",
+                "calStatus",
+                "height"
+            ]
         },
-        "required": [
-          "calStatusDEPRECATED",
-          "calCycle",
-          "calPerc",
-          "rpyCalib",
-          "rpyCalibSpread",
-          "validBlocks",
-          "wideFromDeviceEuler",
-          "calStatus",
-          "height"
-        ]
-      },
-      "logMonoTime": {
-        "type": "number"
-      },
-      "valid": {
-        "type": "boolean"
-      }
+        "logMonoTime": {
+            "type": "number"
+        },
+        "valid": {
+            "type": "boolean"
+        }
     },
     "required": [
-      "liveCalibration",
-      "logMonoTime",
-      "valid"
+        "liveCalibration",
+        "logMonoTime",
+        "valid"
     ]
-  }
+}

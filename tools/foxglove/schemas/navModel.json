@@ -1,91 +1,91 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Generated schema for Root",
+    "title": "navModel",
     "type": "object",
     "properties": {
-      "navModel": {
-        "type": "object",
-        "properties": {
-          "frameId": {
-            "type": "number"
-          },
-          "modelExecutionTime": {
-            "type": "number"
-          },
-          "dspExecutionTime": {
-            "type": "number"
-          },
-          "features": {
-            "type": "array",
-            "items": {
-              "type": "number"
-            }
-          },
-          "position": {
+        "navModel": {
             "type": "object",
             "properties": {
-              "x": {
-                "type": "array",
-                "items": {
-                  "type": "number"
+                "frameId": {
+                    "type": "number"
+                },
+                "modelExecutionTime": {
+                    "type": "number"
+                },
+                "dspExecutionTime": {
+                    "type": "number"
+                },
+                "features": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "position": {
+                    "type": "object",
+                    "properties": {
+                        "x": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            }
+                        },
+                        "y": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            }
+                        },
+                        "xStd": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            }
+                        },
+                        "yStd": {
+                            "type": "array",
+                            "items": {
+                                "type": "number"
+                            }
+                        }
+                    },
+                    "required": [
+                        "x",
+                        "y",
+                        "xStd",
+                        "yStd"
+                    ]
+                },
+                "desirePrediction": {
+                    "type": "array",
+                    "items": {
+                        "type": "number"
+                    }
+                },
+                "locationMonoTime": {
+                    "type": "number"
                 }
-              },
-              "y": {
-                "type": "array",
-                "items": {
-                  "type": "number"
-                }
-              },
-              "xStd": {
-                "type": "array",
-                "items": {
-                  "type": "number"
-                }
-              },
-              "yStd": {
-                "type": "array",
-                "items": {
-                  "type": "number"
-                }
-              }
             },
             "required": [
-              "x",
-              "y",
-              "xStd",
-              "yStd"
+                "frameId",
+                "modelExecutionTime",
+                "dspExecutionTime",
+                "features",
+                "position",
+                "desirePrediction",
+                "locationMonoTime"
             ]
-          },
-          "desirePrediction": {
-            "type": "array",
-            "items": {
-              "type": "number"
-            }
-          },
-          "locationMonoTime": {
-            "type": "number"
-          }
         },
-        "required": [
-          "frameId",
-          "modelExecutionTime",
-          "dspExecutionTime",
-          "features",
-          "position",
-          "desirePrediction",
-          "locationMonoTime"
-        ]
-      },
-      "logMonoTime": {
-        "type": "number"
-      },
-      "valid": {
-        "type": "boolean"
-      }
+        "logMonoTime": {
+            "type": "number"
+        },
+        "valid": {
+            "type": "boolean"
+        }
     },
     "required": [
-      "navModel",
-      "logMonoTime",
-      "valid"
+        "navModel",
+        "logMonoTime",
+        "valid"
     ]
-  }
+}
