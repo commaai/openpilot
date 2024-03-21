@@ -43,6 +43,8 @@ class DevicePanel : public ListWidget {
   Q_OBJECT
 public:
   explicit DevicePanel(SettingsWindow *parent);
+  void showEvent(QShowEvent *event) override;
+
 signals:
   void reviewTrainingGuide();
   void showDriverView();
@@ -54,6 +56,7 @@ private slots:
 
 private:
   Params params;
+  ButtonControl *pair_device;
 };
 
 class TogglesPanel : public ListWidget {
