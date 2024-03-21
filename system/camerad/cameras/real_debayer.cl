@@ -7,7 +7,7 @@
 #define RGB_TO_V(r, g, b) ((mul24(r, 56) - mul24(g, 47) - mul24(b, 9) + 0x8080) >> 8)
 #define AVERAGE(x, y, z, w) ((convert_ushort(x) + convert_ushort(y) + convert_ushort(z) + convert_ushort(w) + 1) >> 1)
 
-float3 color_correct(float3 rgb) {
+float3 color_correct(float3 rgb, int expo) {
   // color correction
   #if IS_OX
   float3 x = rgb.x * (float3)(1.5664815, -0.29808738, -0.03973474);
@@ -26,7 +26,21 @@ float3 color_correct(float3 rgb) {
   #if IS_OX
   return -0.507089*exp(-12.54124638*x)+0.9655*powr(x,0.5)-0.472597*x+0.507089;
   #elif IS_OS
-  return clamp(log(1+x*65536.0) * 28.8 - 65, 0.0, 255.0) / 255.0;
+  if (expo < 64) {
+    return clamp(log(1+x*65536.0) * 54.432 - 122.85, 0.0, 255.0) / 255.0;
+  } else if (expo < 128) {
+    return clamp(log(1+x*65536.0) * 47.5 - 107.21, 0.0, 255.0) / 255.0;
+  } else if (expo < 256) {
+    return clamp(log(1+x*65536.0) * 42.07 - 94.96, 0.0, 255.0) / 255.0;
+  } else if (expo < 512) {
+    return clamp(log(1+x*65536.0) * 37.82 - 85.37, 0.0, 255.0) / 255.0;
+  } else if (expo < 1024) {
+    return clamp(log(1+x*65536.0) * 34.24 - 77.29, 0.0, 255.0) / 255.0;
+  } else if (expo < 2048) {
+    return clamp(log(1+x*65536.0) * 31.33 - 70.71, 0.0, 255.0) / 255.0;
+  } else {
+    return clamp(log(1+x*65536.0) * 28.8 - 65, 0.0, 255.0) / 255.0;
+  }
   #else
   // tone mapping params
   const float gamma_k = 0.75;
@@ -301,7 +315,7 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out, int exp
   rgb.x = (k02*v_rows[1].s2+k04*v_rows[1].s0)/(k02+k04); // R_G1
   rgb.y = v_rows[1].s1; // G1(R)
   rgb.z = (k01*v_rows[0].s1+k03*v_rows[2].s1)/(k01+k03); // B_G1
-  rgb_out[rgb_write_order[0]] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
+  rgb_out[rgb_write_order[0]] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0), expo_time) * 255.0);
 
   const float k11 = get_k(v_rows[0].s1, v_rows[2].s1, v_rows[0].s3, v_rows[2].s3);
   const float k12 = get_k(v_rows[0].s2, v_rows[1].s1, v_rows[1].s3, v_rows[2].s2);
@@ -310,7 +324,7 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out, int exp
   rgb.x = v_rows[1].s2; // R
   rgb.y = (k11*(v_rows[0].s2+v_rows[2].s2)*0.5+k13*(v_rows[1].s3+v_rows[1].s1)*0.5)/(k11+k13); // G_R
   rgb.z = (k12*(v_rows[0].s3+v_rows[2].s1)*0.5+k14*(v_rows[0].s1+v_rows[2].s3)*0.5)/(k12+k14); // B_R
-  rgb_out[rgb_write_order[1]] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
+  rgb_out[rgb_write_order[1]] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0), expo_time) * 255.0);
 
   const float k21 = get_k(v_rows[1].s0, v_rows[3].s0, v_rows[1].s2, v_rows[3].s2);
   const float k22 = get_k(v_rows[1].s1, v_rows[2].s0, v_rows[2].s2, v_rows[3].s1);
@@ -319,7 +333,7 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out, int exp
   rgb.x = (k22*(v_rows[1].s2+v_rows[3].s0)*0.5+k24*(v_rows[1].s0+v_rows[3].s2)*0.5)/(k22+k24); // R_B
   rgb.y = (k21*(v_rows[1].s1+v_rows[3].s1)*0.5+k23*(v_rows[2].s2+v_rows[2].s0)*0.5)/(k21+k23); // G_B
   rgb.z = v_rows[2].s1; // B
-  rgb_out[rgb_write_order[2]] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
+  rgb_out[rgb_write_order[2]] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0), expo_time) * 255.0);
 
   const float k31 = get_k(v_rows[1].s1, v_rows[2].s2, v_rows[1].s3, v_rows[2].s2);
   const float k32 = get_k(v_rows[1].s3, v_rows[2].s2, v_rows[3].s3, v_rows[2].s2);
@@ -328,7 +342,7 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out, int exp
   rgb.x = (k31*v_rows[1].s2+k33*v_rows[3].s2)/(k31+k33); // R_G2
   rgb.y = v_rows[2].s2; // G2(B)
   rgb.z = (k32*v_rows[2].s3+k34*v_rows[2].s1)/(k32+k34); // B_G2
-  rgb_out[rgb_write_order[3]] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
+  rgb_out[rgb_write_order[3]] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0), expo_time) * 255.0);
 
   // write ys
   uchar2 yy = (uchar2)(
