@@ -33,8 +33,8 @@ def get_release_notes(path: str = BASEDIR) -> str:
 
 
 @cache
-def is_prebuilt() -> bool:
-  return os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
+def is_prebuilt(path: str = BASEDIR) -> bool:
+  return os.path.exists(os.path.join(path, 'prebuilt'))
 
 
 @cache
