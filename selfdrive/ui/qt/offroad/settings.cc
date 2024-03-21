@@ -16,6 +16,7 @@
 #include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/widgets/input.h"
+#include "selfdrive/ui/qt/widgets/prime.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
@@ -215,6 +216,14 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   addItem(new LabelControl(tr("Dongle ID"), getDongleId().value_or(tr("N/A"))));
   addItem(new LabelControl(tr("Serial"), params.get("HardwareSerial").c_str()));
 
+  pair_device = new ButtonControl(tr("Pair Device"), tr("Pair"),
+                                  tr("Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."));
+  connect(pair_device, &ButtonControl::clicked, [=]() {
+    PairingPopup popup(this);
+    popup.exec();
+  });
+  addItem(pair_device);
+
   // offroad-only buttons
 
   auto dcamBtn = new ButtonControl(tr("Driver Camera"), tr("PREVIEW"),
@@ -262,9 +271,14 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   addItem(translateBtn);
 
+  QObject::connect(uiState(), &UIState::primeChanged, [this] (bool prime) {
+    pair_device->setVisible(!prime);
+  });
   QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
     for (auto btn : findChildren<ButtonControl *>()) {
-      btn->setEnabled(offroad);
+      if (btn != pair_device) {
+        btn->setEnabled(offroad);
+      }
     }
   });
 
@@ -343,6 +357,11 @@ void DevicePanel::poweroff() {
   } else {
     ConfirmationDialog::alert(tr("Disengage to Power Off"), this);
   }
+}
+
+void DevicePanel::showEvent(QShowEvent *event) {
+  pair_device->setVisible(!uiState()->primeType());
+  ListWidget::showEvent(event);
 }
 
 void SettingsWindow::showEvent(QShowEvent *event) {
