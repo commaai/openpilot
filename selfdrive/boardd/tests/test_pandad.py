@@ -29,15 +29,15 @@ class TestPandad(unittest.TestCase):
   def _run_test(self, timeout=30):
     managed_processes['pandad'].start()
 
-    sm = messaging.SubMaster(['peripheralState'])
+    sm = messaging.SubMaster(['pandaStates'])
     for _ in range(timeout*10):
       sm.update(100)
-      if sm['peripheralState'].pandaType != log.PandaState.PandaType.unknown:
+      if sm['pandaStates'][0].pandaType != log.PandaState.PandaType.unknown:
         break
 
     managed_processes['pandad'].stop()
 
-    if sm['peripheralState'].pandaType == log.PandaState.PandaType.unknown:
+    if sm['pandaStates'][0].pandaType == log.PandaState.PandaType.unknown:
       raise Exception("boardd failed to start")
 
   def _go_to_dfu(self):
