@@ -316,7 +316,6 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     ps.setControlsAllowed(health.controls_allowed_pkt);
     ps.setTxBufferOverflow(health.tx_buffer_overflow_pkt);
     ps.setRxBufferOverflow(health.rx_buffer_overflow_pkt);
-    ps.setGmlanSendErrs(health.gmlan_send_errs_pkt);
     ps.setPandaType(panda->hw_type);
     ps.setSafetyModel(cereal::CarParams::SafetyModel(health.safety_mode_pkt));
     ps.setSafetyParam(health.safety_param_pkt);
