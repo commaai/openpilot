@@ -134,7 +134,7 @@ class CarState(CarStateBase):
       ]
     else:
       messages += [
-        ("INSTRUMENT_PANEL", 0),
+        ("INSTRUMENT_PANEL", 1),
       ]
 
     if CP.transmissionType == TransmissionType.automatic:
