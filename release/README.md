@@ -6,7 +6,7 @@
 - `channel` - a named version of openpilot (git branch, casync caidx) which receives updates
 - `build` - a release which is already built for the comma 3/3x and contains only required files for running openpilot and identifying the release
 
-- `build_style` - style of buildor `release` (nightly, staging, release, RELEASE=1)
+- `build_style` - type of build, either `debug` or `release`
   - `debug` - build with `ALLOW_DEBUG=true`, can test experimental features like longitudinal on alpha cars
   - `release` - build with `ALLOW_DEBUG=false`, experimental features disabled
 
