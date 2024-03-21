@@ -56,7 +56,7 @@ def is_release_branch() -> bool:
   return get_short_branch() in RELEASE_BRANCHES
 
 @cache
-def is_dirty() -> bool:
+def is_dirty(cwd: str = None) -> bool:
   origin = get_origin()
   branch = get_branch()
   if not origin or not branch:
@@ -68,11 +68,11 @@ def is_dirty() -> bool:
     if not is_prebuilt():
       # This is needed otherwise touched files might show up as modified
       try:
-        subprocess.check_call(["git", "update-index", "--refresh"])
+        subprocess.check_call(["git", "update-index", "--refresh"], cwd=cwd)
       except subprocess.CalledProcessError:
         pass
 
-      dirty = (subprocess.call(["git", "diff-index", "--quiet", branch, "--"]) != 0)
+      dirty = (subprocess.call(["git", "diff-index", "--quiet", branch, "--"], cwd=cwd)) != 0
   except subprocess.CalledProcessError:
     cloudlog.exception("git subprocess failed while checking dirty")
     dirty = True
