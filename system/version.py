@@ -56,7 +56,7 @@ def is_release_branch() -> bool:
   return get_short_branch() in RELEASE_BRANCHES
 
 @cache
-def is_dirty(cwd: str = None) -> bool:
+def is_dirty(cwd: str = BASEDIR) -> bool:
   origin = get_origin(cwd)
   branch = get_branch(cwd)
   if not origin or not branch:
