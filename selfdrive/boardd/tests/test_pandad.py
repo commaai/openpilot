@@ -88,11 +88,11 @@ class TestPandad(unittest.TestCase):
     assert any(Panda(s).is_internal() for s in Panda.list())
 
   def test_best_case_startup_time(self):
-    # run once so we're setup
+    # run once so we're up to date
     self._run_test(60)
 
-    # should be fast this time
-    self._run_test(8)
+    # should be nearly instant this time
+    self._run_test(2)
 
   def test_protocol_version_check(self):
     if HARDWARE.get_device_type() == 'tici':
