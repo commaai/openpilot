@@ -37,8 +37,8 @@ def get_short_version() -> str:
   return get_version().split('-')[0]
 
 @cache
-def is_prebuilt() -> bool:
-  return os.path.exists(os.path.join(BASEDIR, 'prebuilt'))
+def is_prebuilt(path: str = BASEDIR) -> bool:
+  return os.path.exists(os.path.join(path, 'prebuilt'))
 
 
 @cache
@@ -65,7 +65,7 @@ def is_dirty(cwd: str = None) -> bool:
   dirty = False
   try:
     # Actually check dirty files
-    if not is_prebuilt():
+    if not is_prebuilt(cwd):
       # This is needed otherwise touched files might show up as modified
       try:
         subprocess.check_call(["git", "update-index", "--refresh"], cwd=cwd)
