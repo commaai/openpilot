@@ -184,7 +184,7 @@ node {
       build_release("release3-staging")
     }
 
-    if (env.BRANCH_NAME == 'master-ci') {
+    if (env.BRANCH_NAME == 'build-casync-releases-in-ci') {
       build_release("nightly")
     }
 
