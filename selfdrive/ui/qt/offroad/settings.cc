@@ -407,7 +407,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     {tr("Network"), new Networking(this)},
     {tr("Toggles"), toggles},
     {tr("Software"), new SoftwarePanel(this)},
-    {"Replay", new ReplayPanel(this)},
+    {"Routes", new ReplayPanel(this)},
   };
 
   nav_btns = new QButtonGroup(this);
