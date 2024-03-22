@@ -31,7 +31,7 @@ class CAR(Platforms):
   AP3_MODEL3 = PlatformConfig(
     'TESLA AP3 MODEL 3',
     [CarDocs("Tesla AP3 Model 3", "All")],
-    CarSpecs(mass=1900., wheelbase=2.875, steerRatio=15.0),
+    CarSpecs(mass=1900., wheelbase=2.875, steerRatio=12.0),
     dbc_dict('tesla_model3_veh', None, chassis_dbc='tesla_model3_ch')
   )
 
