@@ -15,7 +15,7 @@ rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR
 
 release/copy_build_files.sh $SOURCE_DIR $BUILD_DIR
-#release/create_prebuilt.sh $BUILD_DIR
+release/create_prebuilt.sh $BUILD_DIR
 
 cd $SOURCE_DIR
 release/create_casync_release.py $BUILD_DIR $CASYNC_DIR $OPENPILOT_CHANNEL
