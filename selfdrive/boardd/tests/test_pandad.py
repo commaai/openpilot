@@ -31,7 +31,7 @@ class TestPandad(unittest.TestCase):
     managed_processes['pandad'].start()
 
     sm = messaging.SubMaster(['pandaStates'])
-    while (time.monotonic() - st) > timeout:
+    while (time.monotonic() - st) < timeout:
       sm.update(100)
       if len(sm['pandaStates']) and sm['pandaStates'][0].pandaType != log.PandaState.PandaType.unknown:
         break
@@ -94,6 +94,11 @@ class TestPandad(unittest.TestCase):
 
     # should be nearly instant this time
     for _ in range(10):
+      # 3s =
+      #  0.6s python startup
+      #  0.2s pandad -> boardd
+      #  1.3s panda boot time (FIXME: it's all the drivers/harness.h init)
+      #  some buffer
       self._run_test(3)
 
   def test_protocol_version_check(self):
