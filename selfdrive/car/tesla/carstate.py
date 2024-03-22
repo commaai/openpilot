@@ -153,7 +153,7 @@ class CarState(CarStateBase):
 
     # Messages needed by carcontroller
     if model3:
-      self.sccm_right_stalk = copy.copy(cp.vl["SCCM_rightStalk"])
+      self.sccm_right_stalk = copy.copy(cp_adas.vl["SCCM_rightStalk"])
     else:
       self.msg_stw_actn_req = copy.copy(cp.vl["STW_ACTN_RQ"])
     self.acc_state = cp_cam.vl["DAS_control"]["DAS_accState"]
