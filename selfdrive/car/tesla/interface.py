@@ -37,7 +37,7 @@ class CarInterface(CarInterfaceBase):
       ret.openpilotLongitudinalControl = False
       ret.safetyConfigs = [
         get_safety_config(car.CarParams.SafetyModel.tesla, flags),  # internal panda controls lateral and long (party)
-        get_safety_config(car.CarParams.SafetyModel.noOutput, 0),  # second external panda (chassis)
+        #get_safety_config(car.CarParams.SafetyModel.noOutput, 0),  # second external panda (chassis)
       ]
     elif (CANBUS.autopilot_powertrain in fingerprint.keys()) and (0x2bf in fingerprint[CANBUS.autopilot_powertrain].keys()):
       ret.openpilotLongitudinalControl = True
