@@ -1,7 +1,9 @@
 from abc import ABC, abstractmethod
-from collections import namedtuple
+from dataclasses import dataclass
+import io
 import lzma
 import os
+import struct
 import time
 
 import requests
@@ -12,13 +14,26 @@ CHUNK_DOWNLOAD_RETRIES = 3
 
 CAIBX_DOWNLOAD_TIMEOUT = 120
 
-Chunk = namedtuple('Chunk', ['sha', 'offset', 'length'])
-ChunkDict = dict[bytes, Chunk]
+
+@dataclass
+class CAChunk:
+  sha: bytes
+  offset: int
+  length: int
+
+  @staticmethod
+  def from_buffer(b: io.BytesIO, last_offset: int):
+    new_offset = struct.unpack("<Q", b.read(8))[0]
+
+    sha = b.read(32)
+    length = new_offset - last_offset
+
+    return CAChunk(sha, last_offset, length)
 
 
 class ChunkReader(ABC):
   @abstractmethod
-  def read(self, chunk: Chunk) -> bytes:
+  def read(self, chunk: CAChunk) -> bytes:
     ...
 
 
@@ -31,7 +46,7 @@ class FileChunkReader(ChunkReader):
   def __del__(self):
     self.f.close()
 
-  def read(self, chunk: Chunk) -> bytes:
+  def read(self, chunk: CAChunk) -> bytes:
     self.f.seek(chunk.offset)
     return self.f.read(chunk.length)
 
@@ -44,7 +59,7 @@ class RemoteChunkReader(ChunkReader):
     self.url = url
     self.session = requests.Session()
 
-  def read(self, chunk: Chunk) -> bytes:
+  def read(self, chunk: CAChunk) -> bytes:
     sha_hex = chunk.sha.hex()
     url = os.path.join(self.url, sha_hex[:4], sha_hex + ".cacnk")
 
@@ -74,7 +89,7 @@ class DirectoryChunkReader(ChunkReader):
     super().__init__()
     self.directory = directory
 
-  def read(self, chunk: Chunk) -> bytes:
+  def read(self, chunk: CAChunk) -> bytes:
     sha_hex = chunk.sha.hex()
     filename = os.path.join(self.directory, sha_hex[:4], sha_hex + ".cacnk")
 

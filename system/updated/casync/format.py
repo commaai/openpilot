@@ -7,7 +7,7 @@ import shutil
 import struct
 
 import requests
-from openpilot.system.updated.casync.reader import DirectoryChunkReader
+from openpilot.system.updated.casync.reader import DirectoryChunkReader, RemoteChunkReader, ChunkReader, CAChunk
 
 
 # from https://github.com/systemd/casync/blob/e6817a79d89b48e1c6083fb1868a28f1afb32505/src/caformat.h#L49
@@ -45,22 +45,6 @@ class CAFormatHeader(abc.ABC):
     size, format_type = struct.unpack("<QQ", b.read(CA_TABLE_HEADER_LEN))
 
     return CAFormatHeader(size, format_type)
-
-
-@dataclass
-class CAChunk:
-  sha: bytes
-  offset: int
-  length: int
-
-  @staticmethod
-  def from_buffer(b: io.BytesIO, last_offset: int):
-    new_offset = struct.unpack("<Q", b.read(8))[0]
-
-    sha = b.read(32)
-    length = new_offset - last_offset
-
-    return CAChunk(sha, last_offset, length)
 
 
 @dataclass
@@ -346,19 +330,8 @@ class Tree:
       node.save(directory)
 
 
-def parse_caidx(caidx_path) -> CAArchive:
-  if os.path.isfile(caidx_path):
-    caidx = CAIndex.from_file(caidx_path)
-  else:
-    resp = requests.get(caidx_path, timeout=30)
-    resp.raise_for_status()
-    caidx = CAIndex.from_buffer(io.BytesIO(resp.content))
-
-  casync_directory = os.path.dirname(caidx_path)
-
-  chunk_reader = DirectoryChunkReader(os.path.join(casync_directory, "default.castr"))
-
-  data = b"".join(chunk_reader.read(chunk) for chunk in caidx.chunks)
+def parse_caidx(caindex: CAIndex, chunk_reader: ChunkReader) -> CAArchive:
+  data = b"".join(chunk_reader.read(chunk) for chunk in caindex.chunks)
 
   archive = CAArchive.from_buffer(io.BytesIO(data))
 
@@ -373,6 +346,30 @@ def extract_archive(archive: CAArchive, directory: pathlib.Path):
   tree.save(directory)
 
 
+def extract_local(local_caidx, output_path: pathlib.Path):
+  caidx = CAIndex.from_file(local_caidx)
+  casync_store = os.path.join(os.path.dirname(local_caidx), "default.castr")
+
+  chunk_reader = DirectoryChunkReader(casync_store)
+
+  archive = parse_caidx(caidx, chunk_reader)
+  extract_archive(archive, output_path)
+
+
+def extract_remote(remote_caidx, output_path: pathlib.Path):
+  resp = requests.get(remote_caidx, timeout=30)
+  resp.raise_for_status()
+  caidx = CAIndex.from_buffer(io.BytesIO(resp.content))
+  casync_store = os.path.join(os.path.dirname(remote_caidx), "default.castr")
+
+  chunk_reader = RemoteChunkReader(casync_store)
+
+  archive = parse_caidx(caidx, chunk_reader)
+  extract_archive(archive, output_path)
+
+
 if __name__ == "__main__":
-  archive = parse_caidx("/tmp/ceec/nightly_rebuild.caidx")
-  extract_archive(archive, pathlib.Path("/tmp/nightly-test3"))
+  extract_local("/tmp/ceec/nightly_rebuild.caidx", pathlib.Path("/tmp/local"))
+  extract_remote( \
+    "https://commadist.blob.core.windows.net/openpilot-releases/0.9.7-48e61b19ad34fb63769f42d88c311054f30d0f5d-release.caidx", \
+     pathlib.Path("/tmp/remote"))
