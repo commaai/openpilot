@@ -235,7 +235,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
   mainLayout->addWidget(content);
 
-  primeUser->setVisible(uiState()->primeType());
+  primeUser->setVisible(uiState()->hasPrime());
   mainLayout->setCurrentIndex(1);
 
   setStyleSheet(R"(
