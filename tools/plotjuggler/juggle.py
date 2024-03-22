@@ -26,7 +26,7 @@ MAX_STREAMING_BUFFER_SIZE = 1000
 
 def install():
   m = f"{platform.system()}-{platform.machine()}"
-  supported = ("Linux-x86_64", "Darwin-arm64", "Darwin-x86_64")
+  supported = ("Linux-x86_64", "Linux-aarch64", "Darwin-arm64", "Darwin-x86_64")
   if m not in supported:
     raise Exception(f"Unsupported platform: '{m}'. Supported platforms: {supported}")
 
@@ -73,7 +73,7 @@ def process(can, lr):
   return [d for d in lr if can or d.which() not in ['can', 'sendcan']]
 
 def juggle_route(route_or_segment_name, can, layout, dbc=None):
-  sr = LogReader(route_or_segment_name, default_mode=ReadMode.AUTO_INTERACIVE)
+  sr = LogReader(route_or_segment_name, default_mode=ReadMode.AUTO_INTERACTIVE)
 
   all_data = sr.run_across_segments(24, partial(process, can))
 

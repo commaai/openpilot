@@ -105,26 +105,29 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
   QWidget::mousePressEvent(e);
 }
 
+void OnroadWindow::createMapWidget() {
+#ifdef ENABLE_MAPS
+  auto m = new MapPanel(get_mapbox_settings());
+  map = m;
+  QObject::connect(m, &MapPanel::mapPanelRequested, this, &OnroadWindow::mapPanelRequested);
+  QObject::connect(nvg->map_settings_btn, &MapSettingsButton::clicked, m, &MapPanel::toggleMapSettings);
+  nvg->map_settings_btn->setEnabled(true);
+
+  m->setFixedWidth(topWidget(this)->width() / 2 - UI_BORDER_SIZE);
+  split->insertWidget(0, m);
+  // hidden by default, made visible when navRoute is published
+  m->setVisible(false);
+#endif
+}
+
 void OnroadWindow::offroadTransition(bool offroad) {
 #ifdef ENABLE_MAPS
   if (!offroad) {
     if (map == nullptr && (uiState()->hasPrime() || !MAPBOX_TOKEN.isEmpty())) {
-      auto m = new MapPanel(get_mapbox_settings());
-      map = m;
-
-      QObject::connect(m, &MapPanel::mapPanelRequested, this, &OnroadWindow::mapPanelRequested);
-      QObject::connect(nvg->map_settings_btn, &MapSettingsButton::clicked, m, &MapPanel::toggleMapSettings);
-      nvg->map_settings_btn->setEnabled(true);
-
-      m->setFixedWidth(topWidget(this)->width() / 2 - UI_BORDER_SIZE);
-      split->insertWidget(0, m);
-
-      // hidden by default, made visible when navRoute is published
-      m->setVisible(false);
+      createMapWidget();
     }
   }
 #endif
-
   alerts->updateAlert({});
 }
 
@@ -135,6 +138,8 @@ void OnroadWindow::primeChanged(bool prime) {
     nvg->map_settings_btn->setVisible(false);
     map->deleteLater();
     map = nullptr;
+  } else if (!map && (prime || !MAPBOX_TOKEN.isEmpty())) {
+    createMapWidget();
   }
 #endif
 }
@@ -289,7 +294,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   const auto nav_instruction = sm["navInstruction"].getNavInstruction();
 
   // Handle older routes where vCruiseCluster is not set
-  float v_cruise =  cs.getVCruiseCluster() == 0.0 ? cs.getVCruise() : cs.getVCruiseCluster();
+  float v_cruise = cs.getVCruiseCluster() == 0.0 ? cs.getVCruise() : cs.getVCruiseCluster();
   setSpeed = cs_alive ? v_cruise : SET_SPEED_NA;
   is_cruise_set = setSpeed > 0 && (int)setSpeed != SET_SPEED_NA;
   if (is_cruise_set && !s.scene.is_metric) {

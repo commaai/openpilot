@@ -2,10 +2,9 @@ import cereal.messaging as messaging
 
 from opendbc.can.packer import CANPacker
 from opendbc.can.parser import CANParser
+from openpilot.common.params import Params
 from openpilot.selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp
-from openpilot.selfdrive.car import crc8_pedal
 from openpilot.tools.sim.lib.common import SimulatorState
-from panda.python import Panda
 
 
 class SimulatedCar:
@@ -18,6 +17,8 @@ class SimulatedCar:
     self.sm = messaging.SubMaster(['carControl', 'controlsState', 'carParams'])
     self.cp = self.get_car_can_parser()
     self.idx = 0
+    self.params = Params()
+    self.obd_multiplexing = False
 
   @staticmethod
   def get_car_can_parser():
@@ -53,8 +54,6 @@ class SimulatedCar:
       "INTERCEPTOR_GAS": simulator_state.user_gas * 2**12,
       "INTERCEPTOR_GAS2": simulator_state.user_gas * 2**12,
     }
-    checksum = crc8_pedal(self.packer.make_can_msg("GAS_SENSOR", 0, values)[2][:-1])
-    values["CHECKSUM_PEDAL"] = checksum
     msg.append(self.packer.make_can_msg("GAS_SENSOR", 0, values))
 
     msg.append(self.packer.make_can_msg("GEARBOX", 0, {"GEAR": 4, "GEAR_SHIFTER": 8}))
@@ -100,6 +99,11 @@ class SimulatedCar:
 
   def send_panda_state(self, simulator_state):
     self.sm.update(0)
+
+    if self.params.get_bool("ObdMultiplexingEnabled") != self.obd_multiplexing:
+      self.obd_multiplexing = not self.obd_multiplexing
+      self.params.put_bool("ObdMultiplexingChanged", True)
+
     dat = messaging.new_message('pandaStates', 1)
     dat.valid = True
     dat.pandaStates[0] = {
@@ -108,7 +112,7 @@ class SimulatedCar:
       'controlsAllowed': True,
       'safetyModel': 'hondaNidec',
       'alternativeExperience': self.sm["carParams"].alternativeExperience,
-      'safetyParam': Panda.FLAG_HONDA_GAS_INTERCEPTOR
+      'safetyParam': 0,
     }
     self.pm.send('pandaStates', dat)
 

@@ -2,7 +2,6 @@
 import os
 import subprocess
 from pathlib import Path
-from typing import List
 
 # NOTE: Do NOT import anything here that needs be built (e.g. params)
 from openpilot.common.basedir import BASEDIR
@@ -10,7 +9,7 @@ from openpilot.common.spinner import Spinner
 from openpilot.common.text_window import TextWindow
 from openpilot.system.hardware import AGNOS
 from openpilot.common.swaglog import cloudlog, add_file_handler
-from openpilot.system.version import is_dirty
+from openpilot.system.version import get_build_metadata
 
 MAX_CACHE_SIZE = 4e9 if "CI" in os.environ else 2e9
 CACHE_DIR = Path("/data/scons_cache" if AGNOS else "/tmp/scons_cache")
@@ -29,7 +28,7 @@ def build(spinner: Spinner, dirty: bool = False, minimal: bool = False) -> None:
 
   # building with all cores can result in using too
   # much memory, so retry with less parallelism
-  compile_output: List[bytes] = []
+  compile_output: list[bytes] = []
   for n in (nproc, nproc/2, 1):
     compile_output.clear()
     scons: subprocess.Popen = subprocess.Popen(["scons", f"-j{int(n)}", "--cache-populate", *extra_args], cwd=BASEDIR, env=env, stderr=subprocess.PIPE)
@@ -87,4 +86,5 @@ def build(spinner: Spinner, dirty: bool = False, minimal: bool = False) -> None:
 if __name__ == "__main__":
   spinner = Spinner()
   spinner.update_progress(0, 100)
-  build(spinner, is_dirty(), minimal = AGNOS)
+  build_metadata = get_build_metadata()
+  build(spinner, build_metadata.openpilot.is_dirty, minimal = AGNOS)

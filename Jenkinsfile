@@ -12,9 +12,11 @@ def retryWithDelay(int maxRetries, int delay, Closure body) {
 def device(String ip, String step_label, String cmd) {
   withCredentials([file(credentialsId: 'id_rsa', variable: 'key_file')]) {
     def ssh_cmd = """
-ssh -tt -o ConnectTimeout=30 -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o BatchMode=yes -o StrictHostKeyChecking=no -i ${key_file} 'comma@${ip}' /usr/bin/bash <<'END'
+ssh -tt -o ConnectTimeout=5 -o ServerAliveInterval=5 -o ServerAliveCountMax=2 -o BatchMode=yes -o StrictHostKeyChecking=no -i ${key_file} 'comma@${ip}' /usr/bin/bash <<'END'
 
 set -e
+
+shopt -s huponexit # kill all child processes when the shell exits
 
 export CI=1
 export PYTHONWARNINGS=error
@@ -85,10 +87,6 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
             device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
           }
           steps.each { item ->
-            if (branch != "master" && item.size() == 3 && !hasDirectoryChanged(item[2])) {
-              println "Skipped '${item[0]}', no relevant changes were detected."
-              return;
-            }
             device(device_ip, item[0], item[1])
           }
         }
@@ -143,20 +141,23 @@ def setupCredentials() {
   }
 }
 
-def hasDirectoryChanged(List<String> paths) {
-  for (change in currentBuild.changeSets) {
-    for (item in change.items) {
-      for (affectedPath in item.affectedPaths) {
-        for (path in paths) {
-          if (affectedPath.startsWith(path)) {
-            return true
-          }
-        }
-      }
+
+def build_release(String channel_name) {
+  return parallel (
+    "${channel_name} (git)": {
+      deviceStage("build git", "tici-needs-can", [], [
+        ["build ${channel_name}", "RELEASE_BRANCH=${channel_name} $SOURCE_DIR/release/build_release.sh"],
+      ])
+    },
+    "${channel_name} (casync)": {
+      deviceStage("build casync", "tici-needs-can", [], [
+        ["build ${channel_name}", "RELEASE=1 OPENPILOT_CHANNEL=${channel_name} BUILD_DIR=/data/openpilot_build CASYNC_DIR=/data/casync $SOURCE_DIR/release/create_casync_build.sh"],
+        //["upload ${channel_name}", "OPENPILOT_CHANNEL=${channel_name} $SOURCE_DIR/release/upload_casync_release.sh"],
+      ])
     }
-  }
-  return false
+  )
 }
+
 
 node {
   env.CI = "1"
@@ -180,15 +181,11 @@ node {
 
   try {
     if (env.BRANCH_NAME == 'devel-staging') {
-      deviceStage("build release3-staging", "tici-needs-can", [], [
-        ["build release3-staging", "RELEASE_BRANCH=release3-staging $SOURCE_DIR/release/build_release.sh"],
-      ])
+      build_release("release3-staging")
     }
 
     if (env.BRANCH_NAME == 'master-ci') {
-      deviceStage("build nightly", "tici-needs-can", [], [
-        ["build nightly", "RELEASE_BRANCH=nightly $SOURCE_DIR/release/build_release.sh"],
-      ])
+      build_release("nightly")
     }
 
     if (!env.BRANCH_NAME.matches(excludeRegex)) {
@@ -207,10 +204,10 @@ node {
       'HW + Unit Tests': {
         deviceStage("tici-hardware", "tici-common", ["UNSAFE=1"], [
           ["build", "cd selfdrive/manager && ./build.py"],
-          ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py", ["panda/", "selfdrive/boardd/"]],
+          ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
           ["test power draw", "pytest -s system/hardware/tici/tests/test_power_draw.py"],
           ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py"],
-          ["test pigeond", "pytest system/sensord/tests/test_pigeond.py"],
+          ["test pigeond", "pytest system/ubloxd/tests/test_pigeond.py"],
           ["test manager", "pytest selfdrive/manager/test/test_manager.py"],
         ])
       },
@@ -252,10 +249,10 @@ node {
         deviceStage("tizi", "tizi", ["UNSAFE=1"], [
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
           ["test boardd loopback", "SINGLE_PANDA=1 pytest selfdrive/boardd/tests/test_boardd_loopback.py"],
-          ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py", ["panda/", "selfdrive/boardd/"]],
+          ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
           ["test amp", "pytest system/hardware/tici/tests/test_amplifier.py"],
           ["test hw", "pytest system/hardware/tici/tests/test_hardware.py"],
-          ["test qcomgpsd", "pytest system/qcomgpsd/tests/test_qcomgpsd.py", ["system/qcomgpsd/"]],
+          ["test qcomgpsd", "pytest system/qcomgpsd/tests/test_qcomgpsd.py"],
         ])
       },
 

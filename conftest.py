@@ -1,3 +1,4 @@
+import contextlib
 import gc
 import os
 import pytest
@@ -25,51 +26,50 @@ def pytest_runtest_call(item):
     yield
 
 
-@pytest.fixture(scope="function", autouse=True)
-def openpilot_function_fixture(request):
+@contextlib.contextmanager
+def clean_env():
   starting_env = dict(os.environ)
-
-  random.seed(0)
-
-  # setup a clean environment for each test
-  with OpenpilotPrefix(shared_download_cache=request.node.get_closest_marker("shared_download_cache") is not None) as prefix:
-    prefix = os.environ["OPENPILOT_PREFIX"]
-
-    yield
-
-    # ensure the test doesn't change the prefix
-    assert "OPENPILOT_PREFIX" in os.environ and prefix == os.environ["OPENPILOT_PREFIX"]
-
+  yield
   os.environ.clear()
   os.environ.update(starting_env)
 
-  # cleanup any started processes
-  manager.manager_cleanup()
 
-  # some processes disable gc for performance, re-enable here
-  if not gc.isenabled():
-    gc.enable()
-    gc.collect()
+@pytest.fixture(scope="function", autouse=True)
+def openpilot_function_fixture(request):
+  random.seed(0)
+
+  with clean_env():
+    # setup a clean environment for each test
+    with OpenpilotPrefix(shared_download_cache=request.node.get_closest_marker("shared_download_cache") is not None) as prefix:
+      prefix = os.environ["OPENPILOT_PREFIX"]
+
+      yield
+
+      # ensure the test doesn't change the prefix
+      assert "OPENPILOT_PREFIX" in os.environ and prefix == os.environ["OPENPILOT_PREFIX"]
+
+    # cleanup any started processes
+    manager.manager_cleanup()
+
+    # some processes disable gc for performance, re-enable here
+    if not gc.isenabled():
+      gc.enable()
+      gc.collect()
 
 # If you use setUpClass, the environment variables won't be cleared properly,
 # so we need to hook both the function and class pytest fixtures
 @pytest.fixture(scope="class", autouse=True)
 def openpilot_class_fixture():
-  starting_env = dict(os.environ)
-
-  yield
-
-  os.environ.clear()
-  os.environ.update(starting_env)
+  with clean_env():
+    yield
 
 
-@pytest.fixture(scope="class")
-def tici_setup_fixture():
-  """Ensure a consistent state for tests on-device"""
+@pytest.fixture(scope="function")
+def tici_setup_fixture(openpilot_function_fixture):
+  """Ensure a consistent state for tests on-device. Needs the openpilot function fixture to run first."""
   HARDWARE.initialize_hardware()
   HARDWARE.set_power_save(False)
   os.system("pkill -9 -f athena")
-  os.system("rm /dev/shm/*")
 
 
 @pytest.hookimpl(tryfirst=True)

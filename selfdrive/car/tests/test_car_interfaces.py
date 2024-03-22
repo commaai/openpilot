@@ -22,7 +22,7 @@ from openpilot.selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
 
 ALL_ECUS = list({ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()})
 
-MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '20'))
+MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '40'))
 
 
 def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
@@ -46,11 +46,6 @@ def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
 
 
 class TestCarInterfaces(unittest.TestCase):
-
-  @classmethod
-  def setUpClass(cls):
-    os.environ['NO_RADAR_SLEEP'] = '1'
-
   # FIXME: Due to the lists used in carParams, Phase.target is very slow and will cause
   #  many generated examples to overrun when max_examples > ~20, don't use it
   @parameterized.expand([(car,) for car in sorted(all_known_cars())])

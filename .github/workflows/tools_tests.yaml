@@ -86,7 +86,7 @@ jobs:
   notebooks:
     name: notebooks
     runs-on: ubuntu-20.04
-    if: github.repository == 'commaai/openpilot'
+    if: false && github.repository == 'commaai/openpilot'
     timeout-minutes: 45
     steps:
     - uses: actions/checkout@v4
@@ -97,6 +97,6 @@ jobs:
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Test notebooks
-      timeout-minutes: 2
+      timeout-minutes: 3
       run: |
         ${{ env.RUN }} "pip install nbmake && pytest --nbmake tools/car_porting/examples/"

@@ -44,6 +44,7 @@ kj::Array<capnp::word> logger_build_init_data() {
   std::map<std::string, std::string> params_map = params.readAll();
 
   init.setGitCommit(params_map["GitCommit"]);
+  init.setGitCommitDate(params_map["GitCommitDate"]);
   init.setGitBranch(params_map["GitBranch"]);
   init.setGitRemote(params_map["GitRemote"]);
   init.setPassive(false);
@@ -88,15 +89,6 @@ kj::Array<capnp::word> logger_build_init_data() {
   return capnp::messageToFlatArray(msg);
 }
 
-std::string logger_get_route_name() {
-  char route_name[64] = {'\0'};
-  time_t rawtime = time(NULL);
-  struct tm timeinfo;
-  localtime_r(&rawtime, &timeinfo);
-  strftime(route_name, sizeof(route_name), "%Y-%m-%d--%H-%M-%S", &timeinfo);
-  return route_name;
-}
-
 std::string logger_get_identifier(std::string key) {
   // a log identifier is a 32 bit counter, plus a 10 character unique ID.
   // e.g. 000001a3--c20ba54385
@@ -130,7 +122,7 @@ static void log_sentinel(LoggerState *log, SentinelType type, int eixt_signal = 
 }
 
 LoggerState::LoggerState(const std::string &log_root) {
-  route_name = logger_get_route_name();
+  route_name = logger_get_identifier("RouteCount");
   route_path = log_root + "/" + route_name;
   init_data = logger_build_init_data();
 }

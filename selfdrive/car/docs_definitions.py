@@ -3,7 +3,6 @@ from collections import namedtuple
 import copy
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Dict, List, Optional, Tuple, Union
 
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
@@ -35,7 +34,7 @@ class Star(Enum):
 @dataclass
 class BasePart:
   name: str
-  parts: List[Enum] = field(default_factory=list)
+  parts: list[Enum] = field(default_factory=list)
 
   def all_parts(self):
     # Recursively get all parts
@@ -76,7 +75,7 @@ class Accessory(EnumBase):
 
 @dataclass
 class BaseCarHarness(BasePart):
-  parts: List[Enum] = field(default_factory=lambda: [Accessory.harness_box, Accessory.comma_power_v2, Cable.rj45_cable_7ft])
+  parts: list[Enum] = field(default_factory=lambda: [Accessory.harness_box, Accessory.comma_power_v2, Cable.rj45_cable_7ft])
   has_connector: bool = True  # without are hidden on the harness connector page
 
 
@@ -119,7 +118,8 @@ class CarHarness(EnumBase):
   nissan_b = BaseCarHarness("Nissan B connector", parts=[Accessory.harness_box, Cable.rj45_cable_7ft, Cable.long_obdc_cable, Cable.usbc_coupler])
   mazda = BaseCarHarness("Mazda connector")
   ford_q3 = BaseCarHarness("Ford Q3 connector")
-  ford_q4 = BaseCarHarness("Ford Q4 connector")
+  ford_q4 = BaseCarHarness("Ford Q4 connector", parts=[Accessory.harness_box, Accessory.comma_power_v2, Cable.rj45_cable_7ft, Cable.long_obdc_cable,
+                                                       Cable.usbc_coupler])
 
 
 class Device(EnumBase):
@@ -149,18 +149,18 @@ class PartType(Enum):
   tool = Tool
 
 
-DEFAULT_CAR_PARTS: List[EnumBase] = [Device.threex]
+DEFAULT_CAR_PARTS: list[EnumBase] = [Device.threex]
 
 
 @dataclass
 class CarParts:
-  parts: List[EnumBase] = field(default_factory=list)
+  parts: list[EnumBase] = field(default_factory=list)
 
   def __call__(self):
     return copy.deepcopy(self)
 
   @classmethod
-  def common(cls, add: Optional[List[EnumBase]] = None, remove: Optional[List[EnumBase]] = None):
+  def common(cls, add: list[EnumBase] = None, remove: list[EnumBase] = None):
     p = [part for part in (add or []) + DEFAULT_CAR_PARTS if part not in (remove or [])]
     return cls(p)
 
@@ -186,7 +186,7 @@ class CommonFootnote(Enum):
     Column.LONGITUDINAL)
 
 
-def get_footnotes(footnotes: List[Enum], column: Column) -> List[Enum]:
+def get_footnotes(footnotes: list[Enum], column: Column) -> list[Enum]:
   # Returns applicable footnotes given current column
   return [fn for fn in footnotes if fn.value.column == column]
 
@@ -209,7 +209,7 @@ def get_year_list(years):
   return years_list
 
 
-def split_name(name: str) -> Tuple[str, str, str]:
+def split_name(name: str) -> tuple[str, str, str]:
   make, model = name.split(" ", 1)
   years = ""
   match = re.search(MODEL_YEARS_RE, model)
@@ -220,7 +220,7 @@ def split_name(name: str) -> Tuple[str, str, str]:
 
 
 @dataclass
-class CarInfo:
+class CarDocs:
   # make + model + model years
   name: str
 
@@ -233,13 +233,13 @@ class CarInfo:
 
   # the minimum compatibility requirements for this model, regardless
   # of market. can be a package, trim, or list of features
-  requirements: Optional[str] = None
+  requirements: str | None = None
 
-  video_link: Optional[str] = None
-  footnotes: List[Enum] = field(default_factory=list)
-  min_steer_speed: Optional[float] = None
-  min_enable_speed: Optional[float] = None
-  auto_resume: Optional[bool] = None
+  video_link: str | None = None
+  footnotes: list[Enum] = field(default_factory=list)
+  min_steer_speed: float | None = None
+  min_enable_speed: float | None = None
+  auto_resume: bool | None = None
 
   # all the parts needed for the supported car
   car_parts: CarParts = field(default_factory=CarParts)
@@ -248,7 +248,7 @@ class CarInfo:
     self.make, self.model, self.years = split_name(self.name)
     self.year_list = get_year_list(self.years)
 
-  def init(self, CP: car.CarParams, all_footnotes: Dict[Enum, int]):
+  def init(self, CP: car.CarParams, all_footnotes: dict[Enum, int]):
     self.car_name = CP.carName
     self.car_fingerprint = CP.carFingerprint
 
@@ -266,7 +266,7 @@ class CarInfo:
     # min steer & enable speed columns
     # TODO: set all the min steer speeds in carParams and remove this
     if self.min_steer_speed is not None:
-      assert CP.minSteerSpeed == 0, f"{CP.carFingerprint}: Minimum steer speed set in both CarInfo and CarParams"
+      assert CP.minSteerSpeed == 0, f"{CP.carFingerprint}: Minimum steer speed set in both CarDocs and CarParams"
     else:
       self.min_steer_speed = CP.minSteerSpeed
 
@@ -293,7 +293,7 @@ class CarInfo:
       if len(tools_docs):
         hardware_col += f'<details><summary>Tools</summary><sub>{display_func(tools_docs)}</sub></details>'
 
-    self.row: Dict[Enum, Union[str, Star]] = {
+    self.row: dict[Enum, str | Star] = {
       Column.MAKE: self.make,
       Column.MODEL: self.model,
       Column.PACKAGE: self.package,
@@ -317,7 +317,7 @@ class CarInfo:
     return self
 
   def init_make(self, CP: car.CarParams):
-    """CarInfo subclasses can add make-specific logic for harness selection, footnotes, etc."""
+    """CarDocs subclasses can add make-specific logic for harness selection, footnotes, etc."""
 
   def get_detail_sentence(self, CP):
     if not CP.notCar:
@@ -346,13 +346,13 @@ class CarInfo:
       return sentence_builder.format(car_model=f"{self.make} {self.model}", alc=alc, acc=acc)
 
     else:
-      if CP.carFingerprint == "COMMA BODY":
+      if CP.carFingerprint == "COMMA_BODY":
         return "The body is a robotics dev kit that can run openpilot. <a href='https://www.commabody.com'>Learn more.</a>"
       else:
         raise Exception(f"This notCar does not have a detail sentence: {CP.carFingerprint}")
 
   def get_column(self, column: Column, star_icon: str, video_icon: str, footnote_tag: str) -> str:
-    item: Union[str, Star] = self.row[column]
+    item: str | Star = self.row[column]
     if isinstance(item, Star):
       item = star_icon.format(item.value)
     elif column == Column.MODEL and len(self.years):
