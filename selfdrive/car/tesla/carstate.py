@@ -54,7 +54,7 @@ class CarState(CarStateBase):
     else:
       epas_msg = "EPAS_sysStatus"
     if model3:
-      epas_status = cp_cam.vl[epas_msg]
+      epas_status = cp.vl[epas_msg]
     elif models_raven:
       epas_status = cp_cam.vl[epas_msg]
     else:
@@ -68,13 +68,13 @@ class CarState(CarStateBase):
       self.steer_warning = self.can_define.dv["EPAS_sysStatus"]["EPAS_eacErrorCode"].get(int(epas_status["EPAS_eacErrorCode"]), None)
       steer_status = self.can_define.dv["EPAS_sysStatus"]["EPAS_eacStatus"].get(int(epas_status["EPAS_eacStatus"]), None)
 
-    ret.steeringAngleDeg = -cp_adas.vl["SCCM_steeringAngleSensor"]["SCCM_steeringAngle"] if model3 else -epas_status["EPAS_internalSAS"]
+    ret.steeringAngleDeg = -epas_status["EPAS3S_internalSAS"] if model3 else -epas_status["EPAS_internalSAS"]
     if model3:
       ret.steeringRateDeg = -cp_adas.vl["SCCM_steeringAngleSensor"]["SCCM_steeringAngleSpeed"]  # This is from a different angle sensor, and at different rate
     else:
       ret.steeringRateDeg = -cp.vl["STW_ANGLHP_STAT"]["StW_AnglHP_Spd"]  # This is from a different angle sensor, and at different rate
 
-    ret.steeringTorque = -epas_status["EPAS3P_torsionBarTorque"] if model3 else -epas_status["EPAS_torsionBarTorque"]
+    ret.steeringTorque = -epas_status["EPAS3S_torsionBarTorque"] if model3 else -epas_status["EPAS_torsionBarTorque"]
     ret.steeringPressed = (self.hands_on_level > 0)
     ret.steerFaultPermanent = steer_status in ["EAC_FAULT", "EAC_ERROR_TMP_FAULT"]
     ret.steerFaultTemporary = (self.steer_warning not in ("EAC_ERROR_IDLE", "EAC_ERROR_HANDS_ON"))
@@ -188,6 +188,7 @@ class CarState(CarStateBase):
         ("DI_systemStatus", 100),
         ("IBST_status", 25),
         ("DI_state", 10),
+        ("EPAS3S_sysStatus", 100)
       ]
 
     return CANParser(DBC[CP.carFingerprint]['chassis'], messages, CANBUS.chassis)
@@ -201,8 +202,6 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint == CAR.MODELS_RAVEN:
       messages.append(("EPAS3P_sysStatus", 100))
-    elif CP.carFingerprint == CAR.AP3_MODEL3:
-      messages.append(("EPAS3S_sysStatus", 100))
 
     return CANParser(DBC[CP.carFingerprint]['chassis'], messages, CANBUS.autopilot_chassis)
 

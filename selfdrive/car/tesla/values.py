@@ -77,7 +77,6 @@ class CANBUS:
   party = 0
   vehicle = 1
   autopilot_party = 2
-  ext_chassis = 5
 
 
 GEAR_MAP = {
