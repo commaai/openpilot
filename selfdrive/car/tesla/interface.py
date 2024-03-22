@@ -55,7 +55,7 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   def _update(self, c):
-    ret = self.CS.update(self.cp, self.cp_cam, self.cp_adas, self.cp_body)
+    ret = self.CS.update(self.cp, self.cp_cam, self.cp_adas)
 
     ret.events = self.create_common_events(ret).to_msg()
 
