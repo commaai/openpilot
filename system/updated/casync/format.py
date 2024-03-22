@@ -7,7 +7,7 @@ import shutil
 import struct
 
 import requests
-from openpilot.system.updated.casync.reader import DirectoryChunkReader, AutoChunkReader
+from openpilot.system.updated.casync.reader import DirectoryChunkReader
 
 
 # from https://github.com/systemd/casync/blob/e6817a79d89b48e1c6083fb1868a28f1afb32505/src/caformat.h#L49
@@ -38,13 +38,13 @@ CA_MAX_FILENAME_SIZE = 256
 @dataclass
 class CAFormatHeader(abc.ABC):
   size: int
-  type: int
+  format_type: int
 
   @staticmethod
   def from_buffer(b: io.BytesIO) -> 'CAFormatHeader':
-    size, type = struct.unpack("<QQ", b.read(CA_TABLE_HEADER_LEN))
+    size, format_type = struct.unpack("<QQ", b.read(CA_TABLE_HEADER_LEN))
 
-    return CAFormatHeader(size, type)
+    return CAFormatHeader(size, format_type)
 
 
 @dataclass
@@ -74,7 +74,7 @@ class CaFormatIndex:
   @staticmethod
   def from_buffer(b: io.BytesIO):
     header = CAFormatHeader.from_buffer(b)
-    assert header.type == CA_FORMAT_INDEX
+    assert header.format_type == CA_FORMAT_INDEX
     return CaFormatIndex(header, *struct.unpack("<QQQQ", b.read(CA_HEADER_LEN)))
 
 
@@ -97,12 +97,15 @@ class CATableItem:
 
 @dataclass
 class CATable:
+  index: CaFormatIndex
+
   items: list[CATableItem]
 
   @staticmethod
   def from_buffer(b: io.BytesIO):
+    index = CaFormatIndex.from_buffer(b)
     header = CAFormatHeader.from_buffer(b)
-    assert header.type == CA_FORMAT_TABLE
+    assert header.format_type == CA_FORMAT_TABLE
 
     items = []
     while True:
@@ -112,14 +115,21 @@ class CATable:
         break
       items.append(item)
 
-    return CATable(items)
+    return CATable(index, items)
 
   def to_chunks(self) -> list[CAChunk]:
     offset = 0
     ret = []
-    for item in self.items:
+    for i, item in enumerate(self.items):
       length = item.offset - offset
-      ret.append(CAChunk(item.chunk_id, item.offset, length))
+
+      assert length <= self.index.chunk_size_max
+
+      # Last chunk can be smaller
+      if i < len(self.items) - 1:
+        assert length >= self.index.chunk_size_min
+
+      ret.append(CAChunk(item.chunk_id, offset, length))
       offset += length
 
     return ret
@@ -131,11 +141,6 @@ class CAIndex:
 
   @staticmethod
   def from_buffer(b: io.BytesIO):
-    b.seek(0, os.SEEK_END)
-    length = b.tell()
-    b.seek(0, os.SEEK_SET)
-
-    index = CaFormatIndex.from_buffer(b)
     table = CATable.from_buffer(b)
 
     chunks = table.to_chunks()
@@ -147,9 +152,6 @@ class CAIndex:
     with open(filepath, "rb") as f:
       return CAIndex.from_buffer(f)
 
-  def chunks(self):
-    return self.chunks
-
 
 @dataclass
 class CAFilename:
@@ -157,7 +159,7 @@ class CAFilename:
 
   @staticmethod
   def from_buffer(b: io.BytesIO):
-    header = CAFormatHeader.from_buffer(b)
+    _ = CAFormatHeader.from_buffer(b)
 
     filename = b""
 
@@ -181,7 +183,7 @@ class CAEntry:
 
   @staticmethod
   def from_buffer(b: io.BytesIO):
-    entry = CAFormatHeader.from_buffer(b)
+    _ = CAFormatHeader.from_buffer(b)
     return CAEntry(*struct.unpack("<QQQQQQ", b.read(8*6)))
 
 
@@ -206,7 +208,7 @@ class CASymlink:
 
   @staticmethod
   def from_buffer(b: io.BytesIO):
-    header = CAFormatHeader.from_buffer(b)
+    _ = CAFormatHeader.from_buffer(b)
 
     target = b""
 
@@ -234,7 +236,7 @@ class CAArchive:
   items: list
 
   @staticmethod
-  def from_buffer(b: io.BytesIO):
+  def from_buffer(b: io.BytesIO) -> 'CAArchive':
     entry = CAEntry.from_buffer(b)
 
     assert entry.feature_flags == REQUIRED_FLAGS
@@ -249,33 +251,41 @@ class CAArchive:
       header = CAFormatHeader.from_buffer(b)
       b.seek(-16, 1) # reset back to header
 
-      if header.type == CA_FORMAT_GOODBYE:
-        goodbye = CAGoodbye.from_buffer(b)
-        items.append(goodbye)
-      elif header.type == CA_FORMAT_FILENAME:
+      if header.format_type == CA_FORMAT_FILENAME:
         filename = CAFilename.from_buffer(b)
         archive = CAArchive.from_buffer(b)
         items.append(filename)
         items.append(archive)
-      elif header.type == CA_FORMAT_PAYLOAD:
+      elif header.format_type == CA_FORMAT_GOODBYE:
+        goodbye = CAGoodbye.from_buffer(b)
+        items.append(goodbye)
+        break
+      elif header.format_type == CA_FORMAT_PAYLOAD:
         payload = CAPayload.from_buffer(b)
         items.append(payload)
-      elif header.type == CA_FORMAT_SYMLINK:
+        break
+      elif header.format_type == CA_FORMAT_SYMLINK:
         symlink = CASymlink.from_buffer(b)
         items.append(symlink)
+        break
       else:
-        raise Exception(f"unsupported type: {header.type:02x}")
+        raise Exception(f"unsupported type: {header.format_type:02x}")
 
     return CAArchive(items)
 
 
 @dataclass
-class Node:
+class Node(abc.ABC):
   entry: CAEntry
-  paths: list[CAFilename]
+  paths: list[CAFilename | None]
 
   def _path(self):
-    return os.path.join(*[f.filename for f in self.paths])
+    assert self.paths[0] is None
+    return os.path.join(*[f.filename for f in self.paths[1:]])
+
+  @abc.abstractmethod
+  def save(self, directory: pathlib.Path):
+    pass
 
 
 @dataclass
@@ -309,7 +319,7 @@ class Tree:
   def parse(self, archive: CAArchive, current_paths: list[CAFilename | None]):
     current_entry = None
 
-    ret = []
+    ret: list[Node] = []
 
     for item in archive.items:
       if isinstance(item, CAFilename):
@@ -317,10 +327,12 @@ class Tree:
       if isinstance(item, CAEntry):
         current_entry = item
       if isinstance(item, CAPayload):
-        ret.append(FileNode(current_entry, current_paths[1:], item))
+        assert current_entry is not None
+        ret.append(FileNode(current_entry, current_paths, item))
         current_paths.pop()
       if isinstance(item, CASymlink):
-        ret.append(SymlinkNode(current_entry, current_paths[1:], item))
+        assert current_entry is not None
+        ret.append(SymlinkNode(current_entry, current_paths, item))
         current_paths.pop()
       if isinstance(item, CAGoodbye):
         current_paths.pop()
@@ -363,5 +375,5 @@ def extract_archive(archive: CAArchive, directory: pathlib.Path):
 
 
 if __name__ == "__main__":
-  archive = parse_caidx("/tmp/casync/nightly_rebuild.caidx")
-  extract_archive(archive, pathlib.Path("/tmp/nightly-test"))
+  archive = parse_caidx("/tmp/ceec/nightly_rebuild.caidx")
+  extract_archive(archive, pathlib.Path("/tmp/nightly-test3"))

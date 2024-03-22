@@ -79,12 +79,8 @@ class DirectoryChunkReader(ChunkReader):
     filename = os.path.join(self.directory, sha_hex[:4], sha_hex + ".cacnk")
 
     with open(filename, "rb") as f:
-      ret = f.read()
       decompressor = lzma.LZMADecompressor(format=lzma.FORMAT_AUTO)
-      ret = decompressor.decompress(ret)
-
-      assert len(ret) == chunk.length
-      return ret
+      return decompressor.decompress(f.read())
 
 
 def AutoChunkReader(path: str):
