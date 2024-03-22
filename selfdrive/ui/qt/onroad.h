@@ -9,6 +9,7 @@
 #include "common/util.h"
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/widgets/cameraview.h"
+#include "selfdrive/ui/qt/offroad/replay_controls.h"
 
 
 const int btn_size = 192;
@@ -130,11 +131,16 @@ private:
   void createMapWidget();
   void paintEvent(QPaintEvent *event);
   void mousePressEvent(QMouseEvent* e) override;
+  void resizeEvent(QResizeEvent *event) override;
+  void startReplay(const QString &route, const QString &data_dir);
+  void stopReplay();
+
   OnroadAlerts *alerts;
   AnnotatedCameraWidget *nvg;
   QColor bg = bg_colors[STATUS_DISENGAGED];
   QWidget *map = nullptr;
   QHBoxLayout* split;
+  std::unique_ptr<ReplayControls> replay_controls = nullptr;
 
 private slots:
   void offroadTransition(bool offroad);

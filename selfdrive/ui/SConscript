@@ -1,10 +1,10 @@
 import os
 import json
 Import('qt_env', 'arch', 'common', 'messaging', 'visionipc',
-       'cereal', 'transformations')
+       'cereal', 'transformations', 'replay_lib')
 
 base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
-             'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
+             'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread', 'curl', 'common', 'avutil', 'avcodec', 'avformat', 'bz2'] + qt_env["LIBS"]
 
 if arch == 'larch64':
   base_libs.append('EGL')
@@ -34,12 +34,12 @@ if maps:
 
 widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
 Export('widgets')
-qt_libs = [widgets, qt_util] + base_libs
+qt_libs = [widgets, qt_util] + base_libs + replay_lib + ['cereal', 'avutil', 'avcodec', 'avformat', 'bz2', 'curl', 'yuv']
 
 qt_src = ["main.cc", "qt/sidebar.cc", "qt/onroad.cc", "qt/body.cc",
           "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc",
           "qt/offroad/software_settings.cc", "qt/offroad/onboarding.cc",
-          "qt/offroad/driverview.cc", "qt/offroad/experimental_mode.cc"]
+          "qt/offroad/driverview.cc", "qt/offroad/experimental_mode.cc", "qt/offroad/replay_controls.cc"]
 
 # build translation files
 with open(File("translations/languages.json").abspath) as f:

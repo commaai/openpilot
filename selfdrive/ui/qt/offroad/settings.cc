@@ -9,6 +9,7 @@
 #include "common/watchdog.h"
 #include "common/util.h"
 #include "selfdrive/ui/qt/network/networking.h"
+#include "selfdrive/ui/qt/offroad/replay_controls.h"
 #include "selfdrive/ui/qt/offroad/settings.h"
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/widgets/prime.h"
@@ -406,6 +407,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     {tr("Network"), new Networking(this)},
     {tr("Toggles"), toggles},
     {tr("Software"), new SoftwarePanel(this)},
+    {"Replay", new ReplayPanel(this)},
   };
 
   nav_btns = new QButtonGroup(this);

@@ -66,6 +66,8 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   QObject::connect(uiState(), &UIState::uiUpdate, this, &OnroadWindow::updateState);
   QObject::connect(uiState(), &UIState::offroadTransition, this, &OnroadWindow::offroadTransition);
   QObject::connect(uiState(), &UIState::primeChanged, this, &OnroadWindow::primeChanged);
+  QObject::connect(uiState(), &UIState::startReplay, this, &OnroadWindow::startReplay);
+  QObject::connect(uiState(), &UIState::stopReplay, this, &OnroadWindow::stopReplay);
 }
 
 void OnroadWindow::updateState(const UIState &s) {
@@ -142,6 +144,27 @@ void OnroadWindow::primeChanged(bool prime) {
     createMapWidget();
   }
 #endif
+}
+
+void OnroadWindow::startReplay(const QString &route, const QString &data_dir) {
+  Params().putBool("IsReplaying", true);
+  replay_controls.reset(new ReplayControls(this));
+  replay_controls->raise();
+  replay_controls->start(route, data_dir);
+  uiState()->replaying = true;
+}
+
+void OnroadWindow::stopReplay() {
+  replay_controls.reset(nullptr);
+  uiState()->replaying = false;
+  Params().putBool("IsReplaying", false);
+}
+
+void OnroadWindow::resizeEvent(QResizeEvent *event) {
+  if (replay_controls) {
+    replay_controls->adjustPosition();
+  }
+  QWidget::resizeEvent(event);
 }
 
 void OnroadWindow::paintEvent(QPaintEvent *event) {
