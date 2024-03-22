@@ -6,7 +6,7 @@ import subprocess
 from openpilot.system.version import BUILD_METADATA_FILENAME, BuildMetadata
 
 
-CASYNC_ARGS = ["--with=symlinks", "--with=permissions"]
+CASYNC_ARGS = ["--with=symlinks", "--with=permissions", "--compression=xz"]
 CASYNC_FILES = [BUILD_METADATA_FILENAME, ".caexclude"]
 
 
