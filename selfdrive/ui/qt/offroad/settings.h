@@ -10,7 +10,6 @@
 #include <QStackedWidget>
 #include <QWidget>
 
-
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
