@@ -742,6 +742,53 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
   # We lose these ECUs without the comma power on these cars.
   # Note that we still attempt to match with them when they are present
+  # HYUNDAI_SANTA_FE_2022
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 182, dongles: {'7a6ba99ba49954c0', '1ad7728ce54a161d', '2fcc9a43453b10de'}
+  # ---
+  #
+  # GENESIS_G70
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 48, dongles: {'edbaee4bf8d33eee'}
+  # ---
+  #
+  # KIA_K5_2021
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 17, dongles: {'0b91b433b9332780'}
+  # ---
+  #
+  # HYUNDAI_SONATA
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 299, dongles: {'ed882557605319f9', 'e425a1ba2f5f42b3', '4203853bc02e087a', '4960a9f1dd71aad1', 'a02a3dd8ad858fa3', '20caa585ef1501af', '310cf131d28b30d8', 'b0af2fff166d80fe', '4b2d45ebeaf6be75', 'b938870bef07f799', '4df896aa825bd9b3'}
+  # ---
+  #
+  # HYUNDAI_SONATA_HYBRID
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 64, dongles: {'49734429dda9bbe7', 'f152e524f24c58d4'}
+  # ---
+  #
+  # HYUNDAI_ELANTRA_2021
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 19, dongles: {'81ba2bbf97deef94'}
+  # ---
+  #
+  # KIA_OPTIMA_G4_FL
+  # ('abs', 'fwdCamera', 'fwdRadar', 'transmission'): routes: 25, dongles: {'9c179cb211aa1609'}
+  # ---
+  #
+  # HYUNDAI_ELANTRA_HEV_2021
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 31, dongles: {'eb5a50f9e98f50b9', '8d49af2b041f8c5c'}
+  # ---
+  #
+  # KIA_NIRO_EV
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 44, dongles: {'a1b9acdbb4c2fa86', 'c04b1653edb84818', 'b576d2ff8a193b4a'}
+  # ---
+  #
+  # HYUNDAI_PALISADE
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 27, dongles: {'ea0d8e2a4cf9ce46', '075d96dd1286fdc9', 'ecdc140c384bc3fb'}
+  # ---
+  #
+  # HYUNDAI_IONIQ_EV_2020
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 23, dongles: {'47ffae6b1d1580b2', '26e73a0e32642dc4'}
+  # ---
+  #
+  # HYUNDAI_SANTA_FE
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 4, dongles: {'9ebc35731309da40', '45a8ffd448481ce2'}
+  # ---
   non_essential_ecus={
     Ecu.transmission: [CAR.HYUNDAI_AZERA_6TH_GEN, CAR.HYUNDAI_AZERA_HEV_6TH_GEN, CAR.HYUNDAI_PALISADE, CAR.HYUNDAI_SONATA],
     Ecu.engine: [CAR.HYUNDAI_AZERA_6TH_GEN, CAR.HYUNDAI_AZERA_HEV_6TH_GEN, CAR.HYUNDAI_PALISADE, CAR.HYUNDAI_SONATA],
