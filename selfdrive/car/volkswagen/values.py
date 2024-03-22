@@ -334,6 +334,7 @@ class CAR(Platforms):
     [
       VWCarDocs("Škoda Octavia 2015-19"),
       VWCarDocs("Škoda Octavia RS 2016"),
+      VWCarDocs("Škoda Octavia Scout 2017-19"),
     ],
     VolkswagenCarSpecs(mass=1388, wheelbase=2.68),
   )
