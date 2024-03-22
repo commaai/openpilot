@@ -152,7 +152,7 @@ def string_from_buffer(b: io.BytesIO):
       break
     string += c
 
-  return string
+  return string.decode("utf-8")
 
 
 @dataclass
