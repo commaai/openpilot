@@ -54,11 +54,11 @@ class CarController(CarControllerBase):
       pcm_cancel_cmd = True
 
     if self.frame % 10 == 0 and pcm_cancel_cmd:
-      # Spam every possible counter value, otherwise it might not be accepted
-      for counter in range(16):
-        if self.model3:
-          can_sends.append(self.tesla_can.model3_cancel_acc(counter))
-        else:
+      if self.model3:
+        can_sends.append(self.tesla_can.model3_cancel_acc(CS.sccm_right_stalk))
+      else:
+        # Spam every possible counter value, otherwise it might not be accepted
+        for counter in range(16):
           can_sends.append(self.tesla_can.create_action_request(CS.msg_stw_actn_req, pcm_cancel_cmd, CANBUS.chassis, counter))
           can_sends.append(self.tesla_can.create_action_request(CS.msg_stw_actn_req, pcm_cancel_cmd, CANBUS.autopilot_chassis, counter))
 

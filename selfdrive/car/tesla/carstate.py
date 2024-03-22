@@ -7,6 +7,7 @@ from openpilot.selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
 
+
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
@@ -16,6 +17,7 @@ class CarState(CarStateBase):
 
     # Needed by carcontroller
     self.msg_stw_actn_req = None
+    self.sccm_right_stalk = None
     self.hands_on_level = 0
     self.steer_warning = None
     self.acc_state = 0
@@ -45,7 +47,12 @@ class CarState(CarStateBase):
       ret.brakePressed = bool(cp.vl["BrakeMessage"]["driverBrakeStatus"] != 1)
 
     # Steering wheel
-    epas_msg = "EPAS3P_sysStatus" if models_raven or model3 else "EPAS_sysStatus"
+    if model3:
+      epas_msg = "EPAS3S_sysStatus"
+    elif models_raven:
+      epas_msg = "EPAS3P_sysStatus"
+    else:
+      epas_msg = "EPAS_sysStatus"
     if model3:
       epas_status = cp_body.vl[epas_msg]
     elif models_raven:
@@ -69,7 +76,7 @@ class CarState(CarStateBase):
 
     ret.steeringTorque = -epas_status["EPAS3P_torsionBarTorque"] if model3 else -epas_status["EPAS_torsionBarTorque"]
     ret.steeringPressed = (self.hands_on_level > 0)
-    ret.steerFaultPermanent = steer_status == "EAC_FAULT"
+    ret.steerFaultPermanent = steer_status in ["EAC_FAULT", "EAC_ERROR_TMP_FAULT"]
     ret.steerFaultTemporary = (self.steer_warning not in ("EAC_ERROR_IDLE", "EAC_ERROR_HANDS_ON"))
 
     # Cruise state
@@ -116,7 +123,7 @@ class CarState(CarStateBase):
 
     # Doors
     if model3:
-      ret.doorOpen = False #(cp_adas.vl["VCFRONT_status"]["VCFRONT_anyDoorOpen"] == 1)  # todo add trunk
+      ret.doorOpen = False  # (cp_adas.vl["VCFRONT_status"]["VCFRONT_anyDoorOpen"] == 1)  # todo add trunk
     else:
       ret.doorOpen = any((self.can_define.dv["GTW_carState"][door].get(int(cp.vl["GTW_carState"][door]), "OPEN") == "OPEN") for door in DOORS)
 
@@ -145,7 +152,9 @@ class CarState(CarStateBase):
     ret.stockAeb = (cp_cam.vl["DAS_control"]["DAS_aebEvent"] == 1)
 
     # Messages needed by carcontroller
-    if not model3:
+    if model3:
+      self.sccm_right_stalk = copy.copy(cp.vl["SCCM_rightStalk"])
+    else:
       self.msg_stw_actn_req = copy.copy(cp.vl["STW_ACTN_RQ"])
     self.acc_state = cp_cam.vl["DAS_control"]["DAS_accState"]
     self.das_control_counters.extend(cp_cam.vl_all["DAS_control"]["DAS_controlCounter"])
@@ -179,6 +188,7 @@ class CarState(CarStateBase):
         ("DI_systemStatus", 100),
         ("IBST_status", 25),
         ("DI_state", 10),
+        ("EPAS3S_sysStatus", 100)
       ]
 
     return CANParser(DBC[CP.carFingerprint]['chassis'], messages, CANBUS.chassis)
@@ -214,6 +224,5 @@ class CarState(CarStateBase):
     if CP.carFingerprint == CAR.AP3_MODEL3:
       messages = [
         ("DAS_status", 2),
-        ("EPAS3P_sysStatus", 100),
       ]
       return CANParser(DBC[CP.carFingerprint]["chassis"], messages, CANBUS.ext_chassis)
