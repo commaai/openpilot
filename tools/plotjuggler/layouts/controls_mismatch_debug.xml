@@ -1,45 +1,44 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <root>
- <tabbed_widget name="Main Window" parent="main_window">
+ <tabbed_widget parent="main_window" name="Main Window">
   <Tab tab_name="tab1" containers="1">
    <Container>
-    <DockSplitter sizes="0.200166;0.200166;0.199336;0.200166;0.200166" orientation="-" count="5">
+    <DockSplitter orientation="-" count="5" sizes="0.2;0.2;0.2;0.2;0.2">
      <DockArea name="...">
-      <plot flip_x="false" mode="TimeSeries" style="Lines" flip_y="false">
-       <range bottom="-0.025000" right="50.400355" left="0.000000" top="1.025000"/>
+      <plot style="Lines" flip_x="false" mode="TimeSeries" flip_y="false">
+       <range top="1.025000" bottom="-0.025000" left="0.018309" right="59.674401"/>
        <limitY/>
-       <curve name="/controlsState/enabled" color="#1f77b4"/>
-       <curve name="/pandaStates/0/controlsAllowed" color="#d62728"/>
+       <curve color="#1f77b4" name="/controlsState/enabled"/>
+       <curve color="#d62728" name="/pandaStates/0/controlsAllowed"/>
       </plot>
      </DockArea>
      <DockArea name="...">
-      <plot flip_x="false" mode="TimeSeries" style="Lines" flip_y="false">
-       <range bottom="-11.322260" right="50.400355" left="0.000000" top="0.439077"/>
+      <plot style="Lines" flip_x="false" mode="TimeSeries" flip_y="false">
+       <range top="27.087398" bottom="-0.905168" left="0.018309" right="59.674401"/>
        <limitY/>
-       <curve name="/controlsState/cumLagMs" color="#9467bd"/>
+       <curve color="#9467bd" name="/controlsState/cumLagMs"/>
       </plot>
      </DockArea>
      <DockArea name="...">
-      <plot flip_x="false" mode="TimeSeries" style="Lines" flip_y="false">
-       <range bottom="-0.025000" right="50.400355" left="0.000000" top="1.025000"/>
+      <plot style="Lines" flip_x="false" mode="TimeSeries" flip_y="false">
+       <range top="1.025000" bottom="-0.025000" left="0.018309" right="59.674401"/>
        <limitY/>
-       <curve name="/pandaStates/0/safetyRxInvalid" color="#f6a814"/>
-       <curve name="/pandaStates/0/safetyRxChecksInvalid" color="#e801ce"/>
+       <curve color="#1f77b4" name="/pandaStates/0/safetyRxInvalid"/>
       </plot>
      </DockArea>
      <DockArea name="...">
-      <plot flip_x="false" mode="TimeSeries" style="Lines" flip_y="false">
-       <range bottom="-0.750000" right="50.400355" left="0.000000" top="30.750000"/>
+      <plot style="Lines" flip_x="false" mode="TimeSeries" flip_y="false">
+       <range top="158.850000" bottom="-2.850000" left="0.018309" right="59.674401"/>
        <limitY/>
-       <curve name="/pandaStates/0/safetyTxBlocked" color="#d62728"/>
+       <curve color="#d62728" name="/pandaStates/0/safetyTxBlocked"/>
       </plot>
      </DockArea>
      <DockArea name="...">
-      <plot flip_x="false" mode="TimeSeries" style="Lines" flip_y="false">
-       <range bottom="-0.025000" right="50.400355" left="0.000000" top="1.025000"/>
+      <plot style="Lines" flip_x="false" mode="TimeSeries" flip_y="false">
+       <range top="1.025000" bottom="-0.025000" left="0.018309" right="59.674401"/>
        <limitY/>
-       <curve name="/carState/gasPressed" color="#1ac938"/>
-       <curve name="/carState/brakePressed" color="#ff7f0e"/>
+       <curve color="#1ac938" name="/carState/gasPressed"/>
+       <curve color="#ff7f0e" name="/carState/brakePressed"/>
       </plot>
      </DockArea>
     </DockSplitter>
