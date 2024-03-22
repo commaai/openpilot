@@ -261,9 +261,9 @@ class CAR(Platforms):
   )
 
 
-HONDA_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+HONDA_ALT_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
   p16(0xF112)
-HONDA_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+HONDA_ALT_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
   p16(0xF112)
 
 FW_QUERY_CONFIG = FwQueryConfig(
@@ -276,17 +276,10 @@ FW_QUERY_CONFIG = FwQueryConfig(
     ),
 
     # Data collection requests:
-    # Attempt to get the radarless Civic 2022+ camera FW
+    # Log manufacturer-specific identifier for current ECUs
     Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.UDS_VERSION_REQUEST],
-      [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.UDS_VERSION_RESPONSE],
-      bus=0,
-      logging=True
-    ),
-    # Log extra identifiers for current ECUs
-    Request(
-      [HONDA_VERSION_REQUEST],
-      [HONDA_VERSION_RESPONSE],
+      [HONDA_ALT_VERSION_REQUEST],
+      [HONDA_ALT_VERSION_RESPONSE],
       bus=1,
       logging=True,
     ),
@@ -326,7 +319,10 @@ FW_QUERY_CONFIG = FwQueryConfig(
   },
   extra_ecus=[
     # The only other ECU on PT bus accessible by camera on radarless Civic
-    (Ecu.unknown, 0x18DAB3F1, None),
+    # This is likely a manufacturer-specific sub-address implementation: the camera responds to this and 0x18dab0f1
+    # Unclear what the part number refers to: 8S103 is 'Camera Set Mono', while 36160 is 'Camera Monocular - Honda'
+    # TODO: add query back, camera does not support querying both in parallel and 0x18dab0f1 often fails to respond
+    # (Ecu.unknown, 0x18DAB3F1, None),
   ],
 )
 
