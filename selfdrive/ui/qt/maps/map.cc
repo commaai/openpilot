@@ -112,7 +112,7 @@ void MapWindow::initLayers() {
 }
 
 void MapWindow::updateState(const UIState &s) {
-  if (!uiState()->scene.started) {
+  if (!m_map || !uiState()->scene.started) {
     return;
   }
   const SubMaster &sm = *(s.sm);
@@ -165,7 +165,7 @@ void MapWindow::updateState(const UIState &s) {
     }
   }
 
-  loaded_once = loaded_once || (m_map && m_map->isFullyLoaded());
+  loaded_once = loaded_once || m_map->isFullyLoaded();
   if (!loaded_once) {
     setError(tr("Map Loading"));
     return;
