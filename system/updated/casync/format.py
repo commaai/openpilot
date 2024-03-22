@@ -155,7 +155,7 @@ class CAIndex:
 
 @dataclass
 class CAFilename:
-  filename: str
+  filename: str | None
 
   @staticmethod
   def from_buffer(b: io.BytesIO):
@@ -277,11 +277,10 @@ class CAArchive:
 @dataclass
 class Node(abc.ABC):
   entry: CAEntry
-  paths: list[CAFilename | None]
+  paths: list[CAFilename]
 
   def _path(self):
-    assert self.paths[0] is None
-    return os.path.join(*[f.filename for f in self.paths[1:]])
+    return os.path.join(*[f.filename for f in self.paths])
 
   @abc.abstractmethod
   def save(self, directory: pathlib.Path):
@@ -314,9 +313,9 @@ class Tree:
   nodes: list[Node]
 
   def __init__(self, archive: CAArchive):
-    self.nodes = self.parse(archive, [None])
+    self.nodes = self.parse(archive, [CAFilename(None)])
 
-  def parse(self, archive: CAArchive, current_paths: list[CAFilename | None]):
+  def parse(self, archive: CAArchive, current_paths: list[CAFilename]):
     current_entry = None
 
     ret: list[Node] = []
@@ -328,11 +327,11 @@ class Tree:
         current_entry = item
       if isinstance(item, CAPayload):
         assert current_entry is not None
-        ret.append(FileNode(current_entry, current_paths, item))
+        ret.append(FileNode(current_entry, current_paths[1:], item))
         current_paths.pop()
       if isinstance(item, CASymlink):
         assert current_entry is not None
-        ret.append(SymlinkNode(current_entry, current_paths, item))
+        ret.append(SymlinkNode(current_entry, current_paths[1:], item))
         current_paths.pop()
       if isinstance(item, CAGoodbye):
         current_paths.pop()
