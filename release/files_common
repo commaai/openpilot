@@ -187,6 +187,8 @@ system/ubloxd/generated/*
 system/ubloxd/*.h
 system/ubloxd/*.cc
 
+system/updated/*
+
 selfdrive/locationd/__init__.py
 selfdrive/locationd/SConscript
 selfdrive/locationd/.gitignore
