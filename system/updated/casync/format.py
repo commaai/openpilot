@@ -17,7 +17,10 @@ CA_TABLE_MIN_LEN = CA_TABLE_HEADER_LEN + CA_TABLE_ENTRY_LEN
 CA_FORMAT_INDEX = 0x96824d9c7b129ff9
 CA_FORMAT_TABLE = 0xe75b9e112f17417d
 CA_FORMAT_ENTRY = 0x1396fabcea5bbb51
+CA_FORMAT_GOODBYE = 0xdfd35c5e8327c403
+CA_FORMAT_FILENAME = 0x6dbb6ebcb3161f0b
 
+CA_MAX_FILENAME_SIZE = 256
 
 @dataclass
 class CAFormatHeader(abc.ABC):
@@ -46,6 +49,7 @@ def create_header_with_type(MAGIC_TYPE) -> type[CAFormatHeader]:
 CAIndexHeader = create_header_with_type(CA_FORMAT_INDEX)
 CATableHeader = create_header_with_type(CA_FORMAT_TABLE)
 CAEntryHeader = create_header_with_type(CA_FORMAT_ENTRY)
+CAFilenameHeader = create_header_with_type(CA_FORMAT_FILENAME)
 
 
 @dataclass
@@ -89,8 +93,8 @@ class CAIndex:
     length = b.tell()
     b.seek(0, os.SEEK_SET)
 
-    #format_index = CaFormatIndex.from_buffer(b)
-    #table_header = CATableHeader.from_buffer(b)
+    format_index = CaFormatIndex.from_buffer(b)
+    table_header = CATableHeader.from_buffer(b)
 
     num_chunks = (length - CA_HEADER_LEN - CA_TABLE_MIN_LEN) // CA_TABLE_ENTRY_LEN
 
@@ -111,6 +115,26 @@ class CAIndex:
 
   def chunks(self):
     return self.chunks
+
+
+@dataclass
+class CAFilename:
+  header: CAFilenameHeader
+  filename: str
+
+  @staticmethod
+  def from_buffer(b: io.BytesIO):
+    header = CAFilenameHeader.from_buffer(b)
+
+    filename = b""
+
+    while len(filename) < CA_MAX_FILENAME_SIZE:
+      c = b.read(1)
+      if c == b'\x00':
+        break
+      filename += c
+
+    return CAFilename(header, filename.decode("utf-8"))
 
 
 @dataclass
@@ -136,42 +160,41 @@ class CAArchive:
   @staticmethod
   def from_buffer(b: io.BytesIO):
     entry = CAEntry.from_buffer(b)
-
     return CAArchive(entry)
 
 
 @dataclass
 class CAFile:
-  filename: str
+  filename: CAFilename
   data: bytes
 
   @staticmethod
   def from_bytes(b: io.BytesIO):
-    filename = ""
-    while True:
-      c = b.read(1)
-      if c == 0:
-        break
+    filename = CAFilename.from_buffer(b)
 
     archive = CAArchive.from_buffer(b)
 
     return CAFile(filename, b"1234")
 
 
-
 @dataclass
 class CATar:
   archive: CAArchive
+  files: list[CAFile]
 
   @staticmethod
   def from_bytes(b: io.BytesIO):
     archive = CAArchive.from_buffer(b)
 
-    return CATar(archive)
+    files = []
+    while True:
+      file = CAFile.from_bytes(b)
+      files.append(file)
+
+    return CATar(archive, files)
 
   def files(self) -> list[CAFile]:
-    print(self.archive)
-    #files = []
+
     return CAFile()
 
 
@@ -180,7 +203,7 @@ def parse_caidx(caidx_path) -> CATar:
 
   chunk_reader = DirectoryChunkReader("/tmp/test_casync/default.castr")
 
-  data = b"".join(chunk_reader.read(chunk) for chunk in caidx.chunks[:1])
+  data = b"".join(chunk_reader.read(chunk) for chunk in caidx.chunks)
 
   tar = CATar.from_bytes(io.BytesIO(data))
 
