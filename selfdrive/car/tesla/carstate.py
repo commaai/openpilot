@@ -23,7 +23,7 @@ class CarState(CarStateBase):
     self.acc_state = 0
     self.das_control_counters = deque(maxlen=32)
 
-  def update(self, cp, cp_cam, cp_adas, cp_body):
+  def update(self, cp, cp_cam, cp_adas):
     ret = car.CarState.new_message()
 
     model3 = self.CP.carFingerprint == CAR.AP3_MODEL3
@@ -219,11 +219,3 @@ class CarState(CarStateBase):
         ("VCFRONT_status", 50)
       ]
       return CANParser(DBC[CP.carFingerprint]["pt"], messages, CANBUS.vehicle)
-
-  @staticmethod
-  def get_body_can_parser(CP):  # Chassis Can on Model 3
-    if CP.carFingerprint == CAR.AP3_MODEL3:
-      messages = [
-        #("DAS_status", 2),
-      ]
-      return CANParser(DBC[CP.carFingerprint]["chassis"], messages, CANBUS.ext_chassis)
