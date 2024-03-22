@@ -207,6 +207,10 @@ def thermald_thread(end_event, hw_queue) -> None:
   while not end_event.is_set():
     sm.update(PANDA_STATES_TIMEOUT)
 
+    pandaStates = sm['pandaStates']
+    peripheralState = sm['peripheralState']
+    peripheral_panda_present = peripheralState.pandaType != log.PandaState.PandaType.unknown
+
     if sm.updated['pandaStates'] and len(pandaStates) > 0:
 
       # Set ignition based on any panda connected
@@ -230,10 +234,6 @@ def thermald_thread(end_event, hw_queue) -> None:
     ign_edge = started_ts is None and onroad_conditions["ignition"]
     if (sm.frame % round(SERVICE_LIST['pandaStates'].frequency * DT_TRML) != 0) and not ign_edge:
       continue
-
-    pandaStates = sm['pandaStates']
-    peripheralState = sm['peripheralState']
-    peripheral_panda_present = peripheralState.pandaType != log.PandaState.PandaType.unknown
 
     msg = read_thermal(thermal_config)
     msg.deviceState.deviceType = HARDWARE.get_device_type()
