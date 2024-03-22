@@ -102,11 +102,10 @@ class TestPandad(unittest.TestCase):
       dt = self._run_test(5)
       ts.append(dt)
 
-    # 2s for SPI, 5s for USB (due to enumeration)
-    #  0.2s pandad -> boardd
-    #  1.1s panda boot time (FIXME: it's all the drivers/harness.h init)
-    #  plus some buffer
-    assert 1.0 < (sum(ts)/len(ts)) < (2.0 if self.spi else 5.0)
+    # 5s for USB (due to enumeration)
+    # - 0.2s pandad -> boardd
+    # - plus some buffer
+    assert 0.1 < (sum(ts)/len(ts)) < (0.5 if self.spi else 5.0)
     print("startup times", ts, sum(ts) / len(ts))
 
   def test_protocol_version_check(self):
