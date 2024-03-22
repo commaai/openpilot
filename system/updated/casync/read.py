@@ -16,8 +16,8 @@ class Node(abc.ABC):
   entry: CAEntry
   paths: list[CAFilename]
 
-  def _path(self):
-    return os.path.join(*[f.filename for f in self.paths])
+  def _path(self) -> str:
+    return os.path.join(*[f.filename for f in self.paths if f.filename is not None])
 
   @abc.abstractmethod
   def save(self, directory: pathlib.Path):
