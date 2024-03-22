@@ -927,6 +927,7 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x7e0, None): [
       b'"\x01TOS-0NU06F301J02',
+      b'391182BCK6\x00',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00OS  MDPS C 1.00 1.05 56310J9030\x00 4OSDC105',
@@ -936,6 +937,7 @@ FW_VERSIONS = {
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x816U2VE051\x00\x00\xf1\x006U2V0_C2\x00\x006U2VE051\x00\x00DOS4T16NS3\x00\x00\x00\x00',
+      b'DOS0T16NS3',
     ],
   },
   CAR.KIA_CEED: {
