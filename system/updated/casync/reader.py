@@ -85,3 +85,10 @@ class DirectoryChunkReader(ChunkReader):
 
       assert len(ret) == chunk.length
       return ret
+
+
+def AutoChunkReader(path: str):
+  if "http" in path:
+    return RemoteChunkReader(path)
+  else:
+    return DirectoryChunkReader(path)
