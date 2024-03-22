@@ -60,10 +60,10 @@ class CarState(CarStateBase):
     else:
       epas_status = cp.vl[epas_msg]
 
-    self.hands_on_level = epas_status["EPAS3P_handsOnLevel"] if model3 else epas_status["EPAS_handsOnLevel"]
+    self.hands_on_level = epas_status["EPAS3S_handsOnLevel"] if model3 else epas_status["EPAS_handsOnLevel"]
     if model3:
-      self.steer_warning = self.can_define.dv[epas_msg]["EPAS3P_eacErrorCode"].get(int(epas_status["EPAS3P_eacErrorCode"]), None)
-      steer_status = self.can_define.dv[epas_msg]["EPAS3P_eacStatus"].get(int(epas_status["EPAS3P_eacStatus"]), None)
+      self.steer_warning = self.can_define.dv[epas_msg]["EPAS3S_eacErrorCode"].get(int(epas_status["EPAS3S_eacErrorCode"]), None)
+      steer_status = self.can_define.dv[epas_msg]["EPAS3S_eacStatus"].get(int(epas_status["EPAS3S_eacStatus"]), None)
     else:
       self.steer_warning = self.can_define.dv["EPAS_sysStatus"]["EPAS_eacErrorCode"].get(int(epas_status["EPAS_eacErrorCode"]), None)
       steer_status = self.can_define.dv["EPAS_sysStatus"]["EPAS_eacStatus"].get(int(epas_status["EPAS_eacStatus"]), None)
