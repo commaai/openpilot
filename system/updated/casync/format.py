@@ -170,7 +170,7 @@ class CASymlink:
 
   @staticmethod
   def from_buffer(b: io.BytesIO):
-    return CAFilename(string_from_buffer(b))
+    return CASymlink(string_from_buffer(b))
 
 
 @dataclass
