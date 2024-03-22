@@ -54,7 +54,7 @@ class CarState(CarStateBase):
     else:
       epas_msg = "EPAS_sysStatus"
     if model3:
-      epas_status = cp_body.vl[epas_msg]
+      epas_status = cp_cam.vl[epas_msg]
     elif models_raven:
       epas_status = cp_cam.vl[epas_msg]
     else:
@@ -188,7 +188,6 @@ class CarState(CarStateBase):
         ("DI_systemStatus", 100),
         ("IBST_status", 25),
         ("DI_state", 10),
-        ("EPAS3S_sysStatus", 100)
       ]
 
     return CANParser(DBC[CP.carFingerprint]['chassis'], messages, CANBUS.chassis)
@@ -202,6 +201,8 @@ class CarState(CarStateBase):
 
     if CP.carFingerprint == CAR.MODELS_RAVEN:
       messages.append(("EPAS3P_sysStatus", 100))
+    elif CP.carFingerprint == CAR.AP3_MODEL3:
+      messages = [("EPAS3S_sysStatus", 100)]
 
     return CANParser(DBC[CP.carFingerprint]['chassis'], messages, CANBUS.autopilot_chassis)
 
