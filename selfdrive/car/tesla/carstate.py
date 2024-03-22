@@ -202,7 +202,7 @@ class CarState(CarStateBase):
     if CP.carFingerprint == CAR.MODELS_RAVEN:
       messages.append(("EPAS3P_sysStatus", 100))
     elif CP.carFingerprint == CAR.AP3_MODEL3:
-      messages = [("EPAS3S_sysStatus", 100)]
+      messages.append(("EPAS3S_sysStatus", 100))
 
     return CANParser(DBC[CP.carFingerprint]['chassis'], messages, CANBUS.autopilot_chassis)
 
