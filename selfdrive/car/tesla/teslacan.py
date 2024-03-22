@@ -87,8 +87,22 @@ class TeslaCAN:
       "DAS_controlChecksum": 0,
     }
 
-    for packer, bus in [(self.packer, CANBUS.chassis), (self.pt_packer, CANBUS.powertrain)]:
+    for packer, bus in [(self.packer, CANBUS.chassis)]:  # , (self.pt_packer, CANBUS.powertrain)]: #todo
       data = packer.make_can_msg("DAS_control", bus, values)[2]
       values["DAS_controlChecksum"] = self.checksum(0x2b9, data[:7])
       messages.append(packer.make_can_msg("DAS_control", bus, values))
     return messages
+
+  def model3_cancel_acc(self, counter):
+    # TODO: Implement CRC checksum instead of lookup table.
+    crc_lookup = [166, 164, 178, 141, 163, 161, 61, 25, 172, 69, 22, 108, 169, 207, 209, 219]
+
+    values = {"SCCM_rightStalkCounter": counter % 16,
+              "SCCM_rightStalkCrc": crc_lookup[counter % 16],
+              "SCCM_rightStalkReserved1": 0,
+              "SCCM_parkButtonStatus": 0,
+              "SCCM_rightStalkReserved2": 0,
+              "SCCM_rightStalkStatus": 1,  # half up to cancel acc
+              }
+
+    return self.pt_packer.make_can_msg("SCCM_rightStalk", CANBUS.radar, values)

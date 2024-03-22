@@ -28,6 +28,13 @@ class CAR(Platforms):
     AP1_MODELS.specs,
     dbc_dict('tesla_powertrain', 'tesla_radar_continental_generated', chassis_dbc='tesla_can')
   )
+  AP3_MODEL3 = PlatformConfig(
+    'TESLA AP3 MODEL 3',
+    [CarDocs("Tesla AP3 Model 3", "All")],
+    CarSpecs(mass=1900., wheelbase=2.875, steerRatio=15.0),
+    dbc_dict('tesla_model3_veh', None, chassis_dbc='tesla_model3_ch')
+  )
+
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
@@ -66,6 +73,13 @@ class CANBUS:
   private = 5
   autopilot_powertrain = 6
 
+  # Model 3
+  party = 0
+  vehicle = 1
+  autopilot_party = 2
+  ext_chassis = 5
+
+
 GEAR_MAP = {
   "DI_GEAR_INVALID": car.CarState.GearShifter.unknown,
   "DI_GEAR_P": car.CarState.GearShifter.park,
@@ -85,6 +99,15 @@ BUTTONS = [
   Button(car.CarState.ButtonEvent.Type.decelCruise, "STW_ACTN_RQ", "SpdCtrlLvr_Stat", [8, 32]),
   Button(car.CarState.ButtonEvent.Type.cancel, "STW_ACTN_RQ", "SpdCtrlLvr_Stat", [1]),
   Button(car.CarState.ButtonEvent.Type.resumeCruise, "STW_ACTN_RQ", "SpdCtrlLvr_Stat", [2]),
+]
+
+MODEL3_BUTTONS = [
+  Button(car.CarState.ButtonEvent.Type.leftBlinker, "SCCM_leftStalk", "SCCM_turnIndicatorStalkStatus", [3,4]),
+  Button(car.CarState.ButtonEvent.Type.rightBlinker, "SCCM_leftStalk", "SCCM_turnIndicatorStalkStatus", [1,2]),
+  Button(car.CarState.ButtonEvent.Type.accelCruise, "VCLEFT_switchStatus", "VCLEFT_swcRightScrollTicks", list(range(1, 10))),
+  Button(car.CarState.ButtonEvent.Type.decelCruise, "VCLEFT_switchStatus", "VCLEFT_swcRightScrollTicks", list(range(-9, 0))),
+  Button(car.CarState.ButtonEvent.Type.cancel, "SCCM_rightStalk", "SCCM_rightStalkStatus", [1,2]),
+  Button(car.CarState.ButtonEvent.Type.resumeCruise, "SCCM_rightStalk", "SCCM_rightStalkStatus", [3,4]),
 ]
 
 class CarControllerParams:
