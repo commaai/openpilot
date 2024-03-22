@@ -23,23 +23,27 @@ class TestPandad(unittest.TestCase):
     if len(Panda.list()) == 0:
       self._run_test(60)
 
+    self.spi = HARDWARE.get_device_type() != 'tici'
+
   def tearDown(self):
     managed_processes['pandad'].stop()
 
-  def _run_test(self, timeout=30):
+  def _run_test(self, timeout=30) -> float:
     st = time.monotonic()
-    managed_processes['pandad'].start()
-
     sm = messaging.SubMaster(['pandaStates'])
+
+    managed_processes['pandad'].start()
     while (time.monotonic() - st) < timeout:
       sm.update(100)
       if len(sm['pandaStates']) and sm['pandaStates'][0].pandaType != log.PandaState.PandaType.unknown:
         break
-
+    dt = time.monotonic() - st
     managed_processes['pandad'].stop()
 
     if len(sm['pandaStates']) == 0 or sm['pandaStates'][0].pandaType == log.PandaState.PandaType.unknown:
       raise Exception("boardd failed to start")
+
+    return dt
 
   def _go_to_dfu(self):
     HARDWARE.recover_internal_panda()
@@ -92,17 +96,21 @@ class TestPandad(unittest.TestCase):
     # run once so we're up to date
     self._run_test(60)
 
-    # should be nearly instant this time
+    ts = []
     for _ in range(10):
-      # 3s =
-      #  0.6s python startup
-      #  0.2s pandad -> boardd
-      #  1.3s panda boot time (FIXME: it's all the drivers/harness.h init)
-      #  some buffer
-      self._run_test(3)
+      # should be nearly instant this time
+      dt = self._run_test(5)
+      ts.append(dt)
+
+    # 2s for SPI, 5s for USB (due to enumeration)
+    #  0.2s pandad -> boardd
+    #  1.1s panda boot time (FIXME: it's all the drivers/harness.h init)
+    #  plus some buffer
+    assert 1.0 < (sum(ts)/len(ts)) < (2.0 if self.spi else 5.0)
+    print("startup times", ts, sum(ts) / len(ts))
 
   def test_protocol_version_check(self):
-    if HARDWARE.get_device_type() == 'tici':
+    if not self.spi:
       raise unittest.SkipTest("SPI test")
     # flash old fw
     fn = os.path.join(HERE, "bootstub.panda_h7_spiv0.bin")
