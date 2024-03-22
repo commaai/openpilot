@@ -1,8 +1,8 @@
 #pragma once
 
-#include <QSet>
 #include <QSlider>
 #include <memory>
+#include <set>
 #include <vector>
 
 #include "selfdrive/ui/qt/offroad/settings.h"
@@ -17,7 +17,7 @@ public:
 protected:
   void showEvent(QShowEvent *event) override;
 
-  QSet<QString> route_names;
+  std::set<QString> route_names;
   QString current_route;
   std::vector<ButtonControl *> routes;
   SettingsWindow *settings_window;
