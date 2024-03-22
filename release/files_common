@@ -55,7 +55,7 @@ selfdrive/sentry.py
 selfdrive/tombstoned.py
 selfdrive/statsd.py
 
-selfdrive/updated/*
+selfdrive/updated/**
 
 system/logmessaged.py
 system/micd.py
