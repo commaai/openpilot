@@ -39,16 +39,16 @@ void ReplayPanel::showEvent(QShowEvent *event) {
     if (n >= routes.size()) {
       r = routes.emplace_back(new ButtonControl(*it, "REPLAY"));
       route_list_widget->addItem(r);
-      QObject::connect(r, &ButtonControl::clicked, [this, route_name = *it]() {
+      QObject::connect(r, &ButtonControl::clicked, [this, r]() {
         emit settings_window->closeSettings();
-        emit uiState()->startReplay(route_name, QString::fromStdString(Path::log_root()));
+        emit uiState()->startReplay(r->property("route").toString(), QString::fromStdString(Path::log_root()));
       });
     } else {
       r = routes[n];
     }
     r->setTitle(*it);
+    r->setProperty("route", *it);
     r->setVisible(true);
-    r->setEnabled(!uiState()->engaged() || uiState()->replaying);
   }
   for (; n < routes.size(); ++n) {
     routes[n]->setVisible(false);
