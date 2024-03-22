@@ -140,23 +140,37 @@ class CAIndex:
       return CAIndex.from_buffer(f)
 
 
+
+def string_from_buffer(b: io.BytesIO):
+  _ = CAFormatHeader.from_buffer(b)
+
+  string = b""
+
+  while len(string) < CA_MAX_FILENAME_SIZE:
+    c = b.read(1)
+    if c == b'\x00':
+      break
+    string += c
+
+  return string
+
+
 @dataclass
 class CAFilename:
   filename: str | None
 
   @staticmethod
   def from_buffer(b: io.BytesIO):
-    _ = CAFormatHeader.from_buffer(b)
+    return CAFilename(string_from_buffer(b))
 
-    filename = b""
 
-    while len(filename) < CA_MAX_FILENAME_SIZE:
-      c = b.read(1)
-      if c == b'\x00':
-        break
-      filename += c
+@dataclass
+class CASymlink:
+  target: str
 
-    return CAFilename(filename.decode("utf-8"))
+  @staticmethod
+  def from_buffer(b: io.BytesIO):
+    return CAFilename(string_from_buffer(b))
 
 
 @dataclass
@@ -183,11 +197,6 @@ class CAPayload:
 
     data = b.read(header.size - 16)
     return CAPayload(data)
-
-
-@dataclass
-class CASymlink(CAFilename):
-  pass
 
 
 @dataclass
