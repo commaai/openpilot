@@ -6,15 +6,22 @@
 
 // class ReplayPanel
 
-ReplayPanel::ReplayPanel(SettingsWindow *parent) : settings_window(parent), ListWidget(parent) {
+ReplayPanel::ReplayPanel(SettingsWindow *parent) : settings_window(parent), QWidget(parent) {
+  main_layout = new QStackedLayout(this);
+  main_layout->addWidget(not_available_label = new QLabel("not available while onroad", this));
+  main_layout->addWidget(route_list_widget = new ListWidget(this));
   QObject::connect(uiState(), &UIState::offroadTransition, [this](bool offroad) {
-    for (auto r : routes) {
-      r->setEnabled(offroad || uiState()->replaying);
-    }
+    main_layout->setCurrentIndex(!offroad && !uiState()->replaying ? 0 : 1);
   });
 }
 
 void ReplayPanel::showEvent(QShowEvent *event) {
+  if (uiState()->scene.started && !uiState()->replaying) {
+    main_layout->setCurrentWidget(not_available_label);
+    return;
+  }
+
+  main_layout->setCurrentWidget(route_list_widget);
   QDir log_dir(Path::log_root().c_str());
   for (const auto &folder : log_dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot, QDir::NoSort)) {
     if (int pos = folder.lastIndexOf("--"); pos != -1) {
@@ -31,7 +38,7 @@ void ReplayPanel::showEvent(QShowEvent *event) {
     ButtonControl *r = nullptr;
     if (n >= routes.size()) {
       r = routes.emplace_back(new ButtonControl(*it, "REPLAY"));
-      addItem(r);
+      route_list_widget->addItem(r);
       QObject::connect(r, &ButtonControl::clicked, [this, route_name = *it]() {
         emit settings_window->closeSettings();
         emit uiState()->startReplay(route_name, QString::fromStdString(Path::log_root()));
@@ -46,7 +53,6 @@ void ReplayPanel::showEvent(QShowEvent *event) {
   for (; n < routes.size(); ++n) {
     routes[n]->setVisible(false);
   }
-  ListWidget::showEvent(event);
 }
 
 // class ReplayControls
@@ -55,15 +61,12 @@ ReplayControls::ReplayControls(QWidget *parent) : QWidget(parent) {
   QHBoxLayout *main_layout = new QHBoxLayout(this);
   QLabel *time_label = new QLabel("00:00");
   main_layout->addWidget(time_label);
-  play_btn = new QPushButton("PAUSE", this);
-  main_layout->addWidget(play_btn);
-  slider = new QSlider(Qt::Horizontal, this);
+  main_layout->addWidget(play_btn = new QPushButton("PAUSE", this));
+  main_layout->addWidget(slider = new QSlider(Qt::Horizontal, this));
+  main_layout->addWidget(stop_btn = new QPushButton("STOP", this));
+  main_layout->addWidget(end_time_label = new QLabel(this));
+
   slider->setSingleStep(0);
-  main_layout->addWidget(slider);
-  end_time_label = new QLabel(this);
-  stop_btn = new QPushButton("STOP", this);
-  main_layout->addWidget(stop_btn);
-  main_layout->addWidget(end_time_label);
   setStyleSheet(R"(
     * {font-size: 35px;font-weight:500;color:white}
     QPushButton {padding: 20px;border-radius: 20px;color: #E4E4E4;background-color: #393939;}
