@@ -1,7 +1,7 @@
-import abc
 from dataclasses import dataclass
 import io
 import struct
+from typing import Self
 
 from openpilot.system.updated.casync.chunk_reader import CAChunk
 
@@ -31,48 +31,55 @@ CA_FORMAT_TABLE_TAIL_MARKER = 0x4b4f050e5549ecd1
 CA_MAX_FILENAME_SIZE = 256
 
 
+class CAFormatBase:
+  HEADER_CA_FORMAT: int | None = None
+  FORMAT_STR: str
+
+  @classmethod
+  def from_buffer(cls, b: io.BytesIO) -> Self:
+    if cls.HEADER_CA_FORMAT is not None:
+      header = CAFormatHeader.from_buffer(b)
+    else:
+      header = None
+
+    unpacked = struct.unpack(cls.FORMAT_STR, b.read(struct.calcsize(cls.FORMAT_STR)))
+
+    if header is not None:
+      unpacked = (header, *unpacked)
+
+    return cls(*unpacked)
+
+
 @dataclass
-class CAFormatHeader(abc.ABC):
+class CAFormatHeader(CAFormatBase):
+  FORMAT_STR = "<QQ"
+
   size: int
   format_type: int
 
-  @staticmethod
-  def from_buffer(b: io.BytesIO) -> 'CAFormatHeader':
-    size, format_type = struct.unpack("<QQ", b.read(CA_TABLE_HEADER_LEN))
-
-    return CAFormatHeader(size, format_type)
-
 
 @dataclass
-class CaFormatIndex:
+class CaFormatIndex(CAFormatBase):
+  HEADER_CA_FORMAT = CA_FORMAT_INDEX
+  FORMAT_STR = "<QQQQ"
+
   header: CAFormatHeader
   flags: int
   chunk_size_min: int
   chunk_size_avg: int
   chunk_size_max: int
 
-  @staticmethod
-  def from_buffer(b: io.BytesIO):
-    header = CAFormatHeader.from_buffer(b)
-    assert header.format_type == CA_FORMAT_INDEX
-    return CaFormatIndex(header, *struct.unpack("<QQQQ", b.read(CA_HEADER_LEN)))
-
 
 @dataclass
-class CATableItem:
+class CATableItem(CAFormatBase):
+  FORMAT_STR = "<Q32s"
+
   offset: int
   chunk_id: bytes
 
-  marker: int
-
-  @staticmethod
-  def from_buffer(b: io.BytesIO):
-    offset = struct.unpack("<Q", b.read(8))[0]
-    chunk_id = b.read(32)
-
-    marker = struct.unpack("<Q", chunk_id[24:])[0]
-
-    return CATableItem(offset, chunk_id, marker)
+  @property
+  def marker(self):
+    return struct.unpack("<Q", self.chunk_id[24:])[0]
 
 
 @dataclass
@@ -153,18 +160,17 @@ class CAFilename:
 
 
 @dataclass
-class CAEntry:
+class CAEntry(CAFormatBase):
+  HEADER_CA_FORMAT = CA_FORMAT_ENTRY
+  FORMAT_STR = "<QQQQQQ"
+
+  header: CAFormatHeader
   feature_flags: int
   mode: int
   flags: int
   uid: int
   gid: int
   mtime: int
-
-  @staticmethod
-  def from_buffer(b: io.BytesIO):
-    _ = CAFormatHeader.from_buffer(b)
-    return CAEntry(*struct.unpack("<QQQQQQ", b.read(8*6)))
 
 
 @dataclass
@@ -178,27 +184,10 @@ class CAPayload:
     data = b.read(header.size - 16)
     return CAPayload(data)
 
-  def __repr__(self):
-    return f"CAPayload(data={len(self.data)} bytes)"
-
 
 @dataclass
-class CASymlink:
-  target: str
-
-  @staticmethod
-  def from_buffer(b: io.BytesIO):
-    _ = CAFormatHeader.from_buffer(b)
-
-    target = b""
-
-    while len(target) < CA_MAX_FILENAME_SIZE:
-      c = b.read(1)
-      if c == b'\x00':
-        break
-      target += c
-
-    return CASymlink(target.decode("utf-8"))
+class CASymlink(CAFilename):
+  pass
 
 
 @dataclass
@@ -220,7 +209,7 @@ class CAArchive:
     entry = CAEntry.from_buffer(b)
 
     assert entry.feature_flags == REQUIRED_FLAGS
-    items = [entry]
+    items: list[CAEntry | CAGoodbye | CAFilename | CAArchive | CASymlink | CAPayload] = [entry]
 
     cur = b.tell()
 
