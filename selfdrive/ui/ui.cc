@@ -154,7 +154,7 @@ static void update_sockets(UIState *s) {
   s->sm->update(0);
 }
 
-void update_state(UIState *s) {
+static void update_state(UIState *s) {
   SubMaster &sm = *(s->sm);
   UIScene &scene = s->scene;
 
@@ -206,21 +206,13 @@ void update_state(UIState *s) {
     float scale = (cam_state.getSensor() == cereal::FrameData::ImageSensor::AR0231) ? 6.0f : 1.0f;
     scene.light_sensor = std::max(100.0f - scale * cam_state.getExposureValPercent(), 0.0f);
   }
+  scene.started = (sm["deviceState"].getDeviceState().getStarted() && scene.ignition) || s->replaying;
 
   scene.world_objects_visible = scene.world_objects_visible ||
                                 (scene.started &&
                                  sm.rcv_frame("liveCalibration") > scene.started_frame &&
                                  sm.rcv_frame("modelV2") > scene.started_frame &&
                                  sm.rcv_frame("uiPlan") > scene.started_frame);
-
-  bool started = (sm["deviceState"].getDeviceState().getStarted() && scene.ignition);
-  if (s->replaying && started) {
-    s->started_prev = false;
-    scene.world_objects_visible = false;
-    emit s->stopReplay();
-    assert(s->replaying == false);
-  }
-  scene.started = started || s->replaying;
 }
 
 void ui_update_params(UIState *s) {

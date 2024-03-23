@@ -4,15 +4,17 @@
 #include <curl/curl.h>
 #include <openssl/sha.h>
 
+#include <cassert>
+#include <chrono>
+#include <cmath>
 #include <cstdarg>
 #include <cstring>
-#include <cassert>
-#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <mutex>
 #include <numeric>
+#include <thread>
 #include <utility>
 
 #include "common/timing.h"
@@ -321,8 +323,7 @@ void precise_nano_sleep(long sleep_ns, bool less_cpu_usage) {
       }
     }
   } else {
-    struct timespec req = {.tv_nsec = sleep_ns};
-    nanosleep(&req, nullptr);
+    std::this_thread::sleep_for(std::chrono::nanoseconds(sleep_ns));
   }
 }
 

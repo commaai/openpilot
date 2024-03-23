@@ -205,7 +205,6 @@ private:
   QTimer *timer;
   bool started_prev = false;
   PrimeType prime_type = PrimeType::UNKNOWN;
-  friend void update_state(UIState *s);
 };
 
 UIState *uiState();
