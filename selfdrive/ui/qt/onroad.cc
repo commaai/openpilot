@@ -640,7 +640,6 @@ void AnnotatedCameraWidget::paintGL() {
 
     if (frames.empty()) {
       if (skip_frame_count > 0) {
-        assert(0);
         skip_frame_count--;
         qDebug() << "skipping frame, not ready";
         return;

@@ -4,22 +4,35 @@
 #include <QFuture>
 #include <QFutureWatcher>
 #include <QtConcurrent>
+#include <algorithm>
 #include <utility>
 
 #include "selfdrive/ui/ui.h"
 
-static std::map<QString, QString> getRouteList() {
-  std::map<QString, QString> results;
+static QString formatTime(int seconds) {
+  return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
+}
+
+static std::map<QString, RoutesPanel::RouteItem> getRouteList() {
+  std::map<QString, RoutesPanel::RouteItem> results;
   QDir log_dir(Path::log_root().c_str());
   for (const auto &folder : log_dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot, QDir::NoSort)) {
     if (int pos = folder.lastIndexOf("--"); pos != -1) {
-      if (QString route = folder.left(pos); !route.isEmpty() && results.count(route) == 0) {
-        // check if segment is valid
-        QString segment_path = log_dir.filePath(folder);
-        auto segment_files = QDir(segment_path).entryList(QDir::Files);
-        if (std::count_if(segment_files.cbegin(), segment_files.cend(),
-                          [](auto &f) { return f == "rlog.bz2" || f == "qcamera.ts" || f == "rlog"; }) >= 2) {
-          results[route] = QFileInfo(segment_path).lastModified().toString(Qt::ISODate);
+      if (QString route = folder.left(pos); !route.isEmpty()) {
+        auto it = results.find(route);
+        if (it == results.end()) {
+          // check if segment is valid
+          QString segment_path = log_dir.filePath(folder);
+          auto segment_files = QDir(segment_path).entryList(QDir::Files);
+          if (std::count_if(segment_files.cbegin(), segment_files.cend(),
+                            [](auto &f) { return f == "rlog.bz2" || f == "qcamera.ts" || f == "rlog"; }) >= 2) {
+            results[route] = RoutesPanel::RouteItem{
+                .datetime = QFileInfo(segment_path).lastModified().toString(Qt::ISODate),
+                .seconds = 60};
+          }
+        } else {
+          uint64_t secs = (folder.right(pos - 2).toInt() + 1) * 60;
+          it->second.seconds = std::max(secs, it->second.seconds);
         }
       }
     }
@@ -44,10 +57,11 @@ void RoutesPanel::showEvent(QShowEvent *event) {
   }
   main_layout->setCurrentWidget(route_list_widget);
 
+  // async get route list
   if (need_refresh) {
     need_refresh = false;
-    auto watcher = new QFutureWatcher<std::map<QString, QString>>(this);
-    QObject::connect(watcher, &QFutureWatcher<std::map<QString, QString>>::finished, [=]() {
+    auto watcher = new QFutureWatcher<std::map<QString, RoutesPanel::RouteItem>>(this);
+    QObject::connect(watcher, &QFutureWatcher<std::map<QString, RoutesPanel::RouteItem>>::finished, [=]() {
       updateRoutes(watcher->future().result());
       watcher->deleteLater();
     });
@@ -55,13 +69,14 @@ void RoutesPanel::showEvent(QShowEvent *event) {
   }
 }
 
-void RoutesPanel::updateRoutes(const std::map<QString, QString> &route_items) {
-  // TODO: 1) display thumbnail, 2) feth all routes.
+void RoutesPanel::updateRoutes(const std::map<QString, RoutesPanel::RouteItem> &route_items) {
+  // display last 100 routes
+  // TODO: 1.display thumbnail. 2.display all local routes. 3.display remote routes. 4.search routes by datetime
   int n = 0;
   for (auto it = route_items.crbegin(); it != route_items.crend() && n < 100; ++it, ++n) {
     ButtonControl *r = nullptr;
     if (n >= routes.size()) {
-      r = routes.emplace_back(new ButtonControl(it->second, tr("REPLAY")));
+      r = routes.emplace_back(new ButtonControl(it->second.datetime, tr("REPLAY")));
       route_list_widget->addItem(r);
       QObject::connect(r, &ButtonControl::clicked, [this, r]() {
         emit settings_window->closeSettings();
@@ -70,7 +85,8 @@ void RoutesPanel::updateRoutes(const std::map<QString, QString> &route_items) {
     } else {
       r = routes[n];
     }
-    r->setTitle(it->second);
+    r->setTitle(it->second.datetime);
+    r->setValue(formatTime(it->second.seconds));
     r->setProperty("route", it->first);
     r->setVisible(true);
   }

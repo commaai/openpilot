@@ -15,9 +15,14 @@ class RoutesPanel : public QWidget {
 public:
   explicit RoutesPanel(SettingsWindow *parent);
 
+  struct RouteItem {
+    QString datetime;
+    uint64_t seconds;
+  };
+
 protected:
   void showEvent(QShowEvent *event) override;
-  void updateRoutes(const std::map<QString, QString> &route_items);
+  void updateRoutes(const std::map<QString, RouteItem> &route_items);
 
   bool need_refresh = true;
   std::vector<ButtonControl *> routes;
@@ -37,9 +42,6 @@ public:
 
 protected:
   void paintEvent(QPaintEvent *event) override;
-  inline QString formatTime(int seconds) {
-    return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
-  }
   bool route_loaded = false;
   QSlider *slider;
   QLabel *end_time_label;
