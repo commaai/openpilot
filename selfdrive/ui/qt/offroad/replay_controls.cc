@@ -8,13 +8,13 @@
 
 #include "selfdrive/ui/ui.h"
 
-static std::set<QString> getRouteList() {
-  std::set<QString> results;
+static std::map<QString, QString> getRouteList() {
+  std::map<QString, QString> results;
   QDir log_dir(Path::log_root().c_str());
   for (const auto &folder : log_dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot, QDir::NoSort)) {
     if (int pos = folder.lastIndexOf("--"); pos != -1) {
       if (QString route = folder.left(pos); !route.isEmpty()) {
-        results.insert(route);
+        results[route] = QFileInfo(log_dir.filePath(folder)).birthTime().toString(Qt::ISODate);
       }
     }
   }
@@ -37,22 +37,21 @@ void ReplayPanel::showEvent(QShowEvent *event) {
   }
   main_layout->setCurrentWidget(route_list_widget);
 
-  auto watcher = new QFutureWatcher<std::set<QString>>(this);
-  QObject::connect(watcher, &QFutureWatcher<std::set<QString>>::finished, [=]() {
+  auto watcher = new QFutureWatcher<std::map<QString, QString>>(this);
+  QObject::connect(watcher, &QFutureWatcher<std::map<QString, QString>>::finished, [=]() {
     updateRoutes(watcher->future().result());
     watcher->deleteLater();
   });
   watcher->setFuture(QtConcurrent::run(getRouteList));
 }
 
-void ReplayPanel::updateRoutes(const std::set<QString> &route_names) {
-  // TODO: 1) display thumbnail & datetime.
-  //       2) feth all routes
+void ReplayPanel::updateRoutes(const std::map<QString, QString> &route_items) {
+  // TODO: 1) display thumbnail, 2) feth all routes
   int n = 0;
-  for (auto it = route_names.crbegin(); it != route_names.crend() && n < 100; ++it, ++n) {
+  for (auto it = route_items.crbegin(); it != route_items.crend() && n < 100; ++it, ++n) {
     ButtonControl *r = nullptr;
     if (n >= routes.size()) {
-      r = routes.emplace_back(new ButtonControl(*it, "REPLAY"));
+      r = routes.emplace_back(new ButtonControl(it->second, "REPLAY"));
       route_list_widget->addItem(r);
       QObject::connect(r, &ButtonControl::clicked, [this, r]() {
         emit settings_window->closeSettings();
@@ -61,8 +60,8 @@ void ReplayPanel::updateRoutes(const std::set<QString> &route_names) {
     } else {
       r = routes[n];
     }
-    r->setTitle(*it);
-    r->setProperty("route", *it);
+    r->setTitle(it->second);
+    r->setProperty("route", it->first);
     r->setVisible(true);
   }
   for (; n < routes.size(); ++n) {

@@ -2,6 +2,7 @@
 
 #include <QSlider>
 #include <memory>
+#include <map>
 #include <set>
 #include <vector>
 #include <QStackedLayout>
@@ -16,7 +17,7 @@ public:
 
 protected:
   void showEvent(QShowEvent *event) override;
-  void updateRoutes(const std::set<QString> &route_names);
+  void updateRoutes(const std::map<QString, QString> &route_items);
 
   std::vector<ButtonControl *> routes;
   SettingsWindow *settings_window;

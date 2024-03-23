@@ -107,21 +107,21 @@ if GetOption('extras') and arch != "Darwin":
     ("openpilot_internal", "master"),
   ]
 
-  cont = senv.Command(f"installer/continue_openpilot.o", f"installer/continue_openpilot.sh",
-                      "ld -r -b binary -o $TARGET $SOURCE")
-  for name, branch in installers:
-    d = {'BRANCH': f"'\"{branch}\"'"}
-    if "internal" in name:
-      d['INTERNAL'] = "1"
+  # cont = senv.Command(f"installer/continue_openpilot.o", f"installer/continue_openpilot.sh",
+  #                     "ld -r -b binary -o $TARGET $SOURCE")
+  # for name, branch in installers:
+  #   d = {'BRANCH': f"'\"{branch}\"'"}
+  #   if "internal" in name:
+  #     d['INTERNAL'] = "1"
 
-      import requests
-      r = requests.get("https://github.com/commaci2.keys")
-      r.raise_for_status()
-      d['SSH_KEYS'] = f'\\"{r.text.strip()}\\"'
-    obj = senv.Object(f"installer/installers/installer_{name}.o", ["installer/installer.cc"], CPPDEFINES=d)
-    f = senv.Program(f"installer/installers/installer_{name}", [obj, cont], LIBS=qt_libs)
-    # keep installers small
-    assert f[0].get_size() < 350*1e3
+  #     import requests
+  #     r = requests.get("https://github.com/commaci2.keys")
+  #     r.raise_for_status()
+  #     d['SSH_KEYS'] = f'\\"{r.text.strip()}\\"'
+  #   obj = senv.Object(f"installer/installers/installer_{name}.o", ["installer/installer.cc"], CPPDEFINES=d)
+  #   f = senv.Program(f"installer/installers/installer_{name}", [obj, cont], LIBS=qt_libs)
+  #   # keep installers small
+  #   assert f[0].get_size() < 350*1e3
 
 # build watch3
 if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):
