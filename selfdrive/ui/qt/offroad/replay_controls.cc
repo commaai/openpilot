@@ -13,8 +13,17 @@ static std::map<QString, QString> getRouteList() {
   QDir log_dir(Path::log_root().c_str());
   for (const auto &folder : log_dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot, QDir::NoSort)) {
     if (int pos = folder.lastIndexOf("--"); pos != -1) {
-      if (QString route = folder.left(pos); !route.isEmpty()) {
-        results[route] = QFileInfo(log_dir.filePath(folder)).birthTime().toString(Qt::ISODate);
+      if (QString route = folder.left(pos); !route.isEmpty() && results.count(route) == 0) {
+        // check if segment is valid
+        QString segment_path = log_dir.filePath(folder);
+        QDir segment_dir(segment_path);
+        int file_cnt = 0;
+        for (const auto &f : segment_dir.entryList(QDir::Files)) {
+          file_cnt += (f == "rlog.bz2" || f == "qcamera.ts" || f == "rlog");
+        }
+        if (file_cnt >= 2) {
+          results[route] = QFileInfo(segment_path).lastModified().toString(Qt::ISODate);
+        }
       }
     }
   }
