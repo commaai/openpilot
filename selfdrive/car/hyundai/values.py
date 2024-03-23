@@ -670,7 +670,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [HYUNDAI_VERSION_REQUEST_LONG],
       [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.cornerRadar, Ecu.hvac, Ecu.eps, Ecu.abs, Ecu.transmission, Ecu.engine],
+      whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.cornerRadar, Ecu.hvac],
       bus=0,
       auxiliary=True,
     ),
@@ -701,7 +701,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
       whitelist_ecus=ALL_HYUNDAI_ECUS,
       bus=0,
       auxiliary=True,
-      logging=True,
     ),
     Request(
       [HYUNDAI_VERSION_REQUEST_MULTI],
@@ -709,7 +708,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
       whitelist_ecus=ALL_HYUNDAI_ECUS,
       bus=0,
       auxiliary=True,
-      logging=True,
     ),
     Request(
       [HYUNDAI_VERSION_REQUEST_LONG],
