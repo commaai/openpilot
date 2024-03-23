@@ -9,44 +9,34 @@
 
 #include "selfdrive/ui/ui.h"
 
-static QString formatTime(int seconds) {
+namespace {
+QString formatTime(int seconds) {
   return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
 }
 
-static std::map<QString, RoutesPanel::RouteItem> getRouteList() {
-  std::map<QString, RoutesPanel::RouteItem> results;
-  QDir log_dir(Path::log_root().c_str());
-  for (const auto &folder : log_dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot, QDir::NoSort)) {
-    if (int pos = folder.lastIndexOf("--"); pos != -1) {
-      if (QString route = folder.left(pos); !route.isEmpty()) {
-        auto it = results.find(route);
-        if (it == results.end()) {
-          // check if segment is valid
-          QString segment_path = log_dir.filePath(folder);
-          auto segment_files = QDir(segment_path).entryList(QDir::Files);
-          if (std::count_if(segment_files.cbegin(), segment_files.cend(),
-                            [](auto &f) { return f == "rlog.bz2" || f == "qcamera.ts" || f == "rlog"; }) >= 2) {
-            results[route] = RoutesPanel::RouteItem{
-                .datetime = QFileInfo(segment_path).lastModified().toString(Qt::ISODate),
-                .seconds = 60};
-          }
-        } else {
-          uint64_t secs = (folder.right(pos - 2).toInt() + 1) * 60;
-          it->second.seconds = std::max(secs, it->second.seconds);
-        }
-      }
-    }
-  }
-  return results;
+QString getThumbnailPath(const QString &route) {
+  return QString::fromStdString(Path::comma_home()) + "/route_thumbnail/" + route + ".jpeg";
 }
+
+void setThumbnail(ButtonControl *btn, const QPixmap &thumbnail) {
+  btn->icon_pixmap = thumbnail.scaledToHeight(80, Qt::SmoothTransformation);
+  btn->icon_label->setPixmap(btn->icon_pixmap);
+  btn->icon_label->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+  btn->icon_label->setVisible(true);
+}
+}  // namespace
 
 RoutesPanel::RoutesPanel(SettingsWindow *parent) : settings_window(parent), QWidget(parent) {
   main_layout = new QStackedLayout(this);
   main_layout->addWidget(not_available_label = new QLabel(tr("not available while onroad"), this));
   main_layout->addWidget(route_list_widget = new ListWidget(this));
+
+  QObject::connect(this, &RoutesPanel::thumbnailReady, this, &RoutesPanel::updateThumbnail, Qt::QueuedConnection);
   QObject::connect(uiState(), &UIState::offroadTransition, [this](bool offroad) {
+    if (offroad && !uiState()->replaying) {
+      fetchRoutes();
+    }
     main_layout->setCurrentIndex(!offroad && !uiState()->replaying ? 0 : 1);
-    need_refresh = true;
   });
 }
 
@@ -56,22 +46,24 @@ void RoutesPanel::showEvent(QShowEvent *event) {
     return;
   }
   main_layout->setCurrentWidget(route_list_widget);
-
-  // async get route list
-  if (need_refresh) {
-    need_refresh = false;
-    auto watcher = new QFutureWatcher<std::map<QString, RoutesPanel::RouteItem>>(this);
-    QObject::connect(watcher, &QFutureWatcher<std::map<QString, RoutesPanel::RouteItem>>::finished, [=]() {
-      updateRoutes(watcher->future().result());
-      watcher->deleteLater();
-    });
-    watcher->setFuture(QtConcurrent::run(getRouteList));
+  if (routes.empty()) {
+    fetchRoutes();
   }
 }
 
-void RoutesPanel::updateRoutes(const std::map<QString, RoutesPanel::RouteItem> &route_items) {
+// async get route list
+void RoutesPanel::fetchRoutes() {
+  auto watcher = new QFutureWatcher<std::map<QString, RoutesPanel::RouteItem>>(this);
+  QObject::connect(watcher, &QFutureWatcher<std::map<QString, RoutesPanel::RouteItem>>::finished, [=]() {
+    updateRouteItems(watcher->future().result());
+    watcher->deleteLater();
+  });
+  watcher->setFuture(QtConcurrent::run(this, &RoutesPanel::getRouteList));
+}
+
+void RoutesPanel::updateRouteItems(const std::map<QString, RoutesPanel::RouteItem> &route_items) {
   // display last 100 routes
-  // TODO: 1.display thumbnail. 2.display all local routes. 3.display remote routes. 4.search routes by datetime
+  // TODO: 1.display all local routes. 2.display remote routes. 3.search routes by datetime
   int n = 0;
   for (auto it = route_items.crbegin(); it != route_items.crend() && n < 100; ++it, ++n) {
     ButtonControl *r = nullptr;
@@ -88,10 +80,72 @@ void RoutesPanel::updateRoutes(const std::map<QString, RoutesPanel::RouteItem> &
     r->setTitle(it->second.datetime);
     r->setValue(formatTime(it->second.seconds));
     r->setProperty("route", it->first);
+    if (!it->second.thumbnail.isNull()) {
+      setThumbnail(r, it->second.thumbnail);
+    }
     r->setVisible(true);
   }
   for (; n < routes.size(); ++n) {
     routes[n]->setVisible(false);
+  }
+}
+
+void RoutesPanel::updateThumbnail(const QString route) {
+  for (auto &r : routes) {
+    if (r->property("route").toString() == route) {
+      setThumbnail(r, QPixmap(getThumbnailPath(route)));
+      break;
+    }
+  }
+}
+
+std::map<QString, RoutesPanel::RouteItem> RoutesPanel::getRouteList() {
+  std::map<QString, RoutesPanel::RouteItem> results;
+  QDir log_dir(Path::log_root().c_str());
+  for (const auto &segment : log_dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot, QDir::NoSort)) {
+    if (int pos = segment.lastIndexOf("--"); pos != -1) {
+      if (QString route = segment.left(pos); !route.isEmpty()) {
+        auto it = results.find(route);
+        if (it == results.end()) {
+          QString segment_path = log_dir.filePath(segment);
+          auto segment_files = QDir(segment_path).entryList(QDir::Files);
+          // check if segment is valid
+          if (std::count_if(segment_files.cbegin(), segment_files.cend(),
+                            [](auto &f) { return f == "rlog.bz2" || f == "qcamera.ts" || f == "rlog"; }) >= 2) {
+            QPixmap thumbnail(getThumbnailPath(route));
+            if (thumbnail.isNull()) {
+              QtConcurrent::run(this, &RoutesPanel::extractThumbnal, route, segment_path);
+            }
+            results[route] = RoutesPanel::RouteItem{
+                .datetime = QFileInfo(segment_path).lastModified().toString(Qt::ISODate),
+                .seconds = 60,
+                .thumbnail = thumbnail};
+          }
+        } else {
+          uint64_t secs = (segment.right(pos - 2).toInt() + 1) * 60;
+          it->second.seconds = std::max(secs, it->second.seconds);
+        }
+      }
+    }
+  }
+  return results;
+}
+
+void RoutesPanel::extractThumbnal(QString route_name, QString segment_path) {
+  if (LogReader log; log.load(QString(segment_path + "/qlog.bz2").toStdString())) {
+    for (const Event *e : log.events) {
+      if (e->which == cereal::Event::Which::THUMBNAIL) {
+        auto thumb = e->event.getThumbnail();
+        auto data = thumb.getThumbnail();
+        if (QPixmap pm; pm.loadFromData(data.begin(), data.size(), "jpeg")) {
+          QString fn = getThumbnailPath(route_name);
+          QDir().mkpath(QFileInfo(fn).absolutePath());
+          pm.save(fn);
+          emit thumbnailReady(route_name);
+          break;
+        }
+      }
+    }
   }
 }
 
@@ -141,7 +195,6 @@ ReplayControls::ReplayControls(QWidget *parent) : QWidget(parent) {
     }
   });
   timer->start();
-
 
   time_label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
   time_label->setText("99:99:99");
