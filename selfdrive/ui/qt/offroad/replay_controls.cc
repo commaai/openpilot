@@ -83,7 +83,7 @@ void ReplayPanel::updateRoutes(const std::map<QString, QString> &route_items) {
 
 ReplayControls::ReplayControls(QWidget *parent) : QWidget(parent) {
   QHBoxLayout *main_layout = new QHBoxLayout(this);
-  QLabel *time_label = new QLabel("00:00");
+  QLabel *time_label = new QLabel(this);
   main_layout->addWidget(time_label);
   main_layout->addWidget(play_btn = new QPushButton("PAUSE", this));
   main_layout->addWidget(slider = new QSlider(Qt::Horizontal, this));
@@ -91,6 +91,7 @@ ReplayControls::ReplayControls(QWidget *parent) : QWidget(parent) {
   main_layout->addWidget(end_time_label = new QLabel(this));
 
   slider->setSingleStep(0);
+  slider->setPageStep(0);
   setStyleSheet(R"(
     * {font-size: 35px;font-weight:500;color:white}
     QPushButton {padding: 30px;border-radius: 20px;color: #E4E4E4;background-color: #393939;}
@@ -116,6 +117,11 @@ ReplayControls::ReplayControls(QWidget *parent) : QWidget(parent) {
     }
   });
   timer->start();
+
+  time_label->setText("99:99:99");
+  time_label->setFixedSize(time_label->sizeHint());
+  end_time_label->setFixedSize(time_label->sizeHint());
+  time_label->setText("");
   setVisible(true);
   adjustPosition();
 }
