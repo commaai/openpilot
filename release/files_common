@@ -47,6 +47,7 @@ tools/__init__.py
 tools/lib/*
 tools/bodyteleop/*
 tools/joystick/*
+tools/replay/.gitignore
 tools/replay/*.cc
 tools/replay/*.h
 tools/replay/SConscript
