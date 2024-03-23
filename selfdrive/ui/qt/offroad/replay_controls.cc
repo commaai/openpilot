@@ -118,6 +118,8 @@ ReplayControls::ReplayControls(QWidget *parent) : QWidget(parent) {
   });
   timer->start();
 
+
+  time_label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
   time_label->setText("99:99:99");
   time_label->setFixedSize(time_label->sizeHint());
   end_time_label->setFixedSize(time_label->sizeHint());
