@@ -76,7 +76,7 @@ class CarState(CarStateBase):
 
     ret.steeringTorque = -epas_status["EPAS3S_torsionBarTorque"] if model3 else -epas_status["EPAS_torsionBarTorque"]
     ret.steeringPressed = (self.hands_on_level > 0)
-    ret.steerFaultPermanent = steer_status in ["EAC_FAULT", "EAC_ERROR_TMP_FAULT"]
+    ret.steerFaultPermanent = steer_status in ["EAC_FAULT"]
     ret.steerFaultTemporary = (self.steer_warning not in ("EAC_ERROR_IDLE", "EAC_ERROR_HANDS_ON"))
 
     # Cruise state
