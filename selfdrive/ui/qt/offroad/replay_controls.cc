@@ -27,6 +27,7 @@ ReplayPanel::ReplayPanel(SettingsWindow *parent) : settings_window(parent), QWid
   main_layout->addWidget(route_list_widget = new ListWidget(this));
   QObject::connect(uiState(), &UIState::offroadTransition, [this](bool offroad) {
     main_layout->setCurrentIndex(!offroad && !uiState()->replaying ? 0 : 1);
+    need_refresh = true;
   });
 }
 
@@ -37,16 +38,19 @@ void ReplayPanel::showEvent(QShowEvent *event) {
   }
   main_layout->setCurrentWidget(route_list_widget);
 
-  auto watcher = new QFutureWatcher<std::map<QString, QString>>(this);
-  QObject::connect(watcher, &QFutureWatcher<std::map<QString, QString>>::finished, [=]() {
-    updateRoutes(watcher->future().result());
-    watcher->deleteLater();
-  });
-  watcher->setFuture(QtConcurrent::run(getRouteList));
+  if (need_refresh) {
+    need_refresh = false;
+    auto watcher = new QFutureWatcher<std::map<QString, QString>>(this);
+    QObject::connect(watcher, &QFutureWatcher<std::map<QString, QString>>::finished, [=]() {
+      updateRoutes(watcher->future().result());
+      watcher->deleteLater();
+    });
+    watcher->setFuture(QtConcurrent::run(getRouteList));
+  }
 }
 
 void ReplayPanel::updateRoutes(const std::map<QString, QString> &route_items) {
-  // TODO: 1) display thumbnail, 2) feth all routes
+  // TODO: 1) display thumbnail, 2) feth all routes.
   int n = 0;
   for (auto it = route_items.crbegin(); it != route_items.crend() && n < 100; ++it, ++n) {
     ButtonControl *r = nullptr;

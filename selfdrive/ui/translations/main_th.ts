@@ -675,6 +675,10 @@ This may take up to a minute.</source>
         <source>Software</source>
         <translation>ซอฟต์แวร์</translation>
     </message>
+    <message>
+        <source>Routes</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Setup</name>

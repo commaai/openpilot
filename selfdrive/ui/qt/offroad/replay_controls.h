@@ -19,6 +19,7 @@ protected:
   void showEvent(QShowEvent *event) override;
   void updateRoutes(const std::map<QString, QString> &route_items);
 
+  bool need_refresh = true;
   std::vector<ButtonControl *> routes;
   SettingsWindow *settings_window;
   ListWidget *route_list_widget;

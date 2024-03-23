@@ -673,6 +673,10 @@ This may take up to a minute.</source>
         <source>Software</source>
         <translation>Yazılım</translation>
     </message>
+    <message>
+        <source>Routes</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Setup</name>

@@ -48,9 +48,9 @@ tools/lib/*
 tools/bodyteleop/*
 tools/joystick/*
 tools/replay/.gitignore
+tools/replay/SConscript
 tools/replay/*.cc
 tools/replay/*.h
-tools/replay/SConscript
 
 selfdrive/__init__.py
 selfdrive/sentry.py
