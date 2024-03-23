@@ -647,8 +647,8 @@ PLATFORM_CODE_ECUS = [Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps]
 # TODO: there are date codes in the ABS firmware versions in hex
 DATE_FW_ECUS = [Ecu.fwdCamera]
 
-ALL_HYUNDAI_ECUS = [Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.engine, Ecu.parkingAdas,
-                    Ecu.transmission, Ecu.adas, Ecu.hvac, Ecu.cornerRadar, Ecu.combinationMeter]
+ALL_HYUNDAI_ECUS = [Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.parkingAdas,
+                    Ecu.adas, Ecu.hvac, Ecu.cornerRadar, Ecu.combinationMeter]
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
@@ -657,12 +657,12 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [HYUNDAI_VERSION_REQUEST_LONG],
       [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.transmission, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera],
+      whitelist_ecus=[Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera],
     ),
     Request(
       [HYUNDAI_VERSION_REQUEST_MULTI],
       [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.engine, Ecu.transmission, Ecu.eps, Ecu.abs, Ecu.fwdRadar],
+      whitelist_ecus=[Ecu.eps, Ecu.abs, Ecu.fwdRadar],
     ),
 
     # CAN-FD queries (from camera)
@@ -743,14 +743,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
   # We lose these ECUs without the comma power on these cars.
   # Note that we still attempt to match with them when they are present
   non_essential_ecus={
-    Ecu.transmission: [CAR.HYUNDAI_AZERA_6TH_GEN, CAR.HYUNDAI_AZERA_HEV_6TH_GEN, CAR.HYUNDAI_PALISADE, CAR.HYUNDAI_SONATA, CAR.HYUNDAI_SANTA_FE_2022,
-                       CAR.GENESIS_G70, CAR.KIA_K5_2021, CAR.HYUNDAI_SONATA_HYBRID, CAR.HYUNDAI_ELANTRA_2021, CAR.HYUNDAI_ELANTRA_HEV_2021,
-                       CAR.HYUNDAI_SANTA_FE, CAR.KIA_STINGER, CAR.KIA_NIRO_PHEV_2022, CAR.GENESIS_G70_2020, CAR.KIA_NIRO_HEV_2021,
-                       CAR.KIA_FORTE, CAR.HYUNDAI_IONIQ_PHEV, CAR.KIA_STINGER_2022, CAR.GENESIS_G90],
-    Ecu.engine: [CAR.HYUNDAI_AZERA_6TH_GEN, CAR.HYUNDAI_AZERA_HEV_6TH_GEN, CAR.HYUNDAI_PALISADE, CAR.HYUNDAI_SONATA, CAR.HYUNDAI_SANTA_FE_2022,
-                 CAR.GENESIS_G70, CAR.KIA_K5_2021, CAR.HYUNDAI_SONATA_HYBRID, CAR.HYUNDAI_ELANTRA_2021, CAR.HYUNDAI_ELANTRA_HEV_2021,
-                 CAR.HYUNDAI_SANTA_FE, CAR.KIA_STINGER, CAR.KIA_NIRO_PHEV_2022, CAR.GENESIS_G70_2020, CAR.KIA_NIRO_HEV_2021, CAR.KIA_FORTE,
-                 CAR.HYUNDAI_IONIQ_PHEV, CAR.KIA_STINGER_2022, CAR.GENESIS_G90, CAR.KIA_OPTIMA_H_G4_FL],
     Ecu.abs: [CAR.HYUNDAI_PALISADE, CAR.HYUNDAI_SONATA, CAR.HYUNDAI_SANTA_FE_2022, CAR.KIA_K5_2021, CAR.HYUNDAI_ELANTRA_2021,
               CAR.HYUNDAI_SANTA_FE, CAR.KIA_FORTE, CAR.HYUNDAI_KONA_EV_2022, CAR.HYUNDAI_KONA_EV],
   },

@@ -85,7 +85,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model.value):
         for ecu, fws in ecus.items():
-          # TODO: enable for Ecu.fwdRadar, Ecu.abs, Ecu.eps, Ecu.transmission
+          # TODO: enable for Ecu.fwdRadar, Ecu.abs, Ecu.eps
           if ecu[0] in (Ecu.fwdCamera,):
             self.assertTrue(all(fw.startswith(expected_fw_prefix) for fw in fws),
                             f"FW from unexpected request in database: {(ecu, fws)}")
