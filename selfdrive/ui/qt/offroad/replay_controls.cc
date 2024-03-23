@@ -1,10 +1,24 @@
 #include "selfdrive/ui/qt/offroad/replay_controls.h"
 
 #include <QDir>
+#include <QtConcurrent>
+#include <QFuture>
+#include <QFutureWatcher>
 #include <utility>
 #include "selfdrive/ui/ui.h"
 
-// class ReplayPanel
+static std::set<QString> getRouteList() {
+  std::set<QString> results;
+  QDir log_dir(Path::log_root().c_str());
+  for (const auto &folder : log_dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot, QDir::NoSort)) {
+    if (int pos = folder.lastIndexOf("--"); pos != -1) {
+      if (QString route = folder.left(pos); !route.isEmpty()) {
+        results.insert(route);
+      }
+    }
+  }
+  return results;
+}
 
 ReplayPanel::ReplayPanel(SettingsWindow *parent) : settings_window(parent), QWidget(parent) {
   main_layout = new QStackedLayout(this);
@@ -20,17 +34,17 @@ void ReplayPanel::showEvent(QShowEvent *event) {
     main_layout->setCurrentWidget(not_available_label);
     return;
   }
-
   main_layout->setCurrentWidget(route_list_widget);
-  QDir log_dir(Path::log_root().c_str());
-  for (const auto &folder : log_dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot, QDir::NoSort)) {
-    if (int pos = folder.lastIndexOf("--"); pos != -1) {
-      if (QString route = folder.left(pos); !route.isEmpty()) {
-        route_names.insert(route);
-      }
-    }
-  }
 
+  auto watcher = new QFutureWatcher<std::set<QString>>(this);
+  QObject::connect(watcher, &QFutureWatcher<std::set<QString>>::finished, [=]() {
+    updateRoutes(watcher->future().result());
+    watcher->deleteLater();
+  });
+  watcher->setFuture(QtConcurrent::run(getRouteList));
+}
+
+void ReplayPanel::updateRoutes(const std::set<QString> &route_names) {
   // TODO: 1) display thumbnail & datetime.
   //       2) feth all routes
   int n = 0;
@@ -76,10 +90,13 @@ ReplayControls::ReplayControls(QWidget *parent) : QWidget(parent) {
     QSlider::handle:horizontal {background: white;border-radius: 30px;width: 60px;height: 60px;margin: -20px 0px;}
   )");
 
-  QObject::connect(stop_btn, &QPushButton::clicked, this, &ReplayControls::stop);
-  QObject::connect(play_btn, &QPushButton::clicked, [this]() { replay->pause(!replay->isPaused()); });
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { replay->seekTo(slider->sliderPosition(), false); });
   QObject::connect(slider, &QSlider::valueChanged, [=](int value) { time_label->setText(formatTime(value)); });
+  QObject::connect(stop_btn, &QPushButton::clicked, this, &ReplayControls::stop);
+  QObject::connect(play_btn, &QPushButton::clicked, [this]() {
+    replay->pause(!replay->isPaused());
+    play_btn->setText(replay->isPaused() ? "PLAY" : "PAUSE");
+  });
 
   timer = new QTimer(this);
   timer->setInterval(1000);

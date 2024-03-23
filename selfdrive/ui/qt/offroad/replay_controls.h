@@ -16,8 +16,8 @@ public:
 
 protected:
   void showEvent(QShowEvent *event) override;
+  void updateRoutes(const std::set<QString> &route_names);
 
-  std::set<QString> route_names;
   std::vector<ButtonControl *> routes;
   SettingsWindow *settings_window;
   ListWidget *route_list_widget;

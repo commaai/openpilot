@@ -4,7 +4,7 @@ Import('qt_env', 'arch', 'common', 'messaging', 'visionipc',
        'cereal', 'transformations', 'replay_lib')
 
 base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
-             'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread', 'curl', 'common', 'avutil', 'avcodec', 'avformat', 'bz2'] + qt_env["LIBS"]
+             'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
 
 if arch == 'larch64':
   base_libs.append('EGL')
