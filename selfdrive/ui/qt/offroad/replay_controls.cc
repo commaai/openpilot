@@ -29,7 +29,7 @@ static std::map<QString, QString> getRouteList() {
 
 ReplayPanel::ReplayPanel(SettingsWindow *parent) : settings_window(parent), QWidget(parent) {
   main_layout = new QStackedLayout(this);
-  main_layout->addWidget(not_available_label = new QLabel("not available while onroad", this));
+  main_layout->addWidget(not_available_label = new QLabel(tr("not available while onroad"), this));
   main_layout->addWidget(route_list_widget = new ListWidget(this));
   QObject::connect(uiState(), &UIState::offroadTransition, [this](bool offroad) {
     main_layout->setCurrentIndex(!offroad && !uiState()->replaying ? 0 : 1);
@@ -61,7 +61,7 @@ void ReplayPanel::updateRoutes(const std::map<QString, QString> &route_items) {
   for (auto it = route_items.crbegin(); it != route_items.crend() && n < 100; ++it, ++n) {
     ButtonControl *r = nullptr;
     if (n >= routes.size()) {
-      r = routes.emplace_back(new ButtonControl(it->second, "REPLAY"));
+      r = routes.emplace_back(new ButtonControl(it->second, tr("REPLAY")));
       route_list_widget->addItem(r);
       QObject::connect(r, &ButtonControl::clicked, [this, r]() {
         emit settings_window->closeSettings();
@@ -85,9 +85,9 @@ ReplayControls::ReplayControls(QWidget *parent) : QWidget(parent) {
   QHBoxLayout *main_layout = new QHBoxLayout(this);
   QLabel *time_label = new QLabel(this);
   main_layout->addWidget(time_label);
-  main_layout->addWidget(play_btn = new QPushButton("PAUSE", this));
+  main_layout->addWidget(play_btn = new QPushButton(tr("PAUSE"), this));
   main_layout->addWidget(slider = new QSlider(Qt::Horizontal, this));
-  main_layout->addWidget(stop_btn = new QPushButton("STOP", this));
+  main_layout->addWidget(stop_btn = new QPushButton(tr("STOP"), this));
   main_layout->addWidget(end_time_label = new QLabel(this));
 
   slider->setSingleStep(0);
@@ -106,7 +106,7 @@ ReplayControls::ReplayControls(QWidget *parent) : QWidget(parent) {
   QObject::connect(stop_btn, &QPushButton::clicked, this, &ReplayControls::stop);
   QObject::connect(play_btn, &QPushButton::clicked, [this]() {
     replay->pause(!replay->isPaused());
-    play_btn->setText(replay->isPaused() ? "PLAY" : "PAUSE");
+    play_btn->setText(replay->isPaused() ? tr("PLAY") : tr("PAUSE"));
   });
 
   timer = new QTimer(this);

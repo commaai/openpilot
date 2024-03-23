@@ -633,6 +633,32 @@
     </message>
 </context>
 <context>
+    <name>ReplayControls</name>
+    <message>
+        <source>PAUSE</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>STOP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PLAY</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>ReplayPanel</name>
+    <message>
+        <source>not available while onroad</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>REPLAY</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>Reset</name>
     <message>
         <source>Reset failed. Reboot to try again.</source>
