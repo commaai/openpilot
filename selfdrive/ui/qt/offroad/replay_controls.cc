@@ -16,12 +16,9 @@ static std::map<QString, QString> getRouteList() {
       if (QString route = folder.left(pos); !route.isEmpty() && results.count(route) == 0) {
         // check if segment is valid
         QString segment_path = log_dir.filePath(folder);
-        QDir segment_dir(segment_path);
-        int file_cnt = 0;
-        for (const auto &f : segment_dir.entryList(QDir::Files)) {
-          file_cnt += (f == "rlog.bz2" || f == "qcamera.ts" || f == "rlog");
-        }
-        if (file_cnt >= 2) {
+        auto segment_files = QDir(segment_path).entryList(QDir::Files);
+        if (std::count_if(segment_files.cbegin(), segment_files.cend(),
+                          [](auto &f) { return f == "rlog.bz2" || f == "qcamera.ts" || f == "rlog"; }) >= 2) {
           results[route] = QFileInfo(segment_path).lastModified().toString(Qt::ISODate);
         }
       }
@@ -96,7 +93,7 @@ ReplayControls::ReplayControls(QWidget *parent) : QWidget(parent) {
   slider->setSingleStep(0);
   setStyleSheet(R"(
     * {font-size: 35px;font-weight:500;color:white}
-    QPushButton {padding: 20px;border-radius: 20px;color: #E4E4E4;background-color: #393939;}
+    QPushButton {padding: 30px;border-radius: 20px;color: #E4E4E4;background-color: #393939;}
     QSlider {height: 68px;}
     QSlider::groove:horizontal {border: 1px solid #262626; height: 20px;background: #393939;}
     QSlider::sub-page {background: #33Ab4C;}
