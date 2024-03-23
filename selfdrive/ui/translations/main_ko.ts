@@ -626,15 +626,12 @@
         <source>PLAY</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>ReplayPanel</name>
     <message>
-        <source>not available while onroad</source>
-        <translation type="unfinished"></translation>
+        <source>camera starting</source>
+        <translation type="obsolete">카메라 시작 중</translation>
     </message>
     <message>
-        <source>REPLAY</source>
+        <source>loading route</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -677,6 +674,17 @@ This may take up to a minute.</source>
     <message>
         <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
         <translation>시스템 재설정이 시작되었습니다. 모든 콘텐츠와 설정을 지우려면 확인을 누르시고 부팅을 재개하려면 취소를 누르세요.</translation>
+    </message>
+</context>
+<context>
+    <name>RoutesPanel</name>
+    <message>
+        <source>not available while onroad</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>REPLAY</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

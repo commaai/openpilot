@@ -27,7 +27,7 @@ static std::map<QString, QString> getRouteList() {
   return results;
 }
 
-ReplayPanel::ReplayPanel(SettingsWindow *parent) : settings_window(parent), QWidget(parent) {
+RoutesPanel::RoutesPanel(SettingsWindow *parent) : settings_window(parent), QWidget(parent) {
   main_layout = new QStackedLayout(this);
   main_layout->addWidget(not_available_label = new QLabel(tr("not available while onroad"), this));
   main_layout->addWidget(route_list_widget = new ListWidget(this));
@@ -37,7 +37,7 @@ ReplayPanel::ReplayPanel(SettingsWindow *parent) : settings_window(parent), QWid
   });
 }
 
-void ReplayPanel::showEvent(QShowEvent *event) {
+void RoutesPanel::showEvent(QShowEvent *event) {
   if (uiState()->scene.started && !uiState()->replaying) {
     main_layout->setCurrentWidget(not_available_label);
     return;
@@ -55,7 +55,7 @@ void ReplayPanel::showEvent(QShowEvent *event) {
   }
 }
 
-void ReplayPanel::updateRoutes(const std::map<QString, QString> &route_items) {
+void RoutesPanel::updateRoutes(const std::map<QString, QString> &route_items) {
   // TODO: 1) display thumbnail, 2) feth all routes.
   int n = 0;
   for (auto it = route_items.crbegin(); it != route_items.crend() && n < 100; ++it, ++n) {
@@ -82,13 +82,21 @@ void ReplayPanel::updateRoutes(const std::map<QString, QString> &route_items) {
 // class ReplayControls
 
 ReplayControls::ReplayControls(QWidget *parent) : QWidget(parent) {
-  QHBoxLayout *main_layout = new QHBoxLayout(this);
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(UI_BORDER_SIZE, UI_BORDER_SIZE, UI_BORDER_SIZE, UI_BORDER_SIZE);
+
+  controls_container = new QWidget(this);
+  controls_container->setVisible(false);
+  QHBoxLayout *controls_layout = new QHBoxLayout(controls_container);
+  main_layout->addStretch(1);
+  main_layout->addWidget(controls_container);
+
   QLabel *time_label = new QLabel(this);
-  main_layout->addWidget(time_label);
-  main_layout->addWidget(play_btn = new QPushButton(tr("PAUSE"), this));
-  main_layout->addWidget(slider = new QSlider(Qt::Horizontal, this));
-  main_layout->addWidget(stop_btn = new QPushButton(tr("STOP"), this));
-  main_layout->addWidget(end_time_label = new QLabel(this));
+  controls_layout->addWidget(time_label);
+  controls_layout->addWidget(play_btn = new QPushButton(tr("PAUSE"), this));
+  controls_layout->addWidget(slider = new QSlider(Qt::Horizontal, this));
+  controls_layout->addWidget(stop_btn = new QPushButton(tr("STOP"), this));
+  controls_layout->addWidget(end_time_label = new QLabel(this));
 
   slider->setSingleStep(0);
   slider->setPageStep(0);
@@ -128,9 +136,20 @@ ReplayControls::ReplayControls(QWidget *parent) : QWidget(parent) {
   adjustPosition();
 }
 
+void ReplayControls::paintEvent(QPaintEvent *event) {
+  if (!route_loaded) {
+    QPainter p(this);
+    p.setPen(Qt::white);
+    p.setRenderHint(QPainter::TextAntialiasing);
+    p.setFont(InterFont(100, QFont::Bold));
+    p.fillRect(rect(), Qt::black);
+    p.drawText(geometry(), Qt::AlignCenter, tr("loading route"));
+  }
+}
+
 void ReplayControls::adjustPosition() {
-  resize(parentWidget()->rect().width() - 100, sizeHint().height());
-  move({50, parentWidget()->rect().height() - rect().height() - UI_BORDER_SIZE});
+  setGeometry(0, 0, parentWidget()->width(), parentWidget()->height());
+  raise();
 }
 
 void ReplayControls::start(const QString &route, const QString &data_dir) {
@@ -139,6 +158,11 @@ void ReplayControls::start(const QString &route, const QString &data_dir) {
                        "driverStateV2", "wideRoadCameraState", "navInstruction", "navRoute", "uiPlan"};
   QString route_name = "0000000000000000|" + route;
   replay.reset(new Replay(route_name, allow, {}, nullptr, REPLAY_FLAG_QCAMERA | REPLAY_FLAG_LESS_CPU_USAGE, data_dir));
+  QObject::connect(replay.get(), &Replay::streamStarted, [this]() {
+    route_loaded = true;
+    controls_container->setVisible(true);
+    update();
+  });
   if (replay->load()) {
     slider->setRange(0, replay->totalSeconds());
     end_time_label->setText(formatTime(replay->totalSeconds()));

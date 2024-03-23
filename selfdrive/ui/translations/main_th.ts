@@ -626,15 +626,12 @@
         <source>PLAY</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>ReplayPanel</name>
     <message>
-        <source>not available while onroad</source>
-        <translation type="unfinished"></translation>
+        <source>camera starting</source>
+        <translation type="obsolete">กำลังเปิดกล้อง</translation>
     </message>
     <message>
-        <source>REPLAY</source>
+        <source>loading route</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -676,6 +673,17 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>RoutesPanel</name>
+    <message>
+        <source>not available while onroad</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>REPLAY</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -630,15 +630,12 @@
         <source>PLAY</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>ReplayPanel</name>
     <message>
-        <source>not available while onroad</source>
-        <translation type="unfinished"></translation>
+        <source>camera starting</source>
+        <translation type="obsolete">câmera iniciando</translation>
     </message>
     <message>
-        <source>REPLAY</source>
+        <source>loading route</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -681,6 +678,17 @@ Isso pode levar até um minuto.</translation>
     <message>
         <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
         <translation>Reinicialização do sistema acionada. Pressione confirmar para apagar todo o conteúdo e configurações. Pressione cancel para retomar a inicialização.</translation>
+    </message>
+</context>
+<context>
+    <name>RoutesPanel</name>
+    <message>
+        <source>not available while onroad</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>REPLAY</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -10,10 +10,10 @@
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "tools/replay/replay.h"
 
-class ReplayPanel : public QWidget {
+class RoutesPanel : public QWidget {
   Q_OBJECT
 public:
-  explicit ReplayPanel(SettingsWindow *parent);
+  explicit RoutesPanel(SettingsWindow *parent);
 
 protected:
   void showEvent(QShowEvent *event) override;
@@ -36,13 +36,16 @@ public:
   void stop();
 
 protected:
+  void paintEvent(QPaintEvent *event) override;
   inline QString formatTime(int seconds) {
     return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
   }
+  bool route_loaded = false;
   QSlider *slider;
   QLabel *end_time_label;
   QPushButton *play_btn;
   QPushButton *stop_btn;
+  QWidget *controls_container;
   QTimer *timer;
   std::unique_ptr<Replay> replay;
 };

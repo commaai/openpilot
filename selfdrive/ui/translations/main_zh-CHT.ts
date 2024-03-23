@@ -626,15 +626,12 @@
         <source>PLAY</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>ReplayPanel</name>
     <message>
-        <source>not available while onroad</source>
-        <translation type="unfinished"></translation>
+        <source>camera starting</source>
+        <translation type="obsolete">開啟相機中</translation>
     </message>
     <message>
-        <source>REPLAY</source>
+        <source>loading route</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -677,6 +674,17 @@ This may take up to a minute.</source>
     <message>
         <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
         <translation>系統重設已啟動。按下「確認」以清除所有內容和設定，或按下「取消」以繼續開機。</translation>
+    </message>
+</context>
+<context>
+    <name>RoutesPanel</name>
+    <message>
+        <source>not available while onroad</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>REPLAY</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

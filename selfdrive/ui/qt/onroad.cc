@@ -149,7 +149,6 @@ void OnroadWindow::primeChanged(bool prime) {
 void OnroadWindow::startReplay(const QString &route, const QString &data_dir) {
   Params().putBool("IsReplaying", true);
   replay_controls.reset(new ReplayControls(this));
-  replay_controls->raise();
   replay_controls->start(route, data_dir);
   uiState()->replaying = true;
 }
@@ -641,6 +640,7 @@ void AnnotatedCameraWidget::paintGL() {
 
     if (frames.empty()) {
       if (skip_frame_count > 0) {
+        assert(0);
         skip_frame_count--;
         qDebug() << "skipping frame, not ready";
         return;
