@@ -1060,6 +1060,10 @@ FW_VERSIONS = {
     (Ecu.combinationMeter, 0x7c6, None): [
       b'\xf1\x00140',
     ],
+    (Ecu.parkingAdas, 0x7b1, None): [
+      b'\xf1\x10NQ5  ADAS_PRK ANL 1.00 1.05 99910-CH130',
+      b'\xf1\x8799910CH120',
+    ],
   },
   CAR.GENESIS_GV70_1ST_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
