@@ -133,7 +133,7 @@ class CarState(CarStateBase):
       self.msg_stw_actn_req = copy.copy(cp.vl["STW_ACTN_RQ"])
     self.acc_state = cp_cam.vl["DAS_control"]["DAS_accState"]
 
-    if model3 and (self.acc_state == 13 or ret.gasPressed):
+    if model3 and (self.acc_state == 13):
       self.acc_state = 0
 
     self.das_control_counters.extend(cp_cam.vl_all["DAS_control"]["DAS_controlCounter"])
