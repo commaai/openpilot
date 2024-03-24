@@ -40,7 +40,7 @@ class CarController(CarControllerBase):
       can_sends.append(self.tesla_can.create_steering_control(apply_angle, lkas_enabled, (self.frame // 2) % 16))
 
     # Longitudinal control Model 3 at 25Hz. Model S at about 40Hz (in sync with stock message)
-    if self.frame % (4 if self.model3 else 1) == 0:
+    if self.frame % (1 if self.model3 else 1) == 0:
       if self.CP.openpilotLongitudinalControl:
         target_accel = actuators.accel
         target_speed = max(CS.out.vEgo + (target_accel * CarControllerParams.ACCEL_TO_SPEED_MULTIPLIER), 0)
