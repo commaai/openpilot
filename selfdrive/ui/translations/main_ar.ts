@@ -683,10 +683,6 @@ This may take up to a minute.</source>
 <context>
     <name>RoutesPanel</name>
     <message>
-        <source>not available while onroad</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>REPLAY</source>
         <translation type="unfinished"></translation>
     </message>

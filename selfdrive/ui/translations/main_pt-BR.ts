@@ -667,10 +667,6 @@ Isso pode levar até um minuto.</translation>
 <context>
     <name>RoutesPanel</name>
     <message>
-        <source>not available while onroad</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>REPLAY</source>
         <translation type="unfinished"></translation>
     </message>

@@ -9,12 +9,14 @@
 
 #include "selfdrive/ui/ui.h"
 
+namespace {
 // TODO: move to assert file
 QString pause_svg = R"(<svg width="512" height="512" viewBox="0 0 512 512" style="color:#ffffff" xmlns="http://www.w3.org/2000/svg" class="h-full w-full"><rect width="512" height="512" x="0" y="0" rx="30" fill="transparent" stroke="transparent" stroke-width="0" stroke-opacity="100%" paint-order="stroke"></rect><svg width="125px" height="125px" viewBox="0 0 14 14" fill="#ffffff" x="193.5" y="193.5" role="img" style="display:inline-block;vertical-align:middle" xmlns="http://www.w3.org/2000/svg"><g fill="#ffffff"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="6.5"/><path d="M5.5 4.5v5m3-5v5"/></g></g></svg></svg>)";
 QString play_svg = R"(<svg width="512" height="512" viewBox="0 0 512 512" style="color:#ffffff" xmlns="http://www.w3.org/2000/svg" class="h-full w-full"><rect width="512" height="512" x="0" y="0" rx="30" fill="transparent" stroke="transparent" stroke-width="0" stroke-opacity="100%" paint-order="stroke"></rect><svg width="125px" height="125px" viewBox="0 0 14 14" fill="#ffffff" x="193.5" y="193.5" role="img" style="display:inline-block;vertical-align:middle" xmlns="http://www.w3.org/2000/svg"><g fill="#ffffff"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="6.5"/><path d="m5.5 4.5l4 2.5l-4 2.5v-5z"/></g></g></svg></svg>)";
 QString stop_svg = R"(<svg width="512" height="512" viewBox="0 0 512 512" style="color:#ffffff" xmlns="http://www.w3.org/2000/svg" class="h-full w-full"><rect width="512" height="512" x="0" y="0" rx="30" fill="transparent" stroke="transparent" stroke-width="0" stroke-opacity="100%" paint-order="stroke"></rect><svg width="125px" height="125px" viewBox="0 0 14 14" fill="#ffffff" x="193.5" y="193.5" role="img" style="display:inline-block;vertical-align:middle" xmlns="http://www.w3.org/2000/svg"><g fill="#ffffff"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="6.5"/><rect width="5" height="5" x="4.5" y="4.5" rx="1"/></g></g></svg></svg>)";
 
-namespace {
+const int THUMBNAIL_HEIGHT = 60;
+
 QString formatTime(int seconds) {
   return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
 }
@@ -24,34 +26,28 @@ QString getThumbnailPath(const QString &route) {
 }
 
 void setThumbnail(ButtonControl *btn, const QPixmap &thumbnail) {
-  btn->icon_pixmap = thumbnail.scaledToHeight(80, Qt::SmoothTransformation);
-  btn->icon_label->setPixmap(btn->icon_pixmap);
+  btn->icon_label->setPixmap(btn->icon_pixmap = thumbnail);
   btn->icon_label->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
   btn->icon_label->setVisible(true);
 }
 }  // namespace
 
 RoutesPanel::RoutesPanel(SettingsWindow *parent) : settings_window(parent), QWidget(parent) {
-  main_layout = new QStackedLayout(this);
-  main_layout->addWidget(not_available_label = new QLabel(tr("not available while onroad"), this));
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->addWidget(route_list_widget = new ListWidget(this));
-
   QObject::connect(this, &RoutesPanel::thumbnailReady, this, &RoutesPanel::updateThumbnail, Qt::QueuedConnection);
   QObject::connect(uiState(), &UIState::offroadTransition, [this](bool offroad) {
     if (offroad && !uiState()->replaying) {
       fetchRoutes();
     }
-    main_layout->setCurrentIndex(!offroad && !uiState()->replaying ? 0 : 1);
+    for (auto &r : routes) {
+      r->setEnabled(offroad || uiState()->replaying);
+    }
   });
 }
 
 void RoutesPanel::showEvent(QShowEvent *event) {
-  if (uiState()->scene.started && !uiState()->replaying) {
-    main_layout->setCurrentWidget(not_available_label);
-    return;
-  }
-  main_layout->setCurrentWidget(route_list_widget);
-  if (routes.empty()) {
+  if (routes.empty() && !uiState()->scene.started) {
     fetchRoutes();
   }
 }
@@ -76,7 +72,9 @@ void RoutesPanel::updateRouteItems(const std::map<QString, RoutesPanel::RouteIte
       r = routes.emplace_back(new ButtonControl(it->second.datetime, tr("REPLAY")));
       route_list_widget->addItem(r);
       QObject::connect(r, &ButtonControl::clicked, [this, r]() {
-        emit settings_window->closeSettings();
+        if (uiState()->replaying) {
+          emit settings_window->closeSettings();
+        }
         emit uiState()->startReplay(r->property("route").toString(), QString::fromStdString(Path::log_root()));
       });
     } else {
@@ -85,9 +83,7 @@ void RoutesPanel::updateRouteItems(const std::map<QString, RoutesPanel::RouteIte
     r->setTitle(it->second.datetime);
     r->setValue(formatTime(it->second.seconds));
     r->setProperty("route", it->first);
-    if (!it->second.thumbnail.isNull()) {
-      setThumbnail(r, it->second.thumbnail);
-    }
+    setThumbnail(r, QPixmap(getThumbnailPath(it->first)));
     r->setVisible(true);
   }
   for (; n < routes.size(); ++n) {
@@ -96,11 +92,9 @@ void RoutesPanel::updateRouteItems(const std::map<QString, RoutesPanel::RouteIte
 }
 
 void RoutesPanel::updateThumbnail(const QString route) {
-  for (auto &r : routes) {
-    if (r->property("route").toString() == route) {
-      setThumbnail(r, QPixmap(getThumbnailPath(route)));
-      break;
-    }
+  auto it = std::find_if(routes.begin(), routes.end(), [&](auto &r) { return r->property("route").toString() == route; });
+  if (it != routes.end()) {
+    setThumbnail(*it, QPixmap(getThumbnailPath(route)));
   }
 }
 
@@ -110,21 +104,17 @@ std::map<QString, RoutesPanel::RouteItem> RoutesPanel::getRouteList() {
   for (const auto &segment : log_dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot, QDir::NoSort)) {
     if (int pos = segment.lastIndexOf("--"); pos != -1) {
       if (QString route = segment.left(pos); !route.isEmpty()) {
-        auto it = results.find(route);
-        if (it == results.end()) {
+        if (auto it = results.find(route); it == results.end()) {
           QString segment_path = log_dir.filePath(segment);
           auto segment_files = QDir(segment_path).entryList(QDir::Files);
           // check if segment is valid
           if (std::count_if(segment_files.cbegin(), segment_files.cend(),
                             [](auto &f) { return f == "rlog.bz2" || f == "qcamera.ts" || f == "rlog"; }) >= 2) {
-            QPixmap thumbnail(getThumbnailPath(route));
-            if (thumbnail.isNull()) {
+            results[route] = {.datetime = QFileInfo(segment_path).lastModified().toString(Qt::ISODate),
+                              .seconds = 60};
+            if (QPixmap thumbnail(getThumbnailPath(route)); thumbnail.isNull()) {
               QtConcurrent::run(this, &RoutesPanel::extractThumbnal, route, segment_path);
             }
-            results[route] = RoutesPanel::RouteItem{
-                .datetime = QFileInfo(segment_path).lastModified().toString(Qt::ISODate),
-                .seconds = 60,
-                .thumbnail = thumbnail};
           }
         } else {
           uint64_t secs = (segment.right(pos - 2).toInt() + 1) * 60;
@@ -137,18 +127,19 @@ std::map<QString, RoutesPanel::RouteItem> RoutesPanel::getRouteList() {
 }
 
 void RoutesPanel::extractThumbnal(QString route_name, QString segment_path) {
-  if (LogReader log; log.load(QString(segment_path + "/qlog.bz2").toStdString())) {
-    for (const Event *e : log.events) {
-      if (e->which == cereal::Event::Which::THUMBNAIL) {
-        auto thumb = e->event.getThumbnail();
-        auto data = thumb.getThumbnail();
-        if (QPixmap pm; pm.loadFromData(data.begin(), data.size(), "jpeg")) {
-          QString fn = getThumbnailPath(route_name);
-          QDir().mkpath(QFileInfo(fn).absolutePath());
-          pm.save(fn);
-          emit thumbnailReady(route_name);
-          break;
-        }
+  QString qlog_fn = segment_path + "/qlog";
+  if (!QFileInfo::exists(qlog_fn)) {
+    qlog_fn += ".bz2";
+  }
+  if (LogReader log; log.load(qlog_fn.toStdString())) {
+    auto it = std::find_if(log.events.cbegin(), log.events.cend(), [](auto e) { return e->which == cereal::Event::Which::THUMBNAIL; });
+    if (it != log.events.cend()) {
+      auto thumb = (*it)->event.getThumbnail().getThumbnail();
+      if (QPixmap pm; pm.loadFromData(thumb.begin(), thumb.size(), "jpeg")) {
+        QString fn = getThumbnailPath(route_name);
+        QDir().mkpath(QFileInfo(fn).absolutePath());
+        pm.scaledToHeight(THUMBNAIL_HEIGHT, Qt::SmoothTransformation).save(fn);
+        emit thumbnailReady(route_name);
       }
     }
   }
@@ -157,6 +148,7 @@ void RoutesPanel::extractThumbnal(QString route_name, QString segment_path) {
 // class ReplayControls
 
 ReplayControls::ReplayControls(QWidget *parent) : QWidget(parent) {
+  // TODO: add more buttons (prev, next, etc.)
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(UI_BORDER_SIZE, UI_BORDER_SIZE, UI_BORDER_SIZE, UI_BORDER_SIZE);
 
@@ -198,7 +190,7 @@ ReplayControls::ReplayControls(QWidget *parent) : QWidget(parent) {
     QSlider {height: 48px;}
     QSlider::groove:horizontal {border: 1px solid #262626; height: 4px;background: #393939;}
     QSlider::sub-page {background: #33Ab4C;}
-    QSlider::handle:horizontal {background: white;border-radius: 15px;width: 30px;height: 30px;margin: -13px 0px;}
+    QSlider::handle:horizontal {background: white;border-radius: 20px;width: 40px;height: 40px;margin: -18px 0px;}
   )");
 
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { replay->seekTo(slider->sliderPosition(), false); });

@@ -3,9 +3,7 @@
 #include <QSlider>
 #include <memory>
 #include <map>
-#include <set>
 #include <vector>
-#include <QStackedLayout>
 #include "selfdrive/ui/qt/offroad/settings.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "tools/replay/replay.h"
@@ -18,7 +16,6 @@ public:
   struct RouteItem {
     QString datetime;
     uint64_t seconds;
-    QPixmap thumbnail;
   };
 
 signals:
@@ -37,8 +34,6 @@ protected:
   std::vector<ButtonControl *> routes;
   SettingsWindow *settings_window;
   ListWidget *route_list_widget;
-  QLabel *not_available_label;
-  QStackedLayout *main_layout;
 };
 
 class ReplayControls : public QWidget {
