@@ -58,5 +58,7 @@ protected:
   QPushButton *stop_btn;
   QWidget *controls_container;
   QTimer *timer;
+  QPixmap pause_icon;
+  QPixmap play_icon;
   std::unique_ptr<Replay> replay;
 };

@@ -615,22 +615,6 @@
 <context>
     <name>ReplayControls</name>
     <message>
-        <source>PAUSE</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>STOP</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>PLAY</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>camera starting</source>
-        <translation type="obsolete">카메라 시작 중</translation>
-    </message>
-    <message>
         <source>loading route</source>
         <translation type="unfinished"></translation>
     </message>

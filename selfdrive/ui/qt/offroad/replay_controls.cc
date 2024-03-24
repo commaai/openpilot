@@ -9,6 +9,11 @@
 
 #include "selfdrive/ui/ui.h"
 
+// TODO: move to assert file
+QString pause_svg = R"(<svg width="512" height="512" viewBox="0 0 512 512" style="color:#ffffff" xmlns="http://www.w3.org/2000/svg" class="h-full w-full"><rect width="512" height="512" x="0" y="0" rx="30" fill="transparent" stroke="transparent" stroke-width="0" stroke-opacity="100%" paint-order="stroke"></rect><svg width="125px" height="125px" viewBox="0 0 14 14" fill="#ffffff" x="193.5" y="193.5" role="img" style="display:inline-block;vertical-align:middle" xmlns="http://www.w3.org/2000/svg"><g fill="#ffffff"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="6.5"/><path d="M5.5 4.5v5m3-5v5"/></g></g></svg></svg>)";
+QString play_svg = R"(<svg width="512" height="512" viewBox="0 0 512 512" style="color:#ffffff" xmlns="http://www.w3.org/2000/svg" class="h-full w-full"><rect width="512" height="512" x="0" y="0" rx="30" fill="transparent" stroke="transparent" stroke-width="0" stroke-opacity="100%" paint-order="stroke"></rect><svg width="125px" height="125px" viewBox="0 0 14 14" fill="#ffffff" x="193.5" y="193.5" role="img" style="display:inline-block;vertical-align:middle" xmlns="http://www.w3.org/2000/svg"><g fill="#ffffff"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="6.5"/><path d="m5.5 4.5l4 2.5l-4 2.5v-5z"/></g></g></svg></svg>)";
+QString stop_svg = R"(<svg width="512" height="512" viewBox="0 0 512 512" style="color:#ffffff" xmlns="http://www.w3.org/2000/svg" class="h-full w-full"><rect width="512" height="512" x="0" y="0" rx="30" fill="transparent" stroke="transparent" stroke-width="0" stroke-opacity="100%" paint-order="stroke"></rect><svg width="125px" height="125px" viewBox="0 0 14 14" fill="#ffffff" x="193.5" y="193.5" role="img" style="display:inline-block;vertical-align:middle" xmlns="http://www.w3.org/2000/svg"><g fill="#ffffff"><g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="7" cy="7" r="6.5"/><rect width="5" height="5" x="4.5" y="4.5" rx="1"/></g></g></svg></svg>)";
+
 namespace {
 QString formatTime(int seconds) {
   return QDateTime::fromTime_t(seconds).toString(seconds > 60 * 60 ? "hh:mm:ss" : "mm:ss");
@@ -157,26 +162,43 @@ ReplayControls::ReplayControls(QWidget *parent) : QWidget(parent) {
 
   controls_container = new QWidget(this);
   controls_container->setVisible(false);
-  QHBoxLayout *controls_layout = new QHBoxLayout(controls_container);
+  QVBoxLayout *controls_layout = new QVBoxLayout(controls_container);
+  controls_layout->setContentsMargins(192 + UI_BORDER_SIZE, 12, 192 + UI_BORDER_SIZE, 12);
   main_layout->addStretch(1);
   main_layout->addWidget(controls_container);
 
+  QHBoxLayout *controls_top_layout = new QHBoxLayout();
+  QHBoxLayout *controls_bottom_layout = new QHBoxLayout();
+
   QLabel *time_label = new QLabel(this);
-  controls_layout->addWidget(time_label);
-  controls_layout->addWidget(play_btn = new QPushButton(tr("PAUSE"), this));
-  controls_layout->addWidget(slider = new QSlider(Qt::Horizontal, this));
-  controls_layout->addWidget(stop_btn = new QPushButton(tr("STOP"), this));
-  controls_layout->addWidget(end_time_label = new QLabel(this));
+  controls_top_layout->addWidget(time_label);
+  controls_top_layout->addWidget(slider = new QSlider(Qt::Horizontal, this));
+  controls_top_layout->addWidget(end_time_label = new QLabel(this));
+  controls_bottom_layout->setSpacing(25);
+  controls_bottom_layout->addStretch(1);
+  controls_bottom_layout->addWidget(play_btn = new QPushButton(this));
+  controls_bottom_layout->addWidget(stop_btn = new QPushButton(this));
+  controls_bottom_layout->addStretch(1);
+
+  const QSize icon_size(100, 100);
+  play_icon = QPixmap::fromImage(QImage::fromData(play_svg.toUtf8())).scaled(icon_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+  pause_icon = QPixmap::fromImage(QImage::fromData(pause_svg.toUtf8())).scaled(icon_size, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+  play_btn->setIconSize(icon_size);
+  play_btn->setIcon(pause_icon);
+  stop_btn->setIconSize(icon_size);
+  stop_btn->setIcon(QPixmap::fromImage(QImage::fromData(stop_svg.toUtf8())).scaled(icon_size, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+  controls_layout->addLayout(controls_top_layout);
+  controls_layout->addLayout(controls_bottom_layout);
 
   slider->setSingleStep(0);
   slider->setPageStep(0);
   setStyleSheet(R"(
     * {font-size: 35px;font-weight:500;color:white}
-    QPushButton {padding: 30px;border-radius: 20px;color: #E4E4E4;background-color: #393939;}
-    QSlider {height: 68px;}
-    QSlider::groove:horizontal {border: 1px solid #262626; height: 20px;background: #393939;}
+    QPushButton {border:none;background:transparent;}
+    QSlider {height: 48px;}
+    QSlider::groove:horizontal {border: 1px solid #262626; height: 4px;background: #393939;}
     QSlider::sub-page {background: #33Ab4C;}
-    QSlider::handle:horizontal {background: white;border-radius: 30px;width: 60px;height: 60px;margin: -20px 0px;}
+    QSlider::handle:horizontal {background: white;border-radius: 15px;width: 30px;height: 30px;margin: -13px 0px;}
   )");
 
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { replay->seekTo(slider->sliderPosition(), false); });
@@ -184,7 +206,7 @@ ReplayControls::ReplayControls(QWidget *parent) : QWidget(parent) {
   QObject::connect(stop_btn, &QPushButton::clicked, this, &ReplayControls::stop);
   QObject::connect(play_btn, &QPushButton::clicked, [this]() {
     replay->pause(!replay->isPaused());
-    play_btn->setText(replay->isPaused() ? tr("PLAY") : tr("PAUSE"));
+    play_btn->setIcon(replay->isPaused() ? play_icon : pause_icon);
   });
 
   timer = new QTimer(this);
