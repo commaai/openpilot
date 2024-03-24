@@ -18,9 +18,8 @@ class CarState(CarStateBase):
     self.msg_stw_actn_req = None
     self.sccm_right_stalk = None
     self.das_control = None
-    self.hands_on_level = 0
     self.steer_warning = None
-    self.acc_state = 0
+    self.hands_on_level = 0
     self.das_control_counters = deque(maxlen=32)
 
   def update(self, cp, cp_cam, cp_adas):
@@ -130,11 +129,10 @@ class CarState(CarStateBase):
     # Messages needed by carcontroller
     if model3:
       self.sccm_right_stalk = copy.copy(cp_adas.vl["SCCM_rightStalk"])
-      self.das_control = copy.copy(cp_cam.vl["DAS_control"])
     else:
       self.msg_stw_actn_req = copy.copy(cp.vl["STW_ACTN_RQ"])
-    self.acc_state = cp_cam.vl["DAS_control"]["DAS_accState"]
 
+    self.das_control = copy.copy(cp_cam.vl["DAS_control"])
     self.das_control_counters.extend(cp_cam.vl_all["DAS_control"]["DAS_controlCounter"])
 
     return ret

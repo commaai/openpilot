@@ -39,21 +39,20 @@ class CarController(CarControllerBase):
       self.apply_angle_last = apply_angle
       can_sends.append(self.tesla_can.create_steering_control(apply_angle, lkas_enabled, (self.frame // 2) % 16))
 
-    # Longitudinal control Model 3 at 25Hz. Model S at about 40Hz (in sync with stock message)
-    if self.frame % (1 if self.model3 else 1) == 0:
-      if self.CP.openpilotLongitudinalControl:
-        target_accel = actuators.accel
-        target_speed = max(CS.out.vEgo + (target_accel * CarControllerParams.ACCEL_TO_SPEED_MULTIPLIER), 0)
-        max_accel = 0 if target_accel < 0 else target_accel
-        min_accel = 0 if target_accel > 0 else target_accel
+    # Longitudinal control (in sync with stock message, about 40Hz)
+    if self.CP.openpilotLongitudinalControl:
+      acc_state = CS.das_control["DAS_accState"]
+      target_accel = actuators.accel
+      target_speed = max(CS.out.vEgo + (target_accel * CarControllerParams.ACCEL_TO_SPEED_MULTIPLIER), 0)
+      max_accel = 0 if target_accel < 0 else target_accel
+      min_accel = 0 if target_accel > 0 else target_accel
 
-        if self.model3:
-          counter = (CS.das_control["DAS_controlCounter"] + 1) % 8
-          acc_state = CS.das_control["DAS_accState"]
-          can_sends.extend(self.tesla_can.create_longitudinal_commands(acc_state, target_speed, min_accel, max_accel, counter))
-        else:
-          while len(CS.das_control_counters) > 0:
-            can_sends.extend(self.tesla_can.create_longitudinal_commands(CS.acc_state, target_speed, min_accel, max_accel, CS.das_control_counters.popleft()))
+      if self.model3:
+        counter = (CS.das_control["DAS_controlCounter"] + 1) % 8
+        can_sends.extend(self.tesla_can.create_longitudinal_commands(acc_state, target_speed, min_accel, max_accel, counter))
+      else:
+        while len(CS.das_control_counters) > 0:
+          can_sends.extend(self.tesla_can.create_longitudinal_commands(acc_state, target_speed, min_accel, max_accel, CS.das_control_counters.popleft()))
 
     # Cancel on user steering override, since there is no steering torque blending
     if hands_on_fault:
