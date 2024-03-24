@@ -670,6 +670,14 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
         <source>REPLAY</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Prev</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Next</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SettingsWindow</name>
