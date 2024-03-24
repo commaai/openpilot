@@ -33,11 +33,10 @@ class CarInterface(CarInterfaceBase):
       flags |= Panda.FLAG_TESLA_RAVEN
     if candidate == CAR.AP3_MODEL3:
       flags |= Panda.FLAG_TESLA_MODEL3
-      # flags |= Panda.FLAG_TESLA_LONG_CONTROL
-      ret.openpilotLongitudinalControl = False
+      flags |= Panda.FLAG_TESLA_LONG_CONTROL
+      ret.openpilotLongitudinalControl = True
       ret.safetyConfigs = [
-        get_safety_config(car.CarParams.SafetyModel.tesla, flags),  # internal panda controls lateral and long (party)
-        #get_safety_config(car.CarParams.SafetyModel.noOutput, 0),  # second external panda (chassis)
+        get_safety_config(car.CarParams.SafetyModel.tesla, flags),
       ]
     elif (CANBUS.autopilot_powertrain in fingerprint.keys()) and (0x2bf in fingerprint[CANBUS.autopilot_powertrain].keys()):
       ret.openpilotLongitudinalControl = True

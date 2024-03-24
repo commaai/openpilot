@@ -64,14 +64,12 @@ class CarState(CarStateBase):
     if model3:
       self.steer_warning = self.can_define.dv[epas_msg]["EPAS3S_eacErrorCode"].get(int(epas_status["EPAS3S_eacErrorCode"]), None)
       steer_status = self.can_define.dv[epas_msg]["EPAS3S_eacStatus"].get(int(epas_status["EPAS3S_eacStatus"]), None)
+      ret.steeringAngleDeg = -epas_status["EPAS3S_internalSAS"]
+      ret.steeringRateDeg = -cp_adas.vl["SCCM_steeringAngleSensor"]["SCCM_steeringAngleSpeed"]
     else:
       self.steer_warning = self.can_define.dv["EPAS_sysStatus"]["EPAS_eacErrorCode"].get(int(epas_status["EPAS_eacErrorCode"]), None)
       steer_status = self.can_define.dv["EPAS_sysStatus"]["EPAS_eacStatus"].get(int(epas_status["EPAS_eacStatus"]), None)
-
-    ret.steeringAngleDeg = -epas_status["EPAS3S_internalSAS"] if model3 else -epas_status["EPAS_internalSAS"]
-    if model3:
-      ret.steeringRateDeg = -cp_adas.vl["SCCM_steeringAngleSensor"]["SCCM_steeringAngleSpeed"]  # This is from a different angle sensor, and at different rate
-    else:
+      ret.steeringAngleDeg = -epas_status["EPAS_internalSAS"]
       ret.steeringRateDeg = -cp.vl["STW_ANGLHP_STAT"]["StW_AnglHP_Spd"]  # This is from a different angle sensor, and at different rate
 
     ret.steeringTorque = -epas_status["EPAS3S_torsionBarTorque"] if model3 else -epas_status["EPAS_torsionBarTorque"]
