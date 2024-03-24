@@ -302,7 +302,7 @@
         <translation>Parear Dispositivo</translation>
     </message>
     <message>
-        <source>Pair</source>
+        <source>PAIR</source>
         <translation>PAREAR</translation>
     </message>
 </context>

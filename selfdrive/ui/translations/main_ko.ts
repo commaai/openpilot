@@ -302,7 +302,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Pair</source>
+        <source>PAIR</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
