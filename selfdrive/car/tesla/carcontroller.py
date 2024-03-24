@@ -47,8 +47,15 @@ class CarController(CarControllerBase):
         max_accel = 0 if target_accel < 0 else target_accel
         min_accel = 0 if target_accel > 0 else target_accel
 
+        if self.frame % 200 == 0 and CC.longActive:
+          acc_state = 13  # ACC_CANCEL_GENERIC_SILENT
+        elif CC.longActive:
+          acc_state = 4  # ACC_ON
+        else:
+          acc_state = 0  # ACC_CANCEL
+
         while len(CS.das_control_counters) > 0:
-          can_sends.extend(self.tesla_can.create_longitudinal_commands(CS.acc_state, target_speed, min_accel, max_accel, CS.das_control_counters.popleft()))
+          can_sends.extend(self.tesla_can.create_longitudinal_commands(acc_state, target_speed, min_accel, max_accel, CS.das_control_counters.popleft()))
 
     # Cancel on user steering override, since there is no steering torque blending
     if hands_on_fault:
