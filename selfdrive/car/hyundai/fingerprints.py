@@ -1056,6 +1056,7 @@ FW_VERSIONS = {
     ],
     (Ecu.combinationMeter, 0x7c6, None): [
       b'\xf1\x00140',
+      b'\xf1\x8794013CH000',
     ],
     (Ecu.parkingAdas, 0x7b1, None): [
       b'\xf1\x10NQ5  ADAS_PRK ANL 1.00 1.05 99910-CH130',
