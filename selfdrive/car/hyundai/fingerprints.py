@@ -1032,6 +1032,9 @@ FW_VERSIONS = {
     ],
   },
   CAR.KIA_SPORTAGE_5TH_GEN: {
+    (Ecu.cornerRadar, 0x7b7, None): [
+      b'\xf1\x00NQ5 BCW RR 1.00 , 1.01 (uR\x89"\x00c\x02\x90',
+    ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00NQ5 FR_CMR AT AUS RHD 1.00 1.00 99211-P1040 663',
       b'\xf1\x00NQ5 FR_CMR AT GEN LHD 1.00 1.00 99211-P1060 665',
@@ -1039,6 +1042,7 @@ FW_VERSIONS = {
       b'\xf1\x00NQ5 FR_CMR AT USA LHD 1.00 1.00 99211-P1040 663',
       b'\xf1\x00NQ5 FR_CMR AT USA LHD 1.00 1.00 99211-P1060 665',
       b'\xf1\x00NQ5 FR_CMR AT USA LHD 1.00 1.00 99211-P1070 690',
+      b'\xf1\x8b "\x02#',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00NQ5__               1.00 1.02 99110-P1000         ',
@@ -1046,6 +1050,15 @@ FW_VERSIONS = {
       b'\xf1\x00NQ5__               1.00 1.03 99110-CH000         ',
       b'\xf1\x00NQ5__               1.01 1.03 99110-CH000         ',
       b'\xf1\x00NQ5__               1.01 1.03 99110-P1000         ',
+    ],
+    (Ecu.hvac, 0x7b3, None): [
+      b'\xf1\x00NQ5HEV97255-CH020UNIT-HEATER CONTROL 1.01NQ5HEVATC1.3 1.00    ',
+    ],
+    (Ecu.combinationMeter, 0x7c6, None): [
+      b'\xf1\x00140',
+    ],
+    (Ecu.combinationMeter, 0x7c6, None): [
+      b'\xf1\x00140',
     ],
   },
   CAR.GENESIS_GV70_1ST_GEN: {
