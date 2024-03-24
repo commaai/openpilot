@@ -47,7 +47,7 @@ class CarState(CarStateBase):
 
     # Steering wheel
     if model3:
-      epas_status = cp.vl["EPAS3S_handsOnLevel"]
+      epas_status = cp.vl["EPAS3S_sysStatus"]
       self.hands_on_level = epas_status["EPAS3S_handsOnLevel"]
       self.steer_warning = self.can_define.dv["EPAS3S_sysStatus"]["EPAS3S_eacErrorCode"].get(int(epas_status["EPAS3S_eacErrorCode"]), None)
       steer_status = self.can_define.dv["EPAS3S_sysStatus"]["EPAS3S_eacStatus"].get(int(epas_status["EPAS3S_eacStatus"]), None)
