@@ -2,7 +2,7 @@ import asyncio
 import logging
 import time
 import fractions
-from typing import Optional, Tuple, Any
+from typing import Any
 
 import aiortc
 from aiortc.mediastreams import VIDEO_CLOCK_RATE, VIDEO_TIME_BASE
@@ -12,7 +12,7 @@ def video_track_id(camera_type: str, track_id: str) -> str:
   return f"{camera_type}:{track_id}"
 
 
-def parse_video_track_id(track_id: str) -> Tuple[str, str]:
+def parse_video_track_id(track_id: str) -> tuple[str, str]:
   parts = track_id.split(":")
   if len(parts) != 2:
     raise ValueError(f"Invalid video track id: {track_id}")
@@ -35,7 +35,7 @@ class TiciVideoStreamTrack(aiortc.MediaStreamTrack):
     self._dt: float = dt
     self._time_base: fractions.Fraction = time_base
     self._clock_rate: int = clock_rate
-    self._start: Optional[float] = None
+    self._start: float | None = None
     self._logger = logging.getLogger("WebRTCStream")
 
   def log_debug(self, msg: Any, *args):
@@ -53,7 +53,7 @@ class TiciVideoStreamTrack(aiortc.MediaStreamTrack):
 
     return pts
 
-  def codec_preference(self) -> Optional[str]:
+  def codec_preference(self) -> str | None:
     return None
 
 

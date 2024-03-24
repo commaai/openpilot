@@ -202,6 +202,7 @@ BO_ 835 ACC_CONTROL: 8 DSU
  SG_ ACC_TYPE : 23|2@0+ (1,0) [0|3] "" HCU
  SG_ CANCEL_REQ : 24|1@0+ (1,0) [0|1] "" HCU
  SG_ ACC_CUT_IN : 25|1@0+ (1,0) [0|1] "" XXX
+ SG_ LEAD_VEHICLE_STOPPED : 29|1@0+ (1,0) [0|0] "" DSU
  SG_ PERMIT_BRAKING : 30|1@0+ (1,0) [0|1] "" HCU
  SG_ RELEASE_STANDSTILL : 31|1@0+ (1,0) [0|1] "" HCU
  SG_ ITS_CONNECT_LEAD : 39|8@0+ (1,0) [0|1] "" Vector__XXX
@@ -450,6 +451,7 @@ CM_ SG_ 835 ACC_MALFUNCTION "display ACC fault on dash if set to 1";
 CM_ SG_ 835 ACC_CUT_IN "Display blinking yellow lead if set to 1";
 CM_ SG_ 835 DISTANCE "Cycle through ACC following distance from long, mid, short when set to 1";
 CM_ SG_ 835 ITS_CONNECT_LEAD "Displayed when lead car is capable of ITS Connect";
+CM_ SG_ 835 LEAD_VEHICLE_STOPPED "Set to 1 when lead is stopped, likely only used in older TSS-P vehicles";
 CM_ SG_ 835 ALLOW_LONG_PRESS "Enable Toyota's factory set speed increment behaviour, available on both metrics cars and imperial unit cars";
 CM_ SG_ 835 PERMIT_BRAKING "Original ACC has this going high when a car in front is detected. In openpilot and before the PERMIT_BRAKING name, this was 'SET_ME_1' and is hardcoded to be high. Unsure if only informational or has an effect though existing usage in openpilot is to always set it to 1. Originally 'PMTBRKG' in the leaked toyota_2017_ref_pt.dbc file and name expansion speculated to be PerMiT BRaKinG.";
 CM_ SG_ 835 ACCEL_CMD_ALT "Copy of main ACCEL_CMD, but across 8 bits instead of 16 bits like ACCEL_CMD. Unsure if only informational or has an effect. Likely informational as existing openpilot sets this to 0 and no loss of functionality observed. Originally 'AT_RAW' in leaked toyota_2017_ref_pt.dbc file.";
@@ -520,6 +522,7 @@ VAL_ 835 ACC_CUT_IN 1 "CUT-IN Detected" 0 "clear";
 VAL_ 835 ALLOW_LONG_PRESS 2 "set speed increase by 5 speed units regardless" 1 "set speed increase by 1 speed unit on short press, 5 speed units on long press";
 VAL_ 865 CLUTCH_RELEASED 0 "clutch pressed any amount" 1 "clutch released"
 VAL_ 921 CRUISE_CONTROL_STATE 2 "disabled" 11 "hold" 10 "hold_waiting_user_cmd" 6 "enabled" 5 "faulted";
+VAL_ 921 DISTANCE_LINES 0 "not displayed" 1 "close" 2 "medium" 3 "far";
 VAL_ 956 SPORT_ON 0 "off" 1 "on";
 VAL_ 956 GEAR 0 "D" 1 "S" 8 "N" 16 "R" 32 "P";
 VAL_ 956 SPORT_GEAR_ON 0 "off" 1 "on";

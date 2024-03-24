@@ -25,10 +25,6 @@ Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
   }
 
   hw_type = get_hw_type();
-  has_rtc = (hw_type == cereal::PandaState::PandaType::UNO) ||
-            (hw_type == cereal::PandaState::PandaType::DOS) ||
-            (hw_type == cereal::PandaState::PandaType::TRES);
-
   can_reset_communications();
 
   return;
@@ -75,41 +71,6 @@ cereal::PandaState::PandaType Panda::get_hw_type() {
 
   handle->control_read(0xc1, 0, 0, hw_query, 1);
   return (cereal::PandaState::PandaType)(hw_query[0]);
-}
-
-void Panda::set_rtc(struct tm sys_time) {
-  // tm struct has year defined as years since 1900
-  handle->control_write(0xa1, (uint16_t)(1900 + sys_time.tm_year), 0);
-  handle->control_write(0xa2, (uint16_t)(1 + sys_time.tm_mon), 0);
-  handle->control_write(0xa3, (uint16_t)sys_time.tm_mday, 0);
-  // handle->control_write(0xa4, (uint16_t)(1 + sys_time.tm_wday), 0);
-  handle->control_write(0xa5, (uint16_t)sys_time.tm_hour, 0);
-  handle->control_write(0xa6, (uint16_t)sys_time.tm_min, 0);
-  handle->control_write(0xa7, (uint16_t)sys_time.tm_sec, 0);
-}
-
-struct tm Panda::get_rtc() {
-  struct __attribute__((packed)) timestamp_t {
-    uint16_t year; // Starts at 0
-    uint8_t month;
-    uint8_t day;
-    uint8_t weekday;
-    uint8_t hour;
-    uint8_t minute;
-    uint8_t second;
-  } rtc_time = {0};
-
-  handle->control_read(0xa0, 0, 0, (unsigned char*)&rtc_time, sizeof(rtc_time));
-
-  struct tm new_time = { 0 };
-  new_time.tm_year = rtc_time.year - 1900; // tm struct has year defined as years since 1900
-  new_time.tm_mon  = rtc_time.month - 1;
-  new_time.tm_mday = rtc_time.day;
-  new_time.tm_hour = rtc_time.hour;
-  new_time.tm_min  = rtc_time.minute;
-  new_time.tm_sec  = rtc_time.second;
-
-  return new_time;
 }
 
 void Panda::set_fan_speed(uint16_t fan_speed) {
@@ -211,7 +172,7 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
   for (auto cmsg : can_data_list) {
     // check if the message is intended for this panda
     uint8_t bus = cmsg.getSrc();
-    if (bus < bus_offset || bus >= (bus_offset + PANDA_BUS_CNT)) {
+    if (bus < bus_offset || bus >= (bus_offset + PANDA_BUS_OFFSET)) {
       continue;
     }
     auto can_data = cmsg.getDat();
@@ -284,6 +245,13 @@ bool Panda::unpack_can_buffer(uint8_t *data, uint32_t &size, std::vector<can_fra
       break;
     }
 
+    if (calculate_checksum(&data[pos], sizeof(can_header) + data_len) != 0) {
+      // TODO: also reset CAN comms?
+      LOGE("Panda CAN checksum failed");
+      size = 0;
+      return false;
+    }
+
     can_frame &canData = out_vec.emplace_back();
     canData.busTime = 0;
     canData.address = header.addr;
@@ -293,12 +261,6 @@ bool Panda::unpack_can_buffer(uint8_t *data, uint32_t &size, std::vector<can_fra
     }
     if (header.returned) {
       canData.src += CAN_RETURNED_BUS_OFFSET;
-    }
-
-    if (calculate_checksum(&data[pos], sizeof(can_header) + data_len) != 0) {
-      LOGE("Panda CAN checksum failed");
-      size = 0;
-      return false;
     }
 
     canData.dat.assign((char *)&data[pos + sizeof(can_header)], data_len);

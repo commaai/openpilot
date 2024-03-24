@@ -10,7 +10,6 @@ const board board_grey = {
   .has_obd = false,
   .has_spi = false,
   .has_canfd = false,
-  .has_rtc_battery = false,
   .fan_max_rpm = 0U,
   .avdd_mV = 3300U,
   .fan_stall_recovery = false,

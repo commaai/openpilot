@@ -15,3 +15,5 @@ if __name__ == "__main__":
     print("flashing", s)
     with PandaJungle(serial=s) as p:
       p.flash()
+
+  exit(1 if len(serials) == 0 else 0)

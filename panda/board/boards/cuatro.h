@@ -108,7 +108,6 @@ const board board_cuatro = {
   .has_obd = true,
   .has_spi = true,
   .has_canfd = true,
-  .has_rtc_battery = true,
   .fan_max_rpm = 6600U,
   .avdd_mV = 1800U,
   .fan_stall_recovery = false,

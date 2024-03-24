@@ -2,7 +2,6 @@
 import os
 import struct
 from functools import wraps
-from typing import Optional
 
 from panda import Panda, PandaDFU
 from panda.python.constants import McuType
@@ -57,7 +56,7 @@ class PandaJungle(Panda):
       fn = os.path.join(FW_PATH, self._mcu_type.config.app_fn.replace("panda", "panda_jungle"))
     super().flash(fn=fn, code=code, reconnect=reconnect)
 
-  def recover(self, timeout: Optional[int] = 60, reset: bool = True) -> bool:
+  def recover(self, timeout: int | None = 60, reset: bool = True) -> bool:
     dfu_serial = self.get_dfu_serial()
 
     if reset:
@@ -81,6 +80,12 @@ class PandaJungle(Panda):
       return McuType.F4
     elif hw_type in PandaJungle.H7_DEVICES:
       return McuType.H7
+    else:
+      # have to assume F4, see comment in Panda.connect
+      # initially Jungle V1 has HW type: bytearray(b'')
+      if hw_type == b'' or self._assume_f4_mcu:
+        return McuType.F4
+
     raise ValueError(f"unknown HW type: {hw_type}")
 
   def up_to_date(self, fn=None) -> bool:

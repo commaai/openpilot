@@ -9,7 +9,7 @@ import logging
 import threading
 from contextlib import contextmanager
 from functools import reduce
-from typing import Callable, List, Optional
+from collections.abc import Callable
 
 from .base import BaseHandle, BaseSTBootloaderHandle, TIMEOUT
 from .constants import McuType, MCU_TYPE_BY_IDCODE, USBPACKET_MAX_SIZE
@@ -251,7 +251,7 @@ class PandaSpiHandle(BaseHandle):
         version_bytes = spi.readbytes(len(vers_str) + 2)
         if bytes(version_bytes).startswith(vers_str):
           break
-        if (time.monotonic() - start) > 0.01:
+        if (time.monotonic() - start) > 0.001:
           raise PandaSpiMissingAck
 
       rlen = struct.unpack("<H", bytes(version_bytes[-2:]))[0]
@@ -319,7 +319,7 @@ class STBootloaderSPIHandle(BaseSTBootloaderHandle):
       with self.dev.acquire() as spi:
         spi.xfer([self.SYNC, ])
         try:
-          self._get_ack(spi)
+          self._get_ack(spi, 0.1)
         except (PandaSpiNackResponse, PandaSpiMissingAck):
           # NACK ok here, will only ACK the first time
           pass
@@ -333,7 +333,7 @@ class STBootloaderSPIHandle(BaseSTBootloaderHandle):
     start_time = time.monotonic()
     while data not in (self.ACK, self.NACK) and (time.monotonic() - start_time < timeout):
       data = spi.xfer([0x00, ])[0]
-      time.sleep(0.001)
+      time.sleep(0)
     spi.xfer([self.ACK, ])
 
     if data == self.NACK:
@@ -341,13 +341,13 @@ class STBootloaderSPIHandle(BaseSTBootloaderHandle):
     elif data != self.ACK:
       raise PandaSpiMissingAck
 
-  def _cmd_no_retry(self, cmd: int, data: Optional[List[bytes]] = None, read_bytes: int = 0, predata=None) -> bytes:
+  def _cmd_no_retry(self, cmd: int, data: list[bytes] | None = None, read_bytes: int = 0, predata=None) -> bytes:
     ret = b""
     with self.dev.acquire() as spi:
       # sync + command
       spi.xfer([self.SYNC, ])
       spi.xfer([cmd, cmd ^ 0xFF])
-      self._get_ack(spi, timeout=0.1)
+      self._get_ack(spi, timeout=0.01)
 
       # "predata" - for commands that send the first data without a checksum
       if predata is not None:
@@ -371,7 +371,7 @@ class STBootloaderSPIHandle(BaseSTBootloaderHandle):
 
     return bytes(ret)
 
-  def _cmd(self, cmd: int, data: Optional[List[bytes]] = None, read_bytes: int = 0, predata=None) -> bytes:
+  def _cmd(self, cmd: int, data: list[bytes] | None = None, read_bytes: int = 0, predata=None) -> bytes:
     exc = PandaSpiException()
     for n in range(MAX_XFER_RETRY_COUNT):
       try:

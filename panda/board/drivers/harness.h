@@ -117,11 +117,6 @@ void harness_tick(void) {
 }
 
 void harness_init(void) {
-  // delay such that the connection is fully made before trying orientation detection
-  current_board->set_led(LED_BLUE, true);
-  delay(10000000);
-  current_board->set_led(LED_BLUE, false);
-
   // try to detect orientation
   harness.status = harness_detect_orientation();
   if (harness.status != HARNESS_STATUS_NC) {

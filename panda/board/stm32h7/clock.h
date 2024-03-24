@@ -21,6 +21,8 @@ void clock_init(void) {
   // Set power mode to direct SMPS power supply(depends on the board layout)
 #ifndef STM32H723
   register_set(&(PWR->CR3), PWR_CR3_SMPSEN, 0xFU); // powered only by SMPS
+#else
+  register_set(&(PWR->CR3), PWR_CR3_LDOEN, 0xFU);
 #endif
   // Set VOS level (VOS3 to 170Mhz, VOS2 to 300Mhz, VOS1 to 400Mhz, VOS0 to 550Mhz)
   register_set(&(PWR->D3CR), PWR_D3CR_VOS_1 | PWR_D3CR_VOS_0, 0xC000U); //VOS1, needed for 80Mhz CAN FD

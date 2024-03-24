@@ -263,7 +263,7 @@ BO_ 416 SCC_CONTROL: 32 ADRV
  SG_ aReqValue : 128|11@1+ (0.01,-10.23) [-10.23|10.24] "m/s^2" XXX
  SG_ ZEROS_7 : 63|8@0+ (1,0) [0|255] "" XXX
  SG_ ACCMode : 68|3@1+ (1,0) [0|7] "" XXX
- SG_ NEW_SIGNAL_12 : 35|9@1+ (0.1,0) [0|255] "" XXX
+ SG_ ACC_ObjRelSpd : 35|9@1+ (0.1,-16.4) [-16.4|34.7] "m/s" XXX
  SG_ JerkLowerLimit : 166|7@0+ (0.1,0) [0|12.7] "m/s^3" XXX
  SG_ StopReq : 184|1@0+ (1,0) [0|1] "" XXX
  SG_ NEW_SIGNAL_15 : 192|11@1+ (0.1,0) [0|204.7] "m" XXX

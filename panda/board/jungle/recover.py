@@ -24,3 +24,4 @@ if __name__ == "__main__":
   for s in dfu_serials:
     print("flashing", s)
     PandaJungleDFU(s).recover()
+  exit(1 if len(dfu_serials) == 0 else 0)

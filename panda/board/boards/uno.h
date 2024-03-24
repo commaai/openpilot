@@ -147,8 +147,6 @@ void uno_init(void) {
   // Initialize harness
   harness_init();
 
-  // Initialize RTC
-  rtc_init();
 
   // Enable CAN transceivers
   uno_enable_can_transceivers(true);
@@ -160,11 +158,6 @@ void uno_init(void) {
 
   // Set normal CAN mode
   uno_set_can_mode(CAN_MODE_NORMAL);
-
-  // change CAN mapping when flipped
-  if (harness.status == HARNESS_STATUS_FLIPPED) {
-    can_flip_buses(0, 2);
-  }
 
   // Switch to phone usb mode if harness connection is powered by less than 7V
   if(white_read_voltage_mV() < 7000U){
@@ -203,7 +196,6 @@ const board board_uno = {
   .has_obd = true,
   .has_spi = false,
   .has_canfd = false,
-  .has_rtc_battery = true,
   .fan_max_rpm = 5100U,
   .avdd_mV = 3300U,
   .fan_stall_recovery = false,

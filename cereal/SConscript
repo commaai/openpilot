@@ -17,7 +17,7 @@ env.Command([f'gen/cpp/{s}.c++' for s in schema_files] + [f'gen/cpp/{s}.h' for s
 # TODO: remove non shared cereal and messaging
 cereal_objects = env.SharedObject([f'gen/cpp/{s}.c++' for s in schema_files])
 
-env.Library('cereal', cereal_objects)
+cereal = env.Library('cereal', cereal_objects)
 env.SharedLibrary('cereal_shared', cereal_objects)
 
 # Build messaging
@@ -34,14 +34,13 @@ messaging_objects = env.SharedObject([
   'messaging/socketmaster.cc',
 ])
 
-messaging_lib = env.Library('messaging', messaging_objects)
+messaging = env.Library('messaging', messaging_objects)
 Depends('messaging/impl_zmq.cc', services_h)
 
-env.Program('messaging/bridge', ['messaging/bridge.cc'], LIBS=[messaging_lib, 'zmq', common])
+env.Program('messaging/bridge', ['messaging/bridge.cc'], LIBS=[messaging, 'zmq', common])
 Depends('messaging/bridge.cc', services_h)
 
-envCython.Program('messaging/messaging_pyx.so', 'messaging/messaging_pyx.pyx', LIBS=envCython["LIBS"]+[messaging_lib, "zmq", common])
-
+messaging_python = envCython.Program('messaging/messaging_pyx.so', 'messaging/messaging_pyx.pyx', LIBS=envCython["LIBS"]+[messaging, "zmq", common])
 
 # Build Vision IPC
 vipc_sources = [
@@ -57,11 +56,11 @@ else:
   vipc_sources += ['visionipc/visionbuf_cl.cc']
 
 vipc_objects = env.SharedObject(vipc_sources)
-vipc = env.Library('visionipc', vipc_objects)
+visionipc = env.Library('visionipc', vipc_objects)
 
 
 vipc_frameworks = []
-vipc_libs = envCython["LIBS"] + [vipc, messaging_lib, common, "zmq"]
+vipc_libs = envCython["LIBS"] + [visionipc, messaging, common, "zmq"]
 if arch == "Darwin":
   vipc_frameworks.append('OpenCL')
 else:
@@ -70,7 +69,10 @@ envCython.Program('visionipc/visionipc_pyx.so', 'visionipc/visionipc_pyx.pyx',
                   LIBS=vipc_libs, FRAMEWORKS=vipc_frameworks)
 
 if GetOption('extras'):
-  env.Program('messaging/test_runner', ['messaging/test_runner.cc', 'messaging/msgq_tests.cc'], LIBS=[messaging_lib, common])
+  env.Program('messaging/test_runner', ['messaging/test_runner.cc', 'messaging/msgq_tests.cc'], LIBS=[messaging, common])
 
   env.Program('visionipc/test_runner', ['visionipc/test_runner.cc', 'visionipc/visionipc_tests.cc'],
               LIBS=['pthread'] + vipc_libs, FRAMEWORKS=vipc_frameworks)
+
+
+Export('cereal', 'messaging', 'messaging_python', 'visionipc')

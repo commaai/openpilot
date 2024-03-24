@@ -122,8 +122,6 @@ void black_init(void) {
   // Initialize harness
   harness_init();
 
-  // Initialize RTC
-  rtc_init();
 
   // Enable CAN transceivers
   black_enable_can_transceivers(true);
@@ -135,11 +133,6 @@ void black_init(void) {
 
   // Set normal CAN mode
   black_set_can_mode(CAN_MODE_NORMAL);
-
-  // change CAN mapping when flipped
-  if (harness.status == HARNESS_STATUS_FLIPPED) {
-    can_flip_buses(0, 2);
-  }
 }
 
 void black_init_bootloader(void) {
@@ -168,7 +161,6 @@ const board board_black = {
   .has_obd = true,
   .has_spi = false,
   .has_canfd = false,
-  .has_rtc_battery = false,
   .fan_max_rpm = 0U,
   .avdd_mV = 3300U,
   .fan_stall_recovery = false,

@@ -188,6 +188,9 @@ BO_ 497 BCMGeneralPlatformStatus: 8 K9_BCM
  SG_ SystemBackUpPowerMode : 5|2@0+ (1,0) [0|3] "" XXX
  SG_ ParkBrakeSwActive : 36|1@0+ (1,0) [0|3] "" XXX
 
+BO_ 500 SportMode: 6 XXX
+ SG_ SportMode : 15|1@0+ (1,0) [0|1] "" XXX
+
 BO_ 501 ECMPRDNL2: 8 K20_ECM
  SG_ TransmissionState : 48|4@1+ (1,0) [0|7] "" NEO
  SG_ PRNDL2 : 27|4@0+ (1,0) [0|255] "" NEO

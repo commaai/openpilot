@@ -29,8 +29,7 @@ const int GM_STANDSTILL_THRSLD = 10;  // 0.311kph
 
 const CanMsg GM_ASCM_TX_MSGS[] = {{0x180, 0, 4}, {0x409, 0, 7}, {0x40A, 0, 7}, {0x2CB, 0, 8}, {0x370, 0, 6},  // pt bus
                                   {0xA1, 1, 7}, {0x306, 1, 8}, {0x308, 1, 7}, {0x310, 1, 2},   // obs bus
-                                  {0x315, 2, 5},  // ch bus
-                                  {0x104c006c, 3, 3}, {0x10400060, 3, 5}};  // gmlan
+                                  {0x315, 2, 5}};  // ch bus
 
 const CanMsg GM_CAM_TX_MSGS[] = {{0x180, 0, 4},  // pt bus
                                  {0x1E1, 2, 7}, {0x184, 2, 8}};  // camera bus

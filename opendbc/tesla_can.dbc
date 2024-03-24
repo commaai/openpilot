@@ -131,6 +131,19 @@ BO_ 880 EPAS_sysStatus: 8 EPAS
  SG_ EPAS_sysStatusCounter : 51|4@0+ (1,0) [0|15] ""  NEO
  SG_ EPAS_torsionBarTorque : 19|12@0+ (0.01,-20.5) [0|0] "Nm"  NEO
 
+BO_ 305 EPAS3P_sysStatus: 8 NEO
+ SG_ EPAS_currentTuneMode : 7|4@0+ (1,0) [0|0] "" NEO
+ SG_ EPAS_eacErrorCode : 23|4@0+ (1,0) [0|15] "" NEO
+ SG_ EPAS_eacStatus : 55|3@0+ (1,0) [0|7] "" NEO
+ SG_ EPAS_handsOnLevel : 39|2@0+ (1,0) [0|3] "" NEO
+ SG_ EPAS_internalSAS : 37|14@0+ (0.1,-819.2) [-819.2|819] "deg" NEO
+ SG_ EPAS_steeringFault : 2|1@0+ (1,0) [0|1] "" NEO
+ SG_ EPAS_steeringRackForce : 1|10@0+ (50,-25575) [-25575|25575] "N" NEO
+ SG_ EPAS_steeringReduced : 3|1@0+ (1,0) [0|1] "" NEO
+ SG_ EPAS_sysStatusChecksum : 63|8@0+ (1,0) [0|255] "" NEO
+ SG_ EPAS_sysStatusCounter : 51|4@0+ (1,0) [0|15] "" NEO
+ SG_ EPAS_torsionBarTorque : 19|12@0+ (0.01,-20.5) [-20.5|20.45] "Nm" NEO
+
 BO_ 3 STW_ANGL_STAT: 8 STW
  SG_ StW_Angl : 5|14@0+ (0.5,-2048) [0|0] "deg"  NEO
  SG_ StW_AnglSpd : 21|14@0+ (0.5,-2048) [0|0] "/s"  NEO
@@ -708,6 +721,10 @@ BO_ 1001 DAS_bodyControls: 8 XXX
  SG_ DAS_bodyControlsCounter : 52|4@1+ (1,0) [0|15] "" XXX
  SG_ DAS_bodyControlsChecksum : 56|8@1+ (1,0) [0|255] "" XXX
 
+BO_ 780 DriverSeat: 8 XXX
+ SG_ occupancyStatus : 16|3@1+ (1,0) [0|7] "" XXX
+ SG_ buckleStatus : 19|2@1+ (1,0) [0|3] "" XXX
+
 VAL_ 3 StW_Angl 16383 "SNA" ;
 VAL_ 3 StW_AnglSens_Id 2 "MUST" 0 "PSBL" 1 "SELF" ;
 VAL_ 3 StW_AnglSens_Stat 2 "ERR" 3 "ERR_INI" 1 "INI" 0 "OK" ;
@@ -802,6 +819,8 @@ VAL_ 697 DAS_jerkMin 511 "SNA" ;
 VAL_ 697 DAS_jerkMax 255 "SNA" ;
 VAL_ 697 DAS_accelMin 511 "SNA" ;
 VAL_ 697 DAS_accelMax 511 "SNA" ;
+VAL_ 780 occupancyStatus 1 "OCCUPIED" 0 "UNOCCUPIED" ;
+VAL_ 780 buckleStatus 1 "LATCHED" 0 "UNLATCHED" ;
 VAL_ 792 BOOT_STATE 2 "Init" 3 "SNA" 0 "closed" 1 "open" ;
 VAL_ 792 CERRD 1 "CAN error detect" 0 "no Can error detected" ;
 VAL_ 792 DAY 1 "Init" 0 "SNA" ;

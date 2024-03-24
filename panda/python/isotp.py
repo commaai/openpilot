@@ -79,10 +79,10 @@ def isotp_send(panda, x, addr, bus=0, recvaddr=None, subaddr=None, rate=None):
     sends = []
     while len(x) > 0:
       if subaddr:
-        sends.append(((bytes([subaddr, 0x20 + (idx & 0xF)]) + x[0:6]).ljust(8, b"\x00")))
+        sends.append((bytes([subaddr, 0x20 + (idx & 0xF)]) + x[0:6]).ljust(8, b"\x00"))
         x = x[6:]
       else:
-        sends.append(((bytes([0x20 + (idx & 0xF)]) + x[0:7]).ljust(8, b"\x00")))
+        sends.append((bytes([0x20 + (idx & 0xF)]) + x[0:7]).ljust(8, b"\x00"))
         x = x[7:]
       idx += 1
 

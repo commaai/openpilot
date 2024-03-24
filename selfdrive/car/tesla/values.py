@@ -1,38 +1,43 @@
 from collections import namedtuple
-from enum import StrEnum
-from typing import Dict, List, Union
 
 from cereal import car
-from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
-from openpilot.selfdrive.car.docs_definitions import CarInfo
+from openpilot.selfdrive.car import AngleRateLimit, CarSpecs, PlatformConfig, Platforms, dbc_dict
+from openpilot.selfdrive.car.docs_definitions import CarDocs
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
 
 Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 
-
-class CAR(StrEnum):
-  AP1_MODELS = 'TESLA AP1 MODEL S'
-  AP2_MODELS = 'TESLA AP2 MODEL S'
-
-
-CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
-  CAR.AP1_MODELS: CarInfo("Tesla AP1 Model S", "All"),
-  CAR.AP2_MODELS: CarInfo("Tesla AP2 Model S", "All"),
-}
-
-
-DBC = {
-  CAR.AP2_MODELS: dbc_dict('tesla_powertrain', 'tesla_radar', chassis_dbc='tesla_can'),
-  CAR.AP1_MODELS: dbc_dict('tesla_powertrain', 'tesla_radar', chassis_dbc='tesla_can'),
-}
+class CAR(Platforms):
+  TESLA_AP1_MODELS = PlatformConfig(
+    [CarDocs("Tesla AP1 Model S", "All")],
+    CarSpecs(mass=2100., wheelbase=2.959, steerRatio=15.0),
+    dbc_dict('tesla_powertrain', 'tesla_radar_bosch_generated', chassis_dbc='tesla_can')
+  )
+  TESLA_AP2_MODELS = PlatformConfig(
+    [CarDocs("Tesla AP2 Model S", "All")],
+    TESLA_AP1_MODELS.specs,
+    TESLA_AP1_MODELS.dbc_dict
+  )
+  TESLA_MODELS_RAVEN = PlatformConfig(
+    [CarDocs("Tesla Model S Raven", "All")],
+    TESLA_AP1_MODELS.specs,
+    dbc_dict('tesla_powertrain', 'tesla_radar_continental_generated', chassis_dbc='tesla_can')
+  )
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.UDS_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.UDS_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.eps],
+      rx_offset=0x08,
+      bus=0,
+    ),
+    Request(
+      [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.SUPPLIER_SOFTWARE_VERSION_REQUEST],
+      [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.SUPPLIER_SOFTWARE_VERSION_RESPONSE],
       whitelist_ecus=[Ecu.eps],
       rx_offset=0x08,
       bus=0,
@@ -46,7 +51,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
     ),
   ]
 )
-
 
 class CANBUS:
   # Lateral harness
@@ -89,3 +93,6 @@ class CarControllerParams:
 
   def __init__(self, CP):
     pass
+
+
+DBC = CAR.create_dbc_map()
