@@ -539,7 +539,7 @@ FW_VERSIONS = {
       b'\xf1\x00OS9 LKAS AT USA LHD 1.00 1.00 95740-J9300 g21',
     ],
   },
-  CAR.KONA_2ND_GEN: {
+  CAR.HYUNDAI_KONA_2ND_GEN: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00SX2_ RDR -----      1.00 1.02 99110-BE000         ',
     ],
