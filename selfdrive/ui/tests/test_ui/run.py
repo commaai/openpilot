@@ -91,6 +91,11 @@ def setup_settings_toggles(click, pm: PubMaster):
   setup_settings_device(click, pm)
   click(300, 750)
 
+def setup_offroad_driver_camera(click, pm: PubMaster):
+  setup_common(click, pm)
+  setup_settings_device(click, pm)
+  click(1900,450)
+
 def setup_onroad(click, pm: PubMaster):
   setup_common(click, pm)
 
@@ -145,6 +150,7 @@ CASES = {
   "settings_network": setup_settings_network,
   "settings_software": setup_settings_software,
   "settings_toggles": setup_settings_toggles,
+  "offroad_driver_camera": setup_offroad_driver_camera,
   "keyboard": setup_keyboard,
   "onroad": setup_onroad,
   "onroad_map": setup_onroad_map,
