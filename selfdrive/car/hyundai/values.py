@@ -220,8 +220,7 @@ class CAR(Platforms):
     flags=HyundaiFlags.CLUSTER_GEARS,
   )
   HYUNDAI_KONA_2ND_GEN = HyundaiCanFDPlatformConfig(
-    "HYUNDAI KONA 2ND GEN",
-    HyundaiCarInfo("Hyundai Kona 2024", car_parts=CarParts.common([CarHarness.hyundai_l])),
+    [HyundaiCarDocs("Hyundai Kona 2024", car_parts=CarParts.common([CarHarness.hyundai_l]))],
     CarSpecs(mass=1590, wheelbase=2.66, steerRatio=13.6, tireStiffnessFactor=0.385),
   )
   HYUNDAI_KONA_EV = HyundaiPlatformConfig(
