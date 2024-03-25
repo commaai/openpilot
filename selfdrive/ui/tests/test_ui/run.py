@@ -22,8 +22,9 @@ from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state
 from openpilot.tools.webcam.camera import Camera
+from openpilot.system.version import terms_version, training_version
 
-UI_DELAY = 0.5 # may be slower on CI?
+UI_DELAY = 2 # may be slower on CI?
 
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
@@ -31,8 +32,18 @@ NetworkStrength = log.DeviceState.NetworkStrength
 EventName = car.CarEvent.EventName
 EVENTS_BY_NAME = {v: k for k, v in EventName.schema.enumerants.items()}
 
+class PrimeType:
+  UNKNOWN = b'-1'
+  NONE = b'0'
+  MAGENTA = b'1'
+  LITE = b'2'
+  BLUE = b'3'
+  MAGENTA_NEW = b'4'
+  PURPLE = b'5'
 
 def setup_common(click, pm: PubMaster):
+  Params().put("HasAcceptedTerms", terms_version)
+  Params().put("CompletedTrainingVersion", training_version)
   Params().put("DongleId", "123456789012345")
   dat = messaging.new_message('deviceState')
   dat.deviceState.started = True
@@ -46,8 +57,18 @@ def setup_common(click, pm: PubMaster):
 
   pm.send("deviceState", dat)
 
-def setup_homescreen(click, pm: PubMaster):
-  setup_common(click, pm)
+def setup_keyboard(click, pm):
+  setup_settings_network(click, pm)
+  click(1800, 50) # Advanced Button
+  click(1900, 350) # Edit tethering password
+
+def setup_homescreen(prime_type):
+  def actual_setup_homescreen(click, pm: PubMaster):
+    if prime_type != PrimeType.NONE:
+      Params().put("PrimeType", prime_type)
+      time.sleep(UI_DELAY)
+    setup_common(click, pm)
+  return actual_setup_homescreen
 
 def setup_settings_device(click, pm: PubMaster):
   setup_common(click, pm)
@@ -59,6 +80,16 @@ def setup_settings_network(click, pm: PubMaster):
 
   setup_settings_device(click, pm)
   click(300, 600)
+
+def setup_settings_software(click, pm: PubMaster):
+  setup_common(click, pm)
+  setup_settings_device(click, pm)
+  click(300, 950)
+
+def setup_settings_toggles(click, pm: PubMaster):
+  setup_common(click, pm)
+  setup_settings_device(click, pm)
+  click(300, 750)
 
 def setup_onroad(click, pm: PubMaster):
   setup_common(click, pm)
@@ -108,9 +139,13 @@ def setup_onroad_sidebar(click, pm: PubMaster):
   click(500, 500)
 
 CASES = {
-  "homescreen": setup_homescreen,
+  "homescreen": setup_homescreen(PrimeType.PURPLE),
+  "homescreen_with_prime": setup_homescreen(PrimeType.NONE),
   "settings_device": setup_settings_device,
   "settings_network": setup_settings_network,
+  "settings_software": setup_settings_software,
+  "settings_toggles": setup_settings_toggles,
+  "keyboard": setup_keyboard,
   "onroad": setup_onroad,
   "onroad_map": setup_onroad_map,
   "onroad_sidebar": setup_onroad_sidebar
