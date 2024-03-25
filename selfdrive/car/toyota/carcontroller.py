@@ -112,7 +112,10 @@ class CarController(CarControllerBase):
 
     # add back gas to maintain speed
     # accel_offset = CS.pcm_neutral_force / self.CP.mass
-    # pcm_accel_cmd += accel_offset
+    # pcm_accel_cmd -= accel_offset
+
+    if not CC.longActive:
+      pcm_accel_cmd = 0.0
 
     pcm_accel_cmd = clip(pcm_accel_cmd, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
 
