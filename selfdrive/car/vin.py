@@ -3,6 +3,8 @@ import re
 
 import cereal.messaging as messaging
 from panda.python.uds import get_rx_addr_for_tx_addr, FUNCTIONAL_ADDRS
+from openpilot.common.params import Params
+from openpilot.selfdrive.car.fw_versions import set_obd_multiplexing
 from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from openpilot.selfdrive.car.fw_query_definitions import STANDARD_VIN_ADDRS, StdQueries
 from openpilot.common.swaglog import cloudlog
@@ -16,8 +18,9 @@ def is_valid_vin(vin: str):
 
 
 def get_vin(logcan, sendcan, buses, timeout=0.1, retry=2, debug=False):
+  params = Params()
   for i in range(retry):
-    for bus in buses:
+    for bus, obd_multiplexing in ((1, True), (0, True), (1, False)):
       for request, response, valid_buses, vin_addrs, functional_addrs, rx_offset in (
         (StdQueries.UDS_VIN_REQUEST, StdQueries.UDS_VIN_RESPONSE, (0, 1), STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8),
         (StdQueries.OBD_VIN_REQUEST, StdQueries.OBD_VIN_RESPONSE, (0, 1), STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8),
@@ -27,6 +30,7 @@ def get_vin(logcan, sendcan, buses, timeout=0.1, retry=2, debug=False):
         if bus not in valid_buses:
           continue
 
+        set_obd_multiplexing(params, obd_multiplexing)
         # When querying functional addresses, ideally we respond to everything that sends a first frame to avoid leaving the
         # ECU in a temporary bad state. Note that we may not cover all ECUs and response offsets. TODO: query physical addrs
         tx_addrs = vin_addrs
