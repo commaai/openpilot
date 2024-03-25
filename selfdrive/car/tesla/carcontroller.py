@@ -15,6 +15,7 @@ class CarController(CarControllerBase):
     self.pt_packer = CANPacker(DBC[CP.carFingerprint]['pt'])
     self.tesla_can = TeslaCAN(self.packer, self.pt_packer)
     self.model3 = CP.carFingerprint == CAR.AP3_MODEL3
+    self.last_das_control_counter = -1
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
@@ -48,8 +49,10 @@ class CarController(CarControllerBase):
       min_accel = 0 if target_accel > 0 else target_accel
 
       if self.model3:
-        counter = (CS.das_control["DAS_controlCounter"] + 1) % 8
-        can_sends.extend(self.tesla_can.create_longitudinal_commands(acc_state, target_speed, min_accel, max_accel, counter))
+        counter = CS.das_control["DAS_controlCounter"] % 8
+        if counter != self.last_das_control_counter:
+          self.last_das_control_counter = counter
+          can_sends.extend(self.tesla_can.create_longitudinal_commands(acc_state, target_speed, min_accel, max_accel, counter))
       else:
         while len(CS.das_control_counters) > 0:
           can_sends.extend(self.tesla_can.create_longitudinal_commands(acc_state, target_speed, min_accel, max_accel, CS.das_control_counters.popleft()))
@@ -59,7 +62,7 @@ class CarController(CarControllerBase):
       pcm_cancel_cmd = True
 
     if self.frame % 10 == 0 and pcm_cancel_cmd:
-      if self.model3:
+      if self.model3 and CS.cruiseState.enabled:
         can_sends.append(self.tesla_can.model3_cancel_acc(CS.sccm_right_stalk))
       else:
         # Spam every possible counter value, otherwise it might not be accepted
