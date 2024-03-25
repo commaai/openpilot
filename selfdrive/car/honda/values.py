@@ -261,9 +261,9 @@ class CAR(Platforms):
   )
 
 
-HONDA_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
+HONDA_ALT_VERSION_REQUEST = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
   p16(0xF112)
-HONDA_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
+HONDA_ALT_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + \
   p16(0xF112)
 
 FW_QUERY_CONFIG = FwQueryConfig(
@@ -276,17 +276,10 @@ FW_QUERY_CONFIG = FwQueryConfig(
     ),
 
     # Data collection requests:
-    # Attempt to get the radarless Civic 2022+ camera FW
+    # Log manufacturer-specific identifier for current ECUs
     Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.UDS_VERSION_REQUEST],
-      [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.UDS_VERSION_RESPONSE],
-      bus=0,
-      logging=True
-    ),
-    # Log extra identifiers for current ECUs
-    Request(
-      [HONDA_VERSION_REQUEST],
-      [HONDA_VERSION_RESPONSE],
+      [HONDA_ALT_VERSION_REQUEST],
+      [HONDA_ALT_VERSION_RESPONSE],
       bus=1,
       logging=True,
     ),
@@ -307,17 +300,18 @@ FW_QUERY_CONFIG = FwQueryConfig(
   # We lose these ECUs without the comma power on these cars.
   # Note that we still attempt to match with them when they are present
   non_essential_ecus={
-    Ecu.programmedFuelInjection: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G, CAR.HONDA_PILOT],
-    Ecu.transmission: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G, CAR.HONDA_PILOT],
-    Ecu.srs: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_E],
-    Ecu.eps: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_E],
-    Ecu.vsa: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G, CAR.HONDA_CRV_HYBRID,
+    Ecu.programmedFuelInjection: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CIVIC_2022, CAR.HONDA_CRV_5G,
+                                  CAR.HONDA_PILOT],
+    Ecu.transmission: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CIVIC_2022, CAR.HONDA_CRV_5G, CAR.HONDA_PILOT],
+    Ecu.srs: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC_2022, CAR.HONDA_E],
+    Ecu.eps: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC_2022, CAR.HONDA_E],
+    Ecu.vsa: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CIVIC_2022, CAR.HONDA_CRV_5G, CAR.HONDA_CRV_HYBRID,
               CAR.HONDA_E, CAR.HONDA_INSIGHT],
-    Ecu.combinationMeter: [CAR.ACURA_ILX, CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_FIT,
+    Ecu.combinationMeter: [CAR.ACURA_ILX, CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CIVIC_2022, CAR.HONDA_FIT,
                            CAR.HONDA_HRV, CAR.HONDA_CRV_5G, CAR.HONDA_CRV_HYBRID, CAR.HONDA_E, CAR.HONDA_INSIGHT, CAR.HONDA_ODYSSEY_CHN],
-    Ecu.gateway: [CAR.ACURA_ILX, CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_FIT, CAR.HONDA_FREED,
-                  CAR.HONDA_HRV, CAR.HONDA_RIDGELINE, CAR.HONDA_CRV_5G, CAR.HONDA_CRV_HYBRID, CAR.HONDA_E, CAR.HONDA_INSIGHT, CAR.HONDA_ODYSSEY,
-                  CAR.HONDA_ODYSSEY_CHN, CAR.HONDA_PILOT],
+    Ecu.gateway: [CAR.ACURA_ILX, CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CIVIC_2022, CAR.HONDA_FIT,
+                  CAR.HONDA_FREED, CAR.HONDA_HRV, CAR.HONDA_RIDGELINE, CAR.HONDA_CRV_5G, CAR.HONDA_CRV_HYBRID, CAR.HONDA_E, CAR.HONDA_INSIGHT,
+                  CAR.HONDA_ODYSSEY, CAR.HONDA_ODYSSEY_CHN, CAR.HONDA_PILOT],
     Ecu.electricBrakeBooster: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
     # existence correlates with transmission type for Accord ICE
     Ecu.shiftByWire: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CRV_HYBRID, CAR.HONDA_E, CAR.HONDA_INSIGHT, CAR.HONDA_PILOT],
@@ -326,7 +320,10 @@ FW_QUERY_CONFIG = FwQueryConfig(
   },
   extra_ecus=[
     # The only other ECU on PT bus accessible by camera on radarless Civic
-    (Ecu.unknown, 0x18DAB3F1, None),
+    # This is likely a manufacturer-specific sub-address implementation: the camera responds to this and 0x18dab0f1
+    # Unclear what the part number refers to: 8S103 is 'Camera Set Mono', while 36160 is 'Camera Monocular - Honda'
+    # TODO: add query back, camera does not support querying both in parallel and 0x18dab0f1 often fails to respond
+    # (Ecu.unknown, 0x18DAB3F1, None),
   ],
 )
 
