@@ -65,7 +65,7 @@ PROCS.update({
   "tici": {
     "./boardd": 4.0,
     "./ubloxd": 0.02,
-    "system.sensord.pigeond": 6.0,
+    "system.ubloxd.pigeond": 6.0,
   },
   "tizi": {
      "./boardd": 19.0,
