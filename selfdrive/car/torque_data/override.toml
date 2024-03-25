@@ -22,6 +22,7 @@ legend = ["LAT_ACCEL_FACTOR", "MAX_LAT_ACCEL_MEASURED", "FRICTION"]
 
 # Guess
 "FORD_BRONCO_SPORT_MK1" = [nan, 1.5, nan]
+"FORD_EDGE_MK2" = [nan, 1.5, nan]
 "FORD_ESCAPE_MK4" = [nan, 1.5, nan]
 "FORD_EXPLORER_MK6" = [nan, 1.5, nan]
 "FORD_F_150_MK14" = [nan, 1.5, nan]
