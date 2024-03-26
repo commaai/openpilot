@@ -96,16 +96,22 @@ def jsonToScheme(jsonData):
   }
   for key, value in jsonData.items():
     if isinstance(value, dict):
-      schema["properties"][key] = jsonToScheme(value)
+      tempScheme = jsonToScheme(value)
+      if tempScheme == 0:
+        return 0
+      schema["properties"][key] = tempScheme
       schema["required"].append(key)
     elif isinstance(value, list):
       if len(value) == 0:
         return 0
       if all(isinstance(item, dict) for item in value):
         # Handle array of objects
+        tempScheme = jsonToScheme(value[0])
+        if tempScheme == 0:
+          return 0
         schema["properties"][key] = {
           "type": "array",
-          "items": jsonToScheme(value[0]) if value else {}
+          "items": tempScheme if value else {}
         }
         schema["required"].append(key)
       else:
@@ -167,9 +173,10 @@ def generateSchemas():
         jsonData = json.load(jsonFile)
         scheme = jsonToScheme(jsonData)
         if scheme == 0:
-          print("Next") # TODO: Fix, recursion does not return 0 to here
+        #   print(f"Scheme for {directory} has empty arrays") # TODO: Fix, recursion does not return 0 to here
           continue
         else:
+        #   print(f"found scheme without empty arrays for scheme {directory}")
           title = jsonData.get("title")
           scheme["title"] = title
           # Add contentEncoding type, hardcoded in foxglove format
