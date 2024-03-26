@@ -1,9 +1,10 @@
 from openpilot.common.numpy_fast import clip
-from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import apply_std_steer_angle_limits
 from openpilot.selfdrive.car.interfaces import CarControllerBase
 from openpilot.selfdrive.car.tesla.teslacan import TeslaCAN
 from openpilot.selfdrive.car.tesla.values import DBC, CANBUS, CarControllerParams, CAR
+
+from opendbc.can.packer import CANPacker
 
 
 class CarController(CarControllerBase):
@@ -15,7 +16,6 @@ class CarController(CarControllerBase):
     self.pt_packer = CANPacker(DBC[CP.carFingerprint]['pt'])
     self.tesla_can = TeslaCAN(self.packer, self.pt_packer)
     self.model3 = CP.carFingerprint == CAR.AP3_MODEL3
-    self.last_das_control_counter = -1
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
@@ -50,9 +50,7 @@ class CarController(CarControllerBase):
 
       if self.model3:
         counter = CS.das_control["DAS_controlCounter"]
-        if self.last_das_control_counter != counter or True:
-          self.last_das_control_counter = counter
-          can_sends.extend(self.tesla_can.create_longitudinal_commands(acc_state, target_speed, min_accel, max_accel, counter))
+        can_sends.extend(self.tesla_can.create_longitudinal_commands(acc_state, target_speed, min_accel, max_accel, counter))
       else:
         while len(CS.das_control_counters) > 0:
           can_sends.extend(self.tesla_can.create_longitudinal_commands(acc_state, target_speed, min_accel, max_accel, CS.das_control_counters.popleft()))
