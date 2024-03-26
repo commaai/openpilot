@@ -634,8 +634,8 @@ FW_VERSIONS = {
       b'\xf1\x00OS IEB \x02 102"\x05\x16 58520-K4010',
       b'\xf1\x00OS IEB \x03 102"\x05\x16 58520-K4010',
       b'\xf1\x00OS IEB \r 102"\x05\x16 58520-K4010',
+      b'\xf1\x00OS IEB \x03 101 \x11\x13 58520-K4010',
       b'\xf1\x8758520-K4010\xf1\x00OS IEB \x02 101 \x11\x13 58520-K4010',
-      b'\xf1\x8758520-K4010\xf1\x00OS IEB \x03 101 \x11\x13 58520-K4010',
       b'\xf1\x8758520-K4010\xf1\x00OS IEB \x04 101 \x11\x13 58520-K4010',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
