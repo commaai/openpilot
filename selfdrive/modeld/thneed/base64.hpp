@@ -1,5 +1,5 @@
-#ifndef _BASE64_HPP_
-#define _BASE64_HPP_
+#ifndef BASE64_HPP_
+#define BASE64_HPP_
 
 #include <vector>
 #include <string>
