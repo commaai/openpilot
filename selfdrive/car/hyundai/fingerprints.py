@@ -289,7 +289,6 @@ FW_VERSIONS = {
       b'\xf1\x00TM ESC \x04 102!\x04\x05 58910-S2GA0',
       b'\xf1\x00TM ESC \x1e 102 \x08\x08 58910-S1DA0',
       b'\xf1\x00TM ESC   103!\x030 58910-S1MA0',
-      b'\xf1\x8758910-S2GA0\xf1\x00TM ESC \x04 102!\x04\x05 58910-S2GA0',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00TM  MDPS C 1.00 1.01 56310-S1AB0 4TSDC101',
