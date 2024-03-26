@@ -584,9 +584,9 @@ FW_VERSIONS = {
       b'\xf1\x00DL ESC \x01 104 \x07\x12 58910-L2200',
       b'\xf1\x00DL ESC \x06 101 \x04\x02 58910-L3200',
       b'\xf1\x00DL ESC \x06 103"\x08\x06 58910-L3200',
+      b'\xf1\x00DL ESC \t 101 \x07\x02 58910-L3800',
       b'\xf1\x00DL ESC \t 100 \x06\x02 58910-L3800',
       b'\xf1\x8758910-L3600\xf1\x00DL ESC \x03 100 \x08\x02 58910-L3600',
-      b'\xf1\x8758910-L3800\xf1\x00DL ESC \t 101 \x07\x02 58910-L3800',
     ],
   },
   CAR.KIA_K5_HEV_2020: {
