@@ -53,7 +53,7 @@ def deleter_thread(exit_event):
       all_contents_in_logs_dir = os.listdir(Paths.log_root())
 
       dirs = [directory for directory in all_contents_in_logs_dir if os.path.isdir(os.path.join(Paths.log_root(), directory))]
-      # Sort directories by creation time.
+      # sort directories by creation time.
       dirs = sorted(dirs, key=get_directory_sort)
       files = [file for file in all_contents_in_logs_dir if os.path.isfile(os.path.join(Paths.log_root(), file))]
       files_for_deletion = files + dirs

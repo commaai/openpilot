@@ -166,7 +166,7 @@ class TestDeleter(UploaderTestCase):
     index = 0
     for candidates_for_deletion in created_files:
       offset = len(candidates_for_deletion)
-      # Checking if the files have been deleted in the correct order.
+      # check if the files have been deleted.
       deleted = delete_order[index:index + offset]
       self.assertCountEqual(candidates_for_deletion, deleted, "Certain files or directories were not deleted.")
       index += offset
