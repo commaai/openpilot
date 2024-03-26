@@ -741,7 +741,7 @@ FW_VERSIONS = {
   },
   CAR.KIA_SELTOS: {
     (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x8799110Q5100\xf1\x00SP2_ SCC FHCUP      1.01 1.05 99110-Q5100         ',
+      b'\xf1\x00SP2_ SCC FHCUP      1.01 1.05 99110-Q5100         ',
     ],
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x00SP ESC \x07 101\x19\t\x05 58910-Q5450',
