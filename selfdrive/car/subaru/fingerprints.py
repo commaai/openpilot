@@ -236,6 +236,7 @@ FW_VERSIONS = {
       b'\xa3 \x18&\x00',
       b'\xa3 \x19\x14\x00',
       b'\xa3 \x19&\x00',
+      b'\xa3 \x19h\x00',
       b'\xa3  \x14\x00',
       b'\xa3  \x14\x01',
     ],
@@ -248,6 +249,7 @@ FW_VERSIONS = {
       b'\x00\x00e!\x1f@ \x11',
       b'\x00\x00e^\x00\x00\x00\x00',
       b'\x00\x00e^\x1f@ !',
+      b'\x00\x00e`\x00\x00\x00\x00',
       b'\x00\x00e`\x1f@  ',
       b'\x00\x00e\x97\x00\x00\x00\x00',
       b'\x00\x00e\x97\x1f@ 0',
@@ -268,6 +270,7 @@ FW_VERSIONS = {
       b'\x1a\xf6F`\x00',
       b'\x1a\xf6b0\x00',
       b'\x1a\xf6b`\x00',
+      b'\x1a\xf6f`\x00',
     ],
   },
   CAR.SUBARU_FORESTER_HYBRID: {
