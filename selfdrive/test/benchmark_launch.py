@@ -2,7 +2,6 @@
 import os
 import time
 import subprocess
-from collections import defaultdict
 
 import cereal.messaging as messaging
 from openpilot.common.basedir import BASEDIR
@@ -12,11 +11,10 @@ if __name__ == "__main__":
   set_params_enabled()
 
   start_time = time.monotonic()
-  first_times = defaultdict(float)
 
   socks = ['roadCameraState', 'deviceState', 'pandaStates', 'managerState', 'gyroscope', 'procLog', 'liveCalibration']
   sm = messaging.SubMaster(socks)
-  first_times = dict.fromkeys(socks + ['started', 'ignition', 'manager_started'], None)
+  first_times: dict[str, float | None] = dict.fromkeys(socks + ['started', 'ignition', 'manager_started'], None)
 
   with open(os.path.join(BASEDIR, 'prebuilt'), 'w') as f:
     f.write('\n')
