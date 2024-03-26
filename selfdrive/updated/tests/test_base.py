@@ -149,6 +149,9 @@ class BaseUpdateTest(unittest.TestCase):
   def wait_for_idle(self):
     self.wait_for_condition(lambda: self.params.get("UpdaterState", encoding="utf-8") == "idle")
 
+  def wait_for_failed(self):
+    self.wait_for_condition(lambda: self.params.get("UpdaterState", encoding="utf-8") == "failed to check for update...")
+
   def wait_for_fetch_available(self):
     self.wait_for_condition(lambda: self.params.get_bool("UpdaterFetchAvailable"))
 

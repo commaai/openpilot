@@ -263,9 +263,7 @@ def swap(manifest_path: str, target_slot_number: int, cloudlog) -> None:
       cloudlog.error(f"Swap failed {out}")
 
 
-def flash_agnos_update(manifest_path: str, target_slot_number: int, cloudlog, standalone=False) -> None:
-  update = json.load(open(manifest_path))
-
+def flash_agnos_update_from_manifest(update: dict, target_slot_number: int, cloudlog, standalone=False) -> None:
   cloudlog.info(f"Target slot {target_slot_number}")
 
   # set target slot as unbootable
@@ -290,6 +288,11 @@ def flash_agnos_update(manifest_path: str, target_slot_number: int, cloudlog, st
       raise Exception("Maximum retries exceeded")
 
   cloudlog.info(f"AGNOS ready on slot {target_slot_number}")
+
+
+def flash_agnos_update(manifest_path: str, target_slot_number: int, cloudlog, standalone=False) -> None:
+  update = json.load(open(manifest_path))
+  return flash_agnos_update_from_manifest(update, target_slot_number, cloudlog, standalone)
 
 
 def verify_agnos_update(manifest_path: str, target_slot_number: int) -> bool:
