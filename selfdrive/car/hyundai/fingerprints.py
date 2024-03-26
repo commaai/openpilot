@@ -562,7 +562,6 @@ FW_VERSIONS = {
       b'\xf1\x00DL3_ SCC FHCUP      1.00 1.03 99110-L2000         ',
       b'\xf1\x00DL3_ SCC FHCUP      1.00 1.03 99110-L2100         ',
       b'\xf1\x00DL3_ SCC FHCUP      1.00 1.04 99110-L2100         ',
-      b'\xf1\x8799110L2100\xf1\x00DL3_ SCC F-CUP      1.00 1.03 99110-L2100         ',
       b'\xf1\x8799110L2100\xf1\x00DL3_ SCC FHCUP      1.00 1.03 99110-L2100         ',
     ],
     (Ecu.eps, 0x7d4, None): [
