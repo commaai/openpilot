@@ -584,8 +584,8 @@ FW_VERSIONS = {
       b'\xf1\x00DL ESC \x01 104 \x07\x12 58910-L2200',
       b'\xf1\x00DL ESC \x06 101 \x04\x02 58910-L3200',
       b'\xf1\x00DL ESC \x06 103"\x08\x06 58910-L3200',
-      b'\xf1\x00DL ESC \t 101 \x07\x02 58910-L3800',
       b'\xf1\x00DL ESC \t 100 \x06\x02 58910-L3800',
+      b'\xf1\x00DL ESC \t 101 \x07\x02 58910-L3800',
     ],
   },
   CAR.KIA_K5_HEV_2020: {
@@ -632,9 +632,9 @@ FW_VERSIONS = {
   CAR.HYUNDAI_KONA_EV_2022: {
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x00OS IEB \x02 102"\x05\x16 58520-K4010',
+      b'\xf1\x00OS IEB \x03 101 \x11\x13 58520-K4010',
       b'\xf1\x00OS IEB \x03 102"\x05\x16 58520-K4010',
       b'\xf1\x00OS IEB \r 102"\x05\x16 58520-K4010',
-      b'\xf1\x00OS IEB \x03 101 \x11\x13 58520-K4010',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00OSP LKA  AT AUS RHD 1.00 1.04 99211-J9200 904',
@@ -855,8 +855,8 @@ FW_VERSIONS = {
       b'\xf1\x00CN7 MFC  AT USA LHD 1.00 1.06 99210-AA000 220111',
     ],
     (Ecu.abs, 0x7d1, None): [
-      b'\xf1\x00CN ESC \t 104 \x08\x03 58910-AA800',
       b'\xf1\x00CN ESC \t 101 \x10\x03 58910-AB800',
+      b'\xf1\x00CN ESC \t 104 \x08\x03 58910-AA800',
       b'\xf1\x00CN ESC \t 105 \x10\x03 58910-AA800',
     ],
   },
@@ -1018,8 +1018,8 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00NQ5__               1.00 1.02 99110-P1000         ',
-      b'\xf1\x00NQ5__               1.00 1.03 99110-P1000         ',
       b'\xf1\x00NQ5__               1.00 1.03 99110-CH000         ',
+      b'\xf1\x00NQ5__               1.00 1.03 99110-P1000         ',
       b'\xf1\x00NQ5__               1.01 1.03 99110-CH000         ',
       b'\xf1\x00NQ5__               1.01 1.03 99110-P1000         ',
     ],
