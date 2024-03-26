@@ -75,6 +75,7 @@ function install_ubuntu_common_requirements() {
     libqt5charts5-dev \
     libqt5serialbus5-dev  \
     libqt5x11extras5-dev \
+    libqt5opengl5-dev \
     libreadline-dev \
     libdw1 \
     valgrind

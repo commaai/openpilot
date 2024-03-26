@@ -290,12 +290,22 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
 void Replay::startStream(const Segment *cur_segment) {
   const auto &events = cur_segment->log->events;
 
-  // each segment has an INIT_DATA
   route_start_ts_ = events.front()->mono_time;
   cur_mono_time_ += route_start_ts_ - 1;
 
+  // get datetime from INIT_DATA, fallback to datetime in the route name
+  route_date_time_ = route()->datetime();
+  auto it = std::find_if(events.cbegin(), events.cend(),
+                         [](auto e) { return e->which == cereal::Event::Which::INIT_DATA; });
+  if (it != events.cend()) {
+    uint64_t wall_time = (*it)->event.getInitData().getWallTimeNanos();
+    if (wall_time > 0) {
+      route_date_time_ = QDateTime::fromMSecsSinceEpoch(wall_time / 1e6);
+    }
+  }
+
   // write CarParams
-  auto it = std::find_if(events.begin(), events.end(), [](auto e) { return e->which == cereal::Event::Which::CAR_PARAMS; });
+  it = std::find_if(events.begin(), events.end(), [](auto e) { return e->which == cereal::Event::Which::CAR_PARAMS; });
   if (it != events.end()) {
     car_fingerprint_ = (*it)->event.getCarParams().getCarFingerprint();
     capnp::MallocMessageBuilder builder;
