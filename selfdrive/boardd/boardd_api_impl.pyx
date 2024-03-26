@@ -3,7 +3,7 @@
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp cimport bool
-from libc.stdint cimport uint8_t, uint64_t
+from libc.stdint cimport uint8_t, uint32_t, uint64_t
 
 cdef extern from "panda.h":
   cdef struct can_frame:
@@ -15,7 +15,7 @@ cdef extern from "panda.h":
 cdef extern from "opendbc/can/common.h":
   cdef struct CanFrame:
     long src
-    long address
+    uint32_t address
     vector[uint8_t] dat
 
   cdef struct CanData:
