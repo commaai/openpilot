@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
 from opendbc.can.parser import CANParser
+from openpilot.selfdrive.boardd.boardd_api_impl import can_capp_to_can_list
 from openpilot.selfdrive.car.tesla.values import CAR, DBC, CANBUS
 from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
 
@@ -33,7 +34,7 @@ class RadarInterface(RadarInterfaceBase):
     if self.rcp is None:
       return super().update(None)
 
-    values = self.rcp.update_strings(can_strings)
+    values = self.rcp.update_strings(can_capp_to_can_list(can_strings))
     self.updated_messages.update(values)
 
     if self.trigger_msg not in self.updated_messages:
