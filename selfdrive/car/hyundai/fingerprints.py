@@ -747,8 +747,8 @@ FW_VERSIONS = {
       b'\xf1\x8799110Q5100\xf1\x00SP2_ SCC FHCUP      1.01 1.05 99110-Q5100         ',
     ],
     (Ecu.abs, 0x7d1, None): [
-      b'\xf1\x8758910-Q5450\xf1\x00SP ESC \x07 101\x19\t\x05 58910-Q5450',
-      b'\xf1\x8758910-Q5450\xf1\x00SP ESC \t 101\x19\t\x05 58910-Q5450',
+      b'\xf1\x00SP ESC \x07 101\x19\t\x05 58910-Q5450',
+      b'\xf1\x00SP ESC \t 101\x19\t\x05 58910-Q5450',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00SP2 MDPS C 1.00 1.04 56300Q5200          ',
