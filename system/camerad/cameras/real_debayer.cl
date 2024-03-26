@@ -26,7 +26,8 @@ float3 color_correct(float3 rgb, int expo) {
   #if IS_OX
   return -0.507089*exp(-12.54124638*x)+0.9655*powr(x,0.5)-0.472597*x+0.507089;
   #elif IS_OS
-  float s = fmax(log2((float)expo), 6.0);
+  float s = log2((float)expo);
+  if (s < 6) {s = 12.0 - s;}
   return clamp(log(1 + x*65472.0) * (0.48*s*s - 12.92*s + 115.0) - (1.08*s*s - 29.2*s + 260.0), 0.0, 255.0) / 255.0;
   #else
   // tone mapping params
@@ -132,9 +133,9 @@ float combine_pvs(float lv, float sv, int expo) {
     //   return (llvc * 64) / (65536.0 - 64.0);
     // }
     if (lv > 64) {
-      return llv / (65536.0 - 64.0);
+      return (llv * 64 / expo) / (65536.0 - 64.0);
     } else {
-      return (lsv * expo / 64) / (65536.0 - 64.0);
+      return lsv / (65536.0 - 64.0);
     }
   }
 }
