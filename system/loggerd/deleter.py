@@ -52,18 +52,17 @@ def deleter_thread(exit_event):
     if out_of_percent or out_of_bytes:
       all_contents_in_logs_dir = os.listdir(Paths.log_root())
 
-      directories = [directory for directory in all_contents_in_logs_dir if os.path.isdir(os.path.join(Paths.log_root(), directory))]
+      dirs = [directory for directory in all_contents_in_logs_dir if os.path.isdir(os.path.join(Paths.log_root(), directory))]
       # Sort directories by creation time.
-      directories = sorted(directories, key=get_directory_sort)
+      dirs = sorted(dirs, key=get_directory_sort)
       files = [file for file in all_contents_in_logs_dir if os.path.isfile(os.path.join(Paths.log_root(), file))]
-      # form list of files for deletion from files and directories.
-      files_sorted_for_deletion = files + directories
+      files_for_deletion = files + dirs
 
       # skip deleting most recent N preserved segments (and their prior segment)
-      preserved_segments = get_preserved_segments(files_sorted_for_deletion)
+      preserved_segments = get_preserved_segments(files_for_deletion)
 
       # remove the earliest directory we can
-      for delete_item in sorted(files_sorted_for_deletion, key=lambda d: (d in DELETE_LAST, d in preserved_segments)):
+      for delete_item in sorted(files_for_deletion, key=lambda d: (d in DELETE_LAST, d in preserved_segments)):
         delete_path = os.path.join(Paths.log_root(), delete_item)
 
         if os.path.isdir(delete_path) and any(name.endswith(".lock") for name in os.listdir(delete_path)):
