@@ -456,10 +456,6 @@ FW_VERSIONS = {
       b'\xf1\x00JS__ SCC H-CUP      1.00 1.02 95650-J3200         ',
       b'\xf1\x00JS__ SCC HNCUP      1.00 1.02 95650-J3100         ',
     ],
-    (Ecu.abs, 0x7d1, None): [
-      b'\xf1\x00\x00\x00\x00\x00\x00\x00',
-      b'\xf1\x816V8RAC00121.ELF\xf1\x00\x00\x00\x00\x00\x00\x00',
-    ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00JSL MDPS C 1.00 1.03 56340-J3000 8308',
     ],
@@ -529,9 +525,6 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00OS__ SCC F-CUP      1.00 1.00 95655-J9200         ',
     ],
-    (Ecu.abs, 0x7d1, None): [
-      b'\xf1\x816V5RAK00018.ELF\xf1\x00\x00\x00\x00\x00\x00\x00',
-    ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00OS  MDPS C 1.00 1.05 56310J9030\x00 4OSDC105',
     ],
@@ -568,11 +561,6 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00BDPE_SCC FHCUPC     1.00 1.04 99110-M6500\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'\xf1\x00BD__ SCC H-CUP      1.00 1.02 99110-M6000         ',
-    ],
-    (Ecu.abs, 0x7d1, None): [
-      b'\xf1\x00\x00\x00\x00\x00\x00\x00',
-      b'\xf1\x816VGRAH00018.ELF\xf1\x00\x00\x00\x00\x00\x00\x00',
-      b'\xf1\x8758900-M7AB0 \xf1\x816VQRAD00127.ELF\xf1\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
   CAR.KIA_K5_2021: {
