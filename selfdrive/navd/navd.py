@@ -48,13 +48,14 @@ class RouteEngine:
 
     self.reroute_counter = 0
 
-    self.api = Api(self.params.get("DongleId", encoding='utf8'))
 
+    self.api = None
+    self.mapbox_token = None
     if "MAPBOX_TOKEN" in os.environ:
       self.mapbox_token = os.environ["MAPBOX_TOKEN"]
       self.mapbox_host = "https://api.mapbox.com"
     else:
-      self.mapbox_token = None
+      self.api = Api(self.params.get("DongleId", encoding='utf8'))
       self.mapbox_host = "https://maps.comma.ai"
 
   def update(self):
@@ -120,8 +121,12 @@ class RouteEngine:
     if lang is not None:
       lang = lang.replace('main_', '')
 
+    token = self.mapbox_token
+    if token is None:
+      token = self.api.get_token()
+
     params = {
-      'access_token': self.mapbox_token or self.api.get_token(),
+      'access_token': token,
       'annotations': 'maxspeed',
       'geometries': 'geojson',
       'overview': 'full',
