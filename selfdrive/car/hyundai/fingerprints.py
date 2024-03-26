@@ -858,7 +858,6 @@ FW_VERSIONS = {
       b'\xf1\x00CN ESC \t 104 \x08\x03 58910-AA800',
       b'\xf1\x00CN ESC \t 101 \x10\x03 58910-AB800',
       b'\xf1\x00CN ESC \t 105 \x10\x03 58910-AA800',
-      b'\xf1\x8758910-AB800\xf1\x00CN ESC \t 101 \x10\x03 58910-AB800\xf1\xa01.01',
     ],
   },
   CAR.HYUNDAI_ELANTRA_HEV_2021: {
