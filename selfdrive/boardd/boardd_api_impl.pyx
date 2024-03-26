@@ -46,8 +46,6 @@ def can_capnp_to_list(strings, sendcan=False):
   can_capnp_to_can_list_cpp(strings, data, sendcan)
   result = []
   for c in data:
-    frames = []
-    for f in c.frames:
-      frames.append([f.address, 0, f.dat, f.src])
+    frames = [[f.address, 0, f.dat, f.src] for f in c.frames]
     result.append([c.nanos, frames])
   return result
