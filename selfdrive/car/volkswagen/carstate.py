@@ -115,7 +115,7 @@ class CarState(CarStateBase):
     # Update ACC radar status.
     self.acc_type = ext_cp.vl["ACC_06"]["ACC_Typ"]
 
-    # ACC okay but disabled (1), a radar visibility or other fault/disruption (6 or 7)
+    # ACC okay but disabled (1), ACC ready (2), a radar visibility or other fault/disruption (6 or 7)
     # currently regulating speed (3), driver accel override (4), brake only (5)
     ret.cruiseState.available = pt_cp.vl["TSK_06"]["TSK_Status"] in (2, 3, 4, 5)
     ret.cruiseState.enabled = pt_cp.vl["TSK_06"]["TSK_Status"] in (3, 4, 5)
