@@ -420,9 +420,18 @@ def uploadFilesToUrls(files_data: list[UploadFileDict]) -> UploadFilesToUrlRespo
 
 
 @dispatcher.add_method
-def listUploadQueue() -> list[UploadItemDict]:
+def listUploadQueue(start='', limit=4, prefix='') -> list[UploadItemDict]:
   items = list(upload_queue.queue) + list(cur_upload_items.values())
-  return [asdict(i) for i in items if (i is not None) and (i.id not in cancelled_uploads)]
+  sorted_items = sorted(items, key=lambda x: x.path)
+
+  start_index = 0
+  for idx, item in enumerate(sorted_items):
+    if start == item.path:
+      start_index = idx + 1
+
+  batch = sorted_items[start_index:start_index+limit]
+  filtered_items = [asdict(i) for i in batch if (i is not None) and (i.id not in cancelled_uploads)]
+  return filtered_items
 
 
 @dispatcher.add_method
