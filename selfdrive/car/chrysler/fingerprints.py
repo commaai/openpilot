@@ -4,7 +4,7 @@ from openpilot.selfdrive.car.chrysler.values import CAR
 Ecu = car.CarParams.Ecu
 
 FW_VERSIONS = {
-  CAR.PACIFICA_2017_HYBRID: {
+  CAR.CHRYSLER_PACIFICA_2017_HYBRID: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68239262AH',
       b'68239262AI',
@@ -33,7 +33,7 @@ FW_VERSIONS = {
       b'05190226AK',
     ],
   },
-  CAR.PACIFICA_2018: {
+  CAR.CHRYSLER_PACIFICA_2018: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68227902AF',
       b'68227902AG',
@@ -81,6 +81,7 @@ FW_VERSIONS = {
       b'68277370AJ',
       b'68277370AM',
       b'68277372AD',
+      b'68277372AE',
       b'68277372AN',
       b'68277374AA',
       b'68277374AB',
@@ -90,7 +91,7 @@ FW_VERSIONS = {
       b'68380571AB',
     ],
   },
-  CAR.PACIFICA_2020: {
+  CAR.CHRYSLER_PACIFICA_2020: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68405327AC',
       b'68436233AB',
@@ -142,6 +143,7 @@ FW_VERSIONS = {
       b'68443120AE ',
       b'68443123AC ',
       b'68443125AC ',
+      b'68496650AI ',
       b'68526752AD ',
       b'68526752AE ',
       b'68526754AE ',
@@ -161,7 +163,7 @@ FW_VERSIONS = {
       b'68586231AD',
     ],
   },
-  CAR.PACIFICA_2018_HYBRID: {
+  CAR.CHRYSLER_PACIFICA_2018_HYBRID: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68358439AE',
       b'68358439AG',
@@ -188,7 +190,7 @@ FW_VERSIONS = {
       b'05190226AM',
     ],
   },
-  CAR.PACIFICA_2019_HYBRID: {
+  CAR.CHRYSLER_PACIFICA_2019_HYBRID: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68405292AC',
       b'68434956AC',
@@ -363,7 +365,7 @@ FW_VERSIONS = {
       b'68503664AC',
     ],
   },
-  CAR.RAM_1500: {
+  CAR.RAM_1500_5TH_GEN: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68294051AG',
       b'68294051AI',
@@ -409,6 +411,7 @@ FW_VERSIONS = {
       b'68527403AD',
       b'68546047AF',
       b'68631938AA',
+      b'68631940AA',
       b'68631942AA',
     ],
     (Ecu.srs, 0x744, None): [
@@ -530,6 +533,7 @@ FW_VERSIONS = {
       b'68586101AA ',
       b'68586105AB ',
       b'68629922AC ',
+      b'68629925AC ',
       b'68629926AC ',
     ],
     (Ecu.transmission, 0x7e1, None): [
@@ -565,7 +569,7 @@ FW_VERSIONS = {
       b'68629936AC',
     ],
   },
-  CAR.RAM_HD: {
+  CAR.RAM_HD_5TH_GEN: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68361606AH',
       b'68437735AC',

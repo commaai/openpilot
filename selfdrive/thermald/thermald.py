@@ -207,16 +207,9 @@ def thermald_thread(end_event, hw_queue) -> None:
   while not end_event.is_set():
     sm.update(PANDA_STATES_TIMEOUT)
 
-    # Run at 2Hz
-    if sm.frame % round(SERVICE_LIST['pandaStates'].frequency * DT_TRML) != 0:
-      continue
-
     pandaStates = sm['pandaStates']
     peripheralState = sm['peripheralState']
     peripheral_panda_present = peripheralState.pandaType != log.PandaState.PandaType.unknown
-
-    msg = read_thermal(thermal_config)
-    msg.deviceState.deviceType = HARDWARE.get_device_type()
 
     if sm.updated['pandaStates'] and len(pandaStates) > 0:
 
@@ -236,6 +229,14 @@ def thermald_thread(end_event, hw_queue) -> None:
       if onroad_conditions["ignition"]:
         onroad_conditions["ignition"] = False
         cloudlog.error("panda timed out onroad")
+
+    # Run at 2Hz, plus rising edge of ignition
+    ign_edge = started_ts is None and onroad_conditions["ignition"]
+    if (sm.frame % round(SERVICE_LIST['pandaStates'].frequency * DT_TRML) != 0) and not ign_edge:
+      continue
+
+    msg = read_thermal(thermal_config)
+    msg.deviceState.deviceType = HARDWARE.get_device_type()
 
     try:
       last_hw_state = hw_queue.get_nowait()
