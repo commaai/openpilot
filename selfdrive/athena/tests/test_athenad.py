@@ -323,18 +323,39 @@ class TestAthenadMethods(unittest.TestCase):
     self.assertTrue(items[0]['current'])
 
   def test_listUploadQueue(self):
-    item = athenad.UploadItem(path="qlog.bz2", url="http://localhost:44444/qlog.bz2", headers={},
-                              created_at=int(time.time()*1000), id='id', allow_cellular=True)
-    athenad.upload_queue.put_nowait(item)
+    # Insert multiple items into the queue
+    items = [
+            athenad.UploadItem(path=f"qlog{i}.bz2", url=f"http://localhost:44444/qlog{i}.bz2", headers={},
+                       created_at=int(time.time() * 1000), id=f"id{i}", allow_cellular=True)
+            for i in range(1, 11)
+        ]
+    for item in items:
+            athenad.upload_queue.put_nowait(item)
+    sorted_items = sorted(items, key=lambda x: x.path)
 
-    items = dispatcher["listUploadQueue"]()
-    self.assertEqual(len(items), 1)
-    self.assertDictEqual(items[0], asdict(item))
-    self.assertFalse(items[0]['current'])
+    # Fetch the first batch of items with a limit of 4
+    start = ''
+    limit = 5
 
-    athenad.cancelled_uploads.add(item.id)
-    items = dispatcher["listUploadQueue"]()
-    self.assertEqual(len(items), 0)
+    all_responses = []
+    response_batch = dispatcher["listUploadQueue"](start, limit)
+    all_responses.extend(response_batch)
+
+    while len(response_batch) == limit:
+        start = response_batch[-1]['path']
+        response_batch = dispatcher["listUploadQueue"](start, limit)
+        if len(response_batch) > 0:
+          all_responses.extend(response_batch)
+
+    # Asserting the results
+    self.assertEqual(len(all_responses), len(sorted_items))
+    self.assertListEqual(all_responses, [asdict(item) for item in sorted_items])
+
+    # Ensure cancelled uploads are not present in the queue
+    for item in sorted_items:
+        athenad.cancelled_uploads.add(item.id)
+    cancelled_items = dispatcher["listUploadQueue"]('', 5)
+    self.assertEqual(len(cancelled_items), 0)
 
   def test_upload_queue_persistence(self):
     item1 = athenad.UploadItem(path="_", url="_", headers={}, created_at=int(time.time()), id='id1')
