@@ -857,8 +857,8 @@ FW_VERSIONS = {
       b'\xf1\x00CN7 MFC  AT USA LHD 1.00 1.06 99210-AA000 220111',
     ],
     (Ecu.abs, 0x7d1, None): [
+      b'\xf1\x00CN ESC \t 104 \x08\x03 58910-AA800',
       b'\xf1\x00CN ESC \t 101 \x10\x03 58910-AB800',
-      b'\xf1\x8758910-AA800\xf1\x00CN ESC \t 104 \x08\x03 58910-AA800',
       b'\xf1\x8758910-AA800\xf1\x00CN ESC \t 105 \x10\x03 58910-AA800',
       b'\xf1\x8758910-AB800\xf1\x00CN ESC \t 101 \x10\x03 58910-AB800\xf1\xa01.01',
     ],
