@@ -50,7 +50,7 @@ class CarController(CarControllerBase):
 
       if self.model3:
         counter = CS.das_control["DAS_controlCounter"]
-        if self.last_das_control_counter != counter:
+        if self.last_das_control_counter != counter or True:
           self.last_das_control_counter = counter
           can_sends.extend(self.tesla_can.create_longitudinal_commands(acc_state, target_speed, min_accel, max_accel, counter))
       else:
