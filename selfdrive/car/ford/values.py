@@ -137,6 +137,10 @@ class CAR(Platforms):
     [FordCarDocs("Ford Mustang Mach-E 2021-23", "Co-Pilot360 Active 2.0")],
     CarSpecs(mass=2200, wheelbase=2.984, steerRatio=17.0),  # TODO: check steer ratio
   )
+  FORD_RANGER_MK2 = FordCANFDPlatformConfig(
+    [FordCarDocs("Ford Ranger 2024", "Adaptive Cruise Control with Lane Centering")],
+    CarSpecs(mass=2000, wheelbase=3.27, steerRatio=17.0),
+  )
 
 
 DATA_IDENTIFIER_FORD_ASBUILT = 0xDE00

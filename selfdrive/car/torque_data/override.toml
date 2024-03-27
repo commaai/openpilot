@@ -29,6 +29,7 @@ legend = ["LAT_ACCEL_FACTOR", "MAX_LAT_ACCEL_MEASURED", "FRICTION"]
 "FORD_MAVERICK_MK1" = [nan, 1.5, nan]
 "FORD_F_150_LIGHTNING_MK1" = [nan, 1.5, nan]
 "FORD_MUSTANG_MACH_E_MK1" = [nan, 1.5, nan]
+"FORD_RANGER_MK2" = [nan, 1.5, nan]
 ###
 
 # No steering wheel
