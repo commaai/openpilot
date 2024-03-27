@@ -328,8 +328,8 @@ FW_VERSIONS = {
   CAR.HYUNDAI_SANTA_FE_PHEV_2022: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00TMhe SCC F-CUP      1.00 1.00 99110-CL500         ',
-      b'\xf1\x00TMhe SCC FHCUP      1.00 1.01 99110-CL500         ',
       b'\xf1\x00TMhe SCC FHCUP      1.00 1.00 99110-CL500         ',
+      b'\xf1\x00TMhe SCC FHCUP      1.00 1.01 99110-CL500         ',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00TM  MDPS C 1.00 1.02 56310-CLAC0 4TSHC102',
@@ -667,12 +667,12 @@ FW_VERSIONS = {
       b'\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4100         ',
       b'\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4500         ',
       b'\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4600         ',
-      b'\xf1\x00DEev SCC FHCUP      1.00 1.00 99110-Q4600         ',
-      b'\xf1\x00DEev SCC FNCUP      1.00 1.00 99110-Q4600         ',
       b'\xf1\x00DEev SCC F-CUP      1.00 1.02 96400-Q4000         ',
       b'\xf1\x00DEev SCC F-CUP      1.00 1.02 96400-Q4100         ',
       b'\xf1\x00DEev SCC F-CUP      1.00 1.03 96400-Q4100         ',
+      b'\xf1\x00DEev SCC FHCUP      1.00 1.00 99110-Q4600         ',
       b'\xf1\x00DEev SCC FHCUP      1.00 1.03 96400-Q4000         ',
+      b'\xf1\x00DEev SCC FNCUP      1.00 1.00 99110-Q4600         ',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00DE  MDPS C 1.00 1.04 56310Q4100\x00 4DEEC104',
