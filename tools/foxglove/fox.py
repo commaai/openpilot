@@ -215,8 +215,8 @@ def getLogMonoTime(jsonMsg):
 
 # Get logs from a path, and convert them into mcap
 def createMcap(logPaths):
-#   print(f"Downloading logs [{len(logPaths)}]")
-#   downloadLogs(logPaths)
+  print(f"Downloading logs [{len(logPaths)}]")
+  downloadLogs(logPaths)
   print("Creating schemas")
   generateSchemas()
   print("Creating mcap file")
