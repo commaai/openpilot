@@ -1,0 +1,56 @@
+{
+  "Offroad_TemperatureTooHigh": {
+    "text": "Device temperature too high. System cooling down before starting. Current internal component temperature: %1",
+    "severity": 1
+  },
+  "Offroad_ConnectivityNeededPrompt": {
+    "text": "Immediately connect to the internet to check for updates. If you do not connect to the internet, openpilot won't engage in %1",
+    "severity": 0,
+    "_comment": "Set extra field to number of days"
+  },
+  "Offroad_ConnectivityNeeded": {
+    "text": "Connect to internet to check for updates. openpilot won't automatically start until it connects to internet to check for updates.",
+    "severity": 1
+  },
+  "Offroad_UpdateFailed": {
+    "text": "Unable to download updates\n%1",
+    "severity": 1,
+    "_comment": "Set extra field to the failed reason."
+  },
+  "Offroad_InvalidTime": {
+    "text": "Invalid date and time settings, system won't start. Connect to internet to set time.",
+    "severity": 1
+  },
+  "Offroad_IsTakingSnapshot": {
+    "text": "Taking camera snapshots. System won't start until finished.",
+    "severity": 0
+  },
+  "Offroad_NeosUpdate": {
+    "text": "An update to your device's operating system is downloading in the background. You will be prompted to update when it's ready to install.",
+    "severity": 0
+  },
+  "Offroad_UnofficialHardware": {
+    "text": "Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.",
+    "severity": 1
+  },
+  "Offroad_StorageMissing": {
+    "text": "NVMe drive not mounted.",
+    "severity": 1
+  },
+  "Offroad_BadNvme": {
+    "text": "Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.",
+    "severity": 1
+  },
+  "Offroad_CarUnrecognized": {
+    "text": "openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.",
+    "severity": 0
+  },
+  "Offroad_NoFirmware": {
+    "text": "openpilot was unable to identify your car. Check integrity of cables and ensure all connections are secure, particularly that the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.",
+    "severity": 0
+  },
+  "Offroad_Recalibration": {
+    "text": "openpilot detected a change in the device's mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.",
+    "severity": 0
+  }
+}

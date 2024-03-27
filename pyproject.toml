@@ -1,0 +1,202 @@
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--ignore=openpilot/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
+cpp_files = "test_*"
+cpp_harness = "selfdrive/test/cpp_harness.py"
+python_files = "test_*.py"
+#timeout = "30"  # you get this long by default
+markers = [
+  "slow: tests that take awhile to run and can be skipped with -m 'not slow'",
+  "tici: tests that are only meant to run on the C3/C3X",
+]
+testpaths = [
+  "common",
+  "selfdrive/athena",
+  "selfdrive/boardd",
+  "selfdrive/car",
+  "selfdrive/controls",
+  "selfdrive/locationd",
+  "selfdrive/monitoring",
+  "selfdrive/navd/tests",
+  "selfdrive/thermald",
+  "selfdrive/test/longitudinal_maneuvers",
+  "selfdrive/test/process_replay/test_fuzzy.py",
+  "selfdrive/updated",
+  "system/camerad",
+  "system/hardware/tici",
+  "system/loggerd",
+  "system/proclogd",
+  "system/tests",
+  "system/ubloxd",
+  "system/webrtc",
+  "tools/lib/tests",
+  "tools/replay",
+  "tools/cabana"
+]
+
+[tool.mypy]
+python_version = "3.11"
+plugins = [
+  "numpy.typing.mypy_plugin",
+]
+exclude = [
+  "body/",
+  "cereal/",
+  "opendbc/",
+  "panda/",
+  "rednose/",
+  "rednose_repo/",
+  "tinygrad/",
+  "tinygrad_repo/",
+  "teleoprtc/",
+  "teleoprtc_repo/",
+  "third_party/",
+]
+
+# third-party packages
+ignore_missing_imports=true
+
+# helpful warnings
+warn_redundant_casts=true
+warn_unreachable=true
+warn_unused_ignores=true
+
+# restrict dynamic typing
+warn_return_any=true
+
+# allow implicit optionals for default args
+implicit_optional = true
+
+
+[tool.poetry]
+name = "openpilot"
+version = "0.1.0"
+description = "an open source driver assistance system"
+authors = ["Vehicle Researcher <user@comma.ai>"]
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/commaai/openpilot"
+documentation = "https://docs.comma.ai"
+
+
+[tool.poetry.dependencies]
+python = "~3.11"
+aiohttp = "*"
+aiortc = "*"
+casadi = "==3.6.3"
+cffi = "*"
+crcmod = "*"
+Cython = "*"
+future-fstrings = "*"  # for acados
+json-rpc = "*"
+libusb1 = "*"
+numpy = "*"
+onnx = ">=1.14.0"
+onnxruntime = { version = ">=1.16.3", platform = "linux", markers = "platform_machine == 'aarch64'" }
+onnxruntime-gpu = { version = ">=1.16.3", platform = "linux", markers = "platform_machine == 'x86_64'" }
+psutil = "*"
+pyaudio = "*"
+pycapnp = "*"
+pycryptodome = "*"
+PyJWT = "*"
+pyserial = "*"
+pyzmq = "*"
+requests = "*"
+scons = "*"
+sentry-sdk = "*"
+smbus2 = "*"
+sounddevice = "*"
+spidev = { version = "*", platform = "linux" }
+sympy = "*"
+websocket_client = "*"
+
+# these should be removed
+markdown-it-py = "*"
+timezonefinder = "*"
+setproctitle = "*"
+
+[tool.poetry.group.dev.dependencies]
+av = "*"
+azure-identity = "*"
+azure-storage-blob = "*"
+breathe = "*"
+control = "*"
+coverage = "*"
+dictdiffer = "*"
+ft4222 = "*"
+flaky = "*"
+hypothesis = "~6.47"
+inputs = "*"
+Jinja2 = "*"
+lru-dict = "*"
+matplotlib = "*"
+metadrive-simulator = { version = "0.4.2.3", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
+mpld3 = "*"
+mypy = "*"
+myst-parser = "*"
+natsort = "*"
+opencv-python-headless = "*"
+parameterized = "^0.8"
+pprofile = "*"
+polyline = "*"
+pre-commit = "*"
+pyautogui = "*"
+pyopencl = "==2023.1.4"  # 2024.1 is broken on arm64
+pygame = "*"
+pywinctl = "*"
+pyprof2calltree = "*"
+pytest = "*"
+pytest-cov = "*"
+pytest-cpp = "*"
+pytest-subtests = "*"
+pytest-xdist = "*"
+pytest-timeout = "*"
+pytest-randomly = "*"
+ruff = "*"
+sphinx = "*"
+sphinx-rtd-theme = "*"
+sphinx-sitemap = "*"
+tabulate = "*"
+tenacity = "*"
+types-requests = "*"
+types-tabulate = "*"
+tqdm = "*"
+
+# this is only pinned since 5.15.11 is broken
+pyqt5 = { version = "==5.15.2", markers = "platform_machine == 'x86_64'" } # no aarch64 wheels for macOS/linux
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+# https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
+[tool.ruff]
+indent-width = 2
+lint.select = ["E", "F", "W", "PIE", "C4", "ISC", "RUF008", "RUF100", "A", "B", "TID251"]
+lint.ignore = ["E741", "E402", "C408", "ISC003", "B027", "B024"]
+line-length = 160
+target-version="py311"
+exclude = [
+  "body",
+  "cereal",
+  "panda",
+  "opendbc",
+  "rednose_repo",
+  "tinygrad_repo",
+  "teleoprtc",
+  "teleoprtc_repo",
+  "third_party",
+]
+lint.flake8-implicit-str-concat.allow-multiline=false
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"selfdrive".msg = "Use openpilot.selfdrive"
+"common".msg = "Use openpilot.common"
+"system".msg = "Use openpilot.system"
+"third_party".msg = "Use openpilot.third_party"
+"tools".msg = "Use openpilot.tools"
+"pytest.main".msg = "pytest.main requires special handling that is easy to mess up!"
+
+[tool.coverage.run]
+concurrency = ["multiprocessing", "thread"]
+[tool.ruff.format]
+quote-style = "preserve"

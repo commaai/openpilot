@@ -1,0 +1,17 @@
+Import('env', 'arch', 'common', 'cereal', 'messaging')
+
+sensors = [
+  'sensors/i2c_sensor.cc',
+  'sensors/bmx055_accel.cc',
+  'sensors/bmx055_gyro.cc',
+  'sensors/bmx055_magn.cc',
+  'sensors/bmx055_temp.cc',
+  'sensors/lsm6ds3_accel.cc',
+  'sensors/lsm6ds3_gyro.cc',
+  'sensors/lsm6ds3_temp.cc',
+  'sensors/mmc5603nj_magn.cc',
+]
+libs = [common, cereal, messaging, 'capnp', 'zmq', 'kj', 'pthread']
+if arch == "larch64":
+  libs.append('i2c')
+env.Program('sensord', ['sensors_qcom2.cc'] + sensors, LIBS=libs)

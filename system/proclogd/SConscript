@@ -1,0 +1,6 @@
+Import('env', 'cereal', 'messaging', 'common')
+libs = [cereal, messaging, 'pthread', 'zmq', 'capnp', 'kj', 'common', 'zmq', 'json11']
+env.Program('proclogd', ['main.cc', 'proclog.cc'], LIBS=libs)
+
+if GetOption('extras'):
+  env.Program('tests/test_proclog', ['tests/test_proclog.cc', 'proclog.cc'], LIBS=libs)

@@ -1,0 +1,72 @@
+Import('env', 'envCython', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc', 'transformations')
+lenv = env.Clone()
+lenvCython = envCython.Clone()
+
+libs = [cereal, messaging, visionipc, gpucommon, common, 'capnp', 'zmq', 'kj', 'pthread']
+frameworks = []
+
+common_src = [
+  "models/commonmodel.cc",
+  "transforms/loadyuv.cc",
+  "transforms/transform.cc",
+]
+
+thneed_src_common = [
+  "thneed/thneed_common.cc",
+  "thneed/serialize.cc",
+]
+
+thneed_src_qcom = thneed_src_common + ["thneed/thneed_qcom2.cc"]
+thneed_src_pc = thneed_src_common + ["thneed/thneed_pc.cc"]
+thneed_src = thneed_src_qcom if arch == "larch64" else thneed_src_pc
+
+# SNPE except on Mac and ARM Linux
+snpe_lib = []
+if arch != "Darwin" and arch != "aarch64":
+  common_src += ['runners/snpemodel.cc']
+  snpe_lib += ['SNPE']
+
+# OpenCL is a framework on Mac
+if arch == "Darwin":
+  frameworks += ['OpenCL']
+else:
+  libs += ['OpenCL']
+
+# Set path definitions
+for pathdef, fn in {'TRANSFORM': 'transforms/transform.cl', 'LOADYUV': 'transforms/loadyuv.cl'}.items():
+  for xenv in (lenv, lenvCython):
+    xenv['CXXFLAGS'].append(f'-D{pathdef}_PATH=\\"{File(fn).abspath}\\"')
+
+# Compile cython
+snpe_rpath_qcom = "/data/pythonpath/third_party/snpe/larch64"
+snpe_rpath_pc = f"{Dir('#').abspath}/third_party/snpe/x86_64-linux-clang"
+snpe_rpath = lenvCython['RPATH'] + [snpe_rpath_qcom if arch == "larch64" else snpe_rpath_pc]
+
+cython_libs = envCython["LIBS"] + libs
+snpemodel_lib = lenv.Library('snpemodel', ['runners/snpemodel.cc'])
+commonmodel_lib = lenv.Library('commonmodel', common_src)
+
+lenvCython.Program('runners/runmodel_pyx.so', 'runners/runmodel_pyx.pyx', LIBS=cython_libs, FRAMEWORKS=frameworks)
+lenvCython.Program('runners/snpemodel_pyx.so', 'runners/snpemodel_pyx.pyx', LIBS=[snpemodel_lib, snpe_lib, *cython_libs], FRAMEWORKS=frameworks, RPATH=snpe_rpath)
+lenvCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LIBS=[commonmodel_lib, *cython_libs], FRAMEWORKS=frameworks)
+
+# Get model metadata
+fn = File("models/supercombo").abspath
+cmd = f'python3 {Dir("#selfdrive/modeld").abspath}/get_model_metadata.py {fn}.onnx'
+files = sum([lenv.Glob("#"+x) for x in open(File("#release/files_common").abspath).read().split("\n") if x.endswith("get_model_metadata.py")], [])
+lenv.Command(fn + "_metadata.pkl", [fn + ".onnx"]+files, cmd)
+
+# Build thneed model
+if arch == "larch64" or GetOption('pc_thneed'):
+  tinygrad_opts = []
+  if not GetOption('pc_thneed'):
+    # use FLOAT16 on device for speed + don't cache the CL kernels for space
+    tinygrad_opts += ["FLOAT16=1", "PYOPENCL_NO_CACHE=1"]
+  cmd = f"cd {Dir('#').abspath}/tinygrad_repo && " + ' '.join(tinygrad_opts) + f" python3 openpilot/compile2.py {fn}.onnx {fn}.thneed"
+
+  tinygrad_files = sum([lenv.Glob("#"+x) for x in open(File("#release/files_common").abspath).read().split("\n") if x.startswith("tinygrad_repo/")], [])
+  lenv.Command(fn + ".thneed", [fn + ".onnx"] + tinygrad_files, cmd)
+
+  thneed_lib = env.SharedLibrary('thneed', thneed_src, LIBS=[gpucommon, common, 'zmq', 'OpenCL', 'dl'])
+  thneedmodel_lib = env.Library('thneedmodel', ['runners/thneedmodel.cc'])
+  lenvCython.Program('runners/thneedmodel_pyx.so', 'runners/thneedmodel_pyx.pyx', LIBS=envCython["LIBS"]+[thneedmodel_lib, thneed_lib, gpucommon, common, 'dl', 'zmq', 'OpenCL'])

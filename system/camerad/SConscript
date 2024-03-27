@@ -1,0 +1,10 @@
+Import('env', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc')
+
+libs = ['m', 'pthread', common, 'jpeg', 'OpenCL', 'yuv', cereal, messaging, 'zmq', 'capnp', 'kj', visionipc, gpucommon, 'atomic']
+
+camera_obj = env.Object(['cameras/camera_qcom2.cc', 'cameras/camera_common.cc', 'cameras/camera_util.cc',
+                         'sensors/ar0231.cc', 'sensors/ox03c10.cc', 'sensors/os04c10.cc'])
+env.Program('camerad', ['main.cc', camera_obj], LIBS=libs)
+
+if GetOption("extras") and arch == "x86_64":
+  env.Program('test/test_ae_gray', ['test/test_ae_gray.cc', camera_obj], LIBS=libs)
