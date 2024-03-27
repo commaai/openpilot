@@ -181,17 +181,17 @@ OnroadAlerts::Alert OnroadAlerts::getAlert(const SubMaster &sm, uint64_t started
     // Handle controls timeout
     if (controls_frame < started_frame) {
       // car is started, but controlsState hasn't been seen at all
-      a = {"openpilot Unavailable", "Waiting for controls to start",
+      a = {tr("openpilot Unavailable"), tr("Waiting for controls to start"),
            "controlsWaiting", cereal::ControlsState::AlertSize::MID,
            cereal::ControlsState::AlertStatus::NORMAL};
     } else if (controls_missing > CONTROLS_TIMEOUT && !Hardware::PC()) {
       // car is started, but controls is lagging or died
       if (cs.getEnabled() && (controls_missing - CONTROLS_TIMEOUT) < 10) {
-        a = {"TAKE CONTROL IMMEDIATELY", "Controls Unresponsive",
+        a = {tr("TAKE CONTROL IMMEDIATELY"), tr("Controls Unresponsive"),
              "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL,
              cereal::ControlsState::AlertStatus::CRITICAL};
       } else {
-        a = {"Controls Unresponsive", "Reboot Device",
+        a = {tr("Controls Unresponsive"), tr("Reboot Device"),
              "controlsUnresponsivePermanent", cereal::ControlsState::AlertSize::MID,
              cereal::ControlsState::AlertStatus::NORMAL};
       }
