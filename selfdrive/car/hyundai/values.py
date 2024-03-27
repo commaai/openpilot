@@ -647,20 +647,16 @@ PLATFORM_CODE_ECUS = [Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps]
 # TODO: there are date codes in the ABS firmware versions in hex
 DATE_FW_ECUS = [Ecu.fwdCamera]
 
-ALL_HYUNDAI_ECUS = [Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.parkingAdas,
-                    Ecu.adas, Ecu.hvac, Ecu.cornerRadar, Ecu.combinationMeter]
-
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
-    # TODO: minimize shared whitelists for CAN and cornerRadar for CAN-FD
+    # TODO: add back whitelists
     # CAN queries (OBD-II port)
     Request(
       [HYUNDAI_VERSION_REQUEST_LONG],
       [HYUNDAI_VERSION_RESPONSE],
     ),
 
-    # CAN-FD queries (from camera)
-    # TODO: combine shared whitelists with CAN requests
+    # CAN & CAN-FD queries (from camera)
     Request(
       [HYUNDAI_VERSION_REQUEST_LONG],
       [HYUNDAI_VERSION_RESPONSE],
@@ -685,24 +681,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
       logging=True,
     ),
 
-    # CAN & CAN FD logging queries (from camera)
-    Request(
-      [HYUNDAI_VERSION_REQUEST_LONG],
-      [HYUNDAI_VERSION_RESPONSE],
-      bus=0,
-      auxiliary=True,
-      logging=True,
-    ),
-    Request(
-      [HYUNDAI_VERSION_REQUEST_LONG],
-      [HYUNDAI_VERSION_RESPONSE],
-      bus=1,
-      auxiliary=True,
-      obd_multiplexing=False,
-      logging=True,
-    ),
-
     # CAN-FD alt request logging queries
+    # TODO: do we need this anymore?
     Request(
       [HYUNDAI_VERSION_REQUEST_ALT],
       [HYUNDAI_VERSION_RESPONSE],
