@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+import os
+
 from cereal import car
 from panda import Panda
 from openpilot.common.conversions import Conversions as CV
@@ -17,6 +19,8 @@ TransmissionType = car.CarParams.TransmissionType
 BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
                 CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
 SETTINGS_BUTTONS_DICT = {CruiseSettings.DISTANCE: ButtonType.gapAdjustCruise, CruiseSettings.LKAS: ButtonType.altButton1}
+
+SIMULATION = "SIMULATION" in os.environ
 
 
 class CarInterface(CarInterfaceBase):
@@ -50,7 +54,7 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaNidec)]
       ret.openpilotLongitudinalControl = True
 
-      ret.pcmCruise = True
+      ret.pcmCruise = not SIMULATION
 
     if candidate == CAR.HONDA_CRV_5G:
       ret.enableBsm = 0x12f8bfa7 in fingerprint[CAN.radar]
@@ -212,7 +216,7 @@ class CarInterface(CarInterfaceBase):
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
     # to a negative value, so it won't matter. Otherwise, add 0.5 mph margin to not
     # conflict with PCM acc
-    ret.autoResumeSng = candidate in (HONDA_BOSCH | {CAR.HONDA_CIVIC})
+    ret.autoResumeSng = candidate in (HONDA_BOSCH | {CAR.HONDA_CIVIC}) or SIMULATION
     ret.minEnableSpeed = -1. if ret.autoResumeSng else 25.5 * CV.MPH_TO_MS
 
     ret.steerActuatorDelay = 0.1
