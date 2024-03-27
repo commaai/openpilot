@@ -54,7 +54,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
     self.assertEqual(CANFD_CAR & HYBRID_CAR, set(), "Hard coding CAN FD cars as hybrid is no longer supported")
 
   def test_canfd_ecu_whitelist(self):
-    # Asserts only auxiliary Ecus can exist in database for CAN-FD cars
+    # Asserts only expected Ecus can exist in database for CAN-FD cars
     for car_model in CANFD_CAR:
       ecus = {fw[0] for fw in FW_VERSIONS[car_model].keys()}
       ecus_not_in_whitelist = ecus - CANFD_EXPECTED_ECUS
