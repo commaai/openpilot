@@ -681,8 +681,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       logging=True,
     ),
 
-    # CAN-FD alt request logging queries
-    # TODO: do we need this anymore?
+    # CAN-FD alt request logging queries for hvac and parkingAdas
     Request(
       [HYUNDAI_VERSION_REQUEST_ALT],
       [HYUNDAI_VERSION_RESPONSE],
