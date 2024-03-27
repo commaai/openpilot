@@ -2,6 +2,7 @@ import sys
 import json
 import base64
 import os
+import subprocess
 from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.logreader import LogReader
 from mcap.writer import Writer
@@ -172,8 +173,6 @@ def generateSchemas():
       with open(filePath, 'r') as jsonFile:
         jsonData = json.load(jsonFile)
         scheme, zerroArray = jsonToScheme(jsonData)
-        if jsonData.get("title") == "radarState" and iteration == lastIteration-1:
-            print(str(iteration)+" of "+str(lastIteration))
         # If array of len 0 has been found, type of its data can not be parsed, skip to the next log
         # in search for a non empty array. If there is not an non empty array in logs, put a dummy string type
         if zerroArray and not iteration == lastIteration-1:
@@ -221,6 +220,7 @@ def createMcap(logPaths):
   generateSchemas()
   print("Creating mcap file")
 
+  print("Registering schemas and channels")
   listOfRlogTopics = os.listdir(RLOG_FOLDER)
   for rlogTopic in listOfRlogTopics:
     schema = loadSchema(rlogTopic)
@@ -250,10 +250,36 @@ def createMcap(logPaths):
           publish_time=logMonoTime
         )
 
+def is_program_installed(program_name):
+    try:
+        # Check if the program is installed using dpkg (for traditional Debian packages)
+        subprocess.run(["dpkg", "-l", program_name], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        return True
+    except subprocess.CalledProcessError:
+        # Check if the program is installed using snap
+        try:
+            subprocess.run(["snap", "list", program_name], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            return True
+        except subprocess.CalledProcessError:
+            return False
+
 
 
 # TODO: Check if foxglove is installed
 if __name__ == '__main__':
+  # Example usage:
+  program_name = "foxglove-studio"  # Change this to the program you want to check
+  if is_program_installed(program_name):
+      print(f"{program_name} detected.")
+  else:
+      print(f"{program_name} could not be detected.")
+      installFoxglove = input("Would you like to install it? YES/NO? - ")
+      if installFoxglove.lower() == "yes":
+        try:
+          subprocess.run(['./install_foxglove.sh'], check=True)
+          print("Installation completed successfully.")
+        except subprocess.CalledProcessError as e:
+          print(f"Installation failed with return code {e.returncode}.")
   # Get a route
   if len(sys.argv) == 1:
     route_name = "a2a0ccea32023010|2023-07-27--13-01-19"
@@ -270,3 +296,4 @@ if __name__ == '__main__':
     writer.start()
     createMcap(logPaths)
     writer.finish()
+    print(f"File {OUT_MCAP_FILE_NAME} has been successfully created. Please import it into foxglove studio to continue.")
