@@ -4,9 +4,9 @@
 #include <memory>
 #include <string>
 
+#include <QApplication>
 #include <QObject>
 #include <QTimer>
-#include <qglobal.h>
 #include <QColor>
 #include <QFuture>
 #include <QPolygonF>
@@ -79,22 +79,22 @@ struct Alert {
       // Handle controls timeout
       if (controls_frame < started_frame) {
         // car is started, but controlsState hasn't been seen at all
-        alert = {QT_TR_NOOP("openpilot Unavailable"),
-                 QT_TR_NOOP("Waiting for controls to start"),
+        alert = {qApp->translate("Alert", QT_TR_NOOP("openpilot Unavailable")),
+                 qApp->translate("Alert", QT_TR_NOOP("Waiting for controls to start")),
                  "controlsWaiting", cereal::ControlsState::AlertSize::MID,
                  cereal::ControlsState::AlertStatus::NORMAL,
                  AudibleAlert::NONE};
       } else if (controls_missing > CONTROLS_TIMEOUT && !Hardware::PC()) {
         // car is started, but controls is lagging or died
         if (cs.getEnabled() && (controls_missing - CONTROLS_TIMEOUT) < 10) {
-          alert = {QT_TR_NOOP("TAKE CONTROL IMMEDIATELY"),
-                   QT_TR_NOOP("Controls Unresponsive"),
+          alert = {qApp->translate("Alert", QT_TR_NOOP("TAKE CONTROL IMMEDIATELY")),
+                   qApp->translate("Alert", QT_TR_NOOP("Controls Unresponsive")),
                    "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL,
                    cereal::ControlsState::AlertStatus::CRITICAL,
                    AudibleAlert::WARNING_IMMEDIATE};
         } else {
-          alert = {QT_TR_NOOP("Controls Unresponsive"),
-                   QT_TR_NOOP("Reboot Device"),
+          alert = {qApp->translate("Alert", QT_TR_NOOP("Controls Unresponsive")),
+                   qApp->translate("Alert", QT_TR_NOOP("Reboot Device")),
                    "controlsUnresponsivePermanent", cereal::ControlsState::AlertSize::MID,
                    cereal::ControlsState::AlertStatus::NORMAL,
                    AudibleAlert::NONE};
