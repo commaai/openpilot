@@ -665,12 +665,12 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4000         ',
       b'\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4100         ',
-b'\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4500         '
+b'\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4500         ',
+b'\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4600         ',
       b'\xf1\x00DEev SCC F-CUP      1.00 1.02 96400-Q4000         ',
       b'\xf1\x00DEev SCC F-CUP      1.00 1.02 96400-Q4100         ',
       b'\xf1\x00DEev SCC F-CUP      1.00 1.03 96400-Q4100         ',
       b'\xf1\x00DEev SCC FHCUP      1.00 1.03 96400-Q4000         ',
-      b'\xf1\x8799110Q4600\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4600         ',
       b'\xf1\x8799110Q4600\xf1\x00DEev SCC FHCUP      1.00 1.00 99110-Q4600         ',
       b'\xf1\x8799110Q4600\xf1\x00DEev SCC FNCUP      1.00 1.00 99110-Q4600         ',
     ],
