@@ -36,6 +36,8 @@ NO_DATES_PLATFORMS = {
   CAR.HYUNDAI_VELOSTER,
 }
 
+CANFD_EXPECTED_ECUS = {Ecu.fwdCamera, Ecu.fwdRadar}
+
 
 class TestHyundaiFingerprint(unittest.TestCase):
   def test_can_features(self):
@@ -51,13 +53,11 @@ class TestHyundaiFingerprint(unittest.TestCase):
     self.assertEqual(HYBRID_CAR & EV_CAR, set(), "Shared cars between hybrid and EV")
     self.assertEqual(CANFD_CAR & HYBRID_CAR, set(), "Hard coding CAN FD cars as hybrid is no longer supported")
 
-  def test_auxiliary_request_ecu_whitelist(self):
+  def test_canfd_ecu_whitelist(self):
     # Asserts only auxiliary Ecus can exist in database for CAN-FD cars
-    whitelisted_ecus = {ecu for r in FW_QUERY_CONFIG.requests for ecu in r.whitelist_ecus if r.auxiliary}
-
     for car_model in CANFD_CAR:
       ecus = {fw[0] for fw in FW_VERSIONS[car_model].keys()}
-      ecus_not_in_whitelist = ecus - whitelisted_ecus
+      ecus_not_in_whitelist = ecus - CANFD_EXPECTED_ECUS
       ecu_strings = ", ".join([f"Ecu.{ECU_NAME[ecu]}" for ecu in ecus_not_in_whitelist])
       self.assertEqual(len(ecus_not_in_whitelist), 0,
                        f"{car_model}: Car model has ECUs not in auxiliary request whitelists: {ecu_strings}")
