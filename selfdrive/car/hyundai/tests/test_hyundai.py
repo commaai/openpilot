@@ -60,7 +60,7 @@ class TestHyundaiFingerprint(unittest.TestCase):
       ecus_not_in_whitelist = ecus - CANFD_EXPECTED_ECUS
       ecu_strings = ", ".join([f"Ecu.{ECU_NAME[ecu]}" for ecu in ecus_not_in_whitelist])
       self.assertEqual(len(ecus_not_in_whitelist), 0,
-                       f"{car_model}: Car model has ECUs not in auxiliary request whitelists: {ecu_strings}")
+                       f"{car_model}: Car model has unexpected ECUs: {ecu_strings}")
 
   def test_blacklisted_parts(self):
     # Asserts no ECUs known to be shared across platforms exist in the database.
