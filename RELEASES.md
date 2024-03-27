@@ -3,6 +3,7 @@ Version 0.9.7 (2024-XX-XX)
 * New driving model
 * Adjust driving personality with the follow distance button
 * Support for hybrid variants of supported Ford models
+* Hyundai Kona 2024 support
 
 Version 0.9.6 (2024-02-27)
 ========================
