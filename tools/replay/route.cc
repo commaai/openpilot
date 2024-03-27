@@ -4,7 +4,7 @@
 #include <QEventLoop>
 #include <QJsonArray>
 #include <QJsonDocument>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QtConcurrent>
 #include <array>
 
