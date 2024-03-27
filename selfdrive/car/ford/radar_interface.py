@@ -2,6 +2,7 @@ from math import cos, sin
 from cereal import car
 from opendbc.can.parser import CANParser
 from openpilot.common.conversions import Conversions as CV
+from openpilot.selfdrive.boardd.boardd import can_capnp_to_list
 from openpilot.selfdrive.car.ford.fordcan import CanBus
 from openpilot.selfdrive.car.ford.values import DBC, RADAR
 from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
@@ -52,7 +53,7 @@ class RadarInterface(RadarInterfaceBase):
     if self.rcp is None:
       return super().update(None)
 
-    vls = self.rcp.update_strings(can_strings)
+    vls = self.rcp.update_strings(can_capnp_to_list(can_strings))
     self.updated_messages.update(vls)
 
     if self.trigger_msg not in self.updated_messages:
