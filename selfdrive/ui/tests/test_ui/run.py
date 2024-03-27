@@ -6,6 +6,7 @@ import jinja2
 import matplotlib.pyplot as plt
 import numpy as np
 import os
+import json
 import pywinctl
 import time
 import unittest
@@ -24,13 +25,22 @@ from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera
 from openpilot.tools.webcam.camera import Camera
 from openpilot.system.version import terms_version, training_version
 
+from openpilot.selfdrive.controls.lib.events import EVENTS, Alert
+from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert, OFFROAD_ALERTS
+
 UI_DELAY = 2 # may be slower on CI?
 
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
 
+State = log.ControlsState.OpenpilotState
+
 EventName = car.CarEvent.EventName
 EVENTS_BY_NAME = {v: k for k, v in EventName.schema.enumerants.items()}
+
+available_langs = json.load(open(os.path.normpath(__file__ + "/../../../translations/languages.json"), "r"))
+test_langs = ["main_" + lang for lang in (os.environ.get("TEST_UI_LANGUAGES") or "").split(" ")]
+langs = dict(filter(lambda x: x[1] == "main_en" or x[1] in test_langs, available_langs.items()))
 
 class PrimeType:
   UNKNOWN = b'-1'
@@ -40,6 +50,41 @@ class PrimeType:
   BLUE = b'3'
   MAGENTA_NEW = b'4'
   PURPLE = b'5'
+
+def event_from_id(event_id: int):
+  try: # O(1)
+    return car.CarEvent.EventName.schema.node.enum.enumerants[event_id].name
+  except IndexError:
+    return "Unknown Event ID"
+
+def get_onroad_alert_cases():
+  cases = {}
+  for event_id, event in EVENTS.items():
+    event_name = event_from_id(event_id)
+    for event_type, alert in event.items():
+      if callable(alert):
+        continue
+
+      case_name = f"onroad_alert_{event_name}_{event_type}"
+      alert.event_type = event_type
+      alert.alert_type = event_name
+      cases[case_name] = (lambda click, pm, alert=alert:
+                          send_onroad_alert(click, pm, alert))
+  return cases
+
+def send_onroad_alert(click, pm, alert: Alert):
+  dat = messaging.new_message('controlsState', valid=True)
+  dat.controlsState.enabled = True
+  dat.controlsState.state = State.enabled if alert.event_type is None or 'override' not in alert.event_type else State.overriding
+  dat.controlsState.alertText1 = alert.alert_text_1
+  dat.controlsState.alertText2 = alert.alert_text_2
+  dat.controlsState.alertSize = alert.alert_size
+  dat.controlsState.alertStatus = alert.alert_status
+  dat.controlsState.alertBlinkingRate = alert.alert_rate
+  dat.controlsState.alertType = alert.alert_type
+  dat.controlsState.alertSound = alert.audible_alert
+  pm.wait_for_readers_to_update('controlsState', UI_DELAY)
+  pm.send('controlsState', dat)
 
 def setup_common(click, pm: PubMaster):
   Params().put("HasAcceptedTerms", terms_version)
@@ -58,17 +103,15 @@ def setup_common(click, pm: PubMaster):
   pm.send("deviceState", dat)
 
 def setup_keyboard(click, pm):
-  setup_settings_network(click, pm)
-  click(1800, 50) # Advanced Button
+  setup_settings_network_advanced(click, pm)
   click(1900, 350) # Edit tethering password
 
-def setup_homescreen(prime_type):
-  def actual_setup_homescreen(click, pm: PubMaster):
-    if prime_type != PrimeType.NONE:
-      Params().put("PrimeType", prime_type)
-      time.sleep(UI_DELAY)
-    setup_common(click, pm)
-  return actual_setup_homescreen
+def setup_numbers_keyboard(click, pm):
+  setup_keyboard(click, pm)
+  click(150, 950)
+
+def setup_homescreen(click, pm: PubMaster):
+  setup_common(click, pm)
 
 def setup_settings_device(click, pm: PubMaster):
   setup_common(click, pm)
@@ -80,6 +123,10 @@ def setup_settings_network(click, pm: PubMaster):
 
   setup_settings_device(click, pm)
   click(300, 600)
+
+def setup_settings_network_advanced(click, pm: PubMaster):
+  setup_settings_network(click, pm)
+  click(2000, 50)
 
 def setup_settings_software(click, pm: PubMaster):
   setup_common(click, pm)
@@ -95,6 +142,19 @@ def setup_offroad_driver_camera(click, pm: PubMaster):
   setup_common(click, pm)
   setup_settings_device(click, pm)
   click(1900,450)
+
+def setup_experimental_mode_prompt(click, pm: PubMaster):
+  setup_settings_toggles(click, pm)
+  click(2000, 250)
+
+def setup_update(click, pm: PubMaster):
+  setup_common(click, pm)
+  Params().put_bool("UpdateAvailable", True)
+  Params().put("UpdaterNewDescription", "A quick brown fox jumps over the lazy dog .")
+  Params().put("UpdaterNewReleaseNotes", "A quick brown fox jumps over the lazy dog .")
+  click(100, 100) # Open and close settings to refresh
+  click(250, 250)
+  Params().put_bool("UpdateAvailable", False)
 
 def setup_onroad(click, pm: PubMaster):
   setup_common(click, pm)
@@ -131,6 +191,36 @@ def setup_onroad(click, pm: PubMaster):
     pm.send(msg.which(), msg)
     server.send(cam_meta.stream, IMG_BYTES, cs.frameId, cs.timestampSof, cs.timestampEof)
 
+def setup_controls_enabled(click, pm: PubMaster, state = State.enabled):
+  msg = messaging.new_message('controlsState', valid=True)
+  msg.controlsState.enabled = True
+  msg.controlsState.state = state
+  pm.send('controlsState', msg)
+
+def setup_navoop(click, pm: PubMaster):
+  msg = messaging.new_message('navInstruction', valid=True)
+  pm.send('navInstruction', msg)
+  msg = messaging.new_message('navRoute', valid=True)
+  pm.send('navRoute', msg)
+  modelv2_send = messaging.new_message('modelV2')
+  modelv2_send.modelV2.navEnabled = True
+  pm.wait_for_readers_to_update('modelV2',UI_DELAY)
+  pm.send('modelV2', modelv2_send)
+
+def setup_onroad_engaged(click, pm: PubMaster):
+  setup_onroad(click, pm)
+  setup_controls_enabled(click, pm)
+
+def setup_onroad_overriding(click, pm: PubMaster):
+  setup_onroad(click, pm)
+  setup_controls_enabled(click, pm, State.overriding)
+
+def setup_onroad_nav_enabled(click, pm: PubMaster):
+  setup_onroad_sidebar(click, pm)
+  setup_controls_enabled(click, pm)
+  setup_navoop(click, pm)
+  time.sleep(UI_DELAY) # give time for the map to render
+
 @mock_messages(['liveLocationKalman'])
 def setup_onroad_map(click, pm: PubMaster):
   setup_onroad(click, pm)
@@ -143,25 +233,37 @@ def setup_onroad_sidebar(click, pm: PubMaster):
   setup_onroad_map(click, pm)
   click(500, 500)
 
+def send_offroad_alert(click, offroad_alert):
+  set_offroad_alert(offroad_alert[0], False)
+  set_offroad_alert(offroad_alert[0], True)
+  click(100, 100) # Open and close settings to refresh
+  click(250, 250)
+
 CASES = {
-  "homescreen": setup_homescreen(PrimeType.PURPLE),
-  "homescreen_with_prime": setup_homescreen(PrimeType.NONE),
+  "homescreen": (setup_homescreen, {'prime': PrimeType.NONE}),
+  "homescreen_with_prime": (setup_homescreen, {'prime': PrimeType.PURPLE}),
   "settings_device": setup_settings_device,
   "settings_network": setup_settings_network,
+  "settings_network_advanced": setup_settings_network_advanced,
   "settings_software": setup_settings_software,
   "settings_toggles": setup_settings_toggles,
   "offroad_driver_camera": setup_offroad_driver_camera,
+  "update": setup_update,
   "keyboard": setup_keyboard,
+  "numbers_keyboard": setup_numbers_keyboard,
   "onroad": setup_onroad,
+  "onroad_engaged": setup_onroad_engaged,
+  "onroad_overriding": setup_onroad_overriding,
+  "onroad_nav_enabled": setup_onroad_nav_enabled,
   "onroad_map": setup_onroad_map,
-  "onroad_sidebar": setup_onroad_sidebar
+  "onroad_sidebar": setup_onroad_sidebar,
+  "experimental_mode_confirm": setup_experimental_mode_prompt
 }
 
 TEST_DIR = pathlib.Path(__file__).parent
 
 TEST_OUTPUT_DIR = TEST_DIR / "report"
 SCREENSHOTS_DIR = TEST_OUTPUT_DIR / "screenshots"
-
 
 class TestUI(unittest.TestCase):
   @classmethod
@@ -173,9 +275,11 @@ class TestUI(unittest.TestCase):
   def tearDownClass(cls):
     del sys.modules["mouseinfo"]
 
-  def setup(self):
+  def setup(self, prime_type = PrimeType.NONE):
+    Params().put("PrimeType", prime_type)
     self.sm = SubMaster(["uiDebug"])
-    self.pm = PubMaster(["deviceState", "pandaStates", "controlsState", 'roadCameraState', 'wideRoadCameraState', 'liveLocationKalman'])
+    self.pm = PubMaster(["deviceState", "pandaStates", "controlsState", 'roadCameraState', 'wideRoadCameraState', 'liveLocationKalman',
+    'navRoute', 'navInstruction', 'modelV2'])
     while not self.sm.valid["uiDebug"]:
       self.sm.update(1)
     time.sleep(UI_DELAY) # wait a bit more for the UI to start rendering
@@ -199,17 +303,68 @@ class TestUI(unittest.TestCase):
     pyautogui.click(self.ui.left + x, self.ui.top + y, *args, **kwargs)
     time.sleep(UI_DELAY) # give enough time for the UI to react
 
-  @parameterized.expand(CASES.items())
+  @parameterized.expand([
+    (case_name, setup_data, lang_code, lang_name)
+    for case_name, setup_data in CASES.items()
+    for lang_name, lang_code in langs.items()
+  ])
+  def test_ui(self, name, setup_data, lang_code, lang_name, *args):
+    Params().put("LanguageSetting", lang_code)
+    self.run_ui_test_case(name, setup_data, lang_code, *args)
+
   @with_processes(["ui"])
-  def test_ui(self, name, setup_case):
-    self.setup()
+  def run_ui_test_case(self, name, setup_data, lang_code, *args):
+    setup_info = {}
+
+    if isinstance(setup_data, tuple):
+      setup_case, setup_info = setup_data
+    else:
+      setup_case = setup_data
+
+    self.setup(dict.get(setup_info, "prime", PrimeType.NONE))
 
     setup_case(self.click, self.pm)
 
     time.sleep(UI_DELAY) # wait a bit more for the UI to finish rendering
 
     im = self.screenshot()
-    plt.imsave(SCREENSHOTS_DIR / f"{name}.png", im)
+    (SCREENSHOTS_DIR / lang_code).mkdir(parents=True, exist_ok=True)
+    plt.imsave(SCREENSHOTS_DIR / f"{lang_code}/{name}.png", im)
+
+  @parameterized.expand(list(langs.items()))
+  def test_offroad_alerts(self, _, lang_code):
+    Params().put("LanguageSetting", lang_code)
+    self.run_offroad_alerts(lang_code)
+
+  @with_processes(["ui"])
+  def run_offroad_alerts(self, lang_code):
+    self.setup()
+    setup_common(self.click, self.pm)
+    time.sleep(UI_DELAY)
+    for offroad_alert in OFFROAD_ALERTS.items():
+      send_offroad_alert(self.click, offroad_alert)
+      im = self.screenshot()
+      set_offroad_alert(offroad_alert[0], False)
+      (SCREENSHOTS_DIR / lang_code / "alerts").mkdir(parents=True, exist_ok=True)
+      plt.imsave(SCREENSHOTS_DIR / f"{lang_code}/alerts/{offroad_alert[0]}.png", im)
+
+  @parameterized.expand(list(langs.items()))
+  def test_ui_events(self, _, lang_code):
+    Params().put("LanguageSetting", lang_code)
+    self.run_events(lang_code)
+
+  @with_processes(["ui"])
+  def run_events(self, lang_code):
+    cases = get_onroad_alert_cases()
+    self.setup()
+    setup_onroad(self.click, self.pm)
+    time.sleep(UI_DELAY)
+    for name, setup_case in cases.items():
+      setup_case(self.click, self.pm)
+      time.sleep(UI_DELAY)
+      im = self.screenshot()
+      (SCREENSHOTS_DIR / lang_code / "alerts").mkdir(parents=True, exist_ok=True)
+      plt.imsave(SCREENSHOTS_DIR / f"{lang_code}/alerts/{name}.png", im)
 
 
 def create_html_report():
