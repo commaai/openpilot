@@ -700,9 +700,194 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
   # We lose these ECUs without the comma power on these cars.
   # Note that we still attempt to match with them when they are present
+  # KIA_NIRO_EV
+  # ('fwdCamera', 'fwdRadar'): routes: 540, dongles: 13
+  # ---
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 482, dongles: 32
+  # ---
+  #
+  # HYUNDAI_SANTA_FE
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 554, dongles: 19
+  # ---
+  # ('fwdCamera', 'fwdRadar'): routes: 369, dongles: 10
+  # ---
+  # ('fwdCamera',): routes: 163, dongles: 1
+  # ---
+  #
+  # HYUNDAI_ELANTRA_HEV_2021
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 435, dongles: 11
+  # ---
+  # ('fwdCamera', 'fwdRadar'): routes: 396, dongles: 7
+  # ---
+  #
+  # HYUNDAI_PALISADE
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 2034, dongles: 54
+  # ---
+  # ('fwdCamera', 'fwdRadar'): routes: 594, dongles: 13
+  # ---
+  #
+  # HYUNDAI_SANTA_FE_2022
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 865, dongles: 17
+  # ---
+  # ('fwdCamera', 'fwdRadar'): routes: 430, dongles: 9
+  # ---
+  #
+  # HYUNDAI_SONATA
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 1550, dongles: 47
+  # ---
+  # ('fwdCamera', 'fwdRadar'): routes: 885, dongles: 22
+  # ---
+  # ('fwdRadar',): routes: 2, dongles: 1
+  # ---
+  # (): routes: 1, dongles: 1
+  # ---
+  #
+  # HYUNDAI_SANTA_FE_PHEV_2022
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 292, dongles: 6
+  # ---
+  # ('fwdCamera', 'fwdRadar'): routes: 69, dongles: 2
+  # ---
+  #
+  # HYUNDAI_SANTA_FE_HEV_2022
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 209, dongles: 4
+  # ---
+  # ('fwdCamera', 'fwdRadar'): routes: 71, dongles: 3
+  # ---
+  #
+  # HYUNDAI_KONA_EV
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 242, dongles: 12
+  # ---
+  # ('fwdCamera', 'fwdRadar'): routes: 13, dongles: 2
+  # ---
+  # ('eps', 'fwdCamera'): routes: 2, dongles: 1
+  # ---
+  #
+  # HYUNDAI_IONIQ_EV_2020
+  # ('fwdCamera', 'fwdRadar'): routes: 227, dongles: 2
+  # ---
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 195, dongles: 4
+  # ---
+  #
+  # HYUNDAI_ELANTRA_2021
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 257, dongles: 9
+  # ---
+  # ('fwdCamera', 'fwdRadar'): routes: 41, dongles: 4
+  # ---
+  #
+  # HYUNDAI_SONATA_HYBRID
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 495, dongles: 19
+  # ---
+  # ('fwdCamera', 'fwdRadar'): routes: 182, dongles: 12
+  # ---
+  #
+  # HYUNDAI_KONA_EV_2022
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 176, dongles: 6
+  # ---
+  # ('fwdCamera', 'fwdRadar'): routes: 173, dongles: 3
+  # ---
+  # ('eps', 'fwdCamera'): routes: 1, dongles: 1
+  # ---
+  #
+  # KIA_FORTE
+  # ('fwdCamera', 'fwdRadar'): routes: 193, dongles: 3
+  # ---
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 24, dongles: 4
+  # ---
+  # ('fwdCamera',): routes: 6, dongles: 2
+  # ---
+  # ('eps', 'fwdCamera'): routes: 4, dongles: 1
+  # ---
+  #
+  # GENESIS_G70
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 131, dongles: 2
+  # ---
+  # ('fwdCamera', 'fwdRadar'): routes: 97, dongles: 1
+  # ---
+  #
+  # KIA_NIRO_PHEV_2022
+  # ('fwdCamera', 'fwdRadar'): routes: 221, dongles: 1
+  # ---
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 88, dongles: 1
+  # ---
+  #
+  # HYUNDAI_IONIQ_PHEV
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 272, dongles: 14
+  # ---
+  # ('fwdCamera', 'fwdRadar'): routes: 121, dongles: 5
+  # ---
+  #
+  # KIA_NIRO_HEV_2021
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 171, dongles: 4
+  # ---
+  # ('fwdCamera', 'fwdRadar'): routes: 2, dongles: 1
+  # ---
+  #
+  # KIA_K5_2021
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 91, dongles: 7
+  # ---
+  # ('fwdCamera', 'fwdRadar'): routes: 61, dongles: 3
+  # ---
+  #
+  # HYUNDAI_IONIQ
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 96, dongles: 3
+  # ---
+  # ('fwdCamera', 'fwdRadar'): routes: 13, dongles: 1
+  # ---
+  #
+  # KIA_STINGER
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 184, dongles: 8
+  # ---
+  # ('fwdCamera', 'fwdRadar'): routes: 9, dongles: 3
+  # ---
+  #
+  # GENESIS_G70_2020
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 45, dongles: 5
+  # ---
+  # ('fwdCamera', 'fwdRadar'): routes: 2, dongles: 1
+  # ---
+  #
+  # HYUNDAI_AZERA_HEV_6TH_GEN
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 29, dongles: 2
+  # ---
+  # ('fwdCamera', 'fwdRadar'): routes: 11, dongles: 2
+  # ---
+  # ('fwdRadar',): routes: 2, dongles: 1
+  # ---
+  #
+  # HYUNDAI_CUSTIN_1ST_GEN
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 10, dongles: 1
+  # ---
+  # ('fwdCamera', 'fwdRadar'): routes: 3, dongles: 1
+  # ---
+  # ('fwdCamera',): routes: 2, dongles: 1
+  # ---
+  # ('eps', 'fwdCamera'): routes: 1, dongles: 1
+  # ---
+  #
+  # KIA_NIRO_PHEV
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 40, dongles: 1
+  # ---
+  #
+  # HYUNDAI_ELANTRA_GT_I30
+  # ('abs', 'eps', 'fwdCamera', 'fwdRadar', 'transmission'): routes: 34, dongles: 1
+  # ---
+  #
+  # HYUNDAI_IONIQ_EV_LTD
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 14, dongles: 1
+  # ---
+  #
+  # KIA_STINGER_2022
+  # ('fwdCamera', 'fwdRadar'): routes: 10, dongles: 1
+  # ---
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 2, dongles: 1
+  # ---
+  #
+  # HYUNDAI_IONIQ_HEV_2022
+  # ('eps', 'fwdCamera', 'fwdRadar'): routes: 5, dongles: 1
+  # ---
   non_essential_ecus={
     Ecu.abs: [CAR.HYUNDAI_PALISADE, CAR.HYUNDAI_SONATA, CAR.HYUNDAI_SANTA_FE_2022, CAR.KIA_K5_2021, CAR.HYUNDAI_ELANTRA_2021,
-              CAR.HYUNDAI_SANTA_FE, CAR.HYUNDAI_KONA_EV_2022, CAR.HYUNDAI_KONA_EV],
+              CAR.HYUNDAI_SANTA_FE, CAR.HYUNDAI_KONA_EV_2022, CAR.HYUNDAI_KONA_EV, CAR.HYUNDAI_CUSTIN_1ST_GEN, CAR.KIA_SORENTO],
   },
   extra_ecus=[
     (Ecu.adas, 0x730, None),              # ADAS Driving ECU on HDA2 platforms
