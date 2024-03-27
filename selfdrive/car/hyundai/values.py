@@ -668,6 +668,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [HYUNDAI_VERSION_REQUEST_MULTI],
       [HYUNDAI_VERSION_RESPONSE],
       whitelist_ecus=[Ecu.eps, Ecu.abs, Ecu.fwdRadar],
+      logging=True,
     ),
 
     # CAN-FD queries (from camera)
