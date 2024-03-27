@@ -328,8 +328,8 @@ FW_VERSIONS = {
   CAR.HYUNDAI_SANTA_FE_PHEV_2022: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00TMhe SCC F-CUP      1.00 1.00 99110-CL500         ',
+      b'\xf1\x00TMhe SCC FHCUP      1.00 1.00 99110-CL500         ',
       b'\xf1\x00TMhe SCC FHCUP      1.00 1.01 99110-CL500         ',
-      b'\xf1\x8799110CL500\xf1\x00TMhe SCC FHCUP      1.00 1.00 99110-CL500         ',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00TM  MDPS C 1.00 1.02 56310-CLAC0 4TSHC102',
@@ -562,9 +562,6 @@ FW_VERSIONS = {
       b'\xf1\x00DL3_ SCC FHCUP      1.00 1.03 99110-L2000         ',
       b'\xf1\x00DL3_ SCC FHCUP      1.00 1.03 99110-L2100         ',
       b'\xf1\x00DL3_ SCC FHCUP      1.00 1.04 99110-L2100         ',
-      b'\xf1\x8799110L2000\xf1\x00DL3_ SCC FHCUP      1.00 1.03 99110-L2000         ',
-      b'\xf1\x8799110L2100\xf1\x00DL3_ SCC F-CUP      1.00 1.03 99110-L2100         ',
-      b'\xf1\x8799110L2100\xf1\x00DL3_ SCC FHCUP      1.00 1.03 99110-L2100         ',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00DL3 MDPS C 1.00 1.01 56310-L3220 4DLAC101',
@@ -667,16 +664,15 @@ FW_VERSIONS = {
   CAR.KIA_NIRO_EV: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4000         ',
+      b'\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4100         ',
+      b'\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4500         ',
+      b'\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4600         ',
       b'\xf1\x00DEev SCC F-CUP      1.00 1.02 96400-Q4000         ',
       b'\xf1\x00DEev SCC F-CUP      1.00 1.02 96400-Q4100         ',
       b'\xf1\x00DEev SCC F-CUP      1.00 1.03 96400-Q4100         ',
+      b'\xf1\x00DEev SCC FHCUP      1.00 1.00 99110-Q4600         ',
       b'\xf1\x00DEev SCC FHCUP      1.00 1.03 96400-Q4000         ',
-      b'\xf1\x8799110Q4000\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4000         ',
-      b'\xf1\x8799110Q4100\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4100         ',
-      b'\xf1\x8799110Q4500\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4500         ',
-      b'\xf1\x8799110Q4600\xf1\x00DEev SCC F-CUP      1.00 1.00 99110-Q4600         ',
-      b'\xf1\x8799110Q4600\xf1\x00DEev SCC FHCUP      1.00 1.00 99110-Q4600         ',
-      b'\xf1\x8799110Q4600\xf1\x00DEev SCC FNCUP      1.00 1.00 99110-Q4600         ',
+      b'\xf1\x00DEev SCC FNCUP      1.00 1.00 99110-Q4600         ',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00DE  MDPS C 1.00 1.04 56310Q4100\x00 4DEEC104',
@@ -744,7 +740,7 @@ FW_VERSIONS = {
   },
   CAR.KIA_SELTOS: {
     (Ecu.fwdRadar, 0x7d0, None): [
-      b'\xf1\x8799110Q5100\xf1\x00SP2_ SCC FHCUP      1.01 1.05 99110-Q5100         ',
+      b'\xf1\x00SP2_ SCC FHCUP      1.01 1.05 99110-Q5100         ',
     ],
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x00SP ESC \x07 101\x19\t\x05 58910-Q5450',
@@ -840,8 +836,6 @@ FW_VERSIONS = {
       b'\xf1\x00CN7_ SCC F-CUP      1.00 1.01 99110-AA000         ',
       b'\xf1\x00CN7_ SCC FHCUP      1.00 1.01 99110-AA000         ',
       b'\xf1\x00CN7_ SCC FNCUP      1.00 1.01 99110-AA000         ',
-      b'\xf1\x8799110AA000\xf1\x00CN7_ SCC F-CUP      1.00 1.01 99110-AA000         ',
-      b'\xf1\x8799110AA000\xf1\x00CN7_ SCC FHCUP      1.00 1.01 99110-AA000         ',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00CN7 MDPS C 1.00 1.06 56310/AA070 4CNDC106',
@@ -870,7 +864,6 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00CNhe SCC FHCUP      1.00 1.01 99110-BY000         ',
-      b'\xf1\x8799110BY000\xf1\x00CNhe SCC FHCUP      1.00 1.01 99110-BY000         ',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00CN7 MDPS C 1.00 1.03 56310BY0500 4CNHC103',
@@ -898,8 +891,6 @@ FW_VERSIONS = {
       b'\xf1\x00DNhe SCC F-CUP      1.00 1.02 99110-L5000         ',
       b'\xf1\x00DNhe SCC FHCUP      1.00 1.00 99110-L5000         ',
       b'\xf1\x00DNhe SCC FHCUP      1.00 1.02 99110-L5000         ',
-      b'\xf1\x8799110L5000\xf1\x00DNhe SCC F-CUP      1.00 1.02 99110-L5000         ',
-      b'\xf1\x8799110L5000\xf1\x00DNhe SCC FHCUP      1.00 1.02 99110-L5000         ',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00DN8 MDPS C 1.00 1.01 56310-L5000 4DNHC101',
