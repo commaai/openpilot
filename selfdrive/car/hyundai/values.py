@@ -624,11 +624,6 @@ HYUNDAI_VERSION_REQUEST_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER])
 HYUNDAI_VERSION_REQUEST_ALT = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
   p16(0xf110)  # Alt long description
 
-HYUNDAI_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_SPARE_PART_NUMBER) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_SOFTWARE_IDENTIFICATION) + \
-  p16(0xf100)
-
 HYUNDAI_ECU_MANUFACTURING_DATE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
   p16(uds.DATA_IDENTIFIER_TYPE.ECU_MANUFACTURING_DATE)
 
@@ -663,11 +658,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
       [HYUNDAI_VERSION_REQUEST_LONG],
       [HYUNDAI_VERSION_RESPONSE],
     ),
-    Request(
-      [HYUNDAI_VERSION_REQUEST_MULTI],
-      [HYUNDAI_VERSION_RESPONSE],
-      logging=True,
-    ),
 
     # CAN-FD queries (from camera)
     # TODO: combine shared whitelists with CAN requests
@@ -698,13 +688,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
     # CAN & CAN FD logging queries (from camera)
     Request(
       [HYUNDAI_VERSION_REQUEST_LONG],
-      [HYUNDAI_VERSION_RESPONSE],
-      bus=0,
-      auxiliary=True,
-      logging=True,
-    ),
-    Request(
-      [HYUNDAI_VERSION_REQUEST_MULTI],
       [HYUNDAI_VERSION_RESPONSE],
       bus=0,
       auxiliary=True,
