@@ -635,6 +635,13 @@
     </message>
 </context>
 <context>
+    <name>ReplayControls</name>
+    <message>
+        <source>loading route</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>Reset</name>
     <message>
         <source>Reset failed. Reboot to try again.</source>
@@ -675,6 +682,21 @@ This may take up to a minute.</source>
     </message>
 </context>
 <context>
+    <name>RoutesPanel</name>
+    <message>
+        <source>REPLAY</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Prev</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Next</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>SettingsWindow</name>
     <message>
         <source>×</source>
@@ -695,6 +717,10 @@ This may take up to a minute.</source>
     <message>
         <source>Software</source>
         <translation>ｿﾌﾄｳｪｱ</translation>
+    </message>
+    <message>
+        <source>Routes</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

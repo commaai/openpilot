@@ -206,7 +206,7 @@ static void update_state(UIState *s) {
     float scale = (cam_state.getSensor() == cereal::FrameData::ImageSensor::AR0231) ? 6.0f : 1.0f;
     scene.light_sensor = std::max(100.0f - scale * cam_state.getExposureValPercent(), 0.0f);
   }
-  scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
+  scene.started = (sm["deviceState"].getDeviceState().getStarted() && scene.ignition) || s->replaying;
 
   scene.world_objects_visible = scene.world_objects_visible ||
                                 (scene.started &&
@@ -349,7 +349,7 @@ void Device::updateBrightness(const UIState &s) {
 
 void Device::updateWakefulness(const UIState &s) {
   bool ignition_just_turned_off = !s.scene.ignition && ignition_on;
-  ignition_on = s.scene.ignition;
+  ignition_on = s.scene.ignition || s.replaying;
 
   if (ignition_just_turned_off) {
     resetInteractiveTimeout();

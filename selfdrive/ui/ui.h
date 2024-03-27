@@ -127,12 +127,16 @@ public:
   QString language;
 
   QTransform car_space_transform;
+  bool replaying = false;
 
 signals:
   void uiUpdate(const UIState &s);
   void offroadTransition(bool offroad);
   void primeChanged(bool prime);
   void primeTypeChanged(PrimeType prime_type);
+  void startReplay(const QString &route, const QString &data_dir);
+  void stopReplay();
+
 
 private slots:
   void update();

@@ -301,6 +301,7 @@ def thermald_thread(end_event, hw_queue) -> None:
     startup_conditions["free_space"] = msg.deviceState.freeSpacePercent > 2
     startup_conditions["completed_training"] = params.get("CompletedTrainingVersion") == training_version
     startup_conditions["not_driver_view"] = not params.get_bool("IsDriverViewEnabled")
+    startup_conditions["not_replaying"] = not params.get_bool("IsReplaying")
     startup_conditions["not_taking_snapshot"] = not params.get_bool("IsTakingSnapshot")
 
     # must be at an engageable thermal band to go onroad

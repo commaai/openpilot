@@ -4,15 +4,17 @@
 #include <curl/curl.h>
 #include <openssl/sha.h>
 
+#include <cassert>
+#include <chrono>
+#include <cmath>
 #include <cstdarg>
 #include <cstring>
-#include <cassert>
-#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <mutex>
 #include <numeric>
+#include <thread>
 #include <utility>
 
 #include "common/timing.h"
@@ -303,7 +305,12 @@ std::string decompressBZ2(const std::byte *in, size_t in_size, std::atomic<bool>
   return {};
 }
 
-void precise_nano_sleep(long sleep_ns) {
+void precise_nano_sleep(long sleep_ns, bool less_cpu_usage) {
+  if (less_cpu_usage) {
+    std::this_thread::sleep_for(std::chrono::nanoseconds(sleep_ns));
+    return;
+  }
+
   const long estimate_ns = 1 * 1e6;  // 1ms
   struct timespec req = {.tv_nsec = estimate_ns};
   uint64_t start_sleep = nanos_since_boot();

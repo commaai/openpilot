@@ -409,7 +409,7 @@ void Replay::stream() {
           loop_start_ts = nanos_since_boot();
           prev_replay_speed = speed_;
         } else if (behind_ns > 0) {
-          precise_nano_sleep(behind_ns);
+          precise_nano_sleep(behind_ns, flags_ & REPLAY_FLAG_LESS_CPU_USAGE);
         }
 
         if (!evt->frame) {

@@ -384,10 +384,10 @@ if arch != "Darwin":
 # Build openpilot
 SConscript(['third_party/SConscript'])
 
+SConscript(['tools/replay/SConscript'])
 SConscript(['selfdrive/SConscript'])
 
 if Dir('#tools/cabana/').exists() and GetOption('extras'):
-  SConscript(['tools/replay/SConscript'])
   if arch != "larch64":
     SConscript(['tools/cabana/SConscript'])
 
