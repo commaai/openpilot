@@ -89,6 +89,7 @@ def transformMapCoordinates(jsonMsg):
   return geoJson
 
 def jsonToScheme(jsonData):
+  zeroArray = False
   schema = {
     "type": "object",
     "properties": {},
@@ -96,25 +97,23 @@ def jsonToScheme(jsonData):
   }
   for key, value in jsonData.items():
     if isinstance(value, dict):
-      tempScheme = jsonToScheme(value)
+      tempScheme, zeroArray = jsonToScheme(value)
       if tempScheme == 0:
         return 0
       schema["properties"][key] = tempScheme
       schema["required"].append(key)
     elif isinstance(value, list):
-      if len(value) == 0:
-        return 0
-      if all(isinstance(item, dict) for item in value):
+      if all(isinstance(item, dict) for item in value) and len(value)>0: # Handle zero value arrays
         # Handle array of objects
-        tempScheme = jsonToScheme(value[0])
-        if tempScheme == 0:
-          return 0
+        tempScheme, zeroArray = jsonToScheme(value[0])
         schema["properties"][key] = {
           "type": "array",
           "items": tempScheme if value else {}
         }
         schema["required"].append(key)
       else:
+        if len(value) == 0:
+          zeroArray = True
         # Handle array of primitive types
         schema["properties"][key] = {
           "type": "array",
@@ -138,7 +137,7 @@ def jsonToScheme(jsonData):
       }
       schema["required"].append(key)
 
-  return schema
+  return schema, zeroArray
 
 def saveScheme(scheme, schemaFileName):
   schemaFileName = schemaFileName + SCHEMA_EXTENSION
@@ -166,24 +165,26 @@ def generateSchemas():
     # List every file in every rlog dir
     dirPath = os.path.join(RLOG_FOLDER, directory)
     listOfFiles = os.listdir(dirPath)
-    for file in listOfFiles:
+    lastIteration = len(listOfFiles)
+    for iteration, file in enumerate(listOfFiles):
       # Load json data from every file until found one without empty arrays
       filePath = os.path.join(dirPath, file)
       with open(filePath, 'r') as jsonFile:
         jsonData = json.load(jsonFile)
-        scheme = jsonToScheme(jsonData)
-        if scheme == 0:
-        #   print(f"Scheme for {directory} has empty arrays") # TODO: Fix, recursion does not return 0 to here
+        scheme, zerroArray = jsonToScheme(jsonData)
+        if jsonData.get("title") == "radarState" and iteration == lastIteration-1:
+            print(str(iteration)+" of "+str(lastIteration))
+        # If array of len 0 has been found, type of its data can not be parsed, skip to the next log
+        # in search for a non empty array. If there is not an non empty array in logs, put a dummy string type
+        if zerroArray and not iteration == lastIteration-1:
           continue
-        else:
-        #   print(f"found scheme without empty arrays for scheme {directory}")
-          title = jsonData.get("title")
-          scheme["title"] = title
-          # Add contentEncoding type, hardcoded in foxglove format
-          if title == FOXGLOVE_IMAGE_SCHEME_TITLE:
+        title = jsonData.get("title")
+        scheme["title"] = title
+        # Add contentEncoding type, hardcoded in foxglove format
+        if title == FOXGLOVE_IMAGE_SCHEME_TITLE:
             scheme["properties"]["data"]["contentEncoding"] = FOXGLOVE_IMAGE_ENCODING
-          saveScheme(scheme, directory)
-          break
+        saveScheme(scheme, directory)
+        break
 
 def downloadLogs(logPaths):
   segment_counter = 0
@@ -214,8 +215,8 @@ def getLogMonoTime(jsonMsg):
 
 # Get logs from a path, and convert them into mcap
 def createMcap(logPaths):
-  print(f"Downloading logs [{len(logPaths)}]")
-  downloadLogs(logPaths)
+#   print(f"Downloading logs [{len(logPaths)}]")
+#   downloadLogs(logPaths)
   print("Creating schemas")
   generateSchemas()
   print("Creating mcap file")
