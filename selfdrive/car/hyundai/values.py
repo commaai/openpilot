@@ -624,11 +624,6 @@ HYUNDAI_VERSION_REQUEST_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER])
 HYUNDAI_VERSION_REQUEST_ALT = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
   p16(0xf110)  # Alt long description
 
-HYUNDAI_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_SPARE_PART_NUMBER) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_SOFTWARE_IDENTIFICATION) + \
-  p16(0xf100)
-
 HYUNDAI_ECU_MANUFACTURING_DATE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
   p16(uds.DATA_IDENTIFIER_TYPE.ECU_MANUFACTURING_DATE)
 
@@ -652,37 +647,25 @@ PLATFORM_CODE_ECUS = [Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps]
 # TODO: there are date codes in the ABS firmware versions in hex
 DATE_FW_ECUS = [Ecu.fwdCamera]
 
-ALL_HYUNDAI_ECUS = [Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.parkingAdas,
-                    Ecu.adas, Ecu.hvac, Ecu.cornerRadar, Ecu.combinationMeter]
-
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
-    # TODO: minimize shared whitelists for CAN and cornerRadar for CAN-FD
+    # TODO: add back whitelists
     # CAN queries (OBD-II port)
     Request(
       [HYUNDAI_VERSION_REQUEST_LONG],
       [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera],
-    ),
-    Request(
-      [HYUNDAI_VERSION_REQUEST_MULTI],
-      [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.eps, Ecu.abs, Ecu.fwdRadar],
     ),
 
-    # CAN-FD queries (from camera)
-    # TODO: combine shared whitelists with CAN requests
+    # CAN & CAN-FD queries (from camera)
     Request(
       [HYUNDAI_VERSION_REQUEST_LONG],
       [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.cornerRadar, Ecu.hvac, Ecu.eps],
       bus=0,
       auxiliary=True,
     ),
     Request(
       [HYUNDAI_VERSION_REQUEST_LONG],
       [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.fwdCamera, Ecu.adas, Ecu.cornerRadar, Ecu.hvac],
       bus=1,
       auxiliary=True,
       obd_multiplexing=False,
@@ -693,44 +676,15 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [HYUNDAI_ECU_MANUFACTURING_DATE],
       [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.fwdCamera],
       bus=0,
       auxiliary=True,
       logging=True,
     ),
 
-    # CAN & CAN FD logging queries (from camera)
-    Request(
-      [HYUNDAI_VERSION_REQUEST_LONG],
-      [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=ALL_HYUNDAI_ECUS,
-      bus=0,
-      auxiliary=True,
-      logging=True,
-    ),
-    Request(
-      [HYUNDAI_VERSION_REQUEST_MULTI],
-      [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=ALL_HYUNDAI_ECUS,
-      bus=0,
-      auxiliary=True,
-      logging=True,
-    ),
-    Request(
-      [HYUNDAI_VERSION_REQUEST_LONG],
-      [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=ALL_HYUNDAI_ECUS,
-      bus=1,
-      auxiliary=True,
-      obd_multiplexing=False,
-      logging=True,
-    ),
-
-    # CAN-FD alt request logging queries
+    # CAN-FD alt request logging queries for hvac and parkingAdas
     Request(
       [HYUNDAI_VERSION_REQUEST_ALT],
       [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.parkingAdas, Ecu.hvac],
       bus=0,
       auxiliary=True,
       logging=True,
@@ -738,7 +692,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [HYUNDAI_VERSION_REQUEST_ALT],
       [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.parkingAdas, Ecu.hvac],
       bus=1,
       auxiliary=True,
       logging=True,
