@@ -37,8 +37,11 @@ FW_VERSIONS = {
     ],
   },
   CAR.AP3_MODEL3: {
-    (Ecu.electricBrakeBooster, 0x64d, None): [
-      b'1044671-00-C',
+    (Ecu.eps, 0x730, None): [
+    ],
+    (Ecu.engine, 0x606, None): [
     ],
   },
 }
+
+

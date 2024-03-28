@@ -59,11 +59,24 @@ FW_QUERY_CONFIG = FwQueryConfig(
       whitelist_ecus=[Ecu.adas, Ecu.electricBrakeBooster, Ecu.fwdRadar],
       rx_offset=0x10,
       bus=0,
+    ),
+    Request(
+      [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.SUPPLIER_SOFTWARE_VERSION_REQUEST],
+      [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.SUPPLIER_SOFTWARE_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.eps],
+      rx_offset=0,
+      bus=0,
+    ),
+    Request(
+      [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.UDS_VERSION_REQUEST],
+      [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.UDS_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.engine],
+      rx_offset=0x10,
+      bus=1,
       obd_multiplexing=False,
     ),
   ]
 )
-
 
 class CANBUS:
   # Lateral harness
