@@ -12,16 +12,14 @@ from openpilot.selfdrive.test.helpers import set_params_enabled
 
 @pytest.mark.tici
 def test_time_to_onroad():
-  # launch
   set_params_enabled()
-  manager_path = os.path.join(BASEDIR, "selfdrive/manager/manager.py")
-  proc = subprocess.Popen(["python", manager_path])
+  sm = messaging.SubMaster(['controlsState', 'deviceState', 'onroadEvents', 'sendcan'])
 
   start_time = time.monotonic()
-  sm = messaging.SubMaster(['controlsState', 'deviceState', 'onroadEvents', 'sendcan'])
   try:
     # wait for onroad. timeout assumes panda is up to date
     with Timeout(10, "timed out waiting to go onroad"):
+      proc = subprocess.Popen(os.path.join(BASEDIR, "launch_openpilot.sh"))
       while not sm['deviceState'].started:
         sm.update(100)
 
