@@ -59,18 +59,27 @@ bool Route::load() {
   return !segments_.empty();
 }
 
-bool Route::loadFromServer() {
-  QEventLoop loop;
-  HttpRequest http(nullptr, !Hardware::PC());
-  QObject::connect(&http, &HttpRequest::requestDone, [&](const QString &json, bool success, QNetworkReply::NetworkError error) {
-    if (error == QNetworkReply::ContentAccessDenied || error == QNetworkReply::AuthenticationRequiredError) {
-      qWarning() << ">>  Unauthorized. Authenticate with tools/lib/auth.py  <<";
+bool Route::loadFromServer(int retries) {
+  for (int i = 1; i <= retries; ++i) {
+    QString result;
+    QEventLoop loop;
+    HttpRequest http(nullptr, !Hardware::PC());
+    QObject::connect(&http, &HttpRequest::requestDone, [&loop, &result](const QString &json, bool success, QNetworkReply::NetworkError err) {
+      result = json;
+      loop.exit((int)err);
+    });
+    http.sendRequest(CommaApi::BASE_URL + "/v1/route/" + route_.str + "/files");
+    auto err = (QNetworkReply::NetworkError)loop.exec();
+    if (err == QNetworkReply::NoError) {
+      return loadFromJson(result);
+    } else if (err == QNetworkReply::ContentAccessDenied || err == QNetworkReply::AuthenticationRequiredError) {
+      rWarning(">>  Unauthorized. Authenticate with tools/lib/auth.py  <<");
+      return false;
     }
-
-    loop.exit(success ? loadFromJson(json) : 0);
-  });
-  http.sendRequest(CommaApi::BASE_URL + "/v1/route/" + route_.str + "/files");
-  return loop.exec();
+    rWarning("Retrying %d/%d", i, retries);
+    util::sleep_for(500);
+  }
+  return false;
 }
 
 bool Route::loadFromJson(const QString &json) {
