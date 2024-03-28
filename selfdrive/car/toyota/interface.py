@@ -146,12 +146,12 @@ class CarInterface(CarInterfaceBase):
     tune.deadzoneV = [.0, .15]
     if candidate in TSS2_CAR:
       tune.kpBP = [5., 35.]
-      tune.kpV = [2.0, 1.5]
+      tune.kpV = [1.0, 0.5]
       tune.kiBP = [0.]
       tune.kiV = [.5]
       if candidate in TSS2_CAR:
-        ret.vEgoStopping = 0.1
-        ret.vEgoStarting = 0.1
+        ret.vEgoStopping = 0.02
+        ret.vEgoStarting = 0.02
         ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
 
         # some notes:
