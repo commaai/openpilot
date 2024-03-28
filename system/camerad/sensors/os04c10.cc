@@ -16,8 +16,9 @@ const uint32_t os04c10_analog_gains_reg[] = {
     0x2E0, 0x300, 0x320, 0x340, 0x380, 0x3C0, 0x400, 0x440, 0x480, 0x4C0, 0x500,
     0x540, 0x580, 0x5C0, 0x600, 0x640, 0x680, 0x6C0, 0x700, 0x740, 0x780, 0x7C0};
 
-const int os04c10_road_ae_xywh[] = {44, 50, 2600, 1470};
-const int os04c10_wide_ae_xywh[] = {44, 194, 2600, 838};
+const int os04c10_road_ae_xywh[] = {44, 50, 2600, 1420};
+// const int os04c10_wide_ae_xywh[] = {44, 194, 2600, 838};
+const int os04c10_wide_ae_xywh[] = {44, 50, 2600, 1420};
 const int os04c10_driver_ae_xywh[] = {44, 180, 2600, 1340};
 
 }  // namespace
