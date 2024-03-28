@@ -18,7 +18,7 @@ class TestPlotJuggler(unittest.TestCase):
     install()
 
     pj = os.path.join(PJ_DIR, "juggle.py")
-    with subprocess.Popen(f'QT_QPA_PLATFORM=offscreen {pj} "{DEMO_ROUTE}/:2"',
+    with subprocess.Popen(f'QT_QPA_PLATFORM=offscreen {pj} --can "{DEMO_ROUTE}/:2"',
                            stderr=subprocess.PIPE, shell=True, start_new_session=True) as p:
       # Wait for "Done reading Rlog data" signal from the plugin
       output = "\n"
