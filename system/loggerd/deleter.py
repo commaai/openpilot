@@ -5,7 +5,7 @@ import threading
 from openpilot.system.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.loggerd.config import get_available_bytes, get_available_percent
-from openpilot.system.loggerd.uploader import listdir_by_creation
+from openpilot.system.loggerd.uploader import get_directory_sort
 from openpilot.system.loggerd.xattr_cache import getxattr
 
 MIN_BYTES = 5 * 1024 * 1024 * 1024
@@ -50,16 +50,22 @@ def deleter_thread(exit_event):
     out_of_percent = get_available_percent(default=MIN_PERCENT + 1) < MIN_PERCENT
 
     if out_of_percent or out_of_bytes:
-      dirs = listdir_by_creation(Paths.log_root())
+      all_contents_in_logs_dir = os.listdir(Paths.log_root())
+
+      dirs = [directory for directory in all_contents_in_logs_dir if os.path.isdir(os.path.join(Paths.log_root(), directory))]
+      # sort directories by creation time.
+      dirs = sorted(dirs, key=get_directory_sort)
+      files = [file for file in all_contents_in_logs_dir if os.path.isfile(os.path.join(Paths.log_root(), file))]
+      files_for_deletion = files + dirs
 
       # skip deleting most recent N preserved segments (and their prior segment)
-      preserved_dirs = get_preserved_segments(dirs)
+      preserved_segments = get_preserved_segments(files_for_deletion)
 
       # remove the earliest directory we can
-      for delete_dir in sorted(dirs, key=lambda d: (d in DELETE_LAST, d in preserved_dirs)):
-        delete_path = os.path.join(Paths.log_root(), delete_dir)
+      for delete_item in sorted(files_for_deletion, key=lambda d: (d in DELETE_LAST, d in preserved_segments)):
+        delete_path = os.path.join(Paths.log_root(), delete_item)
 
-        if any(name.endswith(".lock") for name in os.listdir(delete_path)):
+        if os.path.isdir(delete_path) and any(name.endswith(".lock") for name in os.listdir(delete_path)):
           continue
 
         try:
