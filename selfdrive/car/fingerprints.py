@@ -1,4 +1,3 @@
-from typing import Any, Callable
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.body.values import CAR as BODY
 from openpilot.selfdrive.car.chrysler.values import CAR as CHRYSLER
@@ -338,15 +337,3 @@ MIGRATION = {
   "SKODA SCALA 1ST GEN": VW.SKODA_SCALA_MK1,
   "SKODA SUPERB 3RD GEN": VW.SKODA_SUPERB_MK3,
 }
-
-
-MapFunc = Callable[[Platform], Any]
-
-
-# def create_platform_map(func: MapFunc):
-#   ret = {str(platform): func(platform) for platform in PLATFORMS.values() if func(platform) is not None}
-#
-#   for m in MIGRATION:
-#     ret[m] = ret[MIGRATION[m]]
-#
-#   return ret
