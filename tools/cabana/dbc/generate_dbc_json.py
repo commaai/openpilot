@@ -12,14 +12,11 @@ from openpilot.selfdrive.car.values import PLATFORMS
 
 
 def generate_dbc_json() -> str:
-  print(PLATFORMS)
   dbc_map = {platform.name: platform.config.dbc_dict['pt'] for platform in PLATFORMS.values() if platform != "MOCK"}
 
-  # exit()
-  # dbc_map = create_platform_map(lambda platform: platform.config.dbc_dict["pt"] if platform != "MOCK" else None)
-  for k, v in MIGRATION.items():
-    if v in dbc_map:
-      dbc_map[k] = dbc_map[v]
+  for m in MIGRATION:
+    dbc_map[m] = dbc_map[MIGRATION[m]]
+
   return json.dumps(dict(sorted(dbc_map.items())), indent=2)
 
 
