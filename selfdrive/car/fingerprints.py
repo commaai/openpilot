@@ -343,10 +343,10 @@ MIGRATION = {
 MapFunc = Callable[[Platform], Any]
 
 
-def create_platform_map(func: MapFunc):
-  ret = {str(platform): func(platform) for platform in PLATFORMS.values() if func(platform) is not None}
-
-  for m in MIGRATION:
-    ret[m] = ret[MIGRATION[m]]
-
-  return ret
+# def create_platform_map(func: MapFunc):
+#   ret = {str(platform): func(platform) for platform in PLATFORMS.values() if func(platform) is not None}
+#
+#   for m in MIGRATION:
+#     ret[m] = ret[MIGRATION[m]]
+#
+#   return ret
