@@ -37,7 +37,7 @@ class CarInterface(CarInterfaceBase):
 
     CAN = CanBus(ret, fingerprint)
 
-    if candidate in CANFD_CAR:
+    if candidate in HONDA_CANFD_CAR:
       cfgs = [get_safety_config(car.CarParams.SafetyModel.hondaBosch)]
       if CAN.pt >= 4:
         cfgs.insert(0, get_safety_config(car.CarParams.SafetyModel.noOutput))
