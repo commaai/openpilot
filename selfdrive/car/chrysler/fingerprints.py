@@ -100,6 +100,7 @@ FW_VERSIONS = {
       b'68436250AE',
       b'68529067AA',
       b'68594993AB',
+      b'68594994AB',
     ],
     (Ecu.srs, 0x744, None): [
       b'68405565AB',
@@ -123,6 +124,7 @@ FW_VERSIONS = {
       b'68540436AC',
       b'68540436AD',
       b'68598670AB',
+      b'68598670AC',
     ],
     (Ecu.eps, 0x75a, None): [
       b'68416742AA',
@@ -132,6 +134,7 @@ FW_VERSIONS = {
       b'68524936AA',
       b'68524936AB',
       b'68525338AB',
+      b'68594337AB',
       b'68594340AB',
     ],
     (Ecu.engine, 0x7e0, None): [
@@ -148,6 +151,7 @@ FW_VERSIONS = {
       b'68526752AE ',
       b'68526754AE ',
       b'68536264AE ',
+      b'68700304AB ',
       b'68700306AB ',
     ],
     (Ecu.transmission, 0x7e1, None): [
@@ -161,6 +165,7 @@ FW_VERSIONS = {
       b'68527221AB',
       b'68527223AB',
       b'68586231AD',
+      b'68586233AD',
     ],
   },
   CAR.CHRYSLER_PACIFICA_2018_HYBRID: {
