@@ -37,6 +37,7 @@ class CarInterface(CarInterfaceBase):
       ret.openpilotLongitudinalControl = True
       ret.safetyConfigs = [
         get_safety_config(car.CarParams.SafetyModel.tesla, flags),
+        get_safety_config(car.CarParams.SafetyModel.noOutput, 0),
       ]
     elif (CANBUS.autopilot_powertrain in fingerprint.keys()) and (0x2bf in fingerprint[CANBUS.autopilot_powertrain].keys()):
       ret.openpilotLongitudinalControl = True
