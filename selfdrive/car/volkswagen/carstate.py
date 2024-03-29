@@ -123,7 +123,7 @@ class CarState(CarStateBase):
     if self.CP.pcmCruise:
       # Cruise Control mode; check for distance UI setting from the radar.
       # ECM does not manage this, so do not need to check for openpilot longitudinal
-      ret.cruiseState.nonAdaptive = bool(ext_cp.vl["ACC_02"]["ACC_Gesetzte_Zeitluecke"])
+      ret.cruiseState.nonAdaptive = ext_cp.vl["ACC_02"]["ACC_Gesetzte_Zeitluecke"] == 0
     else:
       # Speed limiter mode; ECM faults if we command ACC while not pcmCruise
       ret.cruiseState.nonAdaptive = bool(pt_cp.vl["TSK_06"]["TSK_Limiter_ausgewaehlt"])
