@@ -382,8 +382,8 @@ FW_VERSIONS = {
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00CK  MDPS R 1.00 5.03 57700-J5300 4C2CL503',
       b'\xf1\x00CK  MDPS R 1.00 5.03 57700-J5320 4C2VL503',
-      b'\xf1\x00CK  MDPS R 1.00 5.03 57700-J5520 4C4VL503',
       b'\xf1\x00CK  MDPS R 1.00 5.03 57700-J5380 4C2VR503',
+      b'\xf1\x00CK  MDPS R 1.00 5.03 57700-J5520 4C4VL503',
       b'\xf1\x00CK  MDPS R 1.00 5.04 57700-J5520 4C4VL504',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [

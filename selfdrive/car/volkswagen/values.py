@@ -327,7 +327,7 @@ class CAR(Platforms):
     VolkswagenCarSpecs(mass=1278, wheelbase=2.66),
   )
   SKODA_KODIAQ_MK1 = VolkswagenMQBPlatformConfig( # Chassis NS
-    [VWCarDocs("Škoda Kodiaq 2017-23")],
+    [VWCarDocs("Škoda Kodiaq 2017-24")],
     VolkswagenCarSpecs(mass=1569, wheelbase=2.79),
   )
   SKODA_OCTAVIA_MK3 = VolkswagenMQBPlatformConfig( # Chassis NE
