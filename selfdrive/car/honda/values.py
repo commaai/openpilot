@@ -345,7 +345,7 @@ HONDA_NIDEC_ALT_PCM_ACCEL = CAR.with_flags(HondaFlags.NIDEC_ALT_PCM_ACCEL)
 HONDA_NIDEC_ALT_SCM_MESSAGES = CAR.with_flags(HondaFlags.NIDEC_ALT_SCM_MESSAGES)
 HONDA_BOSCH = CAR.with_flags(HondaFlags.BOSCH)
 HONDA_BOSCH_RADARLESS = CAR.with_flags(HondaFlags.BOSCH_RADARLESS)
-HONDA_CANFD_CAR = CAR.with_flags(HondaFlags.CANFD_CAR
+HONDA_CANFD_CAR = CAR.with_flags(HondaFlags.CANFD_CAR)
 
 
 DBC = CAR.create_dbc_map()
