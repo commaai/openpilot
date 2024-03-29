@@ -544,8 +544,8 @@ opendbc/tesla_can.dbc
 opendbc/tesla_radar_bosch_generated.dbc
 opendbc/tesla_radar_continental_generated.dbc
 opendbc/tesla_powertrain.dbc
-opendbc/tesla_model3_ch.dbc
-opendbc/tesla_model3_veh.dbc
+opendbc/tesla_model3_party.dbc
+opendbc/tesla_model3_vehicle.dbc
 
 tinygrad_repo/openpilot/compile2.py
 tinygrad_repo/extra/onnx.py
