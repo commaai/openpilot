@@ -60,7 +60,8 @@ class CarController(CarControllerBase):
       pcm_cancel_cmd = True
 
     if self.frame % 10 == 0 and pcm_cancel_cmd:
-      if self.model3:
+      # Only send cancel request if cruise control is enabled
+      if self.model3 and CS.cruiseState.enabled:
         can_sends.append(self.tesla_can.model3_cancel_acc(CS.sccm_right_stalk))
       else:
         # Spam every possible counter value, otherwise it might not be accepted
