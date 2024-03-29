@@ -145,10 +145,10 @@ class CarInterface(CarInterfaceBase):
     tune.deadzoneBP = [0., 9.]
     tune.deadzoneV = [.0, .15]
     if candidate in TSS2_CAR:
-      tune.kpBP = [5., 35.]
-      tune.kpV = [1.0, 0.5]
-      tune.kiBP = [0.]
-      tune.kiV = [.5]
+      tune.kpBP = [0., 5., 20.]
+      tune.kpV = [1.3, 1.0, 0.7]
+      tune.kiBP = [0., 5., 12., 20., 27.]
+      tune.kiV = [.35, .23, .20, .17, .1]
       if candidate in TSS2_CAR:
         ret.vEgoStopping = 0.02
         ret.vEgoStarting = 0.02
@@ -179,8 +179,8 @@ class CarInterface(CarInterfaceBase):
         # TODO: is the reason current planned accel doesn't match future planned speeds because the planner is constrained to start near the ego?
 
         # TODO: we add 0.2s delay to lat, why not long?
-        ret.longitudinalActuatorDelayLowerBound = 0.15 + 0.15
-        ret.longitudinalActuatorDelayUpperBound = 0.15 + 0.25
+        ret.longitudinalActuatorDelayLowerBound = 0.15 + 0.2
+        ret.longitudinalActuatorDelayUpperBound = 0.15 + 0.2
     else:
       tune.kpBP = [0., 5., 35.]
       tune.kiBP = [0., 35.]

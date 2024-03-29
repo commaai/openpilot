@@ -4,8 +4,8 @@ from openpilot.selfdrive.car import apply_meas_steer_torque_limits, apply_std_st
 from openpilot.selfdrive.car.interfaces import CarControllerBase
 from openpilot.selfdrive.car.toyota import toyotacan
 from openpilot.selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_TIMER_CAR, TSS2_CAR, \
-  CarControllerParams, ToyotaFlags, \
-  UNSUPPORTED_DSU_CAR
+                                        CarControllerParams, ToyotaFlags, \
+                                        UNSUPPORTED_DSU_CAR
 from opendbc.can.packer import CANPacker
 
 SteerControlType = car.CarParams.SteerControlType
@@ -36,7 +36,6 @@ class CarController(CarControllerBase):
     self.last_standstill = False
     self.standstill_req = False
     self.steer_rate_counter = 0
-    self.pcm_accel_comp = 0
     self.distance_button = 0
 
     self.packer = CANPacker(dbc_name)
@@ -101,23 +100,7 @@ class CarController(CarControllerBase):
                                                           lta_active, self.frame // 2, torque_wind_down))
 
     # *** gas and brake ***
-
-    # we will throw out PCM's compensations, but that may be a good thing. for example:
-    # we lose things like pitch compensation, gas to maintain speed, brake to compensate for creeping, etc.
-    # but also remove undesirable "snap to standstill" behavior when not requesting enough accel at low speeds,
-    # lag to start moving, lag to start braking, etc.
-    # PI should compensate for lack of the desirable behaviors, but might be worse than the PCM doing them
-    self.pcm_accel_comp = clip(actuators.accel - CS.pcm_accel_net, self.pcm_accel_comp - 0.02, self.pcm_accel_comp + 0.02)
-    pcm_accel_cmd = actuators.accel + self.pcm_accel_comp
-
-    # add back gas to maintain speed
-    accel_offset = CS.pcm_neutral_force / self.CP.mass
-    pcm_accel_cmd -= accel_offset
-
-    if not CC.longActive:
-      pcm_accel_cmd = 0.0
-
-    pcm_accel_cmd = clip(pcm_accel_cmd, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
+    pcm_accel_cmd = clip(actuators.accel, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
 
     # TODO: probably can delete this. CS.pcm_acc_status uses a different signal
     # than CS.cruiseState.enabled. confirm they're not meaningfully different
@@ -166,7 +149,7 @@ class CarController(CarControllerBase):
       # - there is something to stop displaying
       send_ui = False
       if ((fcw_alert or steer_alert) and not self.alert_active) or \
-        (not (fcw_alert or steer_alert) and self.alert_active):
+         (not (fcw_alert or steer_alert) and self.alert_active):
         send_ui = True
         self.alert_active = not self.alert_active
       elif pcm_cancel_cmd:
