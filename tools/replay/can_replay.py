@@ -26,12 +26,10 @@ def send_thread(j: PandaJungle, flock):
     with flock:
       j.flash()
 
+  j.reset()
   for i in [0, 1, 2, 3, 0xFFFF]:
     j.can_clear(i)
     j.set_can_speed_kbps(i, 500)
-    j.set_can_data_speed_kbps(i, 500)
-  j.set_ignition(False)
-  time.sleep(5)
   j.set_ignition(True)
   j.set_panda_power(True)
   j.set_can_loopback(False)
@@ -97,6 +95,10 @@ if __name__ == "__main__":
     args.route_or_segment_name = "77611a1fac303767/2020-03-24--09-50-38/1:3"
 
   sr = LogReader(args.route_or_segment_name)
+
+  CP = sr.first("carParams")
+
+  print(f"carFingerprint (for hardcoding fingerprint): '{CP.carFingerprint}'")
 
   CAN_MSGS = sr.run_across_segments(24, process)
 
