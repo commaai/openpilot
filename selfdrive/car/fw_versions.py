@@ -79,7 +79,7 @@ def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, match_brand: str = N
 
   matched_ecus = set()
   seen_ecus = set()
-  match: str | None = None
+  candidate: str | None = None
   for addr, versions in live_fw_versions.items():
     ecu_key = (addr[0], addr[1])
     seen_ecus.add(ecu_key)
@@ -89,19 +89,19 @@ def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, match_brand: str = N
 
       if len(candidates) == 1:
         matched_ecus.add(ecu_key)
-        if match is None:
-          match = candidates[0]
+        if candidate is None:
+          candidate = candidates[0]
         # We uniquely matched two different cars. No fuzzy match possible
-        elif match != candidates[0]:
+        elif candidate != candidates[0]:
           return set()
 
-  if match and len(matched_ecus) >= 2:
+  if candidate and len(matched_ecus) >= 2:
     # TODO: verify that this is safe and makes sense by looking at data
     # Ensure all ECUs in database have responded to FW queries before matching
-    candidate_ecus = {(addr[1], addr[2]) for addr in FW_VERSIONS[match]}
+    candidate_ecus = {(addr[1], addr[2]) for addr in FW_VERSIONS[candidate]}
     if len(candidate_ecus - seen_ecus) == 0:
       if log:
-        cloudlog.error(f"Fingerprinted {match} using fuzzy match. {len(matched_ecus)} matching ECUs")
+        cloudlog.error(f"Fingerprinted {candidate} using fuzzy match. {len(matched_ecus)} matching ECUs")
       return {candidate}
   return set()
 
