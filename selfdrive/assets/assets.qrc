@@ -14,5 +14,7 @@
   <file>offroad/icon_wifi_strength_medium.svg</file>
   <file>offroad/icon_wifi_strength_high.svg</file>
   <file>offroad/icon_wifi_strength_full.svg</file>
+
+  <file alias="languages.json">../ui/translations/languages.json</file>
 </qresource>
 </RCC>

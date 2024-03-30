@@ -20,16 +20,8 @@ void Sidebar::drawMetric(QPainter &p, const QPair<QString, QString> &label, QCol
   p.drawRoundedRect(rect, 20, 20);
 
   p.setPen(QColor(0xff, 0xff, 0xff));
-  configFont(p, "Inter", 35, "SemiBold");
-
-  QRect label_rect = getTextRect(p, Qt::AlignCenter, label.first);
-  label_rect.setWidth(218);
-  label_rect.moveLeft(rect.left() + 22);
-  label_rect.moveTop(rect.top() + 19);
-  p.drawText(label_rect, Qt::AlignCenter, label.first);
-
-  label_rect.moveTop(rect.top() + 65);
-  p.drawText(label_rect, Qt::AlignCenter, label.second);
+  p.setFont(InterFont(35, QFont::DemiBold));
+  p.drawText(rect.adjusted(22, 0, 0, 0), Qt::AlignCenter, label.first + "\n" + label.second);
 }
 
 Sidebar::Sidebar(QWidget *parent) : QFrame(parent), onroad(false), flag_pressed(false), settings_pressed(false) {
@@ -63,7 +55,7 @@ void Sidebar::mouseReleaseEvent(QMouseEvent *event) {
     flag_pressed = settings_pressed = false;
     update();
   }
-  if (home_btn.contains(event->pos())) {
+  if (onroad && home_btn.contains(event->pos())) {
     MessageBuilder msg;
     msg.initEvent().initUserFlag();
     pm->send("userFlag", msg);
@@ -92,7 +84,9 @@ void Sidebar::updateState(const UIState &s) {
   if (last_ping == 0) {
     connectStatus = ItemStatus{{tr("CONNECT"), tr("OFFLINE")}, warning_color};
   } else {
-    connectStatus = nanos_since_boot() - last_ping < 80e9 ? ItemStatus{{tr("CONNECT"), tr("ONLINE")}, good_color} : ItemStatus{{tr("CONNECT"), tr("ERROR")}, danger_color};
+    connectStatus = nanos_since_boot() - last_ping < 80e9
+                        ? ItemStatus{{tr("CONNECT"), tr("ONLINE")}, good_color}
+                        : ItemStatus{{tr("CONNECT"), tr("ERROR")}, danger_color};
   }
   setProperty("connectStatus", QVariant::fromValue(connectStatus));
 
@@ -137,7 +131,7 @@ void Sidebar::paintEvent(QPaintEvent *event) {
     x += 37;
   }
 
-  configFont(p, "Inter", 35, "Regular");
+  p.setFont(InterFont(35));
   p.setPen(QColor(0xff, 0xff, 0xff));
   const QRect r = QRect(50, 247, 100, 50);
   p.drawText(r, Qt::AlignCenter, net_type);

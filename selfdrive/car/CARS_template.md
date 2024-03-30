@@ -10,14 +10,14 @@
 
 # Supported Cars
 
-A supported vehicle is one that just works when you install a comma three. All supported cars provide a better experience than any stock system. Supported vehicles reference the US market unless otherwise specified.
+A supported vehicle is one that just works when you install a comma device. All supported cars provide a better experience than any stock system. Supported vehicles reference the US market unless otherwise specified.
 
-# {{all_car_info | length}} Supported Cars
+# {{all_car_docs | length}} Supported Cars
 
 |{{Column | map(attribute='value') | join('|') | replace(hardware_col_name, wide_hardware_col_name)}}|
 |---|---|---|{% for _ in range((Column | length) - 3) %}{{':---:|'}}{% endfor +%}
-{% for car_info in all_car_info %}
-|{% for column in Column %}{{car_info.get_column(column, star_icon, video_icon, footnote_tag)}}|{% endfor %}
+{% for car_docs in all_car_docs %}
+|{% for column in Column %}{{car_docs.get_column(column, star_icon, video_icon, footnote_tag)}}|{% endfor %}
 
 {% endfor %}
 
@@ -53,18 +53,19 @@ If your car has the following packages or features, then it's a good candidate f
 
 ### FlexRay
 
-All the cars that openpilot supports use a [CAN bus](https://en.wikipedia.org/wiki/CAN_bus) for communication between all the car's computers, however a CAN bus isn't the only way that the cars in your computer can communicate. Most, if not all, vehicles from the following manufacturers use [FlexRay](https://en.wikipedia.org/wiki/FlexRay) instead of a CAN bus: **BMW, Mercedes, Audi, Land Rover, and some Volvo**. These cars may one day be supported, but we have no immediate plans to support FlexRay.
+All the cars that openpilot supports use a [CAN bus](https://en.wikipedia.org/wiki/CAN_bus) for communication between all the car's computers, however a CAN bus isn't the only way that the computers in your car can communicate. Most, if not all, vehicles from the following manufacturers use [FlexRay](https://en.wikipedia.org/wiki/FlexRay) instead of a CAN bus: **BMW, Mercedes, Audi, Land Rover, and some Volvo**. These cars may one day be supported, but we have no immediate plans to support FlexRay.
 
 ### Toyota Security
 
 openpilot does not yet support these Toyota models due to a new message authentication method.
-[Vote](https://comma.ai/shop/products/vote) if you'd like to see openpilot support on these models.
+[Vote](https://comma.ai/shop#toyota-security) if you'd like to see openpilot support on these models.
 
 * Toyota RAV4 Prime 2021+
 * Toyota Sienna 2021+
 * Toyota Venza 2021+
 * Toyota Sequoia 2023+
 * Toyota Tundra 2022+
+* Toyota Highlander 2024+
 * Toyota Corolla Cross 2022+ (only US model)
 * Lexus NX 2022+
 * Toyota bZ4x 2023+

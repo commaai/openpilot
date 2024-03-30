@@ -1,5 +1,5 @@
 import crcmod
-from selfdrive.car.nissan.values import CAR
+from openpilot.selfdrive.car.nissan.values import CAR
 
 # TODO: add this checksum to the CANPacker
 nissan_checksum = crcmod.mkCrcFun(0x11d, initCrc=0x00, rev=False, xorOut=0xff)
@@ -39,7 +39,7 @@ def create_acc_cancel_cmd(packer, car_fingerprint, cruise_throttle_msg):
     "unsure2",
     "unsure3",
   ]}
-  can_bus = 1 if car_fingerprint == CAR.ALTIMA else 2
+  can_bus = 1 if car_fingerprint == CAR.NISSAN_ALTIMA else 2
 
   values["CANCEL_BUTTON"] = 1
   values["NO_BUTTON_PRESSED"] = 0

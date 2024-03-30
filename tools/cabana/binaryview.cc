@@ -1,7 +1,8 @@
 #include "tools/cabana/binaryview.h"
 
-#include <cmath>
+#include <algorithm>
 
+#include <QDebug>
 #include <QFontDatabase>
 #include <QHeaderView>
 #include <QMouseEvent>
@@ -11,16 +12,12 @@
 #include <QToolTip>
 
 #include "tools/cabana/commands.h"
-#include "tools/cabana/signalview.h"
 
 // BinaryView
 
 const int CELL_HEIGHT = 36;
 const int VERTICAL_HEADER_WIDTH = 30;
-
-inline int get_bit_index(const QModelIndex &index, bool little_endian) {
-  return index.row() * 8 + (little_endian ? 7 - index.column() : index.column());
-}
+inline int get_bit_pos(const QModelIndex &index) { return flipBitPos(index.row() * 8 + index.column()); }
 
 BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   model = new BinaryViewModel(this);
@@ -28,6 +25,7 @@ BinaryView::BinaryView(QWidget *parent) : QTableView(parent) {
   delegate = new BinaryItemDelegate(this);
   setItemDelegate(delegate);
   horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+  horizontalHeader()->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
   verticalHeader()->setSectionsClickable(false);
   verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
   verticalHeader()->setDefaultSectionSize(CELL_HEIGHT);
@@ -66,7 +64,7 @@ void BinaryView::addShortcuts() {
   QObject::connect(shortcut_delete_backspace, &QShortcut::activated, shortcut_delete_x, &QShortcut::activated);
   QObject::connect(shortcut_delete_x, &QShortcut::activated, [=]{
     if (hovered_sig != nullptr) {
-      emit removeSignal(hovered_sig);
+      UndoStack::push(new RemoveSigCommand(model->msg_id, hovered_sig));
       hovered_sig = nullptr;
     }
   });
@@ -75,13 +73,9 @@ void BinaryView::addShortcuts() {
   QShortcut *shortcut_endian = new QShortcut(QKeySequence(Qt::Key_E), this);
   QObject::connect(shortcut_endian, &QShortcut::activated, [=]{
     if (hovered_sig != nullptr) {
-      const cabana::Signal *hovered_sig_prev = hovered_sig;
       cabana::Signal s = *hovered_sig;
       s.is_little_endian = !s.is_little_endian;
       emit editSignal(hovered_sig, s);
-
-      hovered_sig = nullptr;
-      highlight(hovered_sig_prev);
     }
   });
 
@@ -89,13 +83,9 @@ void BinaryView::addShortcuts() {
   QShortcut *shortcut_sign = new QShortcut(QKeySequence(Qt::Key_S), this);
   QObject::connect(shortcut_sign, &QShortcut::activated, [=]{
     if (hovered_sig != nullptr) {
-      const cabana::Signal *hovered_sig_prev = hovered_sig;
       cabana::Signal s = *hovered_sig;
       s.is_signed = !s.is_signed;
       emit editSignal(hovered_sig, s);
-
-      hovered_sig = nullptr;
-      highlight(hovered_sig_prev);
     }
   });
 
@@ -127,15 +117,6 @@ void BinaryView::highlight(const cabana::Signal *sig) {
       }
     }
 
-    if (sig && underMouse()) {
-      QString tooltip = tr(R"(%1<br /><span style="color:gray;font-size:small">
-        Size:%2 LE:%3 SGD:%4</span>
-      )").arg(sig->name).arg(sig->size).arg(sig->is_little_endian ? "Y" : "N").arg(sig->is_signed ? "Y" : "N");
-      QToolTip::showText(QCursor::pos(), tooltip, this, rect());
-    } else {
-      QToolTip::showText(QCursor::pos(), "", this, rect());
-    }
-
     hovered_sig = sig;
     emit signalHovered(hovered_sig);
   }
@@ -148,24 +129,24 @@ void BinaryView::setSelection(const QRect &rect, QItemSelectionModel::SelectionF
 
   QItemSelection selection;
   auto [start, size, is_lb] = getSelection(index);
-  for (int i = start; i < start + size; ++i) {
-    auto idx = model->bitIndex(i, is_lb);
-    selection.merge({idx, idx}, flags);
+  for (int i = 0; i < size; ++i) {
+    int pos = is_lb ? flipBitPos(start + i) : flipBitPos(start) + i;
+    selection << QItemSelectionRange{model->index(pos / 8, pos % 8)};
   }
   selectionModel()->select(selection, flags);
 }
 
 void BinaryView::mousePressEvent(QMouseEvent *event) {
-  delegate->selection_color = (palette().color(QPalette::Active, QPalette::Highlight));
+  resize_sig = nullptr;
   if (auto index = indexAt(event->pos()); index.isValid() && index.column() != 8) {
     anchor_index = index;
     auto item = (const BinaryViewModel::Item *)anchor_index.internalPointer();
-    int bit_idx = get_bit_index(anchor_index, true);
+    int bit_pos = get_bit_pos(anchor_index);
     for (auto s : item->sigs) {
-      if (bit_idx == s->lsb || bit_idx == s->msb) {
-        anchor_index = model->bitIndex(bit_idx == s->lsb ? s->msb : s->lsb, true);
+      if (bit_pos == s->lsb || bit_pos == s->msb) {
+        int idx = flipBitPos(bit_pos == s->lsb ? s->msb : s->lsb);
+        anchor_index = model->index(idx / 8, idx % 8);
         resize_sig = s;
-        delegate->selection_color = s->color;
         break;
       }
     }
@@ -192,9 +173,10 @@ void BinaryView::mouseReleaseEvent(QMouseEvent *event) {
   auto release_index = indexAt(event->pos());
   if (release_index.isValid() && anchor_index.isValid()) {
     if (selectionModel()->hasSelection()) {
-      auto [start_bit, size, is_lb] = getSelection(release_index);
-      resize_sig ? emit resizeSignal(resize_sig, start_bit, size)
-                 : emit addSignal(start_bit, size, is_lb);
+      auto sig = resize_sig ? *resize_sig : cabana::Signal{};
+      std::tie(sig.start_bit, sig.size, sig.is_little_endian) = getSelection(release_index);
+      resize_sig ? emit editSignal(resize_sig, sig)
+                 : UndoStack::push(new AddSigCommand(model->msg_id, sig));
     } else {
       auto item = (const BinaryViewModel::Item *)anchor_index.internalPointer();
       if (item && item->sigs.size() > 0)
@@ -228,9 +210,12 @@ void BinaryView::refresh() {
 
 QSet<const cabana::Signal *> BinaryView::getOverlappingSignals() const {
   QSet<const cabana::Signal *> overlapping;
-  for (auto &item : model->items) {
-    if (item.sigs.size() > 1)
-      for (auto s : item.sigs) overlapping += s;
+  for (const auto &item : model->items) {
+    if (item.sigs.size() > 1) {
+      for (auto s : item.sigs) {
+        if (s->type == cabana::Signal::Type::Normal) overlapping += s;
+      }
+    }
   }
   return overlapping;
 }
@@ -252,10 +237,11 @@ std::tuple<int, int, bool> BinaryView::getSelection(QModelIndex index) {
     is_lb = false;
   }
 
-  int cur_bit_idx = get_bit_index(index, is_lb);
-  int anchor_bit_idx = get_bit_index(anchor_index, is_lb);
-  auto [start_bit, end_bit] = std::minmax(cur_bit_idx, anchor_bit_idx);
-  return {start_bit, end_bit - start_bit + 1, is_lb};
+  int cur_bit_pos = get_bit_pos(index);
+  int anchor_bit_pos = get_bit_pos(anchor_index);
+  int start_bit = is_lb ? std::min(cur_bit_pos, anchor_bit_pos) : get_bit_pos(std::min(index, anchor_index));
+  int size = is_lb ? std::abs(cur_bit_pos - anchor_bit_pos) + 1 : std::abs(flipBitPos(cur_bit_pos) - flipBitPos(anchor_bit_pos)) + 1;
+  return {start_bit, size, is_lb};
 }
 
 // BinaryViewModel
@@ -267,16 +253,15 @@ void BinaryViewModel::refresh() {
     row_count = dbc_msg->size;
     items.resize(row_count * column_count);
     for (auto sig : dbc_msg->getSignals()) {
-      auto [start, end] = getSignalRange(sig);
-      for (int j = start; j <= end; ++j) {
-        int bit_index = sig->is_little_endian ? bigEndianBitIndex(j) : j;
-        int idx = column_count * (bit_index / 8) + bit_index % 8;
+      for (int j = 0; j < sig->size; ++j) {
+        int pos = sig->is_little_endian ? flipBitPos(sig->start_bit + j) : flipBitPos(sig->start_bit) + j;
+        int idx = column_count * (pos / 8) + pos % 8;
         if (idx >= items.size()) {
           qWarning() << "signal " << sig->name << "out of bounds.start_bit:" << sig->start_bit << "size:" << sig->size;
           break;
         }
-        if (j == start) sig->is_little_endian ? items[idx].is_lsb = true : items[idx].is_msb = true;
-        if (j == end) sig->is_little_endian ? items[idx].is_msb = true : items[idx].is_lsb = true;
+        if (j == 0) sig->is_little_endian ? items[idx].is_lsb = true : items[idx].is_msb = true;
+        if (j == sig->size - 1) sig->is_little_endian ? items[idx].is_msb = true : items[idx].is_lsb = true;
 
         auto &sigs = items[idx].sigs;
         sigs.push_back(sig);
@@ -289,7 +274,7 @@ void BinaryViewModel::refresh() {
     row_count = can->lastMessage(msg_id).dat.size();
     items.resize(row_count * column_count);
   }
-  int valid_rows = std::min(can->lastMessage(msg_id).dat.size(), row_count);
+  int valid_rows = std::min<int>(can->lastMessage(msg_id).dat.size(), row_count);
   for (int i = 0; i < valid_rows * column_count; ++i) {
     items[i].valid = true;
   }
@@ -297,7 +282,7 @@ void BinaryViewModel::refresh() {
   updateState();
 }
 
-void BinaryViewModel::updateItem(int row, int col, const QString &val, const QColor &color) {
+void BinaryViewModel::updateItem(int row, int col, uint8_t val, const QColor &color) {
   auto &item = items[row * column_count + col];
   if (item.val != val || item.bg_color != color) {
     item.val = val;
@@ -324,17 +309,17 @@ void BinaryViewModel::updateState() {
   for (int i = 0; i < binary.size(); ++i) {
     for (int j = 0; j < 8; ++j) {
       auto &item = items[i * column_count + j];
-      QString val = ((binary[i] >> (7 - j)) & 1) != 0 ? "1" : "0";
+      int val = ((binary[i] >> (7 - j)) & 1) != 0 ? 1 : 0;
       // Bit update frequency based highlighting
       double offset = !item.sigs.empty() ? 50 : 0;
-      auto n = last_msg.bit_change_counts[i][7 - j];
+      auto n = last_msg.last_changes[i].bit_change_counts[j];
       double min_f = n == 0 ? offset : offset + 25;
       double alpha = std::clamp(offset + log2(1.0 + factor * (double)n / (double)last_msg.count) * scaler, min_f, max_f);
       auto color = item.bg_color;
       color.setAlpha(alpha);
       updateItem(i, j, val, color);
     }
-    updateItem(i, 8, toHex(binary[i]), last_msg.colors[i]);
+    updateItem(i, 8, binary[i], last_msg.colors[i]);
   }
 }
 
@@ -349,12 +334,24 @@ QVariant BinaryViewModel::headerData(int section, Qt::Orientation orientation, i
   return {};
 }
 
+QVariant BinaryViewModel::data(const QModelIndex &index, int role) const {
+  auto item = (const BinaryViewModel::Item *)index.internalPointer();
+  return role == Qt::ToolTipRole && item && !item->sigs.empty() ? signalToolTip(item->sigs.back()) : QVariant();
+}
+
 // BinaryItemDelegate
 
 BinaryItemDelegate::BinaryItemDelegate(QObject *parent) : QStyledItemDelegate(parent) {
   small_font.setPixelSize(8);
   hex_font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
   hex_font.setBold(true);
+
+  bin_text_table[0].setText("0");
+  bin_text_table[1].setText("1");
+  for (int i = 0; i < 256; ++i) {
+    hex_text_table[i].setText(QStringLiteral("%1").arg(i, 2, 16, QLatin1Char('0')).toUpper());
+    hex_text_table[i].prepare({}, hex_font);
+  }
 }
 
 bool BinaryItemDelegate::hasSignal(const QModelIndex &index, int dx, int dy, const cabana::Signal *sig) const {
@@ -375,7 +372,8 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
       painter->fillRect(option.rect, item->bg_color);
     }
   } else if (option.state & QStyle::State_Selected) {
-    painter->fillRect(option.rect, selection_color);
+    auto color = bin_view->resize_sig ? bin_view->resize_sig->color : option.palette.color(QPalette::Active, QPalette::Highlight);
+    painter->fillRect(option.rect, color);
     painter->setPen(option.palette.color(QPalette::BrightText));
   } else if (!bin_view->selectionModel()->hasSelection() || !item->sigs.contains(bin_view->resize_sig)) {  // not resizing
     if (item->sigs.size() > 0) {
@@ -386,7 +384,7 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
           drawSignalCell(painter, option, index, s);
         }
       }
-    } else if (item->valid) {
+    } else if (item->valid && item->bg_color.alpha() > 0) {
       painter->fillRect(option.rect, item->bg_color);
     }
     auto color_role = item->sigs.contains(bin_view->hovered_sig) ? QPalette::BrightText : QPalette::Text;
@@ -398,7 +396,9 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
   } else if (!item->valid) {
     painter->fillRect(option.rect, QBrush(Qt::darkGray, Qt::BDiagPattern));
   }
-  painter->drawText(option.rect, Qt::AlignCenter, item->val);
+  if (item->valid) {
+    utils::drawStaticText(painter, option.rect, index.column() == 8 ? hex_text_table[item->val] : bin_text_table[item->val]);
+  }
   if (item->is_msb || item->is_lsb) {
     painter->setFont(small_font);
     painter->drawText(option.rect.adjusted(8, 0, -8, -3), Qt::AlignRight | Qt::AlignBottom, item->is_msb ? "M" : "L");
@@ -437,7 +437,7 @@ void BinaryItemDelegate::drawSignalCell(QPainter *painter, const QStyleOptionVie
   QColor color = sig->color;
   color.setAlpha(item->bg_color.alpha());
   // Mixing the signal colour with the Base background color to fade it
-  painter->fillRect(rc, QApplication::palette().color(QPalette::Base));
+  painter->fillRect(rc, option.palette.color(QPalette::Base));
   painter->fillRect(rc, color);
 
   // Draw edges

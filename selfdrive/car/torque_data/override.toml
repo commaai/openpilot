@@ -1,0 +1,76 @@
+legend = ["LAT_ACCEL_FACTOR", "MAX_LAT_ACCEL_MEASURED", "FRICTION"]
+### angle control
+# Nissan appears to have torque
+"NISSAN_XTRAIL" = [nan, 1.5, nan]
+"NISSAN_ALTIMA" = [nan, 1.5, nan]
+"NISSAN_LEAF_IC" = [nan, 1.5, nan]
+"NISSAN_LEAF" = [nan, 1.5, nan]
+"NISSAN_ROGUE" = [nan, 1.5, nan]
+
+# New subarus angle based controllers
+"SUBARU_FORESTER_2022" = [nan, 3.0, nan]
+"SUBARU_OUTBACK_2023" = [nan, 3.0, nan]
+"SUBARU_ASCENT_2023" = [nan, 3.0, nan]
+
+# Toyota LTA also has torque
+"TOYOTA_RAV4_TSS2_2023" = [nan, 3.0, nan]
+
+# Tesla has high torque
+"TESLA_AP1_MODELS" = [nan, 2.5, nan]
+"TESLA_AP2_MODELS" = [nan, 2.5, nan]
+"TESLA_MODELS_RAVEN" = [nan, 2.5, nan]
+
+# Guess
+"FORD_BRONCO_SPORT_MK1" = [nan, 1.5, nan]
+"FORD_ESCAPE_MK4" = [nan, 1.5, nan]
+"FORD_EXPLORER_MK6" = [nan, 1.5, nan]
+"FORD_F_150_MK14" = [nan, 1.5, nan]
+"FORD_FOCUS_MK4" = [nan, 1.5, nan]
+"FORD_MAVERICK_MK1" = [nan, 1.5, nan]
+"FORD_F_150_LIGHTNING_MK1" = [nan, 1.5, nan]
+"FORD_MUSTANG_MACH_E_MK1" = [nan, 1.5, nan]
+###
+
+# No steering wheel
+"COMMA_BODY" = [nan, 1000, nan]
+
+# Totally new cars
+"RAM_1500_5TH_GEN" = [2.0, 2.0, 0.05]
+"RAM_HD_5TH_GEN" = [1.4, 1.4, 0.05]
+"SUBARU_OUTBACK" = [2.0, 2.0, 0.2]
+"CADILLAC_ESCALADE" = [1.899999976158142, 1.842270016670227, 0.1120000034570694]
+"CADILLAC_ESCALADE_ESV_2019" = [1.15, 1.3, 0.2]
+"CHEVROLET_BOLT_EUV" = [2.0, 2.0, 0.05]
+"CHEVROLET_SILVERADO" = [1.9, 1.9, 0.112]
+"CHEVROLET_TRAILBLAZER" = [1.33, 1.9, 0.16]
+"CHEVROLET_EQUINOX" = [2.5, 2.5, 0.05]
+"VOLKSWAGEN_CADDY_MK3" = [1.2, 1.2, 0.1]
+"VOLKSWAGEN_PASSAT_NMS" = [2.5, 2.5, 0.1]
+"VOLKSWAGEN_SHARAN_MK2" = [2.5, 2.5, 0.1]
+"HYUNDAI_SANTA_CRUZ_1ST_GEN" = [2.7, 2.7, 0.1]
+"KIA_SPORTAGE_5TH_GEN" = [2.6, 2.6, 0.1]
+"GENESIS_GV70_1ST_GEN" = [2.42, 2.42, 0.1]
+"GENESIS_GV60_EV_1ST_GEN" = [2.5, 2.5, 0.1]
+"KIA_SORENTO_4TH_GEN" = [2.5, 2.5, 0.1]
+"KIA_SORENTO_HEV_4TH_GEN" = [2.5, 2.5, 0.1]
+"KIA_NIRO_HEV_2ND_GEN" = [2.42, 2.5, 0.12]
+"KIA_NIRO_EV_2ND_GEN" = [2.05, 2.5, 0.14]
+"GENESIS_GV80" = [2.5, 2.5, 0.1]
+"KIA_CARNIVAL_4TH_GEN" = [1.75, 1.75, 0.15]
+"GMC_ACADIA" = [1.6, 1.6, 0.2]
+"LEXUS_IS_TSS2" = [2.0, 2.0, 0.1]
+"HYUNDAI_KONA_EV_2ND_GEN" = [2.5, 2.5, 0.1]
+"HYUNDAI_IONIQ_6" = [2.5, 2.5, 0.1]
+"HYUNDAI_AZERA_6TH_GEN" = [1.8, 1.8, 0.1]
+"HYUNDAI_AZERA_HEV_6TH_GEN" = [1.8, 1.8, 0.1]
+"KIA_K8_HEV_1ST_GEN" = [2.5, 2.5, 0.1]
+"HYUNDAI_CUSTIN_1ST_GEN" = [2.5, 2.5, 0.1]
+"LEXUS_GS_F" = [2.5, 2.5, 0.08]
+"HYUNDAI_STARIA_4TH_GEN" = [1.8, 2.0, 0.15]
+
+# Dashcam or fallback configured as ideal car
+"MOCK" = [10.0, 10, 0.0]
+
+# Manually checked
+"HONDA_CIVIC_2022" = [2.5, 1.2, 0.15]
+"HONDA_HRV_3G" = [2.5, 1.2, 0.2]

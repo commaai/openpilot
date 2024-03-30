@@ -1,10 +1,11 @@
 import numpy as np
 
-from common.realtime import DT_CTRL
+from openpilot.common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
-from selfdrive.car.body import bodycan
-from selfdrive.car.body.values import SPEED_FROM_RPM
-from selfdrive.controls.lib.pid import PIDController
+from openpilot.selfdrive.car.body import bodycan
+from openpilot.selfdrive.car.body.values import SPEED_FROM_RPM
+from openpilot.selfdrive.car.interfaces import CarControllerBase
+from openpilot.selfdrive.controls.lib.pid import PIDController
 
 
 MAX_TORQUE = 500
@@ -14,15 +15,14 @@ MAX_POS_INTEGRATOR = 0.2   # meters
 MAX_TURN_INTEGRATOR = 0.1  # meters
 
 
-class CarController:
+class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
     self.frame = 0
     self.packer = CANPacker(dbc_name)
 
-    # Speed, balance and turn PIDs
-    self.speed_pid = PIDController(0.115, k_i=0.23, rate=1/DT_CTRL)
-    self.balance_pid = PIDController(1300, k_i=0, k_d=280, rate=1/DT_CTRL)
+    # PIDs
     self.turn_pid = PIDController(110, k_i=11.5, rate=1/DT_CTRL)
+    self.wheeled_speed_pid = PIDController(110, k_i=11.5, rate=1/DT_CTRL)
 
     self.torque_r_filtered = 0.
     self.torque_l_filtered = 0.
@@ -40,24 +40,17 @@ class CarController:
     torque_l = 0
     torque_r = 0
 
-    llk_valid = len(CC.orientationNED) > 0 and len(CC.angularVelocity) > 0
+    llk_valid = len(CC.orientationNED) > 1 and len(CC.angularVelocity) > 1
     if CC.enabled and llk_valid:
       # Read these from the joystick
       # TODO: this isn't acceleration, okay?
       speed_desired = CC.actuators.accel / 5.
-      speed_diff_desired = -CC.actuators.steer
+      speed_diff_desired = -CC.actuators.steer / 2.
 
       speed_measured = SPEED_FROM_RPM * (CS.out.wheelSpeeds.fl + CS.out.wheelSpeeds.fr) / 2.
       speed_error = speed_desired - speed_measured
 
-      freeze_integrator = ((speed_error < 0 and self.speed_pid.error_integral <= -MAX_POS_INTEGRATOR) or
-                           (speed_error > 0 and self.speed_pid.error_integral >= MAX_POS_INTEGRATOR))
-      angle_setpoint = self.speed_pid.update(speed_error, freeze_integrator=freeze_integrator)
-
-      # Clip angle error, this is enough to get up from stands
-      angle_error = np.clip((-CC.orientationNED[1]) - angle_setpoint, -MAX_ANGLE_ERROR, MAX_ANGLE_ERROR)
-      angle_error_rate = np.clip(-CC.angularVelocity[1], -1., 1.)
-      torque = self.balance_pid.update(angle_error, error_rate=angle_error_rate)
+      torque = self.wheeled_speed_pid.update(speed_error, freeze_integrator=False)
 
       speed_diff_measured = SPEED_FROM_RPM * (CS.out.wheelSpeeds.fl - CS.out.wheelSpeeds.fr)
       turn_error = speed_diff_measured - speed_diff_desired

@@ -1,16 +1,41 @@
 name: 'openpilot env setup'
 
 inputs:
-  save-cache:
-    default: false
+  docker_hub_pat:
+    description: 'Auth token for Docker Hub, required for BuildJet jobs'
+    required: true
+    default: ''
+  is_retried:
+    description: 'A mock param that asserts that we use the setup-with-retry instead of this action directly'
     required: false
+    default: 'false'
 
 runs:
   using: "composite"
   steps:
+    # assert that this action is retried using the setup-with-retry
+    - shell: bash
+      if: ${{ inputs.is_retried == 'false' }}
+      run: |
+        echo "You should not run this action directly. Use setup-with-retry instead"
+        exit 1
+
     # do this after checkout to ensure our custom LFS config is used to pull from GitLab
     - shell: bash
       run: git lfs pull
+
+    # on BuildJet runners, must be logged into DockerHub to avoid rate limiting
+    # https://buildjet.com/for-github-actions/docs/guides/docker
+    - shell: bash
+      if: ${{ contains(runner.name, 'buildjet') && inputs.docker_hub_pat == '' }}
+      run: |
+        echo "Need to set the Docker Hub PAT secret as an input to this action"
+        exit 1
+    - name: Login to Docker Hub
+      if: contains(runner.name, 'buildjet')
+      shell: bash
+      run: |
+        docker login -u adeebshihadeh -p ${{ inputs.docker_hub_pat }}
 
     # build cache
     - id: date
@@ -18,20 +43,21 @@ runs:
       run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
     - shell: bash
       run: echo "$CACHE_COMMIT_DATE"
-    - shell: bash
-      run: echo "CACHE_SKIP_SAVE=true" >> $GITHUB_ENV
-      if: github.ref != 'refs/heads/master' || inputs.save-cache == 'false'
     - id: scons-cache
-      # TODO: change the version to the released version
-      # when https://github.com/actions/cache/pull/489 (or 571) is merged.
-      uses: actions/cache@03e00da99d75a2204924908e1cca7902cafce66b
+      uses: ./.github/workflows/auto-cache
       with:
-        path: /tmp/scons_cache
-        key: scons-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        path: .ci_cache/scons_cache
+        key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
         restore-keys: |
-          scons-${{ env.CACHE_COMMIT_DATE }}-
-          scons-
-
+          scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
+          scons-${{ runner.arch }}
+    # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
+    - id: normalize-file-permissions
+      shell: bash
+      name: Normalize file permissions to ensure a consistent docker build cache
+      run: |
+        find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
+        find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
     # build our docker image
     - shell: bash
       run: eval ${{ env.BUILD }}

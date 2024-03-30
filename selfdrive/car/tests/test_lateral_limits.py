@@ -3,14 +3,13 @@ from collections import defaultdict
 import importlib
 from parameterized import parameterized_class
 import sys
-from typing import DefaultDict, Dict
 import unittest
 
-from common.realtime import DT_CTRL
-from selfdrive.car.car_helpers import interfaces
-from selfdrive.car.fingerprints import all_known_cars
-from selfdrive.car.interfaces import get_torque_params
-from selfdrive.car.subaru.values import CAR as SUBARU
+from openpilot.common.realtime import DT_CTRL
+from openpilot.selfdrive.car.car_helpers import interfaces
+from openpilot.selfdrive.car.fingerprints import all_known_cars
+from openpilot.selfdrive.car.interfaces import get_torque_params
+from openpilot.selfdrive.car.subaru.values import CAR as SUBARU
 
 CAR_MODELS = all_known_cars()
 
@@ -25,14 +24,14 @@ JERK_MEAS_T = 0.5
 
 # TODO: put these cars within limits
 ABOVE_LIMITS_CARS = [
-  SUBARU.LEGACY,
-  SUBARU.OUTBACK,
+  SUBARU.SUBARU_LEGACY,
+  SUBARU.SUBARU_OUTBACK,
 ]
 
-car_model_jerks: DefaultDict[str, Dict[str, float]] = defaultdict(dict)
+car_model_jerks: defaultdict[str, dict[str, float]] = defaultdict(dict)
 
 
-@parameterized_class('car_model', [(c,) for c in CAR_MODELS])
+@parameterized_class('car_model', [(c,) for c in sorted(CAR_MODELS)])
 class TestLateralLimits(unittest.TestCase):
   car_model: str
 
@@ -95,7 +94,8 @@ if __name__ == "__main__":
                 _jerks["down_jerk"] > MAX_LAT_JERK_DOWN
     violation_str = " - VIOLATION" if violation else ""
 
-    print(f"{car_model:{max_car_model_len}} - up jerk: {round(_jerks['up_jerk'], 2):5} m/s^3, down jerk: {round(_jerks['down_jerk'], 2):5} m/s^3{violation_str}")
+    print(f"{car_model:{max_car_model_len}} - up jerk: {round(_jerks['up_jerk'], 2):5} " +
+          f"m/s^3, down jerk: {round(_jerks['down_jerk'], 2):5} m/s^3{violation_str}")
 
   # exit with test result
   sys.exit(not result.result.wasSuccessful())

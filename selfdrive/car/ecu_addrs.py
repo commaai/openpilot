@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 import capnp
 import time
-from typing import Optional, Set, Tuple
 
 import cereal.messaging as messaging
 from panda.python.uds import SERVICE_TYPE
-from selfdrive.car import make_can_msg
-from selfdrive.boardd.boardd import can_list_to_can_capnp
-from system.swaglog import cloudlog
-
-EcuAddrBusType = Tuple[int, Optional[int], int]
+from openpilot.selfdrive.car import make_can_msg
+from openpilot.selfdrive.car.fw_query_definitions import EcuAddrBusType
+from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
+from openpilot.common.swaglog import cloudlog
 
 
 def make_tester_present_msg(addr, bus, subaddr=None):
@@ -21,7 +19,7 @@ def make_tester_present_msg(addr, bus, subaddr=None):
   return make_can_msg(addr, bytes(dat), bus)
 
 
-def is_tester_present_response(msg: capnp.lib.capnp._DynamicStructReader, subaddr: Optional[int] = None) -> bool:
+def is_tester_present_response(msg: capnp.lib.capnp._DynamicStructReader, subaddr: int = None) -> bool:
   # ISO-TP messages are always padded to 8 bytes
   # tester present response is always a single frame
   dat_offset = 1 if subaddr is not None else 0
@@ -35,16 +33,16 @@ def is_tester_present_response(msg: capnp.lib.capnp._DynamicStructReader, subadd
   return False
 
 
-def get_all_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, bus: int, timeout: float = 1, debug: bool = True) -> Set[EcuAddrBusType]:
+def get_all_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, bus: int, timeout: float = 1, debug: bool = True) -> set[EcuAddrBusType]:
   addr_list = [0x700 + i for i in range(256)] + [0x18da00f1 + (i << 8) for i in range(256)]
-  queries: Set[EcuAddrBusType] = {(addr, None, bus) for addr in addr_list}
+  queries: set[EcuAddrBusType] = {(addr, None, bus) for addr in addr_list}
   responses = queries
   return get_ecu_addrs(logcan, sendcan, queries, responses, timeout=timeout, debug=debug)
 
 
-def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, queries: Set[EcuAddrBusType],
-                  responses: Set[EcuAddrBusType], timeout: float = 1, debug: bool = False) -> Set[EcuAddrBusType]:
-  ecu_responses: Set[EcuAddrBusType] = set()  # set((addr, subaddr, bus),)
+def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, queries: set[EcuAddrBusType],
+                  responses: set[EcuAddrBusType], timeout: float = 1, debug: bool = False) -> set[EcuAddrBusType]:
+  ecu_responses: set[EcuAddrBusType] = set()  # set((addr, subaddr, bus),)
   try:
     msgs = [make_tester_present_msg(addr, bus, subaddr) for addr, subaddr, bus in queries]
 
@@ -90,7 +88,7 @@ if __name__ == "__main__":
 
   print()
   print("Found ECUs on addresses:")
-  for addr, subaddr, bus in ecu_addrs:
+  for addr, subaddr, _ in ecu_addrs:
     msg = f"  0x{hex(addr)}"
     if subaddr is not None:
       msg += f" (sub-address: {hex(subaddr)})"

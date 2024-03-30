@@ -1,8 +1,5 @@
 /*
- * Copyright 2019 Gianluca Frison, Dimitris Kouzoupis, Robin Verschueren,
- * Andrea Zanelli, Niels van Duijkeren, Jonathan Frey, Tommaso Sartor,
- * Branimir Novoselnik, Rien Quirynen, Rezart Qelibari, Dang Doan,
- * Jonas Koenemann, Yutao Chen, Tobias Schöls, Jonas Schlagenhauf, Moritz Diehl
+ * Copyright (c) The acados authors.
  *
  * This file is part of acados.
  *
@@ -47,7 +44,8 @@ extern "C" {
 {%- endif %}
 
 {% if solver_options.integrator_type == "IRK" or solver_options.integrator_type == "LIFTED_IRK" %}
-// implicit ODE
+  {% if model.dyn_ext_fun_type == "casadi" %}
+// implicit ODE: function
 int {{ model.name }}_impl_dae_fun(const real_t** arg, real_t** res, int* iw, real_t* w, void *mem);
 int {{ model.name }}_impl_dae_fun_work(int *, int *, int *, int *);
 const int *{{ model.name }}_impl_dae_fun_sparsity_in(int);
@@ -55,7 +53,7 @@ const int *{{ model.name }}_impl_dae_fun_sparsity_out(int);
 int {{ model.name }}_impl_dae_fun_n_in(void);
 int {{ model.name }}_impl_dae_fun_n_out(void);
 
-// implicit ODE
+// implicit ODE: function + jacobians
 int {{ model.name }}_impl_dae_fun_jac_x_xdot_z(const real_t** arg, real_t** res, int* iw, real_t* w, void *mem);
 int {{ model.name }}_impl_dae_fun_jac_x_xdot_z_work(int *, int *, int *, int *);
 const int *{{ model.name }}_impl_dae_fun_jac_x_xdot_z_sparsity_in(int);
@@ -63,7 +61,7 @@ const int *{{ model.name }}_impl_dae_fun_jac_x_xdot_z_sparsity_out(int);
 int {{ model.name }}_impl_dae_fun_jac_x_xdot_z_n_in(void);
 int {{ model.name }}_impl_dae_fun_jac_x_xdot_z_n_out(void);
 
-// implicit ODE
+// implicit ODE: jacobians only
 int {{ model.name }}_impl_dae_jac_x_xdot_u_z(const real_t** arg, real_t** res, int* iw, real_t* w, void *mem);
 int {{ model.name }}_impl_dae_jac_x_xdot_u_z_work(int *, int *, int *, int *);
 const int *{{ model.name }}_impl_dae_jac_x_xdot_u_z_sparsity_in(int);
@@ -79,14 +77,23 @@ const int *{{ model.name }}_impl_dae_fun_jac_x_xdot_u_sparsity_out(int);
 int {{ model.name }}_impl_dae_fun_jac_x_xdot_u_n_in(void);
 int {{ model.name }}_impl_dae_fun_jac_x_xdot_u_n_out(void);
 
-{%- if hessian_approx == "EXACT" %}
+	{%- if hessian_approx == "EXACT" %}
+// implicit ODE - hessian
 int {{ model.name }}_impl_dae_hess(const real_t** arg, real_t** res, int* iw, real_t* w, void *mem);
 int {{ model.name }}_impl_dae_hess_work(int *, int *, int *, int *);
 const int *{{ model.name }}_impl_dae_hess_sparsity_in(int);
 const int *{{ model.name }}_impl_dae_hess_sparsity_out(int);
 int {{ model.name }}_impl_dae_hess_n_in(void);
 int {{ model.name }}_impl_dae_hess_n_out(void);
-{%- endif %}
+	{% endif %}
+  {% else %}{# ext_fun_type #}
+    {%- if hessian_approx == "EXACT" %}
+int {{ model.dyn_impl_dae_hess }}(void **, void **, void *);
+    {% endif %}
+int {{ model.dyn_impl_dae_fun_jac }}(void **, void **, void *);
+int {{ model.dyn_impl_dae_jac }}(void **, void **, void *);
+int {{ model.dyn_impl_dae_fun }}(void **, void **, void *);
+  {% endif %}{# ext_fun_type #}
 
 {% elif solver_options.integrator_type == "GNSF" %}
 /* GNSF Functions */

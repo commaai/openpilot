@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
+import os
 from cereal import car
 from math import fabs, exp
 from panda import Panda
 
-from common.conversions import Conversions as CV
-from selfdrive.car import STD_CARGO_KG, create_button_event, scale_tire_stiffness, get_safety_config
-from selfdrive.car.gm.radar_interface import RADAR_HEADER_MSG
-from selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, CanBus
-from selfdrive.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, FRICTION_THRESHOLD
-from selfdrive.controls.lib.drive_helpers import get_friction
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.conversions import Conversions as CV
+from openpilot.selfdrive.car import create_button_events, get_safety_config
+from openpilot.selfdrive.car.gm.radar_interface import RADAR_HEADER_MSG
+from openpilot.selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, CanBus
+from openpilot.selfdrive.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, FRICTION_THRESHOLD, LatControlInputs, NanoFFModel
+from openpilot.selfdrive.controls.lib.drive_helpers import get_friction
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -17,6 +19,15 @@ TransmissionType = car.CarParams.TransmissionType
 NetworkLocation = car.CarParams.NetworkLocation
 BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
                 CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
+
+
+NON_LINEAR_TORQUE_PARAMS = {
+  CAR.CHEVROLET_BOLT_EUV: [2.6531724862969748, 1.0, 0.1919764879840985, 0.009054123646805178],
+  CAR.GMC_ACADIA: [4.78003305, 1.0, 0.3122, 0.05591772],
+  CAR.CHEVROLET_SILVERADO: [3.29974374, 1.0, 0.25571356, 0.0465122]
+}
+
+NEURAL_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/neural_ff_weights.json')
 
 
 class CarInterface(CarInterfaceBase):
@@ -31,23 +42,14 @@ class CarInterface(CarInterfaceBase):
     sigmoid = desired_angle / (1 + fabs(desired_angle))
     return 0.10006696 * sigmoid * (v_ego + 3.12485927)
 
-  @staticmethod
-  def get_steer_feedforward_acadia(desired_angle, v_ego):
-    desired_angle *= 0.09760208
-    sigmoid = desired_angle / (1 + fabs(desired_angle))
-    return 0.04689655 * sigmoid * (v_ego + 10.028217)
-
   def get_steer_feedforward_function(self):
-    if self.CP.carFingerprint == CAR.VOLT:
+    if self.CP.carFingerprint == CAR.CHEVROLET_VOLT:
       return self.get_steer_feedforward_volt
-    elif self.CP.carFingerprint == CAR.ACADIA:
-      return self.get_steer_feedforward_acadia
     else:
       return CarInterfaceBase.get_steer_feedforward_default
 
-  @staticmethod
-  def torque_from_lateral_accel_bolt(lateral_accel_value: float, torque_params: car.CarParams.LateralTorqueTuning,
-                                     lateral_accel_error: float, lateral_accel_deadzone: float, friction_compensation: bool) -> float:
+  def torque_from_lateral_accel_siglin(self, latcontrol_inputs: LatControlInputs, torque_params: car.CarParams.LateralTorqueTuning, lateral_accel_error: float,
+                                       lateral_accel_deadzone: float, friction_compensation: bool, gravity_adjusted: bool) -> float:
     friction = get_friction(lateral_accel_error, lateral_accel_deadzone, FRICTION_THRESHOLD, torque_params, friction_compensation)
 
     def sig(val):
@@ -57,14 +59,26 @@ class CarInterface(CarInterfaceBase):
     # An important thing to consider is that the slope at 0 should be > 0 (ideally >1)
     # This has big effect on the stability about 0 (noise when going straight)
     # ToDo: To generalize to other GMs, explore tanh function as the nonlinear
-    a, b, c, _ = [2.6531724862969748, 1.0, 0.1919764879840985, 0.009054123646805178]  # weights computed offline
-
-    steer_torque = (sig(lateral_accel_value * a) * b) + (lateral_accel_value * c)
+    non_linear_torque_params = NON_LINEAR_TORQUE_PARAMS.get(self.CP.carFingerprint)
+    assert non_linear_torque_params, "The params are not defined"
+    a, b, c, _ = non_linear_torque_params
+    steer_torque = (sig(latcontrol_inputs.lateral_acceleration * a) * b) + (latcontrol_inputs.lateral_acceleration * c)
     return float(steer_torque) + friction
 
+  def torque_from_lateral_accel_neural(self, latcontrol_inputs: LatControlInputs, torque_params: car.CarParams.LateralTorqueTuning, lateral_accel_error: float,
+                                       lateral_accel_deadzone: float, friction_compensation: bool, gravity_adjusted: bool) -> float:
+    friction = get_friction(lateral_accel_error, lateral_accel_deadzone, FRICTION_THRESHOLD, torque_params, friction_compensation)
+    inputs = list(latcontrol_inputs)
+    if gravity_adjusted:
+      inputs[0] += inputs[1]
+    return float(self.neural_ff_model.predict(inputs)) + friction
+
   def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
-    if self.CP.carFingerprint == CAR.BOLT_EUV:
-      return self.torque_from_lateral_accel_bolt
+    if self.CP.carFingerprint == CAR.CHEVROLET_BOLT_EUV:
+      self.neural_ff_model = NanoFFModel(NEURAL_PARAMS_PATH, self.CP.carFingerprint)
+      return self.torque_from_lateral_accel_neural
+    elif self.CP.carFingerprint in NON_LINEAR_TORQUE_PARAMS:
+      return self.torque_from_lateral_accel_siglin
     else:
       return self.torque_from_lateral_accel_linear
 
@@ -73,6 +87,7 @@ class CarInterface(CarInterfaceBase):
     ret.carName = "gm"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
     ret.autoResumeSng = False
+    ret.enableBsm = 0x142 in fingerprint[CanBus.POWERTRAIN]
 
     if candidate in EV_CAR:
       ret.transmissionType = TransmissionType.direct
@@ -122,7 +137,7 @@ class CarInterface(CarInterfaceBase):
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
     # added to selfdrive/car/tests/routes.py, we can remove it from this list.
-    ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.MALIBU, CAR.BUICK_REGAL, CAR.EQUINOX} or \
+    ret.dashcamOnly = candidate in {CAR.CADILLAC_ATS, CAR.HOLDEN_ASTRA, CAR.CHEVROLET_MALIBU, CAR.BUICK_REGAL} or \
                       (ret.networkLocation == NetworkLocation.gateway and ret.radarUnavailable)
 
     # Start with a baseline tuning for all GM vehicles. Override tuning as needed in each model section below.
@@ -130,19 +145,12 @@ class CarInterface(CarInterfaceBase):
     ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.2], [0.00]]
     ret.lateralTuning.pid.kf = 0.00004   # full torque for 20 deg at 80mph means 0.00007818594
     ret.steerActuatorDelay = 0.1  # Default delay, not measured yet
-    tire_stiffness_factor = 0.444  # not optimized yet
 
     ret.steerLimitTimer = 0.4
     ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
     ret.longitudinalActuatorDelayUpperBound = 0.5  # large delay to initially start braking
 
-    if candidate == CAR.VOLT:
-      ret.mass = 1607. + STD_CARGO_KG
-      ret.wheelbase = 2.69
-      ret.steerRatio = 17.7  # Stock 15.7, LiveParameters
-      tire_stiffness_factor = 0.469  # Stock Michelin Energy Saver A/S, LiveParameters
-      ret.centerToFront = ret.wheelbase * 0.45  # Volt Gen 1, TODO corner weigh
-
+    if candidate == CAR.CHEVROLET_VOLT:
       ret.lateralTuning.pid.kpBP = [0., 40.]
       ret.lateralTuning.pid.kpV = [0., 0.17]
       ret.lateralTuning.pid.kiBP = [0.]
@@ -150,102 +158,47 @@ class CarInterface(CarInterfaceBase):
       ret.lateralTuning.pid.kf = 1.  # get_steer_feedforward_volt()
       ret.steerActuatorDelay = 0.2
 
-    elif candidate == CAR.MALIBU:
-      ret.mass = 1496. + STD_CARGO_KG
-      ret.wheelbase = 2.83
-      ret.steerRatio = 15.8
-      ret.centerToFront = ret.wheelbase * 0.4  # wild guess
-
-    elif candidate == CAR.HOLDEN_ASTRA:
-      ret.mass = 1363. + STD_CARGO_KG
-      ret.wheelbase = 2.662
-      # Remaining parameters copied from Volt for now
-      ret.centerToFront = ret.wheelbase * 0.4
-      ret.steerRatio = 15.7
-
-    elif candidate == CAR.ACADIA:
+    elif candidate == CAR.GMC_ACADIA:
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
-      ret.mass = 4353. * CV.LB_TO_KG + STD_CARGO_KG
-      ret.wheelbase = 2.86
-      ret.steerRatio = 14.4  # end to end is 13.46
-      ret.centerToFront = ret.wheelbase * 0.4
-      ret.lateralTuning.pid.kf = 1.  # get_steer_feedforward_acadia()
+      ret.steerActuatorDelay = 0.2
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     elif candidate == CAR.BUICK_LACROSSE:
-      ret.mass = 1712. + STD_CARGO_KG
-      ret.wheelbase = 2.91
-      ret.steerRatio = 15.8
-      ret.centerToFront = ret.wheelbase * 0.4  # wild guess
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    elif candidate == CAR.BUICK_REGAL:
-      ret.mass = 3779. * CV.LB_TO_KG + STD_CARGO_KG  # (3849+3708)/2
-      ret.wheelbase = 2.83  # 111.4 inches in meters
-      ret.steerRatio = 14.4  # guess for tourx
-      ret.centerToFront = ret.wheelbase * 0.4  # guess for tourx
-
-    elif candidate == CAR.CADILLAC_ATS:
-      ret.mass = 1601. + STD_CARGO_KG
-      ret.wheelbase = 2.78
-      ret.steerRatio = 15.3
-      ret.centerToFront = ret.wheelbase * 0.5
-
-    elif candidate == CAR.ESCALADE:
+    elif candidate == CAR.CADILLAC_ESCALADE:
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
-      ret.mass = 5653. * CV.LB_TO_KG + STD_CARGO_KG  # (5552+5815)/2
-      ret.wheelbase = 2.95  # 116 inches in meters
-      ret.steerRatio = 17.3
-      ret.centerToFront = ret.wheelbase * 0.5
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    elif candidate == CAR.ESCALADE_ESV:
+    elif candidate in (CAR.CADILLAC_ESCALADE_ESV, CAR.CADILLAC_ESCALADE_ESV_2019):
       ret.minEnableSpeed = -1.  # engage speed is decided by pcm
-      ret.mass = 2739. + STD_CARGO_KG
-      ret.wheelbase = 3.302
-      ret.steerRatio = 17.3
-      ret.centerToFront = ret.wheelbase * 0.5
-      ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[10., 41.0], [10., 41.0]]
-      ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13, 0.24], [0.01, 0.02]]
-      ret.lateralTuning.pid.kf = 0.000045
-      tire_stiffness_factor = 1.0
 
-    elif candidate == CAR.BOLT_EUV:
-      ret.mass = 1669. + STD_CARGO_KG
-      ret.wheelbase = 2.63779
-      ret.steerRatio = 16.8
-      ret.centerToFront = ret.wheelbase * 0.4
-      tire_stiffness_factor = 1.0
+      if candidate == CAR.CADILLAC_ESCALADE_ESV:
+        ret.lateralTuning.pid.kiBP, ret.lateralTuning.pid.kpBP = [[10., 41.0], [10., 41.0]]
+        ret.lateralTuning.pid.kpV, ret.lateralTuning.pid.kiV = [[0.13, 0.24], [0.01, 0.02]]
+        ret.lateralTuning.pid.kf = 0.000045
+      else:
+        ret.steerActuatorDelay = 0.2
+        CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
+    elif candidate == CAR.CHEVROLET_BOLT_EUV:
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    elif candidate == CAR.SILVERADO:
-      ret.mass = 2200. + STD_CARGO_KG
-      ret.wheelbase = 3.75
-      ret.steerRatio = 16.3
-      ret.centerToFront = ret.wheelbase * 0.5
-      tire_stiffness_factor = 1.0
+    elif candidate == CAR.CHEVROLET_SILVERADO:
+      # On the Bolt, the ECM and camera independently check that you are either above 5 kph or at a stop
+      # with foot on brake to allow engagement, but this platform only has that check in the camera.
+      # TODO: check if this is split by EV/ICE with more platforms in the future
+      if ret.openpilotLongitudinalControl:
+        ret.minEnableSpeed = -1.
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    elif candidate == CAR.EQUINOX:
-      ret.mass = 3500. * CV.LB_TO_KG + STD_CARGO_KG
-      ret.wheelbase = 2.72
-      ret.steerRatio = 14.4
-      ret.centerToFront = ret.wheelbase * 0.4
+    elif candidate == CAR.CHEVROLET_EQUINOX:
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    elif candidate == CAR.TRAILBLAZER:
-      ret.mass = 1345. + STD_CARGO_KG
-      ret.wheelbase = 2.64
-      ret.steerRatio = 16.8
-      ret.centerToFront = ret.wheelbase * 0.4
-      tire_stiffness_factor = 1.0
+    elif candidate == CAR.CHEVROLET_TRAILBLAZER:
       ret.steerActuatorDelay = 0.2
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
-
-    # TODO: start from empirically derived lateral slip stiffness for the civic and scale by
-    # mass and CG position, so all cars will have approximately similar dyn behaviors
-    ret.tireStiffnessFront, ret.tireStiffnessRear = scale_tire_stiffness(ret.mass, ret.wheelbase, ret.centerToFront,
-                                                                         tire_stiffness_factor=tire_stiffness_factor)
 
     return ret
 
@@ -253,13 +206,14 @@ class CarInterface(CarInterfaceBase):
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_loopback)
 
-    if self.CS.cruise_buttons != self.CS.prev_cruise_buttons and self.CS.prev_cruise_buttons != CruiseButtons.INIT:
-      buttonEvents = [create_button_event(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT, CruiseButtons.UNPRESS)]
-      # Handle ACCButtons changing buttons mid-press
-      if self.CS.cruise_buttons != CruiseButtons.UNPRESS and self.CS.prev_cruise_buttons != CruiseButtons.UNPRESS:
-        buttonEvents.append(create_button_event(CruiseButtons.UNPRESS, self.CS.prev_cruise_buttons, BUTTONS_DICT, CruiseButtons.UNPRESS))
-
-      ret.buttonEvents = buttonEvents
+    # Don't add event if transitioning from INIT, unless it's to an actual button
+    if self.CS.cruise_buttons != CruiseButtons.UNPRESS or self.CS.prev_cruise_buttons != CruiseButtons.INIT:
+      ret.buttonEvents = [
+        *create_button_events(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT,
+                              unpressed_btn=CruiseButtons.UNPRESS),
+        *create_button_events(self.CS.distance_button, self.CS.prev_distance_button,
+                              {1: ButtonType.gapAdjustCruise})
+      ]
 
     # The ECM allows enabling on falling edge of set, but only rising edge of resume
     events = self.create_common_events(ret, extra_gears=[GearShifter.sport, GearShifter.low,
@@ -283,6 +237,3 @@ class CarInterface(CarInterfaceBase):
     ret.events = events.to_msg()
 
     return ret
-
-  def apply(self, c, now_nanos):
-    return self.CC.update(c, self.CS, now_nanos)

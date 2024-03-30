@@ -5,14 +5,14 @@ import unittest
 import numpy as np
 from control import StateSpace
 
-from selfdrive.car.honda.interface import CarInterface
-from selfdrive.car.honda.values import CAR
-from selfdrive.controls.lib.vehicle_model import VehicleModel, dyn_ss_sol, create_dyn_state_matrices
+from openpilot.selfdrive.car.honda.interface import CarInterface
+from openpilot.selfdrive.car.honda.values import CAR
+from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel, dyn_ss_sol, create_dyn_state_matrices
 
 
 class TestVehicleModel(unittest.TestCase):
   def setUp(self):
-    CP = CarInterface.get_non_essential_params(CAR.CIVIC)
+    CP = CarInterface.get_non_essential_params(CAR.HONDA_CIVIC)
     self.VM = VehicleModel(CP)
 
   def test_round_trip_yaw_rate(self):
@@ -38,7 +38,7 @@ class TestVehicleModel(unittest.TestCase):
 
           # Compute yaw rate using direct computations
           yr2 = self.VM.yaw_rate(sa, u, roll)
-          self.assertAlmostEqual(float(yr1), yr2)
+          self.assertAlmostEqual(float(yr1[0]), yr2)
 
   def test_syn_ss_sol_simulate(self):
     """Verifies that dyn_ss_sol matches a simulation"""

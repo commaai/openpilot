@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 # type: ignore
-# pylint: skip-file
 
-from selfdrive.locationd.test import ublox
+from openpilot.selfdrive.locationd.test import ublox
 import struct
 
 baudrate = 460800
@@ -83,7 +82,7 @@ def configure_ublox(dev):
 if __name__ == "__main__":
   class Device:
     def write(self, s):
-      d = '"{}"s'.format(''.join('\\x{:02X}'.format(b) for b in s))
+      d = '"{}"s'.format(''.join(f'\\x{b:02X}' for b in s))
       print(f"    if (!send_with_ack({d})) continue;")
 
   dev = ublox.UBlox(Device(), baudrate=baudrate)

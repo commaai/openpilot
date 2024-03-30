@@ -1,5 +1,5 @@
-import glob
-from typing import Optional, List
+import os
+from functools import lru_cache
 
 def gpio_init(pin: int, output: bool) -> None:
   try:
@@ -15,7 +15,7 @@ def gpio_set(pin: int, high: bool) -> None:
   except Exception as e:
     print(f"Failed to set gpio {pin} value: {e}")
 
-def gpio_read(pin: int) -> Optional[bool]:
+def gpio_read(pin: int) -> bool | None:
   val = None
   try:
     with open(f"/sys/class/gpio/gpio{pin}/value", 'rb') as f:
@@ -25,12 +25,30 @@ def gpio_read(pin: int) -> Optional[bool]:
 
   return val
 
-def get_irq_for_action(action: str) -> List[int]:
-  ret = []
-  for fn in glob.glob('/sys/kernel/irq/*/actions'):
-    with open(fn) as f:
+def gpio_export(pin: int) -> None:
+  if os.path.isdir(f"/sys/class/gpio/gpio{pin}"):
+    return
+
+  try:
+    with open("/sys/class/gpio/export", 'w') as f:
+      f.write(str(pin))
+  except Exception:
+    print(f"Failed to export gpio {pin}")
+
+@lru_cache(maxsize=None)
+def get_irq_action(irq: int) -> list[str]:
+  try:
+    with open(f"/sys/kernel/irq/{irq}/actions") as f:
       actions = f.read().strip().split(',')
-      if action in actions:
-        irq = int(fn.split('/')[-2])
+      return actions
+  except FileNotFoundError:
+    return []
+
+def get_irqs_for_action(action: str) -> list[str]:
+  ret = []
+  with open("/proc/interrupts") as f:
+    for l in f.readlines():
+      irq = l.split(':')[0].strip()
+      if irq.isdigit() and action in get_irq_action(irq):
         ret.append(irq)
   return ret

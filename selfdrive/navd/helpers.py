@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import json
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, cast
 
-from common.conversions import Conversions
-from common.numpy_fast import clip
-from common.params import Params
+from openpilot.common.conversions import Conversions
+from openpilot.common.numpy_fast import clip
+from openpilot.common.params import Params
+
+DIRECTIONS = ('left', 'right', 'straight')
+MODIFIABLE_DIRECTIONS = ('left', 'right')
 
 EARTH_MEAN_RADIUS = 6371007.2
 SPEED_CONVERSIONS = {
@@ -19,17 +22,20 @@ class Coordinate:
   def __init__(self, latitude: float, longitude: float) -> None:
     self.latitude = latitude
     self.longitude = longitude
-    self.annotations: Dict[str, float] = {}
+    self.annotations: dict[str, float] = {}
 
   @classmethod
-  def from_mapbox_tuple(cls, t: Tuple[float, float]) -> Coordinate:
+  def from_mapbox_tuple(cls, t: tuple[float, float]) -> Coordinate:
     return cls(t[1], t[0])
 
-  def as_dict(self) -> Dict[str, float]:
+  def as_dict(self) -> dict[str, float]:
     return {'latitude': self.latitude, 'longitude': self.longitude}
 
   def __str__(self) -> str:
-    return f"({self.latitude}, {self.longitude})"
+    return f'Coordinate({self.latitude}, {self.longitude})'
+
+  def __repr__(self) -> str:
+    return self.__str__()
 
   def __eq__(self, other) -> bool:
     if not isinstance(other, Coordinate):
@@ -77,7 +83,7 @@ def minimum_distance(a: Coordinate, b: Coordinate, p: Coordinate):
   return projection.distance_to(p)
 
 
-def distance_along_geometry(geometry: List[Coordinate], pos: Coordinate) -> float:
+def distance_along_geometry(geometry: list[Coordinate], pos: Coordinate) -> float:
   if len(geometry) <= 2:
     return geometry[0].distance_to(pos)
 
@@ -100,7 +106,7 @@ def distance_along_geometry(geometry: List[Coordinate], pos: Coordinate) -> floa
   return total_distance_closest
 
 
-def coordinate_from_param(param: str, params: Optional[Params] = None) -> Optional[Coordinate]:
+def coordinate_from_param(param: str, params: Params = None) -> Coordinate | None:
   if params is None:
     params = Params()
 
@@ -116,47 +122,54 @@ def coordinate_from_param(param: str, params: Optional[Params] = None) -> Option
 
 
 def string_to_direction(direction: str) -> str:
-  for d in ['left', 'right', 'straight']:
+  for d in DIRECTIONS:
     if d in direction:
+      if 'slight' in direction and d in MODIFIABLE_DIRECTIONS:
+        return 'slight' + d.capitalize()
       return d
   return 'none'
 
 
-def maxspeed_to_ms(maxspeed: Dict[str, Union[str, float]]) -> float:
+def maxspeed_to_ms(maxspeed: dict[str, str | float]) -> float:
   unit = cast(str, maxspeed['unit'])
   speed = cast(float, maxspeed['speed'])
   return SPEED_CONVERSIONS[unit] * speed
 
 
-def parse_banner_instructions(instruction: Any, banners: Any, distance_to_maneuver: float = 0.0) -> None:
-  if not len(banners):
-    return
+def field_valid(dat: dict, field: str) -> bool:
+  return field in dat and dat[field] is not None
 
-  current_banner = banners[0]
+
+def parse_banner_instructions(banners: Any, distance_to_maneuver: float = 0.0) -> dict[str, Any] | None:
+  if not len(banners):
+    return None
+
+  instruction = {}
 
   # A segment can contain multiple banners, find one that we need to show now
+  current_banner = banners[0]
   for banner in banners:
     if distance_to_maneuver < banner['distanceAlongGeometry']:
       current_banner = banner
 
   # Only show banner when close enough to maneuver
-  instruction.showFull = distance_to_maneuver < current_banner['distanceAlongGeometry']
+  instruction['showFull'] = distance_to_maneuver < current_banner['distanceAlongGeometry']
 
   # Primary
   p = current_banner['primary']
-  if 'text' in p:
-    instruction.maneuverPrimaryText = p['text']
-  if 'type' in p:
-    instruction.maneuverType = p['type']
-  if 'modifier' in p:
-    instruction.maneuverModifier = p['modifier']
+  if field_valid(p, 'text'):
+    instruction['maneuverPrimaryText'] = p['text']
+  if field_valid(p, 'type'):
+    instruction['maneuverType'] = p['type']
+  if field_valid(p, 'modifier'):
+    instruction['maneuverModifier'] = p['modifier']
 
   # Secondary
-  if 'secondary' in current_banner:
-    instruction.maneuverSecondaryText = current_banner['secondary']['text']
+  if field_valid(current_banner, 'secondary'):
+    instruction['maneuverSecondaryText'] = current_banner['secondary']['text']
 
   # Lane lines
-  if 'sub' in current_banner:
+  if field_valid(current_banner, 'sub'):
     lanes = []
     for component in current_banner['sub']['components']:
       if component['type'] != 'lane':
@@ -167,8 +180,10 @@ def parse_banner_instructions(instruction: Any, banners: Any, distance_to_maneuv
         'directions': [string_to_direction(d) for d in component['directions']],
       }
 
-      if 'active_direction' in component:
+      if field_valid(component, 'active_direction'):
         lane['activeDirection'] = string_to_direction(component['active_direction'])
 
       lanes.append(lane)
-    instruction.lanes = lanes
+    instruction['lanes'] = lanes
+
+  return instruction

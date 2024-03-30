@@ -4,9 +4,11 @@
 #include <sys/file.h>
 
 #include <algorithm>
+#include <cassert>
 #include <csignal>
 #include <unordered_map>
 
+#include "common/queue.h"
 #include "common/swaglog.h"
 #include "common/util.h"
 #include "system/hardware/hw.h"
@@ -64,7 +66,9 @@ bool create_params_path(const std::string &param_path, const std::string &key_pa
 std::string ensure_params_path(const std::string &prefix, const std::string &path = {}) {
   std::string params_path = path.empty() ? Path::params() : path;
   if (!create_params_path(params_path, params_path + prefix)) {
-    throw std::runtime_error(util::string_format("Failed to ensure params path, errno=%d", errno));
+    throw std::runtime_error(util::string_format(
+        "Failed to ensure params path, errno=%d, path=%s, param_prefix=%s",
+        errno, params_path.c_str(), prefix.c_str()));
   }
   return params_path;
 }
@@ -85,9 +89,13 @@ private:
 
 std::unordered_map<std::string, uint32_t> keys = {
     {"AccessToken", CLEAR_ON_MANAGER_START | DONT_LOG},
+    {"ApiCache_Device", PERSISTENT},
+    {"ApiCache_NavDestinations", PERSISTENT},
     {"AssistNowToken", PERSISTENT},
     {"AthenadPid", PERSISTENT},
     {"AthenadUploadQueue", PERSISTENT},
+    {"AthenadRecentlyViewedRoutes", PERSISTENT},
+    {"BootCount", PERSISTENT},
     {"CalibrationParams", PERSISTENT},
     {"CameraDebugExpGain", CLEAR_ON_MANAGER_START},
     {"CameraDebugExpTime", CLEAR_ON_MANAGER_START},
@@ -95,6 +103,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"CarParams", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"CarParamsCache", CLEAR_ON_MANAGER_START},
     {"CarParamsPersistent", PERSISTENT},
+    {"CarParamsPrevRoute", PERSISTENT},
     {"CarVin", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"CompletedTrainingVersion", PERSISTENT},
     {"ControlsReady", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
@@ -102,20 +111,21 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"CurrentRoute", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"DisableLogging", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"DisablePowerDown", PERSISTENT},
-    {"ExperimentalMode", PERSISTENT},
-    {"ExperimentalModeConfirmed", PERSISTENT},
-    {"LongitudinalPersonality", PERSISTENT},
-    {"ExperimentalLongitudinalEnabled", PERSISTENT},
     {"DisableUpdates", PERSISTENT},
     {"DisengageOnAccelerator", PERSISTENT},
+    {"DmModelInitialized", CLEAR_ON_ONROAD_TRANSITION},
     {"DongleId", PERSISTENT},
     {"DoReboot", CLEAR_ON_MANAGER_START},
     {"DoShutdown", CLEAR_ON_MANAGER_START},
     {"DoUninstall", CLEAR_ON_MANAGER_START},
+    {"ExperimentalLongitudinalEnabled", PERSISTENT | DEVELOPMENT_ONLY},
+    {"ExperimentalMode", PERSISTENT},
+    {"ExperimentalModeConfirmed", PERSISTENT},
     {"FirmwareQueryDone", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"ForcePowerDown", PERSISTENT},
     {"GitBranch", PERSISTENT},
     {"GitCommit", PERSISTENT},
+    {"GitCommitDate", PERSISTENT},
     {"GitDiff", PERSISTENT},
     {"GithubSshKeys", PERSISTENT},
     {"GithubUsername", PERSISTENT},
@@ -134,62 +144,29 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"IsOffroad", CLEAR_ON_MANAGER_START},
     {"IsOnroad", PERSISTENT},
     {"IsRhdDetected", PERSISTENT},
+    {"IsReleaseBranch", CLEAR_ON_MANAGER_START},
     {"IsTakingSnapshot", CLEAR_ON_MANAGER_START},
     {"IsTestedBranch", CLEAR_ON_MANAGER_START},
-    {"IsReleaseBranch", CLEAR_ON_MANAGER_START},
-    {"IsUpdateAvailable", CLEAR_ON_MANAGER_START},
     {"JoystickDebugMode", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
-    {"LaikadEphemerisV3", PERSISTENT | DONT_LOG},
     {"LanguageSetting", PERSISTENT},
     {"LastAthenaPingTime", CLEAR_ON_MANAGER_START},
     {"LastGPSPosition", PERSISTENT},
     {"LastManagerExitReason", CLEAR_ON_MANAGER_START},
+    {"LastOffroadStatusPacket", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
     {"LastPowerDropDetected", CLEAR_ON_MANAGER_START},
-    {"LastSystemShutdown", CLEAR_ON_MANAGER_START},
     {"LastUpdateException", CLEAR_ON_MANAGER_START},
     {"LastUpdateTime", PERSISTENT},
     {"LiveParameters", PERSISTENT},
-    {"LiveTorqueCarParams", PERSISTENT},
     {"LiveTorqueParameters", PERSISTENT | DONT_LOG},
+    {"LongitudinalPersonality", PERSISTENT},
     {"NavDestination", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
     {"NavDestinationWaypoints", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
-    {"NavSettingTime24h", PERSISTENT},
+    {"NavPastDestinations", PERSISTENT},
     {"NavSettingLeftSide", PERSISTENT},
-    {"NavdRender", PERSISTENT},
+    {"NavSettingTime24h", PERSISTENT},
+    {"NetworkMetered", PERSISTENT},
     {"ObdMultiplexingChanged", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"ObdMultiplexingEnabled", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
-    {"OpenpilotEnabledToggle", PERSISTENT},
-    {"PandaHeartbeatLost", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
-    {"PandaSignatures", CLEAR_ON_MANAGER_START},
-    {"Passive", PERSISTENT},
-    {"PrimeType", PERSISTENT},
-    {"RecordFront", PERSISTENT},
-    {"RecordFrontLock", PERSISTENT},  // for the internal fleet
-    {"ReplayControlsState", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
-    {"ShouldDoUpdate", CLEAR_ON_MANAGER_START},
-    {"SnoozeUpdate", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
-    {"SshEnabled", PERSISTENT},
-    {"SubscriberInfo", PERSISTENT},
-    {"TermsVersion", PERSISTENT},
-    {"Timezone", PERSISTENT},
-    {"TrainingVersion", PERSISTENT},
-    {"UbloxAvailable", PERSISTENT},
-    {"UpdateAvailable", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
-    {"UpdateFailedCount", CLEAR_ON_MANAGER_START},
-    {"UpdaterState", CLEAR_ON_MANAGER_START},
-    {"UpdaterFetchAvailable", CLEAR_ON_MANAGER_START},
-    {"UpdaterTargetBranch", CLEAR_ON_MANAGER_START},
-    {"UpdaterAvailableBranches", CLEAR_ON_MANAGER_START},
-    {"UpdaterCurrentDescription", CLEAR_ON_MANAGER_START},
-    {"UpdaterCurrentReleaseNotes", CLEAR_ON_MANAGER_START},
-    {"UpdaterNewDescription", CLEAR_ON_MANAGER_START},
-    {"UpdaterNewReleaseNotes", CLEAR_ON_MANAGER_START},
-    {"Version", PERSISTENT},
-    {"VisionRadarToggle", PERSISTENT},
-    {"WideCameraOnly", PERSISTENT},
-    {"ApiCache_Device", PERSISTENT},
-    {"ApiCache_DriveStats", PERSISTENT},
-    {"ApiCache_NavDestinations", PERSISTENT},
     {"Offroad_BadNvme", CLEAR_ON_MANAGER_START},
     {"Offroad_CarUnrecognized", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"Offroad_ConnectivityNeeded", CLEAR_ON_MANAGER_START},
@@ -198,19 +175,53 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"Offroad_IsTakingSnapshot", CLEAR_ON_MANAGER_START},
     {"Offroad_NeosUpdate", CLEAR_ON_MANAGER_START},
     {"Offroad_NoFirmware", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
+    {"Offroad_Recalibration", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"Offroad_StorageMissing", CLEAR_ON_MANAGER_START},
     {"Offroad_TemperatureTooHigh", CLEAR_ON_MANAGER_START},
     {"Offroad_UnofficialHardware", CLEAR_ON_MANAGER_START},
     {"Offroad_UpdateFailed", CLEAR_ON_MANAGER_START},
-    {"Offroad_Recalibration", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
+    {"OpenpilotEnabledToggle", PERSISTENT},
+    {"PandaHeartbeatLost", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
+    {"PandaSomResetTriggered", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
+    {"PandaSignatures", CLEAR_ON_MANAGER_START},
+    {"PrimeType", PERSISTENT},
+    {"RecordFront", PERSISTENT},
+    {"RecordFrontLock", PERSISTENT},  // for the internal fleet
+    {"ReplayControlsState", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
+    {"RouteCount", PERSISTENT},
+    {"SnoozeUpdate", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
+    {"SshEnabled", PERSISTENT},
+    {"TermsVersion", PERSISTENT},
+    {"Timezone", PERSISTENT},
+    {"TrainingVersion", PERSISTENT},
+    {"UbloxAvailable", PERSISTENT},
+    {"UpdateAvailable", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
+    {"UpdateFailedCount", CLEAR_ON_MANAGER_START},
+    {"UpdaterAvailableBranches", PERSISTENT},
+    {"UpdaterCurrentDescription", CLEAR_ON_MANAGER_START},
+    {"UpdaterCurrentReleaseNotes", CLEAR_ON_MANAGER_START},
+    {"UpdaterFetchAvailable", CLEAR_ON_MANAGER_START},
+    {"UpdaterNewDescription", CLEAR_ON_MANAGER_START},
+    {"UpdaterNewReleaseNotes", CLEAR_ON_MANAGER_START},
+    {"UpdaterState", CLEAR_ON_MANAGER_START},
+    {"UpdaterTargetBranch", CLEAR_ON_MANAGER_START},
+    {"UpdaterLastFetchTime", PERSISTENT},
+    {"Version", PERSISTENT},
 };
 
 } // namespace
 
 
 Params::Params(const std::string &path) {
-  prefix = "/" + util::getenv("OPENPILOT_PREFIX", "d");
-  params_path = ensure_params_path(prefix, path);
+  params_prefix = "/" + util::getenv("OPENPILOT_PREFIX", "d");
+  params_path = ensure_params_path(params_prefix, path);
+}
+
+Params::~Params() {
+  if (future.valid()) {
+    future.wait();
+  }
+  assert(queue.empty());
 }
 
 std::vector<std::string> Params::allKeys() const {
@@ -322,4 +333,21 @@ void Params::clearAll(ParamKeyType key_type) {
   }
 
   fsync_dir(getParamPath());
+}
+
+void Params::putNonBlocking(const std::string &key, const std::string &val) {
+   queue.push(std::make_pair(key, val));
+  // start thread on demand
+  if (!future.valid() || future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready) {
+    future = std::async(std::launch::async, &Params::asyncWriteThread, this);
+  }
+}
+
+void Params::asyncWriteThread() {
+  // TODO: write the latest one if a key has multiple values in the queue.
+  std::pair<std::string, std::string> p;
+  while (queue.try_pop(p, 0)) {
+    // Params::put is Thread-Safe
+    put(p.first, p.second);
+  }
 }

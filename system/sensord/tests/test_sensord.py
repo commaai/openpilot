@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import pytest
 import time
 import unittest
 import numpy as np
@@ -7,9 +8,10 @@ from collections import namedtuple, defaultdict
 
 import cereal.messaging as messaging
 from cereal import log
-from common.gpio import get_irq_for_action
-from system.hardware import TICI
-from selfdrive.manager.process_config import managed_processes
+from cereal.services import SERVICE_LIST
+from openpilot.common.gpio import get_irqs_for_action
+from openpilot.common.timeout import Timeout
+from openpilot.selfdrive.manager.process_config import managed_processes
 
 BMX = {
   ('bmx055', 'acceleration'),
@@ -29,24 +31,16 @@ MMC = {
   ('mmc5603nj', 'magneticUncalibrated'),
 }
 
-RPR = {
-  ('rpr0521', 'light'),
-}
-
 SENSOR_CONFIGURATIONS = (
-  (BMX | LSM | RPR),
-  (MMC | LSM | RPR),
-  (BMX | LSM_C | RPR),
-  (MMC| LSM_C | RPR),
+  (BMX | LSM),
+  (MMC | LSM),
+  (BMX | LSM_C),
+  (MMC| LSM_C),
 )
 
 Sensor = log.SensorEventData.SensorSource
 SensorConfig = namedtuple('SensorConfig', ['type', 'sanity_min', 'sanity_max'])
 ALL_SENSORS = {
-  Sensor.rpr0521: {
-    SensorConfig("light", 0, 1023),
-  },
-
   Sensor.lsm6ds3: {
     SensorConfig("acceleration", 5, 15),
     SensorConfig("gyroUncalibrated", 0, .2),
@@ -79,41 +73,47 @@ def get_irq_count(irq: int):
 
 def read_sensor_events(duration_sec):
   sensor_types = ['accelerometer', 'gyroscope', 'magnetometer', 'accelerometer2',
-                  'gyroscope2', 'lightSensor', 'temperatureSensor']
-  esocks = {}
+                  'gyroscope2', 'temperatureSensor', 'temperatureSensor2']
+  socks = {}
+  poller = messaging.Poller()
   events = defaultdict(list)
   for stype in sensor_types:
-    esocks[stype] = messaging.sub_sock(stype, timeout=0.1)
+    socks[stype] = messaging.sub_sock(stype, poller=poller, timeout=100)
 
-  start_time_sec = time.monotonic()
-  while time.monotonic() - start_time_sec < duration_sec:
-    for esock in esocks:
-      events[esock] += messaging.drain_sock(esocks[esock])
+  # wait for sensors to come up
+  with Timeout(int(os.environ.get("SENSOR_WAIT", "5")), "sensors didn't come up"):
+    while len(poller.poll(250)) == 0:
+      pass
+  time.sleep(1)
+  for s in socks.values():
+    messaging.drain_sock_raw(s)
+
+  st = time.monotonic()
+  while time.monotonic() - st < duration_sec:
+    for s in socks:
+      events[s] += messaging.drain_sock(socks[s])
     time.sleep(0.1)
 
   assert sum(map(len, events.values())) != 0, "No sensor events collected!"
 
-  return events
+  return {k: v for k, v in events.items() if len(v) > 0}
 
+@pytest.mark.tici
 class TestSensord(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
-    if not TICI:
-      raise unittest.SkipTest
-
     # enable LSM self test
     os.environ["LSM_SELF_TEST"] = "1"
 
     # read initial sensor values every test case can use
-    os.system("pkill -f ./_sensord")
+    os.system("pkill -f \\\\./sensord")
     try:
       managed_processes["sensord"].start()
-      time.sleep(3)
-      cls.sample_secs = 10
+      cls.sample_secs = int(os.getenv("SAMPLE_SECS", "10"))
       cls.events = read_sensor_events(cls.sample_secs)
 
       # determine sensord's irq
-      cls.sensord_irq = get_irq_for_action("sensord")[0]
+      cls.sensord_irq = get_irqs_for_action("sensord")[0]
     finally:
       # teardown won't run if this doesn't succeed
       managed_processes["sensord"].stop()
@@ -127,7 +127,6 @@ class TestSensord(unittest.TestCase):
 
   def test_sensors_present(self):
     # verify correct sensors configuration
-
     seen = set()
     for etype in self.events:
       for measurement in self.events[etype]:
@@ -167,22 +166,12 @@ class TestSensord(unittest.TestCase):
         stddev = np.std(tdiffs)
         assert stddev < 2.0, f"Standard-dev to big {stddev}"
 
-  def test_events_check(self):
-    # verify if all sensors produce events
-
-    sensor_events = dict()
-    for etype in self.events:
-      for measurement in self.events[etype]:
-        m = getattr(measurement, measurement.which())
-
-        if m.type in sensor_events:
-          sensor_events[m.type] += 1
-        else:
-          sensor_events[m.type] = 1
-
-    for s in sensor_events:
-      err_msg = f"Sensor {s}: 200 < {sensor_events[s]}"
-      assert sensor_events[s] > 200, err_msg
+  def test_sensor_frequency(self):
+    for s, msgs in self.events.items():
+      with self.subTest(sensor=s):
+        freq = len(msgs) / self.sample_secs
+        ef = SERVICE_LIST[s].frequency
+        assert ef*0.85 <= freq <= ef*1.15
 
   def test_logmonottime_timestamp_diff(self):
     # ensure diff between the message logMonotime and sample timestamp is small
@@ -201,16 +190,14 @@ class TestSensord(unittest.TestCase):
         # before the sensor is read
         tdiffs.append(abs(measurement.logMonoTime - m.timestamp) / 1e6)
 
-    high_delay_diffs = set(filter(lambda d: d >= 15., tdiffs))
-    assert len(high_delay_diffs) < 20, f"Too many measurements published : {high_delay_diffs}"
+    # some sensors have a read procedure that will introduce an expected diff on the order of 20ms
+    high_delay_diffs = set(filter(lambda d: d >= 25., tdiffs))
+    assert len(high_delay_diffs) < 20, f"Too many measurements published: {high_delay_diffs}"
 
     avg_diff = round(sum(tdiffs)/len(tdiffs), 4)
     assert avg_diff < 4, f"Avg packet diff: {avg_diff:.1f}ms"
 
-    stddev = np.std(tdiffs)
-    assert stddev < 2, f"Timing diffs have too high stddev: {stddev}"
-
-  def test_sensor_values_sanity_check(self):
+  def test_sensor_values(self):
     sensor_values = dict()
     for etype in self.events:
       for measurement in self.events[etype]:
@@ -227,18 +214,13 @@ class TestSensord(unittest.TestCase):
         else:
           sensor_values[key] = [values]
 
-    # Sanity check sensor values and counts
+    # Sanity check sensor values
     for sensor, stype in sensor_values:
       for s in ALL_SENSORS[sensor]:
         if s.type != stype:
           continue
 
         key = (sensor, s.type)
-        val_cnt = len(sensor_values[key])
-        min_samples = self.sample_secs * 100  # Hz
-        err_msg = f"Sensor {sensor} {s.type} got {val_cnt} measurements, expected {min_samples}"
-        assert min_samples*0.9 < val_cnt < min_samples*1.1, err_msg
-
         mean_norm = np.mean(np.linalg.norm(sensor_values[key], axis=1))
         err_msg = f"Sensor '{sensor} {s.type}' failed sanity checks {mean_norm} is not between {s.sanity_min} and {s.sanity_max}"
         assert s.sanity_min <= mean_norm <= s.sanity_max, err_msg

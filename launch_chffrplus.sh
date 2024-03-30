@@ -15,6 +15,11 @@ function agnos_init {
   # set success flag for current boot slot
   sudo abctl --set_success
 
+  # TODO: do this without udev in AGNOS
+  # udev does this, but sometimes we startup faster
+  sudo chgrp gpu /dev/adsprpc-smd /dev/ion /dev/kgsl-3d0
+  sudo chmod 660 /dev/adsprpc-smd /dev/ion /dev/kgsl-3d0
+
   # Check if AGNOS update is required
   if [ $(< /VERSION) != "$AGNOS_VERSION" ]; then
     AGNOS_PY="$DIR/system/hardware/tici/agnos.py"
@@ -29,9 +34,6 @@ function agnos_init {
 function launch {
   # Remove orphaned git lock if it exists on boot
   [ -f "$DIR/.git/index.lock" ] && rm -f $DIR/.git/index.lock
-
-  # Pull time from panda
-  $DIR/selfdrive/boardd/set_time.py
 
   # Check to see if there's a valid overlay-based update available. Conditions
   # are as follows:
@@ -72,14 +74,19 @@ function launch {
   export PYTHONPATH="$PWD"
 
   # hardware specific init
-  agnos_init
+  if [ -f /AGNOS ]; then
+    agnos_init
+  fi
 
   # write tmux scrollback to a file
   tmux capture-pane -pq -S-1000 > /tmp/launch_log
 
   # start manager
   cd selfdrive/manager
-  ./build.py && ./manager.py
+  if [ ! -f $DIR/prebuilt ]; then
+    ./build.py
+  fi
+  ./manager.py
 
   # if broken, keep on screen error
   while true; do sleep 1; done

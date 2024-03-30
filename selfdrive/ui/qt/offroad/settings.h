@@ -1,14 +1,17 @@
 #pragma once
 
+#include <map>
+#include <string>
+
 #include <QButtonGroup>
-#include <QFileSystemWatcher>
 #include <QFrame>
 #include <QLabel>
 #include <QPushButton>
 #include <QStackedWidget>
 #include <QWidget>
 
-
+#include "selfdrive/ui/ui.h"
+#include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 
 // ********** settings window + top-level panels **********
@@ -39,6 +42,8 @@ class DevicePanel : public ListWidget {
   Q_OBJECT
 public:
   explicit DevicePanel(SettingsWindow *parent);
+  void showEvent(QShowEvent *event) override;
+
 signals:
   void reviewTrainingGuide();
   void showDriverView();
@@ -50,6 +55,7 @@ private slots:
 
 private:
   Params params;
+  ButtonControl *pair_device;
 };
 
 class TogglesPanel : public ListWidget {
@@ -60,6 +66,9 @@ public:
 
 public slots:
   void expandToggleDescription(const QString &param);
+
+private slots:
+  void updateState(const UIState &s);
 
 private:
   Params params;
@@ -88,5 +97,5 @@ private:
   ButtonControl *targetBranchBtn;
 
   Params params;
-  QFileSystemWatcher *fs_watch;
+  ParamWatcher *fs_watch;
 };

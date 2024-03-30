@@ -20,8 +20,10 @@ private:
   void showEvent(QShowEvent *event) override;
   void paintEvent(QPaintEvent *event) override;
   void mouseReleaseEvent(QMouseEvent* e) override;
+  QImage loadImage(int id);
 
   QImage image;
+  QSize image_raw_size;
   int currentIndex = 0;
 
   // Bounding boxes for each training guide step
@@ -61,7 +63,7 @@ class TermsPage : public QFrame {
   Q_OBJECT
 
 public:
-  explicit TermsPage(QWidget *parent = 0) : QFrame(parent) {};
+  explicit TermsPage(QWidget *parent = 0) : QFrame(parent) {}
 
 public slots:
   void enableAccept();
@@ -80,7 +82,7 @@ class DeclinePage : public QFrame {
   Q_OBJECT
 
 public:
-  explicit DeclinePage(QWidget *parent = 0) : QFrame(parent) {};
+  explicit DeclinePage(QWidget *parent = 0) : QFrame(parent) {}
 
 private:
   void showEvent(QShowEvent *event) override;

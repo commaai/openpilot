@@ -1,5 +1,8 @@
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include <QButtonGroup>
 #include <QFrame>
 #include <QHBoxLayout>
@@ -10,8 +13,6 @@
 #include "common/params.h"
 #include "selfdrive/ui/qt/widgets/input.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
-
-QFrame *horizontal_line(QWidget *parent = nullptr);
 
 class ElidedLabel : public QLabel {
   Q_OBJECT
@@ -143,24 +144,7 @@ class ParamControl : public ToggleControl {
   Q_OBJECT
 
 public:
-  ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, QWidget *parent = nullptr) : ToggleControl(title, desc, icon, false, parent) {
-    key = param.toStdString();
-    QObject::connect(this, &ParamControl::toggleFlipped, [=](bool state) {
-      QString content("<body><h2 style=\"text-align: center;\">" + title + "</h2><br>"
-                      "<p style=\"text-align: center; margin: 0 128px; font-size: 50px;\">" + getDescription() + "</p></body>");
-      ConfirmationDialog dialog(content, tr("Enable"), tr("Cancel"), true, this);
-
-      bool confirmed = store_confirm && params.getBool(key + "Confirmed");
-      if (!confirm || confirmed || !state || dialog.exec()) {
-        if (store_confirm && state) params.putBool(key + "Confirmed", true);
-        params.putBool(key, state);
-        setIcon(state);
-      } else {
-        toggle.togglePosition();
-      }
-    });
-  }
-
+  ParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon, QWidget *parent = nullptr);
   void setConfirmation(bool _confirm, bool _store_confirm) {
     confirm = _confirm;
     store_confirm = _store_confirm;
@@ -183,6 +167,7 @@ public:
   }
 
 private:
+  void toggleClicked(bool state);
   void setIcon(bool state) {
     if (state && !active_icon_pixmap.isNull()) {
       icon_label->setPixmap(active_icon_pixmap);
@@ -238,10 +223,8 @@ public:
       button_group->addButton(button, i);
     }
 
-    QObject::connect(button_group, QOverload<int, bool>::of(&QButtonGroup::buttonToggled), [=](int id, bool checked) {
-      if (checked) {
-        params.put(key, std::to_string(id));
-      }
+    QObject::connect(button_group, QOverload<int>::of(&QButtonGroup::buttonClicked), [=](int id) {
+      params.put(key, std::to_string(id));
     });
   }
 
@@ -249,6 +232,19 @@ public:
     for (auto btn : button_group->buttons()) {
       btn->setEnabled(enable);
     }
+  }
+
+  void setCheckedButton(int id) {
+    button_group->button(id)->setChecked(true);
+  }
+
+  void refresh() {
+    int value = atoi(params.get(key).c_str());
+    button_group->button(value)->setChecked(true);
+  }
+
+  void showEvent(QShowEvent *event) override {
+    refresh();
   }
 
 private:
@@ -297,18 +293,4 @@ public:
   LayoutWidget(QLayout *l, QWidget *parent = nullptr) : QWidget(parent) {
     setLayout(l);
   }
-};
-
-class ClickableWidget : public QWidget {
-  Q_OBJECT
-
-public:
-  ClickableWidget(QWidget *parent = nullptr);
-
-protected:
-  void mouseReleaseEvent(QMouseEvent *event) override;
-  void paintEvent(QPaintEvent *) override;
-
-signals:
-  void clicked();
 };

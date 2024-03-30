@@ -2,11 +2,12 @@
 import unittest
 
 from cereal import car, log
-from common.realtime import DT_CTRL
-from selfdrive.car.car_helpers import interfaces
-from selfdrive.controls.controlsd import Controls, SOFT_DISABLE_TIME
-from selfdrive.controls.lib.events import Events, ET, Alert, Priority, AlertSize, AlertStatus, VisualAlert, \
+from openpilot.common.realtime import DT_CTRL
+from openpilot.selfdrive.car.car_helpers import interfaces
+from openpilot.selfdrive.controls.controlsd import Controls, SOFT_DISABLE_TIME
+from openpilot.selfdrive.controls.lib.events import Events, ET, Alert, Priority, AlertSize, AlertStatus, VisualAlert, \
                                           AudibleAlert, EVENTS
+from openpilot.selfdrive.car.mock.values import CAR as MOCK
 
 State = log.ControlsState.OpenpilotState
 
@@ -30,8 +31,8 @@ def make_event(event_types):
 class TestStateMachine(unittest.TestCase):
 
   def setUp(self):
-    CarInterface, CarController, CarState = interfaces["mock"]
-    CP = CarInterface.get_non_essential_params("mock")
+    CarInterface, CarController, CarState = interfaces[MOCK.MOCK]
+    CP = CarInterface.get_non_essential_params(MOCK.MOCK)
     CI = CarInterface(CP, CarController, CarState)
 
     self.controlsd = Controls(CI=CI)

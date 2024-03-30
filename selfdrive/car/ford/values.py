@@ -1,11 +1,13 @@
-from collections import defaultdict
-from dataclasses import dataclass
-from typing import Dict, List, Set, Union
+import copy
+from dataclasses import dataclass, field, replace
+from enum import Enum, IntFlag
 
+import panda.python.uds as uds
 from cereal import car
-from selfdrive.car import AngleRateLimit, dbc_dict
-from selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts, Device
-from selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+from openpilot.selfdrive.car import AngleRateLimit, CarSpecs, dbc_dict, DbcDict, PlatformConfig, Platforms
+from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column, \
+                                                     Device
+from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
 Ecu = car.CarParams.Ecu
 
@@ -38,21 +40,9 @@ class CarControllerParams:
     pass
 
 
-class CANBUS:
-  main = 0
-  radar = 1
-  camera = 2
-
-
-class CAR:
-  BRONCO_SPORT_MK1 = "FORD BRONCO SPORT 1ST GEN"
-  ESCAPE_MK4 = "FORD ESCAPE 4TH GEN"
-  EXPLORER_MK6 = "FORD EXPLORER 6TH GEN"
-  FOCUS_MK4 = "FORD FOCUS 4TH GEN"
-  MAVERICK_MK1 = "FORD MAVERICK 1ST GEN"
-
-
-CANFD_CARS: Set[str] = set()
+class FordFlags(IntFlag):
+  # Static flags
+  CANFD = 1
 
 
 class RADAR:
@@ -60,182 +50,153 @@ class RADAR:
   DELPHI_MRR = 'FORD_CADS'
 
 
-DBC: Dict[str, Dict[str, str]] = defaultdict(lambda: dbc_dict("ford_lincoln_base_pt", RADAR.DELPHI_MRR))
+class Footnote(Enum):
+  FOCUS = CarFootnote(
+    "Refers only to the Focus Mk4 (C519) available in Europe/China/Taiwan/Australasia, not the Focus Mk3 (C346) in " +
+    "North and South America/Southeast Asia.",
+    Column.MODEL,
+  )
 
 
 @dataclass
-class FordCarInfo(CarInfo):
+class FordCarDocs(CarDocs):
   package: str = "Co-Pilot360 Assist+"
-  car_parts: CarParts = CarParts.common([CarHarness.ford_q3])
+  hybrid: bool = False
+  plug_in_hybrid: bool = False
 
   def init_make(self, CP: car.CarParams):
-    if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.MAVERICK_MK1):
-      self.car_parts = CarParts([Device.three_angled_mount, CarHarness.ford_q3])
+    harness = CarHarness.ford_q4 if CP.flags & FordFlags.CANFD else CarHarness.ford_q3
+    if CP.carFingerprint in (CAR.FORD_BRONCO_SPORT_MK1, CAR.FORD_MAVERICK_MK1, CAR.FORD_F_150_MK14, CAR.FORD_F_150_LIGHTNING_MK1):
+      self.car_parts = CarParts([Device.threex_angled_mount, harness])
+    else:
+      self.car_parts = CarParts([Device.threex, harness])
 
 
-CAR_INFO: Dict[str, Union[CarInfo, List[CarInfo]]] = {
-  CAR.BRONCO_SPORT_MK1: FordCarInfo("Ford Bronco Sport 2021-22"),
-  CAR.ESCAPE_MK4: [
-    FordCarInfo("Ford Escape 2020-22"),
-    FordCarInfo("Ford Kuga 2020-22", "Adaptive Cruise Control with Lane Centering"),
-  ],
-  CAR.EXPLORER_MK6: [
-    FordCarInfo("Ford Explorer 2020-22"),
-    FordCarInfo("Lincoln Aviator 2021", "Co-Pilot360 Plus"),
-  ],
-  CAR.FOCUS_MK4: FordCarInfo("Ford Focus EU 2018", "Adaptive Cruise Control with Lane Centering"),
-  CAR.MAVERICK_MK1: FordCarInfo("Ford Maverick 2022-23", "Co-Pilot360 Assist"),
-}
+@dataclass
+class FordPlatformConfig(PlatformConfig):
+  dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('ford_lincoln_base_pt', RADAR.DELPHI_MRR))
+
+  def init(self):
+    for car_docs in list(self.car_docs):
+      if car_docs.hybrid:
+        name = f"{car_docs.make} {car_docs.model} Hybrid {car_docs.years}"
+        self.car_docs.append(replace(copy.deepcopy(car_docs), name=name))
+      if car_docs.plug_in_hybrid:
+        name = f"{car_docs.make} {car_docs.model} Plug-in Hybrid {car_docs.years}"
+        self.car_docs.append(replace(copy.deepcopy(car_docs), name=name))
+
+
+@dataclass
+class FordCANFDPlatformConfig(FordPlatformConfig):
+  dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('ford_lincoln_base_pt', None))
+
+  def init(self):
+    super().init()
+    self.flags |= FordFlags.CANFD
+
+
+class CAR(Platforms):
+  FORD_BRONCO_SPORT_MK1 = FordPlatformConfig(
+    [FordCarDocs("Ford Bronco Sport 2021-23")],
+    CarSpecs(mass=1625, wheelbase=2.67, steerRatio=17.7),
+  )
+  FORD_ESCAPE_MK4 = FordPlatformConfig(
+    [
+      FordCarDocs("Ford Escape 2020-22", hybrid=True, plug_in_hybrid=True),
+      FordCarDocs("Ford Kuga 2020-22", "Adaptive Cruise Control with Lane Centering", hybrid=True, plug_in_hybrid=True),
+    ],
+    CarSpecs(mass=1750, wheelbase=2.71, steerRatio=16.7),
+  )
+  FORD_EXPLORER_MK6 = FordPlatformConfig(
+    [
+      FordCarDocs("Ford Explorer 2020-23", hybrid=True),  # Hybrid: Limited and Platinum only
+      FordCarDocs("Lincoln Aviator 2020-23", "Co-Pilot360 Plus", plug_in_hybrid=True),  # Hybrid: Grand Touring only
+    ],
+    CarSpecs(mass=2050, wheelbase=3.025, steerRatio=16.8),
+  )
+  FORD_F_150_MK14 = FordCANFDPlatformConfig(
+    [FordCarDocs("Ford F-150 2022-23", "Co-Pilot360 Active 2.0", hybrid=True)],
+    CarSpecs(mass=2000, wheelbase=3.69, steerRatio=17.0),
+  )
+  FORD_F_150_LIGHTNING_MK1 = FordCANFDPlatformConfig(
+    [FordCarDocs("Ford F-150 Lightning 2021-23", "Co-Pilot360 Active 2.0")],
+    CarSpecs(mass=2948, wheelbase=3.70, steerRatio=16.9),
+  )
+  FORD_FOCUS_MK4 = FordPlatformConfig(
+    [FordCarDocs("Ford Focus 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS], hybrid=True)],  # mHEV only
+    CarSpecs(mass=1350, wheelbase=2.7, steerRatio=15.0),
+  )
+  FORD_MAVERICK_MK1 = FordPlatformConfig(
+    [
+      FordCarDocs("Ford Maverick 2022", "LARIAT Luxury", hybrid=True),
+      FordCarDocs("Ford Maverick 2023-24", "Co-Pilot360 Assist", hybrid=True),
+    ],
+    CarSpecs(mass=1650, wheelbase=3.076, steerRatio=17.0),
+  )
+  FORD_MUSTANG_MACH_E_MK1 = FordCANFDPlatformConfig(
+    [FordCarDocs("Ford Mustang Mach-E 2021-23", "Co-Pilot360 Active 2.0")],
+    CarSpecs(mass=2200, wheelbase=2.984, steerRatio=17.0),  # TODO: check steer ratio
+  )
+
+
+DATA_IDENTIFIER_FORD_ASBUILT = 0xDE00
+
+ASBUILT_BLOCKS: list[tuple[int, list]] = [
+  (1, [Ecu.debug, Ecu.fwdCamera, Ecu.eps]),
+  (2, [Ecu.abs, Ecu.debug, Ecu.eps]),
+  (3, [Ecu.abs, Ecu.debug, Ecu.eps]),
+  (4, [Ecu.debug, Ecu.fwdCamera]),
+  (5, [Ecu.debug]),
+  (6, [Ecu.debug]),
+  (7, [Ecu.debug]),
+  (8, [Ecu.debug]),
+  (9, [Ecu.debug]),
+  (16, [Ecu.debug, Ecu.fwdCamera]),
+  (18, [Ecu.fwdCamera]),
+  (20, [Ecu.fwdCamera]),
+  (21, [Ecu.fwdCamera]),
+]
+
+
+def ford_asbuilt_block_request(block_id: int):
+  return bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + p16(DATA_IDENTIFIER_FORD_ASBUILT + block_id - 1)
+
+
+def ford_asbuilt_block_response(block_id: int):
+  return bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40]) + p16(DATA_IDENTIFIER_FORD_ASBUILT + block_id - 1)
+
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
+    # CAN and CAN FD queries are combined.
+    # FIXME: For CAN FD, ECUs respond with frames larger than 8 bytes on the powertrain bus
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.engine],
+      whitelist_ecus=[Ecu.abs, Ecu.debug, Ecu.engine, Ecu.eps, Ecu.fwdCamera, Ecu.fwdRadar, Ecu.shiftByWire],
+      logging=True,
     ),
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
+      whitelist_ecus=[Ecu.abs, Ecu.debug, Ecu.engine, Ecu.eps, Ecu.fwdCamera, Ecu.fwdRadar, Ecu.shiftByWire],
       bus=0,
-      whitelist_ecus=[Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.shiftByWire],
+      auxiliary=True,
     ),
+    *[Request(
+      [StdQueries.TESTER_PRESENT_REQUEST, ford_asbuilt_block_request(block_id)],
+      [StdQueries.TESTER_PRESENT_RESPONSE, ford_asbuilt_block_response(block_id)],
+      whitelist_ecus=ecus,
+      bus=0,
+      logging=True,
+    ) for block_id, ecus in ASBUILT_BLOCKS],
+  ],
+  extra_ecus=[
+    (Ecu.engine, 0x7e0, None),        # Powertrain Control Module
+                                      # Note: We are unlikely to get a response from behind the gateway
+    (Ecu.shiftByWire, 0x732, None),   # Gear Shift Module
+    (Ecu.debug, 0x7d0, None),         # Accessory Protocol Interface Module
   ],
 )
 
-FW_VERSIONS = {
-  CAR.BRONCO_SPORT_MK1: {
-    (Ecu.eps, 0x730, None): [
-      b'LX6C-14D003-AH\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'LX6C-14D003-AK\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.abs, 0x760, None): [
-      b'LX6C-2D053-RD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'LX6C-2D053-RE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdRadar, 0x764, None): [
-      b'LB5T-14D049-AB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdCamera, 0x706, None): [
-      b'M1PT-14F397-AC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.engine, 0x7E0, None): [
-      b'M1PA-14C204-GF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'N1PA-14C204-AC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.shiftByWire, 0x732, None): [
-      b'LX6P-14G395-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'PZ1P-14G395-AB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-  },
-  CAR.ESCAPE_MK4: {
-    (Ecu.eps, 0x730, None): [
-      b'LX6C-14D003-AF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'LX6C-14D003-AH\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'LX6C-14D003-AL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.abs, 0x760, None): [
-      b'LX6C-2D053-NS\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'LX6C-2D053-NY\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'LX6C-2D053-SA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdRadar, 0x764, None): [
-      b'LB5T-14D049-AB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdCamera, 0x706, None): [
-      b'LJ6T-14F397-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'LJ6T-14F397-AE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.engine, 0x7E0, None): [
-      b'LX6A-14C204-BJV\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'LX6A-14C204-ESG\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'MX6A-14C204-BEF\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'MX6A-14C204-BEJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'NX6A-14C204-BLE\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.shiftByWire, 0x732, None): [
-      b'LX6P-14G395-AB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'LX6P-14G395-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'PZ1P-14G395-AC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-  },
-  CAR.EXPLORER_MK6: {
-    (Ecu.eps, 0x730, None): [
-      b'L1MC-14D003-AJ\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'L1MC-14D003-AK\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'L1MC-14D003-AL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'M1MC-14D003-AB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.abs, 0x760, None): [
-      b'L1MC-2D053-AJ\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'L1MC-2D053-BA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'L1MC-2D053-BB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'L1MC-2D053-BF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'L1MC-2D053-KB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdRadar, 0x764, None): [
-      b'LB5T-14D049-AB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdCamera, 0x706, None): [
-      b'LB5T-14F397-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'LB5T-14F397-AE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'LB5T-14F397-AF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'LC5T-14F397-AH\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.engine, 0x7E0, None): [
-      b'LB5A-14C204-ATJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'LB5A-14C204-BUJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'LB5A-14C204-EAC\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'MB5A-14C204-MD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'MB5A-14C204-RC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'NB5A-14C204-HB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.shiftByWire, 0x732, None): [
-      b'L1MP-14C561-AB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'L1MP-14G395-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'L1MP-14G395-AE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'L1MP-14G395-JB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-  },
-  CAR.FOCUS_MK4: {
-    (Ecu.eps, 0x730, None): [
-      b'JX6C-14D003-AH\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.abs, 0x760, None): [
-      b'JX61-2D053-CJ\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdRadar, 0x764, None): [
-      b'JX7T-14D049-AC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdCamera, 0x706, None): [
-      b'JX7T-14F397-AH\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.engine, 0x7E0, None): [
-      b'JX6A-14C204-BPL\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-  },
-  CAR.MAVERICK_MK1: {
-    (Ecu.eps, 0x730, None): [
-      b'NZ6C-14D003-AL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.abs, 0x760, None): [
-      b'NZ6C-2D053-AG\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'PZ6C-2D053-ED\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdRadar, 0x764, None): [
-      b'NZ6T-14D049-AA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.fwdCamera, 0x706, None): [
-      b'NZ6T-14F397-AC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.engine, 0x7E0, None): [
-      b'NZ6A-14C204-AAA\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'NZ6A-14C204-PA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'NZ6A-14C204-ZA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-      b'PZ6A-14C204-JC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-    (Ecu.shiftByWire, 0x732, None): [
-      b'NZ6P-14G395-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-    ],
-  },
-}
+DBC = CAR.create_dbc_map()

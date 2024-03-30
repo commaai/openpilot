@@ -1,8 +1,5 @@
 /*
- * Copyright 2019 Gianluca Frison, Dimitris Kouzoupis, Robin Verschueren,
- * Andrea Zanelli, Niels van Duijkeren, Jonathan Frey, Tommaso Sartor,
- * Branimir Novoselnik, Rien Quirynen, Rezart Qelibari, Dang Doan,
- * Jonas Koenemann, Yutao Chen, Tobias Schöls, Jonas Schlagenhauf, Moritz Diehl
+ * Copyright (c) The acados authors.
  *
  * This file is part of acados.
  *
@@ -60,22 +57,23 @@ typedef struct sim_solver_capsule
 
     /* external functions */
     // ERK
-    external_function_param_casadi * sim_forw_vde_casadi;
-    external_function_param_casadi * sim_expl_ode_fun_casadi;
-    external_function_param_casadi * sim_expl_ode_hess;
+    external_function_param_{{ model.dyn_ext_fun_type }} * sim_forw_vde_casadi;
+    external_function_param_{{ model.dyn_ext_fun_type }} * sim_vde_adj_casadi;
+    external_function_param_{{ model.dyn_ext_fun_type }} * sim_expl_ode_fun_casadi;
+    external_function_param_{{ model.dyn_ext_fun_type }} * sim_expl_ode_hess;
 
     // IRK
-    external_function_param_casadi * sim_impl_dae_fun;
-    external_function_param_casadi * sim_impl_dae_fun_jac_x_xdot_z;
-    external_function_param_casadi * sim_impl_dae_jac_x_xdot_u_z;
-    external_function_param_casadi * sim_impl_dae_hess;
+    external_function_param_{{ model.dyn_ext_fun_type }} * sim_impl_dae_fun;
+    external_function_param_{{ model.dyn_ext_fun_type }} * sim_impl_dae_fun_jac_x_xdot_z;
+    external_function_param_{{ model.dyn_ext_fun_type }} * sim_impl_dae_jac_x_xdot_u_z;
+    external_function_param_{{ model.dyn_ext_fun_type }} * sim_impl_dae_hess;
 
     // GNSF
-    external_function_param_casadi * sim_gnsf_phi_fun;
-    external_function_param_casadi * sim_gnsf_phi_fun_jac_y;
-    external_function_param_casadi * sim_gnsf_phi_jac_y_uhat;
-    external_function_param_casadi * sim_gnsf_f_lo_jac_x1_x1dot_u_z;
-    external_function_param_casadi * sim_gnsf_get_matrices_fun;
+    external_function_param_{{ model.dyn_ext_fun_type }} * sim_gnsf_phi_fun;
+    external_function_param_{{ model.dyn_ext_fun_type }} * sim_gnsf_phi_fun_jac_y;
+    external_function_param_{{ model.dyn_ext_fun_type }} * sim_gnsf_phi_jac_y_uhat;
+    external_function_param_{{ model.dyn_ext_fun_type }} * sim_gnsf_f_lo_jac_x1_x1dot_u_z;
+    external_function_param_{{ model.dyn_ext_fun_type }} * sim_gnsf_get_matrices_fun;
 
 } sim_solver_capsule;
 

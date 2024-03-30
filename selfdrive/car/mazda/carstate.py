@@ -1,9 +1,9 @@
 from cereal import car
-from common.conversions import Conversions as CV
+from openpilot.common.conversions import Conversions as CV
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
-from selfdrive.car.interfaces import CarStateBase
-from selfdrive.car.mazda.values import DBC, LKAS_LIMITS, GEN1
+from openpilot.selfdrive.car.interfaces import CarStateBase
+from openpilot.selfdrive.car.mazda.values import DBC, LKAS_LIMITS, MazdaFlags
 
 class CarState(CarStateBase):
   def __init__(self, CP):
@@ -18,9 +18,16 @@ class CarState(CarStateBase):
     self.lkas_allowed_speed = False
     self.lkas_disabled = False
 
+    self.prev_distance_button = 0
+    self.distance_button = 0
+
   def update(self, cp, cp_cam):
 
     ret = car.CarState.new_message()
+
+    self.prev_distance_button = self.distance_button
+    self.distance_button = cp.vl["CRZ_BTNS"]["DISTANCE_LESS"]
+
     ret.wheelSpeeds = self.get_wheel_speeds(
       cp.vl["WHEEL_SPEEDS"]["FL"],
       cp.vl["WHEEL_SPEEDS"]["FR"],
@@ -32,14 +39,14 @@ class CarState(CarStateBase):
 
     # Match panda speed reading
     speed_kph = cp.vl["ENGINE_DATA"]["SPEED"]
-    ret.standstill = speed_kph < .1
+    ret.standstill = speed_kph <= .1
 
     can_gear = int(cp.vl["GEAR"]["GEAR"])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
 
     ret.genericToggle = bool(cp.vl["BLINK_INFO"]["HIGH_BEAMS"])
-    ret.leftBlindspot = cp.vl["BSM"]["LEFT_BS1"] == 1
-    ret.rightBlindspot = cp.vl["BSM"]["RIGHT_BS1"] == 1
+    ret.leftBlindspot = cp.vl["BSM"]["LEFT_BS_STATUS"] != 0
+    ret.rightBlindspot = cp.vl["BSM"]["RIGHT_BS_STATUS"] != 0
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(40, cp.vl["BLINK_INFO"]["LEFT_BLINK"] == 1,
                                                                       cp.vl["BLINK_INFO"]["RIGHT_BLINK"] == 1)
 
@@ -107,22 +114,7 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_can_parser(CP):
-    signals = [
-      # sig_name, sig_address
-      ("LEFT_BLINK", "BLINK_INFO"),
-      ("RIGHT_BLINK", "BLINK_INFO"),
-      ("HIGH_BEAMS", "BLINK_INFO"),
-      ("STEER_ANGLE", "STEER"),
-      ("STEER_ANGLE_RATE", "STEER_RATE"),
-      ("STEER_TORQUE_SENSOR", "STEER_TORQUE"),
-      ("STEER_TORQUE_MOTOR", "STEER_TORQUE"),
-      ("FL", "WHEEL_SPEEDS"),
-      ("FR", "WHEEL_SPEEDS"),
-      ("RL", "WHEEL_SPEEDS"),
-      ("RR", "WHEEL_SPEEDS"),
-    ]
-
-    checks = [
+    messages = [
       # sig_address, frequency
       ("BLINK_INFO", 10),
       ("STEER", 67),
@@ -131,31 +123,8 @@ class CarState(CarStateBase):
       ("WHEEL_SPEEDS", 100),
     ]
 
-    if CP.carFingerprint in GEN1:
-      signals += [
-        ("LKAS_BLOCK", "STEER_RATE"),
-        ("LKAS_TRACK_STATE", "STEER_RATE"),
-        ("HANDS_OFF_5_SECONDS", "STEER_RATE"),
-        ("CRZ_ACTIVE", "CRZ_CTRL"),
-        ("CRZ_AVAILABLE", "CRZ_CTRL"),
-        ("CRZ_SPEED", "CRZ_EVENTS"),
-        ("STANDSTILL", "PEDALS"),
-        ("BRAKE_ON", "PEDALS"),
-        ("BRAKE_PRESSURE", "BRAKE"),
-        ("GEAR", "GEAR"),
-        ("DRIVER_SEATBELT", "SEATBELT"),
-        ("FL", "DOORS"),
-        ("FR", "DOORS"),
-        ("BL", "DOORS"),
-        ("BR", "DOORS"),
-        ("PEDAL_GAS", "ENGINE_DATA"),
-        ("SPEED", "ENGINE_DATA"),
-        ("CTR", "CRZ_BTNS"),
-        ("LEFT_BS1", "BSM"),
-        ("RIGHT_BS1", "BSM"),
-      ]
-
-      checks += [
+    if CP.flags & MazdaFlags.GEN1:
+      messages += [
         ("ENGINE_DATA", 100),
         ("CRZ_CTRL", 50),
         ("CRZ_EVENTS", 50),
@@ -168,41 +137,17 @@ class CarState(CarStateBase):
         ("BSM", 10),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 0)
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
 
   @staticmethod
   def get_cam_can_parser(CP):
-    signals = []
-    checks = []
+    messages = []
 
-    if CP.carFingerprint in GEN1:
-      signals += [
-        # sig_name, sig_address
-        ("LKAS_REQUEST", "CAM_LKAS"),
-        ("CTR", "CAM_LKAS"),
-        ("ERR_BIT_1", "CAM_LKAS"),
-        ("LINE_NOT_VISIBLE", "CAM_LKAS"),
-        ("BIT_1", "CAM_LKAS"),
-        ("ERR_BIT_2", "CAM_LKAS"),
-        ("STEERING_ANGLE", "CAM_LKAS"),
-        ("ANGLE_ENABLED", "CAM_LKAS"),
-        ("CHKSUM", "CAM_LKAS"),
-
-        ("LINE_VISIBLE", "CAM_LANEINFO"),
-        ("LINE_NOT_VISIBLE", "CAM_LANEINFO"),
-        ("LANE_LINES", "CAM_LANEINFO"),
-        ("BIT1", "CAM_LANEINFO"),
-        ("BIT2", "CAM_LANEINFO"),
-        ("BIT3", "CAM_LANEINFO"),
-        ("NO_ERR_BIT", "CAM_LANEINFO"),
-        ("S1", "CAM_LANEINFO"),
-        ("S1_HBEAM", "CAM_LANEINFO"),
-      ]
-
-      checks += [
+    if CP.flags & MazdaFlags.GEN1:
+      messages += [
         # sig_address, frequency
         ("CAM_LANEINFO", 2),
         ("CAM_LKAS", 16),
       ]
 
-    return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 2)
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, 2)

@@ -4,13 +4,12 @@
 #include <QEventLoop>
 #include <QJsonArray>
 #include <QJsonDocument>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QtConcurrent>
-
 #include <array>
 
-#include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/api.h"
+#include "system/hardware/hw.h"
 #include "tools/replay/replay.h"
 #include "tools/replay/util.h"
 
@@ -19,11 +18,24 @@ Route::Route(const QString &route, const QString &data_dir) : data_dir_(data_dir
 }
 
 RouteIdentifier Route::parseRoute(const QString &str) {
-  QRegExp rx(R"(^(?:([a-z0-9]{16})([|_/]))?(\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2})(?:(--|/)(\d*))?$)");
-  if (rx.indexIn(str) == -1) return {};
-
-  const QStringList list = rx.capturedTexts();
-  return {.dongle_id = list[1], .timestamp = list[3], .segment_id = list[5].toInt(), .str = list[1] + "|" + list[3]};
+  RouteIdentifier identifier = {};
+  QRegularExpression rx(R"(^((?<dongle_id>[a-z0-9]{16})[|_/])?(?<timestamp>.{20})((?<separator>--|/)(?<range>((-?\d+(:(-?\d+)?)?)|(:-?\d+))))?$)");
+  if (auto match = rx.match(str); match.hasMatch()) {
+    identifier.dongle_id = match.captured("dongle_id");
+    identifier.timestamp = match.captured("timestamp");
+    identifier.str = identifier.dongle_id + "|" + identifier.timestamp;
+    auto range_str = match.captured("range");
+    if (auto separator = match.captured("separator"); separator == "/" && !range_str.isEmpty()) {
+      auto range = range_str.split(":");
+      identifier.begin_segment = identifier.end_segment = range[0].toInt();
+      if (range.size() == 2) {
+        identifier.end_segment = range[1].isEmpty() ? -1 : range[1].toInt();
+      }
+    } else if (separator == "--") {
+      identifier.begin_segment = range_str.toInt();
+    }
+  }
+  return identifier;
 }
 
 bool Route::load() {
@@ -32,7 +44,19 @@ bool Route::load() {
     return false;
   }
   date_time_ = QDateTime::fromString(route_.timestamp, "yyyy-MM-dd--HH-mm-ss");
-  return data_dir_.isEmpty() ? loadFromServer() : loadFromLocal();
+  bool ret = data_dir_.isEmpty() ? loadFromServer() : loadFromLocal();
+  if (ret) {
+    if (route_.begin_segment == -1) route_.begin_segment = segments_.rbegin()->first;
+    if (route_.end_segment == -1) route_.end_segment = segments_.rbegin()->first;
+    for (auto it = segments_.begin(); it != segments_.end(); /**/) {
+      if (it->first < route_.begin_segment || it->first > route_.end_segment) {
+        it = segments_.erase(it);
+      } else {
+        ++it;
+      }
+    }
+  }
+  return !segments_.empty();
 }
 
 bool Route::loadFromServer() {
@@ -45,7 +69,7 @@ bool Route::loadFromServer() {
 
     loop.exit(success ? loadFromJson(json) : 0);
   });
-  http.sendRequest("https://api.commadotai.com/v1/route/" + route_.str + "/files");
+  http.sendRequest(CommaApi::BASE_URL + "/v1/route/" + route_.str + "/files");
   return loop.exec();
 }
 
@@ -63,15 +87,13 @@ bool Route::loadFromJson(const QString &json) {
 }
 
 bool Route::loadFromLocal() {
-  QDir log_dir(data_dir_);
-  for (const auto &folder : log_dir.entryList(QDir::Dirs | QDir::NoDot | QDir::NoDotDot, QDir::NoSort)) {
-    int pos = folder.lastIndexOf("--");
-    if (pos != -1 && folder.left(pos) == route_.timestamp) {
-      const int seg_num = folder.mid(pos + 2).toInt();
-      QDir segment_dir(log_dir.filePath(folder));
-      for (const auto &f : segment_dir.entryList(QDir::Files)) {
-        addFileToSegment(seg_num, segment_dir.absoluteFilePath(f));
-      }
+  QDirIterator it(data_dir_, {QString("%1--*").arg(route_.timestamp)}, QDir::Dirs | QDir::NoDotAndDotDot);
+  while (it.hasNext()) {
+    QString segment = it.next();
+    const int seg_num = segment.mid(segment.lastIndexOf("--") + 2).toInt();
+    QDir segment_dir(segment);
+    for (const auto &f : segment_dir.entryList(QDir::Files)) {
+      addFileToSegment(seg_num, segment_dir.absoluteFilePath(f));
     }
   }
   return !segments_.empty();
@@ -100,9 +122,7 @@ void Route::addFileToSegment(int n, const QString &file) {
 
 // class Segment
 
-Segment::Segment(int n, const SegmentFile &files, uint32_t flags,
-                 const std::set<cereal::Event::Which> &allow)
-    : seg_num(n), flags(flags), allow(allow) {
+Segment::Segment(int n, const SegmentFile &files, uint32_t flags) : seg_num(n), flags(flags) {
   // [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
   const std::array file_list = {
       (flags & REPLAY_FLAG_QCAMERA) || files.road_cam.isEmpty() ? files.qcamera : files.road_cam,
@@ -133,7 +153,7 @@ void Segment::loadFile(int id, const std::string file) {
     success = frames[id]->load(file, flags & REPLAY_FLAG_NO_HW_DECODER, &abort_, local_cache, 20 * 1024 * 1024, 3);
   } else {
     log = std::make_unique<LogReader>();
-    success = log->load(file, &abort_, allow, local_cache, 0, 3);
+    success = log->load(file, &abort_, local_cache, 0, 3);
   }
 
   if (!success) {

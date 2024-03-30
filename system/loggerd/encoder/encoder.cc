@@ -1,14 +1,12 @@
-#include <cassert>
 #include "system/loggerd/encoder/encoder.h"
 
-VideoEncoder::~VideoEncoder() {}
+VideoEncoder::VideoEncoder(const EncoderInfo &encoder_info, int in_width, int in_height)
+    : encoder_info(encoder_info), in_width(in_width), in_height(in_height) {
 
-void VideoEncoder::publisher_init() {
-  // publish
-  service_name = this->type == DriverCam ? "driverEncodeData" :
-    (this->type == WideRoadCam ? "wideRoadEncodeData" :
-    (this->in_width == this->out_width ? "roadEncodeData" : "qRoadEncodeData"));
-  pm.reset(new PubMaster({service_name}));
+  out_width = encoder_info.frame_width > 0 ? encoder_info.frame_width : in_width;
+  out_height = encoder_info.frame_height > 0 ? encoder_info.frame_height : in_height;
+
+  pm.reset(new PubMaster({encoder_info.publish_name}));
 }
 
 void VideoEncoder::publisher_publish(VideoEncoder *e, int segment_num, uint32_t idx, VisionIpcBufExtra &extra,
@@ -16,9 +14,7 @@ void VideoEncoder::publisher_publish(VideoEncoder *e, int segment_num, uint32_t 
   // broadcast packet
   MessageBuilder msg;
   auto event = msg.initEvent(true);
-  auto edat = (e->type == DriverCam) ? event.initDriverEncodeData() :
-    ((e->type == WideRoadCam) ? event.initWideRoadEncodeData() :
-    (e->in_width == e->out_width ? event.initRoadEncodeData() : event.initQRoadEncodeData()));
+  auto edat = (event.*(e->encoder_info.init_encode_data_func))();
   auto edata = edat.initIdx();
   struct timespec ts;
   timespec_get(&ts, TIME_UTC);
@@ -26,57 +22,22 @@ void VideoEncoder::publisher_publish(VideoEncoder *e, int segment_num, uint32_t 
   edata.setFrameId(extra.frame_id);
   edata.setTimestampSof(extra.timestamp_sof);
   edata.setTimestampEof(extra.timestamp_eof);
-  edata.setType(e->codec);
+  edata.setType(e->encoder_info.encode_type);
   edata.setEncodeId(e->cnt++);
   edata.setSegmentNum(segment_num);
   edata.setSegmentId(idx);
   edata.setFlags(flags);
   edata.setLen(dat.size());
   edat.setData(dat);
+  edat.setWidth(out_width);
+  edat.setHeight(out_height);
   if (flags & V4L2_BUF_FLAG_KEYFRAME) edat.setHeader(header);
 
-  auto words = new kj::Array<capnp::word>(capnp::messageToFlatArray(msg));
-  auto bytes = words->asBytes();
-  e->pm->send(e->service_name, bytes.begin(), bytes.size());
-  if (e->write) {
-    e->to_write.push(words);
-  } else {
-    delete words;
+  uint32_t bytes_size = capnp::computeSerializedSizeInWords(msg) * sizeof(capnp::word);
+  if (e->msg_cache.size() < bytes_size) {
+    e->msg_cache.resize(bytes_size);
   }
-}
-
-// TODO: writing should be moved to loggerd
-void VideoEncoder::write_handler(VideoEncoder *e, const char *path) {
-  VideoWriter writer(path, e->filename, e->codec != cereal::EncodeIndex::Type::FULL_H_E_V_C, e->out_width, e->out_height, e->fps, e->codec);
-
-  bool first = true;
-  kj::Array<capnp::word>* out_buf;
-  while ((out_buf = e->to_write.pop())) {
-    capnp::FlatArrayMessageReader cmsg(*out_buf);
-    cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-
-    auto edata = (e->type == DriverCam) ? event.getDriverEncodeData() :
-      ((e->type == WideRoadCam) ? event.getWideRoadEncodeData() :
-      (e->in_width == e->out_width ? event.getRoadEncodeData() : event.getQRoadEncodeData()));
-    auto idx = edata.getIdx();
-    auto flags = idx.getFlags();
-
-    if (first) {
-      assert(flags & V4L2_BUF_FLAG_KEYFRAME);
-      auto header = edata.getHeader();
-      writer.write((uint8_t *)header.begin(), header.size(), idx.getTimestampEof()/1000, true, false);
-      first = false;
-    }
-
-    // dangerous cast from const, but should be fine
-    auto data = edata.getData();
-    if (data.size() > 0) {
-      writer.write((uint8_t *)data.begin(), data.size(), idx.getTimestampEof()/1000, false, flags & V4L2_BUF_FLAG_KEYFRAME);
-    }
-
-    // free the data
-    delete out_buf;
-  }
-
-  // VideoWriter is freed on out of scope
+  kj::ArrayOutputStream output_stream(kj::ArrayPtr<capnp::byte>(e->msg_cache.data(), bytes_size));
+  capnp::writeMessage(output_stream, msg);
+  e->pm->send(e->encoder_info.publish_name, e->msg_cache.data(), bytes_size);
 }

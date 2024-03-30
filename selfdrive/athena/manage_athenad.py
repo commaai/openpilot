@@ -3,10 +3,11 @@
 import time
 from multiprocessing import Process
 
-from common.params import Params
-from selfdrive.manager.process import launcher
-from system.swaglog import cloudlog
-from system.version import get_version, is_dirty
+from openpilot.common.params import Params
+from openpilot.selfdrive.manager.process import launcher
+from openpilot.common.swaglog import cloudlog
+from openpilot.system.hardware import HARDWARE
+from openpilot.system.version import get_build_metadata
 
 ATHENA_MGR_PID_PARAM = "AthenadPid"
 
@@ -14,7 +15,15 @@ ATHENA_MGR_PID_PARAM = "AthenadPid"
 def main():
   params = Params()
   dongle_id = params.get("DongleId").decode('utf-8')
-  cloudlog.bind_global(dongle_id=dongle_id, version=get_version(), dirty=is_dirty())
+  build_metadata = get_build_metadata()
+
+  cloudlog.bind_global(dongle_id=dongle_id,
+                       version=build_metadata.openpilot.version,
+                       origin=build_metadata.openpilot.git_normalized_origin,
+                       branch=build_metadata.channel,
+                       commit=build_metadata.openpilot.git_commit,
+                       dirty=build_metadata.openpilot.is_dirty,
+                       device=HARDWARE.get_device_type())
 
   try:
     while 1:

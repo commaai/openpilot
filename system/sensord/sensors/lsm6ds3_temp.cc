@@ -1,4 +1,4 @@
-#include "lsm6ds3_temp.h"
+#include "system/sensord/sensors/lsm6ds3_temp.h"
 
 #include <cassert>
 

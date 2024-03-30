@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 import os
 import sys
-from typing import Dict, List
 
-from common.basedir import BASEDIR
+from openpilot.common.basedir import BASEDIR
 
 # messages reserved for CAN based ignition (see can_ignition_hook function in panda/board/drivers/can)
 # (addr, len)
@@ -64,13 +63,13 @@ def check_can_ignition_conflicts(fingerprints, brands):
 if __name__ == "__main__":
   fingerprints = _get_fingerprints()
 
-  fingerprints_flat: List[Dict] = []
+  fingerprints_flat: list[dict] = []
   car_names = []
   brand_names = []
   for brand in fingerprints:
     for car in fingerprints[brand]:
       fingerprints_flat += fingerprints[brand][car]
-      for i in range(len(fingerprints[brand][car])):
+      for _ in range(len(fingerprints[brand][car])):
         car_names.append(car)
         brand_names.append(brand)
 

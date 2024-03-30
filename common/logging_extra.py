@@ -197,7 +197,7 @@ class SwagLogger(logging.Logger):
       filename = os.path.normcase(co.co_filename)
 
       # TODO: is this pylint exception correct?
-      if filename == _srcfile:  # pylint: disable=comparison-with-callable
+      if filename == _srcfile:
         f = f.f_back
         continue
       sinfo = None

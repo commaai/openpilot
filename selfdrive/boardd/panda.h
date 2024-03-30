@@ -6,6 +6,7 @@
 #include <list>
 #include <memory>
 #include <optional>
+#include <string>
 #include <vector>
 
 #include "cereal/gen/cpp/car.capnp.h"
@@ -21,6 +22,8 @@
 
 #define CAN_REJECTED_BUS_OFFSET   0xC0U
 #define CAN_RETURNED_BUS_OFFSET 0x80U
+
+#define PANDA_BUS_OFFSET 4
 
 struct __attribute__((packed)) can_header {
   uint8_t reserved : 1;
@@ -49,7 +52,6 @@ public:
   Panda(std::string serial="", uint32_t bus_offset=0);
 
   cereal::PandaState::PandaType hw_type = cereal::PandaState::PandaType::UNKNOWN;
-  bool has_rtc = false;
   const uint32_t bus_offset;
 
   bool connected();
@@ -63,8 +65,6 @@ public:
   cereal::PandaState::PandaType get_hw_type();
   void set_safety_model(cereal::CarParams::SafetyModel safety_model, uint16_t safety_param=0U);
   void set_alternative_experience(uint16_t alternative_experience);
-  void set_rtc(struct tm sys_time);
-  struct tm get_rtc();
   void set_fan_speed(uint16_t fan_speed);
   uint16_t get_fan_speed();
   void set_ir_pwr(uint16_t ir_pwr);
@@ -72,6 +72,7 @@ public:
   std::optional<can_health_t> get_can_state(uint16_t can_number);
   void set_loopback(bool loopback);
   std::optional<std::vector<uint8_t>> get_firmware_version();
+  bool up_to_date();
   std::optional<std::string> get_serial();
   void set_power_saving(bool power_saving);
   void enable_deepsleep();

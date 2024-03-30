@@ -7,8 +7,11 @@
 
 #include "selfdrive/ui/qt/offroad/experimental_mode.h"
 #include "selfdrive/ui/qt/util.h"
-#include "selfdrive/ui/qt/widgets/drive_stats.h"
 #include "selfdrive/ui/qt/widgets/prime.h"
+
+#ifdef ENABLE_MAPS
+#include "selfdrive/ui/qt/maps/map_settings.h"
+#endif
 
 // HomeWindow: the container for the offroad and onroad UIs
 
@@ -29,6 +32,7 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   slayout->addWidget(home);
 
   onroad = new OnroadWindow(this);
+  QObject::connect(onroad, &OnroadWindow::mapPanelRequested, this, [=] { sidebar->hide(); });
   slayout->addWidget(onroad);
 
   body = new BodyWindow(this);
@@ -47,6 +51,10 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 
 void HomeWindow::showSidebar(bool show) {
   sidebar->setVisible(show);
+}
+
+void HomeWindow::showMapPanel(bool show) {
+  onroad->showMapPanel(show);
 }
 
 void HomeWindow::updateState(const UIState &s) {
@@ -137,14 +145,19 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     home_layout->setContentsMargins(0, 0, 0, 0);
     home_layout->setSpacing(30);
 
-    // left: DriveStats/PrimeAdWidget
+    // left: MapSettings/PrimeAdWidget
     QStackedWidget *left_widget = new QStackedWidget(this);
-    left_widget->addWidget(new DriveStats);
+#ifdef ENABLE_MAPS
+    left_widget->addWidget(new MapSettings);
+#else
+    left_widget->addWidget(new QWidget);
+#endif
     left_widget->addWidget(new PrimeAdWidget);
+    left_widget->setStyleSheet("border-radius: 10px;");
 
-    left_widget->setCurrentIndex(uiState()->primeType() ? 0 : 1);
-    connect(uiState(), &UIState::primeTypeChanged, [=](int prime_type) {
-      left_widget->setCurrentIndex(prime_type ? 0 : 1);
+    left_widget->setCurrentIndex(uiState()->hasPrime() ? 0 : 1);
+    connect(uiState(), &UIState::primeChanged, [=](bool prime) {
+      left_widget->setCurrentIndex(prime ? 0 : 1);
     });
 
     home_layout->addWidget(left_widget, 1);

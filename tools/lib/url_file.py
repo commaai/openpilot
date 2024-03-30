@@ -1,87 +1,92 @@
-# pylint: skip-file
-
+import logging
 import os
+import socket
 import time
-import tempfile
-import threading
-import urllib.parse
-import pycurl
 from hashlib import sha256
-from io import BytesIO
-from tenacity import retry, wait_random_exponential, stop_after_attempt
-from common.file_helpers import mkdirs_exists_ok, atomic_write_in_dir
+from urllib3 import PoolManager, Retry
+from urllib3.response import BaseHTTPResponse
+from urllib3.util import Timeout
+
+from openpilot.common.file_helpers import atomic_write_in_dir
+from openpilot.system.hardware.hw import Paths
 #  Cache chunk size
 K = 1000
 CHUNK_SIZE = 1000 * K
 
-CACHE_DIR = os.environ.get("COMMA_CACHE", "/tmp/comma_download_cache/")
+logging.getLogger("urllib3").setLevel(logging.WARNING)
 
-
-def hash_256(link):
+def hash_256(link: str) -> str:
   hsh = str(sha256((link.split("?")[0]).encode('utf-8')).hexdigest())
   return hsh
 
 
-class URLFile:
-  _tlocal = threading.local()
+class URLFileException(Exception):
+  pass
 
-  def __init__(self, url, debug=False, cache=None):
+
+class URLFile:
+  _pool_manager: PoolManager|None = None
+
+  @staticmethod
+  def reset() -> None:
+    URLFile._pool_manager = None
+
+  @staticmethod
+  def pool_manager() -> PoolManager:
+    if URLFile._pool_manager is None:
+      socket_options = [(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),]
+      retries = Retry(total=5, backoff_factor=0.5, status_forcelist=[409, 429, 503, 504])
+      URLFile._pool_manager = PoolManager(num_pools=10, maxsize=100, socket_options=socket_options, retries=retries)
+    return URLFile._pool_manager
+
+  def __init__(self, url: str, timeout: int=10, debug: bool=False, cache: bool|None=None):
     self._url = url
+    self._timeout = Timeout(connect=timeout, read=timeout)
     self._pos = 0
-    self._length = None
-    self._local_file = None
+    self._length: int|None = None
     self._debug = debug
     #  True by default, false if FILEREADER_CACHE is defined, but can be overwritten by the cache input
     self._force_download = not int(os.environ.get("FILEREADER_CACHE", "0"))
     if cache is not None:
       self._force_download = not cache
 
-    try:
-      self._curl = self._tlocal.curl
-    except AttributeError:
-      self._curl = self._tlocal.curl = pycurl.Curl()
-    mkdirs_exists_ok(CACHE_DIR)
+    if not self._force_download:
+      os.makedirs(Paths.download_cache_root(), exist_ok=True)
 
   def __enter__(self):
     return self
 
-  def __exit__(self, exc_type, exc_value, traceback):
-    if self._local_file is not None:
-      os.remove(self._local_file.name)
-      self._local_file.close()
-      self._local_file = None
+  def __exit__(self, exc_type, exc_value, traceback) -> None:
+    pass
 
-  @retry(wait=wait_random_exponential(multiplier=1, max=5), stop=stop_after_attempt(3), reraise=True)
-  def get_length_online(self):
-    c = self._curl
-    c.reset()
-    c.setopt(pycurl.NOSIGNAL, 1)
-    c.setopt(pycurl.TIMEOUT_MS, 500000)
-    c.setopt(pycurl.FOLLOWLOCATION, True)
-    c.setopt(pycurl.URL, self._url)
-    c.setopt(c.NOBODY, 1)
-    c.perform()
-    length = int(c.getinfo(c.CONTENT_LENGTH_DOWNLOAD))
-    c.reset()
-    return length
+  def _request(self, method: str, url: str, headers: dict[str, str]|None=None) -> BaseHTTPResponse:
+    return URLFile.pool_manager().request(method, url, timeout=self._timeout, headers=headers)
 
-  def get_length(self):
+  def get_length_online(self) -> int:
+    response = self._request('HEAD', self._url)
+    if not (200 <= response.status <= 299):
+      return -1
+    length = response.headers.get('content-length', 0)
+    return int(length)
+
+  def get_length(self) -> int:
     if self._length is not None:
       return self._length
-    file_length_path = os.path.join(CACHE_DIR, hash_256(self._url) + "_length")
-    if os.path.exists(file_length_path) and not self._force_download:
+
+    file_length_path = os.path.join(Paths.download_cache_root(), hash_256(self._url) + "_length")
+    if not self._force_download and os.path.exists(file_length_path):
       with open(file_length_path) as file_length:
-          content = file_length.read()
-          self._length = int(content)
-          return self._length
+        content = file_length.read()
+        self._length = int(content)
+        return self._length
 
     self._length = self.get_length_online()
-    if not self._force_download:
+    if not self._force_download and self._length != -1:
       with atomic_write_in_dir(file_length_path, mode="w") as file_length:
         file_length.write(str(self._length))
     return self._length
 
-  def read(self, ll=None):
+  def read(self, ll: int|None=None) -> bytes:
     if self._force_download:
       return self.read_aux(ll=ll)
 
@@ -95,7 +100,7 @@ class URLFile:
       self._pos = position
       chunk_number = self._pos / CHUNK_SIZE
       file_name = hash_256(self._url) + "_" + str(chunk_number)
-      full_path = os.path.join(CACHE_DIR, str(file_name))
+      full_path = os.path.join(Paths.download_cache_root(), str(file_name))
       data = None
       #  If we don't have a file, download it
       if not os.path.exists(full_path):
@@ -113,10 +118,9 @@ class URLFile:
         self._pos = file_end
         return response
 
-  @retry(wait=wait_random_exponential(multiplier=1, max=5), stop=stop_after_attempt(3), reraise=True)
-  def read_aux(self, ll=None):
+  def read_aux(self, ll: int|None=None) -> bytes:
     download_range = False
-    headers = ["Connection: keep-alive"]
+    headers = {}
     if self._pos != 0 or ll is not None:
       if ll is None:
         end = self.get_length() - 1
@@ -124,76 +128,37 @@ class URLFile:
         end = min(self._pos + ll, self.get_length()) - 1
       if self._pos >= end:
         return b""
-      headers.append(f"Range: bytes={self._pos}-{end}")
+      headers['Range'] = f"bytes={self._pos}-{end}"
       download_range = True
 
-    dats = BytesIO()
-    c = self._curl
-    c.setopt(pycurl.URL, self._url)
-    c.setopt(pycurl.WRITEDATA, dats)
-    c.setopt(pycurl.NOSIGNAL, 1)
-    c.setopt(pycurl.TIMEOUT_MS, 500000)
-    c.setopt(pycurl.HTTPHEADER, headers)
-    c.setopt(pycurl.FOLLOWLOCATION, True)
-
     if self._debug:
-      print("downloading", self._url)
-
-      def header(x):
-        if b'MISS' in x:
-          print(x.strip())
-
-      c.setopt(pycurl.HEADERFUNCTION, header)
-
-      def test(debug_type, debug_msg):
-       print("  debug(%d): %s" % (debug_type, debug_msg.strip()))
-
-      c.setopt(pycurl.VERBOSE, 1)
-      c.setopt(pycurl.DEBUGFUNCTION, test)
       t1 = time.time()
 
-    c.perform()
+    response = self._request('GET', self._url, headers=headers)
+    ret = response.data
 
     if self._debug:
       t2 = time.time()
       if t2 - t1 > 0.1:
-        print(f"get {self._url} {headers!r} {t2 - t1:.f} slow")
+        print(f"get {self._url} {headers!r} {t2 - t1:.3f} slow")
 
-    response_code = c.getinfo(pycurl.RESPONSE_CODE)
+    response_code = response.status
     if response_code == 416:  # Requested Range Not Satisfiable
-      raise Exception(f"Error, range out of bounds {response_code} {headers} ({self._url}): {repr(dats.getvalue())[:500]}")
+      raise URLFileException(f"Error, range out of bounds {response_code} {headers} ({self._url}): {repr(ret)[:500]}")
     if download_range and response_code != 206:  # Partial Content
-      raise Exception(f"Error, requested range but got unexpected response {response_code} {headers} ({self._url}): {repr(dats.getvalue())[:500]}")
+      raise URLFileException(f"Error, requested range but got unexpected response {response_code} {headers} ({self._url}): {repr(ret)[:500]}")
     if (not download_range) and response_code != 200:  # OK
-      raise Exception(f"Error {response_code} {headers} ({self._url}): {repr(dats.getvalue())[:500]}")
+      raise URLFileException(f"Error {response_code} {headers} ({self._url}): {repr(ret)[:500]}")
 
-    ret = dats.getvalue()
     self._pos += len(ret)
     return ret
 
-  def seek(self, pos):
+  def seek(self, pos:int) -> None:
     self._pos = pos
 
   @property
-  def name(self):
-    """Returns a local path to file with the URLFile's contents.
+  def name(self) -> str:
+    return self._url
 
-       This can be used to interface with modules that require local files.
-    """
-    if self._local_file is None:
-      _, ext = os.path.splitext(urllib.parse.urlparse(self._url).path)
-      local_fd, local_path = tempfile.mkstemp(suffix=ext)
-      try:
-        os.write(local_fd, self.read())
-        local_file = open(local_path, "rb")
-      except Exception:
-        os.remove(local_path)
-        raise
-      finally:
-        os.close(local_fd)
 
-      self._local_file = local_file
-      self.read = self._local_file.read
-      self.seek = self._local_file.seek
-
-    return self._local_file.name
+os.register_at_fork(after_in_child=URLFile.reset)

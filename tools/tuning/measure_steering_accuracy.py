@@ -8,7 +8,7 @@ import signal
 from collections import defaultdict
 
 import cereal.messaging as messaging
-from tools.lib.logreader import logreader_from_route_or_segment
+from openpilot.tools.lib.logreader import LogReader
 
 def sigint_handler(signal, frame):
   exit(0)
@@ -47,12 +47,12 @@ class SteeringAccuracyTool:
 
     v_ego = sm['carState'].vEgo
     active = sm['controlsState'].active
-    steer = sm['carControl'].actuatorsOutput.steer
+    steer = sm['carOutput'].actuatorsOutput.steer
     standstill = sm['carState'].standstill
     steer_limited = abs(sm['carControl'].actuators.steer - sm['carControl'].actuatorsOutput.steer) > 1e-2
     overriding = sm['carState'].steeringPressed
-    changing_lanes = sm['lateralPlan'].laneChangeState != 0
-    d_path_points = sm['lateralPlan'].dPathPoints
+    changing_lanes = sm['modelV2'].meta.laneChangeState != 0
+    model_points = sm['modelV2'].position.y
     # must be engaged, not at standstill, not overriding steering, and not changing lanes
     if active and not standstill and not overriding and not changing_lanes:
       self.cnt += 1
@@ -75,8 +75,8 @@ class SteeringAccuracyTool:
             self.speed_group_stats[group][angle_abs]["cnt"] += 1
             self.speed_group_stats[group][angle_abs]["err"] += angle_error
             self.speed_group_stats[group][angle_abs]["steer"] += abs(steer)
-            if len(d_path_points):
-              self.speed_group_stats[group][angle_abs]["dpp"] += abs(d_path_points[0])
+            if len(model_points):
+              self.speed_group_stats[group][angle_abs]["dpp"] += abs(model_points[0])
             if steer_limited:
               self.speed_group_stats[group][angle_abs]["limited"] += 1
             if control_state.saturated:
@@ -105,7 +105,10 @@ class SteeringAccuracyTool:
           print(f"  {'-'*118}")
           for k in sorted(self.speed_group_stats[group].keys()):
             v = self.speed_group_stats[group][k]
-            print(f'  {k:#2}° | actuator:{int(v["steer"] / v["cnt"] * 100):#3}% | error: {round(v["err"] / v["cnt"], 2):2.2f}° | -:{int(v["-"] / v["cnt"] * 100):#3}% | =:{int(v["="] / v["cnt"] * 100):#3}% | +:{int(v["+"] / v["cnt"] * 100):#3}% | lim:{v["limited"]:#5} | sat:{v["saturated"]:#5} | path dev: {round(v["dpp"] / v["cnt"], 2):2.2f}m | total: {v["cnt"]:#5}')
+            print(f'  {k:#2}° | actuator:{int(v["steer"] / v["cnt"] * 100):#3}% ' +
+                  f'| error: {round(v["err"] / v["cnt"], 2):2.2f}° | -:{int(v["-"] / v["cnt"] * 100):#3}% ' +
+                  f'| =:{int(v["="] / v["cnt"] * 100):#3}% | +:{int(v["+"] / v["cnt"] * 100):#3}% | lim:{v["limited"]:#5} ' +
+                  f'| sat:{v["saturated"]:#5} | path dev: {round(v["dpp"] / v["cnt"], 2):2.2f}m | total: {v["cnt"]:#5}')
           print("")
 
 
@@ -125,7 +128,7 @@ if __name__ == "__main__":
 
   if args.route is not None:
     print(f"loading {args.route}...")
-    lr = logreader_from_route_or_segment(args.route, sort_by_time=True)
+    lr = LogReader(args.route, sort_by_time=True)
 
     sm = {}
     for msg in lr:
@@ -135,10 +138,10 @@ if __name__ == "__main__":
         sm['carControl'] = msg.carControl
       elif msg.which() == 'controlsState':
         sm['controlsState'] = msg.controlsState
-      elif msg.which() == 'lateralPlan':
-        sm['lateralPlan'] = msg.lateralPlan
+      elif msg.which() == 'modelV2':
+        sm['modelV2'] = msg.modelV2
 
-      if msg.which() == 'carControl' and 'carState' in sm and 'controlsState' in sm and 'lateralPlan' in sm:
+      if msg.which() == 'carControl' and 'carState' in sm and 'controlsState' in sm and 'modelV2' in sm:
         tool.update(sm)
 
   else:
@@ -147,7 +150,7 @@ if __name__ == "__main__":
       messaging.context = messaging.Context()
 
     carControl = messaging.sub_sock('carControl', addr=args.addr, conflate=True)
-    sm = messaging.SubMaster(['carState', 'carControl', 'controlsState', 'lateralPlan'], addr=args.addr)
+    sm = messaging.SubMaster(['carState', 'carControl', 'carOutput', 'controlsState', 'modelV2'], addr=args.addr)
     time.sleep(1)  # Make sure all submaster data is available before going further
 
     print("waiting for messages...")

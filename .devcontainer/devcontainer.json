@@ -1,0 +1,51 @@
+{
+  "name": "openpilot devcontainer",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "postCreateCommand": ".devcontainer/container_post_create.sh",
+  "postStartCommand": ".devcontainer/container_post_start.sh",
+  "initializeCommand": [".devcontainer/host_setup"],
+  "privileged": true,
+  "containerEnv": {
+    "DISPLAY": "${localEnv:DISPLAY}",
+    "PYTHONPATH": "${containerWorkspaceFolder}",
+    "TERM": "xterm-256color",
+    "force_color_prompt": "1"
+  },
+  "runArgs": [
+    "--volume=/tmp/.X11-unix:/tmp/.X11-unix",
+    "--volume=${localWorkspaceFolder}/.devcontainer/.host/.Xauthority:/home/batman/.Xauthority",
+    "--volume=${localEnv:HOME}/.comma:/home/batman/.comma",
+    "--volume=/tmp/comma_download_cache:/tmp/comma_download_cache",
+    "--shm-size=1G",
+    "--add-host=host.docker.internal:host-gateway", // required to use host.docker.internal on linux
+    "--publish=0.0.0.0:8070-8079:8070-8079"  // body ZMQ services
+  ],
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": false,
+      "installOhMyZsh": false,
+      "upgradePackages": false,
+      "username": "batman"
+    },
+    "ghcr.io/devcontainers-contrib/features/gh-cli:1": {},
+    "ghcr.io/devcontainers/features/azure-cli:1": {}
+  },
+  "containerUser": "batman",
+  "remoteUser": "batman",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-vscode.cpptools",
+        "ms-toolsai.jupyter",
+        "guyskk.language-cython",
+        "lharri73.dbc"
+      ]
+    }
+  },
+  "mounts": [
+    "type=volume,source=scons_cache,target=/tmp/scons_cache"
+  ]
+}

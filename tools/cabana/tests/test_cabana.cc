@@ -1,22 +1,20 @@
 
-#include "opendbc/can/common.h"
 #undef INFO
-#include "catch2/catch.hpp"
-#include "tools/replay/logreader.h"
-#include "tools/cabana/dbc/dbcmanager.h"
-#include "tools/cabana/streams/abstractstream.h"
+#include <QDir>
 
-// demo route, first segment
-const std::string TEST_RLOG_URL = "https://commadata2.blob.core.windows.net/commadata2/4cf7a6ad03080c90/2021-09-29--13-46-36/0/rlog.bz2";
+#include "catch2/catch.hpp"
+#include "tools/cabana/dbc/dbcmanager.h"
+
+const std::string TEST_RLOG_URL = "https://commadataci.blob.core.windows.net/openpilotci/0c94aa1e1296d7c6/2021-05-05--19-48-37/0/rlog.bz2";
 
 TEST_CASE("DBCFile::generateDBC") {
-  QString fn = QString("%1/%2.dbc").arg(OPENDBC_FILE_PATH, "toyota_new_mc_pt_generated");
+  QString fn = QString("%1/%2.dbc").arg(OPENDBC_FILE_PATH, "tesla_can");
   DBCFile dbc_origin(fn);
   DBCFile dbc_from_generated("", dbc_origin.generateDBC());
 
-  REQUIRE(dbc_origin.msgCount() == dbc_from_generated.msgCount());
-  auto msgs = dbc_origin.getMessages();
-  auto new_msgs = dbc_from_generated.getMessages();
+  REQUIRE(dbc_origin.getMessages().size() == dbc_from_generated.getMessages().size());
+  auto &msgs = dbc_origin.getMessages();
+  auto &new_msgs = dbc_from_generated.getMessages();
   for (auto &[id, m] : msgs) {
     auto &new_m = new_msgs.at(id);
     REQUIRE(m.name == new_m.name);
@@ -30,57 +28,58 @@ TEST_CASE("DBCFile::generateDBC") {
   }
 }
 
-TEST_CASE("Parse can messages") {
-  DBCManager dbc(nullptr);
-  dbc.open({0}, "toyota_new_mc_pt_generated");
-  CANParser can_parser(0, "toyota_new_mc_pt_generated", {}, {});
+TEST_CASE("DBCFile::generateDBC - comment order") {
+  // Ensure that message comments are followed by signal comments and in the correct order
+  auto content = R"(BO_ 160 message_1: 8 EON
+ SG_ signal_1 : 0|12@1+ (1,0) [0|4095] "unit" XXX
 
-  LogReader log;
-  REQUIRE(log.load(TEST_RLOG_URL, nullptr, {}, true));
-  REQUIRE(log.events.size() > 0);
-  for (auto e : log.events) {
-    if (e->which == cereal::Event::Which::CAN) {
-      std::map<std::pair<uint32_t, QString>, std::vector<double>> values_1;
-      for (const auto &c : e->event.getCan()) {
-        const auto msg = dbc.msg({.source = c.getSrc(), .address = c.getAddress()});
-        if (c.getSrc() == 0 && msg) {
-          for (auto sig : msg->getSignals()) {
-            double val = get_raw_value((uint8_t *)c.getDat().begin(), c.getDat().size(), *sig);
-            values_1[{c.getAddress(), sig->name}].push_back(val);
-          }
-        }
-      }
+BO_ 162 message_2: 8 EON
+ SG_ signal_2 : 0|12@1+ (1,0) [0|4095] "unit" XXX
 
-      can_parser.UpdateCans(e->mono_time, e->event.getCan());
-      std::vector<SignalValue> values_2;
-      can_parser.query_latest(values_2);
-      for (auto &[key, v1] : values_1) {
-        bool found = false;
-        for (auto &v2 : values_2) {
-          if (v2.address == key.first && key.second == v2.name.c_str()) {
-            REQUIRE(v2.all_values.size() == v1.size());
-            REQUIRE(v2.all_values == v1);
-            found = true;
-            break;
-          }
-        }
-        REQUIRE(found);
-      }
-    }
-  }
+CM_ BO_ 160 "message comment";
+CM_ SG_ 160 signal_1 "signal comment";
+CM_ BO_ 162 "message comment";
+CM_ SG_ 162 signal_2 "signal comment";
+)";
+  DBCFile dbc("", content);
+  REQUIRE(dbc.generateDBC() == content);
 }
 
-TEST_CASE("Parse dbc") {
+TEST_CASE("DBCFile::generateDBC -- preserve original header") {
+  QString content = R"(VERSION "1.0"
+
+NS_ :
+ CM_
+
+BS_:
+
+BU_: EON
+
+BO_ 160 message_1: 8 EON
+ SG_ signal_1 : 0|12@1+ (1,0) [0|4095] "unit" XXX
+
+CM_ BO_ 160 "message comment";
+CM_ SG_ 160 signal_1 "signal comment";
+)";
+  DBCFile dbc("", content);
+  REQUIRE(dbc.generateDBC() == content);
+}
+
+TEST_CASE("parse_dbc") {
   QString content = R"(
-BO_ 160 message_1: 8 XXX
+BO_ 160 message_1: 8 EON
   SG_ signal_1 : 0|12@1+ (1,0) [0|4095] "unit"  XXX
   SG_ signal_2 : 12|1@1+ (1.0,0.0) [0.0|1] ""  XXX
+
+BO_ 162 message_1: 8 XXX
+  SG_ signal_1 M : 0|12@1+ (1,0) [0|4095] "unit" XXX
+  SG_ signal_2 M4 : 12|1@1+ (1.0,0.0) [0.0|1] "" XXX
 
 VAL_ 160 signal_1 0 "disabled" 1.2 "initializing" 2 "fault";
 
 CM_ BO_ 160 "message comment" ;
 CM_ SG_ 160 signal_1 "signal comment";
-CM_ SG_ 160 signal_2 "multiple line comment
+CM_ SG_ 160 signal_2 "multiple line comment 
 1
 2
 ";)";
@@ -92,6 +91,7 @@ CM_ SG_ 160 signal_2 "multiple line comment
   REQUIRE(msg->size == 8);
   REQUIRE(msg->comment == "message comment");
   REQUIRE(msg->sigs.size() == 2);
+  REQUIRE(msg->transmitter == "EON");
   REQUIRE(file.msg("message_1") != nullptr);
 
   auto sig_1 = msg->sigs[0];
@@ -102,11 +102,37 @@ CM_ SG_ 160 signal_2 "multiple line comment
   REQUIRE(sig_1->max == 4095);
   REQUIRE(sig_1->unit == "unit");
   REQUIRE(sig_1->comment == "signal comment");
+  REQUIRE(sig_1->receiver_name == "XXX");
   REQUIRE(sig_1->val_desc.size() == 3);
   REQUIRE(sig_1->val_desc[0] == std::pair<double, QString>{0, "disabled"});
   REQUIRE(sig_1->val_desc[1] == std::pair<double, QString>{1.2, "initializing"});
   REQUIRE(sig_1->val_desc[2] == std::pair<double, QString>{2, "fault"});
 
   auto &sig_2 = msg->sigs[1];
-  REQUIRE(sig_2->comment == "multiple line comment\n1\n2");
+  REQUIRE(sig_2->comment == "multiple line comment \n1\n2");
+
+  // multiplexed signals
+  msg = file.msg(162);
+  REQUIRE(msg != nullptr);
+  REQUIRE(msg->sigs.size() == 2);
+  REQUIRE(msg->sigs[0]->type == cabana::Signal::Type::Multiplexor);
+  REQUIRE(msg->sigs[1]->type == cabana::Signal::Type::Multiplexed);
+  REQUIRE(msg->sigs[1]->multiplex_value == 4);
+  REQUIRE(msg->sigs[1]->start_bit == 12);
+  REQUIRE(msg->sigs[1]->size == 1);
+  REQUIRE(msg->sigs[1]->receiver_name == "XXX");
+}
+
+TEST_CASE("parse_opendbc") {
+  QDir dir(OPENDBC_FILE_PATH);
+  QStringList errors;
+  for (auto fn : dir.entryList({"*.dbc"}, QDir::Files, QDir::Name)) {
+    try {
+      auto dbc = DBCFile(dir.filePath(fn));
+    } catch (std::exception &e) {
+      errors.push_back(e.what());
+    }
+  }
+  INFO(errors.join("\n").toStdString());
+  REQUIRE(errors.empty());
 }

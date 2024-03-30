@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include <QFrame>
 #include <QPushButton>
 #include <QStackedLayout>

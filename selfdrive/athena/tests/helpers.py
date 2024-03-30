@@ -1,12 +1,5 @@
 import http.server
-import random
-import requests
 import socket
-import time
-from functools import wraps
-from multiprocessing import Process
-
-from common.timeout import Timeout
 
 
 class MockResponse:
@@ -49,35 +42,6 @@ class MockApi():
     return "fake-token"
 
 
-class MockParams():
-  default_params = {
-    "DongleId": b"0000000000000000",
-    "GithubSshKeys": b"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC307aE+nuHzTAgaJhzSf5v7ZZQW9gaperjhCmyPyl4PzY7T1mDGenTlVTN7yoVFZ9UfO9oMQqo0n1OwDIiqbIFxqnhrHU0cYfj88rI85m5BEKlNu5RdaVTj1tcbaPpQc5kZEolaI1nDDjzV0lwS7jo5VYDHseiJHlik3HH1SgtdtsuamGR2T80q1SyW+5rHoMOJG73IH2553NnWuikKiuikGHUYBd00K1ilVAK2xSiMWJp55tQfZ0ecr9QjEsJ+J/efL4HqGNXhffxvypCXvbUYAFSddOwXUPo5BTKevpxMtH+2YrkpSjocWA04VnTYFiPG6U4ItKmbLOTFZtPzoez private",  # noqa: E501
-    "GithubUsername": b"commaci",
-    "GsmMetered": True,
-    "AthenadUploadQueue": '[]',
-  }
-  params = default_params.copy()
-
-  @staticmethod
-  def restore_defaults():
-    MockParams.params = MockParams.default_params.copy()
-
-  def get_bool(self, k):
-    return bool(MockParams.params.get(k))
-
-  def get(self, k, encoding=None):
-    ret = MockParams.params.get(k)
-    if ret is not None and encoding is not None:
-      ret = ret.decode(encoding)
-    return ret
-
-  def put(self, k, v):
-    if k not in MockParams.params:
-      raise KeyError(f"key: {k} not in MockParams")
-    MockParams.params[k] = v
-
-
 class MockWebsocket():
   def __init__(self, recv_queue, send_queue):
     self.recv_queue = recv_queue
@@ -99,32 +63,3 @@ class HTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     self.rfile.read(length)
     self.send_response(201, "Created")
     self.end_headers()
-
-
-def with_http_server(func):
-  @wraps(func)
-  def inner(*args, **kwargs):
-    with Timeout(2, 'HTTP Server did not start'):
-      p = None
-      host = '127.0.0.1'
-      while p is None or p.exitcode is not None:
-        port = random.randrange(40000, 50000)
-        p = Process(target=http.server.test,
-                    kwargs={'port': port, 'HandlerClass': HTTPRequestHandler, 'bind': host})
-        p.start()
-        time.sleep(0.1)
-
-    with Timeout(2, 'HTTP Server seeding failed'):
-      while True:
-        try:
-          requests.put(f'http://{host}:{port}/qlog.bz2', data='', timeout=10)
-          break
-        except requests.exceptions.ConnectionError:
-          time.sleep(0.1)
-
-    try:
-      return func(*args, f'http://{host}:{port}', **kwargs)
-    finally:
-      p.terminate()
-
-  return inner

@@ -4,7 +4,7 @@ import sys
 import os
 import numpy as np
 
-from selfdrive.locationd.models.constants import ObservationKind
+from openpilot.selfdrive.locationd.models.constants import ObservationKind
 
 import sympy as sp
 import inspect
@@ -212,14 +212,14 @@ class LiveKalman():
     live_kf_header = "#pragma once\n\n"
     live_kf_header += "#include <unordered_map>\n"
     live_kf_header += "#include <eigen3/Eigen/Dense>\n\n"
-    for state, slc in inspect.getmembers(States, lambda x: type(x) == slice):
+    for state, slc in inspect.getmembers(States, lambda x: isinstance(x, slice)):
       assert(slc.step is None)  # unsupported
       live_kf_header += f'#define STATE_{state}_START {slc.start}\n'
       live_kf_header += f'#define STATE_{state}_END {slc.stop}\n'
       live_kf_header += f'#define STATE_{state}_LEN {slc.stop - slc.start}\n'
     live_kf_header += "\n"
 
-    for kind, val in inspect.getmembers(ObservationKind, lambda x: type(x) == int):
+    for kind, val in inspect.getmembers(ObservationKind, lambda x: isinstance(x, int)):
       live_kf_header += f'#define OBSERVATION_{kind} {val}\n'
     live_kf_header += "\n"
 

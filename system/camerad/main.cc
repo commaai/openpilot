@@ -8,7 +8,7 @@
 
 int main(int argc, char *argv[]) {
   if (Hardware::PC()) {
-    printf("camerad is not meant to run on PC\n");
+    printf("exiting, camerad is not meant to run on PC\n");
     return 0;
   }
 

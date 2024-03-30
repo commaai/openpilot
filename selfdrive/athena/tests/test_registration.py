@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 import json
-import os
-import tempfile
 import unittest
 from Crypto.PublicKey import RSA
 from pathlib import Path
 from unittest import mock
 
-from common.params import Params
-from selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
-from selfdrive.athena.tests.helpers import MockResponse
+from openpilot.common.params import Params
+from openpilot.selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
+from openpilot.selfdrive.athena.tests.helpers import MockResponse
+from openpilot.system.hardware.hw import Paths
 
 
 class TestRegistration(unittest.TestCase):
@@ -19,16 +18,11 @@ class TestRegistration(unittest.TestCase):
     self.params = Params()
     self.params.clear_all()
 
-    self.persist = tempfile.TemporaryDirectory()
-    os.mkdir(os.path.join(self.persist.name, "comma"))
-    self.priv_key = Path(os.path.join(self.persist.name, "comma/id_rsa"))
-    self.pub_key = Path(os.path.join(self.persist.name, "comma/id_rsa.pub"))
-    self.persist_patcher = mock.patch("selfdrive.athena.registration.PERSIST", self.persist.name)
-    self.persist_patcher.start()
+    persist_dir = Path(Paths.persist_root()) / "comma"
+    persist_dir.mkdir(parents=True, exist_ok=True)
 
-  def tearDown(self):
-    self.persist_patcher.stop()
-    self.persist.cleanup()
+    self.priv_key = persist_dir / "id_rsa"
+    self.pub_key = persist_dir / "id_rsa.pub"
 
   def _generate_keys(self):
     self.pub_key.touch()
@@ -44,7 +38,7 @@ class TestRegistration(unittest.TestCase):
     self.params.put("HardwareSerial", "serial")
     self._generate_keys()
 
-    with mock.patch("selfdrive.athena.registration.api_get", autospec=True) as m:
+    with mock.patch("openpilot.selfdrive.athena.registration.api_get", autospec=True) as m:
       dongle = "DONGLE_ID_123"
       self.params.put("DongleId", dongle)
       self.assertEqual(register(), dongle)
@@ -52,7 +46,7 @@ class TestRegistration(unittest.TestCase):
 
   def test_no_keys(self):
     # missing pubkey
-    with mock.patch("selfdrive.athena.registration.api_get", autospec=True) as m:
+    with mock.patch("openpilot.selfdrive.athena.registration.api_get", autospec=True) as m:
       dongle = register()
       self.assertEqual(m.call_count, 0)
       self.assertEqual(dongle, UNREGISTERED_DONGLE_ID)
@@ -61,7 +55,7 @@ class TestRegistration(unittest.TestCase):
   def test_missing_cache(self):
     # keys exist but no dongle id
     self._generate_keys()
-    with mock.patch("selfdrive.athena.registration.api_get", autospec=True) as m:
+    with mock.patch("openpilot.selfdrive.athena.registration.api_get", autospec=True) as m:
       dongle = "DONGLE_ID_123"
       m.return_value = MockResponse(json.dumps({'dongle_id': dongle}), 200)
       self.assertEqual(register(), dongle)
@@ -75,7 +69,7 @@ class TestRegistration(unittest.TestCase):
   def test_unregistered(self):
     # keys exist, but unregistered
     self._generate_keys()
-    with mock.patch("selfdrive.athena.registration.api_get", autospec=True) as m:
+    with mock.patch("openpilot.selfdrive.athena.registration.api_get", autospec=True) as m:
       m.return_value = MockResponse(None, 402)
       dongle = register()
       self.assertEqual(m.call_count, 1)

@@ -1,8 +1,5 @@
 /*
- * Copyright 2019 Gianluca Frison, Dimitris Kouzoupis, Robin Verschueren,
- * Andrea Zanelli, Niels van Duijkeren, Jonathan Frey, Tommaso Sartor,
- * Branimir Novoselnik, Rien Quirynen, Rezart Qelibari, Dang Doan,
- * Jonas Koenemann, Yutao Chen, Tobias Schöls, Jonas Schlagenhauf, Moritz Diehl
+ * Copyright (c) The acados authors.
  *
  * This file is part of acados.
  *
@@ -88,18 +85,19 @@ int {{ model.name }}_acados_sim_create(sim_solver_capsule * capsule)
     double Tsim = {{ solver_options.Tsim }};
 
     {% if solver_options.integrator_type == "IRK" %}
-    capsule->sim_impl_dae_fun = (external_function_param_casadi *) malloc(sizeof(external_function_param_casadi));
-    capsule->sim_impl_dae_fun_jac_x_xdot_z = (external_function_param_casadi *) malloc(sizeof(external_function_param_casadi));
-    capsule->sim_impl_dae_jac_x_xdot_u_z = (external_function_param_casadi *) malloc(sizeof(external_function_param_casadi));
+    capsule->sim_impl_dae_fun = (external_function_param_{{ model.dyn_ext_fun_type }} *) malloc(sizeof(external_function_param_{{ model.dyn_ext_fun_type }}));
+    capsule->sim_impl_dae_fun_jac_x_xdot_z = (external_function_param_{{ model.dyn_ext_fun_type }} *) malloc(sizeof(external_function_param_{{ model.dyn_ext_fun_type }}));
+    capsule->sim_impl_dae_jac_x_xdot_u_z = (external_function_param_{{ model.dyn_ext_fun_type }} *) malloc(sizeof(external_function_param_{{ model.dyn_ext_fun_type }}));
 
+  {%- if model.dyn_ext_fun_type == "casadi" %}
     // external functions (implicit model)
-    capsule->sim_impl_dae_fun->casadi_fun  = &{{ model.name }}_impl_dae_fun;
+    capsule->sim_impl_dae_fun->casadi_fun = &{{ model.name }}_impl_dae_fun;
     capsule->sim_impl_dae_fun->casadi_work = &{{ model.name }}_impl_dae_fun_work;
     capsule->sim_impl_dae_fun->casadi_sparsity_in = &{{ model.name }}_impl_dae_fun_sparsity_in;
     capsule->sim_impl_dae_fun->casadi_sparsity_out = &{{ model.name }}_impl_dae_fun_sparsity_out;
     capsule->sim_impl_dae_fun->casadi_n_in = &{{ model.name }}_impl_dae_fun_n_in;
     capsule->sim_impl_dae_fun->casadi_n_out = &{{ model.name }}_impl_dae_fun_n_out;
-    external_function_param_casadi_create(capsule->sim_impl_dae_fun, np);
+    external_function_param_{{ model.dyn_ext_fun_type }}_create(capsule->sim_impl_dae_fun, np);
 
     capsule->sim_impl_dae_fun_jac_x_xdot_z->casadi_fun = &{{ model.name }}_impl_dae_fun_jac_x_xdot_z;
     capsule->sim_impl_dae_fun_jac_x_xdot_z->casadi_work = &{{ model.name }}_impl_dae_fun_jac_x_xdot_z_work;
@@ -107,33 +105,39 @@ int {{ model.name }}_acados_sim_create(sim_solver_capsule * capsule)
     capsule->sim_impl_dae_fun_jac_x_xdot_z->casadi_sparsity_out = &{{ model.name }}_impl_dae_fun_jac_x_xdot_z_sparsity_out;
     capsule->sim_impl_dae_fun_jac_x_xdot_z->casadi_n_in = &{{ model.name }}_impl_dae_fun_jac_x_xdot_z_n_in;
     capsule->sim_impl_dae_fun_jac_x_xdot_z->casadi_n_out = &{{ model.name }}_impl_dae_fun_jac_x_xdot_z_n_out;
-    external_function_param_casadi_create(capsule->sim_impl_dae_fun_jac_x_xdot_z, np);
+    external_function_param_{{ model.dyn_ext_fun_type }}_create(capsule->sim_impl_dae_fun_jac_x_xdot_z, np);
 
-    // external_function_param_casadi impl_dae_jac_x_xdot_u_z;
+    // external_function_param_{{ model.dyn_ext_fun_type }} impl_dae_jac_x_xdot_u_z;
     capsule->sim_impl_dae_jac_x_xdot_u_z->casadi_fun = &{{ model.name }}_impl_dae_jac_x_xdot_u_z;
     capsule->sim_impl_dae_jac_x_xdot_u_z->casadi_work = &{{ model.name }}_impl_dae_jac_x_xdot_u_z_work;
     capsule->sim_impl_dae_jac_x_xdot_u_z->casadi_sparsity_in = &{{ model.name }}_impl_dae_jac_x_xdot_u_z_sparsity_in;
     capsule->sim_impl_dae_jac_x_xdot_u_z->casadi_sparsity_out = &{{ model.name }}_impl_dae_jac_x_xdot_u_z_sparsity_out;
     capsule->sim_impl_dae_jac_x_xdot_u_z->casadi_n_in = &{{ model.name }}_impl_dae_jac_x_xdot_u_z_n_in;
     capsule->sim_impl_dae_jac_x_xdot_u_z->casadi_n_out = &{{ model.name }}_impl_dae_jac_x_xdot_u_z_n_out;
-    external_function_param_casadi_create(capsule->sim_impl_dae_jac_x_xdot_u_z, np);
+    external_function_param_{{ model.dyn_ext_fun_type }}_create(capsule->sim_impl_dae_jac_x_xdot_u_z, np);
+  {%- else %}
+    capsule->sim_impl_dae_fun->fun = &{{ model.dyn_impl_dae_fun }};
+    capsule->sim_impl_dae_fun_jac_x_xdot_z->fun = &{{ model.dyn_impl_dae_fun_jac }};
+    capsule->sim_impl_dae_jac_x_xdot_u_z->fun = &{{ model.dyn_impl_dae_jac }};
+  {%- endif %}
 
 {%- if hessian_approx == "EXACT" %}
-    capsule->sim_impl_dae_hess = (external_function_param_casadi *) malloc(sizeof(external_function_param_casadi));
-    // external_function_param_casadi impl_dae_jac_x_xdot_u_z;
+    capsule->sim_impl_dae_hess = (external_function_param_{{ model.dyn_ext_fun_type }} *) malloc(sizeof(external_function_param_{{ model.dyn_ext_fun_type }}));
+    // external_function_param_{{ model.dyn_ext_fun_type }} impl_dae_jac_x_xdot_u_z;
     capsule->sim_impl_dae_hess->casadi_fun = &{{ model.name }}_impl_dae_hess;
     capsule->sim_impl_dae_hess->casadi_work = &{{ model.name }}_impl_dae_hess_work;
     capsule->sim_impl_dae_hess->casadi_sparsity_in = &{{ model.name }}_impl_dae_hess_sparsity_in;
     capsule->sim_impl_dae_hess->casadi_sparsity_out = &{{ model.name }}_impl_dae_hess_sparsity_out;
     capsule->sim_impl_dae_hess->casadi_n_in = &{{ model.name }}_impl_dae_hess_n_in;
     capsule->sim_impl_dae_hess->casadi_n_out = &{{ model.name }}_impl_dae_hess_n_out;
-    external_function_param_casadi_create(capsule->sim_impl_dae_hess, np);
+    external_function_param_{{ model.dyn_ext_fun_type }}_create(capsule->sim_impl_dae_hess, np);
 {%- endif %}
 
     {% elif solver_options.integrator_type == "ERK" %}
     // explicit ode
-    capsule->sim_forw_vde_casadi = (external_function_param_casadi *) malloc(sizeof(external_function_param_casadi));
-    capsule->sim_expl_ode_fun_casadi = (external_function_param_casadi *) malloc(sizeof(external_function_param_casadi));
+    capsule->sim_forw_vde_casadi = (external_function_param_{{ model.dyn_ext_fun_type }} *) malloc(sizeof(external_function_param_{{ model.dyn_ext_fun_type }}));
+    capsule->sim_vde_adj_casadi = (external_function_param_{{ model.dyn_ext_fun_type }} *) malloc(sizeof(external_function_param_{{ model.dyn_ext_fun_type }}));
+    capsule->sim_expl_ode_fun_casadi = (external_function_param_{{ model.dyn_ext_fun_type }} *) malloc(sizeof(external_function_param_{{ model.dyn_ext_fun_type }}));
 
     capsule->sim_forw_vde_casadi->casadi_fun = &{{ model.name }}_expl_vde_forw;
     capsule->sim_forw_vde_casadi->casadi_n_in = &{{ model.name }}_expl_vde_forw_n_in;
@@ -141,7 +145,15 @@ int {{ model.name }}_acados_sim_create(sim_solver_capsule * capsule)
     capsule->sim_forw_vde_casadi->casadi_sparsity_in = &{{ model.name }}_expl_vde_forw_sparsity_in;
     capsule->sim_forw_vde_casadi->casadi_sparsity_out = &{{ model.name }}_expl_vde_forw_sparsity_out;
     capsule->sim_forw_vde_casadi->casadi_work = &{{ model.name }}_expl_vde_forw_work;
-    external_function_param_casadi_create(capsule->sim_forw_vde_casadi, np);
+    external_function_param_{{ model.dyn_ext_fun_type }}_create(capsule->sim_forw_vde_casadi, np);
+
+    capsule->sim_vde_adj_casadi->casadi_fun = &{{ model.name }}_expl_vde_adj;
+    capsule->sim_vde_adj_casadi->casadi_n_in = &{{ model.name }}_expl_vde_adj_n_in;
+    capsule->sim_vde_adj_casadi->casadi_n_out = &{{ model.name }}_expl_vde_adj_n_out;
+    capsule->sim_vde_adj_casadi->casadi_sparsity_in = &{{ model.name }}_expl_vde_adj_sparsity_in;
+    capsule->sim_vde_adj_casadi->casadi_sparsity_out = &{{ model.name }}_expl_vde_adj_sparsity_out;
+    capsule->sim_vde_adj_casadi->casadi_work = &{{ model.name }}_expl_vde_adj_work;
+    external_function_param_{{ model.dyn_ext_fun_type }}_create(capsule->sim_vde_adj_casadi, np);
 
     capsule->sim_expl_ode_fun_casadi->casadi_fun = &{{ model.name }}_expl_ode_fun;
     capsule->sim_expl_ode_fun_casadi->casadi_n_in = &{{ model.name }}_expl_ode_fun_n_in;
@@ -149,30 +161,30 @@ int {{ model.name }}_acados_sim_create(sim_solver_capsule * capsule)
     capsule->sim_expl_ode_fun_casadi->casadi_sparsity_in = &{{ model.name }}_expl_ode_fun_sparsity_in;
     capsule->sim_expl_ode_fun_casadi->casadi_sparsity_out = &{{ model.name }}_expl_ode_fun_sparsity_out;
     capsule->sim_expl_ode_fun_casadi->casadi_work = &{{ model.name }}_expl_ode_fun_work;
-    external_function_param_casadi_create(capsule->sim_expl_ode_fun_casadi, np);
+    external_function_param_{{ model.dyn_ext_fun_type }}_create(capsule->sim_expl_ode_fun_casadi, np);
 
 {%- if hessian_approx == "EXACT" %}
-    capsule->sim_expl_ode_hess = (external_function_param_casadi *) malloc(sizeof(external_function_param_casadi));
-    // external_function_param_casadi impl_dae_jac_x_xdot_u_z;
+    capsule->sim_expl_ode_hess = (external_function_param_{{ model.dyn_ext_fun_type }} *) malloc(sizeof(external_function_param_{{ model.dyn_ext_fun_type }}));
+    // external_function_param_{{ model.dyn_ext_fun_type }} impl_dae_jac_x_xdot_u_z;
     capsule->sim_expl_ode_hess->casadi_fun = &{{ model.name }}_expl_ode_hess;
     capsule->sim_expl_ode_hess->casadi_work = &{{ model.name }}_expl_ode_hess_work;
     capsule->sim_expl_ode_hess->casadi_sparsity_in = &{{ model.name }}_expl_ode_hess_sparsity_in;
     capsule->sim_expl_ode_hess->casadi_sparsity_out = &{{ model.name }}_expl_ode_hess_sparsity_out;
     capsule->sim_expl_ode_hess->casadi_n_in = &{{ model.name }}_expl_ode_hess_n_in;
     capsule->sim_expl_ode_hess->casadi_n_out = &{{ model.name }}_expl_ode_hess_n_out;
-    external_function_param_casadi_create(capsule->sim_expl_ode_hess, np);
+    external_function_param_{{ model.dyn_ext_fun_type }}_create(capsule->sim_expl_ode_hess, np);
 {%- endif %}
 
     {% elif solver_options.integrator_type == "GNSF" -%}
   {% if model.gnsf.purely_linear != 1 %}
-    capsule->sim_gnsf_phi_fun = (external_function_param_casadi *) malloc(sizeof(external_function_param_casadi));
-    capsule->sim_gnsf_phi_fun_jac_y = (external_function_param_casadi *) malloc(sizeof(external_function_param_casadi));
-    capsule->sim_gnsf_phi_jac_y_uhat = (external_function_param_casadi *) malloc(sizeof(external_function_param_casadi));
+    capsule->sim_gnsf_phi_fun = (external_function_param_{{ model.dyn_ext_fun_type }} *) malloc(sizeof(external_function_param_{{ model.dyn_ext_fun_type }}));
+    capsule->sim_gnsf_phi_fun_jac_y = (external_function_param_{{ model.dyn_ext_fun_type }} *) malloc(sizeof(external_function_param_{{ model.dyn_ext_fun_type }}));
+    capsule->sim_gnsf_phi_jac_y_uhat = (external_function_param_{{ model.dyn_ext_fun_type }} *) malloc(sizeof(external_function_param_{{ model.dyn_ext_fun_type }}));
   {% if model.gnsf.nontrivial_f_LO == 1 %}
-    capsule->sim_gnsf_f_lo_jac_x1_x1dot_u_z = (external_function_param_casadi *) malloc(sizeof(external_function_param_casadi));
+    capsule->sim_gnsf_f_lo_jac_x1_x1dot_u_z = (external_function_param_{{ model.dyn_ext_fun_type }} *) malloc(sizeof(external_function_param_{{ model.dyn_ext_fun_type }}));
   {%- endif %}
   {%- endif %}
-    capsule->sim_gnsf_get_matrices_fun = (external_function_param_casadi *) malloc(sizeof(external_function_param_casadi));
+    capsule->sim_gnsf_get_matrices_fun = (external_function_param_{{ model.dyn_ext_fun_type }} *) malloc(sizeof(external_function_param_{{ model.dyn_ext_fun_type }}));
 
   {% if model.gnsf.purely_linear != 1 %}
     capsule->sim_gnsf_phi_fun->casadi_fun = &{{ model.name }}_gnsf_phi_fun;
@@ -181,7 +193,7 @@ int {{ model.name }}_acados_sim_create(sim_solver_capsule * capsule)
     capsule->sim_gnsf_phi_fun->casadi_sparsity_in = &{{ model.name }}_gnsf_phi_fun_sparsity_in;
     capsule->sim_gnsf_phi_fun->casadi_sparsity_out = &{{ model.name }}_gnsf_phi_fun_sparsity_out;
     capsule->sim_gnsf_phi_fun->casadi_work = &{{ model.name }}_gnsf_phi_fun_work;
-    external_function_param_casadi_create(capsule->sim_gnsf_phi_fun, np);
+    external_function_param_{{ model.dyn_ext_fun_type }}_create(capsule->sim_gnsf_phi_fun, np);
 
     capsule->sim_gnsf_phi_fun_jac_y->casadi_fun = &{{ model.name }}_gnsf_phi_fun_jac_y;
     capsule->sim_gnsf_phi_fun_jac_y->casadi_n_in = &{{ model.name }}_gnsf_phi_fun_jac_y_n_in;
@@ -189,7 +201,7 @@ int {{ model.name }}_acados_sim_create(sim_solver_capsule * capsule)
     capsule->sim_gnsf_phi_fun_jac_y->casadi_sparsity_in = &{{ model.name }}_gnsf_phi_fun_jac_y_sparsity_in;
     capsule->sim_gnsf_phi_fun_jac_y->casadi_sparsity_out = &{{ model.name }}_gnsf_phi_fun_jac_y_sparsity_out;
     capsule->sim_gnsf_phi_fun_jac_y->casadi_work = &{{ model.name }}_gnsf_phi_fun_jac_y_work;
-    external_function_param_casadi_create(capsule->sim_gnsf_phi_fun_jac_y, np);
+    external_function_param_{{ model.dyn_ext_fun_type }}_create(capsule->sim_gnsf_phi_fun_jac_y, np);
 
     capsule->sim_gnsf_phi_jac_y_uhat->casadi_fun = &{{ model.name }}_gnsf_phi_jac_y_uhat;
     capsule->sim_gnsf_phi_jac_y_uhat->casadi_n_in = &{{ model.name }}_gnsf_phi_jac_y_uhat_n_in;
@@ -197,7 +209,7 @@ int {{ model.name }}_acados_sim_create(sim_solver_capsule * capsule)
     capsule->sim_gnsf_phi_jac_y_uhat->casadi_sparsity_in = &{{ model.name }}_gnsf_phi_jac_y_uhat_sparsity_in;
     capsule->sim_gnsf_phi_jac_y_uhat->casadi_sparsity_out = &{{ model.name }}_gnsf_phi_jac_y_uhat_sparsity_out;
     capsule->sim_gnsf_phi_jac_y_uhat->casadi_work = &{{ model.name }}_gnsf_phi_jac_y_uhat_work;
-    external_function_param_casadi_create(capsule->sim_gnsf_phi_jac_y_uhat, np);
+    external_function_param_{{ model.dyn_ext_fun_type }}_create(capsule->sim_gnsf_phi_jac_y_uhat, np);
 
   {% if model.gnsf.nontrivial_f_LO == 1 %}
     capsule->sim_gnsf_f_lo_jac_x1_x1dot_u_z->casadi_fun = &{{ model.name }}_gnsf_f_lo_fun_jac_x1k1uz;
@@ -206,7 +218,7 @@ int {{ model.name }}_acados_sim_create(sim_solver_capsule * capsule)
     capsule->sim_gnsf_f_lo_jac_x1_x1dot_u_z->casadi_sparsity_in = &{{ model.name }}_gnsf_f_lo_fun_jac_x1k1uz_sparsity_in;
     capsule->sim_gnsf_f_lo_jac_x1_x1dot_u_z->casadi_sparsity_out = &{{ model.name }}_gnsf_f_lo_fun_jac_x1k1uz_sparsity_out;
     capsule->sim_gnsf_f_lo_jac_x1_x1dot_u_z->casadi_work = &{{ model.name }}_gnsf_f_lo_fun_jac_x1k1uz_work;
-    external_function_param_casadi_create(capsule->sim_gnsf_f_lo_jac_x1_x1dot_u_z, np);
+    external_function_param_{{ model.dyn_ext_fun_type }}_create(capsule->sim_gnsf_f_lo_jac_x1_x1dot_u_z, np);
   {%- endif %}
   {%- endif %}
 
@@ -216,7 +228,7 @@ int {{ model.name }}_acados_sim_create(sim_solver_capsule * capsule)
     capsule->sim_gnsf_get_matrices_fun->casadi_sparsity_in = &{{ model.name }}_gnsf_get_matrices_fun_sparsity_in;
     capsule->sim_gnsf_get_matrices_fun->casadi_sparsity_out = &{{ model.name }}_gnsf_get_matrices_fun_sparsity_out;
     capsule->sim_gnsf_get_matrices_fun->casadi_work = &{{ model.name }}_gnsf_get_matrices_fun_work;
-    external_function_param_casadi_create(capsule->sim_gnsf_get_matrices_fun, np);
+    external_function_param_{{ model.dyn_ext_fun_type }}_create(capsule->sim_gnsf_get_matrices_fun, np);
     {% endif %}
 
     // sim plan & config
@@ -252,6 +264,8 @@ int {{ model.name }}_acados_sim_create(sim_solver_capsule * capsule)
     capsule->acados_sim_opts = {{ model.name }}_sim_opts;
     int tmp_int = {{ solver_options.sim_method_newton_iter }};
     sim_opts_set({{ model.name }}_sim_config, {{ model.name }}_sim_opts, "newton_iter", &tmp_int);
+    double tmp_double = {{ solver_options.sim_method_newton_tol }};
+    sim_opts_set({{ model.name }}_sim_config, {{ model.name }}_sim_opts, "newton_tol", &tmp_double);
     sim_collocation_type collocation_type = {{ solver_options.collocation_type }};
     sim_opts_set({{ model.name }}_sim_config, {{ model.name }}_sim_opts, "collocation_type", &collocation_type);
 
@@ -307,7 +321,9 @@ int {{ model.name }}_acados_sim_create(sim_solver_capsule * capsule)
 
 {%- elif solver_options.integrator_type == "ERK" %}
     {{ model.name }}_sim_config->model_set({{ model.name }}_sim_in->model,
-                 "expl_vde_for", capsule->sim_forw_vde_casadi);
+                 "expl_vde_forw", capsule->sim_forw_vde_casadi);
+    {{ model.name }}_sim_config->model_set({{ model.name }}_sim_in->model,
+                 "expl_vde_adj", capsule->sim_vde_adj_casadi);
     {{ model.name }}_sim_config->model_set({{ model.name }}_sim_in->model,
                  "expl_ode_fun", capsule->sim_expl_ode_fun_casadi);
 {%- if hessian_approx == "EXACT" %}
@@ -408,28 +424,29 @@ int {{ model.name }}_acados_sim_free(sim_solver_capsule *capsule)
 
     // free external function
 {%- if solver_options.integrator_type == "IRK" %}
-    external_function_param_casadi_free(capsule->sim_impl_dae_fun);
-    external_function_param_casadi_free(capsule->sim_impl_dae_fun_jac_x_xdot_z);
-    external_function_param_casadi_free(capsule->sim_impl_dae_jac_x_xdot_u_z);
+    external_function_param_{{ model.dyn_ext_fun_type }}_free(capsule->sim_impl_dae_fun);
+    external_function_param_{{ model.dyn_ext_fun_type }}_free(capsule->sim_impl_dae_fun_jac_x_xdot_z);
+    external_function_param_{{ model.dyn_ext_fun_type }}_free(capsule->sim_impl_dae_jac_x_xdot_u_z);
 {%- if hessian_approx == "EXACT" %}
-    external_function_param_casadi_free(capsule->sim_impl_dae_hess);
+    external_function_param_{{ model.dyn_ext_fun_type }}_free(capsule->sim_impl_dae_hess);
 {%- endif %}
 {%- elif solver_options.integrator_type == "ERK" %}
-    external_function_param_casadi_free(capsule->sim_forw_vde_casadi);
-    external_function_param_casadi_free(capsule->sim_expl_ode_fun_casadi);
+    external_function_param_{{ model.dyn_ext_fun_type }}_free(capsule->sim_forw_vde_casadi);
+    external_function_param_{{ model.dyn_ext_fun_type }}_free(capsule->sim_vde_adj_casadi);
+    external_function_param_{{ model.dyn_ext_fun_type }}_free(capsule->sim_expl_ode_fun_casadi);
 {%- if hessian_approx == "EXACT" %}
-    external_function_param_casadi_free(capsule->sim_expl_ode_hess);
+    external_function_param_{{ model.dyn_ext_fun_type }}_free(capsule->sim_expl_ode_hess);
 {%- endif %}
 {%- elif solver_options.integrator_type == "GNSF" %}
   {% if model.gnsf.purely_linear != 1 %}
-    external_function_param_casadi_free(capsule->sim_gnsf_phi_fun);
-    external_function_param_casadi_free(capsule->sim_gnsf_phi_fun_jac_y);
-    external_function_param_casadi_free(capsule->sim_gnsf_phi_jac_y_uhat);
+    external_function_param_{{ model.dyn_ext_fun_type }}_free(capsule->sim_gnsf_phi_fun);
+    external_function_param_{{ model.dyn_ext_fun_type }}_free(capsule->sim_gnsf_phi_fun_jac_y);
+    external_function_param_{{ model.dyn_ext_fun_type }}_free(capsule->sim_gnsf_phi_jac_y_uhat);
   {% if model.gnsf.nontrivial_f_LO == 1 %}
-    external_function_param_casadi_free(capsule->sim_gnsf_f_lo_jac_x1_x1dot_u_z);
+    external_function_param_{{ model.dyn_ext_fun_type }}_free(capsule->sim_gnsf_f_lo_jac_x1_x1dot_u_z);
   {%- endif %}
   {%- endif %}
-    external_function_param_casadi_free(capsule->sim_gnsf_get_matrices_fun);
+    external_function_param_{{ model.dyn_ext_fun_type }}_free(capsule->sim_gnsf_get_matrices_fun);
 {% endif %}
 
     return 0;
@@ -449,6 +466,7 @@ int {{ model.name }}_acados_sim_update_params(sim_solver_capsule *capsule, doubl
 
 {%- if solver_options.integrator_type == "ERK" %}
     capsule->sim_forw_vde_casadi[0].set_param(capsule->sim_forw_vde_casadi, p);
+    capsule->sim_vde_adj_casadi[0].set_param(capsule->sim_vde_adj_casadi, p);
     capsule->sim_expl_ode_fun_casadi[0].set_param(capsule->sim_expl_ode_fun_casadi, p);
 {%- if hessian_approx == "EXACT" %}
     capsule->sim_expl_ode_hess[0].set_param(capsule->sim_expl_ode_hess, p);

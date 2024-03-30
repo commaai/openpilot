@@ -1,5 +1,0 @@
-# with neos tree
-cd ~/android/system
-mka libcurl
-
-cp ~/android/system/out/target/product/oneplus3/obj/STATIC_LIBRARIES/libcurl_intermediates/libcurl.a lib/

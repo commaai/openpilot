@@ -17,7 +17,7 @@
 
 
 void SoftwarePanel::checkForUpdates() {
-  std::system("pkill -SIGUSR1 -f selfdrive.updated");
+  std::system("pkill -SIGUSR1 -f selfdrive.updated.updated");
 }
 
 SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
@@ -36,7 +36,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
     if (downloadBtn->text() == tr("CHECK")) {
       checkForUpdates();
     } else {
-      std::system("pkill -SIGHUP -f selfdrive.updated");
+      std::system("pkill -SIGHUP -f selfdrive.updated.updated");
     }
   });
   addItem(downloadBtn);
@@ -83,8 +83,8 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   });
   addItem(uninstallBtn);
 
-  fs_watch = new QFileSystemWatcher(this);
-  QObject::connect(fs_watch, &QFileSystemWatcher::fileChanged, [=](const QString path) {
+  fs_watch = new ParamWatcher(this);
+  QObject::connect(fs_watch, &ParamWatcher::paramChanged, [=](const QString &param_name, const QString &param_value) {
     updateLabels();
   });
 
@@ -105,10 +105,10 @@ void SoftwarePanel::showEvent(QShowEvent *event) {
 
 void SoftwarePanel::updateLabels() {
   // add these back in case the files got removed
-  fs_watch->addPath(QString::fromStdString(params.getParamPath("LastUpdateTime")));
-  fs_watch->addPath(QString::fromStdString(params.getParamPath("UpdateFailedCount")));
-  fs_watch->addPath(QString::fromStdString(params.getParamPath("UpdaterState")));
-  fs_watch->addPath(QString::fromStdString(params.getParamPath("UpdateAvailable")));
+  fs_watch->addParam("LastUpdateTime");
+  fs_watch->addParam("UpdateFailedCount");
+  fs_watch->addParam("UpdaterState");
+  fs_watch->addParam("UpdateAvailable");
 
   if (!isVisible()) {
     return;

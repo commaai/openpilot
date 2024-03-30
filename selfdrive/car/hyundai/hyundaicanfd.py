@@ -1,17 +1,15 @@
-import math
+from openpilot.common.numpy_fast import clip
+from openpilot.selfdrive.car import CanBusBase
+from openpilot.selfdrive.car.hyundai.values import HyundaiFlags
 
-from common.numpy_fast import clip
-from selfdrive.car.hyundai.values import HyundaiFlags
 
+class CanBus(CanBusBase):
+  def __init__(self, CP, hda2=None, fingerprint=None) -> None:
+    super().__init__(CP, fingerprint)
 
-class CanBus:
-  def __init__(self, CP, hda2=None, fingerprint=None):
-    if CP is None:
-      assert None not in (hda2, fingerprint)
-      num = math.ceil(max([k for k, v in fingerprint.items() if len(v)], default=1) / 4)
-    else:
+    if hda2 is None:
+      assert CP is not None
       hda2 = CP.flags & HyundaiFlags.CANFD_HDA2.value
-      num = len(CP.safetyConfigs)
 
     # On the CAN-FD platforms, the LKAS camera is on both A-CAN and E-CAN. HDA2 cars
     # have a different harness than the HDA1 and non-HDA variants in order to split
@@ -20,10 +18,9 @@ class CanBus:
     if hda2:
       self._a, self._e = 0, 1
 
-    offset = 4*(num - 1)
-    self._a += offset
-    self._e += offset
-    self._cam = 2 + offset
+    self._a += self.offset
+    self._e += self.offset
+    self._cam = 2 + self.offset
 
   @property
   def ECAN(self):
@@ -49,25 +46,32 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, apply_steer):
     "LKA_ASSIST": 0,
     "STEER_REQ": 1 if lat_active else 0,
     "STEER_MODE": 0,
-    "SET_ME_1": 0,
+    "HAS_LANE_SAFETY": 0,  # hide LKAS settings
     "NEW_SIGNAL_1": 0,
     "NEW_SIGNAL_2": 0,
   }
 
   if CP.flags & HyundaiFlags.CANFD_HDA2:
+    hda2_lkas_msg = "LKAS_ALT" if CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING else "LKAS"
     if CP.openpilotLongitudinalControl:
       ret.append(packer.make_can_msg("LFA", CAN.ECAN, values))
-    ret.append(packer.make_can_msg("LKAS", CAN.ACAN, values))
+    ret.append(packer.make_can_msg(hda2_lkas_msg, CAN.ACAN, values))
   else:
     ret.append(packer.make_can_msg("LFA", CAN.ECAN, values))
 
   return ret
 
-def create_cam_0x2a4(packer, CAN, camera_values):
-  camera_values.update({
-    "BYTE7": 0,
-  })
-  return packer.make_can_msg("CAM_0x2a4", CAN.ACAN, camera_values)
+def create_suppress_lfa(packer, CAN, hda2_lfa_block_msg, hda2_alt_steering):
+  suppress_msg = "CAM_0x362" if hda2_alt_steering else "CAM_0x2a4"
+  msg_bytes = 32 if hda2_alt_steering else 24
+
+  values = {f"BYTE{i}": hda2_lfa_block_msg[f"BYTE{i}"] for i in range(3, msg_bytes) if i != 7}
+  values["COUNTER"] = hda2_lfa_block_msg["COUNTER"]
+  values["SET_ME_0"] = 0
+  values["SET_ME_0_2"] = 0
+  values["LEFT_LANE_LINE"] = 0
+  values["RIGHT_LANE_LINE"] = 0
+  return packer.make_can_msg(suppress_msg, CAN.ACAN, values)
 
 def create_buttons(packer, CP, CAN, cnt, btn):
   values = {
@@ -79,10 +83,33 @@ def create_buttons(packer, CP, CAN, cnt, btn):
   bus = CAN.ECAN if CP.flags & HyundaiFlags.CANFD_HDA2 else CAN.CAM
   return packer.make_can_msg("CRUISE_BUTTONS", bus, values)
 
-def create_acc_cancel(packer, CAN, cruise_info_copy):
-  values = cruise_info_copy
+def create_acc_cancel(packer, CP, CAN, cruise_info_copy):
+  # TODO: why do we copy different values here?
+  if CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value:
+    values = {s: cruise_info_copy[s] for s in [
+      "COUNTER",
+      "CHECKSUM",
+      "NEW_SIGNAL_1",
+      "MainMode_ACC",
+      "ACCMode",
+      "ZEROS_9",
+      "CRUISE_STANDSTILL",
+      "ZEROS_5",
+      "DISTANCE_SETTING",
+      "VSetDis",
+    ]}
+  else:
+    values = {s: cruise_info_copy[s] for s in [
+      "COUNTER",
+      "CHECKSUM",
+      "ACCMode",
+      "VSetDis",
+      "CRUISE_STANDSTILL",
+    ]}
   values.update({
     "ACCMode": 4,
+    "aReqRaw": 0.0,
+    "aReqValue": 0.0,
   })
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)
 
@@ -94,7 +121,7 @@ def create_lfahda_cluster(packer, CAN, enabled):
   return packer.make_can_msg("LFAHDA_CLUSTER", CAN.ECAN, values)
 
 
-def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_override, set_speed):
+def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_override, set_speed, hud_control):
   jerk = 5
   jn = jerk / 50
   if not enabled or gas_override:
@@ -119,7 +146,7 @@ def create_acc_control(packer, CAN, enabled, accel_last, accel, stopping, gas_ov
     "SET_ME_2": 0x4,
     "SET_ME_3": 0x3,
     "SET_ME_TMP_64": 0x64,
-    "DISTANCE_SETTING": 4,
+    "DISTANCE_SETTING": hud_control.leadDistanceBars + 1,
   }
 
   return packer.make_can_msg("SCC_CONTROL", CAN.ECAN, values)

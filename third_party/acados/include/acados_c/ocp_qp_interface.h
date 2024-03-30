@@ -1,8 +1,5 @@
 /*
- * Copyright 2019 Gianluca Frison, Dimitris Kouzoupis, Robin Verschueren,
- * Andrea Zanelli, Niels van Duijkeren, Jonathan Frey, Tommaso Sartor,
- * Branimir Novoselnik, Rien Quirynen, Rezart Qelibari, Dang Doan,
- * Jonas Koenemann, Yutao Chen, Tobias Schöls, Jonas Schlagenhauf, Moritz Diehl
+ * Copyright (c) The acados authors.
  *
  * This file is part of acados.
  *
@@ -86,6 +83,11 @@ typedef enum {
     FULL_CONDENSING_QPOASES,
 #else
     FULL_CONDENSING_QPOASES_NOT_AVAILABLE,
+#endif
+#ifdef ACADOS_WITH_DAQP
+    FULL_CONDENSING_DAQP,
+#else
+    FULL_CONDENSING_DAQP_NOT_AVAILABLE,
 #endif
 #ifdef ACADOS_WITH_QORE
     FULL_CONDENSING_QORE,

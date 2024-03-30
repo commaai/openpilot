@@ -28,16 +28,16 @@ float get_zoom_level_for_scale(float lat, float meters_per_pixel) {
   return log2(num_tiles) - 1;
 }
 
-QMapbox::Coordinate get_point_along_line(float lat, float lon, float bearing, float dist) {
+QMapLibre::Coordinate get_point_along_line(float lat, float lon, float bearing, float dist) {
   float ang_dist = dist / EARTH_RADIUS_METERS;
   float lat1 = DEG2RAD(lat), lon1 = DEG2RAD(lon), bearing1 = DEG2RAD(bearing);
   float lat2 = asin(sin(lat1)*cos(ang_dist) + cos(lat1)*sin(ang_dist)*cos(bearing1));
   float lon2 = lon1 + atan2(sin(bearing1)*sin(ang_dist)*cos(lat1), cos(ang_dist)-sin(lat1)*sin(lat2));
-  return QMapbox::Coordinate(RAD2DEG(lat2), RAD2DEG(lon2));
+  return QMapLibre::Coordinate(RAD2DEG(lat2), RAD2DEG(lon2));
 }
 
 
-MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_settings(settings) {
+MapRenderer::MapRenderer(const QMapLibre::Settings &settings, bool online) : m_settings(settings) {
   QSurfaceFormat fmt;
   fmt.setRenderableType(QSurfaceFormat::OpenGLES);
 
@@ -60,21 +60,30 @@ MapRenderer::MapRenderer(const QMapboxGLSettings &settings, bool online) : m_set
   fbo.reset(new QOpenGLFramebufferObject(WIDTH, HEIGHT, fbo_format));
 
   std::string style = util::read_file(STYLE_PATH);
-  m_map.reset(new QMapboxGL(nullptr, m_settings, fbo->size(), 1));
-  m_map->setCoordinateZoom(QMapbox::Coordinate(0, 0), DEFAULT_ZOOM);
+  m_map.reset(new QMapLibre::Map(nullptr, m_settings, fbo->size(), 1));
+  m_map->setCoordinateZoom(QMapLibre::Coordinate(0, 0), DEFAULT_ZOOM);
   m_map->setStyleJson(style.c_str());
   m_map->createRenderer();
+  ever_loaded = false;
 
   m_map->resize(fbo->size());
   m_map->setFramebufferObject(fbo->handle(), fbo->size());
   gl_functions->glViewport(0, 0, WIDTH, HEIGHT);
 
-  QObject::connect(m_map.data(), &QMapboxGL::mapChanged, [=](QMapboxGL::MapChange change) {
+  QObject::connect(m_map.data(), &QMapLibre::Map::mapChanged, [=](QMapLibre::Map::MapChange change) {
+    // Ignore expected signals
     // https://github.com/mapbox/mapbox-gl-native/blob/cf734a2fec960025350d8de0d01ad38aeae155a0/platform/qt/include/qmapboxgl.hpp#L116
-    //LOGD("new state %d", change);
+    if (ever_loaded) {
+      if (change != QMapLibre::Map::MapChange::MapChangeRegionWillChange &&
+          change != QMapLibre::Map::MapChange::MapChangeRegionDidChange &&
+          change != QMapLibre::Map::MapChange::MapChangeWillStartRenderingFrame &&
+          change != QMapLibre::Map::MapChange::MapChangeDidFinishRenderingFrameFullyRendered) {
+        LOGD("New map state: %d", change);
+      }
+    }
   });
 
-  QObject::connect(m_map.data(), &QMapboxGL::mapLoadingFailed, [=](QMapboxGL::MapLoadingFailure err_code, const QString &reason) {
+  QObject::connect(m_map.data(), &QMapLibre::Map::mapLoadingFailed, [=](QMapLibre::Map::MapLoadingFailure err_code, const QString &reason) {
     LOGE("Map loading failed with %d: '%s'\n", err_code, reason.toStdString().c_str());
   });
 
@@ -101,22 +110,24 @@ void MapRenderer::msgUpdate() {
     auto pos = location.getPositionGeodetic();
     auto orientation = location.getCalibratedOrientationNED();
 
-    bool localizer_valid = (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) && pos.getValid();
-    if (localizer_valid && (sm->rcv_frame("liveLocationKalman") % LLK_DECIMATION) == 0) {
+    if ((sm->rcv_frame("liveLocationKalman") % LLK_DECIMATION) == 0) {
       float bearing = RAD2DEG(orientation.getValue()[2]);
       updatePosition(get_point_along_line(pos.getValue()[0], pos.getValue()[1], bearing, MAP_OFFSET), bearing);
 
-      // TODO: use the static rendering mode
-      if (!loaded() && frame_id > 0) {
-        for (int i = 0; i < 5 && !loaded(); i++) {
-          LOGW("map render retry #%d, %d", i+1, m_map.isNull());
-          QApplication::processEvents(QEventLoop::AllEvents, 100);
-          update();
+      // TODO: use the static rendering mode instead
+      // retry render a few times
+      for (int i = 0; i < 5 && !rendered(); i++) {
+        QApplication::processEvents(QEventLoop::AllEvents, 100);
+        update();
+        if (rendered()) {
+          LOGW("rendered after %d retries", i+1);
+          break;
         }
+      }
 
-        if (!loaded()) {
-          LOGE("failed to render map after retry");
-        }
+      // fallback to sending a blank frame
+      if (!rendered()) {
+        publish(0, false);
       }
     }
   }
@@ -134,7 +145,7 @@ void MapRenderer::msgUpdate() {
   timer->start(0);
 }
 
-void MapRenderer::updatePosition(QMapbox::Coordinate position, float bearing) {
+void MapRenderer::updatePosition(QMapLibre::Coordinate position, float bearing) {
   if (m_map.isNull()) {
     return;
   }
@@ -161,7 +172,8 @@ void MapRenderer::update() {
   double end_t = millis_since_boot();
 
   if ((vipc_server != nullptr) && loaded()) {
-    publish((end_t - start_t) / 1000.0);
+    publish((end_t - start_t) / 1000.0, true);
+    last_llk_rendered = (*sm)["liveLocationKalman"].getLogMonoTime();
   }
 }
 
@@ -174,14 +186,19 @@ void MapRenderer::sendThumbnail(const uint64_t ts, const kj::Array<capnp::byte> 
   pm->send("navThumbnail", msg);
 }
 
-void MapRenderer::publish(const double render_time) {
+void MapRenderer::publish(const double render_time, const bool loaded) {
   QImage cap = fbo->toImage().convertToFormat(QImage::Format_RGB888, Qt::AutoColor);
+
+  auto location = (*sm)["liveLocationKalman"].getLiveLocationKalman();
+  bool valid = loaded && (location.getStatus() == cereal::LiveLocationKalman::Status::VALID) && location.getPositionGeodetic().getValid();
+  ever_loaded = ever_loaded || loaded;
   uint64_t ts = nanos_since_boot();
   VisionBuf* buf = vipc_server->get_buffer(VisionStreamType::VISION_STREAM_MAP);
   VisionIpcBufExtra extra = {
     .frame_id = frame_id,
     .timestamp_sof = (*sm)["liveLocationKalman"].getLogMonoTime(),
     .timestamp_eof = ts,
+    .valid = valid,
   };
 
   assert(cap.sizeInBytes() >= buf->len);
@@ -214,7 +231,9 @@ void MapRenderer::publish(const double render_time) {
 
   // Send state msg
   MessageBuilder msg;
-  auto state = msg.initEvent().initMapRenderState();
+  auto evt = msg.initEvent();
+  auto state = evt.initMapRenderState();
+  evt.setValid(valid);
   state.setLocationMonoTime((*sm)["liveLocationKalman"].getLogMonoTime());
   state.setRenderTime(render_time);
   state.setFrameId(frame_id);
@@ -242,21 +261,21 @@ void MapRenderer::updateRoute(QList<QGeoCoordinate> coordinates) {
   initLayers();
 
   auto route_points = coordinate_list_to_collection(coordinates);
-  QMapbox::Feature feature(QMapbox::Feature::LineStringType, route_points, {}, {});
+  QMapLibre::Feature feature(QMapLibre::Feature::LineStringType, route_points, {}, {});
   QVariantMap navSource;
   navSource["type"] = "geojson";
-  navSource["data"] = QVariant::fromValue<QMapbox::Feature>(feature);
+  navSource["data"] = QVariant::fromValue<QMapLibre::Feature>(feature);
   m_map->updateSource("navSource", navSource);
   m_map->setLayoutProperty("navLayer", "visibility", "visible");
 }
 
 void MapRenderer::initLayers() {
   if (!m_map->layerExists("navLayer")) {
+    LOGD("Initializing navLayer");
     QVariantMap nav;
-    nav["id"] = "navLayer";
     nav["type"] = "line";
     nav["source"] = "navSource";
-    m_map->addLayer(nav, "road-intersection");
+    m_map->addLayer("navLayer", nav, "road-intersection");
     m_map->setPaintProperty("navLayer", "line-color", QColor("grey"));
     m_map->setPaintProperty("navLayer", "line-width", 5);
     m_map->setLayoutProperty("navLayer", "line-cap", "round");
@@ -276,9 +295,10 @@ extern "C" {
     QApplication *app = new QApplication(argc, argv);
     assert(app);
 
-    QMapboxGLSettings settings;
+    QMapLibre::Settings settings;
+    settings.setProviderTemplate(QMapLibre::Settings::ProviderTemplate::MapboxProvider);
     settings.setApiBaseUrl(maps_host == nullptr ? MAPS_HOST : maps_host);
-    settings.setAccessToken(token == nullptr ? get_mapbox_token() : token);
+    settings.setApiKey(token == nullptr ? get_mapbox_token() : token);
 
     return new MapRenderer(settings, false);
   }

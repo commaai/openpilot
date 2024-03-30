@@ -1,5 +1,9 @@
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 
+#include <algorithm>
+#include <string>
+#include <utility>
+
 #include <QJsonDocument>
 #include <QJsonObject>
 
@@ -12,23 +16,25 @@ QString get_mapbox_token() {
   return MAPBOX_TOKEN.isEmpty() ? CommaApi::create_jwt({}, 4 * 7 * 24 * 3600) : MAPBOX_TOKEN;
 }
 
-QMapboxGLSettings get_mapbox_settings() {
-  QMapboxGLSettings settings;
+QMapLibre::Settings get_mapbox_settings() {
+  QMapLibre::Settings settings;
+  settings.setProviderTemplate(QMapLibre::Settings::ProviderTemplate::MapboxProvider);
 
   if (!Hardware::PC()) {
     settings.setCacheDatabasePath(MAPS_CACHE_PATH);
+    settings.setCacheDatabaseMaximumSize(100 * 1024 * 1024);
   }
   settings.setApiBaseUrl(MAPS_HOST);
-  settings.setAccessToken(get_mapbox_token());
+  settings.setApiKey(get_mapbox_token());
 
   return settings;
 }
 
-QGeoCoordinate to_QGeoCoordinate(const QMapbox::Coordinate &in) {
+QGeoCoordinate to_QGeoCoordinate(const QMapLibre::Coordinate &in) {
   return QGeoCoordinate(in.first, in.second);
 }
 
-QMapbox::CoordinatesCollections model_to_collection(
+QMapLibre::CoordinatesCollections model_to_collection(
   const cereal::LiveLocationKalman::Measurement::Reader &calibratedOrientationECEF,
   const cereal::LiveLocationKalman::Measurement::Reader &positionECEF,
   const cereal::XYZTData::Reader &line){
@@ -37,7 +43,7 @@ QMapbox::CoordinatesCollections model_to_collection(
   Eigen::Vector3d orient(calibratedOrientationECEF.getValue()[0], calibratedOrientationECEF.getValue()[1], calibratedOrientationECEF.getValue()[2]);
   Eigen::Matrix3d ecef_from_local = euler2rot(orient);
 
-  QMapbox::Coordinates coordinates;
+  QMapLibre::Coordinates coordinates;
   auto x = line.getX();
   auto y = line.getY();
   auto z = line.getZ();
@@ -47,28 +53,28 @@ QMapbox::CoordinatesCollections model_to_collection(
     coordinates.push_back({point_geodetic.lat, point_geodetic.lon});
   }
 
-  return {QMapbox::CoordinatesCollection{coordinates}};
+  return {QMapLibre::CoordinatesCollection{coordinates}};
 }
 
-QMapbox::CoordinatesCollections coordinate_to_collection(const QMapbox::Coordinate &c) {
-  QMapbox::Coordinates coordinates{c};
-  return {QMapbox::CoordinatesCollection{coordinates}};
+QMapLibre::CoordinatesCollections coordinate_to_collection(const QMapLibre::Coordinate &c) {
+  QMapLibre::Coordinates coordinates{c};
+  return {QMapLibre::CoordinatesCollection{coordinates}};
 }
 
-QMapbox::CoordinatesCollections capnp_coordinate_list_to_collection(const capnp::List<cereal::NavRoute::Coordinate>::Reader& coordinate_list) {
-  QMapbox::Coordinates coordinates;
-  for (auto const &c: coordinate_list) {
+QMapLibre::CoordinatesCollections capnp_coordinate_list_to_collection(const capnp::List<cereal::NavRoute::Coordinate>::Reader& coordinate_list) {
+  QMapLibre::Coordinates coordinates;
+  for (auto const &c : coordinate_list) {
     coordinates.push_back({c.getLatitude(), c.getLongitude()});
   }
-  return {QMapbox::CoordinatesCollection{coordinates}};
+  return {QMapLibre::CoordinatesCollection{coordinates}};
 }
 
-QMapbox::CoordinatesCollections coordinate_list_to_collection(const QList<QGeoCoordinate> &coordinate_list) {
-  QMapbox::Coordinates coordinates;
+QMapLibre::CoordinatesCollections coordinate_list_to_collection(const QList<QGeoCoordinate> &coordinate_list) {
+  QMapLibre::Coordinates coordinates;
   for (auto &c : coordinate_list) {
     coordinates.push_back({c.latitude(), c.longitude()});
   }
-  return {QMapbox::CoordinatesCollection{coordinates}};
+  return {QMapLibre::CoordinatesCollection{coordinates}};
 }
 
 QList<QGeoCoordinate> polyline_to_coordinate_list(const QString &polylineString) {
@@ -113,7 +119,7 @@ QList<QGeoCoordinate> polyline_to_coordinate_list(const QString &polylineString)
   return path;
 }
 
-std::optional<QMapbox::Coordinate> coordinate_from_param(const std::string &param) {
+std::optional<QMapLibre::Coordinate> coordinate_from_param(const std::string &param) {
   QString json_str = QString::fromStdString(Params().get(param));
   if (json_str.isEmpty()) return {};
 
@@ -122,14 +128,26 @@ std::optional<QMapbox::Coordinate> coordinate_from_param(const std::string &para
 
   QJsonObject json = doc.object();
   if (json["latitude"].isDouble() && json["longitude"].isDouble()) {
-    QMapbox::Coordinate coord(json["latitude"].toDouble(), json["longitude"].toDouble());
+    QMapLibre::Coordinate coord(json["latitude"].toDouble(), json["longitude"].toDouble());
     return coord;
   } else {
     return {};
   }
 }
 
-double angle_difference(double angle1, double angle2) {
-  double diff = fmod(angle2 - angle1 + 180.0, 360.0) - 180.0;
-  return diff < -180.0 ? diff + 360.0 : diff;
+// return {distance, unit}
+std::pair<QString, QString> map_format_distance(float d, bool is_metric) {
+  auto round_distance = [](float d) -> QString {
+    return (d > 10) ? QString::number(std::nearbyint(d)) : QString::number(std::nearbyint(d * 10) / 10.0, 'f', 1);
+  };
+
+  d = std::max(d, 0.0f);
+  if (is_metric) {
+    return (d > 500) ? std::pair{round_distance(d / 1000), QObject::tr("km")}
+                     : std::pair{QString::number(50 * std::nearbyint(d / 50)), QObject::tr("m")};
+  } else {
+    float feet = d * METER_TO_FOOT;
+    return (feet > 500) ? std::pair{round_distance(d * METER_TO_MILE), QObject::tr("mi")}
+                        : std::pair{QString::number(50 * std::nearbyint(d / 50)), QObject::tr("ft")};
+  }
 }

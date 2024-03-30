@@ -4,10 +4,8 @@
 #include <QFileInfo>
 #include <QRegularExpression>
 #include <QTextStream>
-#include <numeric>
-#include <sstream>
 
-DBCFile::DBCFile(const QString &dbc_file_name, QObject *parent) : QObject(parent) {
+DBCFile::DBCFile(const QString &dbc_file_name) {
   QFile file(dbc_file_name);
   if (file.open(QIODevice::ReadOnly)) {
     name_ = QFileInfo(dbc_file_name).baseName();
@@ -16,43 +14,15 @@ DBCFile::DBCFile(const QString &dbc_file_name, QObject *parent) : QObject(parent
     if (dbc_file_name.endsWith(AUTO_SAVE_EXTENSION)) {
       filename.chop(AUTO_SAVE_EXTENSION.length());
     }
-    open(file.readAll());
+    parse(file.readAll());
   } else {
     throw std::runtime_error("Failed to open file.");
   }
 }
 
-DBCFile::DBCFile(const QString &name, const QString &content, QObject *parent) : QObject(parent), name_(name), filename("") {
+DBCFile::DBCFile(const QString &name, const QString &content) : name_(name), filename("") {
   // Open from clipboard
-  open(content);
-}
-
-void DBCFile::open(const QString &content) {
-  std::istringstream stream(content.toStdString());
-  auto dbc = const_cast<DBC *>(dbc_parse_from_stream(name_.toStdString(), stream));
-  msgs.clear();
-  for (auto &msg : dbc->msgs) {
-    auto &m = msgs[msg.address];
-    m.address = msg.address;
-    m.name = msg.name.c_str();
-    m.size = msg.size;
-    for (auto &s : msg.sigs) {
-      auto sig = m.sigs.emplace_back(new cabana::Signal);
-      sig->name = s.name.c_str();
-      sig->start_bit = s.start_bit;
-      sig->msb = s.msb;
-      sig->lsb = s.lsb;
-      sig->size = s.size;
-      sig->is_signed = s.is_signed;
-      sig->factor = s.factor;
-      sig->offset = s.offset;
-      sig->is_little_endian = s.is_little_endian;
-    }
-    m.update();
-  }
-  parseExtraInfo(content);
-
-  delete dbc;
+  parse(content);
 }
 
 bool DBCFile::save() {
@@ -82,17 +52,17 @@ void DBCFile::cleanupAutoSaveFile() {
 bool DBCFile::writeContents(const QString &fn) {
   QFile file(fn);
   if (file.open(QIODevice::WriteOnly)) {
-    file.write(generateDBC().toUtf8());
-    return true;
+    return file.write(generateDBC().toUtf8()) >= 0;
   }
   return false;
 }
 
-void DBCFile::updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &comment) {
+void DBCFile::updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &node, const QString &comment) {
   auto &m = msgs[id.address];
   m.address = id.address;
   m.name = name;
   m.size = size;
+  m.transmitter = node.isEmpty() ? DEFAULT_NODE_NAME : node;
   m.comment = comment;
 }
 
@@ -106,11 +76,7 @@ cabana::Msg *DBCFile::msg(const QString &name) {
   return it != msgs.end() ? &(it->second) : nullptr;
 }
 
-int DBCFile::signalCount() {
-  return std::accumulate(msgs.cbegin(), msgs.cend(), 0, [](int &n, const auto &m) { return n + m.second.sigs.size(); });
-}
-
-void DBCFile::parseExtraInfo(const QString &content) {
+void DBCFile::parse(const QString &content) {
   static QRegularExpression bo_regexp(R"(^BO_ (\w+) (\w+) *: (\w+) (\w+))");
   static QRegularExpression sg_regexp(R"(^SG_ (\w+) : (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");
   static QRegularExpression sgm_regexp(R"(^SG_ (\w+) (\w+) *: (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");
@@ -120,23 +86,36 @@ void DBCFile::parseExtraInfo(const QString &content) {
 
   int line_num = 0;
   QString line;
-  auto dbc_assert = [&line_num, &line, this](bool condition) {
-    if (!condition) throw std::runtime_error(QString("[%1:%2]: %3").arg(filename).arg(line_num).arg(line).toStdString());
+  auto dbc_assert = [&line_num, &line, this](bool condition, const QString &msg = "") {
+    if (!condition) throw std::runtime_error(QString("[%1:%2]%3: %4").arg(filename).arg(line_num).arg(msg).arg(line).toStdString());
   };
   auto get_sig = [this](uint32_t address, const QString &name) -> cabana::Signal * {
     auto m = (cabana::Msg *)msg(address);
     return m ? (cabana::Signal *)m->sig(name) : nullptr;
   };
 
+  msgs.clear();
   QTextStream stream((QString *)&content);
-  uint32_t address = 0;
+  cabana::Msg *current_msg = nullptr;
+  int multiplexor_cnt = 0;
+  bool seen_first = false;
   while (!stream.atEnd()) {
     ++line_num;
-    line = stream.readLine().trimmed();
+    QString raw_line = stream.readLine();
+    line = raw_line.trimmed();
+
+    bool seen = true;
     if (line.startsWith("BO_ ")) {
+      multiplexor_cnt = 0;
       auto match = bo_regexp.match(line);
       dbc_assert(match.hasMatch());
-      address = match.captured(1).toUInt();
+      auto address = match.captured(1).toUInt();
+      dbc_assert(msgs.count(address) == 0, QString("Duplicate message address: %1").arg(address));
+      current_msg = &msgs[address];
+      current_msg->address = address;
+      current_msg->name = match.captured(2);
+      current_msg->size = match.captured(3).toULong();
+      current_msg->transmitter = match.captured(4).trimmed();
     } else if (line.startsWith("SG_ ")) {
       int offset = 0;
       auto match = sg_regexp.match(line);
@@ -145,11 +124,34 @@ void DBCFile::parseExtraInfo(const QString &content) {
         offset = 1;
       }
       dbc_assert(match.hasMatch());
-      if (auto s = get_sig(address, match.captured(1))) {
-        s->min = match.captured(8 + offset).toDouble();
-        s->max = match.captured(9 + offset).toDouble();
-        s->unit = match.captured(10 + offset);
+      dbc_assert(current_msg, "No Message");
+      auto name = match.captured(1);
+      dbc_assert(current_msg->sig(name) == nullptr, "Duplicate signal name");
+      cabana::Signal s{};
+      if (offset == 1) {
+        auto indicator = match.captured(2);
+        if (indicator == "M") {
+          // Only one signal within a single message can be the multiplexer switch.
+          dbc_assert(++multiplexor_cnt < 2, "Multiple multiplexor");
+          s.type = cabana::Signal::Type::Multiplexor;
+        } else {
+          s.type = cabana::Signal::Type::Multiplexed;
+          s.multiplex_value = indicator.mid(1).toInt();
+        }
       }
+      s.name = name;
+      s.start_bit = match.captured(offset + 2).toInt();
+      s.size = match.captured(offset + 3).toInt();
+      s.is_little_endian = match.captured(offset + 4).toInt() == 1;
+      s.is_signed = match.captured(offset + 5) == "-";
+      s.factor = match.captured(offset + 6).toDouble();
+      s.offset = match.captured(offset + 7).toDouble();
+      s.min = match.captured(8 + offset).toDouble();
+      s.max = match.captured(9 + offset).toDouble();
+      s.unit = match.captured(10 + offset);
+      s.receiver_name = match.captured(11 + offset).trimmed();
+
+      current_msg->sigs.push_back(new cabana::Signal(s));
     } else if (line.startsWith("VAL_ ")) {
       auto match = val_regexp.match(line);
       dbc_assert(match.hasMatch());
@@ -165,7 +167,7 @@ void DBCFile::parseExtraInfo(const QString &content) {
       }
     } else if (line.startsWith("CM_ BO_")) {
       if (!line.endsWith("\";")) {
-        int pos = stream.pos() - line.length() - 1;
+        int pos = stream.pos() - raw_line.length() - 1;
         line = content.mid(pos, content.indexOf("\";", pos));
       }
       auto match = msg_comment_regexp.match(line);
@@ -175,7 +177,7 @@ void DBCFile::parseExtraInfo(const QString &content) {
       }
     } else if (line.startsWith("CM_ SG_ ")) {
       if (!line.endsWith("\";")) {
-        int pos = stream.pos() - line.length() - 1;
+        int pos = stream.pos() - raw_line.length() - 1;
         line = content.mid(pos, content.indexOf("\";", pos));
       }
       auto match = sg_comment_regexp.match(line);
@@ -183,20 +185,40 @@ void DBCFile::parseExtraInfo(const QString &content) {
       if (auto s = get_sig(match.captured(1).toUInt(), match.captured(2))) {
         s->comment = match.captured(3).trimmed();
       }
+    } else {
+      seen = false;
     }
+
+    if (seen) {
+      seen_first = true;
+    } else if (!seen_first) {
+      header += raw_line + "\n";
+    }
+  }
+
+  for (auto &[_, m] : msgs) {
+    m.update();
   }
 }
 
 QString DBCFile::generateDBC() {
-  QString dbc_string, signal_comment, message_comment, val_desc;
+  QString dbc_string, comment, val_desc;
   for (const auto &[address, m] : msgs) {
-    dbc_string += QString("BO_ %1 %2: %3 XXX\n").arg(address).arg(m.name).arg(m.size);
+    const QString transmitter = m.transmitter.isEmpty() ? DEFAULT_NODE_NAME : m.transmitter;
+    dbc_string += QString("BO_ %1 %2: %3 %4\n").arg(address).arg(m.name).arg(m.size).arg(transmitter);
     if (!m.comment.isEmpty()) {
-      message_comment += QString("CM_ BO_ %1 \"%2\";\n").arg(address).arg(m.comment);
+      comment += QString("CM_ BO_ %1 \"%2\";\n").arg(address).arg(m.comment);
     }
     for (auto sig : m.getSignals()) {
-      dbc_string += QString(" SG_ %1 : %2|%3@%4%5 (%6,%7) [%8|%9] \"%10\" XXX\n")
+      QString multiplexer_indicator;
+      if (sig->type == cabana::Signal::Type::Multiplexor) {
+        multiplexer_indicator = "M ";
+      } else if (sig->type == cabana::Signal::Type::Multiplexed) {
+        multiplexer_indicator = QString("m%1 ").arg(sig->multiplex_value);
+      }
+      dbc_string += QString(" SG_ %1 %2: %3|%4@%5%6 (%7,%8) [%9|%10] \"%11\" %12\n")
                         .arg(sig->name)
+                        .arg(multiplexer_indicator)
                         .arg(sig->start_bit)
                         .arg(sig->size)
                         .arg(sig->is_little_endian ? '1' : '0')
@@ -205,11 +227,12 @@ QString DBCFile::generateDBC() {
                         .arg(doubleToString(sig->offset))
                         .arg(doubleToString(sig->min))
                         .arg(doubleToString(sig->max))
-                        .arg(sig->unit);
+                        .arg(sig->unit)
+                        .arg(sig->receiver_name.isEmpty() ? DEFAULT_NODE_NAME : sig->receiver_name);
       if (!sig->comment.isEmpty()) {
-        signal_comment += QString("CM_ SG_ %1 %2 \"%3\";\n").arg(address).arg(sig->name).arg(sig->comment);
+        comment += QString("CM_ SG_ %1 %2 \"%3\";\n").arg(address).arg(sig->name).arg(sig->comment);
       }
-      if (!sig->val_desc.isEmpty()) {
+      if (!sig->val_desc.empty()) {
         QStringList text;
         for (auto &[val, desc] : sig->val_desc) {
           text << QString("%1 \"%2\"").arg(val).arg(desc);
@@ -219,5 +242,5 @@ QString DBCFile::generateDBC() {
     }
     dbc_string += "\n";
   }
-  return dbc_string + message_comment + signal_comment + val_desc;
+  return header + dbc_string + comment + val_desc;
 }

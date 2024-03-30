@@ -7,6 +7,7 @@
 #include <QProgressBar>
 #include <QSplitter>
 #include <QStatusBar>
+#include <set>
 
 #include "tools/cabana/chart/chartswidget.h"
 #include "tools/cabana/dbc/dbcmanager.h"
@@ -28,6 +29,7 @@ public:
 public slots:
   void openStream();
   void closeStream();
+  void exportToCSV();
   void changingStream();
   void streamStarted();
 
@@ -50,6 +52,7 @@ protected:
   void saveFile(DBCFile *dbc_file);
   void saveFileAs(DBCFile *dbc_file);
   void saveFileToClipboard(DBCFile *dbc_file);
+  void loadFingerprints();
   void loadFromClipboard(SourceSet s = SOURCE_ALL, bool close_all = true);
   void autoSave();
   void cleanupAutoSaveFile();
@@ -84,6 +87,7 @@ protected:
   QProgressBar *progress_bar;
   QLabel *status_label;
   QJsonDocument fingerprint_to_dbc;
+  QStringList opendbc_names;
   QSplitter *video_splitter = nullptr;
   enum { MAX_RECENT_FILES = 15 };
   QAction *recent_files_acts[MAX_RECENT_FILES] = {};
@@ -91,6 +95,7 @@ protected:
   QMenu *manage_dbcs_menu = nullptr;
   QMenu *tools_menu = nullptr;
   QAction *close_stream_act = nullptr;
+  QAction *export_to_csv_act = nullptr;
   QAction *save_dbc = nullptr;
   QAction *save_dbc_as = nullptr;
   QAction *copy_dbc_to_clipboard = nullptr;
@@ -98,7 +103,6 @@ protected:
   int prev_undostack_index = 0;
   int prev_undostack_count = 0;
   QByteArray default_state;
-  friend class OnlineHelp;
 };
 
 class HelpOverlay : public QWidget {
