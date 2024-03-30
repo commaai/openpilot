@@ -35,15 +35,26 @@ def loadSchema(schemaName):
     return json.loads(file.read())
 
 # Foxglove creates one graph of an array, and not one for each item of an array
-# This can be avoided by transforming array to separate values
-def transform_json(json_data, arr_key):
-  newTempC = {}
-  counter = 0
-  for tempC in json_data.get(arr_key):
-    newTempC[counter] = tempC
-    counter+=1
-  json_data[arr_key] = newTempC
-  return json_data
+# This can be avoided by transforming array to separate objects
+def transformListsToJsonDict(json_data):
+    def convert_array_to_dict(array):
+        new_dict = {}
+        for index, item in enumerate(array):
+            if isinstance(item, dict):
+                new_dict[index] = transformListsToJsonDict(item)
+            else:
+                new_dict[index] = item
+        return new_dict
+
+    new_data = {}
+    for key, value in json_data.items():
+        if isinstance(value, list):
+            new_data[key] = convert_array_to_dict(value)
+        elif isinstance(value, dict):
+            new_data[key] = transformListsToJsonDict(value)
+        else:
+            new_data[key] = value
+    return new_data
 
 # Transform openpilot thumbnail to foxglove compressedImage
 def transformToFoxgloveSchema(jsonMsg):
@@ -152,11 +163,11 @@ def convertToFoxGloveFormat(jsonData, rlogTopic):
   if rlogTopic == "thumbnail":
     jsonData = transformToFoxgloveSchema(jsonData)
     jsonData["title"] = FOXGLOVE_IMAGE_SCHEME_TITLE
-  elif rlogTopic == "deviceState":
-    jsonData["deviceState"] = transform_json(jsonData.get("deviceState"), "cpuTempC")
   elif rlogTopic == "navRoute":
     jsonData = transformMapCoordinates(jsonData)
     jsonData["title"] = FOXGLOVE_GEOJSON_TITLE
+  else:
+    jsonData = transformListsToJsonDict(jsonData)
   return jsonData
 
 def generateSchemas():
@@ -220,9 +231,10 @@ def createMcap(logPaths):
   generateSchemas()
   print("Creating mcap file")
 
-  print("Registering schemas and channels")
   listOfRlogTopics = os.listdir(RLOG_FOLDER)
-  for rlogTopic in listOfRlogTopics:
+  print(f"Registering schemas and channels [{len(listOfRlogTopics)}]")
+  for counter, rlogTopic in enumerate(listOfRlogTopics):
+    print(counter)
     schema = loadSchema(rlogTopic)
     schema_id = writer.register_schema(
       name= schema.get("title"),
