@@ -53,8 +53,9 @@ tools/replay/*.h
 selfdrive/__init__.py
 selfdrive/sentry.py
 selfdrive/tombstoned.py
-selfdrive/updated.py
 selfdrive/statsd.py
+
+selfdrive/updated/**
 
 system/logmessaged.py
 system/micd.py
@@ -81,11 +82,11 @@ selfdrive/boardd/panda.h
 selfdrive/boardd/spi.cc
 selfdrive/boardd/panda_comms.h
 selfdrive/boardd/panda_comms.cc
-selfdrive/boardd/set_time.py
 selfdrive/boardd/pandad.py
 selfdrive/boardd/tests/test_boardd_loopback.py
 
 selfdrive/car/__init__.py
+selfdrive/car/card.py
 selfdrive/car/docs_definitions.py
 selfdrive/car/car_helpers.py
 selfdrive/car/fingerprints.py
@@ -181,9 +182,12 @@ system/hardware/pc/hardware.py
 
 system/ubloxd/.gitignore
 system/ubloxd/SConscript
+system/ubloxd/pigeond.py
 system/ubloxd/generated/*
 system/ubloxd/*.h
 system/ubloxd/*.cc
+
+system/updated/*
 
 selfdrive/locationd/__init__.py
 selfdrive/locationd/SConscript
@@ -240,7 +244,6 @@ system/sensord/SConscript
 system/sensord/sensors_qcom2.cc
 system/sensord/sensors/*.cc
 system/sensord/sensors/*.h
-system/sensord/pigeond.py
 
 system/webrtc/__init__.py
 system/webrtc/webrtcd.py
@@ -541,7 +544,8 @@ opendbc/vw_golf_mk4.dbc
 opendbc/vw_mqb_2010.dbc
 
 opendbc/tesla_can.dbc
-opendbc/tesla_radar.dbc
+opendbc/tesla_radar_bosch_generated.dbc
+opendbc/tesla_radar_continental_generated.dbc
 opendbc/tesla_powertrain.dbc
 
 tinygrad_repo/openpilot/compile2.py

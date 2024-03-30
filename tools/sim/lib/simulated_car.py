@@ -4,9 +4,7 @@ from opendbc.can.packer import CANPacker
 from opendbc.can.parser import CANParser
 from openpilot.common.params import Params
 from openpilot.selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp
-from openpilot.selfdrive.car import crc8_pedal
 from openpilot.tools.sim.lib.common import SimulatorState
-from panda.python import Panda
 
 
 class SimulatedCar:
@@ -50,15 +48,6 @@ class SimulatedCar:
     }))
 
     msg.append(self.packer.make_can_msg("SCM_BUTTONS", 0, {"CRUISE_BUTTONS": simulator_state.cruise_button}))
-
-    values = {
-      "COUNTER_PEDAL": self.idx & 0xF,
-      "INTERCEPTOR_GAS": simulator_state.user_gas * 2**12,
-      "INTERCEPTOR_GAS2": simulator_state.user_gas * 2**12,
-    }
-    checksum = crc8_pedal(self.packer.make_can_msg("GAS_SENSOR", 0, values)[2][:-1])
-    values["CHECKSUM_PEDAL"] = checksum
-    msg.append(self.packer.make_can_msg("GAS_SENSOR", 0, values))
 
     msg.append(self.packer.make_can_msg("GEARBOX", 0, {"GEAR": 4, "GEAR_SHIFTER": 8}))
     msg.append(self.packer.make_can_msg("GAS_PEDAL_2", 0, {}))
@@ -116,7 +105,7 @@ class SimulatedCar:
       'controlsAllowed': True,
       'safetyModel': 'hondaNidec',
       'alternativeExperience': self.sm["carParams"].alternativeExperience,
-      'safetyParam': Panda.FLAG_HONDA_GAS_INTERCEPTOR
+      'safetyParam': 0,
     }
     self.pm.send('pandaStates', dat)
 

@@ -264,6 +264,10 @@ class SegmentRange:
     return self.m.group("timestamp")
 
   @property
+  def log_id(self) -> str:
+    return self.m.group("log_id")
+
+  @property
   def slice(self) -> str:
     return self.m.group("slice") or ""
 
@@ -291,7 +295,7 @@ class SegmentRange:
       return list(range(end + 1))[s]
 
   def __str__(self) -> str:
-    return f"{self.dongle_id}/{self.timestamp}" + (f"/{self.slice}" if self.slice else "") + (f"/{self.selector}" if self.selector else "")
+    return f"{self.dongle_id}/{self.log_id}" + (f"/{self.slice}" if self.slice else "") + (f"/{self.selector}" if self.selector else "")
 
   def __repr__(self) -> str:
     return self.__str__()

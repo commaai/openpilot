@@ -137,17 +137,17 @@ std::optional<QMapLibre::Coordinate> coordinate_from_param(const std::string &pa
 
 // return {distance, unit}
 std::pair<QString, QString> map_format_distance(float d, bool is_metric) {
-  auto round_distance = [](float d) -> float {
-    return (d > 10) ? std::nearbyint(d) : std::nearbyint(d * 10) / 10.0;
+  auto round_distance = [](float d) -> QString {
+    return (d > 10) ? QString::number(std::nearbyint(d)) : QString::number(std::nearbyint(d * 10) / 10.0, 'f', 1);
   };
 
   d = std::max(d, 0.0f);
   if (is_metric) {
-    return (d > 500) ? std::pair{QString::number(round_distance(d / 1000)), QObject::tr("km")}
+    return (d > 500) ? std::pair{round_distance(d / 1000), QObject::tr("km")}
                      : std::pair{QString::number(50 * std::nearbyint(d / 50)), QObject::tr("m")};
   } else {
     float feet = d * METER_TO_FOOT;
-    return (feet > 500) ? std::pair{QString::number(round_distance(d * METER_TO_MILE)), QObject::tr("mi")}
+    return (feet > 500) ? std::pair{round_distance(d * METER_TO_MILE), QObject::tr("mi")}
                         : std::pair{QString::number(50 * std::nearbyint(d / 50)), QObject::tr("ft")};
   }
 }
