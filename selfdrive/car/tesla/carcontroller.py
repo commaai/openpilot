@@ -17,7 +17,6 @@ class CarController(CarControllerBase):
     self.tesla_can = TeslaCAN(self.packer, self.pt_packer)
 
     self.model3 = CP.carFingerprint == CAR.AP3_MODEL3
-    self.model3_cancel_sent = False  # Flag to track if cancel command has been sent
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
@@ -58,24 +57,17 @@ class CarController(CarControllerBase):
           can_sends.extend(self.tesla_can.create_longitudinal_commands(acc_state, target_speed, min_accel, max_accel, CS.das_control_counters.popleft()))
 
     # Cancel on user steering override, since there is no steering torque blending
-    if hands_on_fault:
+    if hands_on_fault and CS.cruiseState.enabled:
       pcm_cancel_cmd = True
 
     if self.frame % 10 == 0 and pcm_cancel_cmd:
       if self.model3:
-        # Ensure only one cancel request is sent to prevent entering Neutral gear unintentionally
-        if not self.model3_cancel_sent:
-          can_sends.append(self.tesla_can.model3_cancel_acc(CS.sccm_right_stalk))
-          self.model3_cancel_sent = True
+        can_sends.append(self.tesla_can.model3_cancel_acc(CS.sccm_right_stalk))
       else:
         # Spam every possible counter value, otherwise it might not be accepted
         for counter in range(16):
           can_sends.append(self.tesla_can.create_action_request(CS.msg_stw_actn_req, pcm_cancel_cmd, CANBUS.chassis, counter))
           can_sends.append(self.tesla_can.create_action_request(CS.msg_stw_actn_req, pcm_cancel_cmd, CANBUS.autopilot_chassis, counter))
-
-    elif not pcm_cancel_cmd:
-      # Reset model3 flag when pcm_cancel_cmd is false again
-      self.model3_cancel_sent = False
 
     # TODO: HUD control
 
