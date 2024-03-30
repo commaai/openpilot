@@ -24,7 +24,7 @@
        <range left="0.000450" top="1.050000" right="2483.624998" bottom="-1.050000"/>
        <limitY/>
        <curve color="#0097ff" name="/carState/steeringPressed"/>
-       <curve color="#d62728" name="/carControl/actuatorsOutput/steer"/>
+       <curve color="#d62728" name="/carOutput/actuatorsOutput/steer"/>
       </plot>
      </DockArea>
      <DockArea name="...">

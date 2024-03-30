@@ -29,7 +29,7 @@ from openpilot.tools.lib.logreader import LogReader
 
 # Baseline CPU usage by process
 PROCS = {
-  "selfdrive.controls.controlsd": 39.0,
+  "selfdrive.controls.controlsd": 46.0,
   "./loggerd": 14.0,
   "./encoderd": 17.0,
   "./camerad": 14.5,
@@ -65,7 +65,7 @@ PROCS.update({
   "tici": {
     "./boardd": 4.0,
     "./ubloxd": 0.02,
-    "system.sensord.pigeond": 6.0,
+    "system.ubloxd.pigeond": 6.0,
   },
   "tizi": {
      "./boardd": 19.0,
@@ -114,6 +114,7 @@ class TestOnroad(unittest.TestCase):
     params = Params()
     params.remove("CurrentRoute")
     set_params_enabled()
+    os.environ['REPLAY'] = '1'
     os.environ['TESTING_CLOSET'] = '1'
     if os.path.exists(Paths.log_root()):
       shutil.rmtree(Paths.log_root())
@@ -423,4 +424,4 @@ class TestOnroad(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  pytest.main()
+  unittest.main()

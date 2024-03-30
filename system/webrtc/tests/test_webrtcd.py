@@ -11,20 +11,27 @@ from openpilot.system.webrtc.webrtcd import get_stream
 
 import aiortc
 from teleoprtc import WebRTCOfferBuilder
+from parameterized import parameterized_class
 
 
+@parameterized_class(("in_services", "out_services"), [
+  (["testJoystick"], ["carState"]),
+  ([], ["carState"]),
+  (["testJoystick"], []),
+  ([], []),
+])
 class TestWebrtcdProc(unittest.IsolatedAsyncioTestCase):
   async def assertCompletesWithTimeout(self, awaitable, timeout=1):
     try:
       async with asyncio.timeout(timeout):
         await awaitable
-    except asyncio.TimeoutError:
+    except TimeoutError:
       self.fail("Timeout while waiting for awaitable to complete")
 
   async def test_webrtcd(self):
     mock_request = MagicMock()
     async def connect(offer):
-      body = {'sdp': offer.sdp, 'cameras': offer.video, 'bridge_services_in': [], 'bridge_services_out': ['carState']}
+      body = {'sdp': offer.sdp, 'cameras': offer.video, 'bridge_services_in': self.in_services, 'bridge_services_out': self.out_services}
       mock_request.json.side_effect = AsyncMock(return_value=body)
       response = await get_stream(mock_request)
       response_json = json.loads(response.text)
@@ -33,7 +40,8 @@ class TestWebrtcdProc(unittest.IsolatedAsyncioTestCase):
     builder = WebRTCOfferBuilder(connect)
     builder.offer_to_receive_video_stream("road")
     builder.offer_to_receive_audio_stream()
-    builder.add_messaging()
+    if len(self.in_services) > 0 or len(self.out_services) > 0:
+      builder.add_messaging()
 
     stream = builder.stream()
 
@@ -42,7 +50,7 @@ class TestWebrtcdProc(unittest.IsolatedAsyncioTestCase):
 
     self.assertTrue(stream.has_incoming_video_track("road"))
     self.assertTrue(stream.has_incoming_audio_track())
-    self.assertTrue(stream.has_messaging_channel())
+    self.assertEqual(stream.has_messaging_channel(), len(self.in_services) > 0 or len(self.out_services) > 0)
 
     video_track, audio_track = stream.get_incoming_video_track("road"), stream.get_incoming_audio_track()
     await self.assertCompletesWithTimeout(video_track.recv())
