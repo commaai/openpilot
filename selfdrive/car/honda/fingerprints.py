@@ -1411,7 +1411,7 @@ FW_VERSIONS = {
       b'37805-64S-AA10\x00\x00',
     ],
   },
-  CAR.PILOT_4G: {
+  CAR.HONDA_PILOT_4G: {
     (Ecu.fwdCamera, 0x18dab5f1, None): [
       b'8S102-T90-A050\x00\x00',
     ],

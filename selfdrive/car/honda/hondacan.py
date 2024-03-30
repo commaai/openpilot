@@ -1,6 +1,6 @@
 from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car import CanBusBase
-from openpilot.selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, CANFD_CAR, CAR, CarControllerParams
+from openpilot.selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_CANFD_CAR, CAR, CarControllerParams
 
 # CAN bus layout with relay
 # 0 = ACC-CAN - radar side
@@ -14,7 +14,7 @@ class CanBus(CanBusBase):
     # use fingerprint if specified
     super().__init__(CP if fingerprint is None else None, fingerprint)
 
-    if CP.carFingerprint in (HONDA_BOSCH - HONDA_BOSCH_RADARLESS - CANFD_CAR):
+    if CP.carFingerprint in (HONDA_BOSCH - HONDA_BOSCH_RADARLESS - HONDA_CANFD_CAR):
       self._pt, self._radar = self.offset + 1, self.offset
     else:
       self._pt, self._radar = self.offset, self.offset + 1
@@ -34,7 +34,7 @@ class CanBus(CanBusBase):
 
 def get_lkas_cmd_bus(CAN, car_fingerprint, radar_disabled=False):
   no_radar = car_fingerprint in HONDA_BOSCH_RADARLESS
-  if radar_disabled or no_radar or car_fingerprint in CANFD_CAR:
+  if radar_disabled or no_radar or car_fingerprint in HONDA_CANFD_CAR:
     # when radar is disabled, steering commands are sent directly to powertrain bus
     return CAN.pt
   # normally steering commands are sent to radar, which forwards them to powertrain bus
@@ -179,7 +179,7 @@ def create_ui_commands(packer, CAN, CP, enabled, pcm_speed, hud, is_metric, acc_
     # car likely needs to see LKAS_PROBLEM fall within a specific time frame, so forward from camera
     lkas_hud_values['LKAS_PROBLEM'] = lkas_hud['LKAS_PROBLEM']
 
-  if CP.carFingerprint in CANFD_CAR:
+  if CP.carFingerprint in HONDA_CANFD_CAR:
     lkas_hud_values['LANE_LINES'] = 3
     lkas_hud_values['DASHED_LANES'] = hud.lanes_visible
 
