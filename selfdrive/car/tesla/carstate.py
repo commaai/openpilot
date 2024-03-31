@@ -100,7 +100,7 @@ class CarState(CarStateBase):
 
     # Doors
     if model3:
-      ret.doorOpen = False  # (cp_adas.vl["VCFRONT_status"]["VCFRONT_anyDoorOpen"] == 1)  # todo add trunk
+      ret.doorOpen = cp_adas.vl["VCFRONT_status"]["VCFRONT_anyDoorOpen"] != 0
     else:
       ret.doorOpen = any((self.can_define.dv["GTW_carState"][door].get(int(cp.vl["GTW_carState"][door]), "OPEN") == "OPEN") for door in DOORS)
 
