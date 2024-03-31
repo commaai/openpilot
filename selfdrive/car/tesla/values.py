@@ -9,7 +9,6 @@ Ecu = car.CarParams.Ecu
 
 Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 
-
 class CAR(Platforms):
   AP1_MODELS = PlatformConfig(
     'TESLA AP1 MODEL S',
