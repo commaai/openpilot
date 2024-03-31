@@ -150,8 +150,8 @@ class CarInterface(CarInterfaceBase):
       tune.kiBP = [0., 5., 12., 20., 27.]
       tune.kiV = [.35, .23, .20, .17, .1]
       if candidate in TSS2_CAR:
-        ret.vEgoStopping = 0.02
-        ret.vEgoStarting = 0.02
+        ret.vEgoStopping = 0.1
+        ret.vEgoStarting = 0.1
         ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
 
         # some notes:
@@ -180,7 +180,7 @@ class CarInterface(CarInterfaceBase):
 
         # TODO: we add 0.2s delay to lat, why not long?
         ret.longitudinalActuatorDelayLowerBound = 0.15 + 0.2
-        ret.longitudinalActuatorDelayUpperBound = 0.15 + 0.2
+        ret.longitudinalActuatorDelayUpperBound = 0.15 + 0.35
     else:
       tune.kpBP = [0., 5., 35.]
       tune.kiBP = [0., 35.]
