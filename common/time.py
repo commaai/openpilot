@@ -7,7 +7,7 @@ def min_date():
   # on systemd systems, the default time is the systemd build time
   systemd_path = Path("/lib/systemd/systemd")
   if systemd_path.exists():
-    d = datetime.datetime.fromtimestamp(.stat().st_mtime)
+    d = datetime.datetime.fromtimestamp(systemd_path.stat().st_mtime)
     return d + datetime.timedelta(days=1)
   return _MIN_DATE
 
