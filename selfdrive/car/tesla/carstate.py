@@ -16,6 +16,7 @@ class CarState(CarStateBase):
 
     # Needed by carcontroller
     self.msg_stw_actn_req = None
+    self.acc_enabled = None
     self.sccm_right_stalk = None
     self.das_control = None
     self.steer_warning = None
@@ -71,7 +72,8 @@ class CarState(CarStateBase):
     cruise_state = self.can_define.dv["DI_state"]["DI_cruiseState"].get(int(cp.vl["DI_state"]["DI_cruiseState"]), None)
     speed_units = self.can_define.dv["DI_state"]["DI_speedUnits"].get(int(cp.vl["DI_state"]["DI_speedUnits"]), None)
 
-    ret.cruiseState.enabled = (cruise_state in ("ENABLED", "STANDSTILL", "OVERRIDE", "PRE_FAULT", "PRE_CANCEL"))
+    self.acc_enabled = (cruise_state in ("ENABLED", "STANDSTILL", "OVERRIDE", "PRE_FAULT", "PRE_CANCEL"))
+    ret.cruiseState.enabled = self.acc_enabled
     if speed_units == "KPH":
       ret.cruiseState.speed = cp.vl["DI_state"]["DI_digitalSpeed"] * CV.KPH_TO_MS
     elif speed_units == "MPH":
