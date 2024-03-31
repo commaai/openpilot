@@ -60,7 +60,7 @@ class CarController(CarControllerBase):
     if hands_on_fault:
       pcm_cancel_cmd = True
 
-    # Cancel only if ACC is enabled
+    # Sent cancel request only if ACC is enabled
     if self.frame % 10 == 0 and pcm_cancel_cmd and CS.acc_enabled:
       if self.model3:
         can_sends.append(self.tesla_can.model3_cancel_acc(CS.sccm_right_stalk))
