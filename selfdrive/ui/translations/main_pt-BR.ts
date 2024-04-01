@@ -299,11 +299,11 @@
     </message>
     <message>
         <source>Pair Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Parear Dispositivo</translation>
     </message>
     <message>
-        <source>Pair</source>
-        <translation type="unfinished"></translation>
+        <source>PAIR</source>
+        <translation>PAREAR</translation>
     </message>
 </context>
 <context>
@@ -489,6 +489,29 @@
     </message>
 </context>
 <context>
+    <name>OnroadAlerts</name>
+    <message>
+        <source>openpilot Unavailable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Waiting for controls to start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TAKE CONTROL IMMEDIATELY</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls Unresponsive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reboot Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>PairingPopup</name>
     <message>
         <source>Pair your device to your comma account</source>
@@ -613,7 +636,7 @@
     </message>
     <message>
         <source>now</source>
-        <translation type="unfinished"></translation>
+        <translation>agora</translation>
     </message>
 </context>
 <context>
