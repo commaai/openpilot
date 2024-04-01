@@ -373,7 +373,10 @@ def create_html_report():
   with open(TEST_DIR / "template.html") as f:
     template = jinja2.Template(f.read())
 
-  cases = {("alerts/" if f.parent.name == "alerts" else "") + f.stem: (str(f.relative_to(TEST_OUTPUT_DIR)), "reference.png") for f in SCREENSHOTS_DIR.glob("main_en/**/*.png")}
+  cases = {
+    ("alerts/" if f.parent.name == "alerts" else "") + f.stem:
+      (str(f.relative_to(TEST_OUTPUT_DIR)), "reference.png") for f in SCREENSHOTS_DIR.glob("main_en/**/*.png")
+  }
   cases = dict(sorted(cases.items()))
 
   with open(OUTPUT_FILE, "w") as f:
