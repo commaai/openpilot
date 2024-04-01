@@ -24,8 +24,8 @@ JERK_MEAS_T = 0.5
 
 # TODO: put these cars within limits
 ABOVE_LIMITS_CARS = [
-  SUBARU.LEGACY,
-  SUBARU.OUTBACK,
+  SUBARU.SUBARU_LEGACY,
+  SUBARU.SUBARU_OUTBACK,
 ]
 
 car_model_jerks: defaultdict[str, dict[str, float]] = defaultdict(dict)

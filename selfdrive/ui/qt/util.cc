@@ -61,7 +61,7 @@ QString timeAgo(const QDateTime &date) {
 
   QString s;
   if (diff < 60) {
-    s = "now";
+    s = QObject::tr("now");
   } else if (diff < 60 * 60) {
     int minutes = diff / 60;
     s = QObject::tr("%n minute(s) ago", "", minutes);
