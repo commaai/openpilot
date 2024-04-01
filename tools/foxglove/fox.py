@@ -5,7 +5,18 @@ import os
 import subprocess
 from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.logreader import LogReader
-from mcap.writer import Writer
+try:
+    from mcap.writer import Writer
+except ImportError:
+    print("mcap module not found. Attempting to install...")
+    subprocess.run([sys.executable, "-m", "pip", "install", "mcap"])
+    # Attempt to import again after installation
+    try:
+        from mcap.writer import Writer
+    except ImportError:
+        print("Failed to install mcap module. Exiting.")
+        sys.exit(1)
+
 
 FOXGLOVE_IMAGE_SCHEME_TITLE = "foxglove.CompressedImage"
 FOXGLOVE_GEOJSON_TITLE = "foxglove.GeoJSON"
