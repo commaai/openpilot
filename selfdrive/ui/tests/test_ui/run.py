@@ -87,8 +87,6 @@ def send_onroad_alert(click, pm, alert: Alert):
   pm.send('controlsState', dat)
 
 def setup_common(click, pm: PubMaster):
-  Params().put("HasAcceptedTerms", terms_version)
-  Params().put("CompletedTrainingVersion", training_version)
   Params().put("DongleId", "123456789012345")
   dat = messaging.new_message('deviceState')
   dat.deviceState.started = True
@@ -276,6 +274,8 @@ class TestUI(unittest.TestCase):
     del sys.modules["mouseinfo"]
 
   def setup(self, prime_type = PrimeType.NONE):
+    Params().put("HasAcceptedTerms", terms_version)
+    Params().put("CompletedTrainingVersion", training_version)
     Params().put("PrimeType", prime_type)
     self.sm = SubMaster(["uiDebug"])
     self.pm = PubMaster(["deviceState", "pandaStates", "controlsState", 'roadCameraState', 'wideRoadCameraState', 'liveLocationKalman',
@@ -373,11 +373,11 @@ def create_html_report():
   with open(TEST_DIR / "template.html") as f:
     template = jinja2.Template(f.read())
 
-  cases = {f.stem: (str(f.relative_to(TEST_OUTPUT_DIR)), "reference.png") for f in SCREENSHOTS_DIR.glob("*.png")}
+  cases = {("alerts/" if f.parent.name == "alerts" else "") + f.stem: (str(f.relative_to(TEST_OUTPUT_DIR)), "reference.png") for f in SCREENSHOTS_DIR.glob("main_en/**/*.png")}
   cases = dict(sorted(cases.items()))
 
   with open(OUTPUT_FILE, "w") as f:
-    f.write(template.render(cases=cases))
+    f.write(template.render(cases=cases, langs=langs))
 
 def create_screenshots():
   if TEST_OUTPUT_DIR.exists():

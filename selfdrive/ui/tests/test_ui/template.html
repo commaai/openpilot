@@ -19,16 +19,23 @@
 
 </style>
 
+
+{% for lang_name, lang_code in langs.items() %}
+
+<h1>{{lang_name}}</h1>
+
 {% for name, (image, ref_image) in cases.items() %}
 
-<h1>{{name}}</h1>
+<h2>{{name}}</h2>
 <div class="row">
   <div class="column">
-    <img class="image" src="{{ image }}"  />
+    <img class="image" src="{{ image.replace('main_en', lang_code) }}"  />
   </div>
 </div>
 
 <br>
+
+{% endfor %}
 
 {% endfor %}
 </html>
