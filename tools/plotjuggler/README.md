@@ -12,7 +12,7 @@ Once you've [set up the openpilot environment](../README.md), this command will 
 
 ```
 $ ./juggle.py -h
-usage: juggle.py [-h] [--demo] [--qlog] [--ci] [--can] [--stream] [--layout [LAYOUT]] [--install] [--dbc DBC]
+usage: juggle.py [-h] [--demo] [--can] [--stream] [--layout [LAYOUT]] [--install] [--dbc DBC]
                  [route_or_segment_name] [segment_count]
 
 A helper to run PlotJuggler on openpilot routes
@@ -25,8 +25,6 @@ positional arguments:
 optional arguments:
   -h, --help            show this help message and exit
   --demo                Use the demo route instead of providing one (default: False)
-  --qlog                Use qlogs (default: False)
-  --ci                  Download data from openpilot CI bucket (default: False)
   --can                 Parse CAN data (default: False)
   --stream              Start PlotJuggler in streaming mode (default: False)
   --layout [LAYOUT]     Run PlotJuggler with a pre-defined layout (default: None)
@@ -38,11 +36,13 @@ optional arguments:
 
 Examples using route name:
 
-`./juggle.py "a2a0ccea32023010|2023-07-27--13-01-19"`
+`./juggle.py "a2a0ccea32023010/2023-07-27--13-01-19"`
 
-Examples using segment name:
+Examples using segment range:
 
-`./juggle.py "a2a0ccea32023010|2023-07-27--13-01-19--1"`
+`./juggle.py "a2a0ccea32023010/2023-07-27--13-01-19/1"`
+
+`./juggle.py "a2a0ccea32023010/2023-07-27--13-01-19/1/q" # use qlogs`
 
 ## Streaming
 
