@@ -10,7 +10,8 @@ def generate_dbc_json() -> str:
   dbc_map = {platform.name: platform.config.dbc_dict['pt'] for platform in PLATFORMS.values() if platform != "MOCK"}
 
   for m in MIGRATION:
-    dbc_map[m] = dbc_map[MIGRATION[m]]
+    if MIGRATION[m] in dbc_map:
+      dbc_map[m] = dbc_map[MIGRATION[m]]
 
   return json.dumps(dict(sorted(dbc_map.items())), indent=2)
 
