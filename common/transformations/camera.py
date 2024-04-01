@@ -1,55 +1,74 @@
+import itertools
 import numpy as np
+from dataclasses import dataclass
 
 import openpilot.common.transformations.orientation as orient
 
 ## -- hardcoded hardware params --
-eon_f_focal_length = 910.0
-eon_d_focal_length = 650.0
-tici_f_focal_length = 2648.0
-tici_e_focal_length = tici_d_focal_length = 567.0 # probably wrong? magnification is not consistent across frame
+@dataclass(frozen=True)
+class CameraConfig:
+  width: int
+  height: int
+  focal_length: float
 
-eon_f_frame_size = (1164, 874)
-eon_d_frame_size = (816, 612)
-tici_f_frame_size = tici_e_frame_size = tici_d_frame_size = (1928, 1208)
+  @property
+  def size(self):
+    return (self.width, self.height)
 
-# aka 'K' aka camera_frame_from_view_frame
-eon_fcam_intrinsics = np.array([
-  [eon_f_focal_length,  0.0,  float(eon_f_frame_size[0])/2],
-  [0.0,  eon_f_focal_length,  float(eon_f_frame_size[1])/2],
-  [0.0,  0.0,                                          1.0]])
-eon_intrinsics = eon_fcam_intrinsics # xx
+  @property
+  def intrinsics(self):
+    # aka 'K' aka camera_frame_from_view_frame
+    return np.array([
+      [self.focal_length,  0.0, float(self.width)/2],
+      [0.0, self.focal_length, float(self.height)/2],
+      [0.0,  0.0, 1.0]
+    ])
 
-eon_dcam_intrinsics = np.array([
-  [eon_d_focal_length,  0.0,  float(eon_d_frame_size[0])/2],
-  [0.0,  eon_d_focal_length,  float(eon_d_frame_size[1])/2],
-  [0.0,  0.0,                                          1.0]])
+  @property
+  def intrinsics_inv(self):
+    # aka 'K_inv' aka view_frame_from_camera_frame
+    return np.linalg.inv(self.intrinsics)
 
-tici_fcam_intrinsics = np.array([
-  [tici_f_focal_length,  0.0,  float(tici_f_frame_size[0])/2],
-  [0.0,  tici_f_focal_length,  float(tici_f_frame_size[1])/2],
-  [0.0,  0.0,                                            1.0]])
+@dataclass(frozen=True)
+class _NoneCameraConfig(CameraConfig):
+  width: int = 0
+  height: int = 0
+  focal_length: float = 0
 
-tici_dcam_intrinsics = np.array([
-  [tici_d_focal_length,  0.0,  float(tici_d_frame_size[0])/2],
-  [0.0,  tici_d_focal_length,  float(tici_d_frame_size[1])/2],
-  [0.0,  0.0,                                            1.0]])
+@dataclass(frozen=True)
+class DeviceCameraConfig:
+  fcam: CameraConfig
+  dcam: CameraConfig
+  ecam: CameraConfig
 
-tici_ecam_intrinsics = tici_dcam_intrinsics
+  def all_cams(self):
+    for cam in ['fcam', 'dcam', 'ecam']:
+      if not isinstance(getattr(self, cam), _NoneCameraConfig):
+        yield cam, getattr(self, cam)
 
-# aka 'K_inv' aka view_frame_from_camera_frame
-eon_fcam_intrinsics_inv = np.linalg.inv(eon_fcam_intrinsics)
-eon_intrinsics_inv = eon_fcam_intrinsics_inv # xx
+_ar_ox_fisheye = CameraConfig(1928, 1208, 567.0)  # focal length probably wrong? magnification is not consistent across frame
+_os_fisheye = CameraConfig(2688, 1520, 567.0 / 2 * 3)
+_ar_ox_config = DeviceCameraConfig(CameraConfig(1928, 1208, 2648.0), _ar_ox_fisheye, _ar_ox_fisheye)
+_os_config = DeviceCameraConfig(CameraConfig(2688, 1520, 2648.0 * 2 / 3), _os_fisheye, _os_fisheye)
+_neo_config = DeviceCameraConfig(CameraConfig(1164, 874, 910.0), CameraConfig(816, 612, 650.0), _NoneCameraConfig())
 
-tici_fcam_intrinsics_inv = np.linalg.inv(tici_fcam_intrinsics)
-tici_ecam_intrinsics_inv = np.linalg.inv(tici_ecam_intrinsics)
+DEVICE_CAMERAS = {
+  # A "device camera" is defined by a device type and sensor
 
+  # sensor type was never set on eon/neo/two
+  ("neo", "unknown"): _neo_config,
+  # unknown here is AR0231, field was added with OX03C10 support
+  ("tici", "unknown"): _ar_ox_config,
 
-FULL_FRAME_SIZE = tici_f_frame_size
-FOCAL = tici_f_focal_length
-fcam_intrinsics = tici_fcam_intrinsics
+  # before deviceState.deviceType was set, assume tici AR config
+  ("unknown", "ar0231"): _ar_ox_config,
+  ("unknown", "ox03c10"): _ar_ox_config,
 
-W, H = FULL_FRAME_SIZE[0], FULL_FRAME_SIZE[1]
-
+  # simulator (emulates a tici)
+  ("pc", "unknown"): _ar_ox_config,
+}
+prods = itertools.product(('tici', 'tizi', 'mici'), (('ar0231', _ar_ox_config), ('ox03c10', _ar_ox_config), ('os04c10', _os_config)))
+DEVICE_CAMERAS.update({(d, c[0]): c[1] for d, c in prods})
 
 # device/mesh : x->forward, y-> right, z->down
 # view : x->right, y->down, z->forward
@@ -93,7 +112,7 @@ def roll_from_ke(m):
                     -(m[0, 0] - m[0, 1] * m[2, 0] / m[2, 1]))
 
 
-def normalize(img_pts, intrinsics=fcam_intrinsics):
+def normalize(img_pts, intrinsics):
   # normalizes image coordinates
   # accepts single pt or array of pts
   intrinsics_inv = np.linalg.inv(intrinsics)
@@ -106,7 +125,7 @@ def normalize(img_pts, intrinsics=fcam_intrinsics):
   return img_pts_normalized[:, :2].reshape(input_shape)
 
 
-def denormalize(img_pts, intrinsics=fcam_intrinsics, width=np.inf, height=np.inf):
+def denormalize(img_pts, intrinsics, width=np.inf, height=np.inf):
   # denormalizes image coordinates
   # accepts single pt or array of pts
   img_pts = np.array(img_pts)
@@ -123,7 +142,7 @@ def denormalize(img_pts, intrinsics=fcam_intrinsics, width=np.inf, height=np.inf
   return img_pts_denormalized[:, :2].reshape(input_shape)
 
 
-def get_calib_from_vp(vp, intrinsics=fcam_intrinsics):
+def get_calib_from_vp(vp, intrinsics):
   vp_norm = normalize(vp, intrinsics)
   yaw_calib = np.arctan(vp_norm[0])
   pitch_calib = -np.arctan(vp_norm[1]*np.cos(yaw_calib))

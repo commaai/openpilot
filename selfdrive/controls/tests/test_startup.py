@@ -39,12 +39,12 @@ CX5_FW_VERSIONS = [
   # TODO: test EventName.startup for release branches
 
   # officially supported car
-  (EventName.startupMaster, TOYOTA.COROLLA, COROLLA_FW_VERSIONS, "toyota"),
-  (EventName.startupMaster, TOYOTA.COROLLA, COROLLA_FW_VERSIONS, "toyota"),
+  (EventName.startupMaster, TOYOTA.TOYOTA_COROLLA, COROLLA_FW_VERSIONS, "toyota"),
+  (EventName.startupMaster, TOYOTA.TOYOTA_COROLLA, COROLLA_FW_VERSIONS, "toyota"),
 
   # dashcamOnly car
-  (EventName.startupNoControl, MAZDA.CX5, CX5_FW_VERSIONS, "mazda"),
-  (EventName.startupNoControl, MAZDA.CX5, CX5_FW_VERSIONS, "mazda"),
+  (EventName.startupNoControl, MAZDA.MAZDA_CX5, CX5_FW_VERSIONS, "mazda"),
+  (EventName.startupNoControl, MAZDA.MAZDA_CX5, CX5_FW_VERSIONS, "mazda"),
 
   # unrecognized car with no fw
   (EventName.startupNoFw, None, None, ""),
@@ -55,8 +55,8 @@ CX5_FW_VERSIONS = [
   (EventName.startupNoCar, None, COROLLA_FW_VERSIONS[:1], "toyota"),
 
   # fuzzy match
-  (EventName.startupMaster, TOYOTA.COROLLA, COROLLA_FW_VERSIONS_FUZZY, "toyota"),
-  (EventName.startupMaster, TOYOTA.COROLLA, COROLLA_FW_VERSIONS_FUZZY, "toyota"),
+  (EventName.startupMaster, TOYOTA.TOYOTA_COROLLA, COROLLA_FW_VERSIONS_FUZZY, "toyota"),
+  (EventName.startupMaster, TOYOTA.TOYOTA_COROLLA, COROLLA_FW_VERSIONS_FUZZY, "toyota"),
 ])
 def test_startup_alert(expected_event, car_model, fw_versions, brand):
   controls_sock = messaging.sub_sock("controlsState")

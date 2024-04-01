@@ -220,7 +220,7 @@ def split_name(name: str) -> tuple[str, str, str]:
 
 
 @dataclass
-class CarInfo:
+class CarDocs:
   # make + model + model years
   name: str
 
@@ -265,7 +265,9 @@ class CarInfo:
 
     # min steer & enable speed columns
     # TODO: set all the min steer speeds in carParams and remove this
-    if self.min_steer_speed is None:
+    if self.min_steer_speed is not None:
+      assert CP.minSteerSpeed == 0, f"{CP.carFingerprint}: Minimum steer speed set in both CarDocs and CarParams"
+    else:
       self.min_steer_speed = CP.minSteerSpeed
 
     # TODO: set all the min enable speeds in carParams correctly and remove this
@@ -315,7 +317,7 @@ class CarInfo:
     return self
 
   def init_make(self, CP: car.CarParams):
-    """CarInfo subclasses can add make-specific logic for harness selection, footnotes, etc."""
+    """CarDocs subclasses can add make-specific logic for harness selection, footnotes, etc."""
 
   def get_detail_sentence(self, CP):
     if not CP.notCar:
@@ -344,7 +346,7 @@ class CarInfo:
       return sentence_builder.format(car_model=f"{self.make} {self.model}", alc=alc, acc=acc)
 
     else:
-      if CP.carFingerprint == "COMMA BODY":
+      if CP.carFingerprint == "COMMA_BODY":
         return "The body is a robotics dev kit that can run openpilot. <a href='https://www.commabody.com'>Learn more.</a>"
       else:
         raise Exception(f"This notCar does not have a detail sentence: {CP.carFingerprint}")
