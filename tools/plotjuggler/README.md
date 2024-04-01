@@ -38,9 +38,9 @@ Examples using route name:
 
 `./juggle.py "a2a0ccea32023010/2023-07-27--13-01-19"`
 
-Examples using segment name:
+Examples using segment range:
 
-`./juggle.py "a2a0ccea32023010/2023-07-27--13-01-19--1"`
+`./juggle.py "a2a0ccea32023010/2023-07-27--13-01-19/1"`
 
 ## Streaming
 
