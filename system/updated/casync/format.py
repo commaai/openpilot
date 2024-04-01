@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import io
 import struct
-from typing import Self
+from typing import Iterator, Self
 
 from openpilot.system.updated.casync.chunk_reader import CAChunk
 
@@ -209,44 +209,33 @@ class CAGoodbye:
     return CAGoodbye()
 
 
-@dataclass
-class CAArchive:
-  items: list
+ArchiveEntry = CAEntry | CAGoodbye | CAFilename | CASymlink | CAPayload
+CAArchive = Iterator[ArchiveEntry]
 
-  @staticmethod
-  def from_buffer(b: io.BytesIO) -> 'CAArchive':
-    entry = CAEntry.from_buffer(b)
+def parse_archive(b: io.BytesIO) -> CAArchive:
+  entry = CAEntry.from_buffer(b)
+  assert entry.feature_flags == REQUIRED_FLAGS
+  yield entry
 
-    assert entry.feature_flags == REQUIRED_FLAGS
-    items: list[CAEntry | CAGoodbye | CAFilename | CAArchive | CASymlink | CAPayload] = [entry]
+  cur = b.tell()
+  size = b.seek(0, 2)
+  b.seek(cur, 0)
 
-    cur = b.tell()
+  while b.tell() < size:
+    header = CAFormatHeader.from_buffer(b)
+    b.seek(-16, 1) # reset back to header
 
-    size = b.seek(0, 2)
-    b.seek(cur, 0)
-
-    while b.tell() < size:
-      header = CAFormatHeader.from_buffer(b)
-      b.seek(-16, 1) # reset back to header
-
-      if header.format_type == CA_FORMAT_FILENAME:
-        filename = CAFilename.from_buffer(b)
-        archive = CAArchive.from_buffer(b)
-        items.append(filename)
-        items.append(archive)
-      elif header.format_type == CA_FORMAT_GOODBYE:
-        goodbye = CAGoodbye.from_buffer(b)
-        items.append(goodbye)
-        break
-      elif header.format_type == CA_FORMAT_PAYLOAD:
-        payload = CAPayload.from_buffer(b)
-        items.append(payload)
-        break
-      elif header.format_type == CA_FORMAT_SYMLINK:
-        symlink = CASymlink.from_buffer(b)
-        items.append(symlink)
-        break
-      else:
-        raise Exception(f"unsupported type: {header.format_type:02x}")
-
-    return CAArchive(items)
+    if header.format_type == CA_FORMAT_FILENAME:
+      yield CAFilename.from_buffer(b)
+      yield from parse_archive(b)
+    elif header.format_type == CA_FORMAT_GOODBYE:
+      yield CAGoodbye.from_buffer(b)
+      break
+    elif header.format_type == CA_FORMAT_PAYLOAD:
+      yield CAPayload.from_buffer(b)
+      break
+    elif header.format_type == CA_FORMAT_SYMLINK:
+      yield CASymlink.from_buffer(b)
+      break
+    else:
+      raise Exception(f"unsupported type: {header.format_type:02x}")

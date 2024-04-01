@@ -3,12 +3,13 @@ import io
 import os
 import pathlib
 import shutil
+from typing import Iterator
 import requests
 
 from dataclasses import dataclass
 
-from openpilot.system.updated.casync.chunk_reader import ChunkReader, DirectoryChunkReader, RemoteChunkReader
-from openpilot.system.updated.casync.format import CAArchive, CAEntry, CAFilename, CAGoodbye, CAIndex, CAPayload, CASymlink
+from openpilot.system.updated.casync.chunk_reader import ChunkBuffer, ChunkReader, DirectoryChunkReader, RemoteChunkReader
+from openpilot.system.updated.casync.format import CAArchive, CAEntry, CAFilename, CAGoodbye, CAIndex, CAPayload, CASymlink, parse_archive
 
 
 @dataclass
@@ -45,48 +46,32 @@ class FileNode(Node):
     path.write_bytes(self.payload.data)
     path.chmod(self.entry.mode)
 
-@dataclass
-class Tree:
-  nodes: list[Node]
 
-  def __init__(self, archive: CAArchive):
-    self.nodes = self.parse(archive, [CAFilename(None)])
 
-  def parse(self, archive: CAArchive, current_paths: list[CAFilename]):
-    current_entry = None
+def parse_archive_tree(archive: CAArchive) -> Iterator[Node]:
+  current_paths = [CAFilename(None)]
+  current_entry = None
 
-    ret: list[Node] = []
-
-    for item in archive.items:
-      if isinstance(item, CAFilename):
-        current_paths.append(item)
-      if isinstance(item, CAEntry):
-        current_entry = item
-      if isinstance(item, CAPayload):
-        assert current_entry is not None
-        ret.append(FileNode(current_entry, current_paths[1:], item))
-        current_paths.pop()
-      if isinstance(item, CASymlink):
-        assert current_entry is not None
-        ret.append(SymlinkNode(current_entry, current_paths[1:], item))
-        current_paths.pop()
-      if isinstance(item, CAGoodbye):
-        current_paths.pop()
-      if isinstance(item, CAArchive):
-        ret.extend(self.parse(item, list(current_paths)))
-        current_paths.pop()
-
-    return ret
-
-  def save(self, directory: pathlib.Path):
-    for node in self.nodes:
-      node.save(directory)
+  for item in archive:
+    if isinstance(item, CAFilename):
+      current_paths.append(item)
+    if isinstance(item, CAEntry):
+      current_entry = item
+    if isinstance(item, CAPayload):
+      assert current_entry is not None
+      yield FileNode(current_entry, current_paths[1:], item)
+      current_paths.pop()
+    if isinstance(item, CASymlink):
+      assert current_entry is not None
+      yield SymlinkNode(current_entry, current_paths[1:], item)
+      current_paths.pop()
+    if isinstance(item, CAGoodbye):
+      current_paths.pop()
 
 
 def parse_caidx(caindex: CAIndex, chunk_reader: ChunkReader) -> CAArchive:
-  data = b"".join(chunk_reader.read(chunk) for chunk in caindex.chunks)
-
-  archive = CAArchive.from_buffer(io.BytesIO(data))
+  buffer = ChunkBuffer(caindex.chunks, chunk_reader)
+  archive = parse_archive(buffer)
 
   return archive
 
@@ -95,8 +80,8 @@ def extract_archive(archive: CAArchive, directory: pathlib.Path):
   shutil.rmtree(directory, ignore_errors=True)
   os.mkdir(directory)
 
-  tree = Tree(archive)
-  tree.save(directory)
+  for entry in parse_archive_tree(archive):
+    entry.save(directory)
 
 
 def extract_local(local_caidx, output_path: pathlib.Path):
@@ -122,7 +107,9 @@ def extract_remote(remote_caidx, output_path: pathlib.Path):
 
 
 if __name__ == "__main__":
+  print("extracting a local caidx...")
   extract_local("/tmp/ceec/nightly_rebuild.caidx", pathlib.Path("/tmp/local"))
+  print("extracting a remote caidx...")
   extract_remote( \
-    "https://commadist.blob.core.windows.net/openpilot-releases/0.9.7-48e61b19ad34fb63769f42d88c311054f30d0f5d-release.caidx", \
+    "https://commadist.blob.core.windows.net/openpilot-releases/0.9.7-a51b164cbd5cdb557a0ae392300b9b91e16c9053-release.caidx", \
      pathlib.Path("/tmp/remote"))
