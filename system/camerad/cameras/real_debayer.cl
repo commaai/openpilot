@@ -27,7 +27,7 @@ float3 color_correct(float3 rgb, int expo) {
   return -0.507089*exp(-12.54124638*x)+0.9655*powr(x,0.5)-0.472597*x+0.507089;
   #elif IS_OS
   float s = log2((float)expo);
-  if (s < 6) {s = 12.0 - s;}
+  if (s < 6) {s = fmin(12.0 - s, 9.0);}
   return clamp(log(1 + x*65472.0) * (0.48*s*s - 12.92*s + 115.0) - (1.08*s*s - 29.2*s + 260.0), 0.0, 255.0) / 255.0;
   #else
   // tone mapping params
@@ -116,55 +116,49 @@ float4 val4_from_10(uchar8 pvs, uchar ext, bool aligned, float gain) {
 }
 
 float combine_pvs(float lv, float sv, int expo) {
-  float llv = fmax(lv - 64.0, 0.0);
-  float lsv = fmax(sv - 64.0, 0.0);
-  // float llvc = fmax(llv / expo, 14.984375);
-  float lsvc = fmax(lsv * expo, 61376.0);
+  float svc = fmax(sv * expo, 61376.0);
+  float svd = sv * fmin(expo, 8.0) / 8;
+
   if (expo > 64) {
-    if (lv < 1023) {
-      return llv / (65536.0 - 64.0);
+    if (lv < 959) {
+      return lv / (65536.0 - 64.0);
     } else {
-      return (lsvc / 64) / (65536.0 - 64.0);
+      return (svc / 64) / (65536.0 - 64.0);
     }
   } else {
-    // if (sv < 1023) {
-    //  return lsv / (65536.0 - 64.0);
-    // } else {
-    //   return (llvc * 64) / (65536.0 - 64.0);
-    // }
-    if (lv > 96) {
-      return (llv * 64 / expo) / (65536.0 - 64.0);
+    if (lv > 32) {
+      return (lv * 64 / fmax(expo, 8.0)) / (65536.0 - 64.0);
     } else {
-      return lsv / (65536.0 - 64.0);
+      return svd / (65536.0 - 64.0);
     }
   }
 }
 
 float4 val4_from_210(uchar8 long_pvs, uchar long_ext, uchar8 short_pvs, uchar short_ext, bool aligned, float gain, int expo) {
-  uint4 parsed_long;
-  uint4 parsed_short;
+  int4 parsed_long;
+  int4 parsed_short;
   if (aligned) {
-    parsed_long = (uint4)(((uint)long_pvs.s0 << 2) + (long_pvs.s1 & 0b00000011),
-                     ((uint)long_pvs.s2 << 2) + ((long_pvs.s6 & 0b11000000) / 64),
-                     ((uint)long_pvs.s3 << 2) + ((long_pvs.s6 & 0b00110000) / 16),
-                     ((uint)long_pvs.s4 << 2) + ((long_pvs.s6 & 0b00001100) / 4));
-    parsed_short = (uint4)(((uint)short_pvs.s0 << 2) + (short_pvs.s1 & 0b00000011),
-                     ((uint)short_pvs.s2 << 2) + ((short_pvs.s6 & 0b11000000) / 64),
-                     ((uint)short_pvs.s3 << 2) + ((short_pvs.s6 & 0b00110000) / 16),
-                     ((uint)short_pvs.s4 << 2) + ((short_pvs.s6 & 0b00001100) / 4));
+    parsed_long = (int4)(((int)long_pvs.s0 << 2) + (long_pvs.s1 & 0b00000011),
+                     ((int)long_pvs.s2 << 2) + ((long_pvs.s6 & 0b11000000) / 64),
+                     ((int)long_pvs.s3 << 2) + ((long_pvs.s6 & 0b00110000) / 16),
+                     ((int)long_pvs.s4 << 2) + ((long_pvs.s6 & 0b00001100) / 4));
+    parsed_short = (int4)(((uint)short_pvs.s0 << 2) + (short_pvs.s1 & 0b00000011),
+                     ((int)short_pvs.s2 << 2) + ((short_pvs.s6 & 0b11000000) / 64),
+                     ((int)short_pvs.s3 << 2) + ((short_pvs.s6 & 0b00110000) / 16),
+                     ((int)short_pvs.s4 << 2) + ((short_pvs.s6 & 0b00001100) / 4));
   } else {
-    parsed_long = (uint4)(((uint)long_pvs.s0 << 2) + ((long_pvs.s3 & 0b00110000) / 16),
-                     ((uint)long_pvs.s1 << 2) + ((long_pvs.s3 & 0b00001100) / 4),
-                     ((uint)long_pvs.s2 << 2) + ((long_pvs.s3 & 0b00000011)),
-                     ((uint)long_pvs.s4 << 2) + ((long_ext & 0b11000000) / 64));
-    parsed_short = (uint4)(((uint)short_pvs.s0 << 2) + ((short_pvs.s3 & 0b00110000) / 16),
-                     ((uint)short_pvs.s1 << 2) + ((short_pvs.s3 & 0b00001100) / 4),
-                     ((uint)short_pvs.s2 << 2) + ((short_pvs.s3 & 0b00000011)),
-                     ((uint)short_pvs.s4 << 2) + ((short_ext & 0b11000000) / 64));
+    parsed_long = (int4)(((int)long_pvs.s0 << 2) + ((long_pvs.s3 & 0b00110000) / 16),
+                     ((int)long_pvs.s1 << 2) + ((long_pvs.s3 & 0b00001100) / 4),
+                     ((int)long_pvs.s2 << 2) + ((long_pvs.s3 & 0b00000011)),
+                     ((int)long_pvs.s4 << 2) + ((long_ext & 0b11000000) / 64));
+    parsed_short = (int4)(((int)short_pvs.s0 << 2) + ((short_pvs.s3 & 0b00110000) / 16),
+                     ((int)short_pvs.s1 << 2) + ((short_pvs.s3 & 0b00001100) / 4),
+                     ((int)short_pvs.s2 << 2) + ((short_pvs.s3 & 0b00000011)),
+                     ((int)short_pvs.s4 << 2) + ((short_ext & 0b11000000) / 64));
   }
 
-  float4 pl = convert_float4(parsed_long);
-  float4 ps = convert_float4(parsed_short);
+  float4 pl = convert_float4(parsed_long - 64);
+  float4 ps = convert_float4(parsed_short - 64);
   float4 pv;
   // 16-bits?
 
