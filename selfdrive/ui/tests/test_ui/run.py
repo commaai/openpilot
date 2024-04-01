@@ -272,6 +272,11 @@ SCREENSHOTS_DIR = TEST_OUTPUT_DIR / "screenshots"
 class TestUI(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
+    params = Params()
+    params.put("TermsVersion", terms_version)
+    params.put("TrainingVersion", training_version)
+    params.put("HasAcceptedTerms", terms_version)
+    params.put("CompletedTrainingVersion", training_version)
     os.environ["SCALE"] = "1"
     sys.modules["mouseinfo"] = False
 
@@ -280,8 +285,6 @@ class TestUI(unittest.TestCase):
     del sys.modules["mouseinfo"]
 
   def setup(self, prime_type = PrimeType.NONE):
-    Params().put("HasAcceptedTerms", terms_version)
-    Params().put("CompletedTrainingVersion", training_version)
     Params().put("PrimeType", prime_type)
     self.sm = SubMaster(["uiDebug"])
     self.pm = PubMaster(["deviceState", "pandaStates", "controlsState", 'roadCameraState', 'wideRoadCameraState', 'liveLocationKalman',
