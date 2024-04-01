@@ -493,6 +493,29 @@
     </message>
 </context>
 <context>
+    <name>OnroadAlerts</name>
+    <message>
+        <source>openpilot Unavailable</source>
+        <translation>openpilot غير متوفر</translation>
+    </message>
+    <message>
+        <source>Waiting for controls to start</source>
+        <translation>في انتظار بدء عناصر التحكم</translation>
+    </message>
+    <message>
+        <source>TAKE CONTROL IMMEDIATELY</source>
+        <translation>تحكم على الفور</translation>
+    </message>
+    <message>
+        <source>Controls Unresponsive</source>
+        <translation>الضوابط غير مستجيبة</translation>
+    </message>
+    <message>
+        <source>Reboot Device</source>
+        <translation>إعادة التشغيل</translation>
+    </message>
+</context>
+<context>
     <name>PairingPopup</name>
     <message>
         <source>Pair your device to your comma account</source>

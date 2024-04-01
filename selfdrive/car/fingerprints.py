@@ -1,4 +1,3 @@
-from typing import Any, Callable
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.body.values import CAR as BODY
 from openpilot.selfdrive.car.chrysler.values import CAR as CHRYSLER
@@ -11,7 +10,6 @@ from openpilot.selfdrive.car.nissan.values import CAR as NISSAN
 from openpilot.selfdrive.car.subaru.values import CAR as SUBARU
 from openpilot.selfdrive.car.tesla.values import CAR as TESLA
 from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
-from openpilot.selfdrive.car.values import PLATFORMS, Platform
 from openpilot.selfdrive.car.volkswagen.values import CAR as VW
 
 FW_VERSIONS = get_interface_attr('FW_VERSIONS', combine_brands=True, ignore_none=True)
@@ -136,6 +134,8 @@ MIGRATION = {
   "CHRYSLER PACIFICA 2018": CHRYSLER.CHRYSLER_PACIFICA_2018,
   "CHRYSLER PACIFICA 2020": CHRYSLER.CHRYSLER_PACIFICA_2020,
   "DODGE DURANGO 2021": CHRYSLER.DODGE_DURANGO,
+  "JEEP GRAND CHEROKEE V6 2018": CHRYSLER.JEEP_GRAND_CHEROKEE,
+  "JEEP GRAND CHEROKEE 2019": CHRYSLER.JEEP_GRAND_CHEROKEE_2019,
   "RAM 1500 5TH GEN": CHRYSLER.RAM_1500_5TH_GEN,
   "RAM HD 5TH GEN": CHRYSLER.RAM_HD_5TH_GEN,
   "FORD BRONCO SPORT 1ST GEN": FORD.FORD_BRONCO_SPORT_MK1,
@@ -255,6 +255,7 @@ MIGRATION = {
   "MAZDA CX-5 2022": MAZDA.MAZDA_CX5_2022,
   "NISSAN X-TRAIL 2017": NISSAN.NISSAN_XTRAIL,
   "NISSAN LEAF 2018": NISSAN.NISSAN_LEAF,
+  "NISSAN LEAF 2018 Instrument Cluster": NISSAN.NISSAN_LEAF_IC,
   "NISSAN ROGUE 2019": NISSAN.NISSAN_ROGUE,
   "NISSAN ALTIMA 2020": NISSAN.NISSAN_ALTIMA,
   "SUBARU ASCENT LIMITED 2019": SUBARU.SUBARU_ASCENT,
@@ -338,15 +339,3 @@ MIGRATION = {
   "SKODA SCALA 1ST GEN": VW.SKODA_SCALA_MK1,
   "SKODA SUPERB 3RD GEN": VW.SKODA_SUPERB_MK3,
 }
-
-
-MapFunc = Callable[[Platform], Any]
-
-
-def create_platform_map(func: MapFunc):
-  ret = {str(platform): func(platform) for platform in PLATFORMS.values() if func(platform) is not None}
-
-  for m in MIGRATION:
-    ret[m] = ret[MIGRATION[m]]
-
-  return ret
