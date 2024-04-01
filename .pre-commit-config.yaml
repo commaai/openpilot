@@ -98,6 +98,6 @@ repos:
         args:
         - --lock
 -   repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.28.0
+    rev: 0.28.1
     hooks:
     -   id: check-github-workflows
