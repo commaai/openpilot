@@ -7,7 +7,7 @@ from openpilot.system.version import BUILD_METADATA_FILENAME, BuildMetadata
 
 
 CASYNC_ARGS = ["--with=symlinks", "--with=permissions", "--compression=xz"]
-CASYNC_FILES = [BUILD_METADATA_FILENAME, ".caexclude"]
+CASYNC_FILES = [BUILD_METADATA_FILENAME]
 
 
 def run(cmd):
@@ -26,16 +26,6 @@ def get_exclude_set(path) -> set[str]:
         file = file.parent
 
   return exclude_set
-
-
-def create_caexclude_file(path: pathlib.Path):
-  with open(path / ".caexclude", "w") as f:
-    # exclude everything except the paths already in the release
-    f.write("*\n")
-    f.write(".*\n")
-
-    for file in sorted(get_exclude_set(path)):
-      f.write(f"!{file}\n")
 
 
 def create_build_metadata_file(path: pathlib.Path, build_metadata: BuildMetadata, channel: str):
