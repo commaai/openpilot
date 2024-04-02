@@ -20,7 +20,10 @@ from openpilot.tools.lib.url_file import URLFileException
 NUM_SEGS = 17  # number of segments in the test route
 ALL_SEGS = list(range(NUM_SEGS))
 TEST_ROUTE = "344c5c15b34f2d8a/2024-01-03--09-37-12"
-QLOG_FILE = "https://commadataci.blob.core.windows.net/openpilotci/0375fdf7b1ce594d/2019-06-13--08-32-25/3/qlog.bz2"
+LOG_BASE = "https://commadataci.blob.core.windows.net/openpilotci/0375fdf7b1ce594d/2019-06-13--08-32-25"
+LOG_BASE2 = "https://commadata2.blob.core.windows.net/commadata2/344c5c15b34f2d8a/2024-01-03--09-37-12"
+QLOG_FILE = f"{LOG_BASE}/3/qlog.bz2"
+RLOG_FILE = f"{LOG_BASE}/3/rlog.bz2"
 
 
 def noop(segment: LogIterable):
@@ -28,19 +31,24 @@ def noop(segment: LogIterable):
 
 
 @contextlib.contextmanager
-def setup_source_scenario(is_internal=False):
+def setup_source_scenario(internal=None, openpilotci=None, comma_api=None, comma_car_segments=None):
+
+  def set_return_value(logs: str | list[str]):
+    return [logs] if isinstance(logs, str) else logs
+
   with (
     mock.patch("openpilot.tools.lib.logreader.internal_source") as internal_source_mock,
     mock.patch("openpilot.tools.lib.logreader.openpilotci_source") as openpilotci_source_mock,
     mock.patch("openpilot.tools.lib.logreader.comma_api_source") as comma_api_source_mock,
+    mock.patch("openpilot.tools.lib.logreader.comma_car_segments_source") as comma_car_segments_source_mock,
   ):
-    if is_internal:
-      internal_source_mock.return_value = [QLOG_FILE]
-    else:
+    internal_source_mock.return_value = set_return_value(internal)
+    if internal is None:
       internal_source_mock.side_effect = InternalUnavailableException
 
-    openpilotci_source_mock.return_value = [None]
-    comma_api_source_mock.return_value = [QLOG_FILE]
+    openpilotci_source_mock.return_value = set_return_value(openpilotci)
+    comma_api_source_mock.return_value = set_return_value(comma_api)
+    comma_car_segments_source_mock.return_value = set_return_value(comma_car_segments)
 
     yield
 
@@ -207,16 +215,67 @@ class TestLogReader(unittest.TestCase):
         log_len = len(list(lr))
         self.assertEqual(qlog_len, log_len)
 
-  @parameterized.expand([(True,), (False,)])
+  @parameterized.expand([(True, ), (False, )])
   @pytest.mark.slow
   def test_auto_source_scenarios(self, is_internal):
     lr = LogReader(QLOG_FILE)
     qlog_len = len(list(lr))
 
-    with setup_source_scenario(is_internal=is_internal):
+    def parse_file_type(identifier: str):
+      if identifier.endswith("/rlog.bz2"):
+        return ReadMode.RLOG
+      if identifier.endswith("/qlog.bz2"):
+        return ReadMode.QLOG
+
+    with setup_source_scenario(internal=QLOG_FILE if is_internal else None, comma_api=QLOG_FILE):
       lr = LogReader(f"{TEST_ROUTE}/0/q")
       log_len = len(list(lr))
       self.assertEqual(qlog_len, log_len)
+
+    if not is_internal:
+      with setup_source_scenario(comma_car_segments=RLOG_FILE):
+        lr = LogReader(f"{TEST_ROUTE}/0/r")
+        self.assertEqual(parse_file_type(lr.logreader_identifiers[0]), ReadMode.RLOG)
+
+      # /r would fail if there is no rlog, or not all segments has rlog
+      with setup_source_scenario():
+        with self.assertRaises(Exception) as context:
+          LogReader(f"{TEST_ROUTE}/0/r")
+        self.assertIn("auto_source could not find any valid source", str(context.exception))
+
+      with setup_source_scenario(comma_api=QLOG_FILE):
+        lr = LogReader(f"{TEST_ROUTE}/0/q")
+        log_len = len(list(lr))
+        self.assertEqual(qlog_len, log_len)
+
+        lr = LogReader(f"{TEST_ROUTE}/0/a")
+        log_len = len(list(lr))
+        self.assertEqual(qlog_len, log_len)
+
+      full_qlogs = [f"{LOG_BASE}/{i}/qlog.bz2" for i in range(NUM_SEGS)]
+      missing_rlogs = [f"{LOG_BASE}/{i}/rlog.bz2" for i in range(3)]
+      with setup_source_scenario(openpilotci=missing_rlogs):
+        with self.assertRaises(Exception) as context:
+          LogReader(f"{TEST_ROUTE}/r")
+        self.assertIn("auto_source could not find any valid source", str(context.exception))
+
+      with setup_source_scenario(openpilotci=full_qlogs):
+        lr = LogReader(f"{TEST_ROUTE}/a")
+        qlog_len = len(list(lr))
+        self.assertEqual(qlog_len, log_len)
+
+      with setup_source_scenario():
+        with self.assertRaises(Exception) as context:
+          LogReader(f"{TEST_ROUTE}/r")
+        self.assertIn("auto_source could not find any valid source", str(context.exception))
+
+        with self.assertRaises(Exception) as context:
+          LogReader(f"{TEST_ROUTE}/q")
+        self.assertIn("auto_source could not find any valid source", str(context.exception))
+
+        with self.assertRaises(Exception) as context:
+          LogReader(f"{TEST_ROUTE}/a")
+        self.assertIn("auto_source could not find any valid source", str(context.exception))
 
   @pytest.mark.slow
   def test_sort_by_time(self):
