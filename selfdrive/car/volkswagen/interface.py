@@ -2,7 +2,7 @@ from cereal import car
 from panda import Panda
 from openpilot.selfdrive.car import get_safety_config
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
-from openpilot.selfdrive.car.volkswagen.values import CAR, CANBUS, NetworkLocation, TransmissionType, GearShifter, VolkswagenFlags
+from openpilot.selfdrive.car.volkswagen.values import CAR, CANBUS, NetworkLocation, TransmissionType, GearShifter, VolkswagenFlags, VolkswagenCarSpecs
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -23,6 +23,42 @@ class CarInterface(CarInterfaceBase):
   def _get_params(ret, candidate: CAR, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "volkswagen"
     ret.radarUnavailable = True
+
+    SPECS_MAP = {
+      ('AN',): VolkswagenCarSpecs(mass=1733, wheelbase=2.84),
+      ('CA',): VolkswagenCarSpecs(mass=2011, wheelbase=2.98),
+      ('2K',): VolkswagenCarSpecs(mass=1613, wheelbase=2.6, minSteerSpeed=21 * CV.KPH_TO_MS),
+      ('SY/SZ',): VolkswagenCarSpecs(mass=2100, wheelbase=3.64, minSteerSpeed=50 * CV.KPH_TO_MS),
+      ('5G', 'AU', 'BA', 'BE', 'BU'): VolkswagenCarSpecs(mass=1366, wheelbase=2.62),
+      ('BU',): VolkswagenCarSpecs(mass=1328, wheelbase=2.71),
+      ('3G',): VolkswagenCarSpecs(mass=1528, wheelbase=2.82),
+      ('A3',): VolkswagenCarSpecs(mass=1503, wheelbase=2.80, minSteerSpeed=50*CV.KPH_TO_MS, minEnableSpeed=20*CV.KPH_TO_MS),
+      ('AW',): VolkswagenCarSpecs(mass=1230, wheelbase=2.55),
+      ('7N',): VolkswagenCarSpecs(mass=1639, wheelbase=2.92, minSteerSpeed=50*CV.KPH_TO_MS),
+      ('B2',):  VolkswagenCarSpecs(mass=1498, wheelbase=2.69),
+      ('C1',): VolkswagenCarSpecs(mass=1150, wheelbase=2.60),
+      ('AD/BW',): VolkswagenCarSpecs(mass=1715, wheelbase=2.74),
+      ('1T',): VolkswagenCarSpecs(mass=1516, wheelbase=2.79),
+      ('7H/7L',): VolkswagenCarSpecs(mass=1926, wheelbase=3.00, minSteerSpeed=14.0),
+      ('A1',): VolkswagenCarSpecs(mass=1413, wheelbase=2.63),
+      ('GA',): VolkswagenCarSpecs(mass=1205, wheelbase=2.61),
+      ('8U/F3/FS',): VolkswagenCarSpecs(mass=1623, wheelbase=2.68),
+      ('5F',):VolkswagenCarSpecs(mass=1900, wheelbase=2.64),  # TODO: UH OH
+      ('5F',): VolkswagenCarSpecs(mass=1227, wheelbase=2.64),
+      ('PJ',): VolkswagenCarSpecs(mass=1266, wheelbase=2.56),
+      ('NW',): VolkswagenCarSpecs(mass=1265, wheelbase=2.66),
+      ('NU',): VolkswagenCarSpecs(mass=1278, wheelbase=2.66),
+      ('NS',): VolkswagenCarSpecs(mass=1569, wheelbase=2.79),
+      ('NE',): VolkswagenCarSpecs(mass=1388, wheelbase=2.68),
+      ('NW',): VolkswagenCarSpecs(mass=1192, wheelbase=2.65),
+    }
+
+    chassis_code = ret.carVin[6:8]
+    specs = next((SPECS_MAP[codes] for codes in SPECS_MAP if chassis_code in codes), None)
+    if specs is not None:
+      ret.flags &= VolkswagenFlags.SPECS_SET.value
+      ret.mass = specs.mass
+      ret.wheelbase = specs.wheelbase
 
     if ret.flags & VolkswagenFlags.PQ:
       # Set global PQ35/PQ46/NMS parameters
@@ -109,6 +145,10 @@ class CarInterface(CarInterfaceBase):
     events = self.create_common_events(ret, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic],
                                        pcm_enable=not self.CS.CP.openpilotLongitudinalControl,
                                        enable_buttons=(ButtonType.setCruise, ButtonType.resumeCruise))
+
+    # Lock out if we weren't able to set model-specific specs
+    if not (self.CP.flags & VolkswagenFlags.SPECS_SET):
+      events.add(EventName.startupNoControl)
 
     # Low speed steer alert hysteresis logic
     if self.CP.minSteerSpeed > 0. and ret.vEgo < (self.CP.minSteerSpeed + 1.):
