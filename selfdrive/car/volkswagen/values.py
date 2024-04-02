@@ -223,8 +223,13 @@ class CAR(Platforms):
       VWCarDocs("Volkswagen Golf GTI 2015-21", auto_resume=False),
       VWCarDocs("Volkswagen Golf R 2015-19"),
       VWCarDocs("Volkswagen Golf SportsVan 2015-20"),
+      # Chassis 8V/FF
+      VWCarDocs("Audi A3 2014-19"),
+      VWCarDocs("Audi A3 Sportback e-tron 2017-18"),
+      VWCarDocs("Audi RS3 2018"),
+      VWCarDocs("Audi S3 2015-17"),
     ],
-    VolkswagenCarSpecs(mass=1397, wheelbase=2.62),
+    VolkswagenCarSpecs(mass=1366, wheelbase=2.62),
   )
   VOLKSWAGEN_JETTA_MK7 = VolkswagenMQBPlatformConfig( # Chassis BU
     [
@@ -289,15 +294,6 @@ class CAR(Platforms):
   VOLKSWAGEN_TROC_MK1 = VolkswagenMQBPlatformConfig( # Chassis A1
     [VWCarDocs("Volkswagen T-Roc 2018-22", footnotes=[Footnote.VW_MQB_A0])],
     VolkswagenCarSpecs(mass=1413, wheelbase=2.63),
-  )
-  AUDI_A3_MK3 = VolkswagenMQBPlatformConfig( # Chassis 8V/FF
-    [
-      VWCarDocs("Audi A3 2014-19"),
-      VWCarDocs("Audi A3 Sportback e-tron 2017-18"),
-      VWCarDocs("Audi RS3 2018"),
-      VWCarDocs("Audi S3 2015-17"),
-    ],
-    VolkswagenCarSpecs(mass=1335, wheelbase=2.61),
   )
   AUDI_Q2_MK1 = VolkswagenMQBPlatformConfig( # Chassis GA
     [VWCarDocs("Audi Q2 2018")],
