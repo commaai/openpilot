@@ -46,8 +46,11 @@ def create_build_metadata_file(path: pathlib.Path, build_metadata: BuildMetadata
     f.write(json.dumps(build_metadata_dict))
 
 
-def create_casync_release(target_dir: pathlib.Path, output_dir: pathlib.Path, caidx_name: str):
-  caidx_file = output_dir / f"{caidx_name}.caidx"
-  run(["casync", "make", *CASYNC_ARGS, caidx_file, target_dir])
+def create_casync_release(target_dir: pathlib.Path, output_dir: pathlib.Path, caibx_name: str):
+  tar_file = output_dir / f"{caibx_name}.tar"
+  run(["tar", "-cf", str(tar_file), target_dir])
+  caidx_file = output_dir / f"{caibx_name}.caibx"
+  run(["casync", "make", *CASYNC_ARGS, caidx_file, str(tar_file)])
+  tar_file.unlink()
   digest = run(["casync", "digest", *CASYNC_ARGS, target_dir]).decode("utf-8").strip()
   return digest, caidx_file
