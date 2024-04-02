@@ -29,7 +29,7 @@
 ```bash
 # run on a tici, within the directory you want to create the build from.
 # creates a prebuilt version of openpilot into BUILD_DIR and outputs the caibx
-# and other casync files into CASYNC_DIR for uploading to openpilot-releases.
+# of a tarball containing the full prebuilt openpilot release
 BUILD_DIR=/data/openpilot_build    \
 CASYNC_DIR=/data/casync            \
 OPENPILOT_CHANNEL=nightly          \
