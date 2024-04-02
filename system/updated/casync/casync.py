@@ -98,7 +98,11 @@ class DirectoryTarChunkReader(BinaryChunkReader):
     with open(cache_file, "wb") as f:
       tar.create_tar_archive(f, pathlib.Path(path))
 
-    return super().__init__(f)
+    self.f = open(cache_file, "rb")
+    return super().__init__(self.f)
+
+  def __del__(self):
+    os.unlink(self.f.name)
 
 
 def parse_caibx(caibx_path: str) -> list[Chunk]:
