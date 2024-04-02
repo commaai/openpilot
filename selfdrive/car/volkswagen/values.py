@@ -238,8 +238,9 @@ class CAR(Platforms):
       VWCarDocs("Volkswagen Passat 2015-22", footnotes=[Footnote.PASSAT]),
       VWCarDocs("Volkswagen Passat Alltrack 2015-22"),
       VWCarDocs("Volkswagen Passat GTE 2015-22"),
+      VWCarDocs("Škoda Superb 2015-22"),  # Chassis 3V/NP
     ],
-    VolkswagenCarSpecs(mass=1551, wheelbase=2.79),
+    VolkswagenCarSpecs(mass=1528, wheelbase=2.82),
   )
   VOLKSWAGEN_PASSAT_NMS = VolkswagenPQPlatformConfig( # Chassis A3
     [VWCarDocs("Volkswagen Passat NMS 2017-22")],
@@ -341,10 +342,6 @@ class CAR(Platforms):
   SKODA_SCALA_MK1 = VolkswagenMQBPlatformConfig( # Chassis NW
     [VWCarDocs("Škoda Scala 2020-23", footnotes=[Footnote.VW_MQB_A0])],
     VolkswagenCarSpecs(mass=1192, wheelbase=2.65),
-  )
-  SKODA_SUPERB_MK3 = VolkswagenMQBPlatformConfig( # Chassis 3V/NP
-    [VWCarDocs("Škoda Superb 2015-22")],
-    VolkswagenCarSpecs(mass=1505, wheelbase=2.84),
   )
 
 
