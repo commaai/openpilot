@@ -144,11 +144,11 @@ def setupCredentials() {
 
 def build_release(String channel_name) {
   return parallel (
-    // "${channel_name} (git)": {
-    //   deviceStage("build git", "tici-needs-can", [], [
-    //     ["build ${channel_name}", "RELEASE_BRANCH=${channel_name} $SOURCE_DIR/release/build_release.sh"],
-    //   ])
-    // },
+    "${channel_name} (git)": {
+      deviceStage("build git", "tici-needs-can", [], [
+        ["build ${channel_name}", "RELEASE_BRANCH=${channel_name} $SOURCE_DIR/release/build_release.sh"],
+      ])
+    },
     "${channel_name} (casync)": {
       deviceStage("build casync", "tici-needs-can", [], [
         ["build ${channel_name}", "RELEASE=1 OPENPILOT_CHANNEL=${channel_name} BUILD_DIR=/data/openpilot_build CASYNC_DIR=/data/casync $SOURCE_DIR/release/create_casync_build.sh"],
@@ -184,9 +184,9 @@ node {
       build_release("release3-staging")
     }
 
-    //if (env.BRANCH_NAME == 'master-ci') {
-    build_release("nightly")
-    //}
+    if (env.BRANCH_NAME == 'master-ci') {
+      build_release("nightly")
+    }
 
     if (!env.BRANCH_NAME.matches(excludeRegex)) {
     parallel (
