@@ -8,9 +8,12 @@ import os
 import unittest
 import pytest
 import requests
+import http.server
 
 from parameterized import parameterized
 from unittest import mock
+from openpilot.selfdrive.test.helpers import with_http_server
+from functools import partial
 
 from cereal import log as capnp_log
 from openpilot.tools.lib.logreader import (LogIterable, LogReader, comma_api_source, parse_indirect, ReadMode, InternalUnavailableException,
@@ -44,6 +47,27 @@ def setup_source_scenario(is_internal=False):
     comma_api_source_mock.return_value = [QLOG_FILE]
 
     yield
+
+
+class LogReaderTestRequestHandler(http.server.BaseHTTPRequestHandler):
+  FILE_EXISTS = True
+
+  def do_GET(self):
+    if self.FILE_EXISTS:
+      self.send_response(206 if "Range" in self.headers else 200, b'1234')
+    else:
+      self.send_response(404)
+    self.end_headers()
+
+  def do_HEAD(self):
+    if self.FILE_EXISTS:
+      self.send_response(200)
+      self.send_header("Content-Length", "4")
+    else:
+      self.send_response(404)
+    self.end_headers()
+
+with_logreader_server = partial(with_http_server, handler=LogReaderTestRequestHandler)
 
 
 class TestLogReader(unittest.TestCase):
@@ -278,16 +302,12 @@ class TestLogReader(unittest.TestCase):
 
   @mock.patch("openpilot.tools.lib.logreader.check_source")
   def test_source_rlogs_not_available_qlogs_available(self, check_source):
+    file_url = f"cd:/{TEST_ROUTE}"
     rlog_paths = []
-    qlog_paths = ['cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/0/qlog.bz2', 'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/1/qlog.bz2',
-                  'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/2/qlog.bz2', 'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/3/qlog.bz2',
-                  'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/4/qlog.bz2', 'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/5/qlog.bz2',
-                  'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/6/qlog.bz2', 'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/7/qlog.bz2',
-                  'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/8/qlog.bz2', 'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/9/qlog.bz2',
-                  'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/10/qlog.bz2', 'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/11/qlog.bz2',
-                  'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/12/qlog.bz2', 'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/13/qlog.bz2',
-                  'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/14/qlog.bz2', 'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/15/qlog.bz2',
-                  'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/16/qlog.bz2']
+    qlog_paths = [f'{file_url}/0/qlog.bz2', f'{file_url}/1/qlog.bz2', f'{file_url}/2/qlog.bz2', f'{file_url}/3/qlog.bz2', f'{file_url}/4/qlog.bz2',
+                  f'{file_url}/5/qlog.bz2', f'{file_url}/6/qlog.bz2', f'{file_url}/7/qlog.bz2', f'{file_url}/8/qlog.bz2', f'{file_url}/9/qlog.bz2',
+                  f'{file_url}/10/qlog.bz2', f'{file_url}/11/qlog.bz2', f'{file_url}/12/qlog.bz2', f'{file_url}/13/qlog.bz2', f'{file_url}/14/qlog.bz2',
+                  f'{file_url}/15/qlog.bz2', f'{file_url}/16/qlog.bz2']
 
     exceptions = []
     modes = [ReadMode.RLOG, ReadMode.QLOG, ReadMode.AUTO]
@@ -311,15 +331,11 @@ class TestLogReader(unittest.TestCase):
 
   @mock.patch("openpilot.tools.lib.logreader.check_source")
   def test_source_rlogs_segments_qlogs_rest(self, check_source):
-    rlog_paths = ['cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/0/rlog.bz2', 'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/1/rlog.bz2']
-    qlog_paths = ['cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/2/qlog.bz2', 'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/3/qlog.bz2',
-                  'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/4/qlog.bz2', 'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/5/qlog.bz2',
-                  'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/6/qlog.bz2', 'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/7/qlog.bz2',
-                  'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/8/qlog.bz2', 'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/9/qlog.bz2',
-                  'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/10/qlog.bz2', 'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/11/qlog.bz2',
-                  'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/12/qlog.bz2', 'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/13/qlog.bz2',
-                  'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/14/qlog.bz2', 'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/15/qlog.bz2',
-                  'cd:/344c5c15b34f2d8a/2024-01-03--09-37-12/16/qlog.bz2']
+    file_url = f"cd:/{TEST_ROUTE}"
+    rlog_paths = [f'{file_url}/0/rlog.bz2', f'{file_url}/1/rlog.bz2']
+    qlog_paths = [f'{file_url}/2/qlog.bz2', f'{file_url}/3/qlog.bz2', f'{file_url}/4/qlog.bz2', f'{file_url}/5/qlog.bz2', f'{file_url}/6/qlog.bz2',
+                  f'{file_url}/7/qlog.bz2', f'{file_url}/8/qlog.bz2', f'{file_url}/9/qlog.bz2', f'{file_url}/10/qlog.bz2', f'{file_url}/11/qlog.bz2',
+                  f'{file_url}/12/qlog.bz2', f'{file_url}/13/qlog.bz2', f'{file_url}/14/qlog.bz2', f'{file_url}/15/qlog.bz2', f'{file_url}/16/qlog.bz2']
 
     exceptions = []
     modes = [ReadMode.RLOG, ReadMode.AUTO]
@@ -344,45 +360,27 @@ class TestLogReader(unittest.TestCase):
   @mock.patch("openpilot.tools.lib.logreader.openpilotci_source")
   @mock.patch("openpilot.tools.lib.logreader.comma_api_source")
   @mock.patch("openpilot.tools.lib.logreader.comma_car_segments_source")
-  def test_source_rlogs_not_available_commaapi(self, mock_comma_car_segments_source, mock_comma_api_source, mock_openpilotci_source, mock_internal_source):
-
+  @with_logreader_server
+  def test_source_rlogs_not_available_commaapi(self, mock_comma_car_segments_source, mock_comma_api_source, mock_openpilotci_source, mock_internal_source,
+                                               host):
+    file_openpilotci = f"{host}/openpilotci"
+    file_comma_car_segments = f"{host}/comma_car_segments"
     exceptions = []
+
+    LogReaderTestRequestHandler.FILE_EXISTS = False
     mock_internal_source.return_value = Exception("Internal source not available")
-    mock_openpilotci_source.return_value = ['https://commadataci.blob.core.windows.net/openpilotci/344c5c15b34f2d8a/2024-01-03--09-37-12/0/rlog.bz2',
-                                            'https://commadataci.blob.core.windows.net/openpilotci/344c5c15b34f2d8a/2024-01-03--09-37-12/1/rlog.bz2',
-                                            'https://commadataci.blob.core.windows.net/openpilotci/344c5c15b34f2d8a/2024-01-03--09-37-12/2/rlog.bz2',
-                                            'https://commadataci.blob.core.windows.net/openpilotci/344c5c15b34f2d8a/2024-01-03--09-37-12/3/rlog.bz2',
-                                            'https://commadataci.blob.core.windows.net/openpilotci/344c5c15b34f2d8a/2024-01-03--09-37-12/4/rlog.bz2',
-                                            'https://commadataci.blob.core.windows.net/openpilotci/344c5c15b34f2d8a/2024-01-03--09-37-12/5/rlog.bz2',
-                                            'https://commadataci.blob.core.windows.net/openpilotci/344c5c15b34f2d8a/2024-01-03--09-37-12/6/rlog.bz2',
-                                            'https://commadataci.blob.core.windows.net/openpilotci/344c5c15b34f2d8a/2024-01-03--09-37-12/7/rlog.bz2',
-                                            'https://commadataci.blob.core.windows.net/openpilotci/344c5c15b34f2d8a/2024-01-03--09-37-12/8/rlog.bz2',
-                                            'https://commadataci.blob.core.windows.net/openpilotci/344c5c15b34f2d8a/2024-01-03--09-37-12/9/rlog.bz2',
-                                            'https://commadataci.blob.core.windows.net/openpilotci/344c5c15b34f2d8a/2024-01-03--09-37-12/10/rlog.bz2',
-                                            'https://commadataci.blob.core.windows.net/openpilotci/344c5c15b34f2d8a/2024-01-03--09-37-12/11/rlog.bz2',
-                                            'https://commadataci.blob.core.windows.net/openpilotci/344c5c15b34f2d8a/2024-01-03--09-37-12/12/rlog.bz2',
-                                            'https://commadataci.blob.core.windows.net/openpilotci/344c5c15b34f2d8a/2024-01-03--09-37-12/13/rlog.bz2',
-                                            'https://commadataci.blob.core.windows.net/openpilotci/344c5c15b34f2d8a/2024-01-03--09-37-12/14/rlog.bz2',
-                                            'https://commadataci.blob.core.windows.net/openpilotci/344c5c15b34f2d8a/2024-01-03--09-37-12/15/rlog.bz2',
-                                            'https://commadataci.blob.core.windows.net/openpilotci/344c5c15b34f2d8a/2024-01-03--09-37-12/16/rlog.bz2']
+    mock_openpilotci_source.return_value = [f'{file_openpilotci}/0', f'{file_openpilotci}/1', f'{file_openpilotci}/2', f'{file_openpilotci}/3',
+                                            f'{file_openpilotci}/4', f'{file_openpilotci}/5', f'{file_openpilotci}/6', f'{file_openpilotci}/7',
+                                            f'{file_openpilotci}/8', f'{file_openpilotci}/9', f'{file_openpilotci}/10', f'{file_openpilotci}/11',
+                                            f'{file_openpilotci}/12', f'{file_openpilotci}/13', f'{file_openpilotci}/14', f'{file_openpilotci}/15',
+                                            f'{file_openpilotci}/16']
     mock_comma_api_source.return_value = []
-    mock_comma_car_segments_source.return_value = ['https://commadata2.blob.core.windows.net/commadata2/344c5c15b34f2d8a/2024-01-03--09-37-12/0/rlog.bz2?se=2024-03-28T09%3A36%3A11Z&sp=r&sv=2018-03-28&sr=b&rscd=attachment%3B%20filename%3D344c5c15b34f2d8a_2024-01-03--09-37-12--0--rlog.bz2&sig=R6AJ1Aj/UWxQpQx9TyOFNK0YnQs1HGDa4pkhsr2taoI%3D',
-                                                   'https://commadata2.blob.core.windows.net/commadata2/344c5c15b34f2d8a/2024-01-03--09-37-12/1/rlog.bz2?se=2024-03-28T09%3A36%3A11Z&sp=r&sv=2018-03-28&sr=b&rscd=attachment%3B%20filename%3D344c5c15b34f2d8a_2024-01-03--09-37-12--1--rlog.bz2&sig=sckFM2tIW6ts9CPeQwGzSQ/GlNT5kkHSyikNYVvrcfM%3D',
-                                                   'https://commadata2.blob.core.windows.net/commadata2/344c5c15b34f2d8a/2024-01-03--09-37-12/2/rlog.bz2?se=2024-03-28T09%3A36%3A11Z&sp=r&sv=2018-03-28&sr=b&rscd=attachment%3B%20filename%3D344c5c15b34f2d8a_2024-01-03--09-37-12--2--rlog.bz2&sig=LygCcLHR3y6ZgZa/5Cbbhv/K0aWfwd4pnqcKnzO6KUs%3D',
-                                                   'https://commadata2.blob.core.windows.net/commadata2/344c5c15b34f2d8a/2024-01-03--09-37-12/3/rlog.bz2?se=2024-03-28T09%3A36%3A11Z&sp=r&sv=2018-03-28&sr=b&rscd=attachment%3B%20filename%3D344c5c15b34f2d8a_2024-01-03--09-37-12--3--rlog.bz2&sig=VcnlpeM/AYXzZ8IghzAqGI6NJD8sKq2Hq8QrVU0eBZc%3D',
-                                                   'https://commadata2.blob.core.windows.net/commadata2/344c5c15b34f2d8a/2024-01-03--09-37-12/4/rlog.bz2?se=2024-03-28T09%3A36%3A11Z&sp=r&sv=2018-03-28&sr=b&rscd=attachment%3B%20filename%3D344c5c15b34f2d8a_2024-01-03--09-37-12--4--rlog.bz2&sig=KukNiBfoyjsUYqY%2BFqFYv3NzZnxrJvKKr2h07u/Zmw8%3D',
-                                                   'https://commadata2.blob.core.windows.net/commadata2/344c5c15b34f2d8a/2024-01-03--09-37-12/5/rlog.bz2?se=2024-03-28T09%3A36%3A11Z&sp=r&sv=2018-03-28&sr=b&rscd=attachment%3B%20filename%3D344c5c15b34f2d8a_2024-01-03--09-37-12--5--rlog.bz2&sig=8lP0NPSm0GDxWRUHw/BmTUJ8CUD3bBGxilgGt590ubY%3D',
-                                                   'https://commadata2.blob.core.windows.net/commadata2/344c5c15b34f2d8a/2024-01-03--09-37-12/6/rlog.bz2?se=2024-03-28T09%3A36%3A11Z&sp=r&sv=2018-03-28&sr=b&rscd=attachment%3B%20filename%3D344c5c15b34f2d8a_2024-01-03--09-37-12--6--rlog.bz2&sig=S7kflt8G1ApHwdIyZzNZQ8sqW58%2BSVz7bFQbR4/0BwM%3D',
-                                                   'https://commadata2.blob.core.windows.net/commadata2/344c5c15b34f2d8a/2024-01-03--09-37-12/7/rlog.bz2?se=2024-03-28T09%3A36%3A11Z&sp=r&sv=2018-03-28&sr=b&rscd=attachment%3B%20filename%3D344c5c15b34f2d8a_2024-01-03--09-37-12--7--rlog.bz2&sig=zDX0orxvFsTYLdgyb1z0t80DxpOT/fh8JM7e7ukfVNE%3D',
-                                                   'https://commadata2.blob.core.windows.net/commadata2/344c5c15b34f2d8a/2024-01-03--09-37-12/8/rlog.bz2?se=2024-03-28T09%3A36%3A11Z&sp=r&sv=2018-03-28&sr=b&rscd=attachment%3B%20filename%3D344c5c15b34f2d8a_2024-01-03--09-37-12--8--rlog.bz2&sig=eYvztxp2lAE9K1e0XnZcIRUp%2BNMmS%2Bw5TeIyZe/QqCE%3D',
-                                                   'https://commadata2.blob.core.windows.net/commadata2/344c5c15b34f2d8a/2024-01-03--09-37-12/9/rlog.bz2?se=2024-03-28T09%3A36%3A11Z&sp=r&sv=2018-03-28&sr=b&rscd=attachment%3B%20filename%3D344c5c15b34f2d8a_2024-01-03--09-37-12--9--rlog.bz2&sig=1nRVw1ZmTvOJOLraboX9WAkeZn6mFvxexRte1y7lyL8%3D',
-                                                   'https://commadata2.blob.core.windows.net/commadata2/344c5c15b34f2d8a/2024-01-03--09-37-12/10/rlog.bz2?se=2024-03-28T09%3A36%3A11Z&sp=r&sv=2018-03-28&sr=b&rscd=attachment%3B%20filename%3D344c5c15b34f2d8a_2024-01-03--09-37-12--10--rlog.bz2&sig=myN6AS1xYoO1vWjn/ujvUXNBo/3CLz%2BWU5oN3Cm%2BgnM%3D',
-                                                   'https://commadata2.blob.core.windows.net/commadata2/344c5c15b34f2d8a/2024-01-03--09-37-12/11/rlog.bz2?se=2024-03-28T09%3A36%3A11Z&sp=r&sv=2018-03-28&sr=b&rscd=attachment%3B%20filename%3D344c5c15b34f2d8a_2024-01-03--09-37-12--11--rlog.bz2&sig=KzmqkCGO1fOJVeTc58QC0XoOaZiP5S%2Be1D13FzWo9BA%3D',
-                                                   'https://commadata2.blob.core.windows.net/commadata2/344c5c15b34f2d8a/2024-01-03--09-37-12/12/rlog.bz2?se=2024-03-28T09%3A36%3A11Z&sp=r&sv=2018-03-28&sr=b&rscd=attachment%3B%20filename%3D344c5c15b34f2d8a_2024-01-03--09-37-12--12--rlog.bz2&sig=cPxA0Zyz2nVOwwwOXq4FMWYDcb8HNNVIsi/w7E4cT44%3D',
-                                                   'https://commadata2.blob.core.windows.net/commadata2/344c5c15b34f2d8a/2024-01-03--09-37-12/13/rlog.bz2?se=2024-03-28T09%3A36%3A11Z&sp=r&sv=2018-03-28&sr=b&rscd=attachment%3B%20filename%3D344c5c15b34f2d8a_2024-01-03--09-37-12--13--rlog.bz2&sig=zmnSMpfz217seH/Pmv3038qCCNUrRGhb42r6XzdYQk0%3D',
-                                                   'https://commadata2.blob.core.windows.net/commadata2/344c5c15b34f2d8a/2024-01-03--09-37-12/14/rlog.bz2?se=2024-03-28T09%3A36%3A11Z&sp=r&sv=2018-03-28&sr=b&rscd=attachment%3B%20filename%3D344c5c15b34f2d8a_2024-01-03--09-37-12--14--rlog.bz2&sig=xoqthrJuFpjyaTm/GnViHgkB%2BELSc7JjDkYAxpNnnno%3D',
-                                                   'https://commadata2.blob.core.windows.net/commadata2/344c5c15b34f2d8a/2024-01-03--09-37-12/15/rlog.bz2?se=2024-03-28T09%3A36%3A11Z&sp=r&sv=2018-03-28&sr=b&rscd=attachment%3B%20filename%3D344c5c15b34f2d8a_2024-01-03--09-37-12--15--rlog.bz2&sig=i0f/jpzJdBd8BT2rNCpkJsNrJ7nu8bRdEfqzmVTGyZA%3D',
-                                                   'https://commadata2.blob.core.windows.net/commadata2/344c5c15b34f2d8a/2024-01-03--09-37-12/16/rlog.bz2?se=2024-03-28T09%3A36%3A11Z&sp=r&sv=2018-03-28&sr=b&rscd=attachment%3B%20filename%3D344c5c15b34f2d8a_2024-01-03--09-37-12--16--rlog.bz2&sig=WABf2DpveKtVuVcKga24q5eN0kdm5smOw3TVDDq9HrY%3D']
+    mock_comma_car_segments_source.return_value = [f'{file_comma_car_segments}/0', f'{file_comma_car_segments}/1', f'{file_comma_car_segments}/2',
+                                                   f'{file_comma_car_segments}/3', f'{file_comma_car_segments}/4', f'{file_comma_car_segments}/5',
+                                                   f'{file_comma_car_segments}/6', f'{file_comma_car_segments}/7', f'{file_comma_car_segments}/8',
+                                                   f'{file_comma_car_segments}/9', f'{file_comma_car_segments}/10', f'{file_comma_car_segments}/11',
+                                                   f'{file_comma_car_segments}/12', f'{file_comma_car_segments}/13', f'{file_comma_car_segments}/14',
+                                                   f'{file_comma_car_segments}/15', f'{file_comma_car_segments}/16']
 
     try:
       result = auto_source(SegmentRange(TEST_ROUTE), ReadMode.RLOG)
