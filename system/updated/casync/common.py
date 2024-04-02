@@ -48,7 +48,7 @@ def create_build_metadata_file(path: pathlib.Path, build_metadata: BuildMetadata
 
 def create_casync_release(target_dir: pathlib.Path, output_dir: pathlib.Path, caibx_name: str):
   tar_file = output_dir / f"{caibx_name}.tar"
-  run(["tar", "-cf", str(tar_file), target_dir])
+  run(["tar", "-cf", str(tar_file), "-C", target_dir, "."])
   caibx_file = output_dir / f"{caibx_name}.caibx"
   run(["casync", "make", *CASYNC_ARGS, caibx_file, str(tar_file)])
   tar_file.unlink()
