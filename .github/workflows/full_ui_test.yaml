@@ -41,3 +41,8 @@ jobs:
         with:
           name: ui report
           path: selfdrive/ui/tests/test_ui/report
+      - name: Create job summary
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await require('./selfdrive/ui/tests/test_ui/ci_summary.js')({core, glob})
