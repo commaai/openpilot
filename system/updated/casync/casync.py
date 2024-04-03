@@ -91,17 +91,22 @@ class RemoteChunkReader(ChunkReader):
     return decompressor.decompress(contents)
 
 
+def is_not_git(path: pathlib.Path) -> bool:
+  return ".git" not in path.parts
+
+
 class DirectoryTarChunkReader(BinaryChunkReader):
   """creates a tar archive of a directory and reads chunks from it"""
 
   def __init__(self, path: str, cache_file: str) -> None:
     with open(cache_file, "wb") as f:
-      tar.create_tar_archive(f, pathlib.Path(path))
+      tar.create_tar_archive(f, pathlib.Path(path), is_not_git)
 
     self.f = open(cache_file, "rb")
     return super().__init__(self.f)
 
   def __del__(self):
+    self.f.close()
     os.unlink(self.f.name)
 
 

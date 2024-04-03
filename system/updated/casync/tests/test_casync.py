@@ -202,6 +202,7 @@ class TestCasyncDirectory(unittest.TestCase):
 
   def tearDown(self):
     self.cache_dir.cleanup()
+    self.working_dir.cleanup()
     self.out_dir.cleanup()
 
   def run_test(self):

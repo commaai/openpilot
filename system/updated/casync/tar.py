@@ -1,13 +1,19 @@
 import pathlib
 import tarfile
-from typing import IO
+from typing import IO, Callable
 
 
-def create_tar_archive(fh: IO[bytes], directory: pathlib.Path):
+def include_default(_) -> bool:
+  return True
+
+
+def create_tar_archive(fh: IO[bytes], directory: pathlib.Path, include: Callable[[pathlib.Path], bool] = include_default):
   """Creates a tar archive of a directory"""
 
   tar = tarfile.open(fileobj=fh, mode='w')
   for file in directory.rglob("*"):
+    if not include(file):
+      continue
     relative_path = str(file.relative_to(directory))
     if file.is_symlink():
       info = tarfile.TarInfo(relative_path)
