@@ -30,6 +30,8 @@ from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert, OFF
 
 UI_DELAY = 2 # may be slower on CI?
 
+IS_FULL = os.environ.get("TEST_UI_FULL") == "1"
+
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
 
@@ -87,8 +89,6 @@ def send_onroad_alert(click, pm, alert: Alert):
   pm.send('controlsState', dat)
 
 def setup_common(click, pm: PubMaster):
-  Params().put("HasAcceptedTerms", terms_version)
-  Params().put("CompletedTrainingVersion", training_version)
   Params().put("DongleId", "123456789012345")
   dat = messaging.new_message('deviceState')
   dat.deviceState.started = True
@@ -243,22 +243,26 @@ CASES = {
   "homescreen": (setup_homescreen, {'prime': PrimeType.NONE}),
   "homescreen_with_prime": (setup_homescreen, {'prime': PrimeType.PURPLE}),
   "settings_device": setup_settings_device,
-  "settings_network": setup_settings_network,
-  "settings_network_advanced": setup_settings_network_advanced,
-  "settings_software": setup_settings_software,
-  "settings_toggles": setup_settings_toggles,
-  "offroad_driver_camera": setup_offroad_driver_camera,
-  "update": setup_update,
-  "keyboard": setup_keyboard,
-  "numbers_keyboard": setup_numbers_keyboard,
   "onroad": setup_onroad,
   "onroad_engaged": setup_onroad_engaged,
   "onroad_overriding": setup_onroad_overriding,
-  "onroad_nav_enabled": setup_onroad_nav_enabled,
-  "onroad_map": setup_onroad_map,
-  "onroad_sidebar": setup_onroad_sidebar,
-  "experimental_mode_confirm": setup_experimental_mode_prompt
 }
+
+if IS_FULL:
+  CASES.update({
+    "settings_network": setup_settings_network,
+    "settings_network_advanced": setup_settings_network_advanced,
+    "settings_software": setup_settings_software,
+    "settings_toggles": setup_settings_toggles,
+    "offroad_driver_camera": setup_offroad_driver_camera,
+    "update": setup_update,
+    "keyboard": setup_keyboard,
+    "numbers_keyboard": setup_numbers_keyboard,
+    "onroad_nav_enabled": setup_onroad_nav_enabled,
+    "onroad_map": setup_onroad_map,
+    "onroad_sidebar": setup_onroad_sidebar,
+    "experimental_mode_confirm": setup_experimental_mode_prompt
+  })
 
 TEST_DIR = pathlib.Path(__file__).parent
 
@@ -268,6 +272,11 @@ SCREENSHOTS_DIR = TEST_OUTPUT_DIR / "screenshots"
 class TestUI(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
+    params = Params()
+    params.put("TermsVersion", terms_version)
+    params.put("TrainingVersion", training_version)
+    params.put("HasAcceptedTerms", terms_version)
+    params.put("CompletedTrainingVersion", training_version)
     os.environ["SCALE"] = "1"
     sys.modules["mouseinfo"] = False
 
@@ -332,6 +341,7 @@ class TestUI(unittest.TestCase):
     plt.imsave(SCREENSHOTS_DIR / f"{lang_code}/{name}.png", im)
 
   @parameterized.expand(list(langs.items()))
+  @unittest.skipIf(not IS_FULL, "running minimal UI test")
   def test_offroad_alerts(self, _, lang_code):
     Params().put("LanguageSetting", lang_code)
     self.run_offroad_alerts(lang_code)
@@ -349,6 +359,7 @@ class TestUI(unittest.TestCase):
       plt.imsave(SCREENSHOTS_DIR / f"{lang_code}/alerts/{offroad_alert[0]}.png", im)
 
   @parameterized.expand(list(langs.items()))
+  @unittest.skipIf(not IS_FULL, "running minimal UI test")
   def test_ui_events(self, _, lang_code):
     Params().put("LanguageSetting", lang_code)
     self.run_events(lang_code)
@@ -373,11 +384,14 @@ def create_html_report():
   with open(TEST_DIR / "template.html") as f:
     template = jinja2.Template(f.read())
 
-  cases = {f.stem: (str(f.relative_to(TEST_OUTPUT_DIR)), "reference.png") for f in SCREENSHOTS_DIR.glob("*.png")}
+  cases = {
+    ("alerts/" if f.parent.name == "alerts" else "") + f.stem:
+      (str(f.relative_to(TEST_OUTPUT_DIR)), "reference.png") for f in SCREENSHOTS_DIR.glob("main_en/**/*.png")
+  }
   cases = dict(sorted(cases.items()))
 
   with open(OUTPUT_FILE, "w") as f:
-    f.write(template.render(cases=cases))
+    f.write(template.render(cases=cases, langs=langs))
 
 def create_screenshots():
   if TEST_OUTPUT_DIR.exists():

@@ -382,7 +382,7 @@ jobs:
             })
 
   create_ui_report:
-    name: Create UI Report
+    name: Create Minimal UI Report
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
@@ -393,12 +393,12 @@ jobs:
         run: ${{ env.RUN }} "scons -j$(nproc)"
       - name: Create Test Report
         run: >
-            ${{ env.RUN }} "PYTHONWARNINGS=ignore &&
+            ${{ env.RUN }} "TEST_UI_FULL=0 PYTHONWARNINGS=ignore &&
                             source selfdrive/test/setup_xvfb.sh &&
                             export MAPBOX_TOKEN='pk.eyJ1Ijoiam5ld2IiLCJhIjoiY2xxNW8zZXprMGw1ZzJwbzZneHd2NHljbSJ9.gV7VPRfbXFetD-1OVF0XZg' &&
                             python selfdrive/ui/tests/test_ui/run.py"
       - name: Upload Test Report
         uses: actions/upload-artifact@v2
         with:
-          name: report
+          name: minimal ui report
           path: selfdrive/ui/tests/test_ui/report
