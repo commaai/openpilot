@@ -8,7 +8,7 @@ from libc.string cimport memcpy
 from cereal.visionipc.visionipc cimport cl_mem
 from cereal.visionipc.visionipc_pyx cimport VisionBuf, CLContext as BaseCLContext
 from .commonmodel cimport CL_DEVICE_TYPE_DEFAULT, cl_get_device_id, cl_create_context
-from .commonmodel cimport mat3, sigmoid as cppSigmoid, ModelFrame as cppModelFrame
+from .commonmodel cimport mat3, sigmoid as cppSigmoid, ModelFrame as cppModelFrame, MonitoringModelFrame as cppMonitoringModelFrame
 
 def sigmoid(x):
   return cppSigmoid(x)
@@ -41,3 +41,18 @@ cdef class ModelFrame:
     if not data:
       return None
     return np.asarray(<cnp.float32_t[:self.frame.buf_size]> data)
+
+cdef class MonitoringModelFrame(ModelFrame):
+  cdef cppMonitoringModelFrame * dmframe
+
+  def __cinit__(self, CLContext context):
+    self.dmframe = new cppMonitoringModelFrame(context.device_id, context.context)
+
+  def __dealloc__(self):
+    del self.dmframe
+
+  def prepare(self, VisionBuf buf, float[:] projection):
+    cdef mat3 cprojection
+    memcpy(cprojection.v, &projection[0], 9*sizeof(float))
+    cdef unsigned char * data = self.dmframe.prepare(buf.buf.buf_cl, buf.width, buf.height, buf.stride, buf.uv_offset, cprojection)
+    return np.asarray(<cnp.uint8_t[:self.dmframe.MODEL_FRAME_SIZE]> data)
