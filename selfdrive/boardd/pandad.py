@@ -74,10 +74,10 @@ def panda_sort_cmp(a: Panda, b: Panda):
 
   # sort by hardware type
   if a_type != b_type:
-    return a_type < b_type
+    return -1 if a_type < b_type else 1
 
   # last resort: sort by serial number
-  return a.get_usb_serial() < b.get_usb_serial()
+  return -1 if a.get_usb_serial() < b.get_usb_serial() else 0 if a.get_usb_serial() == b.get_usb_serial() else 1
 
 
 def main() -> NoReturn:
