@@ -12,12 +12,12 @@ concurrency:
 
 env:
   BASE_IMAGE: openpilot-base
+
   DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
 
   BUILD: selfdrive/test/docker_build.sh base
 
   RUN: docker run --shm-size 1G -v $GITHUB_WORKSPACE:/tmp/openpilot -w /tmp/openpilot -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/bash -c
-
 
 jobs:
   plotjuggler:
@@ -31,7 +31,7 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
       timeout-minutes: 5
-      run: ${{ env.RUN }} "scons -j$(nproc) cereal/ common/ opendbc/ --minimal"
+      run: ${{ env.RUN }} "scons -j$(nproc) cereal/ common/ --minimal"
     - name: Test PlotJuggler
       timeout-minutes: 2
       run: |
@@ -55,6 +55,31 @@ jobs:
     - name: Build and push sim image
       run: |
         selfdrive/test/docker_build.sh sim
+
+  simulator_bridge:
+    strategy:
+     fail-fast: false
+     matrix:
+      #run: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20]
+      run: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49]
+    name: simulator bridge test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - run: git lfs pull
+    - uses: ./.github/workflows/setup-with-retry
+    - name: Build base docker image
+      run: eval "$BUILD"
+
+    - name: Build openpilot
+      run: |
+        ${{ env.RUN }} "scons -j$(nproc)"
+    - name: Run bridge test
+      run: |
+        ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && source selfdrive/test/setup_vsound.sh && CI=1 tools/sim/tests/test_metadrive_bridge.py"
 
   devcontainer:
     name: devcontainer
