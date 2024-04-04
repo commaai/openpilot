@@ -57,8 +57,8 @@ class AzureContainer:
     ext = "hevc" if log_type.endswith('camera') else "bz2"
     return self.BASE_URL + f"{route_name.replace('|', '/')}/{segment_num}/{log_type}.{ext}"
 
-  def upload_bytes(self, data: bytes | IO, blob_name: str) -> str:
-    from azure.storage.blob import BlobClient
+  def upload_bytes(self, data: bytes | IO, blob_name: str, content_type: str | None = None) -> str:
+    from azure.storage.blob import BlobClient, ContentSettings
     blob = BlobClient(
       account_url=self.ACCOUNT_URL,
       container_name=self.CONTAINER,
@@ -66,9 +66,9 @@ class AzureContainer:
       credential=get_azure_credential(),
       overwrite=False,
     )
-    blob.upload_blob(data)
+    blob.upload_blob(data, content_settings=ContentSettings(content_type=content_type))
     return self.BASE_URL + blob_name
 
-  def upload_file(self, path: str | os.PathLike, blob_name: str) -> str:
+  def upload_file(self, path: str | os.PathLike, blob_name: str, content_type: str | None = None) -> str:
     with open(path, "rb") as f:
-      return self.upload_bytes(f, blob_name)
+      return self.upload_bytes(f, blob_name, content_type)

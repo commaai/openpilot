@@ -1,5 +1,6 @@
 const nodeFs = require("node:fs");
 const nodePath = require("node:path");
+const nodeChildProcess = require("node:child_process");
 const knownLanguages = JSON.parse(nodeFs.readFileSync(
   nodePath.resolve(
     __dirname,
@@ -9,13 +10,15 @@ const knownLanguages = JSON.parse(nodeFs.readFileSync(
 
 const REPORT_DIR = nodePath.resolve(__dirname, "report/screenshots");
 
-async function getImageLinkFromPath(path) {
-  // This function should upload results to CDN, but currently we will just print stub.
+function getImageLinkFromPath(runEnv, language, name, path) {
+  let link = child_process.execSync(`${runEnv} python ${nodePath.resolve(__dirname, "upload_image_to_azure.py")} ${path} ${language}-${name}`, {
+    encoding: "utf-8",
+  });
 
-  return `<i>image ${path}</i>`;
+  return `![${name}](${link})`;
 }
 
-module.exports = async ({ core, glob }) => {
+module.exports = async ({ core, glob, runEnv }) => {
   let summary = await core.summary
     .addHeading('UI Screenshots');
 
@@ -34,9 +37,9 @@ module.exports = async ({ core, glob }) => {
     const files = await globber.glob();
 
     for (let file of files) {
-      let relativeFile = file.split(language_dir + '/')[1].split(".png")[0];
+      let name = file.split(language_dir + '/')[1].split(".png")[0];
 
-      table.push([relativeFile, await getImageLinkFromPath(file)]);
+      table.push([name, getImageLinkFromPath(runEnv, language_code, name, file)]);
     }
 
     summary = summary.addTable(table)
