@@ -15,7 +15,7 @@ env:
   DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
   BUILD: selfdrive/test/docker_build.sh base
 
-  RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e CI=1 -e PRE_COMMIT_HOME=/tmp/pre-commit -e PYTHONWARNINGS=error -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/pre-commit:/tmp/pre-commit -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/bash -c
+  RUN: docker run --shm-size 1G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e CI=1 -e PRE_COMMIT_HOME=/tmp/pre-commit -e PYTHONWARNINGS=error -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -e GITHUB_RUN_ATTEMPT -e GITHUB_STEP_SUMMARY -v $GITHUB_STEP_SUMMARY:$GITHUB_STEP_SUMMARY -v $GITHUB_WORKSPACE/.ci_cache/pre-commit:/tmp/pre-commit -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/bash -c
 
   PYTEST: pytest --continue-on-collection-errors --cov --cov-report=xml --cov-append --durations=0 --durations-min=5 --hypothesis-seed 0 -n logical
 
@@ -42,7 +42,5 @@ jobs:
           name: ui report
           path: selfdrive/ui/tests/test_ui/report
       - name: Create job summary
-        uses: actions/github-script@v7
-        with:
-          script: |
-            await require('./selfdrive/ui/tests/test_ui/ci_summary.js')({core, glob, runEnv: `${{ env.RUN }}`})
+        run: >
+            ${{ env.RUN }} "python selfdrive/ui/tests/test_ui/generate_ci_summary.py"
