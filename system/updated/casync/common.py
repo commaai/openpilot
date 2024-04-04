@@ -4,6 +4,7 @@ import pathlib
 import subprocess
 
 from openpilot.system.version import BUILD_METADATA_FILENAME, BuildMetadata
+from openpilot.system.updated.casync import tar
 
 
 CASYNC_ARGS = ["--with=symlinks", "--with=permissions", "--compression=xz"]
@@ -36,9 +37,18 @@ def create_build_metadata_file(path: pathlib.Path, build_metadata: BuildMetadata
     f.write(json.dumps(build_metadata_dict))
 
 
+def is_not_git(path: pathlib.Path) -> bool:
+  return ".git" not in path.parts
+
+
+def create_casync_tar_package(target_dir: pathlib.Path, output_path: pathlib.Path):
+  with open(output_path, "wb") as f:
+    tar.create_tar_archive(f, target_dir, is_not_git)
+
+
 def create_casync_release(target_dir: pathlib.Path, output_dir: pathlib.Path, caibx_name: str):
   tar_file = output_dir / f"{caibx_name}.tar"
-  run(["tar", "-cf", str(tar_file), "-C", target_dir, "."])
+  create_casync_tar_package(target_dir, tar_file)
   caibx_file = output_dir / f"{caibx_name}.caibx"
   run(["casync", "make", *CASYNC_ARGS, caibx_file, str(tar_file)])
   tar_file.unlink()
