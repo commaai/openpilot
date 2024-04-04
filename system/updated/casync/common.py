@@ -42,8 +42,7 @@ def is_not_git(path: pathlib.Path) -> bool:
 
 
 def create_casync_tar_package(target_dir: pathlib.Path, output_path: pathlib.Path):
-  with open(output_path, "wb") as f:
-    tar.create_tar_archive(f, target_dir, is_not_git)
+  tar.create_tar_archive(output_path, target_dir, is_not_git)
 
 
 def create_casync_release(target_dir: pathlib.Path, output_dir: pathlib.Path, caibx_name: str):

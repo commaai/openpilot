@@ -185,8 +185,7 @@ class TestCasyncDirectory(unittest.TestCase):
     cls.setup_cache(cls.directory_to_extract.name)
 
     cls.orig_fn = os.path.join(cls.tmpdir.name, 'orig.tar')
-    with open(cls.orig_fn, "wb") as f:
-      tar.create_tar_archive(f, pathlib.Path(cls.directory_to_extract.name))
+    tar.create_tar_archive(cls.orig_fn, pathlib.Path(cls.directory_to_extract.name))
 
     subprocess.check_output(["casync", "make", "--compression=xz", "--store", cls.store_fn, cls.manifest_fn, cls.orig_fn])
 

@@ -7,7 +7,7 @@ def include_default(_) -> bool:
   return True
 
 
-def create_tar_archive(filename, directory: pathlib.Path, include: Callable[[pathlib.Path], bool] = include_default):
+def create_tar_archive(filename: pathlib.Path, directory: pathlib.Path, include: Callable[[pathlib.Path], bool] = include_default):
   """Creates a tar archive of a directory"""
 
   with tarfile.open(filename, 'w') as tar:
