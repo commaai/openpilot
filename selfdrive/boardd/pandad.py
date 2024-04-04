@@ -155,10 +155,7 @@ def main() -> NoReturn:
         if first_run:
           # reset panda to ensure we're in a good state
           cloudlog.info(f"Resetting panda {panda.get_usb_serial()}")
-          if panda.is_internal():
-            HARDWARE.reset_internal_panda()
-          else:
-            panda.reset(reconnect=False)
+          panda.reset(reconnect=False)
 
       for p in pandas:
         p.close()

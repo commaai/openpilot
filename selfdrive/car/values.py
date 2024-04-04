@@ -1,4 +1,4 @@
-from typing import Any, Callable, cast
+from typing import cast
 from openpilot.selfdrive.car.body.values import CAR as BODY
 from openpilot.selfdrive.car.chrysler.values import CAR as CHRYSLER
 from openpilot.selfdrive.car.ford.values import CAR as FORD
@@ -17,9 +17,3 @@ Platform = BODY | CHRYSLER | FORD | GM | HONDA | HYUNDAI | MAZDA | MOCK | NISSAN
 BRANDS = [BODY, CHRYSLER, FORD, GM, HONDA, HYUNDAI, MAZDA, MOCK, NISSAN, SUBARU, TESLA, TOYOTA, VOLKSWAGEN]
 
 PLATFORMS: dict[str, Platform] = {str(platform): platform for brand in BRANDS for platform in cast(list[Platform], brand)}
-
-MapFunc = Callable[[Platform], Any]
-
-
-def create_platform_map(func: MapFunc):
-  return {str(platform): func(platform) for platform in PLATFORMS.values() if func(platform) is not None}

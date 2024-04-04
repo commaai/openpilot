@@ -25,7 +25,7 @@ class TestLeads(unittest.TestCase):
       return msgs
 
     msgs = [m for _ in range(3) for m in single_iter_pkg()]
-    out = replay_process_with_name("radard", msgs, fingerprint=TOYOTA.COROLLA_TSS2)
+    out = replay_process_with_name("radard", msgs, fingerprint=TOYOTA.TOYOTA_COROLLA_TSS2)
     states = [m for m in out if m.which() == "radarState"]
     failures = [not state.valid and len(state.radarState.radarErrors) for state in states]
 
