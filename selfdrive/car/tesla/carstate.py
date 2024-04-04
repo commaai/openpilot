@@ -100,7 +100,7 @@ class CarState(CarStateBase):
 
     # Doors
     if model3:
-      ret.doorOpen = any([cp.vl["VCLEFT_doorStatus"]["VCRIGHT_frontLatchSwitch"] != 1,
+      ret.doorOpen = any([cp.vl["VCLEFT_doorStatus"]["VCLEFT_frontLatchSwitch"] != 1,
                           cp.vl["VCLEFT_doorStatus"]["VCLEFT_rearLatchSwitch"] != 1,
                           cp.vl["VCRIGHT_doorStatus"]["VCRIGHT_frontLatchSwitch"] != 1,
                           cp.vl["VCRIGHT_doorStatus"]["VCRIGHT_rearLatchSwitch"] != 1,
