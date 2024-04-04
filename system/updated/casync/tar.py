@@ -11,7 +11,7 @@ def create_tar_archive(fh: IO[bytes], directory: pathlib.Path, include: Callable
   """Creates a tar archive of a directory"""
 
   tar = tarfile.open(fileobj=fh, mode='w')
-  for file in directory.rglob("*"):
+  for file in sorted(directory.rglob("*"), key=lambda f: f.stat().st_size if f.is_file() else 0, reverse=True):
     if not include(file):
       continue
     relative_path = str(file.relative_to(directory))
