@@ -51,10 +51,12 @@ class CarController(CarControllerBase):
 
       if self.model3:
         counter = CS.das_control["DAS_controlCounter"]
-        can_sends.extend(self.tesla_can.create_longitudinal_commands(acc_state, target_speed, min_accel, max_accel, counter))
+        buses = [(self.packer, CANBUS.chassis)]
+        can_sends.extend(self.tesla_can.create_longitudinal_commands(acc_state, target_speed, min_accel, max_accel, counter, buses))
       else:
+        buses = [(self.packer, CANBUS.chassis), (self.pt_packer, CANBUS.powertrain)]
         while len(CS.das_control_counters) > 0:
-          can_sends.extend(self.tesla_can.create_longitudinal_commands(acc_state, target_speed, min_accel, max_accel, CS.das_control_counters.popleft()))
+          can_sends.extend(self.tesla_can.create_longitudinal_commands(acc_state, target_speed, min_accel, max_accel, CS.das_control_counters.popleft(), buses))
 
     # Cancel on user steering override, since there is no steering torque blending
     if hands_on_fault:
@@ -63,7 +65,9 @@ class CarController(CarControllerBase):
     # Sent cancel request only if ACC is enabled
     if self.frame % 10 == 0 and pcm_cancel_cmd and CS.acc_enabled:
       if self.model3:
-        can_sends.append(self.tesla_can.model3_cancel_acc(CS.sccm_right_stalk))
+        counter = int(CS.sccm_right_stalk["SCCM_rightStalkCounter"] + 1) % 16
+        can_sends.append(self.tesla_can.model3_cancel_acc(counter, 1))  # half up (cancel acc)
+        can_sends.append(self.tesla_can.model3_cancel_acc(counter + 1, 0))  # to prevent neutral gear warning
       else:
         # Spam every possible counter value, otherwise it might not be accepted
         for counter in range(16):

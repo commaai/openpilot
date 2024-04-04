@@ -73,7 +73,7 @@ class TeslaCAN:
     values["CRC_STW_ACTN_RQ"] = self.crc(data[:7])
     return self.packer.make_can_msg("STW_ACTN_RQ", bus, values)
 
-  def create_longitudinal_commands(self, acc_state, speed, min_accel, max_accel, cnt):
+  def create_longitudinal_commands(self, acc_state, speed, min_accel, max_accel, cnt, buses):
     messages = []
     values = {
       "DAS_setSpeed": speed * CV.MS_TO_KPH,
@@ -87,23 +87,26 @@ class TeslaCAN:
       "DAS_controlChecksum": 0,
     }
 
-    for packer, bus in [(self.packer, CANBUS.chassis)]:  # , (self.pt_packer, CANBUS.powertrain)]: #todo
+    for packer, bus in buses:
       data = packer.make_can_msg("DAS_control", bus, values)[2]
       values["DAS_controlChecksum"] = self.checksum(0x2b9, data[:7])
       messages.append(packer.make_can_msg("DAS_control", bus, values))
     return messages
 
-  def model3_cancel_acc(self, sccm_right_stalk):
+  def model3_cancel_acc(self, counter, position):
     # TODO: Implement CRC checksum instead of lookup table.
-    crc_lookup = [166, 164, 178, 141, 163, 161, 61, 25, 172, 69, 22, 108, 169, 207, 209, 219]
+    if position == 1:  # half up
+      crc_lookup = [166, 164, 178, 141, 163, 161, 61, 25, 172, 69, 22, 108, 169, 207, 209, 219]
+    else:  # neutral position
+      position = 0
+      crc_lookup = [70, 68, 82, 109, 67, 65, 221, 249, 76, 165, 246, 140, 73, 47, 49, 59]
 
-    counter = int(sccm_right_stalk["SCCM_rightStalkCounter"] + 1) % 16
     values = {"SCCM_rightStalkCounter": counter,
               "SCCM_rightStalkCrc": crc_lookup[counter],
               "SCCM_rightStalkReserved1": 0,
               "SCCM_parkButtonStatus": 0,
               "SCCM_rightStalkReserved2": 0,
-              "SCCM_rightStalkStatus": 1,  # half up to cancel acc
+              "SCCM_rightStalkStatus": position,
               }
 
     return self.pt_packer.make_can_msg("SCCM_rightStalk", CANBUS.radar, values)
