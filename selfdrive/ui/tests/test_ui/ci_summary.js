@@ -11,7 +11,7 @@ const knownLanguages = JSON.parse(nodeFs.readFileSync(
 const REPORT_DIR = nodePath.resolve(__dirname, "report/screenshots");
 
 function getImageLinkFromPath(runEnv, language, name, path) {
-  let link = child_process.execSync(`${runEnv} python ${nodePath.resolve(__dirname, "upload_image_to_azure.py")} ${path} ${language}-${name}`, {
+  let link = nodeChildProcess.execSync(`${runEnv} python ${nodePath.resolve(__dirname, "upload_image_to_azure.py")} ${path} ${language}-${name}`, {
     encoding: "utf-8",
   });
 
