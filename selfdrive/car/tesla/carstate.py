@@ -100,7 +100,11 @@ class CarState(CarStateBase):
 
     # Doors
     if model3:
-      ret.doorOpen = cp_adas.vl["VCFRONT_status"]["VCFRONT_anyDoorOpen"] == 1
+      ret.doorOpen = any([cp.vl["VCLEFT_doorStatus"]["VCRIGHT_frontLatchSwitch"] != 1,
+                          cp.vl["VCLEFT_doorStatus"]["VCLEFT_rearLatchSwitch"] != 1,
+                          cp.vl["VCRIGHT_doorStatus"]["VCRIGHT_frontLatchSwitch"] != 1,
+                          cp.vl["VCRIGHT_doorStatus"]["VCRIGHT_rearLatchSwitch"] != 1,
+                          cp.vl["VCRIGHT_doorStatus"]["VCRIGHT_trunkLatchStatus"] != 2])
     else:
       ret.doorOpen = any((self.can_define.dv["GTW_carState"][door].get(int(cp.vl["GTW_carState"][door]), "OPEN") == "OPEN") for door in DOORS)
 
@@ -193,6 +197,7 @@ class CarState(CarStateBase):
         ("SCCM_steeringAngleSensor", 100),
         ("DAS_bodyControls", 2),
         ("ID3F5VCFRONT_lighting", 10),
-        ("VCFRONT_status", 50)
+        ("VCLEFT_doorStatus", 10),
+        ("VCRIGHT_doorStatus", 10),
       ]
       return CANParser(DBC[CP.carFingerprint]["pt"], messages, CANBUS.vehicle)
