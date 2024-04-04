@@ -371,7 +371,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [VOLKSWAGEN_VERSION_REQUEST_MULTI],
       [VOLKSWAGEN_VERSION_RESPONSE],
-      # whitelist_ecus=[Ecu.srs, Ecu.eps, Ecu.fwdRadar],
+      whitelist_ecus=[Ecu.srs, Ecu.eps, Ecu.fwdRadar, Ecu.fwdCamera],
       rx_offset=VOLKSWAGEN_RX_OFFSET,
       bus=bus,
       logging=(bus != 1 or not obd_multiplexing),
@@ -380,7 +380,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [VOLKSWAGEN_VERSION_REQUEST_MULTI],
       [VOLKSWAGEN_VERSION_RESPONSE],
-      # whitelist_ecus=[Ecu.engine, Ecu.transmission],
+      whitelist_ecus=[Ecu.engine, Ecu.transmission],
       bus=bus,
       logging=(bus != 1 or not obd_multiplexing),
       obd_multiplexing=obd_multiplexing,
