@@ -5,17 +5,18 @@ import os
 import subprocess
 from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.logreader import LogReader
+
 try:
-    from mcap.writer import Writer
+  from mcap.writer import Writer
 except ImportError:
-    print("mcap module not found. Attempting to install...")
-    subprocess.run([sys.executable, "-m", "pip", "install", "mcap"])
-    # Attempt to import again after installation
-    try:
-        from mcap.writer import Writer
-    except ImportError:
-        print("Failed to install mcap module. Exiting.")
-        sys.exit(1)
+  print("mcap module not found. Attempting to install...")
+  subprocess.run([sys.executable, "-m", "pip", "install", "mcap"])
+  # Attempt to import again after installation
+  try:
+    from mcap.writer import Writer
+  except ImportError:
+    print("Failed to install mcap module. Exiting.")
+    sys.exit(1)
 
 
 FOXGLOVE_IMAGE_SCHEME_TITLE = "foxglove.CompressedImage"
@@ -30,6 +31,7 @@ schemas: dict[str, int] = {}
 channels: dict[str, int] = {}
 writer: Writer
 
+
 def convertBytesToString(data):
   if isinstance(data, bytes):
     return data.decode('latin-1')  # Assuming UTF-8 encoding, adjust if needed
@@ -40,32 +42,35 @@ def convertBytesToString(data):
   else:
     return data
 
+
 # Load jsonscheme for every Event
 def loadSchema(schemaName):
   with open(os.path.join(SCHEMAS_FOLDER, schemaName + SCHEMA_EXTENSION), "r") as file:
     return json.loads(file.read())
 
+
 # Foxglove creates one graph of an array, and not one for each item of an array
 # This can be avoided by transforming array to separate objects
 def transformListsToJsonDict(json_data):
-    def convert_array_to_dict(array):
-        new_dict = {}
-        for index, item in enumerate(array):
-            if isinstance(item, dict):
-                new_dict[index] = transformListsToJsonDict(item)
-            else:
-                new_dict[index] = item
-        return new_dict
+  def convert_array_to_dict(array):
+    new_dict = {}
+    for index, item in enumerate(array):
+      if isinstance(item, dict):
+        new_dict[index] = transformListsToJsonDict(item)
+      else:
+        new_dict[index] = item
+    return new_dict
 
-    new_data = {}
-    for key, value in json_data.items():
-        if isinstance(value, list):
-            new_data[key] = convert_array_to_dict(value)
-        elif isinstance(value, dict):
-            new_data[key] = transformListsToJsonDict(value)
-        else:
-            new_data[key] = value
-    return new_data
+  new_data = {}
+  for key, value in json_data.items():
+    if isinstance(value, list):
+      new_data[key] = convert_array_to_dict(value)
+    elif isinstance(value, dict):
+      new_data[key] = transformListsToJsonDict(value)
+    else:
+      new_data[key] = value
+  return new_data
+
 
 # Transform openpilot thumbnail to foxglove compressedImage
 def transformToFoxgloveSchema(jsonMsg):
@@ -73,15 +78,13 @@ def transformToFoxgloveSchema(jsonMsg):
   base64ImgData = base64.b64encode(bytesImgData)
   base64_string = base64ImgData.decode('utf-8')
   foxMsg = {
-    "timestamp":{
-      "sec":"0",
-      "nsec":jsonMsg.get("logMonoTime")
-    },
-    "frame_id":str(jsonMsg.get("thumbnail").get("frameId")),
+    "timestamp": {"sec": "0", "nsec": jsonMsg.get("logMonoTime")},
+    "frame_id": str(jsonMsg.get("thumbnail").get("frameId")),
     "data": base64_string,
-    "format": "jpeg"
+    "format": "jpeg",
   }
   return foxMsg
+
 
 # TODO: Check if there is a tool to build GEOJson
 def transformMapCoordinates(jsonMsg):
@@ -92,32 +95,18 @@ def transformMapCoordinates(jsonMsg):
   # Define the GeoJSON
   geojson_data = {
     "type": "FeatureCollection",
-    "features": [
-      {
-        "type": "Feature",
-        "geometry": {
-          "type": "LineString",
-          "coordinates": coordinates
-        },
-        "logMonoTime": jsonMsg.get("logMonoTime")
-      }
-    ]
+    "features": [{"type": "Feature", "geometry": {"type": "LineString", "coordinates": coordinates}, "logMonoTime": jsonMsg.get("logMonoTime")}],
   }
 
   # Create the final JSON with the GeoJSON data encoded as a string
-  geoJson = {
-    "geojson": json.dumps(geojson_data)
-  }
+  geoJson = {"geojson": json.dumps(geojson_data)}
 
   return geoJson
 
+
 def jsonToScheme(jsonData):
   zeroArray = False
-  schema = {
-    "type": "object",
-    "properties": {},
-    "required": []
-  }
+  schema = {"type": "object", "properties": {}, "required": []}
   for key, value in jsonData.items():
     if isinstance(value, dict):
       tempScheme, zeroArray = jsonToScheme(value)
@@ -126,24 +115,16 @@ def jsonToScheme(jsonData):
       schema["properties"][key] = tempScheme
       schema["required"].append(key)
     elif isinstance(value, list):
-      if all(isinstance(item, dict) for item in value) and len(value)>0: # Handle zero value arrays
+      if all(isinstance(item, dict) for item in value) and len(value) > 0:  # Handle zero value arrays
         # Handle array of objects
         tempScheme, zeroArray = jsonToScheme(value[0])
-        schema["properties"][key] = {
-          "type": "array",
-          "items": tempScheme if value else {}
-        }
+        schema["properties"][key] = {"type": "array", "items": tempScheme if value else {}}
         schema["required"].append(key)
       else:
         if len(value) == 0:
           zeroArray = True
         # Handle array of primitive types
-        schema["properties"][key] = {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
+        schema["properties"][key] = {"type": "array", "items": {"type": "string"}}
         schema["required"].append(key)
     else:
       typeName = type(value).__name__
@@ -155,19 +136,19 @@ def jsonToScheme(jsonData):
         typeName = "number"
       elif typeName == "int":
         typeName = "integer"
-      schema["properties"][key] = {
-        "type": typeName
-      }
+      schema["properties"][key] = {"type": typeName}
       schema["required"].append(key)
 
   return schema, zeroArray
+
 
 def saveScheme(scheme, schemaFileName):
   schemaFileName = schemaFileName + SCHEMA_EXTENSION
   # Create the new schemas folder
   os.makedirs(SCHEMAS_FOLDER, exist_ok=True)
   with open(os.path.join(SCHEMAS_FOLDER, schemaFileName), 'w') as json_file:
-      json.dump(convertBytesToString(scheme), json_file)
+    json.dump(convertBytesToString(scheme), json_file)
+
 
 def convertToFoxGloveFormat(jsonData, rlogTopic):
   jsonData["title"] = rlogTopic
@@ -180,6 +161,7 @@ def convertToFoxGloveFormat(jsonData, rlogTopic):
   else:
     jsonData = transformListsToJsonDict(jsonData)
   return jsonData
+
 
 def generateSchemas():
   listOfDirs = os.listdir(RLOG_FOLDER)
@@ -197,20 +179,21 @@ def generateSchemas():
         scheme, zerroArray = jsonToScheme(jsonData)
         # If array of len 0 has been found, type of its data can not be parsed, skip to the next log
         # in search for a non empty array. If there is not an non empty array in logs, put a dummy string type
-        if zerroArray and not iteration == lastIteration-1:
+        if zerroArray and not iteration == lastIteration - 1:
           continue
         title = jsonData.get("title")
         scheme["title"] = title
         # Add contentEncoding type, hardcoded in foxglove format
         if title == FOXGLOVE_IMAGE_SCHEME_TITLE:
-            scheme["properties"]["data"]["contentEncoding"] = FOXGLOVE_IMAGE_ENCODING
+          scheme["properties"]["data"]["contentEncoding"] = FOXGLOVE_IMAGE_ENCODING
         saveScheme(scheme, directory)
         break
+
 
 def downloadLogs(logPaths):
   segment_counter = 0
   for logPath in logPaths:
-    segment_counter+=1
+    segment_counter += 1
     msg_counter = 1
     print(segment_counter)
     rlog = LogReader(logPath)
@@ -220,10 +203,11 @@ def downloadLogs(logPaths):
       rlog_dir_path = os.path.join(RLOG_FOLDER, msg.which())
       if not os.path.exists(rlog_dir_path):
         os.makedirs(rlog_dir_path)
-      file_path = os.path.join(rlog_dir_path, str(segment_counter)+","+str(msg_counter))
+      file_path = os.path.join(rlog_dir_path, str(segment_counter) + "," + str(msg_counter))
       with open(file_path, 'w') as json_file:
         json.dump(jsonMsg, json_file)
-      msg_counter+=1
+      msg_counter += 1
+
 
 def getLogMonoTime(jsonMsg):
   if jsonMsg.get("title") == FOXGLOVE_IMAGE_SCHEME_TITLE:
@@ -233,6 +217,7 @@ def getLogMonoTime(jsonMsg):
   else:
     logMonoTime = jsonMsg.get("logMonoTime")
   return logMonoTime
+
 
 # Get logs from a path, and convert them into mcap
 def createMcap(logPaths):
@@ -247,17 +232,9 @@ def createMcap(logPaths):
   for counter, rlogTopic in enumerate(listOfRlogTopics):
     print(counter)
     schema = loadSchema(rlogTopic)
-    schema_id = writer.register_schema(
-      name= schema.get("title"),
-      encoding="jsonschema",
-      data=json.dumps(schema).encode()
-    )
+    schema_id = writer.register_schema(name=schema.get("title"), encoding="jsonschema", data=json.dumps(schema).encode())
     schemas[rlogTopic] = schema_id
-    channel_id = writer.register_channel(
-      schema_id= schemas[rlogTopic],
-      topic=rlogTopic,
-      message_encoding="json"
-    )
+    channel_id = writer.register_channel(schema_id=schemas[rlogTopic], topic=rlogTopic, message_encoding="json")
     channels[rlogTopic] = channel_id
     rlogTopicPath = os.path.join(RLOG_FOLDER, rlogTopic)
     msgFiles = os.listdir(rlogTopicPath)
@@ -266,26 +243,21 @@ def createMcap(logPaths):
       with open(msgFilePath, "r") as msgFile:
         jsonMsg = json.load(msgFile)
         logMonoTime = getLogMonoTime(jsonMsg)
-        writer.add_message(
-          channel_id=channels[rlogTopic],
-          log_time=logMonoTime,
-          data=json.dumps(jsonMsg).encode("utf-8"),
-          publish_time=logMonoTime
-        )
+        writer.add_message(channel_id=channels[rlogTopic], log_time=logMonoTime, data=json.dumps(jsonMsg).encode("utf-8"), publish_time=logMonoTime)
+
 
 def is_program_installed(program_name):
+  try:
+    # Check if the program is installed using dpkg (for traditional Debian packages)
+    subprocess.run(["dpkg", "-l", program_name], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    return True
+  except subprocess.CalledProcessError:
+    # Check if the program is installed using snap
     try:
-        # Check if the program is installed using dpkg (for traditional Debian packages)
-        subprocess.run(["dpkg", "-l", program_name], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        return True
+      subprocess.run(["snap", "list", program_name], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+      return True
     except subprocess.CalledProcessError:
-        # Check if the program is installed using snap
-        try:
-            subprocess.run(["snap", "list", program_name], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            return True
-        except subprocess.CalledProcessError:
-            return False
-
+      return False
 
 
 # TODO: Check if foxglove is installed
@@ -293,16 +265,16 @@ if __name__ == '__main__':
   # Example usage:
   program_name = "foxglove-studio"  # Change this to the program you want to check
   if is_program_installed(program_name):
-      print(f"{program_name} detected.")
+    print(f"{program_name} detected.")
   else:
-      print(f"{program_name} could not be detected.")
-      installFoxglove = input("Would you like to install it? YES/NO? - ")
-      if installFoxglove.lower() == "yes":
-        try:
-          subprocess.run(['./install_foxglove.sh'], check=True)
-          print("Installation completed successfully.")
-        except subprocess.CalledProcessError as e:
-          print(f"Installation failed with return code {e.returncode}.")
+    print(f"{program_name} could not be detected.")
+    installFoxglove = input("Would you like to install it? YES/NO? - ")
+    if installFoxglove.lower() == "yes":
+      try:
+        subprocess.run(['./install_foxglove.sh'], check=True)
+        print("Installation completed successfully.")
+      except subprocess.CalledProcessError as e:
+        print(f"Installation failed with return code {e.returncode}.")
   # Get a route
   if len(sys.argv) == 1:
     route_name = "a2a0ccea32023010|2023-07-27--13-01-19"
