@@ -17,7 +17,9 @@ for language_dir in SCREENSHOTS_DIR.iterdir():
   summary.write(f"## {language_name}\n\n")
 
   for case in language_dir.glob("**/*"):
-    name = case.relative_to(SCREENSHOTS_DIR).replace("/", "-").replace(".png", "")
+    name = str(case.relative_to(SCREENSHOTS_DIR)).replace("/", "-").replace(".png", "")
     blob_name = f"{run_id}-{name}"
     link = OpenpilotCIContainer.upload_file(str(case), blob_name, "image/png")
     summary.write(f"### {name}\n\n![{name}]({link})\n\n")
+
+summary.close()
