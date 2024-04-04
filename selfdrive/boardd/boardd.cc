@@ -493,6 +493,7 @@ void panda_state_thread(std::vector<Panda *> pandas, bool spoofing_started) {
     rk.keepTime();
   }
 
+  // reset the safety mode to avoid faulting the car
   if (is_onroad && !engaged) {
     for (auto &p : pandas) {
       p->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
