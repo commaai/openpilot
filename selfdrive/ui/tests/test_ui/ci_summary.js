@@ -17,6 +17,10 @@ function getImageLinkFromPath(runEnv, language, name, path) {
     encoding: "utf-8",
   });
 
+  if (!link.startsWith("https://")){
+    return "**upload to azure failed**";
+  }
+
   return `![${name}](${link})`;
 }
 
