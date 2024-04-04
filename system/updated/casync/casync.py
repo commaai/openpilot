@@ -14,6 +14,7 @@ from typing import IO
 import requests
 from Crypto.Hash import SHA512
 from openpilot.system.updated.casync import tar
+from openpilot.system.updated.casync.common import create_casync_tar_package
 
 CA_FORMAT_INDEX = 0x96824d9c7b129ff9
 CA_FORMAT_TABLE = 0xe75b9e112f17417d
@@ -91,16 +92,11 @@ class RemoteChunkReader(ChunkReader):
     return decompressor.decompress(contents)
 
 
-def is_not_git(path: pathlib.Path) -> bool:
-  return ".git" not in path.parts
-
-
 class DirectoryTarChunkReader(BinaryChunkReader):
   """creates a tar archive of a directory and reads chunks from it"""
 
   def __init__(self, path: str, cache_file: str) -> None:
-    with open(cache_file, "wb") as f:
-      tar.create_tar_archive(f, pathlib.Path(path), is_not_git)
+    create_casync_tar_package(pathlib.Path(path), pathlib.Path(cache_file))
 
     self.f = open(cache_file, "rb")
     return super().__init__(self.f)
