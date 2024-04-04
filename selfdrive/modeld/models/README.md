@@ -21,10 +21,6 @@ To view the architecture of the ONNX networks, you can use [netron](https://netr
   * one-hot encoded vector to tell model whether traffic is right-hand or left-hand traffic : 2
 * **feature buffer**
   * A buffer of intermediate features that gets appended to the current feature to form a 5 seconds temporal context (at 20FPS) : 99 * 512
-* **nav features**
-  * 1 * 150
-* **nav instructions**
-  * 1 * 256
 
 
 ### Supercombo output format (Full size: XXX x float32)

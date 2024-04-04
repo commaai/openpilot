@@ -36,7 +36,6 @@ PROCS = [
   Proc(['modeld'], 1.12, atol=0.2, msgs=['modelV2']),
   Proc(['dmonitoringmodeld'], 0.4, msgs=['driverStateV2']),
   Proc(['encoderd'], 0.23, msgs=[]),
-  Proc(['mapsd', 'navmodeld'], 0.05, msgs=['mapRenderState', 'navModel']),
 ]
 
 
