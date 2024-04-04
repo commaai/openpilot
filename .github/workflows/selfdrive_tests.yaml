@@ -403,5 +403,6 @@ jobs:
           name: minimal ui report
           path: selfdrive/ui/tests/test_ui/report
       - name: Create job summary
+        if: ${{ github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
         run: >
-            ${{ env.RUN }} "python selfdrive/ui/tests/test_ui/generate_ci_summary.py"
+            ${{ env.RUN }} "unset PYTHONWARNINGS && AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/ui/tests/test_ui/generate_ci_summary.py"

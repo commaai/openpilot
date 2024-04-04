@@ -22,4 +22,5 @@ for language_dir in SCREENSHOTS_DIR.iterdir():
     link = OpenpilotCIContainer.upload_file(str(case), blob_name, "image/png")
     summary.write(f"### {name}\n\n![{name}]({link})\n\n")
 
+languages.close()
 summary.close()
