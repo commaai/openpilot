@@ -14,10 +14,12 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_realtime_priority
 from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
-from openpilot.selfdrive.modeld.models.commonmodel_pyx import sigmoid, CLContext, MonitoringModelFrame
+from openpilot.selfdrive.modeld.models.commonmodel_pyx import sigmoid
 
 CALIB_LEN = 3
 REG_SCALE = 0.25
+MODEL_WIDTH = 1440
+MODEL_HEIGHT = 960
 OUTPUT_SIZE = 84
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 MODEL_PATHS = {
@@ -52,15 +54,13 @@ class DMonitoringModelResult(ctypes.Structure):
 class ModelState:
   inputs: dict[str, np.ndarray]
   output: np.ndarray
-  frame: MonitoringModelFrame
   model: ModelRunner
 
-  def __init__(self, context: CLContext):
+  def __init__(self):
     assert ctypes.sizeof(DMonitoringModelResult) == OUTPUT_SIZE * ctypes.sizeof(ctypes.c_float)
-    self.frame = MonitoringModelFrame(context)
     self.output = np.zeros(OUTPUT_SIZE, dtype=np.float32)
     self.inputs = {
-      # 'input_img': np.zeros(MODEL_HEIGHT * MODEL_WIDTH, dtype=np.uint8),
+      'input_img': np.zeros(MODEL_HEIGHT * MODEL_WIDTH, dtype=np.uint8),
       'calib': np.zeros(CALIB_LEN, dtype=np.float32)}
 
     self.model = ModelRunner(MODEL_PATHS, self.output, Runtime.DSP, True, None)
@@ -70,14 +70,14 @@ class ModelState:
   def run(self, buf:VisionBuf, calib:np.ndarray) -> tuple[np.ndarray, float]:
     self.inputs['calib'][:] = calib
 
-    transform = np.array([
-      [1.5, 0.0, 264.0],
-      [0.0, 1.5, 226.0],
-      [0.0, 0.0, 1.0],
-    ], dtype=np.float32)
+    v_offset = buf.height - MODEL_HEIGHT
+    h_offset = (buf.width - MODEL_WIDTH) // 2
+    buf_data = buf.data.reshape(-1, buf.stride)
+    input_data = self.inputs['input_img'].reshape(MODEL_HEIGHT, MODEL_WIDTH)
+    input_data[:] = buf_data[v_offset:v_offset+MODEL_HEIGHT, h_offset:h_offset+MODEL_WIDTH]
 
     t1 = time.perf_counter()
-    self.model.setInputBuffer("input_img", self.frame.prepare(buf, transform.flatten()).view(np.float32))
+    self.model.setInputBuffer("input_img", self.inputs['input_img'].view(np.float32))
     self.model.execute()
     t2 = time.perf_counter()
     return self.output, t2 - t1
@@ -117,13 +117,12 @@ def main():
   gc.disable()
   set_realtime_priority(1)
 
-  cl_context = CLContext()
-  model = ModelState(cl_context)
+  model = ModelState()
   cloudlog.warning("models loaded, dmonitoringmodeld starting")
   Params().put_bool("DmModelInitialized", True)
 
   cloudlog.warning("connecting to driver stream")
-  vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_DRIVER, True, cl_context)
+  vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_DRIVER, True)
   while not vipc_client.connect(False):
     time.sleep(0.1)
   assert vipc_client.is_connected()
