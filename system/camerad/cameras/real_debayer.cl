@@ -135,37 +135,33 @@ float combine_pvs(float lv, float sv, int expo) {
 }
 
 float4 val4_from_210(uchar8 long_pvs, uchar long_ext, uchar8 short_pvs, uchar short_ext, bool aligned, float gain, int expo) {
-  int4 parsed_long;
-  int4 parsed_short;
+  int8 parsed;
   if (aligned) {
-    parsed_long = (int4)(((int)long_pvs.s0 << 2) + (long_pvs.s1 & 0b00000011),
+    parsed = (int8)(((int)long_pvs.s0 << 2) + (long_pvs.s1 & 0b00000011),
                      ((int)long_pvs.s2 << 2) + ((long_pvs.s6 & 0b11000000) / 64),
                      ((int)long_pvs.s3 << 2) + ((long_pvs.s6 & 0b00110000) / 16),
-                     ((int)long_pvs.s4 << 2) + ((long_pvs.s6 & 0b00001100) / 4));
-    parsed_short = (int4)(((uint)short_pvs.s0 << 2) + (short_pvs.s1 & 0b00000011),
+                     ((int)long_pvs.s4 << 2) + ((long_pvs.s6 & 0b00001100) / 4),
+                     ((int)short_pvs.s0 << 2) + (short_pvs.s1 & 0b00000011),
                      ((int)short_pvs.s2 << 2) + ((short_pvs.s6 & 0b11000000) / 64),
                      ((int)short_pvs.s3 << 2) + ((short_pvs.s6 & 0b00110000) / 16),
                      ((int)short_pvs.s4 << 2) + ((short_pvs.s6 & 0b00001100) / 4));
   } else {
-    parsed_long = (int4)(((int)long_pvs.s0 << 2) + ((long_pvs.s3 & 0b00110000) / 16),
+    parsed = (int8)(((int)long_pvs.s0 << 2) + ((long_pvs.s3 & 0b00110000) / 16),
                      ((int)long_pvs.s1 << 2) + ((long_pvs.s3 & 0b00001100) / 4),
                      ((int)long_pvs.s2 << 2) + ((long_pvs.s3 & 0b00000011)),
-                     ((int)long_pvs.s4 << 2) + ((long_ext & 0b11000000) / 64));
-    parsed_short = (int4)(((int)short_pvs.s0 << 2) + ((short_pvs.s3 & 0b00110000) / 16),
+                     ((int)long_pvs.s4 << 2) + ((long_ext & 0b11000000) / 64),
+                     ((int)short_pvs.s0 << 2) + ((short_pvs.s3 & 0b00110000) / 16),
                      ((int)short_pvs.s1 << 2) + ((short_pvs.s3 & 0b00001100) / 4),
                      ((int)short_pvs.s2 << 2) + ((short_pvs.s3 & 0b00000011)),
                      ((int)short_pvs.s4 << 2) + ((short_ext & 0b11000000) / 64));
   }
 
-  float4 pl = convert_float4(parsed_long - 64);
-  float4 ps = convert_float4(parsed_short - 64);
+  float8 pf = convert_float8(parsed - 64);
   float4 pv;
-  // 16-bits?
-
-  pv.s0 = combine_pvs(pl.s0, ps.s0, expo);
-  pv.s1 = combine_pvs(pl.s1, ps.s1, expo);
-  pv.s2 = combine_pvs(pl.s2, ps.s2, expo);
-  pv.s3 = combine_pvs(pl.s3, ps.s3, expo);
+  pv.s0 = combine_pvs(pf.s0, pf.s4, expo);
+  pv.s1 = combine_pvs(pf.s1, pf.s5, expo);
+  pv.s2 = combine_pvs(pf.s2, pf.s6, expo);
+  pv.s3 = combine_pvs(pf.s3, pf.s7, expo);
   return clamp(pv*gain, 0.0, 1.0);
 }
 
