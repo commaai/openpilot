@@ -65,6 +65,7 @@ MapRenderer::MapRenderer(const QMapLibre::Settings &settings, bool online) : m_s
   m_map->setStyleJson(style.c_str());
   m_map->createRenderer();
   ever_loaded = false;
+  static_rendered = false;
 
   m_map->resize(fbo->size());
   m_map->setFramebufferObject(fbo->handle(), fbo->size());
@@ -100,6 +101,8 @@ MapRenderer::MapRenderer(const QMapLibre::Settings &settings, bool online) : m_s
     QObject::connect(timer, SIGNAL(timeout()), this, SLOT(msgUpdate()));
     timer->start(0);
   }
+
+  QObject::connect(m_map.data(), &QMapLibre::Map::staticRenderFinished, [=]() {static_rendered = true;});
 }
 
 void MapRenderer::msgUpdate() {
@@ -114,10 +117,8 @@ void MapRenderer::msgUpdate() {
       float bearing = RAD2DEG(orientation.getValue()[2]);
       updatePosition(get_point_along_line(pos.getValue()[0], pos.getValue()[1], bearing, MAP_OFFSET), bearing);
 
-      // TODO: use the static rendering mode instead
       // retry render a few times
       for (int i = 0; i < 5 && !rendered(); i++) {
-        QApplication::processEvents(QEventLoop::AllEvents, 100);
         update();
         if (rendered()) {
           LOGW("rendered after %d retries", i+1);
@@ -161,19 +162,20 @@ void MapRenderer::updatePosition(QMapLibre::Coordinate position, float bearing) 
 }
 
 bool MapRenderer::loaded() {
-  return m_map->isFullyLoaded();
+  return static_rendered;
 }
 
 void MapRenderer::update() {
   double start_t = millis_since_boot();
   gl_functions->glClear(GL_COLOR_BUFFER_BIT);
-  m_map->render();
+  m_map->startStaticRender();
   gl_functions->glFlush();
   double end_t = millis_since_boot();
 
   if ((vipc_server != nullptr) && loaded()) {
     publish((end_t - start_t) / 1000.0, true);
     last_llk_rendered = (*sm)["liveLocationKalman"].getLogMonoTime();
+    static_rendered = false;
   }
 }
 

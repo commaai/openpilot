@@ -51,7 +51,6 @@ private:
   void setError(const QString &err_str);
 
   bool loaded_once = false;
-  bool static_rendered = false;
 
   // Panning
   QPointF m_lastPos;

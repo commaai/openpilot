@@ -16,10 +16,12 @@ QString get_mapbox_token() {
   return MAPBOX_TOKEN.isEmpty() ? CommaApi::create_jwt({}, 4 * 7 * 24 * 3600) : MAPBOX_TOKEN;
 }
 
-QMapLibre::Settings get_mapbox_settings() {
+QMapLibre::Settings get_mapbox_settings(bool static_render) {
   QMapLibre::Settings settings;
   settings.setProviderTemplate(QMapLibre::Settings::ProviderTemplate::MapboxProvider);
-  settings.setMapMode(QMapLibre::Settings::MapMode::Static);
+  if (static_render) {
+    settings.setMapMode(QMapLibre::Settings::MapMode::Static);
+  }
 
   if (!Hardware::PC()) {
     settings.setCacheDatabasePath(MAPS_CACHE_PATH);

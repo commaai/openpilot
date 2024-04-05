@@ -165,8 +165,7 @@ void MapWindow::updateState(const UIState &s) {
     }
   }
 
-  //loaded_once = loaded_once || (m_map && m_map->isFullyLoaded());
-  loaded_once = loaded_once || (m_map && static_rendered);
+  loaded_once = loaded_once || (m_map && m_map->isFullyLoaded());
   if (!loaded_once) {
     setError(tr("Map Loading"));
     return;
@@ -275,14 +274,11 @@ void MapWindow::initializeGL() {
       loaded_once = true;
     }
   });
-
-  QObject::connect(m_map.data(), &QMapLibre::Map::staticRenderFinished, [=]() {static_rendered = true;});
 }
 
 void MapWindow::paintGL() {
   if (!isVisible() || m_map.isNull()) return;
-  //m_map->render();
-  m_map->startStaticRender();
+  m_map->render();
 }
 
 void MapWindow::clearRoute() {

@@ -18,7 +18,7 @@ const QString MAPS_HOST = util::getenv("MAPS_HOST", MAPBOX_TOKEN.isEmpty() ? "ht
 const QString MAPS_CACHE_PATH = "/data/mbgl-cache-navd.db";
 
 QString get_mapbox_token();
-QMapLibre::Settings get_mapbox_settings();
+QMapLibre::Settings get_mapbox_settings(bool static_render = false);
 QGeoCoordinate to_QGeoCoordinate(const QMapLibre::Coordinate &in);
 QMapLibre::CoordinatesCollections model_to_collection(
   const cereal::LiveLocationKalman::Measurement::Reader &calibratedOrientationECEF,
