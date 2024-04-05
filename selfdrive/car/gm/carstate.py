@@ -140,10 +140,10 @@ class CarState(CarStateBase):
         ("AEBCmd", 10),
         ("ASCMLKASteeringCmd", 10),
       ]
-    if CP.carFingerprint not in ALT_ACCS:
-      messages += [
-        ("ASCMActiveCruiseControlStatus", 25),
-      ]
+      if CP.carFingerprint not in ALT_ACCS:
+        messages += [
+          ("ASCMActiveCruiseControlStatus", 25),
+        ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus.CAMERA)
 
