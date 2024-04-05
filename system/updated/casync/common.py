@@ -7,7 +7,7 @@ from openpilot.system.version import BUILD_METADATA_FILENAME, BuildMetadata
 from openpilot.system.updated.casync import tar
 
 
-CASYNC_ARGS = ["--with=symlinks", "--with=permissions", "--compression=xz"]
+CASYNC_ARGS = ["--with=symlinks", "--with=permissions", "--compression=xz", "--chunk-size=16M"]
 CASYNC_FILES = [BUILD_METADATA_FILENAME]
 
 
