@@ -1137,10 +1137,6 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1158,6 +1154,10 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. </source>
         <translation type="unfinished"></translation>
     </message>
 </context>

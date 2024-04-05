@@ -1155,11 +1155,11 @@ This may take up to a minute.</source>
         <translation>端到端纵向控制</translation>
     </message>
     <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
-        <translation>行驶画面将在低速时切换到道路朝向的广角摄像头，以更好地显示一些转弯。实验模式标志也将显示在右上角。当设置了导航目的地并且驾驶模型正在使用它作为输入时，地图上的驾驶路径将变为绿色。</translation>
+        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. </source>
         <translation type="unfinished"></translation>
     </message>
 </context>

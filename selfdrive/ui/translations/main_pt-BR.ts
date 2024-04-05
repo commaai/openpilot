@@ -1159,12 +1159,12 @@ Isso pode levar até um minuto.</translation>
         <translation>Controle Longitudinal de Ponta a Ponta</translation>
     </message>
     <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
-        <translation>A visualização de condução fará a transição para a câmera grande angular voltada para a estrada em baixas velocidades para mostrar melhor algumas curvas. O logotipo do modo Experimental também será mostrado no canto superior direito. Quando um destino de navegação é definido e o modelo de condução o utiliza como entrada o caminho de condução no mapa fica verde.</translation>
-    </message>
-    <message>
         <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
         <translation>Neutro é o recomendado. No modo disputa o openpilot seguirá o carro da frente mais de perto e será mais agressivo com a aceleração e frenagem. No modo calmo o openpilot se manterá mais longe do carro da frente. Em carros compatíveis, você pode alternar esses temperamentos com o botão de distância do volante.</translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. </source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

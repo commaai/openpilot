@@ -1155,15 +1155,15 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
         <translation>Contrôle longitudinal de bout en bout</translation>
     </message>
     <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
-        <translation>La visualisation de la conduite passera sur la caméra grand angle dirigée vers la route à faible vitesse afin de mieux montrer certains virages. Le logo du mode expérimental s&apos;affichera également dans le coin supérieur droit. Lorsqu&apos;une destination de navigation est définie et que le modèle de conduite l&apos;utilise comme entrée, la trajectoire de conduite sur la carte deviendra verte.</translation>
-    </message>
-    <message>
         <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
         <translation>Activer le contrôle longitudinal d&apos;openpilot (en alpha) pour autoriser le mode expérimental.</translation>
     </message>
     <message>
         <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. </source>
         <translation type="unfinished"></translation>
     </message>
 </context>

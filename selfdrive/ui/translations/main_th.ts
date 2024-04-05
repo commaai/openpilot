@@ -1151,15 +1151,15 @@ This may take up to a minute.</source>
         <translation>ควบคุมเร่ง/เบรคแบบ End-to-End</translation>
     </message>
     <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
-        <translation>การแสดงภาพการขับขี่จะเปลี่ยนไปใช้กล้องมุมกว้างที่หันหน้าไปทางถนนเมื่ออยู่ในความเร็วต่ำ เพื่อแสดงภาพการเลี้ยวที่ดีขึ้น โลโก้โหมดการทดลองจะแสดงที่มุมบนขวาด้วย เมื่อเป้าหมายการนำทางถูกเลือกและโมเดลการขับขี่กำลังใช้เป็นอินพุต เส้นทางการขับขี่บนแผนที่จะเปลี่ยนเป็นสีเขียว</translation>
-    </message>
-    <message>
         <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
         <translation>เปิดระบบควบคุมการเร่ง/เบรคโดย openpilot (alpha) เพื่อเปิดใช้งานโหมดทดลอง</translation>
     </message>
     <message>
         <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. </source>
         <translation type="unfinished"></translation>
     </message>
 </context>
