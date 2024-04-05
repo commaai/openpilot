@@ -108,6 +108,10 @@ class BuildMetadata:
   def canonical(self) -> str:
     return f"{self.openpilot.version}-{self.openpilot.git_commit}-{self.openpilot.build_style}"
 
+  @property
+  def ui_description(self) -> str:
+    return f"{self.openpilot.version} / {self.openpilot.git_commit[:6]} / {self.channel}"
+
 
 def build_metadata_from_dict(build_metadata: dict) -> BuildMetadata:
   channel = build_metadata.get("channel", "unknown")
