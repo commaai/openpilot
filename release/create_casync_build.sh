@@ -10,6 +10,7 @@ BUILD_DIR="${BUILD_DIR:=$(mktemp -d)}"
 
 echo "Creating casync release from $SOURCE_DIR to $CASYNC_DIR"
 
+cd $SOURCE_DIR
 mkdir -p $CASYNC_DIR
 rm -rf $BUILD_DIR
 mkdir -p $BUILD_DIR
