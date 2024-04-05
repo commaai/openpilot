@@ -188,8 +188,7 @@ class CAR(Platforms):
     [HondaCarDocs("Honda Pilot 2023", "All")],
     CarSpecs(mass=4278 * CV.LB_TO_KG, wheelbase=2.86, centerToFrontRatio=0.428, steerRatio=16.0, tireStiffnessFactor=0.444),  # as spec
     dbc_dict('honda_pilot_2023_can_generated', None),
-    flags=HondaFlags.CANFD_CAR,
-    flags=HondaFlags.BOSCH_ALT_BRAKE,
+    flags=HondaFlags.CANFD_CAR | HondaFlags.BOSCH_ALT_BRAKE,
   )
 
   # Nidec Cars
