@@ -4,10 +4,11 @@ import pathlib
 import subprocess
 
 from openpilot.system.version import BUILD_METADATA_FILENAME, BuildMetadata
+from openpilot.system.updated.casync import tar
 
 
 CASYNC_ARGS = ["--with=symlinks", "--with=permissions", "--compression=xz"]
-CASYNC_FILES = [BUILD_METADATA_FILENAME, ".caexclude"]
+CASYNC_FILES = [BUILD_METADATA_FILENAME]
 
 
 def run(cmd):
@@ -28,16 +29,6 @@ def get_exclude_set(path) -> set[str]:
   return exclude_set
 
 
-def create_caexclude_file(path: pathlib.Path):
-  with open(path / ".caexclude", "w") as f:
-    # exclude everything except the paths already in the release
-    f.write("*\n")
-    f.write(".*\n")
-
-    for file in sorted(get_exclude_set(path)):
-      f.write(f"!{file}\n")
-
-
 def create_build_metadata_file(path: pathlib.Path, build_metadata: BuildMetadata, channel: str):
   with open(path / BUILD_METADATA_FILENAME, "w") as f:
     build_metadata_dict = dataclasses.asdict(build_metadata)
@@ -46,8 +37,19 @@ def create_build_metadata_file(path: pathlib.Path, build_metadata: BuildMetadata
     f.write(json.dumps(build_metadata_dict))
 
 
-def create_casync_release(target_dir: pathlib.Path, output_dir: pathlib.Path, caidx_name: str):
-  caidx_file = output_dir / f"{caidx_name}.caidx"
-  run(["casync", "make", *CASYNC_ARGS, caidx_file, target_dir])
+def is_not_git(path: pathlib.Path) -> bool:
+  return ".git" not in path.parts
+
+
+def create_casync_tar_package(target_dir: pathlib.Path, output_path: pathlib.Path):
+  tar.create_tar_archive(output_path, target_dir, is_not_git)
+
+
+def create_casync_release(target_dir: pathlib.Path, output_dir: pathlib.Path, caibx_name: str):
+  tar_file = output_dir / f"{caibx_name}.tar"
+  create_casync_tar_package(target_dir, tar_file)
+  caibx_file = output_dir / f"{caibx_name}.caibx"
+  run(["casync", "make", *CASYNC_ARGS, caibx_file, str(tar_file)])
+  tar_file.unlink()
   digest = run(["casync", "digest", *CASYNC_ARGS, target_dir]).decode("utf-8").strip()
-  return digest, caidx_file
+  return digest, caibx_file
