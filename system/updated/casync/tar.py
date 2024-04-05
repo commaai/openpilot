@@ -25,9 +25,9 @@ def create_tar_archive(filename: pathlib.Path, directory: pathlib.Path, include:
         info = tarfile.TarInfo(relative_path)
         info.size = file.stat().st_size
         info.type = tarfile.REGTYPE
+        info.mode = file.stat().st_mode
         with file.open('rb') as f:
           tar.addfile(info, f)
-
 
 
 def extract_tar_archive(fh: IO[bytes], directory: pathlib.Path):
