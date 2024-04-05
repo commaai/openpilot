@@ -215,10 +215,10 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out, int exp
   dat[3] = vload8(0, in + start_idx + FRAME_STRIDE*row_after_offset);
   #if IS_HDR
     uchar8 short_dat[4];
-    short_dat[0] = vload8(0, in + start_idx + FRAME_STRIDE*(row_before_offset+HDR_OFFSET) + FRAME_STRIDE/2);
-    short_dat[1] = vload8(0, in + start_idx + FRAME_STRIDE*(1+HDR_OFFSET) + FRAME_STRIDE/2);
-    short_dat[2] = vload8(0, in + start_idx + FRAME_STRIDE*(2+HDR_OFFSET) + FRAME_STRIDE/2);
-    short_dat[3] = vload8(0, in + start_idx + FRAME_STRIDE*(row_after_offset+HDR_OFFSET) + FRAME_STRIDE/2);
+    short_dat[0] = vload8(0, in + start_idx + FRAME_STRIDE*(row_before_offset+HDR_OFFSET/2) + FRAME_STRIDE/2);
+    short_dat[1] = vload8(0, in + start_idx + FRAME_STRIDE*(1+HDR_OFFSET/2) + FRAME_STRIDE/2);
+    short_dat[2] = vload8(0, in + start_idx + FRAME_STRIDE*(2+HDR_OFFSET/2) + FRAME_STRIDE/2);
+    short_dat[3] = vload8(0, in + start_idx + FRAME_STRIDE*(row_after_offset+HDR_OFFSET/2) + FRAME_STRIDE/2);
   #endif
 
   // need extra bit for 10-bit
@@ -233,10 +233,10 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out, int exp
     #if IS_HDR
       uchar short_extra[4];
       if (!aligned10) {
-        short_extra[0] = in[start_idx + FRAME_STRIDE*(row_before_offset+HDR_OFFSET) + FRAME_STRIDE/2 + 8];
-        short_extra[1] = in[start_idx + FRAME_STRIDE*(1+HDR_OFFSET) + FRAME_STRIDE/2 + 8];
-        short_extra[2] = in[start_idx + FRAME_STRIDE*(2+HDR_OFFSET) + FRAME_STRIDE/2 + 8];
-        short_extra[3] = in[start_idx + FRAME_STRIDE*(row_after_offset+HDR_OFFSET) + FRAME_STRIDE/2 + 8];
+        short_extra[0] = in[start_idx + FRAME_STRIDE*(row_before_offset+HDR_OFFSET/2) + FRAME_STRIDE/2 + 8];
+        short_extra[1] = in[start_idx + FRAME_STRIDE*(1+HDR_OFFSET/2) + FRAME_STRIDE/2 + 8];
+        short_extra[2] = in[start_idx + FRAME_STRIDE*(2+HDR_OFFSET/2) + FRAME_STRIDE/2 + 8];
+        short_extra[3] = in[start_idx + FRAME_STRIDE*(row_after_offset+HDR_OFFSET/2) + FRAME_STRIDE/2 + 8];
       }
     #endif
   #endif
