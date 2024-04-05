@@ -5,7 +5,7 @@ from openpilot.common.numpy_fast import mean
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.interfaces import CarStateBase
-from openpilot.selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD
+from openpilot.selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD, ALT_ACCS
 
 TransmissionType = car.CarParams.TransmissionType
 NetworkLocation = car.CarParams.NetworkLocation
@@ -114,11 +114,17 @@ class CarState(CarStateBase):
     ret.cruiseState.enabled = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] != AccState.OFF
     ret.cruiseState.standstill = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.STANDSTILL
     if self.CP.networkLocation == NetworkLocation.fwdCamera:
-      ret.cruiseState.speed = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCSpeedSetpoint"] * CV.KPH_TO_MS
+      if self.CP.carFingerprint not in ALT_ACCS:
+          ret.cruiseState.speed = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCSpeedSetpoint"] * CV.KPH_TO_MS
+      else:
+          ret.cruiseState.speed = pt_cp.vl["ECMCruiseControl"]["CruiseSetSpeed"] * CV.KPH_TO_MS
       ret.stockAeb = cam_cp.vl["AEBCmd"]["AEBCmdActive"] != 0
       # openpilot controls nonAdaptive when not pcmCruise
       if self.CP.pcmCruise:
-        ret.cruiseState.nonAdaptive = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCCruiseState"] not in (2, 3)
+        if self.CP.carFingerprint not in ALT_ACCS:
+          ret.cruiseState.nonAdaptive = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCCruiseState"] not in (2, 3)
+        else:
+          ret.cruiseState.nonAdaptive = False # TODO: Find this message
 
     if self.CP.enableBsm:
       ret.leftBlindspot = pt_cp.vl["BCMBlindSpotMonitor"]["LeftBSM"] == 1
@@ -133,6 +139,9 @@ class CarState(CarStateBase):
       messages += [
         ("AEBCmd", 10),
         ("ASCMLKASteeringCmd", 10),
+      ]
+    if CP.carFingerprint not in ALT_ACCS:
+      messages += [
         ("ASCMActiveCruiseControlStatus", 25),
       ]
 
@@ -142,7 +151,6 @@ class CarState(CarStateBase):
   def get_can_parser(CP):
     messages = [
       ("BCMTurnSignals", 1),
-      ("ECMPRDNL2", 10),
       ("PSCMStatus", 10),
       ("ESPStatus", 10),
       ("BCMDoorBeltStatus", 10),
@@ -150,12 +158,24 @@ class CarState(CarStateBase):
       ("EBCMWheelSpdFront", 20),
       ("EBCMWheelSpdRear", 20),
       ("EBCMFrictionBrakeStatus", 20),
-      ("AcceleratorPedal2", 33),
       ("ASCMSteeringButton", 33),
-      ("ECMEngineStatus", 100),
       ("PSCMSteeringAngle", 100),
       ("ECMAcceleratorPos", 80),
     ]
+
+    if CP.carFingerprint in ALT_ACCS:
+      messages += [
+        ("ECMCruiseControl", 10),
+        ("ECMPRDNL2", 40),
+        ("AcceleratorPedal2", 40),
+        ("ECMEngineStatus", 80),
+      ]
+    else:
+      messages += [
+        ("ECMPRDNL2", 10),
+        ("AcceleratorPedal2", 33),
+        ("ECMEngineStatus", 100),
+      ]
 
     if CP.enableBsm:
       messages.append(("BCMBlindSpotMonitor", 10))

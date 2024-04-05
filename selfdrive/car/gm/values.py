@@ -152,6 +152,10 @@ class CAR(Platforms):
     [GMCarDocs("Chevrolet Trailblazer 2021-22")],
     GMCarSpecs(mass=1345, wheelbase=2.64, steerRatio=16.8, centerToFrontRatio=0.4, tireStiffnessFactor=1.0),
   )
+  CHEVROLET_TAHOE_2019 = GMPlatformConfig(
+    [GMCarDocs("Chevrolet Tahoe 2019", "Adaptive Cruise Control (ACC) & LKAS")],
+    GMCarSpecs(mass=2490, wheelbase=2.94, steerRatio=17.3, centerToFrontRatio=0.5, tireStiffnessFactor=1.0),
+  )
 
 
 class CruiseButtons:
@@ -229,7 +233,10 @@ FW_QUERY_CONFIG = FwQueryConfig(
 EV_CAR = {CAR.CHEVROLET_VOLT, CAR.CHEVROLET_BOLT_EUV}
 
 # We're integrated at the camera with VOACC on these cars (instead of ASCM w/ OBD-II harness)
-CAMERA_ACC_CAR = {CAR.CHEVROLET_BOLT_EUV, CAR.CHEVROLET_SILVERADO, CAR.CHEVROLET_EQUINOX, CAR.CHEVROLET_TRAILBLAZER}
+CAMERA_ACC_CAR = {CAR.CHEVROLET_BOLT_EUV, CAR.CHEVROLET_SILVERADO, CAR.CHEVROLET_EQUINOX, CAR.CHEVROLET_TRAILBLAZER, CAR.CHEVROLET_TAHOE_2019}
+
+# Alt ASCMActiveCruiseControlStatus
+ALT_ACCS = {CAR.CHEVROLET_TAHOE_2019}
 
 STEER_THRESHOLD = 1.0
 
