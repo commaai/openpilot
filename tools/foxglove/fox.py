@@ -3,17 +3,18 @@ import json
 import base64
 import os
 import subprocess
+from multiprocessing import Pool
 from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.logreader import LogReader
 
 try:
-  from mcap.writer import Writer
+  from mcap.writer import Writer, CompressionType
 except ImportError:
   print("mcap module not found. Attempting to install...")
   subprocess.run([sys.executable, "-m", "pip", "install", "mcap"])
   # Attempt to import again after installation
   try:
-    from mcap.writer import Writer
+    from mcap.writer import Writer, CompressionType
   except ImportError:
     print("Failed to install mcap module. Exiting.")
     sys.exit(1)
@@ -219,6 +220,15 @@ def getLogMonoTime(jsonMsg):
   return logMonoTime
 
 
+def processMsgs(args):
+  msgFile, rlogTopicPath, rlogTopic = args
+  msgFilePath = os.path.join(rlogTopicPath, msgFile)
+  with open(msgFilePath, "r") as file:
+    jsonMsg = json.load(file)
+    logMonoTime = getLogMonoTime(jsonMsg)
+    return {'channel_id': channels[rlogTopic], 'log_time': logMonoTime, 'data': json.dumps(jsonMsg).encode("utf-8"), 'publish_time': logMonoTime}
+
+
 # Get logs from a path, and convert them into mcap
 def createMcap(logPaths):
   print(f"Downloading logs [{len(logPaths)}]")
@@ -238,12 +248,12 @@ def createMcap(logPaths):
     channels[rlogTopic] = channel_id
     rlogTopicPath = os.path.join(RLOG_FOLDER, rlogTopic)
     msgFiles = os.listdir(rlogTopicPath)
-    for msgFile in msgFiles:
-      msgFilePath = os.path.join(rlogTopicPath, msgFile)
-      with open(msgFilePath, "r") as msgFile:
-        jsonMsg = json.load(msgFile)
-        logMonoTime = getLogMonoTime(jsonMsg)
-        writer.add_message(channel_id=channels[rlogTopic], log_time=logMonoTime, data=json.dumps(jsonMsg).encode("utf-8"), publish_time=logMonoTime)
+    pool = Pool()
+    results = pool.map(processMsgs, [(msgFile, rlogTopicPath, rlogTopic) for msgFile in msgFiles])
+    pool.close()
+    pool.join()
+    for result in results:
+      writer.add_message(channel_id=result['channel_id'], log_time=result['log_time'], data=result['data'], publish_time=result['publish_time'])
 
 
 def is_program_installed(program_name):
@@ -260,7 +270,6 @@ def is_program_installed(program_name):
       return False
 
 
-# TODO: Check if foxglove is installed
 if __name__ == '__main__':
   # Example usage:
   program_name = "foxglove-studio"  # Change this to the program you want to check
@@ -287,7 +296,7 @@ if __name__ == '__main__':
   logPaths = route.log_paths()
   # Start mcap writer
   with open(OUT_MCAP_FILE_NAME, "wb") as stream:
-    writer = Writer(stream)
+    writer = Writer(stream, compression=CompressionType.NONE)
     writer.start()
     createMcap(logPaths)
     writer.finish()
