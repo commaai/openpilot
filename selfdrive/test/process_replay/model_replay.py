@@ -6,13 +6,13 @@ from collections import defaultdict
 from typing import Any
 
 import cereal.messaging as messaging
+from openpilot.common.git import get_commit
 from openpilot.common.params import Params
 from openpilot.system.hardware import PC
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.tools.lib.openpilotci import BASE_URL, get_url
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.process_replay import get_process_config, replay_process
-from openpilot.system.version import get_commit
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.helpers import save_log
@@ -107,14 +107,17 @@ def model_replay(lr, frs):
   # modeld is using frame pairs
   modeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"roadCameraState", "wideRoadCameraState"}, {"roadEncodeIdx", "wideRoadEncodeIdx", "carParams"})
   dmodeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"driverCameraState"}, {"driverEncodeIdx", "carParams"})
+
   if not SEND_EXTRA_INPUTS:
-    modeld_logs = [msg for msg in modeld_logs if msg.which() not in ["liveCalibration",]]
-    dmodeld_logs = [msg for msg in dmodeld_logs if msg.which() not in ["liveCalibration",]]
-  # initial calibration
-  cal_msg = next(msg for msg in lr if msg.which() == "liveCalibration").as_builder()
-  cal_msg.logMonoTime = lr[0].logMonoTime
-  modeld_logs.insert(0, cal_msg.as_reader())
-  dmodeld_logs.insert(0, cal_msg.as_reader())
+    modeld_logs = [msg for msg in modeld_logs if msg.which() != 'liveCalibration']
+    dmodeld_logs = [msg for msg in dmodeld_logs if msg.which() != 'liveCalibration']
+
+  # initial setup
+  for s in ('liveCalibration', 'deviceState'):
+    msg = next(msg for msg in lr if msg.which() == s).as_builder()
+    msg.logMonoTime = lr[0].logMonoTime
+    modeld_logs.insert(1, msg.as_reader())
+    dmodeld_logs.insert(1, msg.as_reader())
 
   modeld = get_process_config("modeld")
   dmonitoringmodeld = get_process_config("dmonitoringmodeld")
@@ -218,7 +221,8 @@ if __name__ == "__main__":
       results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
       diff_short, diff_long, failed = format_diff(results, log_paths, ref_commit)
 
-      print(diff_long)
+      if "CI" in os.environ:
+        print(diff_long)
       print('-------------\n'*5)
       print(diff_short)
       with open("model_diff.txt", "w") as f:

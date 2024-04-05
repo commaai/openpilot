@@ -28,6 +28,7 @@ class SimulatorBridge(ABC):
   def __init__(self, dual_camera, high_quality):
     set_params_enabled()
     self.params = Params()
+    self.params.put_bool("ExperimentalLongitudinalEnabled", True)
 
     self.rk = Ratekeeper(100, None)
 
@@ -56,14 +57,14 @@ class SimulatorBridge(ABC):
     try:
       self._run(q)
     finally:
-      self.close()
+      self.close("bridge terminated")
 
-  def close(self):
+  def close(self, reason):
     self.started.value = False
     self._exit_event.set()
 
     if self.world is not None:
-      self.world.close()
+      self.world.close(reason)
 
   def run(self, queue, retries=-1):
     bridge_p = Process(name="bridge", target=self.bridge_keep_alive, args=(queue, retries))

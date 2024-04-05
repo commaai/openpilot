@@ -14,7 +14,8 @@
 struct RouteIdentifier {
   QString dongle_id;
   QString timestamp;
-  int segment_id;
+  int begin_segment = 0;
+  int end_segment = -1;
   QString str;
 };
 
@@ -41,7 +42,7 @@ public:
 
 protected:
   bool loadFromLocal();
-  bool loadFromServer();
+  bool loadFromServer(int retries = 3);
   bool loadFromJson(const QString &json);
   void addFileToSegment(int seg_num, const QString &file);
   RouteIdentifier route_ = {};
