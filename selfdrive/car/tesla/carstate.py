@@ -100,11 +100,11 @@ class CarState(CarStateBase):
 
     # Doors
     if model3:
-      ret.doorOpen = any([cp.vl["VCLEFT_doorStatus"]["VCRIGHT_frontLatchSwitch"] != 1,
-                          cp.vl["VCLEFT_doorStatus"]["VCLEFT_rearLatchSwitch"] != 1,
-                          cp.vl["VCRIGHT_doorStatus"]["VCRIGHT_frontLatchSwitch"] != 1,
-                          cp.vl["VCRIGHT_doorStatus"]["VCRIGHT_rearLatchSwitch"] != 1,
-                          cp.vl["VCRIGHT_doorStatus"]["VCRIGHT_trunkLatchStatus"] != 2])
+      ret.doorOpen = any([cp_adas.vl["VCLEFT_doorStatus"]["VCRIGHT_frontLatchSwitch"] != 1,
+                          cp_adas.vl["VCLEFT_doorStatus"]["VCLEFT_rearLatchSwitch"] != 1,
+                          cp_adas.vl["VCRIGHT_doorStatus"]["VCRIGHT_frontLatchSwitch"] != 1,
+                          cp_adas.vl["VCRIGHT_doorStatus"]["VCRIGHT_rearLatchSwitch"] != 1,
+                          cp_adas.vl["VCRIGHT_doorStatus"]["VCRIGHT_trunkLatchStatus"] != 2])
     else:
       ret.doorOpen = any((self.can_define.dv["GTW_carState"][door].get(int(cp.vl["GTW_carState"][door]), "OPEN") == "OPEN") for door in DOORS)
 
