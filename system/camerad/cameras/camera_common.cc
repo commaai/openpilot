@@ -27,13 +27,14 @@ public:
              "-cl-fast-relaxed-math -cl-denorms-are-zero "
              "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d -DFRAME_OFFSET=%d "
              "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DYUV_STRIDE=%d -DUV_OFFSET=%d "
-             "-DIS_OX=%d -DIS_OS=%d -DIS_10BIT -DIS_HDR -DIS_BGGR=%d -DCAM_NUM=%d%s",
+             "-DIS_OX=%d -DIS_OS=%d -DIS_10BIT=%d -DIS_HDR=%d -DHDR_OFFSET=%d -DIS_BGGR=%d -DVIGNETTING=%d ",
              ci->frame_width, ci->frame_height, ci->frame_stride * 2, ci->frame_offset,
              b->rgb_width, b->rgb_height, buf_width, uv_offset,
              ci->image_sensor == cereal::FrameData::ImageSensor::OX03C10,
              ci->image_sensor == cereal::FrameData::ImageSensor::OS04C10,
-             ci->image_sensor == cereal::FrameData::ImageSensor::OS04C10,
-             s->camera_num, s->camera_num==1 ? " -DVIGNETTING" : "");
+             ci->mipi_format == CAM_FORMAT_MIPI_RAW_10,
+             ci->hdr_offset > 0, ci->hdr_offset / 2, ci->bggr,
+             s->camera_num == 1);
     const char *cl_file = "cameras/real_debayer.cl";
     cl_program prg_debayer = cl_program_from_file(context, device_id, cl_file, args);
     krnl_ = CL_CHECK_ERR(clCreateKernel(prg_debayer, "debayer10", &err));
@@ -78,7 +79,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   LOGD("allocated %d CL buffers", frame_buf_count);
 
   rgb_width = ci->frame_width;
-  rgb_height = 1520;//ci->frame_height;
+  rgb_height = ci->hdr_offset > 0 ? (ci->frame_height - ci->hdr_offset) / 2 : ci->frame_height;
 
   int nv12_width = VENUS_Y_STRIDE(COLOR_FMT_NV12, rgb_width);
   int nv12_height = VENUS_Y_SCANLINES(COLOR_FMT_NV12, rgb_height);

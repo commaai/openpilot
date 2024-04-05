@@ -25,10 +25,12 @@ const int os04c10_driver_ae_xywh[] = {44, 180, 2600, 1340};
 
 OS04C10::OS04C10() {
   image_sensor = cereal::FrameData::ImageSensor::OS04C10;
+  bggr = true;
   data_word = false;
 
+  hdr_offset = 64 * 2 + 8; // stagger
   frame_width = 2688;
-  frame_height = 1520 * 2 + 136; // stagger 64*2 + 8
+  frame_height = 1520 * 2 + hdr_offset;
   frame_stride = (frame_width * 10 / 8); // no alignment
 
   extra_height = 0;
