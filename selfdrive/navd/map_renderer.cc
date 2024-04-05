@@ -100,9 +100,9 @@ MapRenderer::MapRenderer(const QMapLibre::Settings &settings, bool online) : m_s
     timer->setSingleShot(true);
     QObject::connect(timer, SIGNAL(timeout()), this, SLOT(msgUpdate()));
     timer->start(0);
-  }
 
-  QObject::connect(m_map.data(), &QMapLibre::Map::staticRenderFinished, [=]() {static_rendered = true;});
+    QObject::connect(m_map.data(), &QMapLibre::Map::staticRenderFinished, [=]() {static_rendered = true;});
+  }
 }
 
 void MapRenderer::msgUpdate() {
