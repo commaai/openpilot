@@ -358,7 +358,8 @@ def main():
   sm = messaging.SubMaster(['liveLocationKalman', 'managerState'])
 
   rk = Ratekeeper(1.0)
-  route_engine = RouteEngine(sm, pm)
+  if sm.all_alive()
+    route_engine = RouteEngine(sm, pm)
   while True:
     route_engine.update()
     rk.keep_time()
