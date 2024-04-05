@@ -15,7 +15,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import gen_empty_fingerprint
-from openpilot.selfdrive.car.fingerprints import all_known_cars
+from openpilot.selfdrive.car.fingerprints import all_known_cars, MIGRATION
 from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from openpilot.selfdrive.car.honda.values import CAR as HONDA, HondaFlags
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
@@ -95,7 +95,8 @@ class TestCarModelBase(unittest.TestCase):
         if msg.carParams.openpilotLongitudinalControl:
           experimental_long = True
         if cls.platform is None and not cls.ci:
-          cls.platform = msg.carParams.carFingerprint
+          live_fingerprint = msg.carParams.carFingerprint
+          cls.platform = MIGRATION.get(live_fingerprint, live_fingerprint)
 
       # Log which can frame the panda safety mode left ELM327, for CAN validity checks
       elif msg.which() == 'pandaStates':

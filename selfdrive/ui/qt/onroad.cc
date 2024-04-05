@@ -73,18 +73,16 @@ void OnroadWindow::updateState(const UIState &s) {
     return;
   }
 
-  QColor bgColor = bg_colors[s.status];
-  Alert alert = Alert::get(*(s.sm), s.scene.started_frame);
-  alerts->updateAlert(alert);
-
   if (s.scene.map_on_left) {
     split->setDirection(QBoxLayout::LeftToRight);
   } else {
     split->setDirection(QBoxLayout::RightToLeft);
   }
 
+  alerts->updateState(s);
   nvg->updateState(s);
 
+  QColor bgColor = bg_colors[s.status];
   if (bg != bgColor) {
     // repaint border
     bg = bgColor;
@@ -105,27 +103,30 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
   QWidget::mousePressEvent(e);
 }
 
+void OnroadWindow::createMapWidget() {
+#ifdef ENABLE_MAPS
+  auto m = new MapPanel(get_mapbox_settings());
+  map = m;
+  QObject::connect(m, &MapPanel::mapPanelRequested, this, &OnroadWindow::mapPanelRequested);
+  QObject::connect(nvg->map_settings_btn, &MapSettingsButton::clicked, m, &MapPanel::toggleMapSettings);
+  nvg->map_settings_btn->setEnabled(true);
+
+  m->setFixedWidth(topWidget(this)->width() / 2 - UI_BORDER_SIZE);
+  split->insertWidget(0, m);
+  // hidden by default, made visible when navRoute is published
+  m->setVisible(false);
+#endif
+}
+
 void OnroadWindow::offroadTransition(bool offroad) {
 #ifdef ENABLE_MAPS
   if (!offroad) {
     if (map == nullptr && (uiState()->hasPrime() || !MAPBOX_TOKEN.isEmpty())) {
-      auto m = new MapPanel(get_mapbox_settings());
-      map = m;
-
-      QObject::connect(m, &MapPanel::mapPanelRequested, this, &OnroadWindow::mapPanelRequested);
-      QObject::connect(nvg->map_settings_btn, &MapSettingsButton::clicked, m, &MapPanel::toggleMapSettings);
-      nvg->map_settings_btn->setEnabled(true);
-
-      m->setFixedWidth(topWidget(this)->width() / 2 - UI_BORDER_SIZE);
-      split->insertWidget(0, m);
-
-      // hidden by default, made visible when navRoute is published
-      m->setVisible(false);
+      createMapWidget();
     }
   }
 #endif
-
-  alerts->updateAlert({});
+  alerts->clear();
 }
 
 void OnroadWindow::primeChanged(bool prime) {
@@ -135,6 +136,8 @@ void OnroadWindow::primeChanged(bool prime) {
     nvg->map_settings_btn->setVisible(false);
     map->deleteLater();
     map = nullptr;
+  } else if (!map && (prime || !MAPBOX_TOKEN.isEmpty())) {
+    createMapWidget();
   }
 #endif
 }
@@ -147,11 +150,54 @@ void OnroadWindow::paintEvent(QPaintEvent *event) {
 // ***** onroad widgets *****
 
 // OnroadAlerts
-void OnroadAlerts::updateAlert(const Alert &a) {
+
+void OnroadAlerts::updateState(const UIState &s) {
+  Alert a = getAlert(*(s.sm), s.scene.started_frame);
   if (!alert.equal(a)) {
     alert = a;
     update();
   }
+}
+
+void OnroadAlerts::clear() {
+  alert = {};
+  update();
+}
+
+OnroadAlerts::Alert OnroadAlerts::getAlert(const SubMaster &sm, uint64_t started_frame) {
+  const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
+  const uint64_t controls_frame = sm.rcv_frame("controlsState");
+
+  Alert a = {};
+  if (controls_frame >= started_frame) {  // Don't get old alert.
+    a = {cs.getAlertText1().cStr(), cs.getAlertText2().cStr(),
+         cs.getAlertType().cStr(), cs.getAlertSize(), cs.getAlertStatus()};
+  }
+
+  if (!sm.updated("controlsState") && (sm.frame - started_frame) > 5 * UI_FREQ) {
+    const int CONTROLS_TIMEOUT = 5;
+    const int controls_missing = (nanos_since_boot() - sm.rcv_time("controlsState")) / 1e9;
+
+    // Handle controls timeout
+    if (controls_frame < started_frame) {
+      // car is started, but controlsState hasn't been seen at all
+      a = {tr("openpilot Unavailable"), tr("Waiting for controls to start"),
+           "controlsWaiting", cereal::ControlsState::AlertSize::MID,
+           cereal::ControlsState::AlertStatus::NORMAL};
+    } else if (controls_missing > CONTROLS_TIMEOUT && !Hardware::PC()) {
+      // car is started, but controls is lagging or died
+      if (cs.getEnabled() && (controls_missing - CONTROLS_TIMEOUT) < 10) {
+        a = {tr("TAKE CONTROL IMMEDIATELY"), tr("Controls Unresponsive"),
+             "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL,
+             cereal::ControlsState::AlertStatus::CRITICAL};
+      } else {
+        a = {tr("Controls Unresponsive"), tr("Reboot Device"),
+             "controlsUnresponsivePermanent", cereal::ControlsState::AlertSize::MID,
+             cereal::ControlsState::AlertStatus::NORMAL};
+      }
+    }
+  }
+  return a;
 }
 
 void OnroadAlerts::paintEvent(QPaintEvent *event) {

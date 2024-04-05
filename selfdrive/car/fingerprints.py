@@ -6,6 +6,7 @@ from openpilot.selfdrive.car.gm.values import CAR as GM
 from openpilot.selfdrive.car.honda.values import CAR as HONDA
 from openpilot.selfdrive.car.hyundai.values import CAR as HYUNDAI
 from openpilot.selfdrive.car.mazda.values import CAR as MAZDA
+from openpilot.selfdrive.car.mock.values import CAR as MOCK
 from openpilot.selfdrive.car.nissan.values import CAR as NISSAN
 from openpilot.selfdrive.car.subaru.values import CAR as SUBARU
 from openpilot.selfdrive.car.tesla.values import CAR as TESLA
@@ -134,6 +135,8 @@ MIGRATION = {
   "CHRYSLER PACIFICA 2018": CHRYSLER.CHRYSLER_PACIFICA_2018,
   "CHRYSLER PACIFICA 2020": CHRYSLER.CHRYSLER_PACIFICA_2020,
   "DODGE DURANGO 2021": CHRYSLER.DODGE_DURANGO,
+  "JEEP GRAND CHEROKEE V6 2018": CHRYSLER.JEEP_GRAND_CHEROKEE,
+  "JEEP GRAND CHEROKEE 2019": CHRYSLER.JEEP_GRAND_CHEROKEE_2019,
   "RAM 1500 5TH GEN": CHRYSLER.RAM_1500_5TH_GEN,
   "RAM HD 5TH GEN": CHRYSLER.RAM_HD_5TH_GEN,
   "FORD BRONCO SPORT 1ST GEN": FORD.FORD_BRONCO_SPORT_MK1,
@@ -253,6 +256,7 @@ MIGRATION = {
   "MAZDA CX-5 2022": MAZDA.MAZDA_CX5_2022,
   "NISSAN X-TRAIL 2017": NISSAN.NISSAN_XTRAIL,
   "NISSAN LEAF 2018": NISSAN.NISSAN_LEAF,
+  "NISSAN LEAF 2018 Instrument Cluster": NISSAN.NISSAN_LEAF_IC,
   "NISSAN ROGUE 2019": NISSAN.NISSAN_ROGUE,
   "NISSAN ALTIMA 2020": NISSAN.NISSAN_ALTIMA,
   "SUBARU ASCENT LIMITED 2019": SUBARU.SUBARU_ASCENT,
@@ -335,4 +339,6 @@ MIGRATION = {
   "SKODA OCTAVIA 3RD GEN": VW.SKODA_OCTAVIA_MK3,
   "SKODA SCALA 1ST GEN": VW.SKODA_SCALA_MK1,
   "SKODA SUPERB 3RD GEN": VW.SKODA_SUPERB_MK3,
+
+  "mock": MOCK.MOCK,
 }
