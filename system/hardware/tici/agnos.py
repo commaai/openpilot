@@ -10,7 +10,7 @@ from collections.abc import Generator
 
 import requests
 
-import openpilot.system.hardware.tici.casync as casync
+import openpilot.system.updated.casync.casync as casync
 
 SPARSE_CHUNK_FMT = struct.Struct('H2xI4x')
 CAIBX_URL = "https://commadist.azureedge.net/agnosupdate/"
