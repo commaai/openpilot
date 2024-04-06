@@ -93,7 +93,7 @@ class CarState(CarStateBase):
     self.gearbox_msg = "GEARBOX"
     if CP.carFingerprint == CAR.HONDA_ACCORD and CP.transmissionType == TransmissionType.cvt:
       self.gearbox_msg = "GEARBOX_15T"
-    elif self.CP.transmissionType == TransmissionType.manual:
+    elif CP.transmissionType == TransmissionType.manual:
       self.gearbox_msg == "GEARBOX_MT"
 
     self.main_on_sig_msg = "SCM_FEEDBACK"
@@ -131,7 +131,7 @@ class CarState(CarStateBase):
     # ******************* parse out can *******************
     # STANDSTILL->WHEELS_MOVING bit can be noisy around zero, so use XMISSION_SPEED
     # panda checks if the signal is non-zero
-    if CP.carFingerprint == CAR.ACURA_INTEGRA:
+    if self.CP.carFingerprint == CAR.ACURA_INTEGRA:
         ret.standstill = cp.vl["CAR_SPEED"]["CAR_SPEED"] < 1e-5
     else:
         ret.standstill = cp.vl["ENGINE_DATA"]["XMISSION_SPEED"] < 1e-5
