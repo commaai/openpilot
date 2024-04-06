@@ -94,7 +94,7 @@ class CarState(CarStateBase):
     if CP.carFingerprint == CAR.HONDA_ACCORD and CP.transmissionType == TransmissionType.cvt:
       self.gearbox_msg = "GEARBOX_15T"
     elif CP.transmissionType == TransmissionType.manual:
-      self.gearbox_msg == "GEARBOX_MT"
+      self.gearbox_msg = "GEARBOX_MT"
 
     self.main_on_sig_msg = "SCM_FEEDBACK"
     if CP.carFingerprint in HONDA_NIDEC_ALT_SCM_MESSAGES:
