@@ -41,6 +41,8 @@ MapRenderer::MapRenderer(const QMapLibre::Settings &settings, bool online) : m_s
   QSurfaceFormat fmt;
   fmt.setRenderableType(QSurfaceFormat::OpenGLES);
 
+  m_settings.setMapMode(QMapLibre::Settings::MapMode::Static);
+
   ctx = std::make_unique<QOpenGLContext>();
   ctx->setFormat(fmt);
   ctx->create();
@@ -62,7 +64,7 @@ MapRenderer::MapRenderer(const QMapLibre::Settings &settings, bool online) : m_s
   std::string style = util::read_file(STYLE_PATH);
   m_map.reset(new QMapLibre::Map(nullptr, m_settings, fbo->size(), 1));
   m_map->setCoordinateZoom(QMapLibre::Coordinate(0, 0), DEFAULT_ZOOM);
-  m_map->setStyleJson(style.c_str());
+  m_map->setStyleUrl("mapbox://styles/commaai/clkqztk0f00ou01qyhsa5bzpj");
   m_map->createRenderer();
   ever_loaded = false;
 
@@ -85,6 +87,18 @@ MapRenderer::MapRenderer(const QMapLibre::Settings &settings, bool online) : m_s
 
   QObject::connect(m_map.data(), &QMapLibre::Map::mapLoadingFailed, [=](QMapLibre::Map::MapLoadingFailure err_code, const QString &reason) {
     LOGE("Map loading failed with %d: '%s'\n", err_code, reason.toStdString().c_str());
+  });
+
+  QObject::connect(m_map.data(), &QMapLibre::Map::staticRenderFinished, [=](const QString &error) {
+    ok_render = true;
+
+    if (!error.isEmpty()) {
+      LOGE("Static map rendering failed with error: '%s'\n", error.toStdString().c_str());
+    } else if (vipc_server != nullptr) {
+      end_render_t = millis_since_boot();
+      publish((end_render_t - start_render_t) / 1000.0, true);
+      last_llk_rendered = (*sm)["liveLocationKalman"].getLogMonoTime();
+    }
   });
 
   if (online) {
@@ -114,22 +128,16 @@ void MapRenderer::msgUpdate() {
       float bearing = RAD2DEG(orientation.getValue()[2]);
       updatePosition(get_point_along_line(pos.getValue()[0], pos.getValue()[1], bearing, MAP_OFFSET), bearing);
 
-      // TODO: use the static rendering mode instead
-      // retry render a few times
-      for (int i = 0; i < 5 && !rendered(); i++) {
-        QApplication::processEvents(QEventLoop::AllEvents, 100);
+      if (ok_render) {
         update();
-        if (rendered()) {
-          LOGW("rendered after %d retries", i+1);
-          break;
-        }
       }
 
-      // fallback to sending a blank frame
       if (!rendered()) {
         publish(0, false);
       }
     }
+
+
   }
 
   if (sm->updated("navRoute")) {
@@ -157,7 +165,9 @@ void MapRenderer::updatePosition(QMapLibre::Coordinate position, float bearing) 
   m_map->setCoordinate(position);
   m_map->setBearing(bearing);
   m_map->setZoom(zoom);
-  update();
+  if (ok_render) {
+    update();
+  }
 }
 
 bool MapRenderer::loaded() {
@@ -165,16 +175,10 @@ bool MapRenderer::loaded() {
 }
 
 void MapRenderer::update() {
-  double start_t = millis_since_boot();
+  ok_render = false;
   gl_functions->glClear(GL_COLOR_BUFFER_BIT);
-  m_map->render();
-  gl_functions->glFlush();
-  double end_t = millis_since_boot();
-
-  if ((vipc_server != nullptr) && loaded()) {
-    publish((end_t - start_t) / 1000.0, true);
-    last_llk_rendered = (*sm)["liveLocationKalman"].getLogMonoTime();
-  }
+  start_render_t = millis_since_boot();
+  m_map->startStaticRender();
 }
 
 void MapRenderer::sendThumbnail(const uint64_t ts, const kj::Array<capnp::byte> &buf) {

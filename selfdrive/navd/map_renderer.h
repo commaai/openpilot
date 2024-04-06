@@ -38,13 +38,16 @@ private:
   void publish(const double render_time, const bool loaded);
   void sendThumbnail(const uint64_t ts, const kj::Array<capnp::byte> &buf);
 
+  //QMapLibre::Style style;
   QMapLibre::Settings m_settings;
   QScopedPointer<QMapLibre::Map> m_map;
 
   void initLayers();
 
+  double start_render_t = 0, end_render_t = 0;
   uint32_t frame_id = 0;
   uint64_t last_llk_rendered = 0;
+  bool ok_render = true;
   bool rendered() {
     return last_llk_rendered == (*sm)["liveLocationKalman"].getLogMonoTime();
   }
