@@ -10,7 +10,7 @@ import shutil
 import subprocess
 import datetime
 from multiprocessing import Process, Event
-from typing import NoReturn, Optional
+from typing import NoReturn
 from struct import unpack_from, calcsize, pack
 
 from cereal import log
@@ -90,7 +90,7 @@ def try_setup_logs(diag, logs):
   return setup_logs(diag, logs)
 
 @retry(attempts=3, delay=1.0)
-def at_cmd(cmd: str) -> Optional[str]:
+def at_cmd(cmd: str) -> str | None:
   return subprocess.check_output(f"mmcli -m any --timeout 30 --command='{cmd}'", shell=True, encoding='utf8')
 
 def gps_enabled() -> bool:
@@ -205,10 +205,10 @@ def teardown_quectel(diag):
   try_setup_logs(diag, [])
 
 
-def wait_for_modem():
+def wait_for_modem(cmd="AT+QGPS?"):
   cloudlog.warning("waiting for modem to come up")
   while True:
-    ret = subprocess.call("mmcli -m any --timeout 10 --command=\"AT+QGPS?\"", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+    ret = subprocess.call(f"mmcli -m any --timeout 10 --command=\"{cmd}\"", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
     if ret == 0:
       return
     time.sleep(0.1)
@@ -342,7 +342,7 @@ def main() -> NoReturn:
       gps.bearingDeg = report["q_FltHeadingRad"] * 180/math.pi
 
       # TODO needs update if there is another leap second, after june 2024?
-      dt_timestamp = (datetime.datetime(1980, 1, 6, 0, 0, 0, 0, datetime.timezone.utc) +
+      dt_timestamp = (datetime.datetime(1980, 1, 6, 0, 0, 0, 0, datetime.UTC) +
                       datetime.timedelta(weeks=report['w_GpsWeekNumber']) +
                       datetime.timedelta(seconds=(1e-3*report['q_GpsFixTimeMs'] - 18)))
       gps.unixTimestampMillis = dt_timestamp.timestamp()*1e3
@@ -352,8 +352,8 @@ def main() -> NoReturn:
       gps.bearingAccuracyDeg = report["q_FltHeadingUncRad"] * 180/math.pi if (report["q_FltHeadingUncRad"] != 0) else 180
       gps.speedAccuracy = math.sqrt(sum([x**2 for x in vNEDsigma]))
       # quectel gps verticalAccuracy is clipped to 500, set invalid if so
-      gps.flags = 1 if gps.verticalAccuracy != 500 else 0
-      if gps.flags:
+      gps.hasFix = gps.verticalAccuracy != 500
+      if gps.hasFix:
         want_assistance = False
         stop_download_event.set()
       pm.send('gpsLocation', msg)

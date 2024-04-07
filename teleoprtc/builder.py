@@ -1,5 +1,4 @@
 import abc
-from typing import List, Dict
 
 import aiortc
 
@@ -16,9 +15,9 @@ class WebRTCStreamBuilder(abc.ABC):
 class WebRTCOfferBuilder(WebRTCStreamBuilder):
   def __init__(self, connection_provider: ConnectionProvider):
     self.connection_provider = connection_provider
-    self.requested_camera_types: List[str] = []
+    self.requested_camera_types: list[str] = []
     self.requested_audio = False
-    self.audio_tracks: List[aiortc.MediaStreamTrack] = []
+    self.audio_tracks: list[aiortc.MediaStreamTrack] = []
     self.messaging_enabled = False
 
   def offer_to_receive_video_stream(self, camera_type: str):
@@ -49,9 +48,9 @@ class WebRTCOfferBuilder(WebRTCStreamBuilder):
 class WebRTCAnswerBuilder(WebRTCStreamBuilder):
   def __init__(self, offer_sdp: str):
     self.offer_sdp = offer_sdp
-    self.video_tracks: Dict[str, aiortc.MediaStreamTrack] = dict()
+    self.video_tracks: dict[str, aiortc.MediaStreamTrack] = dict()
     self.requested_audio = False
-    self.audio_tracks: List[aiortc.MediaStreamTrack] = []
+    self.audio_tracks: list[aiortc.MediaStreamTrack] = []
 
   def offer_to_receive_audio_stream(self):
     self.requested_audio = True

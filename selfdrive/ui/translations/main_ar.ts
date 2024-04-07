@@ -293,6 +293,18 @@
         <source>Review</source>
         <translation>مراجعة</translation>
     </message>
+    <message>
+        <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
+        <translation>اقرن جهازك بجهاز (connect.comma.ai) واحصل على عرضك من comma prime.</translation>
+    </message>
+    <message>
+        <source>Pair Device</source>
+        <translation>إقران الجهاز</translation>
+    </message>
+    <message>
+        <source>PAIR</source>
+        <translation>إقران</translation>
+    </message>
 </context>
 <context>
     <name>DriverViewWindow</name>
@@ -481,6 +493,29 @@
     </message>
 </context>
 <context>
+    <name>OnroadAlerts</name>
+    <message>
+        <source>openpilot Unavailable</source>
+        <translation>openpilot غير متوفر</translation>
+    </message>
+    <message>
+        <source>Waiting for controls to start</source>
+        <translation>في انتظار بدء عناصر التحكم</translation>
+    </message>
+    <message>
+        <source>TAKE CONTROL IMMEDIATELY</source>
+        <translation>تحكم على الفور</translation>
+    </message>
+    <message>
+        <source>Controls Unresponsive</source>
+        <translation>الضوابط غير مستجيبة</translation>
+    </message>
+    <message>
+        <source>Reboot Device</source>
+        <translation>إعادة التشغيل</translation>
+    </message>
+</context>
+<context>
     <name>PairingPopup</name>
     <message>
         <source>Pair your device to your comma account</source>
@@ -615,6 +650,10 @@
         <source>ft</source>
         <translation>قدم</translation>
     </message>
+    <message>
+        <source>now</source>
+        <translation>الآن</translation>
+    </message>
 </context>
 <context>
     <name>Reset</name>
@@ -654,7 +693,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation type="unfinished"></translation>
+        <translation>تم تفعيل إعادة ضبط النظام. اضغط على تأكيد لمسح جميع المحتويات والإعدادات. اضغط على إلغاء لاستئناف التمهيد.</translation>
     </message>
 </context>
 <context>
@@ -761,6 +800,18 @@ This may take up to a minute.</source>
     <message>
         <source>Select a language</source>
         <translation>اختر لغة</translation>
+    </message>
+    <message>
+        <source>Choose Software to Install</source>
+        <translation>اختر البرنامج للتثبيت</translation>
+    </message>
+    <message>
+        <source>openpilot</source>
+        <translation>openpilot</translation>
+    </message>
+    <message>
+        <source>Custom Software</source>
+        <translation>البرمجيات المخصصة</translation>
     </message>
 </context>
 <context>
@@ -1005,7 +1056,7 @@ This may take up to a minute.</source>
     <name>TogglesPanel</name>
     <message>
         <source>Enable openpilot</source>
-        <translation>تمكين</translation>
+        <translation>تمكين openpilot</translation>
     </message>
     <message>
         <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
@@ -1092,10 +1143,6 @@ This may take up to a minute.</source>
         <translation>شخصية القيادة</translation>
     </message>
     <message>
-        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars.</source>
-        <translation>يوصى بالوضع القياسي. في الوضع الهجومي، سيتبع openpilot السيارات الرائدة بشكل أقرب، ويصبح أكثر هجومية في دواسات الوقود والمكابح. في وضعية الراحة يبقى openplot بعيداً لمسافة جيدة عن السيارة الرائدة.</translation>
-    </message>
-    <message>
         <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
         <translation>يتم وضع openpilot بشكل قياسي في &lt;b&gt;وضعية الراحة&lt;/b&gt;. يمكن الوضع التجريبي &lt;b&gt;ميزات المستوى ألفا&lt;/b&gt; التي لا تكون جاهزة في وضع الراحة:</translation>
     </message>
@@ -1138,6 +1185,10 @@ This may take up to a minute.</source>
     <message>
         <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
         <translation>تمكين التحكم الطولي من openpilot (ألفا) للسماح بالوضع التجريبي.</translation>
+    </message>
+    <message>
+        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
+        <translation>يوصى بالمعيار. في الوضع العدواني، سيتبع الطيار المفتوح السيارات الرائدة بشكل أقرب ويكون أكثر عدوانية مع البنزين والفرامل. في الوضع المريح، سيبقى openpilot بعيدًا عن السيارات الرائدة. في السيارات المدعومة، يمكنك التنقل بين هذه الشخصيات باستخدام زر مسافة عجلة القيادة.</translation>
     </message>
 </context>
 <context>

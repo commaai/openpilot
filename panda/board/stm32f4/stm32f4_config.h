@@ -1,5 +1,5 @@
-#include "stm32fx/inc/stm32f4xx.h"
-#include "stm32fx/inc/stm32f4xx_hal_gpio_ex.h"
+#include "stm32f4/inc/stm32f4xx.h"
+#include "stm32f4/inc/stm32f4xx_hal_gpio_ex.h"
 #define MCU_IDCODE 0x463U
 
 // from the linker script
@@ -50,32 +50,28 @@
 #include "drivers/registers.h"
 #include "drivers/interrupts.h"
 #include "drivers/gpio.h"
-#include "stm32fx/peripherals.h"
-#include "stm32fx/interrupt_handlers.h"
+#include "stm32f4/peripherals.h"
+#include "stm32f4/interrupt_handlers.h"
 #include "drivers/timers.h"
-#include "stm32fx/board.h"
-#include "stm32fx/clock.h"
+#include "stm32f4/board.h"
+#include "stm32f4/clock.h"
 #include "drivers/watchdog.h"
 
 #include "drivers/spi.h"
-#include "stm32fx/llspi.h"
+#include "stm32f4/llspi.h"
 
 #if !defined(BOOTSTUB)
   #include "drivers/uart.h"
-  #include "stm32fx/lluart.h"
-#endif
-
-#if defined(PANDA) && !defined(BOOTSTUB)
-  #include "stm32fx/llexti.h"
+  #include "stm32f4/lluart.h"
 #endif
 
 #ifdef BOOTSTUB
-  #include "stm32fx/llflash.h"
+  #include "stm32f4/llflash.h"
 #else
-  #include "stm32fx/llbxcan.h"
+  #include "stm32f4/llbxcan.h"
 #endif
 
-#include "stm32fx/llusb.h"
+#include "stm32f4/llusb.h"
 
 void early_gpio_float(void) {
   RCC->AHB1ENR = RCC_AHB1ENR_GPIOAEN | RCC_AHB1ENR_GPIOBEN | RCC_AHB1ENR_GPIOCEN;

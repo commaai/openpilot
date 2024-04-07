@@ -142,6 +142,23 @@ def setupCredentials() {
 }
 
 
+def build_release(String channel_name) {
+  return parallel (
+    "${channel_name} (git)": {
+      deviceStage("build git", "tici-needs-can", [], [
+        ["build ${channel_name}", "RELEASE_BRANCH=${channel_name} $SOURCE_DIR/release/build_release.sh"],
+      ])
+    },
+    "${channel_name} (casync)": {
+      deviceStage("build casync", "tici-needs-can", [], [
+        ["build ${channel_name}", "RELEASE=1 OPENPILOT_CHANNEL=${channel_name} BUILD_DIR=/data/openpilot CASYNC_DIR=/data/casync $SOURCE_DIR/release/create_casync_build.sh"],
+        //["upload ${channel_name}", "OPENPILOT_CHANNEL=${channel_name} $SOURCE_DIR/release/upload_casync_release.sh"],
+      ])
+    }
+  )
+}
+
+
 node {
   env.CI = "1"
   env.PYTHONWARNINGS = "error"
@@ -164,15 +181,11 @@ node {
 
   try {
     if (env.BRANCH_NAME == 'devel-staging') {
-      deviceStage("build release3-staging", "tici-needs-can", [], [
-        ["build release3-staging", "RELEASE_BRANCH=release3-staging $SOURCE_DIR/release/build_release.sh"],
-      ])
+      build_release("release3-staging")
     }
 
     if (env.BRANCH_NAME == 'master-ci') {
-      deviceStage("build nightly", "tici-needs-can", [], [
-        ["build nightly", "RELEASE_BRANCH=nightly $SOURCE_DIR/release/build_release.sh"],
-      ])
+      build_release("nightly")
     }
 
     if (!env.BRANCH_NAME.matches(excludeRegex)) {
@@ -194,7 +207,7 @@ node {
           ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
           ["test power draw", "pytest -s system/hardware/tici/tests/test_power_draw.py"],
           ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py"],
-          ["test pigeond", "pytest system/sensord/tests/test_pigeond.py"],
+          ["test pigeond", "pytest system/ubloxd/tests/test_pigeond.py"],
           ["test manager", "pytest selfdrive/manager/test/test_manager.py"],
         ])
       },

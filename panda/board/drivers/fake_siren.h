@@ -59,13 +59,13 @@ void fake_siren_init(void) {
   register_set(&DMA1_Stream1->PAR, (uint32_t) &(DAC1->DHR8R1), 0xFFFFFFFFU);
   DMA1_Stream1->NDTR = sizeof(fake_siren_lut);
   register_set(&DMA1_Stream1->FCR, 0U, 0x00000083U);
-  DMA1_Stream1->CR = (0b11 << DMA_SxCR_PL_Pos);
-  DMA1_Stream1->CR |= DMA_SxCR_MINC | DMA_SxCR_CIRC | (1 << DMA_SxCR_DIR_Pos);
+  DMA1_Stream1->CR = (0b11UL << DMA_SxCR_PL_Pos);
+  DMA1_Stream1->CR |= DMA_SxCR_MINC | DMA_SxCR_CIRC | (1U << DMA_SxCR_DIR_Pos);
 
   // Init trigger timer (around 2.5kHz)
   register_set(&TIM7->PSC, 0U, 0xFFFFU);
   register_set(&TIM7->ARR, 133U, 0xFFFFU);
-  register_set(&TIM7->CR2, (0b10 << TIM_CR2_MMS_Pos), TIM_CR2_MMS_Msk);
+  register_set(&TIM7->CR2, (0b10U << TIM_CR2_MMS_Pos), TIM_CR2_MMS_Msk);
   register_set(&TIM7->CR1, TIM_CR1_ARPE | TIM_CR1_URS, 0x088EU);
   TIM7->SR = 0U;
   TIM7->CR1 |= TIM_CR1_CEN;

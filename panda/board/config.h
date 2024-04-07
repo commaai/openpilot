@@ -11,7 +11,6 @@
 //#define DEBUG_FAN
 
 #define CAN_INIT_TIMEOUT_MS 500U
-#define DEEPSLEEP_WAKEUP_DELAY 3U
 #define USBPACKET_MAX_SIZE 0x40U
 #define MAX_CAN_MSGS_PER_USB_BULK_TRANSFER 51U
 #define MAX_CAN_MSGS_PER_SPI_BULK_TRANSFER 170U
@@ -37,7 +36,7 @@
 #ifdef STM32H7
   #include "stm32h7/stm32h7_config.h"
 #elif defined(STM32F4)
-  #include "stm32fx/stm32fx_config.h"
+  #include "stm32f4/stm32f4_config.h"
 #else
   // TODO: uncomment this, cppcheck complains
   // building for tests

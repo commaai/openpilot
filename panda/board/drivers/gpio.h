@@ -11,7 +11,7 @@
 #define OUTPUT_TYPE_OPEN_DRAIN 1U
 
 typedef struct {
-  GPIO_TypeDef *bank;
+  GPIO_TypeDef * const bank;
   uint8_t pin;
 } gpio_t;
 
@@ -68,13 +68,13 @@ int get_gpio_input(const GPIO_TypeDef *GPIO, unsigned int pin) {
   return (GPIO->IDR & (1UL << pin)) == (1UL << pin);
 }
 
-void gpio_set_all_output(const gpio_t *pins, uint8_t num_pins, bool enabled) {
+void gpio_set_all_output(gpio_t *pins, uint8_t num_pins, bool enabled) {
   for (uint8_t i = 0; i < num_pins; i++) {
     set_gpio_output(pins[i].bank, pins[i].pin, enabled);
   }
 }
 
-void gpio_set_bitmask(const gpio_t *pins, uint8_t num_pins, uint32_t bitmask) {
+void gpio_set_bitmask(gpio_t *pins, uint8_t num_pins, uint32_t bitmask) {
   for (uint8_t i = 0; i < num_pins; i++) {
     set_gpio_output(pins[i].bank, pins[i].pin, (bitmask >> i) & 1U);
   }

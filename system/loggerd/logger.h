@@ -52,5 +52,4 @@ protected:
 };
 
 kj::Array<capnp::word> logger_build_init_data();
-std::string logger_get_route_name();
 std::string logger_get_identifier(std::string key);

@@ -91,6 +91,7 @@ BO_ 679 ACC_13: 8 XXX
  SG_ ACC_Tachokranz : 58|1@1+ (1,0) [0|1] ""  XXX
  SG_ ACC_Typ_Tachokranz_unten : 59|1@1+ (1,0) [0|1] ""  XXX
  SG_ ACC_ENG_Texte : 60|2@1+ (1,0) [0|3] ""  XXX
+ SG_ ACC_ADAPTIVE : 63|2@0+ (1,0) [0|3] "" XXX
 
 BO_ 681 ACC_15: 8 XXX
  SG_ AWV_Warnung : 16|3@1+ (1,0) [0|7] ""  XXX
@@ -1459,6 +1460,7 @@ CM_ SG_ 780 SetAbstand "Set following distance";
 CM_ SG_ 780 Abstand "Following distance";
 CM_ SG_ 780 SetSpeed "ACC set speed";
 CM_ SG_ 391 GearPosition "Traditional PRND plus B-mode aggressive regen, B-mode mapped to Drive";
+CM_ SG_ 679 ACC_ADAPTIVE "TSK_06.TSK_Limiter_ausgewaehlt seems to take precedence";
 CM_ SG_ 960 ZAS_Kl_15 "Indicates ignition on";
 CM_ SG_ 1720 KBI_BCmE_aktiv "Anzeige BCmE aktiv (BCmE-Screen oder Einsparhinweis in der Anzeige)";
 CM_ SG_ 1720 KBI_Max_Tankinhalt "Mitteilung des maximalen Tankinhalts an das Reichweitenmodul";
@@ -1559,6 +1561,7 @@ VAL_ 679 ACC_RUV 0 "keine_Anzeige" 1 "RUV_aktiv_Rechtsverkehr" 2 "RUV_aktiv_Link
 VAL_ 679 ACC_Tachokranz 0 "Tachokranz_nicht_beleuchtet" 1 "Tachokranz_beleuchtet" ;
 VAL_ 679 ACC_Typ_Tachokranz_unten 0 "LEDs_an" 1 "LEDs_aus" ;
 VAL_ 679 ACC_ENG_Texte 0 "keine_Anzeige" 1 "keine_Laenderverfuegbarkeit" 2 "nicht_verfuegbar" 3 "Geschwindigkeitsgrenze" ;
+VAL_ 679 ACC_ADAPTIVE 1 "adaptive" 2 "non-adaptive" ;
 VAL_ 681 AWV_Warnung 0 "keine_Anzeige" 1 "latente_Vorwarnung" 2 "Vorwarnung" 3 "Akutwarnung" 4 "Eingriff" 5 "Fahreruebernahmeaufforderung" 6 "Abbiegewarnung" ;
 VAL_ 681 AWV_Texte 0 "keine_Anzeige" 1 "Systemstoerung" 2 "keine_Sensorsicht" 3 "Demomodus" 4 "System_aus" 5 "nicht_definiert" 6 "ESC_aus" 7 "zurzeit_eingeschraenkt" ;
 VAL_ 681 AWV_Status_Anzeige 0 "Init" 1 "verfuegbar" 2 "nicht_verfuegbar" ;

@@ -48,7 +48,7 @@ void update_can_health_pkt(uint8_t can_number, uint32_t ir_reg) {
     can_health[can_number].total_error_cnt += 1U;
 
     // RX message lost due to FIFO overrun
-    if ((CANx->RF0R & (CAN_RF0R_FOVR0)) != 0) {
+    if ((CANx->RF0R & (CAN_RF0R_FOVR0)) != 0U) {
       can_health[can_number].total_rx_lost_cnt += 1U;
       CANx->RF0R &= ~(CAN_RF0R_FOVR0);
     }
@@ -74,7 +74,7 @@ void process_can(uint8_t can_number) {
 
     // check for empty mailbox
     CANPacket_t to_send;
-    if ((CANx->TSR & (CAN_TSR_TERR0 | CAN_TSR_ALST0)) != 0) { // last TX failed due to error arbitration lost
+    if ((CANx->TSR & (CAN_TSR_TERR0 | CAN_TSR_ALST0)) != 0U) { // last TX failed due to error arbitration lost
       can_health[can_number].total_tx_lost_cnt += 1U;
       CANx->TSR |= (CAN_TSR_TERR0 | CAN_TSR_ALST0);
     }
@@ -129,7 +129,7 @@ void can_rx(uint8_t can_number) {
   CAN_TypeDef *CANx = CANIF_FROM_CAN_NUM(can_number);
   uint8_t bus_number = BUS_NUM_FROM_CAN_NUM(can_number);
 
-  while ((CANx->RF0R & CAN_RF0R_FMP0) != 0) {
+  while ((CANx->RF0R & CAN_RF0R_FMP0) != 0U) {
     can_health[can_number].total_rx_cnt += 1U;
 
     // can is live

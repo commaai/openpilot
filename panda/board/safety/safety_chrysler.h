@@ -123,11 +123,12 @@ RxCheck chrysler_ram_hd_rx_checks[] = {
 const uint32_t CHRYSLER_PARAM_RAM_DT = 1U;  // set for Ram DT platform
 const uint32_t CHRYSLER_PARAM_RAM_HD = 2U;  // set for Ram HD platform
 
-enum {
+typedef enum {
   CHRYSLER_RAM_DT,
   CHRYSLER_RAM_HD,
   CHRYSLER_PACIFICA,  // plus Jeep
-} chrysler_platform = CHRYSLER_PACIFICA;
+} ChryslerPlatform;
+ChryslerPlatform chrysler_platform = CHRYSLER_PACIFICA;
 const ChryslerAddrs *chrysler_addrs = &CHRYSLER_ADDRS;
 
 static uint32_t chrysler_get_checksum(const CANPacket_t *to_push) {

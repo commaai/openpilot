@@ -8,7 +8,7 @@ USB_OTG_GlobalTypeDef *USBx = USB_OTG_FS;
 #define USBx_PCGCCTL    *(__IO uint32_t *)((uint32_t)USBx + USB_OTG_PCGCCTL_BASE)
 
 #define USBD_FS_TRDT_VALUE 5UL
-#define USB_OTG_SPEED_FULL 3
+#define USB_OTG_SPEED_FULL 3UL
 
 
 void usb_irqhandler(void);
@@ -27,7 +27,7 @@ void usb_init(void) {
   // full speed PHY, do reset and remove power down
   /*puth(USBx->GRSTCTL);
   print(" resetting PHY\n");*/
-  while ((USBx->GRSTCTL & USB_OTG_GRSTCTL_AHBIDL) == 0);
+  while ((USBx->GRSTCTL & USB_OTG_GRSTCTL_AHBIDL) == 0U);
   //print("AHB idle\n");
 
   // reset PHY here

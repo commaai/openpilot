@@ -1,15 +1,8 @@
 const CanMsg HONDA_N_TX_MSGS[] = {{0xE4, 0, 5}, {0x194, 0, 4}, {0x1FA, 0, 8}, {0x30C, 0, 8}, {0x33D, 0, 5}};
-const CanMsg HONDA_N_INTERCEPTOR_TX_MSGS[] = {{0xE4, 0, 5}, {0x194, 0, 4}, {0x1FA, 0, 8}, {0x200, 0, 6}, {0x30C, 0, 8}, {0x33D, 0, 5}};
 const CanMsg HONDA_BOSCH_TX_MSGS[] = {{0xE4, 0, 5}, {0xE5, 0, 8}, {0x296, 1, 4}, {0x33D, 0, 5}, {0x33DA, 0, 5}, {0x33DB, 0, 8}};  // Bosch
 const CanMsg HONDA_BOSCH_LONG_TX_MSGS[] = {{0xE4, 1, 5}, {0x1DF, 1, 8}, {0x1EF, 1, 8}, {0x1FA, 1, 8}, {0x30C, 1, 8}, {0x33D, 1, 5}, {0x33DA, 1, 5}, {0x33DB, 1, 8}, {0x39F, 1, 8}, {0x18DAB0F1, 1, 8}};  // Bosch w/ gas and brakes
 const CanMsg HONDA_RADARLESS_TX_MSGS[] = {{0xE4, 0, 5}, {0x296, 2, 4}, {0x33D, 0, 8}};  // Bosch radarless
 const CanMsg HONDA_RADARLESS_LONG_TX_MSGS[] = {{0xE4, 0, 5}, {0x33D, 0, 8}, {0x1C8, 0, 8}, {0x30C, 0, 8}};  // Bosch radarless w/ gas and brakes
-
-// panda interceptor threshold needs to be equivalent to openpilot threshold to avoid controls mismatches
-// If thresholds are mismatched then it is possible for panda to see the gas fall and rise while openpilot is in the pre-enabled state
-// Threshold calculated from DBC gains: round(((83.3 / 0.253984064) + (83.3 / 0.126992032)) / 2) = 492
-const int HONDA_GAS_INTERCEPTOR_THRESHOLD = 492;
-#define HONDA_GET_INTERCEPTOR(msg) (((GET_BYTE((msg), 0) << 8) + GET_BYTE((msg), 1) + (GET_BYTE((msg), 2) << 8) + GET_BYTE((msg), 3)) / 2U)  // avg between 2 tracks
 
 const LongitudinalLimits HONDA_BOSCH_LONG_LIMITS = {
   .max_accel = 200,   // accel is used for brakes
@@ -47,11 +40,6 @@ RxCheck honda_common_rx_checks[] = {
   HONDA_COMMON_RX_CHECKS(0)
 };
 
-RxCheck honda_common_interceptor_rx_checks[] = {
-  HONDA_COMMON_RX_CHECKS(0)
-  {.msg = {{0x201, 0, 6, .check_checksum = false, .max_counter = 15U, .frequency = 50U}, { 0 }, { 0 }}},
-};
-
 RxCheck honda_common_alt_brake_rx_checks[] = {
   HONDA_COMMON_RX_CHECKS(0)
   HONDA_ALT_BRAKE_ADDR_CHECK(0)
@@ -60,11 +48,6 @@ RxCheck honda_common_alt_brake_rx_checks[] = {
 // For Nidecs with main on signal on an alternate msg (missing 0x326)
 RxCheck honda_nidec_alt_rx_checks[] = {
   HONDA_COMMON_NO_SCM_FEEDBACK_RX_CHECKS(0)
-};
-
-RxCheck honda_nidec_alt_interceptor_rx_checks[] = {
-  HONDA_COMMON_NO_SCM_FEEDBACK_RX_CHECKS(0)
-  {.msg = {{0x201, 0, 6, .check_checksum = false, .max_counter = 15U, .frequency = 50U}, { 0 }, { 0 }}},
 };
 
 // Bosch has pt on bus 1, verified 0x1A6 does not exist
@@ -81,7 +64,6 @@ const uint16_t HONDA_PARAM_ALT_BRAKE = 1;
 const uint16_t HONDA_PARAM_BOSCH_LONG = 2;
 const uint16_t HONDA_PARAM_NIDEC_ALT = 4;
 const uint16_t HONDA_PARAM_RADARLESS = 8;
-const uint16_t HONDA_PARAM_GAS_INTERCEPTOR = 16;
 
 enum {
   HONDA_BTN_NONE = 0,
@@ -97,7 +79,8 @@ bool honda_alt_brake_msg = false;
 bool honda_fwd_brake = false;
 bool honda_bosch_long = false;
 bool honda_bosch_radarless = false;
-enum {HONDA_NIDEC, HONDA_BOSCH} honda_hw = HONDA_NIDEC;
+typedef enum {HONDA_NIDEC, HONDA_BOSCH} HondaHw;
+HondaHw honda_hw = HONDA_NIDEC;
 
 
 int honda_get_pt_bus(void) {
@@ -127,26 +110,15 @@ static uint32_t honda_compute_checksum(const CANPacket_t *to_push) {
 }
 
 static uint8_t honda_get_counter(const CANPacket_t *to_push) {
-  int addr = GET_ADDR(to_push);
-
-  uint8_t cnt = 0U;
-  if (addr == 0x201) {
-    // Signal: COUNTER_PEDAL
-    cnt = GET_BYTE(to_push, 4) & 0x0FU;
-  } else {
-    int counter_byte = GET_LEN(to_push) - 1U;
-    cnt = (GET_BYTE(to_push, counter_byte) >> 4U) & 0x3U;
-  }
-  return cnt;
+  int counter_byte = GET_LEN(to_push) - 1U;
+  return (GET_BYTE(to_push, counter_byte) >> 4U) & 0x3U;
 }
 
 static void honda_rx_hook(const CANPacket_t *to_push) {
-  const bool pcm_cruise = ((honda_hw == HONDA_BOSCH) && !honda_bosch_long) || \
-                          ((honda_hw == HONDA_NIDEC) && !enable_gas_interceptor);
+  const bool pcm_cruise = ((honda_hw == HONDA_BOSCH) && !honda_bosch_long) || (honda_hw == HONDA_NIDEC);
   int pt_bus = honda_get_pt_bus();
 
   int addr = GET_ADDR(to_push);
-  int len = GET_LEN(to_push);
   int bus = GET_BUS(to_push);
 
   // sample speed
@@ -218,17 +190,8 @@ static void honda_rx_hook(const CANPacket_t *to_push) {
     }
   }
 
-  // length check because bosch hardware also uses this id (0x201 w/ len = 8)
-  if ((addr == 0x201) && (len == 6) && enable_gas_interceptor) {
-    int gas_interceptor = HONDA_GET_INTERCEPTOR(to_push);
-    gas_pressed = gas_interceptor > HONDA_GAS_INTERCEPTOR_THRESHOLD;
-    gas_interceptor_prev = gas_interceptor;
-  }
-
-  if (!enable_gas_interceptor) {
-    if (addr == 0x17C) {
-      gas_pressed = GET_BYTE(to_push, 0) != 0U;
-    }
+  if (addr == 0x17C) {
+    gas_pressed = GET_BYTE(to_push, 0) != 0U;
   }
 
   // disable stock Honda AEB in alternative experience
@@ -346,13 +309,6 @@ static bool honda_tx_hook(const CANPacket_t *to_send) {
     }
   }
 
-  // GAS: safety check (interceptor)
-  if (addr == 0x200) {
-    if (longitudinal_interceptor_checks(to_send)) {
-      tx = false;
-    }
-  }
-
   // FORCE CANCEL: safety check only relevant when spamming the cancel button in Bosch HW
   // ensuring that only the cancel button press is sent (VAL 2) when controls are off.
   // This avoids unintended engagements while still allowing resume spam
@@ -380,24 +336,18 @@ static safety_config honda_nidec_init(uint16_t param) {
   honda_alt_brake_msg = false;
   honda_bosch_long = false;
   honda_bosch_radarless = false;
-  enable_gas_interceptor = GET_FLAG(param, HONDA_PARAM_GAS_INTERCEPTOR);
 
   safety_config ret;
 
   bool enable_nidec_alt = GET_FLAG(param, HONDA_PARAM_NIDEC_ALT);
-  if (enable_nidec_alt) {
-    enable_gas_interceptor ? SET_RX_CHECKS(honda_nidec_alt_interceptor_rx_checks, ret) : \
-                             SET_RX_CHECKS(honda_nidec_alt_rx_checks, ret);
-  } else {
-    enable_gas_interceptor ? SET_RX_CHECKS(honda_common_interceptor_rx_checks, ret) : \
-                             SET_RX_CHECKS(honda_common_rx_checks, ret);
-  }
 
-  if (enable_gas_interceptor) {
-    SET_TX_MSGS(HONDA_N_INTERCEPTOR_TX_MSGS, ret);
+  if (enable_nidec_alt) {
+    SET_RX_CHECKS(honda_nidec_alt_rx_checks, ret);
   } else {
-    SET_TX_MSGS(HONDA_N_TX_MSGS, ret);
+    SET_RX_CHECKS(honda_common_rx_checks, ret);
   }
+  SET_TX_MSGS(HONDA_N_TX_MSGS, ret);
+
   return ret;
 }
 

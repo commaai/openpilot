@@ -212,7 +212,7 @@ def create_acc_ui_msg(packer, CAN: CanBus, CP, main_on: bool, enabled: bool, fcw
       "AccFllwMde_B_Dsply": 1 if hud_control.leadVisible else 0,  # Lead indicator
       "AccStopMde_B_Dsply": 1 if standstill else 0,
       "AccWarn_D_Dsply": 0,                                       # ACC warning
-      "AccTGap_D_Dsply": 4,                                       # Fixed time gap in UI
+      "AccTGap_D_Dsply": hud_control.leadDistanceBars + 1,        # Time gap
     })
 
   # Forwards FCW alert from IPMA

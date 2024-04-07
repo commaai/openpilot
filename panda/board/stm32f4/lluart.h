@@ -5,7 +5,7 @@ void uart_tx_ring(uart_ring *q){
   // Send out next byte of TX buffer
   if (q->w_ptr_tx != q->r_ptr_tx) {
     // Only send if transmit register is empty (aka last byte has been sent)
-    if ((q->uart->SR & USART_SR_TXE) != 0) {
+    if ((q->uart->SR & USART_SR_TXE) != 0U) {
       q->uart->DR = q->elems_tx[q->r_ptr_tx];   // This clears TXE
       q->r_ptr_tx = (q->r_ptr_tx + 1U) % q->tx_fifo_size;
     }
@@ -46,7 +46,7 @@ void uart_rx_ring(uart_ring *q){
 }
 
 void uart_send_break(uart_ring *u) {
-  while ((u->uart->CR1 & USART_CR1_SBK) != 0);
+  while ((u->uart->CR1 & USART_CR1_SBK) != 0U);
   u->uart->CR1 |= USART_CR1_SBK;
 }
 

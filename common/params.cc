@@ -188,6 +188,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"RecordFront", PERSISTENT},
     {"RecordFrontLock", PERSISTENT},  // for the internal fleet
     {"ReplayControlsState", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
+    {"RouteCount", PERSISTENT},
     {"SnoozeUpdate", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
     {"SshEnabled", PERSISTENT},
     {"TermsVersion", PERSISTENT},
@@ -206,7 +207,6 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"UpdaterTargetBranch", CLEAR_ON_MANAGER_START},
     {"UpdaterLastFetchTime", PERSISTENT},
     {"Version", PERSISTENT},
-    {"VisionRadarToggle", PERSISTENT},
 };
 
 } // namespace

@@ -13,16 +13,16 @@ struct harness_t harness;
 
 struct harness_configuration {
   const bool has_harness;
-  GPIO_TypeDef *GPIO_SBU1;
-  GPIO_TypeDef *GPIO_SBU2;
-  GPIO_TypeDef *GPIO_relay_SBU1;
-  GPIO_TypeDef *GPIO_relay_SBU2;
-  uint8_t pin_SBU1;
-  uint8_t pin_SBU2;
-  uint8_t pin_relay_SBU1;
-  uint8_t pin_relay_SBU2;
-  uint8_t adc_channel_SBU1;
-  uint8_t adc_channel_SBU2;
+  GPIO_TypeDef * const GPIO_SBU1;
+  GPIO_TypeDef * const GPIO_SBU2;
+  GPIO_TypeDef * const GPIO_relay_SBU1;
+  GPIO_TypeDef * const GPIO_relay_SBU2;
+  const uint8_t pin_SBU1;
+  const uint8_t pin_SBU2;
+  const uint8_t pin_relay_SBU1;
+  const uint8_t pin_relay_SBU2;
+  const uint8_t adc_channel_SBU1;
+  const uint8_t adc_channel_SBU2;
 };
 
 // The ignition relay is only used for testing purposes
@@ -117,11 +117,6 @@ void harness_tick(void) {
 }
 
 void harness_init(void) {
-  // delay such that the connection is fully made before trying orientation detection
-  current_board->set_led(LED_BLUE, true);
-  delay(10000000);
-  current_board->set_led(LED_BLUE, false);
-
   // try to detect orientation
   harness.status = harness_detect_orientation();
   if (harness.status != HARNESS_STATUS_NC) {

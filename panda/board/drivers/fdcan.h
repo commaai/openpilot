@@ -67,14 +67,14 @@ void update_can_health_pkt(uint8_t can_number, uint32_t ir_reg) {
     FDCANx->IR |= (FDCAN_IR_PED | FDCAN_IR_PEA | FDCAN_IR_EP | FDCAN_IR_BO | FDCAN_IR_RF0L);
     can_health[can_number].total_error_cnt += 1U;
     // Check for RX FIFO overflow
-    if ((ir_reg & (FDCAN_IR_RF0L)) != 0) {
+    if ((ir_reg & (FDCAN_IR_RF0L)) != 0U) {
       can_health[can_number].total_rx_lost_cnt += 1U;
     }
     // Cases:
     // 1. while multiplexing between buses 1 and 3 we are getting ACK errors that overwhelm CAN core, by resetting it recovers faster
     // 2. H7 gets stuck in bus off recovery state indefinitely
     if ((((can_health[can_number].last_error == CAN_ACK_ERROR) || (can_health[can_number].last_data_error == CAN_ACK_ERROR)) && (can_health[can_number].transmit_error_cnt > 127U)) ||
-     ((ir_reg & FDCAN_IR_BO) != 0)) {
+     ((ir_reg & FDCAN_IR_BO) != 0U)) {
       can_health[can_number].can_core_reset_cnt += 1U;
       can_health[can_number].total_tx_lost_cnt += (FDCAN_TX_FIFO_EL_CNT - (FDCANx->TXFQS & FDCAN_TXFQS_TFFL)); // TX FIFO msgs will be lost after reset
       llcan_clear_send(FDCANx);
@@ -93,7 +93,7 @@ void process_can(uint8_t can_number) {
 
     FDCANx->IR |= FDCAN_IR_TFE; // Clear Tx FIFO Empty flag
 
-    if ((FDCANx->TXFQS & FDCAN_TXFQS_TFQF) == 0) {
+    if ((FDCANx->TXFQS & FDCAN_TXFQS_TFQF) == 0U) {
       CANPacket_t to_send;
       if (can_pop(can_queues[bus_number], &to_send)) {
         if (can_check_checksum(&to_send)) {
@@ -101,7 +101,7 @@ void process_can(uint8_t can_number) {
 
           uint32_t TxFIFOSA = FDCAN_START_ADDRESS + (can_number * FDCAN_OFFSET) + (FDCAN_RX_FIFO_0_EL_CNT * FDCAN_RX_FIFO_0_EL_SIZE);
           // get the index of the next TX FIFO element (0 to FDCAN_TX_FIFO_EL_CNT - 1)
-          uint32_t tx_index = (FDCANx->TXFQS >> FDCAN_TXFQS_TFQPI_Pos) & 0x1F;
+          uint32_t tx_index = (FDCANx->TXFQS >> FDCAN_TXFQS_TFQPI_Pos) & 0x1FU;
           // only send if we have received a packet
           canfd_fifo *fifo;
           fifo = (canfd_fifo *)(TxFIFOSA + (tx_index * FDCAN_TX_FIFO_EL_SIZE));
@@ -126,7 +126,7 @@ void process_can(uint8_t can_number) {
           to_push.rejected = 0U;
           to_push.extended = to_send.extended;
           to_push.addr = to_send.addr;
-          to_push.bus = to_send.bus;
+          to_push.bus = bus_number;
           to_push.data_len_code = to_send.data_len_code;
           (void)memcpy(to_push.data, to_send.data, dlc_to_len[to_push.data_len_code]);
           can_set_checksum(&to_push);
@@ -153,14 +153,14 @@ void can_rx(uint8_t can_number) {
 
   // Clear all new messages from Rx FIFO 0
   FDCANx->IR |= FDCAN_IR_RF0N;
-  while((FDCANx->RXF0S & FDCAN_RXF0S_F0FL) != 0) {
+  while((FDCANx->RXF0S & FDCAN_RXF0S_F0FL) != 0U) {
     can_health[can_number].total_rx_cnt += 1U;
 
     // can is live
     pending_can_live = 1;
 
     // get the index of the next RX FIFO element (0 to FDCAN_RX_FIFO_0_EL_CNT - 1)
-    uint32_t rx_fifo_idx = (uint8_t)((FDCANx->RXF0S >> FDCAN_RXF0S_F0GI_Pos) & 0x3F);
+    uint32_t rx_fifo_idx = (uint8_t)((FDCANx->RXF0S >> FDCAN_RXF0S_F0GI_Pos) & 0x3FU);
 
     // Recommended to offset get index by at least +1 if RX FIFO is in overwrite mode and full (datasheet)
     if((FDCANx->RXF0S & FDCAN_RXF0S_F0F) == FDCAN_RXF0S_F0F) {
@@ -232,7 +232,7 @@ void can_rx(uint8_t can_number) {
   }
 
   // Error handling
-  if ((ir_reg & (FDCAN_IR_PED | FDCAN_IR_PEA | FDCAN_IR_EP | FDCAN_IR_BO | FDCAN_IR_RF0L)) != 0) {
+  if ((ir_reg & (FDCAN_IR_PED | FDCAN_IR_PEA | FDCAN_IR_EP | FDCAN_IR_BO | FDCAN_IR_RF0L)) != 0U) {
     update_can_health_pkt(can_number, ir_reg);
   }
 }

@@ -464,7 +464,7 @@ class EKF_sym():
     # rewind
     if self.filter_time is not None and t < self.filter_time:
       if len(self.rewind_t) == 0 or t < self.rewind_t[0] or t < self.rewind_t[-1] - self.max_rewind_age:
-        self.logger.error("observation too old at %.3f with filter at %.3f, ignoring" % (t, self.filter_time))
+        self.logger.error(f"observation too old at {t:.3f} with filter at {self.filter_time:.3f}, ignoring")
         return None
       rewound = self.rewind(t)
     else:

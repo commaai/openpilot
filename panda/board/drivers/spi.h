@@ -73,10 +73,8 @@ uint16_t spi_version_packet(uint8_t *out) {
   uint16_t data_pos = 7U + 2U;
 
   // write serial
-  #ifdef UID_BASE
   (void)memcpy(&out[data_pos], ((uint8_t *)UID_BASE), 12);
   data_len += 12U;
-  #endif
 
   // HW type
   out[data_pos + data_len] = hw_type;
@@ -232,7 +230,7 @@ void spi_rx_done(void) {
   llspi_miso_dma(spi_buf_tx, response_len);
 
   spi_state = next_rx_state;
-  if (!checksum_valid && (spi_checksum_error_count < __UINT16_MAX__)) {
+  if (!checksum_valid && (spi_checksum_error_count < UINT16_MAX)) {
     spi_checksum_error_count += 1U;
   }
 }

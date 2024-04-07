@@ -20,7 +20,6 @@ uint32_t safety_tx_blocked = 0;
 uint32_t safety_rx_invalid = 0;
 uint32_t tx_buffer_overflow = 0;
 uint32_t rx_buffer_overflow = 0;
-uint32_t gmlan_send_errs = 0;
 
 can_health_t can_health[] = {{0}, {0}, {0}};
 
@@ -54,7 +53,6 @@ void process_can(uint8_t can_number);
 
 #define CAN_RX_BUFFER_SIZE 4096U
 #define CAN_TX_BUFFER_SIZE 416U
-#define GMLAN_TX_BUFFER_SIZE 416U
 
 #ifdef STM32H7
 // ITCM RAM and DTCM RAM are the fastest for Cortex-M7 core access
@@ -67,10 +65,10 @@ can_buffer(tx1_q, CAN_TX_BUFFER_SIZE)
 can_buffer(tx2_q, CAN_TX_BUFFER_SIZE)
 #endif
 can_buffer(tx3_q, CAN_TX_BUFFER_SIZE)
-can_buffer(txgmlan_q, GMLAN_TX_BUFFER_SIZE)
+
 // FIXME:
 // cppcheck-suppress misra-c2012-9.3
-can_ring *can_queues[] = {&can_tx1_q, &can_tx2_q, &can_tx3_q, &can_txgmlan_q};
+can_ring *can_queues[] = {&can_tx1_q, &can_tx2_q, &can_tx3_q};
 
 // helpers
 #define WORD_TO_BYTE_ARRAY(dst8, src32) 0[dst8] = ((src32) & 0xFFU); 1[dst8] = (((src32) >> 8U) & 0xFFU); 2[dst8] = (((src32) >> 16U) & 0xFFU); 3[dst8] = (((src32) >> 24U) & 0xFFU)
@@ -122,8 +120,6 @@ bool can_push(can_ring *q, const CANPacket_t *elem) {
         print("can_tx2_q");
       } else if (q == &can_tx3_q) {
         print("can_tx3_q");
-      } else if (q == &can_txgmlan_q) {
-        print("can_txgmlan_q");
       } else {
         print("unknown");
       }
@@ -157,7 +153,7 @@ void can_clear(can_ring *q) {
 }
 
 // assign CAN numbering
-// bus num: Can bus number on ODB connector. Sent to/from USB
+// bus num: CAN Bus numbers in panda, sent to/from USB
 //    Min: 0; Max: 127; Bit 7 marks message as receipt (bus 129 is receipt for but 1)
 // cans: Look up MCU can interface from bus number
 // can number: numeric lookup for MCU CAN interfaces (0 = CAN1, 1 = CAN2, etc);
@@ -179,22 +175,20 @@ bus_config_t bus_config[] = {
 #define CAN_NUM_FROM_BUS_NUM(num) (bus_config[num].can_num_lookup)
 
 void can_init_all(void) {
-  bool ret = true;
   for (uint8_t i=0U; i < PANDA_CAN_CNT; i++) {
     if (!current_board->has_canfd) {
       bus_config[i].can_data_speed = 0U;
     }
     can_clear(can_queues[i]);
-    ret &= can_init(i);
+    (void)can_init(i);
   }
-  UNUSED(ret);
 }
 
-void can_flip_buses(uint8_t bus1, uint8_t bus2){
-  bus_config[bus1].bus_lookup = bus2;
-  bus_config[bus2].bus_lookup = bus1;
-  bus_config[bus1].can_num_lookup = bus2;
-  bus_config[bus2].can_num_lookup = bus1;
+void can_set_orientation(bool flipped) {
+  bus_config[0].bus_lookup = flipped ? 2U : 0U;
+  bus_config[0].can_num_lookup = flipped ? 2U : 0U;
+  bus_config[2].bus_lookup = flipped ? 0U : 2U;
+  bus_config[2].can_num_lookup = flipped ? 0U : 2U;
 }
 
 void can_set_forwarding(uint8_t from, uint8_t to) {
@@ -234,8 +228,7 @@ bool can_tx_check_min_slots_free(uint32_t min) {
   return
     (can_slots_empty(&can_tx1_q) >= min) &&
     (can_slots_empty(&can_tx2_q) >= min) &&
-    (can_slots_empty(&can_tx3_q) >= min) &&
-    (can_slots_empty(&can_txgmlan_q) >= min);
+    (can_slots_empty(&can_tx3_q) >= min);
 }
 
 uint8_t calculate_checksum(const uint8_t *dat, uint32_t len) {
@@ -259,12 +252,8 @@ void can_send(CANPacket_t *to_push, uint8_t bus_number, bool skip_tx_hook) {
   if (skip_tx_hook || safety_tx_hook(to_push) != 0) {
     if (bus_number < PANDA_BUS_CNT) {
       // add CAN packet to send queue
-      if ((bus_number == 3U) && (bus_config[3].can_num_lookup == 0xFFU)) {
-        gmlan_send_errs += bitbang_gmlan(to_push) ? 0U : 1U;
-      } else {
-        tx_buffer_overflow += can_push(can_queues[bus_number], to_push) ? 0U : 1U;
-        process_can(CAN_NUM_FROM_BUS_NUM(bus_number));
-      }
+      tx_buffer_overflow += can_push(can_queues[bus_number], to_push) ? 0U : 1U;
+      process_can(CAN_NUM_FROM_BUS_NUM(bus_number));
     }
   } else {
     safety_tx_blocked += 1U;

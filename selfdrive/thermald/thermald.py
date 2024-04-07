@@ -6,7 +6,6 @@ import threading
 import time
 from collections import OrderedDict, namedtuple
 from pathlib import Path
-from typing import Dict, Optional, Tuple
 
 import psutil
 
@@ -50,9 +49,9 @@ THERMAL_BANDS = OrderedDict({
 # Override to highest thermal band when offroad and above this temp
 OFFROAD_DANGER_TEMP = 75
 
-prev_offroad_states: Dict[str, Tuple[bool, Optional[str]]] = {}
+prev_offroad_states: dict[str, tuple[bool, str | None]] = {}
 
-tz_by_type: Optional[Dict[str, int]] = None
+tz_by_type: dict[str, int] | None = None
 def populate_tz_by_type():
   global tz_by_type
   tz_by_type = {}
@@ -87,7 +86,7 @@ def read_thermal(thermal_config):
   return dat
 
 
-def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_text: Optional[str]=None):
+def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_text: str | None=None):
   if prev_offroad_states.get(offroad_alert, None) == (show_alert, extra_text):
     return
   prev_offroad_states[offroad_alert] = (show_alert, extra_text)
@@ -169,16 +168,16 @@ def thermald_thread(end_event, hw_queue) -> None:
 
   count = 0
 
-  onroad_conditions: Dict[str, bool] = {
+  onroad_conditions: dict[str, bool] = {
     "ignition": False,
   }
-  startup_conditions: Dict[str, bool] = {}
-  startup_conditions_prev: Dict[str, bool] = {}
+  startup_conditions: dict[str, bool] = {}
+  startup_conditions_prev: dict[str, bool] = {}
 
-  off_ts: Optional[float] = None
-  started_ts: Optional[float] = None
+  off_ts: float | None = None
+  started_ts: float | None = None
   started_seen = False
-  startup_blocked_ts: Optional[float] = None
+  startup_blocked_ts: float | None = None
   thermal_status = ThermalStatus.yellow
 
   last_hw_state = HardwareState(
@@ -208,15 +207,9 @@ def thermald_thread(end_event, hw_queue) -> None:
   while not end_event.is_set():
     sm.update(PANDA_STATES_TIMEOUT)
 
-    # Run at 2Hz
-    if sm.frame % round(SERVICE_LIST['pandaStates'].frequency * DT_TRML) != 0:
-      continue
-
     pandaStates = sm['pandaStates']
     peripheralState = sm['peripheralState']
     peripheral_panda_present = peripheralState.pandaType != log.PandaState.PandaType.unknown
-
-    msg = read_thermal(thermal_config)
 
     if sm.updated['pandaStates'] and len(pandaStates) > 0:
 
@@ -236,6 +229,14 @@ def thermald_thread(end_event, hw_queue) -> None:
       if onroad_conditions["ignition"]:
         onroad_conditions["ignition"] = False
         cloudlog.error("panda timed out onroad")
+
+    # Run at 2Hz, plus rising edge of ignition
+    ign_edge = started_ts is None and onroad_conditions["ignition"]
+    if (sm.frame % round(SERVICE_LIST['pandaStates'].frequency * DT_TRML) != 0) and not ign_edge:
+      continue
+
+    msg = read_thermal(thermal_config)
+    msg.deviceState.deviceType = HARDWARE.get_device_type()
 
     try:
       last_hw_state = hw_queue.get_nowait()

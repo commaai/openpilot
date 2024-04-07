@@ -1,6 +1,5 @@
 import functools
 import re
-from typing import List, Optional
 
 from openpilot.tools.lib.auth_config import get_token
 from openpilot.tools.lib.api import CommaApi
@@ -44,7 +43,7 @@ class Bootlog:
       return False
     return self.id < b.id
 
-def get_bootlog_from_id(bootlog_id: str) -> Optional[Bootlog]:
+def get_bootlog_from_id(bootlog_id: str) -> Bootlog | None:
   # TODO: implement an API endpoint for this
   bl = Bootlog(bootlog_id)
   for b in get_bootlogs(bl.dongle_id):
@@ -52,7 +51,7 @@ def get_bootlog_from_id(bootlog_id: str) -> Optional[Bootlog]:
       return b
   return None
 
-def get_bootlogs(dongle_id: str) -> List[Bootlog]:
+def get_bootlogs(dongle_id: str) -> list[Bootlog]:
   api = CommaApi(get_token())
   r = api.get(f'v1/devices/{dongle_id}/bootlogs')
   return [Bootlog(b) for b in r]

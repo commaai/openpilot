@@ -4,13 +4,12 @@ import os
 import usb1
 import time
 import subprocess
-from typing import List, NoReturn
+from typing import NoReturn
 from functools import cmp_to_key
 
 from panda import Panda, PandaDFU, PandaProtocolMismatch, FW_PATH
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
-from openpilot.selfdrive.boardd.set_time import set_time
 from openpilot.system.hardware import HARDWARE
 from openpilot.common.swaglog import cloudlog
 
@@ -124,7 +123,7 @@ def main() -> NoReturn:
       cloudlog.info(f"{len(panda_serials)} panda(s) found, connecting - {panda_serials}")
 
       # Flash pandas
-      pandas: List[Panda] = []
+      pandas: list[Panda] = []
       for serial in panda_serials:
         pandas.append(flash_panda(serial))
 
@@ -154,16 +153,9 @@ def main() -> NoReturn:
           cloudlog.event("panda.som_reset_triggered", health=health, serial=panda.get_usb_serial())
 
         if first_run:
-          if panda.is_internal():
-            # update time from RTC
-            set_time(cloudlog)
-
           # reset panda to ensure we're in a good state
           cloudlog.info(f"Resetting panda {panda.get_usb_serial()}")
-          if panda.is_internal():
-            HARDWARE.reset_internal_panda()
-          else:
-            panda.reset(reconnect=False)
+          panda.reset(reconnect=False)
 
       for p in pandas:
         p.close()

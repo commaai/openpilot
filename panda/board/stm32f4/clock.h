@@ -1,7 +1,7 @@
 void clock_init(void) {
   // enable external oscillator
   register_set_bits(&(RCC->CR), RCC_CR_HSEON);
-  while ((RCC->CR & RCC_CR_HSERDY) == 0);
+  while ((RCC->CR & RCC_CR_HSERDY) == 0U);
 
   // divide things
   // AHB = 96MHz
@@ -20,7 +20,7 @@ void clock_init(void) {
 
   // start PLL
   register_set_bits(&(RCC->CR), RCC_CR_PLLON);
-  while ((RCC->CR & RCC_CR_PLLRDY) == 0);
+  while ((RCC->CR & RCC_CR_PLLRDY) == 0U);
 
   // Configure Flash prefetch, Instruction cache, Data cache and wait state
   // *** without this, it breaks ***

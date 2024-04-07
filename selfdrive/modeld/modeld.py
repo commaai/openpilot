@@ -6,7 +6,6 @@ import numpy as np
 import cereal.messaging as messaging
 from cereal import car, log
 from pathlib import Path
-from typing import Dict, Optional
 from setproctitle import setproctitle
 from cereal.messaging import PubMaster, SubMaster
 from cereal.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
@@ -14,6 +13,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import config_realtime_process
+from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.selfdrive import sentry
 from openpilot.selfdrive.car.car_helpers import get_demo_car_params
@@ -45,7 +45,7 @@ class FrameMeta:
 class ModelState:
   frame: ModelFrame
   wide_frame: ModelFrame
-  inputs: Dict[str, np.ndarray]
+  inputs: dict[str, np.ndarray]
   output: np.ndarray
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
   model: ModelRunner
@@ -78,14 +78,14 @@ class ModelState:
     for k,v in self.inputs.items():
       self.model.addInput(k, v)
 
-  def slice_outputs(self, model_outputs: np.ndarray) -> Dict[str, np.ndarray]:
+  def slice_outputs(self, model_outputs: np.ndarray) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in self.output_slices.items()}
     if SEND_RAW_PRED:
       parsed_model_outputs['raw_pred'] = model_outputs.copy()
     return parsed_model_outputs
 
   def run(self, buf: VisionBuf, wbuf: VisionBuf, transform: np.ndarray, transform_wide: np.ndarray,
-                inputs: Dict[str, np.ndarray], prepare_only: bool) -> Optional[Dict[str, np.ndarray]]:
+                inputs: dict[str, np.ndarray], prepare_only: bool) -> dict[str, np.ndarray] | None:
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
     inputs['desire'][0] = 0
     self.inputs['desire'][:-ModelConstants.DESIRE_LEN] = self.inputs['desire'][ModelConstants.DESIRE_LEN:]
@@ -154,7 +154,7 @@ def main(demo=False):
 
   # messaging
   pm = PubMaster(["modelV2", "cameraOdometry"])
-  sm = SubMaster(["carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel", "navInstruction", "carControl"])
+  sm = SubMaster(["deviceState", "carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel", "navInstruction", "carControl"])
 
   publish_state = PublishState()
   params = Params()
@@ -226,10 +226,11 @@ def main(demo=False):
     is_rhd = sm["driverMonitoringState"].isRHD
     frame_id = sm["roadCameraState"].frameId
     lateral_control_params = np.array([sm["carState"].vEgo, steer_delay], dtype=np.float32)
-    if sm.updated["liveCalibration"]:
+    if sm.updated["liveCalibration"] and sm.seen['roadCameraState'] and sm.seen['deviceState']:
       device_from_calib_euler = np.array(sm["liveCalibration"].rpyCalib, dtype=np.float32)
-      model_transform_main = get_warp_matrix(device_from_calib_euler, main_wide_camera, False).astype(np.float32)
-      model_transform_extra = get_warp_matrix(device_from_calib_euler, True, True).astype(np.float32)
+      dc = DEVICE_CAMERAS[(str(sm['deviceState'].deviceType), str(sm['roadCameraState'].sensor))]
+      model_transform_main = get_warp_matrix(device_from_calib_euler, dc.ecam.intrinsics if main_wide_camera else dc.fcam.intrinsics, False).astype(np.float32)
+      model_transform_extra = get_warp_matrix(device_from_calib_euler, dc.ecam.intrinsics, True).astype(np.float32)
       live_calib_seen = True
 
     traffic_convention = np.zeros(2)
@@ -276,7 +277,7 @@ def main(demo=False):
     if prepare_only:
       cloudlog.error(f"skipping model eval. Dropped {vipc_dropped_frames} frames")
 
-    inputs:Dict[str, np.ndarray] = {
+    inputs:dict[str, np.ndarray] = {
       'desire': vec_desire,
       'traffic_convention': traffic_convention,
       'lateral_control_params': lateral_control_params,
