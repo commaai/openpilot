@@ -37,8 +37,8 @@ class IMUState:
 class SimulatorState:
   def __init__(self):
     self.valid = False
-    self.is_engaged = False
-    self.ignition = True
+    self._is_engaged = False
+    self._ignition = True
 
     self.velocity: vec3 = None
     self.bearing: float = 0
@@ -59,6 +59,29 @@ class SimulatorState:
   @property
   def speed(self):
     return math.sqrt(self.velocity.x ** 2 + self.velocity.y ** 2 + self.velocity.z ** 2)
+
+  @property
+  def is_engaged(self):
+    return self._is_engaged
+
+  @is_engaged.setter
+  def is_engaged(self, value: bool):
+    if self._is_engaged != value:
+      self._is_engaged = value
+      self.print_status()
+
+  @property
+  def ignition(self):
+    return self._ignition
+
+  @ignition.setter
+  def ignition(self, value: bool):
+    if self._ignition != value:
+      self._ignition = value
+      self.print_status()
+
+  def print_status(self):
+    print(f"State:\nIgnition: {self._ignition} Engaged: {self._is_engaged}")
 
 
 class World(ABC):
