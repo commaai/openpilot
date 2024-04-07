@@ -131,7 +131,7 @@ class CarController(CarControllerBase):
     # CAN-FD platforms
     if self.CP.carFingerprint in CANFD_CAR:
       hda2 = self.CP.flags & HyundaiFlags.CANFD_HDA2
-      hda2_long = hda2 and self.CP.openpilotLongitudinalControl
+      #hda2_long = hda2 and self.CP.openpilotLongitudinalControl
 
       # steering control
       can_sends.extend(hyundaicanfd.create_steering_messages(self.packer, self.CP, self.CAN, CC.enabled,
@@ -144,7 +144,8 @@ class CarController(CarControllerBase):
                                                           self.CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING))
 
       # LFA and HDA icons
-      if self.frame % 5 == 0 and (not hda2 or hda2_long):
+      updateLfaHdaIcons = (not hda2) or self.CP.carFingerprint == CAR.KIA_EV9
+      if self.frame % 5 == 0 and updateLfaHdaIcons:
         can_sends.append(hyundaicanfd.create_lfahda_cluster(self.packer, self.CAN, CC.enabled))
 
       # blinkers
