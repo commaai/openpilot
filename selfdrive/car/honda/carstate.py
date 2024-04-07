@@ -170,7 +170,7 @@ class CarState(CarStateBase):
 
     # blend in transmission speed at low speed, since it has more low speed accuracy
     v_weight = interp(v_wheel, v_weight_bp, v_weight_v)
-    if self.CP.carFingerprint == CAR.ACURA_INTEGRA;
+    if self.CP.carFingerprint == CAR.ACURA_INTEGRA:
         ret.vEgoRaw = (1. - v_weight) * cp.vl["CAR_SPEED"]["CAR_SPEED"] * CV.KPH_TO_MS * self.CP.wheelSpeedFactor + v_weight * v_wheel
     else:
         ret.vEgoRaw = (1. - v_weight) * cp.vl["ENGINE_DATA"]["XMISSION_SPEED"] * CV.KPH_TO_MS * self.CP.wheelSpeedFactor + v_weight * v_wheel
