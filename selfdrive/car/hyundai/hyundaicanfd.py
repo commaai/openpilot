@@ -42,7 +42,7 @@ def create_steering_messages(packer, CP, CAN, enabled, lat_active, steering_pres
   values = {
     "LKA_MODE": 0,
     "LKA_ICON": 2 if enabled else 1,
-    "TORQUE_REQUEST": 0,  # apply_steer,
+    "TORQUE_REQUEST": apply_steer,
     "LKA_ASSIST": 0,
     "STEER_REQ": 0,  # 1 if lat_active else 0,
     "STEER_MODE": 0,
