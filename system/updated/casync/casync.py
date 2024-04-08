@@ -237,6 +237,10 @@ def extract_simple(caibx_path, out_path, store_path):
   return extract(target, sources, out_path)
 
 
+def get_default_store(caibx):
+  return os.path.join(os.path.dirname(caibx), "default.castr")
+
+
 if __name__ == "__main__":
   caibx = sys.argv[1]
   out = sys.argv[2]

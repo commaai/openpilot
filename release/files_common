@@ -250,6 +250,9 @@ system/webrtc/schema.py
 system/webrtc/device/audio.py
 system/webrtc/device/video.py
 
+system/updated/casync/common.py
+system/updated/updated.py
+
 selfdrive/thermald/thermald.py
 selfdrive/thermald/power_monitoring.py
 selfdrive/thermald/fan_controller.py
