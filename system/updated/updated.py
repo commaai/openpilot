@@ -75,11 +75,19 @@ def extract_directory_helper(entry, cache_directory, directory):
   cloudlog.info(f"extraction completed in {time.monotonic() - start} seconds with {stats}")
 
 
+def setup_dirs():
+  if os.path.exists(CASYNC_STAGING):
+    shutil.rmtree(CASYNC_STAGING)
+
+  if os.path.exists(CASYNC_TMPDIR):
+    shutil.rmtree(CASYNC_TMPDIR)
+
+  CASYNC_TMPDIR.mkdir()
+  CASYNC_STAGING.mkdir()
+
+
 def download_update(manifest):
   cloudlog.info(f"downloading update from: {manifest}")
-
-  CASYNC_TMPDIR.mkdir(exist_ok=True)
-  CASYNC_STAGING.mkdir(exist_ok=True)
 
   for entry in manifest:
     if entry["type"] == "path_tarred" and entry["path"] == "/data/openpilot":
@@ -110,13 +118,9 @@ def main():
   if psutil.LINUX:
     proc.ionice(psutil.IOPRIO_CLASS_BE, value=7)
 
+  setup_dirs()
+
   params = Params()
-
-  if os.path.exists(CASYNC_STAGING):
-    shutil.rmtree(CASYNC_STAGING)
-
-  if os.path.exists(CASYNC_TMPDIR):
-    shutil.rmtree(CASYNC_TMPDIR)
 
   update_failed_count = 0
 
