@@ -7,10 +7,8 @@
 
 #include <QAbstractTableModel>
 #include <QHeaderView>
-#include <QLabel>
 #include <QLineEdit>
 #include <QMenu>
-#include <QToolBar>
 #include <QTreeView>
 #include <QWheelEvent>
 
@@ -38,19 +36,22 @@ public:
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return items_.size(); }
   void sort(int column, Qt::SortOrder order = Qt::AscendingOrder) override;
   void setFilterStrings(const QMap<int, QString> &filters);
+  void showInactivemessages(bool show);
   void msgsReceived(const std::set<MessageId> *new_msgs, bool has_new_ids);
-  void filterAndSort();
+  bool filterAndSort();
   void dbcModified();
 
   struct Item {
     MessageId id;
     QString name;
     QString node;
+    bool active;
     bool operator==(const Item &other) const {
       return id == other.id && name == other.name && node == other.node;
     }
   };
   std::vector<Item> items_;
+  bool show_inactive_messages = true;
 
 private:
   void sortItems(std::vector<MessageListModel::Item> &items);
@@ -100,9 +101,10 @@ public:
 
 signals:
   void msgSelectionChanged(const MessageId &message_id);
+  void titleChanged(const QString &title);
 
 protected:
-  QToolBar *createToolBar();
+  QWidget *createToolBar();
   void headerContextMenuEvent(const QPoint &pos);
   void menuAboutToShow();
   void setMultiLineBytes(bool multi);
@@ -115,6 +117,5 @@ protected:
   MessageListModel *model;
   QPushButton *suppress_add;
   QPushButton *suppress_clear;
-  QLabel *num_msg_label;
   QMenu *menu;
 };
