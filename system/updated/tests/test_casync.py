@@ -76,8 +76,6 @@ def create_virtual_agnos_manifest(mock_update_path: pathlib.Path, agnos_version:
   size = caibx_file.stat().st_size
   raw_hash = get_raw_hash(str(agnos_bin_file), size)
 
-  _ = run(["casync", "digest", *CASYNC_ARGS, str(agnos_bin_file)]).decode("utf-8")
-
   return [
     {
       "name": "system",
