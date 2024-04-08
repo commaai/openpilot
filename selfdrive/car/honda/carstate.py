@@ -100,7 +100,8 @@ class CarState(CarStateBase):
     if CP.carFingerprint in HONDA_NIDEC_ALT_SCM_MESSAGES:
       self.main_on_sig_msg = "SCM_BUTTONS"
 
-    self.shifter_values = can_define.dv[self.gearbox_msg]["GEAR_SHIFTER"]
+    if CP.carFingerprint != CAR.ACURA_INTEGRA:
+        self.shifter_values = can_define.dv[self.gearbox_msg]["GEAR_SHIFTER"]
     self.steer_status_values = defaultdict(lambda: "UNKNOWN", can_define.dv["STEER_STATUS"]["STEER_STATUS"])
 
     self.brake_switch_prev = False
@@ -199,13 +200,15 @@ class CarState(CarStateBase):
       ret.parkingBrake = cp.vl["EPB_STATUS"]["EPB_STATE"] != 0
 
     gear = int(cp.vl[self.gearbox_msg]["GEAR_SHIFTER"])
-    ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear, None))
     if self.CP.transmissionType == TransmissionType.manual:
-        ret.clutchPressed = cp.vl["GEARBOX_MT"]["GEAR_MT"] == 0
-        if cp.vl["GEARBOX_MT"]["GEAR_MT"] == 14:
-            ret.gearShifter = GearShifter.reverse
-        else:
-            ret.gearShifter = GearShifter.drive
+      ret.clutchPressed = cp.vl["GEARBOX_MT"]["GEAR_MT"] == 0
+      if cp.vl["GEARBOX_MT"]["GEAR_MT"] == 14:
+        ret.gearShifter = GearShifter.reverse
+      else:
+        ret.gearShifter = GearShifter.drive
+    else:
+      ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear, None))
+
 
     ret.gas = cp.vl["POWERTRAIN_DATA"]["PEDAL_GAS"]
     ret.gasPressed = ret.gas > 1e-5
