@@ -39,7 +39,6 @@ def create_openpilot_manifest(build_metadata):
   }
 
 
-
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="creates a casync release")
   parser.add_argument("target_dir", type=str, help="directory of the channel to create manifest from")
