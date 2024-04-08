@@ -374,7 +374,7 @@ void MessageListModel::msgsReceived(const std::set<MessageId> *new_msgs, bool ha
     bool prev_active = item.active;
     item.active = isMessageActive(item.id);
     if (item.active != prev_active || !new_msgs || new_msgs->count(item.id)) {
-      for (int col = Column::FREQ; col < columnCount(); ++col)
+      for (int col = 0; col < columnCount(); ++col)
         emit dataChanged(index(i, col), index(i, col), {Qt::DisplayRole});
     }
   }
