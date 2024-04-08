@@ -15,6 +15,8 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   output_dir = pathlib.Path(args.output_dir)
+  output_dir.mkdir(parents=True)
+
   manifest_file = pathlib.Path(args.target_dir) / AGNOS_MANIFEST
 
   with tempfile.NamedTemporaryFile() as entry_file:
