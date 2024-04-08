@@ -14,7 +14,37 @@ def convertBytesToString(data):
     return {key: convertBytesToString(value) for key, value in data.items()}
   else:
     return data
-  
+
+
+def flatJson(data, logMonoTime, parent_key=''):
+    if isinstance(data, dict):
+        for k, v in data.items():
+            if parent_key:
+                key = f"{parent_key}.{k}"
+            else:
+                key = k
+            if isinstance(v, (dict, list)):
+                flatJson(v, logMonoTime, key)
+            else:
+                if isinstance(v, (int, float)):
+                  rr.set_time_sequence(k, logMonoTime)
+                  rr.log(k, rr.Scalar(v))
+                else:
+                  print("Not plottable value " + str(v))
+    elif isinstance(data, list):
+        for i, v in enumerate(data):
+            if isinstance(v, (int, float)):
+              rr.set_time_sequence(str(i), logMonoTime)
+              rr.log(f"{parent_key}[{i}]", rr.Scalar(v))
+            else:
+               print("Not plottable value " + str(v))
+    else:
+        if isinstance(v, (int, float)):
+          rr.log(parent_key, rr.Scalar(data))
+        else:
+          print("Not plottable value " + str(data))
+
+# TODO: Add "Space view" for every msg.which() property
 def addGraph(logPaths):
   counter = 1
   for logPath in logPaths:
@@ -22,12 +52,11 @@ def addGraph(logPaths):
     counter+=1
     rlog = LogReader(logPath)
     for msg in rlog:
-      if msg.which() == "accelerometer":
-        rr.set_time_sequence(msg.which(), msg.logMonoTime)
-        rr.log("acceleration", rr.Scalar(msg.accelerometer.acceleration.v[0]))
-        # print(json.dumps(convertBytesToString(msg.to_dict())))
-        # exit(0)
-   
+      if msg.which() == "deviceState": # Select one property to plot, one space view available
+        jsonMsg = json.loads(json.dumps(convertBytesToString(msg.to_dict())))
+        flatJson(jsonMsg, jsonMsg.get("logMonoTime"), parent_key='')
+        continue
+
 
 if __name__ == '__main__':
   if len(sys.argv) == 1:
