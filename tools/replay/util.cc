@@ -304,20 +304,11 @@ std::string decompressBZ2(const std::byte *in, size_t in_size, std::atomic<bool>
 }
 
 void precise_nano_sleep(long sleep_ns) {
-  const long estimate_ns = 1 * 1e6;  // 1ms
-  struct timespec req = {.tv_nsec = estimate_ns};
-  uint64_t start_sleep = nanos_since_boot();
-  while (sleep_ns > estimate_ns) {
-    nanosleep(&req, nullptr);
-    uint64_t end_sleep = nanos_since_boot();
-    sleep_ns -= (end_sleep - start_sleep);
-    start_sleep = end_sleep;
-  }
-  // spin wait
-  if (sleep_ns > 0) {
-    while ((nanos_since_boot() - start_sleep) <= sleep_ns) {
-      std::this_thread::yield();
-    }
+  struct timespec req = {.tv_sec = 0, .tv_nsec = sleep_ns};
+  struct timespec rem = {};
+  while (clock_nanosleep(CLOCK_MONOTONIC, 0, &req, &rem) && errno == EINTR) {
+    // Retry sleep if interrupted by a signal
+    req = rem;
   }
 }
 
