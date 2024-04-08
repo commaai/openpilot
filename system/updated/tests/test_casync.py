@@ -9,7 +9,7 @@ from unittest import mock
 
 from openpilot.selfdrive.test.helpers import DirectoryHttpServer, http_server_context, processes_context
 from openpilot.system.hardware.tici.agnos import get_raw_hash
-from openpilot.system.updated.casync.common import CASYNC_ARGS, create_build_metadata_file, create_casync_release
+from openpilot.system.updated.casync.common import create_build_metadata_file, create_casync_from_file, create_casync_release
 from openpilot.system.version import BuildMetadata, OpenpilotMetadata
 from openpilot.selfdrive.updated.tests.test_base import BaseUpdateTest, run, update_release, get_consistent_flag
 
@@ -66,12 +66,12 @@ def OpenpilotChannelMockAPI(release_manifests: dict[str, list[dict]], mock_relea
 
 
 def create_virtual_agnos_manifest(mock_update_path: pathlib.Path, agnos_version: str) -> list[dict]:
-  caibx_file = mock_update_path / "casync" / "agnos.caibx"
   agnos_bin_file = mock_update_path / "agnos.bin"
 
   with open(agnos_bin_file, "wb") as f:
     f.write(agnos_version.encode("utf-8"))
-  run(["casync", "make", *CASYNC_ARGS, str(caibx_file), str(agnos_bin_file)])
+
+  caibx_file = create_casync_from_file(agnos_bin_file, mock_update_path / "casync", "agnos.caibx")
 
   size = caibx_file.stat().st_size
   raw_hash = get_raw_hash(str(agnos_bin_file), size)
