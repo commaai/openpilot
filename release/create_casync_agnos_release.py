@@ -2,22 +2,24 @@ import argparse
 import json
 import pathlib
 import tempfile
-from openpilot.system.hardware.tici.agnos import AGNOS_MANIFEST, StreamingDecompressor
+from openpilot.common.basedir import BASEDIR
+from openpilot.system.hardware.tici.agnos import StreamingDecompressor
 from openpilot.system.updated.casync.common import create_casync_from_file
 
 
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="creates a casync release")
-  parser.add_argument("target_dir", type=str, help="target directory to build channel from")
   parser.add_argument("output_dir", type=str, help="output directory for the channel")
   parser.add_argument("version", type=str, help="version of agnos this is")
+  parser.add_argument("--manifest", type=str, help="json manifest to create agnos release from", \
+                        default=str(pathlib.Path(BASEDIR) / "system/hardware/tici/agnos.json"))
   args = parser.parse_args()
 
   output_dir = pathlib.Path(args.output_dir)
-  output_dir.mkdir(parents=True)
+  output_dir.mkdir(parents=True, exist_ok=True)
 
-  manifest_file = pathlib.Path(args.target_dir) / AGNOS_MANIFEST
+  manifest_file = pathlib.Path(args.manifest)
 
   with tempfile.NamedTemporaryFile() as entry_file:
     entry_path = pathlib.Path(entry_file.name)
