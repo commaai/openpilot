@@ -3,7 +3,7 @@ import json
 import pathlib
 import tempfile
 from openpilot.common.basedir import BASEDIR
-from openpilot.system.hardware.tici.agnos import StreamingDecompressor
+from openpilot.system.hardware.tici.agnos import StreamingDecompressor, unsparsify, noop
 from openpilot.system.updated.casync.common import create_casync_from_file
 
 
@@ -31,22 +31,15 @@ if __name__ == "__main__":
       print(f"creating casync agnos build from {entry}")
       downloader = StreamingDecompressor(entry['url'])
 
-      CHUNK_SIZE=16*1024*1024 # 16mb
+      parse_func = unsparsify if entry['sparse'] else noop
+
+      parsed_chunks = parse_func(downloader)
 
       size = entry["size"]
 
       cur = 0
       with open(entry_path, "wb") as f:
-        while True:
-          to_read = min((size - cur), CHUNK_SIZE)
-
-          print(f"{cur/size*100:06.2f}% {to_read}")
-
-          if not to_read:
-            break
-
-          f.write(downloader.read(to_read))
-
-          cur += to_read
+        for chunk in parsed_chunks:
+          f.write(chunk)
 
       create_casync_from_file(entry_path, output_dir, f"agnos-{args.version}-{entry['name']}")
