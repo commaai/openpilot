@@ -234,7 +234,7 @@ def flash_partition(target_slot_number: int, partition: dict, cloudlog, standalo
 
   path = get_partition_path(target_slot_number, partition)
 
-  if ('casync_caibx' in partition) and not standalone:
+  if ('casync' in partition) and not standalone:
     extract_casync_image(target_slot_number, partition, cloudlog)
   else:
     extract_compressed_image(target_slot_number, partition, cloudlog)

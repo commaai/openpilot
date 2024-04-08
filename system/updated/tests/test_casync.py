@@ -241,3 +241,5 @@ class TestUpdateDCASyncStrategy(BaseUpdateTest):
       time.sleep(1)
       self._wait_for_finalized()
       self._test_finalized_update("release3", *self.MOCK_RELEASES["release3"])
+
+      self.assertEqual(self.partition_slot_1.read_bytes(), b"1.3")

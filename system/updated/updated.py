@@ -16,7 +16,7 @@ from openpilot.system.hardware import AGNOS
 from openpilot.system.updated.common import get_consistent_flag, set_consistent_flag
 from openpilot.system.version import BuildMetadata, get_build_metadata, build_metadata_from_dict
 
-from openpilot.system.hardware.tici.agnos import extract_casync_image, get_target_slot_number
+from openpilot.system.hardware.tici.agnos import flash_partition, get_target_slot_number
 
 
 
@@ -93,10 +93,16 @@ def download_update(manifest):
     if entry["type"] == "path_tarred" and entry["path"] == "/data/openpilot":
       extract_directory_helper(entry, BASEDIR, CASYNC_STAGING)
 
-    if AGNOS and entry["type"] == "partition":
-      target_slot_number = get_target_slot_number()
+  if AGNOS:
+    target_slot_number = get_target_slot_number()
+    cloudlog.info(f"Target slot {target_slot_number}")
 
-      extract_casync_image(target_slot_number, entry, cloudlog)
+    # set target slot as unbootable
+    os.system(f"abctl --set_unbootable {target_slot_number}")
+
+    for entry in manifest:
+      if entry["type"] == "partition":
+        flash_partition(target_slot_number, entry, cloudlog)
 
 
 def finalize_update():
