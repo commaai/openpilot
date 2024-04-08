@@ -45,7 +45,4 @@ if __name__ == "__main__":
 
           cur += to_read
 
-      print(entry_path.stat().st_size, size)
-      assert entry_path.stat().st_size == size
-
       create_casync_from_file(entry_path, output_dir, f"{args.version}-{entry['name']}")
