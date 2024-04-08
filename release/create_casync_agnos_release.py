@@ -3,7 +3,7 @@ import json
 import pathlib
 import tempfile
 from openpilot.common.basedir import BASEDIR
-from openpilot.system.hardware.tici.agnos import StreamingDecompressor, unsparsify, noop
+from openpilot.system.hardware.tici.agnos import StreamingDecompressor, unsparsify, noop, AGNOS_MANIFEST_FILE
 from openpilot.system.updated.casync.common import create_casync_from_file
 
 
@@ -13,7 +13,7 @@ if __name__ == "__main__":
   parser.add_argument("output_dir", type=str, help="output directory for the channel")
   parser.add_argument("version", type=str, help="version of agnos this is")
   parser.add_argument("--manifest", type=str, help="json manifest to create agnos release from", \
-                        default=str(pathlib.Path(BASEDIR) / "system/hardware/tici/agnos.json"))
+                        default=str(pathlib.Path(BASEDIR) / AGNOS_MANIFEST_FILE))
   args = parser.parse_args()
 
   output_dir = pathlib.Path(args.output_dir)
