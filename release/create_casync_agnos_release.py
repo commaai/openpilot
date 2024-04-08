@@ -45,4 +45,4 @@ if __name__ == "__main__":
 
           cur += to_read
 
-      create_casync_from_file(entry_path, output_dir, f"{args.version}-{entry['name']}")
+      create_casync_from_file(entry_path, output_dir, f"agnos-{args.version}-{entry['name']}")
