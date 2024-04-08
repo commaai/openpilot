@@ -253,19 +253,22 @@ void MessageListModel::dbcModified() {
 }
 
 void MessageListModel::sortItems(std::vector<MessageListModel::Item> &items) {
-  auto do_sort = [order = sort_order](std::vector<MessageListModel::Item> &m, auto proj) {
-    std::stable_sort(m.begin(), m.end(), [order, proj = std::move(proj)](auto &l, auto &r) {
-      return order == Qt::AscendingOrder ? proj(l) < proj(r) : proj(l) > proj(r);
-    });
+  auto compare = [this](const auto &l, const auto &r) {
+    switch (sort_column) {
+      case Column::NAME: return l.name < r.name;
+      case Column::SOURCE: return l.id.source < r.id.source;
+      case Column::ADDRESS: return l.id.address < r.id.address;
+      case Column::NODE: return l.node < r.node;
+      case Column::FREQ: return can->lastMessage(l.id).freq < can->lastMessage(r.id).freq;
+      case Column::COUNT: return can->lastMessage(l.id).count < can->lastMessage(r.id).count;
+      default: return false; // Default case to suppress compiler warning
+    }
   };
-  switch (sort_column) {
-    case Column::NAME: do_sort(items, [](auto &item) { return std::tie(item.name, item.id); }); break;
-    case Column::SOURCE: do_sort(items, [](auto &item) { return std::tie(item.id.source, item.id); }); break;
-    case Column::ADDRESS: do_sort(items, [](auto &item) { return std::tie(item.id.address, item.id);}); break;
-    case Column::NODE: do_sort(items, [](auto &item) { return std::tie(item.node, item.id);}); break;
-    case Column::FREQ: do_sort(items, [](auto &item) { return std::make_pair(can->lastMessage(item.id).freq, item.id); }); break;
-    case Column::COUNT: do_sort(items, [](auto &item) { return std::make_pair(can->lastMessage(item.id).count, item.id); }); break;
-  }
+
+  if (sort_order == Qt::DescendingOrder)
+    std::stable_sort(items.rbegin(), items.rend(), compare);
+  else
+    std::stable_sort(items.begin(), items.end(), compare);
 }
 
 static bool parseRange(const QString &filter, uint32_t value, int base = 10) {
