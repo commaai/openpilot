@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 import os
+import pathlib
 import unittest
 import tempfile
 import subprocess
 
-import openpilot.system.hardware.tici.casync as casync
+from openpilot.system.updated.casync import casync
+from openpilot.system.updated.casync import tar
 
 # dd if=/dev/zero of=/tmp/img.raw bs=1M count=2
 # sudo losetup -f /tmp/img.raw
@@ -147,6 +149,118 @@ class TestCasync(unittest.TestCase):
       self.assertEqual(f.read(len(self.contents)), self.contents)
 
     self.assertLess(stats['remote'], len(self.contents))
+
+
+class TestCasyncDirectory(unittest.TestCase):
+  """Tests extracting a directory stored as a casync tar archive"""
+
+  NUM_FILES = 16
+
+  @classmethod
+  def setup_cache(cls, directory, files=None):
+    if files is None:
+      files = range(cls.NUM_FILES)
+
+    chunk_a = [i % 256 for i in range(1024)] * 512
+    chunk_b = [(256 - i) % 256 for i in range(1024)] * 512
+    zeroes = [0] * (1024 * 128)
+    cls.contents = chunk_a + chunk_b + zeroes + chunk_a
+    cls.contents = bytes(cls.contents)
+
+    for i in files:
+      with open(os.path.join(directory, f"file_{i}.txt"), "wb") as f:
+        f.write(cls.contents)
+
+      os.symlink(f"file_{i}.txt", os.path.join(directory, f"link_{i}.txt"))
+
+  @classmethod
+  def setUpClass(cls):
+    cls.tmpdir = tempfile.TemporaryDirectory()
+
+    # Create casync files
+    cls.manifest_fn = os.path.join(cls.tmpdir.name, 'orig.caibx')
+    cls.store_fn = os.path.join(cls.tmpdir.name, 'store')
+
+    cls.directory_to_extract = tempfile.TemporaryDirectory()
+    cls.setup_cache(cls.directory_to_extract.name)
+
+    cls.orig_fn = os.path.join(cls.tmpdir.name, 'orig.tar')
+    tar.create_tar_archive(cls.orig_fn, pathlib.Path(cls.directory_to_extract.name))
+
+    subprocess.check_output(["casync", "make", "--compression=xz", "--store", cls.store_fn, cls.manifest_fn, cls.orig_fn])
+
+  @classmethod
+  def tearDownClass(cls):
+    cls.tmpdir.cleanup()
+    cls.directory_to_extract.cleanup()
+
+  def setUp(self):
+    self.cache_dir = tempfile.TemporaryDirectory()
+    self.working_dir = tempfile.TemporaryDirectory()
+    self.out_dir = tempfile.TemporaryDirectory()
+
+  def tearDown(self):
+    self.cache_dir.cleanup()
+    self.working_dir.cleanup()
+    self.out_dir.cleanup()
+
+  def run_test(self):
+    target = casync.parse_caibx(self.manifest_fn)
+
+    cache_filename = os.path.join(self.working_dir.name, "cache.tar")
+    tmp_filename = os.path.join(self.working_dir.name, "tmp.tar")
+
+    sources = [('cache', casync.DirectoryTarChunkReader(self.cache_dir.name, cache_filename), casync.build_chunk_dict(target))]
+    sources += [('remote', casync.RemoteChunkReader(self.store_fn), casync.build_chunk_dict(target))]
+
+    stats = casync.extract_directory(target, sources, pathlib.Path(self.out_dir.name), tmp_filename)
+
+    with open(os.path.join(self.out_dir.name, "file_0.txt"), "rb") as f:
+      self.assertEqual(f.read(), self.contents)
+
+    with open(os.path.join(self.out_dir.name, "link_0.txt"), "rb") as f:
+      self.assertEqual(f.read(), self.contents)
+      self.assertEqual(os.readlink(os.path.join(self.out_dir.name, "link_0.txt")), "file_0.txt")
+
+    return stats
+
+  def test_no_cache(self):
+    self.setup_cache(self.cache_dir.name, [])
+    stats = self.run_test()
+    self.assertGreater(stats['remote'], 0)
+    self.assertEqual(stats['cache'], 0)
+
+  def test_full_cache(self):
+    self.setup_cache(self.cache_dir.name, range(self.NUM_FILES))
+    stats = self.run_test()
+    self.assertEqual(stats['remote'], 0)
+    self.assertGreater(stats['cache'], 0)
+
+  def test_one_file_cache(self):
+    self.setup_cache(self.cache_dir.name, range(1))
+    stats = self.run_test()
+    self.assertGreater(stats['remote'], 0)
+    self.assertGreater(stats['cache'], 0)
+    self.assertLess(stats['cache'], stats['remote'])
+
+  def test_one_file_incorrect_cache(self):
+    self.setup_cache(self.cache_dir.name, range(self.NUM_FILES))
+    with open(os.path.join(self.cache_dir.name, "file_0.txt"), "wb") as f:
+      f.write(b"1234")
+
+    stats = self.run_test()
+    self.assertGreater(stats['remote'], 0)
+    self.assertGreater(stats['cache'], 0)
+    self.assertGreater(stats['cache'], stats['remote'])
+
+  def test_one_file_missing_cache(self):
+    self.setup_cache(self.cache_dir.name, range(self.NUM_FILES))
+    os.unlink(os.path.join(self.cache_dir.name, "file_12.txt"))
+
+    stats = self.run_test()
+    self.assertGreater(stats['remote'], 0)
+    self.assertGreater(stats['cache'], 0)
+    self.assertGreater(stats['cache'], stats['remote'])
 
 
 if __name__ == "__main__":
