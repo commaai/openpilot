@@ -204,7 +204,7 @@ class CarState(CarStateBase):
         ret.clutchPressed = cp.vl["GEARBOX_MT"]["GEAR_MT"] == 0
         if cp.vl["GEARBOX_MT"]["GEAR_MT"] == 14:
             ret.gearShifter = GearShifter.reverse
-        else;
+        else:
             ret.gearShifter = GearShifter.drive
 
     ret.gas = cp.vl["POWERTRAIN_DATA"]["PEDAL_GAS"]
