@@ -392,20 +392,18 @@ void MessageListModel::sort(int column, Qt::SortOrder order) {
 
 void MessageView::drawRow(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
   QTreeView::drawRow(painter, option, index);
-  const int gridHint = style()->styleHint(QStyle::SH_Table_GridLineColor, &option, this);
-  const QColor gridColor = QColor::fromRgba(static_cast<QRgb>(gridHint));
-  QPen old_pen = painter->pen();
-  painter->setPen(gridColor);
-  painter->drawLine(option.rect.left(), option.rect.bottom(), option.rect.right(), option.rect.bottom());
 
-  auto y = option.rect.y();
-  painter->translate(visualRect(model()->index(0, 0)).x() - indentation() - .5, -.5);
+  QPen oldPen = painter->pen();
+  const int gridHint = style()->styleHint(QStyle::SH_Table_GridLineColor, &option, this);
+  painter->setPen(QColor::fromRgba(static_cast<QRgb>(gridHint)));
+  // Draw bottom border for the row
+  painter->drawLine(option.rect.bottomLeft(), option.rect.bottomRight());
+  // Draw vertical borders for each column
   for (int i = 0; i < header()->count(); ++i) {
-    painter->translate(header()->sectionSize(header()->logicalIndex(i)), 0);
-    painter->drawLine(0, y, 0, y + option.rect.height());
+    int sectionX = header()->sectionViewportPosition(i);
+    painter->drawLine(sectionX, option.rect.top(), sectionX, option.rect.bottom());
   }
-  painter->setPen(old_pen);
-  painter->resetTransform();
+  painter->setPen(oldPen);
 }
 
 void MessageView::dataChanged(const QModelIndex &topLeft, const QModelIndex &bottomRight, const QVector<int> &roles) {
