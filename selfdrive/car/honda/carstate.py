@@ -202,7 +202,7 @@ class CarState(CarStateBase):
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear, None))
     if self.CP.transmissionType == TransmissionType.manual:
         ret.clutchPressed = cp.vl["GEARBOX_MT"]["GEAR_MT"] == 0
-        if cp.vl["GEARBOX_MT"]["GEAR_MT"] == 14;
+        if cp.vl["GEARBOX_MT"]["GEAR_MT"] == 14:
             ret.gearShifter = GearShifter.reverse
         else;
             ret.gearShifter = GearShifter.drive
