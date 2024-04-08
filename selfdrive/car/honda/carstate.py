@@ -41,6 +41,10 @@ def get_can_messages(CP, gearbox_msg):
     messages += [
       ("ENGINE_DATA", 100),
     ]
+  if CP.carFingerprint == CAR.ACURA_INTEGRA:
+    messages += [
+      ("GEARBOX_MT", 50),
+    ]
   if CP.carFingerprint in (CAR.HONDA_CRV_HYBRID, CAR.HONDA_CIVIC_BOSCH_DIESEL, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.ACURA_INTEGRA):
     messages.append((gearbox_msg, 50))
   else:
@@ -89,6 +93,8 @@ class CarState(CarStateBase):
     self.gearbox_msg = "GEARBOX"
     if CP.carFingerprint == CAR.HONDA_ACCORD and CP.transmissionType == TransmissionType.cvt:
       self.gearbox_msg = "GEARBOX_15T"
+    elif CP.transmissionType == TransmissionType.manual:
+      self.gearbox_msg = "GEARBOX_MT"
 
     self.main_on_sig_msg = "SCM_FEEDBACK"
     if CP.carFingerprint in HONDA_NIDEC_ALT_SCM_MESSAGES:
@@ -194,6 +200,12 @@ class CarState(CarStateBase):
 
     gear = int(cp.vl[self.gearbox_msg]["GEAR_SHIFTER"])
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear, None))
+    if self.CP.transmissionType == TransmissionType.manual:
+        ret.clutchPressed = cp.vl["GEARBOX_MT"]["GEAR_MT"] == 0
+        if cp.vl["GEARBOX_MT"]["GEAR_MT"] == 14;
+            ret.gearShifter = GearShifter.reverse
+        else;
+            ret.gearShifter = GearShifter.drive
 
     ret.gas = cp.vl["POWERTRAIN_DATA"]["PEDAL_GAS"]
     ret.gasPressed = ret.gas > 1e-5
