@@ -67,7 +67,7 @@ class CarController(CarControllerBase):
       if self.model3:
         counter = int(CS.sccm_right_stalk["SCCM_rightStalkCounter"] + 1) % 16
         can_sends.append(self.tesla_can.model3_cancel_acc(counter, 1))  # half up (cancel acc)
-        can_sends.append(self.tesla_can.model3_cancel_acc(counter + 1, 0))  # to prevent neutral gear warning
+        can_sends.append(self.tesla_can.model3_cancel_acc((counter + 1) % 16, 0))  # to prevent neutral gear warning
       else:
         # Spam every possible counter value, otherwise it might not be accepted
         for counter in range(16):
