@@ -9,7 +9,6 @@ import time
 import unittest
 from unittest import mock
 
-import pytest
 from openpilot.selfdrive.manager.process import ManagerProcess
 
 
@@ -48,7 +47,6 @@ def get_version(path: str) -> str:
     return f.read().split('"')[1]
 
 
-@pytest.mark.slow # TODO: can we test overlayfs in GHA?
 class BaseUpdateTest(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
@@ -128,6 +126,7 @@ class BaseUpdateTest(unittest.TestCase):
 
     with open(self.staging_root / "finalized" / "test_symlink") as f:
       self.assertIn(version, f.read())
+
 
 class ParamsBaseUpdateTest(BaseUpdateTest):
   def _test_finalized_update(self, branch, version, agnos_version, release_notes):

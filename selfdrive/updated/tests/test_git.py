@@ -1,7 +1,10 @@
 import contextlib
+
+import pytest
 from openpilot.selfdrive.updated.tests.test_base import ParamsBaseUpdateTest, run, update_release
 
 
+@pytest.mark.slow # TODO: can we test overlayfs in GHA?
 class TestUpdateDGitStrategy(ParamsBaseUpdateTest):
   def update_remote_release(self, release):
     update_release(self.remote_dir, release, *self.MOCK_RELEASES[release])
