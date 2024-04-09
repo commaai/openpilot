@@ -8,6 +8,7 @@ import time
 from pathlib import Path
 
 from openpilot.common.basedir import BASEDIR
+from openpilot.common.run import run_cmd
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
 from openpilot.common.swaglog import cloudlog
@@ -75,12 +76,21 @@ def extract_directory_helper(entry, cache_directory, directory):
   cloudlog.info(f"extraction completed in {time.monotonic() - start} seconds with {stats}")
 
 
-def setup_dirs():
-  if os.path.exists(CASYNC_STAGING):
-    shutil.rmtree(CASYNC_STAGING)
 
-  if os.path.exists(CASYNC_TMPDIR):
-    shutil.rmtree(CASYNC_TMPDIR)
+# TODO: this can be removed after all devices have moved away from overlay based git updater
+OVERLAY_MERGED = os.path.join(STAGING_ROOT, "merged")
+
+def dismount_overlay() -> None:
+  if os.path.ismount(OVERLAY_MERGED):
+    cloudlog.info("unmounting existing overlay")
+    run_cmd(["sudo", "umount", "-l", OVERLAY_MERGED])
+
+
+def setup_dirs():
+  dismount_overlay()
+  run_cmd(["sudo", "rm", "-rf", STAGING_ROOT])
+  if os.path.isdir(STAGING_ROOT):
+    shutil.rmtree(STAGING_ROOT)
 
   CASYNC_TMPDIR.mkdir()
   CASYNC_STAGING.mkdir()
