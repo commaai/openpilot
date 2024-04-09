@@ -136,6 +136,8 @@ class TestUpdated(BaseUpdateTest):
   def setup_git_basedir_release(self, release):
     super().setup_basedir_release(release)
     run(["git", "init"], cwd=self.basedir)
+    run(["git", "config", "user.name", "'tester'"], cwd=self.basedir)
+    run(["git", "config", "user.email", "'tester@comma.ai'"], cwd=self.basedir)
     run(["git", "checkout", "-b", release], cwd=self.basedir)
     update_release(self.basedir, release, *self.MOCK_RELEASES[release])
     run(["git", "add", "."], cwd=self.basedir)
