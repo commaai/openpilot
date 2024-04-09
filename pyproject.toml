@@ -29,6 +29,7 @@ testpaths = [
   "system/tests",
   "system/ubloxd",
   "system/webrtc",
+  "system/updated",
   "tools/lib/tests",
   "tools/replay",
   "tools/cabana"

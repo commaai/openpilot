@@ -5,7 +5,6 @@ import pytest
 import random
 
 from openpilot.common.prefix import OpenpilotPrefix
-from openpilot.selfdrive.manager import manager
 from openpilot.system.hardware import TICI, HARDWARE
 
 
@@ -36,6 +35,8 @@ def clean_env():
 
 @pytest.fixture(scope="function", autouse=True)
 def openpilot_function_fixture(request):
+  from openpilot.selfdrive.manager import manager
+
   random.seed(0)
 
   with clean_env():
