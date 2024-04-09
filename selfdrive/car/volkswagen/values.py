@@ -308,7 +308,7 @@ class CAR(Platforms):
   )
   SEAT_ATECA_MK1 = VolkswagenMQBPlatformConfig( # Chassis 5F
     [VWCarDocs("SEAT Ateca 2018")],
-    VolkswagenCarSpecs(mass=1900, wheelbase=2.64),
+    VolkswagenCarSpecs(mass=1400, wheelbase=2.64),
   )
   SEAT_LEON_MK3 = VolkswagenMQBPlatformConfig( # Chassis 5F
     [VWCarDocs("SEAT Leon 2014-20")],
