@@ -7,6 +7,7 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 CASYNC_DIR="${CASYNC_DIR:=/tmp/casync}"
 SOURCE_DIR="$(git -C $DIR rev-parse --show-toplevel)"
 BUILD_DIR="${BUILD_DIR:=$(mktemp -d)}"
+PYTHONPATH="$SOURCE_DIR"
 
 echo "Creating casync release from $SOURCE_DIR to $CASYNC_DIR"
 
