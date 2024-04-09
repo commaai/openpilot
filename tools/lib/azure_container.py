@@ -66,7 +66,7 @@ class AzureContainer:
       credential=get_azure_credential(),
       overwrite=overwrite,
     )
-    blob.upload_blob(data)
+    blob.upload_blob(data, overwrite=overwrite)
     return self.BASE_URL + blob_name
 
   def upload_file(self, path: str | os.PathLike, blob_name: str, overwrite=False) -> str:
