@@ -54,7 +54,8 @@ def get_remote_channel_data(channel) -> tuple[BuildMetadata | None, dict | None]
 def check_update_available(current_directory, other_metadata: BuildMetadata):
   build_metadata = get_build_metadata(current_directory)
   return build_metadata.channel != other_metadata.channel or \
-         build_metadata.openpilot.git_commit != other_metadata.openpilot.git_commit
+         build_metadata.openpilot.git_commit != other_metadata.openpilot.git_commit or \
+         build_metadata.openpilot.build_style != other_metadata.openpilot.build_style
 
 
 def extract_directory_helper(entry, cache_directory, directory):
