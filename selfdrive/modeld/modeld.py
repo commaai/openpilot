@@ -154,7 +154,7 @@ def main(demo=False):
 
   # messaging
   pm = PubMaster(["modelV2", "cameraOdometry"])
-  sm = SubMaster(["deviceState", "carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel", "navInstruction", "carControl"])
+  sm = SubMaster(["deviceState", "carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "carControl"])
 
   publish_state = PublishState()
   params = Params()
@@ -240,30 +240,6 @@ def main(demo=False):
     if desire >= 0 and desire < ModelConstants.DESIRE_LEN:
       vec_desire[desire] = 1
 
-    # Enable/disable nav features
-    timestamp_llk = sm["navModel"].locationMonoTime
-    nav_valid = sm.valid["navModel"] # and (nanos_since_boot() - timestamp_llk < 1e9)
-    nav_enabled = nav_valid and params.get_bool("ExperimentalMode")
-
-    if not nav_enabled:
-      nav_features[:] = 0
-      nav_instructions[:] = 0
-
-    if nav_enabled and sm.updated["navModel"]:
-      nav_features = np.array(sm["navModel"].features)
-
-    if nav_enabled and sm.updated["navInstruction"]:
-      nav_instructions[:] = 0
-      for maneuver in sm["navInstruction"].allManeuvers:
-        distance_idx = 25 + int(maneuver.distance / 20)
-        direction_idx = 0
-        if maneuver.modifier in ("left", "slight left", "sharp left"):
-          direction_idx = 1
-        if maneuver.modifier in ("right", "slight right", "sharp right"):
-          direction_idx = 2
-        if 0 <= distance_idx < 50:
-          nav_instructions[distance_idx*3 + direction_idx] = 1
-
     # tracked dropped frames
     vipc_dropped_frames = max(0, meta_main.frame_id - last_vipc_frame_id - 1)
     frames_dropped = frame_dropped_filter.update(min(vipc_dropped_frames, 10))
@@ -282,7 +258,8 @@ def main(demo=False):
       'traffic_convention': traffic_convention,
       'lateral_control_params': lateral_control_params,
       'nav_features': nav_features,
-      'nav_instructions': nav_instructions}
+      'nav_instructions': nav_instructions,
+      }
 
     mt1 = time.perf_counter()
     model_output = model.run(buf_main, buf_extra, model_transform_main, model_transform_extra, inputs, prepare_only)
@@ -293,7 +270,7 @@ def main(demo=False):
       modelv2_send = messaging.new_message('modelV2')
       posenet_send = messaging.new_message('cameraOdometry')
       fill_model_msg(modelv2_send, model_output, publish_state, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio,
-                      meta_main.timestamp_eof, timestamp_llk, model_execution_time, nav_enabled, live_calib_seen)
+                      meta_main.timestamp_eof, model_execution_time, live_calib_seen)
 
       desire_state = modelv2_send.modelV2.meta.desireState
       l_lane_change_prob = desire_state[log.Desire.laneChangeLeft]
