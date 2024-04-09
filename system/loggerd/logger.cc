@@ -113,11 +113,11 @@ std::string logger_get_identifier(std::string key) {
   return util::string_format("%08x--%s", cnt, ss.str().c_str());
 }
 
-static void log_sentinel(LoggerState *log, SentinelType type, int eixt_signal = 0) {
+static void log_sentinel(LoggerState *log, SentinelType type, int exit_signal = 0) {
   MessageBuilder msg;
   auto sen = msg.initEvent().initSentinel();
   sen.setType(type);
-  sen.setSignal(eixt_signal);
+  sen.setSignal(exit_signal);
   log->write(msg.toBytes(), true);
 }
 
