@@ -56,8 +56,6 @@ class BaseUpdateTest(unittest.TestCase):
   def setUp(self):
     self.tmpdir = tempfile.mkdtemp()
 
-    run(["sudo", "mount", "-t", "tmpfs", "tmpfs", self.tmpdir]) # overlayfs doesn't work inside of docker unless this is a tmpfs
-
     self.mock_update_path = pathlib.Path(self.tmpdir)
 
     self.params = Params()
@@ -97,15 +95,6 @@ class BaseUpdateTest(unittest.TestCase):
   def additional_context(self):
     raise NotImplementedError("")
 
-  def tearDown(self):
-    mock.patch.stopall()
-    try:
-      run(["sudo", "umount", "-l", str(self.staging_root / "merged")])
-      run(["sudo", "umount", "-l", self.tmpdir])
-      shutil.rmtree(self.tmpdir)
-    except Exception:
-      print("cleanup failed...")
-
   def wait_for_condition(self, condition, timeout=12):
     start = time.monotonic()
     while True:
@@ -129,6 +118,20 @@ class BaseUpdateTest(unittest.TestCase):
 
 
 class ParamsBaseUpdateTest(BaseUpdateTest):
+  def setUp(self):
+    run(["sudo", "mount", "-t", "tmpfs", "tmpfs", self.tmpdir]) # overlayfs doesn't work inside of docker unless this is a tmpfs
+    super().setUp()
+
+  def tearDown(self):
+    super().tearDown()
+    mock.patch.stopall()
+    try:
+      run(["sudo", "umount", "-l", str(self.staging_root / "merged")])
+      run(["sudo", "umount", "-l", self.tmpdir])
+      shutil.rmtree(self.tmpdir)
+    except Exception:
+      print("cleanup failed...")
+
   def _test_finalized_update(self, branch, version, agnos_version, release_notes):
     self.assertTrue(self.params.get("UpdaterNewDescription", encoding="utf-8").startswith(f"{version} / {branch}"))
     self.assertEqual(self.params.get("UpdaterNewReleaseNotes", encoding="utf-8"), f"<p>{release_notes}</p>\n")
