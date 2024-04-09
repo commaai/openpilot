@@ -42,7 +42,7 @@ def only_offroad(started, params, CP: car.CarParams) -> bool:
   return not started
 
 def use_casync() -> bool:
-  return bool(os.environ.get("USE_CASYNC", None) is not None)
+  return bool(os.environ.get("USE_CASYNC", None) == "1")
 
 
 procs = [
