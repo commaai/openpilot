@@ -92,6 +92,7 @@ def setup_dirs():
   if os.path.isdir(STAGING_ROOT):
     shutil.rmtree(STAGING_ROOT)
 
+  Path(STAGING_ROOT).mkdir()
   CASYNC_TMPDIR.mkdir()
   CASYNC_STAGING.mkdir()
 
