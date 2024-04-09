@@ -33,6 +33,8 @@ class SimulatedCar:
 
     msg = []
 
+    button_press_pending = simulator_state.button_pending.is_set()
+
     # *** powertrain bus ***
 
     speed = simulator_state.speed * 3.6 # convert m/s to kph
@@ -77,6 +79,9 @@ class SimulatedCar:
     msg.append(self.packer.make_can_msg("STEERING_CONTROL", 2, {}))
     msg.append(self.packer.make_can_msg("ACC_HUD", 2, {}))
     msg.append(self.packer.make_can_msg("LKAS_HUD", 2, {}))
+
+    if button_press_pending:
+      simulator_state.button_pending.clear()
 
     self.pm.send('can', can_list_to_can_capnp(msg))
 

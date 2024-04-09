@@ -113,15 +113,22 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
     for _ in range(20):
       self.world.tick()
 
+    self.simulator_state.cruise_button = 0
+    self.simulator_state.left_blinker = False
+    self.simulator_state.right_blinker = False
+    state_changed = False
+
     while self._keep_alive:
       throttle_out = steer_out = brake_out = 0.0
       throttle_op = steer_op = brake_op = 0.0
 
-      self.simulator_state.cruise_button = 0
-      self.simulator_state.left_blinker = False
-      self.simulator_state.right_blinker = False
-
       throttle_manual = steer_manual = brake_manual = 0.
+
+      if state_changed and not self.simulator_state.button_pending.is_set():
+        self.simulator_state.cruise_button = 0
+        self.simulator_state.left_blinker = False
+        self.simulator_state.right_blinker = False
+        state_changed = False
 
       # Read manual controls
       if not q.empty():
@@ -135,6 +142,7 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
           elif m[0] == "brake":
             brake_manual = float(m[1])
           elif m[0] == "cruise":
+            state_changed = True
             if m[1] == "down":
               self.simulator_state.cruise_button = CruiseButtons.DECEL_SET
             elif m[1] == "up":
@@ -144,6 +152,7 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
             elif m[1] == "main":
               self.simulator_state.cruise_button = CruiseButtons.MAIN
           elif m[0] == "blinker":
+            state_changed = True
             if m[1] == "left":
               self.simulator_state.left_blinker = True
             elif m[1] == "right":

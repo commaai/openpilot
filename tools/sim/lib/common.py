@@ -1,6 +1,7 @@
 import math
 import multiprocessing
 import numpy as np
+import threading
 
 from abc import ABC, abstractmethod
 from collections import namedtuple
@@ -55,6 +56,8 @@ class SimulatorState:
 
     self.left_blinker = False
     self.right_blinker = False
+
+    self.button_pending = threading.Event()
 
   @property
   def speed(self):
