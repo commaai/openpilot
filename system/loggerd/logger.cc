@@ -96,7 +96,7 @@ std::string logger_get_identifier(std::string key) {
   Params params;
   uint32_t cnt;
   try {
-    cnt = std::stol(params.get(key));
+    cnt = std::stoul(params.get(key));
   } catch (std::exception &e) {
     cnt = 0;
   }
