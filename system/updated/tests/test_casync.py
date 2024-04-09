@@ -222,7 +222,7 @@ class TestUpdateDCASyncStrategy(BaseUpdateTest):
     self.partition_slot_2.write_bytes(b"1.2")
 
     def get_target_slot_number(*args, **kwargs):
-      return 1
+      return 2
 
     def get_partition_path(target_slot_number: int, partition: dict):
       if target_slot_number == 1:
@@ -242,4 +242,6 @@ class TestUpdateDCASyncStrategy(BaseUpdateTest):
       self._wait_for_finalized()
       self._test_finalized_update("release3", *self.MOCK_RELEASES["release3"])
 
-      self.assertEqual(self.partition_slot_1.read_bytes(), b"1.3")
+      # ensure update was pushed into correct slot
+      self.assertEqual(self.partition_slot_1.read_bytes(), b"1.2")
+      self.assertEqual(self.partition_slot_2.read_bytes(), b"1.3")
