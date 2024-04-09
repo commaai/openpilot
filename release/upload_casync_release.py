@@ -7,7 +7,8 @@ from openpilot.tools.lib.azure_container import AzureContainer
 
 
 if __name__ == "__main__":
-  del os.environ["AZURE_TOKEN"] # regerenate token for this bucket
+  if "AZURE_TOKEN_OPENPILOT_RELEASES" in os.environ:
+    os.environ["AZURE_TOKEN"] = os.environ["AZURE_TOKEN_OPENPILOT_RELEASES"]
 
   OPENPILOT_RELEASES_CONTAINER = AzureContainer("commadist", "openpilot-releases")
 
