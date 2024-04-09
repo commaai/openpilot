@@ -874,22 +874,6 @@ FW_VERSIONS = {
   CAR.SEAT_ATECA_MK1: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704E906027KA\xf1\x893749',
-    ],
-    (Ecu.transmission, 0x7e1, None): [
-      b'\xf1\x870D9300014S \xf1\x895202',
-    ],
-    (Ecu.srs, 0x715, None): [
-      b'\xf1\x873Q0959655BH\xf1\x890703\xf1\x82\x0e1212001211001305121211052900',
-    ],
-    (Ecu.eps, 0x712, None): [
-      b'\xf1\x873Q0909144L \xf1\x895081\xf1\x82\x0571N60511A1',
-    ],
-    (Ecu.fwdRadar, 0x757, None): [
-      b'\xf1\x872Q0907572M \xf1\x890233',
-    ],
-  },
-  CAR.SEAT_LEON_MK3: {
-    (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704L906021EL\xf1\x897542',
       b'\xf1\x8704L906026BP\xf1\x891198',
       b'\xf1\x8704L906026BP\xf1\x897608',
@@ -900,6 +884,7 @@ FW_VERSIONS = {
       b'\xf1\x878V0907115E \xf1\x890002',
     ],
     (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x870D9300014S \xf1\x895202',
       b'\xf1\x870CW300041D \xf1\x891004',
       b'\xf1\x870CW300041G \xf1\x891003',
       b'\xf1\x870CW300050J \xf1\x891908',
@@ -907,6 +892,7 @@ FW_VERSIONS = {
       b'\xf1\x870GC300043A \xf1\x892304',
     ],
     (Ecu.srs, 0x715, None): [
+      b'\xf1\x873Q0959655BH\xf1\x890703\xf1\x82\x0e1212001211001305121211052900',
       b'\xf1\x873Q0959655AC\xf1\x890189\xf1\x82\r11110011110011021511110200',
       b'\xf1\x873Q0959655AS\xf1\x890200\xf1\x82\r11110011110011021511110200',
       b'\xf1\x873Q0959655AS\xf1\x890200\xf1\x82\r12110012120012021612110200',
@@ -915,6 +901,7 @@ FW_VERSIONS = {
       b'\xf1\x873Q0959655CM\xf1\x890720\xf1\x82\x0e1312001313001305171311052900',
     ],
     (Ecu.eps, 0x712, None): [
+      b'\xf1\x873Q0909144L \xf1\x895081\xf1\x82\x0571N60511A1',
       b'\xf1\x875Q0909144AA\xf1\x891081\xf1\x82\x0521N01842A1',
       b'\xf1\x875Q0909144AB\xf1\x891082\xf1\x82\x0521N01342A1',
       b'\xf1\x875Q0909144P \xf1\x891043\xf1\x82\x0511N01805A0',
@@ -922,6 +909,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0909144T \xf1\x891072\xf1\x82\x0521N05808A1',
     ],
     (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x872Q0907572M \xf1\x890233',
       b'\xf1\x875Q0907572B \xf1\x890200\xf1\x82\x0101',
       b'\xf1\x875Q0907572H \xf1\x890620',
       b'\xf1\x875Q0907572K \xf1\x890402\xf1\x82\x0101',
