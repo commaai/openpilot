@@ -18,4 +18,4 @@ if __name__ == "__main__":
     if f.is_file():
       blob_name = f.relative_to(casync_dir)
       print(f"uploading {f} to {blob_name}")
-      OPENPILOT_RELEASES_CONTAINER.upload_file(str(f), str(blob_name))
+      OPENPILOT_RELEASES_CONTAINER.upload_file(str(f), str(blob_name), overwrite=True)
