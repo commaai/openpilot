@@ -15,6 +15,8 @@ import openpilot.system.updated.casync.casync as casync
 SPARSE_CHUNK_FMT = struct.Struct('H2xI4x')
 CAIBX_URL = "https://commadist.azureedge.net/agnosupdate/"
 
+AGNOS_MANIFEST_FILE = "system/hardware/tici/agnos.json"
+
 
 class StreamingDecompressor:
   def __init__(self, url: str) -> None:
