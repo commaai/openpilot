@@ -41,10 +41,6 @@ def get_can_messages(CP, gearbox_msg):
     messages += [
       ("ENGINE_DATA", 100),
     ]
-  if CP.carFingerprint == CAR.ACURA_INTEGRA:
-    messages += [
-      ("GEARBOX_MT", 50),
-    ]
   if CP.carFingerprint in (CAR.HONDA_CRV_HYBRID, CAR.HONDA_CIVIC_BOSCH_DIESEL, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.ACURA_INTEGRA):
     messages.append((gearbox_msg, 50))
   else:
