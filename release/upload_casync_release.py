@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 
 import argparse
+import os
 import pathlib
 from openpilot.tools.lib.azure_container import AzureContainer
 
-OPENPILOT_RELEASES_CONTAINER = AzureContainer("commadist", "openpilot-releases")
-
 
 if __name__ == "__main__":
+  del os.environ["AZURE_TOKEN"] # regerenate token for this bucket
+
+  OPENPILOT_RELEASES_CONTAINER = AzureContainer("commadist", "openpilot-releases")
+
   parser = argparse.ArgumentParser(description='upload casync folder to azure')
   parser.add_argument("casync_dir", type=str, help="casync directory")
   args = parser.parse_args()
