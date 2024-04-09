@@ -1,6 +1,6 @@
 import contextlib
-
 import pytest
+
 from openpilot.selfdrive.updated.tests.test_base import ParamsBaseUpdateTest, run, update_release
 
 
