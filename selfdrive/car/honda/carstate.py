@@ -195,7 +195,6 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint in (HONDA_BOSCH | {CAR.HONDA_CIVIC, CAR.HONDA_ODYSSEY, CAR.HONDA_ODYSSEY_CHN}):
       ret.parkingBrake = cp.vl["EPB_STATUS"]["EPB_STATE"] != 0
 
-    gear = int(cp.vl[self.gearbox_msg]["GEAR_SHIFTER"])
     if self.CP.transmissionType == TransmissionType.manual:
       ret.clutchPressed = cp.vl["GEARBOX_MT"]["GEAR_MT"] == 0
       if cp.vl["GEARBOX_MT"]["GEAR_MT"] == 14:
@@ -203,6 +202,7 @@ class CarState(CarStateBase):
       else:
         ret.gearShifter = GearShifter.drive
     else:
+      gear = int(cp.vl[self.gearbox_msg]["GEAR_SHIFTER"])
       ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear, None))
 
 
