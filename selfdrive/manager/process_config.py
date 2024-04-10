@@ -45,50 +45,53 @@ def use_casync() -> bool:
   return os.environ.get("USE_CASYNC", None) == "1"
 
 
-procs = [
-  DaemonProcess("manage_athenad", "selfdrive.athena.manage_athenad", "AthenadPid"),
+def get_managed_processes():
+  procs = [
+    DaemonProcess("manage_athenad", "selfdrive.athena.manage_athenad", "AthenadPid"),
 
-  NativeProcess("camerad", "system/camerad", ["./camerad"], driverview),
-  NativeProcess("logcatd", "system/logcatd", ["./logcatd"], only_onroad),
-  NativeProcess("proclogd", "system/proclogd", ["./proclogd"], only_onroad),
-  PythonProcess("logmessaged", "system.logmessaged", always_run),
-  PythonProcess("micd", "system.micd", iscar),
-  PythonProcess("timed", "system.timed", always_run, enabled=not PC),
+    NativeProcess("camerad", "system/camerad", ["./camerad"], driverview),
+    NativeProcess("logcatd", "system/logcatd", ["./logcatd"], only_onroad),
+    NativeProcess("proclogd", "system/proclogd", ["./proclogd"], only_onroad),
+    PythonProcess("logmessaged", "system.logmessaged", always_run),
+    PythonProcess("micd", "system.micd", iscar),
+    PythonProcess("timed", "system.timed", always_run, enabled=not PC),
 
-  PythonProcess("dmonitoringmodeld", "selfdrive.modeld.dmonitoringmodeld", driverview, enabled=(not PC or WEBCAM)),
-  NativeProcess("encoderd", "system/loggerd", ["./encoderd"], only_onroad),
-  NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], notcar),
-  NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging),
-  NativeProcess("modeld", "selfdrive/modeld", ["./modeld"], only_onroad),
-  NativeProcess("sensord", "system/sensord", ["./sensord"], only_onroad, enabled=not PC),
-  NativeProcess("ui", "selfdrive/ui", ["./ui"], always_run, watchdog_max_dt=(5 if not PC else None)),
-  PythonProcess("soundd", "selfdrive.ui.soundd", only_onroad),
-  NativeProcess("locationd", "selfdrive/locationd", ["./locationd"], only_onroad),
-  NativeProcess("boardd", "selfdrive/boardd", ["./boardd"], always_run, enabled=False),
-  PythonProcess("calibrationd", "selfdrive.locationd.calibrationd", only_onroad),
-  PythonProcess("torqued", "selfdrive.locationd.torqued", only_onroad),
-  PythonProcess("controlsd", "selfdrive.controls.controlsd", only_onroad),
-  PythonProcess("deleter", "system.loggerd.deleter", always_run),
-  PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", driverview, enabled=(not PC or WEBCAM)),
-  PythonProcess("qcomgpsd", "system.qcomgpsd.qcomgpsd", qcomgps, enabled=TICI),
-  #PythonProcess("ugpsd", "system.ugpsd", only_onroad, enabled=TICI),
-  PythonProcess("navd", "selfdrive.navd.navd", only_onroad),
-  PythonProcess("pandad", "selfdrive.boardd.pandad", always_run),
-  PythonProcess("paramsd", "selfdrive.locationd.paramsd", only_onroad),
-  NativeProcess("ubloxd", "system/ubloxd", ["./ubloxd"], ublox, enabled=TICI),
-  PythonProcess("pigeond", "system.ubloxd.pigeond", ublox, enabled=TICI),
-  PythonProcess("plannerd", "selfdrive.controls.plannerd", only_onroad),
-  PythonProcess("radard", "selfdrive.controls.radard", only_onroad),
-  PythonProcess("thermald", "selfdrive.thermald.thermald", always_run),
-  PythonProcess("tombstoned", "selfdrive.tombstoned", always_run, enabled=not PC),
-  PythonProcess("updated", "system.updated.updated" if use_casync() else "selfdrive.updated.updated", only_offroad, enabled=not PC),
-  PythonProcess("uploader", "system.loggerd.uploader", always_run),
-  PythonProcess("statsd", "selfdrive.statsd", always_run),
+    PythonProcess("dmonitoringmodeld", "selfdrive.modeld.dmonitoringmodeld", driverview, enabled=(not PC or WEBCAM)),
+    NativeProcess("encoderd", "system/loggerd", ["./encoderd"], only_onroad),
+    NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], notcar),
+    NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging),
+    NativeProcess("modeld", "selfdrive/modeld", ["./modeld"], only_onroad),
+    NativeProcess("sensord", "system/sensord", ["./sensord"], only_onroad, enabled=not PC),
+    NativeProcess("ui", "selfdrive/ui", ["./ui"], always_run, watchdog_max_dt=(5 if not PC else None)),
+    PythonProcess("soundd", "selfdrive.ui.soundd", only_onroad),
+    NativeProcess("locationd", "selfdrive/locationd", ["./locationd"], only_onroad),
+    NativeProcess("boardd", "selfdrive/boardd", ["./boardd"], always_run, enabled=False),
+    PythonProcess("calibrationd", "selfdrive.locationd.calibrationd", only_onroad),
+    PythonProcess("torqued", "selfdrive.locationd.torqued", only_onroad),
+    PythonProcess("controlsd", "selfdrive.controls.controlsd", only_onroad),
+    PythonProcess("deleter", "system.loggerd.deleter", always_run),
+    PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", driverview, enabled=(not PC or WEBCAM)),
+    PythonProcess("qcomgpsd", "system.qcomgpsd.qcomgpsd", qcomgps, enabled=TICI),
+    #PythonProcess("ugpsd", "system.ugpsd", only_onroad, enabled=TICI),
+    PythonProcess("navd", "selfdrive.navd.navd", only_onroad),
+    PythonProcess("pandad", "selfdrive.boardd.pandad", always_run),
+    PythonProcess("paramsd", "selfdrive.locationd.paramsd", only_onroad),
+    NativeProcess("ubloxd", "system/ubloxd", ["./ubloxd"], ublox, enabled=TICI),
+    PythonProcess("pigeond", "system.ubloxd.pigeond", ublox, enabled=TICI),
+    PythonProcess("plannerd", "selfdrive.controls.plannerd", only_onroad),
+    PythonProcess("radard", "selfdrive.controls.radard", only_onroad),
+    PythonProcess("thermald", "selfdrive.thermald.thermald", always_run),
+    PythonProcess("tombstoned", "selfdrive.tombstoned", always_run, enabled=not PC),
+    PythonProcess("updated", "system.updated.updated" if use_casync() else "selfdrive.updated.updated", only_offroad, enabled=not PC),
+    PythonProcess("uploader", "system.loggerd.uploader", always_run),
+    PythonProcess("statsd", "selfdrive.statsd", always_run),
 
-  # debug procs
-  NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar),
-  PythonProcess("webrtcd", "system.webrtc.webrtcd", notcar),
-  PythonProcess("webjoystick", "tools.bodyteleop.web", notcar),
-]
+    # debug procs
+    NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar),
+    PythonProcess("webrtcd", "system.webrtc.webrtcd", notcar),
+    PythonProcess("webjoystick", "tools.bodyteleop.web", notcar),
+  ]
 
-managed_processes = {p.name: p for p in procs}
+  return {p.name: p for p in procs}
+
+managed_processes = get_managed_processes()
