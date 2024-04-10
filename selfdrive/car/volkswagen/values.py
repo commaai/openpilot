@@ -1,6 +1,7 @@
 from collections import namedtuple
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag
+import re
 
 from cereal import car
 from panda.python import uds
@@ -373,6 +374,22 @@ class CAR(Platforms):
   )
 
 
+def match_fw_to_car_custom(live_fw_versions, vin, offline_fw_versions) -> set[str]:
+  candidates = set()
+
+  chassis_code = vin[6:8]
+  if CHASSIS_CODE_PATTERN.match(chassis_code) is None:
+    return set()
+
+  for platform in CAR:
+    if chassis_code in platform.config.chassis_codes:
+      candidates.add(platform)
+
+  return {str(c) for c in candidates}
+
+
+CHASSIS_CODE_PATTERN = re.compile('[A-Z0-9]{2}')
+
 # All supported cars should return FW from the engine, srs, eps, and fwdRadar. Cars
 # with a manual trans won't return transmission firmware, but all other cars will.
 #
@@ -412,6 +429,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     ),
   ]],
   extra_ecus=[(Ecu.fwdCamera, 0x74f, None)],
+  match_fw_to_car_custom=match_fw_to_car_custom,
 )
 
 DBC = CAR.create_dbc_map()
