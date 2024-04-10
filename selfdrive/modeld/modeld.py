@@ -190,7 +190,7 @@ def main(demo=False):
         break
 
     if buf_main is None:
-      cloudlog.error("vipc_client_main no frame")
+      cloudlog.debug("vipc_client_main no frame")
       continue
 
     if use_extra_client:
@@ -202,7 +202,7 @@ def main(demo=False):
           break
 
       if buf_extra is None:
-        cloudlog.error("vipc_client_extra no frame")
+        cloudlog.debug("vipc_client_extra no frame")
         continue
 
       if abs(meta_main.timestamp_sof - meta_extra.timestamp_sof) > 10000000:
