@@ -205,6 +205,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"UpdaterNewReleaseNotes", CLEAR_ON_MANAGER_START},
     {"UpdaterState", CLEAR_ON_MANAGER_START},
     {"UpdaterTargetBranch", CLEAR_ON_MANAGER_START},
+    {"UpdaterTargetChannel", PERSISTENT},
     {"UpdaterLastFetchTime", PERSISTENT},
     {"Version", PERSISTENT},
 };

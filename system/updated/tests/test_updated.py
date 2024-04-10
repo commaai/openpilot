@@ -146,6 +146,9 @@ class TestUpdated(BaseUpdateTest):
   def _wait_for_finalized(self):
     self.wait_for_condition(lambda: get_consistent_flag(self.staging_root / "finalized"))
 
+  def _test_channel_param(self, channel):
+    self.assertEqual(self.params.get("UpdaterTargetChannel", encoding="utf-8"), channel)
+
   def test_no_update(self):
     # Start on release3, ensure we don't fetch any updates
     self.setup_remote_release("release3")
@@ -171,6 +174,20 @@ class TestUpdated(BaseUpdateTest):
   def test_recover_from_git_update(self):
     # starts off on a git update, ensures we can recover and install the correct update
     self.setup_git_basedir_release("release3")
+    self.setup_remote_release("release3")
+
+    with self.additional_context(), processes_context(["updated"]):
+      self._wait_for_finalized()
+      self._test_finalized_update("release3", *self.MOCK_RELEASES["release3"])
+
+  def test_channel_migration(self):
+    # Start on 'test', remote has migrated this to 'release3', ensure we also switch to this branch
+    self.MOCK_RELEASES["test"] = self.MOCK_RELEASES["release3"]
+    self.setup_remote_release("release3")
+    self.setup_remote_release("test")
+    self.release_manifests["test"] = self.release_manifests["release3"]
+
+    self.setup_git_basedir_release("test")
     self.setup_remote_release("release3")
 
     with self.additional_context(), processes_context(["updated"]):

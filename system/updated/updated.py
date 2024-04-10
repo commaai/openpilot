@@ -145,8 +145,14 @@ def main():
   while True:
     # check for updates
     build_metadata = get_build_metadata(BASEDIR)
+
     params.put("UpdaterCurrentDescription", build_metadata.ui_description)
-    target_channel = build_metadata.channel
+    target_channel = params.get("UpdaterTargetChannel", encoding="utf-8")
+    if target_channel is None:
+      target_channel = build_metadata.channel
+
+    params.put("UpdaterTargetChannel", target_channel)
+
     update_ready = get_consistent_flag(FINALIZED)
     remote_build_metadata, remote_manifest = get_remote_channel_data(target_channel)
 
