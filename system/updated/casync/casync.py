@@ -204,7 +204,7 @@ def extract(target: list[Chunk],
 
   os.sync()
 
-  return dict(stats)
+  return stats
 
 
 def extract_directory(target: list[Chunk],
