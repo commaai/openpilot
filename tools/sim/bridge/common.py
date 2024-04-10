@@ -104,21 +104,24 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
       throttle_out = steer_out = brake_out = 0.0
       throttle_op = steer_op = brake_op = 0.0
 
-      self.simulator_state.cruise_button = 0
-      self.simulator_state.left_blinker = False
-      self.simulator_state.right_blinker = False
+      if self.rk.frame % 50 == 0:
+        self.simulator_state.cruise_button = 0
+        self.simulator_state.left_blinker = False
+        self.simulator_state.right_blinker = False
 
-      throttle_manual = steer_manual = brake_manual = 0.
+        throttle_manual = steer_manual = brake_manual = 0.0
 
       # Read manual controls
       if not q.empty():
         message = q.get()
         m = message.split('_')
         if m[0] == "steer":
-          steer_manual = float(m[1])
+          steer_manual = -float(m[1])
         elif m[0] == "throttle":
+          brake_manual = 0.0
           throttle_manual = float(m[1])
         elif m[0] == "brake":
+          throttle_manual = 0.0
           brake_manual = float(m[1])
         elif m[0] == "cruise":
           if m[1] == "down":
@@ -131,8 +134,10 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
             self.simulator_state.cruise_button = CruiseButtons.MAIN
         elif m[0] == "blinker":
           if m[1] == "left":
+            self.simulator_state.right_blinker = False
             self.simulator_state.left_blinker = True
           elif m[1] == "right":
+            self.simulator_state.left_blinker = False
             self.simulator_state.right_blinker = True
         elif m[0] == "ignition":
           self.simulator_state.ignition = not self.simulator_state.ignition
@@ -143,9 +148,7 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
 
       self.simulator_state.user_brake = brake_manual
       self.simulator_state.user_gas = throttle_manual
-      self.simulator_state.user_torque = steer_manual * -10000
-
-      steer_manual = steer_manual * -40
+      self.simulator_state.user_torque = steer_manual
 
       # Update openpilot on current sensor state
       self.simulated_sensors.update(self.simulator_state, self.world)

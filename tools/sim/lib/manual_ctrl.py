@@ -164,7 +164,7 @@ def wheel_poll_thread(q: 'Queue[str]') -> NoReturn:
       elif axis == "x":  # steer angle
         fvalue = value / 32767.0
         axis_states[axis] = fvalue
-        normalized = fvalue
+        normalized = fvalue * 40
         q.put(f"steer_{normalized:f}")
 
     elif mtype & 0x01:  # buttons
