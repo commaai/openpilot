@@ -4,14 +4,20 @@ import http
 import json
 import os
 import pathlib
+import stat
+import tempfile
 import time
 from unittest import mock
+import unittest
 
+from openpilot.common.params import Params
+
+from openpilot.common.run import run_cmd
 from openpilot.selfdrive.test.helpers import DirectoryHttpServer, http_server_context, processes_context
 from openpilot.system.hardware.tici.agnos import get_raw_hash
 from openpilot.system.updated.casync.common import create_build_metadata_file, create_casync_from_file, create_casync_release
-from openpilot.system.version import BuildMetadata, OpenpilotMetadata
-from openpilot.selfdrive.updated.tests.test_base import BaseUpdateTest, run, update_release, get_consistent_flag
+from openpilot.system.updated.common import get_consistent_flag
+from openpilot.system.version import BuildMetadata, OpenpilotMetadata, get_version
 
 
 def create_remote_response(channel, build_metadata, entries: list[dict], casync_base: str):
@@ -23,6 +29,27 @@ def create_remote_response(channel, build_metadata, entries: list[dict], casync_
     "build_metadata": dataclasses.asdict(build_metadata),
     "manifest": entries
   }
+
+
+def update_release(directory, name, version, agnos_version, release_notes):
+  with open(directory / "RELEASES.md", "w") as f:
+    f.write(release_notes)
+
+  (directory / "common").mkdir(exist_ok=True)
+
+  with open(directory / "common" / "version.h", "w") as f:
+    f.write(f'#define COMMA_VERSION "{version}"')
+
+  launch_env = directory / "launch_env.sh"
+  with open(launch_env, "w") as f:
+    f.write(f'export AGNOS_VERSION="{agnos_version}"')
+
+  st = os.stat(launch_env)
+  os.chmod(launch_env, st.st_mode | stat.S_IEXEC)
+
+  test_symlink = directory / "test_symlink"
+  if not os.path.exists(str(test_symlink)):
+    os.symlink("common/version.h", test_symlink)
 
 
 def create_mock_build_metadata(channel, version, agnos_version, release_notes):
@@ -102,9 +129,32 @@ def create_virtual_agnos_manifest(mock_update_path: pathlib.Path, agnos_version:
   ]
 
 
-class TestUpdated(BaseUpdateTest):
+class TestUpdated(unittest.TestCase):
   def setUp(self):
-    super().setUp()
+    self.tmpdir = tempfile.mkdtemp()
+
+    self.mock_update_path = pathlib.Path(self.tmpdir)
+
+    self.params = Params()
+
+    self.basedir = self.mock_update_path / "openpilot"
+    self.basedir.mkdir()
+
+    self.staging_root = self.mock_update_path / "safe_staging"
+    self.staging_root.mkdir()
+
+    self.remote_dir = self.mock_update_path / "remote"
+    self.remote_dir.mkdir()
+
+    mock.patch("openpilot.common.basedir.BASEDIR", self.basedir).start()
+
+    os.environ["UPDATER_STAGING_ROOT"] = str(self.staging_root)
+
+    self.MOCK_RELEASES = {
+      "release3": ("0.1.2", "1.2", "0.1.2 release notes"),
+      "master": ("0.1.3", "1.2", "0.1.3 release notes"),
+    }
+
     self.casync_dir = self.mock_update_path / "casync"
     self.casync_dir.mkdir()
     self.release_manifests = {}
@@ -121,6 +171,36 @@ class TestUpdated(BaseUpdateTest):
 
     self.boot_a.write_bytes(b"1.2")
     self.boot_b.write_bytes(b"1.2")
+
+  def set_target_branch(self, branch):
+    self.params.put("UpdaterTargetBranch", branch)
+
+  def setup_basedir_release(self, release):
+    self.params = Params()
+    self.set_target_branch(release)
+    update_release(self.basedir, release, *self.MOCK_RELEASES[release])
+    create_casync_files(self.basedir, release, *self.MOCK_RELEASES[release])
+
+  def wait_for_condition(self, condition, timeout=12):
+    start = time.monotonic()
+    while True:
+      waited = time.monotonic() - start
+      if condition():
+        print(f"waited {waited}s for condition ")
+        return waited
+
+      if waited > timeout:
+        raise TimeoutError("timed out waiting for condition")
+
+      time.sleep(1)
+
+  def _test_finalized_update(self, branch, version, agnos_version, release_notes):
+    self.assertEqual(get_version(str(self.staging_root / "finalized")), version)
+    self.assertEqual(get_consistent_flag(str(self.staging_root / "finalized")), True)
+    self.assertTrue(os.access(str(self.staging_root / "finalized" / "launch_env.sh"), os.X_OK))
+
+    with open(self.staging_root / "finalized" / "test_symlink") as f:
+      self.assertIn(version, f.read())
 
   def update_remote_release(self, release):
     update_release(self.remote_dir, release, *self.MOCK_RELEASES[release])
@@ -139,11 +219,6 @@ class TestUpdated(BaseUpdateTest):
 
   def setup_remote_release(self, release):
     self.update_remote_release(release)
-
-  def setup_basedir_release(self, release):
-    super().setup_basedir_release(release)
-    update_release(self.basedir, release, *self.MOCK_RELEASES[release])
-    create_casync_files(self.basedir, release, *self.MOCK_RELEASES[release])
 
   @contextlib.contextmanager
   def additional_context(self):
@@ -165,14 +240,14 @@ class TestUpdated(BaseUpdateTest):
           yield
 
   def setup_git_basedir_release(self, release):
-    super().setup_basedir_release(release)
-    run(["git", "init"], cwd=self.basedir)
-    run(["git", "config", "user.name", "'tester'"], cwd=self.basedir)
-    run(["git", "config", "user.email", "'tester@comma.ai'"], cwd=self.basedir)
-    run(["git", "checkout", "-b", release], cwd=self.basedir)
+    self.setup_basedir_release(release)
+    run_cmd(["git", "init"], cwd=self.basedir)
+    run_cmd(["git", "config", "user.name", "'tester'"], cwd=self.basedir)
+    run_cmd(["git", "config", "user.email", "'tester@comma.ai'"], cwd=self.basedir)
+    run_cmd(["git", "checkout", "-b", release], cwd=self.basedir)
     update_release(self.basedir, release, *self.MOCK_RELEASES[release])
-    run(["git", "add", "."], cwd=self.basedir)
-    run(["git", "commit", "-m", f"openpilot release {release}"], cwd=self.basedir)
+    run_cmd(["git", "add", "."], cwd=self.basedir)
+    run_cmd(["git", "commit", "-m", f"openpilot release {release}"], cwd=self.basedir)
 
   def _wait_for_finalized(self):
     self.wait_for_condition(lambda: get_consistent_flag(self.staging_root / "finalized"))

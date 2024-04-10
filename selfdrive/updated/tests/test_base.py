@@ -9,12 +9,17 @@ import time
 import unittest
 from unittest import mock
 
+import pytest
 from openpilot.selfdrive.manager.process import ManagerProcess
 
 
 from openpilot.selfdrive.test.helpers import processes_context
 from openpilot.common.params import Params
-from openpilot.system.updated.common import get_consistent_flag
+
+
+def get_consistent_flag(path: str) -> bool:
+  consistent_file = pathlib.Path(os.path.join(path, ".overlay_consistent"))
+  return consistent_file.is_file()
 
 
 def run(args, **kwargs):
@@ -47,6 +52,7 @@ def get_version(path: str) -> str:
     return f.read().split('"')[1]
 
 
+@pytest.mark.slow # TODO: can we test overlayfs in GHA?
 class BaseUpdateTest(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
@@ -55,6 +61,8 @@ class BaseUpdateTest(unittest.TestCase):
 
   def setUp(self):
     self.tmpdir = tempfile.mkdtemp()
+
+    run(["sudo", "mount", "-t", "tmpfs", "tmpfs", self.tmpdir]) # overlayfs doesn't work inside of docker unless this is a tmpfs
 
     self.mock_update_path = pathlib.Path(self.tmpdir)
 
@@ -95,6 +103,15 @@ class BaseUpdateTest(unittest.TestCase):
   def additional_context(self):
     raise NotImplementedError("")
 
+  def tearDown(self):
+    mock.patch.stopall()
+    try:
+      run(["sudo", "umount", "-l", str(self.staging_root / "merged")])
+      run(["sudo", "umount", "-l", self.tmpdir])
+      shutil.rmtree(self.tmpdir)
+    except Exception:
+      print("cleanup failed...")
+
   def wait_for_condition(self, condition, timeout=12):
     start = time.monotonic()
     while True:
@@ -116,22 +133,7 @@ class BaseUpdateTest(unittest.TestCase):
     with open(self.staging_root / "finalized" / "test_symlink") as f:
       self.assertIn(version, f.read())
 
-
 class ParamsBaseUpdateTest(BaseUpdateTest):
-  def setUp(self):
-    run(["sudo", "mount", "-t", "tmpfs", "tmpfs", self.tmpdir]) # overlayfs doesn't work inside of docker unless this is a tmpfs
-    super().setUp()
-
-  def tearDown(self):
-    super().tearDown()
-    mock.patch.stopall()
-    try:
-      run(["sudo", "umount", "-l", str(self.staging_root / "merged")])
-      run(["sudo", "umount", "-l", self.tmpdir])
-      shutil.rmtree(self.tmpdir)
-    except Exception:
-      print("cleanup failed...")
-
   def _test_finalized_update(self, branch, version, agnos_version, release_notes):
     self.assertTrue(self.params.get("UpdaterNewDescription", encoding="utf-8").startswith(f"{version} / {branch}"))
     self.assertEqual(self.params.get("UpdaterNewReleaseNotes", encoding="utf-8"), f"<p>{release_notes}</p>\n")
