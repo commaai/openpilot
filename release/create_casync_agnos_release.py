@@ -6,7 +6,7 @@ import tempfile
 from openpilot.common.basedir import BASEDIR
 from openpilot.system.hardware.tici.agnos import StreamingDecompressor, unsparsify, noop, AGNOS_MANIFEST_FILE
 from openpilot.system.updated.casync.common import create_casync_from_file
-from release.create_release_manifest import get_agnos_version
+from openpilot.system.version import get_agnos_version
 
 
 
