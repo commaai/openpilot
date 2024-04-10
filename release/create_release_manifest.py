@@ -4,6 +4,7 @@ import dataclasses
 import json
 import pathlib
 
+from openpilot.common.basedir import BASEDIR
 from openpilot.common.run import run_cmd
 from openpilot.system.hardware.tici.agnos import AGNOS_MANIFEST_FILE
 from openpilot.system.version import get_build_metadata
@@ -40,6 +41,11 @@ def create_openpilot_manifest(build_metadata):
   }
 
 
+def get_agnos_version(directory: str = BASEDIR):
+  return run_cmd(["bash", "-c", r"unset AGNOS_VERSION && source launch_env.sh && \
+                          echo -n $AGNOS_VERSION"], directory).strip()
+
+
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="creates a casync release")
   parser.add_argument("target_dir", type=str, help="directory of the channel to create manifest from")
@@ -49,15 +55,12 @@ if __name__ == "__main__":
   with open(pathlib.Path(args.target_dir) / AGNOS_MANIFEST_FILE) as f:
     agnos_manifest = json.load(f)
 
-  agnos_version = run_cmd(["bash", "-c", r"unset AGNOS_VERSION && source launch_env.sh && \
-                          echo -n $AGNOS_VERSION"], args.target_dir).strip()
-
   build_metadata = get_build_metadata(args.target_dir)
 
   ret = {
     "build_metadata": dataclasses.asdict(build_metadata),
     "manifest": [
-      *[create_partition_manifest(agnos_version, entry) for entry in agnos_manifest],
+      *[create_partition_manifest(get_agnos_version(args.target_dir), entry) for entry in agnos_manifest],
       create_openpilot_manifest(build_metadata)
     ]
   }
