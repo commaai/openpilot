@@ -139,7 +139,7 @@ def fingerprint(logcan, sendcan, num_pandas):
       # VIN query only reliably works through OBDII
       vin_rx_addr, vin_rx_bus, vin = get_vin(logcan, sendcan, (0, 1))
       ecu_rx_addrs = get_present_ecus(logcan, sendcan, num_pandas=num_pandas)
-      car_fw = get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, num_pandas=num_pandas)
+      car_fw = get_fw_versions_ordered(logcan, sendcan, vin, ecu_rx_addrs, num_pandas=num_pandas)
       cached = False
 
     exact_fw_match, fw_candidates = match_fw_to_car(car_fw)
@@ -148,6 +148,7 @@ def fingerprint(logcan, sendcan, num_pandas):
     exact_fw_match, fw_candidates, car_fw = True, set(), []
     cached = False
 
+  # TODO: move up?
   if not is_valid_vin(vin):
     cloudlog.event("Malformed VIN", vin=vin, error=True)
     vin = VIN_UNKNOWN
