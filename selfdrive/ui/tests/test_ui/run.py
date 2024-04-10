@@ -141,7 +141,7 @@ def setup_settings_toggles(click, pm: PubMaster):
 def setup_offroad_driver_camera(click, pm: PubMaster):
   setup_common(click, pm)
   setup_settings_device(click, pm)
-  click(1900,450)
+  click(1900,600)
 
 def setup_experimental_mode_prompt(click, pm: PubMaster):
   setup_settings_toggles(click, pm)
