@@ -154,8 +154,8 @@ def build_release(String channel_name) {
     // },
     "${channel_name} (casync)": {
       deviceStage("build casync", "tici-needs-can", [], [
-        ["build agnos ${channel_name}", "$SOURCE_DIR/release/create_casync_agnos_release.py /data/casync/agnos /data/tmp"],
         ["build openpilot ${channel_name}", "RELEASE=1 OPENPILOT_CHANNEL=${channel_name} BUILD_DIR=/data/openpilot CASYNC_DIR=/data/casync/openpilot $SOURCE_DIR/release/create_casync_build.sh"],
+        ["build agnos ${channel_name}", "$SOURCE_DIR/release/create_casync_agnos_release.py /data/casync/agnos /data/tmp"],
         ["create manifest", "$SOURCE_DIR/release/create_casync_agnos_release.py /data/openpilot /data/manifest.json && cat /data/manifest.json"],
         ["upload and cleanup ${channel_name}", "PYTHONWARNINGS=ignore $SOURCE_DIR/release/upload_casync_release.py /data/casync && rm -rf /data/casync"],
       ])
