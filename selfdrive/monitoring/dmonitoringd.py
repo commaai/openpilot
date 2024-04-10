@@ -17,7 +17,7 @@ def dmonitoringd_thread():
   pm = messaging.PubMaster(['driverMonitoringState'])
   sm = messaging.SubMaster(['driverStateV2', 'liveCalibration', 'carState', 'controlsState', 'modelV2'], poll='driverStateV2')
 
-  driver_status = DriverStatus(rhd_saved=params.get_bool("IsRhdDetected"))
+  driver_status = DriverStatus(rhd_saved=params.get_bool("IsRhdDetected"), always_on=params.get_bool("AlwaysOnDM"))
 
   v_cruise_last = 0
   driver_engaged = False
