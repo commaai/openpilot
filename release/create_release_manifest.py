@@ -25,6 +25,7 @@ def create_partition_manifest(agnos_version, partition):
       "caibx": f"{AGNOS_RELEASES}/agnos-{agnos_version}-{partition['name']}.caibx"
     },
     "path": get_partition_path(0, partition),
+    "ab": True,
     "size": partition["size"],
     "full_check": partition["full_check"],
     "hash_raw": partition["hash_raw"],
