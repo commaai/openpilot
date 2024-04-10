@@ -19,3 +19,4 @@ def dismount_overlay() -> None:
 def migrate_openpilot():
   # system level migration for ensursing smooth transitions between openpilot versions
   dismount_overlay()
+  run_cmd(["sudo", "rm", "-rf", STAGING_ROOT])
