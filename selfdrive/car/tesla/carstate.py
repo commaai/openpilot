@@ -7,7 +7,6 @@ from openpilot.selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
 
-
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
@@ -125,9 +124,7 @@ class CarState(CarStateBase):
     else:
       ret.seatbeltUnlatched = (cp.vl["SDM1"]["SDM_bcklDrivStatus"] != 1)
 
-    # if model3:
-    #   ret.leftBlindspot = cp_body.vl["DAS_status"]["DAS_blindSpotRearLeft"] != 0
-    #   ret.rightBlindspot = cp_body.vl["DAS_status"]["DAS_blindSpotRearRight"] != 0
+    # TODO: blindspot
 
     # AEB
     ret.stockAeb = (cp_cam.vl["DAS_control"]["DAS_aebEvent"] == 1)
