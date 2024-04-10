@@ -18,9 +18,9 @@
 
 ExitHandler do_exit;
 
-class Debayer {
+class ImgProc {
 public:
-  Debayer(cl_device_id device_id, cl_context context, const CameraBuf *b, const CameraState *s, int buf_width, int uv_offset) {
+  ImgProc(cl_device_id device_id, cl_context context, const CameraBuf *b, const CameraState *s, int buf_width, int uv_offset) {
     char args[4096];
     const SensorInfo *ci = s->ci.get();
     snprintf(args, sizeof(args),
@@ -35,25 +35,25 @@ public:
              ci->mipi_format == CAM_FORMAT_MIPI_RAW_10,
              ci->hdr_offset > 0, ci->hdr_offset, ci->bggr,
              s->camera_num == 1);
-    const char *cl_file = "cameras/real_debayer.cl";
-    cl_program prg_debayer = cl_program_from_file(context, device_id, cl_file, args);
-    krnl_ = CL_CHECK_ERR(clCreateKernel(prg_debayer, "debayer10", &err));
-    CL_CHECK(clReleaseProgram(prg_debayer));
+    const char *cl_file = "cameras/process_raw.cl";
+    cl_program prg_imgproc = cl_program_from_file(context, device_id, cl_file, args);
+    krnl_ = CL_CHECK_ERR(clCreateKernel(prg_imgproc, "process_raw", &err));
+    CL_CHECK(clReleaseProgram(prg_imgproc));
 
   }
 
-  void queue(cl_command_queue q, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, cl_event *debayer_event, int expo_time) {
+  void queue(cl_command_queue q, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, cl_event *imgproc_event, int expo_time) {
     CL_CHECK(clSetKernelArg(krnl_, 0, sizeof(cl_mem), &cam_buf_cl));
     CL_CHECK(clSetKernelArg(krnl_, 1, sizeof(cl_mem), &buf_cl));
     CL_CHECK(clSetKernelArg(krnl_, 2, sizeof(cl_int), &expo_time));
 
     const size_t globalWorkSize[] = {size_t(width / 2), size_t(height / 2)};
-    const int debayer_local_worksize = 16;
-    const size_t localWorkSize[] = {debayer_local_worksize, debayer_local_worksize};
-    CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, debayer_event));
+    const int imgproc_local_worksize = 16;
+    const size_t localWorkSize[] = {imgproc_local_worksize, imgproc_local_worksize};
+    CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, imgproc_event));
   }
 
-  ~Debayer() {
+  ~ImgProc() {
     CL_CHECK(clReleaseKernel(krnl_));
   }
 
@@ -94,7 +94,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   vipc_server->create_buffers_with_sizes(stream_type, YUV_BUFFER_COUNT, false, rgb_width, rgb_height, nv12_size, nv12_width, nv12_uv_offset);
   LOGD("created %d YUV vipc buffers with size %dx%d", YUV_BUFFER_COUNT, nv12_width, nv12_height);
 
-  debayer = new Debayer(device_id, context, this, s, nv12_width, nv12_uv_offset);
+  imgproc = new ImgProc(device_id, context, this, s, nv12_width, nv12_uv_offset);
 
   const cl_queue_properties props[] = {0};  //CL_QUEUE_PRIORITY_KHR, CL_QUEUE_PRIORITY_HIGH_KHR, 0};
   q = CL_CHECK_ERR(clCreateCommandQueueWithProperties(context, device_id, props, &err));
@@ -104,7 +104,7 @@ CameraBuf::~CameraBuf() {
   for (int i = 0; i < frame_buf_count; i++) {
     camera_bufs[i].free();
   }
-  if (debayer) delete debayer;
+  if (imgproc) delete imgproc;
   if (q) CL_CHECK(clReleaseCommandQueue(q));
 }
 
@@ -122,7 +122,7 @@ bool CameraBuf::acquire() {
 
   double start_time = millis_since_boot();
   cl_event event;
-  debayer->queue(q, camera_bufs[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, &event, cur_frame_data.integ_lines);
+  imgproc->queue(q, camera_bufs[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, &event, cur_frame_data.integ_lines);
   clWaitForEvents(1, &event);
   CL_CHECK(clReleaseEvent(event));
   cur_frame_data.processing_time = (millis_since_boot() - start_time) / 1000.0;

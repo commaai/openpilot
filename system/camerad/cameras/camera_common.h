@@ -44,12 +44,12 @@ typedef struct FrameMetadata {
 
 struct MultiCameraState;
 class CameraState;
-class Debayer;
+class ImgProc;
 
 class CameraBuf {
 private:
   VisionIpcServer *vipc_server;
-  Debayer *debayer = nullptr;
+  ImgProc *imgproc = nullptr;
   VisionStreamType stream_type;
   int cur_buf_idx;
   SafeQueue<int> safe_queue;
