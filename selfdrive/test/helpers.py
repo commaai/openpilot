@@ -8,7 +8,7 @@ from functools import wraps
 
 import cereal.messaging as messaging
 from openpilot.common.params import Params
-from openpilot.selfdrive.manager.process_config import get_managed_processes
+from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.system.hardware import PC
 from openpilot.system.version import training_version, terms_version
 
@@ -47,7 +47,6 @@ def release_only(f):
 
 @contextlib.contextmanager
 def processes_context(processes, init_time=0, ignore_stopped=None):
-  managed_processes = get_managed_processes()
   ignore_stopped = [] if ignore_stopped is None else ignore_stopped
 
   # start and assert started

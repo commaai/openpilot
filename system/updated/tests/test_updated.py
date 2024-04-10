@@ -96,7 +96,6 @@ class TestUpdated(BaseUpdateTest):
     self.casync_dir = self.mock_update_path / "casync"
     self.casync_dir.mkdir()
     self.release_manifests = {}
-    os.environ["USE_CASYNC"] = "1"
     os.environ["UPDATE_DELAY"] = "1"
 
   def update_remote_release(self, release):
