@@ -318,7 +318,7 @@ class CAR(Platforms):
   )
   SKODA_KAMIQ_MK1 = VolkswagenMQBPlatformConfig(  # Chassis NW
     [
-      VWCarDocs("Škoda Kamiq 2021-23", footnotes=[Footnote.VW_MQB_A0, Footnote.KAMIQ]).
+      VWCarDocs("Škoda Kamiq 2021-23", footnotes=[Footnote.VW_MQB_A0, Footnote.KAMIQ]),
       VWCarDocs("Škoda Scala 2020-23", footnotes=[Footnote.VW_MQB_A0]),
     ],
     VolkswagenCarSpecs(mass=1230, wheelbase=2.66),
