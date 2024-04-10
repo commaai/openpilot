@@ -8,7 +8,7 @@ from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.honda.hondacan import CanBus, get_cruise_speed_conversion
 from openpilot.selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, HONDA_BOSCH, \
                                                  HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_RADARLESS, \
-                                                 HondaFlags
+                                                 HondaFlags, GearShifter
 from openpilot.selfdrive.car.interfaces import CarStateBase
 
 TransmissionType = car.CarParams.TransmissionType
@@ -37,7 +37,7 @@ def get_can_messages(CP, gearbox_msg):
       ("SCM_FEEDBACK", 10),
       ("SCM_BUTTONS", 25),
     ]
-  if CP.carFingerprint != CAR.ACURA_INTEGRA:
+  if CP.carFingerprint not in (CAR.ACURA_INTEGRA):
     messages += [
       ("ENGINE_DATA", 100),
     ]
@@ -96,7 +96,7 @@ class CarState(CarStateBase):
     if CP.carFingerprint in HONDA_NIDEC_ALT_SCM_MESSAGES:
       self.main_on_sig_msg = "SCM_BUTTONS"
 
-    if CP.carFingerprint != CAR.ACURA_INTEGRA:
+    if CP.carFingerprint not in (CAR.ACURA_INTEGRA):
         self.shifter_values = can_define.dv[self.gearbox_msg]["GEAR_SHIFTER"]
     self.steer_status_values = defaultdict(lambda: "UNKNOWN", can_define.dv["STEER_STATUS"]["STEER_STATUS"])
 
