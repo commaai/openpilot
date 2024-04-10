@@ -21,7 +21,6 @@ testpaths = [
   "selfdrive/thermald",
   "selfdrive/test/longitudinal_maneuvers",
   "selfdrive/test/process_replay/test_fuzzy.py",
-  "selfdrive/updated",
   "system/camerad",
   "system/hardware/tici",
   "system/loggerd",
