@@ -14,8 +14,8 @@ BASE_URL = "https://commadist.blob.core.windows.net"
 
 CHANNEL_DATA = pathlib.Path(__file__).parent / "channel_data" / "agnos"
 
-OPENPILOT_RELEASES = f"{BASE_URL}/openpilot-releases"
-AGNOS_RELEASES = f"{BASE_URL}/agnos-releases"
+OPENPILOT_RELEASES = f"{BASE_URL}/openpilot-releases/openpilot"
+AGNOS_RELEASES = f"{BASE_URL}/openpilot-releases/agnos"
 
 
 def create_partition_manifest(agnos_version, partition):

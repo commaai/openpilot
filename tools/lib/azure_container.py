@@ -30,7 +30,7 @@ def get_container_sas(account_name: str, container_name: str):
     account_name,
     container_name,
     user_delegation_key=blob_service.get_user_delegation_key(start_time, expiry_time),
-    permission=ContainerSasPermissions(read=True, write=True, list=True),
+    permission=ContainerSasPermissions(read=True, write=True, list=True, delete=True),
     expiry=expiry_time,
   )
 
