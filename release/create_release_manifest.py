@@ -6,7 +6,7 @@ import pathlib
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.run import run_cmd
-from openpilot.system.hardware.tici.agnos import AGNOS_MANIFEST_FILE
+from openpilot.system.hardware.tici.agnos import AGNOS_MANIFEST_FILE, get_partition_path
 from openpilot.system.version import get_build_metadata
 
 
@@ -24,10 +24,10 @@ def create_partition_manifest(agnos_version, partition):
     "casync": {
       "caibx": f"{AGNOS_RELEASES}/agnos-{agnos_version}-{partition['name']}.caibx"
     },
-    "name": partition["name"],
+    "path": get_partition_path(0, partition),
     "size": partition["size"],
     "full_check": partition["full_check"],
-    "hash_raw": partition["hash_raw"]
+    "hash_raw": partition["hash_raw"],
   }
 
 
