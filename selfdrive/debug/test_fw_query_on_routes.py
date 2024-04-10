@@ -9,6 +9,7 @@ from tqdm import tqdm
 from openpilot.tools.lib.logreader import LogReader, ReadMode
 from openpilot.tools.lib.route import SegmentRange
 from openpilot.selfdrive.car.car_helpers import interface_names
+from openpilot.selfdrive.car.fingerprints import MIGRATION
 from openpilot.selfdrive.car.fw_versions import VERSIONS, match_fw_to_car
 
 
@@ -16,11 +17,6 @@ NO_API = "NO_API" in os.environ
 SUPPORTED_BRANDS = VERSIONS.keys()
 SUPPORTED_CARS = [brand for brand in SUPPORTED_BRANDS for brand in interface_names[brand]]
 UNKNOWN_BRAND = "unknown"
-
-try:
-  from xx.pipeline.lib.fingerprint import MIGRATION
-except ImportError:
-  MIGRATION = {}
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Run FW fingerprint on Qlog of route or list of routes')

@@ -133,7 +133,7 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
     prob_y = laplacian_pdf(c.yRel, -lead.y[0], lead.yStd[0])
     prob_v = laplacian_pdf(c.vRel + v_ego, lead.v[0], lead.vStd[0])
 
-    # This is isn't exactly right, but good heuristic
+    # This isn't exactly right, but it's a good heuristic
     return prob_d * prob_y * prob_v
 
   track = max(tracks.values(), key=prob)

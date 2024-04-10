@@ -5,7 +5,7 @@ from openpilot.common.numpy_fast import interp
 from openpilot.common.realtime import DT_DMON
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.stat_live import RunningStatFilter
-from openpilot.common.transformations.camera import tici_d_frame_size
+from openpilot.common.transformations.camera import DEVICE_CAMERAS
 
 EventName = car.CarEvent.EventName
 
@@ -71,9 +71,11 @@ class DRIVER_MONITOR_SETTINGS():
     self._MAX_TERMINAL_DURATION = int(30 / self._DT_DMON)  # not allowed to engage after 30s of terminal alerts
 
 
+# TODO: get these live
 # model output refers to center of undistorted+leveled image
 EFL = 598.0 # focal length in K
-W, H = tici_d_frame_size # corrected image has same size as raw
+cam = DEVICE_CAMERAS[("tici", "ar0231")] # corrected image has same size as raw
+W, H = (cam.dcam.width, cam.dcam.height)  # corrected image has same size as raw
 
 class DistractedType:
   NOT_DISTRACTED = 0

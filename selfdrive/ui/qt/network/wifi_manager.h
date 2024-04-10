@@ -52,7 +52,7 @@ public:
   std::optional<QDBusPendingCall> activateWifiConnection(const QString &ssid);
   NetworkType currentNetworkType();
   void updateGsmSettings(bool roaming, QString apn, bool metered);
-  void connect(const Network &ssid, const QString &password = {}, const QString &username = {});
+  void connect(const Network &ssid, const bool is_hidden = false, const QString &password = {}, const QString &username = {});
 
   // Tethering functions
   void setTetheringEnabled(bool enabled);

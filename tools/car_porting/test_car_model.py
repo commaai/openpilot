@@ -31,6 +31,7 @@ if __name__ == "__main__":
 
   route_or_segment_name = SegmentName(args.route_or_segment_name.strip(), allow_route_name=True)
   segment_num = route_or_segment_name.segment_num if route_or_segment_name.segment_num != -1 else None
+
   test_route = CarTestRoute(route_or_segment_name.route_name.canonical_name, args.car, segment=segment_num)
   test_suite = create_test_models_suite([test_route], ci=args.ci)
 

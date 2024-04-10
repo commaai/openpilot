@@ -127,22 +127,27 @@ const CanData &AbstractStream::lastMessage(const MessageId &id) {
 // it is thread safe to update data in updateLastMsgsTo.
 // updateLastMsgsTo is always called in UI thread.
 void AbstractStream::updateLastMsgsTo(double sec) {
-  new_msgs_.clear();
-  messages_.clear();
-
   current_sec_ = sec;
   uint64_t last_ts = (sec + routeStartTime()) * 1e9;
+  std::unordered_map<MessageId, CanData> msgs;
+
   for (const auto &[id, ev] : events_) {
     auto it = std::upper_bound(ev.begin(), ev.end(), last_ts, CompareCanEvent());
     if (it != ev.begin()) {
       auto prev = std::prev(it);
       double ts = (*prev)->mono_time / 1e9 - routeStartTime();
-      auto &m = messages_[id];
+      auto &m = msgs[id];
+      // Keep last changes
+      if (auto old_m = messages_.find(id); old_m != messages_.end()) {
+        m.last_changes = old_m->second.last_changes;
+      }
       m.compute(id, (*prev)->dat, (*prev)->size, ts, getSpeed(), {});
       m.count = std::distance(ev.begin(), prev) + 1;
     }
   }
 
+  new_msgs_.clear();
+  messages_ = std::move(msgs);
   bool id_changed = messages_.size() != last_msgs.size() ||
                     std::any_of(messages_.cbegin(), messages_.cend(),
                                 [this](const auto &m) { return !last_msgs.count(m.first); });
@@ -182,8 +187,6 @@ void AbstractStream::mergeEvents(const std::vector<const CanEvent *> &events) {
   }
   lastest_event_ts = all_events_.empty() ? 0 : all_events_.back()->mono_time;
 }
-
-// CanData
 
 namespace {
 

@@ -166,7 +166,7 @@ SecurityType WifiManager::getSecurityType(const QVariantMap &properties) {
   }
 }
 
-void WifiManager::connect(const Network &n, const QString &password, const QString &username) {
+void WifiManager::connect(const Network &n, const bool is_hidden, const QString &password, const QString &username) {
   setCurrentConnecting(n.ssid);
   forgetConnection(n.ssid);  // Clear all connections that may already exist to the network we are connecting
   Connection connection;
@@ -176,6 +176,7 @@ void WifiManager::connect(const Network &n, const QString &password, const QStri
   connection["connection"]["autoconnect-retries"] = 0;
 
   connection["802-11-wireless"]["ssid"] = n.ssid;
+  connection["802-11-wireless"]["hidden"] = is_hidden;
   connection["802-11-wireless"]["mode"] = "infrastructure";
 
   if (n.security_type == SecurityType::WPA) {

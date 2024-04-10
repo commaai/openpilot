@@ -18,9 +18,16 @@ class CarState(CarStateBase):
     self.lkas_allowed_speed = False
     self.lkas_disabled = False
 
+    self.prev_distance_button = 0
+    self.distance_button = 0
+
   def update(self, cp, cp_cam):
 
     ret = car.CarState.new_message()
+
+    self.prev_distance_button = self.distance_button
+    self.distance_button = cp.vl["CRZ_BTNS"]["DISTANCE_LESS"]
+
     ret.wheelSpeeds = self.get_wheel_speeds(
       cp.vl["WHEEL_SPEEDS"]["FL"],
       cp.vl["WHEEL_SPEEDS"]["FR"],

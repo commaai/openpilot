@@ -19,7 +19,7 @@ from openpilot.common.time import system_time_valid
 from openpilot.system.hardware import AGNOS, HARDWARE
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
-from openpilot.system.version import is_tested_branch
+from openpilot.system.version import get_build_metadata
 
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
@@ -325,8 +325,9 @@ class Updater:
 
     now = datetime.datetime.utcnow()
     dt = now - last_update
+    build_metadata = get_build_metadata()
     if failed_count > 15 and exception is not None and self.has_internet:
-      if is_tested_branch():
+      if build_metadata.tested_channel:
         extra_text = "Ensure the software is correctly installed. Uninstall and re-install if this error persists."
       else:
         extra_text = exception

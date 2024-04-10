@@ -19,6 +19,9 @@ class CarState(CarStateBase):
 
     self.vehicle_sensors_valid = False
 
+    self.prev_distance_button = 0
+    self.distance_button = 0
+
   def update(self, cp, cp_cam):
     ret = car.CarState.new_message()
 
@@ -54,7 +57,8 @@ class CarState(CarStateBase):
       ret.steerFaultTemporary |= cp.vl["Lane_Assist_Data3_FD1"]["LatCtlSte_D_Stat"] not in (1, 2, 3)
 
     # cruise state
-    ret.cruiseState.speed = cp.vl["EngBrakeData"]["Veh_V_DsplyCcSet"] * CV.MPH_TO_MS
+    is_metric = cp.vl["INSTRUMENT_PANEL"]["METRIC_UNITS"] == 1 if not self.CP.flags & FordFlags.CANFD else False
+    ret.cruiseState.speed = cp.vl["EngBrakeData"]["Veh_V_DsplyCcSet"] * (CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS)
     ret.cruiseState.enabled = cp.vl["EngBrakeData"]["CcStat_D_Actl"] in (4, 5)
     ret.cruiseState.available = cp.vl["EngBrakeData"]["CcStat_D_Actl"] in (3, 4, 5)
     ret.cruiseState.nonAdaptive = cp.vl["Cluster_Info1_FD1"]["AccEnbl_B_RqDrv"] == 0
@@ -83,6 +87,8 @@ class CarState(CarStateBase):
     ret.rightBlinker = cp.vl["Steering_Data_FD1"]["TurnLghtSwtch_D_Stat"] == 2
     # TODO: block this going to the camera otherwise it will enable stock TJA
     ret.genericToggle = bool(cp.vl["Steering_Data_FD1"]["TjaButtnOnOffPress"])
+    self.prev_distance_button = self.distance_button
+    self.distance_button = cp.vl["Steering_Data_FD1"]["AccButtnGapTogglePress"]
 
     # lock info
     ret.doorOpen = any([cp.vl["BodyInfo_3_FD1"]["DrStatDrv_B_Actl"], cp.vl["BodyInfo_3_FD1"]["DrStatPsngr_B_Actl"],
@@ -125,6 +131,10 @@ class CarState(CarStateBase):
     if CP.flags & FordFlags.CANFD:
       messages += [
         ("Lane_Assist_Data3_FD1", 33),
+      ]
+    else:
+      messages += [
+        ("INSTRUMENT_PANEL", 1),
       ]
 
     if CP.transmissionType == TransmissionType.automatic:

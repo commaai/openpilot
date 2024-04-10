@@ -29,6 +29,16 @@ class CarState(CarStateBase):
       cp_brakes = cp_body if self.CP.flags & SubaruFlags.GLOBAL_GEN2 else cp
       ret.brakePressed = cp_brakes.vl["Brake_Status"]["Brake"] == 1
 
+    cp_es_distance = cp_body if self.CP.flags & (SubaruFlags.GLOBAL_GEN2 | SubaruFlags.HYBRID) else cp_cam
+    if not (self.CP.flags & SubaruFlags.HYBRID):
+      eyesight_fault = bool(cp_es_distance.vl["ES_Distance"]["Cruise_Fault"])
+
+      # if openpilot is controlling long, an eyesight fault is a non-critical fault. otherwise it's an ACC fault
+      if self.CP.openpilotLongitudinalControl:
+        ret.carFaultedNonCritical = eyesight_fault
+      else:
+        ret.accFaulted = eyesight_fault
+
     cp_wheels = cp_body if self.CP.flags & SubaruFlags.GLOBAL_GEN2 else cp
     ret.wheelSpeeds = self.get_wheel_speeds(
       cp_wheels.vl["Wheel_Speeds"]["FL"],
@@ -84,7 +94,6 @@ class CarState(CarStateBase):
                         cp.vl["BodyInfo"]["DOOR_OPEN_FL"]])
     ret.steerFaultPermanent = cp.vl["Steering_Torque"]["Steer_Error_1"] == 1
 
-    cp_es_distance = cp_body if self.CP.flags & (SubaruFlags.GLOBAL_GEN2 | SubaruFlags.HYBRID) else cp_cam
     if self.CP.flags & SubaruFlags.PREGLOBAL:
       self.cruise_button = cp_cam.vl["ES_Distance"]["Cruise_Button"]
       self.ready = not cp_cam.vl["ES_DashStatus"]["Not_Ready_Startup"]

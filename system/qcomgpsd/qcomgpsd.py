@@ -205,10 +205,10 @@ def teardown_quectel(diag):
   try_setup_logs(diag, [])
 
 
-def wait_for_modem():
+def wait_for_modem(cmd="AT+QGPS?"):
   cloudlog.warning("waiting for modem to come up")
   while True:
-    ret = subprocess.call("mmcli -m any --timeout 10 --command=\"AT+QGPS?\"", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
+    ret = subprocess.call(f"mmcli -m any --timeout 10 --command=\"{cmd}\"", stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, shell=True)
     if ret == 0:
       return
     time.sleep(0.1)
@@ -352,8 +352,8 @@ def main() -> NoReturn:
       gps.bearingAccuracyDeg = report["q_FltHeadingUncRad"] * 180/math.pi if (report["q_FltHeadingUncRad"] != 0) else 180
       gps.speedAccuracy = math.sqrt(sum([x**2 for x in vNEDsigma]))
       # quectel gps verticalAccuracy is clipped to 500, set invalid if so
-      gps.flags = 1 if gps.verticalAccuracy != 500 else 0
-      if gps.flags:
+      gps.hasFix = gps.verticalAccuracy != 500
+      if gps.hasFix:
         want_assistance = False
         stop_download_event.set()
       pm.send('gpsLocation', msg)

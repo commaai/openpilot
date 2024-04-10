@@ -12,8 +12,9 @@ from openpilot.tools.sim.lib.camerad import W, H
 
 
 class MetaDriveWorld(World):
-  def __init__(self, config, dual_camera = False):
+  def __init__(self, status_q, config, dual_camera = False):
     super().__init__(dual_camera)
+    self.status_q = status_q
     self.camera_array = Array(ctypes.c_uint8, W*H*3)
     self.road_image = np.frombuffer(self.camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
     self.wide_camera_array = None
@@ -34,12 +35,14 @@ class MetaDriveWorld(World):
                                                 self.vehicle_state_send, self.exit_event))
 
     self.metadrive_process.start()
+    self.status_q.put({"status": "starting"})
 
     print("----------------------------------------------------------")
     print("---- Spawning Metadrive world, this might take awhile ----")
     print("----------------------------------------------------------")
 
     self.vehicle_state_recv.recv() # wait for a state message to ensure metadrive is launched
+    self.status_q.put({"status": "started"})
 
     self.steer_ratio = 15
     self.vc = [0.0,0.0]
@@ -65,6 +68,11 @@ class MetaDriveWorld(World):
     while self.simulation_state_recv.poll(0):
       md_state: metadrive_simulation_state = self.simulation_state_recv.recv()
       if md_state.done:
+        self.status_q.put({
+          "status": "terminating",
+          "reason": "done",
+          "done_info": md_state.done_info
+        })
         self.exit_event.set()
 
   def read_sensors(self, state: SimulatorState):
@@ -85,6 +93,10 @@ class MetaDriveWorld(World):
   def reset(self):
     self.should_reset = True
 
-  def close(self):
+  def close(self, reason: str):
+    self.status_q.put({
+      "status": "terminating",
+      "reason": reason,
+    })
     self.exit_event.set()
     self.metadrive_process.join()

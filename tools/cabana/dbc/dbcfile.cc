@@ -80,8 +80,8 @@ void DBCFile::parse(const QString &content) {
   static QRegularExpression bo_regexp(R"(^BO_ (\w+) (\w+) *: (\w+) (\w+))");
   static QRegularExpression sg_regexp(R"(^SG_ (\w+) : (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");
   static QRegularExpression sgm_regexp(R"(^SG_ (\w+) (\w+) *: (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");
-  static QRegularExpression msg_comment_regexp(R"(^CM_ BO_ *(\w+) *\"([^"]*)\"\s*;)");
-  static QRegularExpression sg_comment_regexp(R"(^CM_ SG_ *(\w+) *(\w+) *\"([^"]*)\"\s*;)");
+  static QRegularExpression msg_comment_regexp(R"(^CM_ BO_ *(\w+) *\"((?:[^"\\]|\\.)*)\"\s*;)");
+  static QRegularExpression sg_comment_regexp(R"(^CM_ SG_ *(\w+) *(\w+) *\"((?:[^"\\]|\\.)*)\"\s*;)");
   static QRegularExpression val_regexp(R"(VAL_ (\w+) (\w+) (\s*[-+]?[0-9]+\s+\".+?\"[^;]*))");
 
   int line_num = 0;
@@ -98,10 +98,13 @@ void DBCFile::parse(const QString &content) {
   QTextStream stream((QString *)&content);
   cabana::Msg *current_msg = nullptr;
   int multiplexor_cnt = 0;
+  bool seen_first = false;
   while (!stream.atEnd()) {
     ++line_num;
     QString raw_line = stream.readLine();
     line = raw_line.trimmed();
+
+    bool seen = true;
     if (line.startsWith("BO_ ")) {
       multiplexor_cnt = 0;
       auto match = bo_regexp.match(line);
@@ -170,7 +173,7 @@ void DBCFile::parse(const QString &content) {
       auto match = msg_comment_regexp.match(line);
       dbc_assert(match.hasMatch());
       if (auto m = (cabana::Msg *)msg(match.captured(1).toUInt())) {
-        m->comment = match.captured(2).trimmed();
+        m->comment = match.captured(2).trimmed().replace("\\\"", "\"");
       }
     } else if (line.startsWith("CM_ SG_ ")) {
       if (!line.endsWith("\";")) {
@@ -180,8 +183,16 @@ void DBCFile::parse(const QString &content) {
       auto match = sg_comment_regexp.match(line);
       dbc_assert(match.hasMatch());
       if (auto s = get_sig(match.captured(1).toUInt(), match.captured(2))) {
-        s->comment = match.captured(3).trimmed();
+        s->comment = match.captured(3).trimmed().replace("\\\"", "\"");
       }
+    } else {
+      seen = false;
+    }
+
+    if (seen) {
+      seen_first = true;
+    } else if (!seen_first) {
+      header += raw_line + "\n";
     }
   }
 
@@ -191,12 +202,12 @@ void DBCFile::parse(const QString &content) {
 }
 
 QString DBCFile::generateDBC() {
-  QString dbc_string, signal_comment, message_comment, val_desc;
+  QString dbc_string, comment, val_desc;
   for (const auto &[address, m] : msgs) {
     const QString transmitter = m.transmitter.isEmpty() ? DEFAULT_NODE_NAME : m.transmitter;
     dbc_string += QString("BO_ %1 %2: %3 %4\n").arg(address).arg(m.name).arg(m.size).arg(transmitter);
     if (!m.comment.isEmpty()) {
-      message_comment += QString("CM_ BO_ %1 \"%2\";\n").arg(address).arg(m.comment);
+      comment += QString("CM_ BO_ %1 \"%2\";\n").arg(address).arg(QString(m.comment).replace("\"", "\\\""));
     }
     for (auto sig : m.getSignals()) {
       QString multiplexer_indicator;
@@ -219,7 +230,7 @@ QString DBCFile::generateDBC() {
                         .arg(sig->unit)
                         .arg(sig->receiver_name.isEmpty() ? DEFAULT_NODE_NAME : sig->receiver_name);
       if (!sig->comment.isEmpty()) {
-        signal_comment += QString("CM_ SG_ %1 %2 \"%3\";\n").arg(address).arg(sig->name).arg(sig->comment);
+        comment += QString("CM_ SG_ %1 %2 \"%3\";\n").arg(address).arg(sig->name).arg(QString(sig->comment).replace("\"", "\\\""));
       }
       if (!sig->val_desc.empty()) {
         QStringList text;
@@ -231,5 +242,5 @@ QString DBCFile::generateDBC() {
     }
     dbc_string += "\n";
   }
-  return dbc_string + message_comment + signal_comment + val_desc;
+  return header + dbc_string + comment + val_desc;
 }
