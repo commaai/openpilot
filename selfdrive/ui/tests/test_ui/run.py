@@ -31,6 +31,7 @@ from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert, OFF
 UI_DELAY = 2 # may be slower on CI?
 
 IS_FULL = os.environ.get("TEST_UI_FULL") == "1"
+INCLUDE_EVENTS = os.environ.get("TEST_UI_INCLUDE_EVENTS") == "1"
 
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
@@ -341,7 +342,7 @@ class TestUI(unittest.TestCase):
     plt.imsave(SCREENSHOTS_DIR / f"{lang_code}/{name}.png", im)
 
   @parameterized.expand(list(langs.items()))
-  @unittest.skipIf(not IS_FULL, "running minimal UI test")
+  @unittest.skipIf(not INCLUDE_EVENTS, "running minimal UI test")
   def test_offroad_alerts(self, _, lang_code):
     Params().put("LanguageSetting", lang_code)
     self.run_offroad_alerts(lang_code)
@@ -359,7 +360,7 @@ class TestUI(unittest.TestCase):
       plt.imsave(SCREENSHOTS_DIR / f"{lang_code}/alerts/{offroad_alert[0]}.png", im)
 
   @parameterized.expand(list(langs.items()))
-  @unittest.skipIf(not IS_FULL, "running minimal UI test")
+  @unittest.skipIf(not INCLUDE_EVENTS, "running minimal UI test")
   def test_ui_events(self, _, lang_code):
     Params().put("LanguageSetting", lang_code)
     self.run_events(lang_code)
