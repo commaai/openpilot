@@ -13,6 +13,7 @@ from openpilot.system.version import get_agnos_version
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="creates a casync release")
   parser.add_argument("output_dir", type=str, help="output directory for the channel")
+  parser.add_argument("working_dir", type=str, help="working directory")
   parser.add_argument("--version", type=str, help="version of agnos this is", default=get_agnos_version())
   parser.add_argument("--manifest", type=str, help="json manifest to create agnos release from", \
                         default=str(pathlib.Path(BASEDIR) / AGNOS_MANIFEST_FILE))
@@ -23,7 +24,7 @@ if __name__ == "__main__":
 
   manifest_file = pathlib.Path(args.manifest)
 
-  with tempfile.NamedTemporaryFile() as entry_file:
+  with tempfile.NamedTemporaryFile(dir=args.working_dir) as entry_file:
     entry_path = pathlib.Path(entry_file.name)
 
     with open(manifest_file) as f:
