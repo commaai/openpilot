@@ -7,6 +7,7 @@ import time
 
 from pathlib import Path
 
+from openpilot.common.api import API_HOST
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.run import run_cmd
 from openpilot.common.params import Params
@@ -23,7 +24,6 @@ from openpilot.system.hardware.tici.agnos import flash_partition, get_target_slo
 
 UPDATE_DELAY = int(os.environ.get("UPDATE_DELAY", 60))
 
-API_HOST = os.getenv('API_HOST', 'https://api.commadotai.com')
 CHANNELS_API_ROOT = "v1/openpilot/channels"
 
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
