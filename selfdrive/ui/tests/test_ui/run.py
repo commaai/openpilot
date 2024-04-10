@@ -175,7 +175,12 @@ def setup_onroad(click, pm: PubMaster):
 
   time.sleep(0.5) # give time for vipc server to start
 
-  IMG = Camera.bgr2nv12(np.random.randint(0, 255, (d.fcam.width, d.fcam.height, 3), dtype=np.uint8))
+  image_buffer = np.zeros((d.fcam.width, d.fcam.height, 3), dtype=np.uint8)
+
+  for i in range(d.fcam.width):
+    image_buffer[i, :] = np.random.randint(0, 255, (3), dtype=np.uint8)
+
+  IMG = Camera.bgr2nv12(image_buffer)
   IMG_BYTES = IMG.flatten().tobytes()
 
   cams = ('roadCameraState', 'wideRoadCameraState')
