@@ -4,10 +4,8 @@ import dataclasses
 import json
 import pathlib
 
-from openpilot.common.basedir import BASEDIR
-from openpilot.common.run import run_cmd
 from openpilot.system.hardware.tici.agnos import AGNOS_MANIFEST_FILE, get_partition_path
-from openpilot.system.version import get_build_metadata
+from openpilot.system.version import get_build_metadata, get_agnos_version
 
 
 BASE_URL = "https://commadist.blob.core.windows.net"
@@ -40,11 +38,6 @@ def create_openpilot_manifest(build_metadata):
       "caibx": f"{OPENPILOT_RELEASES}/{build_metadata.canonical}.caibx"
     }
   }
-
-
-def get_agnos_version(directory: str = BASEDIR):
-  return run_cmd(["bash", "-c", r"unset AGNOS_VERSION && source launch_env.sh && \
-                          echo -n $AGNOS_VERSION"], directory).strip()
 
 
 if __name__ == "__main__":
