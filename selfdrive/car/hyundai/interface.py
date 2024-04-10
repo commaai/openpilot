@@ -32,6 +32,9 @@ class CarInterface(CarInterfaceBase):
     hda2 = Ecu.adas in [fw.ecu for fw in car_fw]
     CAN = CanBus(None, hda2, fingerprint)
 
+    hda2 = 0x50 in fingerprint[CAN.CAM] or 0x110 in fingerprint[CAN.CAM]
+    CAN = CanBus(None, hda2, fingerprint)
+
     if candidate in CANFD_CAR:
       # detect if car is hybrid
       if 0x105 in fingerprint[CAN.ECAN]:
