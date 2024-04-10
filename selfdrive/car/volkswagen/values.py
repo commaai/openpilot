@@ -318,7 +318,8 @@ class CAR(Platforms):
   )
   SKODA_KAMIQ_MK1 = VolkswagenMQBPlatformConfig(  # Chassis NW
     [VWCarDocs("Škoda Kamiq 2021-23", footnotes=[Footnote.VW_MQB_A0, Footnote.KAMIQ])],
-    VolkswagenCarSpecs(mass=1265, wheelbase=2.66),
+    [VWCarDocs("Škoda Scala 2020-23", footnotes=[Footnote.VW_MQB_A0])],
+    VolkswagenCarSpecs(mass=1230, wheelbase=2.66),
   )
   SKODA_KAROQ_MK1 = VolkswagenMQBPlatformConfig(  # Chassis NU
     [VWCarDocs("Škoda Karoq 2019-23")],
@@ -335,10 +336,6 @@ class CAR(Platforms):
       VWCarDocs("Škoda Octavia Scout 2017-19"),
     ],
     VolkswagenCarSpecs(mass=1388, wheelbase=2.68),
-  )
-  SKODA_SCALA_MK1 = VolkswagenMQBPlatformConfig(  # Chassis NW
-    [VWCarDocs("Škoda Scala 2020-23", footnotes=[Footnote.VW_MQB_A0])],
-    VolkswagenCarSpecs(mass=1192, wheelbase=2.65),
   )
   SKODA_SUPERB_MK3 = VolkswagenMQBPlatformConfig(  # Chassis 3V/NP
     [VWCarDocs("Škoda Superb 2015-22")],
