@@ -8,7 +8,7 @@ from opendbc.can.can_define import CANDefine
 from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car import dbc_dict, CarSpecs, DbcDict, PlatformConfig, Platforms
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column, \
-                                           Device
+                                                     Device
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
 Ecu = car.CarParams.Ecu
@@ -177,7 +177,7 @@ class VWCarDocs(CarDocs):
 # Exception: SEAT Leon and SEAT Ateca share a chassis code
 
 class CAR(Platforms):
-  VOLKSWAGEN_ARTEON_MK1 = VolkswagenMQBPlatformConfig( # Chassis AN
+  VOLKSWAGEN_ARTEON_MK1 = VolkswagenMQBPlatformConfig(  # Chassis AN
     [
       VWCarDocs("Volkswagen Arteon 2018-23", video_link="https://youtu.be/FAomFKPFlDA"),
       VWCarDocs("Volkswagen Arteon R 2020-23", video_link="https://youtu.be/FAomFKPFlDA"),
@@ -186,7 +186,7 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=1733, wheelbase=2.84),
   )
-  VOLKSWAGEN_ATLAS_MK1 = VolkswagenMQBPlatformConfig( # Chassis CA
+  VOLKSWAGEN_ATLAS_MK1 = VolkswagenMQBPlatformConfig(  # Chassis CA
     [
       VWCarDocs("Volkswagen Atlas 2018-23"),
       VWCarDocs("Volkswagen Atlas Cross Sport 2020-22"),
@@ -196,14 +196,14 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=2011, wheelbase=2.98),
   )
-  VOLKSWAGEN_CADDY_MK3 = VolkswagenPQPlatformConfig( # Chassis 2K
+  VOLKSWAGEN_CADDY_MK3 = VolkswagenPQPlatformConfig(  # Chassis 2K
     [
       VWCarDocs("Volkswagen Caddy 2019"),
       VWCarDocs("Volkswagen Caddy Maxi 2019"),
     ],
     VolkswagenCarSpecs(mass=1613, wheelbase=2.6, minSteerSpeed=21 * CV.KPH_TO_MS),
   )
-  VOLKSWAGEN_CRAFTER_MK2 = VolkswagenMQBPlatformConfig( # Chassis SY/SZ
+  VOLKSWAGEN_CRAFTER_MK2 = VolkswagenMQBPlatformConfig(  # Chassis SY/SZ
     [
       VWCarDocs("Volkswagen Crafter 2017-23", video_link="https://youtu.be/4100gLeabmo"),
       VWCarDocs("Volkswagen e-Crafter 2018-23", video_link="https://youtu.be/4100gLeabmo"),
@@ -213,7 +213,7 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=2100, wheelbase=3.64, minSteerSpeed=50 * CV.KPH_TO_MS),
   )
-  VOLKSWAGEN_GOLF_MK7 = VolkswagenMQBPlatformConfig( # Chassis 5G/AU/BA/BE
+  VOLKSWAGEN_GOLF_MK7 = VolkswagenMQBPlatformConfig(  # Chassis 5G/AU/BA/BE
     [
       VWCarDocs("Volkswagen e-Golf 2014-20"),
       VWCarDocs("Volkswagen Golf 2015-20", auto_resume=False),
@@ -226,14 +226,14 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=1397, wheelbase=2.62),
   )
-  VOLKSWAGEN_JETTA_MK7 = VolkswagenMQBPlatformConfig( # Chassis BU
+  VOLKSWAGEN_JETTA_MK7 = VolkswagenMQBPlatformConfig(  # Chassis BU
     [
       VWCarDocs("Volkswagen Jetta 2018-24"),
       VWCarDocs("Volkswagen Jetta GLI 2021-24"),
     ],
     VolkswagenCarSpecs(mass=1328, wheelbase=2.71),
   )
-  VOLKSWAGEN_PASSAT_MK8 = VolkswagenMQBPlatformConfig( # Chassis 3G
+  VOLKSWAGEN_PASSAT_MK8 = VolkswagenMQBPlatformConfig(  # Chassis 3G
     [
       VWCarDocs("Volkswagen Passat 2015-22", footnotes=[Footnote.PASSAT]),
       VWCarDocs("Volkswagen Passat Alltrack 2015-22"),
@@ -241,55 +241,55 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=1551, wheelbase=2.79),
   )
-  VOLKSWAGEN_PASSAT_NMS = VolkswagenPQPlatformConfig( # Chassis A3
+  VOLKSWAGEN_PASSAT_NMS = VolkswagenPQPlatformConfig(  # Chassis A3
     [VWCarDocs("Volkswagen Passat NMS 2017-22")],
-    VolkswagenCarSpecs(mass=1503, wheelbase=2.80, minSteerSpeed=50*CV.KPH_TO_MS, minEnableSpeed=20*CV.KPH_TO_MS),
+    VolkswagenCarSpecs(mass=1503, wheelbase=2.80, minSteerSpeed=50 * CV.KPH_TO_MS, minEnableSpeed=20 * CV.KPH_TO_MS),
   )
-  VOLKSWAGEN_POLO_MK6 = VolkswagenMQBPlatformConfig( # Chassis AW
+  VOLKSWAGEN_POLO_MK6 = VolkswagenMQBPlatformConfig(  # Chassis AW
     [
       VWCarDocs("Volkswagen Polo 2018-23", footnotes=[Footnote.VW_MQB_A0]),
       VWCarDocs("Volkswagen Polo GTI 2018-23", footnotes=[Footnote.VW_MQB_A0]),
     ],
     VolkswagenCarSpecs(mass=1230, wheelbase=2.55),
   )
-  VOLKSWAGEN_SHARAN_MK2 = VolkswagenPQPlatformConfig( # Chassis 7N
+  VOLKSWAGEN_SHARAN_MK2 = VolkswagenPQPlatformConfig(  # Chassis 7N
     [
       VWCarDocs("Volkswagen Sharan 2018-22"),
       VWCarDocs("SEAT Alhambra 2018-20"),
     ],
-    VolkswagenCarSpecs(mass=1639, wheelbase=2.92, minSteerSpeed=50*CV.KPH_TO_MS),
+    VolkswagenCarSpecs(mass=1639, wheelbase=2.92, minSteerSpeed=50 * CV.KPH_TO_MS),
   )
-  VOLKSWAGEN_TAOS_MK1 = VolkswagenMQBPlatformConfig( # Chassis B2
+  VOLKSWAGEN_TAOS_MK1 = VolkswagenMQBPlatformConfig(  # Chassis B2
     [VWCarDocs("Volkswagen Taos 2022-23")],
     VolkswagenCarSpecs(mass=1498, wheelbase=2.69),
   )
-  VOLKSWAGEN_TCROSS_MK1 = VolkswagenMQBPlatformConfig( # Chassis C1
+  VOLKSWAGEN_TCROSS_MK1 = VolkswagenMQBPlatformConfig(  # Chassis C1
     [VWCarDocs("Volkswagen T-Cross 2021", footnotes=[Footnote.VW_MQB_A0])],
     VolkswagenCarSpecs(mass=1150, wheelbase=2.60),
   )
-  VOLKSWAGEN_TIGUAN_MK2 = VolkswagenMQBPlatformConfig( # Chassis AD/BW
+  VOLKSWAGEN_TIGUAN_MK2 = VolkswagenMQBPlatformConfig(  # Chassis AD/BW
     [
       VWCarDocs("Volkswagen Tiguan 2018-24"),
       VWCarDocs("Volkswagen Tiguan eHybrid 2021-23"),
     ],
     VolkswagenCarSpecs(mass=1715, wheelbase=2.74),
   )
-  VOLKSWAGEN_TOURAN_MK2 = VolkswagenMQBPlatformConfig( # Chassis 1T
+  VOLKSWAGEN_TOURAN_MK2 = VolkswagenMQBPlatformConfig(  # Chassis 1T
     [VWCarDocs("Volkswagen Touran 2016-23")],
     VolkswagenCarSpecs(mass=1516, wheelbase=2.79),
   )
-  VOLKSWAGEN_TRANSPORTER_T61 = VolkswagenMQBPlatformConfig( # Chassis 7H/7L
+  VOLKSWAGEN_TRANSPORTER_T61 = VolkswagenMQBPlatformConfig(  # Chassis 7H/7L
     [
       VWCarDocs("Volkswagen Caravelle 2020"),
       VWCarDocs("Volkswagen California 2021-23"),
     ],
     VolkswagenCarSpecs(mass=1926, wheelbase=3.00, minSteerSpeed=14.0),
   )
-  VOLKSWAGEN_TROC_MK1 = VolkswagenMQBPlatformConfig( # Chassis A1
+  VOLKSWAGEN_TROC_MK1 = VolkswagenMQBPlatformConfig(  # Chassis A1
     [VWCarDocs("Volkswagen T-Roc 2018-22", footnotes=[Footnote.VW_MQB_A0])],
     VolkswagenCarSpecs(mass=1413, wheelbase=2.63),
   )
-  AUDI_A3_MK3 = VolkswagenMQBPlatformConfig( # Chassis 8V/FF
+  AUDI_A3_MK3 = VolkswagenMQBPlatformConfig(  # Chassis 8V/FF
     [
       VWCarDocs("Audi A3 2014-19"),
       VWCarDocs("Audi A3 Sportback e-tron 2017-18"),
@@ -298,39 +298,39 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=1335, wheelbase=2.61),
   )
-  AUDI_Q2_MK1 = VolkswagenMQBPlatformConfig( # Chassis GA
+  AUDI_Q2_MK1 = VolkswagenMQBPlatformConfig(  # Chassis GA
     [VWCarDocs("Audi Q2 2018")],
     VolkswagenCarSpecs(mass=1205, wheelbase=2.61),
   )
-  AUDI_Q3_MK2 = VolkswagenMQBPlatformConfig( # Chassis 8U/F3/FS
+  AUDI_Q3_MK2 = VolkswagenMQBPlatformConfig(  # Chassis 8U/F3/FS
     [VWCarDocs("Audi Q3 2019-23")],
     VolkswagenCarSpecs(mass=1623, wheelbase=2.68),
   )
-  SEAT_ATECA_MK1 = VolkswagenMQBPlatformConfig( # Chassis 5F
+  SEAT_ATECA_MK1 = VolkswagenMQBPlatformConfig(  # Chassis 5F
     [VWCarDocs("SEAT Ateca 2018")],
     VolkswagenCarSpecs(mass=1900, wheelbase=2.64),
   )
-  SEAT_LEON_MK3 = VolkswagenMQBPlatformConfig( # Chassis 5F
+  SEAT_LEON_MK3 = VolkswagenMQBPlatformConfig(  # Chassis 5F
     [VWCarDocs("SEAT Leon 2014-20")],
     VolkswagenCarSpecs(mass=1227, wheelbase=2.64),
   )
-  SKODA_FABIA_MK4 = VolkswagenMQBPlatformConfig( # Chassis PJ
+  SKODA_FABIA_MK4 = VolkswagenMQBPlatformConfig(  # Chassis PJ
     [VWCarDocs("Škoda Fabia 2022-23", footnotes=[Footnote.VW_MQB_A0])],
     VolkswagenCarSpecs(mass=1266, wheelbase=2.56),
   )
-  SKODA_KAMIQ_MK1 = VolkswagenMQBPlatformConfig( # Chassis NW
+  SKODA_KAMIQ_MK1 = VolkswagenMQBPlatformConfig(  # Chassis NW
     [VWCarDocs("Škoda Kamiq 2021-23", footnotes=[Footnote.VW_MQB_A0, Footnote.KAMIQ])],
     VolkswagenCarSpecs(mass=1265, wheelbase=2.66),
   )
-  SKODA_KAROQ_MK1 = VolkswagenMQBPlatformConfig( # Chassis NU
+  SKODA_KAROQ_MK1 = VolkswagenMQBPlatformConfig(  # Chassis NU
     [VWCarDocs("Škoda Karoq 2019-23")],
     VolkswagenCarSpecs(mass=1278, wheelbase=2.66),
   )
-  SKODA_KODIAQ_MK1 = VolkswagenMQBPlatformConfig( # Chassis NS
+  SKODA_KODIAQ_MK1 = VolkswagenMQBPlatformConfig(  # Chassis NS
     [VWCarDocs("Škoda Kodiaq 2017-23")],
     VolkswagenCarSpecs(mass=1569, wheelbase=2.79),
   )
-  SKODA_OCTAVIA_MK3 = VolkswagenMQBPlatformConfig( # Chassis NE
+  SKODA_OCTAVIA_MK3 = VolkswagenMQBPlatformConfig(  # Chassis NE
     [
       VWCarDocs("Škoda Octavia 2015-19"),
       VWCarDocs("Škoda Octavia RS 2016"),
@@ -338,11 +338,11 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=1388, wheelbase=2.68),
   )
-  SKODA_SCALA_MK1 = VolkswagenMQBPlatformConfig( # Chassis NW
+  SKODA_SCALA_MK1 = VolkswagenMQBPlatformConfig(  # Chassis NW
     [VWCarDocs("Škoda Scala 2020-23", footnotes=[Footnote.VW_MQB_A0])],
     VolkswagenCarSpecs(mass=1192, wheelbase=2.65),
   )
-  SKODA_SUPERB_MK3 = VolkswagenMQBPlatformConfig( # Chassis 3V/NP
+  SKODA_SUPERB_MK3 = VolkswagenMQBPlatformConfig(  # Chassis 3V/NP
     [VWCarDocs("Škoda Superb 2015-22")],
     VolkswagenCarSpecs(mass=1505, wheelbase=2.84),
   )
