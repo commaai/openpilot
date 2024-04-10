@@ -109,6 +109,8 @@ def create_virtual_agnos_manifest(mock_update_path: pathlib.Path, agnos_version:
     {
       "name": "system",
       "type": "partition",
+      "path": f"{mock_update_path}/system_a",
+      "ab": True,
       "casync": {
         "caibx": caibx_file.name
       },
@@ -119,6 +121,8 @@ def create_virtual_agnos_manifest(mock_update_path: pathlib.Path, agnos_version:
     {
       "name": "boot",
       "type": "partition",
+      "path": f"{mock_update_path}/boot_a",
+      "ab": True,
       "casync": {
         "caibx": caibx_file.name
       },
@@ -195,6 +199,7 @@ class TestUpdated(unittest.TestCase):
       time.sleep(1)
 
   def _test_finalized_update(self, branch, version, agnos_version, release_notes):
+    self.assertTrue(os.path.exists(self.staging_root / "finalized" / "build.json"))
     self.assertEqual(get_version(str(self.staging_root / "finalized")), version)
     self.assertEqual(get_consistent_flag(str(self.staging_root / "finalized")), True)
     self.assertTrue(os.access(str(self.staging_root / "finalized" / "launch_env.sh"), os.X_OK))
@@ -230,13 +235,10 @@ class TestUpdated(unittest.TestCase):
       with http_server_context(self.api_handler) as (api_host, api_port):
         os.environ["API_HOST"] = f"http://{api_host}:{api_port}"
 
-        def get_partition_path(entry: dict, target: bool):
-          if entry["name"] == "system":
-            return self.system_b if target else self.system_a
-          if entry["name"] == "boot":
-            return self.boot_b if target else self.boot_a
+        def get_ab_slot(target: bool):
+          return "a" if target else "b"
 
-        with mock.patch("openpilot.system.hardware.HARDWARE.get_partition_path", get_partition_path):
+        with mock.patch("openpilot.system.hardware.HARDWARE.get_ab_slot", get_ab_slot):
           yield
 
   def setup_git_basedir_release(self, release):

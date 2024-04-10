@@ -133,6 +133,11 @@ def build_metadata_from_dict(build_metadata: dict) -> BuildMetadata:
               is_dirty=False))
 
 
+def is_git_repo(path: str = BASEDIR):
+  git_folder = pathlib.Path(path) / ".git"
+  return git_folder.exists()
+
+
 def get_build_metadata(path: str = BASEDIR) -> BuildMetadata:
   build_metadata_path = pathlib.Path(path) / BUILD_METADATA_FILENAME
 
@@ -140,9 +145,7 @@ def get_build_metadata(path: str = BASEDIR) -> BuildMetadata:
     build_metadata = json.loads(build_metadata_path.read_text())
     return build_metadata_from_dict(build_metadata)
 
-  git_folder = pathlib.Path(path) / ".git"
-
-  if git_folder.exists():
+  if is_git_repo(path):
     return BuildMetadata(get_short_branch(path),
                     OpenpilotMetadata(
                       version=get_version(path),

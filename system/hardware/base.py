@@ -146,7 +146,7 @@ class HardwareBase(ABC):
     return -1, -1
 
   @abstractmethod
-  def get_partition_path(self, partition: dict, target: bool) -> str:
+  def get_ab_slot(self, target: bool) -> str:
     # get path to staging / live partition
     pass
 

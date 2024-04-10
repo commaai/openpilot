@@ -17,7 +17,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.updated.casync import casync
 from openpilot.system.updated.common import get_consistent_flag, set_consistent_flag
-from openpilot.system.version import BuildMetadata, get_build_metadata, build_metadata_from_dict
+from openpilot.system.version import BuildMetadata, get_build_metadata, build_metadata_from_dict, is_git_repo
 
 
 UPDATE_DELAY = int(os.environ.get("UPDATE_DELAY", 60))
@@ -51,7 +51,8 @@ def get_remote_channel_data(channel) -> tuple[BuildMetadata | None, dict | None]
 
 def check_update_available(current_directory, other_metadata: BuildMetadata):
   build_metadata = get_build_metadata(current_directory)
-  return build_metadata.channel != other_metadata.channel or \
+  return is_git_repo(current_directory) or \
+         build_metadata.channel != other_metadata.channel or \
          build_metadata.openpilot.git_commit != other_metadata.openpilot.git_commit or \
          build_metadata.openpilot.build_style != other_metadata.openpilot.build_style
 
@@ -108,8 +109,19 @@ def extract_partition_helper(entry):
   caibx_url = entry["casync"]["caibx"]
   chunks = casync.parse_caibx(caibx_url)
 
-  target_path = HARDWARE.get_partition_path(entry, True)
-  seed_path = HARDWARE.get_partition_path(entry, False)
+  target_path = entry["path"]
+
+  sources = []
+
+  if entry["ab"]:
+    target_path = entry["path"].replace("_a", f"_{HARDWARE.get_ab_slot(False)}")
+    seed_path = entry["path"].replace("_a", f"_{HARDWARE.get_ab_slot(True)}")
+    sources += [('seed', casync.FileChunkReader(seed_path), casync.build_chunk_dict(chunks))]
+
+  sources += [
+    ('target', casync.FileChunkReader(target_path), casync.build_chunk_dict(chunks)),
+    create_remote_chunk_source(caibx_url, chunks)
+  ]
 
   current_hash = get_partition_hash(target_path, entry["size"])
   target_hash = entry['hash_raw'].lower()
@@ -123,11 +135,6 @@ def extract_partition_helper(entry):
   if not full_check:
     set_partition_hash(target_path, entry["size"], b'\x00' * 64)
 
-  sources = [
-    ('seed', casync.FileChunkReader(seed_path), casync.build_chunk_dict(chunks)),
-    ('target', casync.FileChunkReader(target_path), casync.build_chunk_dict(chunks)),
-    create_remote_chunk_source(caibx_url, chunks)
-  ]
 
   cloudlog.info(f"extracting {caibx_url} to {target_path}")
   start = time.monotonic()
