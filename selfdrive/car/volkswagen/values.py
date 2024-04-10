@@ -120,11 +120,13 @@ class VolkswagenFlags(IntFlag):
 @dataclass
 class VolkswagenMQBPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('vw_mqb_2010', None))
+  chassis_codes: set[str] = field(default_factory=set)
 
 
 @dataclass
 class VolkswagenPQPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('vw_golf_mk4', None))
+  chassis_codes: set[str] = field(default_factory=set)
 
   def init(self):
     self.flags |= VolkswagenFlags.PQ
