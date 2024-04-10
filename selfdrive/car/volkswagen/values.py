@@ -174,7 +174,6 @@ class VWCarDocs(CarDocs):
 # Check the 7th and 8th characters of the VIN before adding a new CAR. If the
 # chassis code is already listed below, don't add a new CAR, just add to the
 # FW_VERSIONS for that existing CAR.
-# Exception: SEAT Leon and SEAT Ateca share a chassis code
 
 class CAR(Platforms):
   VOLKSWAGEN_ARTEON_MK1 = VolkswagenMQBPlatformConfig(  # Chassis AN
@@ -307,20 +306,22 @@ class CAR(Platforms):
     VolkswagenCarSpecs(mass=1623, wheelbase=2.68),
   )
   SEAT_ATECA_MK1 = VolkswagenMQBPlatformConfig(  # Chassis 5F
-    [VWCarDocs("SEAT Ateca 2018")],
-    VolkswagenCarSpecs(mass=1900, wheelbase=2.64),
-  )
-  SEAT_LEON_MK3 = VolkswagenMQBPlatformConfig(  # Chassis 5F
-    [VWCarDocs("SEAT Leon 2014-20")],
-    VolkswagenCarSpecs(mass=1227, wheelbase=2.64),
+    [
+      VWCarDocs("SEAT Ateca 2018"),
+      VWCarDocs("SEAT Leon 2014-20"),
+    ],
+    VolkswagenCarSpecs(mass=1300, wheelbase=2.64),
   )
   SKODA_FABIA_MK4 = VolkswagenMQBPlatformConfig(  # Chassis PJ
     [VWCarDocs("Škoda Fabia 2022-23", footnotes=[Footnote.VW_MQB_A0])],
     VolkswagenCarSpecs(mass=1266, wheelbase=2.56),
   )
   SKODA_KAMIQ_MK1 = VolkswagenMQBPlatformConfig(  # Chassis NW
-    [VWCarDocs("Škoda Kamiq 2021-23", footnotes=[Footnote.VW_MQB_A0, Footnote.KAMIQ])],
-    VolkswagenCarSpecs(mass=1265, wheelbase=2.66),
+    [
+      VWCarDocs("Škoda Kamiq 2021-23", footnotes=[Footnote.VW_MQB_A0, Footnote.KAMIQ]),
+      VWCarDocs("Škoda Scala 2020-23", footnotes=[Footnote.VW_MQB_A0]),
+    ],
+    VolkswagenCarSpecs(mass=1230, wheelbase=2.66),
   )
   SKODA_KAROQ_MK1 = VolkswagenMQBPlatformConfig(  # Chassis NU
     [VWCarDocs("Škoda Karoq 2019-23")],
@@ -337,10 +338,6 @@ class CAR(Platforms):
       VWCarDocs("Škoda Octavia Scout 2017-19"),
     ],
     VolkswagenCarSpecs(mass=1388, wheelbase=2.68),
-  )
-  SKODA_SCALA_MK1 = VolkswagenMQBPlatformConfig(  # Chassis NW
-    [VWCarDocs("Škoda Scala 2020-23", footnotes=[Footnote.VW_MQB_A0])],
-    VolkswagenCarSpecs(mass=1192, wheelbase=2.65),
   )
   SKODA_SUPERB_MK3 = VolkswagenMQBPlatformConfig(  # Chassis 3V/NP
     [VWCarDocs("Škoda Superb 2015-22")],
