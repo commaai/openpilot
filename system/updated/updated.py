@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import hashlib
 import os
 import psutil
 import requests
@@ -13,12 +14,11 @@ from openpilot.common.run import run_cmd
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
 from openpilot.common.swaglog import cloudlog
+from openpilot.system.hardware import HARDWARE
 from openpilot.system.updated.casync import casync
-from openpilot.system.hardware import AGNOS
 from openpilot.system.updated.common import get_consistent_flag, set_consistent_flag
 from openpilot.system.version import BuildMetadata, get_build_metadata, build_metadata_from_dict
 
-from openpilot.system.hardware.tici.agnos import flash_partition, get_target_slot_number
 
 UPDATE_DELAY = int(os.environ.get("UPDATE_DELAY", 60))
 
@@ -56,8 +56,35 @@ def check_update_available(current_directory, other_metadata: BuildMetadata):
          build_metadata.openpilot.build_style != other_metadata.openpilot.build_style
 
 
+def create_remote_chunk_source(caibx_url, chunks):
+  return ('remote', casync.RemoteChunkReader(casync.get_default_store(caibx_url)), casync.build_chunk_dict(chunks))
+
+
+def get_partition_hash(path: str, partition_size: int) -> str:
+  hasher = hashlib.sha256()
+  pos, chunk_size = 0, 1024 * 1024
+
+  with open(path, 'rb') as out:
+    while pos < partition_size:
+      n = min(chunk_size, partition_size - pos)
+      hasher.update(out.read(n))
+      pos += n
+
+  return hasher.hexdigest().lower()
+
+
+def set_partition_hash(path: str, partition_size: int, new_hash: bytes):
+  with open(path, 'rb+') as out:
+    out.seek(partition_size)
+    assert len(new_hash) == 64
+    out.write(new_hash)
+
+  os.sync()
+
+
 def extract_directory_helper(entry, cache_directory, directory):
-  target = casync.parse_caibx(entry["casync"]["caibx"])
+  caibx_url = entry["casync"]["caibx"]
+  target = casync.parse_caibx(caibx_url)
 
   cache_filename = os.path.join(CASYNC_TMPDIR, "cache.tar")
   tmp_filename = os.path.join(CASYNC_TMPDIR, "tmp.tar")
@@ -67,17 +94,54 @@ def extract_directory_helper(entry, cache_directory, directory):
   sources = [('cache', casync.DirectoryTarChunkReader(cache_directory, cache_filename), casync.build_chunk_dict(target))]
   cloudlog.info(f"tarball cache creation completed in {time.monotonic() - start} seconds")
 
-  sources += [('remote', casync.RemoteChunkReader(casync.get_default_store(entry["casync"]["caibx"])), casync.build_chunk_dict(target))]
+  sources += [create_remote_chunk_source(caibx_url, target)]
 
-  cloudlog.info(f"extracting {entry['casync']['caibx']} to {directory}")
+  cloudlog.info(f"extracting {caibx_url} to {directory}")
   start = time.monotonic()
   stats = casync.extract_directory(target, sources, directory, tmp_filename)
   cloudlog.info(f"extraction completed in {time.monotonic() - start} seconds with {stats}")
 
 
+def extract_partition_helper(entry):
+  cloudlog.info(f"extracting partition: {entry}")
+
+  caibx_url = entry["casync"]["caibx"]
+  chunks = casync.parse_caibx(caibx_url)
+
+  target_path = HARDWARE.get_partition_path(entry, True)
+  seed_path = HARDWARE.get_partition_path(entry, False)
+
+  current_hash = get_partition_hash(target_path, entry["size"])
+  target_hash = entry['hash_raw'].lower()
+
+  cloudlog.info(f"{current_hash=}, {target_hash=}")
+  if current_hash == target_hash:
+    return
+
+  # Clear hash before flashing in case we get interrupted
+  full_check = entry['full_check']
+  if not full_check:
+    set_partition_hash(target_path, entry["size"], b'\x00' * 64)
+
+  sources = [
+    ('seed', casync.FileChunkReader(seed_path), casync.build_chunk_dict(chunks)),
+    ('target', casync.FileChunkReader(target_path), casync.build_chunk_dict(chunks)),
+    create_remote_chunk_source(caibx_url, chunks)
+  ]
+
+  cloudlog.info(f"extracting {caibx_url} to {target_path}")
+  start = time.monotonic()
+  stats = casync.extract(chunks, sources, target_path)
+  cloudlog.info(f"extraction completed in {time.monotonic() - start} seconds with {stats}")
+
+  # Write hash after successful flash
+  if not full_check:
+    set_partition_hash(target_path, entry["size"], entry['hash_raw'].lower().encode())
+
 
 # TODO: this can be removed after all devices have moved away from overlay based git updater
 OVERLAY_MERGED = os.path.join(STAGING_ROOT, "merged")
+
 
 def dismount_overlay() -> None:
   if os.path.ismount(OVERLAY_MERGED):
@@ -99,20 +163,14 @@ def setup_dirs():
 def download_update(manifest):
   cloudlog.info(f"downloading update from: {manifest}")
 
+  HARDWARE.system_update_prepare()
+
   for entry in manifest:
     if entry["type"] == "path_tarred" and entry["path"] == "/data/openpilot":
       extract_directory_helper(entry, BASEDIR, CASYNC_STAGING)
 
-  if AGNOS:
-    target_slot_number = get_target_slot_number()
-    cloudlog.info(f"Target slot {target_slot_number}")
-
-    # set target slot as unbootable
-    os.system(f"abctl --set_unbootable {target_slot_number}")
-
-    for entry in manifest:
-      if entry["type"] == "partition":
-        flash_partition(target_slot_number, entry, cloudlog)
+    if entry["type"] == "partition":
+      extract_partition_helper(entry)
 
 
 def finalize_update():

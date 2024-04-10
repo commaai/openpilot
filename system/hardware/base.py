@@ -144,3 +144,13 @@ class HardwareBase(ABC):
 
   def get_modem_data_usage(self):
     return -1, -1
+
+  @abstractmethod
+  def get_partition_path(self, partition: dict, target: bool) -> str:
+    # get path to staging / live partition
+    pass
+
+  @abstractmethod
+  def system_update_prepare(self):
+    # prepare for a system update
+    pass

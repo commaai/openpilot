@@ -68,12 +68,14 @@ def OpenpilotChannelMockAPI(release_manifests: dict[str, list[dict]], mock_relea
 def create_virtual_agnos_manifest(mock_update_path: pathlib.Path, agnos_version: str) -> list[dict]:
   agnos_bin_file = mock_update_path / "agnos.bin"
 
+  data = agnos_version.encode("utf-8")
+
   with open(agnos_bin_file, "wb") as f:
-    f.write(agnos_version.encode("utf-8"))
+    f.write(data)
 
   caibx_file = create_casync_from_file(agnos_bin_file, mock_update_path / "casync", "agnos.caibx")
 
-  size = caibx_file.stat().st_size
+  size = len(data)
   raw_hash = get_raw_hash(str(agnos_bin_file), size)
 
   return [
@@ -86,7 +88,17 @@ def create_virtual_agnos_manifest(mock_update_path: pathlib.Path, agnos_version:
       "size": size,
       "hash_raw": raw_hash,
       "full_check": True
-    }
+    },
+    {
+      "name": "boot",
+      "type": "partition",
+      "casync": {
+        "caibx": caibx_file.name
+      },
+      "size": size,
+      "hash_raw": raw_hash,
+      "full_check": False
+    },
   ]
 
 
@@ -97,6 +109,18 @@ class TestUpdated(BaseUpdateTest):
     self.casync_dir.mkdir()
     self.release_manifests = {}
     os.environ["UPDATE_DELAY"] = "1"
+
+    self.system_a = self.mock_update_path / "system_a"
+    self.system_b = self.mock_update_path / "system_b"
+
+    self.system_a.write_bytes(b"1.2")
+    self.system_b.write_bytes(b"1.2")
+
+    self.boot_a = self.mock_update_path / "boot_a"
+    self.boot_b = self.mock_update_path / "boot_b"
+
+    self.boot_a.write_bytes(b"1.2")
+    self.boot_b.write_bytes(b"1.2")
 
   def update_remote_release(self, release):
     update_release(self.remote_dir, release, *self.MOCK_RELEASES[release])
@@ -130,7 +154,15 @@ class TestUpdated(BaseUpdateTest):
       self.api_handler = OpenpilotChannelMockAPI(self.release_manifests, self.MOCK_RELEASES, casync_base)
       with http_server_context(self.api_handler) as (api_host, api_port):
         os.environ["API_HOST"] = f"http://{api_host}:{api_port}"
-        yield
+
+        def get_partition_path(entry: dict, target: bool):
+          if entry["name"] == "system":
+            return self.system_b if target else self.system_a
+          if entry["name"] == "boot":
+            return self.boot_b if target else self.boot_a
+
+        with mock.patch("openpilot.system.hardware.HARDWARE.get_partition_path", get_partition_path):
+          yield
 
   def setup_git_basedir_release(self, release):
     super().setup_basedir_release(release)
@@ -234,33 +266,18 @@ class TestUpdated(BaseUpdateTest):
     self.MOCK_RELEASES["release3"] = ("0.1.3", "1.3", "0.1.3 release notes")
     self.update_remote_release("release3")
 
-    self.partition_slot_1 = self.mock_update_path / "slota"
-    self.partition_slot_2 = self.mock_update_path / "slotb"
-
-    self.partition_slot_1.write_bytes(b"1.2")
-    self.partition_slot_2.write_bytes(b"1.2")
-
-    def get_target_slot_number(*args, **kwargs):
-      return 2
-
-    def get_partition_path(target_slot_number: int, partition: dict):
-      if target_slot_number == 1:
-        return str(self.partition_slot_1)
-      else:
-        return str(self.partition_slot_2)
-
     with self.additional_context(), \
-      mock.patch("openpilot.system.hardware.AGNOS", "True"), \
-      mock.patch("openpilot.system.hardware.tici.hardware.Tici.get_os_version", "1.2"), \
-      mock.patch("openpilot.system.hardware.tici.agnos.get_target_slot_number", get_target_slot_number), \
-      mock.patch("openpilot.system.hardware.tici.agnos.get_partition_path", get_partition_path), \
-      mock.patch("openpilot.system.hardware.tici.agnos.flash_agnos_update"), \
-        processes_context(["updated"]):
+      processes_context(["updated"]):
 
       time.sleep(1)
       self._wait_for_finalized()
       self._test_finalized_update("release3", *self.MOCK_RELEASES["release3"])
 
       # ensure update was pushed into correct slot
-      self.assertEqual(self.partition_slot_1.read_bytes(), b"1.2")
-      self.assertEqual(self.partition_slot_2.read_bytes(), b"1.3")
+      self.assertEqual(self.boot_a.read_bytes()[:3], b"1.2")
+      self.assertEqual(self.boot_b.read_bytes()[:3], b"1.3")
+
+      self.assertEqual(self.system_a.read_bytes()[:3], b"1.2")
+      self.assertEqual(self.system_b.read_bytes()[:3], b"1.3")
+
+      self.assertEqual(len(self.system_b.read_bytes()), 3)

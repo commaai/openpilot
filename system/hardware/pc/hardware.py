@@ -82,3 +82,9 @@ class Pc(HardwareBase):
 
   def get_networks(self):
     return None
+
+  def get_partition_path(self, entry: dict, target: bool) -> str:
+    raise Exception("no partitions when running on pc")
+
+  def system_update_prepare(self):
+    pass
