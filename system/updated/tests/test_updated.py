@@ -256,7 +256,6 @@ class TestUpdated(unittest.TestCase):
           with fake_ab("_a"):
             yield
 
-
   def setup_git_basedir_release(self, release):
     self.setup_basedir_release(release)
     run_cmd(["git", "init"], cwd=self.basedir)

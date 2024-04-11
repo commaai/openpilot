@@ -26,9 +26,8 @@ CHANNELS_API_ROOT = "v1/openpilot/channels"
 
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
 
-CASYNC_STAGING = Path(STAGING_ROOT) / "casync"        # where the casync update is pulled
-CASYNC_TMPDIR = Path(STAGING_ROOT) / "casync_tmp"     # working directory for casync temp files
-FINALIZED = os.path.join(STAGING_ROOT, "finalized")
+FINALIZED = Path(STAGING_ROOT) / "finalized"        # where the casync update is pulled
+CASYNC_TMPDIR = Path(STAGING_ROOT) / "casync_tmp"   # working directory for casync temp files
 
 
 def get_remote_available_channels() -> list | None:
@@ -90,6 +89,8 @@ def set_partition_hash(path: str, partition_size: int, new_hash: bytes):
 def extract_directory_helper(entry, cache_directory, directory):
   caibx_url = entry["casync"]["caibx"]
   target = casync.parse_caibx(caibx_url)
+
+  shutil.rmtree(directory)
 
   cache_filename = os.path.join(CASYNC_TMPDIR, "cache.tar")
   tmp_filename = os.path.join(CASYNC_TMPDIR, "tmp.tar")
@@ -168,32 +169,23 @@ def setup_dirs():
 
   Path(STAGING_ROOT).mkdir()
   CASYNC_TMPDIR.mkdir()
-  CASYNC_STAGING.mkdir()
+  FINALIZED.mkdir()
 
 
 def download_update(manifest):
   cloudlog.info(f"downloading update from: {manifest}")
 
+  set_consistent_flag(FINALIZED, False)
+
   HARDWARE.prepare_target_ab_slot()
 
   for entry in manifest:
-    if entry["type"] == "path_tarred" and entry["path"] == "/data/openpilot":
-      extract_directory_helper(entry, BASEDIR, CASYNC_STAGING)
+    if entry["type"] == "path_tarred":
+      extract_directory_helper(entry, BASEDIR, FINALIZED)
 
     if entry["type"] == "partition":
       extract_partition_helper(entry)
 
-
-def finalize_update():
-  cloudlog.info("creating finalized version of the update")
-  set_consistent_flag(FINALIZED, False)
-
-  if os.path.exists(FINALIZED):
-    shutil.rmtree(FINALIZED)
-  shutil.copytree(CASYNC_STAGING, FINALIZED, symlinks=True)
-
-  set_consistent_flag(FINALIZED, True)
-  cloudlog.info("done finalizing update")
 
 
 def main():
@@ -233,8 +225,7 @@ def main():
       if update_available:
         try:
           download_update(remote_manifest)
-
-          finalize_update()
+          set_consistent_flag(FINALIZED, True)
           update_ready = get_consistent_flag(FINALIZED)
           update_failed_count = 0
         except Exception:
