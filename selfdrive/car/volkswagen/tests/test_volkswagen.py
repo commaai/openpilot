@@ -25,6 +25,7 @@ class TestVolkswagenPlatformConfigs(unittest.TestCase):
       with self.subTest(platform=platform):
         for chassis_code in platform.config.chassis_codes:
           vin = ['0'] * 17
+          vin[0:3] = 'WVW'
           vin[6:8] = chassis_code
           vin = ''.join(vin)
 
