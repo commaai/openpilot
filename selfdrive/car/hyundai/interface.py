@@ -29,10 +29,9 @@ class CarInterface(CarInterfaceBase):
     # FIXME: the Optima Hybrid 2017 uses a different SCC12 checksum
     ret.dashcamOnly = candidate in {CAR.KIA_OPTIMA_H, }
 
-    hda2 = Ecu.adas in [fw.ecu for fw in car_fw]
-    CAN = CanBus(None, hda2, fingerprint)
-
-    hda2 = 0x50 in fingerprint[CAN.CAM] or 0x110 in fingerprint[CAN.CAM]
+    _CAN_CAM = CanBus(None).CAM
+    hda2 = Ecu.adas in [fw.ecu for fw in car_fw] or \
+           0x50 in fingerprint[_CAN_CAM] or 0x110 in fingerprint[_CAN_CAM]
     CAN = CanBus(None, hda2, fingerprint)
 
     if candidate in CANFD_CAR:
