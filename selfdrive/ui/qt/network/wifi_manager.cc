@@ -99,8 +99,8 @@ void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
   seenNetworks.clear();
 
   const QDBusReply<QList<QDBusObjectPath>> watcher_reply = *watcher;
-  if (!wather_reply.isValid()) {
-    qCritical() << "Failed to refresh.";
+  if (!watcher_reply.isValid()) {
+    qCritical() << "Failed to refresh";
     watcher->deleteLater();
     return;
   }
@@ -112,7 +112,7 @@ void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
       continue;
     }
 
-    auto properties = replay.value();
+    auto properties = reply.value();
     const QByteArray ssid = properties["Ssid"].toByteArray();
     if (ssid.isEmpty()) continue;
 

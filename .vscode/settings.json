@@ -23,12 +23,5 @@
     "system/**",
     "third_party/**",
     "tools/**",
-  ],
-  "files.associations": {
-    "*.py": "python",
-    "*.tcc": "cpp",
-    "optional": "cpp",
-    "system_error": "cpp",
-    "regex": "cpp"
-  }
+  ]
 }
