@@ -12,7 +12,7 @@ class TestVolkswagenPlatformConfigs(unittest.TestCase):
       with self.subTest(platform=platform):
         for fws in ecus.values():
           for fw in fws:
-            self.assertTrue(SPARE_PART_FW_PATTERN.match(fw), f"Bad FW: {fw}")
+            self.assertNotEqual(SPARE_PART_FW_PATTERN.match(fw), None, f"Bad FW: {fw}")
 
 
 if __name__ == "__main__":
