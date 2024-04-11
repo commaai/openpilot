@@ -61,17 +61,22 @@ def create_remote_chunk_source(caibx_url, chunks):
   return ('remote', casync.RemoteChunkReader(casync.get_default_store(caibx_url)), casync.build_chunk_dict(chunks))
 
 
-def get_partition_hash(path: str, partition_size: int) -> str:
-  hasher = hashlib.sha256()
-  pos, chunk_size = 0, 1024 * 1024
+def get_partition_hash(path: str, partition_size: int, full_check: bool) -> str:
+  if full_check:
+    hasher = hashlib.sha256()
+    pos, chunk_size = 0, 1024 * 1024
 
-  with open(path, 'rb') as out:
-    while pos < partition_size:
-      n = min(chunk_size, partition_size - pos)
-      hasher.update(out.read(n))
-      pos += n
+    with open(path, 'rb') as out:
+      while pos < partition_size:
+        n = min(chunk_size, partition_size - pos)
+        hasher.update(out.read(n))
+        pos += n
 
-  return hasher.hexdigest().lower()
+    return hasher.hexdigest().lower()
+  else:
+    with open(path, 'rb+') as out:
+      out.seek(partition_size)
+      return out.read(32).hex().lower()
 
 
 def set_partition_hash(path: str, partition_size: int, new_hash: bytes):
@@ -123,7 +128,7 @@ def extract_partition_helper(entry):
     create_remote_chunk_source(caibx_url, chunks)
   ]
 
-  current_hash = get_partition_hash(target_path, entry["size"])
+  current_hash = get_partition_hash(target_path, entry["size"], entry["full_check"])
   target_hash = entry['hash_raw'].lower()
 
   cloudlog.info(f"{current_hash=}, {target_hash=}")
