@@ -18,8 +18,9 @@ Route::Route(const QString &route, const QString &data_dir) : data_dir_(data_dir
 }
 
 RouteIdentifier Route::parseRoute(const QString &str) {
+  static QRegularExpression rx(R"(^((?<dongle_id>[a-z0-9]{16})[|_/])?(?<timestamp>.{20})((?<separator>--|/)(?<range>((-?\d+(:(-?\d+)?)?)|(:-?\d+))))?$)");
+
   RouteIdentifier identifier = {};
-  QRegularExpression rx(R"(^((?<dongle_id>[a-z0-9]{16})[|_/])?(?<timestamp>.{20})((?<separator>--|/)(?<range>((-?\d+(:(-?\d+)?)?)|(:-?\d+))))?$)");
   if (auto match = rx.match(str); match.hasMatch()) {
     identifier.dongle_id = match.captured("dongle_id");
     identifier.timestamp = match.captured("timestamp");
@@ -83,7 +84,8 @@ bool Route::loadFromServer(int retries) {
 }
 
 bool Route::loadFromJson(const QString &json) {
-  QRegExp rx(R"(\/(\d+)\/)");
+  static QRegExp rx(R"(\/(\d+)\/)");
+
   for (const auto &value : QJsonDocument::fromJson(json.trimmed().toUtf8()).object()) {
     for (const auto &url : value.toArray()) {
       QString url_str = url.toString();
