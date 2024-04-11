@@ -3,7 +3,8 @@
 #define BGGR
 
 #define BIT_DEPTH 10
-#define PV_MAX 65536 // gamma curve is calibrated to 16bit
+#define PV_MAX10 1023
+#define PV_MAX16 65536 // gamma curve is calibrated to 16bit
 #define BLACK_LVL 64
 #define VIGNETTE_RSZ 2.2545f
 
@@ -12,16 +13,16 @@ float combine_dual_pvs(float lv, float sv, int expo_time) {
   float svd = sv * fmin(expo_time, 8.0) / 8;
 
   if (expo_time > 64) {
-    if (lv < 1023 - BLACK_LVL) {
-      return lv / (PV_MAX - BLACK_LVL);
+    if (lv < PV_MAX10 - BLACK_LVL) {
+      return lv / (PV_MAX16 - BLACK_LVL);
     } else {
-      return (svc / 64) / (PV_MAX - BLACK_LVL);
+      return (svc / 64) / (PV_MAX16 - BLACK_LVL);
     }
   } else {
     if (lv > 32) {
-      return (lv * 64 / fmax(expo_time, 8.0)) / (PV_MAX - BLACK_LVL);
+      return (lv * 64 / fmax(expo_time, 8.0)) / (PV_MAX16 - BLACK_LVL);
     } else {
-      return svd / (PV_MAX - BLACK_LVL);
+      return svd / (PV_MAX16 - BLACK_LVL);
     }
   }
 }
@@ -48,7 +49,7 @@ float3 apply_gamma(float3 rgb, int expo_time) {
   float s = log2((float)expo_time);
   if (s < 6) {s = fmin(12.0 - s, 9.0);}
   // log function adaptive to number of bits
-  return clamp(log(1 + rgb*(PV_MAX - BLACK_LVL)) * (0.48*s*s - 12.92*s + 115.0) - (1.08*s*s - 29.2*s + 260.0), 0.0, 255.0) / 255.0;
+  return clamp(log(1 + rgb*(PV_MAX16 - BLACK_LVL)) * (0.48*s*s - 12.92*s + 115.0) - (1.08*s*s - 29.2*s + 260.0), 0.0, 255.0) / 255.0;
 }
 
 #endif
