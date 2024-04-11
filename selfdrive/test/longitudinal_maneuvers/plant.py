@@ -50,7 +50,7 @@ class Plant:
     from openpilot.selfdrive.car.honda.values import CAR
     from openpilot.selfdrive.car.honda.interface import CarInterface
 
-    self.planner = LongitudinalPlanner(CarInterface.get_non_essential_params(CAR.CIVIC), init_v=self.speed)
+    self.planner = LongitudinalPlanner(CarInterface.get_non_essential_params(CAR.HONDA_CIVIC), init_v=self.speed)
 
   @property
   def current_time(self):

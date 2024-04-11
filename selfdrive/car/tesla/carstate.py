@@ -26,7 +26,7 @@ class CarState(CarStateBase):
     ret = car.CarState.new_message()
 
     model3 = self.CP.carFingerprint == CAR.AP3_MODEL3
-    models_raven = self.CP.carFingerprint == CAR.MODELS_RAVEN
+    models_raven = self.CP.carFingerprint == CAR.TESLA_MODELS_RAVEN
 
     # Vehicle speed
     ret.vEgoRaw = cp.vl["ESP_B"]["ESP_vehicleSpeed"] * CV.KPH_TO_MS
@@ -155,7 +155,7 @@ class CarState(CarStateBase):
       ("BrakeMessage", 50),
     ]
 
-    if CP.carFingerprint == CAR.MODELS_RAVEN:
+    if CP.carFingerprint == CAR.TESLA_MODELS_RAVEN:
       messages.append(("DriverSeat", 20))
     else:
       messages.append(("SDM1", 10))
@@ -179,7 +179,7 @@ class CarState(CarStateBase):
       ("DAS_control", 25),
     ]
 
-    if CP.carFingerprint == CAR.MODELS_RAVEN:
+    if CP.carFingerprint == CAR.TESLA_MODELS_RAVEN:
       messages.append(("EPAS3P_sysStatus", 100))
 
     return CANParser(DBC[CP.carFingerprint]['chassis'], messages, CANBUS.autopilot_chassis)

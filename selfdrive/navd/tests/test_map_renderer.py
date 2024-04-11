@@ -65,6 +65,7 @@ class MapBoxInternetDisabledServer(threading.Thread):
     MapBoxInternetDisabledRequestHandler.INTERNET_ACTIVE = True
 
 
+@pytest.mark.skip(reason="not used")
 class TestMapRenderer(unittest.TestCase):
   server: MapBoxInternetDisabledServer
 

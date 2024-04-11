@@ -15,7 +15,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import gen_empty_fingerprint
-from openpilot.selfdrive.car.fingerprints import all_known_cars
+from openpilot.selfdrive.car.fingerprints import all_known_cars, MIGRATION
 from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from openpilot.selfdrive.car.honda.values import CAR as HONDA, HondaFlags
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
@@ -95,7 +95,8 @@ class TestCarModelBase(unittest.TestCase):
         if msg.carParams.openpilotLongitudinalControl:
           experimental_long = True
         if cls.platform is None and not cls.ci:
-          cls.platform = msg.carParams.carFingerprint
+          live_fingerprint = msg.carParams.carFingerprint
+          cls.platform = MIGRATION.get(live_fingerprint, live_fingerprint)
 
       # Log which can frame the panda safety mode left ELM327, for CAN validity checks
       elif msg.which() == 'pandaStates':
@@ -367,7 +368,7 @@ class TestCarModelBase(unittest.TestCase):
         # TODO: remove this exception once this mismatch is resolved
         brake_pressed = CS.brakePressed
         if CS.brakePressed and not self.safety.get_brake_pressed_prev():
-          if self.CP.carFingerprint in (HONDA.PILOT, HONDA.RIDGELINE) and CS.brake > 0.05:
+          if self.CP.carFingerprint in (HONDA.HONDA_PILOT, HONDA.HONDA_RIDGELINE) and CS.brake > 0.05:
             brake_pressed = False
 
         self.assertEqual(brake_pressed, self.safety.get_brake_pressed_prev())
@@ -430,7 +431,7 @@ class TestCarModelBase(unittest.TestCase):
       # TODO: remove this exception once this mismatch is resolved
       brake_pressed = CS.brakePressed
       if CS.brakePressed and not self.safety.get_brake_pressed_prev():
-        if self.CP.carFingerprint in (HONDA.PILOT, HONDA.RIDGELINE) and CS.brake > 0.05:
+        if self.CP.carFingerprint in (HONDA.HONDA_PILOT, HONDA.HONDA_RIDGELINE) and CS.brake > 0.05:
           brake_pressed = False
       checks['brakePressed'] += brake_pressed != self.safety.get_brake_pressed_prev()
       checks['regenBraking'] += CS.regenBraking != self.safety.get_regen_braking_prev()

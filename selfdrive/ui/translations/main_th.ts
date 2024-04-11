@@ -293,6 +293,18 @@
         <source>Review</source>
         <translation>ทบทวน</translation>
     </message>
+    <message>
+        <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
+        <translation>จับคู่อุปกรณ์ของคุณกับ comma connect (connect.comma.ai) และรับข้อเสนอ comma prime ของคุณ</translation>
+    </message>
+    <message>
+        <source>Pair Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PAIR</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DriverViewWindow</name>
@@ -476,6 +488,29 @@
     </message>
 </context>
 <context>
+    <name>OnroadAlerts</name>
+    <message>
+        <source>openpilot Unavailable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Waiting for controls to start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TAKE CONTROL IMMEDIATELY</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls Unresponsive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reboot Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>PairingPopup</name>
     <message>
         <source>Pair your device to your comma account</source>
@@ -594,6 +629,10 @@
     <message>
         <source>ft</source>
         <translation>ฟุต</translation>
+    </message>
+    <message>
+        <source>now</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1112,23 +1151,15 @@ This may take up to a minute.</source>
         <translation>ควบคุมเร่ง/เบรคแบบ End-to-End</translation>
     </message>
     <message>
-        <source>Navigate on openpilot</source>
-        <translation>การนำทางบน openpilot</translation>
-    </message>
-    <message>
-        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
-        <translation>เมื่อการนำทางมีจุดหมายปลายทาง openpilot จะป้อนข้อมูลแผนที่เข้าไปยังโมเดล ซึ่งจะเป็นบริบทที่มีประโยชน์สำหรับโมเดลและจะทำให้ openpilot สามารถรักษาเลนซ้ายหรือขวาได้อย่างเหมาะสมบริเวณทางแยกหรือทางออก พฤติกรรมการเปลี่ยนเลนยังคงเหมือนเดิมและยังคงต้องถูกเริ่มโดยคนขับ ความสามารถนี้ยังอยู่ในระดับ alpha ซึ่งอาจะเกิดความผิดพลาดได้โดยเฉพาะบริเวณทางแยกหรือทางออก ความผิดพลาดที่อาจเกิดขึ้นได้อาจรวมถึงการข้ามเส้นแบ่งเลนโดยไม่ตั้งใจ, การเข้าช่องทางออกช้ากว่าปกติ, การขับเข้าหาแบริเออร์ในเขตปลอดภัย, ฯลฯ</translation>
-    </message>
-    <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
-        <translation>การแสดงภาพการขับขี่จะเปลี่ยนไปใช้กล้องมุมกว้างที่หันหน้าไปทางถนนเมื่ออยู่ในความเร็วต่ำ เพื่อแสดงภาพการเลี้ยวที่ดีขึ้น โลโก้โหมดการทดลองจะแสดงที่มุมบนขวาด้วย เมื่อเป้าหมายการนำทางถูกเลือกและโมเดลการขับขี่กำลังใช้เป็นอินพุต เส้นทางการขับขี่บนแผนที่จะเปลี่ยนเป็นสีเขียว</translation>
-    </message>
-    <message>
         <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
         <translation>เปิดระบบควบคุมการเร่ง/เบรคโดย openpilot (alpha) เพื่อเปิดใช้งานโหมดทดลอง</translation>
     </message>
     <message>
         <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. </source>
         <translation type="unfinished"></translation>
     </message>
 </context>
