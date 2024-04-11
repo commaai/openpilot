@@ -2,20 +2,20 @@
 import unittest
 
 from cereal import car
-from openpilot.selfdrive.car.volkswagen.values import CAR, FW_PATTERN, FW_QUERY_CONFIG, GATEWAY_TYPES, WMI
+from openpilot.selfdrive.car.volkswagen.values import CAR, SPARE_PART_FW_PATTERN, FW_QUERY_CONFIG, GATEWAY_TYPES, WMI
 from openpilot.selfdrive.car.volkswagen.fingerprints import FW_VERSIONS
 
 Ecu = car.CarParams.Ecu
 
 
 class TestVolkswagenPlatformConfigs(unittest.TestCase):
-  def test_fw_pattern(self):
+  def test_spare_part_fw_pattern(self):
     # Relied on for determining if a FW is likely VW
     for platform, ecus in FW_VERSIONS.items():
       with self.subTest(platform=platform):
         for fws in ecus.values():
           for fw in fws:
-            self.assertTrue(FW_PATTERN.match(fw), f"Bad FW: {fw}")
+            self.assertNotEqual(SPARE_PART_FW_PATTERN.match(fw), None, f"Bad FW: {fw}")
 
   def test_chassis_codes(self):
     for platform in CAR:
@@ -45,7 +45,7 @@ class TestVolkswagenPlatformConfigs(unittest.TestCase):
               b'\xf1\x877H9907572AA\xf1\x890396',
               b'',
             ):
-              match = FW_PATTERN.match(radar_fw)
+              match = SPARE_PART_FW_PATTERN.match(radar_fw)
               should_match = (wmi != "000" and chassis_code != "00" and
                               match is not None and match.group("gateway") in GATEWAY_TYPES[(Ecu.fwdRadar, 0x757, None)])
 

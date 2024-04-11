@@ -384,7 +384,7 @@ def match_fw_to_car_custom(live_fw_versions, vin, offline_fw_versions) -> set[st
       return set()
 
     for fw in radar_fw:
-      match = FW_PATTERN.match(fw)
+      match = SPARE_PART_FW_PATTERN.match(fw)
       if match is None or match.group('gateway') not in gateway_types:
         return set()
 
@@ -407,8 +407,6 @@ def match_fw_to_car_custom(live_fw_versions, vin, offline_fw_versions) -> set[st
 # Volkswagen uses the VIN WMI and chassis code to match in the absence of the comma power,
 # as we lose too many ECUs to reliably identify the vehicle
 CHASSIS_CODE_PATTERN = re.compile('[A-Z0-9]{2}')
-# TODO: determine the unknown groups
-FW_PATTERN = re.compile(b'\xf1\x87(?P<gateway>[0-9][0-9A-Z]{2})(?P<unknown>[0-9][0-9A-Z][0-9])(?P<unknown2>[0-9A-Z]{2}[0-9])([A-Z0-9]| )')
 
 # A VIN match requires the WMI to match any of these
 WMI = {
