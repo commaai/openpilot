@@ -64,7 +64,7 @@ MapRenderer::MapRenderer(const QMapLibre::Settings &settings, bool online) : m_s
   std::string style = util::read_file(STYLE_PATH);
   m_map.reset(new QMapLibre::Map(nullptr, m_settings, fbo->size(), 1));
   m_map->setCoordinateZoom(QMapLibre::Coordinate(0, 0), DEFAULT_ZOOM);
-  m_map->setStyleUrl("mapbox://styles/commaai/clkqztk0f00ou01qyhsa5bzpj");
+  m_map->setStyleJson(style.c_str());
   m_map->createRenderer();
   ever_loaded = false;
 
@@ -90,12 +90,12 @@ MapRenderer::MapRenderer(const QMapLibre::Settings &settings, bool online) : m_s
   });
 
   QObject::connect(m_map.data(), &QMapLibre::Map::staticRenderFinished, [=](const QString &error) {
-    ok_render = true;
+    static_render_sig_rec = true;
 
     if (!error.isEmpty()) {
       LOGE("Static map rendering failed with error: '%s'\n", error.toStdString().c_str());
     } else if (vipc_server != nullptr) {
-      end_render_t = millis_since_boot();
+      double end_render_t = millis_since_boot();
       publish((end_render_t - start_render_t) / 1000.0, true);
       last_llk_rendered = (*sm)["liveLocationKalman"].getLogMonoTime();
     }
@@ -128,7 +128,7 @@ void MapRenderer::msgUpdate() {
       float bearing = RAD2DEG(orientation.getValue()[2]);
       updatePosition(get_point_along_line(pos.getValue()[0], pos.getValue()[1], bearing, MAP_OFFSET), bearing);
 
-      if (ok_render) {
+      if (static_render_sig_rec) {
         update();
       }
 
@@ -165,7 +165,7 @@ void MapRenderer::updatePosition(QMapLibre::Coordinate position, float bearing) 
   m_map->setCoordinate(position);
   m_map->setBearing(bearing);
   m_map->setZoom(zoom);
-  if (ok_render) {
+  if (static_render_sig_rec) {
     update();
   }
 }
@@ -175,7 +175,7 @@ bool MapRenderer::loaded() {
 }
 
 void MapRenderer::update() {
-  ok_render = false;
+  static_render_sig_rec = false;
   gl_functions->glClear(GL_COLOR_BUFFER_BIT);
   start_render_t = millis_since_boot();
   m_map->startStaticRender();
