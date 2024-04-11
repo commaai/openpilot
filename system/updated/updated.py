@@ -24,7 +24,6 @@ UPDATE_DELAY = int(os.environ.get("UPDATE_DELAY", 60))
 
 CHANNELS_API_ROOT = "v1/openpilot/channels"
 
-LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")
 STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
 
 CASYNC_STAGING = Path(STAGING_ROOT) / "casync"        # where the casync update is pulled
@@ -186,7 +185,7 @@ def download_update(manifest):
 
 
 def finalize_update():
-  cloudlog.info("creating finalized version of the overlay")
+  cloudlog.info("creating finalized version of the update")
   set_consistent_flag(FINALIZED, False)
 
   if os.path.exists(FINALIZED):
@@ -194,7 +193,7 @@ def finalize_update():
   shutil.copytree(CASYNC_STAGING, FINALIZED, symlinks=True)
 
   set_consistent_flag(FINALIZED, True)
-  cloudlog.info("done finalizing overlay")
+  cloudlog.info("done finalizing update")
 
 
 def main():
