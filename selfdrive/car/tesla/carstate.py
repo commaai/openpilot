@@ -15,12 +15,12 @@ class CarState(CarStateBase):
 
     # Needed by carcontroller
     self.msg_stw_actn_req = None
+    self.hands_on_level = 0
+    self.steer_warning = None
+    self.das_control_counters = deque(maxlen=32)
     self.acc_enabled = None
     self.sccm_right_stalk = None
     self.das_control = None
-    self.steer_warning = None
-    self.hands_on_level = 0
-    self.das_control_counters = deque(maxlen=32)
 
   def update(self, cp, cp_cam, cp_adas):
     ret = car.CarState.new_message()
@@ -31,7 +31,7 @@ class CarState(CarStateBase):
     # Vehicle speed
     ret.vEgoRaw = cp.vl["ESP_B"]["ESP_vehicleSpeed"] * CV.KPH_TO_MS
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    ret.standstill = cp.vl["ESP_B"]["ESP_vehicleStandstillSts"] == 1 if model3_y else (ret.vEgo < 0.1)
+    ret.standstill = (ret.vEgo < 0.1)
 
     # Gas pedal
     pedal_status = cp.vl["DI_systemStatus"]["DI_accelPedalPos"] if model3_y else cp.vl["DI_torque1"]["DI_pedalPos"]
