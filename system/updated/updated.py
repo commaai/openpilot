@@ -20,7 +20,7 @@ from openpilot.system.updated.common import get_consistent_flag, set_consistent_
 from openpilot.system.version import BuildMetadata, get_build_metadata, build_metadata_from_dict, is_git_repo
 
 
-UPDATE_DELAY = int(os.environ.get("UPDATE_DELAY", 60))
+UPDATE_DELAY = float(os.environ.get("UPDATE_DELAY", 60))
 
 CHANNELS_API_ROOT = "v1/openpilot/channels"
 
@@ -98,7 +98,7 @@ def extract_directory(entry: dict, cache_directory: str, directory: str):
   cloudlog.info(f"extracting {caibx_url} to {directory}")
   start = time.monotonic()
   stats = casync.extract_directory(target, sources, directory, tmp_filename)
-  cloudlog.info(f"extraction completed in {time.monotonic() - start} seconds with {stats}")
+  cloudlog.info(f"extraction completed in {time.monotonic() - start} seconds with {stats=}")
 
 
 def extract_partition(entry: dict):
@@ -125,7 +125,7 @@ def extract_partition(entry: dict):
   current_hash = get_partition_hash(target_path, entry["size"], entry["full_check"])
   target_hash = entry['hash_raw'].lower()
 
-  cloudlog.info(f"{current_hash=}, {target_hash=}")
+  cloudlog.info(f"hash check: {current_hash=}, {target_hash=}")
   if current_hash == target_hash and not UPDATED_FORCE_WRITE:
     return
 
@@ -134,11 +134,10 @@ def extract_partition(entry: dict):
   if not full_check:
     set_partition_hash(target_path, entry["size"], b'\x00' * 64)
 
-
   cloudlog.info(f"extracting {caibx_url} to {target_path}")
   start = time.monotonic()
   stats = casync.extract(chunks, sources, target_path)
-  cloudlog.info(f"extraction completed in {time.monotonic() - start} seconds with {stats}")
+  cloudlog.info(f"extraction completed in {time.monotonic() - start} seconds with {stats=}")
 
   # Write hash after successful flash
   if not full_check:
@@ -153,7 +152,6 @@ def setup_updater():
   Path(STAGING_ROOT).mkdir()
   CASYNC_TMPDIR.mkdir()
   FINALIZED.mkdir()
-
   INIT_FILE.touch()
 
 
@@ -170,7 +168,6 @@ def download_update(manifest: dict):
 
     if entry["type"] == "partition":
       extract_partition(entry)
-
 
 
 def main():

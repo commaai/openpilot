@@ -79,7 +79,7 @@ procs = [
   PythonProcess("thermald", "selfdrive.thermald.thermald", always_run),
   PythonProcess("tombstoned", "selfdrive.tombstoned", always_run, enabled=not PC),
   PythonProcess("updated", "system.updated.updated" if os.environ.get("USE_CASYNC", None) == "1" \
-                                                    else "selfdrive.updated.updated", only_offroad, enabled=not PC),
+                      else "selfdrive.updated.updated", only_offroad, enabled=not PC),
   PythonProcess("uploader", "system.loggerd.uploader", always_run),
   PythonProcess("statsd", "selfdrive.statsd", always_run),
 

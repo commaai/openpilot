@@ -13,7 +13,10 @@ import unittest
 from openpilot.common.params import Params
 
 from openpilot.common.run import run_cmd
+from openpilot.selfdrive.manager.process import PythonProcess
+from openpilot.selfdrive.manager.process_config import only_offroad
 from openpilot.selfdrive.test.helpers import DirectoryHttpServer, http_server_context, processes_context
+from openpilot.system.hardware import PC
 from openpilot.system.hardware.tici.agnos import get_raw_hash
 from openpilot.system.updated.casync.common import create_build_metadata_file, create_casync_from_file, create_casync_release
 from openpilot.system.updated.common import get_consistent_flag
@@ -252,8 +255,10 @@ class TestUpdated(unittest.TestCase):
       with http_server_context(self.api_handler) as (api_host, api_port):
         api_host = f"http://{api_host}:{api_port}"
 
-        with mock.patch("openpilot.common.api.API_HOST", api_host):
-          os.environ["USE_CASYNC"] = "1"
+        with mock.patch("openpilot.common.api.API_HOST", api_host), \
+            mock.patch.dict("openpilot.selfdrive.test.helpers.managed_processes") as managed_processes_mock:
+
+          managed_processes_mock["updated"] = PythonProcess("updated", "system.updated.updated", only_offroad, enabled=not PC)
 
           with fake_ab("_a"):
             yield
