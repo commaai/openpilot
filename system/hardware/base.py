@@ -146,11 +146,16 @@ class HardwareBase(ABC):
     return -1, -1
 
   @abstractmethod
-  def get_ab_slot(self, target: bool) -> str:
-    # get path to staging / live partition
+  def get_target_ab_slot(self) -> str:
+    # get ab slot suffix for target slot
     pass
 
   @abstractmethod
-  def system_update_prepare(self):
-    # prepare for a system update
+  def get_current_ab_slot(self) -> str:
+    # get ab slot suffix for current slot
+    pass
+
+  @abstractmethod
+  def prepare_target_ab_slot(self):
+    # prepare target ab slot for update
     pass

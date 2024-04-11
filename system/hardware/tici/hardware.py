@@ -579,13 +579,16 @@ class Tici(HardwareBase):
       return False
     return True
 
-  def get_ab_slot(self, target) -> str:
+  def get_target_ab_slot(self) -> str:
     target_slot_number = get_target_slot_number()
-    if not target:
-      target_slot_number = 0 if target_slot_number == 1 else 1
     return slot_number_to_suffix(target_slot_number)
 
-  def system_update_prepare(self):
+  def get_current_ab_slot(self) -> str:
+    target_slot_number = get_target_slot_number()
+    current_slot_number = 1 if target_slot_number == 1 else 0
+    return slot_number_to_suffix(current_slot_number)
+
+  def prepare_target_ab_slot(self):
     target_slot_number = get_target_slot_number()
     os.system(f"abctl --set_unbootable {target_slot_number}")
 

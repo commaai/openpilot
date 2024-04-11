@@ -114,8 +114,8 @@ def extract_partition_helper(entry):
   sources = []
 
   if entry["ab"]:
-    target_path = entry["path"].replace("_a", f"_{HARDWARE.get_ab_slot(False)}")
-    seed_path = entry["path"].replace("_a", f"_{HARDWARE.get_ab_slot(True)}")
+    target_path = entry["path"].replace("_a", HARDWARE.get_target_ab_slot())
+    seed_path = entry["path"].replace("_a", HARDWARE.get_current_ab_slot())
     sources += [('seed', casync.FileChunkReader(seed_path), casync.build_chunk_dict(chunks))]
 
   sources += [
@@ -170,7 +170,7 @@ def setup_dirs():
 def download_update(manifest):
   cloudlog.info(f"downloading update from: {manifest}")
 
-  HARDWARE.system_update_prepare()
+  HARDWARE.prepare_target_ab_slot()
 
   for entry in manifest:
     if entry["type"] == "path_tarred" and entry["path"] == "/data/openpilot":

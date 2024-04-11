@@ -31,6 +31,23 @@ def create_remote_response(channel, build_metadata, entries: list[dict], casync_
   }
 
 
+@contextlib.contextmanager
+def fake_ab(target):
+  def get_current_ab_slot():
+    return target
+
+  def get_target_ab_slot():
+    return "_b" if target == "_a" else "_a"
+
+  def prepare_target_ab_slot():
+    pass
+
+  with mock.patch("openpilot.system.hardware.HARDWARE.get_current_ab_slot", get_current_ab_slot), \
+      mock.patch("openpilot.system.hardware.HARDWARE.get_target_ab_slot", get_target_ab_slot), \
+      mock.patch("openpilot.system.hardware.HARDWARE.prepare_target_ab_slot", prepare_target_ab_slot):
+    yield
+
+
 def update_release(directory, name, version, agnos_version, release_notes):
   with open(directory / "RELEASES.md", "w") as f:
     f.write(release_notes)
@@ -235,11 +252,9 @@ class TestUpdated(unittest.TestCase):
       with http_server_context(self.api_handler) as (api_host, api_port):
         os.environ["API_HOST"] = f"http://{api_host}:{api_port}"
 
-        def get_ab_slot(target: bool):
-          return "a" if target else "b"
-
-        with mock.patch("openpilot.system.hardware.HARDWARE.get_ab_slot", get_ab_slot):
+        with fake_ab("_a"):
           yield
+
 
   def setup_git_basedir_release(self, release):
     self.setup_basedir_release(release)
