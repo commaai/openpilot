@@ -26,7 +26,7 @@ float combine_dual_pvs(float lv, float sv, int expo_time) {
   }
 }
 
-float normalize_pv_hdr(int4 parsed, int4 short_parsed, float vignette_factor, int expo_time) {
+float4 normalize_pv_hdr(int4 parsed, int4 short_parsed, float vignette_factor, int expo_time) {
   float4 pl = convert_float4(parsed - BLACK_LVL);
   float4 ps = convert_float4(short_parsed - BLACK_LVL);
   float4 pv;

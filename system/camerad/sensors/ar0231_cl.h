@@ -5,7 +5,7 @@
 #define BLACK_LVL 168
 #define VIGNETTE_RSZ 1.0f
 
-float normalize_pv(int4 parsed, float vignette_factor) {
+float4 normalize_pv(int4 parsed, float vignette_factor) {
   float4 pv = (convert_float4(parsed) - BLACK_LVL) / (PV_MAX - BLACK_LVL);
   return clamp(pv*vignette_factor, 0.0, 1.0);
 }
