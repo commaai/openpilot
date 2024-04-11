@@ -6,10 +6,7 @@ from openpilot.system.hardware.hw import Paths
 from openpilot.system.version import get_version
 
 
-def get_api_host():
-  return os.getenv('API_HOST', 'https://api.commadotai.com')
-
-API_HOST = get_api_host()
+API_HOST = os.getenv('API_HOST', 'https://api.commadotai.com')
 
 
 class Api():

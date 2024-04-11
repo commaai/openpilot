@@ -8,7 +8,7 @@ import time
 
 from pathlib import Path
 
-from openpilot.common.api import get_api_host
+from openpilot.common.api import API_HOST
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.run import run_cmd
 from openpilot.common.params import Params
@@ -34,7 +34,7 @@ FINALIZED = os.path.join(STAGING_ROOT, "finalized")
 
 def get_remote_available_channels() -> list | None:
   try:
-    return list(requests.get(f"{get_api_host()}/{CHANNELS_API_ROOT}").json())
+    return list(requests.get(os.path.join(API_HOST, CHANNELS_API_ROOT)).json())
   except Exception:
     cloudlog.exception("fetching remote channels")
     return None
@@ -42,7 +42,7 @@ def get_remote_available_channels() -> list | None:
 
 def get_remote_channel_data(channel) -> tuple[BuildMetadata | None, dict | None]:
   try:
-    data = requests.get(f"{get_api_host()}/{CHANNELS_API_ROOT}/{channel}").json()
+    data = requests.get(os.path.join(API_HOST, CHANNELS_API_ROOT, channel)).json()
     return build_metadata_from_dict(data["build_metadata"]), data["manifest"]
   except Exception:
     cloudlog.exception("fetching remote manifest failed")

@@ -250,10 +250,11 @@ class TestUpdated(unittest.TestCase):
 
       self.api_handler = OpenpilotChannelMockAPI(self.release_manifests, self.MOCK_RELEASES, casync_base)
       with http_server_context(self.api_handler) as (api_host, api_port):
-        os.environ["API_HOST"] = f"http://{api_host}:{api_port}"
+        api_host = f"http://{api_host}:{api_port}"
 
-        with fake_ab("_a"):
-          yield
+        with mock.patch("openpilot.common.api.API_HOST", api_host):
+          with fake_ab("_a"):
+            yield
 
 
   def setup_git_basedir_release(self, release):
