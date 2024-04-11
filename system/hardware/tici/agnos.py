@@ -184,13 +184,15 @@ def extract_casync_image(target_slot_number: int, partition: dict, cloudlog):
   path = get_partition_path(target_slot_number, partition)
   seed_path = path[:-1] + ('b' if path[-1] == 'a' else 'a')
 
-  caibx_url = partition["casync"]["caibx"]
-  target = casync.parse_caibx(caibx_url)
+  target = casync.parse_caibx(partition['casync_caibx'])
 
   sources: list[tuple[str, casync.ChunkReader, casync.ChunkDict]] = []
 
   # First source is the current partition.
   try:
+    raw_hash = get_raw_hash(seed_path, partition['size'])
+    caibx_url = f"{CAIBX_URL}{partition['name']}-{raw_hash}.caibx"
+
     try:
       cloudlog.info(f"casync fetching {caibx_url}")
       sources += [('seed', casync.FileChunkReader(seed_path), casync.build_chunk_dict(casync.parse_caibx(caibx_url)))]
@@ -203,7 +205,7 @@ def extract_casync_image(target_slot_number: int, partition: dict, cloudlog):
   sources += [('target', casync.FileChunkReader(path), casync.build_chunk_dict(target))]
 
   # Finally we add the remote source to download any missing chunks
-  sources += [('remote', casync.RemoteChunkReader(casync.get_default_store(caibx_url)), casync.build_chunk_dict(target))]
+  sources += [('remote', casync.RemoteChunkReader(partition['casync_store']), casync.build_chunk_dict(target))]
 
   last_p = 0
 
@@ -236,7 +238,7 @@ def flash_partition(target_slot_number: int, partition: dict, cloudlog, standalo
 
   path = get_partition_path(target_slot_number, partition)
 
-  if ('casync' in partition) and not standalone:
+  if ('casync_caibx' in partition) and not standalone:
     extract_casync_image(target_slot_number, partition, cloudlog)
   else:
     extract_compressed_image(target_slot_number, partition, cloudlog)
