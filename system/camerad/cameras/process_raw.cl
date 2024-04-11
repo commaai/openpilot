@@ -10,6 +10,13 @@
 #define RGB_TO_V(r, g, b) ((mul24(r, 56) - mul24(g, 47) - mul24(b, 9) + 0x8080) >> 8)
 #define AVERAGE(x, y, z, w) ((convert_ushort(x) + convert_ushort(y) + convert_ushort(z) + convert_ushort(w) + 1) >> 1)
 
+#if defined(BGGR)
+  #define ROW_READ_ORDER (int[]){3, 2, 1, 0}
+  #define RGB_WRITE_ORDER (int[]){2, 3, 0, 1}
+#else
+  #define ROW_READ_ORDER (int[]){0, 1, 2, 3}
+  #define RGB_WRITE_ORDER (int[]){0, 1, 2, 3}
+#endif
 
 float get_vignetting_s(float r) {
   #if IS_OS
@@ -129,14 +136,6 @@ __kernel void process_raw(const __global uchar * in, __global uchar * out, int e
   float3 rgb;
   uchar3 rgb_out[4];
 
-  #if BGGR
-    constant int row_read_order[] = {3, 2, 1, 0};
-    constant int rgb_write_order[] = {2, 3, 0, 1};
-  #else
-    constant int row_read_order[] = {0, 1, 2, 3};
-    constant int rgb_write_order[] = {0, 1, 2, 3};
-  #endif
-
   int start_idx;
   #if IS_10BIT
     bool aligned10;
@@ -204,21 +203,21 @@ __kernel void process_raw(const __global uchar * in, __global uchar * out, int e
   // parse into floats
   #if IS_10BIT
     #if IS_HDR
-      v_rows[row_read_order[0]] = val4_from_10x2(dat[0], extra[0], short_dat[0], short_extra[0], aligned10, gain, expo_time);
-      v_rows[row_read_order[1]] = val4_from_10x2(dat[1], extra[1], short_dat[1], short_extra[1], aligned10, gain, expo_time);
-      v_rows[row_read_order[2]] = val4_from_10x2(dat[2], extra[2], short_dat[2], short_extra[2], aligned10, gain, expo_time);
-      v_rows[row_read_order[3]] = val4_from_10x2(dat[3], extra[3], short_dat[3], short_extra[3], aligned10, gain, expo_time);
+      v_rows[ROW_READ_ORDER[0]] = val4_from_10x2(dat[0], extra[0], short_dat[0], short_extra[0], aligned10, gain, expo_time);
+      v_rows[ROW_READ_ORDER[1]] = val4_from_10x2(dat[1], extra[1], short_dat[1], short_extra[1], aligned10, gain, expo_time);
+      v_rows[ROW_READ_ORDER[2]] = val4_from_10x2(dat[2], extra[2], short_dat[2], short_extra[2], aligned10, gain, expo_time);
+      v_rows[ROW_READ_ORDER[3]] = val4_from_10x2(dat[3], extra[3], short_dat[3], short_extra[3], aligned10, gain, expo_time);
     #else
-      v_rows[row_read_order[0]] = val4_from_10(dat[0], extra[0], aligned10, gain);
-      v_rows[row_read_order[1]] = val4_from_10(dat[1], extra[1], aligned10, gain);
-      v_rows[row_read_order[2]] = val4_from_10(dat[2], extra[2], aligned10, gain);
-      v_rows[row_read_order[3]] = val4_from_10(dat[3], extra[3], aligned10, gain);
+      v_rows[ROW_READ_ORDER[0]] = val4_from_10(dat[0], extra[0], aligned10, gain);
+      v_rows[ROW_READ_ORDER[1]] = val4_from_10(dat[1], extra[1], aligned10, gain);
+      v_rows[ROW_READ_ORDER[2]] = val4_from_10(dat[2], extra[2], aligned10, gain);
+      v_rows[ROW_READ_ORDER[3]] = val4_from_10(dat[3], extra[3], aligned10, gain);
     #endif
   #else
-    v_rows[row_read_order[0]] = val4_from_12(dat[0], gain);
-    v_rows[row_read_order[1]] = val4_from_12(dat[1], gain);
-    v_rows[row_read_order[2]] = val4_from_12(dat[2], gain);
-    v_rows[row_read_order[3]] = val4_from_12(dat[3], gain);
+    v_rows[ROW_READ_ORDER[0]] = val4_from_12(dat[0], gain);
+    v_rows[ROW_READ_ORDER[1]] = val4_from_12(dat[1], gain);
+    v_rows[ROW_READ_ORDER[2]] = val4_from_12(dat[2], gain);
+    v_rows[ROW_READ_ORDER[3]] = val4_from_12(dat[3], gain);
   #endif
 
   // mirror padding
@@ -242,7 +241,7 @@ __kernel void process_raw(const __global uchar * in, __global uchar * out, int e
   rgb.x = (k02*v_rows[1].s2+k04*v_rows[1].s0)/(k02+k04); // R_G1
   rgb.y = v_rows[1].s1; // G1(R)
   rgb.z = (k01*v_rows[0].s1+k03*v_rows[2].s1)/(k01+k03); // B_G1
-  rgb_out[rgb_write_order[0]] = convert_uchar3_sat(apply_gamma(color_correct(clamp(rgb, 0.0, 1.0)), expo_time) * 255.0);
+  rgb_out[RGB_WRITE_ORDER[0]] = convert_uchar3_sat(apply_gamma(color_correct(clamp(rgb, 0.0, 1.0)), expo_time) * 255.0);
 
   const float k11 = get_k(v_rows[0].s1, v_rows[2].s1, v_rows[0].s3, v_rows[2].s3);
   const float k12 = get_k(v_rows[0].s2, v_rows[1].s1, v_rows[1].s3, v_rows[2].s2);
@@ -251,7 +250,7 @@ __kernel void process_raw(const __global uchar * in, __global uchar * out, int e
   rgb.x = v_rows[1].s2; // R
   rgb.y = (k11*(v_rows[0].s2+v_rows[2].s2)*0.5+k13*(v_rows[1].s3+v_rows[1].s1)*0.5)/(k11+k13); // G_R
   rgb.z = (k12*(v_rows[0].s3+v_rows[2].s1)*0.5+k14*(v_rows[0].s1+v_rows[2].s3)*0.5)/(k12+k14); // B_R
-  rgb_out[rgb_write_order[1]] = convert_uchar3_sat(apply_gamma(color_correct(clamp(rgb, 0.0, 1.0)), expo_time) * 255.0);
+  rgb_out[RGB_WRITE_ORDER[1]] = convert_uchar3_sat(apply_gamma(color_correct(clamp(rgb, 0.0, 1.0)), expo_time) * 255.0);
 
   const float k21 = get_k(v_rows[1].s0, v_rows[3].s0, v_rows[1].s2, v_rows[3].s2);
   const float k22 = get_k(v_rows[1].s1, v_rows[2].s0, v_rows[2].s2, v_rows[3].s1);
@@ -260,7 +259,7 @@ __kernel void process_raw(const __global uchar * in, __global uchar * out, int e
   rgb.x = (k22*(v_rows[1].s2+v_rows[3].s0)*0.5+k24*(v_rows[1].s0+v_rows[3].s2)*0.5)/(k22+k24); // R_B
   rgb.y = (k21*(v_rows[1].s1+v_rows[3].s1)*0.5+k23*(v_rows[2].s2+v_rows[2].s0)*0.5)/(k21+k23); // G_B
   rgb.z = v_rows[2].s1; // B
-  rgb_out[rgb_write_order[2]] = convert_uchar3_sat(apply_gamma(color_correct(clamp(rgb, 0.0, 1.0)), expo_time) * 255.0);
+  rgb_out[RGB_WRITE_ORDER[2]] = convert_uchar3_sat(apply_gamma(color_correct(clamp(rgb, 0.0, 1.0)), expo_time) * 255.0);
 
   const float k31 = get_k(v_rows[1].s1, v_rows[2].s2, v_rows[1].s3, v_rows[2].s2);
   const float k32 = get_k(v_rows[1].s3, v_rows[2].s2, v_rows[3].s3, v_rows[2].s2);
@@ -269,7 +268,7 @@ __kernel void process_raw(const __global uchar * in, __global uchar * out, int e
   rgb.x = (k31*v_rows[1].s2+k33*v_rows[3].s2)/(k31+k33); // R_G2
   rgb.y = v_rows[2].s2; // G2(B)
   rgb.z = (k32*v_rows[2].s3+k34*v_rows[2].s1)/(k32+k34); // B_G2
-  rgb_out[rgb_write_order[3]] = convert_uchar3_sat(apply_gamma(color_correct(clamp(rgb, 0.0, 1.0)), expo_time) * 255.0);
+  rgb_out[RGB_WRITE_ORDER[3]] = convert_uchar3_sat(apply_gamma(color_correct(clamp(rgb, 0.0, 1.0)), expo_time) * 255.0);
 
   // write ys
   uchar2 yy = (uchar2)(
