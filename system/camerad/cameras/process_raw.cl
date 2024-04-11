@@ -53,24 +53,6 @@ float4 val4_from_12(uchar8 pvs, float gain) {
 
 }
 
-float4 val4_from_10(uchar8 pvs, uchar ext, bool aligned, float gain) {
-  uint4 parsed;
-  if (aligned) {
-    parsed = (uint4)(((uint)pvs.s0 << 2) + (pvs.s1 & 0b00000011),
-                     ((uint)pvs.s2 << 2) + ((pvs.s6 & 0b11000000) / 64),
-                     ((uint)pvs.s3 << 2) + ((pvs.s6 & 0b00110000) / 16),
-                     ((uint)pvs.s4 << 2) + ((pvs.s6 & 0b00001100) / 4));
-  } else {
-    parsed = (uint4)(((uint)pvs.s0 << 2) + ((pvs.s3 & 0b00110000) / 16),
-                     ((uint)pvs.s1 << 2) + ((pvs.s3 & 0b00001100) / 4),
-                     ((uint)pvs.s2 << 2) + ((pvs.s3 & 0b00000011)),
-                     ((uint)pvs.s4 << 2) + ((ext & 0b11000000) / 64));
-  }
-
-  float4 pv = (convert_float4(parsed) - 64.0) / (1024.0 - 64.0);
-  return clamp(pv*gain, 0.0, 1.0);
-}
-
 float combine_pvs(float lv, float sv, int expo) {
   float svc = fmax(sv * expo, 61376.0);
   float svd = sv * fmin(expo, 8.0) / 8;
@@ -137,7 +119,8 @@ __kernel void process_raw(const __global uchar * in, __global uchar * out, int e
   uchar3 rgb_out[4]; // output is 2x2 window
 
   int start_idx;
-  #if IS_10BIT
+
+  #if BIT_DEPTH == 10
     bool aligned10;
     if (gid_x % 2 == 0) {
       aligned10 = true;
@@ -162,7 +145,7 @@ __kernel void process_raw(const __global uchar * in, __global uchar * out, int e
   }
   dat[2] = vload8(0, in + start_idx + FRAME_STRIDE*2);
   dat[3] = vload8(0, in + start_idx + FRAME_STRIDE*row_after_offset);
-  #if HDR_COMBINE
+  #if HDR_OFFSET > 0
     uchar8 short_dat[4];
     short_dat[0] = vload8(0, in + start_idx + FRAME_STRIDE*(row_before_offset+HDR_OFFSET/2) + FRAME_STRIDE/2);
     short_dat[1] = vload8(0, in + start_idx + FRAME_STRIDE*(1+HDR_OFFSET/2) + FRAME_STRIDE/2);
@@ -171,23 +154,19 @@ __kernel void process_raw(const __global uchar * in, __global uchar * out, int e
   #endif
 
   // need extra bit for 10-bit
-  #if IS_10BIT
+  #if BIT_DEPTH == 10
     uchar extra[4];
+    uchar short_extra[4];
     if (!aligned10) {
       extra[0] = in[start_idx + FRAME_STRIDE*row_before_offset + 8];
       extra[1] = in[start_idx + FRAME_STRIDE*1 + 8];
       extra[2] = in[start_idx + FRAME_STRIDE*2 + 8];
       extra[3] = in[start_idx + FRAME_STRIDE*row_after_offset + 8];
-		}
-    #if HDR_COMBINE
-      uchar short_extra[4];
-      if (!aligned10) {
-        short_extra[0] = in[start_idx + FRAME_STRIDE*(row_before_offset+HDR_OFFSET/2) + FRAME_STRIDE/2 + 8];
-        short_extra[1] = in[start_idx + FRAME_STRIDE*(1+HDR_OFFSET/2) + FRAME_STRIDE/2 + 8];
-        short_extra[2] = in[start_idx + FRAME_STRIDE*(2+HDR_OFFSET/2) + FRAME_STRIDE/2 + 8];
-        short_extra[3] = in[start_idx + FRAME_STRIDE*(row_after_offset+HDR_OFFSET/2) + FRAME_STRIDE/2 + 8];
-      }
-    #endif
+      short_extra[0] = in[start_idx + FRAME_STRIDE*(row_before_offset+HDR_OFFSET/2) + FRAME_STRIDE/2 + 8];
+      short_extra[1] = in[start_idx + FRAME_STRIDE*(1+HDR_OFFSET/2) + FRAME_STRIDE/2 + 8];
+      short_extra[2] = in[start_idx + FRAME_STRIDE*(2+HDR_OFFSET/2) + FRAME_STRIDE/2 + 8];
+      short_extra[3] = in[start_idx + FRAME_STRIDE*(row_after_offset+HDR_OFFSET/2) + FRAME_STRIDE/2 + 8];
+    }
   #endif
 
   // correct vignetting
@@ -201,18 +180,11 @@ __kernel void process_raw(const __global uchar * in, __global uchar * out, int e
 
   float4 v_rows[4];
   // parse into floats
-  #if IS_10BIT
-    #if HDR_COMBINE
+  #if BIT_DEPTH == 10
       v_rows[ROW_READ_ORDER[0]] = val4_from_10x2(dat[0], extra[0], short_dat[0], short_extra[0], aligned10, gain, expo_time);
       v_rows[ROW_READ_ORDER[1]] = val4_from_10x2(dat[1], extra[1], short_dat[1], short_extra[1], aligned10, gain, expo_time);
       v_rows[ROW_READ_ORDER[2]] = val4_from_10x2(dat[2], extra[2], short_dat[2], short_extra[2], aligned10, gain, expo_time);
       v_rows[ROW_READ_ORDER[3]] = val4_from_10x2(dat[3], extra[3], short_dat[3], short_extra[3], aligned10, gain, expo_time);
-    #else
-      v_rows[ROW_READ_ORDER[0]] = val4_from_10(dat[0], extra[0], aligned10, gain);
-      v_rows[ROW_READ_ORDER[1]] = val4_from_10(dat[1], extra[1], aligned10, gain);
-      v_rows[ROW_READ_ORDER[2]] = val4_from_10(dat[2], extra[2], aligned10, gain);
-      v_rows[ROW_READ_ORDER[3]] = val4_from_10(dat[3], extra[3], aligned10, gain);
-    #endif
   #else
     v_rows[ROW_READ_ORDER[0]] = val4_from_12(dat[0], gain);
     v_rows[ROW_READ_ORDER[1]] = val4_from_12(dat[1], gain);

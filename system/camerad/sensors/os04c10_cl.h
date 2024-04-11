@@ -1,7 +1,9 @@
 #if IS_OS
 
 #define BGGR
-#define HDR_COMBINE
+
+#define BIT_DEPTH 10
+#define BLACK_LVL 64
 
 float3 color_correct(float3 rgb) {
   float3 corrected = rgb.x * (float3)(1.55361989, -0.268894615, -0.000593219);

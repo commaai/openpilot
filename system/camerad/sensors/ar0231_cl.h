@@ -1,5 +1,8 @@
 #if IS_AR
 
+#define BIT_DEPTH 12
+#define BLACK_LVL 168
+
 float3 color_correct(float3 rgb) {
   float3 corrected = rgb.x * (float3)(1.82717181, -0.31231438, 0.07307673);
   corrected += rgb.y * (float3)(-0.5743977, 1.36858544, -0.53183455);
