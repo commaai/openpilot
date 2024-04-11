@@ -112,6 +112,11 @@ class BuildMetadata:
   def ui_description(self) -> str:
     return f"{self.openpilot.version} / {self.openpilot.git_commit[:6]} / {self.channel}"
 
+  def __eq__(self, other):
+    return self.channel == other.channel and \
+           self.openpilot.git_commit == other.openpilot.git_commit and \
+           self.openpilot.build_style == other.openpilot.build_style
+
 
 def build_metadata_from_dict(build_metadata: dict) -> BuildMetadata:
   channel = build_metadata.get("channel", "unknown")

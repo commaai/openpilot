@@ -31,6 +31,8 @@ CASYNC_TMPDIR = Path(STAGING_ROOT) / "casync_tmp"   # working directory for casy
 
 INIT_FILE = Path(BASEDIR) / ".overlay_init"
 
+UPDATED_FORCE_WRITE = os.getenv("UPDATED_FORCE_WRITE") == "1"
+
 
 def get_remote_available_channels() -> list | None:
   try:
@@ -51,10 +53,7 @@ def get_remote_channel_data(channel: str) -> tuple[BuildMetadata | None, dict | 
 
 def check_update_available(current_directory, other_metadata: BuildMetadata) -> bool:
   build_metadata = get_build_metadata(current_directory)
-  return is_git_repo(current_directory) or \
-         build_metadata.channel != other_metadata.channel or \
-         build_metadata.openpilot.git_commit != other_metadata.openpilot.git_commit or \
-         build_metadata.openpilot.build_style != other_metadata.openpilot.build_style
+  return is_git_repo(current_directory) or build_metadata != other_metadata
 
 
 def create_remote_chunk_source(caibx_url, chunks):
@@ -135,7 +134,7 @@ def extract_partition_helper(entry):
   target_hash = entry['hash_raw'].lower()
 
   cloudlog.info(f"{current_hash=}, {target_hash=}")
-  if current_hash == target_hash:
+  if current_hash == target_hash and not UPDATED_FORCE_WRITE:
     return
 
   # Clear hash before flashing in case we get interrupted
