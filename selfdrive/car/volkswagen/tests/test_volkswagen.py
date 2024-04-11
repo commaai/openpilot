@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 import unittest
 
-from openpilot.selfdrive.car.volkswagen.values import CAR, FW_PATTERN, FW_QUERY_CONFIG, WMI
+from cereal import car
+from openpilot.selfdrive.car.volkswagen.values import CAR, FW_PATTERN, FW_QUERY_CONFIG, GATEWAY_TYPES, WMI
 from openpilot.selfdrive.car.volkswagen.fingerprints import FW_VERSIONS
+
+Ecu = car.CarParams.Ecu
 
 
 class TestVolkswagenPlatformConfigs(unittest.TestCase):
@@ -36,9 +39,21 @@ class TestVolkswagenPlatformConfigs(unittest.TestCase):
             vin[6:8] = chassis_code
             vin = "".join(vin)
 
-            matches = FW_QUERY_CONFIG.match_fw_to_car_custom(None, vin, None)
-            expected_matches = {platform} if wmi != "000"  and chassis_code != "00" else set()
-            self.assertEqual(expected_matches, matches, "Bad match")
+            # Check a few FW gateway type cases - expected, unexpected, no match
+            for radar_fw in (
+              b'\xf1\x872Q0907572AA\xf1\x890396',
+              b'\xf1\x877H9907572AA\xf1\x890396',
+              b'',
+            ):
+              match = FW_PATTERN.match(radar_fw)
+              should_match = (wmi != "000" and chassis_code != "00" and
+                              match is not None and match.group("gateway") in GATEWAY_TYPES[(Ecu.fwdRadar, 0x757, None)])
+
+              live_fws = {(0x757, None): [radar_fw]}
+              matches = FW_QUERY_CONFIG.match_fw_to_car_custom(live_fws, vin, {})
+
+              expected_matches = {platform} if should_match else set()
+              self.assertEqual(expected_matches, matches, "Bad match")
 
 
 if __name__ == "__main__":
