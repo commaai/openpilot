@@ -35,21 +35,21 @@ INIT_FILE = Path(BASEDIR) / ".overlay_init"
 def get_remote_available_channels() -> list | None:
   try:
     return list(requests.get(os.path.join(API_HOST, CHANNELS_API_ROOT)).json())
-  except Exception:
+  except requests.exceptions.RequestException:
     cloudlog.exception("fetching remote channels")
     return None
 
 
-def get_remote_channel_data(channel) -> tuple[BuildMetadata | None, dict | None]:
+def get_remote_channel_data(channel: str) -> tuple[BuildMetadata | None, dict | None]:
   try:
     data = requests.get(os.path.join(API_HOST, CHANNELS_API_ROOT, channel)).json()
     return build_metadata_from_dict(data["build_metadata"]), data["manifest"]
-  except Exception:
+  except requests.exceptions.RequestException:
     cloudlog.exception("fetching remote manifest failed")
     return None, None
 
 
-def check_update_available(current_directory, other_metadata: BuildMetadata):
+def check_update_available(current_directory, other_metadata: BuildMetadata) -> bool:
   build_metadata = get_build_metadata(current_directory)
   return is_git_repo(current_directory) or \
          build_metadata.channel != other_metadata.channel or \
@@ -121,6 +121,7 @@ def extract_partition_helper(entry):
   sources = []
 
   if entry["ab"]:
+    assert entry["path"][-2:] == "_a"
     target_path = entry["path"].replace("_a", HARDWARE.get_target_ab_slot())
     seed_path = entry["path"].replace("_a", HARDWARE.get_current_ab_slot())
     sources += [('seed', casync.FileChunkReader(seed_path), casync.build_chunk_dict(chunks))]
