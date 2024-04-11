@@ -28,6 +28,7 @@ testpaths = [
   "system/proclogd",
   "system/tests",
   "system/ubloxd",
+  "system/updated",
   "system/webrtc",
   "tools/lib/tests",
   "tools/replay",
