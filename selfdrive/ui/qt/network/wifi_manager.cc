@@ -98,8 +98,8 @@ void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
   ipv4_address = getIp4Address();
   seenNetworks.clear();
 
-  const QDBusReply<QList<QDBusObjectPath>> wather_reply = *watcher;
-  for (const QDBusObjectPath &path : wather_reply.value()) {
+  const QDBusReply<QList<QDBusObjectPath>> watcher_replay = *watcher;
+  for (const QDBusObjectPath &path : watcher_replay.value()) {
     QDBusReply<QVariantMap> replay = call(path.path(), NM_DBUS_INTERFACE_PROPERTIES, "GetAll", NM_DBUS_INTERFACE_ACCESS_POINT);
     auto properties = replay.value();
 
