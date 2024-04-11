@@ -34,6 +34,7 @@ public:
 
 private:
   void parse(const QString &content);
+  QString header;
   std::map<uint32_t, cabana::Msg> msgs;
   QString name_;
 };

@@ -24,7 +24,7 @@ class TestToyotaInterfaces(unittest.TestCase):
 
   def test_lta_platforms(self):
     # At this time, only RAV4 2023 is expected to use LTA/angle control
-    self.assertEqual(ANGLE_CONTROL_CAR, {CAR.RAV4_TSS2_2023})
+    self.assertEqual(ANGLE_CONTROL_CAR, {CAR.TOYOTA_RAV4_TSS2_2023})
 
   def test_tss2_dbc(self):
     # We make some assumptions about TSS2 platforms,
@@ -43,13 +43,13 @@ class TestToyotaInterfaces(unittest.TestCase):
         self.assertEqual(len(missing_ecus), 0)
 
         # Some exceptions for other common ECUs
-        if car_model not in (CAR.ALPHARD_TSS2,):
+        if car_model not in (CAR.TOYOTA_ALPHARD_TSS2,):
           self.assertIn(Ecu.abs, present_ecus)
 
-        if car_model not in (CAR.MIRAI,):
+        if car_model not in (CAR.TOYOTA_MIRAI,):
           self.assertIn(Ecu.engine, present_ecus)
 
-        if car_model not in (CAR.PRIUS_V, CAR.LEXUS_CTH):
+        if car_model not in (CAR.TOYOTA_PRIUS_V, CAR.LEXUS_CTH):
           self.assertIn(Ecu.eps, present_ecus)
 
 
@@ -85,9 +85,9 @@ class TestToyotaFingerprint(unittest.TestCase):
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model.value):
         for platform_code_ecu in PLATFORM_CODE_ECUS:
-          if platform_code_ecu == Ecu.eps and car_model in (CAR.PRIUS_V, CAR.LEXUS_CTH,):
+          if platform_code_ecu == Ecu.eps and car_model in (CAR.TOYOTA_PRIUS_V, CAR.LEXUS_CTH,):
             continue
-          if platform_code_ecu == Ecu.abs and car_model in (CAR.ALPHARD_TSS2,):
+          if platform_code_ecu == Ecu.abs and car_model in (CAR.TOYOTA_ALPHARD_TSS2,):
             continue
           self.assertIn(platform_code_ecu, [e[0] for e in ecus])
 

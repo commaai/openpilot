@@ -10,28 +10,29 @@ Ecu = car.CarParams.Ecu
 Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 
 class CAR(Platforms):
-  AP1_MODELS = PlatformConfig(
-    'TESLA AP1 MODEL S',
+  TESLA_AP1_MODELS = PlatformConfig(
     [CarDocs("Tesla AP1 Model S", "All")],
     CarSpecs(mass=2100., wheelbase=2.959, steerRatio=15.0),
     dbc_dict('tesla_powertrain', 'tesla_radar_bosch_generated', chassis_dbc='tesla_can')
   )
-  AP2_MODELS = PlatformConfig(
-    'TESLA AP2 MODEL S',
+  TESLA_AP2_MODELS = PlatformConfig(
     [CarDocs("Tesla AP2 Model S", "All")],
-    AP1_MODELS.specs,
-    AP1_MODELS.dbc_dict
+    TESLA_AP1_MODELS.specs,
+    TESLA_AP1_MODELS.dbc_dict
   )
-  MODELS_RAVEN = PlatformConfig(
-    'TESLA MODEL S RAVEN',
+  TESLA_MODELS_RAVEN = PlatformConfig(
     [CarDocs("Tesla Model S Raven", "All")],
-    AP1_MODELS.specs,
+    TESLA_AP1_MODELS.specs,
     dbc_dict('tesla_powertrain', 'tesla_radar_continental_generated', chassis_dbc='tesla_can')
   )
-  AP3_MODEL3 = PlatformConfig(
-    'TESLA AP3 MODEL 3',
+  TESLA_AP3_MODEL3 = PlatformConfig(
     [CarDocs("Tesla AP3 Model 3", "All")],
-    CarSpecs(mass=1900., wheelbase=2.875, steerRatio=12.0),
+    CarSpecs(mass=1899., wheelbase=2.875, steerRatio=12.0),
+    dbc_dict('tesla_model3_vehicle', None, chassis_dbc='tesla_model3_party')
+  )
+  TESLA_AP3_MODELY = PlatformConfig(
+    [CarDocs("Tesla AP3 Model Y", "All")],
+    CarSpecs(mass=2072., wheelbase=2.890, steerRatio=12.0),
     dbc_dict('tesla_model3_vehicle', None, chassis_dbc='tesla_model3_party')
   )
 
@@ -115,7 +116,7 @@ BUTTONS = [
   Button(car.CarState.ButtonEvent.Type.resumeCruise, "STW_ACTN_RQ", "SpdCtrlLvr_Stat", [2]),
 ]
 
-MODEL3_BUTTONS = [
+MODEL3_Y_BUTTONS = [
   Button(car.CarState.ButtonEvent.Type.leftBlinker, "SCCM_leftStalk", "SCCM_turnIndicatorStalkStatus", [3, 4]),
   Button(car.CarState.ButtonEvent.Type.rightBlinker, "SCCM_leftStalk", "SCCM_turnIndicatorStalkStatus", [1, 2]),
   Button(car.CarState.ButtonEvent.Type.accelCruise, "VCLEFT_switchStatus", "VCLEFT_swcRightScrollTicks", list(range(1, 10))),

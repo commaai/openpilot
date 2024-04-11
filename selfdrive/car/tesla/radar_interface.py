@@ -9,11 +9,11 @@ class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
     super().__init__(CP)
     self.CP = CP
-    if CP.carFingerprint == CAR.AP3_MODEL3:
+    if CP.carFingerprint in [CAR.TESLA_AP3_MODEL3, CAR.TESLA_AP3_MODELY]:
       self.rcp = None
       return
 
-    if CP.carFingerprint == CAR.MODELS_RAVEN:
+    if CP.carFingerprint == CAR.TESLA_MODELS_RAVEN:
       messages = [('RadarStatus', 16)]
       self.num_points = 40
       self.trigger_msg = 1119
@@ -49,7 +49,7 @@ class RadarInterface(RadarInterfaceBase):
     if not self.rcp.can_valid:
       errors.append('canError')
 
-    if self.CP.carFingerprint == CAR.MODELS_RAVEN:
+    if self.CP.carFingerprint == CAR.TESLA_MODELS_RAVEN:
       radar_status = self.rcp.vl['RadarStatus']
       if radar_status['sensorBlocked'] or radar_status['shortTermUnavailable'] or radar_status['vehDynamicsError']:
         errors.append('fault')

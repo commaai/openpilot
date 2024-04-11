@@ -46,7 +46,7 @@ if __name__ == "__main__":
     if len(possible_platforms) != 1:
       print(f"Unable to auto-determine platform, possible platforms: {possible_platforms}")
 
-      if carPlatform != "mock":
+      if carPlatform != "MOCK":
         print("Using platform from route")
         platform = carPlatform
       else:

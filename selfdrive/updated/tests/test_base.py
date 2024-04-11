@@ -15,10 +15,11 @@ from openpilot.selfdrive.manager.process import ManagerProcess
 
 from openpilot.selfdrive.test.helpers import processes_context
 from openpilot.common.params import Params
+from openpilot.system.updated.common import get_consistent_flag
 
 
 def run(args, **kwargs):
-  return subprocess.run(args, **kwargs, check=True)
+  return subprocess.check_output(args, **kwargs)
 
 
 def update_release(directory, name, version, agnos_version, release_notes):
@@ -45,11 +46,6 @@ def update_release(directory, name, version, agnos_version, release_notes):
 def get_version(path: str) -> str:
   with open(os.path.join(path, "common", "version.h")) as f:
     return f.read().split('"')[1]
-
-
-def get_consistent_flag(path: str) -> bool:
-  consistent_file = pathlib.Path(os.path.join(path, ".overlay_consistent"))
-  return consistent_file.is_file()
 
 
 @pytest.mark.slow # TODO: can we test overlayfs in GHA?
@@ -112,27 +108,6 @@ class BaseUpdateTest(unittest.TestCase):
     except Exception:
       print("cleanup failed...")
 
-  def send_check_for_updates_signal(self, updated: ManagerProcess):
-    updated.signal(signal.SIGUSR1.value)
-
-  def send_download_signal(self, updated: ManagerProcess):
-    updated.signal(signal.SIGHUP.value)
-
-  def _test_params(self, branch, fetch_available, update_available):
-    self.assertEqual(self.params.get("UpdaterTargetBranch", encoding="utf-8"), branch)
-    self.assertEqual(self.params.get_bool("UpdaterFetchAvailable"), fetch_available)
-    self.assertEqual(self.params.get_bool("UpdateAvailable"), update_available)
-
-  def _test_finalized_update(self, branch, version, agnos_version, release_notes):
-    self.assertTrue(self.params.get("UpdaterNewDescription", encoding="utf-8").startswith(f"{version} / {branch}"))
-    self.assertEqual(self.params.get("UpdaterNewReleaseNotes", encoding="utf-8"), f"<p>{release_notes}</p>\n")
-    self.assertEqual(get_version(str(self.staging_root / "finalized")), version)
-    self.assertEqual(get_consistent_flag(str(self.staging_root / "finalized")), True)
-    self.assertTrue(os.access(str(self.staging_root / "finalized" / "launch_env.sh"), os.X_OK))
-
-    with open(self.staging_root / "finalized" / "test_symlink") as f:
-      self.assertIn(version, f.read())
-
   def wait_for_condition(self, condition, timeout=12):
     start = time.monotonic()
     while True:
@@ -146,8 +121,37 @@ class BaseUpdateTest(unittest.TestCase):
 
       time.sleep(1)
 
+  def _test_finalized_update(self, branch, version, agnos_version, release_notes):
+    self.assertEqual(get_version(str(self.staging_root / "finalized")), version)
+    self.assertEqual(get_consistent_flag(str(self.staging_root / "finalized")), True)
+    self.assertTrue(os.access(str(self.staging_root / "finalized" / "launch_env.sh"), os.X_OK))
+
+    with open(self.staging_root / "finalized" / "test_symlink") as f:
+      self.assertIn(version, f.read())
+
+class ParamsBaseUpdateTest(BaseUpdateTest):
+  def _test_finalized_update(self, branch, version, agnos_version, release_notes):
+    self.assertTrue(self.params.get("UpdaterNewDescription", encoding="utf-8").startswith(f"{version} / {branch}"))
+    self.assertEqual(self.params.get("UpdaterNewReleaseNotes", encoding="utf-8"), f"<p>{release_notes}</p>\n")
+    super()._test_finalized_update(branch, version, agnos_version, release_notes)
+
+  def send_check_for_updates_signal(self, updated: ManagerProcess):
+    updated.signal(signal.SIGUSR1.value)
+
+  def send_download_signal(self, updated: ManagerProcess):
+    updated.signal(signal.SIGHUP.value)
+
+  def _test_params(self, branch, fetch_available, update_available):
+    self.assertEqual(self.params.get("UpdaterTargetBranch", encoding="utf-8"), branch)
+    self.assertEqual(self.params.get_bool("UpdaterFetchAvailable"), fetch_available)
+    self.assertEqual(self.params.get_bool("UpdateAvailable"), update_available)
+
   def wait_for_idle(self):
     self.wait_for_condition(lambda: self.params.get("UpdaterState", encoding="utf-8") == "idle")
+
+  def wait_for_failed(self):
+    self.wait_for_condition(lambda: self.params.get("UpdateFailedCount", encoding="utf-8") is not None and \
+                                              int(self.params.get("UpdateFailedCount", encoding="utf-8")) > 0)
 
   def wait_for_fetch_available(self):
     self.wait_for_condition(lambda: self.params.get_bool("UpdaterFetchAvailable"))

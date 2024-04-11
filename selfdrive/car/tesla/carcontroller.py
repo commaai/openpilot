@@ -1,10 +1,9 @@
 from openpilot.common.numpy_fast import clip
+from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import apply_std_steer_angle_limits
 from openpilot.selfdrive.car.interfaces import CarControllerBase
 from openpilot.selfdrive.car.tesla.teslacan import TeslaCAN
-from openpilot.selfdrive.car.tesla.values import DBC, CANBUS, CarControllerParams, CAR
-
-from opendbc.can.packer import CANPacker
+from openpilot.selfdrive.car.tesla.values import DBC, CANBUS, CAR, CarControllerParams
 
 
 class CarController(CarControllerBase):
@@ -15,8 +14,7 @@ class CarController(CarControllerBase):
     self.packer = CANPacker(dbc_name)
     self.pt_packer = CANPacker(DBC[CP.carFingerprint]['pt'])
     self.tesla_can = TeslaCAN(self.packer, self.pt_packer)
-
-    self.model3 = CP.carFingerprint == CAR.AP3_MODEL3
+    self.model3_y = CP.carFingerprint in [CAR.TESLA_AP3_MODEL3, CAR.TESLA_AP3_MODELY]
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
@@ -49,7 +47,7 @@ class CarController(CarControllerBase):
       max_accel = 0 if target_accel < 0 else target_accel
       min_accel = 0 if target_accel > 0 else target_accel
 
-      if self.model3:
+      if self.model3_y:
         counter = CS.das_control["DAS_controlCounter"]
         buses = [(self.packer, CANBUS.chassis)]
         can_sends.extend(self.tesla_can.create_longitudinal_commands(acc_state, target_speed, min_accel, max_accel, counter, buses))
@@ -64,10 +62,10 @@ class CarController(CarControllerBase):
 
     # Sent cancel request only if ACC is enabled
     if self.frame % 10 == 0 and pcm_cancel_cmd and CS.acc_enabled:
-      if self.model3:
+      if self.model3_y:
         counter = int(CS.sccm_right_stalk["SCCM_rightStalkCounter"] + 1) % 16
         can_sends.append(self.tesla_can.model3_cancel_acc(counter, 1))  # half up (cancel acc)
-        can_sends.append(self.tesla_can.model3_cancel_acc(counter + 1, 0))  # to prevent neutral gear warning
+        can_sends.append(self.tesla_can.model3_cancel_acc((counter + 1) % 16, 0))  # to prevent neutral gear warning
       else:
         # Spam every possible counter value, otherwise it might not be accepted
         for counter in range(16):
