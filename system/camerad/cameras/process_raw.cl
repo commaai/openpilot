@@ -19,9 +19,6 @@
 #endif
 
 float get_vignetting_s(float r) {
-  #if IS_OS
-    r = r / 2.2545f;
-  #endif
   if (r < 62500) {
     return (1.0f + 0.0000008f*r);
   } else if (r < 490000) {
@@ -33,74 +30,26 @@ float get_vignetting_s(float r) {
   }
 }
 
-float4 val4_from_12(uchar8 pvs, float gain) {
-  uint4 parsed = (uint4)(((uint)pvs.s0<<4) + (pvs.s1>>4),  // is from the previous 10 bit
-                         ((uint)pvs.s2<<4) + (pvs.s4&0xF),
-                         ((uint)pvs.s3<<4) + (pvs.s4>>4),
-                         ((uint)pvs.s5<<4) + (pvs.s7&0xF));
-  #if IS_OX
-  // PWL
-  //float4 pv = (convert_float4(parsed) - 64.0) / (4096.0 - 64.0);
-  float4 pv = {ox03c10_lut[parsed.s0], ox03c10_lut[parsed.s1], ox03c10_lut[parsed.s2], ox03c10_lut[parsed.s3]};
-
-  // it's a 24 bit signal, center in the middle 8 bits
-  return clamp(pv*gain*256.0, 0.0, 1.0);
-  #else // AR
-  // normalize and scale
-  float4 pv = (convert_float4(parsed) - 168.0) / (4096.0 - 168.0);
-  return clamp(pv*gain, 0.0, 1.0);
-  #endif
-
+int4 parse_12bit(uchar8 pvs) {
+  // lower bits scambled?
+  return (int4)(((int)pvs.s0<<4) + (pvs.s1>>4),
+                      ((int)pvs.s2<<4) + (pvs.s4&0xF),
+                      ((int)pvs.s3<<4) + (pvs.s4>>4),
+                      ((int)pvs.s5<<4) + (pvs.s7&0xF));
 }
 
-float combine_pvs(float lv, float sv, int expo) {
-  float svc = fmax(sv * expo, 61376.0);
-  float svd = sv * fmin(expo, 8.0) / 8;
-
-  if (expo > 64) {
-    if (lv < 959) {
-      return lv / (65536.0 - 64.0);
-    } else {
-      return (svc / 64) / (65536.0 - 64.0);
-    }
-  } else {
-    if (lv > 32) {
-      return (lv * 64 / fmax(expo, 8.0)) / (65536.0 - 64.0);
-    } else {
-      return svd / (65536.0 - 64.0);
-    }
-  }
-}
-
-float4 val4_from_10x2(uchar8 long_pvs, uchar long_ext, uchar8 short_pvs, uchar short_ext, bool aligned, float gain, int expo) {
-  int8 parsed;
+int4 parse_10bit(uchar8 pvs, uchar ext, bool aligned) {
   if (aligned) {
-    parsed = (int8)(((int)long_pvs.s0 << 2) + (long_pvs.s1 & 0b00000011),
-                     ((int)long_pvs.s2 << 2) + ((long_pvs.s6 & 0b11000000) / 64),
-                     ((int)long_pvs.s3 << 2) + ((long_pvs.s6 & 0b00110000) / 16),
-                     ((int)long_pvs.s4 << 2) + ((long_pvs.s6 & 0b00001100) / 4),
-                     ((int)short_pvs.s0 << 2) + (short_pvs.s1 & 0b00000011),
-                     ((int)short_pvs.s2 << 2) + ((short_pvs.s6 & 0b11000000) / 64),
-                     ((int)short_pvs.s3 << 2) + ((short_pvs.s6 & 0b00110000) / 16),
-                     ((int)short_pvs.s4 << 2) + ((short_pvs.s6 & 0b00001100) / 4));
+    return (int4)(((int)pvs.s0 << 2) + (pvs.s1 & 0b00000011),
+                        ((int)pvs.s2 << 2) + ((pvs.s6 & 0b11000000) / 64),
+                        ((int)pvs.s3 << 2) + ((pvs.s6 & 0b00110000) / 16),
+                        ((int)pvs.s4 << 2) + ((pvs.s6 & 0b00001100) / 4));
   } else {
-    parsed = (int8)(((int)long_pvs.s0 << 2) + ((long_pvs.s3 & 0b00110000) / 16),
-                     ((int)long_pvs.s1 << 2) + ((long_pvs.s3 & 0b00001100) / 4),
-                     ((int)long_pvs.s2 << 2) + ((long_pvs.s3 & 0b00000011)),
-                     ((int)long_pvs.s4 << 2) + ((long_ext & 0b11000000) / 64),
-                     ((int)short_pvs.s0 << 2) + ((short_pvs.s3 & 0b00110000) / 16),
-                     ((int)short_pvs.s1 << 2) + ((short_pvs.s3 & 0b00001100) / 4),
-                     ((int)short_pvs.s2 << 2) + ((short_pvs.s3 & 0b00000011)),
-                     ((int)short_pvs.s4 << 2) + ((short_ext & 0b11000000) / 64));
+    return (int4)(((int)pvs.s0 << 2) + ((pvs.s3 & 0b00110000) / 16),
+                        ((int)pvs.s1 << 2) + ((pvs.s3 & 0b00001100) / 4),
+                        ((int)pvs.s2 << 2) + ((pvs.s3 & 0b00000011)),
+                        ((int)pvs.s4 << 2) + ((ext & 0b11000000) / 64));
   }
-
-  float8 pf = convert_float8(parsed - 64);
-  float4 pv;
-  pv.s0 = combine_pvs(pf.s0, pf.s4, expo);
-  pv.s1 = combine_pvs(pf.s1, pf.s5, expo);
-  pv.s2 = combine_pvs(pf.s2, pf.s6, expo);
-  pv.s3 = combine_pvs(pf.s3, pf.s7, expo);
-  return clamp(pv*gain, 0.0, 1.0);
 }
 
 float get_k(float a, float b, float c, float d) {
@@ -112,14 +61,23 @@ __kernel void process_raw(const __global uchar * in, __global uchar * out, int e
   const int gid_x = get_global_id(0);
   const int gid_y = get_global_id(1);
 
+  // estimate vignetting
+  #if VIGNETTING
+    int gx = (gid_x*2 - RGB_WIDTH/2);
+    int gy = (gid_y*2 - RGB_HEIGHT/2);
+    const float vignette_factor = get_vignetting_s((gx*gx + gy*gy) / VIGNETTE_RSZ);
+  #else
+    const float vignette_factor = 1.0;
+  #endif
+
   const int row_before_offset = (gid_y == 0) ? 2 : 0;
   const int row_after_offset = (gid_y == (RGB_HEIGHT/2 - 1)) ? 1 : 3;
 
   float3 rgb_tmp;
   uchar3 rgb_out[4]; // output is 2x2 window
 
+  // read offset
   int start_idx;
-
   #if BIT_DEPTH == 10
     bool aligned10;
     if (gid_x % 2 == 0) {
@@ -133,9 +91,11 @@ __kernel void process_raw(const __global uchar * in, __global uchar * out, int e
     start_idx = (2 * gid_y - 1) * FRAME_STRIDE + (3 * gid_x - 2) + (FRAME_STRIDE * FRAME_OFFSET);
   #endif
 
-  // read in 8x4 chars
+  // read in 4 rows, 8 uchars each
   uchar8 dat[4];
+  // row_before
   dat[0] = vload8(0, in + start_idx + FRAME_STRIDE*row_before_offset);
+  // row_0
   if (gid_x == 0 && gid_y == 0) {
     // this wasn't a problem due to extra rows
     dat[1] = vload8(0, in + start_idx + FRAME_STRIDE*1 + 2);
@@ -143,54 +103,53 @@ __kernel void process_raw(const __global uchar * in, __global uchar * out, int e
   } else {
     dat[1] = vload8(0, in + start_idx + FRAME_STRIDE*1);
   }
+  // row_1
   dat[2] = vload8(0, in + start_idx + FRAME_STRIDE*2);
+  // row_after
   dat[3] = vload8(0, in + start_idx + FRAME_STRIDE*row_after_offset);
+  // need extra bit for 10-bit, 4 rows, 1 uchar each
+  #if BIT_DEPTH == 10
+    uchar extra_dat[4];
+    if (!aligned10) {
+      extra_dat[0] = in[start_idx + FRAME_STRIDE*row_before_offset + 8];
+      extra_dat[1] = in[start_idx + FRAME_STRIDE*1 + 8];
+      extra_dat[2] = in[start_idx + FRAME_STRIDE*2 + 8];
+      extra_dat[3] = in[start_idx + FRAME_STRIDE*row_after_offset + 8];
+    }
+  #endif
+
+  // read odd rows for staggered second exposure
   #if HDR_OFFSET > 0
     uchar8 short_dat[4];
     short_dat[0] = vload8(0, in + start_idx + FRAME_STRIDE*(row_before_offset+HDR_OFFSET/2) + FRAME_STRIDE/2);
     short_dat[1] = vload8(0, in + start_idx + FRAME_STRIDE*(1+HDR_OFFSET/2) + FRAME_STRIDE/2);
     short_dat[2] = vload8(0, in + start_idx + FRAME_STRIDE*(2+HDR_OFFSET/2) + FRAME_STRIDE/2);
     short_dat[3] = vload8(0, in + start_idx + FRAME_STRIDE*(row_after_offset+HDR_OFFSET/2) + FRAME_STRIDE/2);
+    #if BIT_DEPTH == 10
+      uchar short_extra_dat[4];
+      if (!aligned10) {
+        short_extra_dat[0] = in[start_idx + FRAME_STRIDE*(row_before_offset+HDR_OFFSET/2) + FRAME_STRIDE/2 + 8];
+        short_extra_dat[1] = in[start_idx + FRAME_STRIDE*(1+HDR_OFFSET/2) + FRAME_STRIDE/2 + 8];
+        short_extra_dat[2] = in[start_idx + FRAME_STRIDE*(2+HDR_OFFSET/2) + FRAME_STRIDE/2 + 8];
+        short_extra_dat[3] = in[start_idx + FRAME_STRIDE*(row_after_offset+HDR_OFFSET/2) + FRAME_STRIDE/2 + 8];
+      }
+    #endif
   #endif
 
-  // need extra bit for 10-bit
-  #if BIT_DEPTH == 10
-    uchar extra[4];
-    uchar short_extra[4];
-    if (!aligned10) {
-      extra[0] = in[start_idx + FRAME_STRIDE*row_before_offset + 8];
-      extra[1] = in[start_idx + FRAME_STRIDE*1 + 8];
-      extra[2] = in[start_idx + FRAME_STRIDE*2 + 8];
-      extra[3] = in[start_idx + FRAME_STRIDE*row_after_offset + 8];
-      short_extra[0] = in[start_idx + FRAME_STRIDE*(row_before_offset+HDR_OFFSET/2) + FRAME_STRIDE/2 + 8];
-      short_extra[1] = in[start_idx + FRAME_STRIDE*(1+HDR_OFFSET/2) + FRAME_STRIDE/2 + 8];
-      short_extra[2] = in[start_idx + FRAME_STRIDE*(2+HDR_OFFSET/2) + FRAME_STRIDE/2 + 8];
-      short_extra[3] = in[start_idx + FRAME_STRIDE*(row_after_offset+HDR_OFFSET/2) + FRAME_STRIDE/2 + 8];
-    }
-  #endif
-
-  // correct vignetting
-  #if VIGNETTING
-    int gx = (gid_x*2 - RGB_WIDTH/2);
-    int gy = (gid_y*2 - RGB_HEIGHT/2);
-    const float gain = get_vignetting_s(gx*gx + gy*gy);
-  #else
-    const float gain = 1.0;
-  #endif
-
+  // parse into floats 0.0-1.0
   float4 v_rows[4];
-  // parse into floats
-  #if BIT_DEPTH == 10
-      v_rows[ROW_READ_ORDER[0]] = val4_from_10x2(dat[0], extra[0], short_dat[0], short_extra[0], aligned10, gain, expo_time);
-      v_rows[ROW_READ_ORDER[1]] = val4_from_10x2(dat[1], extra[1], short_dat[1], short_extra[1], aligned10, gain, expo_time);
-      v_rows[ROW_READ_ORDER[2]] = val4_from_10x2(dat[2], extra[2], short_dat[2], short_extra[2], aligned10, gain, expo_time);
-      v_rows[ROW_READ_ORDER[3]] = val4_from_10x2(dat[3], extra[3], short_dat[3], short_extra[3], aligned10, gain, expo_time);
-  #else
-    v_rows[ROW_READ_ORDER[0]] = val4_from_12(dat[0], gain);
-    v_rows[ROW_READ_ORDER[1]] = val4_from_12(dat[1], gain);
-    v_rows[ROW_READ_ORDER[2]] = val4_from_12(dat[2], gain);
-    v_rows[ROW_READ_ORDER[3]] = val4_from_12(dat[3], gain);
-  #endif
+  for (int i=0; i<4; i++) {
+    #if BIT_DEPTH == 10
+      // for now it's always HDR
+      int4 parsed = parse_10bit(dat[i], extra_dat[i], aligned10);
+      int4 short_parsed = parse_10bit(short_dat[i], short_extra_dat[i], aligned10);
+      v_rows[ROW_READ_ORDER[i]] = normalize_pv_hdr(parsed, short_parsed, vignette_factor, expo_time);
+    #else
+      // no HDR here
+      int4 parsed = parse_12bit(dat[i]);
+      v_rows[ROW_READ_ORDER[i]] = normalize_pv(parsed, vignette_factor);
+    #endif
+  }
 
   // mirror padding
   if (gid_x == 0) {
@@ -205,6 +164,7 @@ __kernel void process_raw(const __global uchar * in, __global uchar * out, int e
     v_rows[3].s3 = v_rows[3].s1;
   }
 
+  // debayering
   // a simplified version of https://opensignalprocessingjournal.com/contents/volumes/V6/TOSIGPJ-6-1/TOSIGPJ-6-1.pdf
   const float k01 = get_k(v_rows[0].s0, v_rows[1].s1, v_rows[0].s2, v_rows[1].s1);
   const float k02 = get_k(v_rows[0].s2, v_rows[1].s1, v_rows[2].s2, v_rows[1].s1);
@@ -242,7 +202,7 @@ __kernel void process_raw(const __global uchar * in, __global uchar * out, int e
   rgb_tmp.z = (k32*v_rows[2].s3+k34*v_rows[2].s1)/(k32+k34); // B_G2
   rgb_out[RGB_WRITE_ORDER[3]] = convert_uchar3_sat(apply_gamma(color_correct(clamp(rgb_tmp, 0.0, 1.0)), expo_time) * 255.0);
 
-  // write ys
+  // rgb2yuv(nv12)
   uchar2 yy = (uchar2)(
     RGB_TO_Y(rgb_out[0].s0, rgb_out[0].s1, rgb_out[0].s2),
     RGB_TO_Y(rgb_out[1].s0, rgb_out[1].s1, rgb_out[1].s2)
@@ -254,7 +214,6 @@ __kernel void process_raw(const __global uchar * in, __global uchar * out, int e
   );
   vstore2(yy, 0, out + mad24(gid_y * 2 + 1, YUV_STRIDE, gid_x * 2));
 
-  // write uvs
   const short ar = AVERAGE(rgb_out[0].s0, rgb_out[1].s0, rgb_out[2].s0, rgb_out[3].s0);
   const short ag = AVERAGE(rgb_out[0].s1, rgb_out[1].s1, rgb_out[2].s1, rgb_out[3].s1);
   const short ab = AVERAGE(rgb_out[0].s2, rgb_out[1].s2, rgb_out[2].s2, rgb_out[3].s2);
