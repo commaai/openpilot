@@ -411,7 +411,7 @@ void WifiManager::updateGsmSettings(bool roaming, QString apn, bool metered) {
 
 // Functions for tethering
 void WifiManager::addTetheringConnection() {
-    QVariantMap address = {
+  QVariantMap address = {
     {"address", "192.168.43.1"},
     {"prefix", 24u},
   };
