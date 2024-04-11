@@ -157,16 +157,16 @@ def setup_updater():
   INIT_FILE.touch()
 
 
-def download_update(manifest):
+def download_update(manifest: dict):
   cloudlog.info(f"downloading update from: {manifest}")
 
-  set_consistent_flag(FINALIZED, False)
+  set_consistent_flag(str(FINALIZED), False)
 
   HARDWARE.prepare_target_ab_slot()
 
   for entry in manifest:
     if entry["type"] == "path_tarred":
-      extract_directory(entry, BASEDIR, FINALIZED)
+      extract_directory(entry, str(BASEDIR), str(FINALIZED))
 
     if entry["type"] == "partition":
       extract_partition(entry)
