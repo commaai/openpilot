@@ -147,18 +147,22 @@ def setupCredentials() {
 
 def build_release(String channel_name) {
   return parallel (
-    // "${channel_name} (git)": {
-    //   deviceStage("build git", "tici-needs-can", [], [
-    //     ["build ${channel_name}", "RELEASE_BRANCH=${channel_name} $SOURCE_DIR/release/build_release.sh"],
-    //   ])
-    // },
+    "${channel_name} (git)": {
+      deviceStage("build git", "tici-needs-can", [], [
+        ["build ${channel_name}", "RELEASE_BRANCH=${channel_name} $SOURCE_DIR/release/build_release.sh"],
+      ])
+    },
     "${channel_name} (casync)": {
       deviceStage("build casync", "tici-needs-can", [], [
         ["build openpilot ${channel_name}", "RELEASE=1 OPENPILOT_CHANNEL=${channel_name} BUILD_DIR=/data/openpilot CASYNC_DIR=/data/casync/openpilot $SOURCE_DIR/release/create_casync_build.sh"],
-        ["build agnos ${channel_name}", "$SOURCE_DIR/release/create_casync_agnos_release.py /data/casync/agnos /data/tmp"],
         ["create manifest", "$SOURCE_DIR/release/create_casync_agnos_release.py /data/openpilot /data/manifest.json && cat /data/manifest.json"],
         ["upload and cleanup ${channel_name}", "PYTHONWARNINGS=ignore $SOURCE_DIR/release/upload_casync_release.py /data/casync && rm -rf /data/casync"],
       ])
+    },
+    "publish agnos": {
+      pcStage("publish agnos") {
+        sh "release/create_casync_agnos_release.py /data/casync/agnos /data/tmp"
+      }
     }
   )
 }
@@ -192,8 +196,6 @@ node {
     if (env.BRANCH_NAME == 'master-ci') {
       build_release("nightly")
     }
-
-    build_release("nightly")
 
     if (!env.BRANCH_NAME.matches(excludeRegex)) {
     parallel (
