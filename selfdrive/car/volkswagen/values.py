@@ -179,6 +179,8 @@ class VWCarDocs(CarDocs):
 # FW_VERSIONS for that existing CAR.
 
 class CAR(Platforms):
+  config: VolkswagenMQBPlatformConfig | VolkswagenPQPlatformConfig
+
   VOLKSWAGEN_ARTEON_MK1 = VolkswagenMQBPlatformConfig(
     [
       VWCarDocs("Volkswagen Arteon 2018-23", video_link="https://youtu.be/FAomFKPFlDA"),
