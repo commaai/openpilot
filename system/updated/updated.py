@@ -29,6 +29,8 @@ STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
 FINALIZED = Path(STAGING_ROOT) / "finalized"        # where the casync update is pulled
 CASYNC_TMPDIR = Path(STAGING_ROOT) / "casync_tmp"   # working directory for casync temp files
 
+INIT_FILE = Path(BASEDIR) / ".overlay_init"
+
 
 def get_remote_available_channels() -> list | None:
   try:
@@ -161,7 +163,7 @@ def dismount_overlay() -> None:
     run_cmd(["sudo", "umount", "-l", OVERLAY_MERGED])
 
 
-def setup_dirs():
+def setup_updater():
   dismount_overlay()
   run_cmd(["sudo", "rm", "-rf", STAGING_ROOT])
   if os.path.isdir(STAGING_ROOT):
@@ -170,6 +172,8 @@ def setup_dirs():
   Path(STAGING_ROOT).mkdir()
   CASYNC_TMPDIR.mkdir()
   FINALIZED.mkdir()
+
+  INIT_FILE.touch()
 
 
 def download_update(manifest):
@@ -195,7 +199,7 @@ def main():
   if psutil.LINUX:
     proc.ionice(psutil.IOPRIO_CLASS_BE, value=7)
 
-  setup_dirs()
+  setup_updater()
 
   params = Params()
 
