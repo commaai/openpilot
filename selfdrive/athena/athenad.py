@@ -32,13 +32,12 @@ from cereal import log
 from cereal.services import SERVICE_LIST
 from openpilot.common.api import Api
 from openpilot.common.file_helpers import CallbackReader
-from openpilot.common.git import get_commit, get_normalized_origin, get_short_branch
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
 from openpilot.system.hardware import HARDWARE, PC
 from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.version import get_version
+from openpilot.system.version import get_build_metadata
 from openpilot.system.hardware.hw import Paths
 
 
@@ -320,11 +319,12 @@ def getMessage(service: str, timeout: int = 1000) -> dict:
 
 @dispatcher.add_method
 def getVersion() -> dict[str, str]:
+  build_metadata = get_build_metadata()
   return {
-    "version": get_version(),
-    "remote": get_normalized_origin(),
-    "branch": get_short_branch(),
-    "commit": get_commit(),
+    "version": build_metadata.openpilot.version,
+    "remote": build_metadata.openpilot.git_normalized_origin,
+    "branch": build_metadata.channel,
+    "commit": build_metadata.openpilot.git_commit,
   }
 
 

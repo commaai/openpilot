@@ -23,6 +23,8 @@
 #define CAN_REJECTED_BUS_OFFSET   0xC0U
 #define CAN_RETURNED_BUS_OFFSET 0x80U
 
+#define PANDA_BUS_OFFSET 4
+
 struct __attribute__((packed)) can_header {
   uint8_t reserved : 1;
   uint8_t bus : 3;
