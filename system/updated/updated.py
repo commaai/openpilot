@@ -34,14 +34,6 @@ INIT_FILE = Path(BASEDIR) / ".overlay_init"
 UPDATED_FORCE_WRITE = os.getenv("UPDATED_FORCE_WRITE") == "1"
 
 
-def get_remote_available_channels() -> list | None:
-  try:
-    return list(requests.get(os.path.join(API_HOST, CHANNELS_API_ROOT)).json())
-  except requests.exceptions.RequestException:
-    cloudlog.exception("fetching remote channels")
-    return None
-
-
 def get_remote_channel_data(channel: str) -> tuple[BuildMetadata | None, dict | None]:
   try:
     data = requests.get(os.path.join(API_HOST, CHANNELS_API_ROOT, channel)).json()
@@ -51,12 +43,12 @@ def get_remote_channel_data(channel: str) -> tuple[BuildMetadata | None, dict | 
     return None, None
 
 
-def check_update_available(current_directory, other_metadata: BuildMetadata) -> bool:
+def check_update_available(current_directory: str, other_metadata: BuildMetadata) -> bool:
   build_metadata = get_build_metadata(current_directory)
   return is_git_repo(current_directory) or build_metadata != other_metadata
 
 
-def create_remote_chunk_source(caibx_url, chunks):
+def create_remote_chunk_source(caibx_url: str, chunks: list[casync.Chunk]):
   return ('remote', casync.RemoteChunkReader(casync.get_default_store(caibx_url)), casync.build_chunk_dict(chunks))
 
 
@@ -87,7 +79,7 @@ def set_partition_hash(path: str, partition_size: int, new_hash: bytes):
   os.sync()
 
 
-def extract_directory_helper(entry, cache_directory, directory):
+def extract_directory(entry: dict, cache_directory: str, directory: str):
   caibx_url = entry["casync"]["caibx"]
   target = casync.parse_caibx(caibx_url)
 
@@ -109,7 +101,7 @@ def extract_directory_helper(entry, cache_directory, directory):
   cloudlog.info(f"extraction completed in {time.monotonic() - start} seconds with {stats}")
 
 
-def extract_partition_helper(entry):
+def extract_partition(entry: dict):
   cloudlog.info(f"extracting partition: {entry}")
 
   caibx_url = entry["casync"]["caibx"]
@@ -174,10 +166,10 @@ def download_update(manifest):
 
   for entry in manifest:
     if entry["type"] == "path_tarred":
-      extract_directory_helper(entry, BASEDIR, FINALIZED)
+      extract_directory(entry, BASEDIR, FINALIZED)
 
     if entry["type"] == "partition":
-      extract_partition_helper(entry)
+      extract_partition(entry)
 
 
 

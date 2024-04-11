@@ -9,7 +9,7 @@ import time
 from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
 from collections.abc import Callable
-from typing import IO
+from typing import IO, Sequence
 
 import requests
 from Crypto.Hash import SHA512
@@ -166,7 +166,7 @@ def build_chunk_dict(chunks: list[Chunk]) -> ChunkDict:
 
 
 def extract(target: list[Chunk],
-            sources: list[tuple[str, ChunkReader, ChunkDict]],
+            sources: Sequence[tuple[str, ChunkReader, ChunkDict]],
             out_path: str,
             progress: Callable[[int], None] = None):
   stats: dict[str, int] = defaultdict(int)
@@ -207,7 +207,7 @@ def extract(target: list[Chunk],
 
 
 def extract_directory(target: list[Chunk],
-            sources: list[tuple[str, ChunkReader, ChunkDict]],
+            sources: Sequence[tuple[str, ChunkReader, ChunkDict]],
             out_path: str,
             tmp_file: str,
             progress: Callable[[int], None] = None):
