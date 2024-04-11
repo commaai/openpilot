@@ -9,7 +9,7 @@
 #define VIGNETTE_RSZ 2.2545f
 
 float combine_dual_pvs(float lv, float sv, int expo_time) {
-  float svc = fmax(sv * expo_time, 61376.0);
+  float svc = fmax(sv * expo_time, (float)(64 * (PV_MAX10 - BLACK_LVL)));
   float svd = sv * fmin(expo_time, 8.0) / 8;
 
   if (expo_time > 64) {
