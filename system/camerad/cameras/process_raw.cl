@@ -162,7 +162,7 @@ __kernel void process_raw(const __global uchar * in, __global uchar * out, int e
   }
   dat[2] = vload8(0, in + start_idx + FRAME_STRIDE*2);
   dat[3] = vload8(0, in + start_idx + FRAME_STRIDE*row_after_offset);
-  #if IS_HDR
+  #if HDR_COMBINE
     uchar8 short_dat[4];
     short_dat[0] = vload8(0, in + start_idx + FRAME_STRIDE*(row_before_offset+HDR_OFFSET/2) + FRAME_STRIDE/2);
     short_dat[1] = vload8(0, in + start_idx + FRAME_STRIDE*(1+HDR_OFFSET/2) + FRAME_STRIDE/2);
@@ -179,7 +179,7 @@ __kernel void process_raw(const __global uchar * in, __global uchar * out, int e
       extra[2] = in[start_idx + FRAME_STRIDE*2 + 8];
       extra[3] = in[start_idx + FRAME_STRIDE*row_after_offset + 8];
 		}
-    #if IS_HDR
+    #if HDR_COMBINE
       uchar short_extra[4];
       if (!aligned10) {
         short_extra[0] = in[start_idx + FRAME_STRIDE*(row_before_offset+HDR_OFFSET/2) + FRAME_STRIDE/2 + 8];
@@ -202,7 +202,7 @@ __kernel void process_raw(const __global uchar * in, __global uchar * out, int e
   float4 v_rows[4];
   // parse into floats
   #if IS_10BIT
-    #if IS_HDR
+    #if HDR_COMBINE
       v_rows[ROW_READ_ORDER[0]] = val4_from_10x2(dat[0], extra[0], short_dat[0], short_extra[0], aligned10, gain, expo_time);
       v_rows[ROW_READ_ORDER[1]] = val4_from_10x2(dat[1], extra[1], short_dat[1], short_extra[1], aligned10, gain, expo_time);
       v_rows[ROW_READ_ORDER[2]] = val4_from_10x2(dat[2], extra[2], short_dat[2], short_extra[2], aligned10, gain, expo_time);

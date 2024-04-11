@@ -1,6 +1,7 @@
 #if IS_OS
 
 #define BGGR
+#define HDR_COMBINE
 
 float3 color_correct(float3 rgb) {
   float3 corrected = rgb.x * (float3)(1.55361989, -0.268894615, -0.000593219);
