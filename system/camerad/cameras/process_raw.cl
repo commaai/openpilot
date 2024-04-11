@@ -129,7 +129,7 @@ __kernel void process_raw(const __global uchar * in, __global uchar * out, int e
   float3 rgb;
   uchar3 rgb_out[4];
 
-  #if IS_BGGR
+  #if BGGR
     constant int row_read_order[] = {3, 2, 1, 0};
     constant int rgb_write_order[] = {2, 3, 0, 1};
   #else

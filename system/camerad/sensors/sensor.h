@@ -29,7 +29,6 @@ public:
   int registers_offset = -1;
   int stats_offset = -1;
   int hdr_offset = -1;
-  bool bggr;
 
   int exposure_time_min;
   int exposure_time_max;

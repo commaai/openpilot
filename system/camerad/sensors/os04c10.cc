@@ -24,7 +24,6 @@ const int os04c10_driver_ae_xywh[] = {44, 180, 2600, 1340};
 
 OS04C10::OS04C10() {
   image_sensor = cereal::FrameData::ImageSensor::OS04C10;
-  bggr = true;
   data_word = false;
 
   hdr_offset = 64 * 2 + 8; // stagger
