@@ -24,6 +24,13 @@ const bool env_debug_frames = getenv("DEBUG_FRAMES") != NULL;
 const bool env_log_raw_frames = getenv("LOG_RAW_FRAMES") != NULL;
 const bool env_ctrl_exp_from_params = getenv("CTRL_EXP_FROM_PARAMS") != NULL;
 
+typedef struct AutoExposureRect {
+  int x;
+  int y;
+  int w;
+  int h;
+} AutoExposureRect;
+
 typedef struct FrameMetadata {
   uint32_t frame_id;
   uint32_t request_id;

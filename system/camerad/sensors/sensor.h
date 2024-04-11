@@ -49,9 +49,7 @@ public:
   float target_grey_factor;
   float min_ev;
   float max_ev;
-  int road_ae_xywh[4];
-  int wide_ae_xywh[4];
-  int driver_ae_xywh[4];
+  std::vector<AutoExposureRect> ae_areas;
 
   bool data_word;
   uint32_t probe_reg_addr;

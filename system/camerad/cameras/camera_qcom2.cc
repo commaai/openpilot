@@ -398,6 +398,7 @@ void CameraState::enqueue_req_multi(int start, int n, bool dp) {
 
 void CameraState::sensor_set_parameters() {
   target_grey_fraction = 0.3;
+  for (int i = 0; i < 4; i++) {ae_xywh[i] = ci->ae_areas[camera_num][i];}
 
   dc_gain_enabled = false;
   dc_gain_weight = ci->dc_gain_min_weight;
@@ -902,8 +903,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
 }
 
 static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
-  const auto ae_xywh = c->ci->driver_ae_xywh;
-  c->set_camera_exposure(set_exposure_target(&c->buf, ae_xywh[0], ae_xywh[2], 2, ae_xywh[1], ae_xywh[3], 4));
+  c->set_camera_exposure(set_exposure_target(&c->buf, c->ae_xywh[0], c->ae_xywh[2], 2, c->ae_xywh[1], c->ae_xywh[3], 4));
 
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverCameraState();
@@ -928,9 +928,8 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   c->ci->processRegisters(c, framed);
   s->pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
 
-  const auto ae_xywh = (c == &s->wide_road_cam) ? c->ci->wide_ae_xywh : c->ci->road_ae_xywh;
   const int skip = 2;
-  c->set_camera_exposure(set_exposure_target(b, ae_xywh[0], ae_xywh[2], skip, ae_xywh[1], ae_xywh[3], skip));
+  c->set_camera_exposure(set_exposure_target(b, c->ae_xywh[0], c->ae_xywh[2], skip, c->ae_xywh[1], c->ae_xywh[3], skip));
 }
 
 void cameras_run(MultiCameraState *s) {

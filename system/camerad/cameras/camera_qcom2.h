@@ -30,6 +30,7 @@ public:
   int new_exp_g;
   int new_exp_t;
 
+  int ae_xywh[4];
   float measured_grey_fraction;
   float target_grey_fraction;
 
