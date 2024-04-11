@@ -419,9 +419,8 @@ WMI = {
   "LSV",  # SAIC Volkswagen
   "TMB",  # Škoda Auto AS
   "VSS",  # SEAT
-  "WA1",  # NONENONE
-  "WAU",  # Audi car
   "WA1",  # Audi SUV
+  "WAU",  # Audi car
   "WMA",  # MAN
   "WUA",  # Audi Sport GmbH & Quattro GmbH car
   "WV1",  # Volkswagen Commercial Vehicles
