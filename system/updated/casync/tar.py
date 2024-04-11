@@ -36,3 +36,11 @@ def extract_tar_archive(fh: IO[bytes], directory: pathlib.Path):
   tar = tarfile.open(fileobj=fh, mode='r')
   tar.extractall(str(directory), filter=lambda info, path: info)
   tar.close()
+
+
+def is_not_git(path: pathlib.Path) -> bool:
+  return ".git" not in path.parts
+
+
+def create_casync_tar_package(target_dir: pathlib.Path, output_path: pathlib.Path):
+  create_tar_archive(output_path, target_dir, is_not_git)
