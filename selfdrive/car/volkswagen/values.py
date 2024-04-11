@@ -377,30 +377,8 @@ class CAR(Platforms):
 def match_fw_to_car_custom(live_fw_versions, vin, offline_fw_versions) -> set[str]:
   candidates = set()
 
-  valid_wmis = {
-    '1V2',  # Volkswagen SUV
-    '1VW',  # Volkswagen car
-    '3VV',  # Volkswagen SUV
-    '3VW',  # Volkswagen car
-    '8AW',  # Volkswagen Argentina
-    '9BW',  # Volkswagen do Brasil
-    'LSV',  # SAIC Volkswagen
-    'TMB',  # Škoda Auto AS
-    'VSS',  # SEAT
-    'WA1',  # NONENONE
-    'WAU',  # Audi car
-    'WA1',  # Audi SUV
-    'WMA',  # MAN
-    'WUA',  # Audi Sport GmbH & Quattro GmbH car
-    'WV1',  # Volkswagen Commercial Vehicles
-    'WV2',  # Volkswagen Commercial Vehicles
-    'WVG',  # Volkswagen SUV
-    'WVW',  # Volkswagen car
-    'XW8',  # Volkswagen Group Rus
-  }
-
   wmi = vin[:3]
-  if wmi not in valid_wmis:
+  if wmi not in WMI:
     return set()
 
   chassis_code = vin[6:8]
@@ -415,7 +393,27 @@ def match_fw_to_car_custom(live_fw_versions, vin, offline_fw_versions) -> set[st
 
 
 CHASSIS_CODE_PATTERN = re.compile('[A-Z0-9]{2}')
-
+WMI = {
+  '1V2',  # Volkswagen SUV
+  '1VW',  # Volkswagen car
+  '3VV',  # Volkswagen SUV
+  '3VW',  # Volkswagen car
+  '8AW',  # Volkswagen Argentina
+  '9BW',  # Volkswagen do Brasil
+  'LSV',  # SAIC Volkswagen
+  'TMB',  # Škoda Auto AS
+  'VSS',  # SEAT
+  'WA1',  # NONENONE
+  'WAU',  # Audi car
+  'WA1',  # Audi SUV
+  'WMA',  # MAN
+  'WUA',  # Audi Sport GmbH & Quattro GmbH car
+  'WV1',  # Volkswagen Commercial Vehicles
+  'WV2',  # Volkswagen Commercial Vehicles
+  'WVG',  # Volkswagen SUV
+  'WVW',  # Volkswagen car
+  'XW8',  # Volkswagen Group Rus
+}
 
 # All supported cars should return FW from the engine, srs, eps, and fwdRadar. Cars
 # with a manual trans won't return transmission firmware, but all other cars will.
