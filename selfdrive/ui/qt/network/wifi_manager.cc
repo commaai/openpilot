@@ -169,25 +169,34 @@ SecurityType WifiManager::getSecurityType(const QVariantMap &properties) {
 void WifiManager::connect(const Network &n, const bool is_hidden, const QString &password, const QString &username) {
   setCurrentConnecting(n.ssid);
   forgetConnection(n.ssid);  // Clear all connections that may already exist to the network we are connecting
-  Connection connection;
-  connection["connection"]["type"] = "802-11-wireless";
-  connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
-  connection["connection"]["id"] = "openpilot connection " + QString::fromStdString(n.ssid.toStdString());
-  connection["connection"]["autoconnect-retries"] = 0;
 
-  connection["802-11-wireless"]["ssid"] = n.ssid;
-  connection["802-11-wireless"]["hidden"] = is_hidden;
-  connection["802-11-wireless"]["mode"] = "infrastructure";
-
+  Connection connection{
+    {"connection", {
+      {"type", "802-11-wireless"},
+      {"uuid", QUuid::createUuid().toString().remove('{').remove('}')},
+      {"id", "openpilot connection " + n.ssid},
+      {"autoconnect-retries", 0}
+    }},
+    {"802-11-wireless", {
+      {"ssid", n.ssid},
+      {"hidden", is_hidden},
+      {"mode", "infrastructure"}
+    }},
+    {"ipv4", {
+      {"method", "auto"},
+      {"dns-priority", 600}
+    }},
+    {"ipv6", {
+      {"method", "ignore"}
+    }}
+  };
   if (n.security_type == SecurityType::WPA) {
-    connection["802-11-wireless-security"]["key-mgmt"] = "wpa-psk";
-    connection["802-11-wireless-security"]["auth-alg"] = "open";
-    connection["802-11-wireless-security"]["psk"] = password;
+    connection["802-11-wireless-security"] = {
+      {"key-mgmt", "wpa-psk"},
+      {"auth-alg", "open"},
+      {"psk", password}
+    };
   }
-
-  connection["ipv4"]["method"] = "auto";
-  connection["ipv4"]["dns-priority"] = 600;
-  connection["ipv6"]["method"] = "ignore";
 
   call(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "AddConnection", QVariant::fromValue(connection));
 }
@@ -402,31 +411,38 @@ void WifiManager::updateGsmSettings(bool roaming, QString apn, bool metered) {
 
 // Functions for tethering
 void WifiManager::addTetheringConnection() {
-  Connection connection;
-  connection["connection"]["id"] = "Hotspot";
-  connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
-  connection["connection"]["type"] = "802-11-wireless";
-  connection["connection"]["interface-name"] = "wlan0";
-  connection["connection"]["autoconnect"] = false;
-
-  connection["802-11-wireless"]["band"] = "bg";
-  connection["802-11-wireless"]["mode"] = "ap";
-  connection["802-11-wireless"]["ssid"] = tethering_ssid.toUtf8();
-
-  connection["802-11-wireless-security"]["group"] = QStringList("ccmp");
-  connection["802-11-wireless-security"]["key-mgmt"] = "wpa-psk";
-  connection["802-11-wireless-security"]["pairwise"] = QStringList("ccmp");
-  connection["802-11-wireless-security"]["proto"] = QStringList("rsn");
-  connection["802-11-wireless-security"]["psk"] = defaultTetheringPassword;
-
-  connection["ipv4"]["method"] = "shared";
-  QVariantMap address;
-  address["address"] = "192.168.43.1";
-  address["prefix"] = 24u;
-  connection["ipv4"]["address-data"] = QVariant::fromValue(IpConfig() << address);
-  connection["ipv4"]["gateway"] = "192.168.43.1";
-  connection["ipv4"]["route-metric"] = 1100;
-  connection["ipv6"]["method"] = "ignore";
+    QVariantMap address = {
+    {"address", "192.168.43.1"},
+    {"prefix", 24u},
+  };
+  Connection connection = {
+    {"connection", {
+      {"id", "Hotspot"},
+      {"uuid", QUuid::createUuid().toString().remove('{').remove('}')},
+      {"type", "802-11-wireless"},
+      {"interface-name", "wlan0"},
+      {"autoconnect", false}
+    }},
+    {"802-11-wireless", {
+      {"band", "bg"},
+      {"mode", "ap"},
+      {"ssid", tethering_ssid.toUtf8()}
+    }},
+    {"802-11-wireless-security", {
+      {"group", QStringList("ccmp")},
+      {"key-mgmt", "wpa-psk"},
+      {"pairwise", QStringList("ccmp")},
+      {"proto", QStringList("rsn")},
+      {"psk", defaultTetheringPassword}
+    }},
+    {"ipv4", {
+      {"method", "shared"},
+      {"address-data", QVariant::fromValue(IpConfig() << address)},
+      {"gateway", "192.168.43.1"},
+      {"route-metric", 1100}
+    }},
+    {"ipv6", {{"method", "ignore"}}}
+  };
 
   call(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "AddConnection", QVariant::fromValue(connection));
 }
