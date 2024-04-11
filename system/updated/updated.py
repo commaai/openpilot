@@ -75,7 +75,7 @@ def get_partition_hash(path: str, partition_size: int, full_check: bool) -> str:
   else:
     with open(path, 'rb+') as out:
       out.seek(partition_size)
-      return out.read(32).hex().lower()
+      return out.read(64).decode("utf-8")
 
 
 def set_partition_hash(path: str, partition_size: int, new_hash: bytes):
