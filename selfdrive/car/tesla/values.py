@@ -89,7 +89,7 @@ class CANBUS:
   private = 5
   autopilot_powertrain = 6
 
-  # Model 3
+  # Model 3/Y
   party = 0
   vehicle = 1
   autopilot_party = 2

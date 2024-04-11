@@ -10,7 +10,10 @@ from opendbc.can.can_define import CANDefine
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
-    self.button_states = {button.event_type: False for button in (MODEL3_Y_BUTTONS if CAR.TESLA_AP3_MODEL3 else BUTTONS)}
+    self.model3_y = self.CP.carFingerprint in [CAR.TESLA_AP3_MODEL3, CAR.TESLA_AP3_MODELY]
+    self.models_raven = self.CP.carFingerprint == CAR.TESLA_MODELS_RAVEN
+
+    self.button_states = {button.event_type: False for button in (MODEL3_Y_BUTTONS if self.model3_y else BUTTONS)}
     self.can_define = CANDefine(DBC[CP.carFingerprint]['chassis'])
 
     # Needed by carcontroller
@@ -25,8 +28,7 @@ class CarState(CarStateBase):
   def update(self, cp, cp_cam, cp_adas):
     ret = car.CarState.new_message()
 
-    model3_y = self.CP.carFingerprint in [CAR.TESLA_AP3_MODEL3, CAR.TESLA_AP3_MODELY]
-    models_raven = self.CP.carFingerprint == CAR.TESLA_MODELS_RAVEN
+
 
     # Vehicle speed
     ret.vEgoRaw = cp.vl["ESP_B"]["ESP_vehicleSpeed"] * CV.KPH_TO_MS
@@ -34,19 +36,19 @@ class CarState(CarStateBase):
     ret.standstill = (ret.vEgo < 0.1)
 
     # Gas pedal
-    pedal_status = cp.vl["DI_systemStatus"]["DI_accelPedalPos"] if model3_y else cp.vl["DI_torque1"]["DI_pedalPos"]
+    pedal_status = cp.vl["DI_systemStatus"]["DI_accelPedalPos"] if self.model3_y else cp.vl["DI_torque1"]["DI_pedalPos"]
     ret.gas = pedal_status / 100.0
     ret.gasPressed = (ret.gas > 0)
 
     # Brake pedal
     ret.brake = 0
-    if model3_y:
+    if self.model3_y:
       ret.brakePressed = cp.vl["IBST_status"]["IBST_driverBrakeApply"] == 2
     else:
       ret.brakePressed = bool(cp.vl["BrakeMessage"]["driverBrakeStatus"] != 1)
 
     # Steering wheel
-    if model3_y:
+    if self.model3_y:
       epas_status = cp.vl["EPAS3S_sysStatus"]
       self.hands_on_level = epas_status["EPAS3S_handsOnLevel"]
       self.steer_warning = self.can_define.dv["EPAS3S_sysStatus"]["EPAS3S_eacErrorCode"].get(int(epas_status["EPAS3S_eacErrorCode"]), None)
@@ -55,7 +57,7 @@ class CarState(CarStateBase):
       ret.steeringRateDeg = -cp_adas.vl["SCCM_steeringAngleSensor"]["SCCM_steeringAngleSpeed"]
       ret.steeringTorque = -epas_status["EPAS3S_torsionBarTorque"]
     else:
-      epas_status = cp_cam.vl["EPAS3P_sysStatus"] if models_raven else cp.vl["EPAS_sysStatus"]
+      epas_status = cp_cam.vl["EPAS3P_sysStatus"] if self.models_raven else cp.vl["EPAS_sysStatus"]
       self.hands_on_level = epas_status["EPAS_handsOnLevel"]
       self.steer_warning = self.can_define.dv["EPAS_sysStatus"]["EPAS_eacErrorCode"].get(int(epas_status["EPAS_eacErrorCode"]), None)
       steer_status = self.can_define.dv["EPAS_sysStatus"]["EPAS_eacStatus"].get(int(epas_status["EPAS_eacStatus"]), None)
@@ -81,13 +83,13 @@ class CarState(CarStateBase):
     ret.cruiseState.standstill = False  # This needs to be false, since we can resume from stop without sending anything special
 
     # Gear
-    gear_msg = "DI_systemStatus" if model3_y else "DI_torque2"
+    gear_msg = "DI_systemStatus" if self.model3_y else "DI_torque2"
     ret.gearShifter = GEAR_MAP[self.can_define.dv[gear_msg]["DI_gear"].get(int(cp.vl[gear_msg]["DI_gear"]), "DI_GEAR_INVALID")]
 
     # Buttons
     button_events = []
-    for button in (MODEL3_Y_BUTTONS if model3_y else BUTTONS):
-      btn_parser = cp_adas if model3_y else cp
+    for button in (MODEL3_Y_BUTTONS if self.model3_y else BUTTONS):
+      btn_parser = cp_adas if self.model3_y else cp
       state = (btn_parser.vl[button.can_addr][button.can_msg] in button.values)
       if self.button_states[button.event_type] != state:
         event = car.CarState.ButtonEvent.new_message()
@@ -98,7 +100,7 @@ class CarState(CarStateBase):
     ret.buttonEvents = button_events
 
     # Doors
-    if model3_y:
+    if self.model3_y:
       ret.doorOpen = any([cp_adas.vl["VCLEFT_doorStatus"]["VCLEFT_frontLatchSwitch"] != 1,
                           cp_adas.vl["VCLEFT_doorStatus"]["VCLEFT_rearLatchSwitch"] != 1,
                           cp_adas.vl["VCRIGHT_doorStatus"]["VCRIGHT_frontLatchSwitch"] != 1,
@@ -108,7 +110,7 @@ class CarState(CarStateBase):
       ret.doorOpen = any((self.can_define.dv["GTW_carState"][door].get(int(cp.vl["GTW_carState"][door]), "OPEN") == "OPEN") for door in DOORS)
 
     # Blinkers
-    if model3_y:
+    if self.model3_y:
       # maybe use DAS_turnIndicatorRequestReason
       ret.leftBlinker = (cp_adas.vl["ID3F5VCFRONT_lighting"]["VCFRONT_indicatorLeftRequest"] != 0)
       ret.rightBlinker = (cp_adas.vl["ID3F5VCFRONT_lighting"]["VCFRONT_indicatorRightRequest"] != 0)
@@ -117,9 +119,9 @@ class CarState(CarStateBase):
       ret.rightBlinker = (cp.vl["GTW_carState"]["BC_indicatorRStatus"] == 1)
 
     # Seatbelt
-    if models_raven:
+    if self.models_raven:
       ret.seatbeltUnlatched = (cp.vl["DriverSeat"]["buckleStatus"] != 1)
-    elif model3_y:
+    elif self.model3_y:
       ret.seatbeltUnlatched = cp_adas.vl["VCLEFT_switchStatus"]["VCLEFT_frontBuckleSwitch"] == 1
     else:
       ret.seatbeltUnlatched = (cp.vl["SDM1"]["SDM_bcklDrivStatus"] != 1)
@@ -130,7 +132,7 @@ class CarState(CarStateBase):
     ret.stockAeb = (cp_cam.vl["DAS_control"]["DAS_aebEvent"] == 1)
 
     # Messages needed by carcontroller
-    if model3_y:
+    if self.model3_y:
       self.sccm_right_stalk = copy.copy(cp_adas.vl["SCCM_rightStalk"])
     else:
       self.msg_stw_actn_req = copy.copy(cp.vl["STW_ACTN_RQ"])
