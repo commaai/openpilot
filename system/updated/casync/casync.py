@@ -165,8 +165,11 @@ def build_chunk_dict(chunks: list[Chunk]) -> ChunkDict:
   return r
 
 
+ChunkSource = tuple[str, ChunkReader, ChunkDict]
+
+
 def extract(target: list[Chunk],
-            sources: Sequence[tuple[str, ChunkReader, ChunkDict]],
+            sources: Sequence[ChunkSource],
             out_path: str,
             progress: Callable[[int], None] = None):
   stats: dict[str, int] = defaultdict(int)
@@ -207,7 +210,7 @@ def extract(target: list[Chunk],
 
 
 def extract_directory(target: list[Chunk],
-            sources: Sequence[tuple[str, ChunkReader, ChunkDict]],
+            sources: Sequence[ChunkSource],
             out_path: str,
             tmp_file: str,
             progress: Callable[[int], None] = None):

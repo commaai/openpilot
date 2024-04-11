@@ -48,7 +48,7 @@ def check_update_available(current_directory: str, other_metadata: BuildMetadata
   return is_git_repo(current_directory) or build_metadata != other_metadata
 
 
-def create_remote_chunk_source(caibx_url: str, chunks: list[casync.Chunk]):
+def create_remote_chunk_source(caibx_url: str, chunks: list[casync.Chunk]) -> casync.ChunkSource:
   return ('remote', casync.RemoteChunkReader(casync.get_default_store(caibx_url)), casync.build_chunk_dict(chunks))
 
 
@@ -90,7 +90,7 @@ def extract_directory(entry: dict, cache_directory: str, directory: str):
 
   cloudlog.info("building tarball update cache...")
   start = time.monotonic()
-  sources = [('cache', casync.DirectoryTarChunkReader(cache_directory, cache_filename), casync.build_chunk_dict(target))]
+  sources: list[casync.ChunkSource] = [('cache', casync.DirectoryTarChunkReader(cache_directory, cache_filename), casync.build_chunk_dict(target))]
   cloudlog.info(f"tarball cache creation completed in {time.monotonic() - start} seconds")
 
   sources += [create_remote_chunk_source(caibx_url, target)]
@@ -109,7 +109,7 @@ def extract_partition(entry: dict):
 
   target_path = entry["path"]
 
-  sources = []
+  sources: list[casync.ChunkSource] = []
 
   if entry["ab"]:
     assert entry["path"][-2:] == "_a"
