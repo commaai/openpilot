@@ -138,18 +138,31 @@ __kernel void process_raw(const __global uchar * in, __global uchar * out, int e
 
   // parse into floats 0.0-1.0
   float4 v_rows[4];
-  for (int i=0; i<4; i++) {
-    #if BIT_DEPTH == 10
-      // for now it's always HDR
-      int4 parsed = parse_10bit(dat[i], extra_dat[i], aligned10);
-      int4 short_parsed = parse_10bit(short_dat[i], short_extra_dat[i], aligned10);
-      v_rows[ROW_READ_ORDER[i]] = normalize_pv_hdr(parsed, short_parsed, vignette_factor, expo_time);
-    #else
-      // no HDR here
-      int4 parsed = parse_12bit(dat[i]);
-      v_rows[ROW_READ_ORDER[i]] = normalize_pv(parsed, vignette_factor);
-    #endif
-  }
+  #if BIT_DEPTH == 10
+    // for now it's always HDR
+    int4 parsed = parse_10bit(dat[0], extra_dat[0], aligned10);
+    int4 short_parsed = parse_10bit(short_dat[0], short_extra_dat[0], aligned10);
+    v_rows[ROW_READ_ORDER[0]] = normalize_pv_hdr(parsed, short_parsed, vignette_factor, expo_time);
+    parsed = parse_10bit(dat[1], extra_dat[1], aligned10);
+    short_parsed = parse_10bit(short_dat[1], short_extra_dat[1], aligned10);
+    v_rows[ROW_READ_ORDER[1]] = normalize_pv_hdr(parsed, short_parsed, vignette_factor, expo_time);
+    parsed = parse_10bit(dat[2], extra_dat[2], aligned10);
+    short_parsed = parse_10bit(short_dat[2], short_extra_dat[2], aligned10);
+    v_rows[ROW_READ_ORDER[2]] = normalize_pv_hdr(parsed, short_parsed, vignette_factor, expo_time);
+    parsed = parse_10bit(dat[3], extra_dat[3], aligned10);
+    short_parsed = parse_10bit(short_dat[3], short_extra_dat[3], aligned10);
+    v_rows[ROW_READ_ORDER[3]] = normalize_pv_hdr(parsed, short_parsed, vignette_factor, expo_time);
+  #else
+    // no HDR here
+    int4 parsed = parse_12bit(dat[0]);
+    v_rows[ROW_READ_ORDER[0]] = normalize_pv(parsed, vignette_factor);
+    parsed = parse_12bit(dat[1]);
+    v_rows[ROW_READ_ORDER[1]] = normalize_pv(parsed, vignette_factor);
+    parsed = parse_12bit(dat[2]);
+    v_rows[ROW_READ_ORDER[2]] = normalize_pv(parsed, vignette_factor);
+    parsed = parse_12bit(dat[3]);
+    v_rows[ROW_READ_ORDER[3]] = normalize_pv(parsed, vignette_factor);
+  #endif
 
   // mirror padding
   if (gid_x == 0) {
