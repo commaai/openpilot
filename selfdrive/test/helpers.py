@@ -1,7 +1,6 @@
 import contextlib
 import http.server
 import os
-import sys
 import threading
 import time
 
@@ -9,6 +8,7 @@ from functools import wraps
 
 import cereal.messaging as messaging
 from openpilot.common.params import Params
+from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.system.hardware import PC
 from openpilot.system.version import training_version, terms_version
 
@@ -47,11 +47,6 @@ def release_only(f):
 
 @contextlib.contextmanager
 def processes_context(processes, init_time=0, ignore_stopped=None):
-  # need to dynamically import this in case there is some configuration we set within a test
-  if "openpilot.selfdrive.manager.process_config" in sys.modules:
-    del sys.modules["openpilot.selfdrive.manager.process_config"]
-  from openpilot.selfdrive.manager.process_config import managed_processes
-
   ignore_stopped = [] if ignore_stopped is None else ignore_stopped
 
   # start and assert started
