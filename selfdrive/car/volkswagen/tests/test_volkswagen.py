@@ -1,10 +1,19 @@
 #!/usr/bin/env python3
 import unittest
 
-from openpilot.selfdrive.car.volkswagen.values import CAR, FW_QUERY_CONFIG, WMI
+from openpilot.selfdrive.car.volkswagen.values import CAR, FW_PATTERN, FW_QUERY_CONFIG, WMI
+from openpilot.selfdrive.car.volkswagen.fingerprints import FW_VERSIONS
 
 
 class TestVolkswagenPlatformConfigs(unittest.TestCase):
+  def test_fw_pattern(self):
+    # Relied on for determining if a FW is likely VW
+    for platform, ecus in FW_VERSIONS.items():
+      with self.subTest(platform=platform):
+        for fws in ecus.values():
+          for fw in fws:
+            self.assertTrue(FW_PATTERN.match(fw), f"Bad FW: {fw}")
+
   def test_chassis_codes(self):
     for platform in CAR:
       with self.subTest(platform=platform):

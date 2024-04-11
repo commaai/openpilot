@@ -377,6 +377,18 @@ class CAR(Platforms):
 def match_fw_to_car_custom(live_fw_versions, vin, offline_fw_versions) -> set[str]:
   candidates = set()
 
+  # Sanity check that the radar FW is likely Volkswagen
+  for ecu, gateway_types in GATEWAY_TYPES.items():
+    radar_fw = live_fw_versions.get(ecu[1:], [])
+    if not len(radar_fw):
+      return set()
+
+    for fw in radar_fw:
+      match = FW_PATTERN.match(fw)
+      if match is None or match.group('gateway') not in gateway_types:
+        return set()
+
+  # Check the WMI and chassis code to determine the platform
   wmi = vin[:3]
   if wmi not in WMI:
     return set()
@@ -392,27 +404,44 @@ def match_fw_to_car_custom(live_fw_versions, vin, offline_fw_versions) -> set[st
   return {str(c) for c in candidates}
 
 
+# Volkswagen uses the VIN WMI and chassis code to match in the absence of the comma power,
+# as we lose too many ECUs to reliably identify the vehicle
 CHASSIS_CODE_PATTERN = re.compile('[A-Z0-9]{2}')
+# TODO: determine the unknown groups
+FW_PATTERN = re.compile(b'\xf1\x87(?P<gateway>[0-9][0-9A-Z]{2})(?P<unknown>[0-9][0-9A-Z][0-9])(?P<unknown2>[0-9A-Z]{2}[0-9])([A-Z0-9]| )')
+
+# A VIN match requires the WMI to match any of these
 WMI = {
-  '1V2',  # Volkswagen SUV
-  '1VW',  # Volkswagen car
-  '3VV',  # Volkswagen SUV
-  '3VW',  # Volkswagen car
-  '8AW',  # Volkswagen Argentina
-  '9BW',  # Volkswagen do Brasil
-  'LSV',  # SAIC Volkswagen
-  'TMB',  # Škoda Auto AS
-  'VSS',  # SEAT
-  'WA1',  # NONENONE
-  'WAU',  # Audi car
-  'WA1',  # Audi SUV
-  'WMA',  # MAN
-  'WUA',  # Audi Sport GmbH & Quattro GmbH car
-  'WV1',  # Volkswagen Commercial Vehicles
-  'WV2',  # Volkswagen Commercial Vehicles
-  'WVG',  # Volkswagen SUV
-  'WVW',  # Volkswagen car
-  'XW8',  # Volkswagen Group Rus
+  "1V2",  # Volkswagen SUV
+  "1VW",  # Volkswagen car
+  "3VV",  # Volkswagen SUV
+  "3VW",  # Volkswagen car
+  "8AW",  # Volkswagen Argentina
+  "9BW",  # Volkswagen do Brasil
+  "LSV",  # SAIC Volkswagen
+  "TMB",  # Škoda Auto AS
+  "VSS",  # SEAT
+  "WA1",  # NONENONE
+  "WAU",  # Audi car
+  "WA1",  # Audi SUV
+  "WMA",  # MAN
+  "WUA",  # Audi Sport GmbH & Quattro GmbH car
+  "WV1",  # Volkswagen Commercial Vehicles
+  "WV2",  # Volkswagen Commercial Vehicles
+  "WVG",  # Volkswagen SUV
+  "WVW",  # Volkswagen car
+  "XW8",  # Volkswagen Group Rus
+}
+
+# These correspond to the first three digits of the spare part number
+GATEWAY_TYPES = {
+  (Ecu.fwdRadar, 0x757, None): {
+    b"2Q0",
+    b"3Q0",
+    b"561",
+    b"5Q0",
+    b"7N0",
+  }
 }
 
 # All supported cars should return FW from the engine, srs, eps, and fwdRadar. Cars
