@@ -253,6 +253,8 @@ class TestUpdated(unittest.TestCase):
         api_host = f"http://{api_host}:{api_port}"
 
         with mock.patch("openpilot.common.api.API_HOST", api_host):
+          os.environ["USE_CASYNC"] = "1"
+
           with fake_ab("_a"):
             yield
 
