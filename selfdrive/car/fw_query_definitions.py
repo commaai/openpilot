@@ -103,8 +103,6 @@ class FwQueryConfig:
   match_fw_to_car_fuzzy: Callable[[LiveFwVersions, OfflineFwVersions], set[str]] | None = None
 
   # Alternate matching function that takes FW versions and the VIN and returns a set of matches.
-  # If there are conflicts with the union of all other matching functions (exact, fuzzy, or custom fuzzy),
-  # then the result from this custom one takes precedence.
   match_fw_to_car_custom: Callable[[LiveFwVersions, str, OfflineFwVersions], set[str]] | None = None
 
   def __post_init__(self):
