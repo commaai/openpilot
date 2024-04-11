@@ -161,7 +161,8 @@ def build_release(String channel_name) {
     },
     "publish agnos": {
       pcStage("publish agnos") {
-        sh "release/create_casync_agnos_release.py /data/casync/agnos /data/tmp"
+        sh "release/create_casync_agnos_release.py /tmp/casync/agnos /tmp/casync_tmp"
+        sh "PYTHONWARNINGS=ignore $SOURCE_DIR/release/upload_casync_release.py /tmp/casync"
       }
     }
   )

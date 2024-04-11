@@ -22,9 +22,12 @@ if __name__ == "__main__":
   output_dir = pathlib.Path(args.output_dir)
   output_dir.mkdir(parents=True, exist_ok=True)
 
+  working_dir = pathlib.Path(args.working_dir)
+  working_dir.mkdir(parents=True, exist_ok=True)
+
   manifest_file = pathlib.Path(args.manifest)
 
-  with tempfile.NamedTemporaryFile(dir=args.working_dir) as entry_file:
+  with tempfile.NamedTemporaryFile(dir=str(working_dir)) as entry_file:
     entry_path = pathlib.Path(entry_file.name)
 
     with open(manifest_file) as f:
