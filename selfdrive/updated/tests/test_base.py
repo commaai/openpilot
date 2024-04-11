@@ -10,11 +10,10 @@ import unittest
 from unittest import mock
 
 import pytest
-from openpilot.selfdrive.manager.process import ManagerProcess
 
-
-from openpilot.selfdrive.test.helpers import processes_context
 from openpilot.common.params import Params
+from openpilot.selfdrive.manager.process import ManagerProcess
+from openpilot.selfdrive.test.helpers import processes_context
 
 
 def get_consistent_flag(path: str) -> bool:
