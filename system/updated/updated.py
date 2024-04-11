@@ -153,18 +153,7 @@ def extract_partition_helper(entry):
     set_partition_hash(target_path, entry["size"], entry['hash_raw'].lower().encode())
 
 
-# TODO: this can be removed after all devices have moved away from overlay based git updater
-OVERLAY_MERGED = os.path.join(STAGING_ROOT, "merged")
-
-
-def dismount_overlay() -> None:
-  if os.path.ismount(OVERLAY_MERGED):
-    cloudlog.info("unmounting existing overlay")
-    run_cmd(["sudo", "umount", "-l", OVERLAY_MERGED])
-
-
 def setup_updater():
-  dismount_overlay()
   run_cmd(["sudo", "rm", "-rf", STAGING_ROOT])
   if os.path.isdir(STAGING_ROOT):
     shutil.rmtree(STAGING_ROOT)
