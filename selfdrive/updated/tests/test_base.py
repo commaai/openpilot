@@ -10,12 +10,15 @@ import unittest
 from unittest import mock
 
 import pytest
-from openpilot.selfdrive.manager.process import ManagerProcess
 
-
-from openpilot.selfdrive.test.helpers import processes_context
 from openpilot.common.params import Params
-from openpilot.system.updated.common import get_consistent_flag
+from openpilot.selfdrive.manager.process import ManagerProcess
+from openpilot.selfdrive.test.helpers import processes_context
+
+
+def get_consistent_flag(path: str) -> bool:
+  consistent_file = pathlib.Path(os.path.join(path, ".overlay_consistent"))
+  return consistent_file.is_file()
 
 
 def run(args, **kwargs):
