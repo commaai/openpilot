@@ -238,7 +238,7 @@ def main(demo=False):
 
     radar_tracks = np.zeros(ModelConstants.RADAR_TRACKS_LEN * ModelConstants.RADAR_TRACKS_WIDTH, dtype=np.float32)
     if sm.updated["liveTracks"]:
-      for i, track in enumerate(sm["liveTracks"].tracks):
+      for i, track in enumerate(sm["liveTracks"]):
         if i >= ModelConstants.RADAR_TRACKS_LEN:
           break
         vec_index = i * ModelConstants.RADAR_TRACKS_WIDTH
