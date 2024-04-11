@@ -1,5 +1,7 @@
 #include "selfdrive/ui/qt/network/wifi_manager.h"
 
+#include <utility>
+
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/widgets/prime.h"
 
@@ -14,9 +16,15 @@ bool compare_by_strength(const Network &a, const Network &b) {
 
 template <typename T = QDBusMessage, typename... Args>
 T call(const QString &path, const QString &interface, const QString &method, Args &&...args) {
-  QDBusInterface nm = QDBusInterface(NM_DBUS_SERVICE, path, interface, QDBusConnection::systemBus());
+  QDBusInterface nm(NM_DBUS_SERVICE, path, interface, QDBusConnection::systemBus());
   nm.setTimeout(DBUS_TIMEOUT);
-  QDBusMessage response = nm.call(method, args...);
+
+  QDBusMessage response = nm.call(method, std::forward<Args>(args)...);
+  if (response.type() == QDBusMessage::ErrorMessage) {
+    qCritical() << "DBus call error:" << response.errorMessage();
+    return T();
+  }
+
   if constexpr (std::is_same_v<T, QDBusMessage>) {
     return response;
   } else if (response.arguments().count() >= 1) {
