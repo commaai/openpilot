@@ -43,8 +43,8 @@ class RadarD:
     for index, tid in enumerate(sorted(self.points.keys())):
       tracks_msg.liveTracks[index] = {
         "trackId": tid,
-        "dRel": float(self.points[tid][0]),
-        "yRel": float(self.points[tid][1]),
+        "dRel": float(self.points[tid][0]) + RADAR_TO_CAMERA,
+        "yRel": -float(self.points[tid][1]),
         "vRel": float(self.points[tid][2]),
       }
 
