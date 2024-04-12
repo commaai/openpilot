@@ -26,6 +26,7 @@ public:
   float analog_gain_frac;
 
   float cur_ev[3];
+  int cur_exp_t[3];
   float best_ev_score;
   int new_exp_g;
   int new_exp_t;

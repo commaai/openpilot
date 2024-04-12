@@ -405,6 +405,7 @@ void CameraState::sensor_set_parameters() {
   gain_idx = ci->analog_gain_rec_idx;
   exposure_time = 5;
   cur_ev[0] = cur_ev[1] = cur_ev[2] = (1 + dc_gain_weight * (ci->dc_gain_factor-1) / ci->dc_gain_max_weight) * ci->sensor_analog_gains[gain_idx] * exposure_time;
+  cur_exp_t[0] = cur_exp_t[1] = cur_exp_t[2] = exposure_time;
 }
 
 void CameraState::camera_map_bufs(MultiCameraState *s) {
@@ -773,7 +774,7 @@ void CameraState::handle_camera_event(void *evdat) {
     exp_lock.lock();
     meta_data.gain = analog_gain_frac * (1 + dc_gain_weight * (ci->dc_gain_factor-1) / ci->dc_gain_max_weight);
     meta_data.high_conversion_gain = dc_gain_enabled;
-    meta_data.integ_lines = exposure_time;
+    meta_data.integ_lines = cur_exp_t[2];
     meta_data.measured_grey_fraction = measured_grey_fraction;
     meta_data.target_grey_fraction = target_grey_fraction;
     exp_lock.unlock();
@@ -887,6 +888,9 @@ void CameraState::set_camera_exposure(float grey_frac) {
 
   float gain = analog_gain_frac * (1 + dc_gain_weight * (ci->dc_gain_factor-1) / ci->dc_gain_max_weight);
   cur_ev[buf.cur_frame_data.frame_id % 3] = exposure_time * gain;
+  cur_exp_t[2] = cur_exp_t[1];
+  cur_exp_t[1] = cur_exp_t[0];
+  cur_exp_t[0] = exposure_time;
 
   exp_lock.unlock();
 
