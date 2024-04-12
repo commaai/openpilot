@@ -4,17 +4,16 @@ import dataclasses
 import json
 import pathlib
 
-from openpilot.common.run import run_cmd
-from openpilot.system.hardware.tici.agnos import AGNOS_MANIFEST_FILE
-from openpilot.system.version import get_build_metadata
+from openpilot.system.hardware.tici.agnos import AGNOS_MANIFEST_FILE, get_partition_path
+from openpilot.system.version import get_build_metadata, get_agnos_version
 
 
 BASE_URL = "https://commadist.blob.core.windows.net"
 
 CHANNEL_DATA = pathlib.Path(__file__).parent / "channel_data" / "agnos"
 
-OPENPILOT_RELEASES = f"{BASE_URL}/openpilot-releases"
-AGNOS_RELEASES = f"{BASE_URL}/agnos-releases"
+OPENPILOT_RELEASES = f"{BASE_URL}/openpilot-releases/openpilot"
+AGNOS_RELEASES = f"{BASE_URL}/openpilot-releases/agnos"
 
 
 def create_partition_manifest(agnos_version, partition):
@@ -23,10 +22,11 @@ def create_partition_manifest(agnos_version, partition):
     "casync": {
       "caibx": f"{AGNOS_RELEASES}/agnos-{agnos_version}-{partition['name']}.caibx"
     },
-    "name": partition["name"],
+    "path": get_partition_path(0, partition),
+    "ab": True,
     "size": partition["size"],
     "full_check": partition["full_check"],
-    "hash_raw": partition["hash_raw"]
+    "hash_raw": partition["hash_raw"],
   }
 
 
@@ -49,15 +49,12 @@ if __name__ == "__main__":
   with open(pathlib.Path(args.target_dir) / AGNOS_MANIFEST_FILE) as f:
     agnos_manifest = json.load(f)
 
-  agnos_version = run_cmd(["bash", "-c", r"unset AGNOS_VERSION && source launch_env.sh && \
-                          echo -n $AGNOS_VERSION"], args.target_dir).strip()
-
   build_metadata = get_build_metadata(args.target_dir)
 
   ret = {
     "build_metadata": dataclasses.asdict(build_metadata),
     "manifest": [
-      *[create_partition_manifest(agnos_version, entry) for entry in agnos_manifest],
+      *[create_partition_manifest(get_agnos_version(args.target_dir), entry) for entry in agnos_manifest],
       create_openpilot_manifest(build_metadata)
     ]
   }
