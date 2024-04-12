@@ -423,7 +423,7 @@ WMI = {
   "WV2",  # Volkswagen Commercial Bus/Van
   "WVG",  # Volkswagen Europe SUV
   "WVW",  # Volkswagen Europe car
-  "",  # Volkswagen Group Rus
+  "XW8",  # Volkswagen Group Rus
 }
 
 # These correspond to the first three digits of the spare part number

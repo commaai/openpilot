@@ -97,7 +97,7 @@ class FwQueryConfig:
   non_essential_ecus: dict[capnp.lib.capnp._EnumModule, list[str]] = field(default_factory=dict)
   # Ecus added for data collection, not to be fingerprinted on
   extra_ecus: list[tuple[capnp.lib.capnp._EnumModule, int, int | None]] = field(default_factory=list)
-  # Function a brand can implement to provide better fuzzy matching. Takes in FW versions and VIN and
+  # Function a brand can implement to provide better fuzzy matching. Takes in FW versions and VIN,
   # returns set of candidates. Only will match if one candidate is returned
   match_fw_to_car_fuzzy: Callable[[LiveFwVersions, str, OfflineFwVersions], set[str]] | None = None
 
