@@ -236,7 +236,7 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=1613, wheelbase=2.6, minSteerSpeed=21 * CV.KPH_TO_MS),
     chassis_codes={"2K"},
-    wmis={WMI.SETMEMEMEMEME},
+    wmis=set(),
   )
   VOLKSWAGEN_CRAFTER_MK2 = VolkswagenMQBPlatformConfig(
     [
@@ -272,7 +272,7 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=1328, wheelbase=2.71),
     chassis_codes={"BU"},
-    wmis={WMI.VOLKSWAGEN_MEXICO_CAR, CAR.VOLKSWAGEN_EUROPE_CAR},
+    wmis={WMI.VOLKSWAGEN_MEXICO_CAR, WMI.VOLKSWAGEN_EUROPE_CAR},
   )
   VOLKSWAGEN_PASSAT_MK8 = VolkswagenMQBPlatformConfig(
     [
@@ -326,8 +326,8 @@ class CAR(Platforms):
       VWCarDocs("Volkswagen Tiguan eHybrid 2021-23"),
     ],
     VolkswagenCarSpecs(mass=1715, wheelbase=2.74),
-    chassis_codes={"AD", "BW"},
-    wmis={WMI.SETMEMEMEMEME},
+    chassis_codes={"5N", "AD", "AX", "BW"},
+    wmis={WMI.VOLKSWAGEN_EUROPE_SUV},
   )
   VOLKSWAGEN_TOURAN_MK2 = VolkswagenMQBPlatformConfig(
     [VWCarDocs("Volkswagen Touran 2016-23")],
@@ -359,13 +359,13 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=1335, wheelbase=2.61),
     chassis_codes={"8V", "FF"},
-    wmis={WMI.AUDI_CAR, WMI.AUDI_SPORT},
+    wmis={WMI.AUDI_GERMANY_CAR, WMI.AUDI_SPORT},
   )
   AUDI_Q2_MK1 = VolkswagenMQBPlatformConfig(
     [VWCarDocs("Audi Q2 2018")],
     VolkswagenCarSpecs(mass=1205, wheelbase=2.61),
     chassis_codes={"GA"},
-    wmis={WMI.SETMEMEMEMEME},
+    wmis=set(),
   )
   AUDI_Q3_MK2 = VolkswagenMQBPlatformConfig(
     [VWCarDocs("Audi Q3 2019-23")],
