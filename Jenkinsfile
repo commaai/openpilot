@@ -113,7 +113,7 @@ def pcStage(String stageName, Closure body) {
 
     lock(resource: "", label: 'pc', inversePrecedence: true, quantity: 1) {
       openpilot_base.inside(dockerArgs) {
-        timeout(time: 20, unit: 'MINUTES') {
+        timeout(time: 25, unit: 'MINUTES') {
           try {
             retryWithDelay (3, 15) {
               sh "git config --global --add safe.directory '*'"
