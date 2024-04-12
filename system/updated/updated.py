@@ -205,7 +205,7 @@ def main():
       update_available = check_update_available(BASEDIR, remote_build_metadata)
 
       # if we have an update ready, check if that is up to date
-      if update_ready and not check_update_available(FINALIZED, remote_build_metadata):
+      if update_ready and not check_update_available(os.path.join(FINALIZED, "openpilot"), remote_build_metadata):
         update_available = False
 
       if update_available:

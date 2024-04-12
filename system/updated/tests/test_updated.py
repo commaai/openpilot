@@ -281,6 +281,7 @@ class TestUpdated(unittest.TestCase):
 
   def _wait_for_finalized(self):
     self.wait_for_condition(lambda: get_valid_flag(self.finalized))
+    time.sleep(1)
 
   def _test_channel_param(self, channel):
     self.assertEqual(self.params.get("UpdaterTargetChannel", encoding="utf-8"), channel)
