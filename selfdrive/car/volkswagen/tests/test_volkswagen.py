@@ -54,7 +54,7 @@ class TestVolkswagenPlatformConfigs(unittest.TestCase):
                               match is not None and match.group("gateway") in GATEWAY_TYPES[(Ecu.fwdRadar, 0x757, None)])
 
               live_fws = {(0x757, None): [radar_fw]}
-              _, matches = FW_QUERY_CONFIG.match_fw_to_car(live_fws, vin, {})
+              matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(live_fws, vin, {})
 
               expected_matches = {platform} if should_match else set()
               self.assertEqual(expected_matches, matches, "Bad match")
