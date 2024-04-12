@@ -431,16 +431,22 @@ void WifiManager::addTetheringConnection() {
   call(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "AddConnection", QVariant::fromValue(connection));
 }
 
-void WifiManager::tetheringActivated(QDBusPendingCallWatcher *call) {
-  int prime_type = uiState()->primeType();
-  int ipv4_forward = (prime_type == PrimeType::NONE || prime_type == PrimeType::LITE);
+void WifiManager::activeTetheringFinished(QDBusPendingCallWatcher *call) {
+  QDBusReply<QDBusObjectPath> reply = *call;
+  bool activated = !(reply.value().path().isEmpty());
+  if (activated) {
+    int prime_type = uiState()->primeType();
+    int ipv4_forward = (prime_type == PrimeType::NONE || prime_type == PrimeType::LITE);
 
-  if (!ipv4_forward) {
-    QTimer::singleShot(5000, this, [=] {
-      qWarning() << "net.ipv4.ip_forward = 0";
-      std::system("sudo sysctl net.ipv4.ip_forward=0");
-    });
+    if (!ipv4_forward) {
+      QTimer::singleShot(5000, this, [=] {
+        qWarning() << "net.ipv4.ip_forward = 0";
+        std::system("sudo sysctl net.ipv4.ip_forward=0");
+      });
+    }
   }
+
+  emit tetheringActivated(activated);
   call->deleteLater();
 }
 
@@ -451,12 +457,10 @@ void WifiManager::setTetheringEnabled(bool enabled) {
     }
 
     auto pending_call = activateWifiConnection(tethering_ssid);
-
     if (pending_call) {
-      QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(*pending_call);
-      QObject::connect(watcher, &QDBusPendingCallWatcher::finished, this, &WifiManager::tetheringActivated);
+      auto watcher = new QDBusPendingCallWatcher(*pending_call, this);
+      QObject::connect(watcher, &QDBusPendingCallWatcher::finished, this, &WifiManager::activeTetheringFinished);
     }
-
   } else {
     deactivateConnectionBySsid(tethering_ssid);
   }

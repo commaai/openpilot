@@ -211,6 +211,11 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
     meteredToggle->setVisible(gsmVisible);
   });
 
+  connect(wifi, &WifiManager::tetheringActivated, [this](bool activated) {
+    tetheringToggle->setEnabled(true);
+    tetheringToggle->setState(activated);
+  });
+
   main_layout->addWidget(new ScrollView(list, this));
   main_layout->addStretch(1);
 }

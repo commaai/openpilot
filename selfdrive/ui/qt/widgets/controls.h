@@ -132,6 +132,12 @@ public:
     toggle.update();
   }
 
+  void setState(bool on) {
+    if (on != toggle.on) {
+      toggle.togglePosition();
+    }
+  }
+
 signals:
   void toggleFlipped(bool state);
 

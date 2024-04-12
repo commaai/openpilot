@@ -90,6 +90,7 @@ private:
 signals:
   void wrongPassword(const QString &ssid);
   void refreshSignal();
+  void tetheringActivated(bool activated);
 
 private slots:
   void stateChange(unsigned int new_state, unsigned int previous_state, unsigned int change_reason);
@@ -98,5 +99,5 @@ private slots:
   void connectionRemoved(const QDBusObjectPath &path);
   void newConnection(const QDBusObjectPath &path);
   void refreshFinished(QDBusPendingCallWatcher *call);
-  void tetheringActivated(QDBusPendingCallWatcher *call);
+  void activeTetheringFinished(QDBusPendingCallWatcher *call);
 };
