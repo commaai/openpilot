@@ -236,7 +236,7 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=1613, wheelbase=2.6, minSteerSpeed=21 * CV.KPH_TO_MS),
     chassis_codes={"2K"},
-    wmis=set(),
+    wmis={WMI.VOLKSWAGEN_COMMERCIAL_BUS_VAN},
   )
   VOLKSWAGEN_CRAFTER_MK2 = VolkswagenMQBPlatformConfig(
     [
