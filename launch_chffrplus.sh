@@ -74,8 +74,9 @@ function launch {
 
   if [ $? -eq 1 ]; then
     LAUNCHER_LOCATION="${BASH_SOURCE[0]}"
-    cd $BASEDIR
     echo "Update detected, restarting launch script ${LAUNCHER_LOCATION}"
+
+    cd $BASEDIR
     unset AGNOS_VERSION
     exec "${LAUNCHER_LOCATION}"
   fi
