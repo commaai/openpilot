@@ -387,7 +387,7 @@ def match_fw_to_car(live_fw_versions, vin, offline_fw_versions) -> tuple[bool, s
 
     for fw in fws:
       match = SPARE_PART_FW_PATTERN.match(fw)
-      if match is None or match.group('gateway') not in gateway_types:
+      if match is None or match.group("gateway") not in gateway_types:
         return True, set()
 
   # Check the WMI and chassis code to determine the platform

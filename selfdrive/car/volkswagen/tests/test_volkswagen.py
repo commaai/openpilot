@@ -23,7 +23,8 @@ class TestVolkswagenPlatformConfigs(unittest.TestCase):
     for platform in CAR:
       with self.subTest(platform=platform):
         self.assertTrue(len(platform.config.chassis_codes) > 0, "Chassis codes not set")
-        self.assertTrue(all(CHASSIS_CODE_PATTERN.match(cc) for cc in platform.config.chassis_codes), "Bad chassis codes")
+        self.assertTrue(all(CHASSIS_CODE_PATTERN.match(cc) for cc in
+                            platform.config.chassis_codes), "Bad chassis codes")
 
         # No two platforms should share chassis codes
         for comp in CAR:
@@ -53,7 +54,7 @@ class TestVolkswagenPlatformConfigs(unittest.TestCase):
                               match is not None and match.group("gateway") in GATEWAY_TYPES[(Ecu.fwdRadar, 0x757, None)])
 
               live_fws = {(0x757, None): [radar_fw]}
-              matches = FW_QUERY_CONFIG.match_fw_to_car_custom(live_fws, vin, {})
+              _, matches = FW_QUERY_CONFIG.match_fw_to_car(live_fws, vin, {})
 
               expected_matches = {platform} if should_match else set()
               self.assertEqual(expected_matches, matches, "Bad match")
