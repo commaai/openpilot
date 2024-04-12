@@ -99,24 +99,19 @@ class Lead:
     self.prob = prob
     self.status = True
 
-    # if self.kf is None:
-    #   self.kf = lead_kf(self.vLead)
-    # else:
-    #   self.kf.update(self.vLead)
+    if self.kf is None:
+      self.kf = lead_kf(self.vLead)
+    else:
+      self.kf.update(self.vLead)
 
-    # self.vLeadK = float(self.kf.x[LEAD_KALMAN_SPEED][0])
-    # self.aLeadK = float(self.kf.x[LEAD_KALMAN_ACCEL][0])
+    self.vLeadK = float(self.kf.x[LEAD_KALMAN_SPEED][0])
+    self.aLeadK = float(self.kf.x[LEAD_KALMAN_ACCEL][0])
 
-    # # Learn if constant acceleration
-    # if abs(self.aLeadK) < 0.5:
-    #   self.aLeadTau = LEAD_ACCEL_TAU
-    # else:
-    #   self.aLeadTau *= 0.9
-
-    # mock the smooth values just to test the planner
-    self.vLeadK = vLead
-    self.aLeadK = aLead
-    self.aLeadTau = 0.3
+    # Learn if constant acceleration
+    if abs(self.aLeadK) < 0.5:
+      self.aLeadTau = LEAD_ACCEL_TAU
+    else:
+      self.aLeadTau *= 0.9
 
 
 class LongitudinalPlanner:
@@ -194,7 +189,7 @@ class LongitudinalPlanner:
     accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.05)
 
     model_leads = list(sm['modelV2'].leadsV3)
-    # TODO lead state should be invalidated if its different car than the previous one
+    # TODO lead state should be invalidated if its different point than the previous one
     lead_states = [self.lead_one, self.lead_two]
     for index in range(len(lead_states)):
       if len(model_leads) > index:
