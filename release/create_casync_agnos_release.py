@@ -36,9 +36,7 @@ if __name__ == "__main__":
 
     for entry in manifest:
       print(f"creating casync agnos build from {entry}")
-
       start = time.monotonic()
-
       downloader = StreamingDecompressor(entry['url'])
 
       parse_func = unsparsify if entry['sparse'] else noop
