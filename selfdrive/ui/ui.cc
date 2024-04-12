@@ -52,7 +52,7 @@ void update_leads(UIState *s, const cereal::ModelDataV2::Reader &model_data) {
       float d_rel = lead.getX()[0];
       float y_rel = lead.getY()[0];
       float z = line.getZ()[get_path_length_idx(line, d_rel)];
-      calib_frame_to_full_frame(s, d_rel, -y_rel, z + 1.22, &s->scene.lead_vertices[i]);
+      calib_frame_to_full_frame(s, d_rel, y_rel, z + 1.22, &s->scene.lead_vertices[i]);
     }
   }
 }
