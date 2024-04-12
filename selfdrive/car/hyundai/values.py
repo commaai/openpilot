@@ -568,7 +568,7 @@ def get_platform_codes(fw_versions: list[bytes]) -> set[tuple[bytes, bytes | Non
   return codes
 
 
-def match_fw_to_car(live_fw_versions, vin, offline_fw_versions) -> tuple[bool, set[str]]:
+def match_fw_to_car_fuzzy(live_fw_versions, vin, offline_fw_versions) -> set[str]:
   # Non-electric CAN FD platforms often do not have platform code specifiers needed
   # to distinguish between hybrid and ICE. All EVs so far are either exclusively
   # electric or specify electric in the platform code.
@@ -615,7 +615,7 @@ def match_fw_to_car(live_fw_versions, vin, offline_fw_versions) -> tuple[bool, s
     if valid_expected_ecus.issubset(valid_found_ecus):
       candidates.add(candidate)
 
-  return False, candidates - fuzzy_platform_blacklist
+  return candidates - fuzzy_platform_blacklist
 
 
 HYUNDAI_VERSION_REQUEST_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
@@ -713,7 +713,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.combinationMeter, 0x7c6, None),  # CAN FD Instrument cluster
   ],
   # Custom fuzzy fingerprinting function using platform codes, part numbers + FW dates:
-  match_fw_to_car=match_fw_to_car,
+  match_fw_to_car_fuzzy=match_fw_to_car_fuzzy,
 )
 
 CHECKSUM = {

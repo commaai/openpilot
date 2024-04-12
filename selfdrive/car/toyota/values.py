@@ -415,7 +415,7 @@ def get_platform_codes(fw_versions: list[bytes]) -> dict[bytes, set[bytes]]:
   return dict(codes)
 
 
-def match_fw_to_car(live_fw_versions, vin, offline_fw_versions) -> tuple[bool, set[str]]:
+def match_fw_to_car_fuzzy(live_fw_versions, vin, offline_fw_versions) -> set[str]:
   candidates = set()
 
   for candidate, fws in offline_fw_versions.items():
@@ -446,7 +446,7 @@ def match_fw_to_car(live_fw_versions, vin, offline_fw_versions) -> tuple[bool, s
     if valid_expected_ecus.issubset(valid_found_ecus):
       candidates.add(candidate)
 
-  return False, {str(c) for c in (candidates - FUZZY_EXCLUDED_PLATFORMS)}
+  return {str(c) for c in (candidates - FUZZY_EXCLUDED_PLATFORMS)}
 
 
 # Regex patterns for parsing more general platform-specific identifiers from FW versions.
@@ -552,7 +552,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.combinationMeter, 0x7c0, None),
     (Ecu.hvac, 0x7c4, None),
   ],
-  match_fw_to_car=match_fw_to_car,
+  match_fw_to_car_fuzzy=match_fw_to_car_fuzzy,
 )
 
 
