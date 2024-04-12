@@ -201,6 +201,7 @@ QWidget * Setup::network_setup() {
   QPushButton *cont = new QPushButton();
   cont->setObjectName("navBtn");
   cont->setProperty("primary", true);
+  cont->setEnabled(false);
   QObject::connect(cont, &QPushButton::clicked, this, &Setup::nextPage);
   blayout->addWidget(cont);
 
