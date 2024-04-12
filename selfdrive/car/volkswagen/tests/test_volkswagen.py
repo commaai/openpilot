@@ -14,6 +14,7 @@ class TestVolkswagenPlatformConfigs(unittest.TestCase):
   def test_chassis_codes(self):
     for platform in CAR:
       with self.subTest(platform=platform):
+        self.assertTrue(len(platform.config.wmis) > 0, "WMIs not set")
         self.assertTrue(len(platform.config.chassis_codes) > 0, "Chassis codes not set")
         self.assertTrue(all(CHASSIS_CODE_PATTERN.match(cc) for cc in
                             platform.config.chassis_codes), "Bad chassis codes")
