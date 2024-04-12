@@ -70,8 +70,16 @@ function launch {
   fi
 
   # apply any updates from the new updater
-  export PYTHONPATH="$PWD"
-  python $(pwd)/openpilot/system/updated/apply.py
+  PYTHONPATH="$PWD" python $(pwd)/openpilot/system/updated/apply.py
+
+  if [ $? -eq 1 ]; then
+    LAUNCHER_LOCATION="${BASH_SOURCE[0]}"
+    echo "Update detected, restarting launch script ${LAUNCHER_LOCATION}"
+
+    cd $BASEDIR
+    unset AGNOS_VERSION
+    exec "${LAUNCHER_LOCATION}"
+  fi
 
   # handle pythonpath
   ln -sfn $(pwd) /data/pythonpath
