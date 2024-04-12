@@ -51,7 +51,7 @@ void Setup::download(QString url) {
   list = curl_slist_append(list, ("X-openpilot-serial: " + Hardware::get_serial()).c_str());
 
   char tmpfile[] = "/tmp/installer_XXXXXX";
-  FILE *fp = fdopen(mkstemp(tmpfile), "w");
+  FILE *fp = fdopen(mkstemp(tmpfile), "wb");
 
   curl_easy_setopt(curl, CURLOPT_URL, url.toStdString().c_str());
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
