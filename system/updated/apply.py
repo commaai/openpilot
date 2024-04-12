@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # applies the finalized updates from FINALIZED to their proper directory
 import os
 import pathlib
