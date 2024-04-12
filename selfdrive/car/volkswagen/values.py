@@ -376,34 +376,34 @@ class CAR(Platforms):
   )
 
 
-def match_fw_to_car_custom(live_fw_versions, vin, offline_fw_versions) -> set[str]:
+def match_fw_to_car(live_fw_versions, vin, offline_fw_versions) -> tuple[bool, set[str]]:
   candidates = set()
 
   # Sanity check that the radar FW is likely Volkswagen
   for ecu, gateway_types in GATEWAY_TYPES.items():
     radar_fw = live_fw_versions.get(ecu[1:], [])
     if not len(radar_fw):
-      return set()
+      return True, set()
 
     for fw in radar_fw:
       match = SPARE_PART_FW_PATTERN.match(fw)
       if match is None or match.group('gateway') not in gateway_types:
-        return set()
+        return True, set()
 
   # Check the WMI and chassis code to determine the platform
   wmi = vin[:3]
   if wmi not in WMI:
-    return set()
+    return True, set()
 
   chassis_code = vin[6:8]
   if CHASSIS_CODE_PATTERN.match(chassis_code) is None:
-    return set()
+    return True, set()
 
   for platform in CAR:
     if chassis_code in platform.config.chassis_codes:
       candidates.add(platform)
 
-  return {str(c) for c in candidates}
+  return True, {str(c) for c in candidates}
 
 
 # Volkswagen uses the VIN WMI and chassis code to match in the absence of the comma power,
@@ -485,7 +485,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     ),
   ]],
   extra_ecus=[(Ecu.fwdCamera, 0x74f, None)],
-  match_fw_to_car_custom=match_fw_to_car_custom,
+  match_fw_to_car=match_fw_to_car,
 )
 
 DBC = CAR.create_dbc_map()
