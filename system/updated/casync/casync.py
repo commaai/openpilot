@@ -69,8 +69,7 @@ class RemoteChunkReader(ChunkReader):
     self.session = requests.Session()
 
   def read(self, chunk: Chunk) -> bytes:
-    sha_hex = chunk.sha.hex()
-    url = os.path.join(self.url, sha_hex[:4], sha_hex + ".cacnk")
+    url = os.path.join(self.url, get_chunk_path(chunk))
 
     if os.path.isfile(url):
       with open(url, 'rb') as f:
@@ -244,6 +243,11 @@ def extract_simple(caibx_path, out_path, store_path):
 
 def get_default_store(caibx):
   return os.path.join(os.path.dirname(caibx), "default.castr")
+
+
+def get_chunk_path(chunk: Chunk) -> str:
+  sha_hex = chunk.sha.hex()
+  return str(os.path.join(sha_hex[:4], sha_hex + ".cacnk"))
 
 
 if __name__ == "__main__":
