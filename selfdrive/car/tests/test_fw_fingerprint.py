@@ -59,10 +59,10 @@ class TestFwFingerprint(unittest.TestCase):
 
   @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
   def test_custom_fuzzy_match(self, brand, car_model, ecus):
-    # Assert brand-specific fingerprinting function doesn't disagree with standard function
+    # Assert brand-specific fuzzy fingerprinting function doesn't disagree with standard fuzzy function
     config = FW_QUERY_CONFIGS[brand]
-    if config.match_fw_to_car is None:
-      raise unittest.SkipTest("Brand does not implement custom fingerprinting function")
+    if config.match_fw_to_car_fuzzy is None:
+      raise unittest.SkipTest("Brand does not implement custom fuzzy fingerprinting function")
 
     CP = car.CarParams.new_message()
     for _ in range(5):
@@ -73,14 +73,12 @@ class TestFwFingerprint(unittest.TestCase):
                    "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
       CP.carFw = fw
 
-      for allow_exact in (True, False):
-        allow_fuzzy = not allow_exact
-        _, matches = match_fw_to_car(CP.carFw, CP.carVin, allow_exact=allow_exact, allow_fuzzy=allow_fuzzy, log=False)
-        _, brand_matches = config.match_fw_to_car(build_fw_dict(CP.carFw), "", VERSIONS[brand])
+      _, matches = match_fw_to_car(CP.carFw, CP.carVin, allow_exact=False, log=False)
+      brand_matches = config.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw), "", VERSIONS[brand])
 
-        # If both have matches, they must agree
-        if len(matches) == 1 and len(brand_matches) == 1:
-          self.assertEqual(matches, brand_matches)
+      # If both have matches, they must agree
+      if len(matches) == 1 and len(brand_matches) == 1:
+        self.assertEqual(matches, brand_matches)
 
   @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
   def test_fuzzy_match_ecu_count(self, brand, car_model, ecus):
