@@ -33,7 +33,7 @@ class TestVolkswagenPlatformConfigs(unittest.TestCase):
           self.assertEqual(set(), platform.config.chassis_codes & comp.config.chassis_codes,
                            f"Shared chassis codes: {comp}")
 
-  def test_custom_fingerprinting(self):
+  def test_custom_fuzzy_fingerprinting(self):
     for platform in CAR:
       with self.subTest(platform=platform):
         for wmi in WMI | {"000"}:
