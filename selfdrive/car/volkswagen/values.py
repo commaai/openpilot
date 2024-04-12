@@ -327,7 +327,7 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=1715, wheelbase=2.74),
     chassis_codes={"5N", "AD", "AX", "BW"},
-    wmis={WMI.VOLKSWAGEN_EUROPE_SUV},
+    wmis={WMI.VOLKSWAGEN_EUROPE_SUV, WMI.VOLKSWAGEN_MEXICO_SUV},
   )
   VOLKSWAGEN_TOURAN_MK2 = VolkswagenMQBPlatformConfig(
     [VWCarDocs("Volkswagen Touran 2016-23")],
