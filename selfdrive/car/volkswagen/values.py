@@ -427,40 +427,52 @@ class CAR(Platforms):
   )
 
 
+def get_gateway_types(fws: list[bytes]) -> set[bytes]:
+  parsed = set()
+  for fw in fws:
+    match = SPARE_PART_FW_PATTERN.match(fw)
+    if match is not None:
+      parsed.add(match.group("gateway"))
+  return parsed
+
+
 def match_fw_to_car_fuzzy(live_fw_versions, vin, offline_fw_versions) -> set[str]:
   candidates = set()
-
-  # Sanity check that the radar FW is likely Volkswagen
-  for ecu, gateway_types in GATEWAY_TYPES.items():
-    fws = live_fw_versions.get(ecu[1:], [])
-    if not len(fws):
-      return set()
-
-    for fw in fws:
-      match = SPARE_PART_FW_PATTERN.match(fw)
-      if match is None or match.group("gateway") not in gateway_types:
-        return set()
 
   # Check the WMI and chassis code to determine the platform
   wmi = vin[:3]
   chassis_code = vin[6:8]
+
   for platform in CAR:
+    valid_ecus = set()
+    for ecu, expected_versions in offline_fw_versions[platform].items():
+      addr = ecu[1:]
+      if ecu[0] not in CHECK_FUZZY_ECUS:
+        continue
+
+      expected_gateway_types = get_gateway_types(expected_versions)
+      found_gateway_types = get_gateway_types(live_fw_versions.get(addr, []))
+
+      # Sanity check that the FW is likely Volkswagen: the gateway type should be in the database for this platform
+      if not any(found_gateway_type in expected_gateway_types for found_gateway_type in found_gateway_types):
+        break
+
+      valid_ecus.add(ecu[0])
+
+    if valid_ecus != CHECK_FUZZY_ECUS:
+      continue
+
     if chassis_code in platform.config.chassis_codes and wmi in platform.config.wmis:
       candidates.add(platform)
 
   return {str(c) for c in candidates}
 
 
-# These correspond to the first three digits of the spare part number
-GATEWAY_TYPES = {
-  (Ecu.fwdRadar, 0x757, None): {
-    b"2Q0",
-    b"3Q0",
-    b"561",
-    b"5Q0",
-    b"7N0",
-  }
-}
+# These ECUs are required to exist to gain a VIN match. The first three
+# characters of the spare part number must match (gateway type)
+# TODO: do we want to check camera when we add its FW?
+CHECK_FUZZY_ECUS = {Ecu.fwdRadar}
+
 
 # All supported cars should return FW from the engine, srs, eps, and fwdRadar. Cars
 # with a manual trans won't return transmission firmware, but all other cars will.
