@@ -32,3 +32,5 @@ if __name__ == "__main__":
       finalized_dir.rename(target_dir)
 
   set_valid_flag(FINALIZED, False)
+
+  exit(1)
