@@ -7,6 +7,7 @@ venv/
 .tags
 .ipynb_checkpoints
 .idea
+.update_valid
 .overlay_init
 .overlay_consistent
 .sconsign.dblite

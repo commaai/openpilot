@@ -69,6 +69,10 @@ function launch {
     fi
   fi
 
+  # apply any updates from the new updater
+  export PYTHONPATH="$PWD"
+  python $(pwd)/openpilot/system/updated/apply.py
+
   # handle pythonpath
   ln -sfn $(pwd) /data/pythonpath
   export PYTHONPATH="$PWD"

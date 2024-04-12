@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import hashlib
 import os
+import pathlib
 import psutil
 import requests
 import shutil
@@ -10,13 +11,12 @@ from pathlib import Path
 
 from openpilot.common.api import API_HOST
 from openpilot.common.basedir import BASEDIR
-from openpilot.common.run import run_cmd
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.updated.casync import casync
-from openpilot.system.updated.common import get_consistent_flag, set_consistent_flag
+from openpilot.system.updated.common import USERDATA, FINALIZED, get_valid_flag, set_valid_flag
 from openpilot.system.version import BuildMetadata, get_build_metadata, build_metadata_from_dict, is_git_repo
 
 
@@ -24,12 +24,7 @@ UPDATE_DELAY = float(os.environ.get("UPDATE_DELAY", 60))
 
 CHANNELS_API_ROOT = "v1/openpilot/channels"
 
-STAGING_ROOT = os.getenv("UPDATER_STAGING_ROOT", "/data/safe_staging")
-
-FINALIZED = Path(STAGING_ROOT) / "finalized"        # where the casync update is pulled
-CASYNC_TMPDIR = Path(STAGING_ROOT) / "casync_tmp"   # working directory for casync temp files
-
-INIT_FILE = Path(BASEDIR) / ".overlay_init"
+CASYNC_TMPDIR = Path(USERDATA) / "casync_tmp"   # working directory for casync temp files
 
 UPDATED_FORCE_WRITE = os.getenv("UPDATED_FORCE_WRITE") == "1"
 
@@ -79,11 +74,22 @@ def set_partition_hash(path: str, partition_size: int, new_hash: bytes):
   os.sync()
 
 
-def extract_directory(entry: dict, cache_directory: str, directory: str):
+def get_finalized_dir(entry) -> str:
+  return os.path.join(FINALIZED, pathlib.Path(entry["path"]).stem)
+
+
+def extract_directory(entry: dict):
+  assert entry["path"].startswith(USERDATA), f'{entry["path"]} {USERDATA}'  # only updates to USERDATA are supported at this time
+
+  cache_directory = entry["path"]
+  finalized_dir = get_finalized_dir(entry)
+
   caibx_url = entry["casync"]["caibx"]
   target = casync.parse_caibx(caibx_url)
 
-  shutil.rmtree(directory)
+  if os.path.exists(finalized_dir):
+    shutil.rmtree(finalized_dir)
+  os.makedirs(finalized_dir)
 
   cache_filename = os.path.join(CASYNC_TMPDIR, "cache.tar")
   tmp_filename = os.path.join(CASYNC_TMPDIR, "tmp.tar")
@@ -95,9 +101,9 @@ def extract_directory(entry: dict, cache_directory: str, directory: str):
 
   sources += [create_remote_chunk_source(caibx_url, target)]
 
-  cloudlog.info(f"extracting {caibx_url} to {directory}")
+  cloudlog.info(f"extracting {caibx_url} to {finalized_dir}")
   start = time.monotonic()
-  stats = casync.extract_directory(target, sources, directory, tmp_filename)
+  stats = casync.extract_directory(target, sources, finalized_dir, tmp_filename)
   cloudlog.info(f"extraction completed in {time.monotonic() - start} seconds with {stats=}")
 
 
@@ -145,26 +151,17 @@ def extract_partition(entry: dict):
 
 
 def setup_updater():
-  run_cmd(["sudo", "rm", "-rf", STAGING_ROOT])
-  if os.path.isdir(STAGING_ROOT):
-    shutil.rmtree(STAGING_ROOT)
-
-  Path(STAGING_ROOT).mkdir()
   CASYNC_TMPDIR.mkdir()
-  FINALIZED.mkdir()
-  INIT_FILE.touch()
 
 
 def download_update(manifest: dict):
   cloudlog.info(f"downloading update from: {manifest}")
 
-  set_consistent_flag(str(FINALIZED), False)
-
   HARDWARE.prepare_target_ab_slot()
 
   for entry in manifest:
     if entry["type"] == "path_tarred":
-      extract_directory(entry, str(BASEDIR), str(FINALIZED))
+      extract_directory(entry)
 
     if entry["type"] == "partition":
       extract_partition(entry)
@@ -194,7 +191,7 @@ def main():
 
     params.put("UpdaterTargetChannel", target_channel)
 
-    update_ready = get_consistent_flag(FINALIZED)
+    update_ready = get_valid_flag(FINALIZED)
     remote_build_metadata, remote_manifest = get_remote_channel_data(target_channel)
 
     if remote_build_metadata is not None and remote_manifest is not None:
@@ -207,8 +204,8 @@ def main():
       if update_available:
         try:
           download_update(remote_manifest)
-          set_consistent_flag(FINALIZED, True)
-          update_ready = get_consistent_flag(FINALIZED)
+          set_valid_flag(FINALIZED, True)
+          update_ready = get_valid_flag(FINALIZED)
           update_failed_count = 0
         except Exception:
           update_failed_count += 1

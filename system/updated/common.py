@@ -2,16 +2,20 @@ import os
 import pathlib
 
 
-def get_consistent_flag(path: str) -> bool:
-  consistent_file = pathlib.Path(os.path.join(path, ".overlay_consistent"))
-  return consistent_file.is_file()
+USERDATA = os.getenv("USERDATA_DIR", "/data")
+FINALIZED = os.path.join(USERDATA, "finalized")
 
 
-def set_consistent_flag(path: str, consistent: bool) -> None:
+def get_valid_flag(path: str) -> bool:
+  valid_file = pathlib.Path(os.path.join(path, ".update_valid"))
+  return valid_file.is_file()
+
+
+def set_valid_flag(path: str, valid: bool) -> None:
   os.sync()
-  consistent_file = pathlib.Path(os.path.join(path, ".overlay_consistent"))
-  if consistent:
-    consistent_file.touch()
-  elif not consistent:
-    consistent_file.unlink(missing_ok=True)
+  valid_file = pathlib.Path(os.path.join(path, ".update_valid"))
+  if valid:
+    valid_file.touch()
+  else:
+    valid_file.unlink(missing_ok=True)
   os.sync()

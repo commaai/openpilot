@@ -19,7 +19,7 @@ from openpilot.selfdrive.test.helpers import DirectoryHttpServer, http_server_co
 from openpilot.system.hardware import PC
 from openpilot.system.hardware.tici.agnos import get_raw_hash
 from openpilot.system.updated.casync.common import create_build_metadata_file, create_casync_from_file, create_casync_release
-from openpilot.system.updated.common import get_consistent_flag
+from openpilot.system.updated.common import get_valid_flag
 from openpilot.system.version import BuildMetadata, OpenpilotMetadata, get_version
 
 
@@ -161,18 +161,21 @@ class TestUpdated(unittest.TestCase):
 
     self.params = Params()
 
-    self.basedir = self.mock_update_path / "openpilot"
+    self.userdata = self.mock_update_path / "userdata"
+    self.userdata.mkdir()
+
+    self.basedir = self.userdata / "openpilot"
     self.basedir.mkdir()
 
-    self.staging_root = self.mock_update_path / "safe_staging"
-    self.staging_root.mkdir()
+    self.finalized = self.userdata / "finalized"
+    self.finalized.mkdir()
 
     self.remote_dir = self.mock_update_path / "remote"
     self.remote_dir.mkdir()
 
-    mock.patch("openpilot.common.basedir.BASEDIR", self.basedir).start()
+    os.environ["USERDATA_DIR"] = str(self.userdata)
 
-    os.environ["UPDATER_STAGING_ROOT"] = str(self.staging_root)
+    mock.patch("openpilot.common.basedir.BASEDIR", self.basedir).start()
 
     self.MOCK_RELEASES = {
       "release3": ("0.1.2", "1.2", "0.1.2 release notes"),
@@ -205,7 +208,7 @@ class TestUpdated(unittest.TestCase):
     update_release(self.basedir, release, *self.MOCK_RELEASES[release])
     create_casync_files(self.basedir, release, *self.MOCK_RELEASES[release])
 
-  def wait_for_condition(self, condition, timeout=12):
+  def wait_for_condition(self, condition, timeout=4):
     start = time.monotonic()
     while True:
       waited = time.monotonic() - start
@@ -219,12 +222,13 @@ class TestUpdated(unittest.TestCase):
       time.sleep(1)
 
   def _test_finalized_update(self, branch, version, agnos_version, release_notes):
-    self.assertTrue(os.path.exists(self.staging_root / "finalized" / "build.json"))
-    self.assertEqual(get_version(str(self.staging_root / "finalized")), version)
-    self.assertEqual(get_consistent_flag(str(self.staging_root / "finalized")), True)
-    self.assertTrue(os.access(str(self.staging_root / "finalized" / "launch_env.sh"), os.X_OK))
+    finalized_dir = self.userdata / "finalized"
+    self.assertTrue(os.path.exists(finalized_dir / "openpilot" / "build.json"))
+    self.assertEqual(get_version(str(finalized_dir / "openpilot")), version)
+    self.assertEqual(get_valid_flag(str(finalized_dir)), True)
+    self.assertTrue(os.access(str(finalized_dir / "openpilot" / "launch_env.sh"), os.X_OK))
 
-    with open(self.staging_root / "finalized" / "test_symlink") as f:
+    with open(finalized_dir / "openpilot" / "test_symlink") as f:
       self.assertIn(version, f.read())
 
   def update_remote_release(self, release):
@@ -235,7 +239,7 @@ class TestUpdated(unittest.TestCase):
     self.release_manifests[release] = [
       {
         "type": "path_tarred",
-        "path": "/data/openpilot",
+        "path": f"{self.mock_update_path}/userdata/openpilot",
         "casync": {
           "caibx": caibx_file.name,
         }
@@ -256,7 +260,9 @@ class TestUpdated(unittest.TestCase):
         api_host = f"http://{api_host}:{api_port}"
 
         with mock.patch("openpilot.common.api.API_HOST", api_host), \
-            mock.patch.dict("openpilot.selfdrive.test.helpers.managed_processes") as managed_processes_mock:
+             mock.patch.dict("openpilot.selfdrive.test.helpers.managed_processes") as managed_processes_mock, \
+             mock.patch("openpilot.system.updated.common.USERDATA", str(self.userdata)), \
+             mock.patch("openpilot.system.updated.common.FINALIZED", str(self.finalized)):
 
           managed_processes_mock["updated"] = PythonProcess("updated", "system.updated.updated", only_offroad, enabled=not PC)
 
@@ -274,7 +280,7 @@ class TestUpdated(unittest.TestCase):
     run_cmd(["git", "commit", "-m", f"openpilot release {release}"], cwd=self.basedir)
 
   def _wait_for_finalized(self):
-    self.wait_for_condition(lambda: get_consistent_flag(self.staging_root / "finalized"))
+    self.wait_for_condition(lambda: get_valid_flag(self.finalized))
 
   def _test_channel_param(self, channel):
     self.assertEqual(self.params.get("UpdaterTargetChannel", encoding="utf-8"), channel)
@@ -285,8 +291,8 @@ class TestUpdated(unittest.TestCase):
     self.setup_basedir_release("release3")
 
     with self.additional_context(), processes_context(["updated"]):
-      time.sleep(5)
-      self.assertEqual(get_consistent_flag(self.staging_root / "finalized"), False)
+      time.sleep(1)
+      self.assertEqual(get_valid_flag(self.finalized), False)
 
   def test_new_release(self):
     # Start on release3, simulate a release3 commit, ensure we fetch that update properly
@@ -297,7 +303,7 @@ class TestUpdated(unittest.TestCase):
     self.update_remote_release("release3")
 
     with self.additional_context(), processes_context(["updated"]):
-      time.sleep(5)
+      time.sleep(1)
       self._wait_for_finalized()
       self._test_finalized_update("release3", *self.MOCK_RELEASES["release3"])
 
@@ -335,7 +341,7 @@ class TestUpdated(unittest.TestCase):
     with self.additional_context():
       self.api_handler.API_NO_RESPONSE = True
       with processes_context(["updated"]):
-        time.sleep(3)
+        time.sleep(1)
         self.api_handler.API_NO_RESPONSE = False
 
         self._wait_for_finalized()
@@ -352,7 +358,7 @@ class TestUpdated(unittest.TestCase):
     with self.additional_context():
       self.directory_handler.API_NO_RESPONSE = True
       with processes_context(["updated"]):
-        time.sleep(3)
+        time.sleep(1)
         self.directory_handler.API_NO_RESPONSE = False
 
         self._wait_for_finalized()
