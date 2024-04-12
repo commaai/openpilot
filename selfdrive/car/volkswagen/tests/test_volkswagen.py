@@ -7,10 +7,21 @@ from openpilot.selfdrive.car.volkswagen.values import CAR, FW_QUERY_CONFIG, WMI
 from openpilot.selfdrive.car.volkswagen.fingerprints import FW_VERSIONS
 
 Ecu = car.CarParams.Ecu
+
 CHASSIS_CODE_PATTERN = re.compile('[A-Z0-9]{2}')
+# TODO: determine the unknown groups
+SPARE_PART_FW_PATTERN = re.compile(b'\xf1\x87(?P<gateway>[0-9][0-9A-Z]{2})(?P<unknown>[0-9][0-9A-Z][0-9])(?P<unknown2>[0-9A-Z]{2}[0-9])([A-Z0-9]| )')
 
 
 class TestVolkswagenPlatformConfigs(unittest.TestCase):
+  def test_spare_part_fw_pattern(self):
+    # Relied on for determining if a FW is likely VW
+    for platform, ecus in FW_VERSIONS.items():
+      with self.subTest(platform=platform):
+        for fws in ecus.values():
+          for fw in fws:
+            self.assertNotEqual(SPARE_PART_FW_PATTERN.match(fw), None, f"Bad FW: {fw}")
+
   def test_chassis_codes(self):
     for platform in CAR:
       with self.subTest(platform=platform):
