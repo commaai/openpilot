@@ -73,6 +73,7 @@ function launch {
   PYTHONPATH="$PWD" python $(pwd)/openpilot/system/updated/apply.py
 
   if [ $? -eq 1 ]; then
+    cd $BASEDIR
     echo "Update detected, restarting launch script ${LAUNCHER_LOCATION}"
     unset AGNOS_VERSION
     exec "${LAUNCHER_LOCATION}"
