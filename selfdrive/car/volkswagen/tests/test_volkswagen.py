@@ -36,7 +36,7 @@ class TestVolkswagenPlatformConfigs(unittest.TestCase):
   def test_custom_fuzzy_fingerprinting(self):
     for platform in CAR:
       with self.subTest(platform=platform):
-        for wmi in WMI | {"000"}:
+        for wmi in WMI:
           for chassis_code in platform.config.chassis_codes | {"00"}:
             vin = ["0"] * 17
             vin[0:3] = wmi
@@ -50,7 +50,7 @@ class TestVolkswagenPlatformConfigs(unittest.TestCase):
               b'',
             ):
               match = SPARE_PART_FW_PATTERN.match(radar_fw)
-              should_match = (wmi != "000" and chassis_code != "00" and
+              should_match = (wmi in platform.config.wmis and chassis_code != "00" and
                               match is not None and match.group("gateway") in GATEWAY_TYPES[(Ecu.fwdRadar, 0x757, None)])
 
               live_fws = {(0x757, None): [radar_fw]}

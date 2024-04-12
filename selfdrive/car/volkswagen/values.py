@@ -122,12 +122,14 @@ class VolkswagenFlags(IntFlag):
 class VolkswagenMQBPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('vw_mqb_2010', None))
   chassis_codes: set[str] = field(default_factory=set)
+  wmis: set[StrEnum] = field(default_factory=set)
 
 
 @dataclass
 class VolkswagenPQPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('vw_golf_mk4', None))
   chassis_codes: set[str] = field(default_factory=set)
+  wmis: set[StrEnum] = field(default_factory=set)
 
   def init(self):
     self.flags |= VolkswagenFlags.PQ
@@ -213,6 +215,7 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=1733, wheelbase=2.84),
     chassis_codes={"AN"},
+    wmis={WMI.VOLKSWAGEN_EUROPE_CAR},
   )
   VOLKSWAGEN_ATLAS_MK1 = VolkswagenMQBPlatformConfig(
     [
@@ -224,6 +227,7 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=2011, wheelbase=2.98),
     chassis_codes={"CA"},
+    wmis={WMI.VOLKSWAGEN_USA_SUV},
   )
   VOLKSWAGEN_CADDY_MK3 = VolkswagenPQPlatformConfig(
     [
@@ -232,6 +236,7 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=1613, wheelbase=2.6, minSteerSpeed=21 * CV.KPH_TO_MS),
     chassis_codes={"2K"},
+    wmis={WMI.SETMEMEMEMEME},
   )
   VOLKSWAGEN_CRAFTER_MK2 = VolkswagenMQBPlatformConfig(
     [
@@ -243,6 +248,7 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=2100, wheelbase=3.64, minSteerSpeed=50 * CV.KPH_TO_MS),
     chassis_codes={"SY", "SZ"},
+    wmis={WMI.VOLKSWAGEN_COMMERCIAL, WMI.MAN},
   )
   VOLKSWAGEN_GOLF_MK7 = VolkswagenMQBPlatformConfig(
     [
@@ -257,6 +263,7 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=1397, wheelbase=2.62),
     chassis_codes={"5G", "AU", "BA", "BE"},
+    wmis={WMI.SETME},
   )
   VOLKSWAGEN_JETTA_MK7 = VolkswagenMQBPlatformConfig(
     [
@@ -265,6 +272,7 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=1328, wheelbase=2.71),
     chassis_codes={"BU"},
+    wmis={WMI.SETMEMEMEMEME},
   )
   VOLKSWAGEN_PASSAT_MK8 = VolkswagenMQBPlatformConfig(
     [
@@ -274,11 +282,13 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=1551, wheelbase=2.79),
     chassis_codes={"3G"},
+    wmis={WMI.VOLKSWAGEN_EUROPE_CAR},
   )
   VOLKSWAGEN_PASSAT_NMS = VolkswagenPQPlatformConfig(
     [VWCarDocs("Volkswagen Passat NMS 2017-22")],
     VolkswagenCarSpecs(mass=1503, wheelbase=2.80, minSteerSpeed=50 * CV.KPH_TO_MS, minEnableSpeed=20 * CV.KPH_TO_MS),
     chassis_codes={"A3"},
+    wmis={WMI.VOLKSWAGEN_USA_CAR},
   )
   VOLKSWAGEN_POLO_MK6 = VolkswagenMQBPlatformConfig(
     [
@@ -287,6 +297,7 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=1230, wheelbase=2.55),
     chassis_codes={"AW"},
+    wmis={WMI.VOLKSWAGEN_EUROPE_CAR},
   )
   VOLKSWAGEN_SHARAN_MK2 = VolkswagenPQPlatformConfig(
     [
@@ -295,16 +306,19 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=1639, wheelbase=2.92, minSteerSpeed=50 * CV.KPH_TO_MS),
     chassis_codes={"7N"},
+    wmis={WMI.VOLKSWAGEN_EUROPE_CAR},
   )
   VOLKSWAGEN_TAOS_MK1 = VolkswagenMQBPlatformConfig(
     [VWCarDocs("Volkswagen Taos 2022-23")],
     VolkswagenCarSpecs(mass=1498, wheelbase=2.69),
     chassis_codes={"B2"},
+    wmis={WMI.SETMEMEMEMEME},
   )
   VOLKSWAGEN_TCROSS_MK1 = VolkswagenMQBPlatformConfig(
     [VWCarDocs("Volkswagen T-Cross 2021", footnotes=[Footnote.VW_MQB_A0])],
     VolkswagenCarSpecs(mass=1150, wheelbase=2.60),
     chassis_codes={"C1"},
+    wmis={WMI.VOLKSWAGEN_EUROPE_SUV},
   )
   VOLKSWAGEN_TIGUAN_MK2 = VolkswagenMQBPlatformConfig(
     [
@@ -313,11 +327,13 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=1715, wheelbase=2.74),
     chassis_codes={"AD", "BW"},
+    wmis={WMI.SETMEMEMEMEME},
   )
   VOLKSWAGEN_TOURAN_MK2 = VolkswagenMQBPlatformConfig(
     [VWCarDocs("Volkswagen Touran 2016-23")],
     VolkswagenCarSpecs(mass=1516, wheelbase=2.79),
     chassis_codes={"1T"},
+    wmis={WMI.VOLKSWAGEN_EUROPE_SUV},
   )
   VOLKSWAGEN_TRANSPORTER_T61 = VolkswagenMQBPlatformConfig(
     [
@@ -326,11 +342,13 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=1926, wheelbase=3.00, minSteerSpeed=14.0),
     chassis_codes={"7H", "7L"},
+    wmis={WMI.VOLKSWAGEN_COMMERCIAL_BUS_VAN},
   )
   VOLKSWAGEN_TROC_MK1 = VolkswagenMQBPlatformConfig(
     [VWCarDocs("Volkswagen T-Roc 2018-22", footnotes=[Footnote.VW_MQB_A0])],
     VolkswagenCarSpecs(mass=1413, wheelbase=2.63),
     chassis_codes={"A1"},
+    wmis={WMI.VOLKSWAGEN_EUROPE_SUV},
   )
   AUDI_A3_MK3 = VolkswagenMQBPlatformConfig(
     [
@@ -341,16 +359,19 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=1335, wheelbase=2.61),
     chassis_codes={"8V", "FF"},
+    wmis={WMI.SETMEMEMEMEME},
   )
   AUDI_Q2_MK1 = VolkswagenMQBPlatformConfig(
     [VWCarDocs("Audi Q2 2018")],
     VolkswagenCarSpecs(mass=1205, wheelbase=2.61),
     chassis_codes={"GA"},
+    wmis={WMI.SETMEMEMEMEME},
   )
   AUDI_Q3_MK2 = VolkswagenMQBPlatformConfig(
     [VWCarDocs("Audi Q3 2019-23")],
     VolkswagenCarSpecs(mass=1623, wheelbase=2.68),
     chassis_codes={"8U", "F3", "FS"},
+    wmis={WMI.SETMEMEMEMEME},
   )
   SEAT_ATECA_MK1 = VolkswagenMQBPlatformConfig(
     [
@@ -359,11 +380,13 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=1300, wheelbase=2.64),
     chassis_codes={"5F"},
+    wmis={WMI.SEAT},
   )
   SKODA_FABIA_MK4 = VolkswagenMQBPlatformConfig(
     [VWCarDocs("Škoda Fabia 2022-23", footnotes=[Footnote.VW_MQB_A0])],
     VolkswagenCarSpecs(mass=1266, wheelbase=2.56),
     chassis_codes={"PJ"},
+    wmis={WMI.SKODA},
   )
   SKODA_KAMIQ_MK1 = VolkswagenMQBPlatformConfig(
     [
@@ -372,16 +395,19 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=1230, wheelbase=2.66),
     chassis_codes={"NW"},
+    wmis={WMI.SKODA},
   )
   SKODA_KAROQ_MK1 = VolkswagenMQBPlatformConfig(
     [VWCarDocs("Škoda Karoq 2019-23")],
     VolkswagenCarSpecs(mass=1278, wheelbase=2.66),
     chassis_codes={"NU"},
+    wmis={WMI.SKODA},
   )
   SKODA_KODIAQ_MK1 = VolkswagenMQBPlatformConfig(
     [VWCarDocs("Škoda Kodiaq 2017-23")],
     VolkswagenCarSpecs(mass=1569, wheelbase=2.79),
     chassis_codes={"NS"},
+    wmis={WMI.SETMEMEMEMEME},
   )
   SKODA_OCTAVIA_MK3 = VolkswagenMQBPlatformConfig(
     [
@@ -391,11 +417,13 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=1388, wheelbase=2.68),
     chassis_codes={"NE"},
+    wmis={WMI.SKODA},
   )
   SKODA_SUPERB_MK3 = VolkswagenMQBPlatformConfig(
     [VWCarDocs("Škoda Superb 2015-22")],
     VolkswagenCarSpecs(mass=1505, wheelbase=2.84),
     chassis_codes={"3V", "NP"},
+    wmis={WMI.SKODA},
   )
 
 
@@ -415,12 +443,9 @@ def match_fw_to_car_fuzzy(live_fw_versions, vin, offline_fw_versions) -> set[str
 
   # Check the WMI and chassis code to determine the platform
   wmi = vin[:3]
-  if wmi not in WMI:
-    return set()
-
   chassis_code = vin[6:8]
   for platform in CAR:
-    if chassis_code in platform.config.chassis_codes:
+    if chassis_code in platform.config.chassis_codes and wmi in platform.config.wmis:
       candidates.add(platform)
 
   return {str(c) for c in candidates}
