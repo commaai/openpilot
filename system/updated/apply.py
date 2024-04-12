@@ -2,7 +2,7 @@
 # applies the finalized updates from FINALIZED to their proper directory
 import pathlib
 
-from openpilot.system.updated.common import USERDATA, FINALIZED, get_valid_flag
+from openpilot.system.updated.common import USERDATA, FINALIZED, get_valid_flag, set_valid_flag
 
 
 if __name__ == "__main__":
@@ -25,3 +25,5 @@ if __name__ == "__main__":
 
       target_dir.rename(previous_dir)
       finalized_dir.rename(target_dir)
+
+  set_valid_flag(FINALIZED, False)
