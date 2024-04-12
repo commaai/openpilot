@@ -9,7 +9,7 @@ from openpilot.system.updated.common import USERDATA, FINALIZED, get_valid_flag,
 if __name__ == "__main__":
   if not get_valid_flag(FINALIZED):
     print("no valid update found in FINALIZED, skipping...")
-    exit(0)
+    exit(1)
 
   finalized = pathlib.Path(FINALIZED)
   userdata = pathlib.Path(USERDATA)
@@ -32,5 +32,3 @@ if __name__ == "__main__":
       finalized_dir.rename(target_dir)
 
   set_valid_flag(FINALIZED, False)
-
-  exit(1)
