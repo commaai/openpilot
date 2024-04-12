@@ -1,7 +1,6 @@
 from collections import namedtuple
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag, StrEnum
-import re
 
 from cereal import car
 from panda.python import uds
