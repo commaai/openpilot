@@ -406,10 +406,10 @@ def match_fw_to_car_fuzzy(live_fw_versions, vin, offline_fw_versions) -> set[str
 # Volkswagen uses the VIN WMI and chassis code to match in the absence of the comma power,
 # as we lose too many ECUs to reliably identify the vehicle
 WMI = {
-  "1V2",  # Volkswagen SUV
-  "1VW",  # Volkswagen car
-  "3VV",  # Volkswagen SUV
-  "3VW",  # Volkswagen car
+  "1V2",  # Volkswagen USA SUV
+  "1VW",  # Volkswagen USA car
+  "3VV",  # Volkswagen Mexico SUV
+  "3VW",  # Volkswagen Mexico car
   "8AW",  # Volkswagen Argentina
   "9BW",  # Volkswagen do Brasil
   "LSV",  # SAIC Volkswagen
@@ -419,11 +419,11 @@ WMI = {
   "WAU",  # Audi car
   "WMA",  # MAN
   "WUA",  # Audi Sport GmbH & Quattro GmbH car
-  "WV1",  # Volkswagen Commercial Vehicles
-  "WV2",  # Volkswagen Commercial Vehicles
-  "WVG",  # Volkswagen SUV
-  "WVW",  # Volkswagen car
-  "XW8",  # Volkswagen Group Rus
+  "WV1",  # Volkswagen Commercial
+  "WV2",  # Volkswagen Commercial Bus/Van
+  "WVG",  # Volkswagen Europe SUV
+  "WVW",  # Volkswagen Europe car
+  "",  # Volkswagen Group Rus
 }
 
 # These correspond to the first three digits of the spare part number
