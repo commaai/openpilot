@@ -1,6 +1,6 @@
 from collections import namedtuple
 from dataclasses import dataclass, field
-from enum import Enum, IntFlag
+from enum import Enum, IntFlag, StrEnum
 import re
 
 from cereal import car
@@ -172,6 +172,29 @@ class VWCarDocs(CarDocs):
 
     if CP.carFingerprint in (CAR.VOLKSWAGEN_CRAFTER_MK2, CAR.VOLKSWAGEN_TRANSPORTER_T61):
       self.car_parts = CarParts([Device.threex_angled_mount, CarHarness.j533])
+
+
+# Volkswagen uses the VIN WMI and chassis code to match in the absence of the comma power,
+# as we lose too many ECUs to reliably identify the vehicle
+class WMI(StrEnum):
+  VOLKSWAGEN_USA_SUV = "1V2"
+  VOLKSWAGEN_USA_CAR = "1VW"
+  VOLKSWAGEN_MEXICO_SUV = "3VV"
+  VOLKSWAGEN_MEXICO_CAR = "3VW"
+  VOLKSWAGEN_ARGENTINA = "8AW"
+  VOLKSWAGEN_BRASIL = "9BW"
+  SAIC_VOLKSWAGEN = "LSV"
+  SKODA = "TMB"
+  SEAT = "VSS"
+  AUDI_SUV = "WA1"
+  AUDI_CAR = "WAU"
+  MAN = "WMA"
+  AUDI_SPORT = "WUA"
+  VOLKSWAGEN_COMMERCIAL = "WV1"
+  VOLKSWAGEN_COMMERCIAL_BUS_VAN = "WV2"
+  VOLKSWAGEN_EUROPE_SUV = "WVG"
+  VOLKSWAGEN_EUROPE_CAR = "WVW"
+  VOLKSWAGEN_GROUP_RUS = "XW8"
 
 
 # Check the 7th and 8th characters of the VIN before adding a new CAR. If the
@@ -402,29 +425,6 @@ def match_fw_to_car_fuzzy(live_fw_versions, vin, offline_fw_versions) -> set[str
 
   return {str(c) for c in candidates}
 
-
-# Volkswagen uses the VIN WMI and chassis code to match in the absence of the comma power,
-# as we lose too many ECUs to reliably identify the vehicle
-WMI = {
-  "1V2",  # Volkswagen USA SUV
-  "1VW",  # Volkswagen USA car
-  "3VV",  # Volkswagen Mexico SUV
-  "3VW",  # Volkswagen Mexico car
-  "8AW",  # Volkswagen Argentina
-  "9BW",  # Volkswagen do Brasil
-  "LSV",  # SAIC Volkswagen
-  "TMB",  # Škoda Auto AS
-  "VSS",  # SEAT
-  "WA1",  # Audi SUV
-  "WAU",  # Audi car
-  "WMA",  # MAN
-  "WUA",  # Audi Sport GmbH & Quattro GmbH car
-  "WV1",  # Volkswagen Commercial
-  "WV2",  # Volkswagen Commercial Bus/Van
-  "WVG",  # Volkswagen Europe SUV
-  "WVW",  # Volkswagen Europe car
-  "XW8",  # Volkswagen Group Rus
-}
 
 # These correspond to the first three digits of the spare part number
 GATEWAY_TYPES = {
