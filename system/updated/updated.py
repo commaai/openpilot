@@ -151,10 +151,14 @@ def extract_partition(entry: dict):
 
 
 def setup_updater():
-  if CASYNC_TMPDIR.exists():
+  if os.path.exists(CASYNC_TMPDIR):
     shutil.rmtree(CASYNC_TMPDIR)
-  CASYNC_TMPDIR.mkdir()
 
+  if os.path.exists(FINALIZED):
+    shutil.rmtree(FINALIZED)
+
+  os.makedirs(CASYNC_TMPDIR)
+  os.makedirs(FINALIZED)
 
 
 def download_update(manifest: dict):
@@ -206,6 +210,7 @@ def main():
 
       if update_available:
         try:
+          set_valid_flag(FINALIZED, False)
           download_update(remote_manifest)
           set_valid_flag(FINALIZED, True)
           update_ready = get_valid_flag(FINALIZED)
