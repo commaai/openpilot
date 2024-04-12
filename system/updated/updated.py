@@ -213,7 +213,6 @@ def main():
           set_valid_flag(FINALIZED, False)
           download_update(remote_manifest)
           set_valid_flag(FINALIZED, True)
-          update_ready = get_valid_flag(FINALIZED)
           update_failed_count = 0
         except Exception:
           update_failed_count += 1
