@@ -35,6 +35,8 @@ if __name__ == "__main__":
 
     for entry in manifest:
       print(f"creating casync agnos build from {entry}")
+
+      print("downloading...")
       downloader = StreamingDecompressor(entry['url'])
 
       parse_func = unsparsify if entry['sparse'] else noop
@@ -48,4 +50,5 @@ if __name__ == "__main__":
         for chunk in parsed_chunks:
           f.write(chunk)
 
+      print("creating casync...")
       create_casync_from_file(entry_path, output_dir, f"agnos-{args.version}-{entry['name']}")
