@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import re
 import unittest
 
 from cereal import car
@@ -6,6 +7,7 @@ from openpilot.selfdrive.car.volkswagen.values import CAR, SPARE_PART_FW_PATTERN
 from openpilot.selfdrive.car.volkswagen.fingerprints import FW_VERSIONS
 
 Ecu = car.CarParams.Ecu
+CHASSIS_CODE_PATTERN = re.compile('[A-Z0-9]{2}')
 
 
 class TestVolkswagenPlatformConfigs(unittest.TestCase):
@@ -21,6 +23,7 @@ class TestVolkswagenPlatformConfigs(unittest.TestCase):
     for platform in CAR:
       with self.subTest(platform=platform):
         self.assertTrue(len(platform.config.chassis_codes) > 0, "Chassis codes not set")
+        self.assertTrue(all(CHASSIS_CODE_PATTERN.match(cc) for cc in platform.config.chassis_codes), "Bad chassis codes")
 
         # No two platforms should share chassis codes
         for comp in CAR:

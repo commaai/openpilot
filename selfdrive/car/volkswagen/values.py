@@ -381,11 +381,11 @@ def match_fw_to_car(live_fw_versions, vin, offline_fw_versions) -> tuple[bool, s
 
   # Sanity check that the radar FW is likely Volkswagen
   for ecu, gateway_types in GATEWAY_TYPES.items():
-    radar_fw = live_fw_versions.get(ecu[1:], [])
-    if not len(radar_fw):
+    fws = live_fw_versions.get(ecu[1:], [])
+    if not len(fws):
       return True, set()
 
-    for fw in radar_fw:
+    for fw in fws:
       match = SPARE_PART_FW_PATTERN.match(fw)
       if match is None or match.group('gateway') not in gateway_types:
         return True, set()
@@ -396,9 +396,6 @@ def match_fw_to_car(live_fw_versions, vin, offline_fw_versions) -> tuple[bool, s
     return True, set()
 
   chassis_code = vin[6:8]
-  if CHASSIS_CODE_PATTERN.match(chassis_code) is None:
-    return True, set()
-
   for platform in CAR:
     if chassis_code in platform.config.chassis_codes:
       candidates.add(platform)
@@ -408,9 +405,6 @@ def match_fw_to_car(live_fw_versions, vin, offline_fw_versions) -> tuple[bool, s
 
 # Volkswagen uses the VIN WMI and chassis code to match in the absence of the comma power,
 # as we lose too many ECUs to reliably identify the vehicle
-CHASSIS_CODE_PATTERN = re.compile('[A-Z0-9]{2}')
-
-# A VIN match requires the WMI to match any of these
 WMI = {
   "1V2",  # Volkswagen SUV
   "1VW",  # Volkswagen car
