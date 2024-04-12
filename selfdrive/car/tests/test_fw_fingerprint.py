@@ -72,7 +72,6 @@ class TestFwFingerprint(unittest.TestCase):
         fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
                    "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
       CP.carFw = fw
-
       _, matches = match_fw_to_car(CP.carFw, CP.carVin, allow_exact=False, log=False)
       brand_matches = config.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw), "", VERSIONS[brand])
 
