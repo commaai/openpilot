@@ -33,8 +33,8 @@ def get_remote_channel_data(channel: str) -> tuple[BuildMetadata | None, dict | 
   try:
     data = requests.get(os.path.join(API_HOST, CHANNELS_API_ROOT, channel)).json()
     return build_metadata_from_dict(data["build_metadata"]), data["manifest"]
-  except requests.exceptions.RequestException:
-    cloudlog.exception("fetching remote manifest failed")
+  except requests.exceptions.RequestException as e:
+    cloudlog.event("fetching remote manifest failed", error=e)
     return None, None
 
 
@@ -214,9 +214,9 @@ def main():
           download_update(remote_manifest)
           set_valid_flag(FINALIZED, True)
           update_failed_count = 0
-        except Exception:
+        except Exception as e:
           update_failed_count += 1
-          cloudlog.exception("exception while downloading ...")
+          cloudlog.event("update download failed...", error=e)
 
     else:
       update_failed_count += 1
