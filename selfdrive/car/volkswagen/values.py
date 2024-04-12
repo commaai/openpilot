@@ -188,8 +188,8 @@ class WMI(StrEnum):
   SAIC_VOLKSWAGEN = "LSV"
   SKODA = "TMB"
   SEAT = "VSS"
-  AUDI_SUV = "WA1"
-  AUDI_CAR = "WAU"
+  AUDI_EUROPE_MPV = "WA1"
+  AUDI_GERMANY_CAR = "WAU"
   MAN = "WMA"
   AUDI_SPORT = "WUA"
   VOLKSWAGEN_COMMERCIAL = "WV1"
@@ -263,7 +263,7 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=1397, wheelbase=2.62),
     chassis_codes={"5G", "AU", "BA", "BE"},
-    wmis={WMI.SETME},
+    wmis={WMI.VOLKSWAGEN_MEXICO_CAR, WMI.VOLKSWAGEN_EUROPE_CAR},
   )
   VOLKSWAGEN_JETTA_MK7 = VolkswagenMQBPlatformConfig(
     [
@@ -272,7 +272,7 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=1328, wheelbase=2.71),
     chassis_codes={"BU"},
-    wmis={WMI.SETMEMEMEMEME},
+    wmis={WMI.VOLKSWAGEN_MEXICO_CAR, CAR.VOLKSWAGEN_EUROPE_CAR},
   )
   VOLKSWAGEN_PASSAT_MK8 = VolkswagenMQBPlatformConfig(
     [
@@ -312,7 +312,7 @@ class CAR(Platforms):
     [VWCarDocs("Volkswagen Taos 2022-23")],
     VolkswagenCarSpecs(mass=1498, wheelbase=2.69),
     chassis_codes={"B2"},
-    wmis={WMI.SETMEMEMEMEME},
+    wmis={WMI.VOLKSWAGEN_MEXICO_SUV, WMI.VOLKSWAGEN_ARGENTINA},
   )
   VOLKSWAGEN_TCROSS_MK1 = VolkswagenMQBPlatformConfig(
     [VWCarDocs("Volkswagen T-Cross 2021", footnotes=[Footnote.VW_MQB_A0])],
@@ -359,7 +359,7 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=1335, wheelbase=2.61),
     chassis_codes={"8V", "FF"},
-    wmis={WMI.SETMEMEMEMEME},
+    wmis={WMI.AUDI_CAR, WMI.AUDI_SPORT},
   )
   AUDI_Q2_MK1 = VolkswagenMQBPlatformConfig(
     [VWCarDocs("Audi Q2 2018")],
@@ -371,7 +371,7 @@ class CAR(Platforms):
     [VWCarDocs("Audi Q3 2019-23")],
     VolkswagenCarSpecs(mass=1623, wheelbase=2.68),
     chassis_codes={"8U", "F3", "FS"},
-    wmis={WMI.SETMEMEMEMEME},
+    wmis={WMI.AUDI_EUROPE_MPV, WMI.AUDI_GERMANY_CAR},
   )
   SEAT_ATECA_MK1 = VolkswagenMQBPlatformConfig(
     [
@@ -407,7 +407,7 @@ class CAR(Platforms):
     [VWCarDocs("Škoda Kodiaq 2017-23")],
     VolkswagenCarSpecs(mass=1569, wheelbase=2.79),
     chassis_codes={"NS"},
-    wmis={WMI.SETMEMEMEMEME},
+    wmis={WMI.SKODA, WMI.VOLKSWAGEN_GROUP_RUS},
   )
   SKODA_OCTAVIA_MK3 = VolkswagenMQBPlatformConfig(
     [
