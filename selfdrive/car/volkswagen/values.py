@@ -427,15 +427,6 @@ class CAR(Platforms):
   )
 
 
-def get_gateway_types(fws: list[bytes]) -> set[bytes]:
-  parsed = set()
-  for fw in fws:
-    match = SPARE_PART_FW_PATTERN.match(fw)
-    if match is not None:
-      parsed.add(match.group("gateway"))
-  return parsed
-
-
 def match_fw_to_car_fuzzy(live_fw_versions, vin, offline_fw_versions) -> set[str]:
   candidates = set()
 
@@ -450,11 +441,9 @@ def match_fw_to_car_fuzzy(live_fw_versions, vin, offline_fw_versions) -> set[str
       if ecu[0] not in CHECK_FUZZY_ECUS:
         continue
 
-      expected_gateway_types = get_gateway_types(expected_versions)
-      found_gateway_types = get_gateway_types(live_fw_versions.get(addr, []))
-
-      # Sanity check that the FW is likely Volkswagen: the gateway type should be in the database for this platform
-      if not any(found_gateway_type in expected_gateway_types for found_gateway_type in found_gateway_types):
+      # Sanity check that a subset of Volkswagen FW is in the database
+      found_versions = live_fw_versions.get(addr, [])
+      if not any(found_version in expected_versions for found_version in found_versions):
         break
 
       valid_ecus.add(ecu[0])
@@ -468,8 +457,7 @@ def match_fw_to_car_fuzzy(live_fw_versions, vin, offline_fw_versions) -> set[str
   return {str(c) for c in candidates}
 
 
-# These ECUs are required to exist to gain a VIN match. The first three
-# characters of the spare part number must match (gateway type)
+# These ECUs are required to match to gain a VIN match
 # TODO: do we want to check camera when we add its FW?
 CHECK_FUZZY_ECUS = {Ecu.fwdRadar}
 
@@ -490,9 +478,6 @@ VOLKSWAGEN_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFI
 VOLKSWAGEN_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
 
 VOLKSWAGEN_RX_OFFSET = 0x6a
-
-# TODO: determine the unknown groups
-SPARE_PART_FW_PATTERN = re.compile(b'\xf1\x87(?P<gateway>[0-9][0-9A-Z]{2})(?P<unknown>[0-9][0-9A-Z][0-9])(?P<unknown2>[0-9A-Z]{2}[0-9])([A-Z0-9]| )')
 
 FW_QUERY_CONFIG = FwQueryConfig(
   # TODO: add back whitelists after we gather enough data
