@@ -912,8 +912,6 @@ void CameraState::set_camera_exposure(float grey_frac) {
 }
 
 static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
-  c->set_camera_exposure(set_exposure_target(&c->buf, c->ae_xywh, 2, 4));
-
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverCameraState();
   framed.setFrameType(cereal::FrameData::FrameType::FRONT);
@@ -921,6 +919,8 @@ static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) 
 
   c->ci->processRegisters(c, framed);
   s->pm->send("driverCameraState", msg);
+
+  c->set_camera_exposure(set_exposure_target(&c->buf, c->ae_xywh, 2, 4));
 }
 
 void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
