@@ -278,10 +278,18 @@ void WifiManager::stateChange(unsigned int new_state, unsigned int previous_stat
 
 // https://developer.gnome.org/NetworkManager/stable/gdbus-org.freedesktop.NetworkManager.Device.Wireless.html
 void WifiManager::propertyChange(const QString &interface, const QVariantMap &props, const QStringList &invalidated_props) {
-  if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS && props.contains("LastScan")) {
-    refreshNetworks();
-  } else if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS && props.contains("ActiveAccessPoint")) {
-    activeAp = props.value("ActiveAccessPoint").value<QDBusObjectPath>().path();
+  if (interface == NM_DBUS_INTERFACE_DEVICE_WIRELESS) {
+    if (props.contains("LastScan")) {
+      refreshNetworks();
+    } else if (props.contains("ActiveAccessPoint")) {
+      QString active_ap = props.value("ActiveAccessPoint").value<QDBusObjectPath>().path();
+      // Check if the new active access point is different from the previously active one
+      // If so, update the active access point and refresh the list of available networks
+      if (active_ap != activeAp) {
+        activeAp = active_ap;
+        refreshNetworks();
+      }
+    }
   }
 }
 
