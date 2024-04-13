@@ -384,6 +384,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
       obd_multiplexing=obd_multiplexing,
     ),
   ]],
+  non_essential_ecus={Ecu.eps: list(CAR)},
   extra_ecus=[(Ecu.fwdCamera, 0x74f, None)],
 )
 
