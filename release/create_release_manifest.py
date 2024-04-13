@@ -2,6 +2,7 @@
 import argparse
 import dataclasses
 import json
+import os
 import pathlib
 
 from openpilot.system.hardware.tici.agnos import AGNOS_MANIFEST_FILE, get_partition_path
@@ -17,10 +18,12 @@ AGNOS_RELEASES = f"{BASE_URL}/openpilot-releases/agnos"
 
 
 def create_partition_manifest(agnos_version, partition):
+  agnos_filename = os.path.basename(partition["url"]).split(".")[0]
+
   return {
     "type": "partition",
     "casync": {
-      "caibx": f"{AGNOS_RELEASES}/agnos-{agnos_version}-{partition['name']}.caibx"
+      "caibx": f"{AGNOS_RELEASES}/{agnos_filename}.caibx"
     },
     "path": get_partition_path(0, partition),
     "ab": True,
