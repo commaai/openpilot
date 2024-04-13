@@ -153,7 +153,7 @@ class CAR(Platforms):
     GMCarSpecs(mass=1345, wheelbase=2.64, steerRatio=16.8, centerToFrontRatio=0.4, tireStiffnessFactor=1.0),
   )
   CHEVROLET_TAHOE_2019 = GMPlatformConfig(
-    [GMCarDocs("Chevrolet Tahoe 2019", "Adaptive Cruise Control (ACC) & LKAS")],
+    [GMCarDocs("Chevrolet Tahoe 2019-20", "Adaptive Cruise Control (ACC) & LKAS")],
     GMCarSpecs(mass=2490, wheelbase=2.94, steerRatio=17.3, centerToFrontRatio=0.5, tireStiffnessFactor=1.0),
   )
 
