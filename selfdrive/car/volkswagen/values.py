@@ -267,7 +267,7 @@ class CAR(Platforms):
     [VWCarDocs("Volkswagen T-Cross 2021", footnotes=[Footnote.VW_MQB_A0])],
     VolkswagenCarSpecs(mass=1150, wheelbase=2.60),
   )
-  VOLKSWAGEN_TIGUAN_MK2 = VolkswagenMQBPlatformConfig(  # Chassis AD/BW
+  VOLKSWAGEN_TIGUAN_MK2 = VolkswagenMQBPlatformConfig(  # Chassis 5N/AD/AX/BW
     [
       VWCarDocs("Volkswagen Tiguan 2018-24"),
       VWCarDocs("Volkswagen Tiguan eHybrid 2021-23"),
