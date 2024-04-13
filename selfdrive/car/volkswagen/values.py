@@ -109,6 +109,27 @@ class CANBUS:
   cam = 2
 
 
+class WMI(StrEnum):
+  VOLKSWAGEN_USA_SUV = "1V2"
+  VOLKSWAGEN_USA_CAR = "1VW"
+  VOLKSWAGEN_MEXICO_SUV = "3VV"
+  VOLKSWAGEN_MEXICO_CAR = "3VW"
+  VOLKSWAGEN_ARGENTINA = "8AW"
+  VOLKSWAGEN_BRASIL = "9BW"
+  SAIC_VOLKSWAGEN = "LSV"
+  SKODA = "TMB"
+  SEAT = "VSS"
+  AUDI_EUROPE_MPV = "WA1"
+  AUDI_GERMANY_CAR = "WAU"
+  MAN = "WMA"
+  AUDI_SPORT = "WUA"
+  VOLKSWAGEN_COMMERCIAL = "WV1"
+  VOLKSWAGEN_COMMERCIAL_BUS_VAN = "WV2"
+  VOLKSWAGEN_EUROPE_SUV = "WVG"
+  VOLKSWAGEN_EUROPE_CAR = "WVW"
+  VOLKSWAGEN_GROUP_RUS = "XW8"
+
+
 class VolkswagenFlags(IntFlag):
   # Detected flags
   STOCK_HCA_PRESENT = 1
@@ -123,7 +144,7 @@ class VolkswagenMQBPlatformConfig(PlatformConfig):
   # Volkswagen uses the VIN WMI and chassis code to match in the absence of the comma power
   # on camera-integrated cars, as we lose too many ECUs to reliably identify the vehicle
   chassis_codes: set[str] = field(default_factory=set)
-  wmis: set[StrEnum] = field(default_factory=set)
+  wmis: set[WMI] = field(default_factory=set)
 
 
 @dataclass
@@ -173,27 +194,6 @@ class VWCarDocs(CarDocs):
 
     if CP.carFingerprint in (CAR.VOLKSWAGEN_CRAFTER_MK2, CAR.VOLKSWAGEN_TRANSPORTER_T61):
       self.car_parts = CarParts([Device.threex_angled_mount, CarHarness.j533])
-
-
-class WMI(StrEnum):
-  VOLKSWAGEN_USA_SUV = "1V2"
-  VOLKSWAGEN_USA_CAR = "1VW"
-  VOLKSWAGEN_MEXICO_SUV = "3VV"
-  VOLKSWAGEN_MEXICO_CAR = "3VW"
-  VOLKSWAGEN_ARGENTINA = "8AW"
-  VOLKSWAGEN_BRASIL = "9BW"
-  SAIC_VOLKSWAGEN = "LSV"
-  SKODA = "TMB"
-  SEAT = "VSS"
-  AUDI_EUROPE_MPV = "WA1"
-  AUDI_GERMANY_CAR = "WAU"
-  MAN = "WMA"
-  AUDI_SPORT = "WUA"
-  VOLKSWAGEN_COMMERCIAL = "WV1"
-  VOLKSWAGEN_COMMERCIAL_BUS_VAN = "WV2"
-  VOLKSWAGEN_EUROPE_SUV = "WVG"
-  VOLKSWAGEN_EUROPE_CAR = "WVW"
-  VOLKSWAGEN_GROUP_RUS = "XW8"
 
 
 # Check the 7th and 8th characters of the VIN before adding a new CAR. If the
