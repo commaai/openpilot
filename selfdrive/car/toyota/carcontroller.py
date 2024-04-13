@@ -107,7 +107,7 @@ class CarController(CarControllerBase):
     # but also remove undesirable "snap to standstill" behavior when not requesting enough accel at low speeds,
     # lag to start moving, lag to start braking, etc.
     # PI should compensate for lack of the desirable behaviors, but might be worse than the PCM doing them
-    self.pcm_accel_comp = clip(actuators.accel - CS.pcm_accel_net, self.pcm_accel_comp - 0.02, self.pcm_accel_comp + 0.02)
+    self.pcm_accel_comp = clip(actuators.accel - CS.pcm_accel_net, self.pcm_accel_comp - 0.01, self.pcm_accel_comp + 0.01)
     pcm_accel_cmd = actuators.accel + self.pcm_accel_comp
 
     # add back gas to maintain speed
