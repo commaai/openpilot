@@ -458,7 +458,6 @@ def match_fw_to_car_fuzzy(live_fw_versions, vin, offline_fw_versions) -> set[str
 # TODO: do we want to check camera when we add its FW?
 CHECK_FUZZY_ECUS = {Ecu.fwdRadar}
 
-
 # All supported cars should return FW from the engine, srs, eps, and fwdRadar. Cars
 # with a manual trans won't return transmission firmware, but all other cars will.
 #
