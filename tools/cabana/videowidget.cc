@@ -257,13 +257,13 @@ void Slider::setTimeRange(double min, double max) {
 void Slider::parseQLog(int segnum, std::shared_ptr<LogReader> qlog) {
  const auto &segments = qobject_cast<ReplayStream *>(can)->route()->segments();
   if (segments.size() > 0 && segnum == segments.rbegin()->first && !qlog->events.empty()) {
-    emit updateMaximumTime(qlog->events.back()->mono_time / 1e9 - can->routeStartTime());
+    emit updateMaximumTime(qlog->events.back().mono_time / 1e9 - can->routeStartTime());
   }
 
   std::mutex mutex;
-  QtConcurrent::blockingMap(qlog->events.cbegin(), qlog->events.cend(), [&mutex, this](const Event *e) {
-    if (e->which == cereal::Event::Which::THUMBNAIL) {
-      capnp::FlatArrayMessageReader reader(e->data);
+  QtConcurrent::blockingMap(qlog->events.cbegin(), qlog->events.cend(), [&mutex, this](const Event &e) {
+    if (e.which == cereal::Event::Which::THUMBNAIL) {
+      capnp::FlatArrayMessageReader reader(e.data);
       auto thumb = reader.getRoot<cereal::Event>().getThumbnail();
       auto data = thumb.getThumbnail();
       if (QPixmap pm; pm.loadFromData(data.begin(), data.size(), "jpeg")) {
@@ -271,13 +271,13 @@ void Slider::parseQLog(int segnum, std::shared_ptr<LogReader> qlog) {
         std::lock_guard lk(mutex);
         thumbnails[thumb.getTimestampEof()] = scaled;
       }
-    } else if (e->which == cereal::Event::Which::CONTROLS_STATE) {
-      capnp::FlatArrayMessageReader reader(e->data);
+    } else if (e.which == cereal::Event::Which::CONTROLS_STATE) {
+      capnp::FlatArrayMessageReader reader(e.data);
       auto cs = reader.getRoot<cereal::Event>().getControlsState();
       if (cs.getAlertType().size() > 0 && cs.getAlertText1().size() > 0 &&
           cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE) {
         std::lock_guard lk(mutex);
-        alerts.emplace(e->mono_time, AlertInfo{cs.getAlertStatus(), cs.getAlertText1().cStr(), cs.getAlertText2().cStr()});
+        alerts.emplace(e.mono_time, AlertInfo{cs.getAlertStatus(), cs.getAlertText1().cStr(), cs.getAlertText2().cStr()});
       }
     }
   });
