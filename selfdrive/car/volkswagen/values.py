@@ -366,13 +366,13 @@ VOLKSWAGEN_RX_OFFSET = 0x6a
 # TODO: determine the unknown groups
 SPARE_PART_FW_PATTERN = re.compile(b'\xf1\x87(?P<gateway>[0-9][0-9A-Z]{2})(?P<unknown>[0-9][0-9A-Z][0-9])(?P<unknown2>[0-9A-Z]{2}[0-9])([A-Z0-9]| )')
 
-
-def get_volkswagen_requests(bus: int, obd_multiplexing: bool = True, whitelist: tuple = ()) -> list:
-  return [
+FW_QUERY_CONFIG = FwQueryConfig(
+  # TODO: add back whitelists after we gather enough data
+  requests=[request for bus, obd_multiplexing in [(1, True), (1, False), (0, False)] for request in [
     Request(
       [VOLKSWAGEN_VERSION_REQUEST_MULTI],
       [VOLKSWAGEN_VERSION_RESPONSE],
-      whitelist_ecus=[ecu for ecu in [Ecu.srs, Ecu.eps, Ecu.fwdRadar, Ecu.fwdCamera] if ecu in whitelist or not len(whitelist)],
+      whitelist_ecus=[Ecu.srs, Ecu.eps, Ecu.fwdRadar, Ecu.fwdCamera],
       rx_offset=VOLKSWAGEN_RX_OFFSET,
       bus=bus,
       logging=(bus != 1 or not obd_multiplexing),
@@ -381,19 +381,12 @@ def get_volkswagen_requests(bus: int, obd_multiplexing: bool = True, whitelist: 
     Request(
       [VOLKSWAGEN_VERSION_REQUEST_MULTI],
       [VOLKSWAGEN_VERSION_RESPONSE],
-      whitelist_ecus=[ecu for ecu in [Ecu.engine, Ecu.transmission] if ecu in whitelist or not len(whitelist)],
+      whitelist_ecus=[Ecu.engine, Ecu.transmission],
       bus=bus,
       logging=(bus != 1 or not obd_multiplexing),
       obd_multiplexing=obd_multiplexing,
     ),
-  ]
-
-
-FW_QUERY_CONFIG = FwQueryConfig(
-  # TODO: add back whitelists after we gather enough data
-  requests=(get_volkswagen_requests(1) +
-            get_volkswagen_requests(1, False, whitelist=(Ecu.srs, Ecu.engine, Ecu.transmission)) +
-            get_volkswagen_requests(0, whitelist=(Ecu.fwdRadar, Ecu.fwdCamera))),
+  ]],
   extra_ecus=[(Ecu.fwdCamera, 0x74f, None)],
 )
 
