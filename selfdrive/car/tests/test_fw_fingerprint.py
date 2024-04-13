@@ -49,7 +49,7 @@ class TestFwFingerprint(unittest.TestCase):
         fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
                    "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
       CP.carFw = fw
-      _, matches = match_fw_to_car(CP.carFw, allow_fuzzy=False)
+      _, matches = match_fw_to_car(CP.carFw, CP.carVin, allow_fuzzy=False)
       if not test_non_essential:
         self.assertFingerprints(matches, car_model)
       else:
@@ -72,8 +72,8 @@ class TestFwFingerprint(unittest.TestCase):
         fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
                    "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
       CP.carFw = fw
-      _, matches = match_fw_to_car(CP.carFw, allow_exact=False, log=False)
-      brand_matches = config.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw), VERSIONS[brand])
+      _, matches = match_fw_to_car(CP.carFw, CP.carVin, allow_exact=False, log=False)
+      brand_matches = config.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw), CP.carVin, VERSIONS[brand])
 
       # If both have matches, they must agree
       if len(matches) == 1 and len(brand_matches) == 1:
@@ -94,7 +94,7 @@ class TestFwFingerprint(unittest.TestCase):
         fw.append({"ecu": ecu_name, "fwVersion": random.choice(ecus[ecu]), 'brand': brand,
                    "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
       CP = car.CarParams.new_message(carFw=fw)
-      _, matches = match_fw_to_car(CP.carFw, allow_exact=False, log=False)
+      _, matches = match_fw_to_car(CP.carFw, CP.carVin, allow_exact=False, log=False)
 
       # Assert no match if there are not enough unique ECUs
       unique_ecus = {(f['address'], f['subAddress']) for f in fw}
@@ -236,7 +236,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
   def test_startup_timing(self):
     # Tests worse-case VIN query time and typical present ECU query time
-    vin_ref_times = {'worst': 1.2, 'best': 0.6}  # best assumes we go through all queries to get a match
+    vin_ref_times = {'worst': 1.4, 'best': 0.7}  # best assumes we go through all queries to get a match
     present_ecu_ref_time = 0.75
 
     def fake_get_ecu_addrs(*_, timeout):

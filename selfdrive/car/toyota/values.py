@@ -415,7 +415,7 @@ def get_platform_codes(fw_versions: list[bytes]) -> dict[bytes, set[bytes]]:
   return dict(codes)
 
 
-def match_fw_to_car_fuzzy(live_fw_versions, offline_fw_versions) -> set[str]:
+def match_fw_to_car_fuzzy(live_fw_versions, vin, offline_fw_versions) -> set[str]:
   candidates = set()
 
   for candidate, fws in offline_fw_versions.items():

@@ -117,6 +117,7 @@ protected:
   std::condition_variable stream_cv_;
   std::atomic<bool> updating_events_ = false;
   std::atomic<int> current_segment_ = 0;
+  double seeking_to_seconds_ = -1;
   SegmentMap segments_;
   // the following variables must be protected with stream_lock_
   std::atomic<bool> exit_ = false;

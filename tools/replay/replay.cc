@@ -96,20 +96,26 @@ void Replay::updateEvents(const std::function<bool()> &lambda) {
 }
 
 void Replay::seekTo(double seconds, bool relative) {
-  seconds = relative ? seconds + currentSeconds() : seconds;
+  seeking_to_seconds_ = relative ? seconds + currentSeconds() : seconds;
+  seeking_to_seconds_ = std::max(double(0.0), seeking_to_seconds_);
+
   updateEvents([&]() {
-    seconds = std::max(double(0.0), seconds);
-    int seg = (int)seconds / 60;
-    if (segments_.find(seg) == segments_.end()) {
-      rWarning("can't seek to %d s segment %d is invalid", seconds, seg);
+    int target_segment = (int)seeking_to_seconds_ / 60;
+    if (segments_.count(target_segment) == 0) {
+      rWarning("can't seek to %d s segment %d is invalid", (int)seeking_to_seconds_, target_segment);
       return true;
     }
 
-    rInfo("seeking to %d s, segment %d", (int)seconds, seg);
-    current_segment_ = seg;
-    cur_mono_time_ = route_start_ts_ + seconds * 1e9;
-    emit seekedTo(seconds);
-    return isSegmentMerged(seg);
+    rInfo("seeking to %d s, segment %d", (int)seeking_to_seconds_, target_segment);
+    current_segment_ = target_segment;
+    cur_mono_time_ = route_start_ts_ + seeking_to_seconds_ * 1e9;
+    bool segment_merged = isSegmentMerged(target_segment);
+    if (segment_merged) {
+      emit seekedTo(seeking_to_seconds_);
+      // Reset seeking_to_seconds_ to indicate completion of seek
+      seeking_to_seconds_ = -1;
+    }
+    return segment_merged;
   });
   queueSegment();
 }
@@ -277,6 +283,18 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
 
     if (stream_thread_) {
       emit segmentsMerged();
+
+      // Check if seeking is in progress
+      if (seeking_to_seconds_ >= 0) {
+        int target_segment = int(seeking_to_seconds_ / 60);
+        auto segment_found = std::find(segments_need_merge.begin(), segments_need_merge.end(), target_segment);
+
+        // If the target segment is found, emit seekedTo signal and reset seeking_to_seconds_
+        if (segment_found != segments_need_merge.end()) {
+          emit seekedTo(seeking_to_seconds_);
+          seeking_to_seconds_ = -1;  // Reset seeking_to_seconds_ to indicate completion of seek
+        }
+      }
     }
     updateEvents([&]() {
       events_.swap(new_events_);
