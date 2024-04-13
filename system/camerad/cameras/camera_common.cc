@@ -156,8 +156,7 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setTargetGreyFraction(frame_data.target_grey_fraction);
   framed.setProcessingTime(frame_data.processing_time);
 
-  const float ev = c->cur_ev[frame_data.frame_id % 3];
-  const float perc = util::map_val(ev, c->ci->min_ev, c->ci->max_ev, 0.0f, 100.0f);
+  const float perc = util::map_val(c->exposure_params[frame_data.frame_id % AUTOEXPOSURE_DELAY].cur_ev, c->ci->min_ev, c->ci->max_ev, 0.0f, 100.0f);
   framed.setExposureValPercent(perc);
   framed.setSensor(c->ci->image_sensor);
 }

@@ -10,6 +10,16 @@
 #include "common/util.h"
 
 #define FRAME_BUF_COUNT 4
+#define AUTOEXPOSURE_DELAY 2 // 3?
+
+// params set on each frame and take effects on a later frame
+typedef struct ExposureParams {
+  int exposure_time;
+  int gain_idx;
+  bool dc_gain_enabled;
+  float analog_gain_frac;
+  float cur_ev;
+} ExposureParams;
 
 class CameraState {
 public:
@@ -19,14 +29,9 @@ public:
 
   std::mutex exp_lock;
 
-  int exposure_time;
-  bool dc_gain_enabled;
-  int dc_gain_weight;
-  int gain_idx;
-  float analog_gain_frac;
+  ExposureParams exposure_params[AUTOEXPOSURE_DELAY];
 
-  float cur_ev[3];
-  int cur_exp_t[3];
+  int dc_gain_weight;
   float best_ev_score;
   int new_exp_g;
   int new_exp_t;
