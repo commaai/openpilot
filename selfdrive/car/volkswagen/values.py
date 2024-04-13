@@ -448,7 +448,7 @@ def match_fw_to_car_fuzzy(live_fw_versions, vin, offline_fw_versions) -> set[str
     if valid_ecus != CHECK_FUZZY_ECUS:
       continue
 
-    if chassis_code in platform.config.chassis_codes and wmi in platform.config.wmis:
+    if wmi in platform.config.wmis and chassis_code in platform.config.chassis_codes:
       candidates.add(platform)
 
   return {str(c) for c in candidates}
