@@ -1,7 +1,6 @@
 from collections import namedtuple
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag
-import re
 
 from cereal import car
 from panda.python import uds
@@ -362,9 +361,6 @@ VOLKSWAGEN_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFI
 VOLKSWAGEN_VERSION_RESPONSE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER + 0x40])
 
 VOLKSWAGEN_RX_OFFSET = 0x6a
-
-# TODO: determine the unknown groups
-SPARE_PART_FW_PATTERN = re.compile(b'\xf1\x87(?P<gateway>[0-9][0-9A-Z]{2})(?P<unknown>[0-9][0-9A-Z][0-9])(?P<unknown2>[0-9A-Z]{2}[0-9])([A-Z0-9]| )')
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[request for bus, obd_multiplexing in [(1, True), (1, False), (0, False)] for request in [
