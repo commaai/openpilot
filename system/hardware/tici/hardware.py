@@ -468,8 +468,9 @@ class Tici(HardwareBase):
         # use sim slot
         'AT^SIMSWAP=1',
 
-        # configure ECM mode
-        'AT$QCPCFG=usbNet,1'
+        # ethernet config
+        'AT$QCPCFG=usbNet,0',
+        'AT$QCNETDEVCTL=3,1',
       ]
     else:
       cmds += [

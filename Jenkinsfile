@@ -26,6 +26,7 @@ export SOURCE_DIR=${env.SOURCE_DIR}
 export GIT_BRANCH=${env.GIT_BRANCH}
 export GIT_COMMIT=${env.GIT_COMMIT}
 export AZURE_TOKEN='${env.AZURE_TOKEN}'
+export AZURE_TOKEN_OPENPILOT_RELEASES='${env.AZURE_TOKEN_OPENPILOT_RELEASES}'
 export MAPBOX_TOKEN='${env.MAPBOX_TOKEN}'
 # only use 1 thread for tici tests since most require HIL
 export PYTEST_ADDOPTS="-n 0"
@@ -104,7 +105,7 @@ def pcStage(String stageName, Closure body) {
 
     checkout scm
 
-    def dockerArgs = "--user=batman -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/scons_cache:/tmp/scons_cache -e PYTHONPATH=${env.WORKSPACE} --cpus=8 --memory 16g -e PYTEST_ADDOPTS='-n8'";
+    def dockerArgs = "--user=batman -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/scons_cache:/tmp/scons_cache -e PYTHONPATH=${env.WORKSPACE} -e AZURE_TOKEN_OPENPILOT_RELEASES='${env.AZURE_TOKEN_OPENPILOT_RELEASES}' --cpus=8 --memory 16g -e PYTEST_ADDOPTS='-n8'";
 
     def openpilot_base = retryWithDelay (3, 15) {
       return docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .")
@@ -112,7 +113,7 @@ def pcStage(String stageName, Closure body) {
 
     lock(resource: "", label: 'pc', inversePrecedence: true, quantity: 1) {
       openpilot_base.inside(dockerArgs) {
-        timeout(time: 20, unit: 'MINUTES') {
+        timeout(time: 25, unit: 'MINUTES') {
           try {
             retryWithDelay (3, 15) {
               sh "git config --global --add safe.directory '*'"
@@ -134,11 +135,37 @@ def pcStage(String stageName, Closure body) {
 def setupCredentials() {
   withCredentials([
     string(credentialsId: 'azure_token', variable: 'AZURE_TOKEN'),
+    string(credentialsId: 'azure_token_openpilot_releases', variable: 'AZURE_TOKEN_OPENPILOT_RELEASES'),
     string(credentialsId: 'mapbox_token', variable: 'MAPBOX_TOKEN')
   ]) {
     env.AZURE_TOKEN = "${AZURE_TOKEN}"
+    env.AZURE_TOKEN_OPENPILOT_RELEASES = "${AZURE_TOKEN_OPENPILOT_RELEASES}"
     env.MAPBOX_TOKEN = "${MAPBOX_TOKEN}"
   }
+}
+
+
+def build_release(String channel_name) {
+  return parallel (
+    "${channel_name} (git)": {
+      deviceStage("build git", "tici-needs-can", [], [
+        ["build ${channel_name}", "RELEASE_BRANCH=${channel_name} $SOURCE_DIR/release/build_release.sh"],
+      ])
+    },
+    "${channel_name} (casync)": {
+      deviceStage("build casync", "tici-needs-can", [], [
+        ["build ${channel_name}", "RELEASE=1 OPENPILOT_CHANNEL=${channel_name} BUILD_DIR=/data/openpilot CASYNC_DIR=/data/casync/openpilot $SOURCE_DIR/release/create_casync_build.sh"],
+        ["create manifest", "$SOURCE_DIR/release/create_release_manifest.py /data/openpilot /data/manifest.json && cat /data/manifest.json"],
+        ["upload and cleanup ${channel_name}", "PYTHONWARNINGS=ignore $SOURCE_DIR/release/upload_casync_release.py /data/casync && rm -rf /data/casync"],
+      ])
+    },
+    "publish agnos": {
+      pcStage("publish agnos") {
+        sh "release/create_casync_agnos_release.py /tmp/casync/agnos /tmp/casync_tmp"
+        sh "PYTHONWARNINGS=ignore ${env.WORKSPACE}/release/upload_casync_release.py /tmp/casync"
+      }
+    }
+  )
 }
 
 
@@ -164,15 +191,11 @@ node {
 
   try {
     if (env.BRANCH_NAME == 'devel-staging') {
-      deviceStage("build release3-staging", "tici-needs-can", [], [
-        ["build release3-staging", "RELEASE_BRANCH=release3-staging $SOURCE_DIR/release/build_release.sh"],
-      ])
+      build_release("release3-staging")
     }
 
     if (env.BRANCH_NAME == 'master-ci') {
-      deviceStage("build nightly", "tici-needs-can", [], [
-        ["build nightly", "RELEASE_BRANCH=nightly $SOURCE_DIR/release/build_release.sh"],
-      ])
+      build_release("nightly")
     }
 
     if (!env.BRANCH_NAME.matches(excludeRegex)) {
@@ -194,7 +217,7 @@ node {
           ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
           ["test power draw", "pytest -s system/hardware/tici/tests/test_power_draw.py"],
           ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py"],
-          ["test pigeond", "pytest system/sensord/tests/test_pigeond.py"],
+          ["test pigeond", "pytest system/ubloxd/tests/test_pigeond.py"],
           ["test manager", "pytest selfdrive/manager/test/test_manager.py"],
         ])
       },

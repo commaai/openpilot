@@ -8,7 +8,7 @@
 
 float3 color_correct(float3 rgb) {
   // color correction
-  #if IS_OX
+  #if IS_OX | IS_OS
   float3 x = rgb.x * (float3)(1.5664815 , -0.29808738, -0.03973474);
   x += rgb.y * (float3)(-0.48672447,  1.41914433, -0.40295248);
   x += rgb.z * (float3)(-0.07975703, -0.12105695,  1.44268722);
@@ -20,6 +20,8 @@ float3 color_correct(float3 rgb) {
 
   #if IS_OX
   return -0.507089*exp(-12.54124638*x)+0.9655*powr(x,0.5)-0.472597*x+0.507089;
+  #elif IS_OS
+  return powr(x,0.7);
   #else
   // tone mapping params
   const float gamma_k = 0.75;
@@ -35,6 +37,9 @@ float3 color_correct(float3 rgb) {
 }
 
 float get_vignetting_s(float r) {
+  #if IS_OS
+    r = r / 2.2545f;
+  #endif
   if (r < 62500) {
     return (1.0f + 0.0000008f*r);
   } else if (r < 490000) {
@@ -85,6 +90,24 @@ float4 val4_from_12(uchar8 pvs, float gain) {
 
 }
 
+float4 val4_from_10(uchar8 pvs, uchar ext, bool aligned, float gain) {
+  uint4 parsed;
+  if (aligned) {
+    parsed = (uint4)(((uint)pvs.s0 << 2) + (pvs.s1 & 0b00000011),
+                     ((uint)pvs.s2 << 2) + ((pvs.s6 & 0b11000000) / 64),
+                     ((uint)pvs.s3 << 2) + ((pvs.s6 & 0b00110000) / 16),
+                     ((uint)pvs.s4 << 2) + ((pvs.s6 & 0b00001100) / 4));
+  } else {
+    parsed = (uint4)(((uint)pvs.s0 << 2) + ((pvs.s3 & 0b00110000) / 16),
+                     ((uint)pvs.s1 << 2) + ((pvs.s3 & 0b00001100) / 4),
+                     ((uint)pvs.s2 << 2) + ((pvs.s3 & 0b00000011)),
+                     ((uint)pvs.s4 << 2) + ((ext & 0b11000000) / 64));
+  }
+
+  float4 pv = convert_float4(parsed) / 1024.0;
+  return clamp(pv*gain, 0.0, 1.0);
+}
+
 float get_k(float a, float b, float c, float d) {
   return 2.0 - (fabs(a - b) + fabs(c - d));
 }
@@ -94,20 +117,51 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
   const int gid_x = get_global_id(0);
   const int gid_y = get_global_id(1);
 
-  const int y_top_mod = (gid_y == 0) ? 2: 0;
-  const int y_bot_mod = (gid_y == (RGB_HEIGHT/2 - 1)) ? 1: 3;
+  const int row_before_offset = (gid_y == 0) ? 2 : 0;
+  const int row_after_offset = (gid_y == (RGB_HEIGHT/2 - 1)) ? 1 : 3;
 
   float3 rgb;
   uchar3 rgb_out[4];
 
-  int start = (2 * gid_y - 1) * FRAME_STRIDE + (3 * gid_x - 2) + (FRAME_STRIDE * FRAME_OFFSET);
+  #if IS_BGGR
+    constant int row_read_order[] = {3, 2, 1, 0};
+    constant int rgb_write_order[] = {2, 3, 0, 1};
+  #else
+    constant int row_read_order[] = {0, 1, 2, 3};
+    constant int rgb_write_order[] = {0, 1, 2, 3};
+  #endif
+
+  int start_idx;
+  #if IS_10BIT
+    bool aligned10;
+    if (gid_x % 2 == 0) {
+      aligned10 = true;
+      start_idx = (2 * gid_y - 1) * FRAME_STRIDE + (5 * gid_x / 2 - 2) + (FRAME_STRIDE * FRAME_OFFSET);
+    } else {
+      aligned10 = false;
+      start_idx = (2 * gid_y - 1) * FRAME_STRIDE + (5 * (gid_x - 1) / 2 + 1) + (FRAME_STRIDE * FRAME_OFFSET);
+    }
+  #else
+    start_idx = (2 * gid_y - 1) * FRAME_STRIDE + (3 * gid_x - 2) + (FRAME_STRIDE * FRAME_OFFSET);
+  #endif
 
   // read in 8x4 chars
   uchar8 dat[4];
-  dat[0] = vload8(0, in + start + FRAME_STRIDE*y_top_mod);
-  dat[1] = vload8(0, in + start + FRAME_STRIDE*1);
-  dat[2] = vload8(0, in + start + FRAME_STRIDE*2);
-  dat[3] = vload8(0, in + start + FRAME_STRIDE*y_bot_mod);
+  dat[0] = vload8(0, in + start_idx + FRAME_STRIDE*row_before_offset);
+  dat[1] = vload8(0, in + start_idx + FRAME_STRIDE*1);
+  dat[2] = vload8(0, in + start_idx + FRAME_STRIDE*2);
+  dat[3] = vload8(0, in + start_idx + FRAME_STRIDE*row_after_offset);
+
+  // need extra bit for 10-bit
+  #if IS_10BIT
+    uchar extra[4];
+    if (!aligned10) {
+      extra[0] = in[start_idx + FRAME_STRIDE*row_before_offset + 8];
+      extra[1] = in[start_idx + FRAME_STRIDE*1 + 8];
+      extra[2] = in[start_idx + FRAME_STRIDE*2 + 8];
+      extra[3] = in[start_idx + FRAME_STRIDE*row_after_offset + 8];
+		}
+  #endif
 
   // correct vignetting
   #if VIGNETTING
@@ -118,60 +172,69 @@ __kernel void debayer10(const __global uchar * in, __global uchar * out)
     const float gain = 1.0;
   #endif
 
-  // process them to floats
-  float4 va = val4_from_12(dat[0], gain);
-  float4 vb = val4_from_12(dat[1], gain);
-  float4 vc = val4_from_12(dat[2], gain);
-  float4 vd = val4_from_12(dat[3], gain);
+  float4 v_rows[4];
+  // parse into floats
+  #if IS_10BIT
+    v_rows[row_read_order[0]] = val4_from_10(dat[0], extra[0], aligned10, 1.0);
+    v_rows[row_read_order[1]] = val4_from_10(dat[1], extra[1], aligned10, 1.0);
+    v_rows[row_read_order[2]] = val4_from_10(dat[2], extra[2], aligned10, 1.0);
+    v_rows[row_read_order[3]] = val4_from_10(dat[3], extra[3], aligned10, 1.0);
+  #else
+    v_rows[row_read_order[0]] = val4_from_12(dat[0], gain);
+    v_rows[row_read_order[1]] = val4_from_12(dat[1], gain);
+    v_rows[row_read_order[2]] = val4_from_12(dat[2], gain);
+    v_rows[row_read_order[3]] = val4_from_12(dat[3], gain);
+  #endif
 
+  // mirror padding
   if (gid_x == 0) {
-    va.s0 = va.s2;
-    vb.s0 = vb.s2;
-    vc.s0 = vc.s2;
-    vd.s0 = vd.s2;
+    v_rows[0].s0 = v_rows[0].s2;
+    v_rows[1].s0 = v_rows[1].s2;
+    v_rows[2].s0 = v_rows[2].s2;
+    v_rows[3].s0 = v_rows[3].s2;
   } else if (gid_x == RGB_WIDTH/2 - 1) {
-    va.s3 = va.s1;
-    vb.s3 = vb.s1;
-    vc.s3 = vc.s1;
-    vd.s3 = vd.s1;
+    v_rows[0].s3 = v_rows[0].s1;
+    v_rows[1].s3 = v_rows[1].s1;
+    v_rows[2].s3 = v_rows[2].s1;
+    v_rows[3].s3 = v_rows[3].s1;
   }
 
   // a simplified version of https://opensignalprocessingjournal.com/contents/volumes/V6/TOSIGPJ-6-1/TOSIGPJ-6-1.pdf
-  const float k01 = get_k(va.s0, vb.s1, va.s2, vb.s1);
-  const float k02 = get_k(va.s2, vb.s1, vc.s2, vb.s1);
-  const float k03 = get_k(vc.s0, vb.s1, vc.s2, vb.s1);
-  const float k04 = get_k(va.s0, vb.s1, vc.s0, vb.s1);
-  rgb.x = (k02*vb.s2+k04*vb.s0)/(k02+k04); // R_G1
-  rgb.y = vb.s1; // G1(R)
-  rgb.z = (k01*va.s1+k03*vc.s1)/(k01+k03); // B_G1
-  rgb_out[0] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
+  const float k01 = get_k(v_rows[0].s0, v_rows[1].s1, v_rows[0].s2, v_rows[1].s1);
+  const float k02 = get_k(v_rows[0].s2, v_rows[1].s1, v_rows[2].s2, v_rows[1].s1);
+  const float k03 = get_k(v_rows[2].s0, v_rows[1].s1, v_rows[2].s2, v_rows[1].s1);
+  const float k04 = get_k(v_rows[0].s0, v_rows[1].s1, v_rows[2].s0, v_rows[1].s1);
+  rgb.x = (k02*v_rows[1].s2+k04*v_rows[1].s0)/(k02+k04); // R_G1
+  rgb.y = v_rows[1].s1; // G1(R)
+  rgb.z = (k01*v_rows[0].s1+k03*v_rows[2].s1)/(k01+k03); // B_G1
+  rgb_out[rgb_write_order[0]] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
 
-  const float k11 = get_k(va.s1, vc.s1, va.s3, vc.s3);
-  const float k12 = get_k(va.s2, vb.s1, vb.s3, vc.s2);
-  const float k13 = get_k(va.s1, va.s3, vc.s1, vc.s3);
-  const float k14 = get_k(va.s2, vb.s3, vc.s2, vb.s1);
-  rgb.x = vb.s2; // R
-  rgb.y = (k11*(va.s2+vc.s2)*0.5+k13*(vb.s3+vb.s1)*0.5)/(k11+k13); // G_R
-  rgb.z = (k12*(va.s3+vc.s1)*0.5+k14*(va.s1+vc.s3)*0.5)/(k12+k14); // B_R
-  rgb_out[1] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
+  const float k11 = get_k(v_rows[0].s1, v_rows[2].s1, v_rows[0].s3, v_rows[2].s3);
+  const float k12 = get_k(v_rows[0].s2, v_rows[1].s1, v_rows[1].s3, v_rows[2].s2);
+  const float k13 = get_k(v_rows[0].s1, v_rows[0].s3, v_rows[2].s1, v_rows[2].s3);
+  const float k14 = get_k(v_rows[0].s2, v_rows[1].s3, v_rows[2].s2, v_rows[1].s1);
+  rgb.x = v_rows[1].s2; // R
+  rgb.y = (k11*(v_rows[0].s2+v_rows[2].s2)*0.5+k13*(v_rows[1].s3+v_rows[1].s1)*0.5)/(k11+k13); // G_R
+  rgb.z = (k12*(v_rows[0].s3+v_rows[2].s1)*0.5+k14*(v_rows[0].s1+v_rows[2].s3)*0.5)/(k12+k14); // B_R
+  rgb_out[rgb_write_order[1]] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
 
-  const float k21 = get_k(vb.s0, vd.s0, vb.s2, vd.s2);
-  const float k22 = get_k(vb.s1, vc.s0, vc.s2, vd.s1);
-  const float k23 = get_k(vb.s0, vb.s2, vd.s0, vd.s2);
-  const float k24 = get_k(vb.s1, vc.s2, vd.s1, vc.s0);
-  rgb.x = (k22*(vb.s2+vd.s0)*0.5+k24*(vb.s0+vd.s2)*0.5)/(k22+k24); // R_B
-  rgb.y = (k21*(vb.s1+vd.s1)*0.5+k23*(vc.s2+vc.s0)*0.5)/(k21+k23); // G_B
-  rgb.z = vc.s1; // B
-  rgb_out[2] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
+  const float k21 = get_k(v_rows[1].s0, v_rows[3].s0, v_rows[1].s2, v_rows[3].s2);
+  const float k22 = get_k(v_rows[1].s1, v_rows[2].s0, v_rows[2].s2, v_rows[3].s1);
+  const float k23 = get_k(v_rows[1].s0, v_rows[1].s2, v_rows[3].s0, v_rows[3].s2);
+  const float k24 = get_k(v_rows[1].s1, v_rows[2].s2, v_rows[3].s1, v_rows[2].s0);
+  rgb.x = (k22*(v_rows[1].s2+v_rows[3].s0)*0.5+k24*(v_rows[1].s0+v_rows[3].s2)*0.5)/(k22+k24); // R_B
+  rgb.y = (k21*(v_rows[1].s1+v_rows[3].s1)*0.5+k23*(v_rows[2].s2+v_rows[2].s0)*0.5)/(k21+k23); // G_B
+  rgb.z = v_rows[2].s1; // B
+  rgb_out[rgb_write_order[2]] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
 
-  const float k31 = get_k(vb.s1, vc.s2, vb.s3, vc.s2);
-  const float k32 = get_k(vb.s3, vc.s2, vd.s3, vc.s2);
-  const float k33 = get_k(vd.s1, vc.s2, vd.s3, vc.s2);
-  const float k34 = get_k(vb.s1, vc.s2, vd.s1, vc.s2);
-  rgb.x = (k31*vb.s2+k33*vd.s2)/(k31+k33); // R_G2
-  rgb.y = vc.s2; // G2(B)
-  rgb.z = (k32*vc.s3+k34*vc.s1)/(k32+k34); // B_G2
-  rgb_out[3] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
+  const float k31 = get_k(v_rows[1].s1, v_rows[2].s2, v_rows[1].s3, v_rows[2].s2);
+  const float k32 = get_k(v_rows[1].s3, v_rows[2].s2, v_rows[3].s3, v_rows[2].s2);
+  const float k33 = get_k(v_rows[3].s1, v_rows[2].s2, v_rows[3].s3, v_rows[2].s2);
+  const float k34 = get_k(v_rows[1].s1, v_rows[2].s2, v_rows[3].s1, v_rows[2].s2);
+  rgb.x = (k31*v_rows[1].s2+k33*v_rows[3].s2)/(k31+k33); // R_G2
+  rgb.y = v_rows[2].s2; // G2(B)
+  rgb.z = (k32*v_rows[2].s3+k34*v_rows[2].s1)/(k32+k34); // B_G2
+  rgb_out[rgb_write_order[3]] = convert_uchar3_sat(color_correct(clamp(rgb, 0.0, 1.0)) * 255.0);
 
   // write ys
   uchar2 yy = (uchar2)(

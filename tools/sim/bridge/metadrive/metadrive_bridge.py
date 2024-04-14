@@ -1,3 +1,5 @@
+from multiprocessing import Queue
+
 from metadrive.component.sensors.base_camera import _cuda_enable
 from metadrive.component.map.pg_map import MapGenerateMethod
 
@@ -73,6 +75,7 @@ class MetaDriveBridge(SimulatorBridge):
       on_continuous_line_done=False,
       crash_vehicle_done=False,
       crash_object_done=False,
+      arrive_dest_done=False,
       traffic_density=0.0, # traffic is incredibly expensive
       map_config=create_map(),
       decision_repeat=1,
@@ -80,4 +83,4 @@ class MetaDriveBridge(SimulatorBridge):
       preload_models=False
     )
 
-    return MetaDriveWorld(config, self.dual_camera)
+    return MetaDriveWorld(Queue(), config, self.dual_camera)
