@@ -8,7 +8,7 @@ This directory contains two daemons, `navd` and `mapsd`, which support navigatio
 
 ### map renderer
 
-The map renderer listens for the `navRoute` and publishes a rendered map view over VisionIPC for the navigation model, which lives in `selfdrive/modeld/`. The rendered maps look like this:
+The map renderer listens for the `navRoute` and publishes a simplified rendered map view over VisionIPC. The rendered maps look like this:
 
 ![](https://i.imgur.com/oZLfmwq.png)
 

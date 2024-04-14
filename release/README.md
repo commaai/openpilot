@@ -3,7 +3,7 @@
 
 ## terms
 
-- `channel` - a named version of openpilot (git branch, casync caidx) which receives updates
+- `channel` - a named version of openpilot (git branch, casync caibx) which receives updates
 - `build` - a release which is already built for the comma 3/3x and contains only required files for running openpilot and identifying the release
 
 - `build_style` - type of build, either `debug` or `release`
@@ -28,8 +28,8 @@
 
 ```bash
 # run on a tici, within the directory you want to create the build from.
-# creates a prebuilt version of openpilot into BUILD_DIR and outputs the caidx
-# and other casync files into CASYNC_DIR for uploading to openpilot-releases.
+# creates a prebuilt version of openpilot into BUILD_DIR and outputs the caibx
+# of a tarball containing the full prebuilt openpilot release
 BUILD_DIR=/data/openpilot_build    \
 CASYNC_DIR=/data/casync            \
 OPENPILOT_CHANNEL=nightly          \

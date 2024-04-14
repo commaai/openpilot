@@ -94,7 +94,6 @@ typedef struct UIScene {
   float driver_pose_coss[3];
   vec3 face_kpts_draw[std::size(default_face_kpts_3d)];
 
-  bool navigate_on_openpilot = false;
   cereal::LongitudinalPersonality personality;
 
   float light_sensor;
