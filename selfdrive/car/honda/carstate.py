@@ -90,13 +90,13 @@ class CarState(CarStateBase):
     if CP.carFingerprint == CAR.HONDA_ACCORD and CP.transmissionType == TransmissionType.cvt:
       self.gearbox_msg = "GEARBOX_15T"
     elif CP.transmissionType == TransmissionType.manual:
-      self.gearbox_msg = "GEARBOX_MT"
+      self.gearbox_msg = "GEARBOX_BOH"
 
     self.main_on_sig_msg = "SCM_FEEDBACK"
     if CP.carFingerprint in HONDA_NIDEC_ALT_SCM_MESSAGES:
       self.main_on_sig_msg = "SCM_BUTTONS"
 
-    if CP.carFingerprint not in (CAR.ACURA_INTEGRA):
+    if CP.transmission != TransmissionType.manual:
         self.shifter_values = can_define.dv[self.gearbox_msg]["GEAR_SHIFTER"]
     self.steer_status_values = defaultdict(lambda: "UNKNOWN", can_define.dv["STEER_STATUS"]["STEER_STATUS"])
 
@@ -196,8 +196,8 @@ class CarState(CarStateBase):
       ret.parkingBrake = cp.vl["EPB_STATUS"]["EPB_STATE"] != 0
 
     if self.CP.transmissionType == TransmissionType.manual:
-      ret.clutchPressed = cp.vl["GEARBOX_MT"]["GEAR_MT"] == 0
-      if cp.vl["GEARBOX_MT"]["GEAR_MT"] == 14:
+      ret.clutchPressed = cp.vl["GEARBOX_BOH"]["GEAR_MT"] == 0
+      if cp.vl["GEARBOX_BOH"]["GEAR_MT"] == 14:
         ret.gearShifter = GearShifter.reverse
       else:
         ret.gearShifter = GearShifter.drive
