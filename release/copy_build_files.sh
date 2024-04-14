@@ -11,5 +11,5 @@ else
 fi
 
 cd $SOURCE_DIR
-cp -pR --parents $(cat release/files_common) $BUILD_DIR/
+cp -pR --parents $(cat release/files_common) $TARGET_DIR/
 cp -pR --parents $(cat $FILES_SRC) $TARGET_DIR/
