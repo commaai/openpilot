@@ -137,7 +137,6 @@ def get_build_metadata(path: str = BASEDIR) -> BuildMetadata:
 
   if build_metadata_path.exists():
     build_metadata = json.loads(build_metadata_path.read_text())
-    build_metadata["channel"] = Params().get("UpdaterTargetChannel", "unknown")
     return build_metadata_from_dict(build_metadata)
 
   git_folder = pathlib.Path(path) / ".git"
