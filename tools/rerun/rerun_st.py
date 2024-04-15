@@ -62,19 +62,27 @@ def log_nested(obj, parent_key=''):
 
 # Create a blueprint for selected topics
 def createBlueprint(topicsToGraph):
-  # print("Generating blueprint")
   timeSeriesViews = []
   for topic in topicsToGraph:
       timeSeriesViews.append(rrb.TimeSeriesView(name=topic, origin=f"/{topic}/"))
       rr.log(topic, rr.SeriesLine(name=topic), timeless=True)
-  blueprint = rrb.Blueprint(
-                          rrb.Vertical(
-                            *timeSeriesViews,
-                            rrb.SelectionPanel(expanded=False),
-                            rrb.TimePanel(expanded=False)))
+      blueprint = rrb.Blueprint(
+                              rrb.Grid(
+                                rrb.Vertical(
+                                  *timeSeriesViews,
+                                  rrb.SelectionPanel(expanded=False),
+                                  rrb.TimePanel(expanded=False)),
+                                rrb.Spatial2DView(name="thumbnail", origin="/thumbnail")))
   return blueprint
 
 
+def log_thumbnail(thumbnailJson):
+  bytesImgData = thumbnailJson.get("thumbnail").get("thumbnail").encode('latin1')
+  bytesImgData = bytes(bytesImgData)
+  rr.log("/thumbnail", rr.ImageEncoded(contents=bytesImgData))
+
+
+# Log data from rlog to rerun
 def process_log(log_path, topics_to_graph):
     rlog = LogReader(log_path)
     for msg in rlog:
@@ -87,6 +95,9 @@ def process_log(log_path, topics_to_graph):
             json_msg = json.loads(json.dumps(convertBytesToString(msg.to_dict())))
             rr.set_time_sequence(msg.which(), msg.logMonoTime)
             log_nested(json_msg)
+        elif msg.which() == "thumbnail":
+          json_msg = json.loads(json.dumps(convertBytesToString(msg.to_dict())))
+          log_thumbnail(json_msg)
 
 
 # Running in parallel ensures that multiple rr objects are initialized. This approach guarantees thread safety.
