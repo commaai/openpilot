@@ -6,7 +6,7 @@ VideoEncoder::VideoEncoder(const EncoderInfo &encoder_info, int in_width, int in
   out_width = encoder_info.frame_width > 0 ? encoder_info.frame_width : in_width;
   out_height = encoder_info.frame_height > 0 ? encoder_info.frame_height : in_height;
 
-  pm.reset(new PubMaster({encoder_info.publish_name}));
+  pm.reset(new PubMaster({encoder_info.publish_name, "thumbnail"}));
 }
 
 void VideoEncoder::publisher_publish(VideoEncoder *e, int segment_num, uint32_t idx, VisionIpcBufExtra &extra,
@@ -40,4 +40,19 @@ void VideoEncoder::publisher_publish(VideoEncoder *e, int segment_num, uint32_t 
   kj::ArrayOutputStream output_stream(kj::ArrayPtr<capnp::byte>(e->msg_cache.data(), bytes_size));
   capnp::writeMessage(output_stream, msg);
   e->pm->send(e->encoder_info.publish_name, e->msg_cache.data(), bytes_size);
+
+  // Publish thumbnail if keyframe and encoding type is QCAMERA_H264.
+  if ((flags & V4L2_BUF_FLAG_KEYFRAME) && e->encoder_info.encode_type == cereal::EncodeIndex::Type::QCAMERA_H264) {
+    publish_thumbnail(extra.frame_id, extra.timestamp_eof, dat);
+  }
+}
+
+void VideoEncoder::publish_thumbnail(uint32_t frame_id, uint64_t timestamp_eof, kj::ArrayPtr<capnp::byte> dat) {
+  MessageBuilder msg;
+  auto thumbnail = msg.initEvent().initThumbnail();
+  // thumbnail.setEncoding(cereal::Thumbnail::Encoding::IFRAME);
+  thumbnail.setFrameId(frame_id);
+  thumbnail.setTimestampEof(timestamp_eof);
+  thumbnail.setThumbnail(dat);
+  pm->send("thumbnail", msg);
 }
