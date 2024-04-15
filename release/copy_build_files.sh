@@ -6,8 +6,7 @@ TARGET_DIR=$2
 if [ -f /TICI ]; then
   FILES_SRC="release/files_tici"
 else
-  echo "no release files set"
-  exit 1
+  FILES_SRC="release/files_pc"
 fi
 
 cd $SOURCE_DIR
