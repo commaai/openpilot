@@ -127,12 +127,13 @@ kj::Array<capnp::word> UbloxMsgParser::gen_nav_pvt(ubx_t::nav_pvt_t *msg) {
   auto gpsLoc = msg_builder.initEvent().initGpsLocationExternal();
   gpsLoc.setSource(cereal::GpsLocationData::SensorSource::UBLOX);
   gpsLoc.setFlags(msg->flags());
+  gpsLoc.setHasFix((msg->flags() % 2) == 1);
   gpsLoc.setLatitude(msg->lat() * 1e-07);
   gpsLoc.setLongitude(msg->lon() * 1e-07);
   gpsLoc.setAltitude(msg->height() * 1e-03);
   gpsLoc.setSpeed(msg->g_speed() * 1e-03);
   gpsLoc.setBearingDeg(msg->head_mot() * 1e-5);
-  gpsLoc.setAccuracy(msg->h_acc() * 1e-03);
+  gpsLoc.setHorizontalAccuracy(msg->h_acc() * 1e-03);
   std::tm timeinfo = std::tm();
   timeinfo.tm_year = msg->year() - 1900;
   timeinfo.tm_mon = msg->month() - 1;

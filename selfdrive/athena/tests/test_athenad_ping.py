@@ -3,7 +3,7 @@ import subprocess
 import threading
 import time
 import unittest
-from typing import cast, Optional
+from typing import cast
 from unittest import mock
 
 from openpilot.common.params import Params
@@ -11,6 +11,8 @@ from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.athena import athenad
 from openpilot.selfdrive.manager.helpers import write_onroad_params
 from openpilot.system.hardware import TICI
+
+TIMEOUT_TOLERANCE = 20  # seconds
 
 
 def wifi_radio(on: bool) -> None:
@@ -27,8 +29,8 @@ class TestAthenadPing(unittest.TestCase):
   athenad: threading.Thread
   exit_event: threading.Event
 
-  def _get_ping_time(self) -> Optional[str]:
-    return cast(Optional[str], self.params.get("LastAthenaPingTime", encoding="utf-8"))
+  def _get_ping_time(self) -> str | None:
+    return cast(str | None, self.params.get("LastAthenaPingTime", encoding="utf-8"))
 
   def _clear_ping_time(self) -> None:
     self.params.remove("LastAthenaPingTime")
@@ -55,7 +57,7 @@ class TestAthenadPing(unittest.TestCase):
       self.exit_event.set()
       self.athenad.join()
 
-  @mock.patch('openpilot.selfdrive.athena.athenad.create_connection', autospec=True)
+  @mock.patch('openpilot.selfdrive.athena.athenad.create_connection', new_callable=lambda: mock.MagicMock(wraps=athenad.create_connection))
   def assertTimeout(self, reconnect_time: float, mock_create_connection: mock.MagicMock) -> None:
     self.athenad.start()
 
@@ -63,7 +65,7 @@ class TestAthenadPing(unittest.TestCase):
     mock_create_connection.assert_called_once()
     mock_create_connection.reset_mock()
 
-    # check normal behaviour
+    # check normal behaviour, server pings on connection
     with self.subTest("Wi-Fi: receives ping"), Timeout(70, "no ping received"):
       while not self._received_ping():
         time.sleep(0.1)
@@ -92,12 +94,12 @@ class TestAthenadPing(unittest.TestCase):
   @unittest.skipIf(not TICI, "only run on desk")
   def test_offroad(self) -> None:
     write_onroad_params(False, self.params)
-    self.assertTimeout(100)  # expect approx 90s
+    self.assertTimeout(60 + TIMEOUT_TOLERANCE)  # based using TCP keepalive settings
 
   @unittest.skipIf(not TICI, "only run on desk")
   def test_onroad(self) -> None:
     write_onroad_params(True, self.params)
-    self.assertTimeout(30)  # expect 20-30s
+    self.assertTimeout(21 + TIMEOUT_TOLERANCE)
 
 
 if __name__ == "__main__":

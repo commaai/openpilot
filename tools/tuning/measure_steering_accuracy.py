@@ -47,7 +47,7 @@ class SteeringAccuracyTool:
 
     v_ego = sm['carState'].vEgo
     active = sm['controlsState'].active
-    steer = sm['carControl'].actuatorsOutput.steer
+    steer = sm['carOutput'].actuatorsOutput.steer
     standstill = sm['carState'].standstill
     steer_limited = abs(sm['carControl'].actuators.steer - sm['carControl'].actuatorsOutput.steer) > 1e-2
     overriding = sm['carState'].steeringPressed
@@ -150,7 +150,7 @@ if __name__ == "__main__":
       messaging.context = messaging.Context()
 
     carControl = messaging.sub_sock('carControl', addr=args.addr, conflate=True)
-    sm = messaging.SubMaster(['carState', 'carControl', 'controlsState', 'modelV2'], addr=args.addr)
+    sm = messaging.SubMaster(['carState', 'carControl', 'carOutput', 'controlsState', 'modelV2'], addr=args.addr)
     time.sleep(1)  # Make sure all submaster data is available before going further
 
     print("waiting for messages...")

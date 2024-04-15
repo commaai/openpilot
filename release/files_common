@@ -23,6 +23,7 @@ common/.gitignore
 common/__init__.py
 common/*.py
 common/*.pyx
+common/mock/*
 
 common/transformations/__init__.py
 common/transformations/camera.py
@@ -52,12 +53,15 @@ tools/replay/*.h
 selfdrive/__init__.py
 selfdrive/sentry.py
 selfdrive/tombstoned.py
-selfdrive/updated.py
 selfdrive/statsd.py
+
+selfdrive/updated/**
 
 system/logmessaged.py
 system/micd.py
 system/version.py
+
+selfdrive/SConscript
 
 selfdrive/athena/__init__.py
 selfdrive/athena/athenad.py
@@ -78,15 +82,16 @@ selfdrive/boardd/panda.h
 selfdrive/boardd/spi.cc
 selfdrive/boardd/panda_comms.h
 selfdrive/boardd/panda_comms.cc
-selfdrive/boardd/set_time.py
 selfdrive/boardd/pandad.py
 selfdrive/boardd/tests/test_boardd_loopback.py
 
 selfdrive/car/__init__.py
+selfdrive/car/card.py
 selfdrive/car/docs_definitions.py
 selfdrive/car/car_helpers.py
 selfdrive/car/fingerprints.py
 selfdrive/car/interfaces.py
+selfdrive/car/values.py
 selfdrive/car/vin.py
 selfdrive/car/disable_ecu.py
 selfdrive/car/fw_versions.py
@@ -165,7 +170,6 @@ system/hardware/tici/hardware.h
 system/hardware/tici/hardware.py
 system/hardware/tici/pins.py
 system/hardware/tici/agnos.py
-system/hardware/tici/casync.py
 system/hardware/tici/agnos.json
 system/hardware/tici/amplifier.py
 system/hardware/tici/updater
@@ -177,9 +181,12 @@ system/hardware/pc/hardware.py
 
 system/ubloxd/.gitignore
 system/ubloxd/SConscript
+system/ubloxd/pigeond.py
 system/ubloxd/generated/*
 system/ubloxd/*.h
 system/ubloxd/*.cc
+
+system/updated/*
 
 selfdrive/locationd/__init__.py
 selfdrive/locationd/SConscript
@@ -236,7 +243,6 @@ system/sensord/SConscript
 system/sensord/sensors_qcom2.cc
 system/sensord/sensors/*.cc
 system/sensord/sensors/*.h
-system/sensord/pigeond.py
 
 system/webrtc/__init__.py
 system/webrtc/webrtcd.py
@@ -274,6 +280,8 @@ selfdrive/ui/qt/network/*.h
 selfdrive/ui/qt/offroad/*.cc
 selfdrive/ui/qt/offroad/*.h
 selfdrive/ui/qt/offroad/*.qml
+selfdrive/ui/qt/onroad/*.cc
+selfdrive/ui/qt/onroad/*.h
 selfdrive/ui/qt/widgets/*.cc
 selfdrive/ui/qt/widgets/*.h
 selfdrive/ui/qt/maps/*.cc
@@ -310,7 +318,6 @@ selfdrive/modeld/modeld.py
 selfdrive/modeld/parse_model_outputs.py
 selfdrive/modeld/fill_model_msg.py
 selfdrive/modeld/get_model_metadata.py
-selfdrive/modeld/navmodeld.py
 selfdrive/modeld/dmonitoringmodeld.py
 selfdrive/modeld/constants.py
 selfdrive/modeld/modeld
@@ -325,8 +332,6 @@ selfdrive/modeld/models/commonmodel.h
 selfdrive/modeld/models/supercombo.onnx
 
 selfdrive/modeld/models/dmonitoring_model_q.dlc
-
-selfdrive/modeld/models/navmodel_q.dlc
 
 selfdrive/modeld/transforms/loadyuv.cc
 selfdrive/modeld/transforms/loadyuv.h
@@ -536,7 +541,8 @@ opendbc/vw_golf_mk4.dbc
 opendbc/vw_mqb_2010.dbc
 
 opendbc/tesla_can.dbc
-opendbc/tesla_radar.dbc
+opendbc/tesla_radar_bosch_generated.dbc
+opendbc/tesla_radar_continental_generated.dbc
 opendbc/tesla_powertrain.dbc
 
 tinygrad_repo/openpilot/compile2.py

@@ -88,18 +88,24 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
 
   const auto &bytes = *static_cast<std::vector<uint8_t>*>(data.value<void*>());
   const auto &colors = *static_cast<std::vector<QColor>*>(index.data(ColorsRole).value<void*>());
+  auto text_color = index.data(Qt::ForegroundRole).value<QColor>();
+  bool inactive = text_color.isValid();
+  if (!inactive) {
+    text_color = option.palette.color(QPalette::Text);
+  }
+
   for (int i = 0; i < bytes.size(); ++i) {
     int row = !multiple_lines ? 0 : i / 8;
     int column = !multiple_lines ? i : i % 8;
     QRect r = QRect({pt.x() + column * byte_size.width(), pt.y() + row * byte_size.height()}, byte_size);
-    if (i < colors.size() && colors[i].alpha() > 0) {
+    if (!inactive && i < colors.size() && colors[i].alpha() > 0) {
       if (option.state & QStyle::State_Selected) {
         painter->setPen(option.palette.color(QPalette::Text));
         painter->fillRect(r, option.palette.color(QPalette::Window));
       }
       painter->fillRect(r, colors[i]);
-    } else if (option.state & QStyle::State_Selected) {
-      painter->setPen(option.palette.color(QPalette::HighlightedText));
+    } else {
+      painter->setPen(option.state & QStyle::State_Selected ? option.palette.color(QPalette::HighlightedText) : text_color);
     }
     utils::drawStaticText(painter, r, hex_text_table[bytes[i]]);
   }

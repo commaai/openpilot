@@ -3,7 +3,6 @@ import time
 from cereal import log
 import cereal.messaging as messaging
 
-from openpilot.common.params import Params
 from openpilot.common.realtime import DT_DMON
 from openpilot.tools.sim.lib.camerad import Camerad
 
@@ -56,7 +55,7 @@ class SimulatedSensors:
       dat.gpsLocationExternal = {
         "unixTimestampMillis": int(time.time() * 1000),
         "flags": 1,  # valid fix
-        "accuracy": 1.0,
+        "horizontalAccuracy": 1.0,
         "verticalAccuracy": 1.0,
         "speedAccuracy": 0.1,
         "bearingAccuracyDeg": 0.1,
@@ -80,7 +79,6 @@ class SimulatedSensors:
       'current': 5678,
       'fanSpeedRpm': 1000
     }
-    Params().put_bool("ObdMultiplexingEnabled", False)
     self.pm.send('peripheralState', dat)
 
   def send_fake_driver_monitoring(self):

@@ -3,7 +3,6 @@ from collections import defaultdict
 import importlib
 from parameterized import parameterized_class
 import sys
-from typing import DefaultDict, Dict
 import unittest
 
 from openpilot.common.realtime import DT_CTRL
@@ -25,11 +24,11 @@ JERK_MEAS_T = 0.5
 
 # TODO: put these cars within limits
 ABOVE_LIMITS_CARS = [
-  SUBARU.LEGACY,
-  SUBARU.OUTBACK,
+  SUBARU.SUBARU_LEGACY,
+  SUBARU.SUBARU_OUTBACK,
 ]
 
-car_model_jerks: DefaultDict[str, Dict[str, float]] = defaultdict(dict)
+car_model_jerks: defaultdict[str, dict[str, float]] = defaultdict(dict)
 
 
 @parameterized_class('car_model', [(c,) for c in sorted(CAR_MODELS)])

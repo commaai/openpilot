@@ -3,7 +3,6 @@ import argparse
 import collections
 import multiprocessing
 import os
-from typing import Dict, List
 
 import requests
 from tqdm import tqdm
@@ -42,7 +41,7 @@ if __name__ == "__main__":
     szs = list(tqdm(pool.imap(get_chunk_download_size, to), total=len(to)))
   chunk_sizes = {t.sha: sz for (t, sz) in zip(to, szs, strict=True)}
 
-  sources: Dict[str, List[int]] = {
+  sources: dict[str, list[int]] = {
     'seed': [],
     'remote_uncompressed': [],
     'remote_compressed': [],

@@ -1,11 +1,15 @@
 # functions common among cars
-from collections import namedtuple
-from typing import Dict, List, Optional
+from collections import defaultdict, namedtuple
+from dataclasses import dataclass
+from enum import IntFlag, ReprEnum, EnumType
+from dataclasses import replace
 
 import capnp
 
 from cereal import car
 from openpilot.common.numpy_fast import clip, interp
+from openpilot.common.utils import Freezable
+from openpilot.selfdrive.car.docs_definitions import CarDocs
 
 
 # kg of standard extra cargo to count for drive, gas, etc...
@@ -24,9 +28,9 @@ def apply_hysteresis(val: float, val_steady: float, hyst_gap: float) -> float:
   return val_steady
 
 
-def create_button_events(cur_btn: int, prev_btn: int, buttons_dict: Dict[int, capnp.lib.capnp._EnumModule],
-                         unpressed_btn: int = 0) -> List[capnp.lib.capnp._DynamicStructBuilder]:
-  events: List[capnp.lib.capnp._DynamicStructBuilder] = []
+def create_button_events(cur_btn: int, prev_btn: int, buttons_dict: dict[int, capnp.lib.capnp._EnumModule],
+                         unpressed_btn: int = 0) -> list[capnp.lib.capnp._DynamicStructBuilder]:
+  events: list[capnp.lib.capnp._DynamicStructBuilder] = []
 
   if cur_btn == prev_btn:
     return events
@@ -73,7 +77,10 @@ def scale_tire_stiffness(mass, wheelbase, center_to_front, tire_stiffness_factor
   return tire_stiffness_front, tire_stiffness_rear
 
 
-def dbc_dict(pt_dbc, radar_dbc, chassis_dbc=None, body_dbc=None) -> Dict[str, str]:
+DbcDict = dict[str, str]
+
+
+def dbc_dict(pt_dbc, radar_dbc, chassis_dbc=None, body_dbc=None) -> DbcDict:
   return {'pt': pt_dbc, 'radar': radar_dbc, 'chassis': chassis_dbc, 'body': body_dbc}
 
 
@@ -158,41 +165,6 @@ def common_fault_avoidance(fault_condition: bool, request: bool, above_limit_fra
   return above_limit_frames, request
 
 
-def crc8_pedal(data):
-  crc = 0xFF    # standard init value
-  poly = 0xD5   # standard crc8: x8+x7+x6+x4+x2+1
-  size = len(data)
-  for i in range(size - 1, -1, -1):
-    crc ^= data[i]
-    for _ in range(8):
-      if ((crc & 0x80) != 0):
-        crc = ((crc << 1) ^ poly) & 0xFF
-      else:
-        crc <<= 1
-  return crc
-
-
-def create_gas_interceptor_command(packer, gas_amount, idx):
-  # Common gas pedal msg generator
-  enable = gas_amount > 0.001
-
-  values = {
-    "ENABLE": enable,
-    "COUNTER_PEDAL": idx & 0xF,
-  }
-
-  if enable:
-    values["GAS_COMMAND"] = gas_amount * 255.
-    values["GAS_COMMAND2"] = gas_amount * 255.
-
-  dat = packer.make_can_msg("GAS_COMMAND", 0, values)[2]
-
-  checksum = crc8_pedal(dat[:-1])
-  values["CHECKSUM_PEDAL"] = checksum
-
-  return packer.make_can_msg("GAS_COMMAND", 0, values)
-
-
 def make_can_msg(addr, dat, bus):
   return [addr, 0, dat, bus]
 
@@ -208,7 +180,7 @@ def get_safety_config(safety_model, safety_param = None):
 class CanBusBase:
   offset: int
 
-  def __init__(self, CP, fingerprint: Optional[Dict[int, Dict[int, int]]]) -> None:
+  def __init__(self, CP, fingerprint: dict[int, dict[int, int]] | None) -> None:
     if CP is None:
       assert fingerprint is not None
       num = max([k for k, v in fingerprint.items() if len(v)], default=0) // 4 + 1
@@ -236,3 +208,84 @@ class CanSignalRateCalculator:
     self.previous_value = current_value
 
     return self.rate
+
+
+@dataclass(frozen=True, kw_only=True)
+class CarSpecs:
+  mass: float  # kg, curb weight
+  wheelbase: float  # meters
+  steerRatio: float
+  centerToFrontRatio: float = 0.5
+  minSteerSpeed: float = 0.0  # m/s
+  minEnableSpeed: float = -1.0  # m/s
+  tireStiffnessFactor: float = 1.0
+
+  def override(self, **kwargs):
+    return replace(self, **kwargs)
+
+
+@dataclass(order=True)
+class PlatformConfig(Freezable):
+  car_docs: list[CarDocs]
+  specs: CarSpecs
+
+  dbc_dict: DbcDict
+
+  flags: int = 0
+
+  platform_str: str | None = None
+
+  def __hash__(self) -> int:
+    return hash(self.platform_str)
+
+  def override(self, **kwargs):
+    return replace(self, **kwargs)
+
+  def init(self):
+    pass
+
+  def __post_init__(self):
+    self.init()
+
+
+class PlatformsType(EnumType):
+  def __new__(metacls, cls, bases, classdict, *, boundary=None, _simple=False, **kwds):
+    for key in classdict._member_names.keys():
+      cfg: PlatformConfig = classdict[key]
+      cfg.platform_str = key
+      cfg.freeze()
+    return super().__new__(metacls, cls, bases, classdict, boundary=boundary, _simple=_simple, **kwds)
+
+
+class Platforms(str, ReprEnum, metaclass=PlatformsType):
+  config: PlatformConfig
+
+  def __new__(cls, platform_config: PlatformConfig):
+    member = str.__new__(cls, platform_config.platform_str)
+    member.config = platform_config
+    member._value_ = platform_config.platform_str
+    return member
+
+  @classmethod
+  def create_dbc_map(cls) -> dict[str, DbcDict]:
+    return {p: p.config.dbc_dict for p in cls}
+
+  @classmethod
+  def with_flags(cls, flags: IntFlag) -> set['Platforms']:
+    return {p for p in cls if p.config.flags & flags}
+
+  @classmethod
+  def without_flags(cls, flags: IntFlag) -> set['Platforms']:
+    return {p for p in cls if not (p.config.flags & flags)}
+
+  @classmethod
+  def print_debug(cls, flags):
+    platforms_with_flag = defaultdict(list)
+    for flag in flags:
+      for platform in cls:
+        if platform.config.flags & flag:
+          assert flag.name is not None
+          platforms_with_flag[flag.name].append(platform)
+
+    for flag, platforms in platforms_with_flag.items():
+      print(f"{flag:32s}: {', '.join(p.name for p in platforms)}")

@@ -25,7 +25,7 @@ ENCODE_SOCKETS = {
 def decoder(addr, vipc_server, vst, nvidia, W, H, debug=False):
   sock_name = ENCODE_SOCKETS[vst]
   if debug:
-    print("start decoder for %s" % sock_name)
+    print(f"start decoder for {sock_name}, {W}x{H}")
 
   if nvidia:
     os.environ["NV_LOW_LATENCY"] = "3"    # both bLowLatency and CUVID_PKT_ENDOFPICTURE
@@ -124,7 +124,7 @@ class CompressedVipc:
     self.procs = []
     for vst in vision_streams:
       ed = sm[ENCODE_SOCKETS[vst]]
-      p = multiprocessing.Process(target=decoder, args=(addr, self.vipc_server, vst, nvidia, debug, ed.width, ed.height))
+      p = multiprocessing.Process(target=decoder, args=(addr, self.vipc_server, vst, nvidia, ed.width, ed.height, debug))
       p.start()
       self.procs.append(p)
 

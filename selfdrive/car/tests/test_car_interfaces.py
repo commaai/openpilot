@@ -22,7 +22,7 @@ from openpilot.selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
 
 ALL_ECUS = list({ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()})
 
-MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '20'))
+MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '40'))
 
 
 def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
@@ -73,10 +73,6 @@ class TestCarInterfaces(unittest.TestCase):
     self.assertEqual(len(car_params.longitudinalTuning.kpV), len(car_params.longitudinalTuning.kpBP))
     self.assertEqual(len(car_params.longitudinalTuning.kiV), len(car_params.longitudinalTuning.kiBP))
     self.assertEqual(len(car_params.longitudinalTuning.deadzoneV), len(car_params.longitudinalTuning.deadzoneBP))
-
-    # If we're using the interceptor for gasPressed, we should be commanding gas with it
-    if car_params.enableGasInterceptor:
-      self.assertTrue(car_params.openpilotLongitudinalControl)
 
     # Lateral sanity checks
     if car_params.steerControlType != car.CarParams.SteerControlType.angle:
