@@ -287,6 +287,7 @@ FW_VERSIONS = {
       b'\xf1\x00TM ESC \x02 101 \x08\x04 58910-S2GA0',
       b'\xf1\x00TM ESC \x02 103"\x07\x08 58910-S2GA0',
       b'\xf1\x00TM ESC \x03 101 \x08\x02 58910-S2DA0',
+      b'\xf1\x00TM ESC \x03 102!\x04\x03 58910-S2DA0',
       b'\xf1\x00TM ESC \x04 101 \x08\x04 58910-S2GA0',
       b'\xf1\x00TM ESC \x04 102!\x04\x05 58910-S2GA0',
       b'\xf1\x00TM ESC \x1e 102 \x08\x08 58910-S1DA0',
@@ -410,6 +411,7 @@ FW_VERSIONS = {
       b'\xf1\x00LX2_ SCC FHCUP      1.00 1.05 99110-S8100         ',
       b'\xf1\x00ON__ FCA FHCUP      1.00 1.01 99110-S9110         ',
       b'\xf1\x00ON__ FCA FHCUP      1.00 1.02 99110-S9100         ',
+      b'\xf1\x00ON__ FCA FHCUP      1.00 1.03 99110-S9100         ',
     ],
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x00LX ESC \x01 103\x19\t\x10 58910-S8360',
@@ -499,6 +501,7 @@ FW_VERSIONS = {
       b'\xf1\x00DH__ SCC FHCUP      1.00 1.01 96400-B1110         ',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00DH  LKAS AT KOR LHD 1.01 1.01 95895-B1500 161014',
       b'\xf1\x00DH  LKAS AT KOR LHD 1.01 1.02 95895-B1500 170810',
       b'\xf1\x00DH  LKAS AT USA LHD 1.01 1.01 95895-B1500 161014',
       b'\xf1\x00DH  LKAS AT USA LHD 1.01 1.02 95895-B1500 170810',
@@ -585,6 +588,7 @@ FW_VERSIONS = {
       b'\xf1\x00DL ESC \x06 103"\x08\x06 58910-L3200',
       b'\xf1\x00DL ESC \t 100 \x06\x02 58910-L3800',
       b'\xf1\x00DL ESC \t 101 \x07\x02 58910-L3800',
+      b'\xf1\x00DL ESC \t 102"\x08\x10 58910-L3800',
     ],
   },
   CAR.KIA_K5_HEV_2020: {
@@ -735,9 +739,9 @@ FW_VERSIONS = {
       b'\xf1\x00DE  MDPS C 1.00 1.01 56310G5520\x00 4DEPC101',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00DEH MFC  AT KOR LHD 1.00 1.04 99211-G5000 190516',
       b'\xf1\x00DEH MFC  AT USA LHD 1.00 1.00 99211-G5500 210428',
       b'\xf1\x00DEH MFC  AT USA LHD 1.00 1.07 99211-G5000 201221',
-      b'\xf1\x00DEH MFC  AT KOR LHD 1.00 1.04 99211-G5000 190516',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00DEhe SCC FHCUP      1.00 1.00 99110-G5600         ',
