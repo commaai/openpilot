@@ -197,11 +197,11 @@ node {
 
   try {
     if (env.BRANCH_NAME == 'devel-staging') {
-      build_release("release3-staging")
+      build_git_release("release3-staging")
     }
 
     if (env.BRANCH_NAME == 'master-ci') {
-      build_release("nightly")
+      build_git_release("nightly")
     }
 
     if (env.BRANCH_NAME.startsWith('channel/')) {
