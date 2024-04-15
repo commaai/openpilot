@@ -1,4 +1,3 @@
-
 import os
 
 from openpilot.common.swaglog import cloudlog

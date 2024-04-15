@@ -41,7 +41,6 @@ def only_onroad(started: bool, params, CP: car.CarParams) -> bool:
 def only_offroad(started, params, CP: car.CarParams) -> bool:
   return not started
 
-
 procs = [
   DaemonProcess("manage_athenad", "selfdrive.athena.manage_athenad", "AthenadPid"),
 
