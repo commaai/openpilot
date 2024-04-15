@@ -145,13 +145,19 @@ def setupCredentials() {
 }
 
 
-def build_release(String channel_name) {
+def build_git_release(String channel_name) {
   return parallel (
     "${channel_name} (git)": {
       deviceStage("build git", "tici-needs-can", [], [
         ["build ${channel_name}", "RELEASE_BRANCH=${channel_name} $SOURCE_DIR/release/build_release.sh"],
       ])
     },
+  )
+}
+
+
+def build_casync_release(String channel_name) {
+  return parallel (
     "${channel_name} (casync)": {
       deviceStage("build casync", "tici-needs-can", [], [
         ["build ${channel_name}", "RELEASE=1 OPENPILOT_CHANNEL=${channel_name} BUILD_DIR=/data/openpilot CASYNC_DIR=/data/casync/openpilot $SOURCE_DIR/release/create_casync_build.sh"],
@@ -180,7 +186,7 @@ node {
   env.GIT_COMMIT = checkout(scm).GIT_COMMIT
 
   def excludeBranches = ['master-ci', 'devel', 'devel-staging', 'release3', 'release3-staging',
-                         'testing-closet*', 'hotfix-*']
+                         'testing-closet*', 'hotfix-*', 'channel/*']
   def excludeRegex = excludeBranches.join('|').replaceAll('\\*', '.*')
 
   if (env.BRANCH_NAME != 'master') {
@@ -196,6 +202,10 @@ node {
 
     if (env.BRANCH_NAME == 'master-ci') {
       build_release("nightly")
+    }
+
+    if (env.BRANCH_NAME.startsWith('channel/')) {
+      build_casync_release(env.BRANCH_NAME.substring(8))
     }
 
     if (!env.BRANCH_NAME.matches(excludeRegex)) {
