@@ -6,18 +6,16 @@ import os
 import pathlib
 
 from openpilot.system.hardware.tici.agnos import AGNOS_MANIFEST_FILE, get_partition_path
-from openpilot.system.version import get_build_metadata, get_agnos_version
+from openpilot.system.version import get_build_metadata
 
 
 BASE_URL = "https://commadist.blob.core.windows.net"
-
-CHANNEL_DATA = pathlib.Path(__file__).parent / "channel_data" / "agnos"
 
 OPENPILOT_RELEASES = f"{BASE_URL}/openpilot-releases/openpilot"
 AGNOS_RELEASES = f"{BASE_URL}/openpilot-releases/agnos"
 
 
-def create_partition_manifest(agnos_version, partition):
+def create_partition_manifest(partition):
   agnos_filename = os.path.basename(partition["url"]).split(".")[0]
 
   return {
@@ -57,7 +55,7 @@ if __name__ == "__main__":
   ret = {
     "build_metadata": dataclasses.asdict(build_metadata),
     "manifest": [
-      *[create_partition_manifest(get_agnos_version(args.target_dir), entry) for entry in agnos_manifest],
+      *[create_partition_manifest(entry) for entry in agnos_manifest],
       create_openpilot_manifest(build_metadata)
     ]
   }
