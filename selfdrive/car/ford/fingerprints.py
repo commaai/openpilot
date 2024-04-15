@@ -161,5 +161,5 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x706, None): [
       b'PJ6T-14H102-ABJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
-  }
+  },
 }
