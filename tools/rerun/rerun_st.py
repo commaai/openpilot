@@ -1,11 +1,19 @@
-# TODO: add install pip3 install rerun-sdk
-import sys
 import json
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.route import Route
-import rerun as rr
-import rerun.blueprint as rrb
 import multiprocessing
+import subprocess
+import sys
+import os
+
+try:
+    import rerun as rr
+    import rerun.blueprint as rrb
+except ImportError:
+    print("Rerun SDK is not installed. Trying to install it...")
+    subprocess.run([sys.executable, "-m", "pip", "install", "rerun-sdk"])
+    print("Rerun installed, restarting script")
+    os.execv(sys.executable, [sys.executable] + sys.argv)
 
 
 is_first_run = True
