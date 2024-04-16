@@ -230,7 +230,7 @@ node {
     ]))
   }
 
-  if (env.branch != "master") {
+  if (env.BRANCH_NAME != "master") {
     props.add(disableConcurrentBuilds(abortPrevious: true))
   }
 
