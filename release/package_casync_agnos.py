@@ -53,5 +53,7 @@ if __name__ == "__main__":
 
       start = time.monotonic()
       agnos_filename = os.path.basename(entry["url"]).split(".")[0]
-      create_casync_from_file(entry_path, output_dir, agnos_filename)
+      create_casync_from_file(entry_path, output_dir / "agnos", agnos_filename)
       print(f"created casnc in {time.monotonic() - start}")
+
+  upload_casync_release(output_dir)

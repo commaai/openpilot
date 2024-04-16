@@ -182,7 +182,7 @@ def build_casync_release(String channel_name, def is_release) {
   def extra_env = is_release ? "RELEASE=1" : ""
   def build_dir = "/data/openpilot"
 
-  extra_env += "PYTHONPATH=$SOURCE_DIR"
+  extra_env += "TMPDIR=/data/tmp PYTHONPATH=$SOURCE_DIR"
 
   return deviceStage("build casync", "tici-needs-can", [], [
     ["build", "${extra_env} $SOURCE_DIR/release/build.sh ${build_dir}"],
@@ -201,7 +201,7 @@ def build_stage() {
     },
     'publish agnos': {
       pcStage("publish agnos") {
-        sh "release/create_casync_agnos_release.py /tmp/casync/agnos /tmp/casync_tmp"
+        sh "release/package_casync_agnos.py /tmp/casync/agnos /tmp/casync_tmp"
         sh "PYTHONWARNINGS=ignore ${env.WORKSPACE}/release/upload_casync_release.py /tmp/casync"
       }
     }
