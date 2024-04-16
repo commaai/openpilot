@@ -5,7 +5,6 @@ import usb1
 import time
 import subprocess
 from typing import NoReturn
-from functools import cmp_to_key
 
 from panda import Panda, PandaDFU, PandaProtocolMismatch, FW_PATH
 from openpilot.common.basedir import BASEDIR
@@ -60,24 +59,6 @@ def flash_panda(panda_serial: str) -> Panda:
     raise AssertionError
 
   return panda
-
-
-def panda_sort_cmp(a: Panda, b: Panda):
-  a_type = a.get_type()
-  b_type = b.get_type()
-
-  # make sure the internal one is always first
-  if a.is_internal() and not b.is_internal():
-    return -1
-  if not a.is_internal() and b.is_internal():
-    return 1
-
-  # sort by hardware type
-  if a_type != b_type:
-    return a_type < b_type
-
-  # last resort: sort by serial number
-  return a.get_usb_serial() < b.get_usb_serial()
 
 
 def main() -> NoReturn:
@@ -136,7 +117,10 @@ def main() -> NoReturn:
       no_internal_panda_count = 0
 
       # sort pandas to have deterministic order
-      pandas.sort(key=cmp_to_key(panda_sort_cmp))
+      # * the internal one is always first
+      # * then sort by hardware type
+      # * as a last resort, sort by serial number
+      pandas.sort(key=lambda x: (not x.is_internal(), x.get_type(), x.get_usb_serial()))
       panda_serials = [p.get_usb_serial() for p in pandas]
 
       # log panda fw versions

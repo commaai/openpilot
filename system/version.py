@@ -11,7 +11,6 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.common.utils import cache
 from openpilot.common.git import get_commit, get_origin, get_branch, get_short_branch, get_commit_date
 
-
 RELEASE_BRANCHES = ['release3-staging', 'release3', 'nightly']
 TESTED_BRANCHES = RELEASE_BRANCHES + ['devel', 'devel-staging']
 
@@ -107,6 +106,10 @@ class BuildMetadata:
   @property
   def canonical(self) -> str:
     return f"{self.openpilot.version}-{self.openpilot.git_commit}-{self.openpilot.build_style}"
+
+  @property
+  def ui_description(self) -> str:
+    return f"{self.openpilot.version} / {self.openpilot.git_commit[:6]} / {self.channel}"
 
 
 def build_metadata_from_dict(build_metadata: dict) -> BuildMetadata:

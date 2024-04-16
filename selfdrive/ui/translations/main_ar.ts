@@ -1155,20 +1155,8 @@ This may take up to a minute.</source>
         <translation>دع نظام القيادة يتحكم بالوقود والمكابح. سيقوم openpilot بالقيادة كما لو أنه كائن بشري، بما في ذلك التوقف عند الإشارة الحمراء، وإشارات التوقف. وبما أن نمط القيادة يحدد سرعة القيادة، فإن السرعة المضبوطة تشكل الحد الأقصى فقط. هذه خاصية الجودة ألفا، فيجب توقع حدوث الأخطاء.</translation>
     </message>
     <message>
-        <source>Navigate on openpilot</source>
-        <translation>التنقل على openpilot</translation>
-    </message>
-    <message>
-        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
-        <translation>عندما يكون هناك وجهة للتنقل، فإن openpilot سيقوم بإدخال معلومات الخريطة في هذا النموذج. وهذا يقدم سياقاً مفيداً ويسمح لـopenpilot بالبقاء يساراً أو يميناً بالشكل المناسب عند المنعطفات/المخارج. يبقى سلوك تغيير المسار مفعلاً عند السائق،. هذه هي خاصية الجودة ألفا، ولذلك يجب توقع الأخطاء لا سيما عند المخارج والمنعطفات هذه الأخطاء قد تشمل العبور غير المقصود لخطوط المسارات، والتأخر في الخروج، والقيادة نحو الحواجز الفاصلة في المناطق المثلثة بين الطريق الرئيسي والمخارج، وغير ذلك من الأخطاء المشابهة.</translation>
-    </message>
-    <message>
         <source>New Driving Visualization</source>
         <translation>تصور القيادة الديد</translation>
-    </message>
-    <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
-        <translation>تصور القيادة سينتقل إلى الكاميرا واسعة الزاوية المواجهة للطريق في السرعات المنخفضة من أجل إظهار بعض المنعطفات بشكل أفضل. سيتم أيضاً إظهار شعار الوضع التجريبي في الزاوية العلوية اليمنى. عند تحديد وجهة التنقل، واستخدام نظام القيادة لها كوضع مدخل، سيتحول مسار القيادة على الخريطة إلى اللون الأخضر.</translation>
     </message>
     <message>
         <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
@@ -1189,6 +1177,10 @@ This may take up to a minute.</source>
     <message>
         <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
         <translation>يوصى بالمعيار. في الوضع العدواني، سيتبع الطيار المفتوح السيارات الرائدة بشكل أقرب ويكون أكثر عدوانية مع البنزين والفرامل. في الوضع المريح، سيبقى openpilot بعيدًا عن السيارات الرائدة. في السيارات المدعومة، يمكنك التنقل بين هذه الشخصيات باستخدام زر مسافة عجلة القيادة.</translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. </source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
