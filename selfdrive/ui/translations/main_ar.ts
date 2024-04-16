@@ -1179,7 +1179,7 @@ This may take up to a minute.</source>
         <translation>يوصى بالمعيار. في الوضع العدواني، سيتبع الطيار المفتوح السيارات الرائدة بشكل أقرب ويكون أكثر عدوانية مع البنزين والفرامل. في الوضع المريح، سيبقى openpilot بعيدًا عن السيارات الرائدة. في السيارات المدعومة، يمكنك التنقل بين هذه الشخصيات باستخدام زر مسافة عجلة القيادة.</translation>
     </message>
     <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. </source>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
