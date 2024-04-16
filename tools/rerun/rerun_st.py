@@ -5,7 +5,6 @@ import multiprocessing
 import subprocess
 import sys
 import os
-
 try:
     import rerun as rr
     import rerun.blueprint as rrb
@@ -16,14 +15,14 @@ except ImportError:
     os.execv(sys.executable, [sys.executable] + sys.argv)
 
 
-is_first_run = True
 topics = ['accelerometer', 'androidLog', 'cameraOdometry', 'can', 'carControl', 'carParams', 'carState', 'clocks', 'controlsState', 'deviceState',
           'driverCameraState', 'driverEncodeIdx', 'driverMonitoringState', 'driverStateV2', 'errorLogMessage', 'gnssMeasurements', 'gpsLocationExternal',
           'gyroscope', 'initData', 'lateralPlanDEPRECATED', 'lightSensor', 'liveCalibration', 'liveLocationKalman', 'liveParameters', 'liveTorqueParameters',
           'liveTracks', 'logMessage', 'longitudinalPlan', 'magnetometer', 'managerState', 'mapRenderState', 'microphone', 'modelV2', 'navInstruction',
           'navModel', 'navThumbnail', 'onroadEvents', 'pandaStates', 'peripheralState', 'procLog', 'qRoadEncodeIdx', 'radarState', 'roadCameraState',
-          'roadEncodeIdx', 'sendcan', 'sentinel', 'temperatureSensor', 'thumbnail', 'ubloxGnss', 'ubloxRaw', 'uiDebug', 'uiPlan', 'uploaderState',
+          'roadEncodeIdx', 'sendcan', 'sentinel', 'temperatureSensor', 'ubloxGnss', 'ubloxRaw', 'uiDebug', 'uiPlan', 'uploaderState',
           'wideRoadCameraState', 'wideRoadEncodeIdx']
+is_first_run = True
 
 
 def convertBytesToString(data):
@@ -37,9 +36,8 @@ def convertBytesToString(data):
     return data
 
 
-# Log data to rerun, here could be values be excluded form plotting
+# Log data-(key, value) to rerun
 def log_data(key, value):
-      # rr.log(str(key), rr.Scalar(value))
     # Example of excluding a value from plotting
     if key.find("timestamp") == -1 and key.find("logMonoTime") == -1:
       rr.log(str(key), rr.Scalar(value))
@@ -66,13 +64,8 @@ def createBlueprint(topicsToGraph):
   for topic in topicsToGraph:
       timeSeriesViews.append(rrb.TimeSeriesView(name=topic, origin=f"/{topic}/"))
       rr.log(topic, rr.SeriesLine(name=topic), timeless=True)
-      blueprint = rrb.Blueprint(
-                              rrb.Grid(
-                                rrb.Vertical(
-                                  *timeSeriesViews,
-                                  rrb.SelectionPanel(expanded=False),
-                                  rrb.TimePanel(expanded=False)),
-                                rrb.Spatial2DView(name="thumbnail", origin="/thumbnail")))
+      blueprint = rrb.Blueprint(rrb.Grid(rrb.Vertical(*timeSeriesViews,rrb.SelectionPanel(expanded=False),rrb.TimePanel(expanded=False)),
+                                         rrb.Spatial2DView(name="thumbnail", origin="/thumbnail")))
   return blueprint
 
 
@@ -84,20 +77,20 @@ def log_thumbnail(thumbnailJson):
 
 # Log data from rlog to rerun
 def process_log(log_path, topics_to_graph):
-    rlog = LogReader(log_path)
-    for msg in rlog:
-        global is_first_run
-        if is_first_run:
-            blueprint = createBlueprint(topics_to_graph)
-            rr.init("rerun_test", spawn=True, default_blueprint=blueprint)
-            is_first_run = False
-        if msg.which() in topics_to_graph:
-            json_msg = json.loads(json.dumps(convertBytesToString(msg.to_dict())))
-            rr.set_time_sequence(msg.which(), msg.logMonoTime)
-            log_nested(json_msg)
-        elif msg.which() == "thumbnail":
+  rlog = LogReader(log_path)
+  for msg in rlog:
+      global is_first_run
+      if is_first_run:
+          blueprint = createBlueprint(topics_to_graph)
+          rr.init("rerun_test", spawn=True, default_blueprint=blueprint)
+          is_first_run = False
+      if msg.which() in topics_to_graph:
           json_msg = json.loads(json.dumps(convertBytesToString(msg.to_dict())))
-          log_thumbnail(json_msg)
+          rr.set_time_sequence(msg.which(), msg.logMonoTime)
+          log_nested(json_msg)
+      elif msg.which() == "thumbnail":
+        json_msg = json.loads(json.dumps(convertBytesToString(msg.to_dict())))
+        log_thumbnail(json_msg)
 
 
 # Running in parallel ensures that multiple rr objects are initialized. This approach guarantees thread safety.
@@ -127,7 +120,6 @@ if __name__ == '__main__':
   # Get user input
   topicIndexes = [int(x) for x in (input("Separate your inputs with a space: ")).split(" ")]
   topicsToGraph = [topics[i] for i in topicIndexes]
-
   # Get logs for a route
   print("Getting route log paths")
   route = Route(route_name)
