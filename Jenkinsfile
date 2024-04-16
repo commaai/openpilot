@@ -167,19 +167,19 @@ def setupCredentials() {
 }
 
 
-def build_release(String channel_name) {
+def build_git_release(String channel_name) {
   return parallel (
     "${channel_name} (git)": {
       deviceStage("build git", "tici-needs-can", [], [
-        ["build ${channel_name}", "RELEASE_BRANCH=${channel_name} $SOURCE_DIR/release/build_release.sh"],
+        ["build ${channel_name}", "RELEASE_BRANCH=${channel_name} $SOURCE_DIR/release/build_git_release.sh"],
       ])
     }
   )
 }
 
 
-def build_casync_release(String channel_name, def release) {
-  def extra_env = release ? "RELEASE=1" : ""
+def build_casync_release(String channel_name, def is_release) {
+  def extra_env = is_release ? "RELEASE=1" : ""
 
   return deviceStage("build casync", "tici-needs-can", [], [
     ["build", "${extra_env} BUILD_DIR=/data/openpilot CASYNC_DIR=/data/casync/openpilot $SOURCE_DIR/release/create_casync_build.sh"],
@@ -192,10 +192,10 @@ def build_casync_release(String channel_name, def release) {
 def build_stage() {
   return parallel (
     'nightly': {
-      build_release("nightly", true);
+      build_casync_release("nightly", true);
     },
     'master': {
-      build_release("master", false);
+      build_casync_release("master", false);
     },
     'publish agnos': {
       pcStage("publish agnos") {
@@ -239,11 +239,11 @@ node {
 
   try {
     if (env.BRANCH_NAME == 'devel-staging') {
-      build_release("release3-staging")
+      build_git_release("release3-staging")
     }
 
     if (env.BRANCH_NAME == 'master-ci') {
-      build_release("nightly")
+      build_git_release("nightly")
     }
 
     if (!env.BRANCH_NAME.matches(excludeRegex)) {
