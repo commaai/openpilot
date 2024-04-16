@@ -139,7 +139,7 @@ def main() -> NoReturn:
         if first_run:
           # reset panda to ensure we're in a good state
           cloudlog.info(f"Resetting panda {panda.get_usb_serial()}")
-          panda.reset(reconnect=False)
+          panda.reset(reconnect=True)
 
       for p in pandas:
         p.close()
