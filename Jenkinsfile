@@ -220,7 +220,7 @@ node {
                          'testing-closet*', 'hotfix-*']
   def excludeRegex = excludeBranches.join('|').replaceAll('\\*', '.*')
 
-  def nightlyBranch = "try"
+  def nightlyBranch = "master"
 
   def props = [];
 
