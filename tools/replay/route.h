@@ -42,7 +42,7 @@ public:
 
 protected:
   bool loadFromLocal();
-  bool loadFromServer();
+  bool loadFromServer(int retries = 3);
   bool loadFromJson(const QString &json);
   void addFileToSegment(int seg_num, const QString &file);
   RouteIdentifier route_ = {};

@@ -315,8 +315,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Ecu.eps: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC_2022, CAR.HONDA_E, CAR.HONDA_PILOT_4G],
     Ecu.vsa: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CIVIC_2022, CAR.HONDA_CRV_5G, CAR.HONDA_CRV_HYBRID,
               CAR.HONDA_E, CAR.HONDA_INSIGHT, CAR.HONDA_PILOT_4G],
-    Ecu.combinationMeter: [CAR.ACURA_ILX, CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CIVIC_2022, CAR.HONDA_FIT,
-                           CAR.HONDA_HRV, CAR.HONDA_CRV_5G, CAR.HONDA_CRV_HYBRID, CAR.HONDA_E, CAR.HONDA_INSIGHT, CAR.HONDA_ODYSSEY_CHN, CAR.HONDA_PILOT_4G],
     Ecu.gateway: [CAR.ACURA_ILX, CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CIVIC_2022, CAR.HONDA_FIT,
                   CAR.HONDA_FREED, CAR.HONDA_HRV, CAR.HONDA_RIDGELINE, CAR.HONDA_CRV_5G, CAR.HONDA_CRV_HYBRID, CAR.HONDA_E, CAR.HONDA_INSIGHT,
                   CAR.HONDA_ODYSSEY, CAR.HONDA_ODYSSEY_CHN, CAR.HONDA_PILOT, CAR.HONDA_PILOT_4G],
@@ -327,6 +325,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Ecu.hud: [CAR.HONDA_ACCORD, CAR.HONDA_PILOT_4G],
   },
   extra_ecus=[
+    (Ecu.combinationMeter, 0x18da60f1, None),
     # The only other ECU on PT bus accessible by camera on radarless Civic
     # This is likely a manufacturer-specific sub-address implementation: the camera responds to this and 0x18dab0f1
     # Unclear what the part number refers to: 8S103 is 'Camera Set Mono', while 36160 is 'Camera Monocular - Honda'

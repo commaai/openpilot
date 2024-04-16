@@ -5,12 +5,12 @@ from opendbc.can.parser import CANParser
 from openpilot.common.params import Params
 from openpilot.selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp
 from openpilot.tools.sim.lib.common import SimulatorState
+from panda.python import Panda
 
 
 class SimulatedCar:
-  """Simulates a honda civic 2016 (panda state + can messages) to OpenPilot"""
-  packer = CANPacker("honda_civic_touring_2016_can_generated")
-  rpacker = CANPacker("acura_ilx_2016_nidec")
+  """Simulates a honda civic 2022 (panda state + can messages) to OpenPilot"""
+  packer = CANPacker("honda_civic_ex_2022_can_generated")
 
   def __init__(self):
     self.pm = messaging.PubMaster(['can', 'pandaStates'])
@@ -22,11 +22,8 @@ class SimulatedCar:
 
   @staticmethod
   def get_car_can_parser():
-    dbc_f = 'honda_civic_touring_2016_can_generated'
+    dbc_f = 'honda_civic_ex_2022_can_generated'
     checks = [
-      (0xe4, 100),
-      (0x1fa, 50),
-      (0x200, 50),
     ]
     return CANParser(dbc_f, checks, 0)
 
@@ -61,6 +58,7 @@ class SimulatedCar:
     msg.append(self.packer.make_can_msg("DOORS_STATUS", 0, {}))
     msg.append(self.packer.make_can_msg("CRUISE_PARAMS", 0, {}))
     msg.append(self.packer.make_can_msg("CRUISE", 0, {}))
+    msg.append(self.packer.make_can_msg("CRUISE_FAULT_STATUS", 0, {}))
     msg.append(self.packer.make_can_msg("SCM_FEEDBACK", 0,
                                     {
                                       "MAIN_ON": 1,
@@ -73,20 +71,12 @@ class SimulatedCar:
                                     "PEDAL_GAS": simulator_state.user_gas,
                                     "BRAKE_PRESSED": simulator_state.user_brake > 0
                                     }))
-    msg.append(self.packer.make_can_msg("HUD_SETTING", 0, {}))
     msg.append(self.packer.make_can_msg("CAR_SPEED", 0, {}))
 
     # *** cam bus ***
     msg.append(self.packer.make_can_msg("STEERING_CONTROL", 2, {}))
     msg.append(self.packer.make_can_msg("ACC_HUD", 2, {}))
     msg.append(self.packer.make_can_msg("LKAS_HUD", 2, {}))
-    msg.append(self.packer.make_can_msg("BRAKE_COMMAND", 2, {}))
-
-    # *** radar bus ***
-    if self.idx % 5 == 0:
-      msg.append(self.rpacker.make_can_msg("RADAR_DIAGNOSTIC", 1, {"RADAR_STATE": 0x79}))
-      for i in range(16):
-        msg.append(self.rpacker.make_can_msg("TRACK_%d" % i, 1, {"LONG_DIST": 255.5}))
 
     self.pm.send('can', can_list_to_can_capnp(msg))
 
@@ -103,9 +93,9 @@ class SimulatedCar:
       'ignitionLine': simulator_state.ignition,
       'pandaType': "blackPanda",
       'controlsAllowed': True,
-      'safetyModel': 'hondaNidec',
+      'safetyModel': 'hondaBosch',
       'alternativeExperience': self.sm["carParams"].alternativeExperience,
-      'safetyParam': 0,
+      'safetyParam': Panda.FLAG_HONDA_RADARLESS | Panda.FLAG_HONDA_BOSCH_LONG,
     }
     self.pm.send('pandaStates', dat)
 

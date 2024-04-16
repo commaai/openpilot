@@ -6,6 +6,7 @@ from openpilot.selfdrive.car.gm.values import CAR as GM
 from openpilot.selfdrive.car.honda.values import CAR as HONDA
 from openpilot.selfdrive.car.hyundai.values import CAR as HYUNDAI
 from openpilot.selfdrive.car.mazda.values import CAR as MAZDA
+from openpilot.selfdrive.car.mock.values import CAR as MOCK
 from openpilot.selfdrive.car.nissan.values import CAR as NISSAN
 from openpilot.selfdrive.car.subaru.values import CAR as SUBARU
 from openpilot.selfdrive.car.tesla.values import CAR as TESLA
@@ -330,12 +331,16 @@ MIGRATION = {
   "AUDI Q2 1ST GEN": VW.AUDI_Q2_MK1,
   "AUDI Q3 2ND GEN": VW.AUDI_Q3_MK2,
   "SEAT ATECA 1ST GEN": VW.SEAT_ATECA_MK1,
-  "SEAT LEON 3RD GEN": VW.SEAT_LEON_MK3,
+  "SEAT LEON 3RD GEN": VW.SEAT_ATECA_MK1,
+  "SEAT_LEON_MK3": VW.SEAT_ATECA_MK1,
   "SKODA FABIA 4TH GEN": VW.SKODA_FABIA_MK4,
   "SKODA KAMIQ 1ST GEN": VW.SKODA_KAMIQ_MK1,
   "SKODA KAROQ 1ST GEN": VW.SKODA_KAROQ_MK1,
   "SKODA KODIAQ 1ST GEN": VW.SKODA_KODIAQ_MK1,
   "SKODA OCTAVIA 3RD GEN": VW.SKODA_OCTAVIA_MK3,
-  "SKODA SCALA 1ST GEN": VW.SKODA_SCALA_MK1,
+  "SKODA SCALA 1ST GEN": VW.SKODA_KAMIQ_MK1,
+  "SKODA_SCALA_MK1": VW.SKODA_KAMIQ_MK1,
   "SKODA SUPERB 3RD GEN": VW.SKODA_SUPERB_MK3,
+
+  "mock": MOCK.MOCK,
 }

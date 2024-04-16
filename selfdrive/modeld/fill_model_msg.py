@@ -43,8 +43,7 @@ def fill_xyvat(builder, t, x, y, v, a, x_std=None, y_std=None, v_std=None, a_std
 
 def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: dict[str, np.ndarray], publish_state: PublishState,
                    vipc_frame_id: int, vipc_frame_id_extra: int, frame_id: int, frame_drop: float,
-                   timestamp_eof: int, timestamp_llk: int, model_execution_time: float,
-                   nav_enabled: bool, valid: bool) -> None:
+                   timestamp_eof: int, model_execution_time: float, valid: bool) -> None:
   frame_age = frame_id - vipc_frame_id if frame_id > vipc_frame_id else 0
   msg.valid = valid
 
@@ -54,9 +53,7 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: dict[str, 
   modelV2.frameAge = frame_age
   modelV2.frameDropPerc = frame_drop * 100
   modelV2.timestampEof = timestamp_eof
-  modelV2.locationMonoTime = timestamp_llk
   modelV2.modelExecutionTime = model_execution_time
-  modelV2.navEnabled = nav_enabled
 
   # plan
   position = modelV2.position
