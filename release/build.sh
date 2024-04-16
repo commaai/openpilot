@@ -4,7 +4,7 @@ set -ex
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 SOURCE_DIR="$(git -C $DIR rev-parse --show-toplevel)"
-BUILD_DIR="${BUILD_DIR:=$(mktemp -d)}"
+BUILD_DIR=$1
 
 if [ -f /TICI ]; then
   FILES_SRC="release/files_tici"

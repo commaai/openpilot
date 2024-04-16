@@ -180,9 +180,13 @@ def build_git_release(String channel_name) {
 
 def build_casync_release(String channel_name, def is_release) {
   def extra_env = is_release ? "RELEASE=1" : ""
+  def build_dir = "/data/openpilot"
+
+  extra_env += "PYTHONPATH=$SOURCE_DIR"
 
   return deviceStage("build casync", "tici-needs-can", [], [
-    ["build", "${extra_env} BUILD_DIR=/data/openpilot CASYNC_DIR=/data/casync$SOURCE_DIR/release/build_casync_release.sh"],
+    ["build", "${extra_env} $SOURCE_DIR/release/build.sh ${build_dir}"],
+    ["package + upload", "${extra_env} $SOURCE_DIR/release/package_casync_build.py ${build_dir}"],
   ])
 }
 
@@ -209,6 +213,7 @@ node {
   env.PYTHONWARNINGS = "error"
   env.TEST_DIR = "/data/openpilot"
   env.SOURCE_DIR = "/data/openpilot_source/"
+  env.TMPDIR = "/data/tmp"
   setupCredentials()
 
   env.GIT_BRANCH = checkout(scm).GIT_BRANCH

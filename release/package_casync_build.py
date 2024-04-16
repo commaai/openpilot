@@ -62,7 +62,7 @@ def create_partition_manifest(partition):
   }
 
 
-def create_openpilot_manifest(build_metadata):
+def create_openpilot_manifest(build_metadata)
   return {
     "type": "path_tarred",
     "path": "/data/openpilot",
