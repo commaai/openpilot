@@ -1163,7 +1163,7 @@ Isso pode levar até um minuto.</translation>
         <translation>Neutro é o recomendado. No modo disputa o openpilot seguirá o carro da frente mais de perto e será mais agressivo com a aceleração e frenagem. No modo calmo o openpilot se manterá mais longe do carro da frente. Em carros compatíveis, você pode alternar esses temperamentos com o botão de distância do volante.</translation>
     </message>
     <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. </source>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
         <translation>A visualização de condução fará a transição para a câmera grande angular voltada para a estrada em baixas velocidades para mostrar melhor algumas curvas. O logotipo do modo Experimental também será mostrado no canto superior direito.</translation>
     </message>
 </context>
