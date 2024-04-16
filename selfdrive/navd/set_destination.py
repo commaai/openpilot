@@ -15,7 +15,7 @@ if __name__ == "__main__":
       "longitude": float(coords[1])
     }
     params.put("NavDestination", json.dumps(dest))
-    params.remove("NavDestinationWaypoints")
+    params.remove("NavDestination")
   else:
     print("Setting to Taco Bell")
     dest = {
@@ -27,7 +27,7 @@ if __name__ == "__main__":
     waypoints = [
       (-117.16020713111648, 32.71997612490662),
     ]
-    params.put("NavDestinationWaypoints", json.dumps(waypoints))
+    params.put("NavDestination", json.dumps(waypoints))
 
     print(dest)
     print(waypoints)

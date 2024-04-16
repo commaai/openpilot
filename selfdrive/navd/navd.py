@@ -136,8 +136,7 @@ class RouteEngine:
       'language': lang,
     }
 
-    # TODO: move waypoints into NavDestination param?
-    waypoints = self.params.get('NavDestinationWaypoints', encoding='utf8')
+    waypoints = self.params.get('NavDestination', encoding='utf8')
     waypoint_coords = []
     if waypoints is not None and len(waypoints) > 0:
       waypoint_coords = json.loads(waypoints)
@@ -193,7 +192,7 @@ class RouteEngine:
 
       # clear waypoints to avoid a re-route including past waypoints
       # TODO: only clear once we're past a waypoint
-      self.params.remove('NavDestinationWaypoints')
+      self.params.remove('NavDestination')
 
     except requests.exceptions.RequestException:
       cloudlog.exception("failed to get route")
