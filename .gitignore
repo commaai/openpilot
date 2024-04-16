@@ -10,7 +10,6 @@ venv/
 .overlay_init
 .overlay_consistent
 .sconsign.dblite
-.vscode*
 model2.png
 a.out
 .hypothesis
@@ -53,7 +52,6 @@ selfdrive/car/tests/cars_dump
 system/camerad/camerad
 system/camerad/test/ae_gray_test
 selfdrive/modeld/_modeld
-selfdrive/modeld/_navmodeld
 selfdrive/modeld/_dmonitoringmodeld
 /src/
 

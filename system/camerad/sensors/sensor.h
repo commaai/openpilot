@@ -12,10 +12,6 @@
 #include "system/camerad/sensors/os04c10_registers.h"
 
 #define ANALOG_GAIN_MAX_CNT 55
-const size_t FRAME_WIDTH = 1928;
-const size_t FRAME_HEIGHT = 1208;
-const size_t FRAME_STRIDE = 2896;  // for 12 bit output. 1928 * 12 / 8 + 4 (alignment)
-
 
 class SensorInfo {
 public:

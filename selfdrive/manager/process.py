@@ -4,7 +4,7 @@ import signal
 import struct
 import time
 import subprocess
-from typing import Optional, Callable, List, ValuesView
+from collections.abc import Callable, ValuesView
 from abc import ABC, abstractmethod
 from multiprocessing import Process
 
@@ -47,7 +47,7 @@ def launcher(proc: str, name: str) -> None:
     raise
 
 
-def nativelauncher(pargs: List[str], cwd: str, name: str) -> None:
+def nativelauncher(pargs: list[str], cwd: str, name: str) -> None:
   os.environ['MANAGER_DAEMON'] = name
 
   # exec the process
@@ -67,12 +67,12 @@ class ManagerProcess(ABC):
   daemon = False
   sigkill = False
   should_run: Callable[[bool, Params, car.CarParams], bool]
-  proc: Optional[Process] = None
+  proc: Process | None = None
   enabled = True
   name = ""
 
   last_watchdog_time = 0
-  watchdog_max_dt: Optional[int] = None
+  watchdog_max_dt: int | None = None
   watchdog_seen = False
   shutting_down = False
 
@@ -109,7 +109,7 @@ class ManagerProcess(ABC):
     else:
       self.watchdog_seen = True
 
-  def stop(self, retry: bool = True, block: bool = True, sig: Optional[signal.Signals] = None) -> Optional[int]:
+  def stop(self, retry: bool = True, block: bool = True, sig: signal.Signals = None) -> int | None:
     if self.proc is None:
       return None
 
@@ -274,7 +274,7 @@ class DaemonProcess(ManagerProcess):
 
 
 def ensure_running(procs: ValuesView[ManagerProcess], started: bool, params=None, CP: car.CarParams=None,
-                   not_run: Optional[List[str]]=None) -> List[ManagerProcess]:
+                   not_run: list[str] | None=None) -> list[ManagerProcess]:
   if not_run is None:
     not_run = []
 

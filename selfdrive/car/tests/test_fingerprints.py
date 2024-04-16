@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import sys
-from typing import Dict, List
 
 from openpilot.common.basedir import BASEDIR
 
@@ -64,7 +63,7 @@ def check_can_ignition_conflicts(fingerprints, brands):
 if __name__ == "__main__":
   fingerprints = _get_fingerprints()
 
-  fingerprints_flat: List[Dict] = []
+  fingerprints_flat: list[dict] = []
   car_names = []
   brand_names = []
   for brand in fingerprints:

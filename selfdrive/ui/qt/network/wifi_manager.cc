@@ -98,10 +98,10 @@ void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
   ipv4_address = getIp4Address();
   seenNetworks.clear();
 
-  const QDBusReply<QList<QDBusObjectPath>> wather_reply = *watcher;
-  for (const QDBusObjectPath &path : wather_reply.value()) {
-    QDBusReply<QVariantMap> replay = call(path.path(), NM_DBUS_INTERFACE_PROPERTIES, "GetAll", NM_DBUS_INTERFACE_ACCESS_POINT);
-    auto properties = replay.value();
+  const QDBusReply<QList<QDBusObjectPath>> watcher_reply = *watcher;
+  for (const QDBusObjectPath &path : watcher_reply.value()) {
+    QDBusReply<QVariantMap> reply = call(path.path(), NM_DBUS_INTERFACE_PROPERTIES, "GetAll", NM_DBUS_INTERFACE_ACCESS_POINT);
+    auto properties = reply.value();
 
     const QByteArray ssid = properties["Ssid"].toByteArray();
     if (ssid.isEmpty()) continue;
@@ -166,7 +166,7 @@ SecurityType WifiManager::getSecurityType(const QVariantMap &properties) {
   }
 }
 
-void WifiManager::connect(const Network &n, const QString &password, const QString &username) {
+void WifiManager::connect(const Network &n, const bool is_hidden, const QString &password, const QString &username) {
   setCurrentConnecting(n.ssid);
   forgetConnection(n.ssid);  // Clear all connections that may already exist to the network we are connecting
   Connection connection;
@@ -176,6 +176,7 @@ void WifiManager::connect(const Network &n, const QString &password, const QStri
   connection["connection"]["autoconnect-retries"] = 0;
 
   connection["802-11-wireless"]["ssid"] = n.ssid;
+  connection["802-11-wireless"]["hidden"] = is_hidden;
   connection["802-11-wireless"]["mode"] = "infrastructure";
 
   if (n.security_type == SecurityType::WPA) {
@@ -427,7 +428,10 @@ void WifiManager::addTetheringConnection() {
   connection["ipv4"]["route-metric"] = 1100;
   connection["ipv6"]["method"] = "ignore";
 
-  call(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "AddConnection", QVariant::fromValue(connection));
+  auto path = call<QDBusObjectPath>(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "AddConnection", QVariant::fromValue(connection));
+  if (!path.path().isEmpty()) {
+    knownConnections[path] = tethering_ssid;
+  }
 }
 
 void WifiManager::tetheringActivated(QDBusPendingCallWatcher *call) {

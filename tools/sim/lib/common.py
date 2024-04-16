@@ -69,12 +69,18 @@ class World(ABC):
     self.road_image = np.zeros((H, W, 3), dtype=np.uint8)
     self.wide_road_image = np.zeros((H, W, 3), dtype=np.uint8)
 
+    self.exit_event = multiprocessing.Event()
+
   @abstractmethod
   def apply_controls(self, steer_sim, throttle_out, brake_out):
     pass
 
   @abstractmethod
   def tick(self):
+    pass
+
+  @abstractmethod
+  def read_state(self):
     pass
 
   @abstractmethod
@@ -86,7 +92,7 @@ class World(ABC):
     pass
 
   @abstractmethod
-  def close(self):
+  def close(self, reason: str):
     pass
 
   @abstractmethod

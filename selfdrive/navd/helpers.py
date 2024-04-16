@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import math
-from typing import Any, Dict, List, Optional, Tuple, Union, cast
+from typing import Any, cast
 
 from openpilot.common.conversions import Conversions
 from openpilot.common.numpy_fast import clip
@@ -22,13 +22,13 @@ class Coordinate:
   def __init__(self, latitude: float, longitude: float) -> None:
     self.latitude = latitude
     self.longitude = longitude
-    self.annotations: Dict[str, float] = {}
+    self.annotations: dict[str, float] = {}
 
   @classmethod
-  def from_mapbox_tuple(cls, t: Tuple[float, float]) -> Coordinate:
+  def from_mapbox_tuple(cls, t: tuple[float, float]) -> Coordinate:
     return cls(t[1], t[0])
 
-  def as_dict(self) -> Dict[str, float]:
+  def as_dict(self) -> dict[str, float]:
     return {'latitude': self.latitude, 'longitude': self.longitude}
 
   def __str__(self) -> str:
@@ -83,7 +83,7 @@ def minimum_distance(a: Coordinate, b: Coordinate, p: Coordinate):
   return projection.distance_to(p)
 
 
-def distance_along_geometry(geometry: List[Coordinate], pos: Coordinate) -> float:
+def distance_along_geometry(geometry: list[Coordinate], pos: Coordinate) -> float:
   if len(geometry) <= 2:
     return geometry[0].distance_to(pos)
 
@@ -106,7 +106,7 @@ def distance_along_geometry(geometry: List[Coordinate], pos: Coordinate) -> floa
   return total_distance_closest
 
 
-def coordinate_from_param(param: str, params: Optional[Params] = None) -> Optional[Coordinate]:
+def coordinate_from_param(param: str, params: Params = None) -> Coordinate | None:
   if params is None:
     params = Params()
 
@@ -130,7 +130,7 @@ def string_to_direction(direction: str) -> str:
   return 'none'
 
 
-def maxspeed_to_ms(maxspeed: Dict[str, Union[str, float]]) -> float:
+def maxspeed_to_ms(maxspeed: dict[str, str | float]) -> float:
   unit = cast(str, maxspeed['unit'])
   speed = cast(float, maxspeed['speed'])
   return SPEED_CONVERSIONS[unit] * speed
@@ -140,7 +140,7 @@ def field_valid(dat: dict, field: str) -> bool:
   return field in dat and dat[field] is not None
 
 
-def parse_banner_instructions(banners: Any, distance_to_maneuver: float = 0.0) -> Optional[Dict[str, Any]]:
+def parse_banner_instructions(banners: Any, distance_to_maneuver: float = 0.0) -> dict[str, Any] | None:
   if not len(banners):
     return None
 
