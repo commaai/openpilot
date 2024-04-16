@@ -1,14 +1,29 @@
-#!/usr/bin/bash -e
-
-# runs on tici to create a prebuilt version of a release
+#!/usr/bin/bash
 
 set -ex
 
-BUILD_DIR=$1
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
+SOURCE_DIR="$(git -C $DIR rev-parse --show-toplevel)"
+BUILD_DIR="${BUILD_DIR:=$(mktemp -d)}"
 
+if [ -f /TICI ]; then
+  FILES_SRC="release/files_tici"
+else
+  FILES_SRC="release/files_pc"
+fi
+
+echo "Building openpilot into $BUILD_DIR"
+
+rm -rf $BUILD_DIR
+mkdir -p $BUILD_DIR
+
+# Copy required files to BUILD_DIR
+cd $SOURCE_DIR
+cp -pR --parents $(cat release/files_common) $BUILD_DIR/
+cp -pR --parents $(cat $FILES_SRC) $BUILD_DIR/
+
+# Build + cleanup
 cd $BUILD_DIR
-
-# Build
 export PYTHONPATH="$BUILD_DIR"
 
 rm -f panda/board/obj/panda.bin.signed

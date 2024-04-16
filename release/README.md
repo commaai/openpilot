@@ -24,15 +24,15 @@
 
 ## creating casync build
 
-`create_casync_build.sh` - creates a casync openpilot build, ready to upload to `openpilot-releases`
+`build_release.sh` - creates a casync openpilot build, ready to upload to `openpilot-releases`
 
 ```bash
-# run on a tici, within the directory you want to create the build from.
+# run on device within the directory you want to create the build from.
 # creates a prebuilt version of openpilot into BUILD_DIR and outputs the caibx
 # of a tarball containing the full prebuilt openpilot release
 BUILD_DIR=/data/openpilot_build    \
 CASYNC_DIR=/data/casync            \
-release/create_casync_build.sh
+release/build_release.sh
 ```
 
 `upload_casync_release.sh` - helper for uploading a casync build to `openpilot-releases`
