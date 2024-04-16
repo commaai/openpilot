@@ -185,7 +185,7 @@ def build_casync_release(String channel_name, def is_release) {
   extra_env += "TMPDIR=/data/tmp PYTHONPATH=$SOURCE_DIR"
 
   return deviceStage("build casync", "tici-needs-can", [], [
-    ["build", "${extra_env} $SOURCE_DIR/release/build.sh ${build_dir}"],
+    ["build", "${extra_env} $SOURCE_DIR/release/build_release.sh ${build_dir}"],
     ["package + upload", "${extra_env} $SOURCE_DIR/release/package_casync_build.py ${build_dir}"],
   ])
 }
