@@ -131,9 +131,11 @@ FW_VERSIONS = {
   },
   CAR.FORD_MAVERICK_MK1: {
     (Ecu.eps, 0x730, None): [
+      b'NZ6C-14D003-AK\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'NZ6C-14D003-AL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x760, None): [
+      b'NZ6C-2D053-AE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'NZ6C-2D053-AG\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PZ6C-2D053-ED\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PZ6C-2D053-EE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -144,6 +146,20 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x706, None): [
       b'NZ6T-14F397-AC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+  },
+  CAR.FORD_RANGER_MK2: {
+    (Ecu.eps, 0x730, None): [
+      b'NL14-14D003-AE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.abs, 0x760, None): [
+      b'PB3C-2D053-ZD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x764, None): [
+      b'ML3T-14D049-AL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x706, None): [
+      b'PJ6T-14H102-ABJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
 }

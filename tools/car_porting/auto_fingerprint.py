@@ -41,7 +41,7 @@ if __name__ == "__main__":
   carPlatform = CP.carFingerprint
 
   if args.platform is None: # attempt to auto-determine platform with other fuzzy fingerprints
-    _, possible_platforms = match_fw_to_car(carFw, log=False)
+    _, possible_platforms = match_fw_to_car(carFw, carVin, log=False)
 
     if len(possible_platforms) != 1:
       print(f"Unable to auto-determine platform, possible platforms: {possible_platforms}")
