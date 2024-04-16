@@ -226,8 +226,7 @@ node {
 
   if (env.BRANCH_NAME == nightlyBranch) {
     props.add(pipelineTriggers([
-      pollSCM('* * * * *'), // every commit
-      cron('0 2 * * *')     // and at 2am every night
+      cron('0 2 * * *')     // at 2am every night
     ]))
   }
 
