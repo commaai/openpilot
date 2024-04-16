@@ -144,8 +144,8 @@ def match_fw_to_car_exact(live_fw_versions: LiveFwVersions, match_brand: str = N
   return set(candidates.keys()) - invalid
 
 
-def match_fw_to_car(fw_versions: list[capnp.lib.capnp._DynamicStructBuilder], allow_exact: bool = True, allow_fuzzy: bool = True,
-                    log: bool = True) -> tuple[bool, set[str]]:
+def match_fw_to_car(fw_versions: list[capnp.lib.capnp._DynamicStructBuilder], vin: str,
+                    allow_exact: bool = True, allow_fuzzy: bool = True, log: bool = True) -> tuple[bool, set[str]]:
   # Try exact matching first
   exact_matches: list[tuple[bool, MatchFwToCar]] = []
   if allow_exact:
@@ -163,7 +163,7 @@ def match_fw_to_car(fw_versions: list[capnp.lib.capnp._DynamicStructBuilder], al
       # If specified and no matches so far, fall back to brand's fuzzy fingerprinting function
       config = FW_QUERY_CONFIGS[brand]
       if not exact_match and not len(matches) and config.match_fw_to_car_fuzzy is not None:
-        matches |= config.match_fw_to_car_fuzzy(fw_versions_dict, VERSIONS[brand])
+        matches |= config.match_fw_to_car_fuzzy(fw_versions_dict, vin, VERSIONS[brand])
 
     if len(matches):
       return exact_match, matches
@@ -237,7 +237,7 @@ def set_obd_multiplexing(params: Params, obd_multiplexing: bool):
     cloudlog.warning("OBD multiplexing set successfully")
 
 
-def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs: set[EcuAddrBusType], timeout: float = 0.1, num_pandas: int = 1,
+def get_fw_versions_ordered(logcan, sendcan, vin: str, ecu_rx_addrs: set[EcuAddrBusType], timeout: float = 0.1, num_pandas: int = 1,
                             debug: bool = False, progress: bool = False) -> list[capnp.lib.capnp._DynamicStructBuilder]:
   """Queries for FW versions ordering brands by likelihood, breaks when exact match is found"""
 
@@ -253,7 +253,7 @@ def get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs: set[EcuAddrBusType], 
     all_car_fw.extend(car_fw)
 
     # If there is a match using this brand's FW alone, finish querying early
-    _, matches = match_fw_to_car(car_fw, log=False)
+    _, matches = match_fw_to_car(car_fw, vin, log=False)
     if len(matches) == 1:
       break
 
@@ -381,7 +381,7 @@ if __name__ == "__main__":
 
   t = time.time()
   fw_vers = get_fw_versions(logcan, sendcan, query_brand=args.brand, extra=extra, num_pandas=num_pandas, debug=args.debug, progress=True)
-  _, candidates = match_fw_to_car(fw_vers)
+  _, candidates = match_fw_to_car(fw_vers, vin)
 
   print()
   print("Found FW versions")

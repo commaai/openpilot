@@ -32,7 +32,6 @@
 # of a tarball containing the full prebuilt openpilot release
 BUILD_DIR=/data/openpilot_build    \
 CASYNC_DIR=/data/casync            \
-OPENPILOT_CHANNEL=nightly          \
 release/create_casync_build.sh
 ```
 
