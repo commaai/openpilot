@@ -494,15 +494,13 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [StdQueries.SHORT_TESTER_PRESENT_REQUEST, TOYOTA_VERSION_REQUEST_KWP],
       [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, TOYOTA_VERSION_RESPONSE_KWP],
-      whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.dsu, Ecu.abs, Ecu.eps,
-                      Ecu.srs, Ecu.transmission, Ecu.hvac],
+      whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.dsu, Ecu.abs, Ecu.eps, Ecu.srs, Ecu.transmission, Ecu.hvac],
       bus=0,
     ),
     Request(
       [StdQueries.SHORT_TESTER_PRESENT_REQUEST, StdQueries.OBD_VERSION_REQUEST],
       [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, StdQueries.OBD_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.engine, Ecu.hybrid, Ecu.srs, Ecu.transmission,
-                      Ecu.hvac],
+      whitelist_ecus=[Ecu.engine, Ecu.hybrid, Ecu.srs, Ecu.transmission, Ecu.hvac],
       bus=0,
     ),
     Request(
