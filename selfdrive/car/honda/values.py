@@ -300,9 +300,9 @@ FW_QUERY_CONFIG = FwQueryConfig(
   # We lose these ECUs without the comma power on these cars.
   # Note that we still attempt to match with them when they are present
   non_essential_ecus={
-    Ecu.eps: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC_2022, CAR.HONDA_E],
+    Ecu.eps: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC_2022, CAR.HONDA_E, CAR.HONDA_HRV_3G],
     Ecu.vsa: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CIVIC_2022, CAR.HONDA_CRV_5G, CAR.HONDA_CRV_HYBRID,
-              CAR.HONDA_E, CAR.HONDA_INSIGHT],
+              CAR.HONDA_E, CAR.HONDA_HRV_3G, CAR.HONDA_INSIGHT],
   },
   extra_ecus=[
     (Ecu.combinationMeter, 0x18da60f1, None),
