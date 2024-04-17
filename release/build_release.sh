@@ -48,4 +48,4 @@ rm selfdrive/modeld/models/supercombo.onnx
 # Mark as prebuilt release
 touch prebuilt
 
-echo "----- openpilot has been build to $BUILD_DIR -----"
+echo "----- openpilot has been built to $BUILD_DIR -----"
