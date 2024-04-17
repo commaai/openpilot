@@ -1013,33 +1013,26 @@ FW_VERSIONS = {
   },
   CAR.HONDA_HRV_3G: {
     (Ecu.eps, 0x18da30f1, None): [
-      b'39990-3M0-G110\x00\x00',
       b'39990-3W0-A030\x00\x00',
     ],
     (Ecu.gateway, 0x18daeff1, None): [
-      b'38897-3M0-M110\x00\x00',
       b'38897-3W1-A010\x00\x00',
     ],
     (Ecu.srs, 0x18da53f1, None): [
-      b'77959-3M0-K840\x00\x00',
       b'77959-3V0-A820\x00\x00',
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
-      b'8S102-3M6-P030\x00\x00',
       b'8S102-3W0-A060\x00\x00',
       b'8S102-3W0-AB10\x00\x00',
     ],
     (Ecu.vsa, 0x18da28f1, None): [
-      b'57114-3M6-M010\x00\x00',
       b'57114-3W0-A040\x00\x00',
     ],
     (Ecu.transmission, 0x18da1ef1, None): [
       b'28101-6EH-A010\x00\x00',
-      b'28101-6JC-M310\x00\x00',
     ],
     (Ecu.programmedFuelInjection, 0x18da10f1, None): [
       b'37805-6CT-A710\x00\x00',
-      b'37805-6HZ-M630\x00\x00',
     ],
     (Ecu.electricBrakeBooster, 0x18da2bf1, None): [
       b'46114-3W0-A020\x00\x00',
