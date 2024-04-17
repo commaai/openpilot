@@ -1035,7 +1035,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'8S102-3W0-A060\x00\x00',
-      b'8S102-3W0-AB10\x00\x00',
+      b'8S102-3W0-AB10\x00\x00',  # b'8S108-T20-A010\x00\x00',
     ],
   },
   CAR.ACURA_ILX: {
