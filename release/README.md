@@ -4,8 +4,7 @@
 ## terms
 
 - `channel` - a named version of openpilot (git branch, casync caibx) which receives updates
-- `build` - a release which is already built for the comma 3/3x and contains only required files for running openpilot and identifying the release
-
+- `build` - a copy of openpilot ready for distribution, already built for a specific device
 - `build_style` - type of build, either `debug` or `release`
   - `debug` - build with `ALLOW_DEBUG=true`, can test experimental features like longitudinal on alpha cars
   - `release` - build with `ALLOW_DEBUG=false`, experimental features disabled
@@ -22,21 +21,13 @@
 | git branches | `debug`     | installed manually, experimental features enabled, build required |
 
 
-## creating casync build
+## build
 
-`create_casync_build.sh` - creates a casync openpilot build, ready to upload to `openpilot-releases`
+`release/build_release.sh <build_dir>` - creates an openpilot build into `build_dir`, ready for distribution
 
-```bash
-# run on a tici, within the directory you want to create the build from.
-# creates a prebuilt version of openpilot into BUILD_DIR and outputs the caibx
-# of a tarball containing the full prebuilt openpilot release
-BUILD_DIR=/data/openpilot_build    \
-CASYNC_DIR=/data/casync            \
-release/create_casync_build.sh
-```
+## packaging a casync release
 
-`upload_casync_release.sh` - helper for uploading a casync build to `openpilot-releases`
-
+`release/package_casync_build.py <build_dir>` - packages an openpilot build into a casync tar and uploads to `openpilot-releases`
 
 ## release builds
 

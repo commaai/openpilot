@@ -63,6 +63,7 @@ if [ -f /TICI ]; then
   rm -rf /tmp/tmp*
   rm -rf ~/.commacache
   rm -rf /dev/shm/*
+  rm -rf /dev/tmp/tmp*
 
   if ! systemctl is-active --quiet systemd-resolved; then
     echo "restarting resolved"
@@ -179,12 +180,14 @@ def build_git_release(String channel_name) {
 
 
 def build_casync_release(String channel_name, def is_release) {
-  def extra_env = is_release ? "RELEASE=1" : ""
+  def extra_env = is_release ? "RELEASE=1 " : ""
+  def build_dir = "/data/openpilot"
+
+  extra_env += "TMPDIR=/data/tmp PYTHONPATH=$SOURCE_DIR"
 
   return deviceStage("build casync", "tici-needs-can", [], [
-    ["build", "${extra_env} BUILD_DIR=/data/openpilot CASYNC_DIR=/data/casync/openpilot $SOURCE_DIR/release/create_casync_build.sh"],
-    ["create manifest", "$SOURCE_DIR/release/create_release_manifest.py /data/openpilot /data/manifest.json && cat /data/manifest.json"],
-    ["upload and cleanup", "PYTHONWARNINGS=ignore $SOURCE_DIR/release/upload_casync_release.py /data/casync && rm -rf /data/casync"],
+    ["build", "${extra_env} $SOURCE_DIR/release/build_release.sh ${build_dir}"],
+    ["package + upload", "${extra_env} $SOURCE_DIR/release/package_casync_build.py ${build_dir}"],
   ])
 }
 
@@ -199,8 +202,7 @@ def build_stage() {
     },
     'publish agnos': {
       pcStage("publish agnos") {
-        sh "release/create_casync_agnos_release.py /tmp/casync/agnos /tmp/casync_tmp"
-        sh "PYTHONWARNINGS=ignore ${env.WORKSPACE}/release/upload_casync_release.py /tmp/casync"
+        sh "PYTHONWARNINGS=ignore release/package_casync_agnos.py"
       }
     }
   )
