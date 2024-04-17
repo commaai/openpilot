@@ -9,7 +9,7 @@ from unittest import mock
 from cereal import car
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
-from openpilot.selfdrive.car.fw_versions import FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, build_fw_dict, \
+from openpilot.selfdrive.car.fw_versions import ESSENTIAL_ECUS, FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, build_fw_dict, \
                                                 match_fw_to_car, get_brand_ecu_matches, get_fw_versions, get_present_ecus
 from openpilot.selfdrive.car.vin import get_vin
 
@@ -145,6 +145,14 @@ class TestFwFingerprint(unittest.TestCase):
           if CP.carFingerprint.startswith("RAM HD"):
             for ecu in ecus.keys():
               self.assertNotEqual(ecu[0], Ecu.transmission, f"{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})")
+
+  def test_non_essential_ecus(self):
+    for brand, config in FW_QUERY_CONFIGS.items():
+      with self.subTest(brand):
+        # These ECUs are already not in ESSENTIAL_ECUS which the fingerprint functions give a pass if missing
+        unnecessary_non_essential_ecus = set(config.non_essential_ecus) - set(ESSENTIAL_ECUS)
+        self.assertEqual(unnecessary_non_essential_ecus, set(), "Declaring non-essential ECUs non-essential is not required: " +
+                                                                f"{', '.join([f'Ecu.{ECU_NAME[ecu]}' for ecu in unnecessary_non_essential_ecus])}")
 
   def test_missing_versions_and_configs(self):
     brand_versions = set(VERSIONS.keys())
