@@ -527,8 +527,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
     # - HV Battery (0x713, 0x747)
     # - Motor Generator (0x716, 0x724)
     # - 2nd ABS "Brake/EPB" (0x730)
-    # - Telematics ((0x750, 0xc7))
     # - Electronic Parking Brake ((0x750, 0x2c))
+    # - Telematics ((0x750, 0xc7))
     # Responds to KWP (0x1a8801):
     # - Steering Angle Sensor (0x7b3)
     # - EPS/EMPS (0x7a0, 0x7a1)
