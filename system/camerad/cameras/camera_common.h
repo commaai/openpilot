@@ -7,6 +7,7 @@
 #include "cereal/messaging/messaging.h"
 #include "cereal/visionipc/visionipc_server.h"
 #include "common/queue.h"
+#include "common/util.h"
 
 const int YUV_BUFFER_COUNT = 20;
 
@@ -23,13 +24,6 @@ const bool env_disable_driver = getenv("DISABLE_DRIVER") != NULL;
 const bool env_debug_frames = getenv("DEBUG_FRAMES") != NULL;
 const bool env_log_raw_frames = getenv("LOG_RAW_FRAMES") != NULL;
 const bool env_ctrl_exp_from_params = getenv("CTRL_EXP_FROM_PARAMS") != NULL;
-
-typedef struct AutoExposureRect {
-  int x;
-  int y;
-  int w;
-  int h;
-} AutoExposureRect;
 
 typedef struct FrameMetadata {
   uint32_t frame_id;
@@ -82,7 +76,7 @@ typedef void (*process_thread_cb)(MultiCameraState *s, CameraState *c, int cnt);
 
 void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, CameraState *c);
 kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b);
-float set_exposure_target(const CameraBuf *b, AutoExposureRect ae_xywh, int x_skip, int y_skip);
+float set_exposure_target(const CameraBuf *b, Rect ae_xywh, int x_skip, int y_skip);
 std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback);
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx);

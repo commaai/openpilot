@@ -8,7 +8,6 @@
 
 #include "common/clutil.h"
 #include "common/swaglog.h"
-#include "common/util.h"
 #include "third_party/linux/include/msm_media_info.h"
 
 #include "system/camerad/cameras/camera_qcom2.h"
@@ -261,7 +260,7 @@ static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
   pm->send("thumbnail", msg);
 }
 
-float set_exposure_target(const CameraBuf *b, AutoExposureRect ae_xywh, int x_skip, int y_skip) {
+float set_exposure_target(const CameraBuf *b, Rect ae_xywh, int x_skip, int y_skip) {
   int lum_med;
   uint32_t lum_binning[256] = {0};
   const uint8_t *pix_ptr = b->cur_yuv_buf->y;

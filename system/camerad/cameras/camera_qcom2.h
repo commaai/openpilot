@@ -30,7 +30,7 @@ public:
   int new_exp_g;
   int new_exp_t;
 
-  AutoExposureRect ae_xywh;
+  Rect ae_xywh;
   float measured_grey_fraction;
   float target_grey_fraction;
 

@@ -36,7 +36,7 @@ TEST_CASE("camera.test_set_exposure_target") {
   cb.cur_yuv_buf = &vb;
   cb.rgb_width = W;
   cb.rgb_height = H;
-  AutoExposureRect rect = {0, 0, W-1, H-1};
+  Rect rect = {0, 0, W-1, H-1};
 
   printf("AE test patterns %dx%d\n", cb.rgb_width, cb.rgb_height);
 

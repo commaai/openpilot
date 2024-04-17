@@ -48,7 +48,7 @@ public:
   float target_grey_factor;
   float min_ev;
   float max_ev;
-  std::vector<AutoExposureRect> ae_areas;
+  std::vector<Rect> ae_areas;
 
   bool data_word;
   uint32_t probe_reg_addr;
