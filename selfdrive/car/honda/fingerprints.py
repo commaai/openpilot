@@ -1033,6 +1033,9 @@ FW_VERSIONS = {
     (Ecu.electricBrakeBooster, 0x18da2bf1, None): [
       b'46114-3W0-A020\x00\x00',
     ],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'8S102-3W0-A060\x00\x00',
+    ],
   },
   CAR.ACURA_ILX: {
     (Ecu.gateway, 0x18daeff1, None): [
