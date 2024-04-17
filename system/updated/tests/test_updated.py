@@ -23,7 +23,7 @@ from openpilot.system.updated.common import get_valid_flag
 from openpilot.system.version import BuildMetadata, OpenpilotMetadata, get_version
 
 
-def create_remote_response(channel, build_metadata, entries: list[dict], casync_base: str):
+def create_remote_response(build_metadata, entries: list[dict], casync_base: str):
 
   for entry in entries:
     entry["casync"]["caibx"] = os.path.join(casync_base, os.path.basename(entry["casync"]["caibx"]))
@@ -51,7 +51,7 @@ def fake_ab(target):
     yield
 
 
-def update_release(directory, name, version, agnos_version, release_notes):
+def update_release(directory, version, agnos_version, release_notes):
   with open(directory / "RELEASES.md", "w") as f:
     f.write(release_notes)
 
@@ -72,13 +72,13 @@ def update_release(directory, name, version, agnos_version, release_notes):
     os.symlink("common/version.h", test_symlink)
 
 
-def create_mock_build_metadata(channel, version, agnos_version, release_notes):
+def create_mock_build_metadata(version, agnos_version, release_notes):
   commit = str(hash((version, agnos_version, release_notes)))  # simulated commit
-  return BuildMetadata(channel, OpenpilotMetadata(version, release_notes, commit, "https://github.com/commaai/openpilot.git", "2024", "release", False))
+  return BuildMetadata("", OpenpilotMetadata(version, release_notes, commit, "https://github.com/commaai/openpilot.git", "2024", "release", False))
 
 
-def create_casync_files(dirname, channel, version, agnos_version, release_notes):
-  create_build_metadata_file(pathlib.Path(dirname), create_mock_build_metadata(channel, version, agnos_version, release_notes), channel)
+def create_casync_files(dirname, version, agnos_version, release_notes):
+  create_build_metadata_file(pathlib.Path(dirname), create_mock_build_metadata(version, agnos_version, release_notes))
 
 
 def OpenpilotChannelMockAPI(release_manifests: dict[str, list[dict]], mock_releases, casync_base):
@@ -98,9 +98,9 @@ def OpenpilotChannelMockAPI(release_manifests: dict[str, list[dict]], mock_relea
         response = list(release_manifests.keys())
       else:
         channel = self.path.split("/")[-1]
-        build_metadata = create_mock_build_metadata(channel, *mock_releases[channel])
+        build_metadata = create_mock_build_metadata(*mock_releases[channel])
 
-        response = create_remote_response(channel, build_metadata, release_manifests[channel], casync_base)
+        response = create_remote_response(build_metadata, release_manifests[channel], casync_base)
 
       response = json.dumps(response)
 
@@ -199,14 +199,11 @@ class TestUpdated(unittest.TestCase):
     self.boot_a.write_bytes(b"1.2")
     self.boot_b.write_bytes(b"1.2")
 
-  def set_target_branch(self, branch):
-    self.params.put("UpdaterTargetBranch", branch)
-
   def setup_basedir_release(self, release):
     self.params = Params()
-    self.set_target_branch(release)
-    update_release(self.basedir, release, *self.MOCK_RELEASES[release])
-    create_casync_files(self.basedir, release, *self.MOCK_RELEASES[release])
+    self.set_channel_param(release)
+    update_release(self.basedir, *self.MOCK_RELEASES[release])
+    create_casync_files(self.basedir, *self.MOCK_RELEASES[release])
 
   def wait_for_condition(self, condition, timeout=4):
     start = time.monotonic()
@@ -232,8 +229,8 @@ class TestUpdated(unittest.TestCase):
       self.assertIn(version, f.read())
 
   def update_remote_release(self, release):
-    update_release(self.remote_dir, release, *self.MOCK_RELEASES[release])
-    create_casync_files(self.remote_dir, release, *self.MOCK_RELEASES[release])
+    update_release(self.remote_dir, *self.MOCK_RELEASES[release])
+    create_casync_files(self.remote_dir, *self.MOCK_RELEASES[release])
 
     digest, caibx_file = create_casync_release(self.remote_dir, self.casync_dir, release)
     self.release_manifests[release] = [
@@ -275,7 +272,7 @@ class TestUpdated(unittest.TestCase):
     run_cmd(["git", "config", "user.name", "'tester'"], cwd=self.basedir)
     run_cmd(["git", "config", "user.email", "'tester@comma.ai'"], cwd=self.basedir)
     run_cmd(["git", "checkout", "-b", release], cwd=self.basedir)
-    update_release(self.basedir, release, *self.MOCK_RELEASES[release])
+    update_release(self.basedir, *self.MOCK_RELEASES[release])
     run_cmd(["git", "add", "."], cwd=self.basedir)
     run_cmd(["git", "commit", "-m", f"openpilot release {release}"], cwd=self.basedir)
 
@@ -285,6 +282,9 @@ class TestUpdated(unittest.TestCase):
 
   def _test_channel_param(self, channel):
     self.assertEqual(self.params.get("UpdaterTargetChannel", encoding="utf-8"), channel)
+
+  def set_channel_param(self, channel):
+    self.params.put("UpdaterTargetChannel", channel)
 
   def test_no_update(self):
     # Start on release3, ensure we don't fetch any updates

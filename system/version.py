@@ -112,8 +112,7 @@ class BuildMetadata:
     return f"{self.openpilot.version} / {self.openpilot.git_commit[:6]} / {self.channel}"
 
   def __eq__(self, other):
-    return self.channel == other.channel and \
-           self.openpilot.git_commit == other.openpilot.git_commit and \
+    return self.openpilot.git_commit == other.openpilot.git_commit and \
            self.openpilot.build_style == other.openpilot.build_style
 
 
