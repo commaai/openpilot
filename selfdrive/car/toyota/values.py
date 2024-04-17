@@ -544,7 +544,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.transmission, 0x701, None),
     # A few platforms have a tester present response on this address, add to log
     (Ecu.transmission, 0x7e1, None),
-    # On some cars, this only responds to b'\x1a\x88\x80'
     (Ecu.hvac, 0x7c4, None),
   ],
   match_fw_to_car_fuzzy=match_fw_to_car_fuzzy,
