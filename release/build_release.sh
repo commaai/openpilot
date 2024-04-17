@@ -1,10 +1,10 @@
 #!/usr/bin/bash
 
-set -ex
+set -e
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 SOURCE_DIR="$(git -C $DIR rev-parse --show-toplevel)"
-BUILD_DIR=$1
+BUILD_DIR=${1:-$(mktemp -d)}
 
 if [ -f /TICI ]; then
   FILES_SRC="release/files_tici"
@@ -47,3 +47,5 @@ rm selfdrive/modeld/models/supercombo.onnx
 
 # Mark as prebuilt release
 touch prebuilt
+
+echo "----- openpilot has been build to $BUILD_DIR -----"
