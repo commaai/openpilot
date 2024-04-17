@@ -226,7 +226,7 @@ node {
 
   if (env.BRANCH_NAME == nightlyBranch) {
     props.add(pipelineTriggers([
-      cron('0 2 * * *')     // at 2am every night
+      cron('0 9 * * *')     // at 2am PST (9am UTC) every night
     ]))
   }
 
