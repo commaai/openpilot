@@ -177,7 +177,7 @@ jobs:
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         ./selfdrive/ui/tests/test_translations.py"
     - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         name: ${{ github.job }}
       env:
@@ -226,7 +226,7 @@ jobs:
       run: |
         ${{ env.RUN }} "unset PYTHONWARNINGS && AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
     - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         name: ${{ github.job }}
       env:
@@ -284,7 +284,7 @@ jobs:
         ${{ env.RUN }} "unset PYTHONWARNINGS && \
                            $PYTEST selfdrive/modeld"
     - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         name: ${{ github.job }}
       env:
@@ -321,7 +321,7 @@ jobs:
         NUM_JOBS: 5
         JOB_ID: ${{ matrix.job }}
     - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         name: ${{ github.job }}-${{ matrix.job }}
       env:
