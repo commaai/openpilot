@@ -98,10 +98,10 @@ void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
   ipv4_address = getIp4Address();
   seenNetworks.clear();
 
-  const QDBusReply<QList<QDBusObjectPath>> wather_reply = *watcher;
-  for (const QDBusObjectPath &path : wather_reply.value()) {
-    QDBusReply<QVariantMap> replay = call(path.path(), NM_DBUS_INTERFACE_PROPERTIES, "GetAll", NM_DBUS_INTERFACE_ACCESS_POINT);
-    auto properties = replay.value();
+  const QDBusReply<QList<QDBusObjectPath>> watcher_reply = *watcher;
+  for (const QDBusObjectPath &path : watcher_reply.value()) {
+    QDBusReply<QVariantMap> reply = call(path.path(), NM_DBUS_INTERFACE_PROPERTIES, "GetAll", NM_DBUS_INTERFACE_ACCESS_POINT);
+    auto properties = reply.value();
 
     const QByteArray ssid = properties["Ssid"].toByteArray();
     if (ssid.isEmpty()) continue;
@@ -210,16 +210,8 @@ void WifiManager::deactivateConnection(const QDBusObjectPath &path) {
 }
 
 QVector<QDBusObjectPath> WifiManager::getActiveConnections() {
-  QVector<QDBusObjectPath> conns;
-  QDBusObjectPath path;
-  const QDBusArgument &arr = call<QDBusArgument>(NM_DBUS_PATH, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE, "ActiveConnections");
-  arr.beginArray();
-  while (!arr.atEnd()) {
-    arr >> path;
-    conns.push_back(path);
-  }
-  arr.endArray();
-  return conns;
+  auto result = call<QDBusArgument>(NM_DBUS_PATH, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE, "ActiveConnections");
+  return qdbus_cast<QVector<QDBusObjectPath>>(result);
 }
 
 bool WifiManager::isKnownConnection(const QString &ssid) {
@@ -428,7 +420,10 @@ void WifiManager::addTetheringConnection() {
   connection["ipv4"]["route-metric"] = 1100;
   connection["ipv6"]["method"] = "ignore";
 
-  call(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "AddConnection", QVariant::fromValue(connection));
+  auto path = call<QDBusObjectPath>(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "AddConnection", QVariant::fromValue(connection));
+  if (!path.path().isEmpty()) {
+    knownConnections[path] = tethering_ssid;
+  }
 }
 
 void WifiManager::tetheringActivated(QDBusPendingCallWatcher *call) {
