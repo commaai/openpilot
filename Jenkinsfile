@@ -247,7 +247,7 @@ node {
       build_git_release("nightly")
     }
 
-    if (false) {//!env.BRANCH_NAME.matches(excludeRegex)) {
+    if (!env.BRANCH_NAME.matches(excludeRegex)) {
       parallel (
         // tici tests
         'onroad tests': {
@@ -317,7 +317,7 @@ node {
       )
     }
 
-    if (true) {//env.BRANCH_NAME == nightlyBranch && isJobStartedByTimer()) {
+    if (env.BRANCH_NAME == nightlyBranch && isJobStartedByTimer()) {
       stage('build release') {
         build_stage()
       }
