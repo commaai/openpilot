@@ -268,6 +268,8 @@ class TestUpdated(unittest.TestCase):
 
   def setup_git_basedir_release(self, release):
     self.setup_basedir_release(release)
+    self.clear_channel_param()  # before migrating, no channel param will be set
+    (self.basedir / "build.json").unlink()
     run_cmd(["git", "init"], cwd=self.basedir)
     run_cmd(["git", "config", "user.name", "'tester'"], cwd=self.basedir)
     run_cmd(["git", "config", "user.email", "'tester@comma.ai'"], cwd=self.basedir)
@@ -285,6 +287,9 @@ class TestUpdated(unittest.TestCase):
 
   def set_channel_param(self, channel):
     self.params.put("UpdaterTargetChannel", channel)
+
+  def clear_channel_param(self):
+    self.params.remove("UpdaterTargetChannel")
 
   def test_no_update(self):
     # Start on release3, ensure we don't fetch any updates
