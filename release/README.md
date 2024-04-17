@@ -23,7 +23,7 @@
 
 ## build
 
-`release/build.sh <build_dir>` - creates an openpilot build into `build_dir`, ready for distribution
+`release/build_release.sh <build_dir>` - creates an openpilot build into `build_dir`, ready for distribution
 
 ## packaging a casync release
 
