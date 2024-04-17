@@ -77,6 +77,9 @@ def dmonitoringd_thread():
     }
     pm.send('driverMonitoringState', dat)
 
+    if sm['driverStateV2'].frameId % 40 == 1:
+      driver_status.always_on = params.get_bool("AlwaysOnDM")
+
     # save rhd virtual toggle every 5 mins
     if (sm['driverStateV2'].frameId % 6000 == 0 and
      driver_status.wheelpos_learner.filtered_stat.n > driver_status.settings._WHEELPOS_FILTER_MIN_COUNT and
