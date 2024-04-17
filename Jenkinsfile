@@ -180,7 +180,7 @@ def build_git_release(String channel_name) {
 
 
 def build_casync_release(String channel_name, def is_release) {
-  def extra_env = is_release ? "RELEASE=1" : ""
+  def extra_env = is_release ? "RELEASE=1 " : ""
   def build_dir = "/data/openpilot"
 
   extra_env += "TMPDIR=/data/tmp PYTHONPATH=$SOURCE_DIR"
