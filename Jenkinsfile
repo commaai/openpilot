@@ -201,8 +201,7 @@ def build_stage() {
     },
     'publish agnos': {
       pcStage("publish agnos") {
-        sh "release/package_casync_agnos.py /tmp/casync/agnos /tmp/casync_tmp"
-        sh "PYTHONWARNINGS=ignore ${env.WORKSPACE}/release/upload_casync_release.py /tmp/casync"
+        sh "PYTHONWARNINGS=ignore release/package_casync_agnos.py"
       }
     }
   )
