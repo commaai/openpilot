@@ -98,8 +98,9 @@ def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, match_brand: str = N
   if match and len(matched_ecus) >= 2:
     # TODO: verify that this is safe and makes sense by looking at data
     # Ensure all ECUs in database have responded to FW queries before matching
-    # TODO: ignore non essential ecus!
-    candidate_ecus = {(addr[1], addr[2]) for addr in FW_VERSIONS[match]}
+    config = FW_QUERY_CONFIGS[MODEL_TO_BRAND[match]]
+    candidate_ecus = {(addr[1], addr[2]) for addr in FW_VERSIONS[match] if
+                      addr[0] in ESSENTIAL_ECUS and addr[0] not in config.non_essential_ecus}
     if len(candidate_ecus - seen_ecus) == 0:
       if log:
         cloudlog.error(f"Fingerprinted {match} using fuzzy match. {len(matched_ecus)} matching ECUs")
