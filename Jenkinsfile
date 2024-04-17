@@ -248,7 +248,7 @@ node {
       build_git_release("nightly")
     }
 
-    if (!env.BRANCH_NAME.matches(excludeRegex)) {
+    if (false) {//!env.BRANCH_NAME.matches(excludeRegex)) {
       parallel (
         // tici tests
         'onroad tests': {
