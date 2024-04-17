@@ -245,7 +245,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
   def test_startup_timing(self):
     # Tests worse-case VIN query time and typical present ECU query time
     vin_ref_times = {'worst': 1.4, 'best': 0.7}  # best assumes we go through all queries to get a match
-    present_ecu_ref_time = 0.75
+    present_ecu_ref_time = 0.45
 
     def fake_get_ecu_addrs(*_, timeout):
       self.total_time += timeout
@@ -271,7 +271,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
         print(f'get_vin {name} case, query time={self.total_time / self.N} seconds')
 
   def test_fw_query_timing(self):
-    total_ref_time = {1: 8.1, 2: 8.7}
+    total_ref_time = {1: 7.2, 2: 7.8}
     brand_ref_times = {
       1: {
         'gm': 1.0,
@@ -284,7 +284,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
         'nissan': 0.8,
         'subaru': 0.65,
         'tesla': 0.3,
-        'toyota': 1.6,
+        'toyota': 0.7,
         'volkswagen': 0.65,
       },
       2: {
