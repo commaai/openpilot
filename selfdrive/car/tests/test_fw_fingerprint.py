@@ -149,7 +149,7 @@ class TestFwFingerprint(unittest.TestCase):
   def test_non_essential_ecus(self):
     for brand, config in FW_QUERY_CONFIGS.items():
       with self.subTest(brand):
-        # These ECUs are already not in ESSENTIAL_ECUS which the fingeprint functions give a pass if missing
+        # These ECUs are already not in ESSENTIAL_ECUS which the fingerprint functions give a pass if missing
         unnecessary_non_essential_ecus = set(config.non_essential_ecus) - set(ESSENTIAL_ECUS)
         self.assertEqual(unnecessary_non_essential_ecus, set(), "Declaring non-essential ECUs non-essential is not required: " +
                                                                 f"{', '.join([f'Ecu.{ECU_NAME[ecu]}' for ecu in unnecessary_non_essential_ecus])}")
