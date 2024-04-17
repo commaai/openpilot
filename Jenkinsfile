@@ -213,7 +213,6 @@ node {
   env.PYTHONWARNINGS = "error"
   env.TEST_DIR = "/data/openpilot"
   env.SOURCE_DIR = "/data/openpilot_source/"
-  env.TMPDIR = "/data/tmp"
   setupCredentials()
 
   env.GIT_BRANCH = checkout(scm).GIT_BRANCH
