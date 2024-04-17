@@ -156,7 +156,7 @@ class CAR(Platforms):
     flags=HondaFlags.BOSCH_ALT_BRAKE,
   )
   HONDA_CRV_HYBRID = HondaBoschPlatformConfig(
-    [HondaCarDocs("Honda CR-V Hybrid 2017-20", min_steer_speed=12. * CV.MPH_TO_MS)],
+    [HondaCarDocs("Honda CR-V Hybrid 2017-21", min_steer_speed=12. * CV.MPH_TO_MS)],
     # mass: mean of 4 models in kg, steerRatio: 12.3 is spec end-to-end
     CarSpecs(mass=1667, wheelbase=2.66, steerRatio=16, centerToFrontRatio=0.41, tireStiffnessFactor=0.677),
     dbc_dict('honda_accord_2018_can_generated', None),
@@ -300,25 +300,12 @@ FW_QUERY_CONFIG = FwQueryConfig(
   # We lose these ECUs without the comma power on these cars.
   # Note that we still attempt to match with them when they are present
   non_essential_ecus={
-    Ecu.programmedFuelInjection: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CIVIC_2022, CAR.HONDA_CRV_5G,
-                                  CAR.HONDA_PILOT],
-    Ecu.transmission: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CIVIC_2022, CAR.HONDA_CRV_5G, CAR.HONDA_PILOT],
-    Ecu.srs: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC_2022, CAR.HONDA_E],
-    Ecu.eps: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC_2022, CAR.HONDA_E],
+    Ecu.eps: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC_2022, CAR.HONDA_E, CAR.HONDA_HRV_3G],
     Ecu.vsa: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CIVIC_2022, CAR.HONDA_CRV_5G, CAR.HONDA_CRV_HYBRID,
-              CAR.HONDA_E, CAR.HONDA_INSIGHT],
-    Ecu.combinationMeter: [CAR.ACURA_ILX, CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CIVIC_2022, CAR.HONDA_FIT,
-                           CAR.HONDA_HRV, CAR.HONDA_CRV_5G, CAR.HONDA_CRV_HYBRID, CAR.HONDA_E, CAR.HONDA_INSIGHT, CAR.HONDA_ODYSSEY_CHN],
-    Ecu.gateway: [CAR.ACURA_ILX, CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CIVIC_2022, CAR.HONDA_FIT,
-                  CAR.HONDA_FREED, CAR.HONDA_HRV, CAR.HONDA_RIDGELINE, CAR.HONDA_CRV_5G, CAR.HONDA_CRV_HYBRID, CAR.HONDA_E, CAR.HONDA_INSIGHT,
-                  CAR.HONDA_ODYSSEY, CAR.HONDA_ODYSSEY_CHN, CAR.HONDA_PILOT],
-    Ecu.electricBrakeBooster: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CRV_5G],
-    # existence correlates with transmission type for Accord ICE
-    Ecu.shiftByWire: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CRV_HYBRID, CAR.HONDA_E, CAR.HONDA_INSIGHT, CAR.HONDA_PILOT],
-    # existence correlates with trim level
-    Ecu.hud: [CAR.HONDA_ACCORD],
+              CAR.HONDA_E, CAR.HONDA_HRV_3G, CAR.HONDA_INSIGHT],
   },
   extra_ecus=[
+    (Ecu.combinationMeter, 0x18da60f1, None),
     # The only other ECU on PT bus accessible by camera on radarless Civic
     # This is likely a manufacturer-specific sub-address implementation: the camera responds to this and 0x18dab0f1
     # Unclear what the part number refers to: 8S103 is 'Camera Set Mono', while 36160 is 'Camera Monocular - Honda'

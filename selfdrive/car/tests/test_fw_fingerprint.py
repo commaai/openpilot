@@ -9,7 +9,7 @@ from unittest import mock
 from cereal import car
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
-from openpilot.selfdrive.car.fw_versions import FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, build_fw_dict, \
+from openpilot.selfdrive.car.fw_versions import ESSENTIAL_ECUS, FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, build_fw_dict, \
                                                 match_fw_to_car, get_brand_ecu_matches, get_fw_versions, get_present_ecus
 from openpilot.selfdrive.car.vin import get_vin
 
@@ -49,7 +49,7 @@ class TestFwFingerprint(unittest.TestCase):
         fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
                    "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
       CP.carFw = fw
-      _, matches = match_fw_to_car(CP.carFw, allow_fuzzy=False)
+      _, matches = match_fw_to_car(CP.carFw, CP.carVin, allow_fuzzy=False)
       if not test_non_essential:
         self.assertFingerprints(matches, car_model)
       else:
@@ -72,8 +72,8 @@ class TestFwFingerprint(unittest.TestCase):
         fw.append({"ecu": ecu_name, "fwVersion": random.choice(fw_versions), 'brand': brand,
                    "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
       CP.carFw = fw
-      _, matches = match_fw_to_car(CP.carFw, allow_exact=False, log=False)
-      brand_matches = config.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw), VERSIONS[brand])
+      _, matches = match_fw_to_car(CP.carFw, CP.carVin, allow_exact=False, log=False)
+      brand_matches = config.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw), CP.carVin, VERSIONS[brand])
 
       # If both have matches, they must agree
       if len(matches) == 1 and len(brand_matches) == 1:
@@ -94,7 +94,7 @@ class TestFwFingerprint(unittest.TestCase):
         fw.append({"ecu": ecu_name, "fwVersion": random.choice(ecus[ecu]), 'brand': brand,
                    "address": addr, "subAddress": 0 if sub_addr is None else sub_addr})
       CP = car.CarParams.new_message(carFw=fw)
-      _, matches = match_fw_to_car(CP.carFw, allow_exact=False, log=False)
+      _, matches = match_fw_to_car(CP.carFw, CP.carVin, allow_exact=False, log=False)
 
       # Assert no match if there are not enough unique ECUs
       unique_ecus = {(f['address'], f['subAddress']) for f in fw}
@@ -145,6 +145,14 @@ class TestFwFingerprint(unittest.TestCase):
           if CP.carFingerprint.startswith("RAM HD"):
             for ecu in ecus.keys():
               self.assertNotEqual(ecu[0], Ecu.transmission, f"{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})")
+
+  def test_non_essential_ecus(self):
+    for brand, config in FW_QUERY_CONFIGS.items():
+      with self.subTest(brand):
+        # These ECUs are already not in ESSENTIAL_ECUS which the fingerprint functions give a pass if missing
+        unnecessary_non_essential_ecus = set(config.non_essential_ecus) - set(ESSENTIAL_ECUS)
+        self.assertEqual(unnecessary_non_essential_ecus, set(), "Declaring non-essential ECUs non-essential is not required: " +
+                                                                f"{', '.join([f'Ecu.{ECU_NAME[ecu]}' for ecu in unnecessary_non_essential_ecus])}")
 
   def test_missing_versions_and_configs(self):
     brand_versions = set(VERSIONS.keys())
@@ -236,7 +244,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
 
   def test_startup_timing(self):
     # Tests worse-case VIN query time and typical present ECU query time
-    vin_ref_times = {'worst': 1.2, 'best': 0.6}  # best assumes we go through all queries to get a match
+    vin_ref_times = {'worst': 1.4, 'best': 0.7}  # best assumes we go through all queries to get a match
     present_ecu_ref_time = 0.75
 
     def fake_get_ecu_addrs(*_, timeout):
