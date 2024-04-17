@@ -299,7 +299,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
   # We lose these ECUs without the comma power on these cars.
   # Note that we still attempt to match with them when they are present
-  # 147613502316e718/00000001--ce406cf8a7
   non_essential_ecus={
     Ecu.programmedFuelInjection: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CIVIC_2022, CAR.HONDA_CRV_5G,
                                   CAR.HONDA_HRV_3G, CAR.HONDA_PILOT],
