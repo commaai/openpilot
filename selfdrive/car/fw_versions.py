@@ -53,7 +53,7 @@ class MatchFwToCar(Protocol):
     ...
 
 
-def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, match_brand: str = None, log: bool = True, exclude: str = None) -> set[str]:
+def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, match_brand: str = None, log: bool = True, exclude: str = None, new_behavior: bool = False) -> set[str]:
   """Do a fuzzy FW match. This function will return a match, and the number of firmware version
   that were matched uniquely to that specific car. If multiple ECUs uniquely match to different cars
   the match is rejected."""
@@ -101,14 +101,14 @@ def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, match_brand: str = N
     config = FW_QUERY_CONFIGS[MODEL_TO_BRAND[match]]
     candidate_ecus = {(addr[1], addr[2]) for addr in FW_VERSIONS[match] if
                       addr[0] in ESSENTIAL_ECUS and addr[0] not in config.non_essential_ecus}
-    if len(candidate_ecus - seen_ecus) == 0:
+    if (len(candidate_ecus - seen_ecus) == 0) if new_behavior else True:
       if log:
         cloudlog.error(f"Fingerprinted {match} using fuzzy match. {len(matched_ecus)} matching ECUs")
       return {match}
   return set()
 
 
-def match_fw_to_car_exact(live_fw_versions: LiveFwVersions, match_brand: str = None, log: bool = True, extra_fw_versions: dict = None) -> set[str]:
+def match_fw_to_car_exact(live_fw_versions: LiveFwVersions, match_brand: str = None, log: bool = True, extra_fw_versions: dict = None, new_behavior: bool = False) -> set[str]:
   """Do an exact FW match. Returns all cars that match the given
   FW versions for a list of "essential" ECUs. If an ECU is not considered
   essential the FW version can be missing to get a fingerprint, but if it's present it
@@ -150,7 +150,7 @@ def match_fw_to_car_exact(live_fw_versions: LiveFwVersions, match_brand: str = N
 
 
 def match_fw_to_car(fw_versions: list[capnp.lib.capnp._DynamicStructBuilder], vin: str,
-                    allow_exact: bool = True, allow_fuzzy: bool = True, log: bool = True) -> tuple[bool, set[str]]:
+                    allow_exact: bool = True, allow_fuzzy: bool = True, log: bool = True, new_behavior: bool = False) -> tuple[bool, set[str]]:
   # Try exact matching first
   exact_matches: list[tuple[bool, MatchFwToCar]] = []
   if allow_exact:
@@ -163,7 +163,7 @@ def match_fw_to_car(fw_versions: list[capnp.lib.capnp._DynamicStructBuilder], vi
     matches: set[str] = set()
     for brand in VERSIONS.keys():
       fw_versions_dict = build_fw_dict(fw_versions, filter_brand=brand)
-      matches |= match_func(fw_versions_dict, match_brand=brand, log=log)
+      matches |= match_func(fw_versions_dict, match_brand=brand, log=log, new_behavior=new_behavior)
 
       # If specified and no matches so far, fall back to brand's fuzzy fingerprinting function
       config = FW_QUERY_CONFIGS[brand]
