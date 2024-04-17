@@ -318,7 +318,7 @@ node {
       )
     }
 
-    if (env.BRANCH_NAME == nightlyBranch && isJobStartedByTimer()) {
+    if (true) {//env.BRANCH_NAME == nightlyBranch && isJobStartedByTimer()) {
       stage('build release') {
         build_stage()
       }
