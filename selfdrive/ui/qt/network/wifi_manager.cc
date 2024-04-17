@@ -210,16 +210,8 @@ void WifiManager::deactivateConnection(const QDBusObjectPath &path) {
 }
 
 QVector<QDBusObjectPath> WifiManager::getActiveConnections() {
-  QVector<QDBusObjectPath> conns;
-  QDBusObjectPath path;
-  const QDBusArgument &arr = call<QDBusArgument>(NM_DBUS_PATH, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE, "ActiveConnections");
-  arr.beginArray();
-  while (!arr.atEnd()) {
-    arr >> path;
-    conns.push_back(path);
-  }
-  arr.endArray();
-  return conns;
+  auto result = call<QDBusArgument>(NM_DBUS_PATH, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE, "ActiveConnections");
+  return qdbus_cast<QVector<QDBusObjectPath>>(result);
 }
 
 bool WifiManager::isKnownConnection(const QString &ssid) {
