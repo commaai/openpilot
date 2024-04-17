@@ -90,7 +90,7 @@ MapRenderer::MapRenderer(const QMapLibre::Settings &settings, bool online) : m_s
   });
 
   QObject::connect(m_map.data(), &QMapLibre::Map::staticRenderFinished, [=](const QString &error) {
-    static_render_sig_rec = true;
+    rendering = false;
 
     if (!error.isEmpty()) {
       LOGE("Static map rendering failed with error: '%s'\n", error.toStdString().c_str());
@@ -128,7 +128,7 @@ void MapRenderer::msgUpdate() {
       float bearing = RAD2DEG(orientation.getValue()[2]);
       updatePosition(get_point_along_line(pos.getValue()[0], pos.getValue()[1], bearing, MAP_OFFSET), bearing);
 
-      if (static_render_sig_rec) {
+      if (!rendering) {
         update();
       }
 
@@ -165,7 +165,7 @@ void MapRenderer::updatePosition(QMapLibre::Coordinate position, float bearing) 
   m_map->setCoordinate(position);
   m_map->setBearing(bearing);
   m_map->setZoom(zoom);
-  if (static_render_sig_rec) {
+  if (!rendering) {
     update();
   }
 }
@@ -175,7 +175,7 @@ bool MapRenderer::loaded() {
 }
 
 void MapRenderer::update() {
-  static_render_sig_rec = false;
+  rendering = true;
   gl_functions->glClear(GL_COLOR_BUFFER_BIT);
   start_render_t = millis_since_boot();
   m_map->startStaticRender();

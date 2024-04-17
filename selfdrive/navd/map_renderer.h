@@ -46,7 +46,7 @@ private:
   double start_render_t;
   uint32_t frame_id = 0;
   uint64_t last_llk_rendered = 0;
-  bool static_render_sig_rec = true;
+  bool rendering = false;
   bool rendered() {
     return last_llk_rendered == (*sm)["liveLocationKalman"].getLogMonoTime();
   }
