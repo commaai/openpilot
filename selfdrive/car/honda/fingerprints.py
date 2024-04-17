@@ -1027,6 +1027,7 @@ FW_VERSIONS = {
     (Ecu.fwdRadar, 0x18dab0f1, None): [
       b'8S102-3W0-A060\x00\x00',
       b'8S102-3W0-AB10\x00\x00',
+      b'8S102-3M6-P030\x00\x00',
     ],
     (Ecu.vsa, 0x18da28f1, None): [
       b'57114-3W0-A040\x00\x00',
