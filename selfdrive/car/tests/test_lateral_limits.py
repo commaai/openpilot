@@ -22,12 +22,6 @@ MAX_LAT_JERK_UP_TOLERANCE = 0.5  # m/s^3
 # jerk is measured over half a second
 JERK_MEAS_T = 0.5
 
-# TODO: put these cars within limits
-ABOVE_LIMITS_CARS = [
-  SUBARU.SUBARU_LEGACY,
-  SUBARU.SUBARU_OUTBACK,
-]
-
 car_model_jerks: defaultdict[str, dict[str, float]] = defaultdict(dict)
 
 
@@ -48,9 +42,6 @@ class TestLateralLimits(unittest.TestCase):
       raise unittest.SkipTest
 
     if CP.notCar:
-      raise unittest.SkipTest
-
-    if CP.carFingerprint in ABOVE_LIMITS_CARS:
       raise unittest.SkipTest
 
     CarControllerParams = importlib.import_module(f'selfdrive.car.{CP.carName}.values').CarControllerParams
