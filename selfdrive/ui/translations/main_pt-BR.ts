@@ -1168,11 +1168,11 @@ Isso pode levar até um minuto.</translation>
     </message>
     <message>
         <source>Always-On Driver Monitoring</source>
-        <translation type="unfinished"></translation>
+        <translation>Monitoramento do Motorista Sempre Ativo</translation>
     </message>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Habilite o monitoramento do motorista mesmo quando o openpilot não estiver acionado.</translation>
     </message>
 </context>
 <context>
