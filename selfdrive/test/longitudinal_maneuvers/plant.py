@@ -9,6 +9,7 @@ from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LEAD_ACCEL_TAU
+from openpilot.selfdrive.modeld.constants import ModelConstants
 
 
 class Plant:
@@ -59,7 +60,6 @@ class Plant:
   def step(self, v_lead=0.0, prob=1.0, v_cruise=50.):
     # ******** publish a fake model going straight and fake calibration ********
     # note that this is worst case for MPC, since model will delay long mpc by one time step
-    radar = messaging.new_message('radarState')
     control = messaging.new_message('controlsState')
     car_state = messaging.new_message('carState')
     model = messaging.new_message('modelV2')
@@ -81,21 +81,19 @@ class Plant:
       prob = 0.0
       status = False
 
-    lead = log.RadarState.LeadData.new_message()
-    lead.dRel = float(d_rel)
-    lead.yRel = float(0.0)
-    lead.vRel = float(v_rel)
-    lead.aRel = float(a_lead - self.acceleration)
-    lead.vLead = float(v_lead)
-    lead.vLeadK = float(v_lead)
-    lead.aLeadK = float(a_lead)
-    # TODO use real radard logic for this
-    lead.aLeadTau = float(LEAD_ACCEL_TAU)
-    lead.status = status
-    lead.modelProb = float(prob)
-    if not self.only_lead2:
-      radar.radarState.leadOne = lead
-    radar.radarState.leadTwo = lead
+    leads = []
+    lead = log.ModelDataV2.LeadDataV3.new_message()
+    lead.prob = float(prob)
+    lead.t = [float(0.0)] * ModelConstants.LEAD_TRAJ_LEN
+    lead.x = [float(d_rel)] * ModelConstants.LEAD_TRAJ_LEN
+    lead.xStd = [float(0.0)] * ModelConstants.LEAD_TRAJ_LEN
+    lead.y = [float(0.0)] * ModelConstants.LEAD_TRAJ_LEN
+    lead.yStd = [float(0.0)] * ModelConstants.LEAD_TRAJ_LEN
+    lead.v = [float(v_rel)] * ModelConstants.LEAD_TRAJ_LEN
+    lead.vStd = [float(0.0)] * ModelConstants.LEAD_TRAJ_LEN
+    lead.a = [float(a_lead - self.acceleration)] * ModelConstants.LEAD_TRAJ_LEN
+    lead.aStd = [float(0.0)] * ModelConstants.LEAD_TRAJ_LEN
+    leads.append(lead)
 
     # Simulate model predicting slightly faster speed
     # this is to ensure lead policy is effective when model
@@ -109,6 +107,7 @@ class Plant:
     acceleration = log.XYZTData.new_message()
     acceleration.x = [float(x) for x in np.zeros_like(ModelConstants.T_IDXS)]
     model.modelV2.acceleration = acceleration
+    model.modelV2.leadsV3 = leads
 
     control.controlsState.longControlState = LongCtrlState.pid if self.enabled else LongCtrlState.off
     control.controlsState.vCruise = float(v_cruise * 3.6)
@@ -119,8 +118,7 @@ class Plant:
     car_state.carState.standstill = self.speed < 0.01
 
     # ******** get controlsState messages for plotting ***
-    sm = {'radarState': radar.radarState,
-          'carState': car_state.carState,
+    sm = {'carState': car_state.carState,
           'controlsState': control.controlsState,
           'modelV2': model.modelV2}
     self.planner.update(sm)
