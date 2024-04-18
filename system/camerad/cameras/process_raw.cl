@@ -1,5 +1,6 @@
 #include "ar0231_cl.h"
 #include "ox03c10_cl.h"
+#include "os04c10_cl.h"
 
 #define UV_WIDTH RGB_WIDTH / 2
 #define UV_HEIGHT RGB_HEIGHT / 2

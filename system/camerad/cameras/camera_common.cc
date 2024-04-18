@@ -26,7 +26,7 @@ public:
              "-cl-fast-relaxed-math -cl-denorms-are-zero -Isensors "
              "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d -DFRAME_OFFSET=%d "
              "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DYUV_STRIDE=%d -DUV_OFFSET=%d "
-             "-DSENSOR_ID=%d -DVIGNETTING=%d ",
+             "-DSENSOR_ID=%hu -DVIGNETTING=%d ",
              ci->frame_width, ci->frame_height, ci->frame_stride, ci->frame_offset,
              b->rgb_width, b->rgb_height, buf_width, uv_offset,
              ci->image_sensor, s->camera_num == 1);
