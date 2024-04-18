@@ -121,7 +121,7 @@ class DriverBlink():
     self.right_blink = 0.
 
 class DriverStatus():
-  def __init__(self, rhd_saved=False, settings=None):
+  def __init__(self, rhd_saved=False, settings=None, always_on=False):
     if settings is None:
       settings = DRIVER_MONITOR_SETTINGS()
     # init policy settings
@@ -139,6 +139,7 @@ class DriverStatus():
     self.ee1_calibrated = False
     self.ee2_calibrated = False
 
+    self.always_on = always_on
     self.awareness = 1.
     self.awareness_active = 1.
     self.awareness_passive = 1.
@@ -301,8 +302,12 @@ class DriverStatus():
     elif self.face_detected and self.pose.low_std:
       self.hi_stds = 0
 
-  def update_events(self, events, driver_engaged, ctrl_active, standstill):
-    if (driver_engaged and self.awareness > 0 and not self.active_monitoring_mode) or not ctrl_active: # reset only when on disengagement if red reached
+  def update_events(self, events, driver_engaged, ctrl_active, standstill, wrong_gear):
+    always_on_valid = self.always_on and not wrong_gear
+    if (driver_engaged and self.awareness > 0 and not self.active_monitoring_mode) or \
+       (not always_on_valid and not ctrl_active) or \
+       (always_on_valid and not ctrl_active and self.awareness <= 0):
+      # always reset on disengage with normal mode; disengage resets only on red if always on
       self._reset_awareness()
       return
 
@@ -323,11 +328,13 @@ class DriverStatus():
         return
 
     standstill_exemption = standstill and self.awareness - self.step_change <= self.threshold_prompt
+    always_on_red_exemption = always_on_valid and not ctrl_active and self.awareness - self.step_change <= 0
     certainly_distracted = self.driver_distraction_filter.x > 0.63 and self.driver_distracted and self.face_detected
     maybe_distracted = self.hi_stds > self.settings._HI_STD_FALLBACK_TIME or not self.face_detected
     if certainly_distracted or maybe_distracted:
       # should always be counting if distracted unless at standstill and reaching orange
-      if not standstill_exemption:
+      # also will not be reaching 0 if DM is active when not engaged
+      if not standstill_exemption and not always_on_red_exemption:
         self.awareness = max(self.awareness - self.step_change, -0.1)
 
     alert = None

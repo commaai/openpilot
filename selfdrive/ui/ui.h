@@ -53,7 +53,8 @@ typedef enum UIStatus {
 } UIStatus;
 
 enum PrimeType {
-  UNKNOWN = -1,
+  UNKNOWN = -2,
+  UNPAIRED = -1,
   NONE = 0,
   MAGENTA = 1,
   LITE = 2,
@@ -114,7 +115,7 @@ public:
 
   void setPrimeType(PrimeType type);
   inline PrimeType primeType() const { return prime_type; }
-  inline bool hasPrime() const { return prime_type != PrimeType::UNKNOWN && prime_type != PrimeType::NONE; }
+  inline bool hasPrime() const { return prime_type > PrimeType::NONE; }
 
   int fb_w = 0, fb_h = 0;
 
