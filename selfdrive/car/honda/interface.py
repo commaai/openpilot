@@ -193,7 +193,7 @@ class CarInterface(CarInterfaceBase):
 
     # These cars use alternate user brake msg (0x1BE)
     # TODO: Only detect feature for Accord/Accord Hybrid, not all Bosch DBCs have BRAKE_MODULE
-    if 0x1BE in fingerprint[CAN.pt] and candidate == CAR.HONDA_ACCORD:
+    if 0x1BE in fingerprint[CAN.pt] and candidate in (CAR.HONDA_ACCORD, CAR.HONDA_HRV_3G):
       ret.flags |= HondaFlags.BOSCH_ALT_BRAKE.value
 
     if ret.flags & HondaFlags.BOSCH_ALT_BRAKE:
