@@ -8,8 +8,6 @@ from openpilot.common.realtime import Ratekeeper, DT_MDL
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
-from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LEAD_ACCEL_TAU
-from openpilot.selfdrive.modeld.constants import ModelConstants
 
 
 class Plant:
@@ -70,16 +68,11 @@ class Plant:
       d_rel = np.maximum(0., self.distance_lead - self.distance)
       v_rel = v_lead - self.speed
       if self.only_radar:
-        status = True
-      elif prob > .5:
-        status = True
-      else:
-        status = False
+        prob = 1.0
     else:
       d_rel = 200.
       v_rel = 0.
       prob = 0.0
-      status = False
 
     leads = []
     lead = log.ModelDataV2.LeadDataV3.new_message()
