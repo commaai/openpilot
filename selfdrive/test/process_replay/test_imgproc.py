@@ -11,6 +11,7 @@ from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.system.camerad.snapshot.snapshot import yuv_to_rgb
 from openpilot.tools.lib.logreader import LogReader
 
+# TODO: check all sensors
 TEST_ROUTE = "8345e3b82948d454|2022-05-04--13-45-33/0"
 
 cam = DEVICE_CAMERAS[("tici", "ar0231")]
@@ -32,11 +33,11 @@ def init_kernels(frame_offset=0):
       ' -DIS_AR=1 -DIS_OX=0 -DIS_OS=0 -DVIGNETTING=0 '
     if PC:
       build_args += ' -DHALF_AS_FLOAT=1 -cl-std=CL2.0'
-    debayer_prg = cl.Program(ctx, f.read()).build(options=build_args)
+    imgproc_prg = cl.Program(ctx, f.read()).build(options=build_args)
 
-  return ctx, debayer_prg
+  return ctx, imgproc_prg
 
-def debayer_frame(ctx, debayer_prg, data, rgb=False):
+def proc_frame(ctx, imgproc_prg, data, rgb=False):
   q = cl.CommandQueue(ctx)
 
   yuv_buff = np.empty(FRAME_WIDTH * FRAME_HEIGHT + UV_SIZE * 2, dtype=np.uint8)
@@ -44,7 +45,7 @@ def debayer_frame(ctx, debayer_prg, data, rgb=False):
   cam_g = cl.Buffer(ctx, cl.mem_flags.READ_ONLY | cl.mem_flags.COPY_HOST_PTR, hostbuf=data)
   yuv_g = cl.Buffer(ctx, cl.mem_flags.WRITE_ONLY, FRAME_WIDTH * FRAME_HEIGHT + UV_SIZE * 2)
 
-  krn = debayer_prg.process_raw
+  krn = imgproc_prg.process_raw
   krn.set_scalar_arg_dtypes([None, None, np.int32])
   local_worksize = (20, 20) if TICI else (4, 4)
 
@@ -62,8 +63,8 @@ def debayer_frame(ctx, debayer_prg, data, rgb=False):
     return y, u, v
 
 
-def debayer_replay(lr):
-  ctx, debayer_prg = init_kernels()
+def imgproc_replay(lr):
+  ctx, imgproc_prg = init_kernels()
 
   frames = []
   for m in lr:
@@ -71,7 +72,7 @@ def debayer_replay(lr):
       cs = m.roadCameraState
       if cs.image:
         data = np.frombuffer(cs.image, dtype=np.uint8)
-        img = debayer_frame(ctx, debayer_prg, data)
+        img = proc_frame(ctx, imgproc_prg, data)
 
         frames.append(img)
 
@@ -82,12 +83,12 @@ if __name__ == "__main__":
   # load logs
   lr = list(LogReader(TEST_ROUTE))
   # run replay
-  out_frames = debayer_replay(lr)
+  out_frames = imgproc_replay(lr)
 
   all_pix = np.concatenate([np.concatenate([d.flatten() for d in f]) for f in out_frames])
   pix_hash = hashlib.sha1(all_pix).hexdigest()
 
-  with open('debayer_replay_ref_hash') as f:
+  with open('imgproc_replay_ref_hash') as f:
     ref_hash = f.read()
 
   if pix_hash != ref_hash:
