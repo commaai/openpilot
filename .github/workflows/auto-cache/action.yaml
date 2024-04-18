@@ -26,7 +26,7 @@ runs:
 
     - name: setup github cache
       if: ${{ !contains(runner.name, 'nsc') && inputs.save != 'false' }}
-      uses: 'actions/cache@v3'
+      uses: 'actions/cache@v4'
       with:
         path: ${{ inputs.path }}
         key: ${{ inputs.key }}
@@ -34,7 +34,7 @@ runs:
 
     - name: setup github cache
       if: ${{ !contains(runner.name, 'nsc') && inputs.save == 'false' }}
-      uses: 'actions/cache/restore@v3'
+      uses: 'actions/cache/restore@v4'
       with:
         path: ${{ inputs.path }}
         key: ${{ inputs.key }}
