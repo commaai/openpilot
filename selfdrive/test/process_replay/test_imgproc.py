@@ -30,7 +30,7 @@ def init_kernels(frame_offset=0):
     build_args = f' -cl-fast-relaxed-math -cl-denorms-are-zero -cl-single-precision-constant -I{BASEDIR}/system/camerad/sensors ' + \
       f' -DFRAME_WIDTH={FRAME_WIDTH} -DFRAME_HEIGHT={FRAME_WIDTH} -DFRAME_STRIDE={FRAME_STRIDE} -DFRAME_OFFSET={frame_offset} ' + \
       f' -DRGB_WIDTH={FRAME_WIDTH} -DRGB_HEIGHT={FRAME_HEIGHT} -DYUV_STRIDE={FRAME_WIDTH} -DUV_OFFSET={FRAME_WIDTH*FRAME_HEIGHT}' + \
-      ' -DIS_AR=1 -DIS_OX=0 -DIS_OS=0 -DVIGNETTING=0 '
+      ' -DSENSOR_ID=1 -DVIGNETTING=0 '
     if PC:
       build_args += ' -DHALF_AS_FLOAT=1 -cl-std=CL2.0'
     imgproc_prg = cl.Program(ctx, f.read()).build(options=build_args)

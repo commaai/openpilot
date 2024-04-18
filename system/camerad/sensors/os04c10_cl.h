@@ -1,4 +1,4 @@
-#if IS_OS
+#if SENSOR_ID == 3
 
 #define BIT_DEPTH 12
 #define PV_MAX 4096

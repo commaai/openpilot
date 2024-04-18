@@ -1,4 +1,4 @@
-#if IS_OX
+#if SENSOR_ID == 2
 
 #define BIT_DEPTH 12
 #define BLACK_LVL 64
