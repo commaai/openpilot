@@ -357,6 +357,7 @@ openpilot does not yet support these Toyota models due to a new message authenti
 * Toyota Tundra 2022+
 * Toyota Highlander 2024+
 * Toyota Corolla Cross 2022+ (only US model)
+* Toyota Camry 2025+
 * Lexus NX 2022+
 * Toyota bZ4x 2023+
 * Subaru Solterra 2023+
