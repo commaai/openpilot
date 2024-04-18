@@ -1,5 +1,7 @@
 #if SENSOR_ID == 3
 
+#define BGGR
+
 #define BIT_DEPTH 12
 #define PV_MAX 4096
 #define BLACK_LVL 64
