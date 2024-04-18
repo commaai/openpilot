@@ -181,7 +181,7 @@ def create_ui_commands(packer, CAN, CP, enabled, pcm_speed, hud, is_metric, acc_
 
   if CP.carFingerprint in HONDA_CANFD_CAR:
     lkas_hud_values['LANE_LINES'] = 3
-    lkas_hud_values['DASHED_LANES'] = hud.lanes_visible    
+    lkas_hud_values['DASHED_LANES'] = hud.lanes_visible
 
   if not (CP.flags & HondaFlags.BOSCH_EXT_HUD):
     lkas_hud_values['SET_ME_X48'] = 0x48
