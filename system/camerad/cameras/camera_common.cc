@@ -26,10 +26,10 @@ public:
              "-cl-fast-relaxed-math -cl-denorms-are-zero -Isensors "
              "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d -DFRAME_OFFSET=%d "
              "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DYUV_STRIDE=%d -DUV_OFFSET=%d "
-             "-DSENSOR_ID=%hu -DVIGNETTING=%d ",
-             ci->frame_width, ci->frame_height, ci->frame_stride, ci->frame_offset,
+             "-DSENSOR_ID=%hu -DHDR_OFFSET=%d -DVIGNETTING=%d ",
+             ci->frame_width, ci->frame_height, ci->hdr_offset > 0 ? ci->frame_stride * 2 : ci->frame_stride, ci->frame_offset,
              b->rgb_width, b->rgb_height, buf_width, uv_offset,
-             ci->image_sensor, s->camera_num == 1);
+             ci->image_sensor, ci->hdr_offset, s->camera_num == 1);
     const char *cl_file = "cameras/process_raw.cl";
     cl_program prg_imgproc = cl_program_from_file(context, device_id, cl_file, args);
     krnl_ = CL_CHECK_ERR(clCreateKernel(prg_imgproc, "process_raw", &err));
@@ -74,7 +74,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   LOGD("allocated %d CL buffers", frame_buf_count);
 
   rgb_width = ci->frame_width;
-  rgb_height = ci->frame_height;
+  rgb_height = ci->hdr_offset > 0 ? (ci->frame_height - ci->hdr_offset) / 2 : ci->frame_height;
 
   int nv12_width = VENUS_Y_STRIDE(COLOR_FMT_NV12, rgb_width);
   int nv12_height = VENUS_Y_SCANLINES(COLOR_FMT_NV12, rgb_height);
