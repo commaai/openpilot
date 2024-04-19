@@ -3,8 +3,7 @@ import re
 import unittest
 
 from openpilot.selfdrive.car.honda.fingerprints import FW_VERSIONS
-
-HONDA_FW_VERSION_RE = br"[A-Z0-9]{5}-[A-Z0-9]{3}(-|,)[A-Z0-9]{4}(\x00){2}$"
+from openpilot.selfdrive.car.honda.fuzzy import HONDA_PARTNO_RE
 
 
 class TestHondaFingerprint(unittest.TestCase):
@@ -13,7 +12,7 @@ class TestHondaFingerprint(unittest.TestCase):
     for fw_by_ecu in FW_VERSIONS.values():
       for fws in fw_by_ecu.values():
         for fw in fws:
-          self.assertTrue(re.match(HONDA_FW_VERSION_RE, fw) is not None, fw)
+          self.assertTrue(re.match(HONDA_PARTNO_RE, fw) is not None, fw)
 
 
 if __name__ == "__main__":

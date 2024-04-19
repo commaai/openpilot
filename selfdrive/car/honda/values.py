@@ -3,6 +3,7 @@ from enum import Enum, IntFlag
 
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
+from openpilot.selfdrive.car.honda.fuzzy import match_fw_to_car_fuzzy
 from panda.python import uds
 from openpilot.selfdrive.car import CarSpecs, PlatformConfig, Platforms, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column
@@ -10,6 +11,7 @@ from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request,
 
 Ecu = car.CarParams.Ecu
 VisualAlert = car.CarControl.HUDControl.VisualAlert
+
 
 
 class CarControllerParams:
@@ -312,6 +314,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
     # TODO: add query back, camera does not support querying both in parallel and 0x18dab0f1 often fails to respond
     # (Ecu.unknown, 0x18DAB3F1, None),
   ],
+  match_fw_to_car_fuzzy=match_fw_to_car_fuzzy
 )
 
 STEER_THRESHOLD = {
