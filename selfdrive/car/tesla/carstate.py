@@ -130,7 +130,7 @@ class CarState(CarStateBase):
   def get_cam_can_parser(CP):
     messages = [
       # sig_address, frequency
-      ("DAS_control", 40),
+      ("DAS_control", 25),
     ]
 
     if CP.carFingerprint == CAR.TESLA_MODELS_RAVEN:
