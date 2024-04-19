@@ -58,9 +58,6 @@ OS04C10::OS04C10() {
   min_ev = (exposure_time_min) * sensor_analog_gains[analog_gain_min_idx];
   max_ev = exposure_time_max * dc_gain_factor * sensor_analog_gains[analog_gain_max_idx];
   target_grey_factor = 0.01;
-  ae_areas.push_back({44, 194, 2600, 838}); // wide
-  ae_areas.push_back({44, 50, 2600, 1420}); // road
-  ae_areas.push_back({44, 180, 2600, 1340}); // driver
 }
 
 std::vector<i2c_random_wr_payload> OS04C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {

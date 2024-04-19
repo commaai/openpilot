@@ -117,9 +117,6 @@ AR0231::AR0231() {
   min_ev = exposure_time_min * sensor_analog_gains[analog_gain_min_idx];
   max_ev = exposure_time_max * dc_gain_factor * sensor_analog_gains[analog_gain_max_idx];
   target_grey_factor = 1.0;
-  ae_areas.push_back({96, 250, 1734, 524}); // wide
-  ae_areas.push_back({96, 160, 1734, 986}); // road
-  ae_areas.push_back({96, 242, 1736, 906}); // driver
 }
 
 void AR0231::processRegisters(CameraState *c, cereal::FrameData::Builder &framed) const {
