@@ -131,7 +131,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
 
   scc11_values = {
     "MainMode_ACC": 1,
-    "TauGapSet": hud_control.leadDistanceBars + 1,
+    "TauGapSet": hud_control.leadDistanceBars,
     "VSetDis": set_speed if enabled else 0,
     "AliveCounterACC": idx % 0x10,
     "ObjValid": 1, # close lead makes controls tighter
