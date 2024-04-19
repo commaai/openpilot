@@ -41,6 +41,8 @@ MapRenderer::MapRenderer(const QMapLibre::Settings &settings, bool online) : m_s
   QSurfaceFormat fmt;
   fmt.setRenderableType(QSurfaceFormat::OpenGLES);
 
+  m_settings.setMapMode(QMapLibre::Settings::MapMode::Static);
+
   ctx = std::make_unique<QOpenGLContext>();
   ctx->setFormat(fmt);
   ctx->create();
@@ -87,6 +89,18 @@ MapRenderer::MapRenderer(const QMapLibre::Settings &settings, bool online) : m_s
     LOGE("Map loading failed with %d: '%s'\n", err_code, reason.toStdString().c_str());
   });
 
+  QObject::connect(m_map.data(), &QMapLibre::Map::staticRenderFinished, [=](const QString &error) {
+    rendering = false;
+
+    if (!error.isEmpty()) {
+      LOGE("Static map rendering failed with error: '%s'\n", error.toStdString().c_str());
+    } else if (vipc_server != nullptr) {
+      double end_render_t = millis_since_boot();
+      publish((end_render_t - start_render_t) / 1000.0, true);
+      last_llk_rendered = (*sm)["liveLocationKalman"].getLogMonoTime();
+    }
+  });
+
   if (online) {
     vipc_server.reset(new VisionIpcServer("navd"));
     vipc_server->create_buffers(VisionStreamType::VISION_STREAM_MAP, NUM_VIPC_BUFFERS, false, WIDTH, HEIGHT);
@@ -114,22 +128,16 @@ void MapRenderer::msgUpdate() {
       float bearing = RAD2DEG(orientation.getValue()[2]);
       updatePosition(get_point_along_line(pos.getValue()[0], pos.getValue()[1], bearing, MAP_OFFSET), bearing);
 
-      // TODO: use the static rendering mode instead
-      // retry render a few times
-      for (int i = 0; i < 5 && !rendered(); i++) {
-        QApplication::processEvents(QEventLoop::AllEvents, 100);
+      if (!rendering) {
         update();
-        if (rendered()) {
-          LOGW("rendered after %d retries", i+1);
-          break;
-        }
       }
 
-      // fallback to sending a blank frame
       if (!rendered()) {
         publish(0, false);
       }
     }
+
+
   }
 
   if (sm->updated("navRoute")) {
@@ -157,7 +165,9 @@ void MapRenderer::updatePosition(QMapLibre::Coordinate position, float bearing) 
   m_map->setCoordinate(position);
   m_map->setBearing(bearing);
   m_map->setZoom(zoom);
-  update();
+  if (!rendering) {
+    update();
+  }
 }
 
 bool MapRenderer::loaded() {
@@ -165,16 +175,10 @@ bool MapRenderer::loaded() {
 }
 
 void MapRenderer::update() {
-  double start_t = millis_since_boot();
+  rendering = true;
   gl_functions->glClear(GL_COLOR_BUFFER_BIT);
-  m_map->render();
-  gl_functions->glFlush();
-  double end_t = millis_since_boot();
-
-  if ((vipc_server != nullptr) && loaded()) {
-    publish((end_t - start_t) / 1000.0, true);
-    last_llk_rendered = (*sm)["liveLocationKalman"].getLogMonoTime();
-  }
+  start_render_t = millis_since_boot();
+  m_map->startStaticRender();
 }
 
 void MapRenderer::sendThumbnail(const uint64_t ts, const kj::Array<capnp::byte> &buf) {

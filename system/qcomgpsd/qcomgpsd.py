@@ -17,6 +17,7 @@ from cereal import log
 import cereal.messaging as messaging
 from openpilot.common.gpio import gpio_init, gpio_set
 from openpilot.common.retry import retry
+from openpilot.common.time import system_time_valid
 from openpilot.system.hardware.tici.pins import GPIO
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.qcomgpsd.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
@@ -171,8 +172,9 @@ def setup_quectel(diag: ModemDiag) -> bool:
     inject_assistance()
     os.remove(ASSIST_DATA_FILE)
   #at_cmd("AT+QGPSXTRADATA?")
-  time_str = datetime.datetime.utcnow().strftime("%Y/%m/%d,%H:%M:%S")
-  at_cmd(f"AT+QGPSXTRATIME=0,\"{time_str}\",1,1,1000")
+  if system_time_valid():
+    time_str = datetime.datetime.utcnow().strftime("%Y/%m/%d,%H:%M:%S")
+    at_cmd(f"AT+QGPSXTRATIME=0,\"{time_str}\",1,1,1000")
 
   at_cmd("AT+QGPSCFG=\"outport\",\"usbnmea\"")
   at_cmd("AT+QGPS=1")

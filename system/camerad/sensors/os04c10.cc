@@ -20,6 +20,7 @@ const uint32_t os04c10_analog_gains_reg[] = {
 
 OS04C10::OS04C10() {
   image_sensor = cereal::FrameData::ImageSensor::OS04C10;
+  pixel_size_mm = 0.002;
   data_word = false;
 
   hdr_offset = 64 * 2 + 8; // stagger

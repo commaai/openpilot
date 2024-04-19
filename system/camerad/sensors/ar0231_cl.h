@@ -1,4 +1,4 @@
-#if IS_AR
+#if SENSOR_ID == 1
 
 #define BIT_DEPTH 12
 #define PV_MAX 4096
