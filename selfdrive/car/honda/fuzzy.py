@@ -12,7 +12,7 @@ Ecu = car.CarParams.Ecu
 # [12345]-[ABC]-[A123]
 # [part no]-[platform]-[revision]
 
-HONDA_PARTNO_RE = br"[A-Z0-9]{5}(?P<part_no>)-[A-Z0-9]{3}(?P<platform_code>)(-|,)[A-Z0-9]{4}(?P<revision>)(\x00){2}$"
+HONDA_PARTNO_RE = br"(?P<part_no>[A-Z0-9]{5})-(?P<platform_code>[A-Z0-9]{3})(-|,)(?P<revision>[A-Z0-9]{4})(\x00){2}$"
 
 PLATFORM_CODE_ECUS = {Ecu.eps, Ecu.gateway, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.transmission}
 
@@ -23,7 +23,7 @@ def get_platform_codes(fw_versions: list[bytes]) -> dict[bytes, set[bytes]]:
     m = re.match(HONDA_PARTNO_RE, fw)
 
     if m:
-      codes[b'-'.join((m.group("part_no"), m.group("platform_code")))].add(m.group('revision'))
+      codes[b'-'.join((m.group('part_no'), m.group('platform_code')))].add(m.group('revision'))
 
   return dict(codes)
 
