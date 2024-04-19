@@ -4,34 +4,7 @@
 #include "tools/replay/filereader.h"
 #include "tools/replay/util.h"
 
-Event::Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame) : reader(amsg), frame(frame) {
-  words = kj::ArrayPtr<const capnp::word>(amsg.begin(), reader.getEnd());
-  event = reader.getRoot<cereal::Event>();
-  which = event.which();
-  mono_time = event.getLogMonoTime();
-
-  // 1) Send video data at t=timestampEof/timestampSof
-  // 2) Send encodeIndex packet at t=logMonoTime
-  if (frame) {
-    auto idx = capnp::AnyStruct::Reader(event).getPointerSection()[0].getAs<cereal::EncodeIndex>();
-    // C2 only has eof set, and some older routes have neither
-    uint64_t sof = idx.getTimestampSof();
-    uint64_t eof = idx.getTimestampEof();
-    if (sof > 0) {
-      mono_time = sof;
-    } else if (eof > 0) {
-      mono_time = eof;
-    }
-  }
-}
-
-// class LogReader
-
 LogReader::LogReader(size_t memory_pool_block_size) {
-#ifdef HAS_MEMORY_RESOURCE
-  const size_t buf_size = sizeof(Event) * memory_pool_block_size;
-  mbr_ = std::make_unique<std::pmr::monotonic_buffer_resource>(buf_size);
-#endif
   events.reserve(memory_pool_block_size);
 }
 
@@ -61,33 +34,28 @@ bool LogReader::parse(std::atomic<bool> *abort) {
   try {
     kj::ArrayPtr<const capnp::word> words((const capnp::word *)raw_.data(), raw_.size() / sizeof(capnp::word));
     while (words.size() > 0 && !(abort && *abort)) {
-#ifdef HAS_MEMORY_RESOURCE
-      Event *evt = new (mbr_.get()) Event(words);
-#else
-      Event *evt = new Event(words);
-#endif
+      capnp::FlatArrayMessageReader reader(words);
+      auto event = reader.getRoot<cereal::Event>();
+      auto which = event.which();
+      uint64_t mono_time = event.getLogMonoTime();
+      auto event_data = kj::arrayPtr(words.begin(), reader.getEnd());
+
+      Event *evt = events.emplace_back(newEvent(which, mono_time, event_data));
       // Add encodeIdx packet again as a frame packet for the video stream
       if (evt->which == cereal::Event::ROAD_ENCODE_IDX ||
           evt->which == cereal::Event::DRIVER_ENCODE_IDX ||
           evt->which == cereal::Event::WIDE_ROAD_ENCODE_IDX) {
-
-#ifdef HAS_MEMORY_RESOURCE
-        Event *frame_evt = new (mbr_.get()) Event(words, true);
-#else
-        Event *frame_evt = new Event(words, true);
-#endif
-
-        events.push_back(frame_evt);
+        auto idx = capnp::AnyStruct::Reader(event).getPointerSection()[0].getAs<cereal::EncodeIndex>();
+        if (uint64_t sof = idx.getTimestampSof()) {
+          mono_time = sof;
+        }
+        events.emplace_back(newEvent(which, mono_time, event_data, idx.getSegmentNum()));
       }
 
-      words = kj::arrayPtr(evt->reader.getEnd(), words.end());
-      events.push_back(evt);
+      words = kj::arrayPtr(reader.getEnd(), words.end());
     }
   } catch (const kj::Exception &e) {
-    rWarning("failed to parse log : %s", e.getDescription().cStr());
-    if (!events.empty()) {
-      rWarning("read %zu events from corrupt log", events.size());
-    }
+    rWarning("Failed to parse log : %s.\nRetrieved %zu events from corrupt log", e.getDescription().cStr(), events.size());
   }
 
   if (!events.empty() && !(abort && *abort)) {
@@ -95,4 +63,12 @@ bool LogReader::parse(std::atomic<bool> *abort) {
     return true;
   }
   return false;
+}
+
+Event *LogReader::newEvent(cereal::Event::Which which, uint64_t mono_time, const kj::ArrayPtr<const capnp::word> &words, int eidx_segnum) {
+#ifdef HAS_MEMORY_RESOURCE
+  return new (&mbr_) Event(which, mono_time, words, eidx_segnum);
+#else
+  return new Event(which, mono_time, words, eidx_segnum);
+#endif
 }

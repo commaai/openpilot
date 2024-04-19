@@ -1,4 +1,4 @@
-#if IS_OS
+#if SENSOR_ID == 3
 
 #define BGGR
 

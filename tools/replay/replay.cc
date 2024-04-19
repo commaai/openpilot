@@ -96,20 +96,26 @@ void Replay::updateEvents(const std::function<bool()> &lambda) {
 }
 
 void Replay::seekTo(double seconds, bool relative) {
-  seconds = relative ? seconds + currentSeconds() : seconds;
+  seeking_to_seconds_ = relative ? seconds + currentSeconds() : seconds;
+  seeking_to_seconds_ = std::max(double(0.0), seeking_to_seconds_);
+
   updateEvents([&]() {
-    seconds = std::max(double(0.0), seconds);
-    int seg = (int)seconds / 60;
-    if (segments_.find(seg) == segments_.end()) {
-      rWarning("can't seek to %d s segment %d is invalid", seconds, seg);
+    int target_segment = (int)seeking_to_seconds_ / 60;
+    if (segments_.count(target_segment) == 0) {
+      rWarning("can't seek to %d s segment %d is invalid", (int)seeking_to_seconds_, target_segment);
       return true;
     }
 
-    rInfo("seeking to %d s, segment %d", (int)seconds, seg);
-    current_segment_ = seg;
-    cur_mono_time_ = route_start_ts_ + seconds * 1e9;
-    emit seekedTo(seconds);
-    return isSegmentMerged(seg);
+    rInfo("seeking to %d s, segment %d", (int)seeking_to_seconds_, target_segment);
+    current_segment_ = target_segment;
+    cur_mono_time_ = route_start_ts_ + seeking_to_seconds_ * 1e9;
+    bool segment_merged = isSegmentMerged(target_segment);
+    if (segment_merged) {
+      emit seekedTo(seeking_to_seconds_);
+      // Reset seeking_to_seconds_ to indicate completion of seek
+      seeking_to_seconds_ = -1;
+    }
+    return segment_merged;
   });
   queueSegment();
 }
@@ -142,7 +148,9 @@ void Replay::buildTimeline() {
 
     for (const Event *e : log->events) {
       if (e->which == cereal::Event::Which::CONTROLS_STATE) {
-        auto cs = e->event.getControlsState();
+        capnp::FlatArrayMessageReader reader(e->data);
+        auto event = reader.getRoot<cereal::Event>();
+        auto cs = event.getControlsState();
 
         if (engaged != cs.getEnabled()) {
           if (engaged) {
@@ -226,6 +234,7 @@ void Replay::queueSegment() {
 
   auto begin = std::prev(cur, std::min<int>(segment_cache_limit / 2, std::distance(segments_.begin(), cur)));
   auto end = std::next(begin, std::min<int>(segment_cache_limit, std::distance(begin, segments_.end())));
+  begin = std::prev(end, std::min<int>(segment_cache_limit, std::distance(segments_.begin(), end)));
   // load one segment at a time
   auto it = std::find_if(cur, end, [](auto &it) { return !it.second || !it.second->isLoaded(); });
   if (it != end && !it->second) {
@@ -277,6 +286,18 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
 
     if (stream_thread_) {
       emit segmentsMerged();
+
+      // Check if seeking is in progress
+      if (seeking_to_seconds_ >= 0) {
+        int target_segment = int(seeking_to_seconds_ / 60);
+        auto segment_found = std::find(segments_need_merge.begin(), segments_need_merge.end(), target_segment);
+
+        // If the target segment is found, emit seekedTo signal and reset seeking_to_seconds_
+        if (segment_found != segments_need_merge.end()) {
+          emit seekedTo(seeking_to_seconds_);
+          seeking_to_seconds_ = -1;  // Reset seeking_to_seconds_ to indicate completion of seek
+        }
+      }
     }
     updateEvents([&]() {
       events_.swap(new_events_);
@@ -298,7 +319,9 @@ void Replay::startStream(const Segment *cur_segment) {
   auto it = std::find_if(events.cbegin(), events.cend(),
                          [](auto e) { return e->which == cereal::Event::Which::INIT_DATA; });
   if (it != events.cend()) {
-    uint64_t wall_time = (*it)->event.getInitData().getWallTimeNanos();
+    capnp::FlatArrayMessageReader reader((*it)->data);
+    auto event = reader.getRoot<cereal::Event>();
+    uint64_t wall_time = event.getInitData().getWallTimeNanos();
     if (wall_time > 0) {
       route_date_time_ = QDateTime::fromMSecsSinceEpoch(wall_time / 1e6);
     }
@@ -307,9 +330,11 @@ void Replay::startStream(const Segment *cur_segment) {
   // write CarParams
   it = std::find_if(events.begin(), events.end(), [](auto e) { return e->which == cereal::Event::Which::CAR_PARAMS; });
   if (it != events.end()) {
-    car_fingerprint_ = (*it)->event.getCarParams().getCarFingerprint();
+    capnp::FlatArrayMessageReader reader((*it)->data);
+    auto event = reader.getRoot<cereal::Event>();
+    car_fingerprint_ = event.getCarParams().getCarFingerprint();
     capnp::MallocMessageBuilder builder;
-    builder.setRoot((*it)->event.getCarParams());
+    builder.setRoot(event.getCarParams());
     auto words = capnp::messageToFlatArray(builder);
     auto bytes = words.asBytes();
     Params().put("CarParams", (const char *)bytes.begin(), bytes.size());
@@ -343,14 +368,16 @@ void Replay::publishMessage(const Event *e) {
   if (event_filter && event_filter(e, filter_opaque)) return;
 
   if (sm == nullptr) {
-    auto bytes = e->bytes();
+    auto bytes = e->data.asBytes();
     int ret = pm->send(sockets_[e->which], (capnp::byte *)bytes.begin(), bytes.size());
     if (ret == -1) {
       rWarning("stop publishing %s due to multiple publishers error", sockets_[e->which]);
       sockets_[e->which] = nullptr;
     }
   } else {
-    sm->update_msgs(nanos_since_boot(), {{sockets_[e->which], e->event}});
+    capnp::FlatArrayMessageReader reader(e->data);
+    auto event = reader.getRoot<cereal::Event>();
+    sm->update_msgs(nanos_since_boot(), {{sockets_[e->which], event}});
   }
 }
 
@@ -364,10 +391,13 @@ void Replay::publishFrame(const Event *e) {
       (e->which == cereal::Event::WIDE_ROAD_ENCODE_IDX && !hasFlag(REPLAY_FLAG_ECAM))) {
     return;
   }
-  auto eidx = capnp::AnyStruct::Reader(e->event).getPointerSection()[0].getAs<cereal::EncodeIndex>();
-  if (eidx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C && isSegmentMerged(eidx.getSegmentNum())) {
-    CameraType cam = cam_types.at(e->which);
-    camera_server_->pushFrame(cam, segments_[eidx.getSegmentNum()]->frames[cam].get(), eidx);
+
+  if (isSegmentMerged(e->eidx_segnum)) {
+    auto &segment = segments_.at(e->eidx_segnum);
+    auto cam = cam_types.at(e->which);
+    if (auto &frame = segment->frames[cam]; frame) {
+      camera_server_->pushFrame(cam, frame.get(), e);
+    }
   }
 }
 
@@ -381,7 +411,7 @@ void Replay::stream() {
     events_updated_ = false;
     if (exit_) break;
 
-    Event cur_event(cur_which, cur_mono_time_);
+    Event cur_event{cur_which, cur_mono_time_, {}};
     auto eit = std::upper_bound(events_->begin(), events_->end(), &cur_event, Event::lessThan());
     if (eit == events_->end()) {
       rInfo("waiting for events...");
@@ -412,7 +442,7 @@ void Replay::stream() {
           precise_nano_sleep(behind_ns);
         }
 
-        if (!evt->frame) {
+        if (evt->eidx_segnum == -1) {
           publishMessage(evt);
         } else if (camera_server_) {
           if (speed_ > 1.0) {

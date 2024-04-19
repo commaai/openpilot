@@ -118,6 +118,18 @@ def with_http_server(func, handler=http.server.BaseHTTPRequestHandler, setup=Non
 def DirectoryHttpServer(directory) -> type[http.server.SimpleHTTPRequestHandler]:
   # creates an http server that serves files from directory
   class Handler(http.server.SimpleHTTPRequestHandler):
+    API_NO_RESPONSE = False
+    API_BAD_RESPONSE = False
+
+    def do_GET(self):
+      if self.API_NO_RESPONSE:
+        return
+
+      if self.API_BAD_RESPONSE:
+        self.send_response(500, "")
+        return
+      super().do_GET()
+
     def __init__(self, *args, **kwargs):
       super().__init__(*args, directory=str(directory), **kwargs)
 

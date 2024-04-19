@@ -8,7 +8,6 @@
 
 #include "common/clutil.h"
 #include "common/swaglog.h"
-#include "common/util.h"
 #include "third_party/linux/include/msm_media_info.h"
 
 #include "system/camerad/cameras/camera_qcom2.h"
@@ -27,14 +26,10 @@ public:
              "-cl-fast-relaxed-math -cl-denorms-are-zero -Isensors "
              "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d -DFRAME_OFFSET=%d "
              "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DYUV_STRIDE=%d -DUV_OFFSET=%d "
-             "-DIS_AR=%d -DIS_OX=%d -DIS_OS=%d -DHDR_OFFSET=%d -DVIGNETTING=%d ",
+             "-DSENSOR_ID=%hu -DHDR_OFFSET=%d -DVIGNETTING=%d ",
              ci->frame_width, ci->frame_height, ci->hdr_offset > 0 ? ci->frame_stride * 2 : ci->frame_stride, ci->frame_offset,
              b->rgb_width, b->rgb_height, buf_width, uv_offset,
-             ci->image_sensor == cereal::FrameData::ImageSensor::AR0231,
-             ci->image_sensor == cereal::FrameData::ImageSensor::OX03C10,
-             ci->image_sensor == cereal::FrameData::ImageSensor::OS04C10,
-             ci->hdr_offset,
-             s->camera_num == 1);
+             ci->image_sensor, ci->hdr_offset, s->camera_num == 1);
     const char *cl_file = "cameras/process_raw.cl";
     cl_program prg_imgproc = cl_program_from_file(context, device_id, cl_file, args);
     krnl_ = CL_CHECK_ERR(clCreateKernel(prg_imgproc, "process_raw", &err));
@@ -261,7 +256,7 @@ static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
   pm->send("thumbnail", msg);
 }
 
-float set_exposure_target(const CameraBuf *b, AutoExposureRect ae_xywh, int x_skip, int y_skip) {
+float set_exposure_target(const CameraBuf *b, Rect ae_xywh, int x_skip, int y_skip) {
   int lum_med;
   uint32_t lum_binning[256] = {0};
   const uint8_t *pix_ptr = b->cur_yuv_buf->y;
