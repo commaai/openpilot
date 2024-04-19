@@ -404,6 +404,7 @@ void CameraState::set_exposure_rect() {
     std::make_pair((Rect){96, 160, 1734, 986}, 2648.0), // road
     std::make_pair((Rect){96, 242, 1736, 906}, 567.0) // driver
   };
+  int h_ref = 1208;
   /*
     exposure target intrinics is
     [
@@ -418,7 +419,7 @@ void CameraState::set_exposure_rect() {
 
   ae_xywh = (Rect){
     buf.rgb_width / 2 - (int)(fl_pix / fl_ref * xywh_ref.w / 2),
-    buf.rgb_height / 2 - (int)(fl_pix / fl_ref * (buf.rgb_height / 2 - xywh_ref.y)),
+    buf.rgb_height / 2 - (int)(fl_pix / fl_ref * (h_ref / 2 - xywh_ref.y)),
     (int)(fl_pix / fl_ref * xywh_ref.w),
     (int)(fl_pix / fl_ref * xywh_ref.h)};
 }
