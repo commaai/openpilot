@@ -58,9 +58,6 @@ OX03C10::OX03C10() {
   min_ev = (exposure_time_min + VS_TIME_MIN_OX03C10) * sensor_analog_gains[analog_gain_min_idx];
   max_ev = exposure_time_max * dc_gain_factor * sensor_analog_gains[analog_gain_max_idx];
   target_grey_factor = 0.01;
-  ae_areas.push_back({96, 250, 1734, 524}); // wide
-  ae_areas.push_back({96, 160, 1734, 986}); // road
-  ae_areas.push_back({96, 242, 1736, 906}); // driver
 }
 
 std::vector<i2c_random_wr_payload> OX03C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {
