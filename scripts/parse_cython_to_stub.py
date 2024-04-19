@@ -20,7 +20,9 @@ def read_parse_and_write(file_path):
     file_path = os.path.splitext(file_path)[0]
     last_slash_index = file_path.rfind('/')
     new_path = file_path[:last_slash_index]
-    pyi_file_path = new_path + '/stubs/' + file_path[last_slash_index + 1:] + '.pyi'
+    stubs_path = new_path + '/stubs'
+    os.makedirs(stubs_path, exist_ok=True)
+    pyi_file_path =  stubs_path + '/' + file_path[last_slash_index + 1:] + '.pyi'
 
     with open(pyi_file_path, mode='w+') as f:
         f.write(stub_file)
