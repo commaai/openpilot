@@ -51,6 +51,7 @@ public:
   void sensors_start();
 
   void camera_open(MultiCameraState *multi_cam_state, int camera_num, bool enabled);
+  void set_exposure_rect();
   void sensor_set_parameters();
   void camera_map_bufs(MultiCameraState *s);
   void camera_init(MultiCameraState *s, VisionIpcServer *v, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type, float focal_len);
