@@ -427,7 +427,6 @@ void CameraState::set_exposure_rect() {
 
 void CameraState::sensor_set_parameters() {
   target_grey_fraction = 0.3;
-  ae_xywh = ci->ae_areas[camera_num];
 
   dc_gain_weight = ci->dc_gain_min_weight;
   for (int i = 0; i < AUTOEXPOSURE_DELAY; i++) {
