@@ -197,7 +197,7 @@ jobs:
         docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
     - name: Cache test routes
       id: dependency-cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: .ci_cache/comma_download_cache
         key: proc-replay-${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/ref_commit') }}
@@ -215,7 +215,7 @@ jobs:
       id: print-diff
       if: always()
       run: cat selfdrive/test/process_replay/diff.txt
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       if: always()
       continue-on-error: true
       with:
@@ -242,7 +242,7 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
     - name: Cache test routes
       id: dependency-cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: .ci_cache/comma_download_cache
         key: regen-${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/test_regen.py') }}
@@ -357,14 +357,14 @@ jobs:
           echo "::set-output name=diff::$output"
       - name: Find comment
         if: ${{ env.AZURE_TOKEN != '' }}
-        uses: peter-evans/find-comment@1769778a0c5bd330272d749d12c036d65e70d39d
+        uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e
         id: fc
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body-includes: This PR makes changes to
       - name: Update comment
         if: ${{ steps.save_diff.outputs.diff != '' && env.AZURE_TOKEN != '' }}
-        uses: peter-evans/create-or-update-comment@b95e16d2859ad843a14218d1028da5b2c4cbc4b4
+        uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
@@ -372,7 +372,7 @@ jobs:
           edit-mode: replace
       - name: Delete comment
         if: ${{ steps.fc.outputs.comment-id != '' && steps.save_diff.outputs.diff == '' && env.AZURE_TOKEN != '' }}
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             github.rest.issues.deleteComment({
@@ -398,7 +398,7 @@ jobs:
                             export MAPBOX_TOKEN='pk.eyJ1Ijoiam5ld2IiLCJhIjoiY2xxNW8zZXprMGw1ZzJwbzZneHd2NHljbSJ9.gV7VPRfbXFetD-1OVF0XZg' &&
                             python selfdrive/ui/tests/test_ui/run.py"
       - name: Upload Test Report
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: report
           path: selfdrive/ui/tests/test_ui/report
