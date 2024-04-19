@@ -29,6 +29,7 @@ public:
   uint32_t extra_height = 0;
   int registers_offset = -1;
   int stats_offset = -1;
+  int hdr_offset = -1;
 
   int exposure_time_min;
   int exposure_time_max;
