@@ -22,6 +22,7 @@ public:
   virtual void processRegisters(CameraState *c, cereal::FrameData::Builder &framed) const {}
 
   cereal::FrameData::ImageSensor image_sensor = cereal::FrameData::ImageSensor::UNKNOWN;
+  float pixel_size_mm;
   uint32_t frame_width, frame_height;
   uint32_t frame_stride;
   uint32_t frame_offset = 0;
@@ -48,7 +49,6 @@ public:
   float target_grey_factor;
   float min_ev;
   float max_ev;
-  std::vector<Rect> ae_areas;
 
   bool data_word;
   uint32_t probe_reg_addr;
