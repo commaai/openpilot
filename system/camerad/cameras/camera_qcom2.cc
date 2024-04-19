@@ -396,6 +396,35 @@ void CameraState::enqueue_req_multi(int start, int n, bool dp) {
 
 // ******************* camera *******************
 
+void CameraState::set_exposure_rect() {
+  // set areas for each camera, shouldn't be changed
+  std::vector<std::pair<Rect, float>> ae_targets = {
+    // (Rect, F)
+    std::make_pair((Rect){96, 250, 1734, 524}, 567.0), // wide
+    std::make_pair((Rect){96, 160, 1734, 986}, 2648.0), // road
+    std::make_pair((Rect){96, 242, 1736, 906}, 567.0) // driver
+  };
+  int h_ref = 1208;
+  /*
+    exposure target intrinics is
+    [
+      [F, 0, 0.5*ae_xywh[2]]
+      [0, F, 0.5*H-ae_xywh[1]]
+      [0, 0, 1]
+    ]
+  */
+  auto ae_target = ae_targets[camera_num];
+  Rect xywh_ref = ae_target.first;
+  float fl_ref = ae_target.second;
+
+  ae_xywh = (Rect){
+    std::max(0, buf.rgb_width / 2 - (int)(fl_pix / fl_ref * xywh_ref.w / 2)),
+    std::max(0, buf.rgb_height / 2 - (int)(fl_pix / fl_ref * (h_ref / 2 - xywh_ref.y))),
+    std::min((int)(fl_pix / fl_ref * xywh_ref.w), buf.rgb_width / 2 + (int)(fl_pix / fl_ref * xywh_ref.w / 2)),
+    std::min((int)(fl_pix / fl_ref * xywh_ref.h), buf.rgb_height / 2 + (int)(fl_pix / fl_ref * (h_ref / 2 - xywh_ref.y)))
+  };
+}
+
 void CameraState::sensor_set_parameters() {
   target_grey_fraction = 0.3;
 
@@ -421,7 +450,7 @@ void CameraState::camera_map_bufs(MultiCameraState *s) {
   enqueue_req_multi(1, FRAME_BUF_COUNT, 0);
 }
 
-void CameraState::camera_init(MultiCameraState *s, VisionIpcServer * v, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type) {
+void CameraState::camera_init(MultiCameraState *s, VisionIpcServer * v, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type, float focal_len) {
   if (!enabled) return;
 
   LOGD("camera init %d", camera_num);
@@ -430,6 +459,9 @@ void CameraState::camera_init(MultiCameraState *s, VisionIpcServer * v, cl_devic
 
   buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, yuv_type);
   camera_map_bufs(s);
+
+  fl_pix = focal_len / ci->pixel_size_mm;
+  set_exposure_rect();
 }
 
 void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num_, bool enabled_) {
@@ -614,9 +646,9 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
 }
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  s->driver_cam.camera_init(s, v, device_id, ctx, VISION_STREAM_DRIVER);
-  s->road_cam.camera_init(s, v, device_id, ctx, VISION_STREAM_ROAD);
-  s->wide_road_cam.camera_init(s, v, device_id, ctx, VISION_STREAM_WIDE_ROAD);
+  s->driver_cam.camera_init(s, v, device_id, ctx, VISION_STREAM_DRIVER, DRIVER_FL_MM);
+  s->road_cam.camera_init(s, v, device_id, ctx, VISION_STREAM_ROAD, ROAD_FL_MM);
+  s->wide_road_cam.camera_init(s, v, device_id, ctx, VISION_STREAM_WIDE_ROAD, WIDE_FL_MM);
 
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
 }
@@ -902,7 +934,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
 }
 
 static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
-  c->set_camera_exposure(set_exposure_target(&c->buf, 96, 1832, 2, 242, 1148, 4));
+  c->set_camera_exposure(set_exposure_target(&c->buf, c->ae_xywh, 2, 4));
 
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverCameraState();
@@ -927,9 +959,8 @@ void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
   c->ci->processRegisters(c, framed);
   s->pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
 
-  const auto [x, y, w, h] = (c == &s->wide_road_cam) ? std::tuple(96, 250, 1734, 524) : std::tuple(96, 160, 1734, 986);
   const int skip = 2;
-  c->set_camera_exposure(set_exposure_target(b, x, x + w, skip, y, y + h, skip));
+  c->set_camera_exposure(set_exposure_target(b, c->ae_xywh, skip, skip));
 }
 
 void cameras_run(MultiCameraState *s) {

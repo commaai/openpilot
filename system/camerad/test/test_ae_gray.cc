@@ -36,6 +36,7 @@ TEST_CASE("camera.test_set_exposure_target") {
   cb.cur_yuv_buf = &vb;
   cb.rgb_width = W;
   cb.rgb_height = H;
+  Rect rect = {0, 0, W-1, H-1};
 
   printf("AE test patterns %dx%d\n", cb.rgb_width, cb.rgb_height);
 
@@ -60,7 +61,7 @@ TEST_CASE("camera.test_set_exposure_target") {
           memset(&fb_y[h_0*W+h_1*W], l[2], h_2*W);
           memset(&fb_y[h_0*W+h_1*W+h_2*W], l[3], h_3*W);
           memset(&fb_y[h_0*W+h_1*W+h_2*W+h_3*W], l[4], h_4*W);
-          float ev = set_exposure_target((const CameraBuf*) &cb, 0, W-1, 1, 0, H-1, 1);
+          float ev = set_exposure_target((const CameraBuf*) &cb, rect, 1, 1);
           // printf("%d/%d/%d/%d/%d ev is %f\n", h_0, h_1, h_2, h_3, h_4, ev);
           // printf("%f\n", ev);
 
