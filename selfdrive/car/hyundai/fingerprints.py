@@ -777,12 +777,15 @@ FW_VERSIONS = {
   CAR.KIA_OPTIMA_G4: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00JF__ SCC F-CUP      1.00 1.00 96400-D4100         ',
+      b'\xf1\x00JF__ SCC F-CUP      1.00 1.00 96400-D4000         ',
     ],
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x00JF ESC \x0f 16 \x16\x06\x17 58920-D5080',
+      b'\xf1\x00JF ESC \r 14 \026\003\026 58920-D4030',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00JFWGN LDWS AT USA LHD 1.00 1.02 95895-D4100 G21',
+      b'\xf1\x00JFT LKAS AT KOR LHD 1.00 1.00 95895-D4301 T34',
     ],
   },
   CAR.KIA_OPTIMA_G4_FL: {
