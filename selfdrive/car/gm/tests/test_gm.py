@@ -13,7 +13,6 @@ class TestGMFingerprint(unittest.TestCase):
   def test_can_fingerprints(self, car_model, fingerprints):
     self.assertGreater(len(fingerprints), 0)
 
-    # Trailblazer is in dashcam
     self.assertTrue(all(len(finger) for finger in fingerprints))
 
     # The camera can sometimes be communicating on startup
