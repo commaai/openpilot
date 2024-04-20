@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from enum import Enum, IntFlag
+from enum import Enum
 
 from cereal import car
 from openpilot.selfdrive.car import dbc_dict, PlatformConfig, DbcDict, Platforms, CarSpecs
