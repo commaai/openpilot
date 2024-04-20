@@ -10,21 +10,6 @@ Ecu = car.CarParams.Ecu
 Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 
 class CAR(Platforms):
-  TESLA_AP1_MODELS = PlatformConfig(
-    [CarDocs("Tesla AP1 Model S", "All")],
-    CarSpecs(mass=2100., wheelbase=2.959, steerRatio=15.0),
-    dbc_dict('tesla_powertrain', 'tesla_radar_bosch_generated', chassis_dbc='tesla_can')
-  )
-  TESLA_AP2_MODELS = PlatformConfig(
-    [CarDocs("Tesla AP2 Model S", "All")],
-    TESLA_AP1_MODELS.specs,
-    TESLA_AP1_MODELS.dbc_dict
-  )
-  TESLA_MODELS_RAVEN = PlatformConfig(
-    [CarDocs("Tesla Model S Raven", "All")],
-    TESLA_AP1_MODELS.specs,
-    dbc_dict('tesla_powertrain', 'tesla_radar_continental_generated', chassis_dbc='tesla_can')
-  )
   TESLA_AP3_MODEL3 = PlatformConfig(
     [CarDocs("Tesla AP3 Model 3", "All")],
     CarSpecs(mass=1899., wheelbase=2.875, steerRatio=12.0),
@@ -39,27 +24,6 @@ class CAR(Platforms):
 
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
-    Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.UDS_VERSION_REQUEST],
-      [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.UDS_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.eps],
-      rx_offset=0x08,
-      bus=0,
-    ),
-    Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.SUPPLIER_SOFTWARE_VERSION_REQUEST],
-      [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.SUPPLIER_SOFTWARE_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.eps],
-      rx_offset=0x08,
-      bus=0,
-    ),
-    Request(
-      [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.UDS_VERSION_REQUEST],
-      [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.UDS_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.adas, Ecu.electricBrakeBooster, Ecu.fwdRadar],
-      rx_offset=0x10,
-      bus=0,
-    ),
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.SUPPLIER_SOFTWARE_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.SUPPLIER_SOFTWARE_VERSION_RESPONSE],
@@ -79,17 +43,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
 )
 
 class CANBUS:
-  # Lateral harness
-  chassis = 0
-  radar = 1
-  autopilot_chassis = 2
-
-  # Longitudinal harness
-  powertrain = 4
-  private = 5
-  autopilot_powertrain = 6
-
-  # Model 3/Y
   party = 0
   vehicle = 1
   autopilot_party = 2
@@ -104,19 +57,7 @@ GEAR_MAP = {
   "DI_GEAR_SNA": car.CarState.GearShifter.unknown,
 }
 
-DOORS = ["DOOR_STATE_FL", "DOOR_STATE_FR", "DOOR_STATE_RL", "DOOR_STATE_RR", "DOOR_STATE_FrontTrunk", "BOOT_STATE"]
-
-# Make sure the message and addr is also in the CAN parser!
 BUTTONS = [
-  Button(car.CarState.ButtonEvent.Type.leftBlinker, "STW_ACTN_RQ", "TurnIndLvr_Stat", [1]),
-  Button(car.CarState.ButtonEvent.Type.rightBlinker, "STW_ACTN_RQ", "TurnIndLvr_Stat", [2]),
-  Button(car.CarState.ButtonEvent.Type.accelCruise, "STW_ACTN_RQ", "SpdCtrlLvr_Stat", [4, 16]),
-  Button(car.CarState.ButtonEvent.Type.decelCruise, "STW_ACTN_RQ", "SpdCtrlLvr_Stat", [8, 32]),
-  Button(car.CarState.ButtonEvent.Type.cancel, "STW_ACTN_RQ", "SpdCtrlLvr_Stat", [1]),
-  Button(car.CarState.ButtonEvent.Type.resumeCruise, "STW_ACTN_RQ", "SpdCtrlLvr_Stat", [2]),
-]
-
-MODEL3_Y_BUTTONS = [
   Button(car.CarState.ButtonEvent.Type.leftBlinker, "SCCM_leftStalk", "SCCM_turnIndicatorStalkStatus", [3, 4]),
   Button(car.CarState.ButtonEvent.Type.rightBlinker, "SCCM_leftStalk", "SCCM_turnIndicatorStalkStatus", [1, 2]),
   Button(car.CarState.ButtonEvent.Type.accelCruise, "VCLEFT_switchStatus", "VCLEFT_swcRightScrollTicks", list(range(1, 10))),
