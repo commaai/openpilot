@@ -298,6 +298,7 @@ std::string decompressBZ2(const std::byte *in, size_t in_size, std::atomic<bool>
   BZ2_bzDecompressEnd(&strm);
   if (bzerror == BZ_STREAM_END && !(abort && *abort)) {
     out.resize(strm.total_out_lo32);
+    out.shrink_to_fit();
     return out;
   }
   return {};
