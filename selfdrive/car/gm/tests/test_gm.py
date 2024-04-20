@@ -13,10 +13,12 @@ class TestGMFingerprint(unittest.TestCase):
   def test_can_fingerprints(self, car_model, fingerprints):
     self.assertGreater(len(fingerprints), 0)
 
-    self.assertTrue(all(len(finger) for finger in fingerprints))
+    # Trailblazer is in dashcam
+    if car_model != CAR.CHEVROLET_TRAILBLAZER:
+      self.assertTrue(all(len(finger) for finger in fingerprints))
 
     # The camera can sometimes be communicating on startup
-    if car_model in CAMERA_ACC_CAR:
+    if car_model in CAMERA_ACC_CAR - {CAR.CHEVROLET_TRAILBLAZER}:
       for finger in fingerprints:
         for required_addr in (CAMERA_DIAGNOSTIC_ADDRESS, CAMERA_DIAGNOSTIC_ADDRESS + GM_RX_OFFSET):
           self.assertEqual(finger.get(required_addr), 8, required_addr)
