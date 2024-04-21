@@ -342,7 +342,7 @@ class CAR(Platforms):
     wmis={WMI.VOLKSWAGEN_COMMERCIAL_BUS_VAN},
   )
   VOLKSWAGEN_TROC_MK1 = VolkswagenMQBPlatformConfig(
-    [VWCarDocs("Volkswagen T-Roc 2018-22", footnotes=[Footnote.VW_MQB_A0])],
+    [VWCarDocs("Volkswagen T-Roc 2018-23")],
     VolkswagenCarSpecs(mass=1413, wheelbase=2.63),
     chassis_codes={"A1"},
     wmis={WMI.VOLKSWAGEN_EUROPE_SUV},

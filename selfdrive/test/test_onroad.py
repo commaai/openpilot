@@ -300,7 +300,7 @@ class TestOnroad(unittest.TestCase):
   def test_camera_processing_time(self):
     result = "\n"
     result += "------------------------------------------------\n"
-    result += "-------------- Debayer Timing ------------------\n"
+    result += "-------------- ImgProc Timing ------------------\n"
     result += "------------------------------------------------\n"
 
     ts = [getattr(m, m.which()).processingTime for m in self.lr if 'CameraState' in m.which()]

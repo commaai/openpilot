@@ -266,6 +266,9 @@ class Platforms(str, ReprEnum, metaclass=PlatformsType):
     member._value_ = platform_config.platform_str
     return member
 
+  def __repr__(self):
+    return f"<{self.__class__.__name__}.{self.name}>"
+
   @classmethod
   def create_dbc_map(cls) -> dict[str, DbcDict]:
     return {p: p.config.dbc_dict for p in cls}

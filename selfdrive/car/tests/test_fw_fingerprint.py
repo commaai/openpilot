@@ -9,7 +9,7 @@ from unittest import mock
 from cereal import car
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
-from openpilot.selfdrive.car.fw_versions import FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, build_fw_dict, \
+from openpilot.selfdrive.car.fw_versions import ESSENTIAL_ECUS, FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, build_fw_dict, \
                                                 match_fw_to_car, get_brand_ecu_matches, get_fw_versions, get_present_ecus
 from openpilot.selfdrive.car.vin import get_vin
 
@@ -146,6 +146,14 @@ class TestFwFingerprint(unittest.TestCase):
             for ecu in ecus.keys():
               self.assertNotEqual(ecu[0], Ecu.transmission, f"{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})")
 
+  def test_non_essential_ecus(self):
+    for brand, config in FW_QUERY_CONFIGS.items():
+      with self.subTest(brand):
+        # These ECUs are already not in ESSENTIAL_ECUS which the fingerprint functions give a pass if missing
+        unnecessary_non_essential_ecus = set(config.non_essential_ecus) - set(ESSENTIAL_ECUS)
+        self.assertEqual(unnecessary_non_essential_ecus, set(), "Declaring non-essential ECUs non-essential is not required: " +
+                                                                f"{', '.join([f'Ecu.{ECU_NAME[ecu]}' for ecu in unnecessary_non_essential_ecus])}")
+
   def test_missing_versions_and_configs(self):
     brand_versions = set(VERSIONS.keys())
     brand_configs = set(FW_QUERY_CONFIGS.keys())
@@ -237,7 +245,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
   def test_startup_timing(self):
     # Tests worse-case VIN query time and typical present ECU query time
     vin_ref_times = {'worst': 1.4, 'best': 0.7}  # best assumes we go through all queries to get a match
-    present_ecu_ref_time = 0.75
+    present_ecu_ref_time = 0.45
 
     def fake_get_ecu_addrs(*_, timeout):
       self.total_time += timeout
@@ -263,7 +271,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
         print(f'get_vin {name} case, query time={self.total_time / self.N} seconds')
 
   def test_fw_query_timing(self):
-    total_ref_time = {1: 8.1, 2: 8.7}
+    total_ref_time = {1: 7.2, 2: 7.8}
     brand_ref_times = {
       1: {
         'gm': 1.0,
@@ -276,7 +284,7 @@ class TestFwFingerprintTiming(unittest.TestCase):
         'nissan': 0.8,
         'subaru': 0.65,
         'tesla': 0.3,
-        'toyota': 1.6,
+        'toyota': 0.7,
         'volkswagen': 0.65,
       },
       2: {
