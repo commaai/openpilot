@@ -1,5 +1,5 @@
 from cereal import car
-from openpilot.common.numpy_fast import clip
+from openpilot.common.numpy_fast import clip, interp
 from openpilot.selfdrive.car import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, common_fault_avoidance, make_can_msg
 from openpilot.selfdrive.car.interfaces import CarControllerBase
 from openpilot.selfdrive.car.toyota import toyotacan
@@ -23,6 +23,17 @@ MAX_USER_TORQUE = 500
 # EPS ignores commands above this angle and causes PCS to fault
 MAX_LTA_ANGLE = 94.9461  # deg
 MAX_LTA_DRIVER_TORQUE_ALLOWANCE = 150  # slightly above steering pressed allows some resistance when changing lanes
+
+
+def compute_gb_toyota(accel, speed):
+  # from honda nidec
+  creep_brake = 0.0
+  creep_speed = 2.3
+  creep_brake_value = 0.15
+  if speed < creep_speed:
+    creep_brake = (creep_speed - speed) / creep_speed * creep_brake_value
+  gb = accel - creep_brake
+  return gb
 
 
 class CarController(CarControllerBase):
@@ -102,17 +113,25 @@ class CarController(CarControllerBase):
 
     # *** gas and brake ***
 
+    gas_accel = compute_gb_toyota(actuators.accel, CS.out.vEgo)
+
+    # wind brake from air resistance decel at high speed
+    wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 35.0], [0.001, 0.002, 0.15])
+
+    gas_accel += wind_brake
+
     # we will throw out PCM's compensations, but that may be a good thing. for example:
     # we lose things like pitch compensation, gas to maintain speed, brake to compensate for creeping, etc.
     # but also remove undesirable "snap to standstill" behavior when not requesting enough accel at low speeds,
     # lag to start moving, lag to start braking, etc.
     # PI should compensate for lack of the desirable behaviors, but might be worse than the PCM doing them
-    self.pcm_accel_comp = clip(actuators.accel - CS.pcm_accel_net, self.pcm_accel_comp - 0.03, self.pcm_accel_comp + 0.03)
-    pcm_accel_cmd = actuators.accel + self.pcm_accel_comp
+    self.pcm_accel_comp = clip(gas_accel - CS.pcm_accel_net, self.pcm_accel_comp - 0.03, self.pcm_accel_comp + 0.03)
+    pcm_accel_cmd = gas_accel + self.pcm_accel_comp
 
     # add back gas to maintain speed
-    accel_offset = CS.pcm_neutral_force / self.CP.mass
-    pcm_accel_cmd -= min(accel_offset / 2, 0)  # only add, reduce effect
+    # accel_offset = CS.pcm_neutral_force / self.CP.mass
+    # fact = interp(CS.out.vEgo, [3, 6], [0.0, 1.0])  # not at low speed
+    # pcm_accel_cmd -= min(accel_offset / 2, 0) * fact  # only add, reduce effect
 
     if not CC.longActive:
       pcm_accel_cmd = 0.0
