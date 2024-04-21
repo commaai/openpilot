@@ -9,26 +9,9 @@ def retryWithDelay(int maxRetries, int delay, Closure body) {
   throw Exception("Failed after ${maxRetries} retries")
 }
 
-// check if started by timer: https://stackoverflow.com/questions/43516025/how-to-handle-nightly-build-in-jenkins-declarative-pipeline
-@NonCPS
+// check if started by timer: https://gist.github.com/aaclarker/75b8a0eb2b4d600779f84f8e849f2c37
 def isJobStartedByTimer() {
-  def startedByTimer = false
-  try {
-    def buildCauses = currentBuild.rawBuild.getCauses()
-    for ( buildCause in buildCauses ) {
-      if (buildCause != null) {
-        def causeDescription = buildCause.getShortDescription()
-        echo "shortDescription: ${causeDescription}"
-        if (causeDescription.contains("Started by timer")) {
-          startedByTimer = true
-        }
-      }
-    }
-  } catch(theError) {
-    echo "Error getting build cause"
-  }
-
-  return startedByTimer
+  return currentBuild.getBuildCauses()[0]["shortDescription"].matches("Started by timer");
 }
 
 def device(String ip, String step_label, String cmd) {

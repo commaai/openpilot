@@ -36,7 +36,9 @@ void ReplayStream::mergeSegments() {
       for (auto it = seg->log->events.cbegin(); it != seg->log->events.cend(); ++it) {
         if ((*it)->which == cereal::Event::Which::CAN) {
           const uint64_t ts = (*it)->mono_time;
-          for (const auto &c : (*it)->event.getCan()) {
+          capnp::FlatArrayMessageReader reader((*it)->data);
+          auto event = reader.getRoot<cereal::Event>();
+          for (const auto &c : event.getCan()) {
             new_events.push_back(newEvent(ts, c));
           }
         }
@@ -66,7 +68,9 @@ bool ReplayStream::eventFilter(const Event *event) {
   static double prev_update_ts = 0;
   if (event->which == cereal::Event::Which::CAN) {
     double current_sec = event->mono_time / 1e9 - routeStartTime();
-    for (const auto &c : event->event.getCan()) {
+    capnp::FlatArrayMessageReader reader(event->data);
+    auto e = reader.getRoot<cereal::Event>();
+    for (const auto &c : e.getCan()) {
       MessageId id = {.source = c.getSrc(), .address = c.getAddress()};
       const auto dat = c.getDat();
       updateEvent(id, current_sec, (const uint8_t*)dat.begin(), dat.size());

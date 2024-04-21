@@ -263,7 +263,8 @@ void Slider::parseQLog(int segnum, std::shared_ptr<LogReader> qlog) {
   std::mutex mutex;
   QtConcurrent::blockingMap(qlog->events.cbegin(), qlog->events.cend(), [&mutex, this](const Event *e) {
     if (e->which == cereal::Event::Which::THUMBNAIL) {
-      auto thumb = e->event.getThumbnail();
+      capnp::FlatArrayMessageReader reader(e->data);
+      auto thumb = reader.getRoot<cereal::Event>().getThumbnail();
       auto data = thumb.getThumbnail();
       if (QPixmap pm; pm.loadFromData(data.begin(), data.size(), "jpeg")) {
         QPixmap scaled = pm.scaledToHeight(MIN_VIDEO_HEIGHT - THUMBNAIL_MARGIN * 2, Qt::SmoothTransformation);
@@ -271,7 +272,8 @@ void Slider::parseQLog(int segnum, std::shared_ptr<LogReader> qlog) {
         thumbnails[thumb.getTimestampEof()] = scaled;
       }
     } else if (e->which == cereal::Event::Which::CONTROLS_STATE) {
-      auto cs = e->event.getControlsState();
+      capnp::FlatArrayMessageReader reader(e->data);
+      auto cs = reader.getRoot<cereal::Event>().getControlsState();
       if (cs.getAlertType().size() > 0 && cs.getAlertText1().size() > 0 &&
           cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE) {
         std::lock_guard lk(mutex);

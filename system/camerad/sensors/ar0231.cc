@@ -79,6 +79,7 @@ float ar0231_parse_temp_sensor(uint16_t calib1, uint16_t calib2, uint16_t data_r
 
 AR0231::AR0231() {
   image_sensor = cereal::FrameData::ImageSensor::AR0231;
+  pixel_size_mm = 0.003;
   data_word = true;
   frame_width = 1928;
   frame_height = 1208;

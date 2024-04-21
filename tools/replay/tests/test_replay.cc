@@ -178,7 +178,7 @@ void TestReplay::testSeekTo(int seek_to) {
       continue;
     }
 
-    Event cur_event(cereal::Event::Which::INIT_DATA, cur_mono_time_);
+    Event cur_event(cereal::Event::Which::INIT_DATA, cur_mono_time_, {});
     auto eit = std::upper_bound(events_->begin(), events_->end(), &cur_event, Event::lessThan());
     if (eit == events_->end()) {
       qDebug() << "waiting for events...";

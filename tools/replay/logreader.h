@@ -4,7 +4,6 @@
 #define HAS_MEMORY_RESOURCE 1
 #include <memory_resource>
 #endif
-
 #include <memory>
 #include <string>
 #include <vector>
@@ -18,13 +17,8 @@ const int DEFAULT_EVENT_MEMORY_POOL_BLOCK_SIZE = 65000;
 
 class Event {
 public:
-  Event(cereal::Event::Which which, uint64_t mono_time) : reader(kj::ArrayPtr<capnp::word>{}) {
-    // construct a dummy Event for binary search, e.g std::upper_bound
-    this->which = which;
-    this->mono_time = mono_time;
-  }
-  Event(const kj::ArrayPtr<const capnp::word> &amsg, bool frame = false);
-  inline kj::ArrayPtr<const capnp::byte> bytes() const { return words.asBytes(); }
+  Event(cereal::Event::Which which, uint64_t mono_time, const kj::ArrayPtr<const capnp::word> &data, int eidx_segnum = -1)
+    : which(which), mono_time(mono_time), data(data), eidx_segnum(eidx_segnum) {}
 
   struct lessThan {
     inline bool operator()(const Event *l, const Event *r) {
@@ -43,10 +37,8 @@ public:
 
   uint64_t mono_time;
   cereal::Event::Which which;
-  cereal::Event::Reader event;
-  capnp::FlatArrayMessageReader reader;
-  kj::ArrayPtr<const capnp::word> words;
-  bool frame;
+  kj::ArrayPtr<const capnp::word> data;
+  int32_t eidx_segnum;
 };
 
 class LogReader {
@@ -59,9 +51,10 @@ public:
   std::vector<Event*> events;
 
 private:
+  Event *newEvent(cereal::Event::Which which, uint64_t mono_time, const kj::ArrayPtr<const capnp::word> &words, int eidx_segnum = -1);
   bool parse(std::atomic<bool> *abort);
   std::string raw_;
 #ifdef HAS_MEMORY_RESOURCE
-  std::unique_ptr<std::pmr::monotonic_buffer_resource> mbr_;
+  std::pmr::monotonic_buffer_resource mbr_{DEFAULT_EVENT_MEMORY_POOL_BLOCK_SIZE * sizeof(Event)};
 #endif
 };
