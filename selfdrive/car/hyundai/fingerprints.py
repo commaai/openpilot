@@ -85,6 +85,7 @@ FW_VERSIONS = {
       b'\xf1\x00AEhe SCC H-CUP      1.01 1.01 96400-G2100         ',
     ],
     (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00AE  MDPS C 1.00 1.05 56310/G2501 4AEHC105',
       b'\xf1\x00AE  MDPS C 1.00 1.07 56310/G2301 4AEHC107',
       b'\xf1\x00AE  MDPS C 1.00 1.07 56310/G2501 4AEHC107',
     ],
@@ -421,6 +422,7 @@ FW_VERSIONS = {
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x00LX ESC \x01 103\x19\t\x10 58910-S8360',
       b'\xf1\x00LX ESC \x01 1031\t\x10 58910-S8360',
+      b'\xf1\x00LX ESC \x01 104 \x10\x15 58910-S8350',
       b'\xf1\x00LX ESC \x01 104 \x10\x16 58910-S8360',
       b'\xf1\x00LX ESC \x0b 101\x19\x03\x17 58910-S8330',
       b'\xf1\x00LX ESC \x0b 101\x19\x03  58910-S8360',
@@ -484,6 +486,7 @@ FW_VERSIONS = {
   },
   CAR.GENESIS_G70_2020: {
     (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00IK  MDPS R 1.00 1.06 57700-G9220 4I2VL106',
       b'\xf1\x00IK  MDPS R 1.00 1.07 57700-G9220 4I2VL107',
       b'\xf1\x00IK  MDPS R 1.00 1.07 57700-G9420 4I4VL107',
       b'\xf1\x00IK  MDPS R 1.00 1.08 57700-G9200 4I2CL108',
@@ -491,6 +494,7 @@ FW_VERSIONS = {
       b'\xf1\x00IK  MDPS R 1.00 5.09 57700-G9520 4I4VL509',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00IK__ SCC F-CUP      1.00 1.01 96400-G9100         ',
       b'\xf1\x00IK__ SCC F-CUP      1.00 1.02 96400-G9100         ',
       b'\xf1\x00IK__ SCC F-CUP      1.00 1.02 96400-G9100         \xf1\xa01.02',
       b'\xf1\x00IK__ SCC FHCUP      1.00 1.00 99110-G9300         ',
@@ -966,6 +970,7 @@ FW_VERSIONS = {
       b'\xf1\x00NE1_ RDR -----      1.00 1.00 99110-GI000         ',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00NE1 MFC  AT CAN LHD 1.00 1.05 99211-GI010 220614',
       b'\xf1\x00NE1 MFC  AT EUR LHD 1.00 1.01 99211-GI010 211007',
       b'\xf1\x00NE1 MFC  AT EUR LHD 1.00 1.06 99211-GI000 210813',
       b'\xf1\x00NE1 MFC  AT EUR LHD 1.00 1.06 99211-GI010 230110',

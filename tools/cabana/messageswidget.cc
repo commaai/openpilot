@@ -255,12 +255,12 @@ void MessageListModel::dbcModified() {
 void MessageListModel::sortItems(std::vector<MessageListModel::Item> &items) {
   auto compare = [this](const auto &l, const auto &r) {
     switch (sort_column) {
-      case Column::NAME: return l.name < r.name;
-      case Column::SOURCE: return l.id.source < r.id.source;
-      case Column::ADDRESS: return l.id.address < r.id.address;
-      case Column::NODE: return l.node < r.node;
-      case Column::FREQ: return can->lastMessage(l.id).freq < can->lastMessage(r.id).freq;
-      case Column::COUNT: return can->lastMessage(l.id).count < can->lastMessage(r.id).count;
+      case Column::NAME: return std::tie(l.name, l.id) < std::tie(r.name, r.id);
+      case Column::SOURCE: return std::tie(l.id.source, l.id.address) < std::tie(r.id.source, r.id.address);
+      case Column::ADDRESS: return std::tie(l.id.address, l.id.source) < std::tie(r.id.address, r.id.source);
+      case Column::NODE: return std::tie(l.node, l.id) < std::tie(r.node, r.id);
+      case Column::FREQ: return std::tie(can->lastMessage(l.id).freq, l.id) < std::tie(can->lastMessage(r.id).freq, r.id);
+      case Column::COUNT: return std::tie(can->lastMessage(l.id).count, l.id) < std::tie(can->lastMessage(r.id).count, r.id);
       default: return false; // Default case to suppress compiler warning
     }
   };
