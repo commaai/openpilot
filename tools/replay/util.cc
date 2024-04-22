@@ -4,10 +4,10 @@
 #include <curl/curl.h>
 #include <openssl/sha.h>
 
-#include <cstdarg>
-#include <cstring>
 #include <cassert>
 #include <cmath>
+#include <cstdarg>
+#include <cstring>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -158,7 +158,10 @@ size_t getRemoteFileSize(const std::string &url, std::atomic<bool> *abort) {
   int still_running = 1;
   while (still_running > 0 && !(abort && *abort)) {
     CURLMcode mc = curl_multi_perform(cm, &still_running);
-    if (!mc) curl_multi_wait(cm, nullptr, 0, 1000, nullptr);
+    if (mc != CURLM_OK) break;
+    if (still_running > 0) {
+      curl_multi_wait(cm, nullptr, 0, 1000, nullptr);
+    }
   }
 
   double content_length = -1;
@@ -208,10 +211,20 @@ bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t cont
   }
 
   int still_running = 1;
+  size_t prev_written = 0;
   while (still_running > 0 && !(abort && *abort)) {
-    curl_multi_wait(cm, nullptr, 0, 1000, nullptr);
-    curl_multi_perform(cm, &still_running);
-    download_stats.update(url, written);
+    CURLMcode mc = curl_multi_perform(cm, &still_running);
+    if (mc != CURLM_OK) {
+      break;
+    }
+    if (still_running > 0) {
+      curl_multi_wait(cm, nullptr, 0, 1000, nullptr);
+    }
+
+    if (((written - prev_written) / (double)content_length) >= 0.01) {
+      download_stats.update(url, written);
+      prev_written = written;
+    }
   }
 
   CURLMsg *msg;
@@ -304,26 +317,28 @@ std::string decompressBZ2(const std::byte *in, size_t in_size, std::atomic<bool>
   return {};
 }
 
-void precise_nano_sleep(long sleep_ns) {
+void precise_nano_sleep(long nanoseconds) {
 #ifdef __APPLE__
   const long estimate_ns = 1 * 1e6;  // 1ms
   struct timespec req = {.tv_nsec = estimate_ns};
   uint64_t start_sleep = nanos_since_boot();
-  while (sleep_ns > estimate_ns) {
+  while (nanoseconds > estimate_ns) {
     nanosleep(&req, nullptr);
     uint64_t end_sleep = nanos_since_boot();
-    sleep_ns -= (end_sleep - start_sleep);
+    nanoseconds -= (end_sleep - start_sleep);
     start_sleep = end_sleep;
   }
   // spin wait
-  if (sleep_ns > 0) {
-    while ((nanos_since_boot() - start_sleep) <= sleep_ns) {
+  if (nanoseconds > 0) {
+    while ((nanos_since_boot() - start_sleep) <= nanoseconds) {
       std::this_thread::yield();
     }
   }
 #else
-  struct timespec req = {.tv_sec = 0, .tv_nsec = sleep_ns};
-  struct timespec rem = {};
+  struct timespec req, rem;
+
+  req.tv_sec = nanoseconds / 1e9;
+  req.tv_nsec = nanoseconds % (int64_t)1e9;
   while (clock_nanosleep(CLOCK_MONOTONIC, 0, &req, &rem) && errno == EINTR) {
     // Retry sleep if interrupted by a signal
     req = rem;
