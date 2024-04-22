@@ -20,7 +20,7 @@ ESSENTIAL_ECUS = {Ecu.fwdRadar, Ecu.transmission, Ecu.eps, Ecu.fwdCamera}
 
 
 def get_platform_codes(fw_versions: list[bytes]) -> dict[bytes, set[bytes]]:
-  codes = defaultdict(set)  # Optional[part]-platform-major_version: set of sub_version
+  codes = defaultdict(set)
   for fw in fw_versions:
     m = re.match(HONDA_FW_PATTERN, fw)
 
