@@ -151,6 +151,7 @@ QWidget *VideoWidget::createCameraWidget() {
   setMaximumTime(can->totalSeconds());
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->currentSecond()); });
   QObject::connect(slider, &Slider::updateMaximumTime, this, &VideoWidget::setMaximumTime, Qt::QueuedConnection);
+  QObject::connect(can, &AbstractStream::eventsMerged, [this]() { slider->update(); });
   QObject::connect(static_cast<ReplayStream*>(can), &ReplayStream::qLogLoaded, slider, &Slider::parseQLog);
   QObject::connect(cam_widget, &CameraWidget::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(cam_widget, &CameraWidget::vipcAvailableStreamsUpdated, this, &VideoWidget::vipcAvailableStreamsUpdated);
@@ -405,7 +406,7 @@ void InfoLabel::paintEvent(QPaintEvent *event) {
       font.setPixelSize(11);
       p.setFont(font);
     }
-    QRect text_rect = rect().adjusted(2, 2, -2, -2);
+    QRect text_rect = rect().adjusted(1, 1, -1, -1);
     QRect r = p.fontMetrics().boundingRect(text_rect, Qt::AlignTop | Qt::AlignHCenter | Qt::TextWordWrap, text);
     p.fillRect(text_rect.left(), r.top(), text_rect.width(), r.height(), color);
     p.drawText(text_rect, Qt::AlignTop | Qt::AlignHCenter | Qt::TextWordWrap, text);
