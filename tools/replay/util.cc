@@ -317,7 +317,7 @@ std::string decompressBZ2(const std::byte *in, size_t in_size, std::atomic<bool>
   return {};
 }
 
-void precise_nano_sleep(long nanoseconds) {
+void precise_nano_sleep(int64_t nanoseconds) {
 #ifdef __APPLE__
   const long estimate_ns = 1 * 1e6;  // 1ms
   struct timespec req = {.tv_nsec = estimate_ns};
