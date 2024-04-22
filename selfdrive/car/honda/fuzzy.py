@@ -9,10 +9,13 @@ Ecu = car.CarParams.Ecu
 # Honda Fuzzy Fingerprinting
 
 # Honda FW version format
-# [12345]-[ABC]-[A123]
-# [part no]-[platform]-[revision]
+# [xxxxx]-[xxx]-[xxx]
+# [part_number]-[platform]-[revision]
+# - part_number: 5 alphanumeric characters which represent what the part is. appears to be the same or +-3 across platforms
+# - platform: represents the platform that this part fits, or the first car it was used in when it fits multiple
+# - revision: represents software revision for this part
 
-HONDA_FW_PATTERN = br"(?P<part_no>[A-Z0-9]{5})-(?P<platform_code>[A-Z0-9]{3})(-|,)(?P<revision>[A-Z0-9]{4})(\x00){2}$"
+HONDA_FW_PATTERN = br"(?P<part_number>[A-Z0-9]{5})-(?P<platform>[A-Z0-9]{3})(-|,)(?P<revision>[A-Z0-9]{4})(\x00){2}$"
 
 PLATFORM_CODE_ECUS = {Ecu.eps, Ecu.gateway, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.transmission, Ecu.electricBrakeBooster}
 ESSENTIAL_ECUS = {Ecu.fwdRadar, Ecu.transmission, Ecu.eps, Ecu.fwdCamera}
@@ -25,7 +28,7 @@ def get_platform_codes(fw_versions: list[bytes]) -> dict[bytes, set[bytes]]:
     m = re.match(HONDA_FW_PATTERN, fw)
 
     if m:
-      codes[b'-'.join((m.group('part_no'), m.group('platform_code')))].add(m.group('revision'))
+      codes[b'-'.join((m.group('part_number'), m.group('platform')))].add(m.group('revision'))
 
   return dict(codes)
 
