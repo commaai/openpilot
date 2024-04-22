@@ -8,14 +8,19 @@ Ecu = car.CarParams.Ecu
 
 # Honda Fuzzy Fingerprinting
 
-# Honda FW version format
-# [xxxxx]-[xxx]-[xxx]
-# [part_number]-[platform]-[revision]
-# - part_number: 5 alphanumeric characters which represent what the part is. appears to be the same or +-3 across platforms
-# - platform: represents the platform that this part fits, or the first car it was used in when it fits multiple
-# - revision: represents software revision for this part
+# Terminology from Honda SIS
+# 'Programmable Control Unit' - ECU
+# 'Program ID' - firmware version
 
-HONDA_FW_PATTERN = br"(?P<part_number>[A-Z0-9]{5})-(?P<platform>[A-Z0-9]{3})(-|,)(?P<revision>[A-Z0-9]{4})(\x00){2}$"
+# [xxxxx]-[xxx]-[xxx]
+# [classification]-[platform]-[revision]
+# - classification: 5 alphanumeric characters which represent what type of part this is, the last character varies
+#                   slightly (+/-1-3), which seem to be for variations ex: for manual vs automatic transmissions
+# - platform: represents the platform that this part fits, or the first car it was used in when it fits multiple
+#
+# - revision: represents software revision for this part. for example, one update goes from C710 to C730
+
+HONDA_FW_PATTERN = br"(?P<classification>[A-Z0-9]{5})-(?P<platform>[A-Z0-9]{3})(-|,)(?P<revision>[A-Z0-9]{4})(\x00){2}$"
 
 PLATFORM_CODE_ECUS = {Ecu.eps, Ecu.gateway, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.transmission, Ecu.electricBrakeBooster}
 ESSENTIAL_ECUS = {Ecu.fwdRadar, Ecu.transmission, Ecu.eps, Ecu.fwdCamera}
@@ -27,7 +32,7 @@ def get_platform_codes(fw_versions: list[bytes]) -> dict[bytes, set[bytes]]:
     m = re.match(HONDA_FW_PATTERN, fw)
 
     if m:
-      codes[b'-'.join((m.group('part_number'), m.group('platform')))].add(m.group('revision'))
+      codes[b'-'.join((m.group('classification'), m.group('platform')))].add(m.group('revision'))
 
   return dict(codes)
 
