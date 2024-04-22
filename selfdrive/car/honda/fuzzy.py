@@ -21,7 +21,6 @@ PLATFORM_CODE_ECUS = {Ecu.eps, Ecu.gateway, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.tra
 ESSENTIAL_ECUS = {Ecu.fwdRadar, Ecu.transmission, Ecu.eps, Ecu.fwdCamera}
 
 
-
 def get_platform_codes(fw_versions: list[bytes]) -> dict[bytes, set[bytes]]:
   codes = defaultdict(set)
   for fw in fw_versions:
