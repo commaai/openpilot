@@ -37,6 +37,7 @@ def get_platform_codes(fw_versions: list[bytes]) -> dict[bytes, set[bytes]]:
 
 
 def match_fw_to_car_fuzzy(live_fw_versions, vin, offline_fw_versions) -> set[str]:
+  # TODO: we can probably make a helper since this is extremely similar to the Toyota and Hyundai implementations
   candidates = set()
 
   for candidate, fws in offline_fw_versions.items():
@@ -55,9 +56,7 @@ def match_fw_to_car_fuzzy(live_fw_versions, vin, offline_fw_versions) -> set[str
       # Found platform codes & versions
       found_platform_codes = get_platform_codes(live_fw_versions.get(addr, set()))
 
-      # Check part number + platform code + major version matches for any found versions
-      # Platform codes and major versions change for different physical parts, generation, API, etc.
-      # Sub-versions are incremented for minor recalls, do not need to be checked.
+      # Check part number + platform code + revision
       if not any(found_platform_code in expected_platform_codes for found_platform_code in found_platform_codes):
         break
 
