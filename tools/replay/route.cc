@@ -77,7 +77,7 @@ bool Route::loadFromServer(int retries) {
       return false;
     }
     rWarning("Retrying %d/%d", i, retries);
-    util::sleep_for(500);
+    util::sleep_for(3000);
   }
   return false;
 }
