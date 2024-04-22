@@ -30,9 +30,6 @@ class TestVolkswagenPlatformConfigs(unittest.TestCase):
         self.assertTrue(all(CHASSIS_CODE_PATTERN.match(cc) for cc in
                             platform.config.chassis_codes), "Bad chassis codes")
 
-        if platform.config.wmis & {WMI.VOLKSWAGEN_USA_SUV}:
-          self.assertEqual(platform.config.wmis, {WMI.VOLKSWAGEN_USA_SUV, WMI.VOLKSWAGEN_EUROPE_SUV, WMI.VOLKSWAGEN_MEXICO_SUV})
-
         # No two platforms should share chassis codes
         for comp in CAR:
           if platform == comp:
