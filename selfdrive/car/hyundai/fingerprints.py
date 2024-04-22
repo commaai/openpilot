@@ -486,6 +486,7 @@ FW_VERSIONS = {
   },
   CAR.GENESIS_G70_2020: {
     (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00IK  MDPS R 1.00 1.06 57700-G9220 4I2VL106',
       b'\xf1\x00IK  MDPS R 1.00 1.07 57700-G9220 4I2VL107',
       b'\xf1\x00IK  MDPS R 1.00 1.07 57700-G9420 4I4VL107',
       b'\xf1\x00IK  MDPS R 1.00 1.08 57700-G9200 4I2CL108',
@@ -493,6 +494,7 @@ FW_VERSIONS = {
       b'\xf1\x00IK  MDPS R 1.00 5.09 57700-G9520 4I4VL509',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00IK__ SCC F-CUP      1.00 1.01 96400-G9100         ',
       b'\xf1\x00IK__ SCC F-CUP      1.00 1.02 96400-G9100         ',
       b'\xf1\x00IK__ SCC F-CUP      1.00 1.02 96400-G9100         \xf1\xa01.02',
       b'\xf1\x00IK__ SCC FHCUP      1.00 1.00 99110-G9300         ',
