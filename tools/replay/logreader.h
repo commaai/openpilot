@@ -5,6 +5,7 @@
 
 #include "cereal/gen/cpp/log.capnp.h"
 #include "system/camerad/cameras/camera_common.h"
+#include "tools/replay/util.h"
 
 const CameraType ALL_CAMERAS[] = {RoadCam, DriverCam, WideRoadCam};
 const int MAX_CAMERAS = std::size(ALL_CAMERAS);
@@ -26,6 +27,7 @@ public:
 
 class LogReader {
 public:
+  LogReader(const std::vector<bool> &filters = {}) { filters_ = filters; }
   bool load(const std::string &url, std::atomic<bool> *abort = nullptr,
             bool local_cache = false, int chunk_size = -1, int retries = 0);
   bool load(const char *data, size_t size, std::atomic<bool> *abort = nullptr);
@@ -33,4 +35,6 @@ public:
 
 private:
   std::string raw_;
+  std::vector<bool> filters_;
+  MonotonicBuffer buffer_{1024 * 1024};
 };

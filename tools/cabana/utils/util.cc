@@ -263,26 +263,3 @@ QString signalToolTip(const cabana::Signal *sig) {
   )").arg(sig->name).arg(sig->start_bit).arg(sig->size).arg(sig->msb).arg(sig->lsb)
      .arg(sig->is_little_endian ? "Y" : "N").arg(sig->is_signed ? "Y" : "N");
 }
-
-// MonotonicBuffer
-
-void *MonotonicBuffer::allocate(size_t bytes, size_t alignment) {
-  assert(bytes > 0);
-  void *p = std::align(alignment, bytes, current_buf, available);
-  if (p == nullptr) {
-    available = next_buffer_size = std::max(next_buffer_size, bytes);
-    current_buf = buffers.emplace_back(std::aligned_alloc(alignment, next_buffer_size));
-    next_buffer_size *= growth_factor;
-    p = current_buf;
-  }
-
-  current_buf = (char *)current_buf + bytes;
-  available -= bytes;
-  return p;
-}
-
-MonotonicBuffer::~MonotonicBuffer() {
-  for (auto buf : buffers) {
-    free(buf);
-  }
-}
