@@ -224,7 +224,7 @@ class CAR(Platforms):
     ],
     VolkswagenCarSpecs(mass=2011, wheelbase=2.98),
     chassis_codes={"CA"},
-    wmis={WMI.VOLKSWAGEN_USA_SUV},
+    wmis={WMI.VOLKSWAGEN_USA_SUV, WMI.VOLKSWAGEN_EUROPE_SUV},
   )
   VOLKSWAGEN_CADDY_MK3 = VolkswagenPQPlatformConfig(
     [
