@@ -33,7 +33,7 @@ repos:
         - -L bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup,bumb,nd,sie,preints
         - --builtins clear,rare,informal,usage,code,names,en-GB_to_en-US
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.3.5
+    rev: v0.4.1
     hooks:
     -   id: ruff
         exclude: '^(third_party/)|(cereal/)|(panda/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(teleoprtc/)|(teleoprtc_repo/)'
@@ -75,7 +75,7 @@ repos:
         # relevant rules are whitelisted, see all options with: cpplint --filter=
         - --filter=-build,-legal,-readability,-runtime,-whitespace,+build/include_subdir,+build/forward_decl,+build/include_what_you_use,+build/deprecated,+whitespace/comma,+whitespace/line_length,+whitespace/empty_if_body,+whitespace/empty_loop_body,+whitespace/empty_conditional_body,+whitespace/forcolon,+whitespace/parens,+whitespace/semicolon,+whitespace/tab,+readability/braces
 -   repo: https://github.com/MarcoGorelli/cython-lint
-    rev: v0.16.0
+    rev: v0.16.2
     hooks:
     -   id: cython-lint
         exclude: '^(third_party/)|(cereal/)|(body/)|(rednose/)|(rednose_repo/)|(opendbc/)|(panda/)|(generated/)'
@@ -98,6 +98,6 @@ repos:
         args:
         - --lock
 -   repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.28.1
+    rev: 0.28.2
     hooks:
     -   id: check-github-workflows
