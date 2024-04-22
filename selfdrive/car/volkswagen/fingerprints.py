@@ -100,6 +100,7 @@ FW_VERSIONS = {
       b'\xf1\x875Q0907572H \xf1\x890620',
       b'\xf1\x875Q0907572J \xf1\x890654',
       b'\xf1\x875Q0907572P \xf1\x890682',
+      b'\xf1\x875Q0907572S \xf1\x890780',
     ],
   },
   CAR.VOLKSWAGEN_CADDY_MK3: {
