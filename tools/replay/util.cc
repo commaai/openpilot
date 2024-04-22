@@ -318,6 +318,23 @@ std::string decompressBZ2(const std::byte *in, size_t in_size, std::atomic<bool>
 }
 
 void precise_nano_sleep(int64_t nanoseconds) {
+#ifdef __APPLE__
+  const long estimate_ns = 1 * 1e6;  // 1ms
+  struct timespec req = {.tv_nsec = estimate_ns};
+  uint64_t start_sleep = nanos_since_boot();
+  while (nanoseconds > estimate_ns) {
+    nanosleep(&req, nullptr);
+    uint64_t end_sleep = nanos_since_boot();
+    nanoseconds -= (end_sleep - start_sleep);
+    start_sleep = end_sleep;
+  }
+  // spin wait
+  if (nanoseconds > 0) {
+    while ((nanos_since_boot() - start_sleep) <= nanoseconds) {
+      std::this_thread::yield();
+    }
+  }
+#else
   struct timespec req, rem;
 
   req.tv_sec = nanoseconds / 1e9;
@@ -326,6 +343,7 @@ void precise_nano_sleep(int64_t nanoseconds) {
     // Retry sleep if interrupted by a signal
     req = rem;
   }
+#endif
 }
 
 std::string sha256(const std::string &str) {
