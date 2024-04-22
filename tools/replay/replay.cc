@@ -93,10 +93,9 @@ void Replay::updateEvents(const std::function<bool()> &update_events_function) {
 }
 
 void Replay::seekTo(double seconds, bool relative) {
-  seeking_to_seconds_ = relative ? seconds + currentSeconds() : seconds;
-  seeking_to_seconds_ = std::max(double(0.0), seeking_to_seconds_);
-
   updateEvents([&]() {
+    seeking_to_seconds_ = relative ? seconds + currentSeconds() : seconds;
+    seeking_to_seconds_ = std::max(double(0.0), seeking_to_seconds_);
     int target_segment = (int)seeking_to_seconds_ / 60;
     if (segments_.count(target_segment) == 0) {
       rWarning("can't seek to %d s segment %d is invalid", (int)seeking_to_seconds_, target_segment);
@@ -302,18 +301,17 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
 
   if (stream_thread_) {
     emit segmentsMerged();
+  }
 
+  updateEvents([&]() {
+    events_.swap(new_events);
+    merged_segments_ = segments_to_merge;
     // Check if seeking is in progress
     int target_segment = int(seeking_to_seconds_ / 60);
     if (seeking_to_seconds_ >= 0 && segments_to_merge.count(target_segment) > 0) {
       emit seekedTo(seeking_to_seconds_);
       seeking_to_seconds_ = -1;  // Reset seeking_to_seconds_ to indicate completion of seek
     }
-  }
-
-  updateEvents([&]() {
-    events_.swap(new_events);
-    merged_segments_ = segments_to_merge;
     // Wake up the stream thread if the current segment is loaded or invalid.
     return isSegmentMerged(current_segment_) || (segments_.count(current_segment_) == 0);
   });
