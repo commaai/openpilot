@@ -21,7 +21,7 @@ void logMessage(ReplyMsgType type, const char* fmt, ...);
 #define rError(fmt, ...) ::logMessage(ReplyMsgType::Critical , fmt,  ## __VA_ARGS__)
 
 std::string sha256(const std::string &str);
-void precise_nano_sleep(long sleep_ns);
+void precise_nano_sleep(int64_t nanoseconds);
 std::string decompressBZ2(const std::string &in, std::atomic<bool> *abort = nullptr);
 std::string decompressBZ2(const std::byte *in, size_t in_size, std::atomic<bool> *abort = nullptr);
 std::string getUrlWithoutQuery(const std::string &url);

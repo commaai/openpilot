@@ -1,7 +1,8 @@
 #include "tools/replay/camera.h"
 
+#include <capnp/dynamic.h>
+
 #include <cassert>
-#include <tuple>
 
 #include "third_party/linux/include/msm_media_info.h"
 #include "tools/replay/util.h"
@@ -57,8 +58,13 @@ void CameraServer::cameraThread(Camera &cam) {
   };
 
   while (true) {
-    const auto [fr, eidx] = cam.queue.pop();
+    const auto [fr, event] = cam.queue.pop();
     if (!fr) break;
+
+    capnp::FlatArrayMessageReader reader(event->data);
+    auto evt = reader.getRoot<cereal::Event>();
+    auto eidx = capnp::AnyStruct::Reader(evt).getPointerSection()[0].getAs<cereal::EncodeIndex>();
+    if (eidx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C) continue;
 
     const int id = eidx.getSegmentId();
     bool prefetched = (id == cam.cached_id && eidx.getSegmentNum() == cam.cached_seg);
@@ -83,7 +89,7 @@ void CameraServer::cameraThread(Camera &cam) {
   }
 }
 
-void CameraServer::pushFrame(CameraType type, FrameReader *fr, const cereal::EncodeIndex::Reader &eidx) {
+void CameraServer::pushFrame(CameraType type, FrameReader *fr, const Event *event) {
   auto &cam = cameras_[type];
   if (cam.width != fr->width || cam.height != fr->height) {
     cam.width = fr->width;
@@ -93,7 +99,7 @@ void CameraServer::pushFrame(CameraType type, FrameReader *fr, const cereal::Enc
   }
 
   ++publishing_;
-  cam.queue.push({fr, eidx});
+  cam.queue.push({fr, event});
 }
 
 void CameraServer::waitForSent() {

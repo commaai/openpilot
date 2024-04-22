@@ -63,7 +63,7 @@ class TestMonitoring(unittest.TestCase):
       # cal_rpy and car_speed don't matter here
 
       # evaluate events at 10Hz for tests
-      DS.update_events(e, interaction[idx], engaged[idx], standstill[idx])
+      DS.update_events(e, interaction[idx], engaged[idx], standstill[idx], 0)
       events.append(e)
     assert len(events) == len(msgs), f"got {len(events)} for {len(msgs)} driverState input msgs"
     return events, DS

@@ -165,20 +165,6 @@ def common_fault_avoidance(fault_condition: bool, request: bool, above_limit_fra
   return above_limit_frames, request
 
 
-def crc8_pedal(data):
-  crc = 0xFF    # standard init value
-  poly = 0xD5   # standard crc8: x8+x7+x6+x4+x2+1
-  size = len(data)
-  for i in range(size - 1, -1, -1):
-    crc ^= data[i]
-    for _ in range(8):
-      if ((crc & 0x80) != 0):
-        crc = ((crc << 1) ^ poly) & 0xFF
-      else:
-        crc <<= 1
-  return crc
-
-
 def make_can_msg(addr, dat, bus):
   return [addr, 0, dat, bus]
 
@@ -279,6 +265,9 @@ class Platforms(str, ReprEnum, metaclass=PlatformsType):
     member.config = platform_config
     member._value_ = platform_config.platform_str
     return member
+
+  def __repr__(self):
+    return f"<{self.__class__.__name__}.{self.name}>"
 
   @classmethod
   def create_dbc_map(cls) -> dict[str, DbcDict]:

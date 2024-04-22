@@ -51,7 +51,7 @@ void Setup::download(QString url) {
   list = curl_slist_append(list, ("X-openpilot-serial: " + Hardware::get_serial()).c_str());
 
   char tmpfile[] = "/tmp/installer_XXXXXX";
-  FILE *fp = fdopen(mkstemp(tmpfile), "w");
+  FILE *fp = fdopen(mkstemp(tmpfile), "wb");
 
   curl_easy_setopt(curl, CURLOPT_URL, url.toStdString().c_str());
   curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, NULL);
@@ -201,6 +201,7 @@ QWidget * Setup::network_setup() {
   QPushButton *cont = new QPushButton();
   cont->setObjectName("navBtn");
   cont->setProperty("primary", true);
+  cont->setEnabled(false);
   QObject::connect(cont, &QPushButton::clicked, this, &Setup::nextPage);
   blayout->addWidget(cont);
 
