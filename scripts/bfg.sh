@@ -83,7 +83,7 @@ if [ ! -d $SRC_CLONE ]; then
     git add -u
   }
 
-  git rebase -X ours archive
+  git rebase -X ours --committer-date-is-author-date archive
 
   # loop git rebase --continue until we are done
   while true; do
@@ -141,18 +141,15 @@ fi
 
 cd $OUT
 
-# unset any lfs url from previous runs
-git config --unset lfs.url
-git config --unset lfs.pushurl
-
-# fetch all lfs files from remote (https://github.com/commaai/openpilot.git)
+# fetch all lfs files from https://github.com/commaai/openpilot.git
+# some lfs files are missing on gitlab, but they can be found on github
+git config lfs.url https://github.com/commaai/openpilot.git/info/lfs
+git config lfs.pushurl ssh://git@github.com/commaai/openpilot.git
 git lfs fetch --all
 
-# also fetch from gitlab (a bare repo doesn't follow .lfsconfig)
+# also fetch from gitlab
 git config lfs.url https://gitlab.com/commaai/openpilot-lfs.git/info/lfs
 git config lfs.pushurl ssh://git@gitlab.com/commaai/openpilot-lfs.git
-
-# fetch lfs files from gitlab
 git lfs fetch --all
 
 # new lfs urls for testing repo (these should be removed)
@@ -160,6 +157,6 @@ git config lfs.url https://gitlab.com/andiradulescu/openpilot-tiny.git/info/lfs
 git config lfs.pushurl ssh://git@gitlab.com/andiradulescu/openpilot-tiny.git
 
 # final push - will also push lfs
-git push --mirror git@gitlab.com:andiradulescu/openpilot-tiny.git
-# git push --mirror git@github.com:andiradulescu/openpilot-tiny.git
+# git push --mirror git@gitlab.com:andiradulescu/openpilot-tiny.git
+git push --mirror git@github.com:andiradulescu/openpilot-tiny.git
 # git push --mirror https://github.com/commaai/openpilot-tiny.git
