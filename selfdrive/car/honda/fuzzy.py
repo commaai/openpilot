@@ -12,13 +12,14 @@ Ecu = car.CarParams.Ecu
 # - 'Programmable Control Unit' - ECU
 # - 'Program ID' - firmware version
 
-# Program ID determined format:
+# We currently fingerprint on the Program ID (from UDS_VERSION_REQUEST), which seems to have the following format:
 #   [xxxxx]-[xxx]-[xxx]
 #   [classification]-[platform]-[revision]
 #   - classification: 5 alphanumeric characters which represent what type of part this is, the last character varies
 #                     slightly (+/-1-3), which seem to be for variations ex: for manual vs automatic transmissions
-#   - platform: represents the platform that this part fits, or the first car it was used in when it fits multiple
-#   - revision: represents software revision for this part. for example, one update goes from C710 to C730
+#   - platform: a loose representation of the platform that this part fits, typically the same across a single car
+#               or varying by a single character
+#   - revision: seems to represents part and software revisions. for example, one update goes from C710 to C730
 
 HONDA_FW_PATTERN = br"(?P<classification>[A-Z0-9]{5})-(?P<platform>[A-Z0-9]{3})(-|,)(?P<revision>[A-Z0-9]{4})(\x00){2}$"
 
@@ -56,7 +57,7 @@ def match_fw_to_car_fuzzy(live_fw_versions, vin, offline_fw_versions) -> set[str
       # Found platform codes & versions
       found_platform_codes = get_platform_codes(live_fw_versions.get(addr, set()))
 
-      # Check part number + platform code + revision
+      # Check part classification and platform code
       if not any(found_platform_code in expected_platform_codes for found_platform_code in found_platform_codes):
         break
 
