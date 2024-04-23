@@ -27,6 +27,11 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
       sockets_[which] = name.c_str();
     }
   }
+  if (!allow.isEmpty()) {
+    for (int i = 0; i < sockets_.size(); ++i) {
+      filters_.push_back(i == cereal::Event::Which::INIT_DATA || i == cereal::Event::Which::CAR_PARAMS || sockets_[i]);
+    }
+  }
 
   std::vector<const char *> s;
   std::copy_if(sockets_.begin(), sockets_.end(), std::back_inserter(s),
@@ -259,7 +264,7 @@ void Replay::loadSegmentInRange(SegmentMap::iterator begin, SegmentMap::iterator
     auto it = std::find_if(begin, end, [](const auto &seg_it) { return !seg_it.second || !seg_it.second->isLoaded(); });
     if (it != end && !it->second) {
       rDebug("loading segment %d...", it->first);
-      it->second = std::make_unique<Segment>(it->first, route_->at(it->first), flags_);
+      it->second = std::make_unique<Segment>(it->first, route_->at(it->first), flags_, filters_);
       QObject::connect(it->second.get(), &Segment::loadFinished, this, &Replay::segmentLoadFinished);
       return true;
     }
