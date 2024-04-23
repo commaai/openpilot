@@ -1,0 +1,70 @@
+== Overall Statistics ==
+  Number of commits: 78182
+  Number of filenames: 15559
+  Number of directories: 1733
+  Number of file extensions: 199
+
+  Total unpacked size (bytes): 12253136048
+  Total packed size (bytes): 4642245263
+
+== Caveats ==
+=== Sizes ===
+Packed size represents what size your repository would be if no
+trees, commits, tags, or other metadata were included (though it may
+fail to represent de-duplication; see below).  It also represents the
+current packing, which may be suboptimal if you haven't gc'ed for a
+while.
+
+Unpacked size represents what size your repository would be if no
+trees, commits, tags, or other metadata were included AND if no
+files were packed; i.e., without delta-ing or compression.
+
+Both unpacked and packed sizes can be slightly misleading.  Deleting
+a blob from history not save as much space as the unpacked size,
+because it is obviously normally stored in packed form.  Also,
+deleting a blob from history may not save as much space as its packed
+size either, because another blob could be stored as a delta against
+that blob, so when you remove one blob another blob's packed size may
+grow.
+
+Also, the sum of the packed sizes can add up to more than the
+repository size; if the same contents appeared in the repository in
+multiple places, git will automatically de-dupe and store only one
+copy, while the way sizes are added in this analysis adds the size
+for each file path that has those contents.  Further, if a file is
+ever reverted to a previous version's contents, the previous
+version's size will be counted multiple times in this analysis, even
+though git will only store it once.
+
+=== Deletions ===
+Whether a file is deleted is not a binary quality, since it can be
+deleted on some branches but still exist in others.  Also, it might
+exist in an old tag, but have been deleted in versions newer than
+that.  More thorough tracking could be done, including looking at
+merge commits where one side of history deleted and the other modified,
+in order to give a more holistic picture of deletions.  However, that
+algorithm would not only be more complex to implement, it'd also be
+quite difficult to present and interpret by users.  Since --analyze
+is just about getting a high-level rough picture of history, it instead
+implements the simplistic rule that is good enough for 98% of cases:
+  A file is marked as deleted if the last commit in the fast-export
+  stream that mentions the file lists it as deleted.
+This makes it dependent on topological ordering, but generally gives
+the "right" answer.
+
+=== Renames ===
+Renames share the same non-binary nature that deletions do, plus
+additional challenges:
+  * If the renamed file is renamed again, instead of just two names for
+    a path you can have three or more.
+  * Rename pairs of the form (oldname, newname) that we consider to be
+    different names of the "same file" might only be valid over certain
+    commit ranges.  For example, if a new commit reintroduces a file
+    named oldname, then new versions of oldname aren't the "same file"
+    anymore.  We could try to portray this to the user, but it's easier
+    for the user to just break the pairing and only report unbroken
+    rename pairings to the user.
+  * The ability for users to rename files differently in different
+    branches means that our chains of renames will not necessarily be
+    linear but may branch out.
+
