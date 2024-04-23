@@ -137,9 +137,11 @@ void AbstractStream::updateLastMsgsTo(double sec) {
       auto prev = std::prev(it);
       double ts = (*prev)->mono_time / 1e9 - routeStartTime();
       auto &m = msgs[id];
-      // Keep last changes
+      // Keep suppressed bits.
       if (auto old_m = messages_.find(id); old_m != messages_.end()) {
-        m.last_changes = old_m->second.last_changes;
+        std::transform(old_m->second.last_changes.cbegin(), old_m->second.last_changes.cend(),
+                       std::back_inserter(m.last_changes),
+                       [](const auto &change) { return CanData::ByteLastChange{.suppressed = change.suppressed}; });
       }
       m.compute(id, (*prev)->dat, (*prev)->size, ts, getSpeed(), {});
       m.count = std::distance(ev.begin(), prev) + 1;
