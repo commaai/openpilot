@@ -458,6 +458,7 @@ FW_VERSIONS = {
       b'\xf1\x873Q0907572C \xf1\x890196',
       b'\xf1\x875Q0907572P \xf1\x890682',
       b'\xf1\x875Q0907572R \xf1\x890771',
+      b'\xf1\x875Q0907572S \xf1\x890780',
     ],
   },
   CAR.VOLKSWAGEN_PASSAT_NMS: {
