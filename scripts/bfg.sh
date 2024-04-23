@@ -9,7 +9,7 @@ cd $DIR
 SRC=/tmp/openpilot/
 SRC_CLONE=/tmp/openpilot-clone/
 # SRC_ARCHIVE=/tmp/openpilot-release-archive/
-OUT=/tmp/smallpilot/
+OUT=/tmp/openpilot-tiny/
 
 if [ ! -f /tmp/git-filter-repo ]; then
   wget -O /tmp/git-filter-repo https://raw.githubusercontent.com/newren/git-filter-repo/main/git-filter-repo
@@ -47,20 +47,20 @@ fi
 # fi
 
 if [ ! -d $SRC_CLONE ]; then
-  git clone $SRC $SRC_CLONE
+  GIT_LFS_SKIP_SMUDGE=1 git clone $SRC $SRC_CLONE
 
   cd $SRC_CLONE
 
-  # seems we might not need the archive repo at all - since we already have the history of the tags in the main repo
+  # seems we don't need the archive repo at all
   # git checkout --track origin/devel
+  # since we already have the history of the tags in the main repo
 
   git checkout tags/v0.7.1
   git checkout -b archive
 
   # rm these so that we don't get an error when adding them as submodules later
-  # should work now with new handle conflicts
-  # git rm -r cereal opendbc panda
-  # git commit -m "removed unmergeable files and directories before merge"
+  git rm -r cereal opendbc panda
+  git commit -m "removed cereal opendbc panda"
 
   # skip-smudge to get rid of some lfs errors that it can't find the reference of some lfs files
   # we don't care about fetching/pushing lfs right now
@@ -69,20 +69,7 @@ if [ ! -d $SRC_CLONE ]; then
   # go to master
   git checkout master
 
-  # rebase previous "devel" history
-  # WIP - this doesn't complete, it currently errors after ~20 commits rebased
-  # git rebase -X ours archive
-
-  # new solution to rebase
-  handle_conflicts() {
-    # If there's a conflict, find deleted files and delete them
-    git status --porcelain | grep '^UD' | cut -c4- | while read -r file; do
-      git rm -- "$file"
-    done
-    # Add all changes (this will mark conflicts as resolved)
-    git add -u
-  }
-
+  # rebase previous history
   git rebase -X ours --committer-date-is-author-date archive
 
   # loop git rebase --continue until we are done
@@ -94,8 +81,12 @@ if [ ! -d $SRC_CLONE ]; then
       # if the rebase was successful, break out of the loop
       break
     else
-      # if there was an error (e.g., a conflict), handle the conflict
-      handle_conflicts
+      # if there's a conflict, find deleted files and delete them
+      git status --porcelain | grep '^UD' | cut -c4- | while read -r file; do
+        git rm -- "$file"
+      done
+      # add all changes (this will mark conflicts as resolved)
+      git add -u
     fi
   done
 
@@ -123,7 +114,7 @@ if [ ! -d $OUT ]; then
 
   # import almost everything to lfs
   # WIP still needs to add some/more files
-  git lfs migrate import --everything --include="*.dlc,*.onnx,*.svg,*.png,*.gif,*.ttf,*.wav,selfdrive/car/tests/test_models_segs.txt,system/hardware/tici/updater,selfdrive/ui/qt/spinner_larch64,selfdrive/ui/qt/text_larch64,third_party/**/*.a,third_party/**/*.so,third_party/**/*.so.*,third_party/**/*.dylib,third_party/acados/*/t_renderer,third_party/qt5/larch64/bin/lrelease,third_party/qt5/larch64/bin/lupdate,third_party/catch2/include/catch2/catch.hpp,*.apk,*.thneed,selfdrive/hardware/tici/updater,selfdrive/boardd/tests/test_boardd,common/geocode/rg_cities1000.csv,selfdrive/ui/qt/spinner_aarch64,installer/updater/updater,selfdrive/locationd/test/ubloxRaw.tar.gz,selfdrive/debug/profiling/simpleperf/bin/android/arm64/simpleperf,selfdrive/hardware/eon/updater,selfdrive/ui/qt/text_aarch64,selfdrive/debug/profiling/pyflame/pyflame,installer/installers/installer_openpilot,installer/installers/installer_dashcam,selfdrive/ui/text/text,selfdrive/ui/android/text/text,selfdrive/ui/qt/spinnerselfdrive/locationd/kalman/helpers/chi2_lookup_table.npy,selfdrive/locationd/kalman/chi2_lookup_table.npy,selfdrive/ui/spinner/spinner"
+  git lfs migrate import --everything --include="*.dlc,*.onnx,*.svg,*.png,*.gif,*.ttf,*.wav,selfdrive/car/tests/test_models_segs.txt,system/hardware/tici/updater,selfdrive/ui/qt/spinner_larch64,selfdrive/ui/qt/text_larch64,third_party/**/*.a,third_party/**/*.so,third_party/**/*.so.*,third_party/**/*.dylib,third_party/acados/*/t_renderer,third_party/qt5/larch64/bin/lrelease,third_party/qt5/larch64/bin/lupdate,third_party/catch2/include/catch2/catch.hpp,*.jar,*.apk,*.thneed,*.tar.gz,*.npy,*.csv,*.a,*.so*,selfdrive/hardware/tici/updater,selfdrive/boardd/tests/test_boardd,selfdrive/ui/qt/spinner_aarch64,installer/updater/updater,selfdrive/debug/profiling/simpleperf/bin/android/arm64/simpleperf,selfdrive/hardware/eon/updater,selfdrive/ui/qt/text_aarch64,selfdrive/debug/profiling/pyflame/pyflame,installer/installers/installer_openpilot,installer/installers/installer_dashcam,selfdrive/ui/text/text,selfdrive/ui/android/text/text,selfdrive/ui/spinner/spinner"
 
   # this is needed after lfs import
   git reflog expire --expire=now --all
