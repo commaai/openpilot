@@ -6,6 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from third_party.CythonPEG import cython_peg as cp
 
 extensions = ['*.pyx', '*.pxd']
+dirs_to_ignore = ['openpilot', 'third_party']
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -23,7 +24,7 @@ def read_parse_and_write(file_path):
     stubs_path = new_path + '/stubs'
     os.makedirs(stubs_path, exist_ok=True)
     pyi_file_path =  stubs_path + '/' + file_path[last_slash_index + 1:] + '.pyi'
-
+    
     with open(pyi_file_path, mode='w+') as f:
         f.write(stub_file)
 
@@ -45,7 +46,7 @@ def parse_all_files():
 
     cp.set_indent(" ")
     for root, dirs, files in os.walk(openpilot_path):
-        dirs[:] = [d for d in dirs if not (d.startswith('.') or d == 'openpilot' or d == 'CythonPEG')]
+        dirs[:] = [d for d in dirs if not (d.startswith('.') or d in dirs_to_ignore)]
         for filename in files:
             if any(fnmatch.fnmatch(filename, extension) for extension in extensions):
                 file_path = os.path.join(root, filename)
