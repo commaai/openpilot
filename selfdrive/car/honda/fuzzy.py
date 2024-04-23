@@ -13,7 +13,7 @@ Ecu = car.CarParams.Ecu
 # - 'Program ID' - firmware version
 
 # We currently fingerprint on the Program ID (from UDS_VERSION_REQUEST), which seems to have the following format:
-#   [xxxxx]-[xxx]-[xxx]
+#   [xxxxx]-[xxx]-[xxxx]
 #   [classification]-[platform]-[revision]
 #   - classification: 5 alphanumeric characters which represent what type of part this is, the last character varies
 #                     slightly (+/-1-3), which seem to be for variations ex: for manual vs automatic transmissions
