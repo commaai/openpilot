@@ -3,7 +3,7 @@ import fnmatch
 import argparse
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from third_party.CythonPEG import cython_peg as cp
+from openpilot.third_party.CythonPEG import cython_peg as cp
 
 extensions = ['*.pyx', '*.pxd']
 dirs_to_ignore = ['openpilot', 'third_party']
@@ -24,13 +24,13 @@ def read_parse_and_write(file_path):
     stubs_path = new_path + '/stubs'
     os.makedirs(stubs_path, exist_ok=True)
     pyi_file_path =  stubs_path + '/' + file_path[last_slash_index + 1:] + '.pyi'
-    
+
     with open(pyi_file_path, mode='w+') as f:
         f.write(stub_file)
 
 def has_openpilot(path):
-    for dir in os.listdir(path):
-        if dir == 'openpilot':
+    for d in os.listdir(path):
+        if d == 'openpilot':
             return True
     return False
 
