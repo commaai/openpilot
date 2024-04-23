@@ -1,18 +1,19 @@
 #include "tools/replay/logreader.h"
 
 #include <algorithm>
+#include <utility>
 #include "tools/replay/filereader.h"
 #include "tools/replay/util.h"
 
 bool LogReader::load(const std::string &url, std::atomic<bool> *abort, bool local_cache, int chunk_size, int retries) {
-  raw_ = FileReader(local_cache, chunk_size, retries).read(url, abort);
-  if (raw_.empty()) return false;
+  std::string data = FileReader(local_cache, chunk_size, retries).read(url, abort);
+  if (!data.empty() && url.find(".bz2") != std::string::npos)
+    data = decompressBZ2(data, abort);
 
-  if (url.find(".bz2") != std::string::npos) {
-    raw_ = decompressBZ2(raw_, abort);
-    if (raw_.empty()) return false;
-  }
-  return load(raw_.data(), raw_.size(), abort);
+  bool success = !data.empty() && load(data.data(), data.size(), abort);
+  if (filters_.empty())
+    raw_ = std::move(data);
+  return success;
 }
 
 bool LogReader::load(const char *data, size_t size, std::atomic<bool> *abort) {
@@ -23,9 +24,18 @@ bool LogReader::load(const char *data, size_t size, std::atomic<bool> *abort) {
       capnp::FlatArrayMessageReader reader(words);
       auto event = reader.getRoot<cereal::Event>();
       auto which = event.which();
-      uint64_t mono_time = event.getLogMonoTime();
       auto event_data = kj::arrayPtr(words.begin(), reader.getEnd());
+      words = kj::arrayPtr(reader.getEnd(), words.end());
 
+      if (!filters_.empty()) {
+        if (which >= filters_.size() || !filters_[which])
+          continue;
+        auto buf = buffer_.allocate(event_data.size() * sizeof(capnp::word));
+        memcpy(buf, event_data.begin(), event_data.size() * sizeof(capnp::word));
+        event_data = kj::arrayPtr((const capnp::word *)buf, event_data.size());
+      }
+
+      uint64_t mono_time = event.getLogMonoTime();
       const Event &evt = events.emplace_back(which, mono_time, event_data);
       // Add encodeIdx packet again as a frame packet for the video stream
       if (evt.which == cereal::Event::ROAD_ENCODE_IDX ||
@@ -37,8 +47,6 @@ bool LogReader::load(const char *data, size_t size, std::atomic<bool> *abort) {
         }
         events.emplace_back(which, mono_time, event_data, idx.getSegmentNum());
       }
-
-      words = kj::arrayPtr(reader.getEnd(), words.end());
     }
   } catch (const kj::Exception &e) {
     rWarning("Failed to parse log : %s.\nRetrieved %zu events from corrupt log", e.getDescription().cStr(), events.size());

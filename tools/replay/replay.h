@@ -135,6 +135,7 @@ protected:
   SubMaster *sm = nullptr;
   std::unique_ptr<PubMaster> pm;
   std::vector<const char*> sockets_;
+  std::vector<bool> filters_;
   std::unique_ptr<Route> route_;
   std::unique_ptr<CameraServer> camera_server_;
   std::atomic<uint32_t> flags_ = REPLAY_FLAG_NONE;

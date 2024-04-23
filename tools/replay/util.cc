@@ -5,6 +5,7 @@
 #include <openssl/sha.h>
 
 #include <cassert>
+#include <algorithm>
 #include <cmath>
 #include <cstdarg>
 #include <cstring>
@@ -353,4 +354,27 @@ std::string sha256(const std::string &str) {
   SHA256_Update(&sha256, str.c_str(), str.size());
   SHA256_Final(hash, &sha256);
   return util::hexdump(hash, SHA256_DIGEST_LENGTH);
+}
+
+// MonotonicBuffer
+
+void *MonotonicBuffer::allocate(size_t bytes, size_t alignment) {
+  assert(bytes > 0);
+  void *p = std::align(alignment, bytes, current_buf, available);
+  if (p == nullptr) {
+    available = next_buffer_size = std::max(next_buffer_size, bytes);
+    current_buf = buffers.emplace_back(std::aligned_alloc(alignment, next_buffer_size));
+    next_buffer_size *= growth_factor;
+    p = current_buf;
+  }
+
+  current_buf = (char *)current_buf + bytes;
+  available -= bytes;
+  return p;
+}
+
+MonotonicBuffer::~MonotonicBuffer() {
+  for (auto buf : buffers) {
+    free(buf);
+  }
 }
