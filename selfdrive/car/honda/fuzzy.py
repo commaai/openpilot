@@ -23,9 +23,7 @@ Ecu = car.CarParams.Ecu
 
 HONDA_FW_PATTERN = br"(?P<classification>[A-Z0-9]{5})-(?P<platform>[A-Z0-9]{3})(-|,)(?P<revision>[A-Z0-9]{4})(\x00){2}$"
 
-# ECUs that we can get without the comma power and are the most unique across platforms
-#  - fwdRadar: required to tell BOSCH and NIDEC apart
-PLATFORM_CODE_ECUS = {Ecu.fwdRadar, Ecu.srs}
+PLATFORM_CODE_ECUS = {Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps}
 
 
 def get_platform_codes(fw_versions: list[bytes]) -> dict[bytes, set[bytes]]:
