@@ -19,7 +19,7 @@ Ecu = car.CarParams.Ecu
 #                     slightly (+/-1-3), which seem to be for variations ex: for manual vs automatic transmissions
 #   - platform: a loose representation of the platform that this part fits, typically the same across a single car
 #               or varying by a single character
-#   - revision: seems to represents part and software revisions. for example, one software update goes from C710 to C730.
+#   - revision: seems to represent part and software revisions. for example, one software update goes from C710 to C730.
 
 HONDA_FW_PATTERN = br"(?P<classification>[A-Z0-9]{5})-(?P<platform>[A-Z0-9]{3})(-|,)(?P<revision>[A-Z0-9]{4})(\x00){2}$"
 
@@ -31,7 +31,7 @@ PLATFORM_CODE_ECUS = {Ecu.fwdRadar, Ecu.srs}
 def get_platform_codes(fw_versions: list[bytes]) -> dict[bytes, set[bytes]]:
   codes = defaultdict(set)
   for fw in fw_versions:
-    m = re.match(HONDA_FW_PATTERN, fw)
+    match = re.match(HONDA_FW_PATTERN, fw)
 
     if m:
       codes[b'-'.join((m.group('classification'), m.group('platform')))].add(m.group('revision'))
