@@ -33,8 +33,8 @@ def get_platform_codes(fw_versions: list[bytes]) -> dict[bytes, set[bytes]]:
   for fw in fw_versions:
     match = re.match(HONDA_FW_PATTERN, fw)
 
-    if m:
-      codes[b'-'.join((m.group('classification'), m.group('platform')))].add(m.group('revision'))
+    if match:
+      codes[b'-'.join((match.group('classification'), match.group('platform')))].add(match.group('revision'))
 
   return dict(codes)
 
