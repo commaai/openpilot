@@ -278,7 +278,7 @@ class CAR(Platforms):
       VWCarDocs("Volkswagen Passat GTE 2015-22"),
     ],
     VolkswagenCarSpecs(mass=1551, wheelbase=2.79),
-    chassis_codes={"3G"},
+    chassis_codes={"3C", "3G"},
     wmis={WMI.VOLKSWAGEN_EUROPE_CAR},
   )
   VOLKSWAGEN_PASSAT_NMS = VolkswagenPQPlatformConfig(
