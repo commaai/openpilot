@@ -9,6 +9,11 @@ def retryWithDelay(int maxRetries, int delay, Closure body) {
   throw Exception("Failed after ${maxRetries} retries")
 }
 
+// check if started by timer: https://gist.github.com/aaclarker/75b8a0eb2b4d600779f84f8e849f2c37
+def isJobStartedByTimer() {
+  return currentBuild.getBuildCauses()[0]["shortDescription"].matches("Started by timer");
+}
+
 def device(String ip, String step_label, String cmd) {
   withCredentials([file(credentialsId: 'id_rsa', variable: 'key_file')]) {
     def ssh_cmd = """
@@ -26,6 +31,7 @@ export SOURCE_DIR=${env.SOURCE_DIR}
 export GIT_BRANCH=${env.GIT_BRANCH}
 export GIT_COMMIT=${env.GIT_COMMIT}
 export AZURE_TOKEN='${env.AZURE_TOKEN}'
+export AZURE_TOKEN_OPENPILOT_RELEASES='${env.AZURE_TOKEN_OPENPILOT_RELEASES}'
 export MAPBOX_TOKEN='${env.MAPBOX_TOKEN}'
 # only use 1 thread for tici tests since most require HIL
 export PYTEST_ADDOPTS="-n 0"
@@ -40,6 +46,7 @@ if [ -f /TICI ]; then
   rm -rf /tmp/tmp*
   rm -rf ~/.commacache
   rm -rf /dev/shm/*
+  rm -rf /dev/tmp/tmp*
 
   if ! systemctl is-active --quiet systemd-resolved; then
     echo "restarting resolved"
@@ -104,7 +111,7 @@ def pcStage(String stageName, Closure body) {
 
     checkout scm
 
-    def dockerArgs = "--user=batman -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/scons_cache:/tmp/scons_cache -e PYTHONPATH=${env.WORKSPACE} --cpus=8 --memory 16g -e PYTEST_ADDOPTS='-n8'";
+    def dockerArgs = "--user=batman -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/scons_cache:/tmp/scons_cache -e PYTHONPATH=${env.WORKSPACE} -e AZURE_TOKEN_OPENPILOT_RELEASES='${env.AZURE_TOKEN_OPENPILOT_RELEASES}' --cpus=8 --memory 16g -e PYTEST_ADDOPTS='-n8'";
 
     def openpilot_base = retryWithDelay (3, 15) {
       return docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .")
@@ -112,7 +119,7 @@ def pcStage(String stageName, Closure body) {
 
     lock(resource: "", label: 'pc', inversePrecedence: true, quantity: 1) {
       openpilot_base.inside(dockerArgs) {
-        timeout(time: 20, unit: 'MINUTES') {
+        timeout(time: 25, unit: 'MINUTES') {
           try {
             retryWithDelay (3, 15) {
               sh "git config --global --add safe.directory '*'"
@@ -134,13 +141,55 @@ def pcStage(String stageName, Closure body) {
 def setupCredentials() {
   withCredentials([
     string(credentialsId: 'azure_token', variable: 'AZURE_TOKEN'),
+    string(credentialsId: 'azure_token_openpilot_releases', variable: 'AZURE_TOKEN_OPENPILOT_RELEASES'),
     string(credentialsId: 'mapbox_token', variable: 'MAPBOX_TOKEN')
   ]) {
     env.AZURE_TOKEN = "${AZURE_TOKEN}"
+    env.AZURE_TOKEN_OPENPILOT_RELEASES = "${AZURE_TOKEN_OPENPILOT_RELEASES}"
     env.MAPBOX_TOKEN = "${MAPBOX_TOKEN}"
   }
 }
 
+
+def build_git_release(String channel_name) {
+  return parallel (
+    "${channel_name} (git)": {
+      deviceStage("build git", "tici-needs-can", [], [
+        ["build ${channel_name}", "RELEASE_BRANCH=${channel_name} $SOURCE_DIR/release/build_git_release.sh"],
+      ])
+    }
+  )
+}
+
+
+def build_casync_release(String channel_name, def is_release) {
+  def extra_env = is_release ? "RELEASE=1 " : ""
+  def build_dir = "/data/openpilot"
+
+  extra_env += "TMPDIR=/data/tmp PYTHONPATH=$SOURCE_DIR"
+
+  return deviceStage("build casync", "tici-needs-can", [], [
+    ["build", "${extra_env} $SOURCE_DIR/release/build_release.sh ${build_dir}"],
+    ["package + upload", "${extra_env} $SOURCE_DIR/release/package_casync_build.py ${build_dir}"],
+  ])
+}
+
+
+def build_stage() {
+  return parallel (
+    'nightly': {
+      build_casync_release("nightly", true);
+    },
+    'master': {
+      build_casync_release("master", false);
+    },
+    'publish agnos': {
+      pcStage("publish agnos") {
+        sh "PYTHONWARNINGS=ignore release/package_casync_agnos.py"
+      }
+    }
+  )
+}
 
 node {
   env.CI = "1"
@@ -156,94 +205,105 @@ node {
                          'testing-closet*', 'hotfix-*']
   def excludeRegex = excludeBranches.join('|').replaceAll('\\*', '.*')
 
-  if (env.BRANCH_NAME != 'master') {
-    properties([
-        disableConcurrentBuilds(abortPrevious: true)
-    ])
+  def nightlyBranch = "master"
+
+  def props = [];
+
+  if (env.BRANCH_NAME == nightlyBranch) {
+    props.add(pipelineTriggers([
+      cron('0 9 * * *')     // at 2am PST (9am UTC) every night
+    ]))
   }
+
+  if (env.BRANCH_NAME != "master") {
+    props.add(disableConcurrentBuilds(abortPrevious: true))
+  }
+
+  properties(props);
 
   try {
     if (env.BRANCH_NAME == 'devel-staging') {
-      deviceStage("build release3-staging", "tici-needs-can", [], [
-        ["build release3-staging", "RELEASE_BRANCH=release3-staging $SOURCE_DIR/release/build_release.sh"],
-      ])
+      build_git_release("release3-staging")
     }
 
     if (env.BRANCH_NAME == 'master-ci') {
-      deviceStage("build nightly", "tici-needs-can", [], [
-        ["build nightly", "RELEASE_BRANCH=nightly $SOURCE_DIR/release/build_release.sh"],
-      ])
+      build_git_release("nightly")
     }
 
     if (!env.BRANCH_NAME.matches(excludeRegex)) {
-    parallel (
-      // tici tests
-      'onroad tests': {
-        deviceStage("onroad", "tici-needs-can", [], [
-          // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
-          //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
-          ["build openpilot", "cd selfdrive/manager && ./build.py"],
-          ["check dirty", "release/check-dirty.sh"],
-          ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
-          ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
-        ])
-      },
-      'HW + Unit Tests': {
-        deviceStage("tici-hardware", "tici-common", ["UNSAFE=1"], [
-          ["build", "cd selfdrive/manager && ./build.py"],
-          ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
-          ["test power draw", "pytest -s system/hardware/tici/tests/test_power_draw.py"],
-          ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py"],
-          ["test pigeond", "pytest system/sensord/tests/test_pigeond.py"],
-          ["test manager", "pytest selfdrive/manager/test/test_manager.py"],
-        ])
-      },
-      'loopback': {
-        deviceStage("loopback", "tici-loopback", ["UNSAFE=1"], [
-          ["build openpilot", "cd selfdrive/manager && ./build.py"],
-          ["test boardd loopback", "pytest selfdrive/boardd/tests/test_boardd_loopback.py"],
-        ])
-      },
-      'camerad': {
-        deviceStage("AR0231", "tici-ar0231", ["UNSAFE=1"], [
-          ["build", "cd selfdrive/manager && ./build.py"],
-          ["test camerad", "pytest system/camerad/test/test_camerad.py"],
-          ["test exposure", "pytest system/camerad/test/test_exposure.py"],
-        ])
-        deviceStage("OX03C10", "tici-ox03c10", ["UNSAFE=1"], [
-          ["build", "cd selfdrive/manager && ./build.py"],
-          ["test camerad", "pytest system/camerad/test/test_camerad.py"],
-          ["test exposure", "pytest system/camerad/test/test_exposure.py"],
-        ])
-      },
-      'sensord': {
-        deviceStage("LSM + MMC", "tici-lsmc", ["UNSAFE=1"], [
-          ["build", "cd selfdrive/manager && ./build.py"],
-          ["test sensord", "pytest system/sensord/tests/test_sensord.py"],
-        ])
-        deviceStage("BMX + LSM", "tici-bmx-lsm", ["UNSAFE=1"], [
-          ["build", "cd selfdrive/manager && ./build.py"],
-          ["test sensord", "pytest system/sensord/tests/test_sensord.py"],
-        ])
-      },
-      'replay': {
-        deviceStage("model-replay", "tici-replay", ["UNSAFE=1"], [
-          ["build", "cd selfdrive/manager && ./build.py"],
-          ["model replay", "selfdrive/test/process_replay/model_replay.py"],
-        ])
-      },
-      'tizi': {
-        deviceStage("tizi", "tizi", ["UNSAFE=1"], [
-          ["build openpilot", "cd selfdrive/manager && ./build.py"],
-          ["test boardd loopback", "SINGLE_PANDA=1 pytest selfdrive/boardd/tests/test_boardd_loopback.py"],
-          ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
-          ["test amp", "pytest system/hardware/tici/tests/test_amplifier.py"],
-          ["test hw", "pytest system/hardware/tici/tests/test_hardware.py"],
-          ["test qcomgpsd", "pytest system/qcomgpsd/tests/test_qcomgpsd.py"],
-        ])
-      },
+      parallel (
+        // tici tests
+        'onroad tests': {
+          deviceStage("onroad", "tici-needs-can", [], [
+            // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
+            //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
+            ["build openpilot", "cd selfdrive/manager && ./build.py"],
+            ["check dirty", "release/check-dirty.sh"],
+            ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
+            ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
+          ])
+        },
+        'HW + Unit Tests': {
+          deviceStage("tici-hardware", "tici-common", ["UNSAFE=1"], [
+            ["build", "cd selfdrive/manager && ./build.py"],
+            ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
+            ["test power draw", "pytest -s system/hardware/tici/tests/test_power_draw.py"],
+            ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py"],
+            ["test pigeond", "pytest system/ubloxd/tests/test_pigeond.py"],
+            ["test manager", "pytest selfdrive/manager/test/test_manager.py"],
+          ])
+        },
+        'loopback': {
+          deviceStage("loopback", "tici-loopback", ["UNSAFE=1"], [
+            ["build openpilot", "cd selfdrive/manager && ./build.py"],
+            ["test boardd loopback", "pytest selfdrive/boardd/tests/test_boardd_loopback.py"],
+          ])
+        },
+        'camerad': {
+          deviceStage("AR0231", "tici-ar0231", ["UNSAFE=1"], [
+            ["build", "cd selfdrive/manager && ./build.py"],
+            ["test camerad", "pytest system/camerad/test/test_camerad.py"],
+            ["test exposure", "pytest system/camerad/test/test_exposure.py"],
+          ])
+          deviceStage("OX03C10", "tici-ox03c10", ["UNSAFE=1"], [
+            ["build", "cd selfdrive/manager && ./build.py"],
+            ["test camerad", "pytest system/camerad/test/test_camerad.py"],
+            ["test exposure", "pytest system/camerad/test/test_exposure.py"],
+          ])
+        },
+        'sensord': {
+          deviceStage("LSM + MMC", "tici-lsmc", ["UNSAFE=1"], [
+            ["build", "cd selfdrive/manager && ./build.py"],
+            ["test sensord", "pytest system/sensord/tests/test_sensord.py"],
+          ])
+          deviceStage("BMX + LSM", "tici-bmx-lsm", ["UNSAFE=1"], [
+            ["build", "cd selfdrive/manager && ./build.py"],
+            ["test sensord", "pytest system/sensord/tests/test_sensord.py"],
+          ])
+        },
+        'replay': {
+          deviceStage("model-replay", "tici-replay", ["UNSAFE=1"], [
+            ["build", "cd selfdrive/manager && ./build.py"],
+            ["model replay", "selfdrive/test/process_replay/model_replay.py"],
+          ])
+        },
+        'tizi': {
+          deviceStage("tizi", "tizi", ["UNSAFE=1"], [
+            ["build openpilot", "cd selfdrive/manager && ./build.py"],
+            ["test boardd loopback", "SINGLE_PANDA=1 pytest selfdrive/boardd/tests/test_boardd_loopback.py"],
+            ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
+            ["test amp", "pytest system/hardware/tici/tests/test_amplifier.py"],
+            ["test hw", "pytest system/hardware/tici/tests/test_hardware.py"],
+            ["test qcomgpsd", "pytest system/qcomgpsd/tests/test_qcomgpsd.py"],
+          ])
+        },
+      )
+    }
 
-    )
+    if (env.BRANCH_NAME == nightlyBranch && isJobStartedByTimer()) {
+      stage('build release') {
+        build_stage()
+      }
     }
   } catch (Exception e) {
     currentBuild.result = 'FAILED'

@@ -74,10 +74,6 @@ class TestCarInterfaces(unittest.TestCase):
     self.assertEqual(len(car_params.longitudinalTuning.kiV), len(car_params.longitudinalTuning.kiBP))
     self.assertEqual(len(car_params.longitudinalTuning.deadzoneV), len(car_params.longitudinalTuning.deadzoneBP))
 
-    # If we're using the interceptor for gasPressed, we should be commanding gas with it
-    if car_params.enableGasInterceptor:
-      self.assertTrue(car_params.openpilotLongitudinalControl)
-
     # Lateral sanity checks
     if car_params.steerControlType != car.CarParams.SteerControlType.angle:
       tune = car_params.lateralTuning

@@ -31,7 +31,7 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
       timeout-minutes: 5
-      run: ${{ env.RUN }} "scons -j$(nproc) cereal/ common/ --minimal"
+      run: ${{ env.RUN }} "scons -j$(nproc) cereal/ common/ opendbc/ --minimal"
     - name: Test PlotJuggler
       timeout-minutes: 2
       run: |

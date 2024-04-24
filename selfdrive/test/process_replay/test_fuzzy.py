@@ -27,7 +27,7 @@ class TestFuzzProcesses(unittest.TestCase):
     msgs = FuzzyGenerator.get_random_event_msg(data.draw, events=cfg.pubs, real_floats=True)
     lr = [log.Event.new_message(**m).as_reader() for m in msgs]
     cfg.timeout = 5
-    pr.replay_process(cfg, lr, fingerprint=TOYOTA.COROLLA_TSS2, disable_progress=True)
+    pr.replay_process(cfg, lr, fingerprint=TOYOTA.TOYOTA_COROLLA_TSS2, disable_progress=True)
 
 if __name__ == "__main__":
   unittest.main()
