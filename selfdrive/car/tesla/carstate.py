@@ -1,7 +1,7 @@
 import copy
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
-from openpilot.selfdrive.car.tesla.values import DBC, CANBUS, GEAR_MAP, DOORS, BUTTONS
+from openpilot.selfdrive.car.tesla.values import DBC, CANBUS, GEAR_MAP, BUTTONS
 from openpilot.selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
