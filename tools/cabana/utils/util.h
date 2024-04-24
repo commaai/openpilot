@@ -9,6 +9,7 @@
 #include <QByteArray>
 #include <QDoubleValidator>
 #include <QFont>
+#include <QFontMetrics>
 #include <QPainter>
 #include <QRegExpValidator>
 #include <QSocketNotifier>
@@ -76,6 +77,7 @@ public:
 
 private:
   std::array<QStaticText, 256> hex_text_table;
+  QFontMetrics font_metrics;
   QFont fixed_font;
   QSize byte_size = {};
   bool multiple_lines = false;
