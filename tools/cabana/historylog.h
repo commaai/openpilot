@@ -53,7 +53,7 @@ public:
   std::function<bool(double, double)> filter_cmp = nullptr;
   std::deque<Message> messages;
   std::vector<cabana::Signal *> sigs;
-  bool hex_mode = true;
+  bool hex_mode = false;
 };
 
 class LogsWidget : public QFrame {
