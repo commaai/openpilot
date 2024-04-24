@@ -51,7 +51,8 @@ std::pair<double, double> SegmentTree::get_minmax(int n, int left, int right, in
 
 // MessageBytesDelegate
 
-MessageBytesDelegate::MessageBytesDelegate(QObject *parent, bool multiple_lines) : multiple_lines(multiple_lines), QStyledItemDelegate(parent) {
+MessageBytesDelegate::MessageBytesDelegate(QObject *parent, bool multiple_lines)
+    : font_metrics(QApplication::font()), multiple_lines(multiple_lines), QStyledItemDelegate(parent) {
   fixed_font = QFontDatabase::systemFont(QFontDatabase::FixedFont);
   byte_size = QFontMetrics(fixed_font).size(Qt::TextSingleLine, "00 ") + QSize(0, 2);
   for (int i = 0; i < 256; ++i) {
@@ -73,31 +74,38 @@ QSize MessageBytesDelegate::sizeHint(const QStyleOptionViewItem &option, const Q
 }
 
 void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
-  auto data = index.data(BytesRole);
-  if (!data.isValid()) {
-    return QStyledItemDelegate::paint(painter, option, index);
-  }
-
-  QFont old_font = painter->font();
-  QPen old_pen = painter->pen();
   if (option.state & QStyle::State_Selected) {
     painter->fillRect(option.rect, option.palette.brush(QPalette::Normal, QPalette::Highlight));
   }
-  const QPoint pt{option.rect.left() + h_margin, option.rect.top() + v_margin};
-  painter->setFont(fixed_font);
 
-  const auto &bytes = *static_cast<std::vector<uint8_t>*>(data.value<void*>());
-  const auto &colors = *static_cast<std::vector<QColor>*>(index.data(ColorsRole).value<void*>());
+  QRect item_rect = option.rect.adjusted(h_margin, v_margin, -h_margin, -v_margin);
+  QColor highlighted_color = option.palette.color(QPalette::HighlightedText);
   auto text_color = index.data(Qt::ForegroundRole).value<QColor>();
   bool inactive = text_color.isValid();
   if (!inactive) {
     text_color = option.palette.color(QPalette::Text);
   }
+  auto data = index.data(BytesRole);
+  if (!data.isValid()) {
+    painter->setFont(option.font);
+    painter->setPen(option.state & QStyle::State_Selected ? highlighted_color : text_color);
+    QString text = font_metrics.elidedText(index.data(Qt::DisplayRole).toString(), Qt::ElideRight, item_rect.width());
+    painter->drawText(item_rect, Qt::AlignLeft | Qt::AlignVCenter, text);
+    return;
+  }
 
+  // Paint hex column
+  const auto &bytes = *static_cast<std::vector<uint8_t> *>(data.value<void *>());
+  const auto &colors = *static_cast<std::vector<QColor> *>(index.data(ColorsRole).value<void *>());
+
+  painter->setFont(fixed_font);
+  const QPen text_pen(option.state & QStyle::State_Selected ? highlighted_color : text_color);
+  const QPoint pt = item_rect.topLeft();
   for (int i = 0; i < bytes.size(); ++i) {
     int row = !multiple_lines ? 0 : i / 8;
     int column = !multiple_lines ? i : i % 8;
-    QRect r = QRect({pt.x() + column * byte_size.width(), pt.y() + row * byte_size.height()}, byte_size);
+    QRect r({pt.x() + column * byte_size.width(), pt.y() + row * byte_size.height()}, byte_size);
+
     if (!inactive && i < colors.size() && colors[i].alpha() > 0) {
       if (option.state & QStyle::State_Selected) {
         painter->setPen(option.palette.color(QPalette::Text));
@@ -105,12 +113,10 @@ void MessageBytesDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
       }
       painter->fillRect(r, colors[i]);
     } else {
-      painter->setPen(option.state & QStyle::State_Selected ? option.palette.color(QPalette::HighlightedText) : text_color);
+      painter->setPen(text_pen);
     }
     utils::drawStaticText(painter, r, hex_text_table[bytes[i]]);
   }
-  painter->setFont(old_font);
-  painter->setPen(old_pen);
 }
 
 // TabBar
