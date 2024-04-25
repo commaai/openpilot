@@ -17,6 +17,7 @@ public:
 
 private:
   void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
+  void frameSwapped();
 
   QVBoxLayout *main_layout;
   ExperimentalButton *experimental_btn;
@@ -54,5 +55,6 @@ protected:
   inline QColor blackColor(int alpha = 255) { return QColor(0, 0, 0, alpha); }
 
   double prev_draw_t = 0;
+  double start_draw_t = 0;
   FirstOrderFilter fps_filter;
 };

@@ -24,6 +24,8 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
   main_layout->addWidget(map_settings_btn, 0, Qt::AlignBottom | Qt::AlignRight);
 
   dm_img = loadPixmap("../assets/img_driver_face.png", {img_size + 5, img_size + 5});
+
+  QObject::connect(this, &QOpenGLWidget::frameSwapped, this, &AnnotatedCameraWidget::frameSwapped);
 }
 
 void AnnotatedCameraWidget::updateState(const UIState &s) {
@@ -352,7 +354,7 @@ void AnnotatedCameraWidget::drawLead(QPainter &painter, const cereal::RadarState
 void AnnotatedCameraWidget::paintGL() {
   UIState *s = uiState();
   SubMaster &sm = *(s->sm);
-  const double start_draw_t = millis_since_boot();
+  start_draw_t = millis_since_boot();
   const cereal::ModelDataV2::Reader &model = sm["modelV2"].getModelV2();
 
   // draw camera frame
@@ -427,7 +429,12 @@ void AnnotatedCameraWidget::paintGL() {
   }
 
   drawHud(painter);
+}
 
+/**
+ * @brief Called when a frame is swapped. Measures draw time, calculates FPS
+ */
+void AnnotatedCameraWidget::frameSwapped() {
   double cur_draw_t = millis_since_boot();
   double dt = cur_draw_t - prev_draw_t;
   double fps = fps_filter.update(1. / dt * 1000);
