@@ -6,6 +6,14 @@
 #include <GLES3/gl3.h>
 #endif
 
+#include <cmath>
+#include <set>
+#include <string>
+#include <utility>
+
+#include <QOpenGLBuffer>
+#include <QOffscreenSurface>
+
 namespace {
 
 const char frame_vertex_shader[] =
@@ -189,7 +197,15 @@ void CameraWidget::stopVipcThread() {
     vipc_thread = nullptr;
   }
 
-  clearEGLImages();
+#ifdef QCOM2
+  EGLDisplay egl_display = eglGetCurrentDisplay();
+  assert(egl_display != EGL_NO_DISPLAY);
+  for (auto &pair : egl_images) {
+    eglDestroyImageKHR(egl_display, pair.second);
+    assert(eglGetError() == EGL_SUCCESS);
+  }
+  egl_images.clear();
+#endif
 }
 
 void CameraWidget::availableStreamsUpdated(std::set<VisionStreamType> streams) {
@@ -320,7 +336,12 @@ void CameraWidget::vipcConnected(VisionIpcClient *vipc_client) {
   stream_stride = vipc_client->buffers[0].stride;
 
 #ifdef QCOM2
-  clearEGLImages();
+  EGLDisplay egl_display = eglGetCurrentDisplay();
+  assert(egl_display != EGL_NO_DISPLAY);
+  for (auto &pair : egl_images) {
+    eglDestroyImageKHR(egl_display, pair.second);
+  }
+  egl_images.clear();
 
   for (int i = 0; i < vipc_client->num_buffers; i++) {  // import buffers into OpenGL
     int fd = dup(vipc_client->buffers[i].fd);  // eglDestroyImageKHR will close, so duplicate
@@ -413,16 +434,4 @@ void CameraWidget::clearFrames() {
   std::lock_guard lk(frame_lock);
   frames.clear();
   available_streams.clear();
-}
-
-
-void CameraWidget::clearEGLImages() {
-#ifdef QCOM2
-  EGLDisplay egl_display = eglGetCurrentDisplay();
-  assert(egl_display != EGL_NO_DISPLAY);
-  for (auto &pair : egl_images) {
-    eglDestroyImageKHR(egl_display, pair.second);
-  }
-  egl_images.clear();
-#endif
 }
