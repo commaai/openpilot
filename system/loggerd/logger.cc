@@ -49,6 +49,7 @@ kj::Array<capnp::word> logger_build_init_data() {
   init.setGitRemote(params_map["GitRemote"]);
   init.setPassive(false);
   init.setDongleId(params_map["DongleId"]);
+  init.setBootlogId(params_map["BootLogId"])
 
   auto lparams = init.initParams().initEntries(params_map.size());
   int j = 0;
