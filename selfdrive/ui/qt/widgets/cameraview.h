@@ -58,7 +58,6 @@ protected:
   void updateCalibration(const mat3 &calib);
   void vipcThread();
   void clearFrames();
-  void clearEGLImages();
 
   int glWidth();
   int glHeight();
