@@ -99,10 +99,20 @@ void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
   seenNetworks.clear();
 
   const QDBusReply<QList<QDBusObjectPath>> watcher_reply = *watcher;
+  if (!watcher_reply.isValid()) {
+    qCritical() << "Failed to refresh";
+    watcher->deleteLater();
+    return;
+  }
+
   for (const QDBusObjectPath &path : watcher_reply.value()) {
     QDBusReply<QVariantMap> reply = call(path.path(), NM_DBUS_INTERFACE_PROPERTIES, "GetAll", NM_DBUS_INTERFACE_ACCESS_POINT);
-    auto properties = reply.value();
+    if (!reply.isValid()) {
+      qCritical() << "Failed to retrieve properties for path:" << path.path();
+      continue;
+    }
 
+    auto properties = reply.value();
     const QByteArray ssid = properties["Ssid"].toByteArray();
     if (ssid.isEmpty()) continue;
 
