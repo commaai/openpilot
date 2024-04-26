@@ -38,7 +38,7 @@ class CarControllerParams:
   BRAKE_MAX = 600                # about -3.5m/s2 from testing
 
   RPM_MIN = 0
-  RPM_MAX = 2400
+  RPM_MAX = 3600
 
   RPM_INACTIVE = 600             # a good base rpm for zero acceleration
 
