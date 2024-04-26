@@ -36,14 +36,13 @@ class CarInterface(CarInterfaceBase):
     if hda2:
       ret.flags |= HyundaiFlags.CANFD_HDA2.value
 
-    if candidate in CANFD_CAR:
+    if candidate in (CANFD_CAR - CAN_CANFD_HYBRID_CAR):
       # detect if car is hybrid
       if 0x105 in fingerprint[CAN.ECAN]:
         ret.flags |= HyundaiFlags.HYBRID.value
       elif candidate in EV_CAR:
         ret.flags |= HyundaiFlags.EV.value
 
-      # detect HDA2 with ADAS Driving ECU
       if hda2:
         if 0x110 in fingerprint[CAN.CAM]:
           ret.flags |= HyundaiFlags.CANFD_HDA2_ALT_STEERING.value
@@ -79,7 +78,7 @@ class CarInterface(CarInterfaceBase):
     CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     # *** longitudinal control ***
-    if candidate in CANFD_CAR:
+    if candidate in (CANFD_CAR - CAN_CANFD_HYBRID_CAR):
       ret.longitudinalTuning.kpV = [0.1]
       ret.longitudinalTuning.kiV = [0.0]
       ret.experimentalLongitudinalAvailable = candidate not in (CANFD_UNSUPPORTED_LONGITUDINAL_CAR | CANFD_RADAR_SCC_CAR)
@@ -98,14 +97,14 @@ class CarInterface(CarInterfaceBase):
     ret.longitudinalActuatorDelayUpperBound = 0.5
 
     # *** feature detection ***
-    if candidate in CANFD_CAR:
+    if candidate in (CANFD_CAR - CAN_CANFD_HYBRID_CAR):
       ret.enableBsm = 0x1e5 in fingerprint[CAN.ECAN]
     else:
       bus = CAN.ECAN if ret.flags & HyundaiFlags.CAN_CANFD_HYBRID else 0
       ret.enableBsm = 0x58b in fingerprint[bus]
 
     # *** panda safety config ***
-    if candidate in CANFD_CAR:
+    if candidate in (CANFD_CAR - CAN_CANFD_HYBRID_CAR):
       cfgs = [get_safety_config(car.CarParams.SafetyModel.hyundaiCanfd), ]
       if CAN.ECAN >= 4:
         cfgs.insert(0, get_safety_config(car.CarParams.SafetyModel.noOutput))
