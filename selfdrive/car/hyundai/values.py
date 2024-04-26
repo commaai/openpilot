@@ -314,8 +314,10 @@ class CAR(Platforms):
     flags=HyundaiFlags.EV,
   )
   HYUNDAI_IONIQ_6 = HyundaiCanFDPlatformConfig(
-    [HyundaiCarDocs("Hyundai Ioniq 6 (with HDA II) 2023", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_p]))],
-    HYUNDAI_IONIQ_5.specs,
+    [HyundaiCarDocs("Hyundai Ioniq 6 (with HDA II) 2023-24", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_p]))],
+    # Average of min/max mass of SEL/LTD models. Significantly lighter SE Standard Range should be uncommon
+    # https://www.hyundainews.com/assets/documents/original/53031-2023IONIQ6ProductSpecs093022.pdf
+    CarSpecs(mass=2004, wheelbase=2.95, steerRatio=14.27, tireStiffnessFactor=0.65),
     flags=HyundaiFlags.EV | HyundaiFlags.CANFD_NO_RADAR_DISABLE,
   )
   HYUNDAI_TUCSON_4TH_GEN = HyundaiCanFDPlatformConfig(
