@@ -147,6 +147,10 @@ class CarInterface(CarInterfaceBase):
 
     ret.centerToFront = ret.wheelbase * 0.4
 
+    # FIXME: Non-HDA2 2023-24 Hyundai Palisade / Kia Telluride is disabled in this branch;
+    # The non-HDA2 variant is supported in another PR: https://github.com/commaai/openpilot/pull/27478
+    ret.dashcamOnly |= candidate in (CAR.HYUNDAI_PALISADE_2023, ) and not hda2
+
     return ret
 
   @staticmethod
