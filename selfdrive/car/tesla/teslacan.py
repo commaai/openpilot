@@ -25,9 +25,9 @@ class TeslaCAN:
       "DAS_steeringControlCounter": counter,
     }
 
-    data = self.packer.make_can_msg("DAS_steeringControl", CANBUS.chassis, values)[2]
+    data = self.packer.make_can_msg("DAS_steeringControl", CANBUS.party, values)[2]
     values["DAS_steeringControlChecksum"] = self.checksum(0x488, data[:3])
-    return self.packer.make_can_msg("DAS_steeringControl", CANBUS.chassis, values)
+    return self.packer.make_can_msg("DAS_steeringControl", CANBUS.party, values)
 
   def create_longitudinal_commands(self, acc_state, speed, min_accel, max_accel, cnt):
     messages = []
@@ -42,10 +42,9 @@ class TeslaCAN:
       "DAS_controlCounter": cnt,
       "DAS_controlChecksum": 0,
     }
-    data = self.packer.make_can_msg("DAS_control", CANBUS.chassis, values)[2]
+    data = self.packer.make_can_msg("DAS_control", CANBUS.party, values)[2]
     values["DAS_controlChecksum"] = self.checksum(0x2b9, data[:7])
-    messages.append(self.packer.make_can_msg("DAS_control", bus, values))
-    return messages
+    return self.packer.make_can_msg("DAS_control", CANBUS.party, values)
 
   def right_stalk_press(self, counter, position):
     # TODO: Implement CRC checksum instead of lookup table.
