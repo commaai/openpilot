@@ -87,6 +87,8 @@ class Controls:
     if SIMULATION:
       ignore += ['driverCameraState', 'managerState']
 
+    self.joystick_mode = self.params.get_bool("JoystickDebugMode")
+
     if (self.CP.notCar and self.joystick_mode):
       ignore += ["modelV2, longitudinalPlan"]
 
@@ -96,8 +98,6 @@ class Controls:
                                    'testJoystick'] + self.camera_packets + self.sensor_packets,
                                   ignore_alive=ignore, ignore_avg_freq=ignore+['radarState', 'testJoystick'], ignore_valid=['testJoystick', ],
                                   frequency=int(1/DT_CTRL))
-
-    self.joystick_mode = self.params.get_bool("JoystickDebugMode")
 
     # read params
     self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
