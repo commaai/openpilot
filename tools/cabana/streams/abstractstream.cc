@@ -130,6 +130,7 @@ void AbstractStream::updateLastMsgsTo(double sec) {
   current_sec_ = sec;
   uint64_t last_ts = (sec + routeStartTime()) * 1e9;
   std::unordered_map<MessageId, CanData> msgs;
+  msgs.reserve(events_.size());
 
   for (const auto &[id, ev] : events_) {
     auto it = std::upper_bound(ev.begin(), ev.end(), last_ts, CompareCanEvent());
@@ -171,6 +172,8 @@ const CanEvent *AbstractStream::newEvent(uint64_t mono_time, const cereal::CanDa
 void AbstractStream::mergeEvents(const std::vector<const CanEvent *> &events) {
   static MessageEventsMap msg_events;
   std::for_each(msg_events.begin(), msg_events.end(), [](auto &e) { e.second.clear(); });
+
+  // Group events by message ID
   for (auto e : events) {
     msg_events[{.source = e->src, .address = e->address}].push_back(e);
   }
@@ -207,7 +210,7 @@ inline QColor blend(const QColor &a, const QColor &b) {
   return QColor((a.red() + b.red()) / 2, (a.green() + b.green()) / 2, (a.blue() + b.blue()) / 2, (a.alpha() + b.alpha()) / 2);
 }
 
-// Calculate the frequency of the past minute.
+// Calculate the frequency from the past one minute data
 double calc_freq(const MessageId &msg_id, double current_sec) {
   const auto &events = can->events(msg_id);
   uint64_t cur_mono_time = (can->routeStartTime() + current_sec) * 1e9;
@@ -255,11 +258,8 @@ void CanData::compute(const MessageId &msg_id, const uint8_t *can_data, const in
       if (last != cur) {
         const int delta = cur - last;
         // Keep track if signal is changing randomly, or mostly moving in the same direction
-        if (std::signbit(delta) == std::signbit(last_change.delta)) {
-          last_change.same_delta_counter = std::min(16, last_change.same_delta_counter + 1);
-        } else {
-          last_change.same_delta_counter = std::max(0, last_change.same_delta_counter - 4);
-        }
+        last_change.same_delta_counter += std::signbit(delta) == std::signbit(last_change.delta) ? 1 : -4;
+        last_change.same_delta_counter = std::clamp(last_change.same_delta_counter, 0, 16);
 
         const double delta_t = ts - last_change.ts;
         // Mostly moves in the same direction, color based on delta up/down
@@ -272,10 +272,10 @@ void CanData::compute(const MessageId &msg_id, const uint8_t *can_data, const in
         }
 
         // Track bit level changes
-        const uint8_t tmp = (cur ^ last);
+        const uint8_t diff = (cur ^ last);
         for (int bit = 0; bit < 8; bit++) {
-          if (tmp & (1 << (7 - bit))) {
-            last_change.bit_change_counts[bit] += 1;
+          if (diff & (1u << bit)) {
+            ++last_change.bit_change_counts[7 - bit];
           }
         }
 

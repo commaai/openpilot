@@ -29,11 +29,11 @@ struct MessageId {
   }
 
   bool operator<(const MessageId &other) const {
-    return std::pair{source, address} < std::pair{other.source, other.address};
+    return std::tie(source, address) < std::tie(other.source, other.address);
   }
 
   bool operator>(const MessageId &other) const {
-    return std::pair{source, address} > std::pair{other.source, other.address};
+    return std::tie(source, address) > std::tie(other.source, other.address);
   }
 };
 
