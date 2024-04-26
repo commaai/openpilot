@@ -66,10 +66,6 @@ class CarInterface(CarInterfaceBase):
       elif candidate in EV_CAR:
         ret.flags |= HyundaiFlags.EV.value
 
-      # detect cars with hybrid definitions of CAN and CAN-FD
-      if candidate in CAN_CANFD_CAR:
-        ret.flags |= HyundaiFlags.CAN_CANFD.value
-
       # Send LFA message on cars with HDA
       if 0x485 in fingerprint[2]:
         ret.flags |= HyundaiFlags.SEND_LFA.value
