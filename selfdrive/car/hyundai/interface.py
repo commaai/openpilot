@@ -164,7 +164,7 @@ class CarInterface(CarInterfaceBase):
       ret.buttonEvents= create_button_events(self.CS.cruise_buttons[-1], self.CS.prev_cruise_buttons, BUTTONS_DICT)
 
       pause_resume_btn = bool(self.CP.flags & HyundaiFlags.PAUSE_RESUME_BTN)
-      cruise_speed_set = self.CS.cruiseState.speed > 0
+      cruise_speed_set = ret.cruiseState.speed > 0
 
       resume_button = self.CS.cruise_buttons[-1] == Buttons.RES_ACCEL
       cancel_button = self.CS.cruise_buttons[-1] == Buttons.CANCEL
