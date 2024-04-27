@@ -8,7 +8,7 @@ from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.honda.hondacan import CanBus, get_cruise_speed_conversion
 from openpilot.selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, HONDA_BOSCH, \
                                                  HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_RADARLESS, \
-                                                 HONDA_CANFD_CAR, HondaFlags
+                                                 HondaFlags
 from openpilot.selfdrive.car.interfaces import CarStateBase
 
 TransmissionType = car.CarParams.TransmissionType
@@ -194,7 +194,7 @@ class CarState(CarStateBase):
     ret.steeringTorqueEps = cp.vl["STEER_MOTOR_TORQUE"]["MOTOR_TORQUE"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD.get(self.CP.carFingerprint, 1200)
 
-    if self.CP.carFingerprint in (HONDA_BOSCH | HONDA_CANFD_CAR):
+    if self.CP.carFingerprint in HONDA_BOSCH:
       # The PCM always manages its own cruise control state, but doesn't publish it
       if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS:
         ret.cruiseState.nonAdaptive = cp_cam.vl["ACC_HUD"]["CRUISE_CONTROL_LABEL"] != 0
