@@ -581,7 +581,7 @@ void ChartView::showTip(double sec) {
       // use reverse iterator to find last item <= sec.
       auto it = std::lower_bound(s.vals.crbegin(), s.vals.crend(), sec, [](auto &p, double x) { return p.x() > x; });
       if (it != s.vals.crend() && it->x() >= axis_x->min()) {
-        value = QString::number(it->y());
+        value = s.sig->formatValue(it->y(), false);
         s.track_pt = *it;
         x = std::max(x, chart()->mapToPosition(*it).x());
       }
