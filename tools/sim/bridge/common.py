@@ -62,14 +62,14 @@ class SimulatorBridge(ABC):
     try:
       self._run(q)
     finally:
-      self.close("bridge terminated")
+      self.close("close_status", "bridge terminated")
 
-  def close(self, reason):
+  def close(self, closing_type, reason):
     self.started.value = False
     self._exit_event.set()
 
     if self.world is not None:
-      self.world.close(reason)
+      self.world.close(closing_type, reason)
 
   def run(self, queue, retries=-1):
     bridge_p = Process(name="bridge", target=self.bridge_keep_alive, args=(queue, retries))

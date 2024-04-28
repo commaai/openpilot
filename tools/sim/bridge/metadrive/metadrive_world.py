@@ -37,14 +37,14 @@ class MetaDriveWorld(World):
                                                 self.vehicle_state_send, self.exit_event))
 
     self.metadrive_process.start()
-    self.status_q.put(QueueMessage("starting"))
+    self.status_q.put(QueueMessage("start_status", "starting"))
 
     print("----------------------------------------------------------")
     print("---- Spawning Metadrive world, this might take awhile ----")
     print("----------------------------------------------------------")
 
     self.vehicle_state_recv.recv() # wait for a state message to ensure metadrive is launched
-    self.status_q.put(QueueMessage("started"))
+    self.status_q.put(QueueMessage("start_status", "started"))
 
     self.steer_ratio = 15
     self.vc = [0.0,0.0]
@@ -70,7 +70,7 @@ class MetaDriveWorld(World):
     while self.simulation_state_recv.poll(0):
       md_state: metadrive_simulation_state = self.simulation_state_recv.recv()
       if md_state.done:
-        self.close(md_state.done_info)
+        self.close("termination_status", md_state.done_info)
 
   def read_sensors(self, state: SimulatorState):
     while self.vehicle_state_recv.poll(0):
@@ -90,7 +90,7 @@ class MetaDriveWorld(World):
   def reset(self):
     self.should_reset = True
 
-  def close(self, reason: str):
-    self.status_q.put(QueueMessage("terminating", reason))
+  def close(self, closing_type, reason):
+    self.status_q.put(QueueMessage(closing_type, reason))
     self.exit_event.set()
     self.metadrive_process.join()
