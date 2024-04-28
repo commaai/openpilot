@@ -503,14 +503,14 @@ class CAR(Platforms):
     flags=HyundaiFlags.EV,
   )
   GENESIS_G70 = HyundaiPlatformConfig(
-    [HyundaiCarDocs("Genesis G70 2018-19", "All", car_parts=CarParts.common([CarHarness.hyundai_f]))],
+    [HyundaiCarDocs("Genesis G70 2018", "All", car_parts=CarParts.common([CarHarness.hyundai_f]))],
     CarSpecs(mass=1640, wheelbase=2.84, steerRatio=13.56),
     flags=HyundaiFlags.LEGACY,
   )
   GENESIS_G70_2020 = HyundaiPlatformConfig(
     [
       # TODO: 2021 MY harness is unknown
-      HyundaiCarDocs("Genesis G70 2020-21", "All", car_parts=CarParts.common([CarHarness.hyundai_f])),
+      HyundaiCarDocs("Genesis G70 2019-21", "All", car_parts=CarParts.common([CarHarness.hyundai_f])),
       # TODO: From 3.3T Sport Advanced 2022 & Prestige 2023 Trim, 2.0T is unknown
       HyundaiCarDocs("Genesis G70 2022-23", "All", car_parts=CarParts.common([CarHarness.hyundai_l])),
     ],

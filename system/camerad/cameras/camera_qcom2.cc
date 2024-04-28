@@ -31,8 +31,7 @@ int CameraState::clear_req_queue() {
   req_mgr_flush_request.session_hdl = session_handle;
   req_mgr_flush_request.link_hdl = link_handle;
   req_mgr_flush_request.flush_type = CAM_REQ_MGR_FLUSH_TYPE_ALL;
-  int ret;
-  ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_FLUSH_REQ, &req_mgr_flush_request, sizeof(req_mgr_flush_request));
+  int ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_FLUSH_REQ, &req_mgr_flush_request, sizeof(req_mgr_flush_request));
   // LOGD("flushed all req: %d", ret);
   return ret;
 }
@@ -470,7 +469,6 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
   enabled = enabled_;
   if (!enabled) return;
 
-  int ret;
   sensor_fd = open_v4l_by_name_and_index("cam-sensor-driver", camera_num);
   assert(sensor_fd >= 0);
   LOGD("opened sensor for %d", camera_num);
@@ -501,7 +499,7 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
 
   // create session
   struct cam_req_mgr_session_info session_info = {};
-  ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_CREATE_SESSION, &session_info, sizeof(session_info));
+  int ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_CREATE_SESSION, &session_info, sizeof(session_info));
   LOGD("get session: %d 0x%X", ret, session_info.session_hdl);
   session_handle = session_info.session_hdl;
 
@@ -654,8 +652,6 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
 }
 
 void cameras_open(MultiCameraState *s) {
-  int ret;
-
   LOG("-- Opening devices");
   // video0 is req_mgr, the target of many ioctls
   s->video0_fd = HANDLE_EINTR(open("/dev/v4l/by-path/platform-soc:qcom_cam-req-mgr-video-index0", O_RDWR | O_NONBLOCK));
@@ -679,7 +675,7 @@ void cameras_open(MultiCameraState *s) {
   query_cap_cmd.handle_type = 1;
   query_cap_cmd.caps_handle = (uint64_t)&isp_query_cap_cmd;
   query_cap_cmd.size = sizeof(isp_query_cap_cmd);
-  ret = do_cam_control(s->isp_fd, CAM_QUERY_CAP, &query_cap_cmd, sizeof(query_cap_cmd));
+  int ret = do_cam_control(s->isp_fd, CAM_QUERY_CAP, &query_cap_cmd, sizeof(query_cap_cmd));
   assert(ret == 0);
   LOGD("using MMU handle: %x", isp_query_cap_cmd.device_iommu.non_secure);
   LOGD("using MMU handle: %x", isp_query_cap_cmd.cdm_iommu.non_secure);
@@ -703,15 +699,13 @@ void cameras_open(MultiCameraState *s) {
 }
 
 void CameraState::camera_close() {
-  int ret;
-
   // stop devices
   LOG("-- Stop devices %d", camera_num);
 
   if (enabled) {
     // ret = device_control(sensor_fd, CAM_STOP_DEV, session_handle, sensor_dev_handle);
     // LOGD("stop sensor: %d", ret);
-    ret = device_control(multi_cam_state->isp_fd, CAM_STOP_DEV, session_handle, isp_dev_handle);
+    int ret = device_control(multi_cam_state->isp_fd, CAM_STOP_DEV, session_handle, isp_dev_handle);
     LOGD("stop isp: %d", ret);
     ret = device_control(csiphy_fd, CAM_STOP_DEV, session_handle, csiphy_dev_handle);
     LOGD("stop csiphy: %d", ret);
@@ -746,7 +740,7 @@ void CameraState::camera_close() {
     LOGD("released buffers");
   }
 
-  ret = device_control(sensor_fd, CAM_RELEASE_DEV, session_handle, sensor_dev_handle);
+  int ret = device_control(sensor_fd, CAM_RELEASE_DEV, session_handle, sensor_dev_handle);
   LOGD("release sensor: %d", ret);
 
   // destroyed session

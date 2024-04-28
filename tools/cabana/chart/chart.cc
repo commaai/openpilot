@@ -111,6 +111,8 @@ void ChartView::setTheme(QChart::ChartTheme theme) {
     axis_y->setLabelsBrush(palette().text());
     chart()->legend()->setLabelColor(palette().color(QPalette::Text));
   }
+  axis_x->setLineVisible(false);
+  axis_y->setLineVisible(false);
   for (auto &s : sigs) {
     s.series->setColor(s.sig->color);
   }
@@ -579,7 +581,7 @@ void ChartView::showTip(double sec) {
       // use reverse iterator to find last item <= sec.
       auto it = std::lower_bound(s.vals.crbegin(), s.vals.crend(), sec, [](auto &p, double x) { return p.x() > x; });
       if (it != s.vals.crend() && it->x() >= axis_x->min()) {
-        value = QString::number(it->y());
+        value = s.sig->formatValue(it->y(), false);
         s.track_pt = *it;
         x = std::max(x, chart()->mapToPosition(*it).x());
       }
@@ -745,8 +747,8 @@ void ChartView::drawTimeline(QPainter *painter) {
   const auto plot_area = chart()->plotArea();
   // draw vertical time line
   qreal x = std::clamp(chart()->mapToPosition(QPointF{cur_sec, 0}).x(), plot_area.left(), plot_area.right());
-  painter->setPen(QPen(chart()->titleBrush().color(), 2));
-  painter->drawLine(QPointF{x, plot_area.top()}, QPointF{x, plot_area.bottom() + 1});
+  painter->setPen(QPen(chart()->titleBrush().color(), 1));
+  painter->drawLine(QPointF{x, plot_area.top() - 1}, QPointF{x, plot_area.bottom() + 1});
 
   // draw current time under the axis-x
   QString time_str = QString::number(cur_sec, 'f', 2);

@@ -8,7 +8,7 @@ on:
 jobs:
   bump_submodules:
     name: bump_submodules
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     container:
       image: ghcr.io/commaai/openpilot-base:latest
     if: github.repository == 'commaai/openpilot'
@@ -34,7 +34,7 @@ jobs:
         labels: bot
   package_updates:
     name: package_updates
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     container:
       image: ghcr.io/commaai/openpilot-base:latest
     if: github.repository == 'commaai/openpilot'
