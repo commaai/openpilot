@@ -88,6 +88,7 @@ def keyboard_poll_thread(q: 'Queue[QueueMessage]'):
       break
     else:
       print_keyboard_help()
+      continue
     q.put(message)
 
 def test(q: 'Queue[str]') -> NoReturn:
