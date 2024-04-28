@@ -55,7 +55,7 @@ def getch() -> str:
 def print_keyboard_help():
   print(f"Keyboard Commands:\n{KEYBOARD_HELP}")
 
-def keyboard_poll_thread(q: Queue[QueueMessage]):
+def keyboard_poll_thread(q: 'Queue[QueueMessage]'):
   print_keyboard_help()
 
   while True:
@@ -72,7 +72,6 @@ def keyboard_poll_thread(q: Queue[QueueMessage]):
       message = control_cmd_gen(f"steer_{-0.15}")
     elif c == 's':
       message = control_cmd_gen(f"brake_{1.0}")
-      print(message)
     elif c == 'd':
       message = control_cmd_gen(f"steer_{0.15}")
     elif c == 'z':
