@@ -17,6 +17,9 @@ from openpilot.tools.sim.lib.simulated_sensors import SimulatedSensors
 
 QueueMessage = namedtuple("QueueMessage", ["type", "info"], defaults=[None])
 
+def control_cmd_gen(cmd: str):
+  return QueueMessage("control_command", cmd)
+
 def rk_loop(function, hz, exit_event: threading.Event):
   rk = Ratekeeper(hz, None)
   while not exit_event.is_set():

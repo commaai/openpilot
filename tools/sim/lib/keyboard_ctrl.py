@@ -7,7 +7,7 @@ from termios import (BRKINT, CS8, CSIZE, ECHO, ICANON, ICRNL, IEXTEN, INPCK,
                      ISTRIP, IXON, PARENB, VMIN, VTIME)
 from typing import NoReturn
 
-from openpilot.tools.sim.bridge.common import QueueMessage
+from openpilot.tools.sim.bridge.common import QueueMessage, control_cmd_gen
 
 # Indexes for termios list.
 IFLAG = 0
@@ -61,29 +61,30 @@ def keyboard_poll_thread(q: Queue[QueueMessage]):
   while True:
     c = getch()
     if c == '1':
-      message = QueueMessage("control_command", "cruise_up")
+      message = control_cmd_gen("cruise_up")
     elif c == '2':
-      message = QueueMessage("control_command", "cruise_down")
+      message = control_cmd_gen("cruise_down")
     elif c == '3':
-      message = QueueMessage("control_command", "cruise_cancel")
+      message = control_cmd_gen("cruise_cancel")
     elif c == 'w':
-      message = QueueMessage("control_command", f"throttle_{1.0}")
+      message = control_cmd_gen(f"throttle_{1.0}")
     elif c == 'a':
-      message = QueueMessage("control_command", f"steer_{-0.15}")
+      message = control_cmd_gen(f"steer_{-0.15}")
     elif c == 's':
-      message = QueueMessage("control_command", f"brake_{1.0}")
+      message = control_cmd_gen(f"brake_{1.0}")
+      print(message)
     elif c == 'd':
-      message = QueueMessage("control_command", f"steer_{0.15}")
+      message = control_cmd_gen(f"steer_{0.15}")
     elif c == 'z':
-      message = QueueMessage("control_command", "blinker_left")
+      message = control_cmd_gen("blinker_left")
     elif c == 'x':
-      message = QueueMessage("control_command", "blinker_right")
+      message = control_cmd_gen("blinker_right")
     elif c == 'i':
-      message = QueueMessage("control_command", "ignition")
+      message = control_cmd_gen("ignition")
     elif c == 'r':
-      message = QueueMessage("control_command", "reset")
+      message = control_cmd_gen("reset")
     elif c == 'q':
-      message = QueueMessage("control_command", "quit")
+      message = control_cmd_gen("quit")
       q.put(message)
       break
     else:
