@@ -2,9 +2,12 @@ import sys
 import termios
 import time
 
+from multiprocessing import Queue
 from termios import (BRKINT, CS8, CSIZE, ECHO, ICANON, ICRNL, IEXTEN, INPCK,
                      ISTRIP, IXON, PARENB, VMIN, VTIME)
 from typing import NoReturn
+
+from openpilot.tools.sim.bridge.common import QueueMessage
 
 # Indexes for termios list.
 IFLAG = 0
@@ -52,38 +55,40 @@ def getch() -> str:
 def print_keyboard_help():
   print(f"Keyboard Commands:\n{KEYBOARD_HELP}")
 
-def keyboard_poll_thread(q: 'Queue[str]'):
+def keyboard_poll_thread(q: Queue[QueueMessage]):
   print_keyboard_help()
 
   while True:
     c = getch()
     if c == '1':
-      q.put("cruise_up")
+      message = QueueMessage("control_command", "cruise_up")
     elif c == '2':
-      q.put("cruise_down")
+      message = QueueMessage("control_command", "cruise_down")
     elif c == '3':
-      q.put("cruise_cancel")
+      message = QueueMessage("control_command", "cruise_cancel")
     elif c == 'w':
-      q.put("throttle_%f" % 1.0)
+      message = QueueMessage("control_command", f"throttle_{1.0}")
     elif c == 'a':
-      q.put("steer_%f" % -0.15)
+      message = QueueMessage("control_command", f"steer_{-0.15}")
     elif c == 's':
-      q.put("brake_%f" % 1.0)
+      message = QueueMessage("control_command", f"brake_{1.0}")
     elif c == 'd':
-      q.put("steer_%f" % 0.15)
+      message = QueueMessage("control_command", f"steer_{0.15}")
     elif c == 'z':
-      q.put("blinker_left")
+      message = QueueMessage("control_command", "blinker_left")
     elif c == 'x':
-      q.put("blinker_right")
+      message = QueueMessage("control_command", "blinker_right")
     elif c == 'i':
-      q.put("ignition")
+      message = QueueMessage("control_command", "ignition")
     elif c == 'r':
-      q.put("reset")
+      message = QueueMessage("control_command", "reset")
     elif c == 'q':
-      q.put("quit")
+      message = QueueMessage("control_command", "quit")
+      q.put(message)
       break
     else:
       print_keyboard_help()
+    q.put(message)
 
 def test(q: 'Queue[str]') -> NoReturn:
   while True:
@@ -92,7 +97,7 @@ def test(q: 'Queue[str]') -> NoReturn:
 
 if __name__ == '__main__':
   from multiprocessing import Process, Queue
-  q: Queue[str] = Queue()
+  q: Queue[QueueMessage] = Queue()
   p = Process(target=test, args=(q,))
   p.daemon = True
   p.start()
