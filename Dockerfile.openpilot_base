@@ -60,7 +60,7 @@ ENV QTWEBENGINE_DISABLE_SANDBOX 1
 RUN dbus-uuidgen > /etc/machine-id
 
 ARG USER=batman
-ARG USER_UID=1000
+ARG USER_UID=1001
 RUN useradd -m -s /bin/bash -u $USER_UID $USER
 RUN usermod -aG sudo $USER
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
