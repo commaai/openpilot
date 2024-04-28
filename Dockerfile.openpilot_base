@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM ubuntu:20.04
 
 ENV PYTHONUNBUFFERED 1
 
@@ -18,7 +18,7 @@ RUN cd /tmp && \
     rm -rf /var/lib/apt/lists/* && \
     rm -rf /tmp/* && \
     # remove unused architectures from gcc for panda
-    cd /usr/lib/gcc/arm-none-eabi/* && \
+    cd /usr/lib/gcc/arm-none-eabi/9.2.1 && \
     rm -rf arm/ && \
     rm -rf thumb/nofp thumb/v6* thumb/v8* thumb/v7+fp thumb/v7-r+fp.sp
 
@@ -31,9 +31,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     xz-utils \
     dbus \
+    gcc-arm-none-eabi \
     tmux \
     vim \
-    lsb-release \
+    lsb-core \
     libx11-6 \
   && rm -rf /var/lib/apt/lists/*
 
@@ -60,7 +61,7 @@ ENV QTWEBENGINE_DISABLE_SANDBOX 1
 RUN dbus-uuidgen > /etc/machine-id
 
 ARG USER=batman
-ARG USER_UID=1001
+ARG USER_UID=1000
 RUN useradd -m -s /bin/bash -u $USER_UID $USER
 RUN usermod -aG sudo $USER
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
