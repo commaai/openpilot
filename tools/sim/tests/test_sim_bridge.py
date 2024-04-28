@@ -72,6 +72,16 @@ class TestSimBridgeBase(unittest.TestCase):
 
     self.assertEqual(min_counts_control_active, control_active, f"Simulator did not engage a minimal of {min_counts_control_active} steps was {control_active}")
 
+    failure_states = []
+    while bridge.started.value and sm['controlsState'].active:
+      state = q.get()
+      if isinstance(state, dict) and state["status"] == "terminating":
+        done_info = state["done_info"]
+        failure_states = [done_state for done_state in done_info if done_state != "arrive_dest" and done_info[done_state]]
+        if len(failure_states) > 0:
+          break
+    self.assertEqual(len(failure_states), 0, f"Simulator fails to finish a loop. Failure states: ${failure_states}")
+
   def tearDown(self):
     print("Test shutting down. CommIssues are acceptable")
     for p in reversed(self.processes):

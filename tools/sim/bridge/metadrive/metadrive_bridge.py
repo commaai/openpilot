@@ -1,3 +1,4 @@
+from collections import namedtuple
 from multiprocessing import Queue
 
 from metadrive.component.sensors.base_camera import _cuda_enable
@@ -44,12 +45,17 @@ def create_map(track_size=60):
     ]
   )
 
+ci_failure_config = namedtuple("ci_failure_config",
+                              ["out_of_route_done", "on_continuous_line_done", "on_broken_line_done"],
+                              defaults=[False, False, False])
 
 class MetaDriveBridge(SimulatorBridge):
   TICKS_PER_FRAME = 5
 
-  def __init__(self, dual_camera, high_quality):
+  def __init__(self, dual_camera, high_quality, track_size, ci):
     self.should_render = False
+    self.ci_config = ci_failure_config() if not ci else ci_failure_config(True, True, True)
+    self.track_size = track_size
 
     super().__init__(dual_camera, high_quality)
 
@@ -71,13 +77,14 @@ class MetaDriveBridge(SimulatorBridge):
       image_on_cuda=_cuda_enable,
       image_observation=True,
       interface_panel=[],
-      out_of_route_done=False,
-      on_continuous_line_done=False,
+      out_of_route_done=self.ci_config.out_of_route_done,
+      on_continuous_line_done=self.ci_config.on_continuous_line_done,
+      on_broken_line_done=self.ci_config.on_broken_line_done,
       crash_vehicle_done=False,
       crash_object_done=False,
       arrive_dest_done=False,
       traffic_density=0.0, # traffic is incredibly expensive
-      map_config=create_map(),
+      map_config=create_map(self.track_size),
       decision_repeat=1,
       physics_world_step_size=self.TICKS_PER_FRAME/100,
       preload_models=False
