@@ -18,7 +18,7 @@ RUN cd /tmp && \
     rm -rf /var/lib/apt/lists/* && \
     rm -rf /tmp/* && \
     # remove unused architectures from gcc for panda
-    cd /usr/lib/gcc/arm-none-eabi/9.2.1 && \
+    cd /usr/lib/gcc/arm-none-eabi/* && \
     rm -rf arm/ && \
     rm -rf thumb/nofp thumb/v6* thumb/v8* thumb/v7+fp thumb/v7-r+fp.sp
 
@@ -31,7 +31,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     xz-utils \
     dbus \
-    gcc-arm-none-eabi \
     tmux \
     vim \
     lsb-core \
