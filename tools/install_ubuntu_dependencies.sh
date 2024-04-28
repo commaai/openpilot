@@ -81,8 +81,8 @@ function install_ubuntu_common_requirements() {
     valgrind
 }
 
-# Install Ubuntu 22.04 LTS packages
-function install_ubuntu_lts_latest_requirements() {
+# Install Ubuntu 24.04 LTS packages
+function install_ubuntu_noble_requirements() {
   install_ubuntu_common_requirements
 
   $SUDO apt-get install -y --no-install-recommends \
@@ -94,28 +94,12 @@ function install_ubuntu_lts_latest_requirements() {
     python3-dev
 }
 
-# Install Ubuntu 24.04 packages
-function install_ubuntu_focal_requirements() {
-  install_ubuntu_common_requirements
-
-  $SUDO apt-get install -y --no-install-recommends \
-    libavresample-dev \
-    qt5-default \
-    python-dev
-}
-
 # Detect OS using /etc/os-release file
 if [ -f "/etc/os-release" ]; then
   source /etc/os-release
   case "$VERSION_CODENAME" in
-    "jammy")
-      install_ubuntu_lts_latest_requirements
-      ;;
-    "kinetic")
-      install_ubuntu_lts_latest_requirements
-      ;;
-    "focal")
-      install_ubuntu_focal_requirements
+    "jammy" | "kinetic" | "noble")
+      install_ubuntu_noble_requirements
       ;;
     *)
       echo "$ID $VERSION_ID is unsupported. This setup script is written for Ubuntu 24.04."
@@ -124,11 +108,7 @@ if [ -f "/etc/os-release" ]; then
       if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         exit 1
       fi
-      if [ "$UBUNTU_CODENAME" = "jammy" ] || [ "$UBUNTU_CODENAME" = "kinetic" ]; then
-        install_ubuntu_lts_latest_requirements
-      else
-        install_ubuntu_focal_requirements
-      fi
+      install_ubuntu_noble_requirements
   esac
 else
   echo "No /etc/os-release in the system"
