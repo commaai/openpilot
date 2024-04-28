@@ -2,6 +2,7 @@ import signal
 import threading
 import functools
 
+from collections import namedtuple
 from multiprocessing import Process, Queue, Value
 from abc import ABC, abstractmethod
 
@@ -14,6 +15,10 @@ from openpilot.tools.sim.lib.common import SimulatorState, World
 from openpilot.tools.sim.lib.simulated_car import SimulatedCar
 from openpilot.tools.sim.lib.simulated_sensors import SimulatedSensors
 
+QueueMessage = namedtuple("QueueMessage", ["type", "info"], defaults=[None])
+
+def control_cmd_gen(cmd: str):
+  return QueueMessage("control_command", cmd)
 
 def rk_loop(function, hz, exit_event: threading.Event):
   rk = Ratekeeper(hz, None)
@@ -79,11 +84,11 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
     """)
 
   @abstractmethod
-  def spawn_world(self) -> World:
+  def spawn_world(self, q: Queue) -> World:
     pass
 
   def _run(self, q: Queue):
-    self.world = self.spawn_world()
+    self.world = self.spawn_world(q)
 
     self.simulated_car = SimulatedCar()
     self.simulated_sensors = SimulatedSensors(self.dual_camera)
@@ -113,7 +118,9 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
       # Read manual controls
       if not q.empty():
         message = q.get()
-        m = message.split('_')
+        if message.type != "control_command":
+          continue
+        m = message.info.split('_')
         if m[0] == "steer":
           steer_manual = float(m[1])
         elif m[0] == "throttle":
