@@ -45,7 +45,7 @@ def create_map(track_size=60):
     ]
   )
 
-ci_failure_config = namedtuple("ci_failure_config",
+failure_config = namedtuple("failure_config",
                               ["out_of_route_done", "on_continuous_line_done", "on_broken_line_done"],
                               defaults=[False, False, False])
 
@@ -54,7 +54,7 @@ class MetaDriveBridge(SimulatorBridge):
 
   def __init__(self, dual_camera, high_quality, track_size, ci):
     self.should_render = False
-    self.ci_config = ci_failure_config() if not ci else ci_failure_config(True, True, True)
+    self.failure_config = failure_config(True, True, True) if ci else failure_config()
     self.track_size = track_size
 
     super().__init__(dual_camera, high_quality)
@@ -77,9 +77,9 @@ class MetaDriveBridge(SimulatorBridge):
       image_on_cuda=_cuda_enable,
       image_observation=True,
       interface_panel=[],
-      out_of_route_done=self.ci_config.out_of_route_done,
-      on_continuous_line_done=self.ci_config.on_continuous_line_done,
-      on_broken_line_done=self.ci_config.on_broken_line_done,
+      out_of_route_done=self.failure_config.out_of_route_done,
+      on_continuous_line_done=self.failure_config.on_continuous_line_done,
+      on_broken_line_done=self.failure_config.on_broken_line_done,
       crash_vehicle_done=False,
       crash_object_done=False,
       arrive_dest_done=False,
