@@ -52,7 +52,7 @@ failure_config = namedtuple("failure_config",
 class MetaDriveBridge(SimulatorBridge):
   TICKS_PER_FRAME = 5
 
-  def __init__(self, dual_camera, high_quality, track_size, ci):
+  def __init__(self, dual_camera, high_quality, track_size=60, ci=False):
     self.should_render = False
     self.failure_config = failure_config(True, True, True) if ci else failure_config()
     self.track_size = track_size
