@@ -22,7 +22,7 @@ env:
 jobs:
   plotjuggler:
     name: plotjuggler
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
     - uses: actions/checkout@v4
@@ -39,7 +39,7 @@ jobs:
 
   simulator:
     name: simulator
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: github.repository == 'commaai/openpilot'
     timeout-minutes: 45
     steps:
@@ -85,7 +85,7 @@ jobs:
 
   notebooks:
     name: notebooks
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: false && github.repository == 'commaai/openpilot'
     timeout-minutes: 45
     steps:
