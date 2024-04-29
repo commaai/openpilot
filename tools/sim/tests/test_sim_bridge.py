@@ -7,7 +7,7 @@ from multiprocessing import Queue
 
 from cereal import messaging
 from openpilot.common.basedir import BASEDIR
-from openpilot.tools.sim.bridge.common import control_cmd_gen
+from openpilot.tools.sim.bridge.common import control_cmd_gen, QueueMessageType
 
 SIM_DIR = os.path.join(BASEDIR, "tools/sim")
 
@@ -80,11 +80,11 @@ class TestSimBridgeBase(unittest.TestCase):
     state = None
     while not q.empty():
       state = q.get()
-      if state.type == "termination_status":
+      if state.type == QueueMessageType.TERMINATION_STATUS:
         done_info = state.info
         failure_states = [done_state for done_state in done_info if done_state != "arrive_dest" and done_info[done_state]]
         break
-    self.assertEqual(len(failure_states), 0, f"Simulator fails to finish a loop. Failure states: ${failure_states}")
+    self.assertEqual(len(failure_states), 0, f"Simulator fails to finish a loop. Failure states: {failure_states}")
 
   def tearDown(self):
     print("Test shutting down. CommIssues are acceptable")

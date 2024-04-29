@@ -3,6 +3,7 @@ import threading
 import functools
 
 from collections import namedtuple
+from enum import Enum
 from multiprocessing import Process, Queue, Value
 from abc import ABC, abstractmethod
 
@@ -17,8 +18,14 @@ from openpilot.tools.sim.lib.simulated_sensors import SimulatedSensors
 
 QueueMessage = namedtuple("QueueMessage", ["type", "info"], defaults=[None])
 
+class QueueMessageType(Enum):
+  START_STATUS = 0
+  CONTROL_COMMAND = 1
+  TERMINATION_STATUS = 2
+  CLOSE_STATUS = 3
+
 def control_cmd_gen(cmd: str):
-  return QueueMessage("control_command", cmd)
+  return QueueMessage(QueueMessageType.CONTROL_COMMAND, cmd)
 
 def rk_loop(function, hz, exit_event: threading.Event):
   rk = Ratekeeper(hz, None)
@@ -62,14 +69,14 @@ class SimulatorBridge(ABC):
     try:
       self._run(q)
     finally:
-      self.close("close_status", "bridge terminated")
+      self.close("bridge terminated")
 
-  def close(self, closing_type, reason):
+  def close(self, reason):
     self.started.value = False
     self._exit_event.set()
 
     if self.world is not None:
-      self.world.close(closing_type, reason)
+      self.world.close(reason)
 
   def run(self, queue, retries=-1):
     bridge_p = Process(name="bridge", target=self.bridge_keep_alive, args=(queue, retries))
@@ -118,7 +125,7 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
       # Read manual controls
       if not q.empty():
         message = q.get()
-        if message.type == "control_command":
+        if message.type == QueueMessageType.CONTROL_COMMAND:
           m = message.info.split('_')
           if m[0] == "steer":
             steer_manual = float(m[1])
