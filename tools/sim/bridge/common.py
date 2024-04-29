@@ -3,6 +3,7 @@ import threading
 import functools
 
 from collections import namedtuple
+from enum import Enum
 from multiprocessing import Process, Queue, Value
 from abc import ABC, abstractmethod
 
@@ -17,8 +18,14 @@ from openpilot.tools.sim.lib.simulated_sensors import SimulatedSensors
 
 QueueMessage = namedtuple("QueueMessage", ["type", "info"], defaults=[None])
 
+class QueueMessageType(Enum):
+  START_STATUS = 0
+  CONTROL_COMMAND = 1
+  TERMINATION_STATUS = 2
+  CLOSE_STATUS = 3
+
 def control_cmd_gen(cmd: str):
-  return QueueMessage("control_command", cmd)
+  return QueueMessage(QueueMessageType.CONTROL_COMMAND, cmd)
 
 def rk_loop(function, hz, exit_event: threading.Event):
   rk = Ratekeeper(hz, None)
@@ -62,7 +69,7 @@ class SimulatorBridge(ABC):
     try:
       self._run(q)
     finally:
-      self.close("close_status", "bridge terminated")
+      self.close(QueueMessageType.CLOSE_STATUS, "bridge terminated")
 
   def close(self, closing_type, reason):
     self.started.value = False
@@ -118,35 +125,34 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
       # Read manual controls
       if not q.empty():
         message = q.get()
-        if message.type != "control_command":
-          continue
-        m = message.info.split('_')
-        if m[0] == "steer":
-          steer_manual = float(m[1])
-        elif m[0] == "throttle":
-          throttle_manual = float(m[1])
-        elif m[0] == "brake":
-          brake_manual = float(m[1])
-        elif m[0] == "cruise":
-          if m[1] == "down":
-            self.simulator_state.cruise_button = CruiseButtons.DECEL_SET
-          elif m[1] == "up":
-            self.simulator_state.cruise_button = CruiseButtons.RES_ACCEL
-          elif m[1] == "cancel":
-            self.simulator_state.cruise_button = CruiseButtons.CANCEL
-          elif m[1] == "main":
-            self.simulator_state.cruise_button = CruiseButtons.MAIN
-        elif m[0] == "blinker":
-          if m[1] == "left":
-            self.simulator_state.left_blinker = True
-          elif m[1] == "right":
-            self.simulator_state.right_blinker = True
-        elif m[0] == "ignition":
-          self.simulator_state.ignition = not self.simulator_state.ignition
-        elif m[0] == "reset":
-          self.world.reset()
-        elif m[0] == "quit":
-          break
+        if message.type == QueueMessageType.CONTROL_COMMAND:
+          m = message.info.split('_')
+          if m[0] == "steer":
+            steer_manual = float(m[1])
+          elif m[0] == "throttle":
+            throttle_manual = float(m[1])
+          elif m[0] == "brake":
+            brake_manual = float(m[1])
+          elif m[0] == "cruise":
+            if m[1] == "down":
+              self.simulator_state.cruise_button = CruiseButtons.DECEL_SET
+            elif m[1] == "up":
+              self.simulator_state.cruise_button = CruiseButtons.RES_ACCEL
+            elif m[1] == "cancel":
+              self.simulator_state.cruise_button = CruiseButtons.CANCEL
+            elif m[1] == "main":
+              self.simulator_state.cruise_button = CruiseButtons.MAIN
+          elif m[0] == "blinker":
+            if m[1] == "left":
+              self.simulator_state.left_blinker = True
+            elif m[1] == "right":
+              self.simulator_state.right_blinker = True
+          elif m[0] == "ignition":
+            self.simulator_state.ignition = not self.simulator_state.ignition
+          elif m[0] == "reset":
+            self.world.reset()
+          elif m[0] == "quit":
+            break
 
       self.simulator_state.user_brake = brake_manual
       self.simulator_state.user_gas = throttle_manual
