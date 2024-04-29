@@ -46,6 +46,20 @@ FW_VERSIONS = {
       b'LV4T-14F397-GG\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
+  CAR.FORD_ESCAPE_MK4_23REFRESH: {
+    (Ecu.eps, 0x730, None): [
+      b'PZ11-14D003-EA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.abs, 0x760, None): [
+      b'PZ1C-2D053-EJ\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    ],
+    (Ecu.fwdRadar, 0x764, None): [
+      b'ML3T-14D049-AL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x706, None): [
+      b'PJ6T-14H102-ABL\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+  },
   CAR.FORD_EXPLORER_MK6: {
     (Ecu.eps, 0x730, None): [
       b'L1MC-14D003-AJ\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
