@@ -92,7 +92,7 @@ class World(ABC):
     pass
 
   @abstractmethod
-  def close(self, closing_type, reason: str | dict):
+  def close(self, reason: str):
     pass
 
   @abstractmethod
