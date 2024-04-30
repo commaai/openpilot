@@ -1,3 +1,4 @@
+# Prebuilt docker image and publish it.
 name: prebuilt
 on:
   schedule:

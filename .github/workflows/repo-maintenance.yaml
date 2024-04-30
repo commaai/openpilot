@@ -1,8 +1,9 @@
+# Updates the submodules and packages to make sure we have the latest version
 name: repo maintenance
 
 on:
   schedule:
-    - cron: "0 14 * * 1" # every Monday at 2am UTC (6am PST)
+    - cron: "0 14 * * 1"  # every Monday at 2am UTC (6am PST)
   workflow_dispatch:
 
 jobs:
@@ -13,26 +14,26 @@ jobs:
       image: ghcr.io/commaai/openpilot-base:latest
     if: github.repository == 'commaai/openpilot'
     steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    - name: bump submodules
-      run: |
-        git config --global --add safe.directory '*'
-        git -c submodule."tinygrad".update=none submodule update --remote
-        git add .
-    - name: Create Pull Request
-      uses: peter-evans/create-pull-request@9153d834b60caba6d51c9b9510b087acf9f33f83
-      with:
-        author: Vehicle Researcher <user@comma.ai>
-        token: ${{ secrets.ACTIONS_CREATE_PR_PAT }}
-        commit-message: bump submodules
-        title: '[bot] Bump submodules'
-        branch: auto-bump-submodules
-        base: master
-        delete-branch: true
-        body: 'Automatic PR from repo-maintenance -> bump_submodules'
-        labels: bot
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: bump submodules
+        run: |
+          git config --global --add safe.directory '*'
+          git -c submodule."tinygrad".update=none submodule update --remote
+          git add .
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@9153d834b60caba6d51c9b9510b087acf9f33f83
+        with:
+          author: Vehicle Researcher <user@comma.ai>
+          token: ${{ secrets.ACTIONS_CREATE_PR_PAT }}
+          commit-message: bump submodules
+          title: '[bot] Bump submodules'
+          branch: auto-bump-submodules
+          base: master
+          delete-branch: true
+          body: 'Automatic PR from repo-maintenance -> bump_submodules'
+          labels: bot
   package_updates:
     name: package_updates
     runs-on: ubuntu-latest
@@ -40,24 +41,24 @@ jobs:
       image: ghcr.io/commaai/openpilot-base:latest
     if: github.repository == 'commaai/openpilot'
     steps:
-    - uses: actions/checkout@v4
-    - name: poetry lock
-      run: |
-        pip install poetry
-        poetry lock
-    - name: pre-commit autoupdate
-      run: |
-        git config --global --add safe.directory '*'
-        pre-commit autoupdate
-    - name: Create Pull Request
-      uses: peter-evans/create-pull-request@9153d834b60caba6d51c9b9510b087acf9f33f83
-      with:
-        author: Vehicle Researcher <user@comma.ai>
-        token: ${{ secrets.ACTIONS_CREATE_PR_PAT }}
-        commit-message: Update Python packages and pre-commit hooks
-        title: '[bot] Update Python packages and pre-commit hooks'
-        branch: auto-package-updates
-        base: master
-        delete-branch: true
-        body: 'Automatic PR from repo-maintenance -> package_updates'
-        labels: bot
+      - uses: actions/checkout@v4
+      - name: poetry lock
+        run: |
+          pip install poetry==1.8.2
+          poetry lock
+      - name: pre-commit autoupdate
+        run: |
+          git config --global --add safe.directory '*'
+          pre-commit autoupdate
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@9153d834b60caba6d51c9b9510b087acf9f33f83
+        with:
+          author: Vehicle Researcher <user@comma.ai>
+          token: ${{ secrets.ACTIONS_CREATE_PR_PAT }}
+          commit-message: Update Python packages and pre-commit hooks
+          title: '[bot] Update Python packages and pre-commit hooks'
+          branch: auto-package-updates
+          base: master
+          delete-branch: true
+          body: 'Automatic PR from repo-maintenance -> package_updates'
+          labels: bot
