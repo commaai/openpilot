@@ -143,6 +143,7 @@ class Controls:
     self.logged_comm_issue = None
     self.not_running_prev = None
     self.steer_limited = False
+    self.last_actuators = car.CarControl.Actuators.new_message()
     self.desired_curvature = 0.0
     self.experimental_mode = False
     self.personality = self.read_personality_param()
@@ -368,7 +369,7 @@ class Controls:
     stock_long_is_braking = self.enabled and not self.CP.openpilotLongitudinalControl and CS.aEgo < -1.25
     model_fcw = self.sm['modelV2'].meta.hardBrakePredicted and not CS.brakePressed and not stock_long_is_braking
     planner_fcw = self.sm['longitudinalPlan'].fcw and self.enabled
-    if planner_fcw or model_fcw:
+    if (planner_fcw or model_fcw) and not (self.CP.notCar and self.joystick_mode):
       self.events.add(EventName.fcw)
 
     for m in messaging.drain_sock(self.log_sock, wait_for_one=False):
@@ -620,7 +621,7 @@ class Controls:
         undershooting = abs(lac_log.desiredLateralAccel) / abs(1e-3 + lac_log.actualLateralAccel) > 1.2
         turning = abs(lac_log.desiredLateralAccel) > 1.0
         good_speed = CS.vEgo > 5
-        max_torque = abs(actuators.steer) > 0.99
+        max_torque = abs(self.last_actuators.steer) > 0.99
         if undershooting and turning and good_speed and max_torque:
           lac_log.active and self.events.add(EventName.steerSaturated)
       elif lac_log.saturated:
@@ -727,6 +728,7 @@ class Controls:
 
     if not self.CP.passive and self.initialized:
       self.card.controls_update(CC)
+      self.last_actuators = CO.actuatorsOutput
       if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
         self.steer_limited = abs(CC.actuators.steeringAngleDeg - CO.actuatorsOutput.steeringAngleDeg) > \
                              STEER_ANGLE_SATURATION_THRESHOLD

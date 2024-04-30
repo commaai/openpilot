@@ -321,7 +321,7 @@ class CAR(Platforms):
   HYUNDAI_TUCSON_4TH_GEN = HyundaiCanFDPlatformConfig(
     [
       HyundaiCarDocs("Hyundai Tucson 2022", car_parts=CarParts.common([CarHarness.hyundai_n])),
-      HyundaiCarDocs("Hyundai Tucson 2023", "All", car_parts=CarParts.common([CarHarness.hyundai_n])),
+      HyundaiCarDocs("Hyundai Tucson 2023-24", "All", car_parts=CarParts.common([CarHarness.hyundai_n])),
       HyundaiCarDocs("Hyundai Tucson Hybrid 2022-24", "All", car_parts=CarParts.common([CarHarness.hyundai_n])),
     ],
     CarSpecs(mass=1630, wheelbase=2.756, steerRatio=13.7, tireStiffnessFactor=0.385),
@@ -503,12 +503,17 @@ class CAR(Platforms):
     flags=HyundaiFlags.EV,
   )
   GENESIS_G70 = HyundaiPlatformConfig(
-    [HyundaiCarDocs("Genesis G70 2018-19", "All", car_parts=CarParts.common([CarHarness.hyundai_f]))],
+    [HyundaiCarDocs("Genesis G70 2018", "All", car_parts=CarParts.common([CarHarness.hyundai_f]))],
     CarSpecs(mass=1640, wheelbase=2.84, steerRatio=13.56),
     flags=HyundaiFlags.LEGACY,
   )
   GENESIS_G70_2020 = HyundaiPlatformConfig(
-    [HyundaiCarDocs("Genesis G70 2020-23", "All", car_parts=CarParts.common([CarHarness.hyundai_f]))],
+    [
+      # TODO: 2021 MY harness is unknown
+      HyundaiCarDocs("Genesis G70 2019-21", "All", car_parts=CarParts.common([CarHarness.hyundai_f])),
+      # TODO: From 3.3T Sport Advanced 2022 & Prestige 2023 Trim, 2.0T is unknown
+      HyundaiCarDocs("Genesis G70 2022-23", "All", car_parts=CarParts.common([CarHarness.hyundai_l])),
+    ],
     CarSpecs(mass=3673 * CV.LB_TO_KG, wheelbase=2.83, steerRatio=12.9),
     flags=HyundaiFlags.MANDO_RADAR,
   )
@@ -563,7 +568,7 @@ def get_platform_codes(fw_versions: list[bytes]) -> set[tuple[bytes, bytes | Non
   return codes
 
 
-def match_fw_to_car_fuzzy(live_fw_versions, offline_fw_versions) -> set[str]:
+def match_fw_to_car_fuzzy(live_fw_versions, vin, offline_fw_versions) -> set[str]:
   # Non-electric CAN FD platforms often do not have platform code specifiers needed
   # to distinguish between hybrid and ICE. All EVs so far are either exclusively
   # electric or specify electric in the platform code.
@@ -619,11 +624,6 @@ HYUNDAI_VERSION_REQUEST_LONG = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER])
 HYUNDAI_VERSION_REQUEST_ALT = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
   p16(0xf110)  # Alt long description
 
-HYUNDAI_VERSION_REQUEST_MULTI = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.VEHICLE_MANUFACTURER_SPARE_PART_NUMBER) + \
-  p16(uds.DATA_IDENTIFIER_TYPE.APPLICATION_SOFTWARE_IDENTIFICATION) + \
-  p16(0xf100)
-
 HYUNDAI_ECU_MANUFACTURING_DATE = bytes([uds.SERVICE_TYPE.READ_DATA_BY_IDENTIFIER]) + \
   p16(uds.DATA_IDENTIFIER_TYPE.ECU_MANUFACTURING_DATE)
 
@@ -647,37 +647,25 @@ PLATFORM_CODE_ECUS = [Ecu.fwdRadar, Ecu.fwdCamera, Ecu.eps]
 # TODO: there are date codes in the ABS firmware versions in hex
 DATE_FW_ECUS = [Ecu.fwdCamera]
 
-ALL_HYUNDAI_ECUS = [Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.engine, Ecu.parkingAdas,
-                    Ecu.transmission, Ecu.adas, Ecu.hvac, Ecu.cornerRadar, Ecu.combinationMeter]
-
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
-    # TODO: minimize shared whitelists for CAN and cornerRadar for CAN-FD
+    # TODO: add back whitelists
     # CAN queries (OBD-II port)
     Request(
       [HYUNDAI_VERSION_REQUEST_LONG],
       [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.transmission, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera],
-    ),
-    Request(
-      [HYUNDAI_VERSION_REQUEST_MULTI],
-      [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.engine, Ecu.transmission, Ecu.eps, Ecu.abs, Ecu.fwdRadar],
     ),
 
-    # CAN-FD queries (from camera)
-    # TODO: combine shared whitelists with CAN requests
+    # CAN & CAN-FD queries (from camera)
     Request(
       [HYUNDAI_VERSION_REQUEST_LONG],
       [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.cornerRadar, Ecu.hvac, Ecu.eps],
       bus=0,
       auxiliary=True,
     ),
     Request(
       [HYUNDAI_VERSION_REQUEST_LONG],
       [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.fwdCamera, Ecu.adas, Ecu.cornerRadar, Ecu.hvac],
       bus=1,
       auxiliary=True,
       obd_multiplexing=False,
@@ -688,44 +676,15 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [HYUNDAI_ECU_MANUFACTURING_DATE],
       [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.fwdCamera],
       bus=0,
       auxiliary=True,
       logging=True,
     ),
 
-    # CAN & CAN FD logging queries (from camera)
-    Request(
-      [HYUNDAI_VERSION_REQUEST_LONG],
-      [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=ALL_HYUNDAI_ECUS,
-      bus=0,
-      auxiliary=True,
-      logging=True,
-    ),
-    Request(
-      [HYUNDAI_VERSION_REQUEST_MULTI],
-      [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=ALL_HYUNDAI_ECUS,
-      bus=0,
-      auxiliary=True,
-      logging=True,
-    ),
-    Request(
-      [HYUNDAI_VERSION_REQUEST_LONG],
-      [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=ALL_HYUNDAI_ECUS,
-      bus=1,
-      auxiliary=True,
-      obd_multiplexing=False,
-      logging=True,
-    ),
-
-    # CAN-FD alt request logging queries
+    # CAN-FD alt request logging queries for hvac and parkingAdas
     Request(
       [HYUNDAI_VERSION_REQUEST_ALT],
       [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.parkingAdas, Ecu.hvac],
       bus=0,
       auxiliary=True,
       logging=True,
@@ -733,7 +692,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [HYUNDAI_VERSION_REQUEST_ALT],
       [HYUNDAI_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.parkingAdas, Ecu.hvac],
       bus=1,
       auxiliary=True,
       logging=True,
@@ -743,9 +701,9 @@ FW_QUERY_CONFIG = FwQueryConfig(
   # We lose these ECUs without the comma power on these cars.
   # Note that we still attempt to match with them when they are present
   non_essential_ecus={
-    Ecu.transmission: [CAR.HYUNDAI_AZERA_6TH_GEN, CAR.HYUNDAI_AZERA_HEV_6TH_GEN, CAR.HYUNDAI_PALISADE, CAR.HYUNDAI_SONATA],
-    Ecu.engine: [CAR.HYUNDAI_AZERA_6TH_GEN, CAR.HYUNDAI_AZERA_HEV_6TH_GEN, CAR.HYUNDAI_PALISADE, CAR.HYUNDAI_SONATA],
-    Ecu.abs: [CAR.HYUNDAI_PALISADE, CAR.HYUNDAI_SONATA],
+    Ecu.abs: [CAR.HYUNDAI_PALISADE, CAR.HYUNDAI_SONATA, CAR.HYUNDAI_SANTA_FE_2022, CAR.KIA_K5_2021, CAR.HYUNDAI_ELANTRA_2021,
+              CAR.HYUNDAI_SANTA_FE, CAR.HYUNDAI_KONA_EV_2022, CAR.HYUNDAI_KONA_EV, CAR.HYUNDAI_CUSTIN_1ST_GEN, CAR.KIA_SORENTO,
+              CAR.KIA_CEED, CAR.KIA_SELTOS],
   },
   extra_ecus=[
     (Ecu.adas, 0x730, None),              # ADAS Driving ECU on HDA2 platforms

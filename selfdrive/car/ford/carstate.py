@@ -57,7 +57,8 @@ class CarState(CarStateBase):
       ret.steerFaultTemporary |= cp.vl["Lane_Assist_Data3_FD1"]["LatCtlSte_D_Stat"] not in (1, 2, 3)
 
     # cruise state
-    ret.cruiseState.speed = cp.vl["EngBrakeData"]["Veh_V_DsplyCcSet"] * CV.MPH_TO_MS
+    is_metric = cp.vl["INSTRUMENT_PANEL"]["METRIC_UNITS"] == 1 if not self.CP.flags & FordFlags.CANFD else False
+    ret.cruiseState.speed = cp.vl["EngBrakeData"]["Veh_V_DsplyCcSet"] * (CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS)
     ret.cruiseState.enabled = cp.vl["EngBrakeData"]["CcStat_D_Actl"] in (4, 5)
     ret.cruiseState.available = cp.vl["EngBrakeData"]["CcStat_D_Actl"] in (3, 4, 5)
     ret.cruiseState.nonAdaptive = cp.vl["Cluster_Info1_FD1"]["AccEnbl_B_RqDrv"] == 0
@@ -130,6 +131,10 @@ class CarState(CarStateBase):
     if CP.flags & FordFlags.CANFD:
       messages += [
         ("Lane_Assist_Data3_FD1", 33),
+      ]
+    else:
+      messages += [
+        ("INSTRUMENT_PANEL", 1),
       ]
 
     if CP.transmissionType == TransmissionType.automatic:

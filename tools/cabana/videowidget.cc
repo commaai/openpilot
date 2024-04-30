@@ -151,6 +151,7 @@ QWidget *VideoWidget::createCameraWidget() {
   setMaximumTime(can->totalSeconds());
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->currentSecond()); });
   QObject::connect(slider, &Slider::updateMaximumTime, this, &VideoWidget::setMaximumTime, Qt::QueuedConnection);
+  QObject::connect(can, &AbstractStream::eventsMerged, [this]() { slider->update(); });
   QObject::connect(static_cast<ReplayStream*>(can), &ReplayStream::qLogLoaded, slider, &Slider::parseQLog);
   QObject::connect(cam_widget, &CameraWidget::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(cam_widget, &CameraWidget::vipcAvailableStreamsUpdated, this, &VideoWidget::vipcAvailableStreamsUpdated);
@@ -257,25 +258,27 @@ void Slider::setTimeRange(double min, double max) {
 void Slider::parseQLog(int segnum, std::shared_ptr<LogReader> qlog) {
  const auto &segments = qobject_cast<ReplayStream *>(can)->route()->segments();
   if (segments.size() > 0 && segnum == segments.rbegin()->first && !qlog->events.empty()) {
-    emit updateMaximumTime(qlog->events.back()->mono_time / 1e9 - can->routeStartTime());
+    emit updateMaximumTime(qlog->events.back().mono_time / 1e9 - can->routeStartTime());
   }
 
   std::mutex mutex;
-  QtConcurrent::blockingMap(qlog->events.cbegin(), qlog->events.cend(), [&mutex, this](const Event *e) {
-    if (e->which == cereal::Event::Which::THUMBNAIL) {
-      auto thumb = e->event.getThumbnail();
+  QtConcurrent::blockingMap(qlog->events.cbegin(), qlog->events.cend(), [&mutex, this](const Event &e) {
+    if (e.which == cereal::Event::Which::THUMBNAIL) {
+      capnp::FlatArrayMessageReader reader(e.data);
+      auto thumb = reader.getRoot<cereal::Event>().getThumbnail();
       auto data = thumb.getThumbnail();
       if (QPixmap pm; pm.loadFromData(data.begin(), data.size(), "jpeg")) {
         QPixmap scaled = pm.scaledToHeight(MIN_VIDEO_HEIGHT - THUMBNAIL_MARGIN * 2, Qt::SmoothTransformation);
         std::lock_guard lk(mutex);
         thumbnails[thumb.getTimestampEof()] = scaled;
       }
-    } else if (e->which == cereal::Event::Which::CONTROLS_STATE) {
-      auto cs = e->event.getControlsState();
+    } else if (e.which == cereal::Event::Which::CONTROLS_STATE) {
+      capnp::FlatArrayMessageReader reader(e.data);
+      auto cs = reader.getRoot<cereal::Event>().getControlsState();
       if (cs.getAlertType().size() > 0 && cs.getAlertText1().size() > 0 &&
           cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE) {
         std::lock_guard lk(mutex);
-        alerts.emplace(e->mono_time, AlertInfo{cs.getAlertStatus(), cs.getAlertText1().cStr(), cs.getAlertText2().cStr()});
+        alerts.emplace(e.mono_time, AlertInfo{cs.getAlertStatus(), cs.getAlertText1().cStr(), cs.getAlertText2().cStr()});
       }
     }
   });
@@ -403,7 +406,7 @@ void InfoLabel::paintEvent(QPaintEvent *event) {
       font.setPixelSize(11);
       p.setFont(font);
     }
-    QRect text_rect = rect().adjusted(2, 2, -2, -2);
+    QRect text_rect = rect().adjusted(1, 1, -1, -1);
     QRect r = p.fontMetrics().boundingRect(text_rect, Qt::AlignTop | Qt::AlignHCenter | Qt::TextWordWrap, text);
     p.fillRect(text_rect.left(), r.top(), text_rect.width(), r.height(), color);
     p.drawText(text_rect, Qt::AlignTop | Qt::AlignHCenter | Qt::TextWordWrap, text);

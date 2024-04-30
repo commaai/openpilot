@@ -11,6 +11,10 @@
 
 #define FRAME_BUF_COUNT 4
 
+#define ROAD_FL_MM 8.0f
+#define WIDE_FL_MM 1.71f
+#define DRIVER_FL_MM 1.71f
+
 class CameraState {
 public:
   MultiCameraState *multi_cam_state;
@@ -30,6 +34,7 @@ public:
   int new_exp_g;
   int new_exp_t;
 
+  Rect ae_xywh;
   float measured_grey_fraction;
   float target_grey_fraction;
 
@@ -37,6 +42,7 @@ public:
   unique_fd csiphy_fd;
 
   int camera_num;
+  float fl_pix;
 
   void handle_camera_event(void *evdat);
   void update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain);
@@ -45,9 +51,10 @@ public:
   void sensors_start();
 
   void camera_open(MultiCameraState *multi_cam_state, int camera_num, bool enabled);
+  void set_exposure_rect();
   void sensor_set_parameters();
   void camera_map_bufs(MultiCameraState *s);
-  void camera_init(MultiCameraState *s, VisionIpcServer *v, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type);
+  void camera_init(MultiCameraState *s, VisionIpcServer *v, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type, float focal_len);
   void camera_close();
 
   int32_t session_handle;
