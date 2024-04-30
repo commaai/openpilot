@@ -372,7 +372,7 @@ class CAR(Platforms):
   )
   SEAT_ATECA_MK1 = VolkswagenMQBPlatformConfig(
     [
-      VWCarDocs("SEAT Ateca 2018"),
+      VWCarDocs("SEAT Ateca 2016-2023"),
       VWCarDocs("SEAT Leon 2014-20"),
     ],
     VolkswagenCarSpecs(mass=1300, wheelbase=2.64),
