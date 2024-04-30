@@ -97,6 +97,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"AthenadUploadQueue", PERSISTENT},
     {"AthenadRecentlyViewedRoutes", PERSISTENT},
     {"BootCount", PERSISTENT},
+    {"BootlogId", PERSISTENT},
     {"CalibrationParams", PERSISTENT},
     {"CameraDebugExpGain", CLEAR_ON_MANAGER_START},
     {"CameraDebugExpTime", CLEAR_ON_MANAGER_START},
@@ -185,6 +186,8 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"PandaHeartbeatLost", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
     {"PandaSomResetTriggered", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
     {"PandaSignatures", CLEAR_ON_MANAGER_START},
+    {"PowerOnReason", PERSISTENT},
+    {"PreviousRoute", CLEAR_ON_MANAGER_START},
     {"PrimeType", PERSISTENT},
     {"RecordFront", PERSISTENT},
     {"RecordFrontLock", PERSISTENT},  // for the internal fleet
