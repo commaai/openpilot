@@ -5,7 +5,8 @@ from openpilot.common.numpy_fast import clip, interp
 from openpilot.common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car.honda import hondacan
-from openpilot.selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
+from openpilot.selfdrive.car.honda.values import CruiseButtons, CruiseSettings, VISUAL_HUD, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_NIDEC_ALT_PCM_ACCEL, \
+                                                 CarControllerParams
 from openpilot.selfdrive.car.interfaces import CarControllerBase
 from openpilot.selfdrive.controls.lib.drive_helpers import rate_limit
 
@@ -205,7 +206,7 @@ class CarController(CarControllerBase):
         can_sends.append(hondacan.create_bosch_supplemental_1(self.packer, self.CAN, self.CP.carFingerprint))
       # Buttons: spam the cancel or resume buttons.
       cruise = None
-      setting = CruiseButtons.NONE
+      setting = CruiseSettings.NONE
       if pcm_cancel_cmd:
         cruise = CruiseButtons.CANCEL
       elif self.CP.carFingerprint not in HONDA_BOSCH_RADARLESS and CC.cruiseControl.resume:
@@ -214,7 +215,7 @@ class CarController(CarControllerBase):
         # Send buttons to the camera when engaged. Only send the LKAS button to turn off stock LKAS off so it can't disengage cruise.
         # Priority: pcm_cancel > user > auto resume > turn off lkas > none/idle
         cruise = CruiseButtons.NONE
-        if CS.cruise_buttons or (CS.cruise_setting and CS.cruise_setting != CruiseButtons.LKAS):
+        if CS.cruise_buttons or (CS.cruise_setting and CS.cruise_setting != CruiseSettings.LKAS):
           cruise = CS.cruise_buttons
           setting = CS.cruise_setting
         # simulate a momentary press
@@ -222,7 +223,7 @@ class CarController(CarControllerBase):
           if CC.cruiseControl.resume:
             cruise = CruiseButtons.RES_ACCEL
           elif CS.lkas_hud['ENABLED']:
-            setting = CruiseButtons.LKAS
+            setting = CruiseSettings.LKAS
       if cruise is not None:
         can_sends.append(hondacan.create_buttons_command(self.packer, self.CAN, cruise, setting, CS.scm_buttons, self.CP.carFingerprint))
 
