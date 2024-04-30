@@ -155,34 +155,33 @@ def wheel_poll_thread(q: 'Queue[str]') -> NoReturn:
         fvalue = value / 32767.0
         axis_states[axis] = fvalue
         normalized = (1 - fvalue) * 50
-        message = control_cmd_gen(f"throttle_{normalized:f}")
+        q.put(control_cmd_gen(f"throttle_{normalized:f}"))
 
       elif axis == "rz":  # brake
         fvalue = value / 32767.0
         axis_states[axis] = fvalue
         normalized = (1 - fvalue) * 50
-        message = control_cmd_gen(f"brake_{normalized:f}")
+        q.put(control_cmd_gen(f"brake_{normalized:f}"))
 
       elif axis == "x":  # steer angle
         fvalue = value / 32767.0
         axis_states[axis] = fvalue
         normalized = fvalue
-        message = control_cmd_gen(f"steer_{normalized:f}")
+        q.put(control_cmd_gen(f"steer_{normalized:f}"))
 
     elif mtype & 0x01:  # buttons
       if value == 1: # press down
         if number in [0, 19]:  # X
-          message = control_cmd_gen("cruise_down")
+          q.put(control_cmd_gen("cruise_down"))
 
         elif number in [3, 18]:  # triangle
-          message = control_cmd_gen("cruise_up")
+          q.put(control_cmd_gen("cruise_up"))
 
         elif number in [1, 6]:  # square
-          message = control_cmd_gen("cruise_cancel")
+          q.put(control_cmd_gen("cruise_cancel"))
 
         elif number in [10, 21]:  # R3
-          message = control_cmd_gen("reverse_switch")
-    q.put(message)
+          q.put(control_cmd_gen("reverse_switch"))
 
 if __name__ == '__main__':
   from multiprocessing import Process, Queue

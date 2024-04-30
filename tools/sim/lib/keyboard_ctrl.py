@@ -61,35 +61,32 @@ def keyboard_poll_thread(q: 'Queue[QueueMessage]'):
   while True:
     c = getch()
     if c == '1':
-      message = control_cmd_gen("cruise_up")
+      q.put(control_cmd_gen("cruise_up"))
     elif c == '2':
-      message = control_cmd_gen("cruise_down")
+      q.put(control_cmd_gen("cruise_down"))
     elif c == '3':
-      message = control_cmd_gen("cruise_cancel")
+      q.put(control_cmd_gen("cruise_cancel"))
     elif c == 'w':
-      message = control_cmd_gen(f"throttle_{1.0}")
+      q.put(control_cmd_gen(f"throttle_{1.0}"))
     elif c == 'a':
-      message = control_cmd_gen(f"steer_{-0.15}")
+      q.put(control_cmd_gen(f"steer_{-0.15}"))
     elif c == 's':
-      message = control_cmd_gen(f"brake_{1.0}")
+      q.put(control_cmd_gen(f"brake_{1.0}"))
     elif c == 'd':
-      message = control_cmd_gen(f"steer_{0.15}")
+      q.put(control_cmd_gen(f"steer_{0.15}"))
     elif c == 'z':
-      message = control_cmd_gen("blinker_left")
+      q.put(control_cmd_gen("blinker_left"))
     elif c == 'x':
-      message = control_cmd_gen("blinker_right")
+      q.put(control_cmd_gen("blinker_right"))
     elif c == 'i':
-      message = control_cmd_gen("ignition")
+      q.put(control_cmd_gen("ignition"))
     elif c == 'r':
-      message = control_cmd_gen("reset")
+      q.put(control_cmd_gen("reset"))
     elif c == 'q':
-      message = control_cmd_gen("quit")
-      q.put(message)
+      q.put(control_cmd_gen("quit"))
       break
     else:
       print_keyboard_help()
-      continue
-    q.put(message)
 
 def test(q: 'Queue[str]') -> NoReturn:
   while True:
