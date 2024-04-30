@@ -2,7 +2,6 @@
 
 import argparse
 from collections import defaultdict
-from typing import Optional
 from openpilot.selfdrive.debug.format_fingerprints import format_brand_fw_versions
 
 from openpilot.selfdrive.car.fw_versions import match_fw_to_car
@@ -30,7 +29,7 @@ if __name__ == "__main__":
   carVin = None
   carPlatform = None
 
-  platform: Optional[str] = None
+  platform: str | None = None
 
   CP = lr.first("carParams")
 
@@ -42,12 +41,12 @@ if __name__ == "__main__":
   carPlatform = CP.carFingerprint
 
   if args.platform is None: # attempt to auto-determine platform with other fuzzy fingerprints
-    _, possible_platforms = match_fw_to_car(carFw, log=False)
+    _, possible_platforms = match_fw_to_car(carFw, carVin, log=False)
 
     if len(possible_platforms) != 1:
       print(f"Unable to auto-determine platform, possible platforms: {possible_platforms}")
 
-      if carPlatform != "mock":
+      if carPlatform != "MOCK":
         print("Using platform from route")
         platform = carPlatform
       else:

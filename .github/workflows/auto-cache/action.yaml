@@ -19,14 +19,14 @@ runs:
   using: "composite"
   steps:
     - name: setup namespace cache
-      if: ${{ contains(runner.name, 'nsc') }} 
+      if: ${{ contains(runner.name, 'nsc') }}
       uses: namespacelabs/nscloud-cache-action@v1
       with:
         path: ${{ inputs.path }}
 
     - name: setup github cache
       if: ${{ !contains(runner.name, 'nsc') && inputs.save != 'false' }}
-      uses: 'actions/cache@v3'
+      uses: 'actions/cache@v4'
       with:
         path: ${{ inputs.path }}
         key: ${{ inputs.key }}
@@ -34,7 +34,7 @@ runs:
 
     - name: setup github cache
       if: ${{ !contains(runner.name, 'nsc') && inputs.save == 'false' }}
-      uses: 'actions/cache/restore@v3'
+      uses: 'actions/cache/restore@v4'
       with:
         path: ${{ inputs.path }}
         key: ${{ inputs.key }}

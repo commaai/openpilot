@@ -22,7 +22,7 @@ env:
 jobs:
   plotjuggler:
     name: plotjuggler
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
     - uses: actions/checkout@v4
@@ -31,7 +31,7 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
       timeout-minutes: 5
-      run: ${{ env.RUN }} "scons -j$(nproc) cereal/ common/ --minimal"
+      run: ${{ env.RUN }} "scons -j$(nproc) cereal/ common/ opendbc/ --minimal"
     - name: Test PlotJuggler
       timeout-minutes: 2
       run: |
@@ -39,7 +39,7 @@ jobs:
 
   simulator:
     name: simulator
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: github.repository == 'commaai/openpilot'
     timeout-minutes: 45
     steps:
@@ -85,8 +85,8 @@ jobs:
 
   notebooks:
     name: notebooks
-    runs-on: ubuntu-20.04
-    if: github.repository == 'commaai/openpilot'
+    runs-on: ubuntu-latest
+    if: false && github.repository == 'commaai/openpilot'
     timeout-minutes: 45
     steps:
     - uses: actions/checkout@v4

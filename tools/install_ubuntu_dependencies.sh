@@ -75,12 +75,13 @@ function install_ubuntu_common_requirements() {
     libqt5charts5-dev \
     libqt5serialbus5-dev  \
     libqt5x11extras5-dev \
+    libqt5opengl5-dev \
     libreadline-dev \
     libdw1 \
     valgrind
 }
 
-# Install Ubuntu 22.04 LTS packages
+# Install Ubuntu 24.04 LTS packages
 function install_ubuntu_lts_latest_requirements() {
   install_ubuntu_common_requirements
 
@@ -107,10 +108,7 @@ function install_ubuntu_focal_requirements() {
 if [ -f "/etc/os-release" ]; then
   source /etc/os-release
   case "$VERSION_CODENAME" in
-    "jammy")
-      install_ubuntu_lts_latest_requirements
-      ;;
-    "kinetic")
+    "jammy" | "kinetic" | "noble")
       install_ubuntu_lts_latest_requirements
       ;;
     "focal")
@@ -123,10 +121,10 @@ if [ -f "/etc/os-release" ]; then
       if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         exit 1
       fi
-      if [ "$UBUNTU_CODENAME" = "jammy" ] || [ "$UBUNTU_CODENAME" = "kinetic" ]; then
-        install_ubuntu_lts_latest_requirements
-      else
+      if [ "$UBUNTU_CODENAME" = "focal" ]; then
         install_ubuntu_focal_requirements
+      else
+        install_ubuntu_lts_latest_requirements
       fi
   esac
 else

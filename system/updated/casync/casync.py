@@ -2,15 +2,19 @@
 import io
 import lzma
 import os
+import pathlib
 import struct
 import sys
 import time
 from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
-from typing import Callable, Dict, List, Optional, Tuple
+from collections.abc import Callable
+from typing import IO
 
 import requests
 from Crypto.Hash import SHA512
+from openpilot.system.updated.casync import tar
+from openpilot.system.updated.casync.common import create_casync_tar_package
 
 CA_FORMAT_INDEX = 0x96824d9c7b129ff9
 CA_FORMAT_TABLE = 0xe75b9e112f17417d
@@ -28,7 +32,7 @@ CHUNK_DOWNLOAD_RETRIES = 3
 CAIBX_DOWNLOAD_TIMEOUT = 120
 
 Chunk = namedtuple('Chunk', ['sha', 'offset', 'length'])
-ChunkDict = Dict[bytes, Chunk]
+ChunkDict = dict[bytes, Chunk]
 
 
 class ChunkReader(ABC):
@@ -37,18 +41,23 @@ class ChunkReader(ABC):
     ...
 
 
-class FileChunkReader(ChunkReader):
+class BinaryChunkReader(ChunkReader):
   """Reads chunks from a local file"""
-  def __init__(self, fn: str) -> None:
+  def __init__(self, file_like: IO[bytes]) -> None:
     super().__init__()
-    self.f = open(fn, 'rb')
-
-  def __del__(self):
-    self.f.close()
+    self.f = file_like
 
   def read(self, chunk: Chunk) -> bytes:
     self.f.seek(chunk.offset)
     return self.f.read(chunk.length)
+
+
+class FileChunkReader(BinaryChunkReader):
+  def __init__(self, path: str) -> None:
+    super().__init__(open(path, 'rb'))
+
+  def __del__(self):
+    self.f.close()
 
 
 class RemoteChunkReader(ChunkReader):
@@ -83,7 +92,21 @@ class RemoteChunkReader(ChunkReader):
     return decompressor.decompress(contents)
 
 
-def parse_caibx(caibx_path: str) -> List[Chunk]:
+class DirectoryTarChunkReader(BinaryChunkReader):
+  """creates a tar archive of a directory and reads chunks from it"""
+
+  def __init__(self, path: str, cache_file: str) -> None:
+    create_casync_tar_package(pathlib.Path(path), pathlib.Path(cache_file))
+
+    self.f = open(cache_file, "rb")
+    return super().__init__(self.f)
+
+  def __del__(self):
+    self.f.close()
+    os.unlink(self.f.name)
+
+
+def parse_caibx(caibx_path: str) -> list[Chunk]:
   """Parses the chunks from a caibx file. Can handle both local and remote files.
   Returns a list of chunks with hash, offset and length"""
   caibx: io.BufferedIOBase
@@ -132,7 +155,7 @@ def parse_caibx(caibx_path: str) -> List[Chunk]:
   return chunks
 
 
-def build_chunk_dict(chunks: List[Chunk]) -> ChunkDict:
+def build_chunk_dict(chunks: list[Chunk]) -> ChunkDict:
   """Turn a list of chunks into a dict for faster lookups based on hash.
   Keep first chunk since it's more likely to be already downloaded."""
   r = {}
@@ -142,11 +165,11 @@ def build_chunk_dict(chunks: List[Chunk]) -> ChunkDict:
   return r
 
 
-def extract(target: List[Chunk],
-            sources: List[Tuple[str, ChunkReader, ChunkDict]],
+def extract(target: list[Chunk],
+            sources: list[tuple[str, ChunkReader, ChunkDict]],
             out_path: str,
-            progress: Optional[Callable[[int], None]] = None):
-  stats: Dict[str, int] = defaultdict(int)
+            progress: Callable[[int], None] = None):
+  stats: dict[str, int] = defaultdict(int)
 
   mode = 'rb+' if os.path.exists(out_path) else 'wb'
   with open(out_path, mode) as out:
@@ -181,7 +204,22 @@ def extract(target: List[Chunk],
   return stats
 
 
-def print_stats(stats: Dict[str, int]):
+def extract_directory(target: list[Chunk],
+            sources: list[tuple[str, ChunkReader, ChunkDict]],
+            out_path: str,
+            tmp_file: str,
+            progress: Callable[[int], None] = None):
+  """extract a directory stored as a casync tar archive"""
+
+  stats = extract(target, sources, tmp_file, progress)
+
+  with open(tmp_file, "rb") as f:
+    tar.extract_tar_archive(f, pathlib.Path(out_path))
+
+  return stats
+
+
+def print_stats(stats: dict[str, int]):
   total_bytes = sum(stats.values())
   print(f"Total size: {total_bytes / 1024 / 1024:.2f} MB")
   for name, total in stats.items():

@@ -4,7 +4,7 @@ import threading
 import unittest
 from collections import namedtuple
 from pathlib import Path
-from typing import Sequence
+from collections.abc import Sequence
 
 import openpilot.system.loggerd.deleter as deleter
 from openpilot.common.timeout import Timeout, TimeoutException

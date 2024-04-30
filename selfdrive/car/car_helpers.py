@@ -1,18 +1,18 @@
 import os
 import time
-from typing import Callable, Dict, List, Optional, Tuple
+from collections.abc import Callable
 
 from cereal import car
 from openpilot.common.params import Params
-from openpilot.common.basedir import BASEDIR
-from openpilot.system.version import is_comma_remote, is_tested_branch
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from openpilot.selfdrive.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
 from openpilot.selfdrive.car.fw_versions import get_fw_versions_ordered, get_present_ecus, match_fw_to_car, set_obd_multiplexing
+from openpilot.selfdrive.car.mock.values import CAR as MOCK
 from openpilot.common.swaglog import cloudlog
 import cereal.messaging as messaging
 from openpilot.selfdrive.car import gen_empty_fingerprint
+from openpilot.system.version import get_build_metadata
 
 FRAME_FINGERPRINT = 100  # 1s
 
@@ -20,7 +20,8 @@ EventName = car.CarEvent.EventName
 
 
 def get_startup_event(car_recognized, controller_available, fw_seen):
-  if is_comma_remote() and is_tested_branch():
+  build_metadata = get_build_metadata()
+  if build_metadata.openpilot.comma_remote and build_metadata.tested_channel:
     event = EventName.startup
   else:
     event = EventName.startupMaster
@@ -47,23 +48,14 @@ def load_interfaces(brand_names):
   for brand_name in brand_names:
     path = f'openpilot.selfdrive.car.{brand_name}'
     CarInterface = __import__(path + '.interface', fromlist=['CarInterface']).CarInterface
-
-    if os.path.exists(BASEDIR + '/' + path.replace('.', '/') + '/carstate.py'):
-      CarState = __import__(path + '.carstate', fromlist=['CarState']).CarState
-    else:
-      CarState = None
-
-    if os.path.exists(BASEDIR + '/' + path.replace('.', '/') + '/carcontroller.py'):
-      CarController = __import__(path + '.carcontroller', fromlist=['CarController']).CarController
-    else:
-      CarController = None
-
+    CarState = __import__(path + '.carstate', fromlist=['CarState']).CarState
+    CarController = __import__(path + '.carcontroller', fromlist=['CarController']).CarController
     for model_name in brand_names[brand_name]:
       ret[model_name] = (CarInterface, CarController, CarState)
   return ret
 
 
-def _get_interface_names() -> Dict[str, List[str]]:
+def _get_interface_names() -> dict[str, list[str]]:
   # returns a dict of brand name and its respective models
   brand_names = {}
   for brand_name, brand_models in get_interface_attr("CAR").items():
@@ -77,7 +69,7 @@ interface_names = _get_interface_names()
 interfaces = load_interfaces(interface_names)
 
 
-def can_fingerprint(next_can: Callable) -> Tuple[Optional[str], Dict[int, dict]]:
+def can_fingerprint(next_can: Callable) -> tuple[str | None, dict[int, dict]]:
   finger = gen_empty_fingerprint()
   candidate_cars = {i: all_legacy_fingerprint_cars() for i in [0, 1]}  # attempt fingerprint on both bus 0 and 1
   frame = 0
@@ -147,10 +139,10 @@ def fingerprint(logcan, sendcan, num_pandas):
       # VIN query only reliably works through OBDII
       vin_rx_addr, vin_rx_bus, vin = get_vin(logcan, sendcan, (0, 1))
       ecu_rx_addrs = get_present_ecus(logcan, sendcan, num_pandas=num_pandas)
-      car_fw = get_fw_versions_ordered(logcan, sendcan, ecu_rx_addrs, num_pandas=num_pandas)
+      car_fw = get_fw_versions_ordered(logcan, sendcan, vin, ecu_rx_addrs, num_pandas=num_pandas)
       cached = False
 
-    exact_fw_match, fw_candidates = match_fw_to_car(car_fw)
+    exact_fw_match, fw_candidates = match_fw_to_car(car_fw, vin)
   else:
     vin_rx_addr, vin_rx_bus, vin = -1, -1, VIN_UNKNOWN
     exact_fw_match, fw_candidates, car_fw = True, set(), []
@@ -189,7 +181,13 @@ def fingerprint(logcan, sendcan, num_pandas):
   cloudlog.event("fingerprinted", car_fingerprint=car_fingerprint, source=source, fuzzy=not exact_match, cached=cached,
                  fw_count=len(car_fw), ecu_responses=list(ecu_rx_addrs), vin_rx_addr=vin_rx_addr, vin_rx_bus=vin_rx_bus,
                  fingerprints=repr(finger), fw_query_time=fw_query_time, error=True)
+
   return car_fingerprint, finger, vin, car_fw, source, exact_match
+
+
+def get_car_interface(CP):
+  CarInterface, CarController, CarState = interfaces[CP.carFingerprint]
+  return CarInterface(CP, CarController, CarState)
 
 
 def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
@@ -197,25 +195,25 @@ def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
 
   if candidate is None:
     cloudlog.event("car doesn't match any fingerprints", fingerprints=repr(fingerprints), error=True)
-    candidate = "mock"
+    candidate = "MOCK"
 
-  CarInterface, CarController, CarState = interfaces[candidate]
+  CarInterface, _, _ = interfaces[candidate]
   CP = CarInterface.get_params(candidate, fingerprints, car_fw, experimental_long_allowed, docs=False)
   CP.carVin = vin
   CP.carFw = car_fw
   CP.fingerprintSource = source
   CP.fuzzyFingerprint = not exact_match
 
-  return CarInterface(CP, CarController, CarState), CP
+  return get_car_interface(CP), CP
 
-def write_car_param(fingerprint="mock"):
+def write_car_param(platform=MOCK.MOCK):
   params = Params()
-  CarInterface, _, _ = interfaces[fingerprint]
-  CP = CarInterface.get_non_essential_params(fingerprint)
+  CarInterface, _, _ = interfaces[platform]
+  CP = CarInterface.get_non_essential_params(platform)
   params.put("CarParams", CP.to_bytes())
 
 def get_demo_car_params():
-  fingerprint="mock"
-  CarInterface, _, _ = interfaces[fingerprint]
-  CP = CarInterface.get_non_essential_params(fingerprint)
+  platform = MOCK.MOCK
+  CarInterface, _, _ = interfaces[platform]
+  CP = CarInterface.get_non_essential_params(platform)
   return CP

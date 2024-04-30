@@ -7,8 +7,7 @@ from openpilot.common.params import Params
 from openpilot.selfdrive.athena.registration import is_registered_device
 from openpilot.system.hardware import HARDWARE, PC
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.version import get_branch, get_commit, get_origin, get_version, \
-                              is_comma_remote, is_dirty, is_tested_branch
+from openpilot.system.version import get_build_metadata, get_version
 
 
 class SentryProject(Enum):
@@ -43,12 +42,13 @@ def set_tag(key: str, value: str) -> None:
 
 
 def init(project: SentryProject) -> bool:
+  build_metadata = get_build_metadata()
   # forks like to mess with this, so double check
-  comma_remote = is_comma_remote() and "commaai" in get_origin()
+  comma_remote = build_metadata.openpilot.comma_remote and "commaai" in build_metadata.openpilot.git_origin
   if not comma_remote or not is_registered_device() or PC:
     return False
 
-  env = "release" if is_tested_branch() else "master"
+  env = "release" if build_metadata.tested_channel else "master"
   dongle_id = Params().get("DongleId", encoding='utf-8')
 
   integrations = []
@@ -63,11 +63,13 @@ def init(project: SentryProject) -> bool:
                   max_value_length=8192,
                   environment=env)
 
+  build_metadata = get_build_metadata()
+
   sentry_sdk.set_user({"id": dongle_id})
-  sentry_sdk.set_tag("dirty", is_dirty())
-  sentry_sdk.set_tag("origin", get_origin())
-  sentry_sdk.set_tag("branch", get_branch())
-  sentry_sdk.set_tag("commit", get_commit())
+  sentry_sdk.set_tag("dirty", build_metadata.openpilot.is_dirty)
+  sentry_sdk.set_tag("origin", build_metadata.openpilot.git_origin)
+  sentry_sdk.set_tag("branch", build_metadata.channel)
+  sentry_sdk.set_tag("commit", build_metadata.openpilot.git_commit)
   sentry_sdk.set_tag("device", HARDWARE.get_device_type())
 
   if project == SentryProject.SELFDRIVE:

@@ -5,13 +5,14 @@ import random
 
 import cereal.messaging as messaging
 from cereal.visionipc import VisionIpcServer, VisionStreamType
-from openpilot.common.transformations.camera import tici_f_frame_size
+from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.car.car_helpers import write_car_param
 from openpilot.selfdrive.manager.process_config import managed_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state
 
-IMG = np.zeros(int(tici_f_frame_size[0]*tici_f_frame_size[1]*(3/2)), dtype=np.uint8)
+CAM = DEVICE_CAMERAS[("tici", "ar0231")].fcam
+IMG = np.zeros(int(CAM.width*CAM.height*(3/2)), dtype=np.uint8)
 IMG_BYTES = IMG.flatten().tobytes()
 
 
@@ -19,9 +20,9 @@ class TestModeld(unittest.TestCase):
 
   def setUp(self):
     self.vipc_server = VisionIpcServer("camerad")
-    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 40, False, *tici_f_frame_size)
-    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_DRIVER, 40, False, *tici_f_frame_size)
-    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, *tici_f_frame_size)
+    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 40, False, CAM.width, CAM.height)
+    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_DRIVER, 40, False, CAM.width, CAM.height)
+    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, CAM.width, CAM.height)
     self.vipc_server.start_listener()
     write_car_param()
 

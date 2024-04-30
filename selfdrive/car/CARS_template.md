@@ -12,12 +12,12 @@
 
 A supported vehicle is one that just works when you install a comma device. All supported cars provide a better experience than any stock system. Supported vehicles reference the US market unless otherwise specified.
 
-# {{all_car_info | length}} Supported Cars
+# {{all_car_docs | length}} Supported Cars
 
 |{{Column | map(attribute='value') | join('|') | replace(hardware_col_name, wide_hardware_col_name)}}|
 |---|---|---|{% for _ in range((Column | length) - 3) %}{{':---:|'}}{% endfor +%}
-{% for car_info in all_car_info %}
-|{% for column in Column %}{{car_info.get_column(column, star_icon, video_icon, footnote_tag)}}|{% endfor %}
+{% for car_docs in all_car_docs %}
+|{% for column in Column %}{{car_docs.get_column(column, star_icon, video_icon, footnote_tag)}}|{% endfor %}
 
 {% endfor %}
 
@@ -65,7 +65,9 @@ openpilot does not yet support these Toyota models due to a new message authenti
 * Toyota Venza 2021+
 * Toyota Sequoia 2023+
 * Toyota Tundra 2022+
+* Toyota Highlander 2024+
 * Toyota Corolla Cross 2022+ (only US model)
+* Toyota Camry 2025+
 * Lexus NX 2022+
 * Toyota bZ4x 2023+
 * Subaru Solterra 2023+

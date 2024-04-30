@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 from collections import defaultdict, deque
-import sys
 import pytest
 import unittest
 import time
 import numpy as np
 from dataclasses import dataclass
 from tabulate import tabulate
-from typing import List
 
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
@@ -22,9 +20,9 @@ MAX_WARMUP_TIME = 30  # seconds to wait for SAMPLE_TIME consecutive valid sample
 
 @dataclass
 class Proc:
-  procs: List[str]
+  procs: list[str]
   power: float
-  msgs: List[str]
+  msgs: list[str]
   rtol: float = 0.05
   atol: float = 0.12
 
@@ -38,7 +36,6 @@ PROCS = [
   Proc(['modeld'], 1.12, atol=0.2, msgs=['modelV2']),
   Proc(['dmonitoringmodeld'], 0.4, msgs=['driverStateV2']),
   Proc(['encoderd'], 0.23, msgs=[]),
-  Proc(['mapsd', 'navmodeld'], 0.05, msgs=['mapRenderState', 'navModel']),
 ]
 
 
@@ -66,7 +63,7 @@ class TestPowerDraw(unittest.TestCase):
     return np.core.numeric.isclose(used, proc.power, rtol=proc.rtol, atol=proc.atol)
 
   def tabulate_msg_counts(self, msgs_and_power):
-    msg_counts = defaultdict(lambda: 0)
+    msg_counts = defaultdict(int)
     for _, counts in msgs_and_power:
       for msg, count in counts.items():
         msg_counts[msg] += count
@@ -133,4 +130,4 @@ class TestPowerDraw(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  pytest.main(sys.argv)
+  unittest.main()

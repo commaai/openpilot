@@ -4,7 +4,6 @@ import functools
 
 from multiprocessing import Process, Queue, Value
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from openpilot.common.params import Params
 from openpilot.common.numpy_fast import clip
@@ -14,7 +13,6 @@ from openpilot.selfdrive.car.honda.values import CruiseButtons
 from openpilot.tools.sim.lib.common import SimulatorState, World
 from openpilot.tools.sim.lib.simulated_car import SimulatedCar
 from openpilot.tools.sim.lib.simulated_sensors import SimulatedSensors
-from openpilot.tools.sim.lib.keyboard_ctrl import KEYBOARD_HELP
 
 
 def rk_loop(function, hz, exit_event: threading.Event):
@@ -30,6 +28,7 @@ class SimulatorBridge(ABC):
   def __init__(self, dual_camera, high_quality):
     set_params_enabled()
     self.params = Params()
+    self.params.put_bool("ExperimentalLongitudinalEnabled", True)
 
     self.rk = Ratekeeper(100, None)
 
@@ -44,7 +43,7 @@ class SimulatorBridge(ABC):
     self._exit = threading.Event()
     self.simulator_state = SimulatorState()
 
-    self.world: Optional[World] = None
+    self.world: World | None = None
 
     self.past_startup_engaged = False
 
@@ -58,14 +57,14 @@ class SimulatorBridge(ABC):
     try:
       self._run(q)
     finally:
-      self.close()
+      self.close("bridge terminated")
 
-  def close(self):
+  def close(self, reason):
     self.started.value = False
     self._exit_event.set()
 
     if self.world is not None:
-      self.world.close()
+      self.world.close(reason)
 
   def run(self, queue, retries=-1):
     bridge_p = Process(name="bridge", target=self.bridge_keep_alive, args=(queue, retries))
@@ -75,9 +74,6 @@ class SimulatorBridge(ABC):
   def print_status(self):
     print(
     f"""
-Keyboard Commands:
-{KEYBOARD_HELP}
-
 State:
 Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_engaged}
     """)
@@ -172,7 +168,11 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
       steer_out = steer_op if self.simulator_state.is_engaged else steer_manual
 
       self.world.apply_controls(steer_out, throttle_out, brake_out)
+      self.world.read_state()
       self.world.read_sensors(self.simulator_state)
+
+      if self.world.exit_event.is_set():
+        self.shutdown()
 
       if self.rk.frame % self.TICKS_PER_FRAME == 0:
         self.world.tick()

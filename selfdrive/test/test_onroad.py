@@ -29,12 +29,11 @@ from openpilot.tools.lib.logreader import LogReader
 
 # Baseline CPU usage by process
 PROCS = {
-  "selfdrive.controls.controlsd": 41.0,
+  "selfdrive.controls.controlsd": 46.0,
   "./loggerd": 14.0,
   "./encoderd": 17.0,
   "./camerad": 14.5,
   "./locationd": 11.0,
-  "./mapsd": (0.5, 10.0),
   "selfdrive.controls.plannerd": 11.0,
   "./ui": 18.0,
   "selfdrive.locationd.paramsd": 9.0,
@@ -42,7 +41,6 @@ PROCS = {
   "selfdrive.controls.radard": 7.0,
   "selfdrive.modeld.modeld": 13.0,
   "selfdrive.modeld.dmonitoringmodeld": 8.0,
-  "selfdrive.modeld.navmodeld": 1.0,
   "selfdrive.thermald.thermald": 3.87,
   "selfdrive.locationd.calibrationd": 2.0,
   "selfdrive.locationd.torqued": 5.0,
@@ -65,7 +63,7 @@ PROCS.update({
   "tici": {
     "./boardd": 4.0,
     "./ubloxd": 0.02,
-    "system.sensord.pigeond": 6.0,
+    "system.ubloxd.pigeond": 6.0,
   },
   "tizi": {
      "./boardd": 19.0,
@@ -87,8 +85,6 @@ TIMINGS = {
   "driverCameraState": [2.5, 0.35],
   "modelV2": [2.5, 0.35],
   "driverStateV2": [2.5, 0.40],
-  "navModel": [2.5, 0.35],
-  "mapRenderState": [2.5, 0.35],
   "liveLocationKalman": [2.5, 0.35],
   "wideRoadCameraState": [1.5, 0.35],
 }
@@ -304,7 +300,7 @@ class TestOnroad(unittest.TestCase):
   def test_camera_processing_time(self):
     result = "\n"
     result += "------------------------------------------------\n"
-    result += "-------------- Debayer Timing ------------------\n"
+    result += "-------------- ImgProc Timing ------------------\n"
     result += "------------------------------------------------\n"
 
     ts = [getattr(m, m.which()).processingTime for m in self.lr if 'CameraState' in m.which()]
@@ -424,4 +420,4 @@ class TestOnroad(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  pytest.main()
+  unittest.main()

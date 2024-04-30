@@ -13,13 +13,13 @@ BADGE_HEIGHT = 20 + 8
 SHIELDS_URL = "https://img.shields.io/badge"
 
 if __name__ == "__main__":
-  with open(LANGUAGES_FILE, "r") as f:
+  with open(LANGUAGES_FILE) as f:
     translation_files = json.load(f)
 
   badge_svg = []
   max_badge_width = 0  # keep track of max width to set parent element
   for idx, (name, file) in enumerate(translation_files.items()):
-    with open(os.path.join(TRANSLATIONS_DIR, f"{file}.ts"), "r") as tr_f:
+    with open(os.path.join(TRANSLATIONS_DIR, f"{file}.ts")) as tr_f:
       tr_file = tr_f.read()
 
     total_translations = 0

@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository == 'commaai/openpilot'
     steps:
-    - uses: Vankka/pr-target-branch-action@69ab6dd5c221de3548b3b6c4d102c1f4913d3baa
+    - uses: Vankka/pr-target-branch-action@def32ec9d93514138d6ac0132ee62e120a72aed5
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
@@ -34,6 +34,26 @@ jobs:
         already-exists-action: close_this
         already-exists-comment: "Your PR should be made against the `master` branch"
 
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: comment
+        uses: thollander/actions-comment-pull-request@fabd468d3a1a0b97feee5f6b9e499eab0dd903f6
+        if: github.event.pull_request.head.repo.full_name != 'commaai/openpilot'
+        with:
+          message: |
+              <!-- _(run_id **${{ github.run_id }}**)_ -->
+              Thanks for contributing to openpilot! In order for us to review your PR as quickly as possible, check the following:
+              * Convert your PR to a draft unless it's ready to review
+              * Read the [contributing docs](https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md)
+              * Before marking as "ready for review", ensure:
+                * the goal is clearly stated in the description
+                * all the tests are passing
+                * the change is [something we merge](https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md#what-gets-merged)
+                * include a route or your device' dongle ID if relevant
+          comment_tag: run_id
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   check-pr-template:
     runs-on: ubuntu-latest
     permissions:
@@ -41,7 +61,7 @@ jobs:
       issues: write
       pull-requests: write
       actions: read
-    if: github.event.pull_request.head.repo.full_name != 'commaai/openpilot'
+    if: false && github.event.pull_request.head.repo.full_name != 'commaai/openpilot'
     steps:
       - uses: actions/github-script@v7
         with:
@@ -91,7 +111,7 @@ jobs:
 
             // Utility function to check if a list of checkboxes is a subset of another list of checkboxes
             isCheckboxSubset = (templateCheckBoxTexts, prTextCheckBoxTexts) => {
-              // Check if each template checkbox text is a substring of at least one PR checkbox text 
+              // Check if each template checkbox text is a substring of at least one PR checkbox text
               // (user should be allowed to add additional text)
               return templateCheckBoxTexts.every((item) => prTextCheckBoxTexts.some((element) => element.includes(item)))
             }
