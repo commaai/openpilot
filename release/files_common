@@ -542,10 +542,8 @@ opendbc/toyota_tss2_adas.dbc
 opendbc/vw_golf_mk4.dbc
 opendbc/vw_mqb_2010.dbc
 
-opendbc/tesla_can.dbc
-opendbc/tesla_radar_bosch_generated.dbc
-opendbc/tesla_radar_continental_generated.dbc
-opendbc/tesla_powertrain.dbc
+opendbc/tesla_model3_party.dbc
+opendbc/tesla_model3_vehicle.dbc
 
 tinygrad_repo/openpilot/compile2.py
 tinygrad_repo/extra/onnx.py
