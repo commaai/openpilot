@@ -290,7 +290,7 @@ routes = [
   CarTestRoute("f6d5b1a9d7a1c92e|2021-07-08--06-56-59", MAZDA.MAZDA_CX9_2021),
   CarTestRoute("a4af1602d8e668ac|2022-02-03--12-17-07", MAZDA.MAZDA_CX5_2022),
 
-  CarTestRoute("b5f2b5b4ef23f4b6/00000008--d88c2210a5", TESLA.TESLA_AP3_MODEL3),
+  CarTestRoute("b5f2b5b4ef23f4b6/0000005a--5668bed14c", TESLA.TESLA_AP3_MODEL3),
   CarTestRoute("35f334fe58c5cdc5/00000002--6261eeae61", TESLA.TESLA_AP3_MODELY),
 
   # Segments that test specific issues
