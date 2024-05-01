@@ -2572,16 +2572,6 @@ redis = ["redis"]
 tests = ["pytest (>=5.4.1)", "pytest-cov (>=2.8.1)", "pytest-mypy (>=0.8.0)", "pytest-timeout (>=2.1.0)", "redis", "sphinx (>=6.0.0)", "types-redis"]
 
 [[package]]
-name = "pprofile"
-version = "2.1.0"
-description = "Line-granularity, thread-aware deterministic and statistic pure-python profiler"
-optional = false
-python-versions = "*"
-files = [
-    {file = "pprofile-2.1.0.tar.gz", hash = "sha256:b2bb56603dadf40c0bc0f61621f22c20e41638425f729945d9b7f8e4ae8cdd4a"},
-]
-
-[[package]]
 name = "pre-commit"
 version = "3.7.0"
 description = "A framework for managing and maintaining multi-language pre-commit hooks."
@@ -7194,4 +7184,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.12"
-content-hash = "ac60561027d88c854fadf3422e163ece59d4ad3089f0c50dd9b69b8ba2ba1c64"
+content-hash = "267d335525ff1b79b47dfa43412488568c24ce65f5ad5c52e0e5d676c3e4bdcb"
