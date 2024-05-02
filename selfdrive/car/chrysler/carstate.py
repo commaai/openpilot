@@ -147,6 +147,10 @@ class CarState(CarStateBase):
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD
     ret.steerFaultPermanent = bool(cp.vl["EPS_STATUS"]["LKAS_FAULT"])
 
+    if self.CP.enableBsm:
+      ret.leftBlindspot = bool(cp.vl["BSM_LEFT"]["LEFT_DETECTED"])
+      ret.rightBlindspot = bool(cp.vl["BSM_RIGHT"]["RIGHT_DETECTED"])
+
     return ret
 
   @staticmethod
@@ -211,6 +215,8 @@ class CarState(CarStateBase):
       ("TRACTION_BUTTON", 50),
       ("WHEEL_SPEEDS_FRONT", 50),
       ("WHEEL_SPEEDS_REAR", 50),
+      ("BSM_LEFT", 2),  # 2Hz plus immediate update on rising/falling edge
+      ("BSM_RIGHT", 2),  # 2Hz plus immediate update on rising/falling edge
     ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
