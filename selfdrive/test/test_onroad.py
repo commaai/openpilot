@@ -294,7 +294,7 @@ class TestOnroad(unittest.TestCase):
     with self.subTest(name="total CPU"):
       assert procs_tot < MAX_TOTAL_CPU, "Total CPU budget exceeded"
     result +=  "------------------------------------------------\n"
-    result += f"Total allocated CPU usage is {procs_tot}%, budget is {MAX_TOTAL_CPU}%, {MAX_TOTAL_CPU-procs_tot:.1f}% left"
+    result += f"Total allocated CPU usage is {procs_tot}%, budget is {MAX_TOTAL_CPU}%, {MAX_TOTAL_CPU-procs_tot:.1f}% left\n"
     result +=  "------------------------------------------------\n"
 
     print(result)
