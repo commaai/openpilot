@@ -215,9 +215,12 @@ class CarState(CarStateBase):
       ("TRACTION_BUTTON", 50),
       ("WHEEL_SPEEDS_FRONT", 50),
       ("WHEEL_SPEEDS_REAR", 50),
-      ("BSM_LEFT", 2),  # 2Hz plus immediate update on rising/falling edge
-      ("BSM_RIGHT", 2),  # 2Hz plus immediate update on rising/falling edge
     ]
+
+    if CP.enableBsm:
+      # 2Hz plus immediate update on rising/falling edge
+      messages.append(("BSM_LEFT", 2))
+      messages.append(("BSM_RIGHT", 2))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 0)
 
