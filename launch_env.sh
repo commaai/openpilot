@@ -12,4 +12,4 @@ fi
 
 export STAGING_ROOT="/data/safe_staging"
 
-export FINGERPRINT="JEEP CHEROKEE 5TH GEN"
+export FINGERPRINT="JEEP_CHEROKEE_5TH_GEN"
