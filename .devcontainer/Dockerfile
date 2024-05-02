@@ -8,6 +8,8 @@ RUN cd /tmp && \
     curl -L -o virtualgl.deb "https://downloads.sourceforge.net/project/virtualgl/3.1/virtualgl_3.1_$ARCH.deb" && \
     dpkg -i virtualgl.deb
 
+RUN usermod -aG video batman
+
 USER batman
 
 RUN cd $HOME && \
