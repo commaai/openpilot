@@ -33,7 +33,7 @@ CPU usage budget
 * total CPU usage of openpilot (sum(PROCS.values())
   should not exceed MAX_TOTAL_CPU
 """
-MAX_TOTAL_CPU = 250.
+MAX_TOTAL_CPU = 250.  # total for all 8 cores
 PROCS = {
   # Baseline CPU usage by process
   "selfdrive.controls.controlsd": 46.0,
@@ -292,7 +292,7 @@ class TestOnroad(unittest.TestCase):
     # total CPU check
     procs_tot = sum([(max(x) if isinstance(x, tuple) else x) for x in PROCS.values()])
     with self.subTest(name="total CPU"):
-      assert procs_tot < MAX_TOTAL_CPU, f"Total CPU budget exceeded"
+      assert procs_tot < MAX_TOTAL_CPU, "Total CPU budget exceeded"
     result +=  "------------------------------------------------\n"
     result += f"Total allocated CPU usage is {procs_tot}%, budget is {MAX_TOTAL_CPU}%, {MAX_TOTAL_CPU-procs_tot:.1f}% left"
     result +=  "------------------------------------------------\n"
