@@ -64,7 +64,6 @@ void CameraServer::cameraThread(Camera &cam) {
 
     int segment_id = eidx.getSegmentId();
     uint32_t frame_id = eidx.getFrameId();
-    // Attempt to retrieve the frame data
     if (auto yuv = getFrame(cam, fr, segment_id, frame_id)) {
       VisionIpcBufExtra extra = {
           .frame_id = frame_id,
@@ -73,7 +72,7 @@ void CameraServer::cameraThread(Camera &cam) {
       };
       vipc_server_->send(yuv, &extra);
     } else {
-      rError("camera[%d] failed to get frame: %lu", cam.type, eidx.getSegmentId());
+      rError("camera[%d] failed to get frame: %lu", cam.type, segment_id);
     }
 
     // Prefetch the next frame
@@ -87,18 +86,15 @@ VisionBuf *CameraServer::getFrame(Camera &cam, FrameReader *fr, int32_t segment_
   // Check if the frame is cached
   auto buf_it = std::find_if(cam.cached_buf.begin(), cam.cached_buf.end(),
                              [frame_id](VisionBuf *buf) { return buf->get_frame_id() == frame_id; });
-  if (buf_it != cam.cached_buf.end()) {
-    return *buf_it;
-  }
+  if (buf_it != cam.cached_buf.end()) return *buf_it;
 
-  // If the frame is not cached, retrieve it from the frame reader
   VisionBuf *yuv_buf = vipc_server_->get_buffer(cam.stream_type);
-  bool ret = fr->get(segment_id, yuv_buf);
-  if (ret) {
+  if (fr->get(segment_id, yuv_buf)) {
     yuv_buf->set_frame_id(frame_id);
     cam.cached_buf.insert(yuv_buf);
+    return yuv_buf;
   }
-  return ret ? yuv_buf : nullptr;
+  return nullptr;
 }
 
 void CameraServer::pushFrame(CameraType type, FrameReader *fr, const Event *event) {
