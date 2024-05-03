@@ -465,8 +465,7 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
     identity_token = Api(dongle_id).get_token()
     ws = create_connection(remote_ws_uri,
                            cookie="jwt=" + identity_token,
-                           enable_multithread=True,
-                           timeout=30.0)
+                           enable_multithread=True)
 
     ssock, csock = socket.socketpair()
     local_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -658,10 +657,12 @@ def stat_handler(end_event: threading.Event) -> None:
 def ws_proxy_recv(ws: WebSocket, local_sock: socket.socket, ssock: socket.socket, end_event: threading.Event, global_end_event: threading.Event) -> None:
   while not (end_event.is_set() or global_end_event.is_set()):
     try:
-      data = ws.recv()
-      if isinstance(data, str):
-        data = data.encode("utf-8")
-      local_sock.sendall(data)
+      r = select.select([ws], [], [], 10)
+      if r[0]:
+        data = ws.recv()
+        if isinstance(data, str):
+          data = data.encode("utf-8")
+        local_sock.sendall(data)
     except WebSocketTimeoutException:
       pass
     except Exception:
