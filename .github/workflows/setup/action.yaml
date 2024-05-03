@@ -40,10 +40,11 @@ runs:
     - name: Install Python dependencies
       run: |
         pip install --upgrade pip
-        pip install poetry
-        poetry config virtualenvs.create false
-        poetry install --no-interaction --no-ansi
+        sudo pip install poetry
+        sudo poetry config virtualenvs.create false
+        sudo poetry install --no-interaction --no-ansi
       shell: bash
+
 
     - name: Checkout code
       uses: actions/checkout@v3
