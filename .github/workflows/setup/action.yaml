@@ -40,6 +40,7 @@ runs:
     - name: Install Python dependencies
       run: |
         pip install --upgrade pip
+        pip install enum34 
         sudo pip install poetry
         sudo poetry config virtualenvs.create false
         sudo poetry install --no-interaction --no-ansi
