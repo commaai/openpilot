@@ -32,7 +32,7 @@ jobs:
         scons -j$(nproc)
     - name: Build docs
       run: |
-        apt update && apt install -y doxygen && cd docs && make -j$(nproc) html
+        apt update && apt install -y doxygen qt5-default && cd docs && make -j$(nproc) html
 
     - uses: actions/checkout@v4
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
