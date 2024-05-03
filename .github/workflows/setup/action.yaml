@@ -16,7 +16,7 @@ runs:
         exit 1
 
     - name: Cache apt packages
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: /var/cache/apt/archives
         key: ${{ runner.os }}-apt-${{ hashFiles('**/install_ubuntu_dependencies.sh') }}
