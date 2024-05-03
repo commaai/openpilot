@@ -284,6 +284,7 @@ FW_VERSIONS = {
       b'\xf1\x00TM__ SCC F-CUP      1.00 1.00 99110-S1500         ',
       b'\xf1\x00TM__ SCC F-CUP      1.00 1.01 99110-S1500         ',
       b'\xf1\x00TM__ SCC FHCUP      1.00 1.00 99110-S1500         ',
+      b'\xf1\x00TM__ SCC FHCUP      1.00 1.01 99110-S1500         ',
     ],
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x00TM ESC \x01 102!\x04\x03 58910-S2DA0',
@@ -294,6 +295,7 @@ FW_VERSIONS = {
       b'\xf1\x00TM ESC \x03 102!\x04\x03 58910-S2DA0',
       b'\xf1\x00TM ESC \x04 101 \x08\x04 58910-S2GA0',
       b'\xf1\x00TM ESC \x04 102!\x04\x05 58910-S2GA0',
+      b'\xf1\x00TM ESC \x04 103"\x07\x08 58910-S2GA0',
       b'\xf1\x00TM ESC \x1e 102 \x08\x08 58910-S1DA0',
       b'\xf1\x00TM ESC   103!\x030 58910-S1MA0',
     ],
