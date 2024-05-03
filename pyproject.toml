@@ -35,7 +35,7 @@ testpaths = [
 ]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.10"
 plugins = [
   "numpy.typing.mypy_plugin",
 ]
@@ -177,7 +177,7 @@ indent-width = 2
 lint.select = ["E", "F", "W", "PIE", "C4", "ISC", "RUF008", "RUF100", "A", "B", "TID251"]
 lint.ignore = ["E741", "E402", "C408", "ISC003", "B027", "B024"]
 line-length = 160
-target-version="py311"
+target-version="py310"
 exclude = [
   "body",
   "cereal",
