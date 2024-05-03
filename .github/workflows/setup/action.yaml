@@ -1,54 +1,48 @@
 name: 'openpilot env setup'
 description: 'Set up environment for openpilot'
-inputs:
-  is_retried:
-    description: "A mock param that asserts that this setup is for a retry operation"
-    required: false
-    default: "false"
+on: [push, workflow_dispatch]
+jobs:
+  setup:
+    runs-on: ubuntu-20.04-64core
+    steps:
+      - shell: bash
+        if: ${{ inputs.is_retried == 'false' }}
+        run: |
+          echo "You should not run this action directly. Use setup-with-retry instead"
+          exit 1
 
-runs:
-  using: "composite"
-  steps:
-    - shell: bash
-      if: ${{ inputs.is_retried == 'false' }}
-      run: |
-        echo "You should not run this action directly. Use setup-with-retry instead"
-        exit 1
+      - name: Cache apt packages
+        uses: actions/cache@v4
+        with:
+          path: /var/cache/apt/archives
+          key: ${{ runner.os }}-apt-${{ hashFiles('**/install_ubuntu_dependencies.sh') }}
+          restore-keys: |
+            ${{ runner.os }}-apt-
 
-    - name: Cache apt packages
-      uses: actions/cache@v4
-      with:
-        path: /var/cache/apt/archives
-        key: ${{ runner.os }}-apt-${{ hashFiles('**/install_ubuntu_dependencies.sh') }}
-        restore-keys: |
-          ${{ runner.os }}-apt-
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends $(grep -oP 'sudo apt-get install -y --no-install-recommends \K.*' tools/install_ubuntu_dependencies.sh)
+        shell: bash
 
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y --no-install-recommends $(grep -oP 'sudo apt-get install -y --no-install-recommends \K.*' tools/install_ubuntu_dependencies.sh)
-      shell: bash
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
-    - name: Cache pip packages
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/poetry.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          sudo pip install poetry
+          sudo poetry config virtualenvs.create false
+          sudo poetry install --no-interaction --no-ansi
+        shell: bash
 
-    - name: Install Python dependencies
-      run: |
-        pip install --upgrade pip
-        sudo pip install poetry
-        sudo poetry config virtualenvs.create false
-        sudo poetry install --no-interaction --no-ansi
-      shell: bash
+      - uses: actions/checkout@v3
 
-
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Set Environment Variable
-      run: echo "PYTHONPATH=${GITHUB_WORKSPACE}:${PYTHONPATH}" >> $GITHUB_ENV
-      shell: bash
+      - name: Set Environment Variable
+        run: echo "PYTHONPATH=${GITHUB_WORKSPACE}:${PYTHONPATH}" >> $GITHUB_ENV
+        shell: bash
