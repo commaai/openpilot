@@ -26,7 +26,7 @@ runs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y --no-install-recommends portaudio19-dev qt5-default $(grep -oP 'sudo apt-get install -y --no-install-recommends \K.*' tools/install_ubuntu_dependencies.sh)
+        sudo apt-get install -y --no-install-recommends portaudio19-dev qtbase5-dev $(grep -oP 'sudo apt-get install -y --no-install-recommends \K.*' tools/install_ubuntu_dependencies.sh)
       shell: bash
 
     - name: Cache pip packages
