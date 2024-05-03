@@ -28,12 +28,6 @@ runs:
       run: |
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends $(grep -oP 'sudo apt-get install -y --no-install-recommends \K.*' tools/install_ubuntu_dependencies.sh)
-        wget https://www.python.org/ftp/python/3.11.0/Python-3.11.0.tgz
-        tar -xf Python-3.11.0.tgz
-        cd Python-3.11.0
-        ./configure --enable-optimizations
-        make -j$(nproc)
-        sudo make altinstall
       shell: bash
 
     # Setup and cache Python packages

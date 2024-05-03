@@ -2800,7 +2800,7 @@ files = [
 ]
 
 [package.dependencies]
-numpy = {version = ">=1.23.5", markers = "python_version >= \"3.11\""}
+numpy = {version = ">=1.23.5", markers = "python_version >= \"3.10\""}
 
 [[package]]
 name = "opencv-python-headless"
@@ -2819,7 +2819,7 @@ files = [
 ]
 
 [package.dependencies]
-numpy = {version = ">=1.23.5", markers = "python_version >= \"3.11\""}
+numpy = {version = ">=1.23.5", markers = "python_version >= \"3.10\""}
 
 [[package]]
 name = "packaging"
@@ -2989,7 +2989,7 @@ files = [
 ]
 
 [package.dependencies]
-numpy = {version = ">=1.23.2", markers = "python_version == \"3.11\""}
+numpy = {version = ">=1.23.2", markers = "python_version == \"3.10\""}
 python-dateutil = ">=2.8.2"
 pytz = ">=2020.1"
 tzdata = ">=2022.7"
@@ -6623,7 +6623,7 @@ files = [
 ]
 
 [package.dependencies]
-Pillow = {version = ">=9.3.0", markers = "python_version == \"3.11\""}
+Pillow = {version = ">=9.3.0", markers = "python_version == \"3.10\""}
 
 [[package]]
 name = "pyserial"
@@ -7999,5 +7999,5 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 
 [metadata]
 lock-version = "2.0"
-python-versions = "~3.11"
+python-versions = "~3.10"
 content-hash = "5f0a1b6f26faa3effeaa5393b73d9188be385a72c1d3b9befb3f03df3b38c86d"
