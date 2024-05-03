@@ -657,7 +657,7 @@ def stat_handler(end_event: threading.Event) -> None:
 def ws_proxy_recv(ws: WebSocket, local_sock: socket.socket, ssock: socket.socket, end_event: threading.Event, global_end_event: threading.Event) -> None:
   while not (end_event.is_set() or global_end_event.is_set()):
     try:
-      r = select.select([ws], [], [], 10)
+      r = select.select((ws,), (), (), 30)
       if r[0]:
         data = ws.recv()
         if isinstance(data, str):
