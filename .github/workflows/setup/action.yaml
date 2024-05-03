@@ -28,12 +28,14 @@ runs:
       run: |
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends $(grep -oP 'sudo apt-get install -y --no-install-recommends \K.*' tools/install_ubuntu_dependencies.sh)
+      shell: bash
 
     # Setup and cache Python packages
     - name: Set up Python environment
       run: |
         sudo apt-get install -y python3-pip
         pip install --upgrade pip
+      shell: bash
 
     - name: Cache pip packages
       uses: actions/cache@v3
@@ -43,11 +45,13 @@ runs:
         restore-keys: |
           ${{ runner.os }}-pip-
 
+    # Install Python dependencies
     - name: Install Python dependencies
       run: |
         pip install poetry
         poetry config virtualenvs.create false
         poetry install --no-interaction --no-ansi
+      shell: bash
 
     # Checkout and prepare the working directory
     - name: Checkout code
@@ -55,3 +59,4 @@ runs:
 
     - name: Set Environment Variable
       run: echo "PYTHONPATH=${GITHUB_WORKSPACE}:${PYTHONPATH}" >> $GITHUB_ENV
+      shell: bash
