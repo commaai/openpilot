@@ -30,13 +30,6 @@ runs:
         sudo apt-get install -y --no-install-recommends $(grep -oP 'sudo apt-get install -y --no-install-recommends \K.*' tools/install_ubuntu_dependencies.sh)
       shell: bash
 
-    # Setup and cache Python packages
-    - name: Set up Python environment
-      run: |
-        sudo apt-get install -y python3-pip
-        pip install --upgrade pip
-      shell: bash
-
     - name: Cache pip packages
       uses: actions/cache@v4
       with:
