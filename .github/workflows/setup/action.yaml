@@ -1,5 +1,5 @@
-name: "openpilot env setup"
-
+name: 'openpilot env setup'
+description: 'Set up environment for openpilot'
 inputs:
   is_retried:
     description: "A mock param that asserts that this setup is for a retry operation"
@@ -7,7 +7,6 @@ inputs:
     default: "false"
 
 runs:
-  runs-on: ubuntu-20.04
   using: "composite"
   steps:
     - shell: bash
@@ -16,7 +15,6 @@ runs:
         echo "You should not run this action directly. Use setup-with-retry instead"
         exit 1
 
-    # Setup and cache apt packages
     - name: Cache apt packages
       uses: actions/cache@v3
       with:
@@ -39,7 +37,6 @@ runs:
         restore-keys: |
           ${{ runner.os }}-pip-
 
-    # Install Python dependencies
     - name: Install Python dependencies
       run: |
         pip install poetry
@@ -47,7 +44,6 @@ runs:
         poetry install --no-interaction --no-ansi
       shell: bash
 
-    # Checkout and prepare the working directory
     - name: Checkout code
       uses: actions/checkout@v3
 
