@@ -467,6 +467,10 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
                            cookie="jwt=" + identity_token,
                            enable_multithread=True)
 
+    # Set TOS to keep connection responsive while under load.
+    # DSCP of 36/HDD_LINUX_AC_VI with the minimum delay flag
+    ws.sock.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, 0x90)
+
     ssock, csock = socket.socketpair()
     local_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     local_sock.connect(('127.0.0.1', local_port))
