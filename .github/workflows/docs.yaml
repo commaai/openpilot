@@ -30,6 +30,7 @@ jobs:
     - name: Build openpilot
       run: |
         git lfs install
+        git lfs pull
         scons -j$(nproc)
     - name: Build docs
       run: |
