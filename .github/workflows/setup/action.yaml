@@ -1,10 +1,10 @@
-name: 'openpilot env setup'
+name: "openpilot env setup"
 
 inputs:
   is_retried:
-    description: 'A mock param that asserts that this setup is for a retry operation'
+    description: "A mock param that asserts that this setup is for a retry operation"
     required: false
-    default: 'false'
+    default: "false"
 
 runs:
   using: "composite"
@@ -15,46 +15,49 @@ runs:
         echo "You should not run this action directly. Use setup-with-retry instead"
         exit 1
 
-    # Install specific Python version using pyenv
-    - name: Install pyenv
-      run: |
-        curl https://pyenv.run | bash
-      shell: bash
-
-    - name: Install Python 3.11.X
-      run: |
-        export PATH="$HOME/.pyenv/bin:$PATH"
-        eval "$(pyenv init --path)"
-        pyenv install 3.11.4 -s
-        pyenv global 3.11.4
-      shell: bash
-
-    # Verify Python version
-    - name: Check Python version
-      run: |
-        python --version
-      shell: bash
-
-    # Install and Cache Poetry dependencies
-    - name: Install Poetry
-      run: pip install poetry
-      shell: bash
-
-    - name: Cache Poetry dependencies
-      uses: actions/cache@v2
+    # Setup and cache apt packages
+    - name: Cache apt packages
+      uses: actions/cache@v3
       with:
-        path: ~/.cache/pypoetry
-        key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
+        path: /var/cache/apt/archives
+        key: ${{ runner.os }}-apt-${{ hashFiles('**/install_ubuntu_dependencies.sh') }}
         restore-keys: |
-          ${{ runner.os }}-poetry-
+          ${{ runner.os }}-apt-
 
-    - name: Install dependencies with Poetry
+    - name: Install system dependencies
       run: |
-        poetry config virtualenvs.create false
-        poetry install --no-interaction --no-root
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends $(grep -oP 'sudo apt-get install -y --no-install-recommends \K.*' tools/install_ubuntu_dependencies.sh)
       shell: bash
 
-    # Setup Complete
-    - name: Setup Complete
-      run: echo "Setup completed successfully"
+    # Setup and cache Python packages
+    - name: Set up Python environment
+      run: |
+        sudo apt-get install -y python3-pip
+        pip install --upgrade pip
+      shell: bash
+
+    - name: Cache pip packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/poetry.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    # Install Python dependencies
+    - name: Install Python dependencies
+      run: |
+        pip install poetry
+        poetry env use python3.11
+        poetry config virtualenvs.create false
+        poetry install --no-interaction --no-ansi
+      shell: bash
+
+    # Checkout and prepare the working directory
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set Environment Variable
+      run: echo "PYTHONPATH=${GITHUB_WORKSPACE}:${PYTHONPATH}" >> $GITHUB_ENV
       shell: bash
