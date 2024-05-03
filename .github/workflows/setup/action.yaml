@@ -49,7 +49,6 @@ runs:
     - name: Install Python dependencies
       run: |
         pip install poetry
-        poetry env use python3.11
         poetry config virtualenvs.create false
         poetry install --no-interaction --no-ansi
       shell: bash
