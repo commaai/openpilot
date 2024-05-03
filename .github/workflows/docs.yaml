@@ -29,6 +29,7 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
       run: |
+        git lfs install
         scons -j$(nproc)
     - name: Build docs
       run: |
