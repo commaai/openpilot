@@ -26,7 +26,7 @@ runs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y --no-install-recommends qttools5-dev qttools5-dev-tools libeigen3-dev opencl-headers ocl-icd-opencl-dev git-lfs libzmq3-dev libcapnp-dev portaudio19-dev qtbase5-dev gcc-arm-none-eabi capnproto $(grep -oP 'sudo apt-get install -y --no-install-recommends \K.*' tools/install_ubuntu_dependencies.sh)
+        sudo apt-get install -y --no-install-recommends qttools5-dev qttools5-dev-tools libeigen3-dev opencl-headers ocl-icd-opencl-dev git-lfs libzmq3-dev libusb-1.0-0-dev libcapnp-dev portaudio19-dev qtbase5-dev gcc-arm-none-eabi capnproto $(grep -oP 'sudo apt-get install -y --no-install-recommends \K.*' tools/install_ubuntu_dependencies.sh)
       shell: bash
 
     - name: Cache pip packages
