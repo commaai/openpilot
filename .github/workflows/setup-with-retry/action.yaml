@@ -6,28 +6,35 @@ inputs:
     required: false
     default: 30
 
-runs:
-  using: "composite"
+jobs:
+setup:
+  runs-on: ubuntu-20.04
   steps:
     - id: setup1
-      uses: ./.github/workflows/setup
+      uses: ./.github/workflows/setup.yaml
       continue-on-error: true
       with:
         is_retried: true
-    - if: steps.setup1.outcome == 'failure'
-      shell: bash
+
+    - name: Wait after first failure
+      if: steps.setup1.outcome == 'failure'
       run: sleep ${{ inputs.sleep_time }}
+      shell: bash
+
     - id: setup2
       if: steps.setup1.outcome == 'failure'
-      uses: ./.github/workflows/setup
+      uses: ./.github/workflows/setup.yaml
       continue-on-error: true
       with:
         is_retried: true
-    - if: steps.setup2.outcome == 'failure'
-      shell: bash
+
+    - name: Wait after second failure
+      if: steps.setup2.outcome == 'failure'
       run: sleep ${{ inputs.sleep_time }}
+      shell: bash
+
     - id: setup3
       if: steps.setup2.outcome == 'failure'
-      uses: ./.github/workflows/setup
+      uses: ./.github/workflows/setup.yaml
       with:
         is_retried: true
