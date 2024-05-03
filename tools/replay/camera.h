@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <set>
 #include <tuple>
 #include <utility>
 
@@ -26,12 +27,11 @@ protected:
     int height;
     std::thread thread;
     SafeQueue<std::pair<FrameReader*, const Event *>> queue;
-    int cached_id = -1;
-    int cached_seg = -1;
-    VisionBuf * cached_buf;
+    std::set<VisionBuf *> cached_buf;
   };
   void startVipcServer();
   void cameraThread(Camera &cam);
+  VisionBuf *getFrame(Camera &cam, FrameReader *fr, int32_t segment_id, uint32_t frame_id);
 
   Camera cameras_[MAX_CAMERAS] = {
       {.type = RoadCam, .stream_type = VISION_STREAM_ROAD},
