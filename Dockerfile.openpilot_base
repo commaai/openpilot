@@ -1,52 +1,41 @@
-# Use multi-stage builds to separate environment setup
-FROM ubuntu:20.04 as builder
+FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    sudo tzdata locales ssh pulseaudio xvfb x11-xserver-utils gnome-screenshot gcc-arm-none-eabi alien unzip tar curl xz-utils dbus tmux vim lsb-core libx11-6 \
-    && sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen \
-    && locale-gen \
-    && echo "en_US.UTF-8 UTF-8" > /etc/locale.gen \
-    && locale-gen \
-    && rm -rf /var/lib/apt/lists/*
-
-# Setting up OpenCL
-ARG INTEL_DRIVER=l_opencl_p_18.1.0.015.tgz
-ARG INTEL_DRIVER_URL=https://registrationcenter-download.intel.com/akdlm/irc_nas/vcp/15532
-RUN mkdir -p /tmp/opencl-driver-intel && cd /tmp/opencl-driver-intel \
-    && curl -O $INTEL_DRIVER_URL/$INTEL_DRIVER \
-    && tar -xzf $INTEL_DRIVER \
-    && for i in $(basename $INTEL_DRIVER .tgz)/rpm/*.rpm; do alien --to-deb $i; done \
-    && dpkg -i *.deb \
-    && rm -rf $INTEL_DRIVER $(basename $INTEL_DRIVER .tgz) *.deb \
-    && mkdir -p /etc/OpenCL/vendors \
-    && echo /opt/intel/opencl_compilers_and_libraries_18.1.0.015/linux/compiler/lib/intel64_lin/libintelocl.so > /etc/OpenCL/vendors/intel.icd \
-    && rm -rf /tmp/opencl-driver-intel
-
-# Final stage
-FROM ubuntu:20.04
-COPY --from=builder /etc/passwd /etc/passwd
-COPY --from=builder /etc/group /etc/group
-COPY --from=builder /etc/OpenCL /etc/OpenCL
-COPY --from=builder /opt/intel /opt/intel
-COPY --from=builder /usr /usr
-
 ENV PYTHONUNBUFFERED=1
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
-ENV NVIDIA_VISIBLE_DEVICES=all
-ENV NVIDIA_DRIVER_CAPABILITIES=graphics,utility,compute
-ENV QTWEBENGINE_DISABLE_SANDBOX=1
-ENV POETRY_VIRTUALENVS_CREATE=false
-ENV PYENV_VERSION=3.11.4
-ENV PYENV_ROOT="/home/$USER/pyenv"
-ENV PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
 
+# Combine updates, installations, and clean-ups to reduce layer size
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      sudo tzdata locales ssh pulseaudio xvfb x11-xserver-utils gnome-screenshot \
+      curl alien unzip tar xz-utils dbus gcc-arm-none-eabi tmux vim lsb-core libx11-6 && \
+    locale-gen en_US.UTF-8 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install OpenCL in one condensed RUN statement
+ARG INTEL_DRIVER=l_opencl_p_18.1.0.015.tgz
+ARG INTEL_DRIVER_URL=https://registrationcenter-download.intel.com/akdlm/irc_nas/vcp/15532
+RUN mkdir -p /tmp/opencl-driver-intel && \
+    cd /tmp/opencl-driver-intel && \
+    curl -O $INTEL_DRIVER_URL/$INTEL_DRIVER && \
+    tar -xzf $INTEL_DRIVER && \
+    for i in $(basename $INTEL_DRIVER .tgz)/rpm/*.rpm; do alien --to-deb $i; done && \
+    dpkg -i *.deb && \
+    echo /opt/intel/opencl_compilers_and_libraries_18.1.0.015/linux/compiler/lib/intel64_lin/libintelocl.so > /etc/OpenCL/vendors/intel.icd && \
+    cd / && \
+    apt-get clean && \
+    rm -rf /tmp/opencl-driver-intel /var/lib/apt/lists/*
+
+RUN dbus-uuidgen > /etc/machine-id
+
+# Set up a non-root user
 ARG USER=batman
 ARG USER_UID=1000
-RUN useradd -m -s /bin/bash -u $USER_UID $USER \
-    && usermod -aG sudo $USER \
-    && echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+RUN useradd -m -s /bin/bash -u $USER_UID $USER && \
+    usermod -aG sudo $USER && \
+    echo '%sudo ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers
 
 USER $USER
