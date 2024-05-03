@@ -15,48 +15,46 @@ runs:
         echo "You should not run this action directly. Use setup-with-retry instead"
         exit 1
 
-    # Setup and cache apt packages
-    - name: Cache apt packages
-      uses: actions/cache@v3
-      with:
-        path: /var/cache/apt/archives
-        key: ${{ runner.os }}-apt-${{ hashFiles('**/install_ubuntu_dependencies.sh') }}
-        restore-keys: |
-          ${{ runner.os }}-apt-
-
-    - name: Install system dependencies
+    # Install specific Python version using pyenv
+    - name: Install pyenv
       run: |
-        sudo apt-get update
-        sudo apt-get install -y --no-install-recommends $(grep -oP 'sudo apt-get install -y --no-install-recommends \K.*' tools/install_ubuntu_dependencies.sh)
+        curl https://pyenv.run | bash
       shell: bash
 
-    # Setup and cache Python packages
-    - name: Set up Python environment
+    - name: Install Python 3.11.X
       run: |
-        sudo apt-get install -y python3-pip
-        pip install --upgrade pip
+        export PATH="$HOME/.pyenv/bin:$PATH"
+        eval "$(pyenv init --path)"
+        pyenv install 3.11.4 -s
+        pyenv global 3.11.4
       shell: bash
 
-    - name: Cache pip packages
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/poetry.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-
-    # Install Python dependencies
-    - name: Install Python dependencies
+    # Verify Python version
+    - name: Check Python version
       run: |
-        pip install poetry
+        python --version
+      shell: bash
+
+    # Install and Cache Poetry dependencies
+    - name: Install Poetry
+      run: pip install poetry
+      shell: bash
+
+    - name: Cache Poetry dependencies
+      uses: actions/cache@v2
+      with:
+        path: ~/.cache/pypoetry
+        key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-poetry-
+
+    - name: Install dependencies with Poetry
+      run: |
         poetry config virtualenvs.create false
-        poetry install --no-interaction --no-ansi
+        poetry install --no-interaction --no-root
       shell: bash
 
-    # Checkout and prepare the working directory
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Set Environment Variable
-      run: echo "PYTHONPATH=${GITHUB_WORKSPACE}:${PYTHONPATH}" >> $GITHUB_ENV
+    # Setup Complete
+    - name: Setup Complete
+      run: echo "Setup completed successfully"
       shell: bash
