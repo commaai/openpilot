@@ -17,6 +17,7 @@ runs:
     - if: steps.setup1.outcome == 'failure'
       shell: bash
       run: sleep ${{ inputs.sleep_time }}
+
     - id: setup2
       if: steps.setup1.outcome == 'failure'
       uses: ./.github/workflows/setup
@@ -26,6 +27,7 @@ runs:
     - if: steps.setup2.outcome == 'failure'
       shell: bash
       run: sleep ${{ inputs.sleep_time }}
+
     - id: setup3
       if: steps.setup2.outcome == 'failure'
       uses: ./.github/workflows/setup
