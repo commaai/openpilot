@@ -1,6 +1,10 @@
 version: "1"
 rules:
   - base: master
-    upstream: openpilot:master    # change `wei` to the owner of upstream repo
+    upstream: commaai:master    # change `wei` to the owner of upstream repo
     mergeMethod: merge
+    mergeUnstable: false
+  - base: master-ci
+    upstream: commaai:master-ci    # change `wei` to the owner of upstream repo
+    mergeUnstable: false
 conflictLabel: "merge-conflict"
