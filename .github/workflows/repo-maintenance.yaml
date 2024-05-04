@@ -24,6 +24,7 @@ jobs:
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@9153d834b60caba6d51c9b9510b087acf9f33f83
       with:
+        author: Vehicle Researcher <user@comma.ai>
         token: ${{ secrets.ACTIONS_CREATE_PR_PAT }}
         commit-message: bump submodules
         title: '[bot] Bump submodules'
@@ -51,6 +52,7 @@ jobs:
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@9153d834b60caba6d51c9b9510b087acf9f33f83
       with:
+        author: Vehicle Researcher <user@comma.ai>
         token: ${{ secrets.ACTIONS_CREATE_PR_PAT }}
         commit-message: Update Python packages and pre-commit hooks
         title: '[bot] Update Python packages and pre-commit hooks'

@@ -84,6 +84,16 @@ bool ReplayStream::eventFilter(const Event *event) {
   return true;
 }
 
+void ReplayStream::seekTo(double ts) {
+  // Update timestamp and notify receivers of the time change.
+  current_sec_ = ts;
+  std::set<MessageId> new_msgs;
+  msgsReceived(&new_msgs, false);
+
+  // Seek to the specified timestamp
+  replay->seekTo(std::max(double(0), ts), false);
+}
+
 void ReplayStream::pause(bool pause) {
   replay->pause(pause);
   emit(pause ? paused() : resume());

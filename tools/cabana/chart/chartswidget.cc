@@ -197,7 +197,8 @@ void ChartsWidget::updateState() {
     display_range.second = display_range.first + max_chart_range;
   } else if (cur_sec < (zoomed_range.first - 0.1) || cur_sec >= zoomed_range.second) {
     // loop in zoomed range
-    can->seekTo(zoomed_range.first);
+    QTimer::singleShot(0, [ts = zoomed_range.first]() { can->seekTo(ts);});
+    return;
   }
 
   const auto &range = is_zoomed ? zoomed_range : display_range;
