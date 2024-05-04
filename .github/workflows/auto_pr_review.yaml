@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository == 'commaai/openpilot'
     steps:
-    - uses: Vankka/pr-target-branch-action@69ab6dd5c221de3548b3b6c4d102c1f4913d3baa
+    - uses: Vankka/pr-target-branch-action@def32ec9d93514138d6ac0132ee62e120a72aed5
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:

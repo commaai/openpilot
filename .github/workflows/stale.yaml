@@ -12,15 +12,16 @@ jobs:
   stale:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/stale@v8
+      - uses: actions/stale@v9
         with:
           exempt-milestones: true
 
           # pull request config
           stale-pr-message: 'This PR has had no activity for ${{ env.DAYS_BEFORE_PR_STALE }} days. It will be automatically closed in ${{ env.DAYS_BEFORE_PR_CLOSE }} days if there is no activity.'
           close-pr-message: 'This PR has been automatically closed due to inactivity. Feel free to re-open once activity resumes.'
+          stale-pr-label: stale
           delete-branch: ${{ github.event.pull_request.head.repo.full_name == 'commaai/openpilot' }} # only delete branches on the main repo
-          exempt-pr-labels: "ignore stale,needs testing,car port" # if wip or it needs testing from the community, don't mark as stale
+          exempt-pr-labels: "ignore stale,needs testing,car port,car" # if wip or it needs testing from the community, don't mark as stale
           days-before-pr-stale: ${{ env.DAYS_BEFORE_PR_STALE }}
           days-before-pr-close: ${{ env.DAYS_BEFORE_PR_CLOSE }}
 
