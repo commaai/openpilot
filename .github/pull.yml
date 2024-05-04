@@ -1,0 +1,6 @@
+version: "1"
+rules:
+  - base: master
+    upstream: openpilot:master    # change `wei` to the owner of upstream repo
+    mergeMethod: merge
+conflictLabel: "merge-conflict"
