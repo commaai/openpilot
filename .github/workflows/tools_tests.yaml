@@ -37,8 +37,8 @@ jobs:
       run: |
         ${{ env.RUN }} "pytest tools/plotjuggler/"
 
-  simulator:
-    name: simulator
+  simulator_build:
+    name: simulator docker build
     runs-on: ubuntu-latest
     if: github.repository == 'commaai/openpilot'
     timeout-minutes: 45
@@ -56,8 +56,8 @@ jobs:
       run: |
         selfdrive/test/docker_build.sh sim
 
-  simulator_bridge:
-    name: simulator bridge test
+  simulator_driving:
+    name: simulator driving
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -77,7 +77,6 @@ jobs:
                         source selfdrive/test/setup_xvfb.sh && \
                         source selfdrive/test/setup_vsound.sh && \
                         CI=1 tools/sim/tests/test_metadrive_bridge.py"
-
 
   devcontainer:
     name: devcontainer
