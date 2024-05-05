@@ -4,7 +4,7 @@ from panda.python import uds
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, CarControllerParams, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, \
-                                        MIN_ACC_SPEED, EPS_SCALE, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR
+                                        MIN_ACC_SPEED, EPS_SCALE, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR, SECOC_CAR
 from openpilot.selfdrive.car import create_button_events, get_safety_config
 from openpilot.selfdrive.car.disable_ecu import disable_ecu
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
@@ -29,11 +29,8 @@ class CarInterface(CarInterfaceBase):
     if DBC[candidate]["pt"] == "toyota_new_mc_pt_generated":
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_BRAKE_224
 
-    if candidate in [CAR.TOYOTA_RAV4_PRIME]:
-      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_BRAKE_101 | Panda.FLAG_TOYOTA_ALT_PCM_CRUISE_176
-
-    if ret.flags & ToyotaFlags.ALT_GAS_MSG.value:
-      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_GAS_PEDAL_116
+    if candidate in SECOC_CAR:
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_SECOC_CAR
 
     if candidate in ANGLE_CONTROL_CAR:
       ret.steerControlType = SteerControlType.angle

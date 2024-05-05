@@ -578,6 +578,8 @@ RADAR_ACC_CAR = CAR.with_flags(ToyotaFlags.RADAR_ACC)
 
 ANGLE_CONTROL_CAR = CAR.with_flags(ToyotaFlags.ANGLE_CONTROL)
 
+SECOC_CAR = CAR.with_flags(ToyotaFlags.SECOC)
+
 # no resume button press required
 NO_STOP_TIMER_CAR = CAR.with_flags(ToyotaFlags.NO_STOP_TIMER)
 
