@@ -30,7 +30,10 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_BRAKE_224
 
     if candidate in [CAR.TOYOTA_RAV4_PRIME]:
-      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_BRAKE_101 | Panda.FLAG_TOYOTA_ALT_PCM_CRUISE_176 | Panda.FLAG_TOYOTA_ALT_GAS_PEDAL_116
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_BRAKE_101 | Panda.FLAG_TOYOTA_ALT_PCM_CRUISE_176
+
+    if ret.flags & ToyotaFlags.ALT_GAS_MSG.value:
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_GAS_PEDAL_116
 
     if candidate in ANGLE_CONTROL_CAR:
       ret.steerControlType = SteerControlType.angle
