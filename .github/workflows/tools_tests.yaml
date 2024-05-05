@@ -37,8 +37,8 @@ jobs:
       run: |
         ${{ env.RUN }} "pytest tools/plotjuggler/"
 
-  simulator:
-    name: simulator
+  simulator_build:
+    name: simulator docker build
     runs-on: ubuntu-latest
     if: github.repository == 'commaai/openpilot'
     timeout-minutes: 45
@@ -55,6 +55,28 @@ jobs:
     - name: Build and push sim image
       run: |
         selfdrive/test/docker_build.sh sim
+
+  simulator_driving:
+    name: simulator driving
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - run: git lfs pull
+    - uses: ./.github/workflows/setup-with-retry
+    - name: Build base docker image
+      run: eval "$BUILD"
+    - name: Build openpilot
+      run: |
+        ${{ env.RUN }} "scons -j$(nproc)"
+    - name: Run bridge test
+      run: |
+        ${{ env.RUN }} "export MAPBOX_TOKEN='pk.eyJ1Ijoiam5ld2IiLCJhIjoiY2xxNW8zZXprMGw1ZzJwbzZneHd2NHljbSJ9.gV7VPRfbXFetD-1OVF0XZg' && \
+                        source selfdrive/test/setup_xvfb.sh && \
+                        source selfdrive/test/setup_vsound.sh && \
+                        CI=1 tools/sim/tests/test_metadrive_bridge.py"
 
   devcontainer:
     name: devcontainer
