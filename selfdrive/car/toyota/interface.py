@@ -27,7 +27,10 @@ class CarInterface(CarInterfaceBase):
 
     # BRAKE_MODULE is on a different address for these cars
     if DBC[candidate]["pt"] == "toyota_new_mc_pt_generated":
-      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_BRAKE
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_BRAKE_224
+
+    if candidate in [CAR.TOYOTA_RAV4_PRIME]:
+      ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_ALT_BRAKE_101 | Panda.FLAG_TOYOTA_ALT_PCM_CRUISE_176 | Panda.FLAG_TOYOTA_ALT_GAS_PEDAL_116
 
     if candidate in ANGLE_CONTROL_CAR:
       ret.steerControlType = SteerControlType.angle
