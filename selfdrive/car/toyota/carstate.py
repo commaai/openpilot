@@ -165,10 +165,10 @@ class CarState(CarStateBase):
 
     ret.cruiseState.enabled = bool(cp.vl["PCM_CRUISE"]["CRUISE_ACTIVE"])
 
-    if self.CP.carFingerprint not in [CAR.TOYOTA_RAV4_PRIME]:
-      ret.cruiseState.nonAdaptive = cp.vl["PCM_CRUISE"]["CRUISE_STATE"] in (1, 2, 3, 4, 5, 6)
-    else:
+    if self.CP.carFingerprint in [CAR.TOYOTA_RAV4_PRIME]:
       ret.cruiseState.nonAdaptive = bool(cp.vl["PCM_CRUISE"]["CRUISE_ACTIVE"]) and not bool(cp.vl["PCM_CRUISE"]["ADAPTIVE_CRUISE"])
+    else:
+      ret.cruiseState.nonAdaptive = cp.vl["PCM_CRUISE"]["CRUISE_STATE"] in (1, 2, 3, 4, 5, 6)
 
     ret.genericToggle = bool(cp.vl["LIGHT_STALK"]["AUTO_HIGH_BEAM"])
     ret.espDisabled = cp.vl["ESP_CONTROL"]["TC_DISABLED"] != 0
