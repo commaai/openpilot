@@ -46,6 +46,7 @@ class SimulatorBridge(ABC):
     self.world: World | None = None
 
     self.past_startup_engaged = False
+    self.startup_button_prev = True
 
   def _on_shutdown(self, signal, frame):
     self.shutdown()
@@ -161,7 +162,8 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
 
         self.past_startup_engaged = True
       elif not self.past_startup_engaged and controlsState.engageable:
-        self.simulator_state.cruise_button = CruiseButtons.DECEL_SET # force engagement on startup
+        self.simulator_state.cruise_button = CruiseButtons.DECEL_SET if self.startup_button_prev else CruiseButtons.MAIN # force engagement on startup
+        self.startup_button_prev = not self.startup_button_prev
 
       throttle_out = throttle_op if self.simulator_state.is_engaged else throttle_manual
       brake_out = brake_op if self.simulator_state.is_engaged else brake_manual
