@@ -162,7 +162,7 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
 
         self.past_startup_engaged = True
       elif not self.past_startup_engaged and controlsState.engageable:
-        self.simulator_state.cruise_button = CruiseButtons.DECEL_SET if self.startup_button_pingpong else 0 # force engagement on startup
+        self.simulator_state.cruise_button = CruiseButtons.DECEL_SET if self.startup_button_pingpong else CruiseButtons.MAIN # force engagement on startup
         self.startup_button_pingpong = not self.startup_button_pingpong
 
       throttle_out = throttle_op if self.simulator_state.is_engaged else throttle_manual
