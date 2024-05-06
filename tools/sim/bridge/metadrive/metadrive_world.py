@@ -91,7 +91,7 @@ class MetaDriveWorld(World):
   def reset(self):
     self.should_reset = True
 
-  def close(self, reason):
+  def close(self, reason: str):
     self.status_q.put(QueueMessage(QueueMessageType.CLOSE_STATUS, reason))
     self.exit_event.set()
     self.metadrive_process.join()
