@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import asyncio
-import unittest
 from unittest.mock import Mock, MagicMock, patch
 import json
 # for aiortc and its dependencies
@@ -20,11 +19,11 @@ from openpilot.system.webrtc.device.audio import AudioInputStreamTrack
 from openpilot.common.realtime import DT_DMON
 
 
-class TestStreamSession(unittest.TestCase):
-  def setUp(self):
+class TestStreamSession:
+  def setup_method(self):
     self.loop = asyncio.new_event_loop()
 
-  def tearDown(self):
+  def teardown_method(self):
     self.loop.stop()
     self.loop.close()
 
@@ -65,9 +64,9 @@ class TestStreamSession(unittest.TestCase):
 
       mocked_pubmaster.send.assert_called_once()
       mt, md = mocked_pubmaster.send.call_args.args
-      self.assertEqual(mt, msg["type"])
-      self.assertIsInstance(md, capnp._DynamicStructBuilder)
-      self.assertTrue(hasattr(md, msg["type"]))
+      assert mt == msg["type"]
+      assert isinstance(md, capnp._DynamicStructBuilder)
+      assert hasattr(md, msg["type"])
 
       mocked_pubmaster.reset_mock()
 
@@ -78,14 +77,14 @@ class TestStreamSession(unittest.TestCase):
     with patch("cereal.messaging.SubSocket", spec=True, **config):
       track = LiveStreamVideoStreamTrack("driver")
 
-      self.assertTrue(track.id.startswith("driver"))
-      self.assertEqual(track.codec_preference(), "H264")
+      assert track.id.startswith("driver")
+      assert track.codec_preference() == "H264"
 
       for i in range(5):
         packet = self.loop.run_until_complete(track.recv())
-        self.assertEqual(packet.time_base, VIDEO_TIME_BASE)
-        self.assertEqual(packet.pts, int(i * DT_DMON * VIDEO_CLOCK_RATE))
-        self.assertEqual(packet.size, 0)
+        assert packet.time_base == VIDEO_TIME_BASE
+        assert packet.pts == int(i * DT_DMON * VIDEO_CLOCK_RATE)
+        assert packet.size == 0
 
   def test_input_audio_track(self):
     packet_time, rate = 0.02, 16000
@@ -99,10 +98,6 @@ class TestStreamSession(unittest.TestCase):
 
       for i in range(5):
         frame = self.loop.run_until_complete(track.recv())
-        self.assertEqual(frame.rate, rate)
-        self.assertEqual(frame.samples, sample_count)
-        self.assertEqual(frame.pts, i * sample_count)
-
-
-if __name__ == "__main__":
-  unittest.main()
+        assert frame.rate == rate
+        assert frame.samples == sample_count
+        assert frame.pts == i * sample_count
