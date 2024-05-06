@@ -126,13 +126,13 @@ class TestBaseUpdate:
 
   def _test_finalized_update(self, branch, version, agnos_version, release_notes):
     assert get_version(str(self.staging_root / "finalized")) == version
-    assert get_consistent_flag(str(self.staging_root / "finalized")) == True
+    assert get_consistent_flag(str(self.staging_root / "finalized"))
     assert os.access(str(self.staging_root / "finalized" / "launch_env.sh"), os.X_OK)
 
     with open(self.staging_root / "finalized" / "test_symlink") as f:
       assert version in f.read()
 
-class ParamsBaseUpdateTest(BaseUpdateTest):
+class ParamsTestBaseUpdate(TestBaseUpdate):
   def _test_finalized_update(self, branch, version, agnos_version, release_notes):
     assert self.params.get("UpdaterNewDescription", encoding="utf-8").startswith(f"{version} / {branch}")
     assert self.params.get("UpdaterNewReleaseNotes", encoding="utf-8") == f"<p>{release_notes}</p>\n"
