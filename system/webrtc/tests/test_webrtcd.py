@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import pytest
 import asyncio
 import json
 import unittest
@@ -26,7 +27,7 @@ class TestWebrtcdProc(unittest.IsolatedAsyncioTestCase):
       async with asyncio.timeout(timeout):
         await awaitable
     except TimeoutError:
-      self.fail("Timeout while waiting for awaitable to complete")
+      pytest.fail("Timeout while waiting for awaitable to complete")
 
   async def test_webrtcd(self):
     mock_request = MagicMock()
@@ -48,9 +49,9 @@ class TestWebrtcdProc(unittest.IsolatedAsyncioTestCase):
     await self.assertCompletesWithTimeout(stream.start())
     await self.assertCompletesWithTimeout(stream.wait_for_connection())
 
-    self.assertTrue(stream.has_incoming_video_track("road"))
-    self.assertTrue(stream.has_incoming_audio_track())
-    self.assertEqual(stream.has_messaging_channel(), len(self.in_services) > 0 or len(self.out_services) > 0)
+    assert stream.has_incoming_video_track("road")
+    assert stream.has_incoming_audio_track()
+    assert stream.has_messaging_channel() == len(self.in_services) > 0 or len(self.out_services) > 0
 
     video_track, audio_track = stream.get_incoming_video_track("road"), stream.get_incoming_audio_track()
     await self.assertCompletesWithTimeout(video_track.recv())
@@ -59,7 +60,7 @@ class TestWebrtcdProc(unittest.IsolatedAsyncioTestCase):
     await self.assertCompletesWithTimeout(stream.stop())
 
     # cleanup, very implementation specific, test may break if it changes
-    self.assertTrue(mock_request.app["streams"].__setitem__.called, "Implementation changed, please update this test")
+    assert mock_request.app["streams"].__setitem__.called, "Implementation changed, please update this test"
     _, session = mock_request.app["streams"].__setitem__.call_args.args
     await self.assertCompletesWithTimeout(session.post_run_cleanup())
 

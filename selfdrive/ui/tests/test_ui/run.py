@@ -122,14 +122,14 @@ TEST_OUTPUT_DIR = TEST_DIR / "report"
 SCREENSHOTS_DIR = TEST_OUTPUT_DIR / "screenshots"
 
 
-class TestUI(unittest.TestCase):
+class TestUI:
   @classmethod
-  def setUpClass(cls):
+  def setup_class(cls):
     os.environ["SCALE"] = "1"
     sys.modules["mouseinfo"] = False
 
   @classmethod
-  def tearDownClass(cls):
+  def teardown_class(cls):
     del sys.modules["mouseinfo"]
 
   def setup(self):
@@ -147,8 +147,8 @@ class TestUI(unittest.TestCase):
   def screenshot(self):
     import pyautogui
     im = pyautogui.screenshot(region=(self.ui.left, self.ui.top, self.ui.width, self.ui.height))
-    self.assertEqual(im.width, 2160)
-    self.assertEqual(im.height, 1080)
+    assert im.width == 2160
+    assert im.height == 1080
     img = np.array(im)
     im.close()
     return img

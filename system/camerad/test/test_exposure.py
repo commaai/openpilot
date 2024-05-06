@@ -9,9 +9,9 @@ from openpilot.system.camerad.snapshot.snapshot import get_snapshots
 TEST_TIME = 45
 REPEAT = 5
 
-class TestCamerad(unittest.TestCase):
+class TestCamerad:
   @classmethod
-  def setUpClass(cls):
+  def setup_class(cls):
     pass
 
   def _numpy_rgb2gray(self, im):
@@ -49,7 +49,7 @@ class TestCamerad(unittest.TestCase):
 
       passed += int(res)
       time.sleep(2)
-    self.assertGreaterEqual(passed, REPEAT)
+    assert passed >= REPEAT
 
 if __name__ == "__main__":
   unittest.main()

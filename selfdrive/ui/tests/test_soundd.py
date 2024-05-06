@@ -11,7 +11,7 @@ import time
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 
 
-class TestSoundd(unittest.TestCase):
+class TestSoundd:
   def test_check_controls_timeout_alert(self):
     sm = SubMaster(['controlsState'])
     pm = PubMaster(['controlsState'])
@@ -26,13 +26,13 @@ class TestSoundd(unittest.TestCase):
 
       sm.update(0)
 
-      self.assertFalse(check_controls_timeout_alert(sm))
+      assert not check_controls_timeout_alert(sm)
 
     for _ in range(CONTROLS_TIMEOUT * 110):
       sm.update(0)
       time.sleep(0.01)
 
-    self.assertTrue(check_controls_timeout_alert(sm))
+    assert check_controls_timeout_alert(sm)
 
   # TODO: add test with micd for checking that soundd actually outputs sounds
 

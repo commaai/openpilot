@@ -8,7 +8,7 @@ TEST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)))
 MANIFEST = os.path.join(TEST_DIR, "../agnos.json")
 
 
-class TestAgnosUpdater(unittest.TestCase):
+class TestAgnosUpdater:
 
   def test_manifest(self):
     with open(MANIFEST) as f:
@@ -17,7 +17,7 @@ class TestAgnosUpdater(unittest.TestCase):
     for img in m:
       r = requests.head(img['url'], timeout=10)
       r.raise_for_status()
-      self.assertEqual(r.headers['Content-Type'], "application/x-xz")
+      assert r.headers['Content-Type'] == "application/x-xz"
       if not img['sparse']:
         assert img['hash'] == img['hash_raw']
 

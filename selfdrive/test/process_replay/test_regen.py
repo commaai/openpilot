@@ -30,7 +30,7 @@ def ci_setup_data_readers(route, sidx):
   return lr, frs
 
 
-class TestRegen(unittest.TestCase):
+class TestRegen:
   @parameterized.expand(TESTED_SEGMENTS)
   def test_engaged(self, case_name, segment):
     route, sidx = segment.rsplit("--", 1)
@@ -38,7 +38,7 @@ class TestRegen(unittest.TestCase):
     output_logs = regen_segment(lr, frs, disable_tqdm=True)
 
     engaged = check_openpilot_enabled(output_logs)
-    self.assertTrue(engaged, f"openpilot not engaged in {case_name}")
+    assert engaged, f"openpilot not engaged in {case_name}"
 
 
 if __name__=='__main__':

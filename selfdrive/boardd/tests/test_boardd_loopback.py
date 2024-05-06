@@ -17,10 +17,10 @@ from openpilot.system.hardware import TICI
 from openpilot.selfdrive.test.helpers import phone_only, with_processes
 
 
-class TestBoardd(unittest.TestCase):
+class TestBoardd:
 
   @classmethod
-  def setUpClass(cls):
+  def setup_class(cls):
     os.environ['STARTED'] = '1'
     os.environ['BOARDD_LOOPBACK'] = '1'
 
@@ -38,8 +38,8 @@ class TestBoardd(unittest.TestCase):
 
     num_pandas = len(sm['pandaStates'])
     expected_pandas = 2 if TICI and "SINGLE_PANDA" not in os.environ else 1
-    self.assertEqual(num_pandas, expected_pandas, "connected pandas ({num_pandas}) doesn't match expected panda count ({expected_pandas}). \
-                                                   connect another panda for multipanda tests.")
+    assert num_pandas == expected_pandas, "connected pandas ({num_pandas}) doesn't match expected panda count ({expected_pandas}). \ \
+                                                   connect another panda for multipanda tests."
 
     # boardd safety setting relies on these params
     cp = car.CarParams.new_message()

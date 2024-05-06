@@ -11,12 +11,12 @@ from openpilot.common.params import Params
 from openpilot.selfdrive.manager.process_config import managed_processes
 
 
-class TestNavd(unittest.TestCase):
-  def setUp(self):
+class TestNavd:
+  def setup_method(self):
     self.params = Params()
     self.sm = messaging.SubMaster(['navRoute', 'navInstruction'])
 
-  def tearDown(self):
+  def teardown_method(self):
     managed_processes['navd'].stop()
 
   def _check_route(self, start, end, check_coords=True):

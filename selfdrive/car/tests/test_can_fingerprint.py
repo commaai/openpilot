@@ -7,7 +7,7 @@ from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, can_fingerpri
 from openpilot.selfdrive.car.fingerprints import _FINGERPRINTS as FINGERPRINTS
 
 
-class TestCanFingerprint(unittest.TestCase):
+class TestCanFingerprint:
   @parameterized.expand(list(FINGERPRINTS.items()))
   def test_can_fingerprint(self, car_model, fingerprints):
     """Tests online fingerprinting function on offline fingerprints"""
@@ -21,10 +21,10 @@ class TestCanFingerprint(unittest.TestCase):
       empty_can = messaging.new_message('can', 0)
       car_fingerprint, finger = can_fingerprint(lambda: next(fingerprint_iter, empty_can))  # noqa: B023
 
-      self.assertEqual(car_fingerprint, car_model)
-      self.assertEqual(finger[0], fingerprint)
-      self.assertEqual(finger[1], fingerprint)
-      self.assertEqual(finger[2], {})
+      assert car_fingerprint == car_model
+      assert finger[0] == fingerprint
+      assert finger[1] == fingerprint
+      assert finger[2] == {}
 
   def test_timing(self):
     # just pick any CAN fingerprinting car
@@ -59,8 +59,8 @@ class TestCanFingerprint(unittest.TestCase):
           return can  # noqa: B023
 
         car_fingerprint, _ = can_fingerprint(test)
-        self.assertEqual(car_fingerprint, car_model)
-        self.assertEqual(frames, expected_frames + 2)  # TODO: fix extra frames
+        assert car_fingerprint == car_model
+        assert frames == expected_frames + 2# TODO: fix extra frames
 
 
 if __name__ == "__main__":

@@ -13,29 +13,29 @@ CHASSIS_CODE_PATTERN = re.compile('[A-Z0-9]{2}')
 SPARE_PART_FW_PATTERN = re.compile(b'\xf1\x87(?P<gateway>[0-9][0-9A-Z]{2})(?P<unknown>[0-9][0-9A-Z][0-9])(?P<unknown2>[0-9A-Z]{2}[0-9])([A-Z0-9]| )')
 
 
-class TestVolkswagenPlatformConfigs(unittest.TestCase):
+class TestVolkswagenPlatformConfigs:
   def test_spare_part_fw_pattern(self):
     # Relied on for determining if a FW is likely VW
     for platform, ecus in FW_VERSIONS.items():
       with self.subTest(platform=platform):
         for fws in ecus.values():
           for fw in fws:
-            self.assertNotEqual(SPARE_PART_FW_PATTERN.match(fw), None, f"Bad FW: {fw}")
+            assert SPARE_PART_FW_PATTERN.match(fw) != None, f"Bad FW: {fw}"
 
   def test_chassis_codes(self):
     for platform in CAR:
       with self.subTest(platform=platform):
-        self.assertTrue(len(platform.config.wmis) > 0, "WMIs not set")
-        self.assertTrue(len(platform.config.chassis_codes) > 0, "Chassis codes not set")
-        self.assertTrue(all(CHASSIS_CODE_PATTERN.match(cc) for cc in
-                            platform.config.chassis_codes), "Bad chassis codes")
+        assert len(platform.config.wmis) > 0, "WMIs not set"
+        assert len(platform.config.chassis_codes) > 0, "Chassis codes not set"
+        assert all(CHASSIS_CODE_PATTERN.match(cc) for cc in \
+                            platform.config.chassis_codes), "Bad chassis codes"
 
         # No two platforms should share chassis codes
         for comp in CAR:
           if platform == comp:
             continue
-          self.assertEqual(set(), platform.config.chassis_codes & comp.config.chassis_codes,
-                           f"Shared chassis codes: {comp}")
+          assert set() == platform.config.chassis_codes & comp.config.chassis_codes, \
+                           f"Shared chassis codes: {comp}"
 
   def test_custom_fuzzy_fingerprinting(self):
     for platform in CAR:
@@ -58,7 +58,7 @@ class TestVolkswagenPlatformConfigs(unittest.TestCase):
               matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(live_fws, vin, FW_VERSIONS)
 
               expected_matches = {platform} if should_match else set()
-              self.assertEqual(expected_matches, matches, "Bad match")
+              assert expected_matches == matches, "Bad match"
 
 
 if __name__ == "__main__":
