@@ -92,12 +92,12 @@ class TestAthenadPing:
         time.sleep(0.1)
       print("ping received")
 
-  @pytest.mark.skipif(not TICI, "only run on desk")
+  @pytest.mark.skipif(not TICI, reason="only run on desk")
   def test_offroad(self) -> None:
     write_onroad_params(False, self.params)
     self.assertTimeout(60 + TIMEOUT_TOLERANCE)  # based using TCP keepalive settings
 
-  @pytest.mark.skipif(not TICI, "only run on desk")
+  @pytest.mark.skipif(not TICI, reason="only run on desk")
   def test_onroad(self) -> None:
     write_onroad_params(True, self.params)
     self.assertTimeout(21 + TIMEOUT_TOLERANCE)

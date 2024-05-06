@@ -132,7 +132,7 @@ class TestBaseUpdate:
     with open(self.staging_root / "finalized" / "test_symlink") as f:
       assert version in f.read()
 
-class ParamsTestBaseUpdate(TestBaseUpdate):
+class ParamsBaseUpdateTest(TestBaseUpdate):
   def _test_finalized_update(self, branch, version, agnos_version, release_notes):
     assert self.params.get("UpdaterNewDescription", encoding="utf-8").startswith(f"{version} / {branch}")
     assert self.params.get("UpdaterNewReleaseNotes", encoding="utf-8") == f"<p>{release_notes}</p>\n"
