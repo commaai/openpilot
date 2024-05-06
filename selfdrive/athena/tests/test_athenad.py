@@ -249,7 +249,7 @@ class TestAthenadMethods:
     self._wait_for_upload()
     time.sleep(0.1)
 
-    assert athenad.upload_queue.qsize() == 1 if retry else 0
+    assert athenad.upload_queue.qsize() == (1 if retry else 0)
 
     if retry:
       assert athenad.upload_queue.get().retry_count == 1
@@ -394,7 +394,7 @@ class TestAthenadMethods:
     keys = ["version", "remote", "branch", "commit"]
     assert list(resp.keys()) == keys
     for k in keys:
-      assert isinstance(resp[k], str, f"{k} is not a string")
+      assert isinstance(resp[k], str), f"{k} is not a string"
       assert len(resp[k]) > 0, f"{k} has no value"
 
   def test_jsonrpc_handler(self):
