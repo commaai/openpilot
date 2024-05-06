@@ -21,7 +21,7 @@ QueueMessage = namedtuple("QueueMessage", ["type", "info"], defaults=[None])
 class QueueMessageType(Enum):
   START_STATUS = 0
   CONTROL_COMMAND = 1
-  TERMINATION_STATUS = 2
+  TERMINATION_INFO = 2
   CLOSE_STATUS = 3
 
 def control_cmd_gen(cmd: str):

@@ -70,7 +70,7 @@ class MetaDriveWorld(World):
     while self.simulation_state_recv.poll(0):
       md_state: metadrive_simulation_state = self.simulation_state_recv.recv()
       if md_state.done:
-        self.status_q.put(QueueMessage(QueueMessageType.TERMINATION_STATUS, md_state.done_info))
+        self.status_q.put(QueueMessage(QueueMessageType.TERMINATION_INFO, md_state.done_info))
         self.exit_event.set()
 
   def read_sensors(self, state: SimulatorState):
