@@ -1,5 +1,7 @@
 #include "selfdrive/ui/qt/network/wifi_manager.h"
 
+#include <utility>
+
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/widgets/prime.h"
 
@@ -14,9 +16,15 @@ bool compare_by_strength(const Network &a, const Network &b) {
 
 template <typename T = QDBusMessage, typename... Args>
 T call(const QString &path, const QString &interface, const QString &method, Args &&...args) {
-  QDBusInterface nm = QDBusInterface(NM_DBUS_SERVICE, path, interface, QDBusConnection::systemBus());
+  QDBusInterface nm(NM_DBUS_SERVICE, path, interface, QDBusConnection::systemBus());
   nm.setTimeout(DBUS_TIMEOUT);
-  QDBusMessage response = nm.call(method, args...);
+
+  QDBusMessage response = nm.call(method, std::forward<Args>(args)...);
+  if (response.type() == QDBusMessage::ErrorMessage) {
+    qCritical() << "DBus call error:" << response.errorMessage();
+    return T();
+  }
+
   if constexpr (std::is_same_v<T, QDBusMessage>) {
     return response;
   } else if (response.arguments().count() >= 1) {
@@ -99,10 +107,20 @@ void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
   seenNetworks.clear();
 
   const QDBusReply<QList<QDBusObjectPath>> watcher_reply = *watcher;
+  if (!watcher_reply.isValid()) {
+    qCritical() << "Failed to refresh";
+    watcher->deleteLater();
+    return;
+  }
+
   for (const QDBusObjectPath &path : watcher_reply.value()) {
     QDBusReply<QVariantMap> reply = call(path.path(), NM_DBUS_INTERFACE_PROPERTIES, "GetAll", NM_DBUS_INTERFACE_ACCESS_POINT);
-    auto properties = reply.value();
+    if (!reply.isValid()) {
+      qCritical() << "Failed to retrieve properties for path:" << path.path();
+      continue;
+    }
 
+    auto properties = reply.value();
     const QByteArray ssid = properties["Ssid"].toByteArray();
     if (ssid.isEmpty()) continue;
 
@@ -210,16 +228,8 @@ void WifiManager::deactivateConnection(const QDBusObjectPath &path) {
 }
 
 QVector<QDBusObjectPath> WifiManager::getActiveConnections() {
-  QVector<QDBusObjectPath> conns;
-  QDBusObjectPath path;
-  const QDBusArgument &arr = call<QDBusArgument>(NM_DBUS_PATH, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE, "ActiveConnections");
-  arr.beginArray();
-  while (!arr.atEnd()) {
-    arr >> path;
-    conns.push_back(path);
-  }
-  arr.endArray();
-  return conns;
+  auto result = call<QDBusArgument>(NM_DBUS_PATH, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE, "ActiveConnections");
+  return qdbus_cast<QVector<QDBusObjectPath>>(result);
 }
 
 bool WifiManager::isKnownConnection(const QString &ssid) {
@@ -428,7 +438,10 @@ void WifiManager::addTetheringConnection() {
   connection["ipv4"]["route-metric"] = 1100;
   connection["ipv6"]["method"] = "ignore";
 
-  call(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "AddConnection", QVariant::fromValue(connection));
+  auto path = call<QDBusObjectPath>(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "AddConnection", QVariant::fromValue(connection));
+  if (!path.path().isEmpty()) {
+    knownConnections[path] = tethering_ssid;
+  }
 }
 
 void WifiManager::tetheringActivated(QDBusPendingCallWatcher *call) {

@@ -10,7 +10,6 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.utils import cache
 from openpilot.common.git import get_commit, get_origin, get_branch, get_short_branch, get_commit_date
-from openpilot.common.run import run_cmd
 
 RELEASE_BRANCHES = ['release3-staging', 'release3', 'nightly']
 TESTED_BRANCHES = RELEASE_BRANCHES + ['devel', 'devel-staging']
@@ -155,11 +154,6 @@ def get_build_metadata(path: str = BASEDIR) -> BuildMetadata:
 
   cloudlog.exception("unable to get build metadata")
   raise Exception("invalid build metadata")
-
-
-def get_agnos_version(directory: str = BASEDIR) -> str:
-  return run_cmd(["bash", "-c", r"unset AGNOS_VERSION && source launch_env.sh && \
-                          echo -n $AGNOS_VERSION"], cwd=directory).strip()
 
 
 if __name__ == "__main__":

@@ -4,10 +4,11 @@
 #include <curl/curl.h>
 #include <openssl/sha.h>
 
+#include <cassert>
+#include <algorithm>
+#include <cmath>
 #include <cstdarg>
 #include <cstring>
-#include <cassert>
-#include <cmath>
 #include <fstream>
 #include <iostream>
 #include <map>
@@ -158,7 +159,10 @@ size_t getRemoteFileSize(const std::string &url, std::atomic<bool> *abort) {
   int still_running = 1;
   while (still_running > 0 && !(abort && *abort)) {
     CURLMcode mc = curl_multi_perform(cm, &still_running);
-    if (!mc) curl_multi_wait(cm, nullptr, 0, 1000, nullptr);
+    if (mc != CURLM_OK) break;
+    if (still_running > 0) {
+      curl_multi_wait(cm, nullptr, 0, 1000, nullptr);
+    }
   }
 
   double content_length = -1;
@@ -208,10 +212,20 @@ bool httpDownload(const std::string &url, T &buf, size_t chunk_size, size_t cont
   }
 
   int still_running = 1;
+  size_t prev_written = 0;
   while (still_running > 0 && !(abort && *abort)) {
-    curl_multi_wait(cm, nullptr, 0, 1000, nullptr);
-    curl_multi_perform(cm, &still_running);
-    download_stats.update(url, written);
+    CURLMcode mc = curl_multi_perform(cm, &still_running);
+    if (mc != CURLM_OK) {
+      break;
+    }
+    if (still_running > 0) {
+      curl_multi_wait(cm, nullptr, 0, 1000, nullptr);
+    }
+
+    if (((written - prev_written) / (double)content_length) >= 0.01) {
+      download_stats.update(url, written);
+      prev_written = written;
+    }
   }
 
   CURLMsg *msg;
@@ -298,18 +312,39 @@ std::string decompressBZ2(const std::byte *in, size_t in_size, std::atomic<bool>
   BZ2_bzDecompressEnd(&strm);
   if (bzerror == BZ_STREAM_END && !(abort && *abort)) {
     out.resize(strm.total_out_lo32);
+    out.shrink_to_fit();
     return out;
   }
   return {};
 }
 
-void precise_nano_sleep(long sleep_ns) {
-  struct timespec req = {.tv_sec = 0, .tv_nsec = sleep_ns};
-  struct timespec rem = {};
+void precise_nano_sleep(int64_t nanoseconds) {
+#ifdef __APPLE__
+  const long estimate_ns = 1 * 1e6;  // 1ms
+  struct timespec req = {.tv_nsec = estimate_ns};
+  uint64_t start_sleep = nanos_since_boot();
+  while (nanoseconds > estimate_ns) {
+    nanosleep(&req, nullptr);
+    uint64_t end_sleep = nanos_since_boot();
+    nanoseconds -= (end_sleep - start_sleep);
+    start_sleep = end_sleep;
+  }
+  // spin wait
+  if (nanoseconds > 0) {
+    while ((nanos_since_boot() - start_sleep) <= nanoseconds) {
+      std::this_thread::yield();
+    }
+  }
+#else
+  struct timespec req, rem;
+
+  req.tv_sec = nanoseconds / 1e9;
+  req.tv_nsec = nanoseconds % (int64_t)1e9;
   while (clock_nanosleep(CLOCK_MONOTONIC, 0, &req, &rem) && errno == EINTR) {
     // Retry sleep if interrupted by a signal
     req = rem;
   }
+#endif
 }
 
 std::string sha256(const std::string &str) {
@@ -319,4 +354,27 @@ std::string sha256(const std::string &str) {
   SHA256_Update(&sha256, str.c_str(), str.size());
   SHA256_Final(hash, &sha256);
   return util::hexdump(hash, SHA256_DIGEST_LENGTH);
+}
+
+// MonotonicBuffer
+
+void *MonotonicBuffer::allocate(size_t bytes, size_t alignment) {
+  assert(bytes > 0);
+  void *p = std::align(alignment, bytes, current_buf, available);
+  if (p == nullptr) {
+    available = next_buffer_size = std::max(next_buffer_size, bytes);
+    current_buf = buffers.emplace_back(std::aligned_alloc(alignment, next_buffer_size));
+    next_buffer_size *= growth_factor;
+    p = current_buf;
+  }
+
+  current_buf = (char *)current_buf + bytes;
+  available -= bytes;
+  return p;
+}
+
+MonotonicBuffer::~MonotonicBuffer() {
+  for (auto buf : buffers) {
+    free(buf);
+  }
 }
