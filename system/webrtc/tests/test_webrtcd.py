@@ -51,7 +51,7 @@ class TestWebrtcdProc(unittest.IsolatedAsyncioTestCase):
 
     assert stream.has_incoming_video_track("road")
     assert stream.has_incoming_audio_track()
-    assert stream.has_messaging_channel() == len(self.in_services) > 0 or len(self.out_services) > 0
+    assert stream.has_messaging_channel() == (len(self.in_services) > 0 or len(self.out_services) > 0)
 
     video_track, audio_track = stream.get_incoming_video_track("road"), stream.get_incoming_audio_track()
     await self.assertCompletesWithTimeout(video_track.recv())
