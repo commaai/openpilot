@@ -6,10 +6,8 @@ import stat
 import subprocess
 import tempfile
 import time
-import unittest
-from unittest import mock
-
 import pytest
+from unittest import mock
 
 from openpilot.common.params import Params
 from openpilot.selfdrive.manager.process import ManagerProcess
@@ -52,13 +50,13 @@ def get_version(path: str) -> str:
 
 
 @pytest.mark.slow # TODO: can we test overlayfs in GHA?
-class BaseUpdateTest(unittest.TestCase):
+class TestBaseUpdate:
   @classmethod
-  def setUpClass(cls):
+  def setup_class(cls):
     if "Base" in cls.__name__:
-      raise unittest.SkipTest
+      pytest.skip()
 
-  def setUp(self):
+  def setup_method(self):
     self.tmpdir = tempfile.mkdtemp()
 
     run(["sudo", "mount", "-t", "tmpfs", "tmpfs", self.tmpdir]) # overlayfs doesn't work inside of docker unless this is a tmpfs
@@ -102,7 +100,7 @@ class BaseUpdateTest(unittest.TestCase):
   def additional_context(self):
     raise NotImplementedError("")
 
-  def tearDown(self):
+  def teardown_method(self):
     mock.patch.stopall()
     try:
       run(["sudo", "umount", "-l", str(self.staging_root / "merged")])
@@ -125,17 +123,17 @@ class BaseUpdateTest(unittest.TestCase):
       time.sleep(1)
 
   def _test_finalized_update(self, branch, version, agnos_version, release_notes):
-    self.assertEqual(get_version(str(self.staging_root / "finalized")), version)
-    self.assertEqual(get_consistent_flag(str(self.staging_root / "finalized")), True)
-    self.assertTrue(os.access(str(self.staging_root / "finalized" / "launch_env.sh"), os.X_OK))
+    assert get_version(str(self.staging_root / "finalized")) == version
+    assert get_consistent_flag(str(self.staging_root / "finalized"))
+    assert os.access(str(self.staging_root / "finalized" / "launch_env.sh"), os.X_OK)
 
     with open(self.staging_root / "finalized" / "test_symlink") as f:
-      self.assertIn(version, f.read())
+      assert version in f.read()
 
-class ParamsBaseUpdateTest(BaseUpdateTest):
+class ParamsBaseUpdateTest(TestBaseUpdate):
   def _test_finalized_update(self, branch, version, agnos_version, release_notes):
-    self.assertTrue(self.params.get("UpdaterNewDescription", encoding="utf-8").startswith(f"{version} / {branch}"))
-    self.assertEqual(self.params.get("UpdaterNewReleaseNotes", encoding="utf-8"), f"<p>{release_notes}</p>\n")
+    assert self.params.get("UpdaterNewDescription", encoding="utf-8").startswith(f"{version} / {branch}")
+    assert self.params.get("UpdaterNewReleaseNotes", encoding="utf-8") == f"<p>{release_notes}</p>\n"
     super()._test_finalized_update(branch, version, agnos_version, release_notes)
 
   def send_check_for_updates_signal(self, updated: ManagerProcess):
@@ -145,9 +143,9 @@ class ParamsBaseUpdateTest(BaseUpdateTest):
     updated.signal(signal.SIGHUP.value)
 
   def _test_params(self, branch, fetch_available, update_available):
-    self.assertEqual(self.params.get("UpdaterTargetBranch", encoding="utf-8"), branch)
-    self.assertEqual(self.params.get_bool("UpdaterFetchAvailable"), fetch_available)
-    self.assertEqual(self.params.get_bool("UpdateAvailable"), update_available)
+    assert self.params.get("UpdaterTargetBranch", encoding="utf-8") == branch
+    assert self.params.get_bool("UpdaterFetchAvailable") == fetch_available
+    assert self.params.get_bool("UpdateAvailable") == update_available
 
   def wait_for_idle(self):
     self.wait_for_condition(lambda: self.params.get("UpdaterState", encoding="utf-8") == "idle")

@@ -3,6 +3,7 @@ import http.server
 import os
 import threading
 import time
+import pytest
 
 from functools import wraps
 
@@ -32,8 +33,8 @@ def phone_only(f):
   @wraps(f)
   def wrap(self, *args, **kwargs):
     if PC:
-      self.skipTest("This test is not meant to run on PC")
-    f(self, *args, **kwargs)
+      pytest.skip("This test is not meant to run on PC")
+    return f(self, *args, **kwargs)
   return wrap
 
 def release_only(f):
