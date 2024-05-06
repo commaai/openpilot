@@ -78,8 +78,8 @@ if __name__ == "__main__":
             print("not in supported cars")
             break
 
-          _, exact_matches = match_fw_to_car(car_fw, allow_exact=True, allow_fuzzy=False)
-          _, fuzzy_matches = match_fw_to_car(car_fw, allow_exact=False, allow_fuzzy=True)
+          _, exact_matches = match_fw_to_car(car_fw, CP.carVin, allow_exact=True, allow_fuzzy=False)
+          _, fuzzy_matches = match_fw_to_car(car_fw, CP.carVin, allow_exact=False, allow_fuzzy=True)
 
           if (len(exact_matches) == 1) and (list(exact_matches)[0] == live_fingerprint):
             good_exact += 1

@@ -31,7 +31,8 @@ void map_renderer_free_image(void *inst, uint8_t *buf);
   return ffi, ffi.dlopen(lib)
 
 
-def wait_ready(lib, renderer):
+def wait_ready(lib, renderer, timeout=None):
+  st = time.time()
   while not lib.map_renderer_loaded(renderer):
     lib.map_renderer_update(renderer)
 
@@ -39,6 +40,9 @@ def wait_ready(lib, renderer):
     lib.map_renderer_process(renderer)
 
     time.sleep(0.01)
+
+    if timeout is not None and time.time() - st > timeout:
+      raise TimeoutError("Timeout waiting for map renderer to be ready")
 
 
 def get_image(lib, renderer):
