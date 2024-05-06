@@ -95,7 +95,7 @@ def test(q: 'Queue[str]') -> NoReturn:
 
 if __name__ == '__main__':
   from multiprocessing import Process, Queue
-  q: Queue[QueueMessage] = Queue()
+  q: 'Queue[QueueMessage]' = Queue()
   p = Process(target=test, args=(q,))
   p.daemon = True
   p.start()
