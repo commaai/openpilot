@@ -4,7 +4,7 @@ import unittest
 from openpilot.common.numpy_fast import interp
 
 
-class InterpTest(unittest.TestCase):
+class TestInterp:
   def test_correctness_controls(self):
     _A_CRUISE_MIN_BP = np.asarray([0., 5., 10., 20., 40.])
     _A_CRUISE_MIN_V = np.asarray([-1.0, -.8, -.67, -.5, -.30])
