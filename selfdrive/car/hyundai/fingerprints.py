@@ -417,6 +417,7 @@ FW_VERSIONS = {
       b'\xf1\x00LX2_ SCC FHCUP      1.00 1.03 99110-S8100         ',
       b'\xf1\x00LX2_ SCC FHCUP      1.00 1.04 99110-S8100         ',
       b'\xf1\x00LX2_ SCC FHCUP      1.00 1.05 99110-S8100         ',
+      b'\xf1\x00ON__ FCA FHCUP      1.00 1.00 99110-S9110         ',
       b'\xf1\x00ON__ FCA FHCUP      1.00 1.01 99110-S9110         ',
       b'\xf1\x00ON__ FCA FHCUP      1.00 1.02 99110-S9100         ',
       b'\xf1\x00ON__ FCA FHCUP      1.00 1.03 99110-S9100         ',
