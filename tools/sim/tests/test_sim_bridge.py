@@ -7,7 +7,7 @@ from multiprocessing import Queue
 
 from cereal import messaging
 from openpilot.common.basedir import BASEDIR
-from openpilot.tools.sim.bridge.common import control_cmd_gen, QueueMessageType
+from openpilot.tools.sim.bridge.common import QueueMessageType
 
 SIM_DIR = os.path.join(BASEDIR, "tools/sim")
 
@@ -62,8 +62,6 @@ class TestSimBridgeBase(unittest.TestCase):
 
     while time.monotonic() < start_time + max_time_per_step:
       sm.update()
-
-      q.put(control_cmd_gen("cruise_down"))  # Try engaging
 
       if sm.all_alive() and sm['controlsState'].active:
         control_active += 1
