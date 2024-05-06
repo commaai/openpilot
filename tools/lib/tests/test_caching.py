@@ -62,7 +62,7 @@ class TestFileDownload:
       shutil.rmtree(Paths.download_cache_root())
     URLFile(f"{host}/test.txt").get_length()
     URLFile(f"{host}/test.txt").read()
-    assert os.path.exists(Paths.download_cache_root()) == False
+    assert not os.path.exists(Paths.download_cache_root())
 
   def compare_loads(self, url, start=0, length=None):
     """Compares range between cached and non cached version"""
