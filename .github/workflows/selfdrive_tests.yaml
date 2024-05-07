@@ -147,7 +147,7 @@ jobs:
     - name: Run valgrind
       timeout-minutes: 1
       run: |
-        ${{ env.RUN }} "python selfdrive/test/test_valgrind_replay.py"
+        ${{ env.RUN }} "pytest selfdrive/test/test_valgrind_replay.py"
     - name: Print logs
       if: always()
       run: cat selfdrive/test/valgrind_logs.txt
