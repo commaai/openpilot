@@ -25,7 +25,8 @@ tinygrad_repo/disassemblers/
 tinygrad_repo/extra/accel/
 tinygrad_repo/extra/datasets/
 selfdrive/debug/
-panda/tests/
+panda/tests/safety/
+panda/tests/hitl/
 panda/examples/
 opendbc/generator/
 poetry.lock
