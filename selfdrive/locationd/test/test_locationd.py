@@ -17,8 +17,7 @@ class TestLocationdProc:
   LLD_MSGS = ['gpsLocationExternal', 'cameraOdometry', 'carState', 'liveCalibration',
               'accelerometer', 'gyroscope', 'magnetometer']
 
-  @pytest.fixture(autouse=True)
-  def setup(self):
+  def setup_method(self):
     random.seed(123489234)
 
     self.pm = messaging.PubMaster(self.LLD_MSGS)
