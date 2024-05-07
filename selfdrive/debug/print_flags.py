@@ -4,9 +4,8 @@ from selfdrive.car.values import BRANDS
 for brand in BRANDS:
   all_flags = set()
   for platform in brand:
-    if platform.config.flags == 0:
-      continue
-    all_flags |= set(platform.config.flags)
+    if platform.config.flags != 0:
+      all_flags |= set(platform.config.flags)
 
   if len(all_flags):
     print(brand.__module__.split('.')[-2].upper() + ':')
