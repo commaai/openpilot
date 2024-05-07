@@ -49,7 +49,7 @@ def apply_metadrive_patches(arrive_dest_done=True):
 
 def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera_array, image_lock,
                       controls_recv: Connection, simulation_state_send: Connection, vehicle_state_send: Connection,
-                      exit_event):
+                      exit_event, ci):
   arrive_dest_done = config.pop("arrive_dest_done", True)
   apply_metadrive_patches(arrive_dest_done)
 
@@ -78,7 +78,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
     cam.get_cam().reparentTo(env.vehicle.origin)
     cam.get_cam().setPos(C3_POSITION)
     cam.get_cam().setHpr(C3_HPR)
-    img = cam.perceive(to_float=False)
+    img = cam.perceive(clip=False)
     if type(img) != np.ndarray:
       img = img.get() # convert cupy array to numpy
     return img
@@ -113,8 +113,11 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
     if rk.frame % 5 == 0:
       obs, _, terminated, _, info = env.step(vc)
 
-      if terminated:
-        done_result = env.done_function("default_agent")
+      if terminated or (env.vehicle.on_broken_line and ci):
+        if terminated:
+          done_result = env.done_function("default_agent")
+        elif env.vehicle.on_broken_line:
+          done_result = (True, {"out_of_road" : True})
         simulation_state = metadrive_simulation_state(
           running=False,
           done=done_result[0],

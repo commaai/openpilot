@@ -27,11 +27,11 @@ def curve_block(length, angle=45, direction=0):
     "dir": direction
   }
 
-def create_map(track_size=60):
-  return dict(
+def create_map(track_size=60, ci=False):
+  mtd_map = dict(
     type=MapGenerateMethod.PG_MAP_FILE,
     lane_num=2,
-    lane_width=3.5,
+    lane_width=4,
     config=[
       None,
       straight_block(track_size),
@@ -45,8 +45,13 @@ def create_map(track_size=60):
     ]
   )
 
-failure_config = namedtuple("failure_config",
-                              ["out_of_route_done", "on_continuous_line_done", "on_broken_line_done"],
+  if ci:
+    mtd_map["config"] = mtd_map["config"][:-3]
+
+  return mtd_map
+
+done_config = namedtuple("done_config",
+                              ["out_of_route_done", "on_continuous_line_done", "arrive_dest"],
                               defaults=[False, False, False])
 
 class MetaDriveBridge(SimulatorBridge):
@@ -54,8 +59,9 @@ class MetaDriveBridge(SimulatorBridge):
 
   def __init__(self, dual_camera, high_quality, track_size=60, ci=False):
     self.should_render = False
-    self.failure_config = failure_config(True, True, True) if ci else failure_config()
+    self.done_config = done_config(True, True, True) if ci else done_config()
     self.track_size = track_size
+    self.ci = ci
 
     super().__init__(dual_camera, high_quality)
 
@@ -77,17 +83,16 @@ class MetaDriveBridge(SimulatorBridge):
       image_on_cuda=_cuda_enable,
       image_observation=True,
       interface_panel=[],
-      out_of_route_done=self.failure_config.out_of_route_done,
-      on_continuous_line_done=self.failure_config.on_continuous_line_done,
-      on_broken_line_done=self.failure_config.on_broken_line_done,
+      out_of_route_done=self.done_config.out_of_route_done,
+      on_continuous_line_done=self.done_config.on_continuous_line_done,
       crash_vehicle_done=False,
       crash_object_done=False,
-      arrive_dest_done=False,
+      arrive_dest_done=self.done_config.arrive_dest,
       traffic_density=0.0, # traffic is incredibly expensive
-      map_config=create_map(self.track_size),
+      map_config=create_map(self.track_size, self.ci),
       decision_repeat=1,
       physics_world_step_size=self.TICKS_PER_FRAME/100,
       preload_models=False
     )
 
-    return MetaDriveWorld(queue, config, self.dual_camera)
+    return MetaDriveWorld(queue, config, self.dual_camera, self.ci)
