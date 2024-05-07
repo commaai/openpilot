@@ -231,7 +231,7 @@ class PlatformConfig(Freezable):
 
   dbc_dict: DbcDict
 
-  flags: IntFlag = 0
+  flags: int = 0
 
   platform_str: str | None = None
 
