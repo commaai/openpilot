@@ -17,10 +17,6 @@
     "severity": 1,
     "_comment": "Set extra field to the failed reason."
   },
-  "Offroad_InvalidTime": {
-    "text": "Invalid date and time settings, system won't start. Connect to internet to set time.",
-    "severity": 1
-  },
   "Offroad_IsTakingSnapshot": {
     "text": "Taking camera snapshots. System won't start until finished.",
     "severity": 0

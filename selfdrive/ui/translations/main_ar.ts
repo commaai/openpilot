@@ -441,10 +441,6 @@
 %1</translation>
     </message>
     <message>
-        <source>Invalid date and time settings, system won&apos;t start. Connect to internet to set time.</source>
-        <translation>إعدادات التاريخ والتوقيت غير صحيحة، لن يبدأ النظام. اتصل بالإنترنت من أجل ضبط الوقت.</translation>
-    </message>
-    <message>
         <source>Taking camera snapshots. System won&apos;t start until finished.</source>
         <translation>التقاط لقطات كاميرا. لن يبدأ النظام حتى تنتهي هذه العملية.</translation>
     </message>
