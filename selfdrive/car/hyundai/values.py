@@ -549,7 +549,7 @@ class Buttons:
   CANCEL = 4  # on newer models, this is a pause/resume button
 
 
-def get_platform_codes(fw_versions: list[bytes]) -> set[tuple[bytes, bytes | None]]:
+def get_platform_codes(fw_versions: list[bytes] | set[bytes]) -> set[tuple[bytes, bytes | None]]:
   # Returns unique, platform-specific identification codes for a set of versions
   codes = set()  # (code-Optional[part], date)
   for fw in fw_versions:
