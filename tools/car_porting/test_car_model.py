@@ -12,7 +12,7 @@ def create_test_models_suite(routes: list[CarTestRoute], ci=False) -> unittest.T
   test_suite = unittest.TestSuite()
   for test_route in routes:
     # create new test case and discover tests
-    test_case_args = {"car_model": test_route.car_model, "test_route": test_route, "ci": ci}
+    test_case_args = {"platform": test_route.car_model, "test_route": test_route, "test_route_on_bucket": ci}
     CarModelTestCase = type("CarModelTestCase", (TestCarModel,), test_case_args)
     test_suite.addTest(unittest.TestLoader().loadTestsFromTestCase(CarModelTestCase))
   return test_suite
