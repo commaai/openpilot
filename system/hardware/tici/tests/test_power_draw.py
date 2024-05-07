@@ -97,7 +97,7 @@ class TestPowerDraw:
     return now, msg_counts, time.monotonic() - start_time - SAMPLE_TIME
 
   @mock_messages(['liveLocationKalman'])
-  def test_camera_procs(self):
+  def test_camera_procs(self, subtests):
     baseline = get_power()
 
     prev = baseline
@@ -122,7 +122,7 @@ class TestPowerDraw:
       expected = proc.power
       msgs_received = sum(msg_counts[msg] for msg in proc.msgs)
       tab.append([proc.name, round(expected, 2), round(cur, 2), self.get_expected_messages(proc), msgs_received, round(warmup_time[proc.name], 2)])
-      with self.subTest(proc=proc.name):
+      with subtests.test(proc=proc.name):
         assert self.valid_msg_count(proc, msg_counts), f"expected {self.get_expected_messages(proc)} msgs, got {msgs_received} msgs"
         assert self.valid_power_draw(proc, cur), f"expected {expected:.2f}W, got {cur:.2f}W"
     print(tabulate(tab))

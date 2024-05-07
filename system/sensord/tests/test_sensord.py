@@ -135,7 +135,7 @@ class TestSensord:
 
     assert seen in SENSOR_CONFIGURATIONS
 
-  def test_lsm6ds3_timing(self):
+  def test_lsm6ds3_timing(self, subtests):
     # verify measurements are sampled and published at 104Hz
 
     sensor_t = {
@@ -152,7 +152,7 @@ class TestSensord:
       sensor_t[m.sensor].append(m.timestamp)
 
     for s, vals in sensor_t.items():
-      with self.subTest(sensor=s):
+      with subtests.test(sensor=s):
         assert len(vals) > 0
         tdiffs = np.diff(vals) / 1e6 # millis
 
@@ -166,9 +166,9 @@ class TestSensord:
         stddev = np.std(tdiffs)
         assert stddev < 2.0, f"Standard-dev to big {stddev}"
 
-  def test_sensor_frequency(self):
+  def test_sensor_frequency(self, subtests):
     for s, msgs in self.events.items():
-      with self.subTest(sensor=s):
+      with subtests.test(sensor=s):
         freq = len(msgs) / self.sample_secs
         ef = SERVICE_LIST[s].frequency
         assert ef*0.85 <= freq <= ef*1.15

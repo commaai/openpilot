@@ -33,25 +33,25 @@ class TestCarDocs:
     print_car_docs_diff(dump_path)
     os.remove(dump_path)
 
-  def test_duplicate_years(self):
+  def test_duplicate_years(self, subtests):
     make_model_years = defaultdict(list)
     for car in self.all_cars:
-      with self.subTest(car_docs_name=car.name):
+      with subtests.test(car_docs_name=car.name):
         make_model = (car.make, car.model)
         for year in car.year_list:
           assert year not in make_model_years[make_model], f"{car.name}: Duplicate model year"
           make_model_years[make_model].append(year)
 
-  def test_missing_car_docs(subtests):
+  def test_missing_car_docs(self, subtests):
     all_car_docs_platforms = [name for name, config in PLATFORMS.items()]
     for platform in sorted(interfaces.keys()):
       with subtests.test(platform=platform):
         assert platform in all_car_docs_platforms, f"Platform: {platform} doesn't have a CarDocs entry"
 
-  def test_naming_conventions(self):
+  def test_naming_conventions(self, subtests):
     # Asserts market-standard car naming conventions by brand
     for car in self.all_cars:
-      with self.subTest(car=car):
+      with subtests.test(car=car):
         tokens = car.model.lower().split(" ")
         if car.car_name == "hyundai":
           assert "phev" not in tokens, "Use `Plug-in Hybrid`"
@@ -64,24 +64,24 @@ class TestCarDocs:
           if "rav4" in tokens:
             assert "RAV4" in car.model, "Use correct capitalization"
 
-  def test_torque_star(self):
+  def test_torque_star(self, subtests):
     # Asserts brand-specific assumptions around steering torque star
     for car in self.all_cars:
-      with self.subTest(car=car):
+      with subtests.test(car=car):
         # honda sanity check, it's the definition of a no torque star
         if car.car_fingerprint in (HONDA.HONDA_ACCORD, HONDA.HONDA_CIVIC, HONDA.HONDA_CRV, HONDA.HONDA_ODYSSEY, HONDA.HONDA_PILOT):
           assert car.row[Column.STEERING_TORQUE] == Star.EMPTY, f"{car.name} has full torque star"
         elif car.car_name in ("toyota", "hyundai"):
           assert car.row[Column.STEERING_TORQUE] != Star.EMPTY, f"{car.name} has no torque star"
 
-  def test_year_format(self):
+  def test_year_format(self, subtests):
     for car in self.all_cars:
-      with self.subTest(car=car):
+      with subtests.test(car=car):
         assert re.search(r"\d{4}-\d{4}", car.name) is None, f"Format years correctly: {car.name}"
 
-  def test_harnesses(self):
+  def test_harnesses(self, subtests):
     for car in self.all_cars:
-      with self.subTest(car=car):
+      with subtests.test(car=car):
         if car.name == "comma body":
           raise unittest.SkipTest
 

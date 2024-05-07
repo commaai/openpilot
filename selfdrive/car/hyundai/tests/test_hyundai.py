@@ -62,7 +62,7 @@ class TestHyundaiFingerprint:
       assert len(ecus_not_in_whitelist) == 0, \
                        f"{car_model}: Car model has unexpected ECUs: {ecu_strings}"
 
-  def test_blacklisted_parts(subtests):
+  def test_blacklisted_parts(self, subtests):
     # Asserts no ECUs known to be shared across platforms exist in the database.
     # Tucson having Santa Cruz camera and EPS for example
     for car_model, ecus in FW_VERSIONS.items():
@@ -76,7 +76,7 @@ class TestHyundaiFingerprint:
           part = code.split(b"-")[1]
           assert not part.startswith(b'CW'), "Car has bad part number"
 
-  def test_correct_ecu_response_database(subtests):
+  def test_correct_ecu_response_database(self, subtests):
     """
     Assert standard responses for certain ECUs, since they can
     respond to multiple queries with different data
@@ -96,7 +96,7 @@ class TestHyundaiFingerprint:
     fws = data.draw(fw_strategy)
     get_platform_codes(fws)
 
-  def test_expected_platform_codes(subtests):
+  def test_expected_platform_codes(self, subtests):
     # Ensures we don't accidentally add multiple platform codes for a car unless it is intentional
     for car_model, ecus in FW_VERSIONS.items():
       with subtests.test(car_model=car_model.value):
@@ -115,7 +115,7 @@ class TestHyundaiFingerprint:
 
   # Tests for platform codes, part numbers, and FW dates which Hyundai will use to fuzzy
   # fingerprint in the absence of full FW matches:
-  def test_platform_code_ecus_available(subtests):
+  def test_platform_code_ecus_available(self, subtests):
     # TODO: add queries for these non-CAN FD cars to get EPS
     no_eps_platforms = CANFD_CAR | {CAR.KIA_SORENTO, CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL, CAR.KIA_OPTIMA_H,
                                     CAR.KIA_OPTIMA_H_G4_FL, CAR.HYUNDAI_SONATA_LF, CAR.HYUNDAI_TUCSON, CAR.GENESIS_G90, CAR.GENESIS_G80, CAR.HYUNDAI_ELANTRA}
@@ -130,7 +130,7 @@ class TestHyundaiFingerprint:
             continue
           assert platform_code_ecu in [e[0] for e in ecus]
 
-  def test_fw_format(subtests):
+  def test_fw_format(self, subtests):
     # Asserts:
     # - every supported ECU FW version returns one platform code
     # - every supported ECU FW version has a part number

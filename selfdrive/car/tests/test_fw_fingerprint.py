@@ -105,7 +105,7 @@ class TestFwFingerprint:
       elif len(matches):
         self.assertFingerprints(matches, car_model)
 
-  def test_fw_version_lists(subtests):
+  def test_fw_version_lists(self, subtests):
     for car_model, ecus in FW_VERSIONS.items():
       with subtests.test(car_model=car_model.value):
         for ecu, ecu_fw in ecus.items():
@@ -124,7 +124,7 @@ class TestFwFingerprint:
           ecu_strings = ", ".join([f'Ecu.{ECU_NAME[ecu]}' for ecu in ecus_for_addr])
           assert len(ecus_for_addr) <= 1, f"{brand} has multiple ECUs that map to one address: {ecu_strings} -> ({hex(addr)}, {sub_addr})"
 
-  def test_data_collection_ecus(subtests):
+  def test_data_collection_ecus(self, subtests):
     # Asserts no extra ECUs are in the fingerprinting database
     for brand, config in FW_QUERY_CONFIGS.items():
       for car_model, ecus in VERSIONS[brand].items():
@@ -132,7 +132,7 @@ class TestFwFingerprint:
         with subtests.test(car_model=car_model.value):
           assert not len(bad_ecus), f'{car_model}: Fingerprints contain ECUs added for data collection: {bad_ecus}'
 
-  def test_blacklisted_ecus(subtests):
+  def test_blacklisted_ecus(self, subtests):
     blacklisted_addrs = (0x7c4, 0x7d0)  # includes A/C ecu and an unknown ecu
     for car_model, ecus in FW_VERSIONS.items():
       with subtests.test(car_model=car_model.value):
@@ -147,7 +147,7 @@ class TestFwFingerprint:
             for ecu in ecus.keys():
               assert ecu[0] != Ecu.transmission, f"{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})"
 
-  def test_non_essential_ecus(subtests):
+  def test_non_essential_ecus(self, subtests):
     for brand, config in FW_QUERY_CONFIGS.items():
       with subtests.test(brand):
         # These ECUs are already not in ESSENTIAL_ECUS which the fingerprint functions give a pass if missing
@@ -155,7 +155,7 @@ class TestFwFingerprint:
         assert unnecessary_non_essential_ecus == set(), "Declaring non-essential ECUs non-essential is not required: " + \
                                                                 f"{', '.join([f'Ecu.{ECU_NAME[ecu]}' for ecu in unnecessary_non_essential_ecus])}"
 
-  def test_missing_versions_and_configs(subtests):
+  def test_missing_versions_and_configs(self, subtests):
     brand_versions = set(VERSIONS.keys())
     brand_configs = set(FW_QUERY_CONFIGS.keys())
     if len(brand_configs - brand_versions):
@@ -172,7 +172,7 @@ class TestFwFingerprint:
       assert config.get_all_ecus({}) == set(config.extra_ecus)
       assert len(config.get_all_ecus(VERSIONS[brand])) > 0
 
-  def test_fw_request_ecu_whitelist(subtests):
+  def test_fw_request_ecu_whitelist(self, subtests):
     for brand, config in FW_QUERY_CONFIGS.items():
       with subtests.test(brand=brand):
         whitelisted_ecus = {ecu for r in config.requests for ecu in r.whitelist_ecus}
@@ -186,7 +186,7 @@ class TestFwFingerprint:
         assert not len(whitelisted_ecus) and len(ecus_not_whitelisted), \
                          f'{brand.title()}: ECUs not in any FW query whitelists: {ecu_strings}'
 
-  def test_fw_requests(subtests):
+  def test_fw_requests(self, subtests):
     # Asserts equal length request and response lists
     for brand, config in FW_QUERY_CONFIGS.items():
       with subtests.test(brand=brand):
@@ -243,7 +243,7 @@ class TestFwFingerprintTiming:
     assert avg_time < ref_time + self.TOL
     assert avg_time > ref_time - self.TOL, "Performance seems to have improved, update test refs."
 
-  def test_startup_timing(self):
+  def test_startup_timing(self, subtests):
     # Tests worse-case VIN query time and typical present ECU query time
     vin_ref_times = {'worst': 1.4, 'best': 0.7}  # best assumes we go through all queries to get a match
     present_ecu_ref_time = 0.45
@@ -263,7 +263,7 @@ class TestFwFingerprintTiming:
     print(f'get_present_ecus, query time={self.total_time / self.N} seconds')
 
     for name, args in (('worst', {}), ('best', {'retry': 1})):
-      with self.subTest(name=name):
+      with subtests.test(name=name):
         self.total_time = 0.0
         with (mock.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", self.fake_get_data)):
           for _ in range(self.N):
@@ -298,7 +298,7 @@ class TestFwFingerprintTiming:
     total_times = {1: 0.0, 2: 0.0}
     for num_pandas in (1, 2):
       for brand, config in FW_QUERY_CONFIGS.items():
-        with self.subTest(brand=brand, num_pandas=num_pandas):
+        with subtests.test(brand=brand, num_pandas=num_pandas):
           avg_time = self._benchmark_brand(brand, num_pandas)
           total_times[num_pandas] += avg_time
           avg_time = round(avg_time, 2)
@@ -312,7 +312,7 @@ class TestFwFingerprintTiming:
           print(f'{brand=}, {num_pandas=}, {len(config.requests)=}, avg FW query time={avg_time} seconds')
 
     for num_pandas in (1, 2):
-      with self.subTest(brand='all_brands', num_pandas=num_pandas):
+      with subtests.test(brand='all_brands', num_pandas=num_pandas):
         total_time = round(total_times[num_pandas], 2)
         self._assert_timing(total_time, total_ref_time[num_pandas])
         print(f'all brands, total FW query time={total_time} seconds')

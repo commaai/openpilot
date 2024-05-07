@@ -181,7 +181,7 @@ class TestOnroad:
       msgs[m.which()].append(m)
     return msgs
 
-  def test_service_frequencies(self):
+  def test_service_frequencies(self, subtests):
     for s, msgs in self.service_msgs.items():
       if s in ('initData', 'sentinel'):
         continue
@@ -190,7 +190,7 @@ class TestOnroad:
       if s in ('ubloxGnss', 'ubloxRaw', 'gnssMeasurements', 'gpsLocation', 'gpsLocationExternal', 'qcomGnss'):
         continue
 
-      with self.subTest(service=s):
+      with subtests.test(service=s):
         assert len(msgs) >= math.floor(SERVICE_LIST[s].frequency*55)
 
   def test_cloudlog_size(self):
@@ -238,7 +238,7 @@ class TestOnroad:
     veryslow = [x for x in ts if x > 40.]
     assert len(veryslow) < 5, f"Too many slow frame draw times: {veryslow}"
 
-  def test_cpu_usage(self):
+  def test_cpu_usage(self, subtests):
     result = "\n"
     result += "------------------------------------------------\n"
     result += "------------------ CPU Usage -------------------\n"
@@ -286,12 +286,12 @@ class TestOnroad:
     # Ensure there's no missing procs
     all_procs = {p.name for p in self.service_msgs['managerState'][0].managerState.processes if p.shouldBeRunning}
     for p in all_procs:
-      with self.subTest(proc=p):
+      with subtests.test(proc=p):
         assert any(p in pp for pp in PROCS.keys()), f"Expected CPU usage missing for {p}"
 
     # total CPU check
     procs_tot = sum([(max(x) if isinstance(x, tuple) else x) for x in PROCS.values()])
-    with self.subTest(name="total CPU"):
+    with subtests.test(name="total CPU"):
       assert procs_tot < MAX_TOTAL_CPU, "Total CPU budget exceeded"
     result +=  "------------------------------------------------\n"
     result += f"Total allocated CPU usage is {procs_tot}%, budget is {MAX_TOTAL_CPU}%, {MAX_TOTAL_CPU-procs_tot:.1f}% left\n"
