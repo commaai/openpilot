@@ -123,7 +123,7 @@ class TestCasync:
 
     assert stats['remote'] < len(self.contents)
 
-  @pytest.mark.skipif(not LOOPBACK, "requires loopback device")
+  @pytest.mark.skipif(not LOOPBACK, reason="requires loopback device")
   def test_lo_simple_extract(self):
     target = casync.parse_caibx(self.manifest_fn)
     sources = [('remote', casync.RemoteChunkReader(self.store_fn), casync.build_chunk_dict(target))]
@@ -135,7 +135,7 @@ class TestCasync:
 
     assert stats['remote'] == len(self.contents)
 
-  @pytest.mark.skipif(not LOOPBACK, "requires loopback device")
+  @pytest.mark.skipif(not LOOPBACK, reason="requires loopback device")
   def test_lo_chunk_reuse(self):
     """Test that chunks that are reused are only downloaded once"""
     target = casync.parse_caibx(self.manifest_fn)
