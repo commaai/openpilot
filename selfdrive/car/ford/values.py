@@ -169,7 +169,7 @@ def get_platform_codes(fw_versions: list[bytes] | set[bytes]) -> set[tuple[bytes
   return codes
 
 
-def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, offline_fw_versions: OfflineFwVersions) -> set[str]:
+def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, vin: str, offline_fw_versions: OfflineFwVersions) -> set[str]:
   candidates: set[str] = set()
 
   def match_ecu_fw(offline_ecu_fws: list[bytes], live_ecu_fws: set[bytes]) -> bool:
