@@ -1,5 +1,5 @@
 import os
-import unittest
+import pytest
 from uuid import uuid4
 
 from openpilot.common.file_helpers import atomic_write_in_dir
@@ -21,4 +21,4 @@ class TestFileHelpers:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

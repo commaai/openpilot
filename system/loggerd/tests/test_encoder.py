@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 import math
 import os
-import pytest
 import random
 import shutil
 import subprocess
 import time
-import unittest
+import pytest
 from pathlib import Path
 
 from parameterized import parameterized
@@ -153,4 +152,4 @@ class TestEncoder:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

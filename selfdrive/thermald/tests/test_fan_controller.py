@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-import unittest
-from unittest.mock import Mock, patch
+import pytest
+from pytest.mock import Mock, patch
 from parameterized import parameterized
 
 from openpilot.selfdrive.thermald.fan_controller import TiciFanController
@@ -53,4 +53,4 @@ class TestFanController:
     assert controller.update(90, True) >= 60
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

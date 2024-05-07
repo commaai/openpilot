@@ -1,8 +1,7 @@
 #!/usr/bin/env python
-import pytest
 import asyncio
 import json
-import unittest
+import pytest
 from unittest.mock import MagicMock, AsyncMock
 # for aiortc and its dependencies
 import warnings
@@ -21,7 +20,7 @@ from parameterized import parameterized_class
   (["testJoystick"], []),
   ([], []),
 ])
-class TestWebrtcdProc(unittest.IsolatedAsyncioTestCase):
+class TestWebrtcdProc(pytest.IsolatedAsyncioTestCase):
   async def assertCompletesWithTimeout(self, awaitable, timeout=1):
     try:
       async with asyncio.timeout(timeout):
@@ -66,4 +65,4 @@ class TestWebrtcdProc(unittest.IsolatedAsyncioTestCase):
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

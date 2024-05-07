@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 import os
-import pytest
 import signal
 import time
-import unittest
+import pytest
 
 from parameterized import parameterized
 
@@ -79,4 +78,4 @@ class TestManager:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import pytest
 from functools import partial, wraps
 import json
 import multiprocessing
@@ -9,12 +8,12 @@ import shutil
 import time
 import threading
 import queue
-import unittest
+import pytest
 from dataclasses import asdict, replace
 from datetime import datetime, timedelta
 from parameterized import parameterized
 
-from unittest import mock
+from pytest import mock
 from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
 
@@ -432,4 +431,4 @@ class TestAthenadMethods:
 
 
 if __name__ == '__main__':
-  unittest.main()
+  pytest.main()

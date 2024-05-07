@@ -2,10 +2,10 @@
 import pytest
 import random
 import time
-import unittest
+import pytest
 from collections import defaultdict
 from parameterized import parameterized
-from unittest import mock
+from pytest import mock
 
 from cereal import car
 from openpilot.selfdrive.car.car_helpers import interfaces
@@ -63,7 +63,7 @@ class TestFwFingerprint:
     # Assert brand-specific fuzzy fingerprinting function doesn't disagree with standard fuzzy function
     config = FW_QUERY_CONFIGS[brand]
     if config.match_fw_to_car_fuzzy is None:
-      raise unittest.SkipTest("Brand does not implement custom fuzzy fingerprinting function")
+      raise pytest.SkipTest("Brand does not implement custom fuzzy fingerprinting function")
 
     CP = car.CarParams.new_message()
     for _ in range(5):
@@ -85,7 +85,7 @@ class TestFwFingerprint:
     # Asserts that fuzzy matching does not count matching FW, but ECU address keys
     valid_ecus = [e for e in ecus if e[0] not in FUZZY_EXCLUDE_ECUS]
     if not len(valid_ecus):
-      raise unittest.SkipTest("Car model has no compatible ECUs for fuzzy matching")
+      raise pytest.SkipTest("Car model has no compatible ECUs for fuzzy matching")
 
     fw = []
     for ecu in valid_ecus:
@@ -319,4 +319,4 @@ class TestFwFingerprintTiming:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

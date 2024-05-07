@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import json
 import random
-import unittest
+import pytest
 import numpy as np
 
 from parameterized import parameterized
@@ -60,4 +60,4 @@ class TestNavd:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

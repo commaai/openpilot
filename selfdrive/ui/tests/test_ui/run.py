@@ -8,7 +8,7 @@ import numpy as np
 import os
 import pywinctl
 import time
-import unittest
+import pytest
 
 from parameterized import parameterized
 from cereal import messaging, car, log
@@ -188,7 +188,7 @@ def create_screenshots():
     shutil.rmtree(TEST_OUTPUT_DIR)
 
   SCREENSHOTS_DIR.mkdir(parents=True)
-  unittest.main(exit=False)
+  pytest.main(exit=False)
 
 if __name__ == "__main__":
   print("creating test screenshots")

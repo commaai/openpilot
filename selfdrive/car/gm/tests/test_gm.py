@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from parameterized import parameterized
-import unittest
+import pytest
 
 from openpilot.selfdrive.car.gm.fingerprints import FINGERPRINTS
 from openpilot.selfdrive.car.gm.values import CAMERA_ACC_CAR, GM_RX_OFFSET
@@ -23,4 +23,4 @@ class TestGMFingerprint:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

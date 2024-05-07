@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 import os
-import pytest
 import time
-import unittest
+import pytest
 
 import cereal.messaging as messaging
 from cereal import log
@@ -110,7 +109,7 @@ class TestPandad:
 
   def test_protocol_version_check(self):
     if not self.spi:
-      raise unittest.SkipTest("SPI test")
+      raise pytest.SkipTest("SPI test")
     # flash old fw
     fn = os.path.join(HERE, "bootstub.panda_h7_spiv0.bin")
     self._flash_bootstub_and_test(fn, expect_mismatch=True)
@@ -130,4 +129,4 @@ class TestPandad:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

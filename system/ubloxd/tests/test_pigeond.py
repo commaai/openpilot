@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import pytest
 import time
-import unittest
-
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
 from openpilot.common.gpio import gpio_read
@@ -57,4 +55,4 @@ class TestPigeond:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

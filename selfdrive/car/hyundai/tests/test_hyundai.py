@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from hypothesis import settings, given, strategies as st
-import unittest
+import pytest
 
 from cereal import car
 from openpilot.selfdrive.car.fw_versions import build_fw_dict
@@ -68,7 +68,7 @@ class TestHyundaiFingerprint:
     for car_model, ecus in FW_VERSIONS.items():
       with self.subTest(car_model=car_model.value):
         if car_model == CAR.HYUNDAI_SANTA_CRUZ_1ST_GEN:
-          raise unittest.SkipTest("Skip checking Santa Cruz for its parts")
+          raise pytest.SkipTest("Skip checking Santa Cruz for its parts")
 
         for code, _ in get_platform_codes(ecus[(Ecu.fwdCamera, 0x7c4, None)]):
           if b"-" not in code:
@@ -154,7 +154,7 @@ class TestHyundaiFingerprint:
             assert all(date is not None for _, date in codes)
 
           if car_model == CAR.HYUNDAI_GENESIS:
-            raise unittest.SkipTest("No part numbers for car model")
+            raise pytest.SkipTest("No part numbers for car model")
 
           # Hyundai places the ECU part number in their FW versions, assert all parsable
           # Some examples of valid formats: b"56310-L0010", b"56310L0010", b"56310/M6300"
@@ -219,4 +219,4 @@ class TestHyundaiFingerprint:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

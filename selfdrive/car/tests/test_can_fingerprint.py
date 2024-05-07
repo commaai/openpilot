@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from parameterized import parameterized
-import unittest
+import pytest
 
 from cereal import log, messaging
 from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, can_fingerprint
@@ -64,4 +64,4 @@ class TestCanFingerprint:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

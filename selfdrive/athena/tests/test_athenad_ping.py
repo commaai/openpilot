@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
-import pytest
 import subprocess
 import threading
 import time
-import unittest
+import pytest
 from typing import cast
-from unittest import mock
+from pytest import mock
 
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
@@ -104,4 +103,4 @@ class TestAthenadPing:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

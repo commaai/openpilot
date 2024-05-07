@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import unittest
+import pytest
 import numpy as np
 import random
 
@@ -104,4 +104,4 @@ class TestModeld:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

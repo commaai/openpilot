@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-import pytest
 import time
-import unittest
+import pytest
 import numpy as np
 
 from openpilot.system.hardware.tici.hardware import Tici
@@ -25,4 +24,4 @@ class TestHardware:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

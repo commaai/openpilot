@@ -2,7 +2,7 @@
 import pytest
 import time
 import random
-import unittest
+import pytest
 import subprocess
 
 from panda import Panda
@@ -16,7 +16,7 @@ class TestAmplifier:
   @classmethod
   def setup_class(cls):
     if not TICI:
-      raise unittest.SkipTest
+      raise pytest.SkipTest
 
   def setup_method(self):
     # clear dmesg
@@ -73,4 +73,4 @@ class TestAmplifier:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

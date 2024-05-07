@@ -1,4 +1,4 @@
-import unittest
+import pytest
 
 from openpilot.common.simple_kalman import KF1D
 
@@ -32,4 +32,4 @@ class TestSimpleKalman:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

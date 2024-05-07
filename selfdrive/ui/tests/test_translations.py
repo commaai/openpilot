@@ -3,7 +3,6 @@ import pytest
 import json
 import os
 import re
-import unittest
 import shutil
 import tempfile
 import xml.etree.ElementTree as ET
@@ -132,4 +131,4 @@ class TestTranslations:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

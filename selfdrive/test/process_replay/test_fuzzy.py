@@ -3,7 +3,7 @@ import copy
 from hypothesis import given, HealthCheck, Phase, settings
 import hypothesis.strategies as st
 from parameterized import parameterized
-import unittest
+import pytest
 
 from cereal import log
 from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
@@ -30,4 +30,4 @@ class TestFuzzProcesses:
     pr.replay_process(cfg, lr, fingerprint=TOYOTA.TOYOTA_COROLLA_TSS2, disable_progress=True)
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

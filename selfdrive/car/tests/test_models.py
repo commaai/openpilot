@@ -2,9 +2,8 @@
 import capnp
 import os
 import importlib
-import pytest
 import random
-import unittest
+import pytest
 from collections import defaultdict, Counter
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
@@ -155,12 +154,12 @@ class TestCarModelBase:
   @classmethod
   def setup_class(cls):
     if cls.__name__ == 'TestCarModel' or cls.__name__.endswith('Base'):
-      raise unittest.SkipTest
+      raise pytest.SkipTest
 
     if cls.test_route is None:
       if cls.platform in non_tested_cars:
         print(f"Skipping tests for {cls.platform}: missing route")
-        raise unittest.SkipTest
+        raise pytest.SkipTest
       raise Exception(f"missing test route for {cls.platform}")
 
     car_fw, can_msgs, experimental_long = cls.get_testing_data()
@@ -483,4 +482,4 @@ class TestCarModel(TestCarModelBase):
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

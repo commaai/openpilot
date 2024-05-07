@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import re
-import unittest
+import pytest
 
 from cereal import car
 from openpilot.selfdrive.car.volkswagen.values import CAR, FW_QUERY_CONFIG, WMI
@@ -62,4 +62,4 @@ class TestVolkswagenPlatformConfigs:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

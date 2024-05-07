@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import re
-import unittest
+import pytest
 
 from openpilot.selfdrive.car.honda.fingerprints import FW_VERSIONS
 
@@ -17,4 +17,4 @@ class TestHondaFingerprint:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

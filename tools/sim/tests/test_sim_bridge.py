@@ -1,7 +1,7 @@
 import os
 import subprocess
 import time
-import unittest
+import pytest
 
 from multiprocessing import Queue
 
@@ -14,7 +14,7 @@ class TestSimBridgeBase:
   @classmethod
   def setup_class(cls):
     if cls is TestSimBridgeBase:
-      raise unittest.SkipTest("Don't run this base class, run test_metadrive_bridge.py instead")
+      raise pytest.SkipTest("Don't run this base class, run test_metadrive_bridge.py instead")
 
   def setup_method(self):
     self.processes = []
@@ -83,4 +83,4 @@ class TestSimBridgeBase:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

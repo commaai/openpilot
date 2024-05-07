@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 import os
-import pytest
 import json
 import time
 import datetime
-import unittest
+import pytest
 import subprocess
 
 import cereal.messaging as messaging
@@ -121,4 +120,4 @@ class TestRawgpsd:
     self.check_assistance(True)
 
 if __name__ == "__main__":
-  unittest.main(failfast=True)
+  pytest.main(failfast=True)

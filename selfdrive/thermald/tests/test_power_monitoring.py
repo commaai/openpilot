@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-import unittest
-from unittest.mock import patch
+import pytest
+from pytest.mock import patch
 
 from openpilot.common.params import Params
 from openpilot.selfdrive.thermald.power_monitoring import PowerMonitoring, CAR_BATTERY_CAPACITY_uWh, \
@@ -197,4 +197,4 @@ class TestPowerMonitoring:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

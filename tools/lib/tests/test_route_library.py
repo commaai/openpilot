@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import unittest
+import pytest
 from collections import namedtuple
 
 from openpilot.tools.lib.route import SegmentName
@@ -29,4 +29,4 @@ class TestRouteLibrary:
       _validate(case)
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

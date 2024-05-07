@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import time
 import threading
-import unittest
+import pytest
 from collections import namedtuple
 from pathlib import Path
 from collections.abc import Sequence
@@ -120,4 +120,4 @@ class TestDeleter(UploaderTestCase):
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

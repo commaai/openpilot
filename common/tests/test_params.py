@@ -1,9 +1,8 @@
-import pytest
 import os
 import threading
 import time
 import uuid
-import unittest
+import pytest
 
 from openpilot.common.params import Params, ParamKeyType, UnknownKeyName
 
@@ -111,4 +110,4 @@ class TestParams:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

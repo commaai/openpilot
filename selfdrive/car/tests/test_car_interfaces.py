@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
 import math
-import unittest
+import pytest
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
 import importlib
@@ -159,4 +159,4 @@ class TestCarInterfaces:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

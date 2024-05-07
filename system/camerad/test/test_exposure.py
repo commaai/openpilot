@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import time
-import unittest
+import pytest
 import numpy as np
 
 from openpilot.selfdrive.test.helpers import with_processes, phone_only
@@ -52,4 +52,4 @@ class TestCamerad:
     assert passed >= REPEAT
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

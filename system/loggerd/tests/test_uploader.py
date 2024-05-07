@@ -2,7 +2,7 @@
 import os
 import time
 import threading
-import unittest
+import pytest
 import logging
 import json
 from pathlib import Path
@@ -187,4 +187,4 @@ class TestUploader(UploaderTestCase):
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 import os
-import pytest
 import time
-import unittest
+import pytest
 import numpy as np
 from collections import namedtuple, defaultdict
 
@@ -248,4 +247,4 @@ class TestSensord:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

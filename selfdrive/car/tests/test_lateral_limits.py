@@ -3,7 +3,7 @@ from collections import defaultdict
 import importlib
 from parameterized import parameterized_class
 import sys
-import unittest
+import pytest
 
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car.car_helpers import interfaces
@@ -34,14 +34,14 @@ class TestLateralLimits:
     CP = CarInterface.get_non_essential_params(cls.car_model)
 
     if CP.dashcamOnly:
-      raise unittest.SkipTest("Platform is behind dashcamOnly")
+      raise pytest.SkipTest("Platform is behind dashcamOnly")
 
     # TODO: test all platforms
     if CP.lateralTuning.which() != 'torque':
-      raise unittest.SkipTest
+      raise pytest.SkipTest
 
     if CP.notCar:
-      raise unittest.SkipTest
+      raise pytest.SkipTest
 
     CarControllerParams = importlib.import_module(f'selfdrive.car.{CP.carName}.values').CarControllerParams
     cls.control_params = CarControllerParams(CP)
@@ -74,7 +74,7 @@ class TestLateralLimits:
 
 
 if __name__ == "__main__":
-  result = unittest.main(exit=False)
+  result = pytest.main(exit=False)
 
   print(f"\n\n---- Lateral limit report ({len(CAR_MODELS)} cars) ----\n")
 

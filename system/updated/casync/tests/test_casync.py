@@ -2,7 +2,6 @@
 import pytest
 import os
 import pathlib
-import unittest
 import tempfile
 import subprocess
 
@@ -265,4 +264,4 @@ class TestCasyncDirectory:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import pytest
-import unittest
 import numpy as np
 from collections import defaultdict
 from enum import Enum
@@ -226,4 +225,4 @@ class TestLocationdScenarios:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

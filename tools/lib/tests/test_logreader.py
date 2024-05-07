@@ -5,12 +5,11 @@ import io
 import shutil
 import tempfile
 import os
-import unittest
 import pytest
 import requests
 
 from parameterized import parameterized
-from unittest import mock
+from pytest import mock
 
 from cereal import log as capnp_log
 from openpilot.tools.lib.logreader import LogIterable, LogReader, comma_api_source, parse_indirect, ReadMode, InternalUnavailableException
@@ -257,4 +256,4 @@ class TestLogReader:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

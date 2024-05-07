@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import itertools
-import unittest
+import pytest
 from parameterized import parameterized_class
 
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import STOP_DISTANCE
@@ -157,4 +157,4 @@ class TestLongitudinalControl:
 
 
 if __name__ == "__main__":
-  unittest.main(failfast=True)
+  pytest.main(failfast=True)

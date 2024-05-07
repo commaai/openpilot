@@ -6,11 +6,8 @@ import stat
 import subprocess
 import tempfile
 import time
-import unittest
-from unittest import mock
-
 import pytest
-
+from pytest import mock
 from openpilot.common.params import Params
 from openpilot.selfdrive.manager.process import ManagerProcess
 from openpilot.selfdrive.test.helpers import processes_context
@@ -56,7 +53,7 @@ class TestBaseUpdate:
   @classmethod
   def setup_class(cls):
     if "Base" in cls.__name__:
-      raise unittest.SkipTest
+      raise pytest.SkipTest
 
   def setup_method(self):
     self.tmpdir = tempfile.mkdtemp()

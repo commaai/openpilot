@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import random
-import unittest
+import pytest
 
 import numpy as np
 
@@ -114,4 +114,4 @@ class TestCalibrationd:
     np.testing.assert_allclose(c.rpy, [0.0, 0.0, MAX_ALLOWED_YAW_SPREAD*1.1], atol=1e-2)
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 import datetime
 import os
-import pytest
 import time
 import tempfile
-import unittest
+import pytest
 import shutil
 import signal
 import subprocess
@@ -299,4 +298,4 @@ class TestUpdated:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

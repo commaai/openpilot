@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import unittest
+import pytest
 from parameterized import parameterized
 from collections.abc import Iterable
 
@@ -79,4 +79,4 @@ class TestFordFW:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

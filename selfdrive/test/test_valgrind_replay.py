@@ -2,7 +2,7 @@
 import os
 import threading
 import time
-import unittest
+import pytest
 import subprocess
 import signal
 
@@ -114,4 +114,4 @@ class TestValgrind:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

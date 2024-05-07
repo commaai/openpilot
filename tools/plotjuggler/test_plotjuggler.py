@@ -4,7 +4,7 @@ import glob
 import signal
 import subprocess
 import time
-import unittest
+import pytest
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.timeout import Timeout
@@ -51,4 +51,4 @@ class TestPlotJuggler:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

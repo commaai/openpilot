@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import unittest
+import pytest
 
 from cereal import car
 from cereal import messaging
@@ -38,4 +38,4 @@ class TestSoundd:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

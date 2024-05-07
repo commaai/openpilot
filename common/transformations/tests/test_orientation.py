@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
-import unittest
+import pytest
 
 from openpilot.common.transformations.orientation import euler2quat, quat2euler, euler2rot, rot2euler, \
                                                rot2quat, quat2rot, \
@@ -65,4 +65,4 @@ class TestOrientation:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

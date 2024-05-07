@@ -4,7 +4,7 @@ import http.server
 import os
 import shutil
 import socket
-import unittest
+import pytest
 
 from parameterized import parameterized
 from openpilot.selfdrive.test.helpers import with_http_server
@@ -135,4 +135,4 @@ class TestFileDownload:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

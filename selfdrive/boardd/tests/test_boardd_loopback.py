@@ -3,7 +3,7 @@ import os
 import copy
 import random
 import time
-import unittest
+import pytest
 from collections import defaultdict
 from pprint import pprint
 
@@ -99,4 +99,4 @@ class TestBoardd:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

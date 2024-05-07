@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import pytest
-import unittest
 import requests
 import tempfile
 
@@ -65,4 +64,4 @@ class TestReaders:
     _check_data(fr_url)
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

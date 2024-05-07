@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import unittest
+import pytest
 
 from parameterized import parameterized
 
@@ -42,4 +42,4 @@ class TestRegen:
 
 
 if __name__=='__main__':
-  unittest.main()
+  pytest.main()

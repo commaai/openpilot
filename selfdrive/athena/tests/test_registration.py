@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import json
-import unittest
+import pytest
 from Crypto.PublicKey import RSA
 from pathlib import Path
-from unittest import mock
+from pytest import mock
 
 from openpilot.common.params import Params
 from openpilot.selfdrive.athena.registration import register, UNREGISTERED_DONGLE_ID
@@ -78,4 +78,4 @@ class TestRegistration:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

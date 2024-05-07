@@ -1,5 +1,5 @@
 from cereal import car
-import unittest
+import pytest
 from openpilot.selfdrive.car.subaru.fingerprints import FW_VERSIONS
 
 Ecu = car.CarParams.Ecu
@@ -17,4 +17,4 @@ class TestSubaruFingerprint:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

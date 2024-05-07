@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from hypothesis import given, settings, strategies as st
-import unittest
+import pytest
 
 from cereal import car
 from openpilot.selfdrive.car.fw_versions import build_fw_dict
@@ -171,4 +171,4 @@ class TestToyotaFingerprint:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

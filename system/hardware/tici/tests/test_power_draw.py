@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 from collections import defaultdict, deque
 import pytest
-import unittest
 import time
 import numpy as np
 from dataclasses import dataclass
@@ -130,4 +129,4 @@ class TestPowerDraw:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

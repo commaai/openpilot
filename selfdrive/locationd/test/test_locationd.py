@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-import pytest
 import json
 import random
-import unittest
+import pytest
 import time
 import capnp
 
@@ -93,4 +92,4 @@ class TestLocationdProc:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

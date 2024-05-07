@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import unittest
+import pytest
 
 from openpilot.selfdrive.car.values import PLATFORMS
 
@@ -22,4 +22,4 @@ class TestPlatformConfigs:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

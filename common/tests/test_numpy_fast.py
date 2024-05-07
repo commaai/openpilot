@@ -1,5 +1,5 @@
 import numpy as np
-import unittest
+import pytest
 
 from openpilot.common.numpy_fast import interp
 
@@ -23,4 +23,4 @@ class TestInterp:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

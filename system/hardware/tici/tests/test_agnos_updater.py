@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import json
 import os
-import unittest
+import pytest
 import requests
 
 TEST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)))
@@ -23,4 +23,4 @@ class TestAgnosUpdater:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()
