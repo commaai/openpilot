@@ -66,7 +66,7 @@ class TestRawgpsd:
         assert self._wait_for_output(7)
         managed_processes['qcomgpsd'].stop()
 
-  def test_turns_off_gnss(self):
+  def test_turns_off_gnss(self, subtests):
     for s in (0.1, 1, 5):
       with subtests.test(runtime=s):
         managed_processes['qcomgpsd'].start()
