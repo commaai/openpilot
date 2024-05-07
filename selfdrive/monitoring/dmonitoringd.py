@@ -53,7 +53,7 @@ def dmonitoringd_thread():
 
     # Update events from driver state
     driver_status.update_events(events, driver_engaged, sm['controlsState'].enabled,
-      sm['carState'].standstill, sm['carState'].gearShifter in [car.CarState.GearShifter.reverse, car.CarState.GearShifter.park])
+      sm['carState'].standstill, sm['carState'].gearShifter in [car.CarState.GearShifter.reverse, car.CarState.GearShifter.park], sm['carState'].vEgo)
 
     # build driverMonitoringState packet
     dat = messaging.new_message('driverMonitoringState', valid=sm.all_checks())
