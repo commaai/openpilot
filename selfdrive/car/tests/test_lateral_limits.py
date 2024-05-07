@@ -25,11 +25,11 @@ car_model_jerks: defaultdict[str, dict[str, float]] = defaultdict(dict)
 
 
 @parameterized_class('car_model', [(c,) for c in sorted(CAR_MODELS)])
-class TestLateralLimits(unittest.TestCase):
+class TestLateralLimits:
   car_model: str
 
   @classmethod
-  def setUpClass(cls):
+  def setup_class(cls):
     CarInterface, _, _ = interfaces[cls.car_model]
     CP = CarInterface.get_non_essential_params(cls.car_model)
 
@@ -66,11 +66,11 @@ class TestLateralLimits(unittest.TestCase):
   def test_jerk_limits(self):
     up_jerk, down_jerk = self.calculate_0_5s_jerk(self.control_params, self.torque_params)
     car_model_jerks[self.car_model] = {"up_jerk": up_jerk, "down_jerk": down_jerk}
-    self.assertLessEqual(up_jerk, MAX_LAT_JERK_UP + MAX_LAT_JERK_UP_TOLERANCE)
-    self.assertLessEqual(down_jerk, MAX_LAT_JERK_DOWN)
+    assert up_jerk <= MAX_LAT_JERK_UP + MAX_LAT_JERK_UP_TOLERANCE
+    assert down_jerk <= MAX_LAT_JERK_DOWN
 
   def test_max_lateral_accel(self):
-    self.assertLessEqual(self.torque_params["MAX_LAT_ACCEL_MEASURED"], MAX_LAT_ACCEL)
+    assert self.torque_params["MAX_LAT_ACCEL_MEASURED"] <= MAX_LAT_ACCEL
 
 
 if __name__ == "__main__":

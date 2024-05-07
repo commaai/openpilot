@@ -43,19 +43,19 @@ ECU_FW_CORE = {
 }
 
 
-class TestFordFW(unittest.TestCase):
+class TestFordFW:
   def test_fw_query_config(self):
     for (ecu, addr, subaddr) in FW_QUERY_CONFIG.extra_ecus:
-      self.assertIn(ecu, ECU_ADDRESSES, "Unknown ECU")
-      self.assertEqual(addr, ECU_ADDRESSES[ecu], "ECU address mismatch")
-      self.assertIsNone(subaddr, "Unexpected ECU subaddress")
+      assert ecu in ECU_ADDRESSES, "Unknown ECU"
+      assert addr == ECU_ADDRESSES[ecu], "ECU address mismatch"
+      assert subaddr, "Unexpected ECU subaddress" is None
 
   @parameterized.expand(FW_VERSIONS.items())
   def test_fw_versions(self, car_model: str, fw_versions: dict[tuple[capnp.lib.capnp._EnumModule, int, int | None], Iterable[bytes]]):
     for (ecu, addr, subaddr), fws in fw_versions.items():
-      self.assertIn(ecu, ECU_FW_CORE, "Unexpected ECU")
-      self.assertEqual(addr, ECU_ADDRESSES[ecu], "ECU address mismatch")
-      self.assertIsNone(subaddr, "Unexpected ECU subaddress")
+      assert ecu in ECU_FW_CORE, "Unexpected ECU"
+      assert addr == ECU_ADDRESSES[ecu], "ECU address mismatch"
+      assert subaddr, "Unexpected ECU subaddress" is None
 
       # Software part number takes the form: PREFIX-CORE-SUFFIX
       # Prefix changes based on the family of part. It includes the model year
@@ -65,17 +65,17 @@ class TestFordFW(unittest.TestCase):
       #   Small increments in the suffix are usually compatible.
       # Details: https://forscan.org/forum/viewtopic.php?p=70008#p70008
       for fw in fws:
-        self.assertEqual(len(fw), 24, "Expected ECU response to be 24 bytes")
+        assert len(fw) == 24, "Expected ECU response to be 24 bytes"
 
         # TODO: parse with regex, don't need detailed error message
         fw_parts = fw.rstrip(b'\x00').split(b'-')
-        self.assertEqual(len(fw_parts), 3, "Expected FW to be in format: prefix-core-suffix")
+        assert len(fw_parts) == 3, "Expected FW to be in format: prefix-core-suffix"
 
         prefix, core, suffix = fw_parts
-        self.assertEqual(len(prefix), 4, "Expected FW prefix to be 4 characters")
-        self.assertIn(len(core), (5, 6), "Expected FW core to be 5-6 characters")
-        self.assertIn(core, ECU_FW_CORE[ecu], f"Unexpected FW core for {ecu}")
-        self.assertIn(len(suffix), (2, 3), "Expected FW suffix to be 2-3 characters")
+        assert len(prefix) == 4, "Expected FW prefix to be 4 characters"
+        assert len(core) in (5, 6), "Expected FW core to be 5-6 characters"
+        assert core in ECU_FW_CORE[ecu], f"Unexpected FW core for {ecu}"
+        assert len(suffix) in (2, 3), "Expected FW suffix to be 2-3 characters"
 
 
 if __name__ == "__main__":

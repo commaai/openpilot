@@ -17,7 +17,7 @@ NOT_TESTED = ['controlsd', 'plannerd', 'calibrationd', 'dmonitoringd', 'paramsd'
 
 TEST_CASES = [(cfg.proc_name, copy.deepcopy(cfg)) for cfg in pr.CONFIGS if cfg.proc_name not in NOT_TESTED]
 
-class TestFuzzProcesses(unittest.TestCase):
+class TestFuzzProcesses:
 
   # TODO: make this faster and increase examples
   @parameterized.expand(TEST_CASES)

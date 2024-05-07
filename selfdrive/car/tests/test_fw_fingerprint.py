@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import pytest
 import random
 import time
 import unittest
@@ -27,11 +28,11 @@ class FakeSocket:
     pass
 
 
-class TestFwFingerprint(unittest.TestCase):
+class TestFwFingerprint:
   def assertFingerprints(self, candidates, expected):
     candidates = list(candidates)
-    self.assertEqual(len(candidates), 1, f"got more than one candidate: {candidates}")
-    self.assertEqual(candidates[0], expected)
+    assert len(candidates) == 1, f"got more than one candidate: {candidates}"
+    assert candidates[0] == expected
 
   @parameterized.expand([(b, c, e[c], n) for b, e in VERSIONS.items() for c in e for n in (True, False)])
   def test_exact_match(self, brand, car_model, ecus, test_non_essential):
@@ -77,7 +78,7 @@ class TestFwFingerprint(unittest.TestCase):
 
       # If both have matches, they must agree
       if len(matches) == 1 and len(brand_matches) == 1:
-        self.assertEqual(matches, brand_matches)
+        assert matches == brand_matches
 
   @parameterized.expand([(b, c, e[c]) for b, e in VERSIONS.items() for c in e])
   def test_fuzzy_match_ecu_count(self, brand, car_model, ecus):
@@ -99,7 +100,7 @@ class TestFwFingerprint(unittest.TestCase):
       # Assert no match if there are not enough unique ECUs
       unique_ecus = {(f['address'], f['subAddress']) for f in fw}
       if len(unique_ecus) < 2:
-        self.assertEqual(len(matches), 0, car_model)
+        assert len(matches) == 0, car_model
       # There won't always be a match due to shared FW, but if there is it should be correct
       elif len(matches):
         self.assertFingerprints(matches, car_model)
@@ -110,8 +111,8 @@ class TestFwFingerprint(unittest.TestCase):
         for ecu, ecu_fw in ecus.items():
           with self.subTest(ecu):
             duplicates = {fw for fw in ecu_fw if ecu_fw.count(fw) > 1}
-            self.assertFalse(len(duplicates), f'{car_model}: Duplicate FW versions: Ecu.{ECU_NAME[ecu[0]]}, {duplicates}')
-            self.assertGreater(len(ecu_fw), 0, f'{car_model}: No FW versions: Ecu.{ECU_NAME[ecu[0]]}')
+            assert not len(duplicates), f'{car_model}: Duplicate FW versions: Ecu.{ECU_NAME[ecu[0]]}, {duplicates}'
+            assert len(ecu_fw) > 0, f'{car_model}: No FW versions: Ecu.{ECU_NAME[ecu[0]]}'
 
   def test_all_addrs_map_to_one_ecu(self):
     for brand, cars in VERSIONS.items():
@@ -121,7 +122,7 @@ class TestFwFingerprint(unittest.TestCase):
           addr_to_ecu[(addr, sub_addr)].add(ecu_type)
           ecus_for_addr = addr_to_ecu[(addr, sub_addr)]
           ecu_strings = ", ".join([f'Ecu.{ECU_NAME[ecu]}' for ecu in ecus_for_addr])
-          self.assertLessEqual(len(ecus_for_addr), 1, f"{brand} has multiple ECUs that map to one address: {ecu_strings} -> ({hex(addr)}, {sub_addr})")
+          assert len(ecus_for_addr) <= 1, f"{brand} has multiple ECUs that map to one address: {ecu_strings} -> ({hex(addr)}, {sub_addr})"
 
   def test_data_collection_ecus(self):
     # Asserts no extra ECUs are in the fingerprinting database
@@ -129,7 +130,7 @@ class TestFwFingerprint(unittest.TestCase):
       for car_model, ecus in VERSIONS[brand].items():
         bad_ecus = set(ecus).intersection(config.extra_ecus)
         with self.subTest(car_model=car_model.value):
-          self.assertFalse(len(bad_ecus), f'{car_model}: Fingerprints contain ECUs added for data collection: {bad_ecus}')
+          assert not len(bad_ecus), f'{car_model}: Fingerprints contain ECUs added for data collection: {bad_ecus}'
 
   def test_blacklisted_ecus(self):
     blacklisted_addrs = (0x7c4, 0x7d0)  # includes A/C ecu and an unknown ecu
@@ -138,38 +139,38 @@ class TestFwFingerprint(unittest.TestCase):
         CP = interfaces[car_model][0].get_non_essential_params(car_model)
         if CP.carName == 'subaru':
           for ecu in ecus.keys():
-            self.assertNotIn(ecu[1], blacklisted_addrs, f'{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})')
+            assert ecu[1] not in blacklisted_addrs, f'{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})'
 
         elif CP.carName == "chrysler":
           # Some HD trucks have a combined TCM and ECM
           if CP.carFingerprint.startswith("RAM HD"):
             for ecu in ecus.keys():
-              self.assertNotEqual(ecu[0], Ecu.transmission, f"{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})")
+              assert ecu[0] != Ecu.transmission, f"{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})"
 
   def test_non_essential_ecus(self):
     for brand, config in FW_QUERY_CONFIGS.items():
       with self.subTest(brand):
         # These ECUs are already not in ESSENTIAL_ECUS which the fingerprint functions give a pass if missing
         unnecessary_non_essential_ecus = set(config.non_essential_ecus) - set(ESSENTIAL_ECUS)
-        self.assertEqual(unnecessary_non_essential_ecus, set(), "Declaring non-essential ECUs non-essential is not required: " +
-                                                                f"{', '.join([f'Ecu.{ECU_NAME[ecu]}' for ecu in unnecessary_non_essential_ecus])}")
+        assert unnecessary_non_essential_ecus == set(), "Declaring non-essential ECUs non-essential is not required: " + \
+                                                                f"{', '.join([f'Ecu.{ECU_NAME[ecu]}' for ecu in unnecessary_non_essential_ecus])}"
 
   def test_missing_versions_and_configs(self):
     brand_versions = set(VERSIONS.keys())
     brand_configs = set(FW_QUERY_CONFIGS.keys())
     if len(brand_configs - brand_versions):
       with self.subTest():
-        self.fail(f"Brands do not implement FW_VERSIONS: {brand_configs - brand_versions}")
+        pytest.fail(f"Brands do not implement FW_VERSIONS: {brand_configs - brand_versions}")
 
     if len(brand_versions - brand_configs):
       with self.subTest():
-        self.fail(f"Brands do not implement FW_QUERY_CONFIG: {brand_versions - brand_configs}")
+        pytest.fail(f"Brands do not implement FW_QUERY_CONFIG: {brand_versions - brand_configs}")
 
     # Ensure each brand has at least 1 ECU to query, and extra ECU retrieval
     for brand, config in FW_QUERY_CONFIGS.items():
-      self.assertEqual(len(config.get_all_ecus({}, include_extra_ecus=False)), 0)
-      self.assertEqual(config.get_all_ecus({}), set(config.extra_ecus))
-      self.assertGreater(len(config.get_all_ecus(VERSIONS[brand])), 0)
+      assert len(config.get_all_ecus({}, include_extra_ecus=False)) == 0
+      assert config.get_all_ecus({}) == set(config.extra_ecus)
+      assert len(config.get_all_ecus(VERSIONS[brand])) > 0
 
   def test_fw_request_ecu_whitelist(self):
     for brand, config in FW_QUERY_CONFIGS.items():
@@ -182,30 +183,30 @@ class TestFwFingerprint(unittest.TestCase):
         ecus_not_whitelisted = brand_ecus - whitelisted_ecus
 
         ecu_strings = ", ".join([f'Ecu.{ECU_NAME[ecu]}' for ecu in ecus_not_whitelisted])
-        self.assertFalse(len(whitelisted_ecus) and len(ecus_not_whitelisted),
-                         f'{brand.title()}: ECUs not in any FW query whitelists: {ecu_strings}')
+        assert not len(whitelisted_ecus) and len(ecus_not_whitelisted), \
+                         f'{brand.title()}: ECUs not in any FW query whitelists: {ecu_strings}'
 
   def test_fw_requests(self):
     # Asserts equal length request and response lists
     for brand, config in FW_QUERY_CONFIGS.items():
       with self.subTest(brand=brand):
         for request_obj in config.requests:
-          self.assertEqual(len(request_obj.request), len(request_obj.response))
+          assert len(request_obj.request) == len(request_obj.response)
 
           # No request on the OBD port (bus 1, multiplexed) should be run on an aux panda
-          self.assertFalse(request_obj.auxiliary and request_obj.bus == 1 and request_obj.obd_multiplexing,
-                           f"{brand.title()}: OBD multiplexed request is marked auxiliary: {request_obj}")
+          assert not request_obj.auxiliary and request_obj.bus == 1 and request_obj.obd_multiplexing, \
+                           f"{brand.title()}: OBD multiplexed request is marked auxiliary: {request_obj}"
 
   def test_brand_ecu_matches(self):
     empty_response = {brand: set() for brand in FW_QUERY_CONFIGS}
-    self.assertEqual(get_brand_ecu_matches(set()), empty_response)
+    assert get_brand_ecu_matches(set()) == empty_response
 
     # we ignore bus
     expected_response = empty_response | {'toyota': {(0x750, 0xf)}}
-    self.assertEqual(get_brand_ecu_matches({(0x758, 0xf, 99)}), expected_response)
+    assert get_brand_ecu_matches({(0x758, 0xf, 99)}) == expected_response
 
 
-class TestFwFingerprintTiming(unittest.TestCase):
+class TestFwFingerprintTiming:
   N: int = 5
   TOL: float = 0.05
 
@@ -239,8 +240,8 @@ class TestFwFingerprintTiming(unittest.TestCase):
     return self.total_time / self.N
 
   def _assert_timing(self, avg_time, ref_time):
-    self.assertLess(avg_time, ref_time + self.TOL)
-    self.assertGreater(avg_time, ref_time - self.TOL, "Performance seems to have improved, update test refs.")
+    assert avg_time < ref_time + self.TOL
+    assert avg_time > ref_time - self.TOL, "Performance seems to have improved, update test refs."
 
   def test_startup_timing(self):
     # Tests worse-case VIN query time and typical present ECU query time

@@ -12,7 +12,7 @@ from openpilot.tools.plotjuggler.juggle import DEMO_ROUTE, install
 
 PJ_DIR = os.path.join(BASEDIR, "tools/plotjuggler")
 
-class TestPlotJuggler(unittest.TestCase):
+class TestPlotJuggler:
 
   def test_demo(self):
     install()
@@ -28,10 +28,10 @@ class TestPlotJuggler(unittest.TestCase):
 
       # ensure plotjuggler didn't crash after exiting the plugin
       time.sleep(15)
-      self.assertEqual(p.poll(), None)
+      assert p.poll() == None
       os.killpg(os.getpgid(p.pid), signal.SIGTERM)
 
-      self.assertNotIn("Raw file read failed", output)
+      assert "Raw file read failed" not in output
 
   # TODO: also test that layouts successfully load
   def test_layouts(self):

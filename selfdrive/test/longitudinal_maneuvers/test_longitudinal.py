@@ -144,7 +144,7 @@ def create_maneuvers(kwargs):
 
 
 @parameterized_class(("e2e", "force_decel"), itertools.product([True, False], repeat=2))
-class LongitudinalControl(unittest.TestCase):
+class TestLongitudinalControl:
   e2e: bool
   force_decel: bool
 
@@ -153,7 +153,7 @@ class LongitudinalControl(unittest.TestCase):
       with self.subTest(title=maneuver.title, e2e=maneuver.e2e, force_decel=maneuver.force_decel):
         print(maneuver.title, f'in {"e2e" if maneuver.e2e else "acc"} mode')
         valid, _ = maneuver.evaluate()
-        self.assertTrue(valid)
+        assert valid
 
 
 if __name__ == "__main__":

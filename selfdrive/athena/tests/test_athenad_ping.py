@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import pytest
 import subprocess
 import threading
 import time
@@ -22,7 +23,7 @@ def wifi_radio(on: bool) -> None:
   subprocess.run(["nmcli", "radio", "wifi", "on" if on else "off"], check=True)
 
 
-class TestAthenadPing(unittest.TestCase):
+class TestAthenadPing:
   params: Params
   dongle_id: str
 
@@ -39,10 +40,10 @@ class TestAthenadPing(unittest.TestCase):
     return self._get_ping_time() is not None
 
   @classmethod
-  def tearDownClass(cls) -> None:
+  def teardown_class(cls) -> None:
     wifi_radio(True)
 
-  def setUp(self) -> None:
+  def setup_method(self) -> None:
     self.params = Params()
     self.dongle_id = self.params.get("DongleId", encoding="utf-8")
 
@@ -52,7 +53,7 @@ class TestAthenadPing(unittest.TestCase):
     self.exit_event = threading.Event()
     self.athenad = threading.Thread(target=athenad.main, args=(self.exit_event,))
 
-  def tearDown(self) -> None:
+  def teardown_method(self) -> None:
     if self.athenad.is_alive():
       self.exit_event.set()
       self.athenad.join()
@@ -91,12 +92,12 @@ class TestAthenadPing(unittest.TestCase):
         time.sleep(0.1)
       print("ping received")
 
-  @unittest.skipIf(not TICI, "only run on desk")
+  @pytest.mark.skipif(not TICI, "only run on desk")
   def test_offroad(self) -> None:
     write_onroad_params(False, self.params)
     self.assertTimeout(60 + TIMEOUT_TOLERANCE)  # based using TCP keepalive settings
 
-  @unittest.skipIf(not TICI, "only run on desk")
+  @pytest.mark.skipif(not TICI, "only run on desk")
   def test_onroad(self) -> None:
     write_onroad_params(True, self.params)
     self.assertTimeout(21 + TIMEOUT_TOLERANCE)

@@ -1,3 +1,4 @@
+import pytest
 import contextlib
 import http.server
 import os
@@ -32,7 +33,7 @@ def phone_only(f):
   @wraps(f)
   def wrap(self, *args, **kwargs):
     if PC:
-      self.skipTest("This test is not meant to run on PC")
+      pytest.skip("This test is not meant to run on PC")
     f(self, *args, **kwargs)
   return wrap
 
@@ -40,7 +41,7 @@ def release_only(f):
   @wraps(f)
   def wrap(self, *args, **kwargs):
     if "RELEASE" not in os.environ:
-      self.skipTest("This test is only for release branches")
+      pytest.skip("This test is only for release branches")
     f(self, *args, **kwargs)
   return wrap
 

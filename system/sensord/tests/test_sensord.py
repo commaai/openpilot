@@ -99,9 +99,9 @@ def read_sensor_events(duration_sec):
   return {k: v for k, v in events.items() if len(v) > 0}
 
 @pytest.mark.tici
-class TestSensord(unittest.TestCase):
+class TestSensord:
   @classmethod
-  def setUpClass(cls):
+  def setup_class(cls):
     # enable LSM self test
     os.environ["LSM_SELF_TEST"] = "1"
 
@@ -119,10 +119,10 @@ class TestSensord(unittest.TestCase):
       managed_processes["sensord"].stop()
 
   @classmethod
-  def tearDownClass(cls):
+  def teardown_class(cls):
     managed_processes["sensord"].stop()
 
-  def tearDown(self):
+  def teardown_method(self):
     managed_processes["sensord"].stop()
 
   def test_sensors_present(self):
@@ -133,7 +133,7 @@ class TestSensord(unittest.TestCase):
         m = getattr(measurement, measurement.which())
         seen.add((str(m.source), m.which()))
 
-    self.assertIn(seen, SENSOR_CONFIGURATIONS)
+    assert seen in SENSOR_CONFIGURATIONS
 
   def test_lsm6ds3_timing(self):
     # verify measurements are sampled and published at 104Hz
