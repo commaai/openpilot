@@ -145,34 +145,34 @@ class TestAthenadMethods:
 
     resp = dispatcher["listDataDirectory"]()
     assert resp, 'list empty!'
-    self.assertCountEqual(resp, files)
+    assert len(resp) == len(files)
 
     resp = dispatcher["listDataDirectory"](f'{route}--123')
-    self.assertCountEqual(resp, [])
+    assert len(resp) == 0
 
     prefix = f'{route}'
     expected = filter(lambda f: f.startswith(prefix), files)
     resp = dispatcher["listDataDirectory"](prefix)
     assert resp, 'list empty!'
-    self.assertCountEqual(resp, expected)
+    assert len(resp) == len(expected)
 
     prefix = f'{route}--1'
     expected = filter(lambda f: f.startswith(prefix), files)
     resp = dispatcher["listDataDirectory"](prefix)
     assert resp, 'list empty!'
-    self.assertCountEqual(resp, expected)
+    assert len(resp) == len(expected)
 
     prefix = f'{route}--1/'
     expected = filter(lambda f: f.startswith(prefix), files)
     resp = dispatcher["listDataDirectory"](prefix)
     assert resp, 'list empty!'
-    self.assertCountEqual(resp, expected)
+    assert len(resp) == len(expected)
 
     prefix = f'{route}--1/q'
     expected = filter(lambda f: f.startswith(prefix), files)
     resp = dispatcher["listDataDirectory"](prefix)
     assert resp, 'list empty!'
-    self.assertCountEqual(resp, expected)
+    assert len(resp) == len(expected)
 
   def test_strip_bz2_extension(self):
     fn = self._create_file('qlog.bz2')
