@@ -28,7 +28,7 @@ git fetch --depth 1 origin devel
 git checkout -f --track origin/master-ci
 git reset --hard master-ci
 git checkout master-ci
-git reset --hard origin/master-ci
+git reset --hard origin/devel
 git clean -xdff
 git lfs uninstall
 
