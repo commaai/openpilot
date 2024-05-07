@@ -18,7 +18,7 @@ class TestDeleter(UploaderTestCase):
 
   def setup_method(self):
     self.f_type = "fcamera.hevc"
-    super().setUp()
+    super().setup_method()
     self.fake_stats = Stats(f_bavail=0, f_blocks=10, f_frsize=4096)
     deleter.os.statvfs = self.fake_statvfs
 
