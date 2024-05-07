@@ -175,7 +175,7 @@ class TestUpdated:
 
     # check params
     update = self._read_param("UpdateAvailable")
-    assert update == "1" == update_available, f"UpdateAvailable: {repr(update)}"
+    assert (update == "1") == update_available, f"UpdateAvailable: {repr(update)}"
     assert self._read_param("UpdateFailedCount") == "0"
 
     # TODO: check that the finalized update actually matches remote

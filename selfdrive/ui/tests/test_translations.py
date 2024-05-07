@@ -82,12 +82,12 @@ class TestTranslations:
           numerusform = [t.text for t in translation.findall("numerusform")]
 
           for nf in numerusform:
-            assert nf, f"Ensure all plural translation forms are completed: {source_text}" is not None
+            assert nf is not None, f"Ensure all plural translation forms are completed: {source_text}"
             assert "%n" in nf, "Ensure numerus argument (%n) exists in translation."
-            assert FORMAT_ARG.search(nf), f"Plural translations must use %n, not %1, %2, etc.: {numerusform}" is None
+            assert FORMAT_ARG.search(nf) is None, f"Plural translations must use %n, not %1, %2, etc.: {numerusform}"
 
         else:
-          assert translation.text, f"Ensure translation is completed: {source_text}" is not None
+          assert translation.text is not None, f"Ensure translation is completed: {source_text}"
 
           source_args = FORMAT_ARG.findall(source_text)
           translation_args = FORMAT_ARG.findall(translation.text)

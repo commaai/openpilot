@@ -66,7 +66,7 @@ class TestStateMachine:
         self.controlsd.events.add(make_event([et, ET.SOFT_DISABLE]))
         self.controlsd.state = state
         self.controlsd.state_transition(self.CS)
-        assert self.controlsd.state == State.disabled if state == State.disabled else State.softDisabling
+        assert self.controlsd.state == (State.disabled if state == State.disabled else State.softDisabling)
         self.controlsd.events.clear()
 
   def test_soft_disable_timer(self):

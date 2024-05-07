@@ -48,14 +48,14 @@ class TestFordFW:
     for (ecu, addr, subaddr) in FW_QUERY_CONFIG.extra_ecus:
       assert ecu in ECU_ADDRESSES, "Unknown ECU"
       assert addr == ECU_ADDRESSES[ecu], "ECU address mismatch"
-      assert subaddr, "Unexpected ECU subaddress" is None
+      assert subaddr is None, "Unexpected ECU subaddress"
 
   @parameterized.expand(FW_VERSIONS.items())
   def test_fw_versions(self, car_model: str, fw_versions: dict[tuple[capnp.lib.capnp._EnumModule, int, int | None], Iterable[bytes]]):
     for (ecu, addr, subaddr), fws in fw_versions.items():
       assert ecu in ECU_FW_CORE, "Unexpected ECU"
       assert addr == ECU_ADDRESSES[ecu], "ECU address mismatch"
-      assert subaddr, "Unexpected ECU subaddress" is None
+      assert subaddr is None, "Unexpected ECU subaddress"
 
       # Software part number takes the form: PREFIX-CORE-SUFFIX
       # Prefix changes based on the family of part. It includes the model year

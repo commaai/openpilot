@@ -377,7 +377,7 @@ class TestCarModelBase:
         assert CS.regenBraking == self.safety.get_regen_braking_prev()
 
       if self.safety.get_vehicle_moving() != prev_panda_vehicle_moving:
-        assert not CS.standstill == self.safety.get_vehicle_moving()
+        assert (not CS.standstill) == self.safety.get_vehicle_moving()
 
       if not (self.CP.carName == "honda" and not (self.CP.flags & HondaFlags.BOSCH)):
         if self.safety.get_cruise_engaged_prev() != prev_panda_cruise_engaged:

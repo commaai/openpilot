@@ -77,7 +77,7 @@ class TestCarDocs:
   def test_year_format(self):
     for car in self.all_cars:
       with self.subTest(car=car):
-        assert re.search(r"\d{4}-\d{4}", car.name), f"Format years correctly: {car.name}" is None
+        assert re.search(r"\d{4}-\d{4}", car.name) is None, f"Format years correctly: {car.name}"
 
   def test_harnesses(self):
     for car in self.all_cars:
