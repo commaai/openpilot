@@ -25,7 +25,7 @@ from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.athena import athenad
 from openpilot.selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
 from openpilot.selfdrive.athena.tests.helpers import HTTPRequestHandler, MockWebsocket, MockApi, EchoSocket
-from openpilot.selfdrive.test.helpers import with_http_server
+from openpilot.selfdrive.test.helpers import http_server_context
 from openpilot.system.hardware.hw import Paths
 
 
@@ -38,8 +38,10 @@ def seed_athena_server(host, port):
       except requests.exceptions.ConnectionError:
         time.sleep(0.1)
 
-with_mock_athena = partial(with_http_server, handler=HTTPRequestHandler, setup=seed_athena_server)
-
+@pytest.fixture
+def host():
+  with http_server_context(handler=HTTPRequestHandler, setup=seed_athena_server) as (host, port):
+    yield f"http://{host}:{port}"
 
 def with_upload_handler(func):
   @wraps(func)

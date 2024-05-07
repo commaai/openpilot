@@ -6,8 +6,7 @@ import shutil
 import socket
 import unittest
 
-from parameterized import parameterized
-from openpilot.selfdrive.test.helpers import with_http_server
+from openpilot.selfdrive.test.helpers import http_server_context
 from openpilot.system.hardware.hw import Paths
 from openpilot.tools.lib.url_file import URLFile
 
@@ -31,8 +30,9 @@ class CachingTestRequestHandler(http.server.BaseHTTPRequestHandler):
     self.end_headers()
 
 @pytest.fixture
-with_caching_server = partial(with_http_server, handler=CachingTestRequestHandler)
-
+def host():
+  with http_server_context(handler=CachingTestRequestHandler) as (host, port):
+    yield f"http://{host}:{port}"
 
 class TestFileDownload:
 
