@@ -38,7 +38,7 @@ def seed_athena_server(host, port):
       except requests.exceptions.ConnectionError:
         time.sleep(0.1)
 
-
+@pytest.fixture
 with_mock_athena = partial(with_http_server, handler=HTTPRequestHandler, setup=seed_athena_server)
 
 

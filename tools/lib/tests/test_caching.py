@@ -30,7 +30,7 @@ class CachingTestRequestHandler(http.server.BaseHTTPRequestHandler):
       self.send_response(404)
     self.end_headers()
 
-
+@pytest.fixture
 with_caching_server = partial(with_http_server, handler=CachingTestRequestHandler)
 
 
