@@ -24,7 +24,6 @@ tinygrad_repo/examples/
 tinygrad_repo/disassemblers/
 tinygrad_repo/extra/accel/
 tinygrad_repo/extra/datasets/
-selfdrive/debug/
 panda/tests/safety/
 panda/tests/hitl/
 panda/examples/
