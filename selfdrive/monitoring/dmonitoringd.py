@@ -22,7 +22,7 @@ def dmonitoringd_thread():
   v_cruise_last = 0
   driver_engaged = False
 
-  # 10Hz <- dmonitoringmodeld
+  # 20Hz <- dmonitoringmodeld
   while True:
     sm.update()
     if not sm.updated['driverStateV2']:
