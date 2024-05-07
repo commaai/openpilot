@@ -153,16 +153,16 @@ class CAR(Platforms):
 # 3 = Part number
 # 4 = Software version
 FW_ALPHABET = b'A-HJ-NP-VX-Z'
-FW_RE = re.compile(b'^(?P<model_year_hint>[' + FW_ALPHABET + b'])' +
-                   b'(?P<platform_hint>[0-9' + FW_ALPHABET + b']{3})-' +
-                   b'(?P<part_number>[0-9' + FW_ALPHABET + b']{5,6})-' +
-                   b'(?P<software_revision>[' + FW_ALPHABET + b']{2,})$')
+FW_PATTERN = re.compile(b'^(?P<model_year_hint>[' + FW_ALPHABET + b'])' +
+                        b'(?P<platform_hint>[0-9' + FW_ALPHABET + b']{3})-' +
+                        b'(?P<part_number>[0-9' + FW_ALPHABET + b']{5,6})-' +
+                        b'(?P<software_revision>[' + FW_ALPHABET + b']{2,})$')
 
 
 def get_platform_codes(fw_versions: list[bytes] | set[bytes]) -> set[tuple[bytes, bytes]]:
   codes = set()
   for firmware in fw_versions:
-    m = FW_RE.match(firmware.rstrip(b'\x00'))
+    m = FW_PATTERN.match(firmware.rstrip(b'\x00'))
     if m is None:
       continue
     codes.add((m.group('platform_hint'), m.group('model_year_hint')))

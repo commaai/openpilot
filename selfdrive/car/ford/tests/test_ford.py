@@ -7,7 +7,7 @@ from hypothesis import settings, given, strategies as st
 from parameterized import parameterized
 
 from cereal import car
-from openpilot.selfdrive.car.ford.values import CAR, FW_QUERY_CONFIG, FW_RE, get_platform_codes
+from openpilot.selfdrive.car.ford.values import CAR, FW_QUERY_CONFIG, FW_PATTERN, get_platform_codes
 from openpilot.selfdrive.car.ford.fingerprints import FW_VERSIONS
 
 Ecu = car.CarParams.Ecu
@@ -58,7 +58,7 @@ class TestFordFW(unittest.TestCase):
       for fw in fws:
         self.assertEqual(len(fw), 24, "Expected ECU response to be 24 bytes")
 
-        m = FW_RE.match(fw.rstrip(b'\x00'))
+        m = FW_PATTERN.match(fw.rstrip(b'\x00'))
         self.assertIsNotNone(m, f"Unable to parse FW: {fw!r}")
         if m:
           part_number = m.group("part_number")
