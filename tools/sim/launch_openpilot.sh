@@ -4,7 +4,7 @@ export PASSIVE="0"
 export NOBOARD="1"
 export SIMULATION="1"
 export SKIP_FW_QUERY="1"
-export FINGERPRINT="HONDA CIVIC 2016"
+export FINGERPRINT="HONDA_CIVIC_2022"
 
 export BLOCK="${BLOCK},camerad,loggerd,encoderd,micd,logmessaged"
 if [[ "$CI" ]]; then

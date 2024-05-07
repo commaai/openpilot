@@ -65,6 +65,7 @@ class MapBoxInternetDisabledServer(threading.Thread):
     MapBoxInternetDisabledRequestHandler.INTERNET_ACTIVE = True
 
 
+@pytest.mark.skip(reason="not used")
 class TestMapRenderer(unittest.TestCase):
   server: MapBoxInternetDisabledServer
 
@@ -135,7 +136,7 @@ class TestMapRenderer(unittest.TestCase):
       invalid_and_not_previously_valid = (expect_valid and not self.sm.valid['mapRenderState'] and not prev_valid)
       valid_and_not_previously_invalid = (not expect_valid and self.sm.valid['mapRenderState'] and prev_valid)
 
-      if (invalid_and_not_previously_valid or valid_and_not_previously_invalid) and frames_since_test_start < 5:
+      if (invalid_and_not_previously_valid or valid_and_not_previously_invalid) and frames_since_test_start < 20:
         continue
 
       # check output

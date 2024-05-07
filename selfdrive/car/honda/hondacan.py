@@ -195,7 +195,7 @@ def create_ui_commands(packer, CAN, CP, enabled, pcm_speed, hud, is_metric, acc_
     }
     commands.append(packer.make_can_msg('RADAR_HUD', CAN.pt, radar_hud_values))
 
-    if CP.carFingerprint == CAR.CIVIC_BOSCH:
+    if CP.carFingerprint == CAR.HONDA_CIVIC_BOSCH:
       commands.append(packer.make_can_msg("LEGACY_BRAKE_COMMAND", CAN.pt, {}))
 
   return commands

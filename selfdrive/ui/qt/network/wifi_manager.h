@@ -63,7 +63,7 @@ public:
 private:
   QString adapter;  // Path to network manager wifi-device
   QTimer timer;
-  unsigned int raw_adapter_state;  // Connection status https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NMDeviceState
+  unsigned int raw_adapter_state = NM_DEVICE_STATE_UNKNOWN;  // Connection status https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NMDeviceState
   QString connecting_to_network;
   QString tethering_ssid;
   const QString defaultTetheringPassword = "swagswagcomma";

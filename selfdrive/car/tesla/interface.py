@@ -28,7 +28,7 @@ class CarInterface(CarInterfaceBase):
 
     # Check if we have messages on an auxiliary panda, and that 0x2bf (DAS_control) is present on the AP powertrain bus
     # If so, we assume that it is connected to the longitudinal harness.
-    flags = (Panda.FLAG_TESLA_RAVEN if candidate == CAR.MODELS_RAVEN else 0)
+    flags = (Panda.FLAG_TESLA_RAVEN if candidate == CAR.TESLA_MODELS_RAVEN else 0)
     if (CANBUS.autopilot_powertrain in fingerprint.keys()) and (0x2bf in fingerprint[CANBUS.autopilot_powertrain].keys()):
       ret.openpilotLongitudinalControl = True
       flags |= Panda.FLAG_TESLA_LONG_CONTROL
@@ -50,6 +50,3 @@ class CarInterface(CarInterfaceBase):
     ret.events = self.create_common_events(ret).to_msg()
 
     return ret
-
-  def apply(self, c, now_nanos):
-    return self.CC.update(c, self.CS, now_nanos)
