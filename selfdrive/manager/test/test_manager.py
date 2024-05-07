@@ -49,7 +49,7 @@ class TestManager:
     assert t < MAX_STARTUP_TIME, f"startup took {t}s, expected <{MAX_STARTUP_TIME}s"
 
   @pytest.mark.skip("this test is flaky the way it's currently written, should be moved to test_onroad")
-  def test_clean_exit(self):
+  def test_clean_exit(subtests):
     """
       Ensure all processes exit cleanly when stopped.
     """
@@ -62,7 +62,7 @@ class TestManager:
     time.sleep(10)
 
     for p in procs:
-      with self.subTest(proc=p.name):
+      with subtests.test(proc=p.name):
         state = p.get_process_state_msg()
         assert state.running, f"{p.name} not running"
         exit_code = p.stop(retry=False)

@@ -33,11 +33,11 @@ class TestToyotaInterfaces:
       if car_model in TSS2_CAR:
         assert dbc["pt"] == "toyota_nodsu_pt_generated"
 
-  def test_essential_ecus(self):
+  def test_essential_ecus(subtests):
     # Asserts standard ECUs exist for each platform
     common_ecus = {Ecu.fwdRadar, Ecu.fwdCamera}
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model.value):
+      with subtests.test(car_model=car_model.value):
         present_ecus = {ecu[0] for ecu in ecus}
         missing_ecus = common_ecus - present_ecus
         assert len(missing_ecus) == 0
@@ -54,19 +54,19 @@ class TestToyotaInterfaces:
 
 
 class TestToyotaFingerprint:
-  def test_non_essential_ecus(self):
+  def test_non_essential_ecus(subtests):
     # Ensures only the cars that have multiple engine ECUs are in the engine non-essential ECU list
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model.value):
+      with subtests.test(car_model=car_model.value):
         engine_ecus = {ecu for ecu in ecus if ecu[0] == Ecu.engine}
         assert len(engine_ecus) > 1 == \
                          car_model in FW_QUERY_CONFIG.non_essential_ecus[Ecu.engine], \
                          f"Car model unexpectedly {'not ' if len(engine_ecus) > 1 else ''}in non-essential list"
 
-  def test_valid_fw_versions(self):
+  def test_valid_fw_versions(subtests):
     # Asserts all FW versions are valid
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model.value):
+      with subtests.test(car_model=car_model.value):
         for fws in ecus.values():
           for fw in fws:
             assert check_fw_version(fw), fw
@@ -80,10 +80,10 @@ class TestToyotaFingerprint:
     fws = data.draw(fw_strategy)
     get_platform_codes(fws)
 
-  def test_platform_code_ecus_available(self):
+  def test_platform_code_ecus_available(subtests):
     # Asserts ECU keys essential for fuzzy fingerprinting are available on all platforms
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model.value):
+      with subtests.test(car_model=car_model.value):
         for platform_code_ecu in PLATFORM_CODE_ECUS:
           if platform_code_ecu == Ecu.eps and car_model in (CAR.TOYOTA_PRIUS_V, CAR.LEXUS_CTH,):
             continue
@@ -91,14 +91,14 @@ class TestToyotaFingerprint:
             continue
           assert platform_code_ecu in [e[0] for e in ecus]
 
-  def test_fw_format(self):
+  def test_fw_format(subtests):
     # Asserts:
     # - every supported ECU FW version returns one platform code
     # - every supported ECU FW version has a part number
     # - expected parsing of ECU sub-versions
 
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model.value):
+      with subtests.test(car_model=car_model.value):
         for ecu, fws in ecus.items():
           if ecu[0] not in PLATFORM_CODE_ECUS:
             continue

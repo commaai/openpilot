@@ -184,25 +184,25 @@ class TestLogReader:
     assert len(lr.run_across_segments(4, noop)) == len(list(lr))
 
   @pytest.mark.slow
-  def test_auto_mode(self):
+  def test_auto_mode(subtests):
     lr = LogReader(f"{TEST_ROUTE}/0/q")
     qlog_len = len(list(lr))
     with mock.patch("openpilot.tools.lib.route.Route.log_paths") as log_paths_mock:
       log_paths_mock.return_value = [None] * NUM_SEGS
       # Should fall back to qlogs since rlogs are not available
 
-      with self.subTest("interactive_yes"):
+      with subtests.test("interactive_yes"):
         with mock.patch("sys.stdin", new=io.StringIO("y\n")):
           lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO_INTERACTIVE, default_source=comma_api_source)
           log_len = len(list(lr))
         assert qlog_len == log_len
 
-      with self.subTest("interactive_no"):
+      with subtests.test("interactive_no"):
         with mock.patch("sys.stdin", new=io.StringIO("n\n")):
           with pytest.raises(AssertionError):
             lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO_INTERACTIVE, default_source=comma_api_source)
 
-      with self.subTest("non_interactive"):
+      with subtests.test("non_interactive"):
         lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO, default_source=comma_api_source)
         log_len = len(list(lr))
         assert qlog_len == log_len

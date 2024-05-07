@@ -105,11 +105,11 @@ class TestFwFingerprint:
       elif len(matches):
         self.assertFingerprints(matches, car_model)
 
-  def test_fw_version_lists(self):
+  def test_fw_version_lists(subtests):
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model.value):
+      with subtests.test(car_model=car_model.value):
         for ecu, ecu_fw in ecus.items():
-          with self.subTest(ecu):
+          with subtests.test(ecu):
             duplicates = {fw for fw in ecu_fw if ecu_fw.count(fw) > 1}
             assert not len(duplicates), f'{car_model}: Duplicate FW versions: Ecu.{ECU_NAME[ecu[0]]}, {duplicates}'
             assert len(ecu_fw) > 0, f'{car_model}: No FW versions: Ecu.{ECU_NAME[ecu[0]]}'
@@ -124,18 +124,18 @@ class TestFwFingerprint:
           ecu_strings = ", ".join([f'Ecu.{ECU_NAME[ecu]}' for ecu in ecus_for_addr])
           assert len(ecus_for_addr) <= 1, f"{brand} has multiple ECUs that map to one address: {ecu_strings} -> ({hex(addr)}, {sub_addr})"
 
-  def test_data_collection_ecus(self):
+  def test_data_collection_ecus(subtests):
     # Asserts no extra ECUs are in the fingerprinting database
     for brand, config in FW_QUERY_CONFIGS.items():
       for car_model, ecus in VERSIONS[brand].items():
         bad_ecus = set(ecus).intersection(config.extra_ecus)
-        with self.subTest(car_model=car_model.value):
+        with subtests.test(car_model=car_model.value):
           assert not len(bad_ecus), f'{car_model}: Fingerprints contain ECUs added for data collection: {bad_ecus}'
 
-  def test_blacklisted_ecus(self):
+  def test_blacklisted_ecus(subtests):
     blacklisted_addrs = (0x7c4, 0x7d0)  # includes A/C ecu and an unknown ecu
     for car_model, ecus in FW_VERSIONS.items():
-      with self.subTest(car_model=car_model.value):
+      with subtests.test(car_model=car_model.value):
         CP = interfaces[car_model][0].get_non_essential_params(car_model)
         if CP.carName == 'subaru':
           for ecu in ecus.keys():
@@ -147,23 +147,23 @@ class TestFwFingerprint:
             for ecu in ecus.keys():
               assert ecu[0] != Ecu.transmission, f"{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})"
 
-  def test_non_essential_ecus(self):
+  def test_non_essential_ecus(subtests):
     for brand, config in FW_QUERY_CONFIGS.items():
-      with self.subTest(brand):
+      with subtests.test(brand):
         # These ECUs are already not in ESSENTIAL_ECUS which the fingerprint functions give a pass if missing
         unnecessary_non_essential_ecus = set(config.non_essential_ecus) - set(ESSENTIAL_ECUS)
         assert unnecessary_non_essential_ecus == set(), "Declaring non-essential ECUs non-essential is not required: " + \
                                                                 f"{', '.join([f'Ecu.{ECU_NAME[ecu]}' for ecu in unnecessary_non_essential_ecus])}"
 
-  def test_missing_versions_and_configs(self):
+  def test_missing_versions_and_configs(subtests):
     brand_versions = set(VERSIONS.keys())
     brand_configs = set(FW_QUERY_CONFIGS.keys())
     if len(brand_configs - brand_versions):
-      with self.subTest():
+      with subtests.test():
         pytest.fail(f"Brands do not implement FW_VERSIONS: {brand_configs - brand_versions}")
 
     if len(brand_versions - brand_configs):
-      with self.subTest():
+      with subtests.test():
         pytest.fail(f"Brands do not implement FW_QUERY_CONFIG: {brand_versions - brand_configs}")
 
     # Ensure each brand has at least 1 ECU to query, and extra ECU retrieval
@@ -172,9 +172,9 @@ class TestFwFingerprint:
       assert config.get_all_ecus({}) == set(config.extra_ecus)
       assert len(config.get_all_ecus(VERSIONS[brand])) > 0
 
-  def test_fw_request_ecu_whitelist(self):
+  def test_fw_request_ecu_whitelist(subtests):
     for brand, config in FW_QUERY_CONFIGS.items():
-      with self.subTest(brand=brand):
+      with subtests.test(brand=brand):
         whitelisted_ecus = {ecu for r in config.requests for ecu in r.whitelist_ecus}
         brand_ecus = {fw[0] for car_fw in VERSIONS[brand].values() for fw in car_fw}
         brand_ecus |= {ecu[0] for ecu in config.extra_ecus}
@@ -186,10 +186,10 @@ class TestFwFingerprint:
         assert not len(whitelisted_ecus) and len(ecus_not_whitelisted), \
                          f'{brand.title()}: ECUs not in any FW query whitelists: {ecu_strings}'
 
-  def test_fw_requests(self):
+  def test_fw_requests(subtests):
     # Asserts equal length request and response lists
     for brand, config in FW_QUERY_CONFIGS.items():
-      with self.subTest(brand=brand):
+      with subtests.test(brand=brand):
         for request_obj in config.requests:
           assert len(request_obj.request) == len(request_obj.response)
 

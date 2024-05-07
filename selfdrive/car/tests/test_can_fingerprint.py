@@ -26,7 +26,7 @@ class TestCanFingerprint:
       assert finger[1] == fingerprint
       assert finger[2] == {}
 
-  def test_timing(self):
+  def test_timing(subtests):
     # just pick any CAN fingerprinting car
     car_model = "CHEVROLET_BOLT_EUV"
     fingerprint = FINGERPRINTS[car_model][0]
@@ -50,7 +50,7 @@ class TestCanFingerprint:
     cases.append((FRAME_FINGERPRINT * 2, None, can))
 
     for expected_frames, car_model, can in cases:
-      with self.subTest(expected_frames=expected_frames, car_model=car_model):
+      with subtests.test(expected_frames=expected_frames, car_model=car_model):
         frames = 0
 
         def test():

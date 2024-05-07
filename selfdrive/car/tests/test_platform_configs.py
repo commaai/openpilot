@@ -6,10 +6,10 @@ from openpilot.selfdrive.car.values import PLATFORMS
 
 
 class TestPlatformConfigs:
-  def test_configs(self):
+  def test_configs(subtests):
 
     for name, platform in PLATFORMS.items():
-      with self.subTest(platform=str(platform)):
+      with subtests.test(platform=str(platform)):
         assert platform.config._frozen
 
         if platform != "MOCK":

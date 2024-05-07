@@ -42,10 +42,10 @@ class TestCarDocs:
           assert year not in make_model_years[make_model], f"{car.name}: Duplicate model year"
           make_model_years[make_model].append(year)
 
-  def test_missing_car_docs(self):
+  def test_missing_car_docs(subtests):
     all_car_docs_platforms = [name for name, config in PLATFORMS.items()]
     for platform in sorted(interfaces.keys()):
-      with self.subTest(platform=platform):
+      with subtests.test(platform=platform):
         assert platform in all_car_docs_platforms, f"Platform: {platform} doesn't have a CarDocs entry"
 
   def test_naming_conventions(self):
