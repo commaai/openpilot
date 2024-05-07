@@ -34,7 +34,7 @@ class TestPlotJuggler:
       assert "Raw file read failed" not in output
 
   # TODO: also test that layouts successfully load
-  def test_layouts(subtests):
+  def test_layouts(self,subtests):
     bad_strings = (
       # if a previously loaded file is defined,
       # PJ will throw a warning when loading the layout
