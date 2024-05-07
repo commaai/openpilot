@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import unittest
+import pytest
 
 import cereal.messaging as messaging
 
@@ -33,4 +33,4 @@ class TestLeads:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

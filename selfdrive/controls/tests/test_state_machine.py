@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import unittest
+import pytest
 
 from cereal import car, log
 from openpilot.common.realtime import DT_CTRL
@@ -106,4 +106,4 @@ class TestStateMachine:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

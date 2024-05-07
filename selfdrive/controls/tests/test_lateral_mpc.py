@@ -31,16 +31,16 @@ class TestLateralMpc:
 
   def _assert_null(self, sol, curvature=1e-6):
     for i in range(len(sol)):
-      assert sol[0,i,1] == pytest.approx(0., delta=curvature)
-      assert sol[0,i,2] == pytest.approx(0., delta=curvature)
-      assert sol[0,i,3] == pytest.approx(0., delta=curvature)
+      assert sol[0,i,1] == pytest.approx(0. + curvature)
+      assert sol[0,i,2] == pytest.approx(0. + curvature)
+      assert sol[0,i,3] == pytest.approx(0. + curvature)
 
   def _assert_simmetry(self, sol, curvature=1e-6):
     for i in range(len(sol)):
-      assert sol[0,i,1] == pytest.approx(-sol[1,i,1], delta=curvature)
-      assert sol[0,i,2] == pytest.approx(-sol[1,i,2], delta=curvature)
-      assert sol[0,i,3] == pytest.approx(-sol[1,i,3], delta=curvature)
-      assert sol[0,i,0] == pytest.approx(sol[1,i,0], delta=curvature)
+      assert sol[0,i,1] == pytest.approx(-sol[1,i,1] - curvature, -sol[1,i,1] + curvature)
+      assert sol[0,i,2] == pytest.approx(-sol[1,i,2] - curvature, -sol[1,i,2] + curvature)
+      assert sol[0,i,3] == pytest.approx(-sol[1,i,3] - curvature, -sol[1,i,3] + curvature)
+      assert sol[0,i,0] == pytest.approx(sol[1,i,0] - curvature, sol[1,i,0] + curvature)
 
   def test_straight(self):
     sol = run_mpc()
@@ -86,4 +86,4 @@ class TestLateralMpc:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-import pytest
 import math
-import unittest
+import pytest
 
 import numpy as np
 from control import StateSpace
@@ -68,4 +67,4 @@ class TestVehicleModel:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import random
-import unittest
+import pytest
 
 from openpilot.selfdrive.controls.lib.events import Alert, EVENTS
 from openpilot.selfdrive.controls.lib.alertmanager import AlertManager
@@ -42,4 +42,4 @@ class TestAlertManager:
 
 
 if __name__ == "__main__":
-  unittest.main()
+  pytest.main()
