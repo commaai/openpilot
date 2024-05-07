@@ -74,7 +74,7 @@ class TestVCruiseHelper:
         CS.buttonEvents = [ButtonEvent(type=btn, pressed=pressed)]
 
         self.v_cruise_helper.update_v_cruise(CS, enabled=True, is_metric=False)
-        assert pressed == self.v_cruise_helper.v_cruise_kph == self.v_cruise_helper.v_cruise_kph_last
+        assert pressed == (self.v_cruise_helper.v_cruise_kph == self.v_cruise_helper.v_cruise_kph_last)
 
   def test_rising_edge_enable(self):
     """
@@ -110,7 +110,7 @@ class TestVCruiseHelper:
 
         # speed should only update if not at standstill and button falling edge
         should_equal = standstill or pressed
-        assert should_equal == self.v_cruise_helper.v_cruise_kph == self.v_cruise_helper.v_cruise_kph_last
+        assert should_equal == (self.v_cruise_helper.v_cruise_kph == self.v_cruise_helper.v_cruise_kph_last)
 
   def test_set_gas_pressed(self):
     """
