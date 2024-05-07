@@ -40,6 +40,7 @@ if [ -f /TICI ]; then
   rm -rf /tmp/tmp*
   rm -rf ~/.commacache
   rm -rf /dev/shm/*
+  rm -rf /dev/tmp/tmp*
 
   if ! systemctl is-active --quiet systemd-resolved; then
     echo "restarting resolved"
@@ -194,7 +195,7 @@ node {
           ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
           ["test power draw", "pytest -s system/hardware/tici/tests/test_power_draw.py"],
           ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py"],
-          ["test pigeond", "pytest system/sensord/tests/test_pigeond.py"],
+          ["test pigeond", "pytest system/ubloxd/tests/test_pigeond.py"],
           ["test manager", "pytest selfdrive/manager/test/test_manager.py"],
         ])
       },

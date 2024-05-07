@@ -14,7 +14,7 @@ runs:
           ${{ env.RUN }} "rm -rf /tmp/scons_cache/* && \
                           scons -j$(nproc) --cache-populate"
     - name: Save scons cache
-      uses: actions/cache/save@v3
+      uses: actions/cache/save@v4
       if: github.ref == 'refs/heads/master'
       with:
         path: .ci_cache/scons_cache

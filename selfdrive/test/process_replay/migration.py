@@ -1,6 +1,7 @@
 from collections import defaultdict
 
 from cereal import messaging
+from openpilot.selfdrive.car.fingerprints import MIGRATION
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
 from openpilot.selfdrive.car.toyota.values import EPS_SCALE
 from openpilot.selfdrive.manager.process_config import managed_processes
@@ -12,6 +13,7 @@ def migrate_all(lr, old_logtime=False, manager_states=False, panda_states=False,
   msgs = migrate_sensorEvents(lr, old_logtime)
   msgs = migrate_carParams(msgs, old_logtime)
   msgs = migrate_gpsLocation(msgs)
+  msgs = migrate_deviceState(msgs)
   if manager_states:
     msgs = migrate_managerState(msgs)
   if panda_states:
@@ -52,13 +54,28 @@ def migrate_gpsLocation(lr):
   return all_msgs
 
 
+def migrate_deviceState(lr):
+  all_msgs = []
+  dt = None
+  for msg in lr:
+    if msg.which() == 'initData':
+      dt = msg.initData.deviceType
+    if msg.which() == 'deviceState':
+      n = msg.as_builder()
+      n.deviceState.deviceType = dt
+      all_msgs.append(n.as_reader())
+    else:
+      all_msgs.append(msg)
+  return all_msgs
+
+
 def migrate_pandaStates(lr):
   all_msgs = []
   # TODO: safety param migration should be handled automatically
   safety_param_migration = {
-    "TOYOTA PRIUS 2017": EPS_SCALE["TOYOTA PRIUS 2017"] | Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL,
-    "TOYOTA RAV4 2017": EPS_SCALE["TOYOTA RAV4 2017"] | Panda.FLAG_TOYOTA_ALT_BRAKE | Panda.FLAG_TOYOTA_GAS_INTERCEPTOR,
-    "KIA EV6 2022": Panda.FLAG_HYUNDAI_EV_GAS | Panda.FLAG_HYUNDAI_CANFD_HDA2,
+    "TOYOTA_PRIUS": EPS_SCALE["TOYOTA_PRIUS"] | Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL,
+    "TOYOTA_RAV4": EPS_SCALE["TOYOTA_RAV4"] | Panda.FLAG_TOYOTA_ALT_BRAKE,
+    "KIA_EV6": Panda.FLAG_HYUNDAI_EV_GAS | Panda.FLAG_HYUNDAI_CANFD_HDA2,
   }
 
   # Migrate safety param base on carState
@@ -169,6 +186,7 @@ def migrate_carParams(lr, old_logtime=False):
       CP = messaging.new_message('carParams')
       CP.valid = True
       CP.carParams = msg.carParams.as_builder()
+      CP.carParams.carFingerprint = MIGRATION.get(CP.carParams.carFingerprint, CP.carParams.carFingerprint)
       for car_fw in CP.carParams.carFw:
         car_fw.brand = CP.carParams.carName
       if old_logtime:

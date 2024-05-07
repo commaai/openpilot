@@ -7,7 +7,7 @@ system/camerad/cameras/camera_qcom2.cc
 system/camerad/cameras/camera_qcom2.h
 system/camerad/cameras/camera_util.cc
 system/camerad/cameras/camera_util.h
-system/camerad/cameras/real_debayer.cl
+system/camerad/cameras/process_raw.cl
 
 system/qcomgpsd/*
 
