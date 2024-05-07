@@ -58,10 +58,10 @@ class TestFordFW(unittest.TestCase):
       for fw in fws:
         self.assertEqual(len(fw), 24, "Expected ECU response to be 24 bytes")
 
-        m = FW_PATTERN.match(fw.rstrip(b'\x00'))
-        self.assertIsNotNone(m, f"Unable to parse FW: {fw!r}")
-        if m:
-          part_number = m.group("part_number")
+        match = FW_PATTERN.match(fw)
+        self.assertIsNotNone(match, f"Unable to parse FW: {fw!r}")
+        if match:
+          part_number = match.group("part_number")
           self.assertIn(part_number, ECU_PART_NUMBER[ecu], f"Unexpected part number for {fw!r}")
 
         codes = get_platform_codes([fw])

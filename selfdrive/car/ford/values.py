@@ -156,16 +156,16 @@ FW_ALPHABET = b'A-HJ-NP-VX-Z'
 FW_PATTERN = re.compile(b'^(?P<model_year_hint>[' + FW_ALPHABET + b'])' +
                         b'(?P<platform_hint>[0-9' + FW_ALPHABET + b']{3})-' +
                         b'(?P<part_number>[0-9' + FW_ALPHABET + b']{5,6})-' +
-                        b'(?P<software_revision>[' + FW_ALPHABET + b']{2,})$')
+                        b'(?P<software_revision>[' + FW_ALPHABET + b']{2,})\x00*$')
 
 
 def get_platform_codes(fw_versions: list[bytes] | set[bytes]) -> set[tuple[bytes, bytes]]:
   codes = set()
-  for firmware in fw_versions:
-    m = FW_PATTERN.match(firmware.rstrip(b'\x00'))
-    if m is None:
+  for fw in fw_versions:
+    match = FW_PATTERN.match(fw)
+    if match is None:
       continue
-    codes.add((m.group('platform_hint'), m.group('model_year_hint')))
+    codes.add((match.group('platform_hint'), match.group('model_year_hint')))
   return codes
 
 
