@@ -54,7 +54,7 @@ class MockApiIgnore():
   def get_token(self):
     return "fake-token"
 
-class TestUploader:
+class UploaderTestCase:
   f_type = "UNKNOWN"
 
   root: Path
