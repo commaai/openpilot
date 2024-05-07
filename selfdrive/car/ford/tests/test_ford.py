@@ -117,8 +117,8 @@ class TestFordFW(unittest.TestCase):
       live_ecu_fw = live_fw.get((addr, subaddr), set())
       self.assertEqual(0, len(set(fws).intersection(live_ecu_fw)))
 
-    expected_fingerprint = CAR.EXPLORER_MK6
-    candidates = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(live_fw, {
+    expected_fingerprint = CAR.FORD_EXPLORER_MK6
+    candidates = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(live_fw, '', {
       expected_fingerprint: offline_fw,
     })
     self.assertEqual(candidates, {expected_fingerprint})
@@ -126,7 +126,7 @@ class TestFordFW(unittest.TestCase):
     # change one of the fw to have a new unseen model year hint
     live_fw[(0x760, None)] = {b"M1MC-2D053-BA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"}
 
-    candidates = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(live_fw, {
+    candidates = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(live_fw, '', {
       expected_fingerprint: offline_fw,
     })
     self.assertEqual(len(candidates), 0, "Should not match new model year hint")
