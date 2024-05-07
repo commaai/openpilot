@@ -18,8 +18,6 @@ class TestLocationdProc:
               'accelerometer', 'gyroscope', 'magnetometer']
 
   def setup_method(self):
-    random.seed(123489234)
-
     self.pm = messaging.PubMaster(self.LLD_MSGS)
 
     self.params = Params()
@@ -65,6 +63,7 @@ class TestLocationdProc:
     return msg
 
   def test_params_gps(self):
+    random.seed(123489234)
     self.params.remove('LastGPSPosition')
 
     self.x = -2710700 + (random.random() * 1e5)
