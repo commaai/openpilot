@@ -10,9 +10,5 @@ for brand in BRANDS:
   if len(all_flags):
     print(brand.__module__.split('.')[-2].upper() + ':')
     for flag in sorted(all_flags):
-      print(f'  {flag.name:<24}: ', end='')
-      for platform in brand:
-        if platform.config.flags & flag:
-          print(platform.name, end=', ')
-      print()
+      print(f'  {flag.name:<24}:', {platform.name for platform in brand.with_flags(flag)})
     print()
