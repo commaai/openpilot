@@ -32,7 +32,7 @@ ned_eulers = np.array([[ 0.46806039, -0.4881889 ,  1.65697808],
                     [ 2.50450101,  0.36304151,  0.33136365]])
 
 
-class TestOrientation(unittest.TestCase):
+class TestOrientation:
   def test_quat_euler(self):
     for i, eul in enumerate(eulers):
       np.testing.assert_allclose(quats[i], euler2quat(eul), rtol=1e-7)
