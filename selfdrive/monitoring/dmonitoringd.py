@@ -48,7 +48,8 @@ def dmonitoringd_thread():
 
     # Block engaging after max number of distrations
     if driver_status.terminal_alert_cnt >= driver_status.settings._MAX_TERMINAL_ALERTS or \
-       driver_status.terminal_time >= driver_status.settings._MAX_TERMINAL_DURATION:
+       driver_status.terminal_time >= driver_status.settings._MAX_TERMINAL_DURATION or \
+       driver_status.always_on and driver_status.awareness <= driver_status.threshold_prompt:
       events.add(car.CarEvent.EventName.tooDistracted)
 
     # Update events from driver state
