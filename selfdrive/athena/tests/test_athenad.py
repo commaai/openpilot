@@ -151,25 +151,25 @@ class TestAthenadMethods:
     assert len(resp) == 0
 
     prefix = f'{route}'
-    expected = filter(lambda f: f.startswith(prefix), files)
+    expected = list(filter(lambda f: f.startswith(prefix), files))
     resp = dispatcher["listDataDirectory"](prefix)
     assert resp, 'list empty!'
     assert len(resp) == len(expected)
 
     prefix = f'{route}--1'
-    expected = filter(lambda f: f.startswith(prefix), files)
+    expected = list(filter(lambda f: f.startswith(prefix), files))
     resp = dispatcher["listDataDirectory"](prefix)
     assert resp, 'list empty!'
     assert len(resp) == len(expected)
 
     prefix = f'{route}--1/'
-    expected = filter(lambda f: f.startswith(prefix), files)
+    expected = list(filter(lambda f: f.startswith(prefix), files))
     resp = dispatcher["listDataDirectory"](prefix)
     assert resp, 'list empty!'
     assert len(resp) == len(expected)
 
     prefix = f'{route}--1/q'
-    expected = filter(lambda f: f.startswith(prefix), files)
+    expected = list(filter(lambda f: f.startswith(prefix), files))
     resp = dispatcher["listDataDirectory"](prefix)
     assert resp, 'list empty!'
     assert len(resp) == len(expected)
