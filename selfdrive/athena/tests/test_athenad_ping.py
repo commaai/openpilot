@@ -59,7 +59,7 @@ class TestAthenadPing:
       self.athenad.join()
 
   @mock.patch('openpilot.selfdrive.athena.athenad.create_connection', new_callable=lambda: mock.MagicMock(wraps=athenad.create_connection))
-  def assertTimeout(self, reconnect_time: float, mock_create_connection: mock.MagicMock) -> None:
+  def assertTimeout(self, subtests, reconnect_time: float, mock_create_connection: mock.MagicMock) -> None:
     self.athenad.start()
 
     time.sleep(1)
@@ -67,7 +67,7 @@ class TestAthenadPing:
     mock_create_connection.reset_mock()
 
     # check normal behaviour, server pings on connection
-    with self.subTest("Wi-Fi: receives ping"), Timeout(70, "no ping received"):
+    with subtests.test("Wi-Fi: receives ping"), Timeout(70, "no ping received"):
       while not self._received_ping():
         time.sleep(0.1)
       print("ping received")
@@ -75,7 +75,7 @@ class TestAthenadPing:
     mock_create_connection.assert_not_called()
 
     # websocket should attempt reconnect after short time
-    with self.subTest("LTE: attempt reconnect"):
+    with subtests.test("LTE: attempt reconnect"):
       wifi_radio(False)
       print("waiting for reconnect attempt")
       start_time = time.monotonic()
@@ -87,7 +87,7 @@ class TestAthenadPing:
     self._clear_ping_time()
 
     # check ping received after reconnect
-    with self.subTest("LTE: receives ping"), Timeout(70, "no ping received"):
+    with subtests.test("LTE: receives ping"), Timeout(70, "no ping received"):
       while not self._received_ping():
         time.sleep(0.1)
       print("ping received")
