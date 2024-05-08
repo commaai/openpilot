@@ -163,9 +163,9 @@ def get_platform_codes(fw_versions: list[bytes] | set[bytes]) -> set[tuple[bytes
   codes = set()
   for fw in fw_versions:
     match = FW_PATTERN.match(fw)
-    if match is None:
-      continue
-    codes.add((match.group('platform_hint'), match.group('model_year_hint')))
+    if match is not None:
+      codes.add((match.group('platform_hint'), match.group('model_year_hint')))
+
   return codes
 
 
