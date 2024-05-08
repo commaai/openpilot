@@ -181,7 +181,6 @@ class TestAthenadMethods:
       assert athenad.strip_bz2_extension(fn) == fn[:-4]
 
   @parameterized.expand([(True,), (False,)])
-  @with_mock_athena
   def test_do_upload(self, compress, host):
     # random bytes to ensure rather large object post-compression
     fn = self._create_file('qlog', data=os.urandom(10000 * 1024))
@@ -195,7 +194,6 @@ class TestAthenadMethods:
     resp = athenad._do_upload(item)
     assert resp.status_code == 201
 
-  @with_mock_athena
   def test_upload_file_to_url(self, host):
     fn = self._create_file('qlog.bz2')
 
@@ -206,7 +204,6 @@ class TestAthenadMethods:
     assert resp['items'][0].get('id') is not None
     assert athenad.upload_queue.qsize() == 1
 
-  @with_mock_athena
   def test_upload_file_to_url_duplicate(self, host):
     self._create_file('qlog.bz2')
 
@@ -218,12 +215,10 @@ class TestAthenadMethods:
     resp = dispatcher["uploadFileToUrl"]("qlog.bz2", url2, {})
     assert resp == {'enqueued': 0, 'items': []}
 
-  @with_mock_athena
   def test_upload_file_to_url_does_not_exist(self, host):
     not_exists_resp = dispatcher["uploadFileToUrl"]("does_not_exist.bz2", "http://localhost:1238", {})
     assert not_exists_resp == {'enqueued': 0, 'items': [], 'failed': ['does_not_exist.bz2']}
 
-  @with_mock_athena
   @with_upload_handler
   def test_upload_handler(self, host):
     fn = self._create_file('qlog.bz2')
@@ -238,7 +233,6 @@ class TestAthenadMethods:
     assert athenad.upload_queue.qsize() == 0
 
   @parameterized.expand([(500, True), (412, False)])
-  @with_mock_athena
   @mock.patch('requests.put')
   @with_upload_handler
   def test_upload_handler_retry(self, status, retry, mock_put, host):
