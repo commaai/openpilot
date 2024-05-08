@@ -9,7 +9,7 @@ from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car import dbc_dict, CarSpecs, DbcDict, PlatformConfig, Platforms
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column, \
                                                      Device
-from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
+from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, LiveFwVersions, OfflineFwVersions, Request, p16
 
 Ecu = car.CarParams.Ecu
 NetworkLocation = car.CarParams.NetworkLocation
@@ -430,7 +430,7 @@ class CAR(Platforms):
   )
 
 
-def match_fw_to_car_fuzzy(live_fw_versions, vin, offline_fw_versions) -> set[str]:
+def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, vin: str, offline_fw_versions: OfflineFwVersions) -> set[str]:
   candidates = set()
 
   # Compile all FW versions for each ECU
