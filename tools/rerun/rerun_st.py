@@ -1,13 +1,14 @@
 import multiprocessing
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.route import Route
+from cereal.services import services
 import subprocess
 import sys
 import os
 import capnp
 
 
-NUM_CPUS = 1 # Number of CPUS to use in pool
+NUM_CPUS = 1
 DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 WHEEL_URL = "https://build.rerun.io/commit/660463d/wheels"
 RERUN_VERSION = "rerun-cli 0.16.0-alpha.2 [rustc 1.76.0 (07dca489a 2024-02-04), LLVM 17.0.6] x86_64-unknown-linux-gnu main 660463d, built 2024-04-28T12:33:59Z"
@@ -47,13 +48,7 @@ except ImportError:
 #     os.execv(sys.executable, [sys.executable] + sys.argv)
 
 
-topics = ['accelerometer', 'androidLog', 'cameraOdometry', 'can', 'carControl', 'carParams', 'carState', 'clocks', 'controlsState', 'deviceState',
-          'driverCameraState', 'driverEncodeIdx', 'driverMonitoringState', 'driverStateV2', 'errorLogMessage', 'gnssMeasurements', 'gpsLocationExternal',
-          'gyroscope', 'initData', 'lateralPlanDEPRECATED', 'lightSensor', 'liveCalibration', 'liveLocationKalman', 'liveParameters', 'liveTorqueParameters',
-          'liveTracks', 'logMessage', 'longitudinalPlan', 'magnetometer', 'managerState', 'mapRenderState', 'microphone', 'modelV2', 'navInstruction',
-          'navModel', 'navThumbnail', 'onroadEvents', 'pandaStates', 'peripheralState', 'procLog', 'qRoadEncodeIdx', 'radarState', 'roadCameraState',
-          'roadEncodeIdx', 'sendcan', 'sentinel', 'temperatureSensor', 'ubloxGnss', 'ubloxRaw', 'uiDebug', 'uiPlan', 'uploaderState',
-          'wideRoadCameraState', 'wideRoadEncodeIdx']
+topics = sorted(services.keys())
 excluded = ['sentinel']
 is_first_run = True
 
