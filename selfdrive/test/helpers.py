@@ -33,7 +33,7 @@ def phone_only(f):
   @wraps(f)
   def wrap(self, *args, **kwargs):
     if PC:
-      pytest.skipTest("This test is not meant to run on PC")
+      pytest.skip("This test is not meant to run on PC")
     return f(self, *args, **kwargs)
   return wrap
 
@@ -41,7 +41,7 @@ def release_only(f):
   @wraps(f)
   def wrap(self, *args, **kwargs):
     if "RELEASE" not in os.environ:
-      pytest.skipTest("This test is only for release branches")
+      pytest.skip("This test is only for release branches")
     return f(self, *args, **kwargs)
   return wrap
 
