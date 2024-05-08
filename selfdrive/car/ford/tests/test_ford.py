@@ -100,8 +100,7 @@ class TestFordFW(unittest.TestCase):
 
         CP = car.CarParams.new_message(carFw=car_fw)
         matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw), CP.carVin, FW_VERSIONS)
-        self.assertEqual(len(matches), 1)
-        self.assertEqual(list(matches)[0], platform)
+        self.assertEqual(matches, {platform})
 
   def test_match_fw_fuzzy(self):
     offline_fw = {
