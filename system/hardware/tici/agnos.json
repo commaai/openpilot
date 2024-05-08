@@ -1,10 +1,10 @@
 [
   {
     "name": "boot",
-    "url": "https://commadist.azureedge.net/agnosupdate/boot-543fdc8aadf700f33a6e90740b8a227036bbd190626861d45ba1eb0d9ac422d1.img.xz",
-    "hash": "543fdc8aadf700f33a6e90740b8a227036bbd190626861d45ba1eb0d9ac422d1",
-    "hash_raw": "543fdc8aadf700f33a6e90740b8a227036bbd190626861d45ba1eb0d9ac422d1",
-    "size": 15636480,
+    "url": "https://commadist.azureedge.net/agnosupdate/boot-5674ea6767e7198cf1e7def3de66a57061f001ed76d43dc4b4f84de545c53c6f.img.xz",
+    "hash": "5674ea6767e7198cf1e7def3de66a57061f001ed76d43dc4b4f84de545c53c6f",
+    "hash_raw": "5674ea6767e7198cf1e7def3de66a57061f001ed76d43dc4b4f84de545c53c6f",
+    "size": 16029696,
     "sparse": false,
     "full_check": true,
     "has_ab": true
@@ -61,17 +61,17 @@
   },
   {
     "name": "system",
-    "url": "https://commadist.azureedge.net/agnosupdate/system-bd2967074298a2686f81e2094db3867d7cb2605750d63b1a7309a923f6985b2a.img.xz",
-    "hash": "dc2f960631f02446d912885786922c27be4eb1ec6c202cacce6699d5a74021ba",
-    "hash_raw": "bd2967074298a2686f81e2094db3867d7cb2605750d63b1a7309a923f6985b2a",
+    "url": "https://commadist.azureedge.net/agnosupdate/system-1badfe72851628d6cf9200a53a6151bb4e797b49c717141409fc57138eae388a.img.xz",
+    "hash": "328e90c62068222dfd98f71dd3f6251fcb962f082b49c6be66ab2699f5db6f4f",
+    "hash_raw": "1badfe72851628d6cf9200a53a6151bb4e797b49c717141409fc57138eae388a",
     "size": 10737418240,
     "sparse": true,
     "full_check": false,
     "has_ab": true,
     "alt": {
-      "hash": "283e5e754593c6e1bb5e9d63b54624cda5475b88bc1b130fe6ab13acdbd966e2",
-      "url": "https://commadist.azureedge.net/agnosupdate/system-skip-chunks-bd2967074298a2686f81e2094db3867d7cb2605750d63b1a7309a923f6985b2a.img.xz",
-      "size": 4548070712
+      "hash": "bc11d2148f29862ee1326aca2af1cf6bbf5fed831e3f8f6b8f7a0f110dfe8d26",
+      "url": "https://commadist.azureedge.net/agnosupdate/system-skip-chunks-1badfe72851628d6cf9200a53a6151bb4e797b49c717141409fc57138eae388a.img.xz",
+      "size": 4548070000
     }
   }
 ]
