@@ -10,6 +10,7 @@
 #include <QTabBar>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
+#include "tools/cabana/streams/replaystream.h"
 #include "tools/cabana/utils/util.h"
 #include "tools/replay/logreader.h"
 
@@ -23,7 +24,6 @@ class InfoLabel : public QWidget {
 public:
   InfoLabel(QWidget *parent);
   void showPixmap(const QPoint &pt, const QString &sec, const QPixmap &pm, const AlertInfo &alert);
-  void showAlert(const AlertInfo &alert);
   void paintEvent(QPaintEvent *event) override;
   QPixmap pixmap;
   QString second;
@@ -58,6 +58,21 @@ private:
   InfoLabel *thumbnail_label;
 };
 
+class CustomCameraView : public CameraWidget {
+public:
+  CustomCameraView(QWidget *parent);
+  void setAlert(const AlertInfo &alert) {
+    if (alert.status != alert_.status || alert.text1 != alert_.text1 || alert.text2 != alert_.text2) {
+      alert_ = alert;
+      update();
+    }
+  }
+  void paintGL() override;
+  QTimer loading_timer_;
+  bool loading_ = false;
+  AlertInfo alert_;
+};
+
 class VideoWidget : public QFrame {
   Q_OBJECT
 
@@ -75,7 +90,7 @@ protected:
   void loopPlaybackClicked();
   void vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams);
 
-  CameraWidget *cam_widget;
+  CustomCameraView *cam_widget;
   double maximum_time = 0;
   QToolButton *time_btn = nullptr;
   ToolButton *seek_backward_btn = nullptr;
@@ -84,7 +99,6 @@ protected:
   ToolButton *loop_btn = nullptr;
   QToolButton *speed_btn = nullptr;
   ToolButton *skip_to_end_btn = nullptr;
-  InfoLabel *alert_label = nullptr;
   Slider *slider = nullptr;
   QTabBar *camera_tab = nullptr;
 };

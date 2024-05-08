@@ -31,8 +31,6 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
   auto new_tab_btn = new ToolButton("window-stack", tr("New Tab"));
   toolbar->addWidget(new_plot_btn);
   toolbar->addWidget(new_tab_btn);
-  toolbar->addWidget(title_label = new QLabel());
-  title_label->setContentsMargins(0, 0, style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing), 0);
 
   QMenu *menu = new QMenu(this);
   for (int i = 0; i < MAX_COLUMN_COUNT; ++i) {
@@ -65,7 +63,6 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
   reset_zoom_btn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
   toolbar->addWidget(remove_all_btn = new ToolButton("x-square", tr("Remove all charts")));
-  toolbar->addWidget(dock_btn = new ToolButton(""));
   main_layout->addWidget(toolbar);
 
   // tabbar
@@ -113,11 +110,6 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, this, &ChartsWidget::removeTab);
   QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {
     if (index != -1) updateLayout(true);
-  });
-  QObject::connect(dock_btn, &QToolButton::clicked, [this]() {
-    emit dock(!docking);
-    docking = !docking;
-    updateToolBar();
   });
 
   newTab();
@@ -214,7 +206,6 @@ void ChartsWidget::setMaxChartRange(int value) {
 }
 
 void ChartsWidget::updateToolBar() {
-  title_label->setText(tr("Charts: %1").arg(charts.size()));
   columns_action->setText(tr("Column: %1").arg(column_count));
   range_lb->setText(utils::formatSeconds(max_chart_range));
   range_lb_action->setVisible(!is_zoomed);
@@ -224,8 +215,6 @@ void ChartsWidget::updateToolBar() {
   reset_zoom_action->setVisible(is_zoomed);
   reset_zoom_btn->setText(is_zoomed ? tr("%1-%2").arg(zoomed_range.first, 0, 'f', 2).arg(zoomed_range.second, 0, 'f', 2) : "");
   remove_all_btn->setEnabled(!charts.isEmpty());
-  dock_btn->setIcon(docking ? "arrow-up-right-square" : "arrow-down-left-square");
-  dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
 }
 
 void ChartsWidget::settingChanged() {
@@ -249,6 +238,16 @@ ChartView *ChartsWidget::findChart(const MessageId &id, const cabana::Signal *si
   for (auto c : charts)
     if (c->hasSignal(id, sig)) return c;
   return nullptr;
+}
+
+std::set<std::pair<MessageId, QString>> ChartsWidget::allSignals() const {
+  std::set<std::pair<MessageId, QString>> sigs;
+  for (auto c : charts) {
+    for (auto &sig : c->sigs) {
+      sigs.insert(std::make_pair(sig.msg_id, sig.sig->name));
+    }
+  }
+  return sigs;
 }
 
 ChartView *ChartsWidget::createChart() {
@@ -432,14 +431,6 @@ void ChartsWidget::alignCharts() {
   for (auto c : charts) {
     c->updatePlotArea(plot_left);
   }
-}
-
-bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
-  if (obj != this && event->type() == QEvent::Close) {
-    emit dock_btn->clicked();
-    return true;
-  }
-  return false;
 }
 
 bool ChartsWidget::event(QEvent *event) {

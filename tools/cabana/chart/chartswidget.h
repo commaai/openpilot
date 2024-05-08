@@ -1,5 +1,6 @@
 #pragma once
 
+#include <set>
 #include <unordered_map>
 #include <utility>
 
@@ -42,6 +43,8 @@ public:
   ChartsWidget(QWidget *parent = nullptr);
   void showChart(const MessageId &id, const cabana::Signal *sig, bool show, bool merge);
   inline bool hasSignal(const MessageId &id, const cabana::Signal *sig) { return findChart(id, sig) != nullptr; }
+  std::set<std::pair<MessageId, QString>> allSignals() const;
+  int chartCount() const { return charts.size(); }
 
 public slots:
   void setColumnCount(int n);
@@ -49,7 +52,6 @@ public slots:
   void setZoom(double min, double max);
 
 signals:
-  void dock(bool floating);
   void rangeChanged(double min, double max, bool is_zommed);
   void seriesChanged();
 
@@ -75,19 +77,15 @@ private:
   void updateLayout(bool force = false);
   void settingChanged();
   void showValueTip(double sec);
-  bool eventFilter(QObject *obj, QEvent *event) override;
   void newTab();
   void removeTab(int index);
   inline QList<ChartView *> &currentCharts() { return tab_charts[tabbar->tabData(tabbar->currentIndex()).toInt()]; }
   ChartView *findChart(const MessageId &id, const cabana::Signal *sig);
 
-  QLabel *title_label;
   QLabel *range_lb;
   LogSlider *range_slider;
   QAction *range_lb_action;
   QAction *range_slider_action;
-  bool docking = true;
-  ToolButton *dock_btn;
 
   QAction *undo_zoom_action;
   QAction *redo_zoom_action;

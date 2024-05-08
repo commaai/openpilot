@@ -7,6 +7,7 @@
 #include <QProgressBar>
 #include <QSplitter>
 #include <QStatusBar>
+#include <QTabWidget>
 #include <set>
 
 #include "tools/cabana/chart/chartswidget.h"
@@ -15,13 +16,13 @@
 #include "tools/cabana/messageswidget.h"
 #include "tools/cabana/videowidget.h"
 #include "tools/cabana/tools/findsimilarbits.h"
+#include "tools/cabana/utils/signaltable.h"
 
 class MainWindow : public QMainWindow {
   Q_OBJECT
 
 public:
   MainWindow();
-  void dockCharts(bool dock);
   void showStatusMessage(const QString &msg, int timeout = 0) { statusBar()->showMessage(msg, timeout); }
   void loadFile(const QString &fn, SourceSet s = SOURCE_ALL);
   ChartsWidget *charts_widget = nullptr;
@@ -80,10 +81,12 @@ protected:
   VideoWidget *video_widget = nullptr;
   QDockWidget *video_dock;
   QDockWidget *messages_dock;
+  QTabWidget *left_tab_widget_ = nullptr;
+  QTabWidget *charts_tab_widget_ = nullptr;
   MessagesWidget *messages_widget = nullptr;
+  SignalTable *signal_table_ = nullptr;
+  SignalTable *charts_signal_table_ = nullptr;
   CenterWidget *center_widget;
-  QWidget *floating_window = nullptr;
-  QVBoxLayout *charts_layout;
   QProgressBar *progress_bar;
   QLabel *status_label;
   QJsonDocument fingerprint_to_dbc;

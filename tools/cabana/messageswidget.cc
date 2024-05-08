@@ -29,10 +29,9 @@ static bool isMessageActive(const MessageId &id) {
 MessagesWidget::MessagesWidget(QWidget *parent) : menu(new QMenu(this)), QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
-  // toolbar
-  main_layout->addWidget(createToolBar());
   // message table
   main_layout->addWidget(view = new MessageView(this));
+  main_layout->addWidget(createToolBar());
   view->setItemDelegate(delegate = new MessageBytesDelegate(view, settings.multiple_lines_hex));
   view->setModel(model = new MessageListModel(this));
   view->setHeader(header = new MessageViewHeader(this));
@@ -90,7 +89,7 @@ MessagesWidget::MessagesWidget(QWidget *parent) : menu(new QMenu(this)), QWidget
 QWidget *MessagesWidget::createToolBar() {
   QWidget *toolbar = new QWidget(this);
   QHBoxLayout *layout = new QHBoxLayout(toolbar);
-  layout->setContentsMargins(0, 9, 0, 0);
+  layout->setContentsMargins(0, 0, 0, 0);
   layout->addWidget(suppress_add = new QPushButton("Suppress Highlighted"));
   layout->addWidget(suppress_clear = new QPushButton());
   suppress_clear->setToolTip(tr("Clear suppressed"));

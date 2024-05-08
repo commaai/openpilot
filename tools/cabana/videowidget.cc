@@ -8,12 +8,9 @@
 #include <QMenu>
 #include <QMouseEvent>
 #include <QPainter>
-#include <QStackedLayout>
 #include <QStyleOptionSlider>
 #include <QVBoxLayout>
 #include <QtConcurrent>
-
-#include "tools/cabana/streams/replaystream.h"
 
 const int MIN_VIDEO_HEIGHT = 100;
 const int THUMBNAIL_MARGIN = 3;
@@ -26,6 +23,7 @@ static const QColor timeline_colors[] = {
   [(int)TimelineType::AlertWarning] = QColor(255, 195, 0),
   [(int)TimelineType::AlertCritical] = QColor(199, 0, 57),
 };
+void paintAlert(QPainter &p, const QRect &rect, const AlertInfo &alert_info);
 
 VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
@@ -137,13 +135,9 @@ QWidget *VideoWidget::createCameraWidget() {
   camera_tab->setAutoHide(true);
   camera_tab->setExpanding(false);
 
-  QStackedLayout *stacked = new QStackedLayout();
-  stacked->setStackingMode(QStackedLayout::StackAll);
-  stacked->addWidget(cam_widget = new CameraWidget("camerad", VISION_STREAM_ROAD, false));
+  l->addWidget(cam_widget = new CustomCameraView(this));
   cam_widget->setMinimumHeight(MIN_VIDEO_HEIGHT);
   cam_widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
-  stacked->addWidget(alert_label = new InfoLabel(this));
-  l->addLayout(stacked);
 
   l->addWidget(slider = new Slider(w));
   slider->setSingleStep(0);
@@ -217,7 +211,7 @@ void VideoWidget::updateState() {
   if (slider) {
     if (!slider->isSliderDown())
       slider->setCurrentSecond(can->currentSec());
-    alert_label->showAlert(slider->alertInfo(can->currentSec()));
+    cam_widget->setAlert(slider->alertInfo(can->currentSec()));
     time_btn->setText(QString("%1 / %2").arg(formatTime(can->currentSec(), true),
                                              formatTime(slider->maximum() / slider->factor)));
   } else {
@@ -357,6 +351,32 @@ bool Slider::event(QEvent *event) {
   return QSlider::event(event);
 }
 
+CustomCameraView::CustomCameraView(QWidget *parent) : loading_timer_(this), CameraWidget("camerad", VISION_STREAM_ROAD, false, parent) {
+  loading_timer_.setSingleShot(true);
+  loading_timer_.callOnTimeout(this, [this]() {
+    loading_ = true;
+    update();
+  });
+  QObject::connect(can, &AbstractStream::paused, this, [this]() { update(); });
+  QObject::connect(can, &AbstractStream::seekingTo, this, [this]() { loading_timer_.start(1000); });
+  QObject::connect(can, &AbstractStream::seekedTo, this, [this]() {
+    loading_timer_.stop();
+    loading_ = false;
+    update();
+  });
+}
+
+void CustomCameraView::paintGL() {
+  CameraWidget::paintGL();
+  QPainter p(this);
+  paintAlert(p, rect(), alert_);
+  if (loading_ || can->isPaused()) {
+    p.setFont(QFont(font().family(), 15));
+    p.setPen(QColor(255, 255, 255, 125));
+    p.drawText(rect().adjusted(0, 0, 0, -3), loading_ ? tr("LOADING...") : tr("PAUSED"), Qt::AlignHCenter | Qt::AlignBottom);
+  }
+}
+
 // InfoLabel
 
 InfoLabel::InfoLabel(QWidget *parent) : QWidget(parent, Qt::WindowStaysOnTopHint) {
@@ -373,13 +393,6 @@ void InfoLabel::showPixmap(const QPoint &pt, const QString &sec, const QPixmap &
   update();
 }
 
-void InfoLabel::showAlert(const AlertInfo &alert) {
-  alert_info = alert;
-  pixmap = {};
-  setVisible(!alert_info.text1.isEmpty());
-  update();
-}
-
 void InfoLabel::paintEvent(QPaintEvent *event) {
   QPainter p(this);
   p.setPen(QPen(palette().color(QPalette::BrightText), 2));
@@ -388,6 +401,11 @@ void InfoLabel::paintEvent(QPaintEvent *event) {
     p.drawRect(rect());
     p.drawText(rect().adjusted(0, 0, 0, -THUMBNAIL_MARGIN), second, Qt::AlignHCenter | Qt::AlignBottom);
   }
+  p.setFont(QFont(font().family(), 8));
+  paintAlert(p, rect(), alert_info);
+}
+
+void paintAlert(QPainter &p, const QRect &rect, const AlertInfo &alert_info) {
   if (alert_info.text1.size() > 0) {
     QColor color = timeline_colors[(int)TimelineType::AlertInfo];
     if (alert_info.status == cereal::ControlsState::AlertStatus::USER_PROMPT) {
@@ -401,13 +419,9 @@ void InfoLabel::paintEvent(QPaintEvent *event) {
       text += "\n" + alert_info.text2;
     }
 
-    if (!pixmap.isNull()) {
-      QFont font;
-      font.setPixelSize(11);
-      p.setFont(font);
-    }
-    QRect text_rect = rect().adjusted(1, 1, -1, -1);
+    QRect text_rect = rect.adjusted(1, 1, -1, -1);
     QRect r = p.fontMetrics().boundingRect(text_rect, Qt::AlignTop | Qt::AlignHCenter | Qt::TextWordWrap, text);
+    p.setPen(QApplication::palette().color(QPalette::BrightText));
     p.fillRect(text_rect.left(), r.top(), text_rect.width(), r.height(), color);
     p.drawText(text_rect, Qt::AlignTop | Qt::AlignHCenter | Qt::TextWordWrap, text);
   }

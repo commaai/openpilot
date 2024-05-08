@@ -90,6 +90,7 @@ void ReplayStream::seekTo(double ts) {
   current_sec_ = ts;
   std::set<MessageId> new_msgs;
   msgsReceived(&new_msgs, false);
+  emit seekingTo(ts);
 
   // Seek to the specified timestamp
   replay->seekTo(std::max(double(0), ts), false);

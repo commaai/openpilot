@@ -163,12 +163,14 @@ void ChartView::signalUpdated(const cabana::Signal *sig) {
     }
     updateTitle();
     updateSeries(sig);
+    emit charts_widget->seriesChanged();
   }
 }
 
 void ChartView::msgUpdated(MessageId id) {
   if (std::any_of(sigs.cbegin(), sigs.cend(), [=](auto &s) { return s.msg_id.address == id.address; })) {
     updateTitle();
+    emit charts_widget->seriesChanged();
   }
 }
 

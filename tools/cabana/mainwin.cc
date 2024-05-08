@@ -177,29 +177,37 @@ void MainWindow::createDockWindows() {
 }
 
 void MainWindow::createDockWidgets() {
-  messages_widget = new MessagesWidget(this);
-  messages_dock->setWidget(messages_widget);
+  left_tab_widget_ = new QTabWidget(this);
+  left_tab_widget_->setStyleSheet("QTabWidget::pane { border: 0; }");
+  left_tab_widget_->addTab(messages_widget = new MessagesWidget(left_tab_widget_), tr("Messages"));
+  left_tab_widget_->addTab(signal_table_ = new SignalTable(left_tab_widget_), tr("Signals"));
+  messages_dock->setWidget(left_tab_widget_);
+  signal_table_->setDisplayALlSignal(true);
   QObject::connect(messages_widget, &MessagesWidget::titleChanged, messages_dock, &QDockWidget::setWindowTitle);
 
   // right panel
-  charts_widget = new ChartsWidget(this);
-  QWidget *charts_container = new QWidget(this);
-  charts_layout = new QVBoxLayout(charts_container);
-  charts_layout->setContentsMargins(0, 0, 0, 0);
-  charts_layout->addWidget(charts_widget);
+  charts_tab_widget_ = new QTabWidget(this);
+  charts_tab_widget_->setStyleSheet("QTabWidget::pane { border: 0; }");
+  charts_tab_widget_->addTab(charts_widget = new ChartsWidget(charts_tab_widget_), tr("Charts"));
+  charts_tab_widget_->addTab(charts_signal_table_ = new SignalTable(charts_tab_widget_), tr("Signals"));
 
   // splitter between video and charts
   video_splitter = new QSplitter(Qt::Vertical, this);
   video_widget = new VideoWidget(this);
   video_splitter->addWidget(video_widget);
   QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::updateTimeRange);
+  QObject::connect(charts_widget, &ChartsWidget::seriesChanged, charts_signal_table_, [this]() {
+    charts_tab_widget_->setTabText(0, charts_widget->chartCount() ? tr("Charts (%1)").arg(charts_widget->chartCount()) : tr("Charts"));
+    auto all_signals = charts_widget->allSignals();
+    charts_tab_widget_->setTabText(1, !all_signals.empty() ? tr("Signals (%1)").arg(all_signals.size()) : tr("Signals"));
+    charts_signal_table_->setSignals(all_signals);
+  });
 
-  video_splitter->addWidget(charts_container);
+  video_splitter->addWidget(charts_tab_widget_);
   video_splitter->setStretchFactor(1, 1);
   video_splitter->restoreState(settings.video_splitter_state);
   video_splitter->handle(1)->setEnabled(!can->liveStreaming());
   video_dock->setWidget(video_splitter);
-  QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
 }
 
 void MainWindow::createStatusBar() {
@@ -352,7 +360,7 @@ void MainWindow::loadFromClipboard(SourceSet s, bool close_all) {
 
 void MainWindow::changingStream() {
   center_widget->clear();
-  delete messages_widget;
+  delete left_tab_widget_;
   delete video_splitter;
 }
 
@@ -578,32 +586,12 @@ void MainWindow::updateStatus() {
   status_label->setText(tr("Cached Minutes:%1 FPS:%2").arg(settings.max_cached_minutes).arg(settings.fps));
 }
 
-void MainWindow::dockCharts(bool dock) {
-  if (dock && floating_window) {
-    floating_window->removeEventFilter(charts_widget);
-    charts_layout->insertWidget(0, charts_widget, 1);
-    floating_window->deleteLater();
-    floating_window = nullptr;
-  } else if (!dock && !floating_window) {
-    floating_window = new QWidget(this);
-    floating_window->setWindowFlags(Qt::Window);
-    floating_window->setWindowTitle("Charts");
-    floating_window->setLayout(new QVBoxLayout());
-    floating_window->layout()->addWidget(charts_widget);
-    floating_window->installEventFilter(charts_widget);
-    floating_window->showMaximized();
-  }
-}
-
 void MainWindow::closeEvent(QCloseEvent *event) {
   cleanupAutoSaveFile();
   remindSaveChanges();
 
   installDownloadProgressHandler(nullptr);
   qInstallMessageHandler(nullptr);
-
-  if (floating_window)
-    floating_window->deleteLater();
 
   // save states
   settings.geometry = saveGeometry();

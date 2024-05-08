@@ -194,6 +194,7 @@ LogsWidget::LogsWidget(QWidget *parent) : QFrame(parent) {
   main_layout->addWidget(logs = new QTableView(this));
   logs->setModel(model = new HistoryLogModel(this));
   logs->setItemDelegate(delegate = new MessageBytesDelegate(this));
+  logs->setSelectionMode(QAbstractItemView::NoSelection);
   logs->setHorizontalHeader(new HeaderView(Qt::Horizontal, this));
   logs->horizontalHeader()->setDefaultAlignment(Qt::AlignRight | (Qt::Alignment)Qt::TextWordWrap);
   logs->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
