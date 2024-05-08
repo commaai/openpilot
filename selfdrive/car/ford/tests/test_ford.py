@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import random
 import unittest
 from collections.abc import Iterable
 
@@ -7,6 +8,7 @@ from hypothesis import settings, given, strategies as st
 from parameterized import parameterized
 
 from cereal import car
+from openpilot.selfdrive.car.fw_versions import build_fw_dict
 from openpilot.selfdrive.car.ford.values import CAR, FW_QUERY_CONFIG, FW_PATTERN, get_platform_codes
 from openpilot.selfdrive.car.ford.fingerprints import FW_VERSIONS
 
@@ -84,6 +86,22 @@ class TestFordFW(unittest.TestCase):
       b"LB5A-14C204-EAC\x00\x00\x00\x00\x00\x00\x00\x00\x00",
     ])
     self.assertEqual(results, {(b"X6A", b"J"), (b"Z6T", b"N"), (b"J6T", b"P"), (b"B5A", b"L")})
+
+  def test_fuzzy_match(self):
+    for platform, fw_by_addr in FW_VERSIONS.items():
+      # Ensure there's no overlaps in platform codes
+      for _ in range(20):
+        car_fw = []
+        for ecu, fw_versions in fw_by_addr.items():
+          ecu_name, addr, sub_addr = ecu
+          fw = random.choice(fw_versions)
+          car_fw.append({"ecu": ecu_name, "fwVersion": fw, "address": addr,
+                         "subAddress": 0 if sub_addr is None else sub_addr})
+
+        CP = car.CarParams.new_message(carFw=car_fw)
+        matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw), CP.carVin, FW_VERSIONS)
+        self.assertEqual(len(matches), 1)
+        self.assertEqual(list(matches)[0], platform)
 
   def test_match_fw_fuzzy(self):
     offline_fw = {
