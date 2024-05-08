@@ -6,7 +6,7 @@ from openpilot.selfdrive.car.values import PLATFORMS
 
 
 class TestPlatformConfigs:
-  def test_configs(subtests):
+  def test_configs(self, subtests):
 
     for name, platform in PLATFORMS.items():
       with subtests.test(platform=str(platform)):

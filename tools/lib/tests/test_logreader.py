@@ -184,7 +184,7 @@ class TestLogReader:
     assert len(lr.run_across_segments(4, noop)) == len(list(lr))
 
   @pytest.mark.slow
-  def test_auto_mode(subtests):
+  def test_auto_mode(self, subtests):
     lr = LogReader(f"{TEST_ROUTE}/0/q")
     qlog_len = len(list(lr))
     with mock.patch("openpilot.tools.lib.route.Route.log_paths") as log_paths_mock:

@@ -14,7 +14,7 @@ SPARE_PART_FW_PATTERN = re.compile(b'\xf1\x87(?P<gateway>[0-9][0-9A-Z]{2})(?P<un
 
 
 class TestVolkswagenPlatformConfigs:
-  def test_spare_part_fw_pattern(subtests):
+  def test_spare_part_fw_pattern(self, subtests):
     # Relied on for determining if a FW is likely VW
     for platform, ecus in FW_VERSIONS.items():
       with subtests.test(platform=platform):
@@ -22,7 +22,7 @@ class TestVolkswagenPlatformConfigs:
           for fw in fws:
             assert SPARE_PART_FW_PATTERN.match(fw) != None, f"Bad FW: {fw}"
 
-  def test_chassis_codes(subtests):
+  def test_chassis_codes(self, subtests):
     for platform in CAR:
       with subtests.test(platform=platform):
         assert len(platform.config.wmis) > 0, "WMIs not set"
@@ -37,7 +37,7 @@ class TestVolkswagenPlatformConfigs:
           assert set() == platform.config.chassis_codes & comp.config.chassis_codes, \
                            f"Shared chassis codes: {comp}"
 
-  def test_custom_fuzzy_fingerprinting(subtests):
+  def test_custom_fuzzy_fingerprinting(self, subtests):
     for platform in CAR:
       expected_radar_fw = FW_VERSIONS[platform][Ecu.fwdRadar, 0x757, None]
 

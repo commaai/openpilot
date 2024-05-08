@@ -148,7 +148,7 @@ class TestLongitudinalControl:
   e2e: bool
   force_decel: bool
 
-  def test_maneuver(subtests):
+  def test_maneuver(self, subtests):
     for maneuver in create_maneuvers({"e2e": self.e2e, "force_decel": self.force_decel}):
       with subtests.test(title=maneuver.title, e2e=maneuver.e2e, force_decel=maneuver.force_decel):
         print(maneuver.title, f'in {"e2e" if maneuver.e2e else "acc"} mode')

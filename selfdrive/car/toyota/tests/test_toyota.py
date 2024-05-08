@@ -33,7 +33,7 @@ class TestToyotaInterfaces:
       if car_model in TSS2_CAR:
         assert dbc["pt"] == "toyota_nodsu_pt_generated"
 
-  def test_essential_ecus(subtests):
+  def test_essential_ecus(self, subtests):
     # Asserts standard ECUs exist for each platform
     common_ecus = {Ecu.fwdRadar, Ecu.fwdCamera}
     for car_model, ecus in FW_VERSIONS.items():
@@ -54,7 +54,7 @@ class TestToyotaInterfaces:
 
 
 class TestToyotaFingerprint:
-  def test_non_essential_ecus(subtests):
+  def test_non_essential_ecus(self, subtests):
     # Ensures only the cars that have multiple engine ECUs are in the engine non-essential ECU list
     for car_model, ecus in FW_VERSIONS.items():
       with subtests.test(car_model=car_model.value):
@@ -63,7 +63,7 @@ class TestToyotaFingerprint:
                          car_model in FW_QUERY_CONFIG.non_essential_ecus[Ecu.engine], \
                          f"Car model unexpectedly {'not ' if len(engine_ecus) > 1 else ''}in non-essential list"
 
-  def test_valid_fw_versions(subtests):
+  def test_valid_fw_versions(self, subtests):
     # Asserts all FW versions are valid
     for car_model, ecus in FW_VERSIONS.items():
       with subtests.test(car_model=car_model.value):
@@ -80,7 +80,7 @@ class TestToyotaFingerprint:
     fws = data.draw(fw_strategy)
     get_platform_codes(fws)
 
-  def test_platform_code_ecus_available(subtests):
+  def test_platform_code_ecus_available(self, subtests):
     # Asserts ECU keys essential for fuzzy fingerprinting are available on all platforms
     for car_model, ecus in FW_VERSIONS.items():
       with subtests.test(car_model=car_model.value):
@@ -91,7 +91,7 @@ class TestToyotaFingerprint:
             continue
           assert platform_code_ecu in [e[0] for e in ecus]
 
-  def test_fw_format(subtests):
+  def test_fw_format(self, subtests):
     # Asserts:
     # - every supported ECU FW version returns one platform code
     # - every supported ECU FW version has a part number
