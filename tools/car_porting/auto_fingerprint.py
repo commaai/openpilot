@@ -25,7 +25,6 @@ if __name__ == "__main__":
   elif carPlatform != "MOCK":
     platform = carPlatform
   else:
-    # attempt to auto-determine platform
     _, matches = match_fw_to_car(CP.carFw, CP.carVin, log=False)
     assert len(matches) == 1, f"Unable to auto-determine platform, matches: {matches}"
     platform = list(matches)[0]
