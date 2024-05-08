@@ -5,7 +5,6 @@
 .gitattributes
 .vscode/
 .devcontainer/
-docs/
 body/STL/
 tools/replay/
 tools/scripts/
