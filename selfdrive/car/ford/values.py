@@ -172,36 +172,39 @@ def get_platform_codes(fw_versions: list[bytes] | set[bytes]) -> set[tuple[bytes
 def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, vin: str, offline_fw_versions: OfflineFwVersions) -> set[str]:
   candidates: set[str] = set()
 
-  def match_ecu_fw(offline_ecu_fws: list[bytes], live_ecu_fws: set[bytes]) -> bool:
-    expected_codes = get_platform_codes(offline_ecu_fws)
-    live_codes = get_platform_codes(live_ecu_fws)
-
-    for live_platform_hint, live_model_year_hint in live_codes:
-      # Check for platform hint match
-      expected_model_year_hints = {
-        model_year_hint for platform_hint, model_year_hint in expected_codes
-        if platform_hint == live_platform_hint
-      }
-      if not expected_model_year_hints:
+  for candidate, fws in offline_fw_versions.items():
+    # Keep track of ECUs which pass all checks (platform hint, within model year hint range)
+    valid_found_ecus = set()
+    valid_expected_ecus = {ecu[1:] for ecu in fws if ecu[0] in PLATFORM_CODE_ECUS}
+    for ecu, expected_versions in fws.items():
+      addr = ecu[1:]
+      # Only check ECUs expected to have platform codes
+      if ecu[0] not in PLATFORM_CODE_ECUS:
         continue
 
-      # Check model year hint for this platform hint is in the expected range
-      # TODO: can this range be expanded to the full range of model year hints for this ECU instead of platform-hint specific?
-      #       some models have more than one platform hint per ECU.
-      if min(expected_model_year_hints) <= live_model_year_hint <= max(expected_model_year_hints):
-        return True
+      # Expected platform codes & model year hints
+      codes = get_platform_codes(expected_versions)
+      expected_platform_codes = {code for code, _ in codes}
+      expected_model_year_hints = {model_year_hint for _, model_year_hint in codes}
 
-    return False
+      # Found platform codes & model year hints
+      codes = get_platform_codes(live_fw_versions.get(addr, set()))
+      found_platform_codes = {code for code, _ in codes}
+      found_model_year_hints = {model_year_hint for _, model_year_hint in codes}
 
-  for candidate, fws in offline_fw_versions.items():
-    # All ECUs with a matching platform hint and model year hint in the expected range
-    valid_found_ecus = {
-      addr[1:] for addr, ecu_fws in fws.items()
-      if match_ecu_fw(ecu_fws, live_fw_versions.get(addr[1:], set()))
-    }
+      # Check platform code matches for any found versions
+      if not any(found_platform_code in expected_platform_codes for found_platform_code in found_platform_codes):
+        break
+
+      # Check any model year hint within range in the database. Note that some models have more than one
+      # platform code per ECU which we don't consider as separate ranges
+      if not any(min(expected_model_year_hints) <= found_model_year_hint <= max(expected_model_year_hints) for
+                 found_model_year_hint in found_model_year_hints):
+        break
+
+      valid_found_ecus.add(addr)
 
     # If all live ECUs pass all checks for candidate, add it as a match
-    valid_expected_ecus = {ecu[1:] for ecu in fws if ecu[0] in PLATFORM_CODE_ECUS}
     if valid_expected_ecus.issubset(valid_found_ecus):
       candidates.add(candidate)
 
