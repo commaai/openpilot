@@ -17,7 +17,7 @@ if __name__ == "__main__":
     for ecu in sorted(ecus, key=lambda x: int(x[0])):
       platform_codes = get_platform_codes(ecus[ecu])
       for code in platform_codes:
-        cars_for_code[ecu][code].update({ car_model })
+        cars_for_code[ecu][code].add(car_model)
 
       print(f'  (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])}, {ecu[2]}):')
       print(f'    Codes: {sorted(platform_codes)}')
