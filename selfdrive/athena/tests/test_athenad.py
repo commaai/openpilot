@@ -9,7 +9,6 @@ import shutil
 import time
 import threading
 import queue
-import unittest
 from dataclasses import asdict, replace
 from datetime import datetime, timedelta
 from parameterized import parameterized
@@ -423,7 +422,3 @@ class TestAthenadMethods:
     # ensure the list is all logs except most recent
     sl = athenad.get_logs_to_send_sorted()
     assert sl == fl[:-1]
-
-
-if __name__ == '__main__':
-  unittest.main()

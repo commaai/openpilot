@@ -4,7 +4,6 @@ import glob
 import signal
 import subprocess
 import time
-import unittest
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.timeout import Timeout
@@ -48,7 +47,3 @@ class TestPlotJuggler:
           layout = f.read()
           violations = [s for s in bad_strings if s in layout]
           assert len(violations) == 0, f"These should be stripped out of the layout: {str(violations)}"
-
-
-if __name__ == "__main__":
-  unittest.main()

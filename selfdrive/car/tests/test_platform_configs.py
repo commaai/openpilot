@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import unittest
 
 from openpilot.selfdrive.car.values import PLATFORMS
 
@@ -19,7 +18,3 @@ class TestPlatformConfigs:
         assert name == platform.config.platform_str
 
         assert platform.config.specs is not None
-
-
-if __name__ == "__main__":
-  unittest.main()

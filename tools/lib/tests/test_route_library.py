@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-import unittest
 from collections import namedtuple
 
 from openpilot.tools.lib.route import SegmentName
@@ -27,6 +26,3 @@ class TestRouteLibrary:
 
     for case in cases:
       _validate(case)
-
-if __name__ == "__main__":
-  unittest.main()

@@ -80,7 +80,3 @@ class TestSimBridgeBase:
         p.wait(15)
       else:
         p.join(15)
-
-
-if __name__ == "__main__":
-  unittest.main()

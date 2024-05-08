@@ -3,7 +3,6 @@ import time
 import numpy as np
 import os
 import pytest
-import unittest
 import requests
 import threading
 import http.server
@@ -211,7 +210,3 @@ class TestMapRenderer:
 
     assert _max < 0.065
     assert _min > 0.015
-
-
-if __name__ == "__main__":
-  unittest.main()

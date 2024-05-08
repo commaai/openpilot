@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import pytest
 import time
-import unittest
 
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
@@ -54,7 +53,3 @@ class TestPigeond:
 
       assert gpio_read(GPIO.UBLOX_RST_N) == 0
       assert gpio_read(GPIO.GNSS_PWR_EN) == 0
-
-
-if __name__ == "__main__":
-  unittest.main()

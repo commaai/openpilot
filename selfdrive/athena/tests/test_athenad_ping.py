@@ -3,7 +3,6 @@ import pytest
 import subprocess
 import threading
 import time
-import unittest
 from typing import cast
 from unittest import mock
 
@@ -101,7 +100,3 @@ class TestAthenadPing:
   def test_onroad(self) -> None:
     write_onroad_params(True, self.params)
     self.assertTimeout(21 + TIMEOUT_TOLERANCE)
-
-
-if __name__ == "__main__":
-  unittest.main()

@@ -1,5 +1,4 @@
 import numpy as np
-import unittest
 
 from openpilot.common.numpy_fast import interp
 
@@ -20,7 +19,3 @@ class TestInterp:
       expected = np.interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
       actual = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
       np.testing.assert_equal(actual, expected)
-
-
-if __name__ == "__main__":
-  unittest.main()

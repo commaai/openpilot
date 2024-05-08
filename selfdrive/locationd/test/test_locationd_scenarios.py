@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import pytest
-import unittest
 import numpy as np
 from collections import defaultdict
 from enum import Enum
@@ -223,7 +222,3 @@ class TestLocationdScenarios:
     orig_data, replayed_data = run_scenarios(Scenario.ACCEL_SPIKE_MIDWAY, self.logs)
     assert np.allclose(orig_data['yaw_rate'], replayed_data['yaw_rate'], atol=np.radians(0.2))
     assert np.allclose(orig_data['roll'], replayed_data['roll'], atol=np.radians(0.5))
-
-
-if __name__ == "__main__":
-  unittest.main()

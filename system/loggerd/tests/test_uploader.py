@@ -2,7 +2,6 @@
 import os
 import time
 import threading
-import unittest
 import logging
 import json
 from pathlib import Path
@@ -184,7 +183,3 @@ class TestUploader(UploaderTestCase):
     for f_path in f_paths:
       lock_path = f_path.with_suffix(f_path.suffix + ".lock")
       assert not lock_path.is_file(), "File lock not cleared on startup"
-
-
-if __name__ == "__main__":
-  unittest.main()

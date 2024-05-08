@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import random
-import unittest
 
 import numpy as np
 
@@ -112,6 +111,3 @@ class TestCalibrationd:
     assert c.valid_blocks == 1
     assert c.cal_status == log.LiveCalibrationData.Status.recalibrating
     np.testing.assert_allclose(c.rpy, [0.0, 0.0, MAX_ALLOWED_YAW_SPREAD*1.1], atol=1e-2)
-
-if __name__ == "__main__":
-  unittest.main()

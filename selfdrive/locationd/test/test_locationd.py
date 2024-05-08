@@ -2,7 +2,6 @@
 import pytest
 import json
 import random
-import unittest
 import time
 import capnp
 
@@ -90,7 +89,3 @@ class TestLocationdProc:
     assert lastGPS['latitude'] == pytest.approx(self.lat, abs=0.001)
     assert lastGPS['longitude'] == pytest.approx(self.lon, abs=0.001)
     assert lastGPS['altitude'] == pytest.approx(self.alt, abs=0.001)
-
-
-if __name__ == "__main__":
-  unittest.main()

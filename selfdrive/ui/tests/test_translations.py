@@ -3,7 +3,6 @@ import pytest
 import json
 import os
 import re
-import unittest
 import shutil
 import tempfile
 import xml.etree.ElementTree as ET
@@ -129,7 +128,3 @@ class TestTranslations:
         words = set(translation_text.translate(str.maketrans('', '', string.punctuation + '%n')).lower().split())
         bad_words_found = words & (banned_words - IGNORED_WORDS)
         assert not bad_words_found, f"Bad language found in {self.name}: '{translation_text}'. Bad word(s): {', '.join(bad_words_found)}"
-
-
-if __name__ == "__main__":
-  unittest.main()

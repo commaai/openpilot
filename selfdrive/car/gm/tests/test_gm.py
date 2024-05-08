@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from parameterized import parameterized
-import unittest
 
 from openpilot.selfdrive.car.gm.fingerprints import FINGERPRINTS
 from openpilot.selfdrive.car.gm.values import CAMERA_ACC_CAR, GM_RX_OFFSET
@@ -20,7 +19,3 @@ class TestGMFingerprint:
       for finger in fingerprints:
         for required_addr in (CAMERA_DIAGNOSTIC_ADDRESS, CAMERA_DIAGNOSTIC_ADDRESS + GM_RX_OFFSET):
           assert finger.get(required_addr) == 8, required_addr
-
-
-if __name__ == "__main__":
-  unittest.main()

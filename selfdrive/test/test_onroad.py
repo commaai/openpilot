@@ -10,7 +10,6 @@ import shutil
 import subprocess
 import time
 import numpy as np
-import unittest
 from collections import Counter, defaultdict
 from functools import cached_property
 from pathlib import Path
@@ -432,7 +431,3 @@ class TestOnroad:
     eng = [m.controlsState.engageable for m in self.service_msgs['controlsState']]
     assert all(eng), \
            f"Not engageable for whole segment:\n- controlsState.engageable: {Counter(eng)}\n- No entry events: {no_entries}"
-
-
-if __name__ == "__main__":
-  unittest.main()

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import unittest
 
 import cereal.messaging as messaging
 
@@ -30,7 +29,3 @@ class TestLeads:
     failures = [not state.valid and len(state.radarState.radarErrors) for state in states]
 
     assert len(states) == 0 or all(failures)
-
-
-if __name__ == "__main__":
-  unittest.main()

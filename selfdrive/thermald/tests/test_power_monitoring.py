@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import unittest
 from unittest.mock import patch
 
 from openpilot.common.params import Params
@@ -194,7 +193,3 @@ class TestPowerMonitoring:
                                        offroad_timestamp,
                                        started_seen), \
                     f"Should shutdown after {DELAY_SHUTDOWN_TIME_S} seconds offroad time"
-
-
-if __name__ == "__main__":
-  unittest.main()

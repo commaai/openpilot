@@ -4,7 +4,6 @@ import pytest
 import json
 import time
 import datetime
-import unittest
 import subprocess
 
 import cereal.messaging as messaging
@@ -119,6 +118,3 @@ class TestRawgpsd:
     time.sleep(15)
     managed_processes['qcomgpsd'].stop()
     self.check_assistance(True)
-
-if __name__ == "__main__":
-  unittest.main(failfast=True)

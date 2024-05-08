@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import asyncio
-import unittest
 from unittest.mock import Mock, MagicMock, patch
 import json
 # for aiortc and its dependencies
@@ -102,7 +101,3 @@ class TestStreamSession:
         assert frame.rate == rate
         assert frame.samples == sample_count
         assert frame.pts == i * sample_count
-
-
-if __name__ == "__main__":
-  unittest.main()

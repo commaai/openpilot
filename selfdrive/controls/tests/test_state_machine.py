@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import unittest
 
 from cereal import car, log
 from openpilot.common.realtime import DT_CTRL
@@ -103,7 +102,3 @@ class TestStateMachine:
         self.controlsd.state_transition(self.CS)
         assert self.controlsd.state == state
         self.controlsd.events.clear()
-
-
-if __name__ == "__main__":
-  unittest.main()

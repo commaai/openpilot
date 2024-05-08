@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import time
 import threading
-import unittest
 from collections import namedtuple
 from pathlib import Path
 from collections.abc import Sequence
@@ -117,7 +116,3 @@ class TestDeleter(UploaderTestCase):
     self.join_thread()
 
     assert f_path.exists(), "File deleted when locked"
-
-
-if __name__ == "__main__":
-  unittest.main()

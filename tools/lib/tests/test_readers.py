@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 import pytest
-import unittest
 import requests
 import tempfile
 
@@ -63,6 +62,3 @@ class TestReaders:
 
     fr_url = FrameReader("https://github.com/commaai/comma2k19/blob/master/Example_1/b0c9d2329ad1606b%7C2018-08-02--08-34-47/40/video.hevc?raw=true")
     _check_data(fr_url)
-
-if __name__ == "__main__":
-  unittest.main()

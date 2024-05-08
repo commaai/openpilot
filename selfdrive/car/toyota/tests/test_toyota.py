@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from hypothesis import given, settings, strategies as st
-import unittest
 
 from cereal import car
 from openpilot.selfdrive.car.fw_versions import build_fw_dict
@@ -168,7 +167,3 @@ class TestToyotaFingerprint:
         platforms_with_shared_codes |= {str(platform), *matches}
 
     assert platforms_with_shared_codes == FUZZY_EXCLUDED_PLATFORMS, (len(platforms_with_shared_codes), len(FW_VERSIONS))
-
-
-if __name__ == "__main__":
-  unittest.main()

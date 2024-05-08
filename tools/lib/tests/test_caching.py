@@ -4,7 +4,6 @@ import http.server
 import os
 import shutil
 import socket
-import unittest
 import pytest
 
 from openpilot.selfdrive.test.helpers import http_server_context
@@ -130,8 +129,3 @@ class TestFileDownload:
     CachingTestRequestHandler.FILE_EXISTS = True
     length = URLFile(file_url).get_length()
     assert length == 4
-
-
-
-if __name__ == "__main__":
-  unittest.main()

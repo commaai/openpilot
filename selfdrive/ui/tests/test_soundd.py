@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import unittest
 
 from cereal import car
 from cereal import messaging
@@ -35,7 +34,3 @@ class TestSoundd:
     assert check_controls_timeout_alert(sm)
 
   # TODO: add test with micd for checking that soundd actually outputs sounds
-
-
-if __name__ == "__main__":
-  unittest.main()

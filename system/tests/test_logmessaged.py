@@ -2,7 +2,6 @@
 import glob
 import os
 import time
-import unittest
 
 import cereal.messaging as messaging
 from openpilot.selfdrive.manager.process_config import managed_processes
@@ -54,7 +53,3 @@ class TestLogmessaged:
 
     logsize = sum([os.path.getsize(f) for f in self._get_log_files()])
     assert (n*len(msg)) < logsize < (n*(len(msg)+1024))
-
-
-if __name__ == "__main__":
-  unittest.main()

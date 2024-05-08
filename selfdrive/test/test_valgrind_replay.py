@@ -2,7 +2,6 @@
 import os
 import threading
 import time
-import unittest
 import subprocess
 import signal
 
@@ -111,7 +110,3 @@ class TestValgrind:
         time.sleep(0.1)  # Wait for the valgrind to finish
 
       assert not self.leak
-
-
-if __name__ == "__main__":
-  unittest.main()

@@ -2,7 +2,6 @@
 import pytest
 import os
 import pathlib
-import unittest
 import tempfile
 import subprocess
 
@@ -262,7 +261,3 @@ class TestCasyncDirectory:
     assert stats['remote'] > 0
     assert stats['cache'] > 0
     assert stats['cache'] > stats['remote']
-
-
-if __name__ == "__main__":
-  unittest.main()

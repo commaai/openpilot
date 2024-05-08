@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import numpy as np
-import unittest
 
 from openpilot.common.transformations.orientation import euler2quat, quat2euler, euler2rot, rot2euler, \
                                                rot2quat, quat2rot, \
@@ -62,7 +61,3 @@ class TestOrientation:
       np.testing.assert_allclose(ned_eulers[i], ned_euler_from_ecef(ecef_positions[i], eulers[i]), rtol=1e-7)
       #np.testing.assert_allclose(eulers[i], ecef_euler_from_ned(ecef_positions[i], ned_eulers[i]), rtol=1e-7)
     # np.testing.assert_allclose(ned_eulers, ned_euler_from_ecef(ecef_positions, eulers), rtol=1e-7)
-
-
-if __name__ == "__main__":
-  unittest.main()

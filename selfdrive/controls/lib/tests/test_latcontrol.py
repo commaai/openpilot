@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import unittest
 
 from parameterized import parameterized
 
@@ -37,7 +36,3 @@ class TestLatControl:
       _, _, lac_log = controller.update(True, CS, VM, params, False, 1, llk)
 
     assert lac_log.saturated
-
-
-if __name__ == "__main__":
-  unittest.main()

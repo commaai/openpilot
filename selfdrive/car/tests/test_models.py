@@ -480,7 +480,3 @@ class TestCarModelBase:
 @pytest.mark.xdist_group_class_property('test_route')
 class TestCarModel(TestCarModelBase):
   pass
-
-
-if __name__ == "__main__":
-  unittest.main()

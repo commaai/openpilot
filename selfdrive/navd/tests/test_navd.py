@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import json
 import random
-import unittest
 import numpy as np
 
 from parameterized import parameterized
@@ -57,7 +56,3 @@ class TestNavd:
     start = {"latitude": random.uniform(-90, 90), "longitude": random.uniform(-180, 180)}
     end = {"latitude": random.uniform(-90, 90), "longitude": random.uniform(-180, 180)}
     self._check_route(start, end, check_coords=False)
-
-
-if __name__ == "__main__":
-  unittest.main()

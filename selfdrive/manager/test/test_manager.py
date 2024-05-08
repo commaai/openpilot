@@ -3,7 +3,6 @@ import os
 import pytest
 import signal
 import time
-import unittest
 
 from parameterized import parameterized
 
@@ -76,7 +75,3 @@ class TestManager:
         if p.sigkill:
           exit_codes = [-signal.SIGKILL]
         assert exit_code in exit_codes, f"{p.name} died with {exit_code}"
-
-
-if __name__ == "__main__":
-  unittest.main()

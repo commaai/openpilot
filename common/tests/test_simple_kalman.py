@@ -1,5 +1,3 @@
-import unittest
-
 from openpilot.common.simple_kalman import KF1D
 
 
@@ -29,7 +27,3 @@ class TestSimpleKalman:
   def update_returns_state(self):
     x = self.kf.update(100)
     assert x == self.kf.x
-
-
-if __name__ == "__main__":
-  unittest.main()

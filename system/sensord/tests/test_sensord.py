@@ -2,7 +2,6 @@
 import os
 import pytest
 import time
-import unittest
 import numpy as np
 from collections import namedtuple, defaultdict
 
@@ -245,7 +244,3 @@ class TestSensord:
     time.sleep(1)
     state_two = get_irq_count(self.sensord_irq)
     assert state_one == state_two, "Interrupts received after sensord stop!"
-
-
-if __name__ == "__main__":
-  unittest.main()

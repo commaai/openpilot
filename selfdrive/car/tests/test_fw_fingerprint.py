@@ -316,7 +316,3 @@ class TestFwFingerprintTiming:
         total_time = round(total_times[num_pandas], 2)
         self._assert_timing(total_time, total_ref_time[num_pandas])
         print(f'all brands, total FW query time={total_time} seconds')
-
-
-if __name__ == "__main__":
-  unittest.main()

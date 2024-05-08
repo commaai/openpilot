@@ -3,7 +3,6 @@ import os
 import threading
 import time
 import uuid
-import unittest
 
 from openpilot.common.params import Params, ParamKeyType, UnknownKeyName
 
@@ -108,7 +107,3 @@ class TestParams:
     assert len(keys) > 20
     assert len(keys) == len(set(keys))
     assert b"CarParams" in keys
-
-
-if __name__ == "__main__":
-  unittest.main()

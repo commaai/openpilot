@@ -1,5 +1,4 @@
 from cereal import car
-import unittest
 from openpilot.selfdrive.car.subaru.fingerprints import FW_VERSIONS
 
 Ecu = car.CarParams.Ecu
@@ -14,7 +13,3 @@ class TestSubaruFingerprint:
         fw_size = len(fws[0])
         for fw in fws:
           assert len(fw) == fw_size, f"{platform} {ecu}: {len(fw)} {fw_size}"
-
-
-if __name__ == "__main__":
-  unittest.main()

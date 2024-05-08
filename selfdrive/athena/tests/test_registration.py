@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import json
-import unittest
 from Crypto.PublicKey import RSA
 from pathlib import Path
 from unittest import mock
@@ -75,7 +74,3 @@ class TestRegistration:
       assert m.call_count == 1
       assert dongle == UNREGISTERED_DONGLE_ID
     assert self.params.get("DongleId", encoding='utf-8') == dongle
-
-
-if __name__ == "__main__":
-  unittest.main()

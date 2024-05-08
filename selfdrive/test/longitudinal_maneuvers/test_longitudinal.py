@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import itertools
-import unittest
 from parameterized import parameterized_class
 
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import STOP_DISTANCE
@@ -154,7 +153,3 @@ class TestLongitudinalControl:
         print(maneuver.title, f'in {"e2e" if maneuver.e2e else "acc"} mode')
         valid, _ = maneuver.evaluate()
         assert valid
-
-
-if __name__ == "__main__":
-  unittest.main(failfast=True)

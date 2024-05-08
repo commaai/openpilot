@@ -8,7 +8,6 @@ import tempfile
 import time
 import unittest
 from unittest import mock
-
 import pytest
 
 from openpilot.common.params import Params

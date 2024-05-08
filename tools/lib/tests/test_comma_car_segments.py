@@ -1,5 +1,4 @@
 import pytest
-import unittest
 import requests
 from openpilot.selfdrive.car.fingerprints import MIGRATION
 from openpilot.tools.lib.comma_car_segments import get_comma_car_segments_database, get_url
@@ -33,7 +32,3 @@ class TestCommaCarSegments:
     lr = LogReader(url)
     CP = lr.first("carParams")
     assert MIGRATION.get(CP.carFingerprint, CP.carFingerprint) == fp
-
-
-if __name__ == "__main__":
-  unittest.main()

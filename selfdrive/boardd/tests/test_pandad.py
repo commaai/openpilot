@@ -127,7 +127,3 @@ class TestPandad:
     self._assert_no_panda()
 
     self._run_test(60)
-
-
-if __name__ == "__main__":
-  unittest.main()

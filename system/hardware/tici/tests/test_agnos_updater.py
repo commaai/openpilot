@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import json
 import os
-import unittest
 import requests
 
 TEST_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)))
@@ -20,7 +19,3 @@ class TestAgnosUpdater:
       assert r.headers['Content-Type'] == "application/x-xz"
       if not img['sparse']:
         assert img['hash'] == img['hash_raw']
-
-
-if __name__ == "__main__":
-  unittest.main()

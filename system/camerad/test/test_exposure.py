@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import time
-import unittest
 import numpy as np
 
 from openpilot.selfdrive.test.helpers import with_processes, phone_only
@@ -50,6 +49,3 @@ class TestCamerad:
       passed += int(res)
       time.sleep(2)
     assert passed >= REPEAT
-
-if __name__ == "__main__":
-  unittest.main()

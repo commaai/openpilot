@@ -5,7 +5,6 @@ import io
 import shutil
 import tempfile
 import os
-import unittest
 import pytest
 import requests
 
@@ -254,7 +253,3 @@ class TestLogReader:
       msgs = list(LogReader(qlog.name, only_union_types=True))
       assert len(msgs) == num_msgs
       [m.which() for m in msgs]
-
-
-if __name__ == "__main__":
-  unittest.main()

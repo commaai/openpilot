@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import pytest
 from hypothesis import settings, given, strategies as st
 import unittest
 
@@ -216,7 +217,3 @@ class TestHyundaiFingerprint:
         platforms_with_shared_codes.add(platform)
 
     assert platforms_with_shared_codes == excluded_platforms
-
-
-if __name__ == "__main__":
-  unittest.main()

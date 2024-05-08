@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from parameterized import parameterized
-import unittest
 
 from cereal import log, messaging
 from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, can_fingerprint
@@ -61,7 +60,3 @@ class TestCanFingerprint:
         car_fingerprint, _ = can_fingerprint(test)
         assert car_fingerprint == car_model
         assert frames == expected_frames + 2# TODO: fix extra frames
-
-
-if __name__ == "__main__":
-  unittest.main()

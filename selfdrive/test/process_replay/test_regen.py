@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import unittest
 
 from parameterized import parameterized
 
@@ -39,7 +38,3 @@ class TestRegen:
 
     engaged = check_openpilot_enabled(output_logs)
     assert engaged, f"openpilot not engaged in {case_name}"
-
-
-if __name__=='__main__':
-  unittest.main()

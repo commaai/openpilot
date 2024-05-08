@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import re
-import unittest
 
 from openpilot.selfdrive.car.honda.fingerprints import FW_VERSIONS
 
@@ -14,7 +13,3 @@ class TestHondaFingerprint:
       for fws in fw_by_ecu.values():
         for fw in fws:
           assert re.match(HONDA_FW_VERSION_RE, fw) is not None, fw
-
-
-if __name__ == "__main__":
-  unittest.main()

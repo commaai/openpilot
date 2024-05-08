@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import unittest
 import numpy as np
 import random
 
@@ -101,7 +100,3 @@ class TestModeld:
       if n != frame_id:
         assert not self.sm.updated['modelV2']
         assert not self.sm.updated['cameraOdometry']
-
-
-if __name__ == "__main__":
-  unittest.main()

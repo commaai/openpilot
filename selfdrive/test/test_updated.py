@@ -4,7 +4,6 @@ import os
 import pytest
 import time
 import tempfile
-import unittest
 import shutil
 import signal
 import subprocess
@@ -296,7 +295,3 @@ class TestUpdated:
 
     # TODO: more comprehensive check
     assert os.path.isdir(self.neosupdate_dir)
-
-
-if __name__ == "__main__":
-  unittest.main()

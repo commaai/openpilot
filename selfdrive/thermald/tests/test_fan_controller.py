@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import unittest
 from unittest.mock import Mock, patch
 from parameterized import parameterized
 
@@ -51,6 +50,3 @@ class TestFanController:
     for _ in range(10):
       controller.update(90, True)
     assert controller.update(90, True) >= 60
-
-if __name__ == "__main__":
-  unittest.main()

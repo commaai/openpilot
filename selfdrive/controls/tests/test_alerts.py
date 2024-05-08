@@ -2,7 +2,6 @@
 import copy
 import json
 import os
-import unittest
 import random
 from PIL import Image, ImageDraw, ImageFont
 
@@ -130,6 +129,3 @@ class TestAlerts:
       written_alert = json.loads(params.get(a, encoding='utf8'))
       assert "a"*i == written_alert['extra']
       assert alert["text"] == written_alert['text']
-
-if __name__ == "__main__":
-  unittest.main()

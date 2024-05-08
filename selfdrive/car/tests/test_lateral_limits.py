@@ -4,6 +4,7 @@ import importlib
 from parameterized import parameterized_class
 import sys
 import unittest
+import pytest
 
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car.car_helpers import interfaces

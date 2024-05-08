@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import itertools
 import numpy as np
-import unittest
 import pytest
 
 from parameterized import parameterized_class
@@ -151,7 +150,3 @@ class TestVCruiseHelper():
         self.enable(float(v_ego), experimental_mode)
         assert V_CRUISE_INITIAL <= self.v_cruise_helper.v_cruise_kph <= V_CRUISE_MAX
         assert self.v_cruise_helper.v_cruise_initialized
-
-
-if __name__ == "__main__":
-  unittest.main()

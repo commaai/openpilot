@@ -6,7 +6,6 @@ import random
 import shutil
 import subprocess
 import time
-import unittest
 from pathlib import Path
 
 from parameterized import parameterized
@@ -150,7 +149,3 @@ class TestEncoder:
       managed_processes['encoderd'].stop()
       managed_processes['camerad'].stop()
       managed_processes['sensord'].stop()
-
-
-if __name__ == "__main__":
-  unittest.main()

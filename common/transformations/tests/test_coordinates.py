@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import numpy as np
-import unittest
 
 import openpilot.common.transformations.coordinates as coord
 
@@ -105,5 +104,3 @@ class TestNED:
     np.testing.assert_allclose(converter.ned2ecef(ned_offsets_batch),
                                                            ecef_positions_offset_batch,
                                                            rtol=1e-9, atol=1e-7)
-if __name__ == "__main__":
-  unittest.main()

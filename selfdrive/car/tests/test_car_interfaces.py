@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import math
-import unittest
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
 import importlib
@@ -156,7 +155,3 @@ class TestCarInterfaces:
     ret = get_interface_attr('FINGERPRINTS', ignore_none=True)
     none_brands_in_ret = none_brands.intersection(ret)
     assert len(none_brands_in_ret) == 0, f'Brands with None values in ignore_none=True result: {none_brands_in_ret}'
-
-
-if __name__ == "__main__":
-  unittest.main()

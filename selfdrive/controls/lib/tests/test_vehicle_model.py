@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import pytest
 import math
-import unittest
 
 import numpy as np
 from control import StateSpace
@@ -64,8 +63,3 @@ class TestVehicleModel:
           x2 = dyn_ss_sol(sa, u, roll, self.VM)
 
           np.testing.assert_almost_equal(x1, x2, decimal=3)
-
-
-
-if __name__ == "__main__":
-  unittest.main()

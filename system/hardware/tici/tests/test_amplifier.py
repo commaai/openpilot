@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import pytest
+import unittest
 import time
 import random
-import unittest
 import subprocess
 
 from panda import Panda
@@ -70,7 +70,3 @@ class TestAmplifier:
         break
     else:
       pytest.fail("didn't hit any i2c errors")
-
-
-if __name__ == "__main__":
-  unittest.main()
