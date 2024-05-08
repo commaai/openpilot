@@ -99,36 +99,32 @@ class TestFordFW(unittest.TestCase):
         b"LB5T-14D049-AB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
         b"LB5T-14D049-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
       ],
+      # We consider all model year hints for ECU, even with different platform codes
       (Ecu.fwdCamera, 0x706, None): [
         b"LB5T-14F397-AD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
-        b"LB5T-14F397-AF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
+        b"NC5T-14F397-AF\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00",
       ],
     }
-
-    live_fw = {
-      (0x730, None): {b"L1MC-14D003-AK\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"},
-      (0x760, None): {b"L1MC-2D053-BB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"},
-      (0x764, None): {b"LB5T-14D049-AC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"},
-      (0x706, None): {b"LB5T-14F397-AE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"},
-    }
-
-    # for this test, check that none of the live FW matches matches the offline FW exactly
-    for (_, addr, subaddr), fws in offline_fw.items():
-      live_ecu_fw = live_fw.get((addr, subaddr), set())
-      self.assertEqual(0, len(set(fws).intersection(live_ecu_fw)))
-
     expected_fingerprint = CAR.FORD_EXPLORER_MK6
-    candidates = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(live_fw, '', {
-      expected_fingerprint: offline_fw,
-    })
+
+    # ensure that we fuzzy match on all non-exact FW with changed revisions
+    live_fw = {
+      (0x730, None): {b"L1MC-14D003-XX\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"},
+      (0x760, None): {b"L1MC-2D053-XX\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"},
+      (0x764, None): {b"LB5T-14D049-XX\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"},
+      (0x706, None): {b"LB5T-14F397-XX\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"},
+    }
+    candidates = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(live_fw, '', {expected_fingerprint: offline_fw})
     self.assertEqual(candidates, {expected_fingerprint})
 
-    # change one of the fw to have a new unseen model year hint
-    live_fw[(0x760, None)] = {b"M1MC-2D053-BA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"}
+    # model year hint in between the range should match
+    live_fw[(0x706, None)] = {b"MB5T-14F397-XX\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"}
+    candidates = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(live_fw, '', {expected_fingerprint: offline_fw,})
+    self.assertEqual(candidates, {expected_fingerprint})
 
-    candidates = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(live_fw, '', {
-      expected_fingerprint: offline_fw,
-    })
+    # unseen model year hint should not match
+    live_fw[(0x760, None)] = {b"M1MC-2D053-XX\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"}
+    candidates = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(live_fw, '', {expected_fingerprint: offline_fw})
     self.assertEqual(len(candidates), 0, "Should not match new model year hint")
 
 
