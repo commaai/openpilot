@@ -1,5 +1,5 @@
 # functions common among cars
-from collections import defaultdict, namedtuple
+from collections import namedtuple
 from dataclasses import dataclass
 from enum import IntFlag, ReprEnum, EnumType
 from dataclasses import replace
@@ -266,6 +266,9 @@ class Platforms(str, ReprEnum, metaclass=PlatformsType):
     member._value_ = platform_config.platform_str
     return member
 
+  def __repr__(self):
+    return f"<{self.__class__.__name__}.{self.name}>"
+
   @classmethod
   def create_dbc_map(cls) -> dict[str, DbcDict]:
     return {p: p.config.dbc_dict for p in cls}
@@ -273,19 +276,3 @@ class Platforms(str, ReprEnum, metaclass=PlatformsType):
   @classmethod
   def with_flags(cls, flags: IntFlag) -> set['Platforms']:
     return {p for p in cls if p.config.flags & flags}
-
-  @classmethod
-  def without_flags(cls, flags: IntFlag) -> set['Platforms']:
-    return {p for p in cls if not (p.config.flags & flags)}
-
-  @classmethod
-  def print_debug(cls, flags):
-    platforms_with_flag = defaultdict(list)
-    for flag in flags:
-      for platform in cls:
-        if platform.config.flags & flag:
-          assert flag.name is not None
-          platforms_with_flag[flag.name].append(platform)
-
-    for flag, platforms in platforms_with_flag.items():
-      print(f"{flag:32s}: {', '.join(p.name for p in platforms)}")

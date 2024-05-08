@@ -12,7 +12,7 @@ env:
 jobs:
   badges:
     name: create badges
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: github.repository == 'commaai/openpilot'
     permissions:
       contents: write
