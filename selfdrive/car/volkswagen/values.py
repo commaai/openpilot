@@ -34,6 +34,8 @@ class CarControllerParams:
   STEER_TIME_ALERT = STEER_TIME_MAX - 10   # If mitigation fails, time to soft disengage before EPS timer expires
   STEER_TIME_STUCK_TORQUE = 1.9            # EPS limits same torque to 6 seconds, reset timer 3x within that period
 
+  DEFAULT_MIN_STEER_SPEED = 0.4            # m/s, newer EPS racks fault below this speed, don't show a low speed alert
+
   ACCEL_MAX = 2.0                          # 2.0 m/s max acceleration
   ACCEL_MIN = -3.5                         # 3.5 m/s max deceleration
 
@@ -159,6 +161,7 @@ class VolkswagenPQPlatformConfig(VolkswagenMQBPlatformConfig):
 class VolkswagenCarSpecs(CarSpecs):
   centerToFrontRatio: float = 0.45
   steerRatio: float = 15.6
+  minSteerSpeed: float = CarControllerParams.DEFAULT_MIN_STEER_SPEED
 
 
 class Footnote(Enum):
@@ -194,6 +197,9 @@ class VWCarDocs(CarDocs):
 
     if CP.carFingerprint in (CAR.VOLKSWAGEN_CRAFTER_MK2, CAR.VOLKSWAGEN_TRANSPORTER_T61):
       self.car_parts = CarParts([Device.threex_angled_mount, CarHarness.j533])
+
+    if abs(CP.minSteerSpeed - CarControllerParams.DEFAULT_MIN_STEER_SPEED) < 1e-3:
+      self.min_steer_speed = 0
 
 
 # Check the 7th and 8th characters of the VIN before adding a new CAR. If the
