@@ -5,6 +5,7 @@ import os
 import shutil
 import socket
 import unittest
+import pytest
 
 from openpilot.selfdrive.test.helpers import http_server_context
 from openpilot.system.hardware.hw import Paths
