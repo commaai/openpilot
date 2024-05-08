@@ -305,7 +305,6 @@ class TestAthenadMethods:
     items = dispatcher["listUploadQueue"]()
     assert len(items) == 0
 
-  @with_http_server
   @with_upload_handler
   def test_list_upload_queue_current(self, host: str):
     fn = self._create_file('qlog.bz2')

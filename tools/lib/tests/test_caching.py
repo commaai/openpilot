@@ -37,7 +37,6 @@ def host():
 
 class TestFileDownload:
 
-  @with_caching_server
   def test_pipeline_defaults(self, host):
     # TODO: parameterize the defaults so we don't rely on hard-coded values in xx
 
@@ -118,8 +117,7 @@ class TestFileDownload:
     self.compare_loads(large_file_url, length - 100, 100)
     self.compare_loads(large_file_url)
 
-  @parameterized.expand([(True, ), (False, )])
-  @with_caching_server
+  @pytest.mark.parametrize("cache_enabled", [True, False])
   def test_recover_from_missing_file(self, cache_enabled, host):
     os.environ["FILEREADER_CACHE"] = "1" if cache_enabled else "0"
 
