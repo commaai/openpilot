@@ -66,8 +66,7 @@ class Controls:
     self.params = Params()
 
     with car.CarParams.from_bytes(self.params.get("CarParams", block=True)) as msg:
-      # TODO: this shouldn't need to be a builder
-      self.CP = msg.as_builder()
+      self.CP = msg
 
     self.CI = self.card.CI
 
