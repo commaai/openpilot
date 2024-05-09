@@ -55,6 +55,7 @@ class DRIVER_MONITOR_SETTINGS():
     self._POSESTD_THRESHOLD = 0.3
     self._HI_STD_FALLBACK_TIME = int(10  / self._DT_DMON)  # fall back to wheel touch if model is uncertain for 10s
     self._DISTRACTED_FILTER_TS = 0.25  # 0.6Hz
+    self._ALWAYS_ON_ALERT_MIN_SPEED = 7
 
     self._POSE_CALIB_MIN_SPEED = 13  # 30 mph
     self._POSE_OFFSET_MIN_COUNT = int(60 / self._DT_DMON)  # valid data counts before calibration completes, 1min cumulative
@@ -302,7 +303,7 @@ class DriverStatus():
     elif self.face_detected and self.pose.low_std:
       self.hi_stds = 0
 
-  def update_events(self, events, driver_engaged, ctrl_active, standstill, wrong_gear):
+  def update_events(self, events, driver_engaged, ctrl_active, standstill, wrong_gear, car_speed):
     always_on_valid = self.always_on and not wrong_gear
     if (driver_engaged and self.awareness > 0 and not self.active_monitoring_mode) or \
        (not always_on_valid and not ctrl_active) or \
@@ -327,14 +328,19 @@ class DriverStatus():
       if self.awareness > self.threshold_prompt:
         return
 
-    standstill_exemption = standstill and self.awareness - self.step_change <= self.threshold_prompt
-    always_on_red_exemption = always_on_valid and not ctrl_active and self.awareness - self.step_change <= 0
+    _reaching_audible = self.awareness - self.step_change <= self.threshold_prompt
+    _reaching_terminal = self.awareness - self.step_change <= 0
+    standstill_exemption = standstill and _reaching_audible
+    always_on_red_exemption = always_on_valid and not ctrl_active and _reaching_terminal
+    always_on_lowspeed_exemption = always_on_valid and not ctrl_active and car_speed < self.settings._ALWAYS_ON_ALERT_MIN_SPEED and _reaching_audible
+
     certainly_distracted = self.driver_distraction_filter.x > 0.63 and self.driver_distracted and self.face_detected
     maybe_distracted = self.hi_stds > self.settings._HI_STD_FALLBACK_TIME or not self.face_detected
+
     if certainly_distracted or maybe_distracted:
-      # should always be counting if distracted unless at standstill and reaching orange
+      # should always be counting if distracted unless at standstill (lowspeed for always-on) and reaching orange
       # also will not be reaching 0 if DM is active when not engaged
-      if not standstill_exemption and not always_on_red_exemption:
+      if not (standstill_exemption or always_on_red_exemption or always_on_lowspeed_exemption):
         self.awareness = max(self.awareness - self.step_change, -0.1)
 
     alert = None

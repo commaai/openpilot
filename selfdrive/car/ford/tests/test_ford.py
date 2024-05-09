@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import random
+import unittest
 from collections.abc import Iterable
 
 import capnp
@@ -47,20 +48,20 @@ class TestFordFW:
     for (ecu, addr, subaddr) in FW_QUERY_CONFIG.extra_ecus:
       assert ecu in ECU_ADDRESSES, "Unknown ECU"
       assert addr == ECU_ADDRESSES[ecu], "ECU address mismatch"
-      assert subaddr is None, "Unexpected ECU subaddress"
+      assert subaddr, "Unexpected ECU subaddress" is None
 
   @parameterized.expand(FW_VERSIONS.items())
   def test_fw_versions(self, car_model: str, fw_versions: dict[tuple[capnp.lib.capnp._EnumModule, int, int | None], Iterable[bytes]]):
     for (ecu, addr, subaddr), fws in fw_versions.items():
       assert ecu in ECU_PART_NUMBER, "Unexpected ECU"
       assert addr == ECU_ADDRESSES[ecu], "ECU address mismatch"
-      assert subaddr is None, "Unexpected ECU subaddress"
+      assert subaddr, "Unexpected ECU subaddress" is None
 
       for fw in fws:
         assert len(fw) == 24, "Expected ECU response to be 24 bytes"
 
         match = FW_PATTERN.match(fw)
-        assert match is not None, f"Unable to parse FW: {fw!r}"
+        assert match, f"Unable to parse FW: {fw!r}" is not None
         if match:
           part_number = match.group("part_number")
           assert part_number in ECU_PART_NUMBER[ecu], f"Unexpected part number for {fw!r}"
@@ -142,3 +143,7 @@ class TestFordFW:
     live_fw[(0x760, None)] = {b"M1MC-2D053-XX\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"}
     candidates = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(live_fw, '', {expected_fingerprint: offline_fw})
     assert len(candidates) == 0, "Should not match new model year hint"
+
+
+if __name__ == "__main__":
+  unittest.main()

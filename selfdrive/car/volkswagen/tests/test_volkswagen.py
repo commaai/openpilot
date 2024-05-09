@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
+import random
 import re
+import unittest
 
 from cereal import car
 from openpilot.selfdrive.car.volkswagen.values import CAR, FW_QUERY_CONFIG, WMI
@@ -13,17 +15,17 @@ SPARE_PART_FW_PATTERN = re.compile(b'\xf1\x87(?P<gateway>[0-9][0-9A-Z]{2})(?P<un
 
 
 class TestVolkswagenPlatformConfigs:
-  def test_spare_part_fw_pattern(self, subtests):
+  def test_spare_part_fw_pattern(self):
     # Relied on for determining if a FW is likely VW
     for platform, ecus in FW_VERSIONS.items():
-      with subtests.test(platform=platform):
+      with self.subTest(platform=platform):
         for fws in ecus.values():
           for fw in fws:
             assert SPARE_PART_FW_PATTERN.match(fw) != None, f"Bad FW: {fw}"
 
-  def test_chassis_codes(self, subtests):
+  def test_chassis_codes(self):
     for platform in CAR:
-      with subtests.test(platform=platform):
+      with self.subTest(platform=platform):
         assert len(platform.config.wmis) > 0, "WMIs not set"
         assert len(platform.config.chassis_codes) > 0, "Chassis codes not set"
         assert all(CHASSIS_CODE_PATTERN.match(cc) for cc in \
@@ -36,11 +38,11 @@ class TestVolkswagenPlatformConfigs:
           assert set() == platform.config.chassis_codes & comp.config.chassis_codes, \
                            f"Shared chassis codes: {comp}"
 
-  def test_custom_fuzzy_fingerprinting(self, subtests):
-    for platform in CAR:
-      expected_radar_fw = FW_VERSIONS[platform][Ecu.fwdRadar, 0x757, None]
+  def test_custom_fuzzy_fingerprinting(self):
+    all_radar_fw = list({fw for ecus in FW_VERSIONS.values() for fw in ecus[Ecu.fwdRadar, 0x757, None]})
 
-      with subtests.test(platform=platform):
+    for platform in CAR:
+      with self.subTest(platform=platform):
         for wmi in WMI:
           for chassis_code in platform.config.chassis_codes | {"00"}:
             vin = ["0"] * 17
@@ -49,12 +51,16 @@ class TestVolkswagenPlatformConfigs:
             vin = "".join(vin)
 
             # Check a few FW cases - expected, unexpected
-            for radar_fw in expected_radar_fw + [b'\xf1\x877H9907572AA\xf1\x890396']:
+            for radar_fw in random.sample(all_radar_fw, 5) + [b'\xf1\x875Q0907572G \xf1\x890571', b'\xf1\x877H9907572AA\xf1\x890396']:
               should_match = ((wmi in platform.config.wmis and chassis_code in platform.config.chassis_codes) and
-                              radar_fw in expected_radar_fw)
+                              radar_fw in all_radar_fw)
 
               live_fws = {(0x757, None): [radar_fw]}
               matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(live_fws, vin, FW_VERSIONS)
 
               expected_matches = {platform} if should_match else set()
               assert expected_matches == matches, "Bad match"
+
+
+if __name__ == "__main__":
+  unittest.main()

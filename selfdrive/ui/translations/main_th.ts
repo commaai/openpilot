@@ -436,10 +436,6 @@
 %1</translation>
     </message>
     <message>
-        <source>Invalid date and time settings, system won&apos;t start. Connect to internet to set time.</source>
-        <translation>วันที่และเวลาไม่ถูกต้อง ระบบจะไม่เริ่มทำงาน เชื่อต่ออินเตอร์เน็ตเพื่อตั้งเวลา</translation>
-    </message>
-    <message>
         <source>Taking camera snapshots. System won&apos;t start until finished.</source>
         <translation>กล้องกำลังถ่ายภาพ ระบบจะไม่เริ่มทำงานจนกว่าจะเสร็จ</translation>
     </message>

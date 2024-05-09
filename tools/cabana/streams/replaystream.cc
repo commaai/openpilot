@@ -7,6 +7,7 @@
 #include <QPushButton>
 
 #include "common/timing.h"
+#include "tools/cabana/streams/routes.h"
 
 ReplayStream::ReplayStream(QObject *parent) : AbstractStream(parent) {
   unsetenv("ZMQ");
@@ -107,27 +108,34 @@ AbstractOpenStreamWidget *ReplayStream::widget(AbstractStream **stream) {
 // OpenReplayWidget
 
 OpenReplayWidget::OpenReplayWidget(AbstractStream **stream) : AbstractOpenStreamWidget(stream) {
-  // TODO: get route list from api.comma.ai
   QGridLayout *grid_layout = new QGridLayout(this);
   grid_layout->addWidget(new QLabel(tr("Route")), 0, 0);
   grid_layout->addWidget(route_edit = new QLineEdit(this), 0, 1);
-  route_edit->setPlaceholderText(tr("Enter remote route name or click browse to select a local route"));
-  auto file_btn = new QPushButton(tr("Browse..."), this);
-  grid_layout->addWidget(file_btn, 0, 2);
+  route_edit->setPlaceholderText(tr("Enter route name or browse for local/remote route"));
+  auto browse_remote_btn = new QPushButton(tr("Remote route..."), this);
+  grid_layout->addWidget(browse_remote_btn, 0, 2);
+  auto browse_local_btn = new QPushButton(tr("Local route..."), this);
+  grid_layout->addWidget(browse_local_btn, 0, 3);
 
-  grid_layout->addWidget(new QLabel(tr("Camera")), 1, 0);
   QHBoxLayout *camera_layout = new QHBoxLayout();
   for (auto c : {tr("Road camera"), tr("Driver camera"), tr("Wide road camera")})
     camera_layout->addWidget(cameras.emplace_back(new QCheckBox(c, this)));
+  cameras[0]->setChecked(true);
   camera_layout->addStretch(1);
   grid_layout->addItem(camera_layout, 1, 1);
 
   setMinimumWidth(550);
-  QObject::connect(file_btn, &QPushButton::clicked, [=]() {
+  QObject::connect(browse_local_btn, &QPushButton::clicked, [=]() {
     QString dir = QFileDialog::getExistingDirectory(this, tr("Open Local Route"), settings.last_route_dir);
     if (!dir.isEmpty()) {
       route_edit->setText(dir);
       settings.last_route_dir = QFileInfo(dir).absolutePath();
+    }
+  });
+  QObject::connect(browse_remote_btn, &QPushButton::clicked, [this]() {
+    RoutesDialog route_dlg(this);
+    if (route_dlg.exec()) {
+      route_edit->setText(route_dlg.route());
     }
   });
 }
