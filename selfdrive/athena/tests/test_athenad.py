@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import pytest
-from functools import partial, wraps
+from functools import wraps
 import json
 import multiprocessing
 import os

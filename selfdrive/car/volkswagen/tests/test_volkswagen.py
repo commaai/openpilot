@@ -21,7 +21,7 @@ class TestVolkswagenPlatformConfigs:
       with subtests.test(platform=platform):
         for fws in ecus.values():
           for fw in fws:
-            assert SPARE_PART_FW_PATTERN.match(fw) != None, f"Bad FW: {fw}"
+            assert SPARE_PART_FW_PATTERN.match(fw) is not None, f"Bad FW: {fw}"
 
   def test_chassis_codes(self, subtests):
     for platform in CAR:

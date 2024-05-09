@@ -27,7 +27,7 @@ class TestPlotJuggler:
 
       # ensure plotjuggler didn't crash after exiting the plugin
       time.sleep(15)
-      assert p.poll() == None
+      assert p.poll() is None
       os.killpg(os.getpgid(p.pid), signal.SIGTERM)
 
       assert "Raw file read failed" not in output
