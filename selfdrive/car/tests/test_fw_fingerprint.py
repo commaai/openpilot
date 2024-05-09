@@ -183,7 +183,7 @@ class TestFwFingerprint:
         ecus_not_whitelisted = brand_ecus - whitelisted_ecus
 
         ecu_strings = ", ".join([f'Ecu.{ECU_NAME[ecu]}' for ecu in ecus_not_whitelisted])
-        assert not len(whitelisted_ecus) and len(ecus_not_whitelisted), \
+        assert not (len(whitelisted_ecus) and len(ecus_not_whitelisted)), \
                          f'{brand.title()}: ECUs not in any FW query whitelists: {ecu_strings}'
 
   def test_fw_requests(self, subtests):
@@ -194,7 +194,7 @@ class TestFwFingerprint:
           assert len(request_obj.request) == len(request_obj.response)
 
           # No request on the OBD port (bus 1, multiplexed) should be run on an aux panda
-          assert not request_obj.auxiliary and request_obj.bus == 1 and request_obj.obd_multiplexing, \
+          assert not (request_obj.auxiliary and (request_obj.bus == 1) and request_obj.obd_multiplexing), \
                            f"{brand.title()}: OBD multiplexed request is marked auxiliary: {request_obj}"
 
   def test_brand_ecu_matches(self):
