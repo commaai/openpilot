@@ -3,7 +3,6 @@ from collections import defaultdict
 import os
 import re
 import pytest
-import unittest
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.car.car_helpers import interfaces
@@ -84,7 +83,7 @@ class TestCarDocs:
     for car in self.all_cars:
       with subtests.test(car=car):
         if car.name == "comma body":
-          raise unittest.SkipTest
+          raise pytest.skip()
 
         car_part_type = [p.part_type for p in car.car_parts.all_parts()]
         car_parts = list(car.car_parts.all_parts())

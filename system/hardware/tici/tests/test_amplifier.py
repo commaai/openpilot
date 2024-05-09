@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import pytest
-import unittest
 import time
 import random
 import subprocess
@@ -16,7 +15,7 @@ class TestAmplifier:
   @classmethod
   def setup_class(cls):
     if not TICI:
-      raise unittest.SkipTest
+      raise pytest.skip()
 
   def setup_method(self):
     # clear dmesg

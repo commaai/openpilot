@@ -6,7 +6,6 @@ import stat
 import subprocess
 import tempfile
 import time
-import unittest
 from unittest import mock
 import pytest
 
@@ -55,7 +54,7 @@ class TestBaseUpdate:
   @classmethod
   def setup_class(cls):
     if "Base" in cls.__name__:
-      raise unittest.SkipTest
+      raise pytest.skip()
 
   def setup_method(self):
     self.tmpdir = tempfile.mkdtemp()

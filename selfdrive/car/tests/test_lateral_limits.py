@@ -35,14 +35,14 @@ class TestLateralLimits:
     CP = CarInterface.get_non_essential_params(cls.car_model)
 
     if CP.dashcamOnly:
-      raise unittest.SkipTest("Platform is behind dashcamOnly")
+      raise pytest.skip("Platform is behind dashcamOnly")
 
     # TODO: test all platforms
     if CP.lateralTuning.which() != 'torque':
-      raise unittest.SkipTest
+      raise pytest.skip()
 
     if CP.notCar:
-      raise unittest.SkipTest
+      raise pytest.skip()
 
     CarControllerParams = importlib.import_module(f'selfdrive.car.{CP.carName}.values').CarControllerParams
     cls.control_params = CarControllerParams(CP)
