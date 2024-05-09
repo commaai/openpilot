@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import random
-import unittest
 from collections.abc import Iterable
 
 import capnp
@@ -144,6 +143,3 @@ class TestFordFW:
     candidates = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(live_fw, '', {expected_fingerprint: offline_fw})
     assert len(candidates) == 0, "Should not match new model year hint"
 
-
-if __name__ == "__main__":
-  unittest.main()

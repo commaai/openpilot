@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import random
 import re
-import unittest
 
 from cereal import car
 from openpilot.selfdrive.car.volkswagen.values import CAR, FW_QUERY_CONFIG, WMI
@@ -61,6 +60,3 @@ class TestVolkswagenPlatformConfigs:
               expected_matches = {platform} if should_match else set()
               assert expected_matches == matches, "Bad match"
 
-
-if __name__ == "__main__":
-  unittest.main()
