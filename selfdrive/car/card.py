@@ -123,7 +123,7 @@ class Car:
 
     # publish new carOutput
     co_send = messaging.new_message('carOutput')
-    co_send.valid = True
+    co_send.valid = self.sm.all_checks(['carControl'])
     if self.last_actuators is not None:
       co_send.carOutput.actuatorsOutput = self.last_actuators
     self.pm.send('carOutput', co_send)
