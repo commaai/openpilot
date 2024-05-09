@@ -47,8 +47,8 @@ class CarInterface(CarInterfaceBase):
         if len(pscm_config.response) != 24:
           ret.dashcamOnly = True
         else:
-          config_tja = pscm_config.response[7]  # Traffic Jam Assist (long)
-          config_lca = pscm_config.response[8]  # Lane Centering Assist (lat)
+          config_tja = pscm_config.response[7]  # Traffic Jam Assist
+          config_lca = pscm_config.response[8]  # Lane Centering Assist
           if config_tja != 0xFF or config_lca != 0xFF:
             ret.dashcamOnly = True
 
