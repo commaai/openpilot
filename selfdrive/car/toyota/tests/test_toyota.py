@@ -58,8 +58,8 @@ class TestToyotaFingerprint:
     for car_model, ecus in FW_VERSIONS.items():
       with subtests.test(car_model=car_model.value):
         engine_ecus = {ecu for ecu in ecus if ecu[0] == Ecu.engine}
-        assert len(engine_ecus) > 1 == \
-                         car_model in FW_QUERY_CONFIG.non_essential_ecus[Ecu.engine], \
+        assert ((len(engine_ecus) > 1) == \
+                         (car_model in FW_QUERY_CONFIG.non_essential_ecus[Ecu.engine])), \
                          f"Car model unexpectedly {'not ' if len(engine_ecus) > 1 else ''}in non-essential list"
 
   def test_valid_fw_versions(self, subtests):
