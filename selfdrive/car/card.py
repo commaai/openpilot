@@ -20,7 +20,6 @@ REPLAY = "REPLAY" in os.environ
 
 class Car:
   CI: CarInterfaceBase
-  CS: car.CarState
 
   def __init__(self, CI=None):
     self.can_sock = messaging.sub_sock('can', timeout=20)
@@ -84,7 +83,7 @@ class Car:
 
     # Update carState from CAN
     can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
-    self.CS = self.CI.update(self.CC_prev, can_strs)
+    CS = self.CI.update(self.CC_prev, can_strs)
 
     self.sm.update(0)
 
@@ -102,13 +101,15 @@ class Car:
     if can_rcv_valid and REPLAY:
       self.can_log_mono_time = messaging.log_from_bytes(can_strs[0]).logMonoTime
 
-  def state_publish(self):
+    return CS
+
+  def state_publish(self, CS: car.CarState):
     """carState and carParams publish loop"""
 
     # carState
     cs_send = messaging.new_message('carState')
-    cs_send.valid = self.CS.canValid
-    cs_send.carState = self.CS
+    cs_send.valid = CS.canValid
+    cs_send.carState = CS
     cs_send.canRcvTimeout = self.can_rcv_timeout
     cs_send.canErrorCounter = self.can_rcv_cum_timeout_counter
     cs_send.cumLagMs = -self.rk.remaining * 1000.
@@ -128,13 +129,13 @@ class Car:
       co_send.carOutput.actuatorsOutput = self.last_actuators
     self.pm.send('carOutput', co_send)
 
-  def controls_update(self, CC: car.CarControl):
+  def controls_update(self, CS: car.CarState, CC: car.CarControl):
     """control update loop, driven by carControl"""
 
     # send car controls over can
     now_nanos = self.can_log_mono_time if REPLAY else int(time.monotonic() * 1e9)
     self.last_actuators, can_sends = self.CI.apply(CC, now_nanos)
-    self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=self.CS.canValid))
+    self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
 
     self.CC_prev = CC
 
@@ -142,12 +143,12 @@ class Car:
     if self.sm['controlsState'].initialized and not self.CoS_prev.initialized:
       self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
 
-    self.state_update()
+    CS = self.state_update()
 
-    self.state_publish()
+    self.state_publish(CS)
 
     if not self.CP.passive and self.sm['controlsState'].initialized:
-      self.controls_update(self.sm['carControl'])
+      self.controls_update(CS, self.sm['carControl'])
 
     self.CoS_prev = self.sm['controlsState']
 
