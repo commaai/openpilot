@@ -252,8 +252,8 @@ class TestFwFingerprintTiming:
 
     fake_socket = FakeSocket()
     self.total_time = 0.0
-    with (mocker.patch("openpilot.selfdrive.car.fw_versions.set_obd_multiplexing", self.fake_set_obd_multiplexing),
-          mocker.patch("openpilot.selfdrive.car.fw_versions.get_ecu_addrs", fake_get_ecu_addrs)):
+    with (mocker.patch.context_manager("openpilot.selfdrive.car.fw_versions.set_obd_multiplexing", self.fake_set_obd_multiplexing),
+          mocker.patch.context_manager("openpilot.selfdrive.car.fw_versions.get_ecu_addrs", fake_get_ecu_addrs)):
       for _ in range(self.N):
         self.current_obd_multiplexing = True
         get_present_ecus(fake_socket, fake_socket, num_pandas=2)
