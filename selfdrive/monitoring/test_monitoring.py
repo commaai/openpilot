@@ -86,7 +86,7 @@ class TestMonitoring:
                       ((d_status.settings._DISTRACTED_PROMPT_TIME_TILL_TERMINAL)/2))/DT_DMON)].names[0] == EventName.promptDriverDistracted
     assert events[int((d_status.settings._DISTRACTED_TIME + \
                       ((TEST_TIMESPAN-10-d_status.settings._DISTRACTED_TIME)/2))/DT_DMON)].names[0] == EventName.driverDistracted
-    assert type(d_status.awareness) is float
+    assert isinstance(d_status.awareness, float)
 
   # engaged, no face detected the whole time, no action
   def test_fully_invisible_driver(self):
