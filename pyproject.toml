@@ -116,6 +116,8 @@ future-fstrings = "*"
 markdown-it-py = "*"
 timezonefinder = "*"
 setproctitle = "*"
+pytest-asyncio = "^0.23.6"
+pytest-mock = "^3.14.0"
 
 [tool.poetry.group.dev.dependencies]
 av = "*"
