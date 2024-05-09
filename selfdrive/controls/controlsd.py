@@ -62,14 +62,18 @@ class Controls:
   def __init__(self, CI=None):
     self.params = Params()
 
-    with car.CarParams.from_bytes(self.params.get("CarParams", block=True)) as msg:
-      # TODO: this shouldn't need to be a builder
-      self.CP = msg.as_builder()
+    if CI is None:
+      cloudlog.info("controlsd is waiting for CarParams")
+      with car.CarParams.from_bytes(self.params.get("CarParams", block=True)) as msg:
+        # TODO: this shouldn't need to be a builder
+        self.CP = msg.as_builder()
+      cloudlog.info("controlsd got CarParams")
 
-    # TODO: if we want to remove usage of CI, we need to move controllers and other fields to card (like curvature & desiredCurvature)
-    # TODO: we need to ensure no CI calls here updates any state that we expect to be used to change sendcan over in card, because it won't
-    # TODO: perhaps there's a different attribute or object that just provides car-specific functions for long and lat
-    self.CI = get_car_interface(self.CP)
+      # Note that we only use helper functions from the car interface inside controlsd,
+      # anything that updates CI state won't be considered by card for actuation
+      self.CI = get_car_interface(self.CP)
+    else:
+      self.CI, self.CP = CI, CI.CP
 
     # Ensure the current branch is cached, otherwise the first iteration of controlsd lags
     self.branch = get_short_branch()
