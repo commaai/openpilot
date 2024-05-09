@@ -30,7 +30,7 @@ class Car:
     self.can_rcv_cum_timeout_counter = 0  # cumulative timeout count
 
     self.CC_prev = car.CarControl.new_message()
-    self.CoS_prev = car.CarState.new_message()
+    self.controlsState_prev = car.CarState.new_message()
 
     self.last_actuators = None
 
@@ -140,17 +140,18 @@ class Car:
     self.CC_prev = CC
 
   def step(self):
-    if self.sm['controlsState'].initialized and not self.CoS_prev.initialized:
+    controlsState = self.sm['controlsState']
+    if controlsState.initialized and not self.controlsState_prev.initialized:
       self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
 
     CS = self.state_update()
 
     self.state_publish(CS)
 
-    if not self.CP.passive and self.sm['controlsState'].initialized:
+    if not self.CP.passive and controlsState.initialized:
       self.controls_update(CS, self.sm['carControl'])
 
-    self.CoS_prev = self.sm['controlsState']
+    self.controlsState_prev = controlsState
 
   def card_thread(self):
     while True:
