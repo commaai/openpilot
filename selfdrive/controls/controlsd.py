@@ -414,6 +414,7 @@ class Controls:
           self.sm.ignore_alive.append('wideRoadCameraState')
 
         self.initialized = True
+        cloudlog.timestamp("Initialized")
         self.set_initial_state()
         self.params.put_bool_nonblocking("ControlsReady", True)
 
@@ -813,12 +814,15 @@ class Controls:
     if not self.CP.passive and self.initialized:
       # Update control state
       self.state_transition(CS)
+    cloudlog.timestamp("State transitioned")
 
     # Compute actuators (runs PID loops and lateral MPC)
     CC, lac_log = self.state_control(CS)
+    cloudlog.timestamp("State controlled")
 
     # Publish data
     self.publish_logs(CS, start_time, CC, lac_log)
+    cloudlog.timestamp("Logs published")
 
     self.CS_prev = CS
 

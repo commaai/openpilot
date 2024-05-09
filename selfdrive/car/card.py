@@ -10,6 +10,7 @@ from panda import ALTERNATIVE_EXPERIENCE
 
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper, DT_CTRL
+from openpilot.common.swaglog import cloudlog
 
 from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
 from openpilot.selfdrive.car.car_helpers import get_car, get_one_can
@@ -143,13 +144,17 @@ class Car:
     controlsState = self.sm['controlsState']
     if controlsState.initialized and not self.controlsState_prev.initialized:
       self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
+      cloudlog.timestamp("Initialized")
 
     CS = self.state_update()
+    cloudlog.timestamp("State updated")
 
     if not self.CP.passive and controlsState.initialized:
       self.controls_update(CS, self.sm['carControl'])
+      cloudlog.timestamp("Controls updated")
 
     self.state_publish(CS)
+    cloudlog.timestamp("State published")
 
     self.controlsState_prev = controlsState
 
