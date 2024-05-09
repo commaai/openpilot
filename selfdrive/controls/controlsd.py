@@ -90,8 +90,7 @@ class Controls:
                                    'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
                                    'carState', 'testJoystick'] + self.camera_packets + self.sensor_packets,
                                   poll='carState',
-                                  ignore_alive=ignore, ignore_avg_freq=ignore+['radarState', 'testJoystick'], ignore_valid=['testJoystick', ],
-                                  frequency=int(1/DT_CTRL))
+                                  ignore_alive=ignore, ignore_avg_freq=ignore+['radarState', 'testJoystick'], ignore_valid=['testJoystick', ])
 
     self.joystick_mode = self.params.get_bool("JoystickDebugMode")
 

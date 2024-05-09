@@ -110,9 +110,9 @@ class Car:
     cs_send = messaging.new_message('carState')
     cs_send.valid = CS.canValid
     cs_send.carState = CS
-    cs_send.canRcvTimeout = self.can_rcv_timeout
-    cs_send.canErrorCounter = self.can_rcv_cum_timeout_counter
-    cs_send.cumLagMs = -self.rk.remaining * 1000.
+    cs_send.carState.canRcvTimeout = self.can_rcv_timeout
+    cs_send.carState.canErrorCounter = self.can_rcv_cum_timeout_counter
+    cs_send.carState.cumLagMs = -self.rk.remaining * 1000.
     self.pm.send('carState', cs_send)
 
     # carParams - logged every 50 seconds (> 1 per segment)
