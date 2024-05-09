@@ -394,9 +394,8 @@ class Controls:
         self.events.add(EventName.modeldLagging)
 
   def data_sample(self):
-    """Receive data from sockets and update carState"""
+    """Receive data from sockets"""
 
-    # TODO: is this right?
     self.sm.update(20)
 
     CS = self.sm['carState']
@@ -410,9 +409,6 @@ class Controls:
           self.sm.ignore_alive.append('roadCameraState')
         if VisionStreamType.VISION_STREAM_WIDE_ROAD not in available_streams:
           self.sm.ignore_alive.append('wideRoadCameraState')
-
-        # if not self.CP.passive:
-        #   self.card.initialize()
 
         self.initialized = True
         self.set_initial_state()
@@ -726,7 +722,6 @@ class Controls:
       hudControl.visualAlert = current_alert.visual_alert
 
     if not self.CP.passive and self.initialized:
-      # self.card.controls_update(CC)
       self.last_actuators = CO.actuatorsOutput
       if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
         self.steer_limited = abs(CC.actuators.steeringAngleDeg - CO.actuatorsOutput.steeringAngleDeg) > \
@@ -774,7 +769,6 @@ class Controls:
     controlsState.cumLagMs = -self.rk.remaining * 1000.
     controlsState.startMonoTime = int(start_time * 1e9)
     controlsState.forceDecel = bool(force_decel)
-    # controlsState.canErrorCounter = self.card.can_rcv_cum_timeout_counter
     controlsState.experimentalMode = self.experimental_mode
     controlsState.personality = self.personality
     controlsState.initialized = self.initialized
