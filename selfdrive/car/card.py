@@ -9,7 +9,7 @@ from cereal import car
 from panda import ALTERNATIVE_EXPERIENCE
 
 from openpilot.common.params import Params
-from openpilot.common.realtime import DT_CTRL
+from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper, DT_CTRL
 
 from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
 from openpilot.selfdrive.car.car_helpers import get_car, get_one_can
@@ -18,19 +18,20 @@ from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 REPLAY = "REPLAY" in os.environ
 
 
-class CarD:
+class Car:
   CI: CarInterfaceBase
   CS: car.CarState
 
   def __init__(self, CI=None):
     self.can_sock = messaging.sub_sock('can', timeout=20)
-    self.sm = messaging.SubMaster(['pandaStates'])
+    self.sm = messaging.SubMaster(['pandaStates', 'carControl', 'controlsState'])
     self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams', 'carOutput'])
 
     self.can_rcv_timeout_counter = 0  # consecutive timeout count
     self.can_rcv_cum_timeout_counter = 0  # cumulative timeout count
 
     self.CC_prev = car.CarControl.new_message()
+    self.CoS_prev = car.CarState.new_message()
 
     self.last_actuators = None
 
@@ -75,9 +76,8 @@ class CarD:
     self.params.put_nonblocking("CarParamsCache", cp_bytes)
     self.params.put_nonblocking("CarParamsPersistent", cp_bytes)
 
-  def initialize(self):
-    """Initialize CarInterface, once controls are ready"""
-    self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
+    # card is driven by can recv, expected at 100Hz
+    self.rk = Ratekeeper(100, print_delay_threshold=None)
 
   def state_update(self):
     """carState update loop, driven by can"""
@@ -102,10 +102,6 @@ class CarD:
     if can_rcv_valid and REPLAY:
       self.can_log_mono_time = messaging.log_from_bytes(can_strs[0]).logMonoTime
 
-    self.state_publish()
-
-    return self.CS
-
   def state_publish(self):
     """carState and carParams publish loop"""
 
@@ -113,6 +109,9 @@ class CarD:
     cs_send = messaging.new_message('carState')
     cs_send.valid = self.CS.canValid
     cs_send.carState = self.CS
+    cs_send.canRcvTimeout = self.can_rcv_timeout
+    cs_send.canErrorCounter = self.can_rcv_cum_timeout_counter
+    cs_send.cumLagMs = -self.rk.remaining * 1000.
     self.pm.send('carState', cs_send)
 
     # carParams - logged every 50 seconds (> 1 per segment)
@@ -138,3 +137,31 @@ class CarD:
     self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=self.CS.canValid))
 
     self.CC_prev = CC
+
+  def step(self):
+    if self.sm['controlsState'].initialized and not self.CoS_prev.initialized:
+      self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
+
+    self.state_update()
+
+    self.state_publish()
+
+    if not self.CP.passive and self.sm['controlsState'].initialized:
+      self.controls_update(self.sm['carControl'])
+
+    self.CoS_prev = self.sm['controlsState']
+
+  def card_thread(self):
+    while True:
+      self.step()
+      self.rk.monitor_time()
+
+
+def main():
+  config_realtime_process(4, Priority.CTRL_HIGH)
+  car = Car()
+  car.card_thread()
+
+
+if __name__ == "__main__":
+  main()
