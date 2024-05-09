@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag, StrEnum
 
@@ -9,7 +9,7 @@ from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car import dbc_dict, CarSpecs, DbcDict, PlatformConfig, Platforms
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column, \
                                                      Device
-from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
+from openpilot.selfdrive.car.fw_query_definitions import EcuAddrSubAddr, FwQueryConfig, Request, p16
 
 Ecu = car.CarParams.Ecu
 NetworkLocation = car.CarParams.NetworkLocation
@@ -434,19 +434,26 @@ class CAR(Platforms):
 def match_fw_to_car_fuzzy(live_fw_versions, vin, offline_fw_versions) -> set[str]:
   candidates = set()
 
+  # Compile all FW versions for each ECU
+  all_ecu_versions: dict[EcuAddrSubAddr, set[str]] = defaultdict(set)
+  for ecus in offline_fw_versions.values():
+    for ecu, versions in ecus.items():
+      all_ecu_versions[ecu] |= set(versions)
+
   # Check the WMI and chassis code to determine the platform
   wmi = vin[:3]
   chassis_code = vin[6:8]
 
   for platform in CAR:
     valid_ecus = set()
-    for ecu, expected_versions in offline_fw_versions[platform].items():
+    for ecu in offline_fw_versions[platform]:
       addr = ecu[1:]
       if ecu[0] not in CHECK_FUZZY_ECUS:
         continue
 
-      # Sanity check that a subset of Volkswagen FW is in the database
+      # Sanity check that live FW is in the superset of all FW, Volkswagen ECU part numbers are commonly shared
       found_versions = live_fw_versions.get(addr, [])
+      expected_versions = all_ecu_versions[ecu]
       if not any(found_version in expected_versions for found_version in found_versions):
         break
 
