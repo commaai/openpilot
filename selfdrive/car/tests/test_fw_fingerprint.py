@@ -223,11 +223,11 @@ class TestFwFingerprintTiming:
     self.total_time += timeout
     return {}
 
-  def _benchmark_brand(self, brand, num_pandas):
+  def _benchmark_brand(self, brand, num_pandas, mocker):
     fake_socket = FakeSocket()
     self.total_time = 0
-    with (mock.patch("openpilot.selfdrive.car.fw_versions.set_obd_multiplexing", self.fake_set_obd_multiplexing),
-          mock.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", self.fake_get_data)):
+    with (mocker.patch("openpilot.selfdrive.car.fw_versions.set_obd_multiplexing", self.fake_set_obd_multiplexing),
+          mocker.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", self.fake_get_data)):
       for _ in range(self.N):
         # Treat each brand as the most likely (aka, the first) brand with OBD multiplexing initially on
         self.current_obd_multiplexing = True
@@ -242,7 +242,7 @@ class TestFwFingerprintTiming:
     assert avg_time < ref_time + self.TOL
     assert avg_time > ref_time - self.TOL, "Performance seems to have improved, update test refs."
 
-  def test_startup_timing(self, subtests):
+  def test_startup_timing(self, subtests, mocker):
     # Tests worse-case VIN query time and typical present ECU query time
     vin_ref_times = {'worst': 1.4, 'best': 0.7}  # best assumes we go through all queries to get a match
     present_ecu_ref_time = 0.45
@@ -253,8 +253,8 @@ class TestFwFingerprintTiming:
 
     fake_socket = FakeSocket()
     self.total_time = 0.0
-    with (mock.patch("openpilot.selfdrive.car.fw_versions.set_obd_multiplexing", self.fake_set_obd_multiplexing),
-          mock.patch("openpilot.selfdrive.car.fw_versions.get_ecu_addrs", fake_get_ecu_addrs)):
+    with (mocker.patch("openpilot.selfdrive.car.fw_versions.set_obd_multiplexing", self.fake_set_obd_multiplexing),
+          mocker.patch("openpilot.selfdrive.car.fw_versions.get_ecu_addrs", fake_get_ecu_addrs)):
       for _ in range(self.N):
         self.current_obd_multiplexing = True
         get_present_ecus(fake_socket, fake_socket, num_pandas=2)
@@ -264,7 +264,7 @@ class TestFwFingerprintTiming:
     for name, args in (('worst', {}), ('best', {'retry': 1})):
       with subtests.test(name=name):
         self.total_time = 0.0
-        with (mock.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", self.fake_get_data)):
+        with (mocker.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", self.fake_get_data)):
           for _ in range(self.N):
             get_vin(fake_socket, fake_socket, (0, 1), **args)
         self._assert_timing(self.total_time / self.N, vin_ref_times[name])
