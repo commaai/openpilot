@@ -20,7 +20,7 @@ from parameterized import parameterized_class
   (["testJoystick"], []),
   ([], []),
 ])
-@pytest.mock.asyncio
+@pytest.mark.asyncio
 class TestWebrtcdProc():
   async def assertCompletesWithTimeout(self, awaitable, timeout=1):
     try:
