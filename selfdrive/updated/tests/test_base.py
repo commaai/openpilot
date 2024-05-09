@@ -6,7 +6,6 @@ import stat
 import subprocess
 import tempfile
 import time
-from unittest import mock
 import pytest
 
 from openpilot.common.params import Params

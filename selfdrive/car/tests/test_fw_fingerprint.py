@@ -4,7 +4,6 @@ import random
 import time
 from collections import defaultdict
 from parameterized import parameterized
-from unittest import mock
 
 from cereal import car
 from openpilot.selfdrive.car.car_helpers import interfaces
@@ -270,7 +269,7 @@ class TestFwFingerprintTiming:
         self._assert_timing(self.total_time / self.N, vin_ref_times[name])
         print(f'get_vin {name} case, query time={self.total_time / self.N} seconds')
 
-  def test_fw_query_timing(self,subtests):
+  def test_fw_query_timing(self,subtests, mocker):
     total_ref_time = {1: 7.2, 2: 7.8}
     brand_ref_times = {
       1: {

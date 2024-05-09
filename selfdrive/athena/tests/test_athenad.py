@@ -13,7 +13,6 @@ from dataclasses import asdict, replace
 from datetime import datetime, timedelta
 from parameterized import parameterized
 
-from unittest import mock
 from websocket import ABNF
 from websocket._exceptions import WebSocketConnectionClosedException
 
@@ -232,9 +231,9 @@ class TestAthenadMethods:
     assert athenad.upload_queue.qsize() == 0
 
   @parameterized.expand([(500, True), (412, False)])
-  @mock.patch('requests.put')
+  @mocker.patch('requests.put')
   @with_upload_handler
-  def test_upload_handler_retry(self, status, retry, mock_put, host):
+  def test_upload_handler_retry(self, status, retry, mock_put, host, mocker):
     mock_put.return_value.status_code = status
     fn = self._create_file('qlog.bz2')
     item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
@@ -350,8 +349,8 @@ class TestAthenadMethods:
     assert athenad.upload_queue.qsize() == 1
     assert asdict(athenad.upload_queue.queue[-1]) == asdict(item1)
 
-  @mock.patch('openpilot.selfdrive.athena.athenad.create_connection')
-  def test_start_local_proxy(self, mock_create_connection):
+  @mocker.patch('openpilot.selfdrive.athena.athenad.create_connection')
+  def test_start_local_proxy(self, mock_create_connection, mocker):
     end_event = threading.Event()
 
     ws_recv = queue.Queue()
