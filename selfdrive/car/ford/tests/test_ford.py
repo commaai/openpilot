@@ -48,20 +48,20 @@ class TestFordFW:
     for (ecu, addr, subaddr) in FW_QUERY_CONFIG.extra_ecus:
       assert ecu in ECU_ADDRESSES, "Unknown ECU"
       assert addr == ECU_ADDRESSES[ecu], "ECU address mismatch"
-      assert subaddr, "Unexpected ECU subaddress" is None
+      assert subaddr is None, "Unexpected ECU subaddress"
 
   @parameterized.expand(FW_VERSIONS.items())
   def test_fw_versions(self, car_model: str, fw_versions: dict[tuple[capnp.lib.capnp._EnumModule, int, int | None], Iterable[bytes]]):
     for (ecu, addr, subaddr), fws in fw_versions.items():
       assert ecu in ECU_PART_NUMBER, "Unexpected ECU"
       assert addr == ECU_ADDRESSES[ecu], "ECU address mismatch"
-      assert subaddr, "Unexpected ECU subaddress" is None
+      assert subaddr is None, "Unexpected ECU subaddress"
 
       for fw in fws:
         assert len(fw) == 24, "Expected ECU response to be 24 bytes"
 
         match = FW_PATTERN.match(fw)
-        assert match, f"Unable to parse FW: {fw!r}" is not None
+        assert match is not None, f"Unable to parse FW: {fw!r}"
         if match:
           part_number = match.group("part_number")
           assert part_number in ECU_PART_NUMBER[ecu], f"Unexpected part number for {fw!r}"
