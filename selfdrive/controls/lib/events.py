@@ -950,6 +950,11 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.NO_ENTRY: NoEntryAlert("Vehicle Sensors Calibrating"),
   },
 
+  EventName.actuatorsApiUnavailable: {
+    ET.PERMANENT: NormalPermanentAlert("Missing Actuators API", "Your car may not be supported"),
+    ET.NO_ENTRY: NoEntryAlert("Missing Actuators API", "Your car may not be supported"),
+  },
+
 }
 
 
