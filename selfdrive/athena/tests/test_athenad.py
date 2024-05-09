@@ -41,6 +41,14 @@ def host():
   with http_server_context(handler=HTTPRequestHandler, setup=seed_athena_server) as (host, port):
     yield f"http://{host}:{port}"
 
+@pytest.fixture
+def mock_requests(mocker):
+  return mocker.patch('requests.put')
+
+@pytest.fixture
+def mock_con(mocker):
+  return mocker.patch('openpilot.selfdrive.athena.athenad.create_connection')
+
 def with_upload_handler(func):
   @wraps(func)
   def wrapper(*args, **kwargs):
@@ -231,9 +239,9 @@ class TestAthenadMethods:
     assert athenad.upload_queue.qsize() == 0
 
   @parameterized.expand([(500, True), (412, False)])
-  @mocker.patch('requests.put')
+  @pytest.mark.usefixtures("mock_requests")
   @with_upload_handler
-  def test_upload_handler_retry(self, status, retry, mock_put, host, mocker):
+  def test_upload_handler_retry(self, status, retry, mock_put, host):
     mock_put.return_value.status_code = status
     fn = self._create_file('qlog.bz2')
     item = athenad.UploadItem(path=fn, url=f"{host}/qlog.bz2", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
@@ -349,8 +357,8 @@ class TestAthenadMethods:
     assert athenad.upload_queue.qsize() == 1
     assert asdict(athenad.upload_queue.queue[-1]) == asdict(item1)
 
-  @mocker.patch('openpilot.selfdrive.athena.athenad.create_connection')
-  def test_start_local_proxy(self, mock_create_connection, mocker):
+  @pytest.mark.usefixtures("mock_con")
+  def test_start_local_proxy(self, mock_create_connection):
     end_event = threading.Event()
 
     ws_recv = queue.Queue()
