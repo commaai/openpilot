@@ -32,7 +32,7 @@ class Car:
     self.CC_prev = car.CarControl.new_message()
     self.controlsState_prev = car.CarState.new_message()
 
-    self.last_actuators = None
+    self.last_actuators_output = car.CarControl.Actuators.new_message()
 
     self.params = Params()
 
@@ -105,15 +105,6 @@ class Car:
   def state_publish(self, CS: car.CarState):
     """carState and carParams publish loop"""
 
-    # carState
-    cs_send = messaging.new_message('carState')
-    cs_send.valid = CS.canValid
-    cs_send.carState = CS
-    cs_send.carState.canRcvTimeout = self.can_rcv_timeout
-    cs_send.carState.canErrorCounter = self.can_rcv_cum_timeout_counter
-    cs_send.carState.cumLagMs = -self.rk.remaining * 1000.
-    self.pm.send('carState', cs_send)
-
     # carParams - logged every 50 seconds (> 1 per segment)
     if (self.sm.frame % int(50. / DT_CTRL) == 0):
       cp_send = messaging.new_message('carParams')
@@ -124,9 +115,17 @@ class Car:
     # publish new carOutput
     co_send = messaging.new_message('carOutput')
     co_send.valid = self.sm.all_checks(['carControl'])
-    if self.last_actuators is not None:
-      co_send.carOutput.actuatorsOutput = self.last_actuators
+    co_send.carOutput.actuatorsOutput = self.last_actuators_output
     self.pm.send('carOutput', co_send)
+
+    # carState is sent last to ensure controlsd receives above services this cycle
+    cs_send = messaging.new_message('carState')
+    cs_send.valid = CS.canValid
+    cs_send.carState = CS
+    cs_send.carState.canRcvTimeout = self.can_rcv_timeout
+    cs_send.carState.canErrorCounter = self.can_rcv_cum_timeout_counter
+    cs_send.carState.cumLagMs = -self.rk.remaining * 1000.
+    self.pm.send('carState', cs_send)
 
   def controls_update(self, CS: car.CarState, CC: car.CarControl):
     """control update loop, driven by carControl"""
@@ -134,7 +133,7 @@ class Car:
     # send car controls over can
     now_nanos = self.can_log_mono_time if REPLAY else int(time.monotonic() * 1e9)
     # TODO: CC shouldn't be builder
-    self.last_actuators, can_sends = self.CI.apply(CC.as_builder(), now_nanos)
+    self.last_actuators_output, can_sends = self.CI.apply(CC.as_builder(), now_nanos)
     self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
 
     self.CC_prev = CC
@@ -146,10 +145,10 @@ class Car:
 
     CS = self.state_update()
 
-    self.state_publish(CS)
-
     if not self.CP.passive and controlsState.initialized:
       self.controls_update(CS, self.sm['carControl'])
+
+    self.state_publish(CS)
 
     self.controlsState_prev = controlsState
 
