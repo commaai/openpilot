@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import time
 import threading
 import unittest
@@ -8,6 +9,7 @@ from collections.abc import Sequence
 
 import openpilot.system.loggerd.deleter as deleter
 from openpilot.common.timeout import Timeout, TimeoutException
+from openpilot.system.hardware.hw import Paths
 from openpilot.system.loggerd.tests.loggerd_tests_common import UploaderTestCase
 
 Stats = namedtuple("Stats", ['f_bavail', 'f_blocks', 'f_frsize'])
@@ -65,6 +67,27 @@ class TestDeleter(UploaderTestCase):
       self.join_thread()
 
     self.assertEqual(deleted_order, f_paths, "Files not deleted in expected order")
+
+  def test_delete_empty_dir(self):
+    f_path = self.make_file_with_data(os.path.join('test'), self.f_type)
+    self.start_thread()
+    self.join_thread()
+
+    assert not f_path.exists()
+    assert not os.path.exists(os.path.join(Paths.log_root(), 'test'))
+
+  def test_delete_file_log_root(self):
+    f_path = self.make_file_with_data('', 'file.txt')
+    f_path_lock = self.make_file_with_data('', self.f_type, lock=True)
+
+    self.start_thread()
+    start_time = time.monotonic()
+    while f_path.exists() and time.monotonic() - start_time < 2:
+      time.sleep(0.01)
+    self.join_thread()
+
+    assert f_path_lock.exists(), "Lock file deleted"
+    assert not f_path.exists(), "File not deleted"
 
   def test_delete_order(self):
     self.assertDeleteOrder([
