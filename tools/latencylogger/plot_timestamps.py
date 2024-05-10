@@ -3,7 +3,6 @@ import argparse
 import json
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
-import mpld3
 import sys
 from bisect import bisect_left, bisect_right
 from collections import defaultdict
@@ -136,15 +135,25 @@ def plot(lr):
   # for lbl, x, y in zip(points['labels'], points['x'], points['y']):
   #   ax.annotate(lbl, (x, y))
 
-  # tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=points['labels'])
-  # mpld3.plugins.connect(fig, tooltip)
-
-
   plt.legend(handles=[mpatches.Patch(color=colors[i], label=PLOT_SERVICES[i]) for i in range(len(PLOT_SERVICES))])
 
 
   # plt.scatter([t[0] for t in times], [t[1] for t in times], marker='d', edgecolor='black')
   ax.set_xlabel('milliseconds')
+
+  txt = ax.text(0, 0, '', ha='center', fontsize=8, color='red')
+
+  def hover(event):
+    txt.set_text("")
+    status, pts = scatter.contains(event)
+    txt.set_visible(status)
+    if status:
+      lbl = points['labels'][pts['ind'][0]]
+      txt.set_text(lbl)
+      txt.set_position((event.xdata, event.ydata + 1))
+    event.canvas.draw()
+
+  fig.canvas.mpl_connect("motion_notify_event", hover)
 
   plt.show()
   # plt.pause(1000)
@@ -152,18 +161,18 @@ def plot(lr):
 
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description="A tool for analyzing openpilot's end-to-end latency",
-                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-  parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
-  parser.add_argument("route_or_segment_name", nargs='?', help="The route to print")
+  # parser = argparse.ArgumentParser(description="A tool for analyzing openpilot's end-to-end latency",
+  #                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+  # parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
+  # parser.add_argument("route_or_segment_name", nargs='?', help="The route to print")
+  #
+  # if len(sys.argv) == 1:
+  #   parser.print_help()
+  #   sys.exit()
+  # args = parser.parse_args()
 
-  if len(sys.argv) == 1:
-    parser.print_help()
-    sys.exit()
-  args = parser.parse_args()
-
-  r = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
-  lr = LogReader(r, sort_by_time=True)
+  # r = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
+  # lr = LogReader(r, sort_by_time=True)
   lr = LogReader('08e4c2a99df165b1/00000017--e2d24ab118/0', sort_by_time=True)  # polls on carControl
   lr = LogReader('08e4c2a99df165b1/00000018--cf65e47c24/0', sort_by_time=True)  # polls on carControl, sends it earlier
   lr = LogReader('08e4c2a99df165b1/00000019--e73e3ab4df/0', sort_by_time=True)  # polls on carControl, more logging
