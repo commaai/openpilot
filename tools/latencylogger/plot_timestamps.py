@@ -131,8 +131,8 @@ if __name__ == "__main__":
 
   # r = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
   # lr = LogReader(r, sort_by_time=True)
-  # lr = LogReader('08e4c2a99df165b1/00000016--c3a4ca99ec/0', sort_by_time=True)  # normal
-  lr = LogReader('08e4c2a99df165b1/00000017--e2d24ab118/0', sort_by_time=True)  # polls on carControl
+  lr = LogReader('08e4c2a99df165b1/00000016--c3a4ca99ec/0', sort_by_time=True)  # normal
+  # lr = LogReader('08e4c2a99df165b1/00000017--e2d24ab118/0', sort_by_time=True)  # polls on carControl
   # lr = LogReader('08e4c2a99df165b1/00000018--cf65e47c24/0', sort_by_time=True)  # polls on carControl, sends it earlier
   # lr = LogReader('08e4c2a99df165b1/00000019--e73e3ab4df/0', sort_by_time=True)  # polls on carControl, more logging
 
