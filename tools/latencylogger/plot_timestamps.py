@@ -4,7 +4,6 @@ import json
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import sys
-from bisect import bisect_left, bisect_right
 from collections import defaultdict
 
 from openpilot.tools.lib.logreader import LogReader
@@ -12,11 +11,10 @@ from openpilot.tools.lib.logreader import LogReader
 DEMO_ROUTE = "9f583b1d93915c31|2022-05-18--10-49-51--0"
 
 COLORS = ['blue', 'green', 'red', 'yellow', 'orange', 'purple']
+PLOT_SERVICES = ['card', 'controlsd']  # , 'boardd']
 
 
 def plot(lr):
-  PLOT_SERVICES = ['card', 'controlsd', 'boardd']
-
   seen = set()
   aligned = False
 
@@ -24,8 +22,11 @@ def plot(lr):
   # dict of services to events per inferred frame
   times = {s: [[]] for s in PLOT_SERVICES}
 
+  first_event = None
+  # temp_times = {s: [] for s in PLOT_SERVICES}  # holds only current frame of services
+
   timestamps = [json.loads(msg.logMessage) for msg in lr if msg.which() == 'logMessage' and 'timestamp' in msg.logMessage]
-  print(timestamps)
+  # print(timestamps)
   timestamps = sorted(timestamps, key=lambda m: float(m['msg']['timestamp']['time']))
 
   # closely matches timestamp time
@@ -40,15 +41,18 @@ def plot(lr):
     time = int(jmsg['msg']['timestamp']['time'])
     service = jmsg['ctx']['daemon']
     event = jmsg['msg']['timestamp']['event']
+    # print(jmsg)
+    # print(seen)
 
-    # Align the best we can; all seen and this is the first service
+    if service in PLOT_SERVICES and first_event is None:
+      first_event = event
+
+    # Align the best we can; wait for all to be seen and this is the first event
     # TODO: detect first logMessage correctly by keeping track of events before aligned
-    aligned = aligned or (all(s in seen for s in PLOT_SERVICES) and service == PLOT_SERVICES[0] and event == 'Sent carState')
+    aligned = aligned or (all(s in seen for s in PLOT_SERVICES) and event == first_event)
     if not aligned:
       seen.add(service)
       continue
-    # if not all(s in seen for s in PLOT_SERVICES):
-    #   continue
 
     if service in PLOT_SERVICES:
 
@@ -91,17 +95,14 @@ def plot(lr):
     # offset = offset_services
     # offset each service
     for j, sb in enumerate(service_bars):
-      ax.broken_barh([sb], (idx - height / 2 - j * 1, height), facecolors=[colors[j]], alpha=0.5)#, offsets=offsets)
+      ax.broken_barh([sb], (idx - height / 2 - j * 1, height), facecolors=[colors[j]], alpha=0.5)  # , offsets=offsets)
     # ax.broken_barh(service_bars, [(idx - height / 2 - j * 5, height - j * 5) for j in range(len(service_bars))], facecolors=(colors), alpha=0.5)#, offsets=offsets)
-
-
 
   scatter = ax.scatter(points['x'], points['y'], marker='d', edgecolor='black')
   # for lbl, x, y in zip(points['labels'], points['x'], points['y']):
   #   ax.annotate(lbl, (x, y))
 
   plt.legend(handles=[mpatches.Patch(color=colors[i], label=PLOT_SERVICES[i]) for i in range(len(PLOT_SERVICES))])
-
 
   # plt.scatter([t[0] for t in times], [t[1] for t in times], marker='d', edgecolor='black')
   ax.set_xlabel('milliseconds')
