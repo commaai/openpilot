@@ -2,15 +2,19 @@
 import io
 import lzma
 import os
+import pathlib
 import struct
 import sys
 import time
 from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
 from collections.abc import Callable
+from typing import IO
 
 import requests
 from Crypto.Hash import SHA512
+from openpilot.system.updated.casync import tar
+from openpilot.system.updated.casync.common import create_casync_tar_package
 
 CA_FORMAT_INDEX = 0x96824d9c7b129ff9
 CA_FORMAT_TABLE = 0xe75b9e112f17417d
@@ -37,18 +41,23 @@ class ChunkReader(ABC):
     ...
 
 
-class FileChunkReader(ChunkReader):
+class BinaryChunkReader(ChunkReader):
   """Reads chunks from a local file"""
-  def __init__(self, fn: str) -> None:
+  def __init__(self, file_like: IO[bytes]) -> None:
     super().__init__()
-    self.f = open(fn, 'rb')
-
-  def __del__(self):
-    self.f.close()
+    self.f = file_like
 
   def read(self, chunk: Chunk) -> bytes:
     self.f.seek(chunk.offset)
     return self.f.read(chunk.length)
+
+
+class FileChunkReader(BinaryChunkReader):
+  def __init__(self, path: str) -> None:
+    super().__init__(open(path, 'rb'))
+
+  def __del__(self):
+    self.f.close()
 
 
 class RemoteChunkReader(ChunkReader):
@@ -81,6 +90,20 @@ class RemoteChunkReader(ChunkReader):
 
     decompressor = lzma.LZMADecompressor(format=lzma.FORMAT_AUTO)
     return decompressor.decompress(contents)
+
+
+class DirectoryTarChunkReader(BinaryChunkReader):
+  """creates a tar archive of a directory and reads chunks from it"""
+
+  def __init__(self, path: str, cache_file: str) -> None:
+    create_casync_tar_package(pathlib.Path(path), pathlib.Path(cache_file))
+
+    self.f = open(cache_file, "rb")
+    return super().__init__(self.f)
+
+  def __del__(self):
+    self.f.close()
+    os.unlink(self.f.name)
 
 
 def parse_caibx(caibx_path: str) -> list[Chunk]:
@@ -177,6 +200,21 @@ def extract(target: list[Chunk],
           break
       else:
         raise RuntimeError("Desired chunk not found in provided stores")
+
+  return stats
+
+
+def extract_directory(target: list[Chunk],
+            sources: list[tuple[str, ChunkReader, ChunkDict]],
+            out_path: str,
+            tmp_file: str,
+            progress: Callable[[int], None] = None):
+  """extract a directory stored as a casync tar archive"""
+
+  stats = extract(target, sources, tmp_file, progress)
+
+  with open(tmp_file, "rb") as f:
+    tar.extract_tar_archive(f, pathlib.Path(out_path))
 
   return stats
 

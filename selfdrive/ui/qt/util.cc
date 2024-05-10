@@ -105,20 +105,21 @@ void initApp(int argc, char *argv[], bool disable_hidpi) {
   std::signal(SIGINT, sigTermHandler);
   std::signal(SIGTERM, sigTermHandler);
 
-  if (disable_hidpi) {
+  QString app_dir;
 #ifdef __APPLE__
-    // Get the devicePixelRatio, and scale accordingly to maintain 1:1 rendering
-    QApplication tmp(argc, argv);
-    qputenv("QT_SCALE_FACTOR", QString::number(1.0 / tmp.devicePixelRatio() ).toLocal8Bit());
-#endif
+  // Get the devicePixelRatio, and scale accordingly to maintain 1:1 rendering
+  QApplication tmp(argc, argv);
+  app_dir = QCoreApplication::applicationDirPath();
+  if (disable_hidpi) {
+    qputenv("QT_SCALE_FACTOR", QString::number(1.0 / tmp.devicePixelRatio()).toLocal8Bit());
   }
+#else
+  app_dir = QFileInfo(util::readlink("/proc/self/exe").c_str()).path();
+#endif
 
   qputenv("QT_DBL_CLICK_DIST", QByteArray::number(150));
-
   // ensure the current dir matches the exectuable's directory
-  QApplication tmp(argc, argv);
-  QString appDir = QCoreApplication::applicationDirPath();
-  QDir::setCurrent(appDir);
+  QDir::setCurrent(app_dir);
 
   setQtSurfaceFormat();
 }

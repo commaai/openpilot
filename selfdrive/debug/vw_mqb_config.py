@@ -6,6 +6,7 @@ from enum import IntEnum
 from panda import Panda
 from panda.python.uds import UdsClient, MessageTimeoutError, NegativeResponseError, SESSION_TYPE,\
   DATA_IDENTIFIER_TYPE, ACCESS_TYPE
+from datetime import date
 
 # TODO: extend UDS library to allow custom/vendor-defined data identifiers without ignoring type checks
 class VOLKSWAGEN_DATA_IDENTIFIER_TYPE(IntEnum):
@@ -136,8 +137,10 @@ if __name__ == "__main__":
       # last two bytes, but not the VZ/importer or tester serial number
       # Can't seem to read it back, but we can read the calibration tester,
       # so fib a little and say that same tester did the programming
-      # TODO: encode the actual current date
-      prog_date = b'\x22\x02\x08'
+      current_date = date.today()
+      formatted_date = current_date.strftime('%y-%m-%d')
+      year, month, day = [int(part) for part in formatted_date.split('-')]
+      prog_date = bytes([year, month, day])
       uds_client.write_data_by_identifier(DATA_IDENTIFIER_TYPE.PROGRAMMING_DATE, prog_date)
       tester_num = uds_client.read_data_by_identifier(DATA_IDENTIFIER_TYPE.CALIBRATION_REPAIR_SHOP_CODE_OR_CALIBRATION_EQUIPMENT_SERIAL_NUMBER)
       uds_client.write_data_by_identifier(DATA_IDENTIFIER_TYPE.REPAIR_SHOP_CODE_OR_TESTER_SERIAL_NUMBER, tester_num)

@@ -21,6 +21,7 @@ class PandaStream : public LiveStream {
   Q_OBJECT
 public:
   PandaStream(QObject *parent, PandaStreamConfig config_ = {});
+  bool connect();
   static AbstractOpenStreamWidget *widget(AbstractStream **stream);
   inline QString routeName() const override {
     return QString("Live Streaming From Panda %1").arg(config.serial);
@@ -28,7 +29,6 @@ public:
 
 protected:
   void streamThread() override;
-  bool connect();
 
   std::unique_ptr<Panda> panda;
   PandaStreamConfig config = {};
@@ -47,6 +47,6 @@ private:
   void buildConfigForm();
 
   QComboBox *serial_edit;
-  QFormLayout *config_layout;
+  QFormLayout *form_layout;
   PandaStreamConfig config = {};
 };
