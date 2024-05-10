@@ -803,24 +803,24 @@ class Controls:
     self.pm.send('carControl', cc_send)
 
   def step(self):
-    cloudlog.timestamp("Start controlsd")
+    # cloudlog.timestamp("Start controlsd")
     start_time = time.monotonic()
 
     # Sample data from sockets and get a carState
     CS = self.data_sample()
-    cloudlog.timestamp("Data sampled")
+    # cloudlog.timestamp("Data sampled")
 
     self.update_events(CS)
-    cloudlog.timestamp("Events updated")
+    # cloudlog.timestamp("Events updated")
 
     if not self.CP.passive and self.initialized:
       # Update control state
       self.state_transition(CS)
-    cloudlog.timestamp("State transitioned")
+    # cloudlog.timestamp("State transitioned")
 
     # Compute actuators (runs PID loops and lateral MPC)
     CC, lac_log = self.state_control(CS)
-    cloudlog.timestamp("State controlled")
+    # cloudlog.timestamp("State controlled")
 
     # Publish data
     self.publish_logs(CS, start_time, CC, lac_log)
