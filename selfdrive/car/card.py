@@ -142,13 +142,13 @@ class Car:
       self.CC_prev = CC
 
   def step(self):
+    CS = self.state_update()
+    cloudlog.timestamp("State updated")
+
     controlsState = self.sm['controlsState']
     if controlsState.initialized and not self.controlsState_prev.initialized:
       self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
       cloudlog.timestamp("Initialized")
-
-    CS = self.state_update()
-    cloudlog.timestamp("State updated")
 
     self.state_publish(CS)
     cloudlog.timestamp("State published")
