@@ -66,10 +66,8 @@ def plot(lr):
       times[service][-1].append(((time - start_time) * 1e-6, event))
 
   points = {"x": [], "y": [], "labels": []}
-  colors = COLORS[:len(PLOT_SERVICES)]
-  offset_services = True
-  height = 0.9 if offset_services else 0.9
-  # offsets = [[0, -10 * j] for j in range(len(PLOT_SERVICES))] if offset_services else None
+  height = 0.9
+  offsets = [[0, -10 * j] for j in range(len(PLOT_SERVICES))]
 
   fig, ax = plt.subplots()
 
@@ -95,27 +93,21 @@ def plot(lr):
     # offset = offset_services
     # offset each service
     for j, sb in enumerate(service_bars):
-      ax.broken_barh([sb], (idx - height / 2 - j * 1, height), facecolors=[colors[j]], alpha=0.5)  # , offsets=offsets)
-    # ax.broken_barh(service_bars, [(idx - height / 2 - j * 5, height - j * 5) for j in range(len(service_bars))], facecolors=(colors), alpha=0.5)#, offsets=offsets)
+      ax.broken_barh([sb], (idx - height / 2 - j * 1, height), facecolors=[COLORS[j]], alpha=0.5)  # , offsets=offsets)
+    # ax.broken_barh(service_bars, (idx - height / 2, height), facecolors=COLORS, alpha=0.5, offsets=offsets)
 
   scatter = ax.scatter(points['x'], points['y'], marker='d', edgecolor='black')
-  # for lbl, x, y in zip(points['labels'], points['x'], points['y']):
-  #   ax.annotate(lbl, (x, y))
-
-  plt.legend(handles=[mpatches.Patch(color=colors[i], label=PLOT_SERVICES[i]) for i in range(len(PLOT_SERVICES))])
-
-  # plt.scatter([t[0] for t in times], [t[1] for t in times], marker='d', edgecolor='black')
+  txt = ax.text(0, 0, '', ha='center', fontsize=8, color='red')
   ax.set_xlabel('milliseconds')
 
-  txt = ax.text(0, 0, '', ha='center', fontsize=8, color='red')
+  plt.legend(handles=[mpatches.Patch(color=COLORS[i], label=PLOT_SERVICES[i]) for i in range(len(PLOT_SERVICES))])
 
   def hover(event):
     txt.set_text("")
     status, pts = scatter.contains(event)
     txt.set_visible(status)
     if status:
-      lbl = points['labels'][pts['ind'][0]]
-      txt.set_text(lbl)
+      txt.set_text(points['labels'][pts['ind'][0]])
       txt.set_position((event.xdata, event.ydata + 1))
     event.canvas.draw()
 
@@ -139,8 +131,9 @@ if __name__ == "__main__":
 
   # r = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
   # lr = LogReader(r, sort_by_time=True)
+  # lr = LogReader('08e4c2a99df165b1/00000016--c3a4ca99ec/0', sort_by_time=True)  # normal
   lr = LogReader('08e4c2a99df165b1/00000017--e2d24ab118/0', sort_by_time=True)  # polls on carControl
-  lr = LogReader('08e4c2a99df165b1/00000018--cf65e47c24/0', sort_by_time=True)  # polls on carControl, sends it earlier
-  lr = LogReader('08e4c2a99df165b1/00000019--e73e3ab4df/0', sort_by_time=True)  # polls on carControl, more logging
+  # lr = LogReader('08e4c2a99df165b1/00000018--cf65e47c24/0', sort_by_time=True)  # polls on carControl, sends it earlier
+  # lr = LogReader('08e4c2a99df165b1/00000019--e73e3ab4df/0', sort_by_time=True)  # polls on carControl, more logging
 
   times, points = plot(lr)
