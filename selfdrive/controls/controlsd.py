@@ -610,6 +610,12 @@ class Controls:
         lac_log.output = actuators.steer
         lac_log.saturated = abs(actuators.steer) >= 0.9
 
+    # carControl
+    cc_send = messaging.new_message('carControl')
+    cc_send.valid = CS.canValid
+    cc_send.carControl = CC
+    self.pm.send('carControl', cc_send)
+
     if CS.steeringPressed:
       self.last_steering_pressed_frame = self.sm.frame
     recent_steer_pressed = (self.sm.frame - self.last_steering_pressed_frame)*DT_CTRL < 2.0
@@ -795,11 +801,11 @@ class Controls:
       self.pm.send('onroadEvents', ce_send)
     self.events_prev = self.events.names.copy()
 
-    # carControl
-    cc_send = messaging.new_message('carControl')
-    cc_send.valid = CS.canValid
-    cc_send.carControl = CC
-    self.pm.send('carControl', cc_send)
+    # # carControl
+    # cc_send = messaging.new_message('carControl')
+    # cc_send.valid = CS.canValid
+    # cc_send.carControl = CC
+    # self.pm.send('carControl', cc_send)
 
   def step(self):
     start_time = time.monotonic()

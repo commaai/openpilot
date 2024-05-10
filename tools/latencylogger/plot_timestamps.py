@@ -387,7 +387,8 @@ if __name__ == "__main__":
   # args = parser.parse_args()
   #
   # r = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
-  lr = LogReader('08e4c2a99df165b1/00000016--c3a4ca99ec/0', sort_by_time=True)
+  # lr = LogReader('08e4c2a99df165b1/00000016--c3a4ca99ec/0', sort_by_time=True)
+  lr = LogReader('08e4c2a99df165b1/00000017--e2d24ab118/0', sort_by_time=True)  # polls on carControl
 
   times, points = plot(lr)
 
