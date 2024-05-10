@@ -1,15 +1,14 @@
-import multiprocessing
 from openpilot.tools.lib.logreader import LogReader
-from openpilot.tools.lib.route import Route
 from cereal.services import services
+from functools import partial
 import subprocess
 import sys
 import os
-import capnp
 
+NUM_CPUS = 4
+# DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
+DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19/1:2"
 
-NUM_CPUS = 1
-DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 WHEEL_URL = "https://build.rerun.io/commit/660463d/wheels"
 RERUN_VERSION = "rerun-cli 0.16.0-alpha.2 [rustc 1.76.0 (07dca489a 2024-02-04), LLVM 17.0.6] x86_64-unknown-linux-gnu main 660463d, built 2024-04-28T12:33:59Z"
 
@@ -37,49 +36,27 @@ except ImportError:
     os.execv(sys.executable, [sys.executable] + sys.argv)
 
 
-# Import newest rerun version, replace when rerun version is greater than 0.15.1
-# try:
-#     import rerun as rr
-#     import rerun.blueprint as rrb
-# except ImportError:
-#     print("Rerun SDK is not installed. Trying to install it...")
-#     subprocess.run([sys.executable, "-m", "pip", "install", "rerun-sdk"])
-#     print("Rerun installed, restarting script")
-#     os.execv(sys.executable, [sys.executable] + sys.argv)
-
-
 topics = sorted(services.keys())
 excluded = ['sentinel']
 is_first_run = True
 
 
-# Log data-(key, value) to rerun
-# Here a property could be excluded from graphing
-def log_data(key, value):
-    rr.log(str(key), rr.Scalar(value))
-
-
-# Log capnp message to rerun
+# Log dict message to rerun
 def log_msg(msg, parent_key=''):
     stack = [(msg, parent_key)]
     while stack:
         current_msg, current_parent_key = stack.pop()
-        if hasattr(current_msg, 'schema') and hasattr(current_msg.schema, 'fields'):
-            msgFields = current_msg.schema.fields
-            for msgField in msgFields:
-                try:
-                    value = getattr(current_msg, msgField)
-                except capnp.KjException:
-                    continue
-                new_key = current_parent_key + "/" + msgField
+        if isinstance(current_msg, dict):
+            for key, value in current_msg.items():
+                new_key = f"{current_parent_key}/{key}"
                 if isinstance(value, (int, float)):
-                    log_data(new_key, value)
-                elif isinstance(value, capnp.lib.capnp._DynamicStructReader):
+                    rr.log(str(new_key), rr.Scalar(value))
+                elif isinstance(value, dict):
                     stack.append((value, new_key))
-                elif isinstance(value, capnp.lib.capnp._DynamicListReader):
+                elif isinstance(value, list):
                     for index, item in enumerate(value):
                         if isinstance(item, (int, float)):
-                            log_data(new_key + '/' + str(index), item)
+                            rr.log(f"{new_key}/{index}", rr.Scalar(item))
         else:
             pass  # Not a plottable value
 
@@ -97,35 +74,21 @@ def createBlueprint():
 
 # Log thumbnail, could be used for potential logging of any image
 def log_thumbnail(thumbnailMsg):
-  bytesImgData = thumbnailMsg.thumbnail
+  bytesImgData = thumbnailMsg.get('thumbnail')
   rr.log("/thumbnail", rr.ImageEncoded(contents=bytesImgData))
 
 
-# Download segment data and log it
-def process_log(log_path):
-  rlog = LogReader(log_path)
-  for msg in rlog:
-    global is_first_run
-    if is_first_run:
-        blueprint = createBlueprint()
-        rr.init("rerun_test", spawn=True, default_blueprint=blueprint)
-        is_first_run = False
+def process(blueprint, lr):
+  ret = []
+  rr.init("rerun_test", spawn=True, default_blueprint=blueprint)
+  for msg in lr:
+    ret.append(msg)
     rr.set_time_nanos("TIMELINE", msg.logMonoTime)
     if msg.which() != "thumbnail":
-        log_msg(getattr(msg, msg.which()), msg.which())
+      log_msg(msg.to_dict()[msg.which()], msg.which())
     else:
-       log_thumbnail(getattr(msg, msg.which()))
-
-
-# Create blueprint and initiate rerun and data logging
-def addGraphs(log_paths):
-  print(f"Downloading logs [{len(log_paths)}]")
-  with multiprocessing.Pool(NUM_CPUS) as pool:
-    for log_path in log_paths:
-        pool.apply_async(process_log, (log_path,))
-    pool.close()
-    pool.join()
-  print("Messages sent to rerun!")
+      log_thumbnail(msg.to_dict()[msg.which()])
+  return ret
 
 
 if __name__ == '__main__':
@@ -135,7 +98,7 @@ if __name__ == '__main__':
   else:
     route_name = sys.argv[1]
   # Get logs for a route
+  blueprint = createBlueprint()
   print("Getting route log paths")
-  route = Route(route_name)
-  logPaths = route.log_paths()
-  addGraphs(logPaths)
+  lr = LogReader(route_name)
+  lr.run_across_segments(NUM_CPUS, partial(process, blueprint))
