@@ -803,6 +803,7 @@ class Controls:
     self.pm.send('carControl', cc_send)
 
   def step(self):
+    cloudlog.timestamp("Start controlsd")
     start_time = time.monotonic()
 
     # Sample data from sockets and get a carState

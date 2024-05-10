@@ -142,6 +142,7 @@ class Car:
       self.CC_prev = CC
 
   def step(self):
+    cloudlog.timestamp("Start card")
     CS = self.state_update()
     cloudlog.timestamp("State updated")
 
