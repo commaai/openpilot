@@ -89,6 +89,13 @@ class TestDeleter(UploaderTestCase):
     assert f_path_lock.exists(), "Lock file deleted"
     assert not f_path.exists(), "File not deleted"
 
+  def test_delete_deletes_one(self):
+    f_path = self.make_file_with_data(self.seg_format.format(0), 'a.txt')
+    f_path2 = self.make_file_with_data(self.seg_format.format(0), 'b.txt')
+
+    assert deleter.delete(os.path.join(Paths.log_root(), self.seg_format.format(0)))
+    assert(sum([f_path.exists(), f_path2.exists()])) == 1
+
   def test_delete_order(self):
     self.assertDeleteOrder([
       self.make_file_with_data(self.seg_format.format(0), self.f_type),

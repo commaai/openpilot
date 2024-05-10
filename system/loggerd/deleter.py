@@ -56,10 +56,10 @@ def delete(path: str) -> bool:
     return True
   elif os.path.isdir(path):
     for f in filter(lambda n: not n.endswith('.lock'), os.listdir(path)):
-      delete(os.path.join(path, f))
-      if len(os.listdir(path)) == 0:
-        cloudlog.info(f"deleting directory: {path}")
-        shutil.rmtree(path)
+      if delete(os.path.join(path, f)):
+        if len(os.listdir(path)) == 0:
+          cloudlog.info(f"deleting directory: {path}")
+          shutil.rmtree(path)
         return True
   return False
 
