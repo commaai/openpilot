@@ -400,6 +400,7 @@ class Controls:
     """Receive data from sockets"""
 
     self.sm.update(20)
+    cloudlog.timestamp('Got carState')
 
     CS = self.sm['carState']
 
