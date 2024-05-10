@@ -24,7 +24,7 @@ class Car:
 
   def __init__(self, CI=None):
     self.can_sock = messaging.sub_sock('can', timeout=20)
-    self.sm = messaging.SubMaster(['pandaStates', 'carControl', 'controlsState'])
+    self.sm = messaging.SubMaster(['pandaStates', 'carControl', 'controlsState'], poll='carControl')
     self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams', 'carOutput'])
 
     self.can_rcv_timeout_counter = 0  # consecutive timeout count
@@ -85,8 +85,6 @@ class Car:
     can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
     CS = self.CI.update(self.CC_prev, can_strs)
 
-    self.sm.update(0)
-
     can_rcv_valid = len(can_strs) > 0
 
     # Check for CAN timeout
@@ -100,6 +98,19 @@ class Car:
 
     if can_rcv_valid and REPLAY:
       self.can_log_mono_time = messaging.log_from_bytes(can_strs[0]).logMonoTime
+
+    # carState is sent last to ensure controlsd receives above services this cycle
+    cs_send = messaging.new_message('carState')
+    cs_send.valid = CS.canValid
+    cs_send.carState = CS
+    cs_send.carState.canRcvTimeout = self.can_rcv_timeout
+    cs_send.carState.canErrorCounter = self.can_rcv_cum_timeout_counter
+    cs_send.carState.cumLagMs = -self.rk.remaining * 1000.
+    self.pm.send('carState', cs_send)
+    cloudlog.timestamp('Sent carState')
+
+    # Wait for carControl response from controlsd
+    self.sm.update(20)
 
     return CS
 
@@ -119,14 +130,14 @@ class Car:
     co_send.carOutput.actuatorsOutput = self.last_actuators_output
     self.pm.send('carOutput', co_send)
 
-    # carState is sent last to ensure controlsd receives above services this cycle
-    cs_send = messaging.new_message('carState')
-    cs_send.valid = CS.canValid
-    cs_send.carState = CS
-    cs_send.carState.canRcvTimeout = self.can_rcv_timeout
-    cs_send.carState.canErrorCounter = self.can_rcv_cum_timeout_counter
-    cs_send.carState.cumLagMs = -self.rk.remaining * 1000.
-    self.pm.send('carState', cs_send)
+    # # carState is sent last to ensure controlsd receives above services this cycle
+    # cs_send = messaging.new_message('carState')
+    # cs_send.valid = CS.canValid
+    # cs_send.carState = CS
+    # cs_send.carState.canRcvTimeout = self.can_rcv_timeout
+    # cs_send.carState.canErrorCounter = self.can_rcv_cum_timeout_counter
+    # cs_send.carState.cumLagMs = -self.rk.remaining * 1000.
+    # self.pm.send('carState', cs_send)
 
   def controls_update(self, CS: car.CarState, CC: car.CarControl):
     """control update loop, driven by carControl"""
@@ -153,6 +164,7 @@ class Car:
       self.controls_update(CS, self.sm['carControl'])
       cloudlog.timestamp("Controls updated")
 
+    # TODO: this should be moved back up, note that carOutput will be delayed a frame
     self.state_publish(CS)
     cloudlog.timestamp("State published")
 
