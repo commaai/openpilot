@@ -61,41 +61,6 @@ def plot(lr):
       print('new_frame', new_frame)
       times[service][-1].append(((time - start_time) * 1e-6, event))
 
-  # for msg in lr:
-  #   if len(times[PLOT_SERVICES[0]]) > 100:
-  #     continue
-  #   if start_time is None:
-  #     # closely matches timestamp time
-  #     start_time = msg.logMonoTime
-  #
-  #   if msg.which() == 'logMessage':
-  #     # print()
-  #     # print(msg.logMonoTime)
-  #     jmsg = json.loads(msg.logMessage)
-  #     if "timestamp" in jmsg['msg']:
-  #       time = int(jmsg['msg']['timestamp']['time'])
-  #       service = jmsg['ctx']['daemon']
-  #       event = jmsg['msg']['timestamp']['event']
-  #
-  #       # Align the best we can; all seen and this is the first service
-  #       aligned = aligned or (all(s in seen for s in PLOT_SERVICES) and service == PLOT_SERVICES[0])
-  #       if not aligned:
-  #         seen.add(service)
-  #         continue
-  #       # if not all(s in seen for s in PLOT_SERVICES):
-  #       #   continue
-  #
-  #       if service in PLOT_SERVICES:
-  #
-  #         # new frame when we've seen this event before
-  #         new_frame = event in {e[1] for e in times[service][-1]}
-  #         if new_frame:
-  #           times[service].append([])
-  #
-  #         print(msg.logMonoTime, jmsg)
-  #         print('new_frame', new_frame)
-  #         times[service][-1].append(((time - start_time) * 1e-6, event))
-
   points = {"x": [], "y": [], "labels": []}
   colors = COLORS[:len(PLOT_SERVICES)]
   offset_services = True
