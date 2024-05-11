@@ -409,6 +409,7 @@ FW_VERSIONS = {
   },
   CAR.HYUNDAI_PALISADE: {
     (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00LX2_ SCC -----      1.00 1.00 99110-S8600         ',
       b'\xf1\x00LX2 SCC FHCUP      1.00 1.04 99110-S8100         ',
       b'\xf1\x00LX2_ SCC F-CUP      1.00 1.04 99110-S8100         ',
       b'\xf1\x00LX2_ SCC F-CUP      1.00 1.05 99110-S8100         ',
@@ -425,6 +426,7 @@ FW_VERSIONS = {
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x00LX ESC \x01 103\x19\t\x10 58910-S8360',
       b'\xf1\x00LX ESC \x01 1031\t\x10 58910-S8360',
+      b'\xf1\x00LX ESC \x0e 103#\x03) 58910-S8700'
       b'\xf1\x00LX ESC \x01 104 \x10\x15 58910-S8350',
       b'\xf1\x00LX ESC \x01 104 \x10\x16 58910-S8360',
       b'\xf1\x00LX ESC \x0b 101\x19\x03\x17 58910-S8330',
@@ -440,6 +442,7 @@ FW_VERSIONS = {
       b'\xf1\x00ON ESC \x0b 101\x19\t\x08 58910-S9360',
     ],
     (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00LXP MDPS C 1.00 1.00 56310S8620\x00 4LXPC100'
       b'\xf1\x00LX2 MDPS C 1,00 1,03 56310-S8020 4LXDC103',
       b'\xf1\x00LX2 MDPS C 1.00 1.03 56310-S8000 4LXDC103',
       b'\xf1\x00LX2 MDPS C 1.00 1.03 56310-S8020 4LXDC103',
@@ -453,6 +456,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00LX2 MFC  AT KOR LHD 1.00 1.08 99211-S8100 200903',
       b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.00 99211-S8110 210226',
+      b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.01 99211-S8600 230817',
       b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.03 99211-S8100 190125',
       b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.05 99211-S8100 190909',
       b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.07 99211-S8100 200422',
