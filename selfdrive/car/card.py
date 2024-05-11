@@ -23,8 +23,11 @@ class Car:
   CI: CarInterfaceBase
 
   def __init__(self, CI=None):
+    self.POLL = True
+
     self.can_sock = messaging.sub_sock('can', timeout=20)
-    self.sm = messaging.SubMaster(['pandaStates', 'carControl', 'controlsState'])
+    self.sm = messaging.SubMaster(['pandaStates', 'carControl', 'controlsState'],
+                                  poll='carControl' if self.POLL else None)
     self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams', 'carOutput'])
 
     self.can_rcv_timeout_counter = 0  # consecutive timeout count
@@ -85,7 +88,8 @@ class Car:
     can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
     CS = self.CI.update(self.CC_prev, can_strs)
 
-    self.sm.update(0)
+    if not self.POLL:
+      self.sm.update(0)
 
     can_rcv_valid = len(can_strs) > 0
 
@@ -129,6 +133,10 @@ class Car:
     self.pm.send('carState', cs_send)
     cloudlog.timestamp('Sent carState')
 
+    if self.POLL:
+      # wait for latest carControl
+      self.sm.update(20)
+
   def controls_update(self, CS: car.CarState, CC: car.CarControl):
     """control update loop, driven by carControl"""
 
@@ -146,13 +154,13 @@ class Car:
     CS = self.state_update()
     cloudlog.timestamp("State updated")
 
+    self.state_publish(CS)
+    cloudlog.timestamp("State published")
+
     controlsState = self.sm['controlsState']
     if controlsState.initialized and not self.controlsState_prev.initialized:
       self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
       cloudlog.timestamp("Initialized")
-
-    self.state_publish(CS)
-    cloudlog.timestamp("State published")
 
     if not self.CP.passive and controlsState.initialized:
       self.controls_update(CS, self.sm['carControl'])
