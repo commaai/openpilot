@@ -78,7 +78,7 @@ class CarD:
     """Initialize CarInterface, once controls are ready"""
     self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
 
-  def state_update(self):
+  def state_update(self) -> car.CarState:
     """carState update loop, driven by can"""
 
     # Update carState from CAN
