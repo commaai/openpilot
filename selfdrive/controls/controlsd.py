@@ -203,9 +203,6 @@ class Controls:
     if not self.CP.pcmCruise and not self.v_cruise_helper.v_cruise_initialized and resume_pressed:
       self.events.add(EventName.resumeBlocked)
 
-    # TODO: I just realized; why are we adding events based off CAN data when below we don't add car events
-    # if not CS.canValid?
-    # panda doesn't consider brake/gas if it thinks CAN is invalid too, so this seems like a mismatch
     if CS.brakePressed and CS.standstill:
       self.events.add(EventName.preEnableStandstill)
 
