@@ -43,25 +43,6 @@ def get_preserved_segments(dirs_by_creation: list[str]) -> list[str]:
 
   return preserved
 
-def is_locked(file_path):
-  return os.path.exists(f'{file_path}.lock')
-
-def delete(path: str) -> bool:
-  if not os.path.exists(path):
-    return False
-
-  if os.path.isfile(path) and not is_locked(path):
-    cloudlog.info(f"deleting file: {path}")
-    os.remove(path)
-    return True
-  elif os.path.isdir(path):
-    for f in filter(lambda n: not n.endswith('.lock'), os.listdir(path)):
-      if delete(os.path.join(path, f)):
-        if len(os.listdir(path)) == 0:
-          cloudlog.info(f"deleting directory: {path}")
-          shutil.rmtree(path)
-        return True
-  return False
 
 def deleter_thread(exit_event):
   while not exit_event.is_set():
@@ -77,14 +58,25 @@ def deleter_thread(exit_event):
       # skip deleting most recent N preserved segments (and their prior segment)
       preserved_dirs = get_preserved_segments(dirs)
 
-      # remove the earliest directory we can, lastly check for files in log_root()
-      for f in sorted(files + dirs, key=lambda d: (d in DELETE_LAST, d in preserved_dirs)):
-        to_delete = os.path.join(log_root, f)
+      # remove the earliest directory we can
+      for to_delete in files + sorted(dirs, key=lambda d: (d in DELETE_LAST, d in preserved_dirs)):
+        delete_path = os.path.join(Paths.log_root(), to_delete)
+
+        deleted = False
         try:
-          if delete(to_delete):
-            break
+          if os.path.isdir(delete_path):
+            if not any(name.endswith(".lock") for name in os.listdir(delete_path)):
+              cloudlog.info(f"deleting {delete_path}")
+              shutil.rmtree(delete_path)
+              deleted = True
+          elif os.path.isfile(delete_path):
+            os.remove(delete_path)
+            deleted = True
         except OSError:
-          cloudlog.exception(f"issue deleting {to_delete}")
+          cloudlog.exception(f"issue deleting {delete_path}")
+
+        if deleted:
+          break
       exit_event.wait(.1)
     else:
       exit_event.wait(30)
