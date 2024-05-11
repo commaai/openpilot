@@ -209,44 +209,6 @@ def plot_dist(lr, poll):
 
   fig, ax = plt.subplots(3)
 
-
-  # plt.figure()
-  # plt.title('card end to end loop times')
-  # sns.distplot(card_e2e_loop_times)
-  # plt.xlabel('ms')
-
-  # plt.figure()
-  # plt.title('card loop times (timestamps)')
-  # sns.distplot(card_loop_times)
-  # plt.xlabel('ms')
-  #
-  # plt.figure()
-  # plt.title('card CI.update times')
-  # sns.distplot(card_carInterface_update)
-  # plt.xlabel('ms')
-  #
-  # plt.figure()
-  # plt.title('card loop times (logMonoTime)')
-  # sns.distplot(carState_service_times)
-  # plt.xlabel('ms')
-  #
-  # plt.figure()
-  # plt.title('carState to controlsd times')
-  # sns.distplot(carState_recv_times)
-  # plt.xlabel('ms')
-  #
-  # plt.figure()
-  # plt.title('carState to carControl times1')
-  # sns.distplot(carState_to_carControl_times, bins=50)
-  # plt.xlabel('ms')
-  #
-  # plt.figure()
-  # plt.title('carState to carControl times2')
-  # sns.displot(carState_to_carControl_times, bins=50, kind='hist', kde=True)
-  # plt.xlabel('ms')
-
-  # plt.figure()
-  # ax.set_title('carState to carControl times3')
   fig.suptitle('Polling/waiting on carControl from controlsd' if poll else 'Not polling on carControl')
 
   ax[0].set_title('cereal communication times')
@@ -285,11 +247,6 @@ def plot_dist(lr, poll):
                                                           f'95th: {np.percentile(card_loop_times, 95):0.2f}')
   ax[2].legend()
   ax[2].set_xlabel('ms')
-  #
-  # plt.figure()
-  # plt.title('card CI.apply (controls) times')
-  # sns.distplot(card_controls_times)
-  # plt.xlabel('ms')
 
   return timestamps, card_loop_times, carState_recv_times, carState_to_carControl_times
 
