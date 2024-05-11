@@ -15,12 +15,6 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
 from openpilot.selfdrive.car.car_helpers import get_car, get_one_can
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
-from openpilot.selfdrive.controls.lib.longcontrol import LongControl
-from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
-from openpilot.selfdrive.controls.lib.latcontrol import LatControl, MIN_LATERAL_CONTROL_SPEED
-from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
-from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle, STEER_ANGLE_SATURATION_THRESHOLD
-from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 
 REPLAY = "REPLAY" in os.environ
 
@@ -83,18 +77,6 @@ class Car:
     self.params.put("CarParams", cp_bytes)
     self.params.put_nonblocking("CarParamsCache", cp_bytes)
     self.params.put_nonblocking("CarParamsPersistent", cp_bytes)
-
-    # controllers
-    self.LoC = LongControl(self.CP)
-    self.VM = VehicleModel(self.CP)
-
-    self.LaC: LatControl
-    if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
-      self.LaC = LatControlAngle(self.CP, self.CI)
-    elif self.CP.lateralTuning.which() == 'pid':
-      self.LaC = LatControlPID(self.CP, self.CI)
-    elif self.CP.lateralTuning.which() == 'torque':
-      self.LaC = LatControlTorque(self.CP, self.CI)
 
     # card is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
