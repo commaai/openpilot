@@ -345,13 +345,13 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
   ret = lltransfer(transfer);
   if (ret < 0) {
     LOGE("SPI: failed to send header");
-    goto transfer_fail;
+    return ret;
   }
 
   // Wait for (N)ACK
   ret = wait_for_ack(SPI_HACK, 0x11, timeout, 1);
   if (ret < 0) {
-    goto transfer_fail;
+    return ret;
   }
 
   // Send data
@@ -363,20 +363,20 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
   ret = lltransfer(transfer);
   if (ret < 0) {
     LOGE("SPI: failed to send data");
-    goto transfer_fail;
+    return ret;
   }
 
   // Wait for (N)ACK
   ret = wait_for_ack(SPI_DACK, 0x13, timeout, 3);
   if (ret < 0) {
-    goto transfer_fail;
+    return ret;
   }
 
   // Read data
   rx_data_len = *(uint16_t *)(rx_buf+1);
   if (rx_data_len >= SPI_BUF_SIZE) {
     LOGE("SPI: RX data len larger than buf size %d", rx_data_len);
-    goto transfer_fail;
+    return -1;
   }
 
   transfer.len = rx_data_len + 1;
@@ -384,11 +384,11 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
   ret = lltransfer(transfer);
   if (ret < 0) {
     LOGE("SPI: failed to read rx data");
-    goto transfer_fail;
+    return ret;
   }
   if (!check_checksum(rx_buf, rx_data_len + 4)) {
     LOGE("SPI: bad checksum");
-    goto transfer_fail;
+    return -1;
   }
 
   if (rx_data != NULL) {
@@ -396,8 +396,5 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
   }
 
   return rx_data_len;
-
-transfer_fail:
-  return ret;
 }
 #endif
