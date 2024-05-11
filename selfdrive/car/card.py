@@ -23,7 +23,7 @@ class Car:
   CI: CarInterfaceBase
 
   def __init__(self, CI=None):
-    self.POLL = True
+    self.POLL = False
 
     self.can_sock = messaging.sub_sock('can', timeout=20)
     self.sm = messaging.SubMaster(['pandaStates', 'carControl', 'controlsState'],
