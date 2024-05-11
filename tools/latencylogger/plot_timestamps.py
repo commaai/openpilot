@@ -3,6 +3,9 @@ import argparse
 import json
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+import seaborn as sns
+from tqdm import tqdm
+import numpy as np
 import sys
 from collections import defaultdict
 
@@ -33,7 +36,7 @@ def plot(lr):
   start_time = next(msg.logMonoTime for msg in lr)
 
   for jmsg in timestamps:
-    if len(times[PLOT_SERVICES[0]]) > 400:
+    if len(times[PLOT_SERVICES[0]]) > 1400:
       continue
 
     # print()
@@ -107,7 +110,8 @@ def plot(lr):
     status, pts = scatter.contains(event)
     txt.set_visible(status)
     if status:
-      txt.set_text(points['labels'][pts['ind'][0]])
+      pt_idx = pts['ind'][0]
+      txt.set_text(f"{points['labels'][pt_idx]} ({points['x'][pt_idx]:0.2f} ms)")
       txt.set_position((event.xdata, event.ydata + 1))
     event.canvas.draw()
 
@@ -116,6 +120,179 @@ def plot(lr):
   plt.show()
   # plt.pause(1000)
   return times, points
+
+
+def plot_dist(lr, poll):
+
+  lr = list(lr)
+
+  # carState_service_times = []
+  # prev_time = None
+  # for msg in lr:
+  #   if msg.which() == 'carState':
+  #     if prev_time is not None:
+  #       carState_service_times.append((msg.logMonoTime - prev_time) * 1e-6)
+  #     prev_time = msg.logMonoTime
+
+  # logMonoTime is from logmessaged, not when the timestamp was created. some messages are out of order
+  timestamps = [json.loads(msg.logMessage) for msg in tqdm(lr) if msg.which() == 'logMessage' and '"timestamp"' in msg.logMessage]
+  timestamps = sorted(timestamps, key=lambda m: float(m['msg']['timestamp']['time']))
+  timestamps = [m for m in tqdm(timestamps) if m['ctx']['daemon'] in PLOT_SERVICES]
+
+  initialized = False
+  ready = False
+
+  start_card_loop = None
+  received_can = None
+  state_updated = None
+  sent_carState = None
+  state_published = None
+  sent_carControl = None
+
+  card_e2e_loop_times = []
+  card_carInterface_update_times = []
+  carState_recv_times = []
+  carControl_recv_times = []
+  carState_to_carControl_times = []
+  card_controls_times = []
+  card_loop_times = []
+
+  for jmsg in tqdm(timestamps):
+    time = int(jmsg['msg']['timestamp']['time'])
+    service = jmsg['ctx']['daemon']
+    event = jmsg['msg']['timestamp']['event']
+
+    if event == 'Initialized' and service == 'card':
+      initialized = True
+
+    if initialized and event == 'Start card':
+      ready = True
+
+    if not ready:
+      continue
+
+    if event == 'Start card' and service == 'card':
+      if start_card_loop is not None:
+        card_e2e_loop_times.append((time - start_card_loop) * 1e-6)
+      start_card_loop = time
+
+    elif event == 'Received can' and service == 'card':
+      # measuring from this time does not include wait time for can packet, so this measures true card loop time taken
+      received_can = time
+
+    elif event == 'State updated' and service == 'card':
+      state_updated = time
+      card_carInterface_update_times.append((time - received_can) * 1e-6)
+
+    elif event == 'Sent carState' and service == 'card':
+      sent_carState = time
+
+    elif event == 'Got carState' and service == 'controlsd':
+      # TODO why none
+      if sent_carState is not None:
+        carState_recv_times.append((time - sent_carState) * 1e-6)
+
+    elif event == 'Logs published' and service == 'controlsd':
+      sent_carControl = time
+
+    elif event == 'State published' and service == 'card':
+      state_published = time
+      if poll:  # only makes sense when polling
+        # from carState sent to carControl received
+        carControl_recv_times.append((time - sent_carControl) * 1e-6)
+        carState_to_carControl_times.append((time - sent_carState) * 1e-6)
+
+    elif event == 'Controls updated' and service == 'card':
+      card_controls_times.append((time - state_published) * 1e-6)
+      card_loop_times.append((time - received_can) * 1e-6)  # this is time NOT spent waiting for can
+
+
+  fig, ax = plt.subplots(3)
+
+
+  # plt.figure()
+  # plt.title('card end to end loop times')
+  # sns.distplot(card_e2e_loop_times)
+  # plt.xlabel('ms')
+
+  # plt.figure()
+  # plt.title('card loop times (timestamps)')
+  # sns.distplot(card_loop_times)
+  # plt.xlabel('ms')
+  #
+  # plt.figure()
+  # plt.title('card CI.update times')
+  # sns.distplot(card_carInterface_update)
+  # plt.xlabel('ms')
+  #
+  # plt.figure()
+  # plt.title('card loop times (logMonoTime)')
+  # sns.distplot(carState_service_times)
+  # plt.xlabel('ms')
+  #
+  # plt.figure()
+  # plt.title('carState to controlsd times')
+  # sns.distplot(carState_recv_times)
+  # plt.xlabel('ms')
+  #
+  # plt.figure()
+  # plt.title('carState to carControl times1')
+  # sns.distplot(carState_to_carControl_times, bins=50)
+  # plt.xlabel('ms')
+  #
+  # plt.figure()
+  # plt.title('carState to carControl times2')
+  # sns.displot(carState_to_carControl_times, bins=50, kind='hist', kde=True)
+  # plt.xlabel('ms')
+
+  # plt.figure()
+  # ax.set_title('carState to carControl times3')
+  fig.suptitle('Polling/waiting on carControl from controlsd' if poll else 'Not polling on carControl')
+
+  ax[0].set_title('cereal communication times')
+  ax[0].set_xlim(0, 16)
+  sns.histplot(carState_recv_times, kde=True, ax=ax[0],
+               label=f'carState->controlsd recv time: \n  minmax: {min(carState_recv_times):0.2f}, {max(carState_recv_times):>5.2f}, ' +
+                     f'med: {np.median(carState_recv_times):0.2f}, mean: {np.mean(carState_recv_times):0.2f}, ' +
+                     f'95th: {np.percentile(carState_recv_times, 95):0.2f}')
+  if poll:
+    sns.histplot(carControl_recv_times, kde=True, ax=ax[0],
+                 label=f'carControl->card recv time (polling on carControl): \n  minmax: {min(carControl_recv_times):0.2f}, {max(carControl_recv_times):>5.2f}, ' +
+                       f'med: {np.median(carControl_recv_times):0.2f}, mean: {np.mean(carControl_recv_times):0.2f}, ' +
+                       f'95th: {np.percentile(carControl_recv_times, 95):0.2f}')
+  ax[0].legend()
+
+  ax[1].set_title('card loop times')
+  ax[1].set_xlim(0, 16)
+  if poll:
+    sns.histplot(carState_to_carControl_times, kde=True, ax=ax[1],
+                 label=f'waiting on carControl (polling on carControl): \n  minmax: {min(carState_to_carControl_times):0.2f}, {max(carState_to_carControl_times):>5.2f}, ' +
+                       f'med: {np.median(carState_to_carControl_times):0.2f}, mean: {np.mean(carState_to_carControl_times):0.2f}, ' +
+                       f'95th: {np.percentile(carState_to_carControl_times, 95):0.2f}')
+  sns.histplot(card_controls_times, kde=True, ax=ax[1], label=f'CI.apply(): \n  minmax: {min(card_controls_times):0.2f}, {max(card_controls_times):>6.2f}, ' +
+                                                              f'med: {np.median(card_controls_times):0.2f}, mean: {np.mean(card_controls_times):0.2f}, ' +
+                                                              f'95th: {np.percentile(card_controls_times, 95):0.2f}')
+  sns.histplot(card_carInterface_update_times, kde=True, ax=ax[1],
+               label=f'CI.update(): \n  minmax: {min(card_carInterface_update_times):0.2f}, {max(card_carInterface_update_times):>5.2f}, ' +
+                     f'med: {np.median(card_carInterface_update_times):0.2f}, mean: {np.mean(card_carInterface_update_times):0.2f}, ' +
+                     f'95th: {np.percentile(card_carInterface_update_times, 95):0.2f}')
+  ax[1].legend()
+
+  ax[2].set_title('total card loop time')
+  ax[2].set_xlim(0, 16)
+  sns.histplot(card_loop_times, kde=True, ax=ax[2], label=f'entire card loop time: \n  minmax: {min(card_loop_times):0.2f}, {max(card_loop_times):>5.2f}, ' +
+                                                          f'med: {np.median(card_loop_times):0.2f}, mean: {np.mean(card_loop_times):0.2f}, ' +
+                                                          f'95th: {np.percentile(card_loop_times, 95):0.2f}')
+  ax[2].legend()
+  ax[2].set_xlabel('ms')
+  #
+  # plt.figure()
+  # plt.title('card CI.apply (controls) times')
+  # sns.distplot(card_controls_times)
+  # plt.xlabel('ms')
+
+  return timestamps, card_loop_times, carState_recv_times, carState_to_carControl_times
+
 
 
 if __name__ == "__main__":
@@ -131,9 +308,24 @@ if __name__ == "__main__":
 
   # r = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
   # lr = LogReader(r, sort_by_time=True)
-  lr = LogReader('08e4c2a99df165b1/00000016--c3a4ca99ec/0', sort_by_time=True)  # normal
+  # lr = LogReader('08e4c2a99df165b1/00000016--c3a4ca99ec/0', sort_by_time=True)  # normal
   # lr = LogReader('08e4c2a99df165b1/00000017--e2d24ab118/0', sort_by_time=True)  # polls on carControl
   # lr = LogReader('08e4c2a99df165b1/00000018--cf65e47c24/0', sort_by_time=True)  # polls on carControl, sends it earlier
   # lr = LogReader('08e4c2a99df165b1/00000019--e73e3ab4df/0', sort_by_time=True)  # polls on carControl, more logging
 
-  times, points = plot(lr)
+  # lr = LogReader('08e4c2a99df165b1/0000002c--b40eb82d6d/0:-1', sort_by_time=True)  # polls on carControl
+  # lr = LogReader('08e4c2a99df165b1/0000002d--ccebe8b617/0:1', sort_by_time=True)  # no poll on carControl
+  # lr = LogReader('08e4c2a99df165b1/0000002e--fd98f6603b/:7', sort_by_time=True)  # no poll on carControl (no timestamps)
+
+  POLL = False  # carControl polling or not
+  if POLL:
+    # lr = LogReader('08e4c2a99df165b1/00000032--2c1d57d894/0', sort_by_time=True)  # carControl poll, w/ reduced timestamps
+    # lr = LogReader('08e4c2a99df165b1/00000033--1e2720e55b/0', sort_by_time=True)  # carControl poll, w/ poll flag (FINAL)
+    lr = LogReader('08e4c2a99df165b1/00000036--4eb8126f04', sort_by_time=True)  # carControl poll, w/ poll flag & Received can (FINAL v2)
+  else:
+    # lr = LogReader('08e4c2a99df165b1/00000031--f6f38d1ccf/0', sort_by_time=True)  # no carControl poll, w/ reduced timestamps
+    # lr = LogReader('08e4c2a99df165b1/00000035--0abfde9c4a/0', sort_by_time=True)  # no carControl poll, w/ poll flag (FINAL)
+    lr = LogReader('08e4c2a99df165b1/00000037--f6294815ac', sort_by_time=True)  # no carControl poll, w/ poll flag & Received can (FINAL v2)
+
+  timestamps = plot_dist(lr, poll=POLL)
+  # times, points = plot(lr)
