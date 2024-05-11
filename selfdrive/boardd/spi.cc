@@ -301,7 +301,11 @@ int PandaSpiHandle::lltransfer(spi_ioc_transfer &t) {
     }
     if ((static_cast<double>(rand()) / RAND_MAX) < err_prob && t.tx_buf != (uint64_t)NULL) {
       printf("corrupting TX\n");
-      memset((uint8_t*)t.tx_buf, (uint8_t)(rand() % 256), rand() % (t.len+1));
+      for (int i = 0; i < t.len; i++) {
+        if ((static_cast<double>(rand()) / RAND_MAX) > 0.9) {
+          ((uint8_t*)t.tx_buf)[i] = (uint8_t)(rand() % 256);
+        }
+      }
     }
   }
 
@@ -310,7 +314,11 @@ int PandaSpiHandle::lltransfer(spi_ioc_transfer &t) {
   if (err_prob > 0) {
     if ((static_cast<double>(rand()) / RAND_MAX) < err_prob && t.rx_buf != (uint64_t)NULL) {
       printf("corrupting RX\n");
-      memset((uint8_t*)t.rx_buf, (uint8_t)(rand() % 256), rand() % (t.len+1));
+      for (int i = 0; i < t.len; i++) {
+        if ((static_cast<double>(rand()) / RAND_MAX) > 0.9) {
+          ((uint8_t*)t.rx_buf)[i] = (uint8_t)(rand() % 256);
+        }
+      }
     }
   }
 

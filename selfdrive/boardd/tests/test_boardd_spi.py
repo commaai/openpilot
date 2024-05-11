@@ -23,10 +23,9 @@ class TestBoarddSpi:
 
   @phone_only
   @with_processes(['pandad'])
-  def test_loopback(self, subtests):
+  def test_spi_corruption(self, subtests):
     setup_boardd(1)
 
-    sendcan = messaging.pub_sock('sendcan')
     socks = {s: messaging.sub_sock(s, conflate=False, timeout=100) for s in ('can', 'pandaStates', 'peripheralState')}
     time.sleep(2)
     for s in socks.values():
@@ -48,8 +47,8 @@ class TestBoarddSpi:
             ps = m.pandaStates[0]
             assert ps.uptime < 100
             assert ps.pandaType == "tres"
-            assert ps.ignitionLine == True
-            assert ps.ignitionCan == False
+            assert ps.ignitionLine
+            assert not ps.ignitionCan
             assert ps.voltage < 14000
           elif service == "peripheralState":
             ps = m.peripheralState
