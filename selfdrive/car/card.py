@@ -107,14 +107,14 @@ class CarD:
       self.can_log_mono_time = messaging.log_from_bytes(can_strs[0]).logMonoTime
 
     # TODO: these should be split out into separate steps when this is a process
-    self.update_events(CS)
+    CS = self.update_events(CS)
     self.state_publish(CS)
 
     self.CS_prev = CS
 
     return CS
 
-  def update_events(self, CS: car.CarState):
+  def update_events(self, CS: car.CarState) -> car.CarState:
     self.events.clear()
 
     self.events.add_from_msg(CS.events)
@@ -126,6 +126,8 @@ class CarD:
       self.events.add(EventName.pedalPressed)
 
     CS.events = self.events.to_msg()
+    CS = CS.as_reader()
+    return CS
 
   def state_publish(self, CS: car.CarState):
     """carState and carParams publish loop"""
