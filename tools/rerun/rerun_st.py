@@ -4,67 +4,56 @@ from functools import partial
 import subprocess
 import sys
 import os
-
-NUM_CPUS = 4
-# DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
-DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19/1:2"
-
-WHEEL_URL = "https://build.rerun.io/commit/660463d/wheels"
-RERUN_VERSION = "rerun-cli 0.16.0-alpha.2 [rustc 1.76.0 (07dca489a 2024-02-04), LLVM 17.0.6] x86_64-unknown-linux-gnu main 660463d, built 2024-04-28T12:33:59Z"
-
-
+import argparse
+import multiprocessing
 try:
-    import rerun as rr
-    import rerun.blueprint as rrb
-    # Simple version check
-    result = subprocess.run(["rerun", "--version"], capture_output=True, text=True)
-    if result.returncode == 0:
-        if result.stdout.strip() != RERUN_VERSION.strip():
-          print("YOU NEED TO UNINSTALL RERUN AND THAN START THIS SCRIPT")
-          print("You have "+ result.stdout)
-          print("You need "+ RERUN_VERSION)
-          print("\nHINT: pip uninstall rerun-sdk")
-          exit(0)
-except ImportError:
-    print("Rerun SDK is not installed. Trying to install it...")
-    # subprocess.run([sys.executable, "-m", "pip", "install", "rerun-sdk"])
-    subprocess.run(
-        [sys.executable, "-m", "pip", "install", "--pre", "-f", WHEEL_URL, "--upgrade", "rerun-sdk"],
-        check=True
-    )
-    print("Rerun installed, restarting script")
-    os.execv(sys.executable, [sys.executable] + sys.argv)
+  import rerun as rr
+  import rerun.blueprint as rrb
+except Exception:
+  print("Rerun is not installed, try running --install")
+  sys.exit()
+
+
+NUM_CPUS = multiprocessing.cpu_count()
+DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
+WHEEL_URL = "https://build.rerun.io/commit/660463d/wheels"
+
+
+def install():
+  subprocess.run([sys.executable, "-m", "pip", "install", "--pre", "-f", WHEEL_URL, "--upgrade", "rerun-sdk"], check=True)
+  print("Rerun installed, restarting script")
+  os.execv(sys.executable, [sys.executable] + sys.argv)
+  # subprocess.run([sys.executable, "-m", "pip", "install", "rerun-sdk"])
 
 
 topics = sorted(services.keys())
-excluded = ['sentinel']
 is_first_run = True
 
 
 # Log dict message to rerun
 def log_msg(msg, parent_key=''):
-    if isinstance(msg, list):
-        for index, item in enumerate(msg):
-            log_msg(item, f"{parent_key}/{index}")
-    elif isinstance(msg, dict):
-        for key, value in msg.items():
-            new_key = f"{parent_key}/{key}"
-            if isinstance(value, (int, float)):
-                rr.log(str(new_key), rr.Scalar(value))
-            elif isinstance(value, dict) or isinstance(value, list):
-                log_msg(value, new_key)
-    else:
-        pass  # Not a plottable value
+  if isinstance(msg, list):
+    for index, item in enumerate(msg):
+      log_msg(item, f"{parent_key}/{index}")
+  elif isinstance(msg, dict):
+    for key, value in msg.items():
+      new_key = f"{parent_key}/{key}"
+      if isinstance(value, (int, float)):
+        rr.log(str(new_key), rr.Scalar(value))
+      elif isinstance(value, dict) or isinstance(value, list):
+        log_msg(value, new_key)
+  else:
+    pass  # Not a plottable value
 
 
 # Create a blueprint for selected topics
 def createBlueprint():
   timeSeriesViews = []
   for topic in topics:
-      timeSeriesViews.append(rrb.TimeSeriesView(name=topic, origin=f"/{topic}/", visible=False))
-      rr.log(topic, rr.SeriesLine(name=topic), timeless=True)
-      blueprint = rrb.Blueprint(rrb.Grid(rrb.Vertical(*timeSeriesViews,rrb.SelectionPanel(expanded=False),rrb.TimePanel(expanded=False)),
-                                         rrb.Spatial2DView(name="thumbnail", origin="/thumbnail")))
+    timeSeriesViews.append(rrb.TimeSeriesView(name=topic, origin=f"/{topic}/", visible=False))
+    rr.log(topic, rr.SeriesLine(name=topic), timeless=True)
+    blueprint = rrb.Blueprint(rrb.Grid(rrb.Vertical(*timeSeriesViews,rrb.SelectionPanel(expanded=False),rrb.TimePanel(expanded=False)),
+                                        rrb.Spatial2DView(name="thumbnail", origin="/thumbnail")))
   return blueprint
 
 
@@ -88,13 +77,22 @@ def process(blueprint, lr):
 
 
 if __name__ == '__main__':
+  parser = argparse.ArgumentParser(description="A helper to run rerun on openpilot routes",
+                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+  parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
+  parser.add_argument("--install", action="store_true", help="Install or update PlotJuggler + plugins")
+  parser.add_argument("route_or_segment_name", nargs='?', help="The route or segment name to plot")
+
   if len(sys.argv) == 1:
-    route_name = DEMO_ROUTE
-    print("No route was provided, using demo route")
-  else:
-    route_name = sys.argv[1]
-  # Get logs for a route
+    parser.print_help()
+    sys.exit()
+  args = parser.parse_args()
+  if args.install:
+    install()
+    sys.exit()
+
+  route_or_segment_name = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
   blueprint = createBlueprint()
   print("Getting route log paths")
-  lr = LogReader(route_name)
+  lr = LogReader(route_or_segment_name)
   lr.run_across_segments(NUM_CPUS, partial(process, blueprint))
