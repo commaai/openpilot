@@ -86,6 +86,7 @@ class Car:
 
     # Update carState from CAN
     can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
+    cloudlog.timestamp('Received can')
     CS = self.CI.update(self.CC_prev, can_strs)
 
     if not self.POLL:
