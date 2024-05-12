@@ -90,10 +90,11 @@ class CarState(CarStateBase):
     ret.rightBlinker = (cp_adas.vl["ID3F5VCFRONT_lighting"]["VCFRONT_indicatorRightRequest"] != 0)
 
     # Seatbelt
-    ret.seatbeltUnlatched = cp_adas.vl["VCLEFT_switchStatus"]["VCLEFT_frontBuckleSwitch"] == 1
+    ret.seatbeltUnlatched = cp.vl["DriverSeat"]["buckleStatus"] != 1
 
-
-    # TODO: blindspot
+    # Blindspot
+    ret.leftBlindspot = cp_cam.vl["DAS_status"]["DAS_blindSpotRearLeft"] != 0
+    ret.rightBlindspot = cp_cam.vl["DAS_status"]["DAS_blindSpotRearRight"] != 0
 
     # AEB
     ret.stockAeb = (cp_cam.vl["DAS_control"]["DAS_aebEvent"] == 1)
@@ -112,7 +113,8 @@ class CarState(CarStateBase):
       ("DI_systemStatus", 100),
       ("IBST_status", 25),
       ("DI_state", 10),
-      ("EPAS3S_sysStatus", 100)
+      ("EPAS3S_sysStatus", 100),
+      ("DriverSeat", 10)
     ]
 
     return CANParser(DBC[CP.carFingerprint]['chassis'], messages, CANBUS.party)
@@ -121,6 +123,7 @@ class CarState(CarStateBase):
   def get_cam_can_parser(CP):
     messages = [
       ("DAS_control", 25),
+      ("DAS_status", 2)
     ]
 
     return CANParser(DBC[CP.carFingerprint]['chassis'], messages, CANBUS.autopilot_party)
