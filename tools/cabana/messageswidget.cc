@@ -43,7 +43,6 @@ MessagesWidget::MessagesWidget(QWidget *parent) : menu(new QMenu(this)), QWidget
   view->setItemsExpandable(false);
   view->setIndentation(0);
   view->setRootIsDecorated(false);
-  view->setUniformRowHeights(!settings.multiple_lines_hex);
 
   // Must be called before setting any header parameters to avoid overriding
   restoreHeaderState(settings.message_header_state);
@@ -135,15 +134,9 @@ void MessagesWidget::selectMessage(const MessageId &msg_id) {
 }
 
 void MessagesWidget::suppressHighlighted() {
-  if (sender() == suppress_add) {
-    size_t n = can->suppressHighlighted();
-    suppress_clear->setText(tr("Clear (%1)").arg(n));
-    suppress_clear->setEnabled(true);
-  } else {
-    can->clearSuppressed();
-    suppress_clear->setText(tr("Clear"));
-    suppress_clear->setEnabled(false);
-  }
+  int n = sender() == suppress_add ? can->suppressHighlighted() : (can->clearSuppressed(), 0);
+  suppress_clear->setText(n > 0 ? tr("Clear (%1)").arg(n) : tr("Clear"));
+  suppress_clear->setEnabled(n > 0);
 }
 
 void MessagesWidget::headerContextMenuEvent(const QPoint &pos) {
@@ -174,7 +167,6 @@ void MessagesWidget::menuAboutToShow() {
 void MessagesWidget::setMultiLineBytes(bool multi) {
   settings.multiple_lines_hex = multi;
   delegate->setMultipleLines(multi);
-  view->setUniformRowHeights(!multi);
   view->updateBytesSectionSize();
   view->doItemsLayout();
 }
@@ -207,22 +199,22 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
     }
   };
 
+  const static QString NA =  QStringLiteral("N/A");
   const auto &item = items_[index.row()];
-  const auto &data = can->lastMessage(item.id);
   if (role == Qt::DisplayRole) {
     switch (index.column()) {
       case Column::NAME: return item.name;
-      case Column::SOURCE: return item.id.source != INVALID_SOURCE ? QString::number(item.id.source) : "N/A";
+      case Column::SOURCE: return item.id.source != INVALID_SOURCE ? QString::number(item.id.source) : NA;
       case Column::ADDRESS: return QString::number(item.id.address, 16);
       case Column::NODE: return item.node;
-      case Column::FREQ: return item.id.source != INVALID_SOURCE ? getFreq(data.freq) : "N/A";
-      case Column::COUNT: return item.id.source != INVALID_SOURCE ? QString::number(data.count) : "N/A";
-      case Column::DATA: return item.id.source != INVALID_SOURCE ? "" : "N/A";
+      case Column::FREQ: return item.id.source != INVALID_SOURCE ? getFreq(can->lastMessage(item.id).freq) : NA;
+      case Column::COUNT: return item.id.source != INVALID_SOURCE ? QString::number(can->lastMessage(item.id).count) : NA;
+      case Column::DATA: return item.id.source != INVALID_SOURCE ? "" : NA;
     }
   } else if (role == ColorsRole) {
-    return QVariant::fromValue((void*)(&data.colors));
+    return QVariant::fromValue((void*)(&can->lastMessage(item.id).colors));
   } else if (role == BytesRole && index.column() == Column::DATA && item.id.source != INVALID_SOURCE) {
-    return QVariant::fromValue((void*)(&data.dat));
+    return QVariant::fromValue((void*)(&can->lastMessage(item.id).dat));
   } else if (role == Qt::ForegroundRole && !item.active) {
     return settings.theme == DARK_THEME ? QApplication::palette().color(QPalette::Text).darker(150) : QColor(Qt::gray);
   } else if (role == Qt::ToolTipRole && index.column() == Column::NAME) {
@@ -255,12 +247,12 @@ void MessageListModel::dbcModified() {
 void MessageListModel::sortItems(std::vector<MessageListModel::Item> &items) {
   auto compare = [this](const auto &l, const auto &r) {
     switch (sort_column) {
-      case Column::NAME: return l.name < r.name;
-      case Column::SOURCE: return l.id.source < r.id.source;
-      case Column::ADDRESS: return l.id.address < r.id.address;
-      case Column::NODE: return l.node < r.node;
-      case Column::FREQ: return can->lastMessage(l.id).freq < can->lastMessage(r.id).freq;
-      case Column::COUNT: return can->lastMessage(l.id).count < can->lastMessage(r.id).count;
+      case Column::NAME: return std::tie(l.name, l.id) < std::tie(r.name, r.id);
+      case Column::SOURCE: return std::tie(l.id.source, l.id.address) < std::tie(r.id.source, r.id.address);
+      case Column::ADDRESS: return std::tie(l.id.address, l.id.source) < std::tie(r.id.address, r.id.source);
+      case Column::NODE: return std::tie(l.node, l.id) < std::tie(r.node, r.id);
+      case Column::FREQ: return std::tie(can->lastMessage(l.id).freq, l.id) < std::tie(can->lastMessage(r.id).freq, r.id);
+      case Column::COUNT: return std::tie(can->lastMessage(l.id).count, l.id) < std::tie(can->lastMessage(r.id).count, r.id);
       default: return false; // Default case to suppress compiler warning
     }
   };
@@ -366,18 +358,17 @@ bool MessageListModel::filterAndSort() {
 }
 
 void MessageListModel::msgsReceived(const std::set<MessageId> *new_msgs, bool has_new_ids) {
-  if (has_new_ids || filters_.contains(Column::FREQ) || filters_.contains(Column::COUNT) || filters_.contains(Column::DATA)) {
+  if (has_new_ids || ((filters_.count(Column::FREQ) || filters_.count(Column::COUNT) || filters_.count(Column::DATA)) &&
+                      ++sort_threshold_ == settings.fps)) {
+    sort_threshold_ = 0;
     if (filterAndSort()) return;
   }
-  for (int i = 0; i < items_.size(); ++i) {
-    auto &item = items_[i];
-    bool prev_active = item.active;
+
+  for (auto &item : items_) {
     item.active = isMessageActive(item.id);
-    if (item.active != prev_active || !new_msgs || new_msgs->count(item.id)) {
-      for (int col = 0; col < columnCount(); ++col)
-        emit dataChanged(index(i, col), index(i, col), {Qt::DisplayRole});
-    }
   }
+  // Update viewport
+  emit dataChanged(index(0, 0), index(rowCount() - 1, columnCount() - 1));
 }
 
 void MessageListModel::sort(int column, Qt::SortOrder order) {
@@ -420,6 +411,7 @@ void MessageView::updateBytesSectionSize() {
       max_bytes = std::max<int>(max_bytes, m.dat.size());
     }
   }
+  setUniformRowHeights(!delegate->multipleLines() || max_bytes <= 8);
   header()->resizeSection(MessageListModel::Column::DATA, delegate->sizeForBytes(max_bytes).width());
 }
 

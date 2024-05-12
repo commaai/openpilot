@@ -12,7 +12,7 @@ jobs:
       ImageOS: ubuntu20
     container:
       image: ghcr.io/commaai/openpilot-base:latest
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: github.repository == 'commaai/openpilot'
     permissions:
       checks: read
@@ -24,7 +24,7 @@ jobs:
         sudo apt-get install -y libyaml-dev
     - name: Wait for green check mark
       if: ${{ github.event_name != 'workflow_dispatch' }}
-      uses: lewagon/wait-on-check-action@595dabb3acf442d47e29c9ec9ba44db0c6bdd18f
+      uses: lewagon/wait-on-check-action@ccfb013c15c8afb7bf2b7c028fb74dc5a068cccc
       with:
         ref: master
         wait-interval: 30

@@ -45,7 +45,9 @@ release/*
 
 tools/__init__.py
 tools/lib/*
-tools/bodyteleop/*
+tools/bodyteleop/.gitignore
+tools/bodyteleop/web.py
+tools/bodyteleop/static/*
 tools/joystick/*
 tools/replay/*.cc
 tools/replay/*.h
