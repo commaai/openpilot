@@ -203,12 +203,6 @@ class Controls:
     if not self.CP.pcmCruise and not self.v_cruise_helper.v_cruise_initialized and resume_pressed:
       self.events.add(EventName.resumeBlocked)
 
-    if CS.brakePressed and CS.standstill:
-      self.events.add(EventName.preEnableStandstill)
-
-    if CS.gasPressed:
-      self.events.add(EventName.gasPressedOverride)
-
     if not self.CP.notCar:
       self.events.add_from_msg(self.sm['driverMonitoringState'].events)
 
