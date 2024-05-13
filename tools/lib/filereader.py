@@ -18,6 +18,7 @@ def internal_source_available():
     pass
   return False
 
+
 def resolve_name(fn):
   if fn.startswith("cd:/"):
     return fn.replace("cd:/", DATA_ENDPOINT)
