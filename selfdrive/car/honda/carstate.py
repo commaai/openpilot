@@ -45,6 +45,7 @@ def get_can_messages(CP, gearbox_msg):
     CAR.HONDA_HRV
   }
 
+
   if CP.carFingerprint == CAR.HONDA_ODYSSEY_CHN:
     messages += [
       ("SCM_FEEDBACK", 25),
