@@ -106,8 +106,7 @@ class CarD:
     if can_rcv_valid and REPLAY:
       self.can_log_mono_time = messaging.log_from_bytes(can_strs[0]).logMonoTime
 
-    # TODO: these should be split out into separate steps when this is a process
-    CS = self.update_events(CS)
+    self.update_events(CS)
     self.state_publish(CS)
 
     self.CS_prev = CS
