@@ -33,7 +33,7 @@ def test_time_to_onroad():
           sm.update(100)
 
           # sendcan is only sent once we're initialized
-          if sm.seen['controlsState'] and sendcan_frame is None:
+          if sm.seen['sendcan'] and sendcan_frame is None:
             sendcan_frame = sm.frame
 
           if sendcan_frame is not None and sm.recv_frame['sendcan'] > sendcan_frame:
