@@ -8,15 +8,15 @@ DATA_ENDPOINT = os.getenv("DATA_ENDPOINT", "http://data-raw.comma.internal/")
 
 
 def internal_source_available():
-    try:
-      hostname = urlparse(DATA_ENDPOINT).hostname
-      port = urlparse(DATA_ENDPOINT).port or 80
-      with socket.socket() as s:
-        s.connect((hostname, port))
-      return True
-    except (socket.gaierror, ConnectionRefusedError):
-      pass
-    return False
+  try:
+    hostname = urlparse(DATA_ENDPOINT).hostname
+    port = urlparse(DATA_ENDPOINT).port or 80
+    with socket.socket() as s:
+      s.connect((hostname, port))
+    return True
+  except (socket.gaierror, ConnectionRefusedError):
+    pass
+  return False
 
 def resolve_name(fn):
   if fn.startswith("cd:/"):
