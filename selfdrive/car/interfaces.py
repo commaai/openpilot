@@ -242,10 +242,11 @@ class CarInterfaceBase(ABC):
       ret.cruiseState.speedCluster = ret.cruiseState.speed
 
     # copy back for next iteration
+    reader = ret.as_reader()
     if self.CS is not None:
-      self.CS.out = ret.as_reader()
+      self.CS.out = reader
 
-    return ret
+    return reader
 
 
   def create_common_events(self, cs_out, extra_gears=None, pcm_enable=True, allow_enable=True,
