@@ -1133,6 +1133,7 @@ FW_VERSIONS = {
   CAR.KIA_K8_HEV_1ST_GEN: {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00GL3HMFC  AT KOR LHD 1.00 1.03 99211-L8000 210907',
+      b'\xf1\x00GL3HMFC  AT KOR LHD 1.00 1.04 99211-L8000 230207',
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00GL3_ RDR -----      1.00 1.02 99110-L8000         ',
