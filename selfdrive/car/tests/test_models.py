@@ -94,7 +94,7 @@ class TestCarModelBase(unittest.TestCase):
         car_fw = msg.carParams.carFw
         if msg.carParams.openpilotLongitudinalControl:
           experimental_long = True
-        if cls.platform is None and not cls.ci:
+        if cls.platform is None and not cls.test_route_on_bucket:
           live_fingerprint = msg.carParams.carFingerprint
           cls.platform = MIGRATION.get(live_fingerprint, live_fingerprint)
 

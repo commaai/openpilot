@@ -1,4 +1,5 @@
 import copy
+import re
 from dataclasses import dataclass, field, replace
 from enum import Enum, IntFlag
 
@@ -7,7 +8,7 @@ from cereal import car
 from openpilot.selfdrive.car import AngleRateLimit, CarSpecs, dbc_dict, DbcDict, PlatformConfig, Platforms
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column, \
                                                      Device
-from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
+from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, LiveFwVersions, OfflineFwVersions, Request, StdQueries, p16
 
 Ecu = car.CarParams.Ecu
 
@@ -143,6 +144,76 @@ class CAR(Platforms):
   )
 
 
+# FW response contains a combined software and part number
+# A-Z except no I, O or W
+# e.g. NZ6A-14C204-AAA
+#      1222-333333-444
+# 1 = Model year hint (approximates model year/generation)
+# 2 = Platform hint
+# 3 = Part number
+# 4 = Software version
+FW_ALPHABET = b'A-HJ-NP-VX-Z'
+FW_PATTERN = re.compile(b'^(?P<model_year_hint>[' + FW_ALPHABET + b'])' +
+                        b'(?P<platform_hint>[0-9' + FW_ALPHABET + b']{3})-' +
+                        b'(?P<part_number>[0-9' + FW_ALPHABET + b']{5,6})-' +
+                        b'(?P<software_revision>[' + FW_ALPHABET + b']{2,})\x00*$')
+
+
+def get_platform_codes(fw_versions: list[bytes] | set[bytes]) -> set[tuple[bytes, bytes]]:
+  codes = set()
+  for fw in fw_versions:
+    match = FW_PATTERN.match(fw)
+    if match is not None:
+      codes.add((match.group('platform_hint'), match.group('model_year_hint')))
+
+  return codes
+
+
+def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, vin: str, offline_fw_versions: OfflineFwVersions) -> set[str]:
+  candidates: set[str] = set()
+
+  for candidate, fws in offline_fw_versions.items():
+    # Keep track of ECUs which pass all checks (platform hint, within model year hint range)
+    valid_found_ecus = set()
+    valid_expected_ecus = {ecu[1:] for ecu in fws if ecu[0] in PLATFORM_CODE_ECUS}
+    for ecu, expected_versions in fws.items():
+      addr = ecu[1:]
+      # Only check ECUs expected to have platform codes
+      if ecu[0] not in PLATFORM_CODE_ECUS:
+        continue
+
+      # Expected platform codes & model year hints
+      codes = get_platform_codes(expected_versions)
+      expected_platform_codes = {code for code, _ in codes}
+      expected_model_year_hints = {model_year_hint for _, model_year_hint in codes}
+
+      # Found platform codes & model year hints
+      codes = get_platform_codes(live_fw_versions.get(addr, set()))
+      found_platform_codes = {code for code, _ in codes}
+      found_model_year_hints = {model_year_hint for _, model_year_hint in codes}
+
+      # Check platform code matches for any found versions
+      if not any(found_platform_code in expected_platform_codes for found_platform_code in found_platform_codes):
+        break
+
+      # Check any model year hint within range in the database. Note that some models have more than one
+      # platform code per ECU which we don't consider as separate ranges
+      if not any(min(expected_model_year_hints) <= found_model_year_hint <= max(expected_model_year_hints) for
+                 found_model_year_hint in found_model_year_hints):
+        break
+
+      valid_found_ecus.add(addr)
+
+    # If all live ECUs pass all checks for candidate, add it as a match
+    if valid_expected_ecus.issubset(valid_found_ecus):
+      candidates.add(candidate)
+
+  return candidates
+
+
+# All of these ECUs must be present and are expected to have platform codes we can match
+PLATFORM_CODE_ECUS = (Ecu.abs, Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps)
+
 DATA_IDENTIFIER_FORD_ASBUILT = 0xDE00
 
 ASBUILT_BLOCKS: list[tuple[int, list]] = [
@@ -201,6 +272,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.shiftByWire, 0x732, None),   # Gear Shift Module
     (Ecu.debug, 0x7d0, None),         # Accessory Protocol Interface Module
   ],
+  # Custom fuzzy fingerprinting function using platform and model year hints
+  match_fw_to_car_fuzzy=match_fw_to_car_fuzzy,
 )
 
 DBC = CAR.create_dbc_map()
