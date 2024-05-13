@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import asyncio
-from unittest.mock import Mock, MagicMock, patch
 import json
 # for aiortc and its dependencies
 import warnings
@@ -27,7 +26,7 @@ class TestStreamSession:
     self.loop.stop()
     self.loop.close()
 
-  def test_outgoing_proxy(self):
+  def test_outgoing_proxy(self, mocker):
     test_msg = log.Event.new_message()
     test_msg.logMonoTime = 123
     test_msg.valid = True
@@ -35,27 +34,27 @@ class TestStreamSession:
     expected_dict = {"type": "customReservedRawData0", "logMonoTime": 123, "valid": True, "data": "test"}
     expected_json = json.dumps(expected_dict).encode()
 
-    channel = Mock(spec=RTCDataChannel)
+    channel = mocker.Mock(spec=RTCDataChannel)
     mocked_submaster = messaging.SubMaster(["customReservedRawData0"])
     def mocked_update(t):
       mocked_submaster.update_msgs(0, [test_msg])
 
-    with patch.object(messaging.SubMaster, "update", side_effect=mocked_update):
-      proxy = CerealOutgoingMessageProxy(mocked_submaster)
-      proxy.add_channel(channel)
+    mocker.patch.object(messaging.SubMaster, "update", side_effect=mocked_update)
+    proxy = CerealOutgoingMessageProxy(mocked_submaster)
+    proxy.add_channel(channel)
 
-      proxy.update()
+    proxy.update()
 
-      channel.send.assert_called_once_with(expected_json)
+    channel.send.assert_called_once_with(expected_json)
 
-  def test_incoming_proxy(self):
+  def test_incoming_proxy(self, mocker):
     tested_msgs = [
       {"type": "customReservedRawData0", "data": "test"}, # primitive
       {"type": "can", "data": [{"address": 0, "busTime": 0, "dat": "", "src": 0}]}, # list
       {"type": "testJoystick", "data": {"axes": [0, 0], "buttons": [False]}}, # dict
     ]
 
-    mocked_pubmaster = MagicMock(spec=messaging.PubMaster)
+    mocked_pubmaster = mocker.MagicMock(spec=messaging.PubMaster)
 
     proxy = CerealIncomingMessageProxy(mocked_pubmaster)
 
@@ -70,34 +69,34 @@ class TestStreamSession:
 
       mocked_pubmaster.reset_mock()
 
-  def test_livestream_track(self):
+  def test_livestream_track(self, mocker):
     fake_msg = messaging.new_message("livestreamDriverEncodeData")
 
     config = {"receive.return_value": fake_msg.to_bytes()}
-    with patch("cereal.messaging.SubSocket", spec=True, **config):
-      track = LiveStreamVideoStreamTrack("driver")
+    mocker.patch("cereal.messaging.SubSocket", spec=True, **config)
+    track = LiveStreamVideoStreamTrack("driver")
 
-      assert track.id.startswith("driver")
-      assert track.codec_preference() == "H264"
+    assert track.id.startswith("driver")
+    assert track.codec_preference() == "H264"
 
-      for i in range(5):
-        packet = self.loop.run_until_complete(track.recv())
-        assert packet.time_base == VIDEO_TIME_BASE
-        assert packet.pts == int(i * DT_DMON * VIDEO_CLOCK_RATE)
-        assert packet.size == 0
+    for i in range(5):
+      packet = self.loop.run_until_complete(track.recv())
+      assert packet.time_base == VIDEO_TIME_BASE
+      assert packet.pts == int(i * DT_DMON * VIDEO_CLOCK_RATE)
+      assert packet.size == 0
 
-  def test_input_audio_track(self):
+  def test_input_audio_track(self, mocker):
     packet_time, rate = 0.02, 16000
     sample_count = int(packet_time * rate)
-    mocked_stream = MagicMock(spec=pyaudio.Stream)
+    mocked_stream = mocker.MagicMock(spec=pyaudio.Stream)
     mocked_stream.read.return_value = b"\x00" * 2 * sample_count
 
     config = {"open.side_effect": lambda *args, **kwargs: mocked_stream}
-    with patch("pyaudio.PyAudio", spec=True, **config):
-      track = AudioInputStreamTrack(audio_format=pyaudio.paInt16, packet_time=packet_time, rate=rate)
+    mocker.patch("pyaudio.PyAudio", spec=True, **config)
+    track = AudioInputStreamTrack(audio_format=pyaudio.paInt16, packet_time=packet_time, rate=rate)
 
-      for i in range(5):
-        frame = self.loop.run_until_complete(track.recv())
-        assert frame.rate == rate
-        assert frame.samples == sample_count
-        assert frame.pts == i * sample_count
+    for i in range(5):
+      frame = self.loop.run_until_complete(track.recv())
+      assert frame.rate == rate
+      assert frame.samples == sample_count
+      assert frame.pts == i * sample_count

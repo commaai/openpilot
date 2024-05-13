@@ -2,7 +2,6 @@
 import pytest
 import asyncio
 import json
-from unittest.mock import MagicMock, AsyncMock
 # for aiortc and its dependencies
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -29,11 +28,11 @@ class TestWebrtcdProc():
     except TimeoutError:
       pytest.fail("Timeout while waiting for awaitable to complete")
 
-  async def test_webrtcd(self):
-    mock_request = MagicMock()
+  async def test_webrtcd(self, mocker):
+    mock_request = mocker.MagicMock()
     async def connect(offer):
       body = {'sdp': offer.sdp, 'cameras': offer.video, 'bridge_services_in': self.in_services, 'bridge_services_out': self.out_services}
-      mock_request.json.side_effect = AsyncMock(return_value=body)
+      mock_request.json.side_effect = mocker.AsyncMock(return_value=body)
       response = await get_stream(mock_request)
       response_json = json.loads(response.text)
       return aiortc.RTCSessionDescription(**response_json)

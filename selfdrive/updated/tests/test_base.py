@@ -7,7 +7,6 @@ import subprocess
 import tempfile
 import time
 import pytest
-from unittest import mock
 
 from openpilot.common.params import Params
 from openpilot.selfdrive.manager.process import ManagerProcess
@@ -74,8 +73,6 @@ class TestBaseUpdate:
     self.remote_dir = self.mock_update_path / "remote"
     self.remote_dir.mkdir()
 
-    mock.patch("openpilot.common.basedir.BASEDIR", self.basedir).start()
-
     os.environ["UPDATER_STAGING_ROOT"] = str(self.staging_root)
     os.environ["UPDATER_LOCK_FILE"] = str(self.mock_update_path / "safe_staging_overlay.lock")
 
@@ -83,6 +80,10 @@ class TestBaseUpdate:
       "release3": ("0.1.2", "1.2", "0.1.2 release notes"),
       "master": ("0.1.3", "1.2", "0.1.3 release notes"),
     }
+
+  @pytest.fixture(autouse=True)
+  def mock_basedir(self, mocker):
+    mocker.patch("openpilot.common.basedir.BASEDIR", self.basedir)
 
   def set_target_branch(self, branch):
     self.params.put("UpdaterTargetBranch", branch)
@@ -101,7 +102,6 @@ class TestBaseUpdate:
     raise NotImplementedError("")
 
   def teardown_method(self):
-    mock.patch.stopall()
     try:
       run(["sudo", "umount", "-l", str(self.staging_root / "merged")])
       run(["sudo", "umount", "-l", self.tmpdir])
@@ -227,17 +227,16 @@ class ParamsBaseUpdateTest(TestBaseUpdate):
       self._test_params("master", False, True)
       self._test_finalized_update("master", *self.MOCK_RELEASES["master"])
 
-  def test_agnos_update(self):
+  def test_agnos_update(self, mocker):
     # Start on release3, push an update with an agnos change
     self.setup_remote_release("release3")
     self.setup_basedir_release("release3")
 
-    with self.additional_context(), \
-        mock.patch("openpilot.system.hardware.AGNOS", "True"), \
-        mock.patch("openpilot.system.hardware.tici.hardware.Tici.get_os_version", "1.2"), \
-        mock.patch("openpilot.system.hardware.tici.agnos.get_target_slot_number"), \
-        mock.patch("openpilot.system.hardware.tici.agnos.flash_agnos_update"), \
-          processes_context(["updated"]) as [updated]:
+    with self.additional_context(), processes_context(["updated"]) as [updated]:
+      mocker.patch("openpilot.system.hardware.AGNOS", "True")
+      mocker.patch("openpilot.system.hardware.tici.hardware.Tici.get_os_version", "1.2")
+      mocker.patch("openpilot.system.hardware.tici.agnos.get_target_slot_number")
+      mocker.patch("openpilot.system.hardware.tici.agnos.flash_agnos_update")
 
       self._test_params("release3", False, False)
       self.wait_for_idle()

@@ -4,7 +4,6 @@ import subprocess
 import threading
 import time
 from typing import cast
-from unittest import mock
 
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
@@ -57,9 +56,11 @@ class TestAthenadPing:
       self.exit_event.set()
       self.athenad.join()
 
-  @mock.patch('openpilot.selfdrive.athena.athenad.create_connection', new_callable=lambda: mock.MagicMock(wraps=athenad.create_connection))
-  def assertTimeout(self, reconnect_time: float, mock_create_connection: mock.MagicMock, subtests) -> None:
+  def assertTimeout(self, reconnect_time: float, subtests, mocker) -> None:
     self.athenad.start()
+
+    mock_create_connection = mocker.patch('openpilot.selfdrive.athena.athenad.create_connection',
+                                          new_callable=lambda: mocker.MagicMock(wraps=athenad.create_connection))
 
     time.sleep(1)
     mock_create_connection.assert_called_once()
@@ -92,11 +93,11 @@ class TestAthenadPing:
       print("ping received")
 
   @pytest.mark.skipif(not TICI, reason="only run on desk")
-  def test_offroad(self) -> None:
+  def test_offroad(self, subtests, mocker) -> None:
     write_onroad_params(False, self.params)
-    self.assertTimeout(60 + TIMEOUT_TOLERANCE)  # based using TCP keepalive settings
+    self.assertTimeout(60 + TIMEOUT_TOLERANCE, subtests, mocker)  # based using TCP keepalive settings
 
   @pytest.mark.skipif(not TICI, reason="only run on desk")
-  def test_onroad(self) -> None:
+  def test_onroad(self, subtests, mocker) -> None:
     write_onroad_params(True, self.params)
-    self.assertTimeout(21 + TIMEOUT_TOLERANCE)
+    self.assertTimeout(21 + TIMEOUT_TOLERANCE, subtests, mocker)

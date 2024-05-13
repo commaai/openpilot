@@ -9,7 +9,6 @@ import pytest
 import requests
 
 from parameterized import parameterized
-from unittest import mock
 
 from cereal import log as capnp_log
 from openpilot.tools.lib.logreader import LogIterable, LogReader, comma_api_source, parse_indirect, ReadMode, InternalUnavailableException
@@ -27,21 +26,19 @@ def noop(segment: LogIterable):
 
 
 @contextlib.contextmanager
-def setup_source_scenario(is_internal=False):
-  with (
-    mock.patch("openpilot.tools.lib.logreader.internal_source") as internal_source_mock,
-    mock.patch("openpilot.tools.lib.logreader.openpilotci_source") as openpilotci_source_mock,
-    mock.patch("openpilot.tools.lib.logreader.comma_api_source") as comma_api_source_mock,
-  ):
-    if is_internal:
-      internal_source_mock.return_value = [QLOG_FILE]
-    else:
-      internal_source_mock.side_effect = InternalUnavailableException
+def setup_source_scenario(mocker, is_internal=False):
+  internal_source_mock = mocker.patch("openpilot.tools.lib.logreader.internal_source")
+  openpilotci_source_mock = mocker.patch("openpilot.tools.lib.logreader.openpilotci_source")
+  comma_api_source_mock = mocker.patch("openpilot.tools.lib.logreader.comma_api_source")
+  if is_internal:
+    internal_source_mock.return_value = [QLOG_FILE]
+  else:
+    internal_source_mock.side_effect = InternalUnavailableException
 
-    openpilotci_source_mock.return_value = [None]
-    comma_api_source_mock.return_value = [QLOG_FILE]
+  openpilotci_source_mock.return_value = [None]
+  comma_api_source_mock.return_value = [QLOG_FILE]
 
-    yield
+  yield
 
 
 class TestLogReader:
@@ -87,9 +84,9 @@ class TestLogReader:
     sr = SegmentRange(identifier)
     assert str(sr) == expected
 
-  @parameterized.expand([(True,), (False,)])
-  @mock.patch("openpilot.tools.lib.logreader.file_exists")
-  def test_direct_parsing(self, cache_enabled, file_exists_mock):
+  @pytest.mark.parametrize("cache_enabled", [True, False])
+  def test_direct_parsing(self, mocker, cache_enabled):
+    file_exists_mock = mocker.patch("openpilot.tools.lib.logreader.file_exists")
     os.environ["FILEREADER_CACHE"] = "1" if cache_enabled else "0"
     qlog = tempfile.NamedTemporaryFile(mode='wb', delete=False)
 
@@ -123,18 +120,18 @@ class TestLogReader:
     with pytest.raises(AssertionError):
       _ = SegmentRange(segment_range).seg_idxs
 
-  @parameterized.expand([
+  @pytest.mark.parametrize("segment_range, api_call", [
     (f"{TEST_ROUTE}/0", False),
     (f"{TEST_ROUTE}/:2", False),
     (f"{TEST_ROUTE}/0:", True),
     (f"{TEST_ROUTE}/-1", True),
     (f"{TEST_ROUTE}", True),
   ])
-  def test_slicing_api_call(self, segment_range, api_call):
-    with mock.patch("openpilot.tools.lib.route.get_max_seg_number_cached") as max_seg_mock:
-      max_seg_mock.return_value = NUM_SEGS
-      _ = SegmentRange(segment_range).seg_idxs
-      assert api_call == max_seg_mock.called
+  def test_slicing_api_call(self, mocker, segment_range, api_call):
+    max_seg_mock = mocker.patch("openpilot.tools.lib.route.get_max_seg_number_cached")
+    max_seg_mock.return_value = NUM_SEGS
+    _ = SegmentRange(segment_range).seg_idxs
+    assert api_call == max_seg_mock.called
 
   @pytest.mark.slow
   def test_modes(self):
@@ -158,8 +155,8 @@ class TestLogReader:
     assert qlog_len * 2 == qlog_len_2
 
   @pytest.mark.slow
-  @mock.patch("openpilot.tools.lib.logreader._LogFileReader")
-  def test_multiple_iterations(self, init_mock):
+  def test_multiple_iterations(self, mocker):
+    init_mock = mocker.patch("openpilot.tools.lib.logreader._LogFileReader")
     lr = LogReader(f"{TEST_ROUTE}/0/q")
     qlog_len1 = len(list(lr))
     qlog_len2 = len(list(lr))
@@ -183,36 +180,36 @@ class TestLogReader:
     assert len(lr.run_across_segments(4, noop)) == len(list(lr))
 
   @pytest.mark.slow
-  def test_auto_mode(self, subtests):
+  def test_auto_mode(self, subtests, mocker):
     lr = LogReader(f"{TEST_ROUTE}/0/q")
     qlog_len = len(list(lr))
-    with mock.patch("openpilot.tools.lib.route.Route.log_paths") as log_paths_mock:
-      log_paths_mock.return_value = [None] * NUM_SEGS
-      # Should fall back to qlogs since rlogs are not available
+    log_paths_mock = mocker.patch("openpilot.tools.lib.route.Route.log_paths")
+    log_paths_mock.return_value = [None] * NUM_SEGS
+    # Should fall back to qlogs since rlogs are not available
 
-      with subtests.test("interactive_yes"):
-        with mock.patch("sys.stdin", new=io.StringIO("y\n")):
-          lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO_INTERACTIVE, default_source=comma_api_source)
-          log_len = len(list(lr))
-        assert qlog_len == log_len
+    with subtests.test("interactive_yes"):
+      mocker.patch("sys.stdin", new=io.StringIO("y\n"))
+      lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO_INTERACTIVE, default_source=comma_api_source)
+      log_len = len(list(lr))
+      assert qlog_len == log_len
 
-      with subtests.test("interactive_no"):
-        with mock.patch("sys.stdin", new=io.StringIO("n\n")):
-          with pytest.raises(AssertionError):
-            lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO_INTERACTIVE, default_source=comma_api_source)
+    with subtests.test("interactive_no"):
+      mocker.patch("sys.stdin", new=io.StringIO("n\n"))
+      with pytest.raises(AssertionError):
+        lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO_INTERACTIVE, default_source=comma_api_source)
 
-      with subtests.test("non_interactive"):
-        lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO, default_source=comma_api_source)
-        log_len = len(list(lr))
-        assert qlog_len == log_len
+    with subtests.test("non_interactive"):
+      lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO, default_source=comma_api_source)
+      log_len = len(list(lr))
+      assert qlog_len == log_len
 
-  @parameterized.expand([(True,), (False,)])
+  @pytest.mark.parametrize("is_internal", [True, False])
   @pytest.mark.slow
-  def test_auto_source_scenarios(self, is_internal):
+  def test_auto_source_scenarios(self, mocker, is_internal):
     lr = LogReader(QLOG_FILE)
     qlog_len = len(list(lr))
 
-    with setup_source_scenario(is_internal=is_internal):
+    with setup_source_scenario(mocker, is_internal=is_internal):
       lr = LogReader(f"{TEST_ROUTE}/0/q")
       log_len = len(list(lr))
       assert qlog_len == log_len
