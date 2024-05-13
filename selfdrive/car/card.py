@@ -109,8 +109,8 @@ class CarD:
     self.update_events(CS)
     self.state_publish(CS)
 
+    CS = CS.as_reader()
     self.CS_prev = CS
-
     return CS
 
   def update_events(self, CS: car.CarState) -> car.CarState:
@@ -125,8 +125,6 @@ class CarD:
       self.events.add(EventName.pedalPressed)
 
     CS.events = self.events.to_msg()
-    CS = CS.as_reader()
-    return CS
 
   def state_publish(self, CS: car.CarState):
     """carState and carParams publish loop"""
