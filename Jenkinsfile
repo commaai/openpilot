@@ -40,6 +40,7 @@ if [ -f /TICI ]; then
   rm -rf /tmp/tmp*
   rm -rf ~/.commacache
   rm -rf /dev/shm/*
+  rm -rf /dev/tmp/tmp*
 
   if ! systemctl is-active --quiet systemd-resolved; then
     echo "restarting resolved"
@@ -142,23 +143,6 @@ def setupCredentials() {
 }
 
 
-def build_release(String channel_name) {
-  return parallel (
-    "${channel_name} (git)": {
-      deviceStage("build git", "tici-needs-can", [], [
-        ["build ${channel_name}", "RELEASE_BRANCH=${channel_name} $SOURCE_DIR/release/build_release.sh"],
-      ])
-    },
-    "${channel_name} (casync)": {
-      deviceStage("build casync", "tici-needs-can", [], [
-        ["build ${channel_name}", "RELEASE=1 OPENPILOT_CHANNEL=${channel_name} BUILD_DIR=/data/openpilot CASYNC_DIR=/data/casync $SOURCE_DIR/release/create_casync_build.sh"],
-        //["upload ${channel_name}", "OPENPILOT_CHANNEL=${channel_name} $SOURCE_DIR/release/upload_casync_release.sh"],
-      ])
-    }
-  )
-}
-
-
 node {
   env.CI = "1"
   env.PYTHONWARNINGS = "error"
@@ -181,11 +165,15 @@ node {
 
   try {
     if (env.BRANCH_NAME == 'devel-staging') {
-      build_release("release3-staging")
+      deviceStage("build release3-staging", "tici-needs-can", [], [
+        ["build release3-staging", "RELEASE_BRANCH=release3-staging $SOURCE_DIR/release/build_release.sh"],
+      ])
     }
 
     if (env.BRANCH_NAME == 'master-ci') {
-      build_release("nightly")
+      deviceStage("build nightly", "tici-needs-can", [], [
+        ["build nightly", "RELEASE_BRANCH=nightly $SOURCE_DIR/release/build_release.sh"],
+      ])
     }
 
     if (!env.BRANCH_NAME.matches(excludeRegex)) {
@@ -249,6 +237,7 @@ node {
         deviceStage("tizi", "tizi", ["UNSAFE=1"], [
           ["build openpilot", "cd selfdrive/manager && ./build.py"],
           ["test boardd loopback", "SINGLE_PANDA=1 pytest selfdrive/boardd/tests/test_boardd_loopback.py"],
+          ["test boardd spi", "pytest selfdrive/boardd/tests/test_boardd_spi.py"],
           ["test pandad", "pytest selfdrive/boardd/tests/test_pandad.py"],
           ["test amp", "pytest system/hardware/tici/tests/test_amplifier.py"],
           ["test hw", "pytest system/hardware/tici/tests/test_hardware.py"],
