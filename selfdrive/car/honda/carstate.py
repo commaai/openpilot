@@ -81,12 +81,7 @@ def get_can_messages(CP, gearbox_msg):
     else:
       messages.append(("CRUISE_PARAMS", 50))
 
-  # TODO: clean this up
-  if CP.carFingerprint in bosch_cars:
-    pass
-  elif CP.carFingerprint in nidec_cars:
-    pass
-  else:
+  if CP.carFingerprint not in bosch_cars and CP.carFingerprint not in nidec_cars:
     messages.append(("DOORS_STATUS", 3))
 
   if CP.carFingerprint in HONDA_BOSCH_RADARLESS:
