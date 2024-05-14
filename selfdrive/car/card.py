@@ -130,12 +130,6 @@ class Car:
   def state_publish(self, CS: car.CarState):
     """carState and carParams publish loop"""
 
-    # carState
-    cs_send = messaging.new_message('carState')
-    cs_send.valid = CS.canValid
-    cs_send.carState = CS
-    self.pm.send('carState', cs_send)
-
     # carParams - logged every 50 seconds (> 1 per segment)
     if self.sm.frame % int(50. / DT_CTRL) == 0:
       cp_send = messaging.new_message('carParams')
