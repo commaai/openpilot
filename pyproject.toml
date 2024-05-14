@@ -107,6 +107,7 @@ sounddevice = "*"
 spidev = { version = "*", platform = "linux" }
 sympy = "*"
 websocket_client = "*"
+sortedcontainers = "*"
 
 # acados deps
 casadi = "*"
