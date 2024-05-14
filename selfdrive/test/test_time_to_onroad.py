@@ -21,7 +21,7 @@ def test_time_to_onroad():
   proc = subprocess.Popen(["python", manager_path])
 
   start_time = time.monotonic()
-  sm = messaging.SubMaster(['controlsState', 'deviceState', 'onroadEvents', 'onroadEvents'])
+  sm = messaging.SubMaster(['controlsState', 'deviceState', 'onroadEvents'])
   try:
     # wait for onroad. timeout assumes panda is up to date
     with Timeout(10, "timed out waiting to go onroad"):
