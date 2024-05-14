@@ -19,8 +19,8 @@ class CarModelTestCase(TestCarModelBase):
 if __name__ == '__main__':
   # Get CAN messages and parsers
   tm = CarModelTestCase()
-  tm.setup_class()
-  tm.setup_method()
+  tm.setUpClass()
+  tm.setUp()
 
   CC = car.CarControl.new_message()
   ets = []
