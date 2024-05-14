@@ -99,7 +99,6 @@ class Controls:
     self.joystick_mode = self.params.get_bool("JoystickDebugMode")
 
     # read params
-    self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
     self.is_metric = self.params.get_bool("IsMetric")
     self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
 
@@ -114,7 +113,6 @@ class Controls:
     if not self.CP.openpilotLongitudinalControl:
       self.params.remove("ExperimentalMode")
 
-    self.CS_prev = car.CarState.new_message()
     self.AM = AlertManager()
     self.events = Events()
 
@@ -171,7 +169,7 @@ class Controls:
 
   def set_initial_state(self):
     if REPLAY:
-      controls_state = Params().get("ReplayControlsState")
+      controls_state = self.params.get("ReplayControlsState")
       if controls_state is not None:
         with log.ControlsState.from_bytes(controls_state) as controls_state:
           self.v_cruise_helper.v_cruise_kph = controls_state.vCruise
@@ -207,18 +205,6 @@ class Controls:
     resume_pressed = any(be.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for be in CS.buttonEvents)
     if not self.CP.pcmCruise and not self.v_cruise_helper.v_cruise_initialized and resume_pressed:
       self.events.add(EventName.resumeBlocked)
-
-    # Disable on rising edge of accelerator or brake. Also disable on brake when speed > 0
-    if (CS.gasPressed and not self.CS_prev.gasPressed and self.disengage_on_accelerator) or \
-      (CS.brakePressed and (not self.CS_prev.brakePressed or not CS.standstill)) or \
-      (CS.regenBraking and (not self.CS_prev.regenBraking or not CS.standstill)):
-      self.events.add(EventName.pedalPressed)
-
-    if CS.brakePressed and CS.standstill:
-      self.events.add(EventName.preEnableStandstill)
-
-    if CS.gasPressed:
-      self.events.add(EventName.gasPressedOverride)
 
     if not self.CP.notCar:
       self.events.add_from_msg(self.sm['driverMonitoringState'].events)
@@ -825,8 +811,6 @@ class Controls:
     # Publish data
     self.publish_logs(CS, start_time, CC, lac_log)
     cloudlog.timestamp("Logs published")
-
-    self.CS_prev = CS
 
   def read_personality_param(self):
     try:
