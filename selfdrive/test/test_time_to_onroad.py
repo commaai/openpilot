@@ -4,10 +4,13 @@ import pytest
 import time
 import subprocess
 
+from cereal import car
 import cereal.messaging as messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.test.helpers import set_params_enabled
+
+EventName = car.CarEvent.EventName
 
 
 @pytest.mark.tici
@@ -18,7 +21,7 @@ def test_time_to_onroad():
   proc = subprocess.Popen(["python", manager_path])
 
   start_time = time.monotonic()
-  sm = messaging.SubMaster(['controlsState', 'deviceState', 'onroadEvents', 'sendcan'])
+  sm = messaging.SubMaster(['controlsState', 'deviceState', 'onroadEvents'])
   try:
     # wait for onroad. timeout assumes panda is up to date
     with Timeout(10, "timed out waiting to go onroad"):
@@ -28,15 +31,14 @@ def test_time_to_onroad():
     # wait for engageability
     try:
       with Timeout(10, "timed out waiting for engageable"):
-        sendcan_frame = None
+        initialized = False
         while True:
           sm.update(100)
 
-          # sendcan is only sent once we're initialized
-          if sm.seen['controlsState'] and sendcan_frame is None:
-            sendcan_frame = sm.frame
+          if sm.seen['onroadEvents'] and not any(EventName.controlsInitializing == e.name for e in sm['onroadEvents']):
+            initialized = True
 
-          if sendcan_frame is not None and sm.recv_frame['sendcan'] > sendcan_frame:
+          if initialized:
             sm.update(100)
             assert sm['controlsState'].engageable, f"events: {sm['onroadEvents']}"
             break
