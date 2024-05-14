@@ -84,14 +84,7 @@ void HttpRequest::sendRequest(const QString &requestURL, const HttpRequest::Meth
     qDebug() << "HttpRequest is active";
     return;
   }
-  QString token;
-  if (create_jwt) {
-    token = CommaApi::create_jwt();
-  } else {
-    QString token_json = QString::fromStdString(util::read_file(util::getenv("HOME") + "/.comma/auth.json"));
-    QJsonDocument json_d = QJsonDocument::fromJson(token_json.toUtf8());
-    token = json_d["access_token"].toString();
-  }
+  QString token = CommaApi::create_jwt();
 
   QNetworkRequest request;
   request.setUrl(QUrl(requestURL));
