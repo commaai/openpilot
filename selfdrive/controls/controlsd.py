@@ -424,7 +424,7 @@ class Controls:
 
     return CS
 
-  def state_transition(self):
+  def state_transition(self, CS):
     """Compute conditional state transitions and execute actions on state transitions"""
 
     # decrement the soft disable timer at every step, as it's reset on
@@ -555,7 +555,7 @@ class Controls:
 
     if not self.joystick_mode:
       # accel PID loop
-      pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, CS.vCruise * CV.KPH_TO_MS)
+      pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.card.v_cruise_helper.v_cruise_kph * CV.KPH_TO_MS)
       t_since_plan = (self.sm.frame - self.sm.recv_frame['longitudinalPlan']) * DT_CTRL
       actuators.accel = self.LoC.update(CC.longActive, CS, long_plan, pid_accel_limits, t_since_plan)
 
@@ -658,7 +658,7 @@ class Controls:
       CC.cruiseControl.resume = self.enabled and CS.cruiseState.standstill and speeds[-1] > 0.1
 
     hudControl = CC.hudControl
-    hudControl.setSpeed = float(CS.vCruiseCluster * CV.KPH_TO_MS)
+    hudControl.setSpeed = float(self.card.v_cruise_helper.v_cruise_cluster_kph * CV.KPH_TO_MS)
     hudControl.speedVisible = self.enabled
     hudControl.lanesVisible = self.enabled
     hudControl.leadVisible = self.sm['longitudinalPlan'].hasLead
@@ -741,6 +741,8 @@ class Controls:
     controlsState.engageable = not self.events.contains(ET.NO_ENTRY)
     controlsState.longControlState = self.LoC.long_control_state
     controlsState.vPid = float(self.LoC.v_pid)
+    controlsState.vCruise = float(self.card.v_cruise_helper.v_cruise_kph)
+    controlsState.vCruiseCluster = float(self.card.v_cruise_helper.v_cruise_cluster_kph)
     controlsState.upAccelCmd = float(self.LoC.pid.p)
     controlsState.uiAccelCmd = float(self.LoC.pid.i)
     controlsState.ufAccelCmd = float(self.LoC.pid.f)
@@ -790,7 +792,7 @@ class Controls:
 
     if not self.CP.passive and self.initialized:
       # Update control state
-      self.state_transition()
+      self.state_transition(CS)
     # cloudlog.timestamp("State transitioned")
 
     # Compute actuators (runs PID loops and lateral MPC)
