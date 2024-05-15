@@ -14,8 +14,8 @@ ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
 # Create a "tools" directory to contain all shell scripts for installation
-COPY tools/install_ubuntu_dependencies.sh /tmp/tools/
-COPY tools/install_python_dependencies.sh /tmp/tools/
+COPY --chown=$USER tools/install_ubuntu_dependencies.sh /tmp/tools/
+COPY --chown=$USER tools/install_python_dependencies.sh /tmp/tools/
 
 # Execute shell scripts to install additional dependencies
 RUN cd /tmp && \
