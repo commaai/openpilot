@@ -4,7 +4,7 @@ import time
 
 import cereal.messaging as messaging
 
-from cereal import car
+from cereal import car, log
 
 from panda import ALTERNATIVE_EXPERIENCE
 
@@ -20,6 +20,7 @@ from openpilot.selfdrive.controls.lib.events import Events
 
 REPLAY = "REPLAY" in os.environ
 
+State = log.ControlsState.OpenpilotState
 EventName = car.CarEvent.EventName
 ButtonType = car.CarState.ButtonEvent.Type
 
@@ -56,6 +57,9 @@ class Car:
       self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'], experimental_long_allowed, num_pandas)
     else:
       self.CI, self.CP = CI, CI.CP
+
+    # read params
+    self.is_metric = self.params.get_bool("IsMetric")
 
     # set alternative experiences from parameters
     self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
@@ -115,6 +119,10 @@ class Car:
     if can_rcv_valid and REPLAY:
       self.can_log_mono_time = messaging.log_from_bytes(can_strs[0]).logMonoTime
 
+    if self.sm['controlsState'].initialized and not self.controlsState_prev.initialized:
+      self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
+      cloudlog.timestamp("Initialized")
+
     return CS
 
   def update_events(self, CS: car.CarState) -> car.CarState:
@@ -134,6 +142,15 @@ class Car:
       self.events.add(EventName.pedalPressed)
 
     CS.events = self.events.to_msg()
+
+  def state_transition(self, CS: car.CarState):
+    self.v_cruise_helper.update_v_cruise(CS, self.sm['controlsState'].enabled, self.is_metric)
+
+    controlsState = self.sm['controlsState']
+    if self.controlsState_prev.state == State.disabled:
+      # TODO: use ENABLED_STATES from controlsd? it includes softDisabling which isn't possible here
+      if controlsState.state in (State.preEnabled, State.overriding, State.enabled):
+       self.v_cruise_helper.initialize_v_cruise(CS, controlsState.experimentalMode)
 
   def state_publish(self, CS: car.CarState):
     """carState and carParams publish loop"""
@@ -184,14 +201,13 @@ class Car:
 
     self.update_events(CS)
 
+    if not self.CP.passive and self.sm['controlsState'].initialized:
+      self.state_transition(CS)
+
     self.state_publish(CS)
     cloudlog.timestamp("State published")
 
     controlsState = self.sm['controlsState']
-    if controlsState.initialized and not self.controlsState_prev.initialized:
-      self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
-      cloudlog.timestamp("Initialized")
-
     if not self.CP.passive and controlsState.initialized:
       self.controls_update(CS, self.sm['carControl'])
       cloudlog.timestamp("Controls updated")

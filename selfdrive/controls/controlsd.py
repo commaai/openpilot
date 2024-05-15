@@ -96,9 +96,8 @@ class Controls:
                                   poll='carState',
                                   ignore_alive=ignore, ignore_avg_freq=ignore+['radarState', 'testJoystick'], ignore_valid=['testJoystick', ])
 
-    self.joystick_mode = self.params.get_bool("JoystickDebugMode")
-
     # read params
+    self.joystick_mode = self.params.get_bool("JoystickDebugMode")
     self.is_metric = self.params.get_bool("IsMetric")
     self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
 
@@ -168,10 +167,11 @@ class Controls:
 
   def set_initial_state(self):
     if REPLAY:
-      controls_state = self.params.get("ReplayControlsState")
-      if controls_state is not None:
-        with log.ControlsState.from_bytes(controls_state) as controls_state:
-          self.card.v_cruise_helper.v_cruise_kph = controls_state.vCruise
+      # TODO: move this to card
+      # controls_state = self.params.get("ReplayControlsState")
+      # if controls_state is not None:
+      #   with log.ControlsState.from_bytes(controls_state) as controls_state:
+      #     self.card.v_cruise_helper.v_cruise_kph = controls_state.vCruise
 
       if any(ps.controlsAllowed for ps in self.sm['pandaStates']):
         self.state = State.enabled
@@ -427,8 +427,6 @@ class Controls:
   def state_transition(self, CS):
     """Compute conditional state transitions and execute actions on state transitions"""
 
-    self.card.v_cruise_helper.update_v_cruise(CS, self.enabled, self.is_metric)
-
     # decrement the soft disable timer at every step, as it's reset on
     # entrance in SOFT_DISABLING state
     self.soft_disable_timer = max(0, self.soft_disable_timer - 1)
@@ -502,7 +500,6 @@ class Controls:
           else:
             self.state = State.enabled
           self.current_alert_types.append(ET.ENABLE)
-          self.card.v_cruise_helper.initialize_v_cruise(CS, self.experimental_mode)
 
     # Check if openpilot is engaged and actuators are enabled
     self.enabled = self.state in ENABLED_STATES
