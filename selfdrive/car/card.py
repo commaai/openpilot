@@ -94,6 +94,13 @@ class Car:
     # card is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
 
+  def set_initial_state(self):
+    if REPLAY:
+      controls_state = self.params.get("ReplayCarState")
+      if controls_state is not None:
+        with log.ControlsState.from_bytes(controls_state) as controls_state:
+          self.v_cruise_helper.v_cruise_kph = controls_state.vCruise
+
   def state_update(self) -> car.CarState:
     """carState update loop, driven by can"""
 
@@ -121,6 +128,7 @@ class Car:
 
     if self.sm['controlsState'].initialized and not self.controlsState_prev.initialized:
       self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
+      self.set_initial_state()
       cloudlog.timestamp("Initialized")
 
     return CS
@@ -172,6 +180,8 @@ class Car:
     cs_send = messaging.new_message('carState')
     cs_send.valid = CS.canValid
     cs_send.carState = CS
+    cs_send.carState.vCruise = float(self.v_cruise_helper.v_cruise_kph)
+    cs_send.carState.vCruiseCluster = float(self.v_cruise_helper.v_cruise_cluster_kph)
     cs_send.carState.canRcvTimeout = self.can_rcv_timeout
     cs_send.carState.canErrorCounter = self.can_rcv_cum_timeout_counter
     cs_send.carState.cumLagMs = -self.rk.remaining * 1000.
