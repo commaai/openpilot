@@ -809,7 +809,7 @@ This may take up to a minute.</source>
     <name>Sidebar</name>
     <message>
         <source>CONNECT</source>
-        <translation>연결됨</translation>
+        <translation>커넥트</translation>
     </message>
     <message>
         <source>OFFLINE</source>
