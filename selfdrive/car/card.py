@@ -15,7 +15,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
 from openpilot.selfdrive.car.car_helpers import get_car, get_one_can
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
-from openpilot.selfdrive.controls.lib.events import Events
+from openpilot.selfdrive.controls.lib.events import Events, ET
 
 REPLAY = "REPLAY" in os.environ
 
@@ -88,6 +88,8 @@ class Car:
 
     self.events = Events()
 
+    self.enabled_requested = False
+
     # card is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
 
@@ -136,13 +138,20 @@ class Car:
     CS.events = self.events.to_msg()
 
   def state_transition(self, CS: car.CarState):
-    self.v_cruise_helper.update_v_cruise(CS, self.sm['controlsState'].enabled, self.is_metric)
+    # card maintains its own requested state to ensure controlsd doesn't miss any enable/disable events
+    if self.events.contains(ET.ENABLE):
+      if not self.events.contains(ET.NO_ENTRY):
+        self.enabled_requested = True
 
-    controlsState = self.sm['controlsState']
-    if self.controlsState_prev.state == State.disabled:
-      # TODO: use ENABLED_STATES from controlsd? it includes softDisabling which isn't possible here
-      if controlsState.state in (State.preEnabled, State.overriding, State.enabled):
-       self.v_cruise_helper.initialize_v_cruise(CS, controlsState.experimentalMode)
+    else:
+      if self.events.contains(ET.USER_DISABLE) or self.events.contains(ET.IMMEDIATE_DISABLE):
+        self.enabled_requested = False
+
+    # sync state with controlsd on non-car disable events
+    if not self.sm['controlsState'].enabled and self.controlsState_prev.enabled:
+      self.enabled_requested = False
+
+    CS.enabledRequested = self.enabled_requested
 
   def state_publish(self, CS: car.CarState):
     """carState and carParams publish loop"""
