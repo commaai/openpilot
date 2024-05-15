@@ -2,14 +2,14 @@ import os
 import shutil
 import uuid
 
-from typing import Optional
 
 from openpilot.common.params import Params
+from openpilot.system.hardware import PC
 from openpilot.system.hardware.hw import Paths
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
 
 class OpenpilotPrefix:
-  def __init__(self, prefix: Optional[str] = None, clean_dirs_on_exit: bool = True, shared_download_cache: bool = False):
+  def __init__(self, prefix: str = None, clean_dirs_on_exit: bool = True, shared_download_cache: bool = False):
     self.prefix = prefix if prefix else str(uuid.uuid4().hex[0:15])
     self.msgq_path = os.path.join('/dev/shm', self.prefix)
     self.clean_dirs_on_exit = clean_dirs_on_exit
@@ -46,7 +46,8 @@ class OpenpilotPrefix:
       shutil.rmtree(os.path.realpath(symlink_path), ignore_errors=True)
       os.remove(symlink_path)
     shutil.rmtree(self.msgq_path, ignore_errors=True)
-    shutil.rmtree(Paths.log_root(), ignore_errors=True)
+    if PC:
+      shutil.rmtree(Paths.log_root(), ignore_errors=True)
     if not os.environ.get("COMMA_CACHE", False):
       shutil.rmtree(Paths.download_cache_root(), ignore_errors=True)
     shutil.rmtree(Paths.comma_home(), ignore_errors=True)

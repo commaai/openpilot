@@ -39,7 +39,7 @@ def create_acc_cancel_cmd(packer, car_fingerprint, cruise_throttle_msg):
     "unsure2",
     "unsure3",
   ]}
-  can_bus = 1 if car_fingerprint == CAR.ALTIMA else 2
+  can_bus = 1 if car_fingerprint == CAR.NISSAN_ALTIMA else 2
 
   values["CANCEL_BUTTON"] = 1
   values["NO_BUTTON_PRESSED"] = 0

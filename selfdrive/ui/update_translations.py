@@ -28,7 +28,7 @@ def update_translations(vanish: bool = False, translation_files: None | list[str
   generate_translations_include()
 
   if translation_files is None:
-    with open(LANGUAGES_FILE, "r") as f:
+    with open(LANGUAGES_FILE) as f:
       translation_files = json.load(f).values()
 
   for file in translation_files:

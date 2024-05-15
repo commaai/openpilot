@@ -1,8 +1,8 @@
 import capnp
-from typing import Union, List, Dict, Any
+from typing import Any
 
 
-def generate_type(type_walker, schema_walker) -> Union[str, List[Any], Dict[str, Any]]:
+def generate_type(type_walker, schema_walker) -> str | list[Any] | dict[str, Any]:
   data_type = next(type_walker)
   if data_type.which() == 'struct':
     return generate_struct(next(schema_walker))
@@ -15,11 +15,11 @@ def generate_type(type_walker, schema_walker) -> Union[str, List[Any], Dict[str,
     return str(data_type.which())
 
 
-def generate_struct(schema: capnp.lib.capnp._StructSchema) -> Dict[str, Any]:
+def generate_struct(schema: capnp.lib.capnp._StructSchema) -> dict[str, Any]:
   return {field: generate_field(schema.fields[field]) for field in schema.fields if not field.endswith("DEPRECATED")}
 
 
-def generate_field(field: capnp.lib.capnp._StructSchemaField) -> Union[str, List[Any], Dict[str, Any]]:
+def generate_field(field: capnp.lib.capnp._StructSchemaField) -> str | list[Any] | dict[str, Any]:
   def schema_walker(field):
     yield field.schema
 

@@ -4,7 +4,7 @@ from collections import defaultdict
 import difflib
 import pickle
 
-from openpilot.selfdrive.car.docs import get_all_car_info
+from openpilot.selfdrive.car.docs import get_all_car_docs
 from openpilot.selfdrive.car.docs_definitions import Column
 
 FOOTNOTE_TAG = "<sup>{}</sup>"
@@ -17,7 +17,7 @@ COLUMN_HEADER = "|---|---|---|{}|".format("|".join([":---:"] * (len(Column) - 3)
 ARROW_SYMBOL = "➡️"
 
 
-def load_base_car_info(path):
+def load_base_car_docs(path):
   with open(path, "rb") as f:
     return pickle.load(f)
 
@@ -57,31 +57,31 @@ def format_row(builder):
   return "|" + "|".join(builder) + "|"
 
 
-def print_car_info_diff(path):
-  base_car_info = defaultdict(list)
-  new_car_info = defaultdict(list)
+def print_car_docs_diff(path):
+  base_car_docs = defaultdict(list)
+  new_car_docs = defaultdict(list)
 
-  for car in load_base_car_info(path):
-    base_car_info[car.car_fingerprint].append(car)
-  for car in get_all_car_info():
-    new_car_info[car.car_fingerprint].append(car)
+  for car in load_base_car_docs(path):
+    base_car_docs[car.car_fingerprint].append(car)
+  for car in get_all_car_docs():
+    new_car_docs[car.car_fingerprint].append(car)
 
   # Add new platforms to base cars so we can detect additions and removals in one pass
-  base_car_info.update({car: [] for car in new_car_info if car not in base_car_info})
+  base_car_docs.update({car: [] for car in new_car_docs if car not in base_car_docs})
 
   changes = defaultdict(list)
-  for base_car_model, base_cars in base_car_info.items():
+  for base_car_model, base_cars in base_car_docs.items():
     # Match car info changes, and get additions and removals
-    new_cars = new_car_info[base_car_model]
+    new_cars = new_car_docs[base_car_model]
     car_changes, car_additions, car_removals = match_cars(base_cars, new_cars)
 
     # Removals
-    for car_info in car_removals:
-      changes["removals"].append(format_row([car_info.get_column(column, STAR_ICON, VIDEO_ICON, FOOTNOTE_TAG) for column in Column]))
+    for car_docs in car_removals:
+      changes["removals"].append(format_row([car_docs.get_column(column, STAR_ICON, VIDEO_ICON, FOOTNOTE_TAG) for column in Column]))
 
     # Additions
-    for car_info in car_additions:
-      changes["additions"].append(format_row([car_info.get_column(column, STAR_ICON, VIDEO_ICON, FOOTNOTE_TAG) for column in Column]))
+    for car_docs in car_additions:
+      changes["additions"].append(format_row([car_docs.get_column(column, STAR_ICON, VIDEO_ICON, FOOTNOTE_TAG) for column in Column]))
 
     for new_car, base_car in car_changes:
       # Column changes
@@ -117,4 +117,4 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument("--path", required=True)
   args = parser.parse_args()
-  print_car_info_diff(args.path)
+  print_car_docs_diff(args.path)

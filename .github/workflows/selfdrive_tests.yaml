@@ -26,7 +26,7 @@ env:
 jobs:
   build_release:
     name: build release
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     env:
       STRIPPED_DIR: /tmp/releasepilot
     steps:
@@ -69,9 +69,9 @@ jobs:
       matrix:
         arch: ${{ fromJson(
            ((github.repository == 'commaai/openpilot') &&
-              ((github.event_name != 'pull_request') || 
+              ((github.event_name != 'pull_request') ||
                (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && '["x86_64", "aarch64"]' || '["x86_64"]' ) }}
-    runs-on: ${{ (matrix.arch == 'aarch64') && 'namespace-profile-arm64-2x8' || 'ubuntu-20.04' }}
+    runs-on: ${{ (matrix.arch == 'aarch64') && 'namespace-profile-arm64-2x8' || 'ubuntu-latest' }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -87,7 +87,7 @@ jobs:
     strategy:
       matrix:
         arch: ${{ fromJson( (github.repository == 'commaai/openpilot') && '["x86_64", "aarch64"]' || '["x86_64"]' ) }}
-    runs-on: ${{ (matrix.arch == 'aarch64') && 'namespace-profile-arm64-2x8' || 'ubuntu-20.04' }}
+    runs-on: ${{ (matrix.arch == 'aarch64') && 'namespace-profile-arm64-2x8' || 'ubuntu-latest' }}
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v4
@@ -104,7 +104,7 @@ jobs:
 
   docker_push_multiarch:
     name: docker push multiarch tag
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
     needs: [docker_push]
     steps:
@@ -117,13 +117,13 @@ jobs:
     - name: Merge x64 and arm64 tags
       run: |
         export PUSH_IMAGE=true
-        selfdrive/test/docker_tag_multiarch.sh base x86_64 aarch64
+        scripts/retry.sh selfdrive/test/docker_tag_multiarch.sh base x86_64 aarch64
 
   static_analysis:
     name: static analysis
     runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
-                   ((github.event_name != 'pull_request') || 
-                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-20.04' }}
+                   ((github.event_name != 'pull_request') ||
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-latest' }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -136,7 +136,7 @@ jobs:
 
   valgrind:
     name: valgrind
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
       with:
@@ -155,8 +155,8 @@ jobs:
   unit_tests:
     name: unit tests
     runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
-                   ((github.event_name != 'pull_request') || 
-                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-20.04' }}
+                   ((github.event_name != 'pull_request') ||
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-latest' }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -177,7 +177,7 @@ jobs:
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         ./selfdrive/ui/tests/test_translations.py"
     - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         name: ${{ github.job }}
       env:
@@ -186,8 +186,8 @@ jobs:
   process_replay:
     name: process replay
     runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
-                   ((github.event_name != 'pull_request') || 
-                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-20.04' }}
+                   ((github.event_name != 'pull_request') ||
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-latest' }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -197,7 +197,7 @@ jobs:
         docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
     - name: Cache test routes
       id: dependency-cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: .ci_cache/comma_download_cache
         key: proc-replay-${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/ref_commit') }}
@@ -215,7 +215,7 @@ jobs:
       id: print-diff
       if: always()
       run: cat selfdrive/test/process_replay/diff.txt
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       if: always()
       continue-on-error: true
       with:
@@ -226,7 +226,7 @@ jobs:
       run: |
         ${{ env.RUN }} "unset PYTHONWARNINGS && AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
     - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         name: ${{ github.job }}
       env:
@@ -234,15 +234,15 @@ jobs:
 
   regen:
     name: regen
-    runs-on: 'ubuntu-20.04'
-    steps: 
+    runs-on: 'ubuntu-latest'
+    steps:
     - uses: actions/checkout@v4
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
     - name: Cache test routes
       id: dependency-cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: .ci_cache/comma_download_cache
         key: regen-${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/test_regen.py') }}
@@ -259,7 +259,7 @@ jobs:
 
   test_modeld:
     name: model tests
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
       with:
@@ -284,7 +284,7 @@ jobs:
         ${{ env.RUN }} "unset PYTHONWARNINGS && \
                            $PYTEST selfdrive/modeld"
     - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         name: ${{ github.job }}
       env:
@@ -293,8 +293,8 @@ jobs:
   test_cars:
     name: cars
     runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
-                   ((github.event_name != 'pull_request') || 
-                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-20.04' }}
+                   ((github.event_name != 'pull_request') ||
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
       matrix:
@@ -321,7 +321,7 @@ jobs:
         NUM_JOBS: 5
         JOB_ID: ${{ matrix.job }}
     - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         name: ${{ github.job }}-${{ matrix.job }}
       env:
@@ -329,7 +329,7 @@ jobs:
 
   car_docs_diff:
     name: PR comments
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
@@ -340,7 +340,7 @@ jobs:
       - uses: ./.github/workflows/setup-with-retry
       - name: Get base car info
         run: |
-          ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/debug/dump_car_info.py --path /tmp/openpilot_cache/base_car_info"
+          ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/debug/dump_car_docs.py --path /tmp/openpilot_cache/base_car_docs"
           sudo chown -R $USER:$USER ${{ github.workspace }}
       - uses: actions/checkout@v4
         with:
@@ -352,19 +352,19 @@ jobs:
         run: |
           cd current
           ${{ env.RUN }} "scons -j$(nproc)"
-          output=$(${{ env.RUN }} "python selfdrive/debug/print_docs_diff.py --path /tmp/openpilot_cache/base_car_info")
+          output=$(${{ env.RUN }} "python selfdrive/debug/print_docs_diff.py --path /tmp/openpilot_cache/base_car_docs")
           output="${output//$'\n'/'%0A'}"
           echo "::set-output name=diff::$output"
       - name: Find comment
         if: ${{ env.AZURE_TOKEN != '' }}
-        uses: peter-evans/find-comment@1769778a0c5bd330272d749d12c036d65e70d39d
+        uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e
         id: fc
         with:
           issue-number: ${{ github.event.pull_request.number }}
           body-includes: This PR makes changes to
       - name: Update comment
         if: ${{ steps.save_diff.outputs.diff != '' && env.AZURE_TOKEN != '' }}
-        uses: peter-evans/create-or-update-comment@b95e16d2859ad843a14218d1028da5b2c4cbc4b4
+        uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043
         with:
           comment-id: ${{ steps.fc.outputs.comment-id }}
           issue-number: ${{ github.event.pull_request.number }}
@@ -372,7 +372,7 @@ jobs:
           edit-mode: replace
       - name: Delete comment
         if: ${{ steps.fc.outputs.comment-id != '' && steps.save_diff.outputs.diff == '' && env.AZURE_TOKEN != '' }}
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           script: |
             github.rest.issues.deleteComment({
@@ -383,7 +383,7 @@ jobs:
 
   create_ui_report:
     name: Create UI Report
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -395,10 +395,10 @@ jobs:
         run: >
             ${{ env.RUN }} "PYTHONWARNINGS=ignore &&
                             source selfdrive/test/setup_xvfb.sh &&
-                            export MAPBOX_TOKEN='pk.eyJ1Ijoiam5ld2IiLCJhIjoiY2xxNW8zZXprMGw1ZzJwbzZneHd2NHljbSJ9.gV7VPRfbXFetD-1OVF0XZg' && 
+                            export MAPBOX_TOKEN='pk.eyJ1Ijoiam5ld2IiLCJhIjoiY2xxNW8zZXprMGw1ZzJwbzZneHd2NHljbSJ9.gV7VPRfbXFetD-1OVF0XZg' &&
                             python selfdrive/ui/tests/test_ui/run.py"
       - name: Upload Test Report
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: report
           path: selfdrive/ui/tests/test_ui/report
