@@ -14,11 +14,13 @@ from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
 from openpilot.selfdrive.car.car_helpers import get_car, get_one_can
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
+from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_UNSET
 from openpilot.selfdrive.controls.lib.events import Events
 
 REPLAY = "REPLAY" in os.environ
 
 EventName = car.CarEvent.EventName
+ButtonType = car.CarState.ButtonEvent.Type
 
 
 class CarD:
@@ -117,6 +119,11 @@ class CarD:
     self.events.clear()
 
     self.events.add_from_msg(CS.events)
+
+    # Block resume if cruise never previously enabled
+    resume_pressed = any(be.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for be in CS.buttonEvents)
+    if not self.CP.pcmCruise and abs(self.sm['controlsState'].vCruise - V_CRUISE_UNSET) < 1e-3 and resume_pressed:
+      self.events.add(EventName.resumeBlocked)
 
     # Disable on rising edge of accelerator or brake. Also disable on brake when speed > 0
     if (CS.gasPressed and not self.CS_prev.gasPressed and self.disengage_on_accelerator) or \
