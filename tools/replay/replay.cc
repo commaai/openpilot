@@ -468,12 +468,15 @@ std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::con
      // Skip events if socket is not present
     if (!sockets_[evt.which]) continue;
 
-    int64_t time_diff = (evt.mono_time - evt_start_ts) / speed_ - (nanos_since_boot() - loop_start_ts);
-    // if time_diff is greater than 1 second, it means that an invalid segment is skipped
-    if (time_diff >= 1e9 || speed_ != prev_replay_speed) {
-      // reset event start times
+    const uint64_t current_nanos = nanos_since_boot();
+    const int64_t time_diff = (evt.mono_time - evt_start_ts) / speed_ - (current_nanos - loop_start_ts);
+
+    // Reset timestamps for potential synchronization issues:
+    // - A negative time_diff may indicate slow execution or system wake-up,
+    // - A time_diff exceeding 1 second suggests a skipped segment.
+    if ((time_diff < -1e9 || time_diff >= 1e9) || speed_ != prev_replay_speed) {
       evt_start_ts = evt.mono_time;
-      loop_start_ts = nanos_since_boot();
+      loop_start_ts = current_nanos;
       prev_replay_speed = speed_;
     } else if (time_diff > 0) {
       precise_nano_sleep(time_diff);

@@ -21,7 +21,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.car.car_helpers import get_startup_event
 from openpilot.selfdrive.car.card import CarD
 from openpilot.selfdrive.controls.lib.alertmanager import AlertManager, set_offroad_alert
-from openpilot.selfdrive.controls.lib.drive_helpers import VCruiseHelper, clip_curvature
+from openpilot.selfdrive.controls.lib.drive_helpers import clip_curvature
 from openpilot.selfdrive.controls.lib.events import Events, ET
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl, MIN_LATERAL_CONTROL_SPEED
 from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
@@ -96,7 +96,6 @@ class Controls:
     self.joystick_mode = self.params.get_bool("JoystickDebugMode")
 
     # read params
-    self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
     self.is_metric = self.params.get_bool("IsMetric")
     self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
 
@@ -111,8 +110,6 @@ class Controls:
     if not self.CP.openpilotLongitudinalControl:
       self.params.remove("ExperimentalMode")
 
-    self.CC = car.CarControl.new_message()
-    self.CS_prev = car.CarState.new_message()
     self.AM = AlertManager()
     self.events = Events()
 
@@ -143,11 +140,9 @@ class Controls:
     self.logged_comm_issue = None
     self.not_running_prev = None
     self.steer_limited = False
-    self.last_actuators = car.CarControl.Actuators.new_message()
     self.desired_curvature = 0.0
     self.experimental_mode = False
     self.personality = self.read_personality_param()
-    self.v_cruise_helper = VCruiseHelper(self.CP)
     self.recalibrating_seen = False
 
     self.can_log_mono_time = 0
@@ -170,10 +165,10 @@ class Controls:
 
   def set_initial_state(self):
     if REPLAY:
-      controls_state = Params().get("ReplayControlsState")
+      controls_state = self.params.get("ReplayControlsState")
       if controls_state is not None:
         with log.ControlsState.from_bytes(controls_state) as controls_state:
-          self.v_cruise_helper.v_cruise_kph = controls_state.vCruise
+          self.card.v_cruise_helper.v_cruise_kph = controls_state.vCruise
 
       if any(ps.controlsAllowed for ps in self.sm['pandaStates']):
         self.state = State.enabled
@@ -201,23 +196,6 @@ class Controls:
     # no more events while in dashcam mode
     if self.CP.passive:
       return
-
-    # Block resume if cruise never previously enabled
-    resume_pressed = any(be.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for be in CS.buttonEvents)
-    if not self.CP.pcmCruise and not self.v_cruise_helper.v_cruise_initialized and resume_pressed:
-      self.events.add(EventName.resumeBlocked)
-
-    # Disable on rising edge of accelerator or brake. Also disable on brake when speed > 0
-    if (CS.gasPressed and not self.CS_prev.gasPressed and self.disengage_on_accelerator) or \
-      (CS.brakePressed and (not self.CS_prev.brakePressed or not CS.standstill)) or \
-      (CS.regenBraking and (not self.CS_prev.regenBraking or not CS.standstill)):
-      self.events.add(EventName.pedalPressed)
-
-    if CS.brakePressed and CS.standstill:
-      self.events.add(EventName.preEnableStandstill)
-
-    if CS.gasPressed:
-      self.events.add(EventName.gasPressedOverride)
 
     if not self.CP.notCar:
       self.events.add_from_msg(self.sm['driverMonitoringState'].events)
@@ -447,7 +425,7 @@ class Controls:
   def state_transition(self, CS):
     """Compute conditional state transitions and execute actions on state transitions"""
 
-    self.v_cruise_helper.update_v_cruise(CS, self.enabled, self.is_metric)
+    self.card.v_cruise_helper.update_v_cruise(CS, self.enabled, self.is_metric)
 
     # decrement the soft disable timer at every step, as it's reset on
     # entrance in SOFT_DISABLING state
@@ -522,7 +500,7 @@ class Controls:
           else:
             self.state = State.enabled
           self.current_alert_types.append(ET.ENABLE)
-          self.v_cruise_helper.initialize_v_cruise(CS, self.experimental_mode)
+          self.card.v_cruise_helper.initialize_v_cruise(CS, self.experimental_mode)
 
     # Check if openpilot is engaged and actuators are enabled
     self.enabled = self.state in ENABLED_STATES
@@ -578,7 +556,7 @@ class Controls:
 
     if not self.joystick_mode:
       # accel PID loop
-      pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.v_cruise_helper.v_cruise_kph * CV.KPH_TO_MS)
+      pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, self.card.v_cruise_helper.v_cruise_kph * CV.KPH_TO_MS)
       t_since_plan = (self.sm.frame - self.sm.recv_frame['longitudinalPlan']) * DT_CTRL
       actuators.accel = self.LoC.update(CC.longActive, CS, long_plan, pid_accel_limits, t_since_plan)
 
@@ -621,7 +599,7 @@ class Controls:
         undershooting = abs(lac_log.desiredLateralAccel) / abs(1e-3 + lac_log.actualLateralAccel) > 1.2
         turning = abs(lac_log.desiredLateralAccel) > 1.0
         good_speed = CS.vEgo > 5
-        max_torque = abs(self.last_actuators.steer) > 0.99
+        max_torque = abs(self.sm['carOutput'].actuatorsOutput.steer) > 0.99
         if undershooting and turning and good_speed and max_torque:
           lac_log.active and self.events.add(EventName.steerSaturated)
       elif lac_log.saturated:
@@ -662,8 +640,6 @@ class Controls:
   def publish_logs(self, CS, start_time, CC, lac_log):
     """Send actuators and hud commands to the car, send controlsstate and MPC logging"""
 
-    CO = self.sm['carOutput']
-
     # Orientation and angle rates can be useful for carcontroller
     # Only calibrated (car) frame is relevant for the carcontroller
     orientation_value = list(self.sm['liveLocationKalman'].calibratedOrientationNED.value)
@@ -683,7 +659,7 @@ class Controls:
       CC.cruiseControl.resume = self.enabled and CS.cruiseState.standstill and speeds[-1] > 0.1
 
     hudControl = CC.hudControl
-    hudControl.setSpeed = float(self.v_cruise_helper.v_cruise_cluster_kph * CV.KPH_TO_MS)
+    hudControl.setSpeed = float(self.card.v_cruise_helper.v_cruise_cluster_kph * CV.KPH_TO_MS)
     hudControl.speedVisible = self.enabled
     hudControl.lanesVisible = self.enabled
     hudControl.leadVisible = self.sm['longitudinalPlan'].hasLead
@@ -727,8 +703,8 @@ class Controls:
       hudControl.visualAlert = current_alert.visual_alert
 
     if not self.CP.passive and self.initialized:
-      self.card.controls_update(CC)
-      self.last_actuators = CO.actuatorsOutput
+      self.card.controls_update(CS, CC)
+      CO = self.sm['carOutput']
       if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
         self.steer_limited = abs(CC.actuators.steeringAngleDeg - CO.actuatorsOutput.steeringAngleDeg) > \
                              STEER_ANGLE_SATURATION_THRESHOLD
@@ -767,8 +743,8 @@ class Controls:
     controlsState.engageable = not self.events.contains(ET.NO_ENTRY)
     controlsState.longControlState = self.LoC.long_control_state
     controlsState.vPid = float(self.LoC.v_pid)
-    controlsState.vCruise = float(self.v_cruise_helper.v_cruise_kph)
-    controlsState.vCruiseCluster = float(self.v_cruise_helper.v_cruise_cluster_kph)
+    controlsState.vCruise = float(self.card.v_cruise_helper.v_cruise_kph)
+    controlsState.vCruiseCluster = float(self.card.v_cruise_helper.v_cruise_cluster_kph)
     controlsState.upAccelCmd = float(self.LoC.pid.p)
     controlsState.uiAccelCmd = float(self.LoC.pid.i)
     controlsState.ufAccelCmd = float(self.LoC.pid.f)
@@ -805,9 +781,6 @@ class Controls:
     cc_send.carControl = CC
     self.pm.send('carControl', cc_send)
 
-    # copy CarControl to pass to CarInterface on the next iteration
-    self.CC = CC
-
   def step(self):
     start_time = time.monotonic()
 
@@ -827,8 +800,6 @@ class Controls:
 
     # Publish data
     self.publish_logs(CS, start_time, CC, lac_log)
-
-    self.CS_prev = CS
 
   def read_personality_param(self):
     try:

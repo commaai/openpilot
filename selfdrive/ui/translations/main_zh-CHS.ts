@@ -432,10 +432,6 @@
 %1</translation>
     </message>
     <message>
-        <source>Invalid date and time settings, system won&apos;t start. Connect to internet to set time.</source>
-        <translation>日期和时间设置无效，系统无法启动。请连接至互联网以设置时间。</translation>
-    </message>
-    <message>
         <source>Taking camera snapshots. System won&apos;t start until finished.</source>
         <translation>正在使用相机拍摄中。在完成之前，系统将无法启动。</translation>
     </message>

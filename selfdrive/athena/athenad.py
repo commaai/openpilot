@@ -467,6 +467,10 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
                            cookie="jwt=" + identity_token,
                            enable_multithread=True)
 
+    # Set TOS to keep connection responsive while under load.
+    # DSCP of 36/HDD_LINUX_AC_VI with the minimum delay flag
+    ws.sock.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, 0x90)
+
     ssock, csock = socket.socketpair()
     local_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     local_sock.connect(('127.0.0.1', local_port))
@@ -657,10 +661,12 @@ def stat_handler(end_event: threading.Event) -> None:
 def ws_proxy_recv(ws: WebSocket, local_sock: socket.socket, ssock: socket.socket, end_event: threading.Event, global_end_event: threading.Event) -> None:
   while not (end_event.is_set() or global_end_event.is_set()):
     try:
-      data = ws.recv()
-      if isinstance(data, str):
-        data = data.encode("utf-8")
-      local_sock.sendall(data)
+      r = select.select((ws.sock,), (), (), 30)
+      if r[0]:
+        data = ws.recv()
+        if isinstance(data, str):
+          data = data.encode("utf-8")
+        local_sock.sendall(data)
     except WebSocketTimeoutException:
       pass
     except Exception:
@@ -670,6 +676,7 @@ def ws_proxy_recv(ws: WebSocket, local_sock: socket.socket, ssock: socket.socket
   cloudlog.debug("athena.ws_proxy_recv closing sockets")
   ssock.close()
   local_sock.close()
+  ws.close()
   cloudlog.debug("athena.ws_proxy_recv done closing sockets")
 
   end_event.set()
