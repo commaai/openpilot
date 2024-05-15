@@ -12,15 +12,14 @@ from openpilot.tools.lib.logreader import LogReader
 
 DEMO_ROUTE = "9f583b1d93915c31|2022-05-18--10-49-51--0"
 
-SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'card', 'boardd']
-MONOTIME_KEYS = ['modelMonoTime', 'lateralPlanMonoTime', 'logMonoTime']
+SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
+MONOTIME_KEYS = ['modelMonoTime', 'lateralPlanMonoTime']
 MSGQ_TO_SERVICE = {
   'roadCameraState': 'camerad',
   'wideRoadCameraState': 'camerad',
   'modelV2': 'modeld',
   'longitudinalPlan': 'plannerd',
-  'carState': 'card',
-  'sendcan': 'card',
+  'sendcan': 'controlsd',
   'controlsState': 'controlsd'
 }
 SERVICE_TO_DURATIONS = {
@@ -50,11 +49,7 @@ def read_logs(lr):
       else:
         continue_outer = False
         for key in MONOTIME_KEYS:
-          # if msg.which() == 'controlsState':
-          #   print('hi')
           if hasattr(msg_obj, key):
-            if msg.which() == 'carState':
-              raise Exception
             if getattr(msg_obj, key) == 0:
               # Filter out controlsd messages which arrive before the camera loop
               continue_outer = True
@@ -81,8 +76,8 @@ def read_logs(lr):
         data['timestamp'][frame_id][service].append((msg.which()+" start of frame", msg_obj.timestampSof))
         if not data['start'][frame_id][service]:
           data['start'][frame_id][service] = msg_obj.timestampSof
-      elif msg.which() == 'carState':
-        # Sendcan is published before carState, but the frameId is retrieved in CS
+      elif msg.which() == 'controlsState':
+        # Sendcan is published before controlsState, but the frameId is retrieved in CS
         data['timestamp'][frame_id][service].append(("sendcan published", latest_sendcan_monotime))
       elif msg.which() == 'modelV2':
         if msg_obj.frameIdExtra != frame_id:
@@ -165,8 +160,6 @@ def insert_cloudlogs(lr, timestamps, start_times, end_times):
 def print_timestamps(timestamps, durations, start_times, relative):
   t0 = find_t0(start_times)
   for frame_id in timestamps.keys():
-    if frame_id > 50:
-      break
     print('='*80)
     print("Frame ID:", frame_id)
     if relative:
@@ -189,7 +182,7 @@ def graph_timestamps(timestamps, start_times, end_times, relative, offset_servic
   ax.set_xlim(0, 130 if relative else 750)
   ax.set_ylim(0, 17)
   ax.set_xlabel('Time (milliseconds)')
-  colors = ['blue', 'green', 'red', 'yellow', 'orange', 'purple']
+  colors = ['blue', 'green', 'red', 'yellow', 'purple']
   offsets = [[0, -5*j] for j in range(len(SERVICES))] if offset_services else None
   height = 0.3 if offset_services else 0.9
   assert len(colors) == len(SERVICES), 'Each service needs a color'
