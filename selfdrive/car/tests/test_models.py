@@ -454,7 +454,7 @@ class TestCarModelBase(unittest.TestCase):
         card.update_events(CS)
         card.CS_prev = CS
         button_enable = (any(evt.enable for evt in CS.events) and
-                         not any(evt.name == EventName.pedalPressed for evt in CS.events))
+                         not any(evt == EventName.pedalPressed for evt in card.events.names))
         mismatch = button_enable != (self.safety.get_controls_allowed() and not controls_allowed_prev)
         checks['controlsAllowed'] += mismatch
         controls_allowed_prev = self.safety.get_controls_allowed()
