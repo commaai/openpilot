@@ -440,18 +440,18 @@ class FrequencyBasedRcvCallback:
 
 
 def controlsd_config_callback(params, cfg, lr):
-  controlsState = None
+  carState = None
   initialized = False
   for msg in lr:
-    if msg.which() == "controlsState":
-      controlsState = msg.controlsState
+    if msg.which() == "carState":
+      carState = msg.carState
       if initialized:
         break
     elif msg.which() == "onroadEvents":
       initialized = car.CarEvent.EventName.controlsInitializing not in [e.name for e in msg.onroadEvents]
 
-  assert controlsState is not None and initialized, "controlsState never initialized"
-  params.put("ReplayControlsState", controlsState.as_builder().to_bytes())
+  assert carState is not None and initialized, "carState never initialized"
+  params.put("ReplayCarState", carState.as_builder().to_bytes())
 
 
 def locationd_config_pubsub_callback(params, cfg, lr):
@@ -472,7 +472,7 @@ CONFIGS = [
     ],
     subs=["controlsState", "carControl", "onroadEvents"],
     ignore=["logMonoTime", "controlsState.startMonoTime", "controlsState.cumLagMs"],
-    config_callback=controlsd_config_callback,
+    # config_callback=controlsd_config_callback,
     init_callback=get_car_params_callback,
     should_recv_callback=controlsd_rcv_callback,
     tolerance=NUMPY_TOLERANCE,

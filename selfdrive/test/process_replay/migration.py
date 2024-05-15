@@ -14,6 +14,7 @@ def migrate_all(lr, old_logtime=False, manager_states=False, panda_states=False,
   msgs = migrate_carParams(msgs, old_logtime)
   msgs = migrate_gpsLocation(msgs)
   msgs = migrate_deviceState(msgs)
+  msgs = migrate_carState(msgs)
   if manager_states:
     msgs = migrate_managerState(msgs)
   if panda_states:
@@ -64,6 +65,24 @@ def migrate_deviceState(lr):
       n = msg.as_builder()
       n.deviceState.deviceType = dt
       all_msgs.append(n.as_reader())
+    else:
+      all_msgs.append(msg)
+  return all_msgs
+
+
+def migrate_carState(lr):
+  all_msgs = []
+  vCruise = None
+  vCruiseCluster = None
+  for msg in lr:
+    if msg.which() == 'controlsState':
+      vCruise = msg.controlsState.vCruise
+      vCruiseCluster = msg.controlsState.vCruiseCluster
+    elif msg.which() == 'carState':
+      cs = msg.as_builder()
+      cs.carState.vCruise = vCruise
+      cs.carState.vCruiseCluster = vCruiseCluster
+      all_msgs.append(cs.as_reader())
     else:
       all_msgs.append(msg)
   return all_msgs

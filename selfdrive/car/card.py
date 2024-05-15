@@ -96,10 +96,10 @@ class Car:
 
   def set_initial_state(self):
     if REPLAY:
-      controls_state = self.params.get("ReplayCarState")
-      if controls_state is not None:
-        with log.ControlsState.from_bytes(controls_state) as controls_state:
-          self.v_cruise_helper.v_cruise_kph = controls_state.vCruise
+      car_state = self.params.get("ReplayCarState")
+      if car_state is not None:
+        with log.CarState.from_bytes(car_state) as car_state:
+          self.v_cruise_helper.v_cruise_kph = car_state.vCruise
 
   def state_update(self) -> car.CarState:
     """carState update loop, driven by can"""
