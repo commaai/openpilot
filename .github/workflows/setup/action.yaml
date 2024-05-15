@@ -1,63 +1,79 @@
 name: 'openpilot env setup'
 
-inputs:
-  docker_hub_pat:
-    description: 'Auth token for Docker Hub, required for BuildJet jobs'
-    required: true
-    default: ''
-  is_retried:
-    description: 'A mock param that asserts that we use the setup-with-retry instead of this action directly'
-    required: false
-    default: 'false'
+on: [push]
 
-runs:
-  using: "composite"
-  steps:
-    # assert that this action is retried using the setup-with-retry
-    - shell: bash
-      if: ${{ inputs.is_retried == 'false' }}
-      run: |
-        echo "You should not run this action directly. Use setup-with-retry instead"
-        exit 1
+jobs:
+  setup:
+    runs-on: ubuntu-latest
 
-    # do this after checkout to ensure our custom LFS config is used to pull from GitLab
-    - shell: bash
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v2
+      with:
+        lfs: true
+
+    - name: Setup Cache for Git LFS
+      id: git-lfs-cache
+      uses: actions/cache@v2
+      with:
+        path: .git/lfs
+        key: lfs-${{ runner.os }}-${{ hashFiles('.gitattributes') }}
+
+    - name: Pull LFS Objects
       run: git lfs pull
 
-    # on BuildJet runners, must be logged into DockerHub to avoid rate limiting
-    # https://buildjet.com/for-github-actions/docs/guides/docker
-    - shell: bash
-      if: ${{ contains(runner.name, 'buildjet') && inputs.docker_hub_pat == '' }}
+    - name: Setup Cache for Docker
+      id: docker-cache
+      uses: actions/cache@v2
+      with:
+        path: /tmp/.buildx-cache
+        key: docker-${{ runner.os }}-${{ github.sha }}
+        restore-keys: |
+          docker-${{ runner.os }}-
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Cache Docker layers
       run: |
-        echo "Need to set the Docker Hub PAT secret as an input to this action"
-        exit 1
+        docker buildx create --use
+        docker buildx build --cache-from type=local,src=/tmp/.buildx-cache --cache-to type=local,dest=/tmp/.buildx-cache --tag my-image:latest .
+
+    - name: Save Docker layer cache
+      run: |
+        docker save -o /tmp/docker-cache/my-image-latest.tar my-image:latest
+      if: success()
+
+    - name: Upload Docker layer cache
+      uses: actions/upload-artifact@v2
+      with:
+        name: docker-layer-cache
+        path: /tmp/docker-cache
+
+    - name: Download Docker layer cache
+      uses: actions/download-artifact@v2
+      with:
+        name: docker-layer-cache
+        path: /tmp/docker-cache
+
+    - name: Load Docker layer cache
+      run: |
+        docker load -i /tmp/docker-cache/my-image-latest.tar
+      if: success()
+
+    - name: Check Docker Hub Login
+      if: contains(runner.name, 'buildjet')
+      run: |
+        if [[ -z "${{ secrets.DOCKER_HUB_PAT }}" ]]; then
+          echo "Docker Hub PAT is not set. Exiting."
+          exit 1
+        fi
+
     - name: Login to Docker Hub
       if: contains(runner.name, 'buildjet')
-      shell: bash
-      run: |
-        docker login -u adeebshihadeh -p ${{ inputs.docker_hub_pat }}
+      run: docker login -u your-username -p ${{ secrets.DOCKER_HUB_PAT }}
 
-    # build cache
-    - id: date
-      shell: bash
-      run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
-    - shell: bash
-      run: echo "$CACHE_COMMIT_DATE"
-    - id: scons-cache
-      uses: ./.github/workflows/auto-cache
-      with:
-        path: .ci_cache/scons_cache
-        key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
-        restore-keys: |
-          scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
-          scons-${{ runner.arch }}
-    # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
-    - id: normalize-file-permissions
-      shell: bash
-      name: Normalize file permissions to ensure a consistent docker build cache
+    - name: Build and Push Docker Image
       run: |
-        find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
-        find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
-    # build our docker image
-    - shell: bash
-      run: eval ${{ env.BUILD }}
+        docker buildx build --tag your-username/your-repo:latest .
+        docker push your-username/your-repo:latest
