@@ -19,6 +19,7 @@ COPY --chown=$USER tools/install_ubuntu_dependencies.sh /tmp/tools/
 # Execute shell scripts to install additional dependencies
 RUN cd /tmp && \
     tools/install_ubuntu_dependencies.sh && \
+    apt-get autoremove && apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     rm -rf /tmp/* && \
     cd /usr/lib/gcc/arm-none-eabi/9.2.1 && \
