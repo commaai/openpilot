@@ -14,13 +14,11 @@ from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
 from openpilot.selfdrive.car.car_helpers import get_car, get_one_can
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
-from openpilot.selfdrive.controls.lib.drive_helpers import VCruiseHelper
 from openpilot.selfdrive.controls.lib.events import Events
 
 REPLAY = "REPLAY" in os.environ
 
 EventName = car.CarEvent.EventName
-ButtonType = car.CarState.ButtonEvent.Type
 
 
 class CarD:
@@ -35,7 +33,6 @@ class CarD:
     self.can_rcv_cum_timeout_counter = 0  # cumulative timeout count
 
     self.CC_prev = car.CarControl.new_message()
-    self.CS_prev = car.CarState.new_message()
 
     self.last_actuators = None
 
@@ -79,8 +76,8 @@ class CarD:
     self.params.put_nonblocking("CarParamsCache", cp_bytes)
     self.params.put_nonblocking("CarParamsPersistent", cp_bytes)
 
+    self.CS_prev = car.CarState.new_message()
     self.events = Events()
-    self.v_cruise_helper = VCruiseHelper(self.CP)
 
   def initialize(self):
     """Initialize CarInterface, once controls are ready"""
@@ -120,11 +117,6 @@ class CarD:
     self.events.clear()
 
     self.events.add_from_msg(CS.events)
-
-    # Block resume if cruise never previously enabled
-    resume_pressed = any(be.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for be in CS.buttonEvents)
-    if not self.CP.pcmCruise and not self.v_cruise_helper.v_cruise_initialized and resume_pressed:
-      self.events.add(EventName.resumeBlocked)
 
     # Disable on rising edge of accelerator or brake. Also disable on brake when speed > 0
     if (CS.gasPressed and not self.CS_prev.gasPressed and self.disengage_on_accelerator) or \
