@@ -157,18 +157,13 @@ class CarState(CarStateBase):
        (self.CP.carFingerprint in TSS2_CAR and self.acc_type == 1):
       self.low_speed_lockout = cp.vl["PCM_CRUISE_2"]["LOW_SPEED_LOCKOUT"] == 2
 
-    if self.CP.carFingerprint not in [CAR.TOYOTA_RAV4_PRIME]:
-      self.pcm_acc_status = cp.vl["PCM_CRUISE"]["CRUISE_STATE"]
-      if self.CP.carFingerprint not in (NO_STOP_TIMER_CAR - TSS2_CAR):
-        # ignore standstill state in certain vehicles, since pcm allows to restart with just an acceleration request
-        ret.cruiseState.standstill = self.pcm_acc_status == 7
+    self.pcm_acc_status = cp.vl["PCM_CRUISE"]["CRUISE_STATE"]
+    if self.CP.carFingerprint not in (NO_STOP_TIMER_CAR - TSS2_CAR):
+      # ignore standstill state in certain vehicles, since pcm allows to restart with just an acceleration request
+      ret.cruiseState.standstill = self.pcm_acc_status == 7
 
     ret.cruiseState.enabled = bool(cp.vl["PCM_CRUISE"]["CRUISE_ACTIVE"])
-
-    if self.CP.carFingerprint in [CAR.TOYOTA_RAV4_PRIME]:
-      ret.cruiseState.nonAdaptive = bool(cp.vl["PCM_CRUISE"]["CRUISE_ACTIVE"]) and not bool(cp.vl["PCM_CRUISE"]["ADAPTIVE_CRUISE"])
-    else:
-      ret.cruiseState.nonAdaptive = cp.vl["PCM_CRUISE"]["CRUISE_STATE"] in (1, 2, 3, 4, 5, 6)
+    ret.cruiseState.nonAdaptive = cp.vl["PCM_CRUISE"]["CRUISE_STATE"] in (1, 2, 3, 4, 5, 6)
 
     ret.genericToggle = bool(cp.vl["LIGHT_STALK"]["AUTO_HIGH_BEAM"])
     ret.espDisabled = cp.vl["ESP_CONTROL"]["TC_DISABLED"] != 0
