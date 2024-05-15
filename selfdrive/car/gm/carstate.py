@@ -121,7 +121,7 @@ class CarState(CarStateBase):
       if self.CP.pcmCruise:
         ret.cruiseState.nonAdaptive = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCCruiseState"] not in (2, 3)
 
-    # Keep track of when the ECM will allow enabling with the resume button
+    # The ECM faults if you enable with resume before set
     self.cruise_resume_allowed = (self.cruise_resume_allowed or ret.cruiseState.enabled) and ret.cruiseState.available
 
     if self.CP.enableBsm:
