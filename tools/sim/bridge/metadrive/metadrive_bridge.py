@@ -44,9 +44,8 @@ def create_map(track_size=60, ci=False):
       curve_block(track_size*2, 90),
     ]
   )
-
   if ci:
-    mtd_map["config"] = mtd_map["config"][:-3]
+    mtd_map["config"] = mtd_map["config"][1:]
 
   return mtd_map
 
