@@ -51,8 +51,8 @@ class CarState(CarStateBase):
     # ret.cruiseState.enabled = TODO
     # ret.cruiseState.speed = TODO
 
-    # ret.leftBlinker = TODO
-    # ret.rightBlinker = TODO
+    ret.leftBlinker = bool(pt_cp.vl["BCM_1"]["LEFT_TURN_STALK"])
+    ret.rightBlinker = bool(pt_cp.vl["BCM_1"]["RIGHT_TURN_STALK"])
     # ret.buttonEvents = TODO
     # ret.espDisabled = TODO
 
@@ -70,6 +70,7 @@ class CarState(CarStateBase):
       ("ABS_4", 100),
       ("ENGINE_1", 100),
       ("EPS_1", 100),
+      ("BCM_1", 4),  # 4Hz plus triggered updates
     ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, CANBUS.pt)
