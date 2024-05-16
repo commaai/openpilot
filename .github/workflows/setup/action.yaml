@@ -51,6 +51,9 @@ runs:
         restore-keys: |
           scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}
+    - id: create-buildx-cache
+      name: Create Buildx Cache
+      run: mkdir -p /tmp/.buildx-cache
     # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
     - id: normalize-file-permissions
       shell: bash
@@ -58,7 +61,16 @@ runs:
       run: |
         find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
         find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
-    - id: Setup Docker Buildx
+
+    - id: cache-docker-layers
+      name: Cache Docker Layers
+      uses: actions/cache@v3
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-docker-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-docker
+    - id: setup-docker-buildx
       name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
     # build our docker image
