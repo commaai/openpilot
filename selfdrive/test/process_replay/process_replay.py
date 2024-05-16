@@ -487,7 +487,6 @@ CONFIGS = [
     pubs=["pandaStates", "carControl", "controlsState", "can"],
     subs=["sendcan", "carState", "carParams", "carOutput"],
     ignore=["logMonoTime", "carState.cumLagMs"],
-    config_callback=controlsd_config_callback,
     init_callback=card_fingerprint_callback,
     should_recv_callback=card_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
