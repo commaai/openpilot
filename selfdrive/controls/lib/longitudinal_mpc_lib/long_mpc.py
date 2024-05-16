@@ -402,12 +402,13 @@ class LongitudinalMpc:
       self.crash_cnt = 0
 
     # Check if it got within lead comfort range
-    # TODO This should be done cleaner
     if self.mode == 'blended':
-      if any((lead_0_obstacle - get_safe_obstacle_distance(self.x_sol[:,1], t_follow))- self.x_sol[:,0] < 0.0):
+      obstacle_distance = get_safe_obstacle_distance(self.x_sol[:,1], t_follow)
+      lead_0_close = (lead_0_obstacle - obstacle_distance)- self.x_sol[:,0] < 0.0
+      lead_1_close = (lead_1_obstacle - obstacle_distance)- self.x_sol[:,0] < 0.0
+      if any(lead_0_close):
         self.source = 'lead0'
-      if any((lead_1_obstacle - get_safe_obstacle_distance(self.x_sol[:,1], t_follow))- self.x_sol[:,0] < 0.0) and \
-         (lead_1_obstacle[0] - lead_0_obstacle[0]):
+      if any(lead_1_close) and (lead_1_obstacle[0] - lead_0_obstacle[0]):
         self.source = 'lead1'
 
   def run(self):
