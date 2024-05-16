@@ -6,39 +6,12 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QThread>
-#include <QVBoxLayout>
 
-// TODO: remove clearLayout
-static void clearLayout(QLayout* layout) {
-  while (layout->count() > 0) {
-    QLayoutItem* item = layout->takeAt(0);
-    if (QWidget* widget = item->widget()) {
-      widget->deleteLater();
-    }
-    if (QLayout* childLayout = item->layout()) {
-      clearLayout(childLayout);
-    }
-    delete item;
-  }
-}
-
-PandaStream::PandaStream(QObject *parent, PandaStreamConfig config_) : config(config_), LiveStream(parent) {
-  if (config.serial.isEmpty()) {
-    auto serials = Panda::list();
-    if (serials.size() == 0) {
-      throw std::runtime_error("No panda found");
-    }
-    config.serial = QString::fromStdString(serials[0]);
-  }
-
-  qDebug() << "Connecting to panda with serial" << config.serial;
-  if (!connect()) {
-    throw std::runtime_error("Failed to connect to panda");
-  }
-}
+PandaStream::PandaStream(QObject *parent, PandaStreamConfig config_) : config(config_), LiveStream(parent) {}
 
 bool PandaStream::connect() {
   try {
+    qDebug() << "Connecting to panda with serial" << config.serial;
     panda.reset(new Panda(config.serial.toStdString()));
     config.bus_config.resize(3);
     qDebug() << "Connected";
@@ -47,7 +20,6 @@ bool PandaStream::connect() {
   }
 
   panda->set_safety_model(cereal::CarParams::SafetyModel::SILENT);
-
   for (int bus = 0; bus < config.bus_config.size(); bus++) {
     panda->set_can_speed_kbps(bus, config.bus_config[bus].can_speed_kbps);
 
@@ -60,7 +32,6 @@ bool PandaStream::connect() {
         panda->set_data_speed_kbps(bus, 10);
       }
     }
-
   }
   return true;
 }
@@ -108,26 +79,14 @@ AbstractOpenStreamWidget *PandaStream::widget(AbstractStream **stream) {
 // OpenPandaWidget
 
 OpenPandaWidget::OpenPandaWidget(AbstractStream **stream) : AbstractOpenStreamWidget(stream) {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->addStretch(1);
-
-  QFormLayout *form_layout = new QFormLayout();
-
+  form_layout = new QFormLayout(this);
   QHBoxLayout *serial_layout = new QHBoxLayout();
-  serial_edit = new QComboBox();
-  serial_edit->setFixedWidth(300);
-  serial_layout->addWidget(serial_edit);
+  serial_layout->addWidget(serial_edit = new QComboBox());
 
   QPushButton *refresh = new QPushButton(tr("Refresh"));
-  refresh->setFixedWidth(100);
+  refresh->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
   serial_layout->addWidget(refresh);
   form_layout->addRow(tr("Serial"), serial_layout);
-  main_layout->addLayout(form_layout);
-
-  config_layout = new QFormLayout();
-  main_layout->addLayout(config_layout);
-
-  main_layout->addStretch(1);
 
   QObject::connect(refresh, &QPushButton::clicked, this, &OpenPandaWidget::refreshSerials);
   QObject::connect(serial_edit, &QComboBox::currentTextChanged, this, &OpenPandaWidget::buildConfigForm);
@@ -145,15 +104,16 @@ void OpenPandaWidget::refreshSerials() {
 }
 
 void OpenPandaWidget::buildConfigForm() {
-  clearLayout(config_layout);
-  QString serial = serial_edit->currentText();
+  for (int i = form_layout->rowCount() - 1; i > 0; --i) {
+    form_layout->removeRow(i);
+  }
 
+  QString serial = serial_edit->currentText();
   bool has_fd = false;
   bool has_panda = !serial.isEmpty();
-
   if (has_panda) {
     try {
-      Panda panda = Panda(serial.toStdString());
+      Panda panda(serial.toStdString());
       has_fd = (panda.hw_type == cereal::PandaState::PandaType::RED_PANDA) || (panda.hw_type == cereal::PandaState::PandaType::RED_PANDA_V2);
     } catch (const std::exception& e) {
       has_panda = false;
@@ -201,20 +161,22 @@ void OpenPandaWidget::buildConfigForm() {
         QObject::connect(enable_fd, &QCheckBox::stateChanged, [=](int state) {config.bus_config[i].can_fd = (bool)state;});
       }
 
-      config_layout->addRow(tr("Bus %1:").arg(i), bus_layout);
+      form_layout->addRow(tr("Bus %1:").arg(i), bus_layout);
     }
   } else {
     config.serial = "";
-    config_layout->addWidget(new QLabel(tr("No panda found")));
+    form_layout->addWidget(new QLabel(tr("No panda found")));
   }
 }
 
 bool OpenPandaWidget::open() {
-  try {
-    *stream = new PandaStream(qApp, config);
-  } catch (std::exception &e) {
-    QMessageBox::warning(nullptr, tr("Warning"), tr("Failed to connect to panda: '%1'").arg(e.what()));
-    return false;
+  if (!config.serial.isEmpty()) {
+    auto panda_stream = std::make_unique<PandaStream>(qApp, config);
+    if (panda_stream->connect()) {
+      *stream = panda_stream.release();
+      return true;
+    }
   }
-  return true;
+  QMessageBox::warning(nullptr, tr("Warning"), tr("Failed to connect to panda"));
+  return false;
 }

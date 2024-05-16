@@ -268,7 +268,7 @@ int PandaSpiHandle::wait_for_ack(uint8_t ack, uint8_t tx, unsigned int timeout, 
   tx_buf[0] = tx;
 
   while (true) {
-    int ret = util::safe_ioctl(spi_fd, SPI_IOC_MESSAGE(1), &transfer);
+    int ret = lltransfer(transfer);
     if (ret < 0) {
       LOGE("SPI: failed to send ACK request");
       return ret;
@@ -289,6 +289,40 @@ int PandaSpiHandle::wait_for_ack(uint8_t ack, uint8_t tx, unsigned int timeout, 
   }
 
   return 0;
+}
+
+int PandaSpiHandle::lltransfer(spi_ioc_transfer &t) {
+  static const double err_prob = std::stod(util::getenv("SPI_ERR_PROB", "-1"));
+
+  if (err_prob > 0) {
+    if ((static_cast<double>(rand()) / RAND_MAX) < err_prob) {
+      printf("transfer len error\n");
+      t.len = rand() % SPI_BUF_SIZE;
+    }
+    if ((static_cast<double>(rand()) / RAND_MAX) < err_prob && t.tx_buf != (uint64_t)NULL) {
+      printf("corrupting TX\n");
+      for (int i = 0; i < t.len; i++) {
+        if ((static_cast<double>(rand()) / RAND_MAX) > 0.9) {
+          ((uint8_t*)t.tx_buf)[i] = (uint8_t)(rand() % 256);
+        }
+      }
+    }
+  }
+
+  int ret = util::safe_ioctl(spi_fd, SPI_IOC_MESSAGE(1), &t);
+
+  if (err_prob > 0) {
+    if ((static_cast<double>(rand()) / RAND_MAX) < err_prob && t.rx_buf != (uint64_t)NULL) {
+      printf("corrupting RX\n");
+      for (int i = 0; i < t.len; i++) {
+        if ((static_cast<double>(rand()) / RAND_MAX) > 0.9) {
+          ((uint8_t*)t.rx_buf)[i] = (uint8_t)(rand() % 256);
+        }
+      }
+    }
+  }
+
+  return ret;
 }
 
 int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len, unsigned int timeout) {
@@ -316,16 +350,16 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
   memcpy(tx_buf, &header, sizeof(header));
   add_checksum(tx_buf, sizeof(header));
   transfer.len = sizeof(header) + 1;
-  ret = util::safe_ioctl(spi_fd, SPI_IOC_MESSAGE(1), &transfer);
+  ret = lltransfer(transfer);
   if (ret < 0) {
     LOGE("SPI: failed to send header");
-    goto transfer_fail;
+    return ret;
   }
 
   // Wait for (N)ACK
   ret = wait_for_ack(SPI_HACK, 0x11, timeout, 1);
   if (ret < 0) {
-    goto transfer_fail;
+    return ret;
   }
 
   // Send data
@@ -334,35 +368,35 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
   }
   add_checksum(tx_buf, tx_len);
   transfer.len = tx_len + 1;
-  ret = util::safe_ioctl(spi_fd, SPI_IOC_MESSAGE(1), &transfer);
+  ret = lltransfer(transfer);
   if (ret < 0) {
     LOGE("SPI: failed to send data");
-    goto transfer_fail;
+    return ret;
   }
 
   // Wait for (N)ACK
   ret = wait_for_ack(SPI_DACK, 0x13, timeout, 3);
   if (ret < 0) {
-    goto transfer_fail;
+    return ret;
   }
 
   // Read data
   rx_data_len = *(uint16_t *)(rx_buf+1);
   if (rx_data_len >= SPI_BUF_SIZE) {
     LOGE("SPI: RX data len larger than buf size %d", rx_data_len);
-    goto transfer_fail;
+    return -1;
   }
 
   transfer.len = rx_data_len + 1;
   transfer.rx_buf = (uint64_t)(rx_buf + 2 + 1);
-  ret = util::safe_ioctl(spi_fd, SPI_IOC_MESSAGE(1), &transfer);
+  ret = lltransfer(transfer);
   if (ret < 0) {
     LOGE("SPI: failed to read rx data");
-    goto transfer_fail;
+    return ret;
   }
   if (!check_checksum(rx_buf, rx_data_len + 4)) {
     LOGE("SPI: bad checksum");
-    goto transfer_fail;
+    return -1;
   }
 
   if (rx_data != NULL) {
@@ -370,8 +404,5 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
   }
 
   return rx_data_len;
-
-transfer_fail:
-  return ret;
 }
 #endif

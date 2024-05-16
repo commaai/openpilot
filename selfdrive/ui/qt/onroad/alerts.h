@@ -21,7 +21,7 @@ protected:
     cereal::ControlsState::AlertStatus status;
 
     bool equal(const Alert &other) const {
-      return text1 == other.text1 && other.text2 == other.text2 && type == other.type;
+      return text1 == other.text1 && text2 == other.text2 && type == other.type;
     }
   };
 
