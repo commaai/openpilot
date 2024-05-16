@@ -215,7 +215,7 @@ class TestCarModelBase(unittest.TestCase):
     # TODO: also check for checksum violations from can parser
     can_invalid_cnt = 0
     can_valid = False
-    CC = car.CarControl.new_message()
+    CC = car.CarControl.new_message().as_reader()
 
     for i, msg in enumerate(self.can_msgs):
       CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
@@ -308,17 +308,17 @@ class TestCarModelBase(unittest.TestCase):
 
     # Make sure we can send all messages while inactive
     CC = car.CarControl.new_message()
-    test_car_controller(CC)
+    test_car_controller(CC.as_reader())
 
     # Test cancel + general messages (controls_allowed=False & cruise_engaged=True)
     self.safety.set_cruise_engaged_prev(True)
     CC = car.CarControl.new_message(cruiseControl={'cancel': True})
-    test_car_controller(CC)
+    test_car_controller(CC.as_reader())
 
     # Test resume + general messages (controls_allowed=True & cruise_engaged=True)
     self.safety.set_controls_allowed(True)
     CC = car.CarControl.new_message(cruiseControl={'resume': True})
-    test_car_controller(CC)
+    test_car_controller(CC.as_reader())
 
   # Skip stdout/stderr capture with pytest, causes elevated memory usage
   @pytest.mark.nocapture
