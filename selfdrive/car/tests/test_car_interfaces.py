@@ -93,14 +93,12 @@ class TestCarInterfaces(unittest.TestCase):
     for _ in range(10):
       car_interface.update(CC, [])
       car_interface.apply(CC, now_nanos)
-      car_interface.apply(CC, now_nanos)
       now_nanos += DT_CTRL * 1e9  # 10 ms
 
     CC = car.CarControl.new_message(**cc_msg)
     CC.enabled = True
     for _ in range(10):
       car_interface.update(CC, [])
-      car_interface.apply(CC, now_nanos)
       car_interface.apply(CC, now_nanos)
       now_nanos += DT_CTRL * 1e9  # 10ms
 
