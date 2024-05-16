@@ -21,7 +21,6 @@ RUN cd /tmp && \
     apt-get autoremove && apt-get clean && apt-get purge \
     rm -rf /var/lib/apt/lists/* && \
     rm -rf /tmp/* && \
-    rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/locale/* /usr/share/info/* && \
     cd /usr/lib/gcc/arm-none-eabi/9.2.1 && \
     rm -rf arm/ && \
     rm -rf thumb/nofp thumb/v6* thumb/v8* thumb/v7+fp thumb/v7-r+fp.sp
