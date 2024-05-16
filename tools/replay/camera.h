@@ -1,8 +1,7 @@
 #pragma once
 
-#include <unistd.h>
-
 #include <memory>
+#include <set>
 #include <tuple>
 #include <utility>
 
@@ -17,7 +16,7 @@ class CameraServer {
 public:
   CameraServer(std::pair<int, int> camera_size[MAX_CAMERAS] = nullptr);
   ~CameraServer();
-  void pushFrame(CameraType type, FrameReader* fr, const cereal::EncodeIndex::Reader& eidx);
+  void pushFrame(CameraType type, FrameReader* fr, const Event *event);
   void waitForSent();
 
 protected:
@@ -27,13 +26,12 @@ protected:
     int width;
     int height;
     std::thread thread;
-    SafeQueue<std::pair<FrameReader*, const cereal::EncodeIndex::Reader>> queue;
-    int cached_id = -1;
-    int cached_seg = -1;
-    VisionBuf * cached_buf;
+    SafeQueue<std::pair<FrameReader*, const Event *>> queue;
+    std::set<VisionBuf *> cached_buf;
   };
   void startVipcServer();
   void cameraThread(Camera &cam);
+  VisionBuf *getFrame(Camera &cam, FrameReader *fr, int32_t segment_id, uint32_t frame_id);
 
   Camera cameras_[MAX_CAMERAS] = {
       {.type = RoadCam, .stream_type = VISION_STREAM_ROAD},

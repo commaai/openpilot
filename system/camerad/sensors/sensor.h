@@ -22,12 +22,14 @@ public:
   virtual void processRegisters(CameraState *c, cereal::FrameData::Builder &framed) const {}
 
   cereal::FrameData::ImageSensor image_sensor = cereal::FrameData::ImageSensor::UNKNOWN;
+  float pixel_size_mm;
   uint32_t frame_width, frame_height;
   uint32_t frame_stride;
   uint32_t frame_offset = 0;
   uint32_t extra_height = 0;
   int registers_offset = -1;
   int stats_offset = -1;
+  int hdr_offset = -1;
 
   int exposure_time_min;
   int exposure_time_max;

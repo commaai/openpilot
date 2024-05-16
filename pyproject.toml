@@ -83,11 +83,9 @@ documentation = "https://docs.comma.ai"
 python = "~3.11"
 aiohttp = "*"
 aiortc = "*"
-casadi = "==3.6.3"
 cffi = "*"
 crcmod = "*"
 Cython = "*"
-future-fstrings = "*"  # for acados
 json-rpc = "*"
 libusb1 = "*"
 numpy = "*"
@@ -109,6 +107,10 @@ sounddevice = "*"
 spidev = { version = "*", platform = "linux" }
 sympy = "*"
 websocket_client = "*"
+
+# acados deps
+casadi = "*"
+future-fstrings = "*"
 
 # these should be removed
 markdown-it-py = "*"

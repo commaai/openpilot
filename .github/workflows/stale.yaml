@@ -5,14 +5,14 @@ on:
   workflow_dispatch:
 
 env:
-  DAYS_BEFORE_PR_CLOSE: 7
-  DAYS_BEFORE_PR_STALE: 30
+  DAYS_BEFORE_PR_CLOSE: 3
+  DAYS_BEFORE_PR_STALE: 14
 
 jobs:
   stale:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/stale@v8
+      - uses: actions/stale@v9
         with:
           exempt-milestones: true
 

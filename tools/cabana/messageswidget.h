@@ -61,6 +61,7 @@ private:
   std::set<MessageId> dbc_messages_;
   int sort_column = 0;
   Qt::SortOrder sort_order = Qt::AscendingOrder;
+  int sort_threshold_ = 0;
 };
 
 class MessageView : public QTreeView {
