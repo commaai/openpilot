@@ -18,9 +18,10 @@ COPY --chown=$USER tools/install_ubuntu_dependencies.sh /tmp/tools/
 # Execute shell scripts to install additional dependencies
 RUN cd /tmp && \
     tools/install_ubuntu_dependencies.sh && \
-    apt-get autoremove && apt-get clean && apt-get purge \
+    apt-get autoremove && apt-get clean && apt-get purge && \
     rm -rf /var/lib/apt/lists/* && \
     rm -rf /tmp/* && \
+    rm -rf /usr/share/doc/* /usr/share/man/* /usr/share/locale/* /usr/share/info/* && \
     cd /usr/lib/gcc/arm-none-eabi/9.2.1 && \
     rm -rf arm/ && \
     rm -rf thumb/nofp thumb/v6* thumb/v8* thumb/v7+fp thumb/v7-r+fp.sp
