@@ -147,7 +147,6 @@ class Controls:
     self.personality = self.read_personality_param()
     self.v_cruise_helper = VCruiseHelper(self.CP)
     self.recalibrating_seen = False
-    self.CS_prev = car.CarState.new_message()
 
     self.can_log_mono_time = 0
 
@@ -212,12 +211,6 @@ class Controls:
     # Add car events, ignore if CAN isn't valid
     if CS.canValid:
       self.events.add_from_msg(CS.events)
-
-      # FIXME: immediate disable from card won't show up as alerts anymore because user disable has higher priority :/
-      if CS.enabledRequested and not self.CS_prev.enabledRequested:
-        self.events.add(EventName.pcmEnable)
-      elif not CS.enabledRequested and self.CS_prev.enabledRequested:
-        self.events.add(EventName.pcmDisable)
 
     # Create events for temperature, disk space, and memory
     if self.sm['deviceState'].thermalStatus >= ThermalStatus.red:
@@ -817,8 +810,6 @@ class Controls:
     # Publish data
     self.publish_logs(CS, start_time, CC, lac_log)
     cloudlog.timestamp("Logs published")
-
-    self.CS_prev = CS
 
   def read_personality_param(self):
     try:
