@@ -8,12 +8,16 @@ import os
 import unittest
 import pytest
 import requests
+import http.server
 
 from parameterized import parameterized
 from unittest import mock
+from openpilot.selfdrive.test.helpers import with_http_server
+from functools import partial
 
 from cereal import log as capnp_log
-from openpilot.tools.lib.logreader import LogIterable, LogReader, comma_api_source, parse_indirect, ReadMode, InternalUnavailableException
+from openpilot.tools.lib.logreader import (LogIterable, LogReader, comma_api_source, parse_indirect, ReadMode, InternalUnavailableException,
+                                           auto_source, apply_strategy)
 from openpilot.tools.lib.route import SegmentRange
 from openpilot.tools.lib.url_file import URLFileException
 
@@ -43,6 +47,27 @@ def setup_source_scenario(is_internal=False):
     comma_api_source_mock.return_value = [QLOG_FILE]
 
     yield
+
+
+class LogReaderTestRequestHandler(http.server.BaseHTTPRequestHandler):
+  FILE_EXISTS = True
+
+  def do_GET(self):
+    if self.FILE_EXISTS:
+      self.send_response(206 if "Range" in self.headers else 200, b'1234')
+    else:
+      self.send_response(404)
+    self.end_headers()
+
+  def do_HEAD(self):
+    if self.FILE_EXISTS:
+      self.send_response(200)
+      self.send_header("Content-Length", "4")
+    else:
+      self.send_response(404)
+    self.end_headers()
+
+with_logreader_server = partial(with_http_server, handler=LogReaderTestRequestHandler)
 
 
 class TestLogReader(unittest.TestCase):
@@ -254,6 +279,116 @@ class TestLogReader(unittest.TestCase):
       msgs = list(LogReader(qlog.name, only_union_types=True))
       self.assertEqual(len(msgs), num_msgs)
       [m.which() for m in msgs]
+
+  @mock.patch("openpilot.tools.lib.logreader.check_source")
+  def test_source_no_logs_available(self, check_source):
+    check_source.return_value = []
+    exceptions = []
+
+    modes = [ReadMode.RLOG, ReadMode.QLOG, ReadMode.AUTO]
+
+    for mode in modes:
+      try:
+          auto_source(SegmentRange(TEST_ROUTE), mode)
+      except Exception as e:
+          exceptions.append(e)
+          exceptions.append(mode)
+
+    for i in range(0, len(exceptions), 2):
+      if(str(exceptions[i + 1]) == modes[i//2]):
+        self.assertEqual(str(exceptions[i]), "auto_source could not find any valid source, exceptions for sources: []")
+      else:
+        raise Exception("Wrong mode while an exception is raised!")
+
+  @mock.patch("openpilot.tools.lib.logreader.check_source")
+  def test_source_rlogs_not_available_qlogs_available(self, check_source):
+    file_url = f"cd:/{TEST_ROUTE}"
+    rlog_paths = []
+    qlog_paths = [f'{file_url}/0/qlog.bz2', f'{file_url}/1/qlog.bz2', f'{file_url}/2/qlog.bz2', f'{file_url}/3/qlog.bz2', f'{file_url}/4/qlog.bz2',
+                  f'{file_url}/5/qlog.bz2', f'{file_url}/6/qlog.bz2', f'{file_url}/7/qlog.bz2', f'{file_url}/8/qlog.bz2', f'{file_url}/9/qlog.bz2',
+                  f'{file_url}/10/qlog.bz2', f'{file_url}/11/qlog.bz2', f'{file_url}/12/qlog.bz2', f'{file_url}/13/qlog.bz2', f'{file_url}/14/qlog.bz2',
+                  f'{file_url}/15/qlog.bz2', f'{file_url}/16/qlog.bz2']
+
+    exceptions = []
+    modes = [ReadMode.RLOG, ReadMode.QLOG, ReadMode.AUTO]
+
+    for mode in modes:
+      try:
+        check_source.return_value = apply_strategy(mode, rlog_paths, qlog_paths)
+        result = auto_source(SegmentRange(TEST_ROUTE), mode)
+        if(result):
+          self.assertEqual(result, qlog_paths)
+      except Exception as e:
+        exceptions.append(e)
+        exceptions.append(mode)
+
+    for i in range(0, len(exceptions), 2):
+      if(str(exceptions[i + 1]) == modes[i]):
+        self.assertEqual(str(exceptions[i]), "auto_source could not find any valid source, exceptions for sources: []")
+      else:
+        raise Exception("Wrong mode while an exception is raised!")
+
+
+  @mock.patch("openpilot.tools.lib.logreader.check_source")
+  def test_source_rlogs_segments_qlogs_rest(self, check_source):
+    file_url = f"cd:/{TEST_ROUTE}"
+    rlog_paths = [f'{file_url}/0/rlog.bz2', f'{file_url}/1/rlog.bz2']
+    qlog_paths = [f'{file_url}/2/qlog.bz2', f'{file_url}/3/qlog.bz2', f'{file_url}/4/qlog.bz2', f'{file_url}/5/qlog.bz2', f'{file_url}/6/qlog.bz2',
+                  f'{file_url}/7/qlog.bz2', f'{file_url}/8/qlog.bz2', f'{file_url}/9/qlog.bz2', f'{file_url}/10/qlog.bz2', f'{file_url}/11/qlog.bz2',
+                  f'{file_url}/12/qlog.bz2', f'{file_url}/13/qlog.bz2', f'{file_url}/14/qlog.bz2', f'{file_url}/15/qlog.bz2', f'{file_url}/16/qlog.bz2']
+
+    exceptions = []
+    modes = [ReadMode.RLOG, ReadMode.AUTO]
+
+    for mode in modes:
+      try:
+        check_source.return_value = apply_strategy(mode, rlog_paths, qlog_paths)
+        result = auto_source(SegmentRange(TEST_ROUTE), mode)
+        if(result):
+          self.assertEqual(result, rlog_paths)
+      except Exception as e:
+        exceptions.append(e)
+        exceptions.append(mode)
+
+    for i in range(0, len(exceptions), 2):
+      if(str(exceptions[i + 1]) == modes[i + 1]):
+        self.assertNotEqual(str(exceptions[i]), "Exception not equal!")
+      else:
+        raise Exception("Wrong mode while an exception is raised!")
+
+  @mock.patch("openpilot.tools.lib.logreader.internal_source")
+  @mock.patch("openpilot.tools.lib.logreader.openpilotci_source")
+  @mock.patch("openpilot.tools.lib.logreader.comma_api_source")
+  @mock.patch("openpilot.tools.lib.logreader.comma_car_segments_source")
+  @with_logreader_server
+  def test_source_rlogs_not_available_commaapi(self, mock_comma_car_segments_source, mock_comma_api_source, mock_openpilotci_source, mock_internal_source,
+                                               host):
+    file_openpilotci = f"{host}/openpilotci"
+    file_comma_car_segments = f"{host}/comma_car_segments"
+    exceptions = []
+
+    LogReaderTestRequestHandler.FILE_EXISTS = False
+    mock_internal_source.return_value = Exception("Internal source not available")
+    mock_openpilotci_source.return_value = [f'{file_openpilotci}/0', f'{file_openpilotci}/1', f'{file_openpilotci}/2', f'{file_openpilotci}/3',
+                                            f'{file_openpilotci}/4', f'{file_openpilotci}/5', f'{file_openpilotci}/6', f'{file_openpilotci}/7',
+                                            f'{file_openpilotci}/8', f'{file_openpilotci}/9', f'{file_openpilotci}/10', f'{file_openpilotci}/11',
+                                            f'{file_openpilotci}/12', f'{file_openpilotci}/13', f'{file_openpilotci}/14', f'{file_openpilotci}/15',
+                                            f'{file_openpilotci}/16']
+    mock_comma_api_source.return_value = []
+    mock_comma_car_segments_source.return_value = [f'{file_comma_car_segments}/0', f'{file_comma_car_segments}/1', f'{file_comma_car_segments}/2',
+                                                   f'{file_comma_car_segments}/3', f'{file_comma_car_segments}/4', f'{file_comma_car_segments}/5',
+                                                   f'{file_comma_car_segments}/6', f'{file_comma_car_segments}/7', f'{file_comma_car_segments}/8',
+                                                   f'{file_comma_car_segments}/9', f'{file_comma_car_segments}/10', f'{file_comma_car_segments}/11',
+                                                   f'{file_comma_car_segments}/12', f'{file_comma_car_segments}/13', f'{file_comma_car_segments}/14',
+                                                   f'{file_comma_car_segments}/15', f'{file_comma_car_segments}/16']
+
+    try:
+      result = auto_source(SegmentRange(TEST_ROUTE), ReadMode.RLOG)
+    except Exception as e:
+      exceptions.append(e)
+      exceptions.append(ReadMode.RLOG)
+
+    self.assertEqual(result, [])
 
 
 if __name__ == "__main__":
