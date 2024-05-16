@@ -58,6 +58,9 @@ runs:
       run: |
         find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
         find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
+    - Setup Docker Buildx
+      name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
     # build our docker image
     - shell: bash
       run: eval ${{ env.BUILD }}
