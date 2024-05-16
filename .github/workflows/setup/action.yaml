@@ -53,6 +53,7 @@ runs:
           scons-${{ runner.arch }}
     - id: create-buildx-cache
       name: Create Buildx Cache
+      shell: bash
       run: mkdir -p /tmp/.buildx-cache
     # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
     - id: normalize-file-permissions
@@ -61,7 +62,6 @@ runs:
       run: |
         find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
         find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
-
     - id: cache-docker-layers
       name: Cache Docker Layers
       uses: actions/cache@v3
