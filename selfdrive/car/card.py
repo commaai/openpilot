@@ -163,8 +163,7 @@ class Car:
     if self.sm.all_checks(['carControl']):
       # send car controls over can
       now_nanos = self.can_log_mono_time if REPLAY else int(time.monotonic() * 1e9)
-      # TODO: CC shouldn't be builder
-      self.last_actuators_output, can_sends = self.CI.apply(CC.as_builder(), now_nanos)
+      self.last_actuators_output, can_sends = self.CI.apply(CC, now_nanos)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
 
       self.CC_prev = CC
