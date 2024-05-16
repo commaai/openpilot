@@ -386,9 +386,8 @@ class Controls:
   def data_sample(self):
     """Receive data from sockets"""
 
-    CS = messaging.recv_one(self.car_state_sock)
-    if CS is None:
-      CS = self.CS_prev
+    car_state = messaging.recv_one(self.car_state_sock)
+    CS = car_state.carState if car_state else self.CS_prev
     cloudlog.timestamp('Got carState')
 
     self.sm.update(0)
