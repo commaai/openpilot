@@ -16,7 +16,7 @@ class CarState(CarStateBase):
     self.hands_on_level = 0
     self.steer_warning = None
     self.acc_enabled = None
-    self.sccm_right_stalk = None
+    self.sccm_right_stalk_counter = None
     self.das_control = None
 
   def update(self, cp, cp_cam, cp_adas):
@@ -40,13 +40,12 @@ class CarState(CarStateBase):
     epas_status = cp.vl["EPAS3S_sysStatus"]
     self.hands_on_level = epas_status["EPAS3S_handsOnLevel"]
     self.steer_warning = self.can_define.dv["EPAS3S_sysStatus"]["EPAS3S_eacErrorCode"].get(int(epas_status["EPAS3S_eacErrorCode"]), None)
-    steer_status = self.can_define.dv["EPAS3S_sysStatus"]["EPAS3S_eacStatus"].get(int(epas_status["EPAS3S_eacStatus"]), None)
     ret.steeringAngleDeg = -epas_status["EPAS3S_internalSAS"]
     ret.steeringRateDeg = -cp_adas.vl["SCCM_steeringAngleSensor"]["SCCM_steeringAngleSpeed"]
     ret.steeringTorque = -epas_status["EPAS3S_torsionBarTorque"]
 
     ret.steeringPressed = (self.hands_on_level > 0)
-    ret.steerFaultPermanent = steer_status in ["EAC_FAULT"]
+    ret.steerFaultPermanent = self.can_define.dv["EPAS3S_sysStatus"]["EPAS3S_eacStatus"].get(int(epas_status["EPAS3S_eacStatus"]), None) in ["EAC_FAULT"]
     ret.steerFaultTemporary = (self.steer_warning not in ("EAC_ERROR_IDLE", "EAC_ERROR_HANDS_ON"))
 
     # Cruise state
@@ -78,19 +77,14 @@ class CarState(CarStateBase):
     ret.buttonEvents = button_events
 
     # Doors
-    ret.doorOpen = any([cp_adas.vl["VCLEFT_doorStatus"]["VCLEFT_frontLatchSwitch"] != 1,
-                        cp_adas.vl["VCLEFT_doorStatus"]["VCLEFT_rearLatchSwitch"] != 1,
-                        cp_adas.vl["VCRIGHT_doorStatus"]["VCRIGHT_frontLatchSwitch"] != 1,
-                        cp_adas.vl["VCRIGHT_doorStatus"]["VCRIGHT_rearLatchSwitch"] != 1,
-                        cp_adas.vl["VCRIGHT_doorStatus"]["VCRIGHT_trunkLatchStatus"] != 2])
+    ret.doorOpen = (cp.vl["UI_warning"]["anyDoorOpen"] == 1)
 
     # Blinkers
-    # maybe use DAS_turnIndicatorRequestReason
     ret.leftBlinker = (cp_adas.vl["ID3F5VCFRONT_lighting"]["VCFRONT_indicatorLeftRequest"] != 0)
     ret.rightBlinker = (cp_adas.vl["ID3F5VCFRONT_lighting"]["VCFRONT_indicatorRightRequest"] != 0)
 
     # Seatbelt
-    ret.seatbeltUnlatched = cp.vl["DriverSeat"]["buckleStatus"] != 1
+    ret.seatbeltUnlatched = cp.vl["UI_warning"]["buckleStatus"] != 1
 
     # Blindspot
     ret.leftBlindspot = cp_cam.vl["DAS_status"]["DAS_blindSpotRearLeft"] != 0
@@ -100,7 +94,7 @@ class CarState(CarStateBase):
     ret.stockAeb = (cp_cam.vl["DAS_control"]["DAS_aebEvent"] == 1)
 
     # Messages needed by carcontroller
-    self.sccm_right_stalk = copy.copy(cp_adas.vl["SCCM_rightStalk"])
+    self.sccm_right_stalk_counter = copy.copy(cp_adas.vl["SCCM_rightStalk"]["SCCM_rightStalkCounter"])
     self.das_control = copy.copy(cp_cam.vl["DAS_control"])
 
     return ret
@@ -114,7 +108,7 @@ class CarState(CarStateBase):
       ("IBST_status", 25),
       ("DI_state", 10),
       ("EPAS3S_sysStatus", 100),
-      ("DriverSeat", 10)
+      ("UI_warning", 10)
     ]
 
     return CANParser(DBC[CP.carFingerprint]['chassis'], messages, CANBUS.party)
@@ -140,4 +134,5 @@ class CarState(CarStateBase):
       ("VCLEFT_doorStatus", 10),
       ("VCRIGHT_doorStatus", 10),
     ]
+
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, CANBUS.vehicle)
