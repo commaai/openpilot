@@ -1,7 +1,7 @@
 # functions common among cars
 from collections import defaultdict, namedtuple
-from dataclasses import dataclass
-from enum import IntFlag, ReprEnum, EnumType
+from dataclasses import dataclass, is_dataclass, fields
+from enum import IntFlag, ReprEnum, EnumType, Enum
 from dataclasses import replace
 
 import capnp
@@ -177,6 +177,23 @@ def get_safety_config(safety_model, safety_param = None):
   return ret
 
 
+def attr_repr(attr):
+  if is_dataclass(attr):
+    return f"{attr.__class__.__name__}({', '.join(f'{field.name}={attr_repr(getattr(attr, field.name))}' for field in fields(attr))})"
+  elif isinstance(attr, Enum):
+    if isinstance(attr, IntFlag):
+      return " | ".join(f"{attr.__class__.__name__}.{member.name}" for member in attr)
+    else:
+      return f"{attr.__class__.__name__}.{attr.name}"
+  elif isinstance(attr, (list, set, tuple)):
+    left_bracket, right_bracket = {list: ('[', ']'), tuple: ('(', ')'), set: ('{', '}')}.get(type(attr))
+    return f"{left_bracket}{', '.join(attr_repr(item) for item in attr)}{right_bracket}"
+  elif isinstance(attr, dict):
+    return f"{{{', '.join(f'{repr(k)}: {attr_repr(v)}' for k, v in attr.items())}}}"
+  else:
+    return repr(attr)
+
+
 class CanBusBase:
   offset: int
 
@@ -246,6 +263,9 @@ class PlatformConfig(Freezable):
 
   def __post_init__(self):
     self.init()
+
+  def __str__(self):
+    return attr_repr(self)
 
 
 class PlatformsType(EnumType):
