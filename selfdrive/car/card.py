@@ -136,13 +136,14 @@ class Car:
     CS.events = self.events.to_msg()
 
   def state_transition(self, CS: car.CarState):
-    self.v_cruise_helper.update_v_cruise(CS, self.sm['controlsState'].enabled, self.is_metric)
-
-    controlsState = self.sm['controlsState']
-    if self.controlsState_prev.state == State.disabled:
-      # TODO: use ENABLED_STATES from controlsd? it includes softDisabling which isn't possible here
-      if controlsState.state in (State.preEnabled, State.overriding, State.enabled):
-       self.v_cruise_helper.initialize_v_cruise(CS, controlsState.experimentalMode)
+    pass
+    # self.v_cruise_helper.update_v_cruise(CS, self.sm['controlsState'].enabled, self.is_metric)
+    #
+    # controlsState = self.sm['controlsState']
+    # if self.controlsState_prev.state == State.disabled:
+    #   # TODO: use ENABLED_STATES from controlsd? it includes softDisabling which isn't possible here
+    #   if controlsState.state in (State.preEnabled, State.overriding, State.enabled):
+    #    self.v_cruise_helper.initialize_v_cruise(CS, controlsState.experimentalMode)
 
   def state_publish(self, CS: car.CarState):
     """carState and carParams publish loop"""

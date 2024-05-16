@@ -85,16 +85,17 @@ class Controls:
     self.camera_packets = ["roadCameraState", "driverCameraState", "wideRoadCameraState"]
 
     self.log_sock = messaging.sub_sock('androidLog')
+    self.car_state_sock = messaging.sub_sock('carState', timeout=20)
 
     ignore = self.sensor_packets + ['testJoystick']
     if SIMULATION:
       ignore += ['driverCameraState', 'managerState']
-    self.sm = messaging.SubMaster(['carState', 'deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
+    self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                    'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'liveLocationKalman',
                                    'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
                                    'testJoystick'] + self.camera_packets + self.sensor_packets,
-                                  poll='carState',
-                                  ignore_alive=ignore, ignore_avg_freq=ignore+['radarState', 'testJoystick'], ignore_valid=['testJoystick', ])
+                                  ignore_alive=ignore, ignore_avg_freq=ignore+['radarState', 'testJoystick'], ignore_valid=['testJoystick', ],
+                                  frequency=int(1/DT_CTRL))
 
     # read params
     self.joystick_mode = self.params.get_bool("JoystickDebugMode")
@@ -112,6 +113,7 @@ class Controls:
     if not self.CP.openpilotLongitudinalControl:
       self.params.remove("ExperimentalMode")
 
+    self.CS_prev = car.CarState.new_message()
     self.AM = AlertManager()
     self.events = Events()
 
@@ -384,10 +386,12 @@ class Controls:
   def data_sample(self):
     """Receive data from sockets"""
 
-    self.sm.update(20)
+    CS = messaging.recv_one(self.car_state_sock)
+    if CS is None:
+      CS = self.CS_prev
     cloudlog.timestamp('Got carState')
 
-    CS = self.sm['carState']
+    self.sm.update(0)
 
     if not self.initialized:
       all_valid = CS.canValid and self.sm.all_checks()
@@ -810,6 +814,8 @@ class Controls:
     # Publish data
     self.publish_logs(CS, start_time, CC, lac_log)
     cloudlog.timestamp("Logs published")
+
+    self.CS_prev = CS
 
   def read_personality_param(self):
     try:
