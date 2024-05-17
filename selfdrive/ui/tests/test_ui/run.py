@@ -8,7 +8,7 @@ import numpy as np
 import os
 import pywinctl
 import time
-import unittest
+import unittest  # noqa: TID251
 
 from parameterized import parameterized
 from cereal import messaging, car, log

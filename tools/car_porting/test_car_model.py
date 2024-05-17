@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import sys
-import unittest
+import unittest # noqa: TID251
 
 from openpilot.selfdrive.car.tests.routes import CarTestRoute
 from openpilot.selfdrive.car.tests.test_models import TestCarModel
