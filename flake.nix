@@ -5,15 +5,12 @@
     dream2nix.url = "github:nix-community/dream2nix";
     #dream2nix.url = "path:/home/satwik/projects/dream2nix";
     nixpkgs.follows = "dream2nix/nixpkgs";#.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    nixpkgs_cuda.url = "github:SomeoneSerge/nixpkgs-unfree";
-    #nixpkgs_cuda.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs = inputs @ {
     self,
     dream2nix,
     nixpkgs,
-    nixpkgs_cuda,
     ...
   }: let
     system = "x86_64-linux";
@@ -21,12 +18,8 @@
     	inherit system;
 
     };
-    pkgs_cuda = import nixpkgs_cuda {
-    	inherit system;
-    };
     packages = dream2nix.lib.evalModules {
       packageSets.nixpkgs = pkgs;
-      packageSets.nixpkgs_cuda = pkgs_cuda;
       modules = [
         ./default.nix
         {
