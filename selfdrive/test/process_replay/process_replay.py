@@ -469,10 +469,10 @@ CONFIGS = [
   ProcessConfig(
     proc_name="controlsd",
     pubs=[
-      "carOutput", "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
+      "carState", "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
       "longitudinalPlan", "liveLocationKalman", "liveParameters", "radarState",
       "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
-      "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope", "carState"
+      "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope", "carOutput"
     ],
     subs=["controlsState", "carControl", "onroadEvents"],
     ignore=["logMonoTime", "controlsState.startMonoTime", "controlsState.cumLagMs"],
