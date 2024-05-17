@@ -69,8 +69,7 @@ class Controls:
         self.CP = msg.as_builder()
       cloudlog.info("controlsd got CarParams")
 
-      # Note that we only use helper functions from the car interface inside controlsd,
-      # anything that updates CI state won't be considered by card for actuation
+      # Uses car interface helper functions, altering state won't be considered by card for actuation
       self.CI = get_car_interface(self.CP)
     else:
       self.CI, self.CP = CI, CI.CP
@@ -97,8 +96,9 @@ class Controls:
                                   ignore_alive=ignore, ignore_avg_freq=ignore+['radarState', 'testJoystick'], ignore_valid=['testJoystick', ],
                                   frequency=int(1/DT_CTRL))
 
-    # read params
     self.joystick_mode = self.params.get_bool("JoystickDebugMode")
+
+    # read params
     self.is_metric = self.params.get_bool("IsMetric")
     self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
 
@@ -388,7 +388,6 @@ class Controls:
 
     car_state = messaging.recv_one(self.car_state_sock)
     CS = car_state.carState if car_state else self.CS_prev
-    cloudlog.timestamp('Got carState')
 
     self.sm.update(0)
 
@@ -403,7 +402,6 @@ class Controls:
           self.sm.ignore_alive.append('wideRoadCameraState')
 
         self.initialized = True
-        cloudlog.timestamp("Initialized")
         self.set_initial_state()
         self.params.put_bool_nonblocking("ControlsReady", True)
 
@@ -791,28 +789,24 @@ class Controls:
     self.pm.send('carControl', cc_send)
 
   def step(self):
-    # cloudlog.timestamp("Start controlsd")
     start_time = time.monotonic()
 
     # Sample data from sockets and get a carState
     CS = self.data_sample()
-    # cloudlog.timestamp("Data sampled")
+    cloudlog.timestamp("Data sampled")
 
     self.update_events(CS)
-    # cloudlog.timestamp("Events updated")
+    cloudlog.timestamp("Events updated")
 
     if not self.CP.passive and self.initialized:
       # Update control state
       self.state_transition(CS)
-    # cloudlog.timestamp("State transitioned")
 
     # Compute actuators (runs PID loops and lateral MPC)
     CC, lac_log = self.state_control(CS)
-    # cloudlog.timestamp("State controlled")
 
     # Publish data
     self.publish_logs(CS, start_time, CC, lac_log)
-    cloudlog.timestamp("Logs published")
 
     self.CS_prev = CS
 
