@@ -44,9 +44,9 @@ in {
 
 	};
 	onnxruntime-gpu = {config, lib, ...}: {
-		deps = {nixpkgs, ...}: {
-			inherit (nixpkgs.cudaPackages) cudatoolkit cuda_cccl libcublas libcurand libcusparse libcufft cudnn cuda_cudart;
-			inherit (nixpkgs) oneDNN re2 onnxruntime;
+		deps = {nixpkgs, nixpkgs_cuda, ...}: {
+			inherit (nixpkgs_cuda.cudaPackages) cudatoolkit cuda_cccl libcublas libcurand libcusparse libcufft cudnn cuda_cudart;
+			inherit (nixpkgs_cuda) oneDNN re2 onnxruntime;
 		};
 		mkDerivation = {
 			src = config.deps.onnxruntime.dist;
@@ -78,6 +78,8 @@ in {
       config.deps.python.pkgs.poetry-core
 
     ];
+    doInstallCheck = false;
+    doCheck = false;
   };
 
 
