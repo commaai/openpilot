@@ -38,6 +38,7 @@ class CarController(CarControllerBase):
     self.alert_active = False
     self.steer_rate_counter = 0
     self.distance_button = 0
+    self.standstill = False
 
     self.packer = CANPacker(dbc_name)
     self.gas = 0
@@ -118,7 +119,7 @@ class CarController(CarControllerBase):
         self.resume_off_frames = 0
         self.standstill_req = False
     # ignore standstill on NO_STOP_TIMER_CAR, and never ignore if self.CP.enableGasInterceptor
-    standstill = self.standstill_req and self.CP.carFingerprint not in NO_STOP_TIMER_CAR
+    self.standstill = self.standstill_req and self.CP.carFingerprint not in NO_STOP_TIMER_CAR
 
     # handle UI messages
     fcw_alert = hud_control.visualAlert == VisualAlert.fcw
@@ -140,7 +141,7 @@ class CarController(CarControllerBase):
       if pcm_cancel_cmd and self.CP.carFingerprint in UNSUPPORTED_DSU_CAR:
         can_sends.append(toyotacan.create_acc_cancel_command(self.packer))
       elif self.CP.openpilotLongitudinalControl:
-        can_sends.append(toyotacan.create_accel_command(self.packer, pcm_accel_cmd, pcm_cancel_cmd, standstill, lead, CS.acc_type, fcw_alert,
+        can_sends.append(toyotacan.create_accel_command(self.packer, pcm_accel_cmd, pcm_cancel_cmd, self.standstill, lead, CS.acc_type, fcw_alert,
                                                         self.distance_button))
         self.accel = pcm_accel_cmd
       else:
