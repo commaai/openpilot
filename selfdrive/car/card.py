@@ -10,7 +10,6 @@ from panda import ALTERNATIVE_EXPERIENCE
 
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper, DT_CTRL
-from openpilot.common.swaglog import cloudlog
 
 from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
 from openpilot.selfdrive.car.car_helpers import get_car, get_one_can
@@ -93,7 +92,6 @@ class Car:
 
     # Update carState from CAN
     can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
-    cloudlog.timestamp('Received can')
     CS = self.CI.update(self.CC_prev, can_strs)
 
     self.sm.update(0)
@@ -111,10 +109,6 @@ class Car:
 
     if can_rcv_valid and REPLAY:
       self.can_log_mono_time = messaging.log_from_bytes(can_strs[0]).logMonoTime
-
-    if self.sm['controlsState'].initialized and not self.controlsState_prev.initialized:
-      self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
-      cloudlog.timestamp("Initialized")
 
     return CS
 
@@ -147,7 +141,7 @@ class Car:
     co_send.carOutput.actuatorsOutput = self.last_actuators_output
     self.pm.send('carOutput', co_send)
 
-    # kick off controlsd step now while we actuate the latest carControl packet
+    # kick off controlsd step while we actuate the latest carControl packet
     cs_send = messaging.new_message('carState')
     cs_send.valid = CS.canValid
     cs_send.carState = CS
@@ -155,7 +149,6 @@ class Car:
     cs_send.carState.canErrorCounter = self.can_rcv_cum_timeout_counter
     cs_send.carState.cumLagMs = -self.rk.remaining * 1000.
     self.pm.send('carState', cs_send)
-    cloudlog.timestamp('Sent carState')
 
   def controls_update(self, CS: car.CarState, CC: car.CarControl):
     """control update loop, driven by carControl"""
@@ -169,19 +162,18 @@ class Car:
       self.CC_prev = CC
 
   def step(self):
-    cloudlog.timestamp("Start card")
     CS = self.state_update()
-    cloudlog.timestamp("State updated")
 
     self.update_events(CS)
 
     self.state_publish(CS)
-    cloudlog.timestamp("State published")
 
     controlsState = self.sm['controlsState']
+    if self.sm['controlsState'].initialized and not self.controlsState_prev.initialized:
+      self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
+
     if not self.CP.passive and controlsState.initialized:
       self.controls_update(CS, self.sm['carControl'])
-      cloudlog.timestamp("Controls updated")
 
     self.controlsState_prev = controlsState
     self.CS_prev = CS.as_reader()
