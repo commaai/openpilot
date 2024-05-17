@@ -78,7 +78,7 @@ def migrate_controlsState(lr):
   for msg in lr:
     if msg.which() == 'onroadEvents':
       events = msg.onroadEvents
-    elif msg.which() == 'controlsState':
+    if msg.which() == 'controlsState':
       cs = msg.as_builder()
       cs.controlsState.initialized = events is not None and not any(EventName.controlsInitializing == e.name for e in events)
       all_msgs.append(cs.as_reader())
