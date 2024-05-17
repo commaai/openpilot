@@ -43,7 +43,6 @@ testpaths = [
   "tools/cabana"
 ]
 
-
 [tool.mypy]
 python_version = "3.11"
 plugins = [
