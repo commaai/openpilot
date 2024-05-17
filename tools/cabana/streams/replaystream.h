@@ -18,12 +18,12 @@ public:
   void start() override;
   bool loadRoute(const QString &route, const QString &data_dir, uint32_t replay_flags = REPLAY_FLAG_NONE);
   bool eventFilter(const Event *event);
-  void seekTo(double ts) override { replay->seekTo(std::max(double(0), ts), false); }
+  void seekTo(double ts) override;
   bool liveStreaming() const override { return false; }
   inline QString routeName() const override { return replay->route()->name(); }
   inline QString carFingerprint() const override { return replay->carFingerprint().c_str(); }
   double totalSeconds() const override { return replay->totalSeconds(); }
-  inline QDateTime beginDateTime() const { return replay->route()->datetime(); }
+  inline QDateTime beginDateTime() const { return replay->routeDateTime(); }
   inline double routeStartTime() const override { return replay->routeStartTime() / (double)1e9; }
   inline const Route *route() const { return replay->route(); }
   inline void setSpeed(float speed) override { replay->setSpeed(speed); }

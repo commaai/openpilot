@@ -7,7 +7,7 @@ import socket
 import unittest
 
 from parameterized import parameterized
-from openpilot.selfdrive.athena.tests.helpers import with_http_server
+from openpilot.selfdrive.test.helpers import with_http_server
 from openpilot.system.hardware.hw import Paths
 from openpilot.tools.lib.url_file import URLFile
 

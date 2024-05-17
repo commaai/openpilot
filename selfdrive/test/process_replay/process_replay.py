@@ -512,7 +512,7 @@ CONFIGS = [
     proc_name="locationd",
     pubs=[
       "cameraOdometry", "accelerometer", "gyroscope", "gpsLocationExternal",
-      "liveCalibration", "carState", "carParams", "gpsLocation"
+      "liveCalibration", "carState", "gpsLocation"
     ],
     subs=["liveLocationKalman"],
     ignore=["logMonoTime"],
@@ -546,7 +546,7 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="modeld",
-    pubs=["roadCameraState", "wideRoadCameraState", "liveCalibration", "driverMonitoringState"],
+    pubs=["deviceState", "roadCameraState", "wideRoadCameraState", "liveCalibration", "driverMonitoringState"],
     subs=["modelV2", "cameraOdometry"],
     ignore=["logMonoTime", "modelV2.frameDropPerc", "modelV2.modelExecutionTime"],
     should_recv_callback=ModeldCameraSyncRcvCallback(),
@@ -627,9 +627,9 @@ def replay_process_with_name(name: str | Iterable[str], lr: LogIterable, *args, 
 
 
 def replay_process(
-  cfg: ProcessConfig | Iterable[ProcessConfig], lr: LogIterable, frs: dict[str, BaseFrameReader] | None = None,
-  fingerprint: str | None = None, return_all_logs: bool = False, custom_params: dict[str, Any] | None = None,
-  captured_output_store: dict[str, dict[str, str]] | None = None, disable_progress: bool = False
+  cfg: ProcessConfig | Iterable[ProcessConfig], lr: LogIterable, frs: dict[str, BaseFrameReader] = None,
+  fingerprint: str = None, return_all_logs: bool = False, custom_params: dict[str, Any] = None,
+  captured_output_store: dict[str, dict[str, str]] = None, disable_progress: bool = False
 ) -> list[capnp._DynamicStructReader]:
   if isinstance(cfg, Iterable):
     cfgs = list(cfg)

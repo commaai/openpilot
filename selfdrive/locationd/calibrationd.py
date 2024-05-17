@@ -89,7 +89,7 @@ class Calibrator:
                   valid_blocks: int = 0,
                   wide_from_device_euler_init: np.ndarray = WIDE_FROM_DEVICE_EULER_INIT,
                   height_init: np.ndarray = HEIGHT_INIT,
-                  smooth_from: np.ndarray | None = None) -> None:
+                  smooth_from: np.ndarray = None) -> None:
     if not np.isfinite(rpy_init).all():
       self.rpy = RPY_INIT.copy()
     else:

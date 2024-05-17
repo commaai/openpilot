@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from collections import defaultdict, deque
-import sys
 import pytest
 import unittest
 import time
@@ -37,7 +36,6 @@ PROCS = [
   Proc(['modeld'], 1.12, atol=0.2, msgs=['modelV2']),
   Proc(['dmonitoringmodeld'], 0.4, msgs=['driverStateV2']),
   Proc(['encoderd'], 0.23, msgs=[]),
-  Proc(['mapsd', 'navmodeld'], 0.05, msgs=['mapRenderState', 'navModel']),
 ]
 
 
@@ -132,4 +130,4 @@ class TestPowerDraw(unittest.TestCase):
 
 
 if __name__ == "__main__":
-  pytest.main(sys.argv)
+  unittest.main()

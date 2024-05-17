@@ -5,7 +5,6 @@ import unittest
 
 from parameterized import parameterized_class
 from cereal import log
-from openpilot.common.params import Params
 from openpilot.selfdrive.controls.lib.drive_helpers import VCruiseHelper, V_CRUISE_MIN, V_CRUISE_MAX, V_CRUISE_INITIAL, IMPERIAL_INCREMENT
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
@@ -15,7 +14,7 @@ ButtonEvent = car.CarState.ButtonEvent
 ButtonType = car.CarState.ButtonEvent.Type
 
 
-def run_cruise_simulation(cruise, e2e, t_end=20.):
+def run_cruise_simulation(cruise, e2e, personality, t_end=20.):
   man = Maneuver(
     '',
     duration=t_end,
@@ -26,6 +25,7 @@ def run_cruise_simulation(cruise, e2e, t_end=20.):
     prob_lead_values=[0.0],
     breakpoints=[0.],
     e2e=e2e,
+    personality=personality,
   )
   valid, output = man.evaluate()
   assert valid
@@ -38,12 +38,10 @@ def run_cruise_simulation(cruise, e2e, t_end=20.):
                       [5,35])) # speed
 class TestCruiseSpeed(unittest.TestCase):
   def test_cruise_speed(self):
-    params = Params()
-    params.put("LongitudinalPersonality", str(self.personality))
     print(f'Testing {self.speed} m/s')
     cruise_speed = float(self.speed)
 
-    simulation_steady_state = run_cruise_simulation(cruise_speed, self.e2e)
+    simulation_steady_state = run_cruise_simulation(cruise_speed, self.e2e, self.personality)
     self.assertAlmostEqual(simulation_steady_state, cruise_speed, delta=.01, msg=f'Did not reach {self.speed} m/s')
 
 

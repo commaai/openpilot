@@ -19,7 +19,7 @@ def make_tester_present_msg(addr, bus, subaddr=None):
   return make_can_msg(addr, bytes(dat), bus)
 
 
-def is_tester_present_response(msg: capnp.lib.capnp._DynamicStructReader, subaddr: int | None = None) -> bool:
+def is_tester_present_response(msg: capnp.lib.capnp._DynamicStructReader, subaddr: int = None) -> bool:
   # ISO-TP messages are always padded to 8 bytes
   # tester present response is always a single frame
   dat_offset = 1 if subaddr is not None else 0

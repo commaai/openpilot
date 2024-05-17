@@ -13,12 +13,8 @@
 
 StreamSelector::StreamSelector(AbstractStream **stream, QWidget *parent) : QDialog(parent) {
   setWindowTitle(tr("Open stream"));
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-
-  QWidget *w = new QWidget(this);
-  QVBoxLayout *layout = new QVBoxLayout(w);
+  QVBoxLayout *layout = new QVBoxLayout(this);
   tab = new QTabWidget(this);
-  tab->setTabBarAutoHide(true);
   layout->addWidget(tab);
 
   QHBoxLayout *dbc_layout = new QHBoxLayout();
@@ -35,9 +31,8 @@ StreamSelector::StreamSelector(AbstractStream **stream, QWidget *parent) : QDial
   line->setFrameStyle(QFrame::HLine | QFrame::Sunken);
   layout->addWidget(line);
 
-  main_layout->addWidget(w);
   auto btn_box = new QDialogButtonBox(QDialogButtonBox::Open | QDialogButtonBox::Cancel);
-  main_layout->addWidget(btn_box);
+  layout->addWidget(btn_box);
 
   addStreamWidget(ReplayStream::widget(stream));
   addStreamWidget(PandaStream::widget(stream));
@@ -48,14 +43,11 @@ StreamSelector::StreamSelector(AbstractStream **stream, QWidget *parent) : QDial
 
   QObject::connect(btn_box, &QDialogButtonBox::rejected, this, &QDialog::reject);
   QObject::connect(btn_box, &QDialogButtonBox::accepted, [=]() {
-    btn_box->button(QDialogButtonBox::Open)->setEnabled(false);
-    w->setEnabled(false);
+    setEnabled(false);
     if (((AbstractOpenStreamWidget *)tab->currentWidget())->open()) {
       accept();
-    } else {
-      btn_box->button(QDialogButtonBox::Open)->setEnabled(true);
-      w->setEnabled(true);
     }
+    setEnabled(true);
   });
   QObject::connect(file_btn, &QPushButton::clicked, [this]() {
     QString fn = QFileDialog::getOpenFileName(this, tr("Open File"), settings.last_dir, "DBC (*.dbc)");

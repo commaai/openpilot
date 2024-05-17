@@ -179,6 +179,7 @@ void MainWindow::createDockWindows() {
 void MainWindow::createDockWidgets() {
   messages_widget = new MessagesWidget(this);
   messages_dock->setWidget(messages_widget);
+  QObject::connect(messages_widget, &MessagesWidget::titleChanged, messages_dock, &QDockWidget::setWindowTitle);
 
   // right panel
   charts_widget = new ChartsWidget(this);
@@ -261,6 +262,9 @@ void MainWindow::openStream() {
     }
     stream->start();
     statusBar()->showMessage(tr("Route %1 loaded").arg(can->routeName()), 2000);
+  } else if (!can) {
+    stream = new DummyStream(this);
+    stream->start();
   }
 }
 

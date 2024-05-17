@@ -21,8 +21,8 @@ Given a route and platform, automatically inserts FW fingerprints from the platf
 
 Example:
 ```bash
-> python tools/car_porting/auto_fingerprint.py '1bbe6bf2d62f58a8|2022-07-14--17-11-43' 'SUBARU OUTBACK 6TH GEN'
-Attempting to add fw version for:  SUBARU OUTBACK 6TH GEN
+> python tools/car_porting/auto_fingerprint.py '1bbe6bf2d62f58a8|2022-07-14--17-11-43' 'OUTBACK'
+Attempting to add fw version for:  OUTBACK
 ```
 
 ### [selfdrive/car/tests/test_car_interfaces.py](/selfdrive/car/tests/test_car_interfaces.py)

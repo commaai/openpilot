@@ -19,7 +19,7 @@ SOURCES: list[AzureContainer] = [
 
 DEST = OpenpilotCIContainer
 
-def upload_route(path: str, exclude_patterns: Iterable[str] | None = None) -> None:
+def upload_route(path: str, exclude_patterns: Iterable[str] = None) -> None:
   if exclude_patterns is None:
     exclude_patterns = [r'dcamera\.hevc']
 

@@ -13,6 +13,7 @@
 #include "cereal/messaging/messaging.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/utils/util.h"
+#include "tools/replay/util.h"
 
 struct CanData {
   void compute(const MessageId &msg_id, const uint8_t *dat, const int size, double current_sec,
@@ -89,6 +90,7 @@ public:
 signals:
   void paused();
   void resume();
+  void seekingTo(double sec);
   void seekedTo(double sec);
   void streamStarted();
   void eventsMerged(const MessageEventsMap &events_map);
@@ -106,6 +108,7 @@ protected:
   uint64_t lastEventMonoTime() const { return lastest_event_ts; }
 
   std::vector<const CanEvent *> all_events_;
+  double current_sec_ = 0;
   uint64_t lastest_event_ts = 0;
 
 private:
@@ -113,7 +116,6 @@ private:
   void updateLastMsgsTo(double sec);
   void updateMasks();
 
-  double current_sec_ = 0;
   MessageEventsMap events_;
   std::unordered_map<MessageId, CanData> last_msgs;
   std::unique_ptr<MonotonicBuffer> event_buffer_;

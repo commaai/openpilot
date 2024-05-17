@@ -109,7 +109,7 @@ class ManagerProcess(ABC):
     else:
       self.watchdog_seen = True
 
-  def stop(self, retry: bool = True, block: bool = True, sig: signal.Signals | None = None) -> int | None:
+  def stop(self, retry: bool = True, block: bool = True, sig: signal.Signals = None) -> int | None:
     if self.proc is None:
       return None
 

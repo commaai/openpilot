@@ -4,7 +4,7 @@ import numpy as np
 import tomllib
 from abc import abstractmethod, ABC
 from enum import StrEnum
-from typing import Any, NamedTuple, cast
+from typing import Any, NamedTuple
 from collections.abc import Callable
 
 from cereal import car
@@ -13,8 +13,8 @@ from openpilot.common.conversions import Conversions as CV
 from openpilot.common.simple_kalman import KF1D, get_kalman_gain
 from openpilot.common.numpy_fast import clip
 from openpilot.common.realtime import DT_CTRL
-from openpilot.selfdrive.car import PlatformConfig, apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, STD_CARGO_KG
-from openpilot.selfdrive.car.values import Platform
+from openpilot.selfdrive.car import apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, STD_CARGO_KG
+from openpilot.selfdrive.car.values import PLATFORMS
 from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, get_friction
 from openpilot.selfdrive.controls.lib.events import Events
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -81,43 +81,44 @@ class CarInterfaceBase(ABC):
     self.silent_steer_warning = True
     self.v_ego_cluster_seen = False
 
-    self.CS = None
-    self.can_parsers = []
-    if CarState is not None:
-      self.CS = CarState(CP)
+    self.CS = CarState(CP)
+    self.cp = self.CS.get_can_parser(CP)
+    self.cp_cam = self.CS.get_cam_can_parser(CP)
+    self.cp_adas = self.CS.get_adas_can_parser(CP)
+    self.cp_body = self.CS.get_body_can_parser(CP)
+    self.cp_loopback = self.CS.get_loopback_can_parser(CP)
+    self.can_parsers = [self.cp, self.cp_cam, self.cp_adas, self.cp_body, self.cp_loopback]
 
-      self.cp = self.CS.get_can_parser(CP)
-      self.cp_cam = self.CS.get_cam_can_parser(CP)
-      self.cp_adas = self.CS.get_adas_can_parser(CP)
-      self.cp_body = self.CS.get_body_can_parser(CP)
-      self.cp_loopback = self.CS.get_loopback_can_parser(CP)
-      self.can_parsers = [self.cp, self.cp_cam, self.cp_adas, self.cp_body, self.cp_loopback]
+    dbc_name = "" if self.cp is None else self.cp.dbc_name
+    self.CC: CarControllerBase = CarController(dbc_name, CP, self.VM)
 
-    self.CC = None
-    if CarController is not None:
-      self.CC = CarController(self.cp.dbc_name, CP, self.VM)
+  def apply(self, c: car.CarControl, now_nanos: int) -> tuple[car.CarControl.Actuators, list[tuple[int, int, bytes, int]]]:
+    return self.CC.update(c, self.CS, now_nanos)
 
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
     return ACCEL_MIN, ACCEL_MAX
 
   @classmethod
-  def get_non_essential_params(cls, candidate: Platform):
+  def get_non_essential_params(cls, candidate: str):
     """
     Parameters essential to controlling the car may be incomplete or wrong without FW versions or fingerprints.
     """
     return cls.get_params(candidate, gen_empty_fingerprint(), list(), False, False)
 
   @classmethod
-  def get_params(cls, candidate: Platform, fingerprint: dict[int, dict[int, int]], car_fw: list[car.CarParams.CarFw], experimental_long: bool, docs: bool):
+  def get_params(cls, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[car.CarParams.CarFw], experimental_long: bool, docs: bool):
     ret = CarInterfaceBase.get_std_params(candidate)
 
-    if hasattr(candidate, "config"):
-      platform_config = cast(PlatformConfig, candidate.config)
-      if platform_config.specs is not None:
-        ret.mass = platform_config.specs.mass
-        ret.wheelbase = platform_config.specs.wheelbase
-        ret.steerRatio = platform_config.specs.steerRatio
+    platform = PLATFORMS[candidate]
+    ret.mass = platform.config.specs.mass
+    ret.wheelbase = platform.config.specs.wheelbase
+    ret.steerRatio = platform.config.specs.steerRatio
+    ret.centerToFront = ret.wheelbase * platform.config.specs.centerToFrontRatio
+    ret.minEnableSpeed = platform.config.specs.minEnableSpeed
+    ret.minSteerSpeed = platform.config.specs.minSteerSpeed
+    ret.tireStiffnessFactor = platform.config.specs.tireStiffnessFactor
+    ret.flags |= int(platform.config.flags)
 
     ret = cls._get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs)
 
@@ -133,7 +134,7 @@ class CarInterfaceBase(ABC):
 
   @staticmethod
   @abstractmethod
-  def _get_params(ret: car.CarParams, candidate: Platform, fingerprint: dict[int, dict[int, int]],
+  def _get_params(ret: car.CarParams, candidate, fingerprint: dict[int, dict[int, int]],
                   car_fw: list[car.CarParams.CarFw], experimental_long: bool, docs: bool):
     raise NotImplementedError
 
@@ -241,15 +242,11 @@ class CarInterfaceBase(ABC):
       ret.cruiseState.speedCluster = ret.cruiseState.speed
 
     # copy back for next iteration
-    reader = ret.as_reader()
     if self.CS is not None:
-      self.CS.out = reader
+      self.CS.out = ret.as_reader()
 
-    return reader
+    return ret
 
-  @abstractmethod
-  def apply(self, c: car.CarControl, now_nanos: int) -> tuple[car.CarControl.Actuators, list[bytes]]:
-    pass
 
   def create_common_events(self, cs_out, extra_gears=None, pcm_enable=True, allow_enable=True,
                            enable_buttons=(ButtonType.accelCruise, ButtonType.decelCruise)):
@@ -284,6 +281,10 @@ class CarInterfaceBase(ABC):
       events.add(EventName.accFaulted)
     if cs_out.steeringPressed:
       events.add(EventName.steerOverride)
+    if cs_out.brakePressed and cs_out.standstill:
+      events.add(EventName.preEnableStandstill)
+    if cs_out.gasPressed:
+      events.add(EventName.gasPressedOverride)
 
     # Handle button presses
     for b in cs_out.buttonEvents:
@@ -332,7 +333,6 @@ class RadarInterfaceBase(ABC):
     self.delay = 0
     self.radar_ts = CP.radarTimeStep
     self.frame = 0
-    self.no_radar_sleep = 'NO_RADAR_SLEEP' in os.environ
 
   def update(self, can_strings):
     self.frame += 1
@@ -437,6 +437,10 @@ class CarStateBase(ABC):
     return d.get(gear.upper(), GearShifter.unknown)
 
   @staticmethod
+  def get_can_parser(CP):
+    return None
+
+  @staticmethod
   def get_cam_can_parser(CP):
     return None
 
@@ -451,6 +455,18 @@ class CarStateBase(ABC):
   @staticmethod
   def get_loopback_can_parser(CP):
     return None
+
+
+SendCan = tuple[int, int, bytes, int]
+
+
+class CarControllerBase(ABC):
+  def __init__(self, dbc_name: str, CP, VM):
+    pass
+
+  @abstractmethod
+  def update(self, CC: car.CarControl.Actuators, CS: car.CarState, now_nanos: int) -> tuple[car.CarControl.Actuators, list[SendCan]]:
+    pass
 
 
 INTERFACE_ATTR_FILE = {

@@ -41,7 +41,7 @@ class PointBuckets:
   def add_point(self, x: float, y: float, bucket_val: float) -> None:
     raise NotImplementedError
 
-  def get_points(self, num_points: int | None = None) -> Any:
+  def get_points(self, num_points: int = None) -> Any:
     points = np.vstack([x.arr for x in self.buckets.values()])
     if num_points is None:
       return points

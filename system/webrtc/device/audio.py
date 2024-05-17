@@ -16,7 +16,7 @@ class AudioInputStreamTrack(aiortc.mediastreams.AudioStreamTrack):
       pyaudio.paFloat32: 'flt',
   }
 
-  def __init__(self, audio_format: int = pyaudio.paInt16, rate: int = 16000, channels: int = 1, packet_time: float = 0.020, device_index: int | None = None):
+  def __init__(self, audio_format: int = pyaudio.paInt16, rate: int = 16000, channels: int = 1, packet_time: float = 0.020, device_index: int = None):
     super().__init__()
 
     self.p = pyaudio.PyAudio()
@@ -48,7 +48,7 @@ class AudioInputStreamTrack(aiortc.mediastreams.AudioStreamTrack):
 
 
 class AudioOutputSpeaker:
-  def __init__(self, audio_format: int = pyaudio.paInt16, rate: int = 48000, channels: int = 2, packet_time: float = 0.2, device_index: int | None = None):
+  def __init__(self, audio_format: int = pyaudio.paInt16, rate: int = 48000, channels: int = 2, packet_time: float = 0.2, device_index: int = None):
 
     chunk_size = int(packet_time * rate)
     self.p = pyaudio.PyAudio()

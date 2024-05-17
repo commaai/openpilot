@@ -4,7 +4,7 @@ runs:
   using: "composite"
   steps:
     - uses: ./.github/workflows/auto-cache
-      with: 
+      with:
         path: .ci_cache/pre-commit
         key: pre-commit-${{ hashFiles('**/.pre-commit-config.yaml') }}
         restore-keys: |
