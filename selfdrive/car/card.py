@@ -153,6 +153,9 @@ class Car:
   def controls_update(self, CS: car.CarState, CC: car.CarControl):
     """control update loop, driven by carControl"""
 
+    if not self.controlsState_prev.initialized:
+      self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
+
     if self.sm.all_checks(['carControl']):
       # send car controls over can
       now_nanos = self.can_log_mono_time if REPLAY else int(time.monotonic() * 1e9)
@@ -169,9 +172,6 @@ class Car:
     self.state_publish(CS)
 
     controlsState = self.sm['controlsState']
-    if self.sm['controlsState'].initialized and not self.controlsState_prev.initialized:
-      self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
-
     if not self.CP.passive and controlsState.initialized:
       self.controls_update(CS, self.sm['carControl'])
 
