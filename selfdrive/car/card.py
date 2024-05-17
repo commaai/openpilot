@@ -154,6 +154,7 @@ class Car:
     """control update loop, driven by carControl"""
 
     if not self.controlsState_prev.initialized:
+      # Initialize CarInterface, once controls are ready
       self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
 
     if self.sm.all_checks(['carControl']):
