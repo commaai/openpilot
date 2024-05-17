@@ -17,6 +17,7 @@ def migrate_all(lr, old_logtime=False, manager_states=False, panda_states=False,
   msgs = migrate_gpsLocation(msgs)
   msgs = migrate_deviceState(msgs)
   msgs = migrate_controlsState(msgs)
+  msgs = migrate_carOutput(msgs)
   if manager_states:
     msgs = migrate_managerState(msgs)
   if panda_states:
@@ -84,6 +85,23 @@ def migrate_controlsState(lr):
       all_msgs.append(cs.as_reader())
     else:
       all_msgs.append(msg)
+  return all_msgs
+
+
+def migrate_carOutput(lr):
+  # migration needed only for routes before carOutput
+  if any(msg.which() == 'carOutput' for msg in lr):
+    return lr
+
+  all_msgs = []
+  for msg in lr:
+    if msg.which() == 'carControl':
+      co = messaging.new_message('carOutput')
+      co.valid = msg.valid
+      co.logMonoTime = msg.logMonoTime
+      co.carOutput.actuatorsOutput = msg.carControl.actuatorsOutputDEPRECATED
+      all_msgs.append(co.as_reader())
+    all_msgs.append(msg)
   return all_msgs
 
 
