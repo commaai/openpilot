@@ -481,6 +481,7 @@ CONFIGS = [
     should_recv_callback=controlsd_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
+    # main_pub="carState",
   ),
   ProcessConfig(
     proc_name="card",
