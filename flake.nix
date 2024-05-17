@@ -14,8 +14,13 @@
     ...
   }: let
     system = "x86_64-linux";
+    pkgs = import nixpkgs {
+    	inherit system;
+	config.allowUnfree = true;
+
+    };
     packages = dream2nix.lib.evalModules {
-      packageSets.nixpkgs = inputs.dream2nix.inputs.nixpkgs.legacyPackages.${system};
+      packageSets.nixpkgs = pkgs;
       modules = [
         ./default.nix
         {
