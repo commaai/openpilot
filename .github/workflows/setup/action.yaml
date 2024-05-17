@@ -1,10 +1,6 @@
 name: 'openpilot env setup'
 
 inputs:
-  docker_hub_pat:
-    description: 'Auth token for Docker Hub, required for BuildJet jobs'
-    required: true
-    default: ''
   is_retried:
     description: 'A mock param that asserts that we use the setup-with-retry instead of this action directly'
     required: false
@@ -24,40 +20,23 @@ runs:
     - shell: bash
       run: git lfs pull
 
-    # on BuildJet runners, must be logged into DockerHub to avoid rate limiting
-    # https://buildjet.com/for-github-actions/docs/guides/docker
-    - shell: bash
-      if: ${{ contains(runner.name, 'buildjet') && inputs.docker_hub_pat == '' }}
-      run: |
-        echo "Need to set the Docker Hub PAT secret as an input to this action"
-        exit 1
-    - name: Login to Docker Hub
-      if: contains(runner.name, 'buildjet')
-      shell: bash
-      run: |
-        docker login -u adeebshihadeh -p ${{ inputs.docker_hub_pat }}
+    - uses: nixbuild/nix-quick-install-action@v27
 
-    # build cache
-    - id: date
-      shell: bash
-      run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
-    - shell: bash
-      run: echo "$CACHE_COMMIT_DATE"
-    - id: scons-cache
-      uses: ./.github/workflows/auto-cache
+    - name: Restore and cache Nix store
+      uses: nix-community/cach-nix-action@v5
       with:
-        path: .ci_cache/scons_cache
-        key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
-        restore-keys: |
-          scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
-          scons-${{ runner.arch }}
-    # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
-    - id: normalize-file-permissions
-      shell: bash
-      name: Normalize file permissions to ensure a consistent docker build cache
-      run: |
-        find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
-        find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
-    # build our docker image
-    - shell: bash
-      run: eval ${{ env.BUILD }}
+        # restore and save a cache using this key
+        primary-key: nix-${{ runner.os }}-${{ hashFiles('**/*.nix') }}
+        # if there's no cache hit, restore a cache by this prefix
+        restore-prefixes-first-match: nix-${{ runner.os }}-
+        # collect garbage until Nix store size (in bytes) is at most this number
+        # before trying to save a new cache
+        gc-max-store-size-linux: 1073741824
+        # do purge caches
+        purge: true
+        # purge all versions of the cache
+        purge-prefixes: cache-${{ runner.os }}-
+        # created more than this number of seconds ago relative to the start of the `Post Restore` phase
+        purge-created: 0
+        # except the version with the `primary-key`, if it exists
+        purge-primary-key: never

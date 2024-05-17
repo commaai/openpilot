@@ -17,7 +17,6 @@ runs:
       uses: ./.github/workflows/setup
       continue-on-error: true
       with:
-        docker_hub_pat: ${{ inputs.docker_hub_pat }}
         is_retried: true
     - if: steps.setup1.outcome == 'failure'
       shell: bash
@@ -27,7 +26,6 @@ runs:
       uses: ./.github/workflows/setup
       continue-on-error: true
       with:
-        docker_hub_pat: ${{ inputs.docker_hub_pat }}
         is_retried: true
     - if: steps.setup2.outcome == 'failure'
       shell: bash
@@ -36,5 +34,4 @@ runs:
       if: steps.setup2.outcome == 'failure'
       uses: ./.github/workflows/setup
       with:
-        docker_hub_pat: ${{ inputs.docker_hub_pat }}
         is_retried: true
