@@ -43,25 +43,25 @@ in {
 	    ];
 
 	};
-	onnxruntime-gpu = {config, lib, ...}: {
-		deps = {nixpkgs, nixpkgs_cuda, ...}: {
-			#inherit (nixpkgs_cuda.cudaPackages) cudatoolkit cuda_cccl libcublas libcurand libcusparse libcufft cudnn cuda_cudart;
-			inherit (nixpkgs) oneDNN re2 onnxruntime;
-		};
-		mkDerivation = {
-			src = config.deps.onnxruntime.dist;
-			 unpackPhase = ''
-			 	cp -r $src dist
-				chmod +w dist
-			'';
-			 buildInputs= with config.deps; [
-			 	onnxruntime.protobuf
-			 	re2
-				oneDNN
-			];
-		};
-
-	};
+	#onnxruntime-gpu = {config, lib, ...}: {
+	#	deps = {nixpkgs, nixpkgs_cuda, ...}: {
+	#		#inherit (nixpkgs_cuda.cudaPackages) cudatoolkit cuda_cccl libcublas libcurand libcusparse libcufft cudnn cuda_cudart;
+	#		inherit (nixpkgs) oneDNN re2 onnxruntime;
+	#	};
+	#	mkDerivation = {
+	#		src = config.deps.onnxruntime.dist;
+	#		 unpackPhase = ''
+	#		 	cp -r $src dist
+	#			chmod +w dist
+	#		'';
+	#		 buildInputs= with config.deps; [
+	#		 	onnxruntime.protobuf
+	#		 	re2
+	#			oneDNN
+	#		];
+	#	};
+#
+#	};
   };
   pdm.lockfile = ./pdm.lock;
   pdm.pyproject = ./pyproject.toml;

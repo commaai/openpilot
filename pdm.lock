@@ -5,7 +5,7 @@
 groups = ["default", "dev"]
 strategy = ["cross_platform", "inherit_metadata"]
 lock_version = "4.4.1"
-content_hash = "sha256:874ce77abdfcd8e40316c943743ded84738cde4f0c689ef3336bb433b2b7b6e2"
+content_hash = "sha256:79d9ba59363934a5e3ecf8fa5c8fcc00eb97f5191ff66d383cdef696c385f535"
 
 [[package]]
 name = "aiohttp"
@@ -400,7 +400,7 @@ version = "15.0.1"
 requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 summary = "Colored terminal output for Python's logging module"
 groups = ["default"]
-marker = "platform_machine == \"aarch64\" or platform_machine == \"x86_64\""
+marker = "platform_machine == \"aarch64\""
 dependencies = [
     "humanfriendly>=9.1",
 ]
@@ -708,7 +708,7 @@ name = "flatbuffers"
 version = "24.3.25"
 summary = "The FlatBuffers serialization format for Python"
 groups = ["default"]
-marker = "platform_machine == \"aarch64\" or platform_machine == \"x86_64\""
+marker = "platform_machine == \"aarch64\""
 files = [
     {file = "flatbuffers-24.3.25-py2.py3-none-any.whl", hash = "sha256:8dbdec58f935f3765e4f7f3cf635ac3a77f83568138d6a2311f524ec96364812"},
     {file = "flatbuffers-24.3.25.tar.gz", hash = "sha256:de2ec5b203f21441716617f38443e0a8ebf3d25bf0d9c0bb0ce68fa00ad546a4"},
@@ -886,7 +886,7 @@ version = "10.0"
 requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 summary = "Human friendly output for text interfaces using Python"
 groups = ["default"]
-marker = "platform_machine == \"aarch64\" or platform_machine == \"x86_64\""
+marker = "platform_machine == \"aarch64\""
 dependencies = [
     "pyreadline3; sys_platform == \"win32\" and python_version >= \"3.8\"",
 ]
@@ -1544,25 +1544,6 @@ files = [
     {file = "onnxruntime-1.17.3-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:2f823d5eb4807007f3da7b27ca972263df6a1836e6f327384eb266274c53d05d"},
     {file = "onnxruntime-1.17.3-cp311-cp311-win32.whl", hash = "sha256:b66b23f9109e78ff2791628627a26f65cd335dcc5fbd67ff60162733a2f7aded"},
     {file = "onnxruntime-1.17.3-cp311-cp311-win_amd64.whl", hash = "sha256:570760ca53a74cdd751ee49f13de70d1384dcf73d9888b8deac0917023ccda6d"},
-]
-
-[[package]]
-name = "onnxruntime-gpu"
-version = "1.17.1"
-summary = "ONNX Runtime is a runtime accelerator for Machine Learning models"
-groups = ["default"]
-marker = "platform_machine == \"x86_64\""
-dependencies = [
-    "coloredlogs",
-    "flatbuffers",
-    "numpy>=1.24.2",
-    "packaging",
-    "protobuf",
-    "sympy",
-]
-files = [
-    {file = "onnxruntime_gpu-1.17.1-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:b2cd54f2b0a05e6bc9ab30182b859364d30115a19c31be24aa2edef40be00277"},
-    {file = "onnxruntime_gpu-1.17.1-cp311-cp311-win_amd64.whl", hash = "sha256:bdffcced8a5f6275c0df202220e9232138b336f868cd671c9d2c571e834d2a80"},
 ]
 
 [[package]]
@@ -5056,7 +5037,7 @@ name = "pyreadline3"
 version = "3.4.1"
 summary = "A python implementation of GNU readline."
 groups = ["default"]
-marker = "sys_platform == \"win32\" and python_version >= \"3.8\" and (platform_machine == \"aarch64\" or platform_machine == \"x86_64\")"
+marker = "sys_platform == \"win32\" and python_version >= \"3.8\" and platform_machine == \"aarch64\""
 files = [
     {file = "pyreadline3-3.4.1-py3-none-any.whl", hash = "sha256:b0efb6516fd4fb07b45949053826a62fa4cb353db5be2bbb4a7aa1fdd1e345fb"},
     {file = "pyreadline3-3.4.1.tar.gz", hash = "sha256:6f3d1f7b8a31ba32b73917cefc1f28cc660562f39aea8646d30bd6eff21f7bae"},

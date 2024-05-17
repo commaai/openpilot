@@ -284,7 +284,7 @@ dependencies = [
     "numpy",
     "onnx>=1.14.0",
     "onnxruntime>=1.16.3; platform_machine == \"aarch64\"",
-    "onnxruntime-gpu>=1.16.3; platform_machine == \"x86_64\"",
+    #"onnxruntime-gpu>=1.16.3; platform_machine == \"x86_64\"",
     "psutil",
     "pyaudio",
     "pycapnp",
