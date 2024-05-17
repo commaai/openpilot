@@ -41,4 +41,5 @@ runs:
         # except the version with the `primary-key`, if it exists
         purge-primary-key: never
     - name: Run `nix build`
+      shell: bash
       run: nix build .
