@@ -299,11 +299,11 @@
     </message>
     <message>
         <source>Pair Device</source>
-        <translation type="unfinished"></translation>
+        <translation>配对设备</translation>
     </message>
     <message>
         <source>PAIR</source>
-        <translation type="unfinished"></translation>
+        <translation>配对</translation>
     </message>
 </context>
 <context>
@@ -487,23 +487,23 @@
     <name>OnroadAlerts</name>
     <message>
         <source>openpilot Unavailable</source>
-        <translation type="unfinished"></translation>
+        <translation>无法使用 openpilot</translation>
     </message>
     <message>
         <source>Waiting for controls to start</source>
-        <translation type="unfinished"></translation>
+        <translation>等待控制服务啟動</translation>
     </message>
     <message>
         <source>TAKE CONTROL IMMEDIATELY</source>
-        <translation type="unfinished"></translation>
+        <translation>立即接管</translation>
     </message>
     <message>
         <source>Controls Unresponsive</source>
-        <translation type="unfinished"></translation>
+        <translation>控制服务无响应</translation>
     </message>
     <message>
         <source>Reboot Device</source>
-        <translation type="unfinished"></translation>
+        <translation>重启设备</translation>
     </message>
 </context>
 <context>
@@ -628,7 +628,7 @@
     </message>
     <message>
         <source>now</source>
-        <translation type="unfinished"></translation>
+        <translation>现在</translation>
     </message>
 </context>
 <context>
@@ -1152,11 +1152,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
-        <translation type="unfinished"></translation>
+        <translation>推荐使用标准模式。在积极模式下，openpilot 会更靠近前方车辆，并在油门和刹车方面更加激进。在放松模式下，openpilot 会与前方车辆保持更远距离。在支持的车型上，你可以使用方向盘上的距离按钮来循环切换这些驾驶风格。</translation>
     </message>
     <message>
         <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
-        <translation type="unfinished"></translation>
+        <translation>在低速时，驾驶可视化将转换为道路朝向的广角摄像头，以更好地展示某些转弯。测试模式标志也将显示在右上角。</translation>
     </message>
     <message>
         <source>Always-On Driver Monitoring</source>
