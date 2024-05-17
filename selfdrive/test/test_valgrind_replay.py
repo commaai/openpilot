@@ -2,7 +2,6 @@
 import os
 import threading
 import time
-import unittest
 import subprocess
 import signal
 
@@ -35,7 +34,7 @@ CONFIGS = [
 ]
 
 
-class TestValgrind(unittest.TestCase):
+class TestValgrind:
   def extract_leak_sizes(self, log):
     if "All heap blocks were freed -- no leaks are possible" in log:
       return (0,0,0)
@@ -110,8 +109,4 @@ class TestValgrind(unittest.TestCase):
       while self.leak is None:
         time.sleep(0.1)  # Wait for the valgrind to finish
 
-      self.assertFalse(self.leak)
-
-
-if __name__ == "__main__":
-  unittest.main()
+      assert not self.leak
