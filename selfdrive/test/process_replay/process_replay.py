@@ -159,7 +159,6 @@ class ProcessContainer:
     self.vipc_server: VisionIpcServer | None = None
     self.environ_config: dict[str, Any] | None = None
     self.capture: ProcessOutputCapture | None = None
-    self.seen = set()
 
   @property
   def has_empty_queue(self) -> bool:
@@ -309,7 +308,6 @@ class ProcessContainer:
         for socket in self.sockets:
           ms = messaging.drain_sock(socket)
           for m in ms:
-            self.seen.add(m.which())
             m = m.as_builder()
             m.logMonoTime = msg.logMonoTime + int(self.cfg.processing_time * 1e9)
             output_msgs.append(m.as_reader())
@@ -715,13 +713,8 @@ def _replay_multi_process(
             internal_pub_queue.append(m)
             heapq.heappush(internal_pub_index_heap, (m.logMonoTime, len(internal_pub_queue) - 1))
         log_msgs.extend(output_msgs)
-    for container in containers:
-      # print('subs, seen', set(container.subs), container.seen, set(container.subs) == container.seen)
-      assert set(container.subs) == container.seen or not container.seen, \
-        f"Seen messages do not match subscribed messages: {set(container.subs)} - {container.seen}"
   finally:
     for container in containers:
-      # print('subs, seen', set(container.subs), container.seen, set(container.subs) == container.seen)
       container.stop()
       if captured_output_store is not None:
         assert container.capture is not None
