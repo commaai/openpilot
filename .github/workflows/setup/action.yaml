@@ -40,3 +40,5 @@ runs:
         purge-created: 0
         # except the version with the `primary-key`, if it exists
         purge-primary-key: never
+    - name: Run `nix build`
+      run: nix build .
