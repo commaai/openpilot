@@ -30,7 +30,7 @@ def dmonitoringd_thread():
     # Get interaction
     if sm.updated['carState']:
       driver_engaged = sm['carState'].steeringPressed or \
-        sm['carState'].gasPressed
+                       sm['carState'].gasPressed
 
     if sm.updated['modelV2']:
       driver_status.set_policy(sm['modelV2'], sm['carState'].vEgo)
