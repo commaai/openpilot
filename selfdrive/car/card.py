@@ -22,154 +22,170 @@ State = log.ControlsState.OpenpilotState
 EventName = car.CarEvent.EventName
 
 
-def loop(CI=None):
-  can_sock = messaging.sub_sock('can', timeout=20)
-  sm = messaging.SubMaster(['pandaStates', 'carControl', 'controlsState'])
-  pm = messaging.PubMaster(['sendcan', 'carState', 'carParams', 'carOutput'])
+class Car:
+  CI: CarInterfaceBase
 
-  can_rcv_timeout_counter = 0  # consecutive timeout count
-  can_rcv_cum_timeout_counter = 0  # cumulative timeout count
+  def __init__(self, CI=None):
+    self.can_sock = messaging.sub_sock('can', timeout=20)
+    self.sm = messaging.SubMaster(['pandaStates', 'carControl', 'controlsState'])
+    self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams', 'carOutput'])
 
-  CC_prev = car.CarControl.new_message()
-  CS_prev = car.CarState.new_message()
-  controlsState_prev = car.CarState.new_message()
+    self.can_rcv_timeout_counter = 0  # consecutive timeout count
+    self.can_rcv_cum_timeout_counter = 0  # cumulative timeout count
 
-  last_actuators_output = car.CarControl.Actuators.new_message()
+    self.CC_prev = car.CarControl.new_message()
+    self.CS_prev = car.CarState.new_message()
+    self.controlsState_prev = car.CarState.new_message()
 
-  params = Params()
+    self.last_actuators_output = car.CarControl.Actuators.new_message()
 
-  if CI is None:
-    # wait for one pandaState and one CAN packet
-    print("Waiting for CAN messages...")
-    get_one_can(can_sock)
+    params = Params()
 
-    num_pandas = len(messaging.recv_one_retry(sm.sock['pandaStates']).pandaStates)
-    experimental_long_allowed = params.get_bool("ExperimentalLongitudinalEnabled")
-    CI, CP = get_car(can_sock, pm.sock['sendcan'], experimental_long_allowed, num_pandas)
-  else:
-    CI, CP = CI, CI.CP
+    if CI is None:
+      # wait for one pandaState and one CAN packet
+      print("Waiting for CAN messages...")
+      get_one_can(self.can_sock)
 
-  # set alternative experiences from parameters
-  disengage_on_accelerator = params.get_bool("DisengageOnAccelerator")
-  CP.alternativeExperience = 0
-  if not disengage_on_accelerator:
-    CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
+      num_pandas = len(messaging.recv_one_retry(self.sm.sock['pandaStates']).pandaStates)
+      experimental_long_allowed = params.get_bool("ExperimentalLongitudinalEnabled")
+      self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'], experimental_long_allowed, num_pandas)
+    else:
+      self.CI, self.CP = CI, CI.CP
 
-  openpilot_enabled_toggle = params.get_bool("OpenpilotEnabledToggle")
+    # set alternative experiences from parameters
+    self.disengage_on_accelerator = params.get_bool("DisengageOnAccelerator")
+    self.CP.alternativeExperience = 0
+    if not self.disengage_on_accelerator:
+      self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
 
-  controller_available = CI.CC is not None and openpilot_enabled_toggle and not CP.dashcamOnly
+    openpilot_enabled_toggle = params.get_bool("OpenpilotEnabledToggle")
 
-  CP.passive = not controller_available or CP.dashcamOnly
-  if CP.passive:
-    safety_config = car.CarParams.SafetyConfig.new_message()
-    safety_config.safetyModel = car.CarParams.SafetyModel.noOutput
-    CP.safetyConfigs = [safety_config]
+    controller_available = self.CI.CC is not None and openpilot_enabled_toggle and not self.CP.dashcamOnly
 
-  # Write previous route's CarParams
-  prev_cp = params.get("CarParamsPersistent")
-  if prev_cp is not None:
-    params.put("CarParamsPrevRoute", prev_cp)
+    self.CP.passive = not controller_available or self.CP.dashcamOnly
+    if self.CP.passive:
+      safety_config = car.CarParams.SafetyConfig.new_message()
+      safety_config.safetyModel = car.CarParams.SafetyModel.noOutput
+      self.CP.safetyConfigs = [safety_config]
 
-  # Write CarParams for controls and radard
-  cp_bytes = CP.to_bytes()
-  params.put("CarParams", cp_bytes)
-  params.put_nonblocking("CarParamsCache", cp_bytes)
-  params.put_nonblocking("CarParamsPersistent", cp_bytes)
+    # Write previous route's CarParams
+    prev_cp = params.get("CarParamsPersistent")
+    if prev_cp is not None:
+      params.put("CarParamsPrevRoute", prev_cp)
 
-  events = Events()
+    # Write CarParams for controls and radard
+    cp_bytes = self.CP.to_bytes()
+    params.put("CarParams", cp_bytes)
+    params.put_nonblocking("CarParamsCache", cp_bytes)
+    params.put_nonblocking("CarParamsPersistent", cp_bytes)
 
-  # card is driven by can recv, expected at 100Hz
-  rk = Ratekeeper(100, print_delay_threshold=None)
+    self.events = Events()
 
-  while True:
-    # *** state update ***
+    # card is driven by can recv, expected at 100Hz
+    self.rk = Ratekeeper(100, print_delay_threshold=None)
+
+  def state_update(self) -> car.CarState:
     """carState update loop, driven by can"""
 
     # Update carState from CAN
-    can_strs = messaging.drain_sock_raw(can_sock, wait_for_one=True)
-    CS = CI.update(CC_prev, can_strs)
+    can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
+    CS = self.CI.update(self.CC_prev, can_strs)
 
-    sm.update(0)
+    self.sm.update(0)
 
     can_rcv_valid = len(can_strs) > 0
 
     # Check for CAN timeout
     if not can_rcv_valid:
-      can_rcv_timeout_counter += 1
-      can_rcv_cum_timeout_counter += 1
+      self.can_rcv_timeout_counter += 1
+      self.can_rcv_cum_timeout_counter += 1
     else:
-      can_rcv_timeout_counter = 0
+      self.can_rcv_timeout_counter = 0
 
-    can_rcv_timeout = can_rcv_timeout_counter >= 5
+    self.can_rcv_timeout = self.can_rcv_timeout_counter >= 5
 
     if can_rcv_valid and REPLAY:
-      can_log_mono_time = messaging.log_from_bytes(can_strs[0]).logMonoTime
+      self.can_log_mono_time = messaging.log_from_bytes(can_strs[0]).logMonoTime
 
-    # *** update events ***
-    events.clear()
+    return CS
 
-    events.add_from_msg(CS.events)
+  def update_events(self, CS: car.CarState) -> car.CarState:
+    self.events.clear()
+
+    self.events.add_from_msg(CS.events)
 
     # Disable on rising edge of accelerator or brake. Also disable on brake when speed > 0
-    if (CS.gasPressed and not CS_prev.gasPressed and disengage_on_accelerator) or \
-      (CS.brakePressed and (not CS_prev.brakePressed or not CS.standstill)) or \
-      (CS.regenBraking and (not CS_prev.regenBraking or not CS.standstill)):
-      events.add(EventName.pedalPressed)
+    if (CS.gasPressed and not self.CS_prev.gasPressed and self.disengage_on_accelerator) or \
+      (CS.brakePressed and (not self.CS_prev.brakePressed or not CS.standstill)) or \
+      (CS.regenBraking and (not self.CS_prev.regenBraking or not CS.standstill)):
+      self.events.add(EventName.pedalPressed)
 
-    CS.events = events.to_msg()
+    CS.events = self.events.to_msg()
 
-    # *** state publish ***
+  def state_publish(self, CS: car.CarState):
     """carState and carParams publish loop"""
 
     # carParams - logged every 50 seconds (> 1 per segment)
-    if sm.frame % int(50. / DT_CTRL) == 0:
+    if self.sm.frame % int(50. / DT_CTRL) == 0:
       cp_send = messaging.new_message('carParams')
       cp_send.valid = True
-      cp_send.carParams = CP
-      pm.send('carParams', cp_send)
+      cp_send.carParams = self.CP
+      self.pm.send('carParams', cp_send)
 
     # publish new carOutput
     co_send = messaging.new_message('carOutput')
-    co_send.valid = sm.all_checks(['carControl'])
-    co_send.carOutput.actuatorsOutput = last_actuators_output
-    pm.send('carOutput', co_send)
+    co_send.valid = self.sm.all_checks(['carControl'])
+    co_send.carOutput.actuatorsOutput = self.last_actuators_output
+    self.pm.send('carOutput', co_send)
 
     # kick off controlsd step while we actuate the latest carControl packet
     cs_send = messaging.new_message('carState')
     cs_send.valid = CS.canValid
     cs_send.carState = CS
-    cs_send.carState.canRcvTimeout = can_rcv_timeout
-    cs_send.carState.canErrorCounter = can_rcv_cum_timeout_counter
-    cs_send.carState.cumLagMs = -rk.remaining * 1000.
-    pm.send('carState', cs_send)
+    cs_send.carState.canRcvTimeout = self.can_rcv_timeout
+    cs_send.carState.canErrorCounter = self.can_rcv_cum_timeout_counter
+    cs_send.carState.cumLagMs = -self.rk.remaining * 1000.
+    self.pm.send('carState', cs_send)
 
-    # *** controls update ***
-    controlsState = sm['controlsState']
-    if not CP.passive and controlsState.initialized:
-      """control update loop, driven by carControl"""
+  def controls_update(self, CS: car.CarState, CC: car.CarControl):
+    """control update loop, driven by carControl"""
 
-      if not controlsState_prev.initialized:
-        # Initialize CarInterface, once controls are ready
-        CI.init(CP, can_sock, pm.sock['sendcan'])
+    if not self.controlsState_prev.initialized:
+      # Initialize CarInterface, once controls are ready
+      self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
 
-      if sm.all_checks(['carControl']):
-        # send car controls over can
-        CC = sm['carControl']
-        now_nanos = can_log_mono_time if REPLAY else int(time.monotonic() * 1e9)
-        last_actuators_output, can_sends = CI.apply(CC, now_nanos)
-        pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
+    if self.sm.all_checks(['carControl']):
+      # send car controls over can
+      now_nanos = self.can_log_mono_time if REPLAY else int(time.monotonic() * 1e9)
+      self.last_actuators_output, can_sends = self.CI.apply(CC, now_nanos)
+      self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
 
-        CC_prev = CC
+      self.CC_prev = CC
 
-    controlsState_prev = controlsState
-    CS_prev = CS.as_reader()
+  def step(self):
+    CS = self.state_update()
 
-    rk.monitor_time()
+    self.update_events(CS)
+
+    self.state_publish(CS)
+
+    controlsState = self.sm['controlsState']
+    if not self.CP.passive and controlsState.initialized:
+      self.controls_update(CS, self.sm['carControl'])
+
+    self.controlsState_prev = controlsState
+    self.CS_prev = CS.as_reader()
+
+  def card_thread(self):
+    while True:
+      self.step()
+      self.rk.monitor_time()
 
 
 def main():
   config_realtime_process(4, Priority.CTRL_HIGH)
-  loop()
+  car = Car()
+  car.card_thread()
 
 
 if __name__ == "__main__":
