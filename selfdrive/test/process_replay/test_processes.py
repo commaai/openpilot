@@ -42,7 +42,7 @@ source_segments = [
 
 segments = [
   ("BODY", "regen997DF2697CB|2023-10-30--23-14-29--0"),
-  ("HYUNDAI", "regen2A9D2A8E0B4|2023-10-30--23-13-34--0"),
+  ("HYUNDAI", "regen845DC1916E6|2024-05-18--04-30-52--0"),
   ("HYUNDAI2", "regen6CA24BC3035|2023-10-30--23-14-28--0"),
   ("TOYOTA", "regen5C019D76307|2023-10-30--23-13-31--0"),
   ("TOYOTA2", "regen5DCADA88A96|2023-10-30--23-14-57--0"),
