@@ -1302,50 +1302,6 @@ files = [
 ]
 
 [[package]]
-name = "ft4222"
-version = "1.10.0"
-description = "Python wrapper around libFT4222."
-optional = false
-python-versions = "*"
-files = [
-    {file = "ft4222-1.10.0-cp310-cp310-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:dd003a91ecaf20bc4d4ce8f0aea4a5ecfbc17a3840d41b0ce27410e027530cd0"},
-    {file = "ft4222-1.10.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:1cedabcd6c554e78f3479350153c5a347355ccc977ceeb24726edc37d3e7edb7"},
-    {file = "ft4222-1.10.0-cp310-cp310-win32.whl", hash = "sha256:a039d4230926fa9b600baa12903843c53d6b238eb93e99ae68eeeb450d6f4bdc"},
-    {file = "ft4222-1.10.0-cp310-cp310-win_amd64.whl", hash = "sha256:b05e499fd3f1baef225671f3afd25bf93e1f287fa17326c90c1f8db70abb3e89"},
-    {file = "ft4222-1.10.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:df9da4d5575d51511ba58e73ee434061dc709ce69491656ec109d995ce304167"},
-    {file = "ft4222-1.10.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:20f2cb89e63ea755d69a4d41c2dcba94d2f720b6e736ea51bdf681f1e809763c"},
-    {file = "ft4222-1.10.0-cp311-cp311-win32.whl", hash = "sha256:806d4117d0814c390c7f280345aa99168ec989ca49b20259ce593ea79bcd246f"},
-    {file = "ft4222-1.10.0-cp311-cp311-win_amd64.whl", hash = "sha256:ad626507e9b1520f2f3b6f98ddca0d257c93b844824a1ab7cbb58759b0fbca84"},
-    {file = "ft4222-1.10.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:4ecaae4e5ec3bedcdbe04a5792bf08119040669cf58c02df947395e6a96bd18c"},
-    {file = "ft4222-1.10.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:c8c2655fe7192eb80ef25ab750123139f591e0f079fe2a5e6f31b7cd6f015a9f"},
-    {file = "ft4222-1.10.0-cp312-cp312-win32.whl", hash = "sha256:fe668caa43bcacfbf3287cff8b4b11bb586a71d4722307e574f60180bb4a351e"},
-    {file = "ft4222-1.10.0-cp312-cp312-win_amd64.whl", hash = "sha256:4d7a49febc2b96ebed4b843262ab1f00843d158d6f4877c8ee19219f1c41f0da"},
-    {file = "ft4222-1.10.0-cp36-cp36m-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:18a6f99e31c767b6ccb7e2f0e7f6cc51d15c9b685e2b81fd12ab08cac0924289"},
-    {file = "ft4222-1.10.0-cp36-cp36m-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:83efcb50649a7ab4c7e045467357029f16ef0be064d46ffe7ea1e06eb9ad85f8"},
-    {file = "ft4222-1.10.0-cp37-cp37m-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:e051c89cb45f964640e355506efa74b41c424e9ea9046367534180075be0a95c"},
-    {file = "ft4222-1.10.0-cp37-cp37m-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:9cae991a917602635238c144395bb59a516b7684b6599da251a88cfe37a5ed8f"},
-    {file = "ft4222-1.10.0-cp37-cp37m-win32.whl", hash = "sha256:713ed85fbb8f11755ae7ed932302192a34d2aa8834ffa45a7c345d3a5ba8f67b"},
-    {file = "ft4222-1.10.0-cp37-cp37m-win_amd64.whl", hash = "sha256:6f2458e6c62d251b6219cfa0fbcfb9ccfa22854c5d7463b862f11b268019ec66"},
-    {file = "ft4222-1.10.0-cp38-cp38-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:db4b489cd434b92748e45695c1313716db4e00bdda4f70b6bcf99cdc042a34d8"},
-    {file = "ft4222-1.10.0-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:b0bd0632063b0e4bb2852ccde3fb95252ea7f0a0bfd3e4c3ee677f4ec63c2520"},
-    {file = "ft4222-1.10.0-cp38-cp38-win32.whl", hash = "sha256:057c88eaa2db14a05163b90a7ba2938c0aa6e3870fec31c70051fb791cfbbc22"},
-    {file = "ft4222-1.10.0-cp38-cp38-win_amd64.whl", hash = "sha256:648a739bb5c0ca53b5cb0698e0ebb54ddaea090878a02cbe9039b3d80cf818ba"},
-    {file = "ft4222-1.10.0-cp39-cp39-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:88170a0aaa321ae8c974a664b2316fab00f86dd8249ff5927ea4d58a2ed7fa23"},
-    {file = "ft4222-1.10.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:69fa55d8b5bc7da5a20254d480d4764dbcaa1ca74cd2d10bbc0ce39d39891f2a"},
-    {file = "ft4222-1.10.0-cp39-cp39-win32.whl", hash = "sha256:9eb40e86fd43ab8d12b33d092369419e275292a6d57f1ef7de30e63cd8dc9bd5"},
-    {file = "ft4222-1.10.0-cp39-cp39-win_amd64.whl", hash = "sha256:875478f2c8c0fa128037c389969375ede546dde8cf7a5ae796421832aa6dd634"},
-    {file = "ft4222-1.10.0-pp310-pypy310_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:834b9e549d66f3cc0bbe75983b32e756258523b70363bb67970a7be21c9e3d8f"},
-    {file = "ft4222-1.10.0-pp310-pypy310_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:7af52e4d61e2bcaa10b802e6f1af29823da12a27f520c799823490e6fd9ebb19"},
-    {file = "ft4222-1.10.0-pp37-pypy37_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:ca8c5aff74e213d8b658e7cdd8df3012e55023a2d379b5074628f6bb8947359a"},
-    {file = "ft4222-1.10.0-pp37-pypy37_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:755a70ab2c5d3fd94030e51fd82c332bc2463c6c455adf093d12e2f3803ea207"},
-    {file = "ft4222-1.10.0-pp38-pypy38_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:035ea7fc9ad627b44be57c31e87bc8d445ebd7cf6ac991d750fedc999683d64e"},
-    {file = "ft4222-1.10.0-pp38-pypy38_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:2df65d174200c1451f5646a109e683aada9d7a076bf5f7ce682145d10725445a"},
-    {file = "ft4222-1.10.0-pp39-pypy39_pp73-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:99ef3c412017a85ef9f90d8fc884ba66dae71e85433c8890da6aec38eb0288ab"},
-    {file = "ft4222-1.10.0-pp39-pypy39_pp73-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:d00b36bdac3960c377f3a625fc352eca20e36825ddff178feaae97c2d9a8846c"},
-    {file = "ft4222-1.10.0.tar.gz", hash = "sha256:74eab32dfc5c012d11952c8645b72157f8828685972669ef3c22025491d96001"},
-]
-
-[[package]]
 name = "future-fstrings"
 version = "1.2.0"
 description = "A backport of fstrings to python<3.6"
@@ -7797,21 +7753,6 @@ files = [
 
 [package.extras]
 widechars = ["wcwidth"]
-
-[[package]]
-name = "tenacity"
-version = "8.3.0"
-description = "Retry code until it succeeds"
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "tenacity-8.3.0-py3-none-any.whl", hash = "sha256:3649f6443dbc0d9b01b9d8020a9c4ec7a1ff5f6f3c6c8a036ef371f573fe9185"},
-    {file = "tenacity-8.3.0.tar.gz", hash = "sha256:953d4e6ad24357bceffbc9707bc74349aca9d245f68eb65419cf0c249a1949a2"},
-]
-
-[package.extras]
-doc = ["reno", "sphinx"]
-test = ["pytest", "tornado (>=4.5)", "typeguard"]
 
 [[package]]
 name = "timezonefinder"
