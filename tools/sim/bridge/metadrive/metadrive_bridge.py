@@ -30,7 +30,7 @@ def curve_block(length, angle=45, direction=0):
   }
 
 def create_map(track_size=60):
-  mtd_map = dict(
+  return dict(
     type=MapGenerateMethod.PG_MAP_FILE,
     lane_num=2,
     lane_width=4,
@@ -46,8 +46,6 @@ def create_map(track_size=60):
       curve_block(track_size*2, 90),
     ]
   )
-
-  return mtd_map
 
 ci_config = namedtuple("ci_config", ["out_of_route_done", "on_continuous_line_done"], defaults=[False, False])
 
