@@ -3,6 +3,8 @@ import subprocess
 import sys
 import argparse
 import multiprocessing
+import rerun as rr
+import rerun.blueprint as rrb
 from functools import partial
 
 from openpilot.tools.lib.logreader import LogReader
@@ -55,7 +57,6 @@ def createBlueprint():
                                         rrb.Spatial2DView(name="thumbnail", origin="/thumbnail")))
   return blueprint
 
-
 def log_thumbnail(thumbnailMsg):
   bytesImgData = thumbnailMsg.get('thumbnail')
   rr.log("/thumbnail", rr.ImageEncoded(contents=bytesImgData))
@@ -78,7 +79,6 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description="A helper to run rerun on openpilot routes",
                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
-  parser.add_argument("--install", action="store_true", help="Install or update rerun")
   parser.add_argument("route_or_segment_name", nargs='?', help="The route or segment name to plot")
 
   if len(sys.argv) == 1:
@@ -86,16 +86,6 @@ if __name__ == '__main__':
     sys.exit()
 
   args = parser.parse_args()
-  if args.install:
-    install()
-    sys.exit()
-
-  try:
-    import rerun as rr
-    import rerun.blueprint as rrb
-  except ImportError:
-    print("Rerun is not installed, run with --install first")
-    sys.exit()
 
   route_or_segment_name = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
   blueprint = createBlueprint()
