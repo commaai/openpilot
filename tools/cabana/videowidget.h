@@ -73,9 +73,9 @@ protected:
   QWidget *createCameraWidget();
   QHBoxLayout *createPlaybackController();
   void loopPlaybackClicked();
-  void vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams);
+  void vipcAvailableStreamsUpdated();
 
-  CameraWidget *cam_widget;
+  CameraView *cam_widget;
   double maximum_time = 0;
   QToolButton *time_btn = nullptr;
   ToolButton *seek_backward_btn = nullptr;

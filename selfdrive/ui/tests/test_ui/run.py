@@ -175,20 +175,17 @@ def create_html_report():
   with open(OUTPUT_FILE, "w") as f:
     f.write(template.render(cases=cases))
 
-def setup_directories():
+def create_screenshots():
   if TEST_OUTPUT_DIR.exists():
     shutil.rmtree(TEST_OUTPUT_DIR)
 
   SCREENSHOTS_DIR.mkdir(parents=True)
 
-def create_screenshots():
   t = TestUI()
   for name, setup in CASES.items():
     t.test_ui(name, setup)
 
 if __name__ == "__main__":
-  setup_directories()
-
   print("creating test screenshots")
   create_screenshots()
 
