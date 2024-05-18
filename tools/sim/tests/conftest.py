@@ -1,8 +1,8 @@
 import pytest
 
 def pytest_addoption(parser):
-  parser.addoption("--track_size", action="store", default=60, type=int, help="Set the TRACK_SIZE for tests")
+  parser.addoption("--time_done", action="store", default=60, type=int, help="Seconds to run metadrive drive")
 
 @pytest.fixture
-def track_size(request):
-  return request.config.getoption("--track_size")
+def time_done(request):
+  return request.config.getoption("--time_done")

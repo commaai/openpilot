@@ -11,8 +11,8 @@ from openpilot.tools.sim.tests.test_sim_bridge import TestSimBridgeBase
 @pytest.mark.slow
 class TestMetaDriveBridge(TestSimBridgeBase):
   @pytest.fixture(autouse=True)
-  def setup_class(self, track_size):
-    self.track_size = track_size
+  def setup_class(self, time_done):
+    self.time_done = time_done
 
   def create_bridge(self):
-    return MetaDriveBridge(False, False, self.track_size, True)
+    return MetaDriveBridge(False, False, self.time_done, True)

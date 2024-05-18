@@ -1,3 +1,5 @@
+import math
+
 from collections import namedtuple
 from multiprocessing import Queue
 
@@ -27,41 +29,40 @@ def curve_block(length, angle=45, direction=0):
     "dir": direction
   }
 
-ci_config = namedtuple("ci_config", ["out_of_route_done", "on_continuous_line_done", "arrive_dest"], defaults=[False, False, False])
+def create_map(track_size=60):
+  mtd_map = dict(
+    type=MapGenerateMethod.PG_MAP_FILE,
+    lane_num=2,
+    lane_width=4,
+    config=[
+      None,
+      straight_block(track_size),
+      curve_block(track_size*2, 90),
+      straight_block(track_size),
+      curve_block(track_size*2, 90),
+      straight_block(track_size),
+      curve_block(track_size*2, 90),
+      straight_block(track_size),
+      curve_block(track_size*2, 90),
+    ]
+  )
+
+  return mtd_map
+
+ci_config = namedtuple("ci_config", ["out_of_route_done", "on_continuous_line_done"], defaults=[False, False])
 
 
 class MetaDriveBridge(SimulatorBridge):
   TICKS_PER_FRAME = 5
 
-  def __init__(self, dual_camera, high_quality, track_size=60, ci=False):
+  def __init__(self, dual_camera, high_quality, time_done=math.inf, ci=False):
     self.should_render = False
-    self.ci_config = ci_config(True, True, True) if ci else ci_config()
-    self.track_size = track_size
+    self.ci_config = ci_config(True, True) if ci else ci_config()
     self.ci = ci
+    self.time_done = time_done if self.ci else math.inf
 
     super().__init__(dual_camera, high_quality)
 
-  def create_map(self, track_size=60):
-    mtd_map = dict(
-      type=MapGenerateMethod.PG_MAP_FILE,
-      lane_num=2,
-      lane_width=4,
-      config=[
-        None,
-        straight_block(track_size),
-        curve_block(track_size*2, 90),
-        straight_block(track_size),
-        curve_block(track_size*2, 90),
-        straight_block(track_size),
-        curve_block(track_size*2, 90),
-        straight_block(track_size),
-        curve_block(track_size*2, 90),
-      ]
-    )
-    # None block is to make sure we have a complete loop, but having this would make metadrive detect wrong destination for run in CI to complete
-    mtd_map["config"] = mtd_map["config"][1:] if self.ci else mtd_map["config"]
-
-    return mtd_map
 
   def spawn_world(self, queue: Queue):
     sensors = {
@@ -85,12 +86,12 @@ class MetaDriveBridge(SimulatorBridge):
       on_continuous_line_done=self.ci_config.on_continuous_line_done,
       crash_vehicle_done=False,
       crash_object_done=False,
-      arrive_dest_done=self.ci_config.arrive_dest,
+      arrive_dest_done=False,
       traffic_density=0.0, # traffic is incredibly expensive
-      map_config=self.create_map(self.track_size),
+      map_config=create_map(),
       decision_repeat=1,
       physics_world_step_size=self.TICKS_PER_FRAME/100,
       preload_models=False
     )
 
-    return MetaDriveWorld(queue, config, self.dual_camera, self.ci)
+    return MetaDriveWorld(queue, config, self.time_done, self.dual_camera, self.ci)

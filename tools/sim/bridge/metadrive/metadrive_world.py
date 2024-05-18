@@ -14,7 +14,7 @@ from openpilot.tools.sim.lib.camerad import W, H
 
 
 class MetaDriveWorld(World):
-  def __init__(self, status_q, config, dual_camera=False, ci=False):
+  def __init__(self, status_q, config, time_done, dual_camera=False, ci=False):
     super().__init__(dual_camera)
     self.status_q = status_q
     self.camera_array = Array(ctypes.c_uint8, W*H*3)
@@ -30,11 +30,12 @@ class MetaDriveWorld(World):
 
     self.exit_event = multiprocessing.Event()
 
+    start_time = time.monotonic()
     self.metadrive_process = multiprocessing.Process(name="metadrive process", target=
                               functools.partial(metadrive_process, dual_camera, config,
                                                 self.camera_array, self.wide_camera_array, self.image_lock,
                                                 self.controls_recv, self.simulation_state_send,
-                                                self.vehicle_state_send, self.exit_event, ci))
+                                                self.vehicle_state_send, self.exit_event, start_time, ci, time_done))
 
     self.metadrive_process.start()
     self.status_q.put(QueueMessage(QueueMessageType.START_STATUS, "starting"))

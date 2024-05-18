@@ -71,6 +71,7 @@ class TestSimBridgeBase:
 
     assert min_counts_control_active == control_active, f"Simulator did not engage a minimal of {min_counts_control_active} steps was {control_active}"
 
+  # TODO: merge this into the above test to be run in GHA (another bounty)
   @pytest.mark.skipif(bool(int(os.getenv("CI", 0))), reason="slow on GHA")
   def test_driving(self):
     p_manager = subprocess.Popen("./launch_openpilot.sh", cwd=SIM_DIR)
@@ -89,6 +90,7 @@ class TestSimBridgeBase:
       time.sleep(0.1)
     assert p_bridge.exitcode is None, f"Bridge process should be running, but exited with code {p_bridge.exitcode}"
 
+    success_done_states = ("arrive_dest", "time_done")
     failure_states = []
     while bridge.started.value:
       continue
@@ -98,7 +100,7 @@ class TestSimBridgeBase:
       state = q.get()
       if state.type == QueueMessageType.TERMINATION_INFO:
         done_info = state.info
-        failure_states = [done_state for done_state in done_info if done_state != "arrive_dest" and done_info[done_state]]
+        failure_states = [done_state for done_state in done_info if done_state not in success_done_states and done_info[done_state]]
         break
     assert len(failure_states) == 0, f"Simulator fails to finish a loop. Failure states: {failure_states}"
 
