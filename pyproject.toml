@@ -19,7 +19,10 @@ markers = [
   "tici: tests that are only meant to run on the C3/C3X",
 ]
 testpaths = [
-  "openpilot",
+  "common",
+  "selfdrive",
+  "system",
+  "tools",
 ]
 
 [tool.mypy]
