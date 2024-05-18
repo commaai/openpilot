@@ -182,7 +182,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: .ci_cache/comma_download_cache
-        key: proc-replay-${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/ref_commit') }}
+        key: proc-replay-${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/ref_commit', 'selfdrive/test/process_replay/test_regen.py') }}
     - name: Build openpilot
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
@@ -214,37 +214,17 @@ jobs:
         ${{ env.RUN }} "unset PYTHONWARNINGS && \
                         ONNXCPU=1 NO_NAV=1 coverage run selfdrive/test/process_replay/model_replay.py && \
                         coverage combine && coverage xml"
+    - name: Run regen
+      timeout-minutes: 4
+      run: |
+        ${{ env.RUN }} "ONNXCPU=1 $PYTEST selfdrive/test/process_replay/test_regen.py && \
+                        chmod -R 777 /tmp/comma_download_cache"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v4
       with:
         name: ${{ github.job }}
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-  regen:
-    name: regen
-    runs-on: 'ubuntu-latest'
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    - uses: ./.github/workflows/setup-with-retry
-    - name: Cache test routes
-      id: dependency-cache
-      uses: actions/cache@v4
-      with:
-        path: .ci_cache/comma_download_cache
-        key: regen-${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/test_regen.py') }}
-    - name: Build base Docker image
-      run: eval "$BUILD"
-    - name: Build openpilot
-      run: |
-        ${{ env.RUN }} "scons -j$(nproc)"
-    - name: Run regen
-      timeout-minutes: 30
-      run: |
-        ${{ env.RUN }} "ONNXCPU=1 $PYTEST selfdrive/test/process_replay/test_regen.py && \
-                           chmod -R 777 /tmp/comma_download_cache"
 
   test_cars:
     name: cars
