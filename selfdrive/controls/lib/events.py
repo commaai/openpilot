@@ -487,7 +487,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       "Press Resume to Exit Standstill",
       "",
       AlertStatus.userPrompt, AlertSize.small,
-      Priority.MID, VisualAlert.none, AudibleAlert.none, .2),
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .2),
   },
 
   EventName.belowSteerSpeed: {
