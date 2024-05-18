@@ -408,7 +408,7 @@ class DriverMonitoring():
 
     # Update distraction events
     self._update_events(
-      driver_engaged=sm['carState'].steeringPressed or sm['carState'].gasPressed, # TODO: add back vCruise
+      driver_engaged=sm['carState'].steeringPressed or sm['carState'].gasPressed,
       op_engaged=sm['controlsState'].enabled,
       standstill=sm['carState'].standstill,
       wrong_gear=sm['carState'].gearShifter in [car.CarState.GearShifter.reverse, car.CarState.GearShifter.park],
