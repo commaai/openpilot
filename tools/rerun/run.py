@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import subprocess
 import sys
 import argparse
 import multiprocessing
@@ -13,14 +12,6 @@ from cereal.services import SERVICE_LIST
 
 NUM_CPUS = multiprocessing.cpu_count()
 DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
-WHEEL_URL = "https://build.rerun.io/commit/660463d/wheels"
-
-
-def install():
-  # currently requires a preview release build
-  subprocess.run([sys.executable, "-m", "pip", "install", "--pre", "-f", WHEEL_URL, "--upgrade", "rerun-sdk"], check=True)
-  print("Rerun installed")
-
 
 def log_msg(msg, parent_key=''):
   stack = [(msg, parent_key)]
@@ -47,7 +38,6 @@ def log_msg(msg, parent_key=''):
     else:
       pass  # Not a plottable value
 
-
 def createBlueprint():
   timeSeriesViews = []
   for topic in sorted(SERVICE_LIST.keys()):
@@ -61,7 +51,6 @@ def log_thumbnail(thumbnailMsg):
   bytesImgData = thumbnailMsg.get('thumbnail')
   rr.log("/thumbnail", rr.ImageEncoded(contents=bytesImgData))
 
-
 def process(blueprint, lr):
   ret = []
   rr.init("rerun_test", spawn=True, default_blueprint=blueprint)
@@ -73,7 +62,6 @@ def process(blueprint, lr):
     else:
       log_thumbnail(msg.to_dict()[msg.which()])
   return ret
-
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description="A helper to run rerun on openpilot routes",
