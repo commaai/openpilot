@@ -6,11 +6,11 @@
 #include <cmath>
 
 #include "common/swaglog.h"
-#include "selfdrive/ui/qt/onroad/buttons.h"
 #include "selfdrive/ui/qt/util.h"
 
 // Window that shows camera view and variety of info drawn on top
-AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraWidget("camerad", type, true, parent) {
+AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget *parent)
+    : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraWidget("camerad", type, true, parent) {
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"uiDebug"});
 
   main_layout = new QVBoxLayout(this);
@@ -76,6 +76,8 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
     map_settings_btn->setVisible(!hideBottomIcons);
     main_layout->setAlignment(map_settings_btn, (rightHandDM ? Qt::AlignLeft : Qt::AlignRight) | Qt::AlignBottom);
   }
+
+  update();
 }
 
 void AnnotatedCameraWidget::drawHud(QPainter &p) {
@@ -353,25 +355,8 @@ void AnnotatedCameraWidget::paintGL() {
   UIState *s = uiState();
   SubMaster &sm = *(s->sm);
   const double start_draw_t = millis_since_boot();
-  const cereal::ModelDataV2::Reader &model = sm["modelV2"].getModelV2();
 
-  // draw camera frame
   {
-    std::lock_guard lk(frame_lock);
-
-    if (frames.empty()) {
-      if (skip_frame_count > 0) {
-        skip_frame_count--;
-        qDebug() << "skipping frame, not ready";
-        return;
-      }
-    } else {
-      // skip drawing up to this many frames if we're
-      // missing camera frames. this smooths out the
-      // transitions from the narrow and wide cameras
-      skip_frame_count = 5;
-    }
-
     // Wide or narrow cam dependent on speed
     bool has_wide_cam = available_streams.count(VISION_STREAM_WIDE_ROAD);
     if (has_wide_cam) {
@@ -387,14 +372,16 @@ void AnnotatedCameraWidget::paintGL() {
     }
     CameraWidget::setStreamType(wide_cam_requested ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
 
-    s->scene.wide_cam = CameraWidget::getStreamType() == VISION_STREAM_WIDE_ROAD;
+    s->scene.wide_cam = CameraWidget::streamType() == VISION_STREAM_WIDE_ROAD;
     if (s->scene.calibration_valid) {
       auto calib = s->scene.wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib;
       CameraWidget::updateCalibration(calib);
     } else {
       CameraWidget::updateCalibration(DEFAULT_CALIBRATION);
     }
-    CameraWidget::setFrameId(model.getFrameId());
+
+    // Draw the frame based on the UI plan's frame ID
+    CameraWidget::setFrameId(sm["uiPlan"].getUiPlan().getFrameId());
     CameraWidget::paintGL();
   }
 
@@ -403,6 +390,7 @@ void AnnotatedCameraWidget::paintGL() {
   painter.setPen(Qt::NoPen);
 
   if (s->scene.world_objects_visible) {
+    const cereal::ModelDataV2::Reader &model = sm["modelV2"].getModelV2();
     update_model(s, model, sm["uiPlan"].getUiPlan());
     drawLaneLines(painter, s);
 
