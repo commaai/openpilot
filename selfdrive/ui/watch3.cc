@@ -19,15 +19,15 @@ int main(int argc, char *argv[]) {
   {
     QHBoxLayout *hlayout = new QHBoxLayout();
     layout->addLayout(hlayout);
-    hlayout->addWidget(new CameraView("navd", VISION_STREAM_MAP, false));
-    hlayout->addWidget(new CameraView("camerad", VISION_STREAM_ROAD, false));
+    hlayout->addWidget(new CameraWidget("navd", VISION_STREAM_MAP, false));
+    hlayout->addWidget(new CameraWidget("camerad", VISION_STREAM_ROAD, false));
   }
 
   {
     QHBoxLayout *hlayout = new QHBoxLayout();
     layout->addLayout(hlayout);
-    hlayout->addWidget(new CameraView("camerad", VISION_STREAM_DRIVER, false));
-    hlayout->addWidget(new CameraView("camerad", VISION_STREAM_WIDE_ROAD, false));
+    hlayout->addWidget(new CameraWidget("camerad", VISION_STREAM_DRIVER, false));
+    hlayout->addWidget(new CameraWidget("camerad", VISION_STREAM_WIDE_ROAD, false));
   }
 
   return a.exec();
