@@ -19,7 +19,6 @@ def dmonitoringd_thread():
 
   driver_status = DriverStatus(rhd_saved=params.get_bool("IsRhdDetected"), always_on=params.get_bool("AlwaysOnDM"))
 
-  v_cruise_last = 0
   driver_engaged = False
 
   # 20Hz <- dmonitoringmodeld
@@ -30,12 +29,8 @@ def dmonitoringd_thread():
 
     # Get interaction
     if sm.updated['carState']:
-      v_cruise = sm['carState'].cruiseState.speed
-      driver_engaged = len(sm['carState'].buttonEvents) > 0 or \
-                        v_cruise != v_cruise_last or \
-                        sm['carState'].steeringPressed or \
-                        sm['carState'].gasPressed
-      v_cruise_last = v_cruise
+      driver_engaged = sm['carState'].steeringPressed or \
+                       sm['carState'].gasPressed
 
     if sm.updated['modelV2']:
       driver_status.set_policy(sm['modelV2'], sm['carState'].vEgo)
