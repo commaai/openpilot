@@ -45,7 +45,7 @@ Given a route, runs most of the car interface to check for common errors like mi
 
 #### Example: panda safety mismatch for gasPressed
 ```bash
-> python tools/car_porting/test_car_model.py '4822a427b188122a|2023-08-14--16-22-21'
+> ROUTE='4822a427b188122a|2023-08-14--16-22-21' pytest tools/car_porting/test_car_model.py
 
 =====================================================================
 FAIL: test_panda_safety_carstate (__main__.CarModelTestCase.test_panda_safety_carstate)
