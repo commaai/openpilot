@@ -19,9 +19,7 @@ function install_ubuntu_common_requirements() {
     autoconf \
     build-essential \
     ca-certificates \
-    casync \
     clang \
-    cmake \
     make \
     cppcheck \
     libtool \
@@ -32,10 +30,7 @@ function install_ubuntu_common_requirements() {
     libbz2-dev \
     capnproto \
     libcapnp-dev \
-    curl \
     libcurl4-openssl-dev \
-    git \
-    git-lfs \
     ffmpeg \
     libavformat-dev \
     libavcodec-dev \
@@ -51,7 +46,6 @@ function install_ubuntu_common_requirements() {
     libncurses5-dev \
     libncursesw5-dev \
     libomp-dev \
-    libopencv-dev \
     libpng16-16 \
     libportaudio2 \
     libssl-dev \
@@ -101,6 +95,16 @@ function install_ubuntu_focal_requirements() {
     libavresample-dev \
     qt5-default \
     python-dev
+}
+
+function install_ubuntu_dev_dependencies() {
+  $SUDO apt-get install -y --no-install-recommends \
+    casync \
+    curl \
+    cmake \
+    git \
+    git-lfs \
+    libopencv-dev
 }
 
 # Detect OS using /etc/os-release file
