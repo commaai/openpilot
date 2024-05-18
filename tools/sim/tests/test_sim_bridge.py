@@ -96,7 +96,7 @@ class TestSimBridgeBase:
     state = None
     while not q.empty():
       state = q.get()
-      if state.type == QueueMessageType.TERMINATION_STATUS:
+      if state.type == QueueMessageType.TERMINATION_INFO:
         done_info = state.info
         failure_states = [done_state for done_state in done_info if done_state != "arrive_dest" and done_info[done_state]]
         break
