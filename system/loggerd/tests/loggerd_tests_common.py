@@ -1,6 +1,5 @@
 import os
 import random
-import unittest
 from pathlib import Path
 
 
@@ -54,7 +53,7 @@ class MockApiIgnore():
   def get_token(self):
     return "fake-token"
 
-class UploaderTestCase(unittest.TestCase):
+class UploaderTestCase:
   f_type = "UNKNOWN"
 
   root: Path
@@ -66,7 +65,7 @@ class UploaderTestCase(unittest.TestCase):
   def set_ignore(self):
     uploader.Api = MockApiIgnore
 
-  def setUp(self):
+  def setup_method(self):
     uploader.Api = MockApi
     uploader.fake_upload = True
     uploader.force_wifi = True
