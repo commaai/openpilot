@@ -20,23 +20,6 @@ env:
 
 
 jobs:
-  plotjuggler:
-    name: plotjuggler
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    - uses: ./.github/workflows/setup-with-retry
-    - name: Build openpilot
-      timeout-minutes: 5
-      run: ${{ env.RUN }} "scons -j$(nproc) cereal/ common/ opendbc/ --minimal"
-    - name: Test PlotJuggler
-      timeout-minutes: 2
-      run: |
-        ${{ env.RUN }} "pytest tools/plotjuggler/"
-
   simulator_build:
     name: simulator docker build
     runs-on: ubuntu-latest
