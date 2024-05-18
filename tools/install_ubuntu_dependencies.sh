@@ -51,7 +51,6 @@ function install_ubuntu_common_requirements() {
     libncurses5-dev \
     libncursesw5-dev \
     libomp-dev \
-    libopencv-dev \
     libpng16-16 \
     libportaudio2 \
     libssl-dev \
