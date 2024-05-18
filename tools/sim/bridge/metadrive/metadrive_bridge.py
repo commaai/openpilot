@@ -44,6 +44,8 @@ def create_map(track_size=60, ci=False):
       curve_block(track_size*2, 90),
     ]
   )
+
+  # None block is to make sure we have a complete loop, but having this would make metadrive detect wrong destination for run in CI to complete
   if ci:
     mtd_map["config"] = mtd_map["config"][1:]
 

@@ -1,7 +1,7 @@
 import os
 import subprocess
 import time
-import unittest
+import pytest
 
 from multiprocessing import Queue
 
@@ -11,13 +11,13 @@ from openpilot.tools.sim.bridge.common import QueueMessageType
 
 SIM_DIR = os.path.join(BASEDIR, "tools/sim")
 
-class TestSimBridgeBase(unittest.TestCase):
+class TestSimBridgeBase:
   @classmethod
-  def setUpClass(cls):
+  def setup_class(cls):
     if cls is TestSimBridgeBase:
-      raise unittest.SkipTest("Don't run this base class, run test_metadrive_bridge.py instead")
+      raise pytest.skip("Don't run this base class, run test_metadrive_bridge.py instead")
 
-  def setUp(self):
+  def setup_method(self):
     self.processes = []
 
   def test_engage(self):
@@ -37,7 +37,7 @@ class TestSimBridgeBase(unittest.TestCase):
     start_waiting = time.monotonic()
     while not bridge.started.value and time.monotonic() < start_waiting + max_time_per_step:
       time.sleep(0.1)
-    self.assertEqual(p_bridge.exitcode, None, f"Bridge process should be running, but exited with code {p_bridge.exitcode}")
+    assert p_bridge.exitcode is None, f"Bridge process should be running, but exited with code {p_bridge.exitcode}"
 
     start_time = time.monotonic()
     no_car_events_issues_once = False
@@ -53,8 +53,8 @@ class TestSimBridgeBase(unittest.TestCase):
         no_car_events_issues_once = True
         break
 
-    self.assertTrue(no_car_events_issues_once,
-                    f"Failed because no messages received, or CarEvents '{car_event_issues}' or processes not running '{not_running}'")
+    assert no_car_events_issues_once, \
+                    f"Failed because no messages received, or CarEvents '{car_event_issues}' or processes not running '{not_running}'"
 
     start_time = time.monotonic()
     min_counts_control_active = 100
@@ -69,7 +69,25 @@ class TestSimBridgeBase(unittest.TestCase):
         if control_active == min_counts_control_active:
           break
 
-    self.assertEqual(min_counts_control_active, control_active, f"Simulator did not engage a minimal of {min_counts_control_active} steps was {control_active}")
+    assert min_counts_control_active == control_active, f"Simulator did not engage a minimal of {min_counts_control_active} steps was {control_active}"
+
+  @pytest.mark.skipif(bool(int(os.getenv("CI", 0))), reason="slow on GHA")
+  def test_driving(self):
+    p_manager = subprocess.Popen("./launch_openpilot.sh", cwd=SIM_DIR)
+    self.processes.append(p_manager)
+
+    q = Queue()
+    bridge = self.create_bridge()
+    p_bridge = bridge.run(q, retries=10)
+    self.processes.append(p_bridge)
+
+    max_time_per_step = 60
+
+    # Wait for bridge to startup
+    start_waiting = time.monotonic()
+    while not bridge.started.value and time.monotonic() < start_waiting + max_time_per_step:
+      time.sleep(0.1)
+    assert p_bridge.exitcode is None, f"Bridge process should be running, but exited with code {p_bridge.exitcode}"
 
     failure_states = []
     while bridge.started.value:
@@ -82,9 +100,9 @@ class TestSimBridgeBase(unittest.TestCase):
         done_info = state.info
         failure_states = [done_state for done_state in done_info if done_state != "arrive_dest" and done_info[done_state]]
         break
-    self.assertEqual(len(failure_states), 0, f"Simulator fails to finish a loop. Failure states: {failure_states}")
+    assert len(failure_states) == 0, f"Simulator fails to finish a loop. Failure states: {failure_states}"
 
-  def tearDown(self):
+  def teardown_method(self):
     print("Test shutting down. CommIssues are acceptable")
     for p in reversed(self.processes):
       p.terminate()
@@ -94,7 +112,3 @@ class TestSimBridgeBase(unittest.TestCase):
         p.wait(15)
       else:
         p.join(15)
-
-
-if __name__ == "__main__":
-  unittest.main()
