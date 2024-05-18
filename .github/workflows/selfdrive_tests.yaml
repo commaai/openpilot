@@ -298,7 +298,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        job: [0, 1, 2, 3, 4]
+        job: [0, 1]
     steps:
     - uses: actions/checkout@v4
       with:
