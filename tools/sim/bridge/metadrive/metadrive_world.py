@@ -35,7 +35,7 @@ class MetaDriveWorld(World):
                               functools.partial(metadrive_process, dual_camera, config,
                                                 self.camera_array, self.wide_camera_array, self.image_lock,
                                                 self.controls_recv, self.simulation_state_send,
-                                                self.vehicle_state_send, self.exit_event, start_time, ci, time_done))
+                                                self.vehicle_state_send, self.exit_event, start_time, time_done, ci))
 
     self.metadrive_process.start()
     self.status_q.put(QueueMessage(QueueMessageType.START_STATUS, "starting"))

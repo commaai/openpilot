@@ -50,7 +50,7 @@ def apply_metadrive_patches(arrive_dest_done=True):
 
 def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera_array, image_lock,
                       controls_recv: Connection, simulation_state_send: Connection, vehicle_state_send: Connection,
-                      exit_event, start_time, ci, time_done):
+                      exit_event, start_time, time_done, ci):
   arrive_dest_done = config.pop("arrive_dest_done", True)
   apply_metadrive_patches(arrive_dest_done)
 
