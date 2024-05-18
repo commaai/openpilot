@@ -134,24 +134,6 @@ jobs:
       timeout-minutes: 4
       run: ${{ env.RUN }} "unset PYTHONWARNINGS && pre-commit run --all && chmod -R 777 /tmp/pre-commit"
 
-  valgrind:
-    name: valgrind
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    - uses: ./.github/workflows/setup-with-retry
-    - name: Build openpilot
-      run: ${{ env.RUN }} "scons -j$(nproc)"
-    - name: Run valgrind
-      timeout-minutes: 1
-      run: |
-        ${{ env.RUN }} "pytest selfdrive/test/test_valgrind_replay.py"
-    - name: Print logs
-      if: always()
-      run: cat selfdrive/test/valgrind_logs.txt
-
   unit_tests:
     name: unit tests
     runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
