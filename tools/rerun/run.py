@@ -4,6 +4,9 @@ import sys
 import argparse
 import multiprocessing
 from functools import partial
+import importlib.util
+import rerun as rr
+import rerun.blueprint as rrb
 
 from openpilot.tools.lib.logreader import LogReader
 from cereal.services import SERVICE_LIST
@@ -90,10 +93,7 @@ if __name__ == '__main__':
     install()
     sys.exit()
 
-  try:
-    import rerun as rr
-    import rerun.blueprint as rrb
-  except ImportError:
+  if importlib.util.find_spec("rerun") is None:
     print("Rerun is not installed, run with --install first")
     sys.exit()
 
