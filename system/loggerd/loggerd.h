@@ -77,7 +77,7 @@ const EncoderInfo main_driver_encoder_info = {
 
 const EncoderInfo stream_road_encoder_info = {
   .publish_name = "livestreamRoadEncodeData",
-  //.thumbnail_name = "thumbnail",
+  .thumbnail_name = "thumbnail",
   .encode_type = cereal::EncodeIndex::Type::QCAMERA_H264,
   .record = false,
   .bitrate = LIVESTREAM_BITRATE,
