@@ -109,7 +109,7 @@ def test_process(cfg, lr, segment, ref_log_path, new_log_path, ignore_fields=Non
     if not check_openpilot_enabled(log_msgs):
       return f"Route did not enable at all or for long enough: {new_log_path}", log_msgs
 
-  if cfg.proc_name != 'ubloxd' or segment != 'regenBAE0915FE22|2024-05-18--04-33-11--0':
+  if cfg.proc_name != 'ubloxd' or segment != 'regen6D8AED07CE3|2024-05-19--08-22-34--0':
     seen_msgs = {m.which() for m in log_msgs}
     expected_msgs = set(cfg.subs)
     if seen_msgs != expected_msgs:
