@@ -56,9 +56,9 @@ class MetaDriveBridge(SimulatorBridge):
 
   def __init__(self, dual_camera, high_quality, time_done=math.inf, ci=False):
     self.should_render = False
-    self.ci_config = ci_config(True, True) if ci else ci_config()
     self.ci = ci
     self.time_done = time_done if self.ci else math.inf
+    self.ci_config = ci_config(True, True) if self.ci else ci_config()
 
     super().__init__(dual_camera, high_quality)
 
