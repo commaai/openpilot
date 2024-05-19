@@ -48,12 +48,12 @@ void VideoEncoder::publisher_publish(VideoEncoder *e, int segment_num, uint32_t 
 
   // Publish keyframe thumbnail
   if ((flags & V4L2_BUF_FLAG_KEYFRAME) && e->encoder_info.thumbnail_name != NULL) {
-    MessageBuilder msg;
-    auto thumbnail = msg.initEvent().initThumbnail();
-    thumbnail.setFrameId(frame_id);
-    thumbnail.setTimestampEof(timestamp_eof);
+    MessageBuilder tm;
+    auto thumbnail = tm.initEvent().initThumbnail();
+    thumbnail.setFrameId(extra.frame_id);
+    thumbnail.setTimestampEof(extra.timestamp_eof);
     thumbnail.setThumbnail(dat);
-    thumbnail.setEncoding(cereal::Thumbnail::Encoding::IFRAME);
-    pm->send(e->encoder_info.thumbnail_name, msg);
+    thumbnail.setEncoding(cereal::Thumbnail::Encoding::KEYFRAME);
+    pm->send(e->encoder_info.thumbnail_name, tm);
   }
 }
