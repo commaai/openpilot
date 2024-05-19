@@ -30,7 +30,6 @@ function install_ubuntu_common_requirements() {
     autoconf \
     build-essential \
     ca-certificates \
-    casync \
     clang \
     cmake \
     make \
@@ -41,8 +40,6 @@ function install_ubuntu_common_requirements() {
     liblzma-dev \
     libarchive-dev \
     libbz2-dev \
-    capnproto \
-    libcapnp-dev \
     curl \
     libcurl4-openssl-dev \
     git \
@@ -72,8 +69,6 @@ function install_ubuntu_common_requirements() {
     libsystemd-dev \
     locales \
     opencl-headers \
-    ocl-icd-libopencl1 \
-    ocl-icd-opencl-dev \
     portaudio19-dev \
     qml-module-qtquick2 \
     qtmultimedia5-dev \
@@ -93,8 +88,14 @@ function install_ubuntu_common_requirements() {
 
 # Install extra packages
 function install_extra_packages() {
+  echo "Installing extra packages..."
   $SUDO apt-get install -y --no-install-recommends \
-    clinfo
+    clinfo \
+    casync \
+    capnproto \
+    libcapnp-dev \
+    ocl-icd-libopencl1 \
+    ocl-icd-opencl-dev
 }
 
 # Install Ubuntu 24.04 LTS packages
