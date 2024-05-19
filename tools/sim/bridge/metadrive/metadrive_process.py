@@ -113,9 +113,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
 
     if rk.frame % 5 == 0:
       obs, _, terminated, _, info = env.step(vc)
-
-      current_time = time.monotonic()
-      time_out = True if current_time - start_time >= time_done else False
+      time_out = True if time.monotonic() - start_time >= time_done else False
 
       if terminated or ((env.vehicle.on_broken_line or time_out) and ci):
         if terminated:
