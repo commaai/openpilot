@@ -30,7 +30,7 @@ def curve_block(length, angle=45, direction=0):
   }
 
 def create_map(track_size=60):
-  curve_len = track_size * 2 + 10
+  curve_len = track_size * 2 + 10 # emperically reliable for driving test
   return dict(
     type=MapGenerateMethod.PG_MAP_FILE,
     lane_num=2,
@@ -48,17 +48,17 @@ def create_map(track_size=60):
     ]
   )
 
-ci_config = namedtuple("ci_config", ["out_of_route_done", "on_continuous_line_done"], defaults=[False, False])
+done_config = namedtuple("done_config", ["out_of_route_done", "on_continuous_line_done"], defaults=[False, False])
 
 
 class MetaDriveBridge(SimulatorBridge):
   TICKS_PER_FRAME = 5
 
-  def __init__(self, dual_camera, high_quality, time_done=math.inf, ci=False):
+  def __init__(self, dual_camera, high_quality, time_done=math.inf, test_run=False):
     self.should_render = False
-    self.ci = ci
-    self.time_done = time_done if self.ci else math.inf
-    self.ci_config = ci_config(True, True) if self.ci else ci_config()
+    self.test_run = test_run
+    self.time_done = time_done if self.test_run else math.inf
+    self.done_config = done_config(True, True) if self.test_run else done_config()
 
     super().__init__(dual_camera, high_quality)
 
@@ -81,8 +81,8 @@ class MetaDriveBridge(SimulatorBridge):
       image_on_cuda=_cuda_enable,
       image_observation=True,
       interface_panel=[],
-      out_of_route_done=self.ci_config.out_of_route_done,
-      on_continuous_line_done=self.ci_config.on_continuous_line_done,
+      out_of_route_done=self.done_config.out_of_route_done,
+      on_continuous_line_done=self.done_config.on_continuous_line_done,
       crash_vehicle_done=False,
       crash_object_done=False,
       arrive_dest_done=False,
@@ -93,4 +93,4 @@ class MetaDriveBridge(SimulatorBridge):
       preload_models=False
     )
 
-    return MetaDriveWorld(queue, config, self.time_done, self.dual_camera, self.ci)
+    return MetaDriveWorld(queue, config, self.time_done, self.test_run, self.dual_camera)

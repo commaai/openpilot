@@ -50,7 +50,7 @@ def apply_metadrive_patches(arrive_dest_done=True):
 
 def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera_array, image_lock,
                       controls_recv: Connection, simulation_state_send: Connection, vehicle_state_send: Connection,
-                      exit_event, start_time, time_done, ci):
+                      exit_event, start_time, time_done, test_run):
   arrive_dest_done = config.pop("arrive_dest_done", True)
   apply_metadrive_patches(arrive_dest_done)
 
@@ -115,7 +115,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
       obs, _, terminated, _, info = env.step(vc)
       time_out = True if time.monotonic() - start_time >= time_done else False
 
-      if terminated or ((env.vehicle.on_broken_line or time_out) and ci):
+      if terminated or ((env.vehicle.on_broken_line or time_out) and test_run):
         if terminated:
           done_result = env.done_function("default_agent")
         elif env.vehicle.on_broken_line:
