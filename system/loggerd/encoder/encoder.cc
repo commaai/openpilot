@@ -6,7 +6,6 @@ VideoEncoder::VideoEncoder(const EncoderInfo &encoder_info, int in_width, int in
   out_width = encoder_info.frame_width > 0 ? encoder_info.frame_width : in_width;
   out_height = encoder_info.frame_height > 0 ? encoder_info.frame_height : in_height;
 
-
   std::vector pubs = {encoder_info.publish_name};
   if (encoder_info.thumbnail_name != NULL) {
     pubs.push_back(encoder_info.thumbnail_name);
@@ -47,7 +46,9 @@ void VideoEncoder::publisher_publish(VideoEncoder *e, int segment_num, uint32_t 
   e->pm->send(e->encoder_info.publish_name, e->msg_cache.data(), bytes_size);
 
   // Publish keyframe thumbnail
-  if ((flags & V4L2_BUF_FLAG_KEYFRAME) && e->encoder_info.thumbnail_name != NULL) {
+  if ((flags & V4L2_BUF_FLAG_KEYFRAME) && e->encoder_info.thumbnail_name != NULL && segment_num > last_thumbnail_segment) {
+    last_thumbnail_segment = segment_num;
+
     MessageBuilder tm;
     auto thumbnail = tm.initEvent().initThumbnail();
     thumbnail.setFrameId(extra.frame_id);

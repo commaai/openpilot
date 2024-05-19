@@ -32,8 +32,8 @@ protected:
   const EncoderInfo encoder_info;
 
 private:
-  // total frames encoded
-  int cnt = 0;
+  int cnt = 0;  // total frames encoded
+  int last_thumbnail_segment = -1;
   std::unique_ptr<PubMaster> pm;
   std::vector<capnp::byte> msg_cache;
 };
