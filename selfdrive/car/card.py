@@ -14,13 +14,15 @@ from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
 from openpilot.selfdrive.car.car_helpers import get_car, get_one_can
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
+from openpilot.selfdrive.controls.lib.events import Events
 
 REPLAY = "REPLAY" in os.environ
+
+EventName = car.CarEvent.EventName
 
 
 class CarD:
   CI: CarInterfaceBase
-  CS: car.CarState
 
   def __init__(self, CI=None):
     self.can_sock = messaging.sub_sock('can', timeout=20)
@@ -48,9 +50,9 @@ class CarD:
       self.CI, self.CP = CI, CI.CP
 
     # set alternative experiences from parameters
-    disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
+    self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
     self.CP.alternativeExperience = 0
-    if not disengage_on_accelerator:
+    if not self.disengage_on_accelerator:
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
 
     openpilot_enabled_toggle = self.params.get_bool("OpenpilotEnabledToggle")
@@ -74,16 +76,19 @@ class CarD:
     self.params.put_nonblocking("CarParamsCache", cp_bytes)
     self.params.put_nonblocking("CarParamsPersistent", cp_bytes)
 
+    self.CS_prev = car.CarState.new_message()
+    self.events = Events()
+
   def initialize(self):
     """Initialize CarInterface, once controls are ready"""
     self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
 
-  def state_update(self):
+  def state_update(self) -> car.CarState:
     """carState update loop, driven by can"""
 
     # Update carState from CAN
     can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
-    self.CS = self.CI.update(self.CC_prev, can_strs)
+    CS = self.CI.update(self.CC_prev, can_strs)
 
     self.sm.update(0)
 
@@ -101,21 +106,37 @@ class CarD:
     if can_rcv_valid and REPLAY:
       self.can_log_mono_time = messaging.log_from_bytes(can_strs[0]).logMonoTime
 
-    self.state_publish()
+    self.update_events(CS)
+    self.state_publish(CS)
 
-    return self.CS
+    CS = CS.as_reader()
+    self.CS_prev = CS
+    return CS
 
-  def state_publish(self):
+  def update_events(self, CS: car.CarState) -> car.CarState:
+    self.events.clear()
+
+    self.events.add_from_msg(CS.events)
+
+    # Disable on rising edge of accelerator or brake. Also disable on brake when speed > 0
+    if (CS.gasPressed and not self.CS_prev.gasPressed and self.disengage_on_accelerator) or \
+      (CS.brakePressed and (not self.CS_prev.brakePressed or not CS.standstill)) or \
+      (CS.regenBraking and (not self.CS_prev.regenBraking or not CS.standstill)):
+      self.events.add(EventName.pedalPressed)
+
+    CS.events = self.events.to_msg()
+
+  def state_publish(self, CS: car.CarState):
     """carState and carParams publish loop"""
 
     # carState
     cs_send = messaging.new_message('carState')
-    cs_send.valid = self.CS.canValid
-    cs_send.carState = self.CS
+    cs_send.valid = CS.canValid
+    cs_send.carState = CS
     self.pm.send('carState', cs_send)
 
     # carParams - logged every 50 seconds (> 1 per segment)
-    if (self.sm.frame % int(50. / DT_CTRL) == 0):
+    if self.sm.frame % int(50. / DT_CTRL) == 0:
       cp_send = messaging.new_message('carParams')
       cp_send.valid = True
       cp_send.carParams = self.CP
@@ -128,12 +149,12 @@ class CarD:
       co_send.carOutput.actuatorsOutput = self.last_actuators
     self.pm.send('carOutput', co_send)
 
-  def controls_update(self, CC: car.CarControl):
+  def controls_update(self, CS: car.CarState, CC: car.CarControl):
     """control update loop, driven by carControl"""
 
     # send car controls over can
     now_nanos = self.can_log_mono_time if REPLAY else int(time.monotonic() * 1e9)
     self.last_actuators, can_sends = self.CI.apply(CC, now_nanos)
-    self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=self.CS.canValid))
+    self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
 
     self.CC_prev = CC

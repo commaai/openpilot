@@ -96,7 +96,6 @@ class Controls:
     self.joystick_mode = self.params.get_bool("JoystickDebugMode")
 
     # read params
-    self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
     self.is_metric = self.params.get_bool("IsMetric")
     self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
 
@@ -111,7 +110,6 @@ class Controls:
     if not self.CP.openpilotLongitudinalControl:
       self.params.remove("ExperimentalMode")
 
-    self.CS_prev = car.CarState.new_message()
     self.AM = AlertManager()
     self.events = Events()
 
@@ -142,7 +140,6 @@ class Controls:
     self.logged_comm_issue = None
     self.not_running_prev = None
     self.steer_limited = False
-    self.last_actuators = car.CarControl.Actuators.new_message()
     self.desired_curvature = 0.0
     self.experimental_mode = False
     self.personality = self.read_personality_param()
@@ -169,7 +166,7 @@ class Controls:
 
   def set_initial_state(self):
     if REPLAY:
-      controls_state = Params().get("ReplayControlsState")
+      controls_state = self.params.get("ReplayControlsState")
       if controls_state is not None:
         with log.ControlsState.from_bytes(controls_state) as controls_state:
           self.v_cruise_helper.v_cruise_kph = controls_state.vCruise
@@ -205,18 +202,6 @@ class Controls:
     resume_pressed = any(be.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for be in CS.buttonEvents)
     if not self.CP.pcmCruise and not self.v_cruise_helper.v_cruise_initialized and resume_pressed:
       self.events.add(EventName.resumeBlocked)
-
-    # Disable on rising edge of accelerator or brake. Also disable on brake when speed > 0
-    if (CS.gasPressed and not self.CS_prev.gasPressed and self.disengage_on_accelerator) or \
-      (CS.brakePressed and (not self.CS_prev.brakePressed or not CS.standstill)) or \
-      (CS.regenBraking and (not self.CS_prev.regenBraking or not CS.standstill)):
-      self.events.add(EventName.pedalPressed)
-
-    if CS.brakePressed and CS.standstill:
-      self.events.add(EventName.preEnableStandstill)
-
-    if CS.gasPressed:
-      self.events.add(EventName.gasPressedOverride)
 
     if not self.CP.notCar:
       self.events.add_from_msg(self.sm['driverMonitoringState'].events)
@@ -311,7 +296,7 @@ class Controls:
           self.events.add(EventName.cameraFrameRate)
     if not REPLAY and self.rk.lagging:
       self.events.add(EventName.controlsdLagging)
-    if len(self.sm['radarState'].radarErrors) or (not self.rk.lagging and not self.sm.all_checks(['radarState'])):
+    if len(self.sm['radarState'].radarErrors) or ((not self.rk.lagging or REPLAY) and not self.sm.all_checks(['radarState'])):
       self.events.add(EventName.radarFault)
     if not self.sm.valid['pandaStates']:
       self.events.add(EventName.usbError)
@@ -620,7 +605,7 @@ class Controls:
         undershooting = abs(lac_log.desiredLateralAccel) / abs(1e-3 + lac_log.actualLateralAccel) > 1.2
         turning = abs(lac_log.desiredLateralAccel) > 1.0
         good_speed = CS.vEgo > 5
-        max_torque = abs(self.last_actuators.steer) > 0.99
+        max_torque = abs(self.sm['carOutput'].actuatorsOutput.steer) > 0.99
         if undershooting and turning and good_speed and max_torque:
           lac_log.active and self.events.add(EventName.steerSaturated)
       elif lac_log.saturated:
@@ -660,8 +645,6 @@ class Controls:
 
   def publish_logs(self, CS, start_time, CC, lac_log):
     """Send actuators and hud commands to the car, send controlsstate and MPC logging"""
-
-    CO = self.sm['carOutput']
 
     # Orientation and angle rates can be useful for carcontroller
     # Only calibrated (car) frame is relevant for the carcontroller
@@ -726,8 +709,8 @@ class Controls:
       hudControl.visualAlert = current_alert.visual_alert
 
     if not self.CP.passive and self.initialized:
-      self.card.controls_update(CC)
-      self.last_actuators = CO.actuatorsOutput
+      self.card.controls_update(CS, CC)
+      CO = self.sm['carOutput']
       if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
         self.steer_limited = abs(CC.actuators.steeringAngleDeg - CO.actuatorsOutput.steeringAngleDeg) > \
                              STEER_ANGLE_SATURATION_THRESHOLD
@@ -823,8 +806,6 @@ class Controls:
 
     # Publish data
     self.publish_logs(CS, start_time, CC, lac_log)
-
-    self.CS_prev = CS
 
   def read_personality_param(self):
     try:

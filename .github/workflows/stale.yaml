@@ -5,8 +5,8 @@ on:
   workflow_dispatch:
 
 env:
-  DAYS_BEFORE_PR_CLOSE: 7
-  DAYS_BEFORE_PR_STALE: 30
+  DAYS_BEFORE_PR_CLOSE: 3
+  DAYS_BEFORE_PR_STALE: 14
 
 jobs:
   stale:

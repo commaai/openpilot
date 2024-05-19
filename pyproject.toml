@@ -1,3 +1,12 @@
+[project]
+name = "openpilot"
+requires-python = ">= 3.11"
+readme = "README.md"
+license = {text = "MIT License"}
+
+[project.urls]
+Homepage = "https://comma.ai"
+
 [tool.pytest.ini_options]
 minversion = "6.0"
 addopts = "--ignore=openpilot/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
@@ -99,6 +108,7 @@ pycryptodome = "*"
 PyJWT = "*"
 pyserial = "*"
 pyzmq = "*"
+rerun-sdk = "*"
 requests = "*"
 scons = "*"
 sentry-sdk = "*"
@@ -125,7 +135,6 @@ breathe = "*"
 control = "*"
 coverage = "*"
 dictdiffer = "*"
-ft4222 = "*"
 flaky = "*"
 hypothesis = "~6.47"
 inputs = "*"
@@ -154,12 +163,13 @@ pytest-subtests = "*"
 pytest-xdist = "*"
 pytest-timeout = "*"
 pytest-randomly = "*"
+pytest-asyncio = "*"
+pytest-mock = "*"
 ruff = "*"
 sphinx = "*"
 sphinx-rtd-theme = "*"
 sphinx-sitemap = "*"
 tabulate = "*"
-tenacity = "*"
 types-requests = "*"
 types-tabulate = "*"
 tqdm = "*"
@@ -197,6 +207,7 @@ lint.flake8-implicit-str-concat.allow-multiline=false
 "third_party".msg = "Use openpilot.third_party"
 "tools".msg = "Use openpilot.tools"
 "pytest.main".msg = "pytest.main requires special handling that is easy to mess up!"
+"unittest".msg = "Use pytest"
 
 [tool.coverage.run]
 concurrency = ["multiprocessing", "thread"]
