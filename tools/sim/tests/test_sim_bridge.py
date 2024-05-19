@@ -20,7 +20,7 @@ class TestSimBridgeBase:
   def setup_method(self):
     self.processes = []
 
-  def test_engage(self):
+  def test_driving(self):
     # Startup manager and bridge.py. Check processes are running, then engage and verify.
     p_manager = subprocess.Popen("./launch_openpilot.sh", cwd=SIM_DIR)
     self.processes.append(p_manager)
