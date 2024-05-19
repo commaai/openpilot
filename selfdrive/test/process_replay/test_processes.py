@@ -158,8 +158,8 @@ if __name__ == "__main__":
   upload = args.update_refs or args.upload_only
   os.makedirs(os.path.dirname(FAKEDATA), exist_ok=True)
 
-  # if upload:
-  #   assert full_test, "Need to run full test when updating refs"
+  if upload:
+    assert full_test, "Need to run full test when updating refs"
 
   try:
     with open(REF_COMMIT_FN) as f:
