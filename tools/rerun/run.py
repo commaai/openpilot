@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-import subprocess
 import sys
 import argparse
 import multiprocessing
+import rerun as rr
+import rerun.blueprint as rrb
 from functools import partial
 
 from openpilot.tools.lib.logreader import LogReader
@@ -11,14 +12,6 @@ from cereal.services import SERVICE_LIST
 
 NUM_CPUS = multiprocessing.cpu_count()
 DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
-WHEEL_URL = "https://build.rerun.io/commit/660463d/wheels"
-
-
-def install():
-  # currently requires a preview release build
-  subprocess.run([sys.executable, "-m", "pip", "install", "--pre", "-f", WHEEL_URL, "--upgrade", "rerun-sdk"], check=True)
-  print("Rerun installed")
-
 
 def log_msg(msg, parent_key=''):
   stack = [(msg, parent_key)]
@@ -45,7 +38,6 @@ def log_msg(msg, parent_key=''):
     else:
       pass  # Not a plottable value
 
-
 def createBlueprint():
   timeSeriesViews = []
   for topic in sorted(SERVICE_LIST.keys()):
@@ -55,11 +47,9 @@ def createBlueprint():
                                         rrb.Spatial2DView(name="thumbnail", origin="/thumbnail")))
   return blueprint
 
-
 def log_thumbnail(thumbnailMsg):
   bytesImgData = thumbnailMsg.get('thumbnail')
   rr.log("/thumbnail", rr.ImageEncoded(contents=bytesImgData))
-
 
 def process(blueprint, lr):
   ret = []
@@ -73,12 +63,10 @@ def process(blueprint, lr):
       log_thumbnail(msg.to_dict()[msg.which()])
   return ret
 
-
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description="A helper to run rerun on openpilot routes",
                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
-  parser.add_argument("--install", action="store_true", help="Install or update rerun")
   parser.add_argument("route_or_segment_name", nargs='?', help="The route or segment name to plot")
 
   if len(sys.argv) == 1:
@@ -86,16 +74,6 @@ if __name__ == '__main__':
     sys.exit()
 
   args = parser.parse_args()
-  if args.install:
-    install()
-    sys.exit()
-
-  try:
-    import rerun as rr
-    import rerun.blueprint as rrb
-  except ImportError:
-    print("Rerun is not installed, run with --install first")
-    sys.exit()
 
   route_or_segment_name = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
   blueprint = createBlueprint()
