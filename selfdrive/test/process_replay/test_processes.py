@@ -41,23 +41,23 @@ source_segments = [
 ]
 
 segments = [
-  ("BODY", "regen02ECB79BACC|2024-05-18--04-29-29--0"),
-  ("HYUNDAI", "regen845DC1916E6|2024-05-18--04-30-52--0"),
-  ("HYUNDAI2", "regenBAE0915FE22|2024-05-18--04-33-11--0"),
-  ("TOYOTA", "regen1108D19FC2E|2024-05-18--04-34-34--0"),
-  ("TOYOTA2", "regen846521F39C7|2024-05-18--04-35-58--0"),
-  ("TOYOTA3", "regen788C3623D11|2024-05-18--04-38-21--0"),
-  ("HONDA", "regenDE43F170E99|2024-05-18--04-39-47--0"),
-  ("HONDA2", "regen1EE0FA383C3|2024-05-18--04-41-12--0"),
-  ("CHRYSLER", "regen9C5A30F471C|2024-05-18--04-42-36--0"),
-  ("RAM", "regenCCA313D117D|2024-05-18--04-44-53--0"),
-  ("SUBARU", "regenA41511F882A|2024-05-18--04-47-14--0"),
-  ("GM", "regen9D7B9CE4A66|2024-05-18--04-48-36--0"),
-  ("GM2", "regen07CECA52D41|2024-05-18--04-50-55--0"),
-  ("NISSAN", "regen2D6B856D0AE|2024-05-18--04-52-17--0"),
-  ("VOLKSWAGEN", "regen2D3AC6A6F05|2024-05-18--04-53-41--0"),
-  ("MAZDA", "regen0D5A777DD16|2024-05-18--04-56-02--0"),
-  ("FORD", "regen235D0937965|2024-05-18--04-58-16--0"),
+  ("BODY", "regen819C03CA926|2024-05-19--08-20-56--0"),
+  ("HYUNDAI", "regen37F817F76CF|2024-05-19--08-20-04--0"),
+  ("HYUNDAI2", "regen6D8AED07CE3|2024-05-19--08-22-34--0"),
+  ("TOYOTA", "regen0D4CCBD9D19|2024-05-19--08-22-27--0"),
+  ("TOYOTA2", "regen505DE145410|2024-05-19--08-23-58--0"),
+  ("TOYOTA3", "regen91EB3D13187|2024-05-19--08-25-06--0"),
+  ("HONDA", "regen8B0549926B7|2024-05-19--08-25-30--0"),
+  ("HONDA2", "regen30ACF1C42FE|2024-05-19--08-26-40--0"),
+  ("CHRYSLER", "regenDE2D79EFAF9|2024-05-19--08-27-01--0"),
+  ("RAM", "regen47D02421A48|2024-05-19--08-29-06--0"),
+  ("SUBARU", "regenB84018FE60D|2024-05-19--08-29-29--0"),
+  ("GM", "regen193347ACF28|2024-05-19--08-30-37--0"),
+  ("GM2", "regenBBB53F6E7AF|2024-05-19--08-31-56--0"),
+  ("NISSAN", "regenB096706DA55|2024-05-19--08-32-04--0"),
+  ("VOLKSWAGEN", "regenCF4C2CB949F|2024-05-19--08-33-27--0"),
+  ("MAZDA", "regen425B1C385CC|2024-05-19--08-34-35--0"),
+  ("FORD", "regen936594904CF|2024-05-19--08-35-48--0"),
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
@@ -109,11 +109,7 @@ def test_process(cfg, lr, segment, ref_log_path, new_log_path, ignore_fields=Non
     if not check_openpilot_enabled(log_msgs):
       return f"Route did not enable at all or for long enough: {new_log_path}", log_msgs
 
-<<<<<<< HEAD
-  if cfg.proc_name != 'ubloxd' or segment != 'regenF2914AECCD3|2024-05-18--01-16-29--0':
-=======
   if cfg.proc_name != 'ubloxd' or segment != 'regenBAE0915FE22|2024-05-18--04-33-11--0':
->>>>>>> upstream/master
     seen_msgs = {m.which() for m in log_msgs}
     expected_msgs = set(cfg.subs)
     if seen_msgs != expected_msgs:
