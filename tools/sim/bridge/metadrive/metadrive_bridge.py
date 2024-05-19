@@ -30,7 +30,7 @@ def curve_block(length, angle=45, direction=0):
   }
 
 def create_map(track_size=60):
-  curve_len = track_size * 2 + 10 # emperically reliable for driving test
+  curve_len = track_size * 2 + 10 # empirically reliable for driving test
   return dict(
     type=MapGenerateMethod.PG_MAP_FILE,
     lane_num=2,

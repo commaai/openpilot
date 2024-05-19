@@ -90,7 +90,6 @@ class TestSimBridgeBase:
       time.sleep(0.1)
     assert p_bridge.exitcode is None, f"Bridge process should be running, but exited with code {p_bridge.exitcode}"
 
-    success_done_states = ("arrive_dest", "time_done")
     failure_states = []
     while bridge.started.value:
       continue
@@ -100,7 +99,7 @@ class TestSimBridgeBase:
       state = q.get()
       if state.type == QueueMessageType.TERMINATION_INFO:
         done_info = state.info
-        failure_states = [done_state for done_state in done_info if done_state not in success_done_states and done_info[done_state]]
+        failure_states = [done_state for done_state in done_info if done_state != "time_done" and done_info[done_state]]
         break
     assert len(failure_states) == 0, f"Simulator fails to finish a loop. Failure states: {failure_states}"
 
