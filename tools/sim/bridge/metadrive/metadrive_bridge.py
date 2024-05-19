@@ -1,6 +1,4 @@
 import math
-
-from collections import namedtuple
 from multiprocessing import Queue
 
 from metadrive.component.sensors.base_camera import _cuda_enable
