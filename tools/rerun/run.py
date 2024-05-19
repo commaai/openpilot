@@ -20,20 +20,20 @@ def log_msg(msg, parent_key=''):
     if isinstance(current_msg, list):
       for index, item in enumerate(current_msg):
         new_key = f"{current_parent_key}/{index}"
-        if isinstance(item, (int, float)):
+        if isinstance(item, int | float):
           rr.log(str(new_key), rr.Scalar(item))
         elif isinstance(item, dict):
           stack.append((item, new_key))
     elif isinstance(current_msg, dict):
       for key, value in current_msg.items():
         new_key = f"{current_parent_key}/{key}"
-        if isinstance(value, (int, float)):
+        if isinstance(value, int | float):
           rr.log(str(new_key), rr.Scalar(value))
         elif isinstance(value, dict):
           stack.append((value, new_key))
         elif isinstance(value, list):
           for index, item in enumerate(value):
-            if isinstance(item, (int, float)):
+            if isinstance(item, int | float):
               rr.log(f"{new_key}/{index}", rr.Scalar(item))
     else:
       pass  # Not a plottable value

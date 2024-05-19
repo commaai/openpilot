@@ -32,7 +32,7 @@ def run_following_distance_simulation(v_lead, t_end=100.0, e2e=False, personalit
                        log.LongitudinalPersonality.standard,
                        log.LongitudinalPersonality.aggressive],
                       [0,10,35])) # speed
-class TestFollowingDistance():
+class TestFollowingDistance:
   def test_following_distance(self):
     v_lead = float(self.speed)
     simulation_steady_state = run_following_distance_simulation(v_lead, e2e=self.e2e, personality=self.personality)

@@ -2,9 +2,9 @@
 import os
 import zmq
 import time
+import datetime
 from pathlib import Path
 from collections import defaultdict
-from datetime import datetime, timezone
 from typing import NoReturn
 
 from openpilot.common.params import Params
@@ -61,7 +61,7 @@ class StatLog:
 
 def main() -> NoReturn:
   dongle_id = Params().get("DongleId", encoding='utf-8')
-  def get_influxdb_line(measurement: str, value: float | dict[str, float],  timestamp: datetime, tags: dict) -> str:
+  def get_influxdb_line(measurement: str, value: float | dict[str, float],  timestamp: datetime.datetime, tags: dict) -> str:
     res = f"{measurement}"
     for k, v in tags.items():
       res += f",{k}={str(v)}"
@@ -133,7 +133,7 @@ def main() -> NoReturn:
       # flush when started state changes or after FLUSH_TIME_S
       if (time.monotonic() > last_flush_time + STATS_FLUSH_TIME_S) or (sm['deviceState'].started != started_prev):
         result = ""
-        current_time = datetime.utcnow().replace(tzinfo=timezone.utc)
+        current_time = datetime.datetime.utcnow().replace(tzinfo=datetime.UTC)
         tags['started'] = sm['deviceState'].started
 
         for key, value in gauges.items():

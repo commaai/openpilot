@@ -77,7 +77,7 @@ class SwagLogFileFormatter(SwagFormatter):
     # e.g. log.info() creates 'msg' -> 'msg$s'
     #      log.event() creates 'msg.health.logMonoTime' -> 'msg.health.logMonoTime$i'
     #      because overlapping namespace 'msg' caused problems
-    if isinstance(v, (str, bytes)):
+    if isinstance(v, str | bytes):
       k += "$s"
     elif isinstance(v, float):
       k += "$f"
