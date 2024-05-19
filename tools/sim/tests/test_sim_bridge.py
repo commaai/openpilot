@@ -71,25 +71,6 @@ class TestSimBridgeBase:
 
     assert min_counts_control_active == control_active, f"Simulator did not engage a minimal of {min_counts_control_active} steps was {control_active}"
 
-  # TODO: merge this into the above test to be run in GHA (another bounty)
-  @pytest.mark.skipif(bool(int(os.getenv("CI", 0))), reason="slow on GHA")
-  def test_driving(self):
-    p_manager = subprocess.Popen("./launch_openpilot.sh", cwd=SIM_DIR)
-    self.processes.append(p_manager)
-
-    q = Queue()
-    bridge = self.create_bridge()
-    p_bridge = bridge.run(q, retries=10)
-    self.processes.append(p_bridge)
-
-    max_time_per_step = 60
-
-    # Wait for bridge to startup
-    start_waiting = time.monotonic()
-    while not bridge.started.value and time.monotonic() < start_waiting + max_time_per_step:
-      time.sleep(0.1)
-    assert p_bridge.exitcode is None, f"Bridge process should be running, but exited with code {p_bridge.exitcode}"
-
     failure_states = []
     while bridge.started.value:
       continue
