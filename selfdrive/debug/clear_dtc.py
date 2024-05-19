@@ -17,7 +17,7 @@ try:
   sys.exit(1)
 except CalledProcessError as e:
   if e.returncode != 1: # 1 == no process found (boardd not running)
-    raise e
+    raise
 
 panda = Panda()
 panda.set_safety_mode(Panda.SAFETY_ELM327)

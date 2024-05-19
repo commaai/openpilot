@@ -128,7 +128,7 @@ def main() -> NoReturn:
     sys.exit(1)
   except CalledProcessError as e:
     if e.returncode != 1: # 1 == no process found (boardd not running)
-      raise e
+      raise
 
   print("power up antenna ...")
   gpio_init(GPIO.GNSS_PWR_EN, True)

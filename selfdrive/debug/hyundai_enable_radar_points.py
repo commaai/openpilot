@@ -84,7 +84,7 @@ if __name__ == "__main__":
     sys.exit(1)
   except CalledProcessError as e:
     if e.returncode != 1: # 1 == no process found (boardd not running)
-      raise e
+      raise
 
   confirm = input("power on the vehicle keeping the engine off (press start button twice) then type OK to continue: ").upper().strip()
   if confirm != "OK":

@@ -486,9 +486,9 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
 
     cloudlog.debug("athena.startLocalProxy.started")
     return {"success": 1}
-  except Exception as e:
+  except Exception:
     cloudlog.exception("athenad.startLocalProxy.exception")
-    raise e
+    raise
 
 
 @dispatcher.add_method
