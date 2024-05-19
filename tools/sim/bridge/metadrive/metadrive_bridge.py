@@ -30,7 +30,7 @@ def curve_block(length, angle=45, direction=0):
   }
 
 def create_map(track_size=60):
-  curve_len = track_size * 2
+  curve_len = track_size * 2 + 10
   return dict(
     type=MapGenerateMethod.PG_MAP_FILE,
     lane_num=2,
