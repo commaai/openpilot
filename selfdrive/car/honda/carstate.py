@@ -39,10 +39,14 @@ def get_can_messages(CP, gearbox_msg):
       ("SCM_BUTTONS", 25),
     ]
 
-  if CP.carFingerprint in (CAR.HONDA_CRV_HYBRID, CAR.HONDA_CIVIC_BOSCH_DIESEL, CAR.ACURA_RDX_3G, CAR.HONDA_E):
-    messages.append((gearbox_msg, 50))
+
+  if CP.transmissionType != TransmissionType.manual:
+    if CP.carFingerprint in (CAR.CRV_HYBRID, CAR.CIVIC_BOSCH_DIESEL, CAR.ACURA_RDX_3G, CAR.HONDA_E, CAR.HONDA_CIVIC):
+      messages.append((gearbox_msg, 50))
+    else:
+      messages.append((gearbox_msg, 100))
   else:
-    messages.append((gearbox_msg, 100))
+    messages.append(("GAS_PEDAL_2", 100))
 
   if CP.flags & HondaFlags.BOSCH_ALT_BRAKE:
     messages.append(("BRAKE_MODULE", 50))
@@ -84,15 +88,19 @@ class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
-    self.gearbox_msg = "GEARBOX"
-    if CP.carFingerprint == CAR.HONDA_ACCORD and CP.transmissionType == TransmissionType.cvt:
-      self.gearbox_msg = "GEARBOX_15T"
 
     self.main_on_sig_msg = "SCM_FEEDBACK"
     if CP.carFingerprint in HONDA_NIDEC_ALT_SCM_MESSAGES:
       self.main_on_sig_msg = "SCM_BUTTONS"
 
-    self.shifter_values = can_define.dv[self.gearbox_msg]["GEAR_SHIFTER"]
+
+    self.gearbox_msg = "GEARBOX"
+    if CP.carFingerprint == CAR.HONDA_BOSCH and CP.transmissionType == TransmissionType.cvt:
+      self.gearbox_msg = "GEARBOX_15T"
+    if CP.carFingerprint == CAR.HONDA_BOSCH and CP.transmissionType == TransmissionType.manual:
+      self.gearbox_msg = None
+    if self.gearbox_msg is not None:
+      self.shifter_values = can_define.dv[self.gearbox_msg]["GEAR_SHIFTER"]
     self.steer_status_values = defaultdict(lambda: "UNKNOWN", can_define.dv["STEER_STATUS"]["STEER_STATUS"])
 
     self.brake_switch_prev = False
@@ -184,8 +192,17 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint in (HONDA_BOSCH | {CAR.HONDA_CIVIC, CAR.HONDA_ODYSSEY, CAR.HONDA_ODYSSEY_CHN}):
       ret.parkingBrake = cp.vl["EPB_STATUS"]["EPB_STATE"] != 0
 
-    gear = int(cp.vl[self.gearbox_msg]["GEAR_SHIFTER"])
-    ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear, None))
+
+    if self.CP.transmissionType != TransmissionType.manual:
+      gear = int(cp.vl[self.gearbox_msg]["GEAR_SHIFTER"])
+      ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear, None))
+    else:
+      if bool(cp.vl["GAS_PEDAL_2"]['NEUTRAL']):
+        ret.gearShifter = 'neutral'
+      elif bool(cp.vl["SCM_FEEDBACK"]['REVERSE']):
+        ret.gearShifter = 'reverse'
+      else:
+        ret.gearShifter = 'drive'
 
     ret.gas = cp.vl["POWERTRAIN_DATA"]["PEDAL_GAS"]
     ret.gasPressed = ret.gas > 1e-5
@@ -237,6 +254,10 @@ class CarState(CarStateBase):
         ret.brakePressed = True
 
     if self.CP.carFingerprint in HONDA_BOSCH:
+          if self.CP.transmissionType == TransmissionType.manual:
+        ret.clutchPressed = bool(cp.vl["GAS_PEDAL_2"]["CLUTCH_MAIN"] or cp.vl["GAS_PEDAL_2"]["CLUTCH_ACC"])
+      else:
+        ret.clutchPressed = False
       # TODO: find the radarless AEB_STATUS bit and make sure ACCEL_COMMAND is correct to enable AEB alerts
       if self.CP.carFingerprint not in HONDA_BOSCH_RADARLESS:
         ret.stockAeb = (not self.CP.openpilotLongitudinalControl) and bool(cp.vl["ACC_CONTROL"]["AEB_STATUS"] and cp.vl["ACC_CONTROL"]["ACCEL_COMMAND"] < -1e-5)
