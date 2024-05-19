@@ -12,7 +12,18 @@ if [[ ! $(id -u) -eq 0 ]]; then
   SUDO="sudo"
 fi
 
-# Install packages present in all supported versions of Ubuntu
+# Prompt the user for extra packages
+function prompt_extra_packages() {
+  read -p "Do you want to install extra packages (e.g., clinfo)? [Y/n]: " -n 1 -r
+  echo ""
+  if [[ $REPLY =~ ^[Nn]$ ]]; then
+    INSTALL_EXTRA_PACKAGES="no"
+  else
+    INSTALL_EXTRA_PACKAGES="yes"
+  fi
+}
+
+# Install common packages
 function install_ubuntu_common_requirements() {
   $SUDO apt-get update
   $SUDO apt-get install -y --no-install-recommends \
@@ -51,6 +62,7 @@ function install_ubuntu_common_requirements() {
     libncurses5-dev \
     libncursesw5-dev \
     libomp-dev \
+    libopencv-dev \
     libpng16-16 \
     libportaudio2 \
     libssl-dev \
@@ -62,7 +74,6 @@ function install_ubuntu_common_requirements() {
     opencl-headers \
     ocl-icd-libopencl1 \
     ocl-icd-opencl-dev \
-    clinfo \
     portaudio19-dev \
     qml-module-qtquick2 \
     qtmultimedia5-dev \
@@ -76,7 +87,14 @@ function install_ubuntu_common_requirements() {
     libqt5x11extras5-dev \
     libqt5opengl5-dev \
     libreadline-dev \
-    libdw1
+    libdw1 \
+    valgrind
+}
+
+# Install extra packages
+function install_extra_packages() {
+  $SUDO apt-get install -y --no-install-recommends \
+    clinfo
 }
 
 # Install Ubuntu 24.04 LTS packages
@@ -128,4 +146,14 @@ if [ -f "/etc/os-release" ]; then
 else
   echo "No /etc/os-release in the system"
   exit 1
+fi
+
+# Prompt for extra packages if not in non-interactive mode
+if [[ -z "$NON_INTERACTIVE" ]]; then
+  prompt_extra_packages
+fi
+
+# Install extra packages if required
+if [[ "$INSTALL_EXTRA_PACKAGES" == "yes" || "$NON_INTERACTIVE" == "yes" ]]; then
+  install_extra_packages
 fi
