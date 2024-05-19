@@ -119,7 +119,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
       if terminated or ((out_of_lane or time_out) and test_run):
         if terminated:
           done_result = env.done_function("default_agent")
-        elif env.vehicle.on_broken_line:
+        elif out_of_lane:
           done_result = (True, {"out_of_lane" : True})
         elif time_out:
           done_result = (True, {"time_done" : True})
