@@ -254,10 +254,11 @@ class CarState(CarStateBase):
         ret.brakePressed = True
 
     if self.CP.carFingerprint in HONDA_BOSCH:
-          if self.CP.transmissionType == TransmissionType.manual:
+      if self.CP.transmissionType == TransmissionType.manual:
         ret.clutchPressed = bool(cp.vl["GAS_PEDAL_2"]["CLUTCH_MAIN"] or cp.vl["GAS_PEDAL_2"]["CLUTCH_ACC"])
       else:
         ret.clutchPressed = False
+      
       # TODO: find the radarless AEB_STATUS bit and make sure ACCEL_COMMAND is correct to enable AEB alerts
       if self.CP.carFingerprint not in HONDA_BOSCH_RADARLESS:
         ret.stockAeb = (not self.CP.openpilotLongitudinalControl) and bool(cp.vl["ACC_CONTROL"]["AEB_STATUS"] and cp.vl["ACC_CONTROL"]["ACCEL_COMMAND"] < -1e-5)
