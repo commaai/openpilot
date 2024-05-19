@@ -212,6 +212,7 @@ void MapWindow::updateState(const UIState &s) {
   }
 
   if (sm.rcv_frame("navRoute") != route_rcv_frame) {
+    m_settings.setApiKey(get_mapbox_token());
     qWarning() << "Updating navLayer with new route";
     auto route = sm["navRoute"].getNavRoute();
     auto route_points = capnp_coordinate_list_to_collection(route.getCoordinates());

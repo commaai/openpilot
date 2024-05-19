@@ -13,7 +13,7 @@
 
 QString get_mapbox_token() {
   // Valid for 4 weeks since we can't swap tokens on the fly
-  return MAPBOX_TOKEN.isEmpty() ? CommaApi::create_jwt({}, 4 * 7 * 24 * 3600) : MAPBOX_TOKEN;
+  return MAPBOX_TOKEN.isEmpty() ? CommaApi::create_jwt({}) : MAPBOX_TOKEN;
 }
 
 QMapLibre::Settings get_mapbox_settings() {
