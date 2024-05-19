@@ -112,10 +112,11 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
         reset()
 
     if rk.frame % 5 == 0:
-      obs, _, terminated, _, info = env.step(vc)
+      _, _, terminated, _, _ = env.step(vc)
       time_out = True if time.monotonic() - start_time >= time_done else False
+      out_of_lane = env.vehicle.on_broken_line or env.vehicle.on_yellow_continuous_line or env.vehicle.on_white_continuous_line or env.vehicle.crash_sidewalk
 
-      if terminated or ((env.vehicle.on_broken_line or time_out) and test_run):
+      if terminated or ((out_of_lane or time_out) and test_run):
         if terminated:
           done_result = env.done_function("default_agent")
         elif env.vehicle.on_broken_line:

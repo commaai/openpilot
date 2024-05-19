@@ -30,7 +30,7 @@ def curve_block(length, angle=45, direction=0):
   }
 
 def create_map(track_size=60):
-  curve_len = track_size * 2 + 10 # empirically reliable for driving test
+  curve_len = track_size * 2
   return dict(
     type=MapGenerateMethod.PG_MAP_FILE,
     lane_num=2,
@@ -48,8 +48,6 @@ def create_map(track_size=60):
     ]
   )
 
-done_config = namedtuple("done_config", ["out_of_route_done", "on_continuous_line_done"], defaults=[False, False])
-
 
 class MetaDriveBridge(SimulatorBridge):
   TICKS_PER_FRAME = 5
@@ -58,7 +56,6 @@ class MetaDriveBridge(SimulatorBridge):
     self.should_render = False
     self.test_run = test_run
     self.time_done = time_done if self.test_run else math.inf
-    self.done_config = done_config(True, True) if self.test_run else done_config()
 
     super().__init__(dual_camera, high_quality)
 
@@ -80,8 +77,8 @@ class MetaDriveBridge(SimulatorBridge):
       image_on_cuda=_cuda_enable,
       image_observation=True,
       interface_panel=[],
-      out_of_route_done=self.done_config.out_of_route_done,
-      on_continuous_line_done=self.done_config.on_continuous_line_done,
+      out_of_route_done=False,
+      on_continuous_line_done=False,
       crash_vehicle_done=False,
       crash_object_done=False,
       arrive_dest_done=False,
