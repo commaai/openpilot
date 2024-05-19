@@ -25,6 +25,8 @@ public:
   void publisher_publish(VideoEncoder *e, int segment_num, uint32_t idx, VisionIpcBufExtra &extra, unsigned int flags, kj::ArrayPtr<capnp::byte> header, kj::ArrayPtr<capnp::byte> dat);
 
 protected:
+  void publish_thumbnail(uint32_t frame_id, uint64_t timestamp_eof, kj::ArrayPtr<capnp::byte> dat);
+
   int in_width, in_height;
   int out_width, out_height;
   const EncoderInfo encoder_info;
