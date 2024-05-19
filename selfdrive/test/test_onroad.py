@@ -10,7 +10,6 @@ import shutil
 import subprocess
 import time
 import numpy as np
-import unittest
 from collections import Counter, defaultdict
 from functools import cached_property
 from pathlib import Path
@@ -27,8 +26,15 @@ from openpilot.selfdrive.test.helpers import set_params_enabled, release_only
 from openpilot.system.hardware.hw import Paths
 from openpilot.tools.lib.logreader import LogReader
 
-# Baseline CPU usage by process
+"""
+CPU usage budget
+* each process is entitled to at least 8%
+* total CPU usage of openpilot (sum(PROCS.values())
+  should not exceed MAX_TOTAL_CPU
+"""
+MAX_TOTAL_CPU = 250.  # total for all 8 cores
 PROCS = {
+  # Baseline CPU usage by process
   "selfdrive.controls.controlsd": 46.0,
   "./loggerd": 14.0,
   "./encoderd": 17.0,
@@ -95,10 +101,10 @@ def cputime_total(ct):
 
 
 @pytest.mark.tici
-class TestOnroad(unittest.TestCase):
+class TestOnroad:
 
   @classmethod
-  def setUpClass(cls):
+  def setup_class(cls):
     if "DEBUG" in os.environ:
       segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog")), Path(Paths.log_root()).iterdir())
       segs = sorted(segs, key=lambda x: x.stat().st_mtime)
@@ -174,7 +180,7 @@ class TestOnroad(unittest.TestCase):
       msgs[m.which()].append(m)
     return msgs
 
-  def test_service_frequencies(self):
+  def test_service_frequencies(self, subtests):
     for s, msgs in self.service_msgs.items():
       if s in ('initData', 'sentinel'):
         continue
@@ -183,18 +189,18 @@ class TestOnroad(unittest.TestCase):
       if s in ('ubloxGnss', 'ubloxRaw', 'gnssMeasurements', 'gpsLocation', 'gpsLocationExternal', 'qcomGnss'):
         continue
 
-      with self.subTest(service=s):
+      with subtests.test(service=s):
         assert len(msgs) >= math.floor(SERVICE_LIST[s].frequency*55)
 
   def test_cloudlog_size(self):
     msgs = [m for m in self.lr if m.which() == 'logMessage']
 
     total_size = sum(len(m.as_builder().to_bytes()) for m in msgs)
-    self.assertLess(total_size, 3.5e5)
+    assert total_size < 3.5e5
 
     cnt = Counter(json.loads(m.logMessage)['filename'] for m in msgs)
     big_logs = [f for f, n in cnt.most_common(3) if n / sum(cnt.values()) > 30.]
-    self.assertEqual(len(big_logs), 0, f"Log spam: {big_logs}")
+    assert len(big_logs) == 0, f"Log spam: {big_logs}"
 
   def test_log_sizes(self):
     for f, sz in self.log_sizes.items():
@@ -223,15 +229,15 @@ class TestOnroad(unittest.TestCase):
     result += "------------------------------------------------\n"
     print(result)
 
-    self.assertLess(max(ts), 250.)
-    self.assertLess(np.mean(ts), 10.)
+    assert max(ts) < 250.
+    assert np.mean(ts) < 10.
     #self.assertLess(np.std(ts), 5.)
 
     # some slow frames are expected since camerad/modeld can preempt ui
     veryslow = [x for x in ts if x > 40.]
     assert len(veryslow) < 5, f"Too many slow frame draw times: {veryslow}"
 
-  def test_cpu_usage(self):
+  def test_cpu_usage(self, subtests):
     result = "\n"
     result += "------------------------------------------------\n"
     result += "------------------ CPU Usage -------------------\n"
@@ -274,17 +280,25 @@ class TestOnroad(unittest.TestCase):
       result += f"{proc_name.ljust(35)}  {cpu_usage:5.2f}% ({exp}%) {err}\n"
       if len(err) > 0:
         cpu_ok = False
+    result += "------------------------------------------------\n"
 
     # Ensure there's no missing procs
     all_procs = {p.name for p in self.service_msgs['managerState'][0].managerState.processes if p.shouldBeRunning}
     for p in all_procs:
-      with self.subTest(proc=p):
+      with subtests.test(proc=p):
         assert any(p in pp for pp in PROCS.keys()), f"Expected CPU usage missing for {p}"
 
-    result += "------------------------------------------------\n"
+    # total CPU check
+    procs_tot = sum([(max(x) if isinstance(x, tuple) else x) for x in PROCS.values()])
+    with subtests.test(name="total CPU"):
+      assert procs_tot < MAX_TOTAL_CPU, "Total CPU budget exceeded"
+    result +=  "------------------------------------------------\n"
+    result += f"Total allocated CPU usage is {procs_tot}%, budget is {MAX_TOTAL_CPU}%, {MAX_TOTAL_CPU-procs_tot:.1f}% left\n"
+    result +=  "------------------------------------------------\n"
+
     print(result)
 
-    self.assertTrue(cpu_ok)
+    assert cpu_ok
 
   def test_memory_usage(self):
     mems = [m.deviceState.memoryUsagePercent for m in self.service_msgs['deviceState']]
@@ -292,26 +306,26 @@ class TestOnroad(unittest.TestCase):
 
     # check for big leaks. note that memory usage is
     # expected to go up while the MSGQ buffers fill up
-    self.assertLessEqual(max(mems) - min(mems), 3.0)
+    assert max(mems) - min(mems) <= 3.0
 
   def test_gpu_usage(self):
-    self.assertEqual(self.gpu_procs, {"weston", "ui", "camerad", "selfdrive.modeld.modeld"})
+    assert self.gpu_procs == {"weston", "ui", "camerad", "selfdrive.modeld.modeld"}
 
   def test_camera_processing_time(self):
     result = "\n"
     result += "------------------------------------------------\n"
-    result += "-------------- Debayer Timing ------------------\n"
+    result += "-------------- ImgProc Timing ------------------\n"
     result += "------------------------------------------------\n"
 
     ts = [getattr(m, m.which()).processingTime for m in self.lr if 'CameraState' in m.which()]
-    self.assertLess(min(ts), 0.025, f"high execution time: {min(ts)}")
+    assert min(ts) < 0.025, f"high execution time: {min(ts)}"
     result += f"execution time: min  {min(ts):.5f}s\n"
     result += f"execution time: max  {max(ts):.5f}s\n"
     result += f"execution time: mean {np.mean(ts):.5f}s\n"
     result += "------------------------------------------------\n"
     print(result)
 
-  @unittest.skip("TODO: enable once timings are fixed")
+  @pytest.mark.skip("TODO: enable once timings are fixed")
   def test_camera_frame_timings(self):
     result = "\n"
     result += "------------------------------------------------\n"
@@ -321,7 +335,7 @@ class TestOnroad(unittest.TestCase):
       ts = [getattr(m, m.which()).timestampSof for m in self.lr if name in m.which()]
       d_ms = np.diff(ts) / 1e6
       d50 = np.abs(d_ms-50)
-      self.assertLess(max(d50), 1.0, f"high sof delta vs 50ms: {max(d50)}")
+      assert max(d50) < 1.0, f"high sof delta vs 50ms: {max(d50)}"
       result += f"{name} sof delta vs 50ms: min  {min(d50):.5f}s\n"
       result += f"{name} sof delta vs 50ms: max  {max(d50):.5f}s\n"
       result += f"{name} sof delta vs 50ms: mean {d50.mean():.5f}s\n"
@@ -337,8 +351,8 @@ class TestOnroad(unittest.TestCase):
     cfgs = [("longitudinalPlan", 0.05, 0.05),]
     for (s, instant_max, avg_max) in cfgs:
       ts = [getattr(m, s).solverExecutionTime for m in self.service_msgs[s]]
-      self.assertLess(max(ts), instant_max, f"high '{s}' execution time: {max(ts)}")
-      self.assertLess(np.mean(ts), avg_max, f"high avg '{s}' execution time: {np.mean(ts)}")
+      assert max(ts) < instant_max, f"high '{s}' execution time: {max(ts)}"
+      assert np.mean(ts) < avg_max, f"high avg '{s}' execution time: {np.mean(ts)}"
       result += f"'{s}' execution time: min  {min(ts):.5f}s\n"
       result += f"'{s}' execution time: max  {max(ts):.5f}s\n"
       result += f"'{s}' execution time: mean {np.mean(ts):.5f}s\n"
@@ -357,8 +371,8 @@ class TestOnroad(unittest.TestCase):
     ]
     for (s, instant_max, avg_max) in cfgs:
       ts = [getattr(m, s).modelExecutionTime for m in self.service_msgs[s]]
-      self.assertLess(max(ts), instant_max, f"high '{s}' execution time: {max(ts)}")
-      self.assertLess(np.mean(ts), avg_max, f"high avg '{s}' execution time: {np.mean(ts)}")
+      assert max(ts) < instant_max, f"high '{s}' execution time: {max(ts)}"
+      assert np.mean(ts) < avg_max, f"high avg '{s}' execution time: {np.mean(ts)}"
       result += f"'{s}' execution time: min  {min(ts):.5f}s\n"
       result += f"'{s}' execution time: max {max(ts):.5f}s\n"
       result += f"'{s}' execution time: mean {np.mean(ts):.5f}s\n"
@@ -394,7 +408,7 @@ class TestOnroad(unittest.TestCase):
       result += f"{''.ljust(40)}  {np.max(np.absolute([np.max(ts)/dt, np.min(ts)/dt]))} {np.std(ts)/dt}\n"
     result += "="*67
     print(result)
-    self.assertTrue(passed)
+    assert passed
 
   @release_only
   def test_startup(self):
@@ -405,7 +419,7 @@ class TestOnroad(unittest.TestCase):
         startup_alert = msg.controlsState.alertText1
         break
     expected = EVENTS[car.CarEvent.EventName.startup][ET.PERMANENT].alert_text_1
-    self.assertEqual(startup_alert, expected, "wrong startup alert")
+    assert startup_alert == expected, "wrong startup alert"
 
   def test_engagable(self):
     no_entries = Counter()
@@ -417,7 +431,3 @@ class TestOnroad(unittest.TestCase):
     eng = [m.controlsState.engageable for m in self.service_msgs['controlsState']]
     assert all(eng), \
            f"Not engageable for whole segment:\n- controlsState.engageable: {Counter(eng)}\n- No entry events: {no_entries}"
-
-
-if __name__ == "__main__":
-  unittest.main()

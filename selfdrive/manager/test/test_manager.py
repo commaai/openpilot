@@ -3,7 +3,6 @@ import os
 import pytest
 import signal
 import time
-import unittest
 
 from parameterized import parameterized
 
@@ -21,15 +20,15 @@ BLACKLIST_PROCS = ['manage_athenad', 'pandad', 'pigeond']
 
 
 @pytest.mark.tici
-class TestManager(unittest.TestCase):
-  def setUp(self):
+class TestManager:
+  def setup_method(self):
     HARDWARE.set_power_save(False)
 
     # ensure clean CarParams
     params = Params()
     params.clear_all()
 
-  def tearDown(self):
+  def teardown_method(self):
     manager.manager_cleanup()
 
   def test_manager_prepare(self):
@@ -38,7 +37,7 @@ class TestManager(unittest.TestCase):
 
   def test_blacklisted_procs(self):
     # TODO: ensure there are blacklisted procs until we have a dedicated test
-    self.assertTrue(len(BLACKLIST_PROCS), "No blacklisted procs to test not_run")
+    assert len(BLACKLIST_PROCS), "No blacklisted procs to test not_run"
 
   @parameterized.expand([(i,) for i in range(10)])
   def test_startup_time(self, index):
@@ -48,8 +47,8 @@ class TestManager(unittest.TestCase):
     t = time.monotonic() - start
     assert t < MAX_STARTUP_TIME, f"startup took {t}s, expected <{MAX_STARTUP_TIME}s"
 
-  @unittest.skip("this test is flaky the way it's currently written, should be moved to test_onroad")
-  def test_clean_exit(self):
+  @pytest.mark.skip("this test is flaky the way it's currently written, should be moved to test_onroad")
+  def test_clean_exit(self, subtests):
     """
       Ensure all processes exit cleanly when stopped.
     """
@@ -62,21 +61,17 @@ class TestManager(unittest.TestCase):
     time.sleep(10)
 
     for p in procs:
-      with self.subTest(proc=p.name):
+      with subtests.test(proc=p.name):
         state = p.get_process_state_msg()
-        self.assertTrue(state.running, f"{p.name} not running")
+        assert state.running, f"{p.name} not running"
         exit_code = p.stop(retry=False)
 
-        self.assertNotIn(p.name, BLACKLIST_PROCS, f"{p.name} was started")
+        assert p.name not in BLACKLIST_PROCS, f"{p.name} was started"
 
-        self.assertTrue(exit_code is not None, f"{p.name} failed to exit")
+        assert exit_code is not None, f"{p.name} failed to exit"
 
         # TODO: interrupted blocking read exits with 1 in cereal. use a more unique return code
         exit_codes = [0, 1]
         if p.sigkill:
           exit_codes = [-signal.SIGKILL]
-        self.assertIn(exit_code, exit_codes, f"{p.name} died with {exit_code}")
-
-
-if __name__ == "__main__":
-  unittest.main()
+        assert exit_code in exit_codes, f"{p.name} died with {exit_code}"

@@ -432,10 +432,6 @@
 %1</translation>
     </message>
     <message>
-        <source>Invalid date and time settings, system won&apos;t start. Connect to internet to set time.</source>
-        <translation>날짜 및 시간 설정이 잘못되어 시스템이 시작되지 않습니다. 날짜와 시간을 동기화하려면 인터넷에 연결하세요.</translation>
-    </message>
-    <message>
         <source>Taking camera snapshots. System won&apos;t start until finished.</source>
         <translation>카메라 스냅샷 찍기가 완료될 때까지 시스템이 시작되지 않습니다.</translation>
     </message>
@@ -813,7 +809,7 @@ This may take up to a minute.</source>
     <name>Sidebar</name>
     <message>
         <source>CONNECT</source>
-        <translation>연결됨</translation>
+        <translation>커넥트</translation>
     </message>
     <message>
         <source>OFFLINE</source>
@@ -1159,7 +1155,15 @@ This may take up to a minute.</source>
         <translation>표준 모드를 권장합니다. 공격적 모드의 openpilot은 선두 차량을 더 가까이 따라가고 가감속제어를 사용하여 더욱 공격적으로 움직입니다. 편안한 모드의 openpilot은 선두 차량으로부터 더 멀리 떨어져 있습니다. 지원되는 차량에서는 스티어링 휠 거리 버튼을 사용하여 이러한 특성을 순환할 수 있습니다.</translation>
     </message>
     <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. </source>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Always-On Driver Monitoring</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable driver monitoring even when openpilot is not engaged.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
