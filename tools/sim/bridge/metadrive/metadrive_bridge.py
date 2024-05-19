@@ -30,20 +30,21 @@ def curve_block(length, angle=45, direction=0):
   }
 
 def create_map(track_size=60):
+  curve_len = track_size * 2
   return dict(
     type=MapGenerateMethod.PG_MAP_FILE,
     lane_num=2,
-    lane_width=4,
+    lane_width=4.5,
     config=[
       None,
       straight_block(track_size),
-      curve_block(track_size*2, 90),
+      curve_block(curve_len, 90),
       straight_block(track_size),
-      curve_block(track_size*2, 90),
+      curve_block(curve_len, 90),
       straight_block(track_size),
-      curve_block(track_size*2, 90),
+      curve_block(curve_len, 90),
       straight_block(track_size),
-      curve_block(track_size*2, 90),
+      curve_block(curve_len, 90),
     ]
   )
 
