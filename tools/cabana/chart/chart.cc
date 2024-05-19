@@ -22,6 +22,7 @@
 
 // ChartAxisElement's padding is 4 (https://codebrowser.dev/qt5/qtcharts/src/charts/axis/chartaxiselement_p.h.html)
 const int AXIS_X_TOP_MARGIN = 4;
+const double MIN_ZOOM_SECONDS = 0.01; // 10ms
 // Define a small value of epsilon to compare double values
 const float EPSILON = 0.000001;
 static inline bool xLessThan(const QPointF &p, float x) { return p.x() < (x - EPSILON); }
@@ -511,7 +512,7 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
     if (rubber->width() <= 0) {
       // no rubber dragged, seek to mouse position
       can->seekTo(min);
-    } else if (rubber->width() > 10 && (max - min) > 0.01) { // Minimum range is 10 milliseconds.
+    } else if (rubber->width() > 10 && (max - min) > MIN_ZOOM_SECONDS) {
       charts_widget->zoom_undo_stack->push(new ZoomCommand(charts_widget, {min, max}));
     } else {
       viewport()->update();
