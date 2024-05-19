@@ -648,7 +648,7 @@ void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_i
   s->road_cam.camera_init(s, v, device_id, ctx, VISION_STREAM_ROAD, ROAD_FL_MM);
   s->wide_road_cam.camera_init(s, v, device_id, ctx, VISION_STREAM_WIDE_ROAD, WIDE_FL_MM);
 
-  s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
+  s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState"});
 }
 
 void cameras_open(MultiCameraState *s) {
