@@ -325,7 +325,7 @@ class TestCarModelBase(unittest.TestCase):
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
             phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
-  def test_panda_safety_carstate_fuzzy(self, data):
+  def test_panda_safety_rx_fuzzy(self, data):
     """
       For each example, pick a random CAN message on the bus and fuzz its data,
       checking for panda state mismatches.
@@ -386,6 +386,37 @@ class TestCarModelBase(unittest.TestCase):
       if self.CP.carName == "honda":
         if self.safety.get_acc_main_on() != prev_panda_acc_main_on:
           self.assertEqual(CS.cruiseState.available, self.safety.get_acc_main_on())
+
+  # Skip stdout/stderr capture with pytest, causes elevated memory usage
+  @pytest.mark.nocapture
+  @settings(max_examples=MAX_EXAMPLES, deadline=None,
+            phases=(Phase.reuse, Phase.generate, Phase.shrink))
+  @given(data=st.data())
+  def test_panda_safety_tx_fuzzy(self, data):
+    valid_addrs = [(addr, bus, size) for bus, addrs in self.fingerprint.items() for addr, size in addrs.items()]
+    address, bus, size = data.draw(st.sampled_from(valid_addrs))
+
+    msg_strategy = st.binary(min_size=size, max_size=size)
+    msgs = data.draw(st.lists(msg_strategy, min_size=20))
+
+    CC = car.CarControl.new_message()
+
+    for dat in msgs:
+      to_send = libpanda_py.make_CANPacket(address, bus, dat)
+      tx_valid = self.safety.safety_tx_hook(to_send)
+
+      if tx_valid:
+        can = messaging.new_message('can', 1)
+        can.can = [log.CanData(address=address, dat=dat, src=bus)]
+
+        CS = self.CI.update(CC, (can.to_bytes(),))
+        _, sendcan = self.CI.apply(car.CarControl.new_message(), can.logMonoTime)
+
+        for addr, _, dat, bus in sendcan:
+          to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
+          self.assertTrue(self.safety.safety_tx_hook(to_send), f"Panda TX check failed for address {hex(addr)} and data {dat.hex()}")
+
+        self.assertEqual(self.safety.get_controls_allowed(), CS.cruiseState.enabled, (addr, dat, bus))
 
   def test_panda_safety_carstate(self):
     """
