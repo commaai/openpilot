@@ -14,7 +14,7 @@ in {
   # select python 3.11
   deps = {nixpkgs, ...}: {
     python = lib.mkForce nixpkgs.python311;
-    python3 = lib.mkForce nixpkgs.python311;
+    #python3 = lib.mkForce nixpkgs.python311;
   };
   overrides = {
   	pyaudio = {config, lib, ...}: {
