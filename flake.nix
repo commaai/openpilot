@@ -33,7 +33,17 @@
     # All packages defined in ./packages/<name> are automatically added to the flake outputs
     # e.g., 'packages/hello/default.nix' becomes '.#packages.hello'
     packages.${system}.default = packages;
-    devShells.${system}.default = packages.devShell;
+    devShells.${system}.default = pkgs.mkShell {
+    	inputsFrom = [
+		packages.devShell
+	];
+	packages = with pkgs; [
+		coreutils
+		scons
+		doxygen
+		stdenv.cc.cc.lib
+	];
+    };
 
     nixConfig = {
     	extra-substituters = [

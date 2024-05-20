@@ -15,7 +15,7 @@ env:
 
   BUILD: selfdrive/test/docker_build.sh base
 
-  RUN: nix shell .#default --impure --command
+  RUN: nix shell .#default --command
 jobs:
   docs:
     name: build docs
