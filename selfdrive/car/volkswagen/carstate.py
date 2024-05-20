@@ -65,21 +65,9 @@ class CarState(CarStateBase):
       ret.leftBlinker = bool(pt_cp.vl["Blinkmodi_01"]["BM_links"])
       ret.rightBlinker = bool(pt_cp.vl["Blinkmodi_01"]["BM_rechts"])
 
-      # Update ACC radar status.
-      # TODO: find an explicit ACC main switch state
-      if pt_cp.vl["TSK_02"]["TSK_Status"] == 0:
-        # ACC okay and enabled, but not currently engaged
-        ret.cruiseState.available = True
-        ret.cruiseState.enabled = False
-      elif pt_cp.vl["TSK_02"]["TSK_Status"] in (1, 2):
-        # ACC okay and enabled, currently regulating speed (1) or driver override (2)
-        ret.cruiseState.available = True
-        ret.cruiseState.enabled = True
-      else:
-        # ACC disabled due to error (3)
-        ret.cruiseState.available = False
-        ret.cruiseState.enabled = False
-        ret.accFaulted = True
+      ret.cruiseState.available = pt_cp.vl["TSK_02"]["TSK_Status"] in (0, 1, 2)
+      ret.cruiseState.enabled = pt_cp.vl["TSK_02"]["TSK_Status"] in (1, 2)
+      ret.accFaulted = pt_cp.vl["TSK_02"]["TSK_Status"] == 3
 
       self.gra_stock_values = pt_cp.vl["LS_01"]
 
