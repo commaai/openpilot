@@ -24,6 +24,7 @@ in {
 			inherit (nixpkgs) portaudio;
 		};
 		mkDerivation = {
+			src = ./.;
 			buildInputs = [
 				config.deps.portaudio
 			];
