@@ -36,16 +36,18 @@ def create_acc_buttons_control(packer, bus, gra_stock_values, cancel=False, resu
 
 
 def acc_control_value(main_switch_on, acc_faulted, long_active):
-  pass
+  return 0
 
 
 def acc_hud_status_value(main_switch_on, acc_faulted, long_active):
-  pass
+  return 0
 
 
 def create_acc_accel_control(packer, bus, acc_type, acc_enabled, accel, acc_control, stopping, starting, esp_hold):
-  pass
+  values = {}
+  return packer.make_can_msg("ACC_05", bus, values)
 
 
 def create_acc_hud_control(packer, bus, acc_hud_status, set_speed, lead_distance):
-  pass
+  values = {}
+  return packer.make_can_msg("ACC_02", bus, values)
