@@ -3,6 +3,7 @@ name = "openpilot"
 authors = [
     {name = "Vehicle Researcher", email = "user@comma.ai"},
 ]
+license = {text = "MIT"}
 version = "0.1.0"
 description = "an open source driver assistance system"
 readme = "README.md"
@@ -43,7 +44,6 @@ dependencies = [
 
 [project.urls]
 Homepage = "https://comma.ai"
-license = {text = "MIT"}
 
 [tool.pytest.ini_options]
 minversion = "6.0"
