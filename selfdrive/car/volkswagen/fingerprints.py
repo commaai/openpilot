@@ -837,7 +837,7 @@ FW_VERSIONS = {
     ],
     # SRS needs to be probed on the test car
     (Ecu.srs, 0x715, None): [
-     b'PLACEHOLDER',
+      b'PLACEHOLDER',
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x878K0909144J \xf1\x890509\xf1\x82\x01\n\x1a',
