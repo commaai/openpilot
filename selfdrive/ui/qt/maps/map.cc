@@ -170,6 +170,7 @@ void MapWindow::updateState(const UIState &s) {
 
   if (locationd_valid) {
     // Update current location marker
+    m_settings.setApiKey(get_mapbox_token());
     auto point = coordinate_to_collection(*last_position);
     QMapLibre::Feature feature1(QMapLibre::Feature::PointType, point, {}, {});
     QVariantMap carPosSource;
@@ -363,6 +364,7 @@ void MapWindow::offroadTransition(bool offroad) {
 }
 
 void MapWindow::updateDestinationMarker() {
+  m_settings.setApiKey(get_mapbox_token());
   auto nav_dest = coordinate_from_param("NavDestination");
   if (nav_dest.has_value()) {
     auto point = coordinate_to_collection(*nav_dest);
