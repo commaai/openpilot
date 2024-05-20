@@ -24,7 +24,6 @@ in {
 			inherit (nixpkgs) portaudio;
 		};
 		mkDerivation = {
-			src = ./.;
 			buildInputs = [
 				config.deps.portaudio
 			];
@@ -32,7 +31,7 @@ in {
 	};
 	timezonefinder = {config, lib, ...}: {
 		mkDerivation.propagatedBuildInputs = [
-			config.deps.python.pkgs.poetry-core
+		      config.deps.python.pkgs.poetry-core
 		];
 	};
 	casadi = {
@@ -69,7 +68,7 @@ in {
   mkDerivation = {
     src = ./.;
     propagatedBuildInputs = [
-      config.deps.python.pkgs.poetry-core
+      config.deps.python.pkgs.pdm-backend
 
     ];
     doInstallCheck = false;
