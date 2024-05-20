@@ -12,17 +12,6 @@ if [[ ! $(id -u) -eq 0 ]]; then
   SUDO="sudo"
 fi
 
-# Prompt the user for extra packages
-function prompt_extra_packages() {
-  read -p "Do you want to install extra packages (e.g., clinfo)? [Y/n]: " -n 1 -r
-  echo ""
-  if [[ $REPLY =~ ^[Nn]$ ]]; then
-    INSTALL_EXTRA_PACKAGES="no"
-  else
-    INSTALL_EXTRA_PACKAGES="yes"
-  fi
-}
-
 # Install common packages
 function install_ubuntu_common_requirements() {
   $SUDO apt-get update
@@ -31,15 +20,14 @@ function install_ubuntu_common_requirements() {
     build-essential \
     ca-certificates \
     clang \
-    cmake \
-    make \
     cppcheck \
     libtool \
     gcc-arm-none-eabi \
-    bzip2 \
     liblzma-dev \
     libarchive-dev \
     libbz2-dev \
+    capnproto \
+    libcapnp-dev \
     curl \
     libcurl4-openssl-dev \
     git \
@@ -59,7 +47,6 @@ function install_ubuntu_common_requirements() {
     libncurses5-dev \
     libncursesw5-dev \
     libomp-dev \
-    libopencv-dev \
     libpng16-16 \
     libportaudio2 \
     libssl-dev \
@@ -70,7 +57,6 @@ function install_ubuntu_common_requirements() {
     locales \
     opencl-headers \
     portaudio19-dev \
-    qml-module-qtquick2 \
     qtmultimedia5-dev \
     qtlocation5-dev \
     qtpositioning5-dev \
@@ -81,21 +67,21 @@ function install_ubuntu_common_requirements() {
     libqt5serialbus5-dev  \
     libqt5x11extras5-dev \
     libqt5opengl5-dev \
-    libreadline-dev \
-    libdw1 \
-    valgrind
+    libreadline-dev
 }
 
 # Install extra packages
 function install_extra_packages() {
   echo "Installing extra packages..."
   $SUDO apt-get install -y --no-install-recommends \
+    bzip2 \
     clinfo \
     casync \
-    capnproto \
-    libcapnp-dev \
+    cmake \
+    make \
     ocl-icd-libopencl1 \
-    ocl-icd-opencl-dev
+    ocl-icd-opencl-dev \
+    libdw1
 }
 
 # Install Ubuntu 24.04 LTS packages
@@ -144,17 +130,19 @@ if [ -f "/etc/os-release" ]; then
         install_ubuntu_lts_latest_requirements
       fi
   esac
+
+  # Install extra packages
+  if [[ -z "$INSTALL_EXTRA_PACKAGES" ]]; then
+    read -p "Base setup done. Do you want to install extra development packages? [Y/n]: " -n 1 -r
+    echo ""
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      INSTALL_EXTRA_PACKAGES="yes"
+    fi
+  fi
+  if [[ "$INSTALL_EXTRA_PACKAGES" == "yes" ]]; then
+    install_extra_packages
+  fi
 else
-  echo "No /etc/os-release in the system"
+  echo "No /etc/os-release in the system. Make sure you're running on Ubuntu, or similar."
   exit 1
-fi
-
-# Prompt for extra packages if not in non-interactive mode
-if [[ -z "$NON_INTERACTIVE" ]]; then
-  prompt_extra_packages
-fi
-
-# Install extra packages if required
-if [[ "$INSTALL_EXTRA_PACKAGES" == "yes" || "$NON_INTERACTIVE" == "yes" ]]; then
-  install_extra_packages
 fi
