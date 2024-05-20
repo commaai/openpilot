@@ -65,14 +65,6 @@ class CarState(CarStateBase):
       ret.leftBlinker = bool(pt_cp.vl["Blinkmodi_01"]["BM_links"])
       ret.rightBlinker = bool(pt_cp.vl["Blinkmodi_01"]["BM_rechts"])
 
-      # ACC okay but disabled (1), ACC ready (2), a radar visibility or other fault/disruption (6 or 7)
-      # currently regulating speed (3), driver accel override (4), brake only (5)
-      ret.cruiseState.available = pt_cp.vl["TSK_06"]["TSK_Status"] in (2, 3, 4, 5)
-      ret.cruiseState.enabled = pt_cp.vl["TSK_06"]["TSK_Status"] in (3, 4, 5)
-      # Speed limiter mode; ECM faults if we command ACC while not pcmCruise
-      ret.cruiseState.nonAdaptive = bool(pt_cp.vl["TSK_06"]["TSK_Limiter_ausgewaehlt"])
-      ret.accFaulted = pt_cp.vl["TSK_06"]["TSK_Status"] in (6, 7)
-
       # Update ACC radar status.
       # TODO: find an explicit ACC main switch state
       if pt_cp.vl["TSK_02"]["TSK_Status"] == 0:
