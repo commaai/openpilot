@@ -75,7 +75,6 @@ class TestSimBridgeBase:
     while bridge.started.value:
       continue
 
-    state = None
     while not q.empty():
       state = q.get()
       if state.type == QueueMessageType.TERMINATION_INFO:
