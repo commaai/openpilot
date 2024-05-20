@@ -20,7 +20,7 @@ markers = [
 ]
 testpaths = [
   "common",
-  "selfdrive/athena",
+  "system.athena",
   "selfdrive/boardd",
   "selfdrive/car",
   "selfdrive/controls",
