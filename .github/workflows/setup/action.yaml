@@ -20,7 +20,7 @@ runs:
     - shell: bash
       run: git lfs pull
 
-    - uses: nixbuild/nix-quick-install-action@v27
+    - uses: nixbuild/nix-quick-install-action@v28
 
     - name: Restore and cache Nix store
       uses: nix-community/cache-nix-action@v5
