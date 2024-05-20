@@ -12,7 +12,7 @@ from setproctitle import setproctitle
 
 from cereal import car, log
 import cereal.messaging as messaging
-import openpilot.selfdrive.sentry as sentry
+import openpilot.system.sentry as sentry
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
