@@ -50,7 +50,7 @@ def apply_metadrive_patches(arrive_dest_done=True):
 
 def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera_array, image_lock,
                       controls_recv: Connection, simulation_state_send: Connection, vehicle_state_send: Connection,
-                      exit_event, start_time, time_done, test_run):
+                      exit_event, start_time, test_duration, test_run):
   arrive_dest_done = config.pop("arrive_dest_done", True)
   apply_metadrive_patches(arrive_dest_done)
 
@@ -113,16 +113,16 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
 
     if rk.frame % 5 == 0:
       _, _, terminated, _, _ = env.step(vc)
-      time_out = True if time.monotonic() - start_time >= time_done else False
+      timeout = True if time.monotonic() - start_time >= test_duration else False
       out_of_lane = env.vehicle.on_broken_line or env.vehicle.on_yellow_continuous_line or env.vehicle.on_white_continuous_line or env.vehicle.crash_sidewalk
 
-      if terminated or ((out_of_lane or time_out) and test_run):
+      if terminated or ((out_of_lane or timeout) and test_run):
         if terminated:
           done_result = env.done_function("default_agent")
         elif out_of_lane:
           done_result = (True, {"out_of_lane" : True})
-        elif time_out:
-          done_result = (True, {"time_done" : True})
+        elif timeout:
+          done_result = (True, {"timeout" : True})
 
         simulation_state = metadrive_simulation_state(
           running=False,

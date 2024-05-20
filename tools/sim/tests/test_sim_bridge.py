@@ -79,7 +79,7 @@ class TestSimBridgeBase:
       state = q.get()
       if state.type == QueueMessageType.TERMINATION_INFO:
         done_info = state.info
-        failure_states = [done_state for done_state in done_info if done_state != "time_done" and done_info[done_state]]
+        failure_states = [done_state for done_state in done_info if done_state != "timeout" and done_info[done_state]]
         break
     assert len(failure_states) == 0, f"Simulator fails to finish a loop. Failure states: {failure_states}"
 

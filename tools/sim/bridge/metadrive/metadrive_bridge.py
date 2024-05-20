@@ -50,10 +50,10 @@ def create_map(track_size=60):
 class MetaDriveBridge(SimulatorBridge):
   TICKS_PER_FRAME = 5
 
-  def __init__(self, dual_camera, high_quality, time_done=math.inf, test_run=False):
+  def __init__(self, dual_camera, high_quality, test_duration=math.inf, test_run=False):
     self.should_render = False
     self.test_run = test_run
-    self.time_done = time_done if self.test_run else math.inf
+    self.test_duration = test_duration if self.test_run else math.inf
 
     super().__init__(dual_camera, high_quality)
 
@@ -87,4 +87,4 @@ class MetaDriveBridge(SimulatorBridge):
       preload_models=False
     )
 
-    return MetaDriveWorld(queue, config, self.time_done, self.test_run, self.dual_camera)
+    return MetaDriveWorld(queue, config, self.test_duration, self.test_run, self.dual_camera)
