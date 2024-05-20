@@ -20,7 +20,6 @@ markers = [
 ]
 testpaths = [
   "common",
-  "selfdrive/athena",
   "selfdrive/boardd",
   "selfdrive/car",
   "selfdrive/controls",
@@ -31,6 +30,7 @@ testpaths = [
   "selfdrive/test/longitudinal_maneuvers",
   "selfdrive/test/process_replay/test_fuzzy.py",
   "selfdrive/updated",
+  "system/athena",
   "system/camerad",
   "system/hardware/tici",
   "system/loggerd",
@@ -108,6 +108,7 @@ pycryptodome = "*"
 PyJWT = "*"
 pyserial = "*"
 pyzmq = "*"
+rerun-sdk = "*"
 requests = "*"
 scons = "*"
 sentry-sdk = "*"
@@ -134,7 +135,6 @@ breathe = "*"
 control = "*"
 coverage = "*"
 dictdiffer = "*"
-ft4222 = "*"
 flaky = "*"
 hypothesis = "~6.47"
 inputs = "*"
@@ -170,7 +170,6 @@ sphinx = "*"
 sphinx-rtd-theme = "*"
 sphinx-sitemap = "*"
 tabulate = "*"
-tenacity = "*"
 types-requests = "*"
 types-tabulate = "*"
 tqdm = "*"
