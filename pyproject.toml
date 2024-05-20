@@ -19,28 +19,7 @@ markers = [
   "tici: tests that are only meant to run on the C3/C3X",
 ]
 testpaths = [
-  "common",
-  "selfdrive/athena",
-  "selfdrive/boardd",
-  "selfdrive/car",
-  "selfdrive/controls",
-  "selfdrive/locationd",
-  "selfdrive/monitoring",
-  "selfdrive/navd/tests",
-  "selfdrive/thermald",
-  "selfdrive/test/longitudinal_maneuvers",
-  "selfdrive/test/process_replay/test_fuzzy.py",
-  "selfdrive/updated",
-  "system/camerad",
-  "system/hardware/tici",
-  "system/loggerd",
-  "system/proclogd",
-  "system/tests",
-  "system/ubloxd",
-  "system/webrtc",
-  "tools/lib/tests",
-  "tools/replay",
-  "tools/cabana"
+  "openpilot",
 ]
 
 [tool.mypy]
