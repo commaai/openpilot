@@ -16,9 +16,9 @@ from markdown_it import MarkdownIt
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.time import system_time_valid
-from openpilot.system.hardware import AGNOS, HARDWARE
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
+from openpilot.system.hardware import AGNOS, HARDWARE
 from openpilot.system.version import get_build_metadata
 
 LOCK_FILE = os.getenv("UPDATER_LOCK_FILE", "/tmp/safe_staging_overlay.lock")

@@ -86,11 +86,10 @@ void *alloc_w_mmu_hdl(int video0_fd, int len, uint32_t *handle, int align, int f
 }
 
 void release(int video0_fd, uint32_t handle) {
-  int ret;
   struct cam_mem_mgr_release_cmd mem_mgr_release_cmd = {0};
   mem_mgr_release_cmd.buf_handle = handle;
 
-  ret = do_cam_control(video0_fd, CAM_REQ_MGR_RELEASE_BUF, &mem_mgr_release_cmd, sizeof(mem_mgr_release_cmd));
+  int ret = do_cam_control(video0_fd, CAM_REQ_MGR_RELEASE_BUF, &mem_mgr_release_cmd, sizeof(mem_mgr_release_cmd));
   assert(ret == 0);
 }
 

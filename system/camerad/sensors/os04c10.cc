@@ -20,11 +20,13 @@ const uint32_t os04c10_analog_gains_reg[] = {
 
 OS04C10::OS04C10() {
   image_sensor = cereal::FrameData::ImageSensor::OS04C10;
+  pixel_size_mm = 0.002;
   data_word = false;
 
+  hdr_offset = 64 * 2 + 8; // stagger
   frame_width = 2688;
-  frame_height = 1520;
-  frame_stride = (frame_width * 12 / 8); // no alignment
+  frame_height = 1520 * 2 + hdr_offset;
+  frame_stride = (frame_width * 10 / 8); // no alignment
 
   extra_height = 0;
   frame_offset = 0;
@@ -33,8 +35,8 @@ OS04C10::OS04C10() {
   init_reg_array.assign(std::begin(init_array_os04c10), std::end(init_array_os04c10));
   probe_reg_addr = 0x300a;
   probe_expected_data = 0x5304;
-  mipi_format = CAM_FORMAT_MIPI_RAW_12;
-  frame_data_type = 0x2c;
+  mipi_format = CAM_FORMAT_MIPI_RAW_10;
+  frame_data_type = 0x2b;
   mclk_frequency = 24000000; // Hz
 
   dc_gain_factor = 1;
@@ -42,8 +44,8 @@ OS04C10::OS04C10() {
   dc_gain_max_weight = 1;
   dc_gain_on_grey = 0.9;
   dc_gain_off_grey = 1.0;
-  exposure_time_min = 2;  // 1x
-  exposure_time_max = 2200;
+  exposure_time_min = 2;
+  exposure_time_max = 2400;
   analog_gain_min_idx = 0x0;
   analog_gain_rec_idx = 0x0;  // 1x
   analog_gain_max_idx = 0x36;
@@ -62,13 +64,10 @@ std::vector<i2c_random_wr_payload> OS04C10::getExposureRegisters(int exposure_ti
   uint32_t long_time = exposure_time;
   uint32_t real_gain = os04c10_analog_gains_reg[new_exp_g];
 
-  // uint32_t short_time = long_time > exposure_time_min*8 ? long_time / 8 : exposure_time_min;
-
   return {
     {0x3501, long_time>>8}, {0x3502, long_time&0xFF},
-    // {0x3511, short_time>>8}, {0x3512, short_time&0xFF},
     {0x3508, real_gain>>8}, {0x3509, real_gain&0xFF},
-    // {0x350c, real_gain>>8}, {0x350d, real_gain&0xFF},
+    {0x350c, real_gain>>8}, {0x350d, real_gain&0xFF},
   };
 }
 
@@ -83,6 +82,6 @@ float OS04C10::getExposureScore(float desired_ev, int exp_t, int exp_g_idx, floa
   score += std::abs(exp_g_idx - (int)analog_gain_rec_idx) * m;
   score += ((1 - analog_gain_cost_delta) +
             analog_gain_cost_delta * (exp_g_idx - analog_gain_min_idx) / (analog_gain_max_idx - analog_gain_min_idx)) *
-           std::abs(exp_g_idx - gain_idx) * 5.0;
+           std::abs(exp_g_idx - gain_idx) * 3.0;
   return score;
 }

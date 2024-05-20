@@ -466,7 +466,7 @@ CONFIGS = [
       "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
       "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope"
     ],
-    subs=["controlsState", "carState", "carControl", "sendcan", "onroadEvents", "carParams"],
+    subs=["controlsState", "carState", "carControl", "carOutput", "sendcan", "onroadEvents", "carParams"],
     ignore=["logMonoTime", "controlsState.startMonoTime", "controlsState.cumLagMs"],
     config_callback=controlsd_config_callback,
     init_callback=controlsd_fingerprint_callback,

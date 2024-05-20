@@ -53,7 +53,7 @@ class MetaDriveBridge(SimulatorBridge):
 
     super().__init__(dual_camera, high_quality)
 
-  def spawn_world(self):
+  def spawn_world(self, queue: Queue):
     sensors = {
       "rgb_road": (RGBCameraRoad, W, H, )
     }
@@ -83,4 +83,4 @@ class MetaDriveBridge(SimulatorBridge):
       preload_models=False
     )
 
-    return MetaDriveWorld(Queue(), config, self.dual_camera)
+    return MetaDriveWorld(queue, config, self.dual_camera)

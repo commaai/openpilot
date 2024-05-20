@@ -11,7 +11,6 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.common.utils import cache
 from openpilot.common.git import get_commit, get_origin, get_branch, get_short_branch, get_commit_date
 
-
 RELEASE_BRANCHES = ['release3-staging', 'release3', 'nightly']
 TESTED_BRANCHES = RELEASE_BRANCHES + ['devel', 'devel-staging']
 
@@ -62,13 +61,14 @@ def is_dirty(cwd: str = BASEDIR) -> bool:
   return dirty
 
 
-@dataclass(frozen=True)
+@dataclass
 class OpenpilotMetadata:
   version: str
   release_notes: str
   git_commit: str
   git_origin: str
   git_commit_date: str
+  build_style: str
   is_dirty: bool  # whether there are local changes
 
   @property
@@ -90,7 +90,7 @@ class OpenpilotMetadata:
       .replace(":", "/", 1)
 
 
-@dataclass(frozen=True)
+@dataclass
 class BuildMetadata:
   channel: str
   openpilot: OpenpilotMetadata
@@ -103,6 +103,33 @@ class BuildMetadata:
   def release_channel(self) -> bool:
     return self.channel in RELEASE_BRANCHES
 
+  @property
+  def canonical(self) -> str:
+    return f"{self.openpilot.version}-{self.openpilot.git_commit}-{self.openpilot.build_style}"
+
+  @property
+  def ui_description(self) -> str:
+    return f"{self.openpilot.version} / {self.openpilot.git_commit[:6]} / {self.channel}"
+
+
+def build_metadata_from_dict(build_metadata: dict) -> BuildMetadata:
+  channel = build_metadata.get("channel", "unknown")
+  openpilot_metadata = build_metadata.get("openpilot", {})
+  version = openpilot_metadata.get("version", "unknown")
+  release_notes = openpilot_metadata.get("release_notes", "unknown")
+  git_commit = openpilot_metadata.get("git_commit", "unknown")
+  git_origin = openpilot_metadata.get("git_origin", "unknown")
+  git_commit_date = openpilot_metadata.get("git_commit_date", "unknown")
+  build_style = openpilot_metadata.get("build_style", "unknown")
+  return BuildMetadata(channel,
+            OpenpilotMetadata(
+              version=version,
+              release_notes=release_notes,
+              git_commit=git_commit,
+              git_origin=git_origin,
+              git_commit_date=git_commit_date,
+              build_style=build_style,
+              is_dirty=False))
 
 
 def get_build_metadata(path: str = BASEDIR) -> BuildMetadata:
@@ -110,22 +137,7 @@ def get_build_metadata(path: str = BASEDIR) -> BuildMetadata:
 
   if build_metadata_path.exists():
     build_metadata = json.loads(build_metadata_path.read_text())
-    openpilot_metadata = build_metadata.get("openpilot", {})
-
-    channel = build_metadata.get("channel", "unknown")
-    version = openpilot_metadata.get("version", "unknown")
-    release_notes = openpilot_metadata.get("release_notes", "unknown")
-    git_commit = openpilot_metadata.get("git_commit", "unknown")
-    git_origin = openpilot_metadata.get("git_origin", "unknown")
-    git_commit_date = openpilot_metadata.get("git_commit_date", "unknown")
-    return BuildMetadata(channel,
-              OpenpilotMetadata(
-                version=version,
-                release_notes=release_notes,
-                git_commit=git_commit,
-                git_origin=git_origin,
-                git_commit_date=git_commit_date,
-                is_dirty=False))
+    return build_metadata_from_dict(build_metadata)
 
   git_folder = pathlib.Path(path) / ".git"
 
@@ -137,6 +149,7 @@ def get_build_metadata(path: str = BASEDIR) -> BuildMetadata:
                       git_commit=get_commit(path),
                       git_origin=get_origin(path),
                       git_commit_date=get_commit_date(path),
+                      build_style="unknown",
                       is_dirty=is_dirty(path)))
 
   cloudlog.exception("unable to get build metadata")
