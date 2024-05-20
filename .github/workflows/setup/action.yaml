@@ -44,4 +44,4 @@ runs:
         purge-primary-key: never
     - name: Run `nix build`
       shell: bash
-      run: nix build .#devShells.x86_64-linux.default
+      run: nix build --show-trace .#devShells.x86_64-linux.default

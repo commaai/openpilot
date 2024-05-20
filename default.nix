@@ -67,6 +67,7 @@ in {
     src = ./.;
     propagatedBuildInputs = [
       config.deps.python.pkgs.pdm-backend
+      config.deps.python.pkgs.poetry-core
 
     ];
     doInstallCheck = false;
