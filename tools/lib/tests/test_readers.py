@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import unittest
+import pytest
 import requests
 import tempfile
 
@@ -9,16 +9,16 @@ from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.logreader import LogReader
 
 
-class TestReaders(unittest.TestCase):
-  @unittest.skip("skip for bandwidth reasons")
+class TestReaders:
+  @pytest.mark.skip("skip for bandwidth reasons")
   def test_logreader(self):
     def _check_data(lr):
       hist = defaultdict(int)
       for l in lr:
         hist[l.which()] += 1
 
-      self.assertEqual(hist['carControl'], 6000)
-      self.assertEqual(hist['logMessage'], 6857)
+      assert hist['carControl'] == 6000
+      assert hist['logMessage'] == 6857
 
     with tempfile.NamedTemporaryFile(suffix=".bz2") as fp:
       r = requests.get("https://github.com/commaai/comma2k19/blob/master/Example_1/b0c9d2329ad1606b%7C2018-08-02--08-34-47/40/raw_log.bz2?raw=true", timeout=10)
@@ -31,15 +31,15 @@ class TestReaders(unittest.TestCase):
     lr_url = LogReader("https://github.com/commaai/comma2k19/blob/master/Example_1/b0c9d2329ad1606b%7C2018-08-02--08-34-47/40/raw_log.bz2?raw=true")
     _check_data(lr_url)
 
-  @unittest.skip("skip for bandwidth reasons")
+  @pytest.mark.skip("skip for bandwidth reasons")
   def test_framereader(self):
     def _check_data(f):
-      self.assertEqual(f.frame_count, 1200)
-      self.assertEqual(f.w, 1164)
-      self.assertEqual(f.h, 874)
+      assert f.frame_count == 1200
+      assert f.w == 1164
+      assert f.h == 874
 
       frame_first_30 = f.get(0, 30)
-      self.assertEqual(len(frame_first_30), 30)
+      assert len(frame_first_30) == 30
 
       print(frame_first_30[15])
 
@@ -62,6 +62,3 @@ class TestReaders(unittest.TestCase):
 
     fr_url = FrameReader("https://github.com/commaai/comma2k19/blob/master/Example_1/b0c9d2329ad1606b%7C2018-08-02--08-34-47/40/video.hevc?raw=true")
     _check_data(fr_url)
-
-if __name__ == "__main__":
-  unittest.main()

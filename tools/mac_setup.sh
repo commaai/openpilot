@@ -63,7 +63,6 @@ brew "pyenv"
 brew "pyenv-virtualenv"
 brew "qt@5"
 brew "zeromq"
-brew "gcc@13"
 cask "gcc-arm-embedded"
 brew "portaudio"
 EOS

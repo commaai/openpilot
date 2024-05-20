@@ -3,7 +3,6 @@ import copy
 from hypothesis import given, HealthCheck, Phase, settings
 import hypothesis.strategies as st
 from parameterized import parameterized
-import unittest
 
 from cereal import log
 from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
@@ -17,7 +16,7 @@ NOT_TESTED = ['controlsd', 'plannerd', 'calibrationd', 'dmonitoringd', 'paramsd'
 
 TEST_CASES = [(cfg.proc_name, copy.deepcopy(cfg)) for cfg in pr.CONFIGS if cfg.proc_name not in NOT_TESTED]
 
-class TestFuzzProcesses(unittest.TestCase):
+class TestFuzzProcesses:
 
   # TODO: make this faster and increase examples
   @parameterized.expand(TEST_CASES)
@@ -28,6 +27,3 @@ class TestFuzzProcesses(unittest.TestCase):
     lr = [log.Event.new_message(**m).as_reader() for m in msgs]
     cfg.timeout = 5
     pr.replay_process(cfg, lr, fingerprint=TOYOTA.TOYOTA_COROLLA_TSS2, disable_progress=True)
-
-if __name__ == "__main__":
-  unittest.main()

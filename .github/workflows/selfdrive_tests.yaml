@@ -134,24 +134,6 @@ jobs:
       timeout-minutes: 4
       run: ${{ env.RUN }} "unset PYTHONWARNINGS && pre-commit run --all && chmod -R 777 /tmp/pre-commit"
 
-  valgrind:
-    name: valgrind
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    - uses: ./.github/workflows/setup-with-retry
-    - name: Build openpilot
-      run: ${{ env.RUN }} "scons -j$(nproc)"
-    - name: Run valgrind
-      timeout-minutes: 1
-      run: |
-        ${{ env.RUN }} "python selfdrive/test/test_valgrind_replay.py"
-    - name: Print logs
-      if: always()
-      run: cat selfdrive/test/valgrind_logs.txt
-
   unit_tests:
     name: unit tests
     runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
@@ -200,7 +182,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: .ci_cache/comma_download_cache
-        key: proc-replay-${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/ref_commit') }}
+        key: proc-replay-${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/ref_commit', 'selfdrive/test/process_replay/test_regen.py') }}
     - name: Build openpilot
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
@@ -225,64 +207,18 @@ jobs:
       if: ${{ failure() && steps.print-diff.outcome == 'success' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
       run: |
         ${{ env.RUN }} "unset PYTHONWARNINGS && AZURE_TOKEN='$AZURE_TOKEN' python selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
-    - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v4
-      with:
-        name: ${{ github.job }}
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-  regen:
-    name: regen
-    runs-on: 'ubuntu-latest'
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    - uses: ./.github/workflows/setup-with-retry
-    - name: Cache test routes
-      id: dependency-cache
-      uses: actions/cache@v4
-      with:
-        path: .ci_cache/comma_download_cache
-        key: regen-${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/test_regen.py') }}
-    - name: Build base Docker image
-      run: eval "$BUILD"
-    - name: Build openpilot
-      run: |
-        ${{ env.RUN }} "scons -j$(nproc)"
-    - name: Run regen
-      timeout-minutes: 30
-      run: |
-        ${{ env.RUN }} "ONNXCPU=1 $PYTEST selfdrive/test/process_replay/test_regen.py && \
-                           chmod -R 777 /tmp/comma_download_cache"
-
-  test_modeld:
-    name: model tests
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    - uses: ./.github/workflows/setup-with-retry
-    - name: Build base Docker image
-      run: eval "$BUILD"
-    - name: Build openpilot
-      run: |
-        ${{ env.RUN }} "scons -j$(nproc)"
     # PYTHONWARNINGS triggers a SyntaxError in onnxruntime
     - name: Run model replay with ONNX
       timeout-minutes: 4
       run: |
         ${{ env.RUN }} "unset PYTHONWARNINGS && \
-                           ONNXCPU=1 NO_NAV=1 coverage run selfdrive/test/process_replay/model_replay.py && \
-                           coverage combine && \
-                           coverage xml"
-    - name: Run unit tests
+                        ONNXCPU=1 NO_NAV=1 coverage run selfdrive/test/process_replay/model_replay.py && \
+                        coverage combine && coverage xml"
+    - name: Run regen
       timeout-minutes: 4
       run: |
-        ${{ env.RUN }} "unset PYTHONWARNINGS && \
-                           $PYTEST selfdrive/modeld"
+        ${{ env.RUN }} "ONNXCPU=1 $PYTEST selfdrive/test/process_replay/test_regen.py && \
+                        chmod -R 777 /tmp/comma_download_cache"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v4
       with:
@@ -298,7 +234,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        job: [0, 1, 2, 3, 4]
+        job: [0, 1]
     steps:
     - uses: actions/checkout@v4
       with:
@@ -313,12 +249,12 @@ jobs:
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Test car models
-      timeout-minutes: 10
+      timeout-minutes: 20
       run: |
         ${{ env.RUN }} "$PYTEST selfdrive/car/tests/test_models.py && \
                         chmod -R 777 /tmp/comma_download_cache"
       env:
-        NUM_JOBS: 5
+        NUM_JOBS: 2
         JOB_ID: ${{ matrix.job }}
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v4

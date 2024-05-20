@@ -6,6 +6,8 @@ import struct
 from fcntl import ioctl
 from typing import NoReturn
 
+from openpilot.tools.sim.bridge.common import control_cmd_gen
+
 # Iterate over the joystick devices.
 print('Available devices:')
 for fn in os.listdir('/dev/input'):
@@ -153,33 +155,33 @@ def wheel_poll_thread(q: 'Queue[str]') -> NoReturn:
         fvalue = value / 32767.0
         axis_states[axis] = fvalue
         normalized = (1 - fvalue) * 50
-        q.put(f"throttle_{normalized:f}")
+        q.put(control_cmd_gen(f"throttle_{normalized:f}"))
 
       elif axis == "rz":  # brake
         fvalue = value / 32767.0
         axis_states[axis] = fvalue
         normalized = (1 - fvalue) * 50
-        q.put(f"brake_{normalized:f}")
+        q.put(control_cmd_gen(f"brake_{normalized:f}"))
 
       elif axis == "x":  # steer angle
         fvalue = value / 32767.0
         axis_states[axis] = fvalue
         normalized = fvalue
-        q.put(f"steer_{normalized:f}")
+        q.put(control_cmd_gen(f"steer_{normalized:f}"))
 
     elif mtype & 0x01:  # buttons
       if value == 1: # press down
         if number in [0, 19]:  # X
-          q.put("cruise_down")
+          q.put(control_cmd_gen("cruise_down"))
 
         elif number in [3, 18]:  # triangle
-          q.put("cruise_up")
+          q.put(control_cmd_gen("cruise_up"))
 
         elif number in [1, 6]:  # square
-          q.put("cruise_cancel")
+          q.put(control_cmd_gen("cruise_cancel"))
 
         elif number in [10, 21]:  # R3
-          q.put("reverse_switch")
+          q.put(control_cmd_gen("reverse_switch"))
 
 if __name__ == '__main__':
   from multiprocessing import Process, Queue

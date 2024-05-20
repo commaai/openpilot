@@ -51,7 +51,6 @@ function install_ubuntu_common_requirements() {
     libncurses5-dev \
     libncursesw5-dev \
     libomp-dev \
-    libopencv-dev \
     libpng16-16 \
     libportaudio2 \
     libssl-dev \
@@ -77,8 +76,7 @@ function install_ubuntu_common_requirements() {
     libqt5x11extras5-dev \
     libqt5opengl5-dev \
     libreadline-dev \
-    libdw1 \
-    valgrind
+    libdw1
 }
 
 # Install Ubuntu 24.04 LTS packages
