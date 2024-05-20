@@ -21,6 +21,8 @@ runs:
       run: git lfs pull
 
     - uses: nixbuild/nix-quick-install-action@v28
+      with:
+        nix_version: "2.18.3"
 
     - name: Restore and cache Nix store
       uses: nix-community/cache-nix-action@v5
