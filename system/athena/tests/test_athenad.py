@@ -19,9 +19,9 @@ from cereal import messaging
 
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
-from openpilot.selfdrive.athena import athenad
-from openpilot.selfdrive.athena.athenad import MAX_RETRY_COUNT, dispatcher
-from openpilot.selfdrive.athena.tests.helpers import HTTPRequestHandler, MockWebsocket, MockApi, EchoSocket
+from openpilot.system.athena import athenad
+from openpilot.system.athena.athenad import MAX_RETRY_COUNT, dispatcher
+from openpilot.system.athena.tests.helpers import HTTPRequestHandler, MockWebsocket, MockApi, EchoSocket
 from openpilot.selfdrive.test.helpers import http_server_context
 from openpilot.system.hardware.hw import Paths
 
@@ -50,7 +50,7 @@ def with_upload_handler(func):
 
 @pytest.fixture
 def mock_create_connection(mocker):
-    return mocker.patch('openpilot.selfdrive.athena.athenad.create_connection')
+    return mocker.patch('openpilot.system.athena.athenad.create_connection')
 
 @pytest.fixture
 def host():

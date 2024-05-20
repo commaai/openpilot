@@ -7,7 +7,7 @@ from typing import cast
 
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
-from openpilot.selfdrive.athena import athenad
+from openpilot.system.athena import athenad
 from openpilot.selfdrive.manager.helpers import write_onroad_params
 from openpilot.system.hardware import TICI
 
@@ -59,7 +59,7 @@ class TestAthenadPing:
   def assertTimeout(self, reconnect_time: float, subtests, mocker) -> None:
     self.athenad.start()
 
-    mock_create_connection = mocker.patch('openpilot.selfdrive.athena.athenad.create_connection',
+    mock_create_connection = mocker.patch('openpilot.system.athena.athenad.create_connection',
                                           new_callable=lambda: mocker.MagicMock(wraps=athenad.create_connection))
 
     time.sleep(1)

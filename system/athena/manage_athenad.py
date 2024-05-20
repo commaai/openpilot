@@ -28,7 +28,7 @@ def main():
   try:
     while 1:
       cloudlog.info("starting athena daemon")
-      proc = Process(name='athenad', target=launcher, args=('selfdrive.athena.athenad', 'athenad'))
+      proc = Process(name='athenad', target=launcher, args=('system.athena.athenad', 'athenad'))
       proc.start()
       proc.join()
       cloudlog.event("athenad exited", exitcode=proc.exitcode)
