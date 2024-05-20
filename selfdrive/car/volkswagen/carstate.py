@@ -65,6 +65,14 @@ class CarState(CarStateBase):
       ret.leftBlinker = bool(pt_cp.vl["Blinkmodi_01"]["BM_links"])
       ret.rightBlinker = bool(pt_cp.vl["Blinkmodi_01"]["BM_rechts"])
 
+      # ACC okay but disabled (1), ACC ready (2), a radar visibility or other fault/disruption (6 or 7)
+      # currently regulating speed (3), driver accel override (4), brake only (5)
+      ret.cruiseState.available = pt_cp.vl["TSK_06"]["TSK_Status"] in (2, 3, 4, 5)
+      ret.cruiseState.enabled = pt_cp.vl["TSK_06"]["TSK_Status"] in (3, 4, 5)
+      # Speed limiter mode; ECM faults if we command ACC while not pcmCruise
+      ret.cruiseState.nonAdaptive = bool(pt_cp.vl["TSK_06"]["TSK_Limiter_ausgewaehlt"])
+      ret.accFaulted = pt_cp.vl["TSK_06"]["TSK_Status"] in (6, 7)
+
       # Update ACC radar status.
       # TODO: find an explicit ACC main switch state
       if pt_cp.vl["TSK_02"]["TSK_Status"] == 0:
@@ -118,19 +126,12 @@ class CarState(CarStateBase):
                           pt_cp.vl["Gateway_72"]["ZV_HBFS_offen"],
                           pt_cp.vl["Gateway_72"]["ZV_HD_offen"]])
 
-      # Update ACC radar status.
-      if pt_cp.vl["TSK_06"]["TSK_Status"] == 2:
-        # ACC okay and enabled, but not currently engaged
-        ret.cruiseState.available = True
-        ret.cruiseState.enabled = False
-      elif pt_cp.vl["TSK_06"]["TSK_Status"] in (3, 4, 5):
-        # ACC okay and enabled, currently regulating speed (3) or driver accel override (4) or brake only (5)
-        ret.cruiseState.available = True
-        ret.cruiseState.enabled = True
-      else:
-        # ACC okay but disabled (1), or a radar visibility or other fault/disruption (6 or 7)
-        ret.cruiseState.available = False
-        ret.cruiseState.enabled = False
+      # ACC okay but disabled (1), ACC ready (2), a radar visibility or other fault/disruption (6 or 7)
+      # currently regulating speed (3), driver accel override (4), brake only (5)
+      ret.cruiseState.available = pt_cp.vl["TSK_06"]["TSK_Status"] in (2, 3, 4, 5)
+      ret.cruiseState.enabled = pt_cp.vl["TSK_06"]["TSK_Status"] in (3, 4, 5)
+      # Speed limiter mode; ECM faults if we command ACC while not pcmCruise
+      ret.cruiseState.nonAdaptive = bool(pt_cp.vl["TSK_06"]["TSK_Limiter_ausgewaehlt"])
       ret.accFaulted = pt_cp.vl["TSK_06"]["TSK_Status"] in (6, 7)
 
       self.gra_stock_values = pt_cp.vl["GRA_ACC_01"]
