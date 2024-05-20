@@ -836,16 +836,16 @@ FW_VERSIONS = {
       b'\xf1\x878K5927156D \xf1\x890003',
     ],
     # SRS needs to be probed on the test car
-    # (Ecu.srs, 0x715, None): [
-    #  b'\xf1\x875Q0959655BD\xf1\x890336\xf1\x82\x1311111111111100311211011231129321312111',
-    # ],
+    (Ecu.srs, 0x715, None): [
+     b'PLACEHOLDER',
+    ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x878K0909144J \xf1\x890509\xf1\x82\x01\n\x1a',
     ],
     # Test car lacks a radar
-    # (Ecu.fwdRadar, 0x757, None): [
-    #  b'\xf1\x872Q0907572M \xf1\x890233',
-    # ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'PLACEHOLDER',
+    ],
   },
   CAR.AUDI_Q2_MK1: {
     (Ecu.engine, 0x7e0, None): [
