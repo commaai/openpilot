@@ -835,16 +835,16 @@ FW_VERSIONS = {
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x878K5927156D \xf1\x890003',
     ],
-    # SRS needs to be probed on the test car
+    # FIXME: placeholder
     (Ecu.srs, 0x715, None): [
       b'PLACEHOLDER',
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x878K0909144J \xf1\x890509\xf1\x82\x01\n\x1a',
     ],
-    # Test car lacks a radar
     (Ecu.fwdRadar, 0x757, None): [
-      b'PLACEHOLDER',
+      # FIXME: placeholder
+      b'\xf1\x872Q0907572M \xf1\x890233',
     ],
   },
   CAR.AUDI_Q2_MK1: {
