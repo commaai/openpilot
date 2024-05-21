@@ -183,9 +183,7 @@ def migrate_carParams(lr, old_logtime=False):
   all_msgs = []
   for msg in lr:
     if msg.which() == 'carParams':
-      CP = messaging.new_message('carParams')
-      CP.valid = True
-      CP.carParams = msg.carParams.as_builder()
+      CP = msg.as_builder()
       CP.carParams.carFingerprint = MIGRATION.get(CP.carParams.carFingerprint, CP.carParams.carFingerprint)
       for car_fw in CP.carParams.carFw:
         car_fw.brand = CP.carParams.carName
