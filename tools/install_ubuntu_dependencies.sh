@@ -19,6 +19,7 @@ function install_ubuntu_common_requirements() {
     ca-certificates \
     clang \
     cppcheck \
+    build-essential \
     gcc-arm-none-eabi \
     liblzma-dev \
     capnproto \
@@ -74,7 +75,6 @@ function install_extra_packages() {
     libdw1 \
     libbz2-dev \
     autoconf \
-    build-essential \
     libtool \
     bzip2 \
     libarchive-dev \
