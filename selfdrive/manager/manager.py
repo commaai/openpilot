@@ -7,7 +7,7 @@ import traceback
 
 from cereal import log
 import cereal.messaging as messaging
-import openpilot.selfdrive.sentry as sentry
+import openpilot.system.sentry as sentry
 from openpilot.common.params import Params, ParamKeyType
 from openpilot.common.text_window import TextWindow
 from openpilot.system.hardware import HARDWARE, PC

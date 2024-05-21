@@ -76,10 +76,10 @@ procs = [
   PythonProcess("plannerd", "selfdrive.controls.plannerd", only_onroad),
   PythonProcess("radard", "selfdrive.controls.radard", only_onroad),
   PythonProcess("thermald", "selfdrive.thermald.thermald", always_run),
-  PythonProcess("tombstoned", "selfdrive.tombstoned", always_run, enabled=not PC),
+  PythonProcess("tombstoned", "system.tombstoned", always_run, enabled=not PC),
   PythonProcess("updated", "selfdrive.updated.updated", only_offroad, enabled=not PC),
   PythonProcess("uploader", "system.loggerd.uploader", always_run),
-  PythonProcess("statsd", "selfdrive.statsd", always_run),
+  PythonProcess("statsd", "system.statsd", always_run),
 
   # debug procs
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar),
