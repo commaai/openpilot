@@ -17,6 +17,15 @@ class TeslaCAN:
     ret += sum(dat)
     return ret & 0xFF
 
+  @staticmethod
+  def right_stalk_crc(dat):
+    right_stalk_val = [0x7C, 0xB6, 0xF0, 0x2F, 0x69, 0xA3, 0xDD, 0x1C, 0x56, 0x90, 0xCA, 0x09, 0x43, 0x7D, 0xB7, 0xF1]
+    cntr = dat[0] & 0xF
+    crc1_func = crcmod.mkCrcFun(0x12F, initCrc=0x00, xorOut=0xFF, rev=False)
+    crc1 = crc1_func(dat) & 0xFF
+    crc2_func = crcmod.mkCrcFun(0x12F, initCrc=crc1, xorOut=0xFF, rev=False)
+    return crc2_func(bytes([right_stalk_val[cntr]])) & 0xFF
+
   def create_steering_control(self, angle, enabled, counter):
     values = {
       "DAS_steeringAngleRequest": -angle,
@@ -46,19 +55,15 @@ class TeslaCAN:
     return self.packer.make_can_msg("DAS_control", CANBUS.party, values)
 
   def right_stalk_press(self, counter, position):
-    # TODO: Implement CRC checksum instead of lookup table.
-    if position == 1:  # half up
-      crc_lookup = [166, 164, 178, 141, 163, 161, 61, 25, 172, 69, 22, 108, 169, 207, 209, 219]
-    else:  # neutral position
-      position = 0
-      crc_lookup = [70, 68, 82, 109, 67, 65, 221, 249, 76, 165, 246, 140, 73, 47, 49, 59]
-
-    values = {"SCCM_rightStalkCounter": counter,
-              "SCCM_rightStalkCrc": crc_lookup[counter],
+    values = {
+              "SCCM_rightStalkCrc": 0,
+              "SCCM_rightStalkCounter": counter,
+              "SCCM_rightStalkStatus": position,
               "SCCM_rightStalkReserved1": 0,
               "SCCM_parkButtonStatus": 0,
               "SCCM_rightStalkReserved2": 0,
-              "SCCM_rightStalkStatus": position,
               }
 
+    data = self.pt_packer.make_can_msg("SCCM_rightStalk", CANBUS.vehicle, values)[2]
+    values["SCCM_rightStalkCrc"] = self.right_stalk_crc(data[1:])
     return self.pt_packer.make_can_msg("SCCM_rightStalk", CANBUS.vehicle, values)
