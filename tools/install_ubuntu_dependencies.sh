@@ -49,6 +49,7 @@ function install_ubuntu_common_requirements() {
     opencl-headers \
     ocl-icd-libopencl1 \
     ocl-icd-opencl-dev \
+    portaudio19-dev \
     qtmultimedia5-dev \
     qtlocation5-dev \
     qtpositioning5-dev \
@@ -67,7 +68,6 @@ function install_extra_packages() {
     cmake \
     make \
     clinfo \
-    portaudio19-dev \
     libqt5sql5-sqlite \
     libqt5charts5-dev \
     libreadline-dev \
