@@ -1,4 +1,4 @@
-[]
+[project]
 name = "openpilot"
 requires-python = ">= 3.11"
 readme = "README.md"
