@@ -253,9 +253,9 @@ system/webrtc/schema.py
 system/webrtc/device/audio.py
 system/webrtc/device/video.py
 
-selfdrive/thermald/thermald.py
-selfdrive/thermald/power_monitoring.py
-selfdrive/thermald/fan_controller.py
+system/thermald/thermald.py
+system/thermald/power_monitoring.py
+system/thermald/fan_controller.py
 
 selfdrive/test/__init__.py
 selfdrive/test/fuzzy_generation.py

@@ -26,7 +26,7 @@ testpaths = [
   "selfdrive/locationd",
   "selfdrive/monitoring",
   "selfdrive/navd/tests",
-  "selfdrive/thermald",
+  "system.thermald",
   "selfdrive/test/longitudinal_maneuvers",
   "selfdrive/test/process_replay/test_fuzzy.py",
   "selfdrive/updated",
