@@ -76,12 +76,26 @@ function install_ubuntu_common_requirements() {
 function install_extra_packages() {
   echo "Installing extra packages..."
   $SUDO apt-get install -y --no-install-recommends \
-    bzip2 \
-    clinfo \
     casync \
     cmake \
     make \
-    libdw1
+    clinfo \
+    portaudio19-dev \
+    libqt5sql5-sqlite \
+    libqt5charts5-dev \
+    libreadline-dev \
+    libdw1 \
+    libbz2-dev \
+    autoconf \
+    build-essential \
+    libtool \
+    bzip2 \
+    libarchive-dev \
+    libncurses5-dev \
+    libncursesw5-dev \
+    libportaudio2 \
+    libsqlite3-dev \
+    locales \
 }
 
 # Install Ubuntu 24.04 LTS packages
