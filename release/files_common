@@ -53,9 +53,6 @@ tools/replay/*.cc
 tools/replay/*.h
 
 selfdrive/__init__.py
-selfdrive/sentry.py
-selfdrive/tombstoned.py
-selfdrive/statsd.py
 
 selfdrive/updated/**
 
@@ -65,10 +62,10 @@ system/version.py
 
 selfdrive/SConscript
 
-selfdrive/athena/__init__.py
-selfdrive/athena/athenad.py
-selfdrive/athena/manage_athenad.py
-selfdrive/athena/registration.py
+system/athena/__init__.py
+system/athena/athenad.py
+system/athena/manage_athenad.py
+system/athena/registration.py
 
 selfdrive/boardd/.gitignore
 selfdrive/boardd/SConscript
@@ -162,6 +159,10 @@ selfdrive/controls/lib/longitudinal_mpc_lib/*
 system/__init__.py
 system/*.py
 
+system/sentry.py
+system/tombstoned.py
+system/statsd.py
+
 system/hardware/__init__.py
 system/hardware/base.h
 system/hardware/base.py
@@ -252,9 +253,9 @@ system/webrtc/schema.py
 system/webrtc/device/audio.py
 system/webrtc/device/video.py
 
-selfdrive/thermald/thermald.py
-selfdrive/thermald/power_monitoring.py
-selfdrive/thermald/fan_controller.py
+system/thermald/thermald.py
+system/thermald/power_monitoring.py
+system/thermald/fan_controller.py
 
 selfdrive/test/__init__.py
 selfdrive/test/fuzzy_generation.py

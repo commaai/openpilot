@@ -1,5 +1,5 @@
 import os
-from functools import lru_cache
+from functools import cache
 
 def gpio_init(pin: int, output: bool) -> None:
   try:
@@ -35,7 +35,7 @@ def gpio_export(pin: int) -> None:
   except Exception:
     print(f"Failed to export gpio {pin}")
 
-@lru_cache(maxsize=None)
+@cache
 def get_irq_action(irq: int) -> list[str]:
   try:
     with open(f"/sys/kernel/irq/{irq}/actions") as f:

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import pytest
 
-from openpilot.selfdrive.thermald.fan_controller import TiciFanController
+from openpilot.system.thermald.fan_controller import TiciFanController
 
 ALL_CONTROLLERS = [TiciFanController]
 

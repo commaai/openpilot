@@ -68,6 +68,7 @@ FW_VERSIONS = {
     (Ecu.engine, 0x7e0, None): [
       b'68267018AO ',
       b'68267020AJ ',
+      b'68303534AG ',
       b'68303534AJ ',
       b'68340762AD ',
       b'68340764AD ',
@@ -106,6 +107,7 @@ FW_VERSIONS = {
       b'68405565AB',
       b'68405565AC',
       b'68444299AC',
+      b'68480707AC',
       b'68480708AC',
       b'68526663AB',
     ],
@@ -147,6 +149,7 @@ FW_VERSIONS = {
       b'68443120AE ',
       b'68443123AC ',
       b'68443125AC ',
+      b'68496647AI ',
       b'68496647AJ ',
       b'68496650AH ',
       b'68496650AI ',
@@ -264,6 +267,7 @@ FW_VERSIONS = {
   },
   CAR.JEEP_GRAND_CHEROKEE: {
     (Ecu.combinationMeter, 0x742, None): [
+      b'68243549AG',
       b'68302211AC',
       b'68302212AD',
       b'68302223AC',
@@ -275,18 +279,22 @@ FW_VERSIONS = {
       b'68340272AD',
     ],
     (Ecu.srs, 0x744, None): [
+      b'68309533AA',
       b'68316742AB',
       b'68355363AB',
     ],
     (Ecu.abs, 0x747, None): [
+      b'68252642AG',
       b'68306178AD',
       b'68336276AB',
     ],
     (Ecu.fwdRadar, 0x753, None): [
       b'04672627AB',
+      b'68251506AF',
       b'68332015AB',
     ],
     (Ecu.eps, 0x75a, None): [
+      b'68276201AG',
       b'68321644AB',
       b'68321644AC',
       b'68321646AC',
@@ -294,6 +302,7 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x7e0, None): [
       b'05035920AE ',
+      b'68252272AG ',
       b'68284455AI ',
       b'68284456AI ',
       b'68284477AF ',
@@ -304,6 +313,7 @@ FW_VERSIONS = {
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'05035517AH',
+      b'68253222AF',
       b'68311218AC',
       b'68311223AF',
       b'68311223AG',

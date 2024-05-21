@@ -61,7 +61,7 @@ def get_assistnow_messages(token: bytes) -> list[bytes]:
   return msgs
 
 
-class TTYPigeon():
+class TTYPigeon:
   def __init__(self):
     self.tty = serial.VTIMESerial(UBLOX_TTY, baudrate=9600, timeout=0)
 

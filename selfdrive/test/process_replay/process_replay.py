@@ -317,12 +317,12 @@ class ProcessContainer:
     return output_msgs
 
 
-def controlsd_fingerprint_callback(rc, pm, msgs, fingerprint):
+def card_fingerprint_callback(rc, pm, msgs, fingerprint):
   print("start fingerprinting")
   params = Params()
   canmsgs = [msg for msg in msgs if msg.which() == "can"][:300]
 
-  # controlsd expects one arbitrary can and pandaState
+  # card expects one arbitrary can and pandaState
   rc.send_sync(pm, "can", messaging.new_message("can", 1))
   pm.send("pandaStates", messaging.new_message("pandaStates", 1))
   rc.send_sync(pm, "can", messaging.new_message("can", 1))
@@ -356,12 +356,20 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
     for m in canmsgs[:300]:
       can.send(m.as_builder().to_bytes())
     _, CP = get_car(can, sendcan, Params().get_bool("ExperimentalLongitudinalEnabled"))
+
+    if not params.get_bool("DisengageOnAccelerator"):
+      CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
+
   params.put("CarParams", CP.to_bytes())
   return CP
 
 
 def controlsd_rcv_callback(msg, cfg, frame):
-  # no sendcan until controlsd is initialized
+  return (frame - 1) == 0 or msg.which() == 'carState'
+
+
+def card_rcv_callback(msg, cfg, frame):
+  # no sendcan until card is initialized
   if msg.which() != "can":
     return False
 
@@ -461,16 +469,26 @@ CONFIGS = [
   ProcessConfig(
     proc_name="controlsd",
     pubs=[
-      "can", "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
+      "carState", "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
       "longitudinalPlan", "liveLocationKalman", "liveParameters", "radarState",
       "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
-      "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope"
+      "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope", "carOutput"
     ],
-    subs=["controlsState", "carState", "carControl", "carOutput", "sendcan", "onroadEvents", "carParams"],
+    subs=["controlsState", "carControl", "onroadEvents"],
     ignore=["logMonoTime", "controlsState.startMonoTime", "controlsState.cumLagMs"],
     config_callback=controlsd_config_callback,
-    init_callback=controlsd_fingerprint_callback,
+    init_callback=get_car_params_callback,
     should_recv_callback=controlsd_rcv_callback,
+    tolerance=NUMPY_TOLERANCE,
+    processing_time=0.004,
+  ),
+  ProcessConfig(
+    proc_name="card",
+    pubs=["pandaStates", "carControl", "onroadEvents", "can"],
+    subs=["sendcan", "carState", "carParams", "carOutput"],
+    ignore=["logMonoTime", "carState.cumLagMs"],
+    init_callback=card_fingerprint_callback,
+    should_recv_callback=card_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
     main_pub="can",

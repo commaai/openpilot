@@ -57,26 +57,23 @@ void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, con
 void update_line_data(const UIState *s, const cereal::XYZTData::Reader &line,
                       float y_off, float z_off, QPolygonF *pvd, int max_idx, bool allow_invert=true) {
   const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
-  QPolygonF left_points, right_points;
-  left_points.reserve(max_idx + 1);
-  right_points.reserve(max_idx + 1);
-
+  QPointF left, right;
+  pvd->clear();
   for (int i = 0; i <= max_idx; i++) {
     // highly negative x positions  are drawn above the frame and cause flickering, clip to zy plane of camera
     if (line_x[i] < 0) continue;
-    QPointF left, right;
+
     bool l = calib_frame_to_full_frame(s, line_x[i], line_y[i] - y_off, line_z[i] + z_off, &left);
     bool r = calib_frame_to_full_frame(s, line_x[i], line_y[i] + y_off, line_z[i] + z_off, &right);
     if (l && r) {
       // For wider lines the drawn polygon will "invert" when going over a hill and cause artifacts
-      if (!allow_invert && left_points.size() && left.y() > left_points.back().y()) {
+      if (!allow_invert && pvd->size() && left.y() > pvd->back().y()) {
         continue;
       }
-      left_points.push_back(left);
-      right_points.push_front(right);
+      pvd->push_back(left);
+      pvd->push_front(right);
     }
   }
-  *pvd = left_points + right_points;
 }
 
 void update_model(UIState *s,
