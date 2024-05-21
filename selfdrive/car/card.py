@@ -149,7 +149,7 @@ class Car:
   def controls_update(self, CS: car.CarState, CC: car.CarControl):
     """control update loop, driven by carControl"""
 
-    initialized_prev = any(e.name == EventName.controlsInitializing for e in self.onroadEvents_prev)
+    initialized_prev = not any(e.name == EventName.controlsInitializing for e in self.onroadEvents_prev)
     if not initialized_prev:
       # Initialize CarInterface, once controls are ready
       self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
@@ -170,7 +170,7 @@ class Car:
     self.state_publish(CS)
 
     onroadEvents = self.sm['onroadEvents']
-    initialized = any(e.name == EventName.controlsInitializing for e in onroadEvents)
+    initialized = not any(e.name == EventName.controlsInitializing for e in onroadEvents)
     if not self.CP.passive and initialized:
       self.controls_update(CS, self.sm['carControl'])
 
