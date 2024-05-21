@@ -34,7 +34,7 @@ class Car:
 
     self.CC_prev = car.CarControl.new_message()
     self.CS_prev = car.CarState.new_message()
-    self.onroadEvents_prev = []
+    self.initialized_prev = False
 
     self.last_actuators_output = car.CarControl.Actuators.new_message()
 
@@ -149,8 +149,7 @@ class Car:
   def controls_update(self, CS: car.CarState, CC: car.CarControl):
     """control update loop, driven by carControl"""
 
-    initialized_prev = not any(e.name == EventName.controlsInitializing for e in self.onroadEvents_prev)
-    if not initialized_prev:
+    if not self.initialized_prev:
       # Initialize CarInterface, once controls are ready
       self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
 
@@ -169,12 +168,12 @@ class Car:
 
     self.state_publish(CS)
 
-    onroadEvents = self.sm['onroadEvents']
-    initialized = not any(e.name == EventName.controlsInitializing for e in onroadEvents)
+    initialized = (not any(e.name == EventName.controlsInitializing for e in self.sm['onroadEvents']) and
+                   self.sm.seen['onroadEvents'])
     if not self.CP.passive and initialized:
       self.controls_update(CS, self.sm['carControl'])
 
-    self.onroadEvents_prev = onroadEvents
+    self.initialized_prev = initialized
     self.CS_prev = CS.as_reader()
 
   def card_thread(self):
