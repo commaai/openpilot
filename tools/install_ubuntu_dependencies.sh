@@ -69,10 +69,6 @@ function install_extra_packages() {
     cmake \
     make \
     clinfo \
-    libqt5sql5-sqlite \
-    libqt5charts5-dev \
-    libreadline-dev \
-    libdw1 \
     libbz2-dev \
     autoconf \
     libtool \
