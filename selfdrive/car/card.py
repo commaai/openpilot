@@ -35,7 +35,7 @@ class Car:
 
     self.CC_prev = car.CarControl.new_message()
     self.CS_prev = car.CarState.new_message()
-    self.controlsState_prev = car.CarState.new_message()
+    self.controlsState_prev = log.ControlsState.new_message()
 
     self.last_actuators_output = car.CarControl.Actuators.new_message()
 
