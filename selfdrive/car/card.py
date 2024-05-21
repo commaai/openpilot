@@ -18,7 +18,6 @@ from openpilot.selfdrive.controls.lib.events import Events
 
 REPLAY = "REPLAY" in os.environ
 
-State = log.ControlsState.OpenpilotState
 EventName = car.CarEvent.EventName
 
 
@@ -27,7 +26,7 @@ class Car:
 
   def __init__(self, CI=None):
     self.can_sock = messaging.sub_sock('can', timeout=20)
-    self.sm = messaging.SubMaster(['pandaStates', 'carControl', 'controlsState'])
+    self.sm = messaging.SubMaster(['pandaStates', 'carControl', 'onroadEvents'])
     self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams', 'carOutput'])
 
     self.can_rcv_timeout_counter = 0  # consecutive timeout count
@@ -35,7 +34,7 @@ class Car:
 
     self.CC_prev = car.CarControl.new_message()
     self.CS_prev = car.CarState.new_message()
-    self.controlsState_prev = log.ControlsState.new_message()
+    self.onroadEvents_prev = []
 
     self.last_actuators_output = car.CarControl.Actuators.new_message()
 
@@ -150,7 +149,8 @@ class Car:
   def controls_update(self, CS: car.CarState, CC: car.CarControl):
     """control update loop, driven by carControl"""
 
-    if not self.controlsState_prev.initialized:
+    initialized_prev = any(e.name == EventName.controlsInitializing for e in self.onroadEvents_prev)
+    if not initialized_prev:
       # Initialize CarInterface, once controls are ready
       self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
 
@@ -169,11 +169,12 @@ class Car:
 
     self.state_publish(CS)
 
-    controlsState = self.sm['controlsState']
-    if not self.CP.passive and controlsState.initialized:
+    onroadEvents = self.sm['onroadEvents'].onroadEvents
+    initialized = any(e.name == EventName.controlsInitializing for e in onroadEvents)
+    if not self.CP.passive and initialized:
       self.controls_update(CS, self.sm['carControl'])
 
-    self.controlsState_prev = controlsState
+    self.onroadEvents_prev = onroadEvents
     self.CS_prev = CS.as_reader()
 
   def card_thread(self):

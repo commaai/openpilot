@@ -484,7 +484,7 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="card",
-    pubs=["pandaStates", "carControl", "controlsState", "can"],
+    pubs=["pandaStates", "carControl", "onroadEvents", "can"],
     subs=["sendcan", "carState", "carParams", "carOutput"],
     ignore=["logMonoTime", "carState.cumLagMs"],
     init_callback=card_fingerprint_callback,

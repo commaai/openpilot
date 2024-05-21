@@ -16,7 +16,6 @@ def migrate_all(lr, old_logtime=False, manager_states=False, panda_states=False,
   msgs = migrate_carParams(msgs, old_logtime)
   msgs = migrate_gpsLocation(msgs)
   msgs = migrate_deviceState(msgs)
-  msgs = migrate_controlsState(msgs)
   msgs = migrate_carOutput(msgs)
   if manager_states:
     msgs = migrate_managerState(msgs)
@@ -68,21 +67,6 @@ def migrate_deviceState(lr):
       n = msg.as_builder()
       n.deviceState.deviceType = dt
       all_msgs.append(n.as_reader())
-    else:
-      all_msgs.append(msg)
-  return all_msgs
-
-
-def migrate_controlsState(lr):
-  all_msgs = []
-  events = None
-  for msg in lr:
-    if msg.which() == 'onroadEvents':
-      events = msg.onroadEvents
-    if msg.which() == 'controlsState':
-      cs = msg.as_builder()
-      cs.controlsState.initialized = events is not None and not any(EventName.controlsInitializing == e.name for e in events)
-      all_msgs.append(cs.as_reader())
     else:
       all_msgs.append(msg)
   return all_msgs
