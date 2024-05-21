@@ -61,9 +61,15 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
 
   env = MetaDriveEnv(config)
 
+  def get_current_lane_info(vehicle):
+    _, lane_info, on_lane = vehicle.navigation._get_current_lane(vehicle)
+    lane_idx = lane_info[2] if lane_info is not None else None
+    return lane_idx, on_lane
+
   def reset():
     env.reset()
     env.vehicle.config["max_speed_km_h"] = 1000
+    lane_idx_prev, _ = get_current_lane_info(env.vehicle)
 
     simulation_state = metadrive_simulation_state(
       running=True,
@@ -72,7 +78,9 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
     )
     simulation_state_send.send(simulation_state)
 
-  reset()
+    return lane_idx_prev
+
+  lane_idx_prev = reset()
 
   def get_cam_as_rgb(cam):
     cam = env.engine.sensors[cam]
@@ -114,7 +122,8 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
     if rk.frame % 5 == 0:
       _, _, terminated, _, _ = env.step(vc)
       timeout = True if time.monotonic() - start_time >= test_duration else False
-      out_of_lane = env.vehicle.on_broken_line or env.vehicle.on_yellow_continuous_line or env.vehicle.on_white_continuous_line or env.vehicle.crash_sidewalk
+      lane_idx_curr, on_lane = get_current_lane_info(env.vehicle)
+      out_of_lane = lane_idx_curr != lane_idx_prev or not on_lane
 
       if terminated or ((out_of_lane or timeout) and test_run):
         if terminated:
