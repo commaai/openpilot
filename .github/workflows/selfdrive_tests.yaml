@@ -249,6 +249,60 @@ jobs:
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
+  car_docs_diff:
+    name: PR comments
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          ref: ${{ github.event.pull_request.base.ref }}
+      - run: git lfs pull
+      - uses: ./.github/workflows/setup-with-retry
+      - name: Get base car info
+        run: |
+          ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/debug/dump_car_docs.py --path /tmp/openpilot_cache/base_car_docs"
+          sudo chown -R $USER:$USER ${{ github.workspace }}
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          path: current
+      - run: cd current && git lfs pull
+      - name: Save car docs diff
+        id: save_diff
+        run: |
+          cd current
+          ${{ env.RUN }} "scons -j$(nproc)"
+          output=$(${{ env.RUN }} "python selfdrive/debug/print_docs_diff.py --path /tmp/openpilot_cache/base_car_docs")
+          output="${output//$'\n'/'%0A'}"
+          echo "::set-output name=diff::$output"
+      - name: Find comment
+        if: ${{ env.AZURE_TOKEN != '' }}
+        uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e
+        id: fc
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          body-includes: This PR makes changes to
+      - name: Update comment
+        if: ${{ steps.save_diff.outputs.diff != '' && env.AZURE_TOKEN != '' }}
+        uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043
+        with:
+          comment-id: ${{ steps.fc.outputs.comment-id }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: "${{ steps.save_diff.outputs.diff }}"
+          edit-mode: replace
+      - name: Delete comment
+        if: ${{ steps.fc.outputs.comment-id != '' && steps.save_diff.outputs.diff == '' && env.AZURE_TOKEN != '' }}
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.deleteComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              comment_id: ${{ steps.fc.outputs.comment-id }}
+            })
+
   create_ui_report:
     name: Create UI Report
     runs-on: ubuntu-latest
