@@ -154,7 +154,7 @@ class Car:
       # Initialize CarInterface, once controls are ready
       self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
 
-    if self.sm.all_checks(['carControl']):
+    if self.sm.all_alive(['carControl']):
       # send car controls over can
       now_nanos = self.can_log_mono_time if REPLAY else int(time.monotonic() * 1e9)
       self.last_actuators_output, can_sends = self.CI.apply(CC, now_nanos)
