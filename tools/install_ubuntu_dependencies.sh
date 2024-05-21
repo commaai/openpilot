@@ -56,6 +56,8 @@ function install_ubuntu_common_requirements() {
     libsystemd-dev \
     locales \
     opencl-headers \
+    ocl-icd-libopencl1 \
+    ocl-icd-opencl-dev \
     portaudio19-dev \
     qtmultimedia5-dev \
     qtlocation5-dev \
@@ -79,8 +81,6 @@ function install_extra_packages() {
     casync \
     cmake \
     make \
-    ocl-icd-libopencl1 \
-    ocl-icd-opencl-dev \
     libdw1
 }
 
