@@ -16,16 +16,11 @@ fi
 function install_ubuntu_common_requirements() {
   $SUDO apt-get update
   $SUDO apt-get install -y --no-install-recommends \
-    autoconf \
-    build-essential \
     ca-certificates \
     clang \
     cppcheck \
-    libtool \
     gcc-arm-none-eabi \
     liblzma-dev \
-    libarchive-dev \
-    libbz2-dev \
     capnproto \
     libcapnp-dev \
     curl \
@@ -44,13 +39,9 @@ function install_ubuntu_common_requirements() {
     libgles2-mesa-dev \
     libglfw3-dev \
     libglib2.0-0 \
-    libncurses5-dev \
-    libncursesw5-dev \
     libomp-dev \
     libpng16-16 \
-    libportaudio2 \
     libssl-dev \
-    libsqlite3-dev \
     libusb-1.0-0-dev \
     libzmq3-dev \
     libsystemd-dev \
@@ -58,18 +49,14 @@ function install_ubuntu_common_requirements() {
     opencl-headers \
     ocl-icd-libopencl1 \
     ocl-icd-opencl-dev \
-    portaudio19-dev \
     qtmultimedia5-dev \
     qtlocation5-dev \
     qtpositioning5-dev \
     qttools5-dev-tools \
-    libqt5sql5-sqlite \
     libqt5svg5-dev \
-    libqt5charts5-dev \
     libqt5serialbus5-dev  \
     libqt5x11extras5-dev \
     libqt5opengl5-dev \
-    libreadline-dev
 }
 
 # Install extra packages
