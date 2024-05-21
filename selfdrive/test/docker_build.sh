@@ -17,9 +17,14 @@ fi
 
 source $SCRIPT_DIR/docker_common.sh $1 "$TAG_SUFFIX"
 
-DOCKER_BUILDKIT=1 docker buildx build --provenance false --pull --platform $PLATFORM --load --cache-to type=inline --cache-from type=registry,ref=$REMOTE_TAG -t $REMOTE_TAG -t $LOCAL_TAG -f $OPENPILOT_DIR/$DOCKER_FILE $OPENPILOT_DIR
+if [ -n "$REBUILD_IMAGE" ]; then
+  DOCKER_BUILDKIT=1 docker buildx build --provenance false --pull --platform $PLATFORM --load --cache-to type=inline --cache-from type=registry,ref=$REMOTE_TAG -t $REMOTE_TAG -t $LOCAL_TAG -f $OPENPILOT_DIR/$DOCKER_FILE $OPENPILOT_DIR
+else
+  docker pull --platform $PLATFORM $REMOTE_TAG
+fi
 
 if [ -n "$PUSH_IMAGE" ]; then
+
   docker push $REMOTE_TAG
   docker tag $REMOTE_TAG $REMOTE_SHA_TAG
   docker push $REMOTE_SHA_TAG

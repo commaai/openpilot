@@ -14,13 +14,10 @@ ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
 COPY tools/install_ubuntu_dependencies.sh /tmp/tools/
-RUN cd /tmp && \
-    tools/install_ubuntu_dependencies.sh && \
+RUN INSTALL_EXTRA_PACKAGES=no tools/install_ubuntu_dependencies.sh && \
     rm -rf /var/lib/apt/lists/* && \
     rm -rf /tmp/* && \
-    rm -rf /usr/lib/aarch64-linux-gnu/perl/5.30.0/auto/Encode && \
     rm -rf /usr/share/vim/vim81/doc && \
-    rm -rf /usr/lib/debug && \
     rm -rf /usr/lib/python2.7 && \
     # remove unused architectures from gcc for panda
     cd /usr/lib/gcc/arm-none-eabi/9.2.1 && \
