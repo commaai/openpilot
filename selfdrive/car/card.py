@@ -4,7 +4,7 @@ import time
 
 import cereal.messaging as messaging
 
-from cereal import car, log
+from cereal import car
 
 from panda import ALTERNATIVE_EXPERIENCE
 
@@ -169,7 +169,7 @@ class Car:
 
     self.state_publish(CS)
 
-    onroadEvents = self.sm['onroadEvents'].onroadEvents
+    onroadEvents = self.sm['onroadEvents']
     initialized = any(e.name == EventName.controlsInitializing for e in onroadEvents)
     if not self.CP.passive and initialized:
       self.controls_update(CS, self.sm['carControl'])
