@@ -76,24 +76,8 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - uses: ./.github/workflows/setup-with-retry
-      with:
-        docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
-    - uses: ./.github/workflows/compile-openpilot
-      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 15 || 30) }} # allow more time when we missed the scons cache
-
-  docker_push:
-    name: docker push
-    strategy:
-      matrix:
-        arch: ${{ fromJson( (github.repository == 'commaai/openpilot') && '["x86_64", "aarch64"]' || '["x86_64"]' ) }}
-    runs-on: ${{ (matrix.arch == 'aarch64') && 'namespace-profile-arm64-2x8' || 'ubuntu-latest' }}
-    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    - name: Setup to push to repo
+    - name: Setup docker push
+      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
       run: |
         echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
         echo "TARGET_ARCHITECTURE=${{ matrix.arch }}" >> "$GITHUB_ENV"
@@ -101,12 +85,14 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
       with:
         docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
+    - uses: ./.github/workflows/compile-openpilot
+      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 15 || 30) }} # allow more time when we missed the scons cache
 
   docker_push_multiarch:
     name: docker push multiarch tag
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
-    needs: [docker_push]
+    needs: [build]
     steps:
     - uses: actions/checkout@v4
       with:
