@@ -117,7 +117,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
       vc = [steer_metadrive, gas]
 
       if should_reset:
-        reset()
+        lane_idx_prev = reset()
 
     if rk.frame % 5 == 0:
       _, _, terminated, _, _ = env.step(vc)
