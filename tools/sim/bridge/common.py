@@ -195,8 +195,9 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
         self.world.tick()
         self.world.read_cameras()
 
-      if self.rk.frame % 25 == 0:
-        not self.test_run and self.print_status() # don't print during test, so no print/IO Block between OP and metadrive proc
+      # don't print during test, so no print/IO Block between OP and metadrive processes
+      if not self.test_run and self.rk.frame % 25 == 0:
+        self.print_status()
 
       self.started.value = True
 
