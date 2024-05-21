@@ -2,7 +2,7 @@
 import importlib
 import math
 from collections import deque
-from typing import Any, Optional
+from typing import Any
 
 import capnp
 from cereal import messaging, log, car
@@ -208,7 +208,7 @@ class RadarD:
 
     self.ready = False
 
-  def update(self, sm: messaging.SubMaster, rr: Optional[car.RadarData]):
+  def update(self, sm: messaging.SubMaster, rr):
     self.ready = sm.seen['modelV2']
     self.current_time = 1e-9*max(sm.logMonoTime.values())
 
