@@ -43,6 +43,7 @@ function install_ubuntu_common_requirements() {
     libomp-dev \
     libpng16-16 \
     libqt5charts5-dev \
+    libncurses5-dev \
     libssl-dev \
     libusb-1.0-0-dev \
     libzmq3-dev \
@@ -78,7 +79,6 @@ function install_extra_packages() {
     libtool \
     bzip2 \
     libarchive-dev \
-    libncurses5-dev \
     libncursesw5-dev \
     libportaudio2 \
     libsqlite3-dev \
