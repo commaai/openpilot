@@ -53,9 +53,6 @@ tools/replay/*.cc
 tools/replay/*.h
 
 selfdrive/__init__.py
-selfdrive/sentry.py
-selfdrive/tombstoned.py
-selfdrive/statsd.py
 
 selfdrive/updated/**
 
@@ -161,6 +158,10 @@ selfdrive/controls/lib/longitudinal_mpc_lib/*
 
 system/__init__.py
 system/*.py
+
+system/sentry.py
+system/tombstoned.py
+system/statsd.py
 
 system/hardware/__init__.py
 system/hardware/base.h
