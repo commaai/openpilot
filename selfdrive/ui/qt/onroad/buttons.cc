@@ -16,7 +16,7 @@ void drawIcon(QPainter &p, const QPoint &center, const QPixmap &img, const QBrus
 }
 
 // ExperimentalButton
-ExperimentalButton::ExperimentalButton(QWidget *parent) : experimental_mode(false), engageable(false), QPushButton(parent) {
+ExperimentalButton::ExperimentalButton(QWidget *parent) : experimental_mode(false), warningShown(false) engageable(false), QPushButton(parent) {
   setFixedSize(btn_size, btn_size);
 
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
@@ -28,6 +28,9 @@ void ExperimentalButton::changeMode() {
   const auto cp = (*uiState()->sm)["carParams"].getCarParams();
   bool can_change = hasLongitudinalControl(cp) && params.getBool("ExperimentalModeConfirmed");
   if (can_change) {
+    ifc(!mode_change_warning_shown) {
+      params.putBool("ModeChangeWarningShown")
+    }
     params.putBool("ExperimentalMode", !experimental_mode);
   }
 }

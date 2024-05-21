@@ -22,6 +22,7 @@ private:
   QPixmap engage_img;
   QPixmap experimental_img;
   bool experimental_mode;
+  bool mode_change_warning_shown;
   bool engageable;
 };
 

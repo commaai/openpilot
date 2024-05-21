@@ -121,6 +121,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"DoUninstall", CLEAR_ON_MANAGER_START},
     {"ExperimentalLongitudinalEnabled", PERSISTENT | DEVELOPMENT_ONLY},
     {"ExperimentalMode", PERSISTENT},
+    {"ModeChangeWarningShown", CLEAR_ON_MANAGER_START},
     {"ExperimentalModeConfirmed", PERSISTENT},
     {"FirmwareQueryDone", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"ForcePowerDown", PERSISTENT},
