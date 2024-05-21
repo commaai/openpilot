@@ -34,6 +34,7 @@ function install_ubuntu_common_requirements() {
     libavdevice-dev \
     libavutil-dev \
     libavfilter-dev \
+    libbz2-dev \
     libeigen3-dev \
     libffi-dev \
     libglew-dev \
@@ -74,7 +75,6 @@ function install_extra_packages() {
     libqt5sql5-sqlite \
     libreadline-dev \
     libdw1 \
-    libbz2-dev \
     autoconf \
     libtool \
     bzip2 \
