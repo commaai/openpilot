@@ -42,7 +42,7 @@ def only_offroad(started, params, CP: car.CarParams) -> bool:
   return not started
 
 procs = [
-  DaemonProcess("manage_athenad", "selfdrive.athena.manage_athenad", "AthenadPid"),
+  DaemonProcess("manage_athenad", "system.athena.manage_athenad", "AthenadPid"),
 
   NativeProcess("camerad", "system/camerad", ["./camerad"], driverview),
   NativeProcess("logcatd", "system/logcatd", ["./logcatd"], only_onroad),

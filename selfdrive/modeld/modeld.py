@@ -206,9 +206,8 @@ def main(demo=False):
         continue
 
       if abs(meta_main.timestamp_sof - meta_extra.timestamp_sof) > 10000000:
-        cloudlog.error("frames out of sync! main: {} ({:.5f}), extra: {} ({:.5f})".format(
-          meta_main.frame_id, meta_main.timestamp_sof / 1e9,
-          meta_extra.frame_id, meta_extra.timestamp_sof / 1e9))
+        cloudlog.error(f"frames out of sync! main: {meta_main.frame_id} ({meta_main.timestamp_sof / 1e9:.5f}),\
+                         extra: {meta_extra.frame_id} ({meta_extra.timestamp_sof / 1e9:.5f})")
 
     else:
       # Use single camera

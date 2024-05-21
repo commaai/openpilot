@@ -4,7 +4,7 @@ import zmq
 import time
 from pathlib import Path
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, UTC
 from typing import NoReturn
 
 from openpilot.common.params import Params
@@ -133,7 +133,7 @@ def main() -> NoReturn:
       # flush when started state changes or after FLUSH_TIME_S
       if (time.monotonic() > last_flush_time + STATS_FLUSH_TIME_S) or (sm['deviceState'].started != started_prev):
         result = ""
-        current_time = datetime.utcnow().replace(tzinfo=timezone.utc)
+        current_time = datetime.utcnow().replace(tzinfo=UTC)
         tags['started'] = sm['deviceState'].started
 
         for key, value in gauges.items():
