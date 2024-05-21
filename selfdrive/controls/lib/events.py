@@ -331,6 +331,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   # ********** events with no alerts **********
 
   EventName.stockFcw: {},
+  EventName.actuatorsApiUnavailable: {},
 
   # ********** events only containing alerts displayed in all states **********
 
@@ -949,11 +950,6 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Vehicle Sensors Invalid"),
     ET.PERMANENT: NormalPermanentAlert("Vehicle Sensors Calibrating", "Drive to Calibrate"),
     ET.NO_ENTRY: NoEntryAlert("Vehicle Sensors Calibrating"),
-  },
-
-  EventName.actuatorsApiUnavailable: {
-    ET.PERMANENT: NormalPermanentAlert("Missing Actuators API", "Your car may not be supported"),
-    ET.NO_ENTRY: NoEntryAlert("Missing Actuators API", "Your car may not be supported"),
   },
 
 }
