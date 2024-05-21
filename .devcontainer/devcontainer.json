@@ -14,6 +14,7 @@
     "force_color_prompt": "1"
   },
   "runArgs": [
+    "--volume=/dev:/dev",
     "--volume=/tmp/.X11-unix:/tmp/.X11-unix",
     "--volume=${localWorkspaceFolder}/.devcontainer/.host/.Xauthority:/home/batman/.Xauthority",
     "--volume=${localEnv:HOME}/.comma:/home/batman/.comma",
