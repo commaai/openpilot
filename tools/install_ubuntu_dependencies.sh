@@ -12,21 +12,17 @@ if [[ ! $(id -u) -eq 0 ]]; then
   SUDO="sudo"
 fi
 
-# Install packages present in all supported versions of Ubuntu
+# Install common packages
 function install_ubuntu_common_requirements() {
   $SUDO apt-get update
   $SUDO apt-get install -y --no-install-recommends \
     autoconf \
     build-essential \
     ca-certificates \
-    casync \
     clang \
-    cmake \
-    make \
     cppcheck \
     libtool \
     gcc-arm-none-eabi \
-    bzip2 \
     liblzma-dev \
     libarchive-dev \
     libbz2-dev \
@@ -62,9 +58,7 @@ function install_ubuntu_common_requirements() {
     opencl-headers \
     ocl-icd-libopencl1 \
     ocl-icd-opencl-dev \
-    clinfo \
     portaudio19-dev \
-    qml-module-qtquick2 \
     qtmultimedia5-dev \
     qtlocation5-dev \
     qtpositioning5-dev \
@@ -75,7 +69,18 @@ function install_ubuntu_common_requirements() {
     libqt5serialbus5-dev  \
     libqt5x11extras5-dev \
     libqt5opengl5-dev \
-    libreadline-dev \
+    libreadline-dev
+}
+
+# Install extra packages
+function install_extra_packages() {
+  echo "Installing extra packages..."
+  $SUDO apt-get install -y --no-install-recommends \
+    bzip2 \
+    clinfo \
+    casync \
+    cmake \
+    make \
     libdw1
 }
 
@@ -125,7 +130,19 @@ if [ -f "/etc/os-release" ]; then
         install_ubuntu_lts_latest_requirements
       fi
   esac
+
+  # Install extra packages
+  if [[ -z "$INSTALL_EXTRA_PACKAGES" ]]; then
+    read -p "Base setup done. Do you want to install extra development packages? [Y/n]: " -n 1 -r
+    echo ""
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      INSTALL_EXTRA_PACKAGES="yes"
+    fi
+  fi
+  if [[ "$INSTALL_EXTRA_PACKAGES" == "yes" ]]; then
+    install_extra_packages
+  fi
 else
-  echo "No /etc/os-release in the system"
+  echo "No /etc/os-release in the system. Make sure you're running on Ubuntu, or similar."
   exit 1
 fi

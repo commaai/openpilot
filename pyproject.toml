@@ -20,7 +20,6 @@ markers = [
 ]
 testpaths = [
   "common",
-  "selfdrive/athena",
   "selfdrive/boardd",
   "selfdrive/car",
   "selfdrive/controls",
@@ -31,6 +30,7 @@ testpaths = [
   "selfdrive/test/longitudinal_maneuvers",
   "selfdrive/test/process_replay/test_fuzzy.py",
   "selfdrive/updated",
+  "system/athena",
   "system/camerad",
   "system/hardware/tici",
   "system/loggerd",
