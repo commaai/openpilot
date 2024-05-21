@@ -19,10 +19,10 @@ from openpilot.common.realtime import DT_TRML
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
 from openpilot.system.hardware import HARDWARE, TICI, AGNOS
 from openpilot.system.loggerd.config import get_available_percent
-from openpilot.selfdrive.statsd import statlog
+from openpilot.system.statsd import statlog
 from openpilot.common.swaglog import cloudlog
-from openpilot.selfdrive.thermald.power_monitoring import PowerMonitoring
-from openpilot.selfdrive.thermald.fan_controller import TiciFanController
+from openpilot.system.thermald.power_monitoring import PowerMonitoring
+from openpilot.system.thermald.fan_controller import TiciFanController
 from openpilot.system.version import terms_version, training_version
 
 ThermalStatus = log.DeviceState.ThermalStatus
