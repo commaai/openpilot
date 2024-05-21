@@ -28,7 +28,7 @@ def _slice(n):
   return s
 
 
-class States():
+class States:
   # Vehicle model params
   STIFFNESS = _slice(1)  # [-]
   STEER_RATIO = _slice(1)  # [-]
