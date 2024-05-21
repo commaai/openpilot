@@ -1,6 +1,6 @@
 import numpy as np
 
-class RunningStat():
+class RunningStat:
   # tracks realtime mean and standard deviation without storing any data
   def __init__(self, priors=None, max_trackable=-1):
     self.max_trackable = max_trackable
@@ -51,7 +51,7 @@ class RunningStat():
   def params_to_save(self):
     return [self.M, self.S, self.n]
 
-class RunningStatFilter():
+class RunningStatFilter:
   def __init__(self, raw_priors=None, filtered_priors=None, max_trackable=-1):
     self.raw_stat = RunningStat(raw_priors, -1)
     self.filtered_stat = RunningStat(filtered_priors, max_trackable)
