@@ -184,7 +184,14 @@ build-backend = "poetry.core.masonry.api"
 # https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
 [tool.ruff]
 indent-width = 2
-lint.select = ["E", "F", "W", "PIE", "C4", "ISC", "NPY", "UP", "RUF008", "RUF100", "A", "B", "TID251"]
+lint.select = [
+  "E", "F", "W", "PIE", "C4", "ISC", "A", "B",
+  "NPY", # numpy
+  "UP",  # pyupgrade
+  "TRY302", "TRY400", "TRY401", # try/excepts
+  "RUF008", "RUF100",
+  "TID251"
+]
 lint.ignore = [
   "E741",
   "E402",
