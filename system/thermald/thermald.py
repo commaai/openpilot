@@ -21,8 +21,8 @@ from openpilot.system.hardware import HARDWARE, TICI, AGNOS
 from openpilot.system.loggerd.config import get_available_percent
 from openpilot.system.statsd import statlog
 from openpilot.common.swaglog import cloudlog
-from openpilot.selfdrive.thermald.power_monitoring import PowerMonitoring
-from openpilot.selfdrive.thermald.fan_controller import TiciFanController
+from openpilot.system.thermald.power_monitoring import PowerMonitoring
+from openpilot.system.thermald.fan_controller import TiciFanController
 from openpilot.system.version import terms_version, training_version
 
 ThermalStatus = log.DeviceState.ThermalStatus
