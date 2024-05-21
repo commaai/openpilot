@@ -48,6 +48,7 @@ function install_ubuntu_common_requirements() {
     libssl-dev \
     libusb-1.0-0-dev \
     libzmq3-dev \
+    libsqlite3-dev \
     libsystemd-dev \
     locales \
     opencl-headers \
@@ -81,7 +82,6 @@ function install_extra_packages() {
     libarchive-dev \
     libncursesw5-dev \
     libportaudio2 \
-    libsqlite3-dev \
     locales
 }
 
