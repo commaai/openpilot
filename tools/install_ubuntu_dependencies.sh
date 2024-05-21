@@ -42,6 +42,7 @@ function install_ubuntu_common_requirements() {
     libglib2.0-0 \
     libomp-dev \
     libpng16-16 \
+    libqt5charts5-dev \
     libssl-dev \
     libusb-1.0-0-dev \
     libzmq3-dev \
@@ -69,6 +70,9 @@ function install_extra_packages() {
     cmake \
     make \
     clinfo \
+    libqt5sql5-sqlite \
+    libreadline-dev \
+    libdw1 \
     libbz2-dev \
     autoconf \
     libtool \
