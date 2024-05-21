@@ -762,7 +762,6 @@ class Controls:
     controlsState.forceDecel = bool(force_decel)
     controlsState.experimentalMode = self.experimental_mode
     controlsState.personality = self.personality
-    controlsState.initialized = self.initialized
 
     lat_tuning = self.CP.lateralTuning.which()
     if self.joystick_mode:
