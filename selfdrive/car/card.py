@@ -38,7 +38,7 @@ class Car:
 
     self.last_actuators_output = car.CarControl.Actuators.new_message()
 
-    params = Params()
+    self.params = Params()
 
     if CI is None:
       # wait for one pandaState and one CAN packet
@@ -46,18 +46,18 @@ class Car:
       get_one_can(self.can_sock)
 
       num_pandas = len(messaging.recv_one_retry(self.sm.sock['pandaStates']).pandaStates)
-      experimental_long_allowed = params.get_bool("ExperimentalLongitudinalEnabled")
+      experimental_long_allowed = self.params.get_bool("ExperimentalLongitudinalEnabled")
       self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'], experimental_long_allowed, num_pandas)
     else:
       self.CI, self.CP = CI, CI.CP
 
     # set alternative experiences from parameters
-    self.disengage_on_accelerator = params.get_bool("DisengageOnAccelerator")
+    self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
     self.CP.alternativeExperience = 0
     if not self.disengage_on_accelerator:
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
 
-    openpilot_enabled_toggle = params.get_bool("OpenpilotEnabledToggle")
+    openpilot_enabled_toggle = self.params.get_bool("OpenpilotEnabledToggle")
 
     controller_available = self.CI.CC is not None and openpilot_enabled_toggle and not self.CP.dashcamOnly
 
@@ -68,15 +68,15 @@ class Car:
       self.CP.safetyConfigs = [safety_config]
 
     # Write previous route's CarParams
-    prev_cp = params.get("CarParamsPersistent")
+    prev_cp = self.params.get("CarParamsPersistent")
     if prev_cp is not None:
-      params.put("CarParamsPrevRoute", prev_cp)
+      self.params.put("CarParamsPrevRoute", prev_cp)
 
     # Write CarParams for controls and radard
     cp_bytes = self.CP.to_bytes()
-    params.put("CarParams", cp_bytes)
-    params.put_nonblocking("CarParamsCache", cp_bytes)
-    params.put_nonblocking("CarParamsPersistent", cp_bytes)
+    self.params.put("CarParams", cp_bytes)
+    self.params.put_nonblocking("CarParamsCache", cp_bytes)
+    self.params.put_nonblocking("CarParamsPersistent", cp_bytes)
 
     self.events = Events()
 
@@ -151,7 +151,10 @@ class Car:
 
     if not self.initialized_prev:
       # Initialize CarInterface, once controls are ready
+      # TODO: this can make us miss at least a few cycles when doing an ECU knockout
       self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
+      # signal boardd to switch to car safety mode
+      self.params.put_bool_nonblocking("ControlsReady", True)
 
     if self.sm.all_alive(['carControl']):
       # send car controls over can
