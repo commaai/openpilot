@@ -94,7 +94,7 @@ class MetaDriveWorld(World):
       is_engaged = state.is_engaged
       if is_engaged and self.first_engage is None:
         self.first_engage = time.monotonic()
-      not_moving_after_engaged = is_engaged and time.monotonic() - self.first_engage >= 5 and self.test_run # check moving 5 seconds after engaged
+      not_moving_after_engaged = is_engaged and time.monotonic() - self.first_engage >= 5 and self.test_run # check moving 5 seconds after engaged, doesn't move right away
 
       x_dist = abs(curr_pos[0] - self.vehicle_last_pos[0])
       y_dist = abs(curr_pos[1] - self.vehicle_last_pos[1])
@@ -109,7 +109,6 @@ class MetaDriveWorld(World):
         self.status_q.put(QueueMessage(QueueMessageType.TERMINATION_INFO, {"vehicle_not_moving" : True}))
         self.exit_event.set()
 
-      # update every <time_check_threshold> seconds
       if since_last_check >= time_check_threshold:
         self.last_check_timestamp = current_time
         self.distance_moved = 0
