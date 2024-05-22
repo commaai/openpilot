@@ -9,7 +9,7 @@
 const QString ICON_SUFFIX = ".png";
 
 MapInstructions::MapInstructions(QWidget *parent) : QWidget(parent) {
-  is_rhd = Params().getBool("IsRhdDetected");
+  is_rhd = true;  // Params().getBool("IsRhdDetected");
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(11, UI_BORDER_SIZE, 11, 20);
 
@@ -63,6 +63,7 @@ void MapInstructions::buildPixmapCache() {
     if (key.contains("_left")) {
       pixmap_cache["rhd_" + key.replace("_left", "_right")] = pm.transformed(QTransform().scale(-1, 1));
     } else if (key.contains("_right")) {
+      qDebug() << "replacing:" << key << "with:" << key.replace("_right", "_left");
       pixmap_cache["rhd_" + key.replace("_right", "_left")] = pm.transformed(QTransform().scale(-1, 1));
     }
   }
@@ -92,6 +93,7 @@ void MapInstructions::updateInstructions(cereal::NavInstruction::Reader instruct
     }
     fn = fn.replace(' ', '_');
     bool rhd = is_rhd && (fn.contains("_left") || fn.contains("_right"));
+    qDebug() << "fn: " << (!rhd ? fn : "rhd_" + fn);
     icon_01->setPixmap(pixmap_cache[!rhd ? fn : "rhd_" + fn]);
     icon_01->setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
     icon_01->setVisible(true);
