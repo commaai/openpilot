@@ -52,7 +52,7 @@ def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
 class TestCarInterfaces:
   # FIXME: Due to the lists used in carParams, Phase.target is very slow and will cause
   #  many generated examples to overrun when max_examples > ~20, don't use it
-  @parameterized.expand([(car,) for car in sorted(all_known_cars()) if car.startswith('FORD')])
+  @parameterized.expand([(car,) for car in sorted(all_known_cars())])
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
             phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
