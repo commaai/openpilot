@@ -5,6 +5,15 @@ from openpilot.selfdrive.car.docs_definitions import CarHarness, CarDocs, CarPar
 
 
 class CarControllerParams:
+  STEER_STEP = 1
+
+  STEER_MAX = 200  # TODO: probe limit
+  STEER_DRIVER_ALLOWANCE = 50  # TODO: validate
+  STEER_DRIVER_MULTIPLIER = 3  # weight driver torque heavily
+  STEER_DRIVER_FACTOR = 1  # from dbc
+  STEER_DELTA_UP = 4  # TODO: probe limit
+  STEER_DELTA_DOWN = 4  # TODO: probe limit
+
   def __init__(self, CP):
     pass
 

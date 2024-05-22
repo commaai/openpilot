@@ -1,6 +1,9 @@
 from opendbc.can.packer import CANPacker
+from openpilot.selfdrive.car import apply_driver_steer_torque_limits
 from openpilot.selfdrive.car.interfaces import CarControllerBase
-from openpilot.selfdrive.car.fca_giorgio.values import CarControllerParams
+
+from openpilot.selfdrive.car.fca_giorgio import fca_giorgiocan
+from openpilot.selfdrive.car.fca_giorgio.values import CANBUS, CarControllerParams
 
 
 class CarController(CarControllerBase):
@@ -17,6 +20,16 @@ class CarController(CarControllerBase):
     can_sends = []
 
     # **** Steering Controls ************************************************ #
+
+    if self.frame % self.CCP.STEER_STEP == 0:
+      if CC.latActive:
+        new_steer = int(round(actuators.steer * self.CCP.STEER_MAX))
+        apply_steer = apply_driver_steer_torque_limits(new_steer, self.apply_steer_last, CS.out.steeringTorque, self.CCP)
+      else:
+        apply_steer = 0
+
+      self.apply_steer_last = apply_steer
+      can_sends.append(fca_giorgiocan.create_steering_control(self.packer_pt, CANBUS.pt, apply_steer, CC.latActive))
 
     # **** Acceleration Controls ******************************************** #
 
