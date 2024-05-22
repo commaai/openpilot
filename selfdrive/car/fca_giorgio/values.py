@@ -16,7 +16,7 @@ class CANBUS:
 
 @dataclass
 class FcaGiorgioPlatformConfig(PlatformConfig):
-  dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('alfa_romeo', None))
+  dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('fca_giorgio', None))
 
 
 @dataclass(frozen=True, kw_only=True)
