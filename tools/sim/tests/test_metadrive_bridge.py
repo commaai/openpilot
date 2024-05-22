@@ -13,6 +13,9 @@ from openpilot.tools.sim.tests.test_sim_bridge import TestSimBridgeBase
 class TestMetaDriveBridge(TestSimBridgeBase):
   @pytest.fixture(autouse=True)
   def setup_create_bridge(self, test_duration):
+    # run bridge test for at least 60s, since not-moving check runs after 30s
+    if test_duration < 60:
+      test_duration = 60
     self.test_duration = test_duration
 
   def create_bridge(self):
