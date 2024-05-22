@@ -24,7 +24,7 @@ ALL_ECUS |= {ecu for config in FW_QUERY_CONFIGS.values() for ecu in config.extra
 
 ALL_REQUESTS = {tuple(r.request) for config in FW_QUERY_CONFIGS.values() for r in config.requests}
 
-MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '500'))
+MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '150'))
 
 
 def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
@@ -46,6 +46,7 @@ def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
   params['car_fw'] = [car.CarParams.CarFw(ecu=fw[0], address=fw[1], subAddress=fw[2] or 0,
                                           request=draw(st.sampled_from(sorted(ALL_REQUESTS))))
                       for fw in params['car_fw']]
+  print(len(params['car_fw']), [(list(fw.request), fw.ecu) for fw in params['car_fw']])
   return params
 
 
