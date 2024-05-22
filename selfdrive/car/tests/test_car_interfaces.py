@@ -34,7 +34,7 @@ def get_fuzzy_car_interface_args(draw: DrawType, brand: str) -> dict:
   # only pick from possible ecus to reduce search space
   all_ecus = {ecu for ecus in VERSIONS[brand].values() for ecu in ecus.keys()}
   all_ecus |= {ecu for ecu in FW_QUERY_CONFIGS[brand].extra_ecus}
-  print(all_ecus)
+  all_requests = sorted({tuple(r.request) for config in FW_QUERY_CONFIGS.values() for r in config.requests})
   car_fw_strategy = st.lists(st.sampled_from(list(all_ecus)))
 
   params_strategy = st.fixed_dictionaries({
@@ -45,8 +45,11 @@ def get_fuzzy_car_interface_args(draw: DrawType, brand: str) -> dict:
 
   params: dict = draw(params_strategy)
   params['car_fw'] = [car.CarParams.CarFw(ecu=fw[0], address=fw[1], subAddress=fw[2] or 0,
-                                          request=[draw(st.binary(min_size=1, max_size=2))])
+                                          # request=[draw(st.binary(min_size=3, max_size=3))]
+                                          request=draw(st.sampled_from(all_requests))
+                                          )
                       for fw in params['car_fw']]
+  # print(len(params['car_fw']), [list(fw.request) for fw in params['car_fw']])
   print(len(params['car_fw']), params['car_fw'])
   return params
 
