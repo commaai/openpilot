@@ -165,15 +165,14 @@ def parse_banner_instructions(banners: Any, distance_to_maneuver: float = 0.0) -
     modifier = p['modifier']
 
     # handle roundabout directions, TODO: add slight/sharp modifiers
-    if p['type'] in ('rotary', 'roundabout'):# and field_valid(p, 'degrees'):
-      degrees = p.get('degrees', 0)
-      driving_side = p.get('driving_side', 'right')
+    if p['type'] in ('rotary', 'roundabout') and field_valid(p, 'degrees'):
+      degrees = p['degrees']
       if p.get('driving_side', 'right') == 'left':
         degrees = 360 - degrees
 
       modifier = 'left' if degrees > 180 else 'right'
       if abs(degrees - 180) < 45:
-        modifier = f'straight {driving_side}'
+        modifier = 'straight'
 
     instruction['maneuverModifier'] = modifier
 
