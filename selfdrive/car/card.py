@@ -151,7 +151,9 @@ class Car:
 
     if not self.initialized_prev:
       # Initialize CarInterface, once controls are ready
+      # TODO: this can make us miss at least a few cycles when doing an ECU knockout
       self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
+      # signal boardd to switch to car safety mode
       self.params.put_bool_nonblocking("ControlsReady", True)
 
     if self.sm.all_alive(['carControl']):
