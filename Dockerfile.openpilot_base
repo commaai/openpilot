@@ -13,14 +13,10 @@ ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
 COPY tools/install_ubuntu_dependencies.sh /tmp/tools/
-RUN cd /tmp && \
-    tools/install_ubuntu_dependencies.sh && \
-    rm -rf /var/lib/apt/lists/* && \
-    rm -rf /tmp/* && \
-    # remove unused architectures from gcc for panda
+RUN INSTALL_EXTRA_PACKAGES=no /tmp/tools/install_ubuntu_dependencies.sh && \
+    rm -rf /var/lib/apt/lists/* /tmp/* && \
     cd /usr/lib/gcc/arm-none-eabi/9.2.1 && \
-    rm -rf arm/ && \
-    rm -rf thumb/nofp thumb/v6* thumb/v8* thumb/v7+fp thumb/v7-r+fp.sp
+    rm -rf arm/ thumb/nofp thumb/v6* thumb/v8* thumb/v7+fp thumb/v7-r+fp.sp
 
 # Add OpenCL
 RUN apt-get update && apt-get install -y --no-install-recommends \

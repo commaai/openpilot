@@ -26,7 +26,7 @@ cabana_env.Command(assets, assets_src, f"rcc $SOURCES -o $TARGET")
 cabana_env.Depends(assets, Glob('/assets/*', exclude=[assets, assets_src, "assets/assets.o"]))
 
 cabana_lib = cabana_env.Library("cabana_lib", ['mainwin.cc', 'streams/socketcanstream.cc', 'streams/pandastream.cc', 'streams/devicestream.cc', 'streams/livestream.cc', 'streams/abstractstream.cc', 'streams/replaystream.cc', 'binaryview.cc', 'historylog.cc', 'videowidget.cc', 'signalview.cc',
-                                               'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc',
+                                               'streams/routes.cc', 'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc',
                                                'utils/export.cc', 'utils/util.cc',
                                                'chart/chartswidget.cc', 'chart/chart.cc', 'chart/signalselector.cc', 'chart/tiplabel.cc', 'chart/sparkline.cc',
                                                'commands.cc', 'messageswidget.cc', 'streamselector.cc', 'settings.cc', 'detailwidget.cc', 'tools/findsimilarbits.cc', 'tools/findsignal.cc'], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
