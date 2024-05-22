@@ -108,7 +108,7 @@ function install_ubuntu_focal_requirements() {
 
 function install_deadsnakes_ppa(){
   if [[ -z "$INSTALL_DEADSNAKES_PPA" ]]; then
-    read -p "Base setup done. Do you want to install extra development packages? [Y/n]: " -n 1 -r
+    read -p "Do you want to use deadsnakes python@3.11? [Y/n]: " -n 1 -r
     echo ""
     if [[ $REPLY =~ ^[Yy]$ ]]; then
       INSTALL_DEADSNAKES_PPA="yes"
