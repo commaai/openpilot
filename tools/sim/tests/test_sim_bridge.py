@@ -7,6 +7,7 @@ from multiprocessing import Queue
 
 from cereal import messaging
 from openpilot.common.basedir import BASEDIR
+from openpilot.tools.sim.bridge.common import QueueMessageType
 
 SIM_DIR = os.path.join(BASEDIR, "tools/sim")
 
@@ -19,7 +20,7 @@ class TestSimBridgeBase:
   def setup_method(self):
     self.processes = []
 
-  def test_engage(self):
+  def test_driving(self):
     # Startup manager and bridge.py. Check processes are running, then engage and verify.
     p_manager = subprocess.Popen("./launch_openpilot.sh", cwd=SIM_DIR)
     self.processes.append(p_manager)
@@ -69,6 +70,18 @@ class TestSimBridgeBase:
           break
 
     assert min_counts_control_active == control_active, f"Simulator did not engage a minimal of {min_counts_control_active} steps was {control_active}"
+
+    failure_states = []
+    while bridge.started.value:
+      continue
+
+    while not q.empty():
+      state = q.get()
+      if state.type == QueueMessageType.TERMINATION_INFO:
+        done_info = state.info
+        failure_states = [done_state for done_state in done_info if done_state != "timeout" and done_info[done_state]]
+        break
+    assert len(failure_states) == 0, f"Simulator fails to finish a loop. Failure states: {failure_states}"
 
   def teardown_method(self):
     print("Test shutting down. CommIssues are acceptable")
