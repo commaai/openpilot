@@ -39,29 +39,36 @@ def log_msg(msg, parent_key=''):
       pass  # Not a plottable value
 
 def createBlueprint():
-  timeSeriesViews = []
-  for topic in sorted(SERVICE_LIST.keys()):
-    timeSeriesViews.append(rrb.TimeSeriesView(name=topic, origin=f"/{topic}/", visible=False))
-    rr.log(topic, rr.SeriesLine(name=topic), timeless=True)
-    blueprint = rrb.Blueprint(rrb.Grid(rrb.Vertical(*timeSeriesViews,rrb.SelectionPanel(expanded=False),rrb.TimePanel(expanded=False)),
-                                        rrb.Spatial2DView(name="thumbnail", origin="/thumbnail")))
-  return blueprint
+    timeSeriesViews = []
+    for topic in sorted(SERVICE_LIST.keys()):
+        timeSeriesViews.append(rrb.TimeSeriesView(name=topic, origin=f"/{topic}/", visible=False))
+        rr.log(topic, rr.SeriesLine(name=topic), timeless=True)
+    blueprint = rrb.Blueprint(
+        rrb.Grid(
+            rrb.Vertical(*timeSeriesViews),
+            rrb.SelectionPanel(expanded=False),
+            rrb.TimePanel(expanded=False)
+        ),
+        rrb.Spatial2DView(name="thumbnail", origin="/thumbnail")
+    )
+    return blueprint
 
 def log_thumbnail(thumbnailMsg):
   bytesImgData = thumbnailMsg.get('thumbnail')
   rr.log("/thumbnail", rr.ImageEncoded(contents=bytesImgData))
 
 def process(blueprint, lr):
-  ret = []
-  rr.init("rerun_test", spawn=True, default_blueprint=blueprint)
-  for msg in lr:
-    ret.append(msg)
-    rr.set_time_nanos("TIMELINE", msg.logMonoTime)
-    if msg.which() != "thumbnail":
-      log_msg(msg.to_dict()[msg.which()], msg.which())
-    else:
-      log_thumbnail(msg.to_dict()[msg.which()])
-  return ret
+    ret = []
+    rr.init("rerun_test", spawn=True, default_blueprint=blueprint)
+    for msg in lr:
+        ret.append(msg)
+        rr.set_time_nanos("TIMELINE", msg.logMonoTime)
+        if msg.which() != "thumbnail":
+            log_msg(msg.to_dict()[msg.which()], msg.which())
+        else:
+            log_thumbnail(msg.to_dict()[msg.which()])
+    return ret
+
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description="A helper to run rerun on openpilot routes",
