@@ -99,11 +99,12 @@ function install_ubuntu_lts_latest_requirements() {
 # Install Ubuntu 20.04 packages
 function install_ubuntu_focal_requirements() {
   install_ubuntu_common_requirements
-
+  $SUDO add-apt-repository ppa:deadsnakes/ppa
   $SUDO apt-get install -y --no-install-recommends \
     libavresample-dev \
     qt5-default \
-    python-dev
+    python-dev \
+    python3.11
 }
 
 # Detect OS using /etc/os-release file
