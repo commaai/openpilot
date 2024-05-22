@@ -4,13 +4,11 @@ import os
 import usb1
 import time
 import subprocess
-from typing import List, NoReturn
-from functools import cmp_to_key
+from typing import NoReturn
 
 from panda import Panda, PandaDFU, PandaProtocolMismatch, FW_PATH
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
-from openpilot.selfdrive.boardd.set_time import set_time
 from openpilot.system.hardware import HARDWARE
 from openpilot.common.swaglog import cloudlog
 
@@ -63,24 +61,6 @@ def flash_panda(panda_serial: str) -> Panda:
   return panda
 
 
-def panda_sort_cmp(a: Panda, b: Panda):
-  a_type = a.get_type()
-  b_type = b.get_type()
-
-  # make sure the internal one is always first
-  if a.is_internal() and not b.is_internal():
-    return -1
-  if not a.is_internal() and b.is_internal():
-    return 1
-
-  # sort by hardware type
-  if a_type != b_type:
-    return a_type < b_type
-
-  # last resort: sort by serial number
-  return a.get_usb_serial() < b.get_usb_serial()
-
-
 def main() -> NoReturn:
   count = 0
   first_run = True
@@ -92,6 +72,11 @@ def main() -> NoReturn:
       count += 1
       cloudlog.event("pandad.flash_and_connect", count=count)
       params.remove("PandaSignatures")
+
+      # TODO: remove this in the next AGNOS
+      # wait until USB is up before counting
+      if time.monotonic() < 25.:
+        no_internal_panda_count = 0
 
       # Handle missing internal panda
       if no_internal_panda_count > 0:
@@ -119,7 +104,7 @@ def main() -> NoReturn:
       cloudlog.info(f"{len(panda_serials)} panda(s) found, connecting - {panda_serials}")
 
       # Flash pandas
-      pandas: List[Panda] = []
+      pandas: list[Panda] = []
       for serial in panda_serials:
         pandas.append(flash_panda(serial))
 
@@ -132,7 +117,10 @@ def main() -> NoReturn:
       no_internal_panda_count = 0
 
       # sort pandas to have deterministic order
-      pandas.sort(key=cmp_to_key(panda_sort_cmp))
+      # * the internal one is always first
+      # * then sort by hardware type
+      # * as a last resort, sort by serial number
+      pandas.sort(key=lambda x: (not x.is_internal(), x.get_type(), x.get_usb_serial()))
       panda_serials = [p.get_usb_serial() for p in pandas]
 
       # log panda fw versions
@@ -149,16 +137,9 @@ def main() -> NoReturn:
           cloudlog.event("panda.som_reset_triggered", health=health, serial=panda.get_usb_serial())
 
         if first_run:
-          if panda.is_internal():
-            # update time from RTC
-            set_time(cloudlog)
-
           # reset panda to ensure we're in a good state
           cloudlog.info(f"Resetting panda {panda.get_usb_serial()}")
-          if panda.is_internal():
-            HARDWARE.reset_internal_panda()
-          else:
-            panda.reset(reconnect=False)
+          panda.reset(reconnect=True)
 
       for p in pandas:
         p.close()

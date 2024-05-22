@@ -13,7 +13,7 @@ def main(route: str, addrs: list[int]):
   - print as fixed width table, easier to read
   """
 
-  lr = LogReader(route, default_mode=ReadMode.RLOG)
+  lr = LogReader(route, default_mode=ReadMode.RLOG, sort_by_time=True)
 
   start_mono_time = None
   prev_mono_time = 0
@@ -32,7 +32,7 @@ def main(route: str, addrs: list[int]):
           if msg.logMonoTime != prev_mono_time:
             print()
             prev_mono_time = msg.logMonoTime
-          print(f"{msg.logMonoTime} rxaddr={can.address}, bus={can.src}, {round((msg.logMonoTime - start_mono_time) * 1e-6, 2)} ms, " +
+          print(f"{msg.which():>7}: rxaddr={can.address}, bus={can.src}, {round((msg.logMonoTime - start_mono_time) * 1e-6, 2)} ms, " +
                 f"0x{can.dat.hex()}, {can.dat}, {len(can.dat)=}")
 
 

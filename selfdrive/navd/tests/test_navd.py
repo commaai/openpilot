@@ -1,20 +1,21 @@
 #!/usr/bin/env python3
 import json
 import random
-import unittest
 import numpy as np
+
+from parameterized import parameterized
 
 import cereal.messaging as messaging
 from openpilot.common.params import Params
 from openpilot.selfdrive.manager.process_config import managed_processes
 
 
-class TestNavd(unittest.TestCase):
-  def setUp(self):
+class TestNavd:
+  def setup_method(self):
     self.params = Params()
     self.sm = messaging.SubMaster(['navRoute', 'navInstruction'])
 
-  def tearDown(self):
+  def teardown_method(self):
     managed_processes['navd'].stop()
 
   def _check_route(self, start, end, check_coords=True):
@@ -24,7 +25,7 @@ class TestNavd(unittest.TestCase):
     managed_processes['navd'].start()
     for _ in range(30):
       self.sm.update(1000)
-      if all(f > 0 for f in self.sm.rcv_frame.values()):
+      if all(f > 0 for f in self.sm.recv_frame.values()):
         break
     else:
       raise Exception("didn't get a route")
@@ -50,12 +51,8 @@ class TestNavd(unittest.TestCase):
     }
     self._check_route(start, end)
 
-  def test_random(self):
-    for _ in range(10):
-      start = {"latitude": random.uniform(-90, 90), "longitude": random.uniform(-180, 180)}
-      end = {"latitude": random.uniform(-90, 90), "longitude": random.uniform(-180, 180)}
-      self._check_route(start, end, check_coords=False)
-
-
-if __name__ == "__main__":
-  unittest.main()
+  @parameterized.expand([(i,) for i in range(10)])
+  def test_random(self, index):
+    start = {"latitude": random.uniform(-90, 90), "longitude": random.uniform(-180, 180)}
+    end = {"latitude": random.uniform(-90, 90), "longitude": random.uniform(-180, 180)}
+    self._check_route(start, end, check_coords=False)

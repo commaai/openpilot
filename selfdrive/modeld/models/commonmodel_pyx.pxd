@@ -7,7 +7,7 @@ cdef class CLContext(BaseCLContext):
   pass
 
 cdef class CLMem:
-  cdef cl_mem * mem;
+  cdef cl_mem * mem
 
   @staticmethod
   cdef create(void*)

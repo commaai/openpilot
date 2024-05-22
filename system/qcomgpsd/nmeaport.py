@@ -93,7 +93,7 @@ def nmea_checksum_ok(s):
 def process_nmea_port_messages(device:str="/dev/ttyUSB1") -> NoReturn:
   while True:
     try:
-      with open(device, "r") as nmeaport:
+      with open(device) as nmeaport:
         for line in nmeaport:
           line = line.strip()
           if DEBUG:

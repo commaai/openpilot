@@ -7,9 +7,6 @@ elif [ "$1" = "sim" ]; then
 elif [ "$1" = "prebuilt" ]; then
   export DOCKER_IMAGE=openpilot-prebuilt
   export DOCKER_FILE=Dockerfile.openpilot
-elif [ "$1" = "cl" ]; then
-  export DOCKER_IMAGE=openpilot-base-cl
-  export DOCKER_FILE=Dockerfile.openpilot_base_cl
 else
   echo "Invalid docker build image: '$1'"
   exit 1

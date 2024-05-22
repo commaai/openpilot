@@ -12,6 +12,10 @@ from cereal.visionipc import VisionIpcServer, VisionStreamType
 
 V4L2_BUF_FLAG_KEYFRAME = 8
 
+# start encoderd
+# also start cereal messaging bridge
+# then run this "./compressed_vipc.py <ip>"
+
 ENCODE_SOCKETS = {
   VisionStreamType.VISION_STREAM_ROAD: "roadEncodeData",
   VisionStreamType.VISION_STREAM_WIDE_ROAD: "wideRoadEncodeData",
@@ -21,7 +25,7 @@ ENCODE_SOCKETS = {
 def decoder(addr, vipc_server, vst, nvidia, W, H, debug=False):
   sock_name = ENCODE_SOCKETS[vst]
   if debug:
-    print("start decoder for %s" % sock_name)
+    print(f"start decoder for {sock_name}, {W}x{H}")
 
   if nvidia:
     os.environ["NV_LOW_LATENCY"] = "3"    # both bLowLatency and CUVID_PKT_ENDOFPICTURE
@@ -106,7 +110,7 @@ class CompressedVipc:
     os.environ["ZMQ"] = "1"
     messaging.context = messaging.Context()
     sm = messaging.SubMaster([ENCODE_SOCKETS[s] for s in vision_streams], addr=addr)
-    while min(sm.rcv_frame.values()) == 0:
+    while min(sm.recv_frame.values()) == 0:
       sm.update(100)
     os.environ.pop("ZMQ")
     messaging.context = messaging.Context()
@@ -120,7 +124,7 @@ class CompressedVipc:
     self.procs = []
     for vst in vision_streams:
       ed = sm[ENCODE_SOCKETS[vst]]
-      p = multiprocessing.Process(target=decoder, args=(addr, self.vipc_server, vst, nvidia, debug, ed.width, ed.height))
+      p = multiprocessing.Process(target=decoder, args=(addr, self.vipc_server, vst, nvidia, ed.width, ed.height, debug))
       p.start()
       self.procs.append(p)
 

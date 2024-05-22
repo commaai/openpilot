@@ -46,6 +46,7 @@ def print_androidlog(t, msg):
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
+  parser.add_argument('--absolute', action='store_true')
   parser.add_argument('--level', default='DEBUG')
   parser.add_argument('--addr', default='127.0.0.1')
   parser.add_argument("route", type=str, nargs='*', help="route name + segment number for offline usage")
@@ -54,15 +55,18 @@ if __name__ == "__main__":
   min_level = LEVELS[args.level]
 
   if args.route:
+    st = None if not args.absolute else 0
     for route in args.route:
-      lr = LogReader(route)
+      lr = LogReader(route, sort_by_time=True)
       for m in lr:
+        if st is None:
+          st = m.logMonoTime
         if m.which() == 'logMessage':
-          print_logmessage(m.logMonoTime, m.logMessage, min_level)
+          print_logmessage(m.logMonoTime-st, m.logMessage, min_level)
         elif m.which() == 'errorLogMessage':
-          print_logmessage(m.logMonoTime, m.errorLogMessage, min_level)
+          print_logmessage(m.logMonoTime-st, m.errorLogMessage, min_level)
         elif m.which() == 'androidLog':
-          print_androidlog(m.logMonoTime, m.androidLog)
+          print_androidlog(m.logMonoTime-st, m.androidLog)
   else:
     sm = messaging.SubMaster(['logMessage', 'androidLog'], addr=args.addr)
     while True:
