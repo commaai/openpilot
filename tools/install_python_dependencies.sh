@@ -20,7 +20,6 @@ python3 -m venv openpilot-ppa
 source openpilot-ppa/bin/activate
 pip install pip==24.0
 pip install poetry==1.7.0
-pip install scons
 
 poetry config virtualenvs.prefer-active-python true --local
 poetry config virtualenvs.in-project true --local

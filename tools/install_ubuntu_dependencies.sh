@@ -122,6 +122,7 @@ function install_deadsnakes_ppa(){
     python3.11 \
     python3.11-venv \
     python3.11-distutils \
+    scons \
     python3-pip
     $SUDO update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 20
     curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11
