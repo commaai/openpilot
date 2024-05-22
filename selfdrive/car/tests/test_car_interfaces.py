@@ -11,7 +11,7 @@ from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import gen_empty_fingerprint
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.fingerprints import all_known_cars
-from openpilot.selfdrive.car.fw_versions import FW_VERSIONS, VERSIONS, FW_QUERY_CONFIGS, MODEL_TO_BRAND
+from openpilot.selfdrive.car.fw_versions import FW_VERSIONS, FW_QUERY_CONFIGS
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
@@ -27,7 +27,7 @@ ALL_REQUESTS = {tuple(r.request) for config in FW_QUERY_CONFIGS.values() for r i
 MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '40'))
 
 
-def get_fuzzy_car_interface_args(draw: DrawType, brand: str) -> dict:
+def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
   # Fuzzy CAN fingerprints and FW versions to test more states of the CarInterface
   fingerprint_strategy = st.fixed_dictionaries({key: st.dictionaries(st.integers(min_value=0, max_value=0x800),
                                                                      st.integers(min_value=0, max_value=64)) for key in
@@ -59,7 +59,7 @@ class TestCarInterfaces:
   def test_car_interfaces(self, car_name, data):
     CarInterface, CarController, CarState = interfaces[car_name]
 
-    args = get_fuzzy_car_interface_args(data.draw, MODEL_TO_BRAND[car_name])
+    args = get_fuzzy_car_interface_args(data.draw)
 
     car_params = CarInterface.get_params(car_name, args['fingerprints'], args['car_fw'],
                                          experimental_long=args['experimental_long'], docs=False)
