@@ -12,7 +12,7 @@ class CarInterface(CarInterfaceBase):
 
     # Set global parameters
 
-    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.allOutput,1)]
+    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.fca_giorgio)]
 
     # Global lateral tuning defaults, can be overridden per-vehicle
 
