@@ -106,11 +106,11 @@ class MetaDriveWorld(World):
       time_check_threshold = 30
       current_time = time.monotonic()
       since_last_check = current_time - self.last_check_timestamp
-      if since_last_check >= time_check_threshold and after_engaged_check and self.distance_moved == 0:
-        self.status_q.put(QueueMessage(QueueMessageType.TERMINATION_INFO, {"vehicle_not_moving" : True}))
-        self.exit_event.set()
-
       if since_last_check >= time_check_threshold:
+        if after_engaged_check and self.distance_moved == 0:
+          self.status_q.put(QueueMessage(QueueMessageType.TERMINATION_INFO, {"vehicle_not_moving" : True}))
+          self.exit_event.set()
+
         self.last_check_timestamp = current_time
         self.distance_moved = 0
         self.vehicle_last_pos = curr_pos
