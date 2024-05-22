@@ -125,25 +125,27 @@ void update_dmonitoring(UIState *s, const cereal::DriverStateV2::Reader &drivers
     scene.driver_pose_coss[i] = cosf(scene.driver_pose_vals[i]*(1.0-dm_fade_state));
   }
 
+  auto [sin_y, sin_x, sin_z] = scene.driver_pose_sins;
+  auto [cos_y, cos_x, cos_z] = scene.driver_pose_coss;
+
   const mat3 r_xyz = (mat3){{
-    scene.driver_pose_coss[1]*scene.driver_pose_coss[2],
-    scene.driver_pose_coss[1]*scene.driver_pose_sins[2],
-    -scene.driver_pose_sins[1],
+    cos_x * cos_z,
+    cos_x * sin_z,
+    -sin_x,
 
-    -scene.driver_pose_sins[0]*scene.driver_pose_sins[1]*scene.driver_pose_coss[2] - scene.driver_pose_coss[0]*scene.driver_pose_sins[2],
-    -scene.driver_pose_sins[0]*scene.driver_pose_sins[1]*scene.driver_pose_sins[2] + scene.driver_pose_coss[0]*scene.driver_pose_coss[2],
-    -scene.driver_pose_sins[0]*scene.driver_pose_coss[1],
+    -sin_y * sin_x * cos_z - cos_y * sin_z,
+    -sin_y * sin_x * sin_z + cos_y * cos_z,
+    -sin_y * cos_x,
 
-    scene.driver_pose_coss[0]*scene.driver_pose_sins[1]*scene.driver_pose_coss[2] - scene.driver_pose_sins[0]*scene.driver_pose_sins[2],
-    scene.driver_pose_coss[0]*scene.driver_pose_sins[1]*scene.driver_pose_sins[2] + scene.driver_pose_sins[0]*scene.driver_pose_coss[2],
-    scene.driver_pose_coss[0]*scene.driver_pose_coss[1],
+    cos_y * sin_x * cos_z - sin_y * sin_z,
+    cos_y * sin_x * sin_z + sin_y * cos_z,
+    cos_y * cos_x,
   }};
 
   // transform vertices
   for (int kpi = 0; kpi < std::size(default_face_kpts_3d); kpi++) {
-    vec3 kpt_this = default_face_kpts_3d[kpi];
-    kpt_this = matvecmul3(r_xyz, kpt_this);
-    scene.face_kpts_draw[kpi] = (vec3){{(float)kpt_this.v[0], (float)kpt_this.v[1], (float)(kpt_this.v[2] * (1.0-dm_fade_state) + 8 * dm_fade_state)}};
+    vec3 kpt_this = matvecmul3(r_xyz, default_face_kpts_3d[kpi]);
+    scene.face_kpts_draw[kpi] = (vec3){{kpt_this.v[0], kpt_this.v[1], (float)(kpt_this.v[2] * (1.0-dm_fade_state) + 8 * dm_fade_state)}};
   }
 }
 
