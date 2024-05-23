@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
 import argparse
-import os
 import requests
+import os
+
+
+def download_file(url, local_path):
+  response = requests.get(url)
+  response.raise_for_status()
+  with open(local_path, 'wb') as f:
+    f.write(response.content)
 
 
 def load_file(path):
-  with open(path) as file:
-    return file.readlines()
-
-
-def download_file(url, output_path):
-  response = requests.get(url)
-  response.raise_for_status()
-  with open(output_path, 'w') as file:
-    file.write(response.text)
+  with open(path, 'rb') as file:
+    return file.read().decode('utf-8', errors='ignore').splitlines()
 
 
 def parse_markdown(lines):
@@ -27,32 +27,19 @@ def parse_markdown(lines):
 
 
 def generate_diff(old_cars, new_cars):
-  changes = {"column": [], "additions": [], "removals": [], "detail": []}
-
+  diffs = []
   for platform, new_line in new_cars.items():
     old_line = old_cars.get(platform)
     if old_line:
       if old_line != new_line:
-        changes["column"].append(f"| {old_line} | ➡️ | {new_line} |")
+        diffs.append(f"### Change in {platform}:\n```diff\n- {old_line}+ {new_line}```")
     else:
-      changes["additions"].append(f"| {new_line} |")
+      diffs.append(f"### Addition: {platform}:\n{new_line}")
 
   for platform in old_cars.keys() - new_cars.keys():
-    changes["removals"].append(f"| {old_cars[platform]} |")
+    diffs.append(f"### Removal: {platform}:\n{old_cars[platform]}")
 
-  return changes
-
-
-def print_changes(changes):
-  markdown_builder = ["### ⚠️ This PR makes changes to [CARS.md](../blob/master/docs/CARS.md) ⚠️"]
-  sections = [("## 🔀 Column Changes", "column"), ("## ➕ Added", "additions"), ("## ❌ Removed", "removals"), ("## 📖 Detail Sentence Changes", "detail")]
-
-  for title, category in sections:
-    if changes[category]:
-      markdown_builder.append(title)
-      markdown_builder.extend(changes[category])
-
-  print("\n".join(markdown_builder))
+  return '\n'.join(diffs)
 
 
 def main():
@@ -70,10 +57,10 @@ def main():
   old_cars = parse_markdown(old_lines)
   new_cars = parse_markdown(new_lines)
 
-  changes = generate_diff(old_cars, new_cars)
-
-  if any(changes.values()):
-    print_changes(changes)
+  diff = generate_diff(old_cars, new_cars)
+  if diff:
+    print("### Differences found in CARS.md:\n")
+    print(diff)
   else:
     print("No differences found in CARS.md")
 
