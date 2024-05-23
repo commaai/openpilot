@@ -6,7 +6,7 @@ import json
 import heapq
 import signal
 import platform
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from dataclasses import dataclass, field
 from typing import Any
 from collections.abc import Callable, Iterable
@@ -816,3 +816,21 @@ def check_openpilot_enabled(msgs: LogIterable) -> bool:
       max_enabled_count = max(max_enabled_count, cur_enabled_count)
 
   return max_enabled_count > int(10. / DT_CTRL)
+
+
+def check_most_messages_valid(msgs: LogIterable, threshold: float = 0.9, verbose: bool = False) -> bool:
+  grouped_msgs = defaultdict(list)
+  for m in msgs:
+    grouped_msgs[m.which()].append(m)
+
+  most_valid_for_service = {}
+  for service, service_msgs in grouped_msgs.items():
+    assert len(service_msgs) != 0
+    valid_count = sum(m.valid for m in service_msgs)
+    valid_share = valid_count / len(service_msgs)
+    ok = valid_share >= threshold
+    if verbose and not ok:
+      print(f"WARNING: Service {service} has {valid_share * 100:.2f}% valid messages, which is below threshold of {threshold * 100:.2f}%")
+    most_valid_for_service[service] = ok
+
+  return all(most_valid_for_service.values())
