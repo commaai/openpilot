@@ -11,7 +11,8 @@ def load_file(path):
 
 
 def get_last_commit_file(path, output_path):
-  result = subprocess.run(['git', 'show', f'HEAD~1:{path}'], capture_output=True, text=True, check=True)
+  relative_path = os.path.relpath(path, start=os.getcwd())
+  result = subprocess.run(['git', 'show', f'HEAD~1:{relative_path}'], capture_output=True, text=True, check=True)
   with open(output_path, 'w') as file:
     file.write(result.stdout)
 
