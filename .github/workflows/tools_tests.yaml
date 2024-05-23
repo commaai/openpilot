@@ -65,7 +65,7 @@ jobs:
     - uses: actions/upload-artifact@v4
       with:
         name: metadrive_logs
-        path: ${{ env.LOG_PATH }}/.comma/media/0/realdata
+        path: ${{ env.LOG_PATH }}/.comma*/media/0/realdata
 
   devcontainer:
     name: devcontainer
