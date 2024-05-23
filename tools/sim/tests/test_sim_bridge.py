@@ -86,7 +86,7 @@ class TestSimBridgeBase:
         failure_states = [done_state for done_state in done_info if done_state != "timeout" and done_info[done_state]]
         break
 
-    # move logs to persitent dir since pytest cleans up logs file after tests
+    # move logs to persistent dir since pytest cleans up logs file after tests
     if CI:
       if os.path.exists(SIM_LOG_DEST):
         shutil.rmtree(SIM_LOG_DEST)
