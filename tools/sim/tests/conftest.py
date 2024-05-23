@@ -18,5 +18,5 @@ def setup_preserve_logs():
   rel_log_path = f".comma{op_prefix}/media/0/realdata"
   log_path = os.path.join(home, rel_log_path)
   yield log_path
-  if CI and os.path.exists(log_path):
+  if not CI and os.path.exists(log_path):
     shutil.rmtree(log_path)
