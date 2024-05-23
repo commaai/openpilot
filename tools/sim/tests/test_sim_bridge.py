@@ -13,7 +13,7 @@ from openpilot.tools.sim.bridge.common import QueueMessageType
 from openpilot.system.hardware.hw import Paths
 
 SIM_DIR = os.path.join(BASEDIR, "tools/sim")
-LOG_DEST = "/tmp/simulator_logs"
+SIM_LOG_DEST = "/tmp/.op_logs/simulator_logs"
 
 class TestSimBridgeBase:
   @classmethod
@@ -88,9 +88,9 @@ class TestSimBridgeBase:
 
     # move logs to persitent dir since pytest cleans up logs file after tests
     if CI:
-      if os.path.exists(LOG_DEST):
-        shutil.rmtree(LOG_DEST)
-      shutil.copytree(Paths.log_root(), LOG_DEST)
+      if os.path.exists(SIM_LOG_DEST):
+        shutil.rmtree(SIM_LOG_DEST)
+      shutil.copytree(Paths.log_root(), SIM_LOG_DEST)
 
     assert len(failure_states) == 0, f"Simulator fails to finish a loop. Failure states: {failure_states}"
 
