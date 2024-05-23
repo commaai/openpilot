@@ -13,7 +13,7 @@ from openpilot.tools.sim.bridge.common import QueueMessageType
 from openpilot.system.hardware.hw import Paths
 
 SIM_DIR = os.path.join(BASEDIR, "tools/sim")
-LOG_DEST = "/tmp/.simulator_logs"
+LOG_DEST = "/tmp/simulator_logs"
 
 class TestSimBridgeBase:
   @classmethod
