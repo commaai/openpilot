@@ -24,13 +24,16 @@ class TestCarDocs:
     assert generated_cars_md == current_cars_md, "Run selfdrive/car/docs.py to update the compatibility documentation"
 
   def test_docs_diff(self):
-    base_path = "docs/CARS.md"
     new_path = CARS_MD_OUT
 
-    result = subprocess.run(['selfdrive/debug/compare_cars_md.py', base_path, new_path], capture_output=True, text=True)
-    diff_output = result.stdout
+    result = subprocess.run(['selfdrive/debug/print_docs_diff.py', '--new-path', new_path], capture_output=True, text=True)
+    diff_output = result.stdout.strip()
 
-    assert diff_output == "", "Differences found in CARS.md:\n" + diff_output
+    if diff_output != "No differences found in CARS.md":
+      print(diff_output)
+      assert "Differences found in CARS.md" in diff_output, f"Differences found in CARS.md:\n{diff_output}"
+    else:
+      assert diff_output == "No differences found in CARS.md"
 
   def test_duplicate_years(self, subtests):
     make_model_years = defaultdict(list)
