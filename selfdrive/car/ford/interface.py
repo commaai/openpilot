@@ -43,6 +43,8 @@ class CarInterface(CarInterfaceBase):
       # Lock out if the car does not have needed lateral and longitudinal control APIs.
       # Note that we also check CAN for adaptive cruise, but no known signal for LCA exists
       pscm_config = next((fw for fw in car_fw if fw.ecu == Ecu.eps and b'\x22\xDE\x01' in fw.request), None)
+      print('pscm_config', pscm_config)
+      print('carFw', car_fw)
       if pscm_config:
         if len(pscm_config.response) != 24:
           ret.dashcamOnly = True
