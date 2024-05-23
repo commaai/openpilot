@@ -555,7 +555,7 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="torqued",
-    pubs=["liveLocationKalman", "carState", "carControl", "carOutput"],
+    pubs=["liveLocationKalman", "carState", "carControl"],
     subs=["liveTorqueParameters"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
@@ -818,19 +818,20 @@ def check_openpilot_enabled(msgs: LogIterable) -> bool:
   return max_enabled_count > int(10. / DT_CTRL)
 
 
-def check_most_messages_valid(msgs: LogIterable, threshold: float = 0.9, verbose: bool = False) -> bool:
-  grouped_msgs = defaultdict(list)
-  for m in msgs:
-    grouped_msgs[m.which()].append(m)
+def check_most_messages_valid(msgs: LogIterable, threshold: float = 0.9) -> bool:
+  msgs_counts: dict[str, int] = defaultdict(int)
+  msgs_valid_counts: dict[str, int] = defaultdict(int)
+  for msg in msgs:
+    msgs_counts[msg.which()] += 1
+    if msg.valid:
+      msgs_valid_counts[msg.which()] += 1
 
   most_valid_for_service = {}
-  for service, service_msgs in grouped_msgs.items():
-    assert len(service_msgs) != 0
-    valid_count = sum(m.valid for m in service_msgs)
-    valid_share = valid_count / len(service_msgs)
+  for msg_type in msgs_counts.keys():
+    valid_share = msgs_valid_counts[msg_type] / msgs_counts[msg_type]
     ok = valid_share >= threshold
-    if verbose and not ok:
-      print(f"WARNING: Service {service} has {valid_share * 100:.2f}% valid messages, which is below threshold of {threshold * 100:.2f}%")
-    most_valid_for_service[service] = ok
+    if not ok:
+      print(f"WARNING: Service {msg_type} has {valid_share * 100:.2f}% valid messages, which is below threshold of {threshold * 100:.2f}%")
+    most_valid_for_service[msg_type] = ok
 
   return all(most_valid_for_service.values())

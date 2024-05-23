@@ -129,7 +129,7 @@ def regen_and_save(
 
   if not check_openpilot_enabled(output_logs):
     raise Exception("Route did not engage for long enough")
-  if not check_most_messages_valid(output_logs, verbose=True):
+  if not check_most_messages_valid(output_logs):
     raise Exception("Route has too many invalid messages")
 
   if upload:
