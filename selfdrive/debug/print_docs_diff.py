@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+from collections import defaultdict
 import requests
 import os
 
@@ -27,19 +28,46 @@ def parse_markdown(lines):
 
 
 def generate_diff(old_cars, new_cars):
-  diffs = []
+  changes = defaultdict(list)
   for platform, new_line in new_cars.items():
     old_line = old_cars.get(platform)
     if old_line:
       if old_line != new_line:
-        diffs.append(f"### Change in {platform}:\n```diff\n- {old_line}+ {new_line}```")
+        changes["column"].append(f"|{new_line}")
     else:
-      diffs.append(f"### Addition: {platform}:\n{new_line}")
+      changes["additions"].append(f"|{new_line}")
 
   for platform in old_cars.keys() - new_cars.keys():
-    diffs.append(f"### Removal: {platform}:\n{old_cars[platform]}")
+    changes["removals"].append(f"|{old_cars[platform]}")
 
-  return '\n'.join(diffs)
+  markdown_builder = ["### ⚠️ This PR makes changes to [CARS.md](../blob/master/docs/CARS.md) ⚠️"]
+
+  for title, category in (("## 🔀 Column Changes", "column"), ("## ❌ Removed", "removals"), ("## ➕ Added", "additions")):
+    if len(changes[category]):
+      markdown_builder.append(title)
+      markdown_builder.extend(changes[category])
+
+  return "\n".join(markdown_builder)
+
+
+def print_car_docs_diff(path):
+  base_url = "https://raw.githubusercontent.com/commaai/openpilot/master/docs/CARS.md"
+  base_path = 'old_CARS.md'
+  download_file(base_url, base_path)
+
+  old_lines = load_file(base_path)
+  new_lines = load_file(path)
+
+  old_cars = parse_markdown(old_lines)
+  new_cars = parse_markdown(new_lines)
+
+  diff = generate_diff(old_cars, new_cars)
+  if diff:
+    print(diff)
+  else:
+    print("No differences found in CARS.md")
+
+  os.remove(base_path)
 
 
 def main():
@@ -47,24 +75,7 @@ def main():
   parser.add_argument('--path', default='docs/CARS.md', help="Path to the new CARS.md file")
   args = parser.parse_args()
 
-  base_url = "https://raw.githubusercontent.com/commaai/openpilot/master/docs/CARS.md"
-  base_path = 'old_CARS.md'
-  download_file(base_url, base_path)
-
-  old_lines = load_file(base_path)
-  new_lines = load_file(args.path)
-
-  old_cars = parse_markdown(old_lines)
-  new_cars = parse_markdown(new_lines)
-
-  diff = generate_diff(old_cars, new_cars)
-  if diff:
-    print("### Differences found in CARS.md:\n")
-    print(diff)
-  else:
-    print("No differences found in CARS.md")
-
-  os.remove(base_path)
+  print_car_docs_diff(args.path)
 
 
 if __name__ == "__main__":

@@ -13,6 +13,7 @@ from openpilot.selfdrive.car.values import PLATFORMS
 from openpilot.selfdrive.debug.dump_car_docs import dump_car_docs
 from openpilot.selfdrive.debug.print_docs_diff import print_car_docs_diff
 
+
 class TestCarDocs:
   @classmethod
   def setup_class(cls):
