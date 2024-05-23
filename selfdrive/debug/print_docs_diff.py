@@ -27,10 +27,10 @@ def main():
   args = parser.parse_args()
 
   base_path = 'old_CARS.md'
-  get_last_commit_file(args.new_path, base_path)
+  get_last_commit_file(args.path, base_path)
 
   base_file = load_file(base_path)
-  new_file = load_file(args.new_path)
+  new_file = load_file(args.path)
 
   diff = generate_diff(base_file, new_file)
   if diff:
