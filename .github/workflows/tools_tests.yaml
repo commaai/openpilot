@@ -14,7 +14,7 @@ env:
   BASE_IMAGE: openpilot-base
   DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
 
-  LOG_PATH: $GITHUB_WORKSPACE/.logs
+  LOG_PATH: ${{ github.workspace }}/.logs
 
   BUILD: selfdrive/test/docker_build.sh base
 
