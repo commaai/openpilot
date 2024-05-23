@@ -26,7 +26,7 @@ class TestCarDocs:
   def test_docs_diff(self):
     new_path = CARS_MD_OUT
 
-    result = subprocess.run(['selfdrive/debug/print_docs_diff.py', '--new-path', new_path], capture_output=True, text=True)
+    result = subprocess.run(['selfdrive/debug/print_docs_diff.py', '--path', new_path], capture_output=True, text=True)
     diff_output = result.stdout.strip()
 
     if diff_output != "No differences found in CARS.md":

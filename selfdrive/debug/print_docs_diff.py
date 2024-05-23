@@ -23,7 +23,7 @@ def generate_diff(base_file, new_file):
 
 def main():
   parser = argparse.ArgumentParser(description="Compare two CARS.md files and generate a diff.")
-  parser.add_argument('--new-path', default='docs/CARS.md', help="Path to the new CARS.md file")
+  parser.add_argument('--path', default='docs/CARS.md', help="Path to the new CARS.md file")
   args = parser.parse_args()
 
   base_path = 'old_CARS.md'
