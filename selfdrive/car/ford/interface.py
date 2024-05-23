@@ -44,11 +44,11 @@ class CarInterface(CarInterfaceBase):
       # Note that we also check CAN for adaptive cruise, but no known signal for LCA exists
       pscm_config = next((fw for fw in car_fw if fw.ecu == Ecu.eps and b'\x22\xDE\x01' in fw.request), None)
       if pscm_config:
-        if len(pscm_config.response) != 24:
+        if len(pscm_config.fwVersion) != 24:
           ret.dashcamOnly = True
         else:
-          config_tja = pscm_config.response[7]  # Traffic Jam Assist
-          config_lca = pscm_config.response[8]  # Lane Centering Assist
+          config_tja = pscm_config.fwVersion[7]  # Traffic Jam Assist
+          config_lca = pscm_config.fwVersion[8]  # Lane Centering Assist
           if config_tja != 0xFF or config_lca != 0xFF:
             ret.dashcamOnly = True
 
