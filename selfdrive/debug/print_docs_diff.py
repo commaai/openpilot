@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 import argparse
-import difflib
-import subprocess
 import os
+import requests
 
 
 def load_file(path):
@@ -10,16 +9,50 @@ def load_file(path):
     return file.readlines()
 
 
-def get_last_commit_file(path, output_path):
-  relative_path = os.path.relpath(path, start=os.getcwd())
-  result = subprocess.run(['git', 'show', f'HEAD~1:{relative_path}'], capture_output=True, text=True, check=True)
+def download_file(url, output_path):
+  response = requests.get(url)
+  response.raise_for_status()
   with open(output_path, 'w') as file:
-    file.write(result.stdout)
+    file.write(response.text)
 
 
-def generate_diff(base_file, new_file):
-  diff = difflib.unified_diff(base_file, new_file, fromfile='old_CARS.md', tofile='new_CARS.md', lineterm='')
-  return '\n'.join(diff)
+def parse_markdown(lines):
+  cars = {}
+  for line in lines:
+    if line.startswith('|') and not line.startswith('|---'):
+      columns = line.split('|')
+      platform = columns[1].strip()
+      cars[platform] = line
+  return cars
+
+
+def generate_diff(old_cars, new_cars):
+  changes = {"column": [], "additions": [], "removals": [], "detail": []}
+
+  for platform, new_line in new_cars.items():
+    old_line = old_cars.get(platform)
+    if old_line:
+      if old_line != new_line:
+        changes["column"].append(f"| {old_line} | ➡️ | {new_line} |")
+    else:
+      changes["additions"].append(f"| {new_line} |")
+
+  for platform in old_cars.keys() - new_cars.keys():
+    changes["removals"].append(f"| {old_cars[platform]} |")
+
+  return changes
+
+
+def print_changes(changes):
+  markdown_builder = ["### ⚠️ This PR makes changes to [CARS.md](../blob/master/docs/CARS.md) ⚠️"]
+  sections = [("## 🔀 Column Changes", "column"), ("## ➕ Added", "additions"), ("## ❌ Removed", "removals"), ("## 📖 Detail Sentence Changes", "detail")]
+
+  for title, category in sections:
+    if changes[category]:
+      markdown_builder.append(title)
+      markdown_builder.extend(changes[category])
+
+  print("\n".join(markdown_builder))
 
 
 def main():
@@ -27,16 +60,20 @@ def main():
   parser.add_argument('--path', default='docs/CARS.md', help="Path to the new CARS.md file")
   args = parser.parse_args()
 
+  base_url = "https://raw.githubusercontent.com/commaai/openpilot/master/docs/CARS.md"
   base_path = 'old_CARS.md'
-  get_last_commit_file(args.path, base_path)
+  download_file(base_url, base_path)
 
-  base_file = load_file(base_path)
-  new_file = load_file(args.path)
+  old_lines = load_file(base_path)
+  new_lines = load_file(args.path)
 
-  diff = generate_diff(base_file, new_file)
-  if diff:
-    print("### Differences found in CARS.md:\n")
-    print(diff)
+  old_cars = parse_markdown(old_lines)
+  new_cars = parse_markdown(new_lines)
+
+  changes = generate_diff(old_cars, new_cars)
+
+  if any(changes.values()):
+    print_changes(changes)
   else:
     print("No differences found in CARS.md")
 
