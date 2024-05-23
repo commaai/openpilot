@@ -66,6 +66,7 @@ jobs:
       with:
         name: metadrive_logs-$GITHUB_RUN_ID
         path: ${{ env.LOG_PATH }}/simulator_logs
+        compression-level: 9
 
   devcontainer:
     name: devcontainer
