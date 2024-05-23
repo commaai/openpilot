@@ -106,6 +106,7 @@ function install_ubuntu_focal_requirements() {
     python-dev
 }
 
+# Remove once on Ubuntu 24.04
 function install_deadsnakes_ppa(){
   if [[ -z "$INSTALL_DEADSNAKES_PPA" ]]; then
     read -p "Do you want to use deadsnakes python@3.11? [Y/n]: " -n 1 -r
@@ -118,12 +119,11 @@ function install_deadsnakes_ppa(){
     $SUDO apt-get install software-properties-common -y --no-install-recommends
     $SUDO add-apt-repository ppa:deadsnakes/ppa
     $SUDO apt-get install -y --no-install-recommends \
-    python3.11-dev \
-    python3.11 \
-    python3.11-venv \
-    python3.11-distutils \
-    scons \
-    python3-pip
+      python3.11-dev \
+      python3.11 \
+      python3.11-venv \
+      python3.11-distutils \
+      python3-pip
     $SUDO update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 20
     curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11
   fi

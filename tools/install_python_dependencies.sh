@@ -14,10 +14,9 @@ export MAKEFLAGS="-j$(nproc)"
 
 
 
-# export PATH="$HOME/.local/bin:$PATH"
 echo "update pip"
-python3 -m venv openpilot-ppa
-source openpilot-ppa/bin/activate
+python3 -m venv --system-site-packages $VIRTUAL_ENV_ROOT
+source $VIRTUAL_ENV_ROOT/bin/activate
 pip install pip==24.0
 pip install poetry==1.7.0
 
