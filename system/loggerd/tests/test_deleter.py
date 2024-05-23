@@ -66,13 +66,18 @@ class TestDeleter(UploaderTestCase):
 
     self.assertEqual(deleted_order, f_paths, "Files not deleted in expected order")
 
-  def test_delete_file_log_root(self):
-    f_path = self.make_file_with_data('', 'file.txt')
+  def test_delete_user_created(self):
+    f_paths = [
+      self.make_file_with_data(Path(''), 'file.txt'),
+      self.make_file_with_data(Path('a'), 'file.txt'),
+      self.make_file_with_data(Path('b') / 'c', 'file.txt')
+    ]
 
     self.start_thread()
+    time.sleep(0.3)
     self.join_thread()
 
-    assert not f_path.exists(), "File not deleted"
+    assert all(not f.exists() for f in f_paths), "Files not deleted"
 
   def test_delete_order(self):
     self.assertDeleteOrder([
