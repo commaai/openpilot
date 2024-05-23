@@ -11,6 +11,7 @@ fi
 
 docker run \
        -it \
+       --shm-size=100m \
        --rm \
        --volume $OP_ROOT:$OP_ROOT \
        --workdir $PWD \
