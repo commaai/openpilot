@@ -2,14 +2,18 @@ import os
 import subprocess
 import time
 import pytest
+import shutil
 
 from multiprocessing import Queue
 
 from cereal import messaging
 from openpilot.common.basedir import BASEDIR
+from openpilot.selfdrive.car.tests.test_models import CI
 from openpilot.tools.sim.bridge.common import QueueMessageType
+from openpilot.system.hardware.hw import Paths
 
 SIM_DIR = os.path.join(BASEDIR, "tools/sim")
+LOG_DEST = "/tmp/.simulator_logs"
 
 class TestSimBridgeBase:
   @classmethod
@@ -81,7 +85,15 @@ class TestSimBridgeBase:
         done_info = state.info
         failure_states = [done_state for done_state in done_info if done_state != "timeout" and done_info[done_state]]
         break
+
+    # move logs to persitent dir since pytest cleans up logs file after tests
+    if CI:
+      if os.path.exists(LOG_DEST):
+        shutil.rmtree(LOG_DEST)
+      shutil.copytree(Paths.log_root(), LOG_DEST)
+
     assert len(failure_states) == 0, f"Simulator fails to finish a loop. Failure states: {failure_states}"
+
 
   def teardown_method(self):
     print("Test shutting down. CommIssues are acceptable")
