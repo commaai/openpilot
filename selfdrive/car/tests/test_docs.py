@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 from collections import defaultdict
-import subprocess
+import os
 import pytest
 import re
 
+from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.docs import CARS_MD_OUT, CARS_MD_TEMPLATE, generate_cars_md, get_all_car_docs
 from openpilot.selfdrive.car.docs_definitions import Cable, Column, PartType, Star
 from openpilot.selfdrive.car.honda.values import CAR as HONDA
 from openpilot.selfdrive.car.values import PLATFORMS
-
+from openpilot.selfdrive.debug.dump_car_docs import dump_car_docs
+from openpilot.selfdrive.debug.print_docs_diff import print_car_docs_diff
 
 class TestCarDocs:
   @classmethod
@@ -24,16 +26,10 @@ class TestCarDocs:
     assert generated_cars_md == current_cars_md, "Run selfdrive/car/docs.py to update the compatibility documentation"
 
   def test_docs_diff(self):
-    new_path = CARS_MD_OUT
-
-    result = subprocess.run(['selfdrive/debug/print_docs_diff.py', '--path', new_path], capture_output=True, text=True)
-    diff_output = result.stdout.strip()
-
-    if diff_output != "No differences found in CARS.md":
-      print(diff_output)
-      assert "Differences found in CARS.md" in diff_output, f"Differences found in CARS.md:\n{diff_output}"
-    else:
-      assert diff_output == "No differences found in CARS.md"
+    dump_path = os.path.join(BASEDIR, "selfdrive", "car", "tests", "cars_dump")
+    dump_car_docs(dump_path)
+    print_car_docs_diff(dump_path)
+    os.remove(dump_path)
 
   def test_duplicate_years(self, subtests):
     make_model_years = defaultdict(list)
