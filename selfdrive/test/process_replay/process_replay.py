@@ -6,7 +6,7 @@ import json
 import heapq
 import signal
 import platform
-from collections import OrderedDict, defaultdict
+from collections import Counter, OrderedDict
 from dataclasses import dataclass, field
 from typing import Any
 from collections.abc import Callable, Iterable
@@ -819,12 +819,8 @@ def check_openpilot_enabled(msgs: LogIterable) -> bool:
 
 
 def check_most_messages_valid(msgs: LogIterable, threshold: float = 0.9) -> bool:
-  msgs_counts: dict[str, int] = defaultdict(int)
-  msgs_valid_counts: dict[str, int] = defaultdict(int)
-  for msg in msgs:
-    msgs_counts[msg.which()] += 1
-    if msg.valid:
-      msgs_valid_counts[msg.which()] += 1
+  msgs_counts = Counter(msg.which() for msg in msgs)
+  msgs_valid_counts = Counter(msg.which() for msg in msgs if msg.valid)
 
   most_valid_for_service = {}
   for msg_type in msgs_counts.keys():
