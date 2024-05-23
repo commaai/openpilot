@@ -113,6 +113,7 @@ function install_deadsnakes_ppa(){
     echo ""
     if [[ $REPLY =~ ^[Yy]$ ]]; then
       INSTALL_DEADSNAKES_PPA="yes"
+      export VIRTUAL_ENV_ROOT=".venv"
     fi
   fi
   if [[ "$INSTALL_DEADSNAKES_PPA" == "yes" ]]; then
