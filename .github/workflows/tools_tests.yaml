@@ -64,9 +64,8 @@ jobs:
                         CI=1 pytest tools/sim/tests/test_metadrive_bridge.py"
     - uses: actions/upload-artifact@v4
       with:
-        name: metadrive_logs-$GITHUB_RUN_ID
+        name: metadrive_logs-${{ github.run_id }}
         path: ${{ env.LOG_PATH }}/simulator_logs
-        compression-level: 9
 
   devcontainer:
     name: devcontainer
