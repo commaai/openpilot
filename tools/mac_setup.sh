@@ -6,7 +6,7 @@ if [ -z "$SKIP_PROMPT" ]; then
   echo "---------------   macOS support   ---------------"
   echo "Running openpilot natively on macOS is not officially supported."
   echo "It might build, some parts of it might work, but it's not fully tested, so there might be some issues."
-  echo 
+  echo
   echo "Check out devcontainers for a seamless experience (see tools/README.md)."
   echo "-------------------------------------------------"
   echo -n "Are you sure you want to continue? [y/N] "
@@ -59,11 +59,9 @@ brew "libusb"
 brew "libtool"
 brew "llvm"
 brew "openssl@3.0"
-brew "pyenv"
-brew "pyenv-virtualenv"
+brew "python@3.11"
 brew "qt@5"
 brew "zeromq"
-brew "gcc@13"
 cask "gcc-arm-embedded"
 brew "portaudio"
 EOS

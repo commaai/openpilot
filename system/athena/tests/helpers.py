@@ -9,7 +9,7 @@ class MockResponse:
     self.status_code = status_code
 
 
-class EchoSocket():
+class EchoSocket:
   def __init__(self, port):
     self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     self.socket.bind(('127.0.0.1', port))
@@ -34,7 +34,7 @@ class EchoSocket():
       self.socket.close()
 
 
-class MockApi():
+class MockApi:
   def __init__(self, dongle_id):
     pass
 
@@ -42,7 +42,7 @@ class MockApi():
     return "fake-token"
 
 
-class MockWebsocket():
+class MockWebsocket:
   sock = socket.socket()
 
   def __init__(self, recv_queue, send_queue):

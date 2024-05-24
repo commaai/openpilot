@@ -275,7 +275,7 @@ class CarDocs:
       self.min_enable_speed = CP.minEnableSpeed
 
     if self.auto_resume is None:
-      self.auto_resume = CP.autoResumeSng
+      self.auto_resume = CP.autoResumeSng and self.min_enable_speed <= 0
 
     # hardware column
     hardware_col = "None"
