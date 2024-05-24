@@ -967,22 +967,10 @@ FW_VERSIONS = {
       b'\xf1\x00CV1 MFC  AT KOR LHD 1.00 1.05 99210-CV000 211027',
       b'\xf1\x00CV1 MFC  AT KOR LHD 1.00 1.06 99210-CV000 220328',
       b'\xf1\x00CV1 MFC  AT USA LHD 1.00 1.00 99210-CV100 220630',
+      b'\xf1\x00CV1 MFC  AT USA LHD 1.00 1.00 99210-CV200 230510',
       b'\xf1\x00CV1 MFC  AT USA LHD 1.00 1.05 99210-CV000 211027',
       b'\xf1\x00CV1 MFC  AT USA LHD 1.00 1.06 99210-CV000 220328',
-      b'\xf1\x00CV1 MFC  AT USA LHD 1.00 1.00 99210-CV200 230510',
     ],
-    (Ecu.adas, 0x730, None): [
-      b'\xf1\x00CV1 ADRV 1.00 1.00 230502',
-    ],
-    (Ecu.cornerRadar, 0x7B7, None): [
-      b'\xf1\x00CV  BCW RR 1.00 , 1.00 (\x81\x11\x82#\x011\x012',
-    ],
-    (Ecu.hvac, 0x7B3, None): [
-      b"\xf1\x00CV   \x0097255-CV110CONTROL ASS'Y-DATC  1.13_CVDATC21.04.06_1.00 ",
-    ],
-    (Ecu.parkingAdas, 0x7B1, None): [
-      b'\xf1\x10CV1  ADAS_PRK ANL 1.01 1.08 99910-CV180',
-    ],    
   },
   CAR.HYUNDAI_IONIQ_5: {
     (Ecu.fwdRadar, 0x7d0, None): [
