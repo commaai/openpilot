@@ -113,11 +113,20 @@ function install_deadsnakes_ppa(){
     echo ""
     if [[ $REPLY =~ ^[Yy]$ ]]; then
       INSTALL_DEADSNAKES_PPA="yes"
-      export VIRTUAL_ENV_ROOT=".venv"
     fi
   fi
   if [[ "$INSTALL_DEADSNAKES_PPA" == "yes" ]]; then
-    $SUDO apt-get install software-properties-common -y --no-install-recommends
+    $SUDO apt install -f --reinstall python3-minimal
+    $SUDO apt-get install -y --no-install-recommends python3-apt --reinstall
+    cd /usr/lib/python3/dist-packages
+    if [[ ! -f apt_pkg.so ]]; then
+      sudo ln apt_pkg.cpython-38-aarch64-linux-gnu.so apt_pkg.so
+    fi
+    # cd /usr/bin/
+    # sudo unlink python3
+    # ln -s python3.11 python3
+    cd $PYTHONPATH
+    $SUDO apt-get install -y --no-install-recommends software-properties-common
     $SUDO add-apt-repository ppa:deadsnakes/ppa
     $SUDO apt-get install -y --no-install-recommends \
       python3.11-dev \
