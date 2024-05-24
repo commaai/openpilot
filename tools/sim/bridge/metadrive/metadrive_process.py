@@ -126,7 +126,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
 
     if rk.frame % 5 == 0:
       _, _, terminated, _, _ = env.step(vc)
-      timeout = True if is_engaged and time.monotonic() - start_time >= test_duration else False
+      timeout = True if start_time is not None and time.monotonic() - start_time >= test_duration else False
       lane_idx_curr, on_lane = get_current_lane_info(env.vehicle)
       out_of_lane = lane_idx_curr != lane_idx_prev or not on_lane
       lane_idx_prev = lane_idx_curr
