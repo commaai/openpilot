@@ -971,6 +971,26 @@ FW_VERSIONS = {
       b'\xf1\x00CV1 MFC  AT USA LHD 1.00 1.06 99210-CV000 220328',
     ],
   },
+  CAR.KIA_EV6_GT_2024: {
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00CV1_ RDR -----      1.00 1.01 99110-CV000         ',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00CV1 MFC  AT USA LHD 1.00 1.00 99210-CV200 230510',
+    ],
+    (Ecu.adas, 0x730, None): [
+      b'\xf1\x00CV1 ADRV 1.00 1.00 230502',
+    ],
+    (Ecu.cornerRadar, 0x7B7, None): [
+      b'\xf1\x00CV  BCW RR 1.00 , 1.00 (\x81\x11\x82#\x011\x012',
+    ],
+    (Ecu.hvac, 0x7B3, None): [
+      b"\xf1\x00CV   \x0097255-CV110CONTROL ASS'Y-DATC  1.13_CVDATC21.04.06_1.00 ",
+    ],
+    (Ecu.parkingAdas, 0x7B1, None): [
+      b'\xf1\x10CV1  ADAS_PRK ANL 1.01 1.08 99910-CV180',
+    ],    
+  },
   CAR.HYUNDAI_IONIQ_5: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00NE1_ RDR -----      1.00 1.00 99110-GI000         ',
