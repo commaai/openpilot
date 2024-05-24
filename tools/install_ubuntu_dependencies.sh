@@ -120,7 +120,7 @@ function install_deadsnakes_ppa(){
     $SUDO apt-get install -y --no-install-recommends python3-apt --reinstall
     cd /usr/lib/python3/dist-packages
     if [[ ! -f apt_pkg.so ]]; then
-      sudo ln apt_pkg.cpython-38-aarch64-linux-gnu.so apt_pkg.so
+      sudo ln apt_pkg.cpython-38-$(uname -m)-linux-gnu.so apt_pkg.so
     fi
     # cd /usr/bin/
     # sudo unlink python3
