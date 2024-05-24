@@ -63,6 +63,7 @@ jobs:
                         source selfdrive/test/setup_vsound.sh && \
                         CI=1 pytest tools/sim/tests/test_metadrive_bridge.py"
     - uses: actions/upload-artifact@v4
+      if: ${{ success() || failure() }}
       with:
         name: metadrive_logs-${{ github.run_id }}
         path: ${{ env.LOG_PATH }}/simulator_logs
