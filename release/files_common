@@ -357,7 +357,7 @@ selfdrive/modeld/runners/*.h
 selfdrive/modeld/runners/*.py
 
 selfdrive/monitoring/dmonitoringd.py
-selfdrive/monitoring/driver_monitor.py
+selfdrive/monitoring/helpers.py
 
 selfdrive/navd/.gitignore
 selfdrive/navd/__init__.py
