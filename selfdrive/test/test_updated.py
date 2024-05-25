@@ -89,7 +89,7 @@ class TestUpdated:
     os.environ["UPDATER_STAGING_ROOT"] = self.staging_dir
     os.environ["UPDATER_NEOS_VERSION"] = self.neos_version
     os.environ["UPDATER_NEOSUPDATE_DIR"] = self.neosupdate_dir
-    updated_path = os.path.join(self.basedir, "selfdrive/updated.py")
+    updated_path = os.path.join(self.basedir, "system/updated.py")
     return subprocess.Popen(updated_path, env=os.environ)
 
   def _start_updater(self, offroad=True, nosleep=False):

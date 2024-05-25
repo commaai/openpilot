@@ -54,8 +54,6 @@ tools/replay/*.h
 
 selfdrive/__init__.py
 
-selfdrive/updated/**
-
 system/logmessaged.py
 system/micd.py
 system/version.py
@@ -189,7 +187,7 @@ system/ubloxd/generated/*
 system/ubloxd/*.h
 system/ubloxd/*.cc
 
-system/updated/*
+system/updated/**
 
 selfdrive/locationd/__init__.py
 selfdrive/locationd/SConscript
