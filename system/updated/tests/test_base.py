@@ -9,7 +9,7 @@ import time
 import pytest
 
 from openpilot.common.params import Params
-from openpilot.selfdrive.manager.process import ManagerProcess
+from openpilot.system.manager.process import ManagerProcess
 from openpilot.selfdrive.test.helpers import processes_context
 
 
