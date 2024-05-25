@@ -794,6 +794,7 @@ FW_VERSIONS = {
       b'37805-RLV-L350\x00\x00',
       b'37805-RLV-L410\x00\x00',
       b'37805-RLV-L430\x00\x00',
+      b'37805-RLV-L830\x00\x00',
       b'37805-RLV-L850\x00\x00',
     ],
     (Ecu.gateway, 0x18daeff1, None): [
