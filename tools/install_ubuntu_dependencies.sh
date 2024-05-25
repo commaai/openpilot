@@ -117,10 +117,9 @@ function install_deadsnakes_ppa(){
   fi
   if [[ "$INSTALL_DEADSNAKES_PPA" == "yes" ]]; then
     $SUDO apt-get install -y --no-install-recommends python3-minimal --reinstall
+    $SUDO apt-get install -y --no-install-recommends python3-apt software-properties-common
     $SUDO add-apt-repository ppa:deadsnakes/ppa
     $SUDO apt-get install -y --no-install-recommends \
-      python3-apt \
-      software-properties-common \
       python3.11-dev \
       python3.11 \
       python3.11-venv \
