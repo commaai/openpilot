@@ -93,6 +93,7 @@ class TestSimBridgeBase:
       shutil.copytree(Paths.log_root(), SIM_LOG_DEST)
 
     assert len(failure_states) == 0, f"Simulator fails to finish a loop. Failure states: {failure_states}"
+    assert 0
 
 
   def teardown_method(self):
