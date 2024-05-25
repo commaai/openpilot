@@ -32,7 +32,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     vim \
     lsb-core \
     libx11-6 \
-  && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*
 
 ARG INTEL_DRIVER=l_opencl_p_18.1.0.015.tgz
 ARG INTEL_DRIVER_URL=https://registrationcenter-download.intel.com/akdlm/irc_nas/vcp/15532
@@ -67,7 +67,7 @@ ENV POETRY_VIRTUALENVS_CREATE=false
 ENV VIRTUAL_ENV_ROOT="/home/$USER/venv"
 ENV PATH="$VIRTUAL_ENV_ROOT/bin:$PATH"
 
-COPY --chown=$USER pyproject.toml poetry.lock /tmp/
+COPY --chown=$USER requirements.docker.txt /tmp/
 COPY --chown=$USER tools/install_python_dependencies.sh /tmp/tools/
 
 RUN cd /tmp && \

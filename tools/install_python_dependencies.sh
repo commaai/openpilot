@@ -16,14 +16,11 @@ export MAKEFLAGS="-j$(nproc)"
 
 echo "update pip"
 if [ ! -z "\$VIRTUAL_ENV_ROOT" ] || [ ! -z "$INSTALL_DEADSNAKES_PPA" ] ; then
-  python3 -m venv --system-site-packages $VIRTUAL_ENV_ROOT
+  python3.11 -m venv --system-site-packages $VIRTUAL_ENV_ROOT
   source $VIRTUAL_ENV_ROOT/bin/activate
 fi
 pip install pip==24.0
-pip install poetry==1.7.0
-
-poetry config virtualenvs.prefer-active-python true --local
-poetry config virtualenvs.in-project true --local
+pip install uv
 
 echo "PYTHONPATH=${PWD}" > $ROOT/.env
 if [[ "$(uname)" == 'Darwin' ]]; then
@@ -32,10 +29,8 @@ if [[ "$(uname)" == 'Darwin' ]]; then
   echo "export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES" >> $ROOT/.env
 fi
 
-poetry self add poetry-dotenv-plugin@^0.1.0
-
 echo "pip packages install..."
-poetry install --no-cache --no-root
+uv pip sync requirements.docker.txt
 
 [ -n "$POETRY_VIRTUALENVS_CREATE" ] && RUN="" || RUN="poetry run"
 
