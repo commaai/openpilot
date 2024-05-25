@@ -93,7 +93,7 @@ cd $SOURCE_DIR
 cp -pR -n --parents $TEST_FILES $BUILD_DIR/
 cd $BUILD_DIR
 RELEASE=1 selfdrive/test/test_onroad.py
-#selfdrive/manager/test/test_manager.py
+#system/manager/test/test_manager.py
 selfdrive/car/tests/test_car_interfaces.py
 rm -rf $TEST_FILES
 
