@@ -82,7 +82,7 @@ function launch {
   tmux capture-pane -pq -S-1000 > /tmp/launch_log
 
   # start manager
-  cd selfdrive/manager
+  cd system/manager
   if [ ! -f $DIR/prebuilt ]; then
     ./build.py
   fi

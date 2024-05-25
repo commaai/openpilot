@@ -303,14 +303,8 @@ system/camerad/cameras/camera_common.cc
 system/camerad/sensors/*.h
 system/camerad/sensors/*.cc
 
-selfdrive/manager/__init__.py
-selfdrive/manager/build.py
-selfdrive/manager/helpers.py
-selfdrive/manager/manager.py
-selfdrive/manager/process_config.py
-selfdrive/manager/process.py
-selfdrive/manager/test/__init__.py
-selfdrive/manager/test/test_manager.py
+system/manager/__init__.py
+system/manager/**
 
 selfdrive/modeld/.gitignore
 selfdrive/modeld/__init__.py
