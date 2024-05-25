@@ -13,8 +13,8 @@ from openpilot.system.updated.casync import tar
 # losetup -a | grep img.raw
 LOOPBACK = os.environ.get('LOOPBACK', None)
 
-pytest.skip("not used yet", allow_module_level=True)
 
+@pytest.mark.skip("not used yet")
 class TestCasync:
   @classmethod
   def setup_class(cls):
@@ -152,6 +152,7 @@ class TestCasync:
     assert stats['remote'] < len(self.contents)
 
 
+@pytest.mark.skip("not used yet")
 class TestCasyncDirectory:
   """Tests extracting a directory stored as a casync tar archive"""
 
