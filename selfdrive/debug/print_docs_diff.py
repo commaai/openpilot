@@ -22,23 +22,42 @@ def parse_markdown(lines):
   for line in lines:
     if line.startswith('|') and not line.startswith('|---'):
       columns = line.split('|')
-      platform = f"{columns[1].strip()} {columns[2].strip()}"
-      cars[platform] = line
+      platform = columns[1].strip()
+      model_year = columns[2].strip()
+      key = (platform, model_year)
+      cars[key] = line
   return cars
+
+
+def extract_platform_model_year(line):
+  parts = line.split('|')
+  platform = parts[1].strip()
+  model_year = parts[2].strip()
+  return platform, model_year
 
 
 def generate_diff(old_cars, new_cars):
   changes = defaultdict(list)
-  for platform, new_line in new_cars.items():
-    old_line = old_cars.get(platform)
-    if old_line:
+  all_keys = set(old_cars.keys()) | set(new_cars.keys())
+
+  for key in all_keys:
+    old_line = old_cars.get(key)
+    new_line = new_cars.get(key)
+
+    if old_line and new_line:
       if old_line != new_line:
         changes["column"].append(f"|{new_line}")
-    else:
+    elif old_line:
+      platform, _ = key
+      for new_key in new_cars:
+        new_platform, new_model_year = new_key
+        if new_platform == platform:
+          changes["column"].append(f"|{new_cars[new_key]}")
+          break
+      else:
+        changes["removals"].append(f"|{old_line}")
+    elif new_line:
       changes["additions"].append(f"|{new_line}")
-
-  for platform in old_cars.keys() - new_cars.keys():
-    changes["removals"].append(f"|{old_cars[platform]}")
 
   markdown_builder = ["### ⚠️ This PR makes changes to [CARS.md](../blob/master/docs/CARS.md) ⚠️"]
 
