@@ -15,8 +15,8 @@ export MAKEFLAGS="-j$(nproc)"
 
 
 echo "update pip"
-if [ ! -z "\$VIRTUAL_ENV_ROOT" ] || [ ! -z "$INSTALL_DEADSNAKES_PPA" ] ; then
-  if [ -z "\$VIRTUAL_ENV_ROOT" ]; then
+if [ ! -z "$VIRTUAL_ENV_ROOT" ] || [ ! -z "$INSTALL_DEADSNAKES_PPA" ] ; then
+  if [ -z "$VIRTUAL_ENV_ROOT" ]; then
     export VIRTUAL_ENV_ROOT="venv"
   fi
   python3 -m venv --system-site-packages $VIRTUAL_ENV_ROOT
