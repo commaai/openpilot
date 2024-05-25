@@ -14,6 +14,7 @@ from openpilot.system.updated.casync import tar
 LOOPBACK = os.environ.get('LOOPBACK', None)
 
 
+@pytest.mark.skip("not used yet")
 class TestCasync:
   @classmethod
   def setup_class(cls):
