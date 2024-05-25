@@ -50,7 +50,7 @@ def apply_metadrive_patches(arrive_dest_done=True):
 
 def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera_array, image_lock,
                       controls_recv: Connection, simulation_state_send: Connection, vehicle_state_send: Connection,
-                      exit_event, start_time, test_duration, test_run):
+                      exit_event, op_engaged, test_duration, test_run):
   arrive_dest_done = config.pop("arrive_dest_done", True)
   apply_metadrive_patches(arrive_dest_done)
 
@@ -81,6 +81,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
     return lane_idx_prev
 
   lane_idx_prev = reset()
+  start_time = None
 
   def get_cam_as_rgb(cam):
     cam = env.engine.sensors[cam]
@@ -104,7 +105,6 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
       bearing=float(math.degrees(env.vehicle.heading_theta)),
       steering_angle=env.vehicle.steering * env.vehicle.MAX_STEERING
     )
-
     vehicle_state_send.send(vehicle_state)
 
     if controls_recv.poll(0):
@@ -118,10 +118,15 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
 
       if should_reset:
         lane_idx_prev = reset()
+        start_time = None
+
+    is_engaged = op_engaged.is_set()
+    if is_engaged and start_time is None:
+      start_time = time.monotonic()
 
     if rk.frame % 5 == 0:
       _, _, terminated, _, _ = env.step(vc)
-      timeout = True if time.monotonic() - start_time >= test_duration else False
+      timeout = True if start_time is not None and time.monotonic() - start_time >= test_duration else False
       lane_idx_curr, on_lane = get_current_lane_info(env.vehicle)
       out_of_lane = lane_idx_curr != lane_idx_prev or not on_lane
       lane_idx_prev = lane_idx_curr
