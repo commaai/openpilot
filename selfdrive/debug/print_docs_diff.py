@@ -13,7 +13,7 @@ def download_file(url, local_path):
 
 
 def load_file(path):
-  with open(path, 'rb') as file:
+  with open(path) as file:
     return file.read().decode('utf-8', errors='ignore').splitlines()
 
 
