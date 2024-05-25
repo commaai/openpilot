@@ -118,7 +118,6 @@ function install_deadsnakes_ppa(){
   if [[ "$INSTALL_DEADSNAKES_PPA" == "yes" ]]; then
     # The reinstall ensures that apt_pkg.cpython-35m-x86_64-linux-gnu.so exists
     # by reinstalling python3-minimal since it's not present in /usr/lib/python3/dist-packages.
-    # It was done in an earlier commit 2a264d4 but i removed it since --reinstall does this.
     $SUDO apt install -y --no-install-recommends --reinstall python3-minimal
     $SUDO apt-get install -y --no-install-recommends python3-apt software-properties-common
     $SUDO add-apt-repository ppa:deadsnakes/ppa
