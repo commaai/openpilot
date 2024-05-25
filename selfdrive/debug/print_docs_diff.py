@@ -13,8 +13,8 @@ def download_file(url, local_path):
 
 
 def load_file(path):
-  with open(path) as file:
-    return file.read().decode('utf-8', errors='ignore').splitlines()
+  with open(path, encoding='utf-8', errors='ignore') as file:
+      return file.read().splitlines()
 
 
 def parse_markdown(lines):
