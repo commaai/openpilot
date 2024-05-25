@@ -8,13 +8,13 @@ import os
 def download_file(url, local_path):
   response = requests.get(url)
   response.raise_for_status()
-  with open(local_path, 'wb') as f:
-    f.write(response.content)
+  with open(local_path, 'w') as f:
+    f.write(response.text)
 
 
 def load_file(path):
   with open(path, encoding='utf-8', errors='ignore') as file:
-      return file.read().splitlines()
+    return file.read().splitlines()
 
 
 def parse_markdown(lines):
@@ -22,7 +22,7 @@ def parse_markdown(lines):
   for line in lines:
     if line.startswith('|') and not line.startswith('|---'):
       columns = line.split('|')
-      platform = columns[1].strip()
+      platform = f"{columns[1].strip()} {columns[2].strip()}"
       cars[platform] = line
   return cars
 
