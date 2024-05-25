@@ -116,7 +116,7 @@ function install_deadsnakes_ppa(){
     fi
   fi
   if [[ "$INSTALL_DEADSNAKES_PPA" == "yes" ]]; then
-    $SUDO apt-get install -y --no-install-recommends python3-minimal --reinstall
+    $SUDO apt install -y --no-install-recommends --reinstall python3-minimal
     $SUDO apt-get install -y --no-install-recommends python3-apt software-properties-common
     $SUDO add-apt-repository ppa:deadsnakes/ppa
     $SUDO apt-get install -y --no-install-recommends \
