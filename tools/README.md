@@ -4,7 +4,7 @@
 
 openpilot is developed and tested on **Ubuntu 20.04**, which is the primary development target aside from the [supported embedded hardware](https://github.com/commaai/openpilot#running-on-a-dedicated-device-in-a-car).
 
-Running natively on any other system is not recommended and will require modifications. On Windows you can use WSL, and on macOS or incompatible Linux systems, it is recommended to use the dev containers.
+Running natively on any other system is not recommended and will require modifications. On Windows you can use WSL, and on macOS or other Linux systems, it is recommended to use the dev containers.
 
 ## Native setup on Ubuntu 20.04
 
@@ -22,7 +22,7 @@ or do a full clone:
 git clone --recurse-submodules https://github.com/commaai/openpilot.git
 ```
 
-**2. Run the setup script**
+**2. Install apt packages**
 
 ``` bash
 cd openpilot
@@ -36,6 +36,12 @@ poetry shell
 ```
 
 **3. Build openpilot**
+
+``` bash
+pip install -e .
+```
+
+**4. Build openpilot**
 
 ``` bash
 scons -u -j$(nproc)

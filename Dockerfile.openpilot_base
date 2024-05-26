@@ -63,7 +63,6 @@ RUN usermod -aG sudo $USER
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 USER $USER
 
-ENV POETRY_VIRTUALENVS_CREATE=false
 ENV VIRTUAL_ENV_ROOT="/home/$USER/venv"
 ENV PATH="$VIRTUAL_ENV_ROOT/bin:$PATH"
 
