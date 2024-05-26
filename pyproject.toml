@@ -89,7 +89,7 @@ documentation = "https://docs.comma.ai"
 
 
 [tool.poetry.dependencies]
-python = ">=3.11"
+python = "~3.11"
 aiohttp = "*"
 aiortc = "*"
 cffi = "*"
