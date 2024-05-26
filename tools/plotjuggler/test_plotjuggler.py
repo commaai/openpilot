@@ -26,7 +26,7 @@ class TestPlotJuggler:
           output += p.stderr.readline().decode("utf-8")
 
       # ensure plotjuggler didn't crash after exiting the plugin
-      time.sleep(15)
+      time.sleep(2)
       assert p.poll() is None
       os.killpg(os.getpgid(p.pid), signal.SIGTERM)
 

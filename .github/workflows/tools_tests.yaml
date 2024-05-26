@@ -49,8 +49,6 @@ jobs:
         submodules: true
     - run: git lfs pull
     - uses: ./.github/workflows/setup-with-retry
-    - name: Build base docker image
-      run: eval "$BUILD"
     - name: Build openpilot
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
