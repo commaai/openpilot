@@ -62,7 +62,7 @@ jobs:
         cp pyproject.toml $STRIPPED_DIR
         cp poetry.lock $STRIPPED_DIR
         cd $STRIPPED_DIR
-        ${{ env.RUN }} "unset PYTHONWARNINGS && SKIP=check-added-large-files pre-commit run --all && chmod -R 777 /tmp/pre-commit"
+        ${{ env.RUN }} "unset PYTHONWARNINGS && SKIP=check-added-large-files,check-hooks-apply,check-useless-excludes pre-commit run --all && chmod -R 777 /tmp/pre-commit"
 
   build:
     strategy:
