@@ -90,13 +90,6 @@ repos:
         language: script
         pass_filenames: false
         files: '^selfdrive/ui/translations/'
--   repo: https://github.com/python-poetry/poetry
-    rev: '1.8.0'
-    hooks:
-    -   id: poetry-check
-        name: validate poetry lock
-        args:
-        - --lock
 -   repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.28.3
     hooks:
