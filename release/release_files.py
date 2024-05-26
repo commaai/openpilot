@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import re
-import glob
 from pathlib import Path
 
 HERE = os.path.abspath(os.path.dirname(__file__))
@@ -11,14 +10,16 @@ ROOT = HERE + "/.."
 # - minimizing release download size
 # - keeping the diff readable
 blacklist = [
-  "body/STL",
+  "^scripts/",
+  "body/STL/",
   "tools/cabana/",
   "panda/examples/",
-  "opendbc/generator",
-  "third_party/acados/acados_template/gnsf",
+  "opendbc/generator/",
 
-  "tools",
-  "tinygrad_repo",
+  "^tools/",
+  "^tinygrad_repo/",
+
+  "matlab.*.md",
 
   ".git$",  # for submodules
   ".git/",
@@ -27,7 +28,6 @@ blacklist = [
   "Darwin/",
   ".vscode",
 ]
-
 
 # gets you through the blacklist
 whitelist = [
@@ -54,7 +54,7 @@ whitelist = [
 ]
 
 if __name__ == "__main__":
-  for f in Path(ROOT).glob("**/*"):
+  for f in Path(ROOT).rglob("**/*"):
     if not (f.is_file() or f.is_symlink()):
       continue
 
@@ -64,5 +64,4 @@ if __name__ == "__main__":
     if blacklisted and not whitelisted:
       continue
 
-    assert " " not in rf, rf
     print(rf)
