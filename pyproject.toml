@@ -141,7 +141,7 @@ inputs = "*"
 Jinja2 = "*"
 lru-dict = "*"
 matplotlib = "*"
-#metadrive-simulator-py3.12 = { version = "0.1.0", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
+metadrive-simulator-py3-12 = "0.2.0"
 mpld3 = "*"
 mypy = "*"
 myst-parser = "*"
