@@ -12,6 +12,8 @@ fi
 
 export MAKEFLAGS="-j$(nproc)"
 
+
+
 echo "update pip"
 if [ ! -z "$VIRTUAL_ENV_ROOT" ] || [ ! -z "$INSTALL_DEADSNAKES_PPA" ] ; then
   if [ -z "$VIRTUAL_ENV_ROOT" ]; then
@@ -20,15 +22,11 @@ if [ ! -z "$VIRTUAL_ENV_ROOT" ] || [ ! -z "$INSTALL_DEADSNAKES_PPA" ] ; then
   python3 -m venv --system-site-packages $VIRTUAL_ENV_ROOT
   source $VIRTUAL_ENV_ROOT/bin/activate
 fi
-
-pkg_manager=$1
-
 pip install pip==24.0
-if [ "$pkg_manager" == "uv" ]; then
-  pip install uv
-else
-  pip install poetry==1.7.0
-fi
+pip install poetry==1.7.0
+
+poetry config virtualenvs.prefer-active-python true --local
+poetry config virtualenvs.in-project true --local
 
 echo "PYTHONPATH=${PWD}" > $ROOT/.env
 if [[ "$(uname)" == 'Darwin' ]]; then
@@ -37,15 +35,10 @@ if [[ "$(uname)" == 'Darwin' ]]; then
   echo "export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES" >> $ROOT/.env
 fi
 
-if [ "$pkg_manager" == "uv" ]; then
-  uv pip sync requirements.docker.txt
-else
-  poetry config virtualenvs.prefer-active-python true --local
-  poetry config virtualenvs.in-project true --local
-  poetry self add poetry-dotenv-plugin@^0.1.0
-  echo "pip packages install..."
-  poetry install --no-cache --no-root
-fi
+poetry self add poetry-dotenv-plugin@^0.1.0
+
+echo "pip packages install..."
+poetry install --no-cache --no-root
 
 [ -n "$POETRY_VIRTUALENVS_CREATE" ] && RUN="" || RUN="poetry run"
 
