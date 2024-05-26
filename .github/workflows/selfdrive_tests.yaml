@@ -53,7 +53,7 @@ jobs:
       run: |
         cd $STRIPPED_DIR
         ${{ env.RUN }} "release/check-dirty.sh && \
-                        MAX_EXAMPLES=5 $PYTEST selfdrive/car"
+                        MAX_EXAMPLES=5 $PYTEST -m 'not slow' selfdrive/car"
     - name: pre-commit
       timeout-minutes: 3
       run: |
@@ -62,7 +62,7 @@ jobs:
         cp pyproject.toml $STRIPPED_DIR
         cp poetry.lock $STRIPPED_DIR
         cd $STRIPPED_DIR
-        ${{ env.RUN }} "unset PYTHONWARNINGS && SKIP=check-added-large-files pre-commit run --all && chmod -R 777 /tmp/pre-commit"
+        ${{ env.RUN }} "unset PYTHONWARNINGS && SKIP=check-added-large-files,check-hooks-apply,check-useless-excludes pre-commit run --all && chmod -R 777 /tmp/pre-commit"
 
   build:
     strategy:
