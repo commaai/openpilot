@@ -84,7 +84,6 @@ version = "0.1.0"
 description = "an open source driver assistance system"
 authors = ["Vehicle Researcher <user@comma.ai>"]
 license = "MIT"
-readme = "README.md"
 repository = "https://github.com/commaai/openpilot"
 documentation = "https://docs.comma.ai"
 packages = [{ include = "openpilot" }]
