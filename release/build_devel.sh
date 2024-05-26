@@ -43,7 +43,7 @@ git clean -xdff
 # do the files copy
 echo "[-] copying files T=$SECONDS"
 cd $SOURCE_DIR
-find . -type f -o -type l | sed 's|^\./||' | grep -v -f release/non_release_files | xargs -I{} cp --parents -pR {} $TARGET_DIR/
+cp -pR --parents $(./release/release_files.py) $TARGET_DIR/
 
 # in the directory
 cd $TARGET_DIR
