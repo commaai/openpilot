@@ -55,7 +55,7 @@ dependencies = [
     "coverage",
     "dictdiffer",
     "flaky",
-    "hypothesis~=6.47",
+    "hypothesis==6.47",
     "inputs",
     "Jinja2",
     "lru-dict",
