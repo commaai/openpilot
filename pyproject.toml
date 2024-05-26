@@ -1,6 +1,6 @@
 [project]
 name = "openpilot"
-requires-python = ">= 3.11"
+requires-python = ">= 3.12"
 readme = "README.md"
 license = {text = "MIT License"}
 
@@ -44,7 +44,7 @@ testpaths = [
 ]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 plugins = [
   "numpy.typing.mypy_plugin",
 ]
@@ -89,7 +89,7 @@ documentation = "https://docs.comma.ai"
 
 
 [tool.poetry.dependencies]
-python = "~3.11"
+python = "~3.12"
 aiohttp = "*"
 aiortc = "*"
 cffi = "*"
@@ -141,14 +141,14 @@ inputs = "*"
 Jinja2 = "*"
 lru-dict = "*"
 matplotlib = "*"
-metadrive-simulator = { version = "0.4.2.3", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
+#metadrive-simulator-py3.12 = { version = "0.1.0", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
 mpld3 = "*"
 mypy = "*"
 myst-parser = "*"
 natsort = "*"
 opencv-python-headless = "*"
 parameterized = "^0.8"
-pprofile = "*"
+#pprofile = "*"
 polyline = "*"
 pre-commit = "*"
 pyautogui = "*"
