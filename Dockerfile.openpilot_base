@@ -72,7 +72,8 @@ RUN cd /tmp && \
     python3 -m venv --system-site-packages $VIRTUAL_ENV_ROOT && \
     . $VIRTUAL_ENV_ROOT/bin/activate && \
     pip install uv && \
-    uv pip install . && \
+    uv pip compile pyproject.toml -o requirements.txt && \
+    uv pip install -r requirements.txt && \
     rm -rf /tmp/* && \
     rm -rf /home/$USER/.cache
 
