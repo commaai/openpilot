@@ -99,35 +99,11 @@ function install_ubuntu_lts_latest_requirements() {
 # Install Ubuntu 20.04 packages
 function install_ubuntu_focal_requirements() {
   install_ubuntu_common_requirements
-  install_deadsnakes_ppa
+
   $SUDO apt-get install -y --no-install-recommends \
     libavresample-dev \
     qt5-default \
     python-dev
-}
-
-# Remove once on Ubuntu 24.04
-function install_deadsnakes_ppa(){
-  if [[ -z "$INSTALL_DEADSNAKES_PPA" ]]; then
-    read -p "Do you want to use deadsnakes python@3.11? [Y/n]: " -n 1 -r
-    echo ""
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-      INSTALL_DEADSNAKES_PPA="yes"
-      export VIRTUAL_ENV_ROOT=".venv"
-    fi
-  fi
-  if [[ "$INSTALL_DEADSNAKES_PPA" == "yes" ]]; then
-    $SUDO apt-get install software-properties-common -y --no-install-recommends
-    $SUDO add-apt-repository ppa:deadsnakes/ppa
-    $SUDO apt-get install -y --no-install-recommends \
-      python3.11-dev \
-      python3.11 \
-      python3.11-venv \
-      python3.11-distutils \
-      python3-pip
-    $SUDO update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 20
-    curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11
-  fi
 }
 
 # Detect OS using /etc/os-release file
