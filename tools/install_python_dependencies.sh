@@ -22,6 +22,7 @@ if [ ! -z "$VIRTUAL_ENV_ROOT" ] || [ ! -z "$INSTALL_DEADSNAKES_PPA" ] ; then
   python3 -m venv --system-site-packages $VIRTUAL_ENV_ROOT
   source $VIRTUAL_ENV_ROOT/bin/activate
 fi
+pip uninstall textract
 pip install pip==24.0
 pip install poetry==1.7.0
 
