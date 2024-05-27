@@ -113,13 +113,11 @@ function install_deadsnakes_ppa(){
     echo ""
     if [[ $REPLY =~ ^[Yy]$ ]]; then
       INSTALL_DEADSNAKES_PPA="yes"
+      export VIRTUAL_ENV_ROOT=".venv"
     fi
   fi
   if [[ "$INSTALL_DEADSNAKES_PPA" == "yes" ]]; then
-    # The reinstall ensures that apt_pkg.cpython-35m-x86_64-linux-gnu.so exists
-    # by reinstalling python3-minimal since it's not present in /usr/lib/python3/dist-packages.
-    $SUDO apt install -y --no-install-recommends --reinstall python3-minimal
-    $SUDO apt-get install -y --no-install-recommends python3-apt software-properties-common
+    $SUDO apt-get install software-properties-common -y --no-install-recommends
     $SUDO add-apt-repository ppa:deadsnakes/ppa
     $SUDO apt-get install -y --no-install-recommends \
       python3.11-dev \
