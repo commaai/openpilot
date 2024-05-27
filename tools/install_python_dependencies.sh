@@ -19,15 +19,14 @@ if [ ! -z "$VIRTUAL_ENV_ROOT" ] || [ ! -z "$INSTALL_DEADSNAKES_PPA" ] ; then
   if [ -z "$VIRTUAL_ENV_ROOT" ]; then
     export VIRTUAL_ENV_ROOT="venv"
   fi
-  python3 -m venv --system-site-packages $VIRTUAL_ENV_ROOT
+  python3 -m venv $VIRTUAL_ENV_ROOT
   source $VIRTUAL_ENV_ROOT/bin/activate
 fi
-pip uninstall textract
 pip install pip==24.0
-pip install poetry==1.7.0
+pip install poetry==1.8.3
 
-poetry config virtualenvs.prefer-active-python true --local
-poetry config virtualenvs.in-project true --local
+# poetry config virtualenvs.prefer-active-python true --local
+# poetry config virtualenvs.in-project true --local
 
 echo "PYTHONPATH=${PWD}" > $ROOT/.env
 if [[ "$(uname)" == 'Darwin' ]]; then
@@ -35,7 +34,6 @@ if [[ "$(uname)" == 'Darwin' ]]; then
   echo "export ZMQ=1" >> $ROOT/.env
   echo "export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES" >> $ROOT/.env
 fi
-
 poetry self add poetry-dotenv-plugin@^0.1.0
 
 echo "pip packages install..."

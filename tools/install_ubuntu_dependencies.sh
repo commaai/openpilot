@@ -17,6 +17,7 @@ function install_ubuntu_common_requirements() {
   $SUDO apt-get update
   $SUDO apt-get install -y --no-install-recommends \
     ca-certificates \
+    cmake \
     clang \
     cppcheck \
     build-essential \
@@ -60,7 +61,8 @@ function install_ubuntu_common_requirements() {
     libqt5svg5-dev \
     libqt5serialbus5-dev  \
     libqt5x11extras5-dev \
-    libqt5opengl5-dev
+    libqt5opengl5-dev \
+    python3-setuptools
 }
 
 # Install extra packages
@@ -68,7 +70,6 @@ function install_extra_packages() {
   echo "Installing extra packages..."
   $SUDO apt-get install -y --no-install-recommends \
     casync \
-    cmake \
     make \
     clinfo \
     libqt5sql5-sqlite \
