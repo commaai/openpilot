@@ -41,6 +41,7 @@ public:
   void setStreamType(VisionStreamType type) { requested_stream_type = type; }
   VisionStreamType getStreamType() { return active_stream_type; }
   void stopVipcThread();
+  void setUpdateOnFrame(bool v) { update_on_frame = v; }
 
 signals:
   void clicked();
@@ -62,6 +63,7 @@ protected:
   int glWidth();
   int glHeight();
 
+  bool update_on_frame = true;
   bool zoomed_view;
   GLuint frame_vao, frame_vbo, frame_ibo;
   GLuint textures[2];

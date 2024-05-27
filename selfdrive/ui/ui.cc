@@ -1,9 +1,9 @@
 #include "selfdrive/ui/ui.h"
 
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 
+#include <QApplication>
 #include <QtConcurrent>
 
 #include "common/transformations/orientation.hpp"
@@ -259,13 +259,26 @@ UIState::UIState(QObject *parent) : QObject(parent) {
     prime_type = static_cast<PrimeType>(std::atoi(prime_value.c_str()));
   }
 
-  // update timer
-  timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, this, &UIState::update);
-  timer->start(1000 / UI_FREQ);
+  future = QtConcurrent::run(this, &UIState::updateUIWorkerThread);
+  QObject::connect(qApp, &QApplication::aboutToQuit, [this]() {
+    exit_ = true;
+    future.waitForFinished();
+  });
 }
 
-void UIState::update() {
+void UIState::updateUIWorkerThread() {
+  SubMaster s({"uiPlan"});
+  while (!exit_) {
+    s.update(1000 / UI_FREQ);
+    bool received = s.updated("uiPlan");
+    QMetaObject::invokeMethod(this, std::bind(&UIState::update, this, received), Qt::QueuedConnection);
+  }
+}
+
+void UIState::update(bool msg_received) {
+  if (!msg_received && scene.started)
+    return;
+
   update_sockets(this);
   update_state(this);
   updateStatus();

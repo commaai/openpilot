@@ -380,7 +380,9 @@ void CameraWidget::vipcConnected(VisionIpcClient *vipc_client) {
 }
 
 void CameraWidget::vipcFrameReceived() {
-  update();
+  if (update_on_frame) {
+    update();
+  }
 }
 
 void CameraWidget::vipcThread() {
