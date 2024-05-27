@@ -136,7 +136,7 @@ class CarController(CarControllerBase):
         if self.frame % 2 == 0:
           can_sends.append(subarucan.create_es_static_2(self.packer))
 
-    new_actuators = actuators.copy()
+    new_actuators = actuators.as_builder()
     new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX
     new_actuators.steerOutputCan = self.apply_steer_last
 
