@@ -33,6 +33,7 @@ constexpr char PRESERVE_ATTR_VALUE = '1';
 class EncoderInfo {
 public:
   const char *publish_name;
+  const char *thumbnail_name = NULL;
   const char *filename = NULL;
   bool record = true;
   int frame_width = -1;
@@ -76,6 +77,7 @@ const EncoderInfo main_driver_encoder_info = {
 
 const EncoderInfo stream_road_encoder_info = {
   .publish_name = "livestreamRoadEncodeData",
+  //.thumbnail_name = "thumbnail",
   .encode_type = cereal::EncodeIndex::Type::QCAMERA_H264,
   .record = false,
   .bitrate = LIVESTREAM_BITRATE,
