@@ -99,37 +99,11 @@ function install_ubuntu_lts_latest_requirements() {
 # Install Ubuntu 20.04 packages
 function install_ubuntu_focal_requirements() {
   install_ubuntu_common_requirements
-  install_deadsnakes_ppa
+
   $SUDO apt-get install -y --no-install-recommends \
     libavresample-dev \
     qt5-default \
     python-dev
-}
-
-# Remove once on Ubuntu 24.04
-function install_deadsnakes_ppa(){
-  if [[ -z "$INSTALL_DEADSNAKES_PPA" ]]; then
-    read -p "Do you want to use deadsnakes python@3.11? [Y/n]: " -n 1 -r
-    echo ""
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
-      INSTALL_DEADSNAKES_PPA="yes"
-    fi
-  fi
-  if [[ "$INSTALL_DEADSNAKES_PPA" == "yes" ]]; then
-    # The reinstall ensures that apt_pkg.cpython-35m-x86_64-linux-gnu.so exists
-    # by reinstalling python3-minimal since it's not present in /usr/lib/python3/dist-packages.
-    $SUDO apt install -y --no-install-recommends --reinstall python3-minimal
-    $SUDO apt-get install -y --no-install-recommends python3-apt software-properties-common
-    $SUDO add-apt-repository ppa:deadsnakes/ppa
-    $SUDO apt-get install -y --no-install-recommends \
-      python3.11-dev \
-      python3.11 \
-      python3.11-venv \
-      python3.11-distutils \
-      python3-pip
-    $SUDO update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 20
-    curl -sS https://bootstrap.pypa.io/get-pip.py | python3.11
-  fi
 }
 
 # Detect OS using /etc/os-release file
