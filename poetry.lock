@@ -2268,13 +2268,13 @@ files = [
 
 [[package]]
 name = "metadrive-simulator-py3-12"
-version = "0.2.0"
+version = "0.3.0"
 description = "An open-ended driving simulator with infinite scenes"
 optional = false
 python-versions = "<3.13,>=3.6"
 files = [
-    {file = "metadrive_simulator_py3_12-0.2.0-py3-none-any.whl", hash = "sha256:631d7c2eef2197d9e2fc84bba67e127b9fd798aab7bec4a41e10a191c92b018e"},
-    {file = "metadrive_simulator_py3_12-0.2.0.tar.gz", hash = "sha256:91a162352513fbe29578cd3a138848953da5863fd9f75a305d2e309eae41ec00"},
+    {file = "metadrive_simulator_py3_12-0.3.0-py3-none-any.whl", hash = "sha256:24a1b5a805c389e526e943bade9539df8aa901b9c5921b82ccdbd5e756c33da0"},
+    {file = "metadrive_simulator_py3_12-0.3.0.tar.gz", hash = "sha256:206fe2cdc0aa0ee4d8e1b1bd9f47b134043012d624d0619ce436c30f6a6df67e"},
 ]
 
 [package.dependencies]
@@ -7956,4 +7956,4 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "jaraco.test", "more
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.12"
-content-hash = "1c3a6ce78102ca3b4a3f6184219eada902fe2d538de526f65cde6416824a0c88"
+content-hash = "92ff41ae2ad24f50ef88c2a3672b24e9b0b5c6967ea2686199d27112a3548dd3"
