@@ -28,7 +28,7 @@ fi
 
 # Install brew if required
 if [[ $(command -v brew) == "" ]]; then
-  echo "Installing Hombrew"
+  echo "Installing Homebrew"
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
   echo "[ ] installed brew t=$SECONDS"
 
