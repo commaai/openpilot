@@ -73,7 +73,7 @@ jobs:
     - name: Setup Dev Container CLI
       run: npm install -g @devcontainers/cli
     - name: Build dev container image
-      run: devcontainer build --workspace-folder .
+      run: ./scripts/retry.sh devcontainer build --workspace-folder .
     - name: Run dev container
       run: |
         mkdir -p /tmp/devcontainer_scons_cache/
