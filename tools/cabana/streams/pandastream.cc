@@ -6,12 +6,17 @@
 #include <QMessageBox>
 #include <QPushButton>
 #include <QThread>
+#include <QTimer>
 
-PandaStream::PandaStream(QObject *parent, PandaStreamConfig config_) : config(config_), LiveStream(parent) {}
+PandaStream::PandaStream(QObject *parent, PandaStreamConfig config_) : config(config_), LiveStream(parent) {
+  if (!connect()) {
+    throw std::runtime_error("Failed to connect to panda");
+  }
+}
 
 bool PandaStream::connect() {
   try {
-    qDebug() << "Connecting to panda with serial" << config.serial;
+    qDebug() << "Connecting to panda " << config.serial;
     panda.reset(new Panda(config.serial.toStdString()));
     config.bus_config.resize(3);
     qDebug() << "Connected";
@@ -80,6 +85,13 @@ AbstractOpenStreamWidget *PandaStream::widget(AbstractStream **stream) {
 
 OpenPandaWidget::OpenPandaWidget(AbstractStream **stream) : AbstractOpenStreamWidget(stream) {
   form_layout = new QFormLayout(this);
+  if (can && dynamic_cast<PandaStream *>(can) != nullptr) {
+    form_layout->addWidget(new QLabel(tr("Already connected to %1.").arg(can->routeName())));
+    form_layout->addWidget(new QLabel("Close the current connection via [File menu -> Close Stream] before connecting to another Panda."));
+    QTimer::singleShot(0, [this]() { emit enableOpenButton(false); });
+    return;
+  }
+
   QHBoxLayout *serial_layout = new QHBoxLayout();
   serial_layout->addWidget(serial_edit = new QComboBox());
 
@@ -116,6 +128,7 @@ void OpenPandaWidget::buildConfigForm() {
       Panda panda(serial.toStdString());
       has_fd = (panda.hw_type == cereal::PandaState::PandaType::RED_PANDA) || (panda.hw_type == cereal::PandaState::PandaType::RED_PANDA_V2);
     } catch (const std::exception& e) {
+      qDebug() << "failed to open panda" << serial;
       has_panda = false;
     }
   }
@@ -170,13 +183,11 @@ void OpenPandaWidget::buildConfigForm() {
 }
 
 bool OpenPandaWidget::open() {
-  if (!config.serial.isEmpty()) {
-    auto panda_stream = std::make_unique<PandaStream>(qApp, config);
-    if (panda_stream->connect()) {
-      *stream = panda_stream.release();
-      return true;
-    }
+  try {
+    *stream = new PandaStream(qApp, config);
+    return true;
+  } catch (std::exception &e) {
+    QMessageBox::warning(nullptr, tr("Warning"), tr("Failed to connect to panda: '%1'").arg(e.what()));
+    return false;
   }
-  QMessageBox::warning(nullptr, tr("Warning"), tr("Failed to connect to panda"));
-  return false;
 }
