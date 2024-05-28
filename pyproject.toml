@@ -112,7 +112,7 @@ requests = "*"
 scons = "*"
 sentry-sdk = "*"
 smbus2 = "*"
-sounddevice = "*"
+sounddevice = "0.4.6"
 spidev = { version = "*", platform = "linux" }
 sympy = "*"
 websocket_client = "*"
