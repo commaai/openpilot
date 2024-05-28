@@ -8,7 +8,7 @@ from typing import cast
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
 from openpilot.system.athena import athenad
-from openpilot.selfdrive.manager.helpers import write_onroad_params
+from openpilot.system.manager.helpers import write_onroad_params
 from openpilot.system.hardware import TICI
 
 TIMEOUT_TOLERANCE = 20  # seconds

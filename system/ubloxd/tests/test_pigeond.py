@@ -6,7 +6,7 @@ import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
 from openpilot.common.gpio import gpio_read
 from openpilot.selfdrive.test.helpers import with_processes
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.hardware.tici.pins import GPIO
 
 
