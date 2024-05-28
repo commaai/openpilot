@@ -60,6 +60,8 @@ class SimulatorBridge(ABC):
     self.past_startup_engaged = False
     self.startup_button_prev = True
 
+    self.test_run = False
+
   def _on_shutdown(self, signal, frame):
     self.shutdown()
 
@@ -193,7 +195,8 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
         self.world.tick()
         self.world.read_cameras()
 
-      if self.rk.frame % 25 == 0:
+      # don't print during test, so no print/IO Block between OP and metadrive processes
+      if not self.test_run and self.rk.frame % 25 == 0:
         self.print_status()
 
       self.started.value = True

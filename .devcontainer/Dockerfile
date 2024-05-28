@@ -1,6 +1,6 @@
 FROM ghcr.io/commaai/openpilot-base:latest
 
-RUN apt update && apt install -y vim net-tools usbutils htop ripgrep tmux wget mesa-utils xvfb libxtst6 libxv1 libglu1-mesa libegl1-mesa gdb
+RUN apt update && apt install -y vim net-tools usbutils htop ripgrep tmux wget mesa-utils xvfb libxtst6 libxv1 libglu1-mesa libegl1-mesa gdb bash-completion
 RUN pip install ipython jupyter jupyterlab
 
 RUN cd /tmp && \
