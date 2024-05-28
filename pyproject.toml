@@ -3,6 +3,9 @@ name = "openpilot"
 requires-python = ">= 3.11"
 readme = "README.md"
 license = {text = "MIT License"}
+dependencies = [
+  "metadrive@git+https://github.com/commaai/metadrive#egg=python3.12"
+]
 
 [project.urls]
 Homepage = "https://comma.ai"
@@ -140,7 +143,7 @@ inputs = "*"
 Jinja2 = "*"
 lru-dict = "*"
 matplotlib = "*"
-metadrive-simulator-py3-12 = { version = "0.3.0", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
+#metadrive-simulator-py3-12 = { version = "*", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
 mpld3 = "*"
 mypy = "*"
 myst-parser = "*"
