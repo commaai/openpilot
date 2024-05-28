@@ -18,4 +18,4 @@ SCRIPT_DIR=$(dirname "$0")
 OPENPILOT_DIR=$SCRIPT_DIR/../../
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-cd $OPENPILOT_DIR/selfdrive/manager && exec ./manager.py
+cd $OPENPILOT_DIR/system/manager && exec ./manager.py

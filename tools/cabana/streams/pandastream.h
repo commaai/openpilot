@@ -21,14 +21,15 @@ class PandaStream : public LiveStream {
   Q_OBJECT
 public:
   PandaStream(QObject *parent, PandaStreamConfig config_ = {});
+  ~PandaStream() { stop(); }
   static AbstractOpenStreamWidget *widget(AbstractStream **stream);
   inline QString routeName() const override {
-    return QString("Live Streaming From Panda %1").arg(config.serial);
+    return QString("Panda: %1").arg(config.serial);
   }
 
 protected:
-  void streamThread() override;
   bool connect();
+  void streamThread() override;
 
   std::unique_ptr<Panda> panda;
   PandaStreamConfig config = {};
@@ -47,6 +48,6 @@ private:
   void buildConfigForm();
 
   QComboBox *serial_edit;
-  QFormLayout *config_layout;
+  QFormLayout *form_layout;
   PandaStreamConfig config = {};
 };

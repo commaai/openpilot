@@ -1,4 +1,4 @@
-import unittest
+import pytest
 import numpy as np
 from openpilot.selfdrive.controls.lib.lateral_mpc_lib.lat_mpc import LateralMpc
 from openpilot.selfdrive.controls.lib.drive_helpers import CAR_ROTATION_RADIUS
@@ -27,20 +27,20 @@ def run_mpc(lat_mpc=None, v_ref=30., x_init=0., y_init=0., psi_init=0., curvatur
   return lat_mpc.x_sol
 
 
-class TestLateralMpc(unittest.TestCase):
+class TestLateralMpc:
 
   def _assert_null(self, sol, curvature=1e-6):
     for i in range(len(sol)):
-      self.assertAlmostEqual(sol[0,i,1], 0., delta=curvature)
-      self.assertAlmostEqual(sol[0,i,2], 0., delta=curvature)
-      self.assertAlmostEqual(sol[0,i,3], 0., delta=curvature)
+      assert sol[0,i,1] == pytest.approx(0, abs=curvature)
+      assert sol[0,i,2] == pytest.approx(0, abs=curvature)
+      assert sol[0,i,3] == pytest.approx(0, abs=curvature)
 
   def _assert_simmetry(self, sol, curvature=1e-6):
     for i in range(len(sol)):
-      self.assertAlmostEqual(sol[0,i,1], -sol[1,i,1], delta=curvature)
-      self.assertAlmostEqual(sol[0,i,2], -sol[1,i,2], delta=curvature)
-      self.assertAlmostEqual(sol[0,i,3], -sol[1,i,3], delta=curvature)
-      self.assertAlmostEqual(sol[0,i,0], sol[1,i,0], delta=curvature)
+      assert sol[0,i,1] == pytest.approx(-sol[1,i,1], abs=curvature)
+      assert sol[0,i,2] == pytest.approx(-sol[1,i,2], abs=curvature)
+      assert sol[0,i,3] == pytest.approx(-sol[1,i,3], abs=curvature)
+      assert sol[0,i,0] == pytest.approx(sol[1,i,0], abs=curvature)
 
   def test_straight(self):
     sol = run_mpc()
@@ -74,7 +74,7 @@ class TestLateralMpc(unittest.TestCase):
     y_init = 1.
     sol = run_mpc(y_init=y_init)
     for y in list(sol[:,1]):
-      self.assertGreaterEqual(y_init, abs(y))
+      assert y_init >= abs(y)
 
   def test_switch_convergence(self):
     lat_mpc = LateralMpc()
@@ -83,7 +83,3 @@ class TestLateralMpc(unittest.TestCase):
     sol = run_mpc(lat_mpc=lat_mpc, poly_shift=-3.0, v_ref=7.0)
     left_psi_deg = np.degrees(sol[:,2])
     np.testing.assert_almost_equal(right_psi_deg, -left_psi_deg, decimal=3)
-
-
-if __name__ == "__main__":
-  unittest.main()

@@ -219,7 +219,7 @@ class CAR(Platforms):
     flags=HyundaiFlags.HYBRID,
   )
   HYUNDAI_KONA = HyundaiPlatformConfig(
-    [HyundaiCarDocs("Hyundai Kona 2020", car_parts=CarParts.common([CarHarness.hyundai_b]))],
+    [HyundaiCarDocs("Hyundai Kona 2020", min_enable_speed=6 * CV.MPH_TO_MS, car_parts=CarParts.common([CarHarness.hyundai_b]))],
     CarSpecs(mass=1275, wheelbase=2.6, steerRatio=13.42, tireStiffnessFactor=0.385),
     flags=HyundaiFlags.CLUSTER_GEARS,
   )
@@ -325,8 +325,9 @@ class CAR(Platforms):
   HYUNDAI_TUCSON_4TH_GEN = HyundaiCanFDPlatformConfig(
     [
       HyundaiCarDocs("Hyundai Tucson 2022", car_parts=CarParts.common([CarHarness.hyundai_n])),
-      HyundaiCarDocs("Hyundai Tucson 2023", "All", car_parts=CarParts.common([CarHarness.hyundai_n])),
+      HyundaiCarDocs("Hyundai Tucson 2023-24", "All", car_parts=CarParts.common([CarHarness.hyundai_n])),
       HyundaiCarDocs("Hyundai Tucson Hybrid 2022-24", "All", car_parts=CarParts.common([CarHarness.hyundai_n])),
+      HyundaiCarDocs("Hyundai Tucson Plug-in Hybrid 2024", "All", car_parts=CarParts.common([CarHarness.hyundai_n])),
     ],
     CarSpecs(mass=1630, wheelbase=2.756, steerRatio=13.7, tireStiffnessFactor=0.385),
   )
@@ -344,8 +345,8 @@ class CAR(Platforms):
   # Kia
   KIA_FORTE = HyundaiPlatformConfig(
     [
-      HyundaiCarDocs("Kia Forte 2019-21", car_parts=CarParts.common([CarHarness.hyundai_g])),
-      HyundaiCarDocs("Kia Forte 2023", car_parts=CarParts.common([CarHarness.hyundai_e])),
+      HyundaiCarDocs("Kia Forte 2019-21", min_enable_speed=6 * CV.MPH_TO_MS, car_parts=CarParts.common([CarHarness.hyundai_g])),
+      HyundaiCarDocs("Kia Forte 2022-23", car_parts=CarParts.common([CarHarness.hyundai_e])),
     ],
     CarSpecs(mass=2878 * CV.LB_TO_KG, wheelbase=2.8, steerRatio=13.75, tireStiffnessFactor=0.5)
   )
@@ -481,9 +482,9 @@ class CAR(Platforms):
   )
   KIA_EV6 = HyundaiCanFDPlatformConfig(
     [
-      HyundaiCarDocs("Kia EV6 (Southeast Asia only) 2022-23", "All", car_parts=CarParts.common([CarHarness.hyundai_p])),
-      HyundaiCarDocs("Kia EV6 (without HDA II) 2022-23", "Highway Driving Assist", car_parts=CarParts.common([CarHarness.hyundai_l])),
-      HyundaiCarDocs("Kia EV6 (with HDA II) 2022-23", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_p]))
+      HyundaiCarDocs("Kia EV6 (Southeast Asia only) 2022-24", "All", car_parts=CarParts.common([CarHarness.hyundai_p])),
+      HyundaiCarDocs("Kia EV6 (without HDA II) 2022-24", "Highway Driving Assist", car_parts=CarParts.common([CarHarness.hyundai_l])),
+      HyundaiCarDocs("Kia EV6 (with HDA II) 2022-24", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_p]))
     ],
     CarSpecs(mass=2055, wheelbase=2.9, steerRatio=16, tireStiffnessFactor=0.65),
     flags=HyundaiFlags.EV,
@@ -514,14 +515,14 @@ class CAR(Platforms):
     flags=HyundaiFlags.EV,
   )
   GENESIS_G70 = HyundaiPlatformConfig(
-    [HyundaiCarDocs("Genesis G70 2018-19", "All", car_parts=CarParts.common([CarHarness.hyundai_f]))],
+    [HyundaiCarDocs("Genesis G70 2018", "All", car_parts=CarParts.common([CarHarness.hyundai_f]))],
     CarSpecs(mass=1640, wheelbase=2.84, steerRatio=13.56),
     flags=HyundaiFlags.LEGACY,
   )
   GENESIS_G70_2020 = HyundaiPlatformConfig(
     [
       # TODO: 2021 MY harness is unknown
-      HyundaiCarDocs("Genesis G70 2020-21", "All", car_parts=CarParts.common([CarHarness.hyundai_f])),
+      HyundaiCarDocs("Genesis G70 2019-21", "All", car_parts=CarParts.common([CarHarness.hyundai_f])),
       # TODO: From 3.3T Sport Advanced 2022 & Prestige 2023 Trim, 2.0T is unknown
       HyundaiCarDocs("Genesis G70 2022-23", "All", car_parts=CarParts.common([CarHarness.hyundai_l])),
     ],
@@ -579,7 +580,7 @@ def get_platform_codes(fw_versions: list[bytes]) -> set[tuple[bytes, bytes | Non
   return codes
 
 
-def match_fw_to_car_fuzzy(live_fw_versions, offline_fw_versions) -> set[str]:
+def match_fw_to_car_fuzzy(live_fw_versions, vin, offline_fw_versions) -> set[str]:
   # Non-electric CAN FD platforms often do not have platform code specifiers needed
   # to distinguish between hybrid and ICE. All EVs so far are either exclusively
   # electric or specify electric in the platform code.
@@ -757,6 +758,3 @@ LEGACY_SAFETY_MODE_CAR = CAR.with_flags(HyundaiFlags.LEGACY)
 UNSUPPORTED_LONGITUDINAL_CAR = CAR.with_flags(HyundaiFlags.LEGACY) | CAR.with_flags(HyundaiFlags.UNSUPPORTED_LONGITUDINAL)
 
 DBC = CAR.create_dbc_map()
-
-if __name__ == "__main__":
-  CAR.print_debug(HyundaiFlags)

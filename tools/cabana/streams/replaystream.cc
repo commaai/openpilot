@@ -7,6 +7,7 @@
 #include <QPushButton>
 
 #include "common/timing.h"
+#include "tools/cabana/streams/routes.h"
 
 ReplayStream::ReplayStream(QObject *parent) : AbstractStream(parent) {
   unsetenv("ZMQ");
@@ -33,11 +34,12 @@ void ReplayStream::mergeSegments() {
 
       std::vector<const CanEvent *> new_events;
       new_events.reserve(seg->log->events.size());
-      for (auto it = seg->log->events.cbegin(); it != seg->log->events.cend(); ++it) {
-        if ((*it)->which == cereal::Event::Which::CAN) {
-          const uint64_t ts = (*it)->mono_time;
-          for (const auto &c : (*it)->event.getCan()) {
-            new_events.push_back(newEvent(ts, c));
+      for (const Event &e : seg->log->events) {
+        if (e.which == cereal::Event::Which::CAN) {
+          capnp::FlatArrayMessageReader reader(e.data);
+          auto event = reader.getRoot<cereal::Event>();
+          for (const auto &c : event.getCan()) {
+            new_events.push_back(newEvent(e.mono_time, c));
           }
         }
       }
@@ -66,7 +68,9 @@ bool ReplayStream::eventFilter(const Event *event) {
   static double prev_update_ts = 0;
   if (event->which == cereal::Event::Which::CAN) {
     double current_sec = event->mono_time / 1e9 - routeStartTime();
-    for (const auto &c : event->event.getCan()) {
+    capnp::FlatArrayMessageReader reader(event->data);
+    auto e = reader.getRoot<cereal::Event>();
+    for (const auto &c : e.getCan()) {
       MessageId id = {.source = c.getSrc(), .address = c.getAddress()};
       const auto dat = c.getDat();
       updateEvent(id, current_sec, (const uint8_t*)dat.begin(), dat.size());
@@ -79,6 +83,16 @@ bool ReplayStream::eventFilter(const Event *event) {
     prev_update_ts = ts;
   }
   return true;
+}
+
+void ReplayStream::seekTo(double ts) {
+  // Update timestamp and notify receivers of the time change.
+  current_sec_ = ts;
+  std::set<MessageId> new_msgs;
+  msgsReceived(&new_msgs, false);
+
+  // Seek to the specified timestamp
+  replay->seekTo(std::max(double(0), ts), false);
 }
 
 void ReplayStream::pause(bool pause) {
@@ -94,27 +108,34 @@ AbstractOpenStreamWidget *ReplayStream::widget(AbstractStream **stream) {
 // OpenReplayWidget
 
 OpenReplayWidget::OpenReplayWidget(AbstractStream **stream) : AbstractOpenStreamWidget(stream) {
-  // TODO: get route list from api.comma.ai
   QGridLayout *grid_layout = new QGridLayout(this);
   grid_layout->addWidget(new QLabel(tr("Route")), 0, 0);
   grid_layout->addWidget(route_edit = new QLineEdit(this), 0, 1);
-  route_edit->setPlaceholderText(tr("Enter remote route name or click browse to select a local route"));
-  auto file_btn = new QPushButton(tr("Browse..."), this);
-  grid_layout->addWidget(file_btn, 0, 2);
+  route_edit->setPlaceholderText(tr("Enter route name or browse for local/remote route"));
+  auto browse_remote_btn = new QPushButton(tr("Remote route..."), this);
+  grid_layout->addWidget(browse_remote_btn, 0, 2);
+  auto browse_local_btn = new QPushButton(tr("Local route..."), this);
+  grid_layout->addWidget(browse_local_btn, 0, 3);
 
-  grid_layout->addWidget(new QLabel(tr("Camera")), 1, 0);
   QHBoxLayout *camera_layout = new QHBoxLayout();
   for (auto c : {tr("Road camera"), tr("Driver camera"), tr("Wide road camera")})
     camera_layout->addWidget(cameras.emplace_back(new QCheckBox(c, this)));
+  cameras[0]->setChecked(true);
   camera_layout->addStretch(1);
   grid_layout->addItem(camera_layout, 1, 1);
 
   setMinimumWidth(550);
-  QObject::connect(file_btn, &QPushButton::clicked, [=]() {
+  QObject::connect(browse_local_btn, &QPushButton::clicked, [=]() {
     QString dir = QFileDialog::getExistingDirectory(this, tr("Open Local Route"), settings.last_route_dir);
     if (!dir.isEmpty()) {
       route_edit->setText(dir);
       settings.last_route_dir = QFileInfo(dir).absolutePath();
+    }
+  });
+  QObject::connect(browse_remote_btn, &QPushButton::clicked, [this]() {
+    RoutesDialog route_dlg(this);
+    if (route_dlg.exec()) {
+      route_edit->setText(route_dlg.route());
     }
   });
 }

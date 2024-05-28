@@ -47,7 +47,7 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
 class LongitudinalPlanner:
   def __init__(self, CP, init_v=0.0, init_a=0.0, dt=DT_MDL):
     self.CP = CP
-    self.mpc = LongitudinalMpc()
+    self.mpc = LongitudinalMpc(dt=dt)
     self.fcw = False
     self.dt = dt
 

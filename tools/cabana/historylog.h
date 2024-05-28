@@ -3,7 +3,6 @@
 #include <deque>
 #include <vector>
 
-#include <QCheckBox>
 #include <QComboBox>
 #include <QHeaderView>
 #include <QLineEdit>
@@ -11,7 +10,6 @@
 
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/streams/abstractstream.h"
-#include "tools/cabana/utils/util.h"
 
 class HeaderView : public QHeaderView {
 public:
@@ -26,24 +24,18 @@ class HistoryLogModel : public QAbstractTableModel {
 public:
   HistoryLogModel(QObject *parent) : QAbstractTableModel(parent) {}
   void setMessage(const MessageId &message_id);
-  void updateState();
+  void updateState(bool clear = false);
   void setFilter(int sig_idx, const QString &value, std::function<bool(double, double)> cmp);
   QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
   QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
   void fetchMore(const QModelIndex &parent) override;
-  inline bool canFetchMore(const QModelIndex &parent) const override { return has_more_data; }
+  bool canFetchMore(const QModelIndex &parent) const override;
   int rowCount(const QModelIndex &parent = QModelIndex()) const override { return messages.size(); }
-  int columnCount(const QModelIndex &parent = QModelIndex()) const override {
-    return display_signals_mode && !sigs.empty() ? sigs.size() + 1 : 2;
-  }
-  void refresh(bool fetch_message = true);
+  int columnCount(const QModelIndex &parent = QModelIndex()) const override { return !isHexMode() ? sigs.size() + 1 : 2; }
+  inline bool isHexMode() const { return sigs.empty() || hex_mode; }
+  void reset();
+  void setHexMode(bool hex_mode);
 
-public slots:
-  void setDisplayType(int type);
-  void setDynamicMode(int state);
-  void segmentsMerged();
-
-public:
   struct Message {
     uint64_t mono_time = 0;
     std::vector<double> sig_values;
@@ -51,22 +43,17 @@ public:
     std::vector<QColor> colors;
   };
 
-  template <class InputIt>
-  std::deque<HistoryLogModel::Message> fetchData(InputIt first, InputIt last, uint64_t min_time);
-  std::deque<Message> fetchData(uint64_t from_time, uint64_t min_time = 0);
+  void fetchData(std::deque<Message>::iterator insert_pos, uint64_t from_time, uint64_t min_time);
 
   MessageId msg_id;
   CanData hex_colors;
-  bool has_more_data = true;
   const int batch_size = 50;
   int filter_sig_idx = -1;
   double filter_value = 0;
-  uint64_t last_fetch_time = 0;
   std::function<bool(double, double)> filter_cmp = nullptr;
   std::deque<Message> messages;
   std::vector<cabana::Signal *> sigs;
-  bool dynamic_mode = true;
-  bool display_signals_mode = true;
+  bool hex_mode = false;
 };
 
 class LogsWidget : public QFrame {
@@ -74,22 +61,21 @@ class LogsWidget : public QFrame {
 
 public:
   LogsWidget(QWidget *parent);
-  void setMessage(const MessageId &message_id);
-  void updateState();
-  void showEvent(QShowEvent *event) override;
+  void setMessage(const MessageId &message_id) { model->setMessage(message_id); }
+  void updateState() { model->updateState(); }
+  void showEvent(QShowEvent *event) override { model->updateState(true); }
 
 private slots:
-  void setFilter();
+  void filterChanged();
   void exportToCSV();
+  void modelReset();
 
 private:
-  void refresh();
-
   QTableView *logs;
   HistoryLogModel *model;
-  QCheckBox *dynamic_mode;
   QComboBox *signals_cb, *comp_box, *display_type_cb;
   QLineEdit *value_edit;
   QWidget *filters_widget;
+  ToolButton *export_btn;
   MessageBytesDelegate *delegate;
 };
