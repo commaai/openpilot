@@ -72,7 +72,8 @@ jobs:
         echo "USE_LOCAL_IMAGE=true" >> "$GITHUB_ENV"
     - name: Setup Dev Container CLI
       run: npm install -g @devcontainers/cli
-    - uses: ./.github/workflows/build-devcontainer-with-retry
+    - name: Build dev container image
+      run: ./scripts/retry.sh devcontainer build --workspace-folder .
     - name: Run dev container
       run: |
         mkdir -p /tmp/devcontainer_scons_cache/
