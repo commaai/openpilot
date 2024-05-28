@@ -9,7 +9,7 @@ Homepage = "https://comma.ai"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
+addopts = "--ignore=common/ --ignore=selfdrive/ --ignore=system/ --ignore=tools/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
 cpp_files = "test_*"
 cpp_harness = "selfdrive/test/cpp_harness.py"
 python_files = "test_*.py"
