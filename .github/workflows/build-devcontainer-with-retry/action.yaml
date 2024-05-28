@@ -4,18 +4,19 @@ runs:
   using: "composite"
   steps:
     - id: setup1
+      shell: bash
       run: devcontainer build --workspace-folder .
       continue-on-error: true
     - if: steps.setup1.outcome == 'failure'
-      shell: bash
       run: sleep ${{ inputs.sleep_time }}
     - id: setup2
+      shell: bash
       if: steps.setup1.outcome == 'failure'
       run: devcontainer build --workspace-folder .
       continue-on-error: true
     - if: steps.setup2.outcome == 'failure'
-      shell: bash
       run: sleep ${{ inputs.sleep_time }}
     - id: setup3
+      shell: bash
       if: steps.setup2.outcome == 'failure'
       run: devcontainer build --workspace-folder .
