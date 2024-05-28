@@ -262,6 +262,9 @@ void MainWindow::openStream() {
     }
     stream->start();
     statusBar()->showMessage(tr("Route %1 loaded").arg(can->routeName()), 2000);
+  } else if (!can) {
+    stream = new DummyStream(this);
+    stream->start();
   }
 }
 

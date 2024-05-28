@@ -102,11 +102,6 @@ class CarController(CarControllerBase):
     # *** gas and brake ***
     pcm_accel_cmd = clip(actuators.accel, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
 
-    # TODO: probably can delete this. CS.pcm_acc_status uses a different signal
-    # than CS.cruiseState.enabled. confirm they're not meaningfully different
-    if not CC.enabled and CS.pcm_acc_status:
-      pcm_cancel_cmd = 1
-
     # on entering standstill, send standstill request
     if CS.out.standstill and not self.last_standstill and (self.CP.carFingerprint not in NO_STOP_TIMER_CAR):
       self.standstill_req = True
@@ -173,7 +168,7 @@ class CarController(CarControllerBase):
     if self.frame % 20 == 0 and self.CP.flags & ToyotaFlags.DISABLE_RADAR.value:
       can_sends.append([0x750, 0, b"\x0F\x02\x3E\x00\x00\x00\x00\x00", 0])
 
-    new_actuators = actuators.copy()
+    new_actuators = actuators.as_builder()
     new_actuators.steer = apply_steer / self.params.STEER_MAX
     new_actuators.steerOutputCan = apply_steer
     new_actuators.steeringAngleDeg = self.last_angle

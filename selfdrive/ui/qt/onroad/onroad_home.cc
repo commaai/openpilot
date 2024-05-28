@@ -1,6 +1,7 @@
 #include "selfdrive/ui/qt/onroad/onroad_home.h"
 
 #include <QPainter>
+#include <QStackedLayout>
 
 #ifdef ENABLE_MAPS
 #include "selfdrive/ui/qt/maps/map_helpers.h"
