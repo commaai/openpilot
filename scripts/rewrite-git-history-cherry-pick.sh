@@ -71,6 +71,9 @@ if [ ! -d $SRC_CLONE ]; then
   TOTAL_COMMITS=$(echo $COMMITS | wc -w)
   CURRENT_COMMIT_NUMBER=0
 
+  # empty this file
+  > commit-map.txt
+
   for COMMIT in $COMMITS; do
       CURRENT_COMMIT_NUMBER=$((CURRENT_COMMIT_NUMBER + 1))
       printf "Cherry-picking commit %d out of %d: %s\n" "$CURRENT_COMMIT_NUMBER" "$TOTAL_COMMITS" "$COMMIT"
@@ -93,7 +96,31 @@ if [ ! -d $SRC_CLONE ]; then
 
       # cherry-pick the commit
       git cherry-pick -m 1 --keep-redundant-commits -X theirs $COMMIT
+
+      # capture the new commit hash
+      NEW_COMMIT=$(git rev-parse HEAD)
+
+      # save the old and new commit hashes to the mapping file
+      echo "$COMMIT $NEW_COMMIT" >> commit-map.txt
   done
+
+  # remove all old tags
+  git tag -l | xargs git tag -d
+
+  # read each line from the tag-commit-map.txt
+  while IFS=' ' read -r TAG OLD_COMMIT; do
+    # Search for the new commit in commit-map.txt corresponding to the old commit
+    NEW_COMMIT=$(grep "^$OLD_COMMIT " "commit-map.txt" | awk '{print $2}')
+
+    # check if this is a rebased commit
+    if [ -z "$NEW_COMMIT" ]; then
+      # if not, then just use old commit hash
+      NEW_COMMIT=$OLD_COMMIT
+    fi
+
+    printf "Recreating tag %s from commit %s\n" "$TAG" "$NEW_COMMIT"
+    git tag -f "$TAG" "$NEW_COMMIT"
+  done < "$DIR/tag-commit-map.txt"
 
   # uninstall lfs since we don't want to touch (push to) lfs right now
   # git push will also push lfs, if we don't uninstall (--local so just for this repo)
@@ -113,14 +140,11 @@ if [ ! -d $OUT ]; then
 
   cd $OUT
 
-  # remove all tags
-  # TODO: we need to keep the tags, WIP on how we actually do it
-  # git tag -l | xargs git tag -d
-
   # remove all non-master branches
   # TODO: need to see if we "redo" the other branches (except master, master-ci, devel, devel-staging, release3, release3-staging, dashcam3, dashcam3-staging, testing-closet*, hotfix-*)
-  git branch | grep -v "^  master$" | grep -v "\*" | xargs git branch -D
-  git for-each-ref --format='%(refname)' | grep -v 'refs/heads/master$' | xargs -I {} git update-ref -d {}
+  # for now don't remove any other branches
+  # git branch | grep -v "^  master$" | grep -v "\*" | xargs git branch -D
+  # git for-each-ref --format='%(refname)' | grep -v 'refs/heads/master$' | xargs -I {} git update-ref -d {}
 
   # import almost everything to lfs
   # WIP still needs to add some/more files
