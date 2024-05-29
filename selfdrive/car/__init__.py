@@ -1,6 +1,6 @@
 # functions common among cars
 from collections import namedtuple
-from dataclasses import dataclass, is_dataclass, fields
+from dataclasses import dataclass, is_dataclass, fields, MISSING
 from enum import IntFlag, ReprEnum, EnumType, Enum
 from dataclasses import replace
 
@@ -9,7 +9,7 @@ import capnp
 from cereal import car
 from openpilot.common.numpy_fast import clip, interp
 from openpilot.common.utils import Freezable
-from openpilot.selfdrive.car.docs_definitions import CarDocs
+from openpilot.selfdrive.car.docs_definitions import CarDocs, Device
 
 
 # kg of standard extra cargo to count for drive, gas, etc...
@@ -177,19 +177,25 @@ def get_safety_config(safety_model, safety_param = None):
   return ret
 
 
-def attr_repr(attr):
-  if is_dataclass(attr):
-    return f"{attr.__class__.__name__}({', '.join(f'{field.name}={attr_repr(getattr(attr, field.name))}' for field in fields(attr))})"
+def attr_repr(attr, name=None):
+  if name == 'car_parts':
+    return f"CarParts.common([{', '.join(attr_repr(part) for part in attr.parts if part is not Device.threex)}])"
+  elif is_dataclass(attr):
+    return f"""{attr.__class__.__name__}({', '.join(f"{field.name}={attr_repr(getattr(attr, field.name), field.name)}"
+                                                  for field in fields(attr)
+                                                    if field.name != 'platform_str' and
+                                                      (field.default_factory is MISSING or field.default_factory() != getattr(attr, field.name)) and
+                                                        (field.default is MISSING or field.default != getattr(attr, field.name)))})"""
   elif isinstance(attr, Enum):
     if isinstance(attr, IntFlag):
-      return " | ".join(f"{attr.__class__.__name__}.{member.name}" for member in attr)
+      return ' | '.join(f"{attr.__class__.__name__}.{member.name}" for member in attr)
     else:
       return f"{attr.__class__.__name__}.{attr.name}"
   elif isinstance(attr, (list, set, tuple)):
     left_bracket, right_bracket = {list: ('[', ']'), tuple: ('(', ')'), set: ('{', '}')}.get(type(attr))
     return f"{left_bracket}{', '.join(attr_repr(item) for item in attr)}{right_bracket}"
   elif isinstance(attr, dict):
-    return f"{{{', '.join(f'{repr(k)}: {attr_repr(v)}' for k, v in attr.items())}}}"
+    return f"{{{', '.join(f'{repr(k)}: {attr_repr(v)}' for k, v in attr.items() if v)}}}"
   else:
     return repr(attr)
 
