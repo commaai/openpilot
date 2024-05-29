@@ -22,9 +22,6 @@ const float MAP_SCALE = 2;
 MapWindow::MapWindow(const QMapLibre::Settings &settings) : m_settings(settings), velocity_filter(0, 10, 0.05, false) {
   QObject::connect(uiState(), &UIState::uiUpdate, this, &MapWindow::updateState);
 
-  reinit_timer.setSingleShot(true);
-  QObject::connect(&reinit_timer, &QTimer::timeout, this, &MapWindow::initializeGL);
-
   map_overlay = new QWidget (this);
   map_overlay->setAttribute(Qt::WA_TranslucentBackground, true);
   QVBoxLayout *overlay_layout = new QVBoxLayout(map_overlay);
@@ -122,15 +119,12 @@ void MapWindow::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
   update();
 
-
-  qDebug() << "time valid:" << sm.valid("clocks");
-
+  // on seeing one invalid and one valid time message, reinitialize the map to set a new token
   if (sm.valid("clocks") && !prev_time_valid) {
-    qDebug() << "time now valid, reinit";
-    LOGW("");
+    LOGW("Time is now valid, reinitializing map");
+    m_settings.setApiKey(get_mapbox_token());
     QTimer::singleShot(0, this, &MapWindow::initializeGL);
   }
-
   prev_time_valid = sm.valid("clocks");
 
   if (sm.updated("liveLocationKalman")) {
@@ -271,10 +265,6 @@ void MapWindow::initializeGL() {
 
   QObject::connect(m_map.data(), &QMapLibre::Map::mapLoadingFailed, [=](QMapLibre::Map::MapLoadingFailure err_code, const QString &reason) {
     LOGE("Map loading failed with %d: '%s'\n", err_code, reason.toStdString().c_str());
-    // time could be wrong, re-create token and try connecting again in 5s
-    if (err_code == QMapLibre::Map::MapLoadingFailure::StyleLoadFailure && !loaded_once && !reinit_timer.isActive()) {
-      reinit_timer.start(5000);
-    }
   });
 
   QObject::connect(m_map.data(), &QMapLibre::Map::mapChanged, [=](QMapLibre::Map::MapChange change) {

@@ -52,7 +52,6 @@ private:
 
   bool loaded_once = false;
   bool prev_time_valid = true;
-  QTimer reinit_timer;
 
   // Panning
   QPointF m_lastPos;
