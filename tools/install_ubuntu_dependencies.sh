@@ -122,7 +122,14 @@ function ask() {
 # Detect OS using /etc/os-release file
 if [ -f "/etc/os-release" ]; then
   source /etc/os-release
-  if ask "Do you want to install runtime dependencies?"; then
+
+  if [[ -z "$INSTALL_BASE_PACKAGES" ]]; then
+    if ask "Do you want to install runtime dependencies?"; then
+      INSTALL_BASE_PACKAGES="yes"
+    fi
+  fi
+
+  if [[ "$INSTALL_BASE_PACKAGES" == "yes" ]]; then
     case "$VERSION_CODENAME" in
       "jammy" | "kinetic" | "noble")
         install_ubuntu_lts_latest_requirements
