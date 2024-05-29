@@ -12,6 +12,10 @@
 #include <iomanip>
 #include <random>
 #include <sstream>
+#include <iostream>
+#include <filesystem>
+#include <chrono>
+#include <ctime>
 
 #ifdef __linux__
 #include <sys/prctl.h>
@@ -269,6 +273,22 @@ std::string check_output(const std::string& command) {
   }
 
   return result;
+}
+
+const std::chrono::system_clock::time_point _MIN_DATE = std::chrono::system_clock::from_time_t(std::mktime(new std::tm{0, 0, 0, 30, 2, 2024 - 1900}));
+
+std::chrono::system_clock::time_point min_date() {
+  std::filesystem::path systemd_path("/lib/systemd/systemd");
+  if (std::filesystem::exists(systemd_path)) {
+    auto ftime = std::filesystem::last_write_time(systemd_path);
+    auto stime = std::chrono::time_point_cast<std::chrono::system_clock::duration>(ftime - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now());
+    return stime + std::chrono::hours(24);
+  }
+  return _MIN_DATE;
+}
+
+bool system_time_valid() {
+  return std::chrono::system_clock::now() > min_date();
 }
 
 }  // namespace util

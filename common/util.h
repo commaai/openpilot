@@ -99,6 +99,8 @@ inline void sleep_for(const int milliseconds) {
   }
 }
 
+bool system_time_valid();
+
 }  // namespace util
 
 class ExitHandler {
