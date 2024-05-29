@@ -13,7 +13,7 @@ SRC_CLONE=/tmp/openpilot-clone/
 OUT=/tmp/openpilot-tiny/
 
 if [ ! -f /tmp/git-filter-repo ]; then
-  wget -O /tmp/git-filter-repo https://raw.githubusercontent.com/newren/git-filter-repo/main/git-filter-repo
+  curl -o /tmp/git-filter-repo https://raw.githubusercontent.com/newren/git-filter-repo/main/git-filter-repo
   chmod +x /tmp/git-filter-repo
 fi
 
@@ -132,7 +132,10 @@ if [ ! -d $SRC_CLONE ]; then
   git branch -D main
 
   # push to $SRC
-  git push --force
+  git push --force --set-upstream origin master
+
+  # force push tags
+  git push --tags --force
 fi
 
 if [ ! -d $OUT ]; then
@@ -170,12 +173,12 @@ cd $OUT
 # some lfs files are missing on gitlab, but they can be found on github
 git config lfs.url https://github.com/commaai/openpilot.git/info/lfs
 git config lfs.pushurl ssh://git@github.com/commaai/openpilot.git
-git lfs fetch --all
+git lfs fetch --all || true
 
 # also fetch from gitlab
 git config lfs.url https://gitlab.com/commaai/openpilot-lfs.git/info/lfs
 git config lfs.pushurl ssh://git@gitlab.com/commaai/openpilot-lfs.git
-git lfs fetch --all
+git lfs fetch --all || true
 
 # new lfs urls for testing repo (these should be removed)
 git config lfs.url https://gitlab.com/andiradulescu/openpilot-lfs.git/info/lfs
