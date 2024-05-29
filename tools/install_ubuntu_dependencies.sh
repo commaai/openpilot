@@ -106,35 +106,38 @@ function install_ubuntu_focal_requirements() {
     python-dev
 }
 
+function ask() {
+  read -p "$1 [Y/n] " -n 1 -r
+  echo ""
+  # In bash 0 is true, 1 is false.
+  [[ $REPLY =~ ^[Yy]$ ]] && return 0 || return 1
+}
+
 # Detect OS using /etc/os-release file
 if [ -f "/etc/os-release" ]; then
   source /etc/os-release
-  case "$VERSION_CODENAME" in
-    "jammy" | "kinetic" | "noble")
-      install_ubuntu_lts_latest_requirements
-      ;;
-    "focal")
-      install_ubuntu_focal_requirements
-      ;;
-    *)
-      echo "$ID $VERSION_ID is unsupported. This setup script is written for Ubuntu 20.04."
-      read -p "Would you like to attempt installation anyway? " -n 1 -r
-      echo ""
-      if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 1
-      fi
-      if [ "$UBUNTU_CODENAME" = "focal" ]; then
-        install_ubuntu_focal_requirements
-      else
+    case "$VERSION_CODENAME" in
+      "jammy" | "kinetic" | "noble")
         install_ubuntu_lts_latest_requirements
-      fi
-  esac
+        ;;
+      "focal")
+        install_ubuntu_focal_requirements
+        ;;
+      *)
+        echo "$ID $VERSION_ID is unsupported. This setup script is written for Ubuntu 20.04."
+        if ! ask "Would you like to attempt installation anyway?"; then
+          exit 1
+        fi
+          if [ "$UBUNTU_CODENAME" = "focal" ]; then
+          install_ubuntu_focal_requirements
+          else
+          install_ubuntu_lts_latest_requirements
+        fi
+    esac
 
   # Install extra packages
   if [[ -z "$INSTALL_EXTRA_PACKAGES" ]]; then
-    read -p "Base setup done. Do you want to install extra development packages? [Y/n]: " -n 1 -r
-    echo ""
-    if [[ $REPLY =~ ^[Yy]$ ]]; then
+    if ask "Base setup done. Do you want to install extra development packages?"; then
       INSTALL_EXTRA_PACKAGES="yes"
     fi
   fi
