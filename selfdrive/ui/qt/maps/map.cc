@@ -122,7 +122,16 @@ void MapWindow::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
   update();
 
-  qDebug() << "time valid:" << util::system_time_valid();
+
+  qDebug() << "time valid:" << sm.valid("clocks");
+
+  if (sm.valid("clocks") && !prev_time_valid) {
+    qDebug() << "time now valid, reinit";
+    LOGW("");
+    QTimer::singleShot(0, this, &MapWindow::initializeGL);
+  }
+
+  prev_time_valid = sm.valid("clocks");
 
   if (sm.updated("liveLocationKalman")) {
     auto locationd_location = sm["liveLocationKalman"].getLiveLocationKalman();
