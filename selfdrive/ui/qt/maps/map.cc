@@ -170,7 +170,6 @@ void MapWindow::updateState(const UIState &s) {
 
   if (locationd_valid) {
     // Update current location marker
-    m_settings.setApiKey(get_mapbox_token());
     auto point = coordinate_to_collection(*last_position);
     QMapLibre::Feature feature1(QMapLibre::Feature::PointType, point, {}, {});
     QVariantMap carPosSource;
@@ -213,9 +212,9 @@ void MapWindow::updateState(const UIState &s) {
   }
 
   if (sm.rcv_frame("navRoute") != route_rcv_frame) {
-    m_settings.setApiKey(get_mapbox_token());
     qWarning() << "Updating navLayer with new route";
     auto route = sm["navRoute"].getNavRoute();
+    m_settings.setApiKey(get_mapbox_token());
     auto route_points = capnp_coordinate_list_to_collection(route.getCoordinates());
     QMapLibre::Feature feature(QMapLibre::Feature::LineStringType, route_points, {}, {});
     QVariantMap navSource;
