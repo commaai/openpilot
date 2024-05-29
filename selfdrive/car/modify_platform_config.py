@@ -3,7 +3,7 @@ import re
 
 def save_config(platform, config):
   file_path = inspect.getsourcefile(type(platform))
-  with open(file_path, 'r') as f:
+  with open(file_path) as f:
       tokens = f.read()
 
   regex = rf'{platform} = ([a-zA-Z0-9]*)PlatformConfig\((?:[^()]+|\((?:[^()]+|\((?:[^()]+|\([^()]*\))*\))*\))*\)'
