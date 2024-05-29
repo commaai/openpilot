@@ -83,6 +83,12 @@ function install_extra_packages() {
     locales
 }
 
+function install_tools() {
+  echo "Installing development tools"
+  # TODO: Add other packages
+  $SUDO apt-get install -y --no-install-recommends valgrind
+}
+
 # Install Ubuntu 24.04 LTS packages
 function install_ubuntu_lts_latest_requirements() {
   install_ubuntu_common_requirements
@@ -147,6 +153,11 @@ if [ -f "/etc/os-release" ]; then
   if [[ "$INSTALL_EXTRA_PACKAGES" == "yes" ]]; then
     install_extra_packages
   fi
+
+  if ask "Do you want to install extra development tools?"; then
+    install_tools
+  fi
+
 else
   echo "No /etc/os-release in the system. Make sure you're running on Ubuntu, or similar."
   exit 1
