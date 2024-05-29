@@ -205,6 +205,10 @@ lint.flake8-implicit-str-concat.allow-multiline=false
 "unittest".msg = "Use pytest"
 
 [tool.coverage.run]
+omit = [
+    "config.py",
+    "config-3.py"
+  ]
 concurrency = ["multiprocessing", "thread"]
 [tool.ruff.format]
 quote-style = "preserve"
