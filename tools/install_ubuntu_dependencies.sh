@@ -116,6 +116,7 @@ function ask() {
 # Detect OS using /etc/os-release file
 if [ -f "/etc/os-release" ]; then
   source /etc/os-release
+  if ask "Do you want to install runtime dependencies?"; then
     case "$VERSION_CODENAME" in
       "jammy" | "kinetic" | "noble")
         install_ubuntu_lts_latest_requirements
@@ -134,10 +135,12 @@ if [ -f "/etc/os-release" ]; then
           install_ubuntu_lts_latest_requirements
         fi
     esac
+    echo "Base setup done."
+  fi
 
   # Install extra packages
   if [[ -z "$INSTALL_EXTRA_PACKAGES" ]]; then
-    if ask "Base setup done. Do you want to install extra development packages?"; then
+    if ask "Do you want to install extra development packages?"; then
       INSTALL_EXTRA_PACKAGES="yes"
     fi
   fi
