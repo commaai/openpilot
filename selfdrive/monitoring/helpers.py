@@ -368,9 +368,9 @@ class DriverMonitoring:
       self.current_events.add(alert)
 
 
-  def get_state_packet(self):
+  def get_state_packet(self, valid=True):
     # build driverMonitoringState packet
-    dat = messaging.new_message('driverMonitoringState', valid=True)
+    dat = messaging.new_message('driverMonitoringState', valid=valid)
     dat.driverMonitoringState = {
       "events": self.current_events.to_msg(),
       "faceDetected": self.face_detected,
