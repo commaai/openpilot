@@ -22,6 +22,10 @@ or do a full clone:
 git clone --recurse-submodules https://github.com/commaai/openpilot.git
 ```
 
+Now you can use the automatic script or manually setup your environment:
+
+### Automatic setup
+
 **2. Run the setup script**
 
 ``` bash
@@ -40,6 +44,102 @@ poetry shell
 ``` bash
 scons -u -j$(nproc)
 ```
+
+### Manual setup
+
+**2. Setup pyenv**
+
+Run the pyenv installer:
+
+```bash
+curl https://pyenv.run | bash
+```
+
+Then follow [the instructions from pyenv](https://github.com/pyenv/pyenv?tab=readme-ov-file#set-up-your-shell-environment-for-pyenv) to setup the shell environment.
+
+After you're done, restart your shell:
+
+```bash
+exec "$SHELL"
+```
+
+**3. Install runtime dependencies**
+
+Install the common requirements:
+
+```bash
+sudo apt install ca-certificates clang cppcheck build-essential gcc-arm-none-eabi liblzma-dev capnproto libcapnp-dev curl libcurl4-openssl-dev git git-lfs ffmpeg libavformat-dev libavcodec-dev libavdevice-dev libavutil-dev libavfilter-dev libbz2-dev libeigen3-dev libffi-dev libglew-dev libgles2-mesa-dev libglfw3-dev libglib2.0-0 libqt5charts5-dev libncurses5-dev libssl-dev libusb-1.0-0-dev libzmq3-dev libsqlite3-dev libsystemd-dev locales opencl-headers ocl-icd-libopencl1 ocl-icd-opencl-dev portaudio19-dev qtmultimedia5-dev qtlocation5-dev qtpositioning5-dev qttools5-dev-tools libqt5svg5-dev libqt5serialbus5-dev libqt5x11extras5-dev libqt5opengl5-dev
+```
+
+After that, if you're using Ubuntu 24.04 LTS:
+
+```bash
+sudo apt install g++-12 qtbase5-dev qtchooser qt5-qmake qtbase5-dev-tools python3-dev
+```
+
+If you're using Ubuntu 20.04 ( Focal Fossa ):
+
+```bash
+sudo apt install libavresample-dev qt5-default python-dev
+```
+
+**4. Install development dependencies ( optional )**
+
+```bash
+sudo apt install casync cmake make clinfo libqt5sql5-sqlite libreadline-dev libdw1 autoconf libtool bzip2 libarchive-dev libncursesw5-dev libportaudio2 locales
+```
+
+**5. Install development tools ( optional )**
+
+```bash
+sudo apt install valgrind
+```
+
+**6. Install python through pyenv**
+
+Update pyenv and install python:
+```bash
+pyenv update
+CONFIGURE_OPTS="--enable-shared" pyenv install -f 3.11.4
+```
+
+**7. Setup poetry**
+
+Update pip and install poetry:
+
+```bash
+pip install pip==24.0
+pip install poetry==1.7.0
+```
+
+Configure poetry virtualenvs and install dotenv plugin:
+```bash
+poetry config virtualenvs.prefer-active-python true --local
+poetry config virtualenvs.in-project true --local
+
+poetry self add poetry-dotenv-plugin@^0.1.0
+```
+
+**8. Install the python dependencies**
+
+```bash
+poetry install --no-cache --no-root
+pyenv rehash
+```
+
+After that, configure your active shell env and activate poetry:
+
+```bash
+source ~/.bashrc
+poetry shell
+```
+
+**9. Build openpilot**
+
+``` bash
+scons -u -j$(nproc)
+```
+
 
 ## Dev Container on any Linux or macOS
 
