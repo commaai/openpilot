@@ -23,7 +23,7 @@ MapWindow::MapWindow(const QMapLibre::Settings &settings) : m_settings(settings)
   QObject::connect(uiState(), &UIState::uiUpdate, this, &MapWindow::updateState);
 
   reinit_timer.setSingleShot(true);
-   QObject::connect(&reinit_timer, &QTimer::timeout, this, &MapWindow::initializeGL);
+  QObject::connect(&reinit_timer, &QTimer::timeout, this, &MapWindow::initializeGL);
 
   map_overlay = new QWidget (this);
   map_overlay->setAttribute(Qt::WA_TranslucentBackground, true);
