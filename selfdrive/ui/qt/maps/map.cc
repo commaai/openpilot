@@ -261,6 +261,7 @@ void MapWindow::initializeGL() {
     if (failure == QMapLibre::Map::MapLoadingFailure::StyleLoadFailure && reason.contains("SSL handshake failed")) {
       qDebug() << "reinitalizing GL!";
 //      initializeGL();
+      m_settings.setApiKey(get_mapbox_token());
       QTimer::singleShot(1000, this, &MapWindow::initializeGL);
     }
   });
