@@ -3,7 +3,7 @@ import os
 from cereal import car
 from openpilot.common.params import Params
 from openpilot.system.hardware import PC, TICI
-from openpilot.selfdrive.manager.process import PythonProcess, NativeProcess, DaemonProcess
+from openpilot.system.manager.process import PythonProcess, NativeProcess, DaemonProcess
 
 WEBCAM = os.getenv("USE_WEBCAM") is not None
 
@@ -78,7 +78,7 @@ procs = [
   PythonProcess("radard", "selfdrive.controls.radard", only_onroad),
   PythonProcess("thermald", "system.thermald.thermald", always_run),
   PythonProcess("tombstoned", "system.tombstoned", always_run, enabled=not PC),
-  PythonProcess("updated", "selfdrive.updated.updated", only_offroad, enabled=not PC),
+  PythonProcess("updated", "system.updated.updated", only_offroad, enabled=not PC),
   PythonProcess("uploader", "system.loggerd.uploader", always_run),
   PythonProcess("statsd", "system.statsd", always_run),
 

@@ -29,10 +29,10 @@ class MetaDriveWorld(World):
     self.vehicle_state_send, self.vehicle_state_recv = Pipe()
 
     self.exit_event = multiprocessing.Event()
+    self.op_engaged = multiprocessing.Event()
 
     self.test_run = test_run
 
-    self.start_time = time.monotonic()
     self.first_engage = None
     self.last_check_timestamp = 0
     self.distance_moved = 0
@@ -41,7 +41,7 @@ class MetaDriveWorld(World):
                               functools.partial(metadrive_process, dual_camera, config,
                                                 self.camera_array, self.wide_camera_array, self.image_lock,
                                                 self.controls_recv, self.simulation_state_send,
-                                                self.vehicle_state_send, self.exit_event, self.start_time, test_duration, self.test_run))
+                                                self.vehicle_state_send, self.exit_event, self.op_engaged, test_duration, self.test_run))
 
     self.metadrive_process.start()
     self.status_q.put(QueueMessage(QueueMessageType.START_STATUS, "starting"))
@@ -94,6 +94,8 @@ class MetaDriveWorld(World):
       is_engaged = state.is_engaged
       if is_engaged and self.first_engage is None:
         self.first_engage = time.monotonic()
+        self.op_engaged.set()
+
       # check moving 5 seconds after engaged, doesn't move right away
       after_engaged_check = is_engaged and time.monotonic() - self.first_engage >= 5 and self.test_run
 

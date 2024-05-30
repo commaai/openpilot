@@ -7,7 +7,7 @@ from cereal.visionipc import VisionIpcServer, VisionStreamType
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.car.car_helpers import write_car_param
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.manager.process_config import managed_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state
 
 CAM = DEVICE_CAMERAS[("tici", "ar0231")].fcam

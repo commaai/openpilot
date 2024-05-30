@@ -64,6 +64,7 @@ public:
   AbstractStream(QObject *parent);
   virtual ~AbstractStream() {}
   virtual void start() = 0;
+  virtual void stop() {}
   virtual bool liveStreaming() const { return true; }
   virtual void seekTo(double ts) {}
   virtual QString routeName() const = 0;
@@ -128,10 +129,14 @@ private:
 };
 
 class AbstractOpenStreamWidget : public QWidget {
+  Q_OBJECT
 public:
   AbstractOpenStreamWidget(AbstractStream **stream, QWidget *parent = nullptr) : stream(stream), QWidget(parent) {}
   virtual bool open() = 0;
   virtual QString title() = 0;
+
+signals:
+  void enableOpenButton(bool);
 
 protected:
   AbstractStream **stream = nullptr;
