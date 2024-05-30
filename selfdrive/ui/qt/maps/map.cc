@@ -261,10 +261,8 @@ void MapWindow::initializeGL() {
   QObject::connect(m_map.data(), &QMapLibre::Map::mapLoadingFailed, [=](QMapLibre::Map::MapLoadingFailure err_code, const QString &reason) {
     LOGE("Map loading failed with %d: '%s'\n", err_code, reason.toStdString().c_str());
     // time could be wrong, re-create token and try connecting again in 5s
-    if (err_code == QMapLibre::Map::MapLoadingFailure::StyleLoadFailure && !loaded_once) {
-      if (!reinit_timer.isActive()) {
-        reinit_timer.start(5000);
-      }
+    if (err_code == QMapLibre::Map::MapLoadingFailure::StyleLoadFailure && !loaded_once && !reinit_timer.isActive()) {
+      reinit_timer.start(5000);
     }
   });
 
