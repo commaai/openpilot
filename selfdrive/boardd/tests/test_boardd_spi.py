@@ -3,12 +3,13 @@ import os
 import time
 import numpy as np
 import pytest
+import random
 
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
 from openpilot.system.hardware import HARDWARE
 from openpilot.selfdrive.test.helpers import phone_only, with_processes
-from openpilot.selfdrive.boardd.tests.test_boardd_loopback import setup_boardd
+from openpilot.selfdrive.boardd.tests.test_boardd_loopback import setup_boardd, send_random_can_messages
 
 
 @pytest.mark.tici
@@ -26,14 +27,25 @@ class TestBoarddSpi:
   def test_spi_corruption(self, subtests):
     setup_boardd(1)
 
+    sendcan = messaging.pub_sock('sendcan')
     socks = {s: messaging.sub_sock(s, conflate=False, timeout=100) for s in ('can', 'pandaStates', 'peripheralState')}
     time.sleep(2)
     for s in socks.values():
       messaging.drain_sock_raw(s)
 
+    total_recv_count = 0
+    total_sent_count = 0
+    sent_msgs = {bus: list() for bus in range(3)}
+
     st = time.monotonic()
     ts = {s: list() for s in socks.keys()}
     for _ in range(20):
+      # send some CAN messages
+      sent = send_random_can_messages(sendcan, random.randrange(2, 10))
+      for k, v in sent.items():
+        sent_msgs[k].extend(list(v))
+        total_sent_count += len(v)
+
       for service, sock in socks.items():
         for m in messaging.drain_sock(sock):
           ts[service].append(m.logMonoTime)
@@ -41,7 +53,13 @@ class TestBoarddSpi:
           # sanity check for corruption
           assert m.valid
           if service == "can":
-            assert len(m.can) == 0
+            for msg in m.can:
+              if msg.src > 4:
+                continue
+              key = (msg.address, msg.dat)
+              assert key in sent_msgs[msg.src], f"got unexpected msg: {msg.src=} {msg.address=} {msg.dat=}"
+              sent_msgs[msg.src].remove(key)
+              total_recv_count += 1
           elif service == "pandaStates":
             assert len(m.pandaStates) == 1
             ps = m.pandaStates[0]
@@ -70,3 +88,7 @@ class TestBoarddSpi:
         assert np.max(dts) < edt*3
         assert np.min(dts) < edt
         assert len(dts) >= ((et-0.5)*SERVICE_LIST[service].frequency*0.8)
+
+    with subtests.test(msg="CAN traffic"):
+      print(f"Sent {total_sent_count} CAN messages, got {total_recv_count} back. {total_recv_count/total_sent_count:.2%} received")
+      assert (total_recv_count / total_sent_count) > 0.8
