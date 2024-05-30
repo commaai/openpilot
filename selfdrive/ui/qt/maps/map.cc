@@ -258,11 +258,10 @@ void MapWindow::initializeGL() {
 
   QObject::connect(m_map.data(), &QMapLibre::Map::mapLoadingFailed, [=](QMapLibre::Map::MapLoadingFailure err_code, const QString &reason) {
     LOGE("Map loading failed with %d: '%s'\n", err_code, reason.toStdString().c_str());
+    // if time is wrong, re-create token and try connecting again in 5s
     if (err_code == QMapLibre::Map::MapLoadingFailure::StyleLoadFailure && reason.contains("SSL handshake failed")) {
-      qDebug() << "reinitalizing GL!";
-//      initializeGL();
       m_settings.setApiKey(get_mapbox_token());
-      QTimer::singleShot(1000, this, &MapWindow::initializeGL);
+      QTimer::singleShot(5000, this, &MapWindow::initializeGL);
     }
   });
 
@@ -271,7 +270,6 @@ void MapWindow::initializeGL() {
     if (change == QMapLibre::Map::MapChange::MapChangeDidFinishLoadingStyle) {
       m_map->setTransitionOptions(0, 0);
     }
-//    qDebug() << "Map change:" << change;
     if (change == QMapLibre::Map::MapChange::MapChangeDidFinishLoadingMap) {
       loaded_once = true;
     }
