@@ -127,7 +127,6 @@ void MapWindow::updateState(const UIState &s) {
 
     locationd_valid = (locationd_pos.getValid() && locationd_orientation.getValid() && locationd_velocity.getValid() && locationd_ecef.getValid());
     if (locationd_valid) {
-//      qDebug() << "locationd_valid";
       // Check std norm
       auto pos_ecef_std = locationd_ecef.getStd();
       bool pos_accurate_enough = sqrt(pow(pos_ecef_std[0], 2) + pow(pos_ecef_std[1], 2) + pow(pos_ecef_std[2], 2)) < 100;
@@ -156,10 +155,6 @@ void MapWindow::updateState(const UIState &s) {
 
   loaded_once = loaded_once || (m_map && m_map->isFullyLoaded());
   if (!loaded_once) {
-    m_settings.setApiKey(get_mapbox_token());
-//    m_map.reset(new QMapLibre::Map(this, m_settings, size(), 1));
-//    m_map->render();
-    qDebug() << "not loaded, updated key:" << m_settings.apiKey();
     setError(tr("Map Loading"));
     return;
   }
