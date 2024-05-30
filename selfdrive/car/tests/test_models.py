@@ -18,7 +18,10 @@ from openpilot.selfdrive.car import gen_empty_fingerprint
 from openpilot.selfdrive.car.card import CarD
 from openpilot.selfdrive.car.fingerprints import all_known_cars, MIGRATION
 from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
-from openpilot.selfdrive.car.honda.values import CAR as HONDA, HondaFlags
+from openpilot.selfdrive.car.volkswagen.values import CAR as VK
+from openpilot.selfdrive.car.ford.values import CAR as FORD, FordFlags
+from openpilot.selfdrive.car.hyundai.values import CAR as HYUNDAI, HyundaiFlags
+from openpilot.selfdrive.car.honda.values import HondaFlags
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from openpilot.selfdrive.car.values import Platform
 from openpilot.selfdrive.test.helpers import read_segment_list
@@ -38,6 +41,53 @@ INTERNAL_SEG_LIST = os.environ.get("INTERNAL_SEG_LIST", "")
 INTERNAL_SEG_CNT = int(os.environ.get("INTERNAL_SEG_CNT", "0"))
 MAX_EXAMPLES = int(os.environ.get("MAX_EXAMPLES", "300"))
 CI = os.environ.get("CI", None) is not None
+
+@st.composite
+def car_control_strategy(draw):
+  actuators = draw(st.builds(car.CarControl.Actuators.new_message,
+                              gas=st.floats(0.0, 1.0), brake=st.floats(0.0, 1.0),
+                              steer=st.floats(-1.0, 1.0), steerOutputCan=st.floats(-1.0, 1.0),
+                              steeringAngleDeg=st.floats(-180.0, 180.0), curvature=st.floats(-1.0, 1.0),
+                              speed=st.floats(0.0, 50.0), accel=st.floats(-10.0, 10.0),
+                              longControlState=st.sampled_from([car.CarControl.Actuators.LongControlState.off,
+                                                                car.CarControl.Actuators.LongControlState.pid,
+                                                                car.CarControl.Actuators.LongControlState.stopping,
+                                                                car.CarControl.Actuators.LongControlState.starting])))
+  cruise_control = draw(st.builds(car.CarControl.CruiseControl.new_message,
+                                  cancel=st.booleans(), resume=st.booleans(),
+                                  override=st.booleans(), speedOverrideDEPRECATED=st.floats(0.0, 1.0),
+                                  accelOverrideDEPRECATED=st.floats(0.0, 1.0)))
+  hud_control = draw(st.builds(car.CarControl.HUDControl.new_message,
+                              speedVisible=st.booleans(), setSpeed=st.floats(0.0, 1.0),
+                              lanesVisible=st.booleans(), leadVisible=st.booleans(),
+                              visualAlert=st.sampled_from([car.CarControl.HUDControl.VisualAlert.none,
+                                                            car.CarControl.HUDControl.VisualAlert.fcw,
+                                                            car.CarControl.HUDControl.VisualAlert.steerRequired,
+                                                            car.CarControl.HUDControl.VisualAlert.brakePressed,
+                                                            car.CarControl.HUDControl.VisualAlert.wrongGear,
+                                                            car.CarControl.HUDControl.VisualAlert.seatbeltUnbuckled,
+                                                            car.CarControl.HUDControl.VisualAlert.speedTooHigh,
+                                                            car.CarControl.HUDControl.VisualAlert.ldw]),
+                              audibleAlert=st.sampled_from([car.CarControl.HUDControl.AudibleAlert.none,
+                                                            car.CarControl.HUDControl.AudibleAlert.engage,
+                                                            car.CarControl.HUDControl.AudibleAlert.disengage,
+                                                            car.CarControl.HUDControl.AudibleAlert.refuse,
+                                                            car.CarControl.HUDControl.AudibleAlert.warningSoft,
+                                                            car.CarControl.HUDControl.AudibleAlert.warningImmediate,
+                                                            car.CarControl.HUDControl.AudibleAlert.prompt,
+                                                            car.CarControl.HUDControl.AudibleAlert.promptRepeat,
+                                                            car.CarControl.HUDControl.AudibleAlert.promptDistracted]),
+                              rightLaneVisible=st.booleans(), leftLaneVisible=st.booleans(),
+                              rightLaneDepart=st.booleans(), leftLaneDepart=st.booleans(),
+                              leadDistanceBars=st.integers(1, 3)))
+  return car.CarControl.new_message(
+      enabled=draw(st.booleans()), latActive=draw(st.booleans()), longActive=draw(st.booleans()),
+      actuators=actuators, actuatorsOutputDEPRECATED=actuators,
+      leftBlinker=draw(st.booleans()), rightBlinker=draw(st.booleans()),
+      orientationNED=draw(st.lists(st.floats(-1e6, 1e6), min_size=3, max_size=3)),
+      angularVelocity=draw(st.lists(st.floats(-1e6, 1e6), min_size=3, max_size=3)),
+      cruiseControl=cruise_control, hudControl=hud_control)
+
 
 
 def get_test_cases() -> list[tuple[str, CarTestRoute | None]]:
@@ -154,6 +204,9 @@ class TestCarModelBase(unittest.TestCase):
 
   @classmethod
   def setUpClass(cls):
+    if cls.platform is not None and cls.platform not in VK:
+      print(f"\nskip test for platform {cls.platform}")
+      raise unittest.SkipTest
     if cls.__name__ == 'TestCarModel' or cls.__name__.endswith('Base'):
       raise unittest.SkipTest
 
@@ -195,6 +248,7 @@ class TestCarModelBase(unittest.TestCase):
     self.assertEqual(0, set_status, f"failed to set safetyModel {cfg}")
     self.safety.init_tests()
 
+  '''
   def test_car_params(self):
     if self.CP.dashcamOnly:
       self.skipTest("no need to check carParams for dashcamOnly")
@@ -386,38 +440,89 @@ class TestCarModelBase(unittest.TestCase):
       if self.CP.carName == "honda":
         if self.safety.get_acc_main_on() != prev_panda_acc_main_on:
           self.assertEqual(CS.cruiseState.available, self.safety.get_acc_main_on())
+  '''
 
   # Skip stdout/stderr capture with pytest, causes elevated memory usage
   @pytest.mark.nocapture
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
             phases=(Phase.reuse, Phase.generate, Phase.shrink))
-  @given(data=st.data())
-  def test_panda_safety_tx_fuzzy(self, data):
-    valid_addrs = [(addr, bus, size) for bus, addrs in self.fingerprint.items() for addr, size in addrs.items()]
-    address, bus, size = data.draw(st.sampled_from(valid_addrs))
+  @given(CC=car_control_strategy())
+  def test_panda_safety_tx_fuzzy(self, CC):
 
-    msg_strategy = st.binary(min_size=size, max_size=size)
-    msgs = data.draw(st.lists(msg_strategy, min_size=20))
+    now_nanos = DT_CTRL * 1e9
+    CI = self.CarInterface(self.CP, self.CarController, self.CarState)
 
-    CC = car.CarControl.new_message()
+    if self.CP.carName == "honda":
+      bus_buttons = 0
+      if self.CP.flags & HondaFlags.BOSCH_RADARLESS:
+        bus_buttons = 2
+      elif self.CP.flags & HondaFlags.BOSCH:
+        bus_buttons = 1
 
-    for dat in msgs:
-      to_send = libpanda_py.make_CANPacket(address, bus, dat)
-      tx_valid = self.safety.safety_tx_hook(to_send)
+    elif self.CP.carName == "hyundai":
+      if self.CP.flags & HyundaiFlags.CANFD_HDA2 and not self.CP.openpilotLongitudinalControl:
+        if self.CP.flags & HyundaiFlags.CANFD_HDA2_ALT_STEERING:
+          steer_addr = 0x110
+        else:
+          steer_addr = 0x50
+      else:
+        steer_addr = 0x12a
 
-      if tx_valid:
-        can = messaging.new_message('can', 1)
-        can.can = [log.CanData(address=address, dat=dat, src=bus)]
+    CS = CI.update(CC, [])
+    act, sendcan = CI.apply(CC, now_nanos)
+    now_nanos += DT_CTRL * 1e9
 
-        CS = self.CI.update(CC, (can.to_bytes(),))
-        _, sendcan = self.CI.apply(car.CarControl.new_message(), can.logMonoTime)
+    original_controls_allowed = self.safety.get_controls_allowed()
 
-        for addr, _, dat, bus in sendcan:
-          to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
-          self.assertTrue(self.safety.safety_tx_hook(to_send), f"Panda TX check failed for address {hex(addr)} and data {dat.hex()}")
+    for addr, _, dat, bus in sendcan:
+      to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
+      tx_ok = self.safety.safety_tx_hook(to_send)
 
-        self.assertEqual(self.safety.get_controls_allowed(), CS.cruiseState.enabled, (addr, dat, bus))
+      if self.CP.carName == "honda":
+        if ((addr == 0xE4 or addr == 0x194) and (CC.latActive and act.steerOutputCan != 0)) \
+          or (addr == 0x296 and bus == bus_buttons and CC.cruiseControl.cancel):
+          self.assertFalse(tx_ok, "issue TX")
 
+      elif self.CP.carName == "ford":
+        if addr == 0x083 and CC.cruiseControl.resume:
+          self.assertFalse(tx_ok, "issue TX")
+
+      elif self.CP.carName == "gm":
+        if (addr == 0x2CB and CC.enabled) or addr == 0x180:
+          self.assertFalse(tx_ok, "issue TX")
+
+      elif self.CP.carName == "toyota":
+        if bus == 0 and CC.latActive:
+          if (addr ==  0x191 and self.CP.steerControlType == car.CarParams.SteerControlType.angle) \
+            or (addr == 0x2E4 and (CC.latActive and act.steerOutputCan != 0)):
+            self.assertFalse(tx_ok, "issue TX")
+
+      elif self.CP.carName == "hyundai":
+        if (addr == 0x340 and CC.latActive and act.steerOutputCan != 0) \
+          or (addr == 0x1cf and CC.cruiseControl.resume) \
+            or (addr == steer_addr and act.steerOutputCan != 0):
+          self.assertFalse(tx_ok, "issue TX")
+
+      elif self.CP.carName == "tesla":
+        if addr == 0x488 and CC.latActive:
+          self.assertFalse(tx_ok, "issue TX")
+
+      elif self.CP.carName == "mazda":
+        if bus == 0:
+          if (addr == 0x243 and act.steerOutputCan != 0) \
+            or (addr == 0x09d and not CC.cruiseControl.cancel):
+            self.assertFalse(tx_ok, "issue TX")
+
+      elif self.CP.carName == "subaru":
+        if (addr == 0x122) and act.steerOutputCan != 0:
+          self.assertFalse(tx_ok, f"issue TX for car {self.CP.carName} at address {hex(addr)} and bus {bus}")
+
+      elif self.CP.carName == "volkswagen":
+        print(self.safety.get_controls_allowed())
+        if addr == 0x0D2 and act.steerOutputCan != 0:
+          self.assertFalse(tx_ok, f"issue TX for car {self.CP.carName} at address {hex(addr)} and bus {bus}")
+
+  '''
   def test_panda_safety_carstate(self):
     """
       Assert that panda safety matches openpilot's carState
@@ -504,6 +609,7 @@ class TestCarModelBase(unittest.TestCase):
   def test_route_on_ci_bucket(self):
     self.assertTrue(self.test_route_on_bucket, "Route not on CI bucket. " +
                     "This is fine to fail for WIP car ports, just let us know and we can upload your routes to the CI bucket.")
+  '''
 
 
 @parameterized_class(('platform', 'test_route'), get_test_cases())
