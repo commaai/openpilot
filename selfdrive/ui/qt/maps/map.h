@@ -51,6 +51,7 @@ private:
   void setError(const QString &err_str);
 
   bool loaded_once = false;
+  QTimer reinit_timer;
 
   // Panning
   QPointF m_lastPos;
