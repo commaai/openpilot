@@ -119,6 +119,14 @@ void MapWindow::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
   update();
 
+  // on rising edge of a valid system time, reinitialize the map to set a new token
+  if (sm.valid("clocks") && !prev_time_valid) {
+    LOGW("Time is now valid, reinitializing map");
+    m_settings.setApiKey(get_mapbox_token());
+    initializeGL();
+  }
+  prev_time_valid = sm.valid("clocks");
+
   if (sm.updated("liveLocationKalman")) {
     auto locationd_location = sm["liveLocationKalman"].getLiveLocationKalman();
     auto locationd_pos = locationd_location.getPositionGeodetic();
