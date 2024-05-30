@@ -60,7 +60,8 @@ jobs:
                         source selfdrive/test/setup_xvfb.sh && \
                         source selfdrive/test/setup_vsound.sh && \
                         CI=1 pytest tools/sim/tests/test_metadrive_bridge.py"
-    - uses: actions/upload-artifact@v4
+    - name: Upload simulator logs
+      uses: actions/upload-artifact@v4
       if: ${{ success() || failure() }}
       with:
         name: metadrive_logs-${{ github.run_id }}
