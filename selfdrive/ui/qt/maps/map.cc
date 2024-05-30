@@ -5,6 +5,7 @@
 
 #include <QDebug>
 
+#include "common/swaglog.h"
 #include "selfdrive/ui/qt/maps/map_helpers.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/ui.h"
@@ -211,10 +212,9 @@ void MapWindow::updateState(const UIState &s) {
     }
   }
 
-
   if (sm.rcv_frame("navRoute") != route_rcv_frame) {
     qWarning() << "Updating navLayer with new route" << m_settings.apiKey();
-    m_settings.setApiKey(get_mapbox_token());
+//    m_settings.setApiKey(get_mapbox_token());
 //    qDebug() << m_settings.apiKey();
     auto route = sm["navRoute"].getNavRoute();
     auto route_points = capnp_coordinate_list_to_collection(route.getCoordinates());
@@ -256,9 +256,9 @@ void MapWindow::initializeGL() {
   m_map->setPitch(MIN_PITCH);
   m_map->setStyleUrl("mapbox://styles/commaai/clkqztk0f00ou01qyhsa5bzpj");
 
-  QObject::connect(m_map.data(), &QMapLibre::Map::mapLoadingFailed, [=](QMapLibre::Map::MapLoadingFailure failure, const QString &reason) {
-    qDebug() << "Map loading failed:" << failure << "reason:" << reason;
-    if (failure == QMapLibre::Map::MapLoadingFailure::StyleLoadFailure && reason.contains("SSL handshake failed")) {
+  QObject::connect(m_map.data(), &QMapLibre::Map::mapLoadingFailed, [=](QMapLibre::Map::MapLoadingFailure err_code, const QString &reason) {
+    LOGE("Map loading failed with %d: '%s'\n", err_code, reason.toStdString().c_str());
+    if (err_code == QMapLibre::Map::MapLoadingFailure::StyleLoadFailure && reason.contains("SSL handshake failed")) {
       qDebug() << "reinitalizing GL!";
 //      initializeGL();
       m_settings.setApiKey(get_mapbox_token());
