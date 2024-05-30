@@ -123,7 +123,7 @@ void MapWindow::updateState(const UIState &s) {
   if (sm.valid("clocks") && !prev_time_valid) {
     LOGW("Time is now valid, reinitializing map");
     m_settings.setApiKey(get_mapbox_token());
-    QTimer::singleShot(0, this, &MapWindow::initializeGL);
+    initializeGL();
   }
   prev_time_valid = sm.valid("clocks");
 
