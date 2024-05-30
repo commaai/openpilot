@@ -127,6 +127,7 @@ void MapWindow::updateState(const UIState &s) {
 
     locationd_valid = (locationd_pos.getValid() && locationd_orientation.getValid() && locationd_velocity.getValid() && locationd_ecef.getValid());
     if (locationd_valid) {
+//      qDebug() << "locationd_valid";
       // Check std norm
       auto pos_ecef_std = locationd_ecef.getStd();
       bool pos_accurate_enough = sqrt(pow(pos_ecef_std[0], 2) + pow(pos_ecef_std[1], 2) + pow(pos_ecef_std[2], 2)) < 100;
@@ -155,6 +156,10 @@ void MapWindow::updateState(const UIState &s) {
 
   loaded_once = loaded_once || (m_map && m_map->isFullyLoaded());
   if (!loaded_once) {
+    m_settings.setApiKey(get_mapbox_token());
+//    m_map.reset(new QMapLibre::Map(this, m_settings, size(), 1));
+//    m_map->render();
+    qDebug() << "not loaded, updated key:" << m_settings.apiKey();
     setError(tr("Map Loading"));
     return;
   }
@@ -211,8 +216,11 @@ void MapWindow::updateState(const UIState &s) {
     }
   }
 
+
   if (sm.rcv_frame("navRoute") != route_rcv_frame) {
-    qWarning() << "Updating navLayer with new route";
+    qWarning() << "Updating navLayer with new route" << m_settings.apiKey();
+    m_settings.setApiKey(get_mapbox_token());
+//    qDebug() << m_settings.apiKey();
     auto route = sm["navRoute"].getNavRoute();
     auto route_points = capnp_coordinate_list_to_collection(route.getCoordinates());
     QMapLibre::Feature feature(QMapLibre::Feature::LineStringType, route_points, {}, {});
@@ -253,11 +261,21 @@ void MapWindow::initializeGL() {
   m_map->setPitch(MIN_PITCH);
   m_map->setStyleUrl("mapbox://styles/commaai/clkqztk0f00ou01qyhsa5bzpj");
 
+  QObject::connect(m_map.data(), &QMapLibre::Map::mapLoadingFailed, [=](QMapLibre::Map::MapLoadingFailure failure, const QString &reason) {
+    qDebug() << "Map loading failed:" << failure << "reason:" << reason;
+    if (failure == QMapLibre::Map::MapLoadingFailure::StyleLoadFailure && reason.contains("SSL handshake failed")) {
+      qDebug() << "reinitalizing GL!";
+//      initializeGL();
+      QTimer::singleShot(1000, this, &MapWindow::initializeGL);
+    }
+  });
+
   QObject::connect(m_map.data(), &QMapLibre::Map::mapChanged, [=](QMapLibre::Map::MapChange change) {
     // set global animation duration to 0 ms so visibility changes are instant
     if (change == QMapLibre::Map::MapChange::MapChangeDidFinishLoadingStyle) {
       m_map->setTransitionOptions(0, 0);
     }
+//    qDebug() << "Map change:" << change;
     if (change == QMapLibre::Map::MapChange::MapChangeDidFinishLoadingMap) {
       loaded_once = true;
     }
