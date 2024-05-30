@@ -263,10 +263,6 @@ void MapWindow::initializeGL() {
   m_map->setPitch(MIN_PITCH);
   m_map->setStyleUrl("mapbox://styles/commaai/clkqztk0f00ou01qyhsa5bzpj");
 
-  QObject::connect(m_map.data(), &QMapLibre::Map::mapLoadingFailed, [=](QMapLibre::Map::MapLoadingFailure err_code, const QString &reason) {
-    LOGE("Map loading failed with %d: '%s'\n", err_code, reason.toStdString().c_str());
-  });
-
   QObject::connect(m_map.data(), &QMapLibre::Map::mapChanged, [=](QMapLibre::Map::MapChange change) {
     // set global animation duration to 0 ms so visibility changes are instant
     if (change == QMapLibre::Map::MapChange::MapChangeDidFinishLoadingStyle) {
