@@ -12,7 +12,8 @@
 #include "selfdrive/ui/qt/api.h"
 
 QString get_mapbox_token() {
-  return MAPBOX_TOKEN.isEmpty() ? CommaApi::create_jwt({}) : MAPBOX_TOKEN;
+  // Valid for 4 weeks since we can't swap tokens on the fly
+  return MAPBOX_TOKEN.isEmpty() ? CommaApi::create_jwt({}, 4 * 7 * 24 * 3600) : MAPBOX_TOKEN;
 }
 
 QMapLibre::Settings get_mapbox_settings() {
