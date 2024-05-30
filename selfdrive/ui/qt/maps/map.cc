@@ -250,7 +250,6 @@ void MapWindow::resizeGL(int w, int h) {
 }
 
 void MapWindow::initializeGL() {
-  m_settings.setApiKey(get_mapbox_token());
   m_map.reset(new QMapLibre::Map(this, m_settings, size(), 1));
 
   if (last_position) {
