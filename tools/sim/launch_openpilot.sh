@@ -7,10 +7,7 @@ export SKIP_FW_QUERY="1"
 export FINGERPRINT="HONDA_CIVIC_2022"
 
 export BLOCK="${BLOCK},camerad,micd,logmessaged"
-if [[ "$CI" ]]; then
-  # TODO: offscreen UI should work
-  export BLOCK="${BLOCK},ui"
-else
+if [[ ! "$CI" ]]; then
   export BLOCK="${BLOCK},loggerd,encoderd"
 fi
 
