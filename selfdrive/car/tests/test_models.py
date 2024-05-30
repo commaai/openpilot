@@ -320,6 +320,58 @@ class TestCarModelBase(unittest.TestCase):
     CC = car.CarControl.new_message(cruiseControl={'resume': True})
     test_car_controller(CC.as_reader())
 
+  @settings(max_examples=MAX_EXAMPLES, deadline=None,
+            phases=(Phase.reuse, Phase.generate, Phase.shrink))
+  @given(data=st.data())
+  def test_panda_safety_carstate_fuzzy_tx_rx(self, data):
+    """
+    For each example, pick a random CAN message on the bus and fuzz its data,
+    checking for panda state mismatches in transmitted messages.
+    """
+
+    if self.CP.dashcamOnly:
+      self.skipTest("no need to check panda safety for dashcamOnly")
+
+    valid_addrs = [(addr, bus, size) for bus, addrs in self.fingerprint.items() for addr, size in addrs.items()]
+    address, bus, size = data.draw(st.sampled_from(valid_addrs))
+
+    msg_strategy = st.binary(min_size=size, max_size=size)
+    msgs = data.draw(st.lists(msg_strategy, min_size=20))
+
+    CC = car.CarControl.new_message()
+
+    for dat in msgs:
+      prev_panda_gas = self.safety.get_gas_pressed_prev()
+      prev_panda_regen_braking = self.safety.get_regen_braking_prev()
+      prev_panda_vehicle_moving = self.safety.get_vehicle_moving()
+      prev_panda_cruise_engaged = self.safety.get_cruise_engaged_prev()
+      prev_panda_acc_main_on = self.safety.get_acc_main_on()
+
+      to_send = libpanda_py.make_CANPacket(address, bus, dat)
+      self.safety.safety_tx_hook(to_send)
+
+      can = messaging.new_message('can', 1)
+      can.can = [log.CanData(address=address, dat=dat, src=bus)]
+
+      CS = self.CI.update(CC, (can.to_bytes(),))
+
+      if self.safety.get_gas_pressed_prev() != prev_panda_gas:
+        self.assertEqual(CS.gasPressed, self.safety.get_gas_pressed_prev())
+
+      if self.safety.get_regen_braking_prev() != prev_panda_regen_braking:
+        self.assertEqual(CS.regenBraking, self.safety.get_regen_braking_prev())
+
+      if self.safety.get_vehicle_moving() != prev_panda_vehicle_moving:
+        self.assertEqual(not CS.standstill, self.safety.get_vehicle_moving())
+
+      if not (self.CP.carName == "honda" and not (self.CP.flags & HondaFlags.BOSCH)):
+        if self.safety.get_cruise_engaged_prev() != prev_panda_cruise_engaged:
+          self.assertEqual(CS.cruiseState.enabled, self.safety.get_cruise_engaged_prev())
+
+      if self.CP.carName == "honda":
+        if self.safety.get_acc_main_on() != prev_panda_acc_main_on:
+          self.assertEqual(CS.cruiseState.available, self.safety.get_acc_main_on())
+
   # Skip stdout/stderr capture with pytest, causes elevated memory usage
   @pytest.mark.nocapture
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
