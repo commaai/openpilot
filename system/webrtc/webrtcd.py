@@ -97,8 +97,8 @@ class CerealProxyRunner:
       except InvalidStateError:
         self.logger.warning("Cereal outgoing proxy invalid state (connection closed)")
         break
-      except Exception as ex:
-        self.logger.error("Cereal outgoing proxy failure: %s", ex)
+      except Exception:
+        self.logger.exception("Cereal outgoing proxy failure")
       await asyncio.sleep(0.01)
 
 
@@ -175,8 +175,8 @@ class StreamSession:
     assert self.incoming_bridge is not None
     try:
       self.incoming_bridge.send(message)
-    except Exception as ex:
-      self.logger.error("Cereal incoming proxy failure: %s", ex)
+    except Exception:
+      self.logger.exception("Cereal incoming proxy failure")
 
   async def run(self):
     try:
@@ -200,8 +200,8 @@ class StreamSession:
       await self.post_run_cleanup()
 
       self.logger.info("Stream session (%s) ended", self.identifier)
-    except Exception as ex:
-      self.logger.error("Stream session failure: %s", ex)
+    except Exception:
+      self.logger.exception("Stream session failure")
 
   async def post_run_cleanup(self):
     await self.stream.stop()
