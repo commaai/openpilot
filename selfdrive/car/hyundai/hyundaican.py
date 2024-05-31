@@ -126,7 +126,7 @@ def create_lfahda_mfc(packer, enabled, hda_set_speed=0):
   }
   return packer.make_can_msg("LFAHDA_MFC", 0, values)
 
-def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, set_speed, stopping, long_override, use_fca):
+def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, set_speed, stopping, long_override, use_fca11):
   commands = []
 
   scc11_values = {
@@ -152,7 +152,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
 
   # show AEB disabled indicator on dash with SCC12 if not sending FCA messages.
   # these signals also prevent a TCS fault on non-FCA cars with alpha longitudinal
-  if not use_fca:
+  if not use_fca11:
     scc12_values["CF_VSM_ConfMode"] = 1
     scc12_values["AEB_Status"] = 1  # AEB disabled
 
@@ -172,7 +172,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
   commands.append(packer.make_can_msg("SCC14", 0, scc14_values))
 
   # Only send FCA11 on cars where it exists on the bus
-  if use_fca:
+  if use_fca11:
     # note that some vehicles most likely have an alternate checksum/counter definition
     # https://github.com/commaai/opendbc/commit/9ddcdb22c4929baf310295e832668e6e7fcfa602
     fca11_values = {
