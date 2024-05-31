@@ -266,7 +266,7 @@ class CarDocs:
     # min steer & enable speed columns
     # TODO: set all the min steer speeds in carParams and remove this
     if self.min_steer_speed is not None:
-      assert CP.minSteerSpeed == 0, f"{CP.carFingerprint}: Minimum steer speed set in both CarDocs and CarParams"
+      assert CP.minSteerSpeed < 0.5, f"{CP.carFingerprint}: Minimum steer speed set in both CarDocs and CarParams"
     else:
       self.min_steer_speed = CP.minSteerSpeed
 
@@ -275,7 +275,7 @@ class CarDocs:
       self.min_enable_speed = CP.minEnableSpeed
 
     if self.auto_resume is None:
-      self.auto_resume = CP.autoResumeSng
+      self.auto_resume = CP.autoResumeSng and self.min_enable_speed <= 0
 
     # hardware column
     hardware_col = "None"
@@ -340,7 +340,7 @@ class CarDocs:
 
       # experimental mode
       exp_link = "<a href='https://blog.comma.ai/090release/#experimental-mode' target='_blank' class='link-light-new-regular-text'>Experimental mode</a>"
-      if CP.openpilotLongitudinalControl or CP.experimentalLongitudinalAvailable:
+      if CP.openpilotLongitudinalControl and not CP.experimentalLongitudinalAvailable:
         sentence_builder += f" Traffic light and stop sign handling is also available in {exp_link}."
 
       return sentence_builder.format(car_model=f"{self.make} {self.model}", alc=alc, acc=acc)

@@ -1,5 +1,5 @@
 # functions common among cars
-from collections import defaultdict, namedtuple
+from collections import namedtuple
 from dataclasses import dataclass
 from enum import IntFlag, ReprEnum, EnumType
 from dataclasses import replace
@@ -165,20 +165,6 @@ def common_fault_avoidance(fault_condition: bool, request: bool, above_limit_fra
   return above_limit_frames, request
 
 
-def crc8_pedal(data):
-  crc = 0xFF    # standard init value
-  poly = 0xD5   # standard crc8: x8+x7+x6+x4+x2+1
-  size = len(data)
-  for i in range(size - 1, -1, -1):
-    crc ^= data[i]
-    for _ in range(8):
-      if ((crc & 0x80) != 0):
-        crc = ((crc << 1) ^ poly) & 0xFF
-      else:
-        crc <<= 1
-  return crc
-
-
 def make_can_msg(addr, dat, bus):
   return [addr, 0, dat, bus]
 
@@ -280,6 +266,9 @@ class Platforms(str, ReprEnum, metaclass=PlatformsType):
     member._value_ = platform_config.platform_str
     return member
 
+  def __repr__(self):
+    return f"<{self.__class__.__name__}.{self.name}>"
+
   @classmethod
   def create_dbc_map(cls) -> dict[str, DbcDict]:
     return {p: p.config.dbc_dict for p in cls}
@@ -287,19 +276,3 @@ class Platforms(str, ReprEnum, metaclass=PlatformsType):
   @classmethod
   def with_flags(cls, flags: IntFlag) -> set['Platforms']:
     return {p for p in cls if p.config.flags & flags}
-
-  @classmethod
-  def without_flags(cls, flags: IntFlag) -> set['Platforms']:
-    return {p for p in cls if not (p.config.flags & flags)}
-
-  @classmethod
-  def print_debug(cls, flags):
-    platforms_with_flag = defaultdict(list)
-    for flag in flags:
-      for platform in cls:
-        if platform.config.flags & flag:
-          assert flag.name is not None
-          platforms_with_flag[flag.name].append(platform)
-
-    for flag, platforms in platforms_with_flag.items():
-      print(f"{flag:32s}: {', '.join(p.name for p in platforms)}")

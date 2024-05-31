@@ -1,6 +1,5 @@
 import os
 import random
-import unittest
 from pathlib import Path
 
 
@@ -29,12 +28,12 @@ def create_random_file(file_path: Path, size_mb: float, lock: bool = False, uplo
   if upload_xattr is not None:
     setxattr(str(file_path), uploader.UPLOAD_ATTR_NAME, upload_xattr)
 
-class MockResponse():
+class MockResponse:
   def __init__(self, text, status_code):
     self.text = text
     self.status_code = status_code
 
-class MockApi():
+class MockApi:
   def __init__(self, dongle_id):
     pass
 
@@ -44,7 +43,7 @@ class MockApi():
   def get_token(self):
     return "fake-token"
 
-class MockApiIgnore():
+class MockApiIgnore:
   def __init__(self, dongle_id):
     pass
 
@@ -54,7 +53,7 @@ class MockApiIgnore():
   def get_token(self):
     return "fake-token"
 
-class UploaderTestCase(unittest.TestCase):
+class UploaderTestCase:
   f_type = "UNKNOWN"
 
   root: Path
@@ -66,7 +65,7 @@ class UploaderTestCase(unittest.TestCase):
   def set_ignore(self):
     uploader.Api = MockApiIgnore
 
-  def setUp(self):
+  def setup_method(self):
     uploader.Api = MockApi
     uploader.fake_upload = True
     uploader.force_wifi = True

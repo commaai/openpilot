@@ -9,8 +9,6 @@ if arch == "Darwin":
 else:
   base_libs.append('OpenCL')
 
-qt_env['CXXFLAGS'] += ["-Wno-deprecated-declarations"]
-
 replay_lib_src = ["replay.cc", "consoleui.cc", "camera.cc", "filereader.cc", "logreader.cc", "framereader.cc", "route.cc", "util.cc"]
 replay_lib = qt_env.Library("qt_replay", replay_lib_src, LIBS=base_libs, FRAMEWORKS=base_frameworks)
 Export('replay_lib')

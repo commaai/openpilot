@@ -2,13 +2,12 @@
 import os
 import pytest
 import time
-import unittest
 
 import cereal.messaging as messaging
 from cereal import log
 from openpilot.common.gpio import gpio_set, gpio_init
 from panda import Panda, PandaDFU, PandaProtocolMismatch
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.hardware.tici.pins import GPIO
 
@@ -16,29 +15,34 @@ HERE = os.path.dirname(os.path.realpath(__file__))
 
 
 @pytest.mark.tici
-class TestPandad(unittest.TestCase):
+class TestPandad:
 
-  def setUp(self):
+  def setup_method(self):
     # ensure panda is up
     if len(Panda.list()) == 0:
       self._run_test(60)
 
-  def tearDown(self):
+    self.spi = HARDWARE.get_device_type() != 'tici'
+
+  def teardown_method(self):
     managed_processes['pandad'].stop()
 
-  def _run_test(self, timeout=30):
+  def _run_test(self, timeout=30) -> float:
+    st = time.monotonic()
+    sm = messaging.SubMaster(['pandaStates'])
+
     managed_processes['pandad'].start()
-
-    sm = messaging.SubMaster(['peripheralState'])
-    for _ in range(timeout*10):
+    while (time.monotonic() - st) < timeout:
       sm.update(100)
-      if sm['peripheralState'].pandaType != log.PandaState.PandaType.unknown:
+      if len(sm['pandaStates']) and sm['pandaStates'][0].pandaType != log.PandaState.PandaType.unknown:
         break
-
+    dt = time.monotonic() - st
     managed_processes['pandad'].stop()
 
-    if sm['peripheralState'].pandaType == log.PandaState.PandaType.unknown:
+    if len(sm['pandaStates']) == 0 or sm['pandaStates'][0].pandaType == log.PandaState.PandaType.unknown:
       raise Exception("boardd failed to start")
+
+    return dt
 
   def _go_to_dfu(self):
     HARDWARE.recover_internal_panda()
@@ -60,7 +64,7 @@ class TestPandad(unittest.TestCase):
 
     assert Panda.wait_for_panda(None, 10)
     if expect_mismatch:
-      with self.assertRaises(PandaProtocolMismatch):
+      with pytest.raises(PandaProtocolMismatch):
         Panda()
     else:
       with Panda() as p:
@@ -88,15 +92,25 @@ class TestPandad(unittest.TestCase):
     assert any(Panda(s).is_internal() for s in Panda.list())
 
   def test_best_case_startup_time(self):
-    # run once so we're setup
+    # run once so we're up to date
     self._run_test(60)
 
-    # should be fast this time
-    self._run_test(8)
+    ts = []
+    for _ in range(10):
+      # should be nearly instant this time
+      dt = self._run_test(5)
+      ts.append(dt)
+
+    # 5s for USB (due to enumeration)
+    # - 0.2s pandad -> boardd
+    # - plus some buffer
+    assert 0.1 < (sum(ts)/len(ts)) < (0.5 if self.spi else 5.0)
+    print("startup times", ts, sum(ts) / len(ts))
+
 
   def test_protocol_version_check(self):
-    if HARDWARE.get_device_type() == 'tici':
-      raise unittest.SkipTest("SPI test")
+    if not self.spi:
+      pytest.skip("SPI test")
     # flash old fw
     fn = os.path.join(HERE, "bootstub.panda_h7_spiv0.bin")
     self._flash_bootstub_and_test(fn, expect_mismatch=True)
@@ -113,7 +127,3 @@ class TestPandad(unittest.TestCase):
     self._assert_no_panda()
 
     self._run_test(60)
-
-
-if __name__ == "__main__":
-  unittest.main()
