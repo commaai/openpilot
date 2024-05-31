@@ -71,6 +71,7 @@ class CarInterface(CarInterfaceBase):
       if 0x38d in fingerprint[0] or 0x38d in fingerprint[2]:
         ret.flags |= HyundaiFlags.USE_FCA11.value
 
+      # These cars use the FCA12 message for the status of AEB and FCW, all others use SCC13a
       if 0x483 in fingerprint[0] or 0x483 in fingerprint[2]:
         ret.flags |= HyundaiFlags.USE_FCA12.value
 
