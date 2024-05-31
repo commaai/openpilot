@@ -1,9 +1,9 @@
-Version 0.9.7 (2024-05-XX)
+Version 0.9.7 (2024-06-11)
 ========================
 * New driving model
 * Adjust driving personality with the follow distance button
-* Support for hybrid variants of supported Ford models
 * Added toggle to enable driver monitoring even when openpilot is not engaged
+* Support for hybrid variants of supported Ford models
 * Fingerprinting without the OBD-II port on all cars
 
 Version 0.9.6 (2024-02-27)
