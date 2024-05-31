@@ -47,23 +47,7 @@ scons -u -j$(nproc)
 
 ### Manual setup
 
-**2. Setup pyenv**
-
-Run the pyenv installer:
-
-```bash
-curl https://pyenv.run | bash
-```
-
-Then follow [the instructions from pyenv](https://github.com/pyenv/pyenv?tab=readme-ov-file#set-up-your-shell-environment-for-pyenv) to setup the shell environment.
-
-After you're done, restart your shell:
-
-```bash
-exec "$SHELL"
-```
-
-**3. Install runtime dependencies**
+**2. Install runtime dependencies**
 
 Install the common requirements:
 
@@ -83,16 +67,31 @@ If you're using Ubuntu 20.04 ( Focal Fossa ):
 sudo apt install libavresample-dev qt5-default python-dev
 ```
 
-**4. Install development dependencies ( optional )**
+**3. Install development dependencies ( optional )**
 
 ```bash
 sudo apt install casync cmake make clinfo libqt5sql5-sqlite libreadline-dev libdw1 autoconf libtool bzip2 libarchive-dev libncursesw5-dev libportaudio2 locales
 ```
 
-**5. Install development tools ( optional )**
+**4. Install development tools ( optional )**
 
 ```bash
 sudo apt install valgrind
+```
+**5. Setup pyenv**
+
+Run the pyenv installer:
+
+```bash
+curl https://pyenv.run | bash
+```
+
+Then follow [the instructions from pyenv](https://github.com/pyenv/pyenv?tab=readme-ov-file#set-up-your-shell-environment-for-pyenv) to setup the shell environment.
+
+After you're done, restart your shell:
+
+```bash
+exec "$SHELL"
 ```
 
 **6. Install python through pyenv**
