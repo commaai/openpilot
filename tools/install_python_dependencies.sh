@@ -108,7 +108,7 @@ fi
 
 
 if [[ "$POETRY_INSTALLED" == "true" ]] && [[ "$PYENV_INSTALLED" == "true" ]]; then
-  if ask "Install openpilot python dependencies?"
+  if ask "Install openpilot python dependencies?"; then
     echo "pip packages install..."
     poetry install --no-cache --no-root
     pyenv rehash
