@@ -6,6 +6,7 @@ from abc import abstractmethod, ABC
 from enum import StrEnum
 from typing import Any, NamedTuple
 from collections.abc import Callable
+from functools import cache
 
 from cereal import car
 from openpilot.common.basedir import BASEDIR
@@ -43,6 +44,7 @@ class LatControlInputs(NamedTuple):
 TorqueFromLateralAccelCallbackType = Callable[[LatControlInputs, car.CarParams.LateralTorqueTuning, float, float, bool, bool], float]
 
 
+@cache
 def get_torque_params(candidate):
   with open(TORQUE_SUBSTITUTE_PATH, 'rb') as f:
     sub = tomllib.load(f)
