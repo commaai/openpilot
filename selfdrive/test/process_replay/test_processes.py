@@ -17,6 +17,9 @@ from openpilot.tools.lib.filereader import FileReader
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.helpers import save_log
 
+import pytest
+pytest.skip("not a pytest test", allow_module_level=True)
+
 source_segments = [
   ("BODY", "937ccb7243511b65|2022-05-24--16-03-09--1"),        # COMMA.COMMA_BODY
   ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.HYUNDAI_SONATA
@@ -67,7 +70,6 @@ excluded_interfaces = ["mock", "tesla"]
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
 EXCLUDED_PROCS = {"modeld", "dmonitoringmodeld"}
-
 
 def run_test_process(data):
   segment, cfg, args, cur_log_fn, ref_log_path, lr_dat = data
