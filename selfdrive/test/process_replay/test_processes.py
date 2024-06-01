@@ -17,8 +17,6 @@ from openpilot.tools.lib.filereader import FileReader
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.helpers import save_log
 
-import pytest
-pytest.skip("not a pytest test", allow_module_level=True)
 
 source_segments = [
   ("BODY", "937ccb7243511b65|2022-05-24--16-03-09--1"),        # COMMA.COMMA_BODY
