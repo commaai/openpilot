@@ -43,18 +43,22 @@ class LatControlInputs(NamedTuple):
 
 TorqueFromLateralAccelCallbackType = Callable[[LatControlInputs, car.CarParams.LateralTorqueTuning, float, float, bool, bool], float]
 
-
 @cache
 def get_torque_params(candidate):
-  with open(TORQUE_SUBSTITUTE_PATH, 'rb') as f:
-    sub = tomllib.load(f)
+  # Load torque data only once
+  if not hasattr(get_torque_params, 'sub'):
+    with open(TORQUE_SUBSTITUTE_PATH, 'rb') as f:
+      get_torque_params.sub = tomllib.load(f)
+    with open(TORQUE_PARAMS_PATH, 'rb') as f:
+      get_torque_params.params = tomllib.load(f)
+    with open(TORQUE_OVERRIDE_PATH, 'rb') as f:
+      get_torque_params.override = tomllib.load(f)
+
+  sub = get_torque_params.sub
+  params = get_torque_params.params
+  override = get_torque_params.override
   if candidate in sub:
     candidate = sub[candidate]
-
-  with open(TORQUE_PARAMS_PATH, 'rb') as f:
-    params = tomllib.load(f)
-  with open(TORQUE_OVERRIDE_PATH, 'rb') as f:
-    override = tomllib.load(f)
 
   # Ensure no overlap
   if sum([candidate in x for x in [sub, params, override]]) > 1:
