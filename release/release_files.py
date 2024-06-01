@@ -36,6 +36,7 @@ blacklist = [
 # gets you through the blacklist
 whitelist = [
   "tools/lib/",
+  "tools/bodyteleop/",
 
   "tinygrad_repo/openpilot/compile2.py",
   "tinygrad_repo/extra/onnx.py",
