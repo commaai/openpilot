@@ -27,6 +27,10 @@ blacklist = [
   ".devcontainer/",
   "Darwin/",
   ".vscode",
+
+  # no LFS
+  ".lfsconfig",
+  ".gitattributes",
 ]
 
 # gets you through the blacklist
