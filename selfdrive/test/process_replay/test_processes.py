@@ -68,6 +68,7 @@ BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
 EXCLUDED_PROCS = {"modeld", "dmonitoringmodeld"}
 
+
 def run_test_process(data):
   segment, cfg, args, cur_log_fn, ref_log_path, lr_dat = data
   res = None

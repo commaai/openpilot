@@ -9,7 +9,7 @@ Homepage = "https://comma.ai"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--rootdir=openpilot/ --ignore=openpilot/selfdrive/test/process_replay/test_processes.py --ignore=common/ --ignore=selfdrive/ --ignore=system/ --ignore=tools/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
+addopts = "--ignore=openpilot/selfdrive/test/process_replay/test_processes.py --ignore=common/ --ignore=selfdrive/ --ignore=system/ --ignore=tools/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
 cpp_files = "test_*.cc"
 cpp_harness = "openpilot/selfdrive/test/cpp_harness.py"
 python_files = "test_*.py"
@@ -17,9 +17,6 @@ python_files = "test_*.py"
 markers = [
   "slow: tests that take awhile to run and can be skipped with -m 'not slow'",
   "tici: tests that are only meant to run on the C3/C3X",
-]
-testpaths = [
-  "openpilot",
 ]
 
 [tool.mypy]
