@@ -138,12 +138,13 @@ jobs:
     - name: Run unit tests
       timeout-minutes: 15
       run: |
-        ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
+        ${{ env.RUN }} "source openpilot/selfdrive/test/setup_xvfb.sh && \
                         export MAPBOX_TOKEN='pk.eyJ1Ijoiam5ld2IiLCJhIjoiY2xxNW8zZXprMGw1ZzJwbzZneHd2NHljbSJ9.gV7VPRfbXFetD-1OVF0XZg' && \
                         $PYTEST --timeout 60 -m 'not slow' && \
-                        ./openpilot/selfdrive/ui/tests/create_test_translations.sh && \
-                        QT_QPA_PLATFORM=offscreen ./openpilot/selfdrive/ui/tests/test_translations && \
-                        ./openpilot/selfdrive/ui/tests/test_translations.py"
+                        cd openpilot \
+                        ./selfdrive/ui/tests/create_test_translations.sh && \
+                        QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
+                        ./selfdrive/ui/tests/test_translations.py"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v4
       with:
