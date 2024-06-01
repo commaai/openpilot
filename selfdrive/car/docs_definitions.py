@@ -266,7 +266,7 @@ class CarDocs:
     # min steer & enable speed columns
     # TODO: set all the min steer speeds in carParams and remove this
     if self.min_steer_speed is not None:
-      assert CP.minSteerSpeed == 0, f"{CP.carFingerprint}: Minimum steer speed set in both CarDocs and CarParams"
+      assert CP.minSteerSpeed < 0.5, f"{CP.carFingerprint}: Minimum steer speed set in both CarDocs and CarParams"
     else:
       self.min_steer_speed = CP.minSteerSpeed
 
@@ -275,7 +275,7 @@ class CarDocs:
       self.min_enable_speed = CP.minEnableSpeed
 
     if self.auto_resume is None:
-      self.auto_resume = CP.autoResumeSng
+      self.auto_resume = CP.autoResumeSng and self.min_enable_speed <= 0
 
     # hardware column
     hardware_col = "None"

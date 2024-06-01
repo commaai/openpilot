@@ -64,6 +64,7 @@ public:
   AbstractStream(QObject *parent);
   virtual ~AbstractStream() {}
   virtual void start() = 0;
+  virtual void stop() {}
   virtual bool liveStreaming() const { return true; }
   virtual void seekTo(double ts) {}
   virtual QString routeName() const = 0;
@@ -90,6 +91,7 @@ public:
 signals:
   void paused();
   void resume();
+  void seekingTo(double sec);
   void seekedTo(double sec);
   void streamStarted();
   void eventsMerged(const MessageEventsMap &events_map);
@@ -107,6 +109,7 @@ protected:
   uint64_t lastEventMonoTime() const { return lastest_event_ts; }
 
   std::vector<const CanEvent *> all_events_;
+  double current_sec_ = 0;
   uint64_t lastest_event_ts = 0;
 
 private:
@@ -114,7 +117,6 @@ private:
   void updateLastMsgsTo(double sec);
   void updateMasks();
 
-  double current_sec_ = 0;
   MessageEventsMap events_;
   std::unordered_map<MessageId, CanData> last_msgs;
   std::unique_ptr<MonotonicBuffer> event_buffer_;
@@ -127,10 +129,14 @@ private:
 };
 
 class AbstractOpenStreamWidget : public QWidget {
+  Q_OBJECT
 public:
   AbstractOpenStreamWidget(AbstractStream **stream, QWidget *parent = nullptr) : stream(stream), QWidget(parent) {}
   virtual bool open() = 0;
   virtual QString title() = 0;
+
+signals:
+  void enableOpenButton(bool);
 
 protected:
   AbstractStream **stream = nullptr;

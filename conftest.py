@@ -5,7 +5,7 @@ import pytest
 import random
 
 from openpilot.common.prefix import OpenpilotPrefix
-from openpilot.selfdrive.manager import manager
+from openpilot.system.manager import manager
 from openpilot.system.hardware import TICI, HARDWARE
 
 

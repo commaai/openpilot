@@ -1,10 +1,9 @@
 #!/usr/bin/env python
-import unittest
 from collections import namedtuple
 
 from openpilot.tools.lib.route import SegmentName
 
-class TestRouteLibrary(unittest.TestCase):
+class TestRouteLibrary:
   def test_segment_name_formats(self):
     Case = namedtuple('Case', ['input', 'expected_route', 'expected_segment_num', 'expected_data_dir'])
 
@@ -21,12 +20,9 @@ class TestRouteLibrary(unittest.TestCase):
 
       s = SegmentName(route_or_segment_name, allow_route_name=True)
 
-      self.assertEqual(str(s.route_name), case.expected_route)
-      self.assertEqual(s.segment_num, case.expected_segment_num)
-      self.assertEqual(s.data_dir, case.expected_data_dir)
+      assert str(s.route_name) == case.expected_route
+      assert s.segment_num == case.expected_segment_num
+      assert s.data_dir == case.expected_data_dir
 
     for case in cases:
       _validate(case)
-
-if __name__ == "__main__":
-  unittest.main()
