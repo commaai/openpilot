@@ -16,7 +16,6 @@ def main(route: str | None, addrs: list[int]):
 
   if route is None:
     lr = live_logreader()
-    print('live')
   else:
     lr = LogReader(route, default_mode=ReadMode.RLOG, sort_by_time=True)
 
@@ -32,7 +31,6 @@ def main(route: str | None, addrs: list[int]):
         start_mono_time = msg.logMonoTime
 
     if msg.which() in ("can", 'sendcan'):
-      print('here')
       for can in getattr(msg, msg.which()):
         if can.address in addrs or not len(addrs):
           if msg.logMonoTime != prev_mono_time:
@@ -47,8 +45,6 @@ if __name__ == "__main__":
   parser.add_argument('route', nargs='?', help='Route name, live if not specified')
   parser.add_argument('--addrs', nargs='*', default=[], help='List of tx address to view (0x7e0 for engine)')
   args = parser.parse_args()
-
-  print(args.route, args.addrs)
 
   addrs = [int(addr, base=16) if addr.startswith('0x') else int(addr) for addr in args.addrs]
   main(args.route, addrs)
