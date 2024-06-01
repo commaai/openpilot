@@ -48,7 +48,6 @@ cp -pR --parents $(./release/release_files.py) $TARGET_DIR/
 # in the directory
 cd $TARGET_DIR
 rm -f panda/board/obj/panda.bin.signed
-git submodule status
 
 # include source commit hash and build date in commit
 GIT_HASH=$(git --git-dir=$SOURCE_DIR/.git rev-parse HEAD)
@@ -63,6 +62,13 @@ git commit -a -m "openpilot v$VERSION release
 date: $DATETIME
 master commit: $GIT_HASH
 "
+
+# should be no submodules or LFS files
+git submodule status
+if [ ! -z "$(git lfs ls-files)" ]; then
+  echo "LFS files detected!"
+  exit 1
+fi
 
 # ensure files are within GitHub's limit
 BIG_FILES="$(find . -type f -not -path './.git/*' -size +95M)"
