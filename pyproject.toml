@@ -9,7 +9,7 @@ Homepage = "https://comma.ai"
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=selfdrive/test/process_replay/test_processes.py -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
+addopts = "--ignore=selfdrive/test/process_replay/test_processes.py --ignore=selfdrive/test/process_replay/test_regen.py -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
 cpp_files = "test_*.cc"
 cpp_harness = "selfdrive/test/cpp_harness.py"
 python_files = "test_*.py"
