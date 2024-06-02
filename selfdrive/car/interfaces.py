@@ -33,6 +33,18 @@ TORQUE_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/params.tom
 TORQUE_OVERRIDE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/override.toml')
 TORQUE_SUBSTITUTE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/substitute.toml')
 
+GEAR_SHIFTER_MAP: dict[str, car.CarState.GearShifter] = {
+  'P': GearShifter.park, 'PARK': GearShifter.park,
+  'R': GearShifter.reverse, 'REVERSE': GearShifter.reverse,
+  'N': GearShifter.neutral, 'NEUTRAL': GearShifter.neutral,
+  'E': GearShifter.eco, 'ECO': GearShifter.eco,
+  'T': GearShifter.manumatic, 'MANUAL': GearShifter.manumatic,
+  'D': GearShifter.drive, 'DRIVE': GearShifter.drive,
+  'S': GearShifter.sport, 'SPORT': GearShifter.sport,
+  'L': GearShifter.low, 'LOW': GearShifter.low,
+  'B': GearShifter.brake, 'BRAKE': GearShifter.brake,
+}
+
 
 class LatControlInputs(NamedTuple):
   lateral_acceleration: float
@@ -424,19 +436,7 @@ class CarStateBase(ABC):
   def parse_gear_shifter(gear: str | None) -> car.CarState.GearShifter:
     if gear is None:
       return GearShifter.unknown
-
-    d: dict[str, car.CarState.GearShifter] = {
-      'P': GearShifter.park, 'PARK': GearShifter.park,
-      'R': GearShifter.reverse, 'REVERSE': GearShifter.reverse,
-      'N': GearShifter.neutral, 'NEUTRAL': GearShifter.neutral,
-      'E': GearShifter.eco, 'ECO': GearShifter.eco,
-      'T': GearShifter.manumatic, 'MANUAL': GearShifter.manumatic,
-      'D': GearShifter.drive, 'DRIVE': GearShifter.drive,
-      'S': GearShifter.sport, 'SPORT': GearShifter.sport,
-      'L': GearShifter.low, 'LOW': GearShifter.low,
-      'B': GearShifter.brake, 'BRAKE': GearShifter.brake,
-    }
-    return d.get(gear.upper(), GearShifter.unknown)
+    return GEAR_SHIFTER_MAP.get(gear.upper(), GearShifter.unknown)
 
   @staticmethod
   def get_can_parser(CP):
