@@ -53,8 +53,8 @@ def log_thumbnail(thumbnailMsg):
   rr.log("/thumbnail", rr.ImageEncoded(contents=bytesImgData))
 
 @rr.shutdown_at_exit
-def process(blueprint, lr):
-  rr.init("rerun_test", default_blueprint=blueprint)
+def process(lr):
+  rr.init("rerun_test")
   rr.connect()
 
   ret = []
@@ -86,4 +86,4 @@ if __name__ == '__main__':
   route_or_segment_name = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
   print("Getting route log paths")
   lr = LogReader(route_or_segment_name)
-  lr.run_across_segments(NUM_CPUS, partial(process, blueprint))
+  lr.run_across_segments(NUM_CPUS, partial(process))
