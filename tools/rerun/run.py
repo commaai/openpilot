@@ -81,7 +81,7 @@ if __name__ == '__main__':
 
   blueprint = createBlueprint()
   rr.init("rerun_test", default_blueprint=blueprint)
-  rr.spawn(connect=False)
+  rr.spawn(connect=False) # child processes stream data to Viewer
 
   route_or_segment_name = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
   print("Getting route log paths")
