@@ -26,6 +26,7 @@ echo "-- sudo is required for apt installation --"
 $DIR/install_ubuntu_dependencies.sh
 $DIR/install_python_dependencies.sh
 
+clear
 echo
 echo "----   OPENPILOT SETUP DONE   ----"
 echo "Open a new shell or configure your active shell env by running:"
@@ -33,4 +34,4 @@ echo "source ~/.bashrc"
 echo
 echo "To activate your virtual env using poetry, run either:"
 echo
-echo "`poetry shell` or `.venv/bin/activate`"
+echo "\`poetry shell\` or \`.venv/bin/activate\`"
