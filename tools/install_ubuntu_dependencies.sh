@@ -1,17 +1,6 @@
 #!/usr/bin/env bash
 set -e
 
-SUDO=""
-
-# Use sudo if not root
-if [[ ! $(id -u) -eq 0 ]]; then
-  if [[ -z $(which sudo) ]]; then
-    echo "Please install sudo or run as root"
-    exit 1
-  fi
-  SUDO="sudo"
-fi
-
 # Install common packages
 function install_ubuntu_common_requirements() {
   $SUDO apt-get update
@@ -105,7 +94,6 @@ function install_ubuntu_focal_requirements() {
     qt5-default \
     python-dev
 }
-
 # Detect OS using /etc/os-release file
 if [ -f "/etc/os-release" ]; then
   source /etc/os-release
@@ -117,6 +105,7 @@ if [ -f "/etc/os-release" ]; then
       install_ubuntu_focal_requirements
       ;;
     *)
+      clear
       echo "$ID $VERSION_ID is unsupported. This setup script is written for Ubuntu 20.04."
       read -p "Would you like to attempt installation anyway? " -n 1 -r
       echo ""
@@ -132,6 +121,7 @@ if [ -f "/etc/os-release" ]; then
 
   # Install extra packages
   if [[ -z "$INSTALL_EXTRA_PACKAGES" ]]; then
+    clear
     read -p "Base setup done. Do you want to install extra development packages? [Y/n]: " -n 1 -r
     echo ""
     if [[ $REPLY =~ ^[Yy]$ ]]; then

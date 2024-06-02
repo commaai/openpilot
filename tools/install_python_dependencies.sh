@@ -1,15 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-ROOT=$DIR/../
-cd $ROOT
-
-RC_FILE="${HOME}/.$(basename ${SHELL})rc"
-if [ "$(uname)" == "Darwin" ] && [ $SHELL == "/bin/bash" ]; then
-  RC_FILE="$HOME/.bash_profile"
-fi
-
+function use_poetry() {
 if ! command -v "pyenv" > /dev/null 2>&1; then
   echo "pyenv install ..."
   curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
@@ -46,32 +38,56 @@ if ! pyenv prefix ${PYENV_PYTHON_VERSION} &> /dev/null; then
   # no pyenv update on mac
   if [ "$(uname)" == "Linux" ]; then
     echo "pyenv update ..."
-    pyenv update
+    pyenv update --quiet
   fi
   echo "python ${PYENV_PYTHON_VERSION} install ..."
   CONFIGURE_OPTS="--enable-shared" pyenv install -f ${PYENV_PYTHON_VERSION}
 fi
 eval "$(pyenv init --path)"
 
-echo "update pip"
-pip install pip==24.0
-pip install poetry==1.7.0
+  echo "update pip"
+  pip install pip==24.0
+  pip install poetry==1.7.0
 
-poetry config virtualenvs.prefer-active-python true --local
-poetry config virtualenvs.in-project true --local
+  poetry config virtualenvs.prefer-active-python true --local
+  poetry config virtualenvs.in-project true --local
 
-echo "PYTHONPATH=${PWD}" > $ROOT/.env
-if [[ "$(uname)" == 'Darwin' ]]; then
-  echo "# msgq doesn't work on mac" >> $ROOT/.env
-  echo "export ZMQ=1" >> $ROOT/.env
-  echo "export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES" >> $ROOT/.env
+  echo "PYTHONPATH=${PWD}" > $ROOT/.env
+  if [[ "$(uname)" == 'Darwin' ]]; then
+    echo "# msgq doesn't work on mac" >> $ROOT/.env
+    echo "export ZMQ=1" >> $ROOT/.env
+    echo "export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES" >> $ROOT/.env
+  fi
+
+  poetry self add poetry-dotenv-plugin@^0.1.0
+
+  echo "pip packages install..."
+  poetry install --no-cache --no-root
+  pyenv rehash
+}
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+ROOT=$DIR/../
+cd $ROOT
+
+RC_FILE="${HOME}/.$(basename ${SHELL})rc"
+if [ "$(uname)" == "Darwin" ] && [ $SHELL == "/bin/bash" ]; then
+  RC_FILE="$HOME/.bash_profile"
 fi
 
-poetry self add poetry-dotenv-plugin@^0.1.0
-
-echo "pip packages install..."
-poetry install --no-cache --no-root
-pyenv rehash
+MIN_VERSION=$(grep -m 1 requires-python pyproject.toml | tr -d '"' | tr -d "'" | cut -d' ' -f4)
+if [[ -z "$USE_POETRY" ]]; then
+  clear
+  echo "Minimum Python version required: $MIN_VERSION"
+  read -p "Do you want to use poetry shell for your venv setup? [y/n]: " -n 1 -r
+  echo ""
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    USE_POETRY="yes"
+  fi
+fi
+if [[ "$USE_POETRY" == "yes" ]]; then
+  use_poetry
+fi
 
 [ -n "$POETRY_VIRTUALENVS_CREATE" ] && RUN="" || RUN="poetry run"
 
