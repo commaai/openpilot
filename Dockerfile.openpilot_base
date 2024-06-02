@@ -13,7 +13,7 @@ ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
 COPY tools/install_ubuntu_dependencies.sh /tmp/tools/
-RUN INSTALL_EXTRA_PACKAGES=no USE_POETRY=yes /tmp/tools/install_ubuntu_dependencies.sh && \
+RUN INSTALL_EXTRA_PACKAGES=no /tmp/tools/install_ubuntu_dependencies.sh && \
     rm -rf /var/lib/apt/lists/* /tmp/* && \
     cd /usr/lib/gcc/arm-none-eabi/9.2.1 && \
     rm -rf arm/ thumb/nofp thumb/v6* thumb/v8* thumb/v7+fp thumb/v7-r+fp.sp
@@ -69,7 +69,7 @@ ENV PYENV_ROOT="/home/$USER/pyenv"
 ENV PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
 
 COPY --chown=$USER pyproject.toml poetry.lock .python-version /tmp/
-COPY --chown=$USER tools/install_python_dependencies.sh /tmp/tools/
+COPY --chown=$USER USE_POETRY=yes tools/install_python_dependencies.sh /tmp/tools/
 
 RUN cd /tmp && \
     tools/install_python_dependencies.sh && \
