@@ -3,6 +3,7 @@ import os
 import math
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
+from functools import lru_cache
 import importlib
 from parameterized import parameterized
 
@@ -19,12 +20,15 @@ from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.longcontrol import LongControl
 from openpilot.selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
 
-ALL_ECUS = {ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()}
-ALL_ECUS |= {ecu for config in FW_QUERY_CONFIGS.values() for ecu in config.extra_ecus}
-
-ALL_REQUESTS = {tuple(r.request) for config in FW_QUERY_CONFIGS.values() for r in config.requests}
+ALL_ECUS = sorted({ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()} |
+                  {ecu for config in FW_QUERY_CONFIGS.values() for ecu in config.extra_ecus})
+ALL_REQUESTS = sorted({tuple(r.request) for config in FW_QUERY_CONFIGS.values() for r in config.requests})
 
 MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '40'))
+
+@lru_cache
+def get_radar_interface(car_name):
+  return importlib.import_module(f'selfdrive.car.{car_name}.radar_interface').RadarInterface
 
 
 def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
@@ -34,7 +38,7 @@ def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
                                                 gen_empty_fingerprint()})
 
   # only pick from possible ecus to reduce search space
-  car_fw_strategy = st.lists(st.sampled_from(sorted(ALL_ECUS)))
+  car_fw_strategy = st.lists(st.sampled_from(ALL_ECUS))
 
   params_strategy = st.fixed_dictionaries({
     'fingerprints': fingerprint_strategy,
@@ -44,7 +48,7 @@ def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
 
   params: dict = draw(params_strategy)
   params['car_fw'] = [car.CarParams.CarFw(ecu=fw[0], address=fw[1], subAddress=fw[2] or 0,
-                                          request=draw(st.sampled_from(sorted(ALL_REQUESTS))))
+                                          request=draw(st.sampled_from(ALL_REQUESTS)))
                       for fw in params['car_fw']]
   return params
 
@@ -118,7 +122,7 @@ class TestCarInterfaces:
       LatControlTorque(car_params, car_interface)
 
     # Test radar interface
-    RadarInterface = importlib.import_module(f'selfdrive.car.{car_params.carName}.radar_interface').RadarInterface
+    RadarInterface = get_radar_interface(car_params.carName)
     radar_interface = RadarInterface(car_params)
     assert radar_interface
 
