@@ -51,7 +51,7 @@ class Events:
   def __init__(self):
     self.events: list[int] = []
     self.static_events: list[int] = []
-    self.events_prev = dict.fromkeys(EVENTS.keys(), 0)
+    self.events_prev: dict[int, int] = dict.fromkeys(EVENTS.keys(), 0)
 
   @property
   def names(self) -> list[int]:
