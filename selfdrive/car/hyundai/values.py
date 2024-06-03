@@ -653,12 +653,6 @@ DATE_FW_ECUS = [Ecu.fwdCamera]
 FW_QUERY_CONFIG = FwQueryConfig(
   requests=[
     # TODO: add back whitelists
-    # CAN queries (OBD-II port)
-    Request(
-      [HYUNDAI_VERSION_REQUEST_LONG],
-      [HYUNDAI_VERSION_RESPONSE],
-    ),
-
     # CAN & CAN-FD queries (from camera)
     Request(
       [HYUNDAI_VERSION_REQUEST_LONG],
@@ -699,6 +693,14 @@ FW_QUERY_CONFIG = FwQueryConfig(
       auxiliary=True,
       logging=True,
       obd_multiplexing=False,
+    ),
+
+    # Run only OBD query last due to some unknown bug that assigns the next query's repsonse to this one
+    # TODO: figure that out
+    # CAN queries (OBD-II port)
+    Request(
+      [HYUNDAI_VERSION_REQUEST_LONG],
+      [HYUNDAI_VERSION_RESPONSE],
     ),
   ],
   # We lose these ECUs without the comma power on these cars.
