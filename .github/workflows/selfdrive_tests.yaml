@@ -116,6 +116,8 @@ jobs:
         submodules: true
     - uses: ./.github/workflows/setup-pre-commit
     - uses: ./.github/workflows/setup-with-retry
+    - name: Build openpilot
+      run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: pre-commit
       timeout-minutes: 4
       run: ${{ env.RUN }} "unset PYTHONWARNINGS && pre-commit run --all && chmod -R 777 /tmp/pre-commit"
