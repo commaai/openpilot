@@ -17,7 +17,7 @@ class FuzzyGenerator:
   def generate_native_type(self, field: str) -> st.SearchStrategy[bool | int | float | str | bytes]:
     value_func = self.native_type_map.get(field)
     if value_func:
-      return value_func()
+      return value_func
     else:
       raise NotImplementedError(f'Invalid type: {field}')
 
@@ -44,26 +44,26 @@ class FuzzyGenerator:
   def generate_struct(self, schema: capnp.lib.capnp._StructSchema, event: str = None) -> st.SearchStrategy[dict[str, Any]]:
     single_fill: tuple[str, ...] = (event,) if event else (self.draw(st.sampled_from(schema.union_fields)),) if schema.union_fields else ()
     fields_to_generate = schema.non_union_fields + single_fill
-    return st.fixed_dictionaries({field: self.generate_field(schema.fields[field]) for field in fields_to_generate})
+    return st.fixed_dictionaries({field: self.generate_field(schema.fields[field]) for field in fields_to_generate if not field.endswith('DEPRECATED')})
 
   @staticmethod
   @cache
-  def _get_native_type_map(real_floats: bool) -> dict[str, Callable[[], st.SearchStrategy]]:
+  def _get_native_type_map(real_floats: bool) -> dict[str, st.SearchStrategy]:
     return {
-      'bool': st.booleans,
-      'int8': lambda: st.integers(min_value=-2**7, max_value=2**7-1),
-      'int16': lambda: st.integers(min_value=-2**15, max_value=2**15-1),
-      'int32': lambda: st.integers(min_value=-2**31, max_value=2**31-1),
-      'int64': lambda: st.integers(min_value=-2**63, max_value=2**63-1),
-      'uint8': lambda: st.integers(min_value=0, max_value=2**8-1),
-      'uint16': lambda: st.integers(min_value=0, max_value=2**16-1),
-      'uint32': lambda: st.integers(min_value=0, max_value=2**32-1),
-      'uint64': lambda: st.integers(min_value=0, max_value=2**64-1),
-      'float32': lambda: st.floats(width=32, allow_nan=not real_floats, allow_infinity=not real_floats),
-      'float64': lambda: st.floats(width=64, allow_nan=not real_floats, allow_infinity=not real_floats),
-      'text': lambda: st.text(max_size=1000),
-      'data': lambda: st.binary(max_size=1000),
-      'anyPointer': st.text  # Note: No need to define a separate function for anyPointer
+      'bool': st.booleans(),
+      'int8': st.integers(min_value=-2**7, max_value=2**7-1),
+      'int16': st.integers(min_value=-2**15, max_value=2**15-1),
+      'int32': st.integers(min_value=-2**31, max_value=2**31-1),
+      'int64': st.integers(min_value=-2**63, max_value=2**63-1),
+      'uint8': st.integers(min_value=0, max_value=2**8-1),
+      'uint16': st.integers(min_value=0, max_value=2**16-1),
+      'uint32': st.integers(min_value=0, max_value=2**32-1),
+      'uint64': st.integers(min_value=0, max_value=2**64-1),
+      'float32': st.floats(width=32, allow_nan=not real_floats, allow_infinity=not real_floats),
+      'float64': st.floats(width=64, allow_nan=not real_floats, allow_infinity=not real_floats),
+      'text': st.text(max_size=1000),
+      'data': st.binary(max_size=1000),
+      'anyPointer': st.text()  # Note: No need to define a separate function for anyPointer
     }
 
   @classmethod
