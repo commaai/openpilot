@@ -86,7 +86,7 @@ repos:
     hooks:
     -   id: test_translations
         name: test translations
-        entry: selfdrive/ui/tests/test_translations.py
+        entry: pytest selfdrive/ui/tests/test_translations.py
         language: script
         pass_filenames: false
         files: '^selfdrive/ui/translations/'
