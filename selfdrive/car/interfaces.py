@@ -43,35 +43,34 @@ class LatControlInputs(NamedTuple):
 
 TorqueFromLateralAccelCallbackType = Callable[[LatControlInputs, car.CarParams.LateralTorqueTuning, float, float, bool, bool], float]
 
+
 @cache
-def get_torque_params(candidate):
-  # Load torque data only once
-  if not hasattr(get_torque_params, 'sub'):
-    with open(TORQUE_SUBSTITUTE_PATH, 'rb') as f:
-      get_torque_params.sub = tomllib.load(f)
-    with open(TORQUE_PARAMS_PATH, 'rb') as f:
-      get_torque_params.params = tomllib.load(f)
-    with open(TORQUE_OVERRIDE_PATH, 'rb') as f:
-      get_torque_params.override = tomllib.load(f)
+def get_torque_params():
+  with open(TORQUE_SUBSTITUTE_PATH, 'rb') as f:
+    sub = tomllib.load(f)
+  with open(TORQUE_PARAMS_PATH, 'rb') as f:
+    params = tomllib.load(f)
+  with open(TORQUE_OVERRIDE_PATH, 'rb') as f:
+    override = tomllib.load(f)
 
-  sub = get_torque_params.sub
-  params = get_torque_params.params
-  override = get_torque_params.override
-  if candidate in sub:
-    candidate = sub[candidate]
+  legend = params['legend']
 
-  # Ensure no overlap
-  if sum([candidate in x for x in [sub, params, override]]) > 1:
-    raise RuntimeError(f'{candidate} is defined twice in torque config')
+  # Merge params and override, with override taking precedence
+  torque_params = {}
+  for source in [params, override]:
+    for key, values in source.items():
+      if key != "legend":
+        torque_params[key] = dict(zip(legend, values, strict=True))
 
-  if candidate in override:
-    out = override[candidate]
-  elif candidate in params:
-    out = params[candidate]
-  else:
-    raise NotImplementedError(f"Did not find torque params for {candidate}")
-  return {key: out[i] for i, key in enumerate(params['legend'])}
+  # Process substitute entries
+  for candidate, target in sub.items():
+    if candidate != "legend":
+      if target in torque_params:
+        torque_params[candidate] = torque_params[target]
+      else:
+        raise NotImplementedError(f"Did not find torque params for {candidate}")
 
+  return torque_params
 
 # generic car and radar interfaces
 
@@ -172,7 +171,7 @@ class CarInterfaceBase(ABC):
     ret.carFingerprint = candidate
 
     # Car docs fields
-    ret.maxLateralAccel = get_torque_params(candidate)['MAX_LAT_ACCEL_MEASURED']
+    ret.maxLateralAccel = get_torque_params()[candidate]['MAX_LAT_ACCEL_MEASURED']
     ret.autoResumeSng = True  # describes whether car can resume from a stop automatically
 
     # standard ALC params
@@ -205,7 +204,7 @@ class CarInterfaceBase(ABC):
 
   @staticmethod
   def configure_torque_tune(candidate, tune, steering_angle_deadzone_deg=0.0, use_steering_angle=True):
-    params = get_torque_params(candidate)
+    params = get_torque_params()[candidate]
 
     tune.init('torque')
     tune.torque.useSteeringAngle = use_steering_angle
