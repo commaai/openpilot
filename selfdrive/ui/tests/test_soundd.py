@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 
 from cereal import car
 from cereal import messaging

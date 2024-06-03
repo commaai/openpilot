@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import itertools
 from parameterized import parameterized_class
 
