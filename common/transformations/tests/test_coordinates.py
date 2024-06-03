@@ -1,4 +1,3 @@
-
 import numpy as np
 
 import openpilot.common.transformations.coordinates as coord

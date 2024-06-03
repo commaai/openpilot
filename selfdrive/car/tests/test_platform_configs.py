@@ -1,4 +1,3 @@
-
 from openpilot.selfdrive.car.values import PLATFORMS
 
 

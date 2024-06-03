@@ -1,4 +1,3 @@
-
 import numpy as np
 
 from openpilot.common.transformations.orientation import euler2quat, quat2euler, euler2rot, rot2euler, \

@@ -1,4 +1,3 @@
-
 from parameterized import parameterized
 
 from openpilot.selfdrive.test.process_replay.regen import regen_segment, DummyFrameReader

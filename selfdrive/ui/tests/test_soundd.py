@@ -1,4 +1,3 @@
-
 from cereal import car
 from cereal import messaging
 from cereal.messaging import SubMaster, PubMaster
