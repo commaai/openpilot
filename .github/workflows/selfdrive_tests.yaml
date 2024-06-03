@@ -143,7 +143,7 @@ jobs:
                         $PYTEST --timeout 60 -m 'not slow' && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
-                        ./selfdrive/ui/tests/test_translations.py"
+                        pytest ./selfdrive/ui/tests/test_translations.py"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v4
       with:

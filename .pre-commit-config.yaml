@@ -82,15 +82,14 @@ repos:
         args:
         - --max-line-length=240
         - --ignore=E111, E302, E305
-# FIXME
-#-   repo: local
-#    hooks:
-#    -   id: test_translations
-#        name: test translations
-#        entry: pytest selfdrive/ui/tests/test_translations.py
-#        language: system
-#        pass_filenames: false
-#        files: '^selfdrive/ui/translations/'
+-   repo: local
+    hooks:
+    -   id: test_translations
+        name: test translations
+        entry: pytest selfdrive/ui/tests/test_translations.py
+        language: system
+        pass_filenames: false
+        files: '^selfdrive/ui/translations/'
 -   repo: https://github.com/python-poetry/poetry
     rev: '1.8.0'
     hooks:
