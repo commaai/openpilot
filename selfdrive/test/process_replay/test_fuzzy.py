@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import copy
 from hypothesis import given, HealthCheck, Phase, settings
 import hypothesis.strategies as st
