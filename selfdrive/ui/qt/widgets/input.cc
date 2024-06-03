@@ -130,7 +130,7 @@ InputDialog::InputDialog(const QString &title, QWidget *parent, const QString &s
       }
     });
     eye_btn->toggle();
-    eye_btn->setChecked(false);
+    eye_btn->setChecked(true);
     textbox_layout->addWidget(eye_btn);
   }
 
