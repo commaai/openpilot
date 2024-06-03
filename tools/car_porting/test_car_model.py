@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import argparse
 import sys
 import unittest # noqa: TID251
