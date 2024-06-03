@@ -39,6 +39,7 @@ def log_msg(msg, parent_key=''):
       pass  # Not a plottable value
 
 def createBlueprint():
+  blueprint = None
   timeSeriesViews = []
   for topic in sorted(SERVICE_LIST.keys()):
     timeSeriesViews.append(rrb.TimeSeriesView(name=topic, origin=f"/{topic}/", visible=False))
@@ -51,9 +52,12 @@ def log_thumbnail(thumbnailMsg):
   bytesImgData = thumbnailMsg.get('thumbnail')
   rr.log("/thumbnail", rr.ImageEncoded(contents=bytesImgData))
 
-def process(blueprint, lr):
+@rr.shutdown_at_exit
+def process(lr):
+  rr.init("rerun_test")
+  rr.connect()
+
   ret = []
-  rr.init("rerun_test", spawn=True, default_blueprint=blueprint)
   for msg in lr:
     ret.append(msg)
     rr.set_time_nanos("TIMELINE", msg.logMonoTime)
@@ -75,8 +79,11 @@ if __name__ == '__main__':
 
   args = parser.parse_args()
 
-  route_or_segment_name = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
   blueprint = createBlueprint()
+  rr.init("rerun_test", default_blueprint=blueprint)
+  rr.spawn(connect=False) # child processes stream data to Viewer
+
+  route_or_segment_name = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
   print("Getting route log paths")
   lr = LogReader(route_or_segment_name)
-  lr.run_across_segments(NUM_CPUS, partial(process, blueprint))
+  lr.run_across_segments(NUM_CPUS, partial(process))
