@@ -7,7 +7,7 @@ from openpilot.system.version import get_version
 
 API_HOST = os.getenv('API_HOST', 'https://api.commadotai.com')
 
-class Api():
+class Api:
   def __init__(self, dongle_id):
     self.dongle_id = dongle_id
     with open(Paths.persist_root()+'/comma/id_rsa') as f:

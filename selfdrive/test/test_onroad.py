@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import bz2
 import math
 import json
@@ -35,7 +34,8 @@ CPU usage budget
 MAX_TOTAL_CPU = 250.  # total for all 8 cores
 PROCS = {
   # Baseline CPU usage by process
-  "selfdrive.controls.controlsd": 46.0,
+  "selfdrive.controls.controlsd": 32.0,
+  "selfdrive.car.card": 22.0,
   "./loggerd": 14.0,
   "./encoderd": 17.0,
   "./camerad": 14.5,
@@ -47,19 +47,19 @@ PROCS = {
   "selfdrive.controls.radard": 7.0,
   "selfdrive.modeld.modeld": 13.0,
   "selfdrive.modeld.dmonitoringmodeld": 8.0,
-  "selfdrive.thermald.thermald": 3.87,
+  "system.thermald.thermald": 3.87,
   "selfdrive.locationd.calibrationd": 2.0,
   "selfdrive.locationd.torqued": 5.0,
   "selfdrive.ui.soundd": 3.5,
   "selfdrive.monitoring.dmonitoringd": 4.0,
   "./proclogd": 1.54,
   "system.logmessaged": 0.2,
-  "selfdrive.tombstoned": 0,
+  "system.tombstoned": 0,
   "./logcatd": 0,
   "system.micd": 6.0,
   "system.timed": 0,
   "selfdrive.boardd.pandad": 0,
-  "selfdrive.statsd": 0.4,
+  "system.statsd": 0.4,
   "selfdrive.navd.navd": 0.4,
   "system.loggerd.uploader": (0.5, 15.0),
   "system.loggerd.deleter": 0.1,
@@ -124,7 +124,7 @@ class TestOnroad:
     # start manager and run openpilot for a minute
     proc = None
     try:
-      manager_path = os.path.join(BASEDIR, "selfdrive/manager/manager.py")
+      manager_path = os.path.join(BASEDIR, "system/manager/manager.py")
       proc = subprocess.Popen(["python", manager_path])
 
       sm = messaging.SubMaster(['carState'])

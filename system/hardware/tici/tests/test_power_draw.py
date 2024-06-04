@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from collections import defaultdict, deque
 import pytest
 import time
@@ -11,8 +10,8 @@ from cereal.services import SERVICE_LIST
 from openpilot.common.mock import mock_messages
 from openpilot.selfdrive.car.car_helpers import write_car_param
 from openpilot.system.hardware.tici.power_monitor import get_power
-from openpilot.selfdrive.manager.process_config import managed_processes
-from openpilot.selfdrive.manager.manager import manager_cleanup
+from openpilot.system.manager.process_config import managed_processes
+from openpilot.system.manager.manager import manager_cleanup
 
 SAMPLE_TIME = 8       # seconds to sample power
 MAX_WARMUP_TIME = 30  # seconds to wait for SAMPLE_TIME consecutive valid samples

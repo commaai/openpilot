@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import pytest
 import asyncio
 import json
@@ -20,7 +19,7 @@ from parameterized import parameterized_class
   ([], []),
 ])
 @pytest.mark.asyncio
-class TestWebrtcdProc():
+class TestWebrtcdProc:
   async def assertCompletesWithTimeout(self, awaitable, timeout=1):
     try:
       async with asyncio.timeout(timeout):

@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from openpilot.selfdrive.car.values import PLATFORMS
 
 

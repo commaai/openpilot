@@ -11,7 +11,8 @@ from openpilot.common.git import get_commit
 from openpilot.selfdrive.car.car_helpers import interface_names
 from openpilot.tools.lib.openpilotci import get_url, upload_file
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
-from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, check_openpilot_enabled, replay_process
+from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, replay_process, \
+                                                                   check_openpilot_enabled, check_most_messages_valid
 from openpilot.tools.lib.filereader import FileReader
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.helpers import save_log
@@ -41,23 +42,23 @@ source_segments = [
 ]
 
 segments = [
-  ("BODY", "regen02ECB79BACC|2024-05-18--04-29-29--0"),
-  ("HYUNDAI", "regen845DC1916E6|2024-05-18--04-30-52--0"),
-  ("HYUNDAI2", "regenBAE0915FE22|2024-05-18--04-33-11--0"),
-  ("TOYOTA", "regen1108D19FC2E|2024-05-18--04-34-34--0"),
-  ("TOYOTA2", "regen846521F39C7|2024-05-18--04-35-58--0"),
-  ("TOYOTA3", "regen788C3623D11|2024-05-18--04-38-21--0"),
-  ("HONDA", "regenDE43F170E99|2024-05-18--04-39-47--0"),
-  ("HONDA2", "regen1EE0FA383C3|2024-05-18--04-41-12--0"),
-  ("CHRYSLER", "regen9C5A30F471C|2024-05-18--04-42-36--0"),
-  ("RAM", "regenCCA313D117D|2024-05-18--04-44-53--0"),
-  ("SUBARU", "regenA41511F882A|2024-05-18--04-47-14--0"),
-  ("GM", "regen9D7B9CE4A66|2024-05-18--04-48-36--0"),
-  ("GM2", "regen07CECA52D41|2024-05-18--04-50-55--0"),
-  ("NISSAN", "regen2D6B856D0AE|2024-05-18--04-52-17--0"),
-  ("VOLKSWAGEN", "regen2D3AC6A6F05|2024-05-18--04-53-41--0"),
-  ("MAZDA", "regen0D5A777DD16|2024-05-18--04-56-02--0"),
-  ("FORD", "regen235D0937965|2024-05-18--04-58-16--0"),
+  ("BODY", "regen29FD9FF7760|2024-05-21--06-58-51--0"),
+  ("HYUNDAI", "regen0B1B76A1C27|2024-05-21--06-57-53--0"),
+  ("HYUNDAI2", "regen3BB55FA5E20|2024-05-21--06-59-03--0"),
+  ("TOYOTA", "regenF6FB954C1E2|2024-05-21--06-57-53--0"),
+  ("TOYOTA2", "regen0AC637CE7BA|2024-05-21--06-57-54--0"),
+  ("TOYOTA3", "regenC7BE3FAE496|2024-05-21--06-59-01--0"),
+  ("HONDA", "regen58E9F8B695A|2024-05-21--06-57-55--0"),
+  ("HONDA2", "regen8695608EB15|2024-05-21--06-57-55--0"),
+  ("CHRYSLER", "regenB0F8C25C902|2024-05-21--06-59-47--0"),
+  ("RAM", "regenB3B2C7A105B|2024-05-21--07-00-47--0"),
+  ("SUBARU", "regen860FD736DCC|2024-05-21--07-00-50--0"),
+  ("GM", "regen8CB3048DEB9|2024-05-21--06-59-49--0"),
+  ("GM2", "regen379D446541D|2024-05-21--07-00-51--0"),
+  ("NISSAN", "regen24871108F80|2024-05-21--07-00-38--0"),
+  ("VOLKSWAGEN", "regenF390392F275|2024-05-21--07-00-52--0"),
+  ("MAZDA", "regenE5A36020581|2024-05-21--07-01-51--0"),
+  ("FORD", "regenDC288ED0D78|2024-05-21--07-02-18--0"),
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
@@ -108,8 +109,10 @@ def test_process(cfg, lr, segment, ref_log_path, new_log_path, ignore_fields=Non
   if cfg.proc_name == "controlsd":
     if not check_openpilot_enabled(log_msgs):
       return f"Route did not enable at all or for long enough: {new_log_path}", log_msgs
+  if not check_most_messages_valid(log_msgs):
+    return f"Route did not have enough valid messages: {new_log_path}", log_msgs
 
-  if cfg.proc_name != 'ubloxd' or segment != 'regenBAE0915FE22|2024-05-18--04-33-11--0':
+  if cfg.proc_name != 'ubloxd' or segment != 'regen3BB55FA5E20|2024-05-21--06-59-03--0':
     seen_msgs = {m.which() for m in log_msgs}
     expected_msgs = set(cfg.subs)
     if seen_msgs != expected_msgs:

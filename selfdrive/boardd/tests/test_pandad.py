@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import os
 import pytest
 import time
@@ -7,7 +6,7 @@ import cereal.messaging as messaging
 from cereal import log
 from openpilot.common.gpio import gpio_set, gpio_init
 from panda import Panda, PandaDFU, PandaProtocolMismatch
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.hardware.tici.pins import GPIO
 
