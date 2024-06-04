@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 from collections import namedtuple
 
 from openpilot.tools.lib.route import SegmentName

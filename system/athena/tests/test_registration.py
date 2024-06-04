@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import json
 from Crypto.PublicKey import RSA
 from pathlib import Path
