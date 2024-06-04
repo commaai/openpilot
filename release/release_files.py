@@ -10,13 +10,18 @@ ROOT = HERE + "/.."
 # - minimizing release download size
 # - keeping the diff readable
 blacklist = [
-  "^scripts/",
   "body/STL/",
-  "tools/cabana/",
+  "panda/drivers/",
   "panda/examples/",
+  "panda/tests/safety/",
   "opendbc/generator/",
 
+  "poetry.lock",
+  "third_party/catch2",
+  "selfdrive/car/tests/test_models_segs.txt",
+
   "^tools/",
+  "^scripts/",
   "^tinygrad_repo/",
 
   "matlab.*.md",
@@ -31,6 +36,14 @@ blacklist = [
   # no LFS
   ".lfsconfig",
   ".gitattributes",
+
+  # TODO: do this automatically
+  "opendbc/tesla.*.dbc",
+  "opendbc/ford_cgea1_2_ptcan_2011.dbc",
+  "opendbc/hyundai_2015_mcan.dbc",
+  "opendbc/toyota_2017_ref_pt.dbc",
+  "opendbc/cadillac_ct6_object.dbc",
+  "opendbc/gm_global_a_lowspeed_1818125.dbc",
 ]
 
 # gets you through the blacklist
