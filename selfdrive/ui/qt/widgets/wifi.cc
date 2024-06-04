@@ -19,7 +19,7 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
     {
       QLabel *icon = new QLabel;
       QPixmap pixmap("../assets/offroad/icon_wifi_strength_full.svg");
-      icon->setPixmap(pixmap.scaledToWidth(80, Qt::SmoothTransformation));
+      icon->setPixmap(pixmap.scaledToWidth(100, Qt::SmoothTransformation));
       title_layout->addWidget(icon);
 
       QLabel *title = new QLabel(tr("Setup Wi-Fi"));
@@ -38,17 +38,18 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
     connect(settings_btn, &QPushButton::clicked, [=]() { emit openSettings(1); });
     settings_btn->setStyleSheet(R"(
       QPushButton {
-        font-size: 48px;
+        font-size: 64px;
         font-weight: 500;
         border-radius: 10px;
         background-color: #465BEA;
-        padding: 32px;
+        padding: 16px;
       }
       QPushButton:pressed {
         background-color: #3049F4;
       }
     )");
     setup_layout->addWidget(settings_btn);
+    setup_layout->addStretch();
   }
   stack->addWidget(setup);
 
@@ -56,9 +57,10 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
   QWidget *uploading = new QWidget;
   QVBoxLayout *uploading_layout = new QVBoxLayout(uploading);
   uploading_layout->setContentsMargins(64, 56, 64, 56);
-  uploading_layout->setSpacing(36);
+  uploading_layout->setSpacing(20);
   {
     QHBoxLayout *title_layout = new QHBoxLayout;
+    title_layout->setSpacing(32);
     {
       QLabel *title = new QLabel(tr("Ready to upload"));
       title->setStyleSheet("font-size: 64px; font-weight: 600;");
@@ -69,7 +71,7 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
 
       QLabel *icon = new QLabel;
       QPixmap pixmap("../assets/offroad/icon_wifi_uploading.svg");
-      icon->setPixmap(pixmap.scaledToWidth(120, Qt::SmoothTransformation));
+      icon->setPixmap(pixmap.scaledToWidth(100, Qt::SmoothTransformation));
       title_layout->addWidget(icon);
     }
     uploading_layout->addLayout(title_layout);
@@ -78,6 +80,24 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
     desc->setStyleSheet("font-size: 48px; font-weight: 400;");
     desc->setWordWrap(true);
     uploading_layout->addWidget(desc);
+    uploading_layout->setSpacing(52);
+
+    QPushButton *settings_btn = new QPushButton(tr("Open Settings"));
+    connect(settings_btn, &QPushButton::clicked, [=]() { emit openSettings(1); });
+    settings_btn->setStyleSheet(R"(
+      QPushButton {
+        font-size: 48px;
+        font-weight: 500;
+        border-radius: 10px;
+        background-color: #465BEA;
+        padding: 16px;
+      }
+      QPushButton:pressed {
+        background-color: #3049F4;
+      }
+    )");
+    uploading_layout->addWidget(settings_btn);
+    uploading_layout->addStretch();
   }
   stack->addWidget(uploading);
 

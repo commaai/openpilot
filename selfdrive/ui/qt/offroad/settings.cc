@@ -417,7 +417,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
         color: grey;
         border: none;
         background: none;
-        font-size: 65px;
+        font-size: 55px;
         font-weight: 500;
       }
       QPushButton:checked {
@@ -447,7 +447,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   // main settings layout, sidebar + main panel
   QHBoxLayout *main_layout = new QHBoxLayout(this);
 
-  sidebar_widget->setFixedWidth(500);
+  sidebar_widget->setFixedWidth(400);
   main_layout->addWidget(sidebar_widget);
   main_layout->addWidget(panel_widget);
 

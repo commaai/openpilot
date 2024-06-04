@@ -144,7 +144,7 @@ PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QFrame(parent) {
   main_layout->addSpacing(50);
 
   QLabel *description = new QLabel(tr("Become a comma prime member at connect.comma.ai"));
-  description->setStyleSheet("font-size: 56px; font-weight: light; color: white;");
+  description->setStyleSheet("font-size: 46px; font-weight: light; color: white;");
   description->setWordWrap(true);
   main_layout->addWidget(description, 0, Qt::AlignTop);
 
@@ -160,7 +160,7 @@ PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QFrame(parent) {
     const QString check = "<b><font color='#465BEA'>✓</font></b> ";
     QLabel *l = new QLabel(check + b);
     l->setAlignment(Qt::AlignLeft);
-    l->setStyleSheet("font-size: 50px; margin-bottom: 15px;");
+    l->setStyleSheet("font-size: 44px; margin-bottom: 15px;");
     main_layout->addWidget(l, 0, Qt::AlignBottom);
   }
 

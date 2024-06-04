@@ -21,11 +21,11 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   main_layout->setSpacing(0);
 
   sidebar = new Sidebar(this);
-  main_layout->addWidget(sidebar);
+  main_layout->addWidget(sidebar, 1);
   QObject::connect(sidebar, &Sidebar::openSettings, this, &HomeWindow::openSettings);
 
   slayout = new QStackedLayout();
-  main_layout->addLayout(slayout);
+  main_layout->addLayout(slayout, 4);
 
   home = new OffroadHome(this);
   QObject::connect(home, &OffroadHome::openSettings, this, &HomeWindow::openSettings);
@@ -86,6 +86,7 @@ void HomeWindow::showDriverView(bool show) {
   }
   sidebar->setVisible(show == false);
 }
+
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
   // Handle sidebar collapsing
@@ -166,7 +167,6 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     QWidget* right_widget = new QWidget(this);
     QVBoxLayout* right_column = new QVBoxLayout(right_widget);
     right_column->setContentsMargins(0, 0, 0, 0);
-    right_widget->setFixedWidth(750);
     right_column->setSpacing(30);
 
     ExperimentalModeButton *experimental_mode = new ExperimentalModeButton(this);

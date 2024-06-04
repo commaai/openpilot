@@ -4,13 +4,24 @@
 
 #include "selfdrive/ui/qt/util.h"
 
+
 void Sidebar::drawMetric(QPainter &p, const QPair<QString, QString> &label, QColor c, int y) {
-  const QRect rect = {30, y, 240, 126};
+  int sidebarWidth = this->width();
+  int sidebarHeight = this->height();
+
+  // Define margins and element sizes relative to the sidebar size
+  int marginX = sidebarWidth * 0.11;
+  int rectWidth = sidebarWidth - (2 * marginX);
+  int rectHeight = sidebarHeight * 0.11;
+  int rectX = marginX;
+  int rectY = y * sidebarHeight / 1080;
+
+  const QRect rect = {rectX, rectY, rectWidth, rectHeight};
 
   p.setPen(Qt::NoPen);
   p.setBrush(QBrush(c));
-  p.setClipRect(rect.x() + 4, rect.y(), 18, rect.height(), Qt::ClipOperation::ReplaceClip);
-  p.drawRoundedRect(QRect(rect.x() + 4, rect.y() + 4, 100, 118), 18, 18);
+  p.setClipRect(rect.x() + 4, rect.y(), 18, rect.height()-4, Qt::ClipOperation::ReplaceClip);
+  p.drawRoundedRect(QRect(rect.x() + 4, rect.y() + 4, 100, rectHeight-8), 18, 18);
   p.setClipping(false);
 
   QPen pen = QPen(QColor(0xff, 0xff, 0xff, 0x55));
@@ -19,25 +30,38 @@ void Sidebar::drawMetric(QPainter &p, const QPair<QString, QString> &label, QCol
   p.setBrush(Qt::NoBrush);
   p.drawRoundedRect(rect, 20, 20);
 
+  // Draw the text inside the rectangle
   p.setPen(QColor(0xff, 0xff, 0xff));
-  p.setFont(InterFont(35, QFont::DemiBold));
-  p.drawText(rect.adjusted(22, 0, 0, 0), Qt::AlignCenter, label.first + "\n" + label.second);
+  p.setFont(InterFont(rectHeight / 3.5, QFont::DemiBold));
+  p.drawText(rect, Qt::AlignCenter, label.first + "\n" + label.second);
+
 }
 
 Sidebar::Sidebar(QWidget *parent) : QFrame(parent), onroad(false), flag_pressed(false), settings_pressed(false) {
   home_img = loadPixmap("../assets/images/button_home.png", home_btn.size());
   flag_img = loadPixmap("../assets/images/button_flag.png", home_btn.size());
-  settings_img = loadPixmap("../assets/images/button_settings.png", settings_btn.size(), Qt::IgnoreAspectRatio);
+  settings_img = loadPixmap("../assets/images/button_settings.png", settings_btn.size());
 
   connect(this, &Sidebar::valueChanged, [=] { update(); });
 
   setAttribute(Qt::WA_OpaquePaintEvent);
-  setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Expanding);
-  setFixedWidth(300);
+  setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
   QObject::connect(uiState(), &UIState::uiUpdate, this, &Sidebar::updateState);
 
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"userFlag"});
+}
+
+void Sidebar::resizeEvent(QResizeEvent *event) {
+    setFixedWidth(parentWidget()->width() * 0.2);
+
+    int sidebarWidth = this->width();
+    int sidebarHeight = this->height();
+
+    home_btn = QRect((sidebarWidth-sidebarHeight * 0.167)/2, sidebarHeight * 0.8, sidebarHeight * 0.167, sidebarHeight * 0.167);
+    settings_btn = QRect(sidebarWidth * 0.11, sidebarHeight * 0.05, sidebarWidth * 0.5, sidebarHeight * 0.1);
+
+    update();
 }
 
 void Sidebar::mousePressEvent(QMouseEvent *event) {
@@ -117,27 +141,39 @@ void Sidebar::paintEvent(QPaintEvent *event) {
 
   // buttons
   p.setOpacity(settings_pressed ? 0.65 : 1.0);
-  p.drawPixmap(settings_btn.x(), settings_btn.y(), settings_img);
+
+  QPixmap scaledSettingsImg = settings_img.scaled(settings_btn.size(), Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+  p.drawPixmap(settings_btn.x(), settings_btn.y(), scaledSettingsImg);
+
+  QPixmap scaledHomeImg = home_img.scaled(home_btn.size(), Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+  QPixmap scaledFlagImg = flag_img.scaled(home_btn.size(), Qt::KeepAspectRatioByExpanding, Qt::SmoothTransformation);
+
   p.setOpacity(onroad && flag_pressed ? 0.65 : 1.0);
-  p.drawPixmap(home_btn.x(), home_btn.y(), onroad ? flag_img : home_img);
+  p.drawPixmap(home_btn.x(), home_btn.y(), onroad ? scaledFlagImg : scaledHomeImg);
   p.setOpacity(1.0);
 
-  // network
-  int x = 58;
+  int sidebarWidth = this->width();
+  int sidebarHeight = this->height();
+  int ellipseSize = sidebarWidth * 0.06;
+  int ellipseSpacing = ellipseSize * 1.37;
+  int baseX = sidebarWidth * 0.11;
+  int baseY = sidebarHeight * 0.181;
+
   const QColor gray(0x54, 0x54, 0x54);
   for (int i = 0; i < 5; ++i) {
     p.setBrush(i < net_strength ? Qt::white : gray);
-    p.drawEllipse(x, 196, 27, 27);
-    x += 37;
+    p.drawEllipse(QRect(baseX + i * ellipseSpacing, baseY, ellipseSize, ellipseSize));
   }
 
-  p.setFont(InterFont(35));
+  int fontzise = 0.0324 * sidebarHeight;
+  p.setFont(InterFont(fontzise));
   p.setPen(QColor(0xff, 0xff, 0xff));
-  const QRect r = QRect(50, 247, 100, 50);
-  p.drawText(r, Qt::AlignCenter, net_type);
+  QRect r = QRect(sidebarWidth * 0.11, sidebarHeight * 0.23, 100, 50);
+  p.drawText(r, Qt::AlignLeft, net_type);
 
   // metrics
   drawMetric(p, temp_status.first, temp_status.second, 338);
   drawMetric(p, panda_status.first, panda_status.second, 496);
   drawMetric(p, connect_status.first, connect_status.second, 654);
+
 }
