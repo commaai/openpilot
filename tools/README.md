@@ -26,7 +26,7 @@ git submodule update --init --recursive
 
 **3. Run the setup script**
 
-For quick setup, devs can run `ubuntu_setup.sh` which will go through dependency installs for both `ubuntu` and `python` while also setting up a `venv` to use right away. However if you'd like to pick dependencies based on groups you can run `install_python_dependencies.sh` and `install_ubuntu_dependencies.sh` separately.
+For quick setup, devs can run `ubuntu_setup.sh` which will go through dependency installs for both `ubuntu` and `python` while also setting up a `venv` to use right away. However if you'd like to pick dependencies based on groups you can run `install_ubuntu_dependencies.sh` separately and `install_python_dependencies.sh` in your own virtual env.
 
 ``` bash
 tools/ubuntu_setup.sh

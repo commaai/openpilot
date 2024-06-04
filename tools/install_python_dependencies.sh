@@ -11,12 +11,12 @@ fi
 if [ -z "$PYENV_SHELL" ] || [ -n "$PYENV_PATH_SETUP" ]; then
   echo "pyenvrc setup ..."
   cat <<EOF > "${HOME}/.pyenvrc"
-if [ -z "\$PYENV_ROOT" ]; then
-  $PYENV_PATH_SETUP
-  export PYENV_ROOT="\$HOME/.pyenv"
-  eval "\$(pyenv init -)"
-  eval "\$(pyenv virtualenv-init -)"
-fi
+  if [ -z "\$PYENV_ROOT" ]; then
+    $PYENV_PATH_SETUP
+    export PYENV_ROOT="\$HOME/.pyenv"
+    eval "\$(pyenv init -)"
+    eval "\$(pyenv virtualenv-init -)"
+  fi
 EOF
 
   SOURCE_PYENVRC="source ~/.pyenvrc"
@@ -45,25 +45,27 @@ if ! pyenv prefix ${PYENV_PYTHON_VERSION} &> /dev/null; then
 fi
 eval "$(pyenv init --path)"
 
-  echo "update pip"
-  pip install pip==24.0
-  pip install poetry==1.7.0
+echo "update pip"
+pip install pip==24.0
+pip install poetry==1.7.0
 
-  poetry config virtualenvs.prefer-active-python true --local
-  poetry config virtualenvs.in-project true --local
+poetry config virtualenvs.prefer-active-python true --local
+poetry config virtualenvs.in-project true --local
 
-  echo "PYTHONPATH=${PWD}" > $ROOT/.env
-  if [[ "$(uname)" == 'Darwin' ]]; then
-    echo "# msgq doesn't work on mac" >> $ROOT/.env
-    echo "export ZMQ=1" >> $ROOT/.env
-    echo "export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES" >> $ROOT/.env
-  fi
+echo "PYTHONPATH=${PWD}" > $ROOT/.env
+if [[ "$(uname)" == 'Darwin' ]]; then
+  echo "# msgq doesn't work on mac" >> $ROOT/.env
+  echo "export ZMQ=1" >> $ROOT/.env
+  echo "export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES" >> $ROOT/.env
+fi
 
-  poetry self add poetry-dotenv-plugin@^0.1.0
+poetry self add poetry-dotenv-plugin@^0.1.0
 
-  echo "pip packages install..."
-  poetry install --no-cache --no-root
-  pyenv rehash
+echo "pip packages install..."
+poetry install --no-cache --no-root
+pyenv rehash
+
+[ -n "$POETRY_VIRTUALENVS_CREATE" ] && RUN="" || RUN="poetry run"
 }
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
@@ -88,8 +90,6 @@ fi
 if [[ "$USE_POETRY" == "yes" ]]; then
   use_poetry
 fi
-
-[ -n "$POETRY_VIRTUALENVS_CREATE" ] && RUN="" || RUN="poetry run"
 
 if [ "$(uname)" != "Darwin" ] && [ -e "$ROOT/.git" ]; then
   echo "pre-commit hooks install..."
