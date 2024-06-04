@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import pytest
 
 from openpilot.system.thermald.fan_controller import TiciFanController

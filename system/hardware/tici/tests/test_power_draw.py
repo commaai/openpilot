@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from collections import defaultdict, deque
 import pytest
 import time
