@@ -2,6 +2,8 @@ from collections import defaultdict
 import importlib
 from parameterized import parameterized_class
 import pytest
+import sys
+from typing import Any
 
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car.car_helpers import interfaces
@@ -19,12 +21,13 @@ MAX_LAT_JERK_UP_TOLERANCE = 0.5  # m/s^3
 # jerk is measured over half a second
 JERK_MEAS_T = 0.5
 
-car_model_jerks: defaultdict[str, dict[str, float]] = defaultdict(dict)
-
 
 @parameterized_class('car_model', [(c,) for c in sorted(CAR_MODELS)])
 class TestLateralLimits:
   car_model: str
+
+  control_params: Any
+  torque_params: Any
 
   @classmethod
   def setup_class(cls):
@@ -63,9 +66,38 @@ class TestLateralLimits:
 
   def test_jerk_limits(self):
     up_jerk, down_jerk = self.calculate_0_5s_jerk(self.control_params, self.torque_params)
-    car_model_jerks[self.car_model] = {"up_jerk": up_jerk, "down_jerk": down_jerk}
     assert up_jerk <= MAX_LAT_JERK_UP + MAX_LAT_JERK_UP_TOLERANCE
     assert down_jerk <= MAX_LAT_JERK_DOWN
 
   def test_max_lateral_accel(self):
     assert self.torque_params["MAX_LAT_ACCEL_MEASURED"] <= MAX_LAT_ACCEL
+
+
+if __name__ == "__main__":
+  car_model_jerks: defaultdict[str, dict[str, float]] = defaultdict(dict)
+
+  for car_model in sorted(CAR_MODELS):
+    TestLateralLimits.car_model = car_model
+    try:
+      TestLateralLimits.setup_class()
+      up_jerk, down_jerk = TestLateralLimits.calculate_0_5s_jerk(TestLateralLimits.control_params, TestLateralLimits.torque_params)
+      car_model_jerks[car_model] = {"up_jerk": up_jerk, "down_jerk": down_jerk}
+    except pytest.skip.Exception:
+      pass
+
+  print(f"\n\n---- Lateral limit report ({len(CAR_MODELS)} cars) ----\n")
+
+  has_violations = False
+  max_car_model_len = max([len(car_model) for car_model in car_model_jerks])
+  for car_model, _jerks in sorted(car_model_jerks.items(), key=lambda i: i[1]['up_jerk'], reverse=True):
+    violation = _jerks["up_jerk"] > MAX_LAT_JERK_UP + MAX_LAT_JERK_UP_TOLERANCE or \
+                _jerks["down_jerk"] > MAX_LAT_JERK_DOWN
+    violation_str = " - VIOLATION" if violation else ""
+
+    if violation:
+      has_violations = True
+
+    print(f"{car_model:{max_car_model_len}} - up jerk: {round(_jerks['up_jerk'], 2):5} " +
+          f"m/s^3, down jerk: {round(_jerks['down_jerk'], 2):5} m/s^3{violation_str}")
+
+  sys.exit(has_violations)
