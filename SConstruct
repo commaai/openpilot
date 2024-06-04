@@ -14,6 +14,7 @@ SCons.Warnings.warningAsException(True)
 
 TICI = os.path.isfile('/TICI')
 AGNOS = TICI
+UBUNTU_FOCAL = int(subprocess.check_output('[ -f /etc/os-release ] && . /etc/os-release && [ "$ID" = "ubuntu" ] && [ "$VERSION_ID" = "20.04" ] && echo 1 || echo 0', shell=True, encoding='utf-8').rstrip())
 
 Decider('MD5-timestamp')
 
@@ -330,8 +331,17 @@ qt_flags = [
   "-DQT_MESSAGELOGCONTEXT",
 ]
 qt_env['CXXFLAGS'] += qt_flags
-qt_env['LIBPATH'] += ['#selfdrive/ui', f"#third_party/maplibre-native-qt/{arch}/lib"]
-qt_env['RPATH'] += [Dir(f"#third_party/maplibre-native-qt/{arch}/lib").srcnode().abspath]
+
+maplibre_path = f"#third_party/maplibre-native-qt/{arch}/lib"
+if arch == "x86_64":
+  if UBUNTU_FOCAL:
+    maplibre_path = f"#third_party/maplibre-native-qt/{arch}/lib/focal"
+  else:
+    maplibre_path = f"#third_party/maplibre-native-qt/{arch}/lib/noble"
+Export('maplibre_path')
+
+qt_env['LIBPATH'] += ['#selfdrive/ui', maplibre_path]
+qt_env['RPATH'] += [Dir(maplibre_path).srcnode().abspath]
 qt_env['LIBS'] = qt_libs
 
 if GetOption("clazy"):

@@ -1,4 +1,5 @@
-FROM ubuntu:20.04
+ARG UBUNTU_VERSION=24.04
+FROM ubuntu:${UBUNTU_VERSION}
 
 ENV PYTHONUNBUFFERED 1
 
@@ -15,7 +16,7 @@ ENV LC_ALL en_US.UTF-8
 COPY tools/install_ubuntu_dependencies.sh /tmp/tools/
 RUN INSTALL_EXTRA_PACKAGES=no /tmp/tools/install_ubuntu_dependencies.sh && \
     rm -rf /var/lib/apt/lists/* /tmp/* && \
-    cd /usr/lib/gcc/arm-none-eabi/9.2.1 && \
+    cd /usr/lib/gcc/arm-none-eabi/* && \
     rm -rf arm/ thumb/nofp thumb/v6* thumb/v8* thumb/v7+fp thumb/v7-r+fp.sp
 
 # Add OpenCL
@@ -30,7 +31,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc-arm-none-eabi \
     tmux \
     vim \
-    lsb-core \
+    lsb-release \
     libx11-6 \
   && rm -rf /var/lib/apt/lists/*
 
@@ -57,7 +58,7 @@ ENV QTWEBENGINE_DISABLE_SANDBOX 1
 RUN dbus-uuidgen > /etc/machine-id
 
 ARG USER=batman
-ARG USER_UID=1000
+ARG USER_UID=1001
 RUN useradd -m -s /bin/bash -u $USER_UID $USER
 RUN usermod -aG sudo $USER
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
