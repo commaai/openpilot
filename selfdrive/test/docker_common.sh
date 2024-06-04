@@ -1,6 +1,10 @@
 if [ "$1" = "base" ]; then
   export DOCKER_IMAGE=openpilot-base
   export DOCKER_FILE=Dockerfile.openpilot_base
+elif [ "$1" = "base_focal" ]; then
+  export DOCKER_IMAGE=openpilot-base-focal
+  export DOCKER_FILE=Dockerfile.openpilot_base
+  export DOCKER_BUILD_ARG="UBUNTU_VERSION=20.04"
 elif [ "$1" = "sim" ]; then
   export DOCKER_IMAGE=openpilot-sim
   export DOCKER_FILE=tools/sim/Dockerfile.sim
