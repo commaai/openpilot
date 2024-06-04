@@ -53,7 +53,8 @@ class MatchFwToCar(Protocol):
     ...
 
 
-def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, match_brand: str = None, log: bool = True, exclude: str = None) -> set[str]:
+def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, match_brand: str = None, log: bool = True, exclude: str = None,
+                          ignore_pgfi: bool = False) -> set[str]:
   """Do a fuzzy FW match. This function will return a match, and the number of firmware version
   that were matched uniquely to that specific car. If multiple ECUs uniquely match to different cars
   the match is rejected."""
@@ -72,7 +73,7 @@ def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, match_brand: str = N
       # Getting this exactly right isn't crucial, but excluding camera and radar makes it almost
       # impossible to get 3 matching versions, even if two models with shared parts are released at the same
       # time and only one is in our database.
-      if addr[0] in FUZZY_EXCLUDE_ECUS:
+      if addr[0] in FUZZY_EXCLUDE_ECUS or (addr[0] == Ecu.programmedFuelInjection and ignore_pgfi):
         continue
       for f in fws:
         all_fw_versions[(addr[1], addr[2], f)].append(candidate)
@@ -103,7 +104,8 @@ def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, match_brand: str = N
     return set()
 
 
-def match_fw_to_car_exact(live_fw_versions: LiveFwVersions, match_brand: str = None, log: bool = True, extra_fw_versions: dict = None) -> set[str]:
+def match_fw_to_car_exact(live_fw_versions: LiveFwVersions, match_brand: str = None, log: bool = True, extra_fw_versions: dict = None,
+                          ignore_pgfi: bool = False) -> set[str]:
   """Do an exact FW match. Returns all cars that match the given
   FW versions for a list of "essential" ECUs. If an ECU is not considered
   essential the FW version can be missing to get a fingerprint, but if it's present it
@@ -121,6 +123,9 @@ def match_fw_to_car_exact(live_fw_versions: LiveFwVersions, match_brand: str = N
       expected_versions = expected_versions + extra_fw_versions.get(candidate, {}).get(ecu, [])
       ecu_type = ecu[0]
       addr = ecu[1:]
+
+      if ecu_type == Ecu.programmedFuelInjection and ignore_pgfi:
+        continue
 
       found_versions = live_fw_versions.get(addr, set())
       if not len(found_versions):
@@ -145,13 +150,16 @@ def match_fw_to_car_exact(live_fw_versions: LiveFwVersions, match_brand: str = N
 
 
 def match_fw_to_car(fw_versions: list[capnp.lib.capnp._DynamicStructBuilder], vin: str,
-                    allow_exact: bool = True, allow_fuzzy: bool = True, log: bool = True) -> tuple[bool, set[str]]:
+                    allow_exact: bool = True, allow_fuzzy: bool = True, log: bool = True,
+                    ignore_pgfi: bool = False) -> tuple[bool, set[str]]:
   # Try exact matching first
   exact_matches: list[tuple[bool, MatchFwToCar]] = []
   if allow_exact:
     exact_matches = [(True, match_fw_to_car_exact)]
   if allow_fuzzy:
     exact_matches.append((False, match_fw_to_car_fuzzy))
+
+  fw_versions = [fw for fw in fw_versions if fw.ecu != Ecu.programmedFuelInjection or not ignore_pgfi]
 
   for exact_match, match_func in exact_matches:
     # For each brand, attempt to fingerprint using all FW returned from its queries
