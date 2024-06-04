@@ -136,6 +136,7 @@ FW_VERSIONS = {
       b'\xf1\x00AEev SCC F-CUP      1.00 1.00 99110-G7500         ',
       b'\xf1\x00AEev SCC F-CUP      1.00 1.01 99110-G7000         ',
       b'\xf1\x00AEev SCC F-CUP      1.00 1.01 99110-G7100         ',
+      b'\xf1\x00AEev SCC FHCUP      1.00 1.01 99110-G7100         ',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00AE  MDPS C 1.00 1.01 56310/G7310 4APEC101',
