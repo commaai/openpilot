@@ -152,7 +152,7 @@ pprofile = "*"
 polyline = "*"
 pre-commit = "*"
 pyautogui = "*"
-pyopencl = "^2024.2.2"
+pyopencl = "==2023.1.2"  # 2024.1 is broken on arm64
 pygame = "*"
 pywinctl = "*"
 pyprof2calltree = "*"
