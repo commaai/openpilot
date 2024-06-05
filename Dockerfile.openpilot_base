@@ -26,6 +26,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     unzip \
     tar \
     curl \
+    wget \
     xz-utils \
     dbus \
     gcc-arm-none-eabi \
@@ -50,6 +51,20 @@ RUN cd /tmp/opencl-driver-intel && \
     echo /opt/intel/opencl_compilers_and_libraries_18.1.0.015/linux/compiler/lib/intel64_lin/libintelocl.so > /etc/OpenCL/vendors/intel.icd && \
     cd / && \
     rm -rf /tmp/opencl-driver-intel
+
+# Add lsb-core
+RUN mkdir -p /tmp/lsbcore && \
+    cd /tmp/lsbcore && \
+    apt update && \
+    wget http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb && \
+    apt-get install -y --no-install-recommends ./libtinfo5_6.3-2ubuntu0.1_amd64.deb && \
+    wget http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libncurses5_6.3-2ubuntu0.1_amd64.deb && \
+    apt-get install -y --no-install-recommends ./libncurses5_6.3-2ubuntu0.1_amd64.deb && \
+    wget http://mirrors.kernel.org/ubuntu/pool/universe/l/lsb/lsb-security_11.1.0ubuntu4_amd64.deb && \
+    apt-get install -y --no-install-recommends ./lsb-security_11.1.0ubuntu4_amd64.deb && \
+    wget http://mirrors.kernel.org/ubuntu/pool/universe/l/lsb/lsb-core_11.1.0ubuntu4_amd64.deb && \
+    apt-get install -y --no-install-recommends ./lsb-core_11.1.0ubuntu4_amd64.deb && \
+    rm -rf /tmp/lsbcore
 
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES graphics,utility,compute
