@@ -26,13 +26,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     unzip \
     tar \
     curl \
-    wget \
     xz-utils \
     dbus \
     gcc-arm-none-eabi \
     tmux \
     vim \
-    lsb-release \
     libx11-6 \
   && rm -rf /var/lib/apt/lists/*
 
@@ -52,10 +50,13 @@ RUN cd /tmp/opencl-driver-intel && \
     cd / && \
     rm -rf /tmp/opencl-driver-intel
 
-# Add lsb-core
-RUN mkdir -p /tmp/lsbcore && \
+# Install lsb-core automatically (20.04) or manually (24.04)
+RUN apt update && \
+    apt-get install -y --no-install-recommends lsb-core || \
+  ( mkdir -p /tmp/lsbcore && \
     cd /tmp/lsbcore && \
     apt update && \
+    apt-get install -y --no-install-recommends wget && \
     wget http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb && \
     apt-get install -y --no-install-recommends ./libtinfo5_6.3-2ubuntu0.1_amd64.deb && \
     wget http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libncurses5_6.3-2ubuntu0.1_amd64.deb && \
@@ -64,7 +65,7 @@ RUN mkdir -p /tmp/lsbcore && \
     apt-get install -y --no-install-recommends ./lsb-security_11.1.0ubuntu4_amd64.deb && \
     wget http://mirrors.kernel.org/ubuntu/pool/universe/l/lsb/lsb-core_11.1.0ubuntu4_amd64.deb && \
     apt-get install -y --no-install-recommends ./lsb-core_11.1.0ubuntu4_amd64.deb && \
-    rm -rf /tmp/lsbcore
+    rm -rf /tmp/lsbcore )
 
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES graphics,utility,compute
