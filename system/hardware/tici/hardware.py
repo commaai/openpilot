@@ -392,18 +392,6 @@ class Tici(HardwareBase):
 
     # *** IRQ config ***
 
-    # pandad core
-    affine_irq(3, "spi_geni")         # SPI
-    affine_irq(3, "xhci-hcd:usb3")    # aux panda USB (or potentially anything else on USB)
-    if "tici" in self.get_device_type():
-      affine_irq(3, "xhci-hcd:usb1")  # internal panda USB (also modem)
-    try:
-      pid = subprocess.check_output(["pgrep", "-f", "spi0"], encoding='utf8').strip()
-      subprocess.call(["sudo", "chrt", "-f", "-p", "1", pid])
-      subprocess.call(["sudo", "taskset", "-pc", "3", pid])
-    except subprocess.CalledProcessException as e:
-      print(str(e))
-
     # GPU
     affine_irq(5, "kgsl-3d0")
 
@@ -460,6 +448,18 @@ class Tici(HardwareBase):
     # *** VIDC (encoder) config ***
     sudo_write("N", "/sys/kernel/debug/msm_vidc/clock_scaling")
     sudo_write("Y", "/sys/kernel/debug/msm_vidc/disable_thermal_mitigation")
+
+    # pandad core
+    affine_irq(3, "spi_geni")         # SPI
+    if "tici" in self.get_device_type():
+      affine_irq(3, "xhci-hcd:usb3")  # aux panda USB (or potentially anything else on USB)
+      affine_irq(3, "xhci-hcd:usb1")  # internal panda USB (also modem)
+    try:
+      pid = subprocess.check_output(["pgrep", "-f", "spi0"], encoding='utf8').strip()
+      subprocess.call(["sudo", "chrt", "-f", "-p", "1", pid])
+      subprocess.call(["sudo", "taskset", "-pc", "3", pid])
+    except subprocess.CalledProcessException as e:
+      print(str(e))
 
   def configure_modem(self):
     sim_id = self.get_sim_info().get('sim_id', '')
