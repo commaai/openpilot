@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from abc import ABC, abstractmethod
 
-from openpilot.common.realtime import DT_TRML
+from openpilot.common.realtime import DT_HW
 from openpilot.common.numpy_fast import interp
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.pid import PIDController
@@ -18,7 +18,7 @@ class TiciFanController(BaseFanController):
     cloudlog.info("Setting up TICI fan handler")
 
     self.last_ignition = False
-    self.controller = PIDController(k_p=0, k_i=4e-3, k_f=1, rate=(1 / DT_TRML))
+    self.controller = PIDController(k_p=0, k_i=4e-3, k_f=1, rate=(1 / DT_HW))
 
   def update(self, cur_temp: float, ignition: bool) -> int:
     self.controller.neg_limit = -(100 if ignition else 30)
