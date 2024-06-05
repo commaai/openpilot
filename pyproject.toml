@@ -152,8 +152,7 @@ pprofile = "*"
 polyline = "*"
 pre-commit = "*"
 pyautogui = "*"
-pyopencl = {git = "https://github.com/inducer/pyopencl.git", rev ="1c460eccc8bd9425a601c95a241d45ce7cc8989f"}
-#pyopencl = "==2023.1.2"  # 2024.1 is broken on arm64
+pyopencl = "==2024.2.2"  # 2024.1 is broken on arm64
 pygame = "*"
 pywinctl = "*"
 pyprof2calltree = "*"
