@@ -97,4 +97,4 @@ class LatAccelReport:
 
 
 if __name__ == '__main__':
-  sys.exit(pytest.main([__file__, '-s', '-n0', '--no-summary'], plugins=[LatAccelReport()]))
+  sys.exit(pytest.main([__file__, '-n0', '--no-summary'], plugins=[LatAccelReport()]))  # noqa: TID251
