@@ -307,6 +307,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
   },
   extra_ecus=[
     (Ecu.combinationMeter, 0x18da60f1, None),
+    (Ecu.programmedFuelInjection, 0x18da10f1, None),
     # The only other ECU on PT bus accessible by camera on radarless Civic
     # This is likely a manufacturer-specific sub-address implementation: the camera responds to this and 0x18dab0f1
     # Unclear what the part number refers to: 8S103 is 'Camera Set Mono', while 36160 is 'Camera Monocular - Honda'
