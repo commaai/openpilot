@@ -85,7 +85,7 @@ class Request:
   auxiliary: bool = False
   # FW responses from these queries will not be used for fingerprinting
   logging: bool = False
-  # boardd toggles OBD multiplexing on/off as needed
+  # pandad toggles OBD multiplexing on/off as needed
   obd_multiplexing: bool = True
 
 

@@ -1,4 +1,4 @@
-#include "selfdrive/boardd/panda.h"
+#include "selfdrive/pandad/panda.h"
 
 #include <unistd.h>
 
@@ -246,9 +246,9 @@ bool Panda::unpack_can_buffer(uint8_t *data, uint32_t &size, std::vector<can_fra
     }
 
     if (calculate_checksum(&data[pos], sizeof(can_header) + data_len) != 0) {
-      // TODO: also reset CAN comms?
       LOGE("Panda CAN checksum failed");
       size = 0;
+      can_reset_communications();
       return false;
     }
 

@@ -13,7 +13,7 @@
 #include "common/timing.h"
 #include "common/swaglog.h"
 #include "panda/board/comms_definitions.h"
-#include "selfdrive/boardd/panda_comms.h"
+#include "selfdrive/pandad/panda_comms.h"
 
 
 #define SPI_SYNC 0x5AU

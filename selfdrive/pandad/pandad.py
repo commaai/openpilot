@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# simple boardd wrapper that updates the panda first
+# simple pandad wrapper that updates the panda first
 import os
 import usb1
 import time
@@ -157,10 +157,10 @@ def main() -> NoReturn:
 
     first_run = False
 
-    # run boardd with all connected serials as arguments
-    os.environ['MANAGER_DAEMON'] = 'boardd'
-    os.chdir(os.path.join(BASEDIR, "selfdrive/boardd"))
-    subprocess.run(["./boardd", *panda_serials], check=True)
+    # run pandad with all connected serials as arguments
+    os.environ['MANAGER_DAEMON'] = 'pandad'
+    os.chdir(os.path.join(BASEDIR, "selfdrive/pandad"))
+    subprocess.run(["./pandad", *panda_serials], check=True)
 
 if __name__ == "__main__":
   main()

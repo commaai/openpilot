@@ -23,7 +23,7 @@ class Priority:
   CTRL_LOW = 51 # plannerd & radard
 
   # CORE 3
-  # - boardd = 55
+  # - pandad = 55
   CTRL_HIGH = 53
 
 

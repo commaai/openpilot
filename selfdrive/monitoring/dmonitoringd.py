@@ -20,14 +20,16 @@ def dmonitoringd_thread():
   # 20Hz <- dmonitoringmodeld
   while True:
     sm.update()
-    if (not sm.updated['driverStateV2']) or (not sm.all_checks()):
+    if not sm.updated['driverStateV2']:
       # iterate when model has new output
       continue
 
-    DM.run_step(sm)
+    valid = sm.all_checks()
+    if valid:
+      DM.run_step(sm)
 
     # publish
-    dat = DM.get_state_packet()
+    dat = DM.get_state_packet(valid=valid)
     pm.send('driverMonitoringState', dat)
 
     # load live always-on toggle

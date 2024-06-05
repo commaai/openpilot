@@ -1,13 +1,10 @@
 #include "selfdrive/modeld/models/commonmodel.h"
 
-#include <algorithm>
 #include <cassert>
 #include <cmath>
 #include <cstring>
 
 #include "common/clutil.h"
-#include "common/mat.h"
-#include "common/timing.h"
 
 ModelFrame::ModelFrame(cl_device_id device_id, cl_context context) {
   input_frames = std::make_unique<float[]>(buf_size);
@@ -50,21 +47,6 @@ ModelFrame::~ModelFrame() {
   CL_CHECK(clReleaseMemObject(u_cl));
   CL_CHECK(clReleaseMemObject(y_cl));
   CL_CHECK(clReleaseCommandQueue(q));
-}
-
-void softmax(const float* input, float* output, size_t len) {
-  const float max_val = *std::max_element(input, input + len);
-  float denominator = 0;
-  for (int i = 0; i < len; i++) {
-    float const v_exp = expf(input[i] - max_val);
-    denominator += v_exp;
-    output[i] = v_exp;
-  }
-
-  const float inv_denominator = 1. / denominator;
-  for (int i = 0; i < len; i++) {
-    output[i] *= inv_denominator;
-  }
 }
 
 float sigmoid(float input) {

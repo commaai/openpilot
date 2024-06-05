@@ -379,7 +379,7 @@ class Tici(HardwareBase):
 
     # *** CPU config ***
 
-    # offline big cluster, leave core 4 online for boardd
+    # offline big cluster, leave core 4 online for pandad
     for i in range(4, 8):
       val = '0' if powersave_enabled else '1'
       sudo_write(val, f'/sys/devices/system/cpu/cpu{i}/online')
@@ -392,7 +392,7 @@ class Tici(HardwareBase):
 
     # *** IRQ config ***
 
-    # boardd core
+    # pandad core
     affine_irq(3, "spi_geni")         # SPI
     affine_irq(3, "xhci-hcd:usb3")    # aux panda USB (or potentially anything else on USB)
     if "tici" in self.get_device_type():
