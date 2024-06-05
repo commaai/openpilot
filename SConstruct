@@ -226,7 +226,7 @@ env = Environment(
     "#cereal",
     "#third_party",
     "#opendbc/can",
-    "#selfdrive/boardd",
+    "#selfdrive/pandad",
     "#common",
     "#rednose/helpers",
   ],
