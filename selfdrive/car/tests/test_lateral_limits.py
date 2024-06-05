@@ -22,22 +22,9 @@ MAX_LAT_JERK_UP_TOLERANCE = 0.5  # m/s^3
 # jerk is measured over half a second
 JERK_MEAS_T = 0.5
 
-# car_model_jerks: defaultdict[str, dict[str, float]] = defaultdict(dict)
-
-
-hi = []
-
-@pytest.fixture(autouse=True)
-def exception_fixture():
-  global hi
-  hi.append(1)
-  # raise Exception("This is an intentional exception from the fixture")
-
 
 @parameterized_class('car_model', [(c,) for c in sorted(CAR_MODELS)])
 class TestLateralLimits:
-  control_params: object
-  torque_params: dict
   car_model: str
 
   @classmethod
@@ -77,7 +64,6 @@ class TestLateralLimits:
 
   def test_jerk_limits(self):
     up_jerk, down_jerk = self.calculate_0_5s_jerk(self.control_params, self.torque_params)
-    # car_model_jerks[self.car_model] = {"up_jerk": up_jerk, "down_jerk": down_jerk}
     assert up_jerk <= MAX_LAT_JERK_UP + MAX_LAT_JERK_UP_TOLERANCE
     assert down_jerk <= MAX_LAT_JERK_DOWN
 
@@ -88,22 +74,10 @@ class TestLateralLimits:
 class LatAccelReport:
   car_model_jerks: defaultdict[str, dict[str, float]] = defaultdict(dict)
 
-  # def pytest_runtest_teardown(self, item, nextitem):
-  #   print('test', item, nextitem)
-
-  # class level setup:
-
   def __init__(self):
-    atexit.register(self.test123)
+    atexit.register(self.show_report)
 
-  # def pytest_sessionstart(self, session):
-  #   self.session = session
-  #
-
-  # @pytest.hookimpl(wrapper=True)
-  def test123(self):
-    # Execute the original hook implementation
-
+  def show_report(self):
     print(f"\n\n---- Lateral limit report ({len(CAR_MODELS)} cars) ----\n")
 
     max_car_model_len = max([len(car_model) for car_model in self.car_model_jerks])
@@ -119,13 +93,10 @@ class LatAccelReport:
   def class_setup(self, request):
     yield
     cls = request.cls
-    # print('request', dir(request), dir(request.node), request.node.reportinfo(), request.node.own_markers)
     try:
-      # print(cls.calculate_0_5s_jerk(cls.control_params, cls.torque_params))
       up_jerk, down_jerk = TestLateralLimits.calculate_0_5s_jerk(cls.control_params, cls.torque_params)
       self.car_model_jerks[cls.car_model] = {"up_jerk": up_jerk, "down_jerk": down_jerk}
-      # self.car_model_jerks.append(cls.calculate_0_5s_jerk(cls.control_params, cls.torque_params))
-    except:
+    except AttributeError:
       pass
 
 
