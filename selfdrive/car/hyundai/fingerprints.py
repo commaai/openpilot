@@ -750,6 +750,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00DEhe SCC F-CUP      1.00 1.00 99110-G5600         ',
+      b'\xf1\x00DEhe SCC FHCUP      1.00 1.00 99110-G5600         ',
     ],
   },
   CAR.KIA_NIRO_HEV_2021: {
@@ -878,6 +879,7 @@ FW_VERSIONS = {
       b'\xf1\x00CN7 MFC  AT USA LHD 1.00 1.03 99210-AA000 200819',
       b'\xf1\x00CN7 MFC  AT USA LHD 1.00 1.03 99210-AB000 220426',
       b'\xf1\x00CN7 MFC  AT USA LHD 1.00 1.06 99210-AA000 220111',
+      b'\xf1\x00CN7 MFC  AT USA LHD 1.00 1.07 99210-AA000 220426',
       b'\xf1\x00CN7 MFC  AT USA LHD 1.00 1.08 99210-AA000 220728',
     ],
     (Ecu.abs, 0x7d1, None): [
@@ -1002,6 +1004,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00CE  MFC  AT CAN LHD 1.00 1.04 99211-KL000 221213',
       b'\xf1\x00CE  MFC  AT EUR LHD 1.00 1.03 99211-KL000 221011',
+      b'\xf1\x00CE  MFC  AT EUR LHD 1.00 1.04 99211-KL000 221213',
       b'\xf1\x00CE  MFC  AT USA LHD 1.00 1.04 99211-KL000 221213',
     ],
   },
