@@ -21,8 +21,8 @@ from openpilot.system.hardware import HARDWARE, TICI, AGNOS
 from openpilot.system.loggerd.config import get_available_percent
 from openpilot.system.statsd import statlog
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.thermald.power_monitoring import PowerMonitoring
-from openpilot.system.thermald.fan_controller import TiciFanController
+from openpilot.system.hardware.power_monitoring import PowerMonitoring
+from openpilot.system.hardware.fan_controller import TiciFanController
 from openpilot.system.version import terms_version, training_version
 
 ThermalStatus = log.DeviceState.ThermalStatus
@@ -162,7 +162,7 @@ def hw_state_thread(end_event, hw_queue):
     time.sleep(DT_TRML)
 
 
-def thermald_thread(end_event, hw_queue) -> None:
+def hardware_thread(end_event, hw_queue) -> None:
   pm = messaging.PubMaster(['deviceState'])
   sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "controlsState", "pandaStates"], poll="pandaStates")
 
@@ -349,7 +349,7 @@ def thermald_thread(end_event, hw_queue) -> None:
 
       try:
         with open('/dev/kmsg', 'w') as kmsg:
-          kmsg.write(f"<3>[thermald] engaged: {engaged}\n")
+          kmsg.write(f"<3>[hardware] engaged: {engaged}\n")
       except Exception:
         pass
 
@@ -452,7 +452,7 @@ def main():
 
   threads = [
     threading.Thread(target=hw_state_thread, args=(end_event, hw_queue)),
-    threading.Thread(target=thermald_thread, args=(end_event, hw_queue)),
+    threading.Thread(target=hardware_thread, args=(end_event, hw_queue)),
   ]
 
   for t in threads:
