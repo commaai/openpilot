@@ -63,6 +63,7 @@ repos:
         - --force
         - -j8
         - --library=qt
+        - -I third_party/
 -   repo: https://github.com/cpplint/cpplint
     rev: 1.6.1
     hooks:
