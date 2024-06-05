@@ -64,6 +64,10 @@ void ReplayStream::start() {
   replay->start();
 }
 
+void ReplayStream::stop() {
+  replay.reset(nullptr);
+}
+
 bool ReplayStream::eventFilter(const Event *event) {
   static double prev_update_ts = 0;
   if (event->which == cereal::Event::Which::CAN) {
