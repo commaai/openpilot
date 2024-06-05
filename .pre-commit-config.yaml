@@ -63,7 +63,7 @@ repos:
         - --force
         - -j8
         - --library=qt
-        - --include third_party/kaitai/kaitaistream.h
+        - --include=third_party/kaitai/kaitaistream.h
 -   repo: https://github.com/cpplint/cpplint
     rev: 1.6.1
     hooks:
