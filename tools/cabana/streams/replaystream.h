@@ -16,6 +16,7 @@ class ReplayStream : public AbstractStream {
 public:
   ReplayStream(QObject *parent);
   void start() override;
+  void stop() override;
   bool loadRoute(const QString &route, const QString &data_dir, uint32_t replay_flags = REPLAY_FLAG_NONE);
   bool eventFilter(const Event *event);
   void seekTo(double ts) override;
