@@ -1,4 +1,4 @@
-#include "selfdrive/boardd/panda.h"
+#include "selfdrive/pandad/panda.h"
 
 #include <unistd.h>
 
