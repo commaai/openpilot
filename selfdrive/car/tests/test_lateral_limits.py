@@ -4,7 +4,6 @@ import importlib
 from parameterized import parameterized_class
 import pytest
 import sys
-import atexit
 
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car.car_helpers import interfaces
@@ -74,10 +73,7 @@ class TestLateralLimits:
 class LatAccelReport:
   car_model_jerks: defaultdict[str, dict[str, float]] = defaultdict(dict)
 
-  def __init__(self):
-    atexit.register(self.show_report)
-
-  def show_report(self):
+  def pytest_sessionfinish(self):
     print(f"\n\n---- Lateral limit report ({len(CAR_MODELS)} cars) ----\n")
 
     max_car_model_len = max([len(car_model) for car_model in self.car_model_jerks])
@@ -101,4 +97,4 @@ class LatAccelReport:
 
 
 if __name__ == '__main__':
-  sys.exit(pytest.main([__file__, '-s', '-n0'], plugins=[LatAccelReport()]))
+  sys.exit(pytest.main([__file__, '-s', '-n0', '--no-summary'], plugins=[LatAccelReport()]))
