@@ -32,50 +32,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     tmux \
     vim \
     libx11-6 \
+    pocl-opencl-icd \
   && rm -rf /var/lib/apt/lists/*
-
-ARG INTEL_DRIVER=l_opencl_p_18.1.0.015.tgz
-ARG INTEL_DRIVER_URL=https://registrationcenter-download.intel.com/akdlm/irc_nas/vcp/15532
-RUN mkdir -p /tmp/opencl-driver-intel
-
-RUN cd /tmp/opencl-driver-intel && \
-    echo INTEL_DRIVER is $INTEL_DRIVER && \
-    curl -O $INTEL_DRIVER_URL/$INTEL_DRIVER && \
-    tar -xzf $INTEL_DRIVER && \
-    for i in $(basename $INTEL_DRIVER .tgz)/rpm/*.rpm; do alien --to-deb $i; done && \
-    dpkg -i *.deb && \
-    rm -rf $INTEL_DRIVER $(basename $INTEL_DRIVER .tgz) *.deb && \
-    mkdir -p /etc/OpenCL/vendors && \
-    echo /opt/intel/opencl_compilers_and_libraries_18.1.0.015/linux/compiler/lib/intel64_lin/libintelocl.so > /etc/OpenCL/vendors/intel.icd && \
-    cd / && \
-    rm -rf /tmp/opencl-driver-intel
-
-# Install lsb-core automatically (20.04) or manually (24.04)
-RUN apt update && \
-    apt-get install -y --no-install-recommends lsb-core || \
-  ( mkdir -p /tmp/lsbcore && \
-    cd /tmp/lsbcore && \
-    apt update && \
-    apt-get install -y --no-install-recommends wget && \
-  ( wget http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libtinfo5_6.3-2ubuntu0.1_amd64.deb && \
-    apt-get install -y --no-install-recommends ./libtinfo5_6.3-2ubuntu0.1_amd64.deb && \
-    wget http://security.ubuntu.com/ubuntu/pool/universe/n/ncurses/libncurses5_6.3-2ubuntu0.1_amd64.deb && \
-    apt-get install -y --no-install-recommends ./libncurses5_6.3-2ubuntu0.1_amd64.deb && \
-    wget http://mirrors.kernel.org/ubuntu/pool/universe/l/lsb/lsb-security_11.1.0ubuntu4_amd64.deb && \
-    apt-get install -y --no-install-recommends ./lsb-security_11.1.0ubuntu4_amd64.deb && \
-    wget http://mirrors.kernel.org/ubuntu/pool/universe/l/lsb/lsb-core_11.1.0ubuntu4_amd64.deb && \
-    apt-get install -y --no-install-recommends ./lsb-core_11.1.0ubuntu4_amd64.deb  && \
-    rm -rf /tmp/lsbcore ) || \
-  ( wget http://launchpadlibrarian.net/666971087/libtinfo5_6.3-2ubuntu0.1_arm64.deb && \
-    apt-get install -y --no-install-recommends ./libtinfo5_6.3-2ubuntu0.1_arm64.deb && \
-    wget http://launchpadlibrarian.net/666971083/libncurses5_6.3-2ubuntu0.1_arm64.deb && \
-    apt-get install -y --no-install-recommends ./libncurses5_6.3-2ubuntu0.1_arm64.deb && \
-    wget http://launchpadlibrarian.net/592823153/lsb-security_11.1.0ubuntu4_arm64.deb && \
-    apt-get install -y --no-install-recommends ./lsb-security_11.1.0ubuntu4_arm64.deb && \
-    wget http://launchpadlibrarian.net/592823150/lsb-core_11.1.0ubuntu4_arm64.deb && \
-    apt-get install -y --no-install-recommends ./lsb-core_11.1.0ubuntu4_arm64.deb  && \
-    rm -rf /tmp/lsbcore ) )
-
 
 ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES graphics,utility,compute
