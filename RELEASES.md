@@ -1,9 +1,9 @@
 Version 0.9.7 (2024-06-11)
 ========================
 * New driving model
-  * Inputs the past curvature for a smoother and more accurate lateral control
+  * Inputs the past curvature for smoother and more accurate lateral control
   * Simplified neural network architecture in the model's last layers
-  * Minor fixes: desire augmentation, weight decay
+  * Minor fixes to desire augmentation and weight decay
 * Adjust driving personality with the follow distance button
 * Added toggle to enable driver monitoring even when openpilot is not engaged
 * Support for hybrid variants of supported Ford models
