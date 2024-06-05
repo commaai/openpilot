@@ -1,7 +1,10 @@
+#!/usr/bin/env python3
 from collections import defaultdict
 import importlib
 from parameterized import parameterized_class
 import pytest
+import sys
+import atexit
 
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car.car_helpers import interfaces
@@ -82,7 +85,7 @@ class TestLateralLimits:
     assert self.torque_params["MAX_LAT_ACCEL_MEASURED"] <= MAX_LAT_ACCEL
 
 
-class Plugin:
+class LatAccelReport:
   car_model_jerks: defaultdict[str, dict[str, float]] = defaultdict(dict)
 
   # def pytest_runtest_teardown(self, item, nextitem):
@@ -90,12 +93,17 @@ class Plugin:
 
   # class level setup:
 
+  def __init__(self):
+    atexit.register(self.test123)
 
   # def pytest_sessionstart(self, session):
   #   self.session = session
   #
 
-  def pytest_sessionfinish(self, session):
+  # @pytest.hookimpl(wrapper=True)
+  def test123(self):
+    # Execute the original hook implementation
+
     print(f"\n\n---- Lateral limit report ({len(CAR_MODELS)} cars) ----\n")
 
     max_car_model_len = max([len(car_model) for car_model in self.car_model_jerks])
@@ -122,5 +130,4 @@ class Plugin:
 
 
 if __name__ == '__main__':
-  pytest.main([__file__, '-s'], plugins=[Plugin()])
-  print('hi', hi)
+  sys.exit(pytest.main([__file__, '-s', '-n0'], plugins=[LatAccelReport()]))
