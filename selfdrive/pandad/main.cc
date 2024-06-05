@@ -1,12 +1,12 @@
 #include <cassert>
 
-#include "selfdrive/boardd/boardd.h"
+#include "selfdrive/pandad/pandad.h"
 #include "common/swaglog.h"
 #include "common/util.h"
 #include "system/hardware/hw.h"
 
 int main(int argc, char *argv[]) {
-  LOGW("starting boardd");
+  LOGW("starting pandad");
 
   if (!Hardware::PC()) {
     int err;
@@ -17,6 +17,6 @@ int main(int argc, char *argv[]) {
   }
 
   std::vector<std::string> serials(argv + 1, argv + argc);
-  boardd_main_thread(serials);
+  pandad_main_thread(serials);
   return 0;
 }

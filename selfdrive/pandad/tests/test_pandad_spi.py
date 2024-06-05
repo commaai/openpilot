@@ -8,7 +8,7 @@ import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
 from openpilot.system.hardware import HARDWARE
 from openpilot.selfdrive.test.helpers import phone_only, with_processes
-from openpilot.selfdrive.boardd.tests.test_boardd_loopback import setup_boardd, send_random_can_messages
+from openpilot.selfdrive.pandad.tests.test_pandad_loopback import setup_pandad, send_random_can_messages
 
 
 @pytest.mark.tici
@@ -25,7 +25,7 @@ class TestBoarddSpi:
   @phone_only
   @with_processes(['pandad'])
   def test_spi_corruption(self, subtests):
-    setup_boardd(1)
+    setup_pandad(1)
 
     sendcan = messaging.pub_sock('sendcan')
     socks = {s: messaging.sub_sock(s, conflate=False, timeout=100) for s in ('can', 'pandaStates', 'peripheralState')}
