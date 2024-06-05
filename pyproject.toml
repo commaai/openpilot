@@ -20,7 +20,7 @@ markers = [
 ]
 testpaths = [
   "common",
-  "selfdrive/boardd",
+  "selfdrive/pandad",
   "selfdrive/car",
   "selfdrive/controls",
   "selfdrive/locationd",

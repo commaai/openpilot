@@ -39,7 +39,7 @@ class TestPandad:
     managed_processes['pandad'].stop()
 
     if len(sm['pandaStates']) == 0 or sm['pandaStates'][0].pandaType == log.PandaState.PandaType.unknown:
-      raise Exception("boardd failed to start")
+      raise Exception("pandad failed to start")
 
     return dt
 
@@ -101,7 +101,7 @@ class TestPandad:
       ts.append(dt)
 
     # 5s for USB (due to enumeration)
-    # - 0.2s pandad -> boardd
+    # - 0.2s pandad -> pandad
     # - plus some buffer
     assert 0.1 < (sum(ts)/len(ts)) < (0.5 if self.spi else 5.0)
     print("startup times", ts, sum(ts) / len(ts))
