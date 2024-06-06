@@ -89,19 +89,14 @@ class Request:
 
 
 @dataclass
-class VinRequest:
-  request: bytes
-  response: bytes
-  addrs: List[int]
+class VinRequest(Request):
+  addrs: list[int] = field(default_factory=list)
   functional: bool = True
-  rx_offset: int = 0x8
-  buses: list[int] = field(default_factory=lambda: [0, 1])
-  obd_multiplexing: bool = True
 
 
 @dataclass
 class FwQueryConfig:
-  requests: List[Request]
+  requests: list[Request]
   vin_requests: list[VinRequest] = field(default_factory=list)
   # TODO: make this automatic and remove hardcoded lists, or do fingerprinting with ecus
   # Overrides and removes from essential ecus for specific models and ecus (exact matching)

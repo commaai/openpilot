@@ -703,18 +703,19 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
   # OBD query + PT query
   vin_requests=[
+    # PT and OBD query
     VinRequest(
       StdQueries.UDS_VIN_REQUEST,
       StdQueries.UDS_VIN_RESPONSE,
       addrs=[0x7e0, 0x7e2, 0x7c6],
-      buses=[0, 1],
-    ),
+      bus=b,
+    ) for b in (0, 1)] + [
     # HDA 2 PT query
     VinRequest(
       StdQueries.UDS_VIN_REQUEST,
       StdQueries.UDS_VIN_RESPONSE,
       addrs=[0x7e0, 0x7e2, 0x7c6],
-      buses=[1],
+      bus=1,
       obd_multiplexing=False,
     ),
   ],
