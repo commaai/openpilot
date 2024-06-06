@@ -106,7 +106,7 @@ def build_header():
   for k, v in SERVICE_LIST.items():
     should_log = "true" if v.should_log else "false"
     decimation = -1 if v.decimation is None else v.decimation
-    h += '  { "%s", {"%s", %d, %s, %d, %d}},\n' % \
+    h += '  { "%s", {"%s", %s, %d, %d}},\n' % \
          (k, k, should_log, v.frequency, decimation)
   h += "};\n"
 
