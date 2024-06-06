@@ -15,7 +15,7 @@ from openpilot.common.simple_kalman import KF1D, get_kalman_gain
 from openpilot.common.numpy_fast import clip
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, STD_CARGO_KG
-from openpilot.selfdrive.car.values import PLATFORMS
+from openpilot.selfdrive.car.values import BRANDS, PLATFORMS
 from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, get_friction
 from openpilot.selfdrive.controls.lib.events import Events
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
@@ -44,9 +44,6 @@ GEAR_SHIFTER_MAP: dict[str, car.CarState.GearShifter] = {
   'L': GearShifter.low, 'LOW': GearShifter.low,
   'B': GearShifter.brake, 'BRAKE': GearShifter.brake,
 }
-
-CAR_BRANDS = sorted(entry.name for entry in os.scandir(BASEDIR + '/selfdrive/car') if entry.is_dir())
-
 
 class LatControlInputs(NamedTuple):
   lateral_acceleration: float
@@ -489,8 +486,9 @@ def get_interface_attr(attr: str, combine_brands: bool = False, ignore_none: boo
   # - keys are all the car models or brand names
   # - values are attr values from all car folders
   result = {}
-  for brand_name in CAR_BRANDS:
+  for brand in BRANDS:
     try:
+      brand_name = brand.__module__.split('.')[-2]
       brand_values = __import__(f'openpilot.selfdrive.car.{brand_name}.{INTERFACE_ATTR_FILE.get(attr, "values")}', fromlist=[attr])
       if hasattr(brand_values, attr) or not ignore_none:
         attr_data = getattr(brand_values, attr, None)
