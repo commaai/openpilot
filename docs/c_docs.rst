@@ -8,7 +8,7 @@ opendbc
    :project: opendbc_can
 
 
-msgq
+cereal
 ------
 
 messaging

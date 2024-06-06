@@ -28,8 +28,4 @@ env.Program('messaging/bridge', ['messaging/bridge.cc'], LIBS=[messaging, 'zmq',
 socketmaster = env.SharedObject(['messaging/socketmaster.cc'])
 socketmaster = env.Library('socketmaster', socketmaster)
 
-Depends('messaging/bridge.cc', services_h)
-Depends('messaging/impl_zmq.cc', services_h)
-
-
 Export('cereal', 'socketmaster')
