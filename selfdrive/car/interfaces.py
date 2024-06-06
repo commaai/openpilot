@@ -53,22 +53,22 @@ def get_torque_params():
   with open(TORQUE_OVERRIDE_PATH, 'rb') as f:
     override = tomllib.load(f)
 
-  legend = params['legend']
-
-  # Merge params and override, with override taking precedence
   torque_params = {}
-  for source in [params, override]:
-    for key, values in source.items():
-      if key != "legend":
-        torque_params[key] = dict(zip(legend, values, strict=True))
+  for candidate in (sub.keys() | params.keys() | override.keys()) - {'legend'}:
+    if sum([candidate in x for x in [sub, params, override]]) > 1:
+      raise RuntimeError(f'{candidate} is defined twice in torque config')
 
-  # Process substitute entries
-  for candidate, target in sub.items():
-    if candidate != "legend":
-      if target in torque_params:
-        torque_params[candidate] = torque_params[target]
-      else:
-        raise NotImplementedError(f"Did not find torque params for {candidate}")
+    if candidate in sub:
+      candidate = sub[candidate]
+
+    if candidate in override:
+      out = override[candidate]
+    elif candidate in params:
+      out = params[candidate]
+    else:
+      raise NotImplementedError(f"Did not find torque params for {candidate}")
+
+    torque_params[candidate] = {key: out[i] for i, key in enumerate(params['legend'])}
 
   return torque_params
 
