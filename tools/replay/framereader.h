@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-#include "cereal/visionipc/visionbuf.h"
+#include "msgq/visionipc/visionbuf.h"
 #include "system/camerad/cameras/camera_common.h"
 #include "tools/replay/filereader.h"
 

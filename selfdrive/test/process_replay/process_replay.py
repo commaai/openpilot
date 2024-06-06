@@ -16,7 +16,7 @@ import capnp
 import cereal.messaging as messaging
 from cereal import car
 from cereal.services import SERVICE_LIST
-from cereal.visionipc import VisionIpcServer, get_endpoint_name as vipc_get_endpoint_name
+from msgq.visionipc import VisionIpcServer, get_endpoint_name as vipc_get_endpoint_name
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.common.timeout import Timeout

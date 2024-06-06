@@ -8,13 +8,13 @@ opendbc
    :project: opendbc_can
 
 
-cereal
+msgq
 ------
 
 messaging
 ^^^^^^^^^
 .. autodoxygenindex::
-   :project: cereal_messaging
+   :project: msgq_messaging
 
 visionipc
 ^^^^^^^^^

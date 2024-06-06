@@ -8,7 +8,7 @@ from typing import SupportsFloat
 import cereal.messaging as messaging
 
 from cereal import car, log
-from cereal.visionipc import VisionIpcClient, VisionStreamType
+from msgq.visionipc import VisionIpcClient, VisionStreamType
 
 
 from openpilot.common.conversions import Conversions as CV
