@@ -5,6 +5,7 @@ import usb1
 import time
 import signal
 import subprocess
+import sys
 from typing import NoReturn
 
 from panda import Panda, PandaDFU, PandaProtocolMismatch, FW_PATH
@@ -171,6 +172,8 @@ def main() -> NoReturn:
     os.environ['MANAGER_DAEMON'] = 'pandad'
     os.chdir(os.path.join(BASEDIR, "selfdrive/pandad"))
     subprocess.run(["./pandad", *panda_serials], check=True)
+
+  sys.exit(1)
 
 if __name__ == "__main__":
   main()
