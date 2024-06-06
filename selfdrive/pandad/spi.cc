@@ -52,7 +52,7 @@ private:
       fn(fmt, ## __VA_ARGS__);     \
       fn("  %d / 0x%x / %d / %d", \
          xfer_count, header.endpoint, header.tx_len, header.max_rx_len); \
-      } while(0)
+      } while (0)
 
 PandaSpiHandle::PandaSpiHandle(std::string serial) : PandaCommsHandle(serial) {
   int ret;
