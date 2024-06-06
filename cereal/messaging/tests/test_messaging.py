@@ -181,7 +181,7 @@ class TestMessaging(unittest.TestCase):
     recvd = messaging.recv_sock(sub_sock)
     self.assertIsInstance(recvd, capnp._DynamicStructReader)
     # https://github.com/python/mypy/issues/13038
-    assert_carstate(msg.carState, recvd.carState)  # type: ignore[union-attr]
+    assert_carstate(msg.carState, recvd.carState)
 
   def test_recv_one(self):
     sock = "carState"
@@ -198,7 +198,7 @@ class TestMessaging(unittest.TestCase):
     pub_sock.send(msg.to_bytes())
     recvd = messaging.recv_one(sub_sock)
     self.assertIsInstance(recvd, capnp._DynamicStructReader)
-    assert_carstate(msg.carState, recvd.carState)  # type: ignore[union-attr]
+    assert_carstate(msg.carState, recvd.carState)
 
   @zmq_expected_failure
   def test_recv_one_or_none(self):
@@ -216,7 +216,7 @@ class TestMessaging(unittest.TestCase):
     pub_sock.send(msg.to_bytes())
     recvd = messaging.recv_one_or_none(sub_sock)
     self.assertIsInstance(recvd, capnp._DynamicStructReader)
-    assert_carstate(msg.carState, recvd.carState)  # type: ignore[union-attr]
+    assert_carstate(msg.carState, recvd.carState)
 
   def test_recv_one_retry(self):
     sock = "carState"

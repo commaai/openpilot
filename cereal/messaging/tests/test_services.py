@@ -6,7 +6,7 @@ import unittest
 from parameterized import parameterized
 
 import cereal.services as services
-from cereal.services import SERVICE_LIST, RESERVED_PORT, STARTING_PORT
+from cereal.services import SERVICE_LIST
 
 
 class TestServices(unittest.TestCase):
