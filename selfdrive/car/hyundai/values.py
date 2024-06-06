@@ -515,7 +515,7 @@ class CAR(Platforms):
       # TODO: From 3.3T Sport Advanced 2022 & Prestige 2023 Trim, 2.0T is unknown
       HyundaiCarDocs("Genesis G70 2022-23", "All", car_parts=CarParts.common([CarHarness.hyundai_l])),
     ],
-    CarSpecs(mass=3673 * CV.LB_TO_KG, wheelbase=2.83, steerRatio=12.9),
+    GENESIS_G70.specs,
     flags=HyundaiFlags.MANDO_RADAR,
   )
   GENESIS_GV70_1ST_GEN = HyundaiCanFDPlatformConfig(
