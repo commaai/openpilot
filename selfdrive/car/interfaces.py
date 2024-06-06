@@ -58,17 +58,18 @@ def get_torque_params():
     if sum([candidate in x for x in [sub, params, override]]) > 1:
       raise RuntimeError(f'{candidate} is defined twice in torque config')
 
-    if candidate in sub:
-      candidate = sub[candidate]
+    sub_candidate = sub.get(candidate, candidate)
 
-    if candidate in override:
-      out = override[candidate]
-    elif candidate in params:
-      out = params[candidate]
+    if sub_candidate in override:
+      out = override[sub_candidate]
+    elif sub_candidate in params:
+      out = params[sub_candidate]
     else:
-      raise NotImplementedError(f"Did not find torque params for {candidate}")
+      raise NotImplementedError(f"Did not find torque params for {sub_candidate}")
 
-    torque_params[candidate] = {key: out[i] for i, key in enumerate(params['legend'])}
+    torque_params[sub_candidate] = {key: out[i] for i, key in enumerate(params['legend'])}
+    if candidate in sub:
+      torque_params[candidate] = torque_params[sub_candidate]
 
   return torque_params
 
