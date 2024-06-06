@@ -180,13 +180,8 @@ def main() -> None:
   if os.getenv("PREPAREONLY") is not None:
     return
 
-  def here(sig, frame):
-    print('manager got signal', sig)
-    sys.exit()
-
   # SystemExit on sigterm
-  # signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(1))
-  signal.signal(signal.SIGTERM, here)
+  signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(1))
 
   try:
     manager_thread()
