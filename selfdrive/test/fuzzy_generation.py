@@ -35,7 +35,7 @@ class FuzzyGenerator:
         return self.generate_native_type(type_which)
 
     if hasattr(field.proto, 'slot'):
-      slot_type =  field.proto.slot.type
+      slot_type = field.proto.slot.type
       base_type = slot_type.which()
       return rec(slot_type)
     else:
@@ -63,7 +63,7 @@ class FuzzyGenerator:
       'float64': st.floats(width=64, allow_nan=not real_floats, allow_infinity=not real_floats),
       'text': st.text(max_size=1000),
       'data': st.binary(max_size=1000),
-      'anyPointer': st.text()  # Note: No need to define a separate function for anyPointer
+      'anyPointer': st.text(),  # Note: No need to define a separate function for anyPointer
     }
 
   @classmethod
