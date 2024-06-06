@@ -10,7 +10,7 @@ import pywinctl
 import time
 
 from cereal import messaging, car, log
-from cereal.visionipc import VisionIpcServer, VisionStreamType
+from msgq.visionipc import VisionIpcServer, VisionStreamType
 
 from cereal.messaging import SubMaster, PubMaster
 from openpilot.common.mock import mock_messages

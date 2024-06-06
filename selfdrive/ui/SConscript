@@ -1,9 +1,9 @@
 import os
 import json
 Import('qt_env', 'arch', 'common', 'messaging', 'visionipc',
-       'cereal', 'transformations')
+       'cereal', 'transformations', 'socketmaster')
 
-base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
+base_libs = [common, socketmaster, messaging, cereal, visionipc, transformations, 'zmq',
              'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
 
 if arch == 'larch64':

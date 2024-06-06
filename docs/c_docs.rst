@@ -14,12 +14,12 @@ cereal
 messaging
 ^^^^^^^^^
 .. autodoxygenindex::
-   :project: cereal_messaging
+   :project: msgq_messaging
 
 visionipc
 ^^^^^^^^^
 .. autodoxygenindex::
-   :project: cereal_visionipc
+   :project: msgq_visionipc
 
 
 selfdrive

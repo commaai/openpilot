@@ -1,6 +1,6 @@
-Import('env', 'arch', 'common', 'cereal', 'messaging', 'rednose', 'transformations')
+Import('env', 'arch', 'common', 'cereal', 'messaging', 'rednose', 'transformations', 'socketmaster')
 
-loc_libs = [cereal, messaging, 'zmq', common, 'capnp', 'kj', 'pthread', 'dl']
+loc_libs = [cereal, socketmaster, messaging, 'zmq', common, 'capnp', 'kj', 'pthread', 'dl']
 
 # build ekf models
 rednose_gen_dir = 'models/generated'
