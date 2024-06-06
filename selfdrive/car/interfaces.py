@@ -45,6 +45,7 @@ GEAR_SHIFTER_MAP: dict[str, car.CarState.GearShifter] = {
   'B': GearShifter.brake, 'BRAKE': GearShifter.brake,
 }
 
+
 class LatControlInputs(NamedTuple):
   lateral_acceleration: float
   roll_compensation: float
