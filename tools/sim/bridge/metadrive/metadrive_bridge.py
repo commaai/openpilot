@@ -1,3 +1,6 @@
+import math
+from multiprocessing import Queue
+
 from metadrive.component.sensors.base_camera import _cuda_enable
 from metadrive.component.map.pg_map import MapGenerateMethod
 
@@ -25,20 +28,21 @@ def curve_block(length, angle=45, direction=0):
   }
 
 def create_map(track_size=60):
+  curve_len = track_size * 2
   return dict(
     type=MapGenerateMethod.PG_MAP_FILE,
     lane_num=2,
-    lane_width=3.5,
+    lane_width=4.5,
     config=[
       None,
       straight_block(track_size),
-      curve_block(track_size*2, 90),
+      curve_block(curve_len, 90),
       straight_block(track_size),
-      curve_block(track_size*2, 90),
+      curve_block(curve_len, 90),
       straight_block(track_size),
-      curve_block(track_size*2, 90),
+      curve_block(curve_len, 90),
       straight_block(track_size),
-      curve_block(track_size*2, 90),
+      curve_block(curve_len, 90),
     ]
   )
 
@@ -46,12 +50,14 @@ def create_map(track_size=60):
 class MetaDriveBridge(SimulatorBridge):
   TICKS_PER_FRAME = 5
 
-  def __init__(self, dual_camera, high_quality):
-    self.should_render = False
-
+  def __init__(self, dual_camera, high_quality, test_duration=math.inf, test_run=False):
     super().__init__(dual_camera, high_quality)
 
-  def spawn_world(self):
+    self.should_render = False
+    self.test_run = test_run
+    self.test_duration = test_duration if self.test_run else math.inf
+
+  def spawn_world(self, queue: Queue):
     sensors = {
       "rgb_road": (RGBCameraRoad, W, H, )
     }
@@ -73,6 +79,7 @@ class MetaDriveBridge(SimulatorBridge):
       on_continuous_line_done=False,
       crash_vehicle_done=False,
       crash_object_done=False,
+      arrive_dest_done=False,
       traffic_density=0.0, # traffic is incredibly expensive
       map_config=create_map(),
       decision_repeat=1,
@@ -80,4 +87,4 @@ class MetaDriveBridge(SimulatorBridge):
       preload_models=False
     )
 
-    return MetaDriveWorld(config, self.dual_camera)
+    return MetaDriveWorld(queue, config, self.test_duration, self.test_run, self.dual_camera)

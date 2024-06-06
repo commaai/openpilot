@@ -2,7 +2,7 @@
 import importlib
 import math
 from collections import deque
-from typing import Any, Optional
+from typing import Any
 
 import capnp
 from cereal import messaging, log, car
@@ -133,7 +133,7 @@ def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks
     prob_y = laplacian_pdf(c.yRel, -lead.y[0], lead.yStd[0])
     prob_v = laplacian_pdf(c.vRel + v_ego, lead.v[0], lead.vStd[0])
 
-    # This is isn't exactly right, but good heuristic
+    # This isn't exactly right, but it's a good heuristic
     return prob_d * prob_y * prob_v
 
   track = max(tracks.values(), key=prob)
@@ -208,7 +208,7 @@ class RadarD:
 
     self.ready = False
 
-  def update(self, sm: messaging.SubMaster, rr: Optional[car.RadarData]):
+  def update(self, sm: messaging.SubMaster, rr):
     self.ready = sm.seen['modelV2']
     self.current_time = 1e-9*max(sm.logMonoTime.values())
 

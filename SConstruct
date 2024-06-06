@@ -193,6 +193,7 @@ env = Environment(
     "-Wno-c99-designator",
     "-Wno-reorder-init-list",
     "-Wno-error=unused-but-set-variable",
+    "-Wno-vla-cxx-extension",
   ] + cflags + ccflags,
 
   CPPPATH=cpppath + [
@@ -225,7 +226,7 @@ env = Environment(
     "#cereal",
     "#third_party",
     "#opendbc/can",
-    "#selfdrive/boardd",
+    "#selfdrive/pandad",
     "#common",
     "#rednose/helpers",
   ],
@@ -376,10 +377,12 @@ SConscript([
 ])
 if arch != "Darwin":
   SConscript([
-    'system/camerad/SConscript',
     'system/sensord/SConscript',
     'system/logcatd/SConscript',
   ])
+
+if arch == "larch64":
+  SConscript(['system/camerad/SConscript'])
 
 # Build openpilot
 SConscript(['third_party/SConscript'])
@@ -388,7 +391,8 @@ SConscript(['selfdrive/SConscript'])
 
 if Dir('#tools/cabana/').exists() and GetOption('extras'):
   SConscript(['tools/replay/SConscript'])
-  SConscript(['tools/cabana/SConscript'])
+  if arch != "larch64":
+    SConscript(['tools/cabana/SConscript'])
 
 external_sconscript = GetOption('external_sconscript')
 if external_sconscript:

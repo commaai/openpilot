@@ -89,7 +89,7 @@ def default_valid_file(fn: LogPath) -> bool:
 
 def auto_strategy(rlog_paths: LogPaths, qlog_paths: LogPaths, interactive: bool, valid_file: ValidFileCallable) -> LogPaths:
   # auto select logs based on availability
-  if any(rlog is None or not valid_file(rlog) for rlog in rlog_paths):
+  if any(rlog is None or not valid_file(rlog) for rlog in rlog_paths) and all(qlog is not None and valid_file(qlog) for qlog in qlog_paths):
     if interactive:
       if input("Some rlogs were not found, would you like to fallback to qlogs for those segments? (y/n) ").lower() != "y":
         return rlog_paths
@@ -172,6 +172,15 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
 
   SOURCES: list[Source] = [internal_source, openpilotci_source, comma_api_source, comma_car_segments_source,]
   exceptions = []
+
+  # for automatic fallback modes, auto_source needs to first check if rlogs exist for any source
+  if mode in [ReadMode.AUTO, ReadMode.AUTO_INTERACTIVE]:
+    for source in SOURCES:
+      try:
+        return check_source(source, sr, ReadMode.RLOG)
+      except Exception:
+        pass
+
   # Automatically determine viable source
   for source in SOURCES:
     try:
@@ -248,7 +257,7 @@ are uploaded or auto fallback to qlogs with '/a' selector at the end of the rout
 
   def _get_lr(self, i):
     if i not in self.__lrs:
-      self.__lrs[i] = _LogFileReader(self.logreader_identifiers[i])
+      self.__lrs[i] = _LogFileReader(self.logreader_identifiers[i], sort_by_time=self.sort_by_time, only_union_types=self.only_union_types)
     return self.__lrs[i]
 
   def __iter__(self):

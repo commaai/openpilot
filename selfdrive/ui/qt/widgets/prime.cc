@@ -235,7 +235,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
   mainLayout->addWidget(content);
 
-  primeUser->setVisible(uiState()->primeType());
+  primeUser->setVisible(uiState()->hasPrime());
   mainLayout->setCurrentIndex(1);
 
   setStyleSheet(R"(
@@ -269,15 +269,16 @@ void SetupWidget::replyFinished(const QString &response, bool success) {
   }
 
   QJsonObject json = doc.object();
+  bool is_paired = json["is_paired"].toBool();
   PrimeType prime_type = static_cast<PrimeType>(json["prime_type"].toInt());
-  uiState()->setPrimeType(prime_type);
+  uiState()->setPrimeType(is_paired ? prime_type : PrimeType::UNPAIRED);
 
-  if (!json["is_paired"].toBool()) {
+  if (!is_paired) {
     mainLayout->setCurrentIndex(0);
   } else {
     popup->reject();
 
-    primeUser->setVisible(prime_type);
+    primeUser->setVisible(uiState()->hasPrime());
     mainLayout->setCurrentIndex(1);
   }
 }

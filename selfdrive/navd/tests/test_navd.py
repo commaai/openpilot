@@ -1,22 +1,20 @@
-#!/usr/bin/env python3
 import json
 import random
-import unittest
 import numpy as np
 
 from parameterized import parameterized
 
 import cereal.messaging as messaging
 from openpilot.common.params import Params
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.manager.process_config import managed_processes
 
 
-class TestNavd(unittest.TestCase):
-  def setUp(self):
+class TestNavd:
+  def setup_method(self):
     self.params = Params()
     self.sm = messaging.SubMaster(['navRoute', 'navInstruction'])
 
-  def tearDown(self):
+  def teardown_method(self):
     managed_processes['navd'].stop()
 
   def _check_route(self, start, end, check_coords=True):
@@ -57,7 +55,3 @@ class TestNavd(unittest.TestCase):
     start = {"latitude": random.uniform(-90, 90), "longitude": random.uniform(-180, 180)}
     end = {"latitude": random.uniform(-90, 90), "longitude": random.uniform(-180, 180)}
     self._check_route(start, end, check_coords=False)
-
-
-if __name__ == "__main__":
-  unittest.main()

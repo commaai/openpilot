@@ -8,7 +8,7 @@ from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car.honda.interface import CarInterface
 from openpilot.selfdrive.controls.lib.events import ET, Events
 from openpilot.selfdrive.controls.lib.alertmanager import AlertManager
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.manager.process_config import managed_processes
 
 EventName = car.CarEvent.EventName
 
@@ -52,7 +52,7 @@ def cycle_alerts(duration=200, is_metric=False):
   cameras = ['roadCameraState', 'wideRoadCameraState', 'driverCameraState']
 
   CS = car.CarState.new_message()
-  CP = CarInterface.get_non_essential_params("HONDA CIVIC 2016")
+  CP = CarInterface.get_non_essential_params("HONDA_CIVIC")
   sm = messaging.SubMaster(['deviceState', 'pandaStates', 'roadCameraState', 'modelV2', 'liveCalibration',
                             'driverMonitoringState', 'longitudinalPlan', 'liveLocationKalman',
                             'managerState'] + cameras)

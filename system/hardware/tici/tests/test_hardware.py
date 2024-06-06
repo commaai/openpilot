@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
 import pytest
 import time
-import unittest
 import numpy as np
 
 from openpilot.system.hardware.tici.hardware import Tici
@@ -10,7 +8,7 @@ HARDWARE = Tici()
 
 
 @pytest.mark.tici
-class TestHardware(unittest.TestCase):
+class TestHardware:
 
   def test_power_save_time(self):
     ts = []
@@ -22,7 +20,3 @@ class TestHardware(unittest.TestCase):
 
     assert 0.1 < np.mean(ts) < 0.25
     assert max(ts) < 0.3
-
-
-if __name__ == "__main__":
-  unittest.main()

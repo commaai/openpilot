@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from cereal import car
 from panda.python import uds
 from openpilot.selfdrive.car import CarSpecs, DbcDict, PlatformConfig, Platforms, dbc_dict
-from openpilot.selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts
+from openpilot.selfdrive.car.docs_definitions import CarHarness, CarDocs, CarParts
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
 
 Ecu = car.CarParams.Ecu
@@ -15,7 +15,7 @@ class ChryslerFlags(IntFlag):
   HIGHER_MIN_STEERING_SPEED = 1
 
 @dataclass
-class ChryslerCarInfo(CarInfo):
+class ChryslerCarDocs(CarDocs):
   package: str = "Adaptive Cruise Control (ACC)"
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.fca]))
 
@@ -32,67 +32,57 @@ class ChryslerCarSpecs(CarSpecs):
 
 class CAR(Platforms):
   # Chrysler
-  PACIFICA_2017_HYBRID = ChryslerPlatformConfig(
-    "CHRYSLER PACIFICA HYBRID 2017",
-    ChryslerCarInfo("Chrysler Pacifica Hybrid 2017"),
+  CHRYSLER_PACIFICA_2017_HYBRID = ChryslerPlatformConfig(
+    [ChryslerCarDocs("Chrysler Pacifica Hybrid 2017")],
     ChryslerCarSpecs(mass=2242., wheelbase=3.089, steerRatio=16.2),
   )
-  PACIFICA_2018_HYBRID = ChryslerPlatformConfig(
-    "CHRYSLER PACIFICA HYBRID 2018",
-    ChryslerCarInfo("Chrysler Pacifica Hybrid 2018"),
-    PACIFICA_2017_HYBRID.specs,
+  CHRYSLER_PACIFICA_2018_HYBRID = ChryslerPlatformConfig(
+    [ChryslerCarDocs("Chrysler Pacifica Hybrid 2018")],
+    CHRYSLER_PACIFICA_2017_HYBRID.specs,
   )
-  PACIFICA_2019_HYBRID = ChryslerPlatformConfig(
-    "CHRYSLER PACIFICA HYBRID 2019",
-    ChryslerCarInfo("Chrysler Pacifica Hybrid 2019-23"),
-    PACIFICA_2017_HYBRID.specs,
+  CHRYSLER_PACIFICA_2019_HYBRID = ChryslerPlatformConfig(
+    [ChryslerCarDocs("Chrysler Pacifica Hybrid 2019-23")],
+    CHRYSLER_PACIFICA_2017_HYBRID.specs,
   )
-  PACIFICA_2018 = ChryslerPlatformConfig(
-    "CHRYSLER PACIFICA 2018",
-    ChryslerCarInfo("Chrysler Pacifica 2017-18"),
-    PACIFICA_2017_HYBRID.specs,
+  CHRYSLER_PACIFICA_2018 = ChryslerPlatformConfig(
+    [ChryslerCarDocs("Chrysler Pacifica 2017-18")],
+    CHRYSLER_PACIFICA_2017_HYBRID.specs,
   )
-  PACIFICA_2020 = ChryslerPlatformConfig(
-    "CHRYSLER PACIFICA 2020",
+  CHRYSLER_PACIFICA_2020 = ChryslerPlatformConfig(
     [
-      ChryslerCarInfo("Chrysler Pacifica 2019-20"),
-      ChryslerCarInfo("Chrysler Pacifica 2021-23", package="All"),
+      ChryslerCarDocs("Chrysler Pacifica 2019-20"),
+      ChryslerCarDocs("Chrysler Pacifica 2021-23", package="All"),
     ],
-    PACIFICA_2017_HYBRID.specs,
+    CHRYSLER_PACIFICA_2017_HYBRID.specs,
   )
 
   # Dodge
   DODGE_DURANGO = ChryslerPlatformConfig(
-    "DODGE DURANGO 2021",
-    ChryslerCarInfo("Dodge Durango 2020-21"),
-    PACIFICA_2017_HYBRID.specs,
+    [ChryslerCarDocs("Dodge Durango 2020-21")],
+    CHRYSLER_PACIFICA_2017_HYBRID.specs,
   )
 
   # Jeep
   JEEP_GRAND_CHEROKEE = ChryslerPlatformConfig(  # includes 2017 Trailhawk
-    "JEEP GRAND CHEROKEE V6 2018",
-    ChryslerCarInfo("Jeep Grand Cherokee 2016-18", video_link="https://www.youtube.com/watch?v=eLR9o2JkuRk"),
+    [ChryslerCarDocs("Jeep Grand Cherokee 2016-18", video_link="https://www.youtube.com/watch?v=eLR9o2JkuRk")],
     ChryslerCarSpecs(mass=1778., wheelbase=2.71, steerRatio=16.7),
   )
 
   JEEP_GRAND_CHEROKEE_2019 = ChryslerPlatformConfig(  # includes 2020 Trailhawk
-    "JEEP GRAND CHEROKEE 2019",
-    ChryslerCarInfo("Jeep Grand Cherokee 2019-21", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4"),
+    [ChryslerCarDocs("Jeep Grand Cherokee 2019-21", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4")],
     JEEP_GRAND_CHEROKEE.specs,
   )
 
   # Ram
-  RAM_1500 = ChryslerPlatformConfig(
-    "RAM 1500 5TH GEN",
-    ChryslerCarInfo("Ram 1500 2019-24", car_parts=CarParts.common([CarHarness.ram])),
+  RAM_1500_5TH_GEN = ChryslerPlatformConfig(
+    [ChryslerCarDocs("Ram 1500 2019-24", car_parts=CarParts.common([CarHarness.ram]))],
     ChryslerCarSpecs(mass=2493., wheelbase=3.88, steerRatio=16.3, minSteerSpeed=14.5),
     dbc_dict('chrysler_ram_dt_generated', None),
   )
-  RAM_HD = ChryslerPlatformConfig(
-    "RAM HD 5TH GEN",
+  RAM_HD_5TH_GEN = ChryslerPlatformConfig(
     [
-      ChryslerCarInfo("Ram 2500 2020-24", car_parts=CarParts.common([CarHarness.ram])),
-      ChryslerCarInfo("Ram 3500 2019-22", car_parts=CarParts.common([CarHarness.ram])),
+      ChryslerCarDocs("Ram 2500 2020-24", car_parts=CarParts.common([CarHarness.ram])),
+      ChryslerCarDocs("Ram 3500 2019-22", car_parts=CarParts.common([CarHarness.ram])),
     ],
     ChryslerCarSpecs(mass=3405., wheelbase=3.785, steerRatio=15.61, minSteerSpeed=16.),
     dbc_dict('chrysler_ram_hd_generated', None),
@@ -119,8 +109,8 @@ class CarControllerParams:
 
 STEER_THRESHOLD = 120
 
-RAM_DT = {CAR.RAM_1500, }
-RAM_HD = {CAR.RAM_HD, }
+RAM_DT = {CAR.RAM_1500_5TH_GEN, }
+RAM_HD = {CAR.RAM_HD_5TH_GEN, }
 RAM_CARS = RAM_DT | RAM_HD
 
 
@@ -163,5 +153,4 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
 )
 
-CAR_INFO = CAR.create_carinfo_map()
 DBC = CAR.create_dbc_map()
