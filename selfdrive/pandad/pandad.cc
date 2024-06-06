@@ -7,7 +7,6 @@
 #include <cassert>
 #include <cerrno>
 #include <chrono>
-#include <fstream>
 #include <future>
 #include <memory>
 #include <thread>
@@ -493,13 +492,6 @@ void panda_state_thread(std::vector<Panda *> pandas, bool spoofing_started) {
 
     rk.keepTime();
   }
-
-  // reset the safety mode to avoid faulting the car
-  LOGE("EXITED!");
-
-  std::ofstream f;
-  f.open("/data/pandad_exited.txt", std::ios_base::app);
-  f << "exited\n";
 
   if (is_onroad && !engaged) {
     for (auto &p : pandas) {
