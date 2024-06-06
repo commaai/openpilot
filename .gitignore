@@ -41,7 +41,6 @@ compare_runtime*.html
 
 persist
 selfdrive/pandad/pandad
-board/obj/
 cereal/services.h
 cereal/gen
 selfdrive/logcatd/logcatd
