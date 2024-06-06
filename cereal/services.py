@@ -1,18 +1,9 @@
 #!/usr/bin/env python3
 from typing import Optional
 
-RESERVED_PORT = 8022  # sshd
-STARTING_PORT = 8001
-
-
-def new_port(port: int):
-  port += STARTING_PORT
-  return port + 1 if port >= RESERVED_PORT else port
-
 
 class Service:
-  def __init__(self, port: int, should_log: bool, frequency: float, decimation: Optional[int] = None):
-    self.port = port
+  def __init__(self, should_log: bool, frequency: float, decimation: Optional[int] = None):
     self.should_log = should_log
     self.frequency = frequency
     self.decimation = decimation
@@ -97,7 +88,7 @@ _services: dict[str, tuple] = {
   "customReservedRawData1": (True, 0.),
   "customReservedRawData2": (True, 0.),
 }
-SERVICE_LIST = {name: Service(new_port(idx), *vals) for
+SERVICE_LIST = {name: Service(*vals) for
                 idx, (name, vals) in enumerate(_services.items())}
 
 
@@ -110,13 +101,13 @@ def build_header():
   h += "#include <map>\n"
   h += "#include <string>\n"
 
-  h += "struct service { std::string name; int port; bool should_log; int frequency; int decimation; };\n"
+  h += "struct service { std::string name; bool should_log; int frequency; int decimation; };\n"
   h += "static std::map<std::string, service> services = {\n"
   for k, v in SERVICE_LIST.items():
     should_log = "true" if v.should_log else "false"
     decimation = -1 if v.decimation is None else v.decimation
     h += '  { "%s", {"%s", %d, %s, %d, %d}},\n' % \
-         (k, k, v.port, should_log, v.frequency, decimation)
+         (k, k, should_log, v.frequency, decimation)
   h += "};\n"
 
   h += "#endif\n"
