@@ -3,6 +3,7 @@ import datetime
 import os
 import signal
 import sys
+import time
 import traceback
 
 from cereal import log
@@ -172,6 +173,10 @@ def manager_thread() -> None:
         cloudlog.warning(f"Shutting down manager - {param} set")
 
     if shutdown:
+      # Signal processes to shut down with a small grace period
+      for p in managed_processes.values():
+        p.signal(signal.SIGTERM)
+      time.sleep(1)
       break
 
 

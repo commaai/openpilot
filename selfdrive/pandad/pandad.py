@@ -64,13 +64,15 @@ def flash_panda(panda_serial: str) -> Panda:
 
 
 def main() -> NoReturn:
-  # override manager's immediate SystemExit to allow pandad to exit gracefully
+  # signal pandad to close the relay and exit
   def signal_handler(signum, frame):
-    nonlocal do_exit
-    do_exit = True
     cloudlog.info(f"Caught signal {signum}, exiting")
+    if process is not None and process.poll() is None:
+      process.terminate()
+      process.wait()
+    sys.exit(1)
 
-  do_exit = False
+  process = None
   signal.signal(signal.SIGTERM, signal_handler)
 
   count = 0
@@ -78,7 +80,7 @@ def main() -> NoReturn:
   params = Params()
   no_internal_panda_count = 0
 
-  while not do_exit:
+  while True:
     try:
       count += 1
       cloudlog.event("pandad.flash_and_connect", count=count)
@@ -170,8 +172,8 @@ def main() -> NoReturn:
 
     # run pandad with all connected serials as arguments
     os.environ['MANAGER_DAEMON'] = 'pandad'
-    os.chdir(os.path.join(BASEDIR, "selfdrive/pandad"))
-    subprocess.run(["./pandad", *panda_serials], check=True)
+    process = subprocess.Popen(["./pandad", *panda_serials], cwd=os.path.join(BASEDIR, "selfdrive/pandad"))
+    process.wait()
 
   sys.exit(1)
 
