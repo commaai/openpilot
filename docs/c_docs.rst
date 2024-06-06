@@ -19,7 +19,7 @@ messaging
 visionipc
 ^^^^^^^^^
 .. autodoxygenindex::
-   :project: cereal_visionipc
+   :project: msgq_visionipc
 
 
 selfdrive
