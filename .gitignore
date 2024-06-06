@@ -41,6 +41,8 @@ compare_runtime*.html
 
 persist
 selfdrive/pandad/pandad
+cereal/services.h
+cereal/gen
 selfdrive/logcatd/logcatd
 selfdrive/mapd/default_speeds_by_region.json
 system/proclogd/proclogd
