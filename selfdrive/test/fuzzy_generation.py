@@ -34,11 +34,14 @@ class FuzzyGenerator:
       else:
         return self.generate_native_type(type_which)
 
-    if hasattr(field.proto, 'slot'):
-      slot_type = field.proto.slot.type
-      base_type = slot_type.which()
-      return rec(slot_type)
-    else:
+    try:
+      if hasattr(field.proto, 'slot'):
+        slot_type =  field.proto.slot.type
+        base_type = slot_type.which()
+        return rec(slot_type)
+      else:
+        return self.generate_struct(field.schema)
+    except capnp.lib.capnp.KjException:
       return self.generate_struct(field.schema)
 
   def generate_struct(self, schema: capnp.lib.capnp._StructSchema, event: str = None) -> st.SearchStrategy[dict[str, Any]]:
