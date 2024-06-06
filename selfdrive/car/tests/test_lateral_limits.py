@@ -43,7 +43,7 @@ class TestLateralLimits:
 
     CarControllerParams = importlib.import_module(f'selfdrive.car.{CP.carName}.values').CarControllerParams
     cls.control_params = CarControllerParams(CP)
-    cls.torque_params = get_torque_params(cls.car_model)
+    cls.torque_params = get_torque_params()[cls.car_model]
 
   @staticmethod
   def calculate_0_5s_jerk(control_params, torque_params):
