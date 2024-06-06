@@ -269,7 +269,6 @@ int PandaSpiHandle::wait_for_ack(uint8_t ack, uint8_t tx, unsigned int timeout, 
     int ret = lltransfer(transfer);
     if (ret < 0) {
       SPILOG(LOGE, "SPI: failed to send ACK request");
-      printf("failed: %f\n", millis_since_boot() - st);
       return ret;
     }
 
@@ -277,14 +276,12 @@ int PandaSpiHandle::wait_for_ack(uint8_t ack, uint8_t tx, unsigned int timeout, 
       break;
     } else if (rx_buf[0] == SPI_NACK) {
       SPILOG(LOGD, "SPI: got NACK");
-      printf("NACK: %f\n", millis_since_boot() - st);
       return SpiError::NACK;
     }
 
     // handle timeout
     if (millis_since_boot() - start_millis > timeout) {
       SPILOG(LOGW, "SPI: timed out waiting for ACK");
-      printf("timeout: %f\n", millis_since_boot() - st);
       return SpiError::ACK_TIMEOUT;
     }
   }
