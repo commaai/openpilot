@@ -68,7 +68,7 @@ def main() -> NoReturn:
   def signal_handler(signum, frame):
     nonlocal do_exit
     do_exit = True
-    cloudlog.warning(f"caught signal {signum}, exiting")
+    cloudlog.info(f"Caught signal {signum}, exiting")
 
   do_exit = False
   signal.signal(signal.SIGTERM, signal_handler)
