@@ -89,11 +89,9 @@ class LatAccelReport:
   def class_setup(self, request):
     yield
     cls = request.cls
-    try:
+    if hasattr(cls, "control_params"):
       up_jerk, down_jerk = TestLateralLimits.calculate_0_5s_jerk(cls.control_params, cls.torque_params)
       self.car_model_jerks[cls.car_model] = {"up_jerk": up_jerk, "down_jerk": down_jerk}
-    except AttributeError:
-      pass
 
 
 if __name__ == '__main__':
