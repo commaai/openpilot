@@ -47,7 +47,6 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - run: git lfs pull
     - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
       run: |
