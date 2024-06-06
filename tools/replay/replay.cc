@@ -56,6 +56,7 @@ Replay::~Replay() {
     stream_thread_->quit();
     stream_thread_->wait();
     delete stream_thread_;
+    stream_thread_ = nullptr;
   }
   timeline_future.waitForFinished();
   rInfo("shutdown: done");

@@ -1,4 +1,4 @@
-#include "selfdrive/boardd/boardd.h"
+#include "selfdrive/pandad/pandad.h"
 
 #include <algorithm>
 #include <array>
@@ -25,7 +25,7 @@
 // - The internal panda will always be the first panda
 // - Consecutive pandas will be sorted based on panda type, and then serial number
 // Connecting:
-// - If a panda connection is dropped, boardd will reconnect to all pandas
+// - If a panda connection is dropped, pandad will reconnect to all pandas
 // - If a panda is added, we will only reconnect when we are offroad
 // CAN buses:
 // - Each panda will have it's block of 4 buses. E.g.: the second panda will use
@@ -163,7 +163,7 @@ Panda *connect(std::string serial="", uint32_t index=0) {
 }
 
 void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
-  util::set_thread_name("boardd_can_send");
+  util::set_thread_name("pandad_can_send");
 
   AlignedBuffer aligned_buf;
   std::unique_ptr<Context> context(Context::create());
@@ -198,12 +198,12 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
 }
 
 void can_recv_thread(std::vector<Panda *> pandas) {
-  util::set_thread_name("boardd_can_recv");
+  util::set_thread_name("pandad_can_recv");
 
   PubMaster pm({"can"});
 
   // run at 100Hz
-  RateKeeper rk("boardd_can_recv", 100);
+  RateKeeper rk("pandad_can_recv", 100);
   std::vector<can_frame> raw_can_data;
 
   while (!do_exit && check_all_connected(pandas)) {
@@ -405,7 +405,7 @@ void send_peripheral_state(PubMaster *pm, Panda *panda) {
 }
 
 void panda_state_thread(std::vector<Panda *> pandas, bool spoofing_started) {
-  util::set_thread_name("boardd_panda_state");
+  util::set_thread_name("pandad_panda_state");
 
   Params params;
   SubMaster sm({"controlsState"});
@@ -503,7 +503,7 @@ void panda_state_thread(std::vector<Panda *> pandas, bool spoofing_started) {
 
 
 void peripheral_control_thread(Panda *panda, bool no_fan_control) {
-  util::set_thread_name("boardd_peripheral_control");
+  util::set_thread_name("pandad_peripheral_control");
 
   SubMaster sm({"deviceState", "driverCameraState"});
 
@@ -554,8 +554,8 @@ void peripheral_control_thread(Panda *panda, bool no_fan_control) {
   }
 }
 
-void boardd_main_thread(std::vector<std::string> serials) {
-  LOGW("launching boardd");
+void pandad_main_thread(std::vector<std::string> serials) {
+  LOGW("launching pandad");
 
   if (serials.size() == 0) {
     serials = Panda::list();

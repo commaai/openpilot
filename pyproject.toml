@@ -20,7 +20,7 @@ markers = [
 ]
 testpaths = [
   "common",
-  "selfdrive/boardd",
+  "selfdrive/pandad",
   "selfdrive/car",
   "selfdrive/controls",
   "selfdrive/locationd",
@@ -29,10 +29,9 @@ testpaths = [
   "selfdrive/test/longitudinal_maneuvers",
   "selfdrive/test/process_replay/test_fuzzy.py",
   "system/updated",
-  "system/thermald",
   "system/athena",
   "system/camerad",
-  "system/hardware/tici",
+  "system/hardware",
   "system/loggerd",
   "system/proclogd",
   "system/tests",
@@ -140,7 +139,8 @@ inputs = "*"
 Jinja2 = "*"
 lru-dict = "*"
 matplotlib = "*"
-metadrive-simulator = { version = "0.4.2.3", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
+# No release for this fix https://github.com/metadriverse/metadrive/issues/632. Pinned to this commit until next release
+metadrive-simulator = {git = "https://github.com/metadriverse/metadrive.git", rev ="233a3a1698be7038ec3dd050ca10b547b4b3324c", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
 mpld3 = "*"
 mypy = "*"
 myst-parser = "*"
@@ -164,6 +164,7 @@ pytest-timeout = "*"
 pytest-randomly = "*"
 pytest-asyncio = "*"
 pytest-mock = "*"
+pytest-repeat = "*"
 rerun-sdk = "*"
 ruff = "*"
 sphinx = "*"
