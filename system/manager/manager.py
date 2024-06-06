@@ -187,6 +187,7 @@ def main() -> None:
   # SystemExit on sigterm
   # signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(1))
   signal.signal(signal.SIGTERM, here)
+  os.register_at_fork(after_in_child=lambda: signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGTERM)))
 
   try:
     manager_thread()

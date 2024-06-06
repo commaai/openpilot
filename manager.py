@@ -1,4 +1,5 @@
 import time
+import os
 import sys
 import signal
 import multiprocessing
@@ -20,6 +21,7 @@ if __name__ == '__main__':
 
   # SystemExit on sigterm
   signal.signal(signal.SIGTERM, signal_handler)
+  os.register_at_fork(after_in_child=lambda: signal.signal(signal.SIGTERM, signal.getsignal(signal.SIGTERM)))
 
   p = multiprocessing.Process(target=launcher, name='python_process')
   try:
