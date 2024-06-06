@@ -85,14 +85,13 @@ class LatAccelReport:
       print(f"{car_model:{max_car_model_len}} - up jerk: {round(_jerks['up_jerk'], 2):5} " +
             f"m/s^3, down jerk: {round(_jerks['down_jerk'], 2):5} m/s^3{violation_str}")
 
-  @pytest.hookimpl(tryfirst=True, hookwrapper=True)
-  def pytest_runtest_makereport(self, item, call):
+  @pytest.hookimpl(hookwrapper=True)
+  def pytest_runtest_makereport(self, item):
     outcome = yield
     rep = outcome.get_result()
     if rep.when == 'setup' and not rep.skipped:
-      cls = item.cls
-      up_jerk, down_jerk = cls.calculate_0_5s_jerk(cls.control_params, cls.torque_params)
-      self.car_model_jerks[cls.car_model] = {"up_jerk": up_jerk, "down_jerk": down_jerk}
+      up_jerk, down_jerk = item.cls.calculate_0_5s_jerk(item.cls.control_params, item.cls.torque_params)
+      self.car_model_jerks[item.cls.car_model] = {"up_jerk": up_jerk, "down_jerk": down_jerk}
 
 
 if __name__ == '__main__':
