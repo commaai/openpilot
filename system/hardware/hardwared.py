@@ -15,14 +15,14 @@ from cereal.services import SERVICE_LIST
 from openpilot.common.dict_helpers import strip_deprecated_keys
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
-from openpilot.common.realtime import DT_TRML
+from openpilot.common.realtime import DT_HW
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
 from openpilot.system.hardware import HARDWARE, TICI, AGNOS
 from openpilot.system.loggerd.config import get_available_percent
 from openpilot.system.statsd import statlog
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.thermald.power_monitoring import PowerMonitoring
-from openpilot.system.thermald.fan_controller import TiciFanController
+from openpilot.system.hardware.power_monitoring import PowerMonitoring
+from openpilot.system.hardware.fan_controller import TiciFanController
 from openpilot.system.version import terms_version, training_version
 
 ThermalStatus = log.DeviceState.ThermalStatus
@@ -106,7 +106,7 @@ def hw_state_thread(end_event, hw_queue):
 
   while not end_event.is_set():
     # these are expensive calls. update every 10s
-    if (count % int(10. / DT_TRML)) == 0:
+    if (count % int(10. / DT_HW)) == 0:
       try:
         network_type = HARDWARE.get_network_type()
         modem_temps = HARDWARE.get_modem_temperatures()
@@ -159,10 +159,10 @@ def hw_state_thread(end_event, hw_queue):
         cloudlog.exception("Error getting hardware state")
 
     count += 1
-    time.sleep(DT_TRML)
+    time.sleep(DT_HW)
 
 
-def thermald_thread(end_event, hw_queue) -> None:
+def hardware_thread(end_event, hw_queue) -> None:
   pm = messaging.PubMaster(['deviceState'])
   sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "controlsState", "pandaStates"], poll="pandaStates")
 
@@ -190,8 +190,8 @@ def thermald_thread(end_event, hw_queue) -> None:
     modem_temps=[],
   )
 
-  all_temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_TRML, initialized=False)
-  offroad_temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_TRML, initialized=False)
+  all_temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_HW, initialized=False)
+  offroad_temp_filter = FirstOrderFilter(0., TEMP_TAU, DT_HW, initialized=False)
   should_start_prev = False
   in_car = False
   engaged_prev = False
@@ -232,7 +232,7 @@ def thermald_thread(end_event, hw_queue) -> None:
 
     # Run at 2Hz, plus rising edge of ignition
     ign_edge = started_ts is None and onroad_conditions["ignition"]
-    if (sm.frame % round(SERVICE_LIST['pandaStates'].frequency * DT_TRML) != 0) and not ign_edge:
+    if (sm.frame % round(SERVICE_LIST['pandaStates'].frequency * DT_HW) != 0) and not ign_edge:
       continue
 
     msg = read_thermal(thermal_config)
@@ -349,7 +349,7 @@ def thermald_thread(end_event, hw_queue) -> None:
 
       try:
         with open('/dev/kmsg', 'w') as kmsg:
-          kmsg.write(f"<3>[thermald] engaged: {engaged}\n")
+          kmsg.write(f"<3>[hardware] engaged: {engaged}\n")
       except Exception:
         pass
 
@@ -423,7 +423,7 @@ def thermald_thread(end_event, hw_queue) -> None:
 
     # report to server once every 10 minutes
     rising_edge_started = should_start and not should_start_prev
-    if rising_edge_started or (count % int(600. / DT_TRML)) == 0:
+    if rising_edge_started or (count % int(600. / DT_HW)) == 0:
       dat = {
         'count': count,
         'pandaStates': [strip_deprecated_keys(p.to_dict()) for p in pandaStates],
@@ -452,7 +452,7 @@ def main():
 
   threads = [
     threading.Thread(target=hw_state_thread, args=(end_event, hw_queue)),
-    threading.Thread(target=thermald_thread, args=(end_event, hw_queue)),
+    threading.Thread(target=hardware_thread, args=(end_event, hw_queue)),
   ]
 
   for t in threads:

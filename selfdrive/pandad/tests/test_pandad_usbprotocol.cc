@@ -4,7 +4,7 @@
 #include "catch2/catch.hpp"
 #include "cereal/messaging/messaging.h"
 #include "common/util.h"
-#include "selfdrive/boardd/panda.h"
+#include "selfdrive/pandad/panda.h"
 
 struct PandaTest : public Panda {
   PandaTest(uint32_t bus_offset, int can_list_size, cereal::PandaState::PandaType hw_type);

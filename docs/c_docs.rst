@@ -77,10 +77,10 @@ sensorsd
 .. autodoxygenindex::
    :project: system_sensord_sensors
 
-boardd
+pandad
 ^^^^^^
 .. autodoxygenindex::
-   :project: selfdrive_boardd
+   :project: selfdrive_pandad
 
 
 rednose

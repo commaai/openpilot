@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import pytest
 from functools import wraps
 import json

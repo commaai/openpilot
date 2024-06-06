@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import os
 import copy
 import random
@@ -9,19 +8,21 @@ from pprint import pprint
 
 import cereal.messaging as messaging
 from cereal import car, log
+from openpilot.common.retry import retry
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
-from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
+from openpilot.selfdrive.pandad import can_list_to_can_capnp
 from openpilot.selfdrive.car import make_can_msg
 from openpilot.system.hardware import TICI
 from openpilot.selfdrive.test.helpers import phone_only, with_processes
 
 
-def setup_boardd(num_pandas):
+@retry(attempts=3)
+def setup_pandad(num_pandas):
   params = Params()
   params.put_bool("IsOnroad", False)
 
-  with Timeout(90, "boardd didn't start"):
+  with Timeout(90, "pandad didn't start"):
     sm = messaging.SubMaster(['pandaStates'])
     while sm.recv_frame['pandaStates'] < 1 or len(sm['pandaStates']) == 0 or \
         any(ps.pandaType == log.PandaState.PandaType.unknown for ps in sm['pandaStates']):
@@ -31,7 +32,7 @@ def setup_boardd(num_pandas):
   assert num_pandas == found_pandas, "connected pandas ({found_pandas}) doesn't match expected panda count ({num_pandas}). \
                                       connect another panda for multipanda tests."
 
-  # boardd safety setting relies on these params
+  # pandad safety setting relies on these params
   cp = car.CarParams.new_message()
 
   safety_config = car.CarParams.SafetyConfig.new_message()
@@ -71,7 +72,7 @@ class TestBoarddLoopback:
   @with_processes(['pandad'])
   def test_loopback(self):
     num_pandas = 2 if TICI and "SINGLE_PANDA" not in os.environ else 1
-    setup_boardd(num_pandas)
+    setup_pandad(num_pandas)
     sendcan = messaging.pub_sock('sendcan')
     can = messaging.sub_sock('can', conflate=False, timeout=100)
     sm = messaging.SubMaster(['pandaStates'])
@@ -79,7 +80,7 @@ class TestBoarddLoopback:
 
     n = 200
     for i in range(n):
-      print(f"boardd loopback {i}/{n}")
+      print(f"pandad loopback {i}/{n}")
 
       sent_msgs = send_random_can_messages(sendcan, random.randrange(20, 100), num_pandas)
 

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import http.server
 import os
 import shutil
