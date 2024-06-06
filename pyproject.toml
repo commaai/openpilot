@@ -152,7 +152,7 @@ pprofile = "*"
 polyline = "*"
 pre-commit = "*"
 pyautogui = "*"
-pyopencl = "*"
+pyopencl = { version = "*", markers = "platform_machine == 'x86_64'" }
 pygame = "*"
 pywinctl = "*"
 pyprof2calltree = "*"

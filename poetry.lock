@@ -6409,37 +6409,37 @@ pyobjc-framework-Cocoa = ">=10.3"
 
 [[package]]
 name = "pyopencl"
-version = "2024.2.4"
+version = "2024.2.2"
 description = "Python wrapper for OpenCL"
 optional = false
 python-versions = "~=3.8"
 files = [
-    {file = "pyopencl-2024.2.4-cp310-cp310-macosx_10_14_x86_64.whl", hash = "sha256:03e508e7b9886a800662c70cb2f1db977c0166ec31b09d4eb08f0a4fc813449e"},
-    {file = "pyopencl-2024.2.4-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:164303d6e79589019a0af769c54d52918f5dbd46abb480a02832c68acc743d3c"},
-    {file = "pyopencl-2024.2.4-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:08b4ffaf99b1a9387c81787d0a3746b301c4eb8c6d5f586113052974a76aa485"},
-    {file = "pyopencl-2024.2.4-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:ca1e69929218bc92977c4cb340847b13b91361a9159c2c43a5b3970706f0f98b"},
-    {file = "pyopencl-2024.2.4-cp310-cp310-win_amd64.whl", hash = "sha256:6f9b0b4a424b7e3fc3ebd8f847efb9c5bdfb1cebb4d4645015140cde55774966"},
-    {file = "pyopencl-2024.2.4-cp311-cp311-macosx_10_14_x86_64.whl", hash = "sha256:0cbb7e0507ebbfe750de8fafc073e2172543f9b77d70766b6edc84a7a13967bb"},
-    {file = "pyopencl-2024.2.4-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:7bfaa30e1b1f4451bda2323a2f58f50678ae7f52dc416c4bcf3ce4eb0b48c3e8"},
-    {file = "pyopencl-2024.2.4-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:635e3b9d549708fc26da7058d6fee8e6c7af83d0c184e86f08841605e68c07df"},
-    {file = "pyopencl-2024.2.4-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:3db3c636d4b93981cb70f7b37de8315d445ef80d641063530e783e616fa59838"},
-    {file = "pyopencl-2024.2.4-cp311-cp311-win_amd64.whl", hash = "sha256:fdc8619d304058e7414a9a620a240724fefdcc06fc5a3076dd9aec07428d1254"},
-    {file = "pyopencl-2024.2.4-cp312-cp312-macosx_10_14_x86_64.whl", hash = "sha256:e4b82718f98278ae4c008a75b54b9d93ae9e8566c31ab0823026ab057216145c"},
-    {file = "pyopencl-2024.2.4-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:91539dedaa87042275440ee38f8a08d28cb389cf04437d8e274893f8230b1dc1"},
-    {file = "pyopencl-2024.2.4-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:d4ad4ab0188b17d6aa0bafda3900218c33d53036ec6c6dc617deedc28f08394e"},
-    {file = "pyopencl-2024.2.4-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:0ff950e5557a662b351dfec33f8ca199a008f007925b461ac505d2e851591a11"},
-    {file = "pyopencl-2024.2.4-cp312-cp312-win_amd64.whl", hash = "sha256:92c682d84e1c5c3f15419e4645d7635e120408226257d51a06a6d8310d3d6361"},
-    {file = "pyopencl-2024.2.4-cp38-cp38-macosx_10_14_x86_64.whl", hash = "sha256:ca121fc6865c6d80bdb23c5248e94ff22652f6b68c424afec1b95ba9865072e2"},
-    {file = "pyopencl-2024.2.4-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:fb3f45272d1a5900bcbeaf7b889f922ab00973df6e9399f7e60668b6b0830258"},
-    {file = "pyopencl-2024.2.4-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5bc1e2cf08bea0ccb6d12e809c1b2b6e63e242d8ca5e6177a5110d9322d7eded"},
-    {file = "pyopencl-2024.2.4-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:af7d0604262bfcf1f159a18a7fc3ad11534e699c03b11500150c66f2f7ecb9a1"},
-    {file = "pyopencl-2024.2.4-cp38-cp38-win_amd64.whl", hash = "sha256:acbf99bfb9f416be394054424f1dd2d1bc8fdd6b03bf595b934b65ff5dacb966"},
-    {file = "pyopencl-2024.2.4-cp39-cp39-macosx_10_14_x86_64.whl", hash = "sha256:b30743561d13bc9920e2c0dc3e65029dd77ef95aa4cb448a1ef46e02925420f3"},
-    {file = "pyopencl-2024.2.4-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:29c68e619960100885ea029b62070271f4c5395601b1c9048e22e269b3fd5a75"},
-    {file = "pyopencl-2024.2.4-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:45084ca0606edccc3f51160235f0fdc8cfdc3d81eed3108da6ac4444306b1896"},
-    {file = "pyopencl-2024.2.4-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:ba0e6e0dc37b6ff6cd4d79da5b897ebe5acf05cb2af76a19b464d796698df71b"},
-    {file = "pyopencl-2024.2.4-cp39-cp39-win_amd64.whl", hash = "sha256:0b56958dd5c6be27471fb2a21795693905d70d3b70be9b4ae57258983cef617d"},
-    {file = "pyopencl-2024.2.4.tar.gz", hash = "sha256:7d0a4a7d559e5aba5f2e6494057a09a110ef56b72d2c3aa21fa3408809c6586e"},
+    {file = "pyopencl-2024.2.2-cp310-cp310-macosx_10_14_x86_64.whl", hash = "sha256:3cc76a86c9b7ada3d82b9f35c02c3b5ab9f23260708b5f2ceb1d63620524def9"},
+    {file = "pyopencl-2024.2.2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:60bc5f5559fdf361b494fb83580384299cf1d708c78bea1daab86a984ee59f35"},
+    {file = "pyopencl-2024.2.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ba02048a85388fdba5e3be01d8fd274cbd3ac665eb963364b9a2d2b73ec40381"},
+    {file = "pyopencl-2024.2.2-cp310-cp310-musllinux_1_1_x86_64.whl", hash = "sha256:a246b2a1036d635c79910b4819d7aa352af82ce8326328e4b831346eb2673e9a"},
+    {file = "pyopencl-2024.2.2-cp310-cp310-win_amd64.whl", hash = "sha256:5bde1457e21e8209fd639f246bce56238f5e115bc36c9dd00105c4293483b999"},
+    {file = "pyopencl-2024.2.2-cp311-cp311-macosx_10_14_x86_64.whl", hash = "sha256:12121754420c5ad93e4a7a1233e0d6f6ec504a9a698dcd2897d7869144821771"},
+    {file = "pyopencl-2024.2.2-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:31f3d80abc994a084f63eb0dc1afa12b0266c8e24cb7477d0684dc46907ba816"},
+    {file = "pyopencl-2024.2.2-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e07256f80d3b362939c715e288f5418ef964c493b29d89c2c4ae05d4d63f348b"},
+    {file = "pyopencl-2024.2.2-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:e46ab782243223f6c9a0b671d4f8134fd32c66045caede75716bec613bc49e53"},
+    {file = "pyopencl-2024.2.2-cp311-cp311-win_amd64.whl", hash = "sha256:d30715aa7b70cf091d93ff6e5221a9d3ac7b1384672d523151949885e77d9baa"},
+    {file = "pyopencl-2024.2.2-cp312-cp312-macosx_10_14_x86_64.whl", hash = "sha256:9215d5d7286112523728b2569e64732137a08b1e3aa211def368584d5a181dd2"},
+    {file = "pyopencl-2024.2.2-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:81221cf0af4778cf6e5740697dee2c0608c961376c901ec8228e52f01a86badf"},
+    {file = "pyopencl-2024.2.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:0d8d496a1e9c0654c89e05acfddaeba4b49dd3485d0e19af97b934d4b7d0241a"},
+    {file = "pyopencl-2024.2.2-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:75bcb11dc30df41002b641936c793be97cfa8d95fa7c2860357fd52a60803398"},
+    {file = "pyopencl-2024.2.2-cp312-cp312-win_amd64.whl", hash = "sha256:2cf8c48bd05c561997bc1c905111e4664c0954186ac92bd678f78d8bff378fa0"},
+    {file = "pyopencl-2024.2.2-cp38-cp38-macosx_10_14_x86_64.whl", hash = "sha256:139bf0369578cac8ed1b26503ae3cd8e1518fe1ec205f22e253a1e5869906c39"},
+    {file = "pyopencl-2024.2.2-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:373143a7b8aaa4a657b34f5ef7db0cb520e14060f6f03e19eb138b6925a897be"},
+    {file = "pyopencl-2024.2.2-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f22258852c9416fd58c1ca2fff6b6f40280c34633a0bb846c777126006acd237"},
+    {file = "pyopencl-2024.2.2-cp38-cp38-musllinux_1_1_x86_64.whl", hash = "sha256:f4ce76d86f5785b81d8dcd2c3c1b2f9c417144994f7a4a37e9ee956197f00289"},
+    {file = "pyopencl-2024.2.2-cp38-cp38-win_amd64.whl", hash = "sha256:2be34785c291d657660105c6f5f00eb3fa25058339ab0abcd8d116aa1cbe1b57"},
+    {file = "pyopencl-2024.2.2-cp39-cp39-macosx_10_14_x86_64.whl", hash = "sha256:66999a3657fb9af7b17d69df3845bbbf921f46a56eab9da93c45e7120de2a6de"},
+    {file = "pyopencl-2024.2.2-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:8982d64f7862a55be56d2cad0332b193f9f9ec5e0d27ac8f90b71281bf5c93e8"},
+    {file = "pyopencl-2024.2.2-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:31621740f51f6e4d43fc028454bc17e61aac22ca33b4eef0c3109c156058266b"},
+    {file = "pyopencl-2024.2.2-cp39-cp39-musllinux_1_1_x86_64.whl", hash = "sha256:fd328d58596a6ec8bdc0851f3acae692aadd6c44379a619acae4e95b739842a1"},
+    {file = "pyopencl-2024.2.2-cp39-cp39-win_amd64.whl", hash = "sha256:489a3083c9c1c2ace2a078b6b6355a0a2c22c4c1497eed4910e2f150ea4ac5c5"},
+    {file = "pyopencl-2024.2.2.tar.gz", hash = "sha256:be6f6535de310a3166e4a8fb606a615b7cf3412cdb05353127ac194cf852f4c0"},
 ]
 
 [package.dependencies]
@@ -6448,8 +6448,8 @@ platformdirs = ">=2.2.0"
 pytools = ">=2022.1.13"
 
 [package.extras]
-oclgrind = ["oclgrind_binary_distribution (>=18.3)"]
-pocl = ["pocl_binary_distribution (>=1.2)"]
+oclgrind = ["oclgrind-binary-distribution (>=18.3)"]
+pocl = ["pocl-binary-distribution (>=1.2)"]
 test = ["Mako", "pytest (>=7.0.0)"]
 
 [[package]]
@@ -8050,4 +8050,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.11"
-content-hash = "d678b5b6a4648d978088808ba5958bb9a26f7e0a3da42d413bc450a5c59efb30"
+content-hash = "a3022c7c12f4609a16ae00bd4dcef29d31b200013203ca2a46c3ea9bb78367bd"
