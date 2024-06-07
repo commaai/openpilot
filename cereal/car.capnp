@@ -281,6 +281,7 @@ struct CarState {
   brakeLightsDEPRECATED @19 :Bool;
   steeringRateLimitedDEPRECATED @29 :Bool;
   canMonoTimesDEPRECATED @12: List(UInt64);
+  canRcvTimeoutDEPRECATED @49 :Bool;
 }
 
 # ******* radar state @ 20hz *******
