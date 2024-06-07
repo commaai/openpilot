@@ -15,17 +15,17 @@ blacklist = [
   "panda/drivers/",
   "panda/examples/",
   "panda/tests/safety/",
-
+  
   "opendbc/.*.dbc$",
   "opendbc/generator/",
-
+  
   "cereal/.*test.*",
   "^common/tests/",
 
   # particularly large text files
   "poetry.lock",
   "third_party/catch2",
-  "selfdrive/car/tests/test_models_segs.txt",
+  "selfdrive/car/tests/test_models.*",
 
   "^tools/",
   "^scripts/",
