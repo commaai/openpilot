@@ -67,7 +67,7 @@ AddOption('--pc-thneed',
 AddOption('--minimal',
           action='store_false',
           dest='extras',
-          default=os.path.islink(Dir('#rednose/').abspath), # minimal by default on release branch (where rednose is not a link)
+          default=os.path.exists(File('#.lfsconfig').abspath), # minimal by default on release branch (where there's no LFS)
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
 ## Architecture name breakdown (arch)
