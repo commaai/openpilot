@@ -11,14 +11,18 @@ ROOT = HERE + "/.."
 # - keeping the diff readable
 blacklist = [
   "body/STL/",
+
   "panda/drivers/",
   "panda/examples/",
   "panda/tests/safety/",
+  
+  "opendbc/.*.dbc$",
   "opendbc/generator/",
+  
   "cereal/.*test.*",
   "^common/tests/",
-  "opendbc/.*.dbc",
 
+  # particularly large text files
   "poetry.lock",
   "third_party/catch2",
   "selfdrive/car/tests/test_models_segs.txt",
