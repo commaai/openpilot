@@ -85,8 +85,3 @@ if [ ! -z "$BRANCH" ]; then
 fi
 
 echo "[-] done T=$SECONDS, ready at $TARGET_DIR"
-
-cd $TARGET_DIR
-#PYTHONPATH=TARGET_DIR system/manager/build.py
-#PYTHONPATH=$TARGET_DIR scons --minimal
-
