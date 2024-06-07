@@ -15,10 +15,10 @@ blacklist = [
   "panda/drivers/",
   "panda/examples/",
   "panda/tests/safety/",
-  
+
   "opendbc/.*.dbc$",
   "opendbc/generator/",
-  
+
   "cereal/.*test.*",
   "^common/tests/",
 
