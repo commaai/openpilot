@@ -1,6 +1,6 @@
 # distutils: language = c++
 
-from cereal.visionipc.visionipc cimport cl_device_id, cl_context, cl_mem
+from msgq.visionipc.visionipc cimport cl_device_id, cl_context, cl_mem
 
 cdef extern from "common/mat.h":
   cdef struct mat3:

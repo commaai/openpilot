@@ -1,7 +1,7 @@
-Import('env', 'qt_env', 'arch', 'common', 'messaging', 'visionipc', 'cereal')
+Import('env', 'qt_env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'socketmaster')
 
 base_frameworks = qt_env['FRAMEWORKS']
-base_libs = [common, messaging, cereal, visionipc, 'zmq',
+base_libs = [common, socketmaster, messaging, cereal, visionipc, 'zmq',
              'capnp', 'kj', 'm', 'ssl', 'crypto', 'pthread', 'qt_util'] + qt_env["LIBS"]
 
 if arch == "Darwin":

@@ -27,7 +27,7 @@ repos:
     rev: v2.2.6
     hooks:
     -   id: codespell
-        exclude: '^(third_party/)|(body/)|(cereal/)|(panda/)|(opendbc/)|(rednose/)|(rednose_repo/)|(teleoprtc/)|(teleoprtc_repo/)|(selfdrive/ui/translations/.*.ts)|(poetry.lock)'
+        exclude: '^(third_party/)|(body/)|(msgq/)|(panda/)|(opendbc/)|(rednose/)|(rednose_repo/)|(teleoprtc/)|(teleoprtc_repo/)|(selfdrive/ui/translations/.*.ts)|(poetry.lock)'
         args:
         # if you've got a short variable name that's getting flagged, add it here
         - -L bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup,bumb,nd,sie,preints
@@ -36,7 +36,7 @@ repos:
     rev: v0.4.4
     hooks:
     -   id: ruff
-        exclude: '^(third_party/)|(cereal/)|(panda/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(teleoprtc/)|(teleoprtc_repo/)'
+        exclude: '^(third_party/)|(msgq/)|(panda/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(teleoprtc/)|(teleoprtc_repo/)'
 -   repo: local
     hooks:
     -   id: mypy
@@ -47,7 +47,7 @@ repos:
         args:
         - --local-partial-types
         - --explicit-package-bases
-        exclude: '^(third_party/)|(body/)|(cereal/)|(opendbc/)|(panda/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(teleoprtc/)|(teleoprtc_repo/)'
+        exclude: '^(third_party/)|(body/)|(msgq/)|(opendbc/)|(panda/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(teleoprtc/)|(teleoprtc_repo/)'
 -   repo: local
     hooks:
     -   id: cppcheck
@@ -55,7 +55,7 @@ repos:
         entry: cppcheck
         language: system
         types: [c++]
-        exclude: '^(third_party/)|(cereal/)|(body/)|(rednose/)|(rednose_repo/)|(opendbc/)|(panda/)|(tools/)|(selfdrive/modeld/thneed/debug/)|(selfdrive/modeld/test/)|(selfdrive/camerad/test/)|(installer/)'
+        exclude: '^(third_party/)|(msgq/)|(body/)|(rednose/)|(rednose_repo/)|(opendbc/)|(panda/)|(tools/)|(selfdrive/modeld/thneed/debug/)|(selfdrive/modeld/test/)|(selfdrive/camerad/test/)|(installer/)'
         args:
         - --error-exitcode=1
         - --language=c++
@@ -66,7 +66,7 @@ repos:
     rev: 1.6.1
     hooks:
     -   id: cpplint
-        exclude: '^(third_party/)|(cereal/)|(body/)|(rednose/)|(rednose_repo/)|(opendbc/)|(panda/)|(generated/)'
+        exclude: '^(third_party/)|(msgq/)|(body/)|(rednose/)|(rednose_repo/)|(opendbc/)|(panda/)|(generated/)'
         args:
         - --quiet
         - --counting=total
@@ -78,7 +78,7 @@ repos:
     rev: v0.16.2
     hooks:
     -   id: cython-lint
-        exclude: '^(third_party/)|(cereal/)|(body/)|(rednose/)|(rednose_repo/)|(opendbc/)|(panda/)|(generated/)'
+        exclude: '^(third_party/)|(msgq/)|(body/)|(rednose/)|(rednose_repo/)|(opendbc/)|(panda/)|(generated/)'
         args:
         - --max-line-length=240
         - --ignore=E111, E302, E305

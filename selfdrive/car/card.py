@@ -29,8 +29,7 @@ class Car:
     self.sm = messaging.SubMaster(['pandaStates', 'carControl', 'onroadEvents'])
     self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams', 'carOutput'])
 
-    self.can_rcv_timeout_counter = 0  # consecutive timeout count
-    self.can_rcv_cum_timeout_counter = 0  # cumulative timeout count
+    self.can_rcv_cum_timeout_counter = 0
 
     self.CC_prev = car.CarControl.new_message()
     self.CS_prev = car.CarState.new_message()
@@ -96,12 +95,7 @@ class Car:
 
     # Check for CAN timeout
     if not can_rcv_valid:
-      self.can_rcv_timeout_counter += 1
       self.can_rcv_cum_timeout_counter += 1
-    else:
-      self.can_rcv_timeout_counter = 0
-
-    self.can_rcv_timeout = self.can_rcv_timeout_counter >= 5
 
     if can_rcv_valid and REPLAY:
       self.can_log_mono_time = messaging.log_from_bytes(can_strs[0]).logMonoTime
@@ -141,7 +135,6 @@ class Car:
     cs_send = messaging.new_message('carState')
     cs_send.valid = CS.canValid
     cs_send.carState = CS
-    cs_send.carState.canRcvTimeout = self.can_rcv_timeout
     cs_send.carState.canErrorCounter = self.can_rcv_cum_timeout_counter
     cs_send.carState.cumLagMs = -self.rk.remaining * 1000.
     self.pm.send('carState', cs_send)
