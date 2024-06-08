@@ -3,6 +3,7 @@ from cereal import car
 from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
 from openpilot.selfdrive.car.honda.values import DBC
+from openpilot.selfdrive.pandad import can_capnp_to_list
 
 
 def _create_nidec_can_parser(car_fingerprint):
@@ -36,7 +37,7 @@ class RadarInterface(RadarInterfaceBase):
     if self.radar_off_can:
       return super().update(None)
 
-    vls = self.rcp.update_strings(can_strings)
+    vls = self.rcp.update_strings(can_capnp_to_list(can_strings))
     self.updated_messages.update(vls)
 
     if self.trigger_msg not in self.updated_messages:
