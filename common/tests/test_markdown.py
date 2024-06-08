@@ -1,5 +1,4 @@
 import os
-import unittest
 
 from common.basedir import BASEDIR
 from common.markdown import parse_markdown
