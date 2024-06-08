@@ -12,21 +12,23 @@ Running natively on any other system is not recommended and will require modific
 
 NOTE: This repository uses Git LFS for large files. Ensure you have [Git LFS](https://git-lfs.com/) installed and set up before cloning or working with it.
 
-Either do a partial clone for faster download:
-``` bash
-git clone --filter=blob:none --recurse-submodules --also-filter-submodules https://github.com/commaai/openpilot.git
-```
-
-or do a full clone:
 ``` bash
 git clone --recurse-submodules https://github.com/commaai/openpilot.git
 ```
 
-**2. Run the setup script**
+**2. Get latest commits from master**
 
 ``` bash
-cd openpilot
-git lfs pull
+# get the latest commits from master
+git pull
+git submodule update --init --recursive
+```
+
+**3. Run the setup script**
+
+For quick setup, devs can run `ubuntu_setup.sh` which will go through dependency installs for both `ubuntu` and `python` while also setting up a `venv` to use right away. However if you'd like to pick dependencies based on groups you can run `install_ubuntu_dependencies.sh` separately and `install_python_dependencies.sh` in your own virtual env.
+
+``` bash
 tools/ubuntu_setup.sh
 ```
 
@@ -35,10 +37,24 @@ Activate a shell with the Python dependencies installed:
 poetry shell
 ```
 
-**3. Build openpilot**
+**3. Building openpilot**
 
 ``` bash
+# build everything
 scons -u -j$(nproc)
+
+# build just the ui with either of these
+scons -j8 selfdrive/ui/
+cd selfdrive/ui/ && scons -u -j8
+
+# test everything
+pytest .
+
+# test just logging services
+cd system/loggerd && pytest .
+
+# run the linter
+pre-commit run --all
 ```
 
 ## Dev Container on any Linux or macOS

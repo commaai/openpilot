@@ -16,10 +16,30 @@ if [[ ! $(id -u) -eq 0 ]]; then
 fi
 
 clear
+cat <<"EOF"
+                .~ssos+.
+              +8888888888i,
+             {888888888888o.
+             h8888888888888k
+             t888888888s888k
+              `t88888d/ h88k
+                 ```    h88l
+                       ,88k`
+                      .d8h`
+                     +d8h
+                  _+d8h`
+                ;y8h+`
+                |-`
+
+EOF
+
+
 echo " --   WELCOME TO THE OPENPILOT SETUP   --"
 echo
 echo "-- sudo is required for apt installation --"
 
+export INSTALL_EXTRA_PACKAGES="no"
+export USE_POETRY="yes"
 
 # NOTE: this is used in a docker build, so do not run any scripts here.
 
