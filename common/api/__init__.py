@@ -23,7 +23,7 @@ class Api:
     return api_get(endpoint, method=method, timeout=timeout, access_token=access_token, **params)
 
   def get_token(self, expiry_hours=1):
-    now = datetime.now(UTC)
+    now = datetime.now(UTC).replace(tzinfo=None)
     payload = {
       'identity': self.dongle_id,
       'nbf': now,
