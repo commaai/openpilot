@@ -5,6 +5,7 @@ from enum import IntFlag, ReprEnum, EnumType
 from dataclasses import replace, is_dataclass, fields
 from tokenize import tokenize
 from copy import deepcopy
+from typing import List, Any, Tuple
 
 import capnp, inspect, re, io
 
@@ -344,7 +345,7 @@ class PlatformConfigModifier:
     # parse the existing source code into a dict
     # each attribute will be marked with it's starting and ending position in the code string
     # the writer can use this to find the diff points
-    def _parse_source(self, code: [any], attributes: any, start: int, end: int):
+    def _parse_source(self, code: List[Any], attributes: Any, start: int, end: int):
 
         '''
         if you write an attribute like so
@@ -390,7 +391,8 @@ class PlatformConfigModifier:
                     name = code[index].string
                     if name in attributes.keys():
                         # if it's sure that we're dealing with a nested object
-                        # are you thinking why I'm checking using isinstance also? well, imagine the source code is something=dict() or something=list(), then the pattern will flag it as a nested object. we don't want that
+                        # are you thinking why I'm checking using isinstance also?
+                        # well, imagine the source code is something=dict() or something=list(), then the pattern will flag it as a nested object. we don't want that
                         if code[index+2].type == 1 and code[index+3].type == 54 and code[index+3].string == '(' and isinstance(attributes[name], dict):
                             attribute_start = start = index + 3 # mark the start after the 'ClassName(' paranthesis
                             parsed[name] = {'start': code[start-1].start}
@@ -451,7 +453,7 @@ class PlatformConfigModifier:
 
     # takes some code and inserts it at the given position
     # it moves anything currently in that position to be after the inserted string
-    def _insert_code(self, source: str, name: str, value: any, position: (int, int)):
+    def _insert_code(self, source: str, name: str, value: Any, position: Tuple[int, int]):
         lines = source.split('\n')
         line = lines[position[0]-1]
 
@@ -469,7 +471,7 @@ class PlatformConfigModifier:
         return '\n'.join(lines)
 
     # takes a string to replace & a position as argument, then replaces whatever code is in that position with the supplied code
-    def _replace_code(self, source: str, replacement: str, start: (int, int), end: (int, int)):
+    def _replace_code(self, source: str, replacement: str, start: Tuple[int, int], end: Tuple[int, int]):
         # split the source text into lines
         lines = source.split('\n')
 
@@ -497,7 +499,7 @@ class PlatformConfigModifier:
 
         return '\n'.join(lines)
 
-    def _diff_writer(self, source: str, parsed: dict, changes: [any]):
+    def _diff_writer(self, source: str, parsed: dict, changes: List[Any]):
 
         # for a given change, this returns which attribute's source code has to be changed
         def get_attribute(change):
