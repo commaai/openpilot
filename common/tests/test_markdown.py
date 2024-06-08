@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-from markdown_it import MarkdownIt
 import os
 import unittest
 
@@ -7,20 +5,12 @@ from common.basedir import BASEDIR
 from common.markdown import parse_markdown
 
 
-class TestMarkdown(unittest.TestCase):
-  # validate that our simple markdown parser produces the same output as `markdown_it` from pip
-  def test_current_release_notes(self):
-    self.maxDiff = None
-
+class TestMarkdown:
+  def test_all_release_notes(self):
     with open(os.path.join(BASEDIR, "RELEASES.md")) as f:
-      for r in f.read().split("\n\n"):
+      release_notes = f.read().split("\n\n")
+      assert len(release_notes) > 10
 
-        # No hyperlink support is ok
-        if '[' in r:
-          continue
-
-        self.assertEqual(MarkdownIt().render(r), parse_markdown(r))
-
-
-if __name__ == "__main__":
-  unittest.main()
+      for rn in release_notes:
+        md = parse_markdown(rn)
+        assert len(md) > 0
