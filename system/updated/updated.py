@@ -11,11 +11,11 @@ import time
 import threading
 from collections import defaultdict
 from pathlib import Path
-from markdown_it import MarkdownIt
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.time import system_time_valid
+from openpilot.common.markdown import parse_markdown
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
 from openpilot.system.hardware import AGNOS, HARDWARE
@@ -89,7 +89,7 @@ def parse_release_notes(basedir: str) -> bytes:
     with open(os.path.join(basedir, "RELEASES.md"), "rb") as f:
       r = f.read().split(b'\n\n', 1)[0]  # Slice latest release notes
     try:
-      return bytes(MarkdownIt().render(r.decode("utf-8")), encoding="utf-8")
+      return bytes(parse_markdown(r.decode("utf-8")), encoding="utf-8")
     except Exception:
       return r + b"\n"
   except FileNotFoundError:
