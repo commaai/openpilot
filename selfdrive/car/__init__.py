@@ -544,7 +544,7 @@ class PlatformConfigModifier:
 
         return source
 
-    def save(self, platform: str):
+    def save(self, config: PlatformConfig, platform: str):
 
         changes = self.changed_fields
         if len(changes) < 0: return
