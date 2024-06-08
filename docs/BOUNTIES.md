@@ -59,7 +59,9 @@ Requires a merged port with lateral control and at least a POC of longitudinal c
 
 #### Toyota SecOc - $5000
 
-We're contributing $5k to the [community-organized bounty](https://github.com/commaai/openpilot/discussions/19932).
+We're contributing $5k to support Toyota Vehicles with SecOC.
+
+[News about the overall progress of SecOC may be found at the community GitHub discussion.](https://github.com/commaai/openpilot/discussions/19932).
 
 #### Chevy Bolt with SuperCruise - $2500
 
