@@ -38,9 +38,6 @@ echo " --   WELCOME TO THE OPENPILOT SETUP   --"
 echo
 echo "-- sudo is required for apt installation --"
 
-export INSTALL_EXTRA_PACKAGES="no"
-export USE_POETRY="yes"
-
 # NOTE: this is used in a docker build, so do not run any scripts here.
 
 $DIR/install_ubuntu_dependencies.sh
