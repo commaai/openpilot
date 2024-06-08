@@ -2,9 +2,11 @@
 from collections import namedtuple
 from dataclasses import dataclass
 from enum import IntFlag, ReprEnum, EnumType
-from dataclasses import replace
+from dataclasses import replace, is_dataclass, fields
+from tokenize import tokenize
+from copy import deepcopy
 
-import capnp
+import capnp, inspect, re, io
 
 from cereal import car
 from openpilot.common.numpy_fast import clip, interp
@@ -224,7 +226,7 @@ class CarSpecs:
     return replace(self, **kwargs)
 
 
-@dataclass(order=True)
+@dataclass(order=True, kw_only=True)
 class PlatformConfig(Freezable):
   car_docs: list[CarDocs]
   specs: CarSpecs
@@ -240,6 +242,9 @@ class PlatformConfig(Freezable):
 
   def override(self, **kwargs):
     return replace(self, **kwargs)
+
+  def copy(self):
+    return PlatformConfigModifier(self)
 
   def init(self):
     pass
@@ -276,3 +281,291 @@ class Platforms(str, ReprEnum, metaclass=PlatformsType):
   @classmethod
   def with_flags(cls, flags: IntFlag) -> set['Platforms']:
     return {p for p in cls if p.config.flags & flags}
+
+class PlatformConfigModifier:
+    """
+    Keeps track of changes made to any attributes of a PlatformConfig in a dict.
+    Write changes easier and with low diff.
+    The attributes have to be objects of dataclasses, otherwise the changes may be missed
+    """
+    def __init__(self, config):
+        self._original_config = deepcopy(config)
+        self._config = deepcopy(config)
+        self._changed_fields = {}
+
+    def __getattr__(self, name):
+        return getattr(self._config, name)
+
+    def __setattr__(self, name, value):
+        # if it's change to an already existing attribute
+        if name in {'_original_config', '_config', '_changed_fields'}:
+            super().__setattr__(name, value)
+        else:
+            # if it's a new attrbiute
+            setattr(self._config, name, value)
+            self._changed_fields[name] = value
+
+    # this will only work if all objects are of dataclasses, otherwise changes to that attribute will be missed
+    def _compare_dataclasses(self, original, current, path=""):
+        changes = []
+
+        # iterate through the fields in the original object
+        for field in fields(original):
+            # get the values of the attribute, current & previous
+            original_value = getattr(original, field.name)
+            current_value = getattr(current, field.name)
+            # we need the formatted name for referring to later
+            current_path = f"{path}.{field.name}" if path else field.name
+
+            # if this is a nested object
+            if is_dataclass(original_value):
+                # recursively check for any changes within it
+                changes.extend(self._compare_dataclasses(original_value, current_value, current_path))
+            elif original_value != current_value: # or if there are any changes, just note them down
+                changes.append({'name': current_path, 'value': current_value})
+        return changes
+
+    def _get_fields(self, attribute):
+        result = dict()
+        for field in fields(attribute):
+            if is_dataclass(field.type):
+                result[field.name] = self._get_fields(field.type)
+            else:
+                result[field.name] = ''
+        return result
+
+    # generate the source code of an attribute
+    def _get_source(self, fields):
+        config = self._config
+        for each in fields:
+            config = getattr(config, each)
+        return str(config)
+
+    # parse the existing source code into a dict
+    # each attribute will be marked with it's starting and ending position in the code string
+    # the writer can use this to find the diff points
+    def _parse_source(self, code, attributes, start, end):
+
+        '''
+        if you write an attribute like so
+
+            HONDA_ACCORD = PlatformConfig(
+                CarSpecs(
+                mass=3279 * 1
+                , # comma here
+                wheelbase
+                = # or assignment here
+                2.83,
+                # ...
+                )
+            )
+
+        with the commas or assignments on a new line, this will fail.
+        i know comma isn't stupid to write commas like that, just documenting
+        '''
+
+        parsed = dict()
+
+        # we don't count the starting paranthesis in the logic, it's just harcoded here
+        brackets = {')': 1, ']': 0, '}': 0}
+        def bracket_tracker(token):
+            bracket_map = {'(': ')', '[': ']', '{': '}'}
+            if token in bracket_map.keys():
+                brackets[bracket_map[token]] += 1
+            elif token in bracket_map.values():
+                brackets[token] -= 1
+
+        while start < end:
+
+            name = ''
+
+            # find the attribute in the source code
+            for index in range(start+1, end):
+                if code[index].type == 62 and code[index].string == '\n':
+                    continue # if it's a newline, then skip
+
+                bracket_tracker(code[index].string)
+                # since kw_only=True, the code will be written as attribute_name=<value>, which we can exploit to find it
+                if code[index].type == 1 and code[index+1].type == 54 and code[index+1].string == '=':
+                    name = code[index].string
+                    if name in attributes.keys():
+                        if code[index+2].type == 1 and code[index+3].type == 54 and code[index+3].string == '(' and isinstance(attributes[name], dict):
+                            attribute_start = start = index + 3
+                            parsed[name] = {'start': code[start-1].start}
+                        else:
+                            attribute_start = start = index + 2
+                            parsed[name] = {'start': code[start].start}
+                        break
+
+            # find the end value
+            for index in range(start, end):
+                bracket_tracker(code[index].string)
+
+                # if this attribute has ended, mark the end position
+                if code[index].type == 54 and code[index].string == ',' and [value for value in brackets.values()] == [1, 0, 0]:
+                    parsed[name]['end'] = code[index-1].end
+                    attribute_end = index
+                    start = index
+                    break
+
+                # if all the brackets are clear, then this is the last attribute.
+                if code[index].type == 54 and code[index].string == ')' and all(value == 0 for value in brackets.values()):
+
+                    # backtrack till we find anything other than a newline
+                    index -= 1
+                    while code[index].type == 62 and code[index].string == '\n':
+                        index-=1
+
+                    # and that should be the end of this attribute, because come on what else would it be?
+                    parsed[name]['end'] = code[index].end
+                    attribute_end = index + 1
+                    end = start # and mark this attribute as finished
+                    break
+
+            try:
+                if isinstance(attributes[name], dict): parsed[name]['attributes'] = self._parse_source(code, attributes[name], attribute_start, attribute_end)
+                del attributes[name]
+            except KeyError: break
+
+        for attribute in attributes.keys():
+            parsed[attribute] = {'start': (0, 0), 'end': (0, 0)}
+
+        return parsed
+
+    @property
+    def original_fields(self):
+        return self._get_fields(self._original_config)
+
+    @property
+    def changed_fields(self):
+        changes = self._compare_dataclasses(self._original_config, self._config)
+        for key, value in self._changed_fields.items():
+            full_path = key
+            if not any(change['name'] == full_path for change in changes):
+                changes.append({'name': full_path, 'value': value})
+        return changes
+
+    # takes some code and inserts it at the given position
+    # it moves anything currently in that position to be after the inserted string
+    def _insert_code(self, source, name, value, position):
+        lines = source.split('\n')
+        line = lines[position[0]-1]
+
+        before = line[:position[1]]
+        after = line[position[1]:]
+
+        lines[position[0]-1] = f'{before} {name}={str(value)}{after}' if before.endswith(',') else f'{before}, {name}={str(value)}{after}'
+        return '\n'.join(lines)
+
+    # takes a line number and writes the supplied code to the end of the line
+    def _append_code(self, source, name, value, line):
+        lines = source.split('\n')
+
+        lines[line-1] += f' {name}={str(value)}' if lines[line-1].endswith(',') else f', {name}={str(value)}'
+        return '\n'.join(lines)
+
+    def _replace_code(self, source, replacement, start, end):
+        # split the source text into lines
+        lines = source.split('\n')
+
+        # extract line and position from start and end tuples
+        start_line, start_pos = start
+        end_line, end_pos = end
+
+        # account for the discrepancy with line numbers in tokenize
+        start_line -= 1
+        end_line -= 1
+
+        # extract the parts of the lines to keep
+        before = lines[start_line][:start_pos]
+        after = lines[end_line][end_pos:]
+
+        # construct the changed code
+        if start_line == end_line:
+            new_line = before + replacement + after
+            lines[start_line] = new_line
+        else:
+            # replace the lines from start_line to end_line
+            lines[start_line] = before + replacement + after
+            # remove the lines in between
+            del lines[start_line + 1:end_line + 1]
+
+        return '\n'.join(lines)
+
+    def _diff_writer(self, source, parsed, changes):
+
+        def get_attribute(change):
+            attributes = change.split(".")
+            value, prev, diff, codeExists, code = parsed, (None, 0), None, False, None
+
+            for index, attribute in enumerate(attributes):
+                try:
+                    value = value[attribute]
+                except KeyError:
+                    value = value['attributes'][attribute]
+
+                # while traversing, keep track of the last attribute written in the source code
+                if value['start'] != (0, 0) and value['end'] != (0, 0): prev = (value, index)
+
+                if value['start'] == (0, 0) and value['end'] == (0, 0) and prev[0] is not None:
+                    value, diff = prev[0], self._get_source(attributes)
+                    # if the parent just above this is already written in the source, we can simply insert this one to that with minimum diff
+                    codeExists, code = prev[1] is index-1, self._get_source(attributes[:index]) # we'll also keep the full atrribute source code, for an edge case
+                    break
+
+            return (value, diff, codeExists, code)
+
+        root_end = max(parsed.items(), key=lambda item: item[1]['end'])[1]['end']
+        replacements = list()
+        for change in changes:
+            (attribute, diff, codeExists, code) = get_attribute(change['name'])
+            value = diff if diff is not None else str(f"\"{change['value']}\"" if isinstance(change['value'], str) else change['value'])
+
+            #  if neither the attribute nor it's parents are written in the source
+            if attribute['start'] == (0, 0) and attribute['end'] == (0, 0):
+                # write the code below all the already written attributes
+                source = self._append_code(source, change['name'], value, root_end[0])
+            # if the code of a parent attribute exists
+            elif codeExists:
+                # get the end position of the last written child attribute of the parent
+                end = max(attribute['attributes'].items(), key=lambda item: item[1]['end'])[1]['end']
+                if end == (0, 0): # EDGE CASE: if it doesn't have any child attributes written, it's a variable.
+                    replacements.append((code, (attribute['start'], attribute['end']))) # replace the variable with the full source code
+                # write the code after the last written child attribute
+                else: source = self._insert_code(source, change['name'].split(".")[-1], change['value'], end)
+            else:
+                replacements.append((value, (attribute['start'], attribute['end'])))
+
+        if len(replacements) > 0:
+            # sort the array based on the tuple values.
+
+            for replacement in replacements[::-1]:
+                source = self._replace_code(source, replacement[0], replacement[1][0], replacement[1][1])
+
+        return source
+
+    def save(self, platform: str):
+
+        changes = self.changed_fields
+        if len(changes) < 0: return
+
+        pattern = rf'{platform} = ([a-zA-Z0-9]*)PlatformConfig\((?:[^()]+|\((?:[^()]+|\((?:[^()]+|\([^()]*\))*\))*\))*\)'
+        file_path = inspect.getsourcefile(type(config))
+
+        with open(file_path, 'r') as source_file:
+            source_code = source_file.read()
+
+        match = re.search(pattern, source_code, re.DOTALL)
+        tokens = [token for token in tokenize(io.BytesIO(match.group().encode()).readline)]
+
+        # start where the first ( is found
+        start_index = next((index for index, token in enumerate(tokens) if token.string == '('), 0)
+
+        code = self._parse_source(tokens, self.original_fields, start_index, len(tokens)-2)
+        diff = self._diff_writer(match.group(), code, changes)
+
+        before, after = source_code[:match.start()], source_code[match.end():]
+        source_code = before + diff + after
+
+        with open(file_path, 'w') as source_file:
+            source_file.write(source_code)
