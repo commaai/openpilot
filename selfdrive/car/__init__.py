@@ -344,7 +344,7 @@ class PlatformConfigModifier:
     # parse the existing source code into a dict
     # each attribute will be marked with it's starting and ending position in the code string
     # the writer can use this to find the diff points
-    def _parse_source(self, code, attributes, start, end):
+    def _parse_source(self, code: [any], attributes: any, start: int, end: int):
 
         '''
         if you write an attribute like so
@@ -451,7 +451,7 @@ class PlatformConfigModifier:
 
     # takes some code and inserts it at the given position
     # it moves anything currently in that position to be after the inserted string
-    def _insert_code(self, source, name, value, position):
+    def _insert_code(self, source: str, name: str, value: any, position: (int, int)):
         lines = source.split('\n')
         line = lines[position[0]-1]
 
@@ -462,13 +462,14 @@ class PlatformConfigModifier:
         return '\n'.join(lines)
 
     # takes a line number and writes the supplied code to the end of the line
-    def _append_code(self, source, name, value, line):
+    def _append_code(self, source: str, name: str, value: any, line: int):
         lines = source.split('\n')
 
         lines[line-1] += f' {name}={str(value)}' if lines[line-1].endswith(',') else f', {name}={str(value)}'
         return '\n'.join(lines)
 
-    def _replace_code(self, source, replacement, start, end):
+    # takes a string to replace & a position as argument, then replaces whatever code is in that position with the supplied code
+    def _replace_code(self, source: str, replacement: str, start: (int, int), end: (int, int)):
         # split the source text into lines
         lines = source.split('\n')
 
@@ -496,7 +497,7 @@ class PlatformConfigModifier:
 
         return '\n'.join(lines)
 
-    def _diff_writer(self, source, parsed, changes):
+    def _diff_writer(self, source: str, parsed: dict, changes: [any]):
 
         # for a given change, this returns which attribute's source code has to be changed
         def get_attribute(change):
@@ -521,7 +522,7 @@ class PlatformConfigModifier:
             return (value, diff, codeExists, code)
 
         root_end = max(parsed.items(), key=lambda item: item[1]['end'])[1]['end']
-        replacements = list() # why waste memory on a separate list? go to line
+        replacements = list() # why waste memory on a separate list? go to line 545
         for change in changes:
             (attribute, diff, codeExists, code) = get_attribute(change['name'])
             value = diff if diff is not None else str(f"\"{change['value']}\"" if isinstance(change['value'], str) else change['value'])
