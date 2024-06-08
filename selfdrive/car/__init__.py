@@ -284,9 +284,9 @@ class Platforms(str, ReprEnum, metaclass=PlatformsType):
 
 class PlatformConfigModifier:
     """
-    Keeps track of changes made to any attributes of a PlatformConfig in a dict.
-    Write changes easier and with low diff.
-    The attributes have to be objects of dataclasses, otherwise the changes may be missed
+    Keeps track of changes made to any attributes of a PlatformConfig in a dict & saves them to the source file.
+    The attributes have to be objects of dataclasses, otherwise the changes may be missed.
+    The primary goal is not performance, but rather to keep the diff as low as possible when editing platform configs.
     """
     def __init__(self, config):
         self._original_config = deepcopy(config)
@@ -389,10 +389,12 @@ class PlatformConfigModifier:
                 if code[index].type == 1 and code[index+1].type == 54 and code[index+1].string == '=':
                     name = code[index].string
                     if name in attributes.keys():
+                        # if it's sure that we're dealing with a nested object
+                        # are you thinking why I'm checking using isinstance also? well, imagine the source code is something=dict() or something=list(), then the pattern will flag it as a nested object. we don't want that
                         if code[index+2].type == 1 and code[index+3].type == 54 and code[index+3].string == '(' and isinstance(attributes[name], dict):
-                            attribute_start = start = index + 3
+                            attribute_start = start = index + 3 # mark the start after the 'ClassName(' paranthesis
                             parsed[name] = {'start': code[start-1].start}
-                        else:
+                        else: # otherwise mark that name token as the start
                             attribute_start = start = index + 2
                             parsed[name] = {'start': code[start].start}
                         break
@@ -427,6 +429,7 @@ class PlatformConfigModifier:
                 del attributes[name]
             except KeyError: break
 
+        # any attribute not yet encountered is not in the source code
         for attribute in attributes.keys():
             parsed[attribute] = {'start': (0, 0), 'end': (0, 0)}
 
@@ -436,6 +439,7 @@ class PlatformConfigModifier:
     def original_fields(self):
         return self._get_fields(self._original_config)
 
+    # returns all the fields that have changed as a list containing dict({name: value})
     @property
     def changed_fields(self):
         changes = self._compare_dataclasses(self._original_config, self._config)
@@ -494,6 +498,7 @@ class PlatformConfigModifier:
 
     def _diff_writer(self, source, parsed, changes):
 
+        # for a given change, this returns which attribute's source code has to be changed
         def get_attribute(change):
             attributes = change.split(".")
             value, prev, diff, codeExists, code = parsed, (None, 0), None, False, None
@@ -516,7 +521,7 @@ class PlatformConfigModifier:
             return (value, diff, codeExists, code)
 
         root_end = max(parsed.items(), key=lambda item: item[1]['end'])[1]['end']
-        replacements = list()
+        replacements = list() # why waste memory on a separate list? go to line
         for change in changes:
             (attribute, diff, codeExists, code) = get_attribute(change['name'])
             value = diff if diff is not None else str(f"\"{change['value']}\"" if isinstance(change['value'], str) else change['value'])
@@ -537,18 +542,25 @@ class PlatformConfigModifier:
                 replacements.append((value, (attribute['start'], attribute['end'])))
 
         if len(replacements) > 0:
-            # sort the array based on the tuple values.
+            # yeah imagine you did the replacements in the loop: the whole thing will be a disaster.
+            # remember, tokenize gives us the (line number, position) of any given token. if we were to replace the changes at the lines on the top,
+            # it'd change the lines numbers and position numbers of all the tokens after it & in the lines below
+            # thus, it'd become impossible to replace the changes after the first one.
 
+            # well, the solution? easy, just replace everything in reverse! subsequent changes will only happen in tokens occuring before the last,
+            # and so, no position values get messed up.
             for replacement in replacements[::-1]:
                 source = self._replace_code(source, replacement[0], replacement[1][0], replacement[1][1])
 
         return source
 
+    # the driver function ofc
     def save(self, config: PlatformConfig, platform: str):
 
         changes = self.changed_fields
         if len(changes) < 0: return
 
+        # this platform variable just for searching is a mess i agree, but i couldn't find any other way
         pattern = rf'{platform} = ([a-zA-Z0-9]*)PlatformConfig\((?:[^()]+|\((?:[^()]+|\((?:[^()]+|\([^()]*\))*\))*\))*\)'
         file_path = inspect.getsourcefile(type(config))
 
@@ -567,5 +579,7 @@ class PlatformConfigModifier:
         before, after = source_code[:match.start()], source_code[match.end():]
         source_code = before + diff + after
 
+        # when i tried using w+, it's throwing some error related to reading the file
+        # a single file open call would have been better yes, but i couldn't get it to work
         with open(file_path, 'w') as source_file:
             source_file.write(source_code)
