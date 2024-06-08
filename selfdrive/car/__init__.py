@@ -410,7 +410,7 @@ class PlatformConfigModifier:
                 bracket_tracker(code[index].string)
 
                 # if this attribute has ended, mark the end position
-                if code[index].type == 54 and code[index].string == ',' and [value for value in brackets.values()] == [1, 0, 0]:
+                if code[index].type == 54 and code[index].string == ',' and list(brackets.values()) == [1, 0, 0]:
                     parsed[name]['end'] = code[index-1].end
                     attribute_end = index
                     start = index
@@ -579,13 +579,13 @@ class PlatformConfigModifier:
         if file_path is None:
           raise FileNotFoundError("Source code file not found.")
 
-        with open(file_path, 'r') as source_file:
+        with open(file_path) as source_file:
             source_code = source_file.read()
 
         match = re.search(pattern, source_code, re.DOTALL)
         if match is None:
           raise ValueError("Pattern not found in the source code.")
-        tokens = [token for token in tokenize(io.BytesIO(match.group().encode()).readline)]
+        tokens = list(tokenize(io.BytesIO(match.group().encode()).readline))
 
         # start where the first ( is found
         start_index = next((index for index, token in enumerate(tokens) if token.string == '('), 0)
