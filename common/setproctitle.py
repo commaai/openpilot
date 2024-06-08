@@ -1,4 +1,5 @@
-import ctypes,os
+import ctypes
+import os
 
 LINUX = os.name == 'posix' and os.uname().sysname == 'Linux'
 
