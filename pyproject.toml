@@ -150,6 +150,7 @@ parameterized = "^0.8"
 polyline = "*"
 pre-commit = "*"
 pyautogui = "*"
+pytools = "<=2024.1.3" # pyopencl does not pin pytools and currently use a "broken" version
 pyopencl = "==2023.1.4"  # 2024.1 is broken on arm64
 pygame = "*"
 pywinctl = "*"

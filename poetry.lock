@@ -6827,13 +6827,13 @@ files = [
 
 [[package]]
 name = "pytools"
-version = "2024.1.5"
+version = "2024.1.3"
 description = "A collection of tools for Python"
 optional = false
 python-versions = "~=3.8"
 files = [
-    {file = "pytools-2024.1.5-py2.py3-none-any.whl", hash = "sha256:dd2b4a1cbe078699742ab37ae3a94a81c5cc598c3247536d12e90588c39b0cc6"},
-    {file = "pytools-2024.1.5.tar.gz", hash = "sha256:8c377bb1ffdcb5103301b8e7e94f01cbe36573a01e020434fea96291b1f1ac19"},
+    {file = "pytools-2024.1.3-py2.py3-none-any.whl", hash = "sha256:2977a7e9580fac6260d1352ed7a69a12a0c59687f834e0ebaecaf1148eceb7f3"},
+    {file = "pytools-2024.1.3.tar.gz", hash = "sha256:cc2db25666aa64094d3fb4532aa8a7deaa2da8edd7340fb270ed1807dcc75202"},
 ]
 
 [package.dependencies]
@@ -8045,4 +8045,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.12"
-content-hash = "24b77bb04b3c6758de7912211fc56775eedfa28c379cec0e31afb71d7a15ac21"
+content-hash = "7460e9f74690329e3e13ad918b1124abbd7f847c02ba23db157232d51e8e715c"
