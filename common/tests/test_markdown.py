@@ -1,7 +1,7 @@
 import os
 
-from common.basedir import BASEDIR
-from common.markdown import parse_markdown
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.markdown import parse_markdown
 
 
 class TestMarkdown:

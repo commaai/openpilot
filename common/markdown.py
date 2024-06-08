@@ -1,14 +1,11 @@
-from typing import List
-
 HTML_REPLACEMENTS = [
   (r'&', r'&amp;'),
   (r'"', r'&quot;'),
 ]
 
-
 def parse_markdown(text: str, tab_length: int = 2) -> str:
   lines = text.split("\n")
-  output: List[str] = []
+  output: list[str] = []
   list_level = 0
 
   def end_outstanding_lists(level: int, end_level: int) -> int:
