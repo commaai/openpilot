@@ -86,34 +86,47 @@ readme = "README.md"
 repository = "https://github.com/commaai/openpilot"
 documentation = "https://docs.comma.ai"
 
-
 [tool.poetry.dependencies]
 python = "~3.11"
+
+# multiple users
+sounddevice = "*"  # micd + soundd
+pyserial = "*"     # pigeond + qcomgpsd
+requests = "*"     # many one-off uses
+sympy = "*"        # rednose + friends
+crcmod = "*"       # cars + qcomgpsd
+
+# hardwared
+smbus2 = "*"  # configuring amp
+
+# core
+cffi = "*"
+scons = "*"
+pycapnp = "*"
+Cython = "*"
+numpy = "*"
+
+# body / webrtcd
 aiohttp = "*"
 aiortc = "*"
-cffi = "*"
-crcmod = "*"
-Cython = "*"
-json-rpc = "*"
+pyaudio = "*"
+
+# panda
 libusb1 = "*"
-numpy = "*"
+spidev = { version = "*", platform = "linux" }
+
+# modeld
 onnx = ">=1.14.0"
 onnxruntime = { version = ">=1.16.3", platform = "linux", markers = "platform_machine == 'aarch64'" }
 onnxruntime-gpu = { version = ">=1.16.3", platform = "linux", markers = "platform_machine == 'x86_64'" }
-psutil = "*"
-pyaudio = "*"
-pycapnp = "*"
-pycryptodome = "*"
-PyJWT = "*"
-pyserial = "*"
+
+# logging
 pyzmq = "*"
-requests = "*"
-scons = "*"
 sentry-sdk = "*"
-smbus2 = "*"
-sounddevice = "*"
-spidev = { version = "*", platform = "linux" }
-sympy = "*"
+
+# athena
+PyJWT = "*"
+json-rpc = "*"
 websocket_client = "*"
 
 # acados deps
@@ -121,8 +134,10 @@ casadi = "*"
 future-fstrings = "*"
 
 # these should be removed
-timezonefinder = "*"
+psutil = "*"
+timezonefinder = "*"  # just used for nav ETA
 setproctitle = "*"
+pycryptodome = "*"  # used in updated/casync, panda, body, and a test
 
 [tool.poetry.group.dev.dependencies]
 av = "*"
