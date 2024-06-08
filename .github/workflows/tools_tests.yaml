@@ -20,25 +20,6 @@ env:
 
 
 jobs:
-  simulator_build:
-    name: simulator docker build
-    runs-on: ubuntu-latest
-    if: github.repository == 'commaai/openpilot'
-    timeout-minutes: 45
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    - uses: ./.github/workflows/setup-with-retry
-    - name: Setup to push to repo
-      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
-      run: |
-        echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
-        $DOCKER_LOGIN
-    - name: Build and push sim image
-      run: |
-        selfdrive/test/docker_build.sh sim
-
   simulator_driving:
     name: simulator driving
     runs-on: ubuntu-latest
