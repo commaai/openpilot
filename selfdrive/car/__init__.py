@@ -305,7 +305,7 @@ class PlatformConfigModifier:
         if name in {'_original_config', '_config', '_changed_fields'}:
             super().__setattr__(name, value)
         else:
-            # if it's a new attrbiute
+            # if it's a new attribute
             setattr(self._config, name, value)
             self._changed_fields[name] = value
 
@@ -370,7 +370,7 @@ class PlatformConfigModifier:
 
         parsed = dict()
 
-        # we don't count the starting paranthesis in the logic, it's just harcoded here
+        # we don't count the starting parenthesis in the logic, it's just hardcoded here
         brackets = {')': 1, ']': 0, '}': 0}
         def bracket_tracker(token):
             bracket_map = {'(': ')', '[': ']', '{': '}'}
@@ -398,7 +398,7 @@ class PlatformConfigModifier:
                         # well, imagine the source code is something=dict() or something=list(),
                         # then the pattern will flag it as a nested object. we don't want that
                         if code[index+2].type == 1 and code[index+3].type == 54 and code[index+3].string == '(' and isinstance(attributes[name], dict):
-                            attribute_start = start = index + 3 # mark the start after the 'ClassName(' paranthesis
+                            attribute_start = start = index + 3 # mark the start after the 'ClassName(' parenthesis
                             parsed[name] = {'start': code[start-1].start}
                         else: # otherwise mark that name token as the start
                             attribute_start = start = index + 2
@@ -525,7 +525,7 @@ class PlatformConfigModifier:
                 if value['start'] == (0, 0) and value['end'] == (0, 0) and prev[0] is not None:
                     value, diff = prev[0], self._get_source(attributes)
                     # if the parent just above this is already written in the source, we can simply insert this one to that with minimum diff
-                    # we'll also keep the full atrribute source code, for an edge case
+                    # we'll also keep the full attribute source code, for an edge case
                     codeExists, code = prev[1] is index-1, self._get_source(attributes[:index])
                     break
 
@@ -559,7 +559,7 @@ class PlatformConfigModifier:
             # it'd change the lines numbers and position numbers of all the tokens after it & in the lines below
             # thus, it'd become impossible to replace the changes after the first one.
 
-            # well, the solution? easy, just replace everything in reverse! subsequent changes will only happen in tokens occuring before the last,
+            # well, the solution? easy, just replace everything in reverse! subsequent changes will only happen in tokens occurring before the last,
             # and so, no position values get messed up.
             for replacement in replacements[::-1]:
                 source = self._replace_code(source, replacement[0], replacement[1][0], replacement[1][1])
