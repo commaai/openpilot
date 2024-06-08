@@ -18,7 +18,7 @@ def _get_fingerprints():
   for car_folder in [x[0] for x in os.walk(BASEDIR + '/selfdrive/car')]:
     car_name = car_folder.split('/')[-1]
     try:
-      fingerprints[car_name] = __import__(f'selfdrive.car.{car_name}.values', fromlist=['FINGERPRINTS']).FINGERPRINTS
+      fingerprints[car_name] = __import__(f'selfdrive.car.{car_name}.fingerprints', fromlist=['FINGERPRINTS']).FINGERPRINTS
     except (ImportError, OSError, AttributeError):
       pass
 
@@ -93,3 +93,4 @@ if __name__ == "__main__":
     sys.exit(1)
   else:
     print("TEST SUCCESSFUL")
+  sys.exit(1)
