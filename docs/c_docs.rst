@@ -14,7 +14,7 @@ cereal
 messaging
 ^^^^^^^^^
 .. autodoxygenindex::
-   :project: msgq
+   :project: msgq_repo
 
 visionipc
 ^^^^^^^^^
