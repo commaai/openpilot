@@ -1,13 +1,17 @@
-import ctypes
+import ctypes,os
 
-libc = ctypes.CDLL('libc.so.6')
+LINUX = os.name == 'posix' and os.uname().sysname == 'Linux'
 
-PRCTL_CALL = 15
+if LINUX:
+  libc = ctypes.CDLL('libc.so.6')
+  PRCTL_CALL = 15
 
 def setproctitle(name: str):
-  libc.prctl(PRCTL_CALL, str.encode(name), 0, 0, 0)
+  if LINUX:
+    libc.prctl(PRCTL_CALL, str.encode(name), 0, 0, 0)
 
 def getproctitle():
-  with open('/proc/self/comm') as f:
-    process_name = f.read().strip()
-  return process_name
+  if LINUX:
+    with open('/proc/self/comm') as f:
+      process_name = f.read().strip()
+    return process_name
