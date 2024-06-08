@@ -1,10 +1,10 @@
-Import('env', 'envCython', 'arch', 'common', 'messaging')
+Import('env', 'envCython', 'arch', 'common', 'msgq')
 
 import shutil
 
 cereal_dir = Dir('.')
 gen_dir = Dir('gen')
-other_dir = Dir('#msgq/messaging')
+other_dir = Dir('#msgq')
 
 # Build cereal
 schema_files = ['log.capnp', 'car.capnp', 'legacy.capnp', 'custom.capnp']
@@ -22,7 +22,7 @@ env.SharedLibrary('cereal_shared', cereal_objects)
 # Build messaging
 
 services_h = env.Command(['services.h'], ['services.py'], 'python3 ' + cereal_dir.path + '/services.py > $TARGET')
-env.Program('messaging/bridge', ['messaging/bridge.cc'], LIBS=[messaging, 'zmq', common])
+env.Program('messaging/bridge', ['messaging/bridge.cc'], LIBS=[msgq, 'zmq', common])
 
 
 socketmaster = env.SharedObject(['messaging/socketmaster.cc'])

@@ -359,8 +359,12 @@ gpucommon = [_gpucommon]
 Export('common', 'gpucommon')
 
 # Build cereal and messaging
-SConscript(['msgq/SConscript'])
+SConscript(['msgq_repo/SConscript'])
 SConscript(['cereal/SConscript'])
+Import('socketmaster', 'msgq')
+messaging = [socketmaster, msgq, 'zmq', 'capnp', 'kj',]
+Export('messaging')
+
 
 # Build other submodules
 SConscript([
