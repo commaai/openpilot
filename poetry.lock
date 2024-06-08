@@ -6725,6 +6725,20 @@ files = [
 pytest = "*"
 
 [[package]]
+name = "pytest-repeat"
+version = "0.9.3"
+description = "pytest plugin for repeating tests"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "pytest_repeat-0.9.3-py3-none-any.whl", hash = "sha256:26ab2df18226af9d5ce441c858f273121e92ff55f5bb311d25755b8d7abdd8ed"},
+    {file = "pytest_repeat-0.9.3.tar.gz", hash = "sha256:ffd3836dfcd67bb270bec648b330e20be37d2966448c4148c4092d1e8aba8185"},
+]
+
+[package.dependencies]
+pytest = "*"
+
+[[package]]
 name = "pytest-subtests"
 version = "0.12.1"
 description = "unittest subTest() support and subtests fixture"
@@ -8031,4 +8045,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.12"
-content-hash = "1e059356a0e28c7b25ea617629f02929f816bd86dd1f13b3a425de10d4dfc6e6"
+content-hash = "24b77bb04b3c6758de7912211fc56775eedfa28c379cec0e31afb71d7a15ac21"
