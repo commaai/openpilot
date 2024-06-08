@@ -7,7 +7,6 @@ from typing import NoReturn
 
 import cereal.messaging as messaging
 from openpilot.common.time import system_time_valid
-from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import AGNOS
 
@@ -17,7 +16,6 @@ def set_timezone(timezone):
   if timezone not in valid_timezones:
     cloudlog.error(f"Timezone not supported {timezone}")
     return
-
   cloudlog.debug(f"Setting timezone to {timezone}")
   try:
     if AGNOS:
@@ -54,14 +52,6 @@ def main() -> NoReturn:
     AGNOS will also use NTP to update the time.
   """
 
-  params = Params()
-
-  # Restore timezone from param
-  tz = params.get("Timezone", encoding='utf8')
-  if tz is not None:
-    cloudlog.debug("Restoring timezone from param")
-    set_timezone(tz)
-
   pm = messaging.PubMaster(['clocks'])
   sm = messaging.SubMaster(['liveLocationKalman'])
   while True:
@@ -75,6 +65,11 @@ def main() -> NoReturn:
     llk = sm['liveLocationKalman']
     if not llk.gpsOK or (time.monotonic() - sm.logMonoTime['liveLocationKalman']/1e9) > 0.2:
       continue
+    tz = sm['NavRoute']['timezone'] # timezone comes from tilequery mapbox api
+    if tz != '':
+      set_timezone(tz)
+    else:
+      cloudlog.exception("timed.failed_setting_timezone")
 
     # set time
     # TODO: account for unixTimesatmpMillis being a (usually short) time in the past
