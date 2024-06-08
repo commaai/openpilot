@@ -495,7 +495,7 @@ void panda_state_thread(std::vector<Panda *> pandas, bool spoofing_started) {
 
   if (is_onroad && !engaged) {
     for (auto &p : pandas) {
-      p->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1U);
+      p->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
     }
   }
 }
