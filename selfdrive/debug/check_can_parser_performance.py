@@ -9,7 +9,6 @@ from openpilot.selfdrive.car.tests.test_models import TestCarModelBase
 from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.tools.plotjuggler.juggle import DEMO_ROUTE
 
-
 N_RUNS = 10
 
 
