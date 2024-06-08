@@ -20,10 +20,11 @@ from openpilot.selfdrive.test.helpers import phone_only, with_processes
 @retry(attempts=3)
 def setup_pandad(num_pandas):
   params = Params()
+  params.clear_all()
   params.put_bool("IsOnroad", False)
 
+  sm = messaging.SubMaster(['pandaStates'])
   with Timeout(90, "pandad didn't start"):
-    sm = messaging.SubMaster(['pandaStates'])
     while sm.recv_frame['pandaStates'] < 1 or len(sm['pandaStates']) == 0 or \
         any(ps.pandaType == log.PandaState.PandaType.unknown for ps in sm['pandaStates']):
       sm.update(1000)
@@ -44,6 +45,9 @@ def setup_pandad(num_pandas):
   params.put_bool("ControlsReady", True)
   params.put("CarParams", cp.to_bytes())
 
+  with Timeout(90, "pandad didn't set safety mode"):
+    while any(ps.safetyModel != car.CarParams.SafetyModel.allOutput for ps in sm['pandaStates']):
+      sm.update(1000)
 
 def send_random_can_messages(sendcan, count, num_pandas=1):
   sent_msgs = defaultdict(set)
@@ -73,10 +77,11 @@ class TestBoarddLoopback:
   def test_loopback(self):
     num_pandas = 2 if TICI and "SINGLE_PANDA" not in os.environ else 1
     setup_pandad(num_pandas)
+
     sendcan = messaging.pub_sock('sendcan')
     can = messaging.sub_sock('can', conflate=False, timeout=100)
     sm = messaging.SubMaster(['pandaStates'])
-    time.sleep(0.5)
+    time.sleep(1)
 
     n = 200
     for i in range(n):
