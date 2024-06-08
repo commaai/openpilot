@@ -38,24 +38,24 @@ class NissanPlatformConfig(PlatformConfig):
 
 class CAR(Platforms):
   NISSAN_XTRAIL = NissanPlatformConfig(
-    [NissanCarDocs("Nissan X-Trail 2017")],
-    NissanCarSpecs(mass=1610, wheelbase=2.705)
+    car_docs=[NissanCarDocs("Nissan X-Trail 2017")],
+    specs=NissanCarSpecs(mass=1610, wheelbase=2.705)
   )
   NISSAN_LEAF = NissanPlatformConfig(
-    [NissanCarDocs("Nissan Leaf 2018-23", video_link="https://youtu.be/vaMbtAh_0cY")],
-    NissanCarSpecs(mass=1610, wheelbase=2.705),
-    dbc_dict('nissan_leaf_2018_generated', None),
+    car_docs=[NissanCarDocs("Nissan Leaf 2018-23", video_link="https://youtu.be/vaMbtAh_0cY")],
+    specs=NissanCarSpecs(mass=1610, wheelbase=2.705),
+    dbc_dict=dbc_dict('nissan_leaf_2018_generated', None),
   )
   # Leaf with ADAS ECU found behind instrument cluster instead of glovebox
   # Currently the only known difference between them is the inverted seatbelt signal.
   NISSAN_LEAF_IC = NISSAN_LEAF.override(car_docs=[])
   NISSAN_ROGUE = NissanPlatformConfig(
-    [NissanCarDocs("Nissan Rogue 2018-20")],
-    NissanCarSpecs(mass=1610, wheelbase=2.705)
+    car_docs=[NissanCarDocs("Nissan Rogue 2018-20")],
+    specs=NissanCarSpecs(mass=1610, wheelbase=2.705)
   )
   NISSAN_ALTIMA = NissanPlatformConfig(
-    [NissanCarDocs("Nissan Altima 2019-20", car_parts=CarParts.common([CarHarness.nissan_b]))],
-    NissanCarSpecs(mass=1492, wheelbase=2.824)
+    car_docs=[NissanCarDocs("Nissan Altima 2019-20", car_parts=CarParts.common([CarHarness.nissan_b]))],
+    specs=NissanCarSpecs(mass=1492, wheelbase=2.824)
   )
 
 

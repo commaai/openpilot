@@ -33,59 +33,59 @@ class ChryslerCarSpecs(CarSpecs):
 class CAR(Platforms):
   # Chrysler
   CHRYSLER_PACIFICA_2017_HYBRID = ChryslerPlatformConfig(
-    [ChryslerCarDocs("Chrysler Pacifica Hybrid 2017")],
-    ChryslerCarSpecs(mass=2242., wheelbase=3.089, steerRatio=16.2),
+    car_docs=[ChryslerCarDocs("Chrysler Pacifica Hybrid 2017")],
+    specs=ChryslerCarSpecs(mass=2242., wheelbase=3.089, steerRatio=16.2),
   )
   CHRYSLER_PACIFICA_2018_HYBRID = ChryslerPlatformConfig(
-    [ChryslerCarDocs("Chrysler Pacifica Hybrid 2018")],
-    CHRYSLER_PACIFICA_2017_HYBRID.specs,
+    car_docs=[ChryslerCarDocs("Chrysler Pacifica Hybrid 2018")],
+    specs=CHRYSLER_PACIFICA_2017_HYBRID.specs,
   )
   CHRYSLER_PACIFICA_2019_HYBRID = ChryslerPlatformConfig(
-    [ChryslerCarDocs("Chrysler Pacifica Hybrid 2019-23")],
-    CHRYSLER_PACIFICA_2017_HYBRID.specs,
+    car_docs=[ChryslerCarDocs("Chrysler Pacifica Hybrid 2019-23")],
+    specs=CHRYSLER_PACIFICA_2017_HYBRID.specs,
   )
   CHRYSLER_PACIFICA_2018 = ChryslerPlatformConfig(
-    [ChryslerCarDocs("Chrysler Pacifica 2017-18")],
-    CHRYSLER_PACIFICA_2017_HYBRID.specs,
+    car_docs=[ChryslerCarDocs("Chrysler Pacifica 2017-18")],
+    specs=CHRYSLER_PACIFICA_2017_HYBRID.specs,
   )
   CHRYSLER_PACIFICA_2020 = ChryslerPlatformConfig(
-    [
+    car_docs=[
       ChryslerCarDocs("Chrysler Pacifica 2019-20"),
       ChryslerCarDocs("Chrysler Pacifica 2021-23", package="All"),
     ],
-    CHRYSLER_PACIFICA_2017_HYBRID.specs,
+    specs=CHRYSLER_PACIFICA_2017_HYBRID.specs,
   )
 
   # Dodge
   DODGE_DURANGO = ChryslerPlatformConfig(
-    [ChryslerCarDocs("Dodge Durango 2020-21")],
-    CHRYSLER_PACIFICA_2017_HYBRID.specs,
+    car_docs=[ChryslerCarDocs("Dodge Durango 2020-21")],
+    specs=CHRYSLER_PACIFICA_2017_HYBRID.specs,
   )
 
   # Jeep
   JEEP_GRAND_CHEROKEE = ChryslerPlatformConfig(  # includes 2017 Trailhawk
-    [ChryslerCarDocs("Jeep Grand Cherokee 2016-18", video_link="https://www.youtube.com/watch?v=eLR9o2JkuRk")],
-    ChryslerCarSpecs(mass=1778., wheelbase=2.71, steerRatio=16.7),
+    car_docs=[ChryslerCarDocs("Jeep Grand Cherokee 2016-18", video_link="https://www.youtube.com/watch?v=eLR9o2JkuRk")],
+    specs=ChryslerCarSpecs(mass=1778., wheelbase=2.71, steerRatio=16.7),
   )
 
   JEEP_GRAND_CHEROKEE_2019 = ChryslerPlatformConfig(  # includes 2020 Trailhawk
-    [ChryslerCarDocs("Jeep Grand Cherokee 2019-21", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4")],
-    JEEP_GRAND_CHEROKEE.specs,
+    car_docs=[ChryslerCarDocs("Jeep Grand Cherokee 2019-21", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4")],
+    specs=JEEP_GRAND_CHEROKEE.specs,
   )
 
   # Ram
   RAM_1500_5TH_GEN = ChryslerPlatformConfig(
-    [ChryslerCarDocs("Ram 1500 2019-24", car_parts=CarParts.common([CarHarness.ram]))],
-    ChryslerCarSpecs(mass=2493., wheelbase=3.88, steerRatio=16.3, minSteerSpeed=14.5),
-    dbc_dict('chrysler_ram_dt_generated', None),
+    car_docs=[ChryslerCarDocs("Ram 1500 2019-24", car_parts=CarParts.common([CarHarness.ram]))],
+    specs=ChryslerCarSpecs(mass=2493., wheelbase=3.88, steerRatio=16.3, minSteerSpeed=14.5),
+    dbc_dict=dbc_dict('chrysler_ram_dt_generated', None),
   )
   RAM_HD_5TH_GEN = ChryslerPlatformConfig(
-    [
+    car_docs=[
       ChryslerCarDocs("Ram 2500 2020-24", car_parts=CarParts.common([CarHarness.ram])),
       ChryslerCarDocs("Ram 3500 2019-22", car_parts=CarParts.common([CarHarness.ram])),
     ],
-    ChryslerCarSpecs(mass=3405., wheelbase=3.785, steerRatio=15.61, minSteerSpeed=16.),
-    dbc_dict('chrysler_ram_hd_generated', None),
+    specs=ChryslerCarSpecs(mass=3405., wheelbase=3.785, steerRatio=15.61, minSteerSpeed=16.),
+    dbc_dict=dbc_dict('chrysler_ram_hd_generated', None),
   )
 
 
