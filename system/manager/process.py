@@ -8,7 +8,7 @@ from collections.abc import Callable, ValuesView
 from abc import ABC, abstractmethod
 from multiprocessing import Process
 
-from setproctitle import setproctitle
+from openpilot.common.setproctitle import setproctitle
 
 from cereal import car, log
 import cereal.messaging as messaging
