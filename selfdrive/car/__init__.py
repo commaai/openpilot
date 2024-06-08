@@ -5,9 +5,12 @@ from enum import IntFlag, ReprEnum, EnumType
 from dataclasses import replace, is_dataclass, fields
 from tokenize import tokenize
 from copy import deepcopy
-from typing import List, Any, Tuple
+from typing import Any
 
-import capnp, inspect, re, io
+import capnp
+import inspect
+import re
+import io
 
 from cereal import car
 from openpilot.common.numpy_fast import clip, interp
@@ -345,7 +348,7 @@ class PlatformConfigModifier:
     # parse the existing source code into a dict
     # each attribute will be marked with it's starting and ending position in the code string
     # the writer can use this to find the diff points
-    def _parse_source(self, code: List[Any], attributes: Any, start: int, end: int):
+    def _parse_source(self, code: list[Any], attributes: Any, start: int, end: int):
 
         '''
         if you write an attribute like so
@@ -392,7 +395,8 @@ class PlatformConfigModifier:
                     if name in attributes.keys():
                         # if it's sure that we're dealing with a nested object
                         # are you thinking why I'm checking using isinstance also?
-                        # well, imagine the source code is something=dict() or something=list(), then the pattern will flag it as a nested object. we don't want that
+                        # well, imagine the source code is something=dict() or something=list(),
+                        # then the pattern will flag it as a nested object. we don't want that
                         if code[index+2].type == 1 and code[index+3].type == 54 and code[index+3].string == '(' and isinstance(attributes[name], dict):
                             attribute_start = start = index + 3 # mark the start after the 'ClassName(' paranthesis
                             parsed[name] = {'start': code[start-1].start}
@@ -427,9 +431,11 @@ class PlatformConfigModifier:
                     break
 
             try:
-                if isinstance(attributes[name], dict): parsed[name]['attributes'] = self._parse_source(code, attributes[name], attribute_start, attribute_end)
+                if isinstance(attributes[name], dict):
+                  parsed[name]['attributes'] = self._parse_source(code, attributes[name], attribute_start, attribute_end)
                 del attributes[name]
-            except KeyError: break
+            except KeyError:
+              break
 
         # any attribute not yet encountered is not in the source code
         for attribute in attributes.keys():
@@ -453,7 +459,7 @@ class PlatformConfigModifier:
 
     # takes some code and inserts it at the given position
     # it moves anything currently in that position to be after the inserted string
-    def _insert_code(self, source: str, name: str, value: Any, position: Tuple[int, int]):
+    def _insert_code(self, source: str, name: str, value: Any, position: tuple[int, int]):
         lines = source.split('\n')
         line = lines[position[0]-1]
 
@@ -464,14 +470,14 @@ class PlatformConfigModifier:
         return '\n'.join(lines)
 
     # takes a line number and writes the supplied code to the end of the line
-    def _append_code(self, source: str, name: str, value: any, line: int):
+    def _append_code(self, source: str, name: str, value: Any, line: int):
         lines = source.split('\n')
 
         lines[line-1] += f' {name}={str(value)}' if lines[line-1].endswith(',') else f', {name}={str(value)}'
         return '\n'.join(lines)
 
     # takes a string to replace & a position as argument, then replaces whatever code is in that position with the supplied code
-    def _replace_code(self, source: str, replacement: str, start: Tuple[int, int], end: Tuple[int, int]):
+    def _replace_code(self, source: str, replacement: str, start: tuple[int, int], end: tuple[int, int]):
         # split the source text into lines
         lines = source.split('\n')
 
@@ -499,7 +505,7 @@ class PlatformConfigModifier:
 
         return '\n'.join(lines)
 
-    def _diff_writer(self, source: str, parsed: dict, changes: List[Any]):
+    def _diff_writer(self, source: str, parsed: dict, changes: list[Any]):
 
         # for a given change, this returns which attribute's source code has to be changed
         def get_attribute(change):
@@ -513,12 +519,14 @@ class PlatformConfigModifier:
                     value = value['attributes'][attribute]
 
                 # while traversing, keep track of the last attribute written in the source code
-                if value['start'] != (0, 0) and value['end'] != (0, 0): prev = (value, index)
+                if value['start'] != (0, 0) and value['end'] != (0, 0):
+                  prev = (value, index)
 
                 if value['start'] == (0, 0) and value['end'] == (0, 0) and prev[0] is not None:
                     value, diff = prev[0], self._get_source(attributes)
                     # if the parent just above this is already written in the source, we can simply insert this one to that with minimum diff
-                    codeExists, code = prev[1] is index-1, self._get_source(attributes[:index]) # we'll also keep the full atrribute source code, for an edge case
+                    # we'll also keep the full atrribute source code, for an edge case
+                    codeExists, code = prev[1] is index-1, self._get_source(attributes[:index])
                     break
 
             return (value, diff, codeExists, code)
@@ -540,7 +548,8 @@ class PlatformConfigModifier:
                 if end == (0, 0): # EDGE CASE: if it doesn't have any child attributes written, it's a variable.
                     replacements.append((code, (attribute['start'], attribute['end']))) # replace the variable with the full source code
                 # write the code after the last written child attribute
-                else: source = self._insert_code(source, change['name'].split(".")[-1], change['value'], end)
+                else:
+                  source = self._insert_code(source, change['name'].split(".")[-1], change['value'], end)
             else:
                 replacements.append((value, (attribute['start'], attribute['end'])))
 
@@ -561,16 +570,21 @@ class PlatformConfigModifier:
     def save(self, config: PlatformConfig, platform: str):
 
         changes = self.changed_fields
-        if len(changes) < 0: return
+        if len(changes) < 0:
+          return
 
         # this platform variable just for searching is a mess i agree, but i couldn't find any other way
         pattern = rf'{platform} = ([a-zA-Z0-9]*)PlatformConfig\((?:[^()]+|\((?:[^()]+|\((?:[^()]+|\([^()]*\))*\))*\))*\)'
         file_path = inspect.getsourcefile(type(config))
+        if file_path is None:
+          raise FileNotFoundError("Source code file not found.")
 
         with open(file_path, 'r') as source_file:
             source_code = source_file.read()
 
         match = re.search(pattern, source_code, re.DOTALL)
+        if match is None:
+          raise ValueError("Pattern not found in the source code.")
         tokens = [token for token in tokenize(io.BytesIO(match.group().encode()).readline)]
 
         # start where the first ( is found
