@@ -2,7 +2,7 @@
 from msgq.ipc_pyx import Context, Poller, SubSocket, PubSocket, SocketEventHandle, toggle_fake_events, \
                                 set_fake_prefix, get_fake_prefix, delete_fake_prefix, wait_for_one_event
 from msgq.ipc_pyx import MultiplePublishersError, IpcError
-from msgq import *
+from msgq import fake_event_handle, pub_sock, sub_sock, drain_sock_raw
 
 import os
 import capnp
