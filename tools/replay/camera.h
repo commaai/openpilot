@@ -5,7 +5,7 @@
 #include <tuple>
 #include <utility>
 
-#include "cereal/visionipc/visionipc_server.h"
+#include "msgq/visionipc/visionipc_server.h"
 #include "common/queue.h"
 #include "tools/replay/framereader.h"
 #include "tools/replay/logreader.h"

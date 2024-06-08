@@ -20,6 +20,7 @@ COPY ./release ${OPENPILOT_PATH}/release
 COPY ./common ${OPENPILOT_PATH}/common
 COPY ./opendbc ${OPENPILOT_PATH}/opendbc
 COPY ./cereal ${OPENPILOT_PATH}/cereal
+COPY ./msgq ${OPENPILOT_PATH}/msgq
 COPY ./panda ${OPENPILOT_PATH}/panda
 COPY ./selfdrive ${OPENPILOT_PATH}/selfdrive
 COPY ./system ${OPENPILOT_PATH}/system

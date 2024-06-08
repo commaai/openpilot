@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import bz2
 import math
 import json
@@ -48,7 +47,7 @@ PROCS = {
   "selfdrive.controls.radard": 7.0,
   "selfdrive.modeld.modeld": 13.0,
   "selfdrive.modeld.dmonitoringmodeld": 8.0,
-  "system.thermald.thermald": 3.87,
+  "system.hardware.hardwared": 3.87,
   "selfdrive.locationd.calibrationd": 2.0,
   "selfdrive.locationd.torqued": 5.0,
   "selfdrive.ui.soundd": 3.5,
@@ -59,7 +58,7 @@ PROCS = {
   "./logcatd": 0,
   "system.micd": 6.0,
   "system.timed": 0,
-  "selfdrive.boardd.pandad": 0,
+  "selfdrive.pandad.pandad": 0,
   "system.statsd": 0.4,
   "selfdrive.navd.navd": 0.4,
   "system.loggerd.uploader": (0.5, 15.0),
@@ -68,12 +67,12 @@ PROCS = {
 
 PROCS.update({
   "tici": {
-    "./boardd": 4.0,
+    "./pandad": 4.0,
     "./ubloxd": 0.02,
     "system.ubloxd.pigeond": 6.0,
   },
   "tizi": {
-     "./boardd": 19.0,
+     "./pandad": 19.0,
     "system.qcomgpsd.qcomgpsd": 1.0,
   }
 }.get(HARDWARE.get_device_type(), {}))

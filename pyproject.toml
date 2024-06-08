@@ -20,7 +20,7 @@ markers = [
 ]
 testpaths = [
   "common",
-  "selfdrive/boardd",
+  "selfdrive/pandad",
   "selfdrive/car",
   "selfdrive/controls",
   "selfdrive/locationd",
@@ -29,10 +29,9 @@ testpaths = [
   "selfdrive/test/longitudinal_maneuvers",
   "selfdrive/test/process_replay/test_fuzzy.py",
   "system/updated",
-  "system/thermald",
   "system/athena",
   "system/camerad",
-  "system/hardware/tici",
+  "system/hardware",
   "system/loggerd",
   "system/proclogd",
   "system/tests",
@@ -165,6 +164,7 @@ pytest-timeout = "*"
 pytest-randomly = "*"
 pytest-asyncio = "*"
 pytest-mock = "*"
+pytest-repeat = "*"
 rerun-sdk = "*"
 ruff = "*"
 sphinx = "*"

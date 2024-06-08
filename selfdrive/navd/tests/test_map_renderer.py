@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import time
 import numpy as np
 import os
@@ -9,7 +8,7 @@ import http.server
 import cereal.messaging as messaging
 
 from typing import Any
-from cereal.visionipc import VisionIpcClient, VisionStreamType
+from msgq.visionipc import VisionIpcClient, VisionStreamType
 from openpilot.common.mock.generators import LLK_DECIMATION, LOCATION1, LOCATION2, generate_liveLocationKalman
 from openpilot.selfdrive.test.helpers import with_processes
 

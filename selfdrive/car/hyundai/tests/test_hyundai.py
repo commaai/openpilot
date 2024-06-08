@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from hypothesis import settings, given, strategies as st
 
 import pytest
