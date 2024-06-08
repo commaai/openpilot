@@ -20,6 +20,7 @@ from openpilot.selfdrive.test.helpers import phone_only, with_processes
 @retry(attempts=3)
 def setup_pandad(num_pandas):
   params = Params()
+  params.clear_all()
   params.put_bool("IsOnroad", False)
 
   with Timeout(90, "pandad didn't start"):
