@@ -161,6 +161,10 @@ class CarInterfaceBase(ABC):
     pass
 
   @staticmethod
+  def deinit(CP, logcan, sendcan):
+    pass
+
+  @staticmethod
   def get_steer_feedforward_default(desired_angle, v_ego):
     # Proportional to realigning tire momentum: lateral acceleration.
     return desired_angle * (v_ego**2)

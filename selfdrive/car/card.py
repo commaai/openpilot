@@ -10,6 +10,7 @@ from panda import ALTERNATIVE_EXPERIENCE
 
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper, DT_CTRL
+from openpilot.common.utils import ExitHandler
 
 from openpilot.selfdrive.pandad import can_list_to_can_capnp
 from openpilot.selfdrive.car.car_helpers import get_car, get_one_can
@@ -19,6 +20,7 @@ from openpilot.selfdrive.controls.lib.events import Events
 REPLAY = "REPLAY" in os.environ
 
 EventName = car.CarEvent.EventName
+SafetyModel = car.CarParams.SafetyModel
 
 
 class Car:
@@ -34,6 +36,7 @@ class Car:
     self.CC_prev = car.CarControl.new_message()
     self.CS_prev = car.CarState.new_message()
     self.initialized_prev = False
+    self.deinitialize_prev = False
 
     self.last_actuators_output = car.CarControl.Actuators.new_message()
 
@@ -63,7 +66,7 @@ class Car:
     self.CP.passive = not controller_available or self.CP.dashcamOnly
     if self.CP.passive:
       safety_config = car.CarParams.SafetyConfig.new_message()
-      safety_config.safetyModel = car.CarParams.SafetyModel.noOutput
+      safety_config.safetyModel = SafetyModel.noOutput
       self.CP.safetyConfigs = [safety_config]
 
     # Write previous route's CarParams
@@ -81,6 +84,7 @@ class Car:
 
     # card is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
+    self.do_exit = ExitHandler()
 
   def state_update(self) -> car.CarState:
     """carState update loop, driven by can"""
@@ -148,6 +152,11 @@ class Car:
       self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
       # signal pandad to switch to car safety mode
       self.params.put_bool_nonblocking("ControlsReady", True)
+
+    ready_to_deinit = all(ps.safetyModel == SafetyModel.elm327 for ps in self.sm['pandaStates'])
+    if self.do_exit and not self.deinitialize_prev and ready_to_deinit:
+      self.CI.deinit(self.CP, self.can_sock, self.pm.sock['sendcan'])
+      self.deinitialize_prev = bool(self.do_exit)
 
     if self.sm.all_alive(['carControl']):
       # send car controls over can
