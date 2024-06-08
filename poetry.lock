@@ -2730,6 +2730,7 @@ optional = false
 python-versions = ">=3.6"
 files = [
     {file = "opencv-python-4.10.0.82.tar.gz", hash = "sha256:dbc021eaa310c4145c47cd648cb973db69bb5780d6e635386cd53d3ea76bd2d5"},
+    {file = "opencv_python-4.10.0.82-cp37-abi3-macosx_11_0_arm64.whl", hash = "sha256:5f78652339957ec24b80a782becfb32f822d2008a865512121fad8c3ce233e9a"},
     {file = "opencv_python-4.10.0.82-cp37-abi3-macosx_12_0_x86_64.whl", hash = "sha256:e6be19a0615aa8c4e0d34e0c7b133e26e386f4b7e9b557b69479104ab2c133ec"},
     {file = "opencv_python-4.10.0.82-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:5b49e530f7fd86f671514b39ffacdf5d14ceb073bc79d0de46bbb6b0cad78eaf"},
     {file = "opencv_python-4.10.0.82-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:955c5ce8ac90c9e4636ad7f5c0d9c75b80abbe347182cfd09b0e3eec6e50472c"},
@@ -2748,6 +2749,7 @@ optional = false
 python-versions = ">=3.6"
 files = [
     {file = "opencv-python-headless-4.10.0.82.tar.gz", hash = "sha256:de9e742c1b9540816fbd115b0b03841d41ed0c65566b0d7a5371f98b131b7e6d"},
+    {file = "opencv_python_headless-4.10.0.82-cp37-abi3-macosx_11_0_arm64.whl", hash = "sha256:a09ed50ba21cc5bf5d436cb0e784ad09c692d6b1d1454252772f6c8f2c7b4088"},
     {file = "opencv_python_headless-4.10.0.82-cp37-abi3-macosx_12_0_x86_64.whl", hash = "sha256:977a5fd21e1fe0d3d2134887db4441f8725abeae95150126302f31fcd9f548fa"},
     {file = "opencv_python_headless-4.10.0.82-cp37-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:db4ec6755838b0be12510bfc9ffb014779c612418f11f4f7e6f505c36124a3aa"},
     {file = "opencv_python_headless-4.10.0.82-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:10a37fa5276967ecf6eb297295b16b28b7a2eb3b568ca0ee469fb1a5954de298"},
