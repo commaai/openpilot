@@ -12,7 +12,7 @@ from openpilot.tools.lib.logreader import LogReader
 
 DEMO_ROUTE = "9f583b1d93915c31|2022-05-18--10-49-51--0"
 
-SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
+SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'pandad']
 MONOTIME_KEYS = ['modelMonoTime', 'lateralPlanMonoTime']
 MSGQ_TO_SERVICE = {
   'roadCameraState': 'camerad',
@@ -137,7 +137,7 @@ def insert_cloudlogs(lr, timestamps, start_times, end_times):
           timestamps[int(jmsg['msg']['timestamp']['frame_id'])][service].append((event, time))
           continue
 
-        if service == "boardd":
+        if service == "pandad":
           timestamps[latest_controls_frameid][service].append((event, time))
           end_times[latest_controls_frameid][service] = time
         else:
@@ -153,7 +153,7 @@ def insert_cloudlogs(lr, timestamps, start_times, end_times):
             failed_inserts += 1
 
   if latest_controls_frameid == 0:
-    print("Warning: failed to bind boardd logs to a frame ID. Add a timestamp cloudlog in controlsd.")
+    print("Warning: failed to bind pandad logs to a frame ID. Add a timestamp cloudlog in controlsd.")
   elif failed_inserts > len(timestamps):
     print(f"Warning: failed to bind {failed_inserts} cloudlog timestamps to a frame ID")
 

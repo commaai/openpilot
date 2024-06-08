@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import pytest
 import asyncio
 import json

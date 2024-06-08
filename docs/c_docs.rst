@@ -14,12 +14,12 @@ cereal
 messaging
 ^^^^^^^^^
 .. autodoxygenindex::
-   :project: cereal_messaging
+   :project: msgq_messaging
 
 visionipc
 ^^^^^^^^^
 .. autodoxygenindex::
-   :project: cereal_visionipc
+   :project: msgq_visionipc
 
 
 selfdrive
@@ -77,10 +77,10 @@ sensorsd
 .. autodoxygenindex::
    :project: system_sensord_sensors
 
-boardd
+pandad
 ^^^^^^
 .. autodoxygenindex::
-   :project: selfdrive_boardd
+   :project: selfdrive_pandad
 
 
 rednose

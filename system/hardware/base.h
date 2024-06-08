@@ -5,7 +5,7 @@
 #include <map>
 #include <string>
 
-#include "cereal/messaging/messaging.h"
+#include "cereal/gen/cpp/log.capnp.h"
 
 // no-op base hw class
 class HardwareNone {

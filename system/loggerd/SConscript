@@ -1,6 +1,6 @@
-Import('env', 'arch', 'cereal', 'messaging', 'common', 'visionipc')
+Import('env', 'arch', 'cereal', 'messaging', 'common', 'visionipc', 'socketmaster')
 
-libs = [common, cereal, messaging, visionipc,
+libs = [common, cereal, socketmaster, messaging, visionipc,
         'zmq', 'capnp', 'kj', 'z',
         'avformat', 'avcodec', 'swscale', 'avutil',
         'yuv', 'OpenCL', 'pthread']
