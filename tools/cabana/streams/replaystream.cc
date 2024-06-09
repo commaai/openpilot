@@ -65,7 +65,9 @@ void ReplayStream::start() {
 }
 
 void ReplayStream::stop() {
-  replay.reset(nullptr);
+  if (replay) {
+    replay->stop();
+  }
 }
 
 bool ReplayStream::eventFilter(const Event *event) {
