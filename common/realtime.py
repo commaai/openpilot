@@ -4,7 +4,7 @@ import os
 import time
 from collections import deque
 
-from setproctitle import getproctitle
+from openpilot.common.setproctitle import getproctitle
 
 from openpilot.system.hardware import PC
 
