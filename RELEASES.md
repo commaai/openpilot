@@ -1,3 +1,7 @@
+Version 0.9.8 (2024-XX-XX)
+========================
+* Always on driver monitoring toggle
+
 Version 0.9.7 (2024-06-11)
 ========================
 * New driving model
