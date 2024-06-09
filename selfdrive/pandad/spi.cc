@@ -50,8 +50,9 @@ private:
 
 #define SPILOG(fn, fmt, ...) do {  \
       fn(fmt, ## __VA_ARGS__);     \
-      fn("  %d / 0x%x / %d / %d", \
-         xfer_count, header.endpoint, header.tx_len, header.max_rx_len); \
+      fn("  %d / 0x%x / %d / %d / tx: %s", \
+         xfer_count, header.endpoint, header.tx_len, header.max_rx_len, \
+         util::hexdump(tx_buf, std::min((int)header.tx_len, 8)).c_str()); \
       } while (0)
 
 PandaSpiHandle::PandaSpiHandle(std::string serial) : PandaCommsHandle(serial) {
@@ -261,7 +262,7 @@ int PandaSpiHandle::wait_for_ack(uint8_t ack, uint8_t tx, unsigned int timeout, 
   spi_ioc_transfer transfer = {
     .tx_buf = (uint64_t)tx_buf,
     .rx_buf = (uint64_t)rx_buf,
-    .len = length
+    .len = length,
   };
   tx_buf[0] = tx;
 
