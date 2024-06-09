@@ -223,11 +223,8 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
   }
 
   if (getenv("PANDAD_MAXOUT") != NULL) {
-    int remaining = RECV_SIZE - recv;
-    if (remaining > 0) {
-      static uint8_t junk[RECV_SIZE + sizeof(can_header) + 64];
-      handle->bulk_read(0xab, junk, remaining);
-    }
+    static uint8_t junk[RECV_SIZE];
+    handle->bulk_read(0xab, junk, RECV_SIZE - recv);
   }
 
   bool ret = true;
