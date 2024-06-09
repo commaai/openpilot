@@ -239,6 +239,7 @@ int PandaSpiHandle::spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint1
         // due to full TX buffers
         nack_count += 1;
         if (nack_count > 3) {
+          SPILOG(LOGE, "NACK sleep %d", nack_count);
           usleep(std::clamp(nack_count*10, 200, 2000));
         }
       }
@@ -257,7 +258,7 @@ int PandaSpiHandle::wait_for_ack(uint8_t ack, uint8_t tx, unsigned int timeout, 
   if (timeout == 0) {
     timeout = SPI_ACK_TIMEOUT;
   }
-  timeout = std::clamp(timeout, 100U, SPI_ACK_TIMEOUT);
+  timeout = std::clamp(timeout, 20U, SPI_ACK_TIMEOUT);
 
   spi_ioc_transfer transfer = {
     .tx_buf = (uint64_t)tx_buf,
@@ -406,12 +407,18 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
   return rx_data_len;
 
 fail:
-  if (ret > 0) ret = -1;
-
   // ensure slave is in a consistent state
   // and ready for the next transfer
-  for (int i = 0; i < 2; i++) wait_for_ack(SPI_NACK, 0x14, 1, SPI_BUF_SIZE);
+  int nack_cnt = 0;
+  while (nack_cnt < 3) {
+    if (wait_for_ack(SPI_NACK, 0x14, 1, SPI_BUF_SIZE/2) == 0) {
+      nack_cnt += 1;
+    } else {
+      nack_cnt = 0;
+    }
+  }
 
+  if (ret > 0) ret = -1;
   return ret;
 }
 #endif
