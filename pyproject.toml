@@ -39,8 +39,8 @@ testpaths = [
   "system/webrtc",
   "tools/lib/tests",
   "tools/replay",
-  "tools/cabana"
-  "cereal/messaging/tests"
+  "tools/cabana",
+  "cereal/messaging/tests",
 ]
 
 [tool.mypy]
