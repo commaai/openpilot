@@ -43,7 +43,7 @@ blacklist = [
   "Darwin/",
   ".vscode",
   ".idea",
-  ".run"
+  ".run",
 
   # no LFS
   ".lfsconfig",
