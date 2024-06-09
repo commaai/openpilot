@@ -26,7 +26,7 @@ POETRY_INSTALLED="false"
 
 if ! command -v "pyenv" > /dev/null 2>&1; then
   if ask "Install pyenv?"; then
-    echo "pyenv install ..."
+    echo "Installing pyenv..."
     curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
     PYENV_PATH_SETUP="export PATH=\$HOME/.pyenv/bin:\$HOME/.pyenv/shims:\$PATH"
     PYENV_INSTALLED="true"
@@ -36,7 +36,7 @@ else
 fi
 
 if [[ "$PYENV_INSTALLED" == "true" ]] && ([ -z "$PYENV_SHELL" ] || [ -n "$PYENV_PATH_SETUP" ]); then
-  echo "pyenvrc setup ..."
+  echo "Setting up pyenvrc..."
   cat <<EOF > "${HOME}/.pyenvrc"
 if [ -z "\$PYENV_ROOT" ]; then
 $PYENV_PATH_SETUP
@@ -65,13 +65,13 @@ if [[ "$PYENV_INSTALLED" == "true" ]] && (! pyenv prefix ${PYENV_PYTHON_VERSION}
   # no pyenv update on mac
   if [ "$(uname)" == "Linux" ]; then
     if ask "Update pyenv?"; then
-      echo "pyenv update ..."
+      echo "Updating pyenv..."
       pyenv update
     fi
   fi
 
   if ask "Install python ${PYENV_PYTHON_VERSION}?"; then
-    echo "python ${PYENV_PYTHON_VERSION} install ..."
+    echo "Installing python ${PYENV_PYTHON_VERSION} ..."
     CONFIGURE_OPTS="--enable-shared" pyenv install -f ${PYENV_PYTHON_VERSION}
   fi
 fi
@@ -79,7 +79,7 @@ fi
 [[ "$PYENV_INSTALLED" == "true" ]] && eval "$(pyenv init --path)"
 
 if ask "Update pip?"; then
-  echo "update pip"
+  echo "Updating pip..."
   pip install pip==24.0
 fi
 
@@ -106,10 +106,9 @@ if [[ "$(uname)" == 'Darwin' ]]; then
   fi
 fi
 
-
 if [[ "$POETRY_INSTALLED" == "true" ]] && [[ "$PYENV_INSTALLED" == "true" ]]; then
   if ask "Install openpilot python dependencies?"; then
-    echo "pip packages install..."
+    echo "Installing pip packages..."
     poetry install --no-cache --no-root
     pyenv rehash
   fi
@@ -123,7 +122,7 @@ fi
 
 if [ "$(uname)" != "Darwin" ] && [ -e "$ROOT/.git" ]; then
   if ask "Install git pre-commit hooks?"; then
-    echo "pre-commit hooks install..."
+    echo "Installing git pre-commit hooks..."
     $RUN pre-commit install
     $RUN git submodule foreach pre-commit install
   fi

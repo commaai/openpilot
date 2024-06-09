@@ -14,6 +14,7 @@ fi
 
 # Install common packages
 function install_ubuntu_common_requirements() {
+  echo "Installing common packages..."
   $SUDO apt-get update
   $SUDO apt-get install -y --no-install-recommends \
     ca-certificates \
@@ -84,7 +85,7 @@ function install_extra_packages() {
 }
 
 function install_tools() {
-  echo "Installing development tools"
+  echo "Installing development tools..."
   # TODO: Add other packages
   $SUDO apt-get install -y --no-install-recommends valgrind
 }
@@ -93,6 +94,7 @@ function install_tools() {
 function install_ubuntu_lts_latest_requirements() {
   install_ubuntu_common_requirements
 
+  echo "Installing Ubuntu LTS requirements..."
   $SUDO apt-get install -y --no-install-recommends \
     g++-12 \
     qtbase5-dev \
@@ -106,6 +108,7 @@ function install_ubuntu_lts_latest_requirements() {
 function install_ubuntu_focal_requirements() {
   install_ubuntu_common_requirements
 
+  echo "Installing Ubuntu Focal requirements..."
   $SUDO apt-get install -y --no-install-recommends \
     libavresample-dev \
     qt5-default \
