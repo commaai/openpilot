@@ -69,7 +69,7 @@ class TestStreamSession:
       mocked_pubmaster.reset_mock()
 
   # FIXME, hangs for some reason
-  @pytest.mark.skip("Hangs forever") 
+  @pytest.mark.skip("Hangs forever")
   def test_livestream_track(self, mocker):
     fake_msg = messaging.new_message("livestreamDriverEncodeData")
 
