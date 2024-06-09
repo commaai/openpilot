@@ -68,8 +68,8 @@ class TestStreamSession:
 
       mocked_pubmaster.reset_mock()
 
-  '''
-  FIXME, hangs for some reason
+  # FIXME, hangs for some reason
+  @pytest.mark.skip("Hangs forever") 
   def test_livestream_track(self, mocker):
     fake_msg = messaging.new_message("livestreamDriverEncodeData")
 
@@ -85,7 +85,6 @@ class TestStreamSession:
       assert packet.time_base == VIDEO_TIME_BASE
       assert packet.pts == int(i * DT_DMON * VIDEO_CLOCK_RATE)
       assert packet.size == 0
-  '''
 
   def test_input_audio_track(self, mocker):
     packet_time, rate = 0.02, 16000
