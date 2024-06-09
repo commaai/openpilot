@@ -22,7 +22,7 @@ blacklist = [
   "cereal/.*test.*",
   "^common/tests/",
 
-  "\.pytest_cache/",
+  ".pytest_cache/",
   "__pycache__/",
 
   # particularly large text files
@@ -42,8 +42,8 @@ blacklist = [
   ".devcontainer/",
   "Darwin/",
   ".vscode",
-  "\.idea",
-  "\.run",
+  ".idea/",
+  ".run/",
 
   # no LFS
   ".lfsconfig",
