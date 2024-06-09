@@ -40,6 +40,7 @@ testpaths = [
   "tools/lib/tests",
   "tools/replay",
   "tools/cabana"
+  "cereal/messaging/tests"
 ]
 
 [tool.mypy]

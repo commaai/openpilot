@@ -5,16 +5,16 @@ import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 from aiortc import RTCDataChannel
-#from aiortc.mediastreams import VIDEO_CLOCK_RATE, VIDEO_TIME_BASE
+from aiortc.mediastreams import VIDEO_CLOCK_RATE, VIDEO_TIME_BASE
 import capnp
 import pyaudio
-
+import pytest
 from cereal import messaging, log
 
 from openpilot.system.webrtc.webrtcd import CerealOutgoingMessageProxy, CerealIncomingMessageProxy
-#from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
+from openpilot.system.webrtc.device.video import LiveStreamVideoStreamTrack
 from openpilot.system.webrtc.device.audio import AudioInputStreamTrack
-#from openpilot.common.realtime import DT_DMON
+from openpilot.common.realtime import DT_DMON
 
 
 class TestStreamSession:
