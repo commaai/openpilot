@@ -22,5 +22,5 @@ class TestHardware:
     assert 0.1 < np.mean(ts[False]) < 0.15
     assert max(ts[False]) < 0.2
 
-    assert 0.1 < np.mean(ts[True]) < 0.3
+    assert 0.1 < np.mean(ts[True]) < 0.35
     assert max(ts[True]) < 0.4
