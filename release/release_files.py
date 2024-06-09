@@ -22,6 +22,9 @@ blacklist = [
   "cereal/.*test.*",
   "^common/tests/",
 
+  ".pytest_cache/",
+  "__pycache__/",
+
   # particularly large text files
   "poetry.lock",
   "third_party/catch2",
@@ -39,6 +42,8 @@ blacklist = [
   ".devcontainer/",
   "Darwin/",
   ".vscode",
+  ".idea",
+  ".run"
 
   # no LFS
   ".lfsconfig",
@@ -47,7 +52,7 @@ blacklist = [
 
 # gets you through the blacklist
 whitelist = [
-  "tools/lib/",
+  "^tools/lib/(?!.*__pycache__).*$",
   "tools/bodyteleop/",
 
   "tinygrad_repo/openpilot/compile2.py",
