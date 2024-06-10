@@ -166,6 +166,7 @@ pprofile = "*"
 polyline = "*"
 pre-commit = "*"
 pyautogui = "*"
+pytools = "<=2024.1.3" # our pinned version of pyopencl use a broken version of pytools
 pyopencl = "==2023.1.4"  # 2024.1 is broken on arm64
 pygame = "*"
 pywinctl = "*"

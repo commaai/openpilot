@@ -125,6 +125,5 @@ if GetOption('extras') and arch != "Darwin":
     assert f[0].get_size() < 350*1e3
 
 # build watch3
-#FIXME
-#if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):
-#  qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'json11', 'zmq', 'visionipc', 'msgq'])
+if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):
+  qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'json11', 'msgq', 'visionipc'])
