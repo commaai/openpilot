@@ -1,10 +1,9 @@
 import os
 import json
-Import('qt_env', 'arch', 'common', 'messaging', 'visionipc',
-       'cereal', 'transformations', 'socketmaster')
+Import('qt_env', 'arch', 'common', 'messaging', 'visionipc', 'transformations')
 
-base_libs = [common, socketmaster, messaging, cereal, visionipc, transformations, 'zmq',
-             'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
+base_libs = [common, messaging, visionipc, transformations,
+             'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
 
 if arch == 'larch64':
   base_libs.append('EGL')
@@ -126,5 +125,6 @@ if GetOption('extras') and arch != "Darwin":
     assert f[0].get_size() < 350*1e3
 
 # build watch3
-if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):
-  qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'json11', 'zmq', 'visionipc', 'messaging'])
+#FIXME
+#if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):
+#  qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'json11', 'zmq', 'visionipc', 'msgq'])
