@@ -6,7 +6,8 @@ common_libs = [
   'util.cc',
   'i2c.cc',
   'watchdog.cc',
-  'ratekeeper.cc'
+  'ratekeeper.cc',
+  'proc_title.cc'
 ]
 
 if arch != "Darwin":
@@ -28,12 +29,13 @@ if GetOption('extras'):
 
 # Cython bindings
 params_python = envCython.Program('params_pyx.so', 'params_pyx.pyx', LIBS=envCython['LIBS'] + [_common, 'zmq', 'json11'])
+proc_title_python = envCython.Program('proc_title_pyx.so', 'proc_title_pyx.pyx')
 
 SConscript([
   'transformations/SConscript',
 ])
 
 Import('transformations_python')
-common_python = [params_python, transformations_python]
+common_python = [params_python, proc_title_python, transformations_python]
 
 Export('common_python')
