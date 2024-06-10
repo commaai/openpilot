@@ -1,4 +1,4 @@
-Import('env', 'envCython', 'arch', 'messaging', 'msgq_python', 'common_python', 'opendbc_python')
+Import('env', 'envCython', 'arch', 'msgq_python', 'common_python', 'opendbc_python')
 
 gen = "c_generated_code"
 
