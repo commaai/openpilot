@@ -251,7 +251,7 @@ class CAR(Platforms):
       VWCarDocs("MAN eTGE 2020-23", video_link="https://youtu.be/4100gLeabmo"),
     ],
     VolkswagenCarSpecs(mass=2100, wheelbase=3.64, minSteerSpeed=50 * CV.KPH_TO_MS),
-    chassis_codes={"SY", "SZ"},
+    chassis_codes={"SY", "SZ", "UY", "UZ"},
     wmis={WMI.VOLKSWAGEN_COMMERCIAL, WMI.MAN},
   )
   VOLKSWAGEN_GOLF_MK7 = VolkswagenMQBPlatformConfig(
