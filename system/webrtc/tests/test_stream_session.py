@@ -71,7 +71,7 @@ class TestStreamSession:
     fake_msg = messaging.new_message("livestreamDriverEncodeData")
 
     config = {"receive.return_value": fake_msg.to_bytes()}
-    mocker.patch("msgq.messaging.SubSocket", spec=True, **config)
+    mocker.patch("msgq.SubSocket", spec=True, **config)
     track = LiveStreamVideoStreamTrack("driver")
 
     assert track.id.startswith("driver")
