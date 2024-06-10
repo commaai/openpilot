@@ -10,7 +10,7 @@
 #include <capnp/serialize.h>
 
 #include "cereal/gen/cpp/log.capnp.h"
-#include "msgq/messaging/messaging.h"
+#include "msgq/ipc.h"
 
 #ifdef __APPLE__
 #define CLOCK_BOOTTIME CLOCK_MONOTONIC
