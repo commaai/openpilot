@@ -299,6 +299,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
   # We lose these ECUs without the comma power on these cars.
   # Note that we still attempt to match with them when they are present
+  # This is or'd with (ALL_ECUS - ESSENTIAL_ECUS) from fw_versions.py
   non_essential_ecus={
     Ecu.eps: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC_2022, CAR.HONDA_E, CAR.HONDA_HRV_3G],
     Ecu.vsa: [CAR.ACURA_RDX_3G, CAR.HONDA_ACCORD, CAR.HONDA_CIVIC, CAR.HONDA_CIVIC_BOSCH, CAR.HONDA_CIVIC_2022, CAR.HONDA_CRV_5G, CAR.HONDA_CRV_HYBRID,
@@ -306,6 +307,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
   },
   extra_ecus=[
     (Ecu.combinationMeter, 0x18da60f1, None),
+    (Ecu.programmedFuelInjection, 0x18da10f1, None),
     # The only other ECU on PT bus accessible by camera on radarless Civic
     # This is likely a manufacturer-specific sub-address implementation: the camera responds to this and 0x18dab0f1
     # Unclear what the part number refers to: 8S103 is 'Camera Set Mono', while 36160 is 'Camera Monocular - Honda'

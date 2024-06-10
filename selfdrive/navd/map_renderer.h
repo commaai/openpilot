@@ -12,7 +12,7 @@
 #include <QOpenGLFunctions>
 #include <QOpenGLFramebufferObject>
 
-#include "cereal/visionipc/visionipc_server.h"
+#include "msgq/visionipc/visionipc_server.h"
 #include "cereal/messaging/messaging.h"
 
 

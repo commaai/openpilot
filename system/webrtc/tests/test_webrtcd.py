@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 import pytest
 import asyncio
 import json
@@ -62,3 +61,4 @@ class TestWebrtcdProc:
     assert mock_request.app["streams"].__setitem__.called, "Implementation changed, please update this test"
     _, session = mock_request.app["streams"].__setitem__.call_args.args
     await self.assertCompletesWithTimeout(session.post_run_cleanup())
+

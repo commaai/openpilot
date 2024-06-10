@@ -6,7 +6,7 @@ import cereal.messaging as messaging
 from panda.python.uds import SERVICE_TYPE
 from openpilot.selfdrive.car import make_can_msg
 from openpilot.selfdrive.car.fw_query_definitions import EcuAddrBusType
-from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
+from openpilot.selfdrive.pandad import can_list_to_can_capnp
 from openpilot.common.swaglog import cloudlog
 
 

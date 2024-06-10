@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import numpy as np
 import os
 import re
@@ -23,7 +22,7 @@ from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.version import get_version
 from openpilot.tools.lib.helpers import RE
 from openpilot.tools.lib.logreader import LogReader
-from cereal.visionipc import VisionIpcServer, VisionStreamType
+from msgq.visionipc import VisionIpcServer, VisionStreamType
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
 
 SentinelType = log.Sentinel.SentinelType

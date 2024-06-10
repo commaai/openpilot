@@ -11,7 +11,7 @@ from panda import ALTERNATIVE_EXPERIENCE
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper, DT_CTRL
 
-from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
+from openpilot.selfdrive.pandad import can_list_to_can_capnp
 from openpilot.selfdrive.car.car_helpers import get_car, get_one_can
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.controls.lib.events import Events
@@ -29,8 +29,7 @@ class Car:
     self.sm = messaging.SubMaster(['pandaStates', 'carControl', 'onroadEvents'])
     self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams', 'carOutput'])
 
-    self.can_rcv_timeout_counter = 0  # consecutive timeout count
-    self.can_rcv_cum_timeout_counter = 0  # cumulative timeout count
+    self.can_rcv_cum_timeout_counter = 0
 
     self.CC_prev = car.CarControl.new_message()
     self.CS_prev = car.CarState.new_message()
@@ -96,12 +95,7 @@ class Car:
 
     # Check for CAN timeout
     if not can_rcv_valid:
-      self.can_rcv_timeout_counter += 1
       self.can_rcv_cum_timeout_counter += 1
-    else:
-      self.can_rcv_timeout_counter = 0
-
-    self.can_rcv_timeout = self.can_rcv_timeout_counter >= 5
 
     if can_rcv_valid and REPLAY:
       self.can_log_mono_time = messaging.log_from_bytes(can_strs[0]).logMonoTime
@@ -141,7 +135,6 @@ class Car:
     cs_send = messaging.new_message('carState')
     cs_send.valid = CS.canValid
     cs_send.carState = CS
-    cs_send.carState.canRcvTimeout = self.can_rcv_timeout
     cs_send.carState.canErrorCounter = self.can_rcv_cum_timeout_counter
     cs_send.carState.cumLagMs = -self.rk.remaining * 1000.
     self.pm.send('carState', cs_send)
@@ -153,7 +146,7 @@ class Car:
       # Initialize CarInterface, once controls are ready
       # TODO: this can make us miss at least a few cycles when doing an ECU knockout
       self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
-      # signal boardd to switch to car safety mode
+      # signal pandad to switch to car safety mode
       self.params.put_bool_nonblocking("ControlsReady", True)
 
     if self.sm.all_alive(['carControl']):

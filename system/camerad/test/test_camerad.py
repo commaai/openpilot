@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import pytest
 import time
 import numpy as np
