@@ -18,8 +18,8 @@ V4L2_BUF_FLAG_KEYFRAME = 8
 
 ENCODE_SOCKETS = {
   VisionStreamType.VISION_STREAM_ROAD: "roadEncodeData",
-  VisionStreamType.VISION_STREAM_WIDE_ROAD: "wideRoadEncodeData",
   VisionStreamType.VISION_STREAM_DRIVER: "driverEncodeData",
+  VisionStreamType.VISION_STREAM_WIDE_ROAD: "wideRoadEncodeData",
 }
 
 def decoder(addr, vipc_server, vst, nvidia, W, H, debug=False):
@@ -147,8 +147,8 @@ if __name__ == "__main__":
 
   vision_streams = [
     VisionStreamType.VISION_STREAM_ROAD,
-    VisionStreamType.VISION_STREAM_WIDE_ROAD,
     VisionStreamType.VISION_STREAM_DRIVER,
+    VisionStreamType.VISION_STREAM_WIDE_ROAD,
   ]
 
   vsts = [vision_streams[int(x)] for x in args.cams.split(",")]
