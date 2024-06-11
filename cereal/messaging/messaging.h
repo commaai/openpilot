@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cstddef>
 #include <map>
 #include <string>
@@ -86,17 +87,25 @@ private:
 class AlignedBuffer {
 public:
   kj::ArrayPtr<const capnp::word> align(const char *data, const size_t size) {
-    words_size = size / sizeof(capnp::word) + 1;
-    if (aligned_buf.size() < words_size) {
-      aligned_buf = kj::heapArray<capnp::word>(words_size < 512 ? 512 : words_size);
+    const size_t word_count = size / sizeof(capnp::word);
+
+    // Check if data is already aligned
+    if (reinterpret_cast<uintptr_t>(data) % alignof(capnp::word) == 0) {
+      return kj::arrayPtr(reinterpret_cast<const capnp::word *>(data), word_count);
     }
-    memcpy(aligned_buf.begin(), data, size);
-    return aligned_buf.slice(0, words_size);
+
+    // Data is not aligned, perform alignment
+    if (aligned_buf.size() < word_count) {
+      aligned_buf = kj::heapArray<capnp::word>(std::max(word_count, size_t(512)));
+    }
+    memcpy(aligned_buf.begin(), data, word_count * sizeof(capnp::word));
+    return aligned_buf.slice(0, word_count);
   }
+
   inline kj::ArrayPtr<const capnp::word> align(Message *m) {
     return align(m->getData(), m->getSize());
   }
+
 private:
   kj::Array<capnp::word> aligned_buf;
-  size_t words_size;
 };
