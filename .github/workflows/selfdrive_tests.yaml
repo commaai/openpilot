@@ -337,7 +337,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11.4'
-          cache: 'poetry'
       - uses: snok/install-poetry@v1
         with:
           version: 1.7.0
