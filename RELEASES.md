@@ -12,6 +12,7 @@ Version 0.9.7 (2024-06-13)
 * Support for hybrid variants of supported Ford models
 * Fingerprinting without the OBD-II port on all cars
 * Improved fuzzy fingerprinting for Ford and Volkswagen
+* Volkswagen Caddy 2019 support thanks to jyoung8607!
 
 Version 0.9.6 (2024-02-27)
 ========================
