@@ -337,5 +337,5 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11.4'
-      - run: pip install pipx
-      - run: pipx install poetry
+      - run: pip --version
+      - run: pip install numpy
