@@ -22,4 +22,5 @@ jobs:
         python-version: '3.11.4'
     - run: pip install pip==24.0
     - run: pip install poetry==1.7.0
+    - run: tools/install_ubuntu_dependencies.sh
     - run: poetry install --no-cache --no-root
