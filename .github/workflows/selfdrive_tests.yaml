@@ -333,10 +333,6 @@ jobs:
     name: Test python3.11 support
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - run: pipx install poetry==1.8.3
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: pip --version
-      - run: pip install numpy
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+      - run: poetry
