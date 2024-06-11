@@ -212,10 +212,9 @@ class CarController(CarControllerBase):
       elif self.CP.carFingerprint not in HONDA_BOSCH_RADARLESS and CC.cruiseControl.resume:
         cruise = CruiseButtons.RES_ACCEL
       elif self.CP.carFingerprint in HONDA_BOSCH_RADARLESS and CC.enabled and self.frame % 4 == 0:
-        # Send buttons to the camera when engaged. Only send the LKAS button to turn off stock LKAS off so it can't disengage cruise.
-        # Priority: pcm_cancel > user > auto resume > turn off lkas > none/idle
+        # Send buttons to the camera when engaged. Priority: pcm_cancel > user > auto resume > none/idle
         cruise = CruiseButtons.NONE
-        if CS.cruise_buttons or (CS.cruise_setting and CS.cruise_setting != CruiseSettings.LKAS):
+        if CS.cruise_buttons or CS.cruise_setting:
           cruise = CS.cruise_buttons
           setting = CS.cruise_setting
         # simulate a momentary press
