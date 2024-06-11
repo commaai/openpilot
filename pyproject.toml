@@ -111,7 +111,6 @@ numpy = "*"
 aiohttp = "*"
 aiortc = "*"
 pyaudio = "*"
-google-crc32c = { url = "https://github.com/commaai/python-crc32c/releases/download/3.12.3/google_crc32c-1.5.0-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.whl", markers = "platform_machine != 'aarch64'" }
 
 # panda
 libusb1 = "*"
