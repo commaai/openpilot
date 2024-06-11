@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v4
-    - run: tools/install_ubuntu_dependencies.sh
+    - run: INSTALL_EXTRA_PACKAGES=no tools/install_ubuntu_dependencies.sh
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
