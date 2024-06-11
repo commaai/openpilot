@@ -18,6 +18,7 @@ function install_ubuntu_common_requirements() {
   $SUDO apt-get install -y --no-install-recommends \
     ca-certificates \
     clang \
+    cmake \
     cppcheck \
     build-essential \
     gcc-arm-none-eabi \
