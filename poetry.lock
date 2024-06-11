@@ -352,7 +352,7 @@ description = "CasADi -- framework for algorithmic differentiation and numeric o
 optional = false
 python-versions = "*"
 files = [
-    {file = "casadi-3.6.5-cp311-none-manylinux2014_aarch64.whl", hash = "sha256:1ce199a4ea1d376edbe5399cd622a4564040c83f50c50114fe50a69a8ea81d92"},
+    {file = "casadi-3.6.5-cp311-none-macosx_11_0_arm64.whl", hash = "sha256:ccb962ea02b7d6d245d5cd40fb52c29e812040a45273c6eed32cb8fcff673dda"},
 ]
 
 [package.dependencies]
@@ -360,7 +360,7 @@ numpy = "*"
 
 [package.source]
 type = "url"
-url = "https://github.com/casadi/casadi/releases/download/3.6.5/casadi-3.6.5-cp311-none-manylinux2014_aarch64.whl"
+url = "https://github.com/casadi/casadi/releases/download/3.6.5/casadi-3.6.5-cp311-none-macosx_11_0_arm64.whl"
 
 [[package]]
 name = "certifi"
@@ -8100,4 +8100,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11, <3.13"
-content-hash = "8fcca5c7616dd253719cd81a73babb42323fe231d838206ec0ad0a968b8a08f7"
+content-hash = "05bb3096c16c1524db364ca82519940d1fbb79a6de363d5e3a81986576f86ad5"
