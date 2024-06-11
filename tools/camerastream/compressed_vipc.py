@@ -6,6 +6,7 @@ import argparse
 import numpy as np
 import multiprocessing
 import time
+import signal
 
 import cereal.messaging as messaging
 from msgq.visionipc import VisionIpcServer, VisionStreamType
@@ -153,4 +154,8 @@ if __name__ == "__main__":
 
   vsts = [vision_streams[int(x)] for x in args.cams.split(",")]
   cvipc = CompressedVipc(args.addr, vsts, args.nvidia, debug=(not args.silent))
+
+  # register exit handler
+  signal.signal(signal.SIGINT, lambda sig, frame: cvipc.kill())
+
   cvipc.join()
