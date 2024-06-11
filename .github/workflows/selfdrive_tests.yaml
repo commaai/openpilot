@@ -328,16 +328,3 @@ jobs:
         with:
           name: report
           path: selfdrive/ui/tests/test_ui/report
-
-  test_python311:
-    name: Test python3.11 support
-    runs-on: ubuntu-latest
-    steps:
-      - name: Set up python
-        id: setup-python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - run: python -c "import sys; print(sys.version)"
-      - run: python --version
-      - run: python -m pip install --upgrade pip setuptools wheel
