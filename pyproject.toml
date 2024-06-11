@@ -139,7 +139,6 @@ psutil = "*"
 timezonefinder = "*"  # just used for nav ETA
 pycryptodome = "*"  # used in updated/casync, panda, body, and a test
 
-
 [tool.poetry.group.dev.dependencies]
 av = "*"
 azure-identity = "*"
