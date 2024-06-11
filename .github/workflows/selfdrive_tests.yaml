@@ -339,6 +339,8 @@ jobs:
         with:
           python-version: '3.12'
       - run: python --version
+      - run: pip uninstall setuptools
+      - run: pip install setuptools==66.1.1
       - run: pip --version
       - run: pip list
       - run: pip install --upgrade pip
