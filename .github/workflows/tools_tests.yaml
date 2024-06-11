@@ -42,7 +42,7 @@ jobs:
   test_python311:
     name: test python3.11 support
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 5
     steps:
     - uses: actions/checkout@v4
     - name: Installing ubuntu dependencies
