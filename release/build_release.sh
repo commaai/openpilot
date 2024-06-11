@@ -1,4 +1,6 @@
-#!/usr/bin/bash -e
+#!/usr/bin/bash
+set -e
+set -x
 
 # git diff --name-status origin/release3-staging | grep "^A" | less
 
@@ -8,13 +10,6 @@ cd $DIR
 
 BUILD_DIR=/data/openpilot
 SOURCE_DIR="$(git rev-parse --show-toplevel)"
-
-if [ -f /TICI ]; then
-  FILES_SRC="release/files_tici"
-else
-  echo "no release files set"
-  exit 1
-fi
 
 if [ -z "$RELEASE_BRANCH" ]; then
   echo "RELEASE_BRANCH is not set"
@@ -36,8 +31,7 @@ git checkout --orphan $RELEASE_BRANCH
 # do the files copy
 echo "[-] copying files T=$SECONDS"
 cd $SOURCE_DIR
-cp -pR --parents $(cat release/files_common) $BUILD_DIR/
-cp -pR --parents $(cat $FILES_SRC) $BUILD_DIR/
+cp -pR --parents $(./release/release_files.py) $BUILD_DIR/
 
 # in the directory
 cd $BUILD_DIR
@@ -54,7 +48,7 @@ git commit -a -m "openpilot v$VERSION release"
 
 # Build
 export PYTHONPATH="$BUILD_DIR"
-scons -j$(nproc)
+scons -j$(nproc) --minimal
 
 # release panda fw
 CERT=/data/pandaextra/certs/release RELEASE=1 scons -j$(nproc) panda/
@@ -77,6 +71,10 @@ find . -name '__pycache__' -delete
 rm -rf .sconsign.dblite Jenkinsfile release/
 rm selfdrive/modeld/models/supercombo.onnx
 
+find third_party/ -name '*x86*' -exec rm -r {} +
+find third_party/ -name '*Darwin*' -exec rm -r {} +
+
+
 # Restore third_party
 git checkout third_party/
 
@@ -92,9 +90,9 @@ TEST_FILES="tools/"
 cd $SOURCE_DIR
 cp -pR -n --parents $TEST_FILES $BUILD_DIR/
 cd $BUILD_DIR
-RELEASE=1 selfdrive/test/test_onroad.py
-#selfdrive/manager/test/test_manager.py
-selfdrive/car/tests/test_car_interfaces.py
+RELEASE=1 pytest -n0 -s selfdrive/test/test_onroad.py
+#system/manager/test/test_manager.py
+pytest selfdrive/car/tests/test_car_interfaces.py
 rm -rf $TEST_FILES
 
 if [ ! -z "$RELEASE_BRANCH" ]; then

@@ -139,7 +139,7 @@ if __name__ == "__main__":
       # so fib a little and say that same tester did the programming
       current_date = date.today()
       formatted_date = current_date.strftime('%y-%m-%d')
-      year, month, day = [int(part) for part in formatted_date.split('-')]
+      year, month, day = (int(part) for part in formatted_date.split('-'))
       prog_date = bytes([year, month, day])
       uds_client.write_data_by_identifier(DATA_IDENTIFIER_TYPE.PROGRAMMING_DATE, prog_date)
       tester_num = uds_client.read_data_by_identifier(DATA_IDENTIFIER_TYPE.CALIBRATION_REPAIR_SHOP_CODE_OR_CALIBRATION_EQUIPMENT_SERIAL_NUMBER)

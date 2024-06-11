@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <utility>
 
+#include <QApplication>
 #include "common/timing.h"
 #include "tools/cabana/settings.h"
 
@@ -19,6 +20,7 @@ AbstractStream::AbstractStream(QObject *parent) : QObject(parent) {
   assert(parent != nullptr);
   event_buffer_ = std::make_unique<MonotonicBuffer>(EVENT_NEXT_BUFFER_SIZE);
 
+  QObject::connect(QApplication::instance(), &QCoreApplication::aboutToQuit, this, &AbstractStream::stop);
   QObject::connect(this, &AbstractStream::privateUpdateLastMsgsSignal, this, &AbstractStream::updateLastMessages, Qt::QueuedConnection);
   QObject::connect(this, &AbstractStream::seekedTo, this, &AbstractStream::updateLastMsgsTo);
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &AbstractStream::updateMasks);

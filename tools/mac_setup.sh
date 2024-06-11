@@ -6,7 +6,7 @@ if [ -z "$SKIP_PROMPT" ]; then
   echo "---------------   macOS support   ---------------"
   echo "Running openpilot natively on macOS is not officially supported."
   echo "It might build, some parts of it might work, but it's not fully tested, so there might be some issues."
-  echo 
+  echo
   echo "Check out devcontainers for a seamless experience (see tools/README.md)."
   echo "-------------------------------------------------"
   echo -n "Are you sure you want to continue? [y/N] "
@@ -28,7 +28,7 @@ fi
 
 # Install brew if required
 if [[ $(command -v brew) == "" ]]; then
-  echo "Installing Hombrew"
+  echo "Installing Homebrew"
   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install.sh)"
   echo "[ ] installed brew t=$SECONDS"
 
@@ -63,7 +63,6 @@ brew "pyenv"
 brew "pyenv-virtualenv"
 brew "qt@5"
 brew "zeromq"
-brew "gcc@13"
 cask "gcc-arm-embedded"
 brew "portaudio"
 EOS

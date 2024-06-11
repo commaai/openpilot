@@ -1,21 +1,19 @@
-#!/usr/bin/env python3
 import pytest
 import time
-import unittest
 
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
 from openpilot.common.gpio import gpio_read
 from openpilot.selfdrive.test.helpers import with_processes
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.hardware.tici.pins import GPIO
 
 
 # TODO: test TTFF when we have good A-GNSS
 @pytest.mark.tici
-class TestPigeond(unittest.TestCase):
+class TestPigeond:
 
-  def tearDown(self):
+  def teardown_method(self):
     managed_processes['pigeond'].stop()
 
   @with_processes(['pigeond'])
@@ -54,7 +52,3 @@ class TestPigeond(unittest.TestCase):
 
       assert gpio_read(GPIO.UBLOX_RST_N) == 0
       assert gpio_read(GPIO.GNSS_PWR_EN) == 0
-
-
-if __name__ == "__main__":
-  unittest.main()

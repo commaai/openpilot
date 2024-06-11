@@ -1,8 +1,8 @@
-Import('qt_env', 'arch', 'common', 'messaging', 'visionipc', 'cereal', 'transformations')
+Import('qt_env', 'arch', 'common', 'messaging', 'visionipc', 'transformations')
 
 map_env = qt_env.Clone()
-libs = ['qt_widgets', 'qt_util', 'QMapLibre', common, messaging, cereal, visionipc, transformations,
-        'zmq', 'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread', 'json11'] + map_env["LIBS"]
+libs = ['qt_widgets', 'qt_util', 'QMapLibre', common, messaging, visionipc, transformations,
+        'm', 'OpenCL', 'ssl', 'crypto', 'pthread', 'json11'] + map_env["LIBS"]
 if arch == 'larch64':
   libs.append(':libEGL_mesa.so.0')
 
