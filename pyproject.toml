@@ -44,7 +44,7 @@ testpaths = [
 ]
 
 [tool.mypy]
-python_version = "3.12"
+python_version = "3.11"
 plugins = [
   "numpy.typing.mypy_plugin",
 ]
