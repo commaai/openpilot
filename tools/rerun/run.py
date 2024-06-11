@@ -5,6 +5,7 @@ import multiprocessing
 import rerun as rr
 import rerun.blueprint as rrb
 from functools import partial
+from collections import defaultdict
 
 from openpilot.tools.lib.logreader import LogReader
 from cereal.services import SERVICE_LIST
@@ -21,20 +22,20 @@ def log_msg(msg, parent_key=''):
       for index, item in enumerate(current_msg):
         new_key = f"{current_parent_key}/{index}"
         if isinstance(item, (int, float)):
-          rr.log(str(new_key), rr.Scalar(item))
+          yield new_key, item
         elif isinstance(item, dict):
           stack.append((item, new_key))
     elif isinstance(current_msg, dict):
       for key, value in current_msg.items():
         new_key = f"{current_parent_key}/{key}"
         if isinstance(value, (int, float)):
-          rr.log(str(new_key), rr.Scalar(value))
+          yield new_key, value
         elif isinstance(value, dict):
           stack.append((value, new_key))
         elif isinstance(value, list):
           for index, item in enumerate(value):
             if isinstance(item, (int, float)):
-              rr.log(f"{new_key}/{index}", rr.Scalar(item))
+              yield f"{new_key}/{index}", item
     else:
       pass  # Not a plottable value
 
@@ -44,8 +45,7 @@ def createBlueprint():
   for topic in sorted(SERVICE_LIST.keys()):
     if topic == "thumbnail":
       continue
-    timeSeriesViews.append(rrb.TimeSeriesView(name=topic, origin=f"/{topic}/", visible=False))
-    rr.log(topic, rr.SeriesLine(name=topic), timeless=True)
+    timeSeriesViews.append(rrb.Spatial2DView(name=topic, origin=f"/{topic}/", visible=False))
 
   blueprint = rrb.Blueprint(
     rrb.Vertical(*timeSeriesViews),
@@ -64,15 +64,20 @@ def process(blueprint, lr):
   rr.init("rerun_test")
   rr.connect(default_blueprint=blueprint)
 
-  ret = []
+  log_data = defaultdict(list)
+
   for msg in lr:
-    ret.append(msg)
-    rr.set_time_nanos("TIMELINE", msg.logMonoTime)
+    time = msg.logMonoTime * 1e-9
     if msg.which() != "thumbnail":
-      log_msg(msg.to_dict()[msg.which()], msg.which())
+      for k, v in log_msg(msg.to_dict()[msg.which()], msg.which()):
+          log_data[k].append([time, v])
     else:
       log_thumbnail(msg.to_dict()[msg.which()])
-  return ret
+
+  for path, data_points in log_data.items():
+    rr.log(path, rr.LineStrips2D(data_points, radii=0.005))
+
+  return []
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description="A helper to run rerun on openpilot routes",
@@ -94,3 +99,4 @@ if __name__ == '__main__':
   print("Getting route log paths")
   lr = LogReader(route_or_segment_name)
   lr.run_across_segments(NUM_CPUS, partial(process, blueprint))
+
