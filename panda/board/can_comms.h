@@ -63,7 +63,7 @@ void comms_can_write(const uint8_t *data, uint32_t len) {
   if (can_write_buffer.ptr != 0U) {
     if (can_write_buffer.tail_size <= (len - pos)) {
       // we have enough data to complete the buffer
-      CANPacket_t to_push;
+      CANPacket_t to_push = {0};
       (void)memcpy(&can_write_buffer.data[can_write_buffer.ptr], &data[pos], can_write_buffer.tail_size);
       can_write_buffer.ptr += can_write_buffer.tail_size;
       pos += can_write_buffer.tail_size;
@@ -89,7 +89,7 @@ void comms_can_write(const uint8_t *data, uint32_t len) {
   while (pos < len) {
     uint32_t pckt_len = CANPACKET_HEAD_SIZE + dlc_to_len[(data[pos] >> 4U)];
     if ((pos + pckt_len) <= len) {
-      CANPacket_t to_push;
+      CANPacket_t to_push = {0};
       (void)memcpy(&to_push, &data[pos], pckt_len);
       can_send(&to_push, to_push.bus, false);
       pos += pckt_len;

@@ -84,8 +84,6 @@ def build_project(project_name, project, extra_flags):
     '..',
     panda_root,
     f"{panda_root}/board/",
-    f"{panda_root}/board/stm32fx/inc",
-    f"{panda_root}/board/stm32h7/inc",
   ]
 
   env = Environment(
@@ -130,14 +128,15 @@ def build_project(project_name, project, extra_flags):
 
 base_project_f4 = {
   "MAIN": "main.c",
-  "STARTUP_FILE": File("./board/stm32fx/startup_stm32f413xx.s"),
-  "LINKER_SCRIPT": File("./board/stm32fx/stm32f4_flash.ld"),
+  "STARTUP_FILE": File("./board/stm32f4/startup_stm32f413xx.s"),
+  "LINKER_SCRIPT": File("./board/stm32f4/stm32f4_flash.ld"),
   "APP_START_ADDRESS": "0x8004000",
   "PROJECT_FLAGS": [
     "-mcpu=cortex-m4",
     "-mhard-float",
     "-DSTM32F4",
     "-DSTM32F413xx",
+    "-Iboard/stm32f4/inc",
     "-mfpu=fpv4-sp-d16",
     "-fsingle-precision-constant",
     "-Os",
@@ -155,6 +154,7 @@ base_project_h7 = {
     "-mhard-float",
     "-DSTM32H7",
     "-DSTM32H725xx",
+    "-Iboard/stm32h7/inc",
     "-mfpu=fpv5-d16",
     "-fsingle-precision-constant",
     "-Os",

@@ -200,6 +200,8 @@ DBC* dbc_parse_from_stream(const std::string &dbc_name, std::istream &stream, Ch
 
   for (auto& m : dbc->msgs) {
     m.sigs = signals[m.address];
+    dbc->addr_to_msg[m.address] = &m;
+    dbc->name_to_msg[m.name] = &m;
   }
   for (auto& v : dbc->vals) {
     v.sigs = signals[v.address];

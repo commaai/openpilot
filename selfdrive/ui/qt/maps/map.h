@@ -51,6 +51,7 @@ private:
   void setError(const QString &err_str);
 
   bool loaded_once = false;
+  bool prev_time_valid = true;
 
   // Panning
   QPointF m_lastPos;
@@ -68,11 +69,6 @@ private:
   QLabel *error;
   MapInstructions* map_instructions;
   MapETA* map_eta;
-
-  // Blue with normal nav, green when nav is input into the model
-  QColor getNavPathColor(bool nav_enabled) {
-    return nav_enabled ? QColor("#31ee73") : QColor("#31a1ee");
-  }
 
   void clearRoute();
   void updateDestinationMarker();

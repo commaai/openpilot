@@ -12,7 +12,7 @@
 #include <QOpenGLFunctions>
 #include <QOpenGLFramebufferObject>
 
-#include "cereal/visionipc/visionipc_server.h"
+#include "msgq/visionipc/visionipc_server.h"
 #include "cereal/messaging/messaging.h"
 
 
@@ -43,8 +43,10 @@ private:
 
   void initLayers();
 
+  double start_render_t;
   uint32_t frame_id = 0;
   uint64_t last_llk_rendered = 0;
+  bool rendering = false;
   bool rendered() {
     return last_llk_rendered == (*sm)["liveLocationKalman"].getLogMonoTime();
   }

@@ -1,0 +1,9 @@
+ruff
+sympy
+numpy
+scipy
+tqdm
+cffi
+scons
+pre-commit
+Cython

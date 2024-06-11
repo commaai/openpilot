@@ -2,7 +2,7 @@
 // Jungle board v2 (STM32H7) //
 // ///////////////////////// //
 
-const gpio_t power_pins[] = {
+gpio_t power_pins[] = {
   {.bank = GPIOA, .pin = 0},
   {.bank = GPIOA, .pin = 1},
   {.bank = GPIOF, .pin = 12},
@@ -11,7 +11,7 @@ const gpio_t power_pins[] = {
   {.bank = GPIOB, .pin = 2},
 };
 
-const gpio_t sbu1_ignition_pins[] = {
+gpio_t sbu1_ignition_pins[] = {
   {.bank = GPIOD, .pin = 0},
   {.bank = GPIOD, .pin = 5},
   {.bank = GPIOD, .pin = 12},
@@ -20,7 +20,7 @@ const gpio_t sbu1_ignition_pins[] = {
   {.bank = GPIOE, .pin = 9},
 };
 
-const gpio_t sbu1_relay_pins[] = {
+gpio_t sbu1_relay_pins[] = {
   {.bank = GPIOD, .pin = 1},
   {.bank = GPIOD, .pin = 6},
   {.bank = GPIOD, .pin = 11},
@@ -29,7 +29,7 @@ const gpio_t sbu1_relay_pins[] = {
   {.bank = GPIOE, .pin = 10},
 };
 
-const gpio_t sbu2_ignition_pins[] = {
+gpio_t sbu2_ignition_pins[] = {
   {.bank = GPIOD, .pin = 3},
   {.bank = GPIOD, .pin = 8},
   {.bank = GPIOD, .pin = 9},
@@ -38,7 +38,7 @@ const gpio_t sbu2_ignition_pins[] = {
   {.bank = GPIOE, .pin = 11},
 };
 
-const gpio_t sbu2_relay_pins[] = {
+gpio_t sbu2_relay_pins[] = {
   {.bank = GPIOD, .pin = 4},
   {.bank = GPIOD, .pin = 10},
   {.bank = GPIOD, .pin = 13},
@@ -47,7 +47,7 @@ const gpio_t sbu2_relay_pins[] = {
   {.bank = GPIOE, .pin = 12},
 };
 
-const adc_channel_t sbu1_channels[] = {
+adc_channel_t sbu1_channels[] = {
   {.adc = ADC3, .channel = 12},
   {.adc = ADC3, .channel = 2},
   {.adc = ADC3, .channel = 4},
@@ -56,7 +56,7 @@ const adc_channel_t sbu1_channels[] = {
   {.adc = ADC3, .channel = 10},
 };
 
-const adc_channel_t sbu2_channels[] = {
+adc_channel_t sbu2_channels[] = {
   {.adc = ADC1, .channel = 13},
   {.adc = ADC3, .channel = 3},
   {.adc = ADC3, .channel = 5},
@@ -307,7 +307,7 @@ void board_v2_init(void) {
 
 void board_v2_tick(void) {}
 
-const board board_v2 = {
+board board_v2 = {
   .has_canfd = true,
   .has_sbu_sense = true,
   .avdd_mV = 3300U,

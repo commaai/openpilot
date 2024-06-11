@@ -4,6 +4,6 @@ from panda import PandaJungle
 if __name__ == "__main__":
   for p in PandaJungle.list():
     pp = PandaJungle(p)
-    print("%s: %s" % (pp.get_serial()[0], pp.get_version()))
+    print(f"{pp.get_serial()[0]}: {pp.get_version()}")
 
 

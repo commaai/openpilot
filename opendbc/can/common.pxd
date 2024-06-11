@@ -6,6 +6,7 @@ from libcpp cimport bool
 from libcpp.pair cimport pair
 from libcpp.string cimport string
 from libcpp.vector cimport vector
+from libcpp.unordered_map cimport unordered_map
 
 
 ctypedef unsigned int (*calc_checksum_type)(uint32_t, const Signal&, const vector[uint8_t] &)
@@ -48,6 +49,8 @@ cdef extern from "common_dbc.h":
     string name
     vector[Msg] msgs
     vector[Val] vals
+    unordered_map[uint32_t, const Msg*] addr_to_msg
+    unordered_map[string, const Msg*] name_to_msg
 
   cdef struct SignalValue:
     uint32_t address

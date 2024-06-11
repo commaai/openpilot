@@ -28,7 +28,7 @@ const LongitudinalLimits SUBARU_LONG_LIMITS = {
   .max_brake = 600,     // approx -3.5 m/s^2
 
   .min_transmission_rpm = 0,
-  .max_transmission_rpm = 2400,
+  .max_transmission_rpm = 3600,
 };
 
 #define MSG_SUBARU_Brake_Status          0x13c

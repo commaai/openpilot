@@ -1,10 +1,10 @@
 from dataclasses import dataclass, field
-from enum import StrEnum
-from typing import Dict, List, Union
+from enum import IntFlag
 
 from cereal import car
-from openpilot.selfdrive.car import dbc_dict
-from openpilot.selfdrive.car.docs_definitions import CarHarness, CarInfo, CarParts
+from openpilot.common.conversions import Conversions as CV
+from openpilot.selfdrive.car import CarSpecs, DbcDict, PlatformConfig, Platforms, dbc_dict
+from openpilot.selfdrive.car.docs_definitions import CarHarness, CarDocs, CarParts
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
@@ -26,29 +26,54 @@ class CarControllerParams:
     pass
 
 
-class CAR(StrEnum):
-  CX5 = "MAZDA CX-5"
-  CX9 = "MAZDA CX-9"
-  MAZDA3 = "MAZDA 3"
-  MAZDA6 = "MAZDA 6"
-  CX9_2021 = "MAZDA CX-9 2021"
-  CX5_2022 = "MAZDA CX-5 2022"
-
-
 @dataclass
-class MazdaCarInfo(CarInfo):
+class MazdaCarDocs(CarDocs):
   package: str = "All"
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.mazda]))
 
 
-CAR_INFO: Dict[str, Union[MazdaCarInfo, List[MazdaCarInfo]]] = {
-  CAR.CX5: MazdaCarInfo("Mazda CX-5 2017-21"),
-  CAR.CX9: MazdaCarInfo("Mazda CX-9 2016-20"),
-  CAR.MAZDA3: MazdaCarInfo("Mazda 3 2017-18"),
-  CAR.MAZDA6: MazdaCarInfo("Mazda 6 2017-20"),
-  CAR.CX9_2021: MazdaCarInfo("Mazda CX-9 2021-23", video_link="https://youtu.be/dA3duO4a0O4"),
-  CAR.CX5_2022: MazdaCarInfo("Mazda CX-5 2022-24"),
-}
+@dataclass(frozen=True, kw_only=True)
+class MazdaCarSpecs(CarSpecs):
+  tireStiffnessFactor: float = 0.7  # not optimized yet
+
+
+class MazdaFlags(IntFlag):
+  # Static flags
+  # Gen 1 hardware: same CAN messages and same camera
+  GEN1 = 1
+
+
+@dataclass
+class MazdaPlatformConfig(PlatformConfig):
+  dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('mazda_2017', None))
+  flags: int = MazdaFlags.GEN1
+
+
+class CAR(Platforms):
+  MAZDA_CX5 = MazdaPlatformConfig(
+    [MazdaCarDocs("Mazda CX-5 2017-21")],
+    MazdaCarSpecs(mass=3655 * CV.LB_TO_KG, wheelbase=2.7, steerRatio=15.5)
+  )
+  MAZDA_CX9 = MazdaPlatformConfig(
+    [MazdaCarDocs("Mazda CX-9 2016-20")],
+    MazdaCarSpecs(mass=4217 * CV.LB_TO_KG, wheelbase=3.1, steerRatio=17.6)
+  )
+  MAZDA_3 = MazdaPlatformConfig(
+    [MazdaCarDocs("Mazda 3 2017-18")],
+    MazdaCarSpecs(mass=2875 * CV.LB_TO_KG, wheelbase=2.7, steerRatio=14.0)
+  )
+  MAZDA_6 = MazdaPlatformConfig(
+    [MazdaCarDocs("Mazda 6 2017-20")],
+    MazdaCarSpecs(mass=3443 * CV.LB_TO_KG, wheelbase=2.83, steerRatio=15.5)
+  )
+  MAZDA_CX9_2021 = MazdaPlatformConfig(
+    [MazdaCarDocs("Mazda CX-9 2021-23", video_link="https://youtu.be/dA3duO4a0O4")],
+    MAZDA_CX9.specs
+  )
+  MAZDA_CX5_2022 = MazdaPlatformConfig(
+    [MazdaCarDocs("Mazda CX-5 2022-24")],
+    MAZDA_CX5.specs,
+  )
 
 
 class LKAS_LIMITS:
@@ -76,15 +101,4 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
 )
 
-
-DBC = {
-  CAR.CX5: dbc_dict('mazda_2017', None),
-  CAR.CX9: dbc_dict('mazda_2017', None),
-  CAR.MAZDA3: dbc_dict('mazda_2017', None),
-  CAR.MAZDA6: dbc_dict('mazda_2017', None),
-  CAR.CX9_2021: dbc_dict('mazda_2017', None),
-  CAR.CX5_2022: dbc_dict('mazda_2017', None),
-}
-
-# Gen 1 hardware: same CAN messages and same camera
-GEN1 = {CAR.CX5, CAR.CX9, CAR.CX9_2021, CAR.MAZDA3, CAR.MAZDA6, CAR.CX5_2022}
+DBC = CAR.create_dbc_map()

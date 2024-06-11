@@ -32,7 +32,7 @@ void usb_init(void) {
   USBx->GUSBCFG |= USB_OTG_GUSBCFG_FDMOD;
   delay(250000); // Wait for about 25ms (explicitly stated in H7 ref manual)
   // Wait for AHB master IDLE state.
-  while ((USBx->GRSTCTL & USB_OTG_GRSTCTL_AHBIDL) == 0);
+  while ((USBx->GRSTCTL & USB_OTG_GRSTCTL_AHBIDL) == 0U);
   // Core Soft Reset
   USBx->GRSTCTL |= USB_OTG_GRSTCTL_CSRST;
   while ((USBx->GRSTCTL & USB_OTG_GRSTCTL_CSRST) == USB_OTG_GRSTCTL_CSRST);

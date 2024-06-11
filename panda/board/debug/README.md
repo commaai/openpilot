@@ -11,7 +11,7 @@ Connect an ST-Link V2 programmer to the SWD pins on the board. The pins that nee
 Make sure you're using a genuine one for boards that do not have a 3.3V panda power rail. For example, the tres runs at 1.8V, which is not supported by the clones.
 
 ## Openocd
-Install openocd. For Ubuntu 20.04, the one in the package manager works fine: `sudo apt install openocd`.
+Install openocd. For Ubuntu 24.04, the one in the package manager works fine: `sudo apt install openocd`.
 
 To run, use `./debug_f4.sh (TODO)` or `./debug_h7.sh` depending on the panda.
 

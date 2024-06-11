@@ -1,7 +1,8 @@
 # must be built with scons
-from .messaging_pyx import Context, Poller, SubSocket, PubSocket, SocketEventHandle, toggle_fake_events, \
+from msgq.ipc_pyx import Context, Poller, SubSocket, PubSocket, SocketEventHandle, toggle_fake_events, \
                                 set_fake_prefix, get_fake_prefix, delete_fake_prefix, wait_for_one_event
-from .messaging_pyx import MultiplePublishersError, MessagingError
+from msgq.ipc_pyx import MultiplePublishersError, IpcError
+from msgq import fake_event_handle, pub_sock, sub_sock, drain_sock_raw, context
 
 import os
 import capnp
@@ -13,26 +14,7 @@ from collections import deque
 from cereal import log
 from cereal.services import SERVICE_LIST
 
-assert MultiplePublishersError
-assert MessagingError
-assert toggle_fake_events
-assert set_fake_prefix
-assert get_fake_prefix
-assert delete_fake_prefix
-assert wait_for_one_event
-
 NO_TRAVERSAL_LIMIT = 2**64-1
-
-context = Context()
-
-
-def fake_event_handle(endpoint: str, identifier: Optional[str] = None, override: bool = True, enable: bool = False) -> SocketEventHandle:
-  identifier = identifier or get_fake_prefix()
-  handle = SocketEventHandle(endpoint, identifier, override)
-  if override:
-    handle.enabled = enable
-
-  return handle
 
 
 def log_from_bytes(dat: bytes) -> capnp.lib.capnp._DynamicStructReader:
@@ -55,58 +37,10 @@ def new_message(service: Optional[str], size: Optional[int] = None, **kwargs) ->
   return dat
 
 
-def pub_sock(endpoint: str) -> PubSocket:
-  sock = PubSocket()
-  sock.connect(context, endpoint)
-  return sock
-
-
-def sub_sock(endpoint: str, poller: Optional[Poller] = None, addr: str = "127.0.0.1",
-             conflate: bool = False, timeout: Optional[int] = None) -> SubSocket:
-  sock = SubSocket()
-  sock.connect(context, endpoint, addr.encode('utf8'), conflate)
-
-  if timeout is not None:
-    sock.setTimeout(timeout)
-
-  if poller is not None:
-    poller.registerSocket(sock)
-  return sock
-
-
-def drain_sock_raw(sock: SubSocket, wait_for_one: bool = False) -> List[bytes]:
-  """Receive all message currently available on the queue"""
-  ret: List[bytes] = []
-  while 1:
-    if wait_for_one and len(ret) == 0:
-      dat = sock.receive()
-    else:
-      dat = sock.receive(non_blocking=True)
-
-    if dat is None:
-      break
-
-    ret.append(dat)
-
-  return ret
-
-
 def drain_sock(sock: SubSocket, wait_for_one: bool = False) -> List[capnp.lib.capnp._DynamicStructReader]:
   """Receive all message currently available on the queue"""
-  ret: List[capnp.lib.capnp._DynamicStructReader] = []
-  while 1:
-    if wait_for_one and len(ret) == 0:
-      dat = sock.receive()
-    else:
-      dat = sock.receive(non_blocking=True)
-
-    if dat is None:  # Timeout hit
-      break
-
-    dat = log_from_bytes(dat)
-    ret.append(dat)
-
-  return ret
+  msgs = drain_sock_raw(sock, wait_for_one=wait_for_one)
+  return [log_from_bytes(m) for m in msgs]
 
 
 # TODO: print when we drop packets?
@@ -180,9 +114,8 @@ class SubMaster:
     self.ignore_average_freq = [] if ignore_avg_freq is None else ignore_avg_freq
     self.ignore_alive = [] if ignore_alive is None else ignore_alive
     self.ignore_valid = [] if ignore_valid is None else ignore_valid
-    if bool(int(os.getenv("SIMULATION", "0"))):
-      self.ignore_alive = services
-      self.ignore_average_freq = services
+
+    self.simulation = bool(int(os.getenv("SIMULATION", "0")))
 
     # if freq and poll aren't specified, assume the max to be conservative
     assert frequency is None or poll is None, "Do not specify 'frequency' - frequency of the polled service will be used."
@@ -253,7 +186,7 @@ class SubMaster:
       self.valid[s] = msg.valid
 
     for s in self.data:
-      if SERVICE_LIST[s].frequency > 1e-5:
+      if SERVICE_LIST[s].frequency > 1e-5 and not self.simulation:
         # alive if delay is within 10x the expected frequency
         self.alive[s] = (cur_time - self.recv_time[s]) < (10. / SERVICE_LIST[s].frequency)
 
@@ -273,7 +206,10 @@ class SubMaster:
         self.freq_ok[s] = avg_freq_ok or recent_freq_ok
       else:
         self.freq_ok[s] = True
-        self.alive[s] = True
+        if self.simulation:
+          self.alive[s] = self.seen[s] # alive is defined as seen when simulation flag set
+        else:
+          self.alive[s] = True
 
   def all_alive(self, service_list: Optional[List[str]] = None) -> bool:
     if service_list is None:

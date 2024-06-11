@@ -1756,6 +1756,14 @@ BO_ 126 SteeringPinion_Data: 8 PSCM
  SG_ StePinAn_No_Cs : 39|8@0+ (1,0) [0|255] "Unitless"  VDM,ABS_ESC,TCCM,GWM
  SG_ StePinAn_No_Cnt : 47|4@0+ (1,0) [0|15] "unitless"  VDM,TCCM,GWM,ABS_ESC
 
+BO_ 133 SteeringPinion_Data_Alt: 8 PSCM
+ SG_ StePw_B_Rq : 23|1@0+ (1,0) [0|1] "SED"  GWM,ECM_Diesel,PCM
+ SG_ StePinRelInit_An_Sns : 7|16@0+ (0.1,-3200) [-3200|3353.3] "degrees"  VDM,IPMA_ADAS,GWM,ECM_Diesel,PCM,PCM_HEV,ABS_ESC,TCCM
+ SG_ StePinCompAnEst_D_Qf : 43|2@0+ (1,0) [0|3] "SED"  VDM,CMR_DSMC,IPMA_ADAS,TCM_DSL,ECM_Diesel,PCM,PCM_HEV,ABS_ESC,TCCM,GWM
+ SG_ StePinComp_An_Est : 22|15@0+ (0.1,-1600) [-1600|1676.7] "degrees"  VDM,CMR_DSMC,IPMA_ADAS,TCM_DSL,ECM_Diesel,PCM,PCM_HEV,ABS_ESC,TCCM,GWM
+ SG_ StePinAn_No_Cs : 39|8@0+ (1,0) [0|255] "Unitless"  VDM,ABS_ESC,TCCM,GWM
+ SG_ StePinAn_No_Cnt : 47|4@0+ (1,0) [0|15] "unitless"  VDM,TCCM,GWM,ABS_ESC
+
 BO_ 1430 ABS_AutoSar_NetworkMgt: 8 ABS_ESC
  SG_ ABS_GWOnBoardTester : 39|8@0+ (1,0) [0|255] "unitless"  GWM
  SG_ ABS_GWNMProxy : 47|8@0+ (1,0) [0|255] "unitless"  GWM
@@ -3608,6 +3616,9 @@ BO_ 922 DCACA_Data1_FD1: 8 GWM
  SG_ DcacClntFlw_D_Rq : 5|2@0+ (1,0) [0|3] "SED"  SOBDMC_HPCM_FD1
  SG_ CoolFanDcac_D_Rq : 7|2@0+ (1,0) [0|3] "SED"  SOBDMC_HPCM_FD1
 
+BO_ 1082 INSTRUMENT_PANEL: 8 GWM
+ SG_ METRIC_UNITS : 54|1@0+ (1,0) [0|1] "SED"  IPMA,PCM,PCM_HEV
+
 BO_TX_BU_ 2612224016 : ECM_Diesel,PCM,PCM_HEV;
 BO_TX_BU_ 878 : PCM,PCM_HEV;
 BO_TX_BU_ 1085 : ECM_Diesel,PCM;
@@ -3694,6 +3705,9 @@ CM_ SG_ 130 SteMdule_U_Meas "DCR 1745  to update Tx from GWM to EP100ms. SteMdul
 CM_ SG_ 130 SteMdule_I_Est "DCR 1745  to update Tx from GWM to EP100ms. SteMdule_I_Est & SteMdule_U_Meas are used by BMS system & filtered. The filter uses standard periodic rate & changing to EP would adversely affect the filter.(jweinfur)";
 CM_ SG_ 126 StePinRelInit_An_Sns "SASM will transmit these signals on vehicles with SASM and without PSCM.  SCCM will not Tx this signal when SASM is present.";
 CM_ SG_ 126 StePinAn_No_Cs "Signal not transmitted on gas variants.";
+CM_ BO_ 133 "Seen on Ford Edge MK2";
+CM_ SG_ 133 StePinRelInit_An_Sns "SASM will transmit these signals on vehicles with SASM and without PSCM.  SCCM will not Tx this signal when SASM is present.";
+CM_ SG_ 133 StePinAn_No_Cs "Signal not transmitted on gas variants.";
 CM_ SG_ 1200 BrkTot_Tq_RqDrv "DCR 1836 to update Tx from GWM to EP100ms rejected due MPS6 TCM requires BrkTot_Tq_RqDrv at 20ms (bshu1).";
 CM_ SG_ 1046 TCMode "Signal data set to 0x0 for ABS only vehicle option content";
 CM_ SG_ 1046 DrvAntiLckLamp_D_Rq "update value table v8.34, not align w/GSDB, need etracker.  ABS & IPC implemented as updated.";
@@ -4938,6 +4952,11 @@ BA_ "GenMsgSendType" BO_ 126 0;
 BA_ "GenMsgCycleTime" BO_ 126 10;
 BA_ "GenMsgDelayTime" BO_ 126 0;
 BA_ "VFrameFormat" BO_ 126 14;
+BA_ "FrameRouting" BO_ 133 "";
+BA_ "GenMsgSendType" BO_ 133 0;
+BA_ "GenMsgCycleTime" BO_ 133 10;
+BA_ "GenMsgDelayTime" BO_ 133 0;
+BA_ "VFrameFormat" BO_ 133 14;
 BA_ "FrameRouting" BO_ 1430 "";
 BA_ "GenMsgILSupport" BO_ 1430 0;
 BA_ "NmAsrMessage" BO_ 1430 1;
@@ -11578,6 +11597,9 @@ VAL_ 130 SAPPAngleControlStat1 3 "Fault" 2 "Active" 1 "Open" 0 "Closed";
 VAL_ 126 StePw_B_Rq 1 "Yes" 0 "No";
 VAL_ 126 StePinRelInit_An_Sns 65535 "Faulty" 65534 "NoDataExists";
 VAL_ 126 StePinCompAnEst_D_Qf 3 "OK" 2 "Degraded" 1 "No_Data_Exists" 0 "Faulty";
+VAL_ 133 StePw_B_Rq 1 "Yes" 0 "No";
+VAL_ 133 StePinRelInit_An_Sns 65535 "Faulty" 65534 "NoDataExists";
+VAL_ 133 StePinCompAnEst_D_Qf 3 "OK" 2 "Degraded" 1 "No_Data_Exists" 0 "Faulty";
 VAL_ 1200 BrkHold_D_Stat 7 "NotUsed_3" 6 "NotUsed_2" 5 "NotUsed_1" 4 "HeldSecondary" 3 "HeldSecure" 2 "Held" 1 "Inactive" 0 "Off";
 VAL_ 1200 HsaTrnAout_Tq_Rq 65535 "Fault" 65534 "Unknown";
 VAL_ 1200 BrkBstrVac_P_Actl 127 "Invalid";

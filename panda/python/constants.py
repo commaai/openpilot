@@ -1,6 +1,6 @@
 import os
 import enum
-from typing import List, NamedTuple
+from typing import NamedTuple
 
 BASEDIR = os.path.join(os.path.dirname(os.path.realpath(__file__)), "../")
 FW_PATH = os.path.join(BASEDIR, "board/obj/")
@@ -10,7 +10,7 @@ USBPACKET_MAX_SIZE = 0x40
 class McuConfig(NamedTuple):
   mcu: str
   mcu_idcode: int
-  sector_sizes: List[int]
+  sector_sizes: list[int]
   sector_count: int  # total sector count, used for MCU identification in DFU mode
   uid_address: int
   block_size: int

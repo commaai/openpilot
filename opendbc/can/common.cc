@@ -102,11 +102,15 @@ void gen_crc_lookup_table_16(uint16_t poly, uint16_t crc_lut[]) {
   }
 }
 
-void init_crc_lookup_tables() {
-  // At init time, set up static lookup tables for fast CRC computation.
-  gen_crc_lookup_table_8(0x2F, crc8_lut_8h2f);    // CRC-8 8H2F/AUTOSAR for Volkswagen
-  gen_crc_lookup_table_16(0x1021, crc16_lut_xmodem);    // CRC-16 XMODEM for HKG CAN FD
-}
+// Initializes CRC lookup tables at module initialization
+struct CrcInitializer {
+  CrcInitializer() {
+    gen_crc_lookup_table_8(0x2F, crc8_lut_8h2f);    // CRC-8 8H2F/AUTOSAR for Volkswagen
+    gen_crc_lookup_table_16(0x1021, crc16_lut_xmodem);    // CRC-16 XMODEM for HKG CAN FD
+  }
+};
+
+static CrcInitializer crcInitializer;
 
 unsigned int volkswagen_mqb_checksum(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d) {
   // Volkswagen uses standard CRC8 8H2F/AUTOSAR, but they compute it with

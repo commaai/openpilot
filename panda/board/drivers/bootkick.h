@@ -29,7 +29,7 @@ void bootkick_tick(bool ignition, bool recent_heartbeat) {
     * once BOOT_RESET is triggered, it stays until countdown is finished
   */
   if (!bootkick_reset_triggered && (boot_state == BOOT_BOOTKICK) && (boot_state_prev == BOOT_STANDBY)) {
-    waiting_to_boot_countdown = 45U;
+    waiting_to_boot_countdown = 20U;
   }
   if (waiting_to_boot_countdown > 0U) {
     bool serial_activity = uart_ring_som_debug.w_ptr_tx != bootkick_last_serial_ptr;

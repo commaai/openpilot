@@ -6,14 +6,16 @@ import os
 import struct
 import subprocess
 import time
-from typing import Dict, Generator, List, Tuple, Union
+from collections.abc import Generator
 
 import requests
 
-import openpilot.system.hardware.tici.casync as casync
+import openpilot.system.updated.casync.casync as casync
 
 SPARSE_CHUNK_FMT = struct.Struct('H2xI4x')
 CAIBX_URL = "https://commadist.azureedge.net/agnosupdate/"
+
+AGNOS_MANIFEST_FILE = "system/hardware/tici/agnos.json"
 
 
 class StreamingDecompressor:
@@ -117,7 +119,7 @@ def get_raw_hash(path: str, partition_size: int) -> str:
   return raw_hash.hexdigest().lower()
 
 
-def verify_partition(target_slot_number: int, partition: Dict[str, Union[str, int]], force_full_check: bool = False) -> bool:
+def verify_partition(target_slot_number: int, partition: dict[str, str | int], force_full_check: bool = False) -> bool:
   full_check = partition['full_check'] or force_full_check
   path = get_partition_path(target_slot_number, partition)
 
@@ -184,7 +186,7 @@ def extract_casync_image(target_slot_number: int, partition: dict, cloudlog):
 
   target = casync.parse_caibx(partition['casync_caibx'])
 
-  sources: List[Tuple[str, casync.ChunkReader, casync.ChunkDict]] = []
+  sources: list[tuple[str, casync.ChunkReader, casync.ChunkDict]] = []
 
   # First source is the current partition.
   try:

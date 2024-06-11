@@ -1,24 +1,15 @@
 #!/usr/bin/env python3
 from typing import Optional
 
-RESERVED_PORT = 8022  # sshd
-STARTING_PORT = 8001
-
-
-def new_port(port: int):
-  port += STARTING_PORT
-  return port + 1 if port >= RESERVED_PORT else port
-
 
 class Service:
-  def __init__(self, port: int, should_log: bool, frequency: float, decimation: Optional[int] = None):
-    self.port = port
+  def __init__(self, should_log: bool, frequency: float, decimation: Optional[int] = None):
     self.should_log = should_log
     self.frequency = frequency
     self.decimation = decimation
 
 
-services: dict[str, tuple] = {
+_services: dict[str, tuple] = {
   # service: (should_log, frequency, qlog decimation (optional))
   # note: the "EncodeIdx" packets will still be in the log
   "gyroscope": (True, 104., 104),
@@ -46,6 +37,7 @@ services: dict[str, tuple] = {
   "androidLog": (True, 0.),
   "carState": (True, 100., 10),
   "carControl": (True, 100., 10),
+  "carOutput": (True, 100., 10),
   "longitudinalPlan": (True, 20., 5),
   "procLog": (True, 0.5, 15),
   "gpsLocationExternal": (True, 10., 10),
@@ -74,8 +66,6 @@ services: dict[str, tuple] = {
   "navInstruction": (True, 1., 10),
   "navRoute": (True, 0.),
   "navThumbnail": (True, 0.),
-  "navModel": (True, 2., 4.),
-  "mapRenderState": (True, 2., 1.),
   "uiPlan": (True, 20., 40.),
   "qRoadEncodeIdx": (False, 20.),
   "userFlag": (True, 0., 1),
@@ -98,8 +88,8 @@ services: dict[str, tuple] = {
   "customReservedRawData1": (True, 0.),
   "customReservedRawData2": (True, 0.),
 }
-SERVICE_LIST = {name: Service(new_port(idx), *vals) for
-                idx, (name, vals) in enumerate(services.items())}
+SERVICE_LIST = {name: Service(*vals) for
+                idx, (name, vals) in enumerate(_services.items())}
 
 
 def build_header():
@@ -111,13 +101,13 @@ def build_header():
   h += "#include <map>\n"
   h += "#include <string>\n"
 
-  h += "struct service { std::string name; int port; bool should_log; int frequency; int decimation; };\n"
+  h += "struct service { std::string name; bool should_log; int frequency; int decimation; };\n"
   h += "static std::map<std::string, service> services = {\n"
   for k, v in SERVICE_LIST.items():
     should_log = "true" if v.should_log else "false"
     decimation = -1 if v.decimation is None else v.decimation
-    h += '  { "%s", {"%s", %d, %s, %d, %d}},\n' % \
-         (k, k, v.port, should_log, v.frequency, decimation)
+    h += '  { "%s", {"%s", %s, %d, %d}},\n' % \
+         (k, k, should_log, v.frequency, decimation)
   h += "};\n"
 
   h += "#endif\n"

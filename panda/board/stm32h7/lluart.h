@@ -29,7 +29,7 @@ void uart_tx_ring(uart_ring *q){
   // Send out next byte of TX buffer
   if (q->w_ptr_tx != q->r_ptr_tx) {
     // Only send if transmit register is empty (aka last byte has been sent)
-    if ((q->uart->ISR & USART_ISR_TXE_TXFNF) != 0) {
+    if ((q->uart->ISR & USART_ISR_TXE_TXFNF) != 0U) {
       q->uart->TDR = q->elems_tx[q->r_ptr_tx];   // This clears TXE
       q->r_ptr_tx = (q->r_ptr_tx + 1U) % q->tx_fifo_size;
     }

@@ -33,16 +33,20 @@ CANPacker::CANPacker(const std::string& dbc_name) {
   assert(dbc);
 
   for (const auto& msg : dbc->msgs) {
-    message_lookup[msg.address] = msg;
     for (const auto& sig : msg.sigs) {
       signal_lookup[std::make_pair(msg.address, sig.name)] = sig;
     }
   }
-  init_crc_lookup_tables();
 }
 
 std::vector<uint8_t> CANPacker::pack(uint32_t address, const std::vector<SignalPackValue> &signals) {
-  std::vector<uint8_t> ret(message_lookup[address].size, 0);
+  auto msg_it = dbc->addr_to_msg.find(address);
+  if (msg_it == dbc->addr_to_msg.end()) {
+    LOGE("undefined address %d", address);
+    return {};
+  }
+
+  std::vector<uint8_t> ret(msg_it->second->size, 0);
 
   // set all values for all given signal/value pairs
   bool counter_set = false;
@@ -50,7 +54,7 @@ std::vector<uint8_t> CANPacker::pack(uint32_t address, const std::vector<SignalP
     auto sig_it = signal_lookup.find(std::make_pair(address, sigval.name));
     if (sig_it == signal_lookup.end()) {
       // TODO: do something more here. invalid flag like CANParser?
-      WARN("undefined signal %s - %d\n", sigval.name.c_str(), address);
+      LOGE("undefined signal %s - %d\n", sigval.name.c_str(), address);
       continue;
     }
     const auto &sig = sig_it->second;
@@ -61,9 +65,9 @@ std::vector<uint8_t> CANPacker::pack(uint32_t address, const std::vector<SignalP
     }
     set_value(ret, sig, ival);
 
-    counter_set = counter_set || (sigval.name == "COUNTER");
-    if (counter_set) {
+    if (sigval.name == "COUNTER") {
       counters[address] = sigval.value;
+      counter_set = true;
     }
   }
 
@@ -93,6 +97,6 @@ std::vector<uint8_t> CANPacker::pack(uint32_t address, const std::vector<SignalP
 }
 
 // This function has a definition in common.h and is used in PlotJuggler
-Msg* CANPacker::lookup_message(uint32_t address) {
-  return &message_lookup[address];
+const Msg* CANPacker::lookup_message(uint32_t address) {
+  return dbc->addr_to_msg.at(address);
 }

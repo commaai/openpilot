@@ -55,7 +55,7 @@ bool fdcan_request_init(FDCAN_GlobalTypeDef *FDCANx) {
   // Request init
   uint32_t timeout_counter = 0U;
   FDCANx->CCCR |= FDCAN_CCCR_INIT;
-  while ((FDCANx->CCCR & FDCAN_CCCR_INIT) == 0) {
+  while ((FDCANx->CCCR & FDCAN_CCCR_INIT) == 0U) {
     // Delay for about 1ms
     delay(10000);
     timeout_counter++;
@@ -73,7 +73,7 @@ bool fdcan_exit_init(FDCAN_GlobalTypeDef *FDCANx) {
 
   FDCANx->CCCR &= ~(FDCAN_CCCR_INIT);
   uint32_t timeout_counter = 0U;
-  while ((FDCANx->CCCR & FDCAN_CCCR_INIT) != 0) {
+  while ((FDCANx->CCCR & FDCAN_CCCR_INIT) != 0U) {
     // Delay for about 1ms
     delay(10000);
     timeout_counter++;
@@ -118,7 +118,7 @@ bool llcan_set_speed(FDCAN_GlobalTypeDef *FDCANx, uint32_t speed, uint32_t data_
     uint32_t seg2 = CAN_SEG2(tq, sp);
     uint8_t sjw = MIN(127U, seg2);
 
-    FDCANx->NBTP = (((sjw & 0x7FU)-1U)<<FDCAN_NBTP_NSJW_Pos) | (((seg1 & 0xFFU)-1U)<<FDCAN_NBTP_NTSEG1_Pos) | (((seg2 & 0x7FU)-1U)<<FDCAN_NBTP_NTSEG2_Pos) | (((prescaler & 0x1FFU)-1U)<<FDCAN_NBTP_NBRP_Pos);
+    FDCANx->NBTP = (((sjw & 0x7FUL)-1U)<<FDCAN_NBTP_NSJW_Pos) | (((seg1 & 0xFFU)-1U)<<FDCAN_NBTP_NTSEG1_Pos) | (((seg2 & 0x7FU)-1U)<<FDCAN_NBTP_NTSEG2_Pos) | (((prescaler & 0x1FFUL)-1U)<<FDCAN_NBTP_NBRP_Pos);
 
     // Set the data bit timing values
     if (data_speed == 50000U) {
@@ -131,7 +131,7 @@ bool llcan_set_speed(FDCAN_GlobalTypeDef *FDCANx, uint32_t speed, uint32_t data_
     seg2 = CAN_SEG2(tq, sp);
     sjw = MIN(15U, seg2);
 
-    FDCANx->DBTP = (((sjw & 0xFU)-1U)<<FDCAN_DBTP_DSJW_Pos) | (((seg1 & 0x1FU)-1U)<<FDCAN_DBTP_DTSEG1_Pos) | (((seg2 & 0xFU)-1U)<<FDCAN_DBTP_DTSEG2_Pos) | (((prescaler & 0x1FU)-1U)<<FDCAN_DBTP_DBRP_Pos);
+    FDCANx->DBTP = (((sjw & 0xFUL)-1U)<<FDCAN_DBTP_DSJW_Pos) | (((seg1 & 0x1FU)-1U)<<FDCAN_DBTP_DTSEG1_Pos) | (((seg2 & 0xFU)-1U)<<FDCAN_DBTP_DTSEG2_Pos) | (((prescaler & 0x1FUL)-1U)<<FDCAN_DBTP_DBRP_Pos);
 
     if (non_iso) {
       // FD non-ISO mode

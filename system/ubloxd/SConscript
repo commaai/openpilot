@@ -1,6 +1,6 @@
-Import('env', 'common', 'cereal', 'messaging')
+Import('env', 'common', 'messaging')
 
-loc_libs = [cereal, messaging, 'zmq', common, 'capnp', 'kj', 'kaitai', 'pthread']
+loc_libs = [messaging, common, 'kaitai', 'pthread']
 
 if GetOption('kaitai'):
   generated = Dir('generated').srcnode().abspath

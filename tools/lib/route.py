@@ -4,7 +4,6 @@ from functools import cache
 from urllib.parse import urlparse
 from collections import defaultdict
 from itertools import chain
-from typing import Optional, cast
 
 from openpilot.tools.lib.auth_config import get_token
 from openpilot.tools.lib.api import CommaApi
@@ -231,7 +230,7 @@ class SegmentName:
   def route_name(self) -> RouteName: return self._route_name
 
   @property
-  def data_dir(self) -> Optional[str]: return self._data_dir
+  def data_dir(self) -> str | None: return self._data_dir
 
   def __str__(self) -> str: return self._canonical_name
 
@@ -240,7 +239,9 @@ class SegmentName:
 def get_max_seg_number_cached(sr: 'SegmentRange') -> int:
   try:
     api = CommaApi(get_token())
-    return cast(int, api.get("/v1/route/" + sr.route_name.replace("/", "|"))["segment_numbers"][-1])
+    max_seg_number = api.get("/v1/route/" + sr.route_name.replace("/", "|"))["maxqlog"]
+    assert isinstance(max_seg_number, int)
+    return max_seg_number
   except Exception as e:
     raise Exception("unable to get max_segment_number. ensure you have access to this route or the route is public.") from e
 
@@ -262,6 +263,10 @@ class SegmentRange:
   @property
   def timestamp(self) -> str:
     return self.m.group("timestamp")
+
+  @property
+  def log_id(self) -> str:
+    return self.m.group("log_id")
 
   @property
   def slice(self) -> str:
@@ -291,7 +296,7 @@ class SegmentRange:
       return list(range(end + 1))[s]
 
   def __str__(self) -> str:
-    return f"{self.dongle_id}/{self.timestamp}" + (f"/{self.slice}" if self.slice else "") + (f"/{self.selector}" if self.selector else "")
+    return f"{self.dongle_id}/{self.log_id}" + (f"/{self.slice}" if self.slice else "") + (f"/{self.selector}" if self.selector else "")
 
   def __repr__(self) -> str:
     return self.__str__()

@@ -44,13 +44,13 @@ void register_set(volatile uint32_t *addr, uint32_t val, uint32_t mask){
 // Set individual bits. Also add them to the check_mask.
 // Do not use this to change bits that get reset by the hardware
 void register_set_bits(volatile uint32_t *addr, uint32_t val) {
-  return register_set(addr, val, val);
+  register_set(addr, val, val);
 }
 
 // Clear individual bits. Also add them to the check_mask.
 // Do not use this to clear bits that get set by the hardware
 void register_clear_bits(volatile uint32_t *addr, uint32_t val) {
-  return register_set(addr, (~val), val);
+  register_set(addr, (~val), val);
 }
 
 // To be called periodically

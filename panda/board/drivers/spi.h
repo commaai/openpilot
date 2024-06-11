@@ -43,7 +43,7 @@ uint16_t spi_data_len_miso;
 uint16_t spi_checksum_error_count = 0;
 bool spi_can_tx_ready = false;
 
-const char version_text[] = "VERSION";
+const unsigned char version_text[] = "VERSION";
 
 #define SPI_HEADER_SIZE 7U
 
@@ -73,10 +73,8 @@ uint16_t spi_version_packet(uint8_t *out) {
   uint16_t data_pos = 7U + 2U;
 
   // write serial
-  #ifdef UID_BASE
   (void)memcpy(&out[data_pos], ((uint8_t *)UID_BASE), 12);
   data_len += 12U;
-  #endif
 
   // HW type
   out[data_pos + data_len] = hw_type;
@@ -154,7 +152,7 @@ void spi_rx_done(void) {
     if (checksum_valid) {
       if (spi_endpoint == 0U) {
         if (spi_data_len_mosi >= sizeof(ControlPacket_t)) {
-          ControlPacket_t ctrl;
+          ControlPacket_t ctrl = {0};
           (void)memcpy(&ctrl, &spi_buf_rx[SPI_HEADER_SIZE], sizeof(ControlPacket_t));
           response_len = comms_control_handler(&ctrl, &spi_buf_tx[3]);
           response_ack = true;
@@ -184,6 +182,10 @@ void spi_rx_done(void) {
         } else {
           print("SPI: did expect data for can_write\n");
         }
+      } else if (spi_endpoint == 0xABU) {
+        // test endpoint, send max response length
+        response_len = spi_data_len_miso;
+        response_ack = true;
       } else {
         print("SPI: unexpected endpoint"); puth(spi_endpoint); print("\n");
       }
@@ -232,7 +234,7 @@ void spi_rx_done(void) {
   llspi_miso_dma(spi_buf_tx, response_len);
 
   spi_state = next_rx_state;
-  if (!checksum_valid && (spi_checksum_error_count < __UINT16_MAX__)) {
+  if (!checksum_valid && (spi_checksum_error_count < UINT16_MAX)) {
     spi_checksum_error_count += 1U;
   }
 }

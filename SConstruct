@@ -67,7 +67,7 @@ AddOption('--pc-thneed',
 AddOption('--minimal',
           action='store_false',
           dest='extras',
-          default=os.path.islink(Dir('#rednose/').abspath), # minimal by default on release branch (where rednose is not a link)
+          default=os.path.exists(File('#.lfsconfig').abspath), # minimal by default on release branch (where there's no LFS)
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
 ## Architecture name breakdown (arch)
@@ -96,8 +96,6 @@ lenv = {
 rpath = lenv["LD_LIBRARY_PATH"].copy()
 
 if arch == "larch64":
-  lenv["LD_LIBRARY_PATH"] += ['/data/data/com.termux/files/usr/lib']
-
   cpppath = [
     "#third_party/opencl/include",
   ]
@@ -195,6 +193,7 @@ env = Environment(
     "-Wno-c99-designator",
     "-Wno-reorder-init-list",
     "-Wno-error=unused-but-set-variable",
+    "-Wno-vla-cxx-extension",
   ] + cflags + ccflags,
 
   CPPPATH=cpppath + [
@@ -210,6 +209,7 @@ env = Environment(
     "#third_party/qrcode",
     "#third_party",
     "#cereal",
+    "#msgq",
     "#opendbc/can",
     "#third_party/maplibre-native-qt/include",
     f"#third_party/maplibre-native-qt/{arch}/include"
@@ -224,10 +224,9 @@ env = Environment(
   CFLAGS=["-std=gnu11"] + cflags,
   CXXFLAGS=["-std=c++1z"] + cxxflags,
   LIBPATH=libpath + [
-    "#cereal",
+    "#msgq_repo",
     "#third_party",
-    "#opendbc/can",
-    "#selfdrive/boardd",
+    "#selfdrive/pandad",
     "#common",
     "#rednose/helpers",
   ],
@@ -357,15 +356,13 @@ gpucommon = [_gpucommon]
 
 Export('common', 'gpucommon')
 
-# Build cereal and messaging
+# Build messaging (cereal + msgq + socketmaster + their dependencies)
+SConscript(['msgq_repo/SConscript'])
 SConscript(['cereal/SConscript'])
+Import('socketmaster', 'msgq')
+messaging = [socketmaster, msgq, 'zmq', 'capnp', 'kj',]
+Export('messaging')
 
-cereal = [File('#cereal/libcereal.a')]
-messaging = [File('#cereal/libmessaging.a')]
-visionipc = [File('#cereal/libvisionipc.a')]
-messaging_python = [File('#cereal/messaging/messaging_pyx.so')]
-
-Export('cereal', 'messaging', 'messaging_python', 'visionipc')
 
 # Build other submodules
 SConscript([
@@ -385,25 +382,22 @@ SConscript([
 ])
 if arch != "Darwin":
   SConscript([
-    'system/camerad/SConscript',
     'system/sensord/SConscript',
     'system/logcatd/SConscript',
   ])
 
+if arch == "larch64":
+  SConscript(['system/camerad/SConscript'])
+
 # Build openpilot
 SConscript(['third_party/SConscript'])
 
-SConscript(['selfdrive/boardd/SConscript'])
-SConscript(['selfdrive/controls/lib/lateral_mpc_lib/SConscript'])
-SConscript(['selfdrive/controls/lib/longitudinal_mpc_lib/SConscript'])
-SConscript(['selfdrive/locationd/SConscript'])
-SConscript(['selfdrive/navd/SConscript'])
-SConscript(['selfdrive/modeld/SConscript'])
-SConscript(['selfdrive/ui/SConscript'])
+SConscript(['selfdrive/SConscript'])
 
-if arch in ['x86_64', 'aarch64', 'Darwin'] and Dir('#tools/cabana/').exists() and GetOption('extras'):
+if Dir('#tools/cabana/').exists() and GetOption('extras'):
   SConscript(['tools/replay/SConscript'])
-  SConscript(['tools/cabana/SConscript'])
+  if arch != "larch64":
+    SConscript(['tools/cabana/SConscript'])
 
 external_sconscript = GetOption('external_sconscript')
 if external_sconscript:

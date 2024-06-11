@@ -13,6 +13,7 @@
 #include "cereal/gen/cpp/log.capnp.h"
 #endif
 
+#include "opendbc/can/logger.h"
 #include "opendbc/can/common_dbc.h"
 
 #define INFO printf
@@ -22,8 +23,6 @@
 
 #define MAX_BAD_COUNTER 5
 #define CAN_INVALID_CNT 5
-
-void init_crc_lookup_tables();
 
 // Car specific functions
 unsigned int honda_checksum(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d);
@@ -92,11 +91,10 @@ class CANPacker {
 private:
   const DBC *dbc = NULL;
   std::map<std::pair<uint32_t, std::string>, Signal> signal_lookup;
-  std::map<uint32_t, Msg> message_lookup;
   std::map<uint32_t, uint32_t> counters;
 
 public:
   CANPacker(const std::string& dbc_name);
   std::vector<uint8_t> pack(uint32_t address, const std::vector<SignalPackValue> &values);
-  Msg* lookup_message(uint32_t address);
+  const Msg* lookup_message(uint32_t address);
 };

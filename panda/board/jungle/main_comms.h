@@ -1,5 +1,7 @@
 extern int _app_start[0xc000]; // Only first 3 sectors of size 0x4000 are used
 
+bool generated_can_traffic = false;
+
 int get_jungle_health_pkt(void *dat) {
   COMPILE_TIME_ASSERT(sizeof(struct jungle_health_t) <= USBPACKET_MAX_SIZE);
   struct jungle_health_t * health = (struct jungle_health_t*)dat;
@@ -58,9 +60,13 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
     case 0xa2:
       current_board->set_ignition((req->param1 == 1U));
       break;
-    // **** 0xa0: Set panda power per channel by bitmask.
+    // **** 0xa3: Set panda power per channel by bitmask.
     case 0xa3:
       current_board->set_panda_individual_power(req->param1, (req->param2 > 0U));
+      break;
+    // **** 0xa4: Enable generated CAN traffic.
+    case 0xa4:
+      generated_can_traffic = (req->param1 > 0U);
       break;
     // **** 0xa8: get microsecond timer
     case 0xa8:

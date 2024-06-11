@@ -4,7 +4,7 @@ from functools import partial
 
 import cereal.messaging as messaging
 from openpilot.common.swaglog import cloudlog
-from openpilot.selfdrive.boardd.boardd import can_list_to_can_capnp
+from openpilot.selfdrive.pandad import can_list_to_can_capnp
 from openpilot.selfdrive.car.fw_query_definitions import AddrType
 from panda.python.uds import CanClient, IsoTpMessage, FUNCTIONAL_ADDRS, get_rx_addr_for_tx_addr
 
@@ -12,7 +12,7 @@ from panda.python.uds import CanClient, IsoTpMessage, FUNCTIONAL_ADDRS, get_rx_a
 class IsoTpParallelQuery:
   def __init__(self, sendcan: messaging.PubSocket, logcan: messaging.SubSocket, bus: int, addrs: list[int] | list[AddrType],
                request: list[bytes], response: list[bytes], response_offset: int = 0x8,
-               functional_addrs: list[int] | None = None, debug: bool = False, response_pending_timeout: float = 10) -> None:
+               functional_addrs: list[int] = None, debug: bool = False, response_pending_timeout: float = 10) -> None:
     self.sendcan = sendcan
     self.logcan = logcan
     self.bus = bus

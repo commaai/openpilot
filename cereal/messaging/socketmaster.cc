@@ -7,6 +7,7 @@
 #include "cereal/services.h"
 #include "cereal/messaging/messaging.h"
 
+
 const bool SIMULATION = (getenv("SIMULATION") != nullptr) && (std::string(getenv("SIMULATION")) == "1");
 
 static inline uint64_t nanos_since_boot() {

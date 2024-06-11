@@ -119,8 +119,6 @@ void red_chiplet_init(void) {
   // Initialize harness
   harness_init();
 
-  // Initialize RTC
-  rtc_init();
 
   // Enable CAN transceivers
   red_chiplet_enable_can_transceivers(true);
@@ -132,14 +130,9 @@ void red_chiplet_init(void) {
 
   // Set normal CAN mode
   red_chiplet_set_can_mode(CAN_MODE_NORMAL);
-
-  // change CAN mapping when flipped
-  if (harness.status == HARNESS_STATUS_FLIPPED) {
-    can_flip_buses(0, 2);
-  }
 }
 
-const harness_configuration red_chiplet_harness_config = {
+harness_configuration red_chiplet_harness_config = {
   .has_harness = true,
   .GPIO_SBU1 = GPIOC,
   .GPIO_SBU2 = GPIOA,

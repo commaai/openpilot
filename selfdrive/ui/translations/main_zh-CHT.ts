@@ -68,23 +68,23 @@
     </message>
     <message>
         <source>Hidden Network</source>
-        <translation type="unfinished"></translation>
+        <translation>隱藏的網路</translation>
     </message>
     <message>
         <source>CONNECT</source>
-        <translation type="unfinished">雲端服務</translation>
+        <translation>連線</translation>
     </message>
     <message>
         <source>Enter SSID</source>
-        <translation type="unfinished">輸入 SSID</translation>
+        <translation>輸入 SSID</translation>
     </message>
     <message>
         <source>Enter password</source>
-        <translation type="unfinished">輸入密碼</translation>
+        <translation>輸入密碼</translation>
     </message>
     <message>
         <source>for &quot;%1&quot;</source>
-        <translation type="unfinished">給 &quot;%1&quot;</translation>
+        <translation>給 &quot;%1&quot;</translation>
     </message>
 </context>
 <context>
@@ -247,11 +247,11 @@
     </message>
     <message>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot 需要將設備固定在左右偏差 4° 以內，朝上偏差 5° 以內或朝下偏差 9° 以內。鏡頭在後台會持續自動校準，很少有需要重設的情況。</translation>
+        <translation>openpilot 需要將裝置固定在左右偏差 4° 以內，朝上偏差 5° 以內或朝下偏差 9° 以內。鏡頭在後台會持續自動校準，很少有需要重置的情況。</translation>
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
-        <translation> 你的設備目前朝%2 %1° 以及朝%4 %3° 。</translation>
+        <translation> 你的裝置目前朝%2 %1° 以及朝%4 %3° 。</translation>
     </message>
     <message>
         <source>down</source>
@@ -292,6 +292,18 @@
     <message>
         <source>Review</source>
         <translation>回顧</translation>
+    </message>
+    <message>
+        <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
+        <translation>將您的裝置與 comma connect (connect.comma.ai) 配對並領取您的 comma 高級會員優惠。</translation>
+    </message>
+    <message>
+        <source>Pair Device</source>
+        <translation>配對裝置</translation>
+    </message>
+    <message>
+        <source>PAIR</source>
+        <translation>配對</translation>
     </message>
 </context>
 <context>
@@ -420,20 +432,16 @@
 %1</translation>
     </message>
     <message>
-        <source>Invalid date and time settings, system won&apos;t start. Connect to internet to set time.</source>
-        <translation>日期和時間設定無效，系統無法啟動。請連接至網際網路以設定時間。</translation>
-    </message>
-    <message>
         <source>Taking camera snapshots. System won&apos;t start until finished.</source>
         <translation>正在使用相機拍攝中。在完成之前，系統將無法啟動。</translation>
     </message>
     <message>
         <source>An update to your device&apos;s operating system is downloading in the background. You will be prompted to update when it&apos;s ready to install.</source>
-        <translation>一個給您設備的操作系統的更新正在後台下載中。當更新準備好安裝時，您將收到提示進行更新。</translation>
+        <translation>一個有關操作系統的更新正在後台下載中。當更新準備好安裝時，您將收到提示進行更新。</translation>
     </message>
     <message>
         <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
-        <translation>設備註冊失敗。它將無法連接或上傳至 comma.ai 伺服器，並且無法獲得 comma.ai 的支援。如果這是一個官方設備，請訪問 https://comma.ai/support 。</translation>
+        <translation>裝置註冊失敗。它將無法連接或上傳至 comma.ai 伺服器，並且無法獲得 comma.ai 的支援。如果這是一個官方裝置，請訪問 https://comma.ai/support 。</translation>
     </message>
     <message>
         <source>NVMe drive not mounted.</source>
@@ -441,7 +449,7 @@
     </message>
     <message>
         <source>Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.</source>
-        <translation>檢測到不支援的 NVMe 固態硬碟。您的設備因為使用了不支援的 NVMe 固態硬碟可能會消耗更多電力並更易過熱。</translation>
+        <translation>檢測到不支援的 NVMe 固態硬碟。您的裝置因為使用了不支援的 NVMe 固態硬碟可能會消耗更多電力並更易過熱。</translation>
     </message>
     <message>
         <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
@@ -453,11 +461,11 @@
     </message>
     <message>
         <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
-        <translation>openpilot 偵測到設備的安裝位置發生變化。請確保設備完全安裝在支架上，並確保支架牢固地固定在擋風玻璃上。</translation>
+        <translation>openpilot 偵測到裝置的安裝位置發生變化。請確保裝置完全安裝在支架上，並確保支架牢固地固定在擋風玻璃上。</translation>
     </message>
     <message>
         <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
-        <translation>設備溫度過高。系統正在冷卻中，等冷卻完畢後才會啟動。目前內部組件溫度：%1</translation>
+        <translation>裝置溫度過高。系統正在冷卻中，等冷卻完畢後才會啟動。目前內部組件溫度：%1</translation>
     </message>
 </context>
 <context>
@@ -476,10 +484,33 @@
     </message>
 </context>
 <context>
+    <name>OnroadAlerts</name>
+    <message>
+        <source>openpilot Unavailable</source>
+        <translation>無法使用 openpilot</translation>
+    </message>
+    <message>
+        <source>Waiting for controls to start</source>
+        <translation>等待操控服務開始</translation>
+    </message>
+    <message>
+        <source>TAKE CONTROL IMMEDIATELY</source>
+        <translation>立即接管</translation>
+    </message>
+    <message>
+        <source>Controls Unresponsive</source>
+        <translation>操控服務沒有反應</translation>
+    </message>
+    <message>
+        <source>Reboot Device</source>
+        <translation>請重新啟裝置</translation>
+    </message>
+</context>
+<context>
     <name>PairingPopup</name>
     <message>
         <source>Pair your device to your comma account</source>
-        <translation>將設備與您的 comma 帳號配對</translation>
+        <translation>將裝置與您的 comma 帳號配對</translation>
     </message>
     <message>
         <source>Go to https://connect.comma.ai on your phone</source>
@@ -595,6 +626,10 @@
         <source>ft</source>
         <translation>ft</translation>
     </message>
+    <message>
+        <source>now</source>
+        <translation>現在</translation>
+    </message>
 </context>
 <context>
     <name>Reset</name>
@@ -604,7 +639,7 @@
     </message>
     <message>
         <source>Are you sure you want to reset your device?</source>
-        <translation>您確定要重設你的設備嗎？</translation>
+        <translation>您確定要重設你的裝置嗎？</translation>
     </message>
     <message>
         <source>System Reset</source>
@@ -624,17 +659,17 @@
     </message>
     <message>
         <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
-        <translation>無法掛載資料分割區。分割區可能已經毀損。請確認是否要刪除並重新設定。</translation>
+        <translation>無法掛載資料分割區。分割區可能已經毀損。請確認是否要刪除並重置。</translation>
     </message>
     <message>
         <source>Resetting device...
 This may take up to a minute.</source>
-        <translation>設備重設中…
+        <translation>重置中…
 這可能需要一分鐘的時間。</translation>
     </message>
     <message>
         <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation type="unfinished"></translation>
+        <translation>系統重設已啟動。按下「確認」以清除所有內容和設定，或按下「取消」以繼續開機。</translation>
     </message>
 </context>
 <context>
@@ -645,7 +680,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Device</source>
-        <translation>設備</translation>
+        <translation>裝置</translation>
     </message>
     <message>
         <source>Network</source>
@@ -720,7 +755,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
-        <translation>請確定您輸入的是有效的安裝網址，並且確定設備的網路連線狀態良好。</translation>
+        <translation>請確定您輸入的是有效的安裝網址，並且確定裝置的網路連線狀態良好。</translation>
     </message>
     <message>
         <source>Reboot device</source>
@@ -736,11 +771,23 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Something went wrong. Reboot the device.</source>
-        <translation>發生了一些錯誤。請重新啟動您的設備。</translation>
+        <translation>發生了一些錯誤。請重新啟動您的裝置。</translation>
     </message>
     <message>
         <source>Select a language</source>
         <translation>選擇語言</translation>
+    </message>
+    <message>
+        <source>Choose Software to Install</source>
+        <translation>選擇要安裝的軟體</translation>
+    </message>
+    <message>
+        <source>openpilot</source>
+        <translation>openpilot</translation>
+    </message>
+    <message>
+        <source>Custom Software</source>
+        <translation>自訂軟體</translation>
     </message>
 </context>
 <context>
@@ -751,11 +798,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
-        <translation>將您的設備與 comma connect (connect.comma.ai) 配對並領取您的 comma 高級會員優惠。</translation>
+        <translation>將您的裝置與 comma connect (connect.comma.ai) 配對並領取您的 comma 高級會員優惠。</translation>
     </message>
     <message>
         <source>Pair device</source>
-        <translation>配對設備</translation>
+        <translation>配對裝置</translation>
     </message>
 </context>
 <context>
@@ -1092,16 +1139,8 @@ This may take up to a minute.</source>
         <translation>駕駛風格</translation>
     </message>
     <message>
-        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars.</source>
-        <translation>推薦使用標準模式。在積極模式中，openpilot 會更靠近前車並在加速和剎車方面更積極。在舒適模式中，openpilot 會與前車保持較遠的距離。</translation>
-    </message>
-    <message>
         <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
         <translation>在正式 (release) 版以外的分支上可以測試 openpilot 縱向控制的 Alpha 版本以及實驗模式。</translation>
-    </message>
-    <message>
-        <source>Navigate on openpilot</source>
-        <translation>Navigate on openpilot</translation>
     </message>
     <message>
         <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
@@ -1112,12 +1151,20 @@ This may take up to a minute.</source>
         <translation>端到端縱向控制</translation>
     </message>
     <message>
-        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
-        <translation>當導航有目的地時，openpilot 將把地圖資訊輸入模型中。這為模型提供了有用的背景資訊，使 openpilot 能夠在叉路/出口時適當地保持左側或右側行駛。車道變換行為保持不變，仍由駕駛員啟用。這是一個 Alpha 版的功能；可能會出現錯誤，特別是在出口和分叉處。這些錯誤可能包括意外的車道越界、晚出口、朝著分隔欄駛向分隔帶區域等。</translation>
+        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
+        <translation>建議使用標準模式。在積極模式下，openpilot 會更接近前車並更積極地使用油門和剎車。在輕鬆模式下，openpilot 會與前車保持較遠距離。對於支援的汽車，您可以使用方向盤上的距離按鈕來切換這些駕駛風格。</translation>
     </message>
     <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
-        <translation>行駛畫面將在低速時切換至道路朝向的廣角鏡頭，以更好地顯示一些轉彎。實驗模式圖示也將顯示在右上角。當設定了導航目的地並且行駛模型正在將其作為輸入時，地圖上的行駛路徑將變為綠色。</translation>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
+        <translation>在低速時，駕駛可視化將切換至道路朝向的廣角攝影機，以更好地顯示某些彎道。在右上角還會顯示「實驗模式」的標誌。</translation>
+    </message>
+    <message>
+        <source>Always-On Driver Monitoring</source>
+        <translation>駕駛監控常開</translation>
+    </message>
+    <message>
+        <source>Enable driver monitoring even when openpilot is not engaged.</source>
+        <translation>即使在openpilot未激活時也啟用駕駛監控。</translation>
     </message>
 </context>
 <context>
@@ -1128,7 +1175,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.</source>
-        <translation>設備的操作系統需要更新。請將您的設備連接到 Wi-Fi 以獲得最快的更新體驗。下載大小約為 1GB。</translation>
+        <translation>需要進行作業系統更新。建議將您的裝置連接上 Wi-Fi 獲得更快的更新下載。下載大小約為 1GB。</translation>
     </message>
     <message>
         <source>Connect to Wi-Fi</source>
