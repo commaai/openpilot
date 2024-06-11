@@ -1,11 +1,6 @@
-# What is cereal? [![cereal tests](https://github.com/commaai/cereal/workflows/tests/badge.svg?event=push)](https://github.com/commaai/cereal/actions) [![codecov](https://codecov.io/gh/commaai/cereal/branch/master/graph/badge.svg)](https://codecov.io/gh/commaai/cereal)
+# What is cereal?
 
-cereal is both a messaging spec for robotics systems as well as generic high performance IPC pub sub messaging with a single publisher and multiple subscribers.
-
-Imagine this use case:
-* A sensor process reads gyro measurements directly from an IMU and publishes a `sensorEvents` packet
-* A calibration process subscribes to the `sensorEvents` packet to use the IMU
-* A localization process subscribes to the `sensorEvents` packet to use the IMU also
+cereal is the messaging system for openpilot. It uses [msgq](https://github.com/commaai/msgq) as a pub/sub backend, and [Cap'n proto](https://capnproto.org/capnp-tool.html) for serialization of the structs.
 
 
 ## Messaging Spec
@@ -32,11 +27,7 @@ Forks of [openpilot](https://github.com/commaai/openpilot) might want to add thi
 spec, however this could conflict with future changes made in mainline cereal/openpilot. Rebasing against mainline openpilot
 then means breaking backwards-compatibility with all old logs of your fork. So we added reserved events in
 [custom.capnp](custom.capnp) that we will leave empty in mainline cereal/openpilot. **If you only modify those, you can ensure your
-fork will remain backwards-compatible with all versions of mainline cereal/openpilot and your fork.**
-
-## Pub Sub Backends
-
-cereal supports two backends, one based on [zmq](https://zeromq.org/) and another called [msgq](messaging/msgq.cc), a custom pub sub based on shared memory that doesn't require the bytes to pass through the kernel.
+fork will remain backwards-compatible with all versions of mainline openpilot and your fork.**
 
 Example
 ---
