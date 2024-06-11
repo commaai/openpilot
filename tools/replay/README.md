@@ -58,6 +58,11 @@ cd tools/replay && ./replay --demo --dcam --ecam
 cd selfdrive/ui && ./watch3
 ```
 
+to only display one camera (or specific cameras), run `watch3` with camera flags:
+```bash
+cd selfdrive/ui && ./watch3 --dcam --ecam
+```
+
 ![](https://i.imgur.com/IeaOdAb.png)
 
 ## Stream CAN messages to your device
