@@ -94,6 +94,8 @@ void SubMaster::update(int timeout) {
     m->msg_reader->~FlatArrayMessageReader();
     capnp::ReaderOptions options;
     options.traversalLimitInWords = kj::maxValue; // Don't limit
+
+    // Reset the message buffer to the new one. Keep it for the message reader's lifetime.
     m->message.reset(msg);
     m->msg_reader = new (m->allocated_msg_reader) capnp::FlatArrayMessageReader(m->aligned_buf.align(msg), options);
     messages.push_back({m->name, m->msg_reader->getRoot<cereal::Event>()});
