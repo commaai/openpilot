@@ -224,10 +224,8 @@ env = Environment(
   CFLAGS=["-std=gnu11"] + cflags,
   CXXFLAGS=["-std=c++1z"] + cxxflags,
   LIBPATH=libpath + [
-    "#cereal",
-    "#msgq",
+    "#msgq_repo",
     "#third_party",
-    "#opendbc/can",
     "#selfdrive/pandad",
     "#common",
     "#rednose/helpers",
@@ -358,9 +356,13 @@ gpucommon = [_gpucommon]
 
 Export('common', 'gpucommon')
 
-# Build cereal and messaging
-SConscript(['msgq/SConscript'])
+# Build messaging (cereal + msgq + socketmaster + their dependencies)
+SConscript(['msgq_repo/SConscript'])
 SConscript(['cereal/SConscript'])
+Import('socketmaster', 'msgq')
+messaging = [socketmaster, msgq, 'zmq', 'capnp', 'kj',]
+Export('messaging')
+
 
 # Build other submodules
 SConscript([

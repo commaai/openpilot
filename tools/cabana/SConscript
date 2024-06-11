@@ -1,7 +1,7 @@
-Import('qt_env', 'arch', 'common', 'messaging', 'visionipc', 'replay_lib', 'cereal', 'widgets', 'socketmaster')
+Import('qt_env', 'arch', 'common', 'messaging', 'visionipc', 'replay_lib', 'cereal', 'widgets')
 
 base_frameworks = qt_env['FRAMEWORKS']
-base_libs = [common, messaging, cereal, visionipc, socketmaster, 'qt_util', 'zmq', 'capnp', 'kj', 'm', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
+base_libs = [common, messaging, cereal, visionipc, 'qt_util', 'm', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
 
 if arch == "Darwin":
   base_frameworks.append('OpenCL')

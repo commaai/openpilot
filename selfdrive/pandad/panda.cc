@@ -220,12 +220,13 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
   if (!comms_healthy()) {
     return false;
   }
-  if (recv == RECV_SIZE) {
-    LOGW("Panda receive buffer full");
-  }
-  receive_buffer_size += recv;
 
-  return (recv <= 0) ? true : unpack_can_buffer(receive_buffer, receive_buffer_size, out_vec);
+  bool ret = true;
+  if (recv > 0) {
+    receive_buffer_size += recv;
+    ret = unpack_can_buffer(receive_buffer, receive_buffer_size, out_vec);
+  }
+  return ret;
 }
 
 void Panda::can_reset_communications() {
