@@ -132,7 +132,7 @@ websocket_client = "*"
 
 # acados deps
 cmake = { version = "*", markers = "platform_machine == 'aarch64'" }
-casadi = "*"
+casadi = "==3.6.4"
 future-fstrings = "*"
 
 # these should be removed
