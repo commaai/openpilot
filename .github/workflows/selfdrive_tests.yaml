@@ -333,6 +333,11 @@ jobs:
     name: Test python3.11 support
     runs-on: ubuntu-latest
     steps:
+      - name: Set up python
+        id: setup-python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Install Poetry
         uses: snok/install-poetry@v1
       - run: poetry
