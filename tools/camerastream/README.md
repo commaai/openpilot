@@ -37,7 +37,7 @@ Decode the stream with `compressed_vipc.py`:
 
 ```cd ~/openpilot/tools/camerastream && ./compressed_vipc.py <ip>```
 
-To actually display the stream of all cameras, run `watch3` in separate terminal:
+To actually display the stream, run `watch3` in separate terminal:
 
 ```cd ~/openpilot/selfdrive/ui/ && ./watch3```
 
