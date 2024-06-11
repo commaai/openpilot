@@ -45,14 +45,18 @@ jobs:
     timeout-minutes: 20
     steps:
     - uses: actions/checkout@v4
-    - run: INSTALL_EXTRA_PACKAGES=no tools/install_ubuntu_dependencies.sh
-    - name: Set up Python
+    - name: Installing ubuntu dependencies
+      run: INSTALL_EXTRA_PACKAGES=no tools/install_ubuntu_dependencies.sh
+    - name: Installing python
       uses: actions/setup-python@v5
       with:
         python-version: '3.11.4'
-    - run: pip install pip==24.0
-    - run: pip install poetry==1.7.0
-    - run: poetry install --no-cache --no-root
+    - name: Installing pip
+      run: pip install pip==24.0
+    - name: Installing poetry
+      run: pip install poetry==1.7.0
+    - name: Installing python dependencies
+      run: poetry install --no-cache --no-root
 
   devcontainer:
     name: devcontainer
