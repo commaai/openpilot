@@ -94,9 +94,6 @@ class CarInterface(CarInterfaceBase):
     else:
       ret.transmissionType = TransmissionType.automatic
 
-    ret.longitudinalTuning.deadzoneBP = [0.]
-    ret.longitudinalTuning.deadzoneV = [0.15]
-
     ret.longitudinalTuning.kpBP = [5., 35.]
     ret.longitudinalTuning.kiBP = [0.]
 
