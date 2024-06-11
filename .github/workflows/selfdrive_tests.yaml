@@ -328,3 +328,16 @@ jobs:
         with:
           name: report
           path: selfdrive/ui/tests/test_ui/report
+
+  test_python311:
+    name: Test python3.11 support
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11.4'
+      - run: |
+            pip install pip==24.0
+            pip install poetry==1.7.0
+            poetry install --no-cache --no-root
