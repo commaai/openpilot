@@ -19,7 +19,7 @@ A supported vehicle is one that just works when you install a comma device. All 
 {% for car_docs in all_car_docs %}
 |{% for column in Column %}
   {% set col = car_docs.get_column(column, star_icon, video_icon, footnote_tag) %}
-  {% if column == Column.MODEL %}
+  {% if column == Column.MAKE %}
     {% set col = col + '[](## "{}")'.format(car_docs.detail_sentence) %}
   {% endif -%}
   {{col}}|
