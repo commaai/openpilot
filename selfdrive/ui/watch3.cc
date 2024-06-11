@@ -19,21 +19,21 @@ int main(int argc, char *argv[]) {
 
   QCommandLineParser cmd_parser;
   cmd_parser.addHelpOption();
-  cmd_parser.addOption({"cams", "cameras to decode e.g. 0 or 0,1 or 0,1,2"});
-  cmd_parser.addOption({"nav", "load nav"});
-  cmd_parser.addOption({"qcam", "load qcamera"});
-  cmd_parser.addOption({"ecam", "load wide road camera"});
-  cmd_parser.addOption({"dcam", "load driver camera"});
+  QCommandLineOption cams_option = QCommandLineOption("cams", "cameras to decode, separated by a comma", "0,1,2");
+  cmd_parser.addOption(cams_option);
+  cmd_parser.addOption({"nav", "decode nav"});
+  cmd_parser.addOption({"qcam", "decode qcamera"});
+  cmd_parser.addOption({"ecam", "decode wide road camera"});
+  cmd_parser.addOption({"dcam", "decode driver camera"});
   cmd_parser.process(app);
-  const QStringList args = cmd_parser.positionalArguments();
 
   if (cmd_parser.isSet("cams")) {
-    QStringList indexes = QString(cmd_parser.value("cams")).split(',');
-    for (const QString &index : indexes) {
+    QStringList indexes = cmd_parser.value(cams_option).split(',');
+    for (QString &index : indexes) {
       VisionStreamType streamType = static_cast<VisionStreamType>(index.toInt());
       layout->addWidget(new CameraWidget("camerad", streamType, false));
     }
-  } else if (!args.empty()) {
+  } else if (cmd_parser.optionNames().count() > 0) {
     if (cmd_parser.isSet("nav")) {
       layout->addWidget(new CameraWidget("navd", VISION_STREAM_MAP, false));
     }
