@@ -224,10 +224,8 @@ env = Environment(
   CFLAGS=["-std=gnu11"] + cflags,
   CXXFLAGS=["-std=c++1z"] + cxxflags,
   LIBPATH=libpath + [
-    "#cereal",
-    "#msgq",
+    "#msgq_repo",
     "#third_party",
-    "#opendbc/can",
     "#selfdrive/pandad",
     "#common",
     "#rednose/helpers",
