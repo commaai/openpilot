@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from cereal import car, log
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car.car_helpers import interfaces

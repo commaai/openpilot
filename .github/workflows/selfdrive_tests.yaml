@@ -26,7 +26,9 @@ env:
 jobs:
   build_release:
     name: build release
-    runs-on: ubuntu-latest
+    runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
+                   ((github.event_name != 'pull_request') ||
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-latest' }}
     env:
       STRIPPED_DIR: /tmp/releasepilot
     steps:
@@ -116,6 +118,8 @@ jobs:
         submodules: true
     - uses: ./.github/workflows/setup-pre-commit
     - uses: ./.github/workflows/setup-with-retry
+    - name: Build openpilot
+      run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: pre-commit
       timeout-minutes: 4
       run: ${{ env.RUN }} "unset PYTHONWARNINGS && pre-commit run --all && chmod -R 777 /tmp/pre-commit"
@@ -143,7 +147,7 @@ jobs:
                         $PYTEST --timeout 60 -m 'not slow' && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
-                        ./selfdrive/ui/tests/test_translations.py"
+                        pytest ./selfdrive/ui/tests/test_translations.py"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v4
       with:

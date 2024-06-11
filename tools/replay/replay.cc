@@ -46,16 +46,21 @@ Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *s
 }
 
 Replay::~Replay() {
+  stop();
+}
+
+void Replay::stop() {
   if (!stream_thread_ && segments_.empty()) return;
 
   rInfo("shutdown: in progress...");
   if (stream_thread_ != nullptr) {
-    exit_ =true;
+    exit_ = true;
     paused_ = true;
     stream_cv_.notify_one();
     stream_thread_->quit();
     stream_thread_->wait();
     delete stream_thread_;
+    stream_thread_ = nullptr;
   }
   timeline_future.waitForFinished();
   rInfo("shutdown: done");

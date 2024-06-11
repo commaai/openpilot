@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from hypothesis import given, settings, strategies as st
 
 from cereal import car
