@@ -41,14 +41,14 @@ def log_msg(msg, parent_key=''):
 
 def createBlueprint():
   blueprint = None
-  timeSeriesViews = []
+  service_views = []
   for topic in sorted(SERVICE_LIST.keys()):
     if topic == "thumbnail":
       continue
-    timeSeriesViews.append(rrb.Spatial2DView(name=topic, origin=f"/{topic}/", visible=False))
+    service_views.append(rrb.Spatial2DView(name=topic, origin=f"/{topic}/", visible=False))
 
   blueprint = rrb.Blueprint(
-    rrb.Vertical(*timeSeriesViews),
+    rrb.Vertical(*service_views),
     rrb.Spatial2DView(name="thumbnail", origin="/thumbnail", visible=False),
     rrb.SelectionPanel(expanded=False),
     rrb.TimePanel(expanded=False),
