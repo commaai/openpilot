@@ -17,7 +17,13 @@ A supported vehicle is one that just works when you install a comma device. All 
 |{{Column | map(attribute='value') | join('|') | replace(hardware_col_name, wide_hardware_col_name)}}|
 |---|---|---|{% for _ in range((Column | length) - 3) %}{{':---:|'}}{% endfor +%}
 {% for car_docs in all_car_docs %}
-|{% for column in Column %}{{car_docs.get_column(column, star_icon, video_icon, footnote_tag)}}|{% endfor %}
+|{% for column in Column %}
+  {% set col = car_docs.get_column(column, star_icon, video_icon, footnote_tag) %}
+  {% if column == Column.MODEL %}
+    {% set col = col + '[](## "{}")'.format(car_docs.detail_sentence) %}
+  {% endif -%}
+  {{col}}|
+{%- endfor %}
 
 {% endfor %}
 
