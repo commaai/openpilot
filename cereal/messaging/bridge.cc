@@ -8,8 +8,8 @@
 typedef void (*sighandler_t)(int sig);
 
 #include "cereal/services.h"
-#include "msgq/messaging/impl_msgq.h"
-#include "msgq/messaging/impl_zmq.h"
+#include "msgq/impl_msgq.h"
+#include "msgq/impl_zmq.h"
 
 std::atomic<bool> do_exit = false;
 static void set_do_exit(int sig) {

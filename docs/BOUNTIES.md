@@ -57,10 +57,6 @@ The control doesn't have to be perfect, but it should generally do what it's sup
 Get a Rivian driving with openpilot.
 Requires a merged port with lateral control and at least a POC of longitudinal control.
 
-#### Toyota SecOc - $5000
-
-We're contributing $5k to the [community-organized bounty](https://github.com/commaai/openpilot/discussions/19932).
-
 #### Chevy Bolt with SuperCruise - $2500
 
 The Bolt is already supported on the trim with standard ACC. Get openpilot working on the trim with SuperCruise. It must be a normal install: no extra pandas or other hardware, no ECU reflashes, etc. The full bounty is for a port with lateral and longitudinal control. $1500 of the bounty can be claimed with a lateral-only port.
