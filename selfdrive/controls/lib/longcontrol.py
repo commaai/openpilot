@@ -92,18 +92,18 @@ class LongControl:
                                                        CS.cruiseState.standstill)
 
     if self.long_control_state == LongCtrlState.off:
-      self.reset(CS.vEgo)
+      self.reset()
       output_accel = 0.
 
     elif self.long_control_state == LongCtrlState.stopping:
       if output_accel > self.CP.stopAccel:
         output_accel = min(output_accel, 0.0)
         output_accel -= self.CP.stoppingDecelRate * DT_CTRL
-      self.reset(CS.vEgo)
+      self.reset()
 
     elif self.long_control_state == LongCtrlState.starting:
       output_accel = self.CP.startAccel
-      self.reset(CS.vEgo)
+      self.reset()
 
     elif self.long_control_state == LongCtrlState.pid:
       error = a_target - CS.aEgo
