@@ -88,7 +88,7 @@ repository = "https://github.com/commaai/openpilot"
 documentation = "https://docs.comma.ai"
 
 [tool.poetry.dependencies]
-python = ">=3.11, <3.13"
+python = ">=3.11, <4"
 
 # multiple users
 sounddevice = "*"  # micd + soundd
