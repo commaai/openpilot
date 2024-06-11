@@ -11,6 +11,7 @@ Version 0.9.7 (2024-06-13)
 * Adjust driving personality with the follow distance button
 * Support for hybrid variants of supported Ford models
 * Fingerprinting without the OBD-II port on all cars
+* Improved fuzzy fingerprinting for Ford and Volkswagen
 
 Version 0.9.6 (2024-02-27)
 ========================
