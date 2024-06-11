@@ -94,7 +94,6 @@ class CarInterface(CarInterfaceBase):
     ret.startingState = True
     ret.vEgoStarting = 0.1
     ret.startAccel = 1.0
-    ret.longitudinalActuatorDelayLowerBoundDEPRECATED= 0.5
     ret.longitudinalActuatorDelay = 0.5
 
     # *** feature detection ***
