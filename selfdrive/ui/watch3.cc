@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
   cmd_parser.addOption({"ecam", "load wide road camera"});
   cmd_parser.addOption({"dcam", "load driver camera"});
   cmd_parser.process(app);
-  const QStringList args = parser.positionalArguments();
+  const QStringList args = cmd_parser.positionalArguments();
 
   if (cmd_parser.isSet("cams")) {
     QStringList indexes = QString(cmd_parser.value("cams")).split(',');
@@ -47,15 +47,19 @@ int main(int argc, char *argv[]) {
       layout->addWidget(new CameraWidget("camerad", VISION_STREAM_WIDE_ROAD, false));
     }
   } else {
-    QHBoxLayout *hlayout = new QHBoxLayout();
-    layout->addLayout(hlayout);
-    hlayout->addWidget(new CameraWidget("navd", VISION_STREAM_MAP, false));
-    hlayout->addWidget(new CameraWidget("camerad", VISION_STREAM_ROAD, false));
+    {
+      QHBoxLayout *hlayout = new QHBoxLayout();
+      layout->addLayout(hlayout);
+      hlayout->addWidget(new CameraWidget("navd", VISION_STREAM_MAP, false));
+      hlayout->addWidget(new CameraWidget("camerad", VISION_STREAM_ROAD, false));
+    }
 
-    QHBoxLayout *hlayout = new QHBoxLayout();
-    layout->addLayout(hlayout);
-    hlayout->addWidget(new CameraWidget("camerad", VISION_STREAM_DRIVER, false));
-    hlayout->addWidget(new CameraWidget("camerad", VISION_STREAM_WIDE_ROAD, false));
+    {
+      QHBoxLayout *hlayout = new QHBoxLayout();
+      layout->addLayout(hlayout);
+      hlayout->addWidget(new CameraWidget("camerad", VISION_STREAM_DRIVER, false));
+      hlayout->addWidget(new CameraWidget("camerad", VISION_STREAM_WIDE_ROAD, false));
+    }
   }
 
   return app.exec();
