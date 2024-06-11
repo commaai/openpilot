@@ -219,11 +219,8 @@ class CarController(CarControllerBase):
           cruise = CS.cruise_buttons
           setting = CS.cruise_setting
         # simulate a momentary press
-        elif self.frame % 100 <= 25:
-          if CC.cruiseControl.resume:
-            cruise = CruiseButtons.RES_ACCEL
-          elif CS.lkas_hud['LKAS_ON']:
-            setting = CruiseSettings.LKAS
+        elif self.frame % 100 <= 25 and CC.cruiseControl.resume:
+          cruise = CruiseButtons.RES_ACCEL
       if cruise is not None:
         can_sends.append(hondacan.create_buttons_command(self.packer, self.CAN, cruise, setting, CS.scm_buttons, self.CP.carFingerprint))
 
