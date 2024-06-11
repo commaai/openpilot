@@ -21,32 +21,32 @@ void can_list_to_can_capnp_cpp(const std::vector<can_frame> &can_list, std::stri
   capnp::writeMessage(output_stream, msg);
 }
 
-void can_capnp_to_can_list_cpp(const std::vector<std::string> &strings, std::vector<CanData> &can_data, bool sendcan) {
-  kj::Array<capnp::word> aligned_buf;
-  can_data.reserve(strings.size());
+// Converts a vector of Cap'n Proto serialized can strings into a vector of CanData structures.
+void can_capnp_to_can_list_cpp(const std::vector<std::string> &strings, std::vector<CanData> &can_list, bool sendcan) {
+  AlignedBuffer aligned_buf;
+  can_list.reserve(strings.size());
 
-  for (const auto &s : strings) {
-    const size_t buf_size = (s.length() / sizeof(capnp::word)) + 1;
-    if (aligned_buf.size() < buf_size) {
-      aligned_buf = kj::heapArray<capnp::word>(buf_size);
-    }
-    memcpy(aligned_buf.begin(), s.data(), s.length());
-
+  for (const auto &str : strings) {
     // extract the messages
-    capnp::FlatArrayMessageReader cmsg(aligned_buf.slice(0, buf_size));
-    cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
+    capnp::FlatArrayMessageReader reader(aligned_buf.align(str.data(), str.size()));
+    cereal::Event::Reader event = reader.getRoot<cereal::Event>();
 
-    auto &can = can_data.emplace_back();
-    can.nanos = event.getLogMonoTime();
+    auto frames = sendcan ? event.getSendcan() : event.getCan();
 
-    auto cans = sendcan ? event.getSendcan() : event.getCan();
-    can.frames.reserve(cans.size());
-    for (const auto &c : cans) {
-      auto &frame = can.frames.emplace_back();
-      frame.src = c.getSrc();
-      frame.address = c.getAddress();
-      auto dat = c.getDat();
-      frame.dat.assign(dat.begin(), dat.end());
+    // Add new CanData entry
+    CanData &can_data = can_list.emplace_back();
+    can_data.nanos = event.getLogMonoTime();
+    can_data.frames.reserve(frames.size());
+
+    // Populate CAN frames
+    for (const auto &frame : frames) {
+      CanFrame &can_frame = can_data.frames.emplace_back();
+      can_frame.src = frame.getSrc();
+      can_frame.address = frame.getAddress();
+
+      // Copy CAN data
+      auto dat = frame.getDat();
+      can_frame.dat.assign(dat.begin(), dat.end());
     }
   }
 }
