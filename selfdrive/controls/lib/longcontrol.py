@@ -11,12 +11,12 @@ LongCtrlState = car.CarControl.Actuators.LongControlState
 
 
 def long_control_state_trans(CP, active, long_control_state, v_ego,
-                             want_to_stop, brake_pressed, cruise_standstill):
+                             should_stop, brake_pressed, cruise_standstill):
   stay_stopped = (v_ego < CP.vEgoStopping and
                   (brake_pressed or cruise_standstill))
-  stopping_condition = want_to_stop or stay_stopped
+  stopping_condition = should_stop or stay_stopped
 
-  starting_condition = (not want_to_stop and
+  starting_condition = (not should_stop and
                         not cruise_standstill and
                         not brake_pressed)
   started_condition = v_ego > CP.vEgoStarting
@@ -61,10 +61,10 @@ def get_accel_from_plan(CP, long_plan, t_since_plan):
       v_target_1sec = 0.0
       a_target = 0.0
     accelerating = v_target_1sec > v_target
-    want_to_stop = (v_target < CP.vEgoStopping and
+    should_stop = (v_target < CP.vEgoStopping and
                     v_target_1sec < CP.vEgoStopping and
                     not accelerating)
-    return a_target, want_to_stop
+    return a_target, should_stop
 
 
 class LongControl:
@@ -85,10 +85,10 @@ class LongControl:
 
     self.pid.neg_limit = accel_limits[0]
     self.pid.pos_limit = accel_limits[1]
-    a_target, want_to_stop = get_accel_from_plan(self.CP, long_plan, t_since_plan)
+    a_target, should_stop = get_accel_from_plan(self.CP, long_plan, t_since_plan)
 
     self.long_control_state = long_control_state_trans(self.CP, active, self.long_control_state, CS.vEgo,
-                                                       want_to_stop, CS.brakePressed,
+                                                       should_stop, CS.brakePressed,
                                                        CS.cruiseState.standstill)
 
     if self.long_control_state == LongCtrlState.off:
