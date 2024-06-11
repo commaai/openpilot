@@ -335,12 +335,10 @@ jobs:
     steps:
       - name: Set up python
         id: setup-python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
-          python-version: '3.12'
+          python-version: '3.11'
       - run: python --version
-      - run: pip uninstall setuptools
-      - run: pip install setuptools==66.1.1
       - run: pip --version
       - run: pip list
       - run: pip install --upgrade pip
