@@ -42,10 +42,17 @@ def createBlueprint():
   blueprint = None
   timeSeriesViews = []
   for topic in sorted(SERVICE_LIST.keys()):
+    if topic == "thumbnail":
+      continue
     timeSeriesViews.append(rrb.TimeSeriesView(name=topic, origin=f"/{topic}/", visible=False))
     rr.log(topic, rr.SeriesLine(name=topic), timeless=True)
-    blueprint = rrb.Blueprint(rrb.Grid(rrb.Vertical(*timeSeriesViews,rrb.SelectionPanel(expanded=False),rrb.TimePanel(expanded=False)),
-                                        rrb.Spatial2DView(name="thumbnail", origin="/thumbnail")))
+
+  blueprint = rrb.Blueprint(
+    rrb.Vertical(*timeSeriesViews),
+    rrb.Spatial2DView(name="thumbnail", origin="/thumbnail", visible=False),
+    rrb.SelectionPanel(expanded=False),
+    rrb.TimePanel(expanded=False),
+  )
   return blueprint
 
 def log_thumbnail(thumbnailMsg):
