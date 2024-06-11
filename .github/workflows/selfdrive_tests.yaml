@@ -338,3 +338,7 @@ jobs:
         with:
           python-version: '3.11.4'
           cache: 'poetry'
+      - uses: snok/install-poetry@v1
+        with:
+          version: 1.7.0
+      - run: poetry install --no-interaction --no-root
