@@ -68,7 +68,7 @@ ENV PYENV_VERSION=3.12.4
 ENV PYENV_ROOT="/home/$USER/pyenv"
 ENV PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
 
-COPY --chown=$USER pyproject.toml poetry.lock .python-version /tmp/
+COPY --chown=$USER pyproject.toml poetry.lock /tmp/
 COPY --chown=$USER tools/install_python_dependencies.sh /tmp/tools/
 
 RUN cd /tmp && \
