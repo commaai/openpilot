@@ -281,13 +281,13 @@ aio = ["aiohttp (>=3.0)"]
 
 [[package]]
 name = "azure-identity"
-version = "1.16.0"
+version = "1.16.1"
 description = "Microsoft Azure Identity Library for Python"
 optional = false
 python-versions = ">=3.8"
 files = [
-    {file = "azure-identity-1.16.0.tar.gz", hash = "sha256:6ff1d667cdcd81da1ceab42f80a0be63ca846629f518a922f7317a7e3c844e1b"},
-    {file = "azure_identity-1.16.0-py3-none-any.whl", hash = "sha256:722fdb60b8fdd55fa44dc378b8072f4b419b56a5e54c0de391f644949f3a826f"},
+    {file = "azure-identity-1.16.1.tar.gz", hash = "sha256:6d93f04468f240d59246d8afde3091494a5040d4f141cad0f49fc0c399d0d91e"},
+    {file = "azure_identity-1.16.1-py3-none-any.whl", hash = "sha256:8fb07c25642cd4ac422559a8b50d3e77f73dcc2bbfaba419d06d6c9d7cff6726"},
 ]
 
 [package.dependencies]
@@ -2167,8 +2167,8 @@ files = [
 ]
 
 [[package]]
-name = "metadrive-simulator-py3-12"
-version = "0.3.0"
+name = "metadrive-simulator"
+version = "0.4.2.3"
 description = "An open-ended driving simulator with infinite scenes"
 optional = false
 python-versions = ">=3.6, <3.13"
@@ -2208,7 +2208,7 @@ ros = ["zmq"]
 type = "git"
 url = "https://github.com/commaai/metadrive.git"
 reference = "python3.12"
-resolved_reference = "dfe20a946281d5fe09f9d7389b799e54b33903ac"
+resolved_reference = "2b59c467a589945da17ade2832b43ef9fdfce4fb"
 
 [[package]]
 name = "mouseinfo"
@@ -2699,13 +2699,13 @@ numpy = {version = ">=1.26.0", markers = "python_version >= \"3.12\""}
 
 [[package]]
 name = "packaging"
-version = "24.0"
+version = "24.1"
 description = "Core utilities for Python packages"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 files = [
-    {file = "packaging-24.0-py3-none-any.whl", hash = "sha256:2ddfb553fdf02fb784c234c7ba6ccc288296ceabec964ad2eae3777778130bc5"},
-    {file = "packaging-24.0.tar.gz", hash = "sha256:eb82c5e3e56209074766e6885bb04b8c38a0c015d0a30036ebe7ece34c9989e9"},
+    {file = "packaging-24.1-py3-none-any.whl", hash = "sha256:5b8f2217dbdbd2f7f384c41c628544e6d52f2d0f53c6d0c3ea61aa5d1d7ff124"},
+    {file = "packaging-24.1.tar.gz", hash = "sha256:026ed72c8ed3fcce5bf8950572258698927fd1dbda10a5e981cdf0ac37f4f002"},
 ]
 
 [[package]]
@@ -7982,4 +7982,4 @@ test = ["big-O", "importlib-resources", "jaraco.functools", "jaraco.itertools", 
 [metadata]
 lock-version = "2.0"
 python-versions = "~3.12"
-content-hash = "ccf45154d556940ba9ce77e2cb649a7d44b5df37fd0167f6596f4bc7bada8e68"
+content-hash = "1fa2cd2613f1d75e236a2db032b6b7a8f21d4a9fe963f91c054dad3b8e01c856"
