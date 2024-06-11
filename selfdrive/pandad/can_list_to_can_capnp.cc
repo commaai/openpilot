@@ -24,6 +24,7 @@ void can_list_to_can_capnp_cpp(const std::vector<can_frame> &can_list, std::stri
 void can_capnp_to_can_list_cpp(const std::vector<std::string> &strings, std::vector<CanData> &can_data, bool sendcan) {
   kj::Array<capnp::word> aligned_buf;
   can_data.reserve(strings.size());
+
   for (const auto &s : strings) {
     const size_t buf_size = (s.length() / sizeof(capnp::word)) + 1;
     if (aligned_buf.size() < buf_size) {
@@ -45,8 +46,7 @@ void can_capnp_to_can_list_cpp(const std::vector<std::string> &strings, std::vec
       frame.src = c.getSrc();
       frame.address = c.getAddress();
       auto dat = c.getDat();
-      frame.dat.resize(dat.size());
-      memcpy(frame.dat.data(), dat.begin(), dat.size());
+      frame.dat.assign(dat.begin(), dat.end());
     }
   }
 }
