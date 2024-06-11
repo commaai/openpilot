@@ -54,6 +54,7 @@ public:
   ~Replay();
   bool load();
   void start(int seconds = 0);
+  void stop();
   void pause(bool pause);
   void seekToFlag(FindFlag flag);
   void seekTo(double seconds, bool relative);

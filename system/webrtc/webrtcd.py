@@ -24,7 +24,7 @@ from cereal import messaging, log
 class CerealOutgoingMessageProxy:
   def __init__(self, sm: messaging.SubMaster):
     self.sm = sm
-    self.channels: list['RTCDataChannel'] = []
+    self.channels: list[RTCDataChannel] = []
 
   def add_channel(self, channel: 'RTCDataChannel'):
     self.channels.append(channel)

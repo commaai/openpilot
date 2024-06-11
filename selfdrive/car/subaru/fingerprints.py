@@ -319,8 +319,8 @@ FW_VERSIONS = {
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\x1a\xf6F`\x00',
-      b'\xda\xf2`\x80\x00',
       b'\xda\xf2`p\x00',
+      b'\xda\xf2`\x80\x00',
       b'\xda\xfd\xe0\x80\x00',
       b'\xdc\xf2@`\x00',
       b'\xdc\xf2``\x00',
