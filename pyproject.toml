@@ -131,6 +131,7 @@ json-rpc = "*"
 websocket_client = "*"
 
 # acados deps
+cmake = { version = "*", markers = "platform_machine == 'aarch64'" }
 casadi = "*"
 future-fstrings = "*"
 
