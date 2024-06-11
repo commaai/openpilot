@@ -45,18 +45,26 @@ bool create_params_path(const std::string &param_path, const std::string &key_pa
     std::string tmp_path = param_path + "/.tmp_XXXXXX";
     // this should be OK since mkdtemp just replaces characters in place
     char *tmp_dir = mkdtemp((char *)tmp_path.c_str());
-    if (tmp_dir == NULL) {
+    if (tmp_dir == nullptr) {
+      LOGE("Failed to create temporary directory: %d", errno);
       return false;
     }
 
     std::string link_path = std::string(tmp_dir) + ".link";
     if (symlink(tmp_dir, link_path.c_str()) != 0) {
+      LOGE("Failed to create symlink: %d", errno);
+      rmdir(tmp_dir);
       return false;
     }
 
-    // don't return false if it has been created by other
-    if (rename(link_path.c_str(), key_path.c_str()) != 0 && errno != EEXIST) {
-      return false;
+    if (rename(link_path.c_str(), key_path.c_str()) != 0) {
+      bool target_exists = (errno == EEXIST);
+      unlink(link_path.c_str());
+      rmdir(tmp_dir);
+      if (!target_exists) {
+        LOGE("Failed to move symlink: %d", errno);
+        return false;
+      }
     }
   }
 
