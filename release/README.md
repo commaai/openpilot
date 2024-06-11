@@ -9,9 +9,9 @@
 **Go to `devel`**
 - [ ] update RELEASES.md
 - [ ] close out milestone
-- [ ] merge the pull request
 - [ ] post on Discord dev channel
 - [ ] bump version on master: `common/version.h` and `RELEASES.md`
+- [ ] merge the pull request
 
 tests:
 - [ ] update from previous release -> new release
