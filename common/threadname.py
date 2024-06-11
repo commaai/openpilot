@@ -8,9 +8,7 @@ if LINUX:
 
 def setthreadname(name: str) -> None:
   if LINUX:
-    if len(name)>15:
-      name = name[:15]
-    name += '\0'
+    name = name[:15] + '\0'
     libc.prctl(15, str.encode(name), 0, 0, 0)
 
 def getthreadname() -> str:
