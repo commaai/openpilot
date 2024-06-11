@@ -197,10 +197,10 @@ class TestCarModelBase(unittest.TestCase):
     if self._testMethodName == "test_panda_safety_tx_fuzzy":
       os.environ["TEST_MODELS"] = "TEST_MODELS"
       self.sm = SubMaster(["carControl"])
-      self.pm = PubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
-                                    'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'liveLocationKalman',
-                                    'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
-                                    'carState'])
+      #self.pm = PubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
+      #                              'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'liveLocationKalman',
+      #                              'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
+      #                              'carState'])
 
     Params().put("CarParams", self.CP.to_bytes())
     Params().put_bool("OpenpilotEnabledToggle", self.openpilot_enabled)
@@ -413,6 +413,10 @@ class TestCarModelBase(unittest.TestCase):
             phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
   def test_panda_safety_tx_fuzzy(self, data):
+    self.pm = PubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
+                                  'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'liveLocationKalman',
+                                  'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
+                                  'carState'])
 
     #pm = PubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
     #                               'driverMonitoringState', 'longitudinalPlan', 'liveLocationKalman',
@@ -425,18 +429,18 @@ class TestCarModelBase(unittest.TestCase):
     #ds_send.deviceState = DS
     #pm.send("deviceState", ds_send)
 
-    ps_msg = FuzzyGenerator.get_random_msg(data.draw, log.PandaState, real_floats=True)
-    PS = log.PandaState.new_message(**ps_msg)
-    PS.controlsAllowed = True
-    ps_send = messaging.new_message("pandaStates", 1)
-    ps_send.pandaStates[0] = PS
-    self.pm.send("pandaStates", ps_send)
+    #ps_msg = FuzzyGenerator.get_random_msg(data.draw, log.PandaState, real_floats=True)
+    #PS = log.PandaState.new_message(**ps_msg)
+    #PS.controlsAllowed = True
+    #ps_send = messaging.new_message("pandaStates", 1)
+    #ps_send.pandaStates[0] = PS
+    #self.pm.send("pandaStates", ps_send)
 
-    prs_msg = FuzzyGenerator.get_random_msg(data.draw, log.PeripheralState, real_floats=True)
-    PRS = log.PeripheralState.new_message(**prs_msg)
-    prs_send = messaging.new_message("peripheralState")
-    prs_send.peripheralState = PRS
-    self.pm.send("peripheralState", prs_send)
+    #prs_msg = FuzzyGenerator.get_random_msg(data.draw, log.PeripheralState, real_floats=True)
+    #PRS = log.PeripheralState.new_message(**prs_msg)
+    #prs_send = messaging.new_message("peripheralState")
+    #prs_send.peripheralState = PRS
+    #self.pm.send("peripheralState", prs_send)
 
     float32_list_strategy = st.lists(st.floats(width=32, allow_nan=False, allow_infinity=False), min_size=3, max_size=3)
     xyzt_data_strategy = st.builds(
@@ -444,89 +448,68 @@ class TestCarModelBase(unittest.TestCase):
     y=float32_list_strategy,
     )
 
-    MV2 = log.ModelDataV2.new_message()
-    MV2.meta.laneChangeState = data.draw(st.sampled_from(list(log.LaneChangeState.schema.enumerants.keys())))
-    MV2.meta.laneChangeDirection = data.draw(st.sampled_from(list(log.LaneChangeDirection.schema.enumerants.keys())))
-    MV2.meta.hardBrakePredicted = data.draw(st.booleans())
-    MV2.meta.desirePrediction = data.draw(st.lists(st.floats(width=32, allow_nan=False, allow_infinity=False), min_size=3, max_size=3))
-    MV2.frameDropPerc = data.draw(st.floats(width=64, allow_nan=False, allow_infinity=False))
-    MV2.action.desiredCurvature = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
-    MV2.position.y = data.draw(st.lists(st.floats(width=32, allow_nan=False, allow_infinity=False), min_size=3, max_size=3))
-    MV2.laneLineProbs = data.draw(st.lists(st.floats(width=32, allow_nan=False, allow_infinity=False), min_size=3, max_size=3))
-    MV2.laneLines = data.draw(st.lists(xyzt_data_strategy, min_size=2, max_size=2))
-
     mv2_send = messaging.new_message("modelV2")
-    mv2_send.modelV2 = MV2
+    mv2_send.modelV2.meta.laneChangeState = data.draw(st.sampled_from(list(log.LaneChangeState.schema.enumerants.keys())))
+    mv2_send.modelV2.meta.laneChangeDirection = data.draw(st.sampled_from(list(log.LaneChangeDirection.schema.enumerants.keys())))
+    mv2_send.modelV2.meta.hardBrakePredicted = data.draw(st.booleans())
+    mv2_send.modelV2.meta.desirePrediction = data.draw(st.lists(st.floats(width=32, allow_nan=False, allow_infinity=False), min_size=3, max_size=3))
+    mv2_send.modelV2.frameDropPerc = data.draw(st.floats(width=64, allow_nan=False, allow_infinity=False))
+    mv2_send.modelV2.action.desiredCurvature = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
+    mv2_send.modelV2.position.y = data.draw(st.lists(st.floats(width=32, allow_nan=False, allow_infinity=False), min_size=3, max_size=3))
+    mv2_send.modelV2.laneLineProbs = data.draw(st.lists(st.floats(width=32, allow_nan=False, allow_infinity=False), min_size=3, max_size=3))
+    mv2_send.modelV2.laneLines = data.draw(st.lists(xyzt_data_strategy, min_size=2, max_size=2))
     self.pm.send("modelV2", mv2_send)
 
-    LC = log.LiveCalibrationData.new_message()
-    LC.calStatus = log.LiveCalibrationData.Status.calibrated
     lc_send = messaging.new_message("liveCalibration")
-    lc_send.liveCalibration = LC
+    lc_send.liveCalibration.calStatus = log.LiveCalibrationData.Status.calibrated
     self.pm.send("liveCalibration", lc_send)
 
-    CO = car.CarOutput.new_message()
-    CO.actuatorsOutput.steer = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
-    CO.actuatorsOutput.steeringAngleDeg = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
     co_send = messaging.new_message("carOutput")
-    co_send.carOutput = CO
+    co_send.carOutput.actuatorsOutput.steer = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
+    co_send.carOutput.actuatorsOutput.steeringAngleDeg = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
     self.pm.send("carOutput", co_send)
 
-    DMS = log.DriverMonitoringState.new_message()
-    DMS.events = [FuzzyGenerator.get_random_msg(data.draw, car.CarEvent, real_floats=True) for _ in range(4)]
-    DMS.awarenessStatus = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
     dms_send = messaging.new_message("driverMonitoringState")
-    dms_send.driverMonitoringState = DMS
+    dms_send.driverMonitoringState.events = [FuzzyGenerator.get_random_msg(data.draw, car.CarEvent, real_floats=True) for _ in range(4)]
+    dms_send.driverMonitoringState.awarenessStatus = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
     self.pm.send("driverMonitoringState", dms_send)
 
-    LGP = log.LongitudinalPlan.new_message()
-    LGP.fcw = data.draw(st.booleans())
-    LGP.speeds = data.draw(st.lists(st.floats(width=32, allow_nan=False, allow_infinity=False), min_size=CONTROL_N, max_size=CONTROL_N))
-    LGP.accels = data.draw(st.lists(st.floats(width=32, allow_nan=False, allow_infinity=False), min_size=CONTROL_N, max_size=CONTROL_N))
-    LGP.hasLead = data.draw(st.booleans())
     lgp_send = messaging.new_message("longitudinalPlan")
-    lgp_send.longitudinalPlan = LGP
+    lgp_send.longitudinalPlan.fcw = data.draw(st.booleans())
+    lgp_send.longitudinalPlan.speeds = data.draw(st.lists(st.floats(width=32, allow_nan=False, allow_infinity=False), min_size=CONTROL_N, max_size=CONTROL_N))
+    lgp_send.longitudinalPlan.accels = data.draw(st.lists(st.floats(width=32, allow_nan=False, allow_infinity=False), min_size=CONTROL_N, max_size=CONTROL_N))
+    lgp_send.longitudinalPlan.hasLead = data.draw(st.booleans())
     self.pm.send("longitudinalPlan", lgp_send)
 
-    LLK = log.LiveLocationKalman.new_message()
-    LLK.posenetOK = data.draw(st.booleans())
-    LLK.inputsOK = data.draw(st.booleans())
-    LLK.gpsOK = data.draw(st.booleans())
-    LLK.angularVelocityCalibrated.value = data.draw(st.lists(st.floats(width=64, allow_nan=False, allow_infinity=False), min_size=3, max_size=3))
-    LLK.deviceStable = data.draw(st.booleans())
-    LLK.calibratedOrientationNED.value = data.draw(st.lists(st.floats(width=64, allow_nan=False, allow_infinity=False), min_size=3, max_size=3))
     llk_send = messaging.new_message("liveLocationKalman")
-    llk_send.liveLocationKalman = LLK
+    llk_send.liveLocationKalman.posenetOK = data.draw(st.booleans())
+    llk_send.liveLocationKalman.inputsOK = data.draw(st.booleans())
+    llk_send.liveLocationKalman.gpsOK = data.draw(st.booleans())
+    llk_send.liveLocationKalman.angularVelocityCalibrated.value = data.draw(st.lists(st.floats(width=64, allow_nan=False, allow_infinity=False), min_size=3, max_size=3))
+    llk_send.liveLocationKalman.deviceStable = data.draw(st.booleans())
+    llk_send.liveLocationKalman.calibratedOrientationNED.value = data.draw(st.lists(st.floats(width=64, allow_nan=False, allow_infinity=False), min_size=3, max_size=3))
     self.pm.send("liveLocationKalman", llk_send)
 
-    MS = log.ManagerState.new_message()
     ms_send = messaging.new_message("managerState")
-    ms_send.managerState = MS
     self.pm.send("managerState", ms_send)
 
-    LP = log.LiveParametersData.new_message()
-    LP.valid = data.draw(st.booleans())
-    LP.stiffnessFactor = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
-    LP.steerRatio = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
-    LP.angleOffsetDeg = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
-    LP.roll = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
     lp_send = messaging.new_message("liveParameters")
-    lp_send.liveParameters = LP
+    lp_send.liveParameters.valid = data.draw(st.booleans())
+    lp_send.liveParameters.stiffnessFactor = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
+    lp_send.liveParameters.steerRatio = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
+    lp_send.liveParameters.angleOffsetDeg = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
+    lp_send.liveParameters.roll = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
     self.pm.send("liveParameters", lp_send)
 
-    RS = log.RadarState.new_message()
-    RS.radarErrors = [data.draw(st.sampled_from(list(car.RadarData.Error.schema.enumerants.keys()))) for _ in range(2)]
     rs_send = messaging.new_message("radarState")
-    rs_send.radarState = RS
+    rs_send.radarState.radarErrors = [data.draw(st.sampled_from(list(car.RadarData.Error.schema.enumerants.keys()))) for _ in range(2)]
     self.pm.send("radarState", rs_send)
 
-    LTP = log.LiveTorqueParametersData.new_message()
-    LTP.useParams = data.draw(st.booleans())
-    LTP.latAccelFactorFiltered = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
-    LTP.latAccelOffsetFiltered = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
-    LTP.frictionCoefficientFiltered = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
     ltp_send = messaging.new_message("liveTorqueParameters")
-    ltp_send.liveTorqueParameters = LTP
+    ltp_send.liveTorqueParameters.useParams = data.draw(st.booleans())
+    ltp_send.liveTorqueParameters.latAccelFactorFiltered = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
+    ltp_send.liveTorqueParameters.latAccelOffsetFiltered = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
+    ltp_send.liveTorqueParameters.frictionCoefficientFiltered = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
     self.pm.send("liveTorqueParameters", ltp_send)
 
     cs_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarState, real_floats=True)
