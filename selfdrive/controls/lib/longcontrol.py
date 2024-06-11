@@ -76,7 +76,7 @@ class LongControl:
                              k_f=CP.longitudinalTuning.kf, rate=1 / DT_CTRL)
     self.last_output_accel = 0.0
 
-  def reset(self, v_pid):
+  def reset(self):
     self.pid.reset()
 
   def update(self, active, CS, long_plan, accel_limits, t_since_plan):
