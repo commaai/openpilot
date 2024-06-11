@@ -335,11 +335,9 @@ jobs:
     steps:
       - name: Set up python
         id: setup-python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - run: python -c "import sys; print(sys.version)"
       - run: python --version
-      - run: pip --version
-      - run: pip list
-      - run: pip install --upgrade pip
-      - run: pip install numpy
+      - run: python -m pip install --upgrade pip setuptools wheel
