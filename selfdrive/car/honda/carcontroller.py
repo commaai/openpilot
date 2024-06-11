@@ -222,7 +222,7 @@ class CarController(CarControllerBase):
         elif self.frame % 100 <= 25:
           if CC.cruiseControl.resume:
             cruise = CruiseButtons.RES_ACCEL
-          elif CS.lkas_hud['ENABLED']:
+          elif CS.lkas_hud['LKAS_ON']:
             setting = CruiseSettings.LKAS
       if cruise is not None:
         can_sends.append(hondacan.create_buttons_command(self.packer, self.CAN, cruise, setting, CS.scm_buttons, self.CP.carFingerprint))
