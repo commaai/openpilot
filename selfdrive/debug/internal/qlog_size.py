@@ -29,9 +29,9 @@ def make_pie(msgs, typ):
 
   print("name - comp. size (uncomp. size)")
   for (name, sz) in sizes:
-    print(f"{name:<22} - {sz / 1024:.2f} kB / {compressed_length_by_type[name] / 1024:.2f} kB ({length_by_type[name] / 1024:.2f} kB)")
+    print(f"{name:<22} - {sz / 1024:.2f} kB ({length_by_type[name] / 1024:.2f} kB)")
   print()
-  print(f"{typ} - Real {total / 1024:.2f} kB")
+  print(f"{typ} - Real total {total / 1024:.2f} kB")
   print(f"{typ} - Breakdown total {sum(compressed_length_by_type.values()) / 1024:.2f} kB")
   print(f"{typ} - Uncompressed total {uncompressed_total / 1024 / 1024:.2f} MB")
 
