@@ -36,14 +36,14 @@ PROCS = {
   # Baseline CPU usage by process
   "selfdrive.controls.controlsd": 32.0,
   "selfdrive.car.card": 22.0,
-  "./loggerd": 14.0,
-  "./encoderd": 17.0,
-  "./camerad": 14.5,
-  "./locationd": 11.0,
+  "loggerd": 14.0,
+  "encoderd": 17.0,
+  "camerad": 14.5,
+  "locationd": 11.0,
   "selfdrive.controls.plannerd": 11.0,
-  "./ui": 18.0,
+  "ui": 18.0,
   "selfdrive.locationd.paramsd": 9.0,
-  "./sensord": 7.0,
+  "sensord": 7.0,
   "selfdrive.controls.radard": 7.0,
   "selfdrive.modeld.modeld": 13.0,
   "selfdrive.modeld.dmonitoringmodeld": 8.0,
@@ -52,10 +52,10 @@ PROCS = {
   "selfdrive.locationd.torqued": 5.0,
   "selfdrive.ui.soundd": 3.5,
   "selfdrive.monitoring.dmonitoringd": 4.0,
-  "./proclogd": 1.54,
+  "proclogd": 1.54,
   "system.logmessaged": 0.2,
   "system.tombstoned": 0,
-  "./logcatd": 0,
+  "logcatd": 0,
   "system.micd": 6.0,
   "system.timed": 0,
   "selfdrive.pandad.pandad": 0,
@@ -67,12 +67,12 @@ PROCS = {
 
 PROCS.update({
   "tici": {
-    "./pandad": 4.0,
-    "./ubloxd": 0.02,
+    "pandad": 4.0,
+    "ubloxd": 0.02,
     "system.ubloxd.pigeond": 6.0,
   },
   "tizi": {
-     "./pandad": 19.0,
+     "pandad": 19.0,
     "system.qcomgpsd.qcomgpsd": 1.0,
   }
 }.get(HARDWARE.get_device_type(), {}))
