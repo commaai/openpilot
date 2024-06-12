@@ -131,13 +131,27 @@ finish:
   return serials;
 }
 
-void PandaUsbHandle::handle_usb_issue(int err, const char func[]) {
-  LOGE_100("usb error %d \"%s\" in %s", err, libusb_strerror((enum libusb_error)err), func);
-  if (err == LIBUSB_ERROR_NO_DEVICE) {
-    LOGE("lost connection");
-    connected = false;
+void PandaUsbHandle::handle_usb_issue(int err, const char func[], unsigned char endpoint) {
+  switch (err) {
+    case LIBUSB_ERROR_NO_DEVICE:
+      LOGE("lost connection");
+      connected = false;
+      break;
+    case LIBUSB_ERROR_PIPE:
+      LOGE("Pipe error in %s", func);
+      // Clear the stall on the endpoint
+      libusb_clear_halt(dev_handle, endpoint);
+      break;
+    case LIBUSB_ERROR_NO_MEM:
+      LOGE("Memory allocation failure in %s", func);
+      // Cannot recover from this, so disconnect
+      connected = false;
+      break;
+    default:
+      // TODO: check other errors, is simply retrying okay?
+      LOGE_100("usb error %d \"%s\" in %s", err, libusb_strerror((enum libusb_error)err), func);
+      break;
   }
-  // TODO: check other errors, is simply retrying okay?
 }
 
 int PandaUsbHandle::control_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsigned int timeout) {
@@ -192,7 +206,7 @@ int PandaUsbHandle::bulk_write(unsigned char endpoint, unsigned char* data, int 
       LOGW("Transmit buffer full");
       break;
     } else if (err != 0 || length != transferred) {
-      handle_usb_issue(err, __func__);
+      handle_usb_issue(err, __func__, endpoint);
     }
   } while (err != 0 && connected);
 
@@ -218,7 +232,7 @@ int PandaUsbHandle::bulk_read(unsigned char endpoint, unsigned char* data, int l
       comms_healthy = false;
       LOGE_100("overflow got 0x%x", transferred);
     } else if (err != 0) {
-      handle_usb_issue(err, __func__);
+      handle_usb_issue(err, __func__, endpoint);
     }
 
   } while (err != 0 && connected);

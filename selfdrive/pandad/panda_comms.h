@@ -52,7 +52,7 @@ private:
   libusb_context *ctx = NULL;
   libusb_device_handle *dev_handle = NULL;
   std::recursive_mutex hw_lock;
-  void handle_usb_issue(int err, const char func[]);
+  void handle_usb_issue(int err, const char func[], unsigned char endpoint = 0);
 };
 
 #ifndef __APPLE__
