@@ -247,8 +247,7 @@ class TestOnroad:
     for pl in self.service_msgs['procLog']:
       for x in pl.procLog.procs:
         if len(x.cmdline) > 0:
-          n = list(x.cmdline)[0]
-          plogs_by_proc[n].append(x)
+          plogs_by_proc[x.name].append(x)
     print(plogs_by_proc.keys())
 
     cpu_ok = True
@@ -258,7 +257,7 @@ class TestOnroad:
       err = ""
       exp = "???"
       cpu_usage = 0.
-      x = plogs_by_proc[proc_name]
+      x = plogs_by_proc[proc_name[-15:]]
       if len(x) > 2:
         cpu_time = cputime_total(x[-1]) - cputime_total(x[0])
         cpu_usage = cpu_time / dt * 100.
