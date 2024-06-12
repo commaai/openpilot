@@ -44,8 +44,12 @@ class _LogFileReader:
     if ext == ".bz2" or dat.startswith(b'BZh9'):
       dat = bz2.decompress(dat)
 
+    ents = capnp_log.Event.read_multiple_bytes(dat)
+
+    self._ents = []
     try:
-      self._ents = list(capnp_log.Event.read_multiple_bytes(dat))
+      for e in ents:
+        self._ents.append(e)
     except capnp.KjException:
       warnings.warn("Corrupted events detected", RuntimeWarning, stacklevel=1)
 
