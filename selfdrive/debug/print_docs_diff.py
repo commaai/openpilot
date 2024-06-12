@@ -1,117 +1,77 @@
 #!/usr/bin/env python3
 import argparse
+import subprocess
+import requests
+
 from collections import defaultdict
-import difflib
-import pickle
-
-from openpilot.selfdrive.car.docs import get_all_car_docs
 from openpilot.selfdrive.car.docs_definitions import Column
+import os
 
-FOOTNOTE_TAG = "<sup>{}</sup>"
-STAR_ICON = '<a href="##"><img valign="top" ' + \
-            'src="https://media.githubusercontent.com/media/commaai/openpilot/master/docs/assets/icon-star-{}.svg" width="22" /></a>'
-VIDEO_ICON = '<a href="{}" target="_blank">' + \
-             '<img height="18px" src="https://media.githubusercontent.com/media/commaai/openpilot/master/docs/assets/icon-youtube.svg"></img></a>'
 COLUMNS = "|" + "|".join([column.value for column in Column]) + "|"
 COLUMN_HEADER = "|---|---|---|{}|".format("|".join([":---:"] * (len(Column) - 3)))
 ARROW_SYMBOL = "➡️"
 
+def download_file(url, filename):
+  response = requests.get(url)
+  with open(filename, 'wb') as file:
+    file.write(response.content)
 
-def load_base_car_docs(path):
-  with open(path, "rb") as f:
-    return pickle.load(f)
+def delete_file(filename):
+  if os.path.exists(filename):
+    os.remove(filename)
 
+def column_change_format(line1, line2):
+  info1, info2 = line1.split('|'), line2.split('|')
+  return "|".join([f"{i1} {ARROW_SYMBOL} {i2}|" if i1 != i2 else f"{i1}|" for i1, i2 in zip(info1, info2, strict=True)])
 
-def match_cars(base_cars, new_cars):
-  changes = []
-  additions = []
-  for new in new_cars:
-    # Addition if no close matches or close match already used
-    # Change if close match and not already used
-    matches = difflib.get_close_matches(new.name, [b.name for b in base_cars], cutoff=0.)
-    if not len(matches) or matches[0] in [c[1].name for c in changes]:
-      additions.append(new)
-    else:
-      changes.append((new, next(car for car in base_cars if car.name == matches[0])))
+def process_diff_information(info):
+  header = info[0]
+  category = None
+  final_strings = []
+  if "c" in header:
+    category = "column"
+    ind = info.index("---")
+    for line1, line2 in zip(info[1:ind], info[ind+1:], strict=True):
+      final_strings.append(column_change_format(line1[2:], line2[2:]))
+  else:
+    category = "additions" if "a" in header else "removals"
+    final_strings = [x[2:] for x in info[1:]]
+  return category, final_strings
 
-  # Removal if base car not in changes
-  removals = [b for b in base_cars if b.name not in [c[1].name for c in changes]]
-  return changes, additions, removals
-
-
-def build_column_diff(base_car, new_car):
-  row_builder = []
-  for column in Column:
-    base_column = base_car.get_column(column, STAR_ICON, VIDEO_ICON, FOOTNOTE_TAG)
-    new_column = new_car.get_column(column, STAR_ICON, VIDEO_ICON, FOOTNOTE_TAG)
-
-    if base_column != new_column:
-      row_builder.append(f"{base_column} {ARROW_SYMBOL} {new_column}")
-    else:
-      row_builder.append(new_column)
-
-  return format_row(row_builder)
-
-
-def format_row(builder):
-  return "|" + "|".join(builder) + "|"
-
+def print_markdown(changes):
+  markdown_builder = ["### ⚠️ This PR makes changes to [CARS.md](../blob/master/docs/CARS.md) ⚠️"]
+  for title, category in (("## 🔀 Column Changes", "column"), ("## ❌ Removed", "removals"),
+                          ("## ➕ Added", "additions"), ("## 📖 Detail Sentence Changes", "detail")):
+    # TODO: Add details for detail changes
+    if len(changes[category]):
+      markdown_builder.append(title)
+      if category not in ("detail",):
+        markdown_builder.append(COLUMNS)
+        markdown_builder.append(COLUMN_HEADER)
+      markdown_builder.extend(changes[category])
+  print("\n".join(markdown_builder))
 
 def print_car_docs_diff(path):
-  base_car_docs = defaultdict(list)
-  new_car_docs = defaultdict(list)
 
-  for car in load_base_car_docs(path):
-    base_car_docs[car.car_fingerprint].append(car)
-  for car in get_all_car_docs():
-    new_car_docs[car.car_fingerprint].append(car)
+  download_file("https://raw.githubusercontent.com/commaai/openpilot/master/docs/CARS.md", path + "master_table.md")
+  changes = subprocess.run(['diff', path + "master_table.md", "docs/CARS.md"], capture_output=True, text=True).stdout.split('\n')
+  delete_file(path + "master_table.md")
 
-  # Add new platforms to base cars so we can detect additions and removals in one pass
-  base_car_docs.update({car: [] for car in new_car_docs if car not in base_car_docs})
+  changes_markdown = defaultdict(list)
+  ind = 0
+  while ind < len(changes):
+    if changes[ind] and changes[ind][0].isdigit():
+      start = ind
+      ind += 1
+      while ind < len(changes) and changes[ind] and not changes[ind][0].isdigit():
+        ind += 1
+      category, strings = process_diff_information(changes[start:ind])
+      changes_markdown[category] += strings
+    else:
+      ind += 1
 
-  changes = defaultdict(list)
-  for base_car_model, base_cars in base_car_docs.items():
-    # Match car info changes, and get additions and removals
-    new_cars = new_car_docs[base_car_model]
-    car_changes, car_additions, car_removals = match_cars(base_cars, new_cars)
-
-    # Removals
-    for car_docs in car_removals:
-      changes["removals"].append(format_row([car_docs.get_column(column, STAR_ICON, VIDEO_ICON, FOOTNOTE_TAG) for column in Column]))
-
-    # Additions
-    for car_docs in car_additions:
-      changes["additions"].append(format_row([car_docs.get_column(column, STAR_ICON, VIDEO_ICON, FOOTNOTE_TAG) for column in Column]))
-
-    for new_car, base_car in car_changes:
-      # Column changes
-      row_diff = build_column_diff(base_car, new_car)
-      if ARROW_SYMBOL in row_diff:
-        changes["column"].append(row_diff)
-
-      # Detail sentence changes
-      if base_car.detail_sentence != new_car.detail_sentence:
-        changes["detail"].append(f"- Sentence for {base_car.name} changed!\n" +
-                                 "  ```diff\n" +
-                                 f"  - {base_car.detail_sentence}\n" +
-                                 f"  + {new_car.detail_sentence}\n" +
-                                 "  ```")
-
-  # Print diff
-  if any(len(c) for c in changes.values()):
-    markdown_builder = ["### ⚠️ This PR makes changes to [CARS.md](../blob/master/docs/CARS.md) ⚠️"]
-
-    for title, category in (("## 🔀 Column Changes", "column"), ("## ❌ Removed", "removals"),
-                            ("## ➕ Added", "additions"), ("## 📖 Detail Sentence Changes", "detail")):
-      if len(changes[category]):
-        markdown_builder.append(title)
-        if category not in ("detail",):
-          markdown_builder.append(COLUMNS)
-          markdown_builder.append(COLUMN_HEADER)
-        markdown_builder.extend(changes[category])
-
-    print("\n".join(markdown_builder))
-
+  if any(len(c) for c in changes_markdown.values()):
+    print_markdown(changes_markdown)
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
