@@ -27,6 +27,10 @@ def column_change_format(line1, line2):
   return "|".join([f"{i1} {ARROW_SYMBOL} {i2}|" if i1 != i2 else f"{i1}|" for i1, i2 in zip(info1, info2, strict=True)])
 
 def get_detail_sentence(data):
+  if len(data.split("|")) == 11:
+    return data.split("|")[8]
+
+  # Without experimental data added
   make, model, package, longitudinal, fsr_longitudinal, fsr_steering, steering_torque, auto_resume, hardware, video = data.split("|")
   min_steer_speed, min_enable_speed = fsr_steering / CV.MS_TO_MPH, fsr_longitudinal / CV.MS_TO_MPH # default values
 
@@ -44,7 +48,7 @@ def get_detail_sentence(data):
     sentence_builder += " This car may not be able to take tight turns on its own."
 
   # experimental mode
-  # TODO: Add experimental data
+  # TODO: Add experimental data to the sentence
   # openpilotLongitudinalControl = True
   # experimentalLongitudinalAvailable = False
   # exp_link = "<a href='https://blog.comma.ai/090release/#experimental-mode' target='_blank' class='link-light-new-regular-text'>Experimental mode</a>"

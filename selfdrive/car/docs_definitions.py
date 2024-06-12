@@ -20,6 +20,7 @@ class Column(Enum):
   FSR_STEERING = "No ALC below"
   STEERING_TORQUE = "Steering Torque"
   AUTO_RESUME = "Resume from stop"
+  DETAIL_SENTENCE = "Details Sentence"
   HARDWARE = "Hardware Needed"
   VIDEO = "Video"
 
@@ -293,6 +294,9 @@ class CarDocs:
       if len(tools_docs):
         hardware_col += f'<details><summary>Tools</summary><sub>{display_func(tools_docs)}</sub></details>'
 
+    self.all_footnotes = all_footnotes
+    self.detail_sentence = self.get_detail_sentence(CP)
+
     self.row: dict[Enum, str | Star] = {
       Column.MAKE: self.make,
       Column.MODEL: self.model,
@@ -302,6 +306,7 @@ class CarDocs:
       Column.FSR_STEERING: f"{max(self.min_steer_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.STEERING_TORQUE: Star.EMPTY,
       Column.AUTO_RESUME: Star.FULL if self.auto_resume else Star.EMPTY,
+      Column.DETAIL_SENTENCE: self.detail_sentence, # TODO: Add tests
       Column.HARDWARE: hardware_col,
       Column.VIDEO: self.video_link if self.video_link is not None else "",  # replaced with an image and link from template in get_column
     }
@@ -310,9 +315,6 @@ class CarDocs:
     assert CP.maxLateralAccel > 0.1
     if CP.maxLateralAccel >= GOOD_TORQUE_THRESHOLD:
       self.row[Column.STEERING_TORQUE] = Star.FULL
-
-    self.all_footnotes = all_footnotes
-    self.detail_sentence = self.get_detail_sentence(CP)
 
     return self
 
