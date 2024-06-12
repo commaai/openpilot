@@ -41,7 +41,7 @@ def make_pie(msgs, typ):
 
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description='Check qlog size based on a rlog')
+  parser = argparse.ArgumentParser(description='View log size breakdown by message type')
   parser.add_argument('route', help='route to use')
   args = parser.parse_args()
 
