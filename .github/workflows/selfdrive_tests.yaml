@@ -258,21 +258,10 @@ jobs:
      runs-on: ubuntu-latest
      if: github.event_name == 'pull_request'
      steps:
-       - uses: actions/checkout@v4
-         with:
-           submodules: true
-           ref: ${{ github.event.pull_request.base.ref }}
-       - run: git lfs pull
-       - uses: ./.github/workflows/setup-with-retry
        - name: Get base car info
          run: |
-           ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/debug/dump_car_docs.py --path /tmp/openpilot_cache/base_car_docs"
+           ${{ env.RUN }} "scons -j$(nproc) && curl -o /tmp/openpilot_cache/base_car_docs/CARS.md https://raw.githubusercontent.com/commaai/openpilot/master/docs/CARS.md"
            sudo chown -R $USER:$USER ${{ github.workspace }}
-       - uses: actions/checkout@v4
-         with:
-           submodules: true
-           path: current
-       - run: cd current && git lfs pull
        - name: Save car docs diff
          id: save_diff
          run: |
@@ -281,6 +270,7 @@ jobs:
            output=$(${{ env.RUN }} "python selfdrive/debug/print_docs_diff.py --path /tmp/openpilot_cache/base_car_docs")
            output="${output//$'\n'/'%0A'}"
            echo "::set-output name=diff::$output"
+
        - name: Find comment
          if: ${{ env.AZURE_TOKEN != '' }}
          uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e

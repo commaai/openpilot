@@ -2,25 +2,17 @@
 import argparse
 import os
 import subprocess
-import requests
 
 from collections import defaultdict
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.car.docs_definitions import Column
-from openpilot.common.conversions import Conversions as CV
 
 STAR_ICON = '<a href="##"><img valign="top" ' + \
             'src="https://media.githubusercontent.com/media/commaai/openpilot/master/docs/assets/icon-star-{}.svg" width="22" /></a>'
 COLUMNS = "|" + "|".join([column.value for column in Column]) + "|"
 COLUMN_HEADER = "|---|---|---|{}|".format("|".join([":---:"] * (len(Column) - 3)))
 ARROW_SYMBOL = "➡️"
-
-def download_file(url, filename):
-  response = requests.get(url)
-  with open(filename, 'wb') as file:
-    file.write(response.content)
-
 
 def column_change_format(line1, line2):
   info1, info2 = line1.split('|'), line2.split('|')
@@ -29,33 +21,6 @@ def column_change_format(line1, line2):
 def get_detail_sentence(data):
   if len(data.split("|")) == 11:
     return data.split("|")[8]
-
-  # Without experimental data added
-  make, model, package, longitudinal, fsr_longitudinal, fsr_steering, steering_torque, auto_resume, hardware, video = data.split("|")
-  min_steer_speed, min_enable_speed = fsr_steering / CV.MS_TO_MPH, fsr_longitudinal / CV.MS_TO_MPH # default values
-
-  sentence_builder = "openpilot upgrades your <strong>{car_model}</strong> with automated lane centering{alc} and adaptive cruise control{acc}."
-  if min_steer_speed > min_enable_speed:
-    alc = f" <strong>above {min_steer_speed * CV.MS_TO_MPH:.0f} mph</strong>," if min_steer_speed > 0 else " <strong>at all speeds</strong>,"
-  else:
-    alc = ""
-  acc = ""
-  if min_enable_speed > 0:
-    acc = f" <strong>while driving above {min_enable_speed * CV.MS_TO_MPH:.0f} mph</strong>"
-  elif auto_resume:
-    acc = " <strong>that automatically resumes from a stop</strong>"
-  if steering_torque != STAR_ICON:
-    sentence_builder += " This car may not be able to take tight turns on its own."
-
-  # experimental mode
-  # TODO: Add experimental data to the sentence
-  # openpilotLongitudinalControl = True
-  # experimentalLongitudinalAvailable = False
-  # exp_link = "<a href='https://blog.comma.ai/090release/#experimental-mode' target='_blank' class='link-light-new-regular-text'>Experimental mode</a>"
-  # if openpilotLongitudinalControl and not experimentalLongitudinalAvailable:
-  #   sentence_builder += f" Traffic light and stop sign handling is also available in {exp_link}."
-
-  return sentence_builder.format(car_model=f"{make} {model}", alc=alc, acc=acc)
 
 def process_detail_sentences(info):
   detail_sentences = []
