@@ -1,7 +1,7 @@
 import pytest
 
 from openpilot.common.params import Params
-from openpilot.system.thermald.power_monitoring import PowerMonitoring, CAR_BATTERY_CAPACITY_uWh, \
+from openpilot.system.hardware.power_monitoring import PowerMonitoring, CAR_BATTERY_CAPACITY_uWh, \
                                                 CAR_CHARGING_RATE_W, VBATT_PAUSE_CHARGING, DELAY_SHUTDOWN_TIME_S
 
 # Create fake time
@@ -17,9 +17,9 @@ VOLTAGE_BELOW_PAUSE_CHARGING = (VBATT_PAUSE_CHARGING - 1) * 1e3
 
 def pm_patch(mocker, name, value, constant=False):
   if constant:
-    mocker.patch(f"openpilot.system.thermald.power_monitoring.{name}", value)
+    mocker.patch(f"openpilot.system.hardware.power_monitoring.{name}", value)
   else:
-    mocker.patch(f"openpilot.system.thermald.power_monitoring.{name}", return_value=value)
+    mocker.patch(f"openpilot.system.hardware.power_monitoring.{name}", return_value=value)
 
 
 @pytest.fixture(autouse=True)

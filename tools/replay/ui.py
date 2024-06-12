@@ -18,7 +18,7 @@ from openpilot.tools.replay.lib.ui_helpers import (UP,
                                          maybe_update_radar_points, plot_lead,
                                          plot_model,
                                          pygame_modules_have_loaded)
-from cereal.visionipc import VisionIpcClient, VisionStreamType
+from msgq.visionipc import VisionIpcClient, VisionStreamType
 
 os.environ['BASEDIR'] = BASEDIR
 

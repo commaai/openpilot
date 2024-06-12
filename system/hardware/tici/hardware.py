@@ -412,7 +412,7 @@ class Tici(HardwareBase):
     if self.amplifier is not None:
       self.amplifier.initialize_configuration(self.get_device_type())
 
-    # Allow thermald to write engagement status to kmsg
+    # Allow hardwared to write engagement status to kmsg
     os.system("sudo chmod a+w /dev/kmsg")
 
     # Ensure fan gpio is enabled so fan runs until shutdown, also turned on at boot by the ABL

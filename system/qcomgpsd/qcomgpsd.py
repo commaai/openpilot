@@ -173,7 +173,7 @@ def setup_quectel(diag: ModemDiag) -> bool:
     os.remove(ASSIST_DATA_FILE)
   #at_cmd("AT+QGPSXTRADATA?")
   if system_time_valid():
-    time_str = datetime.datetime.utcnow().strftime("%Y/%m/%d,%H:%M:%S")
+    time_str = datetime.datetime.now(datetime.UTC).replace(tzinfo=None).strftime("%Y/%m/%d,%H:%M:%S")
     at_cmd(f"AT+QGPSXTRATIME=0,\"{time_str}\",1,1,1000")
 
   at_cmd("AT+QGPSCFG=\"outport\",\"usbnmea\"")
