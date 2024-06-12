@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import bz2
-import zstd
-import lz4.frame
-import zlib
 from collections import defaultdict
 
 import matplotlib.pyplot as plt
@@ -14,28 +11,19 @@ from tqdm import tqdm
 MIN_SIZE = 0.5  # Percent size of total to show as separate entry
 
 
-def compress(data):
-  # return lz4.frame.compress(data)
-  # return zlib.compress(data)
-  # return bz2.compress(data)
-  return zstd.compress(data)
-
-
 def make_pie(msgs, typ):
   msgs_by_type = defaultdict(list)
   for m in msgs:
     msgs_by_type[m.which()].append(m.as_builder().to_bytes())
 
-  length_by_type = {k: len(b"".join(v)) for k, v in msgs_by_type.items()}
-
-  # calculate compressed size by calculating diff when removed from the segment
-  compressed_length_by_type = {}
-
-  total = len(compress(b"".join([m.as_builder().to_bytes() for m in msgs])))
+  total = len(bz2.compress(b"".join([m.as_builder().to_bytes() for m in msgs])))
   uncompressed_total = len(b"".join([m.as_builder().to_bytes() for m in msgs]))
 
+  length_by_type = {k: len(b"".join(v)) for k, v in msgs_by_type.items()}
+  # calculate compressed size by calculating diff when removed from the segment
+  compressed_length_by_type = {}
   for k in tqdm(msgs_by_type.keys()):
-    compressed_length_by_type[k] = total - len(compress(b"".join([m.as_builder().to_bytes() for m in msgs if m.which() != k])))
+    compressed_length_by_type[k] = total - len(bz2.compress(b"".join([m.as_builder().to_bytes() for m in msgs if m.which() != k])))
 
   sizes = sorted(compressed_length_by_type.items(), key=lambda kv: kv[1])
 
