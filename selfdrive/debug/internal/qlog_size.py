@@ -8,9 +8,7 @@ from collections import defaultdict
 
 import matplotlib.pyplot as plt
 
-from cereal.services import SERVICE_LIST
 from openpilot.tools.lib.logreader import LogReader
-from openpilot.tools.lib.route import Route
 from tqdm import tqdm
 
 MIN_SIZE = 0.5  # Percent size of total to show as separate entry
@@ -30,7 +28,7 @@ def make_pie(msgs, typ):
 
   length_by_type = {k: len(b"".join(v)) for k, v in msgs_by_type.items()}
 
-  # calculate compressed size by removing it from segment and compressing
+  # calculate compressed size by calculating diff when removed from the segment
   compressed_length_by_type = {}
 
   total = len(compress(b"".join([m.as_builder().to_bytes() for m in msgs])))
@@ -45,9 +43,8 @@ def make_pie(msgs, typ):
   for (name, sz) in sizes:
     print(f"{name:<22} - {sz / 1024:.2f} kB / {compressed_length_by_type[name] / 1024:.2f} kB ({length_by_type[name] / 1024:.2f} kB)")
   print()
-  # print(f"{typ} - Total {total / 1024:.2f} kB")
   print(f"{typ} - Real {total / 1024:.2f} kB")
-  print(f"{typ} - Simulated total (v2) {sum(compressed_length_by_type.values()) / 1024:.2f} MB")
+  print(f"{typ} - Breakdown total {sum(compressed_length_by_type.values()) / 1024:.2f} kB")
   print(f"{typ} - Uncompressed total {uncompressed_total / 1024 / 1024:.2f} MB")
 
   sizes_large = [(k, sz) for (k, sz) in sizes if sz >= total * MIN_SIZE / 100]
@@ -61,7 +58,7 @@ def make_pie(msgs, typ):
 
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser(description='Check qlog size based on a rlog')
+  parser = argparse.ArgumentParser(description='View log size breakdown by message type')
   parser.add_argument('route', help='route to use')
   args = parser.parse_args()
 
