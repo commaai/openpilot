@@ -1,0 +1,26 @@
+Import('env', 'arch', 'messaging', 'common', 'visionipc')
+
+libs = [common, messaging, visionipc,
+        'z', 'avformat', 'avcodec', 'swscale',
+        'avutil', 'yuv', 'OpenCL', 'pthread']
+
+src = ['logger.cc', 'video_writer.cc', 'encoder/encoder.cc', 'encoder/v4l_encoder.cc']
+if arch != "larch64":
+  src += ['encoder/ffmpeg_encoder.cc']
+
+if arch == "Darwin":
+  # fix OpenCL
+  del libs[libs.index('OpenCL')]
+  env['FRAMEWORKS'] = ['OpenCL']
+  # exclude v4l
+  del src[src.index('encoder/v4l_encoder.cc')]
+
+logger_lib = env.Library('logger', src)
+libs.insert(0, logger_lib)
+
+env.Program('loggerd', ['loggerd.cc'], LIBS=libs)
+env.Program('encoderd', ['encoderd.cc'], LIBS=libs)
+env.Program('bootlog.cc', LIBS=libs)
+
+if GetOption('extras'):
+  env.Program('tests/test_logger', ['tests/test_runner.cc', 'tests/test_logger.cc'], LIBS=libs + ['curl', 'crypto'])
