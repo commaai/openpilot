@@ -3,7 +3,6 @@ from opendbc.can.parser import CANParser
 from cereal import car
 from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
 from openpilot.selfdrive.car.chrysler.values import DBC
-from openpilot.selfdrive.pandad import can_capnp_to_list
 
 RADAR_MSGS_C = list(range(0x2c2, 0x2d4+2, 2))  # c_ messages 706,...,724
 RADAR_MSGS_D = list(range(0x2a2, 0x2b4+2, 2))  # d_ messages
@@ -49,7 +48,7 @@ class RadarInterface(RadarInterfaceBase):
     if self.rcp is None or self.CP.radarUnavailable:
       return super().update(None)
 
-    vls = self.rcp.update_strings(can_capnp_to_list(can_strings))
+    vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)
 
     if self.trigger_msg not in self.updated_messages:

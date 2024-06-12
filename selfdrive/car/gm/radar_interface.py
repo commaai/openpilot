@@ -5,7 +5,6 @@ from openpilot.common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.gm.values import DBC, CanBus
 from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
-from openpilot.selfdrive.pandad import can_capnp_to_list
 
 RADAR_HEADER_MSG = 1120
 SLOT_1_MSG = RADAR_HEADER_MSG + 1
@@ -47,7 +46,7 @@ class RadarInterface(RadarInterfaceBase):
     if self.rcp is None:
       return super().update(None)
 
-    vls = self.rcp.update_strings(can_capnp_to_list(can_strings))
+    vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)
 
     if self.trigger_msg not in self.updated_messages:

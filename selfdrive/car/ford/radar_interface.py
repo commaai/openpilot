@@ -5,7 +5,6 @@ from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car.ford.fordcan import CanBus
 from openpilot.selfdrive.car.ford.values import DBC, RADAR
 from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
-from openpilot.selfdrive.pandad import can_capnp_to_list
 
 DELPHI_ESR_RADAR_MSGS = list(range(0x500, 0x540))
 
@@ -53,7 +52,7 @@ class RadarInterface(RadarInterfaceBase):
     if self.rcp is None:
       return super().update(None)
 
-    vls = self.rcp.update_strings(can_capnp_to_list(can_strings))
+    vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)
 
     if self.trigger_msg not in self.updated_messages:

@@ -3,7 +3,6 @@ from opendbc.can.parser import CANParser
 from cereal import car
 from openpilot.selfdrive.car.toyota.values import DBC, TSS2_CAR
 from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
-from openpilot.selfdrive.pandad import can_capnp_to_list
 
 
 def _create_radar_can_parser(car_fingerprint):
@@ -43,7 +42,7 @@ class RadarInterface(RadarInterfaceBase):
     if self.rcp is None:
       return super().update(None)
 
-    vls = self.rcp.update_strings(can_capnp_to_list(can_strings))
+    vls = self.rcp.update_strings(can_strings)
     self.updated_messages.update(vls)
 
     if self.trigger_msg not in self.updated_messages:
