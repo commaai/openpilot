@@ -21,7 +21,6 @@ def make_pie(msgs, typ):
   compressed_length_by_type = {k: len(bz2.compress(b"".join(v))) for k, v in msgs_by_type.items()}
 
   total = sum(compressed_length_by_type.values())
-  real_total = len(bz2.compress(b"".join([m.as_builder().to_bytes() for m in msgs])))
   uncompressed_total = len(b"".join([m.as_builder().to_bytes() for m in msgs]))
 
   sizes = sorted(compressed_length_by_type.items(), key=lambda kv: kv[1])
@@ -31,7 +30,6 @@ def make_pie(msgs, typ):
     print(f"{name:<22} - {sz / 1024:.2f} kB ({length_by_type[name] / 1024:.2f} kB)")
   print()
   print(f"{typ} - Total {total / 1024:.2f} kB")
-  print(f"{typ} - Real {real_total / 1024:.2f} kB")
   print(f"{typ} - Uncompressed total {uncompressed_total / 1024 / 1024:.2f} MB")
 
   sizes_large = [(k, sz) for (k, sz) in sizes if sz >= total * MIN_SIZE / 100]
