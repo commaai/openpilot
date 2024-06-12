@@ -19,9 +19,6 @@ def download_file(url, filename):
   with open(filename, 'wb') as file:
     file.write(response.content)
 
-def delete_file(filename):
-  if os.path.exists(filename):
-    os.remove(filename)
 
 def column_change_format(line1, line2):
   info1, info2 = line1.split('|'), line2.split('|')
