@@ -44,17 +44,13 @@ class _LogFileReader:
     if ext == ".bz2" or dat.startswith(b'BZh9'):
       dat = bz2.decompress(dat)
 
-    ents = capnp_log.Event.read_multiple_bytes(dat)
-
-    _ents = []
     try:
-      for e in ents:
-        _ents.append(e)
+      self._ents = list(capnp_log.Event.read_multiple_bytes(dat))
     except capnp.KjException:
       warnings.warn("Corrupted events detected", RuntimeWarning, stacklevel=1)
 
-    self._ents = list(sorted(_ents, key=lambda x: x.logMonoTime) if sort_by_time else _ents)
-    self._ts = [x.logMonoTime for x in self._ents]
+    if sort_by_time:
+      self._ents.sort(key=lambda x: x.logMonoTime)
 
   def __iter__(self) -> Iterator[capnp._DynamicStructReader]:
     for ent in self._ents:
