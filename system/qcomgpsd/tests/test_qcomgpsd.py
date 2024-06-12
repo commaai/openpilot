@@ -85,7 +85,7 @@ class TestRawgpsd:
     if should_be_loaded:
       assert valid_duration == "10080"  # should be max time
       injected_time = datetime.datetime.strptime(injected_time_str.replace("\"", ""), "%Y/%m/%d,%H:%M:%S")
-      assert abs((datetime.datetime.utcnow() - injected_time).total_seconds()) < 60*60*12
+      assert abs((datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - injected_time).total_seconds()) < 60*60*12
     else:
       valid_duration, injected_time_str = out.split(",", 1)
       injected_time_str = injected_time_str.replace('\"', '').replace('\'', '')

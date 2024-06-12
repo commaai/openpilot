@@ -1,13 +1,19 @@
-Version 0.9.7 (2024-06-11)
+Version 0.9.8 (2024-XX-XX)
+========================
+* Added toggle to enable driver monitoring even when openpilot is not engaged
+
+Version 0.9.7 (2024-06-13)
 ========================
 * New driving model
   * Inputs the past curvature for smoother and more accurate lateral control
   * Simplified neural network architecture in the model's last layers
   * Minor fixes to desire augmentation and weight decay
+* New driver monitoring model
+  * Improved end-to-end bit for phone detection
 * Adjust driving personality with the follow distance button
-* Added toggle to enable driver monitoring even when openpilot is not engaged
 * Support for hybrid variants of supported Ford models
 * Fingerprinting without the OBD-II port on all cars
+* Improved fuzzy fingerprinting for Ford and Volkswagen
 
 Version 0.9.6 (2024-02-27)
 ========================

@@ -164,7 +164,7 @@ class TestUpdated:
     # make sure LastUpdateTime is recent
     t = self._read_param("LastUpdateTime")
     last_update_time = datetime.datetime.fromisoformat(t)
-    td = datetime.datetime.utcnow() - last_update_time
+    td = datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - last_update_time
     assert td.total_seconds() < 10
     self.params.remove("LastUpdateTime")
 
