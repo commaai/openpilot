@@ -6,6 +6,7 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 
 from openpilot.tools.lib.logreader import LogReader
+from tqdm import tqdm
 
 MIN_SIZE = 0.5  # Percent size of total to show as separate entry
 
@@ -15,11 +16,14 @@ def make_pie(msgs, typ):
   for m in msgs:
     msgs_by_type[m.which()].append(m.as_builder().to_bytes())
 
-  length_by_type = {k: len(b"".join(v)) for k, v in msgs_by_type.items()}
-  compressed_length_by_type = {k: len(bz2.compress(b"".join(v))) for k, v in msgs_by_type.items()}
-
-  total = sum(compressed_length_by_type.values())
+  total = len(bz2.compress(b"".join([m.as_builder().to_bytes() for m in msgs])))
   uncompressed_total = len(b"".join([m.as_builder().to_bytes() for m in msgs]))
+
+  length_by_type = {k: len(b"".join(v)) for k, v in msgs_by_type.items()}
+  # calculate compressed size by calculating diff when removed from the segment
+  compressed_length_by_type = {}
+  for k in tqdm(msgs_by_type.keys(), desc="Compressing"):
+    compressed_length_by_type[k] = total - len(bz2.compress(b"".join([m.as_builder().to_bytes() for m in msgs if m.which() != k])))
 
   sizes = sorted(compressed_length_by_type.items(), key=lambda kv: kv[1])
 
@@ -27,7 +31,8 @@ def make_pie(msgs, typ):
   for (name, sz) in sizes:
     print(f"{name:<22} - {sz / 1024:.2f} kB ({length_by_type[name] / 1024:.2f} kB)")
   print()
-  print(f"{typ} - Total {total / 1024:.2f} kB")
+  print(f"{typ} - Real total {total / 1024:.2f} kB")
+  print(f"{typ} - Breakdown total {sum(compressed_length_by_type.values()) / 1024:.2f} kB")
   print(f"{typ} - Uncompressed total {uncompressed_total / 1024 / 1024:.2f} MB")
 
   sizes_large = [(k, sz) for (k, sz) in sizes if sz >= total * MIN_SIZE / 100]
