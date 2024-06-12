@@ -9,3 +9,13 @@ source_modules =
     openpilot.selfdrive.car
 forbidden_modules =
     openpilot.system
+    openpilot.body
+    openpilot.common
+    openpilot.docs
+    openpilot.msgq
+    openpilot.panda
+    openpilot.rednose
+    openpilot.release
+    openpilot.teleoprtc
+    openpilot.tinygrad
+    openpilot.tools
