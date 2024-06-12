@@ -66,7 +66,6 @@ _services: dict[str, tuple] = {
   "navInstruction": (True, 1., 10),
   "navRoute": (True, 0.),
   "navThumbnail": (True, 0.),
-  "uiPlan": (True, 20., 40.),
   "qRoadEncodeIdx": (False, 20.),
   "userFlag": (True, 0., 1),
   "microphone": (True, 10., 10),
