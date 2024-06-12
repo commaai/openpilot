@@ -1,0 +1,129 @@
+import os
+import json
+Import('qt_env', 'arch', 'common', 'messaging', 'visionipc', 'transformations')
+
+base_libs = [common, messaging, visionipc, transformations,
+             'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
+
+if arch == 'larch64':
+  base_libs.append('EGL')
+
+maps = arch in ['larch64', 'aarch64', 'x86_64']
+
+if arch == "Darwin":
+  del base_libs[base_libs.index('OpenCL')]
+  qt_env['FRAMEWORKS'] += ['OpenCL']
+
+# FIXME: remove this once we're on 5.15 (24.04)
+qt_env['CXXFLAGS'] += ["-Wno-deprecated-declarations"]
+
+qt_util = qt_env.Library("qt_util", ["#selfdrive/ui/qt/api.cc", "#selfdrive/ui/qt/util.cc"], LIBS=base_libs)
+widgets_src = ["ui.cc", "qt/widgets/input.cc", "qt/widgets/wifi.cc",
+               "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc",
+               "qt/widgets/offroad_alerts.cc", "qt/widgets/prime.cc", "qt/widgets/keyboard.cc",
+               "qt/widgets/scrollview.cc", "qt/widgets/cameraview.cc", "#third_party/qrcode/QrCode.cc",
+               "qt/request_repeater.cc", "qt/qt_window.cc", "qt/network/networking.cc", "qt/network/wifi_manager.cc"]
+
+qt_env['CPPDEFINES'] = []
+if maps:
+  base_libs += ['QMapLibre']
+  widgets_src += ["qt/maps/map_helpers.cc", "qt/maps/map_settings.cc", "qt/maps/map.cc", "qt/maps/map_panel.cc",
+                  "qt/maps/map_eta.cc", "qt/maps/map_instructions.cc"]
+  qt_env['CPPDEFINES'] += ["ENABLE_MAPS"]
+
+widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
+Export('widgets')
+qt_libs = [widgets, qt_util] + base_libs
+
+qt_src = ["main.cc", "qt/sidebar.cc", "qt/body.cc",
+          "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc",
+          "qt/offroad/software_settings.cc", "qt/offroad/onboarding.cc",
+          "qt/offroad/driverview.cc", "qt/offroad/experimental_mode.cc",
+          "qt/onroad/onroad_home.cc", "qt/onroad/annotated_camera.cc",
+          "qt/onroad/buttons.cc", "qt/onroad/alerts.cc"]
+
+# build translation files
+with open(File("translations/languages.json").abspath) as f:
+  languages = json.loads(f.read())
+translation_sources = [f"#selfdrive/ui/translations/{l}.ts" for l in languages.values()]
+translation_targets = [src.replace(".ts", ".qm") for src in translation_sources]
+lrelease_bin = 'third_party/qt5/larch64/bin/lrelease' if arch == 'larch64' else 'lrelease'
+
+lupdate = qt_env.Command(translation_sources, qt_src + widgets_src, "selfdrive/ui/update_translations.py")
+lrelease = qt_env.Command(translation_targets, translation_sources, f"{lrelease_bin} $SOURCES")
+qt_env.Depends(lrelease, lupdate)
+qt_env.NoClean(translation_sources)
+qt_env.Precious(translation_sources)
+qt_env.NoCache(lupdate)
+
+# create qrc file for compiled translations to include with assets
+translations_assets_src = "#selfdrive/assets/translations_assets.qrc"
+with open(File(translations_assets_src).abspath, 'w') as f:
+  f.write('<!DOCTYPE RCC><RCC version="1.0">\n<qresource>\n')
+  f.write('\n'.join([f'<file alias="{l}">../ui/translations/{l}.qm</file>' for l in languages.values()]))
+  f.write('\n</qresource>\n</RCC>')
+
+# build assets
+assets = "#selfdrive/assets/assets.cc"
+assets_src = "#selfdrive/assets/assets.qrc"
+qt_env.Command(assets, [assets_src, translations_assets_src], f"rcc $SOURCES -o $TARGET")
+qt_env.Depends(assets, Glob('#selfdrive/assets/*', exclude=[assets, assets_src, translations_assets_src, "#selfdrive/assets/assets.o"]) + [lrelease])
+asset_obj = qt_env.Object("assets", assets)
+
+qt_env.SharedLibrary("qt/python_helpers", ["qt/qt_window.cc"], LIBS=qt_libs)
+
+# spinner and text window
+qt_env.Program("_text", ["qt/text.cc"], LIBS=qt_libs)
+qt_env.Program("_spinner", ["qt/spinner.cc"], LIBS=qt_libs)
+
+# build main UI
+qt_env.Program("ui", qt_src + [asset_obj], LIBS=qt_libs)
+if GetOption('extras'):
+  qt_src.remove("main.cc")  # replaced by test_runner
+  qt_env.Program('tests/test_translations', [asset_obj, 'tests/test_runner.cc', 'tests/test_translations.cc'] + qt_src, LIBS=qt_libs)
+  qt_env.Program('tests/ui_snapshot', [asset_obj, "tests/ui_snapshot.cc"] + qt_src, LIBS=qt_libs)
+
+
+if GetOption('extras') and arch != "Darwin":
+  # setup and factory resetter
+  qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
+  qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc", asset_obj],
+                 LIBS=qt_libs + ['curl', 'common', 'json11'])
+
+  # build updater UI
+  qt_env.Program("qt/setup/updater", ["qt/setup/updater.cc", asset_obj], LIBS=qt_libs)
+
+  # build mui
+  qt_env.Program("mui", ["mui.cc"], LIBS=qt_libs)
+
+  # build installers
+  senv = qt_env.Clone()
+  senv['LINKFLAGS'].append('-Wl,-strip-debug')
+
+  release = "release3"
+  installers = [
+    ("openpilot", release),
+    ("openpilot_test", f"{release}-staging"),
+    ("openpilot_nightly", "nightly"),
+    ("openpilot_internal", "master"),
+  ]
+
+  cont = senv.Command(f"installer/continue_openpilot.o", f"installer/continue_openpilot.sh",
+                      "ld -r -b binary -o $TARGET $SOURCE")
+  for name, branch in installers:
+    d = {'BRANCH': f"'\"{branch}\"'"}
+    if "internal" in name:
+      d['INTERNAL'] = "1"
+
+      import requests
+      r = requests.get("https://github.com/commaci2.keys")
+      r.raise_for_status()
+      d['SSH_KEYS'] = f'\\"{r.text.strip()}\\"'
+    obj = senv.Object(f"installer/installers/installer_{name}.o", ["installer/installer.cc"], CPPDEFINES=d)
+    f = senv.Program(f"installer/installers/installer_{name}", [obj, cont], LIBS=qt_libs)
+    # keep installers small
+    assert f[0].get_size() < 350*1e3
+
+# build watch3
+if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):
+  qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'json11', 'msgq', 'visionipc'])

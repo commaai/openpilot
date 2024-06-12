@@ -1,0 +1,21 @@
+# https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
+[tool.ruff]
+lint.select = ["E", "F", "W", "PIE", "C4", "ISC", "RUF100", "A"]
+lint.ignore = ["W292", "E741", "E402", "C408", "ISC003"]
+lint.flake8-implicit-str-concat.allow-multiline=false
+
+line-length = 160
+target-version="py311"
+
+[mypy.tool]
+# third-party packages
+ignore_missing_imports=true
+
+# helpful warnings
+warn_redundant_casts=true
+warn_unreachable=true
+warn_unused_ignores=true
+
+# restrict dynamic typing
+warn_return_any=true
+check_untyped_defs=true

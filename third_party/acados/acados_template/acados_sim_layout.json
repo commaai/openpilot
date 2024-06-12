@@ -1,0 +1,53 @@
+{
+    "acados_include_path": [
+        "str"
+    ],
+     "model": {
+         "name" : [
+            "str"
+        ]
+    },
+    "acados_lib_path": [
+        "str"
+    ],
+    "dims": {
+        "np": [
+            "int"
+        ],
+        "nu": [
+            "int"
+        ],
+        "nx": [
+            "int" 
+        ],
+        "nz": [
+            "int"
+        ]
+    },
+    "solver_options": {
+        "integrator_type": [
+            "str"
+        ],
+        "collocation_type": [
+            "str"
+        ],
+        "Tsim": [
+            "float"
+        ],
+        "sim_method_num_stages": [
+            "int"
+        ],
+        "sim_method_num_steps": [
+            "int"
+        ],
+        "sim_method_newton_iter": [
+            "int"
+        ],
+        "sim_method_newton_tol": [
+            "float"
+        ],
+        "ext_fun_compile_flags": [
+            "str"
+        ]
+    }
+}
