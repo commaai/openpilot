@@ -104,8 +104,9 @@ std::vector<std::string> PandaUsbHandle::list() {
   num_devices = libusb_get_device_list(context.get(), &dev_list);
   if (num_devices < 0) {
     LOGE("libusb can't get device list");
-    goto finish;
+    return {};
   }
+
   for (size_t i = 0; i < num_devices; ++i) {
     libusb_device *device = dev_list[i];
     libusb_device_descriptor desc;
@@ -113,18 +114,17 @@ std::vector<std::string> PandaUsbHandle::list() {
     if (desc.idVendor == 0xbbaa && desc.idProduct == 0xddcc) {
       libusb_device_handle *handle = NULL;
       int ret = libusb_open(device, &handle);
-      if (ret < 0) { goto finish; }
+      if (ret < 0) continue;
 
       unsigned char desc_serial[26] = { 0 };
       ret = libusb_get_string_descriptor_ascii(handle, desc.iSerialNumber, desc_serial, std::size(desc_serial));
       libusb_close(handle);
-      if (ret < 0) { goto finish; }
+      if (ret < 0) continue;
 
       serials.push_back(std::string((char *)desc_serial, ret).c_str());
     }
   }
 
-finish:
   if (dev_list != NULL) {
     libusb_free_device_list(dev_list, 1);
   }
