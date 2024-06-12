@@ -22,7 +22,7 @@ def make_pie(msgs, typ):
   length_by_type = {k: len(b"".join(v)) for k, v in msgs_by_type.items()}
   # calculate compressed size by calculating diff when removed from the segment
   compressed_length_by_type = {}
-  for k in tqdm(msgs_by_type.keys()):
+  for k in tqdm(msgs_by_type.keys(), desc="Compressing"):
     compressed_length_by_type[k] = total - len(bz2.compress(b"".join([m.as_builder().to_bytes() for m in msgs if m.which() != k])))
 
   sizes = sorted(compressed_length_by_type.items(), key=lambda kv: kv[1])
