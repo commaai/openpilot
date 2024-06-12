@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import bz2
-import zstd
 from collections import defaultdict
 
 import matplotlib.pyplot as plt
@@ -20,9 +19,9 @@ def make_pie(msgs, typ):
 
   sizes = sorted(compressed_length_by_type.items(), key=lambda kv: kv[1])
 
+  print(f"{typ} - Total {total / 1024:.2f} kB")
   for (name, sz) in sizes:
     print(f"{name} - {sz / 1024:.2f} kB")
-  print(f"{typ} - Total {total / 1024:.2f} kB")
   print()
 
   sizes_large = [(k, sz) for (k, sz) in sizes if sz >= total * MIN_SIZE / 100]
@@ -38,26 +37,16 @@ def make_pie(msgs, typ):
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Check qlog size based on a rlog')
   parser.add_argument('route', help='route to use')
+  parser.add_argument('segment', type=int, help='segment number to use')
   args = parser.parse_args()
 
-  msgs = list(LogReader(args.route))
-
-  comp = bz2.compress(b"".join([m.as_builder().to_bytes() for m in msgs]))
-  comp2 = bz2.compress(b"".join([m.as_builder().to_bytes() for m in sorted(msgs, key=lambda m: m.which())]))
-  print(len(comp) / 1024)
-  print(len(comp2) / 1024)
-  # exit(1)
+  r = Route(args.route)
+  rlog = r.log_paths()[args.segment]
+  msgs = list(LogReader(rlog))
 
   msgs_by_type = defaultdict(list)
   for m in msgs:
-    if m.which() == 'modelV2':
-      m = m.as_builder()
-      print(m)
-      break
-      m
-    else:
-      m = m.as_builder()
-    msgs_by_type[m.which()].append(m.to_bytes())
+    msgs_by_type[m.which()].append(m.as_builder().to_bytes())
 
   qlog_by_type = defaultdict(list)
   for name, service in SERVICE_LIST.items():
@@ -69,5 +58,5 @@ if __name__ == "__main__":
         qlog_by_type[name].append(msg)
 
   make_pie(msgs_by_type, 'rlog')
-  # make_pie(qlog_by_type, 'qlog')
+  make_pie(qlog_by_type, 'qlog')
   plt.show()
