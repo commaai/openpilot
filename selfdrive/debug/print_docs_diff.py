@@ -97,7 +97,8 @@ def print_markdown(changes):
 
 def print_car_docs_diff(path):
   CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS.md")
-  changes = subprocess.run(['diff', path, CARS_MD_OUT], capture_output=True, text=True).stdout.split('\n')
+  MASTER_CARS_MD = os.path.join(path, "CARS.md")
+  changes = subprocess.run(['diff', MASTER_CARS_MD, CARS_MD_OUT], capture_output=True, text=True).stdout.split('\n')
 
   changes_markdown = defaultdict(list)
   ind = 0

@@ -262,11 +262,9 @@ jobs:
         with:
           submodules: true
           ref: ${{ github.event.pull_request.base.ref }}
-      - run: git lfs pull
-      - uses: ./.github/workflows/setup-with-retry
       - name: Get base car info
         run: |
-          ${{ env.RUN }} "scons -j$(nproc) && wget -O /tmp/openpilot_cache/base_car_docs https://raw.githubusercontent.com/commaai/openpilot/master/docs/CARS.md"
+          ${{ env.RUN }} "scons -j$(nproc) && wget -P /tmp/openpilot_cache/base_car_docs https://raw.githubusercontent.com/commaai/openpilot/master/docs/CARS.md"
           sudo chown -R $USER:$USER ${{ github.workspace }}
       - uses: actions/checkout@v4
         with:
