@@ -256,6 +256,7 @@ class TestOnroad:
     for proc_name, expected_cpu in PROCS.items():
 
       err = ""
+      exp = "???"
       cpu_usage = 0.
       x = plogs_by_proc[proc_name]
       if len(x) > 2:
@@ -309,7 +310,7 @@ class TestOnroad:
     assert max(mems) - min(mems) <= 3.0
 
   def test_gpu_usage(self):
-    assert self.gpu_procs == {"weston", "ui", "camerad", "selfdrive.modeld.modeld"}
+    assert self.gpu_procs == {"weston", "ui", "camerad", "modeld"}
 
   def test_camera_processing_time(self):
     result = "\n"

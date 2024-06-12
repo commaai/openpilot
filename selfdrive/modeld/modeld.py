@@ -116,7 +116,7 @@ def main(demo=False):
 
   sentry.set_tag("daemon", THREAD_NAME)
   cloudlog.bind(daemon=THREAD_NAME)
-  setthreadname(THREAD_NAME)
+  setthreadname("modeld")
   config_realtime_process(7, 54)
 
   cloudlog.warning("setting up CL context")
