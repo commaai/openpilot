@@ -20,27 +20,19 @@ def make_pie(msgs, typ):
   length_by_type = {k: len(b"".join(v)) for k, v in msgs_by_type.items()}
   compressed_length_by_type = {k: len(bz2.compress(b"".join(v))) for k, v in msgs_by_type.items()}
 
-  compressed_length_by_type_v2 = {}
-
   total = sum(compressed_length_by_type.values())
   real_total = len(bz2.compress(b"".join([m.as_builder().to_bytes() for m in msgs])))
   uncompressed_total = len(b"".join([m.as_builder().to_bytes() for m in msgs]))
 
-  for k in msgs_by_type.keys():
-    compressed_length_by_type_v2[k] = real_total - len(bz2.compress(b"".join([m.as_builder().to_bytes() for m in msgs if m.which() != k])))
-    print(k, compressed_length_by_type_v2[k])
-
-  # sizes = sorted(compressed_length_by_type.items(), key=lambda kv: kv[1])
-  sizes = sorted(compressed_length_by_type_v2.items(), key=lambda kv: kv[1])
+  sizes = sorted(compressed_length_by_type.items(), key=lambda kv: kv[1])
 
   print("name - comp. size (uncomp. size)")
   for (name, sz) in sizes:
-    print(f"{name:<22} - {sz / 1024:.2f} kB / {compressed_length_by_type_v2[name] / 1024:.2f} kB ({length_by_type[name] / 1024:.2f} kB)")
+    print(f"{name:<22} - {sz / 1024:.2f} kB ({length_by_type[name] / 1024:.2f} kB)")
   print()
   print(f"{typ} - Total {total / 1024:.2f} kB")
   print(f"{typ} - Real {real_total / 1024:.2f} kB")
   print(f"{typ} - Uncompressed total {uncompressed_total / 1024 / 1024:.2f} MB")
-  print(sum(compressed_length_by_type_v2.values()) / 1024)
 
   sizes_large = [(k, sz) for (k, sz) in sizes if sz >= total * MIN_SIZE / 100]
   sizes_large += [('other', sum(sz for (_, sz) in sizes if sz < total * MIN_SIZE / 100))]
