@@ -266,7 +266,7 @@ jobs:
       - uses: ./.github/workflows/setup-with-retry
       - name: Get base car info
         run: |
-          ${{ env.RUN }} "scons -j$(nproc) && python selfdrive/debug/dump_car_docs.py --path /tmp/openpilot_cache/base_car_docs"
+          ${{ env.RUN }} "scons -j$(nproc) && wget -O /tmp/openpilot_cache/base_car_docs https://raw.githubusercontent.com/commaai/openpilot/master/docs/CARS.md"
           sudo chown -R $USER:$USER ${{ github.workspace }}
       - uses: actions/checkout@v4
         with:

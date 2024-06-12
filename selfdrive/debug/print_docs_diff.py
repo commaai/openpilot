@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 import argparse
+import os
 import subprocess
 import requests
-import os
 
 from collections import defaultdict
+
+from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.car.docs_definitions import Column
 from openpilot.common.conversions import Conversions as CV
 
@@ -28,10 +30,6 @@ def get_detail_sentence(data):
   make, model, package, longitudinal, fsr_longitudinal, fsr_steering, steering_torque, auto_resume, hardware, video = data.split("|")
   min_steer_speed, min_enable_speed = fsr_steering / CV.MS_TO_MPH, fsr_longitudinal / CV.MS_TO_MPH # default values
 
-  # TODO: Add experimental data
-  openpilotLongitudinalControl = True
-  experimentalLongitudinalAvailable = False
-
   sentence_builder = "openpilot upgrades your <strong>{car_model}</strong> with automated lane centering{alc} and adaptive cruise control{acc}."
   if min_steer_speed > min_enable_speed:
     alc = f" <strong>above {min_steer_speed * CV.MS_TO_MPH:.0f} mph</strong>," if min_steer_speed > 0 else " <strong>at all speeds</strong>,"
@@ -44,10 +42,15 @@ def get_detail_sentence(data):
     acc = " <strong>that automatically resumes from a stop</strong>"
   if steering_torque != STAR_ICON:
     sentence_builder += " This car may not be able to take tight turns on its own."
+
   # experimental mode
-  exp_link = "<a href='https://blog.comma.ai/090release/#experimental-mode' target='_blank' class='link-light-new-regular-text'>Experimental mode</a>"
-  if openpilotLongitudinalControl and not experimentalLongitudinalAvailable:
-    sentence_builder += f" Traffic light and stop sign handling is also available in {exp_link}."
+  # TODO: Add experimental data
+  # openpilotLongitudinalControl = True
+  # experimentalLongitudinalAvailable = False
+  # exp_link = "<a href='https://blog.comma.ai/090release/#experimental-mode' target='_blank' class='link-light-new-regular-text'>Experimental mode</a>"
+  # if openpilotLongitudinalControl and not experimentalLongitudinalAvailable:
+  #   sentence_builder += f" Traffic light and stop sign handling is also available in {exp_link}."
+
   return sentence_builder.format(car_model=f"{make} {model}", alc=alc, acc=acc)
 
 def process_detail_sentences(info):
@@ -93,10 +96,8 @@ def print_markdown(changes):
   print("\n".join(markdown_builder))
 
 def print_car_docs_diff(path):
-
-  download_file("https://raw.githubusercontent.com/commaai/openpilot/master/docs/CARS.md", path + "master_table.md")
-  changes = subprocess.run(['diff', path + "master_table.md", "docs/CARS.md"], capture_output=True, text=True).stdout.split('\n')
-  delete_file(path + "master_table.md")
+  CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS.md")
+  changes = subprocess.run(['diff', path, CARS_MD_OUT], capture_output=True, text=True).stdout.split('\n')
 
   changes_markdown = defaultdict(list)
   ind = 0
