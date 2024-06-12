@@ -835,7 +835,7 @@ class Controls:
       while True:
         self.step()
         self.rk.monitor_time()
-    except SystemExit:
+    except Exception:
       e.set()
       t.join()
 
