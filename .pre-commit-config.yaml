@@ -101,10 +101,8 @@ repos:
     rev: 0.28.4
     hooks:
     -   id: check-github-workflows
--   repo: local
+-   repo: https://github.com/seddonym/import-linter
+    rev: 'v2.0'
     hooks:
-      - id: check-forbidden-imports
-        name: Check Forbidden Imports
-        entry: lint-imports
-        language: python
-        types: [python]
+    -   id: import-linter
+        name: import-linter
