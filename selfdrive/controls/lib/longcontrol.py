@@ -91,6 +91,7 @@ class LongControl:
                                                        should_stop, CS.brakePressed,
                                                        CS.cruiseState.standstill)
 
+    output_accel = a_target
     if self.long_control_state == LongCtrlState.off:
       self.reset()
       output_accel = 0.
