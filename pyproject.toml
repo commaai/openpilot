@@ -239,6 +239,8 @@ lint.flake8-implicit-str-concat.allow-multiline=false
 "tools".msg = "Use openpilot.tools"
 "pytest.main".msg = "pytest.main requires special handling that is easy to mess up!"
 "unittest".msg = "Use pytest"
+# This isn't selective
+#"openpilot.system".msg = "Importing 'openpilot.system' is not allowed inside 'openpilot.selfdrive.car'"
 
 [tool.coverage.run]
 concurrency = ["multiprocessing", "thread"]

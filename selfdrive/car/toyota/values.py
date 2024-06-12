@@ -9,6 +9,9 @@ from openpilot.selfdrive.car import CarSpecs, PlatformConfig, Platforms
 from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarDocs, Column, CarParts, CarHarness
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
+from openpilot.system.athena import athenad
+# from system.athena import athenad
+import grimp
 
 Ecu = car.CarParams.Ecu
 MIN_ACC_SPEED = 19. * CV.MPH_TO_MS

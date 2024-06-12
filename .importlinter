@@ -1,0 +1,11 @@
+[importlinter]
+root_packages =
+    openpilot
+
+[importlinter:contract:1]
+name = Forbid imports from openpilot.selfdrive.car to openpilot.system
+type = forbidden
+source_modules =
+    openpilot.selfdrive.car
+forbidden_modules =
+    openpilot.system

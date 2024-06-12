@@ -101,3 +101,10 @@ repos:
     rev: 0.28.4
     hooks:
     -   id: check-github-workflows
+-   repo: local
+    hooks:
+      - id: check-forbidden-imports
+        name: Check Forbidden Imports
+        entry: lint-imports
+        language: python
+        types: [python]
