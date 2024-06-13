@@ -71,7 +71,7 @@ def process(blueprint, lr):
     time = msg.logMonoTime * 1e-9
     if msg.which() != "thumbnail":
       for k, v in log_msg(msg.to_dict()[msg.which()], msg.which()):
-          log_data[k].append([time, v])
+          log_data[k].append([time, -v])
     else:
       log_thumbnail(msg.to_dict()[msg.which()])
 
