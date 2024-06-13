@@ -43,14 +43,14 @@ def log_msg(msg, parent_key=''):
 def createBlueprint(feature_rich):
   blueprint = None
   service_views = []
-  #View = rrb.TimeSeriesView if feature_rich else rrb.Spatial2DView
+  View = rrb.TimeSeriesView if feature_rich else rrb.Spatial2DView
 
   for topic in sorted(SERVICE_LIST.keys()):
     if topic == "thumbnail":
       continue
     if feature_rich:
       rr.log(topic, rr.SeriesLine(name=topic), static=True)
-    service_views.append(rrb.Spatial2DView(name=topic, origin=f"/{topic}/", visible=False))
+    service_views.append(View(name=topic, origin=f"/{topic}/", visible=False))
 
   blueprint = rrb.Blueprint(
     rrb.Vertical(*service_views),
@@ -102,7 +102,7 @@ if __name__ == '__main__':
   feature_rich = args.feature_rich
 
   blueprint = createBlueprint(feature_rich)
-  rr.init("rerun_test", spawn=True, default_blueprint=blueprint)
+  rr.init("rerun_test", spawn=True)
 
   route_or_segment_name = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
   lr = LogReader(route_or_segment_name)
