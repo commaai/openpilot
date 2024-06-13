@@ -84,7 +84,7 @@ class Uploader:
     self.last_filename = ""
 
     self.immediate_folders = ["crash/", "boot/"]
-    self.immediate_priority = {"qlog": 0, "qlog.zstd": 0, "qcamera.ts": 1}
+    self.immediate_priority = {"qlog": 0, "qlog.zst": 0, "qcamera.ts": 1}
 
   def list_upload_files(self, metered: bool) -> Iterator[tuple[str, str, str]]:
     r = self.params.get("AthenadRecentlyViewedRoutes", encoding="utf8")
@@ -153,7 +153,7 @@ class Uploader:
 
     with open(fn, "rb") as f:
       data: BinaryIO
-      if key.endswith('.zstd') and not fn.endswith('.zstd'):
+      if key.endswith('.zst') and not fn.endswith('.zst'):
         compressed = zstd.compress(f.read(), LOG_COMPRESSION_LEVEL)
         data = io.BytesIO(compressed)
       else:
@@ -219,8 +219,8 @@ class Uploader:
     name, key, fn = d
 
     # qlogs and bootlogs need to be compressed before uploading
-    if key.endswith(('qlog', 'rlog')) or (key.startswith('boot/') and not key.endswith('.zstd')):
-      key += ".zstd"
+    if key.endswith(('qlog', 'rlog')) or (key.startswith('boot/') and not key.endswith('.zst')):
+      key += ".zst"
 
     return self.upload(name, key, fn, network_type, metered)
 

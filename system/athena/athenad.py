@@ -105,7 +105,7 @@ cur_upload_items: dict[int, UploadItem | None] = {}
 
 
 def strip_zstd_extension(fn: str) -> str:
-  if fn.endswith('.zstd'):
+  if fn.endswith('.zst'):
     return fn[:-4]
   return fn
 
@@ -284,7 +284,7 @@ def _do_upload(upload_item: UploadItem, callback: Callable = None) -> requests.R
   path = upload_item.path
   compress = False
 
-  # If file does not exist, but does exist without the .zstd extension we will compress on the fly
+  # If file does not exist, but does exist without the .zst extension we will compress on the fly
   if not os.path.exists(path) and os.path.exists(strip_zstd_extension(path)):
     path = strip_zstd_extension(path)
     compress = True
