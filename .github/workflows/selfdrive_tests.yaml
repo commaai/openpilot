@@ -241,6 +241,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
+          ref: ${{ github.event.pull_request.base.ref }}
+      - run: git lfs pull
+      - uses: ./.github/workflows/setup-with-retry
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
           path: current
       - run: cd current && git lfs pull
       - name: Save car docs diff
@@ -248,8 +254,9 @@ jobs:
         run: |
           cd current
           ${{ env.RUN }} "scons -j$(nproc)"
-          wget -O /tmp/CARS.md.old https://raw.githubusercontent.com/commaai/openpilot/master/docs/CARS.md
-          output=$(${{ env.RUN }} "python selfdrive/debug/print_docs_diff.py --old /tmp/CARS.md.old")
+          ${{ env.RUN }} "wget -O CARS.md.old https://raw.githubusercontent.com/commaai/openpilot/master/docs/CARS.md"
+          sudo chown -R $USER:$USER ${{ github.workspace }}
+          output=$(${{ env.RUN }} "python selfdrive/debug/print_docs_diff.py --old CARS.md.old")
           output="${output//$'\n'/'%0A'}"
           echo "::set-output name=diff::$output"
       - name: Find comment
