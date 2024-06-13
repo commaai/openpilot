@@ -40,12 +40,16 @@ def log_msg(msg, parent_key=''):
     else:
       pass  # Not a plottable value
 
-def createBlueprint():
+def createBlueprint(feature_rich):
   blueprint = None
   service_views = []
+  #View = rrb.TimeSeriesView if feature_rich else rrb.Spatial2DView
+
   for topic in sorted(SERVICE_LIST.keys()):
     if topic == "thumbnail":
       continue
+    if feature_rich:
+      rr.log(topic, rr.SeriesLine(name=topic), static=True)
     service_views.append(rrb.Spatial2DView(name=topic, origin=f"/{topic}/", visible=False))
 
   blueprint = rrb.Blueprint(
@@ -61,7 +65,7 @@ def log_thumbnail(thumbnailMsg):
   rr.log("/thumbnail", rr.ImageEncoded(contents=bytesImgData))
 
 @rr.shutdown_at_exit
-def process(blueprint, lr):
+def process(blueprint, feature_rich, lr):
   rr.init("rerun_test")
   rr.connect(default_blueprint=blueprint)
 
@@ -69,11 +73,16 @@ def process(blueprint, lr):
 
   for msg in lr:
     time = msg.logMonoTime * 1e-9
-    if msg.which() != "thumbnail":
-      for k, v in log_msg(msg.to_dict()[msg.which()], msg.which()):
-          log_data[k].append([time, -v])
-    else:
+
+    if msg.which() == "thumbnail":
       log_thumbnail(msg.to_dict()[msg.which()])
+      continue
+
+    for k, v in log_msg(msg.to_dict()[msg.which()], msg.which()):
+      if feature_rich:
+        rr.log(k, rr.Scalar(v))
+      else:
+        log_data[k].append([time, -v])
 
   return [log_data]
 
@@ -81,6 +90,8 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description="A helper to run rerun on openpilot routes",
                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
+  # TODO: remove this mode once upstream is fixed. Issue tracker: https://github.com/rerun-io/rerun/issues/5967
+  parser.add_argument("--feature_rich", action="store_true", help="Use this option for the full, but expensive, functionalities of Rerun")
   parser.add_argument("route_or_segment_name", nargs='?', help="The route or segment name to plot")
 
   if len(sys.argv) == 1:
@@ -88,21 +99,22 @@ if __name__ == '__main__':
     sys.exit()
 
   args = parser.parse_args()
+  feature_rich = args.feature_rich
 
-  blueprint = createBlueprint()
+  blueprint = createBlueprint(feature_rich)
   rr.init("rerun_test", spawn=True, default_blueprint=blueprint)
 
   route_or_segment_name = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
-  print("Getting route log paths")
   lr = LogReader(route_or_segment_name)
-  msg_from_segments = lr.run_across_segments(NUM_CPUS, partial(process, blueprint))
+  msg_from_segments = lr.run_across_segments(NUM_CPUS, partial(process, blueprint, feature_rich))
 
-  log_data = defaultdict(list)
-  for batch in msg_from_segments:
-    for k, v in batch.items():
-      log_data[k].extend(v)
+  if not feature_rich:
+    log_data = defaultdict(list)
+    for batch in msg_from_segments:
+      for k, v in batch.items():
+        log_data[k].extend(v)
 
-  print("Parsing Log...")
-  for path, data_points in tqdm.tqdm(log_data.items()):
-    rr.log(path, rr.LineStrips2D(data_points, radii=0.005))
+    print("Parsing Log...")
+    for path, data_points in tqdm.tqdm(log_data.items()):
+      rr.log(path, rr.LineStrips2D(data_points, radii=0.005))
 
