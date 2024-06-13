@@ -10,6 +10,7 @@ import sys
 import tqdm
 import urllib.parse
 import warnings
+import zstd
 
 from collections.abc import Callable, Iterable, Iterator
 from urllib.parse import parse_qs, urlparse
@@ -34,8 +35,8 @@ class _LogFileReader:
     ext = None
     if not dat:
       _, ext = os.path.splitext(urllib.parse.urlparse(fn).path)
-      if ext not in ('', '.bz2'):
-        # old rlogs weren't bz2 compressed
+      if ext not in ('', '.bz2', '.zst'):
+        # old rlogs weren't compressed
         raise Exception(f"unknown extension {ext}")
 
       with FileReader(fn) as f:
@@ -43,6 +44,9 @@ class _LogFileReader:
 
     if ext == ".bz2" or dat.startswith(b'BZh9'):
       dat = bz2.decompress(dat)
+    elif ext == ".zst" or dat.startswith(b'\x28\xB5\x2F\xFD'):
+      # https://github.com/facebook/zstd/blob/dev/doc/zstd_compression_format.md#zstandard-frames
+      dat = zstd.decompress(dat)
 
     ents = capnp_log.Event.read_multiple_bytes(dat)
 
