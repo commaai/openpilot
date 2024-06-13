@@ -12,10 +12,7 @@ LongCtrlState = car.CarControl.Actuators.LongControlState
 
 def long_control_state_trans(CP, active, long_control_state, v_ego,
                              should_stop, brake_pressed, cruise_standstill):
-  stay_stopped = (v_ego < CP.vEgoStopping and
-                  (brake_pressed or cruise_standstill))
-  stopping_condition = should_stop or stay_stopped
-
+  stopping_condition = should_stop
   starting_condition = (not should_stop and
                         not cruise_standstill and
                         not brake_pressed)
