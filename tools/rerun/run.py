@@ -50,7 +50,7 @@ def createBlueprint(feature_rich):
       continue
     if feature_rich:
       rr.log(topic, rr.SeriesLine(name=topic), static=True)
-    service_views.append(View(name=topic, origin=f"/{topic}/", visible=False))
+    service_views.append(View(name=topic, origin=f"/{topic}", visible=False))
 
   blueprint = rrb.Blueprint(
     rrb.Vertical(*service_views),
@@ -78,11 +78,11 @@ def process(blueprint, feature_rich, lr):
       log_thumbnail(msg.to_dict()[msg.which()])
       continue
 
-    for k, v in log_msg(msg.to_dict()[msg.which()], msg.which()):
+    for path, data_pt in log_msg(msg.to_dict()[msg.which()], msg.which()):
       if feature_rich:
-        rr.log(k, rr.Scalar(v))
+        rr.log(path, rr.Scalar(data_pt))
       else:
-        log_data[k].append([time, -v])
+        log_data[path].append([time, -data_pt]) # negative since it follows screen coordinate
 
   return [log_data]
 
