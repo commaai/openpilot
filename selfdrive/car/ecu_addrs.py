@@ -71,6 +71,7 @@ def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, que
 
 if __name__ == "__main__":
   import argparse
+  from openpilot.common.params import Params
 
   parser = argparse.ArgumentParser(description='Get addresses of all ECUs')
   parser.add_argument('--debug', action='store_true')
@@ -81,7 +82,12 @@ if __name__ == "__main__":
   logcan = messaging.sub_sock('can')
   sendcan = messaging.pub_sock('sendcan')
 
-  time.sleep(1.0)
+  # Set up params for pandad
+  params = Params()
+  params.remove("FirmwareQueryDone")
+  params.put_bool("IsOnroad", False)
+  time.sleep(0.2)  # thread is 10 Hz
+  params.put_bool("IsOnroad", True)
 
   print("Getting ECU addresses ...")
   ecu_addrs = get_all_ecu_addrs(logcan, sendcan, args.bus, args.timeout, debug=args.debug)
