@@ -59,10 +59,8 @@ def get_accel_from_plan(CP, long_plan):
       v_target_now = 0.0
       v_target_1sec = 0.0
       a_target = 0.0
-    accelerating = v_target_1sec > v_target
     should_stop = (v_target < CP.vEgoStopping and
-                    v_target_1sec < CP.vEgoStopping and
-                    not accelerating)
+                    v_target_1sec < CP.vEgoStopping)
     return a_target, should_stop
 
 
