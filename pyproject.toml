@@ -139,6 +139,9 @@ psutil = "*"
 timezonefinder = "*"  # just used for nav ETA
 pycryptodome = "*"  # used in updated/casync, panda, body, and a test
 
+#logreader
+zstd = "*"
+
 [tool.poetry.group.docs.dependencies]
 Jinja2 = "*"
 sphinx = "*"
@@ -161,9 +164,6 @@ pytest-asyncio = "*"
 pytest-mock = "*"
 pytest-repeat = "*"
 ruff = "*"
-
-[tool.poetry.group.tools.dependencies]
-zstd = "*"
 
 [tool.poetry.group.dev.dependencies]
 av = "*"
