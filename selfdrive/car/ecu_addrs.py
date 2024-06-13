@@ -97,7 +97,7 @@ if __name__ == "__main__":
   ecu_addrs = get_all_ecu_addrs(logcan, sendcan, args.bus, args.timeout, debug=args.debug)
 
   print()
-  print("Found ECUs on addresses:")
+  print("Found ECUs on rx addresses:")
   for addr, subaddr, _ in ecu_addrs:
     msg = f"  {hex(addr)}"
     if subaddr is not None:
