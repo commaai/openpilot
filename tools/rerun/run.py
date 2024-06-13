@@ -115,6 +115,6 @@ if __name__ == "__main__":
         log_data[k].extend(v)
 
     print("Parsing Log...")
-    for path, data_points in tqdm.tqdm(log_data.items()):
-      rr.log(path, rr.LineStrips2D(data_points, radii=0.005))
+    for path, data_pts in tqdm.tqdm(log_data.items()):
+      rr.log(path, rr.LineStrips2D(data_pts, radii=0.005))
 
