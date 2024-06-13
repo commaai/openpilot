@@ -99,7 +99,7 @@ if __name__ == "__main__":
   print()
   print("Found ECUs on addresses:")
   for addr, subaddr, _ in ecu_addrs:
-    msg = f"  0x{hex(addr)}"
+    msg = f"  {hex(addr)}"
     if subaddr is not None:
       msg += f" (sub-address: {hex(subaddr)})"
     print(msg)
