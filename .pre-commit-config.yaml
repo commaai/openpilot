@@ -101,8 +101,10 @@ repos:
     rev: 0.28.4
     hooks:
     -   id: check-github-workflows
-#-   repo: https://github.com/seddonym/import-linter
-#    rev: 'v2.0'
-#    hooks:
-#    -   id: import-linter
-#        name: import-linter
+-   repo: local
+    hooks:
+    -   id: import-linter
+        name: import linter
+        entry: lint-imports
+        language: system
+        pass_filenames: false
