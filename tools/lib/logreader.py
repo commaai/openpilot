@@ -44,7 +44,7 @@ class _LogFileReader:
 
     if ext == ".bz2" or dat.startswith(b'BZh9'):
       dat = bz2.decompress(dat)
-    elif ext == ".zst" or dat.startswith(b'\x28\xb5\x2f\xfd'):
+    elif ext == ".zst" or dat.startswith(b'\x28\xB5\x2F\xFD'):
       # https://github.com/facebook/zstd/blob/dev/doc/zstd_compression_format.md#zstandard-frames
       dat = zstd.decompress(dat)
 
