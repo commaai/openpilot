@@ -26,11 +26,13 @@ def find_model_match(find, rows):
   return max(matches, key=matches.get) if matches else []
 
 
-def extract_detail_sentence(row) -> tuple[str, str]:
+# detail sentences are stored in the MAKE column, after the make as `[](## "<sentence>")
+def extract_detail_sentence(row: str) -> tuple[str, str]:
   cols = row.split('|')
-  make, detail = cols[MAKE_INDEX].split('[](## "')
-  cols[MAKE_INDEX] = make
-  return '|'.join(cols), detail[:-2]
+  split = cols[MAKE_INDEX].split('[](## "')
+  cols[MAKE_INDEX] = split[0]
+  detail = split[1][:-2] if len(split) > 1 else ''
+  return '|'.join(cols), detail
 
 
 def get_table_changes(table_row_diffs):
@@ -43,13 +45,13 @@ def get_table_changes(table_row_diffs):
   for old_row in old_rows:
     new_row = find_model_match(old_row, new_rows)
     if new_row:
-      # if we found a match, new_row is not new, it changed
+      # if we found a match, new_row is not new
       new_rows.remove(new_row)
       new_row, new_detail = extract_detail_sentence(new_row)
       old_row, old_detail = extract_detail_sentence(old_row)
 
       if new_detail != old_detail:
-        detail_changes[get_model_name(new_row)] = (old_detail, new_detail)
+        detail_changes[get_model_name(new_row)] = (f'- {old_detail}', f'+ {new_detail}')
 
       if new_row != old_row:
         table_changes['changes'].append('|'.join([a if a == b else f'{a} {ARROW_SYMBOL} {b}' \
@@ -62,22 +64,23 @@ def get_table_changes(table_row_diffs):
   return table_changes, detail_changes
 
 
-def print_diff(table_changes, detail_changes, other_diffs):
-  print("### ⚠️ This PR makes changes to [CARS.md](../blob/master/docs/CARS.md) ⚠️")
-  for change_type in table_changes:
-    print(f'## {change_type.capitalize()}\n{COLUMNS}\n{COLUMN_HEADER}')
-    for row in table_changes[change_type]:
-      print(row)
+def print_diff(table_changes: dict, detail_changes: dict, other_diffs: list):
+  if table_changes:
+    print("### ⚠️ This PR makes changes to [CARS.md](../blob/master/docs/CARS.md) ⚠️")
+    for change_type in table_changes:
+      print(f'## {change_type.capitalize()}\n{COLUMNS}\n{COLUMN_HEADER}')
+      for row in table_changes[change_type]:
+        print(row)
 
-  if len(detail_changes):
+  if detail_changes:
     print('## Detail Sentence Changes')
     for car_model in detail_changes:
-      print(f'- Sentence for {car_model} changed:\n```diff')
-      print(f'- {detail_changes[car_model][0]}')
-      print(f'+ {detail_changes[car_model][1]}')
+      print(f'- Sentence for {car_model} changed:\n```')
+      for sentence in detail_changes[car_model]:
+        print(sentence)
       print('```')
 
-  if len(other_diffs):
+  if other_diffs:
     print('## Other Changes\n```diff\n' + '\n'.join(other_diffs) + '\n```')
 
 
