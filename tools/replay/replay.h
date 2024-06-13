@@ -85,14 +85,16 @@ public:
   inline const std::string &carFingerprint() const { return car_fingerprint_; }
   inline const std::vector<std::tuple<double, double, TimelineType>> getTimeline() {
     std::lock_guard lk(timeline_lock);
-    return timeline;
+    return timeline_;
   }
 
 signals:
   void streamStarted();
   void segmentsMerged();
+  void seeking(double sec);
   void seekedTo(double sec);
-  void qLogLoaded(int segnum, std::shared_ptr<LogReader> qlog);
+  void qLogLoaded(std::shared_ptr<LogReader> qlog);
+  void totalSecondsUpdated(double sec);
 
 protected slots:
   void segmentLoadFinished(bool success);
@@ -112,6 +114,7 @@ protected:
   void publishMessage(const Event *e);
   void publishFrame(const Event *e);
   void buildTimeline();
+  void checkSeekProgress();
   inline bool isSegmentMerged(int n) const { return merged_segments_.count(n) > 0; }
 
   pthread_t stream_thread_id = 0;
@@ -120,7 +123,7 @@ protected:
   bool user_paused_ = false;
   std::condition_variable stream_cv_;
   std::atomic<int> current_segment_ = 0;
-  double seeking_to_seconds_ = -1;
+  std::optional<double> seeking_to_;
   SegmentMap segments_;
   // the following variables must be protected with stream_lock_
   std::atomic<bool> exit_ = false;
@@ -143,7 +146,7 @@ protected:
 
   std::mutex timeline_lock;
   QFuture<void> timeline_future;
-  std::vector<std::tuple<double, double, TimelineType>> timeline;
+  std::vector<std::tuple<double, double, TimelineType>> timeline_;
   std::string car_fingerprint_;
   std::atomic<float> speed_ = 1.0;
   replayEventFilter event_filter = nullptr;

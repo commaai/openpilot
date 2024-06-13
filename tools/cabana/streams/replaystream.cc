@@ -53,9 +53,9 @@ bool ReplayStream::loadRoute(const QString &route, const QString &data_dir, uint
                           {}, nullptr, replay_flags, data_dir, this));
   replay->setSegmentCacheLimit(settings.max_cached_minutes);
   replay->installEventFilter(event_filter, this);
+  QObject::connect(replay.get(), &Replay::seeking, this, &AbstractStream::seeking);
   QObject::connect(replay.get(), &Replay::seekedTo, this, &AbstractStream::seekedTo);
   QObject::connect(replay.get(), &Replay::segmentsMerged, this, &ReplayStream::mergeSegments);
-  QObject::connect(replay.get(), &Replay::qLogLoaded, this, &ReplayStream::qLogLoaded, Qt::QueuedConnection);
   return replay->load();
 }
 
@@ -92,12 +92,7 @@ bool ReplayStream::eventFilter(const Event *event) {
 }
 
 void ReplayStream::seekTo(double ts) {
-  // Update timestamp and notify receivers of the time change.
   current_sec_ = ts;
-  std::set<MessageId> new_msgs;
-  msgsReceived(&new_msgs, false);
-
-  // Seek to the specified timestamp
   replay->seekTo(std::max(double(0), ts), false);
 }
 
