@@ -1,5 +1,5 @@
 from cereal import car
-from openpilot.common.numpy_fast import clip, interp
+from openpilot.common.numpy_fast import clip
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N
 from openpilot.selfdrive.controls.lib.pid import PIDController
@@ -26,7 +26,6 @@ def long_control_state_trans(CP, active, long_control_state, v_ego,
       long_control_state = LongCtrlState.pid
       if stopping_condition:
         long_control_state = LongCtrlState.stopping
-
     elif long_control_state == LongCtrlState.stopping:
       if starting_condition and CP.startingState:
         long_control_state = LongCtrlState.starting
@@ -41,29 +40,6 @@ def long_control_state_trans(CP, active, long_control_state, v_ego,
 
   return long_control_state
 
-def get_accel_from_plan(CP, long_plan, t_since_plan):
-   # Interp control trajectory
-    speeds = long_plan.speeds
-    if len(speeds) == CONTROL_N:
-      v_target_now = interp(t_since_plan, CONTROL_N_T_IDX, speeds)
-      a_target_now = interp(t_since_plan, CONTROL_N_T_IDX, long_plan.accels)
-
-      v_target = interp(CP.longitudinalActuatorDelay + t_since_plan, CONTROL_N_T_IDX, speeds)
-      a_target = 2 * (v_target - v_target_now) / CP.longitudinalActuatorDelay - a_target_now
-
-      v_target_1sec = interp(CP.longitudinalActuatorDelay + t_since_plan + 1.0, CONTROL_N_T_IDX, speeds)
-    else:
-      v_target = 0.0
-      v_target_now = 0.0
-      v_target_1sec = 0.0
-      a_target = 0.0
-    accelerating = v_target_1sec > v_target
-    should_stop = (v_target < CP.vEgoStopping and
-                    v_target_1sec < CP.vEgoStopping and
-                    not accelerating)
-    return a_target, should_stop
-
-
 class LongControl:
   def __init__(self, CP):
     self.CP = CP
@@ -76,18 +52,14 @@ class LongControl:
   def reset(self):
     self.pid.reset()
 
-  def update(self, active, CS, long_plan, accel_limits, t_since_plan):
+  def update(self, active, CS, a_target, should_stop, accel_limits):
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
-
-
     self.pid.neg_limit = accel_limits[0]
     self.pid.pos_limit = accel_limits[1]
-    a_target, should_stop = get_accel_from_plan(self.CP, long_plan, t_since_plan)
 
     self.long_control_state = long_control_state_trans(self.CP, active, self.long_control_state, CS.vEgo,
                                                        should_stop, CS.brakePressed,
                                                        CS.cruiseState.standstill)
-
     output_accel = a_target
     if self.long_control_state == LongCtrlState.off:
       self.reset()
