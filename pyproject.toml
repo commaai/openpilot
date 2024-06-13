@@ -139,35 +139,17 @@ psutil = "*"
 timezonefinder = "*"  # just used for nav ETA
 pycryptodome = "*"  # used in updated/casync, panda, body, and a test
 
-[tool.poetry.group.dev.dependencies]
-av = "*"
-azure-identity = "*"
-azure-storage-blob = "*"
-breathe = "*"
-control = "*"
-coverage = "*"
-dictdiffer = "*"
-flaky = "*"
-hypothesis = "~6.47"
-inputs = "*"
+[tool.poetry.group.docs.dependencies]
 Jinja2 = "*"
-lru-dict = "*"
-matplotlib = "*"
-metadrive-simulator = { git = "https://github.com/commaai/metadrive.git", branch = "python3.12", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
-mpld3 = "*"
+sphinx = "*"
+sphinx-rtd-theme = "*"
+sphinx-sitemap = "*"
+
+[tool.poetry.group.testing.dependencies]
+coverage = "*"
+hypothesis = "~6.47"
 mypy = "*"
-myst-parser = "*"
-natsort = "*"
-opencv-python-headless = "*"
-parameterized = "^0.8"
-#pprofile = "*"
-polyline = "*"
 pre-commit = "*"
-pyautogui = "*"
-pyopencl = { version = "*", markers = "platform_machine != 'aarch64'" }  # broken on arm64
-pygame = "*"
-pywinctl = "*"
-pyprof2calltree = "*"
 pytest = "*"
 pytest-cov = "*"
 pytest-cpp = "*"
@@ -178,16 +160,40 @@ pytest-randomly = "*"
 pytest-asyncio = "*"
 pytest-mock = "*"
 pytest-repeat = "*"
-rerun-sdk = "*"
 ruff = "*"
-sphinx = "*"
-sphinx-rtd-theme = "*"
-sphinx-sitemap = "*"
+
+[tool.poetry.group.tools.dependencies]
+zstd = "*"
+
+[tool.poetry.group.dev.dependencies]
+av = "*"
+azure-identity = "*"
+azure-storage-blob = "*"
+breathe = "*"
+control = "*"
+dictdiffer = "*"
+flaky = "*"
+inputs = "*"
+lru-dict = "*"
+matplotlib = "*"
+metadrive-simulator = { git = "https://github.com/commaai/metadrive.git", branch = "python3.12", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
+mpld3 = "*"
+myst-parser = "*"
+natsort = "*"
+opencv-python-headless = "*"
+parameterized = "^0.8"
+#pprofile = "*"
+polyline = "*"
+pyautogui = "*"
+pygame = "*"
+pyopencl = { version = "*", markers = "platform_machine != 'aarch64'" }  # broken on arm64
+pywinctl = "*"
+pyprof2calltree = "*"
+rerun-sdk = "*"
 tabulate = "*"
 types-requests = "*"
 types-tabulate = "*"
 tqdm = "*"
-zstd = "*"
 
 # this is only pinned since 5.15.11 is broken
 pyqt5 = { version = "==5.15.2", markers = "platform_machine == 'x86_64'" } # no aarch64 wheels for macOS/linux
