@@ -15,7 +15,7 @@ from cereal.services import SERVICE_LIST
 NUM_CPUS = multiprocessing.cpu_count()
 DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 
-def log_msg(msg, parent_key=''):
+def log_msg(msg, parent_key=""):
   stack = [(msg, parent_key)]
   while stack:
     current_msg, current_parent_key = stack.pop()
@@ -61,7 +61,7 @@ def createBlueprint(feature_rich):
   return blueprint
 
 def log_thumbnail(thumbnailMsg):
-  bytesImgData = thumbnailMsg.get('thumbnail')
+  bytesImgData = thumbnailMsg.get("thumbnail")
   rr.log("/thumbnail", rr.ImageEncoded(contents=bytesImgData))
 
 @rr.shutdown_at_exit
@@ -86,7 +86,7 @@ def process(blueprint, feature_rich, lr):
 
   return [log_data]
 
-if __name__ == '__main__':
+if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="A helper to run rerun on openpilot routes",
                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
