@@ -94,8 +94,7 @@ class CarInterface(CarInterfaceBase):
     else:
       ret.transmissionType = TransmissionType.automatic
 
-    ret.longitudinalTuning.kpBP = [5., 35.]
-    ret.longitudinalTuning.kiBP = [0.]
+    ret.longitudinalTuning.kiBP = [5., 35.]
 
     if candidate in CAMERA_ACC_CAR:
       ret.experimentalLongitudinalAvailable = True

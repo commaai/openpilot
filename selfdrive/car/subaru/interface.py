@@ -91,10 +91,8 @@ class CarInterface(CarInterfaceBase):
       ret.flags |= SubaruFlags.DISABLE_EYESIGHT.value
 
     if ret.openpilotLongitudinalControl:
-      ret.longitudinalTuning.kpBP = [0., 5., 35.]
-      ret.longitudinalTuning.kpV = [0.8, 1.0, 1.5]
-      ret.longitudinalTuning.kiBP = [0., 35.]
-      ret.longitudinalTuning.kiV = [0.54, 0.36]
+      ret.longitudinalTuning.kiBP = [0., 5., 35.]
+      ret.longitudinalTuning.kiV = [0.8, 1.0, 1.5]
 
       ret.stoppingControl = True
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_SUBARU_LONG
