@@ -21,6 +21,10 @@ EventName = car.CarEvent.EventName
 AngleRateLimit = namedtuple('AngleRateLimit', ['speed_bp', 'angle_v'])
 
 
+def rate_limit(new_value, last_value, dw_step, up_step):
+  return clip(new_value, last_value + dw_step, last_value + up_step)
+
+
 def apply_hysteresis(val: float, val_steady: float, hyst_gap: float) -> float:
   if val > val_steady + hyst_gap:
     val_steady = val - hyst_gap
