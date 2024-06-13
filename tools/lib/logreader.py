@@ -10,6 +10,7 @@ import sys
 import tqdm
 import urllib.parse
 import warnings
+import zstd
 
 from collections.abc import Callable, Iterable, Iterator
 from urllib.parse import parse_qs, urlparse
@@ -34,8 +35,8 @@ class _LogFileReader:
     ext = None
     if not dat:
       _, ext = os.path.splitext(urllib.parse.urlparse(fn).path)
-      if ext not in ('', '.bz2'):
-        # old rlogs weren't bz2 compressed
+      if ext not in ('', '.bz2', '.zst'):
+        # old rlogs weren't compressed
         raise Exception(f"unknown extension {ext}")
 
       with FileReader(fn) as f:
@@ -43,18 +44,21 @@ class _LogFileReader:
 
     if ext == ".bz2" or dat.startswith(b'BZh9'):
       dat = bz2.decompress(dat)
+    elif ext == ".zst" or dat.startswith(b'\x28\xB5\x2F\xFD'):
+      # https://github.com/facebook/zstd/blob/dev/doc/zstd_compression_format.md#zstandard-frames
+      dat = zstd.decompress(dat)
 
     ents = capnp_log.Event.read_multiple_bytes(dat)
 
-    _ents = []
+    self._ents = []
     try:
       for e in ents:
-        _ents.append(e)
+        self._ents.append(e)
     except capnp.KjException:
       warnings.warn("Corrupted events detected", RuntimeWarning, stacklevel=1)
 
-    self._ents = list(sorted(_ents, key=lambda x: x.logMonoTime) if sort_by_time else _ents)
-    self._ts = [x.logMonoTime for x in self._ents]
+    if sort_by_time:
+      self._ents.sort(key=lambda x: x.logMonoTime)
 
   def __iter__(self) -> Iterator[capnp._DynamicStructReader]:
     for ent in self._ents:

@@ -187,6 +187,7 @@ tabulate = "*"
 types-requests = "*"
 types-tabulate = "*"
 tqdm = "*"
+zstd = "*"
 
 # this is only pinned since 5.15.11 is broken
 pyqt5 = { version = "==5.15.2", markers = "platform_machine == 'x86_64'" } # no aarch64 wheels for macOS/linux
