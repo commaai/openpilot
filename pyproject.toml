@@ -90,7 +90,6 @@ documentation = "https://docs.comma.ai"
 [tool.poetry.dependencies]
 python = ">=3.11, <3.13"
 
-[tool.poetry.group.runtime.dependencies]
 # multiple users
 sounddevice = "*"  # micd + soundd
 pyserial = "*"     # pigeond + qcomgpsd
@@ -164,8 +163,7 @@ pytest-repeat = "*"
 ruff = "*"
 
 [tool.poetry.group.tools.dependencies]
-metadrive-simulator = { git = "https://github.com/commaai/metadrive.git", branch = "python3.12", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
-pygame = "*"
+zstd = "*"
 
 [tool.poetry.group.dev.dependencies]
 av = "*"
@@ -178,6 +176,7 @@ flaky = "*"
 inputs = "*"
 lru-dict = "*"
 matplotlib = "*"
+metadrive-simulator = { git = "https://github.com/commaai/metadrive.git", branch = "python3.12", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
 mpld3 = "*"
 myst-parser = "*"
 natsort = "*"
@@ -186,6 +185,7 @@ parameterized = "^0.8"
 #pprofile = "*"
 polyline = "*"
 pyautogui = "*"
+pygame = "*"
 pyopencl = { version = "*", markers = "platform_machine != 'aarch64'" }  # broken on arm64
 pywinctl = "*"
 pyprof2calltree = "*"
@@ -194,7 +194,6 @@ tabulate = "*"
 types-requests = "*"
 types-tabulate = "*"
 tqdm = "*"
-zstd = "*"
 
 # this is only pinned since 5.15.11 is broken
 pyqt5 = { version = "==5.15.2", markers = "platform_machine == 'x86_64'" } # no aarch64 wheels for macOS/linux
