@@ -1,7 +1,7 @@
 Import('qt_env', 'arch', 'common', 'messaging', 'visionipc', 'replay_lib', 'cereal', 'widgets')
 
 base_frameworks = qt_env['FRAMEWORKS']
-base_libs = [common, messaging, cereal, visionipc, 'qt_util', 'zmq', 'capnp', 'kj', 'm', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
+base_libs = [common, messaging, cereal, visionipc, 'qt_util', 'm', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
 
 if arch == "Darwin":
   base_frameworks.append('OpenCL')
@@ -39,4 +39,4 @@ output_json_file = 'tools/cabana/dbc/car_fingerprint_to_dbc.json'
 generate_dbc = cabana_env.Command('#' + output_json_file,
                                   ['dbc/generate_dbc_json.py'],
                                   "python3 tools/cabana/dbc/generate_dbc_json.py --out " + output_json_file)
-cabana_env.Depends(generate_dbc, ["#common", "#selfdrive/boardd", '#opendbc', "#cereal", Glob("#opendbc/*.dbc")])
+cabana_env.Depends(generate_dbc, ["#common", "#selfdrive/pandad", '#opendbc', "#cereal", Glob("#opendbc/*.dbc")])

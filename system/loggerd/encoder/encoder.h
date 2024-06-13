@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "cereal/messaging/messaging.h"
-#include "cereal/visionipc/visionipc.h"
+#include "msgq/visionipc/visionipc.h"
 #include "common/queue.h"
 #include "system/camerad/cameras/camera_common.h"
 #include "system/loggerd/loggerd.h"
