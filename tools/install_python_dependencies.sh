@@ -41,7 +41,7 @@ fi
 
 export MAKEFLAGS="-j$(nproc)"
 
-PYENV_PYTHON_VERSION=$(cat $ROOT/.python-version)
+PYENV_PYTHON_VERSION="3.12.4"
 if ! pyenv prefix ${PYENV_PYTHON_VERSION} &> /dev/null; then
   # no pyenv update on mac
   if [ "$(uname)" == "Linux" ]; then
