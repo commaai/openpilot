@@ -120,7 +120,7 @@ std::vector<std::string> PandaUsbHandle::list() {
       libusb_close(handle);
       if (ret < 0) { goto finish; }
 
-      serials.push_back(std::string((char *)desc_serial, ret).c_str());
+      serials.push_back(std::string((char *)desc_serial, ret));
     }
   }
 

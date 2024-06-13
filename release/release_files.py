@@ -33,16 +33,22 @@ blacklist = [
 
   "matlab.*.md",
 
-  ".git$",  # for submodules
   ".git/",
   ".github/",
   ".devcontainer/",
   "Darwin/",
   ".vscode",
 
-  # no LFS
+  # common things
+  "LICENSE",
+  "Dockerfile",
+  ".pre-commit",
+
+  # no LFS or submodules in release
   ".lfsconfig",
   ".gitattributes",
+  ".git$",
+  ".gitmodules",
 ]
 
 # gets you through the blacklist
