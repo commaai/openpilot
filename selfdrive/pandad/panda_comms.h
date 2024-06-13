@@ -56,6 +56,13 @@ private:
 };
 
 #ifndef __APPLE__
+struct __attribute__((packed)) spi_header {
+  uint8_t sync;
+  uint8_t endpoint;
+  uint16_t tx_len;
+  uint16_t max_rx_len;
+};
+
 class PandaSpiHandle : public PandaCommsHandle {
 public:
   PandaSpiHandle(std::string serial);
@@ -79,5 +86,8 @@ private:
   int spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len, unsigned int timeout);
   int spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint16_t tx_len, uint8_t *rx_data, uint16_t max_rx_len, unsigned int timeout);
   int lltransfer(spi_ioc_transfer &t);
+
+  spi_header header;
+  uint32_t xfer_count = 0;
 };
 #endif

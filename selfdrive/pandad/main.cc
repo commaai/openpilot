@@ -12,7 +12,7 @@ int main(int argc, char *argv[]) {
     int err;
     err = util::set_realtime_priority(54);
     assert(err == 0);
-    err = util::set_core_affinity({4});
+    err = util::set_core_affinity({3});
     assert(err == 0);
   }
 
