@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import sys
 import argparse
+import tqdm
 import multiprocessing
 import rerun as rr
 import rerun.blueprint as rrb
@@ -74,10 +75,7 @@ def process(blueprint, lr):
     else:
       log_thumbnail(msg.to_dict()[msg.which()])
 
-  for path, data_points in log_data.items():
-    rr.log(path, rr.LineStrips2D(data_points, radii=0.005))
-
-  return []
+  return [log_data]
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description="A helper to run rerun on openpilot routes",
@@ -92,11 +90,19 @@ if __name__ == '__main__':
   args = parser.parse_args()
 
   blueprint = createBlueprint()
-  rr.init("rerun_test")
-  rr.spawn(connect=False) # child processes stream data to Viewer
+  rr.init("rerun_test", spawn=True, default_blueprint=blueprint)
 
   route_or_segment_name = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
   print("Getting route log paths")
   lr = LogReader(route_or_segment_name)
-  lr.run_across_segments(NUM_CPUS, partial(process, blueprint))
+  msg_from_segments = lr.run_across_segments(NUM_CPUS, partial(process, blueprint))
+
+  log_data = defaultdict(list)
+  for batch in msg_from_segments:
+    for k, v in batch.items():
+      log_data[k].extend(v)
+
+  print("Parsing Log...")
+  for path, data_points in tqdm.tqdm(log_data.items()):
+    rr.log(path, rr.LineStrips2D(data_points, radii=0.005))
 
