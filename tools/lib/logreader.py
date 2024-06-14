@@ -136,22 +136,34 @@ def internal_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
     raise InternalUnavailableException
 
   available_keys = {"rlog": {}, "qlog": {}}
+  # available_keys = defaultdict(dict)  # rename segs
   with FileReader(f"cd:/{sr.dongle_id}/{sr.log_id}/?list") as f:
-    for key in json.loads(f.read().decode())['keys']:
-      seg_number = int(key.strip("/").split("/")[2])
-      for avail in available_keys:
-        if avail in key:
-          available_keys[avail][seg_number] = 'cd:'+key
+    available_keys = json.loads(f.read().decode())['keys']
+    # for key in json.loads(f.read().decode())['keys']:
+    #   seg_number, file = key.strip("/").split("/")[-2:]
+    #   # available_keys[(int(seg_number), file)] = key
+    #   available_keys[int(seg_number)][file] = key
+    #   # for avail in available_keys:
+    #   #   if avail in key:
+    #   #     available_keys[avail][seg_number] = 'cd:'+key
 
   print(available_keys)
 
-  # TODO: refactor the strategies such that we can return only available files
   def get_internal_url(sr: SegmentRange, seg, file):
-    # ret = f"cd:/{available_keys[file][seg]}"
-    ret = available_keys[file].get(seg)
-    # ret = f"cd:/{sr.dongle_id}/{sr.log_id}/{seg}/{file}.bz2"
-    # print(ret)
-    return ret
+    for key in available_keys:
+      seg_number = key.strip("/").split("/")[-2]
+      if int(seg_number) == seg and file in key:
+        return 'cd:' + key  # prefix is /
+
+    # next((key for key in available_keys if key.split("/")[-2] == seg and file in key), None)
+    # # ret = f"cd:/{available_keys[file][seg]}"
+    # available_keys.get(seg, {})
+    #
+    # # next((s == , v for (s, f), v in available_keys.items()))
+    # ret = available_keys[file].get(seg)
+    # # ret = f"cd:/{sr.dongle_id}/{sr.log_id}/{seg}/{file}.bz2"
+    # # print(ret)
+    # return ret
 
   # seg_idxs = (0, 1, 2)
 
