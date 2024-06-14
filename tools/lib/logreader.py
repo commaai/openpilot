@@ -135,7 +135,7 @@ def internal_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
     raise InternalUnavailableException
 
   def get_internal_url(sr: SegmentRange, seg, file):
-    return f"cd:/{sr.dongle_id}/{sr.timestamp}/{seg}/{file}.bz2"
+    return f"cd:/{sr.dongle_id}/{sr.log_id}/{seg}/{file}.bz2"
 
   rlog_paths = [get_internal_url(sr, seg, "rlog") for seg in sr.seg_idxs]
   qlog_paths = [get_internal_url(sr, seg, "qlog") for seg in sr.seg_idxs]
