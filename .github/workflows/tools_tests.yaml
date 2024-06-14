@@ -79,9 +79,9 @@ jobs:
     - name: Installing python dependencies
       run: poetry install --no-cache --no-root
     - name: TEST
-      run: pip list
+      run: poetry run pip list
     - name: build op
-      run: scons -u -j4
+      run: poetry run scons -u -j4
 
   devcontainer:
     name: devcontainer
