@@ -58,6 +58,25 @@ jobs:
     - name: Installing python dependencies
       run: poetry install --no-cache --no-root
 
+  test_fast_setup:
+    name: test fast setup
+    runs-on: ubuntu-20.04
+    timeout-minutes: 5
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - name: Installing python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11.4'
+    - name: Installing dependencies
+      run: .github/workflows/setup/setup.sh
+    - name: TEST
+      run: pip list
+    - name: build op
+      run: scons -u -j4
+
   devcontainer:
     name: devcontainer
     runs-on: ubuntu-latest
