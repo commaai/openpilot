@@ -4,6 +4,8 @@ import os
 import importlib
 import pytest
 import random
+import math
+import numpy as np
 import unittest # noqa: TID251
 from collections import defaultdict, Counter
 import hypothesis.strategies as st
@@ -197,10 +199,10 @@ class TestCarModelBase(unittest.TestCase):
     if self._testMethodName == "test_panda_safety_tx_fuzzy":
       os.environ["TEST_MODELS"] = "TEST_MODELS"
       self.sm = SubMaster(["carControl"])
-      #self.pm = PubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
-      #                              'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'liveLocationKalman',
-      #                              'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
-      #                              'carState'])
+      self.pm = PubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
+                                    'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'liveLocationKalman',
+                                    'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
+                                    'carState'])
 
     Params().put("CarParams", self.CP.to_bytes())
     Params().put_bool("OpenpilotEnabledToggle", self.openpilot_enabled)
@@ -413,11 +415,6 @@ class TestCarModelBase(unittest.TestCase):
             phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
   def test_panda_safety_tx_fuzzy(self, data):
-    self.pm = PubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
-                                  'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'liveLocationKalman',
-                                  'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
-                                  'carState'])
-
     #pm = PubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
     #                               'driverMonitoringState', 'longitudinalPlan', 'liveLocationKalman',
     #                               'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
@@ -452,11 +449,11 @@ class TestCarModelBase(unittest.TestCase):
     mv2_send.modelV2.meta.laneChangeState = data.draw(st.sampled_from(list(log.LaneChangeState.schema.enumerants.keys())))
     mv2_send.modelV2.meta.laneChangeDirection = data.draw(st.sampled_from(list(log.LaneChangeDirection.schema.enumerants.keys())))
     mv2_send.modelV2.meta.hardBrakePredicted = data.draw(st.booleans())
-    mv2_send.modelV2.meta.desirePrediction = data.draw(st.lists(st.floats(width=32, allow_nan=False, allow_infinity=False), min_size=3, max_size=3))
-    mv2_send.modelV2.frameDropPerc = data.draw(st.floats(width=64, allow_nan=False, allow_infinity=False))
+    mv2_send.modelV2.meta.desirePrediction = data.draw(st.lists(st.floats(min_value=0.0, max_value=1.0, width=32, allow_nan=False, allow_infinity=False), min_size=4, max_size=4))
+    mv2_send.modelV2.frameDropPerc = data.draw(st.floats(min_value=0.0, max_value=100.0, width=64, allow_nan=False, allow_infinity=False))
     mv2_send.modelV2.action.desiredCurvature = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
     mv2_send.modelV2.position.y = data.draw(st.lists(st.floats(width=32, allow_nan=False, allow_infinity=False), min_size=3, max_size=3))
-    mv2_send.modelV2.laneLineProbs = data.draw(st.lists(st.floats(width=32, allow_nan=False, allow_infinity=False), min_size=3, max_size=3))
+    mv2_send.modelV2.laneLineProbs = data.draw(st.lists(st.floats(min_value=0.0, max_value=1.0, width=32, allow_nan=False, allow_infinity=False), min_size=3, max_size=3))
     mv2_send.modelV2.laneLines = data.draw(st.lists(xyzt_data_strategy, min_size=2, max_size=2))
     self.pm.send("modelV2", mv2_send)
 
@@ -465,8 +462,9 @@ class TestCarModelBase(unittest.TestCase):
     self.pm.send("liveCalibration", lc_send)
 
     co_send = messaging.new_message("carOutput")
-    co_send.carOutput.actuatorsOutput.steer = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
-    co_send.carOutput.actuatorsOutput.steeringAngleDeg = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
+    steer_max = float(self.CI.CC.params.STEER_MAX)
+    co_send.carOutput.actuatorsOutput.steer = data.draw(st.floats(min_value=0.0, max_value=steer_max, width=32, allow_nan=False, allow_infinity=False))
+    co_send.carOutput.actuatorsOutput.steeringAngleDeg = data.draw(st.floats(min_value=-40.0, max_value=40.0, width=32, allow_nan=False, allow_infinity=False))
     self.pm.send("carOutput", co_send)
 
     dms_send = messaging.new_message("driverMonitoringState")
@@ -485,9 +483,11 @@ class TestCarModelBase(unittest.TestCase):
     llk_send.liveLocationKalman.posenetOK = data.draw(st.booleans())
     llk_send.liveLocationKalman.inputsOK = data.draw(st.booleans())
     llk_send.liveLocationKalman.gpsOK = data.draw(st.booleans())
-    llk_send.liveLocationKalman.angularVelocityCalibrated.value = data.draw(st.lists(st.floats(width=64, allow_nan=False, allow_infinity=False), min_size=3, max_size=3))
+    llk_send.liveLocationKalman.angularVelocityCalibrated.value = data.draw(st.lists(st.floats(min_value=-1.0, max_value=1.0, width=64, allow_nan=False, allow_infinity=False), min_size=3, max_size=3))
     llk_send.liveLocationKalman.deviceStable = data.draw(st.booleans())
-    llk_send.liveLocationKalman.calibratedOrientationNED.value = data.draw(st.lists(st.floats(width=64, allow_nan=False, allow_infinity=False), min_size=3, max_size=3))
+    min_v = np.float32(math.radians(0))
+    max_v = np.float32(math.radians(180))
+    llk_send.liveLocationKalman.calibratedOrientationNED.value = data.draw(st.lists(st.floats(min_value=min_v, max_value=max_v, width=64, allow_nan=False, allow_infinity=False), min_size=3, max_size=3))
     self.pm.send("liveLocationKalman", llk_send)
 
     ms_send = messaging.new_message("managerState")
@@ -496,9 +496,11 @@ class TestCarModelBase(unittest.TestCase):
     lp_send = messaging.new_message("liveParameters")
     lp_send.liveParameters.valid = data.draw(st.booleans())
     lp_send.liveParameters.stiffnessFactor = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
-    lp_send.liveParameters.steerRatio = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
-    lp_send.liveParameters.angleOffsetDeg = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
-    lp_send.liveParameters.roll = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
+    lp_send.liveParameters.angleOffsetDeg = data.draw(st.floats(min_value=0.0, max_value=360.0, width=32, allow_nan=False, allow_infinity=False))
+    lp_send.liveParameters.steerRatio = data.draw(st.floats(min_value=0.0, max_value=1.0, width=32, allow_nan=False, allow_infinity=False))
+    min_v = np.float32(math.radians(-10))
+    max_v = np.float32(math.radians(10))
+    lp_send.liveParameters.roll = data.draw(st.floats(min_value=min_v, max_value=max_v, width=32, allow_nan=False, allow_infinity=False))
     self.pm.send("liveParameters", lp_send)
 
     rs_send = messaging.new_message("radarState")
@@ -632,7 +634,6 @@ class TestCarModelBase(unittest.TestCase):
 @pytest.mark.xdist_group_class_property('test_route')
 class TestCarModel(TestCarModelBase):
   pass
-
 
 if __name__ == "__main__":
   unittest.main()
