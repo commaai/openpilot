@@ -171,7 +171,7 @@ def get_invalid_files(files):
 def check_source(source: Source, *args) -> LogPaths:
   files = source(*args)
   assert len(files) > 0, "No files on source"
-  assert next(get_invalid_files(files), False) is False
+  assert next(get_invalid_files(files), False) is False, "Some files are invalid"
   return files
 
 

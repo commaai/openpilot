@@ -202,13 +202,11 @@ class CarInterfaceBase(ABC):
     ret.vEgoStopping = 0.5
     ret.vEgoStarting = 0.5
     ret.stoppingControl = True
-    ret.longitudinalTuning.deadzoneBP = [0.]
-    ret.longitudinalTuning.deadzoneV = [0.]
     ret.longitudinalTuning.kf = 1.
     ret.longitudinalTuning.kpBP = [0.]
-    ret.longitudinalTuning.kpV = [1.]
+    ret.longitudinalTuning.kpV = [0.]
     ret.longitudinalTuning.kiBP = [0.]
-    ret.longitudinalTuning.kiV = [1.]
+    ret.longitudinalTuning.kiV = [0.]
     # TODO estimate car specific lag, use .15s for now
     ret.longitudinalActuatorDelay = 0.15
     ret.steerLimitTimer = 1.0

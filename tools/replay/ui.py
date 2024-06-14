@@ -158,7 +158,6 @@ def ui_thread(addr):
     # TODO brake is deprecated
     plot_arr[-1, name_to_arr_idx['computer_brake']] = clip(-sm['carControl'].actuators.accel/4.0, 0.0, 1.0)
     plot_arr[-1, name_to_arr_idx['v_ego']] = sm['carState'].vEgo
-    plot_arr[-1, name_to_arr_idx['v_pid']] = sm['controlsState'].vPid
     plot_arr[-1, name_to_arr_idx['v_cruise']] = sm['carState'].cruiseState.speed
     plot_arr[-1, name_to_arr_idx['a_ego']] = sm['carState'].aEgo
 
