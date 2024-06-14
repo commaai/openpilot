@@ -184,7 +184,7 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
   if mode == ReadMode.SANITIZED:
     return comma_car_segments_source(sr, mode)
 
-  SOURCES: list[Source] = [internal_source]
+  SOURCES: list[Source] = [internal_source, openpilotci_source, comma_api_source, comma_car_segments_source,]
   exceptions = {}
 
   # for automatic fallback modes, auto_source needs to first check if rlogs exist for any source
