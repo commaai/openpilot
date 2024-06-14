@@ -130,17 +130,21 @@ def comma_api_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
   return apply_strategy(mode, rlog_paths, qlog_paths, valid_file=valid_file)
 
 
-def internal_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
+def internal_source(sr: SegmentRange, mode: ReadMode, file_ext: str = "bz2") -> LogPaths:
   if not internal_source_available():
     raise InternalUnavailableException
 
   def get_internal_url(sr: SegmentRange, seg, file):
-    return f"cd:/{sr.dongle_id}/{sr.log_id}/{seg}/{file}.bz2"
+    return f"cd:/{sr.dongle_id}/{sr.log_id}/{seg}/{file}.{file_ext}"
 
   rlog_paths = [get_internal_url(sr, seg, "rlog") for seg in sr.seg_idxs]
   qlog_paths = [get_internal_url(sr, seg, "qlog") for seg in sr.seg_idxs]
 
   return apply_strategy(mode, rlog_paths, qlog_paths)
+
+
+def internal_source_zst(sr: SegmentRange, mode: ReadMode, file_ext: str = "zst") -> LogPaths:
+  return internal_source(sr, mode, file_ext)
 
 
 def openpilotci_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
@@ -175,7 +179,7 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
   if mode == ReadMode.SANITIZED:
     return comma_car_segments_source(sr, mode)
 
-  SOURCES: list[Source] = [internal_source, openpilotci_source, comma_api_source, comma_car_segments_source,]
+  SOURCES: list[Source] = [internal_source, internal_source_zst, openpilotci_source, comma_api_source, comma_car_segments_source,]
   exceptions = {}
 
   # for automatic fallback modes, auto_source needs to first check if rlogs exist for any source
