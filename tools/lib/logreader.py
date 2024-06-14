@@ -171,7 +171,8 @@ def get_invalid_files(files):
 
 def check_source(source: Source, *args) -> LogPaths:
   files = source(*args)
-  assert next(get_invalid_files(files), False) is False
+  assert len(files) > 0, "No files on source"
+  assert not any(get_invalid_files(files)), f"Invalid files: {files}"
   return files
 
 
@@ -180,7 +181,7 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
     return comma_car_segments_source(sr, mode)
 
   SOURCES: list[Source] = [internal_source, openpilotci_source, comma_api_source, comma_car_segments_source,]
-  exceptions = []
+  exceptions = {}
 
   # for automatic fallback modes, auto_source needs to first check if rlogs exist for any source
   if mode in [ReadMode.AUTO, ReadMode.AUTO_INTERACTIVE]:
@@ -201,7 +202,7 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
       print('got ret', ret)
       return ret
     except Exception as e:
-      exceptions.append(e)
+      exceptions[source.__name__] = e
 
   raise Exception(f"auto_source could not find any valid source, exceptions for sources: {exceptions}")
 
