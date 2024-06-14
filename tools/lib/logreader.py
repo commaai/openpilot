@@ -122,7 +122,6 @@ def comma_api_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
 
   rlog_paths = [route.log_paths()[seg] for seg in sr.seg_idxs]
   qlog_paths = [route.qlog_paths()[seg] for seg in sr.seg_idxs]
-  print(qlog_paths)
 
   # comma api will have already checked if the file exists
   def valid_file(fn):
@@ -136,9 +135,7 @@ def internal_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
     raise InternalUnavailableException
 
   def get_internal_url(sr: SegmentRange, seg, file):
-    ret = f"cd:/{sr.dongle_id}/{sr.timestamp}/{seg}/{file}.bz2"
-    print('internal try', ret)
-    return ret
+    return f"cd:/{sr.dongle_id}/{sr.timestamp}/{seg}/{file}.bz2"
 
   print('segidxs', sr.seg_idxs)
 
@@ -186,21 +183,15 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
   # for automatic fallback modes, auto_source needs to first check if rlogs exist for any source
   if mode in [ReadMode.AUTO, ReadMode.AUTO_INTERACTIVE]:
     for source in SOURCES:
-      print('source', source)
       try:
-        ret = check_source(source, sr, ReadMode.RLOG)
-        print('got ret', ret)
-        return ret
+        return check_source(source, sr, ReadMode.RLOG)
       except Exception:
         pass
 
   # Automatically determine viable source
   for source in SOURCES:
     try:
-      print('trying source2', source, sr)
-      ret = check_source(source, sr, mode)
-      print('got ret', ret)
-      return ret
+      return check_source(source, sr, mode)
     except Exception as e:
       exceptions[source.__name__] = e
 
@@ -243,11 +234,9 @@ class LogReader:
       return [i for j in identifier for i in self._parse_identifiers(j)]
 
     parsed, source, is_indirect = parse_indirect(identifier)
-    print(parsed, source, is_indirect)
 
     if not is_indirect:
       direct_parsed = parse_direct(identifier)
-      print(direct_parsed)
       if direct_parsed is not None:
         return direct_source(identifier)
 
@@ -256,7 +245,6 @@ class LogReader:
     source = self.default_source if source is None else source
 
     identifiers = source(sr, mode)
-    print('ids', identifiers)
 
     invalid_count = len(list(get_invalid_files(identifiers)))
     assert invalid_count == 0, f"{invalid_count}/{len(identifiers)} invalid log(s) found, please ensure all logs \
@@ -297,7 +285,6 @@ are uploaded or auto fallback to qlogs with '/a' selector at the end of the rout
 
   def reset(self):
     self.logreader_identifiers = self._parse_identifiers(self.identifier)
-    print(self.identifier, self.logreader_identifiers)
 
   @staticmethod
   def from_bytes(dat):
