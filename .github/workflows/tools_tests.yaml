@@ -69,9 +69,11 @@ jobs:
     - name: Installing python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.11.4'
-    - name: Installing dependencies
-      run: .github/workflows/setup/setup.sh
+        python-version: '3.12.4'
+    - name: Installing ubuntu dependencies
+      run: INSTALL_EXTRA_PACKAGES=no tools/install_ubuntu_dependencies.sh
+    - name: Installing python dependencies
+      run: tools/install_python_dependencies.sh
     - name: TEST
       run: pip list
     - name: build op
