@@ -135,7 +135,6 @@ def internal_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
   if not internal_source_available():
     raise InternalUnavailableException
 
-  # list available keys
   with FileReader(f"cd:/{sr.dongle_id}/{sr.log_id}/?list") as f:
     available_keys = json.loads(f.read().decode())['keys']
 
