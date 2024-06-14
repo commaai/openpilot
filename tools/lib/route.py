@@ -261,13 +261,6 @@ class SegmentRange:
     return self.m.group("dongle_id")
 
   @property
-  def timestamp(self) -> str:
-    match = self.m.group("timestamp")
-    if match is None:
-      raise DeprecationWarning("Route timestamp is deprecated, use log_id")
-    return match
-
-  @property
   def log_id(self) -> str:
     return self.m.group("log_id")
 
