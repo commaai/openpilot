@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import bz2
+import time
 from functools import partial
 import multiprocessing
 import capnp
 import enum
-import json
 import os
 import pathlib
 import sys
@@ -131,24 +131,28 @@ def comma_api_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
   return apply_strategy(mode, rlog_paths, qlog_paths, valid_file=valid_file)
 
 
-def internal_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
+def internal_source(sr: SegmentRange, mode: ReadMode, file_ext: str = "bz2") -> LogPaths:
+  print(file_ext)
+  t = time.monotonic()
   if not internal_source_available():
     raise InternalUnavailableException
-
-  with FileReader(f"cd:/{sr.dongle_id}/{sr.log_id}/?list") as f:
-    available_keys = json.loads(f.read().decode())['keys']
-
-  # TODO: only return urls to available keys. we need a default as the
-  #  current behavior is to silently download all logs viewed to the office
-  file_ext = ".zst" if any(".zst" in key for key in available_keys) else ".bz2"
+  print('t1', time.monotonic() - t)
 
   def get_internal_url(sr: SegmentRange, seg, file):
     return f"cd:/{sr.dongle_id}/{sr.log_id}/{seg}/{file}.{file_ext}"
 
   rlog_paths = [get_internal_url(sr, seg, "rlog") for seg in sr.seg_idxs]
   qlog_paths = [get_internal_url(sr, seg, "qlog") for seg in sr.seg_idxs]
+  print('t2', time.monotonic() - t)
+
+  if file_ext == "bz2":
+    qlog_paths = [None] * len(qlog_paths)
 
   return apply_strategy(mode, rlog_paths, qlog_paths)
+
+
+def internal_source_zst(sr: SegmentRange, mode: ReadMode, file_ext: str = "zst") -> LogPaths:
+  return internal_source(sr, mode, file_ext)
 
 
 def openpilotci_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
@@ -169,13 +173,14 @@ def direct_source(file_or_url: str) -> LogPaths:
 def get_invalid_files(files):
   for f in files:
     if f is None or not file_exists(f):
+      print('yielding f')
       yield f
 
 
 def check_source(source: Source, *args) -> LogPaths:
   files = source(*args)
   assert len(files) > 0, "No files on source"
-  assert not any(get_invalid_files(files)), f"Invalid files: {files}"
+  assert next(get_invalid_files(files), False) is False
   return files
 
 
@@ -183,7 +188,7 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
   if mode == ReadMode.SANITIZED:
     return comma_car_segments_source(sr, mode)
 
-  SOURCES: list[Source] = [internal_source, openpilotci_source, comma_api_source, comma_car_segments_source,]
+  SOURCES: list[Source] = [internal_source, internal_source_zst, openpilotci_source, comma_api_source, comma_car_segments_source,]
   exceptions = {}
 
   # for automatic fallback modes, auto_source needs to first check if rlogs exist for any source
@@ -196,10 +201,13 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
 
   # Automatically determine viable source
   for source in SOURCES:
+    t = time.monotonic()
     try:
       return check_source(source, sr, mode)
     except Exception as e:
       exceptions[source.__name__] = e
+    t = time.monotonic() - t
+    print('took', t, source.__name__)
 
   raise Exception("auto_source could not find any valid source, exceptions for sources:\n  - " +
                   "\n  - ".join([f"{k}: {repr(v)}" for k, v in exceptions.items()]))
