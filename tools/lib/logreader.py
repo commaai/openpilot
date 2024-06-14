@@ -4,6 +4,7 @@ from functools import partial
 import multiprocessing
 import capnp
 import enum
+import json
 import os
 import pathlib
 import sys
@@ -134,8 +135,21 @@ def internal_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
   if not internal_source_available():
     raise InternalUnavailableException
 
+  available_keys = {"rlog": [], "qlog": []}
+  with FileReader(f"cd:/{sr.dongle_id}/{sr.log_id}/?list&limit=10000&start=") as f:
+    for key in json.loads(f.read().decode())['keys']:
+      for avail in available_keys:
+        if avail in key:
+          available_keys[avail].append(key)
+
+  print(available_keys)
+
   def get_internal_url(sr: SegmentRange, seg, file):
-    return f"cd:/{sr.dongle_id}/{sr.log_id}/{seg}/{file}.bz2"
+    ret = f"cd:/{sr.dongle_id}/{sr.log_id}/{seg}/{file}.bz2"
+    print(ret)
+    return ret
+
+  # seg_idxs = (0, 1, 2)
 
   rlog_paths = [get_internal_url(sr, seg, "rlog") for seg in sr.seg_idxs]
   qlog_paths = [get_internal_url(sr, seg, "qlog") for seg in sr.seg_idxs]
@@ -175,7 +189,7 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
   if mode == ReadMode.SANITIZED:
     return comma_car_segments_source(sr, mode)
 
-  SOURCES: list[Source] = [internal_source, openpilotci_source, comma_api_source, comma_car_segments_source,]
+  SOURCES: list[Source] = [internal_source]
   exceptions = {}
 
   # for automatic fallback modes, auto_source needs to first check if rlogs exist for any source
