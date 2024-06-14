@@ -195,8 +195,8 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
     except Exception as e:
       exceptions[source.__name__] = e
 
-  raise Exception("auto_source could not find any valid source, exceptions for sources:\n  " +
-                  "\n  ".join(map(repr, exceptions.items())))
+  raise Exception("auto_source could not find any valid source, exceptions for sources:\n  - " +
+                  "\n  - ".join([f"{k}: {repr(v)}" for k, v in exceptions.items()]))
 
 
 def parse_useradmin(identifier: str):
