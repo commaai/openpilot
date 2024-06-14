@@ -137,8 +137,6 @@ def internal_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
   def get_internal_url(sr: SegmentRange, seg, file):
     return f"cd:/{sr.dongle_id}/{sr.timestamp}/{seg}/{file}.bz2"
 
-  print('segidxs', sr.seg_idxs)
-
   rlog_paths = [get_internal_url(sr, seg, "rlog") for seg in sr.seg_idxs]
   qlog_paths = [get_internal_url(sr, seg, "qlog") for seg in sr.seg_idxs]
 
