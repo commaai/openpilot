@@ -9,7 +9,7 @@ from openpilot.tools.lib.auth_config import get_token
 from openpilot.tools.lib.api import CommaApi
 from openpilot.tools.lib.helpers import RE
 
-QLOG_FILENAMES = ['qlog', 'qlog.bz2']
+QLOG_FILENAMES = ['qlog', 'qlog.bz2', 'qlog.zst']
 QCAMERA_FILENAMES = ['qcamera.ts']
 LOG_FILENAMES = ['rlog', 'rlog.bz2', 'raw_log.bz2']
 CAMERA_FILENAMES = ['fcamera.hevc', 'video.hevc']
@@ -62,8 +62,11 @@ class Route:
   # TODO: refactor this, it's super repetitive
   def _get_segments_remote(self):
     api = CommaApi(get_token())
+    # print('token', get_token())
     route_files = api.get('v1/route/' + self.name.canonical_name + '/files')
+    # print('v1/route/' + self.name.canonical_name + '/files')
     self.files = list(chain.from_iterable(route_files.values()))
+    # print(self.files)
 
     segments = {}
     for url in self.files:
