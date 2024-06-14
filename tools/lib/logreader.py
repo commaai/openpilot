@@ -135,24 +135,30 @@ def internal_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
   if not internal_source_available():
     raise InternalUnavailableException
 
-  available_keys = {"rlog": [], "qlog": []}
+  available_keys = {"rlog": {}, "qlog": {}}
   with FileReader(f"cd:/{sr.dongle_id}/{sr.log_id}/?list&limit=10000&start=") as f:
     for key in json.loads(f.read().decode())['keys']:
+      seg_number = int(key.strip("/").split("/")[2])
       for avail in available_keys:
         if avail in key:
-          available_keys[avail].append(key)
+          available_keys[avail][seg_number] = 'cd:'+key
 
   print(available_keys)
 
+  # TODO: refactor the strategies such that we can return only available files
   def get_internal_url(sr: SegmentRange, seg, file):
-    ret = f"cd:/{sr.dongle_id}/{sr.log_id}/{seg}/{file}.bz2"
-    print(ret)
+    # ret = f"cd:/{available_keys[file][seg]}"
+    ret = available_keys[file].get(seg)
+    # ret = f"cd:/{sr.dongle_id}/{sr.log_id}/{seg}/{file}.bz2"
+    # print(ret)
     return ret
 
   # seg_idxs = (0, 1, 2)
 
   rlog_paths = [get_internal_url(sr, seg, "rlog") for seg in sr.seg_idxs]
   qlog_paths = [get_internal_url(sr, seg, "qlog") for seg in sr.seg_idxs]
+
+  print(rlog_paths, qlog_paths)
 
   return apply_strategy(mode, rlog_paths, qlog_paths)
 
