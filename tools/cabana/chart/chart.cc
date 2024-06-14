@@ -277,7 +277,7 @@ void ChartView::updateSeriesPoints() {
         }
         ((QScatterSeries *)s.series)->setMarkerSize(size);
       } else {
-        s.series->setPointsVisible(pixels_per_point > 20);
+        s.series->setPointsVisible(num_points == 1 || pixels_per_point > 20);
       }
     }
   }

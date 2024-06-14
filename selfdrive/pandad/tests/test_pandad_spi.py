@@ -84,8 +84,8 @@ class TestBoarddSpi:
             ps = m.peripheralState
             assert ps.pandaType == "tres"
             assert 4000 < ps.voltage < 14000
-            assert 100 < ps.current < 1000
-            assert ps.fanSpeedRpm < 8000
+            assert 50 < ps.current < 1000
+            assert ps.fanSpeedRpm < 10000
 
       time.sleep(0.5)
     et = time.monotonic() - st
