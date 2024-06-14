@@ -261,10 +261,6 @@ class SegmentRange:
     return self.m.group("dongle_id")
 
   @property
-  def timestamp(self) -> str:
-    return self.m.group("timestamp")
-
-  @property
   def log_id(self) -> str:
     return self.m.group("log_id")
 
