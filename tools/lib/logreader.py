@@ -135,42 +135,19 @@ def internal_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
   if not internal_source_available():
     raise InternalUnavailableException
 
-  available_keys = {"rlog": {}, "qlog": {}}
-  # available_keys = defaultdict(dict)  # rename segs
+  # list available keys
   with FileReader(f"cd:/{sr.dongle_id}/{sr.log_id}/?list") as f:
     available_keys = json.loads(f.read().decode())['keys']
-    # for key in json.loads(f.read().decode())['keys']:
-    #   seg_number, file = key.strip("/").split("/")[-2:]
-    #   # available_keys[(int(seg_number), file)] = key
-    #   available_keys[int(seg_number)][file] = key
-    #   # for avail in available_keys:
-    #   #   if avail in key:
-    #   #     available_keys[avail][seg_number] = 'cd:'+key
 
-  print(available_keys)
-
-  def get_internal_url(sr: SegmentRange, seg, file):
+  def get_internal_url(seg, file):
     for key in available_keys:
       seg_number = key.strip("/").split("/")[-2]
+      # only check file name as file extension can vary
       if int(seg_number) == seg and file in key:
         return 'cd:' + key  # prefix is /
 
-    # next((key for key in available_keys if key.split("/")[-2] == seg and file in key), None)
-    # # ret = f"cd:/{available_keys[file][seg]}"
-    # available_keys.get(seg, {})
-    #
-    # # next((s == , v for (s, f), v in available_keys.items()))
-    # ret = available_keys[file].get(seg)
-    # # ret = f"cd:/{sr.dongle_id}/{sr.log_id}/{seg}/{file}.bz2"
-    # # print(ret)
-    # return ret
-
-  # seg_idxs = (0, 1, 2)
-
-  rlog_paths = [get_internal_url(sr, seg, "rlog") for seg in sr.seg_idxs]
-  qlog_paths = [get_internal_url(sr, seg, "qlog") for seg in sr.seg_idxs]
-
-  print(rlog_paths, qlog_paths)
+  rlog_paths = [get_internal_url(seg, "rlog") for seg in sr.seg_idxs]
+  qlog_paths = [get_internal_url(seg, "qlog") for seg in sr.seg_idxs]
 
   return apply_strategy(mode, rlog_paths, qlog_paths)
 
