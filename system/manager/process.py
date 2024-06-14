@@ -205,7 +205,7 @@ class PythonProcess(ManagerProcess):
     self.enabled = enabled
     self.sigkill = sigkill
     self.watchdog_max_dt = watchdog_max_dt
-    self.launcher = launcher
+    self.launcher = nativelauncher
 
   def prepare(self) -> None:
     if self.enabled:
@@ -221,7 +221,9 @@ class PythonProcess(ManagerProcess):
       return
 
     cloudlog.info(f"starting python {self.module}")
-    self.proc = Process(name=self.name, target=self.launcher, args=(self.module, self.name))
+    cwd = os.path.join(BASEDIR, self.module.replace('.', '/'))
+    pargs = ['python3', cwd]
+    self.proc = Process(name=self.name, target=self.launcher, args=(pargs, cwd, self.name))
     self.proc.start()
     self.watchdog_seen = False
     self.shutting_down = False
