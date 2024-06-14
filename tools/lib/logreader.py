@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import bz2
-import time
 from functools import partial
 import multiprocessing
 import capnp
@@ -132,21 +131,14 @@ def comma_api_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
 
 
 def internal_source(sr: SegmentRange, mode: ReadMode, file_ext: str = "bz2") -> LogPaths:
-  print(file_ext)
-  t = time.monotonic()
   if not internal_source_available():
     raise InternalUnavailableException
-  print('t1', time.monotonic() - t)
 
   def get_internal_url(sr: SegmentRange, seg, file):
     return f"cd:/{sr.dongle_id}/{sr.log_id}/{seg}/{file}.{file_ext}"
 
   rlog_paths = [get_internal_url(sr, seg, "rlog") for seg in sr.seg_idxs]
   qlog_paths = [get_internal_url(sr, seg, "qlog") for seg in sr.seg_idxs]
-  print('t2', time.monotonic() - t)
-
-  if file_ext == "bz2":
-    qlog_paths = [None] * len(qlog_paths)
 
   return apply_strategy(mode, rlog_paths, qlog_paths)
 
@@ -173,7 +165,6 @@ def direct_source(file_or_url: str) -> LogPaths:
 def get_invalid_files(files):
   for f in files:
     if f is None or not file_exists(f):
-      print('yielding f')
       yield f
 
 
@@ -201,13 +192,10 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
 
   # Automatically determine viable source
   for source in SOURCES:
-    t = time.monotonic()
     try:
       return check_source(source, sr, mode)
     except Exception as e:
       exceptions[source.__name__] = e
-    t = time.monotonic() - t
-    print('took', t, source.__name__)
 
   raise Exception("auto_source could not find any valid source, exceptions for sources:\n  - " +
                   "\n  - ".join([f"{k}: {repr(v)}" for k, v in exceptions.items()]))
