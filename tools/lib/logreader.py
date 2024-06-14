@@ -143,7 +143,7 @@ def internal_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
       seg_number = key.strip("/").split("/")[-2]
       # only check file name as file extension can vary
       if int(seg_number) == seg and file in key:
-        return 'cd:' + key  # prefix is /
+        return 'cd:/' + key.strip("/")
 
   rlog_paths = [get_internal_url(seg, "rlog") for seg in sr.seg_idxs]
   qlog_paths = [get_internal_url(seg, "qlog") for seg in sr.seg_idxs]
