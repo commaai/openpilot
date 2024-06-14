@@ -138,15 +138,15 @@ def internal_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
   with FileReader(f"cd:/{sr.dongle_id}/{sr.log_id}/?list") as f:
     available_keys = json.loads(f.read().decode())['keys']
 
-  def get_internal_url(seg, file):
-    for key in available_keys:
-      seg_number = key.strip("/").split("/")[-2]
-      # only check file name as file extension can vary
-      if int(seg_number) == seg and file in key:
-        return 'cd:/' + key.strip("/")
+  # we need a default as the current behavior is to silently download
+  # all logs viewed to the office
+  file_ext = ".zst" if any(".zst" in key for key in available_keys) else ".bz2"
 
-  rlog_paths = [get_internal_url(seg, "rlog") for seg in sr.seg_idxs]
-  qlog_paths = [get_internal_url(seg, "qlog") for seg in sr.seg_idxs]
+  def get_internal_url(sr: SegmentRange, seg, file):
+    return f"cd:/{sr.dongle_id}/{sr.log_id}/{seg}/{file}.{file_ext}"
+
+  rlog_paths = [get_internal_url(sr, seg, "rlog") for seg in sr.seg_idxs]
+  qlog_paths = [get_internal_url(sr, seg, "qlog") for seg in sr.seg_idxs]
 
   return apply_strategy(mode, rlog_paths, qlog_paths)
 
@@ -183,7 +183,7 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
   if mode == ReadMode.SANITIZED:
     return comma_car_segments_source(sr, mode)
 
-  SOURCES: list[Source] = [internal_source, openpilotci_source, comma_api_source, comma_car_segments_source,]
+  SOURCES: list[Source] = [internal_source]
   exceptions = {}
 
   # for automatic fallback modes, auto_source needs to first check if rlogs exist for any source
