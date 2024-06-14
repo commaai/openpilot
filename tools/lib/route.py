@@ -242,7 +242,7 @@ class SegmentName:
 def get_max_seg_number_cached(sr: 'SegmentRange') -> int:
   try:
     api = CommaApi(get_token())
-    max_seg_number = api.get("/v1/route/" + sr.route_name.replace("/", "|"))["maxqlog"]
+    max_seg_number = api.get("/v1/route/" + sr.route_name.replace("/", "|"))["maxqlog"]  # TODO: this isn't updated in the prod DB yet
     assert isinstance(max_seg_number, int)
     return max_seg_number
   except Exception as e:
