@@ -72,8 +72,12 @@ jobs:
         python-version: '3.12.4'
     - name: Installing ubuntu dependencies
       run: INSTALL_EXTRA_PACKAGES=no tools/install_ubuntu_dependencies.sh
+    - name: Installing pip
+      run: pip install pip==24.0
+    - name: Installing poetry
+      run: pip install poetry==1.7.0
     - name: Installing python dependencies
-      run: tools/install_python_dependencies.sh
+      run: poetry install --no-cache --no-root
     - name: TEST
       run: pip list
     - name: build op
