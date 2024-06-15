@@ -222,7 +222,7 @@ class PythonProcess(ManagerProcess):
 
     cloudlog.info(f"starting python {self.module}")
     cwd = self.module.replace('.', '/')
-    pargs = ['python3', cwd]
+    pargs = ['python3', cwd+'.py']
     self.proc = Process(name=self.name, target=self.launcher, args=(pargs, BASEDIR, self.name))
     self.proc.start()
     self.watchdog_seen = False
