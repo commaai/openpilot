@@ -38,6 +38,8 @@ VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   QObject::connect(can, &AbstractStream::paused, this, &VideoWidget::updatePlayBtnState);
   QObject::connect(can, &AbstractStream::resume, this, &VideoWidget::updatePlayBtnState);
   QObject::connect(can, &AbstractStream::msgsReceived, this, &VideoWidget::updateState);
+  QObject::connect(can, &AbstractStream::seeking, this, &VideoWidget::updateState);
+  QObject::connect(can, &AbstractStream::timeRangeChanged, this, &VideoWidget::timeRangeChanged);
 
   updatePlayBtnState();
   setWhatsThis(tr(R"(
@@ -150,14 +152,16 @@ QWidget *VideoWidget::createCameraWidget() {
 
   setMaximumTime(can->totalSeconds());
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->currentSecond()); });
-  QObject::connect(slider, &Slider::updateMaximumTime, this, &VideoWidget::setMaximumTime, Qt::QueuedConnection);
   QObject::connect(can, &AbstractStream::eventsMerged, this, [this]() { slider->update(); });
-  QObject::connect(static_cast<ReplayStream*>(can), &ReplayStream::qLogLoaded, slider, &Slider::parseQLog);
   QObject::connect(cam_widget, &CameraWidget::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(cam_widget, &CameraWidget::vipcAvailableStreamsUpdated, this, &VideoWidget::vipcAvailableStreamsUpdated);
   QObject::connect(camera_tab, &QTabBar::currentChanged, [this](int index) {
     if (index != -1) cam_widget->setStreamType((VisionStreamType)camera_tab->tabData(index).toInt());
   });
+
+  auto replay = static_cast<ReplayStream*>(can)->getReplay();
+  QObject::connect(replay, &Replay::qLogLoaded, slider, &Slider::parseQLog, Qt::QueuedConnection);
+  QObject::connect(replay, &Replay::totalSecondsUpdated, this, &VideoWidget::setMaximumTime, Qt::QueuedConnection);
   return w;
 }
 
@@ -198,13 +202,13 @@ void VideoWidget::setMaximumTime(double sec) {
   slider->setTimeRange(0, sec);
 }
 
-void VideoWidget::updateTimeRange(double min, double max, bool is_zoomed) {
+void VideoWidget::timeRangeChanged(const std::optional<std::pair<double, double>> &time_range) {
   if (can->liveStreaming()) {
-    skip_to_end_btn->setEnabled(!is_zoomed);
+    skip_to_end_btn->setEnabled(!time_range.has_value());
     return;
   }
-  is_zoomed ? slider->setTimeRange(min, max)
-            : slider->setTimeRange(0, maximum_time);
+  time_range ? slider->setTimeRange(time_range->first, time_range->second)
+             : slider->setTimeRange(0, maximum_time);
 }
 
 QString VideoWidget::formatTime(double sec, bool include_milliseconds) {
@@ -255,12 +259,7 @@ void Slider::setTimeRange(double min, double max) {
   setRange(min * factor, max * factor);
 }
 
-void Slider::parseQLog(int segnum, std::shared_ptr<LogReader> qlog) {
- const auto &segments = qobject_cast<ReplayStream *>(can)->route()->segments();
-  if (segments.size() > 0 && segnum == segments.rbegin()->first && !qlog->events.empty()) {
-    emit updateMaximumTime(qlog->events.back().mono_time / 1e9 - can->routeStartTime());
-  }
-
+void Slider::parseQLog(std::shared_ptr<LogReader> qlog) {
   std::mutex mutex;
   QtConcurrent::blockingMap(qlog->events.cbegin(), qlog->events.cend(), [&mutex, this](const Event &e) {
     if (e.which == cereal::Event::Which::THUMBNAIL) {

@@ -60,7 +60,6 @@ void CameraServer::cameraThread(Camera &cam) {
     capnp::FlatArrayMessageReader reader(event->data);
     auto evt = reader.getRoot<cereal::Event>();
     auto eidx = capnp::AnyStruct::Reader(evt).getPointerSection()[0].getAs<cereal::EncodeIndex>();
-    if (eidx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C) continue;
 
     int segment_id = eidx.getSegmentId();
     uint32_t frame_id = eidx.getFrameId();
