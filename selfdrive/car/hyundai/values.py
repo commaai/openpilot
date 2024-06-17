@@ -526,6 +526,13 @@ class CAR(Platforms):
     CarSpecs(mass=1950, wheelbase=2.87, steerRatio=14.6),
     flags=HyundaiFlags.RADAR_SCC,
   )
+  GENESIS_GV70_ELECTRIFIED_1ST_GEN = HyundaiCanFDPlatformConfig(
+    [
+      HyundaiCarDocs("Genesis GV70 Electrified (with HDA II) 2023", "All", car_parts=CarParts.common([CarHarness.hyundai_s])),
+    ],
+    CarSpecs(mass=2295, wheelbase=2.87, steerRatio=13.27),  # Varaible steering/gear ratio: https://www.genesis.com/content/dam/genesis-p2/au/assets/models/electrified-gv70/specs/Genesis_GV70_EV_August_2022_v0.1.pdf
+    flags=HyundaiFlags.EV,
+  )
   GENESIS_G80 = HyundaiPlatformConfig(
     [HyundaiCarDocs("Genesis G80 2018-19", "All", car_parts=CarParts.common([CarHarness.hyundai_h]))],
     CarSpecs(mass=2060, wheelbase=3.01, steerRatio=16.5),
