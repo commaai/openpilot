@@ -9,6 +9,10 @@ inputs:
     description: 'A mock param that asserts that we use the setup-with-retry instead of this action directly'
     required: false
     default: 'false'
+  build_docker:
+    description: 'Whether or not to build the docker image'
+    required: false
+    default: 'true'
 
 runs:
   using: "composite"
@@ -60,4 +64,5 @@ runs:
         find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
     # build our docker image
     - shell: bash
+      if: ${{ inputs.build_docker == 'true' }}
       run: eval ${{ env.BUILD }}

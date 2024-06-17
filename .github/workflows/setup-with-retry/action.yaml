@@ -9,6 +9,10 @@ inputs:
     description: 'Time to sleep between retries'
     required: false
     default: 30
+  build_docker:
+    description: 'Whether or not to build the docker image'
+    required: false
+    default: 'true'
 
 runs:
   using: "composite"
@@ -18,6 +22,7 @@ runs:
       continue-on-error: true
       with:
         docker_hub_pat: ${{ inputs.docker_hub_pat }}
+        build_docker: ${{ inputs.build_docker }}
         is_retried: true
     - if: steps.setup1.outcome == 'failure'
       shell: bash
@@ -28,6 +33,7 @@ runs:
       continue-on-error: true
       with:
         docker_hub_pat: ${{ inputs.docker_hub_pat }}
+        build_docker: ${{ inputs.build_docker }}
         is_retried: true
     - if: steps.setup2.outcome == 'failure'
       shell: bash
@@ -37,4 +43,5 @@ runs:
       uses: ./.github/workflows/setup
       with:
         docker_hub_pat: ${{ inputs.docker_hub_pat }}
+        build_docker: ${{ inputs.build_docker }}
         is_retried: true

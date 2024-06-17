@@ -58,8 +58,15 @@ jobs:
       run: pip install poetry==1.7.0
     - name: Installing python dependencies
       run: poetry install --no-cache --no-root
+    - uses: ./.github/workflows/setup-with-retry
+      with:
+        build_docker: 'false'
     - name: git LFS
       run: git lfs pull
+    - name: Get scons cache
+      run: |
+        mkdir -p /tmp/scons_cache/
+        cp -r $GITHUB_WORKSPACE/.ci_cache/scons_cache/. /tmp/scons_cache/
     - name: Building openpilot
       run: poetry run scons -u -j$(nproc)
 
