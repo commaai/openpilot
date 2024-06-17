@@ -53,6 +53,7 @@ public:
          uint32_t flags = REPLAY_FLAG_NONE, QString data_dir = "", QObject *parent = 0);
   ~Replay();
   bool load();
+  RouteLoadError lastRouteError() const { return route_->lastError(); }
   void start(int seconds = 0);
   void stop();
   void pause(bool pause);
