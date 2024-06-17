@@ -53,7 +53,8 @@ jobs:
         ${{ env.RUN }} "export MAPBOX_TOKEN='pk.eyJ1Ijoiam5ld2IiLCJhIjoiY2xxNW8zZXprMGw1ZzJwbzZneHd2NHljbSJ9.gV7VPRfbXFetD-1OVF0XZg' && \
                         source selfdrive/test/setup_xvfb.sh && \
                         source selfdrive/test/setup_vsound.sh && \
-                        sudo apt install -y mesa-utils && \
+                        sudo apt-get update && \
+                        sudo apt-get install -y mesa-utils && \
                         glxinfo -B"
 
   test_python311:
