@@ -92,13 +92,23 @@ void AbstractStream::updateLastMessages() {
   std::set<MessageId> msgs;
   {
     std::lock_guard lk(mutex_);
+    double max_sec = 0;
     for (const auto &id : new_msgs_) {
       const auto &can_data = messages_[id];
-      current_sec_ = std::max(current_sec_, can_data.ts);
+      max_sec = std::max(max_sec, can_data.ts);
       last_msgs[id] = can_data;
       sources.insert(id.source);
     }
-    msgs = std::move(new_msgs_);
+
+    if (!new_msgs_.empty()) {
+      msgs = std::move(new_msgs_);
+      current_sec_ = max_sec;
+    }
+  }
+
+  if (time_range_ && (current_sec_ < time_range_->first || current_sec_ >= time_range_->second)) {
+    seekTo(time_range_->first);
+    return;
   }
 
   if (sources.size() != prev_src_size) {
@@ -106,6 +116,14 @@ void AbstractStream::updateLastMessages() {
     emit sourcesUpdated(sources);
   }
   emit msgsReceived(&msgs, prev_msg_size != last_msgs.size());
+}
+
+void AbstractStream::setTimeRange(const std::optional<std::pair<double, double>> &range) {
+  time_range_ = range;
+  if (time_range_ && (current_sec_ < time_range_->first || current_sec_ >= time_range_->second)) {
+    seekTo(time_range_->first);
+  }
+  emit timeRangeChanged(time_range_);
 }
 
 void AbstractStream::updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size) {
