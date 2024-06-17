@@ -1,6 +1,7 @@
 Version 0.9.8 (2024-XX-XX)
 ========================
 * Added toggle to enable driver monitoring even when openpilot is not engaged
+* Genesis GV70 2022 (3.5T Trim with HDA II) support thanks to sunnyhaibin!
 
 Version 0.9.7 (2024-06-13)
 ========================
