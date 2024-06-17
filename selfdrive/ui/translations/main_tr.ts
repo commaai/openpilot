@@ -137,33 +137,6 @@
     </message>
 </context>
 <context>
-    <name>DestinationWidget</name>
-    <message>
-        <source>Home</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Work</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>No destination set</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>home</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>work</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>No %1 location set</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -348,41 +321,26 @@
     <name>MapETA</name>
     <message>
         <source>eta</source>
-        <translation>tahmini varış süresi</translation>
+        <translation type="vanished">tahmini varış süresi</translation>
     </message>
     <message>
         <source>min</source>
-        <translation>dk</translation>
+        <translation type="vanished">dk</translation>
     </message>
     <message>
         <source>hr</source>
-        <translation>saat</translation>
-    </message>
-</context>
-<context>
-    <name>MapSettings</name>
-    <message>
-        <source>NAVIGATION</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Manage at connect.comma.ai</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">saat</translation>
     </message>
 </context>
 <context>
     <name>MapWindow</name>
     <message>
         <source>Map Loading</source>
-        <translation>Harita yükleniyor</translation>
+        <translation type="vanished">Harita yükleniyor</translation>
     </message>
     <message>
         <source>Waiting for GPS</source>
-        <translation>GPS verisi bekleniyor...</translation>
-    </message>
-    <message>
-        <source>Waiting for route</source>
-        <translation type="unfinished"></translation>
+        <translation type="vanished">GPS verisi bekleniyor...</translation>
     </message>
 </context>
 <context>
@@ -611,19 +569,19 @@
     </message>
     <message>
         <source>km</source>
-        <translation>km</translation>
+        <translation type="vanished">km</translation>
     </message>
     <message>
         <source>m</source>
-        <translation>m</translation>
+        <translation type="vanished">m</translation>
     </message>
     <message>
         <source>mi</source>
-        <translation>mil</translation>
+        <translation type="vanished">mil</translation>
     </message>
     <message>
         <source>ft</source>
-        <translation>ft</translation>
+        <translation type="vanished">ft</translation>
     </message>
     <message>
         <source>now</source>
@@ -1066,19 +1024,19 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Show ETA in 24h Format</source>
-        <translation>Tahmini varış süresini 24 saat formatı şeklinde göster</translation>
+        <translation type="vanished">Tahmini varış süresini 24 saat formatı şeklinde göster</translation>
     </message>
     <message>
         <source>Use 24h format instead of am/pm</source>
-        <translation>24 saat formatını kullan</translation>
+        <translation type="vanished">24 saat formatını kullan</translation>
     </message>
     <message>
         <source>Show Map on Left Side of UI</source>
-        <translation>Haritayı arayüzün sol tarafında göster</translation>
+        <translation type="vanished">Haritayı arayüzün sol tarafında göster</translation>
     </message>
     <message>
         <source>Show map on left side when in split screen view.</source>
-        <translation>Bölünmüş ekran görünümündeyken haritayı sol tarafta göster.</translation>
+        <translation type="vanished">Bölünmüş ekran görünümündeyken haritayı sol tarafta göster.</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>

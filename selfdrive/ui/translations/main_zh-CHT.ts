@@ -140,27 +140,27 @@
     <name>DestinationWidget</name>
     <message>
         <source>Home</source>
-        <translation>住家</translation>
+        <translation type="vanished">住家</translation>
     </message>
     <message>
         <source>Work</source>
-        <translation>工作</translation>
+        <translation type="vanished">工作</translation>
     </message>
     <message>
         <source>No destination set</source>
-        <translation>尚未設定目的地</translation>
+        <translation type="vanished">尚未設定目的地</translation>
     </message>
     <message>
         <source>No %1 location set</source>
-        <translation>尚未設定 %1 的位置</translation>
+        <translation type="vanished">尚未設定 %1 的位置</translation>
     </message>
     <message>
         <source>home</source>
-        <translation>住家</translation>
+        <translation type="vanished">住家</translation>
     </message>
     <message>
         <source>work</source>
-        <translation>工作</translation>
+        <translation type="vanished">工作</translation>
     </message>
 </context>
 <context>
@@ -348,41 +348,41 @@
     <name>MapETA</name>
     <message>
         <source>eta</source>
-        <translation>抵達</translation>
+        <translation type="vanished">抵達</translation>
     </message>
     <message>
         <source>min</source>
-        <translation>分鐘</translation>
+        <translation type="vanished">分鐘</translation>
     </message>
     <message>
         <source>hr</source>
-        <translation>小時</translation>
+        <translation type="vanished">小時</translation>
     </message>
 </context>
 <context>
     <name>MapSettings</name>
     <message>
         <source>NAVIGATION</source>
-        <translation>導航</translation>
+        <translation type="vanished">導航</translation>
     </message>
     <message>
         <source>Manage at connect.comma.ai</source>
-        <translation>請在 connect.comma.ai 上管理</translation>
+        <translation type="vanished">請在 connect.comma.ai 上管理</translation>
     </message>
 </context>
 <context>
     <name>MapWindow</name>
     <message>
         <source>Map Loading</source>
-        <translation>地圖載入中</translation>
+        <translation type="vanished">地圖載入中</translation>
     </message>
     <message>
         <source>Waiting for GPS</source>
-        <translation>等待 GPS</translation>
+        <translation type="vanished">等待 GPS</translation>
     </message>
     <message>
         <source>Waiting for route</source>
-        <translation>等待路線</translation>
+        <translation type="vanished">等待路線</translation>
     </message>
 </context>
 <context>
@@ -612,19 +612,19 @@
     </message>
     <message>
         <source>km</source>
-        <translation>km</translation>
+        <translation type="vanished">km</translation>
     </message>
     <message>
         <source>m</source>
-        <translation>m</translation>
+        <translation type="vanished">m</translation>
     </message>
     <message>
         <source>mi</source>
-        <translation>mi</translation>
+        <translation type="vanished">mi</translation>
     </message>
     <message>
         <source>ft</source>
-        <translation>ft</translation>
+        <translation type="vanished">ft</translation>
     </message>
     <message>
         <source>now</source>
@@ -1072,19 +1072,19 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Show ETA in 24h Format</source>
-        <translation>預計到達時間單位改用 24 小時制</translation>
+        <translation type="vanished">預計到達時間單位改用 24 小時制</translation>
     </message>
     <message>
         <source>Use 24h format instead of am/pm</source>
-        <translation>使用 24 小時制。(預設值為 12 小時制)</translation>
+        <translation type="vanished">使用 24 小時制。(預設值為 12 小時制)</translation>
     </message>
     <message>
         <source>Show Map on Left Side of UI</source>
-        <translation>將地圖顯示在畫面的左側</translation>
+        <translation type="vanished">將地圖顯示在畫面的左側</translation>
     </message>
     <message>
         <source>Show map on left side when in split screen view.</source>
-        <translation>進入分割畫面後，地圖將會顯示在畫面的左側。</translation>
+        <translation type="vanished">進入分割畫面後，地圖將會顯示在畫面的左側。</translation>
     </message>
     <message>
         <source>Experimental Mode</source>

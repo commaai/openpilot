@@ -140,27 +140,27 @@
     <name>DestinationWidget</name>
     <message>
         <source>Home</source>
-        <translation>Domicile</translation>
+        <translation type="vanished">Domicile</translation>
     </message>
     <message>
         <source>Work</source>
-        <translation>Travail</translation>
+        <translation type="vanished">Travail</translation>
     </message>
     <message>
         <source>No destination set</source>
-        <translation>Aucune destination définie</translation>
+        <translation type="vanished">Aucune destination définie</translation>
     </message>
     <message>
         <source>home</source>
-        <translation>domicile</translation>
+        <translation type="vanished">domicile</translation>
     </message>
     <message>
         <source>work</source>
-        <translation>travail</translation>
+        <translation type="vanished">travail</translation>
     </message>
     <message>
         <source>No %1 location set</source>
-        <translation>Aucun lieu %1 défini</translation>
+        <translation type="vanished">Aucun lieu %1 défini</translation>
     </message>
 </context>
 <context>
@@ -349,41 +349,41 @@
     <name>MapETA</name>
     <message>
         <source>eta</source>
-        <translation>eta</translation>
+        <translation type="vanished">eta</translation>
     </message>
     <message>
         <source>min</source>
-        <translation>min</translation>
+        <translation type="vanished">min</translation>
     </message>
     <message>
         <source>hr</source>
-        <translation>h</translation>
+        <translation type="vanished">h</translation>
     </message>
 </context>
 <context>
     <name>MapSettings</name>
     <message>
         <source>NAVIGATION</source>
-        <translation>NAVIGATION</translation>
+        <translation type="vanished">NAVIGATION</translation>
     </message>
     <message>
         <source>Manage at connect.comma.ai</source>
-        <translation>Gérer sur connect.comma.ai</translation>
+        <translation type="vanished">Gérer sur connect.comma.ai</translation>
     </message>
 </context>
 <context>
     <name>MapWindow</name>
     <message>
         <source>Map Loading</source>
-        <translation>Chargement de la carte</translation>
+        <translation type="vanished">Chargement de la carte</translation>
     </message>
     <message>
         <source>Waiting for GPS</source>
-        <translation>En attente du GPS</translation>
+        <translation type="vanished">En attente du GPS</translation>
     </message>
     <message>
         <source>Waiting for route</source>
-        <translation>En attente d&apos;un trajet</translation>
+        <translation type="vanished">En attente d&apos;un trajet</translation>
     </message>
 </context>
 <context>
@@ -616,19 +616,19 @@
     </message>
     <message>
         <source>km</source>
-        <translation>km</translation>
+        <translation type="vanished">km</translation>
     </message>
     <message>
         <source>m</source>
-        <translation>m</translation>
+        <translation type="vanished">m</translation>
     </message>
     <message>
         <source>mi</source>
-        <translation>mi</translation>
+        <translation type="vanished">mi</translation>
     </message>
     <message>
         <source>ft</source>
-        <translation>ft</translation>
+        <translation type="vanished">ft</translation>
     </message>
     <message>
         <source>now</source>
@@ -1092,19 +1092,19 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     </message>
     <message>
         <source>Show ETA in 24h Format</source>
-        <translation>Afficher l&apos;heure d&apos;arrivée en format 24h</translation>
+        <translation type="vanished">Afficher l&apos;heure d&apos;arrivée en format 24h</translation>
     </message>
     <message>
         <source>Use 24h format instead of am/pm</source>
-        <translation>Utiliser le format 24h plutôt que am/pm</translation>
+        <translation type="vanished">Utiliser le format 24h plutôt que am/pm</translation>
     </message>
     <message>
         <source>Show Map on Left Side of UI</source>
-        <translation>Afficher la carte à gauche de l&apos;interface</translation>
+        <translation type="vanished">Afficher la carte à gauche de l&apos;interface</translation>
     </message>
     <message>
         <source>Show map on left side when in split screen view.</source>
-        <translation>Afficher la carte à gauche en mode écran scindé.</translation>
+        <translation type="vanished">Afficher la carte à gauche en mode écran scindé.</translation>
     </message>
     <message>
         <source>Aggressive</source>

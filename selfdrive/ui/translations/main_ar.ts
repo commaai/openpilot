@@ -140,27 +140,27 @@
     <name>DestinationWidget</name>
     <message>
         <source>Home</source>
-        <translation>المنزل</translation>
+        <translation type="vanished">المنزل</translation>
     </message>
     <message>
         <source>Work</source>
-        <translation>العمل</translation>
+        <translation type="vanished">العمل</translation>
     </message>
     <message>
         <source>No destination set</source>
-        <translation>لم يتم ضبط الوجهة</translation>
+        <translation type="vanished">لم يتم ضبط الوجهة</translation>
     </message>
     <message>
         <source>home</source>
-        <translation>المنزل</translation>
+        <translation type="vanished">المنزل</translation>
     </message>
     <message>
         <source>work</source>
-        <translation>العمل</translation>
+        <translation type="vanished">العمل</translation>
     </message>
     <message>
         <source>No %1 location set</source>
-        <translation>لم يتم ضبط %1 موقع</translation>
+        <translation type="vanished">لم يتم ضبط %1 موقع</translation>
     </message>
 </context>
 <context>
@@ -353,41 +353,41 @@
     <name>MapETA</name>
     <message>
         <source>eta</source>
-        <translation>الوصول</translation>
+        <translation type="vanished">الوصول</translation>
     </message>
     <message>
         <source>min</source>
-        <translation>د</translation>
+        <translation type="vanished">د</translation>
     </message>
     <message>
         <source>hr</source>
-        <translation>س</translation>
+        <translation type="vanished">س</translation>
     </message>
 </context>
 <context>
     <name>MapSettings</name>
     <message>
         <source>NAVIGATION</source>
-        <translation>التنقل</translation>
+        <translation type="vanished">التنقل</translation>
     </message>
     <message>
         <source>Manage at connect.comma.ai</source>
-        <translation>الإدارة في connect.comma.ai</translation>
+        <translation type="vanished">الإدارة في connect.comma.ai</translation>
     </message>
 </context>
 <context>
     <name>MapWindow</name>
     <message>
         <source>Map Loading</source>
-        <translation>تحميل الخريطة</translation>
+        <translation type="vanished">تحميل الخريطة</translation>
     </message>
     <message>
         <source>Waiting for GPS</source>
-        <translation>بانتظار GPS</translation>
+        <translation type="vanished">بانتظار GPS</translation>
     </message>
     <message>
         <source>Waiting for route</source>
-        <translation>بانتظار الطريق</translation>
+        <translation type="vanished">بانتظار الطريق</translation>
     </message>
 </context>
 <context>
@@ -632,19 +632,19 @@
     </message>
     <message>
         <source>km</source>
-        <translation>كم</translation>
+        <translation type="vanished">كم</translation>
     </message>
     <message>
         <source>m</source>
-        <translation>م</translation>
+        <translation type="vanished">م</translation>
     </message>
     <message>
         <source>mi</source>
-        <translation>ميل</translation>
+        <translation type="vanished">ميل</translation>
     </message>
     <message>
         <source>ft</source>
-        <translation>قدم</translation>
+        <translation type="vanished">قدم</translation>
     </message>
     <message>
         <source>now</source>
@@ -1092,19 +1092,19 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Show ETA in 24h Format</source>
-        <translation>إظهار الوقت المقدر للوصول بصيغة 24 ساعة</translation>
+        <translation type="vanished">إظهار الوقت المقدر للوصول بصيغة 24 ساعة</translation>
     </message>
     <message>
         <source>Use 24h format instead of am/pm</source>
-        <translation>استخدام صيغة 24 ساعة بدلاً من صباحاً/مساء</translation>
+        <translation type="vanished">استخدام صيغة 24 ساعة بدلاً من صباحاً/مساء</translation>
     </message>
     <message>
         <source>Show Map on Left Side of UI</source>
-        <translation>عرض الخريطة على الجانب الأيسر من واجهة المستخدم</translation>
+        <translation type="vanished">عرض الخريطة على الجانب الأيسر من واجهة المستخدم</translation>
     </message>
     <message>
         <source>Show map on left side when in split screen view.</source>
-        <translation>عرض الخريطة عل الجانب الأيسر عندما تكون وضعية العرض بطريقة الشاشة المنقسمة.</translation>
+        <translation type="vanished">عرض الخريطة عل الجانب الأيسر عندما تكون وضعية العرض بطريقة الشاشة المنقسمة.</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>

@@ -140,27 +140,27 @@
     <name>DestinationWidget</name>
     <message>
         <source>Home</source>
-        <translation>บ้าน</translation>
+        <translation type="vanished">บ้าน</translation>
     </message>
     <message>
         <source>Work</source>
-        <translation>ที่ทำงาน</translation>
+        <translation type="vanished">ที่ทำงาน</translation>
     </message>
     <message>
         <source>No destination set</source>
-        <translation>ยังไม่ได้เลือกจุดหมาย</translation>
+        <translation type="vanished">ยังไม่ได้เลือกจุดหมาย</translation>
     </message>
     <message>
         <source>home</source>
-        <translation>บ้าน</translation>
+        <translation type="vanished">บ้าน</translation>
     </message>
     <message>
         <source>work</source>
-        <translation>ที่ทำงาน</translation>
+        <translation type="vanished">ที่ทำงาน</translation>
     </message>
     <message>
         <source>No %1 location set</source>
-        <translation>ยังไม่ได้เลือกตำแหน่ง%1</translation>
+        <translation type="vanished">ยังไม่ได้เลือกตำแหน่ง%1</translation>
     </message>
 </context>
 <context>
@@ -348,41 +348,41 @@
     <name>MapETA</name>
     <message>
         <source>eta</source>
-        <translation>eta</translation>
+        <translation type="vanished">eta</translation>
     </message>
     <message>
         <source>min</source>
-        <translation>นาที</translation>
+        <translation type="vanished">นาที</translation>
     </message>
     <message>
         <source>hr</source>
-        <translation>ชม.</translation>
+        <translation type="vanished">ชม.</translation>
     </message>
 </context>
 <context>
     <name>MapSettings</name>
     <message>
         <source>NAVIGATION</source>
-        <translation>การนำทาง</translation>
+        <translation type="vanished">การนำทาง</translation>
     </message>
     <message>
         <source>Manage at connect.comma.ai</source>
-        <translation>จัดการได้ที่ connect.comma.ai</translation>
+        <translation type="vanished">จัดการได้ที่ connect.comma.ai</translation>
     </message>
 </context>
 <context>
     <name>MapWindow</name>
     <message>
         <source>Map Loading</source>
-        <translation>กำลังโหลดแผนที่</translation>
+        <translation type="vanished">กำลังโหลดแผนที่</translation>
     </message>
     <message>
         <source>Waiting for GPS</source>
-        <translation>กำลังรอสัญญาณ GPS</translation>
+        <translation type="vanished">กำลังรอสัญญาณ GPS</translation>
     </message>
     <message>
         <source>Waiting for route</source>
-        <translation>กำลังรอเส้นทาง</translation>
+        <translation type="vanished">กำลังรอเส้นทาง</translation>
     </message>
 </context>
 <context>
@@ -612,19 +612,19 @@
     </message>
     <message>
         <source>km</source>
-        <translation>กม.</translation>
+        <translation type="vanished">กม.</translation>
     </message>
     <message>
         <source>m</source>
-        <translation>ม.</translation>
+        <translation type="vanished">ม.</translation>
     </message>
     <message>
         <source>mi</source>
-        <translation>ไมล์</translation>
+        <translation type="vanished">ไมล์</translation>
     </message>
     <message>
         <source>ft</source>
-        <translation>ฟุต</translation>
+        <translation type="vanished">ฟุต</translation>
     </message>
     <message>
         <source>now</source>
@@ -1072,19 +1072,19 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Show ETA in 24h Format</source>
-        <translation>แสดงเวลา ETA ในรูปแบบ 24 ชั่วโมง</translation>
+        <translation type="vanished">แสดงเวลา ETA ในรูปแบบ 24 ชั่วโมง</translation>
     </message>
     <message>
         <source>Use 24h format instead of am/pm</source>
-        <translation>ใช้รูปแบบเวลา 24 ชั่วโมง แทน am/pm</translation>
+        <translation type="vanished">ใช้รูปแบบเวลา 24 ชั่วโมง แทน am/pm</translation>
     </message>
     <message>
         <source>Show Map on Left Side of UI</source>
-        <translation>แสดงแผนที่ที่ด้านซ้ายของหน้าจอ</translation>
+        <translation type="vanished">แสดงแผนที่ที่ด้านซ้ายของหน้าจอ</translation>
     </message>
     <message>
         <source>Show map on left side when in split screen view.</source>
-        <translation>แสดงแผนที่ด้านซ้ายของหน้าจอเมื่ออยู่ในโหมดแบ่งหน้าจอ</translation>
+        <translation type="vanished">แสดงแผนที่ด้านซ้ายของหน้าจอเมื่ออยู่ในโหมดแบ่งหน้าจอ</translation>
     </message>
     <message>
         <source>Experimental Mode</source>
