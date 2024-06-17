@@ -304,7 +304,7 @@ class CarState(CarStateBase):
     else:
       messages.append(("LVR12", 100))
 
-    bus = CanBus(CP).ECAN if CP.flags & HyundaiFlags.CAN_CANFD.value else 0
+    bus = CanBus(CP).ECAN if CP.flags & HyundaiFlags.CAN_CANFD_HYBRID.value else 0
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, bus)
 
   @staticmethod
