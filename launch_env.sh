@@ -12,4 +12,4 @@ fi
 
 export STAGING_ROOT="/data/safe_staging"
 
-export FINGERPRINT="GENESIS GV80 2023"
+export FINGERPRINT="GENESIS_GV80"
