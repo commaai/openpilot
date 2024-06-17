@@ -307,8 +307,8 @@ class CAR(Platforms):
   )
   HYUNDAI_PALISADE_2023 = HyundaiCanFDPlatformConfig(
     [
-      HyundaiCarDocs("Hyundai Palisade (without HDA II) 2023-24", "All", car_parts=CarParts.common([CarHarness.hyundai_a])),
-      HyundaiCarDocs("Kia Telluride (without HDA II) 2023-24", "All", car_parts=CarParts.common([CarHarness.hyundai_l])),
+      HyundaiCarDocs("Hyundai Palisade (without HDA II) 2023-24", "Highway Driving Assist", car_parts=CarParts.common([CarHarness.hyundai_a])),
+      HyundaiCarDocs("Kia Telluride (without HDA II) 2023-24", "Highway Driving Assist", car_parts=CarParts.common([CarHarness.hyundai_l])),
     ],
     HYUNDAI_PALISADE.specs,
     flags=HyundaiFlags.CHECKSUM_CRC8 | HyundaiFlags.CAN_CANFD_HYBRID | HyundaiFlags.RADAR_SCC,
