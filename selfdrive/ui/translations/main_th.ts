@@ -137,33 +137,6 @@
     </message>
 </context>
 <context>
-    <name>DestinationWidget</name>
-    <message>
-        <source>Home</source>
-        <translation type="vanished">บ้าน</translation>
-    </message>
-    <message>
-        <source>Work</source>
-        <translation type="vanished">ที่ทำงาน</translation>
-    </message>
-    <message>
-        <source>No destination set</source>
-        <translation type="vanished">ยังไม่ได้เลือกจุดหมาย</translation>
-    </message>
-    <message>
-        <source>home</source>
-        <translation type="vanished">บ้าน</translation>
-    </message>
-    <message>
-        <source>work</source>
-        <translation type="vanished">ที่ทำงาน</translation>
-    </message>
-    <message>
-        <source>No %1 location set</source>
-        <translation type="vanished">ยังไม่ได้เลือกตำแหน่ง%1</translation>
-    </message>
-</context>
-<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -342,47 +315,6 @@
     <message>
         <source>Installing...</source>
         <translation>กำลังติดตั้ง...</translation>
-    </message>
-</context>
-<context>
-    <name>MapETA</name>
-    <message>
-        <source>eta</source>
-        <translation type="vanished">eta</translation>
-    </message>
-    <message>
-        <source>min</source>
-        <translation type="vanished">นาที</translation>
-    </message>
-    <message>
-        <source>hr</source>
-        <translation type="vanished">ชม.</translation>
-    </message>
-</context>
-<context>
-    <name>MapSettings</name>
-    <message>
-        <source>NAVIGATION</source>
-        <translation type="vanished">การนำทาง</translation>
-    </message>
-    <message>
-        <source>Manage at connect.comma.ai</source>
-        <translation type="vanished">จัดการได้ที่ connect.comma.ai</translation>
-    </message>
-</context>
-<context>
-    <name>MapWindow</name>
-    <message>
-        <source>Map Loading</source>
-        <translation type="vanished">กำลังโหลดแผนที่</translation>
-    </message>
-    <message>
-        <source>Waiting for GPS</source>
-        <translation type="vanished">กำลังรอสัญญาณ GPS</translation>
-    </message>
-    <message>
-        <source>Waiting for route</source>
-        <translation type="vanished">กำลังรอเส้นทาง</translation>
     </message>
 </context>
 <context>
@@ -609,22 +541,6 @@
         <translation>
             <numerusform>%n วันที่แล้ว</numerusform>
         </translation>
-    </message>
-    <message>
-        <source>km</source>
-        <translation type="vanished">กม.</translation>
-    </message>
-    <message>
-        <source>m</source>
-        <translation type="vanished">ม.</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation type="vanished">ไมล์</translation>
-    </message>
-    <message>
-        <source>ft</source>
-        <translation type="vanished">ฟุต</translation>
     </message>
     <message>
         <source>now</source>
@@ -1069,22 +985,6 @@ This may take up to a minute.</source>
     <message>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
         <translation>เมื่อเปิดใช้งาน การกดแป้นคันเร่งจะเป็นการยกเลิกระบบช่วยขับโดย openpilot</translation>
-    </message>
-    <message>
-        <source>Show ETA in 24h Format</source>
-        <translation type="vanished">แสดงเวลา ETA ในรูปแบบ 24 ชั่วโมง</translation>
-    </message>
-    <message>
-        <source>Use 24h format instead of am/pm</source>
-        <translation type="vanished">ใช้รูปแบบเวลา 24 ชั่วโมง แทน am/pm</translation>
-    </message>
-    <message>
-        <source>Show Map on Left Side of UI</source>
-        <translation type="vanished">แสดงแผนที่ที่ด้านซ้ายของหน้าจอ</translation>
-    </message>
-    <message>
-        <source>Show map on left side when in split screen view.</source>
-        <translation type="vanished">แสดงแผนที่ด้านซ้ายของหน้าจอเมื่ออยู่ในโหมดแบ่งหน้าจอ</translation>
     </message>
     <message>
         <source>Experimental Mode</source>

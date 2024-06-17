@@ -318,32 +318,6 @@
     </message>
 </context>
 <context>
-    <name>MapETA</name>
-    <message>
-        <source>eta</source>
-        <translation type="vanished">tahmini varış süresi</translation>
-    </message>
-    <message>
-        <source>min</source>
-        <translation type="vanished">dk</translation>
-    </message>
-    <message>
-        <source>hr</source>
-        <translation type="vanished">saat</translation>
-    </message>
-</context>
-<context>
-    <name>MapWindow</name>
-    <message>
-        <source>Map Loading</source>
-        <translation type="vanished">Harita yükleniyor</translation>
-    </message>
-    <message>
-        <source>Waiting for GPS</source>
-        <translation type="vanished">GPS verisi bekleniyor...</translation>
-    </message>
-</context>
-<context>
     <name>MultiOptionDialog</name>
     <message>
         <source>Select</source>
@@ -566,22 +540,6 @@
         <translation>
             <numerusform>%n gün önce</numerusform>
         </translation>
-    </message>
-    <message>
-        <source>km</source>
-        <translation type="vanished">km</translation>
-    </message>
-    <message>
-        <source>m</source>
-        <translation type="vanished">m</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation type="vanished">mil</translation>
-    </message>
-    <message>
-        <source>ft</source>
-        <translation type="vanished">ft</translation>
     </message>
     <message>
         <source>now</source>
@@ -1021,22 +979,6 @@ This may take up to a minute.</source>
     <message>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
         <translation>Aktifleştirilirse eğer gaz pedalına basınca openpilot devre dışı kalır.</translation>
-    </message>
-    <message>
-        <source>Show ETA in 24h Format</source>
-        <translation type="vanished">Tahmini varış süresini 24 saat formatı şeklinde göster</translation>
-    </message>
-    <message>
-        <source>Use 24h format instead of am/pm</source>
-        <translation type="vanished">24 saat formatını kullan</translation>
-    </message>
-    <message>
-        <source>Show Map on Left Side of UI</source>
-        <translation type="vanished">Haritayı arayüzün sol tarafında göster</translation>
-    </message>
-    <message>
-        <source>Show map on left side when in split screen view.</source>
-        <translation type="vanished">Bölünmüş ekran görünümündeyken haritayı sol tarafta göster.</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>

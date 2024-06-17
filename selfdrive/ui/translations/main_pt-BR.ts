@@ -137,33 +137,6 @@
     </message>
 </context>
 <context>
-    <name>DestinationWidget</name>
-    <message>
-        <source>Home</source>
-        <translation type="vanished">Casa</translation>
-    </message>
-    <message>
-        <source>Work</source>
-        <translation type="vanished">Trabalho</translation>
-    </message>
-    <message>
-        <source>No destination set</source>
-        <translation type="vanished">Nenhum destino definido</translation>
-    </message>
-    <message>
-        <source>No %1 location set</source>
-        <translation type="vanished">Endereço de %1 não definido</translation>
-    </message>
-    <message>
-        <source>home</source>
-        <translation type="vanished">casa</translation>
-    </message>
-    <message>
-        <source>work</source>
-        <translation type="vanished">trabalho</translation>
-    </message>
-</context>
-<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -343,47 +316,6 @@
     <message>
         <source>Installing...</source>
         <translation>Instalando...</translation>
-    </message>
-</context>
-<context>
-    <name>MapETA</name>
-    <message>
-        <source>eta</source>
-        <translation type="vanished">eta</translation>
-    </message>
-    <message>
-        <source>min</source>
-        <translation type="vanished">min</translation>
-    </message>
-    <message>
-        <source>hr</source>
-        <translation type="vanished">hr</translation>
-    </message>
-</context>
-<context>
-    <name>MapSettings</name>
-    <message>
-        <source>NAVIGATION</source>
-        <translation type="vanished">NAVEGAÇÃO</translation>
-    </message>
-    <message>
-        <source>Manage at connect.comma.ai</source>
-        <translation type="vanished">Gerencie em connect.comma.ai</translation>
-    </message>
-</context>
-<context>
-    <name>MapWindow</name>
-    <message>
-        <source>Map Loading</source>
-        <translation type="vanished">Carregando Mapa</translation>
-    </message>
-    <message>
-        <source>Waiting for GPS</source>
-        <translation type="vanished">Aguardando GPS</translation>
-    </message>
-    <message>
-        <source>Waiting for route</source>
-        <translation type="vanished">Aguardando rota</translation>
     </message>
 </context>
 <context>
@@ -613,22 +545,6 @@
             <numerusform>há %n dia</numerusform>
             <numerusform>há %n dias</numerusform>
         </translation>
-    </message>
-    <message>
-        <source>km</source>
-        <translation type="vanished">km</translation>
-    </message>
-    <message>
-        <source>m</source>
-        <translation type="vanished">m</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation type="vanished">milha</translation>
-    </message>
-    <message>
-        <source>ft</source>
-        <translation type="vanished">pés</translation>
     </message>
     <message>
         <source>now</source>
@@ -1073,22 +989,6 @@ Isso pode levar até um minuto.</translation>
     <message>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
         <translation>Quando ativado, pressionar o pedal do acelerador desacionará o openpilot.</translation>
-    </message>
-    <message>
-        <source>Show ETA in 24h Format</source>
-        <translation type="vanished">Mostrar ETA em Formato 24h</translation>
-    </message>
-    <message>
-        <source>Use 24h format instead of am/pm</source>
-        <translation type="vanished">Use o formato 24h em vez de am/pm</translation>
-    </message>
-    <message>
-        <source>Show Map on Left Side of UI</source>
-        <translation type="vanished">Exibir Mapa no Lado Esquerdo</translation>
-    </message>
-    <message>
-        <source>Show map on left side when in split screen view.</source>
-        <translation type="vanished">Exibir mapa do lado esquerdo quando a tela for dividida.</translation>
     </message>
     <message>
         <source>Experimental Mode</source>

@@ -137,33 +137,6 @@
     </message>
 </context>
 <context>
-    <name>DestinationWidget</name>
-    <message>
-        <source>Home</source>
-        <translation type="vanished">المنزل</translation>
-    </message>
-    <message>
-        <source>Work</source>
-        <translation type="vanished">العمل</translation>
-    </message>
-    <message>
-        <source>No destination set</source>
-        <translation type="vanished">لم يتم ضبط الوجهة</translation>
-    </message>
-    <message>
-        <source>home</source>
-        <translation type="vanished">المنزل</translation>
-    </message>
-    <message>
-        <source>work</source>
-        <translation type="vanished">العمل</translation>
-    </message>
-    <message>
-        <source>No %1 location set</source>
-        <translation type="vanished">لم يتم ضبط %1 موقع</translation>
-    </message>
-</context>
-<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -347,47 +320,6 @@
     <message>
         <source>Installing...</source>
         <translation>جارٍ التثبيت...</translation>
-    </message>
-</context>
-<context>
-    <name>MapETA</name>
-    <message>
-        <source>eta</source>
-        <translation type="vanished">الوصول</translation>
-    </message>
-    <message>
-        <source>min</source>
-        <translation type="vanished">د</translation>
-    </message>
-    <message>
-        <source>hr</source>
-        <translation type="vanished">س</translation>
-    </message>
-</context>
-<context>
-    <name>MapSettings</name>
-    <message>
-        <source>NAVIGATION</source>
-        <translation type="vanished">التنقل</translation>
-    </message>
-    <message>
-        <source>Manage at connect.comma.ai</source>
-        <translation type="vanished">الإدارة في connect.comma.ai</translation>
-    </message>
-</context>
-<context>
-    <name>MapWindow</name>
-    <message>
-        <source>Map Loading</source>
-        <translation type="vanished">تحميل الخريطة</translation>
-    </message>
-    <message>
-        <source>Waiting for GPS</source>
-        <translation type="vanished">بانتظار GPS</translation>
-    </message>
-    <message>
-        <source>Waiting for route</source>
-        <translation type="vanished">بانتظار الطريق</translation>
     </message>
 </context>
 <context>
@@ -629,22 +561,6 @@
             <numerusform>منذ %n أيام</numerusform>
             <numerusform>منذ %n يوم</numerusform>
         </translation>
-    </message>
-    <message>
-        <source>km</source>
-        <translation type="vanished">كم</translation>
-    </message>
-    <message>
-        <source>m</source>
-        <translation type="vanished">م</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation type="vanished">ميل</translation>
-    </message>
-    <message>
-        <source>ft</source>
-        <translation type="vanished">قدم</translation>
     </message>
     <message>
         <source>now</source>
@@ -1089,22 +1005,6 @@ This may take up to a minute.</source>
     <message>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
         <translation>عند تمكين هذه الميزة، فإن الضغط على دواسة الوقود سيؤدي إلى فك ارتباط openpilot.</translation>
-    </message>
-    <message>
-        <source>Show ETA in 24h Format</source>
-        <translation type="vanished">إظهار الوقت المقدر للوصول بصيغة 24 ساعة</translation>
-    </message>
-    <message>
-        <source>Use 24h format instead of am/pm</source>
-        <translation type="vanished">استخدام صيغة 24 ساعة بدلاً من صباحاً/مساء</translation>
-    </message>
-    <message>
-        <source>Show Map on Left Side of UI</source>
-        <translation type="vanished">عرض الخريطة على الجانب الأيسر من واجهة المستخدم</translation>
-    </message>
-    <message>
-        <source>Show map on left side when in split screen view.</source>
-        <translation type="vanished">عرض الخريطة عل الجانب الأيسر عندما تكون وضعية العرض بطريقة الشاشة المنقسمة.</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>

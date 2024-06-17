@@ -137,33 +137,6 @@
     </message>
 </context>
 <context>
-    <name>DestinationWidget</name>
-    <message>
-        <source>Home</source>
-        <translation type="vanished">Domicile</translation>
-    </message>
-    <message>
-        <source>Work</source>
-        <translation type="vanished">Travail</translation>
-    </message>
-    <message>
-        <source>No destination set</source>
-        <translation type="vanished">Aucune destination définie</translation>
-    </message>
-    <message>
-        <source>home</source>
-        <translation type="vanished">domicile</translation>
-    </message>
-    <message>
-        <source>work</source>
-        <translation type="vanished">travail</translation>
-    </message>
-    <message>
-        <source>No %1 location set</source>
-        <translation type="vanished">Aucun lieu %1 défini</translation>
-    </message>
-</context>
-<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -343,47 +316,6 @@
     <message>
         <source>Installing...</source>
         <translation>Installation...</translation>
-    </message>
-</context>
-<context>
-    <name>MapETA</name>
-    <message>
-        <source>eta</source>
-        <translation type="vanished">eta</translation>
-    </message>
-    <message>
-        <source>min</source>
-        <translation type="vanished">min</translation>
-    </message>
-    <message>
-        <source>hr</source>
-        <translation type="vanished">h</translation>
-    </message>
-</context>
-<context>
-    <name>MapSettings</name>
-    <message>
-        <source>NAVIGATION</source>
-        <translation type="vanished">NAVIGATION</translation>
-    </message>
-    <message>
-        <source>Manage at connect.comma.ai</source>
-        <translation type="vanished">Gérer sur connect.comma.ai</translation>
-    </message>
-</context>
-<context>
-    <name>MapWindow</name>
-    <message>
-        <source>Map Loading</source>
-        <translation type="vanished">Chargement de la carte</translation>
-    </message>
-    <message>
-        <source>Waiting for GPS</source>
-        <translation type="vanished">En attente du GPS</translation>
-    </message>
-    <message>
-        <source>Waiting for route</source>
-        <translation type="vanished">En attente d&apos;un trajet</translation>
     </message>
 </context>
 <context>
@@ -613,22 +545,6 @@
             <numerusform>il y a %n jour</numerusform>
             <numerusform>il y a %n jours</numerusform>
         </translation>
-    </message>
-    <message>
-        <source>km</source>
-        <translation type="vanished">km</translation>
-    </message>
-    <message>
-        <source>m</source>
-        <translation type="vanished">m</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation type="vanished">mi</translation>
-    </message>
-    <message>
-        <source>ft</source>
-        <translation type="vanished">ft</translation>
     </message>
     <message>
         <source>now</source>
@@ -1089,22 +1005,6 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     <message>
         <source>Display speed in km/h instead of mph.</source>
         <translation>Afficher la vitesse en km/h au lieu de mph.</translation>
-    </message>
-    <message>
-        <source>Show ETA in 24h Format</source>
-        <translation type="vanished">Afficher l&apos;heure d&apos;arrivée en format 24h</translation>
-    </message>
-    <message>
-        <source>Use 24h format instead of am/pm</source>
-        <translation type="vanished">Utiliser le format 24h plutôt que am/pm</translation>
-    </message>
-    <message>
-        <source>Show Map on Left Side of UI</source>
-        <translation type="vanished">Afficher la carte à gauche de l&apos;interface</translation>
-    </message>
-    <message>
-        <source>Show map on left side when in split screen view.</source>
-        <translation type="vanished">Afficher la carte à gauche en mode écran scindé.</translation>
     </message>
     <message>
         <source>Aggressive</source>

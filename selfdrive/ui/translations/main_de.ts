@@ -319,32 +319,6 @@
     </message>
 </context>
 <context>
-    <name>MapETA</name>
-    <message>
-        <source>eta</source>
-        <translation type="vanished">Ankunft</translation>
-    </message>
-    <message>
-        <source>min</source>
-        <translation type="vanished">min</translation>
-    </message>
-    <message>
-        <source>hr</source>
-        <translation type="vanished">std</translation>
-    </message>
-</context>
-<context>
-    <name>MapWindow</name>
-    <message>
-        <source>Map Loading</source>
-        <translation type="vanished">Karte wird geladen</translation>
-    </message>
-    <message>
-        <source>Waiting for GPS</source>
-        <translation type="vanished">Warten auf GPS</translation>
-    </message>
-</context>
-<context>
     <name>MultiOptionDialog</name>
     <message>
         <source>Select</source>
@@ -570,22 +544,6 @@
             <numerusform>vor %n Tag</numerusform>
             <numerusform>vor %n Tagen</numerusform>
         </translation>
-    </message>
-    <message>
-        <source>km</source>
-        <translation type="vanished">km</translation>
-    </message>
-    <message>
-        <source>m</source>
-        <translation type="vanished">m</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation type="vanished">mi</translation>
-    </message>
-    <message>
-        <source>ft</source>
-        <translation type="vanished">fuß</translation>
     </message>
     <message>
         <source>now</source>
@@ -1027,24 +985,6 @@ This may take up to a minute.</source>
     <message>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
         <translation>Wenn aktiviert, deaktiviert sich Openpilot sobald das Gaspedal betätigt wird.</translation>
-    </message>
-    <message>
-        <source>Use 24h format instead of am/pm</source>
-        <translation type="vanished">Benutze das 24Stunden Format anstatt am/pm</translation>
-    </message>
-    <message>
-        <source>Show Map on Left Side of UI</source>
-        <translatorcomment>Too long for UI</translatorcomment>
-        <translation type="vanished">Zeige die Karte auf der linken Seite</translation>
-    </message>
-    <message>
-        <source>Show map on left side when in split screen view.</source>
-        <translation type="vanished">Zeige die Karte auf der linken Seite der Benutzeroberfläche bei geteilten Bildschirm.</translation>
-    </message>
-    <message>
-        <source>Show ETA in 24h Format</source>
-        <translatorcomment>Too long for UI</translatorcomment>
-        <translation type="vanished">Zeige die Ankunftszeit im 24 Stunden Format</translation>
     </message>
     <message>
         <source>Experimental Mode</source>

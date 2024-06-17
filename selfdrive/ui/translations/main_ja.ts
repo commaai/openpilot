@@ -318,32 +318,6 @@
     </message>
 </context>
 <context>
-    <name>MapETA</name>
-    <message>
-        <source>eta</source>
-        <translation type="vanished">到着予定時間</translation>
-    </message>
-    <message>
-        <source>min</source>
-        <translation type="vanished">分</translation>
-    </message>
-    <message>
-        <source>hr</source>
-        <translation type="vanished">時間</translation>
-    </message>
-</context>
-<context>
-    <name>MapWindow</name>
-    <message>
-        <source>Map Loading</source>
-        <translation type="vanished">マップを読み込んでいます</translation>
-    </message>
-    <message>
-        <source>Waiting for GPS</source>
-        <translation type="vanished">GPS信号を探しています</translation>
-    </message>
-</context>
-<context>
     <name>MultiOptionDialog</name>
     <message>
         <source>Select</source>
@@ -566,22 +540,6 @@
         <translation>
             <numerusform>%n 日前</numerusform>
         </translation>
-    </message>
-    <message>
-        <source>km</source>
-        <translation type="vanished">ｷﾛﾒｰﾄﾙ</translation>
-    </message>
-    <message>
-        <source>m</source>
-        <translation type="vanished">ﾒｰﾄﾙ</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation type="vanished">ﾏｲﾙ</translation>
-    </message>
-    <message>
-        <source>ft</source>
-        <translation type="vanished">ﾌｨｰﾄ</translation>
     </message>
     <message>
         <source>now</source>
@@ -1025,22 +983,6 @@ This may take up to a minute.</source>
     <message>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
         <translation>この機能を有効化すると、openpilotを利用中にアクセルを踏むとopenpilotによる運転サポートを中断します。</translation>
-    </message>
-    <message>
-        <source>Show ETA in 24h Format</source>
-        <translation type="vanished">24時間表示</translation>
-    </message>
-    <message>
-        <source>Use 24h format instead of am/pm</source>
-        <translation type="vanished">AM/PM の代わりに24時間形式を使用します</translation>
-    </message>
-    <message>
-        <source>Show Map on Left Side of UI</source>
-        <translation type="vanished">ﾃﾞｨｽﾌﾟﾚｲの左側にﾏｯﾌﾟを表示</translation>
-    </message>
-    <message>
-        <source>Show map on left side when in split screen view.</source>
-        <translation type="vanished">分割画面表示の場合、ディスプレイの左側にマップを表示します。</translation>
     </message>
     <message>
         <source>Experimental Mode</source>

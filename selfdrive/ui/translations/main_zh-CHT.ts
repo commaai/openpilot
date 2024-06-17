@@ -137,33 +137,6 @@
     </message>
 </context>
 <context>
-    <name>DestinationWidget</name>
-    <message>
-        <source>Home</source>
-        <translation type="vanished">住家</translation>
-    </message>
-    <message>
-        <source>Work</source>
-        <translation type="vanished">工作</translation>
-    </message>
-    <message>
-        <source>No destination set</source>
-        <translation type="vanished">尚未設定目的地</translation>
-    </message>
-    <message>
-        <source>No %1 location set</source>
-        <translation type="vanished">尚未設定 %1 的位置</translation>
-    </message>
-    <message>
-        <source>home</source>
-        <translation type="vanished">住家</translation>
-    </message>
-    <message>
-        <source>work</source>
-        <translation type="vanished">工作</translation>
-    </message>
-</context>
-<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -342,47 +315,6 @@
     <message>
         <source>Installing...</source>
         <translation>安裝中…</translation>
-    </message>
-</context>
-<context>
-    <name>MapETA</name>
-    <message>
-        <source>eta</source>
-        <translation type="vanished">抵達</translation>
-    </message>
-    <message>
-        <source>min</source>
-        <translation type="vanished">分鐘</translation>
-    </message>
-    <message>
-        <source>hr</source>
-        <translation type="vanished">小時</translation>
-    </message>
-</context>
-<context>
-    <name>MapSettings</name>
-    <message>
-        <source>NAVIGATION</source>
-        <translation type="vanished">導航</translation>
-    </message>
-    <message>
-        <source>Manage at connect.comma.ai</source>
-        <translation type="vanished">請在 connect.comma.ai 上管理</translation>
-    </message>
-</context>
-<context>
-    <name>MapWindow</name>
-    <message>
-        <source>Map Loading</source>
-        <translation type="vanished">地圖載入中</translation>
-    </message>
-    <message>
-        <source>Waiting for GPS</source>
-        <translation type="vanished">等待 GPS</translation>
-    </message>
-    <message>
-        <source>Waiting for route</source>
-        <translation type="vanished">等待路線</translation>
     </message>
 </context>
 <context>
@@ -609,22 +541,6 @@
         <translation>
             <numerusform>%n 天前</numerusform>
         </translation>
-    </message>
-    <message>
-        <source>km</source>
-        <translation type="vanished">km</translation>
-    </message>
-    <message>
-        <source>m</source>
-        <translation type="vanished">m</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation type="vanished">mi</translation>
-    </message>
-    <message>
-        <source>ft</source>
-        <translation type="vanished">ft</translation>
     </message>
     <message>
         <source>now</source>
@@ -1069,22 +985,6 @@ This may take up to a minute.</source>
     <message>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
         <translation>啟用後，踩踏油門將會取消 openpilot 控制。</translation>
-    </message>
-    <message>
-        <source>Show ETA in 24h Format</source>
-        <translation type="vanished">預計到達時間單位改用 24 小時制</translation>
-    </message>
-    <message>
-        <source>Use 24h format instead of am/pm</source>
-        <translation type="vanished">使用 24 小時制。(預設值為 12 小時制)</translation>
-    </message>
-    <message>
-        <source>Show Map on Left Side of UI</source>
-        <translation type="vanished">將地圖顯示在畫面的左側</translation>
-    </message>
-    <message>
-        <source>Show map on left side when in split screen view.</source>
-        <translation type="vanished">進入分割畫面後，地圖將會顯示在畫面的左側。</translation>
     </message>
     <message>
         <source>Experimental Mode</source>
