@@ -162,7 +162,8 @@ class TestCarModelBase(unittest.TestCase):
   @classmethod
   def setUpClass(cls):
     #from openpilot.selfdrive.car.honda.values import CAR as HONDA
-    #if cls.platform is not None and cls.platform not in HONDA:
+    #from openpilot.selfdrive.car.hyundai.values import CAR as HYUNDAI, CANFD_CAR
+    #if cls.platform is not None and cls.platform not in HYUNDAI:
     #  print(f"\nskip test for platform {cls.platform}")
     #  raise unittest.SkipTest
     if cls.__name__ == 'TestCarModel' or cls.__name__.endswith('Base'):
@@ -412,33 +413,9 @@ class TestCarModelBase(unittest.TestCase):
   # Skip stdout/stderr capture with pytest, causes elevated memory usage
   @with_processes(["controlsd"])
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
-            phases=(Phase.reuse, Phase.generate, Phase.shrink))
+            phases=(Phase.reuse, Phase.generate, Phase.shrink, Phase.explain))
   @given(data=st.data())
   def test_panda_safety_tx_fuzzy(self, data):
-    #pm = PubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
-    #                               'driverMonitoringState', 'longitudinalPlan', 'liveLocationKalman',
-    #                               'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
-    #                               ])
-
-    #ds_msg = FuzzyGenerator.get_random_msg(data.draw, log.DeviceState, real_floats=True)
-    #DS = log.DeviceState.new_message(**ds_msg)
-    #ds_send = messaging.new_message("deviceState")
-    #ds_send.deviceState = DS
-    #pm.send("deviceState", ds_send)
-
-    #ps_msg = FuzzyGenerator.get_random_msg(data.draw, log.PandaState, real_floats=True)
-    #PS = log.PandaState.new_message(**ps_msg)
-    #PS.controlsAllowed = True
-    #ps_send = messaging.new_message("pandaStates", 1)
-    #ps_send.pandaStates[0] = PS
-    #self.pm.send("pandaStates", ps_send)
-
-    #prs_msg = FuzzyGenerator.get_random_msg(data.draw, log.PeripheralState, real_floats=True)
-    #PRS = log.PeripheralState.new_message(**prs_msg)
-    #prs_send = messaging.new_message("peripheralState")
-    #prs_send.peripheralState = PRS
-    #self.pm.send("peripheralState", prs_send)
-
     float32_list_strategy = st.lists(st.floats(width=32, allow_nan=False, allow_infinity=False), min_size=3, max_size=3)
     xyzt_data_strategy = st.builds(
     log.XYZTData,
@@ -462,8 +439,7 @@ class TestCarModelBase(unittest.TestCase):
     self.pm.send("liveCalibration", lc_send)
 
     co_send = messaging.new_message("carOutput")
-    steer_max = float(self.CI.CC.params.STEER_MAX)
-    co_send.carOutput.actuatorsOutput.steer = data.draw(st.floats(min_value=0.0, max_value=steer_max, width=32, allow_nan=False, allow_infinity=False))
+    co_send.carOutput.actuatorsOutput.steer = data.draw(st.floats(min_value=0.0, max_value=2500.0, width=32, allow_nan=False, allow_infinity=False))
     co_send.carOutput.actuatorsOutput.steeringAngleDeg = data.draw(st.floats(min_value=-40.0, max_value=40.0, width=32, allow_nan=False, allow_infinity=False))
     self.pm.send("carOutput", co_send)
 
@@ -514,11 +490,19 @@ class TestCarModelBase(unittest.TestCase):
     ltp_send.liveTorqueParameters.frictionCoefficientFiltered = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
     self.pm.send("liveTorqueParameters", ltp_send)
 
-    cs_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarState, real_floats=True)
-    CS = car.CarState.new_message(**cs_msg)
-    CS.canValid = True
+    button_events_data_strategy = st.builds(
+    car.CarState.ButtonEvent,
+    pressed=st.booleans(),
+    type=st.sampled_from(list(car.CarState.ButtonEvent.Type.schema.enumerants.keys()))
+    )
+
     cs_send = messaging.new_message("carState")
-    cs_send.carState = CS
+    cs_send.carState.vEgo = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
+    cs_send.carState.aEgo = data.draw(st.floats(width=32, allow_nan=False, allow_infinity=False))
+    cs_send.carState.steeringPressed = data.draw(st.booleans())
+    cs_send.carState.steeringAngleDeg = data.draw(st.floats(min_value=-40.0, max_value=40.0, width=32, allow_nan=False, allow_infinity=False))
+    cs_send.carState.buttonEvents = data.draw(st.lists(button_events_data_strategy, min_size=2, max_size=2))
+    cs_send.carState.brakePressed = data.draw(st.booleans())
     self.pm.send("carState", cs_send)
 
     self.sm.update(0)
@@ -526,7 +510,7 @@ class TestCarModelBase(unittest.TestCase):
 
     def tx_hook():
       now_nanos = 0
-      for _ in range(10):
+      for _ in range(round(10.0 / DT_CTRL)):
         self.CI.update(CC, [])
         act, sendcan = self.CI.apply(CC, now_nanos)
         now_nanos += DT_CTRL * 1e9
