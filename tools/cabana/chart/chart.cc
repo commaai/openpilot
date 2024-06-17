@@ -513,7 +513,7 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
       // no rubber dragged, seek to mouse position
       can->seekTo(min);
     } else if (rubber->width() > 10 && (max - min) > MIN_ZOOM_SECONDS) {
-      charts_widget->zoom_undo_stack->push(new ZoomCommand(charts_widget, {min, max}));
+      charts_widget->zoom_undo_stack->push(new ZoomCommand({min, max}));
     } else {
       viewport()->update();
     }
