@@ -467,6 +467,21 @@ FW_VERSIONS = {
       b'\xf1\x00ON  MFC  AT USA LHD 1.00 1.04 99211-S9100 211227',
     ],
   },
+  CAR.HYUNDAI_PALISADE_2023: {
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00LX2 MFC  AT USA LHD 1.00 1.04 99211-S8150 220622',
+      b'\xf1\x00ON  MFC  AT USA LHD 1.00 1.01 99211-S9150 220708',
+      b'\xf1\x00ON  MFC  AT USA LHD 1.00 1.00 99211-S9160 230303',
+      b'\xf1\x00ON  MFC  AT USA LHD 1.00 1.01 99211-S9160 230802',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00LX2_ SCC -----      1.00 1.01 99110-S8150         ',
+      b'\xf1\x00ON__ SCC -----      1.00 1.01 99110-S9150         ',
+      b'\xf1\x00LX2_ SCC FHCUP      1.00 1.01 99110-S8150         ',
+      b'\xf1\x00ON__ SCC FHCUP      1.00 1.01 99110-S9150         ',
+      b'\xf1\x00ON__ SCC FHCUP      1.00 1.00 99110-S9160         ',
+    ],
+  },
   CAR.HYUNDAI_VELOSTER: {
     (Ecu.fwdRadar, 0x7d0, None): [
       b'\xf1\x00JS__ SCC H-CUP      1.00 1.02 95650-J3200         ',
