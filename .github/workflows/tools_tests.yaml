@@ -41,12 +41,14 @@ jobs:
                         source selfdrive/test/setup_vsound.sh && \
                         CI=1 pytest tools/sim/tests/test_metadrive_bridge.py"
 
-  test_python311:
-    name: test python3.11 support
-    runs-on: ubuntu-latest
+  test_compatibility:
+    name: test ubuntu/python support
+    runs-on: ubuntu-20.04
     timeout-minutes: 5
     steps:
     - uses: actions/checkout@v4
+      with:
+        submodules: true
     - name: Installing ubuntu dependencies
       run: INSTALL_EXTRA_PACKAGES=no tools/install_ubuntu_dependencies.sh
     - name: Installing python
@@ -59,6 +61,10 @@ jobs:
       run: pip install poetry==1.7.0
     - name: Installing python dependencies
       run: poetry install --no-cache --no-root
+    - name: git LFS
+      run: git lfs pull
+    - name: Building openpilot
+      run: poetry run scons -u -j$(nproc)
 
   devcontainer:
     name: devcontainer
