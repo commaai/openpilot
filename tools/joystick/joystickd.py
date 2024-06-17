@@ -47,7 +47,7 @@ class Joystick:
     else:
       self.cancel_button = 'BTN_TRIGGER'
       accel_axis = 'ABS_Y'
-      steer_axis = 'ABS_RZ'
+      steer_axis = 'ABS_RX'
     self.min_axis_value = {accel_axis: 0., steer_axis: 0.}
     self.max_axis_value = {accel_axis: 255., steer_axis: 255.}
     self.axes_values = {accel_axis: 0., steer_axis: 0.}

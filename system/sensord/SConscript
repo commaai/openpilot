@@ -1,4 +1,4 @@
-Import('env', 'arch', 'common', 'cereal', 'messaging')
+Import('env', 'arch', 'common', 'messaging')
 
 sensors = [
   'sensors/i2c_sensor.cc',
@@ -11,7 +11,7 @@ sensors = [
   'sensors/lsm6ds3_temp.cc',
   'sensors/mmc5603nj_magn.cc',
 ]
-libs = [common, cereal, messaging, 'capnp', 'zmq', 'kj', 'pthread']
+libs = [common, messaging, 'pthread']
 if arch == "larch64":
   libs.append('i2c')
 env.Program('sensord', ['sensors_qcom2.cc'] + sensors, LIBS=libs)

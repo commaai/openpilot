@@ -32,20 +32,28 @@ for msg in lr:
     print(msg.carState.steeringAngleDeg)
 ```
 
-### MultiLogIterator
+### Segment Ranges
 
-`MultiLogIterator` is similar to `LogReader`, but reads multiple logs. 
+We also support a new format called a "segment range":
+
+```
+344c5c15b34f2d8a   /   2024-01-03--09-37-12   /     2:6    /       q
+[   dongle id     ] [       timestamp        ] [ selector ]  [ query type]
+```
+
+you can specify which segments from a route to load
 
 ```python
-from openpilot.tools.lib.route import Route
-from openpilot.tools.lib.logreader import MultiLogIterator
+lr = LogReader("a2a0ccea32023010|2023-07-27--13-01-19/4")   # 4th segment
+lr = LogReader("a2a0ccea32023010|2023-07-27--13-01-19/4:6") # 4th and 5th segment
+lr = LogReader("a2a0ccea32023010|2023-07-27--13-01-19/-1")  # last segment
+lr = LogReader("a2a0ccea32023010|2023-07-27--13-01-19/:5")  # first 5 segments
+lr = LogReader("a2a0ccea32023010|2023-07-27--13-01-19/1:")  # all except first segment
+```
 
-# setup a MultiLogIterator to read all the logs in the route
-r = Route("a2a0ccea32023010|2023-07-27--13-01-19")
-lr = MultiLogIterator(r.log_paths())
+and can select which type of logs to grab
 
-# print all the steering angles values from all the logs in the route
-for msg in lr:
-  if msg.which() == "carState":
-    print(msg.carState.steeringAngleDeg)
+```python
+lr = LogReader("a2a0ccea32023010|2023-07-27--13-01-19/4/q") # get qlogs
+lr = LogReader("a2a0ccea32023010|2023-07-27--13-01-19/4/r") # get rlogs (default)
 ```

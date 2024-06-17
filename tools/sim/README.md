@@ -1,10 +1,10 @@
 openpilot in simulator
 =====================
 
-openpilot implements a [bridge](run_bridge.py) that allows it to run in the [MetaDrive simulator](https://github.com/metadriverse/metadrive) or [CARLA simulator](https://carla.org/).
+openpilot implements a [bridge](run_bridge.py) that allows it to run in the [MetaDrive simulator](https://github.com/metadriverse/metadrive).
 
 ## Launching openpilot
-First, start openpilot.
+First, start openpilot. Note that you will either need a [mapbox token](https://docs.mapbox.com/help/getting-started/access-tokens/#how-access-tokens-work) (set with ```export MAPBOX_TOKEN="1234"```), or to disable mapsd with ```export BLOCK=mapsd```
 ``` bash
 # Run locally
 ./tools/sim/launch_openpilot.sh
@@ -13,8 +13,7 @@ First, start openpilot.
 ## Bridge usage
 ```
 $ ./run_bridge.py -h
-usage: run_bridge.py [-h] [--joystick] [--high_quality] [--dual_camera] [--simulator SIMULATOR] [--town TOWN] [--spawn_point NUM_SELECTED_SPAWN_POINT] [--host HOST] [--port PORT]
-
+usage: run_bridge.py [-h] [--joystick] [--high_quality] [--dual_camera]
 Bridge between the simulator and openpilot.
 
 options:
@@ -22,11 +21,6 @@ options:
   --joystick
   --high_quality
   --dual_camera
-  --simulator SIMULATOR
-  --town TOWN
-  --spawn_point NUM_SELECTED_SPAWN_POINT
-  --host HOST
-  --port PORT
 ```
 
 #### Bridge Controls:
@@ -52,33 +46,5 @@ options:
 ### Launching Metadrive
 Start bridge processes located in tools/sim:
 ``` bash
-./run_bridge.py --simulator metadrive
+./run_bridge.py
 ```
-
-## Carla
-
-CARLA is also partially supported, though the performance is not great. It needs to be manually installed with:
-
-```bash
-poetry install --with=carla
-```
-
-openpilot doesn't have any extreme hardware requirements, however CARLA requires an NVIDIA graphics card and is very resource-intensive and may not run smoothly on your system.
-For this case, we have the simulator in low quality by default.
-
-You can also check out the [CARLA python documentation](https://carla.readthedocs.io/en/latest/python_api/) to find more parameters to tune that might increase performance on your system.
-
-### Launching Carla
-Start Carla simulator and bridge processes located in tools/sim:
-``` bash
-# Terminal 1
-./start_carla.sh
-
-# Terminal 2
-./run_bridge.py --simulator carla
-```
-
-## Further Reading
-
-The following resources contain more details and troubleshooting tips.
-* [CARLA on the openpilot wiki](https://github.com/commaai/openpilot/wiki/CARLA)

@@ -1,4 +1,0 @@
-#!/bin/sh
-cd "$(dirname "$0")"
-export QT_DBL_CLICK_DIST=150
-exec ./_ui

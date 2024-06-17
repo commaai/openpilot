@@ -1,9 +1,9 @@
 #pragma once
 
-struct i2c_random_wr_payload start_reg_array_ox03c10[] = {{0x100, 1}};
-struct i2c_random_wr_payload stop_reg_array_ox03c10[] = {{0x100, 0}};
+const struct i2c_random_wr_payload start_reg_array_ox03c10[] = {{0x100, 1}};
+const struct i2c_random_wr_payload stop_reg_array_ox03c10[] = {{0x100, 0}};
 
-struct i2c_random_wr_payload init_array_ox03c10[] = {
+const struct i2c_random_wr_payload init_array_ox03c10[] = {
   {0x103, 1},
   {0x107, 1},
 
