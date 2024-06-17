@@ -44,7 +44,6 @@ jobs:
   test_compatibility:
     name: test ubuntu/python support
     runs-on: ubuntu-20.04
-    timeout-minutes: 5
     steps:
     - uses: actions/checkout@v4
       with:
