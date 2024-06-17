@@ -1,10 +1,11 @@
 #pragma once
 
 #include <memory>
+#include <set>
 #include <tuple>
 #include <utility>
 
-#include "cereal/visionipc/visionipc_server.h"
+#include "msgq/visionipc/visionipc_server.h"
 #include "common/queue.h"
 #include "tools/replay/framereader.h"
 #include "tools/replay/logreader.h"
@@ -26,12 +27,11 @@ protected:
     int height;
     std::thread thread;
     SafeQueue<std::pair<FrameReader*, const Event *>> queue;
-    int cached_id = -1;
-    int cached_seg = -1;
-    VisionBuf * cached_buf;
+    std::set<VisionBuf *> cached_buf;
   };
   void startVipcServer();
   void cameraThread(Camera &cam);
+  VisionBuf *getFrame(Camera &cam, FrameReader *fr, int32_t segment_id, uint32_t frame_id);
 
   Camera cameras_[MAX_CAMERAS] = {
       {.type = RoadCam, .stream_type = VISION_STREAM_ROAD},

@@ -19,6 +19,7 @@ LON_MPC_STEP = 0.2  # first step is 0.2s
 A_CRUISE_MIN = -1.2
 A_CRUISE_MAX_VALS = [1.6, 1.2, 0.8, 0.6]
 A_CRUISE_MAX_BP = [0., 10.0, 25., 40.]
+CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
 
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.7, 3.2]
@@ -34,7 +35,6 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   This function returns a limited long acceleration allowed, depending on the existing lateral acceleration
   this should avoid accelerating when losing the target in turns
   """
-
   # FIXME: This function to calculate lateral accel is incorrect and should use the VehicleModel
   # The lookup table for turns should also be updated if we do this
   a_total_max = interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
@@ -44,10 +44,30 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   return [a_target[0], min(a_target[1], a_x_allowed)]
 
 
+def get_accel_from_plan(CP, long_plan):
+    speeds = long_plan.speeds
+    if len(speeds) == CONTROL_N:
+      v_target_now = interp(DT_MDL, CONTROL_N_T_IDX, speeds)
+      a_target_now = interp(DT_MDL, CONTROL_N_T_IDX, long_plan.accels)
+
+      v_target = interp(CP.longitudinalActuatorDelay + DT_MDL, CONTROL_N_T_IDX, speeds)
+      a_target = 2 * (v_target - v_target_now) / CP.longitudinalActuatorDelay - a_target_now
+
+      v_target_1sec = interp(CP.longitudinalActuatorDelay + DT_MDL + 1.0, CONTROL_N_T_IDX, speeds)
+    else:
+      v_target = 0.0
+      v_target_now = 0.0
+      v_target_1sec = 0.0
+      a_target = 0.0
+    should_stop = (v_target < CP.vEgoStopping and
+                    v_target_1sec < CP.vEgoStopping)
+    return a_target, should_stop
+
+
 class LongitudinalPlanner:
   def __init__(self, CP, init_v=0.0, init_a=0.0, dt=DT_MDL):
     self.CP = CP
-    self.mpc = LongitudinalMpc()
+    self.mpc = LongitudinalMpc(dt=dt)
     self.fcw = False
     self.dt = dt
 
@@ -62,9 +82,9 @@ class LongitudinalPlanner:
 
   @staticmethod
   def parse_model(model_msg, model_error):
-    if (len(model_msg.position.x) == 33 and
-       len(model_msg.velocity.x) == 33 and
-       len(model_msg.acceleration.x) == 33):
+    if (len(model_msg.position.x) == ModelConstants.IDX_N and
+       len(model_msg.velocity.x) == ModelConstants.IDX_N and
+       len(model_msg.acceleration.x) == ModelConstants.IDX_N):
       x = np.interp(T_IDXS_MPC, ModelConstants.T_IDXS, model_msg.position.x) - model_error * T_IDXS_MPC
       v = np.interp(T_IDXS_MPC, ModelConstants.T_IDXS, model_msg.velocity.x) - model_error
       a = np.interp(T_IDXS_MPC, ModelConstants.T_IDXS, model_msg.acceleration.x)
@@ -142,9 +162,14 @@ class LongitudinalPlanner:
 
     plan_send.valid = sm.all_checks(service_list=['carState', 'controlsState'])
 
+
     longitudinalPlan = plan_send.longitudinalPlan
     longitudinalPlan.modelMonoTime = sm.logMonoTime['modelV2']
     longitudinalPlan.processingDelay = (plan_send.logMonoTime / 1e9) - sm.logMonoTime['modelV2']
+    longitudinalPlan.solverExecutionTime = self.mpc.solve_time
+
+    longitudinalPlan.allowBrake = True
+    longitudinalPlan.allowThrottle = True
 
     longitudinalPlan.speeds = self.v_desired_trajectory.tolist()
     longitudinalPlan.accels = self.a_desired_trajectory.tolist()
@@ -154,6 +179,10 @@ class LongitudinalPlanner:
     longitudinalPlan.longitudinalPlanSource = self.mpc.source
     longitudinalPlan.fcw = self.fcw
 
-    longitudinalPlan.solverExecutionTime = self.mpc.solve_time
+    a_target, should_stop = get_accel_from_plan(self.CP, longitudinalPlan)
+    longitudinalPlan.aTarget = a_target
+    longitudinalPlan.shouldStop = should_stop
+    longitudinalPlan.allowBrake = True
+    longitudinalPlan.allowThrottle = True
 
     pm.send('longitudinalPlan', plan_send)

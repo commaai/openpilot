@@ -2,7 +2,7 @@ from cereal import car
 from panda import Panda
 from openpilot.selfdrive.car import get_safety_config
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
-from openpilot.selfdrive.car.volkswagen.values import CAR, CANBUS, NetworkLocation, TransmissionType, GearShifter, VolkswagenFlags
+from openpilot.selfdrive.car.volkswagen.values import CAR, CANBUS, CarControllerParams, NetworkLocation, TransmissionType, GearShifter, VolkswagenFlags
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -96,8 +96,6 @@ class CarInterface(CarInterfaceBase):
     ret.stopAccel = -0.55
     ret.vEgoStarting = 0.1
     ret.vEgoStopping = 0.5
-    ret.longitudinalTuning.kpV = [0.1]
-    ret.longitudinalTuning.kiV = [0.0]
     ret.autoResumeSng = ret.minEnableSpeed == -1
 
     return ret
@@ -111,7 +109,7 @@ class CarInterface(CarInterfaceBase):
                                        enable_buttons=(ButtonType.setCruise, ButtonType.resumeCruise))
 
     # Low speed steer alert hysteresis logic
-    if self.CP.minSteerSpeed > 0. and ret.vEgo < (self.CP.minSteerSpeed + 1.):
+    if (self.CP.minSteerSpeed - 1e-3) > CarControllerParams.DEFAULT_MIN_STEER_SPEED and ret.vEgo < (self.CP.minSteerSpeed + 1.):
       self.low_speed_alert = True
     elif ret.vEgo > (self.CP.minSteerSpeed + 2.):
       self.low_speed_alert = False

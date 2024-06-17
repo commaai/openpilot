@@ -8,11 +8,9 @@ import numpy as np
 import os
 import pywinctl
 import time
-import unittest
 
-from parameterized import parameterized
 from cereal import messaging, car, log
-from cereal.visionipc import VisionIpcServer, VisionStreamType
+from msgq.visionipc import VisionIpcServer, VisionStreamType
 
 from cereal.messaging import SubMaster, PubMaster
 from openpilot.common.mock import mock_messages
@@ -122,15 +120,10 @@ TEST_OUTPUT_DIR = TEST_DIR / "report"
 SCREENSHOTS_DIR = TEST_OUTPUT_DIR / "screenshots"
 
 
-class TestUI(unittest.TestCase):
-  @classmethod
-  def setUpClass(cls):
+class TestUI:
+  def __init__(self):
     os.environ["SCALE"] = "1"
     sys.modules["mouseinfo"] = False
-
-  @classmethod
-  def tearDownClass(cls):
-    del sys.modules["mouseinfo"]
 
   def setup(self):
     self.sm = SubMaster(["uiDebug"])
@@ -147,8 +140,8 @@ class TestUI(unittest.TestCase):
   def screenshot(self):
     import pyautogui
     im = pyautogui.screenshot(region=(self.ui.left, self.ui.top, self.ui.width, self.ui.height))
-    self.assertEqual(im.width, 2160)
-    self.assertEqual(im.height, 1080)
+    assert im.width == 2160
+    assert im.height == 1080
     img = np.array(im)
     im.close()
     return img
@@ -158,7 +151,6 @@ class TestUI(unittest.TestCase):
     pyautogui.click(self.ui.left + x, self.ui.top + y, *args, **kwargs)
     time.sleep(UI_DELAY) # give enough time for the UI to react
 
-  @parameterized.expand(CASES.items())
   @with_processes(["ui"])
   def test_ui(self, name, setup_case):
     self.setup()
@@ -188,7 +180,10 @@ def create_screenshots():
     shutil.rmtree(TEST_OUTPUT_DIR)
 
   SCREENSHOTS_DIR.mkdir(parents=True)
-  unittest.main(exit=False)
+
+  t = TestUI()
+  for name, setup in CASES.items():
+    t.test_ui(name, setup)
 
 if __name__ == "__main__":
   print("creating test screenshots")

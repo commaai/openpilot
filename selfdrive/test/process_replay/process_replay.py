@@ -6,7 +6,7 @@ import json
 import heapq
 import signal
 import platform
-from collections import OrderedDict
+from collections import Counter, OrderedDict
 from dataclasses import dataclass, field
 from typing import Any
 from collections.abc import Callable, Iterable
@@ -16,14 +16,14 @@ import capnp
 import cereal.messaging as messaging
 from cereal import car
 from cereal.services import SERVICE_LIST
-from cereal.visionipc import VisionIpcServer, get_endpoint_name as vipc_get_endpoint_name
+from msgq.visionipc import VisionIpcServer, get_endpoint_name as vipc_get_endpoint_name
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.common.timeout import Timeout
 from openpilot.common.realtime import DT_CTRL
 from panda.python import ALTERNATIVE_EXPERIENCE
 from openpilot.selfdrive.car.car_helpers import get_car, interfaces
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.manager.process_config import managed_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state, available_streams
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
 from openpilot.selfdrive.test.process_replay.capture import ProcessOutputCapture
@@ -317,12 +317,12 @@ class ProcessContainer:
     return output_msgs
 
 
-def controlsd_fingerprint_callback(rc, pm, msgs, fingerprint):
+def card_fingerprint_callback(rc, pm, msgs, fingerprint):
   print("start fingerprinting")
   params = Params()
   canmsgs = [msg for msg in msgs if msg.which() == "can"][:300]
 
-  # controlsd expects one arbitrary can and pandaState
+  # card expects one arbitrary can and pandaState
   rc.send_sync(pm, "can", messaging.new_message("can", 1))
   pm.send("pandaStates", messaging.new_message("pandaStates", 1))
   rc.send_sync(pm, "can", messaging.new_message("can", 1))
@@ -356,12 +356,20 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
     for m in canmsgs[:300]:
       can.send(m.as_builder().to_bytes())
     _, CP = get_car(can, sendcan, Params().get_bool("ExperimentalLongitudinalEnabled"))
+
+    if not params.get_bool("DisengageOnAccelerator"):
+      CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
+
   params.put("CarParams", CP.to_bytes())
   return CP
 
 
 def controlsd_rcv_callback(msg, cfg, frame):
-  # no sendcan until controlsd is initialized
+  return (frame - 1) == 0 or msg.which() == 'carState'
+
+
+def card_rcv_callback(msg, cfg, frame):
+  # no sendcan until card is initialized
   if msg.which() != "can":
     return False
 
@@ -461,16 +469,26 @@ CONFIGS = [
   ProcessConfig(
     proc_name="controlsd",
     pubs=[
-      "can", "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
+      "carState", "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
       "longitudinalPlan", "liveLocationKalman", "liveParameters", "radarState",
       "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
-      "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope"
+      "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope", "carOutput"
     ],
-    subs=["controlsState", "carState", "carControl", "sendcan", "onroadEvents", "carParams"],
+    subs=["controlsState", "carControl", "onroadEvents"],
     ignore=["logMonoTime", "controlsState.startMonoTime", "controlsState.cumLagMs"],
     config_callback=controlsd_config_callback,
-    init_callback=controlsd_fingerprint_callback,
+    init_callback=get_car_params_callback,
     should_recv_callback=controlsd_rcv_callback,
+    tolerance=NUMPY_TOLERANCE,
+    processing_time=0.004,
+  ),
+  ProcessConfig(
+    proc_name="card",
+    pubs=["pandaStates", "carControl", "onroadEvents", "can"],
+    subs=["sendcan", "carState", "carParams", "carOutput"],
+    ignore=["logMonoTime", "carState.cumLagMs"],
+    init_callback=card_fingerprint_callback,
+    should_recv_callback=card_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
     main_pub="can",
@@ -487,7 +505,7 @@ CONFIGS = [
   ProcessConfig(
     proc_name="plannerd",
     pubs=["modelV2", "carControl", "carState", "controlsState", "radarState"],
-    subs=["longitudinalPlan", "uiPlan"],
+    subs=["longitudinalPlan"],
     ignore=["logMonoTime", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime"],
     init_callback=get_car_params_callback,
     should_recv_callback=FrequencyBasedRcvCallback("modelV2"),
@@ -537,7 +555,7 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="torqued",
-    pubs=["liveLocationKalman", "carState", "carControl"],
+    pubs=["liveLocationKalman", "carState", "carControl", "carOutput"],
     subs=["liveTorqueParameters"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
@@ -798,3 +816,18 @@ def check_openpilot_enabled(msgs: LogIterable) -> bool:
       max_enabled_count = max(max_enabled_count, cur_enabled_count)
 
   return max_enabled_count > int(10. / DT_CTRL)
+
+
+def check_most_messages_valid(msgs: LogIterable, threshold: float = 0.9) -> bool:
+  msgs_counts = Counter(msg.which() for msg in msgs)
+  msgs_valid_counts = Counter(msg.which() for msg in msgs if msg.valid)
+
+  most_valid_for_service = {}
+  for msg_type in msgs_counts.keys():
+    valid_share = msgs_valid_counts.get(msg_type, 0) / msgs_counts[msg_type]
+    ok = valid_share >= threshold
+    if not ok:
+      print(f"WARNING: Service {msg_type} has {valid_share * 100:.2f}% valid messages, which is below threshold of {threshold * 100:.2f}%")
+    most_valid_for_service[msg_type] = ok
+
+  return all(most_valid_for_service.values())

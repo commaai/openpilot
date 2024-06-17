@@ -433,10 +433,6 @@
 %1</translation>
     </message>
     <message>
-        <source>Invalid date and time settings, system won&apos;t start. Connect to internet to set time.</source>
-        <translation>Configurações de data e hora inválidas, o sistema não será iniciado. Conecte-se à internet para definir o horário.</translation>
-    </message>
-    <message>
         <source>Taking camera snapshots. System won&apos;t start until finished.</source>
         <translation>Tirando fotos da câmera. O sistema não será iniciado até terminar.</translation>
     </message>
