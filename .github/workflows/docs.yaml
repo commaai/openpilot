@@ -41,7 +41,7 @@ jobs:
           ${{ runner.os }}-docs-
           
     - name: Build docs
-      if: docs.cache.outputs.cache-hit != 'true'
+      if: steps.cache.outputs.cache-hit != 'true'
       run: |
         ${{ env.RUN }} "apt update && apt install -y doxygen && cd docs && make -j$(nproc) html"
 
