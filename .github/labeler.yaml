@@ -1,69 +1,79 @@
 CI / testing:
-  - all:
-    - changed-files: ['.github/**', '**/test_*', 'Jenkinsfile']
+  - changed-files:
+    - any-glob-to-all-files: "{.github/**,**/test_*,Jenkinsfile}"
 
-car: 
-  - all:
-    - changed-files: ['selfdrive/car/**']
+car:
+  - changed-files:
+    - any-glob-to-all-files: 'selfdrive/car/**'
 
 body:
-  - all:
-    - changed-files: ['selfdrive/car/body/*']
+  - changed-files:
+    - any-glob-to-all-files: 'selfdrive/car/body/*'
+
 chrysler:
-  - all:
-    - changed-files: ['selfdrive/car/chrysler/*']
-ford: 
-  - all:
-    - changed-files: ['selfdrive/car/ford/*']
-gm: 
-  - all:
-    - changed-files: ['selfdrive/car/gm/*']
-honda: 
-  - all:
-    - changed-files: ['selfdrive/car/honda/*']
-hyundai: 
-  - all:
-    - changed-files: ['selfdrive/car/hyundai/*']
-mazda: 
-  - all:
-    - changed-files: ['selfdrive/car/mazda/*']
-nissan: 
-  - all:
-    - changed-files: ['selfdrive/car/nissan/*']
-subaru: 
-  - all:
-    - changed-files: ['selfdrive/car/subaru/*']
-tesla: 
-  - all:
-    - changed-files: ['selfdrive/car/tesla/*']
-toyota: 
-  - all:
-    - changed-files: ['selfdrive/car/toyota/*']
-volkswagen: 
-  - all:
-    - changed-files: ['selfdrive/car/volkswagen/*']
+  - changed-files:
+    - any-glob-to-all-files: 'selfdrive/car/chrysler/*'
+
+ford:
+  - changed-files:
+    - any-glob-to-all-files: 'selfdrive/car/ford/*'
+
+gm:
+  - changed-files:
+    - any-glob-to-all-files: 'selfdrive/car/gm/*'
+
+honda:
+  - changed-files:
+    - any-glob-to-all-files: 'selfdrive/car/honda/*'
+
+hyundai:
+  - changed-files:
+    - any-glob-to-all-files: 'selfdrive/car/hyundai/*'
+
+mazda:
+  - changed-files:
+    - any-glob-to-all-files: 'selfdrive/car/mazda/*'
+
+nissan:
+  - changed-files:
+    - any-glob-to-all-files: 'selfdrive/car/nissan/*'
+
+subaru:
+  - changed-files:
+    - any-glob-to-all-files: 'selfdrive/car/subaru/*'
+
+tesla:
+  - changed-files:
+    - any-glob-to-all-files: 'selfdrive/car/telsa/*'
+
+toyota:
+  - changed-files:
+    - any-glob-to-all-files: 'selfdrive/car/toyota/*'
+
+volkswagen:
+  - changed-files:
+    - any-glob-to-all-files: 'selfdrive/car/volkswagen/*'
 
 fingerprint:
-  - all:
-    - changed-files: ['selfdrive/car/*/fingerprints.py']
+  - changed-files:
+    - any-glob-to-all-files: 'selfdrive/car/*/fingerprints.py'
 
 simulation:
-  - all:
-    - changed-files: ['tools/sim/**']
+  - changed-files:
+    - any-glob-to-all-files: 'tools/sim/**'
+
 ui:
-  - all:
-    - changed-files: ['selfdrive/ui/**']
-tools: 
-  - all:
-    - changed-files: ['tools/**']
+  - changed-files:
+    - any-glob-to-all-files: 'selfdrive/ui/**'
+
+tools:
+  - changed-files:
+    - any-glob-to-all-files: 'tools/**'
 
 multilanguage:
-  - all:
-    - changed-files: ['selfdrive/ui/translations/**']
+  - changed-files:
+    - any-glob-to-all-files: 'selfdrive/ui/translations/**'
 
 research:
-  - all:
-    - changed-files: [
-        'selfdrive/modeld/models/**',
-        'selfdrive/test/process_replay/model_replay_ref_commit',
-      ]
+  - changed-files:
+    - any-glob-to-all-files: "{selfdrive/modeld/models/**,selfdrive/test/process_replay/model_replay_ref_commit}"

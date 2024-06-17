@@ -11,7 +11,7 @@ Our software is open source so you can solve your own problems without needing h
 
 ## What contributions are we looking for?
 
-**openpilot's priorities are [safety](SAFETY.md), stability, quality, and features, in that order.** openpilot is part of comma's mission to *solve self-driving cars while delivering shippable intermediaries*, and **all** developoment is towards that goal. 
+**openpilot's priorities are [safety](SAFETY.md), stability, quality, and features, in that order.** openpilot is part of comma's mission to *solve self-driving cars while delivering shippable intermediaries*, and **all** development is towards that goal. 
 
 ### What gets merged?
 
@@ -62,4 +62,4 @@ A good pull request has all of the following:
 * Consider opting into driver camera uploads to improve the driver monitoring model.
 * Connect your device to Wi-Fi regularly, so that we can pull data for training better driving models.
 * Run the `nightly` branch and report issues. This branch is like `master` but it's built just like a release.
-* Annotate images in the [comma10k dateset](https://github.com/commaai/comma10k).
+* Annotate images in the [comma10k dataset](https://github.com/commaai/comma10k).

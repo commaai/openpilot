@@ -89,11 +89,14 @@ private:
 
 std::unordered_map<std::string, uint32_t> keys = {
     {"AccessToken", CLEAR_ON_MANAGER_START | DONT_LOG},
+    {"AlwaysOnDM", PERSISTENT},
     {"ApiCache_Device", PERSISTENT},
     {"ApiCache_NavDestinations", PERSISTENT},
     {"AssistNowToken", PERSISTENT},
     {"AthenadPid", PERSISTENT},
     {"AthenadUploadQueue", PERSISTENT},
+    {"AthenadRecentlyViewedRoutes", PERSISTENT},
+    {"BootCount", PERSISTENT},
     {"CalibrationParams", PERSISTENT},
     {"CameraDebugExpGain", CLEAR_ON_MANAGER_START},
     {"CameraDebugExpTime", CLEAR_ON_MANAGER_START},
@@ -123,6 +126,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"ForcePowerDown", PERSISTENT},
     {"GitBranch", PERSISTENT},
     {"GitCommit", PERSISTENT},
+    {"GitCommitDate", PERSISTENT},
     {"GitDiff", PERSISTENT},
     {"GithubSshKeys", PERSISTENT},
     {"GithubUsername", PERSISTENT},
@@ -144,16 +148,13 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"IsReleaseBranch", CLEAR_ON_MANAGER_START},
     {"IsTakingSnapshot", CLEAR_ON_MANAGER_START},
     {"IsTestedBranch", CLEAR_ON_MANAGER_START},
-    {"IsUpdateAvailable", CLEAR_ON_MANAGER_START},
     {"JoystickDebugMode", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
-    {"LaikadEphemerisV3", PERSISTENT | DONT_LOG},
     {"LanguageSetting", PERSISTENT},
     {"LastAthenaPingTime", CLEAR_ON_MANAGER_START},
     {"LastGPSPosition", PERSISTENT},
     {"LastManagerExitReason", CLEAR_ON_MANAGER_START},
     {"LastOffroadStatusPacket", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
     {"LastPowerDropDetected", CLEAR_ON_MANAGER_START},
-    {"LastSystemShutdown", CLEAR_ON_MANAGER_START},
     {"LastUpdateException", CLEAR_ON_MANAGER_START},
     {"LastUpdateTime", PERSISTENT},
     {"LiveParameters", PERSISTENT},
@@ -164,14 +165,13 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"NavPastDestinations", PERSISTENT},
     {"NavSettingLeftSide", PERSISTENT},
     {"NavSettingTime24h", PERSISTENT},
-    {"NavdRender", PERSISTENT},
+    {"NetworkMetered", PERSISTENT},
     {"ObdMultiplexingChanged", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"ObdMultiplexingEnabled", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"Offroad_BadNvme", CLEAR_ON_MANAGER_START},
     {"Offroad_CarUnrecognized", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"Offroad_ConnectivityNeeded", CLEAR_ON_MANAGER_START},
     {"Offroad_ConnectivityNeededPrompt", CLEAR_ON_MANAGER_START},
-    {"Offroad_InvalidTime", CLEAR_ON_MANAGER_START},
     {"Offroad_IsTakingSnapshot", CLEAR_ON_MANAGER_START},
     {"Offroad_NeosUpdate", CLEAR_ON_MANAGER_START},
     {"Offroad_NoFirmware", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
@@ -184,22 +184,20 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"PandaHeartbeatLost", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
     {"PandaSomResetTriggered", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
     {"PandaSignatures", CLEAR_ON_MANAGER_START},
-    {"Passive", PERSISTENT},
     {"PrimeType", PERSISTENT},
     {"RecordFront", PERSISTENT},
     {"RecordFrontLock", PERSISTENT},  // for the internal fleet
     {"ReplayControlsState", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
-    {"ShouldDoUpdate", CLEAR_ON_MANAGER_START},
+    {"RouteCount", PERSISTENT},
     {"SnoozeUpdate", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
     {"SshEnabled", PERSISTENT},
-    {"SubscriberInfo", PERSISTENT},
     {"TermsVersion", PERSISTENT},
     {"Timezone", PERSISTENT},
     {"TrainingVersion", PERSISTENT},
     {"UbloxAvailable", PERSISTENT},
     {"UpdateAvailable", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"UpdateFailedCount", CLEAR_ON_MANAGER_START},
-    {"UpdaterAvailableBranches", CLEAR_ON_MANAGER_START},
+    {"UpdaterAvailableBranches", PERSISTENT},
     {"UpdaterCurrentDescription", CLEAR_ON_MANAGER_START},
     {"UpdaterCurrentReleaseNotes", CLEAR_ON_MANAGER_START},
     {"UpdaterFetchAvailable", CLEAR_ON_MANAGER_START},
@@ -207,9 +205,8 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"UpdaterNewReleaseNotes", CLEAR_ON_MANAGER_START},
     {"UpdaterState", CLEAR_ON_MANAGER_START},
     {"UpdaterTargetBranch", CLEAR_ON_MANAGER_START},
+    {"UpdaterLastFetchTime", PERSISTENT},
     {"Version", PERSISTENT},
-    {"VisionRadarToggle", PERSISTENT},
-    {"WheeledBody", PERSISTENT},
 };
 
 } // namespace
@@ -276,7 +273,9 @@ int Params::put(const char* key, const char* value, size_t value_size) {
   } while (false);
 
   close(tmp_fd);
-  ::unlink(tmp_path.c_str());
+  if (result != 0) {
+    ::unlink(tmp_path.c_str());
+  }
   return result;
 }
 

@@ -1,10 +1,11 @@
 name: "PR review"
 on:
   pull_request_target:
+    types: [opened, reopened, synchronize, edited, edited]
 
 jobs:
   labeler:
-    name: apply labels
+    name: review
     permissions:
       contents: read
       pull-requests: write
@@ -13,17 +14,17 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: false
-    - uses: actions/labeler@v5.0.0-alpha.1
+
+    # Label PRs
+    - uses: actions/labeler@v5.0.0
       with:
         dot: true
         configuration-path: .github/labeler.yaml
 
-  pr_branch_check:
-    name: check branch
-    runs-on: ubuntu-latest
-    if: github.repository == 'commaai/openpilot'
-    steps:
-    - uses: Vankka/pr-target-branch-action@69ab6dd5c221de3548b3b6c4d102c1f4913d3baa
+    # Check PR target branch
+    - name: check branch
+      uses: Vankka/pr-target-branch-action@def32ec9d93514138d6ac0132ee62e120a72aed5
+      if: github.repository == 'commaai/openpilot'
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
@@ -32,3 +33,21 @@ jobs:
         change-to: ${{ github.base_ref }}
         already-exists-action: close_this
         already-exists-comment: "Your PR should be made against the `master` branch"
+
+    # Welcome comment
+    - name: comment
+      uses: thollander/actions-comment-pull-request@fabd468d3a1a0b97feee5f6b9e499eab0dd903f6
+      if: github.event.pull_request.head.repo.full_name != 'commaai/openpilot'
+      with:
+        message: |
+            <!-- _(run_id **${{ github.run_id }}**)_ -->
+            Thanks for contributing to openpilot! In order for us to review your PR as quickly as possible, check the following:
+            * Convert your PR to a draft unless it's ready to review
+            * Read the [contributing docs](https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md)
+            * Before marking as "ready for review", ensure:
+              * the goal is clearly stated in the description
+              * all the tests are passing
+              * the change is [something we merge](https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md#what-gets-merged)
+              * include a route or your device' dongle ID if relevant
+        comment_tag: run_id
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

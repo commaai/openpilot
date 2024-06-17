@@ -42,6 +42,10 @@ LiveStream::LiveStream(QObject *parent) : AbstractStream(parent) {
   QObject::connect(stream_thread, &QThread::finished, stream_thread, &QThread::deleteLater);
 }
 
+LiveStream::~LiveStream() {
+  stop();
+}
+
 void LiveStream::startUpdateTimer() {
   update_timer.stop();
   update_timer.start(1000.0 / settings.fps, this);
@@ -55,11 +59,14 @@ void LiveStream::start() {
   begin_date_time = QDateTime::currentDateTime();
 }
 
-LiveStream::~LiveStream() {
+void LiveStream::stop() {
+  if (!stream_thread) return;
+
   update_timer.stop();
   stream_thread->requestInterruption();
   stream_thread->quit();
   stream_thread->wait();
+  stream_thread = nullptr;
 }
 
 // called in streamThread

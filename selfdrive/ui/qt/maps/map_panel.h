@@ -1,14 +1,14 @@
 #pragma once
 
 #include <QFrame>
-#include <QMapboxGL>
+#include <QMapLibre/Settings>
 #include <QStackedLayout>
 
 class MapPanel : public QFrame {
   Q_OBJECT
 
 public:
-  explicit MapPanel(const QMapboxGLSettings &settings, QWidget *parent = nullptr);
+  explicit MapPanel(const QMapLibre::Settings &settings, QWidget *parent = nullptr);
 
 signals:
   void mapPanelRequested();

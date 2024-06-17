@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "cereal/messaging/messaging.h"
-#include "cereal/visionipc/visionipc.h"
+#include "msgq/visionipc/visionipc.h"
 #include "common/queue.h"
 #include "system/camerad/cameras/camera_common.h"
 #include "system/loggerd/loggerd.h"
@@ -22,10 +22,13 @@ public:
   virtual void encoder_open(const char* path) = 0;
   virtual void encoder_close() = 0;
 
-  static void publisher_publish(VideoEncoder *e, int segment_num, uint32_t idx, VisionIpcBufExtra &extra, unsigned int flags, kj::ArrayPtr<capnp::byte> header, kj::ArrayPtr<capnp::byte> dat);
+  void publisher_publish(VideoEncoder *e, int segment_num, uint32_t idx, VisionIpcBufExtra &extra, unsigned int flags, kj::ArrayPtr<capnp::byte> header, kj::ArrayPtr<capnp::byte> dat);
 
 protected:
+  void publish_thumbnail(uint32_t frame_id, uint64_t timestamp_eof, kj::ArrayPtr<capnp::byte> dat);
+
   int in_width, in_height;
+  int out_width, out_height;
   const EncoderInfo encoder_info;
 
 private:

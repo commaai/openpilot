@@ -22,7 +22,7 @@
 #include <drm/drm_fourcc.h>
 #endif
 
-#include "cereal/visionipc/visionipc_client.h"
+#include "msgq/visionipc/visionipc_client.h"
 #include "system/camerad/cameras/camera_common.h"
 #include "selfdrive/ui/ui.h"
 

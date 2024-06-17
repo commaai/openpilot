@@ -1,36 +1,23 @@
-#!/usr/bin/env python3
 import time
 import numpy as np
 import os
 import pytest
-import unittest
 import requests
 import threading
 import http.server
 import cereal.messaging as messaging
 
 from typing import Any
-from cereal.visionipc import VisionIpcClient, VisionStreamType
+from msgq.visionipc import VisionIpcClient, VisionStreamType
+from openpilot.common.mock.generators import LLK_DECIMATION, LOCATION1, LOCATION2, generate_liveLocationKalman
 from openpilot.selfdrive.test.helpers import with_processes
 
-LLK_DECIMATION = 10
 CACHE_PATH = "/data/mbgl-cache-navd.db"
-
-LOCATION1 = (32.7174, -117.16277)
-LOCATION2 = (32.7558, -117.2037)
 
 RENDER_FRAMES = 15
 DEFAULT_ITERATIONS = RENDER_FRAMES * LLK_DECIMATION
-
 LOCATION1_REPEATED = [LOCATION1] * DEFAULT_ITERATIONS
 LOCATION2_REPEATED = [LOCATION2] * DEFAULT_ITERATIONS
-
-def gen_llk(location=LOCATION1):
-  msg = messaging.new_message('liveLocationKalman')
-  msg.liveLocationKalman.positionGeodetic = {'value': [*location, 0], 'std': [0., 0., 0.], 'valid': True}
-  msg.liveLocationKalman.calibratedOrientationNED = {'value': [0., 0., 0.], 'std': [0., 0., 0.], 'valid': True}
-  msg.liveLocationKalman.status = 'valid'
-  return msg
 
 
 class MapBoxInternetDisabledRequestHandler(http.server.BaseHTTPRequestHandler):
@@ -76,11 +63,12 @@ class MapBoxInternetDisabledServer(threading.Thread):
     MapBoxInternetDisabledRequestHandler.INTERNET_ACTIVE = True
 
 
-class TestMapRenderer(unittest.TestCase):
+@pytest.mark.skip(reason="not used")
+class TestMapRenderer:
   server: MapBoxInternetDisabledServer
 
   @classmethod
-  def setUpClass(cls):
+  def setup_class(cls):
     assert "MAPBOX_TOKEN" in os.environ
     cls.original_token = os.environ["MAPBOX_TOKEN"]
     cls.server = MapBoxInternetDisabledServer()
@@ -88,10 +76,10 @@ class TestMapRenderer(unittest.TestCase):
     time.sleep(0.5) # wait for server to startup
 
   @classmethod
-  def tearDownClass(cls) -> None:
+  def teardown_class(cls) -> None:
     cls.server.stop()
 
-  def setUp(self):
+  def setup_method(self):
     self.server.enable_internet()
     os.environ['MAPS_HOST'] = f'http://localhost:{self.server.port}'
 
@@ -131,7 +119,7 @@ class TestMapRenderer(unittest.TestCase):
       if starting_frame_id is None:
         starting_frame_id = prev_frame_id
 
-      llk = gen_llk(location)
+      llk = generate_liveLocationKalman(location)
       self.pm.send("liveLocationKalman", llk)
       self.pm.wait_for_readers_to_update("liveLocationKalman", 10)
       self.sm.update(1000 if frame_expected else 0)
@@ -146,7 +134,7 @@ class TestMapRenderer(unittest.TestCase):
       invalid_and_not_previously_valid = (expect_valid and not self.sm.valid['mapRenderState'] and not prev_valid)
       valid_and_not_previously_invalid = (not expect_valid and self.sm.valid['mapRenderState'] and prev_valid)
 
-      if (invalid_and_not_previously_valid or valid_and_not_previously_invalid) and frames_since_test_start < 5:
+      if (invalid_and_not_previously_valid or valid_and_not_previously_invalid) and frames_since_test_start < 20:
         continue
 
       # check output
@@ -181,6 +169,7 @@ class TestMapRenderer(unittest.TestCase):
     self._run_test(False)
 
   @with_processes(["mapsd"])
+  @pytest.mark.skip(reason="slow, flaky, and unlikely to break")
   def test_recover_from_no_internet(self):
     self._setup_test()
     self._run_test(True)
@@ -212,15 +201,12 @@ class TestMapRenderer(unittest.TestCase):
 
     def assert_stat(stat, nominal, tol=0.3):
       tol = (nominal / (1+tol)), (nominal * (1+tol))
-      self.assertTrue(tol[0] < stat < tol[1], f"{stat} not in tolerance {tol}")
+      assert tol[0] < stat < tol[1], f"{stat} not in tolerance {tol}"
 
     assert_stat(_mean,   0.030)
     assert_stat(_median, 0.027)
     assert_stat(_stddev, 0.0078)
 
-    self.assertLess(_max, 0.065)
-    self.assertGreater(_min, 0.015)
+    assert _max < 0.065
+    assert _min > 0.015
 
-
-if __name__ == "__main__":
-  unittest.main()

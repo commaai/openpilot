@@ -2,7 +2,6 @@
 import time
 from smbus2 import SMBus
 from collections import namedtuple
-from typing import List
 
 # https://datasheets.maximintegrated.com/en/ds/MAX98089.pdf
 
@@ -110,7 +109,7 @@ class Amplifier:
   def _get_shutdown_config(self, amp_disabled: bool) -> AmpConfig:
     return AmpConfig("Global shutdown", 0b0 if amp_disabled else 0b1, 0x51, 7, 0b10000000)
 
-  def _set_configs(self, configs: List[AmpConfig]) -> None:
+  def _set_configs(self, configs: list[AmpConfig]) -> None:
     with SMBus(self.AMP_I2C_BUS) as bus:
       for config in configs:
         if self.debug:
@@ -123,7 +122,7 @@ class Amplifier:
         if self.debug:
           print(f"  Changed {hex(config.register)}: {hex(old_value)} -> {hex(new_value)}")
 
-  def set_configs(self, configs: List[AmpConfig]) -> bool:
+  def set_configs(self, configs: list[AmpConfig]) -> bool:
     # retry in case panda is using the amp
     tries = 15
     for i in range(15):
