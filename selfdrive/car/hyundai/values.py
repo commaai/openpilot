@@ -532,7 +532,7 @@ class CAR(Platforms):
     flags=HyundaiFlags.LEGACY,
   )
   GENESIS_G80_2ND_GEN_FL = HyundaiCanFDPlatformConfig(
-    [HyundaiCarDocs("Genesis G80 (2.5T Advanced Trim, with HDA II) 2024", "All", car_parts=CarParts.common([CarHarness.hyundai_p]))],
+    [HyundaiCarDocs("Genesis G80 (2.5T Advanced Trim, with HDA II) 2024", "Highway Driving Assist II", car_parts=CarParts.common([CarHarness.hyundai_p]))],
     CarSpecs(mass=2060, wheelbase=3.00, steerRatio=11.2),
   )
   GENESIS_G90 = HyundaiPlatformConfig(
