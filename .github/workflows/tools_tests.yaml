@@ -40,7 +40,7 @@ jobs:
                         CI=1 pytest tools/sim/tests/test_metadrive_bridge.py"
 
   test_compatibility:
-    name: test ubuntu/python support
+    name: test 20.04 + 3.11
     runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v4
