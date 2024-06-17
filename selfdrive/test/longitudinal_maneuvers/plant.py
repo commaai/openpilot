@@ -83,7 +83,7 @@ class Plant:
 
     lead = log.RadarState.LeadData.new_message()
     lead.dRel = float(d_rel)
-    lead.yRel = float(0.0)
+    lead.yRel = 0.0
     lead.vRel = float(v_rel)
     lead.aRel = float(a_lead - self.acceleration)
     lead.vLead = float(v_lead)

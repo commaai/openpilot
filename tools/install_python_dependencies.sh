@@ -41,7 +41,7 @@ fi
 
 export MAKEFLAGS="-j$(nproc)"
 
-PYENV_PYTHON_VERSION=$(cat $ROOT/.python-version)
+PYENV_PYTHON_VERSION="3.12.4"
 if ! pyenv prefix ${PYENV_PYTHON_VERSION} &> /dev/null; then
   # no pyenv update on mac
   if [ "$(uname)" == "Linux" ]; then
@@ -54,8 +54,8 @@ fi
 eval "$(pyenv init --path)"
 
 echo "update pip"
-pip install pip==23.3
-pip install poetry==1.6.1
+pip install pip==24.0
+pip install poetry==1.7.0
 
 poetry config virtualenvs.prefer-active-python true --local
 poetry config virtualenvs.in-project true --local

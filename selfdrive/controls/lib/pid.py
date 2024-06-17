@@ -4,7 +4,7 @@ from numbers import Number
 from openpilot.common.numpy_fast import clip, interp
 
 
-class PIDController():
+class PIDController:
   def __init__(self, k_p, k_i, k_f=0., k_d=0., pos_limit=1e308, neg_limit=-1e308, rate=100):
     self._k_p = k_p
     self._k_i = k_i

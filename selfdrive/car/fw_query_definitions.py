@@ -85,7 +85,7 @@ class Request:
   auxiliary: bool = False
   # FW responses from these queries will not be used for fingerprinting
   logging: bool = False
-  # boardd toggles OBD multiplexing on/off as needed
+  # pandad toggles OBD multiplexing on/off as needed
   obd_multiplexing: bool = True
 
 
@@ -97,9 +97,9 @@ class FwQueryConfig:
   non_essential_ecus: dict[capnp.lib.capnp._EnumModule, list[str]] = field(default_factory=dict)
   # Ecus added for data collection, not to be fingerprinted on
   extra_ecus: list[tuple[capnp.lib.capnp._EnumModule, int, int | None]] = field(default_factory=list)
-  # Function a brand can implement to provide better fuzzy matching. Takes in FW versions,
+  # Function a brand can implement to provide better fuzzy matching. Takes in FW versions and VIN,
   # returns set of candidates. Only will match if one candidate is returned
-  match_fw_to_car_fuzzy: Callable[[LiveFwVersions, OfflineFwVersions], set[str]] | None = None
+  match_fw_to_car_fuzzy: Callable[[LiveFwVersions, str, OfflineFwVersions], set[str]] | None = None
 
   def __post_init__(self):
     for i in range(len(self.requests)):

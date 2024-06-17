@@ -94,11 +94,7 @@ class CarInterface(CarInterfaceBase):
     else:
       ret.transmissionType = TransmissionType.automatic
 
-    ret.longitudinalTuning.deadzoneBP = [0.]
-    ret.longitudinalTuning.deadzoneV = [0.15]
-
-    ret.longitudinalTuning.kpBP = [5., 35.]
-    ret.longitudinalTuning.kiBP = [0.]
+    ret.longitudinalTuning.kiBP = [5., 35.]
 
     if candidate in CAMERA_ACC_CAR:
       ret.experimentalLongitudinalAvailable = True
@@ -110,8 +106,7 @@ class CarInterface(CarInterfaceBase):
       ret.minSteerSpeed = 10 * CV.KPH_TO_MS
 
       # Tuning for experimental long
-      ret.longitudinalTuning.kpV = [2.0, 1.5]
-      ret.longitudinalTuning.kiV = [0.72]
+      ret.longitudinalTuning.kiV = [2.0, 1.5]
       ret.stoppingDecelRate = 2.0  # reach brake quickly after enabling
       ret.vEgoStopping = 0.25
       ret.vEgoStarting = 0.25
@@ -131,8 +126,7 @@ class CarInterface(CarInterfaceBase):
       ret.minSteerSpeed = 7 * CV.MPH_TO_MS
 
       # Tuning
-      ret.longitudinalTuning.kpV = [2.4, 1.5]
-      ret.longitudinalTuning.kiV = [0.36]
+      ret.longitudinalTuning.kiV = [2.4, 1.5]
 
     # These cars have been put into dashcam only due to both a lack of users and test coverage.
     # These cars likely still work fine. Once a user confirms each car works and a test route is
@@ -148,7 +142,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerLimitTimer = 0.4
     ret.radarTimeStep = 0.0667  # GM radar runs at 15Hz instead of standard 20Hz
-    ret.longitudinalActuatorDelayUpperBound = 0.5  # large delay to initially start braking
+    ret.longitudinalActuatorDelay = 0.5  # large delay to initially start braking
 
     if candidate == CAR.CHEVROLET_VOLT:
       ret.lateralTuning.pid.kpBP = [0., 40.]

@@ -1,44 +1,36 @@
 # openpilot releases
 
+## release checklist
 
-## terms
+**Go to `devel-staging`**
+- [ ] update `devel-staging`: `git reset --hard origin/master-ci`
+- [ ] open a pull request from `devel-staging` to `devel`
 
-- `channel` - a named version of openpilot (git branch, casync caibx) which receives updates
-- `build` - a release which is already built for the comma 3/3x and contains only required files for running openpilot and identifying the release
+**Go to `devel`**
+- [ ] update RELEASES.md
+- [ ] close out milestone
+- [ ] post on Discord dev channel
+- [ ] bump version on master: `common/version.h` and `RELEASES.md`
+- [ ] merge the pull request
 
-- `build_style` - type of build, either `debug` or `release`
-  - `debug` - build with `ALLOW_DEBUG=true`, can test experimental features like longitudinal on alpha cars
-  - `release` - build with `ALLOW_DEBUG=false`, experimental features disabled
+tests:
+- [ ] update from previous release -> new release
+- [ ] update from new release -> previous release
+- [ ] fresh install with `openpilot-test.comma.ai`
+- [ ] drive on fresh install
+- [ ] comma body test
+- [ ] no submodules or LFS
+- [ ] check sentry, MTBF, etc.
 
-
-## openpilot channels
-
-| channel      | build_style | description                                                       |
-| -----------  | ----------- | ----------                                                        |
-| release      | `release`   | stable release of openpilot                                       |
-| staging      | `release`   | release candidate of openpilot for final verification             |
-| nightly      | `release`   | generated nightly from last commit passing CI tests               |
-| master       | `debug`     | current master commit with experimental features enabled          |
-| git branches | `debug`     | installed manually, experimental features enabled, build required |
-
-
-## creating casync build
-
-`create_casync_build.sh` - creates a casync openpilot build, ready to upload to `openpilot-releases`
-
-```bash
-# run on a tici, within the directory you want to create the build from.
-# creates a prebuilt version of openpilot into BUILD_DIR and outputs the caibx
-# of a tarball containing the full prebuilt openpilot release
-BUILD_DIR=/data/openpilot_build    \
-CASYNC_DIR=/data/casync            \
-OPENPILOT_CHANNEL=nightly          \
-release/create_casync_build.sh
+**Go to `release3`**
+- [ ] publish the blog post
+- [ ] `git reset --hard origin/release3-staging`
+- [ ] tag the release
 ```
-
-`upload_casync_release.sh` - helper for uploading a casync build to `openpilot-releases`
-
-
-## release builds
-
-to create a release build, set `RELEASE=1` environment variable when running the build script
+git tag v0.X.X <commit-hash>
+git push origin v0.X.X
+```
+- [ ] create GitHub release
+- [ ] final test install on `openpilot.comma.ai`
+- [ ] update production
+- [ ] Post on Discord, X, etc.
