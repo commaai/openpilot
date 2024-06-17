@@ -8,17 +8,15 @@ import numpy as np
 import os
 import pywinctl
 import time
-import unittest
 
-from parameterized import parameterized
 from cereal import messaging, car, log
-from cereal.visionipc import VisionIpcServer, VisionStreamType
+from msgq.visionipc import VisionIpcServer, VisionStreamType
 
 from cereal.messaging import SubMaster, PubMaster
 from openpilot.common.mock import mock_messages
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_MDL
-from openpilot.common.transformations.camera import tici_f_frame_size
+from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state
 from openpilot.tools.webcam.camera import Camera
@@ -69,15 +67,16 @@ def setup_onroad(click, pm: PubMaster):
 
   pm.send("pandaStates", dat)
 
+  d = DEVICE_CAMERAS[("tici", "ar0231")]
   server = VisionIpcServer("camerad")
-  server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 40, False, *tici_f_frame_size)
-  server.create_buffers(VisionStreamType.VISION_STREAM_DRIVER, 40, False, *tici_f_frame_size)
-  server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, *tici_f_frame_size)
+  server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 40, False, d.fcam.width, d.fcam.height)
+  server.create_buffers(VisionStreamType.VISION_STREAM_DRIVER, 40, False, d.dcam.width, d.dcam.height)
+  server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, d.fcam.width, d.fcam.height)
   server.start_listener()
 
   time.sleep(0.5) # give time for vipc server to start
 
-  IMG = Camera.bgr2nv12(np.random.randint(0, 255, (*tici_f_frame_size,3), dtype=np.uint8))
+  IMG = Camera.bgr2nv12(np.random.randint(0, 255, (d.fcam.width, d.fcam.height, 3), dtype=np.uint8))
   IMG_BYTES = IMG.flatten().tobytes()
 
   cams = ('roadCameraState', 'wideRoadCameraState')
@@ -121,15 +120,10 @@ TEST_OUTPUT_DIR = TEST_DIR / "report"
 SCREENSHOTS_DIR = TEST_OUTPUT_DIR / "screenshots"
 
 
-class TestUI(unittest.TestCase):
-  @classmethod
-  def setUpClass(cls):
+class TestUI:
+  def __init__(self):
     os.environ["SCALE"] = "1"
     sys.modules["mouseinfo"] = False
-
-  @classmethod
-  def tearDownClass(cls):
-    del sys.modules["mouseinfo"]
 
   def setup(self):
     self.sm = SubMaster(["uiDebug"])
@@ -146,8 +140,8 @@ class TestUI(unittest.TestCase):
   def screenshot(self):
     import pyautogui
     im = pyautogui.screenshot(region=(self.ui.left, self.ui.top, self.ui.width, self.ui.height))
-    self.assertEqual(im.width, 2160)
-    self.assertEqual(im.height, 1080)
+    assert im.width == 2160
+    assert im.height == 1080
     img = np.array(im)
     im.close()
     return img
@@ -157,7 +151,6 @@ class TestUI(unittest.TestCase):
     pyautogui.click(self.ui.left + x, self.ui.top + y, *args, **kwargs)
     time.sleep(UI_DELAY) # give enough time for the UI to react
 
-  @parameterized.expand(CASES.items())
   @with_processes(["ui"])
   def test_ui(self, name, setup_case):
     self.setup()
@@ -187,7 +180,10 @@ def create_screenshots():
     shutil.rmtree(TEST_OUTPUT_DIR)
 
   SCREENSHOTS_DIR.mkdir(parents=True)
-  unittest.main(exit=False)
+
+  t = TestUI()
+  for name, setup in CASES.items():
+    t.test_ui(name, setup)
 
 if __name__ == "__main__":
   print("creating test screenshots")

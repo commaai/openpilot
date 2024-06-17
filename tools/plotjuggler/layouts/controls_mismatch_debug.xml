@@ -24,6 +24,7 @@
        <range top="1.025000" bottom="-0.025000" left="0.018309" right="59.674401"/>
        <limitY/>
        <curve color="#1f77b4" name="/pandaStates/0/safetyRxInvalid"/>
+       <curve color="#e801ce" name="/pandaStates/0/safetyRxChecksInvalid"/>
       </plot>
      </DockArea>
      <DockArea name="...">

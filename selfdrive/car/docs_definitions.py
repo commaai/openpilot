@@ -118,7 +118,8 @@ class CarHarness(EnumBase):
   nissan_b = BaseCarHarness("Nissan B connector", parts=[Accessory.harness_box, Cable.rj45_cable_7ft, Cable.long_obdc_cable, Cable.usbc_coupler])
   mazda = BaseCarHarness("Mazda connector")
   ford_q3 = BaseCarHarness("Ford Q3 connector")
-  ford_q4 = BaseCarHarness("Ford Q4 connector")
+  ford_q4 = BaseCarHarness("Ford Q4 connector", parts=[Accessory.harness_box, Accessory.comma_power_v2, Cable.rj45_cable_7ft, Cable.long_obdc_cable,
+                                                       Cable.usbc_coupler])
 
 
 class Device(EnumBase):
@@ -219,7 +220,7 @@ def split_name(name: str) -> tuple[str, str, str]:
 
 
 @dataclass
-class CarInfo:
+class CarDocs:
   # make + model + model years
   name: str
 
@@ -265,7 +266,7 @@ class CarInfo:
     # min steer & enable speed columns
     # TODO: set all the min steer speeds in carParams and remove this
     if self.min_steer_speed is not None:
-      assert CP.minSteerSpeed == 0, f"{CP.carFingerprint}: Minimum steer speed set in both CarInfo and CarParams"
+      assert CP.minSteerSpeed < 0.5, f"{CP.carFingerprint}: Minimum steer speed set in both CarDocs and CarParams"
     else:
       self.min_steer_speed = CP.minSteerSpeed
 
@@ -274,7 +275,7 @@ class CarInfo:
       self.min_enable_speed = CP.minEnableSpeed
 
     if self.auto_resume is None:
-      self.auto_resume = CP.autoResumeSng
+      self.auto_resume = CP.autoResumeSng and self.min_enable_speed <= 0
 
     # hardware column
     hardware_col = "None"
@@ -316,7 +317,7 @@ class CarInfo:
     return self
 
   def init_make(self, CP: car.CarParams):
-    """CarInfo subclasses can add make-specific logic for harness selection, footnotes, etc."""
+    """CarDocs subclasses can add make-specific logic for harness selection, footnotes, etc."""
 
   def get_detail_sentence(self, CP):
     if not CP.notCar:
@@ -339,13 +340,13 @@ class CarInfo:
 
       # experimental mode
       exp_link = "<a href='https://blog.comma.ai/090release/#experimental-mode' target='_blank' class='link-light-new-regular-text'>Experimental mode</a>"
-      if CP.openpilotLongitudinalControl or CP.experimentalLongitudinalAvailable:
+      if CP.openpilotLongitudinalControl and not CP.experimentalLongitudinalAvailable:
         sentence_builder += f" Traffic light and stop sign handling is also available in {exp_link}."
 
       return sentence_builder.format(car_model=f"{self.make} {self.model}", alc=alc, acc=acc)
 
     else:
-      if CP.carFingerprint == "COMMA BODY":
+      if CP.carFingerprint == "COMMA_BODY":
         return "The body is a robotics dev kit that can run openpilot. <a href='https://www.commabody.com'>Learn more.</a>"
       else:
         raise Exception(f"This notCar does not have a detail sentence: {CP.carFingerprint}")

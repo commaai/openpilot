@@ -76,7 +76,7 @@ Frame ID: 1202
     Events updated                                       111.183541
     sendcan published                                    112.981692
     controlsState published                              113.731994
-  boardd
+  pandad
     sending sendcan to panda: 250027001751393037323631   81.928119
     sendcan sent to panda: 250027001751393037323631      82.164834
     sending sendcan to panda: 250027001751393037323631   93.569986

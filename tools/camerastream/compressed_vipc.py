@@ -6,9 +6,10 @@ import argparse
 import numpy as np
 import multiprocessing
 import time
+import signal
 
 import cereal.messaging as messaging
-from cereal.visionipc import VisionIpcServer, VisionStreamType
+from msgq.visionipc import VisionIpcServer, VisionStreamType
 
 V4L2_BUF_FLAG_KEYFRAME = 8
 
@@ -18,14 +19,14 @@ V4L2_BUF_FLAG_KEYFRAME = 8
 
 ENCODE_SOCKETS = {
   VisionStreamType.VISION_STREAM_ROAD: "roadEncodeData",
-  VisionStreamType.VISION_STREAM_WIDE_ROAD: "wideRoadEncodeData",
   VisionStreamType.VISION_STREAM_DRIVER: "driverEncodeData",
+  VisionStreamType.VISION_STREAM_WIDE_ROAD: "wideRoadEncodeData",
 }
 
 def decoder(addr, vipc_server, vst, nvidia, W, H, debug=False):
   sock_name = ENCODE_SOCKETS[vst]
   if debug:
-    print("start decoder for %s" % sock_name)
+    print(f"start decoder for {sock_name}, {W}x{H}")
 
   if nvidia:
     os.environ["NV_LOW_LATENCY"] = "3"    # both bLowLatency and CUVID_PKT_ENDOFPICTURE
@@ -124,7 +125,7 @@ class CompressedVipc:
     self.procs = []
     for vst in vision_streams:
       ed = sm[ENCODE_SOCKETS[vst]]
-      p = multiprocessing.Process(target=decoder, args=(addr, self.vipc_server, vst, nvidia, debug, ed.width, ed.height))
+      p = multiprocessing.Process(target=decoder, args=(addr, self.vipc_server, vst, nvidia, ed.width, ed.height, debug))
       p.start()
       self.procs.append(p)
 
@@ -147,10 +148,14 @@ if __name__ == "__main__":
 
   vision_streams = [
     VisionStreamType.VISION_STREAM_ROAD,
-    VisionStreamType.VISION_STREAM_WIDE_ROAD,
     VisionStreamType.VISION_STREAM_DRIVER,
+    VisionStreamType.VISION_STREAM_WIDE_ROAD,
   ]
 
   vsts = [vision_streams[int(x)] for x in args.cams.split(",")]
   cvipc = CompressedVipc(args.addr, vsts, args.nvidia, debug=(not args.silent))
+
+  # register exit handler
+  signal.signal(signal.SIGINT, lambda sig, frame: cvipc.kill())
+
   cvipc.join()

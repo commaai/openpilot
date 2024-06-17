@@ -1,7 +1,4 @@
 import bz2
-import datetime
-
-TIME_FMT = "%Y-%m-%d--%H-%M-%S"
 
 
 # regex patterns
@@ -21,13 +18,6 @@ class RE:
 
   EXPLORER_FILE = fr'^(?P<segment_name>{SEGMENT_NAME})--(?P<file_name>[a-z]+\.[a-z0-9]+)$'
   OP_SEGMENT_DIR = fr'^(?P<segment_name>{SEGMENT_NAME})$'
-
-
-def timestamp_to_datetime(t: str) -> datetime.datetime:
-  """
-    Convert an openpilot route timestamp to a python datetime
-  """
-  return datetime.datetime.strptime(t, TIME_FMT)
 
 
 def save_log(dest, log_msgs, compress=True):

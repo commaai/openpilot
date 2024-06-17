@@ -55,7 +55,7 @@ class SimulatedSensors:
       dat.gpsLocationExternal = {
         "unixTimestampMillis": int(time.time() * 1000),
         "flags": 1,  # valid fix
-        "accuracy": 1.0,
+        "horizontalAccuracy": 1.0,
         "verticalAccuracy": 1.0,
         "speedAccuracy": 0.1,
         "bearingAccuracyDeg": 0.1,

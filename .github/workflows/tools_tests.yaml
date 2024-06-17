@@ -20,41 +20,43 @@ env:
 
 
 jobs:
-  plotjuggler:
-    name: plotjuggler
-    runs-on: ubuntu-20.04
-    timeout-minutes: 45
+  simulator_driving:
+    name: simulator driving
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
-      timeout-minutes: 5
-      run: ${{ env.RUN }} "scons -j$(nproc) cereal/ common/ --minimal"
-    - name: Test PlotJuggler
-      timeout-minutes: 2
       run: |
-        ${{ env.RUN }} "pytest tools/plotjuggler/"
+        ${{ env.RUN }} "scons -j$(nproc)"
+    - name: Run bridge test
+      run: |
+        ${{ env.RUN }} "export MAPBOX_TOKEN='pk.eyJ1Ijoiam5ld2IiLCJhIjoiY2xxNW8zZXprMGw1ZzJwbzZneHd2NHljbSJ9.gV7VPRfbXFetD-1OVF0XZg' && \
+                        source selfdrive/test/setup_xvfb.sh && \
+                        source selfdrive/test/setup_vsound.sh && \
+                        CI=1 pytest tools/sim/tests/test_metadrive_bridge.py"
 
-  simulator:
-    name: simulator
-    runs-on: ubuntu-20.04
-    if: github.repository == 'commaai/openpilot'
-    timeout-minutes: 45
+  test_python311:
+    name: test python3.11 support
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
     - uses: actions/checkout@v4
+    - name: Installing ubuntu dependencies
+      run: INSTALL_EXTRA_PACKAGES=no tools/install_ubuntu_dependencies.sh
+    - name: Installing python
+      uses: actions/setup-python@v5
       with:
-        submodules: true
-    - uses: ./.github/workflows/setup-with-retry
-    - name: Setup to push to repo
-      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
-      run: |
-        echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
-        $DOCKER_LOGIN
-    - name: Build and push sim image
-      run: |
-        selfdrive/test/docker_build.sh sim
+        python-version: '3.11.4'
+    - name: Installing pip
+      run: pip install pip==24.0
+    - name: Installing poetry
+      run: pip install poetry==1.7.0
+    - name: Installing python dependencies
+      run: poetry install --no-cache --no-root
 
   devcontainer:
     name: devcontainer
@@ -70,7 +72,7 @@ jobs:
     - name: Setup Dev Container CLI
       run: npm install -g @devcontainers/cli
     - name: Build dev container image
-      run: devcontainer build --workspace-folder .
+      run: ./scripts/retry.sh devcontainer build --workspace-folder .
     - name: Run dev container
       run: |
         mkdir -p /tmp/devcontainer_scons_cache/
@@ -82,21 +84,3 @@ jobs:
         devcontainer exec --workspace-folder . pip install pip-install-test
         devcontainer exec --workspace-folder . touch /home/batman/.comma/auth.json
         devcontainer exec --workspace-folder . sudo touch /root/test.txt
-
-  notebooks:
-    name: notebooks
-    runs-on: ubuntu-20.04
-    if: github.repository == 'commaai/openpilot'
-    timeout-minutes: 45
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    - uses: ./.github/workflows/setup-with-retry
-    - name: Build openpilot
-      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
-      run: ${{ env.RUN }} "scons -j$(nproc)"
-    - name: Test notebooks
-      timeout-minutes: 3
-      run: |
-        ${{ env.RUN }} "pip install nbmake && pytest --nbmake tools/car_porting/examples/"

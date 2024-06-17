@@ -1,5 +1,4 @@
 #!/usr/bin/bash
-
 set -ex
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
@@ -44,7 +43,7 @@ git clean -xdff
 # do the files copy
 echo "[-] copying files T=$SECONDS"
 cd $SOURCE_DIR
-cp -pR --parents $(cat release/files_*) $TARGET_DIR/
+cp -pR --parents $(./release/release_files.py) $TARGET_DIR/
 
 # in the directory
 cd $TARGET_DIR
@@ -63,6 +62,13 @@ git commit -a -m "openpilot v$VERSION release
 date: $DATETIME
 master commit: $GIT_HASH
 "
+
+# should be no submodules or LFS files
+git submodule status
+if [ ! -z "$(git lfs ls-files)" ]; then
+  echo "LFS files detected!"
+  exit 1
+fi
 
 # ensure files are within GitHub's limit
 BIG_FILES="$(find . -type f -not -path './.git/*' -size +95M)"

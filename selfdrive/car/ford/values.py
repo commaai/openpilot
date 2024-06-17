@@ -1,12 +1,14 @@
-from dataclasses import dataclass, field
-from enum import Enum
+import copy
+import re
+from dataclasses import dataclass, field, replace
+from enum import Enum, IntFlag
 
 import panda.python.uds as uds
 from cereal import car
 from openpilot.selfdrive.car import AngleRateLimit, CarSpecs, dbc_dict, DbcDict, PlatformConfig, Platforms
-from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarInfo, CarParts, Column, \
+from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column, \
                                                      Device
-from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
+from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, LiveFwVersions, OfflineFwVersions, Request, StdQueries, p16
 
 Ecu = car.CarParams.Ecu
 
@@ -39,6 +41,11 @@ class CarControllerParams:
     pass
 
 
+class FordFlags(IntFlag):
+  # Static flags
+  CANFD = 1
+
+
 class RADAR:
   DELPHI_ESR = 'ford_fusion_2018_adas'
   DELPHI_MRR = 'FORD_CADS'
@@ -53,93 +60,159 @@ class Footnote(Enum):
 
 
 @dataclass
-class FordCarInfo(CarInfo):
+class FordCarDocs(CarDocs):
   package: str = "Co-Pilot360 Assist+"
+  hybrid: bool = False
+  plug_in_hybrid: bool = False
 
   def init_make(self, CP: car.CarParams):
-    harness = CarHarness.ford_q4 if CP.carFingerprint in CANFD_CAR else CarHarness.ford_q3
-    if CP.carFingerprint in (CAR.BRONCO_SPORT_MK1, CAR.MAVERICK_MK1, CAR.F_150_MK14):
+    harness = CarHarness.ford_q4 if CP.flags & FordFlags.CANFD else CarHarness.ford_q3
+    if CP.carFingerprint in (CAR.FORD_BRONCO_SPORT_MK1, CAR.FORD_MAVERICK_MK1, CAR.FORD_F_150_MK14, CAR.FORD_F_150_LIGHTNING_MK1):
       self.car_parts = CarParts([Device.threex_angled_mount, harness])
     else:
       self.car_parts = CarParts([Device.threex, harness])
 
 
-@dataclass(frozen=True)
+@dataclass
 class FordPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('ford_lincoln_base_pt', RADAR.DELPHI_MRR))
 
+  def init(self):
+    for car_docs in list(self.car_docs):
+      if car_docs.hybrid:
+        name = f"{car_docs.make} {car_docs.model} Hybrid {car_docs.years}"
+        self.car_docs.append(replace(copy.deepcopy(car_docs), name=name))
+      if car_docs.plug_in_hybrid:
+        name = f"{car_docs.make} {car_docs.model} Plug-in Hybrid {car_docs.years}"
+        self.car_docs.append(replace(copy.deepcopy(car_docs), name=name))
+
+
+@dataclass
+class FordCANFDPlatformConfig(FordPlatformConfig):
+  dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('ford_lincoln_base_pt', None))
+
+  def init(self):
+    super().init()
+    self.flags |= FordFlags.CANFD
+
 
 class CAR(Platforms):
-  BRONCO_SPORT_MK1 = FordPlatformConfig(
-    "FORD BRONCO SPORT 1ST GEN",
-    FordCarInfo("Ford Bronco Sport 2021-22"),
-    specs=CarSpecs(mass=1625, wheelbase=2.67, steerRatio=17.7),
+  FORD_BRONCO_SPORT_MK1 = FordPlatformConfig(
+    [FordCarDocs("Ford Bronco Sport 2021-23")],
+    CarSpecs(mass=1625, wheelbase=2.67, steerRatio=17.7),
   )
-  ESCAPE_MK4 = FordPlatformConfig(
-    "FORD ESCAPE 4TH GEN",
+  FORD_ESCAPE_MK4 = FordPlatformConfig(
     [
-      FordCarInfo("Ford Escape 2020-22"),
-      FordCarInfo("Ford Escape Hybrid 2020-22"),
-      FordCarInfo("Ford Escape Plug-in Hybrid 2020-22"),
-      FordCarInfo("Ford Kuga 2020-22", "Adaptive Cruise Control with Lane Centering"),
-      FordCarInfo("Ford Kuga Hybrid 2020-22", "Adaptive Cruise Control with Lane Centering"),
-      FordCarInfo("Ford Kuga Plug-in Hybrid 2020-22", "Adaptive Cruise Control with Lane Centering"),
+      FordCarDocs("Ford Escape 2020-22", hybrid=True, plug_in_hybrid=True),
+      FordCarDocs("Ford Kuga 2020-22", "Adaptive Cruise Control with Lane Centering", hybrid=True, plug_in_hybrid=True),
     ],
-    specs=CarSpecs(mass=1750, wheelbase=2.71, steerRatio=16.7),
+    CarSpecs(mass=1750, wheelbase=2.71, steerRatio=16.7),
   )
-  EXPLORER_MK6 = FordPlatformConfig(
-    "FORD EXPLORER 6TH GEN",
+  FORD_EXPLORER_MK6 = FordPlatformConfig(
     [
-      FordCarInfo("Ford Explorer 2020-23"),
-      FordCarInfo("Ford Explorer Hybrid 2020-23"),  # Limited and Platinum only
-      FordCarInfo("Lincoln Aviator 2020-23", "Co-Pilot360 Plus"),
-      FordCarInfo("Lincoln Aviator Plug-in Hybrid 2020-23", "Co-Pilot360 Plus"),  # Grand Touring only
+      FordCarDocs("Ford Explorer 2020-23", hybrid=True),  # Hybrid: Limited and Platinum only
+      FordCarDocs("Lincoln Aviator 2020-23", "Co-Pilot360 Plus", plug_in_hybrid=True),  # Hybrid: Grand Touring only
     ],
-    specs=CarSpecs(mass=2050, wheelbase=3.025, steerRatio=16.8),
+    CarSpecs(mass=2050, wheelbase=3.025, steerRatio=16.8),
   )
-  F_150_MK14 = FordPlatformConfig(
-    "FORD F-150 14TH GEN",
+  FORD_F_150_MK14 = FordCANFDPlatformConfig(
+    [FordCarDocs("Ford F-150 2022-23", "Co-Pilot360 Active 2.0", hybrid=True)],
+    CarSpecs(mass=2000, wheelbase=3.69, steerRatio=17.0),
+  )
+  FORD_F_150_LIGHTNING_MK1 = FordCANFDPlatformConfig(
+    [FordCarDocs("Ford F-150 Lightning 2021-23", "Co-Pilot360 Active 2.0")],
+    CarSpecs(mass=2948, wheelbase=3.70, steerRatio=16.9),
+  )
+  FORD_FOCUS_MK4 = FordPlatformConfig(
+    [FordCarDocs("Ford Focus 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS], hybrid=True)],  # mHEV only
+    CarSpecs(mass=1350, wheelbase=2.7, steerRatio=15.0),
+  )
+  FORD_MAVERICK_MK1 = FordPlatformConfig(
     [
-      FordCarInfo("Ford F-150 2023", "Co-Pilot360 Active 2.0"),
-      FordCarInfo("Ford F-150 Hybrid 2023", "Co-Pilot360 Active 2.0"),
+      FordCarDocs("Ford Maverick 2022", "LARIAT Luxury", hybrid=True),
+      FordCarDocs("Ford Maverick 2023-24", "Co-Pilot360 Assist", hybrid=True),
     ],
-    dbc_dict=dbc_dict('ford_lincoln_base_pt', None),
-    specs=CarSpecs(mass=2000, wheelbase=3.69, steerRatio=17.0),
+    CarSpecs(mass=1650, wheelbase=3.076, steerRatio=17.0),
   )
-  F_150_LIGHTNING_MK1 = FordPlatformConfig(
-    "FORD F-150 LIGHTNING 1ST GEN",
-    FordCarInfo("Ford F-150 Lightning 2021-23", "Co-Pilot360 Active 2.0"),
-    dbc_dict=dbc_dict('ford_lincoln_base_pt', None),
-    specs=CarSpecs(mass=2948, wheelbase=3.70, steerRatio=16.9),
+  FORD_MUSTANG_MACH_E_MK1 = FordCANFDPlatformConfig(
+    [FordCarDocs("Ford Mustang Mach-E 2021-23", "Co-Pilot360 Active 2.0")],
+    CarSpecs(mass=2200, wheelbase=2.984, steerRatio=17.0),  # TODO: check steer ratio
   )
-  FOCUS_MK4 = FordPlatformConfig(
-    "FORD FOCUS 4TH GEN",
-    [
-      FordCarInfo("Ford Focus 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS]),
-      FordCarInfo("Ford Focus Hybrid 2018", "Adaptive Cruise Control with Lane Centering", footnotes=[Footnote.FOCUS]),  # mHEV only
-    ],
-    specs=CarSpecs(mass=1350, wheelbase=2.7, steerRatio=15.0),
-  )
-  MAVERICK_MK1 = FordPlatformConfig(
-    "FORD MAVERICK 1ST GEN",
-    [
-      FordCarInfo("Ford Maverick 2022", "LARIAT Luxury"),
-      FordCarInfo("Ford Maverick Hybrid 2022", "LARIAT Luxury"),
-      FordCarInfo("Ford Maverick 2023", "Co-Pilot360 Assist"),
-      FordCarInfo("Ford Maverick Hybrid 2023", "Co-Pilot360 Assist"),
-    ],
-    specs=CarSpecs(mass=1650, wheelbase=3.076, steerRatio=17.0),
-  )
-  MUSTANG_MACH_E_MK1 = FordPlatformConfig(
-    "FORD MUSTANG MACH-E 1ST GEN",
-    FordCarInfo("Ford Mustang Mach-E 2021-23", "Co-Pilot360 Active 2.0"),
-    dbc_dict=dbc_dict('ford_lincoln_base_pt', None),
-    specs=CarSpecs(mass=2200, wheelbase=2.984, steerRatio=17.0),  # TODO: check steer ratio
+  FORD_RANGER_MK2 = FordCANFDPlatformConfig(
+    [FordCarDocs("Ford Ranger 2024", "Adaptive Cruise Control with Lane Centering")],
+    CarSpecs(mass=2000, wheelbase=3.27, steerRatio=17.0),
   )
 
 
-CANFD_CAR = {CAR.F_150_MK14, CAR.F_150_LIGHTNING_MK1, CAR.MUSTANG_MACH_E_MK1}
+# FW response contains a combined software and part number
+# A-Z except no I, O or W
+# e.g. NZ6A-14C204-AAA
+#      1222-333333-444
+# 1 = Model year hint (approximates model year/generation)
+# 2 = Platform hint
+# 3 = Part number
+# 4 = Software version
+FW_ALPHABET = b'A-HJ-NP-VX-Z'
+FW_PATTERN = re.compile(b'^(?P<model_year_hint>[' + FW_ALPHABET + b'])' +
+                        b'(?P<platform_hint>[0-9' + FW_ALPHABET + b']{3})-' +
+                        b'(?P<part_number>[0-9' + FW_ALPHABET + b']{5,6})-' +
+                        b'(?P<software_revision>[' + FW_ALPHABET + b']{2,})\x00*$')
 
+
+def get_platform_codes(fw_versions: list[bytes] | set[bytes]) -> set[tuple[bytes, bytes]]:
+  codes = set()
+  for fw in fw_versions:
+    match = FW_PATTERN.match(fw)
+    if match is not None:
+      codes.add((match.group('platform_hint'), match.group('model_year_hint')))
+
+  return codes
+
+
+def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, vin: str, offline_fw_versions: OfflineFwVersions) -> set[str]:
+  candidates: set[str] = set()
+
+  for candidate, fws in offline_fw_versions.items():
+    # Keep track of ECUs which pass all checks (platform hint, within model year hint range)
+    valid_found_ecus = set()
+    valid_expected_ecus = {ecu[1:] for ecu in fws if ecu[0] in PLATFORM_CODE_ECUS}
+    for ecu, expected_versions in fws.items():
+      addr = ecu[1:]
+      # Only check ECUs expected to have platform codes
+      if ecu[0] not in PLATFORM_CODE_ECUS:
+        continue
+
+      # Expected platform codes & model year hints
+      codes = get_platform_codes(expected_versions)
+      expected_platform_codes = {code for code, _ in codes}
+      expected_model_year_hints = {model_year_hint for _, model_year_hint in codes}
+
+      # Found platform codes & model year hints
+      codes = get_platform_codes(live_fw_versions.get(addr, set()))
+      found_platform_codes = {code for code, _ in codes}
+      found_model_year_hints = {model_year_hint for _, model_year_hint in codes}
+
+      # Check platform code matches for any found versions
+      if not any(found_platform_code in expected_platform_codes for found_platform_code in found_platform_codes):
+        break
+
+      # Check any model year hint within range in the database. Note that some models have more than one
+      # platform code per ECU which we don't consider as separate ranges
+      if not any(min(expected_model_year_hints) <= found_model_year_hint <= max(expected_model_year_hints) for
+                 found_model_year_hint in found_model_year_hints):
+        break
+
+      valid_found_ecus.add(addr)
+
+    # If all live ECUs pass all checks for candidate, add it as a match
+    if valid_expected_ecus.issubset(valid_found_ecus):
+      candidates.add(candidate)
+
+  return candidates
+
+
+# All of these ECUs must be present and are expected to have platform codes we can match
+PLATFORM_CODE_ECUS = (Ecu.abs, Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps)
 
 DATA_IDENTIFIER_FORD_ASBUILT = 0xDE00
 
@@ -199,7 +272,8 @@ FW_QUERY_CONFIG = FwQueryConfig(
     (Ecu.shiftByWire, 0x732, None),   # Gear Shift Module
     (Ecu.debug, 0x7d0, None),         # Accessory Protocol Interface Module
   ],
+  # Custom fuzzy fingerprinting function using platform and model year hints
+  match_fw_to_car_fuzzy=match_fw_to_car_fuzzy,
 )
 
-CAR_INFO = CAR.create_carinfo_map()
 DBC = CAR.create_dbc_map()

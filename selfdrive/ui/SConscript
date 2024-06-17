@@ -1,10 +1,9 @@
 import os
 import json
-Import('qt_env', 'arch', 'common', 'messaging', 'visionipc',
-       'cereal', 'transformations')
+Import('qt_env', 'arch', 'common', 'messaging', 'visionipc', 'transformations')
 
-base_libs = [common, messaging, cereal, visionipc, transformations, 'zmq',
-             'capnp', 'kj', 'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
+base_libs = [common, messaging, visionipc, transformations,
+             'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
 
 if arch == 'larch64':
   base_libs.append('EGL')
@@ -36,10 +35,12 @@ widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
 Export('widgets')
 qt_libs = [widgets, qt_util] + base_libs
 
-qt_src = ["main.cc", "qt/sidebar.cc", "qt/onroad.cc", "qt/body.cc",
+qt_src = ["main.cc", "qt/sidebar.cc", "qt/body.cc",
           "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc",
           "qt/offroad/software_settings.cc", "qt/offroad/onboarding.cc",
-          "qt/offroad/driverview.cc", "qt/offroad/experimental_mode.cc"]
+          "qt/offroad/driverview.cc", "qt/offroad/experimental_mode.cc",
+          "qt/onroad/onroad_home.cc", "qt/onroad/annotated_camera.cc",
+          "qt/onroad/buttons.cc", "qt/onroad/alerts.cc"]
 
 # build translation files
 with open(File("translations/languages.json").abspath) as f:
@@ -125,4 +126,4 @@ if GetOption('extras') and arch != "Darwin":
 
 # build watch3
 if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):
-  qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'json11', 'zmq', 'visionipc', 'messaging'])
+  qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'json11', 'msgq', 'visionipc'])

@@ -12,24 +12,16 @@ if [[ ! $(id -u) -eq 0 ]]; then
   SUDO="sudo"
 fi
 
-# Install packages present in all supported versions of Ubuntu
+# Install common packages
 function install_ubuntu_common_requirements() {
   $SUDO apt-get update
   $SUDO apt-get install -y --no-install-recommends \
-    autoconf \
-    build-essential \
     ca-certificates \
-    casync \
     clang \
-    cmake \
-    make \
     cppcheck \
-    libtool \
+    build-essential \
     gcc-arm-none-eabi \
-    bzip2 \
     liblzma-dev \
-    libarchive-dev \
-    libbz2-dev \
     capnproto \
     libcapnp-dev \
     curl \
@@ -42,45 +34,56 @@ function install_ubuntu_common_requirements() {
     libavdevice-dev \
     libavutil-dev \
     libavfilter-dev \
+    libbz2-dev \
     libeigen3-dev \
     libffi-dev \
     libglew-dev \
     libgles2-mesa-dev \
     libglfw3-dev \
     libglib2.0-0 \
+    libqt5charts5-dev \
     libncurses5-dev \
-    libncursesw5-dev \
-    libomp-dev \
-    libopencv-dev \
-    libpng16-16 \
-    libportaudio2 \
     libssl-dev \
-    libsqlite3-dev \
     libusb-1.0-0-dev \
     libzmq3-dev \
+    libsqlite3-dev \
     libsystemd-dev \
     locales \
     opencl-headers \
     ocl-icd-libopencl1 \
     ocl-icd-opencl-dev \
-    clinfo \
     portaudio19-dev \
-    qml-module-qtquick2 \
     qtmultimedia5-dev \
     qtlocation5-dev \
     qtpositioning5-dev \
     qttools5-dev-tools \
-    libqt5sql5-sqlite \
     libqt5svg5-dev \
-    libqt5charts5-dev \
     libqt5serialbus5-dev  \
     libqt5x11extras5-dev \
-    libreadline-dev \
-    libdw1 \
-    valgrind
+    libqt5opengl5-dev
 }
 
-# Install Ubuntu 22.04 LTS packages
+# Install extra packages
+function install_extra_packages() {
+  echo "Installing extra packages..."
+  $SUDO apt-get install -y --no-install-recommends \
+    casync \
+    cmake \
+    make \
+    clinfo \
+    libqt5sql5-sqlite \
+    libreadline-dev \
+    libdw1 \
+    autoconf \
+    libtool \
+    bzip2 \
+    libarchive-dev \
+    libncursesw5-dev \
+    libportaudio2 \
+    locales
+}
+
+# Install Ubuntu 24.04 LTS packages
 function install_ubuntu_lts_latest_requirements() {
   install_ubuntu_common_requirements
 
@@ -107,10 +110,7 @@ function install_ubuntu_focal_requirements() {
 if [ -f "/etc/os-release" ]; then
   source /etc/os-release
   case "$VERSION_CODENAME" in
-    "jammy")
-      install_ubuntu_lts_latest_requirements
-      ;;
-    "kinetic")
+    "jammy" | "kinetic" | "noble")
       install_ubuntu_lts_latest_requirements
       ;;
     "focal")
@@ -123,13 +123,25 @@ if [ -f "/etc/os-release" ]; then
       if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         exit 1
       fi
-      if [ "$UBUNTU_CODENAME" = "jammy" ] || [ "$UBUNTU_CODENAME" = "kinetic" ]; then
-        install_ubuntu_lts_latest_requirements
-      else
+      if [ "$UBUNTU_CODENAME" = "focal" ]; then
         install_ubuntu_focal_requirements
+      else
+        install_ubuntu_lts_latest_requirements
       fi
   esac
+
+  # Install extra packages
+  if [[ -z "$INSTALL_EXTRA_PACKAGES" ]]; then
+    read -p "Base setup done. Do you want to install extra development packages? [Y/n]: " -n 1 -r
+    echo ""
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      INSTALL_EXTRA_PACKAGES="yes"
+    fi
+  fi
+  if [[ "$INSTALL_EXTRA_PACKAGES" == "yes" ]]; then
+    install_extra_packages
+  fi
 else
-  echo "No /etc/os-release in the system"
+  echo "No /etc/os-release in the system. Make sure you're running on Ubuntu, or similar."
   exit 1
 fi

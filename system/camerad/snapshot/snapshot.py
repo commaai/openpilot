@@ -6,12 +6,12 @@ import numpy as np
 from PIL import Image
 
 import cereal.messaging as messaging
-from cereal.visionipc import VisionIpcClient, VisionStreamType
+from msgq.visionipc import VisionIpcClient, VisionStreamType
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_MDL
 from openpilot.system.hardware import PC
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.manager.process_config import managed_processes
 
 
 VISION_STREAMS = {
@@ -83,7 +83,7 @@ def snapshot():
   front_camera_allowed = params.get_bool("RecordFront")
   params.put_bool("IsTakingSnapshot", True)
   set_offroad_alert("Offroad_IsTakingSnapshot", True)
-  time.sleep(2.0)  # Give thermald time to read the param, or if just started give camerad time to start
+  time.sleep(2.0)  # Give hardwared time to read the param, or if just started give camerad time to start
 
   # Check if camerad is already started
   try:

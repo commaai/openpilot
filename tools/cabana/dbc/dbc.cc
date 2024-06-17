@@ -142,7 +142,7 @@ void cabana::Signal::update() {
   precision = std::max(num_decimals(factor), num_decimals(offset));
 }
 
-QString cabana::Signal::formatValue(double value) const {
+QString cabana::Signal::formatValue(double value, bool with_unit) const {
   // Show enum string
   int64_t raw_value = round((value - offset) / factor);
   for (const auto &[val, desc] : val_desc) {
@@ -152,7 +152,7 @@ QString cabana::Signal::formatValue(double value) const {
   }
 
   QString val_str = QString::number(value, 'f', precision);
-  if (!unit.isEmpty()) {
+  if (with_unit && !unit.isEmpty()) {
     val_str += " " + unit;
   }
   return val_str;
