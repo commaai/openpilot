@@ -30,13 +30,18 @@ jobs:
     - name: Build openpilot
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
-    - name: Build docs
+
+    - name: Cache docs
+      id: cache
       uses: actions/cache@v4
       with:
         path: ../build/docs/html
         key: ${{ runner.os }}-docs-${{ hashFiles('docs/**') }}
         restore-keys: |
           ${{ runner.os }}-docs-
+          
+    - name: Build docs
+      if: docs.cache.outputs.cache-hit != 'true'
       run: |
         ${{ env.RUN }} "apt update && apt install -y doxygen && cd docs && make -j$(nproc) html"
 
