@@ -39,6 +39,23 @@ jobs:
                         source selfdrive/test/setup_vsound.sh && \
                         CI=1 pytest tools/sim/tests/test_metadrive_bridge.py"
 
+  test_gl:
+    name: simulator driving
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - uses: ./.github/workflows/setup-with-retry
+    - name: Run bridge test
+      run: |
+        ${{ env.RUN }} "export MAPBOX_TOKEN='pk.eyJ1Ijoiam5ld2IiLCJhIjoiY2xxNW8zZXprMGw1ZzJwbzZneHd2NHljbSJ9.gV7VPRfbXFetD-1OVF0XZg' && \
+                        source selfdrive/test/setup_xvfb.sh && \
+                        source selfdrive/test/setup_vsound.sh && \
+                        sudo apt install -y mesa-utils && \
+                        glxinfo -B"
+
   test_python311:
     name: test python3.11 support
     runs-on: ubuntu-latest
