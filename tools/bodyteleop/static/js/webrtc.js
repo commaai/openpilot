@@ -1,9 +1,34 @@
 import { getXY } from "./controls.js";
 import { pingPoints, batteryPoints, chartPing, chartBattery } from "./plots.js";
 
-export let dcInterval = null;
-export let batteryInterval = null;
-export let last_ping = null;
+export let controlCommandInterval = null;
+export let latencyInterval = null;
+export let lastChannelMessageTime = null;
+
+
+export function offerRtcRequest(sdp, type) {
+  return fetch('/offer', {
+    body: JSON.stringify({sdp: sdp, type: type}),
+    headers: {'Content-Type': 'application/json'},
+    method: 'POST'
+  });
+}
+
+
+export function playSoundRequest(sound) {
+  return fetch('/sound', {
+    body: JSON.stringify({sound}),
+    headers: {'Content-Type': 'application/json'},
+    method: 'POST'
+  });
+}
+
+
+export function pingHeadRequest() {
+  return fetch('/', {
+    method: 'HEAD'
+  });
+}
 
 
 export function createPeerConnection(pc) {
@@ -45,16 +70,7 @@ export function negotiate(pc) {
     });
   }).then(function() {
     var offer = pc.localDescription;
-    return fetch('/offer', {
-      body: JSON.stringify({
-        sdp: offer.sdp,
-        type: offer.type,
-      }),
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      method: 'POST'
-    });
+    return offerRtcRequest(offer.sdp, offer.type);
   }).then(function(response) {
     console.log(response);
     return response.json();
@@ -84,25 +100,6 @@ export const constraints = {
   },
   video: isMobile()
 };
-
-
-export function createDummyVideoTrack() {
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-
-  const frameWidth = 5; // Set the width of the frame
-  const frameHeight = 5; // Set the height of the frame
-  canvas.width = frameWidth;
-  canvas.height = frameHeight;
-
-  context.fillStyle = 'black';
-  context.fillRect(0, 0, frameWidth, frameHeight);
-
-  const stream = canvas.captureStream();
-  const videoTrack = stream.getVideoTracks()[0];
-
-  return videoTrack;
-}
 
 
 export function start(pc, dc) {
@@ -138,71 +135,56 @@ export function start(pc, dc) {
       alert('Could not acquire media: ' + err);
     });
 
-  // add a fake video?
-  // const dummyVideoTrack = createDummyVideoTrack();
-  // const dummyMediaStream = new MediaStream();
-  // dummyMediaStream.addTrack(dummyVideoTrack);
-  // pc.addTrack(dummyVideoTrack, dummyMediaStream);
-
-  // setInterval(() => {pc.getStats(null).then((stats) => {stats.forEach((report) => console.log(report))})}, 10000)
-  // var video = document.querySelector('video');
-  // var print = function (e, f){console.log(e, f);  video.requestVideoFrameCallback(print);};
-  // video.requestVideoFrameCallback(print);
-
   var parameters = {"ordered": true};
   dc = pc.createDataChannel('data', parameters);
   dc.onclose = function() {
-    console.log("data channel closed");
-    clearInterval(dcInterval);
-    clearInterval(batteryInterval);
+    clearInterval(controlCommandInterval);
+    clearInterval(latencyInterval);
   };
-  function controlCommand() {
+
+  function sendJoystickOverDataChannel() {
     const {x, y} = getXY();
-    const dt = new Date().getTime();
-    var message = JSON.stringify({type: 'control_command', x, y, dt});
+    var message = JSON.stringify({type: "testJoystick", data: {axes: [x, y], buttons: [false]}})
     dc.send(message);
   }
-
-  function batteryLevel() {
-    var message = JSON.stringify({type: 'battery_level'});
-    dc.send(message);
+  function checkLatency() {
+    const initialTime = new Date().getTime();
+    pingHeadRequest().then(function() {
+      const currentTime = new Date().getTime();
+      if (Math.abs(currentTime - lastChannelMessageTime) < 1000) {
+        const pingtime = currentTime - initialTime;
+        pingPoints.push({'x': currentTime, 'y': pingtime});
+        if (pingPoints.length > 1000) {
+          pingPoints.shift();
+        }
+        chartPing.update();
+        $("#ping-time").text((pingtime) + "ms");
+      }
+    })
   }
-
   dc.onopen = function() {
-    dcInterval = setInterval(controlCommand, 50);
-    batteryInterval = setInterval(batteryLevel, 10000);
-    controlCommand();
-    batteryLevel();
-    $(".sound").click((e)=>{
-      const sound = $(e.target).attr('id').replace('sound-', '')
-      dc.send(JSON.stringify({type: 'play_sound', sound}));
-    });
+    controlCommandInterval = setInterval(sendJoystickOverDataChannel, 50);
+    latencyInterval = setInterval(checkLatency, 1000);
+    sendJoystickOverDataChannel();
   };
 
-  let val_print_idx = 0;
+  const textDecoder = new TextDecoder();
+  var carStaterIndex = 0;
   dc.onmessage = function(evt) {
-    const data = JSON.parse(evt.data);
-    if(val_print_idx == 0 && data.type === 'ping_time') {
-      const dt = new Date().getTime();
-      const pingtime = dt - data.incoming_time;
-      pingPoints.push({'x': dt, 'y': pingtime});
-        if (pingPoints.length > 1000) {
-        pingPoints.shift();
-      }
-      chartPing.update();
-      $("#ping-time").text((pingtime) + "ms");
-      last_ping = dt;
-      $(".pre-blob").addClass('blob');
-    }
-    val_print_idx = (val_print_idx + 1 ) % 20;
-    if(data.type === 'battery_level') {
-      $("#battery").text(data.value + "%");
-      batteryPoints.push({'x': new Date().getTime(), 'y': data.value});
-        if (batteryPoints.length > 1000) {
+    const text = textDecoder.decode(evt.data);
+    const msg = JSON.parse(text);
+    if (carStaterIndex % 100 == 0 && msg.type === 'carState') {
+      const batteryLevel = Math.round(msg.data.fuelGauge * 100);
+      $("#battery").text(batteryLevel + "%");
+      batteryPoints.push({'x': new Date().getTime(), 'y': batteryLevel});
+      if (batteryPoints.length > 1000) {
         batteryPoints.shift();
       }
       chartBattery.update();
     }
+    carStaterIndex += 1;
+    lastChannelMessageTime = new Date().getTime();
+    $(".pre-blob").addClass('blob');
   };
 }
 

@@ -7,6 +7,7 @@
 
 #include <QApplication>
 
+#include "common/util.h"
 #include "common/version.h"
 
 namespace {
@@ -29,7 +30,7 @@ const std::initializer_list<std::pair<std::string, std::string>> keyboard_shortc
   },
   {
     {"enter", "Enter seek request"},
-    {"x", "+/-Replay speed"},
+    {"+/-", "Playback speed"},
     {"q", "Exit"},
   },
 };
@@ -171,7 +172,7 @@ void ConsoleUI::updateStatus() {
   if (status != Status::Paused) {
     auto events = replay->events();
     uint64_t current_mono_time = replay->routeStartTime() + replay->currentSeconds() * 1e9;
-    bool playing = !events->empty() && events->back()->mono_time > current_mono_time;
+    bool playing = !events->empty() && events->back().mono_time > current_mono_time;
     status = playing ? Status::Playing : Status::Waiting;
   }
   auto [status_str, status_color] = status_text[status];
@@ -331,13 +332,18 @@ void ConsoleUI::handleKey(char c) {
     refresh();
     getch_timer.start(1000, this);
 
-  } else if (c == 'x') {
-    if (replay->hasFlag(REPLAY_FLAG_FULL_SPEED)) {
-      replay->removeFlag(REPLAY_FLAG_FULL_SPEED);
-      rWarning("replay at normal speed");
-    } else {
-      replay->addFlag(REPLAY_FLAG_FULL_SPEED);
-      rWarning("replay at full speed");
+  } else if (c == '+' || c == '=') {
+    auto it = std::upper_bound(speed_array.begin(), speed_array.end(), replay->getSpeed());
+    if (it != speed_array.end()) {
+      rWarning("playback speed: %.1fx", *it);
+      replay->setSpeed(*it);
+    }
+  } else if (c == '_' || c == '-') {
+    auto it = std::lower_bound(speed_array.begin(), speed_array.end(), replay->getSpeed());
+    if (it != speed_array.begin()) {
+      auto prev = std::prev(it);
+      rWarning("playback speed: %.1fx", *prev);
+      replay->setSpeed(*prev);
     }
   } else if (c == 'e') {
     replay->seekToFlag(FindFlag::nextEngagement);
@@ -362,7 +368,6 @@ void ConsoleUI::handleKey(char c) {
   } else if (c == ' ') {
     pauseReplay(!replay->isPaused());
   } else if (c == 'q' || c == 'Q') {
-    replay->stop();
     qApp->exit();
   }
 }

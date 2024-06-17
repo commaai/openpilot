@@ -66,6 +66,26 @@
         <source>Prevent large data uploads when on a metered connection</source>
         <translation>ปิดการอัพโหลดข้อมูลขนาดใหญ่เมื่อเชื่อมต่อผ่านเซลลูล่าร์</translation>
     </message>
+    <message>
+        <source>Hidden Network</source>
+        <translation>เครือข่ายที่ซ่อนอยู่</translation>
+    </message>
+    <message>
+        <source>CONNECT</source>
+        <translation>เชื่อมต่อ</translation>
+    </message>
+    <message>
+        <source>Enter SSID</source>
+        <translation>ป้อนค่า SSID</translation>
+    </message>
+    <message>
+        <source>Enter password</source>
+        <translation>ใส่รหัสผ่าน</translation>
+    </message>
+    <message>
+        <source>for &quot;%1&quot;</source>
+        <translation>สำหรับ &quot;%1&quot;</translation>
+    </message>
 </context>
 <context>
     <name>AnnotatedCameraWidget</name>
@@ -273,9 +293,21 @@
         <source>Review</source>
         <translation>ทบทวน</translation>
     </message>
+    <message>
+        <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
+        <translation>จับคู่อุปกรณ์ของคุณกับ comma connect (connect.comma.ai) และรับข้อเสนอ comma prime ของคุณ</translation>
+    </message>
+    <message>
+        <source>Pair Device</source>
+        <translation>จับคู่อุปกรณ์</translation>
+    </message>
+    <message>
+        <source>PAIR</source>
+        <translation>จับคู่</translation>
+    </message>
 </context>
 <context>
-    <name>DriverViewScene</name>
+    <name>DriverViewWindow</name>
     <message>
         <source>camera starting</source>
         <translation>กำลังเปิดกล้อง</translation>
@@ -404,10 +436,6 @@
 %1</translation>
     </message>
     <message>
-        <source>Invalid date and time settings, system won&apos;t start. Connect to internet to set time.</source>
-        <translation>วันที่และเวลาไม่ถูกต้อง ระบบจะไม่เริ่มทำงาน เชื่อต่ออินเตอร์เน็ตเพื่อตั้งเวลา</translation>
-    </message>
-    <message>
         <source>Taking camera snapshots. System won&apos;t start until finished.</source>
         <translation>กล้องกำลังถ่ายภาพ ระบบจะไม่เริ่มทำงานจนกว่าจะเสร็จ</translation>
     </message>
@@ -453,6 +481,29 @@
     <message>
         <source> ALERT</source>
         <translation> การแจ้งเตือน</translation>
+    </message>
+</context>
+<context>
+    <name>OnroadAlerts</name>
+    <message>
+        <source>openpilot Unavailable</source>
+        <translation>openpilot ไม่สามารถใช้งานได้</translation>
+    </message>
+    <message>
+        <source>Waiting for controls to start</source>
+        <translation>กำลังรอให้ controls เริ่มทำงาน</translation>
+    </message>
+    <message>
+        <source>TAKE CONTROL IMMEDIATELY</source>
+        <translation>เข้าควบคุมรถเดี๋ยวนี้</translation>
+    </message>
+    <message>
+        <source>Controls Unresponsive</source>
+        <translation>Controls ไม่ตอบสนอง</translation>
+    </message>
+    <message>
+        <source>Reboot Device</source>
+        <translation>รีบูตอุปกรณ์</translation>
     </message>
 </context>
 <context>
@@ -538,10 +589,6 @@
         <translation>ปิด</translation>
     </message>
     <message>
-        <source>dashcam</source>
-        <translation>กล้องติดรถยนต์</translation>
-    </message>
-    <message>
         <source>openpilot</source>
         <translation>openpilot</translation>
     </message>
@@ -579,6 +626,10 @@
         <source>ft</source>
         <translation>ฟุต</translation>
     </message>
+    <message>
+        <source>now</source>
+        <translation>ตอนนี้</translation>
+    </message>
 </context>
 <context>
     <name>Reset</name>
@@ -613,12 +664,12 @@ This may take up to a minute.</source>
 อาจใช้เวลาถึงหนึ่งนาที</translation>
     </message>
     <message>
-        <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>กดยืนยันเพื่อลบข้อมูลและการตั้งค่าทั้งหมด กดยกเลิกเพื่อบูตต่อ</translation>
-    </message>
-    <message>
         <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
         <translation>ไม่สามารถเมานต์พาร์ติชั่นข้อมูลได้ พาร์ติชั่นอาจเสียหาย กดยืนยันเพื่อลบและรีเซ็ตอุปกรณ์ของคุณ</translation>
+    </message>
+    <message>
+        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
+        <translation>ระบบถูกรีเซ็ต กดยืนยันเพื่อลบข้อมูลและการตั้งค่าทั้งหมด กดยกเลิกเพื่อบูตต่อ</translation>
     </message>
 </context>
 <context>
@@ -725,6 +776,18 @@ This may take up to a minute.</source>
     <message>
         <source>Select a language</source>
         <translation>เลือกภาษา</translation>
+    </message>
+    <message>
+        <source>Choose Software to Install</source>
+        <translation>เลือกซอฟต์แวร์ที่จะติดตั้ง</translation>
+    </message>
+    <message>
+        <source>openpilot</source>
+        <translation>openpilot</translation>
+    </message>
+    <message>
+        <source>Custom Software</source>
+        <translation>ซอฟต์แวร์ที่กำหนดเอง</translation>
     </message>
 </context>
 <context>
@@ -1076,10 +1139,6 @@ This may take up to a minute.</source>
         <translation>บุคลิกการขับขี่</translation>
     </message>
     <message>
-        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars.</source>
-        <translation>แนะนำให้ใช้แบบมาตรฐาน ในโหมดดุดัน openpilot จะตามรถคันหน้าใกล้ขึ้นและเร่งและเบรคแบบดุดันมากขึ้น ในโหมดผ่อนคลาย openpilot จะอยู่ห่างจากรถคันหน้ามากขึ้น</translation>
-    </message>
-    <message>
         <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
         <translation>ระบบควบคุมการเร่ง/เบรคโดย openpilot เวอร์ชัน alpha สามารถทดสอบได้พร้อมกับโหมดการทดลอง บน branch ที่กำลังพัฒนา</translation>
     </message>
@@ -1088,20 +1147,24 @@ This may take up to a minute.</source>
         <translation>ควบคุมเร่ง/เบรคแบบ End-to-End</translation>
     </message>
     <message>
-        <source>Navigate on openpilot</source>
-        <translation>การนำทางบน openpilot</translation>
-    </message>
-    <message>
-        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
-        <translation>เมื่อการนำทางมีจุดหมายปลายทาง openpilot จะป้อนข้อมูลแผนที่เข้าไปยังโมเดล ซึ่งจะเป็นบริบทที่มีประโยชน์สำหรับโมเดลและจะทำให้ openpilot สามารถรักษาเลนซ้ายหรือขวาได้อย่างเหมาะสมบริเวณทางแยกหรือทางออก พฤติกรรมการเปลี่ยนเลนยังคงเหมือนเดิมและยังคงต้องถูกเริ่มโดยคนขับ ความสามารถนี้ยังอยู่ในระดับ alpha ซึ่งอาจะเกิดความผิดพลาดได้โดยเฉพาะบริเวณทางแยกหรือทางออก ความผิดพลาดที่อาจเกิดขึ้นได้อาจรวมถึงการข้ามเส้นแบ่งเลนโดยไม่ตั้งใจ, การเข้าช่องทางออกช้ากว่าปกติ, การขับเข้าหาแบริเออร์ในเขตปลอดภัย, ฯลฯ</translation>
-    </message>
-    <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
-        <translation>การแสดงภาพการขับขี่จะเปลี่ยนไปใช้กล้องมุมกว้างที่หันหน้าไปทางถนนเมื่ออยู่ในความเร็วต่ำ เพื่อแสดงภาพการเลี้ยวที่ดีขึ้น โลโก้โหมดการทดลองจะแสดงที่มุมบนขวาด้วย เมื่อเป้าหมายการนำทางถูกเลือกและโมเดลการขับขี่กำลังใช้เป็นอินพุต เส้นทางการขับขี่บนแผนที่จะเปลี่ยนเป็นสีเขียว</translation>
-    </message>
-    <message>
         <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
         <translation>เปิดระบบควบคุมการเร่ง/เบรคโดย openpilot (alpha) เพื่อเปิดใช้งานโหมดทดลอง</translation>
+    </message>
+    <message>
+        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
+        <translation>แนะนำให้ใช้แบบมาตรฐาน ในโหมดดุดัน openpilot จะตามรถคันหน้าใกล้ขึ้นและเร่งและเบรคแบบดุดันมากขึ้น ในโหมดผ่อนคลาย openpilot จะอยู่ห่างจากรถคันหน้ามากขึ้น ในรถรุ่นที่รองรับคุณสามารถเปลี่ยนบุคลิกไปแบบต่าง ๆ โดยใช้ปุ่มปรับระยะห่างบนพวงมาลัย</translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
+        <translation>การแสดงภาพการขับขี่จะเปลี่ยนไปใช้กล้องมุมกว้างที่หันหน้าไปทางถนนเมื่ออยู่ในความเร็วต่ำ เพื่อแสดงภาพการเลี้ยวที่ดีขึ้น โลโก้โหมดการทดลองจะแสดงที่มุมบนขวาด้วย</translation>
+    </message>
+    <message>
+        <source>Always-On Driver Monitoring</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable driver monitoring even when openpilot is not engaged.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

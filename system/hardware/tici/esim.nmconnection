@@ -5,6 +5,8 @@ type=gsm
 permissions=
 autoconnect=true
 autoconnect-retries=100
+autoconnect-priority=2
+metered=1
 
 [gsm]
 apn=

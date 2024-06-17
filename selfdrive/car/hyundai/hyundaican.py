@@ -1,15 +1,15 @@
 import crcmod
 from openpilot.selfdrive.car.hyundai.hyundaicanfd import CanBus
-from openpilot.selfdrive.car.hyundai.values import HyundaiFlags, CAR, CHECKSUM, CAMERA_SCC_CAR
+from openpilot.selfdrive.car.hyundai.values import CAR, HyundaiFlags
 
 hyundai_checksum = crcmod.mkCrcFun(0x11D, initCrc=0xFD, rev=False, xorOut=0xdf)
 
-def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
+def create_lkas11(packer, frame, CP, apply_steer, steer_req,
                   torque_fault, lkas11, sys_warning, sys_state, enabled,
                   left_lane, right_lane,
-                  left_lane_depart, right_lane_depart, CP):
-  can_canfd = CP.flags & HyundaiFlags.CAN_CANFD
-  bus = CanBus(CP).ECAN if can_canfd else 0
+                  left_lane_depart, right_lane_depart):
+  can_canfd_hybrid = CP.flags & HyundaiFlags.CAN_CANFD_HYBRID
+  bus = CanBus(CP).ECAN if can_canfd_hybrid else 0
 
   lkas11_sigs = [
     "CF_Lkas_LdwsActivemode",
@@ -18,7 +18,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
     "CF_Lkas_FcwOpt_USM",
   ]
 
-  if not can_canfd:
+  if not can_canfd_hybrid:
     lkas11_sigs += [
       "CF_Lkas_LdwsSysState",
       "CF_Lkas_SysWarning",
@@ -40,9 +40,9 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
   values["CR_Lkas_StrToqReq"] = apply_steer
   values["CF_Lkas_ActToi"] = steer_req
   values["CF_Lkas_ToiFlt"] = torque_fault  # seems to allow actuation on CR_Lkas_StrToqReq
-  values["CF_Lkas_MsgCount"] = frame % (0xF if can_canfd else 0x10)
+  values["CF_Lkas_MsgCount"] = frame % (0xF if can_canfd_hybrid else 0x10)
 
-  if can_canfd:
+  if can_canfd_hybrid:
     values["CF_Lkas_LdwsActivemode"] = int(left_lane) + (int(right_lane) << 1)
     values["CF_Lkas_FcwOpt_USM"] = 2 if enabled else 1
     values["NEW_SIGNAL_1"] = 0
@@ -51,12 +51,12 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
     values["CF_Lkas_LdwsSysState"] = sys_state
     values["CF_Lkas_SysWarning"] = 3 if sys_warning else 0
 
-  if car_fingerprint in (CAR.SONATA, CAR.PALISADE, CAR.KIA_NIRO_EV, CAR.KIA_NIRO_HEV_2021, CAR.SANTA_FE,
-                         CAR.IONIQ_EV_2020, CAR.IONIQ_PHEV, CAR.KIA_SELTOS, CAR.ELANTRA_2021, CAR.GENESIS_G70_2020,
-                         CAR.ELANTRA_HEV_2021, CAR.SONATA_HYBRID, CAR.KONA_EV, CAR.KONA_HEV, CAR.KONA_EV_2022,
-                         CAR.SANTA_FE_2022, CAR.KIA_K5_2021, CAR.IONIQ_HEV_2022, CAR.SANTA_FE_HEV_2022,
-                         CAR.SANTA_FE_PHEV_2022, CAR.KIA_STINGER_2022, CAR.KIA_K5_HEV_2020, CAR.KIA_CEED,
-                         CAR.AZERA_6TH_GEN, CAR.AZERA_HEV_6TH_GEN, CAR.CUSTIN_1ST_GEN):
+  if CP.carFingerprint in (CAR.HYUNDAI_SONATA, CAR.HYUNDAI_PALISADE, CAR.KIA_NIRO_EV, CAR.KIA_NIRO_HEV_2021, CAR.HYUNDAI_SANTA_FE,
+                           CAR.HYUNDAI_IONIQ_EV_2020, CAR.HYUNDAI_IONIQ_PHEV, CAR.KIA_SELTOS, CAR.HYUNDAI_ELANTRA_2021, CAR.GENESIS_G70_2020,
+                           CAR.HYUNDAI_ELANTRA_HEV_2021, CAR.HYUNDAI_SONATA_HYBRID, CAR.HYUNDAI_KONA_EV, CAR.HYUNDAI_KONA_HEV, CAR.HYUNDAI_KONA_EV_2022,
+                           CAR.HYUNDAI_SANTA_FE_2022, CAR.KIA_K5_2021, CAR.HYUNDAI_IONIQ_HEV_2022, CAR.HYUNDAI_SANTA_FE_HEV_2022,
+                           CAR.HYUNDAI_SANTA_FE_PHEV_2022, CAR.KIA_STINGER_2022, CAR.KIA_K5_HEV_2020, CAR.KIA_CEED,
+                           CAR.HYUNDAI_AZERA_6TH_GEN, CAR.HYUNDAI_AZERA_HEV_6TH_GEN, CAR.HYUNDAI_CUSTIN_1ST_GEN):
     values["CF_Lkas_LdwsActivemode"] = int(left_lane) + (int(right_lane) << 1)
     values["CF_Lkas_LdwsOpt_USM"] = 2
 
@@ -75,7 +75,7 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
     values["CF_Lkas_SysWarning"] = 4 if sys_warning else 0
 
   # Likely cars lacking the ability to show individual lane lines in the dash
-  elif car_fingerprint in (CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL):
+  elif CP.carFingerprint in (CAR.KIA_OPTIMA_G4, CAR.KIA_OPTIMA_G4_FL):
     # SysWarning 4 = keep hands on wheel + beep
     values["CF_Lkas_SysWarning"] = 4 if sys_warning else 0
 
@@ -90,18 +90,18 @@ def create_lkas11(packer, frame, car_fingerprint, apply_steer, steer_req,
     values["CF_Lkas_LdwsActivemode"] = 0
     values["CF_Lkas_FcwOpt_USM"] = 0
 
-  elif car_fingerprint == CAR.HYUNDAI_GENESIS:
+  elif CP.carFingerprint == CAR.HYUNDAI_GENESIS:
     # This field is actually LdwsActivemode
     # Genesis and Optima fault when forwarding while engaged
     values["CF_Lkas_LdwsActivemode"] = 2
 
   dat = packer.make_can_msg("LKAS11", bus, values)[2]
 
-  if car_fingerprint in CHECKSUM["crc8"]:
+  if CP.flags & HyundaiFlags.CHECKSUM_CRC8:
     # CRC Checksum as seen on 2019 Hyundai Santa Fe
-    dat = dat[1:8] if can_canfd else dat[:6] + dat[7:8]
+    dat = dat[1:8] if can_canfd_hybrid else dat[:6] + dat[7:8]
     checksum = hyundai_checksum(dat)
-  elif car_fingerprint in CHECKSUM["6B"]:
+  elif CP.flags & HyundaiFlags.CHECKSUM_6B:
     # Checksum of first 6 Bytes, as seen on 2018 Kia Sorento
     checksum = sum(dat[:6]) % 256
   else:
@@ -131,20 +131,20 @@ def create_clu11(packer, frame, clu11, button, CP):
   values["CF_Clu_CruiseSwState"] = button
   values["CF_Clu_AliveCnt1"] = frame % 0x10
   # send buttons to camera on camera-scc based cars
-  bus = 2 if CP.carFingerprint in CAMERA_SCC_CAR else CanBus(CP).ECAN if CP.flags & HyundaiFlags.CAN_CANFD else 0
+  bus = 2 if CP.flags & HyundaiFlags.CAMERA_SCC else CanBus(CP).ECAN if CP.flags & HyundaiFlags.CAN_CANFD_HYBRID else 0
   return packer.make_can_msg("CLU11", bus, values)
 
 
 def create_lfahda_mfc(packer, frame, enabled, CP):
-  can_canfd = CP.flags & HyundaiFlags.CAN_CANFD
-  bus = CanBus(CP).ECAN if can_canfd else 0
+  can_canfd_hybrid = CP.flags & HyundaiFlags.CAN_CANFD_HYBRID
+  bus = CanBus(CP).ECAN if can_canfd_hybrid else 0
 
   values = {
     "LFA_Icon_State": 2 if enabled else 0,
     "HDA_Icon_State": 2 if enabled else 0,
   }
 
-  if can_canfd:
+  if can_canfd_hybrid:
     values["COUNTER"] = frame % 0xF
 
     dat = packer.make_can_msg("LFAHDA_MFC", bus, values)[2]
@@ -156,12 +156,12 @@ def create_lfahda_mfc(packer, frame, enabled, CP):
 
   return packer.make_can_msg("LFAHDA_MFC", bus, values)
 
-def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, set_speed, stopping, long_override, use_fca):
+def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, set_speed, stopping, long_override, use_fca):
   commands = []
 
   scc11_values = {
     "MainMode_ACC": 1,
-    "TauGapSet": 4,
+    "TauGapSet": hud_control.leadDistanceBars,
     "VSetDis": set_speed if enabled else 0,
     "AliveCounterACC": idx % 0x10,
     "ObjValid": 1, # close lead makes controls tighter
@@ -197,7 +197,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, lead_visible, s
     "JerkUpperLimit": upper_jerk, # stock usually is 1.0 but sometimes uses higher values
     "JerkLowerLimit": 5.0, # stock usually is 0.5 but sometimes uses higher values
     "ACCMode": 2 if enabled and long_override else 1 if enabled else 4, # stock will always be 4 instead of 0 after first disengage
-    "ObjGap": 2 if lead_visible else 0, # 5: >30, m, 4: 25-30 m, 3: 20-25 m, 2: < 20 m, 0: no lead
+    "ObjGap": 2 if hud_control.leadVisible else 0, # 5: >30, m, 4: 25-30 m, 3: 20-25 m, 2: < 20 m, 0: no lead
   }
   commands.append(packer.make_can_msg("SCC14", 0, scc14_values))
 

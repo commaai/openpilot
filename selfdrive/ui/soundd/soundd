@@ -1,4 +1,0 @@
-#!/bin/sh
-cd "$(dirname "$0")"
-export QT_QPA_PLATFORM="offscreen"
-exec ./_soundd

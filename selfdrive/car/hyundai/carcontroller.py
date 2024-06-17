@@ -6,7 +6,8 @@ from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import apply_driver_steer_torque_limits, common_fault_avoidance
 from openpilot.selfdrive.car.hyundai import hyundaicanfd, hyundaican
 from openpilot.selfdrive.car.hyundai.hyundaicanfd import CanBus
-from openpilot.selfdrive.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParams, CANFD_CAR, CAR, CAN_CANFD_CAR
+from openpilot.selfdrive.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParams, CANFD_CAR, CAR, CAN_CANFD_HYBRID_CAR
+from openpilot.selfdrive.car.interfaces import CarControllerBase
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 LongCtrlState = car.CarControl.Actuators.LongControlState
@@ -42,7 +43,7 @@ def process_hud_alert(enabled, fingerprint, hud_control):
   return sys_warning, sys_state, left_lane_warning, right_lane_warning
 
 
-class CarController:
+class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
     self.CAN = CanBus(CP)
@@ -103,10 +104,10 @@ class CarController:
         can_sends.append([0x7b1, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", self.CAN.ECAN])
 
     hda2 = self.CP.flags & HyundaiFlags.CANFD_HDA2
-    hda2_can_canfd = hda2 and self.CP.flags & HyundaiFlags.CAN_CANFD
+    hda2_can_canfd_hybrid = hda2 and self.CP.flags & HyundaiFlags.CAN_CANFD_HYBRID
 
     # CAN-FD platforms
-    if self.CP.carFingerprint in CANFD_CAR and (self.CP.carFingerprint not in CAN_CANFD_CAR or hda2_can_canfd):
+    if self.CP.carFingerprint in CANFD_CAR and (self.CP.carFingerprint not in CAN_CANFD_HYBRID_CAR or hda2_can_canfd_hybrid):
       hda2_long = hda2 and self.CP.openpilotLongitudinalControl
 
       # steering control
@@ -130,16 +131,16 @@ class CarController:
           can_sends.extend(hyundaicanfd.create_adrv_messages(self.packer, self.CAN, self.frame))
         if self.frame % 2 == 0:
           can_sends.append(hyundaicanfd.create_acc_control(self.packer, self.CAN, CC.enabled, self.accel_last, accel, stopping, CC.cruiseControl.override,
-                                                           set_speed_in_units))
+                                                           set_speed_in_units, hud_control))
           self.accel_last = accel
       else:
         # button presses
         can_sends.extend(self.create_button_messages(CC, CS, use_clu11=False))
     else:
-      can_sends.append(hyundaican.create_lkas11(self.packer, self.frame, self.car_fingerprint, apply_steer, apply_steer_req,
+      can_sends.append(hyundaican.create_lkas11(self.packer, self.frame, self.CP, apply_steer, apply_steer_req,
                                                 torque_fault, CS.lkas11, sys_warning, sys_state, CC.enabled,
                                                 hud_control.leftLaneVisible, hud_control.rightLaneVisible,
-                                                left_lane_warning, right_lane_warning, self.CP))
+                                                left_lane_warning, right_lane_warning))
 
       if not self.CP.openpilotLongitudinalControl:
         can_sends.extend(self.create_button_messages(CC, CS, use_clu11=True))
@@ -149,7 +150,7 @@ class CarController:
         jerk = 3.0 if actuators.longControlState == LongCtrlState.pid else 1.0
         use_fca = self.CP.flags & HyundaiFlags.USE_FCA.value
         can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, jerk, int(self.frame / 2),
-                                                        hud_control.leadVisible, set_speed_in_units, stopping,
+                                                        hud_control, set_speed_in_units, stopping,
                                                         CC.cruiseControl.override, use_fca))
 
       # 20 Hz LFA MFA message
@@ -164,7 +165,7 @@ class CarController:
       if self.frame % 50 == 0 and self.CP.openpilotLongitudinalControl:
         can_sends.append(hyundaican.create_frt_radar_opt(self.packer))
 
-    new_actuators = actuators.copy()
+    new_actuators = actuators.as_builder()
     new_actuators.steer = apply_steer / self.params.STEER_MAX
     new_actuators.steerOutputCan = apply_steer
     new_actuators.accel = accel

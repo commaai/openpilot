@@ -1,0 +1,49 @@
+name: 'automatically cache based on current runner'
+
+inputs:
+  path:
+    description: 'path to cache'
+    required: true
+  key:
+    description: 'key'
+    required: true
+  restore-keys:
+    description: 'restore-keys'
+    required: true
+  save:
+    description: 'whether to save the cache'
+    default: 'false'
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: setup namespace cache
+      if: ${{ contains(runner.name, 'nsc') }}
+      uses: namespacelabs/nscloud-cache-action@v1
+      with:
+        path: ${{ inputs.path }}
+
+    - name: setup github cache
+      if: ${{ !contains(runner.name, 'nsc') && inputs.save != 'false' }}
+      uses: 'actions/cache@v4'
+      with:
+        path: ${{ inputs.path }}
+        key: ${{ inputs.key }}
+        restore-keys: ${{ inputs.restore-keys }}
+
+    - name: setup github cache
+      if: ${{ !contains(runner.name, 'nsc') && inputs.save == 'false' }}
+      uses: 'actions/cache/restore@v4'
+      with:
+        path: ${{ inputs.path }}
+        key: ${{ inputs.key }}
+        restore-keys: ${{ inputs.restore-keys }}
+
+    # make the directory manually in case we didn't get a hit, so it doesn't fail on future steps
+    - id: scons-cache-setup
+      shell: bash
+      run: |
+        mkdir -p ${{ inputs.path }}
+        sudo chmod -R 777 ${{ inputs.path }}
+        sudo chown -R $USER ${{ inputs.path }}

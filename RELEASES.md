@@ -1,4 +1,44 @@
-Version 0.9.5 (2023-11-16)
+Version 0.9.8 (2024-XX-XX)
+========================
+* Added toggle to enable driver monitoring even when openpilot is not engaged
+
+Version 0.9.7 (2024-06-13)
+========================
+* New driving model
+  * Inputs the past curvature for smoother and more accurate lateral control
+  * Simplified neural network architecture in the model's last layers
+  * Minor fixes to desire augmentation and weight decay
+* New driver monitoring model
+  * Improved end-to-end bit for phone detection
+* Adjust driving personality with the follow distance button
+* Support for hybrid variants of supported Ford models
+* Fingerprinting without the OBD-II port on all cars
+* Improved fuzzy fingerprinting for Ford and Volkswagen
+
+Version 0.9.6 (2024-02-27)
+========================
+* New driving model
+  * Vision model trained on more data
+  * Improved driving performance
+  * Directly outputs curvature for lateral control
+* New driver monitoring model
+  * Trained on larger dataset
+* Model path UI
+  * Shows where driving model wants to be
+  * Shows what model is seeing more clearly, but more jittery
+* AGNOS 9
+* comma body streaming and controls over WebRTC
+* Improved fuzzy fingerprinting for many makes and models
+* Alpha longitudinal support for new Toyota models
+* Chevrolet Equinox 2019-22 support thanks to JasonJShuler and nworb-cire!
+* Dodge Durango 2020-21 support
+* Hyundai Staria 2023 support thanks to sunnyhaibin!
+* Kia Niro Plug-in Hybrid 2022 support thanks to sunnyhaibin!
+* Lexus LC 2024 support thanks to nelsonjchen!
+* Toyota RAV4 2023-24 support
+* Toyota RAV4 Hybrid 2023-24 support
+
+Version 0.9.5 (2023-11-17)
 ========================
 * New driving model
   * Improved navigate on openpilot performance using navigation instructions as an additional model input
@@ -8,7 +48,7 @@ Version 0.9.5 (2023-11-16)
 * Hyundai Azera 2022 support thanks to sunnyhaibin!
 * Hyundai Azera Hybrid 2020 support thanks to chanhojung and haram-KONA!
 * Hyundai Custin 2023 support thanks to sunnyhaibin and Saber422!
-* Hyundai Ioniq 6 2023 support thanks to sunnyhaibin, alamo3, and sshane!
+* Hyundai Ioniq 6 2023 support thanks to sunnyhaibin and alamo3!
 * Hyundai Kona Electric 2023 (Korean version) support thanks to sunnyhaibin and haram-KONA!
 * Hyundai Palisade (without HDA II) 2023 support thanks to sunnyhaibin!
 * Kia K8 Hybrid (with HDA II) 2023 support thanks to sunnyhaibin!
@@ -605,7 +645,7 @@ Version 0.5.13 (2019-05-31)
  * Reduce CPU utilization by 20% and improve stability
  * Temporarily remove mapd functionalities to improve stability
  * Add openpilot record-only mode for unsupported cars
- * Synchronize controlsd to boardd to reduce latency
+ * Synchronize controlsd to pandad to reduce latency
  * Remove panda support for Subaru giraffe
 
 Version 0.5.12 (2019-05-16)
@@ -941,7 +981,7 @@ Version 0.2.8  (2017-02-27)
 Version 0.2.7  (2017-02-08)
 ===========================
  * Better performance and pictures at night
- * Fix ptr alignment issue in boardd
+ * Fix ptr alignment issue in pandad
  * Fix brake error light, fix crash if too cold
 
 Version 0.2.6  (2017-01-31)
@@ -973,7 +1013,7 @@ Version 0.2.2  (2017-01-10)
 Version 0.2.1  (2016-12-14)
 ===========================
  * Performance improvements, removal of more numpy
- * Fix boardd process priority
+ * Fix pandad process priority
  * Make counter timer reset on use of steering wheel
 
 Version 0.2  (2016-12-12)

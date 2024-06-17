@@ -1,16 +1,16 @@
 import jwt
 import os
 import requests
-from datetime import datetime, timedelta
-from openpilot.common.basedir import PERSIST
+from datetime import datetime, timedelta, UTC
+from openpilot.system.hardware.hw import Paths
 from openpilot.system.version import get_version
 
 API_HOST = os.getenv('API_HOST', 'https://api.commadotai.com')
 
-class Api():
+class Api:
   def __init__(self, dongle_id):
     self.dongle_id = dongle_id
-    with open(PERSIST+'/comma/id_rsa') as f:
+    with open(Paths.persist_root()+'/comma/id_rsa') as f:
       self.private_key = f.read()
 
   def get(self, *args, **kwargs):
@@ -23,7 +23,7 @@ class Api():
     return api_get(endpoint, method=method, timeout=timeout, access_token=access_token, **params)
 
   def get_token(self, expiry_hours=1):
-    now = datetime.utcnow()
+    now = datetime.now(UTC).replace(tzinfo=None)
     payload = {
       'identity': self.dongle_id,
       'nbf': now,

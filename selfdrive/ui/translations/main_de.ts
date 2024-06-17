@@ -66,6 +66,26 @@
         <source>Prevent large data uploads when on a metered connection</source>
         <translation>Hochladen großer Dateien über getaktete Verbindungen unterbinden</translation>
     </message>
+    <message>
+        <source>Hidden Network</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CONNECT</source>
+        <translation type="unfinished">CONNECT</translation>
+    </message>
+    <message>
+        <source>Enter SSID</source>
+        <translation type="unfinished">SSID eingeben</translation>
+    </message>
+    <message>
+        <source>Enter password</source>
+        <translation type="unfinished">Passwort eingeben</translation>
+    </message>
+    <message>
+        <source>for &quot;%1&quot;</source>
+        <translation type="unfinished">für &quot;%1&quot;</translation>
+    </message>
 </context>
 <context>
     <name>AnnotatedCameraWidget</name>
@@ -273,9 +293,21 @@
         <source>Review</source>
         <translation>Überprüfen</translation>
     </message>
+    <message>
+        <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
+        <translation>Koppele dein Gerät mit Comma Connect (connect.comma.ai) und sichere dir dein Comma Prime Angebot.</translation>
+    </message>
+    <message>
+        <source>Pair Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PAIR</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
-    <name>DriverViewScene</name>
+    <name>DriverViewWindow</name>
     <message>
         <source>camera starting</source>
         <translation>Kamera startet</translation>
@@ -400,10 +432,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Invalid date and time settings, system won&apos;t start. Connect to internet to set time.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Taking camera snapshots. System won&apos;t start until finished.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -453,6 +481,29 @@
     <message>
         <source> ALERT</source>
         <translation> HINWEIS</translation>
+    </message>
+</context>
+<context>
+    <name>OnroadAlerts</name>
+    <message>
+        <source>openpilot Unavailable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Waiting for controls to start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TAKE CONTROL IMMEDIATELY</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls Unresponsive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reboot Device</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -538,10 +589,6 @@
         <translation>Verlassen</translation>
     </message>
     <message>
-        <source>dashcam</source>
-        <translation>dashcam</translation>
-    </message>
-    <message>
         <source>openpilot</source>
         <translation>openpilot</translation>
     </message>
@@ -582,6 +629,10 @@
         <source>ft</source>
         <translation>fuß</translation>
     </message>
+    <message>
+        <source>now</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Reset</name>
@@ -614,12 +665,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
+        <source>Resetting device...
+This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Resetting device...
-This may take up to a minute.</source>
+        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -727,6 +778,18 @@ This may take up to a minute.</source>
     <message>
         <source>Select a language</source>
         <translation>Sprache wählen</translation>
+    </message>
+    <message>
+        <source>Choose Software to Install</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot</source>
+        <translation type="unfinished">openpilot</translation>
+    </message>
+    <message>
+        <source>Custom Software</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1078,23 +1141,7 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>End-to-End Longitudinal Control</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Navigate on openpilot</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1107,6 +1154,22 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Always-On Driver Monitoring</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable driver monitoring even when openpilot is not engaged.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

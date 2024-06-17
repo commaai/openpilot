@@ -1,38 +1,33 @@
 #!/usr/bin/env python3
 from cereal import car
 from opendbc.can.parser import CANParser
-from openpilot.selfdrive.car.tesla.values import DBC, CANBUS
+from openpilot.selfdrive.car.tesla.values import CAR, DBC, CANBUS
 from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
 
-RADAR_MSGS_A = list(range(0x310, 0x36E, 3))
-RADAR_MSGS_B = list(range(0x311, 0x36F, 3))
-NUM_POINTS = len(RADAR_MSGS_A)
-
-def get_radar_can_parser(CP):
-  # Status messages
-  messages = [
-    ('TeslaRadarSguInfo', 10),
-  ]
-
-  # Radar tracks. There are also raw point clouds available,
-  # we don't use those.
-  for i in range(NUM_POINTS):
-    msg_id_a = RADAR_MSGS_A[i]
-    msg_id_b = RADAR_MSGS_B[i]
-    messages.extend([
-      (msg_id_a, 8),
-      (msg_id_b, 8),
-    ])
-
-  return CANParser(DBC[CP.carFingerprint]['radar'], messages, CANBUS.radar)
 
 class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
     super().__init__(CP)
-    self.rcp = get_radar_can_parser(CP)
+    self.CP = CP
+
+    if CP.carFingerprint == CAR.TESLA_MODELS_RAVEN:
+      messages = [('RadarStatus', 16)]
+      self.num_points = 40
+      self.trigger_msg = 1119
+    else:
+      messages = [('TeslaRadarSguInfo', 10)]
+      self.num_points = 32
+      self.trigger_msg = 878
+
+    for i in range(self.num_points):
+      messages.extend([
+        (f'RadarPoint{i}_A', 16),
+        (f'RadarPoint{i}_B', 16),
+      ])
+
+    self.rcp = CANParser(DBC[CP.carFingerprint]['radar'], messages, CANBUS.radar)
     self.updated_messages = set()
     self.track_id = 0
-    self.trigger_msg = RADAR_MSGS_B[-1]
 
   def update(self, can_strings):
     if self.rcp is None:
@@ -48,17 +43,24 @@ class RadarInterface(RadarInterfaceBase):
 
     # Errors
     errors = []
-    sgu_info = self.rcp.vl['TeslaRadarSguInfo']
     if not self.rcp.can_valid:
       errors.append('canError')
-    if sgu_info['RADC_HWFail'] or sgu_info['RADC_SGUFail'] or sgu_info['RADC_SensorDirty']:
-      errors.append('fault')
+
+    if self.CP.carFingerprint == CAR.TESLA_MODELS_RAVEN:
+      radar_status = self.rcp.vl['RadarStatus']
+      if radar_status['sensorBlocked'] or radar_status['shortTermUnavailable'] or radar_status['vehDynamicsError']:
+        errors.append('fault')
+    else:
+      radar_status = self.rcp.vl['TeslaRadarSguInfo']
+      if radar_status['RADC_HWFail'] or radar_status['RADC_SGUFail'] or radar_status['RADC_SensorDirty']:
+        errors.append('fault')
+
     ret.errors = errors
 
     # Radar tracks
-    for i in range(NUM_POINTS):
-      msg_a = self.rcp.vl[RADAR_MSGS_A[i]]
-      msg_b = self.rcp.vl[RADAR_MSGS_B[i]]
+    for i in range(self.num_points):
+      msg_a = self.rcp.vl[f'RadarPoint{i}_A']
+      msg_b = self.rcp.vl[f'RadarPoint{i}_B']
 
       # Make sure msg A and B are together
       if msg_a['Index'] != msg_b['Index2']:

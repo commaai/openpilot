@@ -1,12 +1,10 @@
 #pragma once
 
 #include <limits>
-#include <string>
 #include <utility>
 #include <vector>
 
 #include <QColor>
-#include <QList>
 #include <QMetaType>
 #include <QString>
 
@@ -31,11 +29,11 @@ struct MessageId {
   }
 
   bool operator<(const MessageId &other) const {
-    return std::pair{source, address} < std::pair{other.source, other.address};
+    return std::tie(source, address) < std::tie(other.source, other.address);
   }
 
   bool operator>(const MessageId &other) const {
-    return std::pair{source, address} > std::pair{other.source, other.address};
+    return std::tie(source, address) > std::tie(other.source, other.address);
   }
 };
 
@@ -47,7 +45,7 @@ struct std::hash<MessageId> {
   std::size_t operator()(const MessageId &k) const noexcept { return qHash(k); }
 };
 
-typedef QList<std::pair<double, QString>> ValueDescription;
+typedef std::vector<std::pair<double, QString>> ValueDescription;
 
 namespace cabana {
 
@@ -57,7 +55,7 @@ public:
   Signal(const Signal &other) = default;
   void update();
   bool getValue(const uint8_t *data, size_t data_size, double *val) const;
-  QString formatValue(double value) const;
+  QString formatValue(double value, bool with_unit = true) const;
   bool operator==(const cabana::Signal &other) const;
   inline bool operator!=(const cabana::Signal &other) const { return !(*this == other); }
 

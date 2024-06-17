@@ -1,9 +1,7 @@
 #pragma once
 
-#include <map>
 #include <memory>
 #include <string>
-#include <optional>
 
 #include <QObject>
 #include <QTimer>
@@ -13,18 +11,29 @@
 #include <QTransform>
 
 #include "cereal/messaging/messaging.h"
-#include "common/modeldata.h"
+#include "common/mat.h"
 #include "common/params.h"
 #include "common/timing.h"
+#include "system/hardware/hw.h"
 
 const int UI_BORDER_SIZE = 30;
 const int UI_HEADER_HEIGHT = 420;
 
 const int UI_FREQ = 20; // Hz
 const int BACKLIGHT_OFFROAD = 50;
-typedef cereal::CarControl::HUDControl::AudibleAlert AudibleAlert;
 
-const mat3 DEFAULT_CALIBRATION = {{ 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0 }};
+const float MIN_DRAW_DISTANCE = 10.0;
+const float MAX_DRAW_DISTANCE = 100.0;
+constexpr mat3 DEFAULT_CALIBRATION = {{ 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0 }};
+constexpr mat3 FCAM_INTRINSIC_MATRIX = (mat3){{2648.0, 0.0, 1928.0 / 2,
+                                           0.0, 2648.0, 1208.0 / 2,
+                                           0.0, 0.0, 1.0}};
+// tici ecam focal probably wrong? magnification is not consistent across frame
+// Need to retrain model before this can be changed
+constexpr mat3 ECAM_INTRINSIC_MATRIX = (mat3){{567.0, 0.0, 1928.0 / 2,
+                                           0.0, 567.0, 1208.0 / 2,
+                                           0.0, 0.0, 1.0}};
+
 
 constexpr vec3 default_face_kpts_3d[] = {
   {-5.98, -51.20, 8.00}, {-17.64, -49.14, 8.00}, {-23.81, -46.40, 8.00}, {-29.98, -40.91, 8.00}, {-32.04, -37.49, 8.00},
@@ -36,59 +45,6 @@ constexpr vec3 default_face_kpts_3d[] = {
   {18.02, -49.14, 8.00}, {6.36, -51.20, 8.00}, {-5.98, -51.20, 8.00},
 };
 
-struct Alert {
-  QString text1;
-  QString text2;
-  QString type;
-  cereal::ControlsState::AlertSize size;
-  cereal::ControlsState::AlertStatus status;
-  AudibleAlert sound;
-
-  bool equal(const Alert &a2) {
-    return text1 == a2.text1 && text2 == a2.text2 && type == a2.type && sound == a2.sound;
-  }
-
-  static Alert get(const SubMaster &sm, uint64_t started_frame) {
-    const cereal::ControlsState::Reader &cs = sm["controlsState"].getControlsState();
-    const uint64_t controls_frame = sm.rcv_frame("controlsState");
-
-    Alert alert = {};
-    if (controls_frame >= started_frame) {  // Don't get old alert.
-      alert = {cs.getAlertText1().cStr(), cs.getAlertText2().cStr(),
-               cs.getAlertType().cStr(), cs.getAlertSize(),
-               cs.getAlertStatus(),
-               cs.getAlertSound()};
-    }
-
-    if (!sm.updated("controlsState") && (sm.frame - started_frame) > 5 * UI_FREQ) {
-      const int CONTROLS_TIMEOUT = 5;
-      const int controls_missing = (nanos_since_boot() - sm.rcv_time("controlsState")) / 1e9;
-
-      // Handle controls timeout
-      if (controls_frame < started_frame) {
-        // car is started, but controlsState hasn't been seen at all
-        alert = {"openpilot Unavailable", "Waiting for controls to start",
-                 "controlsWaiting", cereal::ControlsState::AlertSize::MID,
-                 cereal::ControlsState::AlertStatus::NORMAL,
-                 AudibleAlert::NONE};
-      } else if (controls_missing > CONTROLS_TIMEOUT && !Hardware::PC()) {
-        // car is started, but controls is lagging or died
-        if (cs.getEnabled() && (controls_missing - CONTROLS_TIMEOUT) < 10) {
-          alert = {"TAKE CONTROL IMMEDIATELY", "Controls Unresponsive",
-                   "controlsUnresponsive", cereal::ControlsState::AlertSize::FULL,
-                   cereal::ControlsState::AlertStatus::CRITICAL,
-                   AudibleAlert::WARNING_IMMEDIATE};
-        } else {
-          alert = {"Controls Unresponsive", "Reboot Device",
-                   "controlsUnresponsivePermanent", cereal::ControlsState::AlertSize::MID,
-                   cereal::ControlsState::AlertStatus::NORMAL,
-                   AudibleAlert::NONE};
-        }
-      }
-    }
-    return alert;
-  }
-};
 
 typedef enum UIStatus {
   STATUS_DISENGAGED,
@@ -97,7 +53,8 @@ typedef enum UIStatus {
 } UIStatus;
 
 enum PrimeType {
-  UNKNOWN = -1,
+  UNKNOWN = -2,
+  UNPAIRED = -1,
   NONE = 0,
   MAGENTA = 1,
   LITE = 2,
@@ -112,11 +69,6 @@ const QColor bg_colors [] = {
   [STATUS_ENGAGED] = QColor(0x17, 0x86, 0x44, 0xf1),
 };
 
-static std::map<cereal::ControlsState::AlertStatus, QColor> alert_colors = {
-  {cereal::ControlsState::AlertStatus::NORMAL, QColor(0x15, 0x15, 0x15, 0xf1)},
-  {cereal::ControlsState::AlertStatus::USER_PROMPT, QColor(0xDA, 0x6F, 0x25, 0xf1)},
-  {cereal::ControlsState::AlertStatus::CRITICAL, QColor(0xC9, 0x22, 0x31, 0xf1)},
-};
 
 typedef struct UIScene {
   bool calibration_valid = false;
@@ -143,10 +95,11 @@ typedef struct UIScene {
   float driver_pose_coss[3];
   vec3 face_kpts_draw[std::size(default_face_kpts_3d)];
 
-  bool navigate_on_openpilot = false;
+  cereal::LongitudinalPersonality personality;
 
-  float light_sensor;
+  float light_sensor = -1;
   bool started, ignition, is_metric, map_on_left, longitudinal_control;
+  bool world_objects_visible = false;
   uint64_t started_frame;
 } UIScene;
 
@@ -156,16 +109,13 @@ class UIState : public QObject {
 public:
   UIState(QObject* parent = 0);
   void updateStatus();
-  inline bool worldObjectsVisible() const {
-    return sm->rcv_frame("liveCalibration") > scene.started_frame;
-  }
   inline bool engaged() const {
     return scene.started && (*sm)["controlsState"].getControlsState().getEnabled();
   }
 
   void setPrimeType(PrimeType type);
   inline PrimeType primeType() const { return prime_type; }
-  inline bool hasPrime() const { return prime_type != PrimeType::UNKNOWN && prime_type != PrimeType::NONE; }
+  inline bool hasPrime() const { return prime_type > PrimeType::NONE; }
 
   int fb_w = 0, fb_h = 0;
 
@@ -234,8 +184,7 @@ Device *device();
 void ui_update_params(UIState *s);
 int get_path_length_idx(const cereal::XYZTData::Reader &line, const float path_height);
 void update_model(UIState *s,
-                  const cereal::ModelDataV2::Reader &model,
-                  const cereal::UiPlan::Reader &plan);
+                  const cereal::ModelDataV2::Reader &model);
 void update_dmonitoring(UIState *s, const cereal::DriverStateV2::Reader &driverstate, float dm_fade_state, bool is_rhd);
 void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, const cereal::XYZTData::Reader &line);
 void update_line_data(const UIState *s, const cereal::XYZTData::Reader &line,

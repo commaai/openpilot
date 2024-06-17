@@ -38,7 +38,7 @@ static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, 
 int get_path_length_idx(const cereal::XYZTData::Reader &line, const float path_height) {
   const auto line_x = line.getX();
   int max_idx = 0;
-  for (int i = 1; i < TRAJECTORY_SIZE && line_x[i] <= path_height; ++i) {
+  for (int i = 1; i < line_x.size() && line_x[i] <= path_height; ++i) {
     max_idx = i;
   }
   return max_idx;
@@ -57,37 +57,30 @@ void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, con
 void update_line_data(const UIState *s, const cereal::XYZTData::Reader &line,
                       float y_off, float z_off, QPolygonF *pvd, int max_idx, bool allow_invert=true) {
   const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
-  QPolygonF left_points, right_points;
-  left_points.reserve(max_idx + 1);
-  right_points.reserve(max_idx + 1);
-
+  QPointF left, right;
+  pvd->clear();
   for (int i = 0; i <= max_idx; i++) {
     // highly negative x positions  are drawn above the frame and cause flickering, clip to zy plane of camera
     if (line_x[i] < 0) continue;
-    QPointF left, right;
+
     bool l = calib_frame_to_full_frame(s, line_x[i], line_y[i] - y_off, line_z[i] + z_off, &left);
     bool r = calib_frame_to_full_frame(s, line_x[i], line_y[i] + y_off, line_z[i] + z_off, &right);
     if (l && r) {
       // For wider lines the drawn polygon will "invert" when going over a hill and cause artifacts
-      if (!allow_invert && left_points.size() && left.y() > left_points.back().y()) {
+      if (!allow_invert && pvd->size() && left.y() > pvd->back().y()) {
         continue;
       }
-      left_points.push_back(left);
-      right_points.push_front(right);
+      pvd->push_back(left);
+      pvd->push_front(right);
     }
   }
-  *pvd = left_points + right_points;
 }
 
 void update_model(UIState *s,
-                  const cereal::ModelDataV2::Reader &model,
-                  const cereal::UiPlan::Reader &plan) {
+                  const cereal::ModelDataV2::Reader &model) {
   UIScene &scene = s->scene;
-  auto plan_position = plan.getPosition();
-  if (plan_position.getX().size() < TRAJECTORY_SIZE){
-    plan_position = model.getPosition();
-  }
-  float max_distance = std::clamp(plan_position.getX()[TRAJECTORY_SIZE - 1],
+  auto model_position = model.getPosition();
+  float max_distance = std::clamp(*(model_position.getX().end() - 1),
                                   MIN_DRAW_DISTANCE, MAX_DRAW_DISTANCE);
 
   // update lane lines
@@ -113,8 +106,8 @@ void update_model(UIState *s,
     const float lead_d = lead_one.getDRel() * 2.;
     max_distance = std::clamp((float)(lead_d - fmin(lead_d * 0.35, 10.)), 0.0f, max_distance);
   }
-  max_idx = get_path_length_idx(plan_position, max_distance);
-  update_line_data(s, plan_position, 0.9, 1.22, &scene.track_vertices, max_idx, false);
+  max_idx = get_path_length_idx(model_position, max_distance);
+  update_line_data(s, model_position, 0.9, 1.22, &scene.track_vertices, max_idx, false);
 }
 
 void update_dmonitoring(UIState *s, const cereal::DriverStateV2::Reader &driverstate, float dm_fade_state, bool is_rhd) {
@@ -128,25 +121,27 @@ void update_dmonitoring(UIState *s, const cereal::DriverStateV2::Reader &drivers
     scene.driver_pose_coss[i] = cosf(scene.driver_pose_vals[i]*(1.0-dm_fade_state));
   }
 
+  auto [sin_y, sin_x, sin_z] = scene.driver_pose_sins;
+  auto [cos_y, cos_x, cos_z] = scene.driver_pose_coss;
+
   const mat3 r_xyz = (mat3){{
-    scene.driver_pose_coss[1]*scene.driver_pose_coss[2],
-    scene.driver_pose_coss[1]*scene.driver_pose_sins[2],
-    -scene.driver_pose_sins[1],
+    cos_x * cos_z,
+    cos_x * sin_z,
+    -sin_x,
 
-    -scene.driver_pose_sins[0]*scene.driver_pose_sins[1]*scene.driver_pose_coss[2] - scene.driver_pose_coss[0]*scene.driver_pose_sins[2],
-    -scene.driver_pose_sins[0]*scene.driver_pose_sins[1]*scene.driver_pose_sins[2] + scene.driver_pose_coss[0]*scene.driver_pose_coss[2],
-    -scene.driver_pose_sins[0]*scene.driver_pose_coss[1],
+    -sin_y * sin_x * cos_z - cos_y * sin_z,
+    -sin_y * sin_x * sin_z + cos_y * cos_z,
+    -sin_y * cos_x,
 
-    scene.driver_pose_coss[0]*scene.driver_pose_sins[1]*scene.driver_pose_coss[2] - scene.driver_pose_sins[0]*scene.driver_pose_sins[2],
-    scene.driver_pose_coss[0]*scene.driver_pose_sins[1]*scene.driver_pose_sins[2] + scene.driver_pose_sins[0]*scene.driver_pose_coss[2],
-    scene.driver_pose_coss[0]*scene.driver_pose_coss[1],
+    cos_y * sin_x * cos_z - sin_y * sin_z,
+    cos_y * sin_x * sin_z + sin_y * cos_z,
+    cos_y * cos_x,
   }};
 
   // transform vertices
   for (int kpi = 0; kpi < std::size(default_face_kpts_3d); kpi++) {
-    vec3 kpt_this = default_face_kpts_3d[kpi];
-    kpt_this = matvecmul3(r_xyz, kpt_this);
-    scene.face_kpts_draw[kpi] = (vec3){{(float)kpt_this.v[0], (float)kpt_this.v[1], (float)(kpt_this.v[2] * (1.0-dm_fade_state) + 8 * dm_fade_state)}};
+    vec3 kpt_this = matvecmul3(r_xyz, default_face_kpts_3d[kpi]);
+    scene.face_kpts_draw[kpi] = (vec3){{kpt_this.v[0], kpt_this.v[1], (float)(kpt_this.v[2] * (1.0-dm_fade_state) + 8 * dm_fade_state)}};
   }
 }
 
@@ -205,8 +200,15 @@ static void update_state(UIState *s) {
     auto cam_state = sm["wideRoadCameraState"].getWideRoadCameraState();
     float scale = (cam_state.getSensor() == cereal::FrameData::ImageSensor::AR0231) ? 6.0f : 1.0f;
     scene.light_sensor = std::max(100.0f - scale * cam_state.getExposureValPercent(), 0.0f);
+  } else if (!sm.allAliveAndValid({"wideRoadCameraState"})) {
+    scene.light_sensor = -1;
   }
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
+
+  scene.world_objects_visible = scene.world_objects_visible ||
+                                (scene.started &&
+                                 sm.rcv_frame("liveCalibration") > scene.started_frame &&
+                                 sm.rcv_frame("modelV2") > scene.started_frame);
 }
 
 void ui_update_params(UIState *s) {
@@ -233,15 +235,16 @@ void UIState::updateStatus() {
       scene.started_frame = sm->frame;
     }
     started_prev = scene.started;
+    scene.world_objects_visible = false;
     emit offroadTransition(!scene.started);
   }
 }
 
 UIState::UIState(QObject *parent) : QObject(parent) {
   sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
-    "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState", "roadCameraState",
+    "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState",
     "pandaStates", "carParams", "driverMonitoringState", "carState", "liveLocationKalman", "driverStateV2",
-    "wideRoadCameraState", "managerState", "navInstruction", "navRoute", "uiPlan",
+    "wideRoadCameraState", "managerState", "navInstruction", "navRoute", "clocks",
   });
 
   Params params;
@@ -313,7 +316,7 @@ void Device::resetInteractiveTimeout(int timeout) {
 
 void Device::updateBrightness(const UIState &s) {
   float clipped_brightness = offroad_brightness;
-  if (s.scene.started) {
+  if (s.scene.started && s.scene.light_sensor > 0) {
     clipped_brightness = s.scene.light_sensor;
 
     // CIE 1931 - https://www.photonstophotos.net/GeneralTopics/Exposure/Psychometric_Lightness_and_Gamma.htm
