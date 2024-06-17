@@ -322,7 +322,6 @@ class CarState(CarStateBase):
 
   def get_can_parser_canfd(self, CP):
     messages = [
-      (self.gear_msg_canfd, 100),
       (self.accelerator_msg_canfd, 100),
       ("WHEEL_SPEEDS", 100),
       ("STEERING_SENSORS", 100),
@@ -332,6 +331,9 @@ class CarState(CarStateBase):
       ("BLINKERS", 4),
       ("DOORS_SEATBELTS", 4),
     ]
+
+    if not CP.flags & HyundaiFlags.CANFD_ALT_GEARS_3:
+      messages.append((self.gear_msg_canfd, 100))
 
     if CP.flags & HyundaiFlags.EV:
       messages += [
