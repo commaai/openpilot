@@ -46,11 +46,10 @@ public:
 public slots:
   void setColumnCount(int n);
   void removeAll();
-  void setZoom(double min, double max);
+  void timeRangeChanged(const std::optional<std::pair<double, double>> &time_range);
 
 signals:
   void dock(bool floating);
-  void rangeChanged(double min, double max, bool is_zommed);
   void seriesChanged();
 
 private:
@@ -102,9 +101,7 @@ private:
   ChartsContainer *charts_container;
   QScrollArea *charts_scroll;
   uint32_t max_chart_range = 0;
-  bool is_zoomed = false;
   std::pair<double, double> display_range;
-  std::pair<double, double> zoomed_range;
   QAction *columns_action;
   int column_count = 1;
   int current_column_count = 0;
@@ -119,12 +116,11 @@ private:
 
 class ZoomCommand : public QUndoCommand {
 public:
-  ZoomCommand(ChartsWidget *charts, std::pair<double, double> range) : charts(charts), range(range), QUndoCommand() {
-    prev_range = charts->is_zoomed ? charts->zoomed_range : charts->display_range;
+  ZoomCommand(std::pair<double, double> range) : range(range), QUndoCommand() {
+    prev_range = can->timeRange();
     setText(QObject::tr("Zoom to %1-%2").arg(range.first, 0, 'f', 2).arg(range.second, 0, 'f', 2));
   }
-  void undo() override { charts->setZoom(prev_range.first, prev_range.second); }
-  void redo() override { charts->setZoom(range.first, range.second); }
-  ChartsWidget *charts;
-  std::pair<double, double> prev_range, range;
+  void undo() override { can->setTimeRange(prev_range); }
+  void redo() override { can->setTimeRange(range); }
+  std::optional<std::pair<double, double>> prev_range, range;
 };

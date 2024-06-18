@@ -88,7 +88,7 @@ repository = "https://github.com/commaai/openpilot"
 documentation = "https://docs.comma.ai"
 
 [tool.poetry.dependencies]
-python = "~3.11"
+python = ">=3.11, <3.13"
 
 # multiple users
 sounddevice = "*"  # micd + soundd
@@ -137,39 +137,22 @@ future-fstrings = "*"
 # these should be removed
 psutil = "*"
 timezonefinder = "*"  # just used for nav ETA
-setproctitle = "*"
 pycryptodome = "*"  # used in updated/casync, panda, body, and a test
 
-[tool.poetry.group.dev.dependencies]
-av = "*"
-azure-identity = "*"
-azure-storage-blob = "*"
-breathe = "*"
-control = "*"
-coverage = "*"
-dictdiffer = "*"
-flaky = "*"
-hypothesis = "~6.47"
-inputs = "*"
+#logreader
+zstd = "*"
+
+[tool.poetry.group.docs.dependencies]
 Jinja2 = "*"
-lru-dict = "*"
-matplotlib = "*"
-# No release for this fix https://github.com/metadriverse/metadrive/issues/632. Pinned to this commit until next release
-metadrive-simulator = {git = "https://github.com/metadriverse/metadrive.git", rev ="233a3a1698be7038ec3dd050ca10b547b4b3324c", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
-mpld3 = "*"
+sphinx = "*"
+sphinx-rtd-theme = "*"
+sphinx-sitemap = "*"
+
+[tool.poetry.group.testing.dependencies]
+coverage = "*"
+hypothesis = "~6.47"
 mypy = "*"
-myst-parser = "*"
-natsort = "*"
-opencv-python-headless = "*"
-parameterized = "^0.8"
-pprofile = "*"
-polyline = "*"
 pre-commit = "*"
-pyautogui = "*"
-pyopencl = { version = "*", markers = "platform_machine != 'aarch64'" }  # broken on arm64
-pygame = "*"
-pywinctl = "*"
-pyprof2calltree = "*"
 pytest = "*"
 pytest-cov = "*"
 pytest-cpp = "*"
@@ -180,11 +163,33 @@ pytest-randomly = "*"
 pytest-asyncio = "*"
 pytest-mock = "*"
 pytest-repeat = "*"
-rerun-sdk = "*"
 ruff = "*"
-sphinx = "*"
-sphinx-rtd-theme = "*"
-sphinx-sitemap = "*"
+
+[tool.poetry.group.dev.dependencies]
+av = "*"
+azure-identity = "*"
+azure-storage-blob = "*"
+breathe = "*"
+control = "*"
+dictdiffer = "*"
+flaky = "*"
+inputs = "*"
+lru-dict = "*"
+matplotlib = "*"
+metadrive-simulator = { git = "https://github.com/commaai/metadrive.git", branch = "anisotropic_off", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
+mpld3 = "*"
+myst-parser = "*"
+natsort = "*"
+opencv-python-headless = "*"
+parameterized = "^0.8"
+#pprofile = "*"
+polyline = "*"
+pyautogui = "*"
+pygame = "*"
+pyopencl = { version = "*", markers = "platform_machine != 'aarch64'" }  # broken on arm64
+pywinctl = "*"
+pyprof2calltree = "*"
+rerun-sdk = "*"
 tabulate = "*"
 types-requests = "*"
 types-tabulate = "*"
