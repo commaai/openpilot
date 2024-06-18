@@ -11,9 +11,11 @@ if [ "$(uname)" == "Darwin" ] && [ $SHELL == "/bin/bash" ]; then
 fi
 
 echo "installing poetry..."
-pipx install poetry
-pipx ensurepath # add poetry to path
-source $RC_FILE
+curl -sSL https://install.python-poetry.org | python3 -
+POETRY_BIN='$HOME/.local/bin'
+ADD_PATH_CMD="export PATH=\"$POETRY_BIN:\$PATH\""
+eval $ADD_PATH_CMD
+printf "\n#poetry path\n$ADD_PATH_CMD\n" >> $RC_FILE
 
 echo "creating virtualenv..."
 python3 -m venv .venv --prompt openpilot_env
