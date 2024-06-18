@@ -1,6 +1,6 @@
 import os
 import json
-Import('qt_env', 'arch', 'common', 'messaging', 'visionipc', 'transformations')
+Import('qt_env', 'arch', 'common', 'messaging', 'visionipc', 'transformations', 'UBUNTU_FOCAL')
 
 base_libs = [common, messaging, visionipc, transformations,
              'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
@@ -8,7 +8,7 @@ base_libs = [common, messaging, visionipc, transformations,
 if arch == 'larch64':
   base_libs.append('EGL')
 
-maps = arch in ['larch64', 'aarch64', 'x86_64']
+maps = arch in ['larch64', 'aarch64', 'x86_64'] and not UBUNTU_FOCAL
 
 if arch == "Darwin":
   del base_libs[base_libs.index('OpenCL')]

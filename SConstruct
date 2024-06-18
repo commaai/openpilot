@@ -14,6 +14,8 @@ SCons.Warnings.warningAsException(True)
 
 TICI = os.path.isfile('/TICI')
 AGNOS = TICI
+UBUNTU_FOCAL = int(subprocess.check_output('[ -f /etc/os-release ] && . /etc/os-release && [ "$ID" = "ubuntu" ] && [ "$VERSION_ID" = "20.04" ] && echo 1 || echo 0', shell=True, encoding='utf-8').rstrip())
+Export('UBUNTU_FOCAL')
 
 Decider('MD5-timestamp')
 

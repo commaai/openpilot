@@ -39,12 +39,13 @@ jobs:
                         source selfdrive/test/setup_vsound.sh && \
                         CI=1 pytest tools/sim/tests/test_metadrive_bridge.py"
 
-  test_python311:
-    name: test python3.11 support
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
+  test_compatibility:
+    name: test 20.04 + 3.11
+    runs-on: ubuntu-20.04
     steps:
     - uses: actions/checkout@v4
+      with:
+        submodules: true
     - name: Installing ubuntu dependencies
       run: INSTALL_EXTRA_PACKAGES=no tools/install_ubuntu_dependencies.sh
     - name: Installing python
@@ -57,6 +58,25 @@ jobs:
       run: pip install poetry==1.7.0
     - name: Installing python dependencies
       run: poetry install --no-cache --no-root
+    - name: git LFS
+      run: git lfs pull
+    - run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
+    - name: Getting scons cache
+      uses: 'actions/cache@v4'
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ runner.arch }}-ubuntu2004-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        restore-keys: |
+          scons-${{ runner.arch }}-ubuntu2004-${{ env.CACHE_COMMIT_DATE }}
+          scons-${{ runner.arch }}-ubuntu2004
+    - name: Building openpilot
+      run: poetry run scons -u -j$(nproc)
+    - name: Saving scons cache
+      uses: actions/cache/save@v4
+      if: github.ref == 'refs/heads/master'
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ runner.arch }}-ubuntu2004-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
 
   devcontainer:
     name: devcontainer
