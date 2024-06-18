@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
+# Increase the pip timeout to handle TimeoutError
+export PIP_DEFAULT_TIMEOUT=200
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ROOT=$DIR/../
 cd $ROOT
