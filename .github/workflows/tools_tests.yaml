@@ -58,17 +58,25 @@ jobs:
       run: pip install poetry==1.7.0
     - name: Installing python dependencies
       run: poetry install --no-cache --no-root
-    - uses: ./.github/workflows/setup-with-retry
-      with:
-        build_docker: 'false'
     - name: git LFS
       run: git lfs pull
-    - name: Get scons cache
-      run: |
-        mkdir -p /tmp/scons_cache/
-        cp -r $GITHUB_WORKSPACE/.ci_cache/scons_cache/. /tmp/scons_cache/
+    - run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
+    - name: Getting scons cache
+      uses: 'actions/cache@v4'
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ runner.arch }}-ubuntu2004-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        restore-keys: |
+          scons-${{ runner.arch }}-ubuntu2004-${{ env.CACHE_COMMIT_DATE }}
+          scons-${{ runner.arch }}-ubuntu2004
     - name: Building openpilot
       run: poetry run scons -u -j$(nproc)
+    - name: Saving scons cache
+      uses: actions/cache/save@v4
+      if: github.ref == 'refs/heads/master'
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ runner.arch }}-ubuntu2004-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
 
   devcontainer:
     name: devcontainer
