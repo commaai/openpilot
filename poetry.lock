@@ -2270,8 +2270,8 @@ ros = ["zmq"]
 [package.source]
 type = "git"
 url = "https://github.com/commaai/metadrive.git"
-reference = "python3.12"
-resolved_reference = "0823c7491a1ab870bcd53d10a41e985a3ad1b968"
+reference = "anisotropic_off"
+resolved_reference = "1606c844345f98aa79f76177856e328edc6ec428"
 
 [[package]]
 name = "mouseinfo"
@@ -8114,4 +8114,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11, <3.13"
-content-hash = "83dbbf76ea5f3e1022233a164d6f342706ebf64ad8bbbf742a55d5f49474d863"
+content-hash = "32df734a6ad6ad6a665c94c41cd0e3643a48174904faaf6f21c5c84f350f3cec"
