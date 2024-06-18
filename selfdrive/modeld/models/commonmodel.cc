@@ -24,19 +24,12 @@ float* ModelFrame::prepare(cl_mem yuv_cl, int frame_width, int frame_height, int
                   yuv_cl, frame_width, frame_height, frame_stride, frame_uv_offset,
                   y_cl, u_cl, v_cl, MODEL_WIDTH, MODEL_HEIGHT, projection);
 
-  if (output == NULL) {
-    loadyuv_queue(&loadyuv, q, y_cl, u_cl, v_cl, net_input_cl);
+  loadyuv_queue(&loadyuv, q, y_cl, u_cl, v_cl, net_input_cl);
 
-    std::memmove(&input_frames[0], &input_frames[MODEL_FRAME_SIZE], sizeof(float) * MODEL_FRAME_SIZE);
-    CL_CHECK(clEnqueueReadBuffer(q, net_input_cl, CL_TRUE, 0, MODEL_FRAME_SIZE * sizeof(float), &input_frames[MODEL_FRAME_SIZE], 0, nullptr, nullptr));
-    clFinish(q);
-    return &input_frames[0];
-  } else {
-    loadyuv_queue(&loadyuv, q, y_cl, u_cl, v_cl, *output, true);
-    // NOTE: Since thneed is using a different command queue, this clFinish is needed to ensure the image is ready.
-    clFinish(q);
-    return NULL;
-  }
+  std::memmove(&input_frames[0], &input_frames[MODEL_FRAME_SIZE], sizeof(float) * MODEL_FRAME_SIZE);
+  CL_CHECK(clEnqueueReadBuffer(q, net_input_cl, CL_TRUE, 0, MODEL_FRAME_SIZE * sizeof(float), &input_frames[MODEL_FRAME_SIZE], 0, nullptr, nullptr));
+  clFinish(q);
+  return &input_frames[0];
 }
 
 ModelFrame::~ModelFrame() {

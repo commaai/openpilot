@@ -94,7 +94,9 @@ class ModelState:
     self.inputs['lateral_control_params'][:] = inputs['lateral_control_params']
 
     # if getCLBuffer is not None, frame will be None
-    self.model.setInputBuffer("input_imgs", self.frame.prepare(buf, transform.flatten(), self.model.getCLBuffer("input_imgs")))
+    input_imgs = self.frame.prepare(buf, transform.flatten(), self.model.getCLBuffer("input_imgs"))
+    print(input_imgs.shape, input_imgs.dtype, type(input_imgs))
+    self.model.setInputBuffer("input_imgs", input_imgs)
     if wbuf is not None:
       self.model.setInputBuffer("big_input_imgs", self.wide_frame.prepare(wbuf, transform_wide.flatten(), self.model.getCLBuffer("big_input_imgs")))
 
