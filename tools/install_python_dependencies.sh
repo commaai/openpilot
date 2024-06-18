@@ -58,7 +58,7 @@ fi
 eval "$(pyenv init --path)"
 eval "$(pyenv init -)"
 eval "$(pyenv virtualenv-init -)"
-pyenv global ${PYENV_PYTHON_VERSION}
+pyenv local ${PYENV_PYTHON_VERSION}
 pyenv rehash
 
 echo "update pip"
