@@ -12,6 +12,14 @@
 #include "tools/replay/logreader.h"
 #include "tools/replay/util.h"
 
+enum class RouteLoadError {
+  None,
+  AccessDenied,
+  NetworkError,
+  FileNotFound,
+  UnknownError
+};
+
 struct RouteIdentifier {
   QString dongle_id;
   QString timestamp;
@@ -33,6 +41,7 @@ class Route {
 public:
   Route(const QString &route, const QString &data_dir = {});
   bool load();
+  RouteLoadError lastError() const { return err_; }
   inline const QString &name() const { return route_.str; }
   inline const QDateTime datetime() const { return date_time_; }
   inline const QString &dir() const { return data_dir_; }
@@ -50,6 +59,7 @@ protected:
   QString data_dir_;
   std::map<int, SegmentFile> segments_;
   QDateTime date_time_;
+  RouteLoadError err_ = RouteLoadError::None;
 };
 
 class Segment : public QObject {

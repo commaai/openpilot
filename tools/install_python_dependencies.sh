@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
+# Increase the pip timeout to handle TimeoutError
+export PIP_DEFAULT_TIMEOUT=200
+
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ROOT=$DIR/../
 cd $ROOT
@@ -13,7 +16,7 @@ fi
 if ! command -v "pyenv" > /dev/null 2>&1; then
   echo "pyenv install ..."
   curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
-  PYENV_PATH_SETUP="export PATH=\$HOME/.pyenv/bin:\$HOME/.pyenv/shims:\$PATH"
+  PYENV_PATH_SETUP="export PATH=\$HOME/.pyenv/bin:\$HOME/.pyenv/shims:\$HOME/.pyenv/versions/${PYENV_PYTHON_VERSION}/bin:\$PATH"
 fi
 
 if [ -z "$PYENV_SHELL" ] || [ -n "$PYENV_PATH_SETUP" ]; then
@@ -51,7 +54,12 @@ if ! pyenv prefix ${PYENV_PYTHON_VERSION} &> /dev/null; then
   echo "python ${PYENV_PYTHON_VERSION} install ..."
   CONFIGURE_OPTS="--enable-shared" pyenv install -f ${PYENV_PYTHON_VERSION}
 fi
+
 eval "$(pyenv init --path)"
+eval "$(pyenv init -)"
+eval "$(pyenv virtualenv-init -)"
+pyenv local ${PYENV_PYTHON_VERSION}
+pyenv rehash
 
 echo "update pip"
 pip install pip==24.0
