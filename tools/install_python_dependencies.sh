@@ -13,57 +13,14 @@ if [ "$(uname)" == "Darwin" ] && [ $SHELL == "/bin/bash" ]; then
   RC_FILE="$HOME/.bash_profile"
 fi
 
-if ! command -v "pyenv" > /dev/null 2>&1; then
-  echo "pyenv install ..."
-  curl -L https://github.com/pyenv/pyenv-installer/raw/master/bin/pyenv-installer | bash
-  PYENV_PATH_SETUP="export PATH=\$HOME/.pyenv/bin:\$HOME/.pyenv/shims:\$HOME/.pyenv/versions/${PYENV_PYTHON_VERSION}/bin:\$PATH"
+if ! command -v "poetry" > /dev/null 2>&1; then
+  echo "installing poetry..."
+  curl -sSL https://install.python-poetry.org | python3 -
+  POETRY_BIN='$HOME/.local/bin'
+  ADD_PATH_CMD="export PATH=\"$POETRY_BIN:\$PATH\""
+  eval $ADD_PATH_CMD
+  printf "\n#poetry path\n$ADD_PATH_CMD\n" >> $RC_FILE
 fi
-
-if [ -z "$PYENV_SHELL" ] || [ -n "$PYENV_PATH_SETUP" ]; then
-  echo "pyenvrc setup ..."
-  cat <<EOF > "${HOME}/.pyenvrc"
-if [ -z "\$PYENV_ROOT" ]; then
-  $PYENV_PATH_SETUP
-  export PYENV_ROOT="\$HOME/.pyenv"
-  eval "\$(pyenv init -)"
-  eval "\$(pyenv virtualenv-init -)"
-fi
-EOF
-
-  SOURCE_PYENVRC="source ~/.pyenvrc"
-  if ! grep "^$SOURCE_PYENVRC$" $RC_FILE > /dev/null; then
-    printf "\n$SOURCE_PYENVRC\n" >> $RC_FILE
-  fi
-
-  eval "$SOURCE_PYENVRC"
-  # $(pyenv init -) produces a function which is broken on bash 3.2 which ships on macOS
-  if [ $(uname) == "Darwin" ]; then
-    unset -f pyenv
-  fi
-fi
-
-export MAKEFLAGS="-j$(nproc)"
-
-PYENV_PYTHON_VERSION="3.12.4"
-if ! pyenv prefix ${PYENV_PYTHON_VERSION} &> /dev/null; then
-  # no pyenv update on mac
-  if [ "$(uname)" == "Linux" ]; then
-    echo "pyenv update ..."
-    pyenv update
-  fi
-  echo "python ${PYENV_PYTHON_VERSION} install ..."
-  CONFIGURE_OPTS="--enable-shared" pyenv install -f ${PYENV_PYTHON_VERSION}
-fi
-
-eval "$(pyenv init --path)"
-eval "$(pyenv init -)"
-eval "$(pyenv virtualenv-init -)"
-pyenv local ${PYENV_PYTHON_VERSION}
-pyenv rehash
-
-echo "update pip"
-pip install pip==24.0
-pip install poetry==1.7.0
 
 poetry config virtualenvs.prefer-active-python true --local
 poetry config virtualenvs.in-project true --local
@@ -77,9 +34,8 @@ fi
 
 poetry self add poetry-dotenv-plugin@^0.1.0
 
-echo "pip packages install..."
+echo "installing python packages..."
 poetry install --no-cache --no-root
-pyenv rehash
 
 [ -n "$POETRY_VIRTUALENVS_CREATE" ] && RUN="" || RUN="poetry run"
 
