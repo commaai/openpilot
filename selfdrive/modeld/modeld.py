@@ -77,8 +77,8 @@ class ModelState:
     self.parser = Parser()
 
     self.model = ModelRunner(MODEL_PATHS, self.output, Runtime.GPU, False, context)
-    self.model.addInput("input_imgs", None)
-    self.model.addInput("big_input_imgs", None)
+    #self.model.addInput("input_imgs", None)
+    #self.model.addInput("big_input_imgs", None)
     for k,v in self.inputs.items():
       self.model.addInput(k, v)
 
