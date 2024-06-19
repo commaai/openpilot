@@ -94,7 +94,7 @@ function install_ubuntu_lts_latest_requirements() {
     qt5-qmake \
     qtbase5-dev-tools \
     python3-dev \
-    tk-dev
+    python3-venv
 }
 
 # Install Ubuntu 20.04 packages
