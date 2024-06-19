@@ -32,7 +32,7 @@ if [[ "$(uname)" == 'Darwin' ]]; then
   echo "export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES" >> $ROOT/.env
 fi
 
-poetry self add poetry-plugin-dotenv
+poetry self add poetry-dotenv-plugin@^0.1.0
 
 echo "installing python packages..."
 poetry install --no-cache --no-root
