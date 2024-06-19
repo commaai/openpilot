@@ -104,15 +104,15 @@ class ModelState:
     self.inputs['lateral_control_params'][:] = inputs['lateral_control_params']
 
     new_img = self.frame.prepare(buf, transform.flatten(), self.model.getCLBuffer("input_imgs"))
-    self.input_imgs_20hz[:MODEL_FRAME_SIZE] = self.input_imgs_20hz[MODEL_FRAME_SIZE:]
+    self.input_imgs_20hz[:-MODEL_FRAME_SIZE] = self.input_imgs_20hz[MODEL_FRAME_SIZE:]
     self.input_imgs_20hz[-MODEL_FRAME_SIZE:] = new_img
     self.input_imgs[:MODEL_FRAME_SIZE] = self.input_imgs_20hz[:MODEL_FRAME_SIZE]
     self.input_imgs[MODEL_FRAME_SIZE:] = self.input_imgs_20hz[-MODEL_FRAME_SIZE:]
     self.model.setInputBuffer("input_imgs", self.input_imgs)
     if wbuf is not None:
       new_big_img = self.wide_frame.prepare(wbuf, transform.flatten(), self.model.getCLBuffer("big_input_imgs"))
-      self.big_input_imgs_20hz[:MODEL_FRAME_SIZE] = self.big_input_imgs_20hz[MODEL_FRAME_SIZE:]
-      self.big_input_imgs_20hz[MODEL_FRAME_SIZE:] = new_big_img
+      self.big_input_imgs_20hz[:-MODEL_FRAME_SIZE] = self.big_input_imgs_20hz[MODEL_FRAME_SIZE:]
+      self.big_input_imgs_20hz[-MODEL_FRAME_SIZE:] = new_big_img
       self.big_input_imgs[:MODEL_FRAME_SIZE] = self.big_input_imgs_20hz[:MODEL_FRAME_SIZE]
       self.big_input_imgs[MODEL_FRAME_SIZE:] = self.big_input_imgs_20hz[-MODEL_FRAME_SIZE:]
       self.model.setInputBuffer("big_input_imgs", self.big_input_imgs)
