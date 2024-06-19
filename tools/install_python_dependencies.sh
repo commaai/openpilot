@@ -37,8 +37,9 @@ poetry self add poetry-plugin-dotenv
 echo "installing python packages..."
 poetry install --no-cache --no-root
 
+[ -n "$POETRY_VIRTUALENVS_CREATE" ] && RUN="" || RUN="poetry run"
 if [ "$(uname)" != "Darwin" ] && [ -e "$ROOT/.git" ]; then
   echo "pre-commit hooks install..."
-  pre-commit install
-  git submodule foreach pre-commit install
+  $RUN pre-commit install
+  $RUN git submodule foreach pre-commit install
 fi
