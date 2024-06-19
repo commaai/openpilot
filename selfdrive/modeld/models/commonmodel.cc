@@ -7,7 +7,7 @@
 #include "common/clutil.h"
 
 ModelFrame::ModelFrame(cl_device_id device_id, cl_context context) {
-  input_frames = std::make_unique<float[]>(buf_size);
+  frame = std::make_unique<float[]>(MODEL_FRAME_SIZE);
 
   q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
   y_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, MODEL_WIDTH * MODEL_HEIGHT, NULL, &err));
@@ -23,13 +23,10 @@ float* ModelFrame::prepare(cl_mem yuv_cl, int frame_width, int frame_height, int
   transform_queue(&this->transform, q,
                   yuv_cl, frame_width, frame_height, frame_stride, frame_uv_offset,
                   y_cl, u_cl, v_cl, MODEL_WIDTH, MODEL_HEIGHT, projection);
-
   loadyuv_queue(&loadyuv, q, y_cl, u_cl, v_cl, net_input_cl);
-
-  std::memmove(&input_frames[0], &input_frames[MODEL_FRAME_SIZE], sizeof(float) * MODEL_FRAME_SIZE);
-  CL_CHECK(clEnqueueReadBuffer(q, net_input_cl, CL_TRUE, 0, MODEL_FRAME_SIZE * sizeof(float), &input_frames[MODEL_FRAME_SIZE], 0, nullptr, nullptr));
+  CL_CHECK(clEnqueueReadBuffer(q, net_input_cl, CL_TRUE, 0, MODEL_FRAME_SIZE * sizeof(float), &frame[0], 0, nullptr, nullptr));
   clFinish(q);
-  return &input_frames[0];
+  return &frame[0];
 }
 
 ModelFrame::~ModelFrame() {
