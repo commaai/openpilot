@@ -68,20 +68,18 @@ RUN usermod -aG sudo $USER
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 USER $USER
 
-ENV POETRY_VIRTUALENVS_CREATE=false
-ENV PYENV_VERSION=3.12.4
-ENV PYENV_ROOT="/home/$USER/pyenv"
-ENV PATH="$PYENV_ROOT/bin:$PYENV_ROOT/shims:$PATH"
-
 COPY --chown=$USER pyproject.toml poetry.lock /tmp/
 COPY --chown=$USER tools/install_python_dependencies.sh /tmp/tools/
 
-RUN cd /tmp && \
+ENV POETRY_VIRTUALENVS_CREATE=false
+ENV VIRTUAL_ENV=/home/$USER/venv/.venv
+RUN python3 -m venv $VIRTUAL_ENV
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+RUN . $VIRTUAL_ENV/bin/activate && \
+    cd /tmp && \
     tools/install_python_dependencies.sh && \
     rm -rf /tmp/* && \
-    rm -rf /home/$USER/.cache && \
-    find /home/$USER/pyenv -type d -name ".git" | xargs rm -rf && \
-    rm -rf /home/$USER/pyenv/versions/3.12.4/lib/python3.12/test
+    rm -rf /home/$USER/.cache
 
 USER root
 RUN sudo git config --global --add safe.directory /tmp/openpilot
