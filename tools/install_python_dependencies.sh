@@ -22,10 +22,6 @@ if ! command -v "poetry" > /dev/null 2>&1; then
   printf "\n#poetry path\n$ADD_PATH_CMD\n" >> $RC_FILE
 fi
 
-echo "creating virtualenv..."
-python3 -m venv .venv --prompt openpilot_env
-source .venv/bin/activate
-
 poetry config virtualenvs.prefer-active-python true --local
 poetry config virtualenvs.in-project true --local
 
