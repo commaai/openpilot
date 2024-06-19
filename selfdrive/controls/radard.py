@@ -251,10 +251,10 @@ class RadarD:
     self.radar_state.radarErrors = list(radar_errors)
     self.radar_state.carStateMonoTime = sm.logMonoTime['carState']
 
-    if len(sm['modelV2'].temporalPose.trans):
-      model_v_ego = sm['modelV2'].temporalPose.trans[0]
-    else:
-      model_v_ego = self.v_ego
+    #if len(sm['modelV2'].temporalPose.trans):
+    #  model_v_ego = sm['modelV2'].temporalPose.trans[0]
+    #else:
+    model_v_ego = self.v_ego
     leads_v3 = sm['modelV2'].leadsV3
     if len(leads_v3) > 1:
       self.radar_state.leadOne = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[0], model_v_ego, low_speed_override=True)

@@ -115,7 +115,7 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: dict[str, 
 
   # meta
   meta = modelV2.meta
-  meta.desireState = net_output_data['desire_state'][0].reshape(-1).tolist()
+  meta.desireState = np.zeros((ModelConstants.DESIRE_PRED_WIDTH,), dtype=np.float32).reshape(-1).tolist() # TODO
   meta.desirePrediction = net_output_data['desire_pred'][0].reshape(-1).tolist()
   meta.engagedProb = net_output_data['meta'][0,Meta.ENGAGED].item()
   meta.init('disengagePredictions')
@@ -137,11 +137,12 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: dict[str, 
   meta.hardBrakePredicted = hard_brake_predicted.item()
 
   # temporal pose
+  # TODO
   temporal_pose = modelV2.temporalPose
-  temporal_pose.trans = net_output_data['sim_pose'][0,:3].tolist()
-  temporal_pose.transStd = net_output_data['sim_pose_stds'][0,:3].tolist()
-  temporal_pose.rot = net_output_data['sim_pose'][0,3:].tolist()
-  temporal_pose.rotStd = net_output_data['sim_pose_stds'][0,3:].tolist()
+  temporal_pose.trans = np.zeros((3,), dtype=np.float32).reshape(-1).tolist()
+  temporal_pose.transStd = np.zeros((3,), dtype=np.float32).reshape(-1).tolist()
+  temporal_pose.rot = np.zeros((3,), dtype=np.float32).reshape(-1).tolist()
+  temporal_pose.rotStd = np.zeros((3,), dtype=np.float32).reshape(-1).tolist()
 
   # confidence
   if vipc_frame_id % (2*ModelConstants.MODEL_FREQ) == 0:
