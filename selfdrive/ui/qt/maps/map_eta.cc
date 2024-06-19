@@ -20,7 +20,7 @@ void MapETA::paintEvent(QPaintEvent *event) {
     QPainter p(this);
     p.setRenderHint(QPainter::Antialiasing);
     p.setPen(Qt::NoPen);
-    p.setBrush(QColor(0, 0, 0, 150));
+    p.setBrush(QColor(0, 0, 0, 255));
     QSizeF txt_size = eta_doc.size();
     p.drawRoundedRect((width() - txt_size.width()) / 2 - UI_BORDER_SIZE, 0, txt_size.width() + UI_BORDER_SIZE * 2, height() + 25, 25, 25);
     p.translate((width() - txt_size.width()) / 2, (height() - txt_size.height()) / 2);
@@ -38,10 +38,13 @@ void MapETA::updateETA(float s, float s_typical, float d) {
   auto remaining = s < 3600 ? std::pair{QString::number(int(s / 60)), tr("min")}
                             : std::pair{QString("%1:%2").arg((int)s / 3600).arg(((int)s % 3600) / 60, 2, 10, QLatin1Char('0')), tr("hr")};
   QString color = "#25DA6E";
-  if (s / s_typical > 1.5)
-    color = "#DA3025";
-  else if (s / s_typical > 1.2)
-    color = "#DAA725";
+  if (std::abs(s_typical) > 1e-5) {
+    if (s / s_typical > 1.5) {
+      color = "#DA3025";
+    } else if (s / s_typical > 1.2) {
+      color = "#DAA725";
+    }
+  }
 
   // Distance
   auto distance = map_format_distance(d, uiState()->scene.is_metric);

@@ -8,7 +8,7 @@
       <plot style="Lines" flip_x="false" flip_y="false" mode="TimeSeries">
        <range right="134.825489" top="4402341.574525" bottom="-107369.555525" left="0.000000"/>
        <limitY/>
-       <curve name="/gpsLocationExternal/accuracy" color="#1f77b4"/>
+       <curve name="/gpsLocationExternal/horizontalAccuracy" color="#1f77b4"/>
       </plot>
      </DockArea>
      <DockArea name="...">

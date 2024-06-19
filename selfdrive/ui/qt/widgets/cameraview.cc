@@ -11,6 +11,7 @@
 #include <string>
 #include <utility>
 
+#include <QApplication>
 #include <QOpenGLBuffer>
 #include <QOffscreenSurface>
 
@@ -31,8 +32,8 @@ const char frame_vertex_shader[] =
   "  vTexCoord = aTexCoord;\n"
   "}\n";
 
-#ifdef QCOM2
 const char frame_fragment_shader[] =
+#ifdef QCOM2
   "#version 300 es\n"
   "#extension GL_OES_EGL_image_external_essl3 : enable\n"
   "precision mediump float;\n"
@@ -41,9 +42,10 @@ const char frame_fragment_shader[] =
   "out vec4 colorOut;\n"
   "void main() {\n"
   "  colorOut = texture(uTexture, vTexCoord);\n"
+  // gamma to improve worst case visibility when dark
+  "  colorOut.rgb = pow(colorOut.rgb, vec3(1.0/1.28));\n"
   "}\n";
 #else
-const char frame_fragment_shader[] =
 #ifdef __APPLE__
   "#version 330 core\n"
 #else
@@ -97,12 +99,13 @@ mat4 get_fit_view_transform(float widget_aspect_ratio, float frame_aspect_ratio)
 } // namespace
 
 CameraWidget::CameraWidget(std::string stream_name, VisionStreamType type, bool zoom, QWidget* parent) :
-                          stream_name(stream_name), requested_stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
+                          stream_name(stream_name), active_stream_type(type), requested_stream_type(type), zoomed_view(zoom), QOpenGLWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
   qRegisterMetaType<std::set<VisionStreamType>>("availableStreams");
   QObject::connect(this, &CameraWidget::vipcThreadConnected, this, &CameraWidget::vipcConnected, Qt::BlockingQueuedConnection);
   QObject::connect(this, &CameraWidget::vipcThreadFrameReceived, this, &CameraWidget::vipcFrameReceived, Qt::QueuedConnection);
   QObject::connect(this, &CameraWidget::vipcAvailableStreamsUpdated, this, &CameraWidget::availableStreamsUpdated, Qt::QueuedConnection);
+  QObject::connect(QApplication::instance(), &QCoreApplication::aboutToQuit, this, &CameraWidget::stopVipcThread);
 }
 
 CameraWidget::~CameraWidget() {
@@ -188,12 +191,23 @@ void CameraWidget::showEvent(QShowEvent *event) {
 }
 
 void CameraWidget::stopVipcThread() {
+  makeCurrent();
   if (vipc_thread) {
     vipc_thread->requestInterruption();
     vipc_thread->quit();
     vipc_thread->wait();
     vipc_thread = nullptr;
   }
+
+#ifdef QCOM2
+  EGLDisplay egl_display = eglGetCurrentDisplay();
+  assert(egl_display != EGL_NO_DISPLAY);
+  for (auto &pair : egl_images) {
+    eglDestroyImageKHR(egl_display, pair.second);
+    assert(eglGetError() == EGL_SUCCESS);
+  }
+  egl_images.clear();
+#endif
 }
 
 void CameraWidget::availableStreamsUpdated(std::set<VisionStreamType> streams) {
@@ -324,8 +338,8 @@ void CameraWidget::vipcConnected(VisionIpcClient *vipc_client) {
   stream_stride = vipc_client->buffers[0].stride;
 
 #ifdef QCOM2
-  egl_display = eglGetCurrentDisplay();
-
+  EGLDisplay egl_display = eglGetCurrentDisplay();
+  assert(egl_display != EGL_NO_DISPLAY);
   for (auto &pair : egl_images) {
     eglDestroyImageKHR(egl_display, pair.second);
   }
@@ -416,13 +430,6 @@ void CameraWidget::vipcThread() {
       }
     }
   }
-
-#ifdef QCOM2
-  for (auto &pair : egl_images) {
-    eglDestroyImageKHR(egl_display, pair.second);
-  }
-  egl_images.clear();
-#endif
 }
 
 void CameraWidget::clearFrames() {

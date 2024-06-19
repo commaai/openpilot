@@ -40,6 +40,11 @@ class CarState(CarStateBase):
     self.accurate_steer_angle_seen = False
     self.angle_offset = FirstOrderFilter(None, 60.0, DT_CTRL, initialized=False)
 
+    self.prev_distance_button = 0
+    self.distance_button = 0
+
+    self.pcm_follow_distance = 0
+
     self.low_speed_lockout = False
     self.acc_type = 1
     self.lkas_hud = {}
@@ -54,12 +59,8 @@ class CarState(CarStateBase):
 
     ret.brakePressed = cp.vl["BRAKE_MODULE"]["BRAKE_PRESSED"] != 0
     ret.brakeHoldActive = cp.vl["ESP_CONTROL"]["BRAKE_HOLD_ACTIVE"] == 1
-    if self.CP.enableGasInterceptor:
-      ret.gas = (cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS"] + cp.vl["GAS_SENSOR"]["INTERCEPTOR_GAS2"]) // 2
-      ret.gasPressed = ret.gas > 805
-    else:
-      # TODO: find a common gas pedal percentage signal
-      ret.gasPressed = cp.vl["PCM_CRUISE"]["GAS_RELEASED"] == 0
+
+    ret.gasPressed = cp.vl["PCM_CRUISE"]["GAS_RELEASED"] == 0
 
     ret.wheelSpeeds = self.get_wheel_speeds(
       cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FL"],
@@ -71,7 +72,7 @@ class CarState(CarStateBase):
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.vEgoCluster = ret.vEgo * 1.015  # minimum of all the cars
 
-    ret.standstill = ret.vEgoRaw == 0
+    ret.standstill = abs(ret.vEgoRaw) < 1e-3
 
     ret.steeringAngleDeg = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"] + cp.vl["STEER_ANGLE_SENSOR"]["STEER_FRACTION"]
     ret.steeringRateDeg = cp.vl["STEER_ANGLE_SENSOR"]["STEER_RATE"]
@@ -94,6 +95,9 @@ class CarState(CarStateBase):
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
     ret.leftBlinker = cp.vl["BLINKERS_STATE"]["TURN_SIGNALS"] == 1
     ret.rightBlinker = cp.vl["BLINKERS_STATE"]["TURN_SIGNALS"] == 2
+
+    if self.CP.carFingerprint != CAR.TOYOTA_MIRAI:
+      ret.engineRpm = cp.vl["ENGINE_RPM"]["RPM"]
 
     ret.steeringTorque = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_DRIVER"]
     ret.steeringTorqueEps = cp.vl["STEER_TORQUE_SENSOR"]["STEER_TORQUE_EPS"] * self.eps_torque_scale
@@ -128,8 +132,7 @@ class CarState(CarStateBase):
     cp_acc = cp_cam if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR) else cp
 
     if self.CP.carFingerprint in TSS2_CAR and not self.CP.flags & ToyotaFlags.DISABLE_RADAR.value:
-      if not (self.CP.flags & ToyotaFlags.SMART_DSU.value):
-        self.acc_type = cp_acc.vl["ACC_CONTROL"]["ACC_TYPE"]
+      self.acc_type = cp_acc.vl["ACC_CONTROL"]["ACC_TYPE"]
       ret.stockFcw = bool(cp_acc.vl["PCS_HUD"]["FCW"])
 
     # some TSS2 cars have low speed lockout permanently set, so ignore on those cars
@@ -145,7 +148,7 @@ class CarState(CarStateBase):
       # ignore standstill state in certain vehicles, since pcm allows to restart with just an acceleration request
       ret.cruiseState.standstill = self.pcm_acc_status == 7
     ret.cruiseState.enabled = bool(cp.vl["PCM_CRUISE"]["CRUISE_ACTIVE"])
-    ret.cruiseState.nonAdaptive = cp.vl["PCM_CRUISE"]["CRUISE_STATE"] in (1, 2, 3, 4, 5, 6)
+    ret.cruiseState.nonAdaptive = self.pcm_acc_status in (1, 2, 3, 4, 5, 6)
 
     ret.genericToggle = bool(cp.vl["LIGHT_STALK"]["AUTO_HIGH_BEAM"])
     ret.espDisabled = cp.vl["ESP_CONTROL"]["TC_DISABLED"] != 0
@@ -157,8 +160,17 @@ class CarState(CarStateBase):
       ret.leftBlindspot = (cp.vl["BSM"]["L_ADJACENT"] == 1) or (cp.vl["BSM"]["L_APPROACHING"] == 1)
       ret.rightBlindspot = (cp.vl["BSM"]["R_ADJACENT"] == 1) or (cp.vl["BSM"]["R_APPROACHING"] == 1)
 
-    if self.CP.carFingerprint != CAR.PRIUS_V:
+    if self.CP.carFingerprint != CAR.TOYOTA_PRIUS_V:
       self.lkas_hud = copy.copy(cp_cam.vl["LKAS_HUD"])
+
+    if self.CP.carFingerprint not in UNSUPPORTED_DSU_CAR:
+      self.pcm_follow_distance = cp.vl["PCM_CRUISE_2"]["PCM_FOLLOW_DISTANCE"]
+
+    if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
+      # distance button is wired to the ACC module (camera or radar)
+      self.prev_distance_button = self.distance_button
+      if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
+        self.distance_button = cp_acc.vl["ACC_CONTROL"]["DISTANCE"]
 
     return ret
 
@@ -180,26 +192,22 @@ class CarState(CarStateBase):
       ("STEER_TORQUE_SENSOR", 50),
     ]
 
+    if CP.carFingerprint != CAR.TOYOTA_MIRAI:
+      messages.append(("ENGINE_RPM", 42))
+
     if CP.carFingerprint in UNSUPPORTED_DSU_CAR:
       messages.append(("DSU_CRUISE", 5))
       messages.append(("PCM_CRUISE_ALT", 1))
     else:
       messages.append(("PCM_CRUISE_2", 33))
 
-    # add gas interceptor reading if we are using it
-    if CP.enableGasInterceptor:
-      messages.append(("GAS_SENSOR", 50))
-
     if CP.enableBsm:
       messages.append(("BSM", 1))
 
     if CP.carFingerprint in RADAR_ACC_CAR and not CP.flags & ToyotaFlags.DISABLE_RADAR.value:
-      if not CP.flags & ToyotaFlags.SMART_DSU.value:
-        messages += [
-          ("ACC_CONTROL", 33),
-        ]
       messages += [
         ("PCS_HUD", 1),
+        ("ACC_CONTROL", 33),
       ]
 
     if CP.carFingerprint not in (TSS2_CAR - RADAR_ACC_CAR) and not CP.enableDsu and not CP.flags & ToyotaFlags.DISABLE_RADAR.value:
@@ -213,7 +221,7 @@ class CarState(CarStateBase):
   def get_cam_can_parser(CP):
     messages = []
 
-    if CP.carFingerprint != CAR.PRIUS_V:
+    if CP.carFingerprint != CAR.TOYOTA_PRIUS_V:
       messages += [
         ("LKAS_HUD", 1),
       ]

@@ -4,9 +4,8 @@ import pathlib
 import onnx
 import codecs
 import pickle
-from typing import Tuple
 
-def get_name_and_shape(value_info:onnx.ValueInfoProto) -> Tuple[str, Tuple[int,...]]:
+def get_name_and_shape(value_info:onnx.ValueInfoProto) -> tuple[str, tuple[int,...]]:
   shape = tuple([int(dim.dim_value) for dim in value_info.type.tensor_type.shape.dim])
   name = value_info.name
   return name, shape

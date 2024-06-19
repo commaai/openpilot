@@ -3,9 +3,10 @@ from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import apply_meas_steer_torque_limits
 from openpilot.selfdrive.car.chrysler import chryslercan
 from openpilot.selfdrive.car.chrysler.values import RAM_CARS, CarControllerParams, ChryslerFlags
+from openpilot.selfdrive.car.interfaces import CarControllerBase
 
 
-class CarController:
+class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
     self.apply_steer_last = 0
@@ -77,7 +78,7 @@ class CarController:
 
     self.frame += 1
 
-    new_actuators = CC.actuators.copy()
+    new_actuators = CC.actuators.as_builder()
     new_actuators.steer = self.apply_steer_last / self.params.STEER_MAX
     new_actuators.steerOutputCan = self.apply_steer_last
 

@@ -2,7 +2,9 @@
 
 #include <map>
 #include <memory>
+#include <optional>
 #include <set>
+#include <utility>
 
 #include <QHBoxLayout>
 #include <QFrame>
@@ -10,7 +12,7 @@
 #include <QTabBar>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
-#include "tools/cabana/util.h"
+#include "tools/cabana/utils/util.h"
 #include "tools/replay/logreader.h"
 
 struct AlertInfo {
@@ -40,12 +42,9 @@ public:
   void setTimeRange(double min, double max);
   AlertInfo alertInfo(double sec);
   QPixmap thumbnail(double sec);
-  void parseQLog(int segnum, std::shared_ptr<LogReader> qlog);
+  void parseQLog(std::shared_ptr<LogReader> qlog);
 
   const double factor = 1000.0;
-
-signals:
-  void updateMaximumTime(double);
 
 private:
   void mousePressEvent(QMouseEvent *e) override;
@@ -63,11 +62,11 @@ class VideoWidget : public QFrame {
 
 public:
   VideoWidget(QWidget *parnet = nullptr);
-  void updateTimeRange(double min, double max, bool is_zommed);
   void setMaximumTime(double sec);
 
 protected:
   QString formatTime(double sec, bool include_milliseconds = false);
+  void timeRangeChanged(const std::optional<std::pair<double, double>> &time_range);
   void updateState();
   void updatePlayBtnState();
   QWidget *createCameraWidget();

@@ -14,12 +14,12 @@ cereal
 messaging
 ^^^^^^^^^
 .. autodoxygenindex::
-   :project: cereal_messaging
+   :project: msgq_repo_msgq
 
 visionipc
 ^^^^^^^^^
 .. autodoxygenindex::
-   :project: cereal_visionipc
+   :project: msgq_repo_msgq_visionipc
 
 
 selfdrive
@@ -29,8 +29,6 @@ camerad
 ^^^^^^^
 .. autodoxygenindex::
    :project: system_camerad_cameras
-.. autodoxygenindex::
-   :project: system_camerad_imgproc
 
 locationd
 ^^^^^^^^^
@@ -42,12 +40,6 @@ ui
 
 .. autodoxygenindex::
    :project: selfdrive_ui
-
-soundd
-""""""
-.. autodoxygenindex::
-   :project: selfdrive_ui_soundd
-
 
 replay
 """"""
@@ -85,10 +77,10 @@ sensorsd
 .. autodoxygenindex::
    :project: system_sensord_sensors
 
-boardd
+pandad
 ^^^^^^
 .. autodoxygenindex::
-   :project: selfdrive_boardd
+   :project: selfdrive_pandad
 
 
 rednose

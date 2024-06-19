@@ -1,5 +1,5 @@
 import math
-import threading
+import multiprocessing
 import numpy as np
 
 from abc import ABC, abstractmethod
@@ -17,7 +17,7 @@ class GPSState:
     self.altitude = 0
 
   def from_xy(self, xy):
-    """Simulates a lat/lon from an xy coordinate on a plane, for simple simlation. TODO: proper global projection?"""
+    """Simulates a lat/lon from an xy coordinate on a plane, for simple simulation. TODO: proper global projection?"""
     BASE_LAT = 32.75308505188913
     BASE_LON = -117.2095393365393
     DEG_TO_METERS = 100000
@@ -65,9 +65,11 @@ class World(ABC):
   def __init__(self, dual_camera):
     self.dual_camera = dual_camera
 
-    self.image_lock = threading.Lock()
+    self.image_lock = multiprocessing.Semaphore(value=0)
     self.road_image = np.zeros((H, W, 3), dtype=np.uint8)
     self.wide_road_image = np.zeros((H, W, 3), dtype=np.uint8)
+
+    self.exit_event = multiprocessing.Event()
 
   @abstractmethod
   def apply_controls(self, steer_sim, throttle_out, brake_out):
@@ -75,6 +77,10 @@ class World(ABC):
 
   @abstractmethod
   def tick(self):
+    pass
+
+  @abstractmethod
+  def read_state(self):
     pass
 
   @abstractmethod
@@ -86,7 +92,7 @@ class World(ABC):
     pass
 
   @abstractmethod
-  def close(self):
+  def close(self, reason: str):
     pass
 
   @abstractmethod

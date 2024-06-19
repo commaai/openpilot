@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-import unittest
-
 from parameterized import parameterized
 
 from cereal import car, log
@@ -12,12 +9,12 @@ from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
-from openpilot.selfdrive.navd.tests.test_map_renderer import gen_llk
+from openpilot.common.mock.generators import generate_liveLocationKalman
 
 
-class TestLatControl(unittest.TestCase):
+class TestLatControl:
 
-  @parameterized.expand([(HONDA.CIVIC, LatControlPID), (TOYOTA.RAV4, LatControlTorque),  (NISSAN.LEAF, LatControlAngle)])
+  @parameterized.expand([(HONDA.HONDA_CIVIC, LatControlPID), (TOYOTA.TOYOTA_RAV4, LatControlTorque),  (NISSAN.NISSAN_LEAF, LatControlAngle)])
   def test_saturation(self, car_name, controller):
     CarInterface, CarController, CarState = interfaces[car_name]
     CP = CarInterface.get_non_essential_params(car_name)
@@ -30,16 +27,10 @@ class TestLatControl(unittest.TestCase):
     CS.vEgo = 30
     CS.steeringPressed = False
 
-    last_actuators = car.CarControl.Actuators.new_message()
-
     params = log.LiveParametersData.new_message()
 
-    llk = gen_llk()
+    llk = generate_liveLocationKalman()
     for _ in range(1000):
-      _, _, lac_log = controller.update(True, CS, VM, params, last_actuators, False, 1, 0, llk)
+      _, _, lac_log = controller.update(True, CS, VM, params, False, 1, llk)
 
-    self.assertTrue(lac_log.saturated)
-
-
-if __name__ == "__main__":
-  unittest.main()
+    assert lac_log.saturated

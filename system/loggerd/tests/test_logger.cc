@@ -1,16 +1,5 @@
-#include <sys/stat.h>
-
-#include <climits>
-#include <condition_variable>
-#include <sstream>
-#include <thread>
-#include <utility>
-
 #include "catch2/catch.hpp"
-#include "cereal/messaging/messaging.h"
-#include "common/util.h"
 #include "system/loggerd/logger.h"
-#include "tools/replay/util.h"
 
 typedef cereal::Sentinel::SentinelType SentinelType;
 
@@ -57,91 +46,29 @@ void verify_segment(const std::string &route_path, int segment, int max_segment,
   }
 }
 
-void write_msg(LoggerHandle *logger) {
+void write_msg(LoggerState *logger) {
   MessageBuilder msg;
   msg.initEvent().initClocks();
-  auto bytes = msg.toBytes();
-  lh_log(logger, bytes.begin(), bytes.size(), true);
+  logger->write(msg.toBytes(), true);
 }
 
 TEST_CASE("logger") {
+  const int segment_cnt = 100;
   const std::string log_root = "/tmp/test_logger";
   system(("rm " + log_root + " -rf").c_str());
-
-  ExitHandler do_exit;
-
-  LoggerState logger = {};
-  logger_init(&logger, true);
-  char segment_path[PATH_MAX] = {};
-  int segment = -1;
-
-  SECTION("single thread logging & rotation(100 segments, one thread)") {
-    const int segment_cnt = 100;
+  std::string route_name;
+  {
+    LoggerState logger(log_root);
+    route_name = logger.routeName();
     for (int i = 0; i < segment_cnt; ++i) {
-      REQUIRE(logger_next(&logger, log_root.c_str(), segment_path, sizeof(segment_path), &segment) == 0);
-      REQUIRE(util::file_exists(std::string(segment_path) + "/rlog.lock"));
-      REQUIRE(segment == i);
-      write_msg(logger.cur_handle);
+      REQUIRE(logger.next());
+      REQUIRE(util::file_exists(logger.segmentPath() + "/rlog.lock"));
+      REQUIRE(logger.segment() == i);
+      write_msg(&logger);
     }
-    do_exit = true;
-    do_exit.signal = 1;
-    logger_close(&logger, &do_exit);
-    for (int i = 0; i < segment_cnt; ++i) {
-      verify_segment(log_root + "/" + logger.route_name, i, segment_cnt, 1);
-    }
+    logger.setExitSignal(1);
   }
-  SECTION("multiple threads logging & rotation(100 segments, 10 threads") {
-    const int segment_cnt = 100, thread_cnt = 10;
-    std::atomic<int> event_cnt[segment_cnt] = {};
-    std::atomic<int> main_segment = -1;
-
-    auto logging_thread = [&]() -> void {
-      LoggerHandle *lh = logger_get_handle(&logger);
-      assert(lh != nullptr);
-      int segment = main_segment;
-      int delayed_cnt = 0;
-      while (!do_exit) {
-        // write 2 more messages in the current segment and then rotate to the new segment.
-        if (main_segment > segment && ++delayed_cnt == 2) {
-          lh_close(lh);
-          lh = logger_get_handle(&logger);
-          segment = main_segment;
-          delayed_cnt = 0;
-        }
-        write_msg(lh);
-        event_cnt[segment] += 1;
-        usleep(1);
-      }
-      lh_close(lh);
-    };
-
-    // start logging
-    std::vector<std::thread> threads;
-    for (int i = 0; i < segment_cnt; ++i) {
-      REQUIRE(logger_next(&logger, log_root.c_str(), segment_path, sizeof(segment_path), &segment) == 0);
-      REQUIRE(segment == i);
-      main_segment = segment;
-      if (i == 0) {
-        for (int j = 0; j < thread_cnt; ++j) {
-          threads.push_back(std::thread(logging_thread));
-        }
-      }
-      for (int j = 0; j < 100; ++j) {
-        write_msg(logger.cur_handle);
-        usleep(1);
-      }
-      event_cnt[segment] += 100;
-    }
-
-    // end logging
-    for (auto &t : threads) t.join();
-    do_exit = true;
-    do_exit.signal = 1;
-    logger_close(&logger, &do_exit);
-    REQUIRE(logger.cur_handle->refcnt == 0);
-
-    for (int i = 0; i < segment_cnt; ++i) {
-      verify_segment(log_root + "/" + logger.route_name, i, segment_cnt, event_cnt[i]);
-    }
+  for (int i = 0; i < segment_cnt; ++i) {
+    verify_segment(log_root + "/" + route_name, i, segment_cnt, 1);
   }
 }

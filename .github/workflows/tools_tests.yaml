@@ -12,56 +12,71 @@ concurrency:
 
 env:
   BASE_IMAGE: openpilot-base
-  CL_BASE_IMAGE: openpilot-base-cl
   DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
 
   BUILD: selfdrive/test/docker_build.sh base
 
-  RUN: docker run --shm-size 1G -v $GITHUB_WORKSPACE:/tmp/openpilot -w /tmp/openpilot -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/sh -c
-
-  BUILD_CL: selfdrive/test/docker_build.sh cl
-
-  RUN_CL: docker run --shm-size 1G -v $GITHUB_WORKSPACE:/tmp/openpilot -w /tmp/openpilot -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $CL_BASE_IMAGE /bin/sh -c
+  RUN: docker run --shm-size 1G -v $GITHUB_WORKSPACE:/tmp/openpilot -w /tmp/openpilot -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/bash -c
 
 
 jobs:
-  plotjuggler:
-    name: plotjuggler
-    runs-on: ubuntu-20.04
-    timeout-minutes: 45
+  simulator_driving:
+    name: simulator driving
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
-      timeout-minutes: 5
-      run: ${{ env.RUN }} "scons -j$(nproc) cereal/ common/ --minimal"
-    - name: Test PlotJuggler
-      timeout-minutes: 2
       run: |
-        ${{ env.RUN }} "pytest tools/plotjuggler/"
+        ${{ env.RUN }} "scons -j$(nproc)"
+    - name: Run bridge test
+      run: |
+        ${{ env.RUN }} "export MAPBOX_TOKEN='pk.eyJ1Ijoiam5ld2IiLCJhIjoiY2xxNW8zZXprMGw1ZzJwbzZneHd2NHljbSJ9.gV7VPRfbXFetD-1OVF0XZg' && \
+                        source selfdrive/test/setup_xvfb.sh && \
+                        source selfdrive/test/setup_vsound.sh && \
+                        CI=1 pytest tools/sim/tests/test_metadrive_bridge.py"
 
-  simulator:
-    name: simulator
+  test_compatibility:
+    name: test 20.04 + 3.11
     runs-on: ubuntu-20.04
-    if: github.repository == 'commaai/openpilot'
-    timeout-minutes: 45
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - uses: ./.github/workflows/setup-with-retry
-    - name: Build base cl image
-      run: eval "$BUILD_CL"
-    - name: Setup to push to repo
-      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
-      run: |
-        echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
-        $DOCKER_LOGIN
-    - name: Build and push sim image
-      run: |
-        selfdrive/test/docker_build.sh sim
+    - name: Installing ubuntu dependencies
+      run: INSTALL_EXTRA_PACKAGES=no tools/install_ubuntu_dependencies.sh
+    - name: Installing python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11.4'
+    - name: Installing pip
+      run: pip install pip==24.0
+    - name: Installing poetry
+      run: pip install poetry==1.7.0
+    - name: Installing python dependencies
+      run: poetry install --no-cache --no-root
+    - name: git LFS
+      run: git lfs pull
+    - run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
+    - name: Getting scons cache
+      uses: 'actions/cache@v4'
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ runner.arch }}-ubuntu2004-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        restore-keys: |
+          scons-${{ runner.arch }}-ubuntu2004-${{ env.CACHE_COMMIT_DATE }}
+          scons-${{ runner.arch }}-ubuntu2004
+    - name: Building openpilot
+      run: poetry run scons -u -j$(nproc)
+    - name: Saving scons cache
+      uses: actions/cache/save@v4
+      if: github.ref == 'refs/heads/master'
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ runner.arch }}-ubuntu2004-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
 
   devcontainer:
     name: devcontainer
@@ -77,15 +92,15 @@ jobs:
     - name: Setup Dev Container CLI
       run: npm install -g @devcontainers/cli
     - name: Build dev container image
-      run: devcontainer build --workspace-folder .
+      run: ./scripts/retry.sh devcontainer build --workspace-folder .
     - name: Run dev container
       run: |
         mkdir -p /tmp/devcontainer_scons_cache/
-        cp -r $GITHUB_WORKSPACE/.ci_cache/scons_cache/* /tmp/devcontainer_scons_cache/
+        cp -r $GITHUB_WORKSPACE/.ci_cache/scons_cache/. /tmp/devcontainer_scons_cache/
         devcontainer up --workspace-folder .
     - name: Test environment
       run: |
-        devcontainer exec --workspace-folder . scons -j$(nproc)
+        devcontainer exec --workspace-folder . scons -j$(nproc) cereal/ common/
         devcontainer exec --workspace-folder . pip install pip-install-test
         devcontainer exec --workspace-folder . touch /home/batman/.comma/auth.json
         devcontainer exec --workspace-folder . sudo touch /root/test.txt
