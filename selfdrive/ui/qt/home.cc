@@ -143,7 +143,15 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
 
     // left: PrimeAdWidget
     QStackedWidget *left_widget = new QStackedWidget(this);
-    left_widget->addWidget(new QWidget);
+    QVBoxLayout *left_prime_layout = new QVBoxLayout();
+    QWidget *prime_user = new PrimeUserWidget();
+    prime_user->setStyleSheet(R"(
+    border-radius: 10px;
+    background-color: #333333;
+    )");
+    left_prime_layout->addWidget(prime_user);
+    left_prime_layout->addStretch();
+    left_widget->addWidget(new LayoutWidget(left_prime_layout));
     left_widget->addWidget(new PrimeAdWidget);
     left_widget->setStyleSheet("border-radius: 10px;");
 

@@ -225,9 +225,6 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   content_layout->setContentsMargins(0, 0, 0, 0);
   content_layout->setSpacing(30);
 
-  primeUser = new PrimeUserWidget;
-  content_layout->addWidget(primeUser);
-
   WiFiPromptWidget *wifi_prompt = new WiFiPromptWidget;
   QObject::connect(wifi_prompt, &WiFiPromptWidget::openSettings, this, &SetupWidget::openSettings);
   content_layout->addWidget(wifi_prompt);
@@ -235,7 +232,6 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
   mainLayout->addWidget(content);
 
-  primeUser->setVisible(uiState()->hasPrime());
   mainLayout->setCurrentIndex(1);
 
   setStyleSheet(R"(
@@ -277,8 +273,6 @@ void SetupWidget::replyFinished(const QString &response, bool success) {
     mainLayout->setCurrentIndex(0);
   } else {
     popup->reject();
-
-    primeUser->setVisible(uiState()->hasPrime());
     mainLayout->setCurrentIndex(1);
   }
 }
