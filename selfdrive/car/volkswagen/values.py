@@ -223,7 +223,7 @@ class CAR(Platforms):
   )
   VOLKSWAGEN_ATLAS_MK1 = VolkswagenMQBPlatformConfig(
     [
-      VWCarDocs("Volkswagen Atlas 2018-23"),
+      VWCarDocs("Volkswagen Atlas 2018-24"),
       VWCarDocs("Volkswagen Atlas Cross Sport 2020-22"),
       VWCarDocs("Volkswagen Teramont 2018-22"),
       VWCarDocs("Volkswagen Teramont Cross Sport 2021-22"),

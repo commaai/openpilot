@@ -95,6 +95,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x872Q0907572AA\xf1\x890396',
+      b'\xf1\x875WA907572C \xf1\x890461',
       b'\xf1\x872Q0907572R \xf1\x890372',
       b'\xf1\x872Q0907572T \xf1\x890383',
       b'\xf1\x875Q0907572H \xf1\x890620',
