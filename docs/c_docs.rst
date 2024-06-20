@@ -14,12 +14,12 @@ cereal
 messaging
 ^^^^^^^^^
 .. autodoxygenindex::
-   :project: msgq_messaging
+   :project: msgq_repo_msgq
 
 visionipc
 ^^^^^^^^^
 .. autodoxygenindex::
-   :project: msgq_visionipc
+   :project: msgq_repo_msgq_visionipc
 
 
 selfdrive
@@ -50,8 +50,6 @@ qt
 ""
 .. autodoxygenindex::
    :project: selfdrive_ui_qt_offroad
-.. autodoxygenindex::
-   :project: selfdrive_ui_qt_maps
 
 proclogd
 ^^^^^^^^

@@ -188,7 +188,7 @@ class Footnote(Enum):
 @dataclass
 class VWCarDocs(CarDocs):
   package: str = "Adaptive Cruise Control (ACC) & Lane Assist"
-  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.j533]))
+  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.vw_j533]))
 
   def init_make(self, CP: car.CarParams):
     self.footnotes.append(Footnote.VW_EXP_LONG)
@@ -196,7 +196,7 @@ class VWCarDocs(CarDocs):
       self.footnotes.append(Footnote.SKODA_HEATED_WINDSHIELD)
 
     if CP.carFingerprint in (CAR.VOLKSWAGEN_CRAFTER_MK2, CAR.VOLKSWAGEN_TRANSPORTER_T61):
-      self.car_parts = CarParts([Device.threex_angled_mount, CarHarness.j533])
+      self.car_parts = CarParts([Device.threex_angled_mount, CarHarness.vw_j533])
 
     if abs(CP.minSteerSpeed - CarControllerParams.DEFAULT_MIN_STEER_SPEED) < 1e-3:
       self.min_steer_speed = 0
@@ -244,14 +244,14 @@ class CAR(Platforms):
   )
   VOLKSWAGEN_CRAFTER_MK2 = VolkswagenMQBPlatformConfig(
     [
-      VWCarDocs("Volkswagen Crafter 2017-23", video_link="https://youtu.be/4100gLeabmo"),
-      VWCarDocs("Volkswagen e-Crafter 2018-23", video_link="https://youtu.be/4100gLeabmo"),
-      VWCarDocs("Volkswagen Grand California 2019-23", video_link="https://youtu.be/4100gLeabmo"),
-      VWCarDocs("MAN TGE 2017-23", video_link="https://youtu.be/4100gLeabmo"),
-      VWCarDocs("MAN eTGE 2020-23", video_link="https://youtu.be/4100gLeabmo"),
+      VWCarDocs("Volkswagen Crafter 2017-24", video_link="https://youtu.be/4100gLeabmo"),
+      VWCarDocs("Volkswagen e-Crafter 2018-24", video_link="https://youtu.be/4100gLeabmo"),
+      VWCarDocs("Volkswagen Grand California 2019-24", video_link="https://youtu.be/4100gLeabmo"),
+      VWCarDocs("MAN TGE 2017-24", video_link="https://youtu.be/4100gLeabmo"),
+      VWCarDocs("MAN eTGE 2020-24", video_link="https://youtu.be/4100gLeabmo"),
     ],
     VolkswagenCarSpecs(mass=2100, wheelbase=3.64, minSteerSpeed=50 * CV.KPH_TO_MS),
-    chassis_codes={"SY", "SZ"},
+    chassis_codes={"SY", "SZ", "UY", "UZ"},
     wmis={WMI.VOLKSWAGEN_COMMERCIAL, WMI.MAN},
   )
   VOLKSWAGEN_GOLF_MK7 = VolkswagenMQBPlatformConfig(

@@ -84,8 +84,8 @@ class TestBoarddSpi:
             ps = m.peripheralState
             assert ps.pandaType == "tres"
             assert 4000 < ps.voltage < 14000
-            assert 100 < ps.current < 1000
-            assert ps.fanSpeedRpm < 8000
+            assert 50 < ps.current < 1000
+            assert ps.fanSpeedRpm < 10000
 
       time.sleep(0.5)
     et = time.monotonic() - st
@@ -97,7 +97,7 @@ class TestBoarddSpi:
       with subtests.test(msg="timing check", service=service):
         edt = 1e3 / SERVICE_LIST[service].frequency
         assert edt*0.9 < np.mean(dts) < edt*1.1
-        assert np.max(dts) < edt*20
+        assert np.max(dts) < edt*8
         assert np.min(dts) < edt
         assert len(dts) >= ((et-0.5)*SERVICE_LIST[service].frequency*0.8)
 

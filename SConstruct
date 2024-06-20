@@ -211,8 +211,6 @@ env = Environment(
     "#cereal",
     "#msgq",
     "#opendbc/can",
-    "#third_party/maplibre-native-qt/include",
-    f"#third_party/maplibre-native-qt/{arch}/include"
   ],
 
   CC='clang',
@@ -224,10 +222,8 @@ env = Environment(
   CFLAGS=["-std=gnu11"] + cflags,
   CXXFLAGS=["-std=c++1z"] + cxxflags,
   LIBPATH=libpath + [
-    "#cereal",
-    "#msgq",
+    "#msgq_repo",
     "#third_party",
-    "#opendbc/can",
     "#selfdrive/pandad",
     "#common",
     "#rednose/helpers",
@@ -279,7 +275,7 @@ Export('envCython')
 
 # Qt build environment
 qt_env = env.Clone()
-qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick", "Qml", "QuickWidgets", "Location", "Positioning", "DBus", "Xml"]
+qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick", "Qml", "QuickWidgets", "DBus", "Xml"]
 
 qt_libs = []
 if arch == "Darwin":
@@ -332,8 +328,7 @@ qt_flags = [
   "-DQT_MESSAGELOGCONTEXT",
 ]
 qt_env['CXXFLAGS'] += qt_flags
-qt_env['LIBPATH'] += ['#selfdrive/ui', f"#third_party/maplibre-native-qt/{arch}/lib"]
-qt_env['RPATH'] += [Dir(f"#third_party/maplibre-native-qt/{arch}/lib").srcnode().abspath]
+qt_env['LIBPATH'] += ['#selfdrive/ui', ]
 qt_env['LIBS'] = qt_libs
 
 if GetOption("clazy"):
@@ -358,9 +353,13 @@ gpucommon = [_gpucommon]
 
 Export('common', 'gpucommon')
 
-# Build cereal and messaging
-SConscript(['msgq/SConscript'])
+# Build messaging (cereal + msgq + socketmaster + their dependencies)
+SConscript(['msgq_repo/SConscript'])
 SConscript(['cereal/SConscript'])
+Import('socketmaster', 'msgq')
+messaging = [socketmaster, msgq, 'zmq', 'capnp', 'kj',]
+Export('messaging')
+
 
 # Build other submodules
 SConscript([

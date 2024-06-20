@@ -36,43 +36,42 @@ PROCS = {
   # Baseline CPU usage by process
   "selfdrive.controls.controlsd": 32.0,
   "selfdrive.car.card": 22.0,
-  "./loggerd": 14.0,
-  "./encoderd": 17.0,
-  "./camerad": 14.5,
-  "./locationd": 11.0,
+  "loggerd": 14.0,
+  "encoderd": 17.0,
+  "camerad": 14.5,
+  "locationd": 11.0,
   "selfdrive.controls.plannerd": 11.0,
-  "./ui": 18.0,
+  "ui": 18.0,
   "selfdrive.locationd.paramsd": 9.0,
-  "./sensord": 7.0,
+  "sensord": 7.0,
   "selfdrive.controls.radard": 7.0,
-  "selfdrive.modeld.modeld": 13.0,
+  "modeld": 13.0,
   "selfdrive.modeld.dmonitoringmodeld": 8.0,
   "system.hardware.hardwared": 3.87,
   "selfdrive.locationd.calibrationd": 2.0,
   "selfdrive.locationd.torqued": 5.0,
   "selfdrive.ui.soundd": 3.5,
   "selfdrive.monitoring.dmonitoringd": 4.0,
-  "./proclogd": 1.54,
+  "proclogd": 1.54,
   "system.logmessaged": 0.2,
   "system.tombstoned": 0,
-  "./logcatd": 0,
+  "logcatd": 0,
   "system.micd": 6.0,
   "system.timed": 0,
   "selfdrive.pandad.pandad": 0,
   "system.statsd": 0.4,
-  "selfdrive.navd.navd": 0.4,
   "system.loggerd.uploader": (0.5, 15.0),
   "system.loggerd.deleter": 0.1,
 }
 
 PROCS.update({
   "tici": {
-    "./pandad": 4.0,
-    "./ubloxd": 0.02,
+    "pandad": 4.0,
+    "ubloxd": 0.02,
     "system.ubloxd.pigeond": 6.0,
   },
   "tizi": {
-     "./pandad": 19.0,
+     "pandad": 19.0,
     "system.qcomgpsd.qcomgpsd": 1.0,
   }
 }.get(HARDWARE.get_device_type(), {}))
@@ -247,8 +246,7 @@ class TestOnroad:
     for pl in self.service_msgs['procLog']:
       for x in pl.procLog.procs:
         if len(x.cmdline) > 0:
-          n = list(x.cmdline)[0]
-          plogs_by_proc[n].append(x)
+          plogs_by_proc[x.name].append(x)
     print(plogs_by_proc.keys())
 
     cpu_ok = True
@@ -256,8 +254,9 @@ class TestOnroad:
     for proc_name, expected_cpu in PROCS.items():
 
       err = ""
+      exp = "???"
       cpu_usage = 0.
-      x = plogs_by_proc[proc_name]
+      x = plogs_by_proc[proc_name[-15:]]
       if len(x) > 2:
         cpu_time = cputime_total(x[-1]) - cputime_total(x[0])
         cpu_usage = cpu_time / dt * 100.
@@ -309,7 +308,7 @@ class TestOnroad:
     assert max(mems) - min(mems) <= 3.0
 
   def test_gpu_usage(self):
-    assert self.gpu_procs == {"weston", "ui", "camerad", "selfdrive.modeld.modeld"}
+    assert self.gpu_procs == {"weston", "ui", "camerad", "modeld"}
 
   def test_camera_processing_time(self):
     result = "\n"
