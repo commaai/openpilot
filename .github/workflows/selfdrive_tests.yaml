@@ -79,7 +79,7 @@ jobs:
       if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
       run: |
         echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
-        echo "TARGET_ARCHITECTURE=${{ matrix.arch }}" >> "$GITHUB_ENV"
+        : # (TODO: Re-add this once we test other archs) echo "TARGET_ARCHITECTURE=${{ matrix.arch }}" >> "$GITHUB_ENV"
         $DOCKER_LOGIN
     - uses: ./.github/workflows/setup-with-retry
       with:
