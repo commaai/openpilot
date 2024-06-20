@@ -38,7 +38,6 @@ clean:
 			-not -path "./build/*" \
 			-not -path "./docs/*" \
 			-not -path "./xx/*" \
-			\( -newer "./build/docs/" -o ! -path "./build/docs/*" \)
 			-exec cp --parents "{}" "$(SOURCEDIR)/" \;
 
 	@echo "Building rst files..."
