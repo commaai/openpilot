@@ -27,6 +27,13 @@ CameraServer::CameraServer(std::pair<int, int> camera_size[MAX_CAMERAS]) {
 CameraServer::~CameraServer() {
   for (auto &cam : cameras_) {
     if (cam.thread.joinable()) {
+      // Clear the queue
+      std::pair<FrameReader*, const Event *> item;
+      while (cam.queue.try_pop(item)) {
+        --publishing_;
+      }
+
+      // Signal termination and join the thread
       cam.queue.push({});
       cam.thread.join();
     }
