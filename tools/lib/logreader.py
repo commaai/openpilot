@@ -104,6 +104,14 @@ def auto_strategy(rlog_paths: LogPaths, qlog_paths: LogPaths, interactive: bool,
             for (rlog, qlog) in zip(rlog_paths, qlog_paths, strict=True)]
   return rlog_paths
 
+def count_missing_files(rlog_paths: LogPaths, qlog_paths: LogPaths, valid_file: ValidFileCallable) -> int:
+  missing_count = 0
+
+  for rlog, qlog in zip(rlog_paths, qlog_paths):
+    if (rlog is None or not valid_file(rlog)) and (qlog is None or not valid_file(qlog)):
+      missing_count += 1
+
+  return missing_count
 
 def apply_strategy(mode: ReadMode, rlog_paths: LogPaths, qlog_paths: LogPaths, valid_file: ValidFileCallable = default_valid_file) -> LogPaths:
   if mode == ReadMode.RLOG:
