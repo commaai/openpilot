@@ -528,7 +528,7 @@ class CAR(Platforms):
     CarSpecs(mass=1950, wheelbase=2.87, steerRatio=14.6),
     flags=HyundaiFlags.RADAR_SCC,
   )
-  # 2023 GV70 Electrified has Varaible Gear Ratio (VGR) rack & pinion with rack mounted EPS.
+  # 2023 GV70 Electrified has Variable Gear Ratio (VGR) rack & pinion with rack mounted EPS.
   # The overall gear/steering ratio is 13.27.
   # https://www.genesis.com/content/dam/genesis-p2/au/assets/models/electrified-gv70/specs/Genesis_GV70_EV_August_2022_v0.1.pdf
   GENESIS_GV70_ELECTRIFIED_1ST_GEN = HyundaiCanFDPlatformConfig(
