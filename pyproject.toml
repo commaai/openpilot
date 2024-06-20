@@ -25,7 +25,6 @@ testpaths = [
   "selfdrive/controls",
   "selfdrive/locationd",
   "selfdrive/monitoring",
-  "selfdrive/navd/tests",
   "selfdrive/test/longitudinal_maneuvers",
   "selfdrive/test/process_replay/test_fuzzy.py",
   "system/updated",
@@ -183,7 +182,6 @@ natsort = "*"
 opencv-python-headless = "*"
 parameterized = "^0.8"
 #pprofile = "*"
-polyline = "*"
 pyautogui = "*"
 pygame = "*"
 pyopencl = { version = "*", markers = "platform_machine != 'aarch64'" }  # broken on arm64
