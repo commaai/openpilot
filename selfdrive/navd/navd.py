@@ -35,7 +35,6 @@ class RouteEngine:
 
     self.gps_ok = False
     self.localizer_valid = False
-    self.timezone = False
 
     self.nav_destination = None
     self.step_idx = None
@@ -199,20 +198,6 @@ class RouteEngine:
     except requests.exceptions.RequestException:
       cloudlog.exception("failed to get route")
       self.clear_route()
-
-    # getting timezone through mapbox api
-    url = self.mapbox_host + '/v5/examples.4ze9z6tv/tilequery/' + coords_str
-    try:
-      resp = requests.get(url, params=params['access_token'], timeout=10)
-
-      r = resp.json()
-      if len(r["features"]):
-        self.timezone = r["features"][0]["properties"]["TZID"]
-
-    except requests.exceptions.RequestException:
-      cloudlog.exception("failed to get timezone")
-
-    self.send_route()
 
   def send_instruction(self):
     msg = messaging.new_message('navInstruction', valid=True)

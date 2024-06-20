@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import datetime
-import os
 import subprocess
 import time
 from typing import NoReturn
@@ -8,25 +7,6 @@ from typing import NoReturn
 import cereal.messaging as messaging
 from openpilot.common.time import system_time_valid
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.hardware import AGNOS
-
-
-def set_timezone(timezone):
-  valid_timezones = subprocess.check_output('timedatectl list-timezones', shell=True, encoding='utf8').strip().split('\n')
-  if timezone not in valid_timezones:
-    cloudlog.error(f"Timezone not supported {timezone}")
-    return
-  cloudlog.debug(f"Setting timezone to {timezone}")
-  try:
-    if AGNOS:
-      tzpath = os.path.join("/usr/share/zoneinfo/", timezone)
-      subprocess.check_call(f'sudo su -c "ln -snf {tzpath} /data/etc/tmptime && \
-                              mv /data/etc/tmptime /data/etc/localtime"', shell=True)
-      subprocess.check_call(f'sudo su -c "echo \"{timezone}\" > /data/etc/timezone"', shell=True)
-    else:
-      subprocess.check_call(f'sudo timedatectl set-timezone {timezone}', shell=True)
-  except subprocess.CalledProcessError:
-    cloudlog.exception(f"Error setting timezone to {timezone}")
 
 
 def set_time(new_time):
@@ -44,11 +24,10 @@ def set_time(new_time):
 
 def main() -> NoReturn:
   """
-    timed has two responsibilities:
+    timed has one responsibility:
     - getting the current time
-    - getting the current timezone
 
-    GPS directly gives time, and timezone is looked up from GPS position.
+    GPS directly gives time.
     AGNOS will also use NTP to update the time.
   """
 
@@ -65,11 +44,6 @@ def main() -> NoReturn:
     llk = sm['liveLocationKalman']
     if not llk.gpsOK or (time.monotonic() - sm.logMonoTime['liveLocationKalman']/1e9) > 0.2:
       continue
-    tz = sm['NavRoute']['timezone'] # timezone comes from tilequery mapbox api
-    if tz != '':
-      set_timezone(tz)
-    else:
-      cloudlog.exception("timed.failed_setting_timezone")
 
     # set time
     # TODO: account for unixTimesatmpMillis being a (usually short) time in the past
