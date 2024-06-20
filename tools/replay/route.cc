@@ -74,7 +74,10 @@ bool Route::loadFromServer(int retries) {
       return loadFromJson(result);
     } else if (err == QNetworkReply::ContentAccessDenied || err == QNetworkReply::AuthenticationRequiredError) {
       rWarning(">>  Unauthorized. Authenticate with tools/lib/auth.py  <<");
+      err_ = RouteLoadError::AccessDenied;
       return false;
+    } else {
+      err_ = RouteLoadError::NetworkError;
     }
     rWarning("Retrying %d/%d", i, retries);
     util::sleep_for(3000);

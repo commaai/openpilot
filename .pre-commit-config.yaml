@@ -33,7 +33,7 @@ repos:
         - -L bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup,bumb,nd,sie,preints,whit,indexIn
         - --builtins clear,rare,informal,usage,code,names,en-GB_to_en-US
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.8
+    rev: v0.4.9
     hooks:
     -   id: ruff
         exclude: '^(third_party/)|(msgq/)|(panda/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(teleoprtc/)|(teleoprtc_repo/)'
@@ -62,6 +62,8 @@ repos:
         - --quiet
         - --force
         - -j8
+        - --library=qt
+        - --include=third_party/kaitai/kaitaistream.h
 -   repo: https://github.com/cpplint/cpplint
     rev: 1.6.1
     hooks:
@@ -98,6 +100,6 @@ repos:
         args:
         - --lock
 -   repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.28.4
+    rev: 0.28.5
     hooks:
     -   id: check-github-workflows
