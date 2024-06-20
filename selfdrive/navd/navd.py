@@ -199,6 +199,8 @@ class RouteEngine:
       cloudlog.exception("failed to get route")
       self.clear_route()
 
+    self.send_route()
+
   def send_instruction(self):
     msg = messaging.new_message('navInstruction', valid=True)
 
@@ -311,7 +313,6 @@ class RouteEngine:
 
     msg = messaging.new_message('navRoute', valid=True)
     msg.navRoute.coordinates = coords
-    msg.navRoute.timezone = self.timezone
     self.pm.send('navRoute', msg)
 
   def clear_route(self):
