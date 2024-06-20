@@ -95,6 +95,7 @@ pyserial = "*"     # pigeond + qcomgpsd
 requests = "*"     # many one-off uses
 sympy = "*"        # rednose + friends
 crcmod = "*"       # cars + qcomgpsd
+tqdm = "*"         # cars (fw_versions.py) on start + many one-off uses
 
 # hardwared
 smbus2 = "*"  # configuring amp
@@ -104,6 +105,7 @@ cffi = "*"
 scons = "*"
 pycapnp = "*"
 Cython = "*"
+setuptools = "*"
 numpy = "*"
 
 # body / webrtcd
@@ -190,7 +192,6 @@ rerun-sdk = "*"
 tabulate = "*"
 types-requests = "*"
 types-tabulate = "*"
-tqdm = "*"
 
 # this is only pinned since 5.15.11 is broken
 pyqt5 = { version = "==5.15.2", markers = "platform_machine == 'x86_64'" } # no aarch64 wheels for macOS/linux
