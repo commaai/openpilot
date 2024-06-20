@@ -135,7 +135,6 @@ future-fstrings = "*"
 
 # these should be removed
 psutil = "*"
-timezonefinder = "*"  # just used for nav ETA
 pycryptodome = "*"  # used in updated/casync, panda, body, and a test
 
 #logreader
