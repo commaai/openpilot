@@ -500,8 +500,8 @@
         <translation>سنة واحدة من تخزين القرص</translation>
     </message>
     <message>
-        <source>Turn-by-turn navigation</source>
-        <translation>التنقل خطوة بخطوة</translation>
+        <source>Remote snapshots</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

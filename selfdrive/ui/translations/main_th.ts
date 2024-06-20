@@ -495,8 +495,8 @@
         <translation>จัดเก็บข้อมูลการขับขี่นาน 1 ปี</translation>
     </message>
     <message>
-        <source>Turn-by-turn navigation</source>
-        <translation>การนำทางแบบเลี้ยวต่อเลี้ยว</translation>
+        <source>Remote snapshots</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

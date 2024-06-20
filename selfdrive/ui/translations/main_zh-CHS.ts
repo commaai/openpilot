@@ -491,12 +491,12 @@
         <translation>全天候 LTE 連線</translation>
     </message>
     <message>
-        <source>Turn-by-turn navigation</source>
-        <translation>领航功能</translation>
-    </message>
-    <message>
         <source>1 year of drive storage</source>
         <translation>一年的行驶记录储存空间</translation>
+    </message>
+    <message>
+        <source>Remote snapshots</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

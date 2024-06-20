@@ -496,8 +496,8 @@
         <translation>1 an de stockage de trajets</translation>
     </message>
     <message>
-        <source>Turn-by-turn navigation</source>
-        <translation>Navigation étape par étape</translation>
+        <source>Remote snapshots</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

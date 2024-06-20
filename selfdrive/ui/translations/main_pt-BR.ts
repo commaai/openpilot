@@ -492,12 +492,12 @@
         <translation>Conectividade LTE (só nos EUA)</translation>
     </message>
     <message>
-        <source>Turn-by-turn navigation</source>
-        <translation>Navegação passo a passo</translation>
-    </message>
-    <message>
         <source>1 year of drive storage</source>
         <translation>1 ano de dados em nuvem</translation>
+    </message>
+    <message>
+        <source>Remote snapshots</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

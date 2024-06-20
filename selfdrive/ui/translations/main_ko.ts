@@ -491,12 +491,12 @@
         <translation>항상 LTE 연결</translation>
     </message>
     <message>
-        <source>Turn-by-turn navigation</source>
-        <translation>내비게이션 경로안내</translation>
-    </message>
-    <message>
         <source>1 year of drive storage</source>
         <translation>1년간 드라이브 로그 저장</translation>
+    </message>
+    <message>
+        <source>Remote snapshots</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -494,7 +494,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Turn-by-turn navigation</source>
+        <source>Remote snapshots</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
