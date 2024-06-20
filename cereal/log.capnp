@@ -2157,6 +2157,7 @@ struct NavInstruction {
 
 struct NavRoute {
   coordinates @0 :List(Coordinate);
+
   struct Coordinate {
     latitude @0 :Float32;
     longitude @1 :Float32;
