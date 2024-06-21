@@ -19,7 +19,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerControlType = car.CarParams.SteerControlType.angle
 
     ret.longitudinalActuatorDelay = 0.5 # s
-    ret.radarTimeStep = (1.0 / 8) # 8Hz
+    ret.radarUnavailable = True
 
     if candidate in [CAR.TESLA_AP3_MODEL3, CAR.TESLA_AP3_MODELY]:
       flags = Panda.FLAG_TESLA_MODEL3_Y
