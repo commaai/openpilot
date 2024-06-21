@@ -116,13 +116,12 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
   QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {
     if (index != -1) updateLayout(true);
   });
-  QObject::connect(dock_btn, &QToolButton::clicked, [this]() {
-    emit dock(!docking);
-    docking = !docking;
-    updateToolBar();
-  });
+  QObject::connect(dock_btn, &QToolButton::clicked, this, &ChartsWidget::toggleChartsDocking);
 
+  setIsDocked(true);
   newTab();
+  qApp->installEventFilter(this);
+
   setWhatsThis(tr(R"(
     <b>Chart view</b><br />
     <!-- TODO: add descprition here -->
@@ -177,8 +176,11 @@ QRect ChartsWidget::chartVisibleRect(ChartView *chart) {
 }
 
 void ChartsWidget::showValueTip(double sec) {
+  if (sec < 0 && !value_tip_visible_) return;
+
+  value_tip_visible_ = sec >= 0;
   for (auto c : currentCharts()) {
-    sec >= 0 ? c->showTip(sec) : c->hideTip();
+    value_tip_visible_ ? c->showTip(sec) : c->hideTip();
   }
 }
 
@@ -209,6 +211,12 @@ void ChartsWidget::setMaxChartRange(int value) {
   updateState();
 }
 
+void ChartsWidget::setIsDocked(bool docked) {
+  is_docked = docked;
+  dock_btn->setIcon(is_docked ? "arrow-up-right-square" : "arrow-down-left-square");
+  dock_btn->setToolTip(is_docked ? tr("Float the charts window") : tr("Dock the charts window"));
+}
+
 void ChartsWidget::updateToolBar() {
   title_label->setText(tr("Charts: %1").arg(charts.size()));
   columns_action->setText(tr("Column: %1").arg(column_count));
@@ -222,8 +230,6 @@ void ChartsWidget::updateToolBar() {
   reset_zoom_action->setVisible(is_zoomed);
   reset_zoom_btn->setText(is_zoomed ? tr("%1-%2").arg(can->timeRange()->first, 0, 'f', 2).arg(can->timeRange()->second, 0, 'f', 2) : "");
   remove_all_btn->setEnabled(!charts.isEmpty());
-  dock_btn->setIcon(docking ? "arrow-up-right-square" : "arrow-down-left-square");
-  dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
 }
 
 void ChartsWidget::settingChanged() {
@@ -375,11 +381,6 @@ QSize ChartsWidget::minimumSizeHint() const {
   return QSize(CHART_MIN_WIDTH, QWidget::minimumSizeHint().height());
 }
 
-void ChartsWidget::resizeEvent(QResizeEvent *event) {
-  QWidget::resizeEvent(event);
-  updateLayout();
-}
-
 void ChartsWidget::newChart() {
   SignalSelector dlg(tr("New Chart"), this);
   if (dlg.exec() == QDialog::Accepted) {
@@ -432,10 +433,16 @@ void ChartsWidget::alignCharts() {
   }
 }
 
-bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
-  if (obj != this && event->type() == QEvent::Close) {
-    emit dock_btn->clicked();
-    return true;
+bool ChartsWidget::eventFilter(QObject *o, QEvent *e) {
+  if (value_tip_visible_ && e->type() == QEvent::MouseMove) {
+    auto pos = static_cast<QMouseEvent *>(e)->globalPos();
+    bool outside_plot_area =std::none_of(charts.begin(), charts.end(), [&pos](auto c) {
+      return c->chart()->plotArea().contains(c->mapFromGlobal(pos));
+    });
+
+    if (outside_plot_area) {
+      showValueTip(-1);
+    }
   }
   return false;
 }
@@ -443,30 +450,25 @@ bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
 bool ChartsWidget::event(QEvent *event) {
   bool back_button = false;
   switch (event->type()) {
-    case QEvent::MouseButtonPress: {
-      QMouseEvent *ev = static_cast<QMouseEvent *>(event);
-      back_button = ev->button() == Qt::BackButton;
+    case QEvent::Resize:
+      updateLayout();
       break;
-    }
-    case QEvent::NativeGesture: {
-      QNativeGestureEvent *ev = static_cast<QNativeGestureEvent *>(event);
-      back_button = (ev->value() == 180);
+    case QEvent::MouseButtonPress:
+      back_button = static_cast<QMouseEvent *>(event)->button() == Qt::BackButton;
       break;
-    }
-    case QEvent::WindowActivate:
+    case QEvent::NativeGesture:
+      back_button = (static_cast<QNativeGestureEvent *>(event)->value() == 180);
+      break;
     case QEvent::WindowDeactivate:
-    case QEvent::FocusIn:
     case QEvent::FocusOut:
-    case QEvent::Leave:
       showValueTip(-1);
-      break;
     default:
       break;
   }
 
   if (back_button) {
     zoom_undo_stack->undo();
-    return true;
+    return true;  // Return true since the event has been handled
   }
   return QFrame::event(event);
 }
