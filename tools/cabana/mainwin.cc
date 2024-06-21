@@ -198,7 +198,7 @@ void MainWindow::createDockWidgets() {
   video_splitter->restoreState(settings.video_splitter_state);
   video_splitter->handle(1)->setEnabled(!can->liveStreaming());
   video_dock->setWidget(video_splitter);
-  QObject::connect(charts_widget, &ChartsWidget::dock, this, &MainWindow::dockCharts);
+  QObject::connect(charts_widget, &ChartsWidget::toggleChartsDocking, this, &MainWindow::toggleChartsDocking);
 }
 
 void MainWindow::createStatusBar() {
@@ -577,20 +577,31 @@ void MainWindow::updateStatus() {
   status_label->setText(tr("Cached Minutes:%1 FPS:%2").arg(settings.max_cached_minutes).arg(settings.fps));
 }
 
-void MainWindow::dockCharts(bool dock) {
-  if (dock && floating_window) {
-    floating_window->removeEventFilter(charts_widget);
+bool MainWindow::eventFilter(QObject *obj, QEvent *event) {
+  if (obj == floating_window && event->type() == QEvent::Close) {
+    toggleChartsDocking();
+    return true;
+  }
+  return QMainWindow::eventFilter(obj, event);
+}
+
+void MainWindow::toggleChartsDocking() {
+  if (floating_window) {
+    // Dock the charts widget back to the main window
+    floating_window->removeEventFilter(this);
     charts_layout->insertWidget(0, charts_widget, 1);
     floating_window->deleteLater();
     floating_window = nullptr;
-  } else if (!dock && !floating_window) {
-    floating_window = new QWidget(this);
-    floating_window->setWindowFlags(Qt::Window);
+    charts_widget->setIsDocked(true);
+  } else {
+    // Float the charts widget in a separate window
+    floating_window = new QWidget(this, Qt::Window);
     floating_window->setWindowTitle("Charts");
     floating_window->setLayout(new QVBoxLayout());
     floating_window->layout()->addWidget(charts_widget);
-    floating_window->installEventFilter(charts_widget);
+    floating_window->installEventFilter(this);
     floating_window->showMaximized();
+    charts_widget->setIsDocked(false);
   }
 }
 
