@@ -70,7 +70,9 @@ jobs:
     strategy:
       matrix:
         arch: ${{ fromJson('["x86_64"]') }} # TODO: Re-add build test for aarch64 once we switched to ubuntu-2404
-    runs-on: ubuntu-latest
+    runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
+                   ((github.event_name != 'pull_request') ||
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-latest' }}
     steps:
     - uses: actions/checkout@v4
       with:
