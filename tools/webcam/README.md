@@ -1,7 +1,7 @@
 # Run openpilot with webcam on PC
 
 What's needed:
-- Ubuntu 20.04
+- Ubuntu 24.04
 - GPU (recommended)
 - Two USB webcams, at least 720p and 78 degrees FOV (e.g. Logitech C920/C615)
 - [Car harness](https://comma.ai/shop/products/comma-car-harness) with black panda to connect to your car
@@ -29,7 +29,7 @@ USE_WEBCAM=1 scons -j$(nproc)
 
 ## GO
 ```
-cd ~/openpilot/selfdrive/manager
+cd ~/openpilot/system/manager
 NOSENSOR=1 USE_WEBCAM=1 ./manager.py
 ```
 - Start the car, then the UI should show the road webcam's view

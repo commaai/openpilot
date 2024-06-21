@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from parameterized import parameterized
 
 from openpilot.selfdrive.car.gm.fingerprints import FINGERPRINTS

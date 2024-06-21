@@ -192,7 +192,6 @@ void MainWindow::createDockWidgets() {
   video_splitter = new QSplitter(Qt::Vertical, this);
   video_widget = new VideoWidget(this);
   video_splitter->addWidget(video_widget);
-  QObject::connect(charts_widget, &ChartsWidget::rangeChanged, video_widget, &VideoWidget::updateTimeRange);
 
   video_splitter->addWidget(charts_container);
   video_splitter->setStretchFactor(1, 1);

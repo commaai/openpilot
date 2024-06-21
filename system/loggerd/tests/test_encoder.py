@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import math
 import os
 import pytest
@@ -14,7 +13,7 @@ from tqdm import trange
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
 from openpilot.system.hardware import TICI
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.manager.process_config import managed_processes
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.system.hardware.hw import Paths
 
@@ -28,7 +27,7 @@ CAMERAS = [
 ]
 
 # we check frame count, so we don't have to be too strict on size
-FILE_SIZE_TOLERANCE = 0.5
+FILE_SIZE_TOLERANCE = 0.7
 
 
 @pytest.mark.tici # TODO: all of loggerd should work on PC

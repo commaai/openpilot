@@ -1,10 +1,9 @@
-#!/usr/bin/env python3
 import glob
 import os
 import time
 
 import cereal.messaging as messaging
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog, ipchandler
 

@@ -11,7 +11,8 @@ from openpilot.common.git import get_commit
 from openpilot.selfdrive.car.car_helpers import interface_names
 from openpilot.tools.lib.openpilotci import get_url, upload_file
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
-from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, check_openpilot_enabled, replay_process
+from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, replay_process, \
+                                                                   check_openpilot_enabled, check_most_messages_valid
 from openpilot.tools.lib.filereader import FileReader
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.helpers import save_log
@@ -41,23 +42,23 @@ source_segments = [
 ]
 
 segments = [
-  ("BODY", "regen997DF2697CB|2023-10-30--23-14-29--0"),
-  ("HYUNDAI", "regen2A9D2A8E0B4|2023-10-30--23-13-34--0"),
-  ("HYUNDAI2", "regen6CA24BC3035|2023-10-30--23-14-28--0"),
-  ("TOYOTA", "regen5C019D76307|2023-10-30--23-13-31--0"),
-  ("TOYOTA2", "regen5DCADA88A96|2023-10-30--23-14-57--0"),
-  ("TOYOTA3", "regen7204CA3A498|2023-10-30--23-15-55--0"),
-  ("HONDA", "regen048F8FA0B24|2023-10-30--23-15-53--0"),
-  ("HONDA2", "regen7D2D3F82D5B|2023-10-30--23-15-55--0"),
-  ("CHRYSLER", "regen7125C42780C|2023-10-30--23-16-21--0"),
-  ("RAM", "regen2731F3213D2|2023-10-30--23-18-11--0"),
-  ("SUBARU", "regen86E4C1B4DDD|2023-10-30--23-18-14--0"),
-  ("GM", "regenF6393D64745|2023-10-30--23-17-18--0"),
-  ("GM2", "regen220F830C05B|2023-10-30--23-18-39--0"),
-  ("NISSAN", "regen4F671F7C435|2023-10-30--23-18-40--0"),
-  ("VOLKSWAGEN", "regen8BDFE7307A0|2023-10-30--23-19-36--0"),
-  ("MAZDA", "regen2E9F1A15FD5|2023-10-30--23-20-36--0"),
-  ("FORD", "regen6D39E54606E|2023-10-30--23-20-54--0"),
+  ("BODY", "regen29FD9FF7760|2024-05-21--06-58-51--0"),
+  ("HYUNDAI", "regen0B1B76A1C27|2024-05-21--06-57-53--0"),
+  ("HYUNDAI2", "regen3BB55FA5E20|2024-05-21--06-59-03--0"),
+  ("TOYOTA", "regenF6FB954C1E2|2024-05-21--06-57-53--0"),
+  ("TOYOTA2", "regen0AC637CE7BA|2024-05-21--06-57-54--0"),
+  ("TOYOTA3", "regenC7BE3FAE496|2024-05-21--06-59-01--0"),
+  ("HONDA", "regen58E9F8B695A|2024-05-21--06-57-55--0"),
+  ("HONDA2", "regen8695608EB15|2024-05-21--06-57-55--0"),
+  ("CHRYSLER", "regenB0F8C25C902|2024-05-21--06-59-47--0"),
+  ("RAM", "regenB3B2C7A105B|2024-05-21--07-00-47--0"),
+  ("SUBARU", "regen860FD736DCC|2024-05-21--07-00-50--0"),
+  ("GM", "regen8CB3048DEB9|2024-05-21--06-59-49--0"),
+  ("GM2", "regen379D446541D|2024-05-21--07-00-51--0"),
+  ("NISSAN", "regen24871108F80|2024-05-21--07-00-38--0"),
+  ("VOLKSWAGEN", "regenF390392F275|2024-05-21--07-00-52--0"),
+  ("MAZDA", "regenE5A36020581|2024-05-21--07-01-51--0"),
+  ("FORD", "regenDC288ED0D78|2024-05-21--07-02-18--0"),
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
@@ -107,11 +108,11 @@ def test_process(cfg, lr, segment, ref_log_path, new_log_path, ignore_fields=Non
   # check to make sure openpilot is engaged in the route
   if cfg.proc_name == "controlsd":
     if not check_openpilot_enabled(log_msgs):
-      # FIXME: these segments should work, but the replay enabling logic is too brittle
-      if segment not in ("regen6CA24BC3035|2023-10-30--23-14-28--0", "regen7D2D3F82D5B|2023-10-30--23-15-55--0"):
-        return f"Route did not enable at all or for long enough: {new_log_path}", log_msgs
+      return f"Route did not enable at all or for long enough: {new_log_path}", log_msgs
+  if not check_most_messages_valid(log_msgs):
+    return f"Route did not have enough valid messages: {new_log_path}", log_msgs
 
-  if cfg.proc_name != 'ubloxd' or segment != 'regen6CA24BC3035|2023-10-30--23-14-28--0':
+  if cfg.proc_name != 'ubloxd' or segment != 'regen3BB55FA5E20|2024-05-21--06-59-03--0':
     seen_msgs = {m.which() for m in log_msgs}
     expected_msgs = set(cfg.subs)
     if seen_msgs != expected_msgs:

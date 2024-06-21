@@ -51,7 +51,7 @@ class Events:
   def __init__(self):
     self.events: list[int] = []
     self.static_events: list[int] = []
-    self.events_prev = dict.fromkeys(EVENTS.keys(), 0)
+    self.event_counters = dict.fromkeys(EVENTS.keys(), 0)
 
   @property
   def names(self) -> list[int]:
@@ -66,7 +66,7 @@ class Events:
     bisect.insort(self.events, event_name)
 
   def clear(self) -> None:
-    self.events_prev = {k: (v + 1 if k in self.events else 0) for k, v in self.events_prev.items()}
+    self.event_counters = {k: (v + 1 if k in self.events else 0) for k, v in self.event_counters.items()}
     self.events = self.static_events.copy()
 
   def contains(self, event_type: str) -> bool:
@@ -85,7 +85,7 @@ class Events:
           if not isinstance(alert, Alert):
             alert = alert(*callback_args)
 
-          if DT_CTRL * (self.events_prev[e] + 1) >= alert.creation_delay:
+          if DT_CTRL * (self.event_counters[e] + 1) >= alert.creation_delay:
             alert.alert_type = f"{EVENT_NAME[e]}/{et}"
             alert.event_type = et
             ret.append(alert)
@@ -331,6 +331,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   # ********** events with no alerts **********
 
   EventName.stockFcw: {},
+  EventName.actuatorsApiUnavailable: {},
 
   # ********** events only containing alerts displayed in all states **********
 

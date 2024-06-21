@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import pytest
 import json
 import random
@@ -10,7 +9,7 @@ from cereal.services import SERVICE_LIST
 from openpilot.common.params import Params
 from openpilot.common.transformations.coordinates import ecef2geodetic
 
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.manager.process_config import managed_processes
 
 
 class TestLocationdProc:

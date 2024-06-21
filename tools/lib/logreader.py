@@ -10,6 +10,7 @@ import sys
 import tqdm
 import urllib.parse
 import warnings
+import zstd
 
 from collections.abc import Callable, Iterable, Iterator
 from urllib.parse import parse_qs, urlparse
@@ -34,8 +35,8 @@ class _LogFileReader:
     ext = None
     if not dat:
       _, ext = os.path.splitext(urllib.parse.urlparse(fn).path)
-      if ext not in ('', '.bz2'):
-        # old rlogs weren't bz2 compressed
+      if ext not in ('', '.bz2', '.zst'):
+        # old rlogs weren't compressed
         raise Exception(f"unknown extension {ext}")
 
       with FileReader(fn) as f:
@@ -43,18 +44,21 @@ class _LogFileReader:
 
     if ext == ".bz2" or dat.startswith(b'BZh9'):
       dat = bz2.decompress(dat)
+    elif ext == ".zst" or dat.startswith(b'\x28\xB5\x2F\xFD'):
+      # https://github.com/facebook/zstd/blob/dev/doc/zstd_compression_format.md#zstandard-frames
+      dat = zstd.decompress(dat)
 
     ents = capnp_log.Event.read_multiple_bytes(dat)
 
-    _ents = []
+    self._ents = []
     try:
       for e in ents:
-        _ents.append(e)
+        self._ents.append(e)
     except capnp.KjException:
       warnings.warn("Corrupted events detected", RuntimeWarning, stacklevel=1)
 
-    self._ents = list(sorted(_ents, key=lambda x: x.logMonoTime) if sort_by_time else _ents)
-    self._ts = [x.logMonoTime for x in self._ents]
+    if sort_by_time:
+      self._ents.sort(key=lambda x: x.logMonoTime)
 
   def __iter__(self) -> Iterator[capnp._DynamicStructReader]:
     for ent in self._ents:
@@ -126,17 +130,21 @@ def comma_api_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
   return apply_strategy(mode, rlog_paths, qlog_paths, valid_file=valid_file)
 
 
-def internal_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
+def internal_source(sr: SegmentRange, mode: ReadMode, file_ext: str = "bz2") -> LogPaths:
   if not internal_source_available():
     raise InternalUnavailableException
 
   def get_internal_url(sr: SegmentRange, seg, file):
-    return f"cd:/{sr.dongle_id}/{sr.timestamp}/{seg}/{file}.bz2"
+    return f"cd:/{sr.dongle_id}/{sr.log_id}/{seg}/{file}.{file_ext}"
 
   rlog_paths = [get_internal_url(sr, seg, "rlog") for seg in sr.seg_idxs]
   qlog_paths = [get_internal_url(sr, seg, "qlog") for seg in sr.seg_idxs]
 
   return apply_strategy(mode, rlog_paths, qlog_paths)
+
+
+def internal_source_zst(sr: SegmentRange, mode: ReadMode, file_ext: str = "zst") -> LogPaths:
+  return internal_source(sr, mode, file_ext)
 
 
 def openpilotci_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
@@ -162,7 +170,8 @@ def get_invalid_files(files):
 
 def check_source(source: Source, *args) -> LogPaths:
   files = source(*args)
-  assert next(get_invalid_files(files), False) is False
+  assert len(files) > 0, "No files on source"
+  assert next(get_invalid_files(files), False) is False, "Some files are invalid"
   return files
 
 
@@ -170,8 +179,8 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
   if mode == ReadMode.SANITIZED:
     return comma_car_segments_source(sr, mode)
 
-  SOURCES: list[Source] = [internal_source, openpilotci_source, comma_api_source, comma_car_segments_source,]
-  exceptions = []
+  SOURCES: list[Source] = [internal_source, internal_source_zst, openpilotci_source, comma_api_source, comma_car_segments_source,]
+  exceptions = {}
 
   # for automatic fallback modes, auto_source needs to first check if rlogs exist for any source
   if mode in [ReadMode.AUTO, ReadMode.AUTO_INTERACTIVE]:
@@ -186,9 +195,10 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
     try:
       return check_source(source, sr, mode)
     except Exception as e:
-      exceptions.append(e)
+      exceptions[source.__name__] = e
 
-  raise Exception(f"auto_source could not find any valid source, exceptions for sources: {exceptions}")
+  raise Exception("auto_source could not find any valid source, exceptions for sources:\n  - " +
+                  "\n  - ".join([f"{k}: {repr(v)}" for k, v in exceptions.items()]))
 
 
 def parse_useradmin(identifier: str):

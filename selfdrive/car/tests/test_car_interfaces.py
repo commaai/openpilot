@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import os
 import math
 import hypothesis.strategies as st
@@ -11,7 +10,7 @@ from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import gen_empty_fingerprint
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.fingerprints import all_known_cars
-from openpilot.selfdrive.car.fw_versions import FW_VERSIONS
+from openpilot.selfdrive.car.fw_versions import FW_VERSIONS, FW_QUERY_CONFIGS
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
@@ -19,7 +18,10 @@ from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.longcontrol import LongControl
 from openpilot.selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
 
-ALL_ECUS = list({ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()})
+ALL_ECUS = {ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()}
+ALL_ECUS |= {ecu for config in FW_QUERY_CONFIGS.values() for ecu in config.extra_ecus}
+
+ALL_REQUESTS = {tuple(r.request) for config in FW_QUERY_CONFIGS.values() for r in config.requests}
 
 MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '40'))
 
@@ -31,7 +33,7 @@ def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
                                                 gen_empty_fingerprint()})
 
   # only pick from possible ecus to reduce search space
-  car_fw_strategy = st.lists(st.sampled_from(ALL_ECUS))
+  car_fw_strategy = st.lists(st.sampled_from(sorted(ALL_ECUS)))
 
   params_strategy = st.fixed_dictionaries({
     'fingerprints': fingerprint_strategy,
@@ -40,7 +42,9 @@ def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
   })
 
   params: dict = draw(params_strategy)
-  params['car_fw'] = [car.CarParams.CarFw(ecu=fw[0], address=fw[1], subAddress=fw[2] or 0) for fw in params['car_fw']]
+  params['car_fw'] = [car.CarParams.CarFw(ecu=fw[0], address=fw[1], subAddress=fw[2] or 0,
+                                          request=draw(st.sampled_from(sorted(ALL_REQUESTS))))
+                      for fw in params['car_fw']]
   return params
 
 
@@ -71,7 +75,6 @@ class TestCarInterfaces:
     # Longitudinal sanity checks
     assert len(car_params.longitudinalTuning.kpV) == len(car_params.longitudinalTuning.kpBP)
     assert len(car_params.longitudinalTuning.kiV) == len(car_params.longitudinalTuning.kiBP)
-    assert len(car_params.longitudinalTuning.deadzoneV) == len(car_params.longitudinalTuning.deadzoneBP)
 
     # Lateral sanity checks
     if car_params.steerControlType != car.CarParams.SteerControlType.angle:
@@ -91,14 +94,14 @@ class TestCarInterfaces:
     CC = car.CarControl.new_message(**cc_msg)
     for _ in range(10):
       car_interface.update(CC, [])
-      car_interface.apply(CC, now_nanos)
+      car_interface.apply(CC.as_reader(), now_nanos)
       now_nanos += DT_CTRL * 1e9  # 10 ms
 
     CC = car.CarControl.new_message(**cc_msg)
     CC.enabled = True
     for _ in range(10):
       car_interface.update(CC, [])
-      car_interface.apply(CC, now_nanos)
+      car_interface.apply(CC.as_reader(), now_nanos)
       now_nanos += DT_CTRL * 1e9  # 10ms
 
     # Test controller initialization

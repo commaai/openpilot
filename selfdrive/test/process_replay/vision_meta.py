@@ -1,5 +1,5 @@
 from collections import namedtuple
-from cereal.visionipc import VisionStreamType
+from msgq.visionipc import VisionStreamType
 from openpilot.common.realtime import DT_MDL, DT_DMON
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
 

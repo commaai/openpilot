@@ -6,11 +6,11 @@
 #include <cmath>
 
 #include "common/swaglog.h"
+#include "selfdrive/ui/qt/onroad/buttons.h"
 #include "selfdrive/ui/qt/util.h"
 
 // Window that shows camera view and variety of info drawn on top
-AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget *parent)
-    : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraWidget("camerad", type, true, parent) {
+AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraWidget("camerad", type, true, parent) {
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"uiDebug"});
 
   main_layout = new QVBoxLayout(this);
@@ -19,9 +19,6 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget *par
 
   experimental_btn = new ExperimentalButton(this);
   main_layout->addWidget(experimental_btn, 0, Qt::AlignTop | Qt::AlignRight);
-
-  map_settings_btn = new MapSettingsButton(this);
-  main_layout->addWidget(map_settings_btn, 0, Qt::AlignBottom | Qt::AlignRight);
 
   dm_img = loadPixmap("../assets/img_driver_face.png", {img_size + 5, img_size + 5});
 }
@@ -70,14 +67,6 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   rightHandDM = dm_state.getIsRHD();
   // DM icon transition
   dm_fade_state = std::clamp(dm_fade_state+0.2*(0.5-dmActive), 0.0, 1.0);
-
-  // hide map settings button for alerts and flip for right hand DM
-  if (map_settings_btn->isEnabled()) {
-    map_settings_btn->setVisible(!hideBottomIcons);
-    main_layout->setAlignment(map_settings_btn, (rightHandDM ? Qt::AlignLeft : Qt::AlignRight) | Qt::AlignBottom);
-  }
-
-  update();
 }
 
 void AnnotatedCameraWidget::drawHud(QPainter &p) {
@@ -237,8 +226,7 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
   QLinearGradient bg(0, height(), 0, 0);
   if (sm["controlsState"].getControlsState().getExperimentalMode()) {
     // The first half of track_vertices are the points for the right side of the path
-    // and the indices match the positions of accel from uiPlan
-    const auto &acceleration = sm["uiPlan"].getUiPlan().getAccel();
+    const auto &acceleration = sm["modelV2"].getModelV2().getAcceleration().getX();
     const int max_len = std::min<int>(scene.track_vertices.length() / 2, acceleration.size());
 
     for (int i = 0; i < max_len; ++i) {
@@ -355,8 +343,25 @@ void AnnotatedCameraWidget::paintGL() {
   UIState *s = uiState();
   SubMaster &sm = *(s->sm);
   const double start_draw_t = millis_since_boot();
+  const cereal::ModelDataV2::Reader &model = sm["modelV2"].getModelV2();
 
+  // draw camera frame
   {
+    std::lock_guard lk(frame_lock);
+
+    if (frames.empty()) {
+      if (skip_frame_count > 0) {
+        skip_frame_count--;
+        qDebug() << "skipping frame, not ready";
+        return;
+      }
+    } else {
+      // skip drawing up to this many frames if we're
+      // missing camera frames. this smooths out the
+      // transitions from the narrow and wide cameras
+      skip_frame_count = 5;
+    }
+
     // Wide or narrow cam dependent on speed
     bool has_wide_cam = available_streams.count(VISION_STREAM_WIDE_ROAD);
     if (has_wide_cam) {
@@ -372,16 +377,14 @@ void AnnotatedCameraWidget::paintGL() {
     }
     CameraWidget::setStreamType(wide_cam_requested ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
 
-    s->scene.wide_cam = CameraWidget::streamType() == VISION_STREAM_WIDE_ROAD;
+    s->scene.wide_cam = CameraWidget::getStreamType() == VISION_STREAM_WIDE_ROAD;
     if (s->scene.calibration_valid) {
       auto calib = s->scene.wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib;
       CameraWidget::updateCalibration(calib);
     } else {
       CameraWidget::updateCalibration(DEFAULT_CALIBRATION);
     }
-
-    // Draw the frame based on the UI plan's frame ID
-    CameraWidget::setFrameId(sm["uiPlan"].getUiPlan().getFrameId());
+    CameraWidget::setFrameId(model.getFrameId());
     CameraWidget::paintGL();
   }
 
@@ -390,8 +393,7 @@ void AnnotatedCameraWidget::paintGL() {
   painter.setPen(Qt::NoPen);
 
   if (s->scene.world_objects_visible) {
-    const cereal::ModelDataV2::Reader &model = sm["modelV2"].getModelV2();
-    update_model(s, model, sm["uiPlan"].getUiPlan());
+    update_model(s, model);
     drawLaneLines(painter, s);
 
     if (s->scene.longitudinal_control && sm.rcv_frame("radarState") > s->scene.started_frame) {

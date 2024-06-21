@@ -277,7 +277,7 @@ void ChartView::updateSeriesPoints() {
         }
         ((QScatterSeries *)s.series)->setMarkerSize(size);
       } else {
-        s.series->setPointsVisible(pixels_per_point > 20);
+        s.series->setPointsVisible(num_points == 1 || pixels_per_point > 20);
       }
     }
   }
@@ -513,7 +513,7 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
       // no rubber dragged, seek to mouse position
       can->seekTo(min);
     } else if (rubber->width() > 10 && (max - min) > MIN_ZOOM_SECONDS) {
-      charts_widget->zoom_undo_stack->push(new ZoomCommand(charts_widget, {min, max}));
+      charts_widget->zoom_undo_stack->push(new ZoomCommand({min, max}));
     } else {
       viewport()->update();
     }

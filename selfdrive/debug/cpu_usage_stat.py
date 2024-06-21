@@ -9,10 +9,10 @@ System tools like top/htop can only show current cpu usage values, so I write th
     Calculate minumium/maximum/accumulated_average cpu usage as long term inspections.
     Monitor multiple processes simuteneously.
   Sample usage:
-    root@localhost:/data/openpilot$ python selfdrive/debug/cpu_usage_stat.py boardd,ubloxd
-    ('Add monitored proc:', './boardd')
+    root@localhost:/data/openpilot$ python selfdrive/debug/cpu_usage_stat.py pandad,ubloxd
+    ('Add monitored proc:', './pandad')
     ('Add monitored proc:', 'python locationd/ubloxd.py')
-    boardd: 1.96%, min: 1.96%, max: 1.96%, acc: 1.96%
+    pandad: 1.96%, min: 1.96%, max: 1.96%, acc: 1.96%
     ubloxd.py: 0.39%, min: 0.39%, max: 0.39%, acc: 0.39%
 '''
 import psutil
@@ -24,7 +24,7 @@ import argparse
 import re
 from collections import defaultdict
 
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.manager.process_config import managed_processes
 
 # Do statistics every 5 seconds
 PRINT_INTERVAL = 5

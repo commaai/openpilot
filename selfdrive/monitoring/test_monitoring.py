@@ -1,10 +1,8 @@
-#!/usr/bin/env python3
 import numpy as np
 
 from cereal import car, log
 from openpilot.common.realtime import DT_DMON
-from openpilot.selfdrive.controls.lib.events import Events
-from openpilot.selfdrive.monitoring.driver_monitor import DriverStatus, DRIVER_MONITOR_SETTINGS
+from openpilot.selfdrive.monitoring.helpers import DriverMonitoring, DRIVER_MONITOR_SETTINGS
 
 EventName = car.CarEvent.EventName
 dm_settings = DRIVER_MONITOR_SETTINGS()
@@ -51,21 +49,19 @@ always_distracted = [msg_DISTRACTED] * int(TEST_TIMESPAN / DT_DMON)
 always_true = [True] * int(TEST_TIMESPAN / DT_DMON)
 always_false = [False] * int(TEST_TIMESPAN / DT_DMON)
 
-# TODO: this only tests DriverStatus
 class TestMonitoring:
   def _run_seq(self, msgs, interaction, engaged, standstill):
-    DS = DriverStatus()
+    DM = DriverMonitoring()
     events = []
     for idx in range(len(msgs)):
-      e = Events()
-      DS.update_states(msgs[idx], [0, 0, 0], 0, engaged[idx])
+      DM._update_states(msgs[idx], [0, 0, 0], 0, engaged[idx])
       # cal_rpy and car_speed don't matter here
 
       # evaluate events at 10Hz for tests
-      DS.update_events(e, interaction[idx], engaged[idx], standstill[idx], 0, 0)
-      events.append(e)
+      DM._update_events(interaction[idx], engaged[idx], standstill[idx], 0, 0)
+      events.append(DM.current_events)
     assert len(events) == len(msgs), f"got {len(events)} for {len(msgs)} driverState input msgs"
-    return events, DS
+    return events, DM
 
   def _assert_no_events(self, events):
     assert all(not len(e) for e in events)

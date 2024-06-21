@@ -5,7 +5,7 @@
 #include <thread>
 
 #include "cereal/messaging/messaging.h"
-#include "cereal/visionipc/visionipc_server.h"
+#include "msgq/visionipc/visionipc_server.h"
 #include "common/queue.h"
 #include "common/util.h"
 

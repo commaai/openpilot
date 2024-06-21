@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import datetime
 import os
 import pytest
@@ -89,7 +88,7 @@ class TestUpdated:
     os.environ["UPDATER_STAGING_ROOT"] = self.staging_dir
     os.environ["UPDATER_NEOS_VERSION"] = self.neos_version
     os.environ["UPDATER_NEOSUPDATE_DIR"] = self.neosupdate_dir
-    updated_path = os.path.join(self.basedir, "selfdrive/updated.py")
+    updated_path = os.path.join(self.basedir, "system/updated.py")
     return subprocess.Popen(updated_path, env=os.environ)
 
   def _start_updater(self, offroad=True, nosleep=False):
@@ -165,7 +164,7 @@ class TestUpdated:
     # make sure LastUpdateTime is recent
     t = self._read_param("LastUpdateTime")
     last_update_time = datetime.datetime.fromisoformat(t)
-    td = datetime.datetime.utcnow() - last_update_time
+    td = datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - last_update_time
     assert td.total_seconds() < 10
     self.params.remove("LastUpdateTime")
 

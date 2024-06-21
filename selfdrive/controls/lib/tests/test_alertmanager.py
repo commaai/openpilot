@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import random
 
 from openpilot.selfdrive.controls.lib.events import Alert, EVENTS
