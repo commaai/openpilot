@@ -92,6 +92,12 @@ def default_valid_file(fn: LogPath) -> bool:
 
 
 def auto_strategy(rlog_paths: LogPaths, qlog_paths: LogPaths, interactive: bool, valid_file: ValidFileCallable) -> LogPaths:
+  # Count missing files
+  missing_files_count = count_missing_files(rlog_paths, qlog_paths, valid_file)
+
+  if missing_files_count > 0:
+    cloudlog.error(f"Warning: {missing_files_count} segments are missing either rlogs or qlogs.")
+
   # auto select logs based on availability
   if any(rlog is None or not valid_file(rlog) for rlog in rlog_paths) and all(qlog is not None and valid_file(qlog) for qlog in qlog_paths):
     if interactive:
@@ -104,11 +110,11 @@ def auto_strategy(rlog_paths: LogPaths, qlog_paths: LogPaths, interactive: bool,
             for (rlog, qlog) in zip(rlog_paths, qlog_paths, strict=True)]
   return rlog_paths
 
-def count_missing_filess(rlog_paths: LogPaths, qlog_paths: LogPaths, valid_file: ValidFileCallable) -> int:
+def count_missing_files(rlog_paths: LogPaths, qlog_paths: LogPaths, valid_file: ValidFileCallable) -> int:
   missing_count = 0
 
   for rlog, qlog in zip(rlog_paths, qlog_paths, strict=True):
-    if (rlog is None or not valid_file(rlog)) and (qlog is None or not valid_file(qlog)):
+    if (rlog is None or not valid_file(rlog)) or (qlog is None or not valid_file(qlog)):
       missing_count += 1
 
   return missing_count
