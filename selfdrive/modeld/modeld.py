@@ -125,7 +125,7 @@ class ModelState:
     outputs = self.parser.parse_outputs(self.slice_outputs(self.output))
 
     self.full_features_20Hz[:-1] = self.full_features_20Hz[1:]
-    self.full_features_20Hz[-ModelConstants.FEATURE_LEN:] = outputs['hidden_state'][0, :]
+    self.full_features_20Hz[-1] = outputs['hidden_state'][0, :]
     idxs = np.arange(-4,-100,-4)[::-1]
     self.inputs['features_buffer'][:] = self.full_features_20Hz[idxs].flatten()
     # TODO model only uses last value now, once that changes we need to input strided action history buffer
