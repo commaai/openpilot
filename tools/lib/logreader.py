@@ -92,7 +92,6 @@ def default_valid_file(fn: LogPath) -> bool:
 
 
 def auto_strategy(rlog_paths: LogPaths, qlog_paths: LogPaths, interactive: bool, valid_file: ValidFileCallable) -> LogPaths:
-
   # Count missing files
   missing_rlogs = count_missing_rlogs(rlog_paths, valid_file)
   missing_qlogs = count_missing_qlogs(qlog_paths, valid_file)
