@@ -170,13 +170,15 @@ class Rerunner:
     for topic in sorted(SERVICE_LIST.keys()):
       if topic.lower() not in self.enabled_services:
         continue
-      View = rrb.TimeSeriesView if topic == "thumbnail" else rrb.Spatial2DView
-      service_views.append(View(name=topic, origin=f"/{topic}/", visible=False))
+      View = rrb.TimeSeriesView if topic != "thumbnail" else rrb.Spatial2DView
+      service_views.append(View(name=topic, origin=f"/{topic}/"))
       rr.log(topic, rr.SeriesLine(name=topic), timeless=True)
 
     blueprint = rrb.Blueprint(
-      *service_views,
-      *[rrb.Spatial2DView(name=cam_type, origin=cam_type, visible=False) for cam_type in self.camera_readers.keys()],
+      rrb.Horizontal(
+        rrb.Vertical(*service_views),
+        rrb.Vertical(*[rrb.Spatial2DView(name=cam_type, origin=cam_type) for cam_type in self.camera_readers.keys()]),
+      ),
       rrb.SelectionPanel(expanded=False),
       rrb.TimePanel(expanded=False)
     )
@@ -205,7 +207,6 @@ class Rerunner:
   @staticmethod
   @rr.shutdown_at_exit
   def _process_cam_readers(blueprint, cam_type, h, w, fr):
-    print('in here')
     rr.init("rerun_test")
     rr.connect(default_blueprint=blueprint)
 
