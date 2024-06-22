@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 from dataclasses import dataclass
+from functools import cache
 import json
 import os
 import pathlib
 import subprocess
 
-
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.swaglog import cloudlog
-from openpilot.common.utils import cache
 from openpilot.common.git import get_commit, get_origin, get_branch, get_short_branch, get_commit_date
 
 RELEASE_BRANCHES = ['release3-staging', 'release3', 'nightly']
@@ -27,7 +26,7 @@ def get_version(path: str = BASEDIR) -> str:
 
 
 def get_release_notes(path: str = BASEDIR) -> str:
-  with open(os.path.join(path, "RELEASES.md"), "r") as f:
+  with open(os.path.join(path, "RELEASES.md")) as f:
     return f.read().split('\n\n', 1)[0]
 
 

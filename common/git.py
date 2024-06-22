@@ -1,5 +1,5 @@
+from functools import cache
 import subprocess
-from openpilot.common.utils import cache
 from openpilot.common.run import run_cmd, run_cmd_default
 
 

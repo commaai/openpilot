@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import os
 import pytest
 import time
@@ -17,7 +16,7 @@ EventName = car.CarEvent.EventName
 def test_time_to_onroad():
   # launch
   set_params_enabled()
-  manager_path = os.path.join(BASEDIR, "selfdrive/manager/manager.py")
+  manager_path = os.path.join(BASEDIR, "system/manager/manager.py")
   proc = subprocess.Popen(["python", manager_path])
 
   start_time = time.monotonic()

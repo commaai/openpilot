@@ -21,7 +21,7 @@ class MainWindow : public QMainWindow {
 
 public:
   MainWindow();
-  void dockCharts(bool dock);
+  void toggleChartsDocking();
   void showStatusMessage(const QString &msg, int timeout = 0) { statusBar()->showMessage(msg, timeout); }
   void loadFile(const QString &fn, SourceSet s = SOURCE_ALL);
   ChartsWidget *charts_widget = nullptr;
@@ -46,6 +46,7 @@ signals:
   void updateProgressBar(uint64_t cur, uint64_t total, bool success);
 
 protected:
+  bool eventFilter(QObject *obj, QEvent *event) override;
   void remindSaveChanges();
   void closeFile(SourceSet s = SOURCE_ALL);
   void closeFile(DBCFile *dbc_file);

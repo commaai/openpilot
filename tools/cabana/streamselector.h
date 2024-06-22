@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QDialogButtonBox>
 #include <QDialog>
 #include <QLineEdit>
 #include <QTabWidget>
@@ -17,4 +18,5 @@ public:
 private:
   QLineEdit *dbc_file;
   QTabWidget *tab;
+  QDialogButtonBox *btn_box;
 };

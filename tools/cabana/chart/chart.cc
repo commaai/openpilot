@@ -277,7 +277,7 @@ void ChartView::updateSeriesPoints() {
         }
         ((QScatterSeries *)s.series)->setMarkerSize(size);
       } else {
-        s.series->setPointsVisible(pixels_per_point > 20);
+        s.series->setPointsVisible(num_points == 1 || pixels_per_point > 20);
       }
     }
   }
@@ -421,13 +421,6 @@ qreal ChartView::niceNumber(qreal x, bool ceiling) {
   return q * z;
 }
 
-void ChartView::leaveEvent(QEvent *event) {
-  if (tip_label->isVisible()) {
-    charts_widget->showValueTip(-1);
-  }
-  QChartView::leaveEvent(event);
-}
-
 QPixmap getBlankShadowPixmap(const QPixmap &px, int radius) {
   QGraphicsDropShadowEffect *e = new QGraphicsDropShadowEffect;
   e->setColor(QColor(40, 40, 40, 245));
@@ -513,7 +506,7 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
       // no rubber dragged, seek to mouse position
       can->seekTo(min);
     } else if (rubber->width() > 10 && (max - min) > MIN_ZOOM_SECONDS) {
-      charts_widget->zoom_undo_stack->push(new ZoomCommand(charts_widget, {min, max}));
+      charts_widget->zoom_undo_stack->push(new ZoomCommand({min, max}));
     } else {
       viewport()->update();
     }
@@ -546,7 +539,7 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   bool is_zooming = rubber && rubber->isVisible();
   clearTrackPoints();
 
-  if (!is_zooming && plot_area.contains(ev->pos())) {
+  if (!is_zooming && plot_area.contains(ev->pos()) && isActiveWindow()) {
     const double sec = chart()->mapToValue(ev->pos()).x();
     charts_widget->showValueTip(sec);
   } else if (tip_label->isVisible()) {
