@@ -93,28 +93,37 @@ def default_valid_file(fn: LogPath) -> bool:
 
 def auto_strategy(rlog_paths: LogPaths, qlog_paths: LogPaths, interactive: bool, valid_file: ValidFileCallable) -> LogPaths:
   # Count missing files
-  missing_files_count = count_missing_files(rlog_paths, qlog_paths, valid_file)
+  missing_rlogs = count_missing_rlogs(rlog_paths, valid_file)
+  missing_qlogs = count_missing_qlogs(qlog_paths, valid_file)
 
-  if missing_files_count != 0:
-    cloudlog.error(f"Error: {missing_files_count} segments are missing either rlogs or qlogs.")
-    # auto select logs based on availability
-    if any(rlog is None or not valid_file(rlog) for rlog in rlog_paths) and all(qlog is not None and valid_file(qlog) for qlog in qlog_paths):
-      if interactive:
-        if input("Some rlogs were not found, would you like to fallback to qlogs for those segments? (y/n) ").lower() != "y":
-          return rlog_paths
-      else:
-        cloudlog.warning("Some rlogs were not found, falling back to qlogs for those segments...")
+  # auto select logs based on availability
+  if missing_rlogs != 0 and missing_qlogs == 0:
+    if interactive:
+      if input(f"Error: {missing_rlogs} rlogs were not found, would you like to fallback to qlogs for those segments? (y/n) ").lower() != "y":
+        return rlog_paths
+    else:
+      cloudlog.warning("Some rlogs were not found, falling back to qlogs for those segments...")
 
-      #qlogs are checked in all(qlog is not None and valid_file(qlog) for qlog in qlog_paths)
-      return [rlog if valid_file(rlog) else None
-              for rlog in rlog_paths]
-  return rlog_paths
+    return [rlog if valid_file(rlog) else None
+            for rlog in rlog_paths]
+  else:
+    cloudlog.warning(f"Error: {missing_qlogs} qlogs were not found.")
+    return rlog_paths
 
-def count_missing_files(rlog_paths: LogPaths, qlog_paths: LogPaths, valid_file: ValidFileCallable) -> int:
+def count_missing_rlogs(rlog_paths: LogPaths, valid_file: ValidFileCallable) -> int:
   missing_count = 0
 
-  for rlog, qlog in zip(rlog_paths, qlog_paths, strict=True):
-    if (rlog is None or not valid_file(rlog)) or (qlog is None or not valid_file(qlog)):
+  for rlog in rlog_paths:
+    if rlog is None or not valid_file(rlog):
+      missing_count += 1
+
+  return missing_count
+
+def count_missing_qlogs(qlog_paths: LogPaths, valid_file: ValidFileCallable) -> int:
+  missing_count = 0
+
+  for qlog in qlog_paths:
+    if qlog is None or not valid_file(qlog):
       missing_count += 1
 
   return missing_count
