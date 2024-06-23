@@ -131,6 +131,7 @@ def log_msg(msg, parent_key=''):
 class Rerunner:
   def __init__(self, route_or_segment_name, camera_config, enabled_services):
     self.enabled_services = [s.lower() for s in enabled_services]
+    self.log_all = "all" in self.enabled_services
     self.lr = LogReader(route_or_segment_name)
 
     sr = SegmentRange(route_or_segment_name)
@@ -164,12 +165,12 @@ class Rerunner:
     blueprint = None
     service_views = []
 
-    log_all = "all" in self.enabled_services
+    log_msg_visible = len(self.enabled_services) <= 3 and not self.log_all
     for topic in sorted(SERVICE_LIST.keys()):
-      if not log_all and topic.lower() not in self.enabled_services:
+      if not self.log_all and topic.lower() not in self.enabled_services:
         continue
       View = rrb.TimeSeriesView if topic != "thumbnail" else rrb.Spatial2DView
-      service_views.append(View(name=topic, origin=f"/{topic}/"))
+      service_views.append(View(name=topic, origin=f"/{topic}/", visible=log_msg_visible))
       rr.log(topic, rr.SeriesLine(name=topic), timeless=True)
 
     blueprint = rrb.Blueprint(
@@ -184,7 +185,7 @@ class Rerunner:
 
   @staticmethod
   @rr.shutdown_at_exit
-  def _process_log_msgs(blueprint, enabled_services, lr):
+  def _process_log_msgs(blueprint, enabled_services, log_all, lr):
     rr.init(RR_WIN)
     rr.connect(default_blueprint=blueprint)
 
@@ -192,7 +193,7 @@ class Rerunner:
       rr.set_time_nanos(RR_TIMELINE_NAME, msg.logMonoTime)
       msg_type = msg.which()
 
-      if msg_type.lower() not in enabled_services:
+      if not log_all and msg_type.lower() not in enabled_services:
         continue
 
       if msg_type != "thumbnail":
@@ -216,7 +217,7 @@ class Rerunner:
   def load_data(self):
     self._start_rerun()
     if len(self.enabled_services) > 0:
-      self.lr.run_across_segments(NUM_CPUS, partial(self._process_log_msgs, self.blueprint, self.enabled_services))
+      self.lr.run_across_segments(NUM_CPUS, partial(self._process_log_msgs, self.blueprint, self.enabled_services, self.log_all))
     for cam_type, cr in self.camera_readers.items():
       cr.run_across_segments(NUM_CPUS, partial(self._process_cam_readers, self.blueprint, cam_type, cr.h, cr.w))
 

@@ -1,5 +1,5 @@
 # Rerun
-Rerun is a tool to quickly visualize time series data. It supports openpilot logging system, both the `logMessages` and video logs.
+Rerun is a tool to quickly visualize time series data. It supports all openpilot logs , both the `logMessages` and video logs.
 
 ## Usage
 ```
@@ -33,8 +33,16 @@ To list all openpilot services:
 
 `./run.py --print_services`
 
+Examples including openpilot services:
+
+`./run.py --services accelerometer cameraodometry --route "a2a0ccea32023010/2023-07-27--13-01-19/0/q"`
+
+Examples including all services:
+
+`./run.py --services all --route "a2a0ccea32023010/2023-07-27--13-01-19/0/q"`
+
 ## Demo
-`./run.py --services accelerometer --qcam --demo`
+`./run.py --services accelerometer carcontrol caroutput --qcam --demo`
 
 ## Cautions:
 - You can specify `--services all` to visualize all `logMessage`, but it will draw a lot of memory usage and take a long time to log all messages. Rerun isn't ready for logging big number of data.
