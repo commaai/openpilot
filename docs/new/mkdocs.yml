@@ -1,0 +1,5 @@
+site_name: openpilot docs
+docs_dir: docs
+
+theme:
+  name: terminal
