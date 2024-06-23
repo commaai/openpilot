@@ -102,7 +102,7 @@ class CameraReader:
     with multiprocessing.Pool(num_processes) as pool:
       num_segs = len(self.camera_paths)
       for _ in tqdm.tqdm(pool.imap_unordered(partial(self._run_on_segment, func), range(num_segs)), total=num_segs):
-        pass
+        continue
 
 
 CameraConfig = namedtuple("CameraConfig", ["qcam", "fcam", "ecam", "dcam"])
@@ -230,7 +230,8 @@ if __name__ == '__main__':
   parser.add_argument("--fcam", action="store_true", help="Log driving camera")
   parser.add_argument("--ecam", action="store_true", help="Log wide camera")
   parser.add_argument("--dcam", action="store_true", help="Log driver monitoring camera")
-  parser.add_argument("--services", default=[], nargs='*', help="Specify openpilot services that will be logged. No services will be logged if not specified")
+  parser.add_argument("--print_services", action="store_true", help="List out openpilot services")
+  parser.add_argument("--services", default=[], nargs='*', help="Specify openpilot services that will be logged. No service will be logged if not specified")
   parser.add_argument("route_or_segment_name", nargs='?', help="The route or segment name to plot")
 
   if len(sys.argv) == 1:
@@ -238,6 +239,11 @@ if __name__ == '__main__':
     sys.exit()
 
   args = parser.parse_args()
+
+  if args.print_services:
+    print("\n".join(SERVICE_LIST.keys()))
+    sys.exit()
+
   route_or_segment_name = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
   camera_config = CameraConfig(args.qcam, args.fcam, args.ecam, args.dcam)
 
