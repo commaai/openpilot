@@ -3,10 +3,10 @@ import sys
 import argparse
 import multiprocessing
 import tqdm
+import subprocess
 import rerun as rr
 import rerun.blueprint as rrb
 from functools import partial
-import subprocess
 import numpy as np
 from enum import IntEnum, StrEnum
 from collections import namedtuple
@@ -27,6 +27,16 @@ class FrameType(IntEnum):
   h265_stream = 2
 
 
+def read_h264_stream(fn, h, w):
+  frame_sz = w * h * 3 // 2
+  proc = subprocess.Popen(['ffmpeg', '-v', 'quiet', '-i', fn, '-f', 'rawvideo', '-pix_fmt', 'nv12', '-'], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+  while True:
+    dat = proc.stdout.read(frame_sz)
+    if len(dat) == 0:
+      break
+    yield dat
+
+
 class FrameReaderWithTimestamps:
   def __init__(self, camera_path, segment, h, w, frame_type):
     self.camera_path = camera_path
@@ -38,14 +48,14 @@ class FrameReaderWithTimestamps:
     if frame_type == FrameType.h265_stream:
       self.__frame_iter = FrameIterator(self.camera_path, "nv12")
     elif frame_type == FrameType.h264_stream:
-      self.__frame_iter = self.read_h264_stream()
+      self.__frame_iter = read_h264_stream(self.camera_path, h, w)
     else:
       raise NotImplementedError(frame_type)
 
     self.ts = self._get_ts()
 
   def _get_ts(self):
-    args = ["ffprobe", "-show_packets", "-probesize", "10M", self.camera_path]
+    args = ["ffprobe", "-v", "quiet", "-show_packets", "-probesize", "10M", self.camera_path]
     dat = subprocess.check_output(args)
     dat = dat.decode().split()
     try:
@@ -55,18 +65,6 @@ class FrameReaderWithTimestamps:
       ret = [d for d in dat if d.startswith("duration_time")]
       ret = [float(d.split('=')[1])*(i+1)+(self.segment*60) for i, d in enumerate(ret)]
     return ret
-
-  def read_h264_stream(self):
-    frame_sz = self.w * self.h * 3 // 2
-
-    proc = subprocess.Popen(
-      ['ffmpeg', '-v', 'quiet', '-i', self.camera_path, '-f', 'rawvideo', '-pix_fmt', 'nv12', '-'], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL
-    )
-    while True:
-      dat = proc.stdout.read(frame_sz)
-      if len(dat) == 0:
-        break
-      yield dat
 
   def __iter__(self):
     for i, frame in enumerate(self.__frame_iter):
@@ -218,7 +216,8 @@ class Rerunner:
 
   def load_data(self):
     self._start_rerun()
-    self.lr.run_across_segments(NUM_CPUS, partial(self._process_log_msgs, self.blueprint, self.enabled_services))
+    if len(self.enabled_services) > 0:
+      self.lr.run_across_segments(NUM_CPUS, partial(self._process_log_msgs, self.blueprint, self.enabled_services))
     for cam_type, cr in self.camera_readers.items():
       cr.run_across_segments(NUM_CPUS, partial(self._process_cam_readers, self.blueprint, cam_type, cr.h, cr.w))
 
