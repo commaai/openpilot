@@ -20,6 +20,7 @@ from cereal.services import SERVICE_LIST
 NUM_CPUS = multiprocessing.cpu_count()
 DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 RR_TIMELINE_NAME = "Timeline"
+RR_WIN = "rerun_test"
 
 
 class FrameType(IntEnum):
@@ -89,10 +90,6 @@ class CameraReader:
       self.__frs[i] = FrameReaderWithTimestamps(self.camera_paths[i], segment=i, h=self.h, w=self.w, frame_type=self.frame_type)
     return self.__frs[i]
 
-  def __iter__(self):
-    for i in range(len(self.camera_paths)):
-      yield from self._get_fr(i)
-
   def _run_on_segment(self, func, i):
     return func(self._get_fr(i))
 
@@ -159,7 +156,7 @@ class Rerunner:
 
   def _start_rerun(self):
     self.blueprint = self._create_blueprint()
-    rr.init("rerun_test", spawn=True)
+    rr.init(RR_WIN, spawn=True)
 
   def _create_blueprint(self):
     blueprint = None
@@ -186,7 +183,7 @@ class Rerunner:
   @staticmethod
   @rr.shutdown_at_exit
   def _process_log_msgs(blueprint, enabled_services, lr):
-    rr.init("rerun_test")
+    rr.init(RR_WIN)
     rr.connect(default_blueprint=blueprint)
 
     for msg in lr:
@@ -206,7 +203,7 @@ class Rerunner:
   @staticmethod
   @rr.shutdown_at_exit
   def _process_cam_readers(blueprint, cam_type, h, w, fr):
-    rr.init("rerun_test")
+    rr.init(RR_WIN)
     rr.connect(default_blueprint=blueprint)
 
     size_hint = (h, w)
