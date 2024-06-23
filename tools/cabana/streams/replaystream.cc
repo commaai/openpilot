@@ -88,16 +88,10 @@ void ReplayStream::start() {
   replay->start();
 }
 
-void ReplayStream::stop() {
-  if (replay) {
-    replay->stop();
-  }
-}
-
 bool ReplayStream::eventFilter(const Event *event) {
   static double prev_update_ts = 0;
   if (event->which == cereal::Event::Which::CAN) {
-    double current_sec = event->mono_time / 1e9 - routeStartTime();
+    double current_sec = toSeconds(event->mono_time);
     capnp::FlatArrayMessageReader reader(event->data);
     auto e = reader.getRoot<cereal::Event>();
     for (const auto &c : e.getCan()) {
@@ -113,11 +107,6 @@ bool ReplayStream::eventFilter(const Event *event) {
     prev_update_ts = ts;
   }
   return true;
-}
-
-void ReplayStream::seekTo(double ts) {
-  current_sec_ = ts;
-  replay->seekTo(std::max(double(0), ts), false);
 }
 
 void ReplayStream::pause(bool pause) {
