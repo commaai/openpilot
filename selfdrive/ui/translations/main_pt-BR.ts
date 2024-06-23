@@ -497,7 +497,7 @@
     </message>
     <message>
         <source>Remote snapshots</source>
-        <translation type="unfinished"></translation>
+        <translation>Captura remota</translation>
     </message>
 </context>
 <context>
