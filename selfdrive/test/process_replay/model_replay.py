@@ -81,31 +81,6 @@ if __name__ == "__main__":
     'wideRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, log_type="ecamera"), readahead=True)
   }
 
-  # Update tile refs
-  if update:
-    import urllib
-    import requests
-    import threading
-    import http.server
-    from openpilot.tools.lib.openpilotci import upload_bytes
-    os.environ['MAPS_HOST'] = 'http://localhost:5000'
-
-    class HTTPRequestHandler(http.server.BaseHTTPRequestHandler):
-      def do_GET(self):
-        assert len(self.path) > 10  # Sanity check on path length
-        r = requests.get(f'https://api.mapbox.com{self.path}', timeout=30)
-        upload_bytes(r.content, urllib.parse.urlparse(self.path).path.lstrip('/'))
-        self.send_response(r.status_code)
-        self.send_header('Content-type','text/html')
-        self.end_headers()
-        self.wfile.write(r.content)
-
-    server = http.server.HTTPServer(("127.0.0.1", 5000), HTTPRequestHandler)
-    thread = threading.Thread(None, server.serve_forever, daemon=True)
-    thread.start()
-  else:
-    os.environ['MAPS_HOST'] = BASE_URL.rstrip('/')
-
   log_msgs = []
   # run replays
   if not NO_MODEL:
