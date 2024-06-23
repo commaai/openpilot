@@ -1,6 +1,8 @@
 # Rerun
 Rerun is a tool to quickly visualize time series data. It supports all openpilot logs , both the `logMessages` and video logs.
 
+[Instructions](https://rerun.io/docs/reference/viewer/overview) for navigation within the Rerun Viewer.
+
 ## Usage
 ```
 usage: run.py [-h] [--demo] [--qcam] [--fcam] [--ecam] [--dcam] [--print_services] [--services [SERVICES ...]] [route_or_segment_name]

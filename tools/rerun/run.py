@@ -67,8 +67,8 @@ class FrameReader:
 
 
 class CameraReader:
-  def __init__(self, camera_paths, start_time):
-    self.camera_paths = camera_paths
+  def __init__(self, camera_paths, start_time, seg_idxs):
+    self.camera_paths = [camera_paths[i] for i in seg_idxs]
     self.start_time = start_time
 
     probe = ffprobe(camera_paths[0])["streams"][0]
@@ -149,13 +149,13 @@ class Rerunner:
 
     self.camera_readers = {}
     if self.qcam:
-      self.camera_readers[CameraType.qcam] = CameraReader([r.qcamera_paths()[i] for i in sr.seg_idxs], start_time)
+      self.camera_readers[CameraType.qcam] = CameraReader(r.qcamera_paths(), start_time, sr.seg_idxs)
     if self.fcam:
-      self.camera_readers[CameraType.fcam] = CameraReader([r.camera_paths()[i] for i in sr.seg_idxs], start_time)
+      self.camera_readers[CameraType.fcam] = CameraReader(r.camera_paths(), start_time, sr.seg_idxs)
     if self.ecam:
-      self.camera_readers[CameraType.ecam] = CameraReader([r.ecamera_paths()[i] for i in sr.seg_idxs], start_time)
+      self.camera_readers[CameraType.ecam] = CameraReader(r.ecamera_paths(), start_time, sr.seg_idxs)
     if self.dcam:
-      self.camera_readers[CameraType.dcam] = CameraReader([r.dcamera_paths()[i] for i in sr.seg_idxs], start_time)
+      self.camera_readers[CameraType.dcam] = CameraReader(r.dcamera_paths(), start_time, sr.seg_idxs)
 
   def _start_rerun(self):
     self.blueprint = self._create_blueprint()
