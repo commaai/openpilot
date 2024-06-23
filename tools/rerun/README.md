@@ -28,7 +28,7 @@ Examples using route name to observe accelerometer and qcamera:
 
 Examples using segment range (more on [SegmentRange](https://github.com/commaai/openpilot/tree/master/tools/lib)):
 
-`./run.py --qcam --route "a2a0ccea32023010/2023-07-27--13-01-19/2:6:2"`
+`./run.py --qcam --route "a2a0ccea32023010/2023-07-27--13-01-19/2:4"`
 
 ## Openpilot services
 To list all openpilot services:
