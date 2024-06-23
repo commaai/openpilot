@@ -123,7 +123,6 @@ jobs:
       timeout-minutes: 15
       run: |
         ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
-                        export MAPBOX_TOKEN='pk.eyJ1Ijoiam5ld2IiLCJhIjoiY2xxNW8zZXprMGw1ZzJwbzZneHd2NHljbSJ9.gV7VPRfbXFetD-1OVF0XZg' && \
                         $PYTEST --timeout 60 -m 'not slow' && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
@@ -301,7 +300,6 @@ jobs:
         run: >
             ${{ env.RUN }} "PYTHONWARNINGS=ignore &&
                             source selfdrive/test/setup_xvfb.sh &&
-                            export MAPBOX_TOKEN='pk.eyJ1Ijoiam5ld2IiLCJhIjoiY2xxNW8zZXprMGw1ZzJwbzZneHd2NHljbSJ9.gV7VPRfbXFetD-1OVF0XZg' &&
                             python selfdrive/ui/tests/test_ui/run.py"
       - name: Upload Test Report
         uses: actions/upload-artifact@v4
