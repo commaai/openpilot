@@ -25,13 +25,21 @@ options:
 
 Examples using route name to observe accelerometer and qcamera:
 
-`./run.py --services accelerometer --qcam a2a0ccea32023010/2023-07-27--13-01-19`
+`./run.py --services accelerometer --qcam "a2a0ccea32023010/2023-07-27--13-01-19"`
+
+Examples using segment range:
+
+`./run.py --qcam "a2a0ccea32023010/2023-07-27--13-01-19/2:6:2"`
+
+## Openpilot services
+To list all openpilot services:
+
+`./run.py --print_services`
 
 ## Demo
-
 `./run.py --services accelerometer --qcam --demo`
 
 ## Cautions:
 - You can specify `--services all` to visualize all `logMessage`, but it will draw a lot of memory usage and take a long time to log all messages. Rerun isn't ready for logging big number of data.
 
-- Logging hevc videos (`--fcam`, `--ecam`, and `--dcam`)  are expensive, it is recommended to use `--qcam` for optimized performance.
+- Logging hevc videos (`--fcam`, `--ecam`, and `--dcam`)  are expensive, and it's recommended to use `--qcam` for optimized performance.

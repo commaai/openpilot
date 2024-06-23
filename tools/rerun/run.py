@@ -12,7 +12,7 @@ from enum import IntEnum, StrEnum
 from collections import namedtuple
 
 from openpilot.tools.lib.logreader import LogReader
-from openpilot.tools.lib.route import Route
+from openpilot.tools.lib.route import Route, SegmentRange
 from openpilot.tools.lib.framereader import FrameIterator, ffprobe
 from cereal.services import SERVICE_LIST
 
@@ -140,19 +140,21 @@ class Rerunner:
   def __init__(self, route_or_segment_name, camera_config, enabled_services):
     self.enabled_services = [s.lower() for s in enabled_services]
     self.lr = LogReader(route_or_segment_name)
-    r = Route(route_or_segment_name)
+
+    sr = SegmentRange(route_or_segment_name)
+    r = Route(sr.route_name)
 
     self.qcam, self.fcam, self.ecam, self.dcam = camera_config
 
     self.camera_readers = {}
     if self.qcam:
-      self.camera_readers[CameraType.qcam] = CameraReader(r.qcamera_paths(), FrameType.h264_stream)
+      self.camera_readers[CameraType.qcam] = CameraReader([r.qcamera_paths()[i] for i in sr.seg_idxs], FrameType.h264_stream)
     if self.fcam:
-      self.camera_readers[CameraType.fcam] = CameraReader(r.camera_paths())
+      self.camera_readers[CameraType.fcam] = CameraReader([r.camera_paths()[i] for i in sr.seg_idxs])
     if self.ecam:
-      self.camera_readers[CameraType.ecam] = CameraReader(r.ecamera_paths())
+      self.camera_readers[CameraType.ecam] = CameraReader([r.ecamera_paths()[i] for i in sr.seg_idxs])
     if self.dcam:
-      self.camera_readers[CameraType.dcam] = CameraReader(r.dcamera_paths())
+      self.camera_readers[CameraType.dcam] = CameraReader([r.dcamera_paths()[i] for i in sr.seg_idxs])
 
   def _start_rerun(self):
     self.blueprint = self._create_blueprint()
