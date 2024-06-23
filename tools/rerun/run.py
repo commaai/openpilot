@@ -167,8 +167,9 @@ class Rerunner:
     blueprint = None
     service_views = []
 
+    log_all = "all" in self.enabled_services
     for topic in sorted(SERVICE_LIST.keys()):
-      if topic.lower() not in self.enabled_services:
+      if not log_all and topic.lower() not in self.enabled_services:
         continue
       View = rrb.TimeSeriesView if topic != "thumbnail" else rrb.Spatial2DView
       service_views.append(View(name=topic, origin=f"/{topic}/"))
@@ -231,14 +232,15 @@ if __name__ == '__main__':
   parser.add_argument("--ecam", action="store_true", help="Log wide camera")
   parser.add_argument("--dcam", action="store_true", help="Log driver monitoring camera")
   parser.add_argument("--print_services", action="store_true", help="List out openpilot services")
-  parser.add_argument("--services", default=[], nargs='*', help="Specify openpilot services that will be logged. No service will be logged if not specified")
+  parser.add_argument("--services", default=[], nargs='*', help="Specify openpilot services that will be logged.\
+                                                                No service will be logged if not specified.\
+                                                                To log all services include 'all' as one of your services")
   parser.add_argument("route_or_segment_name", nargs='?', help="The route or segment name to plot")
+  args = parser.parse_args()
 
-  if len(sys.argv) == 1:
+  if not args.demo and not args.route_or_segment_name:
     parser.print_help()
     sys.exit()
-
-  args = parser.parse_args()
 
   if args.print_services:
     print("\n".join(SERVICE_LIST.keys()))
