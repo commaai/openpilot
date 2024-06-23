@@ -1,4 +1,4 @@
-This is the source for the new https://docs.comma.ai.
+This is the source for a new https://docs.comma.ai. It's not hosted anywhere yet, but it's easy to run locally.
 
 https://www.mkdocs.org/getting-started/
 
