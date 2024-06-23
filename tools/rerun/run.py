@@ -7,13 +7,12 @@ import subprocess
 import rerun as rr
 import rerun.blueprint as rrb
 from functools import partial
-import numpy as np
-from enum import IntEnum, StrEnum
+from enum import StrEnum
 from collections import namedtuple
 
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.route import Route, SegmentRange
-from openpilot.tools.lib.framereader import FrameIterator, ffprobe
+from openpilot.tools.lib.framereader import ffprobe
 from cereal.services import SERVICE_LIST
 
 
@@ -23,14 +22,9 @@ RR_TIMELINE_NAME = "Timeline"
 RR_WIN = "rerun_test"
 
 
-class FrameType(IntEnum):
-  h264_stream = 1
-  h265_stream = 2
-
-
-def read_h264_stream(fn, h, w):
+def read_stream_nv12(fn, h, w):
   frame_sz = w * h * 3 // 2
-  proc = subprocess.Popen(['ffmpeg', '-v', 'quiet', '-i', fn, '-f', 'rawvideo', '-pix_fmt', 'nv12', '-'], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+  proc = subprocess.Popen(["ffmpeg", "-v", "quiet", "-i", fn, "-f", "rawvideo", "-pix_fmt", "nv12", "-"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
   while True:
     dat = proc.stdout.read(frame_sz)
     if len(dat) == 0:
@@ -38,46 +32,44 @@ def read_h264_stream(fn, h, w):
     yield dat
 
 
-class FrameReaderWithTimestamps:
-  def __init__(self, camera_path, segment, h, w, frame_type):
+def probe_packet_info(camera_path):
+  args = ["ffprobe", "-v", "quiet", "-show_packets", "-probesize", "10M", camera_path]
+  dat = subprocess.check_output(args)
+  dat = dat.decode().split()
+  return dat
+
+
+class FrameReader:
+  def __init__(self, camera_path, segment, h, w, start_time):
     self.camera_path = camera_path
     self.segment = segment
     self.h = h
     self.w = w
-    self.frame_type = frame_type
+    self.start_time = start_time
 
-    if frame_type == FrameType.h265_stream:
-      self.__frame_iter = FrameIterator(self.camera_path, "nv12")
-    elif frame_type == FrameType.h264_stream:
-      self.__frame_iter = read_h264_stream(self.camera_path, h, w)
-    else:
-      raise NotImplementedError(frame_type)
+    self.__frame_iter = read_stream_nv12(self.camera_path, h, w)
 
     self.ts = self._get_ts()
 
   def _get_ts(self):
-    args = ["ffprobe", "-v", "quiet", "-show_packets", "-probesize", "10M", self.camera_path]
-    dat = subprocess.check_output(args)
-    dat = dat.decode().split()
+    dat = probe_packet_info(self.camera_path)
     try:
       ret = [float(d.split('=')[1]) for d in dat if d.startswith("pts_time=")]
     except ValueError:
       # pts_times aren't available. Infer timestamps from duration_times
       ret = [d for d in dat if d.startswith("duration_time")]
-      ret = [float(d.split('=')[1])*(i+1)+(self.segment*60) for i, d in enumerate(ret)]
+      ret = [float(d.split('=')[1])*(i+1)+(self.segment*60)+self.start_time for i, d in enumerate(ret)]
     return ret
 
   def __iter__(self):
     for i, frame in enumerate(self.__frame_iter):
-      if type(frame) == np.ndarray:
-        frame = frame.data.tobytes()
       yield self.ts[i], frame
 
 
 class CameraReader:
-  def __init__(self, camera_paths, frame_type=FrameType.h265_stream):
+  def __init__(self, camera_paths, start_time):
     self.camera_paths = camera_paths
-    self.frame_type = frame_type
+    self.start_time = start_time
 
     probe = ffprobe(camera_paths[0])["streams"][0]
     self.h = probe["height"]
@@ -87,7 +79,7 @@ class CameraReader:
 
   def _get_fr(self, i):
     if i not in self.__frs:
-      self.__frs[i] = FrameReaderWithTimestamps(self.camera_paths[i], segment=i, h=self.h, w=self.w, frame_type=self.frame_type)
+      self.__frs[i] = FrameReader(self.camera_paths[i], segment=i, h=self.h, w=self.w, start_time=self.start_time)
     return self.__frs[i]
 
   def _run_on_segment(self, func, i):
@@ -146,15 +138,23 @@ class Rerunner:
 
     self.qcam, self.fcam, self.ecam, self.dcam = camera_config
 
+    # hevc files don't have start_time. We get it from qcamera.ts
+    start_time = 0
+    dat = probe_packet_info(r.qcamera_paths()[0])
+    for d in dat:
+      if d.startswith("pts_time="):
+        start_time = float(d.split('=')[1])
+        break
+
     self.camera_readers = {}
     if self.qcam:
-      self.camera_readers[CameraType.qcam] = CameraReader([r.qcamera_paths()[i] for i in sr.seg_idxs], FrameType.h264_stream)
+      self.camera_readers[CameraType.qcam] = CameraReader([r.qcamera_paths()[i] for i in sr.seg_idxs], start_time)
     if self.fcam:
-      self.camera_readers[CameraType.fcam] = CameraReader([r.camera_paths()[i] for i in sr.seg_idxs])
+      self.camera_readers[CameraType.fcam] = CameraReader([r.camera_paths()[i] for i in sr.seg_idxs], start_time)
     if self.ecam:
-      self.camera_readers[CameraType.ecam] = CameraReader([r.ecamera_paths()[i] for i in sr.seg_idxs])
+      self.camera_readers[CameraType.ecam] = CameraReader([r.ecamera_paths()[i] for i in sr.seg_idxs], start_time)
     if self.dcam:
-      self.camera_readers[CameraType.dcam] = CameraReader([r.dcamera_paths()[i] for i in sr.seg_idxs])
+      self.camera_readers[CameraType.dcam] = CameraReader([r.dcamera_paths()[i] for i in sr.seg_idxs], start_time)
 
   def _start_rerun(self):
     self.blueprint = self._create_blueprint()
@@ -233,10 +233,10 @@ if __name__ == '__main__':
   parser.add_argument("--services", default=[], nargs='*', help="Specify openpilot services that will be logged.\
                                                                 No service will be logged if not specified.\
                                                                 To log all services include 'all' as one of your services")
-  parser.add_argument("route_or_segment_name", nargs='?', help="The route or segment name to plot")
+  parser.add_argument("--route", nargs='?', help="The route or segment name to plot")
   args = parser.parse_args()
 
-  if not args.demo and not args.route_or_segment_name:
+  if not args.demo and not args.route:
     parser.print_help()
     sys.exit()
 
@@ -244,7 +244,7 @@ if __name__ == '__main__':
     print("\n".join(SERVICE_LIST.keys()))
     sys.exit()
 
-  route_or_segment_name = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
+  route_or_segment_name = DEMO_ROUTE if args.demo else args.route.strip()
   camera_config = CameraConfig(args.qcam, args.fcam, args.ecam, args.dcam)
 
   rerunner = Rerunner(route_or_segment_name, camera_config, args.services)
