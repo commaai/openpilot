@@ -22,7 +22,6 @@ RR_TIMELINE_NAME = "Timeline"
 RR_WIN = "rerun_test"
 
 
-
 def probe_packet_info(camera_path):
   args = ["ffprobe", "-v", "quiet", "-show_packets", "-probesize", "10M", camera_path]
   dat = subprocess.check_output(args)
