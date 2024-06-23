@@ -22,15 +22,6 @@ RR_TIMELINE_NAME = "Timeline"
 RR_WIN = "rerun_test"
 
 
-def read_stream_nv12(fn, h, w):
-  frame_sz = w * h * 3 // 2
-  proc = subprocess.Popen(["ffmpeg", "-v", "quiet", "-i", fn, "-f", "rawvideo", "-pix_fmt", "nv12", "-"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
-  while True:
-    dat = proc.stdout.read(frame_sz)
-    if len(dat) == 0:
-      break
-    yield dat
-
 
 def probe_packet_info(camera_path):
   args = ["ffprobe", "-v", "quiet", "-show_packets", "-probesize", "10M", camera_path]
@@ -47,9 +38,22 @@ class FrameReader:
     self.w = w
     self.start_time = start_time
 
-    self.__frame_iter = read_stream_nv12(self.camera_path, h, w)
+    self.__frame_iter = self.read_stream_nv12()
 
     self.ts = self._get_ts()
+
+  def read_stream_nv12(self):
+    frame_sz = self.w * self.h * 3 // 2
+    proc = subprocess.Popen(
+             ["ffmpeg", "-v", "quiet", "-i", self.camera_path, "-f", "rawvideo", "-pix_fmt", "nv12", "-"],
+             stdout=subprocess.PIPE,
+             stderr=subprocess.DEVNULL
+           )
+    while True:
+      dat = proc.stdout.read(frame_sz)
+      if len(dat) == 0:
+        break
+      yield dat
 
   def _get_ts(self):
     dat = probe_packet_info(self.camera_path)
