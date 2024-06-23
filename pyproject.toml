@@ -25,7 +25,6 @@ testpaths = [
   "selfdrive/controls",
   "selfdrive/locationd",
   "selfdrive/monitoring",
-  "selfdrive/navd/tests",
   "selfdrive/test/longitudinal_maneuvers",
   "selfdrive/test/process_replay/test_fuzzy.py",
   "system/updated",
@@ -96,6 +95,7 @@ pyserial = "*"     # pigeond + qcomgpsd
 requests = "*"     # many one-off uses
 sympy = "*"        # rednose + friends
 crcmod = "*"       # cars + qcomgpsd
+tqdm = "*"         # cars (fw_versions.py) on start + many one-off uses
 
 # hardwared
 smbus2 = "*"  # configuring amp
@@ -105,6 +105,7 @@ cffi = "*"
 scons = "*"
 pycapnp = "*"
 Cython = "*"
+setuptools = "*"
 numpy = "*"
 
 # body / webrtcd
@@ -136,7 +137,6 @@ future-fstrings = "*"
 
 # these should be removed
 psutil = "*"
-timezonefinder = "*"  # just used for nav ETA
 pycryptodome = "*"  # used in updated/casync, panda, body, and a test
 
 #logreader
@@ -183,7 +183,6 @@ natsort = "*"
 opencv-python-headless = "*"
 parameterized = "^0.8"
 #pprofile = "*"
-polyline = "*"
 pyautogui = "*"
 pygame = "*"
 pyopencl = { version = "*", markers = "platform_machine != 'aarch64'" }  # broken on arm64
@@ -193,7 +192,6 @@ rerun-sdk = "*"
 tabulate = "*"
 types-requests = "*"
 types-tabulate = "*"
-tqdm = "*"
 
 # this is only pinned since 5.15.11 is broken
 pyqt5 = { version = "==5.15.2", markers = "platform_machine == 'x86_64'" } # no aarch64 wheels for macOS/linux

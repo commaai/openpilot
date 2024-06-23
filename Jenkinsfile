@@ -26,7 +26,6 @@ export SOURCE_DIR=${env.SOURCE_DIR}
 export GIT_BRANCH=${env.GIT_BRANCH}
 export GIT_COMMIT=${env.GIT_COMMIT}
 export AZURE_TOKEN='${env.AZURE_TOKEN}'
-export MAPBOX_TOKEN='${env.MAPBOX_TOKEN}'
 # only use 1 thread for tici tests since most require HIL
 export PYTEST_ADDOPTS="-n 0"
 
@@ -135,10 +134,8 @@ def pcStage(String stageName, Closure body) {
 def setupCredentials() {
   withCredentials([
     string(credentialsId: 'azure_token', variable: 'AZURE_TOKEN'),
-    string(credentialsId: 'mapbox_token', variable: 'MAPBOX_TOKEN')
   ]) {
     env.AZURE_TOKEN = "${AZURE_TOKEN}"
-    env.MAPBOX_TOKEN = "${MAPBOX_TOKEN}"
   }
 }
 

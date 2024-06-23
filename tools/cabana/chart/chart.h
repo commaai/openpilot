@@ -76,7 +76,6 @@ private:
   void dragLeaveEvent(QDragLeaveEvent *event) override { drawDropIndicator(false); }
   void dragMoveEvent(QDragMoveEvent *event) override;
   void dropEvent(QDropEvent *event) override;
-  void leaveEvent(QEvent *event) override;
   void resizeEvent(QResizeEvent *event) override;
   QSize sizeHint() const override;
   void updateAxisY();

@@ -50,20 +50,20 @@ Replay::~Replay() {
 }
 
 void Replay::stop() {
-  if (!stream_thread_ && segments_.empty()) return;
-
-  rInfo("shutdown: in progress...");
+  exit_ = true;
   if (stream_thread_ != nullptr) {
-    exit_ = true;
+    rInfo("shutdown: in progress...");
     pauseStreamThread();
     stream_cv_.notify_one();
     stream_thread_->quit();
     stream_thread_->wait();
     stream_thread_->deleteLater();
     stream_thread_ = nullptr;
+    rInfo("shutdown: done");
   }
   timeline_future.waitForFinished();
-  rInfo("shutdown: done");
+  camera_server_.reset(nullptr);
+  segments_.clear();
 }
 
 bool Replay::load() {
