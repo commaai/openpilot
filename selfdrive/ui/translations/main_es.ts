@@ -5,336 +5,309 @@
     <name>AbstractAlert</name>
     <message>
         <source>Close</source>
-        <translation>Cerrar</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Snooze Update</source>
-        <translation>Posponer Actualización</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reboot and Update</source>
-        <translation>Reiniciar y Actualizar</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>AdvancedNetworking</name>
     <message>
         <source>Back</source>
-        <translation>Volver</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Enable Tethering</source>
-        <translation>Activar Tether</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Tethering Password</source>
-        <translation>Contraseña de Tethering</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>EDIT</source>
-        <translation>EDITAR</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Enter new tethering password</source>
-        <translation>Nueva contraseña de tethering</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>IP Address</source>
-        <translation>Dirección IP</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Enable Roaming</source>
-        <translation>Activar Roaming</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>APN Setting</source>
-        <translation>Configuración de APN</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Enter APN</source>
-        <translation>Insertar APN</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>leave blank for automatic configuration</source>
-        <translation>dejar en blanco para configuración automática</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cellular Metered</source>
-        <translation>Plano de datos limitado</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Prevent large data uploads when on a metered connection</source>
-        <translation>Evitar grandes descargas de datos cuando tiene una conexión limitada</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Hidden Network</source>
-        <translation>Red Oculta</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>CONNECT</source>
-        <translation>CONNECTAR</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Enter SSID</source>
-        <translation>Ingrese SSID</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Enter password</source>
-        <translation>Ingrese contraseña</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>for &quot;%1&quot;</source>
-        <translation>para &quot;%1&quot;</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>AnnotatedCameraWidget</name>
     <message>
         <source>km/h</source>
-        <translation>km/h</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>mph</source>
-        <translation>mph</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>MAX</source>
-        <translation>MAX</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>SPEED</source>
-        <translation>VELOCIDAD</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>LIMIT</source>
-        <translation>LIMITE</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>ConfirmationDialog</name>
     <message>
         <source>Ok</source>
-        <translation>OK</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Cancelar</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>DeclinePage</name>
     <message>
         <source>You must accept the Terms and Conditions in order to use openpilot.</source>
-        <translation>Debe aceptar los terminos y condiciones para poder utilizar openpilot.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Back</source>
-        <translation>Atrás</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Decline, uninstall %1</source>
-        <translation>Rechazar, desinstalar %1</translation>
-    </message>
-</context>
-<context>
-    <name>DestinationWidget</name>
-    <message>
-        <source>Home</source>
-        <translation>Hogar</translation>
-    </message>
-    <message>
-        <source>Work</source>
-        <translation>Trabajo</translation>
-    </message>
-    <message>
-        <source>No destination set</source>
-        <translation>Sin destino establecido</translation>
-    </message>
-    <message>
-        <source>home</source>
-        <translation>hogar</translation>
-    </message>
-    <message>
-        <source>work</source>
-        <translation>trabajo</translation>
-    </message>
-    <message>
-        <source>No %1 location set</source>
-        <translation>sin %1 ubicación establecida</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
-        <translation>Dongle ID</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>N/A</source>
-        <translation>N/A</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Serial</source>
-        <translation>Serial</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Pair Device</source>
-        <translation>Emparejar Dispositivo</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>PAIR</source>
-        <translation>EMPAREJAR</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
-        <translation>Empareja tu dispositivo con comma connect (connect.comma.ai) y reclama tu oferta de comma prime.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Driver Camera</source>
-        <translation>Cámara del conductor</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>PREVIEW</source>
-        <translation>VISUALIZAR</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
-        <translation>Previsualizar la cámara del conductor para garantizar que la monitorización del sistema tenga buena visibilidad (El vehículo tiene que estar apagado)</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reset Calibration</source>
-        <translation>Reiniciar Calibración</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>RESET</source>
-        <translation>REINICIAR</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Are you sure you want to reset calibration?</source>
-        <translation>¿Seguro qué quiere reiniciar la calibración?</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation>Reiniciar</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Review Training Guide</source>
-        <translation>Revisar la Guía de Entrenamiento</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>REVIEW</source>
-        <translation>REVISAR</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Review the rules, features, and limitations of openpilot</source>
-        <translation>Revisar las reglas, características y limitaciones de openpilot</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Are you sure you want to review the training guide?</source>
-        <translation>¿Seguro qué quiere revisar la guía de entrenamiento?</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Review</source>
-        <translation>Revisar</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Regulatory</source>
-        <translation>Regulador</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>VIEW</source>
-        <translation>VER</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Change Language</source>
-        <translation>Cambiar Idioma</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>CHANGE</source>
-        <translation>CAMBIAR</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Select a language</source>
-        <translation>Seleccione el idioma</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reboot</source>
-        <translation>Reiniciar</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Power Off</source>
-        <translation>Apagar</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot requiere que el dispositivo sea montado entre 4° izquierda o derecha y entre 5° arriba o 9° abajo. openpilot está constantemente en calibración, reiniciar es rara vez necesario.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
-        <translation>Su dispositivo está apuntando %1° %2 e %3° %4.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>down</source>
-        <translation>abajo</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>up</source>
-        <translation>arriba</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>left</source>
-        <translation>izquierda</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>right</source>
-        <translation>derecha</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Are you sure you want to reboot?</source>
-        <translation>¿Seguro qué quiere reiniciar?</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Disengage to Reboot</source>
-        <translation>Desactivar para Reiniciar</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Are you sure you want to power off?</source>
-        <translation>¿Seguro qué quiere apagar?</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Disengage to Power Off</source>
-        <translation>Desactivar para apagar</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>DriverViewWindow</name>
     <message>
         <source>camera starting</source>
-        <translation>iniciando cámara</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>ExperimentalModeButton</name>
     <message>
         <source>EXPERIMENTAL MODE ON</source>
-        <translation>MODO EXPERIMENTAL ACTIVO</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>CHILL MODE ON</source>
-        <translation>MODO TRANQUILO ACTIVO</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>InputDialog</name>
     <message>
         <source>Cancel</source>
-        <translation>Cancelar</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message numerus="yes">
         <source>Need at least %n character(s)!</source>
-        <translation>
-            <numerusform>¡Necesita mínimo %n caractere!</numerusform>
-            <numerusform>¡Necesita mínimo %n caracteres!</numerusform>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
         </translation>
     </message>
 </context>
@@ -342,228 +315,187 @@
     <name>Installer</name>
     <message>
         <source>Installing...</source>
-        <translation>Instalando...</translation>
-    </message>
-</context>
-<context>
-    <name>MapETA</name>
-    <message>
-        <source>eta</source>
-        <translation>tiempo de llegada</translation>
-    </message>
-    <message>
-        <source>min</source>
-        <translation>minuto</translation>
-    </message>
-    <message>
-        <source>hr</source>
-        <translation>hora</translation>
-    </message>
-</context>
-<context>
-    <name>MapSettings</name>
-    <message>
-        <source>NAVIGATION</source>
-        <translation>NAVEGACIÓN</translation>
-    </message>
-    <message>
-        <source>Manage at connect.comma.ai</source>
-        <translation>Administrar en connect.comma.ai</translation>
-    </message>
-</context>
-<context>
-    <name>MapWindow</name>
-    <message>
-        <source>Map Loading</source>
-        <translation>Cargando Mapa</translation>
-    </message>
-    <message>
-        <source>Waiting for GPS</source>
-        <translation>Esperando por GPS</translation>
-    </message>
-    <message>
-        <source>Waiting for route</source>
-        <translation>Esperando por ruta</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>MultiOptionDialog</name>
     <message>
         <source>Select</source>
-        <translation>Seleccione</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Cancelar</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>Networking</name>
     <message>
         <source>Advanced</source>
-        <translation>Avanzado</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Enter password</source>
-        <translation>Ingresar contraseña</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>for &quot;%1&quot;</source>
-        <translation>para &quot;%1&quot;</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Wrong password</source>
-        <translation>Contraseña equivocada</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>OffroadAlert</name>
     <message>
         <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
-        <translation>Temperatura de dispositivo muy alta. Systema enfriando antes de iniciar. Temperatura actual del componente interno: %1</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Immediately connect to the internet to check for updates. If you do not connect to the internet, openpilot won&apos;t engage in %1</source> 
-        <translation>Inmediatamente conectar al internet para buscar actualizaciones. Si no se conecta al internet, openpilot no iniciara en %1</translation>
+        <source>Immediately connect to the internet to check for updates. If you do not connect to the internet, openpilot won&apos;t engage in %1</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Connect to internet to check for updates. openpilot won&apos;t automatically start until it connects to internet to check for updates.</source>
-        <translation>Conectar al internet para buscar actualizaciones. openpilot no iniciara automáticamente hasta conectarse al internet para buscar actualizaciones.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unable to download updates
 %1</source>
-        <translation>Incapaz de descargar actualizaciones.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Taking camera snapshots. System won&apos;t start until finished.</source>
-        <translation>Tomar instantáneas de la cámara</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>An update to your device&apos;s operating system is downloading in the background. You will be prompted to update when it&apos;s ready to install.</source>
-        <translation>Se está descargando una actualización del sistema operativo de su dispositivo en segundo plano. Se le pedirá que actualice cuando esté listo para instalarse.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
-        <translation>El dispositivo no pudo registrarse. No se conectará ni cargará en los servidores de comma.ai y no recibe soporte de comma.ai. Si este es un dispositivo oficial, visite https://comma.ai/support.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>NVMe drive not mounted.</source>
-        <translation>Unidad NVMe no montada</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.</source>
-        <translation>Se detectó una unidad NVMe no compatible. El dispositivo puede consumir mucha más energía y sobrecalentarse debido a que NVMe no es compatible.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
-        <translation>openpilot no pudo identificar su automóvil. Su automóvil no es compatible o no se reconocen sus ECU. Envíe una solicitud de extracción para agregar las versiones de firmware al vehículo adecuado. ¿Necesitas ayuda? Únase a discord.comma.ai.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>openpilot was unable to identify your car. Check integrity of cables and ensure all connections are secure, particularly that the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.</source>
-        <translation>openpilot no pudo identificar su automóvil. Verifique la integridad de los cables y asegúrese de que todas las conexiones estén seguras, en particular que comma power esté completamente insertada en el puerto OBD-II del vehículo. ¿Necesitas ayuda? Únase a discord.comma.ai.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
-        <translation>openpilot detectó un cambio en la posición de montaje del dispositivo. Asegúrese de que el dispositivo esté completamente asentado en el soporte y que el soporte esté firmemente asegurado al parabrisas.</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>OffroadHome</name>
     <message>
         <source>UPDATE</source>
-        <translation>ACTUALIZAR</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source> ALERTS</source>
-        <translation> ALERTAS</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source> ALERT</source>
-        <translation> ALERTA</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>OnroadAlerts</name>
     <message>
         <source>openpilot Unavailable</source>
-        <translation>openpilot no disponible</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Waiting for controls to start</source>
-        <translation>Esperando que los controles inicien.</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>TAKE CONTROL IMMEDIATELY</source>
-        <translation>TOME CONTROL INMEDIATAMENTE</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Controls Unresponsive</source>
-        <translation>Controles no responden</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Reboot Device</source>
-        <translation>Reiniciar Dispositivo</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>PairingPopup</name>
     <message>
         <source>Pair your device to your comma account</source>
-        <translation>Empareje su dispositivo con su cuenta de comma</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Go to https://connect.comma.ai on your phone</source>
-        <translation>Ve a https://connect.comma.ai en su telefono</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
-        <translation>Clic en &quot;agregar nuevo dispositivo&quot; y escanee el código QR a la derecha</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Bookmark connect.comma.ai to your home screen to use it like an app</source>
-        <translation>Marcar connect.comma.ai como su pantalla de inicio para usarlo como una aplicación</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>ParamControl</name>
     <message>
         <source>Enable</source>
-        <translation>Activar</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Cancelar</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>PrimeAdWidget</name>
     <message>
         <source>Upgrade Now</source>
-        <translation>Actualizar Ahora</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Become a comma prime member at connect.comma.ai</source>
-        <translation>Hazte miembro prime de comma en connect.comma.ai</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>PRIME FEATURES:</source>
-        <translation>BENEFICIOS PRIME:</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Remote access</source>
-        <translation>Acceso remoto</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>24/7 LTE connectivity</source>
-        <translation>Conectividad LTE 24/7</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>1 year of drive storage</source>
-        <translation>1 año de almacenamiento en disco</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Turn-by-turn navigation</source>
+        <source>Remote snapshots</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -580,22 +512,6 @@
 </context>
 <context>
     <name>QObject</name>
-    <message>
-        <source>km</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>m</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>ft</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Reboot</source>
         <translation type="unfinished"></translation>
@@ -1094,22 +1010,6 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Display speed in km/h instead of mph.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show ETA in 24h Format</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Use 24h format instead of am/pm</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show Map on Left Side of UI</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show map on left side when in split screen view.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
