@@ -47,7 +47,7 @@ jobs:
       with:
         submodules: true
     - name: Installing ubuntu dependencies
-      run: INSTALL_EXTRA_PACKAGES=no tools/install_ubuntu_dependencies.sh
+      run: INSTALL_EXTRA_PACKAGES=no INTERACTIVE=no tools/install_ubuntu_dependencies.sh
     - name: Installing python
       uses: actions/setup-python@v5
       with:
