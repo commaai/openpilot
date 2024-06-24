@@ -123,8 +123,8 @@ function installer () {
 function install_packages() {
   $SUDO apt-get update
 
-  installer "$RUNTIME_PACKAGES" "Do you want to install these runtime packages? [Y/n]: "
-  installer "$OS_PACKAGES" "Do you want to install these os-specific packages? [Y/n]: "
+  installer "$RUNTIME_PACKAGES" "Do you want to install these runtime packages? (recommended) [Y/n]: "
+  installer "$OS_PACKAGES" "Do you want to install these os-specific packages? (recommended) [Y/n]: "
   installer "$DEV_PACKAGES" "Do you want to install these development packages? [Y/n]: "
   if [[ -z "$INSTALL_EXTRA_PACKAGES" ]]; then
     installer "$EXTRA_PACKAGES" "Do you want to install these extra packages? [Y/n]: "
