@@ -899,7 +899,7 @@ Esto puede tardar hasta un minuto.</translation>
     </message>
     <message>
         <source>Enter your GitHub username</source>
-        <translation>Ingrese su nombre de usuario de GitHub</translation>
+        <translation>Ingresa tu usuario de GitHub</translation>
     </message>
     <message>
         <source>LOADING</source>
