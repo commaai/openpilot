@@ -497,57 +497,57 @@
     </message>
     <message>
         <source>Remote snapshots</source>
-        <translation type="unfinished"></translation>
+        <translation>Istantánea remota</translation>
     </message>
 </context>
 <context>
     <name>PrimeUserWidget</name>
     <message>
         <source>✓ SUBSCRIBED</source>
-        <translation type="unfinished"></translation>
+        <translation>✓ SUSCRITO</translation>
     </message>
     <message>
         <source>comma prime</source>
-        <translation type="unfinished"></translation>
+        <translation>comma prime</translation>
     </message>
 </context>
 <context>
     <name>QObject</name>
     <message>
         <source>Reboot</source>
-        <translation type="unfinished">Reiniciar</translation>
+        <translation>Reiniciar</translation>
     </message>
     <message>
         <source>Exit</source>
-        <translation type="unfinished"></translation>
+        <translation>Salir</translation>
     </message>
     <message>
         <source>openpilot</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot</translation>
     </message>
     <message>
         <source>now</source>
-        <translation type="unfinished"></translation>
+        <translation>ahora</translation>
     </message>
     <message numerus="yes">
         <source>%n minute(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>hace %n minuto</numerusform>
+            <numerusform>hace %n minutos</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n hour(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>hace %n hora</numerusform>
+            <numerusform>hace %n horas</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n day(s) ago</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>hace %n día</numerusform>
+            <numerusform>hace %n días</numerusform>
         </translation>
     </message>
 </context>
@@ -555,600 +555,601 @@
     <name>Reset</name>
     <message>
         <source>Reset failed. Reboot to try again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Reset fallido. Reinicie de nuevo.</translation>
     </message>
     <message>
         <source>Resetting device...
 This may take up to a minute.</source>
-        <translation type="unfinished"></translation>
+        <translation>Reiniciando dispositivo...
+Esto puede tardar hasta un minuto.</translation>
     </message>
     <message>
         <source>Are you sure you want to reset your device?</source>
-        <translation type="unfinished"></translation>
+        <translation>¿Seguro que quiere reiniciar su dispositivo?</translation>
     </message>
     <message>
         <source>System Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Reiniciar Sistema</translation>
     </message>
     <message>
         <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Reinicio del sistema activado. Presione confirmar para borrar todo el contenido y la configuración. Presione cancelar para reanudar el inicio.</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Cancelar</translation>
+        <translation>Cancelar</translation>
     </message>
     <message>
         <source>Reboot</source>
-        <translation type="unfinished">Reiniciar</translation>
+        <translation>Reiniciar</translation>
     </message>
     <message>
         <source>Confirm</source>
-        <translation type="unfinished"></translation>
+        <translation>Confirmar</translation>
     </message>
     <message>
         <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
-        <translation type="unfinished"></translation>
+        <translation>No es posible montar una partición de datos. Partición corrompida. Confirme para borrar y reiniciar su dispositivo.</translation>
     </message>
 </context>
 <context>
     <name>SettingsWindow</name>
     <message>
         <source>×</source>
-        <translation type="unfinished"></translation>
+        <translation>×</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Dispositivo</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation type="unfinished"></translation>
+        <translation>Red</translation>
     </message>
     <message>
         <source>Toggles</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajustes</translation>
     </message>
     <message>
         <source>Software</source>
-        <translation type="unfinished"></translation>
+        <translation>Software</translation>
     </message>
 </context>
 <context>
     <name>Setup</name>
     <message>
         <source>Something went wrong. Reboot the device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Algo ha ido mal. Reinicie el dispositivo.</translation>
     </message>
     <message>
         <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
-        <translation type="unfinished"></translation>
+        <translation>Asegurese de que la URL insertada es válida, y que el dispositivo tiene buena conexión.</translation>
     </message>
     <message>
         <source>No custom software found at this URL.</source>
-        <translation type="unfinished"></translation>
+        <translation>No hay software personalizado en esta URL.</translation>
     </message>
     <message>
         <source>WARNING: Low Voltage</source>
-        <translation type="unfinished"></translation>
+        <translation>ALERTA: Volage bajo</translation>
     </message>
     <message>
         <source>Power your device in a car with a harness or proceed at your own risk.</source>
-        <translation type="unfinished"></translation>
+        <translation>Encender su dispositivo en el auto con el arnés o proceda bajo su propio riesgo.</translation>
     </message>
     <message>
         <source>Power off</source>
-        <translation type="unfinished"></translation>
+        <translation>Apagar</translation>
     </message>
     <message>
         <source>Continue</source>
-        <translation type="unfinished"></translation>
+        <translation>Continuar</translation>
     </message>
     <message>
         <source>Getting Started</source>
-        <translation type="unfinished"></translation>
+        <translation>Comenzando</translation>
     </message>
     <message>
         <source>Before we get on the road, let’s finish installation and cover some details.</source>
-        <translation type="unfinished"></translation>
+        <translation>Antes de comenzar, terminemos la instalación y cubramos algunos detalles.</translation>
     </message>
     <message>
         <source>Connect to Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Conectar a la Wi-Fi</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Volver</translation>
     </message>
     <message>
         <source>Continue without Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Continuar sin Wi-Fi</translation>
     </message>
     <message>
         <source>Waiting for internet</source>
-        <translation type="unfinished"></translation>
+        <translation>Esperando conexión a internet</translation>
     </message>
     <message>
         <source>Choose Software to Install</source>
-        <translation type="unfinished"></translation>
+        <translation>Elija el software para instalar</translation>
     </message>
     <message>
         <source>openpilot</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot</translation>
     </message>
     <message>
         <source>Custom Software</source>
-        <translation type="unfinished"></translation>
+        <translation>Software personalizado</translation>
     </message>
     <message>
         <source>Enter URL</source>
-        <translation type="unfinished"></translation>
+        <translation>Insertar URL</translation>
     </message>
     <message>
         <source>for Custom Software</source>
-        <translation type="unfinished"></translation>
+        <translation>para Software personalizado</translation>
     </message>
     <message>
         <source>Downloading...</source>
-        <translation type="unfinished"></translation>
+        <translation>Descargando...</translation>
     </message>
     <message>
         <source>Download Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Descarga fallida</translation>
     </message>
     <message>
         <source>Reboot device</source>
-        <translation type="unfinished"></translation>
+        <translation>Reiniciar Dispositivo</translation>
     </message>
     <message>
         <source>Start over</source>
-        <translation type="unfinished"></translation>
+        <translation>Comenzar de nuevo</translation>
     </message>
     <message>
         <source>Select a language</source>
-        <translation type="unfinished">Seleccione el idioma</translation>
+        <translation>Seleccione el idioma</translation>
     </message>
 </context>
 <context>
     <name>SetupWidget</name>
     <message>
         <source>Finish Setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Terminar configuración</translation>
     </message>
     <message>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
-        <translation type="unfinished">Empareja tu dispositivo con comma connect (connect.comma.ai) y reclama tu oferta de comma prime.</translation>
+        <translation>Empareja tu dispositivo con comma connect (connect.comma.ai) y reclama tu oferta de comma prime.</translation>
     </message>
     <message>
         <source>Pair device</source>
-        <translation type="unfinished"></translation>
+        <translation>Emparejar dispositivo</translation>
     </message>
 </context>
 <context>
     <name>Sidebar</name>
     <message>
         <source>CONNECT</source>
-        <translation type="unfinished">CONNECTAR</translation>
+        <translation>CONNECTAR</translation>
     </message>
     <message>
         <source>OFFLINE</source>
-        <translation type="unfinished"></translation>
+        <translation>SIN LINEA</translation>
     </message>
     <message>
         <source>ONLINE</source>
-        <translation type="unfinished"></translation>
+        <translation>EN LINEA</translation>
     </message>
     <message>
         <source>ERROR</source>
-        <translation type="unfinished"></translation>
+        <translation>ERROR</translation>
     </message>
     <message>
         <source>TEMP</source>
-        <translation type="unfinished"></translation>
+        <translation>TEMP</translation>
     </message>
     <message>
         <source>HIGH</source>
-        <translation type="unfinished"></translation>
+        <translation>ALTA</translation>
     </message>
     <message>
         <source>GOOD</source>
-        <translation type="unfinished"></translation>
+        <translation>BUENO</translation>
     </message>
     <message>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation>OK</translation>
     </message>
     <message>
         <source>VEHICLE</source>
-        <translation type="unfinished"></translation>
+        <translation>VEHÍCULO</translation>
     </message>
     <message>
         <source>NO</source>
-        <translation type="unfinished"></translation>
+        <translation>SIN</translation>
     </message>
     <message>
         <source>PANDA</source>
-        <translation type="unfinished"></translation>
+        <translation>PANDA</translation>
     </message>
     <message>
         <source>GPS</source>
-        <translation type="unfinished"></translation>
+        <translation>GPS</translation>
     </message>
     <message>
         <source>SEARCH</source>
-        <translation type="unfinished"></translation>
+        <translation>BUSQUEDA</translation>
     </message>
     <message>
         <source>--</source>
-        <translation type="unfinished"></translation>
+        <translation>--</translation>
     </message>
     <message>
         <source>Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Wi-Fi</translation>
     </message>
     <message>
         <source>ETH</source>
-        <translation type="unfinished"></translation>
+        <translation>ETH</translation>
     </message>
     <message>
         <source>2G</source>
-        <translation type="unfinished"></translation>
+        <translation>2G</translation>
     </message>
     <message>
         <source>3G</source>
-        <translation type="unfinished"></translation>
+        <translation>3G</translation>
     </message>
     <message>
         <source>LTE</source>
-        <translation type="unfinished"></translation>
+        <translation>LTE</translation>
     </message>
     <message>
         <source>5G</source>
-        <translation type="unfinished"></translation>
+        <translation>5G</translation>
     </message>
 </context>
 <context>
     <name>SoftwarePanel</name>
     <message>
         <source>Updates are only downloaded while the car is off.</source>
-        <translation type="unfinished"></translation>
+        <translation>Las actualizacines solo se pueden descargar mientras el auto esté apagado.</translation>
     </message>
     <message>
         <source>Current Version</source>
-        <translation type="unfinished"></translation>
+        <translation>Versión Actual</translation>
     </message>
     <message>
         <source>Download</source>
-        <translation type="unfinished"></translation>
+        <translation>Descargar</translation>
     </message>
     <message>
         <source>CHECK</source>
-        <translation type="unfinished"></translation>
+        <translation>VERIFICAR</translation>
     </message>
     <message>
         <source>Install Update</source>
-        <translation type="unfinished"></translation>
+        <translation>Instalar Actualización</translation>
     </message>
     <message>
         <source>INSTALL</source>
-        <translation type="unfinished"></translation>
+        <translation>INSTALAR</translation>
     </message>
     <message>
         <source>Target Branch</source>
-        <translation type="unfinished"></translation>
+        <translation>Rama objetivo</translation>
     </message>
     <message>
         <source>SELECT</source>
-        <translation type="unfinished"></translation>
+        <translation>SELECCIONAR</translation>
     </message>
     <message>
         <source>Select a branch</source>
-        <translation type="unfinished"></translation>
+        <translation>Selecione una rama</translation>
     </message>
     <message>
         <source>Uninstall %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Desinstalar %1</translation>
     </message>
     <message>
         <source>UNINSTALL</source>
-        <translation type="unfinished"></translation>
+        <translation>DESINSTALAR</translation>
     </message>
     <message>
         <source>Are you sure you want to uninstall?</source>
-        <translation type="unfinished"></translation>
+        <translation>¿Seguro qué desea desinstalar?</translation>
     </message>
     <message>
         <source>Uninstall</source>
-        <translation type="unfinished"></translation>
+        <translation>Desinstalar</translation>
     </message>
     <message>
         <source>failed to check for update</source>
-        <translation type="unfinished"></translation>
+        <translation>no se pudo buscar actualización</translation>
     </message>
     <message>
         <source>DOWNLOAD</source>
-        <translation type="unfinished"></translation>
+        <translation>DESCARGAR</translation>
     </message>
     <message>
         <source>update available</source>
-        <translation type="unfinished"></translation>
+        <translation>actualización disponible</translation>
     </message>
     <message>
         <source>never</source>
-        <translation type="unfinished"></translation>
+        <translation>nunca</translation>
     </message>
     <message>
         <source>up to date, last checked %1</source>
-        <translation type="unfinished"></translation>
+        <translation>actualizado, revisado por última vez %1</translation>
     </message>
 </context>
 <context>
     <name>SshControl</name>
     <message>
         <source>SSH Keys</source>
-        <translation type="unfinished"></translation>
+        <translation>Clave SSH</translation>
     </message>
     <message>
         <source>Warning: This grants SSH access to all public keys in your GitHub settings. Never enter a GitHub username other than your own. A comma employee will NEVER ask you to add their GitHub username.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aviso: Esto otorga acceso SSH a todas las claves públicas en su Github. Nunca inserte un nombre de usuario de Github que no sea suyo. Un empleado de comma nunca le pedirá que añada su nombre de Github.</translation>
     </message>
     <message>
         <source>ADD</source>
-        <translation type="unfinished"></translation>
+        <translation>AÑADIR</translation>
     </message>
     <message>
         <source>Enter your GitHub username</source>
-        <translation type="unfinished"></translation>
+        <translation>Ingrese su nombre de usuario de GitHub</translation>
     </message>
     <message>
         <source>LOADING</source>
-        <translation type="unfinished"></translation>
+        <translation>CARGANDO</translation>
     </message>
     <message>
         <source>REMOVE</source>
-        <translation type="unfinished"></translation>
+        <translation>ELIMINAR</translation>
     </message>
     <message>
         <source>Username &apos;%1&apos; has no keys on GitHub</source>
-        <translation type="unfinished"></translation>
+        <translation>Nombre de usuario &quot;%1” no tiene claves en GitHub</translation>
     </message>
     <message>
         <source>Request timed out</source>
-        <translation type="unfinished"></translation>
+        <translation>Solicitud expirada</translation>
     </message>
     <message>
         <source>Username &apos;%1&apos; doesn&apos;t exist on GitHub</source>
-        <translation type="unfinished"></translation>
+        <translation>Nombre de usuario &apos;%1&apos; no existe en Github</translation>
     </message>
 </context>
 <context>
     <name>SshToggle</name>
     <message>
         <source>Enable SSH</source>
-        <translation type="unfinished"></translation>
+        <translation>Habilitar SSH</translation>
     </message>
 </context>
 <context>
     <name>TermsPage</name>
     <message>
         <source>Terms &amp; Conditions</source>
-        <translation type="unfinished"></translation>
+        <translation>Terminos &amp; Condiciones</translation>
     </message>
     <message>
         <source>Decline</source>
-        <translation type="unfinished"></translation>
+        <translation>Rechazar</translation>
     </message>
     <message>
         <source>Scroll to accept</source>
-        <translation type="unfinished"></translation>
+        <translation>Desliza para aceptar</translation>
     </message>
     <message>
         <source>Agree</source>
-        <translation type="unfinished"></translation>
+        <translation>Aceptar</translation>
     </message>
 </context>
 <context>
     <name>TogglesPanel</name>
     <message>
         <source>Enable openpilot</source>
-        <translation type="unfinished"></translation>
+        <translation>Activar openpilot</translation>
     </message>
     <message>
         <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation type="unfinished"></translation>
+        <translation>Utilice el sistema openpilot para control de crucero adaptativo y asistencia al conductor para mantenerse en el carril. Se requiere su atención en todo momento para utilizar esta función. Cambiar esta configuración solo tendrá efecto con el auto apagado.</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
-        <translation type="unfinished"></translation>
+        <translation>Control longitudinal de openpilot (Alfa)</translation>
     </message>
     <message>
         <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation type="unfinished"></translation>
+        <translation>Aviso: el control longitudinal de openpilot está en fase alfa para este automóvil y desactivará el Frenado Automático de Emergencia (AEB).</translation>
     </message>
     <message>
         <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
-        <translation type="unfinished"></translation>
+        <translation>En este vehículo, openpilot se configura de manera predeterminada con el Control de Crucero Adaptativo (ACC) incorporado en el automóvil en lugar del control longitudinal de openpilot. Habilita esta opción para cambiar al control longitudinal de openpilot. Se recomienda activar el modo experimental al habilitar el control longitudinal alfa de openpilot.</translation>
     </message>
     <message>
         <source>Experimental Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Modo Experimental</translation>
     </message>
     <message>
         <source>Disengage on Accelerator Pedal</source>
-        <translation type="unfinished"></translation>
+        <translation>Desactivar con el Acelerador</translation>
     </message>
     <message>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Cuando esté activado, presionar el acelerador deshabilitará el openpilot.</translation>
     </message>
     <message>
         <source>Enable Lane Departure Warnings</source>
-        <translation type="unfinished"></translation>
+        <translation>Activar Aviso de Salida de Carril</translation>
     </message>
     <message>
         <source>Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).</source>
-        <translation type="unfinished"></translation>
+        <translation>Recibir alertas para volver dentro del carril cuando su vehículo se sale fuera del carril sin que esté activado la señal de giro mientras esté conduciendo por encima de 50 km/h (31 mph).</translation>
     </message>
     <message>
         <source>Always-On Driver Monitoring</source>
-        <translation type="unfinished"></translation>
+        <translation>Monitoreo del Conductor Siempre Activo</translation>
     </message>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Habilite el monitoreo del conductor incluso cuando Openpilot no esté activado.</translation>
     </message>
     <message>
         <source>Record and Upload Driver Camera</source>
-        <translation type="unfinished"></translation>
+        <translation>Grabar y Subir Cámara del Conductor</translation>
     </message>
     <message>
         <source>Upload data from the driver facing camera and help improve the driver monitoring algorithm.</source>
-        <translation type="unfinished"></translation>
+        <translation>Subir datos de la cámara del conductor para ayudar a mejorar el algoritmo de monitorización del conductor.</translation>
     </message>
     <message>
         <source>Use Metric System</source>
-        <translation type="unfinished"></translation>
+        <translation>Usar Sistema Métrico</translation>
     </message>
     <message>
         <source>Display speed in km/h instead of mph.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mostrar velocidad en km/h en vez de mph.</translation>
     </message>
     <message>
         <source>Aggressive</source>
-        <translation type="unfinished"></translation>
+        <translation>Agresivo</translation>
     </message>
     <message>
         <source>Standard</source>
-        <translation type="unfinished"></translation>
+        <translation>Estándar</translation>
     </message>
     <message>
         <source>Relaxed</source>
-        <translation type="unfinished"></translation>
+        <translation>Relajado</translation>
     </message>
     <message>
         <source>Driving Personality</source>
-        <translation type="unfinished"></translation>
+        <translation>Personalidad de conducción</translation>
     </message>
     <message>
         <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se recomienda estándar. En el modo agresivo, openpilot seguirá a los autos líderes más cerca y será más agresivo con el acelerador y el freno. En modo relajado, openpilot se mantendrá más alejado de los coches líderes. En automóviles compatibles, puede recorrer estas personalidades con el botón de distancia del volante.</translation>
     </message>
     <message>
         <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot por defecto conduce en &lt;b&gt;modo chill&lt;/b&gt;. El modo Experimental activa &lt;b&gt;recursos de nível-alfa&lt;/b&gt; que no están listos para el modo chill. Los recursos del modo expeimental están listados abajo:</translation>
     </message>
     <message>
         <source>End-to-End Longitudinal Control</source>
-        <translation type="unfinished"></translation>
+        <translation>🌮 Control Longitudinal de Punta a Punta 🌮</translation>
     </message>
     <message>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dajar que el modelo de conducción controle la aceleración y el frenado. openpilot va a conducir como lo haría una persona, incluiyendo parar en los semaforos en rojo y las señales de stop. Dado que el modelo decide la velocidad de conducción, la velocidad de crucero establecida actuará como limitador. Este recurso es de una calidad alfa; errores pueden ocurrir.</translation>
     </message>
     <message>
         <source>New Driving Visualization</source>
-        <translation type="unfinished"></translation>
+        <translation>Nueva Visualización de la conducción</translation>
     </message>
     <message>
         <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
-        <translation type="unfinished"></translation>
+        <translation>La visualización de la conducción cambiará a la cámara que enfoca la carretera a velocidades bajas para mostrar mejor los giros. El logo del modo experimental se mostrará en la esquina superior derecha.</translation>
     </message>
     <message>
         <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
-        <translation type="unfinished"></translation>
+        <translation>El modo Experimental no está disponible actualmente para este auto, ya que el ACC del auto está siendo usado para el control longitudinal.</translation>
     </message>
     <message>
         <source>openpilot longitudinal control may come in a future update.</source>
-        <translation type="unfinished"></translation>
+        <translation>El control longitudinal de openpilot podrá llegar en futuras actualizaciones.</translation>
     </message>
     <message>
         <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
-        <translation type="unfinished"></translation>
+        <translation>Se puede probar una versión experimental del control longitudinal openpilot, junto con el modo Experimental, en ramas sin liberación.</translation>
     </message>
     <message>
         <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>Activar el control longitudinal experimental para permitir el modo Experimental.</translation>
     </message>
 </context>
 <context>
     <name>Updater</name>
     <message>
         <source>Update Required</source>
-        <translation type="unfinished"></translation>
+        <translation>Actualización Requerida</translation>
     </message>
     <message>
         <source>An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.</source>
-        <translation type="unfinished"></translation>
+        <translation>Es necesario la actualización del sistema operativo. Conecte su dispositivo a Wi-Fi para una actualización rápida. El tamaño de descarga es de aproximadamente 1GB.</translation>
     </message>
     <message>
         <source>Connect to Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Conectarse a la Wi-Fi</translation>
     </message>
     <message>
         <source>Install</source>
-        <translation type="unfinished"></translation>
+        <translation>Instalar</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Volver</translation>
     </message>
     <message>
         <source>Loading...</source>
-        <translation type="unfinished"></translation>
+        <translation>Cargando...</translation>
     </message>
     <message>
         <source>Reboot</source>
-        <translation type="unfinished">Reiniciar</translation>
+        <translation>Reiniciar</translation>
     </message>
     <message>
         <source>Update failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Actualización fallida</translation>
     </message>
 </context>
 <context>
     <name>WiFiPromptWidget</name>
     <message>
         <source>Setup Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Configurar Wi-Fi</translation>
     </message>
     <message>
         <source>Connect to Wi-Fi to upload driving data and help improve openpilot</source>
-        <translation type="unfinished"></translation>
+        <translation>Conectar a Wi-Fi para subir los datos de conducir para mejorar openpilot</translation>
     </message>
     <message>
         <source>Open Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Abrir Configuraciones</translation>
     </message>
     <message>
         <source>Ready to upload</source>
-        <translation type="unfinished"></translation>
+        <translation>Listo para subir</translation>
     </message>
     <message>
         <source>Training data will be pulled periodically while your device is on Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Los datos de entrenamiento se extraerán periódicamente mientras tu dispositivo esté conectado a Wi-Fi</translation>
     </message>
 </context>
 <context>
     <name>WifiUI</name>
     <message>
         <source>Scanning for networks...</source>
-        <translation type="unfinished"></translation>
+        <translation>Buscando redes...</translation>
     </message>
     <message>
         <source>CONNECTING...</source>
-        <translation type="unfinished"></translation>
+        <translation>CONECTANDO...</translation>
     </message>
     <message>
         <source>FORGET</source>
-        <translation type="unfinished"></translation>
+        <translation>OLVIDAR</translation>
     </message>
     <message>
         <source>Forget Wi-Fi Network &quot;%1&quot;?</source>
-        <translation type="unfinished"></translation>
+        <translation>Olvidar Red Wi-Fi &quot;%1&quot;?</translation>
     </message>
     <message>
         <source>Forget</source>
-        <translation type="unfinished"></translation>
+        <translation>Olvidar</translation>
     </message>
 </context>
 </TS>
