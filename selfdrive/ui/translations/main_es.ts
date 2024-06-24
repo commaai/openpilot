@@ -290,11 +290,11 @@
     <name>ExperimentalModeButton</name>
     <message>
         <source>EXPERIMENTAL MODE ON</source>
-        <translation>MODO EXPERIMENTAL ACTIVO</translation>
+        <translation>MODO EXPERIMENTAL</translation>
     </message>
     <message>
         <source>CHILL MODE ON</source>
-        <translation>MODO TRANQUILO ACTIVO</translation>
+        <translation>MODO TRANQUILO</translation>
     </message>
 </context>
 <context>
@@ -729,7 +729,7 @@ Esto puede tardar hasta un minuto.</translation>
     <name>Sidebar</name>
     <message>
         <source>CONNECT</source>
-        <translation>CONNECTAR</translation>
+        <translation>CONNECT</translation>
     </message>
     <message>
         <source>OFFLINE</source>
@@ -812,7 +812,7 @@ Esto puede tardar hasta un minuto.</translation>
     <name>SoftwarePanel</name>
     <message>
         <source>Updates are only downloaded while the car is off.</source>
-        <translation>Las actualizacines solo se pueden descargar mientras el auto esté apagado.</translation>
+        <translation>Apague el auto para descargar actualizaciones.</translation>
     </message>
     <message>
         <source>Current Version</source>
@@ -880,7 +880,7 @@ Esto puede tardar hasta un minuto.</translation>
     </message>
     <message>
         <source>up to date, last checked %1</source>
-        <translation>actualizado, revisado por última vez %1</translation>
+        <translation>actualizado, último chequeo %1</translation>
     </message>
 </context>
 <context>
