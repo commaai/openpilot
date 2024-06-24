@@ -37,8 +37,6 @@ class FrameReader:
     self.w = w
     self.start_time = start_time
 
-    self.__frame_iter = self.read_stream_nv12()
-
     self.ts = self._get_ts()
 
   def read_stream_nv12(self):
@@ -65,7 +63,7 @@ class FrameReader:
     return ret
 
   def __iter__(self):
-    for i, frame in enumerate(self.__frame_iter):
+    for i, frame in enumerate(self.read_stream_nv12()):
       yield self.ts[i], frame
 
 
