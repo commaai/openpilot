@@ -33,7 +33,7 @@ repos:
         - -L bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup,bumb,nd,sie,preints,whit,indexIn
         - --builtins clear,rare,informal,usage,code,names,en-GB_to_en-US
 -   repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.4.9
+    rev: v0.4.10
     hooks:
     -   id: ruff
         exclude: '^(third_party/)|(msgq/)|(panda/)|(rednose/)|(rednose_repo/)|(tinygrad/)|(tinygrad_repo/)|(teleoprtc/)|(teleoprtc_repo/)'
