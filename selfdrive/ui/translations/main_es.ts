@@ -532,8 +532,8 @@
     <message numerus="yes">
         <source>%n minute(s) ago</source>
         <translation>
-            <numerusform>hace %n minuto</numerusform>
-            <numerusform>hace %n minutos</numerusform>
+            <numerusform>hace %n min</numerusform>
+            <numerusform>hace %n mins</numerusform>
         </translation>
     </message>
     <message numerus="yes">
@@ -879,8 +879,7 @@ Esto puede tardar hasta un minuto.</translation>
         <translation>nunca</translation>
     </message>
     <message>
-        <source>up to date, last checked
-        %1</source>
+        <source>up to date, last checked %1</source>
         <translation>actualizado, último chequeo %1</translation>
     </message>
 </context>
