@@ -96,8 +96,7 @@ if [[ ! $(id -u) -eq 0 ]]; then
 fi
 
 function apt_install () {
-  CMD="$SUDO apt-get install -y --no-install-recommends $1"
-  echo $CMD
+  $SUDO apt-get install -y --no-install-recommends $1
 }
 
 RUNTIME_PACKAGES=""
