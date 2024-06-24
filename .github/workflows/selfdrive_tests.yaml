@@ -94,12 +94,12 @@ jobs:
       with:
         submodules: true
     - name: Install dependencies
-      if: steps.dependency-cache.outputs.cache-hit != 'true'
       run: ./tools/mac_setup.sh
       env:
         SKIP_PROMPT: 1
     - name: Test openpilot environment
       run: poetry run scons -h
+
   static_analysis:
     name: static analysis
     runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
