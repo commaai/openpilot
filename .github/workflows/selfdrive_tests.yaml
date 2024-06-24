@@ -97,6 +97,8 @@ jobs:
       run: ./tools/mac_setup.sh
       env:
         SKIP_PROMPT: 1
+        # package install has DeprecationWarnings
+        PYTHONWARNINGS: default
     - name: Test openpilot environment
       run: poetry run scons -h
 
