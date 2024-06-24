@@ -421,13 +421,6 @@ qreal ChartView::niceNumber(qreal x, bool ceiling) {
   return q * z;
 }
 
-void ChartView::leaveEvent(QEvent *event) {
-  if (tip_label->isVisible()) {
-    charts_widget->showValueTip(-1);
-  }
-  QChartView::leaveEvent(event);
-}
-
 QPixmap getBlankShadowPixmap(const QPixmap &px, int radius) {
   QGraphicsDropShadowEffect *e = new QGraphicsDropShadowEffect;
   e->setColor(QColor(40, 40, 40, 245));
@@ -546,7 +539,7 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   bool is_zooming = rubber && rubber->isVisible();
   clearTrackPoints();
 
-  if (!is_zooming && plot_area.contains(ev->pos())) {
+  if (!is_zooming && plot_area.contains(ev->pos()) && isActiveWindow()) {
     const double sec = chart()->mapToValue(ev->pos()).x();
     charts_widget->showValueTip(sec);
   } else if (tip_label->isVisible()) {
