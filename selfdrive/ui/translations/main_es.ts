@@ -244,7 +244,7 @@
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
-        <translation>Su dispositivo está apuntando %1° %2 e %3° %4.</translation>
+        <translation> Su dispositivo está apuntando %1° %2 e %3° %4.</translation>
     </message>
     <message>
         <source>down</source>
@@ -370,7 +370,7 @@
     </message>
     <message>
         <source>Taking camera snapshots. System won&apos;t start until finished.</source>
-        <translation>Tomar instantáneas de la cámara</translation>
+        <translation>Tomando instantáneas de la cámara. El sistema no se iniciará hasta que finalice.</translation>
     </message>
     <message>
         <source>An update to your device&apos;s operating system is downloading in the background. You will be prompted to update when it&apos;s ready to install.</source>
@@ -382,7 +382,7 @@
     </message>
     <message>
         <source>NVMe drive not mounted.</source>
-        <translation>Unidad NVMe no montada</translation>
+        <translation>Unidad NVMe no montada.</translation>
     </message>
     <message>
         <source>Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.</source>
@@ -424,7 +424,7 @@
     </message>
     <message>
         <source>Waiting for controls to start</source>
-        <translation>Esperando que los controles inicien.</translation>
+        <translation>Esperando que los controles inicien</translation>
     </message>
     <message>
         <source>TAKE CONTROL IMMEDIATELY</source>
@@ -828,7 +828,7 @@ Esto puede tardar hasta un minuto.</translation>
     </message>
     <message>
         <source>Install Update</source>
-        <translation>Instalar Actualización</translation>
+        <translation>Actualizar</translation>
     </message>
     <message>
         <source>INSTALL</source>
@@ -879,7 +879,8 @@ Esto puede tardar hasta un minuto.</translation>
         <translation>nunca</translation>
     </message>
     <message>
-        <source>up to date, last checked %1</source>
+        <source>up to date, last checked
+        %1</source>
         <translation>actualizado, último chequeo %1</translation>
     </message>
 </context>
