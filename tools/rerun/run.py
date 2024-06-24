@@ -29,7 +29,7 @@ def probe_packet_info(camera_path):
   return dat
 
 
-class FrameReader:
+class _FrameReader:
   def __init__(self, camera_path, segment, h, w, start_time):
     self.camera_path = camera_path
     self.segment = segment
@@ -39,7 +39,7 @@ class FrameReader:
 
     self.ts = self._get_ts()
 
-  def read_stream_nv12(self):
+  def _read_stream_nv12(self):
     frame_sz = self.w * self.h * 3 // 2
     proc = subprocess.Popen(
              ["ffmpeg", "-v", "quiet", "-i", self.camera_path, "-f", "rawvideo", "-pix_fmt", "nv12", "-"],
@@ -63,7 +63,7 @@ class FrameReader:
     return ret
 
   def __iter__(self):
-    for i, frame in enumerate(self.read_stream_nv12()):
+    for i, frame in enumerate(self._read_stream_nv12()):
       yield self.ts[i], frame
 
 
@@ -80,7 +80,7 @@ class CameraReader:
 
   def _get_fr(self, i):
     if i not in self.__frs:
-      self.__frs[i] = FrameReader(self.camera_paths[i], segment=i, h=self.h, w=self.w, start_time=self.start_time)
+      self.__frs[i] = _FrameReader(self.camera_paths[i], segment=i, h=self.h, w=self.w, start_time=self.start_time)
     return self.__frs[i]
 
   def _run_on_segment(self, func, i):
