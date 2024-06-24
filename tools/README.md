@@ -24,18 +24,34 @@ git clone --recurse-submodules https://github.com/commaai/openpilot.git
 
 **2. Run the setup script**
 
+This script will interactively walk you through the installation of all the required dependencies.
+
 ``` bash
 cd openpilot
-git lfs pull
 tools/ubuntu_setup.sh
 ```
+
+**3. Git LFS**
+
+Get all Git LFS files:
+``` bash
+git lfs pull
+```
+
+**4. Activate a python shell**
 
 Activate a shell with the Python dependencies installed:
 ``` bash
 poetry shell
 ```
 
-**3. Build openpilot**
+or if you did not installed poetry while running the setup script: 
+``` bash
+source .venv/bin/activate
+source .env
+```
+
+**5. Build openpilot**
 
 ``` bash
 scons -u -j$(nproc)
