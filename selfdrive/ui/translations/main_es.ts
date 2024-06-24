@@ -137,33 +137,6 @@
     </message>
 </context>
 <context>
-    <name>DestinationWidget</name>
-    <message>
-        <source>Home</source>
-        <translation>Hogar</translation>
-    </message>
-    <message>
-        <source>Work</source>
-        <translation>Trabajo</translation>
-    </message>
-    <message>
-        <source>No destination set</source>
-        <translation>Sin destino establecido</translation>
-    </message>
-    <message>
-        <source>home</source>
-        <translation>hogar</translation>
-    </message>
-    <message>
-        <source>work</source>
-        <translation>trabajo</translation>
-    </message>
-    <message>
-        <source>No %1 location set</source>
-        <translation>sin %1 ubicación establecida</translation>
-    </message>
-</context>
-<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -346,47 +319,6 @@
     </message>
 </context>
 <context>
-    <name>MapETA</name>
-    <message>
-        <source>eta</source>
-        <translation>tiempo de llegada</translation>
-    </message>
-    <message>
-        <source>min</source>
-        <translation>minuto</translation>
-    </message>
-    <message>
-        <source>hr</source>
-        <translation>hora</translation>
-    </message>
-</context>
-<context>
-    <name>MapSettings</name>
-    <message>
-        <source>NAVIGATION</source>
-        <translation>NAVEGACIÓN</translation>
-    </message>
-    <message>
-        <source>Manage at connect.comma.ai</source>
-        <translation>Administrar en connect.comma.ai</translation>
-    </message>
-</context>
-<context>
-    <name>MapWindow</name>
-    <message>
-        <source>Map Loading</source>
-        <translation>Cargando Mapa</translation>
-    </message>
-    <message>
-        <source>Waiting for GPS</source>
-        <translation>Esperando por GPS</translation>
-    </message>
-    <message>
-        <source>Waiting for route</source>
-        <translation>Esperando por ruta</translation>
-    </message>
-</context>
-<context>
     <name>MultiOptionDialog</name>
     <message>
         <source>Select</source>
@@ -423,7 +355,7 @@
         <translation>Temperatura de dispositivo muy alta. Systema enfriando antes de iniciar. Temperatura actual del componente interno: %1</translation>
     </message>
     <message>
-        <source>Immediately connect to the internet to check for updates. If you do not connect to the internet, openpilot won&apos;t engage in %1</source> 
+        <source>Immediately connect to the internet to check for updates. If you do not connect to the internet, openpilot won&apos;t engage in %1</source>
         <translation>Inmediatamente conectar al internet para buscar actualizaciones. Si no se conecta al internet, openpilot no iniciara en %1</translation>
     </message>
     <message>
@@ -433,7 +365,8 @@
     <message>
         <source>Unable to download updates
 %1</source>
-        <translation>Incapaz de descargar actualizaciones.</translation>
+        <translation>Incapaz de descargar actualizaciones.
+%1</translation>
     </message>
     <message>
         <source>Taking camera snapshots. System won&apos;t start until finished.</source>
@@ -563,7 +496,7 @@
         <translation>1 año de almacenamiento en disco</translation>
     </message>
     <message>
-        <source>Turn-by-turn navigation</source>
+        <source>Remote snapshots</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -581,24 +514,8 @@
 <context>
     <name>QObject</name>
     <message>
-        <source>km</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>m</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>ft</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Reboot</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Reiniciar</translation>
     </message>
     <message>
         <source>Exit</source>
@@ -659,11 +576,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Cancelar</translation>
     </message>
     <message>
         <source>Reboot</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Reiniciar</translation>
     </message>
     <message>
         <source>Confirm</source>
@@ -789,7 +706,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Select a language</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Seleccione el idioma</translation>
     </message>
 </context>
 <context>
@@ -800,7 +717,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Empareja tu dispositivo con comma connect (connect.comma.ai) y reclama tu oferta de comma prime.</translation>
     </message>
     <message>
         <source>Pair device</source>
@@ -811,7 +728,7 @@ This may take up to a minute.</source>
     <name>Sidebar</name>
     <message>
         <source>CONNECT</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">CONNECTAR</translation>
     </message>
     <message>
         <source>OFFLINE</source>
@@ -1097,22 +1014,6 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Show ETA in 24h Format</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Use 24h format instead of am/pm</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show Map on Left Side of UI</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Show map on left side when in split screen view.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Aggressive</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1197,7 +1098,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Reboot</source>
-        <translation type="unfinished"></translation>
+        <translation type="unfinished">Reiniciar</translation>
     </message>
     <message>
         <source>Update failed</source>
