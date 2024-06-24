@@ -13,7 +13,7 @@ ENV LANGUAGE en_US:en
 ENV LC_ALL en_US.UTF-8
 
 COPY tools/install_ubuntu_dependencies.sh /tmp/tools/
-RUN INSTALL_EXTRA_PACKAGES=no /tmp/tools/install_ubuntu_dependencies.sh && \
+RUN INTERACTIVE=no INSTALL_EXTRA_PACKAGES=no /tmp/tools/install_ubuntu_dependencies.sh && \
     rm -rf /var/lib/apt/lists/* /tmp/* && \
     cd /usr/lib/gcc/arm-none-eabi/* && \
     rm -rf arm/ thumb/nofp thumb/v6* thumb/v8* thumb/v7+fp thumb/v7-r+fp.sp
@@ -77,7 +77,7 @@ RUN python3 -m venv $VIRTUAL_ENV
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN . $VIRTUAL_ENV/bin/activate && \
     cd /tmp && \
-    tools/install_python_dependencies.sh && \
+    INTERACTIVE=no tools/install_python_dependencies.sh && \
     rm -rf /tmp/* && \
     rm -rf /home/$USER/.cache
 
