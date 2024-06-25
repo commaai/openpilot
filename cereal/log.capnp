@@ -875,12 +875,18 @@ struct DrivingModelData {
   action @2 :ModelDataV2.Action;
 
   laneLineMeta @3 :LaneLineMeta;
+  meta @4 :MetaData;
 
   struct LaneLineMeta {
     leftY @0 :Float32;
     rightY @1 :Float32;
     leftProb @2 :Float32;
     rightProb @3 :Float32;
+  }
+
+  struct MetaData {
+    laneChangeState @0 :LaneChangeState;
+    laneChangeDirection @1 :LaneChangeDirection;
   }
 }
 
@@ -2279,6 +2285,7 @@ struct Event {
     driverMonitoringState @71: DriverMonitoringState;
     liveLocationKalman @72 :LiveLocationKalman;
     modelV2 @75 :ModelDataV2;
+    drivingModelData @128 :DrivingModelData;
     driverStateV2 @92 :DriverStateV2;
 
     # camera stuff, each camera state has a matching encode idx
