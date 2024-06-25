@@ -53,6 +53,8 @@ function success_instructions() {
     echo "To activate the new python virtualenv, run:"
     echo "source ~/.bashrc"
     echo "poetry shell"
+    echo ""
+    echo "Because you did not installed poetry, only runtime python packages were installed!"
   fi
 }
 

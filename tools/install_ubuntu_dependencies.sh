@@ -39,6 +39,7 @@ _RUNTIME_PACKAGES="
     ocl-icd-libopencl1
     ocl-icd-opencl-dev
     portaudio19-dev
+    qml-module-qtquick2
     qtmultimedia5-dev
     qtdeclarative5-dev
     qttools5-dev-tools
@@ -49,13 +50,13 @@ _RUNTIME_PACKAGES="
     "
 
 _DEV_PACKAGES="
-"
-
-_EXTRA_PACKAGES="
-    casync
     cmake
     make
     clinfo
+    "
+
+_EXTRA_PACKAGES="
+    casync
     libqt5sql5-sqlite
     libreadline-dev
     libdw1
