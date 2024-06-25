@@ -137,33 +137,6 @@
     </message>
 </context>
 <context>
-    <name>DestinationWidget</name>
-    <message>
-        <source>Home</source>
-        <translation>Casa</translation>
-    </message>
-    <message>
-        <source>Work</source>
-        <translation>Trabalho</translation>
-    </message>
-    <message>
-        <source>No destination set</source>
-        <translation>Nenhum destino definido</translation>
-    </message>
-    <message>
-        <source>No %1 location set</source>
-        <translation>Endereço de %1 não definido</translation>
-    </message>
-    <message>
-        <source>home</source>
-        <translation>casa</translation>
-    </message>
-    <message>
-        <source>work</source>
-        <translation>trabalho</translation>
-    </message>
-</context>
-<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -346,47 +319,6 @@
     </message>
 </context>
 <context>
-    <name>MapETA</name>
-    <message>
-        <source>eta</source>
-        <translation>eta</translation>
-    </message>
-    <message>
-        <source>min</source>
-        <translation>min</translation>
-    </message>
-    <message>
-        <source>hr</source>
-        <translation>hr</translation>
-    </message>
-</context>
-<context>
-    <name>MapSettings</name>
-    <message>
-        <source>NAVIGATION</source>
-        <translation>NAVEGAÇÃO</translation>
-    </message>
-    <message>
-        <source>Manage at connect.comma.ai</source>
-        <translation>Gerencie em connect.comma.ai</translation>
-    </message>
-</context>
-<context>
-    <name>MapWindow</name>
-    <message>
-        <source>Map Loading</source>
-        <translation>Carregando Mapa</translation>
-    </message>
-    <message>
-        <source>Waiting for GPS</source>
-        <translation>Aguardando GPS</translation>
-    </message>
-    <message>
-        <source>Waiting for route</source>
-        <translation>Aguardando rota</translation>
-    </message>
-</context>
-<context>
     <name>MultiOptionDialog</name>
     <message>
         <source>Select</source>
@@ -431,10 +363,6 @@
 %1</source>
         <translation>Não é possível baixar atualizações
 %1</translation>
-    </message>
-    <message>
-        <source>Invalid date and time settings, system won&apos;t start. Connect to internet to set time.</source>
-        <translation>Configurações de data e hora inválidas, o sistema não será iniciado. Conecte-se à internet para definir o horário.</translation>
     </message>
     <message>
         <source>Taking camera snapshots. System won&apos;t start until finished.</source>
@@ -492,23 +420,23 @@
     <name>OnroadAlerts</name>
     <message>
         <source>openpilot Unavailable</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot Indisponível</translation>
     </message>
     <message>
         <source>Waiting for controls to start</source>
-        <translation type="unfinished"></translation>
+        <translation>Aguardando controles para iniciar</translation>
     </message>
     <message>
         <source>TAKE CONTROL IMMEDIATELY</source>
-        <translation type="unfinished"></translation>
+        <translation>ASSUMA IMEDIATAMENTE</translation>
     </message>
     <message>
         <source>Controls Unresponsive</source>
-        <translation type="unfinished"></translation>
+        <translation>Controles Não Respondem</translation>
     </message>
     <message>
         <source>Reboot Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Reinicie o Dispositivo</translation>
     </message>
 </context>
 <context>
@@ -564,12 +492,12 @@
         <translation>Conectividade LTE (só nos EUA)</translation>
     </message>
     <message>
-        <source>Turn-by-turn navigation</source>
-        <translation>Navegação passo a passo</translation>
-    </message>
-    <message>
         <source>1 year of drive storage</source>
         <translation>1 ano de dados em nuvem</translation>
+    </message>
+    <message>
+        <source>Remote snapshots</source>
+        <translation>Captura remota</translation>
     </message>
 </context>
 <context>
@@ -617,22 +545,6 @@
             <numerusform>há %n dia</numerusform>
             <numerusform>há %n dias</numerusform>
         </translation>
-    </message>
-    <message>
-        <source>km</source>
-        <translation>km</translation>
-    </message>
-    <message>
-        <source>m</source>
-        <translation>m</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation>milha</translation>
-    </message>
-    <message>
-        <source>ft</source>
-        <translation>pés</translation>
     </message>
     <message>
         <source>now</source>
@@ -1079,22 +991,6 @@ Isso pode levar até um minuto.</translation>
         <translation>Quando ativado, pressionar o pedal do acelerador desacionará o openpilot.</translation>
     </message>
     <message>
-        <source>Show ETA in 24h Format</source>
-        <translation>Mostrar ETA em Formato 24h</translation>
-    </message>
-    <message>
-        <source>Use 24h format instead of am/pm</source>
-        <translation>Use o formato 24h em vez de am/pm</translation>
-    </message>
-    <message>
-        <source>Show Map on Left Side of UI</source>
-        <translation>Exibir Mapa no Lado Esquerdo</translation>
-    </message>
-    <message>
-        <source>Show map on left side when in split screen view.</source>
-        <translation>Exibir mapa do lado esquerdo quando a tela for dividida.</translation>
-    </message>
-    <message>
         <source>Experimental Mode</source>
         <translation>Modo Experimental</translation>
     </message>
@@ -1151,10 +1047,6 @@ Isso pode levar até um minuto.</translation>
         <translation>Uma versão embrionária do controle longitudinal openpilot pode ser testada em conjunto com o modo Experimental, em branches que não sejam de produção.</translation>
     </message>
     <message>
-        <source>Navigate on openpilot</source>
-        <translation>Navegação no openpilot</translation>
-    </message>
-    <message>
         <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
         <translation>Habilite o controle longitudinal (embrionário) openpilot para permitir o modo Experimental.</translation>
     </message>
@@ -1163,16 +1055,20 @@ Isso pode levar até um minuto.</translation>
         <translation>Controle Longitudinal de Ponta a Ponta</translation>
     </message>
     <message>
-        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
-        <translation>Quando a navegação tem um destino, o openpilot insere as informações do mapa no modelo. Isso fornece contexto útil para o modelo e permite que o openpilot mantenha a esquerda ou a direita apropriadamente em bifurcações/saídas. O comportamento de mudança de faixa permanece inalterado e ainda é ativado somente pelo motorista. Este é um recurso de qualidade embrionária; erros devem ser esperados, principalmente em torno de saídas e bifurcações. Esses erros podem incluir travessias não intencionais na faixa de rodagem, saída tardia, condução em direção a barreiras divisórias nas áreas de marcas de canalização, etc.</translation>
-    </message>
-    <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
-        <translation>A visualização de condução fará a transição para a câmera grande angular voltada para a estrada em baixas velocidades para mostrar melhor algumas curvas. O logotipo do modo Experimental também será mostrado no canto superior direito. Quando um destino de navegação é definido e o modelo de condução o utiliza como entrada o caminho de condução no mapa fica verde.</translation>
-    </message>
-    <message>
         <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
         <translation>Neutro é o recomendado. No modo disputa o openpilot seguirá o carro da frente mais de perto e será mais agressivo com a aceleração e frenagem. No modo calmo o openpilot se manterá mais longe do carro da frente. Em carros compatíveis, você pode alternar esses temperamentos com o botão de distância do volante.</translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
+        <translation>A visualização de condução fará a transição para a câmera grande angular voltada para a estrada em baixas velocidades para mostrar melhor algumas curvas. O logotipo do modo Experimental também será mostrado no canto superior direito.</translation>
+    </message>
+    <message>
+        <source>Always-On Driver Monitoring</source>
+        <translation>Monitoramento do Motorista Sempre Ativo</translation>
+    </message>
+    <message>
+        <source>Enable driver monitoring even when openpilot is not engaged.</source>
+        <translation>Habilite o monitoramento do motorista mesmo quando o openpilot não estiver acionado.</translation>
     </message>
 </context>
 <context>

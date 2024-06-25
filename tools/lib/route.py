@@ -4,13 +4,12 @@ from functools import cache
 from urllib.parse import urlparse
 from collections import defaultdict
 from itertools import chain
-from typing import cast
 
 from openpilot.tools.lib.auth_config import get_token
 from openpilot.tools.lib.api import CommaApi
 from openpilot.tools.lib.helpers import RE
 
-QLOG_FILENAMES = ['qlog', 'qlog.bz2']
+QLOG_FILENAMES = ['qlog', 'qlog.bz2', 'qlog.zst']
 QCAMERA_FILENAMES = ['qcamera.ts']
 LOG_FILENAMES = ['rlog', 'rlog.bz2', 'raw_log.bz2']
 CAMERA_FILENAMES = ['fcamera.hevc', 'video.hevc']
@@ -240,7 +239,9 @@ class SegmentName:
 def get_max_seg_number_cached(sr: 'SegmentRange') -> int:
   try:
     api = CommaApi(get_token())
-    return cast(int, api.get("/v1/route/" + sr.route_name.replace("/", "|"))["segment_numbers"][-1])
+    max_seg_number = api.get("/v1/route/" + sr.route_name.replace("/", "|"))["maxqlog"]
+    assert isinstance(max_seg_number, int)
+    return max_seg_number
   except Exception as e:
     raise Exception("unable to get max_segment_number. ensure you have access to this route or the route is public.") from e
 
@@ -258,10 +259,6 @@ class SegmentRange:
   @property
   def dongle_id(self) -> str:
     return self.m.group("dongle_id")
-
-  @property
-  def timestamp(self) -> str:
-    return self.m.group("timestamp")
 
   @property
   def log_id(self) -> str:

@@ -137,33 +137,6 @@
     </message>
 </context>
 <context>
-    <name>DestinationWidget</name>
-    <message>
-        <source>Home</source>
-        <translation>Domicile</translation>
-    </message>
-    <message>
-        <source>Work</source>
-        <translation>Travail</translation>
-    </message>
-    <message>
-        <source>No destination set</source>
-        <translation>Aucune destination définie</translation>
-    </message>
-    <message>
-        <source>home</source>
-        <translation>domicile</translation>
-    </message>
-    <message>
-        <source>work</source>
-        <translation>travail</translation>
-    </message>
-    <message>
-        <source>No %1 location set</source>
-        <translation>Aucun lieu %1 défini</translation>
-    </message>
-</context>
-<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -346,47 +319,6 @@
     </message>
 </context>
 <context>
-    <name>MapETA</name>
-    <message>
-        <source>eta</source>
-        <translation>eta</translation>
-    </message>
-    <message>
-        <source>min</source>
-        <translation>min</translation>
-    </message>
-    <message>
-        <source>hr</source>
-        <translation>h</translation>
-    </message>
-</context>
-<context>
-    <name>MapSettings</name>
-    <message>
-        <source>NAVIGATION</source>
-        <translation>NAVIGATION</translation>
-    </message>
-    <message>
-        <source>Manage at connect.comma.ai</source>
-        <translation>Gérer sur connect.comma.ai</translation>
-    </message>
-</context>
-<context>
-    <name>MapWindow</name>
-    <message>
-        <source>Map Loading</source>
-        <translation>Chargement de la carte</translation>
-    </message>
-    <message>
-        <source>Waiting for GPS</source>
-        <translation>En attente du GPS</translation>
-    </message>
-    <message>
-        <source>Waiting for route</source>
-        <translation>En attente d&apos;un trajet</translation>
-    </message>
-</context>
-<context>
     <name>MultiOptionDialog</name>
     <message>
         <source>Select</source>
@@ -435,10 +367,6 @@
 %1</source>
         <translation>Impossible de télécharger les mises à jour
 %1</translation>
-    </message>
-    <message>
-        <source>Invalid date and time settings, system won&apos;t start. Connect to internet to set time.</source>
-        <translation>Paramètres de date et d&apos;heure invalides, le système ne démarrera pas. Connectez l&apos;appareil à Internet pour régler l&apos;heure.</translation>
     </message>
     <message>
         <source>Taking camera snapshots. System won&apos;t start until finished.</source>
@@ -568,8 +496,8 @@
         <translation>1 an de stockage de trajets</translation>
     </message>
     <message>
-        <source>Turn-by-turn navigation</source>
-        <translation>Navigation étape par étape</translation>
+        <source>Remote snapshots</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -617,22 +545,6 @@
             <numerusform>il y a %n jour</numerusform>
             <numerusform>il y a %n jours</numerusform>
         </translation>
-    </message>
-    <message>
-        <source>km</source>
-        <translation>km</translation>
-    </message>
-    <message>
-        <source>m</source>
-        <translation>m</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation>mi</translation>
-    </message>
-    <message>
-        <source>ft</source>
-        <translation>ft</translation>
     </message>
     <message>
         <source>now</source>
@@ -1095,22 +1007,6 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
         <translation>Afficher la vitesse en km/h au lieu de mph.</translation>
     </message>
     <message>
-        <source>Show ETA in 24h Format</source>
-        <translation>Afficher l&apos;heure d&apos;arrivée en format 24h</translation>
-    </message>
-    <message>
-        <source>Use 24h format instead of am/pm</source>
-        <translation>Utiliser le format 24h plutôt que am/pm</translation>
-    </message>
-    <message>
-        <source>Show Map on Left Side of UI</source>
-        <translation>Afficher la carte à gauche de l&apos;interface</translation>
-    </message>
-    <message>
-        <source>Show map on left side when in split screen view.</source>
-        <translation>Afficher la carte à gauche en mode écran scindé.</translation>
-    </message>
-    <message>
         <source>Aggressive</source>
         <translation>Aggressif</translation>
     </message>
@@ -1155,23 +1051,23 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
         <translation>Contrôle longitudinal de bout en bout</translation>
     </message>
     <message>
-        <source>Navigate on openpilot</source>
-        <translation>Navigation avec openpilot</translation>
-    </message>
-    <message>
-        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
-        <translation>Lorsque la navigation dispose d&apos;une destination, openpilot entrera les informations de la carte dans le modèle. Cela fournit un contexte utile pour le modèle et permet à openpilot de se diriger à gauche ou à droite de manière appropriée aux bifurcations/sorties. Le comportement relatif au changement de voie reste inchangé et doit toujours être activé par le conducteur. Il s&apos;agit d&apos;une fonctionnalité alpha ; il faut s&apos;attendre à des erreurs, en particulier aux abords des sorties et des bifurcations. Ces erreurs peuvent inclure des franchissements involontaires de passages piétons, des prises de sortie tardives, la conduite vers des zones de séparation de type zebras, etc.</translation>
-    </message>
-    <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
-        <translation>La visualisation de la conduite passera sur la caméra grand angle dirigée vers la route à faible vitesse afin de mieux montrer certains virages. Le logo du mode expérimental s&apos;affichera également dans le coin supérieur droit. Lorsqu&apos;une destination de navigation est définie et que le modèle de conduite l&apos;utilise comme entrée, la trajectoire de conduite sur la carte deviendra verte.</translation>
-    </message>
-    <message>
         <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
         <translation>Activer le contrôle longitudinal d&apos;openpilot (en alpha) pour autoriser le mode expérimental.</translation>
     </message>
     <message>
         <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
+        <translation>La visualisation de la conduite passera sur la caméra grand angle dirigée vers la route à faible vitesse afin de mieux montrer certains virages. Le logo du mode expérimental s&apos;affichera également dans le coin supérieur droit.</translation>
+    </message>
+    <message>
+        <source>Always-On Driver Monitoring</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable driver monitoring even when openpilot is not engaged.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -44,9 +44,7 @@ class CarControllerParams:
 class ToyotaFlags(IntFlag):
   # Detected flags
   HYBRID = 1
-  SMART_DSU = 2
   DISABLE_RADAR = 4
-  RADAR_CAN_FILTER = 1024
 
   # Static flags
   TSS2 = 8
@@ -56,7 +54,7 @@ class ToyotaFlags(IntFlag):
   # these cars use the Lane Tracing Assist (LTA) message for lateral control
   ANGLE_CONTROL = 128
   NO_STOP_TIMER = 256
-  # these cars are speculated to allow stop and go when the DSU is unplugged or disabled with sDSU
+  # these cars are speculated to allow stop and go when the DSU is unplugged
   SNG_WITHOUT_DSU = 512
 
 
@@ -161,7 +159,7 @@ class CAR(Platforms):
       ToyotaCarDocs("Toyota Corolla Hatchback 2019-22", video_link="https://www.youtube.com/watch?v=_66pXk0CBYA"),
       # Hybrid platforms
       ToyotaCarDocs("Toyota Corolla Hybrid 2020-22"),
-      ToyotaCarDocs("Toyota Corolla Hybrid (Non-US only) 2020-23", min_enable_speed=7.5),
+      ToyotaCarDocs("Toyota Corolla Hybrid (South America only) 2020-23", min_enable_speed=7.5),
       ToyotaCarDocs("Toyota Corolla Cross Hybrid (Non-US only) 2020-22", min_enable_speed=7.5),
       ToyotaCarDocs("Lexus UX Hybrid 2019-23"),
     ],
@@ -415,7 +413,7 @@ def get_platform_codes(fw_versions: list[bytes]) -> dict[bytes, set[bytes]]:
   return dict(codes)
 
 
-def match_fw_to_car_fuzzy(live_fw_versions, offline_fw_versions) -> set[str]:
+def match_fw_to_car_fuzzy(live_fw_versions, vin, offline_fw_versions) -> set[str]:
   candidates = set()
 
   for candidate, fws in offline_fw_versions.items():
@@ -494,22 +492,20 @@ FW_QUERY_CONFIG = FwQueryConfig(
     Request(
       [StdQueries.SHORT_TESTER_PRESENT_REQUEST, TOYOTA_VERSION_REQUEST_KWP],
       [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, TOYOTA_VERSION_RESPONSE_KWP],
-      whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.dsu, Ecu.abs, Ecu.eps, Ecu.epb, Ecu.telematics,
-                      Ecu.srs, Ecu.combinationMeter, Ecu.transmission, Ecu.gateway, Ecu.hvac],
+      whitelist_ecus=[Ecu.fwdCamera, Ecu.fwdRadar, Ecu.dsu, Ecu.abs, Ecu.eps, Ecu.srs, Ecu.transmission, Ecu.hvac],
       bus=0,
     ),
     Request(
       [StdQueries.SHORT_TESTER_PRESENT_REQUEST, StdQueries.OBD_VERSION_REQUEST],
       [StdQueries.SHORT_TESTER_PRESENT_RESPONSE, StdQueries.OBD_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.engine, Ecu.epb, Ecu.telematics, Ecu.hybrid, Ecu.srs, Ecu.combinationMeter, Ecu.transmission,
-                      Ecu.gateway, Ecu.hvac],
+      whitelist_ecus=[Ecu.engine, Ecu.hybrid, Ecu.srs, Ecu.transmission, Ecu.hvac],
       bus=0,
     ),
     Request(
       [StdQueries.TESTER_PRESENT_REQUEST, StdQueries.DEFAULT_DIAGNOSTIC_REQUEST, StdQueries.EXTENDED_DIAGNOSTIC_REQUEST, StdQueries.UDS_VERSION_REQUEST],
       [StdQueries.TESTER_PRESENT_RESPONSE, StdQueries.DEFAULT_DIAGNOSTIC_RESPONSE, StdQueries.EXTENDED_DIAGNOSTIC_RESPONSE, StdQueries.UDS_VERSION_RESPONSE],
-      whitelist_ecus=[Ecu.engine, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.abs, Ecu.eps, Ecu.epb, Ecu.telematics,
-                      Ecu.hybrid, Ecu.srs, Ecu.combinationMeter, Ecu.transmission, Ecu.gateway, Ecu.hvac],
+      whitelist_ecus=[Ecu.engine, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.abs, Ecu.eps,
+                      Ecu.hybrid, Ecu.srs, Ecu.transmission, Ecu.hvac],
       bus=0,
     ),
   ],
@@ -523,33 +519,29 @@ FW_QUERY_CONFIG = FwQueryConfig(
   extra_ecus=[
     # All known ECUs on a late-model Toyota vehicle not queried here:
     # Responds to UDS:
+    # - Combination Meter (0x7c0)
     # - HV Battery (0x713, 0x747)
     # - Motor Generator (0x716, 0x724)
     # - 2nd ABS "Brake/EPB" (0x730)
+    # - Electronic Parking Brake ((0x750, 0x2c))
+    # - Telematics ((0x750, 0xc7))
     # Responds to KWP (0x1a8801):
     # - Steering Angle Sensor (0x7b3)
     # - EPS/EMPS (0x7a0, 0x7a1)
+    # - 2nd SRS Airbag (0x784)
+    # - Central Gateway ((0x750, 0x5f))
+    # - Telematics ((0x750, 0xc7))
     # Responds to KWP (0x1a8881):
     # - Body Control Module ((0x750, 0x40))
+    # - Telematics ((0x750, 0xc7))
 
     # Hybrid control computer can be on 0x7e2 (KWP) or 0x7d2 (UDS) depending on platform
     (Ecu.hybrid, 0x7e2, None),  # Hybrid Control Assembly & Computer
-    # TODO: if these duplicate ECUs always exist together, remove one
     (Ecu.srs, 0x780, None),     # SRS Airbag
-    (Ecu.srs, 0x784, None),     # SRS Airbag 2
-    # Likely only exists on cars where EPB isn't standard (e.g. Camry, Avalon (/Hybrid))
-    # On some cars, EPB is controlled by the ABS module
-    (Ecu.epb, 0x750, 0x2c),     # Electronic Parking Brake
-    # This isn't accessible on all cars
-    (Ecu.gateway, 0x750, 0x5f),
-    # On some cars, this only responds to b'\x1a\x88\x81', which is reflected by the b'\x1a\x88\x00' query
-    (Ecu.telematics, 0x750, 0xc7),
     # Transmission is combined with engine on some platforms, such as TSS-P RAV4
     (Ecu.transmission, 0x701, None),
     # A few platforms have a tester present response on this address, add to log
     (Ecu.transmission, 0x7e1, None),
-    # On some cars, this only responds to b'\x1a\x88\x80'
-    (Ecu.combinationMeter, 0x7c0, None),
     (Ecu.hvac, 0x7c4, None),
   ],
   match_fw_to_car_fuzzy=match_fw_to_car_fuzzy,

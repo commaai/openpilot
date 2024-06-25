@@ -89,8 +89,8 @@ private:
 
 std::unordered_map<std::string, uint32_t> keys = {
     {"AccessToken", CLEAR_ON_MANAGER_START | DONT_LOG},
+    {"AlwaysOnDM", PERSISTENT},
     {"ApiCache_Device", PERSISTENT},
-    {"ApiCache_NavDestinations", PERSISTENT},
     {"AssistNowToken", PERSISTENT},
     {"AthenadPid", PERSISTENT},
     {"AthenadUploadQueue", PERSISTENT},
@@ -159,11 +159,6 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"LiveParameters", PERSISTENT},
     {"LiveTorqueParameters", PERSISTENT | DONT_LOG},
     {"LongitudinalPersonality", PERSISTENT},
-    {"NavDestination", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
-    {"NavDestinationWaypoints", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
-    {"NavPastDestinations", PERSISTENT},
-    {"NavSettingLeftSide", PERSISTENT},
-    {"NavSettingTime24h", PERSISTENT},
     {"NetworkMetered", PERSISTENT},
     {"ObdMultiplexingChanged", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"ObdMultiplexingEnabled", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
@@ -171,7 +166,6 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"Offroad_CarUnrecognized", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"Offroad_ConnectivityNeeded", CLEAR_ON_MANAGER_START},
     {"Offroad_ConnectivityNeededPrompt", CLEAR_ON_MANAGER_START},
-    {"Offroad_InvalidTime", CLEAR_ON_MANAGER_START},
     {"Offroad_IsTakingSnapshot", CLEAR_ON_MANAGER_START},
     {"Offroad_NeosUpdate", CLEAR_ON_MANAGER_START},
     {"Offroad_NoFirmware", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
@@ -192,7 +186,6 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"SnoozeUpdate", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
     {"SshEnabled", PERSISTENT},
     {"TermsVersion", PERSISTENT},
-    {"Timezone", PERSISTENT},
     {"TrainingVersion", PERSISTENT},
     {"UbloxAvailable", PERSISTENT},
     {"UpdateAvailable", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
@@ -273,7 +266,9 @@ int Params::put(const char* key, const char* value, size_t value_size) {
   } while (false);
 
   close(tmp_fd);
-  ::unlink(tmp_path.c_str());
+  if (result != 0) {
+    ::unlink(tmp_path.c_str());
+  }
   return result;
 }
 

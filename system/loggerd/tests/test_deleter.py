@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
 import time
 import threading
-import unittest
 from collections import namedtuple
 from pathlib import Path
 from collections.abc import Sequence
@@ -17,9 +15,9 @@ class TestDeleter(UploaderTestCase):
   def fake_statvfs(self, d):
     return self.fake_stats
 
-  def setUp(self):
+  def setup_method(self):
     self.f_type = "fcamera.hevc"
-    super().setUp()
+    super().setup_method()
     self.fake_stats = Stats(f_bavail=0, f_blocks=10, f_frsize=4096)
     deleter.os.statvfs = self.fake_statvfs
 
@@ -64,7 +62,7 @@ class TestDeleter(UploaderTestCase):
     finally:
       self.join_thread()
 
-    self.assertEqual(deleted_order, f_paths, "Files not deleted in expected order")
+    assert deleted_order == f_paths, "Files not deleted in expected order"
 
   def test_delete_order(self):
     self.assertDeleteOrder([
@@ -105,7 +103,7 @@ class TestDeleter(UploaderTestCase):
       time.sleep(0.01)
     self.join_thread()
 
-    self.assertTrue(f_path.exists(), "File deleted with available space")
+    assert f_path.exists(), "File deleted with available space"
 
   def test_no_delete_with_lock_file(self):
     f_path = self.make_file_with_data(self.seg_dir, self.f_type, lock=True)
@@ -116,8 +114,4 @@ class TestDeleter(UploaderTestCase):
       time.sleep(0.01)
     self.join_thread()
 
-    self.assertTrue(f_path.exists(), "File deleted when locked")
-
-
-if __name__ == "__main__":
-  unittest.main()
+    assert f_path.exists(), "File deleted when locked"

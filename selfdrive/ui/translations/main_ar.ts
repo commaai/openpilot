@@ -137,33 +137,6 @@
     </message>
 </context>
 <context>
-    <name>DestinationWidget</name>
-    <message>
-        <source>Home</source>
-        <translation>المنزل</translation>
-    </message>
-    <message>
-        <source>Work</source>
-        <translation>العمل</translation>
-    </message>
-    <message>
-        <source>No destination set</source>
-        <translation>لم يتم ضبط الوجهة</translation>
-    </message>
-    <message>
-        <source>home</source>
-        <translation>المنزل</translation>
-    </message>
-    <message>
-        <source>work</source>
-        <translation>العمل</translation>
-    </message>
-    <message>
-        <source>No %1 location set</source>
-        <translation>لم يتم ضبط %1 موقع</translation>
-    </message>
-</context>
-<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -350,47 +323,6 @@
     </message>
 </context>
 <context>
-    <name>MapETA</name>
-    <message>
-        <source>eta</source>
-        <translation>الوصول</translation>
-    </message>
-    <message>
-        <source>min</source>
-        <translation>د</translation>
-    </message>
-    <message>
-        <source>hr</source>
-        <translation>س</translation>
-    </message>
-</context>
-<context>
-    <name>MapSettings</name>
-    <message>
-        <source>NAVIGATION</source>
-        <translation>التنقل</translation>
-    </message>
-    <message>
-        <source>Manage at connect.comma.ai</source>
-        <translation>الإدارة في connect.comma.ai</translation>
-    </message>
-</context>
-<context>
-    <name>MapWindow</name>
-    <message>
-        <source>Map Loading</source>
-        <translation>تحميل الخريطة</translation>
-    </message>
-    <message>
-        <source>Waiting for GPS</source>
-        <translation>بانتظار GPS</translation>
-    </message>
-    <message>
-        <source>Waiting for route</source>
-        <translation>بانتظار الطريق</translation>
-    </message>
-</context>
-<context>
     <name>MultiOptionDialog</name>
     <message>
         <source>Select</source>
@@ -439,10 +371,6 @@
 %1</source>
         <translation>غير قادر على تحميل التحديثات
 %1</translation>
-    </message>
-    <message>
-        <source>Invalid date and time settings, system won&apos;t start. Connect to internet to set time.</source>
-        <translation>إعدادات التاريخ والتوقيت غير صحيحة، لن يبدأ النظام. اتصل بالإنترنت من أجل ضبط الوقت.</translation>
     </message>
     <message>
         <source>Taking camera snapshots. System won&apos;t start until finished.</source>
@@ -572,8 +500,8 @@
         <translation>سنة واحدة من تخزين القرص</translation>
     </message>
     <message>
-        <source>Turn-by-turn navigation</source>
-        <translation>التنقل خطوة بخطوة</translation>
+        <source>Remote snapshots</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -633,22 +561,6 @@
             <numerusform>منذ %n أيام</numerusform>
             <numerusform>منذ %n يوم</numerusform>
         </translation>
-    </message>
-    <message>
-        <source>km</source>
-        <translation>كم</translation>
-    </message>
-    <message>
-        <source>m</source>
-        <translation>م</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation>ميل</translation>
-    </message>
-    <message>
-        <source>ft</source>
-        <translation>قدم</translation>
     </message>
     <message>
         <source>now</source>
@@ -1095,22 +1007,6 @@ This may take up to a minute.</source>
         <translation>عند تمكين هذه الميزة، فإن الضغط على دواسة الوقود سيؤدي إلى فك ارتباط openpilot.</translation>
     </message>
     <message>
-        <source>Show ETA in 24h Format</source>
-        <translation>إظهار الوقت المقدر للوصول بصيغة 24 ساعة</translation>
-    </message>
-    <message>
-        <source>Use 24h format instead of am/pm</source>
-        <translation>استخدام صيغة 24 ساعة بدلاً من صباحاً/مساء</translation>
-    </message>
-    <message>
-        <source>Show Map on Left Side of UI</source>
-        <translation>عرض الخريطة على الجانب الأيسر من واجهة المستخدم</translation>
-    </message>
-    <message>
-        <source>Show map on left side when in split screen view.</source>
-        <translation>عرض الخريطة عل الجانب الأيسر عندما تكون وضعية العرض بطريقة الشاشة المنقسمة.</translation>
-    </message>
-    <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
         <translation>التحكم الطولي openpilot (ألفا)</translation>
     </message>
@@ -1155,20 +1051,8 @@ This may take up to a minute.</source>
         <translation>دع نظام القيادة يتحكم بالوقود والمكابح. سيقوم openpilot بالقيادة كما لو أنه كائن بشري، بما في ذلك التوقف عند الإشارة الحمراء، وإشارات التوقف. وبما أن نمط القيادة يحدد سرعة القيادة، فإن السرعة المضبوطة تشكل الحد الأقصى فقط. هذه خاصية الجودة ألفا، فيجب توقع حدوث الأخطاء.</translation>
     </message>
     <message>
-        <source>Navigate on openpilot</source>
-        <translation>التنقل على openpilot</translation>
-    </message>
-    <message>
-        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
-        <translation>عندما يكون هناك وجهة للتنقل، فإن openpilot سيقوم بإدخال معلومات الخريطة في هذا النموذج. وهذا يقدم سياقاً مفيداً ويسمح لـopenpilot بالبقاء يساراً أو يميناً بالشكل المناسب عند المنعطفات/المخارج. يبقى سلوك تغيير المسار مفعلاً عند السائق،. هذه هي خاصية الجودة ألفا، ولذلك يجب توقع الأخطاء لا سيما عند المخارج والمنعطفات هذه الأخطاء قد تشمل العبور غير المقصود لخطوط المسارات، والتأخر في الخروج، والقيادة نحو الحواجز الفاصلة في المناطق المثلثة بين الطريق الرئيسي والمخارج، وغير ذلك من الأخطاء المشابهة.</translation>
-    </message>
-    <message>
         <source>New Driving Visualization</source>
         <translation>تصور القيادة الديد</translation>
-    </message>
-    <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
-        <translation>تصور القيادة سينتقل إلى الكاميرا واسعة الزاوية المواجهة للطريق في السرعات المنخفضة من أجل إظهار بعض المنعطفات بشكل أفضل. سيتم أيضاً إظهار شعار الوضع التجريبي في الزاوية العلوية اليمنى. عند تحديد وجهة التنقل، واستخدام نظام القيادة لها كوضع مدخل، سيتحول مسار القيادة على الخريطة إلى اللون الأخضر.</translation>
     </message>
     <message>
         <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
@@ -1189,6 +1073,18 @@ This may take up to a minute.</source>
     <message>
         <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
         <translation>يوصى بالمعيار. في الوضع العدواني، سيتبع الطيار المفتوح السيارات الرائدة بشكل أقرب ويكون أكثر عدوانية مع البنزين والفرامل. في الوضع المريح، سيبقى openpilot بعيدًا عن السيارات الرائدة. في السيارات المدعومة، يمكنك التنقل بين هذه الشخصيات باستخدام زر مسافة عجلة القيادة.</translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Always-On Driver Monitoring</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable driver monitoring even when openpilot is not engaged.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

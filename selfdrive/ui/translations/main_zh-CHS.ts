@@ -137,33 +137,6 @@
     </message>
 </context>
 <context>
-    <name>DestinationWidget</name>
-    <message>
-        <source>Home</source>
-        <translation>住家</translation>
-    </message>
-    <message>
-        <source>Work</source>
-        <translation>工作</translation>
-    </message>
-    <message>
-        <source>No destination set</source>
-        <translation>尚未设置目的地</translation>
-    </message>
-    <message>
-        <source>No %1 location set</source>
-        <translation>尚未设置 %1 的位置</translation>
-    </message>
-    <message>
-        <source>home</source>
-        <translation>住家</translation>
-    </message>
-    <message>
-        <source>work</source>
-        <translation>工作</translation>
-    </message>
-</context>
-<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -299,11 +272,11 @@
     </message>
     <message>
         <source>Pair Device</source>
-        <translation type="unfinished"></translation>
+        <translation>配对设备</translation>
     </message>
     <message>
         <source>PAIR</source>
-        <translation type="unfinished"></translation>
+        <translation>配对</translation>
     </message>
 </context>
 <context>
@@ -342,47 +315,6 @@
     <message>
         <source>Installing...</source>
         <translation>正在安装……</translation>
-    </message>
-</context>
-<context>
-    <name>MapETA</name>
-    <message>
-        <source>eta</source>
-        <translation>抵达</translation>
-    </message>
-    <message>
-        <source>min</source>
-        <translation>分钟</translation>
-    </message>
-    <message>
-        <source>hr</source>
-        <translation>小时</translation>
-    </message>
-</context>
-<context>
-    <name>MapSettings</name>
-    <message>
-        <source>NAVIGATION</source>
-        <translation>导航</translation>
-    </message>
-    <message>
-        <source>Manage at connect.comma.ai</source>
-        <translation>请在 connect.comma.ai 上管理</translation>
-    </message>
-</context>
-<context>
-    <name>MapWindow</name>
-    <message>
-        <source>Map Loading</source>
-        <translation>地图加载中</translation>
-    </message>
-    <message>
-        <source>Waiting for GPS</source>
-        <translation>等待 GPS</translation>
-    </message>
-    <message>
-        <source>Waiting for route</source>
-        <translation>等待路线</translation>
     </message>
 </context>
 <context>
@@ -430,10 +362,6 @@
 %1</source>
         <translation>无法下载更新
 %1</translation>
-    </message>
-    <message>
-        <source>Invalid date and time settings, system won&apos;t start. Connect to internet to set time.</source>
-        <translation>日期和时间设置无效，系统无法启动。请连接至互联网以设置时间。</translation>
     </message>
     <message>
         <source>Taking camera snapshots. System won&apos;t start until finished.</source>
@@ -491,23 +419,23 @@
     <name>OnroadAlerts</name>
     <message>
         <source>openpilot Unavailable</source>
-        <translation type="unfinished"></translation>
+        <translation>无法使用 openpilot</translation>
     </message>
     <message>
         <source>Waiting for controls to start</source>
-        <translation type="unfinished"></translation>
+        <translation>等待控制服务啟動</translation>
     </message>
     <message>
         <source>TAKE CONTROL IMMEDIATELY</source>
-        <translation type="unfinished"></translation>
+        <translation>立即接管</translation>
     </message>
     <message>
         <source>Controls Unresponsive</source>
-        <translation type="unfinished"></translation>
+        <translation>控制服务无响应</translation>
     </message>
     <message>
         <source>Reboot Device</source>
-        <translation type="unfinished"></translation>
+        <translation>重启设备</translation>
     </message>
 </context>
 <context>
@@ -563,12 +491,12 @@
         <translation>全天候 LTE 連線</translation>
     </message>
     <message>
-        <source>Turn-by-turn navigation</source>
-        <translation>领航功能</translation>
-    </message>
-    <message>
         <source>1 year of drive storage</source>
         <translation>一年的行驶记录储存空间</translation>
+    </message>
+    <message>
+        <source>Remote snapshots</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -615,24 +543,8 @@
         </translation>
     </message>
     <message>
-        <source>km</source>
-        <translation>km</translation>
-    </message>
-    <message>
-        <source>m</source>
-        <translation>m</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation>mi</translation>
-    </message>
-    <message>
-        <source>ft</source>
-        <translation>ft</translation>
-    </message>
-    <message>
         <source>now</source>
-        <translation type="unfinished"></translation>
+        <translation>现在</translation>
     </message>
 </context>
 <context>
@@ -1075,22 +987,6 @@ This may take up to a minute.</source>
         <translation>启用后，踩下油门踏板将取消openpilot。</translation>
     </message>
     <message>
-        <source>Show ETA in 24h Format</source>
-        <translation>以24小时格式显示预计到达时间</translation>
-    </message>
-    <message>
-        <source>Use 24h format instead of am/pm</source>
-        <translation>使用24小时制代替am/pm</translation>
-    </message>
-    <message>
-        <source>Show Map on Left Side of UI</source>
-        <translation>在介面左侧显示地图</translation>
-    </message>
-    <message>
-        <source>Show map on left side when in split screen view.</source>
-        <translation>在分屏模式中，将地图置于屏幕左侧。</translation>
-    </message>
-    <message>
         <source>Experimental Mode</source>
         <translation>测试模式</translation>
     </message>
@@ -1147,10 +1043,6 @@ This may take up to a minute.</source>
         <translation>在正式（release）版本以外的分支上，可以测试 openpilot 纵向控制的 Alpha 版本以及实验模式。</translation>
     </message>
     <message>
-        <source>Navigate on openpilot</source>
-        <translation>Navigate on openpilot</translation>
-    </message>
-    <message>
         <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
         <translation>启用 openpilot 纵向控制（alpha）开关以允许实验模式。</translation>
     </message>
@@ -1159,16 +1051,20 @@ This may take up to a minute.</source>
         <translation>端到端纵向控制</translation>
     </message>
     <message>
-        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
-        <translation>当导航有目的地时，openpilot 将输入地图信息到模型中。这为模型提供了有用的背景信息，使 openpilot 能够在叉路/出口时适当地保持左侧或右侧行驶。车道变换行为保持不变，仍由驾驶员激活。这是一个 Alpha 版的功能；可能会出现错误，特别是在出口和分叉处。这些错误可能包括意外的车道越界、晚出口、朝着分隔栏驶向安全地带等。</translation>
-    </message>
-    <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
-        <translation>行驶画面将在低速时切换到道路朝向的广角摄像头，以更好地显示一些转弯。实验模式标志也将显示在右上角。当设置了导航目的地并且驾驶模型正在使用它作为输入时，地图上的驾驶路径将变为绿色。</translation>
-    </message>
-    <message>
         <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
-        <translation type="unfinished"></translation>
+        <translation>推荐使用标准模式。在积极模式下，openpilot 会更靠近前方车辆，并在油门和刹车方面更加激进。在放松模式下，openpilot 会与前方车辆保持更远距离。在支持的车型上，你可以使用方向盘上的距离按钮来循环切换这些驾驶风格。</translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
+        <translation>在低速时，驾驶可视化将转换为道路朝向的广角摄像头，以更好地展示某些转弯。测试模式标志也将显示在右上角。</translation>
+    </message>
+    <message>
+        <source>Always-On Driver Monitoring</source>
+        <translation>驾驶员监控常开</translation>
+    </message>
+    <message>
+        <source>Enable driver monitoring even when openpilot is not engaged.</source>
+        <translation>即使在openpilot未激活时也启用驾驶员监控。</translation>
     </message>
 </context>
 <context>

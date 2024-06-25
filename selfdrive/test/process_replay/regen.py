@@ -9,7 +9,7 @@ from typing import Any
 from collections.abc import Iterable
 
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, ProcessConfig, replay_process, get_process_config, \
-                                                                   check_openpilot_enabled, get_custom_params_from_lr
+                                                                   check_openpilot_enabled, check_most_messages_valid, get_custom_params_from_lr
 from openpilot.selfdrive.test.process_replay.vision_meta import DRIVER_CAMERA_FRAME_SIZES
 from openpilot.selfdrive.test.update_ci_routes import upload_route
 from openpilot.tools.lib.route import Route
@@ -129,6 +129,8 @@ def regen_and_save(
 
   if not check_openpilot_enabled(output_logs):
     raise Exception("Route did not engage for long enough")
+  if not check_most_messages_valid(output_logs):
+    raise Exception("Route has too many invalid messages")
 
   if upload:
     upload_route(rel_log_dir)

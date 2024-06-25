@@ -137,33 +137,6 @@
     </message>
 </context>
 <context>
-    <name>DestinationWidget</name>
-    <message>
-        <source>Home</source>
-        <translation>집</translation>
-    </message>
-    <message>
-        <source>Work</source>
-        <translation>회사</translation>
-    </message>
-    <message>
-        <source>No destination set</source>
-        <translation>목적지가 설정되지 않았습니다</translation>
-    </message>
-    <message>
-        <source>No %1 location set</source>
-        <translation>%1 위치가 설정되지 않았습니다</translation>
-    </message>
-    <message>
-        <source>home</source>
-        <translation>집</translation>
-    </message>
-    <message>
-        <source>work</source>
-        <translation>회사</translation>
-    </message>
-</context>
-<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -345,47 +318,6 @@
     </message>
 </context>
 <context>
-    <name>MapETA</name>
-    <message>
-        <source>eta</source>
-        <translation>도착</translation>
-    </message>
-    <message>
-        <source>min</source>
-        <translation>분</translation>
-    </message>
-    <message>
-        <source>hr</source>
-        <translation>시간</translation>
-    </message>
-</context>
-<context>
-    <name>MapSettings</name>
-    <message>
-        <source>NAVIGATION</source>
-        <translation>내비게이션</translation>
-    </message>
-    <message>
-        <source>Manage at connect.comma.ai</source>
-        <translation>connect.comma.ai에서 관리하세요</translation>
-    </message>
-</context>
-<context>
-    <name>MapWindow</name>
-    <message>
-        <source>Map Loading</source>
-        <translation>지도 로딩 중</translation>
-    </message>
-    <message>
-        <source>Waiting for GPS</source>
-        <translation>GPS 수신 중</translation>
-    </message>
-    <message>
-        <source>Waiting for route</source>
-        <translation>경로를 기다리는 중</translation>
-    </message>
-</context>
-<context>
     <name>MultiOptionDialog</name>
     <message>
         <source>Select</source>
@@ -430,10 +362,6 @@
 %1</source>
         <translation>업데이트를 다운로드할 수 없습니다
 %1</translation>
-    </message>
-    <message>
-        <source>Invalid date and time settings, system won&apos;t start. Connect to internet to set time.</source>
-        <translation>날짜 및 시간 설정이 잘못되어 시스템이 시작되지 않습니다. 날짜와 시간을 동기화하려면 인터넷에 연결하세요.</translation>
     </message>
     <message>
         <source>Taking camera snapshots. System won&apos;t start until finished.</source>
@@ -563,12 +491,12 @@
         <translation>항상 LTE 연결</translation>
     </message>
     <message>
-        <source>Turn-by-turn navigation</source>
-        <translation>내비게이션 경로안내</translation>
-    </message>
-    <message>
         <source>1 year of drive storage</source>
         <translation>1년간 드라이브 로그 저장</translation>
+    </message>
+    <message>
+        <source>Remote snapshots</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -613,22 +541,6 @@
         <translation>
             <numerusform>%n 일 전</numerusform>
         </translation>
-    </message>
-    <message>
-        <source>km</source>
-        <translation>km</translation>
-    </message>
-    <message>
-        <source>m</source>
-        <translation>m</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation>mi</translation>
-    </message>
-    <message>
-        <source>ft</source>
-        <translation>ft</translation>
     </message>
     <message>
         <source>now</source>
@@ -813,7 +725,7 @@ This may take up to a minute.</source>
     <name>Sidebar</name>
     <message>
         <source>CONNECT</source>
-        <translation>연결됨</translation>
+        <translation>커넥트</translation>
     </message>
     <message>
         <source>OFFLINE</source>
@@ -1075,22 +987,6 @@ This may take up to a minute.</source>
         <translation>활성화된 경우 가속 페달을 밟으면 openpilot이 해제됩니다.</translation>
     </message>
     <message>
-        <source>Show ETA in 24h Format</source>
-        <translation>24시간 형식으로 도착 예정 시간 표시</translation>
-    </message>
-    <message>
-        <source>Use 24h format instead of am/pm</source>
-        <translation>오전/오후 대신 24시간 형식 사용</translation>
-    </message>
-    <message>
-        <source>Show Map on Left Side of UI</source>
-        <translation>UI 왼쪽에 지도 표시</translation>
-    </message>
-    <message>
-        <source>Show map on left side when in split screen view.</source>
-        <translation>분할 화면 보기에서 지도를 왼쪽에 표시합니다.</translation>
-    </message>
-    <message>
         <source>Experimental Mode</source>
         <translation>실험 모드</translation>
     </message>
@@ -1147,10 +1043,6 @@ This may take up to a minute.</source>
         <translation>openpilot 가감속 제어 알파 버전은 비 릴리즈 브랜치에서 실험 모드와 함께 테스트할 수 있습니다.</translation>
     </message>
     <message>
-        <source>Navigate on openpilot</source>
-        <translation>openpilot 내비게이트</translation>
-    </message>
-    <message>
         <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
         <translation>실험 모드를 사용하려면 openpilot E2E 가감속 제어 (알파) 토글을 활성화하세요.</translation>
     </message>
@@ -1159,16 +1051,20 @@ This may take up to a minute.</source>
         <translation>E2E 가감속 제어</translation>
     </message>
     <message>
-        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
-        <translation>내비게이션에 목적지가 설정되어 있으면 openpilot이 지도 정보를 주행 모델에 입력합니다. 이는 모델에 유용한 정보를 제공하고 openpilot이 진출입로 및 램프에서 적절하게 왼쪽 또는 오른쪽을 유지할 수 있도록 해 줍니다. 차선 변경 기능은 여전히 운전자의 조작에 의해 활성화됩니다. 이 기능은 알파 버전입니다. 특히 진출입로 및 분기점 주변에서 실수가 발생할 수 있으며 이러한 실수에는 의도하지 않은 차선 이탈, 늦은 진출, 도로 가장자리의 분리대 또는 경계석을 향해 운전하는 행동 등이 포함됩니다.</translation>
-    </message>
-    <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
-        <translation>주행 시각화는 저속으로 주행 시 도로를 향한 광각 카메라로 자동 전환되어 일부 곡선 경로를 더 잘 보여줍니다. 실험 모드 로고는 우측 상단에 표시됩니다. 내비게이션 목적지가 설정되고 주행 모델에 입력되면 지도의 주행 경로가 녹색으로 바뀝니다.</translation>
-    </message>
-    <message>
         <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
         <translation>표준 모드를 권장합니다. 공격적 모드의 openpilot은 선두 차량을 더 가까이 따라가고 가감속제어를 사용하여 더욱 공격적으로 움직입니다. 편안한 모드의 openpilot은 선두 차량으로부터 더 멀리 떨어져 있습니다. 지원되는 차량에서는 스티어링 휠 거리 버튼을 사용하여 이러한 특성을 순환할 수 있습니다.</translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Always-On Driver Monitoring</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable driver monitoring even when openpilot is not engaged.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

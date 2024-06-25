@@ -53,7 +53,8 @@ typedef enum UIStatus {
 } UIStatus;
 
 enum PrimeType {
-  UNKNOWN = -1,
+  UNKNOWN = -2,
+  UNPAIRED = -1,
   NONE = 0,
   MAGENTA = 1,
   LITE = 2,
@@ -94,10 +95,9 @@ typedef struct UIScene {
   float driver_pose_coss[3];
   vec3 face_kpts_draw[std::size(default_face_kpts_3d)];
 
-  bool navigate_on_openpilot = false;
   cereal::LongitudinalPersonality personality;
 
-  float light_sensor;
+  float light_sensor = -1;
   bool started, ignition, is_metric, map_on_left, longitudinal_control;
   bool world_objects_visible = false;
   uint64_t started_frame;
@@ -115,7 +115,7 @@ public:
 
   void setPrimeType(PrimeType type);
   inline PrimeType primeType() const { return prime_type; }
-  inline bool hasPrime() const { return prime_type != PrimeType::UNKNOWN && prime_type != PrimeType::NONE; }
+  inline bool hasPrime() const { return prime_type > PrimeType::NONE; }
 
   int fb_w = 0, fb_h = 0;
 
@@ -184,8 +184,7 @@ Device *device();
 void ui_update_params(UIState *s);
 int get_path_length_idx(const cereal::XYZTData::Reader &line, const float path_height);
 void update_model(UIState *s,
-                  const cereal::ModelDataV2::Reader &model,
-                  const cereal::UiPlan::Reader &plan);
+                  const cereal::ModelDataV2::Reader &model);
 void update_dmonitoring(UIState *s, const cereal::DriverStateV2::Reader &driverstate, float dm_fade_state, bool is_rhd);
 void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, const cereal::XYZTData::Reader &line);
 void update_line_data(const UIState *s, const cereal::XYZTData::Reader &line,
