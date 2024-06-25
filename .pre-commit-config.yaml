@@ -19,7 +19,7 @@ repos:
     -   id: check-executables-have-shebangs
     -   id: check-shebang-scripts-are-executable
     -   id: check-added-large-files
-        exclude: '(docs/CARS.md)|(poetry.lock)|(third_party/acados/include/blasfeo/include/blasfeo_d_kernel.h)'
+        exclude: '(docs/CARS.md)|(third_party/acados/include/blasfeo/include/blasfeo_d_kernel.h)'
         args:
         - --maxkb=120
         - --enforce-all
@@ -27,7 +27,7 @@ repos:
     rev: v2.3.0
     hooks:
     -   id: codespell
-        exclude: '^(third_party/)|(body/)|(msgq/)|(panda/)|(opendbc/)|(rednose/)|(rednose_repo/)|(teleoprtc/)|(teleoprtc_repo/)|(selfdrive/ui/translations/.*.ts)|(poetry.lock)'
+        exclude: '^(third_party/)|(body/)|(msgq/)|(panda/)|(opendbc/)|(rednose/)|(rednose_repo/)|(teleoprtc/)|(teleoprtc_repo/)|(selfdrive/ui/translations/.*.ts)'
         args:
         # if you've got a short variable name that's getting flagged, add it here
         - -L bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup,bumb,nd,sie,preints,whit,indexIn
@@ -92,13 +92,6 @@ repos:
         language: system
         pass_filenames: false
         files: '^selfdrive/ui/translations/'
--   repo: https://github.com/python-poetry/poetry
-    rev: '1.8.0'
-    hooks:
-    -   id: poetry-check
-        name: validate poetry lock
-        args:
-        - --lock
 -   repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.28.5
     hooks:

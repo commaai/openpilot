@@ -53,10 +53,10 @@ jobs:
         python-version: '3.11.4'
     - name: Installing pip
       run: pip install pip==24.0
-    - name: Installing poetry
-      run: pip install poetry==1.7.0
+    - name: Installing uv
+      run: pip install uv
     - name: Installing python dependencies
-      run: poetry install --no-cache --no-root
+      run: uv pip sync --system requirements.txt
     - name: git LFS
       run: git lfs pull
     - run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
@@ -69,7 +69,7 @@ jobs:
           scons-${{ runner.arch }}-ubuntu2004-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}-ubuntu2004
     - name: Building openpilot
-      run: poetry run scons -u -j$(nproc)
+      run: scons -u -j$(nproc)
     - name: Saving scons cache
       uses: actions/cache/save@v4
       if: github.ref == 'refs/heads/master'

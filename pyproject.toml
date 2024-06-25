@@ -3,6 +3,127 @@ name = "openpilot"
 requires-python = ">= 3.11"
 readme = "README.md"
 license = {text = "MIT License"}
+version = "0.1.0"
+description = "an open source driver assistance system"
+authors = ["Vehicle Researcher <user@comma.ai>"]
+dependencies = [
+
+# multiple users
+"sounddevice >= 0",  # micd + soundd
+"pyserial >= 0",     # pigeond + qcomgpsd
+"requests >= 0",     # many one-off uses
+"sympy >= 0",        # rednose + friends
+"crcmod >= 0",       # cars + qcomgpsd
+"tqdm >= 0",         # cars (fw_versions.py) on start + many one-off uses
+
+# hardwared
+"smbus2 >= 0",  # configuring amp
+
+# core
+"cffi >= 0",
+"scons >= 0",
+"pycapnp >= 0",
+"Cython >= 0",
+"setuptools >= 0",
+"numpy >= 0",
+
+# body / webrtcd
+"aiohttp >= 0",
+"aiortc >= 0",
+"pyaudio >= 0",
+
+# panda
+#"libusb1 >= 0",
+"libusb1 >= 0",
+"spidev >=0; platform_system == 'Linux'",
+
+# modeld
+"onnx >= 1.14.0",
+"onnxruntime >=1.16.3; platform_system == 'Linux' and platform_machine == 'aarch64'",
+"onnxruntime-gpu >=1.16.3; platform_system == 'Linux' and platform_machine == 'x86_64'",
+
+# logging
+"pyzmq >= 0",
+"sentry-sdk >= 0",
+
+# athena
+"PyJWT >= 0",
+"json-rpc >= 0",
+"websocket_client >= 0",
+
+# acados deps
+"casadi >= 0",
+"future-fstrings >= 0",
+
+# these should be removed
+"psutil >= 0",
+"pycryptodome >=  0",  # used in updated/casync, panda, body, and a test
+
+#logreader
+"zstd >= 0",
+]
+
+[project.optional-dependencies]
+docs = [
+  "Jinja2 >= 0",
+  "sphinx >= 0",
+  "sphinx-rtd-theme >= 0",
+  "sphinx-sitemap >= 0"
+]
+
+testing = [
+  "coverage >= 0",
+  "hypothesis ==6.47.*",
+  "mypy >= 0",
+  "pre-commit >= 0",
+  "pytest >= 0",
+  "pytest-cov >= 0",
+  "pytest-cpp >= 0",
+  "pytest-subtests >= 0",
+  "pytest-xdist >= 0",
+  "pytest-timeout >= 0",
+  "pytest-randomly >= 0",
+  "pytest-asyncio >= 0",
+  "pytest-mock >= 0",
+  "pytest-repeat >= 0",
+  "ruff >= 0"
+]
+
+dev = [
+"av >= 0",
+"azure-identity >= 0",
+"azure-storage-blob >= 0",
+"breathe >= 0",
+"control >= 0",
+"dictdiffer >= 0",
+"flaky >= 0",
+"inputs >= 0",
+"lru-dict >= 0",
+"matplotlib >= 0",
+"metadrive-simulator; platform_machine != 'aarch64'",
+"mpld3 >= 0",
+"myst-parser >= 0",
+"natsort >= 0",
+"opencv-python-headless >= 0",
+"parameterized >=0.8, <0.9",
+#pprofile = "*"
+"pyautogui >= 0",
+"pygame >= 0",
+"pyopencl >= 0; platform_machine != 'aarch64'",  # broken on arm64
+"pywinctl >= 0",
+"pyprof2calltree >= 0",
+"rerun-sdk >= 0",
+"tabulate >= 0",
+"types-requests >= 0",
+"types-tabulate >= 0",
+
+# this is only pinned since 5.15.11 is broken
+"pyqt5 ==5.15.2; platform_machine == 'x86_64'", # no aarch64 wheels for macOS/linux
+
+]
+
+[tool.uv.sources]
+metadrive-simulator = { git = "https://github.com/commaai/metadrive.git", branch = "anisotropic_off" }
 
 [project.urls]
 Homepage = "https://comma.ai"
@@ -74,131 +195,6 @@ warn_return_any=true
 
 # allow implicit optionals for default args
 implicit_optional = true
-
-
-[tool.poetry]
-name = "openpilot"
-version = "0.1.0"
-description = "an open source driver assistance system"
-authors = ["Vehicle Researcher <user@comma.ai>"]
-license = "MIT"
-readme = "README.md"
-repository = "https://github.com/commaai/openpilot"
-documentation = "https://docs.comma.ai"
-
-[tool.poetry.dependencies]
-python = ">=3.11, <3.13"
-
-# multiple users
-sounddevice = "*"  # micd + soundd
-pyserial = "*"     # pigeond + qcomgpsd
-requests = "*"     # many one-off uses
-sympy = "*"        # rednose + friends
-crcmod = "*"       # cars + qcomgpsd
-tqdm = "*"         # cars (fw_versions.py) on start + many one-off uses
-
-# hardwared
-smbus2 = "*"  # configuring amp
-
-# core
-cffi = "*"
-scons = "*"
-pycapnp = "*"
-Cython = "*"
-setuptools = "*"
-numpy = "*"
-
-# body / webrtcd
-aiohttp = "*"
-aiortc = "*"
-pyaudio = "*"
-
-# panda
-libusb1 = "*"
-spidev = { version = "*", platform = "linux" }
-
-# modeld
-onnx = ">=1.14.0"
-onnxruntime = { version = ">=1.16.3", platform = "linux", markers = "platform_machine == 'aarch64'" }
-onnxruntime-gpu = { version = ">=1.16.3", platform = "linux", markers = "platform_machine == 'x86_64'" }
-
-# logging
-pyzmq = "*"
-sentry-sdk = "*"
-
-# athena
-PyJWT = "*"
-json-rpc = "*"
-websocket_client = "*"
-
-# acados deps
-casadi = "*"
-future-fstrings = "*"
-
-# these should be removed
-psutil = "*"
-pycryptodome = "*"  # used in updated/casync, panda, body, and a test
-
-#logreader
-zstd = "*"
-
-[tool.poetry.group.docs.dependencies]
-Jinja2 = "*"
-sphinx = "*"
-sphinx-rtd-theme = "*"
-sphinx-sitemap = "*"
-
-[tool.poetry.group.testing.dependencies]
-coverage = "*"
-hypothesis = "~6.47"
-mypy = "*"
-pre-commit = "*"
-pytest = "*"
-pytest-cov = "*"
-pytest-cpp = "*"
-pytest-subtests = "*"
-pytest-xdist = "*"
-pytest-timeout = "*"
-pytest-randomly = "*"
-pytest-asyncio = "*"
-pytest-mock = "*"
-pytest-repeat = "*"
-ruff = "*"
-
-[tool.poetry.group.dev.dependencies]
-av = "*"
-azure-identity = "*"
-azure-storage-blob = "*"
-breathe = "*"
-control = "*"
-dictdiffer = "*"
-flaky = "*"
-inputs = "*"
-lru-dict = "*"
-matplotlib = "*"
-metadrive-simulator = { git = "https://github.com/commaai/metadrive.git", branch = "anisotropic_off", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
-mpld3 = "*"
-myst-parser = "*"
-natsort = "*"
-opencv-python-headless = "*"
-parameterized = "^0.8"
-#pprofile = "*"
-pyautogui = "*"
-pygame = "*"
-pyopencl = { version = "*", markers = "platform_machine != 'aarch64'" }  # broken on arm64
-pywinctl = "*"
-pyprof2calltree = "*"
-rerun-sdk = "*"
-tabulate = "*"
-types-requests = "*"
-types-tabulate = "*"
-
-# this is only pinned since 5.15.11 is broken
-pyqt5 = { version = "==5.15.2", markers = "platform_machine == 'x86_64'" } # no aarch64 wheels for macOS/linux
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
 
 # https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
 [tool.ruff]
