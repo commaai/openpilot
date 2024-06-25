@@ -2,24 +2,22 @@
 
 Aside from the ML models, most tools used for openpilot development are in this repo.
 
-Most development happens on normal Ubuntu workstations, and not in cars or directly on comma devices. See the [setup guide](../tools) for getting your PC setup for openpilot development.
+Most development happens on normal Ubuntu workstations, and not in cars or directly on comma devices.
 
 ## Quick start
 
+**1. Setup your machine**
+
+Follow the [setup guide](../tools/README.md) for getting your PC setup for openpilot development.
+
+**2. Start using openpilot**
 ```bash
-# get the latest stuff
-git pull
-git submodule update --init --recursive
-
-# update dependencies
-tools/ubuntu_setup.sh
-
 # build everything
 scons -j$(nproc)
 
 # build just the ui with either of these
-scons -j8 selfdrive/ui/
-cd selfdrive/ui/ && scons -u -j8
+scons -j$(nproc) selfdrive/ui/
+cd selfdrive/ui/ && scons -u -j$(nproc)
 
 # test everything
 pytest .
