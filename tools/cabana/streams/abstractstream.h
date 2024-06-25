@@ -3,8 +3,10 @@
 #include <array>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <set>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include <QColor>
@@ -77,6 +79,8 @@ public:
   virtual double getSpeed() { return 1; }
   virtual bool isPaused() const { return false; }
   virtual void pause(bool pause) {}
+  void setTimeRange(const std::optional<std::pair<double, double>> &range);
+  const std::optional<std::pair<double, double>> &timeRange() const { return time_range_; }
 
   inline const std::unordered_map<MessageId, CanData> &lastMessages() const { return last_msgs; }
   inline const MessageEventsMap &eventsMap() const { return events_; }
@@ -91,8 +95,9 @@ public:
 signals:
   void paused();
   void resume();
-  void seekingTo(double sec);
+  void seeking(double sec);
   void seekedTo(double sec);
+  void timeRangeChanged(const std::optional<std::pair<double, double>> &range);
   void streamStarted();
   void eventsMerged(const MessageEventsMap &events_map);
   void msgsReceived(const std::set<MessageId> *new_msgs, bool has_new_ids);
@@ -110,6 +115,7 @@ protected:
 
   std::vector<const CanEvent *> all_events_;
   double current_sec_ = 0;
+  std::optional<std::pair<double, double>> time_range_;
   uint64_t lastest_event_ts = 0;
 
 private:
