@@ -205,7 +205,7 @@ natsort==8.4.0
     # via openpilot (pyproject.toml)
 nodeenv==1.9.1
     # via pre-commit
-numpy==2.0.0
+numpy==1.26.4
     # via
     #   openpilot (pyproject.toml)
     #   casadi
@@ -300,7 +300,7 @@ pycryptodome==3.20.0
     # via openpilot (pyproject.toml)
 pyee==11.1.0
     # via aiortc
-pygame==2.6.0
+pygame==2.5.2
     # via
     #   openpilot (pyproject.toml)
     #   metadrive-simulator
