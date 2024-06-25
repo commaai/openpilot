@@ -48,13 +48,13 @@ function success_instructions() {
     echo ""
     echo "To get relevant environment variables, run:"
     echo "source $ROOT/.env"
+    echo ""
+    echo "Because you did not installed poetry, only runtime python packages were installed!"
   else
     echo ""
     echo "To activate the new python virtualenv, run:"
     echo "source ~/.bashrc"
     echo "poetry shell"
-    echo ""
-    echo "Because you did not installed poetry, only runtime python packages were installed!"
   fi
 }
 
@@ -87,6 +87,7 @@ function manual_installation() {
 
 function install_packages() {
   if [[ -z "$INTERACTIVE" ]]; then
+    echo ""
     read -p "Do you want to use poetry for managing python packages? (recommended) [Y/n]:" -n 1 -r
     echo ""
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
