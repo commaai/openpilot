@@ -103,32 +103,6 @@ class CameraType(StrEnum):
   dcam = "dcamera"
 
 
-def log_msg(msg, parent_key=''):
-  stack = [(msg, parent_key)]
-  while stack:
-    current_msg, current_parent_key = stack.pop()
-    if isinstance(current_msg, list):
-      for index, item in enumerate(current_msg):
-        new_key = f"{current_parent_key}/{index}"
-        if isinstance(item, (int, float)):
-          rr.log(new_key, rr.Scalar(item))
-        elif isinstance(item, dict):
-          stack.append((item, new_key))
-    elif isinstance(current_msg, dict):
-      for key, value in current_msg.items():
-        new_key = f"{current_parent_key}/{key}"
-        if isinstance(value, (int, float)):
-          rr.log(new_key, rr.Scalar(value))
-        elif isinstance(value, dict):
-          stack.append((value, new_key))
-        elif isinstance(value, list):
-          for index, item in enumerate(value):
-            if isinstance(item, (int, float)):
-              rr.log(f"{new_key}/{index}", rr.Scalar(item))
-    else:
-      pass  # Not a plottable value
-
-
 class Rerunner:
   def __init__(self, route_or_segment_name, camera_config, enabled_services):
     self.enabled_services = [s.lower() for s in enabled_services]
@@ -185,6 +159,32 @@ class Rerunner:
     return blueprint
 
   @staticmethod
+  def _log_msg(msg, parent_key=''):
+    stack = [(msg, parent_key)]
+    while stack:
+      current_msg, current_parent_key = stack.pop()
+      if isinstance(current_msg, list):
+        for index, item in enumerate(current_msg):
+          new_key = f"{current_parent_key}/{index}"
+          if isinstance(item, (int, float)):
+            rr.log(new_key, rr.Scalar(item))
+          elif isinstance(item, dict):
+            stack.append((item, new_key))
+      elif isinstance(current_msg, dict):
+        for key, value in current_msg.items():
+          new_key = f"{current_parent_key}/{key}"
+          if isinstance(value, (int, float)):
+            rr.log(new_key, rr.Scalar(value))
+          elif isinstance(value, dict):
+            stack.append((value, new_key))
+          elif isinstance(value, list):
+            for index, item in enumerate(value):
+              if isinstance(item, (int, float)):
+                rr.log(f"{new_key}/{index}", rr.Scalar(item))
+      else:
+        pass  # Not a plottable value
+
+  @staticmethod
   @rr.shutdown_at_exit
   def _process_log_msgs(blueprint, enabled_services, log_all, lr):
     rr.init(RR_WIN)
@@ -198,7 +198,7 @@ class Rerunner:
         continue
 
       if msg_type != "thumbnail":
-        log_msg(msg.to_dict()[msg.which()], msg.which())
+        Rerunner._log_msg(msg.to_dict()[msg.which()], msg.which())
       else:
         rr.log("/thumbnail", rr.ImageEncoded(contents=msg.to_dict()[msg.which()].get("thumbnail")))
 
