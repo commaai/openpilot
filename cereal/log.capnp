@@ -868,27 +868,19 @@ struct ControlsState @0x97ff69c53601abf1 {
   vPidDEPRECATED @2 :Float32;
 }
 
-# Come up with a better name
-struct SmolModelDataV2 {
+struct DrivingModelData {
   frameId @0 :UInt32;
   frameIdExtra @1 :UInt32;
 
-  position @2 :SmolXYZTData;
-  orientation @3 :SmolXYZTData;
-  velocity @4 :SmolXYZTData;
-  orientationRate @5 :SmolXYZTData;
+  action @2 :ModelDataV2.Action;
 
-  laneLines @6 :List(SmolXYZTData);
-  laneLineProbs @7 :List(Float32);
-  roadEdges @8 :List(SmolXYZTData);
+  laneLineMeta @3 :LaneLineMeta;
 
-  action @9: ModelDataV2.Action;
-
-  struct SmolXYZTData {
-    x @0 :Float32;
-    y @1 :Float32;
-    z @2 :Float32;
-    t @3 :Float32;
+  struct LaneLineMeta {
+    leftY @0 :Float32;
+    rightY @1 :Float32;
+    leftProb @2 :Float32;
+    rightProb @3 :Float32;
   }
 }
 
