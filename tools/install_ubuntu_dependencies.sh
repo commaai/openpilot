@@ -146,33 +146,35 @@ function get_focal_packages() {
   EXTRA_PACKAGES=$_EXTRA_PACKAGES
 }
 
-# Detect OS using /etc/os-release file
-if [ -f "/etc/os-release" ]; then
-  source /etc/os-release
-  case "$VERSION_CODENAME" in
-    "jammy" | "kinetic" | "noble")
-      get_noble_packages
-      ;;
-    "focal")
-      get_focal_packages
-      ;;
-    *)
-      echo "$ID $VERSION_ID is unsupported. This setup script is written for Ubuntu 24.04."
-      read -p "Would you like to attempt installation anyway? " -n 1 -r
-      echo ""
-      if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 1
-      fi
-      if [ "$UBUNTU_CODENAME" = "focal" ]; then
-        get_focal_packages
-      else
+function detect_os_version() {
+  # Detect OS using /etc/os-release file
+  if [ -f "/etc/os-release" ]; then
+    source /etc/os-release
+    case "$VERSION_CODENAME" in
+      "jammy" | "kinetic" | "noble")
         get_noble_packages
-      fi
-  esac
+        ;;
+      "focal")
+        get_focal_packages
+        ;;
+      *)
+        echo "$ID $VERSION_ID is unsupported. This setup script is written for Ubuntu 24.04."
+        read -p "Would you like to attempt installation anyway? " -n 1 -r
+        echo ""
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+          exit 1
+        fi
+        if [ "$UBUNTU_CODENAME" = "focal" ]; then
+          get_focal_packages
+        else
+          get_noble_packages
+        fi
+    esac
+  else
+    echo "No /etc/os-release in the system. Make sure you're running on Ubuntu, or similar."
+    exit 1
+  fi
+}
 
-  install_packages
-
-else
-  echo "No /etc/os-release in the system. Make sure you're running on Ubuntu, or similar."
-  exit 1
-fi
+detect_os_version
+install_packages
