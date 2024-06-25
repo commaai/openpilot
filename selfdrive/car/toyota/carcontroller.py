@@ -26,7 +26,7 @@ MAX_LTA_ANGLE = 94.9461  # deg
 MAX_LTA_DRIVER_TORQUE_ALLOWANCE = 150  # slightly above steering pressed allows some resistance when changing lanes
 
 # Time values for hysteresis
-RESUME_HYSTERESIS_TIME = 3.  # seconds
+RESUME_HYSTERESIS_TIME = 1.5  # seconds
 
 class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
@@ -105,18 +105,18 @@ class CarController(CarControllerBase):
     # *** gas and brake ***
     pcm_accel_cmd = clip(actuators.accel, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
 
-    # *** standstill entrance logic ***
+    # *** standstill logic ***
     # mimic stock behaviour, set standstill_req to False only when openpilot wants to resume
     if not CC.cruiseControl.resume:
         self.resume_off_frames += 1  # frame counter for hysteresis
-        # add a 3 second hysteresis to when CC.cruiseControl.resume turns off in order to prevent
+        # add a 1.5 second hysteresis to when CC.cruiseControl.resume turns off in order to prevent
         # vehicle's dash from blinking
         if self.resume_off_frames >= RESUME_HYSTERESIS_TIME / DT_CTRL:
             self.standstill_req = True
     else:
         self.resume_off_frames = 0
         self.standstill_req = False
-    # ignore standstill on NO_STOP_TIMER_CAR, and never ignore if self.CP.enableGasInterceptor
+    # ignore standstill on NO_STOP_TIMER_CAR
     self.standstill_req = self.standstill_req and self.CP.carFingerprint not in NO_STOP_TIMER_CAR
 
     # handle UI messages
