@@ -102,8 +102,7 @@ class ModelState:
 
     self.desire_20Hz[:-1] = self.desire_20Hz[1:]
     self.desire_20Hz[-1] = new_desire
-    idxs = np.arange(-1,-100,-4)[::-1]
-    self.inputs['desire'][:] = self.desire_20Hz[idxs].flatten()
+    self.inputs['desire'][:] = self.desire_20Hz.reshape((25,4,-1)).max(axis=1).flatten()
 
     self.inputs['traffic_convention'][:] = inputs['traffic_convention']
     self.inputs['lateral_control_params'][:] = inputs['lateral_control_params']
