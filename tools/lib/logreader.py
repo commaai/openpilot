@@ -90,18 +90,26 @@ InternalUnavailableException = Exception("Internal source not available")
 def default_valid_file(fn: LogPath) -> bool:
   return fn is not None and file_exists(fn)
 
+def count_missing_rlogs(rlog_paths: LogPaths, valid_file: ValidFileCallable) -> int:
+  missing_count = 0
+  for rlog in rlog_paths:
+    if rlog is None or not valid_file(rlog):
+      missing_count += 1
+  return missing_count
 
 def auto_strategy(rlog_paths: LogPaths, qlog_paths: LogPaths, interactive: bool, valid_file: ValidFileCallable) -> LogPaths:
+  # Count missing rlogs
+  missing_rlogs = count_missing_rlogs(rlog_paths, valid_file)
   # auto select logs based on availability
-  if any(rlog is None or not valid_file(rlog) for rlog in rlog_paths) and all(qlog is not None and valid_file(qlog) for qlog in qlog_paths):
+  if missing_rlogs != 0 and all(qlog is not None and valid_file(qlog) for qlog in qlog_paths):
     if interactive:
-      if input("Some rlogs were not found, would you like to fallback to qlogs for those segments? (y/n) ").lower() != "y":
+      if input(f"Error: {missing_rlogs} rlogs were not found, would you like to fallback to qlogs for those segments? (y/n) ").lower() != "y":
         return rlog_paths
     else:
-      cloudlog.warning("Some rlogs were not found, falling back to qlogs for those segments...")
+      cloudlog.warning(f"{missing_rlogs} rlogs were not found, falling back to qlogs for those segments...")
 
-    return [rlog if valid_file(rlog) else (qlog if valid_file(qlog) else None)
-            for (rlog, qlog) in zip(rlog_paths, qlog_paths, strict=True)]
+    return [rlog if valid_file(rlog) else None
+            for rlog in rlog_paths]
   return rlog_paths
 
 
