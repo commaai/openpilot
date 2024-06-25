@@ -1,6 +1,6 @@
 from cereal import car
 from openpilot.selfdrive.car import CarSpecs, PlatformConfig, Platforms, dbc_dict
-from openpilot.selfdrive.car.docs_definitions import CarInfo
+from openpilot.selfdrive.car.docs_definitions import CarDocs
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = car.CarParams.Ecu
@@ -20,9 +20,8 @@ class CarControllerParams:
 
 
 class CAR(Platforms):
-  BODY = PlatformConfig(
-    "COMMA BODY",
-    CarInfo("comma body", package="All"),
+  COMMA_BODY = PlatformConfig(
+    [CarDocs("comma body", package="All")],
     CarSpecs(mass=9, wheelbase=0.406, steerRatio=0.5, centerToFrontRatio=0.44),
     dbc_dict('comma_body', None),
   )
@@ -38,5 +37,4 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
 )
 
-CAR_INFO = CAR.create_carinfo_map()
 DBC = CAR.create_dbc_map()

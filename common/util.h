@@ -8,7 +8,6 @@
 #include <atomic>
 #include <chrono>
 #include <csignal>
-#include <ctime>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -45,10 +44,6 @@ int set_realtime_priority(int level);
 int set_core_affinity(std::vector<int> cores);
 int set_file_descriptor_limit(uint64_t limit);
 
-// ***** Time helpers *****
-struct tm get_time();
-bool time_valid(struct tm sys_time);
-
 // ***** math helpers *****
 
 // map x from [a1, a2] to [b1, b2]
@@ -75,9 +70,8 @@ int getenv(const char* key, int default_val);
 float getenv(const char* key, float default_val);
 
 std::string hexdump(const uint8_t* in, const size_t size);
-std::string dir_name(std::string const& path);
 bool starts_with(const std::string &s1, const std::string &s2);
-bool ends_with(const std::string &s1, const std::string &s2);
+bool ends_with(const std::string &s, const std::string &suffix);
 
 // ***** random helpers *****
 int random_int(int min, int max);
@@ -179,3 +173,10 @@ void update_max_atomic(std::atomic<T>& max, T const& value) {
   T prev = max;
   while (prev < value && !max.compare_exchange_weak(prev, value)) {}
 }
+
+typedef struct Rect {
+  int x;
+  int y;
+  int w;
+  int h;
+} Rect;

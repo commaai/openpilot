@@ -6,15 +6,16 @@ import numpy as np
 import cereal.messaging as messaging
 from cereal import car, log
 from pathlib import Path
-from setproctitle import setproctitle
+from openpilot.common.threadname import setthreadname
 from cereal.messaging import PubMaster, SubMaster
-from cereal.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
+from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import config_realtime_process
+from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.common.transformations.model import get_warp_matrix
-from openpilot.selfdrive import sentry
+from openpilot.system import sentry
 from openpilot.selfdrive.car.car_helpers import get_demo_car_params
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
@@ -23,7 +24,7 @@ from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
 
-PROCESS_NAME = "selfdrive.modeld.modeld"
+THREAD_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
 MODEL_PATHS = {
@@ -58,8 +59,6 @@ class ModelState:
       'traffic_convention': np.zeros(ModelConstants.TRAFFIC_CONVENTION_LEN, dtype=np.float32),
       'lateral_control_params': np.zeros(ModelConstants.LATERAL_CONTROL_PARAMS_LEN, dtype=np.float32),
       'prev_desired_curv': np.zeros(ModelConstants.PREV_DESIRED_CURV_LEN * (ModelConstants.HISTORY_BUFFER_LEN+1), dtype=np.float32),
-      'nav_features': np.zeros(ModelConstants.NAV_FEATURE_LEN, dtype=np.float32),
-      'nav_instructions': np.zeros(ModelConstants.NAV_INSTRUCTION_LEN, dtype=np.float32),
       'features_buffer': np.zeros(ModelConstants.HISTORY_BUFFER_LEN * ModelConstants.FEATURE_LEN, dtype=np.float32),
     }
 
@@ -93,8 +92,6 @@ class ModelState:
 
     self.inputs['traffic_convention'][:] = inputs['traffic_convention']
     self.inputs['lateral_control_params'][:] = inputs['lateral_control_params']
-    self.inputs['nav_features'][:] = inputs['nav_features']
-    self.inputs['nav_instructions'][:] = inputs['nav_instructions']
 
     # if getCLBuffer is not None, frame will be None
     self.model.setInputBuffer("input_imgs", self.frame.prepare(buf, transform.flatten(), self.model.getCLBuffer("input_imgs")))
@@ -117,9 +114,9 @@ class ModelState:
 def main(demo=False):
   cloudlog.warning("modeld init")
 
-  sentry.set_tag("daemon", PROCESS_NAME)
-  cloudlog.bind(daemon=PROCESS_NAME)
-  setproctitle(PROCESS_NAME)
+  sentry.set_tag("daemon", THREAD_NAME)
+  cloudlog.bind(daemon=THREAD_NAME)
+  setthreadname("modeld")
   config_realtime_process(7, 54)
 
   cloudlog.warning("setting up CL context")
@@ -153,7 +150,7 @@ def main(demo=False):
 
   # messaging
   pm = PubMaster(["modelV2", "cameraOdometry"])
-  sm = SubMaster(["carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "navModel", "navInstruction", "carControl"])
+  sm = SubMaster(["deviceState", "carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "carControl"])
 
   publish_state = PublishState()
   params = Params()
@@ -167,8 +164,6 @@ def main(demo=False):
   model_transform_main = np.zeros((3, 3), dtype=np.float32)
   model_transform_extra = np.zeros((3, 3), dtype=np.float32)
   live_calib_seen = False
-  nav_features = np.zeros(ModelConstants.NAV_FEATURE_LEN, dtype=np.float32)
-  nav_instructions = np.zeros(ModelConstants.NAV_INSTRUCTION_LEN, dtype=np.float32)
   buf_main, buf_extra = None, None
   meta_main = FrameMeta()
   meta_extra = FrameMeta()
@@ -195,7 +190,7 @@ def main(demo=False):
         break
 
     if buf_main is None:
-      cloudlog.error("vipc_client_main no frame")
+      cloudlog.debug("vipc_client_main no frame")
       continue
 
     if use_extra_client:
@@ -207,13 +202,12 @@ def main(demo=False):
           break
 
       if buf_extra is None:
-        cloudlog.error("vipc_client_extra no frame")
+        cloudlog.debug("vipc_client_extra no frame")
         continue
 
       if abs(meta_main.timestamp_sof - meta_extra.timestamp_sof) > 10000000:
-        cloudlog.error("frames out of sync! main: {} ({:.5f}), extra: {} ({:.5f})".format(
-          meta_main.frame_id, meta_main.timestamp_sof / 1e9,
-          meta_extra.frame_id, meta_extra.timestamp_sof / 1e9))
+        cloudlog.error(f"frames out of sync! main: {meta_main.frame_id} ({meta_main.timestamp_sof / 1e9:.5f}),\
+                         extra: {meta_extra.frame_id} ({meta_extra.timestamp_sof / 1e9:.5f})")
 
     else:
       # Use single camera
@@ -225,10 +219,11 @@ def main(demo=False):
     is_rhd = sm["driverMonitoringState"].isRHD
     frame_id = sm["roadCameraState"].frameId
     lateral_control_params = np.array([sm["carState"].vEgo, steer_delay], dtype=np.float32)
-    if sm.updated["liveCalibration"]:
+    if sm.updated["liveCalibration"] and sm.seen['roadCameraState'] and sm.seen['deviceState']:
       device_from_calib_euler = np.array(sm["liveCalibration"].rpyCalib, dtype=np.float32)
-      model_transform_main = get_warp_matrix(device_from_calib_euler, main_wide_camera, False).astype(np.float32)
-      model_transform_extra = get_warp_matrix(device_from_calib_euler, True, True).astype(np.float32)
+      dc = DEVICE_CAMERAS[(str(sm['deviceState'].deviceType), str(sm['roadCameraState'].sensor))]
+      model_transform_main = get_warp_matrix(device_from_calib_euler, dc.ecam.intrinsics if main_wide_camera else dc.fcam.intrinsics, False).astype(np.float32)
+      model_transform_extra = get_warp_matrix(device_from_calib_euler, dc.ecam.intrinsics, True).astype(np.float32)
       live_calib_seen = True
 
     traffic_convention = np.zeros(2)
@@ -237,30 +232,6 @@ def main(demo=False):
     vec_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
     if desire >= 0 and desire < ModelConstants.DESIRE_LEN:
       vec_desire[desire] = 1
-
-    # Enable/disable nav features
-    timestamp_llk = sm["navModel"].locationMonoTime
-    nav_valid = sm.valid["navModel"] # and (nanos_since_boot() - timestamp_llk < 1e9)
-    nav_enabled = nav_valid and params.get_bool("ExperimentalMode")
-
-    if not nav_enabled:
-      nav_features[:] = 0
-      nav_instructions[:] = 0
-
-    if nav_enabled and sm.updated["navModel"]:
-      nav_features = np.array(sm["navModel"].features)
-
-    if nav_enabled and sm.updated["navInstruction"]:
-      nav_instructions[:] = 0
-      for maneuver in sm["navInstruction"].allManeuvers:
-        distance_idx = 25 + int(maneuver.distance / 20)
-        direction_idx = 0
-        if maneuver.modifier in ("left", "slight left", "sharp left"):
-          direction_idx = 1
-        if maneuver.modifier in ("right", "slight right", "sharp right"):
-          direction_idx = 2
-        if 0 <= distance_idx < 50:
-          nav_instructions[distance_idx*3 + direction_idx] = 1
 
     # tracked dropped frames
     vipc_dropped_frames = max(0, meta_main.frame_id - last_vipc_frame_id - 1)
@@ -279,8 +250,7 @@ def main(demo=False):
       'desire': vec_desire,
       'traffic_convention': traffic_convention,
       'lateral_control_params': lateral_control_params,
-      'nav_features': nav_features,
-      'nav_instructions': nav_instructions}
+      }
 
     mt1 = time.perf_counter()
     model_output = model.run(buf_main, buf_extra, model_transform_main, model_transform_extra, inputs, prepare_only)
@@ -291,7 +261,7 @@ def main(demo=False):
       modelv2_send = messaging.new_message('modelV2')
       posenet_send = messaging.new_message('cameraOdometry')
       fill_model_msg(modelv2_send, model_output, publish_state, meta_main.frame_id, meta_extra.frame_id, frame_id, frame_drop_ratio,
-                      meta_main.timestamp_eof, timestamp_llk, model_execution_time, nav_enabled, live_calib_seen)
+                      meta_main.timestamp_eof, model_execution_time, live_calib_seen)
 
       desire_state = modelv2_send.modelV2.meta.desireState
       l_lane_change_prob = desire_state[log.Desire.laneChangeLeft]
@@ -316,7 +286,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     main(demo=args.demo)
   except KeyboardInterrupt:
-    cloudlog.warning(f"child {PROCESS_NAME} got SIGINT")
+    cloudlog.warning(f"child {THREAD_NAME} got SIGINT")
   except Exception:
     sentry.capture_exception()
     raise

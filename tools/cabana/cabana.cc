@@ -3,7 +3,6 @@
 
 #include "selfdrive/ui/qt/util.h"
 #include "tools/cabana/mainwin.h"
-#include "tools/cabana/streamselector.h"
 #include "tools/cabana/streams/devicestream.h"
 #include "tools/cabana/streams/pandastream.h"
 #include "tools/cabana/streams/replaystream.h"
@@ -82,28 +81,16 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  int ret = 0;
-  {
-    MainWindow w;
-    QTimer::singleShot(0, [&]() {
-      if (!stream) {
-        StreamSelector dlg(&stream);
-        dlg.exec();
-        dbc_file = dlg.dbcFile();
-      }
-      if (!stream) {
-        stream = new DummyStream(&app);
-      }
-      stream->start();
-      if (!dbc_file.isEmpty()) {
-        w.loadFile(dbc_file);
-      }
-      w.show();
-    });
-
-    ret = app.exec();
+  MainWindow w;
+  if (stream) {
+    stream->start();
+    if (!dbc_file.isEmpty()) {
+      w.loadFile(dbc_file);
+    }
+  } else {
+    w.openStream();
   }
+  w.show();
 
-  delete can;
-  return ret;
+  return app.exec();
 }

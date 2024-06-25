@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-import unittest
-
 from cereal import car, log
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car.car_helpers import interfaces
@@ -28,9 +25,9 @@ def make_event(event_types):
   return 0
 
 
-class TestStateMachine(unittest.TestCase):
+class TestStateMachine:
 
-  def setUp(self):
+  def setup_method(self):
     CarInterface, CarController, CarState = interfaces[MOCK.MOCK]
     CP = CarInterface.get_non_essential_params(MOCK.MOCK)
     CI = CarInterface(CP, CarController, CarState)
@@ -46,7 +43,7 @@ class TestStateMachine(unittest.TestCase):
         self.controlsd.events.add(make_event([et, ET.IMMEDIATE_DISABLE]))
         self.controlsd.state = state
         self.controlsd.state_transition(self.CS)
-        self.assertEqual(State.disabled, self.controlsd.state)
+        assert State.disabled == self.controlsd.state
         self.controlsd.events.clear()
 
   def test_user_disable(self):
@@ -55,7 +52,7 @@ class TestStateMachine(unittest.TestCase):
         self.controlsd.events.add(make_event([et, ET.USER_DISABLE]))
         self.controlsd.state = state
         self.controlsd.state_transition(self.CS)
-        self.assertEqual(State.disabled, self.controlsd.state)
+        assert State.disabled == self.controlsd.state
         self.controlsd.events.clear()
 
   def test_soft_disable(self):
@@ -66,7 +63,7 @@ class TestStateMachine(unittest.TestCase):
         self.controlsd.events.add(make_event([et, ET.SOFT_DISABLE]))
         self.controlsd.state = state
         self.controlsd.state_transition(self.CS)
-        self.assertEqual(self.controlsd.state, State.disabled if state == State.disabled else State.softDisabling)
+        assert self.controlsd.state == State.disabled if state == State.disabled else State.softDisabling
         self.controlsd.events.clear()
 
   def test_soft_disable_timer(self):
@@ -74,17 +71,17 @@ class TestStateMachine(unittest.TestCase):
     self.controlsd.events.add(make_event([ET.SOFT_DISABLE]))
     self.controlsd.state_transition(self.CS)
     for _ in range(int(SOFT_DISABLE_TIME / DT_CTRL)):
-      self.assertEqual(self.controlsd.state, State.softDisabling)
+      assert self.controlsd.state == State.softDisabling
       self.controlsd.state_transition(self.CS)
 
-    self.assertEqual(self.controlsd.state, State.disabled)
+    assert self.controlsd.state == State.disabled
 
   def test_no_entry(self):
     # Make sure noEntry keeps us disabled
     for et in ENABLE_EVENT_TYPES:
       self.controlsd.events.add(make_event([ET.NO_ENTRY, et]))
       self.controlsd.state_transition(self.CS)
-      self.assertEqual(self.controlsd.state, State.disabled)
+      assert self.controlsd.state == State.disabled
       self.controlsd.events.clear()
 
   def test_no_entry_pre_enable(self):
@@ -92,7 +89,7 @@ class TestStateMachine(unittest.TestCase):
     self.controlsd.state = State.preEnabled
     self.controlsd.events.add(make_event([ET.NO_ENTRY, ET.PRE_ENABLE]))
     self.controlsd.state_transition(self.CS)
-    self.assertEqual(self.controlsd.state, State.preEnabled)
+    assert self.controlsd.state == State.preEnabled
 
   def test_maintain_states(self):
     # Given current state's event type, we should maintain state
@@ -101,9 +98,5 @@ class TestStateMachine(unittest.TestCase):
         self.controlsd.state = state
         self.controlsd.events.add(make_event([et]))
         self.controlsd.state_transition(self.CS)
-        self.assertEqual(self.controlsd.state, state)
+        assert self.controlsd.state == state
         self.controlsd.events.clear()
-
-
-if __name__ == "__main__":
-  unittest.main()

@@ -17,6 +17,7 @@ class SocketCanStream : public LiveStream {
   Q_OBJECT
 public:
   SocketCanStream(QObject *parent, SocketCanStreamConfig config_ = {});
+  ~SocketCanStream() { stop(); }
   static AbstractOpenStreamWidget *widget(AbstractStream **stream);
   static bool available();
 

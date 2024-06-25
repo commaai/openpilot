@@ -1,13 +1,13 @@
+import pytest
 import os
 import threading
 import time
 import uuid
-import unittest
 
 from openpilot.common.params import Params, ParamKeyType, UnknownKeyName
 
-class TestParams(unittest.TestCase):
-  def setUp(self):
+class TestParams:
+  def setup_method(self):
     self.params = Params()
 
   def test_params_put_and_get(self):
@@ -49,16 +49,16 @@ class TestParams(unittest.TestCase):
     assert self.params.get("CarParams", True) == b"test"
 
   def test_params_unknown_key_fails(self):
-    with self.assertRaises(UnknownKeyName):
+    with pytest.raises(UnknownKeyName):
       self.params.get("swag")
 
-    with self.assertRaises(UnknownKeyName):
+    with pytest.raises(UnknownKeyName):
       self.params.get_bool("swag")
 
-    with self.assertRaises(UnknownKeyName):
+    with pytest.raises(UnknownKeyName):
       self.params.put("swag", "abc")
 
-    with self.assertRaises(UnknownKeyName):
+    with pytest.raises(UnknownKeyName):
       self.params.put_bool("swag", True)
 
   def test_remove_not_there(self):
@@ -68,19 +68,19 @@ class TestParams(unittest.TestCase):
 
   def test_get_bool(self):
     self.params.remove("IsMetric")
-    self.assertFalse(self.params.get_bool("IsMetric"))
+    assert not self.params.get_bool("IsMetric")
 
     self.params.put_bool("IsMetric", True)
-    self.assertTrue(self.params.get_bool("IsMetric"))
+    assert self.params.get_bool("IsMetric")
 
     self.params.put_bool("IsMetric", False)
-    self.assertFalse(self.params.get_bool("IsMetric"))
+    assert not self.params.get_bool("IsMetric")
 
     self.params.put("IsMetric", "1")
-    self.assertTrue(self.params.get_bool("IsMetric"))
+    assert self.params.get_bool("IsMetric")
 
     self.params.put("IsMetric", "0")
-    self.assertFalse(self.params.get_bool("IsMetric"))
+    assert not self.params.get_bool("IsMetric")
 
   def test_put_non_blocking_with_get_block(self):
     q = Params()
@@ -107,7 +107,3 @@ class TestParams(unittest.TestCase):
     assert len(keys) > 20
     assert len(keys) == len(set(keys))
     assert b"CarParams" in keys
-
-
-if __name__ == "__main__":
-  unittest.main()

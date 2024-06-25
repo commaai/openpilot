@@ -1,13 +1,10 @@
-#!/usr/bin/env python3
-import unittest
-
 import cereal.messaging as messaging
 
 from openpilot.selfdrive.test.process_replay import replay_process_with_name
 from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
 
 
-class TestLeads(unittest.TestCase):
+class TestLeads:
   def test_radar_fault(self):
     # if there's no radar-related can traffic, radard should either not respond or respond with an error
     # this is tightly coupled with underlying car radar_interface implementation, but it's a good sanity check
@@ -25,12 +22,8 @@ class TestLeads(unittest.TestCase):
       return msgs
 
     msgs = [m for _ in range(3) for m in single_iter_pkg()]
-    out = replay_process_with_name("radard", msgs, fingerprint=TOYOTA.COROLLA_TSS2)
+    out = replay_process_with_name("radard", msgs, fingerprint=TOYOTA.TOYOTA_COROLLA_TSS2)
     states = [m for m in out if m.which() == "radarState"]
     failures = [not state.valid and len(state.radarState.radarErrors) for state in states]
 
-    self.assertTrue(len(states) == 0 or all(failures))
-
-
-if __name__ == "__main__":
-  unittest.main()
+    assert len(states) == 0 or all(failures)

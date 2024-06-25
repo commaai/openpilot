@@ -137,33 +137,6 @@
     </message>
 </context>
 <context>
-    <name>DestinationWidget</name>
-    <message>
-        <source>Home</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Work</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>No destination set</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>No %1 location set</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>home</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>work</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -293,6 +266,18 @@
         <source>Review</source>
         <translation>確認</translation>
     </message>
+    <message>
+        <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
+        <translation>デバイスを comma connect (connect.comma.ai)でペアリングし、comma primeの特典を申請してください。</translation>
+    </message>
+    <message>
+        <source>Pair Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>PAIR</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DriverViewWindow</name>
@@ -330,47 +315,6 @@
     <message>
         <source>Installing...</source>
         <translation>インストールしています...</translation>
-    </message>
-</context>
-<context>
-    <name>MapETA</name>
-    <message>
-        <source>eta</source>
-        <translation>到着予定時間</translation>
-    </message>
-    <message>
-        <source>min</source>
-        <translation>分</translation>
-    </message>
-    <message>
-        <source>hr</source>
-        <translation>時間</translation>
-    </message>
-</context>
-<context>
-    <name>MapSettings</name>
-    <message>
-        <source>NAVIGATION</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Manage at connect.comma.ai</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>MapWindow</name>
-    <message>
-        <source>Map Loading</source>
-        <translation>マップを読み込んでいます</translation>
-    </message>
-    <message>
-        <source>Waiting for GPS</source>
-        <translation>GPS信号を探しています</translation>
-    </message>
-    <message>
-        <source>Waiting for route</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -416,10 +360,6 @@
     <message>
         <source>Unable to download updates
 %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Invalid date and time settings, system won&apos;t start. Connect to internet to set time.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -475,6 +415,29 @@
     </message>
 </context>
 <context>
+    <name>OnroadAlerts</name>
+    <message>
+        <source>openpilot Unavailable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Waiting for controls to start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TAKE CONTROL IMMEDIATELY</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls Unresponsive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reboot Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>PairingPopup</name>
     <message>
         <source>Pair your device to your comma account</source>
@@ -527,11 +490,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Turn-by-turn navigation</source>
+        <source>1 year of drive storage</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>1 year of drive storage</source>
+        <source>Remote snapshots</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -579,20 +542,8 @@
         </translation>
     </message>
     <message>
-        <source>km</source>
-        <translation>ｷﾛﾒｰﾄﾙ</translation>
-    </message>
-    <message>
-        <source>m</source>
-        <translation>ﾒｰﾄﾙ</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation>ﾏｲﾙ</translation>
-    </message>
-    <message>
-        <source>ft</source>
-        <translation>ﾌｨｰﾄ</translation>
+        <source>now</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1034,22 +985,6 @@ This may take up to a minute.</source>
         <translation>この機能を有効化すると、openpilotを利用中にアクセルを踏むとopenpilotによる運転サポートを中断します。</translation>
     </message>
     <message>
-        <source>Show ETA in 24h Format</source>
-        <translation>24時間表示</translation>
-    </message>
-    <message>
-        <source>Use 24h format instead of am/pm</source>
-        <translation>AM/PM の代わりに24時間形式を使用します</translation>
-    </message>
-    <message>
-        <source>Show Map on Left Side of UI</source>
-        <translation>ﾃﾞｨｽﾌﾟﾚｲの左側にﾏｯﾌﾟを表示</translation>
-    </message>
-    <message>
-        <source>Show map on left side when in split screen view.</source>
-        <translation>分割画面表示の場合、ディスプレイの左側にマップを表示します。</translation>
-    </message>
-    <message>
         <source>Experimental Mode</source>
         <translation>実験モード</translation>
     </message>
@@ -1098,23 +1033,7 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>End-to-End Longitudinal Control</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Navigate on openpilot</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1127,6 +1046,22 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Always-On Driver Monitoring</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable driver monitoring even when openpilot is not engaged.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
