@@ -135,8 +135,8 @@ class CarInterface(CarInterfaceBase):
       ret.vEgoStopping = 0.25
       ret.vEgoStarting = 0.25
     else:
-      tune.kiBP = [0.]  # appears to produce minimal oscillation on TSS-P
-      tune.kiV = [1.2]
+      tune.kpV = [0.0]
+      tune.kiV = [1.2] # appears to produce minimal oscillation on TSS-P
 
     return ret
 
