@@ -108,8 +108,8 @@ def auto_strategy(rlog_paths: LogPaths, qlog_paths: LogPaths, interactive: bool,
     else:
       cloudlog.warning(f"{missing_rlogs} rlogs were not found, falling back to qlogs for those segments...")
 
-    return [rlog if valid_file(rlog) else None
-            for rlog in rlog_paths]
+    return [rlog if valid_file(rlog) else (qlog if valid_file(qlog) else None)
+            for (rlog, qlog) in zip(rlog_paths, qlog_paths, strict=True)]
   return rlog_paths
 
 
