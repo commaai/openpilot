@@ -35,21 +35,14 @@ tools/ubuntu_setup.sh
 git lfs pull
 ```
 
-**4. Reset your shell**
-
-Open a new shell or configure your active shell by running:
-``` bash
-source ~/.bashrc
-```
-
-**5. Activate a python shell**
+**4. Activate a python shell**
 
 Activate a shell with the Python dependencies installed:
 ``` bash
-openpilot_shell
+source .venv/bin/activate
 ```
 
-**6. Build openpilot**
+**5. Build openpilot**
 
 ``` bash
 scons -u -j$(nproc)

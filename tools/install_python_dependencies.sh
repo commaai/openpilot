@@ -20,13 +20,6 @@ if [ -z "$VIRTUAL_ENV" ]; then
   echo "creating virtual env..."
   uv venv
   . .venv/bin/activate
-
-  RC_FILE="${HOME}/.$(basename ${SHELL})rc"
-  if [ "$(uname)" == "Darwin" ] && [ $SHELL == "/bin/bash" ]; then
-    RC_FILE="$HOME/.bash_profile"
-  fi
-
-  printf "\n#openpilot venv\nalias openpilot_shell=\". $VIRTUAL_ENV/bin/activate && . $ROOT/.env \"\n" >> $RC_FILE
 fi
 
 echo "installing python packages..."
