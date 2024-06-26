@@ -81,6 +81,9 @@ export CPPFLAGS="$CPPFLAGS -I${BREW_PREFIX}/opt/openssl@3/include"
 export PYCURL_CURL_CONFIG=/usr/bin/curl-config
 export PYCURL_SSL_LIBRARY=openssl
 
+# generate macos requirements.txt
+$ROOT/scripts/uvlock.sh --no-update
+
 # install python dependencies
 $DIR/install_python_dependencies.sh
 echo "[ ] installed python dependencies t=$SECONDS"
