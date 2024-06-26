@@ -101,14 +101,6 @@
         <source>MAX</source>
         <translation>LIMITE</translation>
     </message>
-    <message>
-        <source>SPEED</source>
-        <translation>MAX</translation>
-    </message>
-    <message>
-        <source>LIMIT</source>
-        <translation>VELO</translation>
-    </message>
 </context>
 <context>
     <name>ConfirmationDialog</name>

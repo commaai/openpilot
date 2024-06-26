@@ -101,14 +101,6 @@
         <source>MAX</source>
         <translation>最高</translation>
     </message>
-    <message>
-        <source>SPEED</source>
-        <translation>速度</translation>
-    </message>
-    <message>
-        <source>LIMIT</source>
-        <translation>速限</translation>
-    </message>
 </context>
 <context>
     <name>ConfirmationDialog</name>
