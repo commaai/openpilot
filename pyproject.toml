@@ -24,7 +24,7 @@ dependencies = [
   "pycapnp",
   "Cython",
   "setuptools",
-  "numpy < 2.0.0",
+  "numpy < 2.0.0", # control does not support numpy 2
 
 # body / webrtcd
   "aiohttp",
@@ -106,7 +106,7 @@ dev = [
   "parameterized >=0.8, <0.9",
 #pprofile = "*"
   "pyautogui",
-  "pygame < 2.6.0", # TODO: unpin when they release a prebuilt wheel
+  "pygame",
   "pyopencl; platform_machine != 'aarch64'",  # broken on arm64
   "pywinctl",
   "pyprof2calltree",

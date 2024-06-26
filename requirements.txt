@@ -300,7 +300,7 @@ pycryptodome==3.20.0
     # via openpilot (pyproject.toml)
 pyee==11.1.0
     # via aiortc
-pygame==2.5.2
+pygame==2.6.0
     # via
     #   openpilot (pyproject.toml)
     #   metadrive-simulator
@@ -424,7 +424,7 @@ scons==4.7.0
     # via openpilot (pyproject.toml)
 seaborn==0.13.2
     # via metadrive-simulator
-sentry-sdk==2.6.0
+sentry-sdk==2.7.0
     # via openpilot (pyproject.toml)
 setuptools==70.1.1
     # via openpilot (pyproject.toml)
