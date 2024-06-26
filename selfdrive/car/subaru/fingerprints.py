@@ -202,6 +202,7 @@ FW_VERSIONS = {
       b'\xf3"f@\x07',
       b'\xf3"fp\x07',
       b'\xf3"fr\x07',
+      b'\xca!`t\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xe6\x15\x042\x00',
