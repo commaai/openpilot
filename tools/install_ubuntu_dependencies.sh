@@ -60,8 +60,7 @@ function install_ubuntu_common_requirements() {
     libqt5svg5-dev \
     libqt5serialbus5-dev  \
     libqt5x11extras5-dev \
-    libqt5opengl5-dev \
-    libsdl2-dev
+    libqt5opengl5-dev
 }
 
 # Install extra packages
