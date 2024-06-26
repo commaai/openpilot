@@ -60,6 +60,8 @@ def processes_context(processes, init_time=0, ignore_stopped=None):
 
   try:
     yield [managed_processes[name] for name in processes]
+    print(processes)
+    print(ignore_stopped)
     # assert processes are still started
     assert all(managed_processes[name].proc.exitcode is None for name in processes if name not in ignore_stopped)
   finally:
