@@ -26,16 +26,30 @@ git clone --recurse-submodules https://github.com/commaai/openpilot.git
 
 ``` bash
 cd openpilot
-git lfs pull
 tools/ubuntu_setup.sh
 ```
 
-Activate a shell with the Python dependencies installed:
+**3. Git LFS**
+
 ``` bash
-poetry shell
+git lfs pull
 ```
 
-**3. Build openpilot**
+**4. Reset your shell**
+
+Open a new shell or configure your active shell by running:
+``` bash
+source ~/.bashrc
+```
+
+**5. Activate a python shell**
+
+Activate a shell with the Python dependencies installed:
+``` bash
+openpilot_shell
+```
+
+**6. Build openpilot**
 
 ``` bash
 scons -u -j$(nproc)
