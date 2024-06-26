@@ -46,11 +46,14 @@ class _FrameReader:
              stdout=subprocess.PIPE,
              stderr=subprocess.DEVNULL
            )
-    while True:
-      dat = proc.stdout.read(frame_sz)
-      if len(dat) == 0:
-        break
-      yield dat
+    try:
+      while True:
+        dat = proc.stdout.read(frame_sz)
+        if len(dat) == 0:
+          break
+        yield dat
+    finally:
+      proc.kill()
 
   def _get_ts(self):
     dat = probe_packet_info(self.camera_path)
