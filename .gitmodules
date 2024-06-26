@@ -4,9 +4,9 @@
 [submodule "opendbc"]
   path = opendbc
   url = ../../commaai/opendbc.git
-[submodule "cereal"]
-  path = cereal
-  url = ../../commaai/cereal.git
+[submodule "msgq"]
+  path = msgq_repo
+  url = ../../commaai/msgq.git
 [submodule "rednose_repo"]
   path = rednose_repo
   url = ../../commaai/rednose.git

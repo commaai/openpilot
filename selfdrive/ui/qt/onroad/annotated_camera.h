@@ -13,8 +13,6 @@ public:
   explicit AnnotatedCameraWidget(VisionStreamType type, QWidget* parent = 0);
   void updateState(const UIState &s);
 
-  MapSettingsButton *map_settings_btn;
-
 private:
   void drawText(QPainter &p, int x, int y, const QString &text, int alpha = 255);
 

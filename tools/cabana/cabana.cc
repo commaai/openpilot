@@ -91,7 +91,6 @@ int main(int argc, char *argv[]) {
     w.openStream();
   }
   w.show();
-  int ret = app.exec();
-  delete can;
-  return ret;
+
+  return app.exec();
 }

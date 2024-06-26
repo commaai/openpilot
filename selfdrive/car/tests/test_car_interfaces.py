@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import os
 import math
 import hypothesis.strategies as st
@@ -76,7 +75,6 @@ class TestCarInterfaces:
     # Longitudinal sanity checks
     assert len(car_params.longitudinalTuning.kpV) == len(car_params.longitudinalTuning.kpBP)
     assert len(car_params.longitudinalTuning.kiV) == len(car_params.longitudinalTuning.kiBP)
-    assert len(car_params.longitudinalTuning.deadzoneV) == len(car_params.longitudinalTuning.deadzoneBP)
 
     # Lateral sanity checks
     if car_params.steerControlType != car.CarParams.SteerControlType.angle:

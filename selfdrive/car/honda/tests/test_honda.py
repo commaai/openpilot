@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import re
 
 from openpilot.selfdrive.car.honda.fingerprints import FW_VERSIONS

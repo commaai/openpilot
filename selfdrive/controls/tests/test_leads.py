@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import cereal.messaging as messaging
 
 from openpilot.selfdrive.test.process_replay import replay_process_with_name
