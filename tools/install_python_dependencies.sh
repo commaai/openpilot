@@ -24,7 +24,7 @@ fi
 
 echo "installing python packages..."
 if [[ "$(uname)" == 'Darwin' ]]; then
-  uv pip install .
+  uv pip install --preview .
 else
   uv pip sync requirements.txt
 fi
