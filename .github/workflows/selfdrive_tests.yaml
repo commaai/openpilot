@@ -86,6 +86,23 @@ jobs:
         docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
     - uses: ./.github/workflows/compile-openpilot
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 15 || 30) }} # allow more time when we missed the scons cache
+      
+  build_mac:
+    name: build macos
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - run: git lfs pull
+    - name: Install dependencies
+      run: ./tools/mac_setup.sh
+      env:
+        SKIP_PROMPT: 1
+        # package install has DeprecationWarnings
+        PYTHONWARNINGS: default
+    - name: Test openpilot environment
+      run: poetry run scons -h
 
   static_analysis:
     name: static analysis
