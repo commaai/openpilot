@@ -23,7 +23,11 @@ if [ -z "$VIRTUAL_ENV" ]; then
 fi
 
 echo "installing python packages..."
-uv pip sync requirements.txt
+if [[ "$(uname)" == 'Darwin' ]]; then
+  uv pip install .
+else
+  uv pip sync requirements.txt
+fi
 
 echo "PYTHONPATH=${PWD}" > $ROOT/.env
 if [[ "$(uname)" == 'Darwin' ]]; then

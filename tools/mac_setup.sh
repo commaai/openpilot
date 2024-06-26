@@ -82,9 +82,7 @@ export PYCURL_CURL_CONFIG=/usr/bin/curl-config
 export PYCURL_SSL_LIBRARY=openssl
 
 # install python dependencies
-python3 -m venv $ROOT/.venv
-source $ROOT/.venv/bin/activate
-pip install $ROOT
+$DIR/install_python_dependencies.sh
 echo "[ ] installed python dependencies t=$SECONDS"
 
 # brew does not link qt5 by default
