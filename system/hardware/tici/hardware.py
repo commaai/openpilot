@@ -183,32 +183,39 @@ class Tici(HardwareBase):
     return self.bus.get_object(NM, wwan_path)
 
   def get_sim_info(self):
-    modem = self.get_modem()
-    sim_path = modem.Get(MM_MODEM, 'Sim', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+    try:
+      modem = self.get_modem()
+      sim_path = modem.Get(MM_MODEM, 'Sim', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
 
-    if sim_path == "/":
-      return {
-        'sim_id': '',
-        'mcc_mnc': None,
-        'network_type': ["Unknown"],
-        'sim_state': ["ABSENT"],
-        'data_connected': False
-      }
-    else:
-      sim = self.bus.get_object(MM, sim_path)
-      return {
-        'sim_id': str(sim.Get(MM_SIM, 'SimIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)),
-        'mcc_mnc': str(sim.Get(MM_SIM, 'OperatorIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)),
-        'network_type': ["Unknown"],
-        'sim_state': ["READY"],
-        'data_connected': modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT) == MM_MODEM_STATE.CONNECTED,
-      }
+      if sim_path == "/":
+        return {
+          'sim_id': '',
+          'mcc_mnc': None,
+          'network_type': ["Unknown"],
+          'sim_state': ["ABSENT"],
+          'data_connected': False
+        }
+      else:
+        sim = self.bus.get_object(MM, sim_path)
+        return {
+          'sim_id': str(sim.Get(MM_SIM, 'SimIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)),
+          'mcc_mnc': str(sim.Get(MM_SIM, 'OperatorIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)),
+          'network_type': ["Unknown"],
+          'sim_state': ["READY"],
+          'data_connected': modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT) == MM_MODEM_STATE.CONNECTED,
+        }
+    except Exception:
+      return None
 
   def get_imei(self, slot):
     if slot != 0:
       return ""
 
-    return str(self.get_modem().Get(MM_MODEM, 'EquipmentIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
+    try:
+      modem = self.get_modem()
+      return str(modem.Get(MM_MODEM, 'EquipmentIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
+    except Exception:
+      return ""
 
   def get_network_info(self):
     try:
@@ -462,9 +469,12 @@ class Tici(HardwareBase):
       print(str(e))
 
   def configure_modem(self):
-    sim_id = self.get_sim_info().get('sim_id', '')
+    try:
+      sim_id = self.get_sim_info().get('sim_id', '')
+      modem = self.get_modem()
+    except Exception:
+      return
 
-    modem = self.get_modem()
     try:
       manufacturer = str(modem.Get(MM_MODEM, 'Manufacturer', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
     except Exception:
