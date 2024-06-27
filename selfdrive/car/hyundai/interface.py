@@ -130,7 +130,7 @@ class CarInterface(CarInterfaceBase):
     elif ret.flags & HyundaiFlags.EV:
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_EV_GAS
 
-    if candidate in (CAR.HYUNDAI_KONA, CAR.HYUNDAI_KONA_EV, CAR.HYUNDAI_KONA_HEV, CAR.HYUNDAI_KONA_EV_2022, CAR.GENESIS_G70_1ST_GEN_FL):
+    if candidate in (CAR.HYUNDAI_KONA, CAR.HYUNDAI_KONA_EV, CAR.HYUNDAI_KONA_HEV, CAR.HYUNDAI_KONA_EV_2022, CAR.GENESIS_G70_2024):
       ret.flags |= HyundaiFlags.ALT_LIMITS.value
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_ALT_LIMITS
 
