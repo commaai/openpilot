@@ -58,7 +58,7 @@ jobs:
     - name: Installing python dependencies
       run: uv sync
     - name: Python venv
-      run: . .venv/bin/activate
+      run: echo "PATH=\".venv/bin:$PATH\"" >> $GITHUB_ENV
     - name: git LFS
       run: git lfs pull
     - run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
@@ -102,6 +102,6 @@ jobs:
     - name: Test environment
       run: |
         devcontainer exec --workspace-folder . scons -j$(nproc) cereal/ common/
-        devcontainer exec --workspace-folder . pip install pip-install-test
+        devcontainer exec --workspace-folder . pip3 install pip-install-test
         devcontainer exec --workspace-folder . touch /home/batman/.comma/auth.json
         devcontainer exec --workspace-folder . sudo touch /root/test.txt
