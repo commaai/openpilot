@@ -16,17 +16,8 @@ if ! command -v "uv" > /dev/null 2>&1; then
   eval $ADD_PATH_CMD
 fi
 
-: "${VIRTUAL_ENV:=$ROOT/.venv}"
-echo "creating virtual env..."
-uv venv $VIRTUAL_ENV
-. $VIRTUAL_ENV/bin/activate
-
 echo "installing python packages..."
-if [[ "$(uname)" == 'Darwin' ]]; then
-  uv pip install --preview .
-else
-  uv pip sync requirements.txt
-fi
+uv sync
 
 echo "PYTHONPATH=${PWD}" > $ROOT/.env
 if [[ "$(uname)" == 'Darwin' ]]; then
