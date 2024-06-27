@@ -3,6 +3,7 @@
 #include <csignal>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <string>
 
 typedef void (*sighandler_t)(int sig);
@@ -43,17 +44,17 @@ int main(int argc, char** argv) {
   std::string ip = zmq_to_msgq ? argv[1] : "127.0.0.1";
   std::string whitelist_str = zmq_to_msgq ? std::string(argv[2]) : "";
 
-  Poller *poller;
-  Context *pub_context;
-  Context *sub_context;
+  std::unique_ptr<Poller> poller;
+  std::unique_ptr<Context> pub_context;
+  std::unique_ptr<Context> sub_context;
   if (zmq_to_msgq) {  // republishes zmq debugging messages as msgq
-    poller = new ZMQPoller();
-    pub_context = new MSGQContext();
-    sub_context = new ZMQContext();
+    poller = std::make_unique<ZMQPoller>();
+    pub_context = std::make_unique<MSGQContext>();
+    sub_context = std::make_unique<ZMQContext>();
   } else {
-    poller = new MSGQPoller();
-    pub_context = new ZMQContext();
-    sub_context = new MSGQContext();
+    poller = std::make_unique<MSGQPoller>();
+    pub_context = std::make_unique<ZMQContext>();
+    sub_context = std::make_unique<MSGQContext>();
   }
 
   std::map<SubSocket*, PubSocket*> sub2pub;
@@ -67,8 +68,8 @@ int main(int argc, char** argv) {
       pub_sock = new ZMQPubSocket();
       sub_sock = new MSGQSubSocket();
     }
-    pub_sock->connect(pub_context, endpoint);
-    sub_sock->connect(sub_context, endpoint, ip, false);
+    pub_sock->connect(pub_context.get(), endpoint);
+    sub_sock->connect(sub_context.get(), endpoint, ip, false);
 
     poller->registerSocket(sub_sock);
     sub2pub[sub_sock] = pub_sock;
@@ -76,17 +77,23 @@ int main(int argc, char** argv) {
 
   while (!do_exit) {
     for (auto sub_sock : poller->poll(100)) {
-      Message * msg = sub_sock->receive();
-      if (msg == NULL) continue;
+      std::unique_ptr<Message> msg(sub_sock->receive());
+      if (!msg) continue;
       int ret;
       do {
-        ret = sub2pub[sub_sock]->sendMessage(msg);
+        ret = sub2pub[sub_sock]->sendMessage(msg.get());
       } while (ret == -1 && errno == EINTR && !do_exit);
       assert(ret >= 0 || do_exit);
-      delete msg;
 
       if (do_exit) break;
     }
   }
+
+  // Clean up allocated sockets
+  for (auto& [sub_sock, pub_sock] : sub2pub) {
+    delete sub_sock;
+    delete pub_sock;
+  }
+
   return 0;
 }
