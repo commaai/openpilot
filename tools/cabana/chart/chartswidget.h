@@ -47,14 +47,14 @@ public slots:
   void setColumnCount(int n);
   void removeAll();
   void timeRangeChanged(const std::optional<std::pair<double, double>> &time_range);
+  void setIsDocked(bool dock);
 
 signals:
-  void dock(bool floating);
+  void toggleChartsDocking();
   void seriesChanged();
 
 private:
   QSize minimumSizeHint() const override;
-  void resizeEvent(QResizeEvent *event) override;
   bool event(QEvent *event) override;
   void alignCharts();
   void newChart();
@@ -85,7 +85,7 @@ private:
   LogSlider *range_slider;
   QAction *range_lb_action;
   QAction *range_slider_action;
-  bool docking = true;
+  bool is_docked = true;
   ToolButton *dock_btn;
 
   QAction *undo_zoom_action;
@@ -109,6 +109,7 @@ private:
   QTimer *auto_scroll_timer;
   QTimer *align_timer;
   int current_theme = 0;
+  bool value_tip_visible_ = false;
   friend class ZoomCommand;
   friend class ChartView;
   friend class ChartsContainer;

@@ -34,8 +34,7 @@ jobs:
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run bridge test
       run: |
-        ${{ env.RUN }} "export MAPBOX_TOKEN='pk.eyJ1Ijoiam5ld2IiLCJhIjoiY2xxNW8zZXprMGw1ZzJwbzZneHd2NHljbSJ9.gV7VPRfbXFetD-1OVF0XZg' && \
-                        source selfdrive/test/setup_xvfb.sh && \
+        ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
                         source selfdrive/test/setup_vsound.sh && \
                         CI=1 pytest tools/sim/tests/test_metadrive_bridge.py"
 

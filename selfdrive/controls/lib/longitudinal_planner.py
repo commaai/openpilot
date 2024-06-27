@@ -44,11 +44,10 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   return [a_target[0], min(a_target[1], a_x_allowed)]
 
 
-def get_accel_from_plan(CP, long_plan):
-    speeds = long_plan.speeds
+def get_accel_from_plan(CP, speeds, accels):
     if len(speeds) == CONTROL_N:
       v_target_now = interp(DT_MDL, CONTROL_N_T_IDX, speeds)
-      a_target_now = interp(DT_MDL, CONTROL_N_T_IDX, long_plan.accels)
+      a_target_now = interp(DT_MDL, CONTROL_N_T_IDX, accels)
 
       v_target = interp(CP.longitudinalActuatorDelay + DT_MDL, CONTROL_N_T_IDX, speeds)
       a_target = 2 * (v_target - v_target_now) / CP.longitudinalActuatorDelay - a_target_now
@@ -141,11 +140,9 @@ class LongitudinalPlanner:
     x, v, a, j = self.parse_model(sm['modelV2'], self.v_model_error)
     self.mpc.update(sm['radarState'], v_cruise, x, v, a, j, personality=sm['controlsState'].personality)
 
-    self.v_desired_trajectory_full = np.interp(ModelConstants.T_IDXS, T_IDXS_MPC, self.mpc.v_solution)
-    self.a_desired_trajectory_full = np.interp(ModelConstants.T_IDXS, T_IDXS_MPC, self.mpc.a_solution)
-    self.v_desired_trajectory = self.v_desired_trajectory_full[:CONTROL_N]
-    self.a_desired_trajectory = self.a_desired_trajectory_full[:CONTROL_N]
-    self.j_desired_trajectory = np.interp(ModelConstants.T_IDXS[:CONTROL_N], T_IDXS_MPC[:-1], self.mpc.j_solution)
+    self.v_desired_trajectory = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC, self.mpc.v_solution)
+    self.a_desired_trajectory = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC, self.mpc.a_solution)
+    self.j_desired_trajectory = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC[:-1], self.mpc.j_solution)
 
     # TODO counter is only needed because radar is glitchy, remove once radar is gone
     self.fcw = self.mpc.crash_cnt > 2 and not sm['carState'].standstill
@@ -154,7 +151,7 @@ class LongitudinalPlanner:
 
     # Interpolate 0.05 seconds and save as starting point for next iteration
     a_prev = self.a_desired
-    self.a_desired = float(interp(self.dt, ModelConstants.T_IDXS[:CONTROL_N], self.a_desired_trajectory))
+    self.a_desired = float(interp(self.dt, CONTROL_N_T_IDX, self.a_desired_trajectory))
     self.v_desired_filter.x = self.v_desired_filter.x + self.dt * (self.a_desired + a_prev) / 2.0
 
   def publish(self, sm, pm):
@@ -162,14 +159,10 @@ class LongitudinalPlanner:
 
     plan_send.valid = sm.all_checks(service_list=['carState', 'controlsState'])
 
-
     longitudinalPlan = plan_send.longitudinalPlan
     longitudinalPlan.modelMonoTime = sm.logMonoTime['modelV2']
     longitudinalPlan.processingDelay = (plan_send.logMonoTime / 1e9) - sm.logMonoTime['modelV2']
     longitudinalPlan.solverExecutionTime = self.mpc.solve_time
-
-    longitudinalPlan.allowBrake = True
-    longitudinalPlan.allowThrottle = True
 
     longitudinalPlan.speeds = self.v_desired_trajectory.tolist()
     longitudinalPlan.accels = self.a_desired_trajectory.tolist()
@@ -179,7 +172,7 @@ class LongitudinalPlanner:
     longitudinalPlan.longitudinalPlanSource = self.mpc.source
     longitudinalPlan.fcw = self.fcw
 
-    a_target, should_stop = get_accel_from_plan(self.CP, longitudinalPlan)
+    a_target, should_stop = get_accel_from_plan(self.CP, longitudinalPlan.speeds, longitudinalPlan.accels)
     longitudinalPlan.aTarget = a_target
     longitudinalPlan.shouldStop = should_stop
     longitudinalPlan.allowBrake = True
