@@ -9,7 +9,7 @@ authors = [
 ]
 
 dependencies = [
-# multiple users
+  # multiple users
   "sounddevice",  # micd + soundd
   "pyserial",     # pigeond + qcomgpsd
   "requests",     # many one-off uses
@@ -17,10 +17,10 @@ dependencies = [
   "crcmod",       # cars + qcomgpsd
   "tqdm",         # cars (fw_versions.py) on start + many one-off uses
 
-# hardwared
-  "smbus2",  # configuring amp
+  # hardwared
+  "smbus2", # configuring amp
 
-# core
+  # core
   "cffi",
   "scons",
   "pycapnp",
@@ -28,38 +28,38 @@ dependencies = [
   "setuptools",
   "numpy < 2.0.0", # control does not support numpy 2
 
-# body / webrtcd
+  # body / webrtcd
   "aiohttp",
   "aiortc",
   "pyaudio",
 
-# panda
+  # panda
   "libusb1",
   "spidev; platform_system == 'Linux'",
 
-# modeld
+  # modeld
   "onnx >= 1.14.0",
   "onnxruntime >=1.16.3; platform_system == 'Linux' and platform_machine == 'aarch64'",
   "onnxruntime-gpu >=1.16.3; platform_system == 'Linux' and platform_machine == 'x86_64'",
 
-# logging
+  # logging
   "pyzmq",
   "sentry-sdk",
 
-# athena
+  # athena
   "PyJWT",
   "json-rpc",
   "websocket_client",
 
-# acados deps
+  # acados deps
   "casadi",
   "future-fstrings",
 
-# these should be removed
+  # these should be removed
   "psutil",
-  "pycryptodome",  # used in updated/casync, panda, body, and a test
+  "pycryptodome", # used in updated/casync, panda, body, and a test
 
-#logreader
+  #logreader
   "zstd",
 ]
 
@@ -106,10 +106,10 @@ dev = [
   "natsort",
   "opencv-python-headless",
   "parameterized >=0.8, <0.9",
-#pprofile = "*"
+  #pprofile = "*"
   "pyautogui",
   "pygame",
-  "pyopencl; platform_machine != 'aarch64'",  # broken on arm64
+  "pyopencl; platform_machine != 'aarch64'", # broken on arm64
   "pywinctl",
   "pyprof2calltree",
   "rerun-sdk",
@@ -117,7 +117,7 @@ dev = [
   "types-requests",
   "types-tabulate",
 
-# this is only pinned since 5.15.11 is broken
+  # this is only pinned since 5.15.11 is broken
   "pyqt5 ==5.15.2; platform_machine == 'x86_64'", # no aarch64 wheels for macOS/linux
 
 ]
