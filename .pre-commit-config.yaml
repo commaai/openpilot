@@ -19,7 +19,7 @@ repos:
     -   id: check-executables-have-shebangs
     -   id: check-shebang-scripts-are-executable
     -   id: check-added-large-files
-        exclude: '(docs/CARS.md)|(third_party/acados/include/blasfeo/include/blasfeo_d_kernel.h)'
+        exclude: '(docs/CARS.md)|(uv.lock)|(third_party/acados/include/blasfeo/include/blasfeo_d_kernel.h)'
         args:
         - --maxkb=120
         - --enforce-all

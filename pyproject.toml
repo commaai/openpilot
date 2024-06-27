@@ -124,7 +124,7 @@ dev = [
 ]
 
 [tool.uv.sources]
-metadrive-simulator = { git = "https://github.com/commaai/metadrive.git", branch = "anisotropic_off" }
+metadrive-simulator = { git = "https://github.com/commaai/metadrive.git", branch = "opencv_headless" }
 
 [project.urls]
 Homepage = "https://comma.ai"
