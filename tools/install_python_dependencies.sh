@@ -18,6 +18,7 @@ fi
 
 echo "installing python packages..."
 uv sync --all-extras
+source .venv/bin/activate
 
 echo "PYTHONPATH=${PWD}" > $ROOT/.env
 if [[ "$(uname)" == 'Darwin' ]]; then
