@@ -1,7 +1,6 @@
 [project]
 name = "openpilot"
 requires-python = ">= 3.11"
-readme = "README.md"
 license = {text = "MIT License"}
 version = "0.1.0"
 description = "an open source driver assistance system"
@@ -130,11 +129,11 @@ metadrive-simulator = { git = "https://github.com/commaai/metadrive.git", branch
 Homepage = "https://comma.ai"
 
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
-[tool.setuptools.packages.find]
-where = [""]
+[tool.hatch.build.targets.wheel]
+packages = [ "." ]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
