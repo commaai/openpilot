@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import bz2
-from functools import partial
+from functools import cache, partial
 import multiprocessing
 import capnp
 import enum
@@ -87,23 +87,18 @@ Source = Callable[[SegmentRange, ReadMode], LogPaths]
 
 InternalUnavailableException = Exception("Internal source not available")
 
+
+@cache
 def default_valid_file(fn: LogPath) -> bool:
   return fn is not None and file_exists(fn)
 
-def count_missing_rlogs(rlog_paths: LogPaths, valid_file: ValidFileCallable) -> int:
-  missing_count = 0
-  for rlog in rlog_paths:
-    if rlog is None or not valid_file(rlog):
-      missing_count += 1
-  return missing_count
 
 def auto_strategy(rlog_paths: LogPaths, qlog_paths: LogPaths, interactive: bool, valid_file: ValidFileCallable) -> LogPaths:
-  # Count missing rlogs
-  missing_rlogs = count_missing_rlogs(rlog_paths, valid_file)
   # auto select logs based on availability
+  missing_rlogs = [rlog is None or not valid_file(rlog) for rlog in rlog_paths].count(True)
   if missing_rlogs != 0 and all(qlog is not None and valid_file(qlog) for qlog in qlog_paths):
     if interactive:
-      if input(f"Error: {missing_rlogs} rlogs were not found, would you like to fallback to qlogs for those segments? (y/n) ").lower() != "y":
+      if input(f"{missing_rlogs} rlogs were not found, would you like to fallback to qlogs for those segments? (y/n) ").lower() != "y":
         return rlog_paths
     else:
       cloudlog.warning(f"{missing_rlogs} rlogs were not found, falling back to qlogs for those segments...")
