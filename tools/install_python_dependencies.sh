@@ -16,11 +16,10 @@ if ! command -v "uv" > /dev/null 2>&1; then
   eval $ADD_PATH_CMD
 fi
 
-if [ -z "$VIRTUAL_ENV" ]; then
-  echo "creating virtual env..."
-  uv venv
-  . .venv/bin/activate
-fi
+: "${VIRTUAL_ENV:=$ROOT/.venv}"
+echo "creating virtual env..."
+uv venv $VIRTUAL_ENV
+. $VIRTUAL_ENV/bin/activate
 
 echo "installing python packages..."
 if [[ "$(uname)" == 'Darwin' ]]; then

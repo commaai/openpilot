@@ -416,7 +416,7 @@ rerun-sdk==0.16.1
     # via openpilot (pyproject.toml)
 ruff==0.4.10
     # via openpilot (pyproject.toml)
-scipy==1.14.0
+scipy==1.13.1
     # via
     #   control
     #   metadrive-simulator
