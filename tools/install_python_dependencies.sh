@@ -17,7 +17,7 @@ if ! command -v "uv" > /dev/null 2>&1; then
 fi
 
 echo "installing python packages..."
-uv sync
+uv sync --all-extras
 
 echo "PYTHONPATH=${PWD}" > $ROOT/.env
 if [[ "$(uname)" == 'Darwin' ]]; then
