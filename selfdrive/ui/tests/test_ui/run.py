@@ -21,7 +21,7 @@ from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state
 from openpilot.tools.webcam.camera import Camera
 
-UI_DELAY = 1.5 # may be slower on CI?
+UI_DELAY = 0.5 # may be slower on CI?
 
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength

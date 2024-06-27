@@ -44,7 +44,7 @@ jobs:
     - name: uv lock
       run: |
         pip install uv
-        scripts/uvlock.sh
+        uv lock
     - name: pre-commit autoupdate
       run: |
         git config --global --add safe.directory '*'
