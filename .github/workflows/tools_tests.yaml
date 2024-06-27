@@ -56,7 +56,9 @@ jobs:
     - name: Installing uv
       run: pip install uv
     - name: Installing python dependencies
-      run: uv pip sync --system requirements.txt
+      run: uv sync
+    - name: Python venv
+      run: . .venv/bin/activate
     - name: git LFS
       run: git lfs pull
     - run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
