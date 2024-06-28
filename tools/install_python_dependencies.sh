@@ -8,16 +8,15 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ROOT=$DIR/../
 cd $ROOT
 
-if ! command -v "uv" > /dev/null 2>&1; then
-  echo "installing uv..."
-  curl -LsSf https://astral.sh/uv/install.sh | sh
-  UV_BIN='$HOME/.cargo/env'
-  ADD_PATH_CMD=". \"$UV_BIN\""
-  eval $ADD_PATH_CMD
-fi
+echo "installing uv..."
+curl -LsSf https://astral.sh/uv/install.sh | sh
+UV_BIN='$HOME/.cargo/env'
+ADD_PATH_CMD=". \"$UV_BIN\""
+eval $ADD_PATH_CMD
 
+# TODO: remove --no-cache once this is fixed: https://github.com/astral-sh/uv/issues/4378
 echo "installing python packages..."
-uv sync --all-extras
+uv --no-cache sync --all-extras
 source .venv/bin/activate
 
 echo "PYTHONPATH=${PWD}" > $ROOT/.env
