@@ -16,8 +16,12 @@ if ! command -v "uv" > /dev/null 2>&1; then
   eval $ADD_PATH_CMD
 fi
 
+echo "updating uv..."
+uv self update
+
+# TODO: remove --no-cache once this is fixed: https://github.com/astral-sh/uv/issues/4378
 echo "installing python packages..."
-uv sync --all-extras
+uv --no-cache sync --all-extras
 source .venv/bin/activate
 
 echo "PYTHONPATH=${PWD}" > $ROOT/.env
