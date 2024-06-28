@@ -62,7 +62,6 @@ jobs:
         cd $GITHUB_WORKSPACE
         cp .pre-commit-config.yaml $STRIPPED_DIR
         cp pyproject.toml $STRIPPED_DIR
-        cp poetry.lock $STRIPPED_DIR
         cd $STRIPPED_DIR
         ${{ env.RUN }} "unset PYTHONWARNINGS && SKIP=check-added-large-files,check-hooks-apply,check-useless-excludes pre-commit run --all && chmod -R 777 /tmp/pre-commit"
 
@@ -86,7 +85,7 @@ jobs:
         docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
     - uses: ./.github/workflows/compile-openpilot
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 15 || 30) }} # allow more time when we missed the scons cache
-      
+
   build_mac:
     name: build macos
     runs-on: macos-latest
@@ -102,7 +101,7 @@ jobs:
         # package install has DeprecationWarnings
         PYTHONWARNINGS: default
     - name: Test openpilot environment
-      run: poetry run scons -h
+      run: . .venv/bin/activate && scons -h
 
   static_analysis:
     name: static analysis

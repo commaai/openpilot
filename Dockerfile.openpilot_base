@@ -68,16 +68,15 @@ RUN usermod -aG sudo $USER
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 USER $USER
 
-COPY --chown=$USER pyproject.toml poetry.lock /tmp/
+COPY --chown=$USER pyproject.toml uv.lock /tmp/
 COPY --chown=$USER tools/install_python_dependencies.sh /tmp/tools/
 
-ENV POETRY_VIRTUALENVS_CREATE=false
-ENV VIRTUAL_ENV=/home/$USER/venv/.venv
-RUN python3 -m venv $VIRTUAL_ENV
+ENV VIRTUAL_ENV=/home/$USER/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-RUN . $VIRTUAL_ENV/bin/activate && \
-    cd /tmp && \
+RUN cd /tmp && \
     tools/install_python_dependencies.sh && \
+    mkdir -p $VIRTUAL_ENV && \
+    cp -r /tmp/.venv/* $VIRTUAL_ENV && \
     rm -rf /tmp/* && \
     rm -rf /home/$USER/.cache
 
