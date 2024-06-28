@@ -8,6 +8,20 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ROOT=$DIR/../
 cd $ROOT
 
+# updating uv on macOS results in 403 sometimes
+function update_uv() {
+  for i in $(seq 1 5);
+  do
+    if uv self update; then
+      return 0
+    else
+      sleep 2
+    fi
+  done
+  echo "Failed to update uv 5 times!"
+  exit 1
+}
+
 if ! command -v "uv" > /dev/null 2>&1; then
   echo "installing uv..."
   curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -17,7 +31,7 @@ if ! command -v "uv" > /dev/null 2>&1; then
 fi
 
 echo "updating uv..."
-uv self update
+update_uv
 
 # TODO: remove --no-cache once this is fixed: https://github.com/astral-sh/uv/issues/4378
 echo "installing python packages..."
