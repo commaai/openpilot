@@ -19,7 +19,6 @@ function update_uv() {
     fi
   done
   echo "Failed to update uv 5 times!"
-  exit 1
 }
 
 if ! command -v "uv" > /dev/null 2>&1; then
