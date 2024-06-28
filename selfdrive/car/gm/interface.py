@@ -36,13 +36,6 @@ class CarInterface(CarInterfaceBase):
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
     return CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX
 
-  # Determined by iteratively plotting and minimizing error for f(angle, speed) = steer.
-  @staticmethod
-  def get_steer_feedforward_volt(desired_angle, v_ego):
-    desired_angle *= 0.02904609
-    sigmoid = desired_angle / (1 + fabs(desired_angle))
-    return 0.10006696 * sigmoid * (v_ego + 3.12485927)
-
   def torque_from_lateral_accel_siglin(self, latcontrol_inputs: LatControlInputs, torque_params: car.CarParams.LateralTorqueTuning, lateral_accel_error: float,
                                        lateral_accel_deadzone: float, friction_compensation: bool, gravity_adjusted: bool) -> float:
     friction = get_friction(lateral_accel_error, lateral_accel_deadzone, FRICTION_THRESHOLD, torque_params, friction_compensation)
