@@ -41,6 +41,11 @@ def fill_xyvat(builder, t, x, y, v, a, x_std=None, y_std=None, v_std=None, a_std
   if a_std is not None:
     builder.aStd = a_std.tolist()
 
+def fill_xyz_poly(builder, x, y, z, degree):
+  xyz = np.stack([x, y, z], axis=1)
+  coeffs = np.polynomial.polynomial.polyfit(np.arange(len(x)), xyz, deg=degree)
+  builder.coefficients = coeffs.tolist()
+
 def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._DynamicStructBuilder,
                    net_output_data: dict[str, np.ndarray], publish_state: PublishState,
                    vipc_frame_id: int, vipc_frame_id_extra: int, frame_id: int, frame_drop: float,
@@ -76,6 +81,10 @@ def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._D
   fill_xyzt(orientation, ModelConstants.T_IDXS, *net_output_data['plan'][0,:,Plan.T_FROM_CURRENT_EULER].T)
   orientation_rate = modelV2.orientationRate
   fill_xyzt(orientation_rate, ModelConstants.T_IDXS, *net_output_data['plan'][0,:,Plan.ORIENTATION_RATE].T)
+
+  # poly path
+  poly_path = driving_model_data.path
+  fill_xyz_poly(poly_path, *net_output_data['plan'][0,:,Plan.POSITION].T, degree=ModelConstants.POLY_PATH_DEGREE)
 
   # lateral planning
   action = modelV2.action

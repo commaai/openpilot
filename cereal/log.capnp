@@ -877,6 +877,12 @@ struct DrivingModelData {
   laneLineMeta @3 :LaneLineMeta;
   meta @4 :MetaData;
 
+  path @5 :PolyPath;
+
+  struct PolyPath {
+    coefficients @0 :List(List(Float32));
+  }
+
   struct LaneLineMeta {
     leftY @0 :Float32;
     rightY @1 :Float32;
