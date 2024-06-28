@@ -23,7 +23,7 @@ blacklist = [
   "^common/tests/",
 
   # particularly large text files
-  "poetry.lock",
+  "uv.lock",
   "third_party/catch2",
   "selfdrive/car/tests/test_models.*",
 
