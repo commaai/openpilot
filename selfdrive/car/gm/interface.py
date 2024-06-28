@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import json
 from cereal import car
 from math import fabs, exp
 from panda import Panda
