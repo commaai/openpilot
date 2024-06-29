@@ -44,9 +44,9 @@ def fill_xyvat(builder, t, x, y, v, a, x_std=None, y_std=None, v_std=None, a_std
 def fill_xyz_poly(builder, degree, x, y, z):
   xyz = np.stack([x, y, z], axis=1)
   coeffs = np.polynomial.polynomial.polyfit(ModelConstants.T_IDXS, xyz, deg=degree)
-  builder.xCoefficient = coeffs[:, 0].tolist()
-  builder.yCoefficient = coeffs[:, 1].tolist()
-  builder.zCoefficient = coeffs[:, 2].tolist()
+  builder.xCoefficients = coeffs[:, 0].tolist()
+  builder.yCoefficients = coeffs[:, 1].tolist()
+  builder.zCoefficients = coeffs[:, 2].tolist()
 
 def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._DynamicStructBuilder,
                    net_output_data: dict[str, np.ndarray], publish_state: PublishState,
