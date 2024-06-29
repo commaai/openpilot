@@ -871,6 +871,7 @@ struct ControlsState @0x97ff69c53601abf1 {
 struct DrivingModelData {
   frameId @0 :UInt32;
   frameIdExtra @1 :UInt32;
+  frameDropPerc @6 :Float32;
 
   action @2 :ModelDataV2.Action;
 
