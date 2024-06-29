@@ -1,0 +1,53 @@
+name: weekly CI test report
+on:
+  schedule:
+    - cron: '37 9 * * 1' # 9:37AM UTC -> 2:37AM PST every monday
+  workflow_dispatch:
+    inputs:
+      ci_runs:
+        default: 100
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      ci_runs: ${{ steps.ci_runs_setup.outputs.value }}
+    steps:
+      - id: ci_runs_setup
+        run: |
+          mylist="value=["
+
+          for i in $(seq 1 ${{ inputs.ci_runs }});
+          do
+              if [ $i != ${{ inputs.ci_runs }} ]; then
+                  mylist+="\"$i\", "
+              else
+                  mylist+="\"$i\""
+              fi
+          done
+          mylist+="]"
+
+          echo "$mylist" >> $GITHUB_OUTPUT
+      - run: |
+          echo "Number of CI runs for report: ${{ inputs.ci_runs }}"
+  ci_run:
+    outputs:
+      passing: ${{ env.passing_runs }}
+    env:
+      passing_runs: 0
+    needs: [ setup ]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        value: ${{fromJSON(needs.setup.outputs.ci_runs)}}
+    steps:
+      - uses: ./.github/workflows/ci_weekly_run.yaml
+      - name: results
+        if: ${{ success() }}
+        run: $passing_runs+=1
+  result:
+    runs-on: ubuntu-latest
+    needs: [ci_run ]
+    steps:
+      - run: echo "CI RESULT:\ ${{ needs.ci_run.outputs.passing }} / ${{ inputs.ci_runs }} PASSED"
+

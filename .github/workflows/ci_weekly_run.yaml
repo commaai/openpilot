@@ -1,0 +1,13 @@
+name: weekly CI test report
+on:
+  workflow_call:
+
+jobs:
+  docs:
+    uses: ./.github/workflows/docs.yaml
+  selfdrive_tests:
+    uses: ./.github/workflows/selfdrive_tests.yaml
+  tools_tests:
+    uses: /.github/workflows/tools_tests.yaml
+  badges:
+    uses: /.github/workflows/badges.yaml
