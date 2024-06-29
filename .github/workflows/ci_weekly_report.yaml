@@ -7,6 +7,9 @@ on:
       ci_runs:
         default: 100
 
+env:
+  passing_tests: 0
+
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -30,27 +33,23 @@ jobs:
           echo "$mylist" >> $GITHUB_OUTPUT
       - run: |
           echo "Number of CI runs for report: ${{ inputs.ci_runs }}"
-  ci_run:
-    outputs:
-      passing: ${{ env.passing_runs }}
-    env:
-      passing_runs: 0
+  ci_matrix_run:
     needs: [ setup ]
-    runs-on: ubuntu-latest
+    uses: BBBmau/openpilot/.github/workflows/ci_weekly_run.yaml@master
     strategy:
       matrix:
         value: ${{fromJSON(needs.setup.outputs.ci_runs)}}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-      - uses: ./.github/workflows/ci_weekly_run
-      - name: results
-        if: ${{ success() }}
-        run: $passing_runs+=1
-  result:
-    runs-on: ubuntu-latest
-    needs: [ci_run ]
-    steps:
-      - run: echo "CI RESULT:\ ${{ needs.ci_run.outputs.passing }} / ${{ inputs.ci_runs }} PASSED"
+  results:
+      if: ${{ always() }}
+      runs-on: ubuntu-latest
+      name: Final Results
+      needs: [ci_matrix_run]
+      steps:
+        - run: |
+            result="${{ needs.ci_matrix_run.result }}"
+            if [[ $result == "success" || $result == "skipped" ]]; then
+              exit 0
+            else
+              exit 1
+            fi
 
