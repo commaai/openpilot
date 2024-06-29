@@ -42,7 +42,7 @@ jobs:
         value: ${{fromJSON(needs.setup.outputs.ci_runs)}}
     steps:
       - uses: actions/checkout@v4
-      - uses: BBBmau/openpilot/.github/workflows/ci_weekly_run.yaml@master
+      - uses: ./.github/workflows/ci_weekly_run
       - name: results
         if: ${{ success() }}
         run: $passing_runs+=1
