@@ -164,7 +164,6 @@ class CAR(Platforms):
       ToyotaCarDocs("Lexus UX Hybrid 2019-23"),
     ],
     CarSpecs(mass=3060. * CV.LB_TO_KG, wheelbase=2.67, steerRatio=13.9, tireStiffnessFactor=0.444),
-    dbc_dict('gwm_haval_h6_mk1', None),
   )
   TOYOTA_HIGHLANDER = PlatformConfig(
     [

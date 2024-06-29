@@ -1,9 +1,13 @@
 [submodule "panda"]
   path = panda
-  url = ../../commaai/panda.git
+  # url = ../../commaai/panda.git
+  url = https://github.com/alexandresato/panda.git
+  branch = port_gwm_haval_h6
 [submodule "opendbc"]
   path = opendbc
-  url = ../../commaai/opendbc.git
+  # url = ../../commaai/opendbc.git
+  url = https://github.com/alexandresato/opendbc.git
+  branch = port_gwm_haval_h6
 [submodule "msgq"]
   path = msgq_repo
   url = ../../commaai/msgq.git

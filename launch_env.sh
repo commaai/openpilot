@@ -10,4 +10,5 @@ if [ -z "$AGNOS_VERSION" ]; then
   export AGNOS_VERSION="10.1"
 fi
 
+export FINGERPRINT="TOYOTA_COROLLA_TSS2"
 export STAGING_ROOT="/data/safe_staging"
