@@ -1,0 +1,13 @@
+name: weekly CI test run
+on:
+  workflow_call:
+
+run:
+  docs:
+    uses: BBBmau/openpilot/.github/workflows/docs.yaml@master
+  selfdrive_tests:
+    uses: BBBmau/openpilot/.github/workflows/selfdrive_tests.yaml@master
+  tools_tests:
+    uses: BBBmau/openpilot/.github/workflows/tools_tests.yaml@master
+  badges:
+    uses: BBBmau/openpilot/.github/workflows/badges.yaml@master
