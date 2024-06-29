@@ -275,7 +275,7 @@ class CAR(Platforms):
     flags=HyundaiFlags.UNSUPPORTED_LONGITUDINAL | HyundaiFlags.TCU_GEARS,
   )
   HYUNDAI_SONATA_2024 = HyundaiCanFDPlatformConfig(
-    [HyundaiCarDocs("Hyundai Sonata 2024 (with HDA II)", "All", car_parts=CarParts.common([CarHarness.hyundai_a]))],
+    [HyundaiCarDocs("Hyundai Sonata 2024", "All", car_parts=CarParts.common([CarHarness.hyundai_a]))],
     CarSpecs(mass=1513, wheelbase=2.84, steerRatio=13.27 * 1.15, tireStiffnessFactor=0.65),  # 15% higher at the center seems reasonable
   )
   HYUNDAI_STARIA_4TH_GEN = HyundaiCanFDPlatformConfig(
