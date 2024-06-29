@@ -44,7 +44,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - uses: BBBmau/openpilot/.github/workflows/ci_weekly_run.yaml@master
       - name: results
         if: ${{ success() }}
         run: $passing_runs+=1
