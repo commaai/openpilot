@@ -53,6 +53,7 @@ def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._D
                    vipc_frame_id: int, vipc_frame_id_extra: int, frame_id: int, frame_drop: float,
                    timestamp_eof: int, model_execution_time: float, valid: bool) -> None:
   frame_age = frame_id - vipc_frame_id if frame_id > vipc_frame_id else 0
+  frame_drop_perc = frame_drop * 100
   extended_msg.valid = valid
   base_msg.valid = valid
 
@@ -60,6 +61,7 @@ def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._D
 
   driving_model_data.frameId = vipc_frame_id
   driving_model_data.frameIdExtra = vipc_frame_id_extra
+  driving_model_data.frameDropPerc = frame_drop_perc
 
   action = driving_model_data.action
   action.desiredCurvature = float(net_output_data['desired_curvature'][0,0])
@@ -68,7 +70,7 @@ def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._D
   modelV2.frameId = vipc_frame_id
   modelV2.frameIdExtra = vipc_frame_id_extra
   modelV2.frameAge = frame_age
-  modelV2.frameDropPerc = frame_drop * 100
+  modelV2.frameDropPerc = frame_drop_perc
   modelV2.timestampEof = timestamp_eof
   modelV2.modelExecutionTime = model_execution_time
 
