@@ -1,4 +1,4 @@
-name: weekly CI test report
+name: weekly CI test run
 on:
   workflow_call:
 
