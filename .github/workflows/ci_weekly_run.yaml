@@ -4,10 +4,10 @@ on:
 
 jobs:
   docs:
-    uses: ./.github/workflows/docs.yaml
+    uses: commaai/openpilot/.github/workflows/docs.yaml@master
   selfdrive_tests:
-    uses: ./.github/workflows/selfdrive_tests.yaml
+    uses: commaai/openpilot/.github/workflows/selfdrive_tests.yaml@master
   tools_tests:
-    uses: ./.github/workflows/tools_tests.yaml
+    uses: commaai/openpilot/.github/workflows/tools_tests.yaml@master
   badges:
-    uses: ./.github/workflows/badges.yaml
+    uses: commaai/openpilot/.github/workflows/badges.yaml@master
