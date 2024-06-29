@@ -173,6 +173,12 @@ class CarInterface(CarInterfaceBase):
           # while in standstill, send a user alert
           events.add(EventName.manualRestart)
 
+    # TODO clean-after-port
+    if ret.brakePressed:
+      events.add(EventName.reverseGear)
+    if ret.seatbeltUnlatched:
+      events.add(EventName.seatbeltNotLatched)
+
     ret.events = events.to_msg()
 
     return ret

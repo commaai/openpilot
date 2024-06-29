@@ -57,27 +57,30 @@ class CarState(CarStateBase):
     # ret.doorOpen = any([cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_FL"], cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_FR"],
     #                     cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_RL"], cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_RR"]])
     # ret.seatbeltUnlatched = cp.vl["BODY_CONTROL_STATE"]["SEATBELT_DRIVER_UNLATCHED"] != 0
+    # ret.seatbeltUnlatched = cp.vl["SEATBELT"]["SEAT_BELT_DRIVER_STATE"] != 0
     # ret.parkingBrake = cp.vl["BODY_CONTROL_STATE"]["PARKING_BRAKE"] == 1
 
+    ret.brakePressed = cp.vl["BRAKE"]["BRAKE_PRESSURE"] > 255
     # ret.brakePressed = cp.vl["BRAKE_MODULE"]["BRAKE_PRESSED"] != 0
     # ret.brakeHoldActive = cp.vl["ESP_CONTROL"]["BRAKE_HOLD_ACTIVE"] == 1
 
-    # ret.gasPressed = cp.vl["PCM_CRUISE"]["GAS_RELEASED"] == 0
+    ret.gasPressed = False #cp.vl["PCM_CRUISE"]["GAS_RELEASED"] == 0
 
+    ret.wheelSpeeds = self.get_wheel_speeds(10,10,10,10,unit=1.0)
     # ret.wheelSpeeds = self.get_wheel_speeds(
     #   cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FL"],
     #   cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FR"],
     #   cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_RL"],
     #   cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_RR"],
     # )
-    # ret.vEgoRaw = mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr])
-    # ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
+    ret.vEgoRaw = mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr])
+    ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     # ret.vEgoCluster = ret.vEgo * 1.015  # minimum of all the cars
 
-    # ret.standstill = abs(ret.vEgoRaw) < 1e-3
+    ret.standstill = abs(ret.vEgoRaw) < 1e-3
 
-    # ret.steeringAngleDeg = cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"] + cp.vl["STEER_ANGLE_SENSOR"]["STEER_FRACTION"]
-    # ret.steeringRateDeg = cp.vl["STEER_ANGLE_SENSOR"]["STEER_RATE"]
+    ret.steeringAngleDeg = 0 #cp.vl["STEER_ANGLE_SENSOR"]["STEER_ANGLE"] + cp.vl["STEER_ANGLE_SENSOR"]["STEER_FRACTION"]
+    ret.steeringRateDeg = 0 #cp.vl["STEER_ANGLE_SENSOR"]["STEER_RATE"]
     # torque_sensor_angle_deg = cp.vl["STEER_TORQUE_SENSOR"]["STEER_ANGLE"]
 
     # # On some cars, the angle measurement is non-zero while initializing
@@ -96,8 +99,8 @@ class CarState(CarStateBase):
     # can_gear = int(cp.vl["GEAR_PACKET"]["GEAR"])
     # ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(can_gear, None))
     ret.gearShifter = GearShifter.drive  # TODO
-    # ret.leftBlinker = cp.vl["BLINKERS_STATE"]["TURN_SIGNALS"] == 1
-    # ret.rightBlinker = cp.vl["BLINKERS_STATE"]["TURN_SIGNALS"] == 2
+    ret.leftBlinker = False #cp.vl["BLINKERS_STATE"]["TURN_SIGNALS"] == 1
+    ret.rightBlinker = False #cp.vl["BLINKERS_STATE"]["TURN_SIGNALS"] == 2
 
     # if self.CP.carFingerprint != CAR.TOYOTA_MIRAI:
     #   ret.engineRpm = cp.vl["ENGINE_RPM"]["RPM"]
@@ -184,10 +187,11 @@ class CarState(CarStateBase):
       # ("LIGHT_STALK", 1),
       # ("BLINKERS_STATE", 0.15),
       # ("BODY_CONTROL_STATE", 3),
-      # ("BODY_CONTROL_STATE_2", 2),
+      # ("SEATBELT", 2),
       # ("ESP_CONTROL", 3),
       # ("EPS_STATUS", 25),
       # ("BRAKE_MODULE", 40),
+      ("BRAKE", 40),
       # ("WHEEL_SPEEDS", 80),
       # ("STEER_ANGLE_SENSOR", 80),
       # ("PCM_CRUISE", 33),
