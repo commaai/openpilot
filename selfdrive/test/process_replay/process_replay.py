@@ -565,7 +565,7 @@ CONFIGS = [
   ProcessConfig(
     proc_name="modeld",
     pubs=["deviceState", "roadCameraState", "wideRoadCameraState", "liveCalibration", "driverMonitoringState"],
-    subs=["modelV2", "cameraOdometry"],
+    subs=["modelV2", "drivingModelData", "cameraOdometry"],
     ignore=["logMonoTime", "modelV2.frameDropPerc", "modelV2.modelExecutionTime"],
     should_recv_callback=ModeldCameraSyncRcvCallback(),
     tolerance=NUMPY_TOLERANCE,
