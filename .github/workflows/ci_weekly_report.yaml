@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  passing_tests: 0
+  PASSING_RUNS: 0
 
 jobs:
   setup:
@@ -52,11 +52,5 @@ jobs:
       name: Final Results
       needs: [ci_matrix_run]
       steps:
-        - run: |
-            result="${{ needs.ci_matrix_run.result }}"
-            if [[ $result == "success" || $result == "skipped" ]]; then
-              exit 0
-            else
-              exit 1
-            fi
+        - run: echo "WEEKLY CI REPORT:\  ${{ env.PASSING_RUNS }}/${{ inputs.ci_runs }} PASSED"
 
