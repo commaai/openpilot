@@ -308,7 +308,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
           submodules: true
       - uses: ./.github/workflows/setup-with-retry
       - name: Build openpilot
