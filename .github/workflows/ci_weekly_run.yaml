@@ -11,8 +11,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  test:
-    run: echo ${{ inputs.run_number }}
+  value_print:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Print the ci_run value to STDOUT
+        run: echo The ci_run value is ${{ inputs.run_number }}
   docs:
     uses: BBBmau/openpilot/.github/workflows/docs.yaml@master
   selfdrive_tests:
