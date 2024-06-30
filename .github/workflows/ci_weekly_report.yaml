@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   setup:
-    if: github.repository == 'BBBmau/openpilot'
+    if: github.repository == 'commaai/openpilot'
     runs-on: ubuntu-latest
     outputs:
       ci_runs: ${{ steps.ci_runs_setup.outputs.value }}
@@ -41,7 +41,7 @@ jobs:
       fail-fast: false
       matrix:
         value: ${{fromJSON(needs.setup.outputs.ci_runs)}}
-    uses: BBBmau/openpilot/.github/workflows/ci_weekly_run.yaml@master
+    uses: commaai/openpilot/.github/workflows/ci_weekly_run.yaml@master
     with:
       run_number: ${{ matrix.value }}
 
@@ -57,7 +57,7 @@ jobs:
           script: |
             const jobs = await github
               .paginate("GET /repos/{owner}/{repo}/actions/runs/{run_id}/attempts/{attempt}/jobs", {
-                owner: "BBBmau",
+                owner: "commaai",
                 repo: "${{ github.event.repository.name }}",
                 run_id: "${{ github.run_id }}",
                 attempt: "${{ github.run_attempt }}",
