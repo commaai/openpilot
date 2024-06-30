@@ -6,6 +6,7 @@ on:
     inputs:
       ci_runs:
         default: '100'
+        description: 'The amount of runs to trigger in CI test report'
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
