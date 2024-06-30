@@ -66,13 +66,13 @@ class CarState(CarStateBase):
 
     ret.gasPressed = False #cp.vl["PCM_CRUISE"]["GAS_RELEASED"] == 0
 
-    ret.wheelSpeeds = self.get_wheel_speeds(10,10,10,10,unit=1.0)
-    # ret.wheelSpeeds = self.get_wheel_speeds(
-    #   cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FL"],
-    #   cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_FR"],
-    #   cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_RL"],
-    #   cp.vl["WHEEL_SPEEDS"]["WHEEL_SPEED_RR"],
-    # )
+    # ret.wheelSpeeds = self.get_wheel_speeds(10,10,10,10,unit=1.0)
+    ret.wheelSpeeds = self.get_wheel_speeds(
+      cp.vl["WHEEL_SPEEDS"]["FRONT_LEFT_WHEEL_SPEED"],
+      cp.vl["WHEEL_SPEEDS"]["FRONT_RIGHT_WHEEL_SPEED"],
+      cp.vl["WHEEL_SPEEDS"]["REAR_LEFT_WHEEL_SPEED"],
+      cp.vl["WHEEL_SPEEDS"]["REAR_RIGHT_WHEEL_SPEED"],
+    )
     ret.vEgoRaw = mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr])
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     # ret.vEgoCluster = ret.vEgo * 1.015  # minimum of all the cars
@@ -191,7 +191,8 @@ class CarState(CarStateBase):
       # ("ESP_CONTROL", 3),
       # ("EPS_STATUS", 25),
       # ("BRAKE_MODULE", 40),
-      ("BRAKE", 40),
+      ("BRAKE", 50),
+      ("WHEEL_SPEEDS", 50),
       # ("WHEEL_SPEEDS", 80),
       # ("STEER_ANGLE_SENSOR", 80),
       # ("PCM_CRUISE", 33),
