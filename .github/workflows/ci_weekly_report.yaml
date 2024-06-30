@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       ci_runs:
-        default: 100
+        default: '100'
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true

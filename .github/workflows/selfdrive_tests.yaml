@@ -325,5 +325,5 @@ jobs:
       - name: Upload Test Report
         uses: actions/upload-artifact@v4
         with:
-          name: report
-          path: selfdrive/ui/tests/test_ui/report
+          name: report-${{ inputs.run_number }}
+          path: selfdrive/ui/tests/test_ui/report_${{ inputs.run_number }}
