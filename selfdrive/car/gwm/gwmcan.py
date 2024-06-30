@@ -17,17 +17,6 @@ def gwm_crc(message):
     output_int = crc8(message)
     return output_int
 
-# crc = Crc8Base
-# def GwmCrc(message):
-#   crc._poly = 0x1D
-#   crc._reflect_input = False
-#   crc._reflect_output = False
-#   crc._initvalue = 0x0
-#   crc._xor_output = 0x2D
-#   output_int = crc.calc(message)
-#   return output_int
-
-
 class GwmCan(CanBusBase):
   def __init__(self, CP=None, fingerprint=None) -> None:
     # use fingerprint if specified
