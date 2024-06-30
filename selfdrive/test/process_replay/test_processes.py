@@ -39,7 +39,6 @@ source_segments = [
   # Enable when port is tested and dashcamOnly is no longer set
   #("TESLA", "bb50caf5f0945ab1|2021-06-19--17-20-18--3"),      # TESLA.TESLA_AP2_MODELS
   #("VOLKSWAGEN2", "3cfdec54aa035f3f|2022-07-19--23-45-10--2"),  # VOLKSWAGEN.VOLKSWAGEN_PASSAT_NMS
-  #("VOLKSWAGEN3", "578742b26807f756/00000010--41ee3e5bec--3"),  # VOLKSWAGEN.VOLKSWAGEN_JETTA_SPORTWAGEN
 ]
 
 segments = [
