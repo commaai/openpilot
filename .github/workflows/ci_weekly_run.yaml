@@ -11,6 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  test:
+    run: echo ${{ inputs.run_number }}
   docs:
     uses: BBBmau/openpilot/.github/workflows/docs.yaml@master
   selfdrive_tests:
