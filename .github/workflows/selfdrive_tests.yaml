@@ -336,7 +336,7 @@ jobs:
         if: ${{ github.event_name == 'pull_request' && steps.ui_changed.outputs.ui_changed == 'true'}}
         uses: actions/checkout@v4
         with:
-          repository: commaai/ci-artifacts
+          repository: signed-long/ci-artifacts
           ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
           path: ${{ github.workspace }}/ci-artifacts
           ref: master
@@ -363,16 +363,16 @@ jobs:
             ## UI Screenshots
             <table>
               <tr>
-                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/pr-${{ github.event.pull_request.number }}/openpilot/pr-${{ github.event.pull_request.number }}/homescreen.png"></td>
-                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/pr-${{ github.event.pull_request.number }}/openpilot/pr-${{ github.event.pull_request.number }}/onroad.png"></td>
+                <td><img src="https://raw.githubusercontent.com/signed-long/ci-artifacts/pr-${{ github.event.pull_request.number }}/openpilot/pr-${{ github.event.pull_request.number }}/homescreen.png"></td>
+                <td><img src="https://raw.githubusercontent.com/signed-long/ci-artifacts/pr-${{ github.event.pull_request.number }}/openpilot/pr-${{ github.event.pull_request.number }}/onroad.png"></td>
               </tr>
               <tr>
-                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/pr-${{ github.event.pull_request.number }}/openpilot/pr-${{ github.event.pull_request.number }}/onroad_map.png"></td>
-                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/pr-${{ github.event.pull_request.number }}/openpilot/pr-${{ github.event.pull_request.number }}/onroad_sidebar.png"></td>
+                <td><img src="https://raw.githubusercontent.com/signed-long/ci-artifacts/pr-${{ github.event.pull_request.number }}/openpilot/pr-${{ github.event.pull_request.number }}/onroad_map.png"></td>
+                <td><img src="https://raw.githubusercontent.com/signed-long/ci-artifacts/pr-${{ github.event.pull_request.number }}/openpilot/pr-${{ github.event.pull_request.number }}/onroad_sidebar.png"></td>
               </tr>
               <tr>
-                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/pr-${{ github.event.pull_request.number }}/openpilot/pr-${{ github.event.pull_request.number }}/settings_network.png"></td>
-                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/pr-${{ github.event.pull_request.number }}/openpilot/pr-${{ github.event.pull_request.number }}/settings_device.png"></td>
+                <td><img src="https://raw.githubusercontent.com/signed-long/ci-artifacts/pr-${{ github.event.pull_request.number }}/openpilot/pr-${{ github.event.pull_request.number }}/settings_network.png"></td>
+                <td><img src="https://raw.githubusercontent.com/signed-long/ci-artifacts/pr-${{ github.event.pull_request.number }}/openpilot/pr-${{ github.event.pull_request.number }}/settings_device.png"></td>
               </tr>
             </table>
           comment_tag: run_id_screenshots
