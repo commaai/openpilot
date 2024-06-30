@@ -6,6 +6,9 @@ on:
     inputs:
       ci_runs:
         default: 100
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }} # <-- 1. will be reserved as "Build app-..."
+  cancel-in-progress: true
 
 env:
   passing_tests: 0
