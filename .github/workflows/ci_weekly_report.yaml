@@ -11,11 +11,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-env:
-  PASSING_RUNS: 0
-
 jobs:
   setup:
+    if: github.repository == 'BBBmau/openpilot'
     runs-on: ubuntu-latest
     outputs:
       ci_runs: ${{ steps.ci_runs_setup.outputs.value }}

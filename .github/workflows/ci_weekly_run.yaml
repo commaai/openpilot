@@ -11,12 +11,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  value_print:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Print the ci_run value to STDOUT
-        run: echo The ci_run value is ${{ inputs.run_number }}
   docs:
     uses: BBBmau/openpilot/.github/workflows/docs.yaml@master
     with:
@@ -27,9 +21,5 @@ jobs:
       run_number: ${{ inputs.run_number }}
   tools_tests:
     uses: BBBmau/openpilot/.github/workflows/tools_tests.yaml@master
-    with:
-      run_number: ${{ inputs.run_number }}
-  badges:
-    uses: BBBmau/openpilot/.github/workflows/badges.yaml@master
     with:
       run_number: ${{ inputs.run_number }}

@@ -9,6 +9,7 @@ on:
   workflow_call:
     inputs:
       run_number:
+        default: '1'
         required: true
         type: string
 
