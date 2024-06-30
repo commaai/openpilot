@@ -35,7 +35,8 @@ jobs:
       run_number: ${{ inputs.run_number }}
   passing_check:
     check:
-    needs: [ docs, selfdrive_tests, tools_tests, badges]
-    if: contains(join(needs.*.result, ','), 'success')
-    steps:
-      - run: echo "PASSING_RUNS=$((${{ env.PASSING_RUNS }}+1))" >> $GITHUB_ENV
+      runs-on: ubuntu-latest
+      needs: [ docs, selfdrive_tests, tools_tests, badges]
+      if: contains(join(needs.*.result, ','), 'success')
+      steps:
+        - run: echo "PASSING_RUNS=$((${{ env.PASSING_RUNS }}+1))" >> $GITHUB_ENV
