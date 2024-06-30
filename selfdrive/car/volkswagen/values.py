@@ -295,8 +295,9 @@ class CAR(Platforms):
     wmis={WMI.VOLKSWAGEN_USA_CAR},
   )
   VOLKSWAGEN_JETTA_MK6 = VolkswagenPQPlatformConfig(
+    [VWCarDocs("Volkswagen Jetta 2015-2018")],
     [VWCarDocs("Volkswagen Jetta Sportwagen TDI 2011-2014")],
-    VolkswagenCarSpecs(mass=1518, wheelbase=2.62, minSteerSpeed=50 * CV.KPH_TO_MS, minEnableSpeed=20 * CV.KPH_TO_MS),
+    VolkswagenCarSpecs(mass=1518, wheelbase=2.65, minSteerSpeed=50 * CV.KPH_TO_MS, minEnableSpeed=20 * CV.KPH_TO_MS),
     chassis_codes={"5K", "AJ"},
     wmis={WMI.VOLKSWAGEN_MEXICO_CAR},
   )
