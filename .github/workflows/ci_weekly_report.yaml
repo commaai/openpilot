@@ -38,9 +38,9 @@ jobs:
   ci_matrix_run:
     needs: [ setup ]
     strategy:
+      fail-fast: false
       matrix:
         value: ${{fromJSON(needs.setup.outputs.ci_runs)}}
-        fail-fast: false
     uses: BBBmau/openpilot/.github/workflows/ci_weekly_run.yaml@master
     with:
       run_number: ${{ matrix.value }}
