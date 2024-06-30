@@ -334,7 +334,7 @@ jobs:
             echo "ui_changed=false" >> $GITHUB_OUTPUT
           fi
       - name: Checkout ci-artifacts
-        if: ${{ github.event_name == 'pull_request' && steps.ui_changed.outputs.ui_changed }}
+        if: ${{ github.event_name == 'pull_request' && steps.ui_changed.outputs.ui_changed == 'true'}}
         uses: actions/checkout@v4
         with:
           repository: signed-long/ci-artifacts
@@ -342,7 +342,7 @@ jobs:
           path: ${{ github.workspace }}/ci-artifacts
           ref: master
       - name: Push Screenshots
-        if: ${{ github.event_name == 'pull_request' && steps.ui_changed.outputs.ui_changed }}
+        if: ${{ github.event_name == 'pull_request' && steps.ui_changed.outputs.ui_changed == 'true'}}
         working-directory: ${{ github.workspace }}/ci-artifacts
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
@@ -356,7 +356,7 @@ jobs:
           git commit -m "screenshots for PR #$PR_NUMBER"
           git push origin pr-$PR_NUMBER --force
       - name: Comment Screenshots on PR
-        if: ${{ github.event_name == 'pull_request' && steps.ui_changed.outputs.ui_changed }}
+        if: ${{ github.event_name == 'pull_request' && steps.ui_changed.outputs.ui_changed == 'true'}}
         uses: thollander/actions-comment-pull-request@v2
         with:
           message: |
