@@ -308,6 +308,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 2
           submodules: true
       - uses: ./.github/workflows/setup-with-retry
       - name: Build openpilot
@@ -322,3 +323,58 @@ jobs:
         with:
           name: report
           path: selfdrive/ui/tests/test_ui/report
+      - name: Check if ui changed
+        if: ${{ github.event_name == 'pull_request' }}
+        id: ui_changed
+        run: |
+          diff=$(git diff --name-only -r HEAD^1 HEAD)
+          if echo $diff | grep -q selfdrive/ui; then
+            echo "ui_changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "ui_changed=false" >> $GITHUB_OUTPUT
+          fi
+      - name: Checkout ci-artifacts
+        if: ${{ github.event_name == 'pull_request' && steps.ui_changed.outputs.ui_changed }}
+        uses: actions/checkout@v4
+        with:
+          repository: signed-long/ci-artifacts
+          ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
+          path: ${{ github.workspace }}/ci-artifacts
+          ref: master
+      - name: Push Screenshots
+        if: ${{ github.event_name == 'pull_request' && steps.ui_changed.outputs.ui_changed }}
+        working-directory: ${{ github.workspace }}/ci-artifacts
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          git checkout -b pr-$PR_NUMBER
+          git config user.name "GitHub Actions Bot"
+          git config user.email "<>"
+          mkdir -p openpilot/pr-$PR_NUMBER
+          sudo mv ${{ github.workspace }}/selfdrive/ui/tests/test_ui/report/screenshots/* openpilot/pr-$PR_NUMBER/
+          git add openpilot
+          git commit -m "screenshots for PR #$PR_NUMBER"
+          git push origin pr-$PR_NUMBER --force
+      - name: Comment Screenshots on PR
+        if: ${{ github.event_name == 'pull_request' && steps.ui_changed.outputs.ui_changed }}
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            <!-- _(run_id_screenshots **${{ github.run_id }}**)_ -->
+            <table>
+              <tr>
+                <td><img src="https://raw.githubusercontent.com/signed-long/ci-artifacts/pr-${{ github.event.pull_request.number }}/openpilot/pr-${{ github.event.pull_request.number }}/homescreen.png"></td>
+                <td><img src="https://raw.githubusercontent.com/signed-long/ci-artifacts/pr-${{ github.event.pull_request.number }}/openpilot/pr-${{ github.event.pull_request.number }}/onroad.png"></td>
+              </tr>
+              <tr>
+                <td><img src="https://raw.githubusercontent.com/signed-long/ci-artifacts/pr-${{ github.event.pull_request.number }}/openpilot/pr-${{ github.event.pull_request.number }}/onroad_map.png"></td>
+                <td><img src="https://raw.githubusercontent.com/signed-long/ci-artifacts/pr-${{ github.event.pull_request.number }}/openpilot/pr-${{ github.event.pull_request.number }}/onroad_sidebar.png"></td>
+              </tr>
+              <tr>
+                <td><img src="https://raw.githubusercontent.com/signed-long/ci-artifacts/pr-${{ github.event.pull_request.number }}/openpilot/pr-${{ github.event.pull_request.number }}/settings_network.png"></td>
+                <td><img src="https://raw.githubusercontent.com/signed-long/ci-artifacts/pr-${{ github.event.pull_request.number }}/openpilot/pr-${{ github.event.pull_request.number }}/settings_device.png"></td>
+              </tr>
+            </table>
+          comment_tag: run_id_screenshots
+          pr_number: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
