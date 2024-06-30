@@ -64,7 +64,7 @@ jobs:
               })
             var report = {}
             jobs.slice(1, jobs.length-1).forEach(job => {
-              const jobName = job.name.split('/')[1].trim();
+              const jobName = job.name.split('/')[2].trim();
               report[jobName] = report[jobName] || { successes: [], failures: [], cancelled: [] };
               switch (job.conclusion) {
                 case "success":
