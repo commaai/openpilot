@@ -1,13 +1,34 @@
 name: weekly CI test run
 on:
   workflow_call:
+    inputs:
+      run_number:
+        required: true
+        type: string
+
+concurrency:
+  group: ci-run-${{ inputs.run_number }}-${{ github.ref }}
 
 jobs:
+  value_print:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Print the ci_run value to STDOUT
+        run: echo The ci_run value is ${{ inputs.run_number }}
   docs:
-    uses: commaai/openpilot/.github/workflows/docs.yaml@master
+    uses: BBBmau/openpilot/.github/workflows/docs.yaml@master
+    with:
+      run_number: ${{ inputs.run_number }}
   selfdrive_tests:
-    uses: commaai/openpilot/.github/workflows/selfdrive_tests.yaml@master
+    uses: BBBmau/openpilot/.github/workflows/selfdrive_tests.yaml@master
+    with:
+      run_number: ${{ inputs.run_number }}
   tools_tests:
-    uses: commaai/openpilot/.github/workflows/tools_tests.yaml@master
+    uses: BBBmau/openpilot/.github/workflows/tools_tests.yaml@master
+    with:
+      run_number: ${{ inputs.run_number }}
   badges:
-    uses: commaai/openpilot/.github/workflows/badges.yaml@master
+    uses: BBBmau/openpilot/.github/workflows/badges.yaml@master
+    with:
+      run_number: ${{ inputs.run_number }}
