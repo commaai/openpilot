@@ -8,6 +8,7 @@ on:
         default: 100
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   passing_tests: 0

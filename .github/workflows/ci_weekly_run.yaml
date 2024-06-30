@@ -8,6 +8,7 @@ on:
 
 concurrency:
   group: ci-run-${{ inputs.run_number }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   value_print:
