@@ -38,10 +38,13 @@ jobs:
           echo "Number of CI runs for report: ${{ inputs.ci_runs }}"
   ci_matrix_run:
     needs: [ setup ]
-    uses: BBBmau/openpilot/.github/workflows/ci_weekly_run.yaml@master
     strategy:
       matrix:
         value: ${{fromJSON(needs.setup.outputs.ci_runs)}}
+    uses: BBBmau/openpilot/.github/workflows/ci_weekly_run.yaml@master
+    with:
+      run_number: ${{ matrix.value }}
+
   results:
       if: ${{ always() }}
       runs-on: ubuntu-latest
