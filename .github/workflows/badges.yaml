@@ -5,9 +5,9 @@ on:
   workflow_dispatch:
   workflow_call:
     inputs:
-    run_number:
-      required: true
-      type: string
+      run_number:
+        required: true
+        type: string
 env:
   BASE_IMAGE: openpilot-base
   DOCKER_REGISTRY: ghcr.io/commaai
