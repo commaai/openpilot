@@ -2,6 +2,10 @@ name: weekly CI test run
 on:
   workflow_call:
 
+concurrency:
+  group: ci-run-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   docs:
     uses: BBBmau/openpilot/.github/workflows/docs.yaml@master

@@ -7,7 +7,7 @@ on:
       ci_runs:
         default: 100
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }} # <-- 1. will be reserved as "Build app-..."
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
