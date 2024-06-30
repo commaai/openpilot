@@ -8,7 +8,6 @@ on:
         default: 100
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 env:
   passing_tests: 0
@@ -41,6 +40,7 @@ jobs:
     strategy:
       matrix:
         value: ${{fromJSON(needs.setup.outputs.ci_runs)}}
+        fail-fast: false
     uses: BBBmau/openpilot/.github/workflows/ci_weekly_run.yaml@master
     with:
       run_number: ${{ matrix.value }}
