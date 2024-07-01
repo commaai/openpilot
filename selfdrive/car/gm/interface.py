@@ -2,7 +2,7 @@
 import os
 import json
 from cereal import car
-from math import fabs, exp
+from math import exp
 from panda import Panda
 
 from openpilot.common.basedir import BASEDIR
@@ -67,7 +67,7 @@ class CarInterface(CarInterfaceBase):
     return float(self.neural_ff_model.predict(inputs)) + friction
 
   def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
-    with open(NEURAL_PARAMS_PATH, 'r') as f:
+    with open(NEURAL_PARAMS_PATH) as f:
       neural_ff_cars = json.load(f).keys()
     if self.CP.carFingerprint in neural_ff_cars:
       self.neural_ff_model = NanoFFModel(NEURAL_PARAMS_PATH, self.CP.carFingerprint)
