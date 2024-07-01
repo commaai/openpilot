@@ -341,14 +341,14 @@ jobs:
         if: ${{ github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true' }}
         working-directory: ${{ github.workspace }}/ci-artifacts
         run: |
-          git checkout -b pr-${{ github.event.pull_request.number }}
+          git checkout -b openpilot/pr-${{ github.event.pull_request.number }}
           git config user.name "GitHub Actions Bot"
           git config user.email "<>"
           mkdir -p openpilot/pr-${{ github.event.pull_request.number }}
           sudo mv ${{ github.workspace }}/selfdrive/ui/tests/test_ui/report/screenshots/* openpilot/pr-${{ github.event.pull_request.number }}/
           git add openpilot
           git commit -m "screenshots for PR #${{ github.event.pull_request.number }}"
-          git push origin pr-${{ github.event.pull_request.number }} --force
+          git push origin openpilot/pr-${{ github.event.pull_request.number }} --force
       - name: Comment Screenshots on PR
         if: ${{ github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true' }}
         uses: thollander/actions-comment-pull-request@v2
