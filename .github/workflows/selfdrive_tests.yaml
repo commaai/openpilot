@@ -323,6 +323,7 @@ jobs:
           name: report
           path: selfdrive/ui/tests/test_ui/report
       - name: Get changes to selfdrive/ui
+        if: ${{ github.event_name == 'pull_request' }}
         id: changed-files
         uses: tj-actions/changed-files@v44
         with:
@@ -339,17 +340,15 @@ jobs:
       - name: Push Screenshots
         if: ${{ github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true' }}
         working-directory: ${{ github.workspace }}/ci-artifacts
-        env:
-          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          git checkout -b pr-$PR_NUMBER
+          git checkout -b pr-${{ github.event.pull_request.number }}
           git config user.name "GitHub Actions Bot"
           git config user.email "<>"
-          mkdir -p openpilot/pr-$PR_NUMBER
-          sudo mv ${{ github.workspace }}/selfdrive/ui/tests/test_ui/report/screenshots/* openpilot/pr-$PR_NUMBER/
+          mkdir -p openpilot/pr-${{ github.event.pull_request.number }}
+          sudo mv ${{ github.workspace }}/selfdrive/ui/tests/test_ui/report/screenshots/* openpilot/pr-${{ github.event.pull_request.number }}/
           git add openpilot
-          git commit -m "screenshots for PR #$PR_NUMBER"
-          git push origin pr-$PR_NUMBER --force
+          git commit -m "screenshots for PR #${{ github.event.pull_request.number }}"
+          git push origin pr-${{ github.event.pull_request.number }} --force
       - name: Comment Screenshots on PR
         if: ${{ github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true' }}
         uses: thollander/actions-comment-pull-request@v2
