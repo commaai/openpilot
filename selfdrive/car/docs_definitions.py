@@ -91,8 +91,8 @@ class CarHarness(EnumBase):
   subaru_d = BaseCarHarness("Subaru D connector")
   fca = BaseCarHarness("FCA connector")
   ram = BaseCarHarness("Ram connector")
-  vw = BaseCarHarness("VW connector")
-  j533 = BaseCarHarness("J533 connector", parts=[Accessory.harness_box, Cable.long_obdc_cable, Cable.usbc_coupler])
+  vw_a = BaseCarHarness("VW A connector")
+  vw_j533 = BaseCarHarness("VW J533 connector", parts=[Accessory.harness_box, Cable.long_obdc_cable, Cable.usbc_coupler])
   hyundai_a = BaseCarHarness("Hyundai A connector")
   hyundai_b = BaseCarHarness("Hyundai B connector")
   hyundai_c = BaseCarHarness("Hyundai C connector")
@@ -275,7 +275,7 @@ class CarDocs:
       self.min_enable_speed = CP.minEnableSpeed
 
     if self.auto_resume is None:
-      self.auto_resume = CP.autoResumeSng
+      self.auto_resume = CP.autoResumeSng and self.min_enable_speed <= 0
 
     # hardware column
     hardware_col = "None"

@@ -1,17 +1,15 @@
-#!/usr/bin/env python3
 import glob
 import os
 import time
-import unittest
 
 import cereal.messaging as messaging
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog, ipchandler
 
 
-class TestLogmessaged(unittest.TestCase):
-  def setUp(self):
+class TestLogmessaged:
+  def setup_method(self):
     # clear the IPC buffer in case some other tests used cloudlog and filled it
     ipchandler.close()
     ipchandler.connect()
@@ -25,7 +23,7 @@ class TestLogmessaged(unittest.TestCase):
     messaging.drain_sock(self.sock)
     messaging.drain_sock(self.error_sock)
 
-  def tearDown(self):
+  def teardown_method(self):
     del self.sock
     del self.error_sock
     managed_processes['logmessaged'].stop(block=True)
@@ -55,6 +53,3 @@ class TestLogmessaged(unittest.TestCase):
     logsize = sum([os.path.getsize(f) for f in self._get_log_files()])
     assert (n*len(msg)) < logsize < (n*(len(msg)+1024))
 
-
-if __name__ == "__main__":
-  unittest.main()

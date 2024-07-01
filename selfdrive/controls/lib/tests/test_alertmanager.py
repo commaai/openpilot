@@ -1,12 +1,10 @@
-#!/usr/bin/env python3
 import random
-import unittest
 
 from openpilot.selfdrive.controls.lib.events import Alert, EVENTS
 from openpilot.selfdrive.controls.lib.alertmanager import AlertManager
 
 
-class TestAlertManager(unittest.TestCase):
+class TestAlertManager:
 
   def test_duration(self):
     """
@@ -38,8 +36,4 @@ class TestAlertManager(unittest.TestCase):
 
           shown = current_alert is not None
           should_show = frame <= show_duration
-          self.assertEqual(shown, should_show, msg=f"{frame=} {add_duration=} {duration=}")
-
-
-if __name__ == "__main__":
-  unittest.main()
+          assert shown == should_show, f"{frame=} {add_duration=} {duration=}"

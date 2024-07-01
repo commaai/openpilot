@@ -3,7 +3,7 @@ import os
 import pyopencl as cl
 import pyopencl.array as cl_array
 
-from cereal.visionipc import VisionIpcServer, VisionStreamType
+from msgq.visionipc import VisionIpcServer, VisionStreamType
 from cereal import messaging
 
 from openpilot.common.basedir import BASEDIR

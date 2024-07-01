@@ -1,6 +1,5 @@
 #include "tools/cabana/streamselector.h"
 
-#include <QDialogButtonBox>
 #include <QFileDialog>
 #include <QLabel>
 #include <QPushButton>
@@ -31,7 +30,7 @@ StreamSelector::StreamSelector(AbstractStream **stream, QWidget *parent) : QDial
   line->setFrameStyle(QFrame::HLine | QFrame::Sunken);
   layout->addWidget(line);
 
-  auto btn_box = new QDialogButtonBox(QDialogButtonBox::Open | QDialogButtonBox::Cancel);
+  btn_box = new QDialogButtonBox(QDialogButtonBox::Open | QDialogButtonBox::Cancel);
   layout->addWidget(btn_box);
 
   addStreamWidget(ReplayStream::widget(stream));
@@ -60,4 +59,6 @@ StreamSelector::StreamSelector(AbstractStream **stream, QWidget *parent) : QDial
 
 void StreamSelector::addStreamWidget(AbstractOpenStreamWidget *w) {
   tab->addTab(w, w->title());
+  auto open_btn = btn_box->button(QDialogButtonBox::Open);
+  QObject::connect(w, &AbstractOpenStreamWidget::enableOpenButton, open_btn, &QPushButton::setEnabled);
 }

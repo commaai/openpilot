@@ -7,7 +7,7 @@
 #include <QFormLayout>
 
 #include "tools/cabana/streams/livestream.h"
-#include "selfdrive/boardd/panda.h"
+#include "selfdrive/pandad/panda.h"
 
 const uint32_t speeds[] = {10U, 20U, 50U, 100U, 125U, 250U, 500U, 1000U};
 const uint32_t data_speeds[] = {10U, 20U, 50U, 100U, 125U, 250U, 500U, 1000U, 2000U, 5000U};
@@ -21,13 +21,14 @@ class PandaStream : public LiveStream {
   Q_OBJECT
 public:
   PandaStream(QObject *parent, PandaStreamConfig config_ = {});
-  bool connect();
+  ~PandaStream() { stop(); }
   static AbstractOpenStreamWidget *widget(AbstractStream **stream);
   inline QString routeName() const override {
-    return QString("Live Streaming From Panda %1").arg(config.serial);
+    return QString("Panda: %1").arg(config.serial);
   }
 
 protected:
+  bool connect();
   void streamThread() override;
 
   std::unique_ptr<Panda> panda;

@@ -1,0 +1,18 @@
+site_name: openpilot docs
+docs_dir: docs
+repo_url: https://github.com/commaai/openpilot/
+
+theme:
+  name: terminal
+  features:
+    - navigation.side.toc.hide
+
+nav:
+  - Getting Started:
+    - What is openpilot?: getting-started/what-is-openpilot.md
+  - How-to:
+    - Turn the speed blue: how-to/turning-the-speed-blue.md
+  - Car Porting:
+    - What is a car port?: car-porting/what-is-a-car-port.md
+    - Porting a car brand: car-porting/brand-port.md
+    - Porting a car model: car-porting/model-port.md

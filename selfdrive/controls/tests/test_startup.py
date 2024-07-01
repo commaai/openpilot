@@ -4,12 +4,12 @@ from parameterized import parameterized
 from cereal import log, car
 import cereal.messaging as messaging
 from openpilot.common.params import Params
-from openpilot.selfdrive.boardd.boardd_api_impl import can_list_to_can_capnp
+from openpilot.selfdrive.pandad.pandad_api_impl import can_list_to_can_capnp
 from openpilot.selfdrive.car.fingerprints import _FINGERPRINTS
 from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
 from openpilot.selfdrive.car.mazda.values import CAR as MAZDA
 from openpilot.selfdrive.controls.lib.events import EVENT_NAME
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.manager.process_config import managed_processes
 
 EventName = car.CarEvent.EventName
 Ecu = car.CarParams.Ecu
@@ -87,6 +87,7 @@ def test_startup_alert(expected_event, car_model, fw_versions, brand):
     os.environ['SKIP_FW_QUERY'] = '1'
 
   managed_processes['controlsd'].start()
+  managed_processes['card'].start()
 
   assert pm.wait_for_readers_to_update('can', 5)
   pm.send('can', can_list_to_can_capnp([[0, 0, b"", 0]]))
@@ -104,7 +105,7 @@ def test_startup_alert(expected_event, car_model, fw_versions, brand):
 
   msgs = [[addr, 0, b'\x00'*length, 0] for addr, length in finger.items()]
   for _ in range(1000):
-    # controlsd waits for boardd to echo back that it has changed the multiplexing mode
+    # card waits for pandad to echo back that it has changed the multiplexing mode
     if not params.get_bool("ObdMultiplexingChanged"):
       params.put_bool("ObdMultiplexingChanged", True)
 
