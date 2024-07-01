@@ -344,9 +344,8 @@ jobs:
           git checkout -b openpilot/pr-${{ github.event.pull_request.number }}
           git config user.name "GitHub Actions Bot"
           git config user.email "<>"
-          mkdir -p openpilot/pr-${{ github.event.pull_request.number }}
-          sudo mv ${{ github.workspace }}/selfdrive/ui/tests/test_ui/report/screenshots/* openpilot/pr-${{ github.event.pull_request.number }}/
-          git add openpilot
+          sudo mv ${{ github.workspace }}/selfdrive/ui/tests/test_ui/report/screenshots/* .
+          git add .
           git commit -m "screenshots for PR #${{ github.event.pull_request.number }}"
           git push origin openpilot/pr-${{ github.event.pull_request.number }} --force
       - name: Comment Screenshots on PR
@@ -358,16 +357,16 @@ jobs:
             ## UI Screenshots
             <table>
               <tr>
-                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/pr-${{ github.event.pull_request.number }}/openpilot/pr-${{ github.event.pull_request.number }}/homescreen.png"></td>
-                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/pr-${{ github.event.pull_request.number }}/openpilot/pr-${{ github.event.pull_request.number }}/onroad.png"></td>
+                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/openpilot/pr-${{ github.event.pull_request.number }}/homescreen.png"></td>
+                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/openpilot/pr-${{ github.event.pull_request.number }}/onroad.png"></td>
               </tr>
               <tr>
-                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/pr-${{ github.event.pull_request.number }}/openpilot/pr-${{ github.event.pull_request.number }}/onroad_map.png"></td>
-                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/pr-${{ github.event.pull_request.number }}/openpilot/pr-${{ github.event.pull_request.number }}/onroad_sidebar.png"></td>
+                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/openpilot/pr-${{ github.event.pull_request.number }}/onroad_map.png"></td>
+                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/openpilot/pr-${{ github.event.pull_request.number }}/onroad_sidebar.png"></td>
               </tr>
               <tr>
-                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/pr-${{ github.event.pull_request.number }}/openpilot/pr-${{ github.event.pull_request.number }}/settings_network.png"></td>
-                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/pr-${{ github.event.pull_request.number }}/openpilot/pr-${{ github.event.pull_request.number }}/settings_device.png"></td>
+                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/openpilot/pr-${{ github.event.pull_request.number }}/settings_network.png"></td>
+                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/openpilot/pr-${{ github.event.pull_request.number }}/settings_device.png"></td>
               </tr>
             </table>
           comment_tag: run_id_screenshots
