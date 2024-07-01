@@ -4,7 +4,7 @@ https://www.mkdocs.org/getting-started/
 
 ```
 pip install mkdocs mkdocs-terminal
-mkdocs --serve
+mkdocs serve
 ```
 
 inspiration:
