@@ -33,6 +33,10 @@ MODEL_PATHS = {
 
 METADATA_PATH = Path(__file__).parent / 'models/supercombo_metadata.pkl'
 
+MODEL_WIDTH = 512
+MODEL_HEIGHT = 256
+MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT * 3 // 2
+
 class FrameMeta:
   frame_id: int = 0
   timestamp_sof: int = 0
@@ -61,6 +65,9 @@ class ModelState:
       'prev_desired_curv': np.zeros(ModelConstants.PREV_DESIRED_CURV_LEN * (ModelConstants.HISTORY_BUFFER_LEN+1), dtype=np.float32),
       'features_buffer': np.zeros(ModelConstants.HISTORY_BUFFER_LEN * ModelConstants.FEATURE_LEN, dtype=np.float32),
     }
+
+    self.input_imgs = np.zeros(MODEL_FRAME_SIZE*2, dtype=np.float32)
+    self.big_input_imgs = np.zeros(MODEL_FRAME_SIZE*2, dtype=np.float32)
 
     with open(METADATA_PATH, 'rb') as f:
       model_metadata = pickle.load(f)
@@ -94,9 +101,16 @@ class ModelState:
     self.inputs['lateral_control_params'][:] = inputs['lateral_control_params']
 
     # if getCLBuffer is not None, frame will be None
-    self.model.setInputBuffer("input_imgs", self.frame.prepare(buf, transform.flatten(), self.model.getCLBuffer("input_imgs")))
+    new_img = self.frame.prepare(buf, transform.flatten(), self.model.getCLBuffer("input_imgs"))
+    self.input_imgs[:MODEL_FRAME_SIZE] = self.input_imgs[MODEL_FRAME_SIZE:]
+    self.input_imgs[MODEL_FRAME_SIZE:] = new_img
+    self.model.setInputBuffer("input_imgs", self.input_imgs)
     if wbuf is not None:
-      self.model.setInputBuffer("big_input_imgs", self.wide_frame.prepare(wbuf, transform_wide.flatten(), self.model.getCLBuffer("big_input_imgs")))
+      new_big_img = self.wide_frame.prepare(wbuf, transform.flatten(), self.model.getCLBuffer("big_input_imgs"))
+      self.big_input_imgs[:MODEL_FRAME_SIZE] = self.big_input_imgs[MODEL_FRAME_SIZE:]
+      self.big_input_imgs[MODEL_FRAME_SIZE:] = new_big_img
+      self.model.setInputBuffer("big_input_imgs", self.big_input_imgs)
+
 
     if prepare_only:
       return None
