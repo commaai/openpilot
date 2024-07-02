@@ -1,5 +1,6 @@
 from cereal import car
 from openpilot.common.numpy_fast import clip
+from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.car import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, common_fault_avoidance, make_can_msg
 from openpilot.selfdrive.car.interfaces import CarControllerBase
 from openpilot.selfdrive.car.toyota import toyotacan
@@ -24,6 +25,8 @@ MAX_USER_TORQUE = 500
 MAX_LTA_ANGLE = 94.9461  # deg
 MAX_LTA_DRIVER_TORQUE_ALLOWANCE = 150  # slightly above steering pressed allows some resistance when changing lanes
 
+# Time values for hysteresis
+RESUME_HYSTERESIS_TIME = 1.5  # seconds
 
 class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
@@ -33,7 +36,7 @@ class CarController(CarControllerBase):
     self.last_steer = 0
     self.last_angle = 0
     self.alert_active = False
-    self.last_standstill = False
+    self.resume_off_frames = 0.
     self.standstill_req = False
     self.steer_rate_counter = 0
     self.distance_button = 0
@@ -102,14 +105,19 @@ class CarController(CarControllerBase):
     # *** gas and brake ***
     pcm_accel_cmd = clip(actuators.accel, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
 
-    # on entering standstill, send standstill request
-    if CS.out.standstill and not self.last_standstill and (self.CP.carFingerprint not in NO_STOP_TIMER_CAR):
-      self.standstill_req = True
-    if CS.pcm_acc_status != 8:
-      # pcm entered standstill or it's disabled
-      self.standstill_req = False
-
-    self.last_standstill = CS.out.standstill
+    # *** standstill logic ***
+    # mimic stock behaviour, set standstill_req to False only when openpilot wants to resume
+    if not CC.cruiseControl.resume:
+        self.resume_off_frames += 1  # frame counter for hysteresis
+        # add a 1.5 second hysteresis to when CC.cruiseControl.resume turns off in order to prevent
+        # vehicle's dash from blinking
+        if self.resume_off_frames >= RESUME_HYSTERESIS_TIME / DT_CTRL:
+            self.standstill_req = True
+    else:
+        self.resume_off_frames = 0
+        self.standstill_req = False
+    # ignore standstill on NO_STOP_TIMER_CAR
+    self.standstill_req = self.standstill_req and self.CP.carFingerprint not in NO_STOP_TIMER_CAR
 
     # handle UI messages
     fcw_alert = hud_control.visualAlert == VisualAlert.fcw
