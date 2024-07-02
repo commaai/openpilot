@@ -5,7 +5,8 @@ from openpilot.common.numpy_fast import clip, interp
 from openpilot.common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car.honda import hondacan
-from openpilot.selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
+from openpilot.selfdrive.car.honda.values import CruiseButtons, CruiseSettings, VISUAL_HUD, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_NIDEC_ALT_PCM_ACCEL, \
+                                                 CarControllerParams
 from openpilot.selfdrive.car.interfaces import CarControllerBase
 from openpilot.selfdrive.controls.lib.drive_helpers import rate_limit
 
@@ -203,11 +204,24 @@ class CarController(CarControllerBase):
     if not self.CP.openpilotLongitudinalControl:
       if self.frame % 2 == 0 and self.CP.carFingerprint not in HONDA_BOSCH_RADARLESS:  # radarless cars don't have supplemental message
         can_sends.append(hondacan.create_bosch_supplemental_1(self.packer, self.CAN, self.CP.carFingerprint))
-      # If using stock ACC, spam cancel command to kill gas when OP disengages.
+      # Buttons: spam the cancel or resume buttons.
+      cruise = None
+      setting = CruiseSettings.NONE
       if pcm_cancel_cmd:
-        can_sends.append(hondacan.spam_buttons_command(self.packer, self.CAN, CruiseButtons.CANCEL, self.CP.carFingerprint))
-      elif CC.cruiseControl.resume:
-        can_sends.append(hondacan.spam_buttons_command(self.packer, self.CAN, CruiseButtons.RES_ACCEL, self.CP.carFingerprint))
+        cruise = CruiseButtons.CANCEL
+      elif self.CP.carFingerprint not in HONDA_BOSCH_RADARLESS and CC.cruiseControl.resume:
+        cruise = CruiseButtons.RES_ACCEL
+      elif self.CP.carFingerprint in HONDA_BOSCH_RADARLESS and CC.enabled and self.frame % 4 == 0:
+        # Send buttons to the camera when engaged. Priority: pcm_cancel > user > auto resume > none/idle
+        cruise = CruiseButtons.NONE
+        if CS.cruise_buttons or CS.cruise_setting:
+          cruise = CS.cruise_buttons
+          setting = CS.cruise_setting
+        # simulate a momentary press
+        elif self.frame % 100 <= 25 and CC.cruiseControl.resume:
+          cruise = CruiseButtons.RES_ACCEL
+      if cruise is not None:
+        can_sends.append(hondacan.create_buttons_command(self.packer, self.CAN, cruise, setting, CS.scm_buttons, self.CP.carFingerprint))
 
     else:
       # Send gas and brake commands.
