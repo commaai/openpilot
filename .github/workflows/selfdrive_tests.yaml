@@ -101,7 +101,7 @@ jobs:
         # package install has DeprecationWarnings
         PYTHONWARNINGS: default
     - name: Test openpilot environment
-      run: . .venv/bin/activate && scons -h
+      run: . .venv/bin/activate && scons -j5
 
   static_analysis:
     name: static analysis
