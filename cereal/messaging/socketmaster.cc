@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <string>
+#include <memory>
 #include <mutex>
 
 #include "cereal/services.h"
@@ -40,6 +41,7 @@ struct SubMaster::SubMessage {
   bool is_polled = false;
   capnp::FlatArrayMessageReader *msg_reader = nullptr;
   AlignedBuffer aligned_buf;
+  std::unique_ptr<Message> message;
   cereal::Event::Reader event;
 };
 
@@ -92,8 +94,10 @@ void SubMaster::update(int timeout) {
     m->msg_reader->~FlatArrayMessageReader();
     capnp::ReaderOptions options;
     options.traversalLimitInWords = kj::maxValue; // Don't limit
+
+    // Reset the message buffer to the new one. Keep it for the message reader's lifetime.
+    m->message.reset(msg);
     m->msg_reader = new (m->allocated_msg_reader) capnp::FlatArrayMessageReader(m->aligned_buf.align(msg), options);
-    delete msg;
     messages.push_back({m->name, m->msg_reader->getRoot<cereal::Event>()});
   }
 
