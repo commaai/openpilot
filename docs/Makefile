@@ -8,7 +8,7 @@ OPENPILOT_ROOT = `git rev-parse --show-toplevel`
 SPHINXOPTS    ?=
 SPHINXBUILD   ?= sphinx-build
 DOCSDIR       = "$(OPENPILOT_ROOT)/docs"
-SOURCEDIR     = "$(OPENPILOT_ROOT)/build/docs"
+SOURCEDIR     = "$(OPENPILOT_ROOT)/docs"
 DOCSBUILDDIR  = "$(OPENPILOT_ROOT)/build/docs"
 BUILDDIR      = "$(OPENPILOT_ROOT)/build"
 
@@ -25,19 +25,19 @@ clean:
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile
-	@echo "Cleaning build folder..."
-	rm -rf "$(BUILDDIR)"
+	# No longer removing the build each time.
+	# Sphinx natively supports caching through a .doctrees dir in the build dir
+
 	mkdir -p "$(DOCSBUILDDIR)"
 
 	@echo "Copying docs & config to build folder..."
-	cp -a "$(DOCSDIR)" "$(BUILDDIR)"
 	cd "$(OPENPILOT_ROOT)" && \
 		find . -type f \( -name "*.md" -o -name "*.rst" -o -name "*.png" -o -name "*.jpg" -o -name "*.svg" \) \
 			-not -path "*/.*" \
 			-not -path "./build/*" \
 			-not -path "./docs/*" \
 			-not -path "./xx/*" \
-			-exec cp --parents "{}" ./build/docs/ \;
+			-exec cp --parents "{}" "$(SOURCEDIR)/" \;
 
 	@echo "Building rst files..."
 	sphinx-apidoc -o "$(DOCSBUILDDIR)" ../ \
@@ -50,4 +50,4 @@ clean:
 		$(shell find .. -type d -name "*test* -not -path "**.venv**" \")
 
 	@echo "Building html files..."
-	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(DOCSBUILDDIR)" $(SPHINXOPTS) $(O)
+	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(DOCSBUILDDIR)" $(SPHINXOPTS)
