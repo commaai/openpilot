@@ -124,6 +124,25 @@ jobs:
       timeout-minutes: 4
       run: ${{ env.RUN }} "unset PYTHONWARNINGS && pre-commit run --all && chmod -R 777 /tmp/pre-commit"
 
+  static_analysis_not_ns:
+    name: static analysis not ns
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - uses: ./.github/workflows/setup-pre-commit
+    - uses: ./.github/workflows/setup-with-retry
+    - name: Build openpilot
+      run: ${{ env.RUN }} "scons -j$(nproc)"
+    - name: test cache
+      run: echo "test test"
+    - name: test cachea
+      run: echo "test"
+    - name: pre-commit
+      timeout-minutes: 4
+      run: ${{ env.RUN }} "unset PYTHONWARNINGS && pre-commit run --all && chmod -R 777 /tmp/pre-commit"
+
   unit_tests:
     name: unit tests
     runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
