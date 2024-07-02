@@ -4,18 +4,39 @@ import os
 import sys
 import cereal.messaging as messaging
 import numpy as np
-from openpilot.common.numpy_fast import clip
 import rerun as rr
 from msgq.visionipc import VisionIpcClient, VisionStreamType
+from openpilot.tools.replay.lib.ui_helpers import to_topdown_pt, get_blank_lid_overlay, UP
+
 
 img = np.zeros((480, 640, 3), dtype='uint8')
 ANGLE_SCALE = 5.0
 
+def maybe_update_radar_rerun(lt, lid_overlay):
+  ar_pts = []
+  if lt is not None:
+    ar_pts = {}
+    for track in lt:
+      ar_pts[track.trackId] = [track.dRel, track.yRel, track.vRel, track.aRel, track.oncoming, track.stationary]
+  for ids, pt in ar_pts.items():
+    # negative here since radar is left positive
+    px, py = to_topdown_pt(pt[0], -pt[1])
+    if px != -1:
+      if pt[-1]:
+        color = 240
+      elif pt[-2]:
+        color = 230
+      else:
+        color = 255
+      if int(ids) == 1:
+        lid_overlay[px - 2:px + 2, py - 10:py + 10] = 100
+      else:
+        lid_overlay[px - 2:px + 2, py - 2:py + 2] = color
+  return lid_overlay
+
+
 def getMsgs(addr):
-  prevCarStateTime = -1
-  prevCarControlTime = -1
-  prevControlsStateTime = -1
-  prevLongitudinalPlanTime = -1
+  prevliveTracksTime = -1
 
   sm = messaging.SubMaster(['carState', 'longitudinalPlan', 'carControl', 'radarState', 'liveCalibration', 'controlsState',
                           'liveTracks', 'modelV2', 'liveParameters', 'roadCameraState'], addr=addr)
@@ -31,56 +52,13 @@ def getMsgs(addr):
       continue
 
     sm.update(0)
-    carStateTime = sm.logMonoTime['carState']
-    if carStateTime != prevCarStateTime:
-      rr.set_time_nanos("TIMELINE", carStateTime)
-      prevCarStateTime = carStateTime
-      a_ego = sm['carState'].aEgo
-      rr.log("/a/a_ego", rr.Scalar(a_ego))
-      v_ego = sm['carState'].vEgo
-      rr.log("/v/v_ego", rr.Scalar(v_ego))
-      v_cruise = sm['carState'].cruiseState.speed
-      rr.log("/v/v_cruise", rr.Scalar(v_cruise))
-      angle_steers = sm['carState'].steeringAngleDeg
-      rr.log("/angle/angle_steers", rr.Scalar(angle_steers))
-      gas = sm['carState'].gas
-      rr.log("acc/gas", rr.Scalar(gas))
-      user_brake = sm['carState'].brake
-      rr.log("acc/user_brake", rr.Scalar(user_brake))
-
-    carControlTime = sm.logMonoTime['carControl']
-    if prevCarControlTime != carControlTime:
-      rr.set_time_nanos("TIMELINE", carControlTime)
-      prevCarControlTime = carControlTime
-      angle_steers_des = sm['carControl'].actuators.steeringAngleDeg
-      rr.log("angle/angle_steers_des", rr.Scalar(angle_steers_des))
-      steer_torque = sm['carControl'].actuators.steer * ANGLE_SCALE
-      rr.log("angle/steer_torque", rr.Scalar(steer_torque))
-      computer_gas = clip(sm['carControl'].actuators.accel/4.0, 0.0, 1.0)
-      rr.log("acc/computer_gas", rr.Scalar(computer_gas))
-      computer_brake = clip(-sm['carControl'].actuators.accel/4.0, 0.0, 1.0)
-      rr.log("acc/computer_brake", rr.Scalar(computer_brake))
-
-    controlsStateTime = sm.logMonoTime['controlsState']
-    if prevControlsStateTime != controlsStateTime:
-      rr.set_time_nanos("TIMELINE", controlsStateTime)
-      prevControlsStateTime = controlsStateTime
-      w = sm['controlsState'].lateralControlState.which()
-      if w == 'lqrStateDEPRECATED':
-          angle_steers_k = sm['controlsState'].lateralControlState.lqrStateDEPRECATED.steeringAngleDeg
-      elif w == 'indiState':
-          angle_steers_k = sm['controlsState'].lateralControlState.indiState.steeringAngleDeg
-      else:
-          angle_steers_k = np.inf
-      rr.log("angle/angle_steers_k", rr.Scalar(angle_steers_k))
-
-    longitudinalPlanTime = sm.logMonoTime['longitudinalPlan']
-    if prevLongitudinalPlanTime != longitudinalPlanTime:
-      rr.set_time_nanos("TIMELINE", longitudinalPlanTime)
-      prevLongitudinalPlanTime = longitudinalPlanTime
-      if len(sm['longitudinalPlan'].accels):
-        a_target = sm['longitudinalPlan'].accels[0]
-        rr.log("/a/a_target", rr.Scalar(a_target))
+    liveTracksTime = sm.logMonoTime['liveTracks']
+    if liveTracksTime != prevliveTracksTime:
+      rr.set_time_nanos("TIMELINE", liveTracksTime)
+      prevliveTracksTime = liveTracksTime
+      lid_overlay = get_blank_lid_overlay(UP).copy()
+      maybe_update_radar_rerun(sm["liveTracks"], lid_overlay)
+      rr.log("tracks", rr.Image(lid_overlay))
 
 
 def get_arg_parser():
