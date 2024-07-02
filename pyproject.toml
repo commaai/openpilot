@@ -1,15 +1,143 @@
 [project]
 name = "openpilot"
 requires-python = ">= 3.11"
-readme = "README.md"
 license = {text = "MIT License"}
+version = "0.1.0"
+description = "an open source driver assistance system"
+authors = [
+  {name ="Vehicle Researcher", email="user@comma.ai"}
+]
+
+dependencies = [
+  # multiple users
+  "sounddevice",  # micd + soundd
+  "pyserial",     # pigeond + qcomgpsd
+  "requests",     # many one-off uses
+  "sympy",        # rednose + friends
+  "crcmod",       # cars + qcomgpsd
+  "tqdm",         # cars (fw_versions.py) on start + many one-off uses
+
+  # hardwared
+  "smbus2", # configuring amp
+
+  # core
+  "cffi",
+  "scons",
+  "pycapnp",
+  "Cython",
+  "setuptools",
+  "numpy < 2.0.0", # control does not support numpy 2
+
+  # body / webrtcd
+  "aiohttp",
+  "aiortc",
+  "pyaudio",
+
+  # panda
+  "libusb1",
+  "spidev; platform_system == 'Linux'",
+
+  # modeld
+  "onnx >= 1.14.0",
+  "onnxruntime >=1.16.3; platform_system == 'Linux' and platform_machine == 'aarch64'",
+  "onnxruntime-gpu >=1.16.3; platform_system == 'Linux' and platform_machine == 'x86_64'",
+
+  # logging
+  "pyzmq",
+  "sentry-sdk",
+
+  # athena
+  "PyJWT",
+  "json-rpc",
+  "websocket_client",
+
+  # acados deps
+  "casadi",
+  "future-fstrings",
+
+  # these should be removed
+  "psutil",
+  "pycryptodome", # used in updated/casync, panda, body, and a test
+
+  #logreader
+  "zstd",
+]
+
+[project.optional-dependencies]
+docs = [
+  "Jinja2",
+  "sphinx",
+  "sphinx-rtd-theme",
+  "sphinx-sitemap"
+]
+
+testing = [
+  "coverage",
+  "hypothesis ==6.47.*",
+  "mypy",
+  "pre-commit",
+  "pytest",
+  "pytest-cov",
+  "pytest-cpp",
+  "pytest-subtests",
+  "pytest-xdist",
+  "pytest-timeout",
+  "pytest-randomly",
+  "pytest-asyncio",
+  "pytest-mock",
+  "pytest-repeat",
+  "ruff"
+]
+
+dev = [
+  "av",
+  "azure-identity",
+  "azure-storage-blob",
+  "breathe",
+  "control",
+  "dictdiffer",
+  "flaky",
+  "inputs",
+  "lru-dict",
+  "matplotlib",
+  "metadrive-simulator; platform_machine != 'aarch64'",
+  "mpld3",
+  "myst-parser",
+  "natsort",
+  "opencv-python-headless",
+  "parameterized >=0.8, <0.9",
+  #pprofile = "*"
+  "pyautogui",
+  "pygame",
+  "pyopencl; platform_machine != 'aarch64'", # broken on arm64
+  "pywinctl",
+  "pyprof2calltree",
+  "rerun-sdk",
+  "tabulate",
+  "types-requests",
+  "types-tabulate",
+
+  # this is only pinned since 5.15.11 is broken
+  "pyqt5 ==5.15.2; platform_machine == 'x86_64'", # no aarch64 wheels for macOS/linux
+
+]
+
+[tool.uv.sources]
+metadrive-simulator = { git = "https://github.com/commaai/metadrive.git", branch = "opencv_headless" }
 
 [project.urls]
 Homepage = "https://comma.ai"
 
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = [ "." ]
+
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=openpilot/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
+addopts = "--ignore=openpilot/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ --ignore=msgq/  -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
 cpp_files = "test_*"
 cpp_harness = "selfdrive/test/cpp_harness.py"
 python_files = "test_*.py"
@@ -75,131 +203,6 @@ warn_return_any=true
 # allow implicit optionals for default args
 implicit_optional = true
 
-
-[tool.poetry]
-name = "openpilot"
-version = "0.1.0"
-description = "an open source driver assistance system"
-authors = ["Vehicle Researcher <user@comma.ai>"]
-license = "MIT"
-readme = "README.md"
-repository = "https://github.com/commaai/openpilot"
-documentation = "https://docs.comma.ai"
-
-[tool.poetry.dependencies]
-python = ">=3.11, <3.13"
-
-# multiple users
-sounddevice = "*"  # micd + soundd
-pyserial = "*"     # pigeond + qcomgpsd
-requests = "*"     # many one-off uses
-sympy = "*"        # rednose + friends
-crcmod = "*"       # cars + qcomgpsd
-tqdm = "*"         # cars (fw_versions.py) on start + many one-off uses
-
-# hardwared
-smbus2 = "*"  # configuring amp
-
-# core
-cffi = "*"
-scons = "*"
-pycapnp = "*"
-Cython = "*"
-setuptools = "*"
-numpy = "*"
-
-# body / webrtcd
-aiohttp = "*"
-aiortc = "*"
-pyaudio = "*"
-
-# panda
-libusb1 = "*"
-spidev = { version = "*", platform = "linux" }
-
-# modeld
-onnx = ">=1.14.0"
-onnxruntime = { version = ">=1.16.3", platform = "linux", markers = "platform_machine == 'aarch64'" }
-onnxruntime-gpu = { version = ">=1.16.3", platform = "linux", markers = "platform_machine == 'x86_64'" }
-
-# logging
-pyzmq = "*"
-sentry-sdk = "*"
-
-# athena
-PyJWT = "*"
-json-rpc = "*"
-websocket_client = "*"
-
-# acados deps
-casadi = "*"
-future-fstrings = "*"
-
-# these should be removed
-psutil = "*"
-pycryptodome = "*"  # used in updated/casync, panda, body, and a test
-
-#logreader
-zstd = "*"
-
-[tool.poetry.group.docs.dependencies]
-Jinja2 = "*"
-sphinx = "*"
-sphinx-rtd-theme = "*"
-sphinx-sitemap = "*"
-
-[tool.poetry.group.testing.dependencies]
-coverage = "*"
-hypothesis = "~6.47"
-mypy = "*"
-pre-commit = "*"
-pytest = "*"
-pytest-cov = "*"
-pytest-cpp = "*"
-pytest-subtests = "*"
-pytest-xdist = "*"
-pytest-timeout = "*"
-pytest-randomly = "*"
-pytest-asyncio = "*"
-pytest-mock = "*"
-pytest-repeat = "*"
-ruff = "*"
-
-[tool.poetry.group.dev.dependencies]
-av = "*"
-azure-identity = "*"
-azure-storage-blob = "*"
-breathe = "*"
-control = "*"
-dictdiffer = "*"
-flaky = "*"
-inputs = "*"
-lru-dict = "*"
-matplotlib = "*"
-metadrive-simulator = { git = "https://github.com/commaai/metadrive.git", branch = "anisotropic_off", markers = "platform_machine != 'aarch64'" } # no linux/aarch64 wheels for certain dependencies
-mpld3 = "*"
-myst-parser = "*"
-natsort = "*"
-opencv-python-headless = "*"
-parameterized = "^0.8"
-#pprofile = "*"
-pyautogui = "*"
-pygame = "*"
-pyopencl = { version = "*", markers = "platform_machine != 'aarch64'" }  # broken on arm64
-pywinctl = "*"
-pyprof2calltree = "*"
-rerun-sdk = "*"
-tabulate = "*"
-types-requests = "*"
-types-tabulate = "*"
-
-# this is only pinned since 5.15.11 is broken
-pyqt5 = { version = "==5.15.2", markers = "platform_machine == 'x86_64'" } # no aarch64 wheels for macOS/linux
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
 # https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
 [tool.ruff]
 indent-width = 2
@@ -209,7 +212,8 @@ lint.select = [
   "UP",  # pyupgrade
   "TRY302", "TRY400", "TRY401", # try/excepts
   "RUF008", "RUF100",
-  "TID251"
+  "TID251",
+  "PLR1704",
 ]
 lint.ignore = [
   "E741",
