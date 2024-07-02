@@ -11,6 +11,7 @@ from typing import Any, TYPE_CHECKING
 # aiortc and its dependencies have lots of internal warnings :(
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=RuntimeWarning) # TODO: remove this when google-crc32c publish a python3.12 wheel
 
 import capnp
 from aiohttp import web
@@ -24,7 +25,7 @@ from cereal import messaging, log
 class CerealOutgoingMessageProxy:
   def __init__(self, sm: messaging.SubMaster):
     self.sm = sm
-    self.channels: list['RTCDataChannel'] = []
+    self.channels: list[RTCDataChannel] = []
 
   def add_channel(self, channel: 'RTCDataChannel'):
     self.channels.append(channel)
@@ -97,8 +98,8 @@ class CerealProxyRunner:
       except InvalidStateError:
         self.logger.warning("Cereal outgoing proxy invalid state (connection closed)")
         break
-      except Exception as ex:
-        self.logger.error("Cereal outgoing proxy failure: %s", ex)
+      except Exception:
+        self.logger.exception("Cereal outgoing proxy failure")
       await asyncio.sleep(0.01)
 
 
@@ -175,8 +176,8 @@ class StreamSession:
     assert self.incoming_bridge is not None
     try:
       self.incoming_bridge.send(message)
-    except Exception as ex:
-      self.logger.error("Cereal incoming proxy failure: %s", ex)
+    except Exception:
+      self.logger.exception("Cereal incoming proxy failure")
 
   async def run(self):
     try:
@@ -200,8 +201,8 @@ class StreamSession:
       await self.post_run_cleanup()
 
       self.logger.info("Stream session (%s) ended", self.identifier)
-    except Exception as ex:
-      self.logger.error("Stream session failure: %s", ex)
+    except Exception:
+      self.logger.exception("Stream session failure")
 
   async def post_run_cleanup(self):
     await self.stream.stop()

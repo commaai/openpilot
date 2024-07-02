@@ -2,6 +2,8 @@ import signal
 import threading
 import functools
 
+from collections import namedtuple
+from enum import Enum
 from multiprocessing import Process, Queue, Value
 from abc import ABC, abstractmethod
 
@@ -14,6 +16,16 @@ from openpilot.tools.sim.lib.common import SimulatorState, World
 from openpilot.tools.sim.lib.simulated_car import SimulatedCar
 from openpilot.tools.sim.lib.simulated_sensors import SimulatedSensors
 
+QueueMessage = namedtuple("QueueMessage", ["type", "info"], defaults=[None])
+
+class QueueMessageType(Enum):
+  START_STATUS = 0
+  CONTROL_COMMAND = 1
+  TERMINATION_INFO = 2
+  CLOSE_STATUS = 3
+
+def control_cmd_gen(cmd: str):
+  return QueueMessage(QueueMessageType.CONTROL_COMMAND, cmd)
 
 def rk_loop(function, hz, exit_event: threading.Event):
   rk = Ratekeeper(hz, None)
@@ -48,6 +60,8 @@ class SimulatorBridge(ABC):
     self.past_startup_engaged = False
     self.startup_button_prev = True
 
+    self.test_run = False
+
   def _on_shutdown(self, signal, frame):
     self.shutdown()
 
@@ -80,11 +94,11 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
     """)
 
   @abstractmethod
-  def spawn_world(self) -> World:
+  def spawn_world(self, q: Queue) -> World:
     pass
 
   def _run(self, q: Queue):
-    self.world = self.spawn_world()
+    self.world = self.spawn_world(q)
 
     self.simulated_car = SimulatedCar()
     self.simulated_sensors = SimulatedSensors(self.dual_camera)
@@ -114,33 +128,34 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
       # Read manual controls
       if not q.empty():
         message = q.get()
-        m = message.split('_')
-        if m[0] == "steer":
-          steer_manual = float(m[1])
-        elif m[0] == "throttle":
-          throttle_manual = float(m[1])
-        elif m[0] == "brake":
-          brake_manual = float(m[1])
-        elif m[0] == "cruise":
-          if m[1] == "down":
-            self.simulator_state.cruise_button = CruiseButtons.DECEL_SET
-          elif m[1] == "up":
-            self.simulator_state.cruise_button = CruiseButtons.RES_ACCEL
-          elif m[1] == "cancel":
-            self.simulator_state.cruise_button = CruiseButtons.CANCEL
-          elif m[1] == "main":
-            self.simulator_state.cruise_button = CruiseButtons.MAIN
-        elif m[0] == "blinker":
-          if m[1] == "left":
-            self.simulator_state.left_blinker = True
-          elif m[1] == "right":
-            self.simulator_state.right_blinker = True
-        elif m[0] == "ignition":
-          self.simulator_state.ignition = not self.simulator_state.ignition
-        elif m[0] == "reset":
-          self.world.reset()
-        elif m[0] == "quit":
-          break
+        if message.type == QueueMessageType.CONTROL_COMMAND:
+          m = message.info.split('_')
+          if m[0] == "steer":
+            steer_manual = float(m[1])
+          elif m[0] == "throttle":
+            throttle_manual = float(m[1])
+          elif m[0] == "brake":
+            brake_manual = float(m[1])
+          elif m[0] == "cruise":
+            if m[1] == "down":
+              self.simulator_state.cruise_button = CruiseButtons.DECEL_SET
+            elif m[1] == "up":
+              self.simulator_state.cruise_button = CruiseButtons.RES_ACCEL
+            elif m[1] == "cancel":
+              self.simulator_state.cruise_button = CruiseButtons.CANCEL
+            elif m[1] == "main":
+              self.simulator_state.cruise_button = CruiseButtons.MAIN
+          elif m[0] == "blinker":
+            if m[1] == "left":
+              self.simulator_state.left_blinker = True
+            elif m[1] == "right":
+              self.simulator_state.right_blinker = True
+          elif m[0] == "ignition":
+            self.simulator_state.ignition = not self.simulator_state.ignition
+          elif m[0] == "reset":
+            self.world.reset()
+          elif m[0] == "quit":
+            break
 
       self.simulator_state.user_brake = brake_manual
       self.simulator_state.user_gas = throttle_manual
@@ -180,7 +195,8 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
         self.world.tick()
         self.world.read_cameras()
 
-      if self.rk.frame % 25 == 0:
+      # don't print during test, so no print/IO Block between OP and metadrive processes
+      if not self.test_run and self.rk.frame % 25 == 0:
         self.print_status()
 
       self.started.value = True

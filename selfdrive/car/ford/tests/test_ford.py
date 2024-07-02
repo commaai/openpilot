@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
 import random
-import unittest
 from collections.abc import Iterable
 
 import capnp
@@ -43,31 +41,31 @@ ECU_PART_NUMBER = {
 }
 
 
-class TestFordFW(unittest.TestCase):
+class TestFordFW:
   def test_fw_query_config(self):
     for (ecu, addr, subaddr) in FW_QUERY_CONFIG.extra_ecus:
-      self.assertIn(ecu, ECU_ADDRESSES, "Unknown ECU")
-      self.assertEqual(addr, ECU_ADDRESSES[ecu], "ECU address mismatch")
-      self.assertIsNone(subaddr, "Unexpected ECU subaddress")
+      assert ecu in ECU_ADDRESSES, "Unknown ECU"
+      assert addr == ECU_ADDRESSES[ecu], "ECU address mismatch"
+      assert subaddr is None, "Unexpected ECU subaddress"
 
   @parameterized.expand(FW_VERSIONS.items())
   def test_fw_versions(self, car_model: str, fw_versions: dict[tuple[capnp.lib.capnp._EnumModule, int, int | None], Iterable[bytes]]):
     for (ecu, addr, subaddr), fws in fw_versions.items():
-      self.assertIn(ecu, ECU_PART_NUMBER, "Unexpected ECU")
-      self.assertEqual(addr, ECU_ADDRESSES[ecu], "ECU address mismatch")
-      self.assertIsNone(subaddr, "Unexpected ECU subaddress")
+      assert ecu in ECU_PART_NUMBER, "Unexpected ECU"
+      assert addr == ECU_ADDRESSES[ecu], "ECU address mismatch"
+      assert subaddr is None, "Unexpected ECU subaddress"
 
       for fw in fws:
-        self.assertEqual(len(fw), 24, "Expected ECU response to be 24 bytes")
+        assert len(fw) == 24, "Expected ECU response to be 24 bytes"
 
         match = FW_PATTERN.match(fw)
-        self.assertIsNotNone(match, f"Unable to parse FW: {fw!r}")
+        assert match is not None, f"Unable to parse FW: {fw!r}"
         if match:
           part_number = match.group("part_number")
-          self.assertIn(part_number, ECU_PART_NUMBER[ecu], f"Unexpected part number for {fw!r}")
+          assert part_number in ECU_PART_NUMBER[ecu], f"Unexpected part number for {fw!r}"
 
         codes = get_platform_codes([fw])
-        self.assertEqual(1, len(codes), f"Unable to parse FW: {fw!r}")
+        assert 1 == len(codes), f"Unable to parse FW: {fw!r}"
 
   @settings(max_examples=100)
   @given(data=st.data())
@@ -85,7 +83,7 @@ class TestFordFW(unittest.TestCase):
       b"PJ6T-14H102-ABJ\x00\x00\x00\x00\x00\x00\x00\x00\x00",
       b"LB5A-14C204-EAC\x00\x00\x00\x00\x00\x00\x00\x00\x00",
     ])
-    self.assertEqual(results, {(b"X6A", b"J"), (b"Z6T", b"N"), (b"J6T", b"P"), (b"B5A", b"L")})
+    assert results == {(b"X6A", b"J"), (b"Z6T", b"N"), (b"J6T", b"P"), (b"B5A", b"L")}
 
   def test_fuzzy_match(self):
     for platform, fw_by_addr in FW_VERSIONS.items():
@@ -100,7 +98,7 @@ class TestFordFW(unittest.TestCase):
 
         CP = car.CarParams.new_message(carFw=car_fw)
         matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw), CP.carVin, FW_VERSIONS)
-        self.assertEqual(matches, {platform})
+        assert matches == {platform}
 
   def test_match_fw_fuzzy(self):
     offline_fw = {
@@ -132,18 +130,14 @@ class TestFordFW(unittest.TestCase):
       (0x706, None): {b"LB5T-14F397-XX\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"},
     }
     candidates = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(live_fw, '', {expected_fingerprint: offline_fw})
-    self.assertEqual(candidates, {expected_fingerprint})
+    assert candidates == {expected_fingerprint}
 
     # model year hint in between the range should match
     live_fw[(0x706, None)] = {b"MB5T-14F397-XX\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"}
     candidates = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(live_fw, '', {expected_fingerprint: offline_fw,})
-    self.assertEqual(candidates, {expected_fingerprint})
+    assert candidates == {expected_fingerprint}
 
     # unseen model year hint should not match
     live_fw[(0x760, None)] = {b"M1MC-2D053-XX\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"}
     candidates = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(live_fw, '', {expected_fingerprint: offline_fw})
-    self.assertEqual(len(candidates), 0, "Should not match new model year hint")
-
-
-if __name__ == "__main__":
-  unittest.main()
+    assert len(candidates) == 0, "Should not match new model year hint"

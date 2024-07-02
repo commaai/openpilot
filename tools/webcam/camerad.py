@@ -3,7 +3,7 @@ import threading
 import os
 from collections import namedtuple
 
-from cereal.visionipc import VisionIpcServer, VisionStreamType
+from msgq.visionipc import VisionIpcServer, VisionStreamType
 from cereal import messaging
 
 from openpilot.tools.webcam.camera import Camera

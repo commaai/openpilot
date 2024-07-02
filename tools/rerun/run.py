@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-import subprocess
 import sys
 import argparse
 import multiprocessing
+import rerun as rr
+import rerun.blueprint as rrb
 from functools import partial
 
 from openpilot.tools.lib.logreader import LogReader
@@ -11,14 +12,6 @@ from cereal.services import SERVICE_LIST
 
 NUM_CPUS = multiprocessing.cpu_count()
 DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
-WHEEL_URL = "https://build.rerun.io/commit/660463d/wheels"
-
-
-def install():
-  # currently requires a preview release build
-  subprocess.run([sys.executable, "-m", "pip", "install", "--pre", "-f", WHEEL_URL, "--upgrade", "rerun-sdk"], check=True)
-  print("Rerun installed")
-
 
 def log_msg(msg, parent_key=''):
   stack = [(msg, parent_key)]
@@ -45,8 +38,8 @@ def log_msg(msg, parent_key=''):
     else:
       pass  # Not a plottable value
 
-
 def createBlueprint():
+  blueprint = None
   timeSeriesViews = []
   for topic in sorted(SERVICE_LIST.keys()):
     timeSeriesViews.append(rrb.TimeSeriesView(name=topic, origin=f"/{topic}/", visible=False))
@@ -55,15 +48,16 @@ def createBlueprint():
                                         rrb.Spatial2DView(name="thumbnail", origin="/thumbnail")))
   return blueprint
 
-
 def log_thumbnail(thumbnailMsg):
   bytesImgData = thumbnailMsg.get('thumbnail')
   rr.log("/thumbnail", rr.ImageEncoded(contents=bytesImgData))
 
-
+@rr.shutdown_at_exit
 def process(blueprint, lr):
+  rr.init("rerun_test")
+  rr.connect(default_blueprint=blueprint)
+
   ret = []
-  rr.init("rerun_test", spawn=True, default_blueprint=blueprint)
   for msg in lr:
     ret.append(msg)
     rr.set_time_nanos("TIMELINE", msg.logMonoTime)
@@ -73,12 +67,10 @@ def process(blueprint, lr):
       log_thumbnail(msg.to_dict()[msg.which()])
   return ret
 
-
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description="A helper to run rerun on openpilot routes",
                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
-  parser.add_argument("--install", action="store_true", help="Install or update rerun")
   parser.add_argument("route_or_segment_name", nargs='?', help="The route or segment name to plot")
 
   if len(sys.argv) == 1:
@@ -86,19 +78,12 @@ if __name__ == '__main__':
     sys.exit()
 
   args = parser.parse_args()
-  if args.install:
-    install()
-    sys.exit()
 
-  try:
-    import rerun as rr
-    import rerun.blueprint as rrb
-  except ImportError:
-    print("Rerun is not installed, run with --install first")
-    sys.exit()
+  blueprint = createBlueprint()
+  rr.init("rerun_test")
+  rr.spawn(connect=False) # child processes stream data to Viewer
 
   route_or_segment_name = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
-  blueprint = createBlueprint()
   print("Getting route log paths")
   lr = LogReader(route_or_segment_name)
   lr.run_across_segments(NUM_CPUS, partial(process, blueprint))

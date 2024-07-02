@@ -352,7 +352,7 @@ if __name__ == "__main__":
   pandaStates_sock = messaging.sub_sock('pandaStates')
   sendcan = messaging.pub_sock('sendcan')
 
-  # Set up params for boardd
+  # Set up params for pandad
   params = Params()
   params.remove("FirmwareQueryDone")
   params.put_bool("IsOnroad", False)
@@ -374,7 +374,7 @@ if __name__ == "__main__":
   t = time.time()
   print("Getting vin...")
   set_obd_multiplexing(params, True)
-  vin_rx_addr, vin_rx_bus, vin = get_vin(logcan, sendcan, (0, 1), retry=10, debug=args.debug)
+  vin_rx_addr, vin_rx_bus, vin = get_vin(logcan, sendcan, (0, 1), debug=args.debug)
   print(f'RX: {hex(vin_rx_addr)}, BUS: {vin_rx_bus}, VIN: {vin}')
   print(f"Getting VIN took {time.time() - t:.3f} s")
   print()

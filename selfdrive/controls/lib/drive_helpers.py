@@ -141,16 +141,6 @@ class VCruiseHelper:
     self.v_cruise_cluster_kph = self.v_cruise_kph
 
 
-def apply_deadzone(error, deadzone):
-  if error > deadzone:
-    error -= deadzone
-  elif error < - deadzone:
-    error += deadzone
-  else:
-    error = 0.
-  return error
-
-
 def apply_center_deadzone(error, deadzone):
   if (error > - deadzone) and (error < deadzone):
     error = 0.

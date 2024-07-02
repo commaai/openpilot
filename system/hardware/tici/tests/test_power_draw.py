@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
 from collections import defaultdict, deque
 import pytest
-import unittest
 import time
 import numpy as np
 from dataclasses import dataclass
@@ -12,8 +10,8 @@ from cereal.services import SERVICE_LIST
 from openpilot.common.mock import mock_messages
 from openpilot.selfdrive.car.car_helpers import write_car_param
 from openpilot.system.hardware.tici.power_monitor import get_power
-from openpilot.selfdrive.manager.process_config import managed_processes
-from openpilot.selfdrive.manager.manager import manager_cleanup
+from openpilot.system.manager.process_config import managed_processes
+from openpilot.system.manager.manager import manager_cleanup
 
 SAMPLE_TIME = 8       # seconds to sample power
 MAX_WARMUP_TIME = 30  # seconds to wait for SAMPLE_TIME consecutive valid samples
@@ -40,15 +38,15 @@ PROCS = [
 
 
 @pytest.mark.tici
-class TestPowerDraw(unittest.TestCase):
+class TestPowerDraw:
 
-  def setUp(self):
+  def setup_method(self):
     write_car_param()
 
     # wait a bit for power save to disable
     time.sleep(5)
 
-  def tearDown(self):
+  def teardown_method(self):
     manager_cleanup()
 
   def get_expected_messages(self, proc):
@@ -97,7 +95,7 @@ class TestPowerDraw(unittest.TestCase):
     return now, msg_counts, time.monotonic() - start_time - SAMPLE_TIME
 
   @mock_messages(['liveLocationKalman'])
-  def test_camera_procs(self):
+  def test_camera_procs(self, subtests):
     baseline = get_power()
 
     prev = baseline
@@ -122,12 +120,8 @@ class TestPowerDraw(unittest.TestCase):
       expected = proc.power
       msgs_received = sum(msg_counts[msg] for msg in proc.msgs)
       tab.append([proc.name, round(expected, 2), round(cur, 2), self.get_expected_messages(proc), msgs_received, round(warmup_time[proc.name], 2)])
-      with self.subTest(proc=proc.name):
-        self.assertTrue(self.valid_msg_count(proc, msg_counts), f"expected {self.get_expected_messages(proc)} msgs, got {msgs_received} msgs")
-        self.assertTrue(self.valid_power_draw(proc, cur), f"expected {expected:.2f}W, got {cur:.2f}W")
+      with subtests.test(proc=proc.name):
+        assert self.valid_msg_count(proc, msg_counts), f"expected {self.get_expected_messages(proc)} msgs, got {msgs_received} msgs"
+        assert self.valid_power_draw(proc, cur), f"expected {expected:.2f}W, got {cur:.2f}W"
     print(tabulate(tab))
     print(f"Baseline {baseline:.2f}W\n")
-
-
-if __name__ == "__main__":
-  unittest.main()

@@ -1,7 +1,5 @@
-#!/usr/bin/env python3
 import pytest
 import time
-import unittest
 import numpy as np
 
 from openpilot.system.hardware.tici.hardware import Tici
@@ -10,19 +8,19 @@ HARDWARE = Tici()
 
 
 @pytest.mark.tici
-class TestHardware(unittest.TestCase):
+class TestHardware:
 
   def test_power_save_time(self):
-    ts = []
+    ts = {True: [], False: []}
     for _ in range(5):
       for on in (True, False):
         st = time.monotonic()
         HARDWARE.set_power_save(on)
-        ts.append(time.monotonic() - st)
+        ts[on].append(time.monotonic() - st)
 
-    assert 0.1 < np.mean(ts) < 0.25
-    assert max(ts) < 0.3
+    # disabling power save is the main time-critical one
+    assert 0.1 < np.mean(ts[False]) < 0.15
+    assert max(ts[False]) < 0.2
 
-
-if __name__ == "__main__":
-  unittest.main()
+    assert 0.1 < np.mean(ts[True]) < 0.35
+    assert max(ts[True]) < 0.4
