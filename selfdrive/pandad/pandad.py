@@ -3,7 +3,9 @@
 import os
 import usb1
 import time
+import signal
 import subprocess
+import sys
 from typing import NoReturn
 
 from panda import Panda, PandaDFU, PandaProtocolMismatch, FW_PATH
@@ -62,6 +64,17 @@ def flash_panda(panda_serial: str) -> Panda:
 
 
 def main() -> NoReturn:
+  # signal pandad to close the relay and exit
+  def signal_handler(signum, frame):
+    cloudlog.info(f"Caught signal {signum}, exiting")
+    if process is not None and process.poll() is None:
+      process.terminate()
+      process.wait()
+    sys.exit(1)
+
+  process = None
+  signal.signal(signal.SIGTERM, signal_handler)
+
   count = 0
   first_run = True
   params = Params()
@@ -159,8 +172,10 @@ def main() -> NoReturn:
 
     # run pandad with all connected serials as arguments
     os.environ['MANAGER_DAEMON'] = 'pandad'
-    os.chdir(os.path.join(BASEDIR, "selfdrive/pandad"))
-    subprocess.run(["./pandad", *panda_serials], check=True)
+    process = subprocess.Popen(["./pandad", *panda_serials], cwd=os.path.join(BASEDIR, "selfdrive/pandad"))
+    process.wait()
+
+  sys.exit(1)
 
 if __name__ == "__main__":
   main()

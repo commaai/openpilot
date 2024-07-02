@@ -106,6 +106,7 @@ public:
   ExitHandler() {
     std::signal(SIGINT, (sighandler_t)set_do_exit);
     std::signal(SIGTERM, (sighandler_t)set_do_exit);
+    std::signal(SIGHUP, (sighandler_t)set_do_exit);
 
 #ifndef __APPLE__
     std::signal(SIGPWR, (sighandler_t)set_do_exit);

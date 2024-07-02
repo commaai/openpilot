@@ -412,6 +412,7 @@ void panda_state_thread(std::vector<Panda *> pandas, bool spoofing_started) {
   PubMaster pm({"pandaStates", "peripheralState"});
 
   Panda *peripheral_panda = pandas[0];
+  bool engaged = false;
   bool is_onroad = false;
   bool is_onroad_last = false;
   std::future<bool> safety_future;
@@ -483,13 +484,19 @@ void panda_state_thread(std::vector<Panda *> pandas, bool spoofing_started) {
     is_onroad_last = is_onroad;
 
     sm.update(0);
-    const bool engaged = sm.allAliveAndValid({"controlsState"}) && sm["controlsState"].getControlsState().getEnabled();
+    engaged = sm.allAliveAndValid({"controlsState"}) && sm["controlsState"].getControlsState().getEnabled();
 
     for (const auto &panda : pandas) {
       panda->send_heartbeat(engaged);
     }
 
     rk.keepTime();
+  }
+
+  if (is_onroad && !engaged) {
+    for (auto &p : pandas) {
+      p->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
+    }
   }
 }
 
