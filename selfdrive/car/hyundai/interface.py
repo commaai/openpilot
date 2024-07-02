@@ -2,7 +2,7 @@ from cereal import car
 from panda import Panda
 from openpilot.selfdrive.car.hyundai.hyundaicanfd import CanBus
 from openpilot.selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, CANFD_RADAR_SCC_CAR, \
-                                         CANFD_UNSUPPORTED_LONGITUDINAL_CAR, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, \
+                                         EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, \
                                          UNSUPPORTED_LONGITUDINAL_CAR, Buttons
 from openpilot.selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from openpilot.selfdrive.car import create_button_events, get_safety_config
@@ -32,6 +32,10 @@ class CarInterface(CarInterfaceBase):
     hda2 = Ecu.adas in [fw.ecu for fw in car_fw]
     CAN = CanBus(None, hda2, fingerprint)
 
+    if not hda2 and 0x12a in fingerprint[CAN.ACAN]:
+      hda2 = True
+      CAN = CanBus(None, hda2, fingerprint)
+
     if candidate in CANFD_CAR:
       # detect if car is hybrid
       if 0x105 in fingerprint[CAN.ECAN]:
@@ -48,14 +52,15 @@ class CarInterface(CarInterfaceBase):
         # non-HDA2
         if 0x1cf not in fingerprint[CAN.ECAN]:
           ret.flags |= HyundaiFlags.CANFD_ALT_BUTTONS.value
-        # ICE cars do not have 0x130; GEARS message on 0x40 or 0x70 instead
-        if 0x130 not in fingerprint[CAN.ECAN]:
-          if 0x40 not in fingerprint[CAN.ECAN]:
-            ret.flags |= HyundaiFlags.CANFD_ALT_GEARS_2.value
-          else:
-            ret.flags |= HyundaiFlags.CANFD_ALT_GEARS.value
         if candidate not in CANFD_RADAR_SCC_CAR:
           ret.flags |= HyundaiFlags.CANFD_CAMERA_SCC.value
+
+      # ICE cars do not have 0x130; GEARS message on 0x40 or 0x70 instead
+      if 0x130 not in fingerprint[CAN.ECAN]:
+        if 0x40 not in fingerprint[CAN.ECAN]:
+          ret.flags |= HyundaiFlags.CANFD_ALT_GEARS_2.value
+        else:
+          ret.flags |= HyundaiFlags.CANFD_ALT_GEARS.value
     else:
       # TODO: detect EV and hybrid
       if candidate in HYBRID_CAR:
@@ -80,7 +85,7 @@ class CarInterface(CarInterfaceBase):
 
     # *** longitudinal control ***
     if candidate in CANFD_CAR:
-      ret.experimentalLongitudinalAvailable = candidate not in (CANFD_UNSUPPORTED_LONGITUDINAL_CAR | CANFD_RADAR_SCC_CAR)
+      ret.experimentalLongitudinalAvailable = True
     else:
       ret.experimentalLongitudinalAvailable = candidate not in (UNSUPPORTED_LONGITUDINAL_CAR | CAMERA_SCC_CAR)
     ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
@@ -143,8 +148,8 @@ class CarInterface(CarInterfaceBase):
     if CP.openpilotLongitudinalControl and not (CP.flags & HyundaiFlags.CANFD_CAMERA_SCC.value):
       addr, bus = 0x7d0, 0
       if CP.flags & HyundaiFlags.CANFD_HDA2.value:
-        addr, bus = 0x730, CanBus(CP).ECAN
-      disable_ecu(logcan, sendcan, bus=bus, addr=addr, com_cont_req=b'\x28\x83\x01')
+        addr, bus = 0x7d0, CanBus(CP).ECAN
+      disable_ecu(logcan, sendcan, bus=bus, addr=addr, com_cont_req=b'\x28\x01\x01')
 
     # for blinkers
     if CP.flags & HyundaiFlags.ENABLE_BLINKERS:

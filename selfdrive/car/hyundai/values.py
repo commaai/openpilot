@@ -537,7 +537,10 @@ class CAR(Platforms):
     CarSpecs(mass=2200, wheelbase=3.15, steerRatio=12.069),
   )
   GENESIS_GV80 = HyundaiCanFDPlatformConfig(
-    [HyundaiCarDocs("Genesis GV80 2023", "All", car_parts=CarParts.common([CarHarness.hyundai_m]))],
+    [
+      HyundaiCarDocs("Genesis GV80 2023", "All", car_parts=CarParts.common([CarHarness.hyundai_m])),
+      HyundaiCarDocs("Genesis GV80 (Middle East only) 2021", "All", car_parts=CarParts.common([CarHarness.hyundai_s])),
+    ],
     CarSpecs(mass=2258, wheelbase=2.95, steerRatio=14.14),
     flags=HyundaiFlags.RADAR_SCC,
   )
