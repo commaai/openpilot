@@ -6,9 +6,15 @@ on:
       - master
   pull_request:
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      run_number:
+        default: '1'
+        required: true
+        type: string
 
 concurrency:
-  group: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}
+  group: selfdrive-tests-ci-run-${{ inputs.run_number }}-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}
   cancel-in-progress: true
 
 env:
@@ -320,5 +326,5 @@ jobs:
       - name: Upload Test Report
         uses: actions/upload-artifact@v4
         with:
-          name: report
-          path: selfdrive/ui/tests/test_ui/report
+          name: report-${{ inputs.run_number }}
+          path: selfdrive/ui/tests/test_ui/report_${{ inputs.run_number }}
