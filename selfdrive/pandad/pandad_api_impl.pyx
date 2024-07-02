@@ -1,8 +1,10 @@
 # distutils: language = c++
 # cython: language_level=3
+from cython.operator cimport dereference as deref, preincrement as preinc
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp cimport bool
+from libc.stdint cimport uint8_t, uint32_t, uint64_t
 
 cdef extern from "panda.h":
   cdef struct can_frame:
@@ -11,8 +13,19 @@ cdef extern from "panda.h":
     long busTime
     long src
 
+cdef extern from "opendbc/can/common.h":
+  cdef struct CanFrame:
+    long src
+    uint32_t address
+    vector[uint8_t] dat
+
+  cdef struct CanData:
+    uint64_t nanos
+    vector[CanFrame] frames
+
 cdef extern from "can_list_to_can_capnp.cc":
   void can_list_to_can_capnp_cpp(const vector[can_frame] &can_list, string &out, bool sendCan, bool valid)
+  void can_capnp_to_can_list_cpp(const vector[string] &strings, vector[CanData] &can_data, bool sendcan)
 
 def can_list_to_can_capnp(can_msgs, msgtype='can', valid=True):
   cdef can_frame *f
@@ -29,3 +42,17 @@ def can_list_to_can_capnp(can_msgs, msgtype='can', valid=True):
   cdef string out
   can_list_to_can_capnp_cpp(can_list, out, msgtype == 'sendcan', valid)
   return out
+
+def can_capnp_to_list(strings, sendcan=False):
+  cdef vector[CanData] data
+  can_capnp_to_can_list_cpp(strings, data, sendcan)
+
+  result = []
+  cdef CanData *d
+  cdef vector[CanData].iterator it = data.begin()
+  while it != data.end():
+    d = &deref(it)
+    frames = [[f.address, 0, (<char *>&f.dat[0])[:f.dat.size()], f.src] for f in d.frames]
+    result.append([d.nanos, frames])
+    preinc(it)
+  return result

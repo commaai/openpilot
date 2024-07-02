@@ -19,6 +19,7 @@ from openpilot.selfdrive.car.values import PLATFORMS
 from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, get_friction
 from openpilot.selfdrive.controls.lib.events import Events
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
+from openpilot.selfdrive.pandad import can_capnp_to_list
 
 ButtonType = car.CarState.ButtonEvent.Type
 GearShifter = car.CarState.GearShifter
@@ -232,9 +233,10 @@ class CarInterfaceBase(ABC):
 
   def update(self, c: car.CarControl, can_strings: list[bytes]) -> car.CarState:
     # parse can
+    can_list = can_capnp_to_list(can_strings)
     for cp in self.can_parsers:
       if cp is not None:
-        cp.update_strings(can_strings)
+        cp.update_strings(can_list)
 
     # get CarState
     ret = self._update(c)

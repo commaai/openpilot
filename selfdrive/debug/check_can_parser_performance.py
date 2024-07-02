@@ -6,6 +6,7 @@ from tqdm import tqdm
 from cereal import car
 from openpilot.selfdrive.car.tests.routes import CarTestRoute
 from openpilot.selfdrive.car.tests.test_models import TestCarModelBase
+from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.tools.plotjuggler.juggle import DEMO_ROUTE
 
 N_RUNS = 10
@@ -25,7 +26,7 @@ if __name__ == '__main__':
   CC = car.CarControl.new_message()
   ets = []
   for _ in tqdm(range(N_RUNS)):
-    msgs = [(m.as_builder().to_bytes(),) for m in tm.can_msgs]
+    msgs = can_capnp_to_list([m.as_builder().to_bytes() for m in tm.can_msgs])
     start_t = time.process_time_ns()
     for msg in msgs:
       for cp in tm.CI.can_parsers:
