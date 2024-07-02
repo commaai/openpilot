@@ -95,6 +95,8 @@ class HyundaiFlags(IntFlag):
 
   MIN_STEER_32_MPH = 2 ** 23
 
+  PAUSE_RESUME_BTN = 2 ** 24
+
 
 class Footnote(Enum):
   CANFD = CarFootnote(
@@ -731,6 +733,7 @@ CAN_GEARS = {
   "use_tcu_gears": CAR.with_flags(HyundaiFlags.TCU_GEARS),
 }
 
+PAUSE_RESUME_BTN_CAR = CAR.with_flags(HyundaiFlags.PAUSE_RESUME_BTN)
 CANFD_CAR = CAR.with_flags(HyundaiFlags.CANFD)
 CANFD_RADAR_SCC_CAR = CAR.with_flags(HyundaiFlags.RADAR_SCC)
 

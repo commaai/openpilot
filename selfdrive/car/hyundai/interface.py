@@ -3,7 +3,7 @@ from panda import Panda
 from openpilot.selfdrive.car.hyundai.hyundaicanfd import CanBus
 from openpilot.selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, CANFD_RADAR_SCC_CAR, \
                                          CANFD_UNSUPPORTED_LONGITUDINAL_CAR, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, \
-                                         UNSUPPORTED_LONGITUDINAL_CAR, Buttons
+                                         UNSUPPORTED_LONGITUDINAL_CAR, PAUSE_RESUME_BTN_CAR, Buttons
 from openpilot.selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from openpilot.selfdrive.car import create_button_events, get_safety_config
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
@@ -31,6 +31,9 @@ class CarInterface(CarInterfaceBase):
 
     hda2 = Ecu.adas in [fw.ecu for fw in car_fw]
     CAN = CanBus(None, hda2, fingerprint)
+
+    if candidate in PAUSE_RESUME_BTN_CAR:
+        ret.flags |= HyundaiFlags.PAUSE_RESUME_BTN.value
 
     if candidate in CANFD_CAR:
       # detect if car is hybrid
@@ -123,6 +126,8 @@ class CarInterface(CarInterfaceBase):
       if candidate in CAMERA_SCC_CAR:
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_HYUNDAI_CAMERA_SCC
 
+    if ret.flags & HyundaiFlags.PAUSE_RESUME_BTN:
+      ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_PAUSE_RESUME_BTN
     if ret.openpilotLongitudinalControl:
       ret.safetyConfigs[-1].safetyParam |= Panda.FLAG_HYUNDAI_LONG
     if ret.flags & HyundaiFlags.HYBRID:
@@ -154,12 +159,24 @@ class CarInterface(CarInterfaceBase):
     ret = self.CS.update(self.cp, self.cp_cam)
 
     if self.CS.CP.openpilotLongitudinalControl:
-      ret.buttonEvents = create_button_events(self.CS.cruise_buttons[-1], self.CS.prev_cruise_buttons, BUTTONS_DICT)
+      ret.buttonEvents= create_button_events(self.CS.cruise_buttons[-1], self.CS.prev_cruise_buttons, BUTTONS_DICT)
 
-    # On some newer model years, the CANCEL button acts as a pause/resume button based on the PCM state
-    # To avoid re-engaging when openpilot cancels, check user engagement intention via buttons
-    # Main button also can trigger an engagement on these cars
-    allow_enable = any(btn in ENABLE_BUTTONS for btn in self.CS.cruise_buttons) or any(self.CS.main_buttons)
+      pause_resume_btn = bool(self.CP.flags & HyundaiFlags.PAUSE_RESUME_BTN)
+      cruise_speed_set = ret.cruiseState.speed > 0
+
+      resume_button = self.CS.cruise_buttons[-1] == Buttons.RES_ACCEL
+      cancel_button = self.CS.cruise_buttons[-1] == Buttons.CANCEL
+      # main button is considered if it's the first time it is pressed
+      main_button = self.CS.main_buttons[-1] == 1 and sum(1 for x in self.CS.main_buttons if x != Buttons.NONE) == 1
+
+      allow_enable = (
+          (resume_button and cruise_speed_set and not pause_resume_btn) or
+          (cancel_button and pause_resume_btn) or # cancel acts like a pause/resume button on newer cars
+          (main_button and pause_resume_btn)
+      )
+    else:
+      allow_enable = any(btn in ENABLE_BUTTONS for btn in self.CS.cruise_buttons) or any(self.CS.main_buttons)
+
     events = self.create_common_events(ret, pcm_enable=self.CS.CP.pcmCruise, allow_enable=allow_enable)
 
     # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
@@ -168,7 +185,7 @@ class CarInterface(CarInterfaceBase):
     if ret.vEgo > (self.CP.minSteerSpeed + 4.):
       self.low_speed_alert = False
     if self.low_speed_alert:
-      events.add(car.CarEvent.EventName.belowSteerSpeed)
+      events.add(EventName.belowSteerSpeed)
 
     ret.events = events.to_msg()
 
