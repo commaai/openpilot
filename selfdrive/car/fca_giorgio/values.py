@@ -10,7 +10,7 @@ class CarControllerParams:
   HUD_2_STEP = 25
 
   STEER_MAX = 200  # TODO: probe limit
-  STEER_DRIVER_ALLOWANCE = 50  # TODO: validate
+  STEER_DRIVER_ALLOWANCE = 80  # TODO: validate
   STEER_DRIVER_MULTIPLIER = 3  # weight driver torque heavily
   STEER_DRIVER_FACTOR = 1  # from dbc
   STEER_DELTA_UP = 4  # TODO: probe limit
@@ -39,7 +39,7 @@ class FcaGiorgioCarSpecs(CarSpecs):
 @dataclass
 class FcaGiorgioCarDocs(CarDocs):
   package: str = "Adaptive Cruise Control (ACC) & Lane Assist"
-  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.vw]))
+  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.vw_a]))
 
 
 class CAR(Platforms):
