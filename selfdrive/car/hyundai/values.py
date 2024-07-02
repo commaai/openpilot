@@ -26,7 +26,7 @@ class CarControllerParams:
     self.STEER_STEP = 1  # 100 Hz
 
     if CP.carFingerprint in CANFD_CAR:
-      self.STEER_MAX = 270
+      self.STEER_MAX = 170
       self.STEER_DRIVER_ALLOWANCE = 250
       self.STEER_DRIVER_MULTIPLIER = 2
       self.STEER_THRESHOLD = 250
@@ -436,6 +436,7 @@ class CAR(Platforms):
     [
       HyundaiCarDocs("Kia Sportage 2023-24", car_parts=CarParts.common([CarHarness.hyundai_n])),
       HyundaiCarDocs("Kia Sportage Hybrid 2023", car_parts=CarParts.common([CarHarness.hyundai_n])),
+      HyundaiCarDocs("Kia Sportage Plug-in Hybrid 2023", car_parts=CarParts.common([CarHarness.hyundai_n])),
     ],
     # weight from SX and above trims, average of FWD and AWD version, steering ratio according to Kia News https://www.kiamedia.com/us/en/models/sportage/2023/specifications
     CarSpecs(mass=1725, wheelbase=2.756, steerRatio=13.6),
