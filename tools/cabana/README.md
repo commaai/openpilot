@@ -29,4 +29,25 @@ Arguments:
                                  connect.comma.ai
 ```
 
+## Segment Ranges
+
+you can specify which segments from a route to load
+
+```bash
+# the 4th segment
+cabana 'a2a0ccea32023010|2023-07-27--13-01-19/4'
+
+# the 4th, 5th and 6th segment
+cabana 'a2a0ccea32023010|2023-07-27--13-01-19/4:6'
+
+# the last segment
+cabana 'a2a0ccea32023010|2023-07-27--13-01-19/-1'
+
+# the first 5 segments
+cabana 'a2a0ccea32023010|2023-07-27--13-01-19/:5'
+
+# all except first segment
+cabana 'a2a0ccea32023010|2023-07-27--13-01-19/1:'
+```
+
 See [openpilot wiki](https://github.com/commaai/openpilot/wiki/Cabana)
