@@ -294,6 +294,12 @@ class CAR(Platforms):
     chassis_codes={"A3"},
     wmis={WMI.VOLKSWAGEN_USA_CAR},
   )
+  VOLKSWAGEN_JETTA_MK6 = VolkswagenPQPlatformConfig(
+    [VWCarDocs("Volkswagen Jetta 2015-2018")],
+    VolkswagenCarSpecs(mass=1518, wheelbase=2.65, minSteerSpeed=50 * CV.KPH_TO_MS, minEnableSpeed=20 * CV.KPH_TO_MS),
+    chassis_codes={"5K", "AJ"},
+    wmis={WMI.VOLKSWAGEN_MEXICO_CAR},
+  )
   VOLKSWAGEN_POLO_MK6 = VolkswagenMQBPlatformConfig(
     [
       VWCarDocs("Volkswagen Polo 2018-23", footnotes=[Footnote.VW_MQB_A0]),

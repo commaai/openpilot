@@ -486,6 +486,14 @@ FW_VERSIONS = {
       b'\xf1\x877N0907572C \xf1\x890211\xf1\x82\x0152',
     ],
   },
+  CAR.VOLKSWAGEN_JETTA_MK6: {
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x875C0959655M \xf1\x890726\xf1\x82\t00NB1108--------24',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x877N0907572C \xf1\x890211\xf1\x82\x0151',
+    ],
+  },
   CAR.VOLKSWAGEN_POLO_MK6: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704C906025H \xf1\x895177',
