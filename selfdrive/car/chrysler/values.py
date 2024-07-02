@@ -41,7 +41,7 @@ class CAR(Platforms):
     CHRYSLER_PACIFICA_2017_HYBRID.specs,
   )
   CHRYSLER_PACIFICA_2019_HYBRID = ChryslerPlatformConfig(
-    [ChryslerCarDocs("Chrysler Pacifica Hybrid 2019-23")],
+    [ChryslerCarDocs("Chrysler Pacifica Hybrid 2019-24")],
     CHRYSLER_PACIFICA_2017_HYBRID.specs,
   )
   CHRYSLER_PACIFICA_2018 = ChryslerPlatformConfig(

@@ -60,7 +60,7 @@ class WaitTimeHelper:
     self.ready_event.wait(timeout=t)
 
 def write_time_to_param(params, param) -> None:
-  t = datetime.datetime.utcnow()
+  t = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
   params.put(param, t.isoformat().encode('utf8'))
 
 def read_time_from_param(params, param) -> datetime.datetime | None:
@@ -279,7 +279,7 @@ class Updater:
     if len(self.branches):
       self.params.put("UpdaterAvailableBranches", ','.join(self.branches.keys()))
 
-    last_update = datetime.datetime.utcnow()
+    last_update = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
     if update_success:
       write_time_to_param(self.params, "LastUpdateTime")
     else:
@@ -323,7 +323,7 @@ class Updater:
     for alert in ("Offroad_UpdateFailed", "Offroad_ConnectivityNeeded", "Offroad_ConnectivityNeededPrompt"):
       set_offroad_alert(alert, False)
 
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
     dt = now - last_update
     build_metadata = get_build_metadata()
     if failed_count > 15 and exception is not None and self.has_internet:
@@ -429,7 +429,7 @@ def main() -> None:
       cloudlog.event("update installed")
 
     if not params.get("InstallDate"):
-      t = datetime.datetime.utcnow().isoformat()
+      t = datetime.datetime.now(datetime.UTC).replace(tzinfo=None).isoformat()
       params.put("InstallDate", t.encode('utf8'))
 
     updater = Updater()
@@ -469,7 +469,7 @@ def main() -> None:
 
         # download update
         last_fetch = read_time_from_param(params, "UpdaterLastFetchTime")
-        timed_out = last_fetch is None or (datetime.datetime.utcnow() - last_fetch > datetime.timedelta(days=3))
+        timed_out = last_fetch is None or (datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - last_fetch > datetime.timedelta(days=3))
         user_requested_fetch = wait_helper.user_request == UserRequest.FETCH
         if params.get_bool("NetworkMetered") and not timed_out and not user_requested_fetch:
           cloudlog.info("skipping fetch, connection metered")

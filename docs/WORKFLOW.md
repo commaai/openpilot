@@ -22,7 +22,7 @@ scons -j8 selfdrive/ui/
 cd selfdrive/ui/ && scons -u -j8
 
 # test everything
-pytest .
+pytest
 
 # test just logging services
 cd system/loggerd && pytest .

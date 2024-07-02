@@ -698,7 +698,6 @@ struct ControlsState @0x97ff69c53601abf1 {
   personality @66 :LongitudinalPersonality;
 
   longControlState @30 :Car.CarControl.Actuators.LongControlState;
-  vPid @2 :Float32;
   vTargetLead @3 :Float32;
   vCruise @22 :Float32;  # actual set speed
   vCruiseCluster @63 :Float32;  # set speed to display in the UI
@@ -866,6 +865,38 @@ struct ControlsState @0x97ff69c53601abf1 {
   canMonoTimesDEPRECATED @21 :List(UInt64);
   desiredCurvatureRateDEPRECATED @62 :Float32;
   canErrorCounterDEPRECATED @57 :UInt32;
+  vPidDEPRECATED @2 :Float32;
+}
+
+struct DrivingModelData {
+  frameId @0 :UInt32;
+  frameIdExtra @1 :UInt32;
+  frameDropPerc @6 :Float32;
+
+  action @2 :ModelDataV2.Action;
+
+  laneLineMeta @3 :LaneLineMeta;
+  meta @4 :MetaData;
+
+  path @5 :PolyPath;
+
+  struct PolyPath {
+    xCoefficients @0 :List(Float32);
+    yCoefficients @1 :List(Float32);
+    zCoefficients @2 :List(Float32);
+  }
+
+  struct LaneLineMeta {
+    leftY @0 :Float32;
+    rightY @1 :Float32;
+    leftProb @2 :Float32;
+    rightProb @3 :Float32;
+  }
+
+  struct MetaData {
+    laneChangeState @0 :LaneChangeState;
+    laneChangeDirection @1 :LaneChangeDirection;
+  }
 }
 
 # All SI units and in device frame
@@ -1060,6 +1091,11 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
   accels @32 :List(Float32);
   speeds @33 :List(Float32);
   jerks @34 :List(Float32);
+  aTarget @18 :Float32;
+  shouldStop @37: Bool;
+  allowThrottle @38: Bool;
+  allowBrake @39: Bool;
+
 
   solverExecutionTime @35 :Float32;
 
@@ -1076,7 +1112,6 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
   aCruiseDEPRECATED @17 :Float32;
   vTargetDEPRECATED @3 :Float32;
   vTargetFutureDEPRECATED @14 :Float32;
-  aTargetDEPRECATED @18 :Float32;
   vStartDEPRECATED @26 :Float32;
   aStartDEPRECATED @27 :Float32;
   vMaxDEPRECATED @20 :Float32;
@@ -2244,7 +2279,6 @@ struct Event {
     carControl @23 :Car.CarControl;
     carOutput @127 :Car.CarOutput;
     longitudinalPlan @24 :LongitudinalPlan;
-    uiPlan @106 :UiPlan;
     ubloxGnss @34 :UbloxGnss;
     ubloxRaw @39 :Data;
     qcomGnss @31 :QcomGnss;
@@ -2260,6 +2294,7 @@ struct Event {
     driverMonitoringState @71: DriverMonitoringState;
     liveLocationKalman @72 :LiveLocationKalman;
     modelV2 @75 :ModelDataV2;
+    drivingModelData @128 :DrivingModelData;
     driverStateV2 @92 :DriverStateV2;
 
     # camera stuff, each camera state has a matching encode idx
@@ -2365,5 +2400,6 @@ struct Event {
     sensorEventsDEPRECATED @11 :List(SensorEventData);
     lateralPlanDEPRECATED @64 :LateralPlan;
     navModelDEPRECATED @104 :NavModelData;
+    uiPlanDEPRECATED @106 :UiPlan;
   }
 }

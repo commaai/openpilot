@@ -23,7 +23,7 @@ ALL_ECUS |= {ecu for config in FW_QUERY_CONFIGS.values() for ecu in config.extra
 
 ALL_REQUESTS = {tuple(r.request) for config in FW_QUERY_CONFIGS.values() for r in config.requests}
 
-MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '40'))
+MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '60'))
 
 
 def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
@@ -75,7 +75,6 @@ class TestCarInterfaces:
     # Longitudinal sanity checks
     assert len(car_params.longitudinalTuning.kpV) == len(car_params.longitudinalTuning.kpBP)
     assert len(car_params.longitudinalTuning.kiV) == len(car_params.longitudinalTuning.kiBP)
-    assert len(car_params.longitudinalTuning.deadzoneV) == len(car_params.longitudinalTuning.deadzoneBP)
 
     # Lateral sanity checks
     if car_params.steerControlType != car.CarParams.SteerControlType.angle:

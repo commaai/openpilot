@@ -44,9 +44,7 @@ class CarControllerParams:
 class ToyotaFlags(IntFlag):
   # Detected flags
   HYBRID = 1
-  SMART_DSU = 2
   DISABLE_RADAR = 4
-  RADAR_CAN_FILTER = 1024
 
   # Static flags
   TSS2 = 8
@@ -56,7 +54,7 @@ class ToyotaFlags(IntFlag):
   # these cars use the Lane Tracing Assist (LTA) message for lateral control
   ANGLE_CONTROL = 128
   NO_STOP_TIMER = 256
-  # these cars are speculated to allow stop and go when the DSU is unplugged or disabled with sDSU
+  # these cars are speculated to allow stop and go when the DSU is unplugged
   SNG_WITHOUT_DSU = 512
 
 
