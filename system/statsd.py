@@ -62,19 +62,13 @@ class StatLog:
 def main() -> NoReturn:
   dongle_id = Params().get("DongleId", encoding='utf-8')
   def get_influxdb_line(measurement: str, value: float | dict[str, float],  timestamp: datetime, tags: dict) -> str:
-    res = f"{measurement}"
-    for k, v in tags.items():
-      res += f",{k}={str(v)}"
-    res += " "
-
     if isinstance(value, float):
       value = {'value': value}
 
-    for k, v in value.items():
-      res += f"{k}={v},"
+    tags_part = ",".join([f"{k}={v}" for k, v in tags.items()])
+    fields_part = ",".join([f"{k}={v}" for k, v in value.items()])
 
-    res += f"dongle_id=\"{dongle_id}\" {int(timestamp.timestamp() * 1e9)}\n"
-    return res
+    return f"{measurement},{tags_part} {fields_part},dongle_id=\"{dongle_id}\" {int(timestamp.timestamp() * 1e9)}\n"
 
   # open statistics socket
   ctx = zmq.Context.instance()
