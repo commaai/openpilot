@@ -117,7 +117,7 @@ class CarInterface(CarInterfaceBase):
     ret.openpilotLongitudinalControl = ret.enableDsu or candidate in (TSS2_CAR - RADAR_ACC_CAR) or bool(ret.flags & ToyotaFlags.DISABLE_RADAR.value)
     ret.autoResumeSng = ret.openpilotLongitudinalControl and candidate in NO_STOP_TIMER_CAR
 
-    if not ret.openpilotLongitudinalControl or True:
+    if not ret.openpilotLongitudinalControl:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL
 
     # min speed to enable ACC. if car can do stop and go, then set enabling speed
@@ -172,12 +172,6 @@ class CarInterface(CarInterfaceBase):
         if ret.vEgo < 0.001:
           # while in standstill, send a user alert
           events.add(EventName.manualRestart)
-
-    # TODO clean-after-port
-    if ret.brakePressed:
-      events.add(EventName.reverseGear)
-    if ret.seatbeltUnlatched:
-      events.add(EventName.seatbeltNotLatched)
 
     ret.events = events.to_msg()
 
