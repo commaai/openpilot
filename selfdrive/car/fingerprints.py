@@ -1,7 +1,6 @@
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.body.values import CAR as BODY
 from openpilot.selfdrive.car.chrysler.values import CAR as CHRYSLER
-from openpilot.selfdrive.car.fca_giorgio.values import CAR as FCA_GIORGIO
 from openpilot.selfdrive.car.ford.values import CAR as FORD
 from openpilot.selfdrive.car.gm.values import CAR as GM
 from openpilot.selfdrive.car.honda.values import CAR as HONDA
@@ -343,6 +342,5 @@ MIGRATION = {
   "SKODA SCALA 1ST GEN": VW.SKODA_KAMIQ_MK1,
   "SKODA_SCALA_MK1": VW.SKODA_KAMIQ_MK1,
   "SKODA SUPERB 3RD GEN": VW.SKODA_SUPERB_MK3,
-  "ALFA ROMEO STELVIO 1ST GEN": FCA_GIORGIO.ALFA_ROMEO_STELVIO_1ST_GEN,
   "mock": MOCK.MOCK,
 }

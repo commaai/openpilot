@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 
 from openpilot.selfdrive.car import dbc_dict, CarSpecs, DbcDict, PlatformConfig, Platforms
 from openpilot.selfdrive.car.docs_definitions import CarHarness, CarDocs, CarParts
+from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 
 class CarControllerParams:
@@ -49,6 +50,18 @@ class CAR(Platforms):
     [FcaGiorgioCarDocs("Alfa Romeo Stelvio 2017-24")],
     FcaGiorgioCarSpecs(mass=1660, wheelbase=2.82),
   )
+
+
+FW_QUERY_CONFIG = FwQueryConfig(
+  requests=[
+    # TODO: check data to ensure ABS does not skip ISO-TP frames on bus 0
+    Request(
+      [StdQueries.MANUFACTURER_SOFTWARE_VERSION_REQUEST],
+      [StdQueries.MANUFACTURER_SOFTWARE_VERSION_RESPONSE],
+      bus=0,
+    ),
+  ],
+)
 
 
 DBC = CAR.create_dbc_map()

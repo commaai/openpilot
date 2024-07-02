@@ -38,7 +38,9 @@ class CarController(CarControllerBase):
     if self.frame % self.CCP.HUD_2_STEP == 0:
       can_sends.append(fca_giorgiocan.create_lka_hud_2_control(self.packer_pt, CANBUS.pt, CC.latActive))
 
-    new_actuators = actuators.copy()
+    new_actuators = actuators.as_builder()
+    new_actuators.steer = self.apply_steer_last / self.CCP.STEER_MAX
+    new_actuators.steerOutputCan = self.apply_steer_last
 
     self.frame += 1
     return new_actuators, can_sends

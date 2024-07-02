@@ -4,7 +4,7 @@ def create_steering_control(packer, bus, apply_steer, lkas_enabled):
     "LKA_TORQUE": apply_steer,
   }
 
-  return packer.make_can_msg("HCA_01", bus, values)
+  return packer.make_can_msg("LKA_COMMAND", bus, values)
 
 
 def create_lka_hud_1_control(packer, bus, lat_active):
