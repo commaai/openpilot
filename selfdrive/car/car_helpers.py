@@ -1,3 +1,4 @@
+import capnp
 import os
 import time
 from collections.abc import Callable
@@ -119,11 +120,15 @@ def fingerprint(logcan, sendcan, num_pandas):
 
   start_time = time.monotonic()
   if not skip_fw_query:
-    cached_params = params.get("CarParamsCache")
-    if cached_params is not None:
-      with car.CarParams.from_bytes(cached_params) as cached_params:
-        if cached_params.carName == "mock":
-          cached_params = None
+    cached_params_bytes = params.get("CarParamsCache")
+    cached_params = None
+    if cached_params_bytes is not None:
+      try:
+        with car.CarParams.from_bytes(cached_params_bytes) as tmp_params:
+          if tmp_params.carName != "mock":
+            cached_params = tmp_params
+      except capnp.lib.capnp.KjException as e:
+        cloudlog.error(f"Error loading cached CarParams: {e}")
 
     if cached_params is not None and len(cached_params.carFw) > 0 and \
        cached_params.carVin is not VIN_UNKNOWN and not disable_fw_cache:
