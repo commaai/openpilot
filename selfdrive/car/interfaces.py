@@ -160,14 +160,6 @@ class CarInterfaceBase(ABC):
   def init(CP, logcan, sendcan):
     pass
 
-  @staticmethod
-  def get_steer_feedforward_default(desired_angle, v_ego):
-    # Proportional to realigning tire momentum: lateral acceleration.
-    return desired_angle * (v_ego**2)
-
-  def get_steer_feedforward_function(self):
-    return self.get_steer_feedforward_default
-
   def torque_from_lateral_accel_linear(self, latcontrol_inputs: LatControlInputs, torque_params: car.CarParams.LateralTorqueTuning,
                                        lateral_accel_error: float, lateral_accel_deadzone: float, friction_compensation: bool, gravity_adjusted: bool) -> float:
     # The default is a linear relationship between torque and lateral acceleration (accounting for road roll and steering friction)
