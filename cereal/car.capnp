@@ -610,6 +610,7 @@ struct CarParams {
     volkswagenMqbEvo @29;
     chryslerCusw @30;
     psa @31;
+    fcaGiorgio @32;  # certain FCA/Stellantis vehicles including Jeep, Alfa Romeo, and Maserati
   }
 
   enum SteerControlType {
