@@ -12,6 +12,7 @@ TransmissionType = car.CarParams.TransmissionType
 
 class CarState(CarStateBase):
   def __init__(self, CP):
+    self.gear_mismatches = 0
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     if CP.transmissionType == TransmissionType.automatic:
@@ -76,6 +77,8 @@ class CarState(CarStateBase):
     if self.CP.transmissionType == TransmissionType.automatic:
       gear = self.shifter_values.get(cp.vl["Gear_Shift_by_Wire_FD1"]["TrnRng_D_RqGsm"])
       gear_new = self.shifter_values.get(cp.vl["PowertrainData_10"]["TrnRng_D_Rq"])
+      self.gear_mismatches += gear != gear_new
+      assert self.gear_mismatches < 10
       ret.gearShifter = self.parse_gear_shifter(gear_new)
     elif self.CP.transmissionType == TransmissionType.manual:
       ret.clutchPressed = cp.vl["Engine_Clutch_Data"]["CluPdlPos_Pc_Meas"] > 0
