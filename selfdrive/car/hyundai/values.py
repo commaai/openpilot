@@ -62,7 +62,7 @@ class HyundaiFlags(IntFlag):
   ENABLE_BLINKERS = 2 ** 5
   CANFD_ALT_GEARS_2 = 2 ** 6
   SEND_LFA = 2 ** 7
-  USE_FCA = 2 ** 8
+  USE_FCA11 = 2 ** 8
   CANFD_HDA2_ALT_STEERING = 2 ** 9
 
   # these cars use a different gas signal
@@ -94,6 +94,8 @@ class HyundaiFlags(IntFlag):
   TCU_GEARS = 2 ** 22
 
   MIN_STEER_32_MPH = 2 ** 23
+
+  USE_FCA12 = 2 ** 24
 
 
 class Footnote(Enum):
@@ -530,7 +532,6 @@ class CAR(Platforms):
   GENESIS_G80 = HyundaiPlatformConfig(
     [HyundaiCarDocs("Genesis G80 2018-19", "All", car_parts=CarParts.common([CarHarness.hyundai_h]))],
     CarSpecs(mass=2060, wheelbase=3.01, steerRatio=16.5),
-    flags=HyundaiFlags.LEGACY,
   )
   GENESIS_G90 = HyundaiPlatformConfig(
     [HyundaiCarDocs("Genesis G90 2017-20", "All", car_parts=CarParts.common([CarHarness.hyundai_c]))],

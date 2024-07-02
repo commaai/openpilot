@@ -146,8 +146,8 @@ class CarState(CarStateBase):
     ret.gearShifter = self.parse_gear_shifter(self.shifter_values.get(gear))
 
     if not self.CP.openpilotLongitudinalControl:
-      aeb_src = "FCA11" if self.CP.flags & HyundaiFlags.USE_FCA.value else "SCC12"
-      aeb_sig = "FCA_CmdAct" if self.CP.flags & HyundaiFlags.USE_FCA.value else "AEB_CmdAct"
+      aeb_src = "FCA11" if self.CP.flags & HyundaiFlags.USE_FCA11.value else "SCC12"
+      aeb_sig = "FCA_CmdAct" if self.CP.flags & HyundaiFlags.USE_FCA11.value else "AEB_CmdAct"
       aeb_warning = cp_cruise.vl[aeb_src]["CF_VSM_Warn"] != 0
       scc_warning = cp_cruise.vl["SCC12"]["TakeOverReq"] == 1  # sometimes only SCC system shows an FCW
       aeb_braking = cp_cruise.vl[aeb_src]["CF_VSM_DecCmdAct"] != 0 or cp_cruise.vl[aeb_src][aeb_sig] != 0
@@ -275,7 +275,7 @@ class CarState(CarStateBase):
         ("SCC11", 50),
         ("SCC12", 50),
       ]
-      if CP.flags & HyundaiFlags.USE_FCA.value:
+      if CP.flags & HyundaiFlags.USE_FCA11.value:
         messages.append(("FCA11", 50))
 
     if CP.enableBsm:
@@ -315,7 +315,7 @@ class CarState(CarStateBase):
         ("SCC12", 50),
       ]
 
-      if CP.flags & HyundaiFlags.USE_FCA.value:
+      if CP.flags & HyundaiFlags.USE_FCA11.value:
         messages.append(("FCA11", 50))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, 2)
