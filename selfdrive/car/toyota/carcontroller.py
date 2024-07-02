@@ -1,5 +1,5 @@
 from cereal import car
-from openpilot.common.numpy_fast import clip
+from openpilot.common.numpy_fast import clip, interp
 from openpilot.selfdrive.car import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, common_fault_avoidance, make_can_msg
 from openpilot.selfdrive.car.interfaces import CarControllerBase
 from openpilot.selfdrive.car.toyota import toyotacan
@@ -10,6 +10,7 @@ from opendbc.can.packer import CANPacker
 
 SteerControlType = car.CarParams.SteerControlType
 VisualAlert = car.CarControl.HUDControl.VisualAlert
+LongCtrlState = car.CarControl.Actuators.LongControlState
 
 # LKA limits
 # EPS faults if you apply torque while the steering rate is above 100 deg/s for too long
@@ -24,6 +25,12 @@ MAX_USER_TORQUE = 500
 MAX_LTA_ANGLE = 94.9461  # deg
 MAX_LTA_DRIVER_TORQUE_ALLOWANCE = 150  # slightly above steering pressed allows some resistance when changing lanes
 
+# PCM compensatory force calculation threshold
+# a variation in accel command is more pronounced at higher speeds, let compensatory forces ramp to zero before
+# applying when speed is high
+COMPENSATORY_CALCULATION_THRESHOLD_V = [-0.3, -0.25, 0.]  # m/s^2
+COMPENSATORY_CALCULATION_THRESHOLD_BP = [0., 11., 23.]  # m/s
+
 
 class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
@@ -36,6 +43,7 @@ class CarController(CarControllerBase):
     self.last_standstill = False
     self.standstill_req = False
     self.steer_rate_counter = 0
+    self.prohibit_neg_calculation = True
     self.distance_button = 0
 
     self.packer = CANPacker(dbc_name)
@@ -47,6 +55,7 @@ class CarController(CarControllerBase):
     hud_control = CC.hudControl
     pcm_cancel_cmd = CC.cruiseControl.cancel
     lat_active = CC.latActive and abs(CS.out.steeringTorque) < MAX_USER_TORQUE
+    stopping = actuators.longControlState == LongCtrlState.stopping
 
     # *** control msgs ***
     can_sends = []
@@ -100,7 +109,23 @@ class CarController(CarControllerBase):
                                                           lta_active, self.frame // 2, torque_wind_down))
 
     # *** gas and brake ***
-    pcm_accel_cmd = clip(actuators.accel, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
+    # prohibit negative compensatory calculations when first activating long after accelerator depression or engagement
+    if not CC.longActive:
+      self.prohibit_neg_calculation = True
+    comp_thresh = interp(CS.out.vEgo, COMPENSATORY_CALCULATION_THRESHOLD_BP, COMPENSATORY_CALCULATION_THRESHOLD_V)
+    # don't reset until a reasonable compensatory value is reached
+    if CS.pcm_neutral_force > comp_thresh * self.CP.mass:
+      self.prohibit_neg_calculation = False
+    # limit minimum to only positive until first positive is reached after engagement, don't calculate when long isn't active
+    if CC.longActive and not self.prohibit_neg_calculation:
+      accel_offset = CS.pcm_neutral_force / self.CP.mass
+    else:
+      accel_offset = 0.
+    # only calculate pcm_accel_cmd when long is active to prevent disengagement from accelerator depression
+    if CC.longActive:
+      pcm_accel_cmd = clip(actuators.accel + accel_offset, self.params.ACCEL_MIN, self.params.ACCEL_MAX)
+    else:
+      pcm_accel_cmd = 0.
 
     # on entering standstill, send standstill request
     if CS.out.standstill and not self.last_standstill and (self.CP.carFingerprint not in NO_STOP_TIMER_CAR):
@@ -118,6 +143,8 @@ class CarController(CarControllerBase):
     # we can spam can to cancel the system even if we are using lat only control
     if (self.frame % 3 == 0 and self.CP.openpilotLongitudinalControl) or pcm_cancel_cmd:
       lead = hud_control.leadVisible or CS.out.vEgo < 12.  # at low speed we always assume the lead is present so ACC can be engaged
+      # when stopping, send -2.5 raw acceleration immediately to prevent vehicle from creeping, else send actuators.accel
+      accel_raw = -2.5 if stopping else actuators.accel
 
       # Press distance button until we are at the correct bar length. Only change while enabled to avoid skipping startup popup
       if self.frame % 6 == 0 and self.CP.openpilotLongitudinalControl:
@@ -131,11 +158,11 @@ class CarController(CarControllerBase):
       if pcm_cancel_cmd and self.CP.carFingerprint in UNSUPPORTED_DSU_CAR:
         can_sends.append(toyotacan.create_acc_cancel_command(self.packer))
       elif self.CP.openpilotLongitudinalControl:
-        can_sends.append(toyotacan.create_accel_command(self.packer, pcm_accel_cmd, pcm_cancel_cmd, self.standstill_req, lead, CS.acc_type, fcw_alert,
-                                                        self.distance_button))
+        can_sends.append(toyotacan.create_accel_command(self.packer, pcm_accel_cmd, accel_raw, pcm_cancel_cmd, self.standstill_req, lead,
+                                                        CS.acc_type, fcw_alert, self.distance_button))
         self.accel = pcm_accel_cmd
       else:
-        can_sends.append(toyotacan.create_accel_command(self.packer, 0, pcm_cancel_cmd, False, lead, CS.acc_type, False, self.distance_button))
+        can_sends.append(toyotacan.create_accel_command(self.packer, 0, 0, pcm_cancel_cmd, False, lead, CS.acc_type, False, self.distance_button))
 
     # *** hud ui ***
     if self.CP.carFingerprint != CAR.TOYOTA_PRIUS_V:

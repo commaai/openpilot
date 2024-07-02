@@ -124,16 +124,19 @@ class CarInterface(CarInterfaceBase):
     # to a negative value, so it won't matter.
     ret.minEnableSpeed = -1. if stop_and_go else MIN_ACC_SPEED
 
+    # on stock Toyota this is -2.5
+    ret.stopAccel = -2.5
+
     tune = ret.longitudinalTuning
+    ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
     if candidate in TSS2_CAR:
       tune.kpV = [0.0]
       tune.kiV = [0.5]
       ret.vEgoStopping = 0.25
       ret.vEgoStarting = 0.25
-      ret.stoppingDecelRate = 0.3  # reach stopping target smoothly
     else:
-      tune.kiBP = [0., 5., 35.]
-      tune.kiV = [3.6, 2.4, 1.5]
+      tune.kpV = [0.0]
+      tune.kiV = [1.2] # appears to produce minimal oscillation on TSS-P
 
     return ret
 
