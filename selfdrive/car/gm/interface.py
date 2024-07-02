@@ -220,7 +220,7 @@ class CarInterface(CarInterfaceBase):
                                        pcm_enable=self.CP.pcmCruise, enable_buttons=(ButtonType.decelCruise,))
     if not self.CP.pcmCruise:
       if any(b.type == ButtonType.accelCruise and b.pressed for b in ret.buttonEvents):
-        events.add(EventName.buttonEnable)
+        events.add(EventName.buttonEnable if self.CS.cruise_resume_allowed else EventName.resumeBlocked)
 
     # Enabling at a standstill with brake is allowed
     # TODO: verify 17 Volt can enable for the first time at a stop and allow for all GMs
