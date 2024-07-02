@@ -1,22 +1,62 @@
 #!/usr/bin/env python3
+from collections import defaultdict
 import re
 
 import cereal.messaging as messaging
 from panda.python.uds import get_rx_addr_for_tx_addr, FUNCTIONAL_ADDRS
+from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
-from openpilot.selfdrive.car.fw_query_definitions import STANDARD_VIN_ADDRS, StdQueries
+from openpilot.selfdrive.car.fw_query_definitions import STANDARD_VIN_ADDRS, FwQueryConfig, VinRequest, StdQueries
 from openpilot.common.swaglog import cloudlog
+
+FW_QUERY_CONFIGS: dict[str, FwQueryConfig] = get_interface_attr('FW_QUERY_CONFIG', ignore_none=True)
 
 VIN_UNKNOWN = "0" * 17
 VIN_RE = "[A-HJ-NPR-Z0-9]{17}"
+
+STD_VIN_QUERIES = [
+  VinRequest(request=StdQueries.UDS_VIN_REQUEST,
+             response=StdQueries.UDS_VIN_RESPONSE,
+             addrs=STANDARD_VIN_ADDRS,
+             functional=True),
+  VinRequest(request=StdQueries.OBD_VIN_REQUEST,
+             response=StdQueries.OBD_VIN_RESPONSE,
+             addrs=STANDARD_VIN_ADDRS,
+             functional=True),
+]
 
 
 def is_valid_vin(vin: str):
   return re.fullmatch(VIN_RE, vin) is not None
 
 
-def get_vin(logcan, sendcan, buses, timeout=0.1, retry=2, debug=False):
+def get_vin(logcan, sendcan, buses, timeout=0.1, retry=3, debug=False):
+  # build queries
+  queries = defaultdict(set)
+  # queries = [
+  #   (StdQueries.UDS_VIN_REQUEST, StdQueries.UDS_VIN_RESPONSE, (0, 1), STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8),
+  #   (StdQueries.OBD_VIN_REQUEST, StdQueries.OBD_VIN_RESPONSE, (0, 1), STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8),
+  # ]
+  for vin_request in [config.vin_request for config in FW_QUERY_CONFIGS.values() if
+                      config.vin_request is not None] + STD_VIN_QUERIES:
+    for bus in vin_request.buses:
+      queries[(bus, tuple(vin_request.addrs))].add((vin_request.request, vin_request.response,
+                        None, vin_request.rx_offset))
+
+  # print(queries)
+  # raise Exception
+
+  for bus, bus_queries in queries.items():
+    print('Queries for bus={}:'.format(bus))
+    for query in bus_queries:
+      print(bus, query[0], query[1])
+    print()
+
   for i in range(retry):
+<<<<<<< HEAD
+    for (bus, vin_addrs), bus_queries in queries.items():
+      for request, response, functional_addrs, rx_offset in bus_queries:
+=======
     for bus in buses:
       for request, response, valid_buses, vin_addrs, functional_addrs, rx_offset in (
         (StdQueries.UDS_VIN_REQUEST, StdQueries.UDS_VIN_RESPONSE, (0, 1), STANDARD_VIN_ADDRS, FUNCTIONAL_ADDRS, 0x8),
@@ -34,6 +74,7 @@ def get_vin(logcan, sendcan, buses, timeout=0.1, retry=2, debug=False):
         if functional_addrs is not None:
           tx_addrs = [a for a in range(0x700, 0x800) if a != 0x7DF] + list(range(0x18DA00F1, 0x18DB00F1, 0x100))
 
+>>>>>>> upstream/master
         try:
           query = IsoTpParallelQuery(sendcan, logcan, bus, tx_addrs, [request, ], [response, ], response_offset=rx_offset,
                                      functional_addrs=functional_addrs, debug=debug)

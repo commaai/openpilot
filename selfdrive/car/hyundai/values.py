@@ -7,7 +7,7 @@ from panda.python import uds
 from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car import CarSpecs, DbcDict, PlatformConfig, Platforms, dbc_dict
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column
-from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, p16
+from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, VinRequest, p16
 
 Ecu = car.CarParams.Ecu
 
@@ -699,6 +699,24 @@ FW_QUERY_CONFIG = FwQueryConfig(
       bus=1,
       auxiliary=True,
       logging=True,
+      obd_multiplexing=False,
+    ),
+  ],
+  # OBD query + PT query
+  vin_requests=[
+    # PT and OBD query
+    VinRequest(
+      StdQueries.UDS_VIN_REQUEST,
+      StdQueries.UDS_VIN_RESPONSE,
+      addrs=[0x7e0, 0x7e2, 0x7c6],
+      bus=b,
+    ) for b in (0, 1)] + [
+    # HDA 2 PT query
+    VinRequest(
+      StdQueries.UDS_VIN_REQUEST,
+      StdQueries.UDS_VIN_RESPONSE,
+      addrs=[0x7e0, 0x7e2, 0x7c6],
+      bus=1,
       obd_multiplexing=False,
     ),
   ],
