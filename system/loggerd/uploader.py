@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import bz2
 import io
 import json
 import os
@@ -9,6 +8,7 @@ import threading
 import time
 import traceback
 import datetime
+import zstd
 from typing import BinaryIO
 from collections.abc import Iterator
 
@@ -26,6 +26,7 @@ UPLOAD_ATTR_NAME = 'user.upload'
 UPLOAD_ATTR_VALUE = b'1'
 
 UPLOAD_QLOG_QCAM_MAX_SIZE = 5 * 1e6  # MB
+LOG_COMPRESSION_LEVEL = 14
 
 allow_sleep = bool(os.getenv("UPLOADER_SLEEP", "1"))
 force_wifi = os.getenv("FORCEWIFI") is not None
@@ -83,7 +84,7 @@ class Uploader:
     self.last_filename = ""
 
     self.immediate_folders = ["crash/", "boot/"]
-    self.immediate_priority = {"qlog": 0, "qlog.bz2": 0, "qcamera.ts": 1}
+    self.immediate_priority = {"qlog": 0, "qlog.zst": 0, "qcamera.ts": 1}
 
   def list_upload_files(self, metered: bool) -> Iterator[tuple[str, str, str]]:
     r = self.params.get("AthenadRecentlyViewedRoutes", encoding="utf8")
@@ -152,8 +153,8 @@ class Uploader:
 
     with open(fn, "rb") as f:
       data: BinaryIO
-      if key.endswith('.bz2') and not fn.endswith('.bz2'):
-        compressed = bz2.compress(f.read())
+      if key.endswith('.zst') and not fn.endswith('.zst'):
+        compressed = zstd.compress(f.read(), LOG_COMPRESSION_LEVEL)
         data = io.BytesIO(compressed)
       else:
         data = f
@@ -218,8 +219,8 @@ class Uploader:
     name, key, fn = d
 
     # qlogs and bootlogs need to be compressed before uploading
-    if key.endswith(('qlog', 'rlog')) or (key.startswith('boot/') and not key.endswith('.bz2')):
-      key += ".bz2"
+    if key.endswith(('qlog', 'rlog')) or (key.startswith('boot/') and not key.endswith('.zst')):
+      key += ".zst"
 
     return self.upload(name, key, fn, network_type, metered)
 
