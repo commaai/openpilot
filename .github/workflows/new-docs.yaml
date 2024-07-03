@@ -1,0 +1,99 @@
+name: New Docs
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Cache Python dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install -r docs/new/requirements.txt
+
+      - name: Build Docs site
+        run: |
+          source .venv/bin/activate
+          mkdocs build -f docs/new/mkdocs.yml
+
+      - name: Upload built project
+        uses: actions/upload-artifact@v4
+        with:
+          name: docs-site-build
+          path: docs/new/site
+          retention-days: 1
+
+      - name: Deploy to Cloudflare Pages
+        if: github.ref == 'refs/heads/master'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_PAGES_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages publish docs/new/site --project-name=docs-openpilot --branch=master
+
+  preview-docs:
+    needs: build-docs
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Find current PR
+        uses: jwalton/gh-find-current-pr@master
+        id: findPr
+        with:
+          state: open
+
+      - name: Download build artifacts
+        if: success() && steps.findPr.outputs.number
+        uses: actions/download-artifact@v4
+        with:
+          name: docs-site-build
+          path: ./site
+
+      - name: Deploy to Cloudflare Pages
+        if: success() && steps.findPr.outputs.number
+        id: deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_PAGES_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy ./site --project-name=docs-openpilot --branch=pr-${{ steps.findPr.outputs.number }} --commit-dirty=true
+
+      - name: Comment URL on PR
+        if: success() && steps.findPr.outputs.number
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.rest.issues.createComment({
+              issue_number: ${{ steps.findPr.outputs.number }},
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `**openpilot docs PR preview**
+              https://pr-${{ steps.findPr.outputs.number }}.docs-openpilot.pages.dev
+              <!-- _(run_id **${{ github.run_id }}**)_ -->`
+            })
