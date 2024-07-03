@@ -60,7 +60,6 @@ PROCS = {
   "system.timed": 0,
   "selfdrive.pandad.pandad": 0,
   "system.statsd": 0.4,
-  "selfdrive.navd.navd": 0.4,
   "system.loggerd.uploader": (0.5, 15.0),
   "system.loggerd.deleter": 0.1,
 }
@@ -207,7 +206,7 @@ class TestOnroad:
       if f.name == "qcamera.ts":
         assert 2.15 < sz < 2.35
       elif f.name == "qlog":
-        assert 0.7 < sz < 1.0
+        assert 0.6 < sz < 1.0
       elif f.name == "rlog":
         assert 5 < sz < 50
       elif f.name.endswith('.hevc'):

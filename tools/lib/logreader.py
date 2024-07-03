@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import bz2
-from functools import partial
+from functools import cache, partial
 import multiprocessing
 import capnp
 import enum
@@ -87,18 +87,21 @@ Source = Callable[[SegmentRange, ReadMode], LogPaths]
 
 InternalUnavailableException = Exception("Internal source not available")
 
+
+@cache
 def default_valid_file(fn: LogPath) -> bool:
   return fn is not None and file_exists(fn)
 
 
 def auto_strategy(rlog_paths: LogPaths, qlog_paths: LogPaths, interactive: bool, valid_file: ValidFileCallable) -> LogPaths:
   # auto select logs based on availability
-  if any(rlog is None or not valid_file(rlog) for rlog in rlog_paths) and all(qlog is not None and valid_file(qlog) for qlog in qlog_paths):
+  missing_rlogs = [rlog is None or not valid_file(rlog) for rlog in rlog_paths].count(True)
+  if missing_rlogs != 0:
     if interactive:
-      if input("Some rlogs were not found, would you like to fallback to qlogs for those segments? (y/n) ").lower() != "y":
+      if input(f"{missing_rlogs}/{len(rlog_paths)} rlogs were not found, would you like to fallback to qlogs for those segments? (y/n) ").lower() != "y":
         return rlog_paths
     else:
-      cloudlog.warning("Some rlogs were not found, falling back to qlogs for those segments...")
+      cloudlog.warning(f"{missing_rlogs}/{len(rlog_paths)} rlogs were not found, falling back to qlogs for those segments...")
 
     return [rlog if valid_file(rlog) else (qlog if valid_file(qlog) else None)
             for (rlog, qlog) in zip(rlog_paths, qlog_paths, strict=True)]
@@ -130,17 +133,21 @@ def comma_api_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
   return apply_strategy(mode, rlog_paths, qlog_paths, valid_file=valid_file)
 
 
-def internal_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
+def internal_source(sr: SegmentRange, mode: ReadMode, file_ext: str = "bz2") -> LogPaths:
   if not internal_source_available():
     raise InternalUnavailableException
 
   def get_internal_url(sr: SegmentRange, seg, file):
-    return f"cd:/{sr.dongle_id}/{sr.timestamp}/{seg}/{file}.bz2"
+    return f"cd:/{sr.dongle_id}/{sr.log_id}/{seg}/{file}.{file_ext}"
 
   rlog_paths = [get_internal_url(sr, seg, "rlog") for seg in sr.seg_idxs]
   qlog_paths = [get_internal_url(sr, seg, "qlog") for seg in sr.seg_idxs]
 
   return apply_strategy(mode, rlog_paths, qlog_paths)
+
+
+def internal_source_zst(sr: SegmentRange, mode: ReadMode, file_ext: str = "zst") -> LogPaths:
+  return internal_source(sr, mode, file_ext)
 
 
 def openpilotci_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
@@ -166,7 +173,8 @@ def get_invalid_files(files):
 
 def check_source(source: Source, *args) -> LogPaths:
   files = source(*args)
-  assert next(get_invalid_files(files), False) is False
+  assert len(files) > 0, "No files on source"
+  assert next(get_invalid_files(files), False) is False, "Some files are invalid"
   return files
 
 
@@ -174,8 +182,8 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
   if mode == ReadMode.SANITIZED:
     return comma_car_segments_source(sr, mode)
 
-  SOURCES: list[Source] = [internal_source, openpilotci_source, comma_api_source, comma_car_segments_source,]
-  exceptions = []
+  SOURCES: list[Source] = [internal_source, internal_source_zst, openpilotci_source, comma_api_source, comma_car_segments_source,]
+  exceptions = {}
 
   # for automatic fallback modes, auto_source needs to first check if rlogs exist for any source
   if mode in [ReadMode.AUTO, ReadMode.AUTO_INTERACTIVE]:
@@ -190,9 +198,10 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
     try:
       return check_source(source, sr, mode)
     except Exception as e:
-      exceptions.append(e)
+      exceptions[source.__name__] = e
 
-  raise Exception(f"auto_source could not find any valid source, exceptions for sources: {exceptions}")
+  raise Exception("auto_source could not find any valid source, exceptions for sources:\n  - " +
+                  "\n  - ".join([f"{k}: {repr(v)}" for k, v in exceptions.items()]))
 
 
 def parse_useradmin(identifier: str):

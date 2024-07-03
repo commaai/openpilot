@@ -62,7 +62,6 @@ jobs:
         cd $GITHUB_WORKSPACE
         cp .pre-commit-config.yaml $STRIPPED_DIR
         cp pyproject.toml $STRIPPED_DIR
-        cp poetry.lock $STRIPPED_DIR
         cd $STRIPPED_DIR
         ${{ env.RUN }} "unset PYTHONWARNINGS && SKIP=check-added-large-files,check-hooks-apply,check-useless-excludes pre-commit run --all && chmod -R 777 /tmp/pre-commit"
 
@@ -79,13 +78,30 @@ jobs:
       if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
       run: |
         echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
-        echo "TARGET_ARCHITECTURE=${{ matrix.arch }}" >> "$GITHUB_ENV"
+        : # (TODO: Re-add this once we test other archs) echo "TARGET_ARCHITECTURE=${{ matrix.arch }}" >> "$GITHUB_ENV"
         $DOCKER_LOGIN
     - uses: ./.github/workflows/setup-with-retry
       with:
         docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
     - uses: ./.github/workflows/compile-openpilot
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 15 || 30) }} # allow more time when we missed the scons cache
+
+  build_mac:
+    name: build macos
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - run: git lfs pull
+    - name: Install dependencies
+      run: ./tools/mac_setup.sh
+      env:
+        SKIP_PROMPT: 1
+        # package install has DeprecationWarnings
+        PYTHONWARNINGS: default
+    - name: Test openpilot environment
+      run: . .venv/bin/activate && scons -h
 
   static_analysis:
     name: static analysis
@@ -123,7 +139,6 @@ jobs:
       timeout-minutes: 15
       run: |
         ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
-                        export MAPBOX_TOKEN='pk.eyJ1Ijoiam5ld2IiLCJhIjoiY2xxNW8zZXprMGw1ZzJwbzZneHd2NHljbSJ9.gV7VPRfbXFetD-1OVF0XZg' && \
                         $PYTEST --timeout 60 -m 'not slow' && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
@@ -301,7 +316,6 @@ jobs:
         run: >
             ${{ env.RUN }} "PYTHONWARNINGS=ignore &&
                             source selfdrive/test/setup_xvfb.sh &&
-                            export MAPBOX_TOKEN='pk.eyJ1Ijoiam5ld2IiLCJhIjoiY2xxNW8zZXprMGw1ZzJwbzZneHd2NHljbSJ9.gV7VPRfbXFetD-1OVF0XZg' &&
                             python selfdrive/ui/tests/test_ui/run.py"
       - name: Upload Test Report
         uses: actions/upload-artifact@v4
