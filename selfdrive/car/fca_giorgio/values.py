@@ -10,7 +10,7 @@ class CarControllerParams:
   HUD_1_STEP = 50
   HUD_2_STEP = 25
 
-  STEER_MAX = 200  # TODO: probe limit
+  STEER_MAX = 500  # TODO: probe limit
   STEER_DRIVER_ALLOWANCE = 80  # TODO: validate
   STEER_DRIVER_MULTIPLIER = 3  # weight driver torque heavily
   STEER_DRIVER_FACTOR = 1  # from dbc
