@@ -401,12 +401,11 @@ class TestCarModelBase(unittest.TestCase):
     CI = self.CarInterface(self.CP, self.CarController, self.CarState)
     self.safety.set_controls_allowed(True)
 
-    for msg in cc_msgs:
-      now_nanos = 0
+    for i, msg in enumerate(cc_msgs):
+      now_nanos = i * DT_CTRL * 1e9
       car_control = car.CarControl.new_message(**msg).as_reader()
       CI.update(car_control, [])
       _, sendcan = CI.apply(car_control, now_nanos)
-      now_nanos += DT_CTRL * 1e9
       for addr, _, dat, bus in sendcan:
         to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
         self.assertTrue(self.safety.safety_tx_hook(to_send), (addr, dat, bus))
