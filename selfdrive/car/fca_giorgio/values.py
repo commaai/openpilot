@@ -10,12 +10,12 @@ class CarControllerParams:
   HUD_1_STEP = 50
   HUD_2_STEP = 25
 
-  STEER_MAX = 500  # TODO: probe limit
-  STEER_DRIVER_ALLOWANCE = 80  # TODO: validate
+  STEER_MAX = 300
+  STEER_DRIVER_ALLOWANCE = 80
   STEER_DRIVER_MULTIPLIER = 3  # weight driver torque heavily
   STEER_DRIVER_FACTOR = 1  # from dbc
-  STEER_DELTA_UP = 4  # TODO: probe limit
-  STEER_DELTA_DOWN = 4  # TODO: probe limit
+  STEER_DELTA_UP = 4
+  STEER_DELTA_DOWN = 4
 
   def __init__(self, CP):
     pass
