@@ -5,7 +5,6 @@ on:
   workflow_dispatch:
     inputs:
       ci_runs:
-        default: '100'
         description: 'The amount of runs to trigger in CI test report'
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -20,21 +19,20 @@ jobs:
     steps:
       - id: ci_runs_setup
         run: |
+          CI_RUNS=${{ inputs.ci_runs || '50' }}
           mylist="value=["
 
-          for i in $(seq 1 ${{ inputs.ci_runs }});
+          for i in $(seq 1 $CI_RUNS);
           do
-              if [ $i != ${{ inputs.ci_runs }} ]; then
+              if [ $i != $CI_RUNS ]; then
                   mylist+="\"$i\", "
               else
-                  mylist+="\"$i\""
+                  mylist+="\"$i\"]"
               fi
           done
-          mylist+="]"
 
           echo "$mylist" >> $GITHUB_OUTPUT
-      - run: |
-          echo "Number of CI runs for report: ${{ inputs.ci_runs }}"
+          echo "Number of CI runs for report: $CI_RUNS"
   ci_matrix_run:
     needs: [ setup ]
     strategy:
