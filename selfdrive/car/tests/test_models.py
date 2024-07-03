@@ -24,6 +24,7 @@ from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
 from openpilot.tools.lib.logreader import LogReader, internal_source, openpilotci_source
 from openpilot.tools.lib.route import SegmentName
+from openpilot.selfdrive.test.fuzzy_generation import FuzzyGenerator
 
 from panda.tests.libpanda import libpanda_py
 
@@ -385,6 +386,30 @@ class TestCarModelBase(unittest.TestCase):
       if self.CP.carName == "honda":
         if self.safety.get_acc_main_on() != prev_panda_acc_main_on:
           self.assertEqual(CS.cruiseState.available, self.safety.get_acc_main_on())
+
+  @pytest.mark.nocapture
+  @settings(max_examples=MAX_EXAMPLES, deadline=None,
+            phases=(Phase.reuse, Phase.generate, Phase.shrink))
+  @given(data=st.data())
+  def test_panda_safety_tx_fuzzy(self, data):
+    if self.CP.notCar:
+      self.skipTest("Skipping test for notCar")
+
+    fg = FuzzyGenerator(draw=data.draw, real_floats=True)
+    cc_msgs = data.draw(st.lists(fg.generate_struct(car.CarControl.schema), min_size=20))
+
+    CI = self.CarInterface(self.CP, self.CarController, self.CarState)
+    self.safety.set_controls_allowed(True)
+
+    for msg in cc_msgs:
+      now_nanos = 0
+      car_control = car.CarControl.new_message(**msg).as_reader()
+      CI.update(car_control, [])
+      _, sendcan = CI.apply(car_control, now_nanos)
+      now_nanos += DT_CTRL * 1e9
+      for addr, _, dat, bus in sendcan:
+        to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
+        self.assertTrue(self.safety.safety_tx_hook(to_send), (addr, dat, bus))
 
   def test_panda_safety_carstate(self):
     """
