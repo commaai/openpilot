@@ -14,7 +14,6 @@ class CarState(CarStateBase):
     self.frame = 0
     self.CCP = CarControllerParams(CP)
 
-
   def update(self, pt_cp, cam_cp):
     ret = car.CarState.new_message()
     # Update vehicle speed and acceleration from ABS wheel speeds.
@@ -36,7 +35,7 @@ class CarState(CarStateBase):
     ret.steeringTorqueEps = pt_cp.vl["EPS_3"]["EPS_TORQUE"]
     ret.steeringPressed = ret.steeringTorque > 50
     ret.yawRate = pt_cp.vl["ABS_2"]["YAW_RATE"]
-    #ret.steerFaultTemporary, ret.steerFaultPermanent = TODO, TODO
+    ret.steerFaultPermanent = pt_cp.vl["EPS_2"]["LKA_FAULT"]
 
     # TODO: unsure if this is accel pedal or engine throttle
     #ret.gas = pt_cp.vl["ENGINE_1"]["ACCEL_PEDAL"]
