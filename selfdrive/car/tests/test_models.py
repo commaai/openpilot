@@ -398,14 +398,27 @@ class TestCarModelBase(unittest.TestCase):
     fg = FuzzyGenerator(draw=data.draw, real_floats=True)
     cc_msgs = data.draw(st.lists(fg.generate_struct(car.CarControl.schema), min_size=20))
 
-    CI = self.CarInterface(self.CP, self.CarController, self.CarState)
-    self.safety.set_controls_allowed(True)
+    def pcm_cruise_check(cruise_control):
+      if not cruise_control:
+        self.safety.set_controls_allowed(False)
+      if cruise_control and not self.safety.get_cruise_engaged_prev():
+        self.safety.set_controls_allowed(True)
+      self.safety.set_cruise_engaged_prev(cruise_control)
 
     for i, msg in enumerate(cc_msgs):
       now_nanos = i * DT_CTRL * 1e9
-      car_control = car.CarControl.new_message(**msg).as_reader()
-      CI.update(car_control, [])
-      _, sendcan = CI.apply(car_control, now_nanos)
+      CC = car.CarControl.new_message(**msg).as_reader()
+
+      # check for controls_allowed and set True if not already in these cases:
+      # - cancel button messages before controls_allowed
+      # - actuator commands before controls_allowed
+      # - cruiseButton.resume message before controls_allowed
+      cancel_before_engaged = not self.safety.get_cruise_engaged_prev() and CC.cruiseControl.cancel
+      if any([CC.enabled, CC.latActive, CC.longActive, CC.cruiseControl.resume, cancel_before_engaged]):
+        pcm_cruise_check(True)
+
+      self.CI.update(CC, [])
+      _, sendcan = self.CI.apply(CC, now_nanos)
       for addr, _, dat, bus in sendcan:
         to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
         self.assertTrue(self.safety.safety_tx_hook(to_send), (addr, dat, bus))
