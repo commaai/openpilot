@@ -73,6 +73,9 @@ bool ReplayStream::loadRoute(const QString &route, const QString &data_dir, uint
     } else if (replay->lastRouteError() == RouteLoadError::NetworkError) {
       QMessageBox::warning(nullptr, tr("Network Error"),
                           tr("Unable to load the route:\n\n %1.\n\nPlease check your network connection and try again.").arg(route));
+    } else if (replay->lastRouteError() == RouteLoadError::FileNotFound) {
+      QMessageBox::warning(nullptr, tr("Route Not Found"),
+                           tr("The specified route could not be found:\n\n %1.\n\nPlease check the route name and try again.").arg(route));
     } else {
       QMessageBox::warning(nullptr, tr("Route Load Failed"), tr("Failed to load route: '%1'").arg(route));
     }
