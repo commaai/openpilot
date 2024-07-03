@@ -16,12 +16,7 @@ class CarState(CarStateBase):
     super().__init__(CP)
     can_define = CANDefine(DBC[CP.carFingerprint]["pt"])
     if CP.transmissionType == TransmissionType.automatic:
-      # TODO
-      # - [x] NOPE: PowertrainData_10->GearLvr_D_ActlDrv (goes into L instead of D for the rest of the drive randomly, commonly when current message goes into unknown gear)
-      # - [x] YEP: PowertrainData_10->TrnRng_D_Rq
-      # - [x] NOPE: TransGearData->GearLvrPos_D_Actl (goes into N instead of P, this is the transmission gear)
-      self.shifter_values = can_define.dv["Gear_Shift_by_Wire_FD1"]["TrnRng_D_RqGsm"]
-      self.shifter_values_new = can_define.dv["PowertrainData_10"]["TrnRng_D_Rq"]
+      self.shifter_values = can_define.dv["PowertrainData_10"]["TrnRng_D_Rq"]
 
     self.vehicle_sensors_valid = False
 
@@ -75,11 +70,8 @@ class CarState(CarStateBase):
 
     # gear
     if self.CP.transmissionType == TransmissionType.automatic:
-      gear = self.shifter_values.get(cp.vl["Gear_Shift_by_Wire_FD1"]["TrnRng_D_RqGsm"])
-      gear_new = self.shifter_values.get(cp.vl["PowertrainData_10"]["TrnRng_D_Rq"])
-      self.gear_mismatches += gear != gear_new
-      assert self.gear_mismatches < 10
-      ret.gearShifter = self.parse_gear_shifter(gear_new)
+      gear = self.shifter_values.get(cp.vl["PowertrainData_10"]["TrnRng_D_Rq"])
+      ret.gearShifter = self.parse_gear_shifter(gear)
     elif self.CP.transmissionType == TransmissionType.manual:
       ret.clutchPressed = cp.vl["Engine_Clutch_Data"]["CluPdlPos_Pc_Meas"] > 0
       if bool(cp.vl["BCM_Lamp_Stat_FD1"]["RvrseLghtOn_B_Stat"]):
