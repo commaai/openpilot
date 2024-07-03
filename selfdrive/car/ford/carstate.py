@@ -140,7 +140,6 @@ class CarState(CarStateBase):
 
     if CP.transmissionType == TransmissionType.automatic:
       messages += [
-        ("Gear_Shift_by_Wire_FD1", 10),
         ("PowertrainData_10", 10),
       ]
     elif CP.transmissionType == TransmissionType.manual:
