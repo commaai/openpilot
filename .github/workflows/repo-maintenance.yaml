@@ -41,7 +41,7 @@ jobs:
     if: github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v4
-    - name: uv lock
+    - name: uv lock --upgrade
       run: |
         python3 -m ensurepip --upgrade
         pip3 install uv
