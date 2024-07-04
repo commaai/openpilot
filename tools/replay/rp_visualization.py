@@ -2,12 +2,9 @@
 import argparse
 import os
 import sys
-
 import pygame
 import numpy as np
-
 import rerun as rr
-
 import cereal.messaging as messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
@@ -20,12 +17,12 @@ from msgq.visionipc import VisionIpcClient, VisionStreamType
 os.environ['BASEDIR'] = BASEDIR
 
 ANGLE_SCALE = 5.0
+UP.lidar_zoom = 12
 
-def ui_thread(addr):
-
-  sm = messaging.SubMaster(['carState', 'longitudinalPlan', 'carControl', 'radarState', 'liveCalibration', 'controlsState',
-                            'liveTracks', 'modelV2', 'liveParameters', 'roadCameraState'], addr=addr)
-
+# Removing the first two pair of set_time_nanos and rr.log, we can reduce memory by 2/3
+# This would result in the loss of two timestamps, which shouldn't be too much of a problem.
+def visualize(addr):
+  sm = messaging.SubMaster([ 'radarState', 'liveCalibration', 'liveTracks', 'modelV2', 'roadCameraState'], addr=addr)
   img = np.zeros((480, 640, 3), dtype='uint8')
   num_px = 0
   calibration = None
@@ -33,7 +30,7 @@ def ui_thread(addr):
 
   vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_ROAD, True)
   while True:
-    # top_down_surface = np.zeros((UP.lidar_x, UP.lidar_y), dtype=np.uint8)
+    # Used to make calls compatible with functions from ui_helpers
     top_down_surface = pygame.surface.Surface((UP.lidar_x, UP.lidar_y), 0, 8)
 
     lid_overlay = lid_overlay_blank.copy()
@@ -61,23 +58,20 @@ def ui_thread(addr):
       plot_model(sm['modelV2'], img, calibration, top_down)
       if not np.all(top_down[1] == 0):
         rr.set_time_nanos("TIMELINE", modelV2Time)
-        rr.log("tracks", rr.Image(np.flip(np.rot90(top_down[1], k=-1), axis=1)))
+        rr.log("tracks", rr.SegmentationImage(np.flip(np.rot90(top_down[1], k=-1), axis=1)))
 
     radarStateTime = sm.logMonoTime['radarState']
     if sm.recv_frame['radarState']:
       plot_lead(sm['radarState'], top_down)
       if not np.all(top_down[1] == 0):
         rr.set_time_nanos("TIMELINE", radarStateTime)
-        rr.log("tracks", rr.Image(np.flip(np.rot90(top_down[1], k=-1), axis=1)))
+        rr.log("tracks", rr.SegmentationImage(np.flip(np.rot90(top_down[1], k=-1), axis=1)))
 
-
-    # draw all radar points
     liveTracksTime = sm.logMonoTime['liveTracks']
     maybe_update_radar_points(sm['liveTracks'], top_down[1])
     if not np.all(top_down[1] == 0):
       rr.set_time_nanos("TIMELINE", liveTracksTime)
-      rr.log("tracks", rr.Image(np.flip(np.rot90(top_down[1], k=-1), axis=1)))
-
+      rr.log("tracks", rr.SegmentationImage(np.flip(np.rot90(top_down[1], k=-1), axis=1)))
 
     if sm.updated['liveCalibration'] and num_px:
       rpyCalib = np.asarray(sm['liveCalibration'].rpyCalib)
@@ -96,12 +90,13 @@ def get_arg_parser():
                       help="The frame address (fully qualified ZMQ endpoint for frames) on which to receive zmq messages.")
   return parser
 
+
 if __name__ == "__main__":
   args = get_arg_parser().parse_args(sys.argv[1:])
 
   if args.ip_address != "127.0.0.1":
     os.environ["ZMQ"] = "1"
     messaging.context = messaging.Context()
-  rr.init("rerun_test")
+  rr.init("rerun_radarPoints")
   rr.spawn()
-  ui_thread(args.ip_address)
+  visualize(args.ip_address)
