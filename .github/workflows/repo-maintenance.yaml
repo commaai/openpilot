@@ -43,7 +43,8 @@ jobs:
     - uses: actions/checkout@v4
     - name: uv lock
       run: |
-        pip install uv
+        python3 -m ensurepip --upgrade
+        pip3 install uv
         uv lock
     - name: pre-commit autoupdate
       run: |
