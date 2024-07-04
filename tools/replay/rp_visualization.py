@@ -19,8 +19,6 @@ os.environ['BASEDIR'] = BASEDIR
 ANGLE_SCALE = 5.0
 UP.lidar_zoom = 12
 
-# Removing the first two pair of set_time_nanos and rr.log, we can reduce memory by 2/3
-# This would result in the loss of two timestamps, which shouldn't be too much of a problem.
 def visualize(addr):
   sm = messaging.SubMaster([ 'radarState', 'liveCalibration', 'liveTracks', 'modelV2', 'roadCameraState'], addr=addr)
   img = np.zeros((480, 640, 3), dtype='uint8')
@@ -53,25 +51,16 @@ def visualize(addr):
 
     intrinsic_matrix = camera.fcam.intrinsics
 
-    modelV2Time = sm.logMonoTime['modelV2']
     if sm.recv_frame['modelV2']:
       plot_model(sm['modelV2'], img, calibration, top_down)
-      if not np.all(top_down[1] == 0):
-        rr.set_time_nanos("TIMELINE", modelV2Time)
-        rr.log("tracks", rr.SegmentationImage(np.flip(np.rot90(top_down[1], k=-1), axis=1)))
 
-    radarStateTime = sm.logMonoTime['radarState']
     if sm.recv_frame['radarState']:
       plot_lead(sm['radarState'], top_down)
-      if not np.all(top_down[1] == 0):
-        rr.set_time_nanos("TIMELINE", radarStateTime)
-        rr.log("tracks", rr.SegmentationImage(np.flip(np.rot90(top_down[1], k=-1), axis=1)))
 
     liveTracksTime = sm.logMonoTime['liveTracks']
     maybe_update_radar_points(sm['liveTracks'], top_down[1])
-    if not np.all(top_down[1] == 0):
-      rr.set_time_nanos("TIMELINE", liveTracksTime)
-      rr.log("tracks", rr.SegmentationImage(np.flip(np.rot90(top_down[1], k=-1), axis=1)))
+    rr.set_time_nanos("TIMELINE", liveTracksTime)
+    rr.log("tracks", rr.SegmentationImage(np.flip(np.rot90(top_down[1], k=-1), axis=1)))
 
     if sm.updated['liveCalibration'] and num_px:
       rpyCalib = np.asarray(sm['liveCalibration'].rpyCalib)
