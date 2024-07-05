@@ -15,7 +15,7 @@ env:
 
 jobs:
   setup:
-    # if: github.repository == 'commaai/openpilot'
+    if: github.repository == 'commaai/openpilot'
     runs-on: ubuntu-latest
     outputs:
       ci_runs: ${{ steps.ci_runs_setup.outputs.matrix }}
