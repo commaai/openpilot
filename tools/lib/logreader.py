@@ -20,7 +20,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.tools.lib.comma_car_segments import get_url as get_comma_segments_url
 from openpilot.tools.lib.openpilotci import get_url
 from openpilot.tools.lib.filereader import FileReader, file_exists, internal_source_available
-from openpilot.tools.lib.route import Route, SegmentRange
+from openpilot.tools.lib.route import Route, SegmentRange, get_max_seg_number_cached
 
 LogMessage = type[capnp._DynamicStructReader]
 LogIterable = Iterable[LogMessage]
@@ -123,8 +123,11 @@ def apply_strategy(mode: ReadMode, rlog_paths: LogPaths, qlog_paths: LogPaths, v
 def comma_api_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
   route = Route(sr.route_name)
 
-  rlog_paths = [route.log_paths()[seg] for seg in sr.seg_idxs]
-  qlog_paths = [route.qlog_paths()[seg] for seg in sr.seg_idxs]
+  max_seg = get_max_seg_number_cached(sr)
+  seg_idxs = [seg for seg in sr.seg_idxs if seg <= max_seg]
+
+  rlog_paths = [route.log_paths()[seg] for seg in seg_idxs]
+  qlog_paths = [route.qlog_paths()[seg] for seg in seg_idxs]
 
   # comma api will have already checked if the file exists
   def valid_file(fn):
