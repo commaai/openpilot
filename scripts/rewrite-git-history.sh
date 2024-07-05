@@ -25,15 +25,17 @@ if [ ! -d $SRC ]; then
 
   echo "starting size $(du -sh .)"
 
-  # don't see why is needed, since it's already up-to-date
-  # git remote update
+  git remote update
 
   # the git-filter-repo analysis is bliss - can be found in the repo root/filter-repo/analysis
   /tmp/git-filter-repo --force --analyze
 
-  # push to archive repo
-  # TODO: uncomment on final release
-  # git push --mirror https://github.com/commaai/openpilot-archive.git
+  # push to archive repo - in smaller parts because the 2 GB push limit - https://docs.github.com/en/get-started/using-git/troubleshooting-the-2-gb-push-limit
+  ARCHIVE_REPO=git@github.com:commaai/openpilot-archive.git
+  git push $ARCHIVE_REPO --all # 956.39 MiB (110725 objects)
+  git push $ARCHIVE_REPO --tags # 1.75 GiB (21694 objects)
+  git push --mirror $ARCHIVE_REPO || true # fails to push refs/pull/* (deny updating a hidden ref) for pull requests
+  # we fail and continue - more reading: https://stackoverflow.com/a/34266401/639708
 fi
 
 # CHERRY-PICK all master commits over devel (v0.7.1)
@@ -240,4 +242,5 @@ git config lfs.pushurl ssh://git@gitlab.com/commaai/openpilot-lfs.git
 git lfs fetch --all || true
 
 # final push - will also push lfs
+# TODO: switch to https://github.com/commaai/openpilot.git when ready
 git push --mirror https://github.com/commaai/openpilot-tiny.git
