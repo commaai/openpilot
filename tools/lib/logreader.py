@@ -123,6 +123,7 @@ def apply_strategy(mode: ReadMode, rlog_paths: LogPaths, qlog_paths: LogPaths, v
 def comma_api_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
   route = Route(sr.route_name)
 
+
   max_seg = get_max_seg_number_cached(sr)
   seg_idxs = [seg for seg in sr.seg_idxs if seg <= max_seg]
 
