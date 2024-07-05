@@ -32,6 +32,7 @@ if [ ! -d $SRC ]; then
 
   # push to archive repo - in smaller parts because the 2 GB push limit - https://docs.github.com/en/get-started/using-git/troubleshooting-the-2-gb-push-limit
   ARCHIVE_REPO=git@github.com:commaai/openpilot-archive.git
+  git push $ARCHIVE_REPO master:refs/heads/master # push master first so it's the default branch (assuming openpilot-archive is an empty repo)
   git push $ARCHIVE_REPO --all # 956.39 MiB (110725 objects)
   git push $ARCHIVE_REPO --tags # 1.75 GiB (21694 objects)
   git push --mirror $ARCHIVE_REPO || true # fails to push refs/pull/* (deny updating a hidden ref) for pull requests
