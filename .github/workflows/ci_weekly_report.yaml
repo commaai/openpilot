@@ -10,38 +10,31 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  CI_RUNS: ${{ github.event.inputs.ci_runs || '50' }}
+
 jobs:
   setup:
-    if: github.repository == 'commaai/openpilot'
+    # if: github.repository == 'commaai/openpilot'
     runs-on: ubuntu-latest
     outputs:
-      ci_runs: ${{ steps.ci_runs_setup.outputs.value }}
+      ci_runs: ${{ steps.ci_runs_setup.outputs.matrix }}
     steps:
       - id: ci_runs_setup
+        name: CI_RUNS=${{ env.CI_RUNS }}
         run: |
-          CI_RUNS=${{ inputs.ci_runs || '50' }}
-          mylist="value=["
+          matrix=$(python3 -c "import json; print(json.dumps({ 'run_number' : [x for x in range(${{ env.CI_RUNS }})] }))")
+          echo $matrix
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
-          for i in $(seq 1 $CI_RUNS);
-          do
-              if [ $i != $CI_RUNS ]; then
-                  mylist+="\"$i\", "
-              else
-                  mylist+="\"$i\"]"
-              fi
-          done
-
-          echo "$mylist" >> $GITHUB_OUTPUT
-          echo "Number of CI runs for report: $CI_RUNS"
   ci_matrix_run:
     needs: [ setup ]
     strategy:
       fail-fast: false
-      matrix:
-        value: ${{fromJSON(needs.setup.outputs.ci_runs)}}
+      matrix: ${{fromJSON(needs.setup.outputs.ci_runs)}}
     uses: commaai/openpilot/.github/workflows/ci_weekly_run.yaml@master
     with:
-      run_number: ${{ matrix.value }}
+      run_number: ${{ matrix.run_number }}
 
   report:
     needs: [ci_matrix_run]
@@ -80,44 +73,29 @@ jobs:
           JOB_RESULTS: ${{ fromJSON(steps.get-job-results.outputs.result) }}
         run: |
           echo $JOB_RESULTS > job_results.json
-          generate_html_table() {
-            echo "<table>"
-            echo "<thead>"
-            echo "  <tr>"
-            echo "    <th>Job</th>"
-            echo "    <th>Succeeded ✅</th>"
-            echo "    <th>Failed ❌</th>"
-            echo "    <th>Cancelled (timed out) ⏰</th>"
-            echo "  </tr>"
-            echo "</thead>"
-            jq -r '
-              "<tbody>",
-              keys[] as $job |
-              "<tr>",
-              "  <td>\($job)</td>",
-              "  <td>",
-              "    <details>",
-              "      <summary>(\(.[$job].successes | length))</summary>",
-              "      \(.[$job].successes[])<br>",
-              "    </details>",
-              "  </td>",
-              "  <td>",
-              "    <details>",
-              "      <summary>(\(.[$job].failures | length))</summary>",
-              "      \(.[$job].failures[])<br>",
-              "    </details>",
-              "  </td>",
-              "  <td>",
-              "    <details>",
-              "      <summary>(\(.[$job].cancelled | length))</summary>",
-              "      \(.[$job].cancelled[])<br>",
-              "    </details>",
-              "  </td>",
-              "</tr>"
-            ' job_results.json
-            echo  "</tbody>"
-            echo  "</table>"
-          }
-          echo "# CI Job Summary" >> $GITHUB_STEP_SUMMARY
-          generate_html_table >> $GITHUB_STEP_SUMMARY
+          echo "# CI Job Summary - ${{ env.CI_RUNS }} Runs" >> $GITHUB_STEP_SUMMARY
+          echo "| | Job | ✅ Passing | ❌ Failure Details |" >> $GITHUB_STEP_SUMMARY
+          echo "| --- | --- | --- | --- |" >> $GITHUB_STEP_SUMMARY
 
+          jq -r 'keys[]' job_results.json |
+          while IFS= read -r job; do
+            successes=$(jq -r ".[\"$job\"].successes | length" job_results.json)
+            pass_percent=$((100 * successes / ${{ env.CI_RUNS }}))
+
+            green=$((5 * successes / ${{ env.CI_RUNS }}))
+            gradient=""
+            for i in $(seq 5); do
+              if [ $i -le $green ]; then
+                gradient+="🟩"
+              else
+                gradient+="🟥"
+              fi
+            done
+
+            failure_links=""
+            for failure in $(jq -r ".[\"$job\"].failures[]" job_results.json); do
+              failure_links+="[log]($failure), "
+            done
+
+            echo "| $gradient | $job | $pass_percent%  | ${failure_links%, } |" >> $GITHUB_STEP_SUMMARY
+          done
