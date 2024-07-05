@@ -9,7 +9,6 @@ cd $DIR
 
 SRC=/tmp/openpilot/
 SRC_CLONE=/tmp/openpilot-clone/
-SRC_ARCHIVE=/tmp/openpilot-release-archive/
 OUT=/tmp/openpilot-tiny/
 
 # INSTALL git-filter-repo
@@ -36,19 +35,6 @@ if [ ! -d $SRC ]; then
   # TODO: uncomment on final release
   # git push --mirror https://github.com/commaai/openpilot-archive.git
 fi
-
-# NOT NEEDED since we use v0.7.1 tag instead
-# if [ ! -d $SRC_ARCHIVE ]; then
-#   git clone --mirror https://github.com/commaai/openpilot-release-archive.git $SRC_ARCHIVE
-
-#   cd $SRC
-
-#   # add openpilot-release-archive as a remote
-#   git remote add archive $SRC_ARCHIVE
-
-#   # fetch the content from the archive remote
-#   git fetch archive
-# fi
 
 # CHERRY-PICK all master commits over devel (v0.7.1)
 if [ ! -d $SRC_CLONE ]; then
