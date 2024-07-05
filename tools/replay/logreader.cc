@@ -7,8 +7,13 @@
 
 bool LogReader::load(const std::string &url, std::atomic<bool> *abort, bool local_cache, int chunk_size, int retries) {
   std::string data = FileReader(local_cache, chunk_size, retries).read(url, abort);
-  if (!data.empty() && url.find(".bz2") != std::string::npos)
-    data = decompressBZ2(data, abort);
+  if (!data.empty()) {
+    if (url.find(".bz2") != std::string::npos) {
+      data = decompressBZ2(data, abort);
+    } else if (url.find(".zst") != std::string::npos) {
+      data = decompressZST((std::byte *)data.data(), data.size(), abort);
+    }
+  }
 
   bool success = !data.empty() && load(data.data(), data.size(), abort);
   if (filters_.empty())
