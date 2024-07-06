@@ -69,19 +69,25 @@ def to_topdown_pt(y, x):
   return -1, -1
 
 
-def draw_path(path, color, img, calibration, top_down, lid_color=None, z_off=0):
+def draw_path(path, color, img, calibration, lid_overlay, lid_color=None, z_off=0):
   x, y, z = np.asarray(path.x), np.asarray(path.y), np.asarray(path.z) + z_off
   pts = calibration.car_space_to_bb(x, y, z)
   pts = np.round(pts).astype(int)
 
   # draw lidar path point on lidar
   # find color in 8 bit
-  if lid_color is not None and top_down is not None:
-    tcolor = find_color(top_down[0], lid_color)
+  if lid_color is not None and lid_overlay is not None:
+    if lid_color == RED:
+      tcolor = 96
+    elif lid_color == YELLOW:
+      tcolor = 124
+    else:
+      print("Unknown color")
+      exit(0)
     for i in range(len(x)):
       px, py = to_topdown_pt(x[i], y[i])
       if px != -1:
-        top_down[1][px, py] = tcolor
+        lid_overlay[px, py] = tcolor
 
   height, width = img.shape[:2]
   for x, y in pts:
@@ -152,8 +158,8 @@ def pygame_modules_have_loaded():
   return pygame.display.get_init() and pygame.font.get_init()
 
 
-def plot_model(m, img, calibration, top_down):
-  if calibration is None or top_down is None:
+def plot_model(m, img, calibration, lid_overlay):
+  if calibration is None or lid_overlay is None:
     return
 
   for lead in m.leadsV3:
@@ -166,22 +172,22 @@ def plot_model(m, img, calibration, top_down):
 
     _, py_top = to_topdown_pt(x + x_std, y)
     px, py_bottom = to_topdown_pt(x - x_std, y)
-    top_down[1][int(round(px - 4)):int(round(px + 4)), py_top:py_bottom] = find_color(top_down[0], YELLOW)
+    lid_overlay[int(round(px - 4)):int(round(px + 4)), py_top:py_bottom] = 124
 
   for path, prob, _ in zip(m.laneLines, m.laneLineProbs, m.laneLineStds, strict=True):
     color = (0, int(255 * prob), 0)
-    draw_path(path, color, img, calibration, top_down, YELLOW)
+    draw_path(path, color, img, calibration, lid_overlay, YELLOW)
 
   for edge, std in zip(m.roadEdges, m.roadEdgeStds, strict=True):
     prob = max(1 - std, 0)
     color = (int(255 * prob), 0, 0)
-    draw_path(edge, color, img, calibration, top_down, RED)
+    draw_path(edge, color, img, calibration, lid_overlay, RED)
 
   color = (255, 0, 0)
-  draw_path(m.position, color, img, calibration, top_down, RED, 1.22)
+  draw_path(m.position, color, img, calibration, lid_overlay, RED, 1.22)
 
 
-def plot_lead(rs, top_down):
+def plot_lead(rs, lid_overlay):
   for lead in [rs.leadOne, rs.leadTwo]:
     if not lead.status:
       continue
@@ -189,7 +195,7 @@ def plot_lead(rs, top_down):
     x = lead.dRel
     px_left, py = to_topdown_pt(x, -10)
     px_right, _ = to_topdown_pt(x, 10)
-    top_down[1][px_left:px_right, py] = find_color(top_down[0], RED)
+    lid_overlay[px_left:px_right, py] = 96
 
 
 def maybe_update_radar_points(lt, lid_overlay):

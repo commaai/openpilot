@@ -2,7 +2,6 @@
 import argparse
 import os
 import sys
-import pygame
 import numpy as np
 import rerun as rr
 import cereal.messaging as messaging
@@ -18,7 +17,8 @@ os.environ['BASEDIR'] = BASEDIR
 
 ANGLE_SCALE = 5.0
 UP.lidar_zoom = 12
-
+colorPallete = [(96, "red", (255, 0, 0)), (100, "100", (255, 36, 0)), (124, "yellow", (255, 255, 0)),
+                (230, "230", (255, 36, 170)), (240, "240", (255, 146, 0)), (255, "255", (255, 255, 255))]
 def visualize(addr):
   sm = messaging.SubMaster([ 'radarState', 'liveCalibration', 'liveTracks', 'modelV2', 'roadCameraState'], addr=addr)
   img = np.zeros((480, 640, 3), dtype='uint8')
@@ -28,11 +28,7 @@ def visualize(addr):
 
   vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_ROAD, True)
   while True:
-    # Used to make calls compatible with functions from ui_helpers
-    top_down_surface = pygame.surface.Surface((UP.lidar_x, UP.lidar_y), 0, 8)
-
     lid_overlay = lid_overlay_blank.copy()
-    top_down = top_down_surface, lid_overlay
 
     # ***** frame *****
     if not vipc_client.is_connected():
@@ -52,15 +48,16 @@ def visualize(addr):
     intrinsic_matrix = camera.fcam.intrinsics
 
     if sm.recv_frame['modelV2']:
-      plot_model(sm['modelV2'], img, calibration, top_down)
+      plot_model(sm['modelV2'], img, calibration, lid_overlay)
 
     if sm.recv_frame['radarState']:
-      plot_lead(sm['radarState'], top_down)
+      plot_lead(sm['radarState'], lid_overlay)
 
     liveTracksTime = sm.logMonoTime['liveTracks']
-    maybe_update_radar_points(sm['liveTracks'], top_down[1])
+    maybe_update_radar_points(sm['liveTracks'], lid_overlay)
     rr.set_time_nanos("TIMELINE", liveTracksTime)
-    rr.log("tracks", rr.SegmentationImage(np.flip(np.rot90(top_down[1], k=-1), axis=1)))
+    rr.log("tracks", rr.AnnotationContext(colorPallete), static=True)
+    rr.log("tracks", rr.SegmentationImage(np.flip(np.rot90(lid_overlay, k=-1), axis=1)))
 
     if sm.updated['liveCalibration'] and num_px:
       rpyCalib = np.asarray(sm['liveCalibration'].rpyCalib)
