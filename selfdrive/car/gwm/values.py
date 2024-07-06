@@ -23,7 +23,7 @@ class GwmPlatformConfig(PlatformConfig):
 @dataclass(frozen=True, kw_only=True)
 class GwmCarSpecs(CarSpecs):
   centerToFrontRatio: float = 0.45
-  steerRatio = 15.6
+  steerRatio: float = 15.6
 
 
 @dataclass
@@ -37,9 +37,8 @@ class CAR(Platforms):
 
   GWM_HAVAL_H6_PHEV_3RD_GEN = GwmPlatformConfig(
     [GwmCarDocs("GWM Haval H6 hybrid plug-in 2020-24")],
-    GwmCarSpecs(mass=2050, wheelbase=2.74)
+    GwmCarSpecs(mass=2050, wheelbase=2.74),
   )
-
 
 
 FW_QUERY_CONFIG = FwQueryConfig(

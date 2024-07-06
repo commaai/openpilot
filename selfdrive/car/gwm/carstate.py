@@ -40,11 +40,11 @@ class CarState(CarStateBase):
     ret.gas = 0 # TODO
     ret.gasPressed = ret.gas > 0
     ret.brake = 0
-    ret.brakePressed = 0
+    ret.brakePressed = False
     # ret.parkingBrake = TODO
 
     # begin toyota brakePressed TODO clean-after-port
-    ret.brakePressed = cp.vl["BRAKE_MODULE"]["BRAKE_PRESSED"] != 0
+    ret.brakePressed = pt_cp.vl["COROLLA_BRAKE_MODULE"]["BRAKE_PRESSED"] != 0
     # end TODO clean-after-port
 
     ret.gearShifter = GearShifter.drive # TODO
@@ -68,12 +68,7 @@ class CarState(CarStateBase):
 @staticmethod
 def get_can_parser(CP):
   messages = [
-    # seg_address, frequency
-
-    # begin toyota TODO clean-after-port
-    ("BRAKE_MODULE", 40),
-    # end TODO clean-after-port
-
+    ("COROLLA_BRAKE_MODULE", 40),
   ]
 
   return CANParser(DBC[CP.carFingerprint]["pt"], messages, CANBUS.pt)
