@@ -27,6 +27,7 @@ jobs:
     name: build docs
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    if: false  # TODO: replace this with the new docs
     steps:
     - uses: actions/checkout@v4
       with:
