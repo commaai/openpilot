@@ -67,36 +67,34 @@ jobs:
                   report[jobName].cancelled.push(job.html_url); break;
               }
             });
-            return JSON.stringify(report);
+            return JSON.stringify({"jobs": report});
 
       - name: Add job results to summary
         env:
           JOB_RESULTS: ${{ fromJSON(steps.get-job-results.outputs.result) }}
         run: |
-          echo $JOB_RESULTS > job_results.json
-          echo "# CI Job Summary - ${{ env.CI_RUNS }} Runs" >> $GITHUB_STEP_SUMMARY
-          echo "| | Job | ✅ Passing | ❌ Failure Details |" >> $GITHUB_STEP_SUMMARY
-          echo "| --- | --- | --- | --- |" >> $GITHUB_STEP_SUMMARY
+          cat <<EOF >> template.html
+          <table>
+            <thead>
+              <tr>
+                <th></th>
+                <th>Job</th>
+                <th>✅ Passing</th>
+                <th>❌ Failure Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for key in jobs.keys() %}<tr>
+                <td>{% for i in range(5) %}{% if i+1 <= (5 * jobs[key]["successes"]|length // ${{ env.CI_RUNS }}) %}🟩{% else %}🟥{% endif %}{% endfor%}</td>
+                <td>{{ key }}</td>
+                <td>{{ 100 * jobs[key]["successes"]|length // ${{ env.CI_RUNS }} }}%</td>
+                <td>{% if jobs[key]["failures"]|length > 0 %}<details>{% for failure in jobs[key]["failures"] %}<a href="{{ failure }}">log</a><br>{% endfor %}</details>{% else %}{% endif %}</td>
+                </td>
+              </tr>{% endfor %}
+          </table>
+          EOF
 
-          jq -r 'keys[]' job_results.json |
-          while IFS= read -r job; do
-            successes=$(jq -r ".[\"$job\"].successes | length" job_results.json)
-            pass_percent=$((100 * successes / ${{ env.CI_RUNS }}))
-
-            green=$((5 * successes / ${{ env.CI_RUNS }}))
-            gradient=""
-            for i in $(seq 5); do
-              if [ $i -le $green ]; then
-                gradient+="🟩"
-              else
-                gradient+="🟥"
-              fi
-            done
-
-            failure_links=""
-            for failure in $(jq -r ".[\"$job\"].failures[]" job_results.json); do
-              failure_links+="[log]($failure), "
-            done
-
-            echo "| $gradient | $job | $pass_percent%  | ${failure_links%, } |" >> $GITHUB_STEP_SUMMARY
-          done
+          pip install jinja2-cli
+          echo $JOB_RESULTS | jinja2 template.html > report.html
+          echo "# CI Test Report - ${{ env.CI_RUNS }} Runs" >> $GITHUB_STEP_SUMMARY
+          cat report.html >> $GITHUB_STEP_SUMMARY
