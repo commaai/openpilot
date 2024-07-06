@@ -15,6 +15,7 @@ class TestServices(unittest.TestCase):
   def test_services(self, s):
     service = SERVICE_LIST[s]
     self.assertTrue(service.frequency <= 104)
+    self.assertTrue(service.decimation != 0)
 
   def test_generated_header(self):
     with tempfile.NamedTemporaryFile(suffix=".h") as f:
