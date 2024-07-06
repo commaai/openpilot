@@ -6,7 +6,6 @@ class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
     self.CCP = CarControllerParams(self.CP)
-    # dbc_name = 'gwm_haval_h6_mk3'
     # self.packer_pt = CANPacker(dbc_name)
 
     self.frame = 0
