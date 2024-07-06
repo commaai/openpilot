@@ -3,6 +3,7 @@ from openpilot.selfdrive.car.body.values import CAR as BODY
 from openpilot.selfdrive.car.chrysler.values import CAR as CHRYSLER
 from openpilot.selfdrive.car.ford.values import CAR as FORD
 from openpilot.selfdrive.car.gm.values import CAR as GM
+from openpilot.selfdrive.car.gwm.values import CAR as GWM
 from openpilot.selfdrive.car.honda.values import CAR as HONDA
 from openpilot.selfdrive.car.hyundai.values import CAR as HYUNDAI
 from openpilot.selfdrive.car.mazda.values import CAR as MAZDA
@@ -342,6 +343,6 @@ MIGRATION = {
   "SKODA SCALA 1ST GEN": VW.SKODA_KAMIQ_MK1,
   "SKODA_SCALA_MK1": VW.SKODA_KAMIQ_MK1,
   "SKODA SUPERB 3RD GEN": VW.SKODA_SUPERB_MK3,
-
+  "GWM HAVAL H6 PHEV 3RD GEN": GWM.GWM_HAVAL_H6_PHEV_3RD_GEN,
   "mock": MOCK.MOCK,
 }
