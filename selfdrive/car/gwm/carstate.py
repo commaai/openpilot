@@ -13,7 +13,7 @@ class CarState(CarStateBase):
     self.frame = 0
     self.CPP = CarControllerParams(CP)
 
-  def update(self, pt_cp, cam_cp):
+  def update(self, cp, cam_cp):
     ret = car.CarState.new_message()
 
     # begin TODO clean-after-port
@@ -21,10 +21,10 @@ class CarState(CarStateBase):
     # end TODO clean-after-port
 
     # ret.wheelSpeeds = self.get_wheel_speeds(
-    #   pt_cp.vl["WHEEL_SPEEDS"]["FRONT_LEFT_WHEEL_SPEED"],
-    #   pt_cp.vl["WHEEL_SPEEDS"]["FRONT_RIGHT_WHEEL_SPEED"],
-    #   pt_cp.vl["WHEEL_SPEEDS"]["REAR_LEFT_WHEEL_SPEED"],
-    #   pt_cp.vl["WHEEL_SPEEDS"]["REAR_RIGHT_WHEEL_SPEED"],
+    #   cp.vl["WHEEL_SPEEDS"]["FRONT_LEFT_WHEEL_SPEED"],
+    #   cp.vl["WHEEL_SPEEDS"]["FRONT_RIGHT_WHEEL_SPEED"],
+    #   cp.vl["WHEEL_SPEEDS"]["REAR_LEFT_WHEEL_SPEED"],
+    #   cp.vl["WHEEL_SPEEDS"]["REAR_RIGHT_WHEEL_SPEED"],
     # )
     ret.vEgoRaw = float(np.mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr]))
     ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
@@ -44,7 +44,7 @@ class CarState(CarStateBase):
     # ret.parkingBrake = TODO
 
     # begin toyota brakePressed TODO clean-after-port
-    ret.brakePressed = pt_cp.vl["COROLLA_BRAKE_MODULE"]["BRAKE_PRESSED"] != 0
+    ret.brakePressed = cp.vl["COROLLA_BRAKE_MODULE"]["BRAKE_PRESSED"] != 0
     # end TODO clean-after-port
 
     ret.gearShifter = GearShifter.drive # TODO
