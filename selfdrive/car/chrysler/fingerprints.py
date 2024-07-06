@@ -196,11 +196,14 @@ FW_VERSIONS = {
       b'68525339AA',
     ],
     (Ecu.engine, 0x7e0, None): [
+      b'           ',
       b'68366580AI ',
       b'68366580AK ',
       b'68366580AM ',
     ],
     (Ecu.hybrid, 0x7e2, None): [
+      b'           ',
+      b'05190175BH',
       b'05190226AI',
       b'05190226AK',
       b'05190226AM',
