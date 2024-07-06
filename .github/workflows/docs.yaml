@@ -1,4 +1,4 @@
-name: docs
+name: Build and Deploy Docs
 
 on:
   push:
@@ -11,41 +11,61 @@ on:
         default: '1'
         required: true
         type: string
+
 concurrency:
   group: docs-tests-ci-run-${{ inputs.run_number }}-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}
   cancel-in-progress: true
 
 env:
   BASE_IMAGE: openpilot-base
-
   BUILD: selfdrive/test/docker_build.sh base
-
   RUN: docker run --shm-size 1G -v $GITHUB_WORKSPACE:/tmp/openpilot -w /tmp/openpilot -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/bash -c
 
 jobs:
-  docs:
-    name: build docs
+  build-deploy:
+    name: Build and Deploy Docs
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-    - uses: actions/checkout@v4
+    - name: Checkout code
+      uses: actions/checkout@v4
       with:
         submodules: true
+
     - uses: ./.github/workflows/setup-with-retry
+
     - name: Build openpilot
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        pip install -r docs/new/requirements.txt
+
     - name: Build docs
       run: |
-        ${{ env.RUN }} "apt update && apt install -y doxygen && cd docs && make -j$(nproc) html"
+        mkdocs build -f docs/new/mkdocs.yml
 
-    - uses: actions/checkout@v4
-      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
       with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: docs/new/site
+
+    - name: Deploy to openpilot-docs repo
+      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
+      uses: actions/checkout@v4
+      with:
+        repository: commaai/openpilot-docs
         path: openpilot-docs
         ssh-key: ${{ secrets.OPENPILOT_DOCS_KEY }}
-        repository: commaai/openpilot-docs
-    - name: Push
+
+    - name: Push to openpilot-docs
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       run: |
         set -x
@@ -57,13 +77,12 @@ jobs:
         git checkout --orphan tmp
         git rm -rf .
 
-        cp -r ../build/docs/html/ docs/
-        cp -r ../docs/README.md .
-        touch docs/.nojekyll
-        echo -n docs.comma.ai > docs/CNAME
-        git add -f .
+        cp -r ../docs/new/site/* .
+        touch .nojekyll
+        echo -n docs.comma.ai > CNAME
+        git add .
 
-        git commit -m "build docs"
+        git commit -m "Update docs"
 
         # docs live in different repo to not bloat openpilot's full clone size
         git push -f origin tmp:gh-pages
