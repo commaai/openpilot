@@ -112,8 +112,8 @@ if arch == "larch64":
     "#third_party/libyuv/larch64/lib",
     "/usr/lib/aarch64-linux-gnu"
   ]
-  cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
-  cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
+  cflags = ["-DQCOM2", "-mcpu=cortex-a57", "-Wl", "--unresolved-symbols=ignore-in-shared-libs"] # workaround for casadi build error
+  cxxflags = ["-DQCOM2", "-mcpu=cortex-a57", "-Wl", "--unresolved-symbols=ignore-in-shared-libs"]
   rpath += ["/usr/local/lib"]
 else:
   cflags = []
