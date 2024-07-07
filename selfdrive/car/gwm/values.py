@@ -36,7 +36,9 @@ class CAR(Platforms):
   config: GwmPlatformConfig
 
   GWM_HAVAL_H6_PHEV_3RD_GEN = GwmPlatformConfig(
-    [GwmCarDocs("GWM Haval H6 hybrid plug-in 2020-24")],
+    [
+      GwmCarDocs("GWM Haval H6 hybrid plug-in 2020-24"),
+    ],
     GwmCarSpecs(mass=2050, wheelbase=2.74),
   )
 

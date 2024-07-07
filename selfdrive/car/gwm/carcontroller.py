@@ -12,6 +12,7 @@ class CarController(CarControllerBase):
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
+    new_actuators = actuators
     can_sends = []
 
     # **** Steering Controls ******************************************* #
@@ -25,8 +26,6 @@ class CarController(CarControllerBase):
 
     # **** Stock ACC Button Controls *********************************** #
     # TODO
-
-    new_actuators = actuators.copy()
 
     self.frame += 1
     return new_actuators, can_sends

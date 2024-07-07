@@ -65,17 +65,17 @@ class CarState(CarStateBase):
     return ret
 
 
-@staticmethod
-def get_can_parser(CP):
-  messages = [
-    ("COROLLA_BRAKE_MODULE", 40),
-  ]
+  @staticmethod
+  def get_can_parser(CP):
+    messages = [
+      ("COROLLA_BRAKE_MODULE", 40),
+    ]
 
-  return CANParser(DBC[CP.carFingerprint]["pt"], messages, CANBUS.pt)
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, CANBUS.pt)
 
 
-@staticmethod
-def get_cam_can_parser(CP):
-  messages = []
+  @staticmethod
+  def get_cam_can_parser(CP):
+    messages = []
 
-  return CANParser(DBC[CP.carFingerprint]["pt"], messages, CANBUS.cam)
+    return CANParser(DBC[CP.carFingerprint]["pt"], messages, CANBUS.cam)
