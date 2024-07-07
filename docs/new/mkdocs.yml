@@ -3,16 +3,60 @@ docs_dir: docs
 repo_url: https://github.com/commaai/openpilot/
 
 theme:
-  name: terminal
+  name: material
+  logo: # assets/comma-logo-white.png
+  favicon: # assets/favicon-white.png
+  palette:
+    primary: black
+    accent: green
+  font:
+    text: JetBrains Mono
   features:
-    - navigation.side.toc.hide
+    - navigation.indexes # Enables overview documents for each section
+    - navigation.top # Enables back to top feature
+    - content.code.copy # Adds copy button to code examples
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
 
 nav:
   - Getting Started:
+    - Overview: index.md # Also acts as the first page users will see
     - What is openpilot?: getting-started/what-is-openpilot.md
+    - Directory Overview: getting-started/directory-overview.md
+    - Building openpilot: getting-started/building-openpilot.md
+    - Need more help?: getting-started/need-more-help.md
   - How-to:
+    - Overview: how-to/index.md
     - Turn the speed blue: how-to/turning-the-speed-blue.md
   - Car Porting:
+    - Overview: car-porting/index.md
     - What is a car port?: car-porting/what-is-a-car-port.md
     - Porting a car brand: car-porting/brand-port.md
     - Porting a car model: car-porting/model-port.md
+  - Submodules:
+    - Overview: submodules/index.md
+    - cereal : submodules/cereal.md
+    - opendbc : submodules/opendbc.md
+    - panda : submodules/panda.md
+    - rednose : submodules/rednose.md
+  - Tools:
+    - Overview: tools/index.md
+    - Cabana : tools/cabana.md
+    - PlotJuggler : tools/plotjuggler.md
+    - SSH : tools/ssh.md
+  - Contributing :
+    - Overview: contributing/index.md
+    - How to ask questions: contributing/esv-redirect.md
+    - Guidelines: contributing/contributing-guidelines.md
+  - Reference:
+    - Overview: reference/index.md
+    - About comma : reference/about-comma.md
+    - Limitations : reference/LIMITATIONS.md
+    - Safety : reference/SAFETY.md

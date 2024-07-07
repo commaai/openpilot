@@ -1,0 +1,3 @@
+mkdocs
+mkdocs-terminal # Delete if we are going with material theme
+mkdocs-material

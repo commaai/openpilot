@@ -1,0 +1,1 @@
+I was thinking about putting something like [https://docs.howtocomma.com/docs/search-before-you-ask](https://docs.howtocomma.com/docs/search-before-you-ask)
