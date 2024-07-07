@@ -3,11 +3,11 @@ from openpilot.selfdrive.controls.radard import RADAR_TO_CAMERA
 
 # Color palette used for rerun AnnotationContext
 rerunColorPalette = [(96, "red", (255, 0, 0)),
-                     (100, "100", (255, 36, 0)),
+                     (100, "pink", (255, 36, 0)),
                      (124, "yellow", (255, 255, 0)),
-                     (230, "230", (255, 36, 170)),
-                     (240, "240", (255, 146, 0)),
-                     (255, "255", (255, 255, 255)),
+                     (230, "vibrantpink", (255, 36, 170)),
+                     (240, "orange", (255, 146, 0)),
+                     (255, "white", (255, 255, 255)),
                      (110, "carColor", (255,0,127))]
 
 
