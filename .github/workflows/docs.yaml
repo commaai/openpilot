@@ -32,7 +32,7 @@ jobs:
       run: |
         # TODO: can we install just the "docs" dependency group without the normal deps?
         pip install mkdocs mkdocs-terminal
-        cd docs/new
+        cd docs
         mkdocs build
 
     # Push to docs.comma.ai
@@ -54,7 +54,7 @@ jobs:
         git rm -rf .
 
         # copy over docs
-        cp -r ../docs/new/site/ site/
+        cp -r ../docs/site/ site/
 
         # GitHub pages config
         touch site/.nojekyll
