@@ -24,10 +24,8 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    #- name: Installing python
-    #  uses: actions/setup-python@v5
-    #  with:
-    #    python-version: '3.12'
+
+    # Build
     - name: Build docs
       run: |
         # TODO: can we install just the "docs" dependency group without the normal deps?
