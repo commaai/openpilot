@@ -5,14 +5,13 @@ from collections import deque
 from typing import Any
 
 import capnp
-from cereal import messaging, log
+from cereal import messaging, log, car
 from openpilot.common.numpy_fast import interp
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_CTRL, Ratekeeper, Priority, config_realtime_process
 from openpilot.common.swaglog import cloudlog
 
 from openpilot.common.simple_kalman import KF1D
-from openpilot.selfdrive.car.car_helpers import blocking_get_car_params
 
 # Default lead acceleration decay set to 50% at 1s
 _LEAD_ACCEL_TAU = 1.5
@@ -288,7 +287,7 @@ def main():
 
   # wait for stats about the car to come in from controls
   cloudlog.info("radard is waiting for CarParams")
-  CP = blocking_get_car_params(Params())
+  CP = messaging.log_from_bytes(Params().get("CarParams", block=True), car.CarParams)
   cloudlog.info("radard got CarParams")
 
   # import the radar from the fingerprint

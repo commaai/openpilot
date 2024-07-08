@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
+from cereal import car
 from openpilot.common.params import Params
 from openpilot.common.realtime import Priority, config_realtime_process
 from openpilot.common.swaglog import cloudlog
-from openpilot.selfdrive.car.car_helpers import blocking_get_car_params
 from openpilot.selfdrive.controls.lib.longitudinal_planner import LongitudinalPlanner
 import cereal.messaging as messaging
 
@@ -12,7 +12,7 @@ def plannerd_thread():
 
   cloudlog.info("plannerd is waiting for CarParams")
   params = Params()
-  CP = blocking_get_car_params(params)
+  CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
   cloudlog.info("plannerd got CarParams: %s", CP.carName)
 
   longitudinal_planner = LongitudinalPlanner(CP)
