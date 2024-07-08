@@ -18,7 +18,7 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper, DT_CTRL
 from openpilot.common.swaglog import cloudlog
 
-from openpilot.selfdrive.car.car_helpers import get_car_interface, get_startup_event
+from openpilot.selfdrive.car.car_helpers import get_car_interface, blocking_get_car_params, get_startup_event
 from openpilot.selfdrive.controls.lib.alertmanager import AlertManager, set_offroad_alert
 from openpilot.selfdrive.controls.lib.drive_helpers import VCruiseHelper, clip_curvature
 from openpilot.selfdrive.controls.lib.events import Events, ET
@@ -64,8 +64,7 @@ class Controls:
 
     if CI is None:
       cloudlog.info("controlsd is waiting for CarParams")
-      with car.CarParams.from_bytes(self.params.get("CarParams", block=True)) as msg:
-        self.CP = msg
+      self.CP = blocking_get_car_params(self.params)
       cloudlog.info("controlsd got CarParams")
 
       # Uses car interface helper functions, altering state won't be considered by card for actuation

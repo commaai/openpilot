@@ -217,3 +217,7 @@ def get_demo_car_params():
   CarInterface, _, _ = interfaces[platform]
   CP = CarInterface.get_non_essential_params(platform)
   return CP
+
+def blocking_get_car_params(params):
+  with car.CarParams.from_bytes(params.get("CarParams", block=True), traversal_limit_in_words=messaging.NO_TRAVERSAL_LIMIT) as car_params:
+    return car_params

@@ -4,7 +4,7 @@ import time
 import pickle
 import numpy as np
 import cereal.messaging as messaging
-from cereal import car, log
+from cereal import log
 from pathlib import Path
 from openpilot.common.threadname import setthreadname
 from cereal.messaging import PubMaster, SubMaster
@@ -16,7 +16,7 @@ from openpilot.common.realtime import config_realtime_process
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.system import sentry
-from openpilot.selfdrive.car.car_helpers import get_demo_car_params
+from openpilot.selfdrive.car.car_helpers import get_demo_car_params, blocking_get_car_params
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
@@ -172,8 +172,8 @@ def main(demo=False):
   if demo:
     CP = get_demo_car_params()
   else:
-    with car.CarParams.from_bytes(params.get("CarParams", block=True)) as msg:
-      CP = msg
+    CP = blocking_get_car_params(params)
+
   cloudlog.info("modeld got CarParams: %s", CP.carName)
 
   # TODO this needs more thought, use .2s extra for now to estimate other delays

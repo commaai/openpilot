@@ -8,6 +8,7 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, DT_MDL
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.swaglog import cloudlog
+from openpilot.selfdrive.car.car_helpers import blocking_get_car_params
 from openpilot.selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from openpilot.selfdrive.locationd.helpers import PointBuckets, ParameterEstimator
 
@@ -223,8 +224,7 @@ def main(demo=False):
   sm = messaging.SubMaster(['carControl', 'carOutput', 'carState', 'liveLocationKalman'], poll='liveLocationKalman')
 
   params = Params()
-  with car.CarParams.from_bytes(params.get("CarParams", block=True)) as CP:
-    estimator = TorqueEstimator(CP)
+  estimator = TorqueEstimator(blocking_get_car_params(params))
 
   while True:
     sm.update()

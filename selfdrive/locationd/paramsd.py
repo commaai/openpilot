@@ -5,11 +5,11 @@ import json
 import numpy as np
 
 import cereal.messaging as messaging
-from cereal import car
 from cereal import log
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, DT_MDL
 from openpilot.common.numpy_fast import clip
+from openpilot.selfdrive.car.car_helpers import blocking_get_car_params
 from openpilot.selfdrive.locationd.models.car_kf import CarKalman, ObservationKind, States
 from openpilot.selfdrive.locationd.models.constants import GENERATED_DIR
 from openpilot.common.swaglog import cloudlog
@@ -129,8 +129,7 @@ def main():
   params_reader = Params()
   # wait for stats about the car to come in from controls
   cloudlog.info("paramsd is waiting for CarParams")
-  with car.CarParams.from_bytes(params_reader.get("CarParams", block=True)) as msg:
-    CP = msg
+  CP = blocking_get_car_params(params_reader)
   cloudlog.info("paramsd got CarParams")
 
   min_sr, max_sr = 0.5 * CP.steerRatio, 2.0 * CP.steerRatio
