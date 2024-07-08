@@ -223,8 +223,7 @@ def main(demo=False):
   sm = messaging.SubMaster(['carControl', 'carOutput', 'carState', 'liveLocationKalman'], poll='liveLocationKalman')
 
   params = Params()
-  with car.CarParams.from_bytes(params.get("CarParams", block=True)) as CP:
-    estimator = TorqueEstimator(CP)
+  estimator = TorqueEstimator(messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams))
 
   while True:
     sm.update()

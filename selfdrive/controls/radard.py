@@ -288,8 +288,7 @@ def main():
 
   # wait for stats about the car to come in from controls
   cloudlog.info("radard is waiting for CarParams")
-  with car.CarParams.from_bytes(Params().get("CarParams", block=True)) as msg:
-    CP = msg
+  CP = messaging.log_from_bytes(Params().get("CarParams", block=True), car.CarParams)
   cloudlog.info("radard got CarParams")
 
   # import the radar from the fingerprint
