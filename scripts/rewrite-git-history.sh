@@ -115,6 +115,9 @@ if [ ! -d $SRC_CLONE ]; then
 
         # save the old and new commit hashes to the mapping file
         echo "$COMMIT $NEW_COMMIT" >> commit-map.txt
+
+        # append the old commit ID to the commit message
+        git commit --amend -m "$(git log -1 --pretty=%B)" -m "Former-commit-id: $COMMIT" > /dev/null
       fi
   done
 
@@ -220,6 +223,9 @@ if [ ! -f "$SRC_CLONE/branch-diff.txt" ]; then
 
           # save the old and new commit hashes to the mapping file
           echo "$COMMIT $NEW_COMMIT" >> commit-map.txt
+
+          # append the old commit ID to the commit message
+          git commit --amend -m "$(git log -1 --pretty=%B)" -m "Former-commit-id: $COMMIT" > /dev/null
         fi
       done
       
