@@ -1128,4 +1128,12 @@ FW_VERSIONS = {
       b'\xf1\x00US4_ RDR -----      1.00 1.00 99110-CG000         ',
     ],
   },
+  CAR.HYUNDAI_CRETA_2ND_GEN: {
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00SU2BMFC  AT BRA LHD 1.00 1.00 99211-BX000 210524',
+    ],
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00SU2b FCA F-CUP      1.00 1.00 99110-BX000         ',
+    ],
+  }
 }
