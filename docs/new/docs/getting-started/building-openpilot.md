@@ -1,0 +1,1 @@
+This doc would includes the readme's from [tools](https://github.com/commaai/openpilot/blob/master/tools/README.md) and [dev workflows](https://github.com/commaai/openpilot/blob/master/docs/WORKFLOW.md) plus anything else that is similar.
