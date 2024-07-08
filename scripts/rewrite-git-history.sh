@@ -8,6 +8,9 @@ SRC=/tmp/openpilot/
 SRC_CLONE=/tmp/openpilot-clone/
 OUT=/tmp/openpilot-tiny/
 
+LOG_FILE=$DIR/git-rewrite-log-$(date +"%Y-%m-%dT%H:%M:%S%z").txt
+exec > >(tee -a "$LOG_FILE") 2>&1
+
 # INSTALL git-filter-repo
 if [ ! -f /tmp/git-filter-repo ]; then
   echo "Installing git-filter-repo..."
@@ -139,16 +142,104 @@ if [ ! -d $SRC_CLONE ]; then
   # git push will also push lfs, if we don't uninstall (--local so just for this repo)
   git lfs uninstall --local
 
-  # come back to master
-  git branch -D master
-  git checkout -b master
-  git branch -D main
-
-  # push to $SRC
-  git push --force --set-upstream origin master
+  # force push new master
+  git push --force origin main:master
 
   # force push new tags
-  git push --tags --force
+  git push --force --tags
+fi
+
+# REWRITE branches based on master
+if [ ! -f "$SRC_CLONE/branch-diff.txt" ]; then
+  cd $SRC_CLONE
+
+  # empty file
+  > branch-diff.txt
+
+  echo "Rewriting branches based on master..."
+
+  # will store raw diffs here, if exist
+  mkdir -p differences
+
+  # get a list of all branches except master
+  BRANCHES=$(git branch -r | grep -v ' -> ' | sed 's/origin\///' | grep -v '^master$')
+
+  for BRANCH in $BRANCHES; do
+    # check if the branch is based on master history
+    MERGE_BASE=$(git merge-base master origin/$BRANCH) || true
+    if [ -n "$MERGE_BASE" ]; then
+      echo "Rewriting branch: $BRANCH"
+      
+      # create a new branch based on the new master
+      NEW_MERGE_BASE=$(grep "^$MERGE_BASE " "commit-map.txt" | awk '{print $2}')
+      if [ -z "$NEW_MERGE_BASE" ]; then
+        echo "Error: could not find new merge base for branch $BRANCH" >> branch-diff.txt
+        continue
+      fi
+      git checkout -b ${BRANCH}_new $NEW_MERGE_BASE
+      
+      # get the range of commits unique to this branch
+      COMMITS=$(git rev-list --reverse $MERGE_BASE..origin/${BRANCH})
+      
+      HAS_ERROR=0
+
+      # simple delimiter
+      echo "BRANCH ${BRANCH}" >> commit-map.txt
+
+      for COMMIT in $COMMITS; do
+        # set environment variables to preserve author/committer and dates
+        export GIT_AUTHOR_NAME=$(git show -s --format='%an' $COMMIT)
+        export GIT_AUTHOR_EMAIL=$(git show -s --format='%ae' $COMMIT)
+        export GIT_COMMITTER_NAME=$(git show -s --format='%cn' $COMMIT)
+        export GIT_COMMITTER_EMAIL=$(git show -s --format='%ce' $COMMIT)
+        export GIT_AUTHOR_DATE=$(git show -s --format='%ad' $COMMIT)
+        export GIT_COMMITTER_DATE=$(git show -s --format='%cd' $COMMIT)
+
+        echo "Cherry-picking commit $COMMIT of ${BRANCH} branch..."
+
+        # cherry-pick the commit
+        if ! GIT_OUTPUT=$(git cherry-pick -m 1 -X theirs $COMMIT 2>&1); then
+          # check if the failure is because of an empty commit
+          if [[ "$GIT_OUTPUT" == *"The previous cherry-pick is now empty"* ]]; then
+            echo "Empty commit detected. Skipping commit $COMMIT"
+            git cherry-pick --skip
+            # log it was empty to the mapping file
+            echo "$COMMIT EMPTY" >> commit-map.txt
+          else
+            # handle other errors or conflicts
+            echo "Cherry-pick of ${BRANCH} branch failed. Removing branch upstream..." >> branch-diff.txt
+            echo "$GIT_OUTPUT" > "differences/branch-${BRANCH}"
+            git cherry-pick --abort
+            git push --delete origin ${BRANCH}
+            HAS_ERROR=1
+            break
+          fi
+        else
+          # capture the new commit hash
+          NEW_COMMIT=$(git rev-parse HEAD)
+
+          # save the old and new commit hashes to the mapping file
+          echo "$COMMIT $NEW_COMMIT" >> commit-map.txt
+        fi
+      done
+      
+      # force push the new branch
+      if [ $HAS_ERROR -eq 0 ]; then
+        # git lfs goes haywire here, so we need to install and uninstall
+        # git lfs install --skip-smudge --local
+        git lfs uninstall --local > /dev/null
+        git push -f origin ${BRANCH}_new:${BRANCH}
+      fi
+      
+      # clean up local branch
+      git checkout master > /dev/null
+      git branch -D ${BRANCH}_new > /dev/null
+    else
+      # echo "Skipping branch $BRANCH as it's not based on master history" >> branch-diff.txt
+       echo "Deleting branch $BRANCH as it's not based on master history" >> branch-diff.txt
+       git push --delete origin ${BRANCH}
+    fi
+  done
 fi
 
 # VALIDATE cherry-pick
@@ -175,6 +266,10 @@ if [ ! -f "$SRC_CLONE/commit-diff.txt" ]; then
   # read each line from commit-map.txt
   while IFS=' ' read -r OLD_COMMIT NEW_COMMIT; do
     if [ "$NEW_COMMIT" == "EMPTY" ]; then
+      continue
+    fi
+    if [ "$OLD_COMMIT" == "BRANCH" ]; then
+      echo "Branch ${NEW_COMMIT} below:" >> commit-diff.txt
       continue
     fi
     CURRENT_COMMIT_NUMBER=$((CURRENT_COMMIT_NUMBER + 1))
@@ -251,5 +346,8 @@ git config lfs.pushurl ssh://git@gitlab.com/commaai/openpilot-lfs.git
 git lfs fetch --all || true
 
 # final push - will also push lfs
-# TODO: switch to https://github.com/commaai/openpilot.git when ready
-git push --mirror https://github.com/commaai/openpilot-tiny.git
+# TODO: switch to git@github.com:commaai/openpilot.git when ready
+# if using mirror, it will also delete non-master branches (master-ci, nightly, devel, release3, release3-staging, dashcam3, release2)
+# git push --mirror git@github.com:commaai/openpilot-tiny.git
+# using this instead - since this is also what --mirror does - https://blog.plataformatec.com.br/2013/05/how-to-properly-mirror-a-git-repository/
+git push git@github.com:commaai/openpilot-tiny.git +refs/remotes/origin/*:refs/heads/* +refs/tags/*:refs/tags/*
