@@ -36,10 +36,10 @@ if [ ! -d $SRC ]; then
   echo "Pushing to openpilot-archive..."
   # push to archive repo - in smaller parts because the 2 GB push limit - https://docs.github.com/en/get-started/using-git/troubleshooting-the-2-gb-push-limit
   ARCHIVE_REPO=git@github.com:commaai/openpilot-archive.git
-  git push $ARCHIVE_REPO master:refs/heads/master # push master first so it's the default branch (assuming openpilot-archive is an empty repo)
-  git push $ARCHIVE_REPO --all # 956.39 MiB (110725 objects)
-  git push $ARCHIVE_REPO --tags # 1.75 GiB (21694 objects)
-  git push --mirror $ARCHIVE_REPO || true # fails to push refs/pull/* (deny updating a hidden ref) for pull requests
+  git push --prune $ARCHIVE_REPO +refs/heads/master:refs/heads/master # push master first so it's the default branch (when openpilot-archive is an empty repo)
+  git push --prune $ARCHIVE_REPO +refs/heads/*:refs/heads/* # 956.39 MiB (110725 objects)
+  git push --prune $ARCHIVE_REPO +refs/tags/*:refs/tags/* # 1.75 GiB (21694 objects)
+  # git push --mirror $ARCHIVE_REPO || true # fails to push refs/pull/* (deny updating a hidden ref) for pull requests
   # we fail and continue - more reading: https://stackoverflow.com/a/34266401/639708
 fi
 
@@ -85,7 +85,7 @@ if [ ! -d $SRC_CLONE ]; then
 
   for COMMIT in $COMMITS; do
       CURRENT_COMMIT_NUMBER=$((CURRENT_COMMIT_NUMBER + 1))
-      printf "Cherry-picking commit %d out of %d: %s\n" "$CURRENT_COMMIT_NUMBER" "$TOTAL_COMMITS" "$COMMIT"
+      echo -ne "[$CURRENT_COMMIT_NUMBER/$TOTAL_COMMITS] Cherry-picking commit: $COMMIT"\\r
 
       # set environment variables to preserve author/committer and dates
       export GIT_AUTHOR_NAME=$(git show -s --format='%an' $COMMIT)
@@ -197,8 +197,6 @@ if [ ! -f "$SRC_CLONE/branch-diff.txt" ]; then
         export GIT_COMMITTER_EMAIL=$(git show -s --format='%ce' $COMMIT)
         export GIT_AUTHOR_DATE=$(git show -s --format='%ad' $COMMIT)
         export GIT_COMMITTER_DATE=$(git show -s --format='%cd' $COMMIT)
-
-        echo "Cherry-picking commit $COMMIT of ${BRANCH} branch..."
 
         # cherry-pick the commit
         if ! GIT_OUTPUT=$(git cherry-pick -m 1 -X theirs $COMMIT 2>&1); then
@@ -356,4 +354,4 @@ git lfs fetch --all || true
 # if using mirror, it will also delete non-master branches (master-ci, nightly, devel, release3, release3-staging, dashcam3, release2)
 # git push --mirror git@github.com:commaai/openpilot-tiny.git
 # using this instead - since this is also what --mirror does - https://blog.plataformatec.com.br/2013/05/how-to-properly-mirror-a-git-repository/
-git push git@github.com:commaai/openpilot-tiny.git +refs/remotes/origin/*:refs/heads/* +refs/tags/*:refs/tags/*
+git push git@github.com:commaai/openpilot-tiny.git +refs/heads/*:refs/heads/* +refs/tags/*:refs/tags/*
