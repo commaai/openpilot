@@ -66,6 +66,8 @@ dependencies = [
 [project.optional-dependencies]
 docs = [
   "Jinja2",
+  "mkdocs",
+  "mkdocs-terminal",
 ]
 
 testing = [
