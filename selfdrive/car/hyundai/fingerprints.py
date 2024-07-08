@@ -595,6 +595,7 @@ FW_VERSIONS = {
       b'\xf1\x00OS IEB \x02 210 \x02\x14 58520-K4000',
       b'\xf1\x00OS IEB \x02 212 \x11\x13 58520-K4000',
       b'\xf1\x00OS IEB \x03 210 \x02\x14 58520-K4000',
+      b'\xf1\x00OS IEB \x03 211 \x04\x02 58520-K4000',
       b'\xf1\x00OS IEB \x03 212 \x11\x13 58520-K4000',
       b'\xf1\x00OS IEB \r 105\x18\t\x18 58520-K4000',
     ],
