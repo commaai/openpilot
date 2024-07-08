@@ -18,17 +18,17 @@ nav:
   - How-to:
     - Index: how-to/index.md
     - Turn the speed blue: how-to/turning-the-speed-blue.md
-  - Car Porting:
-    - Index: car-porting/index.md
-    - What is a car port?: car-porting/what-is-a-car-port.md
-    - Porting a car brand: car-porting/brand-port.md
-    - Porting a car model: car-porting/model-port.md
   - Submodules:
     - Index: submodules/index.md
     - cereal : submodules/cereal.md
     - opendbc : submodules/opendbc.md
     - panda : submodules/panda.md
     - rednose : submodules/rednose.md
+  - Car Porting:
+    - Index: car-porting/index.md
+    - What is a car port?: car-porting/what-is-a-car-port.md
+    - Porting a car brand: car-porting/brand-port.md
+    - Porting a car model: car-porting/model-port.md
   - Tools:
     - Index: tools/index.md
     - Cabana : tools/cabana.md
