@@ -483,6 +483,20 @@ CONFIGS = [
     processing_time=0.004,
   ),
   ProcessConfig(
+    proc_name="hardwared",
+    pubs=[
+      "peripheralState", "gpsLocationExternal", "controlsState", "pandaStates",
+    ],
+    subs=["deviceState"],
+    ignore=["logMonoTime"],
+    # config_callback=controlsd_config_callback,
+    # init_callback=get_car_params_callback,
+    # should_recv_callback=controlsd_rcv_callback,
+    should_recv_callback=MessageBasedRcvCallback("pandaStates"),
+    tolerance=NUMPY_TOLERANCE,
+    # processing_time=0.004,
+  ),
+  ProcessConfig(
     proc_name="card",
     pubs=["pandaStates", "carControl", "onroadEvents", "can"],
     subs=["sendcan", "carState", "carParams", "carOutput"],
