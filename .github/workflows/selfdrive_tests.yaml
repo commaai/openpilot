@@ -116,7 +116,7 @@ jobs:
           scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}-macos
     - name: Building openpilot
-      run: uv run scons -u -j$(nproc)
+      run: . .venv/bin/activate && scons -j$(nproc)
 
   static_analysis:
     name: static analysis
