@@ -2,11 +2,14 @@
 
 A comma 3/3X is a normal [Linux](https://github.com/commaai/agnos-builder) computer that exposes [SSH](https://wiki.archlinux.org/title/Secure_Shell) and a [serial console](https://wiki.archlinux.org/title/Working_with_the_serial_console).
 
-## Serial
+## Serial Console
 
-For the comma three, use tools/serial/connect.sh.
+On both the comma three and 3X, the serial console is accessible from the main OBD-C port.
+Connect the comma 3/3X to your computer with a normal USB C cable, or use a [comma serial](https://comma.ai/shop/comma-serial) for steady 12V power.
 
-On the comma 3X, use panda/tests/som_debug.sh.
+On the comma three, the serial console is exposed through a UART-to-USB chip, and `tools/serial/connect.sh` can be used to connect.
+
+On the comma 3X, the serial console is accessible through the [panda](https://github.com/commaai/panda) using the `panda/tests/som_debug.sh` script.
 
 ## SSH
 
@@ -15,8 +18,8 @@ In order to SSH into your device, you'll need a GitHub account with SSH keys. Se
 * Enable SSH in your device's settings
 * Enter your GitHub username in the device's settings
 * Connect to your device
-  * Username: `comma`
-  * Port: `22` or `8022`
+    * Username: `comma`
+    * Port: `22`
 
 Here's an example command for connecting to your device using its tethered connection:<br />
 `ssh comma@192.168.43.1`
@@ -31,10 +34,9 @@ The `id_rsa` key in this directory only works while your device is in the setup 
 
 #### ssh.comma.ai proxy
 
-SSH into your comma device from anywhere with `ssh.comma.ai`. Requires a [comma prime subscription](https://comma.ai/connect).
+With a [comma prime subscription](https://comma.ai/connect), you can SSH into your comma device from anywhere.
 
-With the below SSH configuration, you can type `ssh comma-{dongleid}` to connect to your device through `ssh.comma.ai`.<br />
-For example: `ssh comma-ffffffffffffffff`
+With the below SSH configuration, you can type `ssh comma-{dongleid}` to connect to your device through `ssh.comma.ai`.
 
 ```
 Host comma-*
@@ -42,6 +44,7 @@ Host comma-*
   User comma
   IdentityFile ~/.ssh/my_github_key
   ProxyCommand ssh %h@ssh.comma.ai -W %h:%p
+
 Host ssh.comma.ai
   Hostname ssh.comma.ai
   Port 22
