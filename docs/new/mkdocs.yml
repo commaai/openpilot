@@ -40,6 +40,7 @@ nav:
     - Guidelines: contributing/contributing-guidelines.md
   - Reference:
     - Index: reference/index.md
+    - Supported cars : reference/supported-cars.md
     - About comma : reference/about-comma.md
     - Limitations : reference/LIMITATIONS.md
     - Safety : reference/SAFETY.md
