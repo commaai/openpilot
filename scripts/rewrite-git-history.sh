@@ -1,7 +1,4 @@
 #!/bin/bash
-# don't use set -e, cos we need to continue on error (in rebase)
-# set -x
-# set -ex
 set -e
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
@@ -13,23 +10,27 @@ OUT=/tmp/openpilot-tiny/
 
 # INSTALL git-filter-repo
 if [ ! -f /tmp/git-filter-repo ]; then
-  curl -o /tmp/git-filter-repo https://raw.githubusercontent.com/newren/git-filter-repo/main/git-filter-repo
+  echo "Installing git-filter-repo..."
+  curl -sSo /tmp/git-filter-repo https://raw.githubusercontent.com/newren/git-filter-repo/main/git-filter-repo
   chmod +x /tmp/git-filter-repo
 fi
 
 # MIRROR openpilot
 if [ ! -d $SRC ]; then
+  echo "Mirroring openpilot..."
   git clone --mirror https://github.com/commaai/openpilot.git $SRC # 4.18 GiB (488034 objects)
 
   cd $SRC
 
-  echo "starting size $(du -sh .)"
+  echo "Starting size $(du -sh .)"
 
   git remote update
 
   # the git-filter-repo analysis is bliss - can be found in the repo root/filter-repo/analysis
+  echo "Analyzing with git-filter-repo..."
   /tmp/git-filter-repo --force --analyze
 
+  echo "Pushing to openpilot-archive..."
   # push to archive repo - in smaller parts because the 2 GB push limit - https://docs.github.com/en/get-started/using-git/troubleshooting-the-2-gb-push-limit
   ARCHIVE_REPO=git@github.com:commaai/openpilot-archive.git
   git push $ARCHIVE_REPO master:refs/heads/master # push master first so it's the default branch (assuming openpilot-archive is an empty repo)
@@ -39,18 +40,23 @@ if [ ! -d $SRC ]; then
   # we fail and continue - more reading: https://stackoverflow.com/a/34266401/639708
 fi
 
-# CHERRY-PICK all master commits over devel (v0.7.1)
+# REWRITE master and tags
 if [ ! -d $SRC_CLONE ]; then
+  echo "Cloning $SRC..."
   GIT_LFS_SKIP_SMUDGE=1 git clone $SRC $SRC_CLONE
 
   cd $SRC_CLONE
+
+  echo "Checking out old history..."
 
   git checkout tags/v0.7.1
   # checkout as main, since we need master ref later
   git checkout -b main
 
+  echo "Creating setup commits..."
+
   # rm these so we don't get conflicts later
-  git rm -r cereal opendbc panda selfdrive/ui/ui
+  git rm -r cereal opendbc panda selfdrive/ui/ui > /dev/null
   git commit -m "removed conflicting files"
 
   # skip-smudge to get rid of some lfs errors that it can't find the reference of some lfs files
@@ -72,25 +78,19 @@ if [ ! -d $SRC_CLONE ]; then
   # empty this file
   > commit-map.txt
 
+  echo "Rewriting master commits..."
+
   for COMMIT in $COMMITS; do
       CURRENT_COMMIT_NUMBER=$((CURRENT_COMMIT_NUMBER + 1))
       printf "Cherry-picking commit %d out of %d: %s\n" "$CURRENT_COMMIT_NUMBER" "$TOTAL_COMMITS" "$COMMIT"
 
-      # extract commit metadata
-      AUTHOR_NAME=$(git show -s --format='%an' $COMMIT)
-      AUTHOR_EMAIL=$(git show -s --format='%ae' $COMMIT)
-      COMMITTER_NAME=$(git show -s --format='%cn' $COMMIT)
-      COMMITTER_EMAIL=$(git show -s --format='%ce' $COMMIT)
-      AUTHOR_DATE=$(git show -s --format='%ad' $COMMIT)
-      COMMIT_DATE=$(git show -s --format='%cd' $COMMIT)
-
       # set environment variables to preserve author/committer and dates
-      export GIT_AUTHOR_NAME="$AUTHOR_NAME"
-      export GIT_AUTHOR_EMAIL="$AUTHOR_EMAIL"
-      export GIT_COMMITTER_NAME="$COMMITTER_NAME"
-      export GIT_COMMITTER_EMAIL="$COMMITTER_EMAIL"
-      export GIT_AUTHOR_DATE="$AUTHOR_DATE"
-      export GIT_COMMITTER_DATE="$COMMIT_DATE"
+      export GIT_AUTHOR_NAME=$(git show -s --format='%an' $COMMIT)
+      export GIT_AUTHOR_EMAIL=$(git show -s --format='%ae' $COMMIT)
+      export GIT_COMMITTER_NAME=$(git show -s --format='%cn' $COMMIT)
+      export GIT_COMMITTER_EMAIL=$(git show -s --format='%ce' $COMMIT)
+      export GIT_AUTHOR_DATE=$(git show -s --format='%ad' $COMMIT)
+      export GIT_COMMITTER_DATE=$(git show -s --format='%cd' $COMMIT)
 
       # cherry-pick the commit
       if ! GIT_OUTPUT=$(git cherry-pick -m 1 -X theirs $COMMIT 2>&1); then
@@ -115,6 +115,8 @@ if [ ! -d $SRC_CLONE ]; then
       fi
   done
 
+  echo "Rewriting tags..."
+
   # remove all old tags
   git tag -l | xargs git tag -d
 
@@ -129,7 +131,7 @@ if [ ! -d $SRC_CLONE ]; then
       NEW_COMMIT=$OLD_COMMIT
     fi
 
-    printf "Recreating tag %s from commit %s\n" "$TAG" "$NEW_COMMIT"
+    printf "Rewriting tag %s from commit %s\n" "$TAG" "$NEW_COMMIT"
     git tag -f "$TAG" "$NEW_COMMIT"
   done < "$DIR/tag-commit-map.txt"
 
@@ -145,7 +147,7 @@ if [ ! -d $SRC_CLONE ]; then
   # push to $SRC
   git push --force --set-upstream origin master
 
-  # force push tags
+  # force push new tags
   git push --tags --force
 fi
 
@@ -165,7 +167,7 @@ if [ ! -f "$SRC_CLONE/commit-diff.txt" ]; then
   # empty file
   > commit-diff.txt
 
-  echo "Validating commits"
+  echo "Validating commits..."
 
   # will store raw diffs here, if exist
   mkdir -p differences
@@ -213,21 +215,26 @@ if [ ! -d $OUT ]; then
 
   # remove all non-master branches
   # TODO: need to see if we "redo" the other branches (except master, master-ci, devel, devel-staging, release3, release3-staging, dashcam3, dashcam3-staging, testing-closet*, hotfix-*)
-  git branch | grep -v "^  master$" | grep -v "\*" | xargs git branch -D
+  # git branch | grep -v "^  master$" | grep -v "\*" | xargs git branch -D
+
+  # echo "cleaning up refs"
   # delete pull request refs since we can't alter them anyway (https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/reviewing-changes-in-pull-requests/checking-out-pull-requests-locally#error-failed-to-push-some-refs)
-  git for-each-ref --format='%(refname)' | grep '^refs/pull/' | xargs -I {} git update-ref -d {}
+  # git for-each-ref --format='%(refname)' | grep '^refs/pull/' | xargs -I {} git update-ref -d {}
 
+  echo "importing new lfs files"
   # import "almost" everything to lfs
-  git lfs migrate import --everything --include="*.dlc,*.onnx,*.svg,*.png,*.gif,*.ttf,*.wav,selfdrive/car/tests/test_models_segs.txt,system/hardware/tici/updater,selfdrive/ui/qt/spinner_larch64,selfdrive/ui/qt/text_larch64,third_party/**/*.a,third_party/**/*.so,third_party/**/*.so.*,third_party/**/*.dylib,third_party/acados/*/t_renderer,third_party/qt5/larch64/bin/lrelease,third_party/qt5/larch64/bin/lupdate,third_party/catch2/include/catch2/catch.hpp,*.apk,*.apkpatch,*.jar,*.pdf,*.jpg,*.mp3,*.thneed,*.tar.gz,*.npy,*.csv,*.a,*.so*,*.dylib,*.o,*.b64,selfdrive/hardware/tici/updater,selfdrive/boardd/tests/test_boardd,selfdrive/ui/qt/spinner_aarch64,installer/updater/updater,selfdrive/debug/profiling/simpleperf/**/*,selfdrive/hardware/eon/updater,selfdrive/ui/qt/text_aarch64,selfdrive/debug/profiling/pyflame/**/*,installer/installers/installer_openpilot,installer/installers/installer_dashcam,selfdrive/ui/text/text,selfdrive/ui/android/text/text,selfdrive/ui/spinner/spinner,selfdrive/visiond/visiond,selfdrive/loggerd/loggerd,selfdrive/sensord/sensord,selfdrive/sensord/gpsd,selfdrive/ui/android/spinner/spinner,selfdrive/ui/qt/spinner,selfdrive/ui/qt/text,_stringdefs.py,dfu-util-aarch64-linux,dfu-util-aarch64,dfu-util-x86_64-linux,dfu-util-x86_64,stb_image.h,clpeak3,clwaste,apk/**/*,external/**/*,phonelibs/**/*,third_party/boringssl/**/*,flask/**/*,panda/**/*,board/**/*,messaging/**/*,cereal/**/*,opendbc/**/*,tools/cabana/chartswidget.cc,third_party/nanovg/**/*,selfdrive/controls/lib/lateral_mpc/lib_mpc_export/**/*,selfdrive/ui/paint.cc,werkzeug/**/*,pyextra/**/*,third_party/android_hardware_libhardware/**/*,selfdrive/controls/lib/lead_mpc_lib/lib_mpc_export/**/*,selfdrive/locationd/laikad.py,selfdrive/locationd/test/test_laikad.py,tools/gpstest/test_laikad.py,selfdrive/locationd/laikad_helpers.py,tools/nui/**/*,jsonrpc/**/*,selfdrive/controls/lib/longitudinal_mpc/lib_mpc_export/**/*,selfdrive/controls/lib/lateral_mpc/mpc_export/**/*,selfdrive/camerad/cameras/camera_qcom.cc,selfdrive/manager.py,selfdrive/modeld/models/driving.cc,third_party/curl/**/*,selfdrive/modeld/thneed/debug/**/*,selfdrive/modeld/thneed/include/**/*,third_party/openmax/**/*,selfdrive/controls/lib/longitudinal_mpc/mpc_export/**/*,selfdrive/controls/lib/longitudinal_mpc_model/lib_mpc_export/**/*,Pipfile,Pipfile.lock,gunicorn/**/*,*.qm,jinja2/**/*,click/**/*,dbcs/**/*,websocket/**/*"
+  git lfs migrate import --everything --include="*.dlc,*.onnx,*.svg,*.png,*.gif,*.ttf,*.wav,selfdrive/car/tests/test_models_segs.txt,system/hardware/tici/updater,selfdrive/ui/qt/spinner_larch64,selfdrive/ui/qt/text_larch64,third_party/**/*.a,third_party/**/*.so,third_party/**/*.so.*,third_party/**/*.dylib,third_party/acados/*/t_renderer,third_party/qt5/larch64/bin/lrelease,third_party/qt5/larch64/bin/lupdate,third_party/catch2/include/catch2/catch.hpp,*.apk,*.apkpatch,*.jar,*.pdf,*.jpg,*.mp3,*.thneed,*.tar.gz,*.npy,*.csv,*.a,*.so*,*.dylib,*.o,*.b64,selfdrive/hardware/tici/updater,selfdrive/boardd/tests/test_boardd,selfdrive/ui/qt/spinner_aarch64,installer/updater/updater,selfdrive/debug/profiling/simpleperf/**/*,selfdrive/hardware/eon/updater,selfdrive/ui/qt/text_aarch64,selfdrive/debug/profiling/pyflame/**/*,installer/installers/installer_openpilot,installer/installers/installer_dashcam,selfdrive/ui/text/text,selfdrive/ui/android/text/text,selfdrive/ui/spinner/spinner,selfdrive/visiond/visiond,selfdrive/loggerd/loggerd,selfdrive/sensord/sensord,selfdrive/sensord/gpsd,selfdrive/ui/android/spinner/spinner,selfdrive/ui/qt/spinner,selfdrive/ui/qt/text,_stringdefs.py,dfu-util-aarch64-linux,dfu-util-aarch64,dfu-util-x86_64-linux,dfu-util-x86_64,stb_image.h,clpeak3,clwaste,apk/**/*,external/**/*,phonelibs/**/*,third_party/boringssl/**/*,flask/**/*,panda/**/*,board/**/*,messaging/**/*,opendbc/**/*,tools/cabana/chartswidget.cc,third_party/nanovg/**/*,selfdrive/controls/lib/lateral_mpc/lib_mpc_export/**/*,selfdrive/ui/paint.cc,werkzeug/**/*,pyextra/**/*,third_party/android_hardware_libhardware/**/*,selfdrive/controls/lib/lead_mpc_lib/lib_mpc_export/**/*,selfdrive/locationd/laikad.py,selfdrive/locationd/test/test_laikad.py,tools/gpstest/test_laikad.py,selfdrive/locationd/laikad_helpers.py,tools/nui/**/*,jsonrpc/**/*,selfdrive/controls/lib/longitudinal_mpc/lib_mpc_export/**/*,selfdrive/controls/lib/lateral_mpc/mpc_export/**/*,selfdrive/camerad/cameras/camera_qcom.cc,selfdrive/manager.py,selfdrive/modeld/models/driving.cc,third_party/curl/**/*,selfdrive/modeld/thneed/debug/**/*,selfdrive/modeld/thneed/include/**/*,third_party/openmax/**/*,selfdrive/controls/lib/longitudinal_mpc/mpc_export/**/*,selfdrive/controls/lib/longitudinal_mpc_model/lib_mpc_export/**/*,Pipfile,Pipfile.lock,gunicorn/**/*,*.qm,jinja2/**/*,click/**/*,dbcs/**/*,websocket/**/*"
 
+  echo "reflog and gc"
   # this is needed after lfs import
   git reflog expire --expire=now --all
   git gc --prune=now --aggressive
 
   # check the git-filter-repo analysis again - can be found in the repo root/filter-repo/analysis
+  echo "Analyzing with git-filter-repo..."
   /tmp/git-filter-repo --force --analyze
 
-  echo "new one is $(du -sh .)"
+  echo "New size is $(du -sh .)"
 fi
 
 cd $OUT
