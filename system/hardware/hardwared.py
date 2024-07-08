@@ -295,11 +295,11 @@ def hardware_thread(end_event, hw_queue) -> None:
 
     startup_conditions["up_to_date"] = params.get("Offroad_ConnectivityNeeded") is None or params.get_bool("DisableUpdates") or params.get_bool("SnoozeUpdate")
     startup_conditions["not_uninstalling"] = not params.get_bool("DoUninstall")
-    # startup_conditions["accepted_terms"] = params.get("HasAcceptedTerms") == terms_version
+    startup_conditions["accepted_terms"] = params.get("HasAcceptedTerms") == terms_version
 
     # with 2% left, we killall, otherwise the phone will take a long time to boot
     startup_conditions["free_space"] = msg.deviceState.freeSpacePercent > 2
-    # startup_conditions["completed_training"] = params.get("CompletedTrainingVersion") == training_version
+    startup_conditions["completed_training"] = params.get("CompletedTrainingVersion") == training_version
     startup_conditions["not_driver_view"] = not params.get_bool("IsDriverViewEnabled")
     startup_conditions["not_taking_snapshot"] = not params.get_bool("IsTakingSnapshot")
 
@@ -392,7 +392,6 @@ def hardware_thread(end_event, hw_queue) -> None:
       params.put_bool("DoShutdown", True)
 
     msg.deviceState.started = started_ts is not None
-    print('started', msg.deviceState.started)
     msg.deviceState.startedMonoTime = int(1e9*(started_ts or 0))
 
     last_ping = params.get("LastAthenaPingTime")
