@@ -8,10 +8,11 @@
 
 void Sparkline::update(const MessageId &msg_id, const cabana::Signal *sig, double last_msg_ts, int range, QSize size) {
   const auto &msgs = can->events(msg_id);
-  uint64_t ts = (last_msg_ts + can->routeStartTime()) * 1e9;
-  uint64_t first_ts = (ts > range * 1e9) ? ts - range * 1e9 : 0;
-  auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), first_ts, CompareCanEvent());
-  auto last = std::upper_bound(first, msgs.cend(), ts, CompareCanEvent());
+
+  auto range_start = can->toMonoTime(last_msg_ts - range);
+  auto range_end = can->toMonoTime(last_msg_ts);
+  auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), range_start, CompareCanEvent());
+  auto last = std::upper_bound(first, msgs.cend(), range_end, CompareCanEvent());
 
   if (first == last || size.isEmpty()) {
     pixmap = QPixmap();
