@@ -56,16 +56,17 @@ jobs:
             var report = {}
             jobs.slice(1, jobs.length-1).forEach(job => {
               if (job.conclusion === "skipped") return;
-              const jobName = job.name.split('/')[2].trim();
-              const run_number = job.name.split('(')[1][0];
+              const jobName = job.name.split(" / ")[2];
+              const runRegex = /\((.*?)\)/;
+              const run = job.name.match(runRegex)[1];
               report[jobName] = report[jobName] || { successes: [], failures: [], cancelled: [] };
               switch (job.conclusion) {
                 case "success":
-                report[jobName].successes.push({ "run_number": run_number, "link": job.html_url}); break;
-              case "failure":
-                report[jobName].failures.push({ "run_number": run_number, "link": job.html_url }); break;
-              case "cancelled":
-                report[jobName].cancelled.push({ "run_number": run_number, "link": job.html_url }); break;
+                  report[jobName].successes.push({ "run_number": run, "link": job.html_url}); break;
+                case "failure":
+                  report[jobName].failures.push({ "run_number": run, "link": job.html_url }); break;
+                case "cancelled":
+                  report[jobName].cancelled.push({ "run_number": run, "link": job.html_url }); break;
               }
             });
             return JSON.stringify({"jobs": report});
