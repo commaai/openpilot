@@ -11,16 +11,6 @@
     "title": "Blog",
     "newWindow": true
   },
-  "python-openpilot": {
-    "title": "🐍 Python APIs",
-    "newWindow": false,
-    "href": "#"
-  },
-  "cpp-openpilot": {
-    "title": "🌊 C++ APIs",
-    "newWindow": false,
-    "href": "#"
-  },
   "comma-connect-api": {
     "href": "https://api.comma.ai/",
     "title": "💻 Comma API",
