@@ -189,10 +189,12 @@ class TorqueEstimator(ParameterEstimator):
         print(steer, lateral_acc)
         if abs(self.raw_points["steer_torque"][-1]) > 0.8:
           print(all(lat_active), not any(steer_override), vego > MIN_VEL, abs(steer) > STEER_MIN_THRESHOLD, abs(lateral_acc) <= LAT_ACC_THRESHOLD)
-        # reduce effects of torque response non-linearity near the limits of torque by enforcing a max lat accel
         # TODO: add raw points without lat acc threshold!
-        if all(lat_active) and not any(steer_override) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD) and (abs(lateral_acc) <= LAT_ACC_THRESHOLD):
-          self.filtered_points.add_point(float(steer), float(lateral_acc))
+        if all(lat_active) and not any(steer_override) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD):
+          self.raw_points["lat_accel"].append(float(lateral_acc))
+          # reduce effects of torque response non-linearity near the limits of torque by enforcing a max lat accel
+          if abs(lateral_acc) <= LAT_ACC_THRESHOLD:
+            self.filtered_points.add_point(float(steer), float(lateral_acc))
         print()
 
   def get_msg(self, valid=True, with_points=False):
