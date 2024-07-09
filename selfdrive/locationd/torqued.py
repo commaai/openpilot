@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import capnp
 import numpy as np
 from collections import deque, defaultdict
 
@@ -156,7 +157,7 @@ class TorqueEstimator(ParameterEstimator):
       self.filtered_params[param].update(value)
       self.filtered_params[param].update_alpha(self.decay)
 
-  def handle_log(self, t, which, msg):
+  def handle_log(self, t: float, which: str, msg: capnp.lib.capnp._DynamicStructReader):
     if which == "carControl":
       self.raw_points["carControl_t"].append(t + self.lag)
       self.raw_points["lat_active"].append(msg.latActive)
