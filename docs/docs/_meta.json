@@ -3,19 +3,27 @@
   "how-to": "How-to Guides",
   "car-porting": "Car Porting",
   "contributing": "Contributing to Openpilot",
-  "comma-connect-api": {
-    "href": "https://api.comma.ai/",
-    "title": "💻 Comma Connect API",
+  "---": {
+    "type": "separator"
+  },
+  "blog": {
+    "href": "https://blog.comma.ai/",
+    "title": "Blog",
     "newWindow": true
   },
   "python-openpilot": {
     "title": "🐍 Python APIs",
-    "newWindow": true,
+    "newWindow": false,
     "href": "#"
   },
   "cpp-openpilot": {
     "title": "🌊 C++ APIs",
-    "newWindow": true,
+    "newWindow": false,
     "href": "#"
+  },
+  "comma-connect-api": {
+    "href": "https://api.comma.ai/",
+    "title": "💻 Comma API",
+    "newWindow": true
   }
 }
