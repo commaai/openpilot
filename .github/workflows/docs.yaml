@@ -52,11 +52,11 @@ jobs:
         git rm -rf .
 
         # copy over docs
-        cp -r ../docs/site/ site/
+        cp -r ../docs/site/ docs/
 
         # GitHub pages config
-        touch site/.nojekyll
-        echo -n docs.comma.ai > site/CNAME
+        touch docs/.nojekyll
+        echo -n docs.comma.ai > docs/CNAME
 
         git add -f .
         git commit -m "build docs"
