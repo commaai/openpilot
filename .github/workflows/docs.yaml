@@ -30,8 +30,10 @@ jobs:
       with:
         bun-version: 1.1.18
     - run: bun install
-    - name: Build standalone NextJS docs
+      working-directory: ./docs
+    - name: Build standalone docs
       run: bun run build
+      working-directory: ./docs
 
     # Push to docs.comma.ai
     - uses: actions/checkout@v4
