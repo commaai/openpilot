@@ -23,8 +23,7 @@ jobs:
       - id: ci_runs_setup
         name: CI_RUNS=${{ env.CI_RUNS }}
         run: |
-          matrix=$(python3 -c "import json; print(json.dumps({ 'run_number' : [x for x in range(${{ env.CI_RUNS }})] }))")
-          echo $matrix
+          matrix=$(python3 -c "import json; print(json.dumps({ 'run_number' : list(range(${{ env.CI_RUNS }})) }))")
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
   ci_matrix_run:
