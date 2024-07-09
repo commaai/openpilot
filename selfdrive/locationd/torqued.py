@@ -158,7 +158,6 @@ class TorqueEstimator(ParameterEstimator):
       self.filtered_params[param].update_alpha(self.decay)
 
   def handle_log(self, t, which, msg):
-    # all car state points are offset by the lateral actuator delay
     if which == "carControl":
       self.data_points["carControl_t"].append(t + self.lag)
       self.data_points["lat_active"].append(msg.latActive)
@@ -169,6 +168,8 @@ class TorqueEstimator(ParameterEstimator):
       self.data_points["carState_t"].append(t + self.lag)
       self.data_points["vego"].append(msg.vEgo)
       self.data_points["steer_override"].append(msg.steeringPressed)
+
+    # calculate lateral accel from past steering torque
     elif which == "liveLocationKalman":
       if len(self.data_points['steer_torque']) == self.hist_len:
         yaw_rate = msg.angularVelocityCalibrated.value[2]
