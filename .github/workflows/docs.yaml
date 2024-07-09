@@ -23,15 +23,15 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        submodules: true
+        submodules: false
 
     # Build
-    - name: Build docs
-      run: |
-        # TODO: can we install just the "docs" dependency group without the normal deps?
-        pip install mkdocs mkdocs-terminal
-        cd docs
-        mkdocs build
+    - uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: 1.1.18
+    - run: bun install
+    - name: Build standalone NextJS docs
+      run: bun run build
 
     # Push to docs.comma.ai
     - uses: actions/checkout@v4
@@ -52,7 +52,7 @@ jobs:
         git rm -rf .
 
         # copy over docs
-        cp -r ../docs/site/ docs/
+        cp -r ../docs/.next/standalone/ docs/
 
         # GitHub pages config
         touch docs/.nojekyll
