@@ -10,7 +10,7 @@ export default {
       titleTemplate: 'openpilot - %s',
       defaultTitle: 'openpilot',
       description: 'open source driver assistance system that runs on 275+ car models',
-      canonical: 'docs.comma.ai',
+      canonical: 'https://docs.comma.ai',
       twitter: {
         cardType: 'summary_large_image',
         handle: '@comma_ai'
@@ -24,9 +24,21 @@ export default {
         images: [
           {
             url: 'https://github.com/commaai/openpilot/assets/8762862/f09e6d29-db2d-4179-80c2-51e8d92bdb5c',
-            width: 1200,
-            height: 630,
+            width: 800,
+            height: 600,
             alt: 'openpilot github'
+          },
+          {
+            url: "https://media.githubusercontent.com/media/commaai/openpilot/master/selfdrive/assets/training/step1.png",
+            width: 800,
+            height: 600,
+            alt: 'openpilot step 1'
+          },
+          {
+            url: "https://media.githubusercontent.com/media/commaai/openpilot/master/selfdrive/assets/training/step2.png",
+            width: 800,
+            height: 600,
+            alt: 'openpilot step 2'
           }
         ]
       }
