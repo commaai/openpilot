@@ -90,7 +90,7 @@ jobs:
                 <td>{% for i in range(5) %}{% if i+1 <= (5 * jobs[key]["successes"]|length // ${{ env.CI_RUNS }}) %}🟩{% else %}🟥{% endif %}{% endfor%}</td>
                 <td>{{ key }}</td>
                 <td>{{ 100 * jobs[key]["successes"]|length // ${{ env.CI_RUNS }} }}%</td>
-                <td>{% if jobs[key]["failures"]|length > 0 %}<details>{% for failure in jobs[key]["failures"] %}<a href="{{ failure['link'] }}">Failure #{{ failure['run_number'] }}</a><br>{% endfor %}</details>{% else %}{% endif %}</td>
+                <td>{% if jobs[key]["failures"]|length > 0 %}<details>{% for failure in jobs[key]["failures"] %}<a href="{{ failure['link'] }}">Log for run #{{ failure['run_number'] }}</a><br>{% endfor %}</details>{% else %}{% endif %}</td>
                 </td>
               </tr>{% endfor %}
           </table>
