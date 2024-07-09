@@ -51,7 +51,7 @@ class TorqueBuckets(PointBuckets):
 
 
 class TorqueEstimator(ParameterEstimator):
-  def __init__(self, CP, decimated=False):
+  def __init__(self, CP, decimated=True):
     # FIXME: this should be DT_CTRL, but I want to add raw lat accels from 20Hz llk
     self.hist_len = int(HISTORY / DT_MDL / 5) if decimated else int(HISTORY / DT_MDL)
     self.lag = CP.steerActuatorDelay + .2   # from controlsd
@@ -166,8 +166,8 @@ class TorqueEstimator(ParameterEstimator):
       self.raw_points["carControl_t"].append(t + self.lag)
       self.raw_points["lat_active"].append(msg.latActive)
     elif which == "carOutput":
-      if abs(-msg.actuatorsOutput.steer) > 0.5:
-        print('carOutput', abs(-msg.actuatorsOutput.steer))
+      # if abs(-msg.actuatorsOutput.steer) > 0.5:
+      print('carOutput', abs(-msg.actuatorsOutput.steer))
       self.raw_points["carOutput_t"].append(t + self.lag)
       self.raw_points["steer_torque"].append(-msg.actuatorsOutput.steer)
     elif which == "carState":
@@ -186,14 +186,17 @@ class TorqueEstimator(ParameterEstimator):
         steer = np.interp(t, self.raw_points['carOutput_t'], self.raw_points['steer_torque'])
         print(t, self.raw_points['vego'][-1], vego)
         lateral_acc = (vego * yaw_rate) - (np.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
+        print('vego', vego, 'yawrate', yaw_rate, 'roll', roll)
         print(steer, lateral_acc)
-        if abs(self.raw_points["steer_torque"][-1]) > 0.8:
-          print(all(lat_active), not any(steer_override), vego > MIN_VEL, abs(steer) > STEER_MIN_THRESHOLD, abs(lateral_acc) <= LAT_ACC_THRESHOLD)
+        # if abs(self.raw_points["steer_torque"][-1]) > 0.8:
+        print('conditions', all(lat_active), not any(steer_override), vego > MIN_VEL, abs(steer) > STEER_MIN_THRESHOLD, abs(lateral_acc) <= LAT_ACC_THRESHOLD)
         # reduce effects of torque response non-linearity near the limits of torque by enforcing a max lat accel
         # TODO: add raw points without lat acc threshold!
-        if all(lat_active) and not any(steer_override) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD) and (abs(lateral_acc) <= LAT_ACC_THRESHOLD):
+        if all(lat_active) and not any(steer_override) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD):# and (abs(lateral_acc) <= LAT_ACC_THRESHOLD):
+          print('adding point', steer, lateral_acc)
           self.filtered_points.add_point(float(steer), float(lateral_acc))
         print()
+        # print(self.filtered_points.get_points())
 
   def get_msg(self, valid=True, with_points=False):
     msg = messaging.new_message('liveTorqueParameters')
@@ -248,14 +251,15 @@ def main(demo=False):
     if sm.all_checks():
       for which in sm.updated.keys():
         if sm.updated[which]:
-          if start_t is None:
-            start_t = sm.logMonoTime[which] * 1e-9
-          t = sm.logMonoTime[which] * 1e-9 - start_t
+          # if start_t is None:
+          #   start_t = sm.logMonoTime[which] * 1e-9
+          t = sm.logMonoTime[which] * 1e-9# - start_t
           estimator.handle_log(t, which, sm[which])
 
     # 4Hz driven by liveLocationKalman
     if sm.frame % 5 == 0:
-      pm.send('liveTorqueParameters', estimator.get_msg(valid=sm.all_checks()))
+      print(estimator.get_msg(valid=sm.all_checks()))
+      # pm.send('liveTorqueParameters', estimator.get_msg(valid=sm.all_checks()))
 
     # Cache points every 60 seconds while onroad
     if sm.frame % 240 == 0:

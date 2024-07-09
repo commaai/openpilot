@@ -559,7 +559,8 @@ CONFIGS = [
     subs=["liveTorqueParameters"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
-    should_recv_callback=torqued_rcv_callback,
+    # should_recv_callback=torqued_rcv_callback,
+    should_recv_callback=FrequencyBasedRcvCallback("liveLocationKalman"),
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
