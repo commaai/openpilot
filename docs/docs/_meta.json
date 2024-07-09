@@ -1,0 +1,12 @@
+{
+  "index": "Home",
+  "getting-started": "Getting Started",
+  "how-to": "How-to Guides",
+  "car-porting": "Car Porting",
+  "contributing": "Contributing to Openpilot",
+  "comma-connect-api": {
+    "href": "https://api.comma.ai/",
+    "title": "Comma Connect API",
+    "newWindow": true
+  }
+}

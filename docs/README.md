@@ -3,7 +3,15 @@
 This is the source for [docs.comma.ai](https://docs.comma.ai).
 The site is updated on pushes to master by this [workflow](../.github/workflows/docs.yaml).
 
-## development
+## development (nextra)
+
+```bash
+$ cd docs/
+bun install
+bun run next dev
+```
+
+## development (mkdocs)
 ```
 # install the docs dependencies
 pip install .[docs]
