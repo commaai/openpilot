@@ -4,8 +4,6 @@
 #include <limits>
 #include <QPainter>
 
-#include "tools/cabana/streams/abstractstream.h"
-
 void Sparkline::update(const MessageId &msg_id, const cabana::Signal *sig, double last_msg_ts, int range, QSize size) {
   const auto &msgs = can->events(msg_id);
 
@@ -13,11 +11,6 @@ void Sparkline::update(const MessageId &msg_id, const cabana::Signal *sig, doubl
   auto range_end = can->toMonoTime(last_msg_ts);
   auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), range_start, CompareCanEvent());
   auto last = std::upper_bound(first, msgs.cend(), range_end, CompareCanEvent());
-
-  if (first == last || size.isEmpty()) {
-    pixmap = QPixmap();
-    return;
-  }
 
   points.clear();
   double value = 0;
@@ -27,7 +20,7 @@ void Sparkline::update(const MessageId &msg_id, const cabana::Signal *sig, doubl
     }
   }
 
-  if (points.empty()) {
+  if (points.empty() || size.isEmpty()) {
     pixmap = QPixmap();
     return;
   }
