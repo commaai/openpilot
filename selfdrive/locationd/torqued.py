@@ -119,7 +119,8 @@ class TorqueEstimator(ParameterEstimator):
     for param in initial_params:
       self.filtered_params[param] = FirstOrderFilter(initial_params[param], self.decay, DT_MDL)
 
-  def get_restore_key(self, CP, version):
+  @staticmethod
+  def get_restore_key(CP, version):
     a, b = None, None
     if CP.lateralTuning.which() == 'torque':
       a = CP.lateralTuning.torque.friction
