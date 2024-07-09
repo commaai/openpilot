@@ -50,7 +50,7 @@
     <DockSplitter count="3" sizes="0.33361;0.33278;0.33361" orientation="-">
      <DockArea name="offline-calculated vs online-learned lateral accel scaling factor, accel obtained from 100% actuator output">
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-       <range top="4.186450" right="269.490213" left="0.000000" bottom="1.961200"/>
+       <range top="4.186453" right="269.490213" left="0.000000" bottom="3.175940"/>
        <limitY/>
        <curve color="#1f77b4" name="/liveTorqueParameters/latAccelFactorFiltered"/>
        <curve color="#d62728" name="/liveTorqueParameters/latAccelFactorRaw"/>
@@ -146,7 +146,7 @@
   <Tab containers="1" tab_name="Actuator Delay Estimation">
    <Container>
     <DockSplitter count="4" sizes="0.25;0.25;0.25;0.25" orientation="-">
-     <DockArea name="desiredLateralAccel offset zero (baseline)">
+     <DockArea name="desired vs actual lateral acceleration (baseline)">
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
        <range top="3.586831" right="269.943117" left="0.134774" bottom="-2.354077"/>
        <limitY/>
@@ -154,7 +154,7 @@
        <curve color="#1f77b4" name="/controlsState/lateralControlState/torqueState/actualLateralAccel"/>
       </plot>
      </DockArea>
-     <DockArea name="desiredLateralAccel offset + 0.1 seconds, set steerActuatorDelay to the best temporal match">
+     <DockArea name="desired vs actual lateral acceleration (desired shifted by +0.1s)">
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
        <range top="3.586831" right="269.943117" left="0.134774" bottom="-2.354077"/>
        <limitY/>
@@ -166,7 +166,7 @@
        <curve color="#ff7f0e" name="/controlsState/lateralControlState/torqueState/actualLateralAccel"/>
       </plot>
      </DockArea>
-     <DockArea name="desiredLateralAccel offset + 0.2 seconds, set steerActuatorDelay to the best temporal match">
+     <DockArea name="desired vs actual lateral acceleration (desired shifted by +0.2s)">
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
        <range top="3.586831" right="269.943117" left="0.134774" bottom="-2.354077"/>
        <limitY/>
@@ -178,7 +178,7 @@
        <curve color="#ff7f0e" name="/controlsState/lateralControlState/torqueState/actualLateralAccel"/>
       </plot>
      </DockArea>
-     <DockArea name="desiredLateralAccel offset + 0.3 seconds, set steerActuatorDelay to the best temporal match">
+     <DockArea name="desired vs actual lateral acceleration (desired shifted by +0.3s)">
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
        <range top="3.586831" right="269.943117" left="0.134774" bottom="-2.354077"/>
        <limitY/>
