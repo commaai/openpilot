@@ -166,6 +166,7 @@ class TorqueEstimator(ParameterEstimator):
       self.data_points["steer_torque"].append(-msg.actuatorsOutput.steer)
     elif which == "carState":
       self.data_points["carState_t"].append(t + self.lag)
+      # TODO: check if high aEgo affects resulting lateral accel
       self.data_points["vego"].append(msg.vEgo)
       self.data_points["steer_override"].append(msg.steeringPressed)
 
