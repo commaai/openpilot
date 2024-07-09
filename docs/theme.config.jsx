@@ -2,9 +2,22 @@
 const gitRepo = 'https://github.com/commaai/openpilot'
 
 export default {
+  // TODO: SEO optimization ?
+  // https://nextra.site/docs/docs-theme/theme-configuration#seo-options
+  useNextSeoProps() {
+    return {
+      titleTemplate: 'openpilot – make driving chill'
+    }
+  },
+  head: (
+    <>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+      <meta property="og:title" content="openpilot" />
+      <meta property="og:description" content="make driving chill." />
+    </>
+  ),
   logo: (
     <>
-      {/* TODO  */}
       <img
         src="https://github.com/commaai.png?size=48"
         alt="comma.ai logo"
@@ -23,5 +36,11 @@ export default {
   docsRepositoryBase: gitRepo + '/blob/master/docs',
   chat: {
     link: 'https://discord.comma.ai/'
+  },
+  sidebar: {
+    defaultMenuCollapseLevel: 1
+  },
+  footer: {
+    component: null
   }
 }

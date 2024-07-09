@@ -6,7 +6,17 @@
   "contributing": "Contributing to Openpilot",
   "comma-connect-api": {
     "href": "https://api.comma.ai/",
-    "title": "Comma Connect API",
+    "title": "💻 Comma Connect API",
     "newWindow": true
+  },
+  "python-openpilot": {
+    "title": "🐍 Python APIs",
+    "newWindow": true,
+    "href": "#"
+  },
+  "cpp-openpilot": {
+    "title": "🌊 C++ APIs",
+    "newWindow": true,
+    "href": "#"
   }
 }
