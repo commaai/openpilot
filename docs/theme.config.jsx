@@ -34,6 +34,7 @@ export default {
     link: gitRepo
   },
   docsRepositoryBase: gitRepo + '/blob/master/docs',
+  // TODO add x-twitter
   chat: {
     link: 'https://discord.comma.ai/'
   },
