@@ -109,7 +109,7 @@ class TorqueEstimator(ParameterEstimator):
             }
           initial_params['points'] = cache_ltp.points
           self.decay = cache_ltp.decay
-          self.filtered_points.load_points(initial_params['points'])
+          self.torque_points.load_points(initial_params['points'])
           cloudlog.info("restored torque params from cache")
       except Exception:
         cloudlog.exception("failed to restore cached torque params")
@@ -130,15 +130,15 @@ class TorqueEstimator(ParameterEstimator):
   def reset(self):
     self.resets += 1.0
     self.decay = MIN_FILTER_DECAY
-    self.raw_points = defaultdict(lambda: deque(maxlen=self.hist_len))
-    self.filtered_points = TorqueBuckets(x_bounds=STEER_BUCKET_BOUNDS,
-                                         min_points=self.min_bucket_points,
-                                         min_points_total=self.min_points_total,
-                                         points_per_bucket=POINTS_PER_BUCKET,
-                                         rowsize=3)
+    self.data_points = defaultdict(lambda: deque(maxlen=self.hist_len))
+    self.torque_points = TorqueBuckets(x_bounds=STEER_BUCKET_BOUNDS,
+                                       min_points=self.min_bucket_points,
+                                       min_points_total=self.min_points_total,
+                                       points_per_bucket=POINTS_PER_BUCKET,
+                                       rowsize=3)
 
   def estimate_params(self):
-    points = self.filtered_points.get_points(self.fit_points)
+    points = self.torque_points.get_points(self.fit_points)
     # total least square solution as both x and y are noisy observations
     # this is empirically the slope of the hysteresis parallelogram as opposed to the line through the diagonals
     try:
@@ -159,26 +159,26 @@ class TorqueEstimator(ParameterEstimator):
 
   def handle_log(self, t, which, msg):
     if which == "carControl":
-      self.raw_points["carControl_t"].append(t + self.lag)
-      self.raw_points["lat_active"].append(msg.latActive)
+      self.data_points["carControl_t"].append(t + self.lag)
+      self.data_points["lat_active"].append(msg.latActive)
     elif which == "carOutput":
-      self.raw_points["carOutput_t"].append(t + self.lag)
-      self.raw_points["steer_torque"].append(-msg.actuatorsOutput.steer)
+      self.data_points["carOutput_t"].append(t + self.lag)
+      self.data_points["steer_torque"].append(-msg.actuatorsOutput.steer)
     elif which == "carState":
-      self.raw_points["carState_t"].append(t + self.lag)
-      self.raw_points["vego"].append(msg.vEgo)
-      self.raw_points["steer_override"].append(msg.steeringPressed)
+      self.data_points["carState_t"].append(t + self.lag)
+      self.data_points["vego"].append(msg.vEgo)
+      self.data_points["steer_override"].append(msg.steeringPressed)
     elif which == "liveLocationKalman":
-      if len(self.raw_points['steer_torque']) == self.hist_len:
+      if len(self.data_points['steer_torque']) == self.hist_len:
         yaw_rate = msg.angularVelocityCalibrated.value[2]
         roll = msg.orientationNED.value[0]
-        lat_active = np.interp(np.arange(t - MIN_ENGAGE_BUFFER, t, DT_MDL), self.raw_points['carControl_t'], self.raw_points['lat_active']).astype(bool)
-        steer_override = np.interp(np.arange(t - MIN_ENGAGE_BUFFER, t, DT_MDL), self.raw_points['carState_t'], self.raw_points['steer_override']).astype(bool)
-        vego = np.interp(t, self.raw_points['carState_t'], self.raw_points['vego'])
-        steer = np.interp(t, self.raw_points['carOutput_t'], self.raw_points['steer_torque'])
+        lat_active = np.interp(np.arange(t - MIN_ENGAGE_BUFFER, t, DT_MDL), self.data_points['carControl_t'], self.data_points['lat_active']).astype(bool)
+        steer_override = np.interp(np.arange(t - MIN_ENGAGE_BUFFER, t, DT_MDL), self.data_points['carState_t'], self.data_points['steer_override']).astype(bool)
+        vego = np.interp(t, self.data_points['carState_t'], self.data_points['vego'])
+        steer = np.interp(t, self.data_points['carOutput_t'], self.data_points['steer_torque'])
         lateral_acc = (vego * yaw_rate) - (np.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
         if all(lat_active) and not any(steer_override) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD) and (abs(lateral_acc) <= LAT_ACC_THRESHOLD):
-          self.filtered_points.add_point(float(steer), float(lateral_acc))
+          self.torque_points.add_point(float(steer), float(lateral_acc))
 
   def get_msg(self, valid=True, with_points=False):
     msg = messaging.new_message('liveTorqueParameters')
@@ -188,13 +188,13 @@ class TorqueEstimator(ParameterEstimator):
     liveTorqueParameters.useParams = self.use_params
 
     # Calculate raw estimates when possible, only update filters when enough points are gathered
-    if self.filtered_points.is_calculable():
+    if self.torque_points.is_calculable():
       latAccelFactor, latAccelOffset, frictionCoeff = self.estimate_params()
       liveTorqueParameters.latAccelFactorRaw = float(latAccelFactor)
       liveTorqueParameters.latAccelOffsetRaw = float(latAccelOffset)
       liveTorqueParameters.frictionCoefficientRaw = float(frictionCoeff)
 
-      if self.filtered_points.is_valid():
+      if self.torque_points.is_valid():
         if any(val is None or np.isnan(val) for val in [latAccelFactor, latAccelOffset, frictionCoeff]):
           cloudlog.exception("Live torque parameters are invalid.")
           liveTorqueParameters.liveValid = False
@@ -206,12 +206,12 @@ class TorqueEstimator(ParameterEstimator):
           self.update_params({'latAccelFactor': latAccelFactor, 'latAccelOffset': latAccelOffset, 'frictionCoefficient': frictionCoeff})
 
     if with_points:
-      liveTorqueParameters.points = self.filtered_points.get_points()[:, [0, 2]].tolist()
+      liveTorqueParameters.points = self.torque_points.get_points()[:, [0, 2]].tolist()
 
     liveTorqueParameters.latAccelFactorFiltered = float(self.filtered_params['latAccelFactor'].x)
     liveTorqueParameters.latAccelOffsetFiltered = float(self.filtered_params['latAccelOffset'].x)
     liveTorqueParameters.frictionCoefficientFiltered = float(self.filtered_params['frictionCoefficient'].x)
-    liveTorqueParameters.totalBucketPoints = len(self.filtered_points)
+    liveTorqueParameters.totalBucketPoints = len(self.torque_points)
     liveTorqueParameters.decay = self.decay
     liveTorqueParameters.maxResets = self.resets
     return msg
