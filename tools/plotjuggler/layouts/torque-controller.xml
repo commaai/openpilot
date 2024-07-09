@@ -3,43 +3,43 @@
  <tabbed_widget parent="main_window" name="Main Window">
   <Tab containers="1" tab_name="Lateral Plan Conformance">
    <Container>
-    <DockSplitter orientation="-" sizes="0.25;0.25;0.25;0.25" count="4">
+    <DockSplitter count="4" sizes="0.25;0.25;0.25;0.25" orientation="-">
      <DockArea name="desired vs actual lateral acceleration (closer means better conformance to plan)">
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-       <range bottom="-2.694433" left="0.001586" right="1500.011726" top="3.540119"/>
+       <range top="3.586831" right="269.643117" left="0.000140" bottom="-2.354077"/>
        <limitY/>
-       <curve name="/controlsState/lateralControlState/torqueState/actualLateralAccel" color="#1f77b4"/>
-       <curve name="/controlsState/lateralControlState/torqueState/desiredLateralAccel" color="#d62728"/>
+       <curve color="#1f77b4" name="/controlsState/lateralControlState/torqueState/actualLateralAccel"/>
+       <curve color="#d62728" name="/controlsState/lateralControlState/torqueState/desiredLateralAccel"/>
       </plot>
      </DockArea>
      <DockArea name="desired vs actual lateral acceleration, road-roll factored out (closer means better conformance to plan)">
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-       <range bottom="-2.668126" left="0.001586" right="1500.011726" top="3.095201"/>
+       <range top="3.445087" right="269.643117" left="0.000140" bottom="-2.654874"/>
        <limitY/>
-       <curve name="Actual lateral accel (roll compensated)" color="#1ac938"/>
-       <curve name="Desired lateral accel (roll compensated)" color="#ff7f0e"/>
+       <curve color="#1ac938" name="Actual lateral accel (roll compensated)"/>
+       <curve color="#ff7f0e" name="Desired lateral accel (roll compensated)"/>
       </plot>
      </DockArea>
      <DockArea name="controller feed-forward vs actuator output (closer means controller prediction is more accurate)">
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-       <range bottom="-1.760446" left="0.001586" right="1500.011726" top="1.067328"/>
+       <range top="1.082031" right="269.643117" left="0.000140" bottom="-1.050781"/>
        <limitY/>
-       <curve name="/carOutput/actuatorsOutput/steer" color="#9467bd">
-        <transform name="Scale/Offset" alias="/carOutput/actuatorsOutput/steer[Scale/Offset]">
-         <options time_offset="0" value_scale="-1" value_offset="0"/>
+       <curve color="#9467bd" name="/carOutput/actuatorsOutput/steer">
+        <transform alias="/carOutput/actuatorsOutput/steer[Scale/Offset]" name="Scale/Offset">
+         <options value_scale="-1" time_offset="0" value_offset="0"/>
         </transform>
        </curve>
-       <curve name="/controlsState/lateralControlState/torqueState/f" color="#1f77b4"/>
-       <curve name="/carState/steeringPressed" color="#ff000f"/>
+       <curve color="#1f77b4" name="/controlsState/lateralControlState/torqueState/f"/>
+       <curve color="#ff000f" name="/carState/steeringPressed"/>
       </plot>
      </DockArea>
      <DockArea name="vehicle speed">
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-       <range bottom="20.015232" left="0.001586" right="1500.011726" top="120.865454"/>
+       <range top="101.506277" right="269.643117" left="0.000140" bottom="-2.475763"/>
        <limitY/>
-       <curve name="carState.vEgo mph" color="#d62728"/>
-       <curve name="carState.vEgo kmh" color="#1ac938"/>
-       <curve name="/carState/vEgo" color="#ff7f0e"/>
+       <curve color="#d62728" name="carState.vEgo mph"/>
+       <curve color="#1ac938" name="carState.vEgo kmh"/>
+       <curve color="#ff7f0e" name="/carState/vEgo"/>
       </plot>
      </DockArea>
     </DockSplitter>
@@ -47,31 +47,31 @@
   </Tab>
   <Tab containers="1" tab_name="Actuator Performance">
    <Container>
-    <DockSplitter orientation="-" sizes="0.33361;0.33278;0.33361" count="3">
+    <DockSplitter count="3" sizes="0.33361;0.33278;0.33361" orientation="-">
      <DockArea name="offline-calculated vs online-learned lateral accel scaling factor, accel obtained from 100% actuator output">
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-       <range bottom="1.591190" left="0.151987" right="1499.912003" top="1.961200"/>
-       <limitY max="1.9612" min="1.59119"/>
-       <curve name="/liveTorqueParameters/latAccelFactorFiltered" color="#1f77b4"/>
-       <curve name="/liveTorqueParameters/latAccelFactorRaw" color="#d62728"/>
-       <curve name="/carParams/lateralTuning/torque/latAccelFactor" color="#1c9222"/>
+       <range top="4.186450" right="269.490213" left="0.000000" bottom="1.961200"/>
+       <limitY/>
+       <curve color="#1f77b4" name="/liveTorqueParameters/latAccelFactorFiltered"/>
+       <curve color="#d62728" name="/liveTorqueParameters/latAccelFactorRaw"/>
+       <curve color="#1c9222" name="/carParams/lateralTuning/torque/latAccelFactor"/>
       </plot>
      </DockArea>
      <DockArea name="learned lateral accel offset, vehicle-specific compensation to obtain true zero lateral accel">
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-       <range bottom="-0.089471" left="0.151987" right="1499.912003" top="-0.001916"/>
+       <range top="0.003035" right="269.490213" left="0.000000" bottom="-0.124417"/>
        <limitY/>
-       <curve name="/liveTorqueParameters/latAccelOffsetFiltered" color="#1ac938"/>
-       <curve name="/liveTorqueParameters/latAccelOffsetRaw" color="#ff7f0e"/>
+       <curve color="#1ac938" name="/liveTorqueParameters/latAccelOffsetFiltered"/>
+       <curve color="#ff7f0e" name="/liveTorqueParameters/latAccelOffsetRaw"/>
       </plot>
      </DockArea>
      <DockArea name="offline-calculated vs online-learned EPS friction factor, necessary to start moving the steering wheel">
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-       <range bottom="0.095735" left="0.151987" right="1499.912003" top="0.125714"/>
+       <range top="0.121143" right="269.490213" left="0.000000" bottom="-0.002955"/>
        <limitY/>
-       <curve name="/liveTorqueParameters/frictionCoefficientFiltered" color="#f14cc1"/>
-       <curve name="/liveTorqueParameters/frictionCoefficientRaw" color="#9467bd"/>
-       <curve name="/carParams/lateralTuning/torque/friction" color="#1c9222"/>
+       <curve color="#f14cc1" name="/liveTorqueParameters/frictionCoefficientFiltered"/>
+       <curve color="#9467bd" name="/liveTorqueParameters/frictionCoefficientRaw"/>
+       <curve color="#1c9222" name="/carParams/lateralTuning/torque/friction"/>
       </plot>
      </DockArea>
     </DockSplitter>
@@ -79,29 +79,29 @@
   </Tab>
   <Tab containers="1" tab_name="Vehicle Dynamics">
    <Container>
-    <DockSplitter orientation="-" sizes="0.33361;0.33278;0.33361" count="3">
+    <DockSplitter count="3" sizes="0.33361;0.33278;0.33361" orientation="-">
      <DockArea name="configured-initial vs online-learned steerRatio, set configured value to match learned">
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-       <range bottom="14.136701" left="0.003507" right="1499.962649" top="15.635691"/>
+       <range top="12.903705" right="269.638801" left="0.000000" bottom="12.748092"/>
        <limitY/>
-       <curve name="/carParams/steerRatio" color="#1f77b4"/>
-       <curve name="/liveParameters/steerRatio" color="#1ac938"/>
+       <curve color="#1f77b4" name="/carParams/steerRatio"/>
+       <curve color="#1ac938" name="/liveParameters/steerRatio"/>
       </plot>
      </DockArea>
      <DockArea name="configured-initial vs online-learned tireStiffnessRatio, set configured value to match learned">
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-       <range bottom="0.999778" left="0.003507" right="1499.962649" top="1.009114"/>
+       <range top="1.000520" right="269.638801" left="0.000000" bottom="0.999718"/>
        <limitY/>
-       <curve name="/carParams/tireStiffnessFactor" color="#d62728"/>
-       <curve name="/liveParameters/stiffnessFactor" color="#ff7f0e"/>
+       <curve color="#d62728" name="/carParams/tireStiffnessFactor"/>
+       <curve color="#ff7f0e" name="/liveParameters/stiffnessFactor"/>
       </plot>
      </DockArea>
      <DockArea name="live steering angle offsets for straight-ahead driving, large values here may indicate alignment problems">
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-       <range bottom="0.014247" left="0.003507" right="1499.962649" top="1.711634"/>
+       <range top="-0.332067" right="269.638801" left="0.000000" bottom="-3.149970"/>
        <limitY/>
-       <curve name="/liveParameters/angleOffsetAverageDeg" color="#f14cc1"/>
-       <curve name="/liveParameters/angleOffsetDeg" color="#9467bd"/>
+       <curve color="#f14cc1" name="/liveParameters/angleOffsetAverageDeg"/>
+       <curve color="#9467bd" name="/liveParameters/angleOffsetDeg"/>
       </plot>
      </DockArea>
     </DockSplitter>
@@ -109,35 +109,35 @@
   </Tab>
   <Tab containers="1" tab_name="Controller PIF Terms">
    <Container>
-    <DockSplitter orientation="-" sizes="0.33361;0.33278;0.33361" count="3">
+    <DockSplitter count="3" sizes="0.33361;0.33278;0.33361" orientation="-">
      <DockArea name="controller feed-forward vs actuator output (closer means controller prediction is more accurate)">
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-       <range bottom="-1.760446" left="0.001586" right="1500.011726" top="1.067328"/>
+       <range top="1.082031" right="269.643117" left="0.000140" bottom="-1.050781"/>
        <limitY/>
-       <curve name="/carOutput/actuatorsOutput/steer" color="#9467bd">
-        <transform name="Scale/Offset" alias="/carOutput/actuatorsOutput/steer[Scale/Offset]">
-         <options time_offset="0" value_scale="-1.0" value_offset="0"/>
+       <curve color="#9467bd" name="/carOutput/actuatorsOutput/steer">
+        <transform alias="/carOutput/actuatorsOutput/steer[Scale/Offset]" name="Scale/Offset">
+         <options value_scale="-1.0" time_offset="0" value_offset="0"/>
         </transform>
        </curve>
-       <curve name="/controlsState/lateralControlState/torqueState/f" color="#1f77b4"/>
-       <curve name="/carState/steeringPressed" color="#ff000f"/>
+       <curve color="#1f77b4" name="/controlsState/lateralControlState/torqueState/f"/>
+       <curve color="#ff000f" name="/carState/steeringPressed"/>
       </plot>
      </DockArea>
      <DockArea name="proportional error, integral error, and feed-forward terms (actuator output = sum of PIF terms)">
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-       <range bottom="-1.797205" left="0.001586" right="1500.011726" top="0.832316"/>
+       <range top="1.572946" right="269.643117" left="0.000140" bottom="-3.822608"/>
        <limitY/>
-       <curve name="/controlsState/lateralControlState/torqueState/f" color="#0ab027"/>
-       <curve name="/controlsState/lateralControlState/torqueState/p" color="#d62728"/>
-       <curve name="/controlsState/lateralControlState/torqueState/i" color="#ffaf00"/>
-       <curve name="Zero" color="#756a6a"/>
+       <curve color="#0ab027" name="/controlsState/lateralControlState/torqueState/f"/>
+       <curve color="#d62728" name="/controlsState/lateralControlState/torqueState/p"/>
+       <curve color="#ffaf00" name="/controlsState/lateralControlState/torqueState/i"/>
+       <curve color="#756a6a" name="Zero"/>
       </plot>
      </DockArea>
      <DockArea name="road roll angle, from openpilot localizer">
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-       <range bottom="-0.036996" left="0.001586" right="1500.011726" top="0.058913"/>
+       <range top="0.059127" right="269.643117" left="0.000140" bottom="-0.031841"/>
        <limitY/>
-       <curve name="/liveParameters/roll" color="#f14cc1"/>
+       <curve color="#f14cc1" name="/liveParameters/roll"/>
       </plot>
      </DockArea>
     </DockSplitter>
@@ -145,49 +145,49 @@
   </Tab>
   <Tab containers="1" tab_name="Actuator Delay Estimation">
    <Container>
-    <DockSplitter orientation="-" sizes="0.25;0.25;0.25;0.25" count="4">
+    <DockSplitter count="4" sizes="0.25;0.25;0.25;0.25" orientation="-">
      <DockArea name="desiredLateralAccel offset zero (baseline)">
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-       <range bottom="-2.694433" left="0.004486" right="1500.304376" top="3.540119"/>
+       <range top="3.586831" right="269.943117" left="0.134774" bottom="-2.354077"/>
        <limitY/>
-       <curve name="/controlsState/lateralControlState/torqueState/desiredLateralAccel" color="#d62728"/>
-       <curve name="/controlsState/lateralControlState/torqueState/actualLateralAccel" color="#1f77b4"/>
+       <curve color="#d62728" name="/controlsState/lateralControlState/torqueState/desiredLateralAccel"/>
+       <curve color="#1f77b4" name="/controlsState/lateralControlState/torqueState/actualLateralAccel"/>
       </plot>
      </DockArea>
      <DockArea name="desiredLateralAccel offset + 0.1 seconds, set steerActuatorDelay to the best temporal match">
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-       <range bottom="-2.694433" left="0.004486" right="1500.304376" top="3.540119"/>
+       <range top="3.586831" right="269.943117" left="0.134774" bottom="-2.354077"/>
        <limitY/>
-       <curve name="/controlsState/lateralControlState/torqueState/desiredLateralAccel" color="#1ac938">
-        <transform name="Scale/Offset" alias="/controlsState/lateralControlState/torqueState/desiredLateralAccel[Scale/Offset]">
-         <options time_offset="0.1" value_scale="1.0" value_offset="0"/>
+       <curve color="#1ac938" name="/controlsState/lateralControlState/torqueState/desiredLateralAccel">
+        <transform alias="/controlsState/lateralControlState/torqueState/desiredLateralAccel[Scale/Offset]" name="Scale/Offset">
+         <options value_scale="1.0" time_offset="0.1" value_offset="0"/>
         </transform>
        </curve>
-       <curve name="/controlsState/lateralControlState/torqueState/actualLateralAccel" color="#ff7f0e"/>
+       <curve color="#ff7f0e" name="/controlsState/lateralControlState/torqueState/actualLateralAccel"/>
       </plot>
      </DockArea>
      <DockArea name="desiredLateralAccel offset + 0.2 seconds, set steerActuatorDelay to the best temporal match">
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-       <range bottom="-2.694433" left="0.004486" right="1500.304376" top="3.540119"/>
+       <range top="3.586831" right="269.943117" left="0.134774" bottom="-2.354077"/>
        <limitY/>
-       <curve name="/controlsState/lateralControlState/torqueState/desiredLateralAccel" color="#1ac938">
-        <transform name="Scale/Offset" alias="/controlsState/lateralControlState/torqueState/desiredLateralAccel[Scale/Offset]">
-         <options time_offset="0.2" value_scale="1.0" value_offset="0"/>
+       <curve color="#1ac938" name="/controlsState/lateralControlState/torqueState/desiredLateralAccel">
+        <transform alias="/controlsState/lateralControlState/torqueState/desiredLateralAccel[Scale/Offset]" name="Scale/Offset">
+         <options value_scale="1.0" time_offset="0.2" value_offset="0"/>
         </transform>
        </curve>
-       <curve name="/controlsState/lateralControlState/torqueState/actualLateralAccel" color="#ff7f0e"/>
+       <curve color="#ff7f0e" name="/controlsState/lateralControlState/torqueState/actualLateralAccel"/>
       </plot>
      </DockArea>
      <DockArea name="desiredLateralAccel offset + 0.3 seconds, set steerActuatorDelay to the best temporal match">
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
-       <range bottom="-2.694433" left="0.004486" right="1500.304376" top="3.540119"/>
+       <range top="3.586831" right="269.943117" left="0.134774" bottom="-2.354077"/>
        <limitY/>
-       <curve name="/controlsState/lateralControlState/torqueState/desiredLateralAccel" color="#1ac938">
-        <transform name="Scale/Offset" alias="/controlsState/lateralControlState/torqueState/desiredLateralAccel[Scale/Offset]">
-         <options time_offset="0.3" value_scale="1.0" value_offset="0"/>
+       <curve color="#1ac938" name="/controlsState/lateralControlState/torqueState/desiredLateralAccel">
+        <transform alias="/controlsState/lateralControlState/torqueState/desiredLateralAccel[Scale/Offset]" name="Scale/Offset">
+         <options value_scale="1.0" time_offset="0.3" value_offset="0"/>
         </transform>
        </curve>
-       <curve name="/controlsState/lateralControlState/torqueState/actualLateralAccel" color="#ff7f0e"/>
+       <curve color="#ff7f0e" name="/controlsState/lateralControlState/torqueState/actualLateralAccel"/>
       </plot>
      </DockArea>
     </DockSplitter>
@@ -205,7 +205,30 @@
  <!-- - - - - - - - - - - - - - - -->
  <!-- - - - - - - - - - - - - - - -->
  <customMathEquations>
-  <snippet name="engaged_accel_actuator">
+  <snippet name="Zero">
+   <global></global>
+   <function>return (0)</function>
+   <linked_source>/carState/canValid</linked_source>
+  </snippet>
+  <snippet name="Actual lateral accel (roll compensated)">
+   <global></global>
+   <function>return (value * v1 ^ 2) - (v2 * 9.81)</function>
+   <linked_source>/controlsState/curvature</linked_source>
+   <additional_sources>
+    <v1>/carState/vEgo</v1>
+    <v2>/liveParameters/roll</v2>
+   </additional_sources>
+  </snippet>
+  <snippet name="Desired lateral accel (roll compensated)">
+   <global></global>
+   <function>return (value * v1 ^ 2) - (v2 * 9.81)</function>
+   <linked_source>/controlsState/desiredCurvature</linked_source>
+   <additional_sources>
+    <v1>/carState/vEgo</v1>
+    <v2>/liveParameters/roll</v2>
+   </additional_sources>
+  </snippet>
+  <snippet name="engaged_accel_actual">
    <global>engage_delay = 5
 last_bad_time = -engage_delay</global>
    <function>accel = value
@@ -222,11 +245,88 @@ if (time > last_bad_time + engage_delay) then
 else
   return 0
 end</function>
-   <linked_source>/carControl/actuators/accel</linked_source>
+   <linked_source>/carState/aEgo</linked_source>
    <additional_sources>
     <v1>/carState/brakePressed</v1>
     <v2>/carState/gasPressed</v2>
     <v3>/carControl/enabled</v3>
+   </additional_sources>
+  </snippet>
+  <snippet name="carState.vEgo mph">
+   <global></global>
+   <function>return value * 2.23694</function>
+   <linked_source>/carState/vEgo</linked_source>
+  </snippet>
+  <snippet name="engaged curvature plan">
+   <global>engage_delay = 5
+last_bad_time = -engage_delay</global>
+   <function>curvature = value
+pressed = v1
+enabled = v2
+
+if (pressed == 1 or enabled == 0) then
+  last_bad_time = time
+end
+
+if (time > last_bad_time + engage_delay) then
+  return value
+else
+  return 0
+end</function>
+   <linked_source>/lateralPlan/curvatures/0</linked_source>
+   <additional_sources>
+    <v1>/carState/steeringPressed</v1>
+    <v2>/carControl/enabled</v2>
+   </additional_sources>
+  </snippet>
+  <snippet name="carState.vEgo kmh">
+   <global></global>
+   <function>return value * 3.6</function>
+   <linked_source>/carState/vEgo</linked_source>
+  </snippet>
+  <snippet name="engaged curvature yaw">
+   <global>engage_delay = 5
+last_bad_time = -engage_delay</global>
+   <function>curvature = value / v3
+pressed = v1
+enabled = v2
+
+if (pressed == 1 or enabled == 0) then
+  last_bad_time = time
+end
+
+if (time > last_bad_time + engage_delay) then
+  return curvature
+else
+  return 0
+end</function>
+   <linked_source>/liveLocationKalman/angularVelocityCalibrated/value/2</linked_source>
+   <additional_sources>
+    <v1>/carState/steeringPressed</v1>
+    <v2>/carControl/enabled</v2>
+    <v3>/liveLocationKalman/velocityCalibrated/value/0</v3>
+   </additional_sources>
+  </snippet>
+  <snippet name="engaged curvature vehicle model">
+   <global>engage_delay = 5
+last_bad_time = -engage_delay</global>
+   <function>curvature = value
+pressed = v1
+enabled = v2
+
+if (pressed == 1 or enabled == 0) then
+  last_bad_time = time
+end
+
+if (time > last_bad_time + engage_delay) then
+  return value
+else
+  return 0
+end</function>
+   <linked_source>/controlsState/curvature</linked_source>
+   <additional_sources>
+    <v1>/carState/steeringPressed</v1>
+    <v2>/carControl/enabled</v2>
    </additional_sources>
   </snippet>
   <snippet name="engaged_accel_plan">
@@ -253,84 +353,7 @@ end</function>
     <v3>/carControl/enabled</v3>
    </additional_sources>
   </snippet>
-  <snippet name="engaged curvature vehicle model">
-   <global>engage_delay = 5
-last_bad_time = -engage_delay</global>
-   <function>curvature = value
-pressed = v1
-enabled = v2
-
-if (pressed == 1 or enabled == 0) then
-  last_bad_time = time
-end
-
-if (time > last_bad_time + engage_delay) then
-  return value
-else
-  return 0
-end</function>
-   <linked_source>/controlsState/curvature</linked_source>
-   <additional_sources>
-    <v1>/carState/steeringPressed</v1>
-    <v2>/carControl/enabled</v2>
-   </additional_sources>
-  </snippet>
-  <snippet name="engaged curvature yaw">
-   <global>engage_delay = 5
-last_bad_time = -engage_delay</global>
-   <function>curvature = value / v3
-pressed = v1
-enabled = v2
-
-if (pressed == 1 or enabled == 0) then
-  last_bad_time = time
-end
-
-if (time > last_bad_time + engage_delay) then
-  return curvature
-else
-  return 0
-end</function>
-   <linked_source>/liveLocationKalman/angularVelocityCalibrated/value/2</linked_source>
-   <additional_sources>
-    <v1>/carState/steeringPressed</v1>
-    <v2>/carControl/enabled</v2>
-    <v3>/liveLocationKalman/velocityCalibrated/value/0</v3>
-   </additional_sources>
-  </snippet>
-  <snippet name="carState.vEgo kmh">
-   <global></global>
-   <function>return value * 3.6</function>
-   <linked_source>/carState/vEgo</linked_source>
-  </snippet>
-  <snippet name="engaged curvature plan">
-   <global>engage_delay = 5
-last_bad_time = -engage_delay</global>
-   <function>curvature = value
-pressed = v1
-enabled = v2
-
-if (pressed == 1 or enabled == 0) then
-  last_bad_time = time
-end
-
-if (time > last_bad_time + engage_delay) then
-  return value
-else
-  return 0
-end</function>
-   <linked_source>/lateralPlan/curvatures/0</linked_source>
-   <additional_sources>
-    <v1>/carState/steeringPressed</v1>
-    <v2>/carControl/enabled</v2>
-   </additional_sources>
-  </snippet>
-  <snippet name="carState.vEgo mph">
-   <global></global>
-   <function>return value * 2.23694</function>
-   <linked_source>/carState/vEgo</linked_source>
-  </snippet>
-  <snippet name="engaged_accel_actual">
+  <snippet name="engaged_accel_actuator">
    <global>engage_delay = 5
 last_bad_time = -engage_delay</global>
    <function>accel = value
@@ -347,35 +370,12 @@ if (time > last_bad_time + engage_delay) then
 else
   return 0
 end</function>
-   <linked_source>/carState/aEgo</linked_source>
+   <linked_source>/carControl/actuators/accel</linked_source>
    <additional_sources>
     <v1>/carState/brakePressed</v1>
     <v2>/carState/gasPressed</v2>
     <v3>/carControl/enabled</v3>
    </additional_sources>
-  </snippet>
-  <snippet name="Desired lateral accel (roll compensated)">
-   <global></global>
-   <function>return (value * v1 ^ 2) - (v2 * 9.81)</function>
-   <linked_source>/controlsState/desiredCurvature</linked_source>
-   <additional_sources>
-    <v1>/carState/vEgo</v1>
-    <v2>/liveParameters/roll</v2>
-   </additional_sources>
-  </snippet>
-  <snippet name="Actual lateral accel (roll compensated)">
-   <global></global>
-   <function>return (value * v1 ^ 2) - (v2 * 9.81)</function>
-   <linked_source>/controlsState/curvature</linked_source>
-   <additional_sources>
-    <v1>/carState/vEgo</v1>
-    <v2>/liveParameters/roll</v2>
-   </additional_sources>
-  </snippet>
-  <snippet name="Zero">
-   <global></global>
-   <function>return (0)</function>
-   <linked_source>/carState/canValid</linked_source>
   </snippet>
  </customMathEquations>
  <snippets/>
