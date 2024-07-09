@@ -6,7 +6,7 @@ from collections import deque, defaultdict
 import cereal.messaging as messaging
 from cereal import car, log
 from openpilot.common.params import Params
-from openpilot.common.realtime import config_realtime_process, DT_MDL
+from openpilot.common.realtime import config_realtime_process, DT_MDL, DT_CTRL
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
@@ -52,7 +52,8 @@ class TorqueBuckets(PointBuckets):
 
 class TorqueEstimator(ParameterEstimator):
   def __init__(self, CP, decimated=False):
-    self.hist_len = int(HISTORY / DT_MDL / 10)
+    # FIXME: this should be DT_CTRL, but I want to add raw lat accels from 20Hz llk
+    self.hist_len = int(HISTORY / DT_MDL / 5) if decimated else int(HISTORY / DT_MDL)
     self.lag = CP.steerActuatorDelay + .2   # from controlsd
     if decimated:
       self.min_bucket_points = MIN_BUCKET_POINTS / 10
@@ -118,6 +119,8 @@ class TorqueEstimator(ParameterEstimator):
 
     self.filtered_params = {}
     for param in initial_params:
+      # FIXME: should be something like DT_MDL / 4, but I suppose this was deliberately chosen to slow down updating
+      #  it should not be this constant though
       self.filtered_params[param] = FirstOrderFilter(initial_params[param], self.decay, DT_MDL)
 
   def get_restore_key(self, CP, version):
@@ -158,6 +161,7 @@ class TorqueEstimator(ParameterEstimator):
       self.filtered_params[param].update_alpha(self.decay)
 
   def handle_log(self, t: float, which: str, msg: capnp.lib.capnp._DynamicStructReader):
+    # all car state points are offset by the lateral actuator delay
     if which == "carControl":
       self.raw_points["carControl_t"].append(t + self.lag)
       self.raw_points["lat_active"].append(msg.latActive)
