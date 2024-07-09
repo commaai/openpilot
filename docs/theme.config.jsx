@@ -15,7 +15,7 @@ export default {
         cardType: 'summary_large_image',
         handle: '@comma_ai'
       },
-      opengraph: {
+      openGraph: {
         type: 'website',
         locale: 'en_US',
         url: 'https://docs.comma.ai',
