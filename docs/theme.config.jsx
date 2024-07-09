@@ -24,20 +24,20 @@ export default {
         images: [
           {
             url: 'https://github.com/commaai/openpilot/assets/8762862/f09e6d29-db2d-4179-80c2-51e8d92bdb5c',
-            width: 1200,
-            height: 800,
+            width: 1298,
+            height: 507,
             alt: 'openpilot github'
           },
           {
             url: "https://media.githubusercontent.com/media/commaai/openpilot/master/selfdrive/assets/training/step1.png",
-            width: 1200,
-            height: 800,
+            width: 1014,
+            height: 507,
             alt: 'openpilot step 1'
           },
           {
             url: "https://media.githubusercontent.com/media/commaai/openpilot/master/selfdrive/assets/training/step2.png",
-            width: 1200,
-            height: 800,
+            width: 1014,
+            height: 507,
             alt: 'openpilot step 2'
           }
         ]
