@@ -23,7 +23,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
       with:
-        submodules: false
+        submodules: true
 
     # Build
     - uses: oven-sh/setup-bun@v2
