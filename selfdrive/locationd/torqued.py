@@ -158,6 +158,7 @@ class TorqueEstimator(ParameterEstimator):
       self.filtered_params[param].update_alpha(self.decay)
 
   def handle_log(self, t, which, msg):
+    # all car state points are offset by the lateral actuator delay
     if which == "carControl":
       self.data_points["carControl_t"].append(t + self.lag)
       self.data_points["lat_active"].append(msg.latActive)
