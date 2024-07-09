@@ -73,6 +73,9 @@ bool ReplayStream::loadRoute(const QString &route, const QString &data_dir, uint
     } else if (replay->lastRouteError() == RouteLoadError::NetworkError) {
       QMessageBox::warning(nullptr, tr("Network Error"),
                           tr("Unable to load the route:\n\n %1.\n\nPlease check your network connection and try again.").arg(route));
+    } else if (replay->lastRouteError() == RouteLoadError::FileNotFound) {
+      QMessageBox::warning(nullptr, tr("Route Not Found"),
+                           tr("The specified route could not be found:\n\n %1.\n\nPlease check the route name and try again.").arg(route));
     } else {
       QMessageBox::warning(nullptr, tr("Route Load Failed"), tr("Failed to load route: '%1'").arg(route));
     }
@@ -85,16 +88,10 @@ void ReplayStream::start() {
   replay->start();
 }
 
-void ReplayStream::stop() {
-  if (replay) {
-    replay->stop();
-  }
-}
-
 bool ReplayStream::eventFilter(const Event *event) {
   static double prev_update_ts = 0;
   if (event->which == cereal::Event::Which::CAN) {
-    double current_sec = event->mono_time / 1e9 - routeStartTime();
+    double current_sec = toSeconds(event->mono_time);
     capnp::FlatArrayMessageReader reader(event->data);
     auto e = reader.getRoot<cereal::Event>();
     for (const auto &c : e.getCan()) {
@@ -110,11 +107,6 @@ bool ReplayStream::eventFilter(const Event *event) {
     prev_update_ts = ts;
   }
   return true;
-}
-
-void ReplayStream::seekTo(double ts) {
-  current_sec_ = ts;
-  replay->seekTo(std::max(double(0), ts), false);
 }
 
 void ReplayStream::pause(bool pause) {

@@ -4,35 +4,6 @@ from openpilot.selfdrive.car.chrysler.values import CAR
 Ecu = car.CarParams.Ecu
 
 FW_VERSIONS = {
-  CAR.CHRYSLER_PACIFICA_2017_HYBRID: {
-    (Ecu.combinationMeter, 0x742, None): [
-      b'68239262AH',
-      b'68239262AI',
-      b'68239262AJ',
-      b'68239263AH',
-      b'68239263AJ',
-    ],
-    (Ecu.srs, 0x744, None): [
-      b'68238840AH',
-    ],
-    (Ecu.fwdRadar, 0x753, None): [
-      b'68226356AI',
-    ],
-    (Ecu.eps, 0x75a, None): [
-      b'68288309AC',
-      b'68288309AD',
-    ],
-    (Ecu.engine, 0x7e0, None): [
-      b'68277480AV ',
-      b'68277480AX ',
-      b'68277480AZ ',
-    ],
-    (Ecu.hybrid, 0x7e2, None): [
-      b'05190175BF',
-      b'05190175BH',
-      b'05190226AK',
-    ],
-  },
   CAR.CHRYSLER_PACIFICA_2018: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68227902AF',
@@ -181,26 +152,39 @@ FW_VERSIONS = {
   },
   CAR.CHRYSLER_PACIFICA_2018_HYBRID: {
     (Ecu.combinationMeter, 0x742, None): [
+      b'68239262AH',
+      b'68239262AI',
+      b'68239262AJ',
+      b'68239263AH',
+      b'68239263AJ',
       b'68358439AE',
       b'68358439AG',
     ],
     (Ecu.srs, 0x744, None): [
+      b'68238840AH',
       b'68358990AC',
       b'68405939AA',
     ],
     (Ecu.fwdRadar, 0x753, None): [
       b'04672758AA',
+      b'68226356AI',
     ],
     (Ecu.eps, 0x75a, None): [
+      b'68288309AC',
       b'68288309AD',
       b'68525339AA',
     ],
     (Ecu.engine, 0x7e0, None): [
+      b'68277480AV ',
+      b'68277480AX ',
+      b'68277480AZ ',
       b'68366580AI ',
       b'68366580AK ',
       b'68366580AM ',
     ],
     (Ecu.hybrid, 0x7e2, None): [
+      b'05190175BF',
+      b'05190175BH',
       b'05190226AI',
       b'05190226AK',
       b'05190226AM',
@@ -245,6 +229,7 @@ FW_VERSIONS = {
       b'68416680AE ',
       b'68416680AF ',
       b'68416680AG ',
+      b'68444228AC ',
       b'68444228AD ',
       b'68444228AE ',
       b'68444228AF ',

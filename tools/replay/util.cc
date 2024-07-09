@@ -323,7 +323,7 @@ void precise_nano_sleep(int64_t nanoseconds, std::atomic<bool> &should_exit) {
   req.tv_sec = nanoseconds / 1000000000;
   req.tv_nsec = nanoseconds % 1000000000;
   while (!should_exit) {
-#ifdef __APPLE_
+#ifdef __APPLE__
     int ret = nanosleep(&req, &rem);
     if (ret == 0 || errno != EINTR)
       break;

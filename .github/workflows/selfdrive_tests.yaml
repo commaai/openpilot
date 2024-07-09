@@ -6,9 +6,15 @@ on:
       - master
   pull_request:
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      run_number:
+        default: '1'
+        required: true
+        type: string
 
 concurrency:
-  group: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}
+  group: selfdrive-tests-ci-run-${{ inputs.run_number }}-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}
   cancel-in-progress: true
 
 env:
@@ -100,8 +106,17 @@ jobs:
         SKIP_PROMPT: 1
         # package install has DeprecationWarnings
         PYTHONWARNINGS: default
-    - name: Test openpilot environment
-      run: . .venv/bin/activate && scons -h
+    - run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
+    - name: Getting scons cache
+      uses: 'actions/cache@v4'
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        restore-keys: |
+          scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}
+          scons-${{ runner.arch }}-macos
+    - name: Building openpilot
+      run: . .venv/bin/activate && scons -j$(nproc)
 
   static_analysis:
     name: static analysis
@@ -320,5 +335,55 @@ jobs:
       - name: Upload Test Report
         uses: actions/upload-artifact@v4
         with:
-          name: report
-          path: selfdrive/ui/tests/test_ui/report
+          name: report-${{ inputs.run_number }}
+          path: selfdrive/ui/tests/test_ui/report_${{ inputs.run_number }}
+      - name: Get changes to selfdrive/ui
+        if: ${{ github.event_name == 'pull_request' }}
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+         files: |
+            selfdrive/ui/**
+      - name: Checkout ci-artifacts
+        if: ${{ github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true' }}
+        uses: actions/checkout@v4
+        with:
+          repository: commaai/ci-artifacts
+          ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
+          path: ${{ github.workspace }}/ci-artifacts
+          ref: master
+      - name: Push Screenshots
+        if: ${{ github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true' }}
+        working-directory: ${{ github.workspace }}/ci-artifacts
+        run: |
+          git checkout -b openpilot/pr-${{ github.event.pull_request.number }}
+          git config user.name "GitHub Actions Bot"
+          git config user.email "<>"
+          sudo mv ${{ github.workspace }}/selfdrive/ui/tests/test_ui/report/screenshots/* .
+          git add .
+          git commit -m "screenshots for PR #${{ github.event.pull_request.number }}"
+          git push origin openpilot/pr-${{ github.event.pull_request.number }} --force
+      - name: Comment Screenshots on PR
+        if: ${{ github.event_name == 'pull_request' && steps.changed-files.outputs.any_changed == 'true' }}
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: |
+            <!-- _(run_id_screenshots **${{ github.run_id }}**)_ -->
+            ## UI Screenshots
+            <table>
+              <tr>
+                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/openpilot/pr-${{ github.event.pull_request.number }}/homescreen.png"></td>
+                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/openpilot/pr-${{ github.event.pull_request.number }}/onroad.png"></td>
+              </tr>
+              <tr>
+                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/openpilot/pr-${{ github.event.pull_request.number }}/onroad_map.png"></td>
+                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/openpilot/pr-${{ github.event.pull_request.number }}/onroad_sidebar.png"></td>
+              </tr>
+              <tr>
+                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/openpilot/pr-${{ github.event.pull_request.number }}/settings_network.png"></td>
+                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/openpilot/pr-${{ github.event.pull_request.number }}/settings_device.png"></td>
+              </tr>
+            </table>
+          comment_tag: run_id_screenshots
+          pr_number: ${{ github.event.pull_request.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

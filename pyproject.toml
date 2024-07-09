@@ -66,9 +66,8 @@ dependencies = [
 [project.optional-dependencies]
 docs = [
   "Jinja2",
-  "sphinx",
-  "sphinx-rtd-theme",
-  "sphinx-sitemap"
+  "mkdocs",
+  "mkdocs-terminal",
 ]
 
 testing = [

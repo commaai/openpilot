@@ -159,7 +159,7 @@ class TorqueEstimator(ParameterEstimator):
   def handle_log(self, t, which, msg):
     if which == "carControl":
       self.raw_points["carControl_t"].append(t + self.lag)
-      self.raw_points["active"].append(msg.latActive)
+      self.raw_points["lat_active"].append(msg.latActive)
     elif which == "carOutput":
       self.raw_points["carOutput_t"].append(t + self.lag)
       self.raw_points["steer_torque"].append(-msg.actuatorsOutput.steer)
@@ -171,12 +171,12 @@ class TorqueEstimator(ParameterEstimator):
       if len(self.raw_points['steer_torque']) == self.hist_len:
         yaw_rate = msg.angularVelocityCalibrated.value[2]
         roll = msg.orientationNED.value[0]
-        active = np.interp(np.arange(t - MIN_ENGAGE_BUFFER, t, DT_MDL), self.raw_points['carControl_t'], self.raw_points['active']).astype(bool)
+        lat_active = np.interp(np.arange(t - MIN_ENGAGE_BUFFER, t, DT_MDL), self.raw_points['carControl_t'], self.raw_points['lat_active']).astype(bool)
         steer_override = np.interp(np.arange(t - MIN_ENGAGE_BUFFER, t, DT_MDL), self.raw_points['carState_t'], self.raw_points['steer_override']).astype(bool)
         vego = np.interp(t, self.raw_points['carState_t'], self.raw_points['vego'])
         steer = np.interp(t, self.raw_points['carOutput_t'], self.raw_points['steer_torque'])
         lateral_acc = (vego * yaw_rate) - (np.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
-        if all(active) and (not any(steer_override)) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD) and (abs(lateral_acc) <= LAT_ACC_THRESHOLD):
+        if all(lat_active) and not any(steer_override) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD) and (abs(lateral_acc) <= LAT_ACC_THRESHOLD):
           self.filtered_points.add_point(float(steer), float(lateral_acc))
 
   def get_msg(self, valid=True, with_points=False):
@@ -223,8 +223,7 @@ def main(demo=False):
   sm = messaging.SubMaster(['carControl', 'carOutput', 'carState', 'liveLocationKalman'], poll='liveLocationKalman')
 
   params = Params()
-  with car.CarParams.from_bytes(params.get("CarParams", block=True)) as CP:
-    estimator = TorqueEstimator(CP)
+  estimator = TorqueEstimator(messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams))
 
   while True:
     sm.update()
