@@ -17,7 +17,7 @@ class CarInterface(CarInterfaceBase):
     # Global lateral tuning defaults, can be overridden per-vehicle
 
     ret.steerLimitTimer = 0.4
-    ret.steerActuatorDelay = 0.2
+    ret.steerActuatorDelay = 0.1
     CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     # Global longitudinal tuning defaults, can be overridden per-vehicle
