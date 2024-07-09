@@ -141,7 +141,8 @@ class TorqueEstimator(ParameterEstimator):
                                          rowsize=3)
 
   def estimate_params(self):
-    points = self.filtered_points.get_points(self.fit_points)
+    # check lat accel thresh
+    points = self.filtered_points.get_points(self.fit_points, where=lambda pts: np.abs(pts[:, 2]) <= LAT_ACC_THRESHOLD)
     # total least square solution as both x and y are noisy observations
     # this is empirically the slope of the hysteresis parallelogram as opposed to the line through the diagonals
     try:
@@ -191,7 +192,7 @@ class TorqueEstimator(ParameterEstimator):
           print(all(lat_active), not any(steer_override), vego > MIN_VEL, abs(steer) > STEER_MIN_THRESHOLD, abs(lateral_acc) <= LAT_ACC_THRESHOLD)
         # reduce effects of torque response non-linearity near the limits of torque by enforcing a max lat accel
         # TODO: add raw points without lat acc threshold!
-        if all(lat_active) and not any(steer_override) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD) and (abs(lateral_acc) <= LAT_ACC_THRESHOLD):
+        if all(lat_active) and not any(steer_override) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD):  # and (abs(lateral_acc) <= LAT_ACC_THRESHOLD):
           self.filtered_points.add_point(float(steer), float(lateral_acc))
         print()
 
@@ -226,7 +227,7 @@ class TorqueEstimator(ParameterEstimator):
     liveTorqueParameters.latAccelFactorFiltered = float(self.filtered_params['latAccelFactor'].x)
     liveTorqueParameters.latAccelOffsetFiltered = float(self.filtered_params['latAccelOffset'].x)
     liveTorqueParameters.frictionCoefficientFiltered = float(self.filtered_params['frictionCoefficient'].x)
-    liveTorqueParameters.totalBucketPoints = len(self.filtered_points)
+    liveTorqueParameters.totalBucketPoints = len(self.filtered_points)  # FIXME: isn't accurate with unfully unfiltered points
     liveTorqueParameters.decay = self.decay
     liveTorqueParameters.maxResets = self.resets
     return msg
