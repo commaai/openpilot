@@ -29,6 +29,14 @@ jobs:
     - uses: oven-sh/setup-bun@v2
       with:
         bun-version: 1.1.18
+    - uses: actions/cache@v3
+      with:
+        path: |
+          ~/.bun/install/cache
+          ${{ github.workspace }}/docs/.next/cache
+        key: ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lockb') }}-${{ hashFiles('**.[jt]s', '**.[jt]sx') }}
+        restore-keys: |
+          ${{ runner.os }}-nextjs-${{ hashFiles('**/bun.lockb') }}-
     - run: bun install
       working-directory: ./docs
     - name: Build standalone docs
