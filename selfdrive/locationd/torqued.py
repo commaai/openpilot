@@ -129,7 +129,7 @@ class TorqueEstimator(ParameterEstimator):
   def reset(self):
     self.resets += 1.0
     self.decay = MIN_FILTER_DECAY
-    self.data_points = defaultdict(lambda: deque(maxlen=self.hist_len))
+    self.raw_points = defaultdict(lambda: deque(maxlen=self.hist_len))
     self.filtered_points = TorqueBuckets(x_bounds=STEER_BUCKET_BOUNDS,
                                          min_points=self.min_bucket_points,
                                          min_points_total=self.min_points_total,
@@ -159,23 +159,23 @@ class TorqueEstimator(ParameterEstimator):
 
   def handle_log(self, t, which, msg):
     if which == "carControl":
-      self.data_points["carControl_t"].append(t + self.lag)
-      self.data_points["lat_active"].append(msg.latActive)
+      self.raw_points["carControl_t"].append(t + self.lag)
+      self.raw_points["lat_active"].append(msg.latActive)
     elif which == "carOutput":
-      self.data_points["carOutput_t"].append(t + self.lag)
-      self.data_points["steer_torque"].append(-msg.actuatorsOutput.steer)
+      self.raw_points["carOutput_t"].append(t + self.lag)
+      self.raw_points["steer_torque"].append(-msg.actuatorsOutput.steer)
     elif which == "carState":
-      self.data_points["carState_t"].append(t + self.lag)
-      self.data_points["vego"].append(msg.vEgo)
-      self.data_points["steer_override"].append(msg.steeringPressed)
+      self.raw_points["carState_t"].append(t + self.lag)
+      self.raw_points["vego"].append(msg.vEgo)
+      self.raw_points["steer_override"].append(msg.steeringPressed)
     elif which == "liveLocationKalman":
-      if len(self.data_points['steer_torque']) == self.hist_len:
+      if len(self.raw_points['steer_torque']) == self.hist_len:
         yaw_rate = msg.angularVelocityCalibrated.value[2]
         roll = msg.orientationNED.value[0]
-        lat_active = np.interp(np.arange(t - MIN_ENGAGE_BUFFER, t, DT_MDL), self.data_points['carControl_t'], self.data_points['lat_active']).astype(bool)
-        steer_override = np.interp(np.arange(t - MIN_ENGAGE_BUFFER, t, DT_MDL), self.data_points['carState_t'], self.data_points['steer_override']).astype(bool)
-        vego = np.interp(t, self.data_points['carState_t'], self.data_points['vego'])
-        steer = np.interp(t, self.data_points['carOutput_t'], self.data_points['steer_torque']).item()
+        lat_active = np.interp(np.arange(t - MIN_ENGAGE_BUFFER, t, DT_MDL), self.raw_points['carControl_t'], self.raw_points['lat_active']).astype(bool)
+        steer_override = np.interp(np.arange(t - MIN_ENGAGE_BUFFER, t, DT_MDL), self.raw_points['carState_t'], self.raw_points['steer_override']).astype(bool)
+        vego = np.interp(t, self.raw_points['carState_t'], self.raw_points['vego'])
+        steer = np.interp(t, self.raw_points['carOutput_t'], self.raw_points['steer_torque']).item()
         lateral_acc = (vego * yaw_rate) - (np.sin(roll) * ACCELERATION_DUE_TO_GRAVITY).item()
         if all(lat_active) and not any(steer_override) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD):
           self.all_torque_points.append([steer, lateral_acc])
