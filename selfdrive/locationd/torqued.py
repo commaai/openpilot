@@ -51,7 +51,7 @@ class TorqueBuckets(PointBuckets):
 
 class TorqueEstimator(ParameterEstimator):
   def __init__(self, CP, decimated=False, track_all_points=False):
-    self.hist_len = int(HISTORY / DT_MDL)
+    self.raw_hist_len = int(HISTORY / DT_MDL)
     self.lag = CP.steerActuatorDelay + .2  # from controlsd
     self.track_all_points = track_all_points  # for offline analysis, without max lateral accel or max steer torque filters
     if decimated:
@@ -131,7 +131,7 @@ class TorqueEstimator(ParameterEstimator):
   def reset(self):
     self.resets += 1.0
     self.decay = MIN_FILTER_DECAY
-    self.raw_points = defaultdict(lambda: deque(maxlen=self.hist_len))
+    self.raw_points = defaultdict(lambda: deque(maxlen=self.raw_hist_len))
     self.filtered_points = TorqueBuckets(x_bounds=STEER_BUCKET_BOUNDS,
                                          min_points=self.min_bucket_points,
                                          min_points_total=self.min_points_total,
@@ -174,7 +174,7 @@ class TorqueEstimator(ParameterEstimator):
 
     # calculate lateral accel from past steering torque
     elif which == "liveLocationKalman":
-      if len(self.raw_points['steer_torque']) == self.hist_len:
+      if len(self.raw_points['steer_torque']) == self.raw_hist_len:
         yaw_rate = msg.angularVelocityCalibrated.value[2]
         roll = msg.orientationNED.value[0]
         lat_active = np.interp(np.arange(t - MIN_ENGAGE_BUFFER, t, DT_MDL), self.raw_points['carControl_t'], self.raw_points['lat_active']).astype(bool)
