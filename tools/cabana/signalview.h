@@ -135,6 +135,7 @@ private:
       QTreeView::leaveEvent(event);
     }
   };
+  int max_value_width = 0;
   int value_column_width = 0;
   TreeView *tree;
   QLabel *sparkline_label;

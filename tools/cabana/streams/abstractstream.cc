@@ -10,11 +10,6 @@ static const int EVENT_NEXT_BUFFER_SIZE = 6 * 1024 * 1024;  // 6MB
 
 AbstractStream *can = nullptr;
 
-StreamNotifier *StreamNotifier::instance() {
-  static StreamNotifier notifier;
-  return &notifier;
-}
-
 AbstractStream::AbstractStream(QObject *parent) : QObject(parent) {
   assert(parent != nullptr);
   event_buffer_ = std::make_unique<MonotonicBuffer>(EVENT_NEXT_BUFFER_SIZE);
@@ -24,12 +19,6 @@ AbstractStream::AbstractStream(QObject *parent) : QObject(parent) {
   QObject::connect(this, &AbstractStream::seeking, this, [this](double sec) { current_sec_ = sec; });
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &AbstractStream::updateMasks);
   QObject::connect(dbc(), &DBCManager::maskUpdated, this, &AbstractStream::updateMasks);
-  QObject::connect(this, &AbstractStream::streamStarted, [this]() {
-    emit StreamNotifier::instance()->changingStream();
-    delete can;
-    can = this;
-    emit StreamNotifier::instance()->streamStarted();
-  });
 }
 
 void AbstractStream::updateMasks() {
