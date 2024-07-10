@@ -51,7 +51,7 @@ class TorqueBuckets(PointBuckets):
 
 class TorqueEstimator(ParameterEstimator):
   def __init__(self, CP, decimated=False, track_all_points=False):
-    self.hist_len = int(HISTORY / DT_MDL / 5)
+    self.hist_len = int(HISTORY / DT_MDL)
     self.lag = CP.steerActuatorDelay + .2  # from controlsd
     self.track_all_points = track_all_points
     if decimated:
