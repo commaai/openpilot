@@ -36,8 +36,8 @@ ALLOWED_CARS = ['toyota', 'hyundai']
 
 
 def slope2rot(slope):
-  sin = np.sqrt(slope**2 / (slope**2 + 1))
-  cos = np.sqrt(1 / (slope**2 + 1))
+  sin = np.sqrt(slope ** 2 / (slope ** 2 + 1))
+  cos = np.sqrt(1 / (slope ** 2 + 1))
   return np.array([[cos, -sin], [sin, cos]])
 
 
@@ -52,7 +52,7 @@ class TorqueBuckets(PointBuckets):
 class TorqueEstimator(ParameterEstimator):
   def __init__(self, CP, decimated=False):
     self.hist_len = int(HISTORY / DT_MDL)
-    self.lag = CP.steerActuatorDelay + .2   # from controlsd
+    self.lag = CP.steerActuatorDelay + .2  # from controlsd
     if decimated:
       self.min_bucket_points = MIN_BUCKET_POINTS / 10
       self.min_points_total = MIN_POINTS_TOTAL_QLOG
@@ -242,8 +242,10 @@ def main(demo=False):
       msg = estimator.get_msg(valid=sm.all_checks(), with_points=True)
       params.put_nonblocking("LiveTorqueParameters", msg.to_bytes())
 
+
 if __name__ == "__main__":
   import argparse
+
   parser = argparse.ArgumentParser(description='Process the --demo argument.')
   parser.add_argument('--demo', action='store_true', help='A boolean for demo mode.')
   args = parser.parse_args()
