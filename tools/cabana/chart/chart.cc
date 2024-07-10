@@ -155,11 +155,10 @@ void ChartView::removeIf(std::function<bool(const SigItem &s)> predicate) {
 }
 
 void ChartView::signalUpdated(const cabana::Signal *sig) {
-  if (std::any_of(sigs.cbegin(), sigs.cend(), [=](auto &s) { return s.sig == sig; })) {
-    for (const auto &s : sigs) {
-      if (s.sig == sig && s.series->color() != sig->color) {
-        setSeriesColor(s.series, sig->color);
-      }
+  auto it = std::find_if(sigs.begin(), sigs.end(), [sig](auto &s) { return s.sig == sig; });
+  if (it != sigs.end()) {
+    if (it->series->color() != sig->color) {
+      setSeriesColor(it->series, sig->color);
     }
     updateTitle();
     updateSeries(sig);
