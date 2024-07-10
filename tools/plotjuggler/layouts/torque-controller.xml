@@ -123,7 +123,7 @@
        <curve color="#ff000f" name="/carState/steeringPressed"/>
       </plot>
      </DockArea>
-     <DockArea name="proportional error, integral error, and feed-forward terms (actuator output = sum of PIF terms)">
+     <DockArea name="proportional, integral, and feed-forward terms (actuator output = sum of PIF terms)">
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
        <range top="1.572946" right="269.643117" left="0.000140" bottom="-3.822608"/>
        <limitY/>
