@@ -18,6 +18,8 @@ def try_import(file_path, module):
   except ImportError:
     print(f"Can't import {module} from {file_path}. Is this package missing from pyproject.toml?")
     return False
+  except Exception:
+    return True
 
 def find_python_files(dirs):
   python_files = []
