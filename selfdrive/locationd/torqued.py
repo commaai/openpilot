@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from typing import Any
+
 import numpy as np
 from collections import deque, defaultdict
 
@@ -47,6 +49,10 @@ class TorqueBuckets(PointBuckets):
       if (x >= bound_min) and (x < bound_max):
         self.buckets[(bound_min, bound_max)].append([x, 1.0, y])
         break
+
+  def get_points(self, num_points: int = None) -> Any:
+    points = super().get_points(num_points)
+    return points[np.abs(points[:, 2]) <= LAT_ACC_THRESHOLD]
 
 
 class TorqueEstimator(ParameterEstimator):
@@ -131,11 +137,12 @@ class TorqueEstimator(ParameterEstimator):
     self.resets += 1.0
     self.decay = MIN_FILTER_DECAY
     self.data_points = defaultdict(lambda: deque(maxlen=self.hist_len))
-    self.torque_points = TorqueBuckets(x_bounds=STEER_BUCKET_BOUNDS,
+    self.filtered_torque_points = TorqueBuckets(x_bounds=STEER_BUCKET_BOUNDS,
                                        min_points=self.min_bucket_points,
                                        min_points_total=self.min_points_total,
                                        points_per_bucket=POINTS_PER_BUCKET,
                                        rowsize=3)
+    self.all_torque_points = []
 
   def estimate_params(self):
     points = self.torque_points.get_points(self.fit_points)
@@ -180,8 +187,10 @@ class TorqueEstimator(ParameterEstimator):
         vego = np.interp(t, self.data_points['carState_t'], self.data_points['vego'])
         steer = np.interp(t, self.data_points['carOutput_t'], self.data_points['steer_torque'])
         lateral_acc = (vego * yaw_rate) - (np.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
-        if all(lat_active) and not any(steer_override) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD) and (abs(lateral_acc) <= LAT_ACC_THRESHOLD):
-          self.torque_points.add_point(float(steer), float(lateral_acc))
+        if all(lat_active) and not any(steer_override) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD):
+          self.torque_points_unfiltered.append([float(steer), float(lateral_acc)])
+          if abs(lateral_acc) <= LAT_ACC_THRESHOLD:
+            self.torque_points.add_point(float(steer), float(lateral_acc))
 
   def get_msg(self, valid=True, with_points=False):
     msg = messaging.new_message('liveTorqueParameters')
