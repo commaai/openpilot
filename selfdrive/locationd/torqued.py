@@ -133,11 +133,11 @@ class TorqueEstimator(ParameterEstimator):
     self.decay = MIN_FILTER_DECAY
     self.raw_points = defaultdict(lambda: deque(maxlen=self.hist_len))
     self.filtered_points = TorqueBuckets(x_bounds=STEER_BUCKET_BOUNDS,
-                                       min_points=self.min_bucket_points,
-                                       min_points_total=self.min_points_total,
-                                       points_per_bucket=POINTS_PER_BUCKET,
-                                       rowsize=3)
-    self.all_filtered_points = []
+                                         min_points=self.min_bucket_points,
+                                         min_points_total=self.min_points_total,
+                                         points_per_bucket=POINTS_PER_BUCKET,
+                                         rowsize=3)
+    self.all_torque_points = []
 
   def estimate_params(self):
     points = self.filtered_points.get_points(self.fit_points)
@@ -179,8 +179,8 @@ class TorqueEstimator(ParameterEstimator):
         roll = msg.orientationNED.value[0]
         lat_active = np.interp(np.arange(t - MIN_ENGAGE_BUFFER, t, DT_MDL), self.raw_points['carControl_t'], self.raw_points['lat_active']).astype(bool)
         steer_override = np.interp(np.arange(t - MIN_ENGAGE_BUFFER, t, DT_MDL), self.raw_points['carState_t'], self.raw_points['steer_override']).astype(bool)
-        vego = np.interp(t, self.raw_points['carState_t'], self.raw_points['vego'])
-        steer = np.interp(t, self.raw_points['carOutput_t'], self.raw_points['steer_torque'])
+        vego = np.interp(t, self.raw_points['carState_t'], self.raw_points['vego']).item()
+        steer = np.interp(t, self.raw_points['carOutput_t'], self.raw_points['steer_torque']).item()
         lateral_acc = (vego * yaw_rate) - (np.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
         if all(lat_active) and not any(steer_override) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD):
           if abs(lateral_acc) <= LAT_ACC_THRESHOLD:
