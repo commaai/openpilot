@@ -53,7 +53,7 @@ class TorqueEstimator(ParameterEstimator):
   def __init__(self, CP, decimated=False, track_all_points=False):
     self.hist_len = int(HISTORY / DT_MDL)
     self.lag = CP.steerActuatorDelay + .2  # from controlsd
-    self.track_all_points = track_all_points
+    self.track_all_points = track_all_points  # for offline analysis, without max lateral accel or max steer torque filters
     if decimated:
       self.min_bucket_points = MIN_BUCKET_POINTS / 10
       self.min_points_total = MIN_POINTS_TOTAL_QLOG
@@ -182,7 +182,6 @@ class TorqueEstimator(ParameterEstimator):
           if abs(lateral_acc) <= LAT_ACC_THRESHOLD:
             self.filtered_points.add_point(steer, lateral_acc)
 
-          # for offline analysis, without max lateral accel or max steer torque filters
           if self.track_all_points:
             self.all_torque_points.append([steer, lateral_acc])
 
