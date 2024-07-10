@@ -134,6 +134,8 @@ jobs:
     - name: pre-commit
       timeout-minutes: 4
       run: ${{ env.RUN }} "unset PYTHONWARNINGS && pre-commit run --all && chmod -R 777 /tmp/pre-commit"
+    - name: check python imports
+      run: ${{ env.RUN }} "python3 tools/scripts/check_python_imports.py"
 
   unit_tests:
     name: unit tests
