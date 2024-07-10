@@ -228,154 +228,15 @@
     <v2>/liveParameters/roll</v2>
    </additional_sources>
   </snippet>
-  <snippet name="engaged_accel_actual">
-   <global>engage_delay = 5
-last_bad_time = -engage_delay</global>
-   <function>accel = value
-brake = v1
-gas = v2
-enabled = v3
-
-if (brake ~= 0 or gas ~= 0 or enabled == 0) then
-  last_bad_time = time
-end
-
-if (time > last_bad_time + engage_delay) then
-  return value
-else
-  return 0
-end</function>
-   <linked_source>/carState/aEgo</linked_source>
-   <additional_sources>
-    <v1>/carState/brakePressed</v1>
-    <v2>/carState/gasPressed</v2>
-    <v3>/carControl/enabled</v3>
-   </additional_sources>
-  </snippet>
   <snippet name="carState.vEgo mph">
    <global></global>
    <function>return value * 2.23694</function>
    <linked_source>/carState/vEgo</linked_source>
   </snippet>
-  <snippet name="engaged curvature plan">
-   <global>engage_delay = 5
-last_bad_time = -engage_delay</global>
-   <function>curvature = value
-pressed = v1
-enabled = v2
-
-if (pressed == 1 or enabled == 0) then
-  last_bad_time = time
-end
-
-if (time > last_bad_time + engage_delay) then
-  return value
-else
-  return 0
-end</function>
-   <linked_source>/lateralPlan/curvatures/0</linked_source>
-   <additional_sources>
-    <v1>/carState/steeringPressed</v1>
-    <v2>/carControl/enabled</v2>
-   </additional_sources>
-  </snippet>
   <snippet name="carState.vEgo kmh">
    <global></global>
    <function>return value * 3.6</function>
    <linked_source>/carState/vEgo</linked_source>
-  </snippet>
-  <snippet name="engaged curvature yaw">
-   <global>engage_delay = 5
-last_bad_time = -engage_delay</global>
-   <function>curvature = value / v3
-pressed = v1
-enabled = v2
-
-if (pressed == 1 or enabled == 0) then
-  last_bad_time = time
-end
-
-if (time > last_bad_time + engage_delay) then
-  return curvature
-else
-  return 0
-end</function>
-   <linked_source>/liveLocationKalman/angularVelocityCalibrated/value/2</linked_source>
-   <additional_sources>
-    <v1>/carState/steeringPressed</v1>
-    <v2>/carControl/enabled</v2>
-    <v3>/liveLocationKalman/velocityCalibrated/value/0</v3>
-   </additional_sources>
-  </snippet>
-  <snippet name="engaged curvature vehicle model">
-   <global>engage_delay = 5
-last_bad_time = -engage_delay</global>
-   <function>curvature = value
-pressed = v1
-enabled = v2
-
-if (pressed == 1 or enabled == 0) then
-  last_bad_time = time
-end
-
-if (time > last_bad_time + engage_delay) then
-  return value
-else
-  return 0
-end</function>
-   <linked_source>/controlsState/curvature</linked_source>
-   <additional_sources>
-    <v1>/carState/steeringPressed</v1>
-    <v2>/carControl/enabled</v2>
-   </additional_sources>
-  </snippet>
-  <snippet name="engaged_accel_plan">
-   <global>engage_delay = 5
-last_bad_time = -engage_delay</global>
-   <function>accel = value
-brake = v1
-gas = v2
-enabled = v3
-
-if (brake ~= 0 or gas ~= 0 or enabled == 0) then
-  last_bad_time = time
-end
-
-if (time > last_bad_time + engage_delay) then
-  return value
-else
-  return 0
-end</function>
-   <linked_source>/longitudinalPlan/accels/0</linked_source>
-   <additional_sources>
-    <v1>/carState/brakePressed</v1>
-    <v2>/carState/gasPressed</v2>
-    <v3>/carControl/enabled</v3>
-   </additional_sources>
-  </snippet>
-  <snippet name="engaged_accel_actuator">
-   <global>engage_delay = 5
-last_bad_time = -engage_delay</global>
-   <function>accel = value
-brake = v1
-gas = v2
-enabled = v3
-
-if (brake ~= 0 or gas ~= 0 or enabled == 0) then
-  last_bad_time = time
-end
-
-if (time > last_bad_time + engage_delay) then
-  return value
-else
-  return 0
-end</function>
-   <linked_source>/carControl/actuators/accel</linked_source>
-   <additional_sources>
-    <v1>/carState/brakePressed</v1>
-    <v2>/carState/gasPressed</v2>
-    <v3>/carControl/enabled</v3>
-   </additional_sources>
   </snippet>
  </customMathEquations>
  <snippets/>
