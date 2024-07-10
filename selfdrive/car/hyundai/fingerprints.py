@@ -1130,4 +1130,15 @@ FW_VERSIONS = {
       b'\xf1\x00US4_ RDR -----      1.00 1.00 99110-CG000         ',
     ],
   },
+  CAR.KIA_K9_2019: {
+    (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00RJ__ SCC FHCUP      1.01 1.01 99110-J6000         ',
+    ],
+    (Ecu.eps, 0x7d4, None): [
+      b'\xf1\x00RJ  MDPS R 1.00 1.00 56320-J6000 8118',
+    ],
+    (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00RJ  MFC  AT KOR LHD 1.00 1.01 99211-J6000 180228',
+    ],
+  },
 }
