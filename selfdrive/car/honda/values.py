@@ -174,7 +174,7 @@ class CAR(Platforms):
     flags=HondaFlags.BOSCH_ALT_BRAKE,
   )
   HONDA_ODYSSEY_BOSCH = HondaBoschPlatformConfig(
-    [HondaCarDocs("Honda Odyssey 2023", "All", min_steer_speed=3. * CV.MPH_TO_MS)],
+    [HondaCarDocs("Honda Odyssey 2023", "All", min_steer_speed=45. * CV.MPH_TO_MS)],
     CarSpecs(mass=4535 * CV.LB_TO_KG, wheelbase=3., steerRatio=14.35, centerToFrontRatio=0.45, tireStiffnessFactor=0.677),  # as spec
     dbc_dict('acura_rdx_2020_can_generated', None),
     flags=HondaFlags.BOSCH_ALT_BRAKE,
