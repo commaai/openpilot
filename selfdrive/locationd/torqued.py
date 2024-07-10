@@ -5,7 +5,7 @@ from collections import deque, defaultdict
 import cereal.messaging as messaging
 from cereal import car, log
 from openpilot.common.params import Params
-from openpilot.common.realtime import config_realtime_process, DT_MDL
+from openpilot.common.realtime import config_realtime_process, DT_CTRL, DT_MDL
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
@@ -51,8 +51,9 @@ class TorqueBuckets(PointBuckets):
 
 class TorqueEstimator(ParameterEstimator):
   def __init__(self, CP, decimated=False, track_all_points=False):
-    self.raw_hist_len = int(HISTORY / DT_MDL)
+    self.raw_hist_len = int(HISTORY / DT_CTRL)
     self.lag = CP.steerActuatorDelay + .2  # from controlsd
+    self.decimated = decimated
     self.track_all_points = track_all_points  # for offline analysis, without max lateral accel or max steer torque filters
     if decimated:
       self.min_bucket_points = MIN_BUCKET_POINTS / 10
