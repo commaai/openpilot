@@ -109,7 +109,7 @@ class TorqueEstimator(ParameterEstimator):
             }
           initial_params['points'] = cache_ltp.points
           self.decay = cache_ltp.decay
-          self.torque_buckets.load_points(initial_params['points'])
+          self.torque_points.load_points(initial_params['points'])
           cloudlog.info("restored torque params from cache")
       except Exception:
         cloudlog.exception("failed to restore cached torque params")
@@ -130,15 +130,15 @@ class TorqueEstimator(ParameterEstimator):
     self.resets += 1.0
     self.decay = MIN_FILTER_DECAY
     self.data_points = defaultdict(lambda: deque(maxlen=self.hist_len))
-    self.torque_buckets = TorqueBuckets(x_bounds=STEER_BUCKET_BOUNDS,
-                                        min_points=self.min_bucket_points,
-                                        min_points_total=self.min_points_total,
-                                        points_per_bucket=POINTS_PER_BUCKET,
-                                        rowsize=3)
+    self.torque_points = TorqueBuckets(x_bounds=STEER_BUCKET_BOUNDS,
+                                       min_points=self.min_bucket_points,
+                                       min_points_total=self.min_points_total,
+                                       points_per_bucket=POINTS_PER_BUCKET,
+                                       rowsize=3)
     self.all_torque_points = []
 
   def estimate_params(self):
-    points = self.torque_buckets.get_points(self.fit_points)
+    points = self.torque_points.get_points(self.fit_points)
     # total least square solution as both x and y are noisy observations
     # this is empirically the slope of the hysteresis parallelogram as opposed to the line through the diagonals
     try:
@@ -180,7 +180,7 @@ class TorqueEstimator(ParameterEstimator):
         if all(lat_active) and not any(steer_override) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD):
           self.all_torque_points.append([steer, lateral_acc])
           if abs(lateral_acc) <= LAT_ACC_THRESHOLD:
-            self.torque_buckets.add_point(steer, lateral_acc)
+            self.torque_points.add_point(steer, lateral_acc)
 
   def get_msg(self, valid=True, with_points=False):
     msg = messaging.new_message('liveTorqueParameters')
@@ -190,13 +190,13 @@ class TorqueEstimator(ParameterEstimator):
     liveTorqueParameters.useParams = self.use_params
 
     # Calculate raw estimates when possible, only update filters when enough points are gathered
-    if self.torque_buckets.is_calculable():
+    if self.torque_points.is_calculable():
       latAccelFactor, latAccelOffset, frictionCoeff = self.estimate_params()
       liveTorqueParameters.latAccelFactorRaw = float(latAccelFactor)
       liveTorqueParameters.latAccelOffsetRaw = float(latAccelOffset)
       liveTorqueParameters.frictionCoefficientRaw = float(frictionCoeff)
 
-      if self.torque_buckets.is_valid():
+      if self.torque_points.is_valid():
         if any(val is None or np.isnan(val) for val in [latAccelFactor, latAccelOffset, frictionCoeff]):
           cloudlog.exception("Live torque parameters are invalid.")
           liveTorqueParameters.liveValid = False
@@ -208,12 +208,12 @@ class TorqueEstimator(ParameterEstimator):
           self.update_params({'latAccelFactor': latAccelFactor, 'latAccelOffset': latAccelOffset, 'frictionCoefficient': frictionCoeff})
 
     if with_points:
-      liveTorqueParameters.points = self.torque_buckets.get_points()[:, [0, 2]].tolist()
+      liveTorqueParameters.points = self.torque_points.get_points()[:, [0, 2]].tolist()
 
     liveTorqueParameters.latAccelFactorFiltered = float(self.filtered_params['latAccelFactor'].x)
     liveTorqueParameters.latAccelOffsetFiltered = float(self.filtered_params['latAccelOffset'].x)
     liveTorqueParameters.frictionCoefficientFiltered = float(self.filtered_params['frictionCoefficient'].x)
-    liveTorqueParameters.totalBucketPoints = len(self.torque_buckets)
+    liveTorqueParameters.totalBucketPoints = len(self.torque_points)
     liveTorqueParameters.decay = self.decay
     liveTorqueParameters.maxResets = self.resets
     return msg
