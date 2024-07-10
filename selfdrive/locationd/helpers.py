@@ -38,7 +38,7 @@ class PointBuckets:
   def is_calculable(self) -> bool:
     return all(len(v) > 0 for v in self.buckets.values())
 
-  def add_point(self, x: float, y: float, bucket_val: float) -> None:
+  def add_point(self, x: float, y: float) -> None:
     raise NotImplementedError
 
   def get_points(self, num_points: int = None) -> Any:

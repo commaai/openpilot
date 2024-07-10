@@ -120,7 +120,8 @@ class TorqueEstimator(ParameterEstimator):
     for param in initial_params:
       self.filtered_params[param] = FirstOrderFilter(initial_params[param], self.decay, DT_MDL)
 
-  def get_restore_key(self, CP, version):
+  @staticmethod
+  def get_restore_key(CP, version):
     a, b = None, None
     if CP.lateralTuning.which() == 'torque':
       a = CP.lateralTuning.torque.friction
@@ -167,8 +168,11 @@ class TorqueEstimator(ParameterEstimator):
       self.raw_points["steer_torque"].append(-msg.actuatorsOutput.steer)
     elif which == "carState":
       self.raw_points["carState_t"].append(t + self.lag)
+      # TODO: check if high aEgo affects resulting lateral accel
       self.raw_points["vego"].append(msg.vEgo)
       self.raw_points["steer_override"].append(msg.steeringPressed)
+
+    # calculate lateral accel from past steering torque
     elif which == "liveLocationKalman":
       if len(self.raw_points['steer_torque']) == self.hist_len:
         yaw_rate = msg.angularVelocityCalibrated.value[2]
