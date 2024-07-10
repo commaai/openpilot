@@ -50,9 +50,10 @@ class TorqueBuckets(PointBuckets):
 
 
 class TorqueEstimator(ParameterEstimator):
-  def __init__(self, CP, decimated=False):
+  def __init__(self, CP, decimated=False, track_all_points=False):
     self.hist_len = int(HISTORY / DT_MDL)
     self.lag = CP.steerActuatorDelay + .2  # from controlsd
+    self.track_all_points = track_all_points  # for offline analysis, without max lateral accel or max steer torque filters
     if decimated:
       self.min_bucket_points = MIN_BUCKET_POINTS / 10
       self.min_points_total = MIN_POINTS_TOTAL_QLOG
@@ -135,6 +136,7 @@ class TorqueEstimator(ParameterEstimator):
                                          min_points_total=self.min_points_total,
                                          points_per_bucket=POINTS_PER_BUCKET,
                                          rowsize=3)
+    self.all_torque_points = []
 
   def estimate_params(self):
     points = self.filtered_points.get_points(self.fit_points)
@@ -174,10 +176,14 @@ class TorqueEstimator(ParameterEstimator):
         lat_active = np.interp(np.arange(t - MIN_ENGAGE_BUFFER, t, DT_MDL), self.raw_points['carControl_t'], self.raw_points['lat_active']).astype(bool)
         steer_override = np.interp(np.arange(t - MIN_ENGAGE_BUFFER, t, DT_MDL), self.raw_points['carState_t'], self.raw_points['steer_override']).astype(bool)
         vego = np.interp(t, self.raw_points['carState_t'], self.raw_points['vego'])
-        steer = np.interp(t, self.raw_points['carOutput_t'], self.raw_points['steer_torque'])
-        lateral_acc = (vego * yaw_rate) - (np.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
-        if all(lat_active) and not any(steer_override) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD) and (abs(lateral_acc) <= LAT_ACC_THRESHOLD):
-          self.filtered_points.add_point(float(steer), float(lateral_acc))
+        steer = np.interp(t, self.raw_points['carOutput_t'], self.raw_points['steer_torque']).item()
+        lateral_acc = (vego * yaw_rate) - (np.sin(roll) * ACCELERATION_DUE_TO_GRAVITY).item()
+        if all(lat_active) and not any(steer_override) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD):
+          if abs(lateral_acc) <= LAT_ACC_THRESHOLD:
+            self.filtered_points.add_point(steer, lateral_acc)
+
+          if self.track_all_points:
+            self.all_torque_points.append([steer, lateral_acc])
 
   def get_msg(self, valid=True, with_points=False):
     msg = messaging.new_message('liveTorqueParameters')
