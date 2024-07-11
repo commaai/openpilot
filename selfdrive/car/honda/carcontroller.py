@@ -13,6 +13,7 @@ from openpilot.selfdrive.controls.lib.drive_helpers import rate_limit
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
+# to display accurately in the UI
 ROUNDED_KPH_FACTOR = 1.6
 
 
