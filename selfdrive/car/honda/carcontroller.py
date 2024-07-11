@@ -1,7 +1,7 @@
 from collections import namedtuple
 
 from cereal import car
-from common.conversions import Conversions as CV
+from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import clip, interp
 from openpilot.common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
