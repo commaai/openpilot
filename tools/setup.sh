@@ -5,7 +5,6 @@ set -e
 if [ ! -f launch_openpilot.sh ]; then
   if [ ! -d openpilot ]; then
     git clone --single-branch --recurse-submodules https://github.com/commaai/openpilot.git
-    git lfs pull
   fi
   cd openpilot
 fi
@@ -15,6 +14,8 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
 else
   tools/ubuntu_setup.sh
 fi
+
+git lfs pull
 
 source .venv/bin/activate
 
