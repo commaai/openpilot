@@ -395,27 +395,45 @@ class TestCarModelBase(unittest.TestCase):
     if self.CP.notCar:
       self.skipTest("Skipping test for notCar")
 
-    fg = FuzzyGenerator(draw=data.draw, real_floats=True)
-    cc_msgs = data.draw(st.lists(fg.generate_struct(car.CarControl.schema), min_size=20))
+    valid_addrs = [(addr, bus, size) for bus, addrs in self.fingerprint.items() for addr, size in addrs.items()]
+    address, bus, size = data.draw(st.sampled_from(valid_addrs))
 
-    def pcm_cruise_check(cruise_control):
-      if not cruise_control:
-        self.safety.set_controls_allowed(False)
-      if cruise_control and not self.safety.get_cruise_engaged_prev():
-        self.safety.set_controls_allowed(True)
-      self.safety.set_cruise_engaged_prev(cruise_control)
+    msg_strategy = st.binary(min_size=size, max_size=size)
+    msgs = data.draw(st.lists(msg_strategy, min_size=20))
 
-    for i, msg in enumerate(cc_msgs):
-      now_nanos = i * DT_CTRL * 1e9
-      CC = car.CarControl.new_message(**msg).as_reader()
+    CC = car.CarControl.new_message()
+    now_nanos = 0
+
+    # Randomize carstate
+    for dat in msgs:
+      to_send = libpanda_py.make_CANPacket(address, bus, dat)
+      self.safety.safety_rx_hook(to_send)
+      can = messaging.new_message('can', 1)
+      can.can = [log.CanData(address=address, dat=dat, src=bus)]
+      self.CI.update(CC, (can.to_bytes(),))
+      now_nanos += DT_CTRL * 1e9
+
+    def set_pcm_cruise(status):
+      self.safety.set_controls_allowed(status)
+      self.safety.set_cruise_engaged_prev(status)
+
+    # TODO: remove this if
+    if not self.safety.get_gas_pressed_prev() and self.CP.carName not in ("honda", "body", "nissan"):
+      cc_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
+      CC = car.CarControl.new_message(**cc_msg).as_reader()
 
       # check for controls_allowed and set True if not already in these cases:
       # - cancel button messages before controls_allowed
       # - actuator commands before controls_allowed
       # - cruiseButton.resume message before controls_allowed
-      cancel_before_engaged = not self.safety.get_cruise_engaged_prev() and CC.cruiseControl.cancel
-      if any([CC.enabled, CC.latActive, CC.longActive, CC.cruiseControl.resume, cancel_before_engaged]):
-        pcm_cruise_check(True)
+      set_pcm_cruise(any([CC.enabled, CC.latActive, CC.longActive, CC.cruiseControl.resume, CC.cruiseControl.cancel]))
+      # relay_malfunction might be set during randomizing carState
+      if self.safety.get_relay_malfunction():
+        self.safety.set_relay_malfunction(False)
+
+      # TODO: remove this. This is a dummy patch
+      if self.CP.carName in ("toyota", "tesla", "nissan") and not CC.latActive:
+        self.safety.set_angle_meas(-15000, 15000)
 
       self.CI.update(CC, [])
       _, sendcan = self.CI.apply(CC, now_nanos)
