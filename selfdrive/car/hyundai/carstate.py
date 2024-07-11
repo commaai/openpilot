@@ -209,13 +209,16 @@ class CarState(CarStateBase):
 
     # TODO: alt signal usage may be described by cp.vl['BLINKERS']['USE_ALT_LAMP']
     left_blinker_sig, right_blinker_sig = "LEFT_LAMP", "RIGHT_LAMP"
-    if self.CP.carFingerprint == CAR.HYUNDAI_KONA_EV_2ND_GEN:
+    if self.CP.carFingerprint in (CAR.HYUNDAI_KONA_EV_2ND_GEN, CAR.HYUNDAI_IONIQ_5_N):
       left_blinker_sig, right_blinker_sig = "LEFT_LAMP_ALT", "RIGHT_LAMP_ALT"
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, cp.vl["BLINKERS"][left_blinker_sig],
                                                                       cp.vl["BLINKERS"][right_blinker_sig])
+    leftBlindspotSig, rightBlindspotSig = "FL_INDICATOR", "FR_INDICATOR"
     if self.CP.enableBsm:
-      ret.leftBlindspot = cp.vl["BLINDSPOTS_REAR_CORNERS"]["FL_INDICATOR"] != 0
-      ret.rightBlindspot = cp.vl["BLINDSPOTS_REAR_CORNERS"]["FR_INDICATOR"] != 0
+      if self.CP.carFingerprint == CAR.HYUNDAI_IONIQ_5_N:
+        leftBlindspotSig, rightBlindspotSig = "FL_INDICATOR_ALT", "FR_INDICATOR_ALT"
+      ret.leftBlindspot = cp.vl["BLINDSPOTS_REAR_CORNERS"][leftBlindspotSig] != 0
+      ret.rightBlindspot = cp.vl["BLINDSPOTS_REAR_CORNERS"][rightBlindspotSig] != 0
 
     # cruise state
     # CAN FD cars enable on main button press, set available if no TCS faults preventing engagement
