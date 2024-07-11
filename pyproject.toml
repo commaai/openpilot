@@ -66,9 +66,8 @@ dependencies = [
 [project.optional-dependencies]
 docs = [
   "Jinja2",
-  "sphinx",
-  "sphinx-rtd-theme",
-  "sphinx-sitemap"
+  "mkdocs",
+  "mkdocs-terminal",
 ]
 
 testing = [
@@ -137,7 +136,7 @@ packages = [ "." ]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=openpilot/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ --ignore=msgq/  -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
+addopts = "--ignore=openpilot/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ --ignore=msgq/  -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
 cpp_files = "test_*"
 cpp_harness = "selfdrive/test/cpp_harness.py"
 python_files = "test_*.py"

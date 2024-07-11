@@ -39,6 +39,7 @@ public:
   void showTip(double sec);
   void hideTip();
   void startAnimation();
+  double secondsAtPoint(const QPointF &pt) const { return chart()->mapToValue(pt).x(); }
 
   struct SigItem {
     MessageId msg_id;

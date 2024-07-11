@@ -17,8 +17,8 @@ from cereal.services import SERVICE_LIST
 NO_TRAVERSAL_LIMIT = 2**64-1
 
 
-def log_from_bytes(dat: bytes) -> capnp.lib.capnp._DynamicStructReader:
-  with log.Event.from_bytes(dat, traversal_limit_in_words=NO_TRAVERSAL_LIMIT) as msg:
+def log_from_bytes(dat: bytes, struct: capnp.lib.capnp._StructModule = log.Event) -> capnp.lib.capnp._DynamicStructReader:
+  with struct.from_bytes(dat, traversal_limit_in_words=NO_TRAVERSAL_LIMIT) as msg:
     return msg
 
 
