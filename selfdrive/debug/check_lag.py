@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-from typing import Dict
 
 import cereal.messaging as messaging
-from cereal.services import service_list
+from cereal.services import SERVICE_LIST
 
 TO_CHECK = ['carState']
 
@@ -10,7 +9,7 @@ TO_CHECK = ['carState']
 if __name__ == "__main__":
   sm = messaging.SubMaster(TO_CHECK)
 
-  prev_t: Dict[str, float] = {}
+  prev_t: dict[str, float] = {}
 
   while True:
     sm.update()
@@ -20,7 +19,7 @@ if __name__ == "__main__":
         t = sm.logMonoTime[s] / 1e9
 
         if s in prev_t:
-          expected = 1.0 / (service_list[s].frequency)
+          expected = 1.0 / (SERVICE_LIST[s].frequency)
           dt = t - prev_t[s]
           if dt > 10 * expected:
             print(t, s, dt)

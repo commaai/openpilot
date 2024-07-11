@@ -1,12 +1,17 @@
 #include "tools/cabana/streams/livestream.h"
 
+#include <QThread>
 #include <algorithm>
+#include <fstream>
 #include <memory>
+
+#include "common/timing.h"
+#include "common/util.h"
 
 struct LiveStream::Logger {
   Logger() : start_ts(seconds_since_epoch()), segment_num(-1) {}
 
-  void write(const char *data, const size_t size) {
+  void write(kj::ArrayPtr<capnp::word> data) {
     int n = (seconds_since_epoch() - start_ts) / 60.0;
     if (std::exchange(segment_num, n) != segment_num) {
       QString dir = QString("%1/%2--%3")
@@ -17,7 +22,8 @@ struct LiveStream::Logger {
       fs.reset(new std::ofstream((dir + "/rlog").toStdString(), std::ios::binary | std::ios::out));
     }
 
-    fs->write(data, size);
+    auto bytes = data.asBytes();
+    fs->write((const char*)bytes.begin(), bytes.size());
   }
 
   std::unique_ptr<std::ofstream> fs;
@@ -36,6 +42,10 @@ LiveStream::LiveStream(QObject *parent) : AbstractStream(parent) {
   QObject::connect(stream_thread, &QThread::finished, stream_thread, &QThread::deleteLater);
 }
 
+LiveStream::~LiveStream() {
+  stop();
+}
+
 void LiveStream::startUpdateTimer() {
   update_timer.stop();
   update_timer.start(1000.0 / settings.fps, this);
@@ -43,27 +53,36 @@ void LiveStream::startUpdateTimer() {
 }
 
 void LiveStream::start() {
-  emit streamStarted();
   stream_thread->start();
   startUpdateTimer();
+  begin_date_time = QDateTime::currentDateTime();
 }
 
-LiveStream::~LiveStream() {
+void LiveStream::stop() {
+  if (!stream_thread) return;
+
   update_timer.stop();
   stream_thread->requestInterruption();
   stream_thread->quit();
   stream_thread->wait();
+  stream_thread = nullptr;
 }
 
 // called in streamThread
-void LiveStream::handleEvent(const char *data, const size_t size) {
+void LiveStream::handleEvent(kj::ArrayPtr<capnp::word> data) {
   if (logger) {
-    logger->write(data, size);
+    logger->write(data);
   }
 
-  std::lock_guard lk(lock);
-  auto &msg = receivedMessages.emplace_back(data, size);
-  receivedEvents.push_back(msg.event);
+  capnp::FlatArrayMessageReader reader(data);
+  auto event = reader.getRoot<cereal::Event>();
+  if (event.which() == cereal::Event::Which::CAN) {
+    const uint64_t mono_time = event.getLogMonoTime();
+    std::lock_guard lk(lock);
+    for (const auto &c : event.getCan()) {
+      received_events_.push_back(newEvent(mono_time, c));
+    }
+  }
 }
 
 void LiveStream::timerEvent(QTimerEvent *event) {
@@ -71,9 +90,10 @@ void LiveStream::timerEvent(QTimerEvent *event) {
     {
       // merge events received from live stream thread.
       std::lock_guard lk(lock);
-      mergeEvents(receivedEvents.cbegin(), receivedEvents.cend());
-      receivedEvents.clear();
-      receivedMessages.clear();
+      mergeEvents(received_events_);
+      uint64_t last_received_ts = !received_events_.empty() ? received_events_.back()->mono_time : 0;
+      lastest_event_ts = std::max(lastest_event_ts, last_received_ts);
+      received_events_.clear();
     }
     if (!all_events_.empty()) {
       begin_event_ts = all_events_.front()->mono_time;
@@ -111,14 +131,14 @@ void LiveStream::updateEvents() {
     updateEvent(id, (e->mono_time - begin_event_ts) / 1e9, e->dat, e->size);
     current_event_ts = e->mono_time;
   }
-  postEvents();
+  emit privateUpdateLastMsgsSignal();
 }
 
 void LiveStream::seekTo(double sec) {
   sec = std::max(0.0, sec);
   first_update_ts = nanos_since_boot();
-  current_event_ts = first_event_ts = std::min<uint64_t>(sec * 1e9 + begin_event_ts, lastEventMonoTime());
-  post_last_event = (first_event_ts == lastEventMonoTime());
+  current_event_ts = first_event_ts = std::min<uint64_t>(sec * 1e9 + begin_event_ts, lastest_event_ts);
+  post_last_event = (first_event_ts == lastest_event_ts);
   emit seekedTo((current_event_ts - begin_event_ts) / 1e9);
 }
 

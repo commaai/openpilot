@@ -18,8 +18,8 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
     title_layout->setSpacing(32);
     {
       QLabel *icon = new QLabel;
-      QPixmap *pixmap = new QPixmap("../assets/offroad/icon_wifi_strength_full.svg");
-      icon->setPixmap(pixmap->scaledToWidth(80, Qt::SmoothTransformation));
+      QPixmap pixmap("../assets/offroad/icon_wifi_strength_full.svg");
+      icon->setPixmap(pixmap.scaledToWidth(80, Qt::SmoothTransformation));
       title_layout->addWidget(icon);
 
       QLabel *title = new QLabel(tr("Setup Wi-Fi"));
@@ -68,8 +68,8 @@ WiFiPromptWidget::WiFiPromptWidget(QWidget *parent) : QFrame(parent) {
       title_layout->addStretch();
 
       QLabel *icon = new QLabel;
-      QPixmap *pixmap = new QPixmap("../assets/offroad/icon_wifi_uploading.svg");
-      icon->setPixmap(pixmap->scaledToWidth(120, Qt::SmoothTransformation));
+      QPixmap pixmap("../assets/offroad/icon_wifi_uploading.svg");
+      icon->setPixmap(pixmap.scaledToWidth(120, Qt::SmoothTransformation));
       title_layout->addWidget(icon);
     }
     uploading_layout->addLayout(title_layout);

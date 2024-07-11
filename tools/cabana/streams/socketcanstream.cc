@@ -1,8 +1,11 @@
 #include "tools/cabana/streams/socketcanstream.h"
 
-#include <QLabel>
+#include <QDebug>
+#include <QFormLayout>
+#include <QHBoxLayout>
 #include <QMessageBox>
 #include <QPushButton>
+#include <QThread>
 
 SocketCanStream::SocketCanStream(QObject *parent, SocketCanStreamConfig config_) : config(config_), LiveStream(parent) {
   if (!available()) {
@@ -49,7 +52,6 @@ void SocketCanStream::streamThread() {
     auto evt = msg.initEvent();
     auto canData = evt.initCan(frames.size());
 
-
     for (uint i = 0; i < frames.size(); i++) {
       if (!frames[i].isValid()) continue;
 
@@ -60,16 +62,11 @@ void SocketCanStream::streamThread() {
       canData[i].setDat(kj::arrayPtr((uint8_t*)payload.data(), payload.size()));
     }
 
-    auto bytes = msg.toBytes();
-    handleEvent((const char*)bytes.begin(), bytes.size());
+    handleEvent(capnp::messageToFlatArray(msg));
   }
 }
 
-AbstractOpenStreamWidget *SocketCanStream::widget(AbstractStream **stream) {
-  return new OpenSocketCanWidget(stream);
-}
-
-OpenSocketCanWidget::OpenSocketCanWidget(AbstractStream **stream) : AbstractOpenStreamWidget(stream) {
+OpenSocketCanWidget::OpenSocketCanWidget(QWidget *parent) : AbstractOpenStreamWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->addStretch(1);
 
@@ -103,12 +100,11 @@ void OpenSocketCanWidget::refreshDevices() {
 }
 
 
-bool OpenSocketCanWidget::open() {
+AbstractStream *OpenSocketCanWidget::open() {
   try {
-    *stream = new SocketCanStream(qApp, config);
+    return new SocketCanStream(qApp, config);
   } catch (std::exception &e) {
     QMessageBox::warning(nullptr, tr("Warning"), tr("Failed to connect to SocketCAN device: '%1'").arg(e.what()));
-    return false;
+    return nullptr;
   }
-  return true;
 }

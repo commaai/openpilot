@@ -20,12 +20,12 @@ public:
   }
 
   static std::string get_name() {
-    std::string devicetree_model = util::read_file("/sys/firmware/devicetree/base/model");
-    return (devicetree_model.find("tizi") != std::string::npos) ? "tizi" : "tici";
+    std::string model = util::read_file("/sys/firmware/devicetree/base/model");
+    return model.substr(std::string("comma ").size());
   }
 
   static cereal::InitData::DeviceType get_device_type() {
-    return (get_name() == "tizi") ? cereal::InitData::DeviceType::TIZI : cereal::InitData::DeviceType::TICI;
+    return (get_name() == "tizi") ? cereal::InitData::DeviceType::TIZI : (get_name() == "mici" ? cereal::InitData::DeviceType::MICI : cereal::InitData::DeviceType::TICI);
   }
 
   static int get_voltage() { return std::atoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input").c_str()); }
@@ -67,19 +67,12 @@ public:
       bl_power_control.close();
     }
   }
-  static void set_volume(float volume) {
-    volume = util::map_val(volume, 0.f, 1.f, MIN_VOLUME, MAX_VOLUME);
-
-    char volume_str[6];
-    snprintf(volume_str, sizeof(volume_str), "%.3f", volume);
-    std::system(("pactl set-sink-volume @DEFAULT_SINK@ " + std::string(volume_str)).c_str());
-  }
-
 
   static std::map<std::string, std::string> get_init_logs() {
     std::map<std::string, std::string> ret = {
       {"/BUILD", util::read_file("/BUILD")},
       {"lsblk", util::check_output("lsblk -o NAME,SIZE,STATE,VENDOR,MODEL,REV,SERIAL")},
+      {"SOM ID", util::read_file("/sys/devices/platform/vendor/vendor:gpio-som-id/som_id")},
     };
 
     std::string bs = util::check_output("abctl --boot_slot");
@@ -103,4 +96,11 @@ public:
 
   static bool get_ssh_enabled() { return Params().getBool("SshEnabled"); }
   static void set_ssh_enabled(bool enabled) { Params().putBool("SshEnabled", enabled); }
+
+  static void config_cpu_rendering(bool offscreen) {
+    if (offscreen) {
+      setenv("QT_QPA_PLATFORM", "eglfs", 1); // offscreen doesn't work with EGL/GLES
+    }
+    setenv("LP_NUM_THREADS", "0", 1); // disable threading so we stay on our assigned CPU
+  }
 };

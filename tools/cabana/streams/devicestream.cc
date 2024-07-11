@@ -8,6 +8,7 @@
 #include <QRadioButton>
 #include <QRegularExpression>
 #include <QRegularExpressionValidator>
+#include <QThread>
 
 // DeviceStream
 
@@ -21,27 +22,20 @@ void DeviceStream::streamThread() {
   std::string address = zmq_address.isEmpty() ? "127.0.0.1" : zmq_address.toStdString();
   std::unique_ptr<SubSocket> sock(SubSocket::create(context.get(), "can", address));
   assert(sock != NULL);
-  sock->setTimeout(50);
   // run as fast as messages come in
   while (!QThread::currentThread()->isInterruptionRequested()) {
-    Message *msg = sock->receive(true);
+    std::unique_ptr<Message> msg(sock->receive(true));
     if (!msg) {
       QThread::msleep(50);
       continue;
     }
-
-    handleEvent(msg->getData(), msg->getSize());
-    delete msg;
+    handleEvent(kj::ArrayPtr<capnp::word>((capnp::word*)msg->getData(), msg->getSize() / sizeof(capnp::word)));
   }
-}
-
-AbstractOpenStreamWidget *DeviceStream::widget(AbstractStream **stream) {
-  return new OpenDeviceWidget(stream);
 }
 
 // OpenDeviceWidget
 
-OpenDeviceWidget::OpenDeviceWidget(AbstractStream **stream) : AbstractOpenStreamWidget(stream) {
+OpenDeviceWidget::OpenDeviceWidget(QWidget *parent) : AbstractOpenStreamWidget(parent) {
   QRadioButton *msgq = new QRadioButton(tr("MSGQ"));
   QRadioButton *zmq = new QRadioButton(tr("ZMQ"));
   ip_address = new QLineEdit(this);
@@ -64,9 +58,8 @@ OpenDeviceWidget::OpenDeviceWidget(AbstractStream **stream) : AbstractOpenStream
   zmq->setChecked(true);
 }
 
-bool OpenDeviceWidget::open() {
+AbstractStream *OpenDeviceWidget::open() {
   QString ip = ip_address->text().isEmpty() ? "127.0.0.1" : ip_address->text();
   bool msgq = group->checkedId() == 0;
-  *stream = new DeviceStream(qApp, msgq ? "" : ip);
-  return true;
+  return new DeviceStream(qApp, msgq ? "" : ip);
 }

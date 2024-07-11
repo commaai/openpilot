@@ -66,6 +66,26 @@
         <source>Prevent large data uploads when on a metered connection</source>
         <translation>Hochladen großer Dateien über getaktete Verbindungen unterbinden</translation>
     </message>
+    <message>
+        <source>Hidden Network</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>CONNECT</source>
+        <translation type="unfinished">CONNECT</translation>
+    </message>
+    <message>
+        <source>Enter SSID</source>
+        <translation type="unfinished">SSID eingeben</translation>
+    </message>
+    <message>
+        <source>Enter password</source>
+        <translation type="unfinished">Passwort eingeben</translation>
+    </message>
+    <message>
+        <source>for &quot;%1&quot;</source>
+        <translation type="unfinished">für &quot;%1&quot;</translation>
+    </message>
 </context>
 <context>
     <name>AnnotatedCameraWidget</name>
@@ -80,14 +100,6 @@
     <message>
         <source>MAX</source>
         <translation>MAX</translation>
-    </message>
-    <message>
-        <source>SPEED</source>
-        <translation>Geschwindigkeit</translation>
-    </message>
-    <message>
-        <source>LIMIT</source>
-        <translation>LIMIT</translation>
     </message>
 </context>
 <context>
@@ -114,33 +126,6 @@
     <message>
         <source>Decline, uninstall %1</source>
         <translation>Ablehnen, deinstallieren %1</translation>
-    </message>
-</context>
-<context>
-    <name>DestinationWidget</name>
-    <message>
-        <source>Home</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Work</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>No destination set</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>No %1 location set</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>home</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>work</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -226,8 +211,8 @@
         <translation>Ausschalten</translation>
     </message>
     <message>
-        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>Damit Openpilot funktioniert, darf die Installationsposition nicht mehr als 4° nach rechts/links, 5° nach oben und 8° nach unten abweichen. Openpilot kalibriert sich durchgehend, ein Zurücksetzen ist selten notwendig.</translation>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
+        <translation>Damit Openpilot funktioniert, darf die Installationsposition nicht mehr als 4° nach rechts/links, 5° nach oben und 9° nach unten abweichen. Openpilot kalibriert sich durchgehend, ein Zurücksetzen ist selten notwendig.</translation>
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
@@ -273,36 +258,21 @@
         <source>Review</source>
         <translation>Überprüfen</translation>
     </message>
-</context>
-<context>
-    <name>DriveStats</name>
     <message>
-        <source>Drives</source>
-        <translation>Fahrten</translation>
+        <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
+        <translation>Koppele dein Gerät mit Comma Connect (connect.comma.ai) und sichere dir dein Comma Prime Angebot.</translation>
     </message>
     <message>
-        <source>Hours</source>
-        <translation>Stunden</translation>
+        <source>Pair Device</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>ALL TIME</source>
-        <translation>Gesamtzeit</translation>
-    </message>
-    <message>
-        <source>PAST WEEK</source>
-        <translation>Letzte Woche</translation>
-    </message>
-    <message>
-        <source>KM</source>
-        <translation>KM</translation>
-    </message>
-    <message>
-        <source>Miles</source>
-        <translation>Meilen</translation>
+        <source>PAIR</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
-    <name>DriverViewScene</name>
+    <name>DriverViewWindow</name>
     <message>
         <source>camera starting</source>
         <translation>Kamera startet</translation>
@@ -338,47 +308,6 @@
     <message>
         <source>Installing...</source>
         <translation>Installiere...</translation>
-    </message>
-</context>
-<context>
-    <name>MapETA</name>
-    <message>
-        <source>eta</source>
-        <translation>Ankunft</translation>
-    </message>
-    <message>
-        <source>min</source>
-        <translation>min</translation>
-    </message>
-    <message>
-        <source>hr</source>
-        <translation>std</translation>
-    </message>
-</context>
-<context>
-    <name>MapSettings</name>
-    <message>
-        <source>NAVIGATION</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Manage at connect.comma.ai</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>MapWindow</name>
-    <message>
-        <source>Map Loading</source>
-        <translation>Karte wird geladen</translation>
-    </message>
-    <message>
-        <source>Waiting for GPS</source>
-        <translation>Warten auf GPS</translation>
-    </message>
-    <message>
-        <source>Waiting for route</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -424,10 +353,6 @@
     <message>
         <source>Unable to download updates
 %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Invalid date and time settings, system won&apos;t start. Connect to internet to set time.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -483,6 +408,29 @@
     </message>
 </context>
 <context>
+    <name>OnroadAlerts</name>
+    <message>
+        <source>openpilot Unavailable</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Waiting for controls to start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TAKE CONTROL IMMEDIATELY</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Controls Unresponsive</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reboot Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>PairingPopup</name>
     <message>
         <source>Pair your device to your comma account</source>
@@ -535,11 +483,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Turn-by-turn navigation</source>
+        <source>1 year of drive storage</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>1 year of drive storage</source>
+        <source>Remote snapshots</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -563,10 +511,6 @@
     <message>
         <source>Exit</source>
         <translation>Verlassen</translation>
-    </message>
-    <message>
-        <source>dashcam</source>
-        <translation>dashcam</translation>
     </message>
     <message>
         <source>openpilot</source>
@@ -594,20 +538,8 @@
         </translation>
     </message>
     <message>
-        <source>km</source>
-        <translation>km</translation>
-    </message>
-    <message>
-        <source>m</source>
-        <translation>m</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation>mi</translation>
-    </message>
-    <message>
-        <source>ft</source>
-        <translation>fuß</translation>
+        <source>now</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -641,12 +573,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Press confirm to erase all content and settings. Press cancel to resume boot.</source>
+        <source>Resetting device...
+This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Resetting device...
-This may take up to a minute.</source>
+        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -754,6 +686,18 @@ This may take up to a minute.</source>
     <message>
         <source>Select a language</source>
         <translation>Sprache wählen</translation>
+    </message>
+    <message>
+        <source>Choose Software to Install</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot</source>
+        <translation type="unfinished">openpilot</translation>
+    </message>
+    <message>
+        <source>Custom Software</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1035,24 +979,6 @@ This may take up to a minute.</source>
         <translation>Wenn aktiviert, deaktiviert sich Openpilot sobald das Gaspedal betätigt wird.</translation>
     </message>
     <message>
-        <source>Use 24h format instead of am/pm</source>
-        <translation>Benutze das 24Stunden Format anstatt am/pm</translation>
-    </message>
-    <message>
-        <source>Show Map on Left Side of UI</source>
-        <translatorcomment>Too long for UI</translatorcomment>
-        <translation>Zeige die Karte auf der linken Seite</translation>
-    </message>
-    <message>
-        <source>Show map on left side when in split screen view.</source>
-        <translation>Zeige die Karte auf der linken Seite der Benutzeroberfläche bei geteilten Bildschirm.</translation>
-    </message>
-    <message>
-        <source>Show ETA in 24h Format</source>
-        <translatorcomment>Too long for UI</translatorcomment>
-        <translation>Zeige die Ankunftszeit im 24 Stunden Format</translation>
-    </message>
-    <message>
         <source>Experimental Mode</source>
         <translation>Experimenteller Modus</translation>
     </message>
@@ -1105,23 +1031,7 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>End-to-End Longitudinal Control</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Navigate on openpilot</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>When navigation has a destination, openpilot will input the map information into the model. This provides useful context for the model and allows openpilot to keep left or right appropriately at forks/exits. Lane change behavior is unchanged and still activated by the driver. This is an alpha quality feature; mistakes should be expected, particularly around exits and forks. These mistakes can include unintended laneline crossings, late exit taking, driving towards dividing barriers in the gore areas, etc.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner. When a navigation destination is set and the driving model is using it as input, the driving path on the map will turn green.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1134,6 +1044,22 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Always-On Driver Monitoring</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable driver monitoring even when openpilot is not engaged.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

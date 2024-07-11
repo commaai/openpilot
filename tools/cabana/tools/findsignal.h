@@ -4,6 +4,7 @@
 #include <limits>
 
 #include <QAbstractTableModel>
+#include <QCheckBox>
 #include <QLabel>
 #include <QPushButton>
 #include <QTableView>

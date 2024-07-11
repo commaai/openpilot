@@ -2,7 +2,7 @@
 
 from libcpp.string cimport string
 
-from cereal.visionipc.visionipc cimport cl_context
+from msgq.visionipc.visionipc cimport cl_context
 
 cdef extern from "selfdrive/modeld/runners/thneedmodel.h":
   cdef cppclass ThneedModel:

@@ -2,7 +2,9 @@
 
 #include <tuple>
 #include <utility>
+#include <vector>
 
+#include <QMenu>
 #include <QGraphicsPixmapItem>
 #include <QGraphicsProxyWidget>
 #include <QtCharts/QChartView>
@@ -30,21 +32,21 @@ public:
   ChartView(const std::pair<double, double> &x_range, ChartsWidget *parent = nullptr);
   void addSignal(const MessageId &msg_id, const cabana::Signal *sig);
   bool hasSignal(const MessageId &msg_id, const cabana::Signal *sig) const;
-  void updateSeries(const cabana::Signal *sig = nullptr, bool clear = true);
+  void updateSeries(const cabana::Signal *sig = nullptr, const MessageEventsMap *msg_new_events = nullptr);
   void updatePlot(double cur, double min, double max);
   void setSeriesType(SeriesType type);
   void updatePlotArea(int left, bool force = false);
   void showTip(double sec);
   void hideTip();
   void startAnimation();
+  double secondsAtPoint(const QPointF &pt) const { return chart()->mapToValue(pt).x(); }
 
   struct SigItem {
     MessageId msg_id;
     const cabana::Signal *sig = nullptr;
     QXYSeries *series = nullptr;
-    QVector<QPointF> vals;
-    QVector<QPointF> step_vals;
-    uint64_t last_value_mono_time = 0;
+    std::vector<QPointF> vals;
+    std::vector<QPointF> step_vals;
     QPointF track_pt{};
     SegmentTree segment_tree;
     double min = 0;
@@ -63,8 +65,11 @@ private slots:
   void signalRemoved(const cabana::Signal *sig) { removeIf([=](auto &s) { return s.sig == sig; }); }
 
 private:
+  void appendCanEvents(const cabana::Signal *sig, const std::vector<const CanEvent *> &events,
+                       std::vector<QPointF> &vals, std::vector<QPointF> &step_vals);
   void createToolButtons();
   void addSeries(QXYSeries *series);
+  void contextMenuEvent(QContextMenuEvent *event) override;
   void mousePressEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void mouseMoveEvent(QMouseEvent *ev) override;
@@ -72,7 +77,6 @@ private:
   void dragLeaveEvent(QDragLeaveEvent *event) override { drawDropIndicator(false); }
   void dragMoveEvent(QDragMoveEvent *event) override;
   void dropEvent(QDropEvent *event) override;
-  void leaveEvent(QEvent *event) override;
   void resizeEvent(QResizeEvent *event) override;
   QSize sizeHint() const override;
   void updateAxisY();
@@ -98,12 +102,14 @@ private:
   int align_to = 0;
   QValueAxis *axis_x;
   QValueAxis *axis_y;
+  QMenu *menu;
   QAction *split_chart_act;
+  QAction *close_act;
   QGraphicsPixmapItem *move_icon;
   QGraphicsProxyWidget *close_btn_proxy;
   QGraphicsProxyWidget *manage_btn_proxy;
-  TipLabel tip_label;
-  QList<SigItem> sigs;
+  TipLabel *tip_label;
+  std::vector<SigItem> sigs;
   double cur_sec = 0;
   SeriesType series_type = SeriesType::Line;
   bool is_scrubbing = false;

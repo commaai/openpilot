@@ -13,6 +13,15 @@ def create_steering_control(packer, apply_steer, steer_req):
   return packer.make_can_msg("ES_LKAS", 0, values)
 
 
+def create_steering_control_angle(packer, apply_steer, steer_req):
+  values = {
+    "LKAS_Output": apply_steer,
+    "LKAS_Request": steer_req,
+    "SET_3": 3
+  }
+  return packer.make_can_msg("ES_LKAS_ANGLE", 0, values)
+
+
 def create_steering_status(packer):
   return packer.make_can_msg("ES_LKAS_State", 0, {})
 
@@ -46,9 +55,9 @@ def create_es_distance(packer, frame, es_distance_msg, bus, pcm_cancel_cmd, long
 
     # Do not disable openpilot on Eyesight Soft Disable, if openpilot is controlling long
     values["Cruise_Soft_Disable"] = 0
+    values["Cruise_Fault"] = 0
 
-    if brake_cmd:
-      values["Cruise_Brake_Active"] = 1
+    values["Cruise_Brake_Active"] = brake_cmd
 
   if pcm_cancel_cmd:
     values["Cruise_Cancel"] = 1
@@ -152,14 +161,15 @@ def create_es_dashstatus(packer, frame, dashstatus_msg, enabled, long_enabled, l
 
   values["COUNTER"] = frame % 0x10
 
-  if enabled and long_active:
+  if long_enabled:
     values["Cruise_State"] = 0
-    values["Cruise_Activated"] = 1
+    values["Cruise_Activated"] = enabled
     values["Cruise_Disengaged"] = 0
     values["Car_Follow"] = int(lead_visible)
 
-  if long_enabled:
     values["PCB_Off"] = 1 # AEB is not presevered, so show the PCB_Off on dash
+    values["LDW_Off"] = 0
+    values["Cruise_Fault"] = 0
 
   # Filter stock LKAS disabled and Keep hands on steering wheel OFF alerts
   if values["LKAS_State_Msg"] in (2, 3):
@@ -167,7 +177,7 @@ def create_es_dashstatus(packer, frame, dashstatus_msg, enabled, long_enabled, l
 
   return packer.make_can_msg("ES_DashStatus", CanBus.main, values)
 
-def create_es_brake(packer, frame, es_brake_msg, enabled, brake_value):
+def create_es_brake(packer, frame, es_brake_msg, long_enabled, long_active, brake_value):
   values = {s: es_brake_msg[s] for s in [
     "CHECKSUM",
     "Signal1",
@@ -182,14 +192,14 @@ def create_es_brake(packer, frame, es_brake_msg, enabled, brake_value):
 
   values["COUNTER"] = frame % 0x10
 
-  if enabled:
-    values["Cruise_Activated"] = 1
+  if long_enabled:
+    values["Cruise_Brake_Fault"] = 0
+    values["Cruise_Activated"] = long_active
 
-  values["Brake_Pressure"] = brake_value
+    values["Brake_Pressure"] = brake_value
 
-  if brake_value > 0:
-    values["Cruise_Brake_Active"] = 1
-    values["Cruise_Brake_Lights"] = 1 if brake_value >= 70 else 0
+    values["Cruise_Brake_Active"] = brake_value > 0
+    values["Cruise_Brake_Lights"] = brake_value >= 70
 
   return packer.make_can_msg("ES_Brake", CanBus.main, values)
 
@@ -199,7 +209,6 @@ def create_es_status(packer, frame, es_status_msg, long_enabled, long_active, cr
     "Signal1",
     "Cruise_Fault",
     "Cruise_RPM",
-    "Signal2",
     "Cruise_Activated",
     "Brake_Lights",
     "Cruise_Hold",
@@ -210,9 +219,9 @@ def create_es_status(packer, frame, es_status_msg, long_enabled, long_active, cr
 
   if long_enabled:
     values["Cruise_RPM"] = cruise_rpm
+    values["Cruise_Fault"] = 0
 
-    if long_active:
-      values["Cruise_Activated"] = 1
+    values["Cruise_Activated"] = long_active
 
   return packer.make_can_msg("ES_Status", CanBus.main, values)
 
@@ -241,6 +250,30 @@ def create_es_infotainment(packer, frame, es_infotainment_msg, visual_alert):
     values["LKAS_State_Infotainment"] = 2
 
   return packer.make_can_msg("ES_Infotainment", CanBus.main, values)
+
+
+def create_es_highbeamassist(packer):
+  values = {
+    "HBA_Available": False,
+  }
+
+  return packer.make_can_msg("ES_HighBeamAssist", CanBus.main, values)
+
+
+def create_es_static_1(packer):
+  values = {
+    "SET_3": 3,
+  }
+
+  return packer.make_can_msg("ES_STATIC_1", CanBus.main, values)
+
+
+def create_es_static_2(packer):
+  values = {
+    "SET_3": 3,
+  }
+
+  return packer.make_can_msg("ES_STATIC_2", CanBus.main, values)
 
 
 # *** Subaru Pre-global ***

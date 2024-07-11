@@ -1,57 +1,39 @@
 #!/usr/bin/env python3
+import os
+import re
 import subprocess
 import sys
-from functools import lru_cache
-from typing import Iterable, Optional
+from collections.abc import Iterable
 
-from azure.storage.blob import ContainerClient
 from tqdm import tqdm
 
 from openpilot.selfdrive.car.tests.routes import routes as test_car_models_routes
-from openpilot.selfdrive.locationd.test.test_laikad import UBLOX_TEST_ROUTE, QCOM_TEST_ROUTE
 from openpilot.selfdrive.test.process_replay.test_processes import source_segments as replay_segments
-from openpilot.selfdrive.test.openpilotci import (DATA_CI_ACCOUNT, DATA_CI_ACCOUNT_URL, DATA_CI_CONTAINER,
-                                                  get_azure_credential, get_container_sas)
+from openpilot.tools.lib.azure_container import AzureContainer
+from openpilot.tools.lib.openpilotcontainers import DataCIContainer, DataProdContainer, OpenpilotCIContainer
 
-DATA_PROD_ACCOUNT = "commadata2"
-DATA_PROD_CONTAINER = "commadata2"
-
-SOURCES = [
-  (DATA_PROD_ACCOUNT, DATA_PROD_CONTAINER),
-  (DATA_CI_ACCOUNT, DATA_CI_CONTAINER),
+SOURCES: list[AzureContainer] = [
+  DataProdContainer,
+  DataCIContainer
 ]
 
+DEST = OpenpilotCIContainer
 
-@lru_cache
-def get_azure_keys():
-  dest_container = ContainerClient(DATA_CI_ACCOUNT_URL, DATA_CI_CONTAINER, credential=get_azure_credential())
-  dest_key = get_container_sas(DATA_CI_ACCOUNT, DATA_CI_CONTAINER)
-  source_keys = [get_container_sas(*s) for s in SOURCES]
-  return dest_container, dest_key, source_keys
-
-
-def upload_route(path: str, exclude_patterns: Optional[Iterable[str]] = None) -> None:
-  # TODO: use azure-storage-blob instead of azcopy, simplifies auth
-  dest_key = get_container_sas(DATA_CI_ACCOUNT, DATA_CI_CONTAINER)
+def upload_route(path: str, exclude_patterns: Iterable[str] = None) -> None:
   if exclude_patterns is None:
-    exclude_patterns = ['*/dcamera.hevc']
+    exclude_patterns = [r'dcamera\.hevc']
 
   r, n = path.rsplit("--", 1)
   r = '/'.join(r.split('/')[-2:])  # strip out anything extra in the path
   destpath = f"{r}/{n}"
-  cmd = [
-    "azcopy",
-    "copy",
-    f"{path}/*",
-    f"https://{DATA_CI_ACCOUNT}.blob.core.windows.net/{DATA_CI_CONTAINER}/{destpath}?{dest_key}",
-    "--recursive=false",
-    "--overwrite=false",
-  ] + [f"--exclude-pattern={p}" for p in exclude_patterns]
-  subprocess.check_call(cmd)
+  for file in os.listdir(path):
+    if any(re.search(pattern, file) for pattern in exclude_patterns):
+      continue
+    DEST.upload_file(os.path.join(path, file), f"{destpath}/{file}")
 
 
 def sync_to_ci_public(route: str) -> bool:
-  dest_container, dest_key, source_keys = get_azure_keys()
+  dest_container, dest_key = DEST.get_client_and_key()
   key_prefix = route.replace('|', '/')
   dongle_id = key_prefix.split('/')[0]
 
@@ -59,14 +41,15 @@ def sync_to_ci_public(route: str) -> bool:
     return True
 
   print(f"Uploading {route}")
-  for (source_account, source_bucket), source_key in zip(SOURCES, source_keys, strict=True):
+  for source_container in SOURCES:
     # assumes az login has been run
-    print(f"Trying {source_account}/{source_bucket}")
+    print(f"Trying {source_container.ACCOUNT}/{source_container.CONTAINER}")
+    _, source_key = source_container.get_client_and_key()
     cmd = [
       "azcopy",
       "copy",
-      f"https://{source_account}.blob.core.windows.net/{source_bucket}/{key_prefix}?{source_key}",
-      f"https://{DATA_CI_ACCOUNT}.blob.core.windows.net/{DATA_CI_CONTAINER}/{dongle_id}?{dest_key}",
+      f"{source_container.BASE_URL}{key_prefix}?{source_key}",
+      f"{DEST.BASE_URL}{dongle_id}?{dest_key}",
       "--recursive=true",
       "--overwrite=false",
       "--exclude-pattern=*/dcamera.hevc",
@@ -90,7 +73,6 @@ if __name__ == "__main__":
 
   if not len(to_sync):
     # sync routes from the car tests routes and process replay
-    to_sync.extend([UBLOX_TEST_ROUTE, QCOM_TEST_ROUTE])
     to_sync.extend([rt.route for rt in test_car_models_routes])
     to_sync.extend([s[1].rsplit('--', 1)[0] for s in replay_segments])
 

@@ -1,5 +1,5 @@
 import itertools
-from typing import Any, Dict, Tuple
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,9 +7,7 @@ import pygame
 
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 
-from openpilot.common.transformations.camera import (eon_f_frame_size, eon_f_focal_length,
-                                           tici_f_frame_size, tici_f_focal_length,
-                                           get_view_frame_from_calib_frame)
+from openpilot.common.transformations.camera import get_view_frame_from_calib_frame
 from openpilot.selfdrive.controls.radard import RADAR_TO_CAMERA
 
 
@@ -20,9 +18,6 @@ YELLOW = (255, 255, 0)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 
-_FULL_FRAME_SIZE = {
-}
-
 class UIParams:
   lidar_x, lidar_y, lidar_zoom = 384, 960, 6
   lidar_car_x, lidar_car_y = lidar_x / 2., lidar_y / 1.1
@@ -32,45 +27,13 @@ class UIParams:
   car_color = 110
 UP = UIParams
 
-_BB_TO_FULL_FRAME = {}
-_CALIB_BB_TO_FULL = {}
-_FULL_FRAME_TO_BB = {}
-_INTRINSICS = {}
-
-eon_f_qcam_frame_size = (480, 360)
-tici_f_qcam_frame_size = (528, 330)
-
-cams = [(eon_f_frame_size, eon_f_focal_length, eon_f_frame_size),
-        (tici_f_frame_size, tici_f_focal_length, tici_f_frame_size),
-        (eon_f_qcam_frame_size, eon_f_focal_length, eon_f_frame_size),
-        (tici_f_qcam_frame_size, tici_f_focal_length, tici_f_frame_size)]
-for size, focal, full_size in cams:
-  sz = size[0] * size[1]
-  _BB_SCALE = size[0] / 640.
-  _BB_TO_FULL_FRAME[sz] = np.asarray([
-      [_BB_SCALE, 0., 0.],
-      [0., _BB_SCALE, 0.],
-      [0., 0., 1.]])
-  calib_scale = full_size[0] / 640.
-  _CALIB_BB_TO_FULL[sz] = np.asarray([
-      [calib_scale, 0., 0.],
-      [0., calib_scale, 0.],
-      [0., 0., 1.]])
-  _FULL_FRAME_TO_BB[sz] = np.linalg.inv(_BB_TO_FULL_FRAME[sz])
-  _FULL_FRAME_SIZE[sz] = (size[0], size[1])
-  _INTRINSICS[sz] = np.array([
-    [focal, 0., full_size[0] / 2.],
-    [0., focal, full_size[1] / 2.],
-    [0., 0., 1.]])
-
-
 METER_WIDTH = 20
 
 class Calibration:
-  def __init__(self, num_px, rpy, intrinsic):
+  def __init__(self, num_px, rpy, intrinsic, calib_scale):
     self.intrinsic = intrinsic
     self.extrinsics_matrix = get_view_frame_from_calib_frame(rpy[0], rpy[1], rpy[2], 0.0)[:,:3]
-    self.zoom = _CALIB_BB_TO_FULL[num_px][0, 0]
+    self.zoom = calib_scale
 
   def car_space_to_ff(self, x, y, z):
     car_space_projective = np.column_stack((x, y, z)).T
@@ -84,7 +47,7 @@ class Calibration:
     return pts / self.zoom
 
 
-_COLOR_CACHE : Dict[Tuple[int, int, int], Any] = {}
+_COLOR_CACHE : dict[tuple[int, int, int], Any] = {}
 def find_color(lidar_surface, color):
   if color in _COLOR_CACHE:
     return _COLOR_CACHE[color]

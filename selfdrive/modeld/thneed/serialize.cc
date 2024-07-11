@@ -4,13 +4,14 @@
 #include "third_party/json11/json11.hpp"
 #include "common/util.h"
 #include "common/clutil.h"
+#include "common/swaglog.h"
 #include "selfdrive/modeld/thneed/thneed.h"
 using namespace json11;
 
 extern map<cl_program, string> g_program_source;
 
 void Thneed::load(const char *filename) {
-  printf("Thneed::load: loading from %s\n", filename);
+  LOGD("Thneed::load: loading from %s\n", filename);
 
   string buf = util::read_file(filename);
   int jsz = *(int *)buf.data();
@@ -74,8 +75,8 @@ void Thneed::load(const char *filename) {
       clbuf = clCreateImage(context, CL_MEM_READ_WRITE, &format, &desc, NULL, &errcode);
 #endif
       if (clbuf == NULL) {
-        printf("clError: %s create image %zux%zu rp %zu with buffer %p\n", cl_get_error_string(errcode),
-          desc.image_width, desc.image_height, desc.image_row_pitch, desc.buffer);
+        LOGE("clError: %s create image %zux%zu rp %zu with buffer %p\n", cl_get_error_string(errcode),
+             desc.image_width, desc.image_height, desc.image_row_pitch, desc.buffer);
       }
       assert(clbuf != NULL);
     }
@@ -95,11 +96,11 @@ void Thneed::load(const char *filename) {
     cl_mem aa = real_mem[*(cl_mem*)(mobj["buffer_id"].string_value().data())];
     input_clmem.push_back(aa);
     input_sizes.push_back(sz);
-    printf("Thneed::load: adding input %s with size %d\n", mobj["name"].string_value().data(), sz);
+    LOGD("Thneed::load: adding input %s with size %d\n", mobj["name"].string_value().data(), sz);
 
     cl_int cl_err;
     void *ret = clEnqueueMapBuffer(command_queue, aa, CL_TRUE, CL_MAP_WRITE, 0, sz, 0, NULL, NULL, &cl_err);
-    if (cl_err != CL_SUCCESS) printf("clError: %s map %p %d\n", cl_get_error_string(cl_err), aa, sz);
+    if (cl_err != CL_SUCCESS) LOGE("clError: %s map %p %d\n", cl_get_error_string(cl_err), aa, sz);
     assert(cl_err == CL_SUCCESS);
     inputs.push_back(ret);
   }
@@ -107,7 +108,7 @@ void Thneed::load(const char *filename) {
   for (auto &obj : jdat["outputs"].array_items()) {
     auto mobj = obj.object_items();
     int sz = mobj["size"].int_value();
-    printf("Thneed::save: adding output with size %d\n", sz);
+    LOGD("Thneed::save: adding output with size %d\n", sz);
     // TODO: support multiple outputs
     output = real_mem[*(cl_mem*)(mobj["buffer_id"].string_value().data())];
     assert(output != NULL);

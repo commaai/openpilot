@@ -1,21 +1,15 @@
 import json
 import os
-from openpilot.common.file_helpers import mkdirs_exists_ok
-from openpilot.system.hardware import PC
+from openpilot.system.hardware.hw import Paths
 
 
 class MissingAuthConfigError(Exception):
   pass
 
 
-if PC:
-  CONFIG_DIR = os.path.expanduser('~/.comma')
-else:
-  CONFIG_DIR = "/tmp/.comma"
-
 def get_token():
   try:
-    with open(os.path.join(CONFIG_DIR, 'auth.json')) as f:
+    with open(os.path.join(Paths.config_root(), 'auth.json')) as f:
       auth = json.load(f)
       return auth['access_token']
   except Exception:
@@ -23,13 +17,13 @@ def get_token():
 
 
 def set_token(token):
-  mkdirs_exists_ok(CONFIG_DIR)
-  with open(os.path.join(CONFIG_DIR, 'auth.json'), 'w') as f:
+  os.makedirs(Paths.config_root(), exist_ok=True)
+  with open(os.path.join(Paths.config_root(), 'auth.json'), 'w') as f:
     json.dump({'access_token': token}, f)
 
 
 def clear_token():
   try:
-    os.unlink(os.path.join(CONFIG_DIR, 'auth.json'))
+    os.unlink(os.path.join(Paths.config_root(), 'auth.json'))
   except FileNotFoundError:
     pass

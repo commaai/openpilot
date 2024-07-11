@@ -28,10 +28,8 @@ chffr/app2
 chffr/backend/env
 selfdrive/nav
 selfdrive/baseui
-chffr/lib/vidindex/vidindex
 selfdrive/test/simulator2
 **/cache_data
-xx/chffr/lib/vidindex/vidindex
 xx/plus
 xx/community
 xx/projects

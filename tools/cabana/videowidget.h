@@ -1,19 +1,21 @@
 #pragma once
 
-#include <atomic>
 #include <map>
 #include <memory>
-#include <mutex>
-#include <tuple>
-#include <vector>
+#include <optional>
+#include <set>
+#include <string>
+#include <utility>
 
-#include <QFuture>
-#include <QLabel>
-#include <QPushButton>
+#include <QHBoxLayout>
+#include <QFrame>
+#include <QPropertyAnimation>
 #include <QSlider>
+#include <QTabBar>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
-#include "tools/cabana/streams/abstractstream.h"
+#include "tools/cabana/utils/util.h"
+#include "tools/replay/logreader.h"
 
 struct AlertInfo {
   cereal::ControlsState::AlertStatus status;
@@ -42,25 +44,38 @@ public:
   void setTimeRange(double min, double max);
   AlertInfo alertInfo(double sec);
   QPixmap thumbnail(double sec);
+  void parseQLog(std::shared_ptr<LogReader> qlog);
 
-signals:
-  void updateMaximumTime(double);
+  const double factor = 1000.0;
 
 private:
   void mousePressEvent(QMouseEvent *e) override;
   void mouseMoveEvent(QMouseEvent *e) override;
   bool event(QEvent *event) override;
   void paintEvent(QPaintEvent *ev) override;
-  void parseQLog();
 
-  const double factor = 1000.0;
-  std::vector<std::tuple<double, double, TimelineType>> timeline;
-  std::mutex thumbnail_lock;
-  std::atomic<bool> abort_parse_qlog = false;
   QMap<uint64_t, QPixmap> thumbnails;
   std::map<uint64_t, AlertInfo> alerts;
-  std::unique_ptr<QFuture<void>> qlog_future;
-  InfoLabel thumbnail_label;
+  InfoLabel *thumbnail_label;
+};
+
+class StreamCameraView : public CameraWidget {
+  Q_OBJECT
+  Q_PROPERTY(float overlayOpacity READ overlayOpacity WRITE setOverlayOpacity)
+
+public:
+  StreamCameraView(std::string stream_name, VisionStreamType stream_type, bool zoom, QWidget *parent = nullptr);
+  void paintGL() override;
+  void showPausedOverlay() { fade_animation->start(); }
+  float overlayOpacity() const { return overlay_opacity; }
+  void setOverlayOpacity(float opacity) {
+    overlay_opacity = opacity;
+    update();
+  }
+
+private:
+  float overlay_opacity;
+  QPropertyAnimation *fade_animation;
 };
 
 class VideoWidget : public QFrame {
@@ -68,19 +83,26 @@ class VideoWidget : public QFrame {
 
 public:
   VideoWidget(QWidget *parnet = nullptr);
-  void updateTimeRange(double min, double max, bool is_zommed);
-  void setMaximumTime(double sec);
 
 protected:
+  QString formatTime(double sec, bool include_milliseconds = false);
+  void timeRangeChanged();
   void updateState();
   void updatePlayBtnState();
   QWidget *createCameraWidget();
+  QHBoxLayout *createPlaybackController();
+  void loopPlaybackClicked();
+  void vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams);
 
-  CameraWidget *cam_widget;
-  double maximum_time = 0;
-  QLabel *end_time_label;
-  QLabel *time_label;
-  QPushButton *play_btn;
-  InfoLabel *alert_label;
-  Slider *slider;
+  StreamCameraView *cam_widget;
+  QToolButton *time_btn = nullptr;
+  ToolButton *seek_backward_btn = nullptr;
+  ToolButton *play_btn = nullptr;
+  ToolButton *seek_forward_btn = nullptr;
+  ToolButton *loop_btn = nullptr;
+  QToolButton *speed_btn = nullptr;
+  ToolButton *skip_to_end_btn = nullptr;
+  InfoLabel *alert_label = nullptr;
+  Slider *slider = nullptr;
+  QTabBar *camera_tab = nullptr;
 };

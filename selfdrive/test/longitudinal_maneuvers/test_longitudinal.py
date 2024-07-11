@@ -1,10 +1,6 @@
-#!/usr/bin/env python3
 import itertools
-import os
 from parameterized import parameterized_class
-import unittest
 
-from openpilot.common.params import Params
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import STOP_DISTANCE
 from openpilot.selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 
@@ -146,28 +142,13 @@ def create_maneuvers(kwargs):
 
 
 @parameterized_class(("e2e", "force_decel"), itertools.product([True, False], repeat=2))
-class LongitudinalControl(unittest.TestCase):
+class TestLongitudinalControl:
   e2e: bool
   force_decel: bool
 
-  @classmethod
-  def setUpClass(cls):
-    os.environ['SIMULATION'] = "1"
-    os.environ['SKIP_FW_QUERY'] = "1"
-    os.environ['NO_CAN_TIMEOUT'] = "1"
-
-    params = Params()
-    params.clear_all()
-    params.put_bool("Passive", bool(os.getenv("PASSIVE")))
-    params.put_bool("OpenpilotEnabledToggle", True)
-
-  def test_maneuver(self):
+  def test_maneuver(self, subtests):
     for maneuver in create_maneuvers({"e2e": self.e2e, "force_decel": self.force_decel}):
-      with self.subTest(title=maneuver.title, e2e=maneuver.e2e, force_decel=maneuver.force_decel):
+      with subtests.test(title=maneuver.title, e2e=maneuver.e2e, force_decel=maneuver.force_decel):
         print(maneuver.title, f'in {"e2e" if maneuver.e2e else "acc"} mode')
         valid, _ = maneuver.evaluate()
-        self.assertTrue(valid)
-
-
-if __name__ == "__main__":
-  unittest.main(failfast=True)
+        assert valid

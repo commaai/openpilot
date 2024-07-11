@@ -6,7 +6,7 @@ from collections import defaultdict
 
 import cereal.messaging as messaging
 from openpilot.selfdrive.debug.can_table import can_table
-from openpilot.tools.lib.logreader import logreader_from_route_or_segment
+from openpilot.tools.lib.logreader import LogIterable, LogReader
 
 RED = '\033[91m'
 CLEAR = '\033[0m'
@@ -95,13 +95,15 @@ if __name__ == "__main__":
 
   args = parser.parse_args()
 
-  init_lr, new_lr = None, None
+  init_lr: LogIterable | None = None
+  new_lr: LogIterable | None = None
+
   if args.init:
     if args.init == '':
       init_lr = []
     else:
-      init_lr = logreader_from_route_or_segment(args.init)
+      init_lr = LogReader(args.init)
   if args.comp:
-    new_lr = logreader_from_route_or_segment(args.comp)
+    new_lr = LogReader(args.comp)
 
   can_printer(args.bus, init_msgs=init_lr, new_msgs=new_lr, table=args.table)

@@ -13,7 +13,6 @@ int main(int argc, char *argv[]) {
 
   QCoreApplication app(argc, argv);
 
-  const QStringList base_blacklist = {"uiDebug", "userFlag"};
   const std::tuple<QString, REPLAY_FLAGS, QString> flags[] = {
       {"dcam", REPLAY_FLAG_DCAM, "load driver camera"},
       {"ecam", REPLAY_FLAG_ECAM, "load wide road camera"},
@@ -22,7 +21,7 @@ int main(int argc, char *argv[]) {
       {"qcam", REPLAY_FLAG_QCAMERA, "load qcamera"},
       {"no-hw-decoder", REPLAY_FLAG_NO_HW_DECODER, "disable HW video decoding"},
       {"no-vipc", REPLAY_FLAG_NO_VIPC, "do not output video"},
-      {"all", REPLAY_FLAG_ALL_SERVICES, "do output all messages including " + base_blacklist.join(", ") + 
+      {"all", REPLAY_FLAG_ALL_SERVICES, "do output all messages including uiDebug, userFlag"
                                         ". this may causes issues when used along with UI"}
   };
 
@@ -34,6 +33,8 @@ int main(int argc, char *argv[]) {
   parser.addOption({{"b", "block"}, "blacklist of services to send", "block"});
   parser.addOption({{"c", "cache"}, "cache <n> segments in memory. default is 5", "n"});
   parser.addOption({{"s", "start"}, "start from <seconds>", "seconds"});
+  parser.addOption({"x", QString("playback <speed>. between %1 - %2")
+                        .arg(ConsoleUI::speed_array.front()).arg(ConsoleUI::speed_array.back()), "speed"});
   parser.addOption({"demo", "use a demo route instead of providing your own"});
   parser.addOption({"data_dir", "local directory with routes", "data_dir"});
   parser.addOption({"prefix", "set OPENPILOT_PREFIX", "prefix"});
@@ -64,9 +65,13 @@ int main(int argc, char *argv[]) {
     op_prefix.reset(new OpenpilotPrefix(prefix.toStdString()));
   }
 
-  Replay *replay = new Replay(route, allow, block, base_blacklist, nullptr, replay_flags, parser.value("data_dir"), &app);
+  Replay *replay = new Replay(route, allow, block, nullptr, replay_flags, parser.value("data_dir"), &app);
   if (!parser.value("c").isEmpty()) {
     replay->setSegmentCacheLimit(parser.value("c").toInt());
+  }
+  if (!parser.value("x").isEmpty()) {
+    replay->setSpeed(std::clamp(parser.value("x").toFloat(),
+                                ConsoleUI::speed_array.front(), ConsoleUI::speed_array.back()));
   }
   if (!replay->load()) {
     return 0;

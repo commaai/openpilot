@@ -1,5 +1,6 @@
 #include "tools/cabana/dbc/dbcmanager.h"
 
+#include <QSet>
 #include <algorithm>
 #include <numeric>
 
@@ -7,7 +8,7 @@ bool DBCManager::open(const SourceSet &sources, const QString &dbc_file_name, QS
   try {
     auto it = std::find_if(dbc_files.begin(), dbc_files.end(),
                            [&](auto &f) { return f.second && f.second->filename == dbc_file_name; });
-    auto file = (it != dbc_files.end()) ? it->second : std::make_shared<DBCFile>(dbc_file_name, this);
+    auto file = (it != dbc_files.end()) ? it->second : std::make_shared<DBCFile>(dbc_file_name);
     for (auto s : sources) {
       dbc_files[s] = file;
     }
@@ -22,7 +23,7 @@ bool DBCManager::open(const SourceSet &sources, const QString &dbc_file_name, QS
 
 bool DBCManager::open(const SourceSet &sources, const QString &name, const QString &content, QString *error) {
   try {
-    auto file = std::make_shared<DBCFile>(name, content, this);
+    auto file = std::make_shared<DBCFile>(name, content);
     for (auto s : sources) {
       dbc_files[s] = file;
     }
@@ -106,12 +107,6 @@ QString DBCManager::newSignalName(const MessageId &id) {
   return m ? m->newSignalName() : "";
 }
 
-const std::vector<uint8_t> &DBCManager::mask(const MessageId &id) {
-  static std::vector<uint8_t> empty_mask;
-  auto m = msg(id);
-  return m ? m->mask : empty_mask;
-}
-
 const std::map<uint32_t, cabana::Msg> &DBCManager::getMessages(uint8_t source) {
   static std::map<uint32_t, cabana::Msg> empty_msgs;
   auto dbc_file = findDBCFile(source);
@@ -130,36 +125,17 @@ cabana::Msg *DBCManager::msg(uint8_t source, const QString &name) {
 
 QStringList DBCManager::signalNames() {
   // Used for autocompletion
-  QStringList ret;
+  QSet<QString> names;
   for (auto &f : allDBCFiles()) {
     for (auto &[_, m] : f->getMessages()) {
       for (auto sig : m.getSignals()) {
-        ret << sig->name;
+        names.insert(sig->name);
       }
     }
   }
+  QStringList ret = names.values();
   ret.sort();
-  ret.removeDuplicates();
   return ret;
-}
-
-int DBCManager::signalCount(const MessageId &id) {
-  auto m = msg(id);
-  return m ? m->sigs.size() : 0;
-}
-
-int DBCManager::signalCount() {
-  auto files = allDBCFiles();
-  return std::accumulate(files.cbegin(), files.cend(), 0, [](int &n, auto &f) { return n + f->signalCount(); });
-}
-
-int DBCManager::msgCount() {
-  auto files = allDBCFiles();
-  return std::accumulate(files.cbegin(), files.cend(), 0, [](int &n, auto &f) { return n + f->msgCount(); });
-}
-
-int DBCManager::dbcCount() {
-  return allDBCFiles().size();
 }
 
 int DBCManager::nonEmptyDBCCount() {
@@ -187,6 +163,13 @@ const SourceSet DBCManager::sources(const DBCFile *dbc_file) const {
     if (f.get() == dbc_file) sources.insert(s);
   }
   return sources;
+}
+
+QString toString(const SourceSet &ss) {
+  return std::accumulate(ss.cbegin(), ss.cend(), QString(), [](QString str, int source) {
+    if (!str.isEmpty()) str += ", ";
+    return str + (source == -1 ? QStringLiteral("all") : QString::number(source));
+  });
 }
 
 DBCManager *dbc() {

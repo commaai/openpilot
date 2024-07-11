@@ -1,6 +1,6 @@
 #pragma once
 
-#include <deque>
+#include <algorithm>
 #include <memory>
 #include <vector>
 
@@ -15,8 +15,10 @@ public:
   LiveStream(QObject *parent);
   virtual ~LiveStream();
   void start() override;
-  inline double routeStartTime() const override { return begin_event_ts / 1e9; }
-  inline double currentSec() const override { return (current_event_ts - begin_event_ts) / 1e9; }
+  void stop();
+  inline QDateTime beginDateTime() const { return begin_date_time; }
+  inline uint64_t beginMonoTime() const override { return begin_event_ts; }
+  double maxSeconds() const override { return std::max(1.0, (lastest_event_ts - begin_event_ts) / 1e9); }
   void setSpeed(float speed) override { speed_ = speed; }
   double getSpeed() override { return speed_; }
   bool isPaused() const override { return paused_; }
@@ -25,31 +27,23 @@ public:
 
 protected:
   virtual void streamThread() = 0;
-  void handleEvent(const char *data, const size_t size);
+  void handleEvent(kj::ArrayPtr<capnp::word> event);
 
 private:
   void startUpdateTimer();
   void timerEvent(QTimerEvent *event) override;
   void updateEvents();
 
-  struct Msg {
-    Msg(const char *data, const size_t size) {
-      event = ::new Event(aligned_buf.align(data, size));
-    }
-    ~Msg() { ::delete event; }
-    Event *event;
-    AlignedBuffer aligned_buf;
-  };
-
   std::mutex lock;
   QThread *stream_thread;
-  std::vector<Event *> receivedEvents;
-  std::deque<Msg> receivedMessages;
+  std::vector<const CanEvent *> received_events_;
 
   int timer_id;
   QBasicTimer update_timer;
 
+  QDateTime begin_date_time;
   uint64_t begin_event_ts = 0;
+  uint64_t lastest_event_ts = 0;
   uint64_t current_event_ts = 0;
   uint64_t first_event_ts = 0;
   uint64_t first_update_ts = 0;

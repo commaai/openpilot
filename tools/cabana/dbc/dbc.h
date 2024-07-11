@@ -1,16 +1,13 @@
 #pragma once
 
 #include <limits>
-#include <string>
 #include <utility>
 #include <vector>
 
 #include <QColor>
-#include <QList>
 #include <QMetaType>
 #include <QString>
 
-#include "opendbc/can/common_dbc.h"
 
 const QString UNTITLED = "untitled";
 const QString DEFAULT_NODE_NAME = "XXX";
@@ -32,11 +29,11 @@ struct MessageId {
   }
 
   bool operator<(const MessageId &other) const {
-    return std::pair{source, address} < std::pair{other.source, other.address};
+    return std::tie(source, address) < std::tie(other.source, other.address);
   }
 
   bool operator>(const MessageId &other) const {
-    return std::pair{source, address} > std::pair{other.source, other.address};
+    return std::tie(source, address) > std::tie(other.source, other.address);
   }
 };
 
@@ -48,7 +45,7 @@ struct std::hash<MessageId> {
   std::size_t operator()(const MessageId &k) const noexcept { return qHash(k); }
 };
 
-typedef QList<std::pair<double, QString>> ValueDescription;
+typedef std::vector<std::pair<double, QString>> ValueDescription;
 
 namespace cabana {
 
@@ -58,7 +55,7 @@ public:
   Signal(const Signal &other) = default;
   void update();
   bool getValue(const uint8_t *data, size_t data_size, double *val) const;
-  QString formatValue(double value) const;
+  QString formatValue(double value, bool with_unit = true) const;
   bool operator==(const cabana::Signal &other) const;
   inline bool operator!=(const cabana::Signal &other) const { return !(*this == other); }
 
@@ -120,5 +117,4 @@ public:
 double get_raw_value(const uint8_t *data, size_t data_size, const cabana::Signal &sig);
 void updateMsbLsb(cabana::Signal &s);
 inline int flipBitPos(int start_bit) { return 8 * (start_bit / 8) + 7 - start_bit % 8; }
-inline std::vector<std::string> allDBCNames() { return get_dbc_names(); }
 inline QString doubleToString(double value) { return QString::number(value, 'g', std::numeric_limits<double>::digits10); }
