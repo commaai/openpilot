@@ -5,6 +5,10 @@ import os
 
 DIRS = ['selfdrive', 'common', 'tools', 'system', 'scripts', 'release']
 IGNORED_IMPORTS = ['PyNvCodec',
+                   'pprofile', # TODO: remove this once we add back pprofile in normal deps
+                   'ipykernel.iostream',
+                   'dbus',
+                   'tensorflow',
                    'openpilot.third_party.acados.acados_template',
                    'openpilot.selfdrive.modeld.runners.thneedmodel_pyx',
                    'openpilot.system.hardware.tici.casync']
