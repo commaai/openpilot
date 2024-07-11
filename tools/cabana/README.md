@@ -29,4 +29,72 @@ Arguments:
                                  connect.comma.ai
 ```
 
-See [openpilot wiki](https://github.com/commaai/openpilot/wiki/Cabana)
+## Examples
+
+### Running Cabana in Demo Mode
+To run Cabana using a built-in demo route, use the following command:
+
+```shell
+cabana --demo
+```
+
+### Loading a Specific Route
+
+To load a specific route for replay, provide the route as an argument:
+
+```shell
+cabana "a2a0ccea32023010|2023-07-27--13-01-19"
+```
+
+Replace "0ccea32023010|2023-07-27--13-01-19" with your desired route identifier.
+
+
+### Running Cabana with multiple cameras
+To run Cabana with multiple cameras, use the following command:
+
+```shell
+cabana "a2a0ccea32023010|2023-07-27--13-01-19" --dcam --ecam
+```
+
+### Streaming CAN Messages from a comma Device
+
+[SSH into your device](https://github.com/commaai/openpilot/wiki/SSH) and start the bridge with the following command:
+
+```shell
+cd /data/openpilot/cereal/messaging/
+./bridge &
+```
+
+Then Run Cabana with the device's IP address:
+
+```shell
+cabana --stream <ipaddress>
+```
+
+Replace &lt;ipaddress&gt; with your comma device's IP address.
+
+While streaming from the device, Cabana will log the CAN messages to a local directory. By default, this directory is ~/cabana_live_stream/. You can change the log directory in Cabana by navigating to menu -> tools -> settings.
+
+After disconnecting from the device, you can replay the logged CAN messages from the stream selector dialog -> browse local route.
+
+### Streaming CAN Messages from Panda
+
+To read CAN messages from a connected Panda, use the following command:
+
+```shell
+cabana --panda
+```
+
+### Using the Stream Selector Dialog
+
+If you run Cabana without any arguments, a stream selector dialog will pop up, allowing you to choose the stream.
+
+```shell
+cabana
+```
+
+## Additional Information
+
+For more information, see the [openpilot wiki](https://github.com/commaai/openpilot/wiki/Cabana)
+
+If you encounter any issues or have feature requests, please contribute bug reports or discussions at: [new cabana feedback](https://github.com/commaai/openpilot/discussions/26091)
