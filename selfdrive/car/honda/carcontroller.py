@@ -13,7 +13,6 @@ from openpilot.selfdrive.controls.lib.drive_helpers import rate_limit
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 LongCtrlState = car.CarControl.Actuators.LongControlState
 
-# to display accurately in the UI
 ROUNDED_KPH_FACTOR = 1.6
 
 
@@ -81,7 +80,7 @@ def brake_pump_hysteresis(apply_brake, apply_brake_last, last_pump_ts, ts):
 
 
 def round_hud_set_speed(v_cruise_kph, is_metric):
-  # TODO: understand this better
+  # to display accurately in the UI, TODO: understand this better
   if not is_metric:
     v_cruise_kph = v_cruise_kph / (CV.MPH_TO_KPH / ROUNDED_KPH_FACTOR)
     v_cruise_kph = round(v_cruise_kph / ROUNDED_KPH_FACTOR) * ROUNDED_KPH_FACTOR * 1.001
