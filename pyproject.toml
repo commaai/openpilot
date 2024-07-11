@@ -117,7 +117,7 @@ dev = [
   "types-tabulate",
   "scikit-learn", # selfdrive/debug/toyota_eps_factor.py
   "hexdump", # selfdrive/debug/dump.py
-  "evdev", # tools/sim/lib/manual_ctrl.py
+  "evdev; platform_system == 'Linux'", # tools/sim/lib/manual_ctrl.py
 
   # this is only pinned since 5.15.11 is broken
   "pyqt5 ==5.15.2; platform_machine == 'x86_64'", # no aarch64 wheels for macOS/linux

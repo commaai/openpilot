@@ -1557,7 +1557,7 @@ dev = [
     { name = "breathe" },
     { name = "control" },
     { name = "dictdiffer" },
-    { name = "evdev" },
+    { name = "evdev", marker = "platform_system == 'Linux'" },
     { name = "flaky" },
     { name = "hexdump" },
     { name = "inputs" },
