@@ -140,7 +140,7 @@ class CarController(CarControllerBase):
     actuators = CC.actuators
     hud_control = CC.hudControl
     conversion = hondacan.get_cruise_speed_conversion(self.CP.carFingerprint, CS.is_metric)
-    hud_v_cruise = hud_control.setSpeed / conversion if hud_control.speedVisible else 255
+    hud_v_cruise = round_hud_set_speed(hud_control.setSpeed / conversion, CS.is_metric) if hud_control.speedVisible else 255
     pcm_cancel_cmd = CC.cruiseControl.cancel
 
     if CC.longActive:
@@ -247,7 +247,7 @@ class CarController(CarControllerBase):
 
     # Send dashboard UI commands.
     if self.frame % 10 == 0:
-      hud = HUDData(int(pcm_accel), round_hud_set_speed(hud_v_cruise, CS.is_metric), hud_control.leadVisible,
+      hud = HUDData(int(pcm_accel), hud_v_cruise, hud_control.leadVisible,
                     hud_control.lanesVisible, fcw_display, acc_alert, steer_required, hud_control.leadDistanceBars)
       can_sends.extend(hondacan.create_ui_commands(self.packer, self.CAN, self.CP, CC.enabled, pcm_speed, hud, CS.is_metric, CS.acc_hud, CS.lkas_hud))
 
