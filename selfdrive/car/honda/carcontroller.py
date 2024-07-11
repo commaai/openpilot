@@ -8,10 +8,12 @@ from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car.honda import hondacan
 from openpilot.selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
 from openpilot.selfdrive.car.interfaces import CarControllerBase
-from openpilot.selfdrive.controls.lib.drive_helpers import IMPERIAL_INCREMENT, rate_limit
+from openpilot.selfdrive.controls.lib.drive_helpers import rate_limit
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 LongCtrlState = car.CarControl.Actuators.LongControlState
+
+ROUNDED_KPH_FACTOR = 1.6
 
 
 def compute_gb_honda_bosch(accel, speed):
@@ -81,7 +83,7 @@ def round_hud_set_speed(v_cruise_kph, is_metric):
   # TODO: understand this better
   if not is_metric:
     v_cruise_kph = v_cruise_kph / 1.00584
-    v_cruise_kph = round(v_cruise_kph / IMPERIAL_INCREMENT) * IMPERIAL_INCREMENT * 1.001
+    v_cruise_kph = round(v_cruise_kph / ROUNDED_KPH_FACTOR) * ROUNDED_KPH_FACTOR * 1.001
   return round(v_cruise_kph)
 
 
