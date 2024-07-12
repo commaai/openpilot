@@ -15,7 +15,7 @@ class ReplayStream : public AbstractStream {
 
 public:
   ReplayStream(QObject *parent);
-  void start() override;
+  void start() override { replay->start(); }
   bool loadRoute(const QString &route, const QString &data_dir, uint32_t replay_flags = REPLAY_FLAG_NONE);
   bool eventFilter(const Event *event);
   void seekTo(double ts) override { replay->seekTo(std::max(double(0), ts), false); }
@@ -31,7 +31,6 @@ public:
   inline Replay *getReplay() const { return replay.get(); }
   inline bool isPaused() const override { return replay->isPaused(); }
   void pause(bool pause) override;
-  static AbstractOpenStreamWidget *widget(AbstractStream **stream);
 
 private:
   void mergeSegments();
@@ -44,9 +43,8 @@ class OpenReplayWidget : public AbstractOpenStreamWidget {
   Q_OBJECT
 
 public:
-  OpenReplayWidget(AbstractStream **stream);
-  bool open() override;
-  QString title() override { return tr("&Replay"); }
+  OpenReplayWidget(QWidget *parent = nullptr);
+  AbstractStream *open() override;
 
 private:
   QLineEdit *route_edit;

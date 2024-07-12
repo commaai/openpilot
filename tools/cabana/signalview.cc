@@ -494,6 +494,7 @@ SignalView::SignalView(ChartsWidget *charts, QWidget *parent) : charts(charts), 
 }
 
 void SignalView::setMessage(const MessageId &id) {
+  max_value_width = 0;
   filter_edit->clear();
   model->setMessage(id);
 }
@@ -617,7 +618,6 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
   const auto &last_msg = can->lastMessage(model->msg_id);
   if (model->rowCount() == 0 || (msgs && !msgs->count(model->msg_id)) || last_msg.dat.size() == 0) return;
 
-  int max_value_width = 0;
   for (auto item : model->root->children) {
     double value = 0;
     if (item->sig->getValue(last_msg.dat.data(), last_msg.dat.size(), &value)) {

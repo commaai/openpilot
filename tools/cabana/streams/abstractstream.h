@@ -96,7 +96,6 @@ signals:
   void seeking(double sec);
   void seekedTo(double sec);
   void timeRangeChanged(const std::optional<std::pair<double, double>> &range);
-  void streamStarted();
   void eventsMerged(const MessageEventsMap &events_map);
   void msgsReceived(const std::set<MessageId> *new_msgs, bool has_new_ids);
   void sourcesUpdated(const SourceSet &s);
@@ -133,15 +132,11 @@ private:
 class AbstractOpenStreamWidget : public QWidget {
   Q_OBJECT
 public:
-  AbstractOpenStreamWidget(AbstractStream **stream, QWidget *parent = nullptr) : stream(stream), QWidget(parent) {}
-  virtual bool open() = 0;
-  virtual QString title() = 0;
+  AbstractOpenStreamWidget(QWidget *parent = nullptr) : QWidget(parent) {}
+  virtual AbstractStream *open() = 0;
 
 signals:
   void enableOpenButton(bool);
-
-protected:
-  AbstractStream **stream = nullptr;
 };
 
 class DummyStream : public AbstractStream {
@@ -149,17 +144,7 @@ class DummyStream : public AbstractStream {
 public:
   DummyStream(QObject *parent) : AbstractStream(parent) {}
   QString routeName() const override { return tr("No Stream"); }
-  void start() override { emit streamStarted(); }
-};
-
-class StreamNotifier : public QObject {
-  Q_OBJECT
-public:
-  StreamNotifier(QObject *parent = nullptr) : QObject(parent) {}
-  static StreamNotifier* instance();
-signals:
-  void streamStarted();
-  void changingStream();
+  void start() override {}
 };
 
 // A global pointer referring to the unique AbstractStream object
