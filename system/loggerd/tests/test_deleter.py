@@ -4,6 +4,7 @@ from collections import namedtuple
 from pathlib import Path
 from collections.abc import Sequence
 
+from openpilot.system.hardware.hw import Paths
 import openpilot.system.loggerd.deleter as deleter
 from openpilot.common.timeout import Timeout, TimeoutException
 from openpilot.system.loggerd.tests.loggerd_tests_common import UploaderTestCase
@@ -90,6 +91,17 @@ class TestDeleter(UploaderTestCase):
       self.make_file_with_data("crash", self.seg_format2[:-4]),
     ])
 
+  def test_different_structures(self):
+    dirs_path = []
+    counter = 1
+    for i in range(1,4):
+      for j in range(1,4):
+        for k in range(1,4):
+          dirs_path.append(self.create_files_and_dirs(f"folder{counter}",i,j,k))
+          counter += 1
+
+    self.assertDeleteOrder(list(self.create_files(10)) + list(dirs_path))
+
   def test_no_delete_when_available_space(self):
     f_path = self.make_file_with_data(self.seg_dir, self.f_type)
 
@@ -115,3 +127,31 @@ class TestDeleter(UploaderTestCase):
     self.join_thread()
 
     assert f_path.exists(), "File deleted when locked"
+
+  def create_files_and_dirs(self,f_dir, num_dirs, num_subdirs, num_files) -> Path:
+    base_path = Path(Paths.log_root()) / f_dir
+
+    base_path.mkdir(parents=True, exist_ok=True)
+
+    for i in range(num_dirs):
+      dir_path = base_path / f"dir_{i+1}"
+      dir_path.mkdir(exist_ok=True)
+
+      for j in range(num_subdirs):
+        subdir_path = dir_path / f"subdir_{j+1}"
+        subdir_path.mkdir(exist_ok=True)
+
+        for k in range(num_files):
+          self.make_file_with_data(subdir_path,f"file{k+1}")
+
+    return base_path
+
+  def create_files(self,num_files) -> Sequence[Path]:
+    created_files = []
+    for k in range(num_files):
+        file_name = f"file{k+1}"
+        self.make_file_with_data(".",file_name)
+        created_files.append(Path(Paths.log_root()) / file_name)
+        #make files creation time different
+        time.sleep(0.01)
+    return created_files

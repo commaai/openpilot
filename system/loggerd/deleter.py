@@ -2,6 +2,7 @@
 import os
 import shutil
 import threading
+from pathlib import Path
 from openpilot.system.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.loggerd.config import get_available_bytes, get_available_percent
@@ -43,6 +44,14 @@ def get_preserved_segments(dirs_by_creation: list[str]) -> list[str]:
 
   return preserved
 
+def listfile_by_creation(d:str) -> list[str]:
+  try:
+    files = [f for f in Path(Paths.log_root()).iterdir() if f.is_file()]
+    files = sorted(files, key=lambda x: os.stat(x).st_ctime)
+    return files
+  except OSError:
+    cloudlog.exception("listfile_by_creation failed")
+    return []
 
 def deleter_thread(exit_event):
   while not exit_event.is_set():
@@ -51,20 +60,25 @@ def deleter_thread(exit_event):
 
     if out_of_percent or out_of_bytes:
       dirs = listdir_by_creation(Paths.log_root())
+      files = listfile_by_creation(Paths.log_root())
+
+      all_contents = files + dirs
 
       # skip deleting most recent N preserved segments (and their prior segment)
       preserved_dirs = get_preserved_segments(dirs)
 
       # remove the earliest directory we can
-      for delete_dir in sorted(dirs, key=lambda d: (d in DELETE_LAST, d in preserved_dirs)):
+      for delete_dir in sorted(all_contents, key=lambda d: (d in DELETE_LAST, d in preserved_dirs)):
         delete_path = os.path.join(Paths.log_root(), delete_dir)
 
-        if any(name.endswith(".lock") for name in os.listdir(delete_path)):
+        is_file = os.path.isfile(delete_path)
+
+        if not is_file and any(name.endswith(".lock") for name in os.listdir(delete_path)):
           continue
 
         try:
           cloudlog.info(f"deleting {delete_path}")
-          if os.path.isfile(delete_path):
+          if is_file:
             os.remove(delete_path)
           else:
             shutil.rmtree(delete_path)
