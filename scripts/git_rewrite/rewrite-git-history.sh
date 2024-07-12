@@ -1,15 +1,40 @@
-#!/bin/bash
-set -e
-
-DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
-cd $DIR
+#!/bin/bash -e
 
 SRC=/tmp/openpilot/
 SRC_CLONE=/tmp/openpilot-clone/
 OUT=/tmp/openpilot-tiny/
 
-LOG_FILE=$DIR/git-rewrite-log-$(date +"%Y-%m-%dT%H:%M:%S%z").txt
-exec > >(tee -a "$LOG_FILE") 2>&1
+REWRITE_IGNORE_BRANCHES=(
+  dashcam3
+  devel
+  master-ci
+  nightly
+  release2
+  release3
+  release3-staging
+)
+
+VALIDATE_IGNORE_FILES=(
+  ".github/ISSUE_TEMPLATE/bug_report.md"
+  ".github/pull_request_template.md"
+)
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
+cd $DIR
+
+LOGS_DIR=$DIR/git-rewrite-$(date +"%Y-%m-%dT%H:%M:%S%z")
+mkdir -p $LOGS_DIR
+
+GIT_REWRITE_LOG=$LOGS_DIR/git-rewrite-log.txt
+BRANCH_DIFF_LOG=$LOGS_DIR/branch-diff-log.txt
+COMMIT_DIFF_LOG=$LOGS_DIR/commit-diff-log.txt
+
+START_TIME=$(date +%s)
+exec > >(while IFS= read -r line; do
+  CURRENT_TIME=$(date +%s)
+  ELAPSED_TIME=$((CURRENT_TIME - START_TIME))
+  echo "[${ELAPSED_TIME}s] $line"
+done | tee -a "$GIT_REWRITE_LOG") 2>&1
 
 # INSTALL git-filter-repo
 if [ ! -f /tmp/git-filter-repo ]; then
@@ -40,7 +65,7 @@ if [ ! -d $SRC ]; then
   git push --prune $ARCHIVE_REPO +refs/heads/*:refs/heads/* # 956.39 MiB (110725 objects)
   git push --prune $ARCHIVE_REPO +refs/tags/*:refs/tags/* # 1.75 GiB (21694 objects)
   # git push --mirror $ARCHIVE_REPO || true # fails to push refs/pull/* (deny updating a hidden ref) for pull requests
-  # we fail and continue - more reading: https://stackoverflow.com/a/34266401/639708
+  # we fail and continue - more reading: https://stackoverflow.com/a/34266401/639708 and https://blog.plataformatec.com.br/2013/05/how-to-properly-mirror-a-git-repository/
 fi
 
 # REWRITE master and tags
@@ -52,7 +77,7 @@ if [ ! -d $SRC_CLONE ]; then
 
   echo "Checking out old history..."
 
-  git checkout tags/v0.7.1
+  git checkout tags/v0.7.1 > /dev/null 2>&1
   # checkout as main, since we need master ref later
   git checkout -b main
 
@@ -60,22 +85,26 @@ if [ ! -d $SRC_CLONE ]; then
 
   # rm these so we don't get conflicts later
   git rm -r cereal opendbc panda selfdrive/ui/ui > /dev/null
-  git commit -m "removed conflicting files"
+  git commit -m "removed conflicting files" > /dev/null
 
   # skip-smudge to get rid of some lfs errors that it can't find the reference of some lfs files
   # we don't care about fetching/pushing lfs right now
   git lfs install --skip-smudge --local
 
   # squash initial setup commits
-  git cherry-pick -n -X theirs 6c33a5c..59b3d06
-  git commit -m "switching to master" -m "$(git log --reverse --format=%B 6c33a5c..59b3d06)"
+  git cherry-pick -n -X theirs 6c33a5c..59b3d06 > /dev/null
+  git commit -m "switching to master" > /dev/null
+
+  # squash the two commits
+  git reset --soft HEAD~2
+  git commit -m "switching to master" -m "$(git log --reverse --format=%B 6c33a5c..59b3d06)" -m "removed conflicting files" > /dev/null
 
   # get commits we want to cherry-pick
   # will start with the next commit after #59b3d06 tools is local now
   COMMITS=$(git rev-list --reverse 59b3d06..master)
 
   # we need this for logging
-  TOTAL_COMMITS=$(echo $COMMITS | wc -w)
+  TOTAL_COMMITS=$(echo $COMMITS | wc -w | xargs)
   CURRENT_COMMIT_NUMBER=0
 
   # empty this file
@@ -85,7 +114,8 @@ if [ ! -d $SRC_CLONE ]; then
 
   for COMMIT in $COMMITS; do
       CURRENT_COMMIT_NUMBER=$((CURRENT_COMMIT_NUMBER + 1))
-      echo -ne "[$CURRENT_COMMIT_NUMBER/$TOTAL_COMMITS] Cherry-picking commit: $COMMIT"\\r
+      # echo -ne "[$CURRENT_COMMIT_NUMBER/$TOTAL_COMMITS] Cherry-picking commit: $COMMIT"\\r
+      echo "[$CURRENT_COMMIT_NUMBER/$TOTAL_COMMITS] Cherry-picking commit: $COMMIT"
 
       # set environment variables to preserve author/committer and dates
       export GIT_AUTHOR_NAME=$(git show -s --format='%an' $COMMIT)
@@ -119,6 +149,12 @@ if [ ! -d $SRC_CLONE ]; then
         # append the old commit ID to the commit message
         git commit --amend -m "$(git log -1 --pretty=%B)" -m "Former-commit-id: $COMMIT" > /dev/null
       fi
+
+    # prune every 3000 commits to avoid gc errors
+    if [ $((CURRENT_COMMIT_NUMBER % 3000)) -eq 0 ]; then
+      echo "Pruning repo..."
+      git gc
+    fi
   done
 
   echo "Rewriting tags..."
@@ -137,7 +173,7 @@ if [ ! -d $SRC_CLONE ]; then
       NEW_COMMIT=$OLD_COMMIT
     fi
 
-    printf "Rewriting tag %s from commit %s\n" "$TAG" "$NEW_COMMIT"
+    echo "Rewriting tag $TAG from commit $NEW_COMMIT"
     git tag -f "$TAG" "$NEW_COMMIT"
   done < "$DIR/tag-commit-map.txt"
 
@@ -153,19 +189,20 @@ if [ ! -d $SRC_CLONE ]; then
 fi
 
 # REWRITE branches based on master
-if [ ! -f "$SRC_CLONE/branch-diff.txt" ]; then
+if [ ! -f "$SRC_CLONE/rewrite-branches-done" ]; then
   cd $SRC_CLONE
+  > rewrite-branches-done
 
   # empty file
-  > branch-diff.txt
+  > $BRANCH_DIFF_LOG
 
   echo "Rewriting branches based on master..."
 
   # will store raw diffs here, if exist
   mkdir -p differences
 
-  # get a list of all branches except master
-  BRANCHES=$(git branch -r | grep -v ' -> ' | sed 's/origin\///' | grep -v '^master$')
+  # get a list of all branches except master and REWRITE_IGNORE_BRANCHES
+  BRANCHES=$(git branch -r | grep -v ' -> ' | sed 's/.*origin\///' | grep -v '^master$' | grep -v -f <(echo "${REWRITE_IGNORE_BRANCHES[*]}" | tr ' ' '\n'))
 
   for BRANCH in $BRANCHES; do
     # check if the branch is based on master history
@@ -176,7 +213,7 @@ if [ ! -f "$SRC_CLONE/branch-diff.txt" ]; then
       # create a new branch based on the new master
       NEW_MERGE_BASE=$(grep "^$MERGE_BASE " "commit-map.txt" | awk '{print $2}')
       if [ -z "$NEW_MERGE_BASE" ]; then
-        echo "Error: could not find new merge base for branch $BRANCH" >> branch-diff.txt
+        echo "Error: could not find new merge base for branch $BRANCH" >> $BRANCH_DIFF_LOG
         continue
       fi
       git checkout -b ${BRANCH}_new $NEW_MERGE_BASE
@@ -208,8 +245,8 @@ if [ ! -f "$SRC_CLONE/branch-diff.txt" ]; then
             echo "$COMMIT EMPTY" >> commit-map.txt
           else
             # handle other errors or conflicts
-            echo "Cherry-pick of ${BRANCH} branch failed. Removing branch upstream..." >> branch-diff.txt
-            echo "$GIT_OUTPUT" > "differences/branch-${BRANCH}"
+            echo "Cherry-pick of ${BRANCH} branch failed. Removing branch upstream..." >> $BRANCH_DIFF_LOG
+            echo "$GIT_OUTPUT" > "$LOGS_DIR/branch-${BRANCH}"
             git cherry-pick --abort
             git push --delete origin ${BRANCH}
             HAS_ERROR=1
@@ -239,28 +276,24 @@ if [ ! -f "$SRC_CLONE/branch-diff.txt" ]; then
       git checkout master > /dev/null
       git branch -D ${BRANCH}_new > /dev/null
     else
-      # echo "Skipping branch $BRANCH as it's not based on master history" >> branch-diff.txt
-       echo "Deleting branch $BRANCH as it's not based on master history" >> branch-diff.txt
-       git push --delete origin ${BRANCH}
+      echo "Deleting branch $BRANCH as it's not based on master history" >> $BRANCH_DIFF_LOG
+      git push --delete origin ${BRANCH}
     fi
   done
 fi
 
 # VALIDATE cherry-pick
-if [ ! -f "$SRC_CLONE/commit-diff.txt" ]; then
+if [ ! -f "$SRC_CLONE/validation-done" ]; then
   cd $SRC_CLONE
+  > validation-done
 
   TOTAL_COMMITS=$(grep -cve '^\s*$' commit-map.txt)
   CURRENT_COMMIT_NUMBER=0
   COUNT_SAME=0
   COUNT_DIFF=0
-  VALIDATE_IGNORE_FILES=(
-    ".github/ISSUE_TEMPLATE/bug_report.md"
-    ".github/pull_request_template.md"
-  )
 
   # empty file
-  > commit-diff.txt
+  > $COMMIT_DIFF_LOG
 
   echo "Validating commits..."
 
@@ -273,7 +306,7 @@ if [ ! -f "$SRC_CLONE/commit-diff.txt" ]; then
       continue
     fi
     if [ "$OLD_COMMIT" == "BRANCH" ]; then
-      echo "Branch ${NEW_COMMIT} below:" >> commit-diff.txt
+      echo "Branch ${NEW_COMMIT} below:" >> $COMMIT_DIFF_LOG
       continue
     fi
     CURRENT_COMMIT_NUMBER=$((CURRENT_COMMIT_NUMBER + 1))
@@ -283,7 +316,8 @@ if [ ! -f "$SRC_CLONE/commit-diff.txt" ]; then
     OLD_DATE=$(git show -s --format='%cd' $OLD_COMMIT)
     NEW_DATE=$(git show -s --format='%cd' $NEW_COMMIT)
 
-    echo -ne "[$CURRENT_COMMIT_NUMBER/$TOTAL_COMMITS] Comparing old commit $OLD_COMMIT_SHORT ($OLD_DATE) with new commit $NEW_COMMIT_SHORT ($NEW_DATE)"\\r
+    # echo -ne "[$CURRENT_COMMIT_NUMBER/$TOTAL_COMMITS] Comparing old commit $OLD_COMMIT_SHORT ($OLD_DATE) with new commit $NEW_COMMIT_SHORT ($NEW_DATE)"\\r
+    echo "[$CURRENT_COMMIT_NUMBER/$TOTAL_COMMITS] Comparing old commit $OLD_COMMIT_SHORT ($OLD_DATE) with new commit $NEW_COMMIT_SHORT ($NEW_DATE)"
     
     # generate lists of files and their hashes for the old and new commits, excluding ignored files
     OLD_FILES=$(git ls-tree -r $OLD_COMMIT | grep -vE "$(IFS='|'; echo "${VALIDATE_IGNORE_FILES[*]}")")
@@ -294,17 +328,17 @@ if [ ! -f "$SRC_CLONE/commit-diff.txt" ]; then
       # echo "Old commit $OLD_COMMIT_SHORT and new commit $NEW_COMMIT_SHORT are equivalent."
       COUNT_SAME=$((COUNT_SAME + 1))
     else
-      echo "[$CURRENT_COMMIT_NUMBER/$TOTAL_COMMITS] Difference found between old commit $OLD_COMMIT_SHORT and new commit $NEW_COMMIT_SHORT" >> commit-diff.txt
+      echo "[$CURRENT_COMMIT_NUMBER/$TOTAL_COMMITS] Difference found between old commit $OLD_COMMIT_SHORT and new commit $NEW_COMMIT_SHORT" >> $COMMIT_DIFF_LOG
       COUNT_DIFF=$((COUNT_DIFF + 1))
       set +e
-      diff -u <(echo "$OLD_FILES") <(echo "$NEW_FILES") > "differences/$CURRENT_COMMIT_NUMBER-$OLD_COMMIT_SHORT-$NEW_COMMIT_SHORT"
+      diff -u <(echo "$OLD_FILES") <(echo "$NEW_FILES") > "$LOGS_DIR/commit-$CURRENT_COMMIT_NUMBER-$OLD_COMMIT_SHORT-$NEW_COMMIT_SHORT"
       set -e
     fi
   done < "commit-map.txt"
 
-  echo "Summary:" >> commit-diff.txt
-  echo "Equivalent commits: $COUNT_SAME" >> commit-diff.txt
-  echo "Different commits: $COUNT_DIFF" >> commit-diff.txt
+  echo "Summary:" >> $COMMIT_DIFF_LOG
+  echo "Equivalent commits: $COUNT_SAME" >> $COMMIT_DIFF_LOG
+  echo "Different commits: $COUNT_DIFF" >> $COMMIT_DIFF_LOG
 fi
 
 if [ ! -d $OUT ]; then
@@ -313,7 +347,6 @@ if [ ! -d $OUT ]; then
   cd $OUT
 
   # remove all non-master branches
-  # TODO: need to see if we "redo" the other branches (except master, master-ci, devel, devel-staging, release3, release3-staging, dashcam3, dashcam3-staging, testing-closet*, hotfix-*)
   # git branch | grep -v "^  master$" | grep -v "\*" | xargs git branch -D
 
   # echo "cleaning up refs"
@@ -322,7 +355,8 @@ if [ ! -d $OUT ]; then
 
   echo "importing new lfs files"
   # import "almost" everything to lfs
-  git lfs migrate import --everything --include="*.dlc,*.onnx,*.svg,*.png,*.gif,*.ttf,*.wav,selfdrive/car/tests/test_models_segs.txt,system/hardware/tici/updater,selfdrive/ui/qt/spinner_larch64,selfdrive/ui/qt/text_larch64,third_party/**/*.a,third_party/**/*.so,third_party/**/*.so.*,third_party/**/*.dylib,third_party/acados/*/t_renderer,third_party/qt5/larch64/bin/lrelease,third_party/qt5/larch64/bin/lupdate,third_party/catch2/include/catch2/catch.hpp,*.apk,*.apkpatch,*.jar,*.pdf,*.jpg,*.mp3,*.thneed,*.tar.gz,*.npy,*.csv,*.a,*.so*,*.dylib,*.o,*.b64,selfdrive/hardware/tici/updater,selfdrive/boardd/tests/test_boardd,selfdrive/ui/qt/spinner_aarch64,installer/updater/updater,selfdrive/debug/profiling/simpleperf/**/*,selfdrive/hardware/eon/updater,selfdrive/ui/qt/text_aarch64,selfdrive/debug/profiling/pyflame/**/*,installer/installers/installer_openpilot,installer/installers/installer_dashcam,selfdrive/ui/text/text,selfdrive/ui/android/text/text,selfdrive/ui/spinner/spinner,selfdrive/visiond/visiond,selfdrive/loggerd/loggerd,selfdrive/sensord/sensord,selfdrive/sensord/gpsd,selfdrive/ui/android/spinner/spinner,selfdrive/ui/qt/spinner,selfdrive/ui/qt/text,_stringdefs.py,dfu-util-aarch64-linux,dfu-util-aarch64,dfu-util-x86_64-linux,dfu-util-x86_64,stb_image.h,clpeak3,clwaste,apk/**/*,external/**/*,phonelibs/**/*,third_party/boringssl/**/*,flask/**/*,panda/**/*,board/**/*,messaging/**/*,opendbc/**/*,tools/cabana/chartswidget.cc,third_party/nanovg/**/*,selfdrive/controls/lib/lateral_mpc/lib_mpc_export/**/*,selfdrive/ui/paint.cc,werkzeug/**/*,pyextra/**/*,third_party/android_hardware_libhardware/**/*,selfdrive/controls/lib/lead_mpc_lib/lib_mpc_export/**/*,selfdrive/locationd/laikad.py,selfdrive/locationd/test/test_laikad.py,tools/gpstest/test_laikad.py,selfdrive/locationd/laikad_helpers.py,tools/nui/**/*,jsonrpc/**/*,selfdrive/controls/lib/longitudinal_mpc/lib_mpc_export/**/*,selfdrive/controls/lib/lateral_mpc/mpc_export/**/*,selfdrive/camerad/cameras/camera_qcom.cc,selfdrive/manager.py,selfdrive/modeld/models/driving.cc,third_party/curl/**/*,selfdrive/modeld/thneed/debug/**/*,selfdrive/modeld/thneed/include/**/*,third_party/openmax/**/*,selfdrive/controls/lib/longitudinal_mpc/mpc_export/**/*,selfdrive/controls/lib/longitudinal_mpc_model/lib_mpc_export/**/*,Pipfile,Pipfile.lock,gunicorn/**/*,*.qm,jinja2/**/*,click/**/*,dbcs/**/*,websocket/**/*"
+  BRANCHES=$(git for-each-ref --format='%(refname)' refs/heads/ | sed 's%refs/heads/%%g' | grep -v -f <(echo "${REWRITE_IGNORE_BRANCHES[*]}" | tr ' ' '\n') | tr '\n' ' ')
+  git lfs migrate import --include="*.dlc,*.onnx,*.svg,*.png,*.gif,*.ttf,*.wav,selfdrive/car/tests/test_models_segs.txt,system/hardware/tici/updater,selfdrive/ui/qt/spinner_larch64,selfdrive/ui/qt/text_larch64,third_party/**/*.a,third_party/**/*.so,third_party/**/*.so.*,third_party/**/*.dylib,third_party/acados/*/t_renderer,third_party/qt5/larch64/bin/lrelease,third_party/qt5/larch64/bin/lupdate,third_party/catch2/include/catch2/catch.hpp,*.apk,*.apkpatch,*.jar,*.pdf,*.jpg,*.mp3,*.thneed,*.tar.gz,*.npy,*.csv,*.a,*.so*,*.dylib,*.o,*.b64,selfdrive/hardware/tici/updater,selfdrive/boardd/tests/test_boardd,selfdrive/ui/qt/spinner_aarch64,installer/updater/updater,selfdrive/debug/profiling/simpleperf/**/*,selfdrive/hardware/eon/updater,selfdrive/ui/qt/text_aarch64,selfdrive/debug/profiling/pyflame/**/*,installer/installers/installer_openpilot,installer/installers/installer_dashcam,selfdrive/ui/text/text,selfdrive/ui/android/text/text,selfdrive/ui/spinner/spinner,selfdrive/visiond/visiond,selfdrive/loggerd/loggerd,selfdrive/sensord/sensord,selfdrive/sensord/gpsd,selfdrive/ui/android/spinner/spinner,selfdrive/ui/qt/spinner,selfdrive/ui/qt/text,_stringdefs.py,dfu-util-aarch64-linux,dfu-util-aarch64,dfu-util-x86_64-linux,dfu-util-x86_64,stb_image.h,clpeak3,clwaste,apk/**/*,external/**/*,phonelibs/**/*,third_party/boringssl/**/*,flask/**/*,panda/**/*,board/**/*,messaging/**/*,opendbc/**/*,tools/cabana/chartswidget.cc,third_party/nanovg/**/*,selfdrive/controls/lib/lateral_mpc/lib_mpc_export/**/*,selfdrive/ui/paint.cc,werkzeug/**/*,pyextra/**/*,third_party/android_hardware_libhardware/**/*,selfdrive/controls/lib/lead_mpc_lib/lib_mpc_export/**/*,selfdrive/locationd/laikad.py,selfdrive/locationd/test/test_laikad.py,tools/gpstest/test_laikad.py,selfdrive/locationd/laikad_helpers.py,tools/nui/**/*,jsonrpc/**/*,selfdrive/controls/lib/longitudinal_mpc/lib_mpc_export/**/*,selfdrive/controls/lib/lateral_mpc/mpc_export/**/*,selfdrive/camerad/cameras/camera_qcom.cc,selfdrive/manager.py,selfdrive/modeld/models/driving.cc,third_party/curl/**/*,selfdrive/modeld/thneed/debug/**/*,selfdrive/modeld/thneed/include/**/*,third_party/openmax/**/*,selfdrive/controls/lib/longitudinal_mpc/mpc_export/**/*,selfdrive/controls/lib/longitudinal_mpc_model/lib_mpc_export/**/*,Pipfile,Pipfile.lock,gunicorn/**/*,*.qm,jinja2/**/*,click/**/*,dbcs/**/*,websocket/**/*" $BRANCHES
 
   echo "reflog and gc"
   # this is needed after lfs import
@@ -351,7 +385,6 @@ git lfs fetch --all || true
 
 # final push - will also push lfs
 # TODO: switch to git@github.com:commaai/openpilot.git when ready
-# if using mirror, it will also delete non-master branches (master-ci, nightly, devel, release3, release3-staging, dashcam3, release2)
 # git push --mirror git@github.com:commaai/openpilot-tiny.git
-# using this instead - since this is also what --mirror does - https://blog.plataformatec.com.br/2013/05/how-to-properly-mirror-a-git-repository/
-git push git@github.com:commaai/openpilot-tiny.git +refs/heads/*:refs/heads/* +refs/tags/*:refs/tags/*
+# using this instead to ignore refs/pull/* - since this is also what --mirror does - https://blog.plataformatec.com.br/2013/05/how-to-properly-mirror-a-git-repository/
+git push --prune git@github.com:commaai/openpilot-tiny.git +refs/heads/*:refs/heads/* +refs/tags/*:refs/tags/*
