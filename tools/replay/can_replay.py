@@ -7,7 +7,8 @@ import threading
 
 os.environ['FILEREADER_CACHE'] = '1'
 
-from openpilot.common.realtime import config_realtime_process, Ratekeeper, DT_CTRL
+from openpilot.common.realtime import config_realtime_process, Ratekeeper
+from openpilot.selfdrive.car import DT_CTRL
 from openpilot.selfdrive.pandad import can_capnp_to_can_list
 from openpilot.tools.lib.logreader import LogReader
 from panda import PandaJungle
