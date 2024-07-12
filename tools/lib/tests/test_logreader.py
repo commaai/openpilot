@@ -6,12 +6,16 @@ import tempfile
 import os
 import pytest
 import requests
+import http.server
 
 from parameterized import parameterized
+from openpilot.selfdrive.test.helpers import http_server_context
 
 from cereal import log as capnp_log
-from openpilot.tools.lib.logreader import LogIterable, LogReader, comma_api_source, parse_indirect, ReadMode, InternalUnavailableException
+from openpilot.tools.lib.logreader import LogIterable, LogReader, auto_source, auto_strategy, apply_strategy, comma_api_source, \
+                                          parse_indirect, ReadMode, InternalUnavailableException
 from openpilot.tools.lib.route import SegmentRange
+from openpilot.tools.lib.comma_car_segments import get_repo_url
 from openpilot.tools.lib.url_file import URLFileException
 
 NUM_SEGS = 17  # number of segments in the test route
@@ -44,6 +48,31 @@ def setup_source_scenario(mocker, is_internal=False):
   comma_api_source_mock.return_value = [QLOG_FILE]
 
   yield
+
+
+class LogReaderTestRequestHandler(http.server.BaseHTTPRequestHandler):
+  FILE_EXISTS = True
+
+  def do_GET(self):
+    if self.FILE_EXISTS:
+      self.send_response(206 if "Range" in self.headers else 200, b'1234')
+    else:
+      self.send_response(404)
+    self.end_headers()
+
+  def do_HEAD(self):
+    if self.FILE_EXISTS:
+      self.send_response(200)
+      self.send_header("Content-Length", "4")
+    else:
+      self.send_response(404)
+    self.end_headers()
+
+
+@pytest.fixture
+def host():
+  with http_server_context(handler=LogReaderTestRequestHandler) as (host, port):
+    yield f"http://{host}:{port}"
 
 
 class TestLogReader:
@@ -255,3 +284,166 @@ class TestLogReader:
       msgs = list(LogReader(qlog.name, only_union_types=True))
       assert len(msgs) == num_msgs
       [m.which() for m in msgs]
+
+  def test_source_rlogs_not_available_qlogs_available(self, mocker, host):
+    mock_openpilotci_source = mocker.patch("openpilot.tools.lib.logreader.openpilotci_source")
+    mock_openpilotci_source.__name__ = mock_openpilotci_source._mock_name
+    mock_comma_api_source = mocker.patch("openpilot.tools.lib.logreader.comma_api_source")
+    mock_comma_api_source.__name__ = mock_comma_api_source._mock_name
+    mock_comma_car_segments_source = mocker.patch("openpilot.tools.lib.logreader.comma_car_segments_source")
+    mock_comma_car_segments_source.__name__ = mock_comma_car_segments_source._mock_name
+    mock_auto_strategy = mocker.patch("openpilot.tools.lib.logreader.auto_strategy")
+
+    mock_comma_car_segments_source.side_effect = [Exception("Rlogs not available")]
+
+    def default_valid(fn):
+      return fn is not None
+
+    for mode in [ReadMode.RLOG, ReadMode.QLOG, ReadMode.AUTO]:
+      mock_openpilotci_source.side_effect = lambda sr, current_mode:(
+        apply_strategy(current_mode, [None], [f'{host}/openpilotci/qlog']))
+
+      mock_comma_api_source.side_effect = lambda sr, current_mode:(
+        apply_strategy(current_mode, [None], [f'{host}/comma_api/qlog'], valid_file=default_valid))
+
+      if mode == ReadMode.AUTO:
+        mock_auto_strategy.side_effect = lambda rlog, qlog, interactive, valid_file=None:(
+          auto_strategy([None], qlog, interactive, valid_file))
+
+      if mode == ReadMode.RLOG:
+        with pytest.raises(Exception): # noqa
+          auto_source(SegmentRange(TEST_ROUTE), mode)
+      else:
+        assert auto_source(SegmentRange(TEST_ROUTE), mode) == [f'{host}/openpilotci/qlog']
+
+  def test_source_rlogs_not_available_commaapi(self, mocker, host):
+    mock_openpilotci_source = mocker.patch("openpilot.tools.lib.logreader.openpilotci_source")
+    mock_openpilotci_source.__name__ = mock_openpilotci_source._mock_name
+    mock_comma_api_source = mocker.patch("openpilot.tools.lib.logreader.comma_api_source")
+    mock_comma_api_source.__name__ = mock_comma_api_source._mock_name
+    mock_comma_car_segments_source = mocker.patch("openpilot.tools.lib.logreader.comma_car_segments_source")
+    mock_comma_car_segments_source.__name__ = mock_comma_car_segments_source._mock_name
+    mock_parse_lfs_pointer= mocker.patch("openpilot.tools.lib.comma_car_segments.parse_lfs_pointer")
+    mock_parse_lfs_pointer.return_value = ("abcd1234ijkl1234abcd", "1234")
+    mock_get_length_online = mocker.patch("openpilot.tools.lib.url_file.URLFile.get_length_online")
+    mock_get_length_online.return_value = -1
+
+    class MockRequestHead:
+      def __init__(self):
+        self.status_code = 404
+        self.headers = {'content-type': 'text/plain; charset=UTF-8'}
+
+    class MockRequestGet:
+      def __init__(self):
+        self.status_code = 200
+        self.text = '''version https://git-lfs.github.com/spec/v1
+oid sha256:abcd1234ijkl1234abcd
+size 1234'''
+
+    class MockRequestPost:
+      def __init__(self):
+        self.ok = True
+        self.json_data = {
+        "objects": [
+          {
+            "oid": "abcd1234ijkl1234abcd",
+            "size": 1234,
+            "actions": {
+              "download": {
+                "href": f"{host}abcd1234ijkl1234abcd",
+                "expires_at": "2023-01-01T00:00:00Z"
+              }
+            }
+          }
+        ]
+      }
+
+      def json(self):
+        return self.json_data
+
+    def default_valid(fn):
+      return fn is not None
+
+    mock_request_head = mocker.patch("requests.head")
+    mock_request_head.return_value = MockRequestHead()
+    mock_request_get = mocker.patch("requests.get")
+    mock_request_get.return_value = MockRequestGet()
+    mock_request_post = mocker.patch("requests.post")
+    mock_request_post.return_value = MockRequestPost()
+
+    mock_comma_car_segments_source.side_effect = [get_repo_url(f'{host}/rlog')]
+
+    mock_openpilotci_source.side_effect = lambda sr, current_mode:(
+      apply_strategy(current_mode, [f'{host}/openpilotci/rlog'], [f'{host}/openpilotci/qlog']))
+
+    mock_comma_api_source.side_effect = lambda sr, current_mode:(
+      apply_strategy(current_mode, [None], [f'{host}/comma_api/qlog'], valid_file=default_valid))
+
+    with pytest.raises(Exception): # noqa
+      auto_source(SegmentRange(TEST_ROUTE), ReadMode.RLOG)
+
+    assert mock_parse_lfs_pointer.called, "parse_lfs_pointer function was not called"
+
+
+  def test_source_rlogs_segments_qlogs_rest(self, mocker, host):
+    mock_openpilotci_source = mocker.patch("openpilot.tools.lib.logreader.openpilotci_source")
+    mock_openpilotci_source.__name__ = mock_openpilotci_source._mock_name
+    mock_comma_api_source = mocker.patch("openpilot.tools.lib.logreader.comma_api_source")
+    mock_comma_api_source.__name__ = mock_comma_api_source._mock_name
+    mock_comma_car_segments_source = mocker.patch("openpilot.tools.lib.logreader.comma_car_segments_source")
+    mock_comma_car_segments_source.__name__ = mock_comma_car_segments_source._mock_name
+    mock_auto_strategy = mocker.patch("openpilot.tools.lib.logreader.auto_strategy")
+
+    rlog_paths = [f'{host}/0/rlog', None, f'{host}/2/rlog']
+    qlog_paths = [f'{host}/{seg}/qlog' for seg in range(3)]
+    mock_comma_car_segments_source.side_effect = [Exception("Could not access to rlog")]
+
+    def default_valid(fn):
+      return fn is not None
+
+    for mode in [ReadMode.RLOG, ReadMode.AUTO]:
+      mock_openpilotci_source.side_effect = lambda sr, current_mode:(
+        apply_strategy(current_mode, rlog_paths, qlog_paths))
+
+      mock_comma_api_source.side_effect = lambda sr, current_mode:(
+        apply_strategy(current_mode, rlog_paths, qlog_paths, valid_file=default_valid))
+
+      if mode == ReadMode.AUTO:
+        mock_auto_strategy.side_effect = lambda rlog, qlog, interactive, valid_file=None:(
+          auto_strategy(rlog_paths, qlog_paths, interactive, default_valid))
+
+      if mode == ReadMode.RLOG:
+        with pytest.raises(Exception): # noqa
+          auto_source(SegmentRange(TEST_ROUTE), mode)
+      else:
+        assert auto_source(SegmentRange(TEST_ROUTE), mode) == [rlog_paths[i] if rlog_paths[i] is not None else \
+                                                               qlog_paths[i] for i in range(len(rlog_paths))]
+
+  def test_source_no_logs_available(self, mocker):
+    mock_openpilotci_source = mocker.patch("openpilot.tools.lib.logreader.openpilotci_source")
+    mock_openpilotci_source.__name__ = mock_openpilotci_source._mock_name
+    mock_comma_api_source = mocker.patch("openpilot.tools.lib.logreader.comma_api_source")
+    mock_comma_api_source.__name__ = mock_comma_api_source._mock_name
+    mock_comma_car_segments_source = mocker.patch("openpilot.tools.lib.logreader.comma_car_segments_source")
+    mock_comma_car_segments_source.__name__ = mock_comma_car_segments_source._mock_name
+    mock_auto_strategy = mocker.patch("openpilot.tools.lib.logreader.auto_strategy")
+
+    mock_comma_car_segments_source.side_effect = Exception("Rlogs not available")
+
+    def default_valid(fn):
+      return fn is not None
+
+    for mode in list(ReadMode):
+      if mode != ReadMode.SANITIZED:
+        mock_openpilotci_source.side_effect = lambda sr, current_mode:(
+          apply_strategy(current_mode, [None], [None]))
+
+        mock_comma_api_source.side_effect = lambda sr, current_mode:(
+          apply_strategy(current_mode, [None], [None], valid_file=default_valid))
+
+      if mode == ReadMode.AUTO or mode == ReadMode.AUTO_INTERACTIVE:
+        mock_auto_strategy.side_effect = lambda rlog, qlog, interactive, valid_file=None:(
+          auto_strategy([None], [None], interactive, valid_file))
+
+      with pytest.raises(Exception): # noqa
+        auto_source(SegmentRange(TEST_ROUTE), mode)
