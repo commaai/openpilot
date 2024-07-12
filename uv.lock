@@ -767,6 +767,12 @@ wheels = [
 ]
 
 [[distribution]]
+name = "hexdump"
+version = "3.3"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/55/b3/279b1d57fa3681725d0db8820405cdcb4e62a9239c205e4ceac4391c78e4/hexdump-3.3.zip", hash = "sha256:d781a43b0c16ace3f9366aade73e8ad3a7bd5137d58f0b45ab2d3f54876f20db", size = 12658 }
+
+[[distribution]]
 name = "humanfriendly"
 version = "10.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1537,6 +1543,7 @@ dev = [
     { name = "control" },
     { name = "dictdiffer" },
     { name = "flaky" },
+    { name = "hexdump" },
     { name = "inputs" },
     { name = "lru-dict" },
     { name = "matplotlib" },
