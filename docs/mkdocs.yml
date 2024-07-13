@@ -10,6 +10,10 @@ theme:
   features:
     - navigation.side.toc.hide
 
+markdown_extensions:
+    - markdown_include.include:
+        base_path: docs
+
 nav:
   - Getting Started:
     - What is openpilot?: getting-started/what-is-openpilot.md

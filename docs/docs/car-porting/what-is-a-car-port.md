@@ -17,6 +17,6 @@ The complexity of a car port varies depending on many factors including:
 
 # Overiew
 
-[Jason Young](https://github.com/jyoung8607) gave a talk at COMMA_CON with an overview of the car porting process. The talk is available on YouTube:
+[Jason Young][jyoung-gh-profile] gave a talk at COMMA_CON with an overview of the car porting process. The talk is available on YouTube: [How to port a car][jyoung-port-talk]
 
-[https://youtu.be/KcfzEHB6ms4?si=5szh1PX6TksOCKmM](https://youtu.be/KcfzEHB6ms4?si=5szh1PX6TksOCKmM)
+{!links.md!}
