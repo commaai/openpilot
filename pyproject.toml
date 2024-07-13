@@ -115,6 +115,7 @@ dev = [
   "tabulate",
   "types-requests",
   "types-tabulate",
+  "hexdump",
 
   # this is only pinned since 5.15.11 is broken
   "pyqt5 ==5.15.2; platform_machine == 'x86_64'", # no aarch64 wheels for macOS/linux
