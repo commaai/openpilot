@@ -13,6 +13,7 @@ from cereal import messaging, log, car
 
 from panda.tests.safety.test_tesla import TestTeslaSteeringSafety
 from panda.tests.safety.test_toyota import TestToyotaSafetyAngle
+from panda.tests.safety.test_nissan import TestNissanSafety
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
@@ -43,8 +44,11 @@ INTERNAL_SEG_CNT = int(os.environ.get("INTERNAL_SEG_CNT", "0"))
 MAX_EXAMPLES = int(os.environ.get("MAX_EXAMPLES", "300"))
 CI = os.environ.get("CI", None) is not None
 
+ANGLE_BASED_CARS = ("toyota", "tesla", "nissan")
+
 TESLA_DEG_TO_CAN = TestTeslaSteeringSafety.DEG_TO_CAN
 TOYOTA_DEG_TO_CAN = TestToyotaSafetyAngle.DEG_TO_CAN
+NISSAN_DEG_TO_CAN = TestNissanSafety.DEG_TO_CAN
 
 
 def get_test_cases() -> list[tuple[str, CarTestRoute | None]]:
@@ -426,7 +430,7 @@ class TestCarModelBase(unittest.TestCase):
 
     now_nanos = (len(msgs) - 1) * DT_CTRL * 1e9
     # TODO: remove this if
-    if not self.safety.get_gas_pressed_prev() and self.CP.carName not in ("honda", "body", "nissan"):
+    if not self.safety.get_gas_pressed_prev() and self.CP.carName not in ("honda", "body"):
       cc_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
 
       # follow logic of LoC in controlsd to set accel to 0 if longActive is False
@@ -450,13 +454,17 @@ class TestCarModelBase(unittest.TestCase):
       new_actuators, sendcans = self.CI.apply(CC, now_nanos)
       new_actuators = new_actuators.as_reader()
 
-      if car_platform in ("toyota", "tesla", "nissan"):
+      if car_platform in ANGLE_BASED_CARS:
         new_steering_angle_deg = new_actuators.steeringAngleDeg
         if car_platform == "toyota":
           new_steering_angle_deg *= TOYOTA_DEG_TO_CAN
         elif car_platform == "tesla":
           new_steering_angle_deg *= TESLA_DEG_TO_CAN
-          self.safety.set_desired_angle_last(int(round(new_steering_angle_deg)))
+          # mismatch in logic between panda and OP for tesla steering:
+          #   - OP clip steering angle to last angle while safety_tesla in panda doesn't do this
+          self.safety.set_desired_angle_last(-int(round(new_steering_angle_deg)))
+        elif car_platform == "nissan":
+          new_steering_angle_deg *= NISSAN_DEG_TO_CAN
 
         # angle_meas in panda and steeringAngleDeg are randomized,
         #   so they are prone to having large difference in angle when latActive is False.
@@ -467,7 +475,7 @@ class TestCarModelBase(unittest.TestCase):
 
       for addr, _, dat, bus in sendcans:
         to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
-        self.assertTrue(self.safety.safety_tx_hook(to_send), (addr, dat, bus))
+        self.assertTrue(self.safety.safety_tx_hook(to_send), (addr, dat, bus,))
 
   def test_panda_safety_carstate(self):
     """
