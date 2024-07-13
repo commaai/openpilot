@@ -3,6 +3,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <QDateTime>
 #include <QFutureSynchronizer>
@@ -10,6 +11,14 @@
 #include "tools/replay/framereader.h"
 #include "tools/replay/logreader.h"
 #include "tools/replay/util.h"
+
+enum class RouteLoadError {
+  None,
+  AccessDenied,
+  NetworkError,
+  FileNotFound,
+  UnknownError
+};
 
 struct RouteIdentifier {
   QString dongle_id;
@@ -32,6 +41,7 @@ class Route {
 public:
   Route(const QString &route, const QString &data_dir = {});
   bool load();
+  RouteLoadError lastError() const { return err_; }
   inline const QString &name() const { return route_.str; }
   inline const QDateTime datetime() const { return date_time_; }
   inline const QString &dir() const { return data_dir_; }
@@ -49,13 +59,14 @@ protected:
   QString data_dir_;
   std::map<int, SegmentFile> segments_;
   QDateTime date_time_;
+  RouteLoadError err_ = RouteLoadError::None;
 };
 
 class Segment : public QObject {
   Q_OBJECT
 
 public:
-  Segment(int n, const SegmentFile &files, uint32_t flags);
+  Segment(int n, const SegmentFile &files, uint32_t flags, const std::vector<bool> &filters = {});
   ~Segment();
   inline bool isLoaded() const { return !loading_ && !abort_; }
 
@@ -73,4 +84,5 @@ protected:
   std::atomic<int> loading_ = 0;
   QFutureSynchronizer<void> synchronizer_;
   uint32_t flags;
+  std::vector<bool> filters_;
 };

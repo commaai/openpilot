@@ -7,6 +7,7 @@
 #include <QPushButton>
 
 #include "common/timing.h"
+#include "tools/cabana/streams/routes.h"
 
 ReplayStream::ReplayStream(QObject *parent) : AbstractStream(parent) {
   unsetenv("ZMQ");
@@ -52,21 +53,40 @@ bool ReplayStream::loadRoute(const QString &route, const QString &data_dir, uint
                           {}, nullptr, replay_flags, data_dir, this));
   replay->setSegmentCacheLimit(settings.max_cached_minutes);
   replay->installEventFilter(event_filter, this);
+  QObject::connect(replay.get(), &Replay::seeking, this, &AbstractStream::seeking);
   QObject::connect(replay.get(), &Replay::seekedTo, this, &AbstractStream::seekedTo);
   QObject::connect(replay.get(), &Replay::segmentsMerged, this, &ReplayStream::mergeSegments);
-  QObject::connect(replay.get(), &Replay::qLogLoaded, this, &ReplayStream::qLogLoaded, Qt::QueuedConnection);
-  return replay->load();
-}
-
-void ReplayStream::start() {
-  emit streamStarted();
-  replay->start();
+  bool success = replay->load();
+  if (!success) {
+    if (replay->lastRouteError() == RouteLoadError::AccessDenied) {
+      auto auth_content = util::read_file(util::getenv("HOME") + "/.comma/auth.json");
+      QString message;
+      if (auth_content.empty()) {
+        message = "Authentication Required. Please run the following command to authenticate:\n\n"
+                  "python tools/lib/auth.py\n\n"
+                  "This will grant access to routes from your comma account.";
+      } else {
+        message = tr("Access Denied. You do not have permission to access route:\n\n%1\n\n"
+                     "This is likely a private route.").arg(route);
+      }
+      QMessageBox::warning(nullptr, tr("Access Denied"), message);
+    } else if (replay->lastRouteError() == RouteLoadError::NetworkError) {
+      QMessageBox::warning(nullptr, tr("Network Error"),
+                          tr("Unable to load the route:\n\n %1.\n\nPlease check your network connection and try again.").arg(route));
+    } else if (replay->lastRouteError() == RouteLoadError::FileNotFound) {
+      QMessageBox::warning(nullptr, tr("Route Not Found"),
+                           tr("The specified route could not be found:\n\n %1.\n\nPlease check the route name and try again.").arg(route));
+    } else {
+      QMessageBox::warning(nullptr, tr("Route Load Failed"), tr("Failed to load route: '%1'").arg(route));
+    }
+  }
+  return success;
 }
 
 bool ReplayStream::eventFilter(const Event *event) {
   static double prev_update_ts = 0;
   if (event->which == cereal::Event::Which::CAN) {
-    double current_sec = event->mono_time / 1e9 - routeStartTime();
+    double current_sec = toSeconds(event->mono_time);
     capnp::FlatArrayMessageReader reader(event->data);
     auto e = reader.getRoot<cereal::Event>();
     for (const auto &c : e.getCan()) {
@@ -90,42 +110,45 @@ void ReplayStream::pause(bool pause) {
 }
 
 
-AbstractOpenStreamWidget *ReplayStream::widget(AbstractStream **stream) {
-  return new OpenReplayWidget(stream);
-}
-
 // OpenReplayWidget
 
-OpenReplayWidget::OpenReplayWidget(AbstractStream **stream) : AbstractOpenStreamWidget(stream) {
-  // TODO: get route list from api.comma.ai
+OpenReplayWidget::OpenReplayWidget(QWidget *parent) : AbstractOpenStreamWidget(parent) {
   QGridLayout *grid_layout = new QGridLayout(this);
   grid_layout->addWidget(new QLabel(tr("Route")), 0, 0);
   grid_layout->addWidget(route_edit = new QLineEdit(this), 0, 1);
-  route_edit->setPlaceholderText(tr("Enter remote route name or click browse to select a local route"));
-  auto file_btn = new QPushButton(tr("Browse..."), this);
-  grid_layout->addWidget(file_btn, 0, 2);
+  route_edit->setPlaceholderText(tr("Enter route name or browse for local/remote route"));
+  auto browse_remote_btn = new QPushButton(tr("Remote route..."), this);
+  grid_layout->addWidget(browse_remote_btn, 0, 2);
+  auto browse_local_btn = new QPushButton(tr("Local route..."), this);
+  grid_layout->addWidget(browse_local_btn, 0, 3);
 
-  grid_layout->addWidget(new QLabel(tr("Camera")), 1, 0);
   QHBoxLayout *camera_layout = new QHBoxLayout();
   for (auto c : {tr("Road camera"), tr("Driver camera"), tr("Wide road camera")})
     camera_layout->addWidget(cameras.emplace_back(new QCheckBox(c, this)));
+  cameras[0]->setChecked(true);
   camera_layout->addStretch(1);
   grid_layout->addItem(camera_layout, 1, 1);
 
   setMinimumWidth(550);
-  QObject::connect(file_btn, &QPushButton::clicked, [=]() {
+  QObject::connect(browse_local_btn, &QPushButton::clicked, [=]() {
     QString dir = QFileDialog::getExistingDirectory(this, tr("Open Local Route"), settings.last_route_dir);
     if (!dir.isEmpty()) {
       route_edit->setText(dir);
       settings.last_route_dir = QFileInfo(dir).absolutePath();
     }
   });
+  QObject::connect(browse_remote_btn, &QPushButton::clicked, [this]() {
+    RoutesDialog route_dlg(this);
+    if (route_dlg.exec()) {
+      route_edit->setText(route_dlg.route());
+    }
+  });
 }
 
-bool OpenReplayWidget::open() {
+AbstractStream *OpenReplayWidget::open() {
   QString route = route_edit->text();
   QString data_dir;
-  if (int idx = route.lastIndexOf('/'); idx != -1) {
+  if (int idx = route.lastIndexOf('/'); idx != -1 && util::file_exists(route.toStdString())) {
     data_dir = route.mid(0, idx + 1);
     route = route.mid(idx + 1);
   }
@@ -141,10 +164,8 @@ bool OpenReplayWidget::open() {
     if (flags == REPLAY_FLAG_NONE && !cameras[0]->isChecked()) flags = REPLAY_FLAG_NO_VIPC;
 
     if (replay_stream->loadRoute(route, data_dir, flags)) {
-      *stream = replay_stream.release();
-    } else {
-      QMessageBox::warning(nullptr, tr("Warning"), tr("Failed to load route: '%1'").arg(route));
+      return replay_stream.release();
     }
   }
-  return *stream != nullptr;
+  return nullptr;
 }

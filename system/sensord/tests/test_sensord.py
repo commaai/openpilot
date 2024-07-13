@@ -1,8 +1,6 @@
-#!/usr/bin/env python3
 import os
 import pytest
 import time
-import unittest
 import numpy as np
 from collections import namedtuple, defaultdict
 
@@ -11,7 +9,7 @@ from cereal import log
 from cereal.services import SERVICE_LIST
 from openpilot.common.gpio import get_irqs_for_action
 from openpilot.common.timeout import Timeout
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.manager.process_config import managed_processes
 
 BMX = {
   ('bmx055', 'acceleration'),
@@ -99,9 +97,9 @@ def read_sensor_events(duration_sec):
   return {k: v for k, v in events.items() if len(v) > 0}
 
 @pytest.mark.tici
-class TestSensord(unittest.TestCase):
+class TestSensord:
   @classmethod
-  def setUpClass(cls):
+  def setup_class(cls):
     # enable LSM self test
     os.environ["LSM_SELF_TEST"] = "1"
 
@@ -119,10 +117,10 @@ class TestSensord(unittest.TestCase):
       managed_processes["sensord"].stop()
 
   @classmethod
-  def tearDownClass(cls):
+  def teardown_class(cls):
     managed_processes["sensord"].stop()
 
-  def tearDown(self):
+  def teardown_method(self):
     managed_processes["sensord"].stop()
 
   def test_sensors_present(self):
@@ -133,9 +131,9 @@ class TestSensord(unittest.TestCase):
         m = getattr(measurement, measurement.which())
         seen.add((str(m.source), m.which()))
 
-    self.assertIn(seen, SENSOR_CONFIGURATIONS)
+    assert seen in SENSOR_CONFIGURATIONS
 
-  def test_lsm6ds3_timing(self):
+  def test_lsm6ds3_timing(self, subtests):
     # verify measurements are sampled and published at 104Hz
 
     sensor_t = {
@@ -152,7 +150,7 @@ class TestSensord(unittest.TestCase):
       sensor_t[m.sensor].append(m.timestamp)
 
     for s, vals in sensor_t.items():
-      with self.subTest(sensor=s):
+      with subtests.test(sensor=s):
         assert len(vals) > 0
         tdiffs = np.diff(vals) / 1e6 # millis
 
@@ -166,9 +164,9 @@ class TestSensord(unittest.TestCase):
         stddev = np.std(tdiffs)
         assert stddev < 2.0, f"Standard-dev to big {stddev}"
 
-  def test_sensor_frequency(self):
+  def test_sensor_frequency(self, subtests):
     for s, msgs in self.events.items():
-      with self.subTest(sensor=s):
+      with subtests.test(sensor=s):
         freq = len(msgs) / self.sample_secs
         ef = SERVICE_LIST[s].frequency
         assert ef*0.85 <= freq <= ef*1.15
@@ -246,6 +244,3 @@ class TestSensord(unittest.TestCase):
     state_two = get_irq_count(self.sensord_irq)
     assert state_one == state_two, "Interrupts received after sensord stop!"
 
-
-if __name__ == "__main__":
-  unittest.main()

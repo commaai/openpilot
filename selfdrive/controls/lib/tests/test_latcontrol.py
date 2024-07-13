@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-import unittest
-
 from parameterized import parameterized
 
 from cereal import car, log
@@ -15,7 +12,7 @@ from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 from openpilot.common.mock.generators import generate_liveLocationKalman
 
 
-class TestLatControl(unittest.TestCase):
+class TestLatControl:
 
   @parameterized.expand([(HONDA.HONDA_CIVIC, LatControlPID), (TOYOTA.TOYOTA_RAV4, LatControlTorque),  (NISSAN.NISSAN_LEAF, LatControlAngle)])
   def test_saturation(self, car_name, controller):
@@ -24,7 +21,7 @@ class TestLatControl(unittest.TestCase):
     CI = CarInterface(CP, CarController, CarState)
     VM = VehicleModel(CP)
 
-    controller = controller(CP, CI)
+    controller = controller(CP.as_reader(), CI)
 
     CS = car.CarState.new_message()
     CS.vEgo = 30
@@ -36,8 +33,4 @@ class TestLatControl(unittest.TestCase):
     for _ in range(1000):
       _, _, lac_log = controller.update(True, CS, VM, params, False, 1, llk)
 
-    self.assertTrue(lac_log.saturated)
-
-
-if __name__ == "__main__":
-  unittest.main()
+    assert lac_log.saturated

@@ -72,17 +72,13 @@ class CarInterface(CarInterfaceBase):
     ret.lateralTuning.pid.kf = 0.00006  # conservative feed-forward
 
     if candidate in HONDA_BOSCH:
-      ret.longitudinalTuning.kpV = [0.25]
-      ret.longitudinalTuning.kiV = [0.05]
-      ret.longitudinalActuatorDelayUpperBound = 0.5 # s
+      ret.longitudinalActuatorDelay = 0.5 # s
       if candidate in HONDA_BOSCH_RADARLESS:
         ret.stopAccel = CarControllerParams.BOSCH_ACCEL_MIN  # stock uses -4.0 m/s^2 once stopped but limited by safety model
     else:
       # default longitudinal tuning for all hondas
-      ret.longitudinalTuning.kpBP = [0., 5., 35.]
-      ret.longitudinalTuning.kpV = [1.2, 0.8, 0.5]
-      ret.longitudinalTuning.kiBP = [0., 35.]
-      ret.longitudinalTuning.kiV = [0.18, 0.12]
+      ret.longitudinalTuning.kiBP = [0., 5., 35.]
+      ret.longitudinalTuning.kiV = [1.2, 0.8, 0.5]
 
     eps_modified = False
     for fw in car_fw:

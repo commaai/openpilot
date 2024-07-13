@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import os
 import numpy as np
 import hashlib
@@ -93,7 +92,7 @@ if __name__ == "__main__":
 
   if pix_hash != ref_hash:
     print("result changed! please check kernel")
-    print("ref: %s" % ref_hash)
-    print("new: %s" % pix_hash)
+    print(f"ref: {ref_hash}")
+    print(f"new: {pix_hash}")
   else:
     print("test passed")

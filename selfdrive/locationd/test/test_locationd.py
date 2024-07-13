@@ -1,7 +1,6 @@
-#!/usr/bin/env python3
+import pytest
 import json
 import random
-import unittest
 import time
 import capnp
 
@@ -10,16 +9,14 @@ from cereal.services import SERVICE_LIST
 from openpilot.common.params import Params
 from openpilot.common.transformations.coordinates import ecef2geodetic
 
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.manager.process_config import managed_processes
 
 
-class TestLocationdProc(unittest.TestCase):
+class TestLocationdProc:
   LLD_MSGS = ['gpsLocationExternal', 'cameraOdometry', 'carState', 'liveCalibration',
               'accelerometer', 'gyroscope', 'magnetometer']
 
-  def setUp(self):
-    random.seed(123489234)
-
+  def setup_method(self):
     self.pm = messaging.PubMaster(self.LLD_MSGS)
 
     self.params = Params()
@@ -27,7 +24,7 @@ class TestLocationdProc(unittest.TestCase):
     managed_processes['locationd'].prepare()
     managed_processes['locationd'].start()
 
-  def tearDown(self):
+  def teardown_method(self):
     managed_processes['locationd'].stop()
 
   def get_msg(self, name, t):
@@ -65,6 +62,7 @@ class TestLocationdProc(unittest.TestCase):
     return msg
 
   def test_params_gps(self):
+    random.seed(123489234)
     self.params.remove('LastGPSPosition')
 
     self.x = -2710700 + (random.random() * 1e5)
@@ -86,10 +84,6 @@ class TestLocationdProc(unittest.TestCase):
     time.sleep(1)  # wait for async params write
 
     lastGPS = json.loads(self.params.get('LastGPSPosition'))
-    self.assertAlmostEqual(lastGPS['latitude'], self.lat, places=3)
-    self.assertAlmostEqual(lastGPS['longitude'], self.lon, places=3)
-    self.assertAlmostEqual(lastGPS['altitude'], self.alt, places=3)
-
-
-if __name__ == "__main__":
-  unittest.main()
+    assert lastGPS['latitude'] == pytest.approx(self.lat, abs=0.001)
+    assert lastGPS['longitude'] == pytest.approx(self.lon, abs=0.001)
+    assert lastGPS['altitude'] == pytest.approx(self.alt, abs=0.001)

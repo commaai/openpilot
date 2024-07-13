@@ -1,6 +1,7 @@
 import pathlib
 import tarfile
-from typing import IO, Callable
+from typing import IO
+from collections.abc import Callable
 
 
 def include_default(_) -> bool:
