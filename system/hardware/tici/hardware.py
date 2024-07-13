@@ -61,7 +61,7 @@ MM_MODEM_ACCESS_TECHNOLOGY_UMTS = 1 << 5
 MM_MODEM_ACCESS_TECHNOLOGY_LTE = 1 << 14
 
 
-def sudo_write(val, path):
+def _sudo_write(val, path):
   try:
     with open(path, 'w') as f:
       f.write(str(val))
@@ -74,23 +74,23 @@ def sudo_write(val, path):
       # fallback for debugfs files
       os.system(f"sudo su -c 'echo {val} > {path}'")
 
-def sudo_read(path: str) -> str:
+def _sudo_read(path: str) -> str:
   try:
     return subprocess.check_output(f"sudo cat {path}", shell=True, encoding='utf8')
   except Exception:
     return ""
 
-def affine_irq(val, action):
+def _affine_irq(val, action):
   irqs = get_irqs_for_action(action)
   if len(irqs) == 0:
     print(f"No IRQs found for '{action}'")
     return
 
   for i in irqs:
-    sudo_write(str(val), f"/proc/irq/{i}/smp_affinity_list")
+    _sudo_write(str(val), f"/proc/irq/{i}/smp_affinity_list")
 
 @lru_cache
-def get_device_type():
+def _get_device_type():
   # lru_cache and cache can cause memory leaks when used in classes
   with open("/sys/firmware/devicetree/base/model") as f:
     model = f.read().strip('\x00')
@@ -98,20 +98,20 @@ def get_device_type():
 
 class Tici(HardwareBase):
   @cached_property
-  def bus(self):
+  def _bus(self):
     import dbus
     return dbus.SystemBus()
 
   @cached_property
-  def nm(self):
-    return self.bus.get_object(NM, '/org/freedesktop/NetworkManager')
+  def _nm(self):
+    return self._bus.get_object(NM, '/org/freedesktop/NetworkManager')
 
   @property # this should not be cached, in case the modemmanager restarts
-  def mm(self):
-    return self.bus.get_object(MM, '/org/freedesktop/ModemManager1')
+  def _mm(self):
+    return self._bus.get_object(MM, '/org/freedesktop/ModemManager1')
 
   @cached_property
-  def amplifier(self):
+  def _amplifier(self):
     if self.get_device_type() == "mici":
       return None
     return Amplifier()
@@ -121,7 +121,7 @@ class Tici(HardwareBase):
       return f.read().strip()
 
   def get_device_type(self):
-    return get_device_type()
+    return _get_device_type()
 
   def get_sound_card_online(self):
     if os.path.isfile('/proc/asound/card0/state'):
@@ -142,8 +142,8 @@ class Tici(HardwareBase):
 
   def get_network_type(self):
     try:
-      primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-      primary_connection = self.bus.get_object(NM, primary_connection)
+      primary_connection = self._nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+      primary_connection = self._bus.get_object(NM, primary_connection)
       primary_type = primary_connection.Get(NM_CON_ACT, 'Type', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
 
       if primary_type == '802-3-ethernet':
@@ -151,12 +151,12 @@ class Tici(HardwareBase):
       elif primary_type == '802-11-wireless':
         return NetworkType.wifi
       else:
-        active_connections = self.nm.Get(NM, 'ActiveConnections', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+        active_connections = self._nm.Get(NM, 'ActiveConnections', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
         for conn in active_connections:
-          c = self.bus.get_object(NM, conn)
+          c = self._bus.get_object(NM, conn)
           tp = c.Get(NM_CON_ACT, 'Type', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
           if tp == 'gsm':
-            modem = self.get_modem()
+            modem = self._get_modem()
             access_t = modem.Get(MM_MODEM, 'AccessTechnologies', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
             if access_t >= MM_MODEM_ACCESS_TECHNOLOGY_LTE:
               return NetworkType.cell4G
@@ -169,21 +169,21 @@ class Tici(HardwareBase):
 
     return NetworkType.none
 
-  def get_modem(self):
-    objects = self.mm.GetManagedObjects(dbus_interface="org.freedesktop.DBus.ObjectManager", timeout=TIMEOUT)
+  def _get_modem(self):
+    objects = self._mm.GetManagedObjects(dbus_interface="org.freedesktop.DBus.ObjectManager", timeout=TIMEOUT)
     modem_path = list(objects.keys())[0]
-    return self.bus.get_object(MM, modem_path)
+    return self._bus.get_object(MM, modem_path)
 
-  def get_wlan(self):
-    wlan_path = self.nm.GetDeviceByIpIface('wlan0', dbus_interface=NM, timeout=TIMEOUT)
-    return self.bus.get_object(NM, wlan_path)
+  def _get_wlan(self):
+    wlan_path = self._nm.GetDeviceByIpIface('wlan0', dbus_interface=NM, timeout=TIMEOUT)
+    return self._bus.get_object(NM, wlan_path)
 
-  def get_wwan(self):
-    wwan_path = self.nm.GetDeviceByIpIface('wwan0', dbus_interface=NM, timeout=TIMEOUT)
-    return self.bus.get_object(NM, wwan_path)
+  def _get_wwan(self):
+    wwan_path = self._nm.GetDeviceByIpIface('wwan0', dbus_interface=NM, timeout=TIMEOUT)
+    return self._bus.get_object(NM, wwan_path)
 
   def get_sim_info(self):
-    modem = self.get_modem()
+    modem = self._get_modem()
     sim_path = modem.Get(MM_MODEM, 'Sim', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
 
     if sim_path == "/":
@@ -195,7 +195,7 @@ class Tici(HardwareBase):
         'data_connected': False
       }
     else:
-      sim = self.bus.get_object(MM, sim_path)
+      sim = self._bus.get_object(MM, sim_path)
       return {
         'sim_id': str(sim.Get(MM_SIM, 'SimIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)),
         'mcc_mnc': str(sim.Get(MM_SIM, 'OperatorIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)),
@@ -208,11 +208,11 @@ class Tici(HardwareBase):
     if slot != 0:
       return ""
 
-    return str(self.get_modem().Get(MM_MODEM, 'EquipmentIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
+    return str(self._get_modem().Get(MM_MODEM, 'EquipmentIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
 
   def get_network_info(self):
     try:
-      modem = self.get_modem()
+      modem = self._get_modem()
       info = modem.Command("AT+QNWINFO", math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
       extra = modem.Command('AT+QENG="servingcell"', math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
       state = modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
@@ -240,7 +240,7 @@ class Tici(HardwareBase):
     else:
       return None
 
-  def parse_strength(self, percentage):
+  def _parse_strength(self, percentage):
     if percentage < 25:
       return NetworkStrength.poor
     elif percentage < 50:
@@ -257,16 +257,16 @@ class Tici(HardwareBase):
       if network_type == NetworkType.none:
         pass
       elif network_type == NetworkType.wifi:
-        wlan = self.get_wlan()
+        wlan = self._get_wlan()
         active_ap_path = wlan.Get(NM_DEV_WL, 'ActiveAccessPoint', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
         if active_ap_path != "/":
-          active_ap = self.bus.get_object(NM, active_ap_path)
+          active_ap = self._bus.get_object(NM, active_ap_path)
           strength = int(active_ap.Get(NM_AP, 'Strength', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
-          network_strength = self.parse_strength(strength)
+          network_strength = self._parse_strength(strength)
       else:  # Cellular
-        modem = self.get_modem()
+        modem = self._get_modem()
         strength = int(modem.Get(MM_MODEM, 'SignalQuality', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)[0])
-        network_strength = self.parse_strength(strength)
+        network_strength = self._parse_strength(strength)
     except Exception:
       pass
 
@@ -274,12 +274,12 @@ class Tici(HardwareBase):
 
   def get_network_metered(self, network_type) -> bool:
     try:
-      primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-      primary_connection = self.bus.get_object(NM, primary_connection)
+      primary_connection = self._nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+      primary_connection = self._bus.get_object(NM, primary_connection)
       primary_devices = primary_connection.Get(NM_CON_ACT, 'Devices', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
 
       for dev in primary_devices:
-        dev_obj = self.bus.get_object(NM, str(dev))
+        dev_obj = self._bus.get_object(NM, str(dev))
         metered_prop = dev_obj.Get(NM_DEV, 'Metered', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
 
         if network_type == NetworkType.wifi:
@@ -295,7 +295,7 @@ class Tici(HardwareBase):
 
   def get_modem_version(self):
     try:
-      modem = self.get_modem()
+      modem = self._get_modem()
       return modem.Get(MM_MODEM, 'Revision', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
     except Exception:
       return None
@@ -308,7 +308,7 @@ class Tici(HardwareBase):
       '/nv/item_files/modem/mmode/sms_only',
     )
     try:
-      modem = self.get_modem()
+      modem = self._get_modem()
       return { fn: str(modem.Command(f'AT+QNVFR="{fn}"', math.ceil(timeout), dbus_interface=MM_MODEM, timeout=timeout)) for fn in files}
     except Exception:
       return None
@@ -316,7 +316,7 @@ class Tici(HardwareBase):
   def get_modem_temperatures(self):
     timeout = 0.2  # Default timeout is too short
     try:
-      modem = self.get_modem()
+      modem = self._get_modem()
       temps = modem.Command("AT+QTEMP", math.ceil(timeout), dbus_interface=MM_MODEM, timeout=timeout)
       return list(map(int, temps.split(' ')[1].split(',')))
     except Exception:
@@ -372,33 +372,33 @@ class Tici(HardwareBase):
 
   def set_power_save(self, powersave_enabled):
     # amplifier, 100mW at idle
-    if self.amplifier is not None:
-      self.amplifier.set_global_shutdown(amp_disabled=powersave_enabled)
+    if self._amplifier is not None:
+      self._amplifier.set_global_shutdown(amp_disabled=powersave_enabled)
       if not powersave_enabled:
-        self.amplifier.initialize_configuration(self.get_device_type())
+        self._amplifier.initialize_configuration(self.get_device_type())
 
     # *** CPU config ***
 
     # offline big cluster, leave core 4 online for pandad
     for i in range(4, 8):
       val = '0' if powersave_enabled else '1'
-      sudo_write(val, f'/sys/devices/system/cpu/cpu{i}/online')
+      _sudo_write(val, f'/sys/devices/system/cpu/cpu{i}/online')
 
     for n in ('0', '4'):
       if powersave_enabled and n == '4':
         continue
       gov = 'ondemand' if powersave_enabled else 'performance'
-      sudo_write(gov, f'/sys/devices/system/cpu/cpufreq/policy{n}/scaling_governor')
+      _sudo_write(gov, f'/sys/devices/system/cpu/cpufreq/policy{n}/scaling_governor')
 
     # *** IRQ config ***
 
     # GPU
-    affine_irq(5, "kgsl-3d0")
+    _affine_irq(5, "kgsl-3d0")
 
     # camerad core
     camera_irqs = ("cci", "cpas_camnoc", "cpas-cdm", "csid", "ife", "csid-lite", "ife-lite")
     for n in camera_irqs:
-      affine_irq(5, n)
+      _affine_irq(5, n)
 
   def get_gpu_usage_percent(self):
     try:
@@ -409,8 +409,8 @@ class Tici(HardwareBase):
       return 0
 
   def initialize_hardware(self):
-    if self.amplifier is not None:
-      self.amplifier.initialize_configuration(self.get_device_type())
+    if self._amplifier is not None:
+      self._amplifier.initialize_configuration(self.get_device_type())
 
     # Allow hardwared to write engagement status to kmsg
     os.system("sudo chmod a+w /dev/kmsg")
@@ -422,38 +422,38 @@ class Tici(HardwareBase):
     # *** IRQ config ***
 
     # mask off big cluster from default affinity
-    sudo_write("f", "/proc/irq/default_smp_affinity")
+    _sudo_write("f", "/proc/irq/default_smp_affinity")
 
     # move these off the default core
-    affine_irq(1, "msm_drm")   # display
-    affine_irq(1, "msm_vidc")  # encoders
-    affine_irq(1, "i2c_geni")  # sensors
+    _affine_irq(1, "msm_drm")   # display
+    _affine_irq(1, "msm_vidc")  # encoders
+    _affine_irq(1, "i2c_geni")  # sensors
 
     # *** GPU config ***
     # https://github.com/commaai/agnos-kernel-sdm845/blob/master/arch/arm64/boot/dts/qcom/sdm845-gpu.dtsi#L216
-    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/min_pwrlevel")
-    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/max_pwrlevel")
-    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_bus_on")
-    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_clk_on")
-    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_rail_on")
-    sudo_write("1000", "/sys/class/kgsl/kgsl-3d0/idle_timer")
-    sudo_write("performance", "/sys/class/kgsl/kgsl-3d0/devfreq/governor")
-    sudo_write("710", "/sys/class/kgsl/kgsl-3d0/max_clock_mhz")
+    _sudo_write("1", "/sys/class/kgsl/kgsl-3d0/min_pwrlevel")
+    _sudo_write("1", "/sys/class/kgsl/kgsl-3d0/max_pwrlevel")
+    _sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_bus_on")
+    _sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_clk_on")
+    _sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_rail_on")
+    _sudo_write("1000", "/sys/class/kgsl/kgsl-3d0/idle_timer")
+    _sudo_write("performance", "/sys/class/kgsl/kgsl-3d0/devfreq/governor")
+    _sudo_write("710", "/sys/class/kgsl/kgsl-3d0/max_clock_mhz")
 
     # setup governors
-    sudo_write("performance", "/sys/class/devfreq/soc:qcom,cpubw/governor")
-    sudo_write("performance", "/sys/class/devfreq/soc:qcom,memlat-cpu0/governor")
-    sudo_write("performance", "/sys/class/devfreq/soc:qcom,memlat-cpu4/governor")
+    _sudo_write("performance", "/sys/class/devfreq/soc:qcom,cpubw/governor")
+    _sudo_write("performance", "/sys/class/devfreq/soc:qcom,memlat-cpu0/governor")
+    _sudo_write("performance", "/sys/class/devfreq/soc:qcom,memlat-cpu4/governor")
 
     # *** VIDC (encoder) config ***
-    sudo_write("N", "/sys/kernel/debug/msm_vidc/clock_scaling")
-    sudo_write("Y", "/sys/kernel/debug/msm_vidc/disable_thermal_mitigation")
+    _sudo_write("N", "/sys/kernel/debug/msm_vidc/clock_scaling")
+    _sudo_write("Y", "/sys/kernel/debug/msm_vidc/disable_thermal_mitigation")
 
     # pandad core
-    affine_irq(3, "spi_geni")         # SPI
+    _affine_irq(3, "spi_geni")         # SPI
     if "tici" in self.get_device_type():
-      affine_irq(3, "xhci-hcd:usb3")  # aux panda USB (or potentially anything else on USB)
-      affine_irq(3, "xhci-hcd:usb1")  # internal panda USB (also modem)
+      _affine_irq(3, "xhci-hcd:usb3")  # aux panda USB (or potentially anything else on USB)
+      _affine_irq(3, "xhci-hcd:usb1")  # internal panda USB (also modem)
     try:
       pid = subprocess.check_output(["pgrep", "-f", "spi0"], encoding='utf8').strip()
       subprocess.call(["sudo", "chrt", "-f", "-p", "1", pid])
@@ -464,7 +464,7 @@ class Tici(HardwareBase):
   def configure_modem(self):
     sim_id = self.get_sim_info().get('sim_id', '')
 
-    modem = self.get_modem()
+    modem = self._get_modem()
     try:
       manufacturer = str(modem.Get(MM_MODEM, 'Manufacturer', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
     except Exception:
@@ -544,7 +544,7 @@ class Tici(HardwareBase):
 
   def get_modem_data_usage(self):
     try:
-      wwan = self.get_wwan()
+      wwan = self._get_wwan()
 
       # Ensure refresh rate is set so values don't go stale
       refresh_rate = wwan.Get(NM_DEV_STATS, 'RefreshRateMs', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
@@ -581,7 +581,7 @@ class Tici(HardwareBase):
 
   def booted(self):
     # this normally boots within 8s, but on rare occasions takes 30+s
-    encoder_state = sudo_read("/sys/kernel/debug/msm_vidc/core0/info")
+    encoder_state = _sudo_read("/sys/kernel/debug/msm_vidc/core0/info")
     if "Core state: 0" in encoder_state and (time.monotonic() < 60*2):
       return False
     return True
