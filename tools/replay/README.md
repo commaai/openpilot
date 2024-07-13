@@ -19,8 +19,10 @@ tools/replay/replay --demo
 # watch the replay with the normal openpilot UI
 cd selfdrive/ui && ./ui
 
-# or try out a debug visualizer:
-python replay/ui.py
+# or try out radar point visualization in Rerun:
+python replay/rp_visualization.py
+
+# NOTE: To visualize radar points, make sure tools/replay/replay is running.
 ```
 
 ## usage
