@@ -34,6 +34,21 @@ update_uv
 
 # TODO: remove --no-cache once this is fixed: https://github.com/astral-sh/uv/issues/4378
 echo "installing python packages..."
+ARCH=$(uname -m)
+if [[ $ARCH == "aarch64" ]]; then
+	apt install python3 python3-pip cmake curl -y
+	curl https://files.pythonhosted.org/packages/5a/97/ca40c4d7d36162ddfd0bb96a89206469a95b925faf67046ba6e4b5b78283/casadi-3.6.5.tar.gz -o casadi-3.6.5.tar.gz
+	tar -xvf casadi-3.6.5.tar.gz
+
+	cd casadi-3.6.5
+	# build casadi wheel
+	python3 setup.py bdist_wheel
+	echo "built casadi wheel"
+	# update the uv.lock file
+	uv add casadi-3.6.5/dist/casadi-3.6.5-cp312-cp312-linux_aarch64.whl
+	cd ..
+fi
+
 uv --no-cache sync --all-extras
 source .venv/bin/activate
 
