@@ -107,7 +107,6 @@ dev = [
   "parameterized >=0.8, <0.9",
   #pprofile = "*"
   "pyautogui",
-  "pygame",
   "pyopencl; platform_machine != 'aarch64'", # broken on arm64
   "pywinctl",
   "pyprof2calltree",
