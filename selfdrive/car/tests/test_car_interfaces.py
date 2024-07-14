@@ -23,7 +23,7 @@ ALL_ECUS |= {ecu for config in FW_QUERY_CONFIGS.values() for ecu in config.extra
 
 ALL_REQUESTS = {tuple(r.request) for config in FW_QUERY_CONFIGS.values() for r in config.requests}
 
-MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '40'))
+MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '60'))
 
 
 def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
@@ -62,6 +62,7 @@ class TestCarInterfaces:
 
     car_params = CarInterface.get_params(car_name, args['fingerprints'], args['car_fw'],
                                          experimental_long=args['experimental_long'], docs=False)
+    car_params = car_params.as_reader()
     car_interface = CarInterface(car_params, CarController, CarState)
     assert car_params
     assert car_interface

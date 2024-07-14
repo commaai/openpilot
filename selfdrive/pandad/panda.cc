@@ -26,8 +26,6 @@ Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
 
   hw_type = get_hw_type();
   can_reset_communications();
-
-  return;
 }
 
 bool Panda::connected() {

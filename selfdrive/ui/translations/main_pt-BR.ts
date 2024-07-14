@@ -101,14 +101,6 @@
         <source>MAX</source>
         <translation>LIMITE</translation>
     </message>
-    <message>
-        <source>SPEED</source>
-        <translation>MAX</translation>
-    </message>
-    <message>
-        <source>LIMIT</source>
-        <translation>VELO</translation>
-    </message>
 </context>
 <context>
     <name>ConfirmationDialog</name>
@@ -497,7 +489,7 @@
     </message>
     <message>
         <source>Remote snapshots</source>
-        <translation type="unfinished"></translation>
+        <translation>Captura remota</translation>
     </message>
 </context>
 <context>

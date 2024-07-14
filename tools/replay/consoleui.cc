@@ -171,7 +171,7 @@ void ConsoleUI::updateStatus() {
 
   if (status != Status::Paused) {
     auto events = replay->events();
-    uint64_t current_mono_time = replay->routeStartTime() + replay->currentSeconds() * 1e9;
+    uint64_t current_mono_time = replay->routeStartNanos() + replay->currentSeconds() * 1e9;
     bool playing = !events->empty() && events->back().mono_time > current_mono_time;
     status = playing ? Status::Playing : Status::Waiting;
   }
@@ -262,10 +262,10 @@ void ConsoleUI::updateTimeline() {
   mvwhline(win, 2, 0, ' ', width);
   wattroff(win, COLOR_PAIR(Color::Disengaged));
 
-  const int total_sec = replay->totalSeconds();
+  const int total_sec = replay->maxSeconds() - replay->minSeconds();
   for (auto [begin, end, type] : replay->getTimeline()) {
-    int start_pos = (begin / total_sec) * width;
-    int end_pos = (end / total_sec) * width;
+    int start_pos = ((begin - replay->minSeconds()) / total_sec) * width;
+    int end_pos = ((end - replay->minSeconds()) / total_sec) * width;
     if (type == TimelineType::Engaged) {
       mvwchgat(win, 1, start_pos, end_pos - start_pos + 1, A_COLOR, Color::Engaged, NULL);
       mvwchgat(win, 2, start_pos, end_pos - start_pos + 1, A_COLOR, Color::Engaged, NULL);
@@ -280,7 +280,7 @@ void ConsoleUI::updateTimeline() {
     }
   }
 
-  int cur_pos = ((double)replay->currentSeconds() / total_sec) * width;
+  int cur_pos = ((replay->currentSeconds() - replay->minSeconds()) / total_sec) * width;
   wattron(win, COLOR_PAIR(Color::BrightWhite));
   mvwaddch(win, 0, cur_pos, ACS_VLINE);
   mvwaddch(win, 3, cur_pos, ACS_VLINE);
