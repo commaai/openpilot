@@ -379,22 +379,18 @@ class Tici(HardwareBase):
 
     # *** CPU config ***
 
-    # offline big cluster, leave core 4 online for boardd
-    for i in range(5, 8):
+    # offline big cluster, leave core 4 online for pandad
+    for i in range(4, 8):
       val = '0' if powersave_enabled else '1'
       sudo_write(val, f'/sys/devices/system/cpu/cpu{i}/online')
 
     for n in ('0', '4'):
+      if powersave_enabled and n == '4':
+        continue
       gov = 'ondemand' if powersave_enabled else 'performance'
       sudo_write(gov, f'/sys/devices/system/cpu/cpufreq/policy{n}/scaling_governor')
 
     # *** IRQ config ***
-
-    # boardd core
-    affine_irq(4, "spi_geni")         # SPI
-    affine_irq(4, "xhci-hcd:usb3")    # aux panda USB (or potentially anything else on USB)
-    if "tici" in self.get_device_type():
-      affine_irq(4, "xhci-hcd:usb1")  # internal panda USB (also modem)
 
     # GPU
     affine_irq(5, "kgsl-3d0")
@@ -416,7 +412,7 @@ class Tici(HardwareBase):
     if self.amplifier is not None:
       self.amplifier.initialize_configuration(self.get_device_type())
 
-    # Allow thermald to write engagement status to kmsg
+    # Allow hardwared to write engagement status to kmsg
     os.system("sudo chmod a+w /dev/kmsg")
 
     # Ensure fan gpio is enabled so fan runs until shutdown, also turned on at boot by the ABL
@@ -452,6 +448,18 @@ class Tici(HardwareBase):
     # *** VIDC (encoder) config ***
     sudo_write("N", "/sys/kernel/debug/msm_vidc/clock_scaling")
     sudo_write("Y", "/sys/kernel/debug/msm_vidc/disable_thermal_mitigation")
+
+    # pandad core
+    affine_irq(3, "spi_geni")         # SPI
+    if "tici" in self.get_device_type():
+      affine_irq(3, "xhci-hcd:usb3")  # aux panda USB (or potentially anything else on USB)
+      affine_irq(3, "xhci-hcd:usb1")  # internal panda USB (also modem)
+    try:
+      pid = subprocess.check_output(["pgrep", "-f", "spi0"], encoding='utf8').strip()
+      subprocess.call(["sudo", "chrt", "-f", "-p", "1", pid])
+      subprocess.call(["sudo", "taskset", "-pc", "3", pid])
+    except subprocess.CalledProcessException as e:
+      print(str(e))
 
   def configure_modem(self):
     sim_id = self.get_sim_info().get('sim_id', '')

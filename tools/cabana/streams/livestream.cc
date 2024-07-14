@@ -53,7 +53,6 @@ void LiveStream::startUpdateTimer() {
 }
 
 void LiveStream::start() {
-  emit streamStarted();
   stream_thread->start();
   startUpdateTimer();
   begin_date_time = QDateTime::currentDateTime();
@@ -92,6 +91,8 @@ void LiveStream::timerEvent(QTimerEvent *event) {
       // merge events received from live stream thread.
       std::lock_guard lk(lock);
       mergeEvents(received_events_);
+      uint64_t last_received_ts = !received_events_.empty() ? received_events_.back()->mono_time : 0;
+      lastest_event_ts = std::max(lastest_event_ts, last_received_ts);
       received_events_.clear();
     }
     if (!all_events_.empty()) {
@@ -136,8 +137,8 @@ void LiveStream::updateEvents() {
 void LiveStream::seekTo(double sec) {
   sec = std::max(0.0, sec);
   first_update_ts = nanos_since_boot();
-  current_event_ts = first_event_ts = std::min<uint64_t>(sec * 1e9 + begin_event_ts, lastEventMonoTime());
-  post_last_event = (first_event_ts == lastEventMonoTime());
+  current_event_ts = first_event_ts = std::min<uint64_t>(sec * 1e9 + begin_event_ts, lastest_event_ts);
+  post_last_event = (first_event_ts == lastest_event_ts);
   emit seekedTo((current_event_ts - begin_event_ts) / 1e9);
 }
 

@@ -11,6 +11,7 @@ from typing import Any, TYPE_CHECKING
 # aiortc and its dependencies have lots of internal warnings :(
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=RuntimeWarning) # TODO: remove this when google-crc32c publish a python3.12 wheel
 
 import capnp
 from aiohttp import web
@@ -24,7 +25,7 @@ from cereal import messaging, log
 class CerealOutgoingMessageProxy:
   def __init__(self, sm: messaging.SubMaster):
     self.sm = sm
-    self.channels: list['RTCDataChannel'] = []
+    self.channels: list[RTCDataChannel] = []
 
   def add_channel(self, channel: 'RTCDataChannel'):
     self.channels.append(channel)

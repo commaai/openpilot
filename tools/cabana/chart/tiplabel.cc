@@ -9,8 +9,12 @@
 #include "tools/cabana/settings.h"
 
 TipLabel::TipLabel(QWidget *parent) : QLabel(parent, Qt::ToolTip | Qt::FramelessWindowHint) {
+  setAttribute(Qt::WA_ShowWithoutActivating);
+  setAttribute(Qt::WA_TransparentForMouseEvents);
+
   setForegroundRole(QPalette::ToolTipText);
   setBackgroundRole(QPalette::ToolTipBase);
+
   QFont font;
   font.setPointSizeF(8.34563465);
   setFont(font);
@@ -22,9 +26,7 @@ TipLabel::TipLabel(QWidget *parent) : QLabel(parent, Qt::ToolTip | Qt::Frameless
   setPalette(palette);
   ensurePolished();
   setMargin(1 + style()->pixelMetric(QStyle::PM_ToolTipLabelFrameWidth, nullptr, this));
-  setAttribute(Qt::WA_ShowWithoutActivating);
   setTextFormat(Qt::RichText);
-  setVisible(false);
 }
 
 void TipLabel::showText(const QPoint &pt, const QString &text, QWidget *w, const QRect &rect) {

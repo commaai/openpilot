@@ -10,7 +10,7 @@ import pywinctl
 import time
 
 from cereal import messaging, car, log
-from cereal.visionipc import VisionIpcServer, VisionStreamType
+from msgq.visionipc import VisionIpcServer, VisionStreamType
 
 from cereal.messaging import SubMaster, PubMaster
 from openpilot.common.mock import mock_messages
@@ -116,7 +116,7 @@ CASES = {
 
 TEST_DIR = pathlib.Path(__file__).parent
 
-TEST_OUTPUT_DIR = TEST_DIR / "report"
+TEST_OUTPUT_DIR = TEST_DIR / "report_1"
 SCREENSHOTS_DIR = TEST_OUTPUT_DIR / "screenshots"
 
 

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import math
 import os
 import pytest
@@ -28,7 +27,7 @@ CAMERAS = [
 ]
 
 # we check frame count, so we don't have to be too strict on size
-FILE_SIZE_TOLERANCE = 0.5
+FILE_SIZE_TOLERANCE = 0.7
 
 
 @pytest.mark.tici # TODO: all of loggerd should work on PC

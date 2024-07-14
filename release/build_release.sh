@@ -1,4 +1,6 @@
-#!/usr/bin/bash -e
+#!/usr/bin/bash
+set -e
+set -x
 
 # git diff --name-status origin/release3-staging | grep "^A" | less
 
@@ -29,7 +31,7 @@ git checkout --orphan $RELEASE_BRANCH
 # do the files copy
 echo "[-] copying files T=$SECONDS"
 cd $SOURCE_DIR
-cp -pR --parents $(./release/release_files.py) $TARGET_DIR/
+cp -pR --parents $(./release/release_files.py) $BUILD_DIR/
 
 # in the directory
 cd $BUILD_DIR
@@ -46,7 +48,7 @@ git commit -a -m "openpilot v$VERSION release"
 
 # Build
 export PYTHONPATH="$BUILD_DIR"
-scons -j$(nproc)
+scons -j$(nproc) --minimal
 
 # release panda fw
 CERT=/data/pandaextra/certs/release RELEASE=1 scons -j$(nproc) panda/
@@ -88,9 +90,9 @@ TEST_FILES="tools/"
 cd $SOURCE_DIR
 cp -pR -n --parents $TEST_FILES $BUILD_DIR/
 cd $BUILD_DIR
-RELEASE=1 selfdrive/test/test_onroad.py
+RELEASE=1 pytest -n0 -s selfdrive/test/test_onroad.py
 #system/manager/test/test_manager.py
-selfdrive/car/tests/test_car_interfaces.py
+pytest selfdrive/car/tests/test_car_interfaces.py
 rm -rf $TEST_FILES
 
 if [ ! -z "$RELEASE_BRANCH" ]; then

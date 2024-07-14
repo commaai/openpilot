@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from parameterized import parameterized
 
 from cereal import car, log
@@ -22,7 +21,7 @@ class TestLatControl:
     CI = CarInterface(CP, CarController, CarState)
     VM = VehicleModel(CP)
 
-    controller = controller(CP, CI)
+    controller = controller(CP.as_reader(), CI)
 
     CS = car.CarState.new_message()
     CS.vEgo = 30

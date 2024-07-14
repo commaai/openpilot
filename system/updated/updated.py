@@ -11,11 +11,11 @@ import time
 import threading
 from collections import defaultdict
 from pathlib import Path
-from markdown_it import MarkdownIt
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.time import system_time_valid
+from openpilot.common.markdown import parse_markdown
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
 from openpilot.system.hardware import AGNOS, HARDWARE
@@ -60,7 +60,7 @@ class WaitTimeHelper:
     self.ready_event.wait(timeout=t)
 
 def write_time_to_param(params, param) -> None:
-  t = datetime.datetime.utcnow()
+  t = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
   params.put(param, t.isoformat().encode('utf8'))
 
 def read_time_from_param(params, param) -> datetime.datetime | None:
@@ -89,7 +89,7 @@ def parse_release_notes(basedir: str) -> bytes:
     with open(os.path.join(basedir, "RELEASES.md"), "rb") as f:
       r = f.read().split(b'\n\n', 1)[0]  # Slice latest release notes
     try:
-      return bytes(MarkdownIt().render(r.decode("utf-8")), encoding="utf-8")
+      return bytes(parse_markdown(r.decode("utf-8")), encoding="utf-8")
     except Exception:
       return r + b"\n"
   except FileNotFoundError:
@@ -279,7 +279,7 @@ class Updater:
     if len(self.branches):
       self.params.put("UpdaterAvailableBranches", ','.join(self.branches.keys()))
 
-    last_update = datetime.datetime.utcnow()
+    last_update = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
     if update_success:
       write_time_to_param(self.params, "LastUpdateTime")
     else:
@@ -323,7 +323,7 @@ class Updater:
     for alert in ("Offroad_UpdateFailed", "Offroad_ConnectivityNeeded", "Offroad_ConnectivityNeededPrompt"):
       set_offroad_alert(alert, False)
 
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
     dt = now - last_update
     build_metadata = get_build_metadata()
     if failed_count > 15 and exception is not None and self.has_internet:
@@ -429,7 +429,7 @@ def main() -> None:
       cloudlog.event("update installed")
 
     if not params.get("InstallDate"):
-      t = datetime.datetime.utcnow().isoformat()
+      t = datetime.datetime.now(datetime.UTC).replace(tzinfo=None).isoformat()
       params.put("InstallDate", t.encode('utf8'))
 
     updater = Updater()
@@ -469,7 +469,7 @@ def main() -> None:
 
         # download update
         last_fetch = read_time_from_param(params, "UpdaterLastFetchTime")
-        timed_out = last_fetch is None or (datetime.datetime.utcnow() - last_fetch > datetime.timedelta(days=3))
+        timed_out = last_fetch is None or (datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - last_fetch > datetime.timedelta(days=3))
         user_requested_fetch = wait_helper.user_request == UserRequest.FETCH
         if params.get_bool("NetworkMetered") and not timed_out and not user_requested_fetch:
           cloudlog.info("skipping fetch, connection metered")

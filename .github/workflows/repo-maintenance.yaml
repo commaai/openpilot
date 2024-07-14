@@ -41,10 +41,11 @@ jobs:
     if: github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v4
-    - name: poetry lock
+    - name: uv lock
       run: |
-        pip install poetry
-        poetry lock
+        python3 -m ensurepip --upgrade
+        pip3 install uv
+        uv lock --upgrade
     - name: pre-commit autoupdate
       run: |
         git config --global --add safe.directory '*'

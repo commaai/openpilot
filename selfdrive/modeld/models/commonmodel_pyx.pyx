@@ -5,8 +5,8 @@ import numpy as np
 cimport numpy as cnp
 from libc.string cimport memcpy
 
-from cereal.visionipc.visionipc cimport cl_mem
-from cereal.visionipc.visionipc_pyx cimport VisionBuf, CLContext as BaseCLContext
+from msgq.visionipc.visionipc cimport cl_mem
+from msgq.visionipc.visionipc_pyx cimport VisionBuf, CLContext as BaseCLContext
 from .commonmodel cimport CL_DEVICE_TYPE_DEFAULT, cl_get_device_id, cl_create_context
 from .commonmodel cimport mat3, sigmoid as cppSigmoid, ModelFrame as cppModelFrame
 

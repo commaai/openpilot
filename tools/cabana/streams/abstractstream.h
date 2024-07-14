@@ -1,10 +1,13 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <set>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 #include <QColor>
@@ -26,10 +29,10 @@ struct CanData {
   std::vector<QColor> colors;
 
   struct ByteLastChange {
-    double ts;
-    int delta;
-    int same_delta_counter;
-    bool suppressed;
+    double ts = 0;
+    int delta = 0;
+    int same_delta_counter = 0;
+    bool suppressed = false;
     std::array<uint32_t, 8> bit_change_counts;
   };
   std::vector<ByteLastChange> last_changes;
@@ -49,12 +52,6 @@ struct CompareCanEvent {
   constexpr bool operator()(uint64_t ts, const CanEvent *const e) const { return ts < e->mono_time; }
 };
 
-struct BusConfig {
-  int can_speed_kbps = 500;
-  int data_speed_kbps = 2000;
-  bool can_fd = false;
-};
-
 typedef std::unordered_map<MessageId, std::vector<const CanEvent *>> MessageEventsMap;
 
 class AbstractStream : public QObject {
@@ -64,24 +61,29 @@ public:
   AbstractStream(QObject *parent);
   virtual ~AbstractStream() {}
   virtual void start() = 0;
-  virtual void stop() {}
   virtual bool liveStreaming() const { return true; }
   virtual void seekTo(double ts) {}
   virtual QString routeName() const = 0;
   virtual QString carFingerprint() const { return ""; }
   virtual QDateTime beginDateTime() const { return {}; }
-  virtual double routeStartTime() const { return 0; }
-  inline double currentSec() const { return current_sec_; }
-  virtual double totalSeconds() const { return lastEventMonoTime() / 1e9 - routeStartTime(); }
+  virtual uint64_t beginMonoTime() const { return 0; }
+  virtual double minSeconds() const { return 0; }
+  virtual double maxSeconds() const { return 0; }
   virtual void setSpeed(float speed) {}
   virtual double getSpeed() { return 1; }
   virtual bool isPaused() const { return false; }
   virtual void pause(bool pause) {}
+  void setTimeRange(const std::optional<std::pair<double, double>> &range);
+  const std::optional<std::pair<double, double>> &timeRange() const { return time_range_; }
+
+  inline double currentSec() const { return current_sec_; }
+  inline uint64_t toMonoTime(double sec) const { return beginMonoTime() + std::max(sec, 0.0) * 1e9; }
+  inline double toSeconds(uint64_t mono_time) const { return std::max(0.0, (mono_time - beginMonoTime()) / 1e9); }
 
   inline const std::unordered_map<MessageId, CanData> &lastMessages() const { return last_msgs; }
   inline const MessageEventsMap &eventsMap() const { return events_; }
   inline const std::vector<const CanEvent *> &allEvents() const { return all_events_; }
-  const CanData &lastMessage(const MessageId &id);
+  const CanData &lastMessage(const MessageId &id) const;
   const std::vector<const CanEvent *> &events(const MessageId &id) const;
 
   size_t suppressHighlighted();
@@ -91,9 +93,9 @@ public:
 signals:
   void paused();
   void resume();
-  void seekingTo(double sec);
+  void seeking(double sec);
   void seekedTo(double sec);
-  void streamStarted();
+  void timeRangeChanged(const std::optional<std::pair<double, double>> &range);
   void eventsMerged(const MessageEventsMap &events_map);
   void msgsReceived(const std::set<MessageId> *new_msgs, bool has_new_ids);
   void sourcesUpdated(const SourceSet &s);
@@ -106,11 +108,10 @@ protected:
   void mergeEvents(const std::vector<const CanEvent *> &events);
   const CanEvent *newEvent(uint64_t mono_time, const cereal::CanData::Reader &c);
   void updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size);
-  uint64_t lastEventMonoTime() const { return lastest_event_ts; }
 
   std::vector<const CanEvent *> all_events_;
   double current_sec_ = 0;
-  uint64_t lastest_event_ts = 0;
+  std::optional<std::pair<double, double>> time_range_;
 
 private:
   void updateLastMessages();
@@ -131,15 +132,11 @@ private:
 class AbstractOpenStreamWidget : public QWidget {
   Q_OBJECT
 public:
-  AbstractOpenStreamWidget(AbstractStream **stream, QWidget *parent = nullptr) : stream(stream), QWidget(parent) {}
-  virtual bool open() = 0;
-  virtual QString title() = 0;
+  AbstractOpenStreamWidget(QWidget *parent = nullptr) : QWidget(parent) {}
+  virtual AbstractStream *open() = 0;
 
 signals:
   void enableOpenButton(bool);
-
-protected:
-  AbstractStream **stream = nullptr;
 };
 
 class DummyStream : public AbstractStream {
@@ -147,17 +144,7 @@ class DummyStream : public AbstractStream {
 public:
   DummyStream(QObject *parent) : AbstractStream(parent) {}
   QString routeName() const override { return tr("No Stream"); }
-  void start() override { emit streamStarted(); }
-};
-
-class StreamNotifier : public QObject {
-  Q_OBJECT
-public:
-  StreamNotifier(QObject *parent = nullptr) : QObject(parent) {}
-  static StreamNotifier* instance();
-signals:
-  void streamStarted();
-  void changingStream();
+  void start() override {}
 };
 
 // A global pointer referring to the unique AbstractStream object

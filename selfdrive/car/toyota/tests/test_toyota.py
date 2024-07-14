@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from hypothesis import given, settings, strategies as st
 
 from cereal import car
@@ -13,7 +12,8 @@ ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 
 
 def check_fw_version(fw_version: bytes) -> bool:
-  return b'?' not in fw_version
+  # TODO: just use the FW patterns, need to support all chunks
+  return b'?' not in fw_version and b'!' not in fw_version
 
 
 class TestToyotaInterfaces:

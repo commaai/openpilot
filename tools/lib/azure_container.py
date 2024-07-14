@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from functools import lru_cache
 from pathlib import Path
 from typing import IO
@@ -20,7 +20,7 @@ def get_azure_credential():
 @lru_cache
 def get_container_sas(account_name: str, container_name: str):
   from azure.storage.blob import BlobServiceClient, ContainerSasPermissions, generate_container_sas
-  start_time = datetime.utcnow()
+  start_time = datetime.now(UTC).replace(tzinfo=None)
   expiry_time = start_time + timedelta(hours=1)
   blob_service = BlobServiceClient(
     account_url=f"https://{account_name}.blob.core.windows.net",
