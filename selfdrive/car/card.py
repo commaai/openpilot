@@ -9,9 +9,10 @@ from cereal import car
 from panda import ALTERNATIVE_EXPERIENCE
 
 from openpilot.common.params import Params
-from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper, DT_CTRL
+from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper
 
 from openpilot.selfdrive.pandad import can_list_to_can_capnp
+from openpilot.selfdrive.car import DT_CTRL
 from openpilot.selfdrive.car.car_helpers import get_car, get_one_can
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.controls.lib.events import Events
