@@ -6,6 +6,7 @@
 #include "selfdrive/ui/qt/network/networking.h"
 #include "selfdrive/ui/qt/offroad/settings.h"
 #include "selfdrive/ui/qt/offroad/device_panel.h"
+#include "selfdrive/ui/qt/offroad/software_panel.h"
 #include "selfdrive/ui/qt/offroad/toggles_panel.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"

@@ -1,4 +1,4 @@
-#include "selfdrive/ui/qt/offroad/settings.h"
+#include "selfdrive/ui/qt/offroad/software_panel.h"
 
 #include <cassert>
 #include <cmath>
