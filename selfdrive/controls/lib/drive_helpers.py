@@ -3,7 +3,7 @@ import math
 from cereal import car, log
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import clip, interp
-from openpilot.common.realtime import DT_CTRL
+from openpilot.selfdrive.car import DT_CTRL
 
 # WARNING: this value was determined based on the model's training distribution,
 #          model predictions above this speed can be unpredictable
