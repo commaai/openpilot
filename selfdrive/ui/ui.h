@@ -7,13 +7,11 @@
 #include <QTimer>
 #include <QColor>
 #include <QFuture>
-#include <QPolygonF>
 #include <QTransform>
 
 #include "cereal/messaging/messaging.h"
 #include "common/mat.h"
 #include "common/params.h"
-#include "common/timing.h"
 #include "system/hardware/hw.h"
 
 const int UI_BORDER_SIZE = 30;
