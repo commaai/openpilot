@@ -110,14 +110,6 @@ QString InputDialog::getText(const QString &prompt, QWidget *parent, const QStri
   return ret ? d.text() : QString();
 }
 
-QString InputDialog::text() {
-  return line->text();
-}
-
-void InputDialog::show() {
-  setMainWindow(this);
-}
-
 void InputDialog::handleEnter() {
   if (line->text().length() >= minLength) {
     done(QDialog::Accepted);
@@ -125,15 +117,4 @@ void InputDialog::handleEnter() {
   } else {
     setMessage(tr("Need at least %n character(s)!", "", minLength), false);
   }
-}
-
-void InputDialog::setMessage(const QString &message, bool clearInputField) {
-  label->setText(message);
-  if (clearInputField) {
-    line->setText("");
-  }
-}
-
-void InputDialog::setMinLength(int length) {
-  minLength = length;
 }

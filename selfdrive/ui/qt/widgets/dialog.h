@@ -13,8 +13,8 @@ protected:
   DialogBase(QWidget *parent);
   bool eventFilter(QObject *o, QEvent *e) override;
 
-  public slots:
-    int exec() override;
+public slots:
+  int exec() override;
 };
 
 class ConfirmationDialog : public DialogBase {
