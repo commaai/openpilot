@@ -20,7 +20,6 @@ const int UI_BORDER_SIZE = 30;
 const int UI_HEADER_HEIGHT = 420;
 
 const int UI_FREQ = 20; // Hz
-const int BACKLIGHT_OFFROAD = 50;
 
 const float MIN_DRAW_DISTANCE = 10.0;
 const float MAX_DRAW_DISTANCE = 100.0;
@@ -144,42 +143,6 @@ private:
 };
 
 UIState *uiState();
-
-// device management class
-class Device : public QObject {
-  Q_OBJECT
-
-public:
-  Device(QObject *parent = 0);
-  bool isAwake() { return awake; }
-  void setOffroadBrightness(int brightness) {
-    offroad_brightness = std::clamp(brightness, 0, 100);
-  }
-
-private:
-  bool awake = false;
-  int interactive_timeout = 0;
-  bool ignition_on = false;
-
-  int offroad_brightness = BACKLIGHT_OFFROAD;
-  int last_brightness = 0;
-  FirstOrderFilter brightness_filter;
-  QFuture<void> brightness_future;
-
-  void updateBrightness(const UIState &s);
-  void updateWakefulness(const UIState &s);
-  void setAwake(bool on);
-
-signals:
-  void displayPowerChanged(bool on);
-  void interactiveTimeout();
-
-public slots:
-  void resetInteractiveTimeout(int timeout = -1);
-  void update(const UIState &s);
-};
-
-Device *device();
 
 void ui_update_params(UIState *s);
 int get_path_length_idx(const cereal::XYZTData::Reader &line, const float path_height);
