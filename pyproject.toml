@@ -73,6 +73,7 @@ docs = [
 testing = [
   "coverage",
   "hypothesis ==6.47.*",
+  "import-linter",
   "mypy",
   "pre-commit",
   "pytest",
