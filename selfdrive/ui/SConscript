@@ -27,7 +27,7 @@ Export('widgets')
 qt_libs = [widgets, qt_util] + base_libs
 
 qt_src = ["main.cc", "qt/sidebar.cc", "qt/body.cc",
-          "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc",
+          "qt/window.cc", "qt/home/home.cc", "qt/offroad/settings.cc",
           "qt/offroad/software_settings.cc", "qt/offroad/onboarding.cc",
           "qt/offroad/driverview.cc", "qt/offroad/experimental_mode.cc",
           "qt/onroad/onroad_home.cc", "qt/onroad/annotated_camera.cc",

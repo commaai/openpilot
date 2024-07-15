@@ -6,7 +6,7 @@
 #include <QImage>
 #include <QPainter>
 
-#include "selfdrive/ui/qt/home.h"
+#include "selfdrive/ui/qt/home/home.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/window.h"
 #include "selfdrive/ui/ui.h"

@@ -1,4 +1,4 @@
-#include "selfdrive/ui/qt/home.h"
+#include "selfdrive/ui/qt/home/home.h"
 
 #include <QHBoxLayout>
 #include <QMouseEvent>
