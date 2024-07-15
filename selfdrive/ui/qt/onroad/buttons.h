@@ -4,9 +4,6 @@
 
 #include "selfdrive/ui/ui.h"
 
-const int btn_size = 192;
-const int img_size = (btn_size / 4) * 3;
-
 class ExperimentalButton : public QPushButton {
   Q_OBJECT
 
@@ -24,5 +21,3 @@ private:
   bool experimental_mode;
   bool engageable;
 };
-
-void drawIcon(QPainter &p, const QPoint &center, const QPixmap &img, const QBrush &bg, float opacity);

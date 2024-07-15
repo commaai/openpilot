@@ -16,6 +16,9 @@
 #include "common/timing.h"
 #include "system/hardware/hw.h"
 
+const int btn_size = 192;
+const int img_size = (btn_size / 4) * 3;
+
 const int UI_BORDER_SIZE = 30;
 const int UI_HEADER_HEIGHT = 420;
 
@@ -189,3 +192,8 @@ void update_dmonitoring(UIState *s, const cereal::DriverStateV2::Reader &drivers
 void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, const cereal::XYZTData::Reader &line);
 void update_line_data(const UIState *s, const cereal::XYZTData::Reader &line,
                       float y_off, float z_off, QPolygonF *pvd, int max_idx, bool allow_invert);
+
+void drawIcon(QPainter &p, const QPoint &center, const QPixmap &img, const QBrush &bg, float opacity);
+inline QColor redColor(int alpha = 255) { return QColor(201, 34, 49, alpha); }
+inline QColor whiteColor(int alpha = 255) { return QColor(255, 255, 255, alpha); }
+inline QColor blackColor(int alpha = 255) { return QColor(0, 0, 0, alpha); }
