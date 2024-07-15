@@ -44,7 +44,7 @@ subaru:
 
 tesla:
   - changed-files:
-    - any-glob-to-all-files: 'selfdrive/car/telsa/*'
+    - any-glob-to-all-files: 'selfdrive/car/tesla/*'
 
 toyota:
   - changed-files:

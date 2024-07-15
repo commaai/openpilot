@@ -32,34 +32,30 @@ class ChryslerCarSpecs(CarSpecs):
 
 class CAR(Platforms):
   # Chrysler
-  CHRYSLER_PACIFICA_2017_HYBRID = ChryslerPlatformConfig(
-    [ChryslerCarDocs("Chrysler Pacifica Hybrid 2017")],
-    ChryslerCarSpecs(mass=2242., wheelbase=3.089, steerRatio=16.2),
-  )
   CHRYSLER_PACIFICA_2018_HYBRID = ChryslerPlatformConfig(
-    [ChryslerCarDocs("Chrysler Pacifica Hybrid 2018")],
-    CHRYSLER_PACIFICA_2017_HYBRID.specs,
+    [ChryslerCarDocs("Chrysler Pacifica Hybrid 2017-18")],
+    ChryslerCarSpecs(mass=2242., wheelbase=3.089, steerRatio=16.2),
   )
   CHRYSLER_PACIFICA_2019_HYBRID = ChryslerPlatformConfig(
     [ChryslerCarDocs("Chrysler Pacifica Hybrid 2019-24")],
-    CHRYSLER_PACIFICA_2017_HYBRID.specs,
+    CHRYSLER_PACIFICA_2018_HYBRID.specs,
   )
   CHRYSLER_PACIFICA_2018 = ChryslerPlatformConfig(
     [ChryslerCarDocs("Chrysler Pacifica 2017-18")],
-    CHRYSLER_PACIFICA_2017_HYBRID.specs,
+    CHRYSLER_PACIFICA_2018_HYBRID.specs,
   )
   CHRYSLER_PACIFICA_2020 = ChryslerPlatformConfig(
     [
       ChryslerCarDocs("Chrysler Pacifica 2019-20"),
       ChryslerCarDocs("Chrysler Pacifica 2021-23", package="All"),
     ],
-    CHRYSLER_PACIFICA_2017_HYBRID.specs,
+    CHRYSLER_PACIFICA_2018_HYBRID.specs,
   )
 
   # Dodge
   DODGE_DURANGO = ChryslerPlatformConfig(
     [ChryslerCarDocs("Dodge Durango 2020-21")],
-    CHRYSLER_PACIFICA_2017_HYBRID.specs,
+    CHRYSLER_PACIFICA_2018_HYBRID.specs,
   )
 
   # Jeep
