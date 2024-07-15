@@ -4,6 +4,7 @@
 #include <memory>
 
 #include "selfdrive/ui/qt/onroad/buttons.h"
+#include "selfdrive/ui/qt/onroad/driver_monitoring.h"
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
 class AnnotatedCameraWidget : public CameraWidget {
@@ -18,16 +19,13 @@ private:
 
   QVBoxLayout *main_layout;
   ExperimentalButton *experimental_btn;
-  QPixmap dm_img;
+  DriverMonitoring *driver_monitoring;
   float speed;
   QString speedUnit;
   float setSpeed;
   bool is_cruise_set = false;
   bool is_metric = false;
-  bool dmActive = false;
   bool hideBottomIcons = false;
-  bool rightHandDM = false;
-  float dm_fade_state = 1.0;
   bool v_ego_cluster_seen = false;
   int status = STATUS_DISENGAGED;
   std::unique_ptr<PubMaster> pm;
@@ -43,7 +41,6 @@ protected:
   void drawLaneLines(QPainter &painter, const UIState *s);
   void drawLead(QPainter &painter, const cereal::RadarState::LeadData::Reader &lead_data, const QPointF &vd);
   void drawHud(QPainter &p);
-  void drawDriverState(QPainter &painter, const UIState *s);
 
   double prev_draw_t = 0;
   FirstOrderFilter fps_filter;
