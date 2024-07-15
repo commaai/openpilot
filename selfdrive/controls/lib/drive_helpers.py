@@ -13,7 +13,7 @@ V_CRUISE_MAX = 145
 V_CRUISE_UNSET = 255
 V_CRUISE_INITIAL = 40
 V_CRUISE_INITIAL_EXPERIMENTAL_MODE = 105
-IMPERIAL_INCREMENT = round(CV.MPH_TO_KPH, 1)  # avoid rounding errors incrementing set speed
+IMPERIAL_INCREMENT = round(CV.MPH_TO_KPH, 1)  # round here to avoid rounding errors incrementing set speed
 
 MIN_SPEED = 1.0
 CONTROL_N = 17
