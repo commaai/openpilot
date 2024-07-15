@@ -264,11 +264,11 @@
     </message>
     <message>
         <source>Pair Device</source>
-        <translation>Associez l&apos;appareil</translation>
+        <translation>Associer l&apos;appareil</translation>
     </message>
     <message>
         <source>PAIR</source>
-        <translation>Assoiez</translation>
+        <translation>ASSOCIER</translation>
     </message>
 </context>
 <context>
