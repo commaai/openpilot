@@ -40,6 +40,7 @@ class CAR(Platforms):
     ChryslerCarSpecs(mass=2242., wheelbase=3.089, steerRatio=16.2),
     chassis_codes={"C1"},
     years="HH",
+    engines={"7"}
   )
   CHRYSLER_PACIFICA_2018_HYBRID = ChryslerPlatformConfig( # ru
     [ChryslerCarDocs("Chrysler Pacifica Hybrid 2018")],
@@ -60,7 +61,7 @@ class CAR(Platforms):
     CHRYSLER_PACIFICA_2017_HYBRID.specs,
     chassi_codes=["C1", "C3"],
     years="HJ",
-    engines={"7"}
+    engines={"G"}
   )
   CHRYSLER_PACIFICA_2020 = ChryslerPlatformConfig( # ru
     [
