@@ -1,10 +1,8 @@
 #include "selfdrive/ui/qt/offroad/software_panel.h"
 
 #include <cassert>
-#include <cmath>
 #include <string>
 
-#include <QDebug>
 #include <QLabel>
 
 #include "common/params.h"
@@ -13,12 +11,6 @@
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/widgets/input.h"
-#include "system/hardware/hw.h"
-
-
-void SoftwarePanel::checkForUpdates() {
-  std::system("pkill -SIGUSR1 -f system.updated.updated");
-}
 
 SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   onroadLbl = new QLabel(tr("Updates are only downloaded while the car is off."));
@@ -94,6 +86,10 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
   });
 
   updateLabels();
+}
+
+void SoftwarePanel::checkForUpdates() {
+  std::system("pkill -SIGUSR1 -f system.updated.updated");
 }
 
 void SoftwarePanel::showEvent(QShowEvent *event) {

@@ -1,9 +1,5 @@
 #pragma once
 
-#include <QButtonGroup>
-#include <QFrame>
-#include <QLabel>
-#include <QPushButton>
 #include <QStackedWidget>
 #include <QWidget>
 

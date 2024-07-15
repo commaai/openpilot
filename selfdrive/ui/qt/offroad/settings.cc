@@ -1,27 +1,10 @@
-#include <cassert>
-
-#include <QDebug>
-
-#include "common/util.h"
-#include "selfdrive/ui/qt/network/networking.h"
 #include "selfdrive/ui/qt/offroad/settings.h"
+
+#include "selfdrive/ui/qt/network/networking.h"
 #include "selfdrive/ui/qt/offroad/device_panel.h"
 #include "selfdrive/ui/qt/offroad/software_panel.h"
 #include "selfdrive/ui/qt/offroad/toggles_panel.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
-#include "selfdrive/ui/qt/widgets/ssh_keys.h"
-
-void SettingsWindow::showEvent(QShowEvent *event) {
-  setCurrentPanel(0);
-}
-
-void SettingsWindow::setCurrentPanel(int index, const QString &param) {
-  panel_widget->setCurrentIndex(index);
-  nav_btns->buttons()[index]->setChecked(true);
-  if (!param.isEmpty()) {
-    emit expandToggleDescription(param);
-  }
-}
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
@@ -68,7 +51,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   for (auto &[name, panel] : panels) {
     QPushButton *btn = new QPushButton(name);
     btn->setCheckable(true);
-    btn->setChecked(nav_btns->buttons().size() == 0);
+    btn->setChecked(nav_btns->buttons().empty());
     btn->setStyleSheet(R"(
       QPushButton {
         color: grey;
@@ -121,4 +104,16 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
       border-radius: 30px;
     }
   )");
+}
+
+void SettingsWindow::showEvent(QShowEvent *event) {
+  setCurrentPanel(0);
+}
+
+void SettingsWindow::setCurrentPanel(int index, const QString &param) {
+  panel_widget->setCurrentIndex(index);
+  nav_btns->buttons()[index]->setChecked(true);
+  if (!param.isEmpty()) {
+    emit expandToggleDescription(param);
+  }
 }
