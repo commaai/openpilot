@@ -412,7 +412,7 @@
     <name>OnroadAlerts</name>
     <message>
         <source>openpilot Unavailable</source>
-        <translation>openpilot Indisponible</translation>
+        <translation>openpilot indisponible</translation>
     </message>
     <message>
         <source>Waiting for controls to start</source>
