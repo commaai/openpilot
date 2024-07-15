@@ -1,5 +1,6 @@
 from enum import IntFlag, StrEnum
 from dataclasses import dataclass, field
+from collections import defaultdict
 
 from cereal import car
 from panda.python import uds
@@ -45,21 +46,21 @@ class CAR(Platforms):
   CHRYSLER_PACIFICA_2018_HYBRID = ChryslerPlatformConfig( # ru
     [ChryslerCarDocs("Chrysler Pacifica Hybrid 2018")],
     CHRYSLER_PACIFICA_2017_HYBRID.specs,
-    chassis_codes=["C1"],
+    chassis_codes={"C1"},
     years="JJ",
     engines={"7"}
   )
   CHRYSLER_PACIFICA_2019_HYBRID = ChryslerPlatformConfig( # ru
     [ChryslerCarDocs("Chrysler Pacifica Hybrid 2019-24")],
     CHRYSLER_PACIFICA_2017_HYBRID.specs,
-    chassis_codes=["C1", "C3"],
+    chassis_codes={"C1", "C3"},
     years="KR",
-    engines=["7"]
+    engines={"7"}
   )
   CHRYSLER_PACIFICA_2018 = ChryslerPlatformConfig( # ru
     [ChryslerCarDocs("Chrysler Pacifica 2017-18")],
     CHRYSLER_PACIFICA_2017_HYBRID.specs,
-    chassi_codes=["C1", "C3"],
+    chassis_codes={"C1", "C3"},
     years="HJ",
     engines={"G"}
   )
@@ -70,7 +71,7 @@ class CAR(Platforms):
     ],
     CHRYSLER_PACIFICA_2017_HYBRID.specs,
     years="KP",
-    chassis_codes=["C1", "C3"],
+    chassis_codes={"C1", "C3"},
     engines={"G"}
   )
 
@@ -95,7 +96,7 @@ class CAR(Platforms):
   JEEP_GRAND_CHEROKEE_2019 = ChryslerPlatformConfig(  # includes 2020 Trailhawk # wk
     [ChryslerCarDocs("Jeep Grand Cherokee 2019-21", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4")],
     JEEP_GRAND_CHEROKEE.specs,
-    chassi_codes={"JG", "JH"},
+    chassis_codes={"JG", "JH"},
     years="JL",
     engines={"6", "G"}
   )
@@ -105,7 +106,7 @@ class CAR(Platforms):
     [ChryslerCarDocs("Ram 1500 2019-24", car_parts=CarParts.common([CarHarness.ram]))],
     ChryslerCarSpecs(mass=2493., wheelbase=3.88, steerRatio=16.3, minSteerSpeed=14.5),
     dbc_dict('chrysler_ram_dt_generated', None),
-    chassis_codes={"C1"},
+    chassis_codes={"RE", "RF"},
     years="KR",
     engines={"G", "T", "9"}
   )
@@ -116,8 +117,8 @@ class CAR(Platforms):
     ],
     ChryslerCarSpecs(mass=3405., wheelbase=3.785, steerRatio=15.61, minSteerSpeed=16.),
     dbc_dict('chrysler_ram_hd_generated', None),
-    chassis_codes={"C1"},
-    years="K",
+    chassis_codes={"R4", "R5", "R2", "R3", "RP", "RR"},
+    years="KR",
     engines={"J", "L"}
   )
 
@@ -171,8 +172,8 @@ def match_fw_to_car_fuzzy(live_fw_versions, vin, offline_fw_versions) -> set[str
     if valid_ecus != CHECK_FUZZY_ECUS:
       continue
 
-    if chassis_code in platform.config.chassis_codes and engine in platform.engines \
-        and platform.years[0] <= year <= platform.years[1]:
+    if chassis_code in platform.config.chassis_codes and engine in platform.config.engines \
+        and platform.config.years[0] <= year <= platform.config.years[1]:
       candidates.add(platform)
 
   return {str(c) for c in candidates}
@@ -225,6 +226,7 @@ FW_QUERY_CONFIG = FwQueryConfig(
   extra_ecus=[
     (Ecu.abs, 0x7e4, None),  # alt address for abs on hybrids, NOTE: not on all hybrid platforms
   ],
+  match_fw_to_car_fuzzy=match_fw_to_car_fuzzy,
 )
 
 DBC = CAR.create_dbc_map()

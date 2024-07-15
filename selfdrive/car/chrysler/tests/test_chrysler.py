@@ -46,9 +46,9 @@ class TestChryslerPlatformConfigs:
               # Check a few FW cases - expected, unexpected
               for radar_fw in random.sample(all_radar_fw, 5) + [b'\xf1\x875Q0907572G \xf1\x890571', b'\xf1\x877H9907572AA\xf1\x890396']:
                 should_match = ((engine in platform.config.engines and chassis_code in platform.config.chassis_codes and \
-                                platform.config.years[0] < year < platform.config.years[1]) and radar_fw in all_radar_fw)
+                                platform.config.years[0] <= year <= platform.config.years[1]) and radar_fw in all_radar_fw)
 
-                live_fws = {(0x757, None): [radar_fw]}
+                live_fws = {(0x753, None): [radar_fw]}
                 matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(live_fws, vin, FW_VERSIONS)
 
                 expected_matches = {platform} if should_match else set()
