@@ -314,7 +314,7 @@
     <name>MultiOptionDialog</name>
     <message>
         <source>Select</source>
-        <translation>Seleccione</translation>
+        <translation>Seleccionar</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -721,7 +721,7 @@ Esto puede tardar un minuto.</translation>
     <name>Sidebar</name>
     <message>
         <source>CONNECT</source>
-        <translation>CONECTAR</translation>
+        <translation>CONNECT</translation>
     </message>
     <message>
         <source>OFFLINE</source>
@@ -804,7 +804,7 @@ Esto puede tardar un minuto.</translation>
     <name>SoftwarePanel</name>
     <message>
         <source>Updates are only downloaded while the car is off.</source>
-        <translation>Las actualizaciones solo se descargan cuando con el auto apagado.</translation>
+        <translation>Actualizaciones solo se descargan con el auto apagado.</translation>
     </message>
     <message>
         <source>Current Version</source>
