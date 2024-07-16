@@ -1,6 +1,5 @@
 #include "selfdrive/ui/qt/onroad/alerts.h"
 
-#include <QPainter>
 #include <map>
 
 #include "selfdrive/ui/qt/util.h"

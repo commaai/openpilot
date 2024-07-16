@@ -1,7 +1,5 @@
 #include "selfdrive/ui/qt/onroad/buttons.h"
 
-#include <QPainter>
-
 #include "selfdrive/ui/qt/util.h"
 
 void drawIcon(QPainter &p, const QPoint &center, const QPixmap &img, const QBrush &bg, float opacity) {

@@ -1,6 +1,5 @@
 #include "selfdrive/ui/qt/onroad/onroad_home.h"
 
-#include <QPainter>
 #include <QStackedLayout>
 
 #include "selfdrive/ui/qt/util.h"
