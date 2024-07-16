@@ -59,7 +59,7 @@ class CarController(CarControllerBase):
     self.steer_rate_counter, apply_steer_req = common_fault_avoidance(abs(CS.out.steeringRateDeg) >= MAX_STEER_RATE, lat_active,
                                                                       self.steer_rate_counter, MAX_STEER_RATE_FRAMES)
 
-    if not lat_active:
+    if not (lat_active and apply_steer_req):
       apply_steer = 0
 
     # *** steer angle ***
