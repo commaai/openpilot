@@ -721,7 +721,7 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     <name>Sidebar</name>
     <message>
         <source>CONNECT</source>
-        <translation>CONNECTER</translation>
+        <translation>CONNECT</translation>
     </message>
     <message>
         <source>OFFLINE</source>
