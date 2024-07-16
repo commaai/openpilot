@@ -108,8 +108,17 @@ jobs:
         SKIP_PROMPT: 1
         # package install has DeprecationWarnings
         PYTHONWARNINGS: default
-    - name: Test openpilot environment
-      run: . .venv/bin/activate && scons -h
+    - run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
+    - name: Getting scons cache
+      uses: 'actions/cache@v4'
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        restore-keys: |
+          scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}
+          scons-${{ runner.arch }}-macos
+    - name: Building openpilot
+      run: . .venv/bin/activate && scons -j$(nproc)
 
   docker_push_multiarch:
     name: docker push multiarch tag
@@ -345,8 +354,8 @@ jobs:
       - name: Upload Test Report
         uses: actions/upload-artifact@v4
         with:
-          name: report-${{ inputs.run_number }}
-          path: selfdrive/ui/tests/test_ui/report_${{ inputs.run_number }}
+          name: report-${{ inputs.run_number || '1' }}
+          path: selfdrive/ui/tests/test_ui/report_${{ inputs.run_number || '1' }}
       - name: Get changes to selfdrive/ui
         if: ${{ github.event_name == 'pull_request' }}
         id: changed-files
@@ -369,7 +378,7 @@ jobs:
           git checkout -b openpilot/pr-${{ github.event.pull_request.number }}
           git config user.name "GitHub Actions Bot"
           git config user.email "<>"
-          sudo mv ${{ github.workspace }}/selfdrive/ui/tests/test_ui/report/screenshots/* .
+          sudo mv ${{ github.workspace }}/selfdrive/ui/tests/test_ui/report_1/screenshots/* .
           git add .
           git commit -m "screenshots for PR #${{ github.event.pull_request.number }}"
           git push origin openpilot/pr-${{ github.event.pull_request.number }} --force

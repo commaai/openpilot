@@ -76,9 +76,10 @@ public:
   inline double currentSeconds() const { return double(cur_mono_time_ - route_start_ts_) / 1e9; }
   inline QDateTime routeDateTime() const { return route_date_time_; }
   inline QDateTime currentDateTime() const { return route_date_time_.addSecs(currentSeconds()); }
-  inline uint64_t routeStartTime() const { return route_start_ts_; }
+  inline uint64_t routeStartNanos() const { return route_start_ts_; }
   inline double toSeconds(uint64_t mono_time) const { return (mono_time - route_start_ts_) / 1e9; }
-  inline int totalSeconds() const { return (!segments_.empty()) ? (segments_.rbegin()->first + 1) * 60 : 0; }
+  inline double minSeconds() const { return !segments_.empty() ? segments_.begin()->first * 60 : 0; }
+  inline double maxSeconds() const { return max_seconds_; }
   inline void setSpeed(float speed) { speed_ = speed; }
   inline float getSpeed() const { return speed_; }
   inline const std::vector<Event> *events() const { return &events_; }
@@ -95,7 +96,7 @@ signals:
   void seeking(double sec);
   void seekedTo(double sec);
   void qLogLoaded(std::shared_ptr<LogReader> qlog);
-  void totalSecondsUpdated(double sec);
+  void minMaxTimeChanged(double min_sec, double max_sec);
 
 protected slots:
   void segmentLoadFinished(bool success);
@@ -133,6 +134,7 @@ protected:
   QDateTime route_date_time_;
   uint64_t route_start_ts_ = 0;
   std::atomic<uint64_t> cur_mono_time_ = 0;
+  std::atomic<double> max_seconds_ = 0;
   std::vector<Event> events_;
   std::set<int> merged_segments_;
 

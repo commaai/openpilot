@@ -85,6 +85,7 @@ bool Replay::load() {
     return false;
   }
   rInfo("load route %s with %zu valid segments", qPrintable(route_->name()), segments_.size());
+  max_seconds_ = (segments_.rbegin()->first + 1) * 60;
   return true;
 }
 
@@ -108,7 +109,11 @@ void Replay::seekTo(double seconds, bool relative) {
     target_time = std::max(double(0.0), target_time);
     int target_segment = (int)target_time / 60;
     if (segments_.count(target_segment) == 0) {
-      rWarning("Can't seek to %d s segment %d is invalid", (int)target_time, target_segment);
+      rWarning("Can't seek to %.2f s segment %d is invalid", target_time, target_segment);
+      return true;
+    }
+    if (target_time > max_seconds_) {
+      rWarning("Can't seek to %.2f s, time is invalid", target_time);
       return true;
     }
 
@@ -193,14 +198,21 @@ void Replay::buildTimeline() {
       }
     }
 
+    if (it->first == route_segments.rbegin()->first) {
+      if (engaged) {
+        timeline.push_back({toSeconds(engaged_begin), toSeconds(log->events.back().mono_time), TimelineType::Engaged});
+      }
+      if (!alert_type.empty() && alert_size != cereal::ControlsState::AlertSize::NONE) {
+        timeline.push_back({toSeconds(alert_begin), toSeconds(log->events.back().mono_time), timeline_types[(int)alert_status]});
+      }
+
+      max_seconds_ = std::ceil(toSeconds(log->events.back().mono_time));
+      emit minMaxTimeChanged(route_segments.cbegin()->first * 60.0, max_seconds_);
+    }
     {
       std::lock_guard lk(timeline_lock);
       timeline_.insert(timeline_.end(), timeline.begin(), timeline.end());
       std::sort(timeline_.begin(), timeline_.end(), [](auto &l, auto &r) { return std::get<2>(l) < std::get<2>(r); });
-    }
-
-    if (it->first == route_segments.rbegin()->first) {
-      emit totalSecondsUpdated(toSeconds(log->events.back().mono_time));
     }
     emit qLogLoaded(log);
   }
@@ -463,7 +475,7 @@ void Replay::streamThread() {
       int last_segment = segments_.rbegin()->first;
       if (current_segment_ >= last_segment && isSegmentMerged(last_segment)) {
         rInfo("reaches the end of route, restart from beginning");
-        QMetaObject::invokeMethod(this, std::bind(&Replay::seekTo, this, 0, false), Qt::QueuedConnection);
+        QMetaObject::invokeMethod(this, std::bind(&Replay::seekTo, this, minSeconds(), false), Qt::QueuedConnection);
       }
     }
   }

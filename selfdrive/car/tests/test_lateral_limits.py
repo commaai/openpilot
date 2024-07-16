@@ -5,7 +5,7 @@ from parameterized import parameterized_class
 import pytest
 import sys
 
-from openpilot.common.realtime import DT_CTRL
+from openpilot.selfdrive.car import DT_CTRL
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.interfaces import get_torque_params
