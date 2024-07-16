@@ -1261,10 +1261,9 @@ struct LivePose {
   accelerationDevice @2: Measurement;
   angularVelocityDevice @3 : Measurement;
 
-  inputsOK @4 :Bool = true;
-  posenetOK @5 :Bool = true;
-  sensorsOK @6 :Bool = true;
-  deviceStable @7 :Bool = true;
+  inputsOK @4 :Bool = false;
+  posenetOK @5 :Bool = false;
+  sensorsOK @6 :Bool = false;
   filterState @8 : Measurement;
 
   struct Measurement {

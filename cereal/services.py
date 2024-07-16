@@ -47,7 +47,7 @@ _services: dict[str, tuple] = {
   "gnssMeasurements": (True, 10., 10),
   "clocks": (True, 0.1, 1),
   "ubloxRaw": (True, 20.),
-  "livePose": (True, 20., 5),
+  "livePose": (True, 20., 4),
   "liveLocationKalman": (True, 20., 0),
   "liveParameters": (True, 20., 5),
   "cameraOdometry": (True, 20., 5),
