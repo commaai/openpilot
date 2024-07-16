@@ -279,7 +279,7 @@ class CarInterfaceBase(ABC):
       events.add(EventName.wrongCarMode)
     if cs_out.espDisabled:
       events.add(EventName.espDisabled)
-    if cs_out.espActive:
+    if cs_out.espActive and not self.CP.openpilotLongitudinalControl:
       events.add(EventName.espActive)
     if cs_out.stockFcw:
       events.add(EventName.stockFcw)
