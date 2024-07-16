@@ -3,69 +3,64 @@ from openpilot.selfdrive.car.chrysler.values import CAR
 
 Ecu = car.CarParams.Ecu
 
+# Ecu.hybrid -> starts with 05
+
 FW_VERSIONS = {
-  CAR.CHRYSLER_PACIFICA_2017_HYBRID: {
+  CAR.CHRYSLER_PACIFICA_2017: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68239262AH',
       b'68239262AI',
       b'68239262AJ',
       b'68239263AH',
       b'68239263AJ',
+
+      b'68227902AF', # 2018
+      b'68227902AG',
+      b'68227902AH',
+      b'68227905AG',
+      b'68360252AC',
+
+      b'68358439AE',
+      b'68358439AG',
     ],
     (Ecu.srs, 0x744, None): [
       b'68238840AH',
+
+      b'68211617AF',
+      b'68211617AG',
+      b'68358974AC',
+      b'68405937AA',
+
+      b'68358990AC',
+      b'68405939AA',
     ],
     (Ecu.fwdRadar, 0x753, None): [
       b'68226356AI',
+
+      b'04672758AA',
+      b'68226356AF',
+      b'68226356AH',
+      b'68226356AI',
+
+      b'04672758AA',
     ],
     (Ecu.eps, 0x75a, None): [
       b'68288309AC',
       b'68288309AD',
+
+      b'68288891AE',
+      b'68378884AA',
+      b'68525338AA',
+      b'68525338AB',
+
+      b'68288309AD',
+      b'68525339AA',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'68277480AV ',
       b'68277480AX ',
       b'68277480AZ ',
-    ],
-    (Ecu.hybrid, 0x7e2, None): [
-      b'05190175BF',
-      b'05190175BH',
-      b'05190226AK',
-    ],
-  },
-  CAR.CHRYSLER_PACIFICA_2018: {
-    (Ecu.combinationMeter, 0x742, None): [
-      b'68227902AF',
-      b'68227902AG',
-      b'68227902AH',
-      b'68227905AG',
-      b'68360252AC',
-    ],
-    (Ecu.srs, 0x744, None): [
-      b'68211617AF',
-      b'68211617AG',
-      b'68358974AC',
-      b'68405937AA',
-    ],
-    (Ecu.abs, 0x747, None): [
-      b'68222747AG',
-      b'68330876AA',
-      b'68330876AB',
-      b'68352227AA',
-    ],
-    (Ecu.fwdRadar, 0x753, None): [
-      b'04672758AA',
-      b'68226356AF',
-      b'68226356AH',
-      b'68226356AI',
-    ],
-    (Ecu.eps, 0x75a, None): [
-      b'68288891AE',
-      b'68378884AA',
-      b'68525338AA',
-      b'68525338AB',
-    ],
-    (Ecu.engine, 0x7e0, None): [
+
       b'68267018AO ',
       b'68267020AJ ',
       b'68303534AG ',
@@ -77,21 +72,29 @@ FW_VERSIONS = {
       b'68366851AH ',
       b'68366853AE ',
       b'68372861AF ',
+
+      b'68366580AI ',
+      b'68366580AK ',
+      b'68366580AM ',
     ],
-    (Ecu.transmission, 0x7e1, None): [
-      b'68277370AJ',
-      b'68277370AM',
-      b'68277372AD',
-      b'68277372AE',
-      b'68277372AN',
-      b'68277374AA',
-      b'68277374AB',
-      b'68277374AD',
-      b'68277374AN',
-      b'68367471AC',
-      b'68380571AB',
+    (Ecu.hybrid, 0x7e2, None): [
+      b'05190175BF',
+      b'05190175BH',
+      b'05190226AK',
+
+      b'05190226AI',
+      b'05190226AK',
+      b'05190226AM',
+    ],
+
+    (Ecu.abs, 0x747, None): [
+      b'68222747AG',
+      b'68330876AA',
+      b'68330876AB',
+      b'68352227AA',
     ],
   },
+
   CAR.CHRYSLER_PACIFICA_2020: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68405327AC',
@@ -102,6 +105,14 @@ FW_VERSIONS = {
       b'68529067AA',
       b'68594993AB',
       b'68594994AB',
+
+      b'68405292AC',
+      b'68434956AC',
+      b'68434956AD',
+      b'68434960AE',
+      b'68434960AF',
+      b'68529064AB',
+      b'68594990AB',
     ],
     (Ecu.srs, 0x744, None): [
       b'68405565AB',
@@ -110,6 +121,12 @@ FW_VERSIONS = {
       b'68480707AC',
       b'68480708AC',
       b'68526663AB',
+
+      b'68405567AB',
+      b'68405567AC',
+      b'68453076AD',
+      b'68480710AC',
+      b'68526665AB',
     ],
     (Ecu.abs, 0x747, None): [
       b'68397394AA',
@@ -127,6 +144,16 @@ FW_VERSIONS = {
       b'68540436AD',
       b'68598670AB',
       b'68598670AC',
+
+      b'04672758AB',
+      b'68417813AF',
+      b'68540436AA',
+      b'68540436AB',
+      b'68540436AC',
+      b'68540436AD',
+      b'68598670AB',
+      b'68598670AC',
+      b'68645752AA',
     ],
     (Ecu.eps, 0x75a, None): [
       b'68416742AA',
@@ -139,6 +166,12 @@ FW_VERSIONS = {
       b'68525338AB',
       b'68594337AB',
       b'68594340AB',
+
+      b'68416741AA',
+      b'68460392AA',
+      b'68525339AA',
+      b'68525339AB',
+      b'68594341AB',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'68413871AD ',
@@ -161,6 +194,20 @@ FW_VERSIONS = {
       b'68536264AE ',
       b'68700304AB ',
       b'68700306AB ',
+
+      b'68416680AE ',
+      b'68416680AF ',
+      b'68416680AG ',
+      b'68444228AD ',
+      b'68444228AE ',
+      b'68444228AF ',
+      b'68499122AD ',
+      b'68499122AE ',
+      b'68499122AF ',
+      b'68526772AD ',
+      b'68526772AH ',
+      b'68599493AC ',
+      b'68657433AA ',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'68414271AC',
@@ -178,84 +225,6 @@ FW_VERSIONS = {
       b'68586231AD',
       b'68586233AD',
     ],
-  },
-  CAR.CHRYSLER_PACIFICA_2018_HYBRID: {
-    (Ecu.combinationMeter, 0x742, None): [
-      b'68358439AE',
-      b'68358439AG',
-    ],
-    (Ecu.srs, 0x744, None): [
-      b'68358990AC',
-      b'68405939AA',
-    ],
-    (Ecu.fwdRadar, 0x753, None): [
-      b'04672758AA',
-    ],
-    (Ecu.eps, 0x75a, None): [
-      b'68288309AD',
-      b'68525339AA',
-    ],
-    (Ecu.engine, 0x7e0, None): [
-      b'68366580AI ',
-      b'68366580AK ',
-      b'68366580AM ',
-    ],
-    (Ecu.hybrid, 0x7e2, None): [
-      b'05190226AI',
-      b'05190226AK',
-      b'05190226AM',
-    ],
-  },
-  CAR.CHRYSLER_PACIFICA_2019_HYBRID: {
-    (Ecu.combinationMeter, 0x742, None): [
-      b'68405292AC',
-      b'68434956AC',
-      b'68434956AD',
-      b'68434960AE',
-      b'68434960AF',
-      b'68529064AB',
-      b'68594990AB',
-    ],
-    (Ecu.srs, 0x744, None): [
-      b'68405567AB',
-      b'68405567AC',
-      b'68453076AD',
-      b'68480710AC',
-      b'68526665AB',
-    ],
-    (Ecu.fwdRadar, 0x753, None): [
-      b'04672758AB',
-      b'68417813AF',
-      b'68540436AA',
-      b'68540436AB',
-      b'68540436AC',
-      b'68540436AD',
-      b'68598670AB',
-      b'68598670AC',
-      b'68645752AA',
-    ],
-    (Ecu.eps, 0x75a, None): [
-      b'68416741AA',
-      b'68460392AA',
-      b'68525339AA',
-      b'68525339AB',
-      b'68594341AB',
-    ],
-    (Ecu.engine, 0x7e0, None): [
-      b'68416680AE ',
-      b'68416680AF ',
-      b'68416680AG ',
-      b'68444228AD ',
-      b'68444228AE ',
-      b'68444228AF ',
-      b'68499122AD ',
-      b'68499122AE ',
-      b'68499122AF ',
-      b'68526772AD ',
-      b'68526772AH ',
-      b'68599493AC ',
-      b'68657433AA ',
-    ],
     (Ecu.hybrid, 0x7e2, None): [
       b'05185116AF',
       b'05185116AJ',
@@ -272,6 +241,7 @@ FW_VERSIONS = {
       b'68632416AB',
     ],
   },
+
   CAR.JEEP_GRAND_CHEROKEE: {
     (Ecu.combinationMeter, 0x742, None): [
       b'68243549AG',

@@ -24,7 +24,6 @@ class ChryslerCarDocs(CarDocs):
 class ChryslerPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict('chrysler_pacifica_2017_hybrid_generated', 'chrysler_pacifica_2017_hybrid_private_fusion'))
   chassis_codes: set[str] = field(default_factory=set)
-  engines: set[str] = field(default_factory=set)
   years: str = field(default_factory=str)
 
 
@@ -33,72 +32,49 @@ class ChryslerCarSpecs(CarSpecs):
   minSteerSpeed: float = 3.8  # m/s
 
 class CAR(Platforms):
-  # https://vpic.nhtsa.dot.gov/mid/home/displayfile/b5f541b7-8157-415d-889c-7f63628e9e66 vin stuff 2024
-  # a platform is fully determined by [5:6]+[8]+[10] (chassis_code+engine+year)
   # Chrysler
-  CHRYSLER_PACIFICA_2017_HYBRID = ChryslerPlatformConfig( # ru
-    [ChryslerCarDocs("Chrysler Pacifica Hybrid 2017")],
+  CHRYSLER_PACIFICA_2017 = ChryslerPlatformConfig(
+    [
+      ChryslerCarDocs("Chrysler Pacifica Hybrid 2017"),
+      ChryslerCarDocs("Chrysler Pacifica Hybrid 2018"),
+      ChryslerCarDocs("Chrysler Pacifica 2017-18")
+      ],
     ChryslerCarSpecs(mass=2242., wheelbase=3.089, steerRatio=16.2),
-    chassis_codes={"C1"},
-    years="HH",
-    engines={"7"}
-  )
-  CHRYSLER_PACIFICA_2018_HYBRID = ChryslerPlatformConfig( # ru
-    [ChryslerCarDocs("Chrysler Pacifica Hybrid 2018")],
-    CHRYSLER_PACIFICA_2017_HYBRID.specs,
-    chassis_codes={"C1"},
-    years="JJ",
-    engines={"7"}
-  )
-  CHRYSLER_PACIFICA_2019_HYBRID = ChryslerPlatformConfig( # ru
-    [ChryslerCarDocs("Chrysler Pacifica Hybrid 2019-24")],
-    CHRYSLER_PACIFICA_2017_HYBRID.specs,
-    chassis_codes={"C1", "C3"},
-    years="KR",
-    engines={"7"}
-  )
-  CHRYSLER_PACIFICA_2018 = ChryslerPlatformConfig( # ru
-    [ChryslerCarDocs("Chrysler Pacifica 2017-18")],
-    CHRYSLER_PACIFICA_2017_HYBRID.specs,
     chassis_codes={"C1", "C3"},
     years="HJ",
-    engines={"G"}
   )
-  CHRYSLER_PACIFICA_2020 = ChryslerPlatformConfig( # ru
+  CHRYSLER_PACIFICA_2020 = ChryslerPlatformConfig(
     [
       ChryslerCarDocs("Chrysler Pacifica 2019-20"),
       ChryslerCarDocs("Chrysler Pacifica 2021-23", package="All"),
+      ChryslerCarDocs("Chrysler Pacifica Hybrid 2019-24"),
     ],
-    CHRYSLER_PACIFICA_2017_HYBRID.specs,
-    years="KP",
+    CHRYSLER_PACIFICA_2017.specs,
+    years="KR",
     chassis_codes={"C1", "C3"},
-    engines={"G"}
   )
 
   # Dodge
-  DODGE_DURANGO = ChryslerPlatformConfig( # wd
+  DODGE_DURANGO = ChryslerPlatformConfig(
     [ChryslerCarDocs("Dodge Durango 2020-21")],
-    CHRYSLER_PACIFICA_2017_HYBRID.specs,
+    CHRYSLER_PACIFICA_2017.specs,
     chassis_codes={"DH", "DJ"},
     years="LM",
-    engines={"G", "T", "9", "J"}
   )
 
   # Jeep
-  JEEP_GRAND_CHEROKEE = ChryslerPlatformConfig(  # includes 2017 Trailhawk # wk
+  JEEP_GRAND_CHEROKEE = ChryslerPlatformConfig(  # includes 2017 Trailhawk
     [ChryslerCarDocs("Jeep Grand Cherokee 2016-18", video_link="https://www.youtube.com/watch?v=eLR9o2JkuRk")],
     ChryslerCarSpecs(mass=1778., wheelbase=2.71, steerRatio=16.7),
     chassis_codes={"JE", "JF"},
     years="GI",
-    engines={"6", "G"},
   )
 
-  JEEP_GRAND_CHEROKEE_2019 = ChryslerPlatformConfig(  # includes 2020 Trailhawk # wk
+  JEEP_GRAND_CHEROKEE_2019 = ChryslerPlatformConfig(  # includes 2020 Trailhawk
     [ChryslerCarDocs("Jeep Grand Cherokee 2019-21", video_link="https://www.youtube.com/watch?v=jBe4lWnRSu4")],
     JEEP_GRAND_CHEROKEE.specs,
     chassis_codes={"JG", "JH"},
     years="JL",
-    engines={"6", "G"}
   )
 
   # Ram
@@ -108,7 +84,6 @@ class CAR(Platforms):
     dbc_dict('chrysler_ram_dt_generated', None),
     chassis_codes={"RE", "RF"},
     years="KR",
-    engines={"G", "T", "9"}
   )
   RAM_HD_5TH_GEN = ChryslerPlatformConfig(
     [
@@ -119,7 +94,6 @@ class CAR(Platforms):
     dbc_dict('chrysler_ram_hd_generated', None),
     chassis_codes={"R4", "R5", "R2", "R3", "RP", "RR"},
     years="KR",
-    engines={"J", "L"}
   )
 
 
@@ -141,6 +115,9 @@ class CarControllerParams:
       self.STEER_MAX = 261  # higher than this faults the EPS
 
 def match_fw_to_car_fuzzy(live_fw_versions, vin, offline_fw_versions) -> set[str]:
+  # https://vpic.nhtsa.dot.gov/mid/home/displayfile/b5f541b7-8157-415d-889c-7f63628e9e66 vin stuff 2024
+  # a platform is fully determined by [5:6]+[8]+[10] (chassis_code+year)
+
   candidates = set()
 
   # Compile all FW versions for each ECU
@@ -149,9 +126,8 @@ def match_fw_to_car_fuzzy(live_fw_versions, vin, offline_fw_versions) -> set[str
     for ecu, versions in ecus.items():
       all_ecu_versions[ecu] |= set(versions)
 
-  # Check chassis code, engine and year to determine the platform
+  # Check chassis code and year to determine the platform
   chassis_code = vin[4:6]
-  engine = vin[7]
   year = vin[9]
 
   for platform in CAR:
@@ -172,7 +148,7 @@ def match_fw_to_car_fuzzy(live_fw_versions, vin, offline_fw_versions) -> set[str
     if valid_ecus != CHECK_FUZZY_ECUS:
       continue
 
-    if chassis_code in platform.config.chassis_codes and engine in platform.config.engines \
+    if chassis_code in platform.config.chassis_codes \
         and platform.config.years[0] <= year <= platform.config.years[1]:
       candidates.add(platform)
 
