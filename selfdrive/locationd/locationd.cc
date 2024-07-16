@@ -738,7 +738,7 @@ int Localizer::locationd_thread() {
                                                           "carState", "accelerometer", "gyroscope"};
 
   SubMaster sm(service_list, {}, nullptr, {gps_location_socket});
-  PubMaster pm({"liveLocationKalman"});
+  PubMaster pm({"liveLocationKalman", "livePose"});
 
   uint64_t cnt = 0;
   bool filterInitialized = false;
