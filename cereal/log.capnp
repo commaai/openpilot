@@ -1264,7 +1264,7 @@ struct LivePose {
   inputsOK @4 :Bool = false;
   posenetOK @5 :Bool = false;
   sensorsOK @6 :Bool = false;
-  filterState @8 : Measurement;
+  filterState @7 : Measurement;
 
   struct Measurement {
     value @0 : List(Float32);
