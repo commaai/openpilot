@@ -3,7 +3,7 @@
 #include <QStackedLayout>
 #include <QWidget>
 
-#include "selfdrive/ui/qt/home/home.h"
+#include "selfdrive/ui/qt/home_window.h"
 #include "selfdrive/ui/qt/offroad/onboarding.h"
 #include "selfdrive/ui/qt/offroad/settings.h"
 
