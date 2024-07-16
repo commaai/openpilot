@@ -123,7 +123,6 @@ void Localizer::build_live_pose(cereal::LivePose::Builder& livePose, cereal::Liv
   livePose.setInputsOK(liveLocation.getInputsOK());
   livePose.setPosenetOK(liveLocation.getPosenetOK());
   livePose.setSensorsOK(liveLocation.getSensorsOK());
-  livePose.setDeviceStable(liveLocation.getDeviceStable());
 }
 
 void Localizer::build_live_location(cereal::LiveLocationKalman::Builder& fix) {
