@@ -6,7 +6,6 @@
 
 #include <QtConcurrent>
 
-#include "common/transformations/orientation.hpp"
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "common/util.h"
@@ -15,25 +14,6 @@
 
 #define BACKLIGHT_DT 0.05
 #define BACKLIGHT_TS 10.00
-
-// Projects a point in car to space to the corresponding point in full frame
-// image space.
-static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, float in_z, QPointF *out) {
-  const float margin = 500.0f;
-  const QRectF clip_region{-margin, -margin, s->fb_w + 2 * margin, s->fb_h + 2 * margin};
-
-  const vec3 pt = (vec3){{in_x, in_y, in_z}};
-  const vec3 Ep = matvecmul3(s->scene.wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib, pt);
-  const vec3 KEp = matvecmul3(s->scene.wide_cam ? ECAM_INTRINSIC_MATRIX : FCAM_INTRINSIC_MATRIX, Ep);
-
-  // Project.
-  QPointF point = s->car_space_transform.map(QPointF{KEp.v[0] / KEp.v[2], KEp.v[1] / KEp.v[2]});
-  if (clip_region.contains(point)) {
-    *out = point;
-    return true;
-  }
-  return false;
-}
 
 int get_path_length_idx(const cereal::XYZTData::Reader &line, const float path_height) {
   const auto line_x = line.getX();
@@ -49,7 +29,7 @@ void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, con
     auto lead_data = (i == 0) ? radar_state.getLeadOne() : radar_state.getLeadTwo();
     if (lead_data.getStatus()) {
       float z = line.getZ()[get_path_length_idx(line, lead_data.getDRel())];
-      calib_frame_to_full_frame(s, lead_data.getDRel(), -lead_data.getYRel(), z + 1.22, &s->scene.lead_vertices[i]);
+      s->calibration.mapToFrame(lead_data.getDRel(), -lead_data.getYRel(), z + 1.22, &s->scene.lead_vertices[i]);
     }
   }
 }
@@ -63,8 +43,8 @@ void update_line_data(const UIState *s, const cereal::XYZTData::Reader &line,
     // highly negative x positions  are drawn above the frame and cause flickering, clip to zy plane of camera
     if (line_x[i] < 0) continue;
 
-    bool l = calib_frame_to_full_frame(s, line_x[i], line_y[i] - y_off, line_z[i] + z_off, &left);
-    bool r = calib_frame_to_full_frame(s, line_x[i], line_y[i] + y_off, line_z[i] + z_off, &right);
+    bool l = s->calibration.mapToFrame(line_x[i], line_y[i] - y_off, line_z[i] + z_off, &left);
+    bool r = s->calibration.mapToFrame(line_x[i], line_y[i] + y_off, line_z[i] + z_off, &right);
     if (l && r) {
       // For wider lines the drawn polygon will "invert" when going over a hill and cause artifacts
       if (!allow_invert && pvd->size() && left.y() > pvd->back().y()) {
@@ -153,31 +133,6 @@ static void update_state(UIState *s) {
   SubMaster &sm = *(s->sm);
   UIScene &scene = s->scene;
 
-  if (sm.updated("liveCalibration")) {
-    auto live_calib = sm["liveCalibration"].getLiveCalibration();
-    auto rpy_list = live_calib.getRpyCalib();
-    auto wfde_list = live_calib.getWideFromDeviceEuler();
-    Eigen::Vector3d rpy;
-    Eigen::Vector3d wfde;
-    if (rpy_list.size() == 3) rpy << rpy_list[0], rpy_list[1], rpy_list[2];
-    if (wfde_list.size() == 3) wfde << wfde_list[0], wfde_list[1], wfde_list[2];
-    Eigen::Matrix3d device_from_calib = euler2rot(rpy);
-    Eigen::Matrix3d wide_from_device = euler2rot(wfde);
-    Eigen::Matrix3d view_from_device;
-    view_from_device << 0, 1, 0,
-                        0, 0, 1,
-                        1, 0, 0;
-    Eigen::Matrix3d view_from_calib = view_from_device * device_from_calib;
-    Eigen::Matrix3d view_from_wide_calib = view_from_device * wide_from_device * device_from_calib;
-    for (int i = 0; i < 3; i++) {
-      for (int j = 0; j < 3; j++) {
-        scene.view_from_calib.v[i*3 + j] = view_from_calib(i, j);
-        scene.view_from_wide_calib.v[i*3 + j] = view_from_wide_calib(i, j);
-      }
-    }
-    scene.calibration_valid = live_calib.getCalStatus() == cereal::LiveCalibrationData::Status::CALIBRATED;
-    scene.calibration_wide_valid = wfde_list.size() == 3;
-  }
   if (sm.updated("pandaStates")) {
     auto pandaStates = sm["pandaStates"].getPandaStates();
     if (pandaStates.size() > 0) {

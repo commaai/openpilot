@@ -148,7 +148,7 @@ QWidget *VideoWidget::createCameraWidget() {
 
   QStackedLayout *stacked = new QStackedLayout();
   stacked->setStackingMode(QStackedLayout::StackAll);
-  stacked->addWidget(cam_widget = new StreamCameraView("camerad", VISION_STREAM_ROAD, false));
+  stacked->addWidget(cam_widget = new StreamCameraView("camerad", VISION_STREAM_ROAD));
   cam_widget->setMinimumHeight(MIN_VIDEO_HEIGHT);
   cam_widget->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
   stacked->addWidget(alert_label = new InfoLabel(this));
@@ -420,8 +420,8 @@ void InfoLabel::paintEvent(QPaintEvent *event) {
   }
 }
 
-StreamCameraView::StreamCameraView(std::string stream_name, VisionStreamType stream_type, bool zoom, QWidget *parent)
-    : CameraWidget(stream_name, stream_type, zoom, parent) {
+StreamCameraView::StreamCameraView(std::string stream_name, VisionStreamType stream_type, QWidget *parent)
+    : CameraWidget(stream_name, stream_type, parent) {
   fade_animation = new QPropertyAnimation(this, "overlayOpacity");
   fade_animation->setDuration(500);
   fade_animation->setStartValue(0.2f);

@@ -3,14 +3,13 @@
 
 #include <QPainter>
 #include <algorithm>
-#include <cmath>
 
 #include "common/swaglog.h"
-#include "selfdrive/ui/qt/onroad/buttons.h"
 #include "selfdrive/ui/qt/util.h"
 
 // Window that shows camera view and variety of info drawn on top
-AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraWidget("camerad", type, true, parent) {
+AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget *parent)
+    : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraWidget("camerad", type, parent) {
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"uiDebug"});
 
   main_layout = new QVBoxLayout(this);
@@ -132,22 +131,11 @@ void AnnotatedCameraWidget::initializeGL() {
   setBackgroundColor(bg_colors[STATUS_DISENGAGED]);
 }
 
-void AnnotatedCameraWidget::updateFrameMat() {
-  CameraWidget::updateFrameMat();
-  UIState *s = uiState();
-  int w = width(), h = height();
-
-  s->fb_w = w;
-  s->fb_h = h;
-
-  // Apply transformation such that video pixel coordinates match video
-  // 1) Put (0, 0) in the middle of the video
-  // 2) Apply same scaling as video
-  // 3) Put (0, 0) in top left corner of video
-  s->car_space_transform.reset();
-  s->car_space_transform.translate(w / 2 - x_offset, h / 2 - y_offset)
-      .scale(zoom, zoom)
-      .translate(-intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
+mat4 AnnotatedCameraWidget::calcFrameMatrix() {
+  auto s = uiState();
+  bool wide_cam = getStreamType() == VISION_STREAM_WIDE_ROAD;
+  s->calibration.update(wide_cam, (*s->sm)["liveCalibration"].getLiveCalibration() , glWidth(), glHeight());
+  return s->calibration.frameMatrix();
 }
 
 void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
@@ -319,18 +307,8 @@ void AnnotatedCameraWidget::paintGL() {
         wide_cam_requested = false;
       }
       wide_cam_requested = wide_cam_requested && sm["controlsState"].getControlsState().getExperimentalMode();
-      // for replay of old routes, never go to widecam
-      wide_cam_requested = wide_cam_requested && s->scene.calibration_wide_valid;
     }
     CameraWidget::setStreamType(wide_cam_requested ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
-
-    s->scene.wide_cam = CameraWidget::getStreamType() == VISION_STREAM_WIDE_ROAD;
-    if (s->scene.calibration_valid) {
-      auto calib = s->scene.wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib;
-      CameraWidget::updateCalibration(calib);
-    } else {
-      CameraWidget::updateCalibration(DEFAULT_CALIBRATION);
-    }
     CameraWidget::setFrameId(model.getFrameId());
     CameraWidget::paintGL();
   }
