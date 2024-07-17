@@ -532,7 +532,7 @@ CONFIGS = [
       "cameraOdometry", "accelerometer", "gyroscope", "gpsLocationExternal",
       "liveCalibration", "carState", "gpsLocation"
     ],
-    subs=["liveLocationKalman"],
+    subs=["liveLocationKalman", "livePose"],
     ignore=["logMonoTime"],
     config_callback=locationd_config_pubsub_callback,
     tolerance=NUMPY_TOLERANCE,
