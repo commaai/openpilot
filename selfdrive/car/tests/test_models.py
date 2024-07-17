@@ -14,6 +14,7 @@ from cereal import messaging, log, car
 from panda.tests.safety.test_tesla import TestTeslaSteeringSafety
 from panda.tests.safety.test_toyota import TestToyotaSafetyAngle
 from panda.tests.safety.test_nissan import TestNissanSafety
+from panda.tests.safety.common import VEHICLE_SPEED_FACTOR
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
@@ -23,6 +24,7 @@ from openpilot.selfdrive.car.card import Car
 from openpilot.selfdrive.car.fingerprints import all_known_cars, MIGRATION
 from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from openpilot.selfdrive.car.honda.values import CAR as HONDA, HondaFlags
+from openpilot.selfdrive.car.toyota.values import ToyotaFlags
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from openpilot.selfdrive.car.values import Platform
 from openpilot.selfdrive.test.helpers import read_segment_list
@@ -44,11 +46,11 @@ INTERNAL_SEG_CNT = int(os.environ.get("INTERNAL_SEG_CNT", "0"))
 MAX_EXAMPLES = int(os.environ.get("MAX_EXAMPLES", "300"))
 CI = os.environ.get("CI", None) is not None
 
-ANGLE_BASED_CARS = ("toyota", "tesla", "nissan")
-
 TESLA_DEG_TO_CAN = TestTeslaSteeringSafety.DEG_TO_CAN
 TOYOTA_DEG_TO_CAN = TestToyotaSafetyAngle.DEG_TO_CAN
 NISSAN_DEG_TO_CAN = TestNissanSafety.DEG_TO_CAN
+# out of range between -1310 - 1310 CANPacker for nissan produce wrong angle
+NISSAN_WITHOUT_FAULT_MAX_ANGLE = 1310
 
 
 def get_test_cases() -> list[tuple[str, CarTestRoute | None]]:
@@ -429,53 +431,76 @@ class TestCarModelBase(unittest.TestCase):
       self.safety.set_cruise_engaged_prev(status)
 
     now_nanos = (len(msgs) - 1) * DT_CTRL * 1e9
-    # TODO: remove this if
-    if not self.safety.get_gas_pressed_prev() and self.CP.carName not in ("honda", "body"):
-      cc_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
+    cc_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
 
-      # follow logic of LoC in controlsd to set accel to 0 if longActive is False
-      try:
-        cc_msg["actuators"]["accel"] = cc_msg["actuators"]["accel"] if cc_msg["longActive"] else 0
-      except AttributeError:
-        pass
+    if cc_msg["longActive"]:
+      cc_msg["enabled"] = True
 
-      CC = car.CarControl.new_message(**cc_msg).as_reader()
+    # follow logic of LoC in controlsd to set accel to 0 if longActive is False
+    try:
+      cc_msg["actuators"]["accel"] = cc_msg["actuators"]["accel"] if cc_msg["longActive"] else 0
+    except AttributeError:
+      pass
 
-      # check for controls_allowed and set True if not already in these cases:
-      # - cancel button messages before controls_allowed
-      # - actuator commands before controls_allowed
-      # - resume button message before controls_allowed
-      set_pcm_cruise(any([CC.enabled, CC.latActive, CC.longActive, CC.cruiseControl.resume, CC.cruiseControl.cancel]))
+    CC = car.CarControl.new_message(**cc_msg).as_reader()
 
-      # relay_malfunction might be set during randomizing carState
-      if self.safety.get_relay_malfunction():
-        self.safety.set_relay_malfunction(False)
+    # check for controls_allowed and set True if not already in these cases:
+    # - cancel button messages before controls_allowed
+    # - actuator commands before controls_allowed
+    # - resume button message before controls_allowed
+    panda_controls_allowed = any([CC.enabled, CC.latActive, CC.longActive, CC.cruiseControl.resume, CC.cruiseControl.cancel])
+    set_pcm_cruise(panda_controls_allowed)
 
-      new_actuators, sendcans = self.CI.apply(CC, now_nanos)
-      new_actuators = new_actuators.as_reader()
+    # relay_malfunction might be set during randomizing carState
+    if self.safety.get_relay_malfunction():
+      self.safety.set_relay_malfunction(False)
 
-      if car_platform in ANGLE_BASED_CARS:
-        new_steering_angle_deg = new_actuators.steeringAngleDeg
-        if car_platform == "toyota":
-          new_steering_angle_deg *= TOYOTA_DEG_TO_CAN
-        elif car_platform == "tesla":
-          new_steering_angle_deg *= TESLA_DEG_TO_CAN
-          # mismatch in logic between panda and OP for tesla steering:
-          #   - OP clip steering angle to last angle while safety_tesla in panda doesn't do this
-          self.safety.set_desired_angle_last(-int(round(new_steering_angle_deg)))
-        elif car_platform == "nissan":
-          new_steering_angle_deg *= NISSAN_DEG_TO_CAN
+    # no gas_pressed_prev during long controls
+    actuators = CC.actuators
+    if (actuators.brake or actuators.gas or CC.longActive) and self.safety.get_gas_pressed_prev() and panda_controls_allowed:
+      self.safety.set_gas_pressed_prev(False)
 
-        # angle_meas in panda and steeringAngleDeg are randomized,
-        #   so they are prone to having large difference in angle when latActive is False.
-        # Reset angle_meas max/min close to current generated angle
-        if not CC.latActive:
-          new_steering_angle_deg = abs(int(round(new_steering_angle_deg)))
-          self.safety.set_angle_meas(-new_steering_angle_deg, new_steering_angle_deg)
+    if car_platform == "honda":
+      if self.safety.get_honda_fwd_brake():
+        self.safety.set_honda_fwd_brake(False)
 
-      for addr, _, dat, bus in sendcans:
-        to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
-        self.assertTrue(self.safety.safety_tx_hook(to_send), (addr, dat, bus,))
+    # Nissan calculate vEgoRaw with speed of 4 wheels while panda get vehicle_speed from rear wheels only,
+    # so there might be a big enough difference between the two
+    if car_platform == "nissan":
+      panda_vehicle_speed_last = self.safety.get_vehicle_speed_last() / VEHICLE_SPEED_FACTOR
+      if abs(self.CI.CS.out.vEgoRaw - panda_vehicle_speed_last) > 0.2:
+        cs_msg = self.CI.CS.out.to_dict()
+        cc_msg["vEgoRaw"] = panda_vehicle_speed_last
+        self.CI.CS.out = car.CarState.new_message(**cs_msg).as_reader()
+
+    self.CI.update(CC, [])
+    new_actuators, sendcans = self.CI.apply(CC, now_nanos)
+    new_actuators = new_actuators.as_reader()
+
+    if car_platform in ("tesla", "nissan") or (car_platform == "toyota" and self.CP.flags & ToyotaFlags.ANGLE_CONTROL):
+      new_steering_angle_deg = new_actuators.steeringAngleDeg
+      if car_platform == "toyota":
+        new_steering_angle_deg *= TOYOTA_DEG_TO_CAN
+      elif car_platform == "tesla":
+        new_steering_angle_deg *= TESLA_DEG_TO_CAN
+        # mismatch in logic between panda and OP for tesla steering:
+        #   - OP clip steering angle to last angle while safety_tesla in panda doesn't do this
+        # TODO: check and resize steering_angle before apply()
+        self.safety.set_desired_angle_last(-int(round(new_steering_angle_deg)))
+      elif car_platform == "nissan":
+        new_steering_angle_deg *= NISSAN_DEG_TO_CAN
+
+      # angle_meas in panda and steeringAngleDeg are randomized,
+      #   so they are prone to having large difference in angle when latActive is False.
+      # Reset angle_meas max/min close to current generated angle
+      within_range = self.safety.get_angle_meas_min() - 1 <= new_steering_angle_deg <= self.safety.get_angle_meas_max() + 1
+      if not CC.latActive and not within_range:
+        new_steering_angle_deg = abs(int(round(new_steering_angle_deg)))
+        self.safety.set_angle_meas(-new_steering_angle_deg, new_steering_angle_deg)
+
+    for addr, _, dat, bus in sendcans:
+      to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
+      self.assertTrue(self.safety.safety_tx_hook(to_send), (addr, dat, bus))
 
   def test_panda_safety_carstate(self):
     """
