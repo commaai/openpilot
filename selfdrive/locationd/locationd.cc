@@ -68,14 +68,17 @@ static Quaterniond vector2quat(const VectorXd& vec) {
   return Quaterniond(vec(0), vec(1), vec(2), vec(3));
 }
 
-
-template <typename Measurement, typename ValueVector, typename StdVector>
-static void init_measurement(Measurement meas, const ValueVector& val, const StdVector& std, bool valid) {
+static void init_measurement(cereal::LiveLocationKalman::Measurement::Builder meas, const VectorXd& val, const VectorXd& std, bool valid) {
   meas.setValue(kj::arrayPtr(val.data(), val.size()));
   meas.setStd(kj::arrayPtr(std.data(), std.size()));
   meas.setValid(valid);
 }
 
+static void init_xyz_measurement(cereal::LivePose::XYZMeasurement::Builder meas, const VectorXf& val, const VectorXf& std, bool valid) {
+  meas.setX(val[0]); meas.setY(val[1]); meas.setZ(val[2]);
+  meas.setXStd(std[0]); meas.setYStd(std[1]); meas.setZStd(std[2]);
+  meas.setValid(valid);
+}
 
 static MatrixXdr rotate_cov(const MatrixXdr& rot_matrix, const MatrixXdr& cov_in) {
   // To rotate a covariance matrix, the cov matrix needs to multiplied left and right by the transform matrix
@@ -107,17 +110,20 @@ Localizer::Localizer(LocalizerGnssSource gnss_source) {
 void Localizer::build_live_pose(cereal::LivePose::Builder& livePose, cereal::LiveLocationKalman::Reader& liveLocation) {
   // Just copy the values from liveLocation to livePose for now
   VectorXf orientation_ned = float32list2vector(liveLocation.getOrientationNED().getValue()), orientation_ned_std = float32list2vector(liveLocation.getOrientationNED().getStd());
-  init_measurement(livePose.initOrientationNED(), orientation_ned, orientation_ned_std, this->gps_mode);
+  init_xyz_measurement(livePose.initOrientationNED(), orientation_ned, orientation_ned_std, this->gps_mode);
   VectorXf velocity_device = float32list2vector(liveLocation.getVelocityDevice().getValue()), velocity_device_std = float32list2vector(liveLocation.getVelocityDevice().getStd());
-  init_measurement(livePose.initVelocityDevice(), velocity_device, velocity_device_std, true);
+  init_xyz_measurement(livePose.initVelocityDevice(), velocity_device, velocity_device_std, true);
   VectorXf acceleration_device = float32list2vector(liveLocation.getAccelerationDevice().getValue()), acceleration_device_std = float32list2vector(liveLocation.getAccelerationDevice().getStd());
-  init_measurement(livePose.initAccelerationDevice(), acceleration_device, acceleration_device_std, true);
+  init_xyz_measurement(livePose.initAccelerationDevice(), acceleration_device, acceleration_device_std, true);
   VectorXf ang_velocity_device = float32list2vector(liveLocation.getAngularVelocityDevice().getValue()), ang_velocity_device_std = float32list2vector(liveLocation.getAngularVelocityDevice().getStd());
-  init_measurement(livePose.initAngularVelocityDevice(), ang_velocity_device, ang_velocity_device_std, true);
+  init_xyz_measurement(livePose.initAngularVelocityDevice(), ang_velocity_device, ang_velocity_device_std, true);
 
   if (DEBUG) {
-    VectorXf filter_state = float32list2vector(liveLocation.getFilterState().getValue()), filter_state_std = float32list2vector(liveLocation.getFilterState().getStd());
-    init_measurement(livePose.initFilterState(), filter_state, filter_state_std, true);
+    VectorXd filter_state = float64list2vector(liveLocation.getFilterState().getValue()), filter_state_std = float64list2vector(liveLocation.getFilterState().getStd());
+    cereal::LivePose::FilterState::Builder filter_state_builder = livePose.initFilterState();
+    filter_state_builder.setValue(kj::arrayPtr(filter_state.data(), filter_state.size()));
+    filter_state_builder.setStd(kj::arrayPtr(filter_state_std.data(), filter_state_std.size()));
+    filter_state_builder.setValid(true);
   }
 
   livePose.setInputsOK(liveLocation.getInputsOK());
