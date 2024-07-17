@@ -468,7 +468,7 @@ class TestCarModelBase(unittest.TestCase):
     # so there might be a big enough difference between the two
     if car_platform == "nissan":
       panda_vehicle_speed_last = self.safety.get_vehicle_speed_last() / VEHICLE_SPEED_FACTOR
-      if abs(self.CI.CS.out.vEgoRaw - panda_vehicle_speed_last) > 0.2:
+      if self.CI.CS.out.vEgoRaw != panda_vehicle_speed_last:
         cs_msg = self.CI.CS.out.to_dict()
         cc_msg["vEgoRaw"] = panda_vehicle_speed_last
         self.CI.CS.out = car.CarState.new_message(**cs_msg).as_reader()
