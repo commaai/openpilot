@@ -335,8 +335,8 @@ jobs:
       - name: Upload Test Report
         uses: actions/upload-artifact@v4
         with:
-          name: report-${{ inputs.run_number }}
-          path: selfdrive/ui/tests/test_ui/report_${{ inputs.run_number }}
+          name: report-${{ inputs.run_number || '1' }}
+          path: selfdrive/ui/tests/test_ui/report_${{ inputs.run_number || '1' }}
       - name: Get changes to selfdrive/ui
         if: ${{ github.event_name == 'pull_request' }}
         id: changed-files
@@ -359,7 +359,7 @@ jobs:
           git checkout -b openpilot/pr-${{ github.event.pull_request.number }}
           git config user.name "GitHub Actions Bot"
           git config user.email "<>"
-          sudo mv ${{ github.workspace }}/selfdrive/ui/tests/test_ui/report/screenshots/* .
+          sudo mv ${{ github.workspace }}/selfdrive/ui/tests/test_ui/report_1/screenshots/* .
           git add .
           git commit -m "screenshots for PR #${{ github.event.pull_request.number }}"
           git push origin openpilot/pr-${{ github.event.pull_request.number }} --force
