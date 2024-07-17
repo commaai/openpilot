@@ -1264,6 +1264,7 @@ struct LivePose {
   inputsOK @4 :Bool = false;
   posenetOK @5 :Bool = false;
   sensorsOK @6 :Bool = false;
+
   filterState @7 :FilterState;
 
   struct XYZMeasurement {
