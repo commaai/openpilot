@@ -66,7 +66,8 @@ class _FrameReader:
 
 class CameraReader:
   def __init__(self, camera_paths, start_time, seg_idxs):
-    self.camera_paths = [camera_paths[i] for i in seg_idxs]
+    self.seg_idxs = seg_idxs
+    self.camera_paths = camera_paths
     self.start_time = start_time
 
     probe = ffprobe(camera_paths[0])["streams"][0]
@@ -85,7 +86,7 @@ class CameraReader:
 
   def run_across_segments(self, num_processes, func):
     with multiprocessing.Pool(num_processes) as pool:
-      num_segs = len(self.camera_paths)
-      for _ in tqdm.tqdm(pool.imap_unordered(partial(self._run_on_segment, func), range(num_segs)), total=num_segs):
+      num_segs = len(self.seg_idxs)
+      for _ in tqdm.tqdm(pool.imap_unordered(partial(self._run_on_segment, func), self.seg_idxs), total=num_segs):
         continue
 
