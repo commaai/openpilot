@@ -487,7 +487,7 @@ void MainWindow::updateRecentFileMenu() {
 
   for (int i = 0; i < num_recent_files; ++i) {
     QString text = tr("&%1 %2").arg(i + 1).arg(QFileInfo(settings.recent_files[i]).fileName());
-    open_recent_menu->addAction(text, this, [this, i=i](){ loadFile(settings.recent_files[i]); });
+    open_recent_menu->addAction(text, this, [this, file = settings.recent_files[i]]() { loadFile(file); });
   }
 }
 

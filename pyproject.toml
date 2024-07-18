@@ -73,6 +73,7 @@ docs = [
 testing = [
   "coverage",
   "hypothesis ==6.47.*",
+  "import-linter",
   "mypy",
   "pre-commit",
   "pytest",
@@ -107,7 +108,6 @@ dev = [
   "parameterized >=0.8, <0.9",
   #pprofile = "*"
   "pyautogui",
-  "pygame",
   "pyopencl; platform_machine != 'aarch64'", # broken on arm64
   "pywinctl",
   "pyprof2calltree",
@@ -115,6 +115,7 @@ dev = [
   "tabulate",
   "types-requests",
   "types-tabulate",
+  "hexdump",
 
   # this is only pinned since 5.15.11 is broken
   "pyqt5 ==5.15.2; platform_machine == 'x86_64'", # no aarch64 wheels for macOS/linux
