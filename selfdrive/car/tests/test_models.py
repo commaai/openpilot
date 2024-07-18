@@ -208,6 +208,8 @@ class TestCarModelBase(unittest.TestCase):
     self.assertEqual(0, set_status, f"failed to set safetyModel {cfg}")
     self.safety.init_tests()
 
+    self.tx_fuzzy_ts_nanos = 0
+
   def test_car_params(self):
     if self.CP.dashcamOnly:
       self.skipTest("no need to check carParams for dashcamOnly")
@@ -408,6 +410,9 @@ class TestCarModelBase(unittest.TestCase):
     if self.CP.notCar:
       self.skipTest("Skipping test for notCar")
 
+    if self.CP.dashcamOnly:
+      self.skipTest("Skipping test for dashcamOnly")
+
     car_platform = self.CP.carName
 
     valid_addrs = [(addr, bus, size) for bus, addrs in self.fingerprint.items() for addr, size in addrs.items()]
@@ -430,17 +435,13 @@ class TestCarModelBase(unittest.TestCase):
       self.safety.set_controls_allowed(status)
       self.safety.set_cruise_engaged_prev(status)
 
-    now_nanos = (len(msgs) - 1) * DT_CTRL * 1e9
     cc_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
 
     if cc_msg["longActive"]:
       cc_msg["enabled"] = True
-
-    # follow logic of LoC in controlsd to set accel to 0 if longActive is False
-    try:
-      cc_msg["actuators"]["accel"] = cc_msg["actuators"]["accel"] if cc_msg["longActive"] else 0
-    except AttributeError:
-      pass
+    else:
+      # follow logic of LoC in controlsd to set accel to 0 if longActive is False
+      cc_msg["actuators"]["accel"] = 0
 
     CC = car.CarControl.new_message(**cc_msg).as_reader()
 
@@ -464,7 +465,7 @@ class TestCarModelBase(unittest.TestCase):
       if self.safety.get_honda_fwd_brake():
         self.safety.set_honda_fwd_brake(False)
 
-    # Nissan calculate vEgoRaw with speed of 4 wheels while panda get vehicle_speed from rear wheels only,
+    # Nissan calculate vEgoRaw with avg speed of 4 wheels while panda get vehicle_speed from rear wheels only,
     # so there might be a big enough difference between the two
     if car_platform == "nissan":
       panda_vehicle_speed_last = self.safety.get_vehicle_speed_last() / VEHICLE_SPEED_FACTOR
@@ -473,27 +474,26 @@ class TestCarModelBase(unittest.TestCase):
         cs_msg["vEgoRaw"] = panda_vehicle_speed_last
         self.CI.CS.out = car.CarState.new_message(**cs_msg).as_reader()
 
-    new_actuators, sendcans = self.CI.apply(CC, now_nanos)
+    # timer and now_nanos for gm cars
+    self.safety.set_timer(int(self.tx_fuzzy_ts_nanos / 1e3))
+    new_actuators, sendcans = self.CI.apply(CC, self.tx_fuzzy_ts_nanos)
     new_actuators = new_actuators.as_reader()
+    self.tx_fuzzy_ts_nanos += DT_CTRL * 1e9
 
-    if car_platform in ("tesla", "nissan") or (car_platform == "toyota" and self.CP.flags & ToyotaFlags.ANGLE_CONTROL):
+    # angle_meas in panda and steeringAngleDeg are randomized,
+    #   so they're prone to having large difference in angle when latActive is False.
+    # Reset angle_meas max/min close to the current randomly generated desired steering angle
+    angle_based_cars = car_platform in ("tesla", "nissan") or (car_platform == "toyota" and (self.CP.flags & ToyotaFlags.ANGLE_CONTROL))
+    if not CC.latActive and angle_based_cars:
       new_steering_angle_deg = new_actuators.steeringAngleDeg
       if car_platform == "toyota":
         new_steering_angle_deg *= TOYOTA_DEG_TO_CAN
       elif car_platform == "tesla":
         new_steering_angle_deg *= TESLA_DEG_TO_CAN
-        # mismatch in logic between panda and OP for tesla steering:
-        #   - OP clip steering angle to last angle while safety_tesla in panda doesn't do this
-        # TODO: check and resize steering_angle before apply()
-        self.safety.set_desired_angle_last(-int(round(new_steering_angle_deg)))
       elif car_platform == "nissan":
         new_steering_angle_deg *= NISSAN_DEG_TO_CAN
-
-      # angle_meas in panda and steeringAngleDeg are randomized,
-      #   so they are prone to having large difference in angle when latActive is False.
-      # Reset angle_meas max/min close to current generated angle
       within_range = self.safety.get_angle_meas_min() - 1 <= new_steering_angle_deg <= self.safety.get_angle_meas_max() + 1
-      if not CC.latActive and not within_range:
+      if not within_range:
         new_steering_angle_deg = abs(int(round(new_steering_angle_deg)))
         self.safety.set_angle_meas(-new_steering_angle_deg, new_steering_angle_deg)
 
