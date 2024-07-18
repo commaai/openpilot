@@ -56,11 +56,14 @@ if __name__ == "__main__":
 
   if args.as_qlog:
     new_msgs = []
-    msg_cnts = defaultdict(int)
+    msg_cnts: dict[str, int] = defaultdict(int)
     for msg in msgs:
       msg_which = msg.which()
       if msg.which() in ("initData", "sentinel"):
         new_msgs.append(msg)
+        continue
+
+      if msg_which not in SERVICE_LIST:
         continue
 
       decimation = SERVICE_LIST[msg_which].decimation
