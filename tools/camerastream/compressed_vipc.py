@@ -8,7 +8,9 @@ import multiprocessing
 import time
 import signal
 
+
 import cereal.messaging as messaging
+import msgq
 from msgq.visionipc import VisionIpcServer, VisionStreamType
 
 V4L2_BUF_FLAG_KEYFRAME = 8
@@ -42,7 +44,7 @@ def decoder(addr, vipc_server, vst, nvidia, W, H, debug=False):
     codec = av.CodecContext.create("hevc", "r")
 
   os.environ["ZMQ"] = "1"
-  messaging.context = messaging.Context()
+  msgq.context = messaging.Context()
   sock = messaging.sub_sock(sock_name, None, addr=addr, conflate=False)
   cnt = 0
   last_idx = -1
@@ -109,12 +111,12 @@ class CompressedVipc:
   def __init__(self, addr, vision_streams, nvidia=False, debug=False):
     print("getting frame sizes")
     os.environ["ZMQ"] = "1"
-    messaging.context = messaging.Context()
+    msgq.context = messaging.Context()
     sm = messaging.SubMaster([ENCODE_SOCKETS[s] for s in vision_streams], addr=addr)
     while min(sm.recv_frame.values()) == 0:
       sm.update(100)
     os.environ.pop("ZMQ")
-    messaging.context = messaging.Context()
+    msgq.context = messaging.Context()
 
     self.vipc_server = VisionIpcServer("camerad")
     for vst in vision_streams:
