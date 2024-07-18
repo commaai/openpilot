@@ -49,8 +49,6 @@ CI = os.environ.get("CI", None) is not None
 TESLA_DEG_TO_CAN = TestTeslaSteeringSafety.DEG_TO_CAN
 TOYOTA_DEG_TO_CAN = TestToyotaSafetyAngle.DEG_TO_CAN
 NISSAN_DEG_TO_CAN = TestNissanSafety.DEG_TO_CAN
-# out of range between -1310 - 1310 CANPacker for nissan produce wrong angle
-NISSAN_WITHOUT_FAULT_MAX_ANGLE = 1310
 
 
 def get_test_cases() -> list[tuple[str, CarTestRoute | None]]:
