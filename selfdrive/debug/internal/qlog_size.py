@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 import argparse
 import bz2
+import zstd
 from collections import defaultdict
 
 import matplotlib.pyplot as plt
 
+from cereal.services import SERVICE_LIST
 from openpilot.tools.lib.logreader import LogReader
 from tqdm import tqdm
 
@@ -23,7 +25,7 @@ def make_pie(msgs, typ):
   # calculate compressed size by calculating diff when removed from the segment
   compressed_length_by_type = {}
   for k in tqdm(msgs_by_type.keys(), desc="Compressing"):
-    compressed_length_by_type[k] = total - len(bz2.compress(b"".join([m.as_builder().to_bytes() for m in msgs if m.which() != k])))
+    compressed_length_by_type[k] = total - len(bz2.compress(b"".join([m.as_builder().to_bytes() for m in msgs if m.which() != k]),))
 
   sizes = sorted(compressed_length_by_type.items(), key=lambda kv: kv[1])
 
@@ -48,9 +50,32 @@ def make_pie(msgs, typ):
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='View log size breakdown by message type')
   parser.add_argument('route', help='route to use')
+  parser.add_argument('--as-qlog', action='store_true', help='decimate rlog using latest decimation factors')
   args = parser.parse_args()
 
   msgs = list(LogReader(args.route))
 
+  new_msgs = []
+  if args.as_qlog:
+    msg_cnts = defaultdict(int)
+    for msg in msgs:
+      msg_which = msg.which()
+      if msg.which() in ["initData", "sentinel"]:
+        new_msgs.append(msg)
+        continue
+
+      decimation = SERVICE_LIST[msg_which].decimation
+      if decimation is None:
+        continue
+
+      # if msg_which not in SERVICE_LIST:
+      #   new_msgs.append(msg)
+      # else:
+      if msg_cnts[msg_which] % decimation == 0:
+        new_msgs.append(msg)
+      msg_cnts[msg_which] += 1
+    msgs = new_msgs
+
+  print(len(msgs), len(new_msgs))
   make_pie(msgs, 'qlog')
   plt.show()
