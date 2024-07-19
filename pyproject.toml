@@ -52,7 +52,8 @@ dependencies = [
   "websocket_client",
 
   # acados deps
-  "casadi @ https://github.com/commaai/casadi/releases/download/nightly-python312_aarch64/casadi-3.6.5.dev+python312.aarch64-cp312-none-manylinux2014_aarch64.whl ; platform_machine == 'aarch64'",
+  "casadi @ https://github.com/commaai/casadi/releases/download/nightly-release-3.6.5/casadi-3.6.5-cp312-none-manylinux2014_aarch64.whl ; platform_machine == 'aarch64' and python_version == '3.12'", # TODO: Go back to pypi casadi when they fix aarch64 for python312
+  "casadi @ https://github.com/commaai/casadi/releases/download/nightly-release-3.6.5/casadi-3.6.5-cp311-none-manylinux2014_aarch64.whl ; platform_machine == 'aarch64' and python_version == '3.11'",
   "casadi; platform_machine == 'x86_64'",
   "future-fstrings",
 
