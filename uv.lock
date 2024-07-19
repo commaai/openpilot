@@ -204,12 +204,12 @@ wheels = [
 [[distribution]]
 name = "casadi"
 version = "3.6.5.dev0+python312.aarch64"
-source = { url = "https://github.com/commaai/casadi/releases/download/nightly-python312_aarch64/casadi-3.6.5.dev+python312.aarch64-cp311-none-manylinux2014_aarch64.whl" }
+source = { url = "https://github.com/commaai/casadi/releases/download/nightly-python312_aarch64/casadi-3.6.5.dev+python312.aarch64-cp312-none-manylinux2014_aarch64.whl" }
 dependencies = [
     { name = "numpy" },
 ]
 wheels = [
-    { url = "https://github.com/commaai/casadi/releases/download/nightly-python312_aarch64/casadi-3.6.5.dev+python312.aarch64-cp311-none-manylinux2014_aarch64.whl", hash = "sha256:f2f15ca5680061926c2b7205e4f1ed1d387a77c23b35d7fac9fcae11ee1b405e" },
+    { url = "https://github.com/commaai/casadi/releases/download/nightly-python312_aarch64/casadi-3.6.5.dev+python312.aarch64-cp312-none-manylinux2014_aarch64.whl", hash = "sha256:d961f418ed42ab05b8e76c53a2c4f87a40679e056e09f33b9d555ac824f15aa1" },
 ]
 
 [[distribution]]
@@ -1536,7 +1536,7 @@ source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
     { name = "aiortc" },
-    { name = "casadi", version = "3.6.5.dev0+python312.aarch64", source = { url = "https://github.com/commaai/casadi/releases/download/nightly-python312_aarch64/casadi-3.6.5.dev+python312.aarch64-cp311-none-manylinux2014_aarch64.whl" }, marker = "platform_machine == 'aarch64'" },
+    { name = "casadi", version = "3.6.5.dev0+python312.aarch64", source = { url = "https://github.com/commaai/casadi/releases/download/nightly-python312_aarch64/casadi-3.6.5.dev+python312.aarch64-cp312-none-manylinux2014_aarch64.whl" }, marker = "platform_machine == 'aarch64'" },
     { name = "casadi", version = "3.6.5", source = { registry = "https://pypi.org/simple" }, marker = "platform_machine == 'x86_64'" },
     { name = "cffi" },
     { name = "crcmod" },
