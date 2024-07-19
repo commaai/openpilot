@@ -397,6 +397,9 @@ class TestCarModelBase(unittest.TestCase):
             phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
   def test_panda_safety_tx_fuzzy(self, data):
+    """
+    Randomize carState, and fuzz a carControl message.Checking if panda tx hooks agree with Openpilot
+    """
     if self.CP.notCar or self.CP.dashcamOnly:
       self.skipTest("Skipping test for notCar and dashcamOnly")
 
