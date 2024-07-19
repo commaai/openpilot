@@ -1,5 +1,6 @@
 from cereal import car
 from opendbc.can.packer import CANPacker
+from openpilot.common.numpy_fast import clip
 from openpilot.selfdrive.car import apply_std_steer_angle_limits
 from openpilot.selfdrive.car.interfaces import CarControllerBase
 from openpilot.selfdrive.car.nissan import nissancan
@@ -7,6 +8,9 @@ from openpilot.selfdrive.car.nissan.values import CAR, CarControllerParams
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
+# When output steering Angle not within range -1311 and 1310,
+#   CANPacker packs wrong angle output to be decoded by panda
+MAX_STEER_ANGLE = 1310
 
 class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
@@ -49,6 +53,7 @@ class CarController(CarControllerBase):
       apply_angle = CS.out.steeringAngleDeg
       self.lkas_max_torque = 0
 
+    apply_angle = clip(apply_angle, -MAX_STEER_ANGLE, MAX_STEER_ANGLE)
     self.apply_angle_last = apply_angle
 
     if self.CP.carFingerprint in (CAR.NISSAN_ROGUE, CAR.NISSAN_XTRAIL, CAR.NISSAN_ALTIMA) and pcm_cancel_cmd:
