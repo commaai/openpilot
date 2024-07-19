@@ -817,6 +817,7 @@ void CameraState::handle_camera_event(void *evdat) {
     meta_data.integ_lines = exposure_time;
     meta_data.measured_grey_fraction = measured_grey_fraction;
     meta_data.target_grey_fraction = target_grey_fraction;
+    meta_data.exposure_val_percent = util::map_val(cur_ev[meta_data.frame_id % 3], ci->min_ev, ci->max_ev, 0.0f, 100.0f);
     exp_lock.unlock();
 
     // dispatch
