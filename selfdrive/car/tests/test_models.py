@@ -10,7 +10,6 @@ from hypothesis import Phase, given, settings
 from parameterized import parameterized_class
 
 from cereal import messaging, log, car
-
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.selfdrive.car import DT_CTRL, gen_empty_fingerprint
@@ -419,16 +418,13 @@ class TestCarModelBase(unittest.TestCase):
     # - cancel button messages before controls_allowed
     # - actuator commands before controls_allowed
     # - resume button message before controls_allowed
-    enabled_state = any([cc_msg["enabled"], cc_msg["latActive"], cc_msg["longActive"]])
-    panda_controls_allowed = any([enabled_state, cc_msg["cruiseControl"]["resume"], cc_msg["cruiseControl"]["cancel"]])
+    controls_state = any([cc_msg["enabled"], cc_msg["latActive"], cc_msg["longActive"]])
+    panda_controls_allowed = any([controls_state, cc_msg["cruiseControl"]["resume"], cc_msg["cruiseControl"]["cancel"]])
     set_controls_allowed(panda_controls_allowed)
 
     # relay_malfunction might be set during randomizing carState
     if self.safety.get_relay_malfunction():
       self.safety.set_relay_malfunction(False)
-
-    if self.CP.carName == "honda" and self.safety.get_honda_fwd_brake():
-      self.safety.set_honda_fwd_brake(False)
 
     # Nissan calculate vEgoRaw with avg speed of 4 wheels
     # while panda get vehicle_speed from rear wheels only,
@@ -450,6 +446,9 @@ class TestCarModelBase(unittest.TestCase):
     else:
       # follow logic of LoC in controlsd to set accel to 0 if longActive is False
       cc_msg["actuators"]["accel"] = 0
+
+    if self.CP.carName == "honda" and self.safety.get_honda_fwd_brake():
+      self.safety.set_honda_fwd_brake(False)
 
     CC = car.CarControl.new_message(**cc_msg).as_reader()
 
