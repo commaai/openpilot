@@ -137,8 +137,6 @@ struct FrameData {
   requestId @28 :UInt32;
   encodeId @1 :UInt32;
 
-  frameType @7 :FrameType;
-
   # Timestamps
   timestampEof @2 :UInt64;
   timestampSof @8 :UInt64;
@@ -158,7 +156,7 @@ struct FrameData {
 
   temperaturesC @24 :List(Float32);
 
-  enum FrameType {
+  enum FrameTypeDEPRECATED {
     unknown @0;
     neo @1;
     chffrAndroid @2;
@@ -175,6 +173,7 @@ struct FrameData {
 
   frameLengthDEPRECATED @3 :Int32;
   globalGainDEPRECATED @5 :Int32;
+  frameTypeDEPRECATED @7 :FrameTypeDEPRECATED;
   androidCaptureResultDEPRECATED @9 :AndroidCaptureResult;
   lensPosDEPRECATED @11 :Int32;
   lensSagDEPRECATED @12 :Float32;
