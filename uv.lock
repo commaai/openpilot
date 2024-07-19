@@ -203,6 +203,17 @@ wheels = [
 
 [[distribution]]
 name = "casadi"
+version = "3.6.5.dev0+python312.aarch64"
+source = { url = "https://github.com/commaai/casadi/releases/download/nightly-python312_aarch64/casadi-3.6.5.dev+python312.aarch64-cp312-none-manylinux2014_aarch64.whl" }
+dependencies = [
+    { name = "numpy" },
+]
+wheels = [
+    { url = "https://github.com/commaai/casadi/releases/download/nightly-python312_aarch64/casadi-3.6.5.dev+python312.aarch64-cp312-none-manylinux2014_aarch64.whl", hash = "sha256:d961f418ed42ab05b8e76c53a2c4f87a40679e056e09f33b9d555ac824f15aa1" },
+]
+
+[[distribution]]
+name = "casadi"
 version = "3.6.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
@@ -225,14 +236,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/46/49/551760cdcedcd8d0fd7109d620c7c9e332cb8a706b2bd1beec6e4fda1cd1/casadi-3.6.5-cp312-none-manylinux2014_i686.whl", hash = "sha256:be40e9897d80fb72a97e750b2143c32f63f8800cfb78f9b396d8ce7a913fca39", size = 69777406 },
     { url = "https://files.pythonhosted.org/packages/ff/17/2f97a9638072216448b50fd14855939abeff1632edac92739683ffac9b08/casadi-3.6.5-cp312-none-manylinux2014_x86_64.whl", hash = "sha256:0118637823e292a9270133e02c9c6d3f3c7f75e8c91a6f6dc5275ade82dd1d9d", size = 72311551 },
     { url = "https://files.pythonhosted.org/packages/88/08/c55e2172f033a44b831ee771bb32fa89c369311c0598a52c03755f29a75e/casadi-3.6.5-cp312-none-win_amd64.whl", hash = "sha256:fe2b64d777e36cc3f101220dd1e219a0e11c3e4ee2b5e708b30fea9a27107e41", size = 43057681 },
-]
-
-[[distribution]]
-name = "casadi"
-version = "3.6.5"
-source = { url = "https://github.com/commaai/casadi/releases/download/nightly-release-3.6.5/casadi-3.6.5-cp312-none-manylinux2014_aarch64.whl" }
-wheels = [
-    { url = "https://github.com/commaai/casadi/releases/download/nightly-release-3.6.5/casadi-3.6.5-cp312-none-manylinux2014_aarch64.whl", hash = "sha256:a593fe09150274af809a207129ada14314c637dc8b0d394a2ec8abb3feba7533" },
 ]
 
 [[distribution]]
@@ -1533,7 +1536,8 @@ source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
     { name = "aiortc" },
-    { name = "casadi", version = "3.6.5", source = { registry = "https://pypi.org/simple" }, marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64' and platform_system == 'Linux')" },
+    { name = "casadi", version = "3.6.5.dev0+python312.aarch64", source = { url = "https://github.com/commaai/casadi/releases/download/nightly-python312_aarch64/casadi-3.6.5.dev+python312.aarch64-cp312-none-manylinux2014_aarch64.whl" }, marker = "python_version == '3.12' and platform_machine == 'aarch64'" },
+    { name = "casadi", version = "3.6.5", source = { registry = "https://pypi.org/simple" }, marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'" },
     { name = "cffi" },
     { name = "crcmod" },
     { name = "cython" },
