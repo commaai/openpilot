@@ -151,9 +151,7 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setTargetGreyFraction(frame_data.target_grey_fraction);
   framed.setProcessingTime(frame_data.processing_time);
 
-  const float ev = c->cur_ev[frame_data.frame_id % 3];
-  const float perc = util::map_val(ev, c->ci->min_ev, c->ci->max_ev, 0.0f, 100.0f);
-  framed.setExposureValPercent(perc);
+  framed.setExposureValPercent(c->exposure->valuePercent(frame_data.frame_id % 3));
   framed.setSensor(c->ci->image_sensor);
 }
 
@@ -255,33 +253,6 @@ static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
   thumbnaild.setThumbnail(thumbnail);
 
   pm->send("thumbnail", msg);
-}
-
-float set_exposure_target(const CameraBuf *b, Rect ae_xywh, int x_skip, int y_skip) {
-  int lum_med;
-  uint32_t lum_binning[256] = {0};
-  const uint8_t *pix_ptr = b->cur_yuv_buf->y;
-
-  unsigned int lum_total = 0;
-  for (int y = ae_xywh.y; y < ae_xywh.y + ae_xywh.h; y += y_skip) {
-    for (int x = ae_xywh.x; x < ae_xywh.x + ae_xywh.w; x += x_skip) {
-      uint8_t lum = pix_ptr[(y * b->rgb_width) + x];
-      lum_binning[lum]++;
-      lum_total += 1;
-    }
-  }
-
-  // Find mean lumimance value
-  unsigned int lum_cur = 0;
-  for (lum_med = 255; lum_med >= 0; lum_med--) {
-    lum_cur += lum_binning[lum_med];
-
-    if (lum_cur >= lum_total / 2) {
-      break;
-    }
-  }
-
-  return lum_med / 256.0;
 }
 
 void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {

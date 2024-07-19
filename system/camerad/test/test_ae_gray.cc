@@ -7,7 +7,7 @@
 #include <cstring>
 
 #include "common/util.h"
-#include "system/camerad/cameras/camera_common.h"
+#include "system/camerad/cameras/camera_exposure.h"
 
 #define W 240
 #define H 160
@@ -61,7 +61,7 @@ TEST_CASE("camera.test_set_exposure_target") {
           memset(&fb_y[h_0*W+h_1*W], l[2], h_2*W);
           memset(&fb_y[h_0*W+h_1*W+h_2*W], l[3], h_3*W);
           memset(&fb_y[h_0*W+h_1*W+h_2*W+h_3*W], l[4], h_4*W);
-          float ev = set_exposure_target((const CameraBuf*) &cb, rect, 1, 1);
+          float ev = CameraExposure::setExposureTarget((const CameraBuf*) &cb, rect, 1, 1);
           // printf("%d/%d/%d/%d/%d ev is %f\n", h_0, h_1, h_2, h_3, h_4, ev);
           // printf("%f\n", ev);
 
