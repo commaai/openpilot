@@ -10,7 +10,6 @@ from hypothesis import Phase, given, settings
 from parameterized import parameterized_class
 
 from cereal import messaging, log, car
-from panda.tests.safety.common import VEHICLE_SPEED_FACTOR
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
@@ -29,6 +28,7 @@ from openpilot.tools.lib.route import SegmentName
 from openpilot.selfdrive.test.fuzzy_generation import FuzzyGenerator
 
 from panda.tests.libpanda import libpanda_py
+from panda.tests.safety.common import VEHICLE_SPEED_FACTOR
 
 
 EventName = car.CarEvent.EventName
@@ -398,7 +398,7 @@ class TestCarModelBase(unittest.TestCase):
   @given(data=st.data())
   def test_panda_safety_tx_fuzzy(self, data):
     """
-    Randomize carState, and fuzz a carControl message.Checking if panda tx hooks agree with Openpilot
+    Randomize carState, and fuzz a carControl message.Checking if panda tx hooks agrees with Openpilot
     """
     if self.CP.notCar or self.CP.dashcamOnly:
       self.skipTest("Skipping test for notCar and dashcamOnly")
