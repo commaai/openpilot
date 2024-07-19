@@ -1252,6 +1252,38 @@ struct LiveLocationKalman {
   }
 }
 
+
+struct LivePose {
+  # More info on reference frames:
+  # https://github.com/commaai/openpilot/tree/master/common/transformations
+  orientationNED @0 :XYZMeasurement;
+  velocityDevice @1 :XYZMeasurement;
+  accelerationDevice @2 :XYZMeasurement;
+  angularVelocityDevice @3 :XYZMeasurement;
+
+  inputsOK @4 :Bool = false;
+  posenetOK @5 :Bool = false;
+  sensorsOK @6 :Bool = false;
+
+  filterState @7 :FilterState;
+
+  struct XYZMeasurement {
+    x @0 :Float32;
+    y @1 :Float32;
+    z @2 :Float32;
+    xStd @3 :Float32;
+    yStd @4 :Float32;
+    zStd @5 :Float32;
+    valid @6 :Bool;
+  }
+
+  struct FilterState {
+    value @0 : List(Float64);
+    std @1 : List(Float64);
+    valid @2 : Bool;
+  }
+}
+
 struct ProcLog {
   cpuTimes @0 :List(CPUTimes);
   mem @1 :Mem;
@@ -2293,6 +2325,7 @@ struct Event {
     carParams @69: Car.CarParams;
     driverMonitoringState @71: DriverMonitoringState;
     liveLocationKalman @72 :LiveLocationKalman;
+    livePose @129 :LivePose;
     modelV2 @75 :ModelDataV2;
     drivingModelData @128 :DrivingModelData;
     driverStateV2 @92 :DriverStateV2;
