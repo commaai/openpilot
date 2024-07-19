@@ -56,6 +56,7 @@ void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, con
 
 void update_line_data(const UIState *s, const cereal::XYZTData::Reader &line,
                       float y_off, float z_off, QPolygonF *pvd, int max_idx, bool allow_invert=true) {
+  qDebug() << "\n";
   const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
   QPointF left, right;
   pvd->clear();
@@ -70,6 +71,7 @@ void update_line_data(const UIState *s, const cereal::XYZTData::Reader &line,
       if (!allow_invert && pvd->size() && left.y() > pvd->back().y()) {
         continue;
       }
+      qDebug() << i << left << right;
       pvd->push_back(left);
       pvd->push_front(right);
     }

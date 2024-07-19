@@ -175,12 +175,17 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     const auto &acceleration = sm["modelV2"].getModelV2().getAcceleration().getX();
     const int max_len = std::min<int>(scene.track_vertices.length() / 2, acceleration.size());
 
+    for (int i = 0; i < scene.track_vertices.length(); i++) {
+      qDebug() << "track_vertices[" << i << "] = " << scene.track_vertices[i];
+    }
+
     for (int i = 0; i < max_len; ++i) {
       // Some points are out of frame
-      if (scene.track_vertices[i].y() < 0 || scene.track_vertices[i].y() > height()) continue;
+      int track_vertices_idx = (scene.track_vertices.length() / 2) - i;
+      if (scene.track_vertices[track_vertices_idx].y() < 0 || scene.track_vertices[track_vertices_idx].y() > height()) continue;
 
       // Flip so 0 is bottom of frame
-      float lin_grad_point = (height() - scene.track_vertices[i].y()) / height();
+      float lin_grad_point = (height() - scene.track_vertices[track_vertices_idx].y()) / height();
 
       // speed up: 120, slow down: 0
       float path_hue = fmax(fmin(60 + acceleration[i] * 35, 120), 0);
