@@ -932,7 +932,6 @@ static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) 
 
   MessageBuilder msg;
   auto framed = msg.initEvent().initDriverCameraState();
-  framed.setFrameType(cereal::FrameData::FrameType::FRONT);
   fill_frame_data(framed, c->buf.cur_frame_data, c);
 
   c->ci->processRegisters(c, framed);
