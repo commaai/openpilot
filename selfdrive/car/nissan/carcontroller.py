@@ -12,6 +12,7 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 #   CANPacker packs wrong angle output to be decoded by panda
 MAX_STEER_ANGLE = 1310
 
+
 class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
     self.CP = CP
