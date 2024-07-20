@@ -19,15 +19,10 @@ RR_WIN = "rerun_test"
 
 
 class Rerunner:
-  def __init__(self, route_or_segment_name, camera_config, enabled_services):
+  def __init__(self, route, segment_range, camera_config, enabled_services):
     self.enabled_services = [s.lower() for s in enabled_services]
     self.log_all = "all" in self.enabled_services
     self.lr = LogReader(route_or_segment_name)
-
-    sr = SegmentRange(route_or_segment_name)
-    r = Route(sr.route_name)
-
-    self.qcam, self.fcam, self.ecam, self.dcam = camera_config
 
     # hevc files don't have start_time. We get it from qcamera.ts
     start_time = 0
@@ -37,15 +32,16 @@ class Rerunner:
         start_time = float(d.split('=')[1])
         break
 
+    qcam, fcam, ecam, dcam = camera_config
     self.camera_readers = {}
-    if self.qcam:
-      self.camera_readers[CameraType.qcam] = CameraReader(r.qcamera_paths(), start_time, sr.seg_idxs)
-    if self.fcam:
-      self.camera_readers[CameraType.fcam] = CameraReader(r.camera_paths(), start_time, sr.seg_idxs)
-    if self.ecam:
-      self.camera_readers[CameraType.ecam] = CameraReader(r.ecamera_paths(), start_time, sr.seg_idxs)
-    if self.dcam:
-      self.camera_readers[CameraType.dcam] = CameraReader(r.dcamera_paths(), start_time, sr.seg_idxs)
+    if qcam:
+      self.camera_readers[CameraType.qcam] = CameraReader(route.qcamera_paths(), start_time, segment_range.seg_idxs)
+    if fcam:
+      self.camera_readers[CameraType.fcam] = CameraReader(route.camera_paths(), start_time, segment_range.seg_idxs)
+    if ecam:
+      self.camera_readers[CameraType.ecam] = CameraReader(route.ecamera_paths(), start_time, segment_range.seg_idxs)
+    if dcam:
+      self.camera_readers[CameraType.dcam] = CameraReader(route.dcamera_paths(), start_time, segment_range.seg_idxs)
 
   def _start_rerun(self):
     self.blueprint = self._create_blueprint()
@@ -161,9 +157,19 @@ if __name__ == '__main__':
     print("\n".join(SERVICE_LIST.keys()))
     sys.exit()
 
-  route_or_segment_name = DEMO_ROUTE if args.demo else args.route.strip()
   camera_config = CameraConfig(args.qcam, args.fcam, args.ecam, args.dcam)
 
-  rerunner = Rerunner(route_or_segment_name, camera_config, args.services)
+  route_or_segment_name = DEMO_ROUTE if args.demo else args.route.strip()
+  sr = SegmentRange(route_or_segment_name)
+  r = Route(sr.route_name)
+
+  if len(sr.seg_idxs) > 10:
+    print("You're requesting more than 10 segments of the route, " + \
+          "please be aware that might take a lot of memory")
+    response = input("Do you wish to continue? (Y/n): ")
+    if response.strip() != "Y":
+      sys.exit()
+
+  rerunner = Rerunner(r, sr, camera_config, args.services)
   rerunner.load_data()
 
