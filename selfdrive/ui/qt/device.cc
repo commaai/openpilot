@@ -1,4 +1,4 @@
-#include "selfdrive/ui/qt/device/device.h"
+#include "selfdrive/ui/qt/device.h"
 
 #include <cmath>
 

@@ -24,7 +24,7 @@
 
 #include "msgq/visionipc/visionipc_client.h"
 #include "system/camerad/cameras/camera_common.h"
-#include "selfdrive/ui/qt/device/device.h"
+#include "selfdrive/ui/qt/device.h"
 
 const int FRAME_BUFFER_SIZE = 5;
 static_assert(FRAME_BUFFER_SIZE <= YUV_BUFFER_COUNT);

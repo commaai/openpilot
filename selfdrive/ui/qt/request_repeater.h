@@ -2,7 +2,7 @@
 
 #include "common/util.h"
 #include "selfdrive/ui/qt/api.h"
-#include "selfdrive/ui/qt/device/device.h"
+#include "selfdrive/ui/qt/device.h"
 
 class RequestRepeater : public HttpRequest {
 public:
