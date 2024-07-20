@@ -33,11 +33,12 @@ Examples using segment range (more on [SegmentRange](https://github.com/commaai/
 ## Cautions:
 - You can specify `--services all` to visualize all `logMessage`, but it will draw a lot of memory usage and take a long time to log all messages. Rerun isn't ready for logging big number of data.
 
+- Logging hevc videos (`--fcam`, `--ecam`, and `--dcam`)  are expensive, and it's recommended to use `--qcam` for optimized performance. If possible, limiting your route to a few segments using `SegmentRange` will speed up logging and reduce memory usage
+
 This example draws 13GB of memory:
 
 `./run.py --services accelerometer --qcam --route "a2a0ccea32023010/2023-07-27--13-01-19"`
 
-- Logging hevc videos (`--fcam`, `--ecam`, and `--dcam`)  are expensive, and it's recommended to use `--qcam` for optimized performance. If possible, limiting your route to a few segments using `SegmentRange` will speed up logging and reduce memory usage
 
 ## Openpilot services
 To list all openpilot services:
