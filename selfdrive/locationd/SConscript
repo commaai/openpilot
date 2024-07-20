@@ -14,6 +14,13 @@ live_ekf = env.RednoseCompileFilter(
   extra_gen_artifacts=['live_kf_constants.h'],
   gen_script_deps=rednose_gen_deps,
 )
+pose_ekf = env.RednoseCompileFilter(
+  target='pose',
+  filter_gen_script='models/pose_kf.py',
+  output_dir=rednose_gen_dir,
+  extra_gen_artifacts=[],
+  gen_script_deps=rednose_gen_deps,
+)
 car_ekf = env.RednoseCompileFilter(
   target='car',
   filter_gen_script='models/car_kf.py',
