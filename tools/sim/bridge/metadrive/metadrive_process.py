@@ -89,7 +89,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
     cam.get_cam().setPos(C3_POSITION)
     cam.get_cam().setHpr(C3_HPR)
     img = cam.perceive(to_float=False)
-    if type(img) != np.ndarray:
+    if not isinstance(img, np.ndarray):
       img = img.get() # convert cupy array to numpy
     return img
 
