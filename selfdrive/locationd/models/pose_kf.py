@@ -93,15 +93,14 @@ class PoseKalman:
   def P(self):
     return self.filter.covs()
 
-  def predict_and_observe(self, t, kind, data, R = None):
-    if R is None:
-      R = self._get_R(kind, len(data))
-    print(data.shape, R.shape)
+  def predict_and_observe(self, t, kind, data, obs_noise=None):
+    if obs_noise is None:
+      obs_noise = self.obs_noise[kind]
+    R = self._get_R(len(data), obs_noise)
     data = np.atleast_2d(data)
     return self.filter.predict_and_update_batch(t, kind, data, R)
 
-  def _get_R(self, kind, n):
-    obs_noise = self.obs_noise[kind]
+  def _get_R(self, n, obs_noise):
     dim = obs_noise.shape[0]
     R = np.zeros((n, dim, dim))
     for i in range(n):
