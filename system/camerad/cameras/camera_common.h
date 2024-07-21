@@ -18,9 +18,6 @@ enum CameraType {
 };
 
 // for debugging
-const bool env_disable_road = getenv("DISABLE_ROAD") != NULL;
-const bool env_disable_wide_road = getenv("DISABLE_WIDE_ROAD") != NULL;
-const bool env_disable_driver = getenv("DISABLE_DRIVER") != NULL;
 const bool env_debug_frames = getenv("DEBUG_FRAMES") != NULL;
 const bool env_log_raw_frames = getenv("LOG_RAW_FRAMES") != NULL;
 const bool env_ctrl_exp_from_params = getenv("CTRL_EXP_FROM_PARAMS") != NULL;
