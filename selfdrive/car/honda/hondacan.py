@@ -50,7 +50,7 @@ def get_cruise_speed_conversion(car_fingerprint: str, is_metric: bool) -> float:
     return CV.MPH_TO_MS
 
   # for other cars, CRUISE_SPEED is always kph and the vehicle converts to mph using a conversion
-  # value rounded to 1 decimal place (without this our value is off by more than 0.5 mph at 90 mph)
+  # value rounded to 1 decimal place (without this the value would be off by 0.5 mph at 85 mph)
   return 1 / round(CV.MPH_TO_KPH, 1) * CV.MPH_TO_MS
 
 
