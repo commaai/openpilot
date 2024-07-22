@@ -14,7 +14,7 @@
 struct CameraConfig {
   int camera_num;
   VisionStreamType stream_type;
-  float focal_len;
+  float focal_len;  // millimeters
   bool enabled;
 };
 
