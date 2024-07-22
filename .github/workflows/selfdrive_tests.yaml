@@ -318,6 +318,7 @@ jobs:
             })
 
   create_ui_report:
+    # This job name needs to be the same as UI_JOB_NAME in ui_preview.yaml
     name: Create UI Report
     runs-on: ubuntu-latest
     steps:
