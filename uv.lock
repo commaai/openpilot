@@ -228,6 +228,17 @@ wheels = [
 ]
 
 [[distribution]]
+name = "casadi"
+version = "3.6.6"
+source = { url = "https://github.com/commaai/casadi/releases/download/nightly-release-3.6.6/casadi-3.6.6-cp312-none-manylinux2014_aarch64.whl" }
+dependencies = [
+    { name = "numpy" },
+]
+wheels = [
+    { url = "https://github.com/commaai/casadi/releases/download/nightly-release-3.6.6/casadi-3.6.6-cp312-none-manylinux2014_aarch64.whl", hash = "sha256:06a15e0099657b960620a2491e565c7f126030018da80c39f6bd33439160c669" },
+]
+
+[[distribution]]
 name = "certifi"
 version = "2024.7.4"
 source = { registry = "https://pypi.org/simple" }
@@ -1519,7 +1530,8 @@ source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
     { name = "aiortc" },
-    { name = "casadi" },
+    { name = "casadi", version = "3.6.5", source = { registry = "https://pypi.org/simple" }, marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'" },
+    { name = "casadi", version = "3.6.6", source = { url = "https://github.com/commaai/casadi/releases/download/nightly-release-3.6.6/casadi-3.6.6-cp312-none-manylinux2014_aarch64.whl" }, marker = "python_version == '3.12' and platform_machine == 'aarch64'" },
     { name = "cffi" },
     { name = "crcmod" },
     { name = "cython" },
