@@ -52,7 +52,8 @@ dependencies = [
   "websocket_client",
 
   # acados deps
-  "casadi",
+  "casadi @ https://github.com/commaai/casadi/releases/download/nightly-release-3.6.6/casadi-3.6.6-cp312-none-manylinux2014_aarch64.whl ; (python_version == '3.12' and platform_machine == 'aarch64')", # TODO: Go back to pypi casadi when they fix aarch64 for python312
+  "casadi; platform_machine != 'aarch64' or python_version != '3.12'",
   "future-fstrings",
 
   # these should be removed
@@ -66,14 +67,14 @@ dependencies = [
 [project.optional-dependencies]
 docs = [
   "Jinja2",
-  "sphinx",
-  "sphinx-rtd-theme",
-  "sphinx-sitemap"
+  "mkdocs",
+  "mkdocs-terminal",
 ]
 
 testing = [
   "coverage",
   "hypothesis ==6.47.*",
+  "import-linter",
   "mypy",
   "pre-commit",
   "pytest",
@@ -100,7 +101,7 @@ dev = [
   "inputs",
   "lru-dict",
   "matplotlib",
-  "metadrive-simulator; platform_machine != 'aarch64'",
+  "metadrive-simulator@git+https://github.com/commaai/metadrive@opencv_headless ; platform_machine != 'aarch64'",
   "mpld3",
   "myst-parser",
   "natsort",
@@ -108,7 +109,6 @@ dev = [
   "parameterized >=0.8, <0.9",
   #pprofile = "*"
   "pyautogui",
-  "pygame",
   "pyopencl; platform_machine != 'aarch64'", # broken on arm64
   "pywinctl",
   "pyprof2calltree",
@@ -116,14 +116,12 @@ dev = [
   "tabulate",
   "types-requests",
   "types-tabulate",
+  "hexdump",
 
   # this is only pinned since 5.15.11 is broken
   "pyqt5 ==5.15.2; platform_machine == 'x86_64'", # no aarch64 wheels for macOS/linux
 
 ]
-
-[tool.uv.sources]
-metadrive-simulator = { git = "https://github.com/commaai/metadrive.git", branch = "opencv_headless" }
 
 [project.urls]
 Homepage = "https://comma.ai"
@@ -135,9 +133,12 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = [ "." ]
 
+[tool.hatch.metadata]
+allow-direct-references = true
+
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=openpilot/ --ignore=cereal/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ --ignore=msgq/  -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
+addopts = "--ignore=openpilot/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ --ignore=msgq/  -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
 cpp_files = "test_*"
 cpp_harness = "selfdrive/test/cpp_harness.py"
 python_files = "test_*.py"

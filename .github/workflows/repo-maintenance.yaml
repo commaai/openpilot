@@ -43,8 +43,9 @@ jobs:
     - uses: actions/checkout@v4
     - name: uv lock
       run: |
-        pip install uv
-        uv lock
+        python3 -m ensurepip --upgrade
+        pip3 install uv
+        uv lock --upgrade
     - name: pre-commit autoupdate
       run: |
         git config --global --add safe.directory '*'

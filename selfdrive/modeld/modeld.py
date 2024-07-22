@@ -172,8 +172,8 @@ def main(demo=False):
   if demo:
     CP = get_demo_car_params()
   else:
-    with car.CarParams.from_bytes(params.get("CarParams", block=True)) as msg:
-      CP = msg
+    CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
+
   cloudlog.info("modeld got CarParams: %s", CP.carName)
 
   # TODO this needs more thought, use .2s extra for now to estimate other delays

@@ -4,10 +4,12 @@
 #include <memory>
 #include <optional>
 #include <set>
+#include <string>
 #include <utility>
 
 #include <QHBoxLayout>
 #include <QFrame>
+#include <QPropertyAnimation>
 #include <QSlider>
 #include <QTabBar>
 
@@ -57,16 +59,34 @@ private:
   InfoLabel *thumbnail_label;
 };
 
+class StreamCameraView : public CameraWidget {
+  Q_OBJECT
+  Q_PROPERTY(float overlayOpacity READ overlayOpacity WRITE setOverlayOpacity)
+
+public:
+  StreamCameraView(std::string stream_name, VisionStreamType stream_type, bool zoom, QWidget *parent = nullptr);
+  void paintGL() override;
+  void showPausedOverlay() { fade_animation->start(); }
+  float overlayOpacity() const { return overlay_opacity; }
+  void setOverlayOpacity(float opacity) {
+    overlay_opacity = opacity;
+    update();
+  }
+
+private:
+  float overlay_opacity;
+  QPropertyAnimation *fade_animation;
+};
+
 class VideoWidget : public QFrame {
   Q_OBJECT
 
 public:
   VideoWidget(QWidget *parnet = nullptr);
-  void setMaximumTime(double sec);
 
 protected:
   QString formatTime(double sec, bool include_milliseconds = false);
-  void timeRangeChanged(const std::optional<std::pair<double, double>> &time_range);
+  void timeRangeChanged();
   void updateState();
   void updatePlayBtnState();
   QWidget *createCameraWidget();
@@ -74,8 +94,7 @@ protected:
   void loopPlaybackClicked();
   void vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams);
 
-  CameraWidget *cam_widget;
-  double maximum_time = 0;
+  StreamCameraView *cam_widget;
   QToolButton *time_btn = nullptr;
   ToolButton *seek_backward_btn = nullptr;
   ToolButton *play_btn = nullptr;

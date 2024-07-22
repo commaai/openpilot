@@ -45,22 +45,21 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
 
 
 def get_accel_from_plan(CP, speeds, accels):
-    if len(speeds) == CONTROL_N:
-      v_target_now = interp(DT_MDL, CONTROL_N_T_IDX, speeds)
-      a_target_now = interp(DT_MDL, CONTROL_N_T_IDX, accels)
+  if len(speeds) == CONTROL_N:
+    v_target_now = interp(DT_MDL, CONTROL_N_T_IDX, speeds)
+    a_target_now = interp(DT_MDL, CONTROL_N_T_IDX, accels)
 
-      v_target = interp(CP.longitudinalActuatorDelay + DT_MDL, CONTROL_N_T_IDX, speeds)
-      a_target = 2 * (v_target - v_target_now) / CP.longitudinalActuatorDelay - a_target_now
+    v_target = interp(CP.longitudinalActuatorDelay + DT_MDL, CONTROL_N_T_IDX, speeds)
+    a_target = 2 * (v_target - v_target_now) / CP.longitudinalActuatorDelay - a_target_now
 
-      v_target_1sec = interp(CP.longitudinalActuatorDelay + DT_MDL + 1.0, CONTROL_N_T_IDX, speeds)
-    else:
-      v_target = 0.0
-      v_target_now = 0.0
-      v_target_1sec = 0.0
-      a_target = 0.0
-    should_stop = (v_target < CP.vEgoStopping and
-                    v_target_1sec < CP.vEgoStopping)
-    return a_target, should_stop
+    v_target_1sec = interp(CP.longitudinalActuatorDelay + DT_MDL + 1.0, CONTROL_N_T_IDX, speeds)
+  else:
+    v_target = 0.0
+    v_target_1sec = 0.0
+    a_target = 0.0
+  should_stop = (v_target < CP.vEgoStopping and
+                 v_target_1sec < CP.vEgoStopping)
+  return a_target, should_stop
 
 
 class LongitudinalPlanner:
@@ -82,8 +81,8 @@ class LongitudinalPlanner:
   @staticmethod
   def parse_model(model_msg, model_error):
     if (len(model_msg.position.x) == ModelConstants.IDX_N and
-       len(model_msg.velocity.x) == ModelConstants.IDX_N and
-       len(model_msg.acceleration.x) == ModelConstants.IDX_N):
+      len(model_msg.velocity.x) == ModelConstants.IDX_N and
+      len(model_msg.acceleration.x) == ModelConstants.IDX_N):
       x = np.interp(T_IDXS_MPC, ModelConstants.T_IDXS, model_msg.position.x) - model_error * T_IDXS_MPC
       v = np.interp(T_IDXS_MPC, ModelConstants.T_IDXS, model_msg.velocity.x) - model_error
       a = np.interp(T_IDXS_MPC, ModelConstants.T_IDXS, model_msg.acceleration.x)

@@ -46,7 +46,7 @@ void FindSignalModel::search(std::function<bool(double)> cmp) {
     auto it = std::find_if(first, last, [&](const CanEvent *e) { return cmp(get_raw_value(e->dat, e->size, s.sig)); });
     if (it != last) {
       auto values = s.values;
-      values += QString("(%1, %2)").arg((*it)->mono_time / 1e9 - can->routeStartTime(), 0, 'f', 2).arg(get_raw_value((*it)->dat, (*it)->size, s.sig));
+      values += QString("(%1, %2)").arg(can->toSeconds((*it)->mono_time), 0, 'f', 3).arg(get_raw_value((*it)->dat, (*it)->size, s.sig));
       std::lock_guard lk(lock);
       filtered_signals.push_back({.id = s.id, .mono_time = (*it)->mono_time, .sig = s.sig, .values = values});
     }
@@ -217,10 +217,10 @@ void FindSignalDlg::setInitialSignals() {
   double first_time_val = first_time_edit->text().toDouble();
   double last_time_val = last_time_edit->text().toDouble();
   auto [first_sec, last_sec] = std::minmax(first_time_val, last_time_val);
-  uint64_t first_time = (can->routeStartTime() + first_sec) * 1e9;
+  uint64_t first_time = can->toMonoTime(first_sec);
   model->last_time = std::numeric_limits<uint64_t>::max();
   if (last_sec > 0) {
-    model->last_time = (can->routeStartTime() + last_sec) * 1e9;
+    model->last_time = can->toMonoTime(last_sec);
   }
   model->initial_signals.clear();
 

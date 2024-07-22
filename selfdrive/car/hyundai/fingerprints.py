@@ -171,6 +171,7 @@ FW_VERSIONS = {
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00DN8 MDPS C 1,00 1,01 56310L0010\x00 4DNAC101',
       b'\xf1\x00DN8 MDPS C 1.00 1.01 56310-L0010 4DNAC101',
+      b'\xf1\x00DN8 MDPS C 1.00 1.01 56310-L0200 4DNAC102',
       b'\xf1\x00DN8 MDPS C 1.00 1.01 56310-L0210 4DNAC101',
       b'\xf1\x00DN8 MDPS C 1.00 1.01 56310-L0210 4DNAC102',
       b'\xf1\x00DN8 MDPS C 1.00 1.01 56310L0010\x00 4DNAC101',
@@ -291,6 +292,7 @@ FW_VERSIONS = {
       b'\xf1\x00TM  MDPS C 1.00 1.02 56310-CLAC0 4TSHC102',
       b'\xf1\x00TM  MDPS C 1.00 1.02 56310-CLEC0 4TSHC102',
       b'\xf1\x00TM  MDPS C 1.00 1.02 56310-GA000 4TSHA100',
+      b'\xf1\x00TM  MDPS C 1.00 1.02 56310GA000\x00 4TSHA100',
       b'\xf1\x00TM  MDPS R 1.00 1.05 57700-CL000 4TSHP105',
       b'\xf1\x00TM  MDPS R 1.00 1.06 57700-CL000 4TSHP106',
     ],
@@ -407,6 +409,7 @@ FW_VERSIONS = {
       b'\xf1\x00ON ESC \x0b 100\x18\x12\x18 58910-S9360',
       b'\xf1\x00ON ESC \x0b 101\x19\t\x05 58910-S9320',
       b'\xf1\x00ON ESC \x0b 101\x19\t\x08 58910-S9360',
+      b'\xf1\x00ON ESC \x0b 103$\x04\x08 58910-S9360',
     ],
     (Ecu.eps, 0x7d4, None): [
       b'\xf1\x00LX2 MDPS C 1,00 1,03 56310-S8020 4LXDC103',
@@ -480,11 +483,13 @@ FW_VERSIONS = {
   },
   CAR.GENESIS_G80: {
     (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00DH__ SCC F-CU-      1.00 1.01 96400-B1110         ',
       b'\xf1\x00DH__ SCC F-CUP      1.00 1.01 96400-B1120         ',
       b'\xf1\x00DH__ SCC F-CUP      1.00 1.02 96400-B1120         ',
       b'\xf1\x00DH__ SCC FHCUP      1.00 1.01 96400-B1110         ',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00DH  LKAS AT EUR LHD 1.01 1.01 95895-B1500 161014',
       b'\xf1\x00DH  LKAS AT KOR LHD 1.01 1.01 95895-B1500 161014',
       b'\xf1\x00DH  LKAS AT KOR LHD 1.01 1.02 95895-B1500 170810',
       b'\xf1\x00DH  LKAS AT USA LHD 1.01 1.01 95895-B1500 161014',
@@ -585,6 +590,7 @@ FW_VERSIONS = {
       b'\xf1\x00DL3 MDPS C 1.00 1.02 56310-L7220 4DLHC102',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00DL3HMFC  AT KOR LHD 1.00 1.01 99210-L2000 191022',
       b'\xf1\x00DL3HMFC  AT KOR LHD 1.00 1.02 99210-L2000 200309',
       b'\xf1\x00DL3HMFC  AT KOR LHD 1.00 1.04 99210-L2000 210527',
     ],
@@ -595,6 +601,7 @@ FW_VERSIONS = {
       b'\xf1\x00OS IEB \x02 210 \x02\x14 58520-K4000',
       b'\xf1\x00OS IEB \x02 212 \x11\x13 58520-K4000',
       b'\xf1\x00OS IEB \x03 210 \x02\x14 58520-K4000',
+      b'\xf1\x00OS IEB \x03 211 \x04\x02 58520-K4000',
       b'\xf1\x00OS IEB \x03 212 \x11\x13 58520-K4000',
       b'\xf1\x00OS IEB \r 105\x18\t\x18 58520-K4000',
     ],
