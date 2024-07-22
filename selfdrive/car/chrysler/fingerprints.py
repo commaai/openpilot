@@ -26,6 +26,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdRadar, 0x753, None): [
       b'04672758AA',
+      b'04672758AB',
       b'68226356AF',
       b'68226356AH',
       b'68226356AI',
@@ -47,6 +48,7 @@ FW_VERSIONS = {
       b'68352654AE ',
       b'68366851AH ',
       b'68366853AE ',
+      b'68366853AG ',
       b'68372861AF ',
     ],
     (Ecu.transmission, 0x7e1, None): [
@@ -60,6 +62,7 @@ FW_VERSIONS = {
       b'68277374AD',
       b'68277374AN',
       b'68367471AC',
+      b'68367471AD',
       b'68380571AB',
     ],
   },
