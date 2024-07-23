@@ -83,7 +83,7 @@ function op_check_python() {
 
 function op_venv() {
   op_check_openpilot_dir
-  . $OPENPILOT_ROOT/.venv/bin/activate 2&> /dev/null || (echo "Can't activate venv. Have you ran 'op install' ?" && return 1)
+  . $OPENPILOT_ROOT/.venv/bin/activate || (echo -e "\nCan't activate venv. Have you ran 'op install' ?" && return 1)
 }
 
 function op_check() {
