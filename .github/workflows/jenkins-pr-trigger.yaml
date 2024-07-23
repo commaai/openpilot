@@ -28,7 +28,7 @@ jobs:
           const hasWriteAccess = permissions.permission === 'write' || permissions.permission === 'admin';
 
           return (hasWriteAccess && comment.includes(triggerPhrase));
-        result-encoding: boolean
+        result-encoding: json
 
     - name: Set PR number
       id: set_pr_number
