@@ -42,4 +42,4 @@ jobs:
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git checkout -b tmp-jenkins-${{ github.event.issue.number }}
-        GIT_LFS_SKIP_SMUDGE=1 git push -f origin tmp-jenkins-${{ github.event.issue.number }}
+        GIT_LFS_SKIP_PUSH=1 git push -f origin tmp-jenkins-${{ github.event.issue.number }}
