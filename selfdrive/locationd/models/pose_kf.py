@@ -2,10 +2,14 @@
 
 import sys
 import numpy as np
-import sympy as sp
 
 from openpilot.selfdrive.locationd.models.constants import ObservationKind
-from rednose.helpers.ekf_sym import gen_code, EKF_sym
+
+if __name__=="__main__":
+  import sympy as sp
+  from rednose.helpers.ekf_sym import gen_code
+else:
+  from rednose.helpers.ekf_sym_pyx import EKF_sym_pyx
 
 EARTH_G = 9.81
 
@@ -87,7 +91,7 @@ class PoseKalman:
 
   def __init__(self, generated_dir):
     dim_state, dim_state_err = PoseKalman.initial_x.shape[0], PoseKalman.initial_P.shape[0]
-    self.filter = EKF_sym(generated_dir, self.name, PoseKalman.Q, PoseKalman.initial_x, PoseKalman.initial_P, dim_state, dim_state_err)
+    self.filter = EKF_sym_pyx(generated_dir, self.name, PoseKalman.Q, PoseKalman.initial_x, PoseKalman.initial_P, dim_state, dim_state_err)
 
   @property
   def x(self):
