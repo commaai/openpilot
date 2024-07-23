@@ -7,6 +7,8 @@ import sympy as sp
 from openpilot.selfdrive.locationd.models.constants import ObservationKind
 from rednose.helpers.ekf_sym import gen_code, EKF_sym
 
+EARTH_G = 9.81
+
 
 class States:
   NED_ORIENTATION = slice(0, 3)  # roll, pitch, yaw in rad
@@ -70,8 +72,9 @@ class PoseKalman:
 
     f_sym = state + dt * state_dot
 
+    gravity = sp.Matrix([0, 0, -EARTH_G])
     h_gyro_sym = angular_velocity + gyro_bias
-    h_acc_sym = acceleration + acc_bias
+    h_acc_sym = gravity + acceleration + acc_bias
     h_phone_rot_sym = angular_velocity
     h_relative_motion = velocity
     obs_eqs = [
