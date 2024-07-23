@@ -2,17 +2,17 @@ name: jenkins scan
 
 on:
   issue_comment:
-    types: [created]
+    types: [created, edited]
 
 jobs:
   # TODO: gc old branches in a separate job in this workflow
   scan-comments:
     runs-on: ubuntu-latest
-    if: github.event.issue.pull_request != null
+    if: ${{ github.event.issue.pull_request }}
     steps:
-    - name: Check if comment contains trigger phrase and is from someone with write access
+    - name: Check for trigger phrase
       id: check_comment
-      uses: actions/github-script@v6
+      uses: actions/github-script@v7
       with:
         script: |
           const triggerPhrase = "trigger-jenkins";
@@ -30,21 +30,16 @@ jobs:
           return (hasWriteAccess && comment.includes(triggerPhrase));
         result-encoding: json
 
-    - name: Set PR number
-      id: set_pr_number
-      if: steps.check_comment.outputs.result == 'true'
-      run: echo "PR_NUMBER=$(echo ${{ github.event.issue.number }})" >> $GITHUB_ENV
-
     - name: Checkout repository
       if: steps.check_comment.outputs.result == 'true'
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.event.issue.pull_request.head.ref }}
+        ref: refs/pull/${{ github.event.issue.number }}/head
 
     - name: Push to tmp-jenkins branch
       if: steps.check_comment.outputs.result == 'true'
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        git checkout -b tmp-jenkins-${{ env.PR_NUMBER }}
-        git push -f origin tmp-jenkins-${{ env.PR_NUMBER }}
+        git checkout -b tmp-jenkins-${{ github.event.issue.number }}
+        git push -f origin tmp-jenkins-${{ github.event.issue.number }}
