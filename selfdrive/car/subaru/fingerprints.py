@@ -48,6 +48,7 @@ FW_VERSIONS = {
     ],
     (Ecu.transmission, 0x7a3, None): [
       b'\x04\xfe\xf3\x00\x00',
+      b'\x04\xfe\xf6\x00\x00',
     ],
   },
   CAR.SUBARU_LEGACY: {
