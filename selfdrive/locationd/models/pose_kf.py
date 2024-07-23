@@ -108,6 +108,9 @@ class PoseKalman:
     data = np.atleast_2d(data)
     return self.filter.predict_and_update_batch(t, kind, data, R)
 
+  def reset(self, t, x_init=initial_x, P_init=initial_P):
+    self.filter.init_state(x_init, P_init, t)
+
   def _get_R(self, n, obs_noise):
     dim = obs_noise.shape[0]
     R = np.zeros((n, dim, dim))
