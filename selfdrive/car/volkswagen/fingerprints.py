@@ -1137,6 +1137,20 @@ FW_VERSIONS = {
       b'\xf1\x875Q0907572R \xf1\x890771',
     ],
   },
+  CAR.SKODA_OCTAVIA_MK4: {
+    (Ecu.fwdCamera, 0x74F, None): [
+      b'\xf1\x875WA980653D \xf1\x893405',
+    ],
+    (Ecu.fwdRadar, 0x757, None): [
+      b'\xf1\x875WA907572C \xf1\x890461',
+    ],
+    (Ecu.srs, 0x715, None): [
+      b'\xf1\x875WA959655L \xf1\x890636',
+    ],
+    (Ecu.transmission, 0x7e1, None): [
+      b'\xf1\x870CW906556M \xf1\x890563',
+    ],
+  },
   CAR.SKODA_SUPERB_MK3: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8704E906027BS\xf1\x892887',

@@ -424,6 +424,14 @@ class CAR(Platforms):
     chassis_codes={"NE"},
     wmis={WMI.SKODA},
   )
+  SKODA_OCTAVIA_MK4 = VolkswagenMQBPlatformConfig(
+    [
+      VWCarDocs("Škoda Octavia 2023"),
+    ],
+    VolkswagenCarSpecs(mass=1836, wheelbase=2.70),
+    chassis_codes={"NE"},
+    wmis={WMI.SKODA},
+  )
   SKODA_SUPERB_MK3 = VolkswagenMQBPlatformConfig(
     [VWCarDocs("Škoda Superb 2015-22")],
     VolkswagenCarSpecs(mass=1505, wheelbase=2.84),
