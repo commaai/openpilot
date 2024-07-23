@@ -102,7 +102,6 @@ if arch == "larch64":
 
   libpath = [
     "/usr/local/lib",
-    "/usr/lib",
     "/system/vendor/lib64",
     f"#third_party/acados/{arch}/lib",
   ]
