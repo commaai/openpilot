@@ -272,21 +272,25 @@ FW_VERSIONS = {
       b'68331687AC',
       b'68331690AC',
       b'68340272AD',
+      b'68302217AC',
     ],
     (Ecu.srs, 0x744, None): [
       b'68309533AA',
       b'68316742AB',
       b'68355363AB',
+      b'68316743AB', 
     ],
     (Ecu.abs, 0x747, None): [
       b'68252642AG',
       b'68306178AD',
       b'68336275AB',
       b'68336276AB',
+      b'68306178AD',
     ],
     (Ecu.fwdRadar, 0x753, None): [
       b'04672627AB',
       b'68251506AF',
+      b'68332015AB',
       b'68332015AB',
     ],
     (Ecu.eps, 0x75a, None): [
@@ -295,6 +299,7 @@ FW_VERSIONS = {
       b'68321644AC',
       b'68321646AC',
       b'68321648AC',
+      b'68321646AB',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'05035920AE ',
@@ -307,6 +312,7 @@ FW_VERSIONS = {
       b'68325565AH ',
       b'68325565AI ',
       b'68325618AD ',
+      b'68315560AC ',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'05035517AH',
@@ -318,6 +324,7 @@ FW_VERSIONS = {
       b'68361911AF',
       b'68361911AH',
       b'68361916AD',
+      b'68314703AI',
     ],
   },
   CAR.JEEP_GRAND_CHEROKEE_2019: {
