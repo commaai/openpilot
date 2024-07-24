@@ -4,6 +4,20 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m'
 
+function op_first_install() {
+  (set -e
+
+  echo "Installing op system-wide..."
+  RC_FILE="${HOME}/.$(basename ${SHELL})rc"
+  if [ "$(uname)" == "Darwin" ] && [ $SHELL == "/bin/bash" ]; then
+    RC_FILE="$HOME/.bash_profile"
+  fi
+  printf "\nalias op='source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh" \"\$@\"'\n" >> $RC_FILE
+  echo -e " ↳ [${GREEN}✔${NC}] op installed successfully. Open a new shell to use it.\n"
+
+  )
+}
+
 # be default, assume openpilot dir is in current directory
 OPENPILOT_ROOT=$(pwd)
 function op_check_openpilot_dir() {
@@ -161,7 +175,7 @@ function op_build() {
   op_venv
   cd $OPENPILOT_ROOT
 
-  scons -j$(nproc || sysctl -n hw.logicalcpu) || echo -e "\nBuild failed. Have you ran 'op install' ?"
+  scons $@ || echo -e "\nBuild failed. Have you ran 'op install' ?"
 
   )
 }
@@ -183,13 +197,14 @@ function op_default() {
   echo -e "\e[4mUsage:\e[0m op [OPTIONS] <COMMAND>"
   echo ""
   echo -e "\e[4mCommands:\e[0m"
-  echo "  venv     Activate the virtual environment"
-  echo "  check    Check system requirements (git, os, python) to start using openpilot"
-  echo "  install  Install requirements to use openpilot"
-  echo "  build    Build openpilot"
-  echo "  run      Run openpilot"
-  echo "  juggle   Run Plotjuggler"
-  echo "  help     Show this message"
+  echo "  venv       Activate the virtual environment"
+  echo "  check      Check system requirements (git, os, python) to start using openpilot"
+  echo "  install    Install requirements to use openpilot"
+  echo "  build      Build openpilot"
+  echo "  run        Run openpilot"
+  echo "  juggle     Run Plotjuggler"
+  echo "  help       Show this message"
+  echo "  --install  Install this tool system wide"
   echo ""
   echo -e "\e[4mOptions:\e[0m"
   echo "  -d, --dir"
@@ -200,28 +215,39 @@ function op_default() {
   echo "  op --dir /tmp/openpilot check"
   echo "          Run the check command on openpilot located in /tmp/openpilot"
   echo ""
-  echo "  op build"
-  echo "          Build openpilot located in your current working directory"
+  echo "  op juggle --install"
+  echo "          Install plotjuggler in the openpilot located in your current"
+  echo "          working directory"
+  echo ""
+  echo "  op --dir /tmp/openpilot build -j4"
+  echo "          Run the build command on openpilot located in /tmp/openpilot"
+  echo "          on 4 cores"
 }
 
 
-# parse Options
-case $1 in
-  -d | --dir ) shift 1; OPENPILOT_ROOT="$1"; shift 1 ;;
-esac
+function _op() {
+  # parse Options
+  case $1 in
+    -d | --dir ) shift 1; OPENPILOT_ROOT="$1"; shift 1 ;;
+  esac
 
-# parse Commands
-case $1 in
-  venv )    shift 1; op_venv "$@" ;;
-  check )   shift 1; op_check "$@" ;;
-  install ) shift 1; op_install "$@" ;;
-  build )   shift 1; op_build "$@" ;;
-  run )     shift 1; op_run "$@" ;;
-  juggle )  shift 1; op_juggle "$@" ;;
-  * ) op_default "$@" ;;
-esac
+  # parse Commands
+  case $1 in
+    venv )      shift 1; op_venv "$@" ;;
+    check )     shift 1; op_check "$@" ;;
+    install )   shift 1; op_install "$@" ;;
+    build )     shift 1; op_build "$@" ;;
+    run )       shift 1; op_run "$@" ;;
+    juggle )    shift 1; op_juggle "$@" ;;
+    --install ) shift 1; op_first_install "$@" ;;
+    * ) op_default "$@" ;;
+  esac
+}
+
+_op $@
 
 # remove from env
+unset -f _op
 unset -f op_check
 unset -f op_install
 unset -f op_build
@@ -232,3 +258,5 @@ unset -f op_check_openpilot_dir
 unset -f op_check_git
 unset -f op_check_python
 unset -f op_check_os
+unset -f op_first_install
+unset -f op_default
