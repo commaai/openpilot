@@ -72,8 +72,8 @@ class PoseKalman:
 
     dt = sp.Symbol('dt')
 
-    device_from_ned = euler_rotate(roll, pitch, yaw)
-    ned_from_device = device_from_ned.T
+    ned_from_device = euler_rotate(roll, pitch, yaw)
+    device_from_ned = ned_from_device.T
 
     state_dot = sp.Matrix(np.zeros((dim_state, 1)))
     state_dot[States.NED_ORIENTATION, :] = ned_from_device * angular_velocity
@@ -85,11 +85,11 @@ class PoseKalman:
     h_gyro_sym = angular_velocity + gyro_bias
     h_acc_sym = device_from_ned * gravity + acceleration + acc_bias # + centripital_acceleration
     h_phone_rot_sym = angular_velocity
-    h_relative_motion = velocity
+    h_relative_motion_sym = velocity
     obs_eqs = [
       [h_gyro_sym, ObservationKind.PHONE_GYRO, None],
       [h_acc_sym, ObservationKind.PHONE_ACCEL, None],
-      [h_relative_motion, ObservationKind.CAMERA_ODO_TRANSLATION, None],
+      [h_relative_motion_sym, ObservationKind.CAMERA_ODO_TRANSLATION, None],
       [h_phone_rot_sym, ObservationKind.CAMERA_ODO_ROTATION, None],
     ]
     gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state_err)
