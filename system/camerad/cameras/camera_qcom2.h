@@ -86,6 +86,11 @@ public:
   void sensors_i2c(const struct i2c_random_wr_payload* dat, int len, int op_code, bool data_word);
 
 private:
+  bool openSensor();
+  void configISP();
+  void configCSIPHY();
+  void linkDevices();
+
   // for debugging
   Params params;
 };
