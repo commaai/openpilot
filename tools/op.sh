@@ -3,6 +3,7 @@
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 UNDERLINE='\033[4m'
+BOLD='\033[1m'
 NC='\033[0m'
 
 function op_first_install() {
@@ -27,6 +28,18 @@ function op_check_openpilot_dir() {
   if [ ! -f "$OPENPILOT_ROOT/launch_openpilot.sh" ]; then
     echo "openpilot directory not found!"
     return 1
+  fi
+
+  )
+}
+
+function op_run_command() {
+  (set -e
+
+  CMD="$@"
+  echo -e "${BOLD}Running:${NC} $CMD \n"
+  if [[ -z "$DRY" ]]; then
+    $CMD
   fi
 
   )
@@ -139,7 +152,8 @@ function op_run() {
 
   op_venv
   cd $OPENPILOT_ROOT
-  $OPENPILOT_ROOT/launch_openpilot.sh
+
+  op_run_command $OPENPILOT_ROOT/launch_openpilot.sh
 
   )
 }
@@ -171,7 +185,7 @@ function op_build() {
   op_venv
   cd $OPENPILOT_ROOT
 
-  scons $@ || echo -e "\nBuild failed. Have you ran 'op install' ?"
+  op_run_command scons $@ || echo -e "\nBuild failed. Have you ran 'op install' ?"
 
   )
 }
@@ -182,7 +196,7 @@ function op_juggle() {
   op_venv
   cd $OPENPILOT_ROOT
 
-  $OPENPILOT_ROOT/tools/plotjuggler/juggle.py $@
+  op_run_command $OPENPILOT_ROOT/tools/plotjuggler/juggle.py $@
 
   )
 }
@@ -209,8 +223,10 @@ function op_default() {
   echo ""
   echo -e "${UNDERLINE}Options:${NC}"
   echo "  -d, --dir"
-  echo "          Specify the openpilot directory you want to use"
-  echo "          Default to the current working directory"
+  echo "          Specify the openpilot directory you want to use. Default to the"
+  echo "          current working directory"
+  echo "  --dry"
+  echo "          Don't actually run anything, just print what would be"
   echo ""
   echo -e "${UNDERLINE}Examples:${NC}"
   echo "  op --dir /tmp/openpilot check"
@@ -230,6 +246,7 @@ function _op() {
   # parse Options
   case $1 in
     -d | --dir ) shift 1; OPENPILOT_ROOT="$1"; shift 1 ;;
+    --dry )      shift 1; DRY="1" ;;
   esac
 
   # parse Commands
@@ -261,3 +278,4 @@ unset -f op_check_python
 unset -f op_check_os
 unset -f op_first_install
 unset -f op_default
+unset -f op_run_command
