@@ -163,7 +163,7 @@ function op_install() {
       ;;
   esac
 
-  git submodules update --init --recursive
+  git submodule update --init --recursive
   git lfs pull
 
   )
