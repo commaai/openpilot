@@ -221,6 +221,16 @@ function op_replay() {
   )
 }
 
+function op_cabana() {
+  (set -e
+  op_check_openpilot_dir
+  cd $OPENPILOT_ROOT
+
+  op_run_command $OPENPILOT_ROOT/tools/cabana/cabana $@
+
+  )
+}
+
 function op_default() {
   echo "An openpilot helper"
   echo ""
@@ -244,6 +254,7 @@ function op_default() {
   echo -e "  ${BOLD}run${NC}        Run openpilot"
   echo -e "  ${BOLD}juggle${NC}     Run Plotjuggler"
   echo -e "  ${BOLD}replay${NC}     Run replay"
+  echo -e "  ${BOLD}cabana${NC}     Run cabana"
   echo -e "  ${BOLD}linter${NC}     Run all the pre-commit checks"
   echo -e "  ${BOLD}help${NC}       Show this message"
   echo -e "  ${BOLD}--install${NC}  Install this tool system wide"
@@ -283,6 +294,7 @@ function _op() {
     build )     shift 1; op_build "$@" ;;
     run )       shift 1; op_run "$@" ;;
     juggle )    shift 1; op_juggle "$@" ;;
+    cabana )    shift 1; op_cabana "$@" ;;
     linter )    shift 1; op_linter "$@" ;;
     replay )    shift 1; op_replay "$@" ;;
     --install ) shift 1; op_first_install "$@" ;;
@@ -309,5 +321,6 @@ unset -f op_default
 unset -f op_run_command
 unset -f op_linter
 unset -f op_replay
+unset -f op_cabana
 unset DRY
 unset OPENPILOT_ROOT
