@@ -185,7 +185,7 @@ function op_build() {
   op_venv
   cd $OPENPILOT_ROOT
 
-  op_run_command scons $@ || echo -e "\nBuild failed. Have you ran 'op install' ?"
+  op_run_command scons $@
 
   )
 }
@@ -279,3 +279,5 @@ unset -f op_check_os
 unset -f op_first_install
 unset -f op_default
 unset -f op_run_command
+unset DRY
+unset OPENPILOT_ROOT
