@@ -200,6 +200,17 @@ function op_juggle() {
   )
 }
 
+function op_linter() {
+  (set -e
+
+  op_venv
+  cd $OPENPILOT_ROOT
+
+  op_run_command pre-commit run --all $@
+
+  )
+}
+
 function op_default() {
   echo "An openpilot helper"
   echo ""
@@ -222,6 +233,7 @@ function op_default() {
   echo -e "  ${BOLD}build${NC}      Build openpilot"
   echo -e "  ${BOLD}run${NC}        Run openpilot"
   echo -e "  ${BOLD}juggle${NC}     Run Plotjuggler"
+  echo -e "  ${BOLD}linter${NC}     Run all the pre-commit checks"
   echo -e "  ${BOLD}help${NC}       Show this message"
   echo -e "  ${BOLD}--install${NC}  Install this tool system wide"
   echo ""
@@ -260,6 +272,7 @@ function _op() {
     build )     shift 1; op_build "$@" ;;
     run )       shift 1; op_run "$@" ;;
     juggle )    shift 1; op_juggle "$@" ;;
+    linter )    shift 1; op_linter "$@" ;;
     --install ) shift 1; op_first_install "$@" ;;
     * ) op_default "$@" ;;
   esac
@@ -282,5 +295,6 @@ unset -f op_check_os
 unset -f op_first_install
 unset -f op_default
 unset -f op_run_command
+unset -f op_linter
 unset DRY
 unset OPENPILOT_ROOT
