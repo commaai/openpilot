@@ -12,6 +12,13 @@ REFERENCE_SPL = 2e-5  # newtons/m^2
 SAMPLE_RATE = 44100
 SAMPLE_BUFFER = 4096 # (approx 100ms)
 
+def precompute_a_weighting():
+  freqs = np.fft.fftfreq(FFT_SAMPLES, d=1 / SAMPLE_RATE)
+  A = 12194 ** 2 * freqs ** 4 / ((freqs ** 2 + 20.6 ** 2) * (freqs ** 2 + 12194 ** 2) * np.sqrt((freqs ** 2 + 107.7 ** 2) * (freqs ** 2 + 737.9 ** 2)))
+  return A / np.max(A)
+
+
+A_WEIGHTING = precompute_a_weighting()
 
 def calculate_spl(measurements):
   # https://www.engineeringtoolbox.com/sound-pressure-d_711.html
@@ -26,17 +33,8 @@ def calculate_spl(measurements):
 def apply_a_weighting(measurements: np.ndarray) -> np.ndarray:
   # Generate a Hanning window of the same length as the audio measurements
   measurements_windowed = measurements * np.hanning(len(measurements))
-
-  # Calculate the frequency axis for the signal
-  freqs = np.fft.fftfreq(measurements_windowed.size, d=1 / SAMPLE_RATE)
-
-  # Calculate the A-weighting filter
-  # https://en.wikipedia.org/wiki/A-weighting
-  A = 12194 ** 2 * freqs ** 4 / ((freqs ** 2 + 20.6 ** 2) * (freqs ** 2 + 12194 ** 2) * np.sqrt((freqs ** 2 + 107.7 ** 2) * (freqs ** 2 + 737.9 ** 2)))
-  A /= np.max(A)  # Normalize the filter
-
-  # Apply the A-weighting filter to the signal
-  return np.abs(np.fft.ifft(np.fft.fft(measurements_windowed) * A))
+  weighted = np.abs(np.fft.ifft(np.fft.fft(measurements_windowed) * A_WEIGHTING))
+  return weighted
 
 
 class Mic:
