@@ -73,7 +73,6 @@ function op_check_os() {
       source /etc/os-release
       case "$VERSION_CODENAME" in
         "jammy" | "kinetic" | "noble" | "focal")
-          OS_VERSION="Ubuntu"
           echo -e " ↳ [${GREEN}✔${NC}] Ubuntu $VERSION_CODENAME detected.\n"
           ;;
         * )
@@ -88,7 +87,6 @@ function op_check_os() {
 
   elif [[ "$OSTYPE" == "darwin"* ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] macos detected.\n"
-    OS_VERSION="Darwin"
   else
     echo -e " ↳ [${RED}✗${NC}] OS type $OSTYPE not supported!"
     return 1
@@ -154,14 +152,11 @@ function op_install() {
   op_check_os
   op_check_python
 
-  case "$OS_VERSION" in
-    "Ubuntu")
-      $OPENPILOT_ROOT/tools/ubuntu_setup.sh
-      ;;
-    "Darwin")
-      $OPENPILOT_ROOT/tools/mac_setup.sh
-      ;;
-  esac
+  if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    $OPENPILOT_ROOT/tools/ubuntu_setup.sh
+  elif [[ "$OSTYPE" == "darwin"* ]]; then
+    $OPENPILOT_ROOT/tools/mac_setup.sh
+  fi
 
   git submodule update --init --recursive
   git lfs pull
