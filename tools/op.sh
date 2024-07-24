@@ -36,7 +36,7 @@ function op_check_git() {
 
   echo "Checking for git submodules..."
   if $(git submodule foreach --quiet --recursive 'return 1' 2&> /dev/null); then
-    echo -e " ↳ [${RED}✗${NC}] git submodules not found! Run 'git submodules update --init --recursive'"
+    echo -e " ↳ [${RED}✗${NC}] git submodules not found! Run 'git submodule update --init --recursive'"
     return 1
   else
     echo -e " ↳ [${GREEN}✔${NC}] git submodules found on your system.\n"
