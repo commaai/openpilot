@@ -8,6 +8,7 @@ from openpilot.selfdrive.locationd.models.constants import ObservationKind
 if __name__=="__main__":
   import sympy as sp
   from rednose.helpers.ekf_sym import gen_code
+  from rednose.helpers.sympy_helpers import euler_rotate
 else:
   from rednose.helpers.ekf_sym_pyx import EKF_sym_pyx
 
@@ -16,7 +17,7 @@ EARTH_G = 9.81
 
 class States:
   NED_ORIENTATION = slice(0, 3)  # roll, pitch, yaw in rad
-  NED_VELOCITY = slice(3, 6)  # ned velocity in m/s
+  DEVICE_VELOCITY = slice(3, 6)  # ned velocity in m/s
   ANGULAR_VELOCITY = slice(6, 9)  # roll, pitch and yaw rates in rad/s
   GYRO_BIAS = slice(9, 12)  # roll, pitch and yaw gyroscope biases in rad/s
   ACCELERATION = slice(12, 15)  # acceleration in device frame in m/s**2
@@ -62,7 +63,8 @@ class PoseKalman:
 
     state_sym = sp.MatrixSymbol('state', dim_state, 1)
     state = sp.Matrix(state_sym)
-    velocity = state[States.NED_VELOCITY, :]
+    roll, pitch, yaw = state[States.NED_ORIENTATION, :]
+    velocity = state[States.DEVICE_VELOCITY, :]
     angular_velocity = state[States.ANGULAR_VELOCITY, :]
     gyro_bias = state[States.GYRO_BIAS, :]
     acceleration = state[States.ACCELERATION, :]
@@ -70,15 +72,18 @@ class PoseKalman:
 
     dt = sp.Symbol('dt')
 
+    device_from_ned = euler_rotate(roll, pitch, yaw)
+    ned_from_device = device_from_ned.T
+
     state_dot = sp.Matrix(np.zeros((dim_state, 1)))
-    state_dot[States.NED_ORIENTATION, :] = state[States.ANGULAR_VELOCITY]
-    state_dot[States.NED_VELOCITY, :] = state[States.ACCELERATION]
+    state_dot[States.NED_ORIENTATION, :] = ned_from_device * angular_velocity
+    state_dot[States.DEVICE_VELOCITY, :] = acceleration
 
     f_sym = state + dt * state_dot
 
     gravity = sp.Matrix([0, 0, -EARTH_G])
     h_gyro_sym = angular_velocity + gyro_bias
-    h_acc_sym = gravity + acceleration + acc_bias
+    h_acc_sym = device_from_ned * gravity + acceleration + acc_bias # + centripital_acceleration
     h_phone_rot_sym = angular_velocity
     h_relative_motion = velocity
     obs_eqs = [
