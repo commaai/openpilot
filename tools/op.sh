@@ -1,7 +1,5 @@
 #!/bin/bash
 
-set -e
-
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m'
@@ -9,13 +7,19 @@ NC='\033[0m'
 # be default, assume openpilot dir is in current directory
 OPENPILOT_ROOT=$(pwd)
 function op_check_openpilot_dir() {
+  (set -e
+
   if [ ! -f "$OPENPILOT_ROOT/launch_openpilot.sh" ]; then
     echo "openpilot directory not found!"
     return 1
   fi
+
+  )
 }
 
 function op_check_git() {
+  (set -e
+
   cd $OPENPILOT_ROOT
 
   echo "Checking for git..."
@@ -41,9 +45,13 @@ function op_check_git() {
   else
     echo -e " ↳ [${GREEN}✔${NC}] git submodules found on your system.\n"
   fi
+
+  )
 }
 
 function op_check_os() {
+  (set -e
+
   echo "Checking for compatible os version..."
   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
 
@@ -71,9 +79,13 @@ function op_check_os() {
     echo -e " ↳ [${RED}✗${NC}] OS type $OSTYPE not supported!"
     return 1
   fi
+
+  )
 }
 
 function op_check_python() {
+  (set -e
+
   echo "Checking for compatible python version..."
   export REQUIRED_PYTHON_VERSION=$(grep "requires-python" pyproject.toml | cut -d= -f3- | tr -d '"' | tr -d ' ')
   if ! command -v "python3" > /dev/null 2>&1; then
@@ -87,28 +99,41 @@ function op_check_python() {
       return 1
     fi
   fi
+
+  )
 }
 
+# this must be run in the same shell as the user calling "op"
 function op_venv() {
-  op_check_openpilot_dir
-  . $OPENPILOT_ROOT/.venv/bin/activate || (echo -e "\nCan't activate venv. Have you ran 'op install' ?" && return 1)
+  op_check_openpilot_dir || return 1
+  source $OPENPILOT_ROOT/.venv/bin/activate || (echo -e "\nCan't activate venv. Have you ran 'op install' ?" && return 1)
 }
 
 function op_check() {
+  (set -e
+
   op_check_openpilot_dir
   cd $OPENPILOT_ROOT
   op_check_git
   op_check_os
   op_check_python
+
+  )
 }
 
 function op_run() {
+  (set -e
+
   op_venv
   cd $OPENPILOT_ROOT
   $OPENPILOT_ROOT/launch_openpilot.sh
+
+  )
 }
 
 function op_install() {
+  (set -e
+
   op_check_openpilot_dir
   cd $OPENPILOT_ROOT
 
@@ -126,20 +151,30 @@ function op_install() {
 
   git submodules update --init --recursive
   git lfs pull
+
+  )
 }
 
 function op_build() {
+  (set -e
+
   op_venv
   cd $OPENPILOT_ROOT
 
   scons -j$(nproc || sysctl -n hw.logicalcpu) || echo -e "\nBuild failed. Have you ran 'op install' ?"
+
+  )
 }
 
 function op_juggle() {
+  (set -e
+
   op_venv
   cd $OPENPILOT_ROOT
 
   $OPENPILOT_ROOT/tools/plotjuggler/juggle.py $@
+
+  )
 }
 
 function op_default() {
@@ -148,6 +183,7 @@ function op_default() {
   echo -e "\e[4mUsage:\e[0m op [OPTIONS] <COMMAND>"
   echo ""
   echo -e "\e[4mCommands:\e[0m"
+  echo "  venv     Activate the virtual environment"
   echo "  check    Check system requirements (git, os, python) to start using openpilot"
   echo "  install  Install requirements to use openpilot"
   echo "  build    Build openpilot"
@@ -168,19 +204,31 @@ function op_default() {
   echo "          Build openpilot located in your current working directory"
 }
 
-function op() {
-  case $1 in
-    -d | --dir ) shift 1; OPENPILOT_ROOT="$1"; shift 1 ;;
-  esac
 
-  case $1 in
-    check )   shift 1; op_check "$@" ;;
-    install ) shift 1; op_install "$@" ;;
-    build )   shift 1; op_build "$@" ;;
-    run )     shift 1; op_run "$@" ;;
-    juggle )  shift 1; op_juggle "$@" ;;
-    * ) op_default "$@" ;;
-  esac
-}
+# parse Options
+case $1 in
+  -d | --dir ) shift 1; OPENPILOT_ROOT="$1"; shift 1 ;;
+esac
 
-op $@
+# parse Commands
+case $1 in
+  venv )    shift 1; op_venv "$@" ;;
+  check )   shift 1; op_check "$@" ;;
+  install ) shift 1; op_install "$@" ;;
+  build )   shift 1; op_build "$@" ;;
+  run )     shift 1; op_run "$@" ;;
+  juggle )  shift 1; op_juggle "$@" ;;
+  * ) op_default "$@" ;;
+esac
+
+# remove from env
+unset -f op_check
+unset -f op_install
+unset -f op_build
+unset -f op_run
+unset -f op_juggle
+unset -f op_venv
+unset -f op_check_openpilot_dir
+unset -f op_check_git
+unset -f op_check_python
+unset -f op_check_os
