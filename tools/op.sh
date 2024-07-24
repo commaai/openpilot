@@ -192,7 +192,7 @@ function op_default() {
   echo ""
   echo -e "${UNDERLINE}Description:${NC}"
   echo "  op is your entry point for all things related to openpilot development."
-  echo "  op is only a  wrapper for scripts, tool, and commands already existing."
+  echo "  op is only a wrapper for scripts, tools  and commands already existing."
   echo "  op will always show you what it will run on your system."
   echo ""
   echo -e "${UNDERLINE}Usage:${NC} op [OPTIONS] <COMMAND>"
