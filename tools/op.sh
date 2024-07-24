@@ -33,6 +33,14 @@ function op_check_git() {
   else
     echo -e " ↳ [${GREEN}✔${NC}] git lfs files found on your system.\n"
   fi
+
+  echo "Checking for git submodules..."
+  if $(git submodule foreach --quiet --recursive 'return 1' 2&> /dev/null); then
+    echo -e " ↳ [${RED}✗${NC}] git submodules not found! Run 'git submodules update --init --recursive'"
+    return 1
+  else
+    echo -e " ↳ [${GREEN}✔${NC}] git submodules found on your system.\n"
+  fi
 }
 
 function op_check_os() {
