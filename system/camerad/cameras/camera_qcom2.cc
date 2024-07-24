@@ -469,13 +469,15 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
   enabled = enabled_;
   if (!enabled) return;
 
-  if (!openSensor()) {
+  bool ret = openSensor();
+  if (!ret) {
     return;
   }
 
   configISP();
   configCSIPHY();
-  linkDevices();
+  ret = linkDevices();
+  assert(ret);
 }
 
 bool CameraState::openSensor() {
@@ -629,34 +631,54 @@ void CameraState::configCSIPHY() {
   }
 }
 
-void CameraState::linkDevices() {
-  LOG("-- Link devices");
-  struct cam_req_mgr_link_info req_mgr_link_info = {0};
-  req_mgr_link_info.session_hdl = session_handle;
-  req_mgr_link_info.num_devices = 2;
-  req_mgr_link_info.dev_hdls[0] = isp_dev_handle;
-  req_mgr_link_info.dev_hdls[1] = sensor_dev_handle;
-  int ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_LINK, &req_mgr_link_info, sizeof(req_mgr_link_info));
-  link_handle = req_mgr_link_info.link_hdl;
-  LOGD("link: %d session: 0x%X isp: 0x%X sensors: 0x%X link: 0x%X", ret, session_handle, isp_dev_handle, sensor_dev_handle, link_handle);
+bool CameraState::linkDevices() {
+  // Link devices
+  cam_req_mgr_link_info link_info = {
+    .session_hdl = session_handle,
+    .num_devices = 2,
+    .dev_hdls = {isp_dev_handle, sensor_dev_handle},
+  };
 
-  struct cam_req_mgr_link_control req_mgr_link_control = {0};
-  req_mgr_link_control.ops = CAM_REQ_MGR_LINK_ACTIVATE;
-  req_mgr_link_control.session_hdl = session_handle;
-  req_mgr_link_control.num_links = 1;
-  req_mgr_link_control.link_hdls[0] = link_handle;
-  ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_LINK_CONTROL, &req_mgr_link_control, sizeof(req_mgr_link_control));
-  LOGD("link control: %d", ret);
+  int ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_LINK, &link_info, sizeof(link_info));
+  if (ret != 0) {
+    LOGE("Failed to link devices: %d", ret);
+    return false;
+  }
+  link_handle = link_info.link_hdl;
+  LOGD("Link created: session: 0x%X isp: 0x%X sensors: 0x%X link: 0x%X", session_handle, isp_dev_handle, sensor_dev_handle, link_handle);
 
+  // Activate link
+  cam_req_mgr_link_control link_control = {
+    .ops = CAM_REQ_MGR_LINK_ACTIVATE,
+    .session_hdl = session_handle,
+    .num_links = 1,
+    .link_hdls = {link_handle},
+  };
+
+  ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_LINK_CONTROL, &link_control, sizeof(link_control));
+  if (ret != 0) {
+    LOGE("Failed to activate link: %d", ret);
+    return false;
+  }
+
+  // Start devices
   ret = device_control(csiphy_fd, CAM_START_DEV, session_handle, csiphy_dev_handle);
-  LOGD("start csiphy: %d", ret);
+  if (ret != 0) {
+    LOGE("Failed to start CSIPHY device: %d", ret);
+    return false;
+  }
+
   ret = device_control(multi_cam_state->isp_fd, CAM_START_DEV, session_handle, isp_dev_handle);
-  LOGD("start isp: %d", ret);
-  assert(ret == 0);
+  if (ret != 0) {
+    LOGE("Failed to start ISP device: %d", ret);
+    return false;
+  }
+
+  return true;
 
   // TODO: this is unneeded, should we be doing the start i2c in a different way?
-  //ret = device_control(sensor_fd, CAM_START_DEV, session_handle, sensor_dev_handle);
-  //LOGD("start sensor: %d", ret);
+  // ret = device_control(sensor_fd, CAM_START_DEV, session_handle, sensor_dev_handle);
+  // LOGD("start sensor: %d", ret);
 }
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
