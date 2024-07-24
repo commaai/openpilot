@@ -2,6 +2,7 @@
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
+UNDERLINE='\033[4m'
 NC='\033[0m'
 
 function op_first_install() {
@@ -189,9 +190,14 @@ function op_juggle() {
 function op_default() {
   echo "An openpilot helper"
   echo ""
-  echo -e "\e[4mUsage:\e[0m op [OPTIONS] <COMMAND>"
+  echo -e "${UNDERLINE}Description:${NC}"
+  echo "  op is your entry point for all things related to openpilot development."
+  echo "  op is only a  wrapper for scripts, tool, and commands already existing."
+  echo "  op will always show you what it will run on your system."
   echo ""
-  echo -e "\e[4mCommands:\e[0m"
+  echo -e "${UNDERLINE}Usage:${NC} op [OPTIONS] <COMMAND>"
+  echo ""
+  echo -e "${UNDERLINE}Commands:${NC}"
   echo "  venv       Activate the virtual environment"
   echo "  check      Check system requirements (git, os, python) to start using openpilot"
   echo "  install    Install requirements to use openpilot"
@@ -201,12 +207,12 @@ function op_default() {
   echo "  help       Show this message"
   echo "  --install  Install this tool system wide"
   echo ""
-  echo -e "\e[4mOptions:\e[0m"
+  echo -e "${UNDERLINE}Options:${NC}"
   echo "  -d, --dir"
   echo "          Specify the openpilot directory you want to use"
   echo "          Default to the current working directory"
   echo ""
-  echo -e "\e[4mExamples:\e[0m"
+  echo -e "${UNDERLINE}Examples:${NC}"
   echo "  op --dir /tmp/openpilot check"
   echo "          Run the check command on openpilot located in /tmp/openpilot"
   echo ""
