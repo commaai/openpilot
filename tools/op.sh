@@ -116,6 +116,7 @@ function op_install() {
       ;;
   esac
 
+  git submodules update --init --recursive
   git lfs pull
 }
 
@@ -123,7 +124,7 @@ function op_build() {
   op_venv
   cd $OPENPILOT_ROOT
 
-  scons -j$(nproc || sysctl -n hw.logicalcpu)
+  scons -j$(nproc || sysctl -n hw.logicalcpu) || echo -e "\nBuild failed. Have you ran 'op install' ?"
 }
 
 function op_juggle() {
