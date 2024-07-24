@@ -285,6 +285,7 @@ def _do_upload(upload_item: UploadItem, callback: Callable = None) -> requests.R
   compress = False
 
   # If file does not exist, but does exist without the .zst extension we will compress on the fly
+  # TODO: this is needed for a 2 year old compression location migration, not now?
   if not os.path.exists(path) and os.path.exists(strip_zst_extension(path)):
     path = strip_zst_extension(path)
     compress = True
