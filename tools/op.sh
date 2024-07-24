@@ -136,7 +136,7 @@ function op_juggle() {
 function op_default() {
   echo "An openpilot helper"
   echo ""
-  echo -e "\e[4mUsage:\e[0m op <COMMAND>"
+  echo -e "\e[4mUsage:\e[0m op [OPTIONS] <COMMAND>"
   echo ""
   echo -e "\e[4mCommands:\e[0m"
   echo "  check    Check system requirements (git, os, python) to start using openpilot"
@@ -145,9 +145,25 @@ function op_default() {
   echo "  run      Run openpilot"
   echo "  juggle   Run Plotjuggler"
   echo "  help     Show this message"
+  echo ""
+  echo -e "\e[4mOptions:\e[0m"
+  echo "  -d, --dir"
+  echo "          Specify the openpilot directory you want to use"
+  echo "          Default to the current working directory"
+  echo ""
+  echo -e "\e[4mExamples:\e[0m"
+  echo "  op --dir /tmp/openpilot check"
+  echo "          Run the check command on openpilot located in /tmp/openpilot"
+  echo ""
+  echo "  op build"
+  echo "          Build openpilot located in your current working directory"
 }
 
 function op() {
+  case $1 in
+    -d | --dir ) shift 1; OPENPILOT_ROOT="$1"; shift 1 ;;
+  esac
+
   case $1 in
     check )   shift 1; op_check "$@" ;;
     install ) shift 1; op_install "$@" ;;
