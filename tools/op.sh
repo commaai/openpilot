@@ -211,6 +211,16 @@ function op_linter() {
   )
 }
 
+function op_replay() {
+  (set -e
+  op_check_openpilot_dir
+  cd $OPENPILOT_ROOT
+
+  op_run_command $OPENPILOT_ROOT/tools/replay/replay $@
+
+  )
+}
+
 function op_default() {
   echo "An openpilot helper"
   echo ""
@@ -233,6 +243,7 @@ function op_default() {
   echo -e "  ${BOLD}build${NC}      Build openpilot"
   echo -e "  ${BOLD}run${NC}        Run openpilot"
   echo -e "  ${BOLD}juggle${NC}     Run Plotjuggler"
+  echo -e "  ${BOLD}replay${NC}     Run replay"
   echo -e "  ${BOLD}linter${NC}     Run all the pre-commit checks"
   echo -e "  ${BOLD}help${NC}       Show this message"
   echo -e "  ${BOLD}--install${NC}  Install this tool system wide"
@@ -273,6 +284,7 @@ function _op() {
     run )       shift 1; op_run "$@" ;;
     juggle )    shift 1; op_juggle "$@" ;;
     linter )    shift 1; op_linter "$@" ;;
+    replay )    shift 1; op_replay "$@" ;;
     --install ) shift 1; op_first_install "$@" ;;
     * ) op_default "$@" ;;
   esac
@@ -296,5 +308,6 @@ unset -f op_first_install
 unset -f op_default
 unset -f op_run_command
 unset -f op_linter
+unset -f op_replay
 unset DRY
 unset OPENPILOT_ROOT
