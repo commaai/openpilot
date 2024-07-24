@@ -18,6 +18,12 @@ RR_TIMELINE_NAME = "Timeline"
 RR_WIN = "rerun_test"
 
 
+"""
+Relevant upstream Rerun issues:
+- large time series: https://github.com/rerun-io/rerun/issues/5967
+- loading videos directly: https://github.com/rerun-io/rerun/issues/6532
+"""
+
 class Rerunner:
   def __init__(self, route, segment_range, camera_config, enabled_services):
     self.enabled_services = [s.lower() for s in enabled_services]
