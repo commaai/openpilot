@@ -1,9 +1,8 @@
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 
+#include <QResizeEvent>
 #include <QScrollBar>
 #include <QScroller>
-
-// TODO: disable horizontal scrolling and resize
 
 ScrollView::ScrollView(QWidget *w, QWidget *parent) : QScrollArea(parent) {
   setWidget(w);
@@ -37,8 +36,8 @@ ScrollView::ScrollView(QWidget *w, QWidget *parent) : QScrollArea(parent) {
   QScroller *scroller = QScroller::scroller(this->viewport());
   QScrollerProperties sp = scroller->scrollerProperties();
 
-  sp.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, QVariant::fromValue<QScrollerProperties::OvershootPolicy>(QScrollerProperties::OvershootAlwaysOff));
-  sp.setScrollMetric(QScrollerProperties::HorizontalOvershootPolicy, QVariant::fromValue<QScrollerProperties::OvershootPolicy>(QScrollerProperties::OvershootAlwaysOff));
+  sp.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, QScrollerProperties::OvershootAlwaysOff);
+  sp.setScrollMetric(QScrollerProperties::HorizontalOvershootPolicy, QScrollerProperties::OvershootAlwaysOff);
   sp.setScrollMetric(QScrollerProperties::MousePressEventDelay, 0.01);
   scroller->grabGesture(this->viewport(), QScroller::LeftMouseButtonGesture);
   scroller->setScrollerProperties(sp);
@@ -46,4 +45,13 @@ ScrollView::ScrollView(QWidget *w, QWidget *parent) : QScrollArea(parent) {
 
 void ScrollView::hideEvent(QHideEvent *e) {
   verticalScrollBar()->setValue(0);
+}
+
+void ScrollView::resizeEvent(QResizeEvent *event) {
+  if (widget()) {
+    // Ensure the scroll view cannot be resized smaller than the widget's minimum size or size hint
+    QSize minSize = widget()->minimumSizeHint().expandedTo(widget()->minimumSize());
+    setMinimumSize(minSize);
+  }
+  QScrollArea::resizeEvent(event);
 }
