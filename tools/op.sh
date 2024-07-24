@@ -14,7 +14,7 @@ function op_first_install() {
   if [ "$(uname)" == "Darwin" ] && [ $SHELL == "/bin/bash" ]; then
     RC_FILE="$HOME/.bash_profile"
   fi
-  printf "\nalias op='source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh" \"\$@\"'\n" >> $RC_FILE
+  op_run_command printf "\nalias op='source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh" \"\$@\"'\n" >> $RC_FILE
   echo -e " ↳ [${GREEN}✔${NC}] op installed successfully. Open a new shell to use it.\n"
 
   )
@@ -23,14 +23,17 @@ function op_first_install() {
 # be default, assume openpilot dir is in current directory
 OPENPILOT_ROOT=$(pwd)
 function op_check_openpilot_dir() {
-  (set -e
+  while [[ "$OPENPILOT_ROOT" != '/' ]];
+  do
+    if find "$OPENPILOT_ROOT/launch_openpilot.sh" -maxdepth 1 -mindepth 1 &> /dev/null; then
+      return 0
+    fi
+    OPENPILOT_ROOT="$(readlink -f "$OPENPILOT_ROOT/"..)"
+  done
 
-  if [ ! -f "$OPENPILOT_ROOT/launch_openpilot.sh" ]; then
-    echo "openpilot directory not found!"
-    return 1
-  fi
-
-  )
+  echo "openpilot directory not found! Make sure that you are inside openpilot"
+  echo "directory or specify one with the --dir option!"
+  return 1
 }
 
 function op_run_command() {
@@ -200,31 +203,35 @@ function op_juggle() {
 function op_default() {
   echo "An openpilot helper"
   echo ""
-  echo -e "${UNDERLINE}Description:${NC}"
+  echo -e "${BOLD}${UNDERLINE}Description:${NC}"
   echo "  op is your entry point for all things related to openpilot development."
   echo "  op is only a wrapper for scripts, tools  and commands already existing."
   echo "  op will always show you what it will run on your system."
   echo ""
-  echo -e "${UNDERLINE}Usage:${NC} op [OPTIONS] <COMMAND>"
+  echo "  op will try to find your openpilot directory in the following order:"
+  echo "   1: use the directory specified with the --dir option"
+  echo "   2: use the current working directory"
+  echo "   3: go up the file tree non-recursively"
   echo ""
-  echo -e "${UNDERLINE}Commands:${NC}"
-  echo "  venv       Activate the virtual environment"
-  echo "  check      Check system requirements (git, os, python) to start using openpilot"
-  echo "  install    Install requirements to use openpilot"
-  echo "  build      Build openpilot"
-  echo "  run        Run openpilot"
-  echo "  juggle     Run Plotjuggler"
-  echo "  help       Show this message"
-  echo "  --install  Install this tool system wide"
+  echo -e "${BOLD}${UNDERLINE}Usage:${NC} op [OPTIONS] <COMMAND>"
   echo ""
-  echo -e "${UNDERLINE}Options:${NC}"
-  echo "  -d, --dir"
-  echo "          Specify the openpilot directory you want to use. Default to the"
-  echo "          current working directory"
-  echo "  --dry"
+  echo -e "${BOLD}${UNDERLINE}Commands:${NC}"
+  echo -e "  ${BOLD}venv${NC}       Activate the virtual environment"
+  echo -e "  ${BOLD}check${NC}      Check system requirements (git, os, python) to start using openpilot"
+  echo -e "  ${BOLD}install${NC}    Install requirements to use openpilot"
+  echo -e "  ${BOLD}build${NC}      Build openpilot"
+  echo -e "  ${BOLD}run${NC}        Run openpilot"
+  echo -e "  ${BOLD}juggle${NC}     Run Plotjuggler"
+  echo -e "  ${BOLD}help${NC}       Show this message"
+  echo -e "  ${BOLD}--install${NC}  Install this tool system wide"
+  echo ""
+  echo -e "${BOLD}${UNDERLINE}Options:${NC}"
+  echo -e "  ${BOLD}-d, --dir${NC}"
+  echo "          Specify the openpilot directory you want to use"
+  echo -e "  ${BOLD}--dry${NC}"
   echo "          Don't actually run anything, just print what would be"
   echo ""
-  echo -e "${UNDERLINE}Examples:${NC}"
+  echo -e "${BOLD}${UNDERLINE}Examples:${NC}"
   echo "  op --dir /tmp/openpilot check"
   echo "          Run the check command on openpilot located in /tmp/openpilot"
   echo ""
