@@ -469,6 +469,16 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
   enabled = enabled_;
   if (!enabled) return;
 
+  if (!openSensor()) {
+    return;
+  }
+
+  configISP();
+  configCSIPHY();
+  linkDevices();
+}
+
+bool CameraState::openSensor() {
   sensor_fd = open_v4l_by_name_and_index("cam-sensor-driver", camera_num);
   assert(sensor_fd >= 0);
   LOGD("opened sensor for %d", camera_num);
@@ -493,7 +503,7 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
       !init_sensor_lambda(new OS04C10)) {
     LOGE("** sensor %d FAILED bringup, disabling", camera_num);
     enabled = false;
-    return;
+    return false;
   }
   LOGD("-- Probing sensor %d success", camera_num);
 
@@ -512,7 +522,10 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
 
   LOG("-- Configuring sensor");
   sensors_i2c(ci->init_reg_array.data(), ci->init_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, ci->data_word);
+  return true;
+}
 
+void CameraState::configISP() {
   // NOTE: to be able to disable road and wide road, we still have to configure the sensor over i2c
   // If you don't do this, the strobe GPIO is an output (even in reset it seems!)
   if (!enabled) return;
@@ -570,6 +583,13 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
   isp_dev_handle = *isp_dev_handle_;
   LOGD("acquire isp dev");
 
+  // config ISP
+  alloc_w_mmu_hdl(multi_cam_state->video0_fd, 984480, (uint32_t*)&buf0_handle, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS |
+                  CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, multi_cam_state->device_iommu, multi_cam_state->cdm_iommu);
+  config_isp(0, 0, 1, buf0_handle, 0);
+}
+
+void CameraState::configCSIPHY() {
   csiphy_fd = open_v4l_by_name_and_index("cam-csiphy-driver", camera_num);
   assert(csiphy_fd >= 0);
   LOGD("opened csiphy for %d", camera_num);
@@ -579,11 +599,6 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
   assert(csiphy_dev_handle_);
   csiphy_dev_handle = *csiphy_dev_handle_;
   LOGD("acquire csiphy dev");
-
-  // config ISP
-  alloc_w_mmu_hdl(multi_cam_state->video0_fd, 984480, (uint32_t*)&buf0_handle, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS |
-                  CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, multi_cam_state->device_iommu, multi_cam_state->cdm_iommu);
-  config_isp(0, 0, 1, buf0_handle, 0);
 
   // config csiphy
   LOG("-- Config CSI PHY");
@@ -612,15 +627,16 @@ void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num
     int ret_ = device_config(csiphy_fd, session_handle, csiphy_dev_handle, cam_packet_handle);
     assert(ret_ == 0);
   }
+}
 
-  // link devices
+void CameraState::linkDevices() {
   LOG("-- Link devices");
   struct cam_req_mgr_link_info req_mgr_link_info = {0};
   req_mgr_link_info.session_hdl = session_handle;
   req_mgr_link_info.num_devices = 2;
   req_mgr_link_info.dev_hdls[0] = isp_dev_handle;
   req_mgr_link_info.dev_hdls[1] = sensor_dev_handle;
-  ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_LINK, &req_mgr_link_info, sizeof(req_mgr_link_info));
+  int ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_LINK, &req_mgr_link_info, sizeof(req_mgr_link_info));
   link_handle = req_mgr_link_info.link_hdl;
   LOGD("link: %d session: 0x%X isp: 0x%X sensors: 0x%X link: 0x%X", ret, session_handle, isp_dev_handle, sensor_dev_handle, link_handle);
 
