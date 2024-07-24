@@ -251,26 +251,27 @@ def upload_handler(end_event: threading.Event) -> None:
 
       try:
         fn = item.path
+        url = item.url
         try:
           sz = os.path.getsize(fn)
         except OSError:
           sz = -1
 
-        cloudlog.event("athena.upload_handler.upload_start", fn=fn, sz=sz, network_type=network_type, metered=metered, retry_count=item.retry_count)
+        cloudlog.event("athena.upload_handler.upload_start", fn=fn, sz=sz, url=url, network_type=network_type, metered=metered, retry_count=item.retry_count)
         response = _do_upload(item, partial(cb, sm, item, tid, end_event))
 
         if response.status_code not in (200, 201, 401, 403, 412):
-          cloudlog.event("athena.upload_handler.retry", status_code=response.status_code, fn=fn, sz=sz, network_type=network_type, metered=metered)
+          cloudlog.event("athena.upload_handler.retry", status_code=response.status_code, fn=fn, sz=sz, url=url, network_type=network_type, metered=metered)
           retry_upload(tid, end_event)
         else:
-          cloudlog.event("athena.upload_handler.success", fn=fn, sz=sz, network_type=network_type, metered=metered)
+          cloudlog.event("athena.upload_handler.success", fn=fn, sz=sz, url=url, network_type=network_type, metered=metered)
 
         UploadQueueCache.cache(upload_queue)
       except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.SSLError):
-        cloudlog.event("athena.upload_handler.timeout", fn=fn, sz=sz, network_type=network_type, metered=metered)
+        cloudlog.event("athena.upload_handler.timeout", fn=fn, sz=sz, url=url, network_type=network_type, metered=metered)
         retry_upload(tid, end_event)
       except AbortTransferException:
-        cloudlog.event("athena.upload_handler.abort", fn=fn, sz=sz, network_type=network_type, metered=metered)
+        cloudlog.event("athena.upload_handler.abort", fn=fn, sz=sz, url=url, network_type=network_type, metered=metered)
         retry_upload(tid, end_event, False)
 
     except queue.Empty:
