@@ -34,15 +34,11 @@ function op_check_openpilot_dir() {
 }
 
 function op_run_command() {
-  (set -e
-
   CMD="$@"
-  echo -e "${BOLD}Running:${NC} $CMD \n"
+  echo -e "${BOLD}Running:${NC} $CMD"
   if [[ -z "$DRY" ]]; then
     $CMD
   fi
-
-  )
 }
 
 function op_check_git() {
@@ -132,7 +128,7 @@ function op_check_python() {
 # this must be run in the same shell as the user calling "op"
 function op_venv() {
   op_check_openpilot_dir || return 1
-  source $OPENPILOT_ROOT/.venv/bin/activate || (echo -e "\nCan't activate venv. Have you ran 'op install' ?" && return 1)
+  op_run_command source $OPENPILOT_ROOT/.venv/bin/activate || (echo -e "\nCan't activate venv. Have you ran 'op install' ?" && return 1)
 }
 
 function op_check() {
