@@ -25,13 +25,13 @@ const int BACKLIGHT_OFFROAD = 50;
 const float MIN_DRAW_DISTANCE = 10.0;
 const float MAX_DRAW_DISTANCE = 100.0;
 constexpr mat3 DEFAULT_CALIBRATION = {{ 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 0.0 }};
-constexpr mat3 FCAM_INTRINSIC_MATRIX = (mat3){{2648.0, 0.0, 1928.0 / 2,
-                                           0.0, 2648.0, 1208.0 / 2,
+constexpr mat3 FCAM_INTRINSIC_MATRIX = (mat3){{1522.0 * 1.5, 0.0, 2688.0 / 2,
+                                           0.0, 1522.0 * 1.5, 1520.0 / 2,
                                            0.0, 0.0, 1.0}};
 // tici ecam focal probably wrong? magnification is not consistent across frame
 // Need to retrain model before this can be changed
-constexpr mat3 ECAM_INTRINSIC_MATRIX = (mat3){{567.0, 0.0, 1928.0 / 2,
-                                           0.0, 567.0, 1208.0 / 2,
+constexpr mat3 ECAM_INTRINSIC_MATRIX = (mat3){{1522.0 * 1.5, 0.0, 2688.0 / 2,
+                                           0.0, 1522.0 * 1.5, 1520.0 / 2,
                                            0.0, 0.0, 1.0}};
 
 

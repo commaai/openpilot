@@ -11,8 +11,8 @@
 
 #define FRAME_BUF_COUNT 4
 
-#define ROAD_FL_MM 8.0f
-#define WIDE_FL_MM 1.71f
+#define ROAD_FL_MM 4.6f
+#define WIDE_FL_MM 4.6f
 #define DRIVER_FL_MM 1.71f
 
 class CameraState {
