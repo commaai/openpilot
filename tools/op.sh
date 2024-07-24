@@ -130,7 +130,7 @@ function op_juggle() {
   op_venv
   cd $OPENPILOT_ROOT
 
-  $OPENPILOT_ROOT/tools/plotjuggler/juggle.py
+  $OPENPILOT_ROOT/tools/plotjuggler/juggle.py $@
 }
 
 function op_default() {
@@ -143,18 +143,17 @@ function op_default() {
   echo "  install  Install requirements to use openpilot"
   echo "  build    Build openpilot"
   echo "  run      Run openpilot"
-  echo "  juggle   Plotjuggler"
-  echo "  linter   Run the linter"
+  echo "  juggle   Run Plotjuggler"
   echo "  help     Show this message"
 }
 
 function op() {
   case $1 in
-    check )  shift 1; op_check "$@" ;;
-    install )    shift 1; op_install "$@" ;;
-    build )    shift 1; op_build "$@" ;;
-    run )    shift 1; op_run "$@" ;;
-    juggle ) shift 1; op_juggle "$@" ;;
+    check )   shift 1; op_check "$@" ;;
+    install ) shift 1; op_install "$@" ;;
+    build )   shift 1; op_build "$@" ;;
+    run )     shift 1; op_run "$@" ;;
+    juggle )  shift 1; op_juggle "$@" ;;
     * ) op_default "$@" ;;
   esac
 }
