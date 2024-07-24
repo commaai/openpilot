@@ -140,6 +140,7 @@ def internal_source(sr: SegmentRange, mode: ReadMode, file_ext: str = "bz2") -> 
   def get_internal_url(sr: SegmentRange, seg, file):
     return f"cd:/{sr.dongle_id}/{sr.log_id}/{seg}/{file}.{file_ext}"
 
+  # TODO: list instead of using static URLs to support routes with multiple file extensions
   rlog_paths = [get_internal_url(sr, seg, "rlog") for seg in sr.seg_idxs]
   qlog_paths = [get_internal_url(sr, seg, "qlog") for seg in sr.seg_idxs]
 
