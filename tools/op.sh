@@ -14,7 +14,7 @@ function op_first_install() {
   if [ "$(uname)" == "Darwin" ] && [ $SHELL == "/bin/bash" ]; then
     RC_FILE="$HOME/.bash_profile"
   fi
-  op_run_command printf "\nalias op='source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh" \"\$@\"'\n" >> $RC_FILE
+  printf "\nalias op='source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh" \"\$@\"'\n" >> $RC_FILE
   echo -e " ↳ [${GREEN}✔${NC}] op installed successfully. Open a new shell to use it.\n"
 
   )
@@ -140,7 +140,10 @@ function op_check_venv() {
 }
 
 function op_before_cmd() {
-  echo -e "-----------------------------"
+  if [[ ! -z "$NO_VERIFY" ]]; then
+    return 0
+  fi
+
   op_check_openpilot_dir
   cd $OPENPILOT_ROOT
   op_check_git
@@ -177,9 +180,11 @@ function op_venv() {
 
   )
 
-  # this must be run in the same shell as the user calling "op"
-  op_check_openpilot_dir > /dev/null || return 1
-  op_run_command source $OPENPILOT_ROOT/.venv/bin/activate
+  if [[ "$?" -eq 0 ]]; then
+    # this must be run in the same shell as the user calling "op"
+    op_check_openpilot_dir > /dev/null
+    op_run_command source $OPENPILOT_ROOT/.venv/bin/activate
+  fi
 }
 
 function op_check() {
@@ -277,6 +282,8 @@ function op_default() {
   echo "          Specify the openpilot directory you want to use"
   echo -e "  ${BOLD}--dry${NC}"
   echo "          Don't actually run anything, just print what would be"
+  echo -e "  ${BOLD}-n, --no-verify${NC}"
+  echo "          Don't run checks before running a command"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Examples:${NC}"
   echo "  op --dir /tmp/openpilot check"
@@ -295,8 +302,9 @@ function op_default() {
 function _op() {
   # parse Options
   case $1 in
-    -d | --dir ) shift 1; OPENPILOT_ROOT="$1"; shift 1 ;;
-    --dry )      shift 1; DRY="1" ;;
+    -d | --dir )       shift 1; OPENPILOT_ROOT="$1"; shift 1 ;;
+    --dry )            shift 1; DRY="1" ;;
+    -n | --no-verify ) shift 1; NO_VERIFY="1" ;;
   esac
 
   # parse Commands
@@ -339,3 +347,4 @@ unset -f op_check_venv
 unset -f op_before_cmd
 unset DRY
 unset OPENPILOT_ROOT
+unset NO_VERIFY
