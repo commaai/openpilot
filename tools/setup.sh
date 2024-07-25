@@ -52,3 +52,8 @@ function install_with_op() {
 }
 
 check_dir && check_git && git_clone && install_with_op
+
+unset OPENPILOT_ROOT
+unset RED
+unset GREEN
+unset NC
