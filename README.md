@@ -1,5 +1,22 @@
 [![openpilot on the comma 3X](https://github.com/commaai/openpilot/assets/8762862/f09e6d29-db2d-4179-80c2-51e8d92bdb5c)](https://comma.ai/shop/comma-3x)
 
+<div align="center">
+  
+<h3>
+  <a href="https://docs.comma.ai">Docs</a> | <a href="https://discord.comma.ai">Discord</a> | <a href="https://x.com/comma_ai">X</a>
+</h3>
+
+Quick start: `curl -fsSL openpilot.comma.ai | bash`
+
+![openpilot tests](https://github.com/commaai/openpilot/actions/workflows/selfdrive_tests.yaml/badge.svg)
+[![codecov](https://codecov.io/gh/commaai/openpilot/branch/master/graph/badge.svg)](https://codecov.io/gh/commaai/openpilot)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/comma_ai)
+
+<img src="https://d1qb2nb5cznatu.cloudfront.net/startups/i/1061157-bc7e9bf3b246ece7322e6ffe653f6af8-medium_jpg.jpg?buster=1458363130" width="75"></img>
+
+</div>
+
 What is openpilot?
 ------
 
@@ -49,6 +66,7 @@ Safety and Testing
 * panda has additional hardware-in-the-loop [tests](https://github.com/commaai/panda/blob/master/Jenkinsfile).
 * We run the latest openpilot in a testing closet containing 10 comma devices continuously replaying routes.
 
+<!--
 User Data and comma Account
 ------
 
@@ -60,6 +78,7 @@ openpilot logs the road-facing cameras, CAN, GPS, IMU, magnetometer, thermal sen
 The driver-facing camera is only logged if you explicitly opt-in in settings. The microphone is not recorded.
 
 By using openpilot, you agree to [our Privacy Policy](https://comma.ai/privacy). You understand that use of this software or its related services will generate certain types of user data, which may be logged and stored at the sole discretion of comma. By accepting this agreement, you grant an irrevocable, perpetual, worldwide right to comma for the use of this data.
+-->
 
 Licensing
 ------
@@ -71,10 +90,3 @@ Any user of this software shall indemnify and hold harmless Comma.ai, Inc. and i
 **THIS IS ALPHA QUALITY SOFTWARE FOR RESEARCH PURPOSES ONLY. THIS IS NOT A PRODUCT.
 YOU ARE RESPONSIBLE FOR COMPLYING WITH LOCAL LAWS AND REGULATIONS.
 NO WARRANTY EXPRESSED OR IMPLIED.**
-
----
-
-<img src="https://d1qb2nb5cznatu.cloudfront.net/startups/i/1061157-bc7e9bf3b246ece7322e6ffe653f6af8-medium_jpg.jpg?buster=1458363130" width="75"></img> <img src="https://cdn-images-1.medium.com/max/1600/1*C87EjxGeMPrkTuVRVWVg4w.png" width="225"></img>
-
-![openpilot tests](https://github.com/commaai/openpilot/actions/workflows/selfdrive_tests.yaml/badge.svg)
-[![codecov](https://codecov.io/gh/commaai/openpilot/branch/master/graph/badge.svg)](https://codecov.io/gh/commaai/openpilot)
