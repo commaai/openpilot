@@ -5,7 +5,7 @@
 <p>
   <b>openpilot is an operating system for robotics.</b>
   <br>
-  Currently, it's the world's best advanced driver assistance systems.
+  Currently, it upgrades the advanced driver assistance system in 275+ supported cars.
 </p>
 
 <h3 align="center">
