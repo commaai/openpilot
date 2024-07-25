@@ -433,12 +433,8 @@ void CameraState::set_exposure_rect() {
 }
 
 void CameraState::sensor_set_parameters() {
-  target_grey_fraction = 0.3;
-
-  dc_gain_enabled = false;
   dc_gain_weight = ci->dc_gain_min_weight;
   gain_idx = ci->analog_gain_rec_idx;
-  exposure_time = 5;
   cur_ev[0] = cur_ev[1] = cur_ev[2] = (1 + dc_gain_weight * (ci->dc_gain_factor-1) / ci->dc_gain_max_weight) * ci->sensor_analog_gains[gain_idx] * exposure_time;
 }
 
@@ -461,9 +457,6 @@ void CameraState::camera_init(VisionIpcServer * v, cl_device_id device_id, cl_co
   if (!enabled) return;
 
   LOGD("camera init %d", camera_num);
-  request_id_last = 0;
-  skipped = true;
-
   buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, stream_type);
   camera_map_bufs();
 

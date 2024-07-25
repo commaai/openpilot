@@ -41,34 +41,34 @@ const CameraConfig DRIVER_CAMERA_CONFIG = {
 
 class CameraState {
 public:
-  MultiCameraState *multi_cam_state;
+  MultiCameraState *multi_cam_state = nullptr;
   std::unique_ptr<const SensorInfo> ci;
-  bool enabled;
+  bool enabled = true;
   VisionStreamType stream_type;
-  float focal_len;
+  float focal_len = 0;
 
   std::mutex exp_lock;
 
-  int exposure_time;
-  bool dc_gain_enabled;
-  int dc_gain_weight;
-  int gain_idx;
-  float analog_gain_frac;
+  int exposure_time = 5;
+  bool dc_gain_enabled = false;
+  int dc_gain_weight = 0;
+  int gain_idx = 0;
+  float analog_gain_frac = 0;
 
-  float cur_ev[3];
-  float best_ev_score;
-  int new_exp_g;
-  int new_exp_t;
+  float cur_ev[3] = {};
+  float best_ev_score = 0;
+  int new_exp_g = 0;
+  int new_exp_t = 0;
 
-  Rect ae_xywh;
-  float measured_grey_fraction;
-  float target_grey_fraction;
+  Rect ae_xywh = {};
+  float measured_grey_fraction = 0;
+  float target_grey_fraction = 0.3;
 
   unique_fd sensor_fd;
   unique_fd csiphy_fd;
 
-  int camera_num;
-  float fl_pix;
+  int camera_num = 0;
+  float fl_pix = 0;
 
   CameraState(MultiCameraState *multi_camera_state, const CameraConfig &config);
   void handle_camera_event(void *evdat);
@@ -84,21 +84,21 @@ public:
   void camera_init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
   void camera_close();
 
-  int32_t session_handle;
-  int32_t sensor_dev_handle;
-  int32_t isp_dev_handle;
-  int32_t csiphy_dev_handle;
+  int32_t session_handle = -1;
+  int32_t sensor_dev_handle = -1;
+  int32_t isp_dev_handle = -1;
+  int32_t csiphy_dev_handle = -1;
 
-  int32_t link_handle;
+  int32_t link_handle = -1;
 
-  int buf0_handle;
-  int buf_handle[FRAME_BUF_COUNT];
-  int sync_objs[FRAME_BUF_COUNT];
-  int request_ids[FRAME_BUF_COUNT];
-  int request_id_last;
-  int frame_id_last;
-  int idx_offset;
-  bool skipped;
+  int buf0_handle = 0;
+  int buf_handle[FRAME_BUF_COUNT] = {};
+  int sync_objs[FRAME_BUF_COUNT] = {};
+  int request_ids[FRAME_BUF_COUNT] = {};
+  int request_id_last = 0;
+  int frame_id_last = 0;
+  int idx_offset = 0;
+  bool skipped = true;
 
   CameraBuf buf;
   MemoryManager mm;
@@ -129,8 +129,8 @@ public:
   unique_fd video0_fd;
   unique_fd cam_sync_fd;
   unique_fd isp_fd;
-  int device_iommu;
-  int cdm_iommu;
+  int device_iommu = -1;
+  int cdm_iommu = -1;
 
   CameraState road_cam;
   CameraState wide_road_cam;
