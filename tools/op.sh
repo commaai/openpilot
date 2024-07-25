@@ -262,8 +262,8 @@ function op_sim() {
   (set -e
 
   op_before_cmd
-  exec $OPENPILOT_ROOT/tools/sim/run_bridge.py &
-  exec $OPENPILOT_ROOT/tools/sim/launch_openpilot.sh
+  op_run_command exec $OPENPILOT_ROOT/tools/sim/run_bridge.py &
+  op_run_command exec $OPENPILOT_ROOT/tools/sim/launch_openpilot.sh
 
   )
 }
