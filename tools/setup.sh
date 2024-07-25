@@ -2,8 +2,6 @@
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
-UNDERLINE='\033[4m'
-BOLD='\033[1m'
 NC='\033[0m'
 
 if [ -z "$OPENPILOT_ROOT" ]; then
@@ -33,7 +31,7 @@ function check_git() {
 
 function git_clone() {
   echo "Cloning openpilot..."
-  if $(git clone --depth=1 -b curl_op https://github.com/commaai/openpilot.git "$OPENPILOT_ROOT"); then
+  if $(git clone --depth=1 https://github.com/commaai/openpilot.git "$OPENPILOT_ROOT"); then
     if [[ -f $OPENPILOT_ROOT/launch_openpilot.sh ]]; then
       echo -e " ↳ [${GREEN}✔${NC}] Successfully cloned openpilot.\n"
       return 0
@@ -50,7 +48,7 @@ function install_with_op() {
   $OPENPILOT_ROOT/tools/op.sh install
 
   # make op usable right now
-  alias op="$OPENPILOT_ROOT/tools/op.sh"
+  alias op="source $OPENPILOT_ROOT/tools/op.sh \"\$@\""
 }
 
 check_dir && check_git && git_clone && install_with_op
