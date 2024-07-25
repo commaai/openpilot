@@ -324,7 +324,7 @@ void camerad_thread() {
 #endif
 
   {
-    MultiCameraState cameras = {};
+    MultiCameraState cameras;
     VisionIpcServer vipc_server("camerad", device_id, context);
 
     cameras_open(&cameras);
