@@ -120,7 +120,7 @@ class PoseKalman:
     dim = obs_noise.shape[0]
     R = np.zeros((n, dim, dim))
     for i in range(n):
-      R[i, :, :] = obs_noise
+      R[i, :, :] = np.diag(obs_noise)
     return R
 
 
