@@ -765,9 +765,11 @@ FW_VERSIONS = {
     ],
     (Ecu.abs, 0x7d1, None): [
       b'\xf1\x00JF ESC \x0f 16 \x16\x06\x17 58920-D5080',
+      b'\xf1\x00JF ESC \t 17 \x16\x06# 58920-D4180',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00JFWGN LDWS AT USA LHD 1.00 1.02 95895-D4100 G21',
+      b'\xf1\x00JFWGN LKAS AT EUR LHD 1.00 1.01 95895-D4100 G20',
     ],
   },
   CAR.KIA_OPTIMA_G4_FL: {
