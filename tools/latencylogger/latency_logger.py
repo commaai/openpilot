@@ -201,7 +201,7 @@ def graph_timestamps(timestamps, start_times, end_times, relative, offset_servic
           points['labels'].append(event[0])
     ax.broken_barh(service_bars, (i-height/2, height), facecolors=(colors), alpha=0.5, offsets=offsets)
 
-  scatter = ax.scatter(points['x'], points['y'], marker='d', edgecolor='black')
+  ax.scatter(points['x'], points['y'], marker='d', edgecolor='black')
   for i, label in enumerate(points['labels']):
     ax.annotate(label, (points['x'][i], points['y'][i]), textcoords="offset points", xytext=(0,10), ha='center')
 
