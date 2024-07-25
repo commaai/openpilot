@@ -31,6 +31,8 @@ CameraState::CameraState(MultiCameraState *multi_camera_state, const CameraConfi
     camera_num(config.camera_num),
     stream_type(config.stream_type),
     focal_len(config.focal_len),
+    publish_name(config.publish_name),
+    init_camera_state(config.init_camera_state),
     enabled(config.enabled) {
 }
 
@@ -941,33 +943,36 @@ void CameraState::set_camera_exposure(float grey_frac) {
   sensors_i2c(exp_reg_array.data(), exp_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, ci->data_word);
 }
 
-static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
-  c->set_camera_exposure(set_exposure_target(&c->buf, c->ae_xywh, 2, 4));
+void CameraState::run() {
+  util::set_thread_name(publish_name);
 
-  MessageBuilder msg;
-  auto framed = msg.initEvent().initDriverCameraState();
-  fill_frame_data(framed, c->buf.cur_frame_data, c);
+  for (uint32_t cnt = 0; !do_exit; ++cnt) {
+    // Acquire the buffer; continue if acquisition fails
+    if (!buf.acquire()) continue;
 
-  c->ci->processRegisters(c, framed);
-  s->pm->send("driverCameraState", msg);
-}
+    MessageBuilder msg;
+    auto framed = (msg.initEvent().*init_camera_state)();
+    fill_frame_data(framed, buf.cur_frame_data, this);
 
-void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
-  const CameraBuf *b = &c->buf;
+    // Log raw frames for road camera
+    if (env_log_raw_frames && stream_type == VISION_STREAM_ROAD && cnt % 100 == 5) {  // no overlap with qlog decimation
+      framed.setImage(get_raw_frame_image(&buf));
+    }
+    // Log frame id for road and wide road cameras
+    if (stream_type != VISION_STREAM_DRIVER) {
+      LOGT(buf.cur_frame_data.frame_id, "%s: Image set", publish_name);
+    }
 
-  MessageBuilder msg;
-  auto framed = c == &s->road_cam ? msg.initEvent().initRoadCameraState() : msg.initEvent().initWideRoadCameraState();
-  fill_frame_data(framed, b->cur_frame_data, c);
-  if (env_log_raw_frames && c == &s->road_cam && cnt % 100 == 5) {  // no overlap with qlog decimation
-    framed.setImage(get_raw_frame_image(b));
+    // Process camera registers and set camera exposure
+    ci->processRegisters(this, framed);
+    set_camera_exposure(set_exposure_target(&buf, ae_xywh, 2, stream_type != VISION_STREAM_DRIVER ? 2 : 4));
+
+    // Send the message
+    multi_cam_state->pm->send(publish_name, msg);
+    if (stream_type == VISION_STREAM_ROAD && cnt % 100 == 3) {
+      publish_thumbnail(multi_cam_state->pm, &buf);  // this takes 10ms???
+    }
   }
-  LOGT(c->buf.cur_frame_data.frame_id, "%s: Image set", c == &s->road_cam ? "RoadCamera" : "WideRoadCamera");
-
-  c->ci->processRegisters(c, framed);
-  s->pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
-
-  const int skip = 2;
-  c->set_camera_exposure(set_exposure_target(b, c->ae_xywh, skip, skip));
 }
 
 MultiCameraState::MultiCameraState()
@@ -979,9 +984,9 @@ MultiCameraState::MultiCameraState()
 void cameras_run(MultiCameraState *s) {
   LOG("-- Starting threads");
   std::vector<std::thread> threads;
-  if (s->driver_cam.enabled) threads.push_back(start_process_thread(s, &s->driver_cam, process_driver_camera));
-  if (s->road_cam.enabled) threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
-  if (s->wide_road_cam.enabled) threads.push_back(start_process_thread(s, &s->wide_road_cam, process_road_camera));
+  if (s->driver_cam.enabled) threads.emplace_back(&CameraState::run, &s->driver_cam);
+  if (s->road_cam.enabled) threads.emplace_back(&CameraState::run, &s->road_cam);
+  if (s->wide_road_cam.enabled) threads.emplace_back(&CameraState::run, &s->wide_road_cam);
 
   // start devices
   LOG("-- Starting devices");
