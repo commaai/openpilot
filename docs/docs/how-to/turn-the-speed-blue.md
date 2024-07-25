@@ -12,6 +12,12 @@ Run this to clone openpilot and install all the dependencies.
 curl -fsSL openpilot.comma.ai | bash
 ```
 
+Then, compile openpilot
+```bash
+cd openpilot
+scons -j8
+```
+
 ## 2. Run replay
 
 We'll run the `replay` tool with the demo route to get data streaming for testing our UI changes.
