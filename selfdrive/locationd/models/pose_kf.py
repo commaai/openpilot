@@ -81,9 +81,10 @@ class PoseKalman:
 
     f_sym = state + dt * state_dot
 
+    centripetal_acceleration = angular_velocity.cross(velocity)
     gravity = sp.Matrix([0, 0, -EARTH_G])
     h_gyro_sym = angular_velocity + gyro_bias
-    h_acc_sym = device_from_ned * gravity + acceleration + acc_bias # + centripital_acceleration
+    h_acc_sym = device_from_ned * gravity + acceleration + centripetal_acceleration + acc_bias
     h_phone_rot_sym = angular_velocity
     h_relative_motion_sym = velocity
     obs_eqs = [
