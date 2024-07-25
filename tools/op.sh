@@ -65,7 +65,7 @@ function op_check_git() {
 
   echo "Checking for git submodules..."
   for name in body msgq_repo opendbc panda rednose_repo tinygrad_repo; do
-    if [[ -z $(ls $name) ]]; then
+    if [[ -z $(ls $OPENPILOT_ROOT/$name) ]]; then
       echo -e " ↳ [${RED}✗${NC}] git submodule $name not found! Run 'git submodule update --init --recursive'"
       return 1
     fi
@@ -146,6 +146,7 @@ function op_check() {
   (set -e
 
   op_check_openpilot_dir
+  cd $OPENPILOT_ROOT
   op_check_git
   op_check_os
   op_check_venv
