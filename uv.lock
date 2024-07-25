@@ -1591,6 +1591,7 @@ dev = [
     { name = "pyopencl", marker = "platform_machine != 'aarch64'" },
     { name = "pyprof2calltree" },
     { name = "pyqt5", marker = "platform_machine == 'x86_64'" },
+    { name = "pytools", marker = "platform_machine != 'aarch64'" },
     { name = "pywinctl" },
     { name = "rerun-sdk" },
     { name = "tabulate" },
@@ -4860,15 +4861,16 @@ sdist = { url = "https://files.pythonhosted.org/packages/ef/c6/2c5999de3bb153352
 
 [[distribution]]
 name = "pytools"
-version = "2024.1.11"
+version = "2024.1.10"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "platformdirs" },
+    { name = "siphash24" },
     { name = "typing-extensions", marker = "python_version < '3.13'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b7/80/188130dc3d1238f35a8a1ed788c42bdf00b9fd00f03a03b150778ceb846f/pytools-2024.1.11.tar.gz", hash = "sha256:fa966e09857bcd9299f961d58fc128e8333e4ac5fcea52473af5aae88f814e38", size = 81917 }
+sdist = { url = "https://files.pythonhosted.org/packages/ee/0f/56e109c0307f831b5d598ad73976aaaa84b4d0e98da29a642e797eaa940c/pytools-2024.1.10.tar.gz", hash = "sha256:9af6f4b045212c49be32bb31fe19606c478ee4b09631886d05a32459f4ce0a12", size = 81741 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/60/83/df2f2e6de93798cfd1432aafaad6f23c80a217983b022d0b4bd739194072/pytools-2024.1.11-py3-none-any.whl", hash = "sha256:b3f254dcd6986426c21fcd52803a248e837a34b78a8c4abe09724cb60e0901ea", size = 88206 },
+    { url = "https://files.pythonhosted.org/packages/66/cf/0a6aaa44b1f9e02b8c0648b5665a82246a93bcc75224c167b4fafa25c093/pytools-2024.1.10-py3-none-any.whl", hash = "sha256:9cabb71038048291400e244e2da441a051d86053339bc484e64e58d8ea263f44", size = 88108 },
 ]
 
 [[distribution]]
@@ -5162,6 +5164,26 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/f0/32/b7687654b6e747ceae8f9fa4cc7489a8ebf275c64caf811f949d87e89f5d/shapely-2.0.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:21f64e647a025b61b19585d2247137b3a38a35314ea68c66aaf507a1c03ef6fe", size = 2524570 },
     { url = "https://files.pythonhosted.org/packages/f9/9c/5b68b3cd484065c7d33d83168d2ecfebfeeaa6d88bc9cfd830de2df490ac/shapely-2.0.5-cp312-cp312-win32.whl", hash = "sha256:3ac7dc1350700c139c956b03d9c3df49a5b34aaf91d024d1510a09717ea39199", size = 1295383 },
     { url = "https://files.pythonhosted.org/packages/d4/c3/e98e3eb9f06def32b8e2454ab718cafb99149f023dff023e257125132d6e/shapely-2.0.5-cp312-cp312-win_amd64.whl", hash = "sha256:30e8737983c9d954cd17feb49eb169f02f1da49e24e5171122cf2c2b62d65c95", size = 1442365 },
+]
+
+[[distribution]]
+name = "siphash24"
+version = "1.6"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/19/d8/beb5183d1acc5a013d273452eac750b51e40855917a1841dead80fcf3086/siphash24-1.6.tar.gz", hash = "sha256:242d6901a81260f618938635a25ae7f208e744f7ee6c571f1b255c1c4c62917d", size = 19659 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e5/a5/0ffc51fe2e5f96258f0edfae15944006b09517ad7e98fdcbda05c67c70f6/siphash24-1.6-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:3e1b3963c392a2d63cbe16af9171d789d2f15e69eb8314b21fe1e11bdc08205f", size = 80669 },
+    { url = "https://files.pythonhosted.org/packages/80/ea/41d648cbbf3248a30f545f9e41ad5dedee19fcbad1d2baa7e39ae6f2779e/siphash24-1.6-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:de23d12c8a015904081e347900433a0c4b5e07690dbd0a104ad88929f3b91948", size = 75379 },
+    { url = "https://files.pythonhosted.org/packages/48/a7/d6dcc551c8d53e436c58b7ecc96d1de0c0379c21b1e71b2543d38c039c95/siphash24-1.6-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:8be513de01677e57989e028185a16e531942f7a9578d441481abe8b1085c45d6", size = 100466 },
+    { url = "https://files.pythonhosted.org/packages/eb/46/b906d7e05e3d84239d6a04e3d5f106d96ab26483951c7cf2c5769ea8c894/siphash24-1.6-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ef89477ce8f2e67fca025ad9b1c85b7498c6959baa7d9a502cbb5d8c7085f5b7", size = 105913 },
+    { url = "https://files.pythonhosted.org/packages/4c/98/20159e2be9a957da2dffb3e18648c51ea7a0f09c49b8dce1cb268ca55ca7/siphash24-1.6-cp311-cp311-win32.whl", hash = "sha256:f702e646dc60b7d7915fa37f9357a03a2ec41ffb360b6946baf4801eb9f7e98f", size = 67528 },
+    { url = "https://files.pythonhosted.org/packages/0d/0a/d8da621e624f3dbcf9a7a8066c54ddd2f6af437fc23169431caf6f9b403b/siphash24-1.6-cp311-cp311-win_amd64.whl", hash = "sha256:38715f61f0873e4a8b05125e14f349f465c64a1aaf79b6af0ff6f5f420d55dc5", size = 79961 },
+    { url = "https://files.pythonhosted.org/packages/12/e4/ed944e92883b45996cf2c94447dd47b899c87674340b081b9e8cb317a88f/siphash24-1.6-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:51eefacbe82f8f48bc603eb97f54bf3819324349b69a9cd131ba02c40b1e6c61", size = 82399 },
+    { url = "https://files.pythonhosted.org/packages/f9/d1/6ddbd7ba8972789f60282b9b9b1f88f08d26ef0913906e8ad5a9806c8432/siphash24-1.6-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:c63321003aa1856b1bfd48e6ffbd4bff98afeaacb0fc902cb2ae44b861476335", size = 76253 },
+    { url = "https://files.pythonhosted.org/packages/0d/87/0f125c1e069d09c4a39ab09d76fa9d4fe698bde68197627faeb38603f643/siphash24-1.6-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:f0ff4d068e9b0b3f138ef8e8b6f5de1990539d9d590e75a9a8beb6887535184a", size = 98184 },
+    { url = "https://files.pythonhosted.org/packages/86/57/a274de0a91016cd4f870334a2af1193ffcdb88e34345ca098afea6dd10cb/siphash24-1.6-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:4c1a671d91095e1872ca9988695200064ccca8db60133638d6061755fe669552", size = 103311 },
+    { url = "https://files.pythonhosted.org/packages/5d/d4/b6a0c9f119b22938e36d74e0859167ae76c0ea0f7d7786eb48120b0e129d/siphash24-1.6-cp312-cp312-win32.whl", hash = "sha256:2dab672fcda08149b8c15f82ee74d732386428f53239cdb002ac2ad0a1f2f2bc", size = 68366 },
+    { url = "https://files.pythonhosted.org/packages/ef/de/6ebd0f96184f8479e8348dcba93a9f14ff54ac3c6a68866cc77c334d7bdf/siphash24-1.6-cp312-cp312-win_amd64.whl", hash = "sha256:226af78af3b992c953cc4808f2c6a4bba320e91e6c89b34aa2492064fa417ae8", size = 81096 },
 ]
 
 [[distribution]]

@@ -111,6 +111,7 @@ dev = [
   #pprofile = "*"
   "pyautogui",
   "pyopencl; platform_machine != 'aarch64'", # broken on arm64
+  "pytools < 2024.1.11; platform_machine != 'aarch64'", # pyopencl use a broken version
   "pywinctl",
   "pyprof2calltree",
   "rerun-sdk",
