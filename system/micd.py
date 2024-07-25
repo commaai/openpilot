@@ -11,11 +11,11 @@ RATE = 10
 FFT_SAMPLES = 4096
 REFERENCE_SPL = 2e-5  # newtons/m^2
 SAMPLE_RATE = 44100
-SAMPLE_BUFFER = 4096 # (approx 100ms)
+SAMPLE_BUFFER = 4096  # approx 100ms
 
 
 @cache
-def cached_a_weighting_filter():
+def get_a_weighting_filter():
   # Calculate the A-weighting filter
   # https://en.wikipedia.org/wiki/A-weighting
   freqs = np.fft.fftfreq(FFT_SAMPLES, d=1 / SAMPLE_RATE)
@@ -38,8 +38,7 @@ def apply_a_weighting(measurements: np.ndarray) -> np.ndarray:
   measurements_windowed = measurements * np.hanning(len(measurements))
 
   # Apply the A-weighting filter to the signal
-  weighted = np.abs(np.fft.ifft(np.fft.fft(measurements_windowed) * cached_a_weighting_filter()))
-  return weighted
+  return np.abs(np.fft.ifft(np.fft.fft(measurements_windowed) * get_a_weighting_filter()))
 
 
 class Mic:
