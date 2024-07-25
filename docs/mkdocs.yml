@@ -5,6 +5,9 @@ site_url: https://docs.comma.ai
 
 strict: true
 
+plugins:
+  - commonmark
+
 theme:
   name: terminal
   features:
