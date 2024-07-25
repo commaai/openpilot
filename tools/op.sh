@@ -20,22 +20,6 @@ function op_first_install() {
   )
 }
 
-# be default, assume openpilot dir is in current directory
-OPENPILOT_ROOT=$(pwd)
-function op_check_openpilot_dir() {
-  while [[ "$OPENPILOT_ROOT" != '/' ]];
-  do
-    if find "$OPENPILOT_ROOT/launch_openpilot.sh" -maxdepth 1 -mindepth 1 &> /dev/null; then
-      return 0
-    fi
-    OPENPILOT_ROOT="$(readlink -f "$OPENPILOT_ROOT/"..)"
-  done
-
-  echo "openpilot directory not found! Make sure that you are inside openpilot"
-  echo "directory or specify one with the --dir option!"
-  return 1
-}
-
 function op_run_command() {
   CMD="$@"
   echo -e "${BOLD}Running:${NC} $CMD"
@@ -44,12 +28,31 @@ function op_run_command() {
   fi
 }
 
+# be default, assume openpilot dir is in current directory
+OPENPILOT_ROOT=$(pwd)
+function op_check_openpilot_dir() {
+  echo "Checking for openpilot directory..."
+  while [[ "$OPENPILOT_ROOT" != '/' ]];
+  do
+    if find "$OPENPILOT_ROOT/launch_openpilot.sh" -maxdepth 1 -mindepth 1 &> /dev/null; then
+      echo -e " ↳ [${GREEN}✔${NC}] openpilot found.\n"
+      return 0
+    fi
+    OPENPILOT_ROOT="$(readlink -f "$OPENPILOT_ROOT/"..)"
+  done
+
+  echo -e " ↳ [${RED}✗${NC}] openpilot directory not found! Make sure that you are"
+  echo "       inside the openpilot directory or specify one with the"
+  echo "       --dir option!"
+  return 1
+}
+
 function op_check_git() {
   (set -e
 
   echo "Checking for git..."
   if ! command -v "git" > /dev/null 2>&1; then
-    echo -e " ↳ [${RED}✗${NC}] git not found on your system!"
+    echo -e " ↳ [${RED}✗${NC}] git not found on your system!\n"
     return 1
   else
     echo -e " ↳ [${GREEN}✔${NC}] git found.\n"
@@ -57,7 +60,7 @@ function op_check_git() {
 
   echo "Checking for git lfs files..."
   if [[ $(file -b $OPENPILOT_ROOT/selfdrive/modeld/models/supercombo.onnx) == "ASCII text" ]]; then
-    echo -e " ↳ [${RED}✗${NC}] git lfs files not found! Run git lfs pull"
+    echo -e " ↳ [${RED}✗${NC}] git lfs files not found! Run 'git lfs pull'\n"
     return 1
   else
     echo -e " ↳ [${GREEN}✔${NC}] git lfs files found.\n"
@@ -66,7 +69,7 @@ function op_check_git() {
   echo "Checking for git submodules..."
   for name in body msgq_repo opendbc panda rednose_repo tinygrad_repo; do
     if [[ -z $(ls $OPENPILOT_ROOT/$name) ]]; then
-      echo -e " ↳ [${RED}✗${NC}] git submodule $name not found! Run 'git submodule update --init --recursive'"
+      echo -e " ↳ [${RED}✗${NC}] git submodule $name not found! Run 'git submodule update --init --recursive'\n"
       return 1
     fi
   done
@@ -88,19 +91,19 @@ function op_check_os() {
           echo -e " ↳ [${GREEN}✔${NC}] Ubuntu $VERSION_CODENAME detected.\n"
           ;;
         * )
-          echo -e " ↳ [${RED}✗${NC}] Incompatible Ubuntu version $VERSION_CODENAME detected!"
+          echo -e " ↳ [${RED}✗${NC}] Incompatible Ubuntu version $VERSION_CODENAME detected!\n"
           return 1
           ;;
       esac
     else
-      echo -e " ↳ [${RED}✗${NC}] No /etc/os-release on your system. Make sure you're running on Ubuntu, or similar!"
+      echo -e " ↳ [${RED}✗${NC}] No /etc/os-release on your system. Make sure you're running on Ubuntu, or similar!\n"
       return 1
     fi
 
   elif [[ "$OSTYPE" == "darwin"* ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] macos detected.\n"
   else
-    echo -e " ↳ [${RED}✗${NC}] OS type $OSTYPE not supported!"
+    echo -e " ↳ [${RED}✗${NC}] OS type $OSTYPE not supported!\n"
     return 1
   fi
 
@@ -115,22 +118,16 @@ function op_check_python() {
   INSTALLED_PYTHON_VERSION=$(python3 --version 2> /dev/null || true)
 
   if [[ -z $INSTALLED_PYTHON_VERSION ]]; then
-    echo -e " ↳ [${RED}✗${NC}] python3 not found on your system. You need python version at least $(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9.]') to continue!"
+    echo -e " ↳ [${RED}✗${NC}] python3 not found on your system. You need python version at least $(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9.]') to continue!\n"
     return 1
   elif [[ $(echo $INSTALLED_PYTHON_VERSION | tr -d -c '[0-9]') -ge $(($(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9]') * 10)) ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] $INSTALLED_PYTHON_VERSION detected.\n"
   else
-    echo -e " ↳ [${RED}✗${NC}] You need python version at least $(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9.]') to continue!"
+    echo -e " ↳ [${RED}✗${NC}] You need python version at least $(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9.]') to continue!\n"
     return 1
   fi
 
   )
-}
-
-# this must be run in the same shell as the user calling "op"
-function op_venv() {
-  op_check_openpilot_dir || return 1
-  op_run_command source $OPENPILOT_ROOT/.venv/bin/activate
 }
 
 function op_check_venv() {
@@ -142,27 +139,15 @@ function op_check_venv() {
   fi
 }
 
-function op_check() {
-  (set -e
-
+function op_before_cmd() {
+  echo -e "-----------------------------"
   op_check_openpilot_dir
   cd $OPENPILOT_ROOT
   op_check_git
   op_check_os
   op_check_venv
   op_check_python
-
-  )
-}
-
-function op_run() {
-  (set -e
-
-  op_check
-  op_venv
-  op_run_command $OPENPILOT_ROOT/launch_openpilot.sh
-
-  )
+  echo -e "-----------------------------\n"
 }
 
 function op_install() {
@@ -170,7 +155,6 @@ function op_install() {
 
   op_check_openpilot_dir
   cd $OPENPILOT_ROOT
-
   op_check_os
   op_check_python
 
@@ -186,11 +170,39 @@ function op_install() {
   )
 }
 
+function op_venv() {
+  ( set -e
+
+  op_before_cmd
+
+  )
+
+  # this must be run in the same shell as the user calling "op"
+  op_check_openpilot_dir > /dev/null || return 1
+  op_run_command source $OPENPILOT_ROOT/.venv/bin/activate
+}
+
+function op_check() {
+  (set -e
+
+  op_before_cmd
+
+  )
+}
+
+function op_run() {
+  (set -e
+
+  op_before_cmd
+  op_run_command $OPENPILOT_ROOT/launch_openpilot.sh
+
+  )
+}
+
 function op_build() {
   (set -e
 
-  op_check
-  op_venv
+  op_before_cmd
   op_run_command scons $@
 
   )
@@ -199,8 +211,7 @@ function op_build() {
 function op_juggle() {
   (set -e
 
-  op_check
-  op_venv
+  op_before_cmd
   op_run_command $OPENPILOT_ROOT/tools/plotjuggler/juggle.py $@
 
   )
@@ -209,8 +220,7 @@ function op_juggle() {
 function op_linter() {
   (set -e
 
-  op_check
-  op_venv
+  op_before_cmd
   op_run_command pre-commit run --all $@
 
   )
@@ -219,7 +229,7 @@ function op_linter() {
 function op_replay() {
   (set -e
 
-  op_check
+  op_before_cmd
   op_run_command $OPENPILOT_ROOT/tools/replay/replay $@
 
   )
@@ -228,7 +238,7 @@ function op_replay() {
 function op_cabana() {
   (set -e
 
-  op_check
+  op_before_cmd
   op_run_command $OPENPILOT_ROOT/tools/cabana/cabana $@
 
   )
@@ -326,5 +336,6 @@ unset -f op_linter
 unset -f op_replay
 unset -f op_cabana
 unset -f op_check_venv
+unset -f op_before_cmd
 unset DRY
 unset OPENPILOT_ROOT
