@@ -13,6 +13,7 @@ REFERENCE_SPL = 2e-5  # newtons/m^2
 SAMPLE_RATE = 44100
 SAMPLE_BUFFER = 4096 # (approx 100ms)
 
+
 @cache
 def cached_a_weighting_filter():
   # Calculate the A-weighting filter
@@ -20,6 +21,7 @@ def cached_a_weighting_filter():
   freqs = np.fft.fftfreq(FFT_SAMPLES, d=1 / SAMPLE_RATE)
   A = 12194 ** 2 * freqs ** 4 / ((freqs ** 2 + 20.6 ** 2) * (freqs ** 2 + 12194 ** 2) * np.sqrt((freqs ** 2 + 107.7 ** 2) * (freqs ** 2 + 737.9 ** 2)))
   return A / np.max(A)
+
 
 def calculate_spl(measurements):
   # https://www.engineeringtoolbox.com/sound-pressure-d_711.html
