@@ -24,7 +24,7 @@ function op_run_command() {
   CMD="$@"
   echo -e "${BOLD}Running:${NC} $CMD"
   if [[ -z "$DRY" ]]; then
-    $CMD
+    eval "$CMD"
   fi
 }
 
