@@ -5,15 +5,13 @@
 <p>
   <b>openpilot is an operating system for robotics.</b>
   <br>
-  Currently, it upgrades the advanced driver assistance system in 275+ supported cars.
+  Currently, it upgrades the driver assistance system in 275+ supported cars.
 </p>
 
-<h3 align="center">
-  <a href="https://docs.comma.ai">Getting Started</a>
+<h3>
+  <a href="https://docs.comma.ai">Read the docs</a>
   <span> · </span>
-  <a href="">Make your first PR</a>
-  <span> · </span>
-  <a href="CONTRIBUTING.md">Contribute</a>
+  <a href="https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md">Contribute</a>
   <span> · </span>
   <a href="https://discord.comma.ai">Community</a>
   <span> · </span>
@@ -29,15 +27,6 @@ Quick start: `curl -fsSL openpilot.comma.ai | bash`
 [![Discord](https://img.shields.io/discord/469524606043160576)](https://discord.comma.ai)
 
 </div>
-
-<!--
-[![openpilot on the comma 3X](https://github.com/commaai/openpilot/assets/8762862/f09e6d29-db2d-4179-80c2-51e8d92bdb5c)](https://comma.ai/shop/comma-3x)
-
-What is openpilot?
-------
-
-[openpilot](http://github.com/commaai/openpilot) is an open source driver assistance system. Currently, openpilot performs the functions of Adaptive Cruise Control (ACC), Automated Lane Centering (ALC), Forward Collision Warning (FCW), and Lane Departure Warning (LDW) for a growing variety of [supported car makes, models, and model years](docs/CARS.md). In addition, while openpilot is engaged, a camera-based Driver Monitoring (DM) feature alerts distracted and asleep drivers. See more about [the vehicle integration](docs/INTEGRATION.md) and [limitations](docs/LIMITATIONS.md).
--->
 
 <table>
   <tr>
