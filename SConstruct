@@ -205,7 +205,6 @@ env = Environment(
     "#third_party/json11",
     "#third_party/linux/include",
     "#third_party/snpe/include",
-    "#third_party/qrcode",
     "#third_party",
     "#cereal",
     "#msgq",
@@ -314,7 +313,7 @@ try:
 except SCons.Errors.UserError:
   qt_env.Tool('qt')
 
-qt_env['CPPPATH'] += qt_dirs# + ["#selfdrive/ui/qt/"]
+qt_env['CPPPATH'] += qt_dirs + ["#third_party/qrcode"]
 qt_flags = [
   "-D_REENTRANT",
   "-DQT_NO_DEBUG",
