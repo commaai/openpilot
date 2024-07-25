@@ -161,14 +161,23 @@ function op_install() {
   op_check_os
   op_check_python
 
+  echo "Installing dependencies..."
   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     op_run_command $OPENPILOT_ROOT/tools/ubuntu_setup.sh
   elif [[ "$OSTYPE" == "darwin"* ]]; then
     op_run_command $OPENPILOT_ROOT/tools/mac_setup.sh
   fi
+  echo -e " ↳ [${GREEN}✔${NC}] Dependencies installed successfully.\n"
 
+  echo "Getting git submodules..."
   op_run_command git submodule update --init --recursive
+  echo -e " ↳ [${GREEN}✔${NC}] Submodules installed successfully.\n"
+
+  echo "Pulling git lfs files..."
   op_run_command git lfs pull
+  echo -e " ↳ [${GREEN}✔${NC}] Files pulled successfully.\n"
+
+  op_check
 
   )
 }
@@ -199,7 +208,7 @@ function op_run() {
   (set -e
 
   op_before_cmd
-  op_run_command $OPENPILOT_ROOT/launch_openpilot.sh
+  op_run_command $OPENPILOT_ROOT/launch_openpilot.sh $@
 
   )
 }
@@ -249,6 +258,16 @@ function op_cabana() {
   )
 }
 
+function op_sim() {
+  (set -e
+
+  op_before_cmd
+  op_run_command exec $OPENPILOT_ROOT/tools/sim/run_bridge.py &
+  op_run_command exec $OPENPILOT_ROOT/tools/sim/launch_openpilot.sh
+
+  )
+}
+
 function op_default() {
   echo "An openpilot helper"
   echo ""
@@ -270,6 +289,7 @@ function op_default() {
   echo -e "  ${BOLD}install${NC}    Install requirements to use openpilot"
   echo -e "  ${BOLD}build${NC}      Build openpilot"
   echo -e "  ${BOLD}run${NC}        Run openpilot"
+  echo -e "  ${BOLD}sim${NC}        Run openpilot in a simulator"
   echo -e "  ${BOLD}juggle${NC}     Run Plotjuggler"
   echo -e "  ${BOLD}replay${NC}     Run replay"
   echo -e "  ${BOLD}cabana${NC}     Run cabana"
@@ -318,6 +338,7 @@ function _op() {
     cabana )    shift 1; op_cabana "$@" ;;
     linter )    shift 1; op_linter "$@" ;;
     replay )    shift 1; op_replay "$@" ;;
+    sim )       shift 1; op_sim "$@" ;;
     --install ) shift 1; op_first_install "$@" ;;
     * ) op_default "$@" ;;
   esac
@@ -345,6 +366,7 @@ unset -f op_replay
 unset -f op_cabana
 unset -f op_check_venv
 unset -f op_before_cmd
+unset -f op_sim
 unset DRY
 unset OPENPILOT_ROOT
 unset NO_VERIFY
