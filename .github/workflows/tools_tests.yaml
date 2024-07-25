@@ -41,7 +41,7 @@ jobs:
       run: |
         ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
                         source selfdrive/test/setup_vsound.sh && \
-                        CI=1 pytest tools/sim/tests/test_metadrive_bridge.py"
+                        PYTHONWARNINGS=ignore CI=1 pytest tools/sim/tests/test_metadrive_bridge.py"
 
   test_compatibility:
     name: test 20.04 + 3.11
