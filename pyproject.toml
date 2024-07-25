@@ -60,13 +60,14 @@ dependencies = [
   "psutil",
   "pycryptodome", # used in updated/casync, panda, body, and a test
 
-  #logreader
+  # logreader
   "zstd",
 ]
 
 [project.optional-dependencies]
 docs = [
   "Jinja2",
+  "natsort",
   "mkdocs==1.4.3",  # needed for mkdocs-plugin-commonmark
   "mkdocs-terminal",
   "mkdocs-plugin-commonmark",
@@ -95,7 +96,6 @@ dev = [
   "av",
   "azure-identity",
   "azure-storage-blob",
-  "breathe",
   "control",
   "dictdiffer",
   "flaky",
@@ -103,12 +103,9 @@ dev = [
   "lru-dict",
   "matplotlib",
   "metadrive-simulator@git+https://github.com/commaai/metadrive@opencv_headless ; platform_machine != 'aarch64'",
-  "mpld3",
-  "myst-parser",
-  "natsort",
   "opencv-python-headless",
   "parameterized >=0.8, <0.9",
-  #pprofile = "*"
+  #"pprofile",
   "pyautogui",
   "pyopencl; platform_machine != 'aarch64'", # broken on arm64
   "pytools < 2024.1.11; platform_machine != 'aarch64'", # pyopencl use a broken version
@@ -122,7 +119,6 @@ dev = [
 
   # this is only pinned since 5.15.11 is broken
   "pyqt5 ==5.15.2; platform_machine == 'x86_64'", # no aarch64 wheels for macOS/linux
-
 ]
 
 [project.urls]
