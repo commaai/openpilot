@@ -29,7 +29,7 @@ jobs:
     - name: Build docs
       run: |
         # TODO: can we install just the "docs" dependency group without the normal deps?
-        pip install mkdocs mkdocs-terminal
+        pip install mkdocs==1.4.3 mkdocs-terminal mkdocs-plugin-commonmark
         cd docs
         mkdocs build
 

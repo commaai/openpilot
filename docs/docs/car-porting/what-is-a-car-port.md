@@ -3,7 +3,6 @@
 A car port enables openpilot support on a particular car. Each car model openpilot supports needs to be individually ported. All car ports live in `openpilot/selfdrive/car/`.
 
 The complexity of a car port varies depending on many factors including:
-
 * existing openpilot support for similar cars
 * architecture and APIs available in the car
 
