@@ -11,9 +11,8 @@ Quick start: `curl -fsSL openpilot.comma.ai | bash`
 ![openpilot tests](https://github.com/commaai/openpilot/actions/workflows/selfdrive_tests.yaml/badge.svg)
 [![codecov](https://codecov.io/gh/commaai/openpilot/branch/master/graph/badge.svg)](https://codecov.io/gh/commaai/openpilot)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/comma_ai)
-
-<img src="https://d1qb2nb5cznatu.cloudfront.net/startups/i/1061157-bc7e9bf3b246ece7322e6ffe653f6af8-medium_jpg.jpg?buster=1458363130" width="75"></img>
+[![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/comma_ai)](https://x.com/comma_ai)
+[![Discord](https://img.shields.io/discord/469524606043160576)](https://discord.comma.ai)
 
 </div>
 
