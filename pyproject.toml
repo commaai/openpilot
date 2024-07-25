@@ -67,8 +67,9 @@ dependencies = [
 [project.optional-dependencies]
 docs = [
   "Jinja2",
-  "mkdocs",
+  "mkdocs==1.4.3",  # needed for mkdocs-plugin-commonmark
   "mkdocs-terminal",
+  "mkdocs-plugin-commonmark",
 ]
 
 testing = [
@@ -227,7 +228,7 @@ lint.ignore = [
   "UP038",   # (x, y) -> x|y for isinstance
 ]
 line-length = 160
-target-version="py311"
+target-version ="py311"
 exclude = [
   "body",
   "cereal",
@@ -239,7 +240,8 @@ exclude = [
   "teleoprtc_repo",
   "third_party",
 ]
-lint.flake8-implicit-str-concat.allow-multiline=false
+lint.flake8-implicit-str-concat.allow-multiline = false
+
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
 "selfdrive".msg = "Use openpilot.selfdrive"
 "common".msg = "Use openpilot.common"
@@ -251,5 +253,6 @@ lint.flake8-implicit-str-concat.allow-multiline=false
 
 [tool.coverage.run]
 concurrency = ["multiprocessing", "thread"]
+
 [tool.ruff.format]
 quote-style = "preserve"
