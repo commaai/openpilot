@@ -26,6 +26,16 @@ const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 
 extern ExitHandler do_exit;
 
+CameraState::CameraState(MultiCameraState *multi_camera_state, const CameraConfig &config)
+  : multi_cam_state(multi_camera_state),
+    camera_num(config.camera_num),
+    stream_type(config.stream_type),
+    focal_len(config.focal_len),
+    publish_name(config.publish_name),
+    init_camera_state(config.init_camera_state),
+    enabled(config.enabled) {
+}
+
 int CameraState::clear_req_queue() {
   struct cam_req_mgr_flush_info req_mgr_flush_request = {0};
   req_mgr_flush_request.session_hdl = session_handle;
@@ -425,48 +435,38 @@ void CameraState::set_exposure_rect() {
 }
 
 void CameraState::sensor_set_parameters() {
-  target_grey_fraction = 0.3;
-
-  dc_gain_enabled = false;
   dc_gain_weight = ci->dc_gain_min_weight;
   gain_idx = ci->analog_gain_rec_idx;
-  exposure_time = 5;
   cur_ev[0] = cur_ev[1] = cur_ev[2] = (1 + dc_gain_weight * (ci->dc_gain_factor-1) / ci->dc_gain_max_weight) * ci->sensor_analog_gains[gain_idx] * exposure_time;
 }
 
-void CameraState::camera_map_bufs(MultiCameraState *s) {
+void CameraState::camera_map_bufs() {
   for (int i = 0; i < FRAME_BUF_COUNT; i++) {
     // configure ISP to put the image in place
     struct cam_mem_mgr_map_cmd mem_mgr_map_cmd = {0};
-    mem_mgr_map_cmd.mmu_hdls[0] = s->device_iommu;
+    mem_mgr_map_cmd.mmu_hdls[0] = multi_cam_state->device_iommu;
     mem_mgr_map_cmd.num_hdl = 1;
     mem_mgr_map_cmd.flags = CAM_MEM_FLAG_HW_READ_WRITE;
     mem_mgr_map_cmd.fd = buf.camera_bufs[i].fd;
-    int ret = do_cam_control(s->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
+    int ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
     LOGD("map buf req: (fd: %d) 0x%x %d", buf.camera_bufs[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
     buf_handle[i] = mem_mgr_map_cmd.out.buf_handle;
   }
   enqueue_req_multi(1, FRAME_BUF_COUNT, 0);
 }
 
-void CameraState::camera_init(MultiCameraState *s, VisionIpcServer * v, cl_device_id device_id, cl_context ctx, VisionStreamType yuv_type, float focal_len) {
+void CameraState::camera_init(VisionIpcServer * v, cl_device_id device_id, cl_context ctx) {
   if (!enabled) return;
 
   LOGD("camera init %d", camera_num);
-  request_id_last = 0;
-  skipped = true;
-
-  buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, yuv_type);
-  camera_map_bufs(s);
+  buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, stream_type);
+  camera_map_bufs();
 
   fl_pix = focal_len / ci->pixel_size_mm;
   set_exposure_rect();
 }
 
-void CameraState::camera_open(MultiCameraState *multi_cam_state_, int camera_num_, bool enabled_) {
-  multi_cam_state = multi_cam_state_;
-  camera_num = camera_num_;
-  enabled = enabled_;
+void CameraState::camera_open() {
   if (!enabled) return;
 
   if (!openSensor()) {
@@ -660,9 +660,9 @@ void CameraState::linkDevices() {
 }
 
 void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  s->driver_cam.camera_init(s, v, device_id, ctx, VISION_STREAM_DRIVER, DRIVER_FL_MM);
-  s->road_cam.camera_init(s, v, device_id, ctx, VISION_STREAM_ROAD, ROAD_FL_MM);
-  s->wide_road_cam.camera_init(s, v, device_id, ctx, VISION_STREAM_WIDE_ROAD, WIDE_FL_MM);
+  s->driver_cam.camera_init(v, device_id, ctx);
+  s->road_cam.camera_init(v, device_id, ctx);
+  s->wide_road_cam.camera_init(v, device_id, ctx);
 
   s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
 }
@@ -706,11 +706,11 @@ void cameras_open(MultiCameraState *s) {
   ret = HANDLE_EINTR(ioctl(s->video0_fd, VIDIOC_SUBSCRIBE_EVENT, &sub));
   LOGD("req mgr subscribe: %d", ret);
 
-  s->driver_cam.camera_open(s, 2, !env_disable_driver);
+  s->driver_cam.camera_open();
   LOGD("driver camera opened");
-  s->road_cam.camera_open(s, 1, !env_disable_road);
+  s->road_cam.camera_open();
   LOGD("road camera opened");
-  s->wide_road_cam.camera_open(s, 0, !env_disable_wide_road);
+  s->wide_road_cam.camera_open();
   LOGD("wide road camera opened");
 }
 
@@ -943,41 +943,50 @@ void CameraState::set_camera_exposure(float grey_frac) {
   sensors_i2c(exp_reg_array.data(), exp_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, ci->data_word);
 }
 
-static void process_driver_camera(MultiCameraState *s, CameraState *c, int cnt) {
-  c->set_camera_exposure(set_exposure_target(&c->buf, c->ae_xywh, 2, 4));
+void CameraState::run() {
+  util::set_thread_name(publish_name);
 
-  MessageBuilder msg;
-  auto framed = msg.initEvent().initDriverCameraState();
-  fill_frame_data(framed, c->buf.cur_frame_data, c);
+  for (uint32_t cnt = 0; !do_exit; ++cnt) {
+    // Acquire the buffer; continue if acquisition fails
+    if (!buf.acquire()) continue;
 
-  c->ci->processRegisters(c, framed);
-  s->pm->send("driverCameraState", msg);
+    MessageBuilder msg;
+    auto framed = (msg.initEvent().*init_camera_state)();
+    fill_frame_data(framed, buf.cur_frame_data, this);
+
+    // Log raw frames for road camera
+    if (env_log_raw_frames && stream_type == VISION_STREAM_ROAD && cnt % 100 == 5) {  // no overlap with qlog decimation
+      framed.setImage(get_raw_frame_image(&buf));
+    }
+    // Log frame id for road and wide road cameras
+    if (stream_type != VISION_STREAM_DRIVER) {
+      LOGT(buf.cur_frame_data.frame_id, "%s: Image set", publish_name);
+    }
+
+    // Process camera registers and set camera exposure
+    ci->processRegisters(this, framed);
+    set_camera_exposure(set_exposure_target(&buf, ae_xywh, 2, stream_type != VISION_STREAM_DRIVER ? 2 : 4));
+
+    // Send the message
+    multi_cam_state->pm->send(publish_name, msg);
+    if (stream_type == VISION_STREAM_ROAD && cnt % 100 == 3) {
+      publish_thumbnail(multi_cam_state->pm, &buf);  // this takes 10ms???
+    }
+  }
 }
 
-void process_road_camera(MultiCameraState *s, CameraState *c, int cnt) {
-  const CameraBuf *b = &c->buf;
-
-  MessageBuilder msg;
-  auto framed = c == &s->road_cam ? msg.initEvent().initRoadCameraState() : msg.initEvent().initWideRoadCameraState();
-  fill_frame_data(framed, b->cur_frame_data, c);
-  if (env_log_raw_frames && c == &s->road_cam && cnt % 100 == 5) {  // no overlap with qlog decimation
-    framed.setImage(get_raw_frame_image(b));
-  }
-  LOGT(c->buf.cur_frame_data.frame_id, "%s: Image set", c == &s->road_cam ? "RoadCamera" : "WideRoadCamera");
-
-  c->ci->processRegisters(c, framed);
-  s->pm->send(c == &s->road_cam ? "roadCameraState" : "wideRoadCameraState", msg);
-
-  const int skip = 2;
-  c->set_camera_exposure(set_exposure_target(b, c->ae_xywh, skip, skip));
+MultiCameraState::MultiCameraState()
+  : driver_cam(this, DRIVER_CAMERA_CONFIG),
+    road_cam(this, ROAD_CAMERA_CONFIG),
+    wide_road_cam(this, WIDE_ROAD_CAMERA_CONFIG) {
 }
 
 void cameras_run(MultiCameraState *s) {
   LOG("-- Starting threads");
   std::vector<std::thread> threads;
-  if (s->driver_cam.enabled) threads.push_back(start_process_thread(s, &s->driver_cam, process_driver_camera));
-  if (s->road_cam.enabled) threads.push_back(start_process_thread(s, &s->road_cam, process_road_camera));
-  if (s->wide_road_cam.enabled) threads.push_back(start_process_thread(s, &s->wide_road_cam, process_road_camera));
+  if (s->driver_cam.enabled) threads.emplace_back(&CameraState::run, &s->driver_cam);
+  if (s->road_cam.enabled) threads.emplace_back(&CameraState::run, &s->road_cam);
+  if (s->wide_road_cam.enabled) threads.emplace_back(&CameraState::run, &s->wide_road_cam);
 
   // start devices
   LOG("-- Starting devices");
