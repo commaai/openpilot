@@ -1,9 +1,23 @@
-[![openpilot on the comma 3X](https://github.com/commaai/openpilot/assets/8762862/f09e6d29-db2d-4179-80c2-51e8d92bdb5c)](https://comma.ai/shop/comma-3x)
-
 <div align="center">
-  
-<h3>
-  <a href="https://docs.comma.ai">Docs</a> | <a href="https://discord.comma.ai">Discord</a> | <a href="https://x.com/comma_ai">X</a>
+
+<h1>openpilot</h1>
+
+<p>
+  <b>openpilot is an operating system for robotics.</b>
+  <br>
+  Currently, it's the world's best advanced driver assistance systems.
+</p>
+
+<h3 align="center">
+  <a href="https://docs.comma.ai">Getting Started</a>
+  <span> · </span>
+  <a href="">Make your first PR</a>
+  <span> · </span>
+  <a href="CONTRIBUTING.md">Contribute</a>
+  <span> · </span>
+  <a href="https://discord.comma.ai">Community</a>
+  <span> · </span>
+  <a href="https://comma.ai/shop">Try it on a comma 3X</a>
 </h3>
 
 Quick start: `curl -fsSL openpilot.comma.ai | bash`
@@ -11,15 +25,19 @@ Quick start: `curl -fsSL openpilot.comma.ai | bash`
 ![openpilot tests](https://github.com/commaai/openpilot/actions/workflows/selfdrive_tests.yaml/badge.svg)
 [![codecov](https://codecov.io/gh/commaai/openpilot/branch/master/graph/badge.svg)](https://codecov.io/gh/commaai/openpilot)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![X (formerly Twitter) Follow](https://img.shields.io/twitter/follow/comma_ai)](https://x.com/comma_ai)
+[![X Follow](https://img.shields.io/twitter/follow/comma_ai)](https://x.com/comma_ai)
 [![Discord](https://img.shields.io/discord/469524606043160576)](https://discord.comma.ai)
 
 </div>
+
+<!--
+[![openpilot on the comma 3X](https://github.com/commaai/openpilot/assets/8762862/f09e6d29-db2d-4179-80c2-51e8d92bdb5c)](https://comma.ai/shop/comma-3x)
 
 What is openpilot?
 ------
 
 [openpilot](http://github.com/commaai/openpilot) is an open source driver assistance system. Currently, openpilot performs the functions of Adaptive Cruise Control (ACC), Automated Lane Centering (ALC), Forward Collision Warning (FCW), and Lane Departure Warning (LDW) for a growing variety of [supported car makes, models, and model years](docs/CARS.md). In addition, while openpilot is engaged, a camera-based Driver Monitoring (DM) feature alerts distracted and asleep drivers. See more about [the vehicle integration](docs/INTEGRATION.md) and [limitations](docs/LIMITATIONS.md).
+-->
 
 <table>
   <tr>
