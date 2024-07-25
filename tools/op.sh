@@ -161,14 +161,23 @@ function op_install() {
   op_check_os
   op_check_python
 
+  echo "Installing dependencies..."
   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     op_run_command $OPENPILOT_ROOT/tools/ubuntu_setup.sh
   elif [[ "$OSTYPE" == "darwin"* ]]; then
     op_run_command $OPENPILOT_ROOT/tools/mac_setup.sh
   fi
+  echo -e " ↳ [${GREEN}✔${NC}] Dependencies installed successfully.\n"
 
+  echo "Getting git submodules..."
   op_run_command git submodule update --init --recursive
+  echo -e " ↳ [${GREEN}✔${NC}] Submodules installed successfully.\n"
+
+  echo "Pulling git lfs files..."
   op_run_command git lfs pull
+  echo -e " ↳ [${GREEN}✔${NC}] Files pulled successfully.\n"
+
+  op_check
 
   )
 }
