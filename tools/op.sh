@@ -228,15 +228,6 @@ function op_check() {
   )
 }
 
-function op_run() {
-  (set -e
-
-  op_before_cmd
-  op_run_command ./launch_openpilot.sh $@
-
-  )
-}
-
 function op_build() {
   (set -e
 
@@ -255,7 +246,7 @@ function op_juggle() {
   )
 }
 
-function op_linter() {
+function op_lint() {
   (set -e
 
   op_before_cmd
@@ -308,16 +299,15 @@ function op_default() {
   echo -e "${BOLD}${UNDERLINE}Usage:${NC} op [OPTIONS] <COMMAND>"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands:${NC}"
-  echo -e "  ${BOLD}venv${NC}     Activate the virtual environment"
-  echo -e "  ${BOLD}check${NC}    Check system requirements (git, os, python) to start using openpilot"
-  echo -e "  ${BOLD}setup${NC}    Setup requirements to use openpilot"
+  echo -e "  ${BOLD}venv${NC}     Activate the Python virtual environment"
+  echo -e "  ${BOLD}check${NC}    Check the development environment (git, os, python) to start using openpilot"
+  echo -e "  ${BOLD}setup${NC}    Install openpilot dependencies"
   echo -e "  ${BOLD}build${NC}    Build openpilot"
-  echo -e "  ${BOLD}run${NC}      Run openpilot"
   echo -e "  ${BOLD}sim${NC}      Run openpilot in a simulator"
   echo -e "  ${BOLD}juggle${NC}   Run Plotjuggler"
   echo -e "  ${BOLD}replay${NC}   Run replay"
   echo -e "  ${BOLD}cabana${NC}   Run cabana"
-  echo -e "  ${BOLD}linter${NC}   Run all the pre-commit checks"
+  echo -e "  ${BOLD}lint${NC}     Run all the pre-commit checks"
   echo -e "  ${BOLD}help${NC}     Show this message"
   echo -e "  ${BOLD}install${NC}  Install this tool system wide"
   echo ""
@@ -360,7 +350,6 @@ function _op() {
     check )     shift 1; op_check "$@" ;;
     setup )   shift 1; op_setup "$@" ;;
     build )     shift 1; op_build "$@" ;;
-    run )       shift 1; op_run "$@" ;;
     juggle )    shift 1; op_juggle "$@" ;;
     cabana )    shift 1; op_cabana "$@" ;;
     linter )    shift 1; op_linter "$@" ;;
@@ -378,7 +367,6 @@ unset -f _op
 unset -f op_check
 unset -f op_setup
 unset -f op_build
-unset -f op_run
 unset -f op_juggle
 unset -f op_venv
 unset -f op_check_openpilot_dir
