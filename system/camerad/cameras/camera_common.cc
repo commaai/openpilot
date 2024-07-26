@@ -15,8 +15,6 @@
 #include "CL/cl_ext_qcom.h"
 #endif
 
-ExitHandler do_exit;
-
 class ImgProc {
 public:
   ImgProc(cl_device_id device_id, cl_context context, const CameraBuf *b, const CameraState *s, int buf_width, int uv_offset) {
