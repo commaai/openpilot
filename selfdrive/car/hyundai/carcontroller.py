@@ -211,8 +211,11 @@ class CarController(CarControllerBase):
 
     return can_sends
 
+  # We currently use static jerk limits for all accel commands, the PCM is very sensitive to how accels are being
+  # sent from the SCC source of truth. Dynamic jerk upper/lower limits are required to make PCM accept controls
+  # more smoothly
   def create_accel_value(self, CC, accel):
-    rate = 0.1
+    rate = 0.1  # TODO: Dynamic jerk upper/lower limits should change this for more accurate and smoother controls
     if not CC.enabled:
       self.accel_raw, self.accel_val = 0, 0
     else:
