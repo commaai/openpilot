@@ -17,7 +17,7 @@ nav:
   - Getting Started:
     - What is openpilot?: getting-started/what-is-openpilot.md
   - How-to:
-    #- Make my first pull request: how-to/first-pr.md
+    - Turn the speed blue: how-to/turn-the-speed-blue.md
     - Connect to a comma 3/3X: how-to/connect-to-comma.md
   - Car Porting:
     - What is a car port?: car-porting/what-is-a-car-port.md
