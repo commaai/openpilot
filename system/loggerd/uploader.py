@@ -26,7 +26,7 @@ UPLOAD_ATTR_NAME = 'user.upload'
 UPLOAD_ATTR_VALUE = b'1'
 
 UPLOAD_QLOG_QCAM_MAX_SIZE = 5 * 1e6  # MB
-LOG_COMPRESSION_LEVEL = 14
+LOG_COMPRESSION_LEVEL = 10
 
 allow_sleep = bool(os.getenv("UPLOADER_SLEEP", "1"))
 force_wifi = os.getenv("FORCEWIFI") is not None
