@@ -1469,7 +1469,6 @@ dev = [
     { name = "lru-dict" },
     { name = "matplotlib" },
     { name = "metadrive-simulator", marker = "platform_machine != 'aarch64'" },
-    { name = "opencv-python-headless" },
     { name = "parameterized" },
     { name = "pyautogui" },
     { name = "pyopencl", marker = "platform_machine != 'aarch64'" },

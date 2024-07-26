@@ -1,3 +1,4 @@
+# TODO: remove the cv2 dependency, it's only used here
 import cv2 as cv
 import numpy as np
 
