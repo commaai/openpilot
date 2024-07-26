@@ -22,6 +22,7 @@ SEND_EXTRA_INPUTS = bool(int(os.getenv("SEND_EXTRA_INPUTS", "0")))
 
 
 def get_log_fn(ref_commit, test_route):
+  # TODO: regenerate with zst
   return f"{test_route}_model_tici_{ref_commit}.bz2"
 
 
