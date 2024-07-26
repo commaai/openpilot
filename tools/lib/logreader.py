@@ -179,24 +179,23 @@ def check_source(source: Source, *args) -> LogPaths:
   return files
 
 
-def auto_source(sr: SegmentRange, mode=ReadMode.RLOG, sources: list[Source] = None) -> LogPaths:
+def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
   if mode == ReadMode.SANITIZED:
     return comma_car_segments_source(sr, mode)
 
-  if sources is None:
-    sources: list[Source] = [internal_source, internal_source_zst, openpilotci_source, comma_api_source, comma_car_segments_source,]
+  SOURCES: list[Source] = [internal_source, internal_source_zst, openpilotci_source, comma_api_source, comma_car_segments_source,]
   exceptions = {}
 
   # for automatic fallback modes, auto_source needs to first check if rlogs exist for any source
   if mode in [ReadMode.AUTO, ReadMode.AUTO_INTERACTIVE]:
-    for source in sources:
+    for source in SOURCES:
       try:
         return check_source(source, sr, ReadMode.RLOG)
       except Exception:
         pass
 
   # Automatically determine viable source
-  for source in sources:
+  for source in SOURCES:
     try:
       return check_source(source, sr, mode)
     except Exception as e:
@@ -261,7 +260,7 @@ are uploaded or auto fallback to qlogs with '/a' selector at the end of the rout
   def __init__(self, identifier: str | list[str], default_mode: ReadMode = ReadMode.RLOG,
                default_source=auto_source, sort_by_time=False, only_union_types=False):
     self.default_mode = default_mode
-    self.default_source = default_source  # TODO: `default_source` name is confusing? should be `source` and should not be able to be overridden
+    self.default_source = default_source
     self.identifier = identifier
 
     self.sort_by_time = sort_by_time
