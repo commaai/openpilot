@@ -36,12 +36,9 @@ if [[ $(command -v brew) == "" ]]; then
 fi
 
 brew bundle --file=- <<-EOS
-brew "catch2"
-brew "cmake"
 brew "cppcheck"
 brew "git-lfs"
 brew "zlib"
-brew "bzip2"
 brew "capnp"
 brew "coreutils"
 brew "eigen"
