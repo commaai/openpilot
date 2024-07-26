@@ -104,9 +104,6 @@ class CarController(CarControllerBase):
       if self.CP.flags & HyundaiFlags.ENABLE_BLINKERS:
         can_sends.append([0x7b1, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", self.CAN.ECAN])
 
-    if self.CP.openpilotLongitudinalControl:
-      self.create_accel_value(CC, accel)
-
     # CAN-FD platforms
     if self.CP.carFingerprint in CANFD_CAR:
       hda2 = self.CP.flags & HyundaiFlags.CANFD_HDA2
@@ -151,6 +148,7 @@ class CarController(CarControllerBase):
         # TODO: unclear if this is needed
         jerk = 3.0 if actuators.longControlState == LongCtrlState.pid else 1.0
         use_fca = self.CP.flags & HyundaiFlags.USE_FCA.value
+        self.create_accel_value(CC, accel)
         can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, self.accel_raw, self.accel_val, jerk,
                                                         int(self.frame / 2), hud_control, set_speed_in_units, stopping,
                                                         CC.cruiseControl.override, use_fca))
