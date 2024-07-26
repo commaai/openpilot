@@ -31,7 +31,7 @@ function check_git() {
 
 function git_clone() {
   echo "Cloning openpilot..."
-  if $(git clone --depth=1 https://github.com/commaai/openpilot.git "$OPENPILOT_ROOT"); then
+  if $(git clone --filter=blob:none https://github.com/commaai/openpilot.git "$OPENPILOT_ROOT"); then
     if [[ -f $OPENPILOT_ROOT/launch_openpilot.sh ]]; then
       echo -e " ↳ [${GREEN}✔${NC}] Successfully cloned openpilot.\n"
       return 0
@@ -44,8 +44,8 @@ function git_clone() {
 
 function install_with_op() {
   cd $OPENPILOT_ROOT
-  $OPENPILOT_ROOT/tools/op.sh --install
   $OPENPILOT_ROOT/tools/op.sh install
+  $OPENPILOT_ROOT/tools/op.sh setup
 
   # make op usable right now
   alias op="source $OPENPILOT_ROOT/tools/op.sh \"\$@\""
