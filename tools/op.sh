@@ -14,7 +14,8 @@ function op_install() {
   if [ "$(uname)" == "Darwin" ] && [ $SHELL == "/bin/bash" ]; then
     RC_FILE="$HOME/.bash_profile"
   fi
-  printf "\nalias op='source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh" \"\$@\"'\n" >> $RC_FILE
+  CMD="\nalias op='source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh" \"\$@\"'\n"
+  grep "alias op=" "$RC_FILE" &> /dev/null || printf "$CMD" >> $RC_FILE
   echo -e " ↳ [${GREEN}✔${NC}] op installed successfully. Open a new shell to use it.\n"
 
   )
@@ -212,6 +213,12 @@ function op_venv() {
   )
 
   if [[ "$?" -eq 0 ]]; then
+
+    if [[ "${BASH_SOURCE[0]}" = "${0}" ]]; then
+      echo "Run 'op venv' or 'source op.sh venv' to activate your venv!"
+      return 1
+    fi
+
     # this must be run in the same shell as the user calling "op"
     op_get_openpilot_dir
     op_run_command source $OPENPILOT_ROOT/.venv/bin/activate
@@ -231,7 +238,9 @@ function op_check() {
 function op_build() {
   (set -e
 
+  CDIR=$(pwd)
   op_before_cmd
+  cd "$CDIR"
   op_run_command scons $@
 
   )
@@ -311,7 +320,7 @@ function op_default() {
   echo -e "  ${BOLD}venv${NC}     Activate the Python virtual environment"
   echo -e "  ${BOLD}check${NC}    Check the development environment (git, os, python) to start using openpilot"
   echo -e "  ${BOLD}setup${NC}    Install openpilot dependencies"
-  echo -e "  ${BOLD}build${NC}    Build openpilot"
+  echo -e "  ${BOLD}build${NC}    Run the openpilot build system in the current working directory"
   echo -e "  ${BOLD}sim${NC}      Run openpilot in a simulator"
   echo -e "  ${BOLD}juggle${NC}   Run Plotjuggler"
   echo -e "  ${BOLD}replay${NC}   Run replay"
