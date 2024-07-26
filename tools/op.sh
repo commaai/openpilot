@@ -238,7 +238,9 @@ function op_check() {
 function op_build() {
   (set -e
 
+  CDIR=$(pwd)
   op_before_cmd
+  cd "$CDIR"
   op_run_command scons $@
 
   )
@@ -318,7 +320,7 @@ function op_default() {
   echo -e "  ${BOLD}venv${NC}     Activate the Python virtual environment"
   echo -e "  ${BOLD}check${NC}    Check the development environment (git, os, python) to start using openpilot"
   echo -e "  ${BOLD}setup${NC}    Install openpilot dependencies"
-  echo -e "  ${BOLD}build${NC}    Build openpilot"
+  echo -e "  ${BOLD}build${NC}    Run the openpilot build system in the current working directory"
   echo -e "  ${BOLD}sim${NC}      Run openpilot in a simulator"
   echo -e "  ${BOLD}juggle${NC}   Run Plotjuggler"
   echo -e "  ${BOLD}replay${NC}   Run replay"
