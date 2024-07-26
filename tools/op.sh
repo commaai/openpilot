@@ -376,7 +376,7 @@ unset -f op_check_os
 unset -f op_install
 unset -f op_default
 unset -f op_run_command
-unset -f op_linter
+unset -f op_lint
 unset -f op_replay
 unset -f op_cabana
 unset -f op_check_venv
