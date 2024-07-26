@@ -213,6 +213,12 @@ function op_venv() {
   )
 
   if [[ "$?" -eq 0 ]]; then
+
+    if [[ "${BASH_SOURCE[0]}" = "${0}" ]]; then
+      echo "Run 'op venv' or 'source op.sh venv' to activate your venv!"
+      return 1
+    fi
+
     # this must be run in the same shell as the user calling "op"
     op_get_openpilot_dir
     op_run_command source $OPENPILOT_ROOT/.venv/bin/activate
