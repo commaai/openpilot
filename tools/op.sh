@@ -14,7 +14,8 @@ function op_install() {
   if [ "$(uname)" == "Darwin" ] && [ $SHELL == "/bin/bash" ]; then
     RC_FILE="$HOME/.bash_profile"
   fi
-  printf "\nalias op='source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh" \"\$@\"'\n" >> $RC_FILE
+  CMD="\nalias op='source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh" \"\$@\"'\n"
+  grep "alias op=" "$RC_FILE" &> /dev/null || printf "$CMD" >> $RC_FILE
   echo -e " ↳ [${GREEN}✔${NC}] op installed successfully. Open a new shell to use it.\n"
 
   )
