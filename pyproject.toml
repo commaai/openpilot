@@ -102,7 +102,7 @@ dev = [
   "inputs",
   "lru-dict",
   "matplotlib",
-  "metadrive-simulator@git+https://github.com/commaai/metadrive@opencv_headless ; platform_machine != 'aarch64'",
+  "metadrive-simulator@git+https://github.com/commaai/metadrive@minimal ; platform_machine != 'aarch64'",
   "opencv-python-headless",
   "parameterized >=0.8, <0.9",
   #"pprofile",
