@@ -27,6 +27,16 @@ LogIterable = Iterable[LogMessage]
 RawLogIterable = Iterable[bytes]
 
 
+def save_log(dest, log_msgs, compress=True):
+  dat = b"".join(msg.as_builder().to_bytes() for msg in log_msgs)
+
+  if compress:
+    dat = bz2.compress(dat)
+
+  with open(dest, "wb") as f:
+    f.write(dat)
+
+
 class _LogFileReader:
   def __init__(self, fn, canonicalize=True, only_union_types=False, sort_by_time=False, dat=None):
     self.data_version = None
