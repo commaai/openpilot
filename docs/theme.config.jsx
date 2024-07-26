@@ -2,8 +2,6 @@
 const gitRepo = 'https://github.com/commaai/openpilot'
 
 export default {
-  // TODO: SEO optimization ?
-  // https://nextra.site/docs/docs-theme/theme-configuration#seo-options
   useNextSeoProps() {
     return {
       // title: 'openpilot',
@@ -64,7 +62,7 @@ export default {
         alt="comma.ai logo"
         width="24"
         height="24"
-        style={{ borderRadius: '50%' }}
+        style={{ borderRadius: '50%', backgroundColor: '#fff' }}
       />
       <span style={{ marginLeft: '.4em', fontWeight: 800 }}>
         openpilot
@@ -89,5 +87,6 @@ export default {
   },
   footer: {
     component: null
-  }
+  },
+  navigation: false
 }
