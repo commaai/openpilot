@@ -53,6 +53,9 @@ generated_files = [
 
 acados_dir = '#third_party/acados'
 acados_templates_dir = '#third_party/acados/acados_template/c_templates_tera'
+acados_includes = ["#third_party/acados/include",
+                   "#third_party/acados/include/blasfeo/include",
+                   "#third_party/acados/include/hpipm/include"]
 
 source_list = ['long_mpc.py',
   '#selfdrive/modeld/constants.py',
@@ -71,6 +74,7 @@ lenv.Depends(generated_long, [msgq_python, common_python, opendbc_python])
 lenv["CFLAGS"].append("-DACADOS_WITH_QPOASES")
 lenv["CXXFLAGS"].append("-DACADOS_WITH_QPOASES")
 lenv["CCFLAGS"].append("-Wno-unused")
+lenv["CPPPATH"] += acados_includes
 if arch != "Darwin":
   lenv["LINKFLAGS"].append("-Wl,--disable-new-dtags")
 lib_solver = lenv.SharedLibrary(f"{gen}/acados_ocp_solver_long",
@@ -85,6 +89,7 @@ libacados_ocp_solver_c = File(f'{gen}/acados_ocp_solver_pyx.c')
 
 lenv2 = envCython.Clone()
 lenv2["LINKFLAGS"] += [lib_solver[0].get_labspath()]
+lenv2["CPPPATH"] += acados_includes
 lenv2.Command(libacados_ocp_solver_c,
   [acados_ocp_solver_pyx, acados_ocp_solver_common, libacados_ocp_solver_pxd],
   f'cython' + \
