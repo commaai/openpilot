@@ -26,6 +26,6 @@ if __name__ == "__main__":
   inputs = [i for i in inputs if i.which() not in produces]
   outputs = sorted(inputs + outputs, key=lambda x: x.logMonoTime)
 
-  fn = f"{args.route.replace('/', '_')}_{args.process}.bz2"
+  fn = f"{args.route.replace('/', '_')}_{args.process}.zst"
   print(f"Saved log to {fn}")
   save_log(fn, outputs)
