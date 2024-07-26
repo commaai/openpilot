@@ -8,7 +8,8 @@
     "next": "^14.2.4",
     "nextra": "^2.13.4",
     "nextra-theme-docs": "^2.13.4",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "preact": "^10.23.1",
+    "preact-compat": "^3.19.0",
+    "preact-render-to-string": "^6.5.7"
   }
 }
