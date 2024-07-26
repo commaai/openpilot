@@ -6,6 +6,7 @@ import capnp
 import numpy as np
 
 from typing import Any
+from functools import partial
 from collections.abc import Iterable
 
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, ProcessConfig, replay_process, get_process_config, \
@@ -14,7 +15,7 @@ from openpilot.selfdrive.test.process_replay.vision_meta import DRIVER_CAMERA_FR
 from openpilot.selfdrive.test.update_ci_routes import upload_route
 from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.framereader import FrameReader, BaseFrameReader, FrameType
-from openpilot.tools.lib.logreader import LogReader, LogIterable
+from openpilot.tools.lib.logreader import LogReader, LogIterable, auto_source, internal_source, internal_source_zst
 from openpilot.tools.lib.helpers import save_log
 
 
@@ -75,7 +76,7 @@ def setup_data_readers(
         assert device_type != "neo", "Driver camera not supported on neo segments. Use dummy dcamera."
         frs['driverCameraState'] = FrameReader(r.dcamera_paths()[sidx])
   else:
-    lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
+    lr = LogReader(f"{route}/{sidx}/r", default_source=partial(auto_source, sources=[internal_source, internal_source_zst]))
     frs = {}
     if needs_road_cam:
       frs['roadCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
