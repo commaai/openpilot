@@ -188,7 +188,7 @@ function op_setup() {
   echo -e " ↳ [${GREEN}✔${NC}] Dependencies installed successfully.\n"
 
   echo "Getting git submodules..."
-  op_run_command git submodule update --init --recursive
+  op_run_command git submodule update --jobs 4 --init --recursive
   echo -e " ↳ [${GREEN}✔${NC}] Submodules installed successfully.\n"
 
   echo "Pulling git lfs files..."
