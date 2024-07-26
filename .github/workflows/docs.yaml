@@ -43,7 +43,7 @@ jobs:
       run: bun run build
       working-directory: ./docs
       env:
-        GITHUB_REPOSITORY: ${{ github.repository }
+        GITHUB_REPOSITORY: ${{ github.repository }}
 
     # Push to docs.comma.ai
     - uses: actions/checkout@v4
