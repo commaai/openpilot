@@ -401,6 +401,7 @@ def uploadFilesToUrls(files_data: list[UploadFileDict]) -> UploadFilesToUrlRespo
 
   resp: UploadFilesToUrlResponse = {"enqueued": len(items), "items": items}
   if failed:
+    cloudlog.event("athena.uploadFilesToUrls.failed", failed=failed, error=True)
     resp["failed"] = failed
 
   return resp

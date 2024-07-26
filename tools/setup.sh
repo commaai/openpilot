@@ -1,32 +1,59 @@
 #!/usr/bin/env bash
 
-set -e
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
 
-if [ ! -f launch_openpilot.sh ]; then
-  if [ ! -d openpilot ]; then
-    git clone --single-branch --recurse-submodules https://github.com/commaai/openpilot.git
+if [ -z "$OPENPILOT_ROOT" ]; then
+  # default to current directory for installation
+  OPENPILOT_ROOT="$(pwd)/openpilot"
+fi
+
+function check_dir() {
+  echo "Checking for installation directory..."
+  if [ -d "$OPENPILOT_ROOT" ]; then
+    echo -e " ↳ [${RED}✗${NC}] can't install openpilot in $OPENPILOT_ROOT !"
+    return 1
   fi
-  cd openpilot
-fi
 
-if [[ "$OSTYPE" == "darwin"* ]]; then
-  tools/mac_setup.sh
-else
-  tools/ubuntu_setup.sh
-fi
+  echo -e " ↳ [${GREEN}✔${NC}] Successfully chosen $OPENPILOT_ROOT as installation directory\n"
+}
 
-git lfs pull
+function check_git() {
+  echo "Checking for git..."
+  if ! command -v "git" > /dev/null 2>&1; then
+    echo -e " ↳ [${RED}✗${NC}] git not found on your system, can't continue!"
+    return 1
+  else
+    echo -e " ↳ [${GREEN}✔${NC}] git found.\n"
+  fi
+}
 
-source .venv/bin/activate
+function git_clone() {
+  echo "Cloning openpilot..."
+  if $(git clone --filter=blob:none https://github.com/commaai/openpilot.git "$OPENPILOT_ROOT"); then
+    if [[ -f $OPENPILOT_ROOT/launch_openpilot.sh ]]; then
+      echo -e " ↳ [${GREEN}✔${NC}] Successfully cloned openpilot.\n"
+      return 0
+    fi
+  fi
 
-echo "Building openpilot"
-scons -u -j$(nproc)
+  echo -e " ↳ [${RED}✗${NC}] failed to clone openpilot!"
+  return 1
+}
 
-echo
-echo "----   OPENPILOT BUILDING DONE   ----"
-echo "To push changes to your fork, run the following commands:"
-echo "git remote remove origin"
-echo "git remote add origin git@github.com:<YOUR_USERNAME>/openpilot.git"
-echo "git fetch"
-echo "git commit -m \"first commit\""
-echo "git push"
+function install_with_op() {
+  cd $OPENPILOT_ROOT
+  $OPENPILOT_ROOT/tools/op.sh install
+  $OPENPILOT_ROOT/tools/op.sh setup
+
+  # make op usable right now
+  alias op="source $OPENPILOT_ROOT/tools/op.sh \"\$@\""
+}
+
+check_dir && check_git && git_clone && install_with_op
+
+unset OPENPILOT_ROOT
+unset RED
+unset GREEN
+unset NC

@@ -27,6 +27,16 @@ LogIterable = Iterable[LogMessage]
 RawLogIterable = Iterable[bytes]
 
 
+def save_log(dest, log_msgs, compress=True):
+  dat = b"".join(msg.as_builder().to_bytes() for msg in log_msgs)
+
+  if compress:
+    dat = bz2.compress(dat)
+
+  with open(dest, "wb") as f:
+    f.write(dat)
+
+
 class _LogFileReader:
   def __init__(self, fn, canonicalize=True, only_union_types=False, sort_by_time=False, dat=None):
     self.data_version = None
@@ -140,6 +150,7 @@ def internal_source(sr: SegmentRange, mode: ReadMode, file_ext: str = "bz2") -> 
   def get_internal_url(sr: SegmentRange, seg, file):
     return f"cd:/{sr.dongle_id}/{sr.log_id}/{seg}/{file}.{file_ext}"
 
+  # TODO: list instead of using static URLs to support routes with multiple file extensions
   rlog_paths = [get_internal_url(sr, seg, "rlog") for seg in sr.seg_idxs]
   qlog_paths = [get_internal_url(sr, seg, "qlog") for seg in sr.seg_idxs]
 
