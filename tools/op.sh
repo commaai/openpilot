@@ -228,15 +228,6 @@ function op_check() {
   )
 }
 
-function op_run() {
-  (set -e
-
-  op_before_cmd
-  op_run_command ./launch_openpilot.sh $@
-
-  )
-}
-
 function op_build() {
   (set -e
 
@@ -255,7 +246,7 @@ function op_juggle() {
   )
 }
 
-function op_linter() {
+function op_lint() {
   (set -e
 
   op_before_cmd
@@ -297,7 +288,7 @@ function op_default() {
   echo ""
   echo -e "${BOLD}${UNDERLINE}Description:${NC}"
   echo "  op is your entry point for all things related to openpilot development."
-  echo "  op is only a wrapper for scripts, tools  and commands already existing."
+  echo "  op is only a wrapper for existing scripts, tools, and commands."
   echo "  op will always show you what it will run on your system."
   echo ""
   echo "  op will try to find your openpilot directory in the following order:"
@@ -308,26 +299,25 @@ function op_default() {
   echo -e "${BOLD}${UNDERLINE}Usage:${NC} op [OPTIONS] <COMMAND>"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands:${NC}"
-  echo -e "  ${BOLD}venv${NC}     Activate the virtual environment"
-  echo -e "  ${BOLD}check${NC}    Check system requirements (git, os, python) to start using openpilot"
-  echo -e "  ${BOLD}setup${NC}    Setup requirements to use openpilot"
+  echo -e "  ${BOLD}venv${NC}     Activate the Python virtual environment"
+  echo -e "  ${BOLD}check${NC}    Check the development environment (git, os, python) to start using openpilot"
+  echo -e "  ${BOLD}setup${NC}    Install openpilot dependencies"
   echo -e "  ${BOLD}build${NC}    Build openpilot"
-  echo -e "  ${BOLD}run${NC}      Run openpilot"
   echo -e "  ${BOLD}sim${NC}      Run openpilot in a simulator"
   echo -e "  ${BOLD}juggle${NC}   Run Plotjuggler"
   echo -e "  ${BOLD}replay${NC}   Run replay"
   echo -e "  ${BOLD}cabana${NC}   Run cabana"
-  echo -e "  ${BOLD}linter${NC}   Run all the pre-commit checks"
+  echo -e "  ${BOLD}lint${NC}     Run all the pre-commit checks"
   echo -e "  ${BOLD}help${NC}     Show this message"
-  echo -e "  ${BOLD}install${NC}  Install this tool system wide"
+  echo -e "  ${BOLD}install${NC}  Install the 'op' tool system wide"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Options:${NC}"
   echo -e "  ${BOLD}-d, --dir${NC}"
   echo "          Specify the openpilot directory you want to use"
   echo -e "  ${BOLD}--dry${NC}"
-  echo "          Don't actually run anything, just print what would be"
+  echo "          Don't actually run anything, just print what would be run"
   echo -e "  ${BOLD}-n, --no-verify${NC}"
-  echo "          Don't run checks before running a command"
+  echo "          Skip environment check before running commands"
   echo -e "  ${BOLD}-v, --verbose${NC}"
   echo "          Show the result of all checks before running a command"
   echo ""
@@ -358,12 +348,11 @@ function _op() {
   case $1 in
     venv )      shift 1; op_venv "$@" ;;
     check )     shift 1; op_check "$@" ;;
-    setup )   shift 1; op_setup "$@" ;;
+    setup )     shift 1; op_setup "$@" ;;
     build )     shift 1; op_build "$@" ;;
-    run )       shift 1; op_run "$@" ;;
     juggle )    shift 1; op_juggle "$@" ;;
     cabana )    shift 1; op_cabana "$@" ;;
-    linter )    shift 1; op_linter "$@" ;;
+    lint )      shift 1; op_lint "$@" ;;
     replay )    shift 1; op_replay "$@" ;;
     sim )       shift 1; op_sim "$@" ;;
     install )   shift 1; op_install "$@" ;;
@@ -378,7 +367,6 @@ unset -f _op
 unset -f op_check
 unset -f op_setup
 unset -f op_build
-unset -f op_run
 unset -f op_juggle
 unset -f op_venv
 unset -f op_check_openpilot_dir
@@ -388,7 +376,7 @@ unset -f op_check_os
 unset -f op_install
 unset -f op_default
 unset -f op_run_command
-unset -f op_linter
+unset -f op_lint
 unset -f op_replay
 unset -f op_cabana
 unset -f op_check_venv
