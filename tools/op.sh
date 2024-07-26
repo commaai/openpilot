@@ -255,6 +255,15 @@ function op_lint() {
   )
 }
 
+function op_test() {
+  (set -e
+
+  op_before_cmd
+  op_run_command pytest $@
+
+  )
+}
+
 function op_replay() {
   (set -e
 
@@ -308,6 +317,7 @@ function op_default() {
   echo -e "  ${BOLD}replay${NC}   Run replay"
   echo -e "  ${BOLD}cabana${NC}   Run cabana"
   echo -e "  ${BOLD}lint${NC}     Run all the pre-commit checks"
+  echo -e "  ${BOLD}test${NC}     Run all unit tests from pytest"
   echo -e "  ${BOLD}help${NC}     Show this message"
   echo -e "  ${BOLD}install${NC}  Install the 'op' tool system wide"
   echo ""
@@ -353,6 +363,7 @@ function _op() {
     juggle )    shift 1; op_juggle "$@" ;;
     cabana )    shift 1; op_cabana "$@" ;;
     lint )      shift 1; op_lint "$@" ;;
+    test )      shift 1; op_test "$@" ;;
     replay )    shift 1; op_replay "$@" ;;
     sim )       shift 1; op_sim "$@" ;;
     install )   shift 1; op_install "$@" ;;
@@ -384,6 +395,7 @@ unset -f op_before_cmd
 unset -f op_sim
 unset -f op_activate_venv
 unset -f op_get_openpilot_dir
+unset -f op_test
 unset DRY
 unset NC
 unset RED
