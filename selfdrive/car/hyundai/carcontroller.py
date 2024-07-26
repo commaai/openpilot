@@ -55,6 +55,8 @@ class CarController(CarControllerBase):
     self.apply_steer_last = 0
     self.car_fingerprint = CP.carFingerprint
     self.last_button_frame = 0
+    self.accel_raw = 0
+    self.accel_val = 0
 
   def update(self, CC, CS, now_nanos):
     actuators = CC.actuators
@@ -102,6 +104,9 @@ class CarController(CarControllerBase):
       if self.CP.flags & HyundaiFlags.ENABLE_BLINKERS:
         can_sends.append([0x7b1, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", self.CAN.ECAN])
 
+    if self.CP.openpilotLongitudinalControl:
+      self.create_accel_value(CC, accel)
+
     # CAN-FD platforms
     if self.CP.carFingerprint in CANFD_CAR:
       hda2 = self.CP.flags & HyundaiFlags.CANFD_HDA2
@@ -146,8 +151,8 @@ class CarController(CarControllerBase):
         # TODO: unclear if this is needed
         jerk = 3.0 if actuators.longControlState == LongCtrlState.pid else 1.0
         use_fca = self.CP.flags & HyundaiFlags.USE_FCA.value
-        can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, accel, jerk, int(self.frame / 2),
-                                                        hud_control, set_speed_in_units, stopping,
+        can_sends.extend(hyundaican.create_acc_commands(self.packer, CC.enabled, self.accel_raw, self.accel_val, jerk,
+                                                        int(self.frame / 2), hud_control, set_speed_in_units, stopping,
                                                         CC.cruiseControl.override, use_fca))
 
       # 20 Hz LFA MFA message
@@ -205,3 +210,12 @@ class CarController(CarControllerBase):
             self.last_button_frame = self.frame
 
     return can_sends
+
+  def create_accel_value(self, CC, accel):
+    rate = 0.1
+    if not CC.enabled:
+      self.accel_raw, self.accel_val = 0, 0
+    else:
+      self.accel_raw = accel
+      self.accel_val = clip(self.accel_raw, self.accel_last - rate, self.accel_last + rate)
+    self.accel_last = self.accel_val
