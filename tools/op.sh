@@ -348,11 +348,11 @@ function _op() {
   case $1 in
     venv )      shift 1; op_venv "$@" ;;
     check )     shift 1; op_check "$@" ;;
-    setup )   shift 1; op_setup "$@" ;;
+    setup )     shift 1; op_setup "$@" ;;
     build )     shift 1; op_build "$@" ;;
     juggle )    shift 1; op_juggle "$@" ;;
     cabana )    shift 1; op_cabana "$@" ;;
-    linter )    shift 1; op_linter "$@" ;;
+    lint )      shift 1; op_lint "$@" ;;
     replay )    shift 1; op_replay "$@" ;;
     sim )       shift 1; op_sim "$@" ;;
     install )   shift 1; op_install "$@" ;;
