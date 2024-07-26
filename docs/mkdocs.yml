@@ -26,10 +26,10 @@ nav:
   - Contributing:
     - Roadmap: contributing/roadmap.md
     #- Architecture: contributing/architecture.md
-    - Contributing: https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md
+    - Contributing →: https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md
   - Links:
-    - Blog: https://blog.comma.ai
-    - Bounties: https://comma.ai/bounties
-    - GitHub: https://github.com/commaai
-    - Discord: https://discord.comma.ai
-    - X: https://x.com/comma_ai
+    - Blog →: https://blog.comma.ai
+    - Bounties →: https://comma.ai/bounties
+    - GitHub →: https://github.com/commaai
+    - Discord →: https://discord.comma.ai
+    - X →: https://x.com/comma_ai
