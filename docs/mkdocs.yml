@@ -16,7 +16,6 @@ theme:
 nav:
   - Getting Started:
     - What is openpilot?: getting-started/what-is-openpilot.md
-    - How does it work?: getting-started/how-does-it-work.md
   - How-to:
     - Turn the speed blue: how-to/turn-the-speed-blue.md
     - Connect to a comma 3/3X: how-to/connect-to-comma.md
