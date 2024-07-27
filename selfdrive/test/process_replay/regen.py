@@ -118,7 +118,7 @@ def regen_and_save(
 
   log_dir = os.path.join(outdir, time.strftime("%Y-%m-%d--%H-%M-%S--0", time.gmtime()))
   rel_log_dir = os.path.relpath(log_dir)
-  rpath = os.path.join(log_dir, "rlog.zst")
+  rpath = os.path.join(log_dir, "rlog.bz2")
 
   os.makedirs(log_dir)
   save_log(rpath, output_logs, compress=True)
