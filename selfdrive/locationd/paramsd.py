@@ -54,8 +54,12 @@ class ParamsLearner:
 
   def handle_log(self, t, which, msg):
     if which == 'livePose':
-      self.yaw_rate = np.matmul(self.calib_from_device, msg.angularVelocityDevice.z)
-      self.yaw_rate_std = rotate_std(self.calib_from_device, msg.angularVelocityDevice.zStd)
+      angular_velocity_device = np.array([msg.angularVelocity.x, msg.angularVelocity.y, msg.angularVelocity.z])
+      angular_velocity_device_std = np.array([msg.angularVelocity.xStd, msg.angularVelocity.yStd, msg.angularVelocity.zStd])
+      angular_velocity_calibrated = np.matmul(self.calib_from_device, angular_velocity_device)
+      angular_velocity_calibrated_std = rotate_std(self.calib_from_device, angular_velocity_device_std)
+
+      self.yaw_rate, self.yaw_rate_std = angular_velocity_calibrated[2], angular_velocity_calibrated_std[2]
 
       localizer_roll = msg.orientationNED.x
       localizer_roll_std = np.radians(1) if np.isnan(msg.orientationNED.xStd) else msg.orientationNED.xStd
