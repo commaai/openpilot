@@ -176,7 +176,7 @@ node {
     if (!env.BRANCH_NAME.matches(excludeRegex)) {
     parallel (
       // tici tests
-      'onroad tests': {
+      'onroad tests1': {
         deviceStage("onroad", "tici-needs-can", [], [
           // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
           //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
@@ -185,6 +185,8 @@ node {
           ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
           ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
         ])
+      },
+      'onroad tests2': {
         deviceStage("onroad", "tici-needs-can", [], [
           // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
           //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
@@ -193,6 +195,8 @@ node {
           ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
           ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
         ])
+      },
+      'onroad tests3': {
         deviceStage("onroad", "tici-needs-can", [], [
           // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
           //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
@@ -201,6 +205,8 @@ node {
           ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
           ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
         ])
+      },
+      'onroad tests4': {
         deviceStage("onroad", "tici-needs-can", [], [
           // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
           //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
@@ -209,6 +215,8 @@ node {
           ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
           ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
         ])
+      },
+      'onroad tests5': {
         deviceStage("onroad", "tici-needs-can", [], [
           // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
           //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
