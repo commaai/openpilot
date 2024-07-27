@@ -172,6 +172,8 @@ jobs:
     - name: Run unit tests
       timeout-minutes: 15
       run: |
+        # TODO: remove serially-run tests in CI. Issue tracker: https://github.com/pytest-dev/pytest/issues/3216
+        # Temporary workaround: https://github.com/pytest-dev/pytest/issues/3216#issuecomment-742143197
         ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
                         $PYTEST --timeout 60 -m 'not slow and not ci_serial' && \
                         $PYTEST -n0 --timeout 60 -m 'ci_serial' && \
