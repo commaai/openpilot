@@ -173,8 +173,8 @@ jobs:
       timeout-minutes: 15
       run: |
         ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
-                        $PYTEST --timeout 60 -m 'not slow and not serial' && \
-                        $PYTEST -n0 --timeout 60 -m 'serial' && \
+                        $PYTEST --timeout 60 -m 'not slow and not ci_serial' && \
+                        $PYTEST -n0 --timeout 60 -m 'ci_serial' && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         pytest -n0 ./selfdrive/ui/tests/test_translations.py"

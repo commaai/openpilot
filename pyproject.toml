@@ -143,7 +143,8 @@ python_files = "test_*.py"
 markers = [
   "slow: tests that take awhile to run and can be skipped with -m 'not slow'",
   "tici: tests that are only meant to run on the C3/C3X",
-  "serial: tests that are run serially to avoid concurrent issues with pytest-xdist",
+  # TODO: remove serially-run tests in CI. Issue tracker: https://github.com/pytest-dev/pytest/issues/3216
+  "ci_serial: tests that are run serially to avoid concurrent issues with pytest-xdist in CI ubuntu runners",
 ]
 testpaths = [
   "common",
