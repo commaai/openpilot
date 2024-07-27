@@ -74,7 +74,7 @@ def setup_data_readers(
         assert device_type != "neo", "Driver camera not supported on neo segments. Use dummy dcamera."
         frs['driverCameraState'] = FrameReader(r.dcamera_paths()[sidx])
   else:
-    lr = LogReader(f"{route}/{sidx}/r")
+    lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
     frs = {}
     if needs_road_cam:
       frs['roadCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
