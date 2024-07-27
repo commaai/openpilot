@@ -15,6 +15,10 @@ class CarControllerParams:
   LKAS_MAX_TORQUE = 1               # A value of 1 is easy to overpower
   STEER_THRESHOLD = 1.0
 
+  # When output steering Angle not within range -1311 and 1310,
+  #   CANPacker packs wrong angle output to be decoded by panda
+  MAX_STEER_ANGLE = 1310
+
   def __init__(self, CP):
     pass
 

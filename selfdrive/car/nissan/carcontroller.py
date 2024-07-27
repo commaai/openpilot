@@ -8,10 +8,6 @@ from openpilot.selfdrive.car.nissan.values import CAR, CarControllerParams
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 
-# When output steering Angle not within range -1311 and 1310,
-#   CANPacker packs wrong angle output to be decoded by panda
-MAX_STEER_ANGLE = 1310
-
 
 class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
@@ -54,7 +50,7 @@ class CarController(CarControllerBase):
       apply_angle = CS.out.steeringAngleDeg
       self.lkas_max_torque = 0
 
-    self.apply_angle_last = clip(apply_angle, -MAX_STEER_ANGLE, MAX_STEER_ANGLE)
+    self.apply_angle_last = clip(apply_angle, -CarControllerParams.MAX_STEER_ANGLE, CarControllerParams.MAX_STEER_ANGLE)
 
     if self.CP.carFingerprint in (CAR.NISSAN_ROGUE, CAR.NISSAN_XTRAIL, CAR.NISSAN_ALTIMA) and pcm_cancel_cmd:
       can_sends.append(nissancan.create_acc_cancel_cmd(self.packer, self.car_fingerprint, CS.cruise_throttle_msg))
