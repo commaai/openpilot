@@ -62,10 +62,10 @@ class TestUploader(UploaderTestCase):
   def gen_order(self, seg1: list[int], seg2: list[int], boot=True) -> list[str]:
     keys = []
     if boot:
-      keys += [f"boot/{self.seg_format.format(i)}.bz2" for i in seg1]
-      keys += [f"boot/{self.seg_format2.format(i)}.bz2" for i in seg2]
-    keys += [f"{self.seg_format.format(i)}/qlog.bz2" for i in seg1]
-    keys += [f"{self.seg_format2.format(i)}/qlog.bz2" for i in seg2]
+      keys += [f"boot/{self.seg_format.format(i)}.zst" for i in seg1]
+      keys += [f"boot/{self.seg_format2.format(i)}.zst" for i in seg2]
+    keys += [f"{self.seg_format.format(i)}/qlog.zst" for i in seg1]
+    keys += [f"{self.seg_format2.format(i)}/qlog.zst" for i in seg2]
     return keys
 
   def test_upload(self):
@@ -159,7 +159,7 @@ class TestUploader(UploaderTestCase):
     self.join_thread()
 
     for f_path in f_paths:
-      fn = f_path.with_suffix(f_path.suffix.replace(".bz2", ""))
+      fn = f_path.with_suffix(f_path.suffix.replace(".zst", ""))
       uploaded = UPLOAD_ATTR_NAME in os.listxattr(fn) and os.getxattr(fn, UPLOAD_ATTR_NAME) == UPLOAD_ATTR_VALUE
       assert not uploaded, "File upload when locked"
 
