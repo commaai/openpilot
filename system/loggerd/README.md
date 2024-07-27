@@ -8,7 +8,7 @@ Check out our [python library](https://github.com/commaai/openpilot/blob/master/
 
 For each segment, openpilot records the following log types:
 
-## rlog
+## rlog.bz2
 
 rlogs contain all the messages passed amongst openpilot's processes. See [cereal/services.py](https://github.com/commaai/cereal/blob/master/services.py) for a list of all the logged services. They're a bzip2 archive of the serialized capnproto messages.
 
@@ -19,7 +19,7 @@ Each camera stream is H.265 encoded and written to its respective file.
 * ecamera.hevc is the wide road camera
 * dcamera.hevc is the driver camera
 
-## qlog & qcamera
+## qlog.bz2 & qcamera.ts
 
 qlogs are a decimated subset of the rlogs. Check out [cereal/services.py](https://github.com/commaai/cereal/blob/master/services.py) for the decimation.
 
