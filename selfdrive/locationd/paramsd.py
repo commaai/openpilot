@@ -54,8 +54,8 @@ class ParamsLearner:
 
   def handle_log(self, t, which, msg):
     if which == 'livePose':
-      angular_velocity_device = np.array([msg.angularVelocity.x, msg.angularVelocity.y, msg.angularVelocity.z])
-      angular_velocity_device_std = np.array([msg.angularVelocity.xStd, msg.angularVelocity.yStd, msg.angularVelocity.zStd])
+      angular_velocity_device = np.array([msg.angularVelocityDevice.x, msg.angularVelocityDevice.y, msg.angularVelocityDevice.z])
+      angular_velocity_device_std = np.array([msg.angularVelocityDevice.xStd, msg.angularVelocityDevice.yStd, msg.angularVelocityDevice.zStd])
       angular_velocity_calibrated = np.matmul(self.calib_from_device, angular_velocity_device)
       angular_velocity_calibrated_std = rotate_std(self.calib_from_device, angular_velocity_device_std)
 
