@@ -54,7 +54,6 @@ class AzureContainer:
     return client, key
 
   def get_url(self, route_name: str, segment_num, log_type="rlog") -> str:
-    # TODO: this is too rigid
     ext = "hevc" if log_type.endswith('camera') else "bz2"
     return self.BASE_URL + f"{route_name.replace('|', '/')}/{segment_num}/{log_type}.{ext}"
 

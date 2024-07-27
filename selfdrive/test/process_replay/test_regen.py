@@ -15,7 +15,6 @@ TESTED_SEGMENTS = [
 
 
 def ci_setup_data_readers(route, sidx):
-  # TODO: use openpilotci source!
   lr = LogReader(get_url(route, sidx, "rlog"))
   frs = {
     'roadCameraState': FrameReader(get_url(route, sidx, "fcamera")),
