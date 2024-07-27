@@ -320,25 +320,25 @@ std::string decompressBZ2(const std::byte *in, size_t in_size, std::atomic<bool>
 }
 
 std::string decompressZST(const std::byte *in, size_t in_size, std::atomic<bool> *abort) {
-  ZSTD_DCtx* dctx = ZSTD_createDCtx();
+  ZSTD_DCtx *dctx = ZSTD_createDCtx();
   assert(dctx != nullptr);
 
   // Initialize input and output buffers
-  ZSTD_inBuffer input = { in, in_size, 0 };
+  ZSTD_inBuffer input = {in, in_size, 0};
   std::string decompressedData;
-  const size_t bufferSize = ZSTD_DStreamOutSize(); // recommended output buffer size
+  const size_t bufferSize = ZSTD_DStreamOutSize();  // recommended output buffer size
   std::string outputBuffer(bufferSize, '\0');
 
   while (input.pos < input.size && !(abort && *abort)) {
-      ZSTD_outBuffer output = { outputBuffer.data(), bufferSize, 0 };
+    ZSTD_outBuffer output = {outputBuffer.data(), bufferSize, 0};
 
-      size_t result = ZSTD_decompressStream(dctx, &output, &input);
-      if (ZSTD_isError(result)) {
-        rWarning("decompressZST error: content is corrupt");
-        break;
-      }
+    size_t result = ZSTD_decompressStream(dctx, &output, &input);
+    if (ZSTD_isError(result)) {
+      rWarning("decompressZST error: content is corrupt");
+      break;
+    }
 
-      decompressedData.append(outputBuffer.data(), output.pos);
+    decompressedData.append(outputBuffer.data(), output.pos);
   }
 
   ZSTD_freeDCtx(dctx);
