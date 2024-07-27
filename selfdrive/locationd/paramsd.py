@@ -9,6 +9,7 @@ from cereal import car, log
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, DT_MDL
 from openpilot.common.numpy_fast import clip
+from openpilot.common.transformations.orientation import rot_from_euler
 from openpilot.selfdrive.locationd.models.car_kf import CarKalman, ObservationKind, States
 from openpilot.selfdrive.locationd.models.constants import GENERATED_DIR
 from openpilot.selfdrive.locationd.helpers import rotate_std
@@ -98,7 +99,7 @@ class ParamsLearner:
 
     elif which == 'liveCalibration':
       self.calibrated  = msg.calStatus == log.LiveCalibrationData.Status.calibrated
-      self.device_from_calib = euler2rot(np.array(msg.rpyCalib))
+      self.device_from_calib = rot_from_euler(np.array(msg.rpyCalib))
       self.calib_from_device = self.device_from_calib.T
 
     elif which == 'carState':
