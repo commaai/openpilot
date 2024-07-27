@@ -270,7 +270,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
   non_essential_ecus={
     Ecu.eps: list(CAR.with_flags(SubaruFlags.GLOBAL_GEN2)),
     Ecu.engine: list(CAR),
-    Ecu.transmission: list(CAR),
   }
 )
 
