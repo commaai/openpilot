@@ -34,7 +34,6 @@ class TestTranslations:
     assert os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{self.file}.ts")), \
                     f"{self.name} has no XML translation file, run selfdrive/ui/update_translations.py"
 
-  @pytest.mark.serial
   def test_translations_updated(self):
     with tempfile.TemporaryDirectory() as tmpdir:
       shutil.copytree(TRANSLATIONS_DIR, tmpdir, dirs_exist_ok=True)
