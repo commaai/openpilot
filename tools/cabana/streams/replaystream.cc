@@ -83,11 +83,6 @@ bool ReplayStream::loadRoute(const QString &route, const QString &data_dir, uint
   return success;
 }
 
-void ReplayStream::start() {
-  emit streamStarted();
-  replay->start();
-}
-
 bool ReplayStream::eventFilter(const Event *event) {
   static double prev_update_ts = 0;
   if (event->which == cereal::Event::Which::CAN) {
@@ -115,13 +110,9 @@ void ReplayStream::pause(bool pause) {
 }
 
 
-AbstractOpenStreamWidget *ReplayStream::widget(AbstractStream **stream) {
-  return new OpenReplayWidget(stream);
-}
-
 // OpenReplayWidget
 
-OpenReplayWidget::OpenReplayWidget(AbstractStream **stream) : AbstractOpenStreamWidget(stream) {
+OpenReplayWidget::OpenReplayWidget(QWidget *parent) : AbstractOpenStreamWidget(parent) {
   QGridLayout *grid_layout = new QGridLayout(this);
   grid_layout->addWidget(new QLabel(tr("Route")), 0, 0);
   grid_layout->addWidget(route_edit = new QLineEdit(this), 0, 1);
@@ -154,7 +145,7 @@ OpenReplayWidget::OpenReplayWidget(AbstractStream **stream) : AbstractOpenStream
   });
 }
 
-bool OpenReplayWidget::open() {
+AbstractStream *OpenReplayWidget::open() {
   QString route = route_edit->text();
   QString data_dir;
   if (int idx = route.lastIndexOf('/'); idx != -1 && util::file_exists(route.toStdString())) {
@@ -173,8 +164,8 @@ bool OpenReplayWidget::open() {
     if (flags == REPLAY_FLAG_NONE && !cameras[0]->isChecked()) flags = REPLAY_FLAG_NO_VIPC;
 
     if (replay_stream->loadRoute(route, data_dir, flags)) {
-      *stream = replay_stream.release();
+      return replay_stream.release();
     }
   }
-  return *stream != nullptr;
+  return nullptr;
 }

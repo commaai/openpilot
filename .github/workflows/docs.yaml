@@ -29,7 +29,8 @@ jobs:
     - name: Build docs
       run: |
         # TODO: can we install just the "docs" dependency group without the normal deps?
-        pip install mkdocs mkdocs-terminal markdown-include
+        pip install mkdocs==1.4.3 mkdocs-terminal mkdocs-plugin-commonmark markdown-include
+
         cd docs
         mkdocs build
 
@@ -52,11 +53,11 @@ jobs:
         git rm -rf .
 
         # copy over docs
-        cp -r ../docs/site/ site/
+        cp -r ../docs/site/ docs/
 
         # GitHub pages config
-        touch site/.nojekyll
-        echo -n docs.comma.ai > site/CNAME
+        touch docs/.nojekyll
+        echo -n docs.comma.ai > docs/CNAME
 
         git add -f .
         git commit -m "build docs"
