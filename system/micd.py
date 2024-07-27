@@ -18,9 +18,14 @@ SAMPLE_BUFFER = 4096  # approx 100ms
 def get_a_weighting_filter():
   # Calculate the A-weighting filter
   # https://en.wikipedia.org/wiki/A-weighting
-  freqs = np.fft.fftfreq(FFT_SAMPLES, d=1 / SAMPLE_RATE)
+  freqs = np.fft.rfftfreq(FFT_SAMPLES, d=1 / SAMPLE_RATE)
   A = 12194 ** 2 * freqs ** 4 / ((freqs ** 2 + 20.6 ** 2) * (freqs ** 2 + 12194 ** 2) * np.sqrt((freqs ** 2 + 107.7 ** 2) * (freqs ** 2 + 737.9 ** 2)))
   return A / np.max(A)
+
+
+@cache
+def get_hanning_window(size):
+  return np.hanning(size)
 
 
 def calculate_spl(measurements):
@@ -35,10 +40,12 @@ def calculate_spl(measurements):
 
 def apply_a_weighting(measurements: np.ndarray) -> np.ndarray:
   # Generate a Hanning window of the same length as the audio measurements
-  measurements_windowed = measurements * np.hanning(len(measurements))
-
+  hanning_windowed_measurements = measurements * get_hanning_window(len(measurements))
   # Apply the A-weighting filter to the signal
-  return np.abs(np.fft.ifft(np.fft.fft(measurements_windowed) * get_a_weighting_filter()))
+  weighted_fft = np.fft.rfft(hanning_windowed_measurements) * get_a_weighting_filter()
+  weighted_measurements = np.fft.irfft(weighted_fft)
+
+  return np.abs(weighted_measurements)
 
 
 class Mic:
