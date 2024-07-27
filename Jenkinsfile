@@ -176,7 +176,7 @@ node {
     if (!env.BRANCH_NAME.matches(excludeRegex)) {
     parallel (
       // tici tests
-      'onroad tests1': {
+      'onroad tests': {
         deviceStage("onroad", "tici-needs-can", [], [
           // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
           //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
@@ -186,96 +186,62 @@ node {
           ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
         ])
       },
-      'onroad tests2': {
-        deviceStage("onroad", "tici-needs-can", [], [
-          // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
-          //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
-          ["build openpilot", "cd system/manager && ./build.py"],
-          ["check dirty", "release/check-dirty.sh"],
-          ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
-          ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
+      'HW + Unit Tests': {
+        deviceStage("tici-hardware", "tici-common", ["UNSAFE=1"], [
+          ["build", "cd system/manager && ./build.py"],
+          ["test pandad", "pytest selfdrive/pandad/tests/test_pandad.py"],
+          ["test power draw", "pytest -s system/hardware/tici/tests/test_power_draw.py"],
+          ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py"],
+          ["test pigeond", "pytest system/ubloxd/tests/test_pigeond.py"],
+          ["test manager", "pytest system/manager/test/test_manager.py"],
         ])
       },
-      'onroad tests3': {
-        deviceStage("onroad", "tici-needs-can", [], [
-          // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
-          //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
+      'loopback': {
+        deviceStage("loopback", "tici-loopback", ["UNSAFE=1"], [
           ["build openpilot", "cd system/manager && ./build.py"],
-          ["check dirty", "release/check-dirty.sh"],
-          ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
-          ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
+          ["test pandad loopback", "pytest selfdrive/pandad/tests/test_pandad_loopback.py"],
         ])
       },
-      'onroad tests4': {
-        deviceStage("onroad", "tici-needs-can", [], [
-          // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
-          //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
-          ["build openpilot", "cd system/manager && ./build.py"],
-          ["check dirty", "release/check-dirty.sh"],
-          ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
-          ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
+      'camerad': {
+        deviceStage("AR0231", "tici-ar0231", ["UNSAFE=1"], [
+          ["build", "cd system/manager && ./build.py"],
+          ["test camerad", "pytest system/camerad/test/test_camerad.py"],
+          ["test exposure", "pytest system/camerad/test/test_exposure.py"],
+        ])
+        deviceStage("OX03C10", "tici-ox03c10", ["UNSAFE=1"], [
+          ["build", "cd system/manager && ./build.py"],
+          ["test camerad", "pytest system/camerad/test/test_camerad.py"],
+          ["test exposure", "pytest system/camerad/test/test_exposure.py"],
         ])
       },
-      'onroad tests5': {
-        deviceStage("onroad", "tici-needs-can", [], [
-          // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
-          //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
-          ["build openpilot", "cd system/manager && ./build.py"],
-          ["check dirty", "release/check-dirty.sh"],
-          ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
-          ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
+      'sensord': {
+        deviceStage("LSM + MMC", "tici-lsmc", ["UNSAFE=1"], [
+          ["build", "cd system/manager && ./build.py"],
+          ["test sensord", "pytest system/sensord/tests/test_sensord.py"],
+        ])
+        deviceStage("BMX + LSM", "tici-bmx-lsm", ["UNSAFE=1"], [
+          ["build", "cd system/manager && ./build.py"],
+          ["test sensord", "pytest system/sensord/tests/test_sensord.py"],
         ])
       },
-      'onroad tests6': {
-        deviceStage("onroad", "tici-needs-can", [], [
-          // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
-          //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
-          ["build openpilot", "cd system/manager && ./build.py"],
-          ["check dirty", "release/check-dirty.sh"],
-          ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
-          ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
+      'replay': {
+        deviceStage("model-replay", "tici-replay", ["UNSAFE=1"], [
+          ["build", "cd system/manager && ./build.py"],
+          ["model replay", "selfdrive/test/process_replay/model_replay.py"],
         ])
       },
-      'onroad tests7': {
-        deviceStage("onroad", "tici-needs-can", [], [
-          // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
-          //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
+      'tizi': {
+        deviceStage("tizi", "tizi", ["UNSAFE=1"], [
           ["build openpilot", "cd system/manager && ./build.py"],
-          ["check dirty", "release/check-dirty.sh"],
-          ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
-          ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
+          ["test pandad loopback", "SINGLE_PANDA=1 pytest selfdrive/pandad/tests/test_pandad_loopback.py"],
+          ["test pandad spi", "pytest selfdrive/pandad/tests/test_pandad_spi.py"],
+          ["test pandad", "pytest selfdrive/pandad/tests/test_pandad.py"],
+          ["test amp", "pytest system/hardware/tici/tests/test_amplifier.py"],
+          ["test hw", "pytest system/hardware/tici/tests/test_hardware.py"],
+          ["test qcomgpsd", "pytest system/qcomgpsd/tests/test_qcomgpsd.py"],
         ])
       },
-      'onroad tests8': {
-        deviceStage("onroad", "tici-needs-can", [], [
-          // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
-          //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
-          ["build openpilot", "cd system/manager && ./build.py"],
-          ["check dirty", "release/check-dirty.sh"],
-          ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
-          ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
-        ])
-      },
-      'onroad tests9': {
-        deviceStage("onroad", "tici-needs-can", [], [
-          // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
-          //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
-          ["build openpilot", "cd system/manager && ./build.py"],
-          ["check dirty", "release/check-dirty.sh"],
-          ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
-          ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
-        ])
-      },
-      'onroad tests10': {
-        deviceStage("onroad", "tici-needs-can", [], [
-          // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
-          //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
-          ["build openpilot", "cd system/manager && ./build.py"],
-          ["check dirty", "release/check-dirty.sh"],
-          ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
-          ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
-        ])
-      },
+
     )
     }
   } catch (Exception e) {
