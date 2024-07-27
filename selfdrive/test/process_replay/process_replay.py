@@ -539,11 +539,11 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="paramsd",
-    pubs=["liveLocationKalman", "carState"],
+    pubs=["livePose", "liveCalibration", "carState"],
     subs=["liveParameters"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
-    should_recv_callback=FrequencyBasedRcvCallback("liveLocationKalman"),
+    should_recv_callback=FrequencyBasedRcvCallback("livePose"),
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
   ),
