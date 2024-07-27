@@ -12,9 +12,14 @@ Run this to clone openpilot and install all the dependencies:
 curl -fsSL openpilot.comma.ai | bash
 ```
 
-Then, compile openpilot:
+Navigate to openpilot folder & activate a Python virtual environment
 ```bash
 cd openpilot
+source .venv/bin/activate
+```
+
+Then, compile openpilot:
+```bash
 scons -j8
 ```
 
