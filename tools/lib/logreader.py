@@ -30,10 +30,8 @@ RawLogIterable = Iterable[bytes]
 def save_log(dest, log_msgs, compress=True):
   dat = b"".join(msg.as_builder().to_bytes() for msg in log_msgs)
 
-  if compress and dest.endswith(".bz2"):
+  if compress:
     dat = bz2.compress(dat)
-  elif compress and dest.endswith(".zst"):
-    dat = zstd.compress(dat, 10)
 
   with open(dest, "wb") as f:
     f.write(dat)
