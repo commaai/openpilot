@@ -1,3 +1,4 @@
+import pytest
 import numpy as np
 import os
 import re
@@ -136,6 +137,7 @@ class TestLoggerd:
       assert getattr(initData, initData_key) == v
       assert logged_params[param_key].decode() == v
 
+  @pytest.mark.serial
   @flaky(max_runs=3)
   def test_rotation(self):
     os.environ["LOGGERD_TEST"] = "1"
