@@ -12,8 +12,7 @@ from functools import partial
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.car.fingerprints import MIGRATION
-from openpilot.tools.lib.helpers import save_log
-from openpilot.tools.lib.logreader import LogReader, ReadMode
+from openpilot.tools.lib.logreader import LogReader, ReadMode, save_log
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))
 
