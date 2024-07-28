@@ -1,12 +1,13 @@
 site_name: openpilot docs
-docs_dir: docs
 repo_url: https://github.com/commaai/openpilot/
 site_url: https://docs.comma.ai
 
 strict: true
+docs_dir: docs
+site_dir: docs_site/
 
-plugins:
-  - commonmark
+#plugins:
+#  - commonmark
 
 theme:
   name: terminal
