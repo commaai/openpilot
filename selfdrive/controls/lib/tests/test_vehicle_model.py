@@ -2,7 +2,6 @@ import pytest
 import math
 
 import numpy as np
-from control import StateSpace
 
 from openpilot.selfdrive.car.honda.interface import CarInterface
 from openpilot.selfdrive.car.honda.values import CAR
@@ -47,8 +46,17 @@ class TestVehicleModel:
         A, B = create_dyn_state_matrices(u, self.VM)
 
         # Convert to discrete time system
-        ss = StateSpace(A, B, np.eye(2), np.zeros((2, 2)))
-        ss = ss.sample(0.01)
+        A_d = np.eye(2)
+        A_power = np.eye(2)
+        factorial = np.eye(1)
+
+        # compute matrix exp with 100 terms of taylor series expansion
+        for i in range(1, 100):
+            A_power = np.dot(A_power, 0.01 * A)
+            factorial *= i
+            A_d += A_power / factorial
+
+        B_d = np.linalg.inv(A) @ (A_d - np.eye(2)) @ B
 
         for sa in np.linspace(math.radians(-20), math.radians(20), num=11):
           inp = np.array([[sa], [roll]])
@@ -56,7 +64,7 @@ class TestVehicleModel:
           # Simulate for 1 second
           x1 = np.zeros((2, 1))
           for _ in range(100):
-            x1 = ss.A @ x1 + ss.B @ inp
+            x1 = A_d @ x1 + B_d @ inp
 
           # Compute steady state solution directly
           x2 = dyn_ss_sol(sa, u, roll, self.VM)
