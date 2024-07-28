@@ -69,7 +69,6 @@ docs = [
   "Jinja2",
   "natsort",
   "mkdocs",
-  "mkdocs-terminal",
 ]
 
 testing = [
