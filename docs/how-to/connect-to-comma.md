@@ -51,14 +51,14 @@ Host ssh.comma.ai
   IdentityFile ~/.ssh/my_github_key
 ```
 
-## One-off connection
+### One-off connection
 
 ```
 ssh -i ~/.ssh/my_github_key -o ProxyCommand="ssh -i ~/.ssh/my_github_key -W %h:%p -p %p %h@ssh.comma.ai" comma@ffffffffffffffff
 ```
 (Replace `ffffffffffffffff` with your dongle_id)
 
-## ssh.comma.ai host key fingerprint
+### ssh.comma.ai host key fingerprint
 
 ```
 Host key fingerprint is SHA256:X22GOmfjGb9J04IA2+egtdaJ7vW9Fbtmpz9/x8/W1X4
