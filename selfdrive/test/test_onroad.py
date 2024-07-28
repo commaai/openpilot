@@ -8,7 +8,7 @@ import shutil
 import subprocess
 import time
 import numpy as np
-import zstd
+import zstandard as zstd
 from collections import Counter, defaultdict
 from functools import cached_property
 from pathlib import Path

@@ -10,7 +10,7 @@ import sys
 import tqdm
 import urllib.parse
 import warnings
-import zstd
+import zstandard as zstd
 
 from collections.abc import Callable, Iterable, Iterator
 from urllib.parse import parse_qs, urlparse
