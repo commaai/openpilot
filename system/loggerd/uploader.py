@@ -8,7 +8,7 @@ import threading
 import time
 import traceback
 import datetime
-import zstd
+import zstandard as zstd
 from typing import BinaryIO
 from collections.abc import Iterator
 

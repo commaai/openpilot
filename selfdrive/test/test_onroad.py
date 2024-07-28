@@ -8,7 +8,7 @@ import shutil
 import subprocess
 import time
 import numpy as np
-import zstd
+import zstandard as zstd
 from collections import Counter, defaultdict
 from functools import cached_property
 from pathlib import Path
@@ -207,7 +207,7 @@ class TestOnroad:
       if f.name == "qcamera.ts":
         assert 2.15 < sz < 2.35
       elif f.name == "qlog":
-        assert 0.4 < sz < 0.5
+        assert 0.45 < sz < 0.55
       elif f.name == "rlog":
         assert 5 < sz < 50
       elif f.name.endswith('.hevc'):
