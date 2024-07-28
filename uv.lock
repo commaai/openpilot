@@ -1136,22 +1136,6 @@ wheels = [
 ]
 
 [[distribution]]
-name = "mkdocs-terminal"
-version = "4.4.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "jinja2" },
-    { name = "markdown" },
-    { name = "mkdocs" },
-    { name = "pygments" },
-    { name = "pymdown-extensions" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/b3/a4/afa8826c3d6971f3e93cb3669936b25579314fef2a4d648fe72729c9675f/mkdocs_terminal-4.4.0.tar.gz", hash = "sha256:d72b87b3d0edf470695811cb56c440a43b0387212590a5dfb2f26861c6e518d7", size = 619482 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/93/65/7973dfe5ae03dd83a5a4e203b542ebacb16fd0c796e3f93f3cb98c3ffcc2/mkdocs_terminal-4.4.0-py3-none-any.whl", hash = "sha256:b2c94dc651c840e9762a1040d39371a31cc7482f7768e619e317419ebae4e40e", size = 641788 },
-]
-
-[[distribution]]
 name = "mouseinfo"
 version = "0.1.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1461,7 +1445,6 @@ dev = [
 docs = [
     { name = "jinja2" },
     { name = "mkdocs" },
-    { name = "mkdocs-terminal" },
     { name = "natsort" },
 ]
 testing = [
@@ -1897,19 +1880,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/16/78/9ea0c88490ad4fe9683ddf3bbee702c7a2331e83a333bb3aa52e8d7d909b/pylibsrtp-0.10.0-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:1b2ef1c32d1145239dd0fe7b7fbe083334d345df6b4597fc66faf914a32682d9", size = 2134898 },
     { url = "https://files.pythonhosted.org/packages/00/f6/c76fa5401f9d95c14db70de0cf4fad922ad61686843bc3e7411178a64bc8/pylibsrtp-0.10.0-cp38-abi3-win32.whl", hash = "sha256:8c6fe2576b2ab13942b47db6c2ffe71f5eb1edc1dc3bdd7283169fecd5249e74", size = 1130881 },
     { url = "https://files.pythonhosted.org/packages/4c/31/85a58625edc0b6967fe0904c9d89d019bcece3f3e3bf775b9151a8cf9d0d/pylibsrtp-0.10.0-cp38-abi3-win_amd64.whl", hash = "sha256:cd965d4b0e9a77b362526cab119f4d9ce39b83f1f20f46c6af8e694b86fa19a7", size = 1448840 },
-]
-
-[[distribution]]
-name = "pymdown-extensions"
-version = "10.4"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "markdown" },
-    { name = "pyyaml" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/85/71/5f48080bde77b07ca1eba6d7cb5c5598ac6c8f2a399846159b3c8b45e171/pymdown_extensions-10.4.tar.gz", hash = "sha256:bc46f11749ecd4d6b71cf62396104b4a200bad3498cb0f5dad1b8502fe461a35", size = 785151 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/98/2d/2929de81618c7213176899dd6372d6ec9c8f24337841dd74634fb69864ae/pymdown_extensions-10.4-py3-none-any.whl", hash = "sha256:cfc28d6a09d19448bcbf8eee3ce098c7d17ff99f7bd3069db4819af181212037", size = 240838 },
 ]
 
 [[distribution]]
