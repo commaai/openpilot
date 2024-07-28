@@ -1115,15 +1115,6 @@ dependencies = [
 ]
 
 [[distribution]]
-name = "mistletoe"
-version = "1.4.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/11/96/ea46a376a7c4cd56955ecdfff0ea68de43996a4e6d1aee4599729453bd11/mistletoe-1.4.0.tar.gz", hash = "sha256:1630f906e5e4bbe66fdeb4d29d277e2ea515d642bb18a9b49b136361a9818c9d", size = 107203 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/2a/0f/b5e545f0c7962be90366af3418989b12cf441d9da1e5d89d88f2f3e5cf8f/mistletoe-1.4.0-py3-none-any.whl", hash = "sha256:44a477803861de1237ba22e375c6b617690a31d2902b47279d1f8f7ed498a794", size = 51304 },
-]
-
-[[distribution]]
 name = "mkdocs"
 version = "1.4.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1142,20 +1133,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/b0/ef/49b4427e5eec761b77a3c3c421d3fd63010e2798b7401dc0fa2b875ef6b5/mkdocs-1.4.3.tar.gz", hash = "sha256:5955093bbd4dd2e9403c5afaf57324ad8b04f16886512a3ee6ef828956481c57", size = 3624951 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/42/7a/5ed794942ace9d00bb77a8036c64c999cda6ebaab57e9b8a6ec1aa5fc900/mkdocs-1.4.3-py3-none-any.whl", hash = "sha256:6ee46d309bda331aac915cd24aab882c179a933bd9e77b80ce7d2eaaa3f689dd", size = 3654464 },
-]
-
-[[distribution]]
-name = "mkdocs-plugin-commonmark"
-version = "0.0.4"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "markdown" },
-    { name = "mistletoe" },
-    { name = "mkdocs" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/fa/a1/4aaa744deec61d75dbe3c67c18f6e4c1fa7699bc2661b6eff5f891e83023/mkdocs-plugin-commonmark-0.0.4.tar.gz", hash = "sha256:9034507af26646e95188a130782dd07d65c86507fddd3b47ea340c02683e85e7", size = 10805 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/f9/4a/4333ef1eb57ff130c7715ba0847dbdae471d153d94507004c92c591cb3c5/mkdocs_plugin_commonmark-0.0.4-py3-none-any.whl", hash = "sha256:70a33394d86a04ec97877ca1b2dff6181de3ec01ef4c7add178fa45b327da535", size = 12532 },
 ]
 
 [[distribution]]
@@ -1484,7 +1461,6 @@ dev = [
 docs = [
     { name = "jinja2" },
     { name = "mkdocs" },
-    { name = "mkdocs-plugin-commonmark" },
     { name = "mkdocs-terminal" },
     { name = "natsort" },
 ]
