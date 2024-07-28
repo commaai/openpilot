@@ -68,9 +68,8 @@ dependencies = [
 docs = [
   "Jinja2",
   "natsort",
-  "mkdocs==1.4.3",  # needed for mkdocs-plugin-commonmark
+  "mkdocs",
   "mkdocs-terminal",
-  "mkdocs-plugin-commonmark",
 ]
 
 testing = [
