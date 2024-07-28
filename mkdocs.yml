@@ -8,6 +8,7 @@ site_dir: docs_site/
 
 theme:
   name: readthedocs
+  navigation_depth: 3
 
 nav:
   - Getting Started:
