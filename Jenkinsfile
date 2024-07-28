@@ -186,6 +186,96 @@ node {
           ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
         ])
       },
+      'onroad tests1': {
+        deviceStage("onroad", "tici-needs-can", [], [
+          // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
+          //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
+          ["build openpilot", "cd system/manager && ./build.py"],
+          ["check dirty", "release/check-dirty.sh"],
+          ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
+          ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
+        ])
+      },
+      'onroad tests2': {
+        deviceStage("onroad", "tici-needs-can", [], [
+          // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
+          //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
+          ["build openpilot", "cd system/manager && ./build.py"],
+          ["check dirty", "release/check-dirty.sh"],
+          ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
+          ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
+        ])
+      },
+      'onroad tests3': {
+        deviceStage("onroad", "tici-needs-can", [], [
+          // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
+          //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
+          ["build openpilot", "cd system/manager && ./build.py"],
+          ["check dirty", "release/check-dirty.sh"],
+          ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
+          ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
+        ])
+      },
+      'onroad tests4': {
+        deviceStage("onroad", "tici-needs-can", [], [
+          // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
+          //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
+          ["build openpilot", "cd system/manager && ./build.py"],
+          ["check dirty", "release/check-dirty.sh"],
+          ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
+          ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
+        ])
+      },
+      'onroad tests5': {
+        deviceStage("onroad", "tici-needs-can", [], [
+          // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
+          //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
+          ["build openpilot", "cd system/manager && ./build.py"],
+          ["check dirty", "release/check-dirty.sh"],
+          ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
+          ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
+        ])
+      },
+      'onroad tests6': {
+        deviceStage("onroad", "tici-needs-can", [], [
+          // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
+          //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
+          ["build openpilot", "cd system/manager && ./build.py"],
+          ["check dirty", "release/check-dirty.sh"],
+          ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
+          ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
+        ])
+      },
+      'onroad tests7': {
+        deviceStage("onroad", "tici-needs-can", [], [
+          // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
+          //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
+          ["build openpilot", "cd system/manager && ./build.py"],
+          ["check dirty", "release/check-dirty.sh"],
+          ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
+          ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
+        ])
+      },
+      'onroad tests8': {
+        deviceStage("onroad", "tici-needs-can", [], [
+          // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
+          //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
+          ["build openpilot", "cd system/manager && ./build.py"],
+          ["check dirty", "release/check-dirty.sh"],
+          ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
+          ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
+        ])
+      },
+      'onroad tests9': {
+        deviceStage("onroad", "tici-needs-can", [], [
+          // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
+          //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
+          ["build openpilot", "cd system/manager && ./build.py"],
+          ["check dirty", "release/check-dirty.sh"],
+          ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
+          ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
+        ])
+      },
       'HW + Unit Tests': {
         deviceStage("tici-hardware", "tici-common", ["UNSAFE=1"], [
           ["build", "cd system/manager && ./build.py"],
