@@ -14,7 +14,7 @@ import sys
 import tempfile
 import threading
 import time
-import zstd
+import zstandard as zstd
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from functools import partial

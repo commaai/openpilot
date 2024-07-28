@@ -61,7 +61,7 @@ dependencies = [
   "pycryptodome", # used in updated/casync, panda, body, and a test
 
   # logreader
-  "zstd",
+  "zstandard",
 ]
 
 [project.optional-dependencies]
