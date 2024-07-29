@@ -140,8 +140,9 @@ int CameraState::sensors_init() {
   probe->expected_data = ci->probe_expected_data;
   probe->data_mask = 0;
 
-  //buf_desc[1].size = buf_desc[1].length = 148;
-  buf_desc[1].size = buf_desc[1].length = 196;
+  const uint32_t buf_size = sizeof(cam_cmd_power) * 7 + sizeof(cam_cmd_unconditional_wait) * 6 + sizeof(cam_power_settings) * 5;
+  assert(buf_size == 196);
+  buf_desc[1].size = buf_desc[1].length = buf_size;
   buf_desc[1].type = CAM_CMD_BUF_I2C;
   auto power_settings = mm.alloc<struct cam_cmd_power>(buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle);
 
