@@ -4,11 +4,17 @@
 #include <utility>
 #include "tools/replay/filereader.h"
 #include "tools/replay/util.h"
+#include "common/util.h"
 
 bool LogReader::load(const std::string &url, std::atomic<bool> *abort, bool local_cache, int chunk_size, int retries) {
   std::string data = FileReader(local_cache, chunk_size, retries).read(url, abort);
-  if (!data.empty() && url.find(".bz2") != std::string::npos)
-    data = decompressBZ2(data, abort);
+  if (!data.empty()) {
+    if (url.find(".bz2") != std::string::npos || util::starts_with(data, "BZh9")) {
+      data = decompressBZ2(data, abort);
+    } else if (url.find(".zst") != std::string::npos || util::starts_with(data, "\x28\xB5\x2F\xFD")) {
+      data = decompressZST(data, abort);
+    }
+  }
 
   bool success = !data.empty() && load(data.data(), data.size(), abort);
   if (filters_.empty())
