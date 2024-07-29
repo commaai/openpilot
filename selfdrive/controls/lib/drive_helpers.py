@@ -141,10 +141,6 @@ class VCruiseHelper:
     self.v_cruise_cluster_kph = self.v_cruise_kph
 
 
-def rate_limit(new_value, last_value, dw_step, up_step):
-  return clip(new_value, last_value + dw_step, last_value + up_step)
-
-
 def clip_curvature(v_ego, prev_curvature, new_curvature):
   v_ego = max(MIN_SPEED, v_ego)
   max_curvature_rate = MAX_LATERAL_JERK / (v_ego**2) # inexact calculation, check https://github.com/commaai/openpilot/pull/24755
