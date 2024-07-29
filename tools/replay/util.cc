@@ -319,6 +319,10 @@ std::string decompressBZ2(const std::byte *in, size_t in_size, std::atomic<bool>
   return {};
 }
 
+std::string decompressZST(const std::string &in, std::atomic<bool> *abort) {
+  return decompressZST((std::byte *)in.data(), in.size(), abort);
+}
+
 std::string decompressZST(const std::byte *in, size_t in_size, std::atomic<bool> *abort) {
   ZSTD_DCtx *dctx = ZSTD_createDCtx();
   assert(dctx != nullptr);
