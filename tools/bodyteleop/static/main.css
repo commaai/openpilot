@@ -183,3 +183,12 @@ video {
   display: flex;
   padding: 0px 10px 0px 10px;
 }
+.tooltip {
+  position: absolute;
+  background-color: #333;
+  color: #fff;
+  padding: 5px 10px;
+  border-radius: 5px;
+  z-index: 1000;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+}
