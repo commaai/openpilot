@@ -31,6 +31,9 @@ class GPUMalloc {
   private:
     uint64_t base;
     int remaining;
+    uint64_t mmapsize;
+    unsigned int alloc_id;
+    int gpu_fd;
 };
 
 class CLQueuedKernel {
