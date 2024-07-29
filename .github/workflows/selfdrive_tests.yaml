@@ -117,6 +117,8 @@ jobs:
         restore-keys: |
           scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}-macos
+      # make new cache
+    - run: rm -rf /tmp/scons_cache/*
     - name: Building openpilot
       run: . .venv/bin/activate && scons -j$(nproc)
 

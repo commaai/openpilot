@@ -71,6 +71,8 @@ jobs:
         restore-keys: |
           scons-${{ runner.arch }}-ubuntu2004-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}-ubuntu2004
+      # make new cache
+    - run: rm -rf /tmp/scons_cache/*
     - name: Building openpilot
       run: uv run scons -u -j$(nproc)
 
