@@ -94,7 +94,6 @@ dev = [
   "av",
   "azure-identity",
   "azure-storage-blob",
-  "control",
   "dictdiffer",
   "flaky",
   "inputs",

@@ -370,20 +370,6 @@ wheels = [
 ]
 
 [[distribution]]
-name = "control"
-version = "0.10.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "matplotlib" },
-    { name = "numpy" },
-    { name = "scipy" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/ee/64/02fedcf78b070571f5e446efb55b7ec82b68187323402b99b6f98f769530/control-0.10.0.tar.gz", hash = "sha256:2c18b767537f45c7fd07b2e4afe8fbe5964019499b5f52f888edb5d8560bab53", size = 8956376 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/4d/de/327ab576657cb6bd5678e5d4fa266f3c4c7094e99df2bb7760e89176772d/control-0.10.0-py3-none-any.whl", hash = "sha256:ed1e0eb73f1e2945fc9af9d7b9121ef328fe980e7903b2a14b149d4f1855a808", size = 513858 },
-]
-
-[[distribution]]
 name = "coverage"
 version = "7.6.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1439,7 +1425,6 @@ dev = [
     { name = "av" },
     { name = "azure-identity" },
     { name = "azure-storage-blob" },
-    { name = "control" },
     { name = "dictdiffer" },
     { name = "flaky" },
     { name = "hexdump" },
