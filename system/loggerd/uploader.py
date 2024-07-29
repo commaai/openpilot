@@ -9,7 +9,6 @@ import time
 import traceback
 import datetime
 import zstandard as zstd
-from typing import BinaryIO
 from collections.abc import Iterator
 
 from cereal import log
@@ -152,14 +151,12 @@ class Uploader:
       return FakeResponse()
 
     with open(fn, "rb") as f:
-      data: BinaryIO
+      content = f.read()
       if key.endswith('.zst') and not fn.endswith('.zst'):
-        compressed = zstd.compress(f.read(), LOG_COMPRESSION_LEVEL)
-        data = io.BytesIO(compressed)
-      else:
-        data = f
+        content = zstd.compress(content, LOG_COMPRESSION_LEVEL)
 
-      return requests.put(url, data=data, headers=headers, timeout=10)
+      with io.BytesIO(content) as data:
+        return requests.put(url, data=data, headers=headers, timeout=10)
 
   def upload(self, name: str, key: str, fn: str, network_type: int, metered: bool) -> bool:
     try:
