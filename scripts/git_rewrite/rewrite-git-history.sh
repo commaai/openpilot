@@ -1,4 +1,5 @@
-#!/usr/bin/env bash -e
+#!/usr/bin/env bash
+set -e
 
 SRC=/tmp/openpilot/
 SRC_CLONE=/tmp/openpilot-clone/
