@@ -2,7 +2,8 @@ import pytest
 import math
 
 import numpy as np
-from control import StateSpace
+# from control import StateSpace
+from custom_statespace import StateSpace # Adjusted the import path
 
 from openpilot.selfdrive.car.honda.interface import CarInterface
 from openpilot.selfdrive.car.honda.values import CAR

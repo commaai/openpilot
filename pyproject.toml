@@ -35,7 +35,7 @@ dependencies = [
 
   # panda
   "libusb1",
-  "spidev; platform_system == 'Linux'",
+  "spidev; sys_platform == 'linux'",
 
   # modeld
   "onnx >= 1.14.0",
@@ -242,11 +242,4 @@ lint.flake8-implicit-str-concat.allow-multiline = false
 "system".msg = "Use openpilot.system"
 "third_party".msg = "Use openpilot.third_party"
 "tools".msg = "Use openpilot.tools"
-"pytest.main".msg = "pytest.main requires special handling that is easy to mess up!"
-"unittest".msg = "Use pytest"
-
-[tool.coverage.run]
-concurrency = ["multiprocessing", "thread"]
-
-[tool.ruff.format]
-quote-style = "preserve"
+"pytest.main".msg = "pytest.main requires special handling that is hard to enforce in all situations. Avoid using it."
