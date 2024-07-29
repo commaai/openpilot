@@ -1,0 +1,37 @@
+{
+  "terms": [
+    {
+      "term": "big model",
+      "definition": "A new paradigm in model development that takes a bigger input frame. Full frame is 1164x874, little model is a 512x256 crop, big model is a 1024x512 crop, 4x bigger than little. Make box bigger, drive better. Useful for signs and lights."
+    },
+    {
+      "term": "Driving Model",
+      "abbreviation": "model",
+      "definition": "The resulting neural network after Comma trains on driving data on their supercomputer. This file lives on the device, and processes inputs to give outputs relevant to driving. Usually takes the form of an ONNX file, or a THNEED file after compilation on device. This file does not change or get trained on device, only processes inputs and outputs. See the list of driving models for names and details of models over time."
+    },
+    {
+      "term": "End to end",
+      "abbreviation": "e2e",
+      "definition": "End to end means the model reacts like a human would. It assesses the whole picture and acts accordingly. Unlike other approaches where things must be labeled by hand, end to end learns all the nuances of driving. A model is basically trained on what human drivers would do in a certain situation and attempts to reproduce that behavior."
+    },
+    {
+      "term": "longitudinal",
+      "abbreviation": "long",
+      "definition": "Refers to gas and brake control."
+    },
+    {
+      "term": "lateral",
+      "abbreviation": "lat",
+      "definition": "Refers to steering control."
+    },
+    {
+      "term": "Model predictive control",
+      "abbreviation": "mpc",
+      "definition": "An advanced method of process control that is used to control a process while satisfying a set of constraints. Used for longitudinal and lateral control."
+    },
+    {
+      "term": "lead",
+      "definition": "Selected radar point from your car's radar by the driving model of openpilot using the camera. Used for longitudinal MPC. Usual attributes: distance, speed, and acceleration."
+    }
+  ]
+}
