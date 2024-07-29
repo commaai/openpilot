@@ -141,12 +141,6 @@ class VCruiseHelper:
     self.v_cruise_cluster_kph = self.v_cruise_kph
 
 
-def apply_center_deadzone(error, deadzone):
-  if (error > - deadzone) and (error < deadzone):
-    error = 0.
-  return error
-
-
 def rate_limit(new_value, last_value, dw_step, up_step):
   return clip(new_value, last_value + dw_step, last_value + up_step)
 
@@ -161,15 +155,15 @@ def clip_curvature(v_ego, prev_curvature, new_curvature):
   return safe_desired_curvature
 
 
-def get_friction(lateral_accel_error: float, lateral_accel_deadzone: float, friction_threshold: float,
-                 torque_params: car.CarParams.LateralTorqueTuning, friction_compensation: bool) -> float:
-  friction_interp = interp(
-    apply_center_deadzone(lateral_accel_error, lateral_accel_deadzone),
-    [-friction_threshold, friction_threshold],
-    [-torque_params.friction, torque_params.friction]
-  )
-  friction = float(friction_interp) if friction_compensation else 0.0
-  return friction
+# def get_friction(lateral_accel_error: float, lateral_accel_deadzone: float, friction_threshold: float,
+#                  torque_params: car.CarParams.LateralTorqueTuning, friction_compensation: bool) -> float:
+#   friction_interp = interp(
+#     apply_center_deadzone(lateral_accel_error, lateral_accel_deadzone),
+#     [-friction_threshold, friction_threshold],
+#     [-torque_params.friction, torque_params.friction]
+#   )
+#   friction = float(friction_interp) if friction_compensation else 0.0
+#   return friction
 
 
 def get_speed_error(modelV2: log.ModelDataV2, v_ego: float) -> float:
