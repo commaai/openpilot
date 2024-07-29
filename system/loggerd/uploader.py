@@ -151,12 +151,12 @@ class Uploader:
       return FakeResponse()
 
     with open(fn, "rb") as f:
+      content = f.read()
       if key.endswith('.zst') and not fn.endswith('.zst'):
-        compressed = zstd.compress(f.read(), LOG_COMPRESSION_LEVEL)
-        with io.BytesIO(compressed) as data:
-          return requests.put(url, data=data, headers=headers, timeout=10)
-      else:
-        return requests.put(url, data=f, headers=headers, timeout=10)
+        content = zstd.compress(content, LOG_COMPRESSION_LEVEL)
+
+      with io.BytesIO(content) as data:
+        return requests.put(url, data=data, headers=headers, timeout=10)
 
   def upload(self, name: str, key: str, fn: str, network_type: int, metered: bool) -> bool:
     try:
