@@ -819,7 +819,7 @@ def check_openpilot_enabled(msgs: LogIterable) -> bool:
 
 
 def check_most_messages_valid(msgs: LogIterable, threshold: float = 0.9) -> bool:
-  relevant_services = set(sock for cfg in CONFIGS for sock in cfg.subs)
+  relevant_services = {sock for cfg in CONFIGS for sock in cfg.subs}
   msgs_counts = Counter(msg.which() for msg in msgs)
   msgs_valid_counts = Counter(msg.which() for msg in msgs if msg.valid)
 
