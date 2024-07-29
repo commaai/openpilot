@@ -111,7 +111,8 @@ def test_process(cfg, lr, segment, ref_log_path, new_log_path, ignore_fields=Non
   if not check_most_messages_valid(log_msgs):
     return f"Route did not have enough valid messages: {new_log_path}", log_msgs
 
-  if cfg.proc_name != 'ubloxd' or segment != 'regen3BB55FA5E20|2024-05-21--06-59-03--0':
+  # skip this check if the segment is using qcom gps
+  if cfg.proc_name != 'ubloxd' or any(m.which() in cfg.pubs for m in lr):
     seen_msgs = {m.which() for m in log_msgs}
     expected_msgs = set(cfg.subs)
     if seen_msgs != expected_msgs:
