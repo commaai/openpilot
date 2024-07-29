@@ -2,8 +2,8 @@ import pytest
 import math
 
 import numpy as np
-from control import StateSpace
-
+#from control import StateSpace
+from custom_state_space import StateSpace
 from openpilot.selfdrive.car.honda.interface import CarInterface
 from openpilot.selfdrive.car.honda.values import CAR
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel, dyn_ss_sol, create_dyn_state_matrices
@@ -56,7 +56,7 @@ class TestVehicleModel:
           # Simulate for 1 second
           x1 = np.zeros((2, 1))
           for _ in range(100):
-            x1 = ss.A @ x1 + ss.B @ inp
+            x1 = ss.update(x1, inp)
 
           # Compute steady state solution directly
           x2 = dyn_ss_sol(sa, u, roll, self.VM)
