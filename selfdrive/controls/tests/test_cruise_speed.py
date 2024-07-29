@@ -4,7 +4,7 @@ import numpy as np
 
 from parameterized import parameterized_class
 from cereal import log
-from openpilot.selfdrive.controls.lib.drive_helpers import VCruiseHelper, V_CRUISE_MIN, V_CRUISE_MAX, V_CRUISE_INITIAL
+from openpilot.selfdrive.controls.lib.drive_helpers import VCruiseHelper, V_CRUISE_MIN, V_CRUISE_MAX, V_CRUISE_INITIAL, CRUISE_LONG_PRESS
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
@@ -12,6 +12,10 @@ from openpilot.selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
 ButtonEvent = car.CarState.ButtonEvent
 ButtonType = car.CarState.ButtonEvent.Type
 
+MPH_INCR_BY_1_VALUES = range(round(V_CRUISE_MIN * CV.KPH_TO_MPH), round(V_CRUISE_MAX * CV.KPH_TO_MPH)+1)
+MPH_INCR_BY_5_VALUES = MPH_INCR_BY_1_VALUES[next(i for i, v in enumerate(MPH_INCR_BY_1_VALUES) if v % 5 == 0)::5]
+KPH_INCR_BY_1_VALUES = range(V_CRUISE_MIN, V_CRUISE_MAX+1)
+KPH_INCR_BY_5_VALUES = KPH_INCR_BY_1_VALUES[next(i for i, v in enumerate(KPH_INCR_BY_1_VALUES) if v % 5 == 0)::5]
 
 def run_cruise_simulation(cruise, e2e, personality, t_end=20.):
   man = Maneuver(
@@ -68,13 +72,24 @@ class TestVCruiseHelper:
     CS.buttonEvents=[ButtonEvent(type=button, pressed=False)]
     self.v_cruise_helper.update_v_cruise(CS, enabled=enabled, is_metric=is_metric)
 
-  def simulate_cruise_speed_range(self, cruise_button, expected_values, start_value, is_metric):
+  def hold_button(self, button, enabled=True, is_metric=True):
+    CS = car.CarState(cruiseState={"available": True}, buttonEvents=[ButtonEvent(type=button, pressed=True)])
+    self.v_cruise_helper.update_v_cruise(CS, enabled=enabled, is_metric=is_metric)
+    CS = car.CarState(cruiseState={"available": True})
+    for _ in range(CRUISE_LONG_PRESS):
+      self.v_cruise_helper.update_v_cruise(CS, enabled=enabled, is_metric=is_metric)
+
+  def simulate_cruise_speed_range(self, cruise_button, expected_values, start_value, is_metric, hold_button):
     self.enable(0, False)
     self.v_cruise_helper.v_cruise_kph = start_value
 
     # each button press should step through expected_values
     for expected_value in expected_values:
-      self.press_button(cruise_button, is_metric=is_metric)
+      if hold_button:
+        self.hold_button(cruise_button, is_metric=is_metric)
+      else:
+        self.press_button(cruise_button, is_metric=is_metric)
+
       if is_metric:
         assert self.v_cruise_helper.v_cruise_kph == expected_value
       else:
@@ -82,10 +97,14 @@ class TestVCruiseHelper:
 
     # verify additional button presses do nothing
     for _ in range(3):
-      self.press_button(cruise_button, is_metric=is_metric)
+      if hold_button:
+        self.hold_button(cruise_button, is_metric=is_metric)
+      else:
+        self.press_button(cruise_button, is_metric=is_metric)
+
       if is_metric:
         assert self.v_cruise_helper.v_cruise_kph == expected_values[-1]
-      else:        
+      else:
         assert abs(self.v_cruise_helper.v_cruise_kph * CV.KPH_TO_MPH - expected_values[-1]) < 0.1
 
   def test_adjust_speed(self):
@@ -179,44 +198,56 @@ class TestVCruiseHelper:
 
   def test_increment_by_1_mph(self):
     """
-    Asserts that cruise speed increments by 1 mph.
+    Asserts that cruise speed increments by 1 mph when pressing ACCEL button.
     """
 
-    expected_mph_values = range(round(V_CRUISE_MIN * CV.KPH_TO_MPH)+1, round(V_CRUISE_MAX * CV.KPH_TO_MPH)+1)
-    self.simulate_cruise_speed_range(ButtonType.accelCruise, list(expected_mph_values), V_CRUISE_MIN, False)
+    self.simulate_cruise_speed_range(ButtonType.accelCruise, list(MPH_INCR_BY_1_VALUES[1:]), V_CRUISE_MIN, False, False)
 
   def test_decrement_by_1_mph(self):
     """
-    Asserts that cruise speed decrements by 1 mph.
+    Asserts that cruise speed decrements by 1 mph when pressing DECEL button.
     """
 
-    expected_mph_values = reversed(range(round(V_CRUISE_MIN * CV.KPH_TO_MPH), round(V_CRUISE_MAX * CV.KPH_TO_MPH)))
-    self.simulate_cruise_speed_range(ButtonType.decelCruise, list(expected_mph_values), V_CRUISE_MAX, False)
+    self.simulate_cruise_speed_range(ButtonType.decelCruise, list(reversed(MPH_INCR_BY_1_VALUES[:-1])), V_CRUISE_MAX, False, False)
 
   def test_increment_by_1_kph(self):
     """
-    Asserts that cruise speed increments by 1 kph.
+    Asserts that cruise speed increments by 1 kph when pressing ACCEL button.
     """
 
-    expected_kph_values = range(V_CRUISE_MIN+1, V_CRUISE_MAX+1)
-    self.simulate_cruise_speed_range(ButtonType.accelCruise, list(expected_kph_values), V_CRUISE_MIN, True)
+    self.simulate_cruise_speed_range(ButtonType.accelCruise, list(KPH_INCR_BY_1_VALUES[1:]), V_CRUISE_MIN, True, False)
 
   def test_decrement_by_1_kph(self):
     """
-    Asserts that cruise speed decrement by 1 kph.
+    Asserts that cruise speed decrement by 1 kph when pressing DECEL button.
     """
 
-    expected_kph_values = reversed(range(V_CRUISE_MIN, V_CRUISE_MAX))
-    self.simulate_cruise_speed_range(ButtonType.decelCruise, list(expected_kph_values), V_CRUISE_MAX, True)
+    self.simulate_cruise_speed_range(ButtonType.decelCruise, list(reversed(KPH_INCR_BY_1_VALUES[:-1])), V_CRUISE_MAX, True, False)
 
-  # def test_increment_by_5_mph(self):
-  #   """
-  #   Asserts that speed increments by 5 mph on ACCEL press+hold.
-  #   """
-  #   pass
+  def test_increment_by_5_mph(self):
+    """
+    Asserts that speed increments by 5 mph when holding ACCEL button.
+    """
 
-  # def test_increment_by_5_mph(self):
-  #   """
-  #   Asserts that speed increments by 5 kph on ACCEL press+hold.
-  #   """
-  #   pass
+    self.simulate_cruise_speed_range(ButtonType.accelCruise, list(MPH_INCR_BY_5_VALUES[1:]), V_CRUISE_MIN, False, True)
+
+  def test_decrement_by_5_mph(self):
+    """
+    Asserts that speed decrements by 5 mph when holding DECEL button.
+    """
+
+    self.simulate_cruise_speed_range(ButtonType.decelCruise, list(reversed(MPH_INCR_BY_5_VALUES[:-1])), V_CRUISE_MAX, False, True)
+
+  def test_increment_by_5_kph(self):
+    """
+    Asserts that speed increments by 5 kph when holding ACCEL button.
+    """
+
+    self.simulate_cruise_speed_range(ButtonType.accelCruise, list(KPH_INCR_BY_5_VALUES), V_CRUISE_MIN, True, True)
+
+  def test_decrement_by_5_kph(self):
+    """
+    Asserts that speed decrements by 5 kph when holding DECEL button.
+    """
+
+    self.simulate_cruise_speed_range(ButtonType.decelCruise, list(reversed(KPH_INCR_BY_5_VALUES[:-1])), V_CRUISE_MAX, True, True)
