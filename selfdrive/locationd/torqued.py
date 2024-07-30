@@ -8,6 +8,7 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, DT_MDL
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.swaglog import cloudlog
+from openpilot.common.transformations.orientation import rot_from_euler
 from openpilot.selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from openpilot.selfdrive.locationd.helpers import PointBuckets, ParameterEstimator
 
@@ -76,6 +77,8 @@ class TorqueEstimator(ParameterEstimator):
     if CP.lateralTuning.which() == 'torque':
       self.offline_friction = CP.lateralTuning.torque.friction
       self.offline_latAccelFactor = CP.lateralTuning.torque.latAccelFactor
+
+    self.calib_from_device = np.eye(3)
 
     self.reset()
 
@@ -171,12 +174,18 @@ class TorqueEstimator(ParameterEstimator):
       # TODO: check if high aEgo affects resulting lateral accel
       self.raw_points["vego"].append(msg.vEgo)
       self.raw_points["steer_override"].append(msg.steeringPressed)
+    elif which == "liveCalibration":
+      device_from_calib = rot_from_euler(np.array(msg.rpyCalib))
+      self.calib_from_device = device_from_calib.T
 
     # calculate lateral accel from past steering torque
-    elif which == "liveLocationKalman":
+    elif which == "livePose":
       if len(self.raw_points['steer_torque']) == self.hist_len:
-        yaw_rate = msg.angularVelocityCalibrated.value[2]
-        roll = msg.orientationNED.value[0]
+        angular_velocity_device = np.array([msg.angularVelocityDevice.x, msg.angularVelocityDevice.y, msg.angularVelocityDevice.z])
+        angular_velocity_calibrated = np.matmul(self.calib_from_device, angular_velocity_device)
+
+        yaw_rate = angular_velocity_calibrated[2]
+        roll = msg.orientationNED.x
         # check lat active up to now (without lag compensation)
         lat_active = np.interp(np.arange(t - MIN_ENGAGE_BUFFER, t + self.lag, DT_MDL),
                                self.raw_points['carControl_t'], self.raw_points['lat_active']).astype(bool)
@@ -233,7 +242,7 @@ def main(demo=False):
   config_realtime_process([0, 1, 2, 3], 5)
 
   pm = messaging.PubMaster(['liveTorqueParameters'])
-  sm = messaging.SubMaster(['carControl', 'carOutput', 'carState', 'liveLocationKalman'], poll='liveLocationKalman')
+  sm = messaging.SubMaster(['carControl', 'carOutput', 'carState', 'liveCalibration', 'livePose'], poll='livePose')
 
   params = Params()
   estimator = TorqueEstimator(messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams))
@@ -246,7 +255,7 @@ def main(demo=False):
           t = sm.logMonoTime[which] * 1e-9
           estimator.handle_log(t, which, sm[which])
 
-    # 4Hz driven by liveLocationKalman
+    # 4Hz driven by livePose
     if sm.frame % 5 == 0:
       pm.send('liveTorqueParameters', estimator.get_msg(valid=sm.all_checks()))
 
