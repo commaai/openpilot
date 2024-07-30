@@ -92,6 +92,7 @@ class CarController(CarControllerBase):
       if not CC.longActive or gas < CarControllerParams.MIN_GAS:
         gas = CarControllerParams.INACTIVE_GAS
       stopping = CC.actuators.longControlState == LongCtrlState.stopping
+      # TODO: look into using the actuators packet to send the desired speed
       can_sends.append(fordcan.create_acc_msg(self.packer, self.CAN, CC.longActive, gas, accel, stopping, v_ego_kph=V_CRUISE_MAX))
 
     ### ui ###
