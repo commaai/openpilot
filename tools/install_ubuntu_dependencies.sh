@@ -46,6 +46,7 @@ function install_ubuntu_common_requirements() {
     libssl-dev \
     libusb-1.0-0-dev \
     libzmq3-dev \
+    libzstd-dev \
     libsqlite3-dev \
     libsystemd-dev \
     locales \
