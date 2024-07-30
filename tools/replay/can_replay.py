@@ -80,6 +80,17 @@ def connect():
 
     time.sleep(1)
 
+def process(lr):
+  return [can_capnp_to_can_list(m.can) for m in lr if m.which() == 'can']
+
+def load_route(route_or_segment_name):
+  print("Loading log...")
+  sr = LogReader(route_or_segment_name)
+  CP = sr.first("carParams")
+  print(f"carFingerprint (for hardcoding fingerprint): '{CP.carFingerprint}'")
+  CAN_MSGS = sr.run_across_segments(24, process)
+  print("Finished loading...")
+  return CAN_MSGS
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Replay CAN messages from a route to all connected pandas and jungles in a loop.",
@@ -87,22 +98,10 @@ if __name__ == "__main__":
   parser.add_argument("route_or_segment_name", nargs='?', help="The route or segment name to replay. If not specified, a default public route will be used.")
   args = parser.parse_args()
 
-  def process(lr):
-    return [can_capnp_to_can_list(m.can) for m in lr if m.which() == 'can']
-
-  print("Loading log...")
   if args.route_or_segment_name is None:
     args.route_or_segment_name = "77611a1fac303767/2020-03-24--09-50-38/1:3"
 
-  sr = LogReader(args.route_or_segment_name)
-
-  CP = sr.first("carParams")
-
-  print(f"carFingerprint (for hardcoding fingerprint): '{CP.carFingerprint}'")
-
-  CAN_MSGS = sr.run_across_segments(24, process)
-
-  print("Finished loading...")
+  CAN_MSGS = load_route(args.route_or_segment_name)
 
   if ENABLE_PWR:
     print(f"Cycling power: on for {PWR_ON}s, off for {PWR_OFF}s")
