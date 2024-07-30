@@ -390,7 +390,7 @@ def calibration_rcv_callback(msg, cfg, frame):
 
 def torqued_rcv_callback(msg, cfg, frame):
   # should_recv always true to increment frame
-  return (frame - 1) == 0 or msg.which() == 'liveLocationKalman'
+  return (frame - 1) == 0 or msg.which() == 'livePose'
 
 
 def dmonitoringmodeld_rcv_callback(msg, cfg, frame):
@@ -555,7 +555,7 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="torqued",
-    pubs=["liveLocationKalman", "carState", "carControl", "carOutput"],
+    pubs=["livePose", "liveCalibration", "carState", "carControl", "carOutput"],
     subs=["liveTorqueParameters"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
