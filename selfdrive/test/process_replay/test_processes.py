@@ -41,23 +41,23 @@ source_segments = [
 ]
 
 segments = [
-  ("BODY", "regen29FD9FF7760|2024-05-21--06-58-51--0"),
-  ("HYUNDAI", "regen0B1B76A1C27|2024-05-21--06-57-53--0"),
-  ("HYUNDAI2", "regen3BB55FA5E20|2024-05-21--06-59-03--0"),
-  ("TOYOTA", "regenF6FB954C1E2|2024-05-21--06-57-53--0"),
-  ("TOYOTA2", "regen0AC637CE7BA|2024-05-21--06-57-54--0"),
-  ("TOYOTA3", "regenC7BE3FAE496|2024-05-21--06-59-01--0"),
-  ("HONDA", "regen58E9F8B695A|2024-05-21--06-57-55--0"),
-  ("HONDA2", "regen8695608EB15|2024-05-21--06-57-55--0"),
-  ("CHRYSLER", "regenB0F8C25C902|2024-05-21--06-59-47--0"),
-  ("RAM", "regenB3B2C7A105B|2024-05-21--07-00-47--0"),
-  ("SUBARU", "regen860FD736DCC|2024-05-21--07-00-50--0"),
-  ("GM", "regen8CB3048DEB9|2024-05-21--06-59-49--0"),
-  ("GM2", "regen379D446541D|2024-05-21--07-00-51--0"),
-  ("NISSAN", "regen24871108F80|2024-05-21--07-00-38--0"),
-  ("VOLKSWAGEN", "regenF390392F275|2024-05-21--07-00-52--0"),
-  ("MAZDA", "regenE5A36020581|2024-05-21--07-01-51--0"),
-  ("FORD", "regenDC288ED0D78|2024-05-21--07-02-18--0"),
+  ("BODY", "regen34ECCE11CA1|2024-07-29--22-55-10--0"),
+  ("HYUNDAI", "regenC713CE6FA82|2024-07-29--22-56-31--0"),
+  ("HYUNDAI2", "regenD81F3A374A7|2024-07-29--22-58-45--0"),
+  ("TOYOTA", "regenE6D76723DC2|2024-07-29--23-00-08--0"),
+  ("TOYOTA2", "regen198859A572C|2024-07-29--23-01-31--0"),
+  ("TOYOTA3", "regenDF1EB621A66|2024-07-29--23-03-49--0"),
+  ("HONDA", "regen0FE7C4758B5|2024-07-29--23-05-14--0"),
+  ("HONDA2", "regen510A1F60E60|2024-07-29--23-06-39--0"),
+  ("CHRYSLER", "regenDACF082E83B|2024-07-29--23-08-01--0"),
+  ("RAM", "regen8BFB7E62F52|2024-07-29--23-10-14--0"),
+  ("SUBARU", "regen4EE2D45369E|2024-07-29--23-12-31--0"),
+  ("GM", "regenB38D92E6A4D|2024-07-29--23-13-54--0"),
+  ("GM2", "regenC5488470F1A|2024-07-29--23-16-09--0"),
+  ("NISSAN", "regenE5400EB4689|2024-07-29--23-17-30--0"),
+  ("VOLKSWAGEN", "regenD0B5635A8B9|2024-07-29--23-18-54--0"),
+  ("MAZDA", "regen57F8511F082|2024-07-29--23-21-09--0"),
+  ("FORD", "regen5708620AA2E|2024-07-29--23-23-20--0"),
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
@@ -111,7 +111,8 @@ def test_process(cfg, lr, segment, ref_log_path, new_log_path, ignore_fields=Non
   if not check_most_messages_valid(log_msgs):
     return f"Route did not have enough valid messages: {new_log_path}", log_msgs
 
-  if cfg.proc_name != 'ubloxd' or segment != 'regen3BB55FA5E20|2024-05-21--06-59-03--0':
+  # skip this check if the segment is using qcom gps
+  if cfg.proc_name != 'ubloxd' or any(m.which() in cfg.pubs for m in lr):
     seen_msgs = {m.which() for m in log_msgs}
     expected_msgs = set(cfg.subs)
     if seen_msgs != expected_msgs:

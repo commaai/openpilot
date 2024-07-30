@@ -12,9 +12,14 @@ Run this to clone openpilot and install all the dependencies:
 curl -fsSL openpilot.comma.ai | bash
 ```
 
-Then, compile openpilot:
+Navigate to openpilot folder & activate a Python virtual environment
 ```bash
 cd openpilot
+source .venv/bin/activate
+```
+
+Then, compile openpilot:
+```bash
 scons -j8
 ```
 
@@ -81,13 +86,13 @@ git commit -m "Make the speed blue."
 git push --set-upstream origin master
 ```
 
-### 6. Run your fork on device in your car!
+## 6. Run your fork on device in your car!
 
 Uninstall openpilot from your device through the settings. Then, enter the URL for your very own installer:
 ```
 installer.comma.ai/<your-github-username>/master
 ```
 
-### 7. Admire your work IRL
+## 7. Admire your work IRL
 
 ![](https://blog.comma.ai/img/c3_blue_ui.jpg)

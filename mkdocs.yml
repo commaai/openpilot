@@ -1,17 +1,14 @@
 site_name: openpilot docs
-docs_dir: docs
 repo_url: https://github.com/commaai/openpilot/
 site_url: https://docs.comma.ai
 
 strict: true
-
-plugins:
-  - commonmark
+docs_dir: docs
+site_dir: docs_site/
 
 theme:
-  name: terminal
-  features:
-    - navigation.side.toc.hide
+  name: readthedocs
+  navigation_depth: 3
 
 nav:
   - Getting Started:
@@ -19,6 +16,10 @@ nav:
   - How-to:
     - Turn the speed blue: how-to/turn-the-speed-blue.md
     - Connect to a comma 3/3X: how-to/connect-to-comma.md
+    #- Replay a drive: how-to/replay-a-drive.md
+  - Concepts:
+    - Logs: concepts/logs.md
+    - Safety: concepts/safety.md
   - Car Porting:
     - What is a car port?: car-porting/what-is-a-car-port.md
     - Porting a car brand: car-porting/brand-port.md
@@ -26,7 +27,7 @@ nav:
   - Contributing:
     - Roadmap: contributing/roadmap.md
     #- Architecture: contributing/architecture.md
-    - Contributing →: https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md
+    - Contributing Guide →: https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md
   - Links:
     - Blog →: https://blog.comma.ai
     - Bounties →: https://comma.ai/bounties
