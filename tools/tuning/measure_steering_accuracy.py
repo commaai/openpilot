@@ -147,7 +147,7 @@ if __name__ == "__main__":
   else:
     if args.addr != "127.0.0.1":
       os.environ["ZMQ"] = "1"
-      messaging.context = messaging.Context()
+      messaging.reset_context()
 
     carControl = messaging.sub_sock('carControl', addr=args.addr, conflate=True)
     sm = messaging.SubMaster(['carState', 'carControl', 'carOutput', 'controlsState', 'modelV2'], addr=args.addr)

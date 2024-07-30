@@ -14,6 +14,8 @@ model2.png
 a.out
 .hypothesis
 
+/docs_site/
+
 *.dylib
 *.DSYM
 *.d
