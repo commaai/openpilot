@@ -8,7 +8,7 @@ from cereal import car, log
 from pathlib import Path
 from openpilot.common.threadname import setthreadname
 from cereal.messaging import PubMaster, SubMaster
-from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
+from msgq.visionipc import VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.common.filter_simple import FirstOrderFilter
@@ -21,6 +21,7 @@ from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
 from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
+from openpilot.selfdrive.modeld.cameras import Cameras
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
 
@@ -32,15 +33,6 @@ MODEL_PATHS = {
   ModelRunner.ONNX: Path(__file__).parent / 'models/supercombo.onnx'}
 
 METADATA_PATH = Path(__file__).parent / 'models/supercombo_metadata.pkl'
-
-class FrameMeta:
-  frame_id: int = 0
-  timestamp_sof: int = 0
-  timestamp_eof: int = 0
-
-  def __init__(self, vipc=None):
-    if vipc is not None:
-      self.frame_id, self.timestamp_sof, self.timestamp_eof = vipc.frame_id, vipc.timestamp_sof, vipc.timestamp_eof
 
 class ModelState:
   frame: ModelFrame
@@ -125,29 +117,6 @@ def main(demo=False):
   model = ModelState(cl_context)
   cloudlog.warning("models loaded, modeld starting")
 
-  # visionipc clients
-  while True:
-    available_streams = VisionIpcClient.available_streams("camerad", block=False)
-    if available_streams:
-      use_extra_client = VisionStreamType.VISION_STREAM_WIDE_ROAD in available_streams and VisionStreamType.VISION_STREAM_ROAD in available_streams
-      main_wide_camera = VisionStreamType.VISION_STREAM_ROAD not in available_streams
-      break
-    time.sleep(.1)
-
-  vipc_client_main_stream = VisionStreamType.VISION_STREAM_WIDE_ROAD if main_wide_camera else VisionStreamType.VISION_STREAM_ROAD
-  vipc_client_main = VisionIpcClient("camerad", vipc_client_main_stream, True, cl_context)
-  vipc_client_extra = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD, False, cl_context)
-  cloudlog.warning(f"vision stream set up, main_wide_camera: {main_wide_camera}, use_extra_client: {use_extra_client}")
-
-  while not vipc_client_main.connect(False):
-    time.sleep(0.1)
-  while use_extra_client and not vipc_client_extra.connect(False):
-    time.sleep(0.1)
-
-  cloudlog.warning(f"connected main cam with buffer size: {vipc_client_main.buffer_len} ({vipc_client_main.width} x {vipc_client_main.height})")
-  if use_extra_client:
-    cloudlog.warning(f"connected extra cam with buffer size: {vipc_client_extra.buffer_len} ({vipc_client_extra.width} x {vipc_client_extra.height})")
-
   # messaging
   pm = PubMaster(["modelV2", "drivingModelData", "cameraOdometry"])
   sm = SubMaster(["deviceState", "carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "carControl"])
@@ -164,10 +133,6 @@ def main(demo=False):
   model_transform_main = np.zeros((3, 3), dtype=np.float32)
   model_transform_extra = np.zeros((3, 3), dtype=np.float32)
   live_calib_seen = False
-  buf_main, buf_extra = None, None
-  meta_main = FrameMeta()
-  meta_extra = FrameMeta()
-
 
   if demo:
     CP = get_demo_car_params()
@@ -180,39 +145,12 @@ def main(demo=False):
   steer_delay = CP.steerActuatorDelay + .2
 
   DH = DesireHelper()
+  cameras = Cameras(cl_context)
 
   while True:
-    # Keep receiving frames until we are at least 1 frame ahead of previous extra frame
-    while meta_main.timestamp_sof < meta_extra.timestamp_sof + 25000000:
-      buf_main = vipc_client_main.recv()
-      meta_main = FrameMeta(vipc_client_main)
-      if buf_main is None:
-        break
-
-    if buf_main is None:
-      cloudlog.debug("vipc_client_main no frame")
+    buf_main, buf_extra = cameras.recv()
+    if not buf_main or not buf_extra:
       continue
-
-    if use_extra_client:
-      # Keep receiving extra frames until frame id matches main camera
-      while True:
-        buf_extra = vipc_client_extra.recv()
-        meta_extra = FrameMeta(vipc_client_extra)
-        if buf_extra is None or meta_main.timestamp_sof < meta_extra.timestamp_sof + 25000000:
-          break
-
-      if buf_extra is None:
-        cloudlog.debug("vipc_client_extra no frame")
-        continue
-
-      if abs(meta_main.timestamp_sof - meta_extra.timestamp_sof) > 10000000:
-        cloudlog.error(f"frames out of sync! main: {meta_main.frame_id} ({meta_main.timestamp_sof / 1e9:.5f}),\
-                         extra: {meta_extra.frame_id} ({meta_extra.timestamp_sof / 1e9:.5f})")
-
-    else:
-      # Use single camera
-      buf_extra = buf_main
-      meta_extra = meta_main
 
     sm.update(0)
     desire = DH.desire
@@ -222,7 +160,8 @@ def main(demo=False):
     if sm.updated["liveCalibration"] and sm.seen['roadCameraState'] and sm.seen['deviceState']:
       device_from_calib_euler = np.array(sm["liveCalibration"].rpyCalib, dtype=np.float32)
       dc = DEVICE_CAMERAS[(str(sm['deviceState'].deviceType), str(sm['roadCameraState'].sensor))]
-      model_transform_main = get_warp_matrix(device_from_calib_euler, dc.ecam.intrinsics if main_wide_camera else dc.fcam.intrinsics, False).astype(np.float32)
+      intrinsics = dc.fcam.intrinsics if cameras.main_stream_type == VisionStreamType.VISION_STREAM_ROAD else dc.ecam.intrinsics
+      model_transform_main = get_warp_matrix(device_from_calib_euler, intrinsics, False).astype(np.float32)
       model_transform_extra = get_warp_matrix(device_from_calib_euler, dc.ecam.intrinsics, True).astype(np.float32)
       live_calib_seen = True
 
@@ -234,7 +173,7 @@ def main(demo=False):
       vec_desire[desire] = 1
 
     # tracked dropped frames
-    vipc_dropped_frames = max(0, meta_main.frame_id - last_vipc_frame_id - 1)
+    vipc_dropped_frames = max(0, cameras.main.frame_id - last_vipc_frame_id - 1)
     frames_dropped = frame_dropped_filter.update(min(vipc_dropped_frames, 10))
     if run_count < 10: # let frame drops warm up
       frame_dropped_filter.x = 0.
@@ -261,8 +200,8 @@ def main(demo=False):
       modelv2_send = messaging.new_message('modelV2')
       drivingdata_send = messaging.new_message('drivingModelData')
       posenet_send = messaging.new_message('cameraOdometry')
-      fill_model_msg(drivingdata_send, modelv2_send, model_output, publish_state, meta_main.frame_id, meta_extra.frame_id, frame_id,
-                     frame_drop_ratio, meta_main.timestamp_eof, model_execution_time, live_calib_seen)
+      fill_model_msg(drivingdata_send, modelv2_send, model_output, publish_state, cameras.main.frame_id, cameras.extra.frame_id, frame_id,
+                     frame_drop_ratio, cameras.main.timestamp_eof, model_execution_time, live_calib_seen)
 
       desire_state = modelv2_send.modelV2.meta.desireState
       l_lane_change_prob = desire_state[log.Desire.laneChangeLeft]
@@ -274,12 +213,12 @@ def main(demo=False):
       drivingdata_send.drivingModelData.meta.laneChangeState = DH.lane_change_state
       drivingdata_send.drivingModelData.meta.laneChangeDirection = DH.lane_change_direction
 
-      fill_pose_msg(posenet_send, model_output, meta_main.frame_id, vipc_dropped_frames, meta_main.timestamp_eof, live_calib_seen)
+      fill_pose_msg(posenet_send, model_output, cameras.main.frame_id, vipc_dropped_frames, cameras.main.timestamp_eof, live_calib_seen)
       pm.send('modelV2', modelv2_send)
       pm.send('drivingModelData', drivingdata_send)
       pm.send('cameraOdometry', posenet_send)
 
-    last_vipc_frame_id = meta_main.frame_id
+    last_vipc_frame_id = cameras.main.frame_id
 
 
 if __name__ == "__main__":
