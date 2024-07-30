@@ -33,7 +33,18 @@ cat << 'EOF'
 EOF
 }
 
+function check_stdin() {
+  if [ -t 0 ]; then
+    return 0
+  else
+    echo "stdin not found! Make sure to run 'bash <(curl -fsSL openpilot.comma.ai)'"
+    return 1
+  fi
+}
+
 function ask_dir() {
+
+
   echo -n "Enter directory in which to install openpilot (default $OPENPILOT_ROOT): "
   read
   OPENPILOT_ROOT=$(realpath "${REPLY:-$OPENPILOT_ROOT}/openpilot")
@@ -87,6 +98,7 @@ function install_with_op() {
   $OPENPILOT_ROOT/tools/op.sh setup
 }
 
+check_stdin
 show_motd
 ask_dir
 check_dir
