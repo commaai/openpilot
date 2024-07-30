@@ -1,6 +1,3 @@
-import bz2
-
-
 # regex patterns
 class RE:
   DONGLE_ID = r'(?P<dongle_id>[a-f0-9]{16})'
@@ -18,13 +15,3 @@ class RE:
 
   EXPLORER_FILE = fr'^(?P<segment_name>{SEGMENT_NAME})--(?P<file_name>[a-z]+\.[a-z0-9]+)$'
   OP_SEGMENT_DIR = fr'^(?P<segment_name>{SEGMENT_NAME})$'
-
-
-def save_log(dest, log_msgs, compress=True):
-  dat = b"".join(msg.as_builder().to_bytes() for msg in log_msgs)
-
-  if compress:
-    dat = bz2.compress(dat)
-
-  with open(dest, "wb") as f:
-    f.write(dat)

@@ -82,7 +82,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
 
     lock(resource: "", label: deviceType, inversePrecedence: true, variable: 'device_ip', quantity: 1, resourceSelectStrategy: 'random') {
       docker.image('ghcr.io/commaai/alpine-ssh').inside('--user=root') {
-        timeout(time: 20, unit: 'MINUTES') {
+        timeout(time: 35, unit: 'MINUTES') {
           retry (3) {
             device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
           }

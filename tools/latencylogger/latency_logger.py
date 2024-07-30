@@ -3,7 +3,6 @@ import argparse
 import json
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
-import mpld3
 import sys
 from bisect import bisect_left, bisect_right
 from collections import defaultdict
@@ -174,7 +173,6 @@ def print_timestamps(timestamps, durations, start_times, relative):
         print("    "+'%-53s%-53s' %(event, str(time*1000)))
 
 def graph_timestamps(timestamps, start_times, end_times, relative, offset_services=False, title=""):
-  # mpld3 doesn't convert properly to D3 font sizes
   plt.rcParams.update({'font.size': 18})
 
   t0 = find_t0(start_times)
@@ -203,15 +201,14 @@ def graph_timestamps(timestamps, start_times, end_times, relative, offset_servic
           points['labels'].append(event[0])
     ax.broken_barh(service_bars, (i-height/2, height), facecolors=(colors), alpha=0.5, offsets=offsets)
 
-  scatter = ax.scatter(points['x'], points['y'], marker='d', edgecolor='black')
-  tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=points['labels'])
-  mpld3.plugins.connect(fig, tooltip)
+  ax.scatter(points['x'], points['y'], marker='d', edgecolor='black')
+  for i, label in enumerate(points['labels']):
+    ax.annotate(label, (points['x'][i], points['y'][i]), textcoords="offset points", xytext=(0,10), ha='center')
 
   plt.title(title)
-  # Set size relative window size is not trivial: https://github.com/mpld3/mpld3/issues/65
   fig.set_size_inches(18, 9)
   plt.legend(handles=[mpatches.Patch(color=colors[i], label=SERVICES[i]) for i in range(len(SERVICES))])
-  return fig
+  plt.show()
 
 def get_timestamps(lr):
   lr = list(lr)
@@ -239,4 +236,4 @@ if __name__ == "__main__":
   data, _ = get_timestamps(lr)
   print_timestamps(data['timestamp'], data['duration'], data['start'], args.relative)
   if args.plot:
-    mpld3.show(graph_timestamps(data['timestamp'], data['start'], data['end'], args.relative, offset_services=args.offset, title=r))
+    graph_timestamps(data['timestamp'], data['start'], data['end'], args.relative, offset_services=args.offset, title=r)
