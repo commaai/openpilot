@@ -11,6 +11,7 @@ from openpilot.common.numpy_fast import clip, interp
 from openpilot.common.utils import Freezable
 from openpilot.selfdrive.car.docs_definitions import CarDocs
 
+DT_CTRL = 0.01  # car state and control loop timestep (s)
 
 # kg of standard extra cargo to count for drive, gas, etc...
 STD_CARGO_KG = 136.
@@ -163,6 +164,27 @@ def common_fault_avoidance(fault_condition: bool, request: bool, above_limit_fra
     above_limit_frames = 0
 
   return above_limit_frames, request
+
+
+def apply_center_deadzone(error, deadzone):
+  if (error > - deadzone) and (error < deadzone):
+    error = 0.
+  return error
+
+
+def rate_limit(new_value, last_value, dw_step, up_step):
+  return clip(new_value, last_value + dw_step, last_value + up_step)
+
+
+def get_friction(lateral_accel_error: float, lateral_accel_deadzone: float, friction_threshold: float,
+                 torque_params: car.CarParams.LateralTorqueTuning, friction_compensation: bool) -> float:
+  friction_interp = interp(
+    apply_center_deadzone(lateral_accel_error, lateral_accel_deadzone),
+    [-friction_threshold, friction_threshold],
+    [-torque_params.friction, torque_params.friction]
+  )
+  friction = float(friction_interp) if friction_compensation else 0.0
+  return friction
 
 
 def make_can_msg(addr, dat, bus):

@@ -1,7 +1,7 @@
 import numpy as np
 
-from openpilot.common.realtime import DT_CTRL
 from opendbc.can.packer import CANPacker
+from openpilot.selfdrive.car import DT_CTRL
 from openpilot.selfdrive.car.body import bodycan
 from openpilot.selfdrive.car.body.values import SPEED_FROM_RPM
 from openpilot.selfdrive.car.interfaces import CarControllerBase

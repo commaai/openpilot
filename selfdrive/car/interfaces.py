@@ -13,10 +13,9 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.simple_kalman import KF1D, get_kalman_gain
 from openpilot.common.numpy_fast import clip
-from openpilot.common.realtime import DT_CTRL
-from openpilot.selfdrive.car import apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, STD_CARGO_KG
+from openpilot.selfdrive.car import DT_CTRL, apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, get_friction, STD_CARGO_KG
 from openpilot.selfdrive.car.values import PLATFORMS
-from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, get_friction
+from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
 from openpilot.selfdrive.controls.lib.events import Events
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 from openpilot.selfdrive.pandad import can_capnp_to_list
@@ -203,13 +202,11 @@ class CarInterfaceBase(ABC):
     ret.vEgoStopping = 0.5
     ret.vEgoStarting = 0.5
     ret.stoppingControl = True
-    ret.longitudinalTuning.deadzoneBP = [0.]
-    ret.longitudinalTuning.deadzoneV = [0.]
     ret.longitudinalTuning.kf = 1.
     ret.longitudinalTuning.kpBP = [0.]
-    ret.longitudinalTuning.kpV = [1.]
+    ret.longitudinalTuning.kpV = [0.]
     ret.longitudinalTuning.kiBP = [0.]
-    ret.longitudinalTuning.kiV = [1.]
+    ret.longitudinalTuning.kiV = [0.]
     # TODO estimate car specific lag, use .15s for now
     ret.longitudinalActuatorDelay = 0.15
     ret.steerLimitTimer = 1.0
@@ -284,6 +281,8 @@ class CarInterfaceBase(ABC):
       events.add(EventName.wrongCarMode)
     if cs_out.espDisabled:
       events.add(EventName.espDisabled)
+    if cs_out.espActive:
+      events.add(EventName.espActive)
     if cs_out.stockFcw:
       events.add(EventName.stockFcw)
     if cs_out.stockAeb:

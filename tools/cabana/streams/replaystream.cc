@@ -53,27 +53,40 @@ bool ReplayStream::loadRoute(const QString &route, const QString &data_dir, uint
                           {}, nullptr, replay_flags, data_dir, this));
   replay->setSegmentCacheLimit(settings.max_cached_minutes);
   replay->installEventFilter(event_filter, this);
+  QObject::connect(replay.get(), &Replay::seeking, this, &AbstractStream::seeking);
   QObject::connect(replay.get(), &Replay::seekedTo, this, &AbstractStream::seekedTo);
   QObject::connect(replay.get(), &Replay::segmentsMerged, this, &ReplayStream::mergeSegments);
-  QObject::connect(replay.get(), &Replay::qLogLoaded, this, &ReplayStream::qLogLoaded, Qt::QueuedConnection);
-  return replay->load();
-}
-
-void ReplayStream::start() {
-  emit streamStarted();
-  replay->start();
-}
-
-void ReplayStream::stop() {
-  if (replay) {
-    replay->stop();
+  bool success = replay->load();
+  if (!success) {
+    if (replay->lastRouteError() == RouteLoadError::AccessDenied) {
+      auto auth_content = util::read_file(util::getenv("HOME") + "/.comma/auth.json");
+      QString message;
+      if (auth_content.empty()) {
+        message = "Authentication Required. Please run the following command to authenticate:\n\n"
+                  "python tools/lib/auth.py\n\n"
+                  "This will grant access to routes from your comma account.";
+      } else {
+        message = tr("Access Denied. You do not have permission to access route:\n\n%1\n\n"
+                     "This is likely a private route.").arg(route);
+      }
+      QMessageBox::warning(nullptr, tr("Access Denied"), message);
+    } else if (replay->lastRouteError() == RouteLoadError::NetworkError) {
+      QMessageBox::warning(nullptr, tr("Network Error"),
+                          tr("Unable to load the route:\n\n %1.\n\nPlease check your network connection and try again.").arg(route));
+    } else if (replay->lastRouteError() == RouteLoadError::FileNotFound) {
+      QMessageBox::warning(nullptr, tr("Route Not Found"),
+                           tr("The specified route could not be found:\n\n %1.\n\nPlease check the route name and try again.").arg(route));
+    } else {
+      QMessageBox::warning(nullptr, tr("Route Load Failed"), tr("Failed to load route: '%1'").arg(route));
+    }
   }
+  return success;
 }
 
 bool ReplayStream::eventFilter(const Event *event) {
   static double prev_update_ts = 0;
   if (event->which == cereal::Event::Which::CAN) {
-    double current_sec = event->mono_time / 1e9 - routeStartTime();
+    double current_sec = toSeconds(event->mono_time);
     capnp::FlatArrayMessageReader reader(event->data);
     auto e = reader.getRoot<cereal::Event>();
     for (const auto &c : e.getCan()) {
@@ -91,29 +104,15 @@ bool ReplayStream::eventFilter(const Event *event) {
   return true;
 }
 
-void ReplayStream::seekTo(double ts) {
-  // Update timestamp and notify receivers of the time change.
-  current_sec_ = ts;
-  std::set<MessageId> new_msgs;
-  msgsReceived(&new_msgs, false);
-
-  // Seek to the specified timestamp
-  replay->seekTo(std::max(double(0), ts), false);
-}
-
 void ReplayStream::pause(bool pause) {
   replay->pause(pause);
   emit(pause ? paused() : resume());
 }
 
 
-AbstractOpenStreamWidget *ReplayStream::widget(AbstractStream **stream) {
-  return new OpenReplayWidget(stream);
-}
-
 // OpenReplayWidget
 
-OpenReplayWidget::OpenReplayWidget(AbstractStream **stream) : AbstractOpenStreamWidget(stream) {
+OpenReplayWidget::OpenReplayWidget(QWidget *parent) : AbstractOpenStreamWidget(parent) {
   QGridLayout *grid_layout = new QGridLayout(this);
   grid_layout->addWidget(new QLabel(tr("Route")), 0, 0);
   grid_layout->addWidget(route_edit = new QLineEdit(this), 0, 1);
@@ -146,10 +145,10 @@ OpenReplayWidget::OpenReplayWidget(AbstractStream **stream) : AbstractOpenStream
   });
 }
 
-bool OpenReplayWidget::open() {
+AbstractStream *OpenReplayWidget::open() {
   QString route = route_edit->text();
   QString data_dir;
-  if (int idx = route.lastIndexOf('/'); idx != -1) {
+  if (int idx = route.lastIndexOf('/'); idx != -1 && util::file_exists(route.toStdString())) {
     data_dir = route.mid(0, idx + 1);
     route = route.mid(idx + 1);
   }
@@ -165,10 +164,8 @@ bool OpenReplayWidget::open() {
     if (flags == REPLAY_FLAG_NONE && !cameras[0]->isChecked()) flags = REPLAY_FLAG_NO_VIPC;
 
     if (replay_stream->loadRoute(route, data_dir, flags)) {
-      *stream = replay_stream.release();
-    } else {
-      QMessageBox::warning(nullptr, tr("Warning"), tr("Failed to load route: '%1'").arg(route));
+      return replay_stream.release();
     }
   }
-  return *stream != nullptr;
+  return nullptr;
 }

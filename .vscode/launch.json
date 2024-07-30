@@ -7,7 +7,6 @@
       "description": "Select the process to debug",
       "options": [
         "selfdrive/controls/controlsd.py",
-        "selfdrive/navd/navd.py",
         "system/timed/timed.py",
         "tools/sim/run_bridge.py"
       ]

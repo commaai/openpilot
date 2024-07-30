@@ -37,9 +37,11 @@ private:
 };
 
 std::string sha256(const std::string &str);
-void precise_nano_sleep(int64_t nanoseconds);
+void precise_nano_sleep(int64_t nanoseconds, std::atomic<bool> &should_exit);
 std::string decompressBZ2(const std::string &in, std::atomic<bool> *abort = nullptr);
 std::string decompressBZ2(const std::byte *in, size_t in_size, std::atomic<bool> *abort = nullptr);
+std::string decompressZST(const std::string &in, std::atomic<bool> *abort = nullptr);
+std::string decompressZST(const std::byte *in, size_t in_size, std::atomic<bool> *abort = nullptr);
 std::string getUrlWithoutQuery(const std::string &url);
 size_t getRemoteFileSize(const std::string &url, std::atomic<bool> *abort = nullptr);
 std::string httpGet(const std::string &url, size_t chunk_size = 0, std::atomic<bool> *abort = nullptr);

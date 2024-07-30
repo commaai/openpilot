@@ -10,8 +10,6 @@ ROOT = HERE + "/.."
 # - minimizing release download size
 # - keeping the diff readable
 blacklist = [
-  "body/STL/",
-
   "panda/drivers/",
   "panda/examples/",
   "panda/tests/safety/",
@@ -23,7 +21,7 @@ blacklist = [
   "^common/tests/",
 
   # particularly large text files
-  "poetry.lock",
+  "uv.lock",
   "third_party/catch2",
   "selfdrive/car/tests/test_models.*",
 

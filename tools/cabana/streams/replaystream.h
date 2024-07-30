@@ -15,27 +15,22 @@ class ReplayStream : public AbstractStream {
 
 public:
   ReplayStream(QObject *parent);
-  void start() override;
-  void stop() override;
+  void start() override { replay->start(); }
   bool loadRoute(const QString &route, const QString &data_dir, uint32_t replay_flags = REPLAY_FLAG_NONE);
   bool eventFilter(const Event *event);
-  void seekTo(double ts) override;
+  void seekTo(double ts) override { replay->seekTo(std::max(double(0), ts), false); }
   bool liveStreaming() const override { return false; }
   inline QString routeName() const override { return replay->route()->name(); }
   inline QString carFingerprint() const override { return replay->carFingerprint().c_str(); }
-  double totalSeconds() const override { return replay->totalSeconds(); }
+  double minSeconds() const override { return replay->minSeconds(); }
+  double maxSeconds() const { return replay->maxSeconds(); }
   inline QDateTime beginDateTime() const { return replay->routeDateTime(); }
-  inline double routeStartTime() const override { return replay->routeStartTime() / (double)1e9; }
-  inline const Route *route() const { return replay->route(); }
+  inline uint64_t beginMonoTime() const override { return replay->routeStartNanos(); }
   inline void setSpeed(float speed) override { replay->setSpeed(speed); }
   inline float getSpeed() const { return replay->getSpeed(); }
   inline Replay *getReplay() const { return replay.get(); }
   inline bool isPaused() const override { return replay->isPaused(); }
   void pause(bool pause) override;
-  static AbstractOpenStreamWidget *widget(AbstractStream **stream);
-
-signals:
-  void qLogLoaded(int segnum, std::shared_ptr<LogReader> qlog);
 
 private:
   void mergeSegments();
@@ -48,9 +43,8 @@ class OpenReplayWidget : public AbstractOpenStreamWidget {
   Q_OBJECT
 
 public:
-  OpenReplayWidget(AbstractStream **stream);
-  bool open() override;
-  QString title() override { return tr("&Replay"); }
+  OpenReplayWidget(QWidget *parent = nullptr);
+  AbstractStream *open() override;
 
 private:
   QLineEdit *route_edit;

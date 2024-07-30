@@ -50,20 +50,20 @@ Replay::~Replay() {
 }
 
 void Replay::stop() {
-  if (!stream_thread_ && segments_.empty()) return;
-
-  rInfo("shutdown: in progress...");
+  exit_ = true;
   if (stream_thread_ != nullptr) {
-    exit_ = true;
-    paused_ = true;
+    rInfo("shutdown: in progress...");
+    pauseStreamThread();
     stream_cv_.notify_one();
     stream_thread_->quit();
     stream_thread_->wait();
-    delete stream_thread_;
+    stream_thread_->deleteLater();
     stream_thread_ = nullptr;
+    rInfo("shutdown: done");
   }
   timeline_future.waitForFinished();
-  rInfo("shutdown: done");
+  camera_server_.reset(nullptr);
+  segments_.clear();
 }
 
 bool Replay::load() {
@@ -85,6 +85,7 @@ bool Replay::load() {
     return false;
   }
   rInfo("load route %s with %zu valid segments", qPrintable(route_->name()), segments_.size());
+  max_seconds_ = (segments_.rbegin()->first + 1) * 60;
   return true;
 }
 
@@ -104,26 +105,42 @@ void Replay::updateEvents(const std::function<bool()> &update_events_function) {
 
 void Replay::seekTo(double seconds, bool relative) {
   updateEvents([&]() {
-    seeking_to_seconds_ = relative ? seconds + currentSeconds() : seconds;
-    seeking_to_seconds_ = std::max(double(0.0), seeking_to_seconds_);
-    int target_segment = (int)seeking_to_seconds_ / 60;
+    double target_time = relative ? seconds + currentSeconds() : seconds;
+    target_time = std::max(double(0.0), target_time);
+    int target_segment = (int)target_time / 60;
     if (segments_.count(target_segment) == 0) {
-      rWarning("can't seek to %d s segment %d is invalid", (int)seeking_to_seconds_, target_segment);
+      rWarning("Can't seek to %.2f s segment %d is invalid", target_time, target_segment);
+      return true;
+    }
+    if (target_time > max_seconds_) {
+      rWarning("Can't seek to %.2f s, time is invalid", target_time);
       return true;
     }
 
-    rInfo("seeking to %d s, segment %d", (int)seeking_to_seconds_, target_segment);
+    rInfo("Seeking to %d s, segment %d", (int)target_time, target_segment);
     current_segment_ = target_segment;
-    cur_mono_time_ = route_start_ts_ + seeking_to_seconds_ * 1e9;
-    bool segment_merged = isSegmentMerged(target_segment);
-    if (segment_merged) {
-      emit seekedTo(seeking_to_seconds_);
-      // Reset seeking_to_seconds_ to indicate completion of seek
-      seeking_to_seconds_ = -1;
-    }
-    return segment_merged;
+    cur_mono_time_ = route_start_ts_ + target_time * 1e9;
+    seeking_to_ = target_time;
+    return false;
   });
+
+  checkSeekProgress();
   updateSegmentsCache();
+}
+
+void Replay::checkSeekProgress() {
+  if (seeking_to_) {
+    auto it = segments_.find(int(*seeking_to_ / 60));
+    if (it != segments_.end() && it->second && it->second->isLoaded()) {
+      emit seekedTo(*seeking_to_);
+      seeking_to_ = std::nullopt;
+      // wake up stream thread
+      updateEvents([]() { return true; });
+    } else {
+      // Emit signal indicating the ongoing seek operation
+      emit seeking(*seeking_to_);
+    }
+  }
 }
 
 void Replay::seekToFlag(FindFlag flag) {
@@ -150,8 +167,9 @@ void Replay::buildTimeline() {
   const auto &route_segments = route_->segments();
   for (auto it = route_segments.cbegin(); it != route_segments.cend() && !exit_; ++it) {
     std::shared_ptr<LogReader> log(new LogReader());
-    if (!log->load(it->second.qlog.toStdString(), &exit_, !hasFlag(REPLAY_FLAG_NO_FILE_CACHE), 0, 3)) continue;
+    if (!log->load(it->second.qlog.toStdString(), &exit_, !hasFlag(REPLAY_FLAG_NO_FILE_CACHE), 0, 3) || log->events.empty()) continue;
 
+    std::vector<std::tuple<double, double, TimelineType>> timeline;
     for (const Event &e : log->events) {
       if (e.which == cereal::Event::Which::CONTROLS_STATE) {
         capnp::FlatArrayMessageReader reader(e.data);
@@ -160,7 +178,6 @@ void Replay::buildTimeline() {
 
         if (engaged != cs.getEnabled()) {
           if (engaged) {
-            std::lock_guard lk(timeline_lock);
             timeline.push_back({toSeconds(engaged_begin), toSeconds(e.mono_time), TimelineType::Engaged});
           }
           engaged_begin = e.mono_time;
@@ -169,7 +186,6 @@ void Replay::buildTimeline() {
 
         if (alert_type != cs.getAlertType().cStr() || alert_status != cs.getAlertStatus()) {
           if (!alert_type.empty() && alert_size != cereal::ControlsState::AlertSize::NONE) {
-            std::lock_guard lk(timeline_lock);
             timeline.push_back({toSeconds(alert_begin), toSeconds(e.mono_time), timeline_types[(int)alert_status]});
           }
           alert_begin = e.mono_time;
@@ -178,12 +194,27 @@ void Replay::buildTimeline() {
           alert_status = cs.getAlertStatus();
         }
       } else if (e.which == cereal::Event::Which::USER_FLAG) {
-        std::lock_guard lk(timeline_lock);
         timeline.push_back({toSeconds(e.mono_time), toSeconds(e.mono_time), TimelineType::UserFlag});
       }
     }
-    std::sort(timeline.begin(), timeline.end(), [](auto &l, auto &r) { return std::get<2>(l) < std::get<2>(r); });
-    emit qLogLoaded(it->first, log);
+
+    if (it->first == route_segments.rbegin()->first) {
+      if (engaged) {
+        timeline.push_back({toSeconds(engaged_begin), toSeconds(log->events.back().mono_time), TimelineType::Engaged});
+      }
+      if (!alert_type.empty() && alert_size != cereal::ControlsState::AlertSize::NONE) {
+        timeline.push_back({toSeconds(alert_begin), toSeconds(log->events.back().mono_time), timeline_types[(int)alert_status]});
+      }
+
+      max_seconds_ = std::ceil(toSeconds(log->events.back().mono_time));
+      emit minMaxTimeChanged(route_segments.cbegin()->first * 60.0, max_seconds_);
+    }
+    {
+      std::lock_guard lk(timeline_lock);
+      timeline_.insert(timeline_.end(), timeline.begin(), timeline.end());
+      std::sort(timeline_.begin(), timeline_.end(), [](auto &l, auto &r) { return std::get<2>(l) < std::get<2>(r); });
+    }
+    emit qLogLoaded(log);
   }
 }
 
@@ -260,14 +291,13 @@ void Replay::updateSegmentsCache() {
   const auto &cur_segment = cur->second;
   if (stream_thread_ == nullptr && cur_segment->isLoaded()) {
     startStream(cur_segment.get());
-    emit streamStarted();
   }
 }
 
 void Replay::loadSegmentInRange(SegmentMap::iterator begin, SegmentMap::iterator cur, SegmentMap::iterator end) {
-  auto loadNext = [this](auto begin, auto end) {
-    auto it = std::find_if(begin, end, [](const auto &seg_it) { return !seg_it.second || !seg_it.second->isLoaded(); });
-    if (it != end && !it->second) {
+  auto loadNextSegment = [this](auto first, auto last) {
+    auto it = std::find_if(first, last, [](const auto &seg_it) { return !seg_it.second || !seg_it.second->isLoaded(); });
+    if (it != last && !it->second) {
       rDebug("loading segment %d...", it->first);
       it->second = std::make_unique<Segment>(it->first, route_->at(it->first), flags_, filters_);
       QObject::connect(it->second.get(), &Segment::loadFinished, this, &Replay::segmentLoadFinished);
@@ -276,9 +306,9 @@ void Replay::loadSegmentInRange(SegmentMap::iterator begin, SegmentMap::iterator
     return false;
   };
 
-  // Load forward segments, then try reverse
-  if (!loadNext(cur, end)) {
-    loadNext(std::make_reverse_iterator(cur), segments_.rend());
+  // Try loading forward segments, then reverse segments
+  if (!loadNextSegment(cur, end)) {
+    loadNextSegment(std::make_reverse_iterator(cur), std::make_reverse_iterator(begin));
   }
 }
 
@@ -316,15 +346,10 @@ void Replay::mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::
   updateEvents([&]() {
     events_.swap(new_events);
     merged_segments_ = segments_to_merge;
-    // Check if seeking is in progress
-    int target_segment = int(seeking_to_seconds_ / 60);
-    if (seeking_to_seconds_ >= 0 && segments_to_merge.count(target_segment) > 0) {
-      emit seekedTo(seeking_to_seconds_);
-      seeking_to_seconds_ = -1;  // Reset seeking_to_seconds_ to indicate completion of seek
-    }
     // Wake up the stream thread if the current segment is loaded or invalid.
-    return isSegmentMerged(current_segment_) || (segments_.count(current_segment_) == 0);
+    return !seeking_to_ && (isSegmentMerged(current_segment_) || (segments_.count(current_segment_) == 0));
   });
+  checkSeekProgress();
 }
 
 void Replay::startStream(const Segment *cur_segment) {
@@ -379,6 +404,7 @@ void Replay::startStream(const Segment *cur_segment) {
   stream_thread_->start();
 
   timeline_future = QtConcurrent::run(this, &Replay::buildTimeline);
+  emit streamStarted();
 }
 
 void Replay::publishMessage(const Event *e) {
@@ -449,7 +475,7 @@ void Replay::streamThread() {
       int last_segment = segments_.rbegin()->first;
       if (current_segment_ >= last_segment && isSegmentMerged(last_segment)) {
         rInfo("reaches the end of route, restart from beginning");
-        QMetaObject::invokeMethod(this, std::bind(&Replay::seekTo, this, 0, false), Qt::QueuedConnection);
+        QMetaObject::invokeMethod(this, std::bind(&Replay::seekTo, this, minSeconds(), false), Qt::QueuedConnection);
       }
     }
   }
@@ -473,6 +499,7 @@ std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::con
      // Skip events if socket is not present
     if (!sockets_[evt.which]) continue;
 
+    cur_mono_time_ = evt.mono_time;
     const uint64_t current_nanos = nanos_since_boot();
     const int64_t time_diff = (evt.mono_time - evt_start_ts) / speed_ - (current_nanos - loop_start_ts);
 
@@ -484,12 +511,11 @@ std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::con
       loop_start_ts = current_nanos;
       prev_replay_speed = speed_;
     } else if (time_diff > 0) {
-      precise_nano_sleep(time_diff);
+      precise_nano_sleep(time_diff, paused_);
     }
 
     if (paused_) break;
 
-    cur_mono_time_ = evt.mono_time;
     if (evt.eidx_segnum == -1) {
       publishMessage(&evt);
     } else if (camera_server_) {

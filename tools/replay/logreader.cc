@@ -4,11 +4,17 @@
 #include <utility>
 #include "tools/replay/filereader.h"
 #include "tools/replay/util.h"
+#include "common/util.h"
 
 bool LogReader::load(const std::string &url, std::atomic<bool> *abort, bool local_cache, int chunk_size, int retries) {
   std::string data = FileReader(local_cache, chunk_size, retries).read(url, abort);
-  if (!data.empty() && url.find(".bz2") != std::string::npos)
-    data = decompressBZ2(data, abort);
+  if (!data.empty()) {
+    if (url.find(".bz2") != std::string::npos || util::starts_with(data, "BZh9")) {
+      data = decompressBZ2(data, abort);
+    } else if (url.find(".zst") != std::string::npos || util::starts_with(data, "\x28\xB5\x2F\xFD")) {
+      data = decompressZST(data, abort);
+    }
+  }
 
   bool success = !data.empty() && load(data.data(), data.size(), abort);
   if (filters_.empty())
@@ -42,10 +48,10 @@ bool LogReader::load(const char *data, size_t size, std::atomic<bool> *abort) {
           evt.which == cereal::Event::DRIVER_ENCODE_IDX ||
           evt.which == cereal::Event::WIDE_ROAD_ENCODE_IDX) {
         auto idx = capnp::AnyStruct::Reader(event).getPointerSection()[0].getAs<cereal::EncodeIndex>();
-        if (uint64_t sof = idx.getTimestampSof()) {
-          mono_time = sof;
+        if (idx.getType() == cereal::EncodeIndex::Type::FULL_H_E_V_C) {
+          uint64_t sof = idx.getTimestampSof();
+          events.emplace_back(which, sof ? sof : mono_time, event_data, idx.getSegmentNum());
         }
-        events.emplace_back(which, mono_time, event_data, idx.getSegmentNum());
       }
     }
   } catch (const kj::Exception &e) {

@@ -119,6 +119,7 @@ class CarState(CarStateBase):
     ret.brakeHoldActive = cp.vl["TCS15"]["AVH_LAMP"] == 2  # 0 OFF, 1 ERROR, 2 ACTIVE, 3 READY
     ret.parkingBrake = cp.vl["TCS13"]["PBRAKE_ACT"] == 1
     ret.espDisabled = cp.vl["TCS11"]["TCS_PAS"] == 1
+    ret.espActive = cp.vl["TCS11"]["ABS_ACT"] == 1
     ret.accFaulted = cp.vl["TCS13"]["ACCEnable"] != 0  # 0 ACC CONTROL ENABLED, 1-3 ACC CONTROL DISABLED
 
     if self.CP.flags & (HyundaiFlags.HYBRID | HyundaiFlags.EV):

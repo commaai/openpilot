@@ -22,10 +22,6 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.2
     ret.steerLimitTimer = 1.0
 
-    ret.longitudinalTuning.kpBP = [0.]
-    ret.longitudinalTuning.kpV = [0.5]
-    ret.longitudinalTuning.kiV = [0.]
-
     CAN = CanBus(fingerprint=fingerprint)
     cfgs = [get_safety_config(car.CarParams.SafetyModel.ford)]
     if CAN.main >= 4:

@@ -411,7 +411,7 @@ void MessageView::updateBytesSectionSize() {
       max_bytes = std::max<int>(max_bytes, m.dat.size());
     }
   }
-  setUniformRowHeights(!delegate->multipleLines() || max_bytes <= 8);
+  setUniformRowHeights(!delegate->multipleLines());
   header()->resizeSection(MessageListModel::Column::DATA, delegate->sizeForBytes(max_bytes).width());
 }
 

@@ -1,6 +1,5 @@
 #include "tools/cabana/streams/abstractstream.h"
 
-#include <algorithm>
 #include <utility>
 
 #include <QApplication>
@@ -11,26 +10,15 @@ static const int EVENT_NEXT_BUFFER_SIZE = 6 * 1024 * 1024;  // 6MB
 
 AbstractStream *can = nullptr;
 
-StreamNotifier *StreamNotifier::instance() {
-  static StreamNotifier notifier;
-  return &notifier;
-}
-
 AbstractStream::AbstractStream(QObject *parent) : QObject(parent) {
   assert(parent != nullptr);
   event_buffer_ = std::make_unique<MonotonicBuffer>(EVENT_NEXT_BUFFER_SIZE);
 
-  QObject::connect(QApplication::instance(), &QCoreApplication::aboutToQuit, this, &AbstractStream::stop);
   QObject::connect(this, &AbstractStream::privateUpdateLastMsgsSignal, this, &AbstractStream::updateLastMessages, Qt::QueuedConnection);
   QObject::connect(this, &AbstractStream::seekedTo, this, &AbstractStream::updateLastMsgsTo);
+  QObject::connect(this, &AbstractStream::seeking, this, [this](double sec) { current_sec_ = sec; });
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &AbstractStream::updateMasks);
   QObject::connect(dbc(), &DBCManager::maskUpdated, this, &AbstractStream::updateMasks);
-  QObject::connect(this, &AbstractStream::streamStarted, [this]() {
-    emit StreamNotifier::instance()->changingStream();
-    delete can;
-    can = this;
-    emit StreamNotifier::instance()->streamStarted();
-  });
 }
 
 void AbstractStream::updateMasks() {
@@ -64,14 +52,12 @@ void AbstractStream::suppressDefinedSignals(bool suppress) {
 size_t AbstractStream::suppressHighlighted() {
   std::lock_guard lk(mutex_);
   size_t cnt = 0;
-  const double cur_ts = currentSec();
   for (auto &[_, m] : messages_) {
     for (auto &last_change : m.last_changes) {
-      const double dt = cur_ts - last_change.ts;
+      const double dt = current_sec_ - last_change.ts;
       if (dt < 2.0) {
         last_change.suppressed = true;
       }
-      // clear bit change counts
       last_change.bit_change_counts.fill(0);
       cnt += last_change.suppressed;
     }
@@ -90,6 +76,7 @@ void AbstractStream::updateLastMessages() {
   auto prev_src_size = sources.size();
   auto prev_msg_size = last_msgs.size();
   std::set<MessageId> msgs;
+
   {
     std::lock_guard lk(mutex_);
     for (const auto &id : new_msgs_) {
@@ -101,11 +88,24 @@ void AbstractStream::updateLastMessages() {
     msgs = std::move(new_msgs_);
   }
 
+  if (time_range_ && (current_sec_ < time_range_->first || current_sec_ >= time_range_->second)) {
+    seekTo(time_range_->first);
+    return;
+  }
+
   if (sources.size() != prev_src_size) {
     updateMasks();
     emit sourcesUpdated(sources);
   }
   emit msgsReceived(&msgs, prev_msg_size != last_msgs.size());
+}
+
+void AbstractStream::setTimeRange(const std::optional<std::pair<double, double>> &range) {
+  time_range_ = range;
+  if (time_range_ && (current_sec_ < time_range_->first || current_sec_ >= time_range_->second)) {
+    seekTo(time_range_->first);
+  }
+  emit timeRangeChanged(time_range_);
 }
 
 void AbstractStream::updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size) {
@@ -120,7 +120,7 @@ const std::vector<const CanEvent *> &AbstractStream::events(const MessageId &id)
   return it != events_.end() ? it->second : empty_events;
 }
 
-const CanData &AbstractStream::lastMessage(const MessageId &id) {
+const CanData &AbstractStream::lastMessage(const MessageId &id) const {
   static CanData empty_data = {};
   auto it = last_msgs.find(id);
   return it != last_msgs.end() ? it->second : empty_data;
@@ -130,15 +130,13 @@ const CanData &AbstractStream::lastMessage(const MessageId &id) {
 // updateLastMsgsTo is always called in UI thread.
 void AbstractStream::updateLastMsgsTo(double sec) {
   current_sec_ = sec;
-  uint64_t last_ts = (sec + routeStartTime()) * 1e9;
+  uint64_t last_ts = toMonoTime(sec);
   std::unordered_map<MessageId, CanData> msgs;
   msgs.reserve(events_.size());
 
   for (const auto &[id, ev] : events_) {
     auto it = std::upper_bound(ev.begin(), ev.end(), last_ts, CompareCanEvent());
     if (it != ev.begin()) {
-      auto prev = std::prev(it);
-      double ts = (*prev)->mono_time / 1e9 - routeStartTime();
       auto &m = msgs[id];
       double freq = 0;
       // Keep suppressed bits.
@@ -149,7 +147,9 @@ void AbstractStream::updateLastMsgsTo(double sec) {
                        std::back_inserter(m.last_changes),
                        [](const auto &change) { return CanData::ByteLastChange{.suppressed = change.suppressed}; });
       }
-      m.compute(id, (*prev)->dat, (*prev)->size, ts, getSpeed(), {}, freq);
+
+      auto prev = std::prev(it);
+      m.compute(id, (*prev)->dat, (*prev)->size, toSeconds((*prev)->mono_time), getSpeed(), {}, freq);
       m.count = std::distance(ev.begin(), prev) + 1;
     }
   }
@@ -195,7 +195,6 @@ void AbstractStream::mergeEvents(const std::vector<const CanEvent *> &events) {
     all_events_.insert(pos, events.cbegin(), events.cend());
     emit eventsMerged(msg_events);
   }
-  lastest_event_ts = all_events_.empty() ? 0 : all_events_.back()->mono_time;
 }
 
 namespace {
@@ -218,14 +217,18 @@ inline QColor blend(const QColor &a, const QColor &b) {
 // Calculate the frequency from the past one minute data
 double calc_freq(const MessageId &msg_id, double current_sec) {
   const auto &events = can->events(msg_id);
-  uint64_t cur_mono_time = (can->routeStartTime() + current_sec) * 1e9;
-  uint64_t first_mono_time = std::max<int64_t>(0, cur_mono_time - 59 * 1e9);
-  auto first = std::lower_bound(events.begin(), events.end(), first_mono_time, CompareCanEvent());
-  auto second = std::lower_bound(first, events.end(), cur_mono_time, CompareCanEvent());
-  if (first != events.end() && second != events.end()) {
-    double duration = ((*second)->mono_time - (*first)->mono_time) / 1e9;
-    uint32_t count = std::distance(first, second);
-    return count / std::max(1.0, duration);
+  if (events.empty()) return 0.0;
+
+  auto current_mono_time = can->toMonoTime(current_sec);
+  auto start_mono_time = can->toMonoTime(current_sec - 59);
+
+  auto first = std::lower_bound(events.begin(), events.end(), start_mono_time, CompareCanEvent());
+  auto last = std::upper_bound(first, events.end(), current_mono_time, CompareCanEvent());
+
+  int count = std::distance(first, last);
+  if (count > 1) {
+    double duration = ((*std::prev(last))->mono_time - (*first)->mono_time) / 1e9;
+    return count / duration;
   }
   return 0;
 }

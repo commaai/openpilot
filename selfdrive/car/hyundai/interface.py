@@ -80,12 +80,8 @@ class CarInterface(CarInterfaceBase):
 
     # *** longitudinal control ***
     if candidate in CANFD_CAR:
-      ret.longitudinalTuning.kpV = [0.1]
-      ret.longitudinalTuning.kiV = [0.0]
       ret.experimentalLongitudinalAvailable = candidate not in (CANFD_UNSUPPORTED_LONGITUDINAL_CAR | CANFD_RADAR_SCC_CAR)
     else:
-      ret.longitudinalTuning.kpV = [0.5]
-      ret.longitudinalTuning.kiV = [0.0]
       ret.experimentalLongitudinalAvailable = candidate not in (UNSUPPORTED_LONGITUDINAL_CAR | CAMERA_SCC_CAR)
     ret.openpilotLongitudinalControl = experimental_long and ret.experimentalLongitudinalAvailable
     ret.pcmCruise = not ret.openpilotLongitudinalControl

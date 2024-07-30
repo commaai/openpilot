@@ -15,6 +15,7 @@
 #include <mutex>
 #include <numeric>
 #include <utility>
+#include <zstd.h>
 
 #include "common/timing.h"
 #include "common/util.h"
@@ -300,7 +301,7 @@ std::string decompressBZ2(const std::byte *in, size_t in_size, std::atomic<bool>
     if (bzerror == BZ_OK && prev_write_pos == strm.next_out) {
       // content is corrupt
       bzerror = BZ_STREAM_END;
-      rWarning("decompressBZ2 error : content is corrupt");
+      rWarning("decompressBZ2 error: content is corrupt");
       break;
     }
 
@@ -318,33 +319,57 @@ std::string decompressBZ2(const std::byte *in, size_t in_size, std::atomic<bool>
   return {};
 }
 
-void precise_nano_sleep(int64_t nanoseconds) {
-#ifdef __APPLE__
-  const long estimate_ns = 1 * 1e6;  // 1ms
-  struct timespec req = {.tv_nsec = estimate_ns};
-  uint64_t start_sleep = nanos_since_boot();
-  while (nanoseconds > estimate_ns) {
-    nanosleep(&req, nullptr);
-    uint64_t end_sleep = nanos_since_boot();
-    nanoseconds -= (end_sleep - start_sleep);
-    start_sleep = end_sleep;
-  }
-  // spin wait
-  if (nanoseconds > 0) {
-    while ((nanos_since_boot() - start_sleep) <= nanoseconds) {
-      std::this_thread::yield();
-    }
-  }
-#else
-  struct timespec req, rem;
+std::string decompressZST(const std::string &in, std::atomic<bool> *abort) {
+  return decompressZST((std::byte *)in.data(), in.size(), abort);
+}
 
-  req.tv_sec = nanoseconds / 1e9;
-  req.tv_nsec = nanoseconds % (int64_t)1e9;
-  while (clock_nanosleep(CLOCK_MONOTONIC, 0, &req, &rem) && errno == EINTR) {
+std::string decompressZST(const std::byte *in, size_t in_size, std::atomic<bool> *abort) {
+  ZSTD_DCtx *dctx = ZSTD_createDCtx();
+  assert(dctx != nullptr);
+
+  // Initialize input and output buffers
+  ZSTD_inBuffer input = {in, in_size, 0};
+  std::string decompressedData;
+  const size_t bufferSize = ZSTD_DStreamOutSize();  // recommended output buffer size
+  std::string outputBuffer(bufferSize, '\0');
+
+  while (input.pos < input.size && !(abort && *abort)) {
+    ZSTD_outBuffer output = {outputBuffer.data(), bufferSize, 0};
+
+    size_t result = ZSTD_decompressStream(dctx, &output, &input);
+    if (ZSTD_isError(result)) {
+      rWarning("decompressZST error: content is corrupt");
+      break;
+    }
+
+    decompressedData.append(outputBuffer.data(), output.pos);
+  }
+
+  ZSTD_freeDCtx(dctx);
+  if (!(abort && *abort)) {
+    decompressedData.shrink_to_fit();
+    return decompressedData;
+  }
+  return {};
+}
+
+void precise_nano_sleep(int64_t nanoseconds, std::atomic<bool> &should_exit) {
+  struct timespec req, rem;
+  req.tv_sec = nanoseconds / 1000000000;
+  req.tv_nsec = nanoseconds % 1000000000;
+  while (!should_exit) {
+#ifdef __APPLE__
+    int ret = nanosleep(&req, &rem);
+    if (ret == 0 || errno != EINTR)
+      break;
+#else
+    int ret = clock_nanosleep(CLOCK_MONOTONIC, 0, &req, &rem);
+    if (ret == 0 || ret != EINTR)
+      break;
+#endif
     // Retry sleep if interrupted by a signal
     req = rem;
   }
-#endif
 }
 
 std::string sha256(const std::string &str) {

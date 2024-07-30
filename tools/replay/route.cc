@@ -39,6 +39,7 @@ RouteIdentifier Route::parseRoute(const QString &str) {
 }
 
 bool Route::load() {
+  err_ = RouteLoadError::None;
   if (route_.str.isEmpty() || (data_dir_.isEmpty() && route_.dongle_id.isEmpty())) {
     rInfo("invalid route format");
     return false;
@@ -74,7 +75,14 @@ bool Route::loadFromServer(int retries) {
       return loadFromJson(result);
     } else if (err == QNetworkReply::ContentAccessDenied || err == QNetworkReply::AuthenticationRequiredError) {
       rWarning(">>  Unauthorized. Authenticate with tools/lib/auth.py  <<");
+      err_ = RouteLoadError::AccessDenied;
       return false;
+    } else if (err == QNetworkReply::ContentNotFoundError) {
+      rWarning("The specified route could not be found on the server.");
+      err_ = RouteLoadError::FileNotFound;
+      return false;
+    } else {
+      err_ = RouteLoadError::NetworkError;
     }
     rWarning("Retrying %d/%d", i, retries);
     util::sleep_for(3000);
@@ -114,9 +122,9 @@ void Route::addFileToSegment(int n, const QString &file) {
   const int pos = name.lastIndexOf("--");
   name = pos != -1 ? name.mid(pos + 2) : name;
 
-  if (name == "rlog.bz2" || name == "rlog") {
+  if (name == "rlog.bz2" || name == "rlog.zst" || name == "rlog") {
     segments_[n].rlog = file;
-  } else if (name == "qlog.bz2" || name == "qlog") {
+  } else if (name == "qlog.bz2" || name == "qlog.zst" || name == "qlog") {
     segments_[n].qlog = file;
   } else if (name == "fcamera.hevc") {
     segments_[n].road_cam = file;

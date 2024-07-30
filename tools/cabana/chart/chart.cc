@@ -155,11 +155,10 @@ void ChartView::removeIf(std::function<bool(const SigItem &s)> predicate) {
 }
 
 void ChartView::signalUpdated(const cabana::Signal *sig) {
-  if (std::any_of(sigs.cbegin(), sigs.cend(), [=](auto &s) { return s.sig == sig; })) {
-    for (const auto &s : sigs) {
-      if (s.sig == sig && s.series->color() != sig->color) {
-        setSeriesColor(s.series, sig->color);
-      }
+  auto it = std::find_if(sigs.begin(), sigs.end(), [sig](auto &s) { return s.sig == sig; });
+  if (it != sigs.end()) {
+    if (it->series->color() != sig->color) {
+      setSeriesColor(it->series, sig->color);
     }
     updateTitle();
     updateSeries(sig);
@@ -277,7 +276,7 @@ void ChartView::updateSeriesPoints() {
         }
         ((QScatterSeries *)s.series)->setMarkerSize(size);
       } else {
-        s.series->setPointsVisible(pixels_per_point > 20);
+        s.series->setPointsVisible(num_points == 1 || pixels_per_point > 20);
       }
     }
   }
@@ -289,10 +288,9 @@ void ChartView::appendCanEvents(const cabana::Signal *sig, const std::vector<con
   step_vals.reserve(step_vals.size() + events.capacity() * 2);
 
   double value = 0;
-  const uint64_t begin_mono_time = can->routeStartTime() * 1e9;
   for (const CanEvent *e : events) {
     if (sig->getValue(e->dat, e->size, &value)) {
-      const double ts = (e->mono_time - std::min(e->mono_time, begin_mono_time)) / 1e9;
+      const double ts = can->toSeconds(e->mono_time);
       vals.emplace_back(ts, value);
       if (!step_vals.empty())
         step_vals.emplace_back(ts, step_vals.back().y());
@@ -312,7 +310,7 @@ void ChartView::updateSeries(const cabana::Signal *sig, const MessageEventsMap *
       auto it = events->find(s.msg_id);
       if (it == events->end() || it->second.empty()) continue;
 
-      if (s.vals.empty() || (it->second.back()->mono_time / 1e9 - can->routeStartTime()) > s.vals.back().x()) {
+      if (s.vals.empty() || can->toSeconds(it->second.back()->mono_time) > s.vals.back().x()) {
         appendCanEvents(s.sig, it->second, s.vals, s.step_vals);
       } else {
         std::vector<QPointF> vals, step_vals;
@@ -421,13 +419,6 @@ qreal ChartView::niceNumber(qreal x, bool ceiling) {
   return q * z;
 }
 
-void ChartView::leaveEvent(QEvent *event) {
-  if (tip_label->isVisible()) {
-    charts_widget->showValueTip(-1);
-  }
-  QChartView::leaveEvent(event);
-}
-
 QPixmap getBlankShadowPixmap(const QPixmap &px, int radius) {
   QGraphicsDropShadowEffect *e = new QGraphicsDropShadowEffect;
   e->setColor(QColor(40, 40, 40, 245));
@@ -507,13 +498,13 @@ void ChartView::mouseReleaseEvent(QMouseEvent *event) {
     rubber->hide();
     auto rect = rubber->geometry().normalized();
     // Prevent zooming/seeking past the end of the route
-    double min = std::clamp(chart()->mapToValue(rect.topLeft()).x(), 0., can->totalSeconds());
-    double max = std::clamp(chart()->mapToValue(rect.bottomRight()).x(), 0., can->totalSeconds());
+    double min = std::clamp(chart()->mapToValue(rect.topLeft()).x(), can->minSeconds(), can->maxSeconds());
+    double max = std::clamp(chart()->mapToValue(rect.bottomRight()).x(), can->minSeconds(), can->maxSeconds());
     if (rubber->width() <= 0) {
       // no rubber dragged, seek to mouse position
       can->seekTo(min);
     } else if (rubber->width() > 10 && (max - min) > MIN_ZOOM_SECONDS) {
-      charts_widget->zoom_undo_stack->push(new ZoomCommand(charts_widget, {min, max}));
+      charts_widget->zoom_undo_stack->push(new ZoomCommand({min, max}));
     } else {
       viewport()->update();
     }
@@ -538,7 +529,7 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   // Scrubbing
   if (is_scrubbing && QApplication::keyboardModifiers().testFlag(Qt::ShiftModifier)) {
     if (plot_area.contains(ev->pos())) {
-      can->seekTo(std::clamp(chart()->mapToValue(ev->pos()).x(), 0., can->totalSeconds()));
+      can->seekTo(std::clamp(chart()->mapToValue(ev->pos()).x(), can->minSeconds(), can->maxSeconds()));
     }
   }
 
@@ -546,9 +537,8 @@ void ChartView::mouseMoveEvent(QMouseEvent *ev) {
   bool is_zooming = rubber && rubber->isVisible();
   clearTrackPoints();
 
-  if (!is_zooming && plot_area.contains(ev->pos())) {
-    const double sec = chart()->mapToValue(ev->pos()).x();
-    charts_widget->showValueTip(sec);
+  if (!is_zooming && plot_area.contains(ev->pos()) && isActiveWindow()) {
+    charts_widget->showValueTip(secondsAtPoint(ev->pos()));
   } else if (tip_label->isVisible()) {
     charts_widget->showValueTip(-1);
   }
