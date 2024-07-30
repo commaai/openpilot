@@ -9,7 +9,9 @@
 </p>
 
 <h3>
-  <a href="https://docs.comma.ai">Read the docs</a>
+  <a href="https://docs.comma.ai">Docs</a>
+  <span> · </span>
+  <a href="https://docs.comma.ai/contributing/roadmap/">Roadmap</a>
   <span> · </span>
   <a href="https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md">Contribute</a>
   <span> · </span>
