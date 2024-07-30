@@ -229,7 +229,7 @@ env = Environment(
   COMPILATIONDB_USE_ABSPATH=True,
   REDNOSE_ROOT="#",
   tools=["default", "cython", "compilation_db", "rednose_filter"],
-  toolpath=["#rednose_repo/site_scons/site_tools"],
+  toolpath=["site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
 )
 
 if arch == "Darwin":

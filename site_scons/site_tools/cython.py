@@ -2,6 +2,7 @@ import re
 import SCons
 from SCons.Action import Action
 from SCons.Scanner import Scanner
+import numpy as np
 
 pyx_from_import_re = re.compile(r'^from\s+(\S+)\s+cimport', re.M)
 pyx_import_re = re.compile(r'^cimport\s+(\S+)', re.M)
@@ -51,6 +52,7 @@ def create_builder(env):
   return cython
 
 def cython_suffix_emitter(env, source):
+  env.Depends(str(source[0]).split('.')[0] + env["CYTHONCFILESUFFIX"], np.__file__)
   return "$CYTHONCFILESUFFIX"
 
 def generate(env):
