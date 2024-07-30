@@ -16,13 +16,13 @@ _services: dict[str, tuple] = {
   "gyroscope2": (True, 100., 100),
   "accelerometer": (True, 104., 104),
   "accelerometer2": (True, 100., 100),
-  "magnetometer": (True, 25., 25),
+  "magnetometer": (True, 25.),
   "lightSensor": (True, 100., 100),
   "temperatureSensor": (True, 2., 200),
   "temperatureSensor2": (True, 2., 200),
   "gpsNMEA": (True, 9.),
   "deviceState": (True, 2., 1),
-  "can": (True, 100., 1223),  # decimation gives ~5 msgs in a full segment
+  "can": (True, 100., 2053),  # decimation gives ~3 msgs in a full segment
   "controlsState": (True, 100., 10),
   "pandaStates": (True, 10., 1),
   "peripheralState": (True, 2., 1),
