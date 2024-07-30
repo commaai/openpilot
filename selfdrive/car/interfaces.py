@@ -13,7 +13,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.simple_kalman import KF1D, get_kalman_gain
 from openpilot.common.numpy_fast import clip, interp
-from openpilot.selfdrive.car import DT_CTRL, apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, STD_CARGO_KG
+from openpilot.selfdrive.car import apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, get_friction, DT_CTRL, STD_CARGO_KG
 from openpilot.selfdrive.car.values import PLATFORMS
 from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
 from openpilot.selfdrive.controls.lib.events import Events
@@ -53,27 +53,6 @@ class LatControlInputs(NamedTuple):
 
 
 TorqueFromLateralAccelCallbackType = Callable[[LatControlInputs, car.CarParams.LateralTorqueTuning, float, float, bool, bool], float]
-
-
-def rate_limit(new_value, last_value, dw_step, up_step):
-  return clip(new_value, last_value + dw_step, last_value + up_step)
-
-
-def apply_center_deadzone(error, deadzone):
-  if (error > - deadzone) and (error < deadzone):
-    error = 0.
-  return error
-
-
-def get_friction(lateral_accel_error: float, lateral_accel_deadzone: float, friction_threshold: float,
-                 torque_params: car.CarParams.LateralTorqueTuning, friction_compensation: bool) -> float:
-  friction_interp = interp(
-    apply_center_deadzone(lateral_accel_error, lateral_accel_deadzone),
-    [-friction_threshold, friction_threshold],
-    [-torque_params.friction, torque_params.friction]
-  )
-  friction = float(friction_interp) if friction_compensation else 0.0
-  return friction
 
 
 @cache
