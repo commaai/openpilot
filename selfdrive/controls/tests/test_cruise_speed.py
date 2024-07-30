@@ -13,9 +13,9 @@ ButtonEvent = car.CarState.ButtonEvent
 ButtonType = car.CarState.ButtonEvent.Type
 
 MPH_INCR_BY_1_VALUES = range(round(V_CRUISE_MIN * CV.KPH_TO_MPH), round(V_CRUISE_MAX * CV.KPH_TO_MPH)+1)
-MPH_INCR_BY_5_VALUES = MPH_INCR_BY_1_VALUES[next(i for i, v in enumerate(MPH_INCR_BY_1_VALUES) if v % 5 == 0)::5]
+MPH_INCR_BY_5_VALUES = [MPH_INCR_BY_1_VALUES[i] for i, v in enumerate(MPH_INCR_BY_1_VALUES) if i == 0 or v % 5 == 0]
 KPH_INCR_BY_1_VALUES = range(V_CRUISE_MIN, V_CRUISE_MAX+1)
-KPH_INCR_BY_5_VALUES = KPH_INCR_BY_1_VALUES[next(i for i, v in enumerate(KPH_INCR_BY_1_VALUES) if v % 5 == 0)::5]
+KPH_INCR_BY_5_VALUES = [KPH_INCR_BY_1_VALUES[i] for i, v in enumerate(KPH_INCR_BY_1_VALUES) if i == 0 or v % 5 == 0]
 
 def run_cruise_simulation(cruise, e2e, personality, t_end=20.):
   man = Maneuver(
@@ -243,7 +243,7 @@ class TestVCruiseHelper:
     Asserts that speed increments by 5 kph when holding ACCEL button.
     """
 
-    self.simulate_cruise_speed_range(ButtonType.accelCruise, list(KPH_INCR_BY_5_VALUES), V_CRUISE_MIN, True, True)
+    self.simulate_cruise_speed_range(ButtonType.accelCruise, list(KPH_INCR_BY_5_VALUES[1:]), V_CRUISE_MIN, True, True)
 
   def test_decrement_by_5_kph(self):
     """
