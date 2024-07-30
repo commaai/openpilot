@@ -3,7 +3,7 @@ import time
 from collections.abc import Callable
 
 from cereal import car
-from openpilot.common.numpy_fast import clip, interp
+from openpilot.common.numpy_fast import clip
 from openpilot.common.params import Params
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
@@ -220,24 +220,3 @@ def get_demo_car_params():
   CarInterface, _, _ = interfaces[platform]
   CP = CarInterface.get_non_essential_params(platform)
   return CP
-
-
-def apply_center_deadzone(error, deadzone):
-  if (error > - deadzone) and (error < deadzone):
-    error = 0.
-  return error
-
-
-def get_friction(lateral_accel_error: float, lateral_accel_deadzone: float, friction_threshold: float,
-                 torque_params: car.CarParams.LateralTorqueTuning, friction_compensation: bool) -> float:
-  friction_interp = interp(
-    apply_center_deadzone(lateral_accel_error, lateral_accel_deadzone),
-    [-friction_threshold, friction_threshold],
-    [-torque_params.friction, torque_params.friction]
-  )
-  friction = float(friction_interp) if friction_compensation else 0.0
-  return friction
-
-
-def rate_limit(new_value, last_value, dw_step, up_step):
-  return clip(new_value, last_value + dw_step, last_value + up_step)
