@@ -42,7 +42,6 @@ class ParamsLearner:
     self.active = False
     self.calibrated = False
 
-    self.device_from_calib = np.eye(3)
     self.calib_from_device = np.eye(3)
 
     self.speed = 0.0
@@ -103,8 +102,8 @@ class ParamsLearner:
 
     elif which == 'liveCalibration':
       self.calibrated  = msg.calStatus == log.LiveCalibrationData.Status.calibrated
-      self.device_from_calib = rot_from_euler(np.array(msg.rpyCalib))
-      self.calib_from_device = self.device_from_calib.T
+      device_from_calib = rot_from_euler(np.array(msg.rpyCalib))
+      self.calib_from_device = device_from_calib.T
 
     elif which == 'carState':
       self.steering_angle = msg.steeringAngleDeg
