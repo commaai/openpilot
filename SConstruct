@@ -268,7 +268,8 @@ if arch == "Darwin":
 else:
   envCython["LINKFLAGS"] = ["-pthread", "-shared"]
 
-Export('envCython')
+np_files = np.__file__
+Export('envCython', 'np_files')
 
 # Qt build environment
 qt_env = env.Clone()
