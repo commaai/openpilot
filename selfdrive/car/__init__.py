@@ -188,7 +188,7 @@ def get_friction(lateral_accel_error: float, lateral_accel_deadzone: float, fric
 
 
 def make_can_msg(addr, dat, bus):
-  return [addr, 0, dat, bus]
+  return [addr, dat, bus]
 
 
 def get_safety_config(safety_model, safety_param = None):
