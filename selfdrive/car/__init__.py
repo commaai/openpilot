@@ -7,7 +7,7 @@ from dataclasses import replace
 import capnp
 
 from cereal import car
-from openpilot.common.numpy_fast import clip, interp
+from numpy import clip, interp
 from openpilot.common.utils import Freezable
 from openpilot.selfdrive.car.docs_definitions import CarDocs
 

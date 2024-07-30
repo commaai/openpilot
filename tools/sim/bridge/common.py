@@ -8,7 +8,7 @@ from multiprocessing import Process, Queue, Value
 from abc import ABC, abstractmethod
 
 from openpilot.common.params import Params
-from openpilot.common.numpy_fast import clip
+from numpy import clip
 from openpilot.common.realtime import Ratekeeper
 from openpilot.selfdrive.test.helpers import set_params_enabled
 from openpilot.selfdrive.car.honda.values import CruiseButtons

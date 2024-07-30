@@ -2,7 +2,7 @@ import math
 
 from cereal import car, log
 from openpilot.common.conversions import Conversions as CV
-from openpilot.common.numpy_fast import clip, interp
+from numpy import clip, interp
 from openpilot.common.realtime import DT_CTRL
 
 # WARNING: this value was determined based on the model's training distribution,

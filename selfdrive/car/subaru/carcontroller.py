@@ -1,4 +1,4 @@
-from openpilot.common.numpy_fast import clip, interp
+from numpy import clip, interp
 from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import apply_driver_steer_torque_limits, common_fault_avoidance
 from openpilot.selfdrive.car.interfaces import CarControllerBase

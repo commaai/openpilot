@@ -1,6 +1,6 @@
 from cereal import car
 from opendbc.can.packer import CANPacker
-from openpilot.common.numpy_fast import clip
+from numpy import clip
 from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car import DT_CTRL, apply_driver_steer_torque_limits
 from openpilot.selfdrive.car.interfaces import CarControllerBase

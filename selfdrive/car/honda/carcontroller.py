@@ -1,7 +1,7 @@
 from collections import namedtuple
 
 from cereal import car
-from openpilot.common.numpy_fast import clip, interp
+from numpy import clip, interp
 from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import DT_CTRL
 from openpilot.selfdrive.car.honda import hondacan

@@ -3,7 +3,7 @@ import os
 import time
 import numpy as np
 from cereal import log
-from openpilot.common.numpy_fast import clip
+from numpy import clip
 from openpilot.common.realtime import DT_MDL
 from openpilot.common.swaglog import cloudlog
 # WARNING: imports outside of constants will not trigger a rebuild

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import math
 import numpy as np
-from openpilot.common.numpy_fast import clip, interp
+from numpy import clip, interp
 
 import cereal.messaging as messaging
 from openpilot.common.conversions import Conversions as CV

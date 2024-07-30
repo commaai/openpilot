@@ -1,7 +1,7 @@
 import numpy as np
 from numbers import Number
 
-from openpilot.common.numpy_fast import clip, interp
+from numpy import clip, interp
 
 
 class PIDController:
