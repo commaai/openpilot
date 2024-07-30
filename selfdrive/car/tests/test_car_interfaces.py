@@ -6,8 +6,7 @@ import importlib
 from parameterized import parameterized
 
 from cereal import car, messaging
-from openpilot.common.realtime import DT_CTRL
-from openpilot.selfdrive.car import gen_empty_fingerprint
+from openpilot.selfdrive.car import DT_CTRL, gen_empty_fingerprint
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.fw_versions import FW_VERSIONS, FW_QUERY_CONFIGS

@@ -22,22 +22,26 @@ def long_control_state_trans(CP, active, long_control_state, v_ego,
     long_control_state = LongCtrlState.off
 
   else:
-    if long_control_state in (LongCtrlState.off, LongCtrlState.pid):
-      long_control_state = LongCtrlState.pid
-      if stopping_condition:
+    if long_control_state == LongCtrlState.off:
+      if not starting_condition:
         long_control_state = LongCtrlState.stopping
+      else:
+        if starting_condition and CP.startingState:
+          long_control_state = LongCtrlState.starting
+        else:
+          long_control_state = LongCtrlState.pid
+
     elif long_control_state == LongCtrlState.stopping:
       if starting_condition and CP.startingState:
         long_control_state = LongCtrlState.starting
       elif starting_condition:
         long_control_state = LongCtrlState.pid
 
-    elif long_control_state == LongCtrlState.starting:
+    elif long_control_state in [LongCtrlState.starting, LongCtrlState.pid]:
       if stopping_condition:
         long_control_state = LongCtrlState.stopping
       elif started_condition:
         long_control_state = LongCtrlState.pid
-
   return long_control_state
 
 class LongControl:

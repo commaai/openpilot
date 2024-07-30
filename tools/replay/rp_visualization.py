@@ -53,7 +53,7 @@ if __name__ == "__main__":
   args = get_arg_parser().parse_args(sys.argv[1:])
   if args.ip_address != "127.0.0.1":
     os.environ["ZMQ"] = "1"
-    messaging.context = messaging.Context()
+    messaging.reset_context()
   rr.init("RadarPoints", spawn= True)
   rr.log("tracks", rr.AnnotationContext(rerunColorPalette), static=True)
   visualize(args.ip_address)
