@@ -10,9 +10,13 @@ from collections import defaultdict
 import cereal.messaging as messaging
 from openpilot.tools.lib.logreader import LogReader
 
+
 def sigint_handler(signal, frame):
   exit(0)
+
+
 signal.signal(signal.SIGINT, sigint_handler)
+
 
 class SteeringAccuracyTool:
   all_groups = {"germany":  (45, "45 - up m/s  //  162 - up km/h  //  101 - up mph"),

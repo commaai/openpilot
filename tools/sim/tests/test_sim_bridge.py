@@ -11,6 +11,7 @@ from openpilot.tools.sim.bridge.common import QueueMessageType
 
 SIM_DIR = os.path.join(BASEDIR, "tools/sim")
 
+
 class TestSimBridgeBase:
   @classmethod
   def setup_class(cls):

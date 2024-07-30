@@ -52,8 +52,10 @@ def getch() -> str:
     termios.tcsetattr(STDIN_FD, termios.TCSADRAIN, old_settings)
   return ch
 
+
 def print_keyboard_help():
   print(f"Keyboard Commands:\n{KEYBOARD_HELP}")
+
 
 def keyboard_poll_thread(q: 'Queue[QueueMessage]'):
   print_keyboard_help()
@@ -88,10 +90,12 @@ def keyboard_poll_thread(q: 'Queue[QueueMessage]'):
     else:
       print_keyboard_help()
 
+
 def test(q: 'Queue[str]') -> NoReturn:
   while True:
     print([q.get_nowait() for _ in range(q.qsize())] or None)
     time.sleep(0.25)
+
 
 if __name__ == '__main__':
   from multiprocessing import Process, Queue

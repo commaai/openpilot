@@ -18,6 +18,7 @@ CAMERAS = [
 if DUAL_CAM:
   CAMERAS.append(CameraType("wideRoadCameraState", VisionStreamType.VISION_STREAM_WIDE_ROAD, DUAL_CAM))
 
+
 class Camerad:
   def __init__(self):
     self.pm = messaging.PubMaster([c.msg_name for c in CAMERAS])

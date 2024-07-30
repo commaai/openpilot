@@ -93,6 +93,7 @@ button_names = {
 axis_name_list: list[str] = []
 button_name_list: list[str] = []
 
+
 def wheel_poll_thread(q: 'Queue[str]') -> NoReturn:
   # Open the joystick device.
   fn = '/dev/input/js0'
@@ -182,6 +183,7 @@ def wheel_poll_thread(q: 'Queue[str]') -> NoReturn:
 
         elif number in [10, 21]:  # R3
           q.put(control_cmd_gen("reverse_switch"))
+
 
 if __name__ == '__main__':
   from multiprocessing import Process, Queue

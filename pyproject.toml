@@ -236,6 +236,7 @@ lint.ignore = [
   "E251",
   "E261",
   "E231",
+  "E502",
 ]
 lint.preview = true
 line-length = 160

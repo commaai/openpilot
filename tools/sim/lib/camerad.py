@@ -9,6 +9,7 @@ from cereal import messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.sim.lib.common import W, H
 
+
 class Camerad:
   """Simulates the camerad daemon"""
   def __init__(self, dual_camera):

@@ -23,6 +23,7 @@ C3_HPR = Vec3(0, 0,0)
 metadrive_simulation_state = namedtuple("metadrive_simulation_state", ["running", "done", "done_info"])
 metadrive_vehicle_state = namedtuple("metadrive_vehicle_state", ["velocity", "position", "bearing", "steering_angle"])
 
+
 def apply_metadrive_patches(arrive_dest_done=True):
   # By default, metadrive won't try to use cuda images unless it's used as a sensor for vehicles, so patch that in
   def add_image_sensor_patched(self, name: str, cls, args):
@@ -47,6 +48,7 @@ def apply_metadrive_patches(arrive_dest_done=True):
 
   if not arrive_dest_done:
     MetaDriveEnv._is_arrive_destination = arrive_destination_patch
+
 
 def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera_array, image_lock,
                       controls_recv: Connection, simulation_state_send: Connection, vehicle_state_send: Connection,
