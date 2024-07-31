@@ -14,6 +14,7 @@ nav:
   - Getting Started:
     - What is openpilot?: getting-started/what-is-openpilot.md
   - How-to:
+    - Change the border thickness: how-to/change-the-border-thickness.md
     - Turn the speed blue: how-to/turn-the-speed-blue.md
     - Connect to a comma 3/3X: how-to/connect-to-comma.md
     #- Replay a drive: how-to/replay-a-drive.md
