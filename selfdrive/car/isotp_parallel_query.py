@@ -27,7 +27,7 @@ class IsoTpParallelQuery:
       assert tx_addr not in FUNCTIONAL_ADDRS, f"Functional address should be defined in functional_addrs: {hex(tx_addr)}"
 
     self.msg_addrs = {tx_addr: get_rx_addr_for_tx_addr(tx_addr[0], rx_offset=response_offset) for tx_addr in real_addrs}
-    self.msg_buffer: dict[int, list[tuple[int, int, bytes, int]]] = defaultdict(list)
+    self.msg_buffer: dict[int, list[tuple[int, bytes, int]]] = defaultdict(list)
 
   def rx(self):
     """Drain can socket and sort messages into buffers based on address"""
@@ -36,11 +36,11 @@ class IsoTpParallelQuery:
     for packet in can_packets:
       for msg in packet.can:
         if msg.src == self.bus and msg.address in self.msg_addrs.values():
-          self.msg_buffer[msg.address].append((msg.address, msg.busTime, msg.dat, msg.src))
+          self.msg_buffer[msg.address].append((msg.address, msg.dat, msg.src))
 
   def _can_tx(self, tx_addr, dat, bus):
     """Helper function to send single message"""
-    msg = [tx_addr, 0, dat, bus]
+    msg = [tx_addr, dat, bus]
     self.sendcan.send(can_list_to_can_capnp([msg], msgtype='sendcan'))
 
   def _can_rx(self, addr, sub_addr=None):
@@ -53,7 +53,7 @@ class IsoTpParallelQuery:
       # Filter based on subadress
       msgs = []
       for m in self.msg_buffer[addr]:
-        first_byte = m[2][0]
+        first_byte = m[1][0]
         if first_byte == sub_addr:
           msgs.append(m)
         else:
