@@ -11,10 +11,10 @@ from openpilot.tools.lib.live_logreader import raw_live_logreader
 
 codecs.register_error("strict", codecs.backslashreplace_errors)
 
-def hexdump(msg : bytes) -> None:
+def hexdump(msg):
   m = str.upper(msg.hex())
-  m = [m[i:i+2] for i in range(0, len(m), 2)]
-  m = [m[i:i+16] for i in range(0, len(m), 16)]
+  m = [m[i:i+2] for i in range(0,len(m),2)]
+  m = [m[i:i+16] for i in range(0,len(m),16)]
   for row,dump in enumerate(m):
     addr = '%08X:' % (row*16)
     raw = ' '.join(dump[:8]) + '  ' + ' '.join(dump[8:])
