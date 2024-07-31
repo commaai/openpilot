@@ -344,6 +344,7 @@ class CarInterfaceBase(ABC):
 
 class RadarInterfaceBase(ABC):
   def __init__(self, CP):
+    self.CP = CP
     self.rcp = None
     self.pts = {}
     self.delay = 0
@@ -466,7 +467,8 @@ SendCan = tuple[int, int, bytes, int]
 
 class CarControllerBase(ABC):
   def __init__(self, dbc_name: str, CP, VM):
-    pass
+    self.CP = CP
+    self.frame = 0
 
   @abstractmethod
   def update(self, CC: car.CarControl.Actuators, CS: car.CarState, now_nanos: int) -> tuple[car.CarControl.Actuators, list[SendCan]]:
