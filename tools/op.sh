@@ -192,7 +192,7 @@ function op_setup() {
 
   echo "Getting git submodules..."
   st="$(date +%s)"
-  op_run_command git submodule update --jobs 4 --init --recursive
+  op_run_command git submodule update --filter=blob:none --jobs 4 --init --recursive
   et="$(date +%s)"
   echo -e " ↳ [${GREEN}✔${NC}] Submodules installed successfully in $((et - st)) seconds.\n"
 

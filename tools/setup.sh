@@ -4,6 +4,7 @@ set -e
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
+BOLD='\033[1m'
 NC='\033[0m'
 
 if [ -z "$OPENPILOT_ROOT" ]; then
@@ -34,10 +35,12 @@ EOF
 }
 
 function check_stdin() {
+  echo "Checking for valid invocation..."
   if [ -t 0 ]; then
+    echo -e " ↳ [${GREEN}✔${NC}] Installer successfully invoked\n"
     return 0
   else
-    echo "stdin not found! Make sure to run 'bash <(curl -fsSL openpilot.comma.ai)'"
+    echo -e " ↳ [${RED}✗${NC}] stdin not found! Make sure to run 'bash <(curl -fsSL openpilot.comma.ai)'"
     return 1
   fi
 }
@@ -47,7 +50,9 @@ function ask_dir() {
 
   echo -n "Enter directory in which to install openpilot (default $OPENPILOT_ROOT): "
   read
-  OPENPILOT_ROOT=$(realpath "${REPLY:-$OPENPILOT_ROOT}/openpilot")
+  if [[ ! -z "$REPLY" ]]; then
+    OPENPILOT_ROOT="$(realpath $REPLY/openpilot)"
+  fi
 }
 
 function check_dir() {
@@ -96,10 +101,16 @@ function install_with_op() {
   cd $OPENPILOT_ROOT
   $OPENPILOT_ROOT/tools/op.sh install
   $OPENPILOT_ROOT/tools/op.sh setup
+
+  echo -e "\n----------------------------------------------------------------------"
+  echo -e "openpilot was successfully installed into ${BOLD}$OPENPILOT_ROOT${NC}"
+  echo -e "Checkout the docs at https://docs.comma.ai"
+  echo -e "Checkout how to contribute at https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md"
 }
 
-check_stdin
 show_motd
+
+check_stdin
 ask_dir
 check_dir
 check_git
