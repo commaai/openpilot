@@ -120,6 +120,18 @@ jobs:
     - name: Building openpilot
       run: . .venv/bin/activate && scons -j$(nproc)
 
+  setup_all:
+    name: Setup openpilot on ${{ matrix.platform.runner }}
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      matrix:
+        platform: [ {runner: "ubuntu-24.04",                arch: "x86_64",  scons_cache_tag: "x86_64"},
+                    {runner: "macos-14",                    arch: "arm64",   scons_cache_tag: "macos"},
+                    {runner: "namespace-profile-arm64-2x8", arch: "aarch64", scons_cache_tag: "aarch64"}]
+    steps:
+    - name: Install openpilot
+      run: curl -fsSL openpilot.comma.ai | bash
+
   docker_push_multiarch:
     name: docker push multiarch tag
     runs-on: ubuntu-latest
