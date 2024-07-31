@@ -35,22 +35,27 @@ EOF
 }
 
 function check_stdin() {
-  echo "Checking for valid invocation..."
   if [ -t 0 ]; then
-    echo -e " ↳ [${GREEN}✔${NC}] Installer successfully invoked\n"
     INTERACTIVE=1
   else
-    echo -e " ↳ [${RED}✗${NC}] stdin not found! Running in non-interactive mode.\n"
+    echo "Checking for valid invocation..."
+    echo -e " ↳ [${RED}✗${NC}] stdin not found! Running in non-interactive mode."
+    echo -e "       Run ${BOLD}'bash <(curl -fsSL openpilot.comma.ai)'${NC} to run in interactive mode.\n"
   fi
 }
 
 function ask_dir() {
+  echo -n "Enter directory in which to install openpilot (default $OPENPILOT_ROOT): "
+
   if [[ -z $INTERACTIVE ]]; then
+    echo -e "\nBecause your are running in non-interactive mode, the installation"
+    echo -e "will default to $OPENPILOT_ROOT\n"
     return 0
   fi
-  echo -n "Enter directory in which to install openpilot (default $OPENPILOT_ROOT): "
+
   read
   if [[ ! -z "$REPLY" ]]; then
+    mkdir -p $REPLY
     OPENPILOT_ROOT="$(realpath $REPLY/openpilot)"
   fi
 }
@@ -58,18 +63,33 @@ function ask_dir() {
 function check_dir() {
   echo "Checking for installation directory..."
   if [ -d "$OPENPILOT_ROOT" ]; then
-    echo -e " ↳ [${RED}✗${NC}] Installation destination $OPENPILOT_ROOT already exists !"
+    echo -e " ↳ [${RED}✗${NC}] Installation destination $OPENPILOT_ROOT already exists!"
+
+    # not a valid clone, can't continue
+    if [[ ! -z "$(ls -A $OPENPILOT_ROOT)" && ! -f "$OPENPILOT_ROOT/launch_openpilot.sh" ]]; then
+      echo -e "       $OPENPILOT_ROOT already contains files but does not seems"
+      echo -e "       to be a valid openpilot git clone. Choose another location for"
+      echo -e "       installing openpilot!\n"
+      return 1
+    fi
+
+    # by default, don't try installing in already existing directory
     if [[ -z $INTERACTIVE ]]; then
       return 1
     fi
+
     read -p "       Would you like to attempt installation anyway? [Y/n] " -n 1 -r
     echo -e "\n"
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
       return 1
-    else
-      RETRY_INSTALLATION=1
-      return 0
     fi
+
+    # already a "valid" openpilot clone, skip cloning again
+    if [[ ! -z "$(ls -A $OPENPILOT_ROOT)" ]]; then
+      SKIP_GIT_CLONE=1
+    fi
+
+    return 0
   fi
 
   echo -e " ↳ [${GREEN}✔${NC}] Successfully chosen $OPENPILOT_ROOT as installation directory\n"
@@ -117,5 +137,5 @@ check_stdin
 ask_dir
 check_dir
 check_git
-[ -z $RETRY_INSTALLATION ] && git_clone
+[ -z $SKIP_GIT_CLONE ] && git_clone
 install_with_op
