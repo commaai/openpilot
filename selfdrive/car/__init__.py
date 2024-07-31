@@ -189,7 +189,7 @@ def get_friction(lateral_accel_error: float, lateral_accel_deadzone: float, fric
 
 
 def make_can_msg(addr, dat, bus):
-  return [addr, 0, dat, bus]
+  return [addr, dat, bus]
 
 
 def make_tester_present_msg(addr, bus, subaddr=None, suppress_response=False):

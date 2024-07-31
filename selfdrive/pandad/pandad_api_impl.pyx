@@ -8,7 +8,6 @@ cdef extern from "panda.h":
   cdef struct can_frame:
     long address
     string dat
-    long busTime
     long src
 
 cdef extern from "can_list_to_can_capnp.cc":
@@ -22,9 +21,8 @@ def can_list_to_can_capnp(can_msgs, msgtype='can', valid=True):
   for can_msg in can_msgs:
     f = &(can_list.emplace_back())
     f.address = can_msg[0]
-    f.busTime = can_msg[1]
-    f.dat = can_msg[2]
-    f.src = can_msg[3]
+    f.dat = can_msg[1]
+    f.src = can_msg[2]
 
   cdef string out
   can_list_to_can_capnp_cpp(can_list, out, msgtype == 'sendcan', valid)
