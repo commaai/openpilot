@@ -458,13 +458,6 @@ def controlsd_config_callback(params, cfg, lr):
   params.put("ReplayControlsState", controlsState.as_builder().to_bytes())
 
 
-def locationd_config_pubsub_callback(params, cfg, lr):
-  ublox = params.get_bool("UbloxAvailable")
-  sub_keys = ({"gpsLocation", } if ublox else {"gpsLocationExternal", })
-
-  cfg.pubs = set(cfg.pubs) - sub_keys
-
-
 CONFIGS = [
   ProcessConfig(
     proc_name="controlsd",
@@ -529,12 +522,10 @@ CONFIGS = [
   ProcessConfig(
     proc_name="locationd",
     pubs=[
-      "cameraOdometry", "accelerometer", "gyroscope", "gpsLocationExternal",
-      "liveCalibration", "carState", "gpsLocation"
+      "cameraOdometry", "accelerometer", "gyroscope", "liveCalibration", "carState"
     ],
     subs=["livePose"],
     ignore=["logMonoTime"],
-    config_callback=locationd_config_pubsub_callback,
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
