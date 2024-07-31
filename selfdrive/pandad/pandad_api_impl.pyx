@@ -41,9 +41,9 @@ def can_list_to_can_capnp(can_msgs, msgtype='can', valid=True):
   can_list_to_can_capnp_cpp(can_list, out, msgtype == 'sendcan', valid)
   return out
 
-def can_capnp_to_list(strings, sendcan=False):
+def can_capnp_to_list(strings, msgtype='can'):
   cdef vector[CanData] data
-  can_capnp_to_can_list_cpp(strings, data, sendcan)
+  can_capnp_to_can_list_cpp(strings, data, msgtype == 'sendcan')
 
   result = []
   cdef CanData *d
