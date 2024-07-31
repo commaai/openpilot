@@ -17,6 +17,15 @@ class TeslaCAN:
     ret += sum(dat)
     return ret & 0xFF
 
+  @staticmethod
+  def right_stalk_crc(dat):
+    right_stalk_val = [0x7C, 0xB6, 0xF0, 0x2F, 0x69, 0xA3, 0xDD, 0x1C, 0x56, 0x90, 0xCA, 0x09, 0x43, 0x7D, 0xB7, 0xF1]
+    cntr = dat[0] & 0xF
+    crc1_func = crcmod.mkCrcFun(0x12F, initCrc=0x00, xorOut=0xFF, rev=False)
+    crc1 = crc1_func(dat) & 0xFF
+    crc2_func = crcmod.mkCrcFun(0x12F, initCrc=crc1, xorOut=0xFF, rev=False)
+    return crc2_func(bytes([right_stalk_val[cntr]])) & 0xFF
+
   def create_steering_control(self, angle, enabled, counter):
     values = {
       "DAS_steeringAngleRequest": -angle,
@@ -25,56 +34,11 @@ class TeslaCAN:
       "DAS_steeringControlCounter": counter,
     }
 
-    data = self.packer.make_can_msg("DAS_steeringControl", CANBUS.chassis, values)[2]
+    data = self.packer.make_can_msg("DAS_steeringControl", CANBUS.party, values)[2]
     values["DAS_steeringControlChecksum"] = self.checksum(0x488, data[:3])
-    return self.packer.make_can_msg("DAS_steeringControl", CANBUS.chassis, values)
-
-  def create_action_request(self, msg_stw_actn_req, cancel, bus, counter):
-    # We copy this whole message when spamming cancel
-    values = {s: msg_stw_actn_req[s] for s in [
-      "SpdCtrlLvr_Stat",
-      "VSL_Enbl_Rq",
-      "SpdCtrlLvrStat_Inv",
-      "DTR_Dist_Rq",
-      "TurnIndLvr_Stat",
-      "HiBmLvr_Stat",
-      "WprWashSw_Psd",
-      "WprWash_R_Sw_Posn_V2",
-      "StW_Lvr_Stat",
-      "StW_Cond_Flt",
-      "StW_Cond_Psd",
-      "HrnSw_Psd",
-      "StW_Sw00_Psd",
-      "StW_Sw01_Psd",
-      "StW_Sw02_Psd",
-      "StW_Sw03_Psd",
-      "StW_Sw04_Psd",
-      "StW_Sw05_Psd",
-      "StW_Sw06_Psd",
-      "StW_Sw07_Psd",
-      "StW_Sw08_Psd",
-      "StW_Sw09_Psd",
-      "StW_Sw10_Psd",
-      "StW_Sw11_Psd",
-      "StW_Sw12_Psd",
-      "StW_Sw13_Psd",
-      "StW_Sw14_Psd",
-      "StW_Sw15_Psd",
-      "WprSw6Posn",
-      "MC_STW_ACTN_RQ",
-      "CRC_STW_ACTN_RQ",
-    ]}
-
-    if cancel:
-      values["SpdCtrlLvr_Stat"] = 1
-      values["MC_STW_ACTN_RQ"] = counter
-
-    data = self.packer.make_can_msg("STW_ACTN_RQ", bus, values)[2]
-    values["CRC_STW_ACTN_RQ"] = self.crc(data[:7])
-    return self.packer.make_can_msg("STW_ACTN_RQ", bus, values)
+    return self.packer.make_can_msg("DAS_steeringControl", CANBUS.party, values)
 
   def create_longitudinal_commands(self, acc_state, speed, min_accel, max_accel, cnt):
-    messages = []
     values = {
       "DAS_setSpeed": speed * CV.MS_TO_KPH,
       "DAS_accState": acc_state,
@@ -86,9 +50,20 @@ class TeslaCAN:
       "DAS_controlCounter": cnt,
       "DAS_controlChecksum": 0,
     }
+    data = self.packer.make_can_msg("DAS_control", CANBUS.party, values)[2]
+    values["DAS_controlChecksum"] = self.checksum(0x2b9, data[:7])
+    return self.packer.make_can_msg("DAS_control", CANBUS.party, values)
 
-    for packer, bus in [(self.packer, CANBUS.chassis), (self.pt_packer, CANBUS.powertrain)]:
-      data = packer.make_can_msg("DAS_control", bus, values)[2]
-      values["DAS_controlChecksum"] = self.checksum(0x2b9, data[:7])
-      messages.append(packer.make_can_msg("DAS_control", bus, values))
-    return messages
+  def right_stalk_press(self, counter, position):
+    values = {
+              "SCCM_rightStalkCrc": 0,
+              "SCCM_rightStalkCounter": counter,
+              "SCCM_rightStalkStatus": position,
+              "SCCM_rightStalkReserved1": 0,
+              "SCCM_parkButtonStatus": 0,
+              "SCCM_rightStalkReserved2": 0,
+              }
+
+    data = self.pt_packer.make_can_msg("SCCM_rightStalk", CANBUS.vehicle, values)[2]
+    values["SCCM_rightStalkCrc"] = self.right_stalk_crc(data[1:])
+    return self.pt_packer.make_can_msg("SCCM_rightStalk", CANBUS.vehicle, values)

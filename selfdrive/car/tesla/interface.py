@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
 from panda import Panda
-from openpilot.selfdrive.car.tesla.values import CANBUS, CAR
+from openpilot.selfdrive.car.tesla.values import CAR
 from openpilot.selfdrive.car import get_safety_config
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
@@ -19,20 +19,12 @@ class CarInterface(CarInterfaceBase):
     ret.steerControlType = car.CarParams.SteerControlType.angle
 
     ret.longitudinalActuatorDelay = 0.5 # s
-    ret.radarTimeStep = (1.0 / 8) # 8Hz
+    ret.radarUnavailable = True
 
-    # Check if we have messages on an auxiliary panda, and that 0x2bf (DAS_control) is present on the AP powertrain bus
-    # If so, we assume that it is connected to the longitudinal harness.
-    flags = (Panda.FLAG_TESLA_RAVEN if candidate == CAR.TESLA_MODELS_RAVEN else 0)
-    if (CANBUS.autopilot_powertrain in fingerprint.keys()) and (0x2bf in fingerprint[CANBUS.autopilot_powertrain].keys()):
-      ret.openpilotLongitudinalControl = True
+    if candidate in [CAR.TESLA_AP3_MODEL3, CAR.TESLA_AP3_MODELY]:
+      flags = Panda.FLAG_TESLA_MODEL3_Y
       flags |= Panda.FLAG_TESLA_LONG_CONTROL
-      ret.safetyConfigs = [
-        get_safety_config(car.CarParams.SafetyModel.tesla, flags),
-        get_safety_config(car.CarParams.SafetyModel.tesla, flags | Panda.FLAG_TESLA_POWERTRAIN),
-      ]
-    else:
-      ret.openpilotLongitudinalControl = False
+      ret.openpilotLongitudinalControl = True
       ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.tesla, flags)]
 
     ret.steerLimitTimer = 1.0
@@ -40,7 +32,7 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   def _update(self, c):
-    ret = self.CS.update(self.cp, self.cp_cam)
+    ret = self.CS.update(self.cp, self.cp_cam, self.cp_adas)
 
     ret.events = self.create_common_events(ret).to_msg()
 
