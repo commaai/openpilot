@@ -13,7 +13,7 @@ LongCtrlState = car.CarControl.Actuators.LongControlState
 
 class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
-    self.CP = CP
+    super().__init__(dbc_name, CP, VM)
     self.CCP = CarControllerParams(CP)
     self.CCS = pqcan if CP.flags & VolkswagenFlags.PQ else mqbcan
     self.packer_pt = CANPacker(dbc_name)

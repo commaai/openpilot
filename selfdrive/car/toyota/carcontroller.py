@@ -27,7 +27,7 @@ MAX_LTA_DRIVER_TORQUE_ALLOWANCE = 150  # slightly above steering pressed allows 
 
 class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
-    self.CP = CP
+    super().__init__(dbc_name, CP, VM)
     self.params = CarControllerParams(self.CP)
     self.frame = 0
     self.last_steer = 0
