@@ -55,7 +55,7 @@ class LocationEstimator:
     self.kf.reset(t)
 
   def _validate_sensor_time(self, sensor_time: float, t: float):
-    # ingore empty readings
+    # ignore empty readings
     if sensor_time == 0:
       return False
 

@@ -97,7 +97,8 @@ class PoseKalman:
 
   def __init__(self, generated_dir, max_rewind_age):
     dim_state, dim_state_err = PoseKalman.initial_x.shape[0], PoseKalman.initial_P.shape[0]
-    self.filter = EKF_sym_pyx(generated_dir, self.name, PoseKalman.Q, PoseKalman.initial_x, PoseKalman.initial_P, dim_state, dim_state_err, max_rewind_age=max_rewind_age)
+    self.filter = EKF_sym_pyx(generated_dir, self.name, PoseKalman.Q, PoseKalman.initial_x, PoseKalman.initial_P,
+                              dim_state, dim_state_err, max_rewind_age=max_rewind_age)
 
   @property
   def x(self):
