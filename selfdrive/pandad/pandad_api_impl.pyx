@@ -23,7 +23,7 @@ cdef extern from "opendbc/can/common.h":
     vector[CanFrame] frames
 
 cdef extern from "can_list_to_can_capnp.cc":
-  void can_list_to_can_capnp_cpp(const vector[can_frame] &can_list, string &out, bool sendCan, bool valid)
+  void can_list_to_can_capnp_cpp(const vector[can_frame] &can_list, string &out, bool sendcan, bool valid)
   void can_capnp_to_can_list_cpp(const vector[string] &strings, vector[CanData] &can_data, bool sendcan)
 
 def can_list_to_can_capnp(can_msgs, msgtype='can', valid=True):

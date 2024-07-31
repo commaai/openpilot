@@ -2,11 +2,11 @@
 #include "selfdrive/pandad/panda.h"
 #include "opendbc/can/common.h"
 
-void can_list_to_can_capnp_cpp(const std::vector<can_frame> &can_list, std::string &out, bool sendCan, bool valid) {
+void can_list_to_can_capnp_cpp(const std::vector<can_frame> &can_list, std::string &out, bool sendcan, bool valid) {
   MessageBuilder msg;
   auto event = msg.initEvent(valid);
 
-  auto canData = sendCan ? event.initSendcan(can_list.size()) : event.initCan(can_list.size());
+  auto canData = sendcan ? event.initSendcan(can_list.size()) : event.initCan(can_list.size());
   int j = 0;
   for (auto it = can_list.begin(); it != can_list.end(); it++, j++) {
     auto c = canData[j];
