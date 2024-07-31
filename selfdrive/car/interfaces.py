@@ -52,6 +52,7 @@ class LatControlInputs(NamedTuple):
   aego: float
 
 
+SendCan = tuple[int, bytes, int]
 TorqueFromLateralAccelCallbackType = Callable[[LatControlInputs, car.CarParams.LateralTorqueTuning, float, float, bool, bool], float]
 
 
@@ -109,7 +110,7 @@ class CarInterfaceBase(ABC):
     dbc_name = "" if self.cp is None else self.cp.dbc_name
     self.CC: CarControllerBase = CarController(dbc_name, CP, self.VM)
 
-  def apply(self, c: car.CarControl, now_nanos: int) -> tuple[car.CarControl.Actuators, list[tuple[int, int, bytes, int]]]:
+  def apply(self, c: car.CarControl, now_nanos: int) -> tuple[car.CarControl.Actuators, list[SendCan]]:
     return self.CC.update(c, self.CS, now_nanos)
 
   @staticmethod
@@ -460,9 +461,6 @@ class CarStateBase(ABC):
   @staticmethod
   def get_loopback_can_parser(CP):
     return None
-
-
-SendCan = tuple[int, int, bytes, int]
 
 
 class CarControllerBase(ABC):
