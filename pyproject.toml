@@ -198,7 +198,7 @@ warn_return_any=true
 # allow implicit optionals for default args
 implicit_optional = true
 
-# https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
+# https://docs.astral.sh/ruff/configuration/#using-pyprojecttoml
 [tool.ruff]
 indent-width = 2
 lint.select = [
@@ -247,5 +247,6 @@ lint.flake8-implicit-str-concat.allow-multiline = false
 [tool.coverage.run]
 concurrency = ["multiprocessing", "thread"]
 
+# https://docs.astral.sh/ruff/settings/#format
 [tool.ruff.format]
 quote-style = "preserve"

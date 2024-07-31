@@ -23,5 +23,8 @@
     "system/**",
     "third_party/**",
     "tools/**",
-  ]
+  ],
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  }
 }
