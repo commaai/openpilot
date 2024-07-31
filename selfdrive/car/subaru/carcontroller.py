@@ -15,7 +15,6 @@ class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
     super().__init__(dbc_name, CP, VM)
     self.apply_steer_last = 0
-    self.frame = 0
 
     self.cruise_button_prev = 0
     self.steer_rate_counter = 0

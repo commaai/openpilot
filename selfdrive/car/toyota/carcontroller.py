@@ -29,7 +29,6 @@ class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
     super().__init__(dbc_name, CP, VM)
     self.params = CarControllerParams(self.CP)
-    self.frame = 0
     self.last_steer = 0
     self.last_angle = 0
     self.alert_active = False

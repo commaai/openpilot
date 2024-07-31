@@ -14,7 +14,6 @@ class CarController(CarControllerBase):
     self.apply_steer_last = 0
     self.packer = CANPacker(dbc_name)
     self.brake_counter = 0
-    self.frame = 0
 
   def update(self, CC, CS, now_nanos):
     can_sends = []

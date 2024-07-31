@@ -29,7 +29,6 @@ class CarController(CarControllerBase):
     self.VM = VM
     self.packer = CANPacker(dbc_name)
     self.CAN = fordcan.CanBus(CP)
-    self.frame = 0
 
     self.apply_curvature_last = 0
     self.main_on_last = False
