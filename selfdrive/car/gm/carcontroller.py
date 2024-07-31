@@ -19,12 +19,11 @@ MIN_STEER_MSG_INTERVAL_MS = 15
 
 class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
-    self.CP = CP
+    super().__init__(dbc_name, CP, VM)
     self.start_time = 0.
     self.apply_steer_last = 0
     self.apply_gas = 0
     self.apply_brake = 0
-    self.frame = 0
     self.last_steer_frame = 0
     self.last_button_frame = 0
     self.cancel_counter = 0

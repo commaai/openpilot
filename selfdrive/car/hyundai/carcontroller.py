@@ -44,12 +44,11 @@ def process_hud_alert(enabled, fingerprint, hud_control):
 
 class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
-    self.CP = CP
+    super().__init__(dbc_name, CP, VM)
     self.CAN = CanBus(CP)
     self.params = CarControllerParams(CP)
     self.packer = CANPacker(dbc_name)
     self.angle_limit_counter = 0
-    self.frame = 0
 
     self.accel_last = 0
     self.apply_steer_last = 0
