@@ -344,6 +344,7 @@ class CarInterfaceBase(ABC):
 
 class RadarInterfaceBase(ABC):
   def __init__(self, CP):
+    self.CP = CP
     self.rcp = None
     self.pts = {}
     self.delay = 0
