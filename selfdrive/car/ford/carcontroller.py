@@ -25,11 +25,10 @@ def apply_ford_curvature_limits(apply_curvature, apply_curvature_last, current_c
 
 class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
-    self.CP = CP
+    super().__init__(dbc_name, CP, VM)
     self.VM = VM
     self.packer = CANPacker(dbc_name)
     self.CAN = fordcan.CanBus(CP)
-    self.frame = 0
 
     self.apply_curvature_last = 0
     self.main_on_last = False
