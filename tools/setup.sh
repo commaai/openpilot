@@ -38,16 +38,16 @@ function check_stdin() {
   echo "Checking for valid invocation..."
   if [ -t 0 ]; then
     echo -e " ↳ [${GREEN}✔${NC}] Installer successfully invoked\n"
-    return 0
+    INTERACTIVE=1
   else
-    echo -e " ↳ [${RED}✗${NC}] stdin not found! Make sure to run 'bash <(curl -fsSL openpilot.comma.ai)'"
-    return 1
+    echo -e " ↳ [${RED}✗${NC}] stdin not found! Running in non-interactive mode.\n"
   fi
 }
 
 function ask_dir() {
-
-
+  if [[ -z $INTERACTIVE ]]; then
+    return 0
+  fi
   echo -n "Enter directory in which to install openpilot (default $OPENPILOT_ROOT): "
   read
   if [[ ! -z "$REPLY" ]]; then
@@ -59,6 +59,9 @@ function check_dir() {
   echo "Checking for installation directory..."
   if [ -d "$OPENPILOT_ROOT" ]; then
     echo -e " ↳ [${RED}✗${NC}] Installation destination $OPENPILOT_ROOT already exists !"
+    if [[ -z $INTERACTIVE ]]; then
+      return 1
+    fi
     read -p "       Would you like to attempt installation anyway? [Y/n] " -n 1 -r
     echo -e "\n"
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
