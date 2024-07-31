@@ -128,6 +128,8 @@ jobs:
         platform: [ {runner: "ubuntu-24.04",                arch: "x86_64",  scons_cache_tag: "x86_64"},
                     {runner: "macos-14",                    arch: "arm64",   scons_cache_tag: "macos"},
                     {runner: "namespace-profile-arm64-2x8", arch: "aarch64", scons_cache_tag: "aarch64"}]
+        exclude:
+          - platform: ${{ github.event.pull_request.head.repo.full_name == 'commaai/openpilot' && {"namespace-profile-arm64-2x8", "aarch64","aarch64"} }}
     steps:
     - name: Install openpilot
       run: curl -fsSL openpilot.comma.ai | bash
