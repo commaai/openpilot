@@ -121,8 +121,8 @@ jobs:
       run: . .venv/bin/activate && scons -j$(nproc)
 
   setup_all:
-    name: Setup openpilot on ${{ matrix.platform.runner }}
-    runs-on: ${{ matrix.platform.runner }}-${{ matrix.platform.arch }}
+    name: Setup openpilot on ${{ matrix.platform.runner }}-${{ matrix.platform.arch }}
+    runs-on: ${{ matrix.platform.runner }}
     strategy:
       matrix:
         platform: [ {runner: "ubuntu-24.04",                arch: "x86_64",  scons_cache_tag: "x86_64"},
