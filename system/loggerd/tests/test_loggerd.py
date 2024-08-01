@@ -170,7 +170,7 @@ class TestLoggerd:
         for p in processes:
           i = 0
           while not p.proc.is_alive():
-            if i > 5:
+            if i >= 5:
               raise Exception(f"Process {p.name} failed to run after 5 restarts")
             p.restart()
             i += 1
