@@ -73,20 +73,20 @@ function check_dir() {
       return 1
     fi
 
+    # already a "valid" openpilot clone, skip cloning again
+    if [[ ! -z "$(ls -A $OPENPILOT_ROOT)" ]]; then
+      SKIP_GIT_CLONE=1
+    fi
+
     # by default, don't try installing in already existing directory
     if [[ -z $INTERACTIVE ]]; then
-      return 1
+      return 0
     fi
 
     read -p "       Would you like to attempt installation anyway? [Y/n] " -n 1 -r
     echo -e "\n"
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
       return 1
-    fi
-
-    # already a "valid" openpilot clone, skip cloning again
-    if [[ ! -z "$(ls -A $OPENPILOT_ROOT)" ]]; then
-      SKIP_GIT_CLONE=1
     fi
 
     return 0
