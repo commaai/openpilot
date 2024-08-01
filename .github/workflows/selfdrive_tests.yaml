@@ -340,6 +340,7 @@ jobs:
     # This job name needs to be the same as UI_JOB_NAME in ui_preview.yaml
     name: Create UI Report
     runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
         with:
