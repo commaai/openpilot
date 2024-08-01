@@ -121,17 +121,18 @@ jobs:
       run: . .venv/bin/activate && scons -j$(nproc)
 
   setup_all:
-    name: Setup openpilot on ${{ matrix.platform.runner }}-${{ matrix.platform.arch }}
-    runs-on: ${{ matrix.platform.runner }}
+    name: Setup openpilot on ${{ matrix.platform[1] }}
+    runs-on: ${{ matrix.platform[0] }}
     strategy:
       fail-fast: false
       matrix:
-        platform: [ {runner: "ubuntu-24.04",                arch: "x86_64",  scons_cache_tag: "x86_64"},
-                    {runner: "ubuntu-20.04",                arch: "x86_64",  scons_cache_tag: "x86_64"},
-                    {runner: "macos-14",                    arch: "arm64",   scons_cache_tag: "macos"},
-                    {runner: "namespace-profile-arm64-2x8", arch: "aarch64", scons_cache_tag: "aarch64"}]
+        platform:
+          - [ubuntu-24-04, Linux-x86_64, x86_64]
+          - [namespace-profile-arm64-2x8, Linux-aarch64, aarch64]
+          - [macos-14, MacOS-arm64, macos]
+
         exclude:
-          - platform: ${{ github.event.pull_request.head.repo.full_name == 'commaai/openpilot' && '{"namespace-profile-arm64-2x8", "aarch64","aarch64"}' }}
+          - platform: ${{ github.event.pull_request.head.repo.full_name == 'commaai/openpilot' && '[namespace-profile-arm64-2x8, Linux-aarch64, aarch64]' }}
     steps:
     - name: Installing python
       uses: actions/setup-python@v5
