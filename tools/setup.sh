@@ -123,10 +123,17 @@ function git_clone() {
 function install_with_op() {
   cd $OPENPILOT_ROOT
   $OPENPILOT_ROOT/tools/op.sh install
-  $OPENPILOT_ROOT/tools/op.sh setup
+
+  (set +e
+    $OPENPILOT_ROOT/tools/op.sh setup
+    if [[ ! "$?" -eq 0 ]]; then
+      echo -e "\n[${RED}✗${NC}] failed to install openpilot!"
+      return 1
+    fi
+  )
 
   echo -e "\n----------------------------------------------------------------------"
-  echo -e "openpilot was successfully installed into ${BOLD}$OPENPILOT_ROOT${NC}"
+  echo -e "[${GREEN}✔${NC}] openpilot was successfully installed into ${BOLD}$OPENPILOT_ROOT${NC}"
   echo -e "Checkout the docs at https://docs.comma.ai"
   echo -e "Checkout how to contribute at https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md"
 }
