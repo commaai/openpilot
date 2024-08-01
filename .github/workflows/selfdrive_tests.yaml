@@ -18,7 +18,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  #PYTHONWARNINGS: error
+  PYTHONWARNINGS: error
   BASE_IMAGE: openpilot-base
   AZURE_TOKEN: ${{ secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN }}
 
@@ -126,15 +126,34 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ {runner: "ubuntu-24.04",                name: "Linux-x86_64",  scons_cache_tag: "x86_64"},
-                    {runner: "namespace-profile-arm64-2x8", name: "Linux-aarch64", scons_cache_tag: "aarch64"},
-                    {runner: "macos-14",                    name: "MacOS-arm64",   scons_cache_tag: "macos"}]
+        platform: [ {runner: "ubuntu-24.04",                name: "Linux-x86_64",  scons_cache_tag: ""},
+                    {runner: "namespace-profile-arm64-2x8", name: "Linux-aarch64", scons_cache_tag: ""},
+                    {runner: "macos-14",                    name: "MacOS-arm64",   scons_cache_tag: "-macos"}]
         exclude:
           - {platform: {runner: "${{ (github.repository != 'commaai/openpilot' || (github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != 'commaai/openpilot')) && 'namespace-profile-arm64-2x8' }}" }}
 
     steps:
     - name: Install openpilot
       run: curl -fsSL openpilot.comma.ai | bash
+      env:
+        PYTHONWARNINGS: default
+
+    - name: Getting scons cache
+      uses: 'actions/cache/restore@v3'
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ runner.arch }}${{ matrix.platform.scons_cache_tag }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        restore-keys: |
+          scons-${{ runner.arch }}${{ matrix.platform.scons_cache_tag }}-${{ env.CACHE_COMMIT_DATE }}
+          scons-${{ runner.arch }}${{ matrix.platform.scons_cache_tag }}
+
+    - name: Install openpilot
+      run: curl -fsSL openpilot.comma.ai | bash
+      env:
+        PYTHONWARNINGS: default
+
+    - name: Building openpilot
+      run: ./openpilot/tools/op.sh build -j4
 
   docker_push_multiarch:
     name: docker push multiarch tag
