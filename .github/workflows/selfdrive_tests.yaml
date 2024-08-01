@@ -122,7 +122,7 @@ jobs:
 
   setup_all:
     name: Setup openpilot on ${{ matrix.platform.runner }}
-    runs-on: ${{ matrix.platform.runner }}
+    runs-on: ${{ matrix.platform.runner }}-${{ matrix.platform.arch }}
     strategy:
       matrix:
         platform: [ {runner: "ubuntu-24.04",                arch: "x86_64",  scons_cache_tag: "x86_64"},
