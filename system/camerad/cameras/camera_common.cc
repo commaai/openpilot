@@ -84,7 +84,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
 
   // the encoder HW tells us the size it wants after setting it up.
   // TODO: VENUS_BUFFER_SIZE should give the size, but it's too small. dependent on encoder settings?
-  size_t nv12_size = (rgb_width >= 2688 ? 2900 : 2346)*nv12_width;
+  size_t nv12_size = (rgb_width <= 1344 ? 2900 : 2346)*nv12_width;
 
   vipc_server->create_buffers_with_sizes(stream_type, YUV_BUFFER_COUNT, false, rgb_width, rgb_height, nv12_size, nv12_width, nv12_uv_offset);
   LOGD("created %d YUV vipc buffers with size %dx%d", YUV_BUFFER_COUNT, nv12_width, nv12_height);
