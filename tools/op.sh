@@ -181,20 +181,26 @@ function op_setup() {
   op_check_python
 
   echo "Installing dependencies..."
+  st="$(date +%s)"
   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     op_run_command $OPENPILOT_ROOT/tools/ubuntu_setup.sh
   elif [[ "$OSTYPE" == "darwin"* ]]; then
     op_run_command $OPENPILOT_ROOT/tools/mac_setup.sh
   fi
-  echo -e " ↳ [${GREEN}✔${NC}] Dependencies installed successfully.\n"
+  et="$(date +%s)"
+  echo -e " ↳ [${GREEN}✔${NC}] Dependencies installed successfully in $((et - st)) seconds.\n"
 
   echo "Getting git submodules..."
-  op_run_command git submodule update --jobs 4 --init --recursive
-  echo -e " ↳ [${GREEN}✔${NC}] Submodules installed successfully.\n"
+  st="$(date +%s)"
+  op_run_command git submodule update --filter=blob:none --jobs 4 --init --recursive
+  et="$(date +%s)"
+  echo -e " ↳ [${GREEN}✔${NC}] Submodules installed successfully in $((et - st)) seconds.\n"
 
   echo "Pulling git lfs files..."
+  st="$(date +%s)"
   op_run_command git lfs pull
-  echo -e " ↳ [${GREEN}✔${NC}] Files pulled successfully.\n"
+  et="$(date +%s)"
+  echo -e " ↳ [${GREEN}✔${NC}] Files pulled successfully in $((et - st)) seconds.\n"
 
   op_check
 
@@ -360,7 +366,7 @@ function _op() {
     -d | --dir )       shift 1; OPENPILOT_ROOT="$1"; shift 1 ;;
     --dry )            shift 1; DRY="1" ;;
     -n | --no-verify ) shift 1; NO_VERIFY="1" ;;
-    -v | --verbose ) shift 1; VERBOSE="1" ;;
+    -v | --verbose )   shift 1; VERBOSE="1" ;;
   esac
 
   # parse Commands

@@ -25,7 +25,7 @@ class TeslaCAN:
       "DAS_steeringControlCounter": counter,
     }
 
-    data = self.packer.make_can_msg("DAS_steeringControl", CANBUS.chassis, values)[2]
+    data = self.packer.make_can_msg("DAS_steeringControl", CANBUS.chassis, values)[1]
     values["DAS_steeringControlChecksum"] = self.checksum(0x488, data[:3])
     return self.packer.make_can_msg("DAS_steeringControl", CANBUS.chassis, values)
 
@@ -69,7 +69,7 @@ class TeslaCAN:
       values["SpdCtrlLvr_Stat"] = 1
       values["MC_STW_ACTN_RQ"] = counter
 
-    data = self.packer.make_can_msg("STW_ACTN_RQ", bus, values)[2]
+    data = self.packer.make_can_msg("STW_ACTN_RQ", bus, values)[1]
     values["CRC_STW_ACTN_RQ"] = self.crc(data[:7])
     return self.packer.make_can_msg("STW_ACTN_RQ", bus, values)
 
@@ -88,7 +88,7 @@ class TeslaCAN:
     }
 
     for packer, bus in [(self.packer, CANBUS.chassis), (self.pt_packer, CANBUS.powertrain)]:
-      data = packer.make_can_msg("DAS_control", bus, values)[2]
+      data = packer.make_can_msg("DAS_control", bus, values)[1]
       values["DAS_controlChecksum"] = self.checksum(0x2b9, data[:7])
       messages.append(packer.make_can_msg("DAS_control", bus, values))
     return messages
