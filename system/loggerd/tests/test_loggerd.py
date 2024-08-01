@@ -157,7 +157,7 @@ class TestLoggerd:
     length = random.randint(1, 3)
     os.environ["LOGGERD_SEGMENT_LENGTH"] = str(length)
 
-    processes = [managed_processes["loggerd"], managed_processes["encoderd"]]
+    processes = (managed_processes["loggerd"], managed_processes["encoderd"])
     for p in processes:
       p.start()
 
