@@ -164,14 +164,15 @@ class TestLoggerd:
     assert pm.wait_for_readers_to_update("roadCameraState", timeout=5)
 
     fps = 20.0
+    restart_limit = 5
     for n in range(1, int(num_segs*length*fps)+1):
       for stream_type, frame_spec, state in streams:
 
         for p in processes:
           i = 0
           while not p.proc.is_alive():
-            if i >= 5:
-              raise Exception(f"Process {p.name} failed to run after 5 restarts")
+            if i >= restart_limit:
+              raise Exception(f"Process {p.name} failed to run after {restart_limit} restarts")
             p.restart()
             i += 1
 
