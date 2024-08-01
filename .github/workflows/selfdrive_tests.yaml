@@ -132,7 +132,7 @@ jobs:
           - [macos-14, MacOS-arm64, macos]
 
         exclude:
-          - platform: ${{ github.event.pull_request.head.repo.full_name == 'commaai/openpilot' && '[namespace-profile-arm64-2x8, Linux-aarch64, aarch64]' }}
+          - platform: ${{ github.repository == 'commaai/openpilot' && [namespace-profile-arm64-2x8, Linux-aarch64, aarch64] }}
     steps:
     - name: Installing python
       uses: actions/setup-python@v5
