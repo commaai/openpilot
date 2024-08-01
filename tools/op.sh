@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+if [[ ! "${BASH_SOURCE[0]}" = "${0}" ]]; then
+  echo "Invalid invocation! This script must not be sourced."
+  echo "Run 'op.sh' directly or check your .bashrc for a valid alias"
+  return 0
+fi
+
 set -e
 
 RED='\033[0;31m'
