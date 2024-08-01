@@ -127,10 +127,10 @@ jobs:
       fail-fast: false
       matrix:
         platform: [ {runner: "ubuntu-24.04",                name: "Linux-x86_64",  scons_cache_tag: "x86_64"},
-                    {runner: "macos-14",                    name: "MacOS-arm64",   scons_cache_tag: "macos"},
-                    {runner: "namespace-profile-arm64-2x8", name: "Linux-aarch64", scons_cache_tag: "aarch64"}]
+                    {runner: "namespace-profile-arm64-2x8", name: "Linux-aarch64", scons_cache_tag: "aarch64"},
+                    {runner: "macos-14",                    name: "MacOS-arm64",   scons_cache_tag: "macos"}]
         exclude:
-          - {platform: {runner: "namespace-profile-arm64-2x8"}}
+          - {platform: {runner: "${{ github.event_name == 'pull_request' && 'namespace-profile-arm64-2x8' }}" }}
 
     steps:
     - name: Installing python
