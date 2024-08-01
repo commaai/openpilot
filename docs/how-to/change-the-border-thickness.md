@@ -13,7 +13,7 @@ The goal of this guide is to make our first changes to the openpilot UI. **No pr
 
 ## Step 1: Clone openpilot
 
-Open up terminal to copy and past each line below. Press `enter` on your keyboard after each line to execute the command. Wait for each line to execute before moving on to the next line.
+Open up terminal to copy and paste each line below. Press `enter` on your keyboard after each line to execute the command. Wait for each line to execute before moving on to the next line.
 
 Wait for it to clone openpilot and install dependencies. A faster internet speed will make install quicker. If clone fails check internet.
 ````bash
@@ -35,7 +35,6 @@ scons -j8
 ```
 
 If this is your first time using terminal, seeing something like below is totally normal. It should look like a bunch of seemingly random words to someone new. As openpilot is building you will see a lot of words being scrolled through.
-
 ```bash
 common/libcommon.a -ljson11 cereal/libsocketmaster.a msgq_repo/libmsgq.a -lzmq -lcapnp -lkj cereal/libcereal.a msgq_repo/libvisionipc.a
 -lm -lssl -lcrypto -lpthread -lqt_util -lQt5Widgets -lQt5Gui -lQt5Core -lQt5Network -lQt5Concurrent -lQt5Multimedia -lQt5Quick
@@ -63,7 +62,7 @@ This shows where my openpilot clone is. This is what we will need to find when w
 
 Open up Visual Studio Code and open up the `openpilot` folder. Refer to the path from the previous step if you are trying to locate where your clone is.
 
-If you are new, find the top tool bar and locate the button `File` then find the button `Open Folder`. Then locate the `openpilot` folder and click open.
+If you are new, find the top toolbar and locate the button `File` then find the button `Open Folder`. Then locate the `openpilot` folder and click open.
 
 <br>
 
@@ -79,7 +78,7 @@ Click on the result that shows `const int UI_BORDER_SIZE = 30;`. This should be 
 
 ## Step 5: Change the thickness of the border
 
-The code below changes how thick the openpilot border is. Increase the number  for a thicker border, decrease it for a thinner border.
+The code below changes how thick the openpilot border is. Increase the number for a thicker border, decrease it for a thinner border.
 ```
 const int UI_BORDER_SIZE = 30;
 ```
@@ -109,7 +108,7 @@ tools/replay/replay --demo
 ```
 
 **7c.** Terminal 2 commands<br>
-This will activate python environment and also rebuild the UI. This could take a similar length of time to the first build we did in the beginning in step 2b.
+This will activate Python environment and also rebuild the UI. This could take a similar length of time to the first build we did in the beginning in step 2b.
 ```bash
 source .venv/bin/activate
 scons -j8 && selfdrive/ui/ui
@@ -129,5 +128,5 @@ After terminal 2 finishes another window should pop up that shows the openpilot 
 
 - Your biggest friend is using the search tool from VSCode
 - Don't forget to activate Python virtual environment
-- Use VSCode source control to make sure you are not doing any unintended changes
+- Use VSCode source control to make sure you are not making any unintended changes
 - Make sure to save after changes, then rebuild every time you make a UI change in openpilot to view your change
