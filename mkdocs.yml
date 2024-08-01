@@ -2,6 +2,8 @@ site_name: openpilot docs
 repo_url: https://github.com/commaai/openpilot/
 site_url: https://docs.comma.ai
 
+exclude_docs: README.md
+
 strict: true
 docs_dir: docs
 site_dir: docs_site/

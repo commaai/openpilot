@@ -257,7 +257,6 @@ bool Panda::unpack_can_buffer(uint8_t *data, uint32_t &size, std::vector<can_fra
     }
 
     can_frame &canData = out_vec.emplace_back();
-    canData.busTime = 0;
     canData.address = header.addr;
     canData.src = header.bus + bus_offset;
     if (header.rejected) {
