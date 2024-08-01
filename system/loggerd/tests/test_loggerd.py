@@ -156,13 +156,25 @@ class TestLoggerd:
     num_segs = random.randint(2, 5)
     length = random.randint(1, 3)
     os.environ["LOGGERD_SEGMENT_LENGTH"] = str(length)
-    managed_processes["loggerd"].start()
-    managed_processes["encoderd"].start()
+
+    processes = [managed_processes["loggerd"], managed_processes["encoderd"]]
+    for p in processes:
+      p.start()
+
     assert pm.wait_for_readers_to_update("roadCameraState", timeout=5)
 
     fps = 20.0
     for n in range(1, int(num_segs*length*fps)+1):
       for stream_type, frame_spec, state in streams:
+
+        for p in processes:
+          i = 0
+          while not p.proc.is_alive():
+            if i > 5:
+              raise Exception(f"Process {p.name} failed to run after 5 restarts")
+            p.restart()
+            i += 1
+
         dat = np.empty(frame_spec[2], dtype=np.uint8)
         vipc_server.send(stream_type, dat[:].flatten().tobytes(), n, n/fps, n/fps)
 
@@ -174,8 +186,8 @@ class TestLoggerd:
       for _, _, state in streams:
         assert pm.wait_for_readers_to_update(state, timeout=5, dt=0.001)
 
-    managed_processes["loggerd"].stop()
-    managed_processes["encoderd"].stop()
+    for p in processes:
+      p.stop()
 
     route_path = str(self._get_latest_log_dir()).rsplit("--", 1)[0]
     for n in range(num_segs):
