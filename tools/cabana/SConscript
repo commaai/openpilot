@@ -16,7 +16,7 @@ qt_libs = ['qt_util'] + base_libs
 
 cabana_env = qt_env.Clone()
 cabana_libs = [widgets, cereal, messaging, visionipc, replay_lib, 'panda', 'avutil', 'avcodec', 'avformat', 'bz2', 'zstd', 'curl', 'yuv', 'usb-1.0'] + qt_libs
-opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (cabana_env.Dir("../../opendbc").abspath)
+opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (cabana_env.Dir("../../opendbc/dbc").abspath)
 cabana_env['CXXFLAGS'] += [opendbc_path]
 
 # build assets
