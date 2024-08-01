@@ -138,11 +138,10 @@ class CarState(CarStateBase):
 
     # Gear Selection via Cluster - For those Kia/Hyundai which are not fully discovered, we can use the Cluster Indicator for Gear Selection,
     # as this seems to be standard over all cars, but is not the preferred method.
-    if self.CP.flags & (HyundaiFlags.HYBRID | HyundaiFlags.EV | HyundaiFlags.FCEV):
-      if self.CP.flags & HyundaiFlags.FCEV:
-        gear = cp.vl["EMS20"]["HYDROGEN_GEAR_SHIFTER"]
-      else:
-        gear = cp.vl["ELECT_GEAR"]["Elect_Gear_Shifter"]
+    if self.CP.flags & (HyundaiFlags.HYBRID | HyundaiFlags.EV):
+      gear = cp.vl["ELECT_GEAR"]["Elect_Gear_Shifter"]
+    elif self.CP.flags & HyundaiFlags.FCEV:
+      gear = cp.vl["EMS20"]["HYDROGEN_GEAR_SHIFTER"]
     elif self.CP.carFingerprint in CAN_GEARS["use_cluster_gears"]:
       gear = cp.vl["CLU15"]["CF_Clu_Gear"]
     elif self.CP.carFingerprint in CAN_GEARS["use_tcu_gears"]:
@@ -288,22 +287,20 @@ class CarState(CarStateBase):
     if CP.enableBsm:
       messages.append(("LCA11", 50))
 
-    if CP.flags & (HyundaiFlags.HYBRID | HyundaiFlags.EV | HyundaiFlags.FCEV):
-      if CP.flags & HyundaiFlags.FCEV:
-        messages.append(("ACCELERATOR", 100))
-      else:
-        messages.append(("E_EMS11", 50))
+    if CP.flags & (HyundaiFlags.HYBRID | HyundaiFlags.EV):
+      messages.append(("E_EMS11", 50))
+    elif CP.flags & HyundaiFlags.FCEV:
+      messages.append(("ACCELERATOR", 100))
     else:
       messages += [
         ("EMS12", 100),
         ("EMS16", 100),
       ]
 
-    if CP.flags & (HyundaiFlags.HYBRID | HyundaiFlags.EV | HyundaiFlags.FCEV):
-      if CP.flags & HyundaiFlags.FCEV:
-        messages.append(("EMS20", 100))
-      else:
-        messages.append(("ELECT_GEAR", 20))
+    if CP.flags & (HyundaiFlags.HYBRID | HyundaiFlags.EV):
+      messages.append(("ELECT_GEAR", 20))
+    elif CP.flags & HyundaiFlags.FCEV:
+      messages.append(("EMS20", 100))
     elif CP.carFingerprint in CAN_GEARS["use_cluster_gears"]:
       pass
     elif CP.carFingerprint in CAN_GEARS["use_tcu_gears"]:
