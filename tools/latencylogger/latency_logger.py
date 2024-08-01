@@ -3,23 +3,20 @@ import argparse
 import json
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
-import mpld3
 import sys
 from bisect import bisect_left, bisect_right
 from collections import defaultdict
 
-from openpilot.tools.lib.logreader import logreader_from_route_or_segment
+from openpilot.tools.lib.logreader import LogReader
 
 DEMO_ROUTE = "9f583b1d93915c31|2022-05-18--10-49-51--0"
 
-SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'boardd']
-# Retrieve controlsd frameId from lateralPlan, mismatch with longitudinalPlan will be ignored
+SERVICES = ['camerad', 'modeld', 'plannerd', 'controlsd', 'pandad']
 MONOTIME_KEYS = ['modelMonoTime', 'lateralPlanMonoTime']
 MSGQ_TO_SERVICE = {
   'roadCameraState': 'camerad',
   'wideRoadCameraState': 'camerad',
   'modelV2': 'modeld',
-  'lateralPlan': 'plannerd',
   'longitudinalPlan': 'plannerd',
   'sendcan': 'controlsd',
   'controlsState': 'controlsd'
@@ -92,7 +89,7 @@ def read_logs(lr):
   return (data, frame_mismatches)
 
 # This is not needed in 3.10 as a "key" parameter is added to bisect
-class KeyifyList(object):
+class KeyifyList:
   def __init__(self, inner, key):
     self.inner = inner
     self.key = key
@@ -139,7 +136,7 @@ def insert_cloudlogs(lr, timestamps, start_times, end_times):
           timestamps[int(jmsg['msg']['timestamp']['frame_id'])][service].append((event, time))
           continue
 
-        if service == "boardd":
+        if service == "pandad":
           timestamps[latest_controls_frameid][service].append((event, time))
           end_times[latest_controls_frameid][service] = time
         else:
@@ -155,7 +152,7 @@ def insert_cloudlogs(lr, timestamps, start_times, end_times):
             failed_inserts += 1
 
   if latest_controls_frameid == 0:
-    print("Warning: failed to bind boardd logs to a frame ID. Add a timestamp cloudlog in controlsd.")
+    print("Warning: failed to bind pandad logs to a frame ID. Add a timestamp cloudlog in controlsd.")
   elif failed_inserts > len(timestamps):
     print(f"Warning: failed to bind {failed_inserts} cloudlog timestamps to a frame ID")
 
@@ -176,7 +173,6 @@ def print_timestamps(timestamps, durations, start_times, relative):
         print("    "+'%-53s%-53s' %(event, str(time*1000)))
 
 def graph_timestamps(timestamps, start_times, end_times, relative, offset_services=False, title=""):
-  # mpld3 doesn't convert properly to D3 font sizes
   plt.rcParams.update({'font.size': 18})
 
   t0 = find_t0(start_times)
@@ -205,15 +201,14 @@ def graph_timestamps(timestamps, start_times, end_times, relative, offset_servic
           points['labels'].append(event[0])
     ax.broken_barh(service_bars, (i-height/2, height), facecolors=(colors), alpha=0.5, offsets=offsets)
 
-  scatter = ax.scatter(points['x'], points['y'], marker='d', edgecolor='black')
-  tooltip = mpld3.plugins.PointLabelTooltip(scatter, labels=points['labels'])
-  mpld3.plugins.connect(fig, tooltip)
+  ax.scatter(points['x'], points['y'], marker='d', edgecolor='black')
+  for i, label in enumerate(points['labels']):
+    ax.annotate(label, (points['x'][i], points['y'][i]), textcoords="offset points", xytext=(0,10), ha='center')
 
   plt.title(title)
-  # Set size relative window size is not trivial: https://github.com/mpld3/mpld3/issues/65
   fig.set_size_inches(18, 9)
   plt.legend(handles=[mpatches.Patch(color=colors[i], label=SERVICES[i]) for i in range(len(SERVICES))])
-  return fig
+  plt.show()
 
 def get_timestamps(lr):
   lr = list(lr)
@@ -236,9 +231,9 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   r = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
-  lr = logreader_from_route_or_segment(r, sort_by_time=True)
+  lr = LogReader(r, sort_by_time=True)
 
   data, _ = get_timestamps(lr)
   print_timestamps(data['timestamp'], data['duration'], data['start'], args.relative)
   if args.plot:
-    mpld3.show(graph_timestamps(data['timestamp'], data['start'], data['end'], args.relative, offset_services=args.offset, title=r))
+    graph_timestamps(data['timestamp'], data['start'], data['end'], args.relative, offset_services=args.offset, title=r)

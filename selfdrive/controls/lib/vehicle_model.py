@@ -12,7 +12,6 @@ x_dot = A*x + B*u
 
 A depends on longitudinal speed, u [m/s], and vehicle parameters CP
 """
-from typing import Tuple
 
 import numpy as np
 from numpy.linalg import solve
@@ -169,7 +168,7 @@ def kin_ss_sol(sa: float, u: float, VM: VehicleModel) -> np.ndarray:
   return K * sa
 
 
-def create_dyn_state_matrices(u: float, VM: VehicleModel) -> Tuple[np.ndarray, np.ndarray]:
+def create_dyn_state_matrices(u: float, VM: VehicleModel) -> tuple[np.ndarray, np.ndarray]:
   """Returns the A and B matrix for the dynamics system
 
   Args:

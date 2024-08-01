@@ -1,8 +1,7 @@
 # distutils: language = c++
-# cython: c_string_encoding=ascii
+# cython: c_string_encoding=ascii, language_level=3
 
 from libcpp.string cimport string
-from libc.string cimport memcpy
 
 from .runmodel cimport USE_CPU_RUNTIME, USE_GPU_RUNTIME, USE_DSP_RUNTIME
 from selfdrive.modeld.models.commonmodel_pyx cimport CLMem

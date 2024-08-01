@@ -1,10 +1,9 @@
 import numpy as np
-import unittest
 
 from openpilot.common.numpy_fast import interp
 
 
-class InterpTest(unittest.TestCase):
+class TestInterp:
   def test_correctness_controls(self):
     _A_CRUISE_MIN_BP = np.asarray([0., 5., 10., 20., 40.])
     _A_CRUISE_MIN_V = np.asarray([-1.0, -.8, -.67, -.5, -.30])
@@ -20,7 +19,3 @@ class InterpTest(unittest.TestCase):
       expected = np.interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
       actual = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
       np.testing.assert_equal(actual, expected)
-
-
-if __name__ == "__main__":
-  unittest.main()

@@ -4,7 +4,7 @@
 
 # Instructions:
 # - connect to a Panda
-# - run selfdrive/boardd/boardd
+# - run selfdrive/pandad/pandad
 # - launching this script
 #   Note: it's very important that the car is in stock mode, in order to collect a complete fingerprint
 # - since some messages are published at low frequency, keep this script running for at least 30s,

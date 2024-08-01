@@ -10,7 +10,7 @@
 #include "common/params.h"
 #include "selfdrive/ui/qt/offroad/driverview.h"
 #include "selfdrive/ui/qt/body.h"
-#include "selfdrive/ui/qt/onroad.h"
+#include "selfdrive/ui/qt/onroad/onroad_home.h"
 #include "selfdrive/ui/qt/sidebar.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/widgets/offroad_alerts.h"
@@ -55,7 +55,6 @@ public slots:
   void offroadTransition(bool offroad);
   void showDriverView(bool show);
   void showSidebar(bool show);
-  void showMapPanel(bool show);
 
 protected:
   void mousePressEvent(QMouseEvent* e) override;

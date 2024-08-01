@@ -1,7 +1,6 @@
 import os
 import capnp
 import numpy as np
-from typing import Dict
 from cereal import log
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan, Meta
 
@@ -42,22 +41,38 @@ def fill_xyvat(builder, t, x, y, v, a, x_std=None, y_std=None, v_std=None, a_std
   if a_std is not None:
     builder.aStd = a_std.tolist()
 
-def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, np.ndarray], publish_state: PublishState,
-                   vipc_frame_id: int, vipc_frame_id_extra: int, frame_id: int, frame_drop: float,
-                   timestamp_eof: int, timestamp_llk: int, model_execution_time: float,
-                   nav_enabled: bool, valid: bool) -> None:
-  frame_age = frame_id - vipc_frame_id if frame_id > vipc_frame_id else 0
-  msg.valid = valid
+def fill_xyz_poly(builder, degree, x, y, z):
+  xyz = np.stack([x, y, z], axis=1)
+  coeffs = np.polynomial.polynomial.polyfit(ModelConstants.T_IDXS, xyz, deg=degree)
+  builder.xCoefficients = coeffs[:, 0].tolist()
+  builder.yCoefficients = coeffs[:, 1].tolist()
+  builder.zCoefficients = coeffs[:, 2].tolist()
 
-  modelV2 = msg.modelV2
+def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._DynamicStructBuilder,
+                   net_output_data: dict[str, np.ndarray], publish_state: PublishState,
+                   vipc_frame_id: int, vipc_frame_id_extra: int, frame_id: int, frame_drop: float,
+                   timestamp_eof: int, model_execution_time: float, valid: bool) -> None:
+  frame_age = frame_id - vipc_frame_id if frame_id > vipc_frame_id else 0
+  frame_drop_perc = frame_drop * 100
+  extended_msg.valid = valid
+  base_msg.valid = valid
+
+  driving_model_data = base_msg.drivingModelData
+
+  driving_model_data.frameId = vipc_frame_id
+  driving_model_data.frameIdExtra = vipc_frame_id_extra
+  driving_model_data.frameDropPerc = frame_drop_perc
+
+  action = driving_model_data.action
+  action.desiredCurvature = float(net_output_data['desired_curvature'][0,0])
+
+  modelV2 = extended_msg.modelV2
   modelV2.frameId = vipc_frame_id
   modelV2.frameIdExtra = vipc_frame_id_extra
   modelV2.frameAge = frame_age
-  modelV2.frameDropPerc = frame_drop * 100
+  modelV2.frameDropPerc = frame_drop_perc
   modelV2.timestampEof = timestamp_eof
-  modelV2.locationMonoTime = timestamp_llk
   modelV2.modelExecutionTime = model_execution_time
-  modelV2.navEnabled = nav_enabled
 
   # plan
   position = modelV2.position
@@ -71,10 +86,13 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
   orientation_rate = modelV2.orientationRate
   fill_xyzt(orientation_rate, ModelConstants.T_IDXS, *net_output_data['plan'][0,:,Plan.ORIENTATION_RATE].T)
 
+  # poly path
+  poly_path = driving_model_data.path
+  fill_xyz_poly(poly_path, ModelConstants.POLY_PATH_DEGREE, *net_output_data['plan'][0,:,Plan.POSITION].T)
+
   # lateral planning
-  solution = modelV2.lateralPlannerSolution
-  solution.x, solution.y, solution.yaw, solution.yawRate = [net_output_data['lat_planner_solution'][0,:,i].tolist() for i in range(4)]
-  solution.xStd, solution.yStd, solution.yawStd, solution.yawRateStd = [net_output_data['lat_planner_solution_stds'][0,:,i].tolist() for i in range(4)]
+  action = modelV2.action
+  action.desiredCurvature = float(net_output_data['desired_curvature'][0,0])
 
   # times at X_IDXS according to model plan
   PLAN_T_IDXS = [np.nan] * ModelConstants.IDX_N
@@ -102,6 +120,12 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
     fill_xyzt(lane_line, PLAN_T_IDXS, np.array(ModelConstants.X_IDXS), net_output_data['lane_lines'][0,i,:,0], net_output_data['lane_lines'][0,i,:,1])
   modelV2.laneLineStds = net_output_data['lane_lines_stds'][0,:,0,0].tolist()
   modelV2.laneLineProbs = net_output_data['lane_lines_prob'][0,1::2].tolist()
+
+  lane_line_meta = driving_model_data.laneLineMeta
+  lane_line_meta.leftY = modelV2.laneLines[1].y[0]
+  lane_line_meta.leftProb = modelV2.laneLineProbs[1]
+  lane_line_meta.rightY = modelV2.laneLines[2].y[0]
+  lane_line_meta.rightProb = modelV2.laneLineProbs[2]
 
   # road edges
   modelV2.init('roadEdges', 2)
@@ -175,7 +199,7 @@ def fill_model_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, 
   if SEND_RAW_PRED:
     modelV2.rawPredictions = net_output_data['raw_pred'].tobytes()
 
-def fill_pose_msg(msg: capnp._DynamicStructBuilder, net_output_data: Dict[str, np.ndarray],
+def fill_pose_msg(msg: capnp._DynamicStructBuilder, net_output_data: dict[str, np.ndarray],
                   vipc_frame_id: int, vipc_dropped_frames: int, timestamp_eof: int, live_calib_seen: bool) -> None:
   msg.valid = live_calib_seen & (vipc_dropped_frames < 1)
   cameraOdometry = msg.cameraOdometry

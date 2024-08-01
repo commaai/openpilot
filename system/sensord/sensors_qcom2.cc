@@ -134,7 +134,13 @@ int sensor_loop(I2CBus *i2c_bus_imu) {
   // increase interrupt quality by pinning interrupt and process to core 1
   setpriority(PRIO_PROCESS, 0, -18);
   util::set_core_affinity({1});
-  std::system("sudo su -c 'echo 1 > /proc/irq/336/smp_affinity_list'");
+
+  // TODO: get the IRQ number from gpiochip
+  std::string irq_path = "/proc/irq/336/smp_affinity_list";
+  if (!util::file_exists(irq_path)) {
+    irq_path = "/proc/irq/335/smp_affinity_list";
+  }
+  std::system(util::string_format("sudo su -c 'echo 1 > %s'", irq_path.c_str()).c_str());
 
   // thread for reading events via interrupts
   threads.emplace_back(&interrupt_loop, std::ref(sensors_init));

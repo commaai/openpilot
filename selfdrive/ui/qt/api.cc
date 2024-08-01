@@ -1,6 +1,5 @@
 #include "selfdrive/ui/qt/api.h"
 
-#include <openssl/bio.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 
@@ -8,38 +7,41 @@
 #include <QCryptographicHash>
 #include <QDateTime>
 #include <QDebug>
-#include <QFile>
 #include <QJsonDocument>
 #include <QNetworkRequest>
 
+#include <memory>
 #include <string>
 
-#include "common/params.h"
 #include "common/util.h"
 #include "system/hardware/hw.h"
 #include "selfdrive/ui/qt/util.h"
 
 namespace CommaApi {
 
-QByteArray rsa_sign(const QByteArray &data) {
-  static std::string key = util::read_file(Path::rsa_file());
-  if (key.empty()) {
-    qDebug() << "No RSA private key found, please run manager.py or registration.py";
-    return {};
+RSA *get_rsa_private_key() {
+  static std::unique_ptr<RSA, decltype(&RSA_free)> rsa_private(nullptr, RSA_free);
+  if (!rsa_private) {
+    FILE *fp = fopen(Path::rsa_file().c_str(), "rb");
+    if (!fp) {
+      qDebug() << "No RSA private key found, please run manager.py or registration.py";
+      return nullptr;
+    }
+    rsa_private.reset(PEM_read_RSAPrivateKey(fp, NULL, NULL, NULL));
+    fclose(fp);
   }
+  return rsa_private.get();
+}
 
-  BIO* mem = BIO_new_mem_buf(key.data(), key.size());
-  assert(mem);
-  RSA* rsa_private = PEM_read_bio_RSAPrivateKey(mem, NULL, NULL, NULL);
-  assert(rsa_private);
-  auto sig = QByteArray();
-  sig.resize(RSA_size(rsa_private));
+QByteArray rsa_sign(const QByteArray &data) {
+  RSA *rsa_private = get_rsa_private_key();
+  if (!rsa_private) return {};
+
+  QByteArray sig(RSA_size(rsa_private), Qt::Uninitialized);
   unsigned int sig_len;
   int ret = RSA_sign(NID_sha256, (unsigned char*)data.data(), data.size(), (unsigned char*)sig.data(), &sig_len, rsa_private);
   assert(ret == 1);
-  assert(sig_len == sig.size());
-  BIO_free(mem);
-  RSA_free(rsa_private);
+  assert(sig.size() == sig_len);
   return sig;
 }
 
@@ -57,9 +59,7 @@ QString create_jwt(const QJsonObject &payloads, int expiry) {
                 QJsonDocument(payload).toJson(QJsonDocument::Compact).toBase64(b64_opts);
 
   auto hash = QCryptographicHash::hash(jwt.toUtf8(), QCryptographicHash::Sha256);
-  auto sig = rsa_sign(hash);
-  jwt += '.' + sig.toBase64(b64_opts);
-  return jwt;
+  return jwt + "." + rsa_sign(hash).toBase64(b64_opts);
 }
 
 }  // namespace CommaApi

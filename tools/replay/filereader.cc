@@ -35,7 +35,10 @@ std::string FileReader::read(const std::string &file, std::atomic<bool> *abort) 
 
 std::string FileReader::download(const std::string &url, std::atomic<bool> *abort) {
   for (int i = 0; i <= max_retries_ && !(abort && *abort); ++i) {
-    if (i > 0) rWarning("download failed, retrying %d", i);
+    if (i > 0) {
+      rWarning("download failed, retrying %d", i);
+      util::sleep_for(3000);
+    }
 
     std::string result = httpGet(url, chunk_size_, abort);
     if (!result.empty()) {

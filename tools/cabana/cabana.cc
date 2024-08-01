@@ -3,7 +3,6 @@
 
 #include "selfdrive/ui/qt/util.h"
 #include "tools/cabana/mainwin.h"
-#include "tools/cabana/streamselector.h"
 #include "tools/cabana/streams/devicestream.h"
 #include "tools/cabana/streams/pandastream.h"
 #include "tools/cabana/streams/replaystream.h"
@@ -39,26 +38,19 @@ int main(int argc, char *argv[]) {
   cmd_parser.addOption({"dbc", "dbc file to open", "dbc"});
   cmd_parser.process(app);
 
-  QString dbc_file = cmd_parser.isSet("dbc") ? cmd_parser.value("dbc") : "";
-
   AbstractStream *stream = nullptr;
+
   if (cmd_parser.isSet("stream")) {
     stream = new DeviceStream(&app, cmd_parser.value("zmq"));
   } else if (cmd_parser.isSet("panda") || cmd_parser.isSet("panda-serial")) {
-    PandaStreamConfig config = {};
-    if (cmd_parser.isSet("panda-serial")) {
-      config.serial = cmd_parser.value("panda-serial");
-    }
     try {
-      stream = new PandaStream(&app, config);
+      stream = new PandaStream(&app, {.serial = cmd_parser.value("panda-serial")});
     } catch (std::exception &e) {
       qWarning() << e.what();
       return 0;
     }
   } else if (cmd_parser.isSet("socketcan")) {
-    SocketCanStreamConfig config = {};
-    config.device = cmd_parser.value("socketcan");
-    stream = new SocketCanStream(&app, config);
+    stream = new SocketCanStream(&app, {.device = cmd_parser.value("socketcan")});
   } else {
     uint32_t replay_flags = REPLAY_FLAG_NONE;
     if (cmd_parser.isSet("ecam")) replay_flags |= REPLAY_FLAG_ECAM;
@@ -74,36 +66,14 @@ int main(int argc, char *argv[]) {
       route = DEMO_ROUTE;
     }
     if (!route.isEmpty()) {
-      auto replay_stream = new ReplayStream(&app);
+      auto replay_stream = std::make_unique<ReplayStream>(&app);
       if (!replay_stream->loadRoute(route, cmd_parser.value("data_dir"), replay_flags)) {
         return 0;
       }
-      stream = replay_stream;
+      stream = replay_stream.release();
     }
   }
 
-  int ret = 0;
-  {
-    MainWindow w;
-    QTimer::singleShot(0, [&]() {
-      if (!stream) {
-        StreamSelector dlg(&stream);
-        dlg.exec();
-        dbc_file = dlg.dbcFile();
-      }
-      if (!stream) {
-        stream = new DummyStream(&app);
-      }
-      stream->start();
-      if (!dbc_file.isEmpty()) {
-        w.loadFile(dbc_file);
-      }
-      w.show();
-    });
-
-    ret = app.exec();
-  }
-
-  delete can;
-  return ret;
+  MainWindow w(stream, cmd_parser.value("dbc"));
+  return app.exec();
 }

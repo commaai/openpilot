@@ -3,7 +3,7 @@ import subprocess
 from openpilot.common.basedir import BASEDIR
 
 
-class Spinner():
+class Spinner:
   def __init__(self):
     try:
       self.spinner_proc = subprocess.Popen(["./spinner"],

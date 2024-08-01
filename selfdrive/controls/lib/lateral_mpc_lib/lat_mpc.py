@@ -128,7 +128,7 @@ def gen_lat_ocp():
   return ocp
 
 
-class LateralMpc():
+class LateralMpc:
   def __init__(self, x0=None):
     if x0 is None:
       x0 = np.zeros(X_DIM)

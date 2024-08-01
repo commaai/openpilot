@@ -1,18 +1,16 @@
-#!/usr/bin/env python3
+import pytest
 import math
-import unittest
 
 import numpy as np
-from control import StateSpace
 
 from openpilot.selfdrive.car.honda.interface import CarInterface
 from openpilot.selfdrive.car.honda.values import CAR
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel, dyn_ss_sol, create_dyn_state_matrices
 
 
-class TestVehicleModel(unittest.TestCase):
-  def setUp(self):
-    CP = CarInterface.get_non_essential_params(CAR.CIVIC)
+class TestVehicleModel:
+  def setup_method(self):
+    CP = CarInterface.get_non_essential_params(CAR.HONDA_CIVIC)
     self.VM = VehicleModel(CP)
 
   def test_round_trip_yaw_rate(self):
@@ -23,7 +21,7 @@ class TestVehicleModel(unittest.TestCase):
           yr = self.VM.yaw_rate(sa, u, roll)
           new_sa = self.VM.get_steer_from_yaw_rate(yr, u, roll)
 
-          self.assertAlmostEqual(sa, new_sa)
+          assert sa == pytest.approx(new_sa)
 
   def test_dyn_ss_sol_against_yaw_rate(self):
     """Verify that the yaw_rate helper function matches the results
@@ -38,7 +36,7 @@ class TestVehicleModel(unittest.TestCase):
 
           # Compute yaw rate using direct computations
           yr2 = self.VM.yaw_rate(sa, u, roll)
-          self.assertAlmostEqual(float(yr1[0]), yr2)
+          assert float(yr1[0]) == pytest.approx(yr2)
 
   def test_syn_ss_sol_simulate(self):
     """Verifies that dyn_ss_sol matches a simulation"""
@@ -48,8 +46,12 @@ class TestVehicleModel(unittest.TestCase):
         A, B = create_dyn_state_matrices(u, self.VM)
 
         # Convert to discrete time system
-        ss = StateSpace(A, B, np.eye(2), np.zeros((2, 2)))
-        ss = ss.sample(0.01)
+        dt = 0.01
+        top = np.hstack((A, B))
+        full = np.vstack((top, np.zeros_like(top))) * dt
+        Md = sum([np.linalg.matrix_power(full, k) / math.factorial(k) for k in range(25)])
+        Ad = Md[:A.shape[0], :A.shape[1]]
+        Bd = Md[:A.shape[0], A.shape[1]:]
 
         for sa in np.linspace(math.radians(-20), math.radians(20), num=11):
           inp = np.array([[sa], [roll]])
@@ -57,14 +59,9 @@ class TestVehicleModel(unittest.TestCase):
           # Simulate for 1 second
           x1 = np.zeros((2, 1))
           for _ in range(100):
-            x1 = ss.A @ x1 + ss.B @ inp
+            x1 = Ad @ x1 + Bd @ inp
 
           # Compute steady state solution directly
           x2 = dyn_ss_sol(sa, u, roll, self.VM)
 
           np.testing.assert_almost_equal(x1, x2, decimal=3)
-
-
-
-if __name__ == "__main__":
-  unittest.main()

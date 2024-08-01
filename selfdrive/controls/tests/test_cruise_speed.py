@@ -1,11 +1,9 @@
-#!/usr/bin/env python3
+import pytest
 import itertools
 import numpy as np
-import unittest
 
 from parameterized import parameterized_class
 from cereal import log
-from openpilot.common.params import Params
 from openpilot.selfdrive.controls.lib.drive_helpers import VCruiseHelper, V_CRUISE_MIN, V_CRUISE_MAX, V_CRUISE_INITIAL, IMPERIAL_INCREMENT
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
@@ -15,7 +13,7 @@ ButtonEvent = car.CarState.ButtonEvent
 ButtonType = car.CarState.ButtonEvent.Type
 
 
-def run_cruise_simulation(cruise, e2e, t_end=20.):
+def run_cruise_simulation(cruise, e2e, personality, t_end=20.):
   man = Maneuver(
     '',
     duration=t_end,
@@ -26,6 +24,7 @@ def run_cruise_simulation(cruise, e2e, t_end=20.):
     prob_lead_values=[0.0],
     breakpoints=[0.],
     e2e=e2e,
+    personality=personality,
   )
   valid, output = man.evaluate()
   assert valid
@@ -36,21 +35,19 @@ def run_cruise_simulation(cruise, e2e, t_end=20.):
                       [True, False], # e2e
                       log.LongitudinalPersonality.schema.enumerants, # personality
                       [5,35])) # speed
-class TestCruiseSpeed(unittest.TestCase):
+class TestCruiseSpeed:
   def test_cruise_speed(self):
-    params = Params()
-    params.put("LongitudinalPersonality", str(self.personality))
     print(f'Testing {self.speed} m/s')
     cruise_speed = float(self.speed)
 
-    simulation_steady_state = run_cruise_simulation(cruise_speed, self.e2e)
-    self.assertAlmostEqual(simulation_steady_state, cruise_speed, delta=.01, msg=f'Did not reach {self.speed} m/s')
+    simulation_steady_state = run_cruise_simulation(cruise_speed, self.e2e, self.personality)
+    assert simulation_steady_state == pytest.approx(cruise_speed, abs=.01), f'Did not reach {self.speed} m/s'
 
 
 # TODO: test pcmCruise
 @parameterized_class(('pcm_cruise',), [(False,)])
-class TestVCruiseHelper(unittest.TestCase):
-  def setUp(self):
+class TestVCruiseHelper:
+  def setup_method(self):
     self.CP = car.CarParams(pcmCruise=self.pcm_cruise)
     self.v_cruise_helper = VCruiseHelper(self.CP)
     self.reset_cruise_speed_state()
@@ -77,7 +74,7 @@ class TestVCruiseHelper(unittest.TestCase):
         CS.buttonEvents = [ButtonEvent(type=btn, pressed=pressed)]
 
         self.v_cruise_helper.update_v_cruise(CS, enabled=True, is_metric=False)
-        self.assertEqual(pressed, self.v_cruise_helper.v_cruise_kph == self.v_cruise_helper.v_cruise_kph_last)
+        assert pressed == (self.v_cruise_helper.v_cruise_kph == self.v_cruise_helper.v_cruise_kph_last)
 
   def test_rising_edge_enable(self):
     """
@@ -96,7 +93,7 @@ class TestVCruiseHelper(unittest.TestCase):
         self.enable(V_CRUISE_INITIAL * CV.KPH_TO_MS, False)
 
       # Expected diff on enabling. Speed should not change on falling edge of pressed
-      self.assertEqual(not pressed, self.v_cruise_helper.v_cruise_kph == self.v_cruise_helper.v_cruise_kph_last)
+      assert not pressed == self.v_cruise_helper.v_cruise_kph == self.v_cruise_helper.v_cruise_kph_last
 
   def test_resume_in_standstill(self):
     """
@@ -113,7 +110,7 @@ class TestVCruiseHelper(unittest.TestCase):
 
         # speed should only update if not at standstill and button falling edge
         should_equal = standstill or pressed
-        self.assertEqual(should_equal, self.v_cruise_helper.v_cruise_kph == self.v_cruise_helper.v_cruise_kph_last)
+        assert should_equal == (self.v_cruise_helper.v_cruise_kph == self.v_cruise_helper.v_cruise_kph_last)
 
   def test_set_gas_pressed(self):
     """
@@ -137,7 +134,7 @@ class TestVCruiseHelper(unittest.TestCase):
       # TODO: fix skipping first run due to enabled on rising edge exception
       if v_ego == 0.0:
         continue
-      self.assertEqual(expected_v_cruise_kph, self.v_cruise_helper.v_cruise_kph)
+      assert expected_v_cruise_kph == self.v_cruise_helper.v_cruise_kph
 
   def test_initialize_v_cruise(self):
     """
@@ -147,12 +144,8 @@ class TestVCruiseHelper(unittest.TestCase):
     for experimental_mode in (True, False):
       for v_ego in np.linspace(0, 100, 101):
         self.reset_cruise_speed_state()
-        self.assertFalse(self.v_cruise_helper.v_cruise_initialized)
+        assert not self.v_cruise_helper.v_cruise_initialized
 
         self.enable(float(v_ego), experimental_mode)
-        self.assertTrue(V_CRUISE_INITIAL <= self.v_cruise_helper.v_cruise_kph <= V_CRUISE_MAX)
-        self.assertTrue(self.v_cruise_helper.v_cruise_initialized)
-
-
-if __name__ == "__main__":
-  unittest.main()
+        assert V_CRUISE_INITIAL <= self.v_cruise_helper.v_cruise_kph <= V_CRUISE_MAX
+        assert self.v_cruise_helper.v_cruise_initialized

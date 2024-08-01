@@ -45,17 +45,6 @@ In order to use a joystick over the network, we need to run joystickd locally fr
    tools/joystick/joystickd.py
    ```
 
-### Web joystick on your mobile device
-
-A browser-based virtual joystick designed for touch screens. Starts automatically when installed on comma body (non-car robotics platform).
-For cars, start the web joystick service manually via SSH before starting the car.
-
-```shell
-tools/joystick/web.py
-```
-
-After starting the car/body, open the web joystick app at this URL: `http://[comma three IP address]:5000`
-
 ---
 Now start your car and openpilot should go into joystick mode with an alert on startup! The status of the axes will display on the alert, while button statuses print in the shell.
 

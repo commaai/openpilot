@@ -5,7 +5,6 @@ import capnp
 import numbers
 import dictdiffer
 from collections import Counter
-from typing import Dict
 
 from openpilot.tools.lib.logreader import LogReader
 
@@ -97,7 +96,7 @@ def format_process_diff(diff):
     diff_short += f"        {diff}\n"
     diff_long += f"\t{diff}\n"
   else:
-    cnt: Dict[str, int] = {}
+    cnt: dict[str, int] = {}
     for d in diff:
       diff_long += f"\t{str(d)}\n"
 

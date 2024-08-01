@@ -16,7 +16,6 @@
        <curve name="/deviceState/cpuUsagePercent/5" color="#9467bd"/>
        <curve name="/deviceState/cpuUsagePercent/6" color="#17becf"/>
        <curve name="/deviceState/cpuUsagePercent/7" color="#bcbd22"/>
-       <curve name="/deviceState/gpuUsagePercent" color="#1f77b4"/>
       </plot>
      </DockArea>
      <DockArea name="...">

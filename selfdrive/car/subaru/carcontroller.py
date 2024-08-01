@@ -1,9 +1,9 @@
 from openpilot.common.numpy_fast import clip, interp
 from opendbc.can.packer import CANPacker
-from openpilot.selfdrive.car import apply_driver_steer_torque_limits, common_fault_avoidance
+from openpilot.selfdrive.car import apply_driver_steer_torque_limits, common_fault_avoidance, make_tester_present_msg
+from openpilot.selfdrive.car.interfaces import CarControllerBase
 from openpilot.selfdrive.car.subaru import subarucan
-from openpilot.selfdrive.car.subaru.values import DBC, GLOBAL_ES_ADDR, GLOBAL_GEN2, PREGLOBAL_CARS, HYBRID_CARS, STEER_RATE_LIMITED, \
-                                                  CanBus, CarControllerParams, SubaruFlags
+from openpilot.selfdrive.car.subaru.values import DBC, GLOBAL_ES_ADDR, CanBus, CarControllerParams, SubaruFlags
 
 # FIXME: These limits aren't exact. The real limit is more than likely over a larger time period and
 # involves the total steering angle change rather than rate, but these limits work well for now
@@ -11,11 +11,10 @@ MAX_STEER_RATE = 25  # deg/s
 MAX_STEER_RATE_FRAMES = 7  # tx control frames needed before torque can be cut
 
 
-class CarController:
+class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
-    self.CP = CP
+    super().__init__(dbc_name, CP, VM)
     self.apply_steer_last = 0
-    self.frame = 0
 
     self.cruise_button_prev = 0
     self.steer_rate_counter = 0
@@ -42,12 +41,12 @@ class CarController:
       if not CC.latActive:
         apply_steer = 0
 
-      if self.CP.carFingerprint in PREGLOBAL_CARS:
+      if self.CP.flags & SubaruFlags.PREGLOBAL:
         can_sends.append(subarucan.create_preglobal_steering_control(self.packer, self.frame // self.p.STEER_STEP, apply_steer, CC.latActive))
       else:
         apply_steer_req = CC.latActive
 
-        if self.CP.carFingerprint in STEER_RATE_LIMITED:
+        if self.CP.flags & SubaruFlags.STEER_RATE_LIMITED:
           # Steering rate fault prevention
           self.steer_rate_counter, apply_steer_req = \
             common_fault_avoidance(abs(CS.out.steeringRateDeg) > MAX_STEER_RATE, apply_steer_req,
@@ -74,7 +73,7 @@ class CarController:
       cruise_brake = CarControllerParams.BRAKE_MIN
 
     # *** alerts and pcm cancel ***
-    if self.CP.carFingerprint in PREGLOBAL_CARS:
+    if self.CP.flags & SubaruFlags.PREGLOBAL:
       if self.frame % 5 == 0:
         # 1 = main, 2 = set shallow, 3 = set deep, 4 = resume shallow, 5 = resume deep
         # disengage ACC when OP is disengaged
@@ -117,14 +116,14 @@ class CarController:
                                                         self.CP.openpilotLongitudinalControl, cruise_brake > 0, cruise_throttle))
       else:
         if pcm_cancel_cmd:
-          if self.CP.carFingerprint not in HYBRID_CARS:
-            bus = CanBus.alt if self.CP.carFingerprint in GLOBAL_GEN2 else CanBus.main
+          if not (self.CP.flags & SubaruFlags.HYBRID):
+            bus = CanBus.alt if self.CP.flags & SubaruFlags.GLOBAL_GEN2 else CanBus.main
             can_sends.append(subarucan.create_es_distance(self.packer, CS.es_distance_msg["COUNTER"] + 1, CS.es_distance_msg, bus, pcm_cancel_cmd))
 
       if self.CP.flags & SubaruFlags.DISABLE_EYESIGHT:
         # Tester present (keeps eyesight disabled)
         if self.frame % 100 == 0:
-          can_sends.append([GLOBAL_ES_ADDR, 0, b"\x02\x3E\x80\x00\x00\x00\x00\x00", CanBus.camera])
+          can_sends.append(make_tester_present_msg(GLOBAL_ES_ADDR, CanBus.camera, suppress_response=True))
 
         # Create all of the other eyesight messages to keep the rest of the car happy when eyesight is disabled
         if self.frame % 5 == 0:
@@ -136,7 +135,7 @@ class CarController:
         if self.frame % 2 == 0:
           can_sends.append(subarucan.create_es_static_2(self.packer))
 
-    new_actuators = actuators.copy()
+    new_actuators = actuators.as_builder()
     new_actuators.steer = self.apply_steer_last / self.p.STEER_MAX
     new_actuators.steerOutputCan = self.apply_steer_last
 

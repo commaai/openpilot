@@ -20,7 +20,7 @@ def numpy2eigenstring(arr):
   return f"(Eigen::VectorXd({len(arr)}) << {arr_str}).finished()"
 
 
-class States():
+class States:
   ECEF_POS = slice(0, 3)  # x, y and z in ECEF in meters
   ECEF_ORIENTATION = slice(3, 7)  # quat for pose of phone in ecef
   ECEF_VELOCITY = slice(7, 10)  # ecef velocity in m/s
@@ -39,7 +39,7 @@ class States():
   ACC_BIAS_ERR = slice(18, 21)
 
 
-class LiveKalman():
+class LiveKalman:
   name = 'live'
 
   initial_x = np.array([3.88e6, -3.37e6, 3.76e6,

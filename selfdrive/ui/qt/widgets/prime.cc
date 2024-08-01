@@ -155,7 +155,7 @@ PrimeAdWidget::PrimeAdWidget(QWidget* parent) : QFrame(parent) {
   main_layout->addWidget(features, 0, Qt::AlignBottom);
   main_layout->addSpacing(30);
 
-  QVector<QString> bullets = {tr("Remote access"), tr("24/7 LTE connectivity"), tr("1 year of drive storage"), tr("Turn-by-turn navigation")};
+  QVector<QString> bullets = {tr("Remote access"), tr("24/7 LTE connectivity"), tr("1 year of drive storage"), tr("Remote snapshots")};
   for (auto &b : bullets) {
     const QString check = "<b><font color='#465BEA'>✓</font></b> ";
     QLabel *l = new QLabel(check + b);
@@ -225,9 +225,6 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   content_layout->setContentsMargins(0, 0, 0, 0);
   content_layout->setSpacing(30);
 
-  primeUser = new PrimeUserWidget;
-  content_layout->addWidget(primeUser);
-
   WiFiPromptWidget *wifi_prompt = new WiFiPromptWidget;
   QObject::connect(wifi_prompt, &WiFiPromptWidget::openSettings, this, &SetupWidget::openSettings);
   content_layout->addWidget(wifi_prompt);
@@ -235,7 +232,6 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
   mainLayout->addWidget(content);
 
-  primeUser->setVisible(uiState()->primeType());
   mainLayout->setCurrentIndex(1);
 
   setStyleSheet(R"(
@@ -269,15 +265,14 @@ void SetupWidget::replyFinished(const QString &response, bool success) {
   }
 
   QJsonObject json = doc.object();
+  bool is_paired = json["is_paired"].toBool();
   PrimeType prime_type = static_cast<PrimeType>(json["prime_type"].toInt());
-  uiState()->setPrimeType(prime_type);
+  uiState()->setPrimeType(is_paired ? prime_type : PrimeType::UNPAIRED);
 
-  if (!json["is_paired"].toBool()) {
+  if (!is_paired) {
     mainLayout->setCurrentIndex(0);
   } else {
     popup->reject();
-
-    primeUser->setVisible(prime_type);
     mainLayout->setCurrentIndex(1);
   }
 }

@@ -3,7 +3,7 @@ import argparse
 import numpy as np
 import time
 from collections import defaultdict, deque
-from typing import DefaultDict, Deque, MutableSequence
+from collections.abc import MutableSequence
 
 import cereal.messaging as messaging
 
@@ -19,8 +19,8 @@ if __name__ == "__main__":
   socket_names = args.socket
   sockets = {}
 
-  rcv_times: DefaultDict[str, MutableSequence[float]] = defaultdict(lambda: deque(maxlen=100))
-  valids: DefaultDict[str, Deque[bool]] = defaultdict(lambda: deque(maxlen=100))
+  rcv_times: defaultdict[str, MutableSequence[float]] = defaultdict(lambda: deque(maxlen=100))
+  valids: defaultdict[str, deque[bool]] = defaultdict(lambda: deque(maxlen=100))
 
   t = time.monotonic()
   for name in socket_names:

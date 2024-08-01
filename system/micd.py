@@ -1,29 +1,26 @@
 #!/usr/bin/env python3
 import numpy as np
+from functools import cache
 
 from cereal import messaging
 from openpilot.common.realtime import Ratekeeper
 from openpilot.common.retry import retry
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.hardware import TICI
 
 RATE = 10
 FFT_SAMPLES = 4096
 REFERENCE_SPL = 2e-5  # newtons/m^2
 SAMPLE_RATE = 44100
-SAMPLE_BUFFER = 4096 # (approx 100ms)
+SAMPLE_BUFFER = 4096  # approx 100ms
 
 
-@retry(attempts=7, delay=3)
-def wait_for_devices(sd):
-  # reload sounddevice to reinitialize portaudio
-  sd._terminate()
-  sd._initialize()
-
-  devices = sd.query_devices()
-  cloudlog.info(f"sounddevice available devices: {list(devices)}")
-
-  assert len(devices) > 0
+@cache
+def get_a_weighting_filter():
+  # Calculate the A-weighting filter
+  # https://en.wikipedia.org/wiki/A-weighting
+  freqs = np.fft.fftfreq(FFT_SAMPLES, d=1 / SAMPLE_RATE)
+  A = 12194 ** 2 * freqs ** 4 / ((freqs ** 2 + 20.6 ** 2) * (freqs ** 2 + 12194 ** 2) * np.sqrt((freqs ** 2 + 107.7 ** 2) * (freqs ** 2 + 737.9 ** 2)))
+  return A / np.max(A)
 
 
 def calculate_spl(measurements):
@@ -40,16 +37,8 @@ def apply_a_weighting(measurements: np.ndarray) -> np.ndarray:
   # Generate a Hanning window of the same length as the audio measurements
   measurements_windowed = measurements * np.hanning(len(measurements))
 
-  # Calculate the frequency axis for the signal
-  freqs = np.fft.fftfreq(measurements_windowed.size, d=1 / SAMPLE_RATE)
-
-  # Calculate the A-weighting filter
-  # https://en.wikipedia.org/wiki/A-weighting
-  A = 12194 ** 2 * freqs ** 4 / ((freqs ** 2 + 20.6 ** 2) * (freqs ** 2 + 12194 ** 2) * np.sqrt((freqs ** 2 + 107.7 ** 2) * (freqs ** 2 + 737.9 ** 2)))
-  A /= np.max(A)  # Normalize the filter
-
   # Apply the A-weighting filter to the signal
-  return np.abs(np.fft.ifft(np.fft.fft(measurements_windowed) * A))
+  return np.abs(np.fft.ifft(np.fft.fft(measurements_windowed) * get_a_weighting_filter()))
 
 
 class Mic:
@@ -92,14 +81,18 @@ class Mic:
 
       self.measurements = self.measurements[FFT_SAMPLES:]
 
+  @retry(attempts=7, delay=3)
+  def get_stream(self, sd):
+    # reload sounddevice to reinitialize portaudio
+    sd._terminate()
+    sd._initialize()
+    return sd.InputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback, blocksize=SAMPLE_BUFFER)
+
   def micd_thread(self):
     # sounddevice must be imported after forking processes
     import sounddevice as sd
 
-    if TICI:
-      wait_for_devices(sd) # wait for alsa to be initialized on device
-
-    with sd.InputStream(channels=1, samplerate=SAMPLE_RATE, callback=self.callback, blocksize=SAMPLE_BUFFER) as stream:
+    with self.get_stream(sd) as stream:
       cloudlog.info(f"micd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}, {stream.blocksize=}")
       while True:
         self.update()

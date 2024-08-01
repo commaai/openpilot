@@ -93,7 +93,7 @@ def nmea_checksum_ok(s):
 def process_nmea_port_messages(device:str="/dev/ttyUSB1") -> NoReturn:
   while True:
     try:
-      with open(device, "r") as nmeaport:
+      with open(device) as nmeaport:
         for line in nmeaport:
           line = line.strip()
           if DEBUG:
@@ -127,7 +127,7 @@ def main() -> NoReturn:
     print("qcomgpsd is running, please kill openpilot before running this script! (aborted)")
     sys.exit(1)
   except CalledProcessError as e:
-    if e.returncode != 1: # 1 == no process found (boardd not running)
+    if e.returncode != 1: # 1 == no process found (pandad not running)
       raise e
 
   print("power up antenna ...")

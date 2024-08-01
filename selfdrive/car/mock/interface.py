@@ -18,18 +18,15 @@ class CarInterface(CarInterfaceBase):
     ret.wheelbase = 2.70
     ret.centerToFront = ret.wheelbase * 0.5
     ret.steerRatio = 13.
+    ret.dashcamOnly = True
     return ret
 
   def _update(self, c):
     self.sm.update(0)
-    gps_sock = 'gpsLocationExternal' if self.sm.rcv_frame['gpsLocationExternal'] > 1 else 'gpsLocation'
+    gps_sock = 'gpsLocationExternal' if self.sm.recv_frame['gpsLocationExternal'] > 1 else 'gpsLocation'
 
     ret = car.CarState.new_message()
     ret.vEgo = self.sm[gps_sock].speed
     ret.vEgoRaw = self.sm[gps_sock].speed
 
     return ret
-
-  def apply(self, c, now_nanos):
-    actuators = car.CarControl.Actuators.new_message()
-    return actuators, []

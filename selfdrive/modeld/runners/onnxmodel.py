@@ -3,7 +3,7 @@ import itertools
 import os
 import sys
 import numpy as np
-from typing import Tuple, Dict, Union, Any
+from typing import Any
 
 from openpilot.selfdrive.modeld.runners.runmodel_pyx import RunModel
 
@@ -38,7 +38,7 @@ def create_ort_session(path, fp16_to_fp32):
   options = ort.SessionOptions()
   options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_DISABLE_ALL
 
-  provider: Union[str, Tuple[str, Dict[Any, Any]]]
+  provider: str | tuple[str, dict[Any, Any]]
   if 'OpenVINOExecutionProvider' in ort.get_available_providers() and 'ONNXCPU' not in os.environ:
     provider = 'OpenVINOExecutionProvider'
   elif 'CUDAExecutionProvider' in ort.get_available_providers() and 'ONNXCPU' not in os.environ:

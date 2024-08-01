@@ -17,7 +17,6 @@ from openpilot.common.transformations.transformations cimport ecef2geodetic as e
 from openpilot.common.transformations.transformations cimport LocalCoord_c
 
 
-import cython
 import numpy as np
 cimport numpy as np
 
@@ -34,14 +33,14 @@ cdef Matrix3 numpy2matrix(np.ndarray[double, ndim=2, mode="fortran"] m):
     return Matrix3(<double*>m.data)
 
 cdef ECEF list2ecef(ecef):
-    cdef ECEF e;
+    cdef ECEF e
     e.x = ecef[0]
     e.y = ecef[1]
     e.z = ecef[2]
     return e
 
 cdef NED list2ned(ned):
-    cdef NED n;
+    cdef NED n
     n.n = ned[0]
     n.e = ned[1]
     n.d = ned[2]
@@ -61,7 +60,7 @@ def euler2quat_single(euler):
 
 def quat2euler_single(quat):
     cdef Quaternion q = Quaternion(quat[0], quat[1], quat[2], quat[3])
-    cdef Vector3 e = quat2euler_c(q);
+    cdef Vector3 e = quat2euler_c(q)
     return [e(0), e(1), e(2)]
 
 def quat2rot_single(quat):

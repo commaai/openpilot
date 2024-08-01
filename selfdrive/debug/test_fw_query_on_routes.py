@@ -6,9 +6,10 @@ import argparse
 import os
 import traceback
 from tqdm import tqdm
-from openpilot.tools.lib.logreader import LogReader
-from openpilot.tools.lib.route import Route
+from openpilot.tools.lib.logreader import LogReader, ReadMode
+from openpilot.tools.lib.route import SegmentRange
 from openpilot.selfdrive.car.car_helpers import interface_names
+from openpilot.selfdrive.car.fingerprints import MIGRATION
 from openpilot.selfdrive.car.fw_versions import VERSIONS, match_fw_to_car
 
 
@@ -16,11 +17,6 @@ NO_API = "NO_API" in os.environ
 SUPPORTED_BRANDS = VERSIONS.keys()
 SUPPORTED_CARS = [brand for brand in SUPPORTED_BRANDS for brand in interface_names[brand]]
 UNKNOWN_BRAND = "unknown"
-
-try:
-  from xx.pipeline.lib.fingerprint import MIGRATION
-except ImportError:
-  MIGRATION = {}
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Run FW fingerprint on Qlog of route or list of routes')
@@ -44,23 +40,18 @@ if __name__ == "__main__":
 
   dongles = []
   for route in tqdm(routes):
-    route = route.rstrip()
-    dongle_id, time = route.split('|')
+    sr = SegmentRange(route)
+    dongle_id = sr.dongle_id
 
     if dongle_id in dongles:
       continue
 
-    if NO_API:
-      qlog_path = f"cd:/{dongle_id}/{time}/0/qlog.bz2"
-    else:
-      route = Route(route)
-      qlog_path = next((p for p in route.qlog_paths() if p is not None), None)
+    if sr.slice == '' and sr.selector is None:
+      route += '/0'
 
-    if qlog_path is None:
-      continue
+    lr = LogReader(route, default_mode=ReadMode.QLOG)
 
     try:
-      lr = LogReader(qlog_path)
       dongles.append(dongle_id)
 
       CP = None
@@ -87,8 +78,8 @@ if __name__ == "__main__":
             print("not in supported cars")
             break
 
-          _, exact_matches = match_fw_to_car(car_fw, allow_exact=True, allow_fuzzy=False)
-          _, fuzzy_matches = match_fw_to_car(car_fw, allow_exact=False, allow_fuzzy=True)
+          _, exact_matches = match_fw_to_car(car_fw, CP.carVin, allow_exact=True, allow_fuzzy=False)
+          _, fuzzy_matches = match_fw_to_car(car_fw, CP.carVin, allow_exact=False, allow_fuzzy=True)
 
           if (len(exact_matches) == 1) and (list(exact_matches)[0] == live_fingerprint):
             good_exact += 1
@@ -98,13 +89,11 @@ if __name__ == "__main__":
             if len(fuzzy_matches) == 1:
               if list(fuzzy_matches)[0] != live_fingerprint:
                 wrong_fuzzy += 1
-                print(f"{dongle_id}|{time}")
                 print("Fuzzy match wrong! Fuzzy:", fuzzy_matches, "Live:", live_fingerprint)
               else:
                 good_fuzzy += 1
             break
 
-          print(f"{dongle_id}|{time}")
           print("Old style:", live_fingerprint, "Vin", CP.carVin)
           print("New style (exact):", exact_matches)
           print("New style (fuzzy):", fuzzy_matches)
@@ -112,8 +101,8 @@ if __name__ == "__main__":
           padding = max([len(fw.brand or UNKNOWN_BRAND) for fw in car_fw])
           for version in sorted(car_fw, key=lambda fw: fw.brand):
             subaddr = None if version.subAddress == 0 else hex(version.subAddress)
-            print(f"  Brand: {version.brand or UNKNOWN_BRAND:{padding}}, bus: {version.bus} - \
-                      (Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}],")
+            print(f"  Brand: {version.brand or UNKNOWN_BRAND:{padding}}, bus: {version.bus} - " +
+                  f"(Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}],")
 
           print("Mismatches")
           found = False

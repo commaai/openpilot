@@ -24,7 +24,7 @@ body:
     id: os-version
     attributes:
       label: OS Version
-      placeholder: Ubuntu 20.04
+      placeholder: Ubuntu 24.04
     validations:
       required: true
 

@@ -1,9 +1,13 @@
 #include "tools/replay/framereader.h"
-#include "tools/replay/util.h"
 
-#include <cassert>
-#include <algorithm>
+#include <map>
+#include <memory>
+#include <tuple>
+#include <utility>
+
+#include "common/util.h"
 #include "third_party/libyuv/include/libyuv.h"
+#include "tools/replay/util.h"
 
 #ifdef __APPLE__
 #define HW_DEVICE_TYPE AV_HWDEVICE_TYPE_VIDEOTOOLBOX
@@ -15,33 +19,37 @@
 
 namespace {
 
-struct buffer_data {
-  const uint8_t *data;
-  int64_t offset;
-  size_t size;
-};
-
-int readPacket(void *opaque, uint8_t *buf, int buf_size) {
-  struct buffer_data *bd = (struct buffer_data *)opaque;
-  assert(bd->offset <= bd->size);
-  buf_size = std::min((size_t)buf_size, (size_t)(bd->size - bd->offset));
-  if (!buf_size) return AVERROR_EOF;
-
-  memcpy(buf, bd->data + bd->offset, buf_size);
-  bd->offset += buf_size;
-  return buf_size;
-}
-
 enum AVPixelFormat get_hw_format(AVCodecContext *ctx, const enum AVPixelFormat *pix_fmts) {
   enum AVPixelFormat *hw_pix_fmt = reinterpret_cast<enum AVPixelFormat *>(ctx->opaque);
   for (const enum AVPixelFormat *p = pix_fmts; *p != -1; p++) {
     if (*p == *hw_pix_fmt) return *p;
   }
   rWarning("Please run replay with the --no-hw-decoder flag!");
-  // fallback to YUV420p
   *hw_pix_fmt = AV_PIX_FMT_NONE;
   return AV_PIX_FMT_YUV420P;
 }
+
+struct DecoderManager {
+  VideoDecoder *acquire(CameraType type, AVCodecParameters *codecpar, bool hw_decoder) {
+    auto key = std::tuple(type, codecpar->width, codecpar->height);
+    std::unique_lock lock(mutex_);
+    if (auto it = decoders_.find(key); it != decoders_.end()) {
+      return it->second.get();
+    }
+
+    auto decoder = std::make_unique<VideoDecoder>();
+    if (!decoder->open(codecpar, hw_decoder)) {
+      decoder.reset(nullptr);
+    }
+    decoders_[key] = std::move(decoder);
+    return decoders_[key].get();
+  }
+
+  std::mutex mutex_;
+  std::map<std::tuple<CameraType, int, int>, std::unique_ptr<VideoDecoder>> decoders_;
+};
+
+DecoderManager decoder_manager;
 
 }  // namespace
 
@@ -50,121 +58,105 @@ FrameReader::FrameReader() {
 }
 
 FrameReader::~FrameReader() {
-  for (AVPacket *pkt : packets) {
-    av_packet_free(&pkt);
-  }
-
-  if (decoder_ctx) avcodec_free_context(&decoder_ctx);
   if (input_ctx) avformat_close_input(&input_ctx);
-  if (hw_device_ctx) av_buffer_unref(&hw_device_ctx);
-
-  if (avio_ctx_) {
-    av_freep(&avio_ctx_->buffer);
-    avio_context_free(&avio_ctx_);
-  }
 }
 
-bool FrameReader::load(const std::string &url, bool no_hw_decoder, std::atomic<bool> *abort, bool local_cache, int chunk_size, int retries) {
-  FileReader f(local_cache, chunk_size, retries);
-  std::string data = f.read(url, abort);
-  if (data.empty()) {
-    rWarning("URL %s returned no data", url.c_str());
-    return false;
+bool FrameReader::load(CameraType type, const std::string &url, bool no_hw_decoder, std::atomic<bool> *abort, bool local_cache, int chunk_size, int retries) {
+  auto local_file_path = url.find("https://") == 0 ? cacheFilePath(url) : url;
+  if (!util::file_exists(local_file_path)) {
+    FileReader f(local_cache, chunk_size, retries);
+    if (f.read(url, abort).empty()) {
+      return false;
+    }
   }
-
-  return load((std::byte *)data.data(), data.size(), no_hw_decoder, abort);
+  return loadFromFile(type, local_file_path, no_hw_decoder, abort);
 }
 
-bool FrameReader::load(const std::byte *data, size_t size, bool no_hw_decoder, std::atomic<bool> *abort) {
-  input_ctx = avformat_alloc_context();
-  if (!input_ctx) {
-    rError("Error calling avformat_alloc_context");
+bool FrameReader::loadFromFile(CameraType type, const std::string &file, bool no_hw_decoder, std::atomic<bool> *abort) {
+  if (avformat_open_input(&input_ctx, file.c_str(), nullptr, nullptr) != 0 ||
+      avformat_find_stream_info(input_ctx, nullptr) < 0) {
+    rError("Failed to open input file or find video stream");
     return false;
   }
-
-  struct buffer_data bd = {
-    .data = (const uint8_t*)data,
-    .offset = 0,
-    .size = size,
-  };
-  const int avio_ctx_buffer_size = 64 * 1024;
-  unsigned char *avio_ctx_buffer = (unsigned char *)av_malloc(avio_ctx_buffer_size);
-  avio_ctx_ = avio_alloc_context(avio_ctx_buffer, avio_ctx_buffer_size, 0, &bd, readPacket, nullptr, nullptr);
-  input_ctx->pb = avio_ctx_;
-
   input_ctx->probesize = 10 * 1024 * 1024;  // 10MB
-  int ret = avformat_open_input(&input_ctx, nullptr, nullptr, nullptr);
-  if (ret != 0) {
-    char err_str[1024] = {0};
-    av_strerror(ret, err_str, std::size(err_str));
-    rError("Error loading video - %s", err_str);
+
+  decoder_ = decoder_manager.acquire(type, input_ctx->streams[0]->codecpar, !no_hw_decoder);
+  if (!decoder_) {
     return false;
   }
+  width = decoder_->width;
+  height = decoder_->height;
 
-  ret = avformat_find_stream_info(input_ctx, nullptr);
-  if (ret < 0) {
-    rError("cannot find a video stream in the input file");
+  AVPacket pkt;
+  packets_info.reserve(60 * 20);  // 20fps, one minute
+  while (!(abort && *abort) && av_read_frame(input_ctx, &pkt) == 0) {
+    packets_info.emplace_back(PacketInfo{.flags = pkt.flags, .pos = pkt.pos});
+    av_packet_unref(&pkt);
+  }
+  avio_seek(input_ctx->pb, 0, SEEK_SET);
+  return !packets_info.empty();
+}
+
+bool FrameReader::get(int idx, VisionBuf *buf) {
+  if (!buf || idx < 0 || idx >= packets_info.size()) {
     return false;
   }
+  return decoder_->decode(this, idx, buf);
+}
 
-  AVStream *video = input_ctx->streams[0];
-  const AVCodec *decoder = avcodec_find_decoder(video->codecpar->codec_id);
+// class VideoDecoder
+
+VideoDecoder::VideoDecoder() {
+  av_frame_ = av_frame_alloc();
+  hw_frame_ = av_frame_alloc();
+}
+
+VideoDecoder::~VideoDecoder() {
+  if (hw_device_ctx) av_buffer_unref(&hw_device_ctx);
+  if (decoder_ctx) avcodec_free_context(&decoder_ctx);
+  av_frame_free(&av_frame_);
+  av_frame_free(&hw_frame_);
+}
+
+bool VideoDecoder::open(AVCodecParameters *codecpar, bool hw_decoder) {
+  const AVCodec *decoder = avcodec_find_decoder(codecpar->codec_id);
   if (!decoder) return false;
 
   decoder_ctx = avcodec_alloc_context3(decoder);
-  ret = avcodec_parameters_to_context(decoder_ctx, video->codecpar);
-  if (ret != 0) return false;
-
+  if (!decoder_ctx || avcodec_parameters_to_context(decoder_ctx, codecpar) != 0) {
+    rError("Failed to allocate or initialize codec context");
+    return false;
+  }
   width = (decoder_ctx->width + 3) & ~3;
   height = decoder_ctx->height;
 
-  if (has_hw_decoder && !no_hw_decoder) {
-    if (!initHardwareDecoder(HW_DEVICE_TYPE)) {
-      rWarning("No device with hardware decoder found. fallback to CPU decoding.");
-    }
+  if (hw_decoder && !initHardwareDecoder(HW_DEVICE_TYPE)) {
+    rWarning("No device with hardware decoder found. fallback to CPU decoding.");
   }
 
-  ret = avcodec_open2(decoder_ctx, decoder, nullptr);
-  if (ret < 0) {
-    rError("avcodec_open2 failed %d", ret);
+  if (avcodec_open2(decoder_ctx, decoder, nullptr) < 0) {
+    rError("Failed to open codec");
     return false;
   }
-
-  packets.reserve(60 * 20);  // 20fps, one minute
-  while (!(abort && *abort)) {
-    AVPacket *pkt = av_packet_alloc();
-    ret = av_read_frame(input_ctx, pkt);
-    if (ret < 0) {
-      av_packet_free(&pkt);
-      valid_ = (ret == AVERROR_EOF);
-      break;
-    }
-    packets.push_back(pkt);
-    // some stream seems to contain no keyframes
-    key_frames_count_ += pkt->flags & AV_PKT_FLAG_KEY;
-  }
-  valid_ = valid_ && !packets.empty();
-  return valid_;
+  return true;
 }
 
-bool FrameReader::initHardwareDecoder(AVHWDeviceType hw_device_type) {
-  for (int i = 0;; i++) {
-    const AVCodecHWConfig *config = avcodec_get_hw_config(decoder_ctx->codec, i);
-    if (!config) {
-      rWarning("decoder %s does not support hw device type %s.", decoder_ctx->codec->name,
-               av_hwdevice_get_type_name(hw_device_type));
-      return false;
-    }
+bool VideoDecoder::initHardwareDecoder(AVHWDeviceType hw_device_type) {
+  const AVCodecHWConfig *config = nullptr;
+  for (int i = 0; (config = avcodec_get_hw_config(decoder_ctx->codec, i)) != nullptr; i++) {
     if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX && config->device_type == hw_device_type) {
       hw_pix_fmt = config->pix_fmt;
       break;
     }
   }
+  if (!config) {
+    rWarning("Hardware configuration not found");
+    return false;
+  }
 
   int ret = av_hwdevice_ctx_create(&hw_device_ctx, hw_device_type, nullptr, nullptr, 0);
   if (ret < 0) {
     hw_pix_fmt = AV_PIX_FMT_NONE;
-    has_hw_decoder = false;
     rWarning("Failed to create specified HW device %d.", ret);
     return false;
   }
@@ -175,64 +167,55 @@ bool FrameReader::initHardwareDecoder(AVHWDeviceType hw_device_type) {
   return true;
 }
 
-bool FrameReader::get(int idx, VisionBuf *buf) {
-  assert(buf != nullptr);
-  if (!valid_ || idx < 0 || idx >= packets.size()) {
-    return false;
-  }
-  return decode(idx, buf);
-}
-
-bool FrameReader::decode(int idx, VisionBuf *buf) {
+bool VideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
   int from_idx = idx;
-  if (idx != prev_idx + 1 && key_frames_count_ > 1) {
+  if (idx != reader->prev_idx + 1) {
     // seeking to the nearest key frame
     for (int i = idx; i >= 0; --i) {
-      if (packets[i]->flags & AV_PKT_FLAG_KEY) {
+      if (reader->packets_info[i].flags & AV_PKT_FLAG_KEY) {
         from_idx = i;
         break;
       }
     }
+    avio_seek(reader->input_ctx->pb, reader->packets_info[from_idx].pos, SEEK_SET);
   }
-  prev_idx = idx;
+  reader->prev_idx = idx;
 
+  bool result = false;
+  AVPacket pkt;
   for (int i = from_idx; i <= idx; ++i) {
-    AVFrame *f = decodeFrame(packets[i]);
-    if (f && i == idx) {
-      return copyBuffers(f, buf);
+    if (av_read_frame(reader->input_ctx, &pkt) == 0) {
+      AVFrame *f = decodeFrame(&pkt);
+      if (f && i == idx) {
+        result = copyBuffer(f, buf);
+      }
+      av_packet_unref(&pkt);
     }
   }
-  return false;
+  return result;
 }
 
-AVFrame *FrameReader::decodeFrame(AVPacket *pkt) {
+AVFrame *VideoDecoder::decodeFrame(AVPacket *pkt) {
   int ret = avcodec_send_packet(decoder_ctx, pkt);
   if (ret < 0) {
     rError("Error sending a packet for decoding: %d", ret);
     return nullptr;
   }
 
-  av_frame_.reset(av_frame_alloc());
-  ret = avcodec_receive_frame(decoder_ctx, av_frame_.get());
+  ret = avcodec_receive_frame(decoder_ctx, av_frame_);
   if (ret != 0) {
     rError("avcodec_receive_frame error: %d", ret);
     return nullptr;
   }
 
-  if (av_frame_->format == hw_pix_fmt) {
-    hw_frame.reset(av_frame_alloc());
-    if ((ret = av_hwframe_transfer_data(hw_frame.get(), av_frame_.get(), 0)) < 0) {
-      rError("error transferring the data from GPU to CPU");
-      return nullptr;
-    }
-    return hw_frame.get();
-  } else {
-    return av_frame_.get();
+  if (av_frame_->format == hw_pix_fmt && av_hwframe_transfer_data(hw_frame_, av_frame_, 0) < 0) {
+    rError("error transferring frame data from GPU to CPU");
+    return nullptr;
   }
+  return (av_frame_->format == hw_pix_fmt) ? hw_frame_ : av_frame_;
 }
 
-bool FrameReader::copyBuffers(AVFrame *f, VisionBuf *buf) {
-  assert(f != nullptr && buf != nullptr);
+bool VideoDecoder::copyBuffer(AVFrame *f, VisionBuf *buf) {
   if (hw_pix_fmt == HW_PIX_FMT) {
     for (int i = 0; i < height/2; i++) {
       memcpy(buf->y + (i*2 + 0)*buf->stride, f->data[0] + (i*2 + 0)*f->linesize[0], width);

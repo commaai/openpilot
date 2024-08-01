@@ -1,9 +1,8 @@
-Import('env', 'arch', 'cereal', 'messaging', 'common', 'visionipc')
+Import('env', 'arch', 'messaging', 'common', 'visionipc')
 
-libs = [common, cereal, messaging, visionipc,
-        'zmq', 'capnp', 'kj', 'z',
-        'avformat', 'avcodec', 'swscale', 'avutil',
-        'yuv', 'OpenCL', 'pthread']
+libs = [common, messaging, visionipc,
+        'z', 'avformat', 'avcodec', 'swscale',
+        'avutil', 'yuv', 'OpenCL', 'pthread']
 
 src = ['logger.cc', 'video_writer.cc', 'encoder/encoder.cc', 'encoder/v4l_encoder.cc']
 if arch != "larch64":

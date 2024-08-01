@@ -1,8 +1,6 @@
-#!/usr/bin/env python3
 import copy
 import json
 import os
-import unittest
 import random
 from PIL import Image, ImageDraw, ImageFont
 
@@ -25,10 +23,10 @@ for event_types in EVENTS.values():
     ALERTS.append(alert)
 
 
-class TestAlerts(unittest.TestCase):
+class TestAlerts:
 
   @classmethod
-  def setUpClass(cls):
+  def setup_class(cls):
     with open(OFFROAD_ALERTS_PATH) as f:
       cls.offroad_alerts = json.loads(f.read())
 
@@ -45,7 +43,7 @@ class TestAlerts(unittest.TestCase):
     for name, e in events.items():
       if not name.endswith("DEPRECATED"):
         fail_msg = "%s @%d not in EVENTS" % (name, e)
-        self.assertTrue(e in EVENTS.keys(), msg=fail_msg)
+        assert e in EVENTS.keys(), fail_msg
 
   # ensure alert text doesn't exceed allowed width
   def test_alert_text_length(self):
@@ -80,7 +78,7 @@ class TestAlerts(unittest.TestCase):
         left, _, right, _ = draw.textbbox((0, 0), txt, font)
         width = right - left
         msg = f"type: {alert.alert_type} msg: {txt}"
-        self.assertLessEqual(width, max_text_width, msg=msg)
+        assert width <= max_text_width, msg
 
   def test_alert_sanity_check(self):
     for event_types in EVENTS.values():
@@ -90,21 +88,21 @@ class TestAlerts(unittest.TestCase):
           continue
 
         if a.alert_size == AlertSize.none:
-          self.assertEqual(len(a.alert_text_1), 0)
-          self.assertEqual(len(a.alert_text_2), 0)
+          assert len(a.alert_text_1) == 0
+          assert len(a.alert_text_2) == 0
         elif a.alert_size == AlertSize.small:
-          self.assertGreater(len(a.alert_text_1), 0)
-          self.assertEqual(len(a.alert_text_2), 0)
+          assert len(a.alert_text_1) > 0
+          assert len(a.alert_text_2) == 0
         elif a.alert_size == AlertSize.mid:
-          self.assertGreater(len(a.alert_text_1), 0)
-          self.assertGreater(len(a.alert_text_2), 0)
+          assert len(a.alert_text_1) > 0
+          assert len(a.alert_text_2) > 0
         else:
-          self.assertGreater(len(a.alert_text_1), 0)
+          assert len(a.alert_text_1) > 0
 
-        self.assertGreaterEqual(a.duration, 0.)
+        assert a.duration >= 0.
 
         if event_type not in (ET.WARNING, ET.PERMANENT, ET.PRE_ENABLE):
-          self.assertEqual(a.creation_delay, 0.)
+          assert a.creation_delay == 0.
 
   def test_offroad_alerts(self):
     params = Params()
@@ -113,11 +111,11 @@ class TestAlerts(unittest.TestCase):
       alert = copy.copy(self.offroad_alerts[a])
       set_offroad_alert(a, True)
       alert['extra'] = ''
-      self.assertTrue(json.dumps(alert) == params.get(a, encoding='utf8'))
+      assert json.dumps(alert) == params.get(a, encoding='utf8')
 
       # then delete it
       set_offroad_alert(a, False)
-      self.assertTrue(params.get(a) is None)
+      assert params.get(a) is None
 
   def test_offroad_alerts_extra_text(self):
     params = Params()
@@ -128,8 +126,5 @@ class TestAlerts(unittest.TestCase):
       set_offroad_alert(a, True, extra_text="a"*i)
 
       written_alert = json.loads(params.get(a, encoding='utf8'))
-      self.assertTrue("a"*i == written_alert['extra'])
-      self.assertTrue(alert["text"] == written_alert['text'])
-
-if __name__ == "__main__":
-  unittest.main()
+      assert "a"*i == written_alert['extra']
+      assert alert["text"] == written_alert['text']

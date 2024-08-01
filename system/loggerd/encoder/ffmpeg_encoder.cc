@@ -29,16 +29,16 @@ FfmpegEncoder::FfmpegEncoder(const EncoderInfo &encoder_info, int in_width, int 
   frame = av_frame_alloc();
   assert(frame);
   frame->format = AV_PIX_FMT_YUV420P;
-  frame->width = encoder_info.frame_width;
-  frame->height = encoder_info.frame_height;
-  frame->linesize[0] = encoder_info.frame_width;
-  frame->linesize[1] = encoder_info.frame_width/2;
-  frame->linesize[2] = encoder_info.frame_width/2;
+  frame->width = out_width;
+  frame->height = out_height;
+  frame->linesize[0] = out_width;
+  frame->linesize[1] = out_width/2;
+  frame->linesize[2] = out_width/2;
 
   convert_buf.resize(in_width * in_height * 3 / 2);
 
-  if (in_width != encoder_info.frame_width || in_height != encoder_info.frame_height) {
-    downscale_buf.resize(encoder_info.frame_width * encoder_info.frame_height * 3 / 2);
+  if (in_width != out_width || in_height != out_height) {
+    downscale_buf.resize(out_width * out_height * 3 / 2);
   }
 }
 

@@ -4,32 +4,33 @@
 #include <limits>
 #include <QPainter>
 
-#include "tools/cabana/streams/abstractstream.h"
-
 void Sparkline::update(const MessageId &msg_id, const cabana::Signal *sig, double last_msg_ts, int range, QSize size) {
   const auto &msgs = can->events(msg_id);
-  uint64_t ts = (last_msg_ts + can->routeStartTime()) * 1e9;
-  uint64_t first_ts = (ts > range * 1e9) ? ts - range * 1e9 : 0;
-  auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), first_ts, CompareCanEvent());
-  auto last = std::upper_bound(first, msgs.cend(), ts, CompareCanEvent());
 
-  if (first != last && !size.isEmpty()) {
-    points.clear();
-    double value = 0;
-    for (auto it = first; it != last; ++it) {
-      if (sig->getValue((*it)->dat, (*it)->size, &value)) {
-        points.emplace_back(((*it)->mono_time - (*first)->mono_time) / 1e9, value);
-      }
+  auto range_start = can->toMonoTime(last_msg_ts - range);
+  auto range_end = can->toMonoTime(last_msg_ts);
+  auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), range_start, CompareCanEvent());
+  auto last = std::upper_bound(first, msgs.cend(), range_end, CompareCanEvent());
+
+  points.clear();
+  double value = 0;
+  for (auto it = first; it != last; ++it) {
+    if (sig->getValue((*it)->dat, (*it)->size, &value)) {
+      points.emplace_back(((*it)->mono_time - (*first)->mono_time) / 1e9, value);
     }
-    const auto [min, max] = std::minmax_element(points.begin(), points.end(),
-                                                [](auto &l, auto &r) { return l.y() < r.y(); });
-    min_val = min->y() == max->y() ? min->y() - 1 : min->y();
-    max_val = min->y() == max->y() ? max->y() + 1 : max->y();
-    freq_ = points.size() / std::max(points.back().x() - points.front().x(), 1.0);
-    render(sig->color, range, size);
-  } else {
-    pixmap = QPixmap();
   }
+
+  if (points.empty() || size.isEmpty()) {
+    pixmap = QPixmap();
+    return;
+  }
+
+  const auto [min, max] = std::minmax_element(points.begin(), points.end(),
+                                              [](auto &l, auto &r) { return l.y() < r.y(); });
+  min_val = min->y() == max->y() ? min->y() - 1 : min->y();
+  max_val = min->y() == max->y() ? max->y() + 1 : max->y();
+  freq_ = points.size() / std::max(points.back().x() - points.front().x(), 1.0);
+  render(sig->color, range, size);
 }
 
 void Sparkline::render(const QColor &color, int range, QSize size) {

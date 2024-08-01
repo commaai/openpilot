@@ -16,7 +16,12 @@
 #define V4L2_QCOM_BUF_FLAG_CODECCONFIG 0x00020000
 #define V4L2_QCOM_BUF_FLAG_EOS 0x02000000
 
-// echo 0x7fffffff > /sys/kernel/debug/msm_vidc/debug_level
+/*
+  kernel debugging:
+  echo 0xff > /sys/module/videobuf2_core/parameters/debug
+  echo 0x7fffffff > /sys/kernel/debug/msm_vidc/debug_level
+  echo 0xff > /sys/devices/platform/soc/aa00000.qcom,vidc/video4linux/video33/dev_debug
+*/
 const int env_debug_encoder = (getenv("DEBUG_ENCODER") != NULL) ? atoi(getenv("DEBUG_ENCODER")) : 0;
 
 static void checked_ioctl(int fd, unsigned long request, void *argp) {
@@ -164,8 +169,8 @@ V4LEncoder::V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_hei
     .fmt = {
       .pix_mp = {
         // downscales are free with v4l
-        .width = (unsigned int)encoder_info.frame_width,
-        .height = (unsigned int)encoder_info.frame_height,
+        .width = (unsigned int)(out_width),
+        .height = (unsigned int)(out_height),
         .pixelformat = (encoder_info.encode_type == cereal::EncodeIndex::Type::FULL_H_E_V_C) ? V4L2_PIX_FMT_HEVC : V4L2_PIX_FMT_H264,
         .field = V4L2_FIELD_ANY,
         .colorspace = V4L2_COLORSPACE_DEFAULT,

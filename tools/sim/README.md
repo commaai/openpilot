@@ -13,7 +13,7 @@ First, start openpilot.
 ## Bridge usage
 ```
 $ ./run_bridge.py -h
-usage: run_bridge.py [-h] [--joystick] [--high_quality] [--dual_camera] [--simulator SIMULATOR]
+usage: run_bridge.py [-h] [--joystick] [--high_quality] [--dual_camera]
 Bridge between the simulator and openpilot.
 
 options:
@@ -21,7 +21,6 @@ options:
   --joystick
   --high_quality
   --dual_camera
-  --simulator SIMULATOR
 ```
 
 #### Bridge Controls:
@@ -47,5 +46,5 @@ options:
 ### Launching Metadrive
 Start bridge processes located in tools/sim:
 ``` bash
-./run_bridge.py --simulator metadrive
+./run_bridge.py
 ```

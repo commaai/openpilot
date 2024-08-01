@@ -1,13 +1,9 @@
-from enum import StrEnum
-from typing import Dict, List, Optional, Union
-
-from openpilot.selfdrive.car.docs_definitions import CarInfo
+from openpilot.selfdrive.car import CarSpecs, PlatformConfig, Platforms
 
 
-class CAR(StrEnum):
-  MOCK = 'mock'
-
-
-CAR_INFO: Dict[str, Optional[Union[CarInfo, List[CarInfo]]]] = {
-  CAR.MOCK: None,
-}
+class CAR(Platforms):
+  MOCK = PlatformConfig(
+    [],
+    CarSpecs(mass=1700, wheelbase=2.7, steerRatio=13),
+    {}
+  )

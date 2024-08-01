@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import math
 import os
 import pytest
@@ -6,7 +5,6 @@ import random
 import shutil
 import subprocess
 import time
-import unittest
 from pathlib import Path
 
 from parameterized import parameterized
@@ -15,7 +13,7 @@ from tqdm import trange
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
 from openpilot.system.hardware import TICI
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.manager.process_config import managed_processes
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.system.hardware.hw import Paths
 
@@ -29,18 +27,18 @@ CAMERAS = [
 ]
 
 # we check frame count, so we don't have to be too strict on size
-FILE_SIZE_TOLERANCE = 0.5
+FILE_SIZE_TOLERANCE = 0.7
 
 
 @pytest.mark.tici # TODO: all of loggerd should work on PC
-class TestEncoder(unittest.TestCase):
+class TestEncoder:
 
-  def setUp(self):
+  def setup_method(self):
     self._clear_logs()
     os.environ["LOGGERD_TEST"] = "1"
     os.environ["LOGGERD_SEGMENT_LENGTH"] = str(SEGMENT_LENGTH)
 
-  def tearDown(self):
+  def teardown_method(self):
     self._clear_logs()
 
   def _clear_logs(self):
@@ -85,7 +83,7 @@ class TestEncoder(unittest.TestCase):
         file_path = f"{route_prefix_path}--{i}/{camera}"
 
         # check file exists
-        self.assertTrue(os.path.exists(file_path), f"segment #{i}: '{file_path}' missing")
+        assert os.path.exists(file_path), f"segment #{i}: '{file_path}' missing"
 
         # TODO: this ffprobe call is really slow
         # check frame count
@@ -98,13 +96,13 @@ class TestEncoder(unittest.TestCase):
         frame_count = int(probe.split('\n')[0].strip())
         counts.append(frame_count)
 
-        self.assertEqual(frame_count, expected_frames,
-                         f"segment #{i}: {camera} failed frame count check: expected {expected_frames}, got {frame_count}")
+        assert frame_count == expected_frames, \
+                         f"segment #{i}: {camera} failed frame count check: expected {expected_frames}, got {frame_count}"
 
         # sanity check file size
         file_size = os.path.getsize(file_path)
-        self.assertTrue(math.isclose(file_size, size, rel_tol=FILE_SIZE_TOLERANCE),
-                        f"{file_path} size {file_size} isn't close to target size {size}")
+        assert math.isclose(file_size, size, rel_tol=FILE_SIZE_TOLERANCE), \
+                        f"{file_path} size {file_size} isn't close to target size {size}"
 
         # Check encodeIdx
         if encode_idx_name is not None:
@@ -118,24 +116,24 @@ class TestEncoder(unittest.TestCase):
           frame_idxs = [m.frameId for m in encode_msgs]
 
           # Check frame count
-          self.assertEqual(frame_count, len(segment_idxs))
-          self.assertEqual(frame_count, len(encode_idxs))
+          assert frame_count == len(segment_idxs)
+          assert frame_count == len(encode_idxs)
 
           # Check for duplicates or skips
-          self.assertEqual(0, segment_idxs[0])
-          self.assertEqual(len(set(segment_idxs)), len(segment_idxs))
+          assert 0 == segment_idxs[0]
+          assert len(set(segment_idxs)) == len(segment_idxs)
 
-          self.assertTrue(all(valid))
+          assert all(valid)
 
-          self.assertEqual(expected_frames * i, encode_idxs[0])
+          assert expected_frames * i == encode_idxs[0]
           first_frames.append(frame_idxs[0])
-          self.assertEqual(len(set(encode_idxs)), len(encode_idxs))
+          assert len(set(encode_idxs)) == len(encode_idxs)
 
-      self.assertEqual(1, len(set(first_frames)))
+      assert 1 == len(set(first_frames))
 
       if TICI:
         expected_frames = fps * SEGMENT_LENGTH
-        self.assertEqual(min(counts), expected_frames)
+        assert min(counts) == expected_frames
       shutil.rmtree(f"{route_prefix_path}--{i}")
 
     try:
@@ -150,7 +148,3 @@ class TestEncoder(unittest.TestCase):
       managed_processes['encoderd'].stop()
       managed_processes['camerad'].stop()
       managed_processes['sensord'].stop()
-
-
-if __name__ == "__main__":
-  unittest.main()

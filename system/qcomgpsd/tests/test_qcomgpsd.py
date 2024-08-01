@@ -1,38 +1,36 @@
-#!/usr/bin/env python3
 import os
 import pytest
 import json
 import time
 import datetime
-import unittest
 import subprocess
 
 import cereal.messaging as messaging
 from openpilot.system.qcomgpsd.qcomgpsd import at_cmd, wait_for_modem
-from openpilot.selfdrive.manager.process_config import managed_processes
+from openpilot.system.manager.process_config import managed_processes
 
 GOOD_SIGNAL = bool(int(os.getenv("GOOD_SIGNAL", '0')))
 
 
 @pytest.mark.tici
-class TestRawgpsd(unittest.TestCase):
+class TestRawgpsd:
   @classmethod
-  def setUpClass(cls):
+  def setup_class(cls):
     os.system("sudo systemctl start systemd-resolved")
     os.system("sudo systemctl restart ModemManager lte")
     wait_for_modem()
 
   @classmethod
-  def tearDownClass(cls):
+  def teardown_class(cls):
     managed_processes['qcomgpsd'].stop()
     os.system("sudo systemctl restart systemd-resolved")
     os.system("sudo systemctl restart ModemManager lte")
 
-  def setUp(self):
+  def setup_method(self):
     at_cmd("AT+QGPSDEL=0")
     self.sm = messaging.SubMaster(['qcomGnss', 'gpsLocation', 'gnssMeasurements'])
 
-  def tearDown(self):
+  def teardown_method(self):
     managed_processes['qcomgpsd'].stop()
     os.system("sudo systemctl restart systemd-resolved")
 
@@ -57,24 +55,25 @@ class TestRawgpsd(unittest.TestCase):
     os.system("sudo systemctl restart ModemManager")
     assert self._wait_for_output(30)
 
-  def test_startup_time(self):
+  def test_startup_time(self, subtests):
     for internet in (True, False):
       if not internet:
         os.system("sudo systemctl stop systemd-resolved")
-      with self.subTest(internet=internet):
+      with subtests.test(internet=internet):
         managed_processes['qcomgpsd'].start()
         assert self._wait_for_output(7)
         managed_processes['qcomgpsd'].stop()
 
-  def test_turns_off_gnss(self):
+  def test_turns_off_gnss(self, subtests):
     for s in (0.1, 1, 5):
-      managed_processes['qcomgpsd'].start()
-      time.sleep(s)
-      managed_processes['qcomgpsd'].stop()
+      with subtests.test(runtime=s):
+        managed_processes['qcomgpsd'].start()
+        time.sleep(s)
+        managed_processes['qcomgpsd'].stop()
 
-      ls = subprocess.check_output("mmcli -m any --location-status --output-json", shell=True, encoding='utf-8')
-      loc_status = json.loads(ls)
-      assert set(loc_status['modem']['location']['enabled']) <= {'3gpp-lac-ci'}
+        ls = subprocess.check_output("mmcli -m any --location-status --output-json", shell=True, encoding='utf-8')
+        loc_status = json.loads(ls)
+        assert set(loc_status['modem']['location']['enabled']) <= {'3gpp-lac-ci'}
 
 
   def check_assistance(self, should_be_loaded):
@@ -86,7 +85,7 @@ class TestRawgpsd(unittest.TestCase):
     if should_be_loaded:
       assert valid_duration == "10080"  # should be max time
       injected_time = datetime.datetime.strptime(injected_time_str.replace("\"", ""), "%Y/%m/%d,%H:%M:%S")
-      self.assertLess(abs((datetime.datetime.utcnow() - injected_time).total_seconds()), 60*60*12)
+      assert abs((datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - injected_time).total_seconds()) < 60*60*12
     else:
       valid_duration, injected_time_str = out.split(",", 1)
       injected_time_str = injected_time_str.replace('\"', '').replace('\'', '')
@@ -118,6 +117,3 @@ class TestRawgpsd(unittest.TestCase):
     time.sleep(15)
     managed_processes['qcomgpsd'].stop()
     self.check_assistance(True)
-
-if __name__ == "__main__":
-  unittest.main(failfast=True)
