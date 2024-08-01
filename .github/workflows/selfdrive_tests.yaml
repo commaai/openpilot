@@ -130,13 +130,9 @@ jobs:
                     {runner: "namespace-profile-arm64-2x8", name: "Linux-aarch64", scons_cache_tag: "aarch64"},
                     {runner: "macos-14",                    name: "MacOS-arm64",   scons_cache_tag: "macos"}]
         exclude:
-          - {platform: {runner: "${{ github.event_name != 'pull_request' && 'namespace-profile-arm64-2x8' }}" }}
+          - {platform: {runner: "${{ github.repository == 'commaai/openpilot' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == 'commaai/openpilot') && 'namespace-profile-arm64-2x8' }}" }}
 
     steps:
-    - name: Installing python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12.3'
     - name: Install openpilot
       run: curl -fsSL openpilot.comma.ai | bash
 
