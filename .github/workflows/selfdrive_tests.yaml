@@ -147,13 +147,8 @@ jobs:
           scons-${{ runner.arch }}${{ matrix.platform.scons_cache_tag }}-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}${{ matrix.platform.scons_cache_tag }}
 
-    - name: Install openpilot
-      run: curl -fsSL openpilot.comma.ai | bash
-      env:
-        PYTHONWARNINGS: default
-
     - name: Building openpilot
-      run: ./openpilot/tools/op.sh build -j4
+      run: cd openpilot && ./openpilot/tools/op.sh build -j4
 
   docker_push_multiarch:
     name: docker push multiarch tag
