@@ -130,7 +130,7 @@ jobs:
                     {runner: "namespace-profile-arm64-2x8", name: "Linux-aarch64", scons_cache_tag: "aarch64"},
                     {runner: "macos-14",                    name: "MacOS-arm64",   scons_cache_tag: "macos"}]
         exclude:
-          - {platform: {runner: "${{ github.event_name == 'pull_request' && 'namespace-profile-arm64-2x8' }}" }}
+          - {platform: {runner: "${{ github.event_name != 'pull_request' && 'namespace-profile-arm64-2x8' }}" }}
 
     steps:
     - name: Installing python
