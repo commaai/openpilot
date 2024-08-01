@@ -124,6 +124,7 @@ jobs:
     name: Setup openpilot on ${{ matrix.platform.runner }}-${{ matrix.platform.arch }}
     runs-on: ${{ matrix.platform.runner }}
     strategy:
+      fail-fast: false
       matrix:
         platform: [ {runner: "ubuntu-24.04",                arch: "x86_64",  scons_cache_tag: "x86_64"},
                     {runner: "macos-14",                    arch: "arm64",   scons_cache_tag: "macos"},
