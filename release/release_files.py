@@ -26,7 +26,6 @@ blacklist = [
   "selfdrive/car/tests/test_models.*",
 
   "^tools/",
-  "^scripts/",
   "^tinygrad_repo/",
 
   "matlab.*.md",
