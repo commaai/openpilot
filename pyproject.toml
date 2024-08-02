@@ -164,6 +164,13 @@ testpaths = [
   "cereal/messaging/tests",
 ]
 
+[tool.codespell]
+count = true
+quiet-level = 3
+# if you've got a short variable name that's getting flagged, add it here
+ignore-words-list = "bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup,bumb,nd,sie,preints,whit,indexIn"
+builtin = "clear,rare,informal,usage,code,names,en-GB_to_en-US"
+
 [tool.mypy]
 python_version = "3.11"
 plugins = [
