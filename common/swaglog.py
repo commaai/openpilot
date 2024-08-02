@@ -111,7 +111,6 @@ class ForwardingHandler(logging.NullHandler):
     self.target_logger = target_logger
 
   def emit(self, record):
-    # Forward the log record to the target logger
     self.target_logger.handle(record)
 
 
