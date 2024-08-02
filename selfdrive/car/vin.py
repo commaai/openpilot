@@ -3,7 +3,7 @@ import re
 
 import cereal.messaging as messaging
 from panda.python.uds import get_rx_addr_for_tx_addr, FUNCTIONAL_ADDRS
-from openpilot.selfdrive.car import logging
+from openpilot.selfdrive.car import carlog
 from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 from openpilot.selfdrive.car.fw_query_definitions import STANDARD_VIN_ADDRS, StdQueries
 
@@ -50,12 +50,12 @@ def get_vin(logcan, sendcan, buses, timeout=0.1, retry=2, debug=False):
               if vin.startswith(b'\x11'):
                 vin = vin[1:18]
 
-              logging.error(f"got vin with {request=}")
+              carlog.error(f"got vin with {request=}")
               return get_rx_addr_for_tx_addr(addr, rx_offset=rx_offset), bus, vin.decode()
         except Exception:
-          logging.exception("VIN query exception")
+          carlog.exception("VIN query exception")
 
-    logging.error(f"vin query retry ({i+1}) ...")
+    carlog.error(f"vin query retry ({i+1}) ...")
 
   return -1, -1, VIN_UNKNOWN
 

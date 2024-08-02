@@ -4,7 +4,7 @@ from collections.abc import Callable
 
 from cereal import car
 from openpilot.common.params import Params
-from openpilot.selfdrive.car import logging
+from openpilot.selfdrive.car import carlog
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from openpilot.selfdrive.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
@@ -127,12 +127,12 @@ def fingerprint(logcan, sendcan, num_pandas):
 
     if cached_params is not None and len(cached_params.carFw) > 0 and \
        cached_params.carVin is not VIN_UNKNOWN and not disable_fw_cache:
-      logging.warning("Using cached CarParams")
+      carlog.warning("Using cached CarParams")
       vin_rx_addr, vin_rx_bus, vin = -1, -1, cached_params.carVin
       car_fw = list(cached_params.carFw)
       cached = True
     else:
-      logging.warning("Getting VIN & FW versions")
+      carlog.warning("Getting VIN & FW versions")
       # enable OBD multiplexing for VIN query
       # NOTE: this takes ~0.1s and is relied on to allow sendcan subscriber to connect in time
       set_obd_multiplexing(params, True)
@@ -149,9 +149,9 @@ def fingerprint(logcan, sendcan, num_pandas):
     cached = False
 
   if not is_valid_vin(vin):
-    logging.error({"event": "Malformed VIN", "vin": vin})
+    carlog.error({"event": "Malformed VIN", "vin": vin})
     vin = VIN_UNKNOWN
-  logging.warning("VIN %s", vin)
+  carlog.warning("VIN %s", vin)
   params.put("CarVin", vin)
 
   # disable OBD multiplexing for CAN fingerprinting and potential ECU knockouts
@@ -178,7 +178,7 @@ def fingerprint(logcan, sendcan, num_pandas):
     car_fingerprint = fixed_fingerprint
     source = car.CarParams.FingerprintSource.fixed
 
-  logging.error({"event": "fingerprinted", "car_fingerprint": car_fingerprint, "source": source, "fuzzy": not exact_match,
+  carlog.error({"event": "fingerprinted", "car_fingerprint": car_fingerprint, "source": source, "fuzzy": not exact_match,
                  "cached": cached, "fw_count": len(car_fw), "ecu_responses": list(ecu_rx_addrs), "vin_rx_addr": vin_rx_addr,
                  "vin_rx_bus": vin_rx_bus, "fingerprints": repr(finger), "fw_query_time": fw_query_time})
 
@@ -194,7 +194,7 @@ def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
   candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan, num_pandas)
 
   if candidate is None:
-    logging.error({"event": "car doesn't match any fingerprints", "fingerprints": repr(fingerprints)})
+    carlog.error({"event": "car doesn't match any fingerprints", "fingerprints": repr(fingerprints)})
     candidate = "MOCK"
 
   CarInterface, _, _ = interfaces[candidate]

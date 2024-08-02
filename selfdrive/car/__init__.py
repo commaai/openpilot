@@ -1,5 +1,4 @@
 # functions common among cars
-import os
 import logging
 from collections import namedtuple
 from dataclasses import dataclass
@@ -15,8 +14,8 @@ from openpilot.common.utils import Freezable
 from openpilot.selfdrive.car.docs_definitions import CarDocs
 
 # setup logging
-LOGLEVEL = os.environ.get('LOGLEVEL', 'INFO').upper()
-logging.basicConfig(level=LOGLEVEL, format='%(message)s')
+carlog = logging.getLogger('carlog')
+carlog.setLevel(logging.INFO)
 
 DT_CTRL = 0.01  # car state and control loop timestep (s)
 
