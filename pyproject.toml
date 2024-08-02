@@ -76,7 +76,6 @@ testing = [
   "hypothesis ==6.47.*",
   "import-linter",
   "mypy",
-  "pre-commit",
   "pytest",
   "pytest-cov",
   "pytest-cpp",
