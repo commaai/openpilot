@@ -1,0 +1,29 @@
+{#  markdown content  #}
+<div class="px-6 pb-16 xl:pr-8">
+    <div class="flex flex-col-reverse justify-between xl:flex-row">
+        <div class="prose prose-a:after:content-['_↗'] max-w-auto md:max-w-none
+            prose-blockquote:font-inter
+            prose-a:decoration-accent prose-a:bg-gradient-to-l from-accent/30
+            hover:prose-a:bg-accent/30 hover:prose-a:decoration-2
+            w-full max-w-4xl flex-grow pt-10">
+            {# TODO add 'last modified' date
+            <div class="badge" >
+                Last Built: {{ build_date_utc.strftime("%b %d, %Y %H:%M:%S")  }}
+            </div>
+            <div class="divider"></div>
+            #}
+            {{ page.content }}
+        </div>
+
+        {# FIXME TOC AnchorLinks go too far up
+            <ul class="hidden lg:block">
+            {% for toc_item in page.toc %}
+                <li><a href="{{ toc_item.url }}">{{ toc_item.title }}</a></li>
+                {% for toc_item in toc_item.children %}
+                    <li><a href="{{ toc_item.url }}">{{ toc_item.title }}</a></li>
+                {% endfor %}
+            {% endfor %}
+            </ul>
+        #}
+    </div>
+</div>

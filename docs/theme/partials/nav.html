@@ -1,0 +1,52 @@
+<div class="bg-base-100/80 backdrop-blur border-b-2 border-neutral sticky top-0 text-base-content justify-center">
+    <div class="navbar">
+        <div class="navbar-start">
+            {#  hamburger icon  #}
+            <div class="flex-none">
+                <label
+                    for="drawer"
+                    aria-label="open sidebar"
+                    class="btn bg-accent lg:hidden"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        class="h-6 w-6 stroke-black"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="3"
+                            d="M4 6h16M4 12h16M4 18h16"
+                        ></path>
+                    </svg>
+                </label>
+            </div>
+
+            {#  site name  #}
+            <div class="px-2 font-monument-extended lowercase lg:text-xl">
+                {{ config.site_name }}
+            </div>
+        </div>
+
+        <div class="navbar-end">
+            {# TODO search bar
+            <label class="input input-bordered flex items-center gap-2">
+              <input type="text" class="shrink" placeholder="Search" />
+              <kbd class="kbd kbd-sm">⌘</kbd>
+              <kbd class="kbd kbd-sm">K</kbd>
+            </label>
+            #}
+
+            {#  social icons  #}
+            <div class="flex-none invisible sm:visible">
+                {% include "partials/socials.html" %}
+            </div>
+
+            {# TODO theme toggle
+                {% include "partials/theme-toggle.html" %}
+            #}
+        </div>
+    </div>
+</div>

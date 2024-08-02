@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+{# TODO theme toggle #}
+<html data-theme="comma">
+    <head>
+        {# FIXME theme toggle save state
+            <script src="https://cdn.jsdelivr.net/npm/theme-change@2.0.2/index.js"></script>
+        #}
+
+        {#  GDPR compliant CDN font  #}
+        <link rel="preconnect" href="https://fonts.bunny.net">
+        <link href="https://fonts.bunny.net/css?family=inter:bold|roboto+mono:400&display=swap" rel="stylesheet" />
+
+        {% block site_meta %}
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+            {#  Canonical  #}
+            {% if page.canonical_url %}
+              <link rel="canonical" href="{{ page.canonical_url }}" />
+            {% endif %}
+
+            {#  Previous page  #}
+            {% if page.previous_page %}
+              <link rel="prev" href="{{ page.previous_page.url | url }}" />
+            {% endif %}
+
+            {#  Next page  #}
+            {% if page.next_page %}
+              <link rel="next" href="{{ page.next_page.url | url }}" />
+            {% endif %}
+        {% endblock %}
+
+
+    {#  Site title  #}
+    {% block htmltitle %}
+    {% if page.meta and page.meta.title %}
+        <title>{{ page.meta.title }} - {{ config.site_name }}</title>
+    {% elif page.title and not page.is_homepage %}
+        <title>{{ page.title | striptags }} - {{ config.site_name }}</title>
+    {% else %}
+        <title>{{ config.site_name }}</title>
+    {% endif %}
+    {% endblock %}
+
+    {#  Theme-related style sheets  #}
+    {% block styles %}
+        {#  tailwindcss  #}
+        <link rel="stylesheet" href="{{ 'assets/stylesheets/output.css' | url }}"></link>
+    {% endblock %}
+
+    {#  Custom style sheets  #}
+    {% for path in config.extra_css %}
+    <link rel="stylesheet" href="{{ path | url }}" />
+    {% endfor %}
+
+    {#  Meta tags from front matter or plugins  #}
+    {% if page.meta and page.meta.meta %}
+      {% for tag in page.meta.meta %}
+        <meta
+          {% for key, value in tag.items() %}
+            {{ key }}="{{value}}"
+          {% endfor %}
+        />
+      {% endfor %}
+    {% endif %}
+
+    {#  Custom front matter  #}
+    {% block extrahead %}{% endblock %}
+  </head>
+
+  {# main #}
+  <body>
+      <div class="xl:max-w-none">
+            <div class="drawer lg:drawer-open">
+                <input id="drawer" type="checkbox" class="drawer-toggle" />
+                <div class="drawer-content flex flex-col">
+                    {#  Navbar  #}
+                    {% include "partials/nav.html" %}
+                    {#  markdown content  #}
+                    {% include "partials/content.html" %}
+                </div>
+                {#  left sidebar nav  #}
+                <div class="drawer-side" style="scroll-behavior: smooth; scroll-padding-top: 5rem;">
+                    <label for="drawer" aria-label="close sidebar" class="drawer-overlay"></label>
+                    {% include "partials/sidebar.html" %}
+                </div>
+            </div>
+
+            {# TODO footer
+                {% include "partials/footer.html" %}
+            #}
+        </div>
+  </body>
+</html>
