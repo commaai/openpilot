@@ -104,7 +104,7 @@ class UnixDomainSocketHandler(logging.Handler):
       pass
 
 
-class ForwardingHandler(logging.NullHandler):
+class ForwardingHandler(logging.Handler):
   def __init__(self, target_logger):
     super().__init__()
     self.target_logger = target_logger

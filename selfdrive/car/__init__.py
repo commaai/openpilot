@@ -16,6 +16,7 @@ from openpilot.selfdrive.car.docs_definitions import CarDocs
 # setup logging
 carlog = logging.getLogger('carlog')
 carlog.setLevel(logging.INFO)
+carlog.propagate = False
 
 DT_CTRL = 0.01  # car state and control loop timestep (s)
 
