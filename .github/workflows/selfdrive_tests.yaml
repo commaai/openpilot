@@ -62,7 +62,7 @@ jobs:
         ${{ env.RUN }} "release/check-dirty.sh && \
                         MAX_EXAMPLES=5 $PYTEST -m 'not slow' selfdrive/car"
     - name: static analysis
-      timeout-minutes: 3
+      timeout-minutes: 1
       run: |
         cd $GITHUB_WORKSPACE
         cp pyproject.toml $STRIPPED_DIR
