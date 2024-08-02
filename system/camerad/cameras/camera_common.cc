@@ -37,7 +37,7 @@ public:
 
   }
 
-  void queue(cl_command_queue q, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, cl_event *imgproc_event, int expo_time) {
+  void runKernel(cl_command_queue q, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, int expo_time) {
     CL_CHECK(clSetKernelArg(krnl_, 0, sizeof(cl_mem), &cam_buf_cl));
     CL_CHECK(clSetKernelArg(krnl_, 1, sizeof(cl_mem), &buf_cl));
     CL_CHECK(clSetKernelArg(krnl_, 2, sizeof(cl_int), &expo_time));
@@ -45,7 +45,11 @@ public:
     const size_t globalWorkSize[] = {size_t(width / 2), size_t(height / 2)};
     const int imgproc_local_worksize = 16;
     const size_t localWorkSize[] = {imgproc_local_worksize, imgproc_local_worksize};
-    CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, imgproc_event));
+
+    cl_event event;
+    CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, &event));
+    clWaitForEvents(1, &event);
+    CL_CHECK(clReleaseEvent(event));
   }
 
   ~ImgProc() {
@@ -116,10 +120,7 @@ bool CameraBuf::acquire() {
   cur_camera_buf = &camera_bufs[cur_buf_idx];
 
   double start_time = millis_since_boot();
-  cl_event event;
-  imgproc->queue(q, camera_bufs[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, &event, cur_frame_data.integ_lines);
-  clWaitForEvents(1, &event);
-  CL_CHECK(clReleaseEvent(event));
+  imgproc->runKernel(q, camera_bufs[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, cur_frame_data.integ_lines);
   cur_frame_data.processing_time = (millis_since_boot() - start_time) / 1000.0;
 
   VisionIpcBufExtra extra = {
