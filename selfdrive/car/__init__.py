@@ -13,7 +13,7 @@ from openpilot.common.numpy_fast import clip, interp
 from openpilot.common.utils import Freezable
 from openpilot.selfdrive.car.docs_definitions import CarDocs
 
-# setup logging
+# set up logging
 carlog = logging.getLogger('carlog')
 carlog.setLevel(logging.INFO)
 carlog.propagate = False
