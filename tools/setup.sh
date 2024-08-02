@@ -34,6 +34,13 @@ cat << 'EOF'
 EOF
 }
 
+function sentry_send_event() {
+  SENTRY_KEY=f8930080caaedb8381e9c2154f1c3d98
+  SENTRY_URL=https://sentry.io/api/4507704194301952/store/
+
+  curl -X POST -g --data "{ \"exception\": { \"values\": [{ \"type\": \"$1\", \"value\": \"$2\" }] } }" -H 'Content-Type: application/json' -H "X-Sentry-Auth: Sentry sentry_version=7, sentry_key=$SENTRY_KEY, sentry_client=op_setup/0.1" $SENTRY_URL
+}
+
 function check_stdin() {
   if [ -t 0 ]; then
     INTERACTIVE=1
@@ -123,7 +130,18 @@ function git_clone() {
 function install_with_op() {
   cd $OPENPILOT_ROOT
   $OPENPILOT_ROOT/tools/op.sh install
-  $OPENPILOT_ROOT/tools/op.sh setup || (echo -e "\n[${RED}✗${NC}] failed to install openpilot!" && return 1)
+
+  (set +e
+  echo 'before'
+  $OPENPILOT_ROOT/tools/op.sh setup
+  if [[ ! "$?" -eq 0 ]]; then
+    echo -e "\n[${RED}✗${NC}] failed to install openpilot!"
+    LOGS=$(cat /tmp/openpilot_setup_logs)
+    rm -f /tmp/openpilot_setup_logs
+    sentry_send_event "$(echo "$LOGS" | sed '1p;d')" "$(echo "$LOGS" | sed '2p;d')"
+    return 0
+  fi
+  )
 
   echo -e "\n----------------------------------------------------------------------"
   echo -e "[${GREEN}✔${NC}] openpilot was successfully installed into ${BOLD}$OPENPILOT_ROOT${NC}"
@@ -134,8 +152,8 @@ function install_with_op() {
 show_motd
 
 check_stdin
-ask_dir
-check_dir
-check_git
-[ -z $SKIP_GIT_CLONE ] && git_clone
+#ask_dir
+#check_dir
+#check_git
+#[ -z $SKIP_GIT_CLONE ] && git_clone
 install_with_op

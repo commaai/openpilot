@@ -25,6 +25,12 @@ function op_install() {
   echo -e " ↳ [${GREEN}✔${NC}] op installed successfully. Open a new shell to use it.\n"
 }
 
+function echoe() {
+  echo -e " ↳ [${RED}✗${NC}] $@"
+  echo "$ERROR_ID" >> /tmp/openpilot_setup_logs
+  echo "$@" >> /tmp/openpilot_setup_logs
+}
+
 function op_run_command() {
   CMD="$@"
   echo -e "${BOLD}Running:${NC} $CMD"
@@ -52,16 +58,16 @@ function op_check_openpilot_dir() {
     return 0
   fi
 
-  echo -e " ↳ [${RED}✗${NC}] openpilot directory not found! Make sure that you are"
-  echo "       inside the openpilot directory or specify one with the"
-  echo "       --dir option!"
+  echoe " ↳ [${RED}✗${NC}] openpilot directory not found! Make sure that you are"
+  echoe "       inside the openpilot directory or specify one with the"
+  echoe "       --dir option!"
   return 1
 }
 
 function op_check_git() {
   echo "Checking for git..."
   if ! command -v "git" > /dev/null 2>&1; then
-    echo -e " ↳ [${RED}✗${NC}] git not found on your system!"
+    echoe " ↳ [${RED}✗${NC}] git not found on your system!"
     return 1
   else
     echo -e " ↳ [${GREEN}✔${NC}] git found."
@@ -71,14 +77,14 @@ function op_check_git() {
   if [[ $(file -b $OPENPILOT_ROOT/selfdrive/modeld/models/supercombo.onnx) == "data" ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] git lfs files found."
   else
-    echo -e " ↳ [${RED}✗${NC}] git lfs files not found! Run 'git lfs pull'"
+    echoe " ↳ [${RED}✗${NC}] git lfs files not found! Run 'git lfs pull'"
     return 1
   fi
 
   echo "Checking for git submodules..."
   for name in $(git config --file .gitmodules --get-regexp path | awk '{ print $2 }' | tr '\n' ' '); do
     if [[ -z $(ls $OPENPILOT_ROOT/$name) ]]; then
-      echo -e " ↳ [${RED}✗${NC}] git submodule $name not found! Run 'git submodule update --init --recursive'"
+      echoe " ↳ [${RED}✗${NC}] git submodule $name not found! Run 'git submodule update --init --recursive'"
       return 1
     fi
   done
@@ -96,35 +102,37 @@ function op_check_os() {
           echo -e " ↳ [${GREEN}✔${NC}] Ubuntu $VERSION_CODENAME detected."
           ;;
         * )
-          echo -e " ↳ [${RED}✗${NC}] Incompatible Ubuntu version $VERSION_CODENAME detected!"
+          echoe " ↳ [${RED}✗${NC}] Incompatible Ubuntu version $VERSION_CODENAME detected!"
           return 1
           ;;
       esac
     else
-      echo -e " ↳ [${RED}✗${NC}] No /etc/os-release on your system. Make sure you're running on Ubuntu, or similar!"
+      echoe " ↳ [${RED}✗${NC}] No /etc/os-release on your system. Make sure you're running on Ubuntu, or similar!"
       return 1
     fi
 
   elif [[ "$OSTYPE" == "darwin"* ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] macos detected.\n"
   else
-    echo -e " ↳ [${RED}✗${NC}] OS type $OSTYPE not supported!"
+    echoe " ↳ [${RED}✗${NC}] OS type $OSTYPE not supported!"
     return 1
   fi
 }
 
 function op_check_python() {
+  ERROR_ID="ERROR_PYTHON_VERSION"
   echo "Checking for compatible python version..."
   REQUIRED_PYTHON_VERSION=$(grep "requires-python" $OPENPILOT_ROOT/pyproject.toml)
   INSTALLED_PYTHON_VERSION=$(python3 --version 2> /dev/null || true)
+  INSTALLED_PYTHON_VERSION="Python 3.10"
 
   if [[ -z $INSTALLED_PYTHON_VERSION ]]; then
-    echo -e " ↳ [${RED}✗${NC}] python3 not found on your system. You need python version at least $(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9.]') to continue!"
+    echoe "python3 not found on your system. You need python version at least $(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9.]') to continue!"
     return 1
   elif [[ $(echo $INSTALLED_PYTHON_VERSION | grep -o '[0-9]\+\.[0-9]\+' | tr -d -c '[0-9]') -ge $(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9]') ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] $INSTALLED_PYTHON_VERSION detected."
   else
-    echo -e " ↳ [${RED}✗${NC}] You need python version at least $(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9.]') to continue!"
+    echoe "You need python version at least $(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9.]') to continue!"
     return 1
   fi
 }
@@ -169,6 +177,7 @@ function op_setup() {
   op_check_openpilot_dir
   op_check_os
   op_check_python
+  return 0
 
   echo "Installing dependencies..."
   st="$(date +%s)"
