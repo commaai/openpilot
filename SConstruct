@@ -361,7 +361,7 @@ Export('messaging')
 
 # Build other submodules
 SConscript([
-  'opendbc/can/SConscript',
+  'opendbc/opendbc/can/SConscript',
   'panda/SConscript',
 ])
 
