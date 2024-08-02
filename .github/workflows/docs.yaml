@@ -27,9 +27,11 @@ jobs:
 
     # Build
     - name: Build docs
+      working-directory: ./docs/
       run: |
         # TODO: can we install just the "docs" dependency group without the normal deps?
-        pip install mkdocs
+        pip install mkdocs pytailwindcss-extra
+        tailwindcss-extra -i styles.css -o theme/assets/stylesheets/output.css --minify
         mkdocs build
 
     # Push to docs.comma.ai
