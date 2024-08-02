@@ -25,7 +25,7 @@ tailwindcss-extra -i styles.css -o theme/assets/stylesheets/output.css --watch
 mkdocs serve --dev-addr=0.0.0.0:8000
 ```
 
-**3. Run prod site locally**
+**3. Build and Run prod site locally**
 ``` bash
 tailwindcss-extra -i styles.css -o theme/assets/stylesheets/output.css --minify
 mkdocs build
