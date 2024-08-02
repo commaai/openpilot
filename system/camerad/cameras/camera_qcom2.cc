@@ -24,7 +24,7 @@ const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 // For debugging:
 // echo "4294967295" > /sys/module/cam_debug_util/parameters/debug_mdl
 
-extern ExitHandler do_exit;
+ExitHandler do_exit;
 
 CameraState::CameraState(MultiCameraState *multi_camera_state, const CameraConfig &config)
   : multi_cam_state(multi_camera_state),
