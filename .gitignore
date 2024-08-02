@@ -15,6 +15,7 @@ a.out
 .hypothesis
 
 /docs_site/
+docs/site/
 
 *.dylib
 *.DSYM

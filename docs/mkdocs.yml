@@ -1,16 +1,23 @@
-site_name: openpilot docs
-repo_url: https://github.com/commaai/openpilot/
+site_name: openpilot
 site_url: https://docs.comma.ai
+github_repo: commaai/openpilot
+discord_url: https://discord.comma.ai
 
-exclude_docs: README.md
+# TODO automate somehow?
+version: 0.9.8
 
-strict: true
-docs_dir: docs
-site_dir: docs_site/
+watch:
+  - "theme/"
 
 theme:
-  name: readthedocs
-  navigation_depth: 3
+  name: null
+  custom_dir: "theme/"
+
+# TODO use macros to automate version tag?
+# plugins:
+#   # TODO implement search ?
+#   - search
+#   - macros
 
 nav:
   - Getting Started:

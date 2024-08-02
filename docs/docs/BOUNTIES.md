@@ -1,3 +1,7 @@
+---
+title: Bounties
+---
+
 # [Bounties](https://github.com/orgs/commaai/projects/26/views/1)
 
 Get paid to improve openpilot!
@@ -11,7 +15,7 @@ Get paid to improve openpilot!
 * get an extra 20% if you redeem your bounty in [comma shop](https://comma.ai/shop) credit (including refunds on previous orders)
 * for bounties >$100, the first PR gets a lock, which times out after a week of no progress
 
-We put up each bounty with the intention that it'll get merged, but occasionally the right resolution is to close the bounty, which only becomes clear once some effort is put in. 
+We put up each bounty with the intention that it'll get merged, but occasionally the right resolution is to close the bounty, which only becomes clear once some effort is put in.
 This is still valuable work, so we'll pay out $100 for getting any bounty closed with a good explanation.
 
 ## Issue bounties
