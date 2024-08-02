@@ -1,10 +1,5 @@
 version = 1
 requires-python = ">=3.11"
-environment-markers = [
-    "python_version == '3.12' and platform_machine == 'aarch64'",
-    "python_version == '3.12' and platform_machine == 'aarch64' and (python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64')",
-    "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'",
-]
 
 [[distribution]]
 name = "aiohttp"
@@ -179,9 +174,6 @@ wheels = [
 name = "casadi"
 version = "3.6.5"
 source = { registry = "https://pypi.org/simple" }
-environment-markers = [
-    "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'",
-]
 dependencies = [
     { name = "numpy", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'" },
 ]
@@ -208,11 +200,8 @@ wheels = [
 name = "casadi"
 version = "3.6.6"
 source = { url = "https://github.com/commaai/casadi/releases/download/nightly-release-3.6.6/casadi-3.6.6-cp312-none-manylinux2014_aarch64.whl" }
-environment-markers = [
-    "python_version == '3.12' and platform_machine == 'aarch64'",
-]
 dependencies = [
-    { name = "numpy", marker = "python_version == '3.12' and platform_machine == 'aarch64'" },
+    { name = "numpy" },
 ]
 wheels = [
     { url = "https://github.com/commaai/casadi/releases/download/nightly-release-3.6.6/casadi-3.6.6-cp312-none-manylinux2014_aarch64.whl", hash = "sha256:06a15e0099657b960620a2491e565c7f126030018da80c39f6bd33439160c669" },
@@ -257,15 +246,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/4c/00/e17e2a8df0ff5aca2edd9eeebd93e095dd2515f2dd8d591d84a3233518f6/cffi-1.16.0-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:2d92b25dbf6cae33f65005baf472d2c245c050b1ce709cc4588cdcdd5495b520", size = 487099 },
     { url = "https://files.pythonhosted.org/packages/c9/6e/751437067affe7ac0944b1ad4856ec11650da77f0dd8f305fae1117ef7bb/cffi-1.16.0-cp312-cp312-win32.whl", hash = "sha256:b2ca4e77f9f47c55c194982e10f058db063937845bb2b7a86c84a6cfe0aefa8b", size = 173564 },
     { url = "https://files.pythonhosted.org/packages/e9/63/e285470a4880a4f36edabe4810057bd4b562c6ddcc165eacf9c3c7210b40/cffi-1.16.0-cp312-cp312-win_amd64.whl", hash = "sha256:68678abf380b42ce21a5f2abde8efee05c114c2fdb2e9eef2efdb0257fba1235", size = 181956 },
-]
-
-[[distribution]]
-name = "cfgv"
-version = "3.4.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/11/74/539e56497d9bd1d484fd863dd69cbbfa653cd2aa27abfe35653494d85e94/cfgv-3.4.0.tar.gz", hash = "sha256:e52591d4c5f5dead8e0f673fb16db7949d2cfb3f7da4582893288f0ded8fe560", size = 7114 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/c5/55/51844dd50c4fc7a33b653bfaba4c2456f06955289ca770a5dbd5fd267374/cfgv-3.4.0-py2.py3-none-any.whl", hash = "sha256:b7265b1f29fd3316bfcd2b330d63d024f2bfd8bcb8b0272f8e19a504856c48f9", size = 7249 },
 ]
 
 [[distribution]]
@@ -326,6 +306,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/c8/72/42a6570fc61b1f8913529728ad314c7cf5961540728dcad22c33fb2db6b6/cloudpickle-3.0.0.tar.gz", hash = "sha256:996d9a482c6fb4f33c1a35335cf8afd065d2a56e973270364840712d9131a882", size = 21231 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/96/43/dae06432d0c4b1dc9e9149ad37b4ca8384cf6eb7700cd9215b177b914f0a/cloudpickle-3.0.0-py3-none-any.whl", hash = "sha256:246ee7d0c295602a036e86369c77fecda4ab17b506496730f2f576d9016fd9c7", size = 20088 },
+]
+
+[[distribution]]
+name = "codespell"
+version = "2.3.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/a0/a9/98353dfc7afcdf18cffd2dd3e959a25eaaf2728cf450caa59af89648a8e4/codespell-2.3.0.tar.gz", hash = "sha256:360c7d10f75e65f67bad720af7007e1060a5d395670ec11a7ed1fed9dd17471f", size = 329791 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0e/20/b6019add11e84f821184234cea0ad91442373489ef7ccfa3d73a71b908fa/codespell-2.3.0-py3-none-any.whl", hash = "sha256:a9c7cef2501c9cfede2110fd6d4e5e62296920efe9abfb84648df866e47f58d1", size = 329167 },
 ]
 
 [[distribution]]
@@ -484,15 +473,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/61/7b/35cbccb7effc5d7e40f4c55e2b79399e1853041997fcda15c9ff160abba0/dictdiffer-0.9.0.tar.gz", hash = "sha256:17bacf5fbfe613ccf1b6d512bd766e6b21fb798822a133aa86098b8ac9997578", size = 31513 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/47/ef/4cb333825d10317a36a1154341ba37e6e9c087bac99c1990ef07ffdb376f/dictdiffer-0.9.0-py2.py3-none-any.whl", hash = "sha256:442bfc693cfcadaf46674575d2eba1c53b42f5e404218ca2c2ff549f2df56595", size = 16754 },
-]
-
-[[distribution]]
-name = "distlib"
-version = "0.3.8"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/c4/91/e2df406fb4efacdf46871c25cde65d3c6ee5e173b7e5a4547a47bae91920/distlib-0.3.8.tar.gz", hash = "sha256:1530ea13e350031b6312d8580ddb6b27a104275a31106523b8f123787f494f64", size = 609931 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/8e/41/9307e4f5f9976bc8b7fea0b66367734e8faf3ec84bc0d412d8cfabbb66cd/distlib-0.3.8-py2.py3-none-any.whl", hash = "sha256:034db59a0b96f8ca18035f36290806a9a6e6bd9d1ff91e45a7f172eb17e51784", size = 468850 },
 ]
 
 [[distribution]]
@@ -760,15 +740,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/45/f2/f77da8271b1abb630cb2090ead2f5aa4acc9639d632e8e68187f52527e4b/hypothesis-6.47.5.tar.gz", hash = "sha256:e0c1e253fc97e7ecdb9e2bbff2cf815d8739e0d1d3d093d67c3af5bb6a7211b0", size = 326641 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d3/a7/389bbaade2cbbb2534cb2715986041ed01c6d792152c527e71f7f68e93b5/hypothesis-6.47.5-py3-none-any.whl", hash = "sha256:87049b781ee11ec1c7948565b889ab02e428a1e32d427ab4de8fdb3649242d06", size = 387311 },
-]
-
-[[distribution]]
-name = "identify"
-version = "2.6.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/32/f4/8e8f7db397a7ce20fbdeac5f25adaf567fc362472432938d25556008e03a/identify-2.6.0.tar.gz", hash = "sha256:cb171c685bdc31bcc4c1734698736a7d5b6c8bf2e0c15117f4d469c8640ae5cf", size = 99116 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/24/6c/a4f39abe7f19600b74528d0c717b52fff0b300bb0161081510d39c53cb00/identify-2.6.0-py2.py3-none-any.whl", hash = "sha256:e79ae4406387a9d300332b5fd366d8994f1525e8414984e1a59e058b2eda2dd0", size = 98962 },
 ]
 
 [[distribution]]
@@ -1081,28 +1052,28 @@ name = "metadrive-simulator"
 version = "0.4.2.3"
 source = { git = "https://github.com/commaai/metadrive?rev=opencv_headless#9b6ddb791919249effa0573883076681514787e4" }
 dependencies = [
-    { name = "filelock", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'" },
-    { name = "geopandas", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'" },
-    { name = "gymnasium", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'" },
-    { name = "lxml", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'" },
-    { name = "matplotlib", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'" },
-    { name = "numpy", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'" },
-    { name = "opencv-python-headless", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'" },
-    { name = "panda3d", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'" },
-    { name = "panda3d-gltf", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'" },
-    { name = "pandas", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'" },
-    { name = "pillow", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'" },
-    { name = "progressbar", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'" },
-    { name = "psutil", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'" },
-    { name = "pygame", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'" },
-    { name = "pygments", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'" },
-    { name = "pytest", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'" },
-    { name = "requests", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'" },
-    { name = "scipy", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'" },
-    { name = "seaborn", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'" },
-    { name = "shapely", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'" },
-    { name = "tqdm", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'" },
-    { name = "yapf", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'" },
+    { name = "filelock" },
+    { name = "geopandas" },
+    { name = "gymnasium" },
+    { name = "lxml" },
+    { name = "matplotlib" },
+    { name = "numpy" },
+    { name = "opencv-python-headless" },
+    { name = "panda3d" },
+    { name = "panda3d-gltf" },
+    { name = "pandas" },
+    { name = "pillow" },
+    { name = "progressbar" },
+    { name = "psutil" },
+    { name = "pygame" },
+    { name = "pygments" },
+    { name = "pytest" },
+    { name = "requests" },
+    { name = "scipy" },
+    { name = "seaborn" },
+    { name = "shapely" },
+    { name = "tqdm" },
+    { name = "yapf" },
 ]
 
 [[distribution]]
@@ -1169,7 +1140,6 @@ version = "1.30.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cryptography", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "pyjwt", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
     { name = "pyjwt", extra = ["crypto"] },
     { name = "requests", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
 ]
@@ -1269,15 +1239,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/e2/a9/a0c57aee75f77794adaf35322f8b6404cbd0f89ad45c87197a937764b7d0/natsort-8.4.0.tar.gz", hash = "sha256:45312c4a0e5507593da193dedd04abb1469253b601ecaf63445ad80f0a1ea581", size = 76575 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ef/82/7a9d0550484a62c6da82858ee9419f3dd1ccc9aa1c26a1e43da3ecd20b0d/natsort-8.4.0-py3-none-any.whl", hash = "sha256:4732914fb471f56b5cce04d7bae6f164a592c7712e1c85f9ef585e197299521c", size = 38268 },
-]
-
-[[distribution]]
-name = "nodeenv"
-version = "1.9.1"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/43/16/fc88b08840de0e0a72a2f9d8c6bae36be573e475a6326ae854bcc549fc45/nodeenv-1.9.1.tar.gz", hash = "sha256:6ec12890a2dab7946721edbfbcd91f3319c6ccc9aec47be7c7e6b7011ee6645f", size = 47437 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/d2/1d/1b658dbd2b9fa9c4c9f32accbfc0205d532c8c6194dc0f2a4c0428e7128a/nodeenv-1.9.1-py2.py3-none-any.whl", hash = "sha256:ba11c9782d29c27c70ffbdda2d7415098754709be8a7056d79a737cd901155c9", size = 22314 },
 ]
 
 [[distribution]]
@@ -1404,8 +1365,8 @@ dependencies = [
     { name = "libusb1", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
     { name = "numpy", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
     { name = "onnx", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "onnxruntime", marker = "platform_machine == 'aarch64' and platform_system == 'Linux'" },
-    { name = "onnxruntime-gpu", marker = "platform_machine == 'x86_64' and platform_system == 'Linux'" },
+    { name = "onnxruntime", marker = "(python_version == '3.12' and platform_machine == 'aarch64' and platform_system == 'Linux') or (python_version == '3.12' and platform_machine == 'aarch64' and platform_system == 'Linux' and (python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64')) or (platform_machine == 'aarch64' and platform_system == 'Linux' and (python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'))" },
+    { name = "onnxruntime-gpu", marker = "platform_machine == 'x86_64' and platform_system == 'Linux' and (python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64')" },
     { name = "psutil", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
     { name = "pyaudio", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
     { name = "pycapnp", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
@@ -1419,7 +1380,7 @@ dependencies = [
     { name = "setuptools", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
     { name = "smbus2", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
     { name = "sounddevice", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "spidev", marker = "platform_system == 'Linux'" },
+    { name = "spidev", marker = "(python_version == '3.12' and platform_machine == 'aarch64' and platform_system == 'Linux') or (python_version == '3.12' and platform_machine == 'aarch64' and platform_system == 'Linux' and (python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64')) or (platform_system == 'Linux' and (python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64'))" },
     { name = "sympy", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
     { name = "tqdm", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
     { name = "websocket-client", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
@@ -1428,49 +1389,49 @@ dependencies = [
 
 [distribution.optional-dependencies]
 dev = [
-    { name = "av", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "azure-identity", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "azure-storage-blob", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "dictdiffer", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "flaky", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "inputs", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "lru-dict", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "matplotlib", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
+    { name = "av" },
+    { name = "azure-identity" },
+    { name = "azure-storage-blob" },
+    { name = "dictdiffer" },
+    { name = "flaky" },
+    { name = "inputs" },
+    { name = "lru-dict" },
+    { name = "matplotlib" },
     { name = "metadrive-simulator", marker = "platform_machine != 'aarch64'" },
-    { name = "parameterized", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "pyautogui", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
+    { name = "parameterized" },
+    { name = "pyautogui" },
     { name = "pyopencl", marker = "platform_machine != 'aarch64'" },
-    { name = "pyprof2calltree", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
+    { name = "pyprof2calltree" },
     { name = "pyqt5", marker = "platform_machine == 'x86_64'" },
     { name = "pytools", marker = "platform_machine != 'aarch64'" },
-    { name = "pywinctl", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "rerun-sdk", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "tabulate", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "types-requests", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "types-tabulate", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
+    { name = "pywinctl" },
+    { name = "rerun-sdk" },
+    { name = "tabulate" },
+    { name = "types-requests" },
+    { name = "types-tabulate" },
 ]
 docs = [
-    { name = "jinja2", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "mkdocs", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "natsort", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
+    { name = "jinja2" },
+    { name = "mkdocs" },
+    { name = "natsort" },
 ]
 testing = [
-    { name = "coverage", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "hypothesis", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "import-linter", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "mypy", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "pre-commit", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "pytest", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "pytest-asyncio", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "pytest-cov", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "pytest-cpp", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "pytest-mock", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "pytest-randomly", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "pytest-repeat", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "pytest-subtests", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "pytest-timeout", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "pytest-xdist", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "ruff", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
+    { name = "codespell" },
+    { name = "coverage" },
+    { name = "hypothesis" },
+    { name = "import-linter" },
+    { name = "mypy" },
+    { name = "pytest" },
+    { name = "pytest-asyncio" },
+    { name = "pytest-cov" },
+    { name = "pytest-cpp" },
+    { name = "pytest-mock" },
+    { name = "pytest-randomly" },
+    { name = "pytest-repeat" },
+    { name = "pytest-subtests" },
+    { name = "pytest-timeout" },
+    { name = "pytest-xdist" },
+    { name = "ruff" },
 ]
 
 [[distribution]]
@@ -1641,22 +1602,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/ed/d3/c6c64067759e87af98cc668c1cc75171347d0f1577fab7ca3749134e3cd4/portalocker-2.10.1.tar.gz", hash = "sha256:ef1bf844e878ab08aee7e40184156e1151f228f103aa5c6bd0724cc330960f8f", size = 40891 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/9b/fb/a70a4214956182e0d7a9099ab17d50bfcba1056188e9b14f35b9e2b62a0d/portalocker-2.10.1-py3-none-any.whl", hash = "sha256:53a5984ebc86a025552264b459b46a2086e269b21823cb572f8f28ee759e45bf", size = 18423 },
-]
-
-[[distribution]]
-name = "pre-commit"
-version = "3.8.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "cfgv", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "identify", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "nodeenv", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "pyyaml", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "virtualenv", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/64/10/97ee2fa54dff1e9da9badbc5e35d0bbaef0776271ea5907eccf64140f72f/pre_commit-3.8.0.tar.gz", hash = "sha256:8bb6494d4a20423842e198980c9ecf9f96607a07ea29549e180eef9ae80fe7af", size = 177815 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/07/92/caae8c86e94681b42c246f0bca35c059a2f0529e5b92619f6aba4cf7e7b6/pre_commit-3.8.0-py2.py3-none-any.whl", hash = "sha256:9a90a53bf82fdd8778d58085faf8d83df56e40dfe18f45b19446e26bf1b3a63f", size = 204643 },
 ]
 
 [[distribution]]
@@ -5168,20 +5113,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/43/6d/fa469ae21497ddc8bc93e5877702dca7cb8f911e337aca7452b5724f1bb6/urllib3-2.2.2.tar.gz", hash = "sha256:dd505485549a7a552833da5e6063639d0d177c04f23bc3864e41e5dc5f612168", size = 292266 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ca/1c/89ffc63a9605b583d5df2be791a27bc1a42b7c32bab68d3c8f2f73a98cd4/urllib3-2.2.2-py3-none-any.whl", hash = "sha256:a448b2f64d686155468037e1ace9f2d2199776e17f0a46610480d311f73e3472", size = 121444 },
-]
-
-[[distribution]]
-name = "virtualenv"
-version = "20.26.3"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "distlib", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "filelock", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "platformdirs", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/68/60/db9f95e6ad456f1872486769c55628c7901fb4de5a72c2f7bdd912abf0c1/virtualenv-20.26.3.tar.gz", hash = "sha256:4c43a2a236279d9ea36a0d76f98d84bd6ca94ac4e0f4a3b9d46d05e10fea542a", size = 9057588 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/07/4d/410156100224c5e2f0011d435e477b57aed9576fc7fe137abcf14ec16e11/virtualenv-20.26.3-py3-none-any.whl", hash = "sha256:8cc4a31139e796e9a7de2cd5cf2489de1217193116a8fd42328f1bd65f434589", size = 5684792 },
 ]
 
 [[distribution]]

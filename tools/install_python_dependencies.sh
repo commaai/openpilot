@@ -43,9 +43,3 @@ if [[ "$(uname)" == 'Darwin' ]]; then
   echo "export ZMQ=1" >> $ROOT/.env
   echo "export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES" >> $ROOT/.env
 fi
-
-if [ "$(uname)" != "Darwin" ] && [ -e "$ROOT/.git" ]; then
-  echo "pre-commit hooks install..."
-  pre-commit install
-  git submodule foreach pre-commit install
-fi
