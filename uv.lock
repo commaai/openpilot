@@ -309,6 +309,15 @@ wheels = [
 ]
 
 [[distribution]]
+name = "codespell"
+version = "2.3.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/a0/a9/98353dfc7afcdf18cffd2dd3e959a25eaaf2728cf450caa59af89648a8e4/codespell-2.3.0.tar.gz", hash = "sha256:360c7d10f75e65f67bad720af7007e1060a5d395670ec11a7ed1fed9dd17471f", size = 329791 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0e/20/b6019add11e84f821184234cea0ad91442373489ef7ccfa3d73a71b908fa/codespell-2.3.0-py3-none-any.whl", hash = "sha256:a9c7cef2501c9cfede2110fd6d4e5e62296920efe9abfb84648df866e47f58d1", size = 329167 },
+]
+
+[[distribution]]
 name = "colorama"
 version = "0.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -1131,8 +1140,7 @@ version = "1.30.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cryptography", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
-    { name = "pyjwt" },
-    { name = "pyjwt", extra = ["crypto"], marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
+    { name = "pyjwt", extra = ["crypto"] },
     { name = "requests", marker = "python_version < '3.12' or python_version > '3.12' or platform_machine != 'aarch64' or (python_version == '3.12' and platform_machine == 'aarch64')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/03/ce/45b9af8f43fbbf34d15162e1e39ce34b675c234c56638277cc05562b6dbf/msal-1.30.0.tar.gz", hash = "sha256:b4bf00850092e465157d814efa24a18f788284c9a479491024d62903085ea2fb", size = 142510 }
@@ -1408,6 +1416,7 @@ docs = [
     { name = "natsort" },
 ]
 testing = [
+    { name = "codespell" },
     { name = "coverage" },
     { name = "hypothesis" },
     { name = "import-linter" },

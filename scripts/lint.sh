@@ -6,5 +6,8 @@ cd $DIR/../
 
 source .venv/bin/activate
 
+# TODO: bring back rest of pre-commit checks:
+# https://github.com/commaai/openpilot/blob/4b11c9e914707df9def598616995be2a5d355a6a/.pre-commit-config.yaml#L2
+
 ruff check .
 

@@ -86,7 +86,8 @@ testing = [
   "pytest-asyncio",
   "pytest-mock",
   "pytest-repeat",
-  "ruff"
+  "ruff",
+  "codespell",
 ]
 
 dev = [

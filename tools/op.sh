@@ -224,7 +224,7 @@ function op_juggle() {
 
 function op_lint() {
   op_before_cmd
-  op_run_command pre-commit run --all $@
+  op_run_command scripts/lint.sh $@
 }
 
 function op_test() {
@@ -272,7 +272,7 @@ function op_default() {
   echo -e "  ${BOLD}juggle${NC}   Run Plotjuggler"
   echo -e "  ${BOLD}replay${NC}   Run replay"
   echo -e "  ${BOLD}cabana${NC}   Run cabana"
-  echo -e "  ${BOLD}lint${NC}     Run all the pre-commit checks"
+  echo -e "  ${BOLD}lint${NC}     Run the linter"
   echo -e "  ${BOLD}test${NC}     Run all unit tests from pytest"
   echo -e "  ${BOLD}help${NC}     Show this message"
   echo -e "  ${BOLD}install${NC}  Install the 'op' tool system wide"
