@@ -105,7 +105,7 @@ class UnixDomainSocketHandler(logging.Handler):
       pass
 
 
-class ForwardingHandler(logging.Handler):
+class ForwardingHandler(logging.NullHandler):
   def __init__(self, target_logger):
     super().__init__()
     self.target_logger = target_logger
@@ -145,10 +145,5 @@ log.addHandler(outhandler)
 # logs are sent through IPC before writing to disk to prevent disk I/O blocking
 log.addHandler(ipchandler)
 
+# forward from submodules and silence stderr
 carlog.addHandler(ForwardingHandler(log))
-
-forwarding_handler = logging.handlers.MemoryHandler(
-  capacity=0,  # Immediate forwarding
-  target=log,
-)
-# forwarding_handler.setTarget(log)
