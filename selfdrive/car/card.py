@@ -22,7 +22,7 @@ REPLAY = "REPLAY" in os.environ
 
 EventName = car.CarEvent.EventName
 
-# forward and silence stderr
+# forward
 carlog.addHandler(ForwardingHandler(cloudlog))
 
 
