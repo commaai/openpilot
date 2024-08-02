@@ -361,6 +361,11 @@ class CAR(Platforms):
     # mass: https://carprices.ae/brands/kia/2023/k8/1.6-turbo-hybrid, steerRatio: guesstimate from K5 platform
     CarSpecs(mass=1630, wheelbase=2.895, steerRatio=13.27)
   )
+  KIA_K9_2019 = HyundaiPlatformConfig(
+    [HyundaiCarDocs("Kia K9 2019", car_parts=CarParts.common([CarHarness.hyundai_d]))],
+    # steerRatio = variable
+    CarSpecs(mass=2005, wheelbase=3.105, steerRatio=14.5, tireStiffnessFactor=0.5)
+  )
   KIA_NIRO_EV = HyundaiPlatformConfig(
     [
       HyundaiCarDocs("Kia Niro EV 2019", "All", video_link="https://www.youtube.com/watch?v=lT7zcG6ZpGo", car_parts=CarParts.common([CarHarness.hyundai_h])),
