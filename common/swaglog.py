@@ -7,7 +7,6 @@ from logging.handlers import BaseRotatingHandler
 
 import zmq
 
-from selfdrive.car import carlog
 from openpilot.common.logging_extra import SwagLogger, SwagFormatter, SwagLogFileFormatter
 from openpilot.system.hardware.hw import Paths
 
@@ -143,6 +142,3 @@ ipchandler = UnixDomainSocketHandler(SwagFormatter(log))
 log.addHandler(outhandler)
 # logs are sent through IPC before writing to disk to prevent disk I/O blocking
 log.addHandler(ipchandler)
-
-# forward from submodules and silence stderr
-carlog.addHandler(ForwardingHandler(log))
