@@ -25,10 +25,13 @@ function op_install() {
   echo -e " ↳ [${GREEN}✔${NC}] op installed successfully. Open a new shell to use it.\n"
 }
 
-function echoe() {
-  echo -e " ↳ [${RED}✗${NC}] $@"
-  echo "$ERROR_ID" >> /tmp/openpilot_setup_logs
-  echo "$@" >> /tmp/openpilot_setup_logs
+function loge() {
+  if [[ -f "$LOG_FILE" ]]; then
+    # error type
+    echo "$1" >> $LOG_FILE
+    # error log
+    echo "$2" >> $LOG_FILE
+  fi
 }
 
 function op_run_command() {
@@ -58,16 +61,16 @@ function op_check_openpilot_dir() {
     return 0
   fi
 
-  echoe " ↳ [${RED}✗${NC}] openpilot directory not found! Make sure that you are"
-  echoe "       inside the openpilot directory or specify one with the"
-  echoe "       --dir option!"
+  echo -e " ↳ [${RED}✗${NC}] openpilot directory not found! Make sure that you are"
+  echo -e "       inside the openpilot directory or specify one with the"
+  echo -e "       --dir option!"
   return 1
 }
 
 function op_check_git() {
   echo "Checking for git..."
   if ! command -v "git" > /dev/null 2>&1; then
-    echoe " ↳ [${RED}✗${NC}] git not found on your system!"
+    echo -e " ↳ [${RED}✗${NC}] git not found on your system!"
     return 1
   else
     echo -e " ↳ [${GREEN}✔${NC}] git found."
@@ -77,14 +80,14 @@ function op_check_git() {
   if [[ $(file -b $OPENPILOT_ROOT/selfdrive/modeld/models/supercombo.onnx) == "data" ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] git lfs files found."
   else
-    echoe " ↳ [${RED}✗${NC}] git lfs files not found! Run 'git lfs pull'"
+    echo -e " ↳ [${RED}✗${NC}] git lfs files not found! Run 'git lfs pull'"
     return 1
   fi
 
   echo "Checking for git submodules..."
   for name in $(git config --file .gitmodules --get-regexp path | awk '{ print $2 }' | tr '\n' ' '); do
     if [[ -z $(ls $OPENPILOT_ROOT/$name) ]]; then
-      echoe " ↳ [${RED}✗${NC}] git submodule $name not found! Run 'git submodule update --init --recursive'"
+      echo -e " ↳ [${RED}✗${NC}] git submodule $name not found! Run 'git submodule update --init --recursive'"
       return 1
     fi
   done
@@ -102,19 +105,22 @@ function op_check_os() {
           echo -e " ↳ [${GREEN}✔${NC}] Ubuntu $VERSION_CODENAME detected."
           ;;
         * )
-          echoe " ↳ [${RED}✗${NC}] Incompatible Ubuntu version $VERSION_CODENAME detected!"
+          echo -e " ↳ [${RED}✗${NC}] Incompatible Ubuntu version $VERSION_CODENAME detected!"
+          loge "ERROR_INCOMPATIBLE_UBUNTU" "$VERSION_CODENAME"
           return 1
           ;;
       esac
     else
-      echoe " ↳ [${RED}✗${NC}] No /etc/os-release on your system. Make sure you're running on Ubuntu, or similar!"
+      echo -e " ↳ [${RED}✗${NC}] No /etc/os-release on your system. Make sure you're running on Ubuntu, or similar!"
+      loge "ERROR_UNKNOWN_UBUNTU"
       return 1
     fi
 
   elif [[ "$OSTYPE" == "darwin"* ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] macos detected.\n"
   else
-    echoe " ↳ [${RED}✗${NC}] OS type $OSTYPE not supported!"
+    echo -e " ↳ [${RED}✗${NC}] OS type $OSTYPE not supported!"
+    loge "ERROR_UNKNOWN_OS" "$OSTYPE"
     return 1
   fi
 }
@@ -124,15 +130,16 @@ function op_check_python() {
   echo "Checking for compatible python version..."
   REQUIRED_PYTHON_VERSION=$(grep "requires-python" $OPENPILOT_ROOT/pyproject.toml)
   INSTALLED_PYTHON_VERSION=$(python3 --version 2> /dev/null || true)
-  INSTALLED_PYTHON_VERSION="Python 3.10"
 
   if [[ -z $INSTALLED_PYTHON_VERSION ]]; then
-    echoe "python3 not found on your system. You need python version at least $(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9.]') to continue!"
+    echo -e " ↳ [${RED}✗${NC}] python3 not found on your system. You need python version at least $(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9.]') to continue!"
+    loge "ERROR_PYTHON_NOT_FOUND"
     return 1
   elif [[ $(echo $INSTALLED_PYTHON_VERSION | grep -o '[0-9]\+\.[0-9]\+' | tr -d -c '[0-9]') -ge $(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9]') ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] $INSTALLED_PYTHON_VERSION detected."
   else
-    echoe "You need python version at least $(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9.]') to continue!"
+    echo -e " ↳ [${RED}✗${NC}] You need python version at least $(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9.]') to continue!"
+    loge "ERROR_PYTHON_VERSION" "$INSTALLED_PYTHON_VERSION"
     return 1
   fi
 }
@@ -177,27 +184,39 @@ function op_setup() {
   op_check_openpilot_dir
   op_check_os
   op_check_python
-  return 0
 
   echo "Installing dependencies..."
   st="$(date +%s)"
   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    op_run_command $OPENPILOT_ROOT/tools/ubuntu_setup.sh
+    SETUP_SCRIPT="tools/ubuntu_setup.sh"
   elif [[ "$OSTYPE" == "darwin"* ]]; then
-    op_run_command $OPENPILOT_ROOT/tools/mac_setup.sh
+    SETUP_SCRIPT="tools/mac_setup.sh"
+  fi
+  if ! op_run_command "$OPENPILOT_ROOT/$SETUP_SCRIPT"; then
+    echo -e " ↳ [${RED}✗${NC}] Dependencies installation failed!"
+    loge "ERROR_DEPENDENCIES_INSTALLATION"
+    return 1
   fi
   et="$(date +%s)"
   echo -e " ↳ [${GREEN}✔${NC}] Dependencies installed successfully in $((et - st)) seconds.\n"
 
   echo "Getting git submodules..."
   st="$(date +%s)"
-  op_run_command git submodule update --filter=blob:none --jobs 4 --init --recursive
+  if ! op_run_command git submodule update --filter=blob:none --jobs 4 --init --recursive; then
+    echo -e " ↳ [${RED}✗${NC}] Getting git submodules failed!"
+    loge "ERROR_GIT_SUBMODULES"
+    return 1
+  fi
   et="$(date +%s)"
   echo -e " ↳ [${GREEN}✔${NC}] Submodules installed successfully in $((et - st)) seconds.\n"
 
   echo "Pulling git lfs files..."
   st="$(date +%s)"
-  op_run_command git lfs pull
+  if ! op_run_command git lfs pull; then
+    echo -e " ↳ [${RED}✗${NC}] Pulling git lfs files failed!"
+    loge "ERROR_GIT_LFS"
+    return 1
+  fi
   et="$(date +%s)"
   echo -e " ↳ [${GREEN}✔${NC}] Files pulled successfully in $((et - st)) seconds.\n"
 
@@ -316,6 +335,7 @@ function _op() {
     --dry )            shift 1; DRY="1" ;;
     -n | --no-verify ) shift 1; NO_VERIFY="1" ;;
     -v | --verbose )   shift 1; VERBOSE="1" ;;
+    -l | --log )       shift 1; LOG_FILE="$1" ; shift 1 ;;
   esac
 
   # parse Commands
