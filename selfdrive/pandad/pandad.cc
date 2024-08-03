@@ -164,24 +164,25 @@ Panda *connect(std::string serial="", uint32_t index=0) {
   return panda.release();
 }
 
-void can_send(std::vector<Panda *> &pandas, bool fake_send) {
-  static AlignedBuffer aligned_buf;
-  static std::unique_ptr<Context> context(Context::create());
-  static std::unique_ptr<SubSocket> subscriber(SubSocket::create(context.get(), "sendcan"));
+void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
+  util::set_thread_name("pandad_can_send");
 
-  std::vector<std::unique_ptr<Message>> messages;
+  AlignedBuffer aligned_buf;
+  std::unique_ptr<Context> context(Context::create());
+  std::unique_ptr<SubSocket> subscriber(SubSocket::create(context.get(), "sendcan"));
+  assert(subscriber != NULL);
+  subscriber->setTimeout(100);
 
-  // Non-blocking drain of sendcan socket
-  while (auto msg = subscriber->receive(true)) {
-    messages.emplace_back(msg);
-  }
+  // run as fast as messages come in
+  while (!do_exit && check_all_connected(pandas)) {
+    std::unique_ptr<Message> msg(subscriber->receive());
+    if (!msg) {
+      if (errno == EINTR) {
+        do_exit = true;
+      }
+      continue;
+    }
 
-  if (do_exit || !check_all_connected(pandas)) {
-    return;
-  }
-
-  // Process and send each message to pandas
-  for (const auto &msg : messages) {
     capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg.get()));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
 
@@ -518,14 +519,17 @@ void process_peripheral_state(Panda *panda, PubMaster *pm, bool no_fan_control) 
 void pandad_run(std::vector<Panda *> &pandas) {
   const bool no_fan_control = getenv("NO_FAN_CONTROL") != nullptr;
   const bool spoofing_started = getenv("STARTED") != nullptr;
-  const bool fack_send = getenv("FAKESEND") != nullptr;
+  const bool fake_send = getenv("FAKESEND") != nullptr;
 
   PubMaster pm({"can", "pandaStates", "peripheralState"});
   RateKeeper rk("pandad", 100);  // 100 hz
 
+  // Start the CAN send thread
+  std::thread send_thread(can_send_thread, pandas, fake_send);
+
+  // Main loop: receive CAN data and process states
   while (!do_exit && check_all_connected(pandas)) {
     can_recv(pandas, &pm);
-    can_send(pandas, fack_send);
 
     // Process peripheral state every 20 Hz
     if (rk.frame() % 5 == 0) {
@@ -544,6 +548,8 @@ void pandad_run(std::vector<Panda *> &pandas) {
   if (g_safety_future.valid()) {
     g_safety_future.wait();
   }
+
+  send_thread.join();
 }
 
 void pandad_main_thread(std::vector<std::string> serials) {
