@@ -15,8 +15,6 @@
 #include "CL/cl_ext_qcom.h"
 #endif
 
-ExitHandler do_exit;
-
 class ImgProc {
 public:
   ImgProc(cl_device_id device_id, cl_context context, const CameraBuf *b, const CameraState *s, int buf_width, int uv_offset) {
@@ -37,7 +35,7 @@ public:
 
   }
 
-  void queue(cl_command_queue q, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, cl_event *imgproc_event, int expo_time) {
+  void runKernel(cl_command_queue q, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, int expo_time) {
     CL_CHECK(clSetKernelArg(krnl_, 0, sizeof(cl_mem), &cam_buf_cl));
     CL_CHECK(clSetKernelArg(krnl_, 1, sizeof(cl_mem), &buf_cl));
     CL_CHECK(clSetKernelArg(krnl_, 2, sizeof(cl_int), &expo_time));
@@ -45,7 +43,11 @@ public:
     const size_t globalWorkSize[] = {size_t(width / 2), size_t(height / 2)};
     const int imgproc_local_worksize = 16;
     const size_t localWorkSize[] = {imgproc_local_worksize, imgproc_local_worksize};
-    CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, imgproc_event));
+
+    cl_event event;
+    CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, &event));
+    clWaitForEvents(1, &event);
+    CL_CHECK(clReleaseEvent(event));
   }
 
   ~ImgProc() {
@@ -84,7 +86,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
 
   // the encoder HW tells us the size it wants after setting it up.
   // TODO: VENUS_BUFFER_SIZE should give the size, but it's too small. dependent on encoder settings?
-  size_t nv12_size = (rgb_width >= 2688 ? 2900 : 2346)*nv12_width;
+  size_t nv12_size = (rgb_width <= 1344 ? 2900 : 2346)*nv12_width;
 
   vipc_server->create_buffers_with_sizes(stream_type, YUV_BUFFER_COUNT, false, rgb_width, rgb_height, nv12_size, nv12_width, nv12_uv_offset);
   LOGD("created %d YUV vipc buffers with size %dx%d", YUV_BUFFER_COUNT, nv12_width, nv12_height);
@@ -116,10 +118,7 @@ bool CameraBuf::acquire() {
   cur_camera_buf = &camera_bufs[cur_buf_idx];
 
   double start_time = millis_since_boot();
-  cl_event event;
-  imgproc->queue(q, camera_bufs[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, &event, cur_frame_data.integ_lines);
-  clWaitForEvents(1, &event);
-  CL_CHECK(clReleaseEvent(event));
+  imgproc->runKernel(q, camera_bufs[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, cur_frame_data.integ_lines);
   cur_frame_data.processing_time = (millis_since_boot() - start_time) / 1000.0;
 
   VisionIpcBufExtra extra = {
@@ -244,7 +243,7 @@ static kj::Array<capnp::byte> yuv420_to_jpeg(const CameraBuf *b, int thumbnail_w
   return dat;
 }
 
-static void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
+void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
   auto thumbnail = yuv420_to_jpeg(b, b->rgb_width / 4, b->rgb_height / 4);
   if (thumbnail.size() == 0) return;
 
@@ -282,36 +281,6 @@ float set_exposure_target(const CameraBuf *b, Rect ae_xywh, int x_skip, int y_sk
   }
 
   return lum_med / 256.0;
-}
-
-void *processing_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
-  const char *thread_name = nullptr;
-  if (cs == &cameras->road_cam) {
-    thread_name = "RoadCamera";
-  } else if (cs == &cameras->driver_cam) {
-    thread_name = "DriverCamera";
-  } else {
-    thread_name = "WideRoadCamera";
-  }
-  util::set_thread_name(thread_name);
-
-  uint32_t cnt = 0;
-  while (!do_exit) {
-    if (!cs->buf.acquire()) continue;
-
-    callback(cameras, cs, cnt);
-
-    if (cs == &(cameras->road_cam) && cameras->pm && cnt % 100 == 3) {
-      // this takes 10ms???
-      publish_thumbnail(cameras->pm, &(cs->buf));
-    }
-    ++cnt;
-  }
-  return NULL;
-}
-
-std::thread start_process_thread(MultiCameraState *cameras, CameraState *cs, process_thread_cb callback) {
-  return std::thread(processing_thread, cameras, cs, callback);
 }
 
 void camerad_thread() {

@@ -33,9 +33,6 @@ ignore_imports =
     openpilot.selfdrive.car.ecu_addrs -> openpilot.common.swaglog
     openpilot.selfdrive.car.car_helpers -> openpilot.common.swaglog
     openpilot.selfdrive.car.car_helpers -> openpilot.system.version
-    openpilot.selfdrive.car.ford.carcontroller -> openpilot.selfdrive.controls.lib.drive_helpers
-    openpilot.selfdrive.car.gm.interface -> openpilot.selfdrive.controls.lib.drive_helpers
-    openpilot.selfdrive.car.honda.carcontroller -> openpilot.selfdrive.controls.lib.drive_helpers
     openpilot.selfdrive.car.interfaces -> openpilot.selfdrive.controls.lib.drive_helpers
     openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.controls.lib.latcontrol_angle
     openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.controls.lib.longcontrol

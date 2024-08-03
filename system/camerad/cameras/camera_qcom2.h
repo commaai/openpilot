@@ -15,6 +15,8 @@ struct CameraConfig {
   int camera_num;
   VisionStreamType stream_type;
   float focal_len;  // millimeters
+  const char *publish_name;
+  cereal::FrameData::Builder (cereal::Event::Builder::*init_camera_state)();
   bool enabled;
 };
 
@@ -22,6 +24,8 @@ const CameraConfig WIDE_ROAD_CAMERA_CONFIG = {
   .camera_num = 0,
   .stream_type = VISION_STREAM_WIDE_ROAD,
   .focal_len = 1.71,
+  .publish_name = "wideRoadCameraState",
+  .init_camera_state = &cereal::Event::Builder::initWideRoadCameraState,
   .enabled = !getenv("DISABLE_WIDE_ROAD"),
 };
 
@@ -29,6 +33,8 @@ const CameraConfig ROAD_CAMERA_CONFIG = {
   .camera_num = 1,
   .stream_type = VISION_STREAM_ROAD,
   .focal_len = 8.0,
+  .publish_name = "roadCameraState",
+  .init_camera_state = &cereal::Event::Builder::initRoadCameraState,
   .enabled = !getenv("DISABLE_ROAD"),
 };
 
@@ -36,6 +42,8 @@ const CameraConfig DRIVER_CAMERA_CONFIG = {
   .camera_num = 2,
   .stream_type = VISION_STREAM_DRIVER,
   .focal_len = 1.71,
+  .publish_name = "driverCameraState",
+  .init_camera_state = &cereal::Event::Builder::initDriverCameraState,
   .enabled = !getenv("DISABLE_DRIVER"),
 };
 
@@ -45,6 +53,8 @@ public:
   std::unique_ptr<const SensorInfo> ci;
   bool enabled = true;
   VisionStreamType stream_type;
+  const char *publish_name = nullptr;
+  cereal::FrameData::Builder (cereal::Event::Builder::*init_camera_state)() = nullptr;
   float focal_len = 0;
 
   std::mutex exp_lock;
@@ -83,6 +93,7 @@ public:
   void camera_map_bufs();
   void camera_init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
   void camera_close();
+  void run();
 
   int32_t session_handle = -1;
   int32_t sensor_dev_handle = -1;
@@ -94,17 +105,17 @@ public:
   int buf0_handle = 0;
   int buf_handle[FRAME_BUF_COUNT] = {};
   int sync_objs[FRAME_BUF_COUNT] = {};
-  int request_ids[FRAME_BUF_COUNT] = {};
-  int request_id_last = 0;
-  int frame_id_last = 0;
-  int idx_offset = 0;
+  uint64_t request_ids[FRAME_BUF_COUNT] = {};
+  uint64_t request_id_last = 0;
+  uint64_t frame_id_last = 0;
+  uint64_t idx_offset = 0;
   bool skipped = true;
 
   CameraBuf buf;
   MemoryManager mm;
 
   void config_isp(int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset);
-  void enqueue_req_multi(int start, int n, bool dp);
+  void enqueue_req_multi(uint64_t start, int n, bool dp);
   void enqueue_buffer(int i, bool dp);
   int clear_req_queue();
 

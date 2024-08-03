@@ -19,6 +19,7 @@ from openpilot.selfdrive.car.honda.values import CAR as HONDA, HondaFlags
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from openpilot.selfdrive.car.values import Platform
 from openpilot.selfdrive.car.card import Car
+from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
 from openpilot.tools.lib.logreader import LogReader, internal_source, openpilotci_source
@@ -237,7 +238,7 @@ class TestCarModelBase(unittest.TestCase):
     # start parsing CAN messages after we've left ELM mode and can expect CAN traffic
     error_cnt = 0
     for i, msg in enumerate(self.can_msgs[self.elm_frame:]):
-      rr = RI.update((msg.as_builder().to_bytes(),))
+      rr = RI.update(can_capnp_to_list((msg.as_builder().to_bytes(),)))
       if rr is not None and i > 50:
         error_cnt += car.RadarData.Error.canError in rr.errors
     self.assertEqual(error_cnt, 0)
@@ -297,7 +298,7 @@ class TestCarModelBase(unittest.TestCase):
 
         now_nanos += DT_CTRL * 1e9
         msgs_sent += len(sendcan)
-        for addr, _, dat, bus in sendcan:
+        for addr, dat, bus in sendcan:
           to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
           self.assertTrue(self.safety.safety_tx_hook(to_send), (addr, dat, bus))
 
