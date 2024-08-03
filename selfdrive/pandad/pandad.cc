@@ -373,7 +373,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
   return ignition_local;
 }
 
-void send_peripheral_state(PubMaster *pm, Panda *panda) {
+void send_peripheral_state(Panda *panda, PubMaster *pm) {
   // build msg
   MessageBuilder msg;
   auto evt = msg.initEvent();
@@ -473,12 +473,6 @@ void process_peripheral_state(Panda *panda, PubMaster *pm, bool no_fan_control) 
 
   {
     sm.update(0);
-
-    // send out peripheralState at 2Hz
-    if (sm.frame % 10 == 0) {
-      send_peripheral_state(pm, panda);
-    }
-
     if (sm.updated("deviceState") && !no_fan_control) {
       // Fan speed
       uint16_t fan_speed = sm["deviceState"].getDeviceState().getFanSpeedPercentDesired();
@@ -521,24 +515,30 @@ void pandad_run(std::vector<Panda *> &pandas) {
   const bool spoofing_started = getenv("STARTED") != nullptr;
   const bool fake_send = getenv("FAKESEND") != nullptr;
 
-  PubMaster pm({"can", "pandaStates", "peripheralState"});
-  RateKeeper rk("pandad", 100);  // 100 hz
-
   // Start the CAN send thread
   std::thread send_thread(can_send_thread, pandas, fake_send);
+
+  PubMaster pm({"can", "pandaStates", "peripheralState"});
+  RateKeeper rk("pandad", 100);  // 100 hz
+  Panda *peripheral_panda = pandas[0];
 
   // Main loop: receive CAN data and process states
   while (!do_exit && check_all_connected(pandas)) {
     can_recv(pandas, &pm);
 
-    // Process peripheral state every 20 Hz
+    // Process peripheral state at 20 Hz
     if (rk.frame() % 5 == 0) {
-      process_peripheral_state(pandas[0], &pm, no_fan_control);
+      process_peripheral_state(peripheral_panda, &pm, no_fan_control);
     }
 
-    // Process panda state every 10 Hz
+    // Process panda state at 10 Hz
     if (rk.frame() % 10 == 0) {
       process_panda_state(pandas, &pm, spoofing_started);
+    }
+
+    // Send out peripheralState at 2Hz
+    if (rk.frame() % 50 == 0) {
+      send_peripheral_state(peripheral_panda, &pm);
     }
 
     rk.keepTime();
