@@ -19,7 +19,6 @@ from openpilot.common.realtime import set_core_affinity
 from openpilot.system.hardware.hw import Paths
 from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
-from pathlib import Path
 
 NetworkType = log.DeviceState.NetworkType
 UPLOAD_ATTR_NAME = 'user.upload'
@@ -62,9 +61,12 @@ def listdir_by_creation(d: str) -> list[str]:
     return []
 
 def clear_locks(root: str) -> None:
-  for lock_file in Path(root).rglob('*.lock'):
+  for logdir in os.listdir(root):
+    path = os.path.join(root, logdir)
     try:
-      lock_file.unlink()
+      for fname in os.listdir(path):
+        if fname.endswith(".lock"):
+          os.unlink(os.path.join(path, fname))
     except OSError:
       cloudlog.exception("clear_locks failed")
 
