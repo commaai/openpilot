@@ -180,8 +180,8 @@ function install_with_op() {
 
 show_motd
 check_stdin
-#ask_dir
-#check_dir
+ask_dir
+check_dir
 check_git
-#[ -z $SKIP_GIT_CLONE ] && git_clone
+[ -z $SKIP_GIT_CLONE ] && git_clone
 install_with_op

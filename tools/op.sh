@@ -62,8 +62,8 @@ function op_check_openpilot_dir() {
   fi
 
   echo -e " ↳ [${RED}✗${NC}] openpilot directory not found! Make sure that you are"
-  echo -e "       inside the openpilot directory or specify one with the"
-  echo -e "       --dir option!"
+  echo "       inside the openpilot directory or specify one with the"
+  echo "       --dir option!"
   return 1
 }
 
