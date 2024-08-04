@@ -73,20 +73,20 @@ function check_dir() {
       return 1
     fi
 
+    # already a "valid" openpilot clone, skip cloning again
+    if [[ ! -z "$(ls -A $OPENPILOT_ROOT)" ]]; then
+      SKIP_GIT_CLONE=1
+    fi
+
     # by default, don't try installing in already existing directory
     if [[ -z $INTERACTIVE ]]; then
-      return 1
+      return 0
     fi
 
     read -p "       Would you like to attempt installation anyway? [Y/n] " -n 1 -r
     echo -e "\n"
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
       return 1
-    fi
-
-    # already a "valid" openpilot clone, skip cloning again
-    if [[ ! -z "$(ls -A $OPENPILOT_ROOT)" ]]; then
-      SKIP_GIT_CLONE=1
     fi
 
     return 0
@@ -123,10 +123,10 @@ function git_clone() {
 function install_with_op() {
   cd $OPENPILOT_ROOT
   $OPENPILOT_ROOT/tools/op.sh install
-  $OPENPILOT_ROOT/tools/op.sh setup
+  $OPENPILOT_ROOT/tools/op.sh setup || (echo -e "\n[${RED}✗${NC}] failed to install openpilot!" && return 1)
 
   echo -e "\n----------------------------------------------------------------------"
-  echo -e "openpilot was successfully installed into ${BOLD}$OPENPILOT_ROOT${NC}"
+  echo -e "[${GREEN}✔${NC}] openpilot was successfully installed into ${BOLD}$OPENPILOT_ROOT${NC}"
   echo -e "Checkout the docs at https://docs.comma.ai"
   echo -e "Checkout how to contribute at https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md"
 }

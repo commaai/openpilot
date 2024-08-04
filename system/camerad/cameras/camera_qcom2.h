@@ -105,17 +105,17 @@ public:
   int buf0_handle = 0;
   int buf_handle[FRAME_BUF_COUNT] = {};
   int sync_objs[FRAME_BUF_COUNT] = {};
-  int request_ids[FRAME_BUF_COUNT] = {};
-  int request_id_last = 0;
-  int frame_id_last = 0;
-  int idx_offset = 0;
+  uint64_t request_ids[FRAME_BUF_COUNT] = {};
+  uint64_t request_id_last = 0;
+  uint64_t frame_id_last = 0;
+  uint64_t idx_offset = 0;
   bool skipped = true;
 
   CameraBuf buf;
   MemoryManager mm;
 
   void config_isp(int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset);
-  void enqueue_req_multi(int start, int n, bool dp);
+  void enqueue_req_multi(uint64_t start, int n, bool dp);
   void enqueue_buffer(int i, bool dp);
   int clear_req_queue();
 

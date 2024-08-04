@@ -24,7 +24,7 @@ const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 // For debugging:
 // echo "4294967295" > /sys/module/cam_debug_util/parameters/debug_mdl
 
-extern ExitHandler do_exit;
+ExitHandler do_exit;
 
 CameraState::CameraState(MultiCameraState *multi_camera_state, const CameraConfig &config)
   : multi_cam_state(multi_camera_state),
@@ -345,7 +345,7 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
 
 void CameraState::enqueue_buffer(int i, bool dp) {
   int ret;
-  int request_id = request_ids[i];
+  uint64_t request_id = request_ids[i];
 
   if (buf_handle[i] && sync_objs[i]) {
     // wait
@@ -386,7 +386,7 @@ void CameraState::enqueue_buffer(int i, bool dp) {
   req_mgr_sched_request.req_id = request_id;
   ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_SCHED_REQ, &req_mgr_sched_request, sizeof(req_mgr_sched_request));
   if (ret != 0) {
-    LOGE("failed to schedule cam mgr request: %d %d", ret, request_id);
+    LOGE("failed to schedule cam mgr request: %d %lu", ret, request_id);
   }
 
   // poke sensor, must happen after schedule
@@ -396,8 +396,8 @@ void CameraState::enqueue_buffer(int i, bool dp) {
   config_isp(buf_handle[i], sync_objs[i], request_id, buf0_handle, 65632*(i+1));
 }
 
-void CameraState::enqueue_req_multi(int start, int n, bool dp) {
-  for (int i=start; i<start+n; ++i) {
+void CameraState::enqueue_req_multi(uint64_t start, int n, bool dp) {
+  for (uint64_t i = start; i < start + n; ++i) {
     request_ids[(i - 1) % FRAME_BUF_COUNT] = i;
     enqueue_buffer((i - 1) % FRAME_BUF_COUNT, dp);
   }
@@ -780,8 +780,8 @@ void CameraState::handle_camera_event(void *evdat) {
   assert(event_data->u.frame_msg.link_hdl == link_handle);
 
   uint64_t timestamp = event_data->u.frame_msg.timestamp;
-  int main_id = event_data->u.frame_msg.frame_id;
-  int real_id = event_data->u.frame_msg.request_id;
+  uint64_t main_id = event_data->u.frame_msg.frame_id;
+  uint64_t real_id = event_data->u.frame_msg.request_id;
 
   if (real_id != 0) { // next ready
     if (real_id == 1) {idx_offset = main_id;}
@@ -799,7 +799,7 @@ void CameraState::handle_camera_event(void *evdat) {
 
     // check for dropped requests
     if (real_id > request_id_last + 1) {
-      LOGE("camera %d dropped requests %d %d", camera_num, real_id, request_id_last);
+      LOGE("camera %d dropped requests %ld %ld", camera_num, real_id, request_id_last);
       enqueue_req_multi(request_id_last + 1 + FRAME_BUF_COUNT, real_id - (request_id_last + 1), 0);
     }
 

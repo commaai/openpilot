@@ -1,24 +1,28 @@
 #!/usr/bin/env bash
 
+if [[ ! "${BASH_SOURCE[0]}" = "${0}" ]]; then
+  echo "Invalid invocation! This script must not be sourced."
+  echo "Run 'op.sh' directly or check your .bashrc for a valid alias"
+  return 0
+fi
+
+set -e
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 UNDERLINE='\033[4m'
 BOLD='\033[1m'
 NC='\033[0m'
 
+RC_FILE="${HOME}/.$(basename ${SHELL})rc"
+if [ "$(uname)" == "Darwin" ] && [ $SHELL == "/bin/bash" ]; then
+  RC_FILE="$HOME/.bash_profile"
+fi
 function op_install() {
-  (set -e
-
   echo "Installing op system-wide..."
-  RC_FILE="${HOME}/.$(basename ${SHELL})rc"
-  if [ "$(uname)" == "Darwin" ] && [ $SHELL == "/bin/bash" ]; then
-    RC_FILE="$HOME/.bash_profile"
-  fi
-  CMD="\nalias op='source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh" \"\$@\"'\n"
+  CMD="\nalias op='"$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh" \"\$@\"'\n"
   grep "alias op=" "$RC_FILE" &> /dev/null || printf "$CMD" >> $RC_FILE
   echo -e " ↳ [${GREEN}✔${NC}] op installed successfully. Open a new shell to use it.\n"
-
-  )
 }
 
 function op_run_command() {
@@ -55,8 +59,6 @@ function op_check_openpilot_dir() {
 }
 
 function op_check_git() {
-  (set -e
-
   echo "Checking for git..."
   if ! command -v "git" > /dev/null 2>&1; then
     echo -e " ↳ [${RED}✗${NC}] git not found on your system!"
@@ -81,13 +83,9 @@ function op_check_git() {
     fi
   done
   echo -e " ↳ [${GREEN}✔${NC}] git submodules found."
-
-  )
 }
 
 function op_check_os() {
-  (set -e
-
   echo "Checking for compatible os version..."
   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
 
@@ -113,13 +111,9 @@ function op_check_os() {
     echo -e " ↳ [${RED}✗${NC}] OS type $OSTYPE not supported!"
     return 1
   fi
-
-  )
 }
 
 function op_check_python() {
-  (set -e
-
   echo "Checking for compatible python version..."
   REQUIRED_PYTHON_VERSION=$(grep "requires-python" $OPENPILOT_ROOT/pyproject.toml)
   INSTALLED_PYTHON_VERSION=$(python3 --version 2> /dev/null || true)
@@ -127,14 +121,12 @@ function op_check_python() {
   if [[ -z $INSTALLED_PYTHON_VERSION ]]; then
     echo -e " ↳ [${RED}✗${NC}] python3 not found on your system. You need python version at least $(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9.]') to continue!"
     return 1
-  elif [[ $(echo $INSTALLED_PYTHON_VERSION | tr -d -c '[0-9]') -ge $(($(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9]') * 10)) ]]; then
+  elif [[ $(echo $INSTALLED_PYTHON_VERSION | grep -o '[0-9]\+\.[0-9]\+' | tr -d -c '[0-9]') -ge $(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9]') ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] $INSTALLED_PYTHON_VERSION detected."
   else
     echo -e " ↳ [${RED}✗${NC}] You need python version at least $(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9.]') to continue!"
     return 1
   fi
-
-  )
 }
 
 function op_check_venv() {
@@ -171,8 +163,6 @@ function op_before_cmd() {
 }
 
 function op_setup() {
-  (set -e
-
   op_get_openpilot_dir
   cd $OPENPILOT_ROOT
 
@@ -203,8 +193,6 @@ function op_setup() {
   echo -e " ↳ [${GREEN}✔${NC}] Files pulled successfully in $((et - st)) seconds.\n"
 
   op_check
-
-  )
 }
 
 function op_activate_venv() {
@@ -212,99 +200,52 @@ function op_activate_venv() {
 }
 
 function op_venv() {
-  ( set -e
-
   op_before_cmd
-
-  )
-
-  if [[ "$?" -eq 0 ]]; then
-
-    if [[ "${BASH_SOURCE[0]}" = "${0}" ]]; then
-      echo "Run 'op venv' or 'source op.sh venv' to activate your venv!"
-      return 1
-    fi
-
-    # this must be run in the same shell as the user calling "op"
-    op_get_openpilot_dir
-    op_run_command source $OPENPILOT_ROOT/.venv/bin/activate
-  fi
+  bash --rcfile <(echo "source $RC_FILE; source $OPENPILOT_ROOT/.venv/bin/activate")
 }
 
 function op_check() {
-  (set -e
-
   VERBOSE=1
   op_before_cmd
   unset VERBOSE
-
-  )
 }
 
 function op_build() {
-  (set -e
-
   CDIR=$(pwd)
   op_before_cmd
   cd "$CDIR"
   op_run_command scons $@
-
-  )
 }
 
 function op_juggle() {
-  (set -e
-
   op_before_cmd
   op_run_command tools/plotjuggler/juggle.py $@
-
-  )
 }
 
 function op_lint() {
-  (set -e
-
   op_before_cmd
-  op_run_command pre-commit run --all $@
-
-  )
+  op_run_command scripts/lint.sh $@
 }
 
 function op_test() {
-  (set -e
-
   op_before_cmd
   op_run_command pytest $@
-
-  )
 }
 
 function op_replay() {
-  (set -e
-
   op_before_cmd
   op_run_command tools/replay/replay $@
-
-  )
 }
 
 function op_cabana() {
-  (set -e
-
   op_before_cmd
   op_run_command tools/cabana/cabana $@
-
-  )
 }
 
 function op_sim() {
-  (set -e
-
   op_before_cmd
   op_run_command exec tools/sim/run_bridge.py &
   op_run_command exec tools/sim/launch_openpilot.sh
-
-  )
 }
 
 function op_default() {
@@ -331,7 +272,7 @@ function op_default() {
   echo -e "  ${BOLD}juggle${NC}   Run Plotjuggler"
   echo -e "  ${BOLD}replay${NC}   Run replay"
   echo -e "  ${BOLD}cabana${NC}   Run cabana"
-  echo -e "  ${BOLD}lint${NC}     Run all the pre-commit checks"
+  echo -e "  ${BOLD}lint${NC}     Run the linter"
   echo -e "  ${BOLD}test${NC}     Run all unit tests from pytest"
   echo -e "  ${BOLD}help${NC}     Show this message"
   echo -e "  ${BOLD}install${NC}  Install the 'op' tool system wide"
@@ -387,36 +328,3 @@ function _op() {
 }
 
 _op $@
-
-# remove from env
-unset -f _op
-unset -f op_check
-unset -f op_setup
-unset -f op_build
-unset -f op_juggle
-unset -f op_venv
-unset -f op_check_openpilot_dir
-unset -f op_check_git
-unset -f op_check_python
-unset -f op_check_os
-unset -f op_install
-unset -f op_default
-unset -f op_run_command
-unset -f op_lint
-unset -f op_replay
-unset -f op_cabana
-unset -f op_check_venv
-unset -f op_before_cmd
-unset -f op_sim
-unset -f op_activate_venv
-unset -f op_get_openpilot_dir
-unset -f op_test
-unset DRY
-unset NC
-unset RED
-unset GREEN
-unset UNDERLINE
-unset BOLD
-unset OPENPILOT_ROOT
-unset NO_VERIFY
-unset VERBOSE
