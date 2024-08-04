@@ -49,7 +49,7 @@ class TestStreamSession:
   def test_incoming_proxy(self, mocker):
     tested_msgs = [
       {"type": "customReservedRawData0", "data": "test"}, # primitive
-      {"type": "can", "data": [{"address": 0, "busTime": 0, "dat": "", "src": 0}]}, # list
+      {"type": "can", "data": [{"address": 0, "dat": "", "src": 0}]}, # list
       {"type": "testJoystick", "data": {"axes": [0, 0], "buttons": [False]}}, # dict
     ]
 

@@ -219,7 +219,6 @@ void can_recv_thread(std::vector<Panda *> pandas) {
     auto canData = evt.initCan(raw_can_data.size());
     for (uint i = 0; i<raw_can_data.size(); i++) {
       canData[i].setAddress(raw_can_data[i].address);
-      canData[i].setBusTime(raw_can_data[i].busTime);
       canData[i].setDat(kj::arrayPtr((uint8_t*)raw_can_data[i].dat.data(), raw_can_data[i].dat.size()));
       canData[i].setSrc(raw_can_data[i].src);
     }

@@ -26,7 +26,7 @@ dependencies = [
   "pycapnp",
   "Cython",
   "setuptools",
-  "numpy < 2.0.0", # control does not support numpy 2
+  "numpy",
 
   # body / webrtcd
   "aiohttp",
@@ -52,22 +52,23 @@ dependencies = [
   "websocket_client",
 
   # acados deps
-  "casadi",
+  "casadi @ https://github.com/commaai/casadi/releases/download/nightly-release-3.6.6/casadi-3.6.6-cp312-none-manylinux2014_aarch64.whl ; (python_version == '3.12' and platform_machine == 'aarch64')", # TODO: Go back to pypi casadi when they fix aarch64 for python312
+  "casadi; platform_machine != 'aarch64' or python_version != '3.12'",
   "future-fstrings",
 
   # these should be removed
   "psutil",
   "pycryptodome", # used in updated/casync, panda, body, and a test
 
-  #logreader
-  "zstd",
+  # logreader
+  "zstandard",
 ]
 
 [project.optional-dependencies]
 docs = [
   "Jinja2",
+  "natsort",
   "mkdocs",
-  "mkdocs-terminal",
 ]
 
 testing = [
@@ -75,7 +76,6 @@ testing = [
   "hypothesis ==6.47.*",
   "import-linter",
   "mypy",
-  "pre-commit",
   "pytest",
   "pytest-cov",
   "pytest-cpp",
@@ -86,40 +86,34 @@ testing = [
   "pytest-asyncio",
   "pytest-mock",
   "pytest-repeat",
-  "ruff"
+  "ruff",
+  "codespell",
 ]
 
 dev = [
   "av",
   "azure-identity",
   "azure-storage-blob",
-  "breathe",
-  "control",
   "dictdiffer",
   "flaky",
   "inputs",
   "lru-dict",
   "matplotlib",
   "metadrive-simulator@git+https://github.com/commaai/metadrive@opencv_headless ; platform_machine != 'aarch64'",
-  "mpld3",
-  "myst-parser",
-  "natsort",
-  "opencv-python-headless",
   "parameterized >=0.8, <0.9",
-  #pprofile = "*"
+  #"pprofile",
   "pyautogui",
   "pyopencl; platform_machine != 'aarch64'", # broken on arm64
+  "pytools < 2024.1.11; platform_machine != 'aarch64'", # pyopencl use a broken version
   "pywinctl",
   "pyprof2calltree",
   "rerun-sdk",
   "tabulate",
   "types-requests",
   "types-tabulate",
-  "hexdump",
 
   # this is only pinned since 5.15.11 is broken
   "pyqt5 ==5.15.2; platform_machine == 'x86_64'", # no aarch64 wheels for macOS/linux
-
 ]
 
 [project.urls]
@@ -169,6 +163,13 @@ testpaths = [
   "tools/cabana",
   "cereal/messaging/tests",
 ]
+
+[tool.codespell]
+count = true
+quiet-level = 3
+# if you've got a short variable name that's getting flagged, add it here
+ignore-words-list = "bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup,bumb,nd,sie,preints,whit,indexIn"
+builtin = "clear,rare,informal,usage,code,names,en-GB_to_en-US"
 
 [tool.mypy]
 python_version = "3.11"
@@ -226,7 +227,7 @@ lint.ignore = [
   "UP038",   # (x, y) -> x|y for isinstance
 ]
 line-length = 160
-target-version="py311"
+target-version ="py311"
 exclude = [
   "body",
   "cereal",
@@ -238,7 +239,8 @@ exclude = [
   "teleoprtc_repo",
   "third_party",
 ]
-lint.flake8-implicit-str-concat.allow-multiline=false
+lint.flake8-implicit-str-concat.allow-multiline = false
+
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
 "selfdrive".msg = "Use openpilot.selfdrive"
 "common".msg = "Use openpilot.common"
@@ -250,5 +252,6 @@ lint.flake8-implicit-str-concat.allow-multiline=false
 
 [tool.coverage.run]
 concurrency = ["multiprocessing", "thread"]
+
 [tool.ruff.format]
 quote-style = "preserve"

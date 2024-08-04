@@ -29,7 +29,7 @@ pytest
 cd system/loggerd && pytest .
 
 # run the linter
-pre-commit run --all
+op lint
 ```
 
 ## Testing

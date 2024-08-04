@@ -11,7 +11,7 @@ from openpilot.tools.lib.helpers import RE
 
 QLOG_FILENAMES = ['qlog', 'qlog.bz2', 'qlog.zst']
 QCAMERA_FILENAMES = ['qcamera.ts']
-LOG_FILENAMES = ['rlog', 'rlog.bz2', 'raw_log.bz2']
+LOG_FILENAMES = ['rlog', 'rlog.bz2', 'raw_log.bz2', 'rlog.zst']
 CAMERA_FILENAMES = ['fcamera.hevc', 'video.hevc']
 DCAMERA_FILENAMES = ['dcamera.hevc']
 ECAMERA_FILENAMES = ['ecamera.hevc']

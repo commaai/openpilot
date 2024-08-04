@@ -34,7 +34,7 @@ update_uv
 
 # TODO: remove --no-cache once this is fixed: https://github.com/astral-sh/uv/issues/4378
 echo "installing python packages..."
-uv --no-cache sync --all-extras
+uv --no-cache sync --frozen --all-extras
 source .venv/bin/activate
 
 echo "PYTHONPATH=${PWD}" > $ROOT/.env
@@ -42,10 +42,4 @@ if [[ "$(uname)" == 'Darwin' ]]; then
   echo "# msgq doesn't work on mac" >> $ROOT/.env
   echo "export ZMQ=1" >> $ROOT/.env
   echo "export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES" >> $ROOT/.env
-fi
-
-if [ "$(uname)" != "Darwin" ] && [ -e "$ROOT/.git" ]; then
-  echo "pre-commit hooks install..."
-  pre-commit install
-  git submodule foreach pre-commit install
 fi
