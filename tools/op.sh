@@ -288,16 +288,15 @@ function op_default() {
   echo "          Show the result of all checks before running a command"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Examples:${NC}"
-  echo "  op --dir /tmp/openpilot check"
-  echo "          Run the check command on openpilot located in /tmp/openpilot"
+  echo "  op setup"
+  echo "          Run the setup script to install"
+  echo "          openpilot's dependencies."
   echo ""
-  echo "  op juggle --install"
-  echo "          Install plotjuggler in the openpilot located in your current"
-  echo "          working directory"
+  echo "  op build -j4"
+  echo "          Compile openpilot using 4 cores"
   echo ""
-  echo "  op --dir /tmp/openpilot build -j4"
-  echo "          Run the build command on openpilot located in /tmp/openpilot"
-  echo "          on 4 cores"
+  echo "  op juggle --demo"
+  echo "          Run PlotJuggler on the demo route"
 }
 
 
