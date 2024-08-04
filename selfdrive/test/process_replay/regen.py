@@ -14,8 +14,7 @@ from openpilot.selfdrive.test.process_replay.vision_meta import DRIVER_CAMERA_FR
 from openpilot.selfdrive.test.update_ci_routes import upload_route
 from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.framereader import FrameReader, BaseFrameReader, FrameType
-from openpilot.tools.lib.logreader import LogReader, LogIterable
-from openpilot.tools.lib.helpers import save_log
+from openpilot.tools.lib.logreader import LogReader, LogIterable, save_log
 
 
 class DummyFrameReader(BaseFrameReader):
@@ -75,7 +74,7 @@ def setup_data_readers(
         assert device_type != "neo", "Driver camera not supported on neo segments. Use dummy dcamera."
         frs['driverCameraState'] = FrameReader(r.dcamera_paths()[sidx])
   else:
-    lr = LogReader(f"cd:/{route.replace('|', '/')}/{sidx}/rlog.bz2")
+    lr = LogReader(f"{route}/{sidx}/r")
     frs = {}
     if needs_road_cam:
       frs['roadCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
@@ -119,7 +118,7 @@ def regen_and_save(
 
   log_dir = os.path.join(outdir, time.strftime("%Y-%m-%d--%H-%M-%S--0", time.gmtime()))
   rel_log_dir = os.path.relpath(log_dir)
-  rpath = os.path.join(log_dir, "rlog.bz2")
+  rpath = os.path.join(log_dir, "rlog.zst")
 
   os.makedirs(log_dir)
   save_log(rpath, output_logs, compress=True)

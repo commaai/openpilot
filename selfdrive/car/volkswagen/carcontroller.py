@@ -13,7 +13,7 @@ LongCtrlState = car.CarControl.Actuators.LongControlState
 
 class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
-    self.CP = CP
+    super().__init__(dbc_name, CP, VM)
     self.CCP = CarControllerParams(CP)
     self.CCS = pqcan if CP.flags & VolkswagenFlags.PQ else mqbcan
     self.packer_pt = CANPacker(dbc_name)
@@ -21,7 +21,6 @@ class CarController(CarControllerBase):
 
     self.apply_steer_last = 0
     self.gra_acc_counter_last = None
-    self.frame = 0
     self.eps_timer_soft_disable_alert = False
     self.hca_frame_timer_running = 0
     self.hca_frame_same_torque = 0

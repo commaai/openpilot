@@ -4,19 +4,10 @@ import time
 
 import cereal.messaging as messaging
 from panda.python.uds import SERVICE_TYPE
-from openpilot.selfdrive.car import make_can_msg
+from openpilot.selfdrive.car import make_tester_present_msg
 from openpilot.selfdrive.car.fw_query_definitions import EcuAddrBusType
 from openpilot.selfdrive.pandad import can_list_to_can_capnp
 from openpilot.common.swaglog import cloudlog
-
-
-def _make_tester_present_msg(addr, bus, subaddr=None):
-  dat = [0x02, SERVICE_TYPE.TESTER_PRESENT, 0x0]
-  if subaddr is not None:
-    dat.insert(0, subaddr)
-
-  dat.extend([0x0] * (8 - len(dat)))
-  return make_can_msg(addr, bytes(dat), bus)
 
 
 def _is_tester_present_response(msg: capnp.lib.capnp._DynamicStructReader, subaddr: int = None) -> bool:
@@ -44,7 +35,7 @@ def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, que
                   responses: set[EcuAddrBusType], timeout: float = 1, debug: bool = False) -> set[EcuAddrBusType]:
   ecu_responses: set[EcuAddrBusType] = set()  # set((addr, subaddr, bus),)
   try:
-    msgs = [_make_tester_present_msg(addr, bus, subaddr) for addr, subaddr, bus in queries]
+    msgs = [make_tester_present_msg(addr, bus, subaddr) for addr, subaddr, bus in queries]
 
     messaging.drain_sock_raw(logcan)
     sendcan.send(can_list_to_can_capnp(msgs, msgtype='sendcan'))

@@ -12,6 +12,11 @@ if [[ ! $(id -u) -eq 0 ]]; then
   SUDO="sudo"
 fi
 
+# Check if stdin is open
+if [ -t 0 ]; then
+  INTERACTIVE=1
+fi
+
 # Install common packages
 function install_ubuntu_common_requirements() {
   $SUDO apt-get update
@@ -46,6 +51,7 @@ function install_ubuntu_common_requirements() {
     libssl-dev \
     libusb-1.0-0-dev \
     libzmq3-dev \
+    libzstd-dev \
     libsqlite3-dev \
     libsystemd-dev \
     locales \
@@ -132,7 +138,7 @@ if [ -f "/etc/os-release" ]; then
   esac
 
   # Install extra packages
-  if [[ -z "$INSTALL_EXTRA_PACKAGES" ]]; then
+  if [[ -z "$INSTALL_EXTRA_PACKAGES" && -n "$INTERACTIVE" ]]; then
     read -p "Base setup done. Do you want to install extra development packages? [Y/n]: " -n 1 -r
     echo ""
     if [[ $REPLY =~ ^[Yy]$ ]]; then

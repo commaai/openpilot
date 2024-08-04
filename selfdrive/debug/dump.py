@@ -4,13 +4,24 @@ import argparse
 import json
 import codecs
 
-from hexdump import hexdump
 from cereal import log
 from cereal.services import SERVICE_LIST
 from openpilot.tools.lib.live_logreader import raw_live_logreader
 
 
 codecs.register_error("strict", codecs.backslashreplace_errors)
+
+def hexdump(msg):
+  m = str.upper(msg.hex())
+  m = [m[i:i+2] for i in range(0,len(m),2)]
+  m = [m[i:i+16] for i in range(0,len(m),16)]
+  for row,dump in enumerate(m):
+    addr = '%08X:' % (row*16)
+    raw = ' '.join(dump[:8]) + '  ' + ' '.join(dump[8:])
+    space = ' ' * (48 - len(raw))
+    asci = ''.join(chr(int(x,16)) if 0x20 <= int(x,16) <= 0x7E else '.' for x in dump)
+    print(f'{addr} {raw} {space} {asci}')
+
 
 if __name__ == "__main__":
 
