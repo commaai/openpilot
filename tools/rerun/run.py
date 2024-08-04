@@ -15,7 +15,7 @@ from openpilot.tools.lib.route import Route, SegmentRange
 NUM_CPUS = multiprocessing.cpu_count()
 DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 RR_TIMELINE_NAME = "Timeline"
-RR_WIN = "rerun_test"
+RR_WIN = "openpilot logs"
 
 
 """
@@ -144,10 +144,10 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description="A helper to run rerun on openpilot routes",
                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
-  parser.add_argument("--qcam", action="store_true", help="Log decimated driving camera")
-  parser.add_argument("--fcam", action="store_true", help="Log driving camera")
-  parser.add_argument("--ecam", action="store_true", help="Log wide camera")
-  parser.add_argument("--dcam", action="store_true", help="Log driver monitoring camera")
+  parser.add_argument("--qcam", action="store_true", help="Show low-res road camera")
+  parser.add_argument("--fcam", action="store_true", help="Show driving camera")
+  parser.add_argument("--ecam", action="store_true", help="Show wide camera")
+  parser.add_argument("--dcam", action="store_true", help="Show driver monitoring camera")
   parser.add_argument("--print_services", action="store_true", help="List out openpilot services")
   parser.add_argument("--services", default=[], nargs='*', help="Specify openpilot services that will be logged.\
                                                                 No service will be logged if not specified.\
@@ -173,7 +173,7 @@ if __name__ == '__main__':
     print("You're requesting more than 10 segments of the route, " + \
           "please be aware that might take a lot of memory")
     response = input("Do you wish to continue? (Y/n): ")
-    if response.strip() != "Y":
+    if response.strip().lower() != "y":
       sys.exit()
 
   rerunner = Rerunner(r, sr, camera_config, args.services)
