@@ -5,7 +5,7 @@ from openpilot.common.conversions import Conversions as CV
 from openpilot.common.numpy_fast import interp
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
-from openpilot.selfdrive.car.honda.hondacan import CanBus, get_cruise_speed_conversion
+from openpilot.selfdrive.car.honda.hondacan import CanBus, cruise_speed_to_ms
 from openpilot.selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, HONDA_BOSCH, \
                                                  HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_RADARLESS, \
                                                  HondaFlags
@@ -194,7 +194,6 @@ class CarState(CarStateBase):
     ret.steeringTorqueEps = cp.vl["STEER_MOTOR_TORQUE"]["MOTOR_TORQUE"]
     ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD.get(self.CP.carFingerprint, 1200)
 
-    cruise_speed_conversion = get_cruise_speed_conversion(self.CP.carFingerprint, self.is_metric)
     if self.CP.carFingerprint in HONDA_BOSCH:
       # The PCM always manages its own cruise control state, but doesn't publish it
       if self.CP.carFingerprint in HONDA_BOSCH_RADARLESS:
@@ -207,10 +206,13 @@ class CarState(CarStateBase):
         ret.cruiseState.standstill = acc_hud["CRUISE_SPEED"] == 252.
 
         # On set, cruise set speed pulses between 254~255 and the set speed prev is set to avoid this.
-        ret.cruiseState.speed = self.v_cruise_pcm_prev if acc_hud["CRUISE_SPEED"] > 160.0 else acc_hud["CRUISE_SPEED"] * cruise_speed_conversion
+        if acc_hud["CRUISE_SPEED"] > 160.0:
+          ret.cruiseState.speed = self.v_cruise_pcm_prev
+        else:
+          cruise_speed_to_ms(acc_hud["CRUISE_SPEED"], self.CP.carFingerprint, self.is_metric)
         self.v_cruise_pcm_prev = ret.cruiseState.speed
     else:
-      ret.cruiseState.speed = cp.vl["CRUISE"]["CRUISE_SPEED_PCM"] * cruise_speed_conversion
+      ret.cruiseState.speed = cruise_speed_to_ms(cp.vl["CRUISE"]["CRUISE_SPEED_PCM"], self.CP.carFingerprint, self.is_metric)
 
     if self.CP.flags & HondaFlags.BOSCH_ALT_BRAKE:
       ret.brakePressed = cp.vl["BRAKE_MODULE"]["BRAKE_PRESSED"] != 0

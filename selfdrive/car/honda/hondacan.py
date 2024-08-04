@@ -41,17 +41,24 @@ def get_lkas_cmd_bus(CAN, car_fingerprint, radar_disabled=False):
   return 0
 
 
-def get_cruise_speed_conversion(car_fingerprint: str, is_metric: bool) -> float:
-  if is_metric:
-    return CV.KPH_TO_MS
+def cruise_speed_from_ms(cruise_speed: float, car_fingerprint: str, is_metric: bool) -> int:
+  # converts to value sent over CAN (always an integer)
+  return int(round(cruise_speed * CV.MS_TO_MPH if car_fingerprint in HONDA_BOSCH_RADARLESS and not is_metric else CV.MS_TO_KPH))
 
-  # on certain cars, CRUISE_SPEED changes to imperial with car's unit setting
+
+def cruise_speed_to_ms(cruise_speed: int, car_fingerprint: str, is_metric: bool) -> float:
   if car_fingerprint in HONDA_BOSCH_RADARLESS:
-    return CV.MPH_TO_MS
+    return cruise_speed * (CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS)
 
-  # for other cars, CRUISE_SPEED is always kph and the vehicle converts to mph using a conversion
-  # value rounded to 1 decimal place (without this the value would be off by 0.5 mph at 85 mph)
-  return 1 / round(CV.MPH_TO_KPH, 1) * CV.MPH_TO_MS
+  if is_metric:
+    return cruise_speed * CV.KPH_TO_MS
+
+  # when cluster displayed set speed is in mi/h but value on CAN bus is in km/h
+  # you must first convert to mi/h (using a conversion factor rounded to 1 decimal place),
+  # then round to the nearest mi/h (to get the displayed set speed),
+  # then convert to m/s (not doing all these steeps introduces significant error,
+  # e.g. speed target can be off by 0.5 mi/h and incrementing set speed skips numbers)
+  return round(cruise_speed * round(CV.KPH_TO_MPH, 1)) * CV.MPH_TO_MS
 
 
 def create_brake_command(packer, CAN, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, car_fingerprint, stock_brake):

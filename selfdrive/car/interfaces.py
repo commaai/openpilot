@@ -24,7 +24,7 @@ ButtonType = car.CarState.ButtonEvent.Type
 GearShifter = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
 
-MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS
+MAX_CTRL_SPEED = (V_CRUISE_MAX[1] + 4) * CV.KPH_TO_MS
 ACCEL_MAX = 2.0
 ACCEL_MIN = -3.5
 FRICTION_THRESHOLD = 0.3
