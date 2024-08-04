@@ -1,10 +1,8 @@
-# loggerd
+# Logging
 
 openpilot records routes in one minute chunks called segments. A route starts on the rising edge of ignition and ends on the falling edge.
 
-Check out our [python library](https://github.com/commaai/openpilot/blob/master/tools/lib/logreader.py) for reading openpilot logs. Also checkout our [tools](https://github.com/commaai/openpilot/tree/master/tools) to replay and view your data. These are the same tools we use to debug and develop openpilot.
-
-## log types
+Check out our [Python library](https://github.com/commaai/openpilot/blob/master/tools/lib/logreader.py) for reading openpilot logs. Also checkout our [tools](https://github.com/commaai/openpilot/tree/master/tools) to replay and view your data. These are the same tools we use to debug and develop openpilot.
 
 For each segment, openpilot records the following log types:
 
@@ -15,9 +13,10 @@ rlogs contain all the messages passed amongst openpilot's processes. See [cereal
 ## {f,e,d}camera.hevc
 
 Each camera stream is H.265 encoded and written to its respective file.
-* fcamera.hevc is the road camera
-* ecamera.hevc is the wide road camera
-* dcamera.hevc is the driver camera
+
+* `fcamera.hevc` is the road camera
+* `ecamera.hevc` is the wide road camera
+* `dcamera.hevc` is the driver camera
 
 ## qlog.bz2 & qcamera.ts
 

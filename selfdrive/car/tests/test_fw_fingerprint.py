@@ -5,11 +5,13 @@ from collections import defaultdict
 from parameterized import parameterized
 
 from cereal import car
+from openpilot.selfdrive.car import make_can_msg
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
 from openpilot.selfdrive.car.fw_versions import ESSENTIAL_ECUS, FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, build_fw_dict, \
                                                 match_fw_to_car, get_brand_ecu_matches, get_fw_versions, get_present_ecus
 from openpilot.selfdrive.car.vin import get_vin
+from openpilot.selfdrive.pandad import can_list_to_can_capnp
 
 CarFw = car.CarParams.CarFw
 Ecu = car.CarParams.Ecu
@@ -19,7 +21,8 @@ ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 
 class FakeSocket:
   def receive(self, non_blocking=False):
-    pass
+    return (can_list_to_can_capnp([make_can_msg(random.randint(0x600, 0x800), b'\x00' * 8, 0)])
+            if random.uniform(0, 1) > 0.5 else None)
 
   def send(self, msg):
     pass
@@ -313,3 +316,18 @@ class TestFwFingerprintTiming:
         total_time = round(total_times[num_pandas], 2)
         self._assert_timing(total_time, total_ref_time[num_pandas])
         print(f'all brands, total FW query time={total_time} seconds')
+
+  def test_get_fw_versions(self, subtests, mocker):
+    # some coverage on IsoTpParallelQuery and panda UDS library
+    # TODO: replace this with full fingerprint simulation testing
+    # https://github.com/commaai/panda/pull/1329
+
+    def fake_cloudlog_exception(*args, **kwargs):
+      raise
+
+    mocker.patch("openpilot.selfdrive.car.fw_versions.set_obd_multiplexing", lambda *args: None)
+    mocker.patch("openpilot.common.swaglog.cloudlog.exception", fake_cloudlog_exception)
+    fake_socket = FakeSocket()
+    for brand in FW_QUERY_CONFIGS.keys():
+      with subtests.test(brand=brand):
+        get_fw_versions(fake_socket, fake_socket, brand, num_pandas=1)

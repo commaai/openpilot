@@ -8,8 +8,7 @@ from openpilot.selfdrive.car.tesla.values import DBC, CANBUS, CarControllerParam
 
 class CarController(CarControllerBase):
   def __init__(self, dbc_name, CP, VM):
-    self.CP = CP
-    self.frame = 0
+    super().__init__(dbc_name, CP, VM)
     self.apply_angle_last = 0
     self.packer = CANPacker(dbc_name)
     self.pt_packer = CANPacker(DBC[CP.carFingerprint]['pt'])

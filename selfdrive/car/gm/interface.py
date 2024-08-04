@@ -6,11 +6,10 @@ from panda import Panda
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.conversions import Conversions as CV
-from openpilot.selfdrive.car import create_button_events, get_safety_config
+from openpilot.selfdrive.car import create_button_events, get_safety_config, get_friction
 from openpilot.selfdrive.car.gm.radar_interface import RADAR_HEADER_MSG
 from openpilot.selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, CanBus
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, FRICTION_THRESHOLD, LatControlInputs, NanoFFModel
-from openpilot.selfdrive.controls.lib.drive_helpers import get_friction
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
@@ -53,7 +52,12 @@ class CarInterface(CarInterfaceBase):
     friction = get_friction(lateral_accel_error, lateral_accel_deadzone, FRICTION_THRESHOLD, torque_params, friction_compensation)
 
     def sig(val):
-      return 1 / (1 + exp(-val)) - 0.5
+      # https://timvieira.github.io/blog/post/2014/02/11/exp-normalize-trick
+      if val >= 0:
+        return 1 / (1 + exp(-val)) - 0.5
+      else:
+        z = exp(val)
+        return z / (1 + z) - 0.5
 
     # The "lat_accel vs torque" relationship is assumed to be the sum of "sigmoid + linear" curves
     # An important thing to consider is that the slope at 0 should be > 0 (ideally >1)
