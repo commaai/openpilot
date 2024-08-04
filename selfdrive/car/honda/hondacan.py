@@ -43,22 +43,30 @@ def get_lkas_cmd_bus(CAN, car_fingerprint, radar_disabled=False):
 
 def cruise_speed_from_ms(cruise_speed: float, car_fingerprint: str, is_metric: bool) -> int:
   # converts to value sent over CAN (always an integer)
-  return int(round(cruise_speed * CV.MS_TO_MPH if car_fingerprint in HONDA_BOSCH_RADARLESS and not is_metric else CV.MS_TO_KPH))
+  if is_metric or car_fingerprint in HONDA_BOSCH_RADARLESS:
+    return int(round(cruise_speed * (CV.MS_TO_KPH if is_metric else CV.MS_TO_MPH)))
+
+  # when cluster display set speed is in mi/h but value on CAN bus is in km/h you must:
+  # 1. convert m/s to mi/h
+  # 2. round to the nearest mi/h (to get the displayed set speed)
+  # 3. convert mi/h to km/h using instrucment cluster conversion factor of 1.6
+  # 4. round to nearest km/h
+  # not doing all these steeps introduces significant error
+  # (e.g. speed target can be off by 0.5 mi/h and incrementing set speed skips numbers)
+  return int(round(round(cruise_speed * CV.MS_TO_MPH) * round(CV.MPH_TO_KPH, 1)))
 
 
 def cruise_speed_to_ms(cruise_speed: int, car_fingerprint: str, is_metric: bool) -> float:
-  if car_fingerprint in HONDA_BOSCH_RADARLESS:
+  if is_metric or car_fingerprint in HONDA_BOSCH_RADARLESS:
     return cruise_speed * (CV.KPH_TO_MS if is_metric else CV.MPH_TO_MS)
 
-  if is_metric:
-    return cruise_speed * CV.KPH_TO_MS
-
-  # when cluster displayed set speed is in mi/h but value on CAN bus is in km/h
-  # you must first convert to mi/h (using a conversion factor rounded to 1 decimal place),
-  # then round to the nearest mi/h (to get the displayed set speed),
-  # then convert to m/s (not doing all these steeps introduces significant error,
-  # e.g. speed target can be off by 0.5 mi/h and incrementing set speed skips numbers)
-  return round(cruise_speed * round(CV.KPH_TO_MPH, 1)) * CV.MPH_TO_MS
+  # when cluster displayed set speed is in mi/h but value on CAN bus is in km/h you must:
+  # 1. convert km/h to mi/h using instrucment cluster conversion factor of 1.6
+  # 2. round to the nearest mi/h (to get the displayed set speed)
+  # 3. convert mi/h to m/s
+  # not doing all these steeps introduces significant error
+  # (e.g. speed target can be off by 0.5 mi/h and incrementing set speed skips numbers)
+  return round(cruise_speed / round(CV.MPH_TO_KPH, 1)) * CV.MPH_TO_MS
 
 
 def create_brake_command(packer, CAN, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, car_fingerprint, stock_brake):

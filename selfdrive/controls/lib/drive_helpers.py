@@ -61,9 +61,8 @@ class VCruiseHelper:
         self.v_cruise_cluster_kph = self.v_cruise_kph
         self.update_button_timers(CS, enabled)
       else:
-        # rounding to 1 decimal place for mph prevents getting 0.5 mph off
-        self.v_cruise_kph = round(CS.cruiseState.speed * CV.MS_TO_KPH, 0 if is_metric else 1)
-        self.v_cruise_cluster_kph = round(CS.cruiseState.speedCluster * CV.MS_TO_KPH, 0 if is_metric else 1)
+        self.v_cruise_kph = round(CS.cruiseState.speed * CV.MS_TO_KPH, 1)
+        self.v_cruise_cluster_kph = round(CS.cruiseState.speedCluster * CV.MS_TO_KPH, 1)
     else:
       self.v_cruise_kph = V_CRUISE_UNSET
       self.v_cruise_cluster_kph = V_CRUISE_UNSET
@@ -115,7 +114,7 @@ class VCruiseHelper:
     if CS.gasPressed and button_type in (ButtonType.decelCruise, ButtonType.setCruise):
       self.v_cruise_kph = max(self.v_cruise_kph, CS.vEgo * CV.MS_TO_KPH)
 
-    self.v_cruise_kph = clip(round(self.v_cruise_kph, 0 if is_metric else 1), V_CRUISE_MIN[is_metric], V_CRUISE_MAX[is_metric])
+    self.v_cruise_kph = clip(round(self.v_cruise_kph, 1), V_CRUISE_MIN[is_metric], V_CRUISE_MAX[is_metric])
 
   def update_button_timers(self, CS, enabled):
     # increment timer for buttons still pressed
@@ -140,7 +139,7 @@ class VCruiseHelper:
     if any(b.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for b in CS.buttonEvents) and self.v_cruise_kph_last < 250:
       self.v_cruise_kph = self.v_cruise_kph_last
     else:
-      self.v_cruise_kph = clip(round(CS.vEgo * CV.MS_TO_KPH, 0 if is_metric else 1), initial, V_CRUISE_MAX[is_metric])
+      self.v_cruise_kph = clip(round(CS.vEgo * CV.MS_TO_KPH, 1), initial, V_CRUISE_MAX[is_metric])
 
     self.v_cruise_cluster_kph = self.v_cruise_kph
 
