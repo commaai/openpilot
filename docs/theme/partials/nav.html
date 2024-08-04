@@ -25,8 +25,14 @@
             </div>
 
             {#  site name  #}
-            <div class="px-2 font-monument-extended lowercase lg:text-xl">
-                {{ config.site_name }}
+            <div class="indicator">
+                {#  version number  #}
+                    <div class="indicator-item badge badge-accent badge-xs lg:badge-sm font-mono rounded-full">
+                        {{ config.version }}
+                    </div>
+                <div class="px-2 font-bold lowercase text-xl lg:text-2xl">
+                    {{ config.site_name }}
+                </div>
             </div>
         </div>
 

@@ -4,7 +4,7 @@ github_repo: commaai/openpilot
 discord_url: https://discord.comma.ai
 
 # TODO automate somehow?
-version: 0.9.8
+version: 0.9.7
 
 watch:
   - "theme/"
