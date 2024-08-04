@@ -2,19 +2,15 @@
 
 #include <algorithm>
 #include <array>
-#include <atomic>
 #include <bitset>
 #include <cassert>
 #include <cerrno>
-#include <chrono>
-#include <future>
 #include <memory>
 #include <thread>
 #include <utility>
 
 #include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/messaging/messaging.h"
-#include "common/params.h"
 #include "common/ratekeeper.h"
 #include "common/swaglog.h"
 #include "common/timing.h"
@@ -44,10 +40,6 @@
 #define MIN_IR_POWER 0.0f
 #define CUTOFF_IL 400
 #define SATURATE_IL 1000
-using namespace std::chrono_literals;
-
-std::atomic<bool> g_ignition(false);
-std::future<bool> g_safety_future;
 
 ExitHandler do_exit;
 
@@ -58,88 +50,6 @@ bool check_all_connected(const std::vector<Panda *> &pandas) {
       return false;
     }
   }
-  return true;
-}
-
-bool safety_setter_thread(std::vector<Panda *> pandas) {
-  LOGD("Starting safety setter thread");
-
-  Params p;
-
-  // there should be at least one panda connected
-  if (pandas.size() == 0) {
-    return false;
-  }
-
-  // initialize to ELM327 without OBD multiplexing for fingerprinting
-  bool obd_multiplexing_enabled = false;
-  for (int i = 0; i < pandas.size(); i++) {
-    pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1U);
-  }
-
-  // openpilot can switch between multiplexing modes for different FW queries
-  while (true) {
-    if (do_exit || !check_all_connected(pandas) || !g_ignition) {
-      return false;
-    }
-
-    bool obd_multiplexing_requested = p.getBool("ObdMultiplexingEnabled");
-    if (obd_multiplexing_requested != obd_multiplexing_enabled) {
-      for (int i = 0; i < pandas.size(); i++) {
-        const uint16_t safety_param = (i > 0 || !obd_multiplexing_requested) ? 1U : 0U;
-        pandas[i]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, safety_param);
-      }
-      obd_multiplexing_enabled = obd_multiplexing_requested;
-      p.putBool("ObdMultiplexingChanged", true);
-    }
-
-    if (p.getBool("FirmwareQueryDone")) {
-      LOGW("finished FW query");
-      break;
-    }
-    util::sleep_for(20);
-  }
-
-  std::string params;
-  LOGW("waiting for params to set safety model");
-  while (true) {
-    if (do_exit || !check_all_connected(pandas) || !g_ignition) {
-      return false;
-    }
-
-    if (p.getBool("ControlsReady")) {
-      params = p.get("CarParams");
-      if (params.size() > 0) break;
-    }
-    util::sleep_for(100);
-  }
-  LOGW("got %lu bytes CarParams", params.size());
-
-  AlignedBuffer aligned_buf;
-  capnp::FlatArrayMessageReader cmsg(aligned_buf.align(params.data(), params.size()));
-  cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
-  cereal::CarParams::SafetyModel safety_model;
-  uint16_t safety_param;
-
-  auto safety_configs = car_params.getSafetyConfigs();
-  uint16_t alternative_experience = car_params.getAlternativeExperience();
-  for (uint32_t i = 0; i < pandas.size(); i++) {
-    auto panda = pandas[i];
-
-    if (safety_configs.size() > i) {
-      safety_model = safety_configs[i].getSafetyModel();
-      safety_param = safety_configs[i].getSafetyParam();
-    } else {
-      // If no safety mode is specified, default to silent
-      safety_model = cereal::CarParams::SafetyModel::SILENT;
-      safety_param = 0U;
-    }
-
-    LOGW("panda %d: setting safety model: %d, param: %d, alternative experience: %d", i, (int)safety_model, safety_param, alternative_experience);
-    panda->set_alternative_experience(alternative_experience);
-    panda->set_safety_model(safety_model, safety_param);
-  }
-
   return true;
 }
 
@@ -397,9 +307,7 @@ void send_peripheral_state(Panda *panda, PubMaster *pm) {
 }
 
 void process_panda_state(std::vector<Panda *> &pandas, PubMaster *pm, bool spoofing_started) {
-  static Params params;
   static SubMaster sm({"controlsState"});
-  static bool is_onroad_last = false;
 
   std::vector<std::string> connected_serials;
   for (Panda *p : pandas) {
@@ -412,10 +320,9 @@ void process_panda_state(std::vector<Panda *> &pandas, PubMaster *pm, bool spoof
       LOGE("Failed to get ignition_opt");
       return;
     }
-    g_ignition = *ignition_opt;
 
     // check if we should have pandad reconnect
-    if (!g_ignition) {
+    if (!ignition_opt.value()) {
       bool comms_healthy = true;
       for (const auto &panda : pandas) {
         comms_healthy &= panda->comms_healthy();
@@ -437,30 +344,14 @@ void process_panda_state(std::vector<Panda *> &pandas, PubMaster *pm, bool spoof
       }
     }
 
-    bool is_onroad = params.getBool("IsOnroad");
-
-    // set new safety on onroad transition, after params are cleared
-    if (is_onroad && !is_onroad_last) {
-      if (!g_safety_future.valid() || g_safety_future.wait_for(0ms) == std::future_status::ready) {
-        g_safety_future = std::async(std::launch::async, safety_setter_thread, pandas);
-      } else {
-        LOGW("Safety setter thread already running");
-      }
-    }
-
-    is_onroad_last = is_onroad;
-
     sm.update(0);
     const bool engaged = sm.allAliveAndValid({"controlsState"}) && sm["controlsState"].getControlsState().getEnabled();
-
     for (const auto &panda : pandas) {
       panda->send_heartbeat(engaged);
     }
   }
 }
 
-
-// run at 20 HZ
 void process_peripheral_state(Panda *panda, PubMaster *pm, bool no_fan_control) {
   static SubMaster sm({"deviceState", "driverCameraState"});
 
@@ -518,8 +409,9 @@ void pandad_run(std::vector<Panda *> &pandas) {
   // Start the CAN send thread
   std::thread send_thread(can_send_thread, pandas, fake_send);
 
+  RateKeeper rk("pandad", 100);
   PubMaster pm({"can", "pandaStates", "peripheralState"});
-  RateKeeper rk("pandad", 100);  // 100 hz
+  PandaSafety panda_safety(pandas);
   Panda *peripheral_panda = pandas[0];
 
   // Main loop: receive CAN data and process states
@@ -534,6 +426,7 @@ void pandad_run(std::vector<Panda *> &pandas) {
     // Process panda state at 10 Hz
     if (rk.frame() % 10 == 0) {
       process_panda_state(pandas, &pm, spoofing_started);
+      panda_safety.configureSafetyMode();
     }
 
     // Send out peripheralState at 2Hz
@@ -542,11 +435,6 @@ void pandad_run(std::vector<Panda *> &pandas) {
     }
 
     rk.keepTime();
-  }
-
-  // Wait for safety future to finish if valid
-  if (g_safety_future.valid()) {
-    g_safety_future.wait();
   }
 
   send_thread.join();
