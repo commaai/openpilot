@@ -3,9 +3,9 @@ from collections import defaultdict
 from functools import partial
 
 import cereal.messaging as messaging
-from openpilot.common.swaglog import cloudlog
-from openpilot.selfdrive.pandad import can_list_to_can_capnp
+from openpilot.selfdrive.car import carlog
 from openpilot.selfdrive.car.fw_query_definitions import AddrType
+from openpilot.selfdrive.pandad import can_list_to_can_capnp
 from panda.python.uds import CanClient, IsoTpMessage, FUNCTIONAL_ADDRS, get_rx_addr_for_tx_addr
 
 
@@ -109,7 +109,7 @@ class IsoTpParallelQuery:
         try:
           dat, rx_in_progress = msg.recv()
         except Exception:
-          cloudlog.exception(f"Error processing UDS response: {tx_addr}")
+          carlog.exception(f"Error processing UDS response: {tx_addr}")
           request_done[tx_addr] = True
           continue
 
@@ -123,7 +123,7 @@ class IsoTpParallelQuery:
 
         # Log unexpected empty responses
         if len(dat) == 0:
-          cloudlog.error(f"iso-tp query empty response: {tx_addr}")
+          carlog.error(f"iso-tp query empty response: {tx_addr}")
           request_done[tx_addr] = True
           continue
 
@@ -143,10 +143,10 @@ class IsoTpParallelQuery:
           error_code = dat[2] if len(dat) > 2 else -1
           if error_code == 0x78:
             response_timeouts[tx_addr] = time.monotonic() + self.response_pending_timeout
-            cloudlog.error(f"iso-tp query response pending: {tx_addr}")
+            carlog.error(f"iso-tp query response pending: {tx_addr}")
           else:
             request_done[tx_addr] = True
-            cloudlog.error(f"iso-tp query bad response: {tx_addr} - 0x{dat.hex()}")
+            carlog.error(f"iso-tp query bad response: {tx_addr} - 0x{dat.hex()}")
 
       # Mark request done if address timed out
       cur_time = time.monotonic()
@@ -154,12 +154,12 @@ class IsoTpParallelQuery:
         if cur_time - response_timeouts[tx_addr] > 0:
           if not request_done[tx_addr]:
             if request_counter[tx_addr] > 0:
-              cloudlog.error(f"iso-tp query timeout after receiving partial response: {tx_addr}")
+              carlog.error(f"iso-tp query timeout after receiving partial response: {tx_addr}")
             elif tx_addr in addrs_responded:
-              cloudlog.error(f"iso-tp query timeout while receiving response: {tx_addr}")
+              carlog.error(f"iso-tp query timeout while receiving response: {tx_addr}")
             # TODO: handle functional addresses
             # else:
-            #   cloudlog.error(f"iso-tp query timeout with no response: {tx_addr}")
+            #   carlog.error(f"iso-tp query timeout with no response: {tx_addr}")
           request_done[tx_addr] = True
 
       # Break if all requests are done (finished or timed out)
@@ -167,7 +167,7 @@ class IsoTpParallelQuery:
         break
 
       if cur_time - start_time > total_timeout:
-        cloudlog.error("iso-tp query timeout while receiving data")
+        carlog.error("iso-tp query timeout while receiving data")
         break
 
     return results

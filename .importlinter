@@ -18,6 +18,7 @@ forbidden_modules =
     openpilot.teleoprtc
     openpilot.tinygrad
 ignore_imports =
+    # remove these
     openpilot.selfdrive.car.card -> openpilot.common.realtime
     openpilot.selfdrive.car.card -> openpilot.selfdrive.controls.lib.events
     openpilot.selfdrive.car.interfaces -> openpilot.selfdrive.controls.lib.events
@@ -26,16 +27,13 @@ ignore_imports =
     openpilot.selfdrive.car.tests.test_models -> openpilot.tools.lib.route
     openpilot.selfdrive.car.tests.test_models -> openpilot.system.hardware.hw
     openpilot.selfdrive.car.tests.test_models -> openpilot.selfdrive.test.helpers
-    openpilot.selfdrive.car.isotp_parallel_query -> openpilot.common.swaglog
-    openpilot.selfdrive.car.fw_versions -> openpilot.common.swaglog
-    openpilot.selfdrive.car.disable_ecu -> openpilot.common.swaglog
-    openpilot.selfdrive.car.vin -> openpilot.common.swaglog
-    openpilot.selfdrive.car.ecu_addrs -> openpilot.common.swaglog
-    openpilot.selfdrive.car.car_helpers -> openpilot.common.swaglog
     openpilot.selfdrive.car.car_helpers -> openpilot.system.version
     openpilot.selfdrive.car.interfaces -> openpilot.selfdrive.controls.lib.drive_helpers
     openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.controls.lib.latcontrol_angle
     openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.controls.lib.longcontrol
     openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.controls.lib.latcontrol_torque
     openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.controls.lib.latcontrol_pid
+
+    # these are okay
+    openpilot.selfdrive.car.card -> openpilot.common.swaglog
 unmatched_ignore_imports_alerting = warn

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
+from openpilot.selfdrive.car import carlog
 from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
-from openpilot.common.swaglog import cloudlog
 
 EXT_DIAG_REQUEST = b'\x10\x03'
 EXT_DIAG_RESPONSE = b'\x50\x03'
@@ -14,26 +14,26 @@ def disable_ecu(logcan, sendcan, bus=0, addr=0x7d0, sub_addr=None, com_cont_req=
 
   This is used to disable the radar in some cars. Openpilot will emulate the radar.
   WARNING: THIS DISABLES AEB!"""
-  cloudlog.warning(f"ecu disable {hex(addr), sub_addr} ...")
+  carlog.warning(f"ecu disable {hex(addr), sub_addr} ...")
 
   for i in range(retry):
     try:
       query = IsoTpParallelQuery(sendcan, logcan, bus, [(addr, sub_addr)], [EXT_DIAG_REQUEST], [EXT_DIAG_RESPONSE], debug=debug)
 
       for _, _ in query.get_data(timeout).items():
-        cloudlog.warning("communication control disable tx/rx ...")
+        carlog.warning("communication control disable tx/rx ...")
 
         query = IsoTpParallelQuery(sendcan, logcan, bus, [(addr, sub_addr)], [com_cont_req], [COM_CONT_RESPONSE], debug=debug)
         query.get_data(0)
 
-        cloudlog.warning("ecu disabled")
+        carlog.warning("ecu disabled")
         return True
 
     except Exception:
-      cloudlog.exception("ecu disable exception")
+      carlog.exception("ecu disable exception")
 
-    cloudlog.error(f"ecu disable retry ({i + 1}) ...")
-  cloudlog.error("ecu disable failed")
+    carlog.error(f"ecu disable retry ({i + 1}) ...")
+  carlog.error("ecu disable failed")
   return False
 
 
