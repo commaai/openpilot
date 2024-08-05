@@ -126,7 +126,6 @@ function op_check_os() {
 }
 
 function op_check_python() {
-  ERROR_ID="ERROR_PYTHON_VERSION"
   echo "Checking for compatible python version..."
   REQUIRED_PYTHON_VERSION=$(grep "requires-python" $OPENPILOT_ROOT/pyproject.toml)
   INSTALLED_PYTHON_VERSION=$(python3 --version 2> /dev/null || true)
