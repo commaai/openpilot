@@ -58,6 +58,7 @@ dependencies = [
   # these should be removed
   "psutil",
   "pycryptodome", # used in updated/casync, panda, body, and a test
+  "setproctitle",
 
   # logreader
   "zstandard",
