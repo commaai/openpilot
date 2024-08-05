@@ -162,9 +162,8 @@ if __name__ == '__main__':
   parser.add_argument("--ecam", action="store_true", help="Show wide camera")
   parser.add_argument("--dcam", action="store_true", help="Show driver monitoring camera")
   parser.add_argument("--print_services", action="store_true", help="List out openpilot services")
-  parser.add_argument("--services", default=[], nargs='*', help="Specify openpilot services that will be logged.\
-                                                                No service will be logged if not specified.\
-                                                                To log all services include 'all' as one of your services")
+  parser.add_argument("--services", default=["all"], nargs='*', help="Specify openpilot services that will be logged.\
+                                                                All services will be logged if not specified.")
   parser.add_argument("--route", nargs='?', help="The route or segment name to plot")
   args = parser.parse_args()
 
@@ -177,7 +176,6 @@ if __name__ == '__main__':
     sys.exit()
 
   camera_config = CameraConfig(args.qcam, args.fcam, args.ecam, args.dcam)
-
   route_or_segment_name = DEMO_ROUTE if args.demo else args.route.strip()
 
   rerunner = Rerunner(route_or_segment_name, camera_config, args.services)
