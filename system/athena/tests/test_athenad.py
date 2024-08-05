@@ -342,7 +342,7 @@ class TestAthenadMethods:
     athenad.upload_queue.put_nowait(item1)
     athenad.upload_queue.put_nowait(item2)
 
-    # Ensure cancelled items are not persisted
+    # Ensure canceled items are not persisted
     athenad.cancelled_uploads.add(item2.id)
 
     # serialize item
