@@ -5,6 +5,7 @@ import multiprocessing
 import rerun as rr
 import rerun.blueprint as rrb
 from functools import partial
+from collections import defaultdict
 
 from cereal.services import SERVICE_LIST
 from openpilot.tools.rerun.camera_reader import probe_packet_info, CameraReader, CameraConfig, CameraType
@@ -25,14 +26,17 @@ Relevant upstream Rerun issues:
 """
 
 class Rerunner:
-  def __init__(self, route, segment_range, camera_config, enabled_services):
+  def __init__(self, route_or_segment_name, camera_config, enabled_services):
     self.enabled_services = [s.lower() for s in enabled_services]
     self.log_all = "all" in self.enabled_services
     self.lr = LogReader(route_or_segment_name)
 
+    segment_range = SegmentRange(route_or_segment_name)
+    route = Route(segment_range.route_name)
+
     # hevc files don't have start_time. We get it from qcamera.ts
     start_time = 0
-    dat = probe_packet_info(r.qcamera_paths()[0])
+    dat = probe_packet_info(route.qcamera_paths()[0])
     for d in dat:
       if d.startswith("pts_time="):
         start_time = float(d.split('=')[1])
@@ -76,7 +80,7 @@ class Rerunner:
     return blueprint
 
   @staticmethod
-  def _log_msg(msg, parent_key=''):
+  def _parse_msg(msg, parent_key=''):
     stack = [(msg, parent_key)]
     while stack:
       current_msg, current_parent_key = stack.pop()
@@ -84,20 +88,20 @@ class Rerunner:
         for index, item in enumerate(current_msg):
           new_key = f"{current_parent_key}/{index}"
           if isinstance(item, (int, float)):
-            rr.log(new_key, rr.Scalar(item))
+            yield new_key, item
           elif isinstance(item, dict):
             stack.append((item, new_key))
       elif isinstance(current_msg, dict):
         for key, value in current_msg.items():
           new_key = f"{current_parent_key}/{key}"
           if isinstance(value, (int, float)):
-            rr.log(new_key, rr.Scalar(value))
+            yield new_key, value
           elif isinstance(value, dict):
             stack.append((value, new_key))
           elif isinstance(value, list):
             for index, item in enumerate(value):
               if isinstance(item, (int, float)):
-                rr.log(f"{new_key}/{index}", rr.Scalar(item))
+                yield f"{new_key}/{index}", item
       else:
         pass  # Not a plottable value
 
@@ -107,17 +111,27 @@ class Rerunner:
     rr.init(RR_WIN)
     rr.connect(default_blueprint=blueprint)
 
+    log_msgs = defaultdict(lambda: defaultdict(list))
     for msg in lr:
-      rr.set_time_nanos(RR_TIMELINE_NAME, msg.logMonoTime)
       msg_type = msg.which()
 
       if not log_all and msg_type.lower() not in enabled_services:
         continue
 
       if msg_type != "thumbnail":
-        Rerunner._log_msg(msg.to_dict()[msg.which()], msg.which())
+        for entity_path, dat in Rerunner._parse_msg(msg.to_dict()[msg.which()], msg.which()):
+          log_msgs[entity_path]["times"].append(msg.logMonoTime / 1e9)
+          log_msgs[entity_path]["data"].append(dat)
       else:
+        rr.set_time_nanos(RR_TIMELINE_NAME, msg.logMonoTime)
         rr.log("/thumbnail", rr.ImageEncoded(contents=msg.to_dict()[msg.which()].get("thumbnail")))
+
+    for entity_path, log_msg in log_msgs.items():
+      rr.log_temporal_batch(
+        entity_path,
+        times=[rr.TimeSecondsBatch(RR_TIMELINE_NAME, log_msg["times"])],
+        components=[rr.components.ScalarBatch(log_msg["data"])]
+      )
 
     return []
 
@@ -165,16 +179,7 @@ if __name__ == '__main__':
   camera_config = CameraConfig(args.qcam, args.fcam, args.ecam, args.dcam)
 
   route_or_segment_name = DEMO_ROUTE if args.demo else args.route.strip()
-  sr = SegmentRange(route_or_segment_name)
-  r = Route(sr.route_name)
 
-  if len(sr.seg_idxs) > 10:
-    print("You're requesting more than 10 segments of the route, " + \
-          "please be aware that might take a lot of memory")
-    response = input("Do you wish to continue? (Y/n): ")
-    if response.strip().lower() != "y":
-      sys.exit()
-
-  rerunner = Rerunner(r, sr, camera_config, args.services)
+  rerunner = Rerunner(route_or_segment_name, camera_config, args.services)
   rerunner.load_data()
 
