@@ -35,8 +35,6 @@ private:
   int skip_frame_count = 0;
   bool wide_cam_requested = false;
 
-  bool isDMAlwaysOn() const;
-
 protected:
   void paintGL() override;
   void initializeGL() override;
