@@ -23,7 +23,7 @@
             {% if nav_item.children %}
                 <li>
                     <details {% if nav_item.active  %}open{% endif %}>
-                    <summary class="font-inter">{{ nav_item.title }}</summary>
+                    <summary class="font-inter font-bold">{{ nav_item.title }}</summary>
                     <ul>
                     {% for nav_item in nav_item.children %}
                         <li class="{% if nav_item.active%}bg-neutral text-neutral-content{% endif %}">
