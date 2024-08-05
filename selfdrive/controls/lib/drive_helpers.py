@@ -7,13 +7,15 @@ from openpilot.common.realtime import DT_CTRL
 
 # WARNING: this value was determined based on the model's training distribution,
 #          model predictions above this speed can be unpredictable
-# V_CRUISE's are in kph
-V_CRUISE_MIN = 8
-V_CRUISE_MAX = 145
+# V_CRUISE's are in kph [imperial to 1 decimal place, metric]
+# NOTE: separate values for metric and imperial ensures the target speed for imperial
+#       is accurate (e.g. 144 and 145 kph are both 90 mph, so incrementing will not change
+#       the displayed speed, but will silently increase the speed target by 0.6 mph)
+V_CRUISE_MIN = [round(5 * CV.MPH_TO_KPH, 1), 10]
+V_CRUISE_MAX = [round(90 * CV.MPH_TO_KPH, 1), 145]
 V_CRUISE_UNSET = 255
-V_CRUISE_INITIAL = 40
-V_CRUISE_INITIAL_EXPERIMENTAL_MODE = 105
-IMPERIAL_INCREMENT = round(CV.MPH_TO_KPH, 1)  # round here to avoid rounding errors incrementing set speed
+V_CRUISE_INITIAL = [round(25 * CV.MPH_TO_KPH, 1), 40]
+V_CRUISE_INITIAL_EXPERIMENTAL_MODE = [round(65 * CV.MPH_TO_KPH, 1), 105]
 
 MIN_SPEED = 1.0
 CONTROL_N = 17
@@ -59,8 +61,8 @@ class VCruiseHelper:
         self.v_cruise_cluster_kph = self.v_cruise_kph
         self.update_button_timers(CS, enabled)
       else:
-        self.v_cruise_kph = CS.cruiseState.speed * CV.MS_TO_KPH
-        self.v_cruise_cluster_kph = CS.cruiseState.speedCluster * CV.MS_TO_KPH
+        self.v_cruise_kph = round(CS.cruiseState.speed * CV.MS_TO_KPH, 1)
+        self.v_cruise_cluster_kph = round(CS.cruiseState.speedCluster * CV.MS_TO_KPH, 1)
     else:
       self.v_cruise_kph = V_CRUISE_UNSET
       self.v_cruise_cluster_kph = V_CRUISE_UNSET
@@ -73,8 +75,6 @@ class VCruiseHelper:
 
     long_press = False
     button_type = None
-
-    v_cruise_delta = 1. if is_metric else IMPERIAL_INCREMENT
 
     for b in CS.buttonEvents:
       if b.type.raw in self.button_timers and not b.pressed:
@@ -101,17 +101,20 @@ class VCruiseHelper:
     if not self.button_change_states[button_type]["enabled"]:
       return
 
-    v_cruise_delta = v_cruise_delta * (5 if long_press else 1)
-    if long_press and self.v_cruise_kph % v_cruise_delta != 0:  # partial interval
-      self.v_cruise_kph = CRUISE_NEAREST_FUNC[button_type](self.v_cruise_kph / v_cruise_delta) * v_cruise_delta
+    # convert to display units, then increment by display units (no accumulating error)
+    v_cruise_delta = 1 * (5 if long_press else 1)
+    v_cruise = round(self.v_cruise_kph if is_metric else self.v_cruise_kph * CV.KPH_TO_MPH)
+    if long_press and v_cruise % v_cruise_delta != 0:  # partial interval
+      v_cruise = CRUISE_NEAREST_FUNC[button_type](v_cruise / v_cruise_delta) * v_cruise_delta
     else:
-      self.v_cruise_kph += v_cruise_delta * CRUISE_INTERVAL_SIGN[button_type]
+      v_cruise += v_cruise_delta * CRUISE_INTERVAL_SIGN[button_type]
+    self.v_cruise_kph = v_cruise if is_metric else v_cruise * CV.MPH_TO_KPH
 
     # If set is pressed while overriding, clip cruise speed to minimum of vEgo
     if CS.gasPressed and button_type in (ButtonType.decelCruise, ButtonType.setCruise):
       self.v_cruise_kph = max(self.v_cruise_kph, CS.vEgo * CV.MS_TO_KPH)
 
-    self.v_cruise_kph = clip(round(self.v_cruise_kph, 1), V_CRUISE_MIN, V_CRUISE_MAX)
+    self.v_cruise_kph = clip(round(self.v_cruise_kph, 1), V_CRUISE_MIN[is_metric], V_CRUISE_MAX[is_metric])
 
   def update_button_timers(self, CS, enabled):
     # increment timer for buttons still pressed
@@ -125,18 +128,18 @@ class VCruiseHelper:
         self.button_timers[b.type.raw] = 1 if b.pressed else 0
         self.button_change_states[b.type.raw] = {"standstill": CS.cruiseState.standstill, "enabled": enabled}
 
-  def initialize_v_cruise(self, CS, experimental_mode: bool) -> None:
+  def initialize_v_cruise(self, CS, experimental_mode: bool, is_metric: bool) -> None:
     # initializing is handled by the PCM
     if self.CP.pcmCruise:
       return
 
-    initial = V_CRUISE_INITIAL_EXPERIMENTAL_MODE if experimental_mode else V_CRUISE_INITIAL
+    initial = V_CRUISE_INITIAL_EXPERIMENTAL_MODE[is_metric] if experimental_mode else V_CRUISE_INITIAL[is_metric]
 
     # 250kph or above probably means we never had a set speed
     if any(b.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for b in CS.buttonEvents) and self.v_cruise_kph_last < 250:
       self.v_cruise_kph = self.v_cruise_kph_last
     else:
-      self.v_cruise_kph = int(round(clip(CS.vEgo * CV.MS_TO_KPH, initial, V_CRUISE_MAX)))
+      self.v_cruise_kph = clip(round(CS.vEgo * CV.MS_TO_KPH, 1), initial, V_CRUISE_MAX[is_metric])
 
     self.v_cruise_cluster_kph = self.v_cruise_kph
 
