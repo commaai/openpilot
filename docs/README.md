@@ -38,4 +38,5 @@ References:
 * https://www.mkdocs.org/getting-started/
 * https://www.mkdocs.org/dev-guide/themes/
 * https://tailwindcss.com/
+* https://github.com/tailwindlabs/tailwindcss-typography?tab=readme-ov-file#basic-usage
 * https://daisyui.com/
