@@ -6,11 +6,14 @@ import time
 import subprocess
 from typing import NoReturn
 
-from panda import Panda, PandaDFU, PandaProtocolMismatch, FW_PATH
+from panda import Panda, PandaDFU, PandaProtocolMismatch, FW_PATH, logger as pandalogger
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.system.hardware import HARDWARE
-from openpilot.common.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog, ForwardingHandler
+
+# forward
+pandalogger.addHandler(ForwardingHandler(cloudlog))
 
 
 def get_expected_signature(panda: Panda) -> bytes:
