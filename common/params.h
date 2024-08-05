@@ -23,7 +23,7 @@ class Params {
 public:
   explicit Params(const std::string &path = {});
   ~Params();
-  // Not copiable.
+  // Not copyable.
   Params(const Params&) = delete;
   Params& operator=(const Params&) = delete;
 
