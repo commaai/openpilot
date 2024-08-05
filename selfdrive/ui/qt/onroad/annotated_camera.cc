@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 
+#include "common/params.h"
 #include "common/swaglog.h"
 #include "selfdrive/ui/qt/onroad/buttons.h"
 #include "selfdrive/ui/qt/util.h"
@@ -21,6 +22,12 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
   main_layout->addWidget(experimental_btn, 0, Qt::AlignTop | Qt::AlignRight);
 
   dm_img = loadPixmap("../assets/img_driver_face.png", {img_size + 5, img_size + 5});
+}
+
+// Checks if "Always-On Driver Monitoring" toggle is enabled in settings
+bool AnnotatedCameraWidget::isDMAlwaysOn() const {
+  Params params;
+  return params.getBool("AlwaysOnDM");
 }
 
 void AnnotatedCameraWidget::updateState(const UIState &s) {
@@ -236,9 +243,12 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s)
   const int arc_l = 133;
   const float arc_t_default = 6.7;
   const float arc_t_extend = 12.0;
-  QColor arc_color = QColor::fromRgbF(0.545 - 0.445 * s->engaged(),
-                                      0.545 + 0.4 * s->engaged(),
-                                      0.545 - 0.285 * s->engaged(),
+
+  bool show_dm_engaged = s->engaged() || isDMAlwaysOn();
+
+  QColor arc_color = QColor::fromRgbF(0.545 - 0.445 * show_dm_engaged,
+                                      0.545 + 0.4 * show_dm_engaged,
+                                      0.545 - 0.285 * show_dm_engaged,
                                       0.4 * (1.0 - dm_fade_state));
   float delta_x = -scene.driver_pose_sins[1] * arc_l / 2;
   float delta_y = -scene.driver_pose_sins[0] * arc_l / 2;
