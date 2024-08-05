@@ -137,7 +137,7 @@ class CAR(Platforms):
                    footnotes=[Footnote.CIVIC_DIESEL], min_steer_speed=2. * CV.MPH_TO_MS),
       HondaCarDocs("Honda Civic Hatchback 2017-21", min_steer_speed=12. * CV.MPH_TO_MS),
     ],
-    HondaCarSpecs(mass=1326, wheelbase=2.7, steerRatio=15.38, centerToFrontRatio=0.4),  # steerRatio: 10.93 is end-to-end spec
+    HondaCarSpecs(mass=1326, wheelbase=2.7, steerRatio=15.38, centerToFrontRatio=0.4, minSteerSpeed=0.),  # steerRatio: 10.93 is end-to-end spec
     dbc_dict('honda_civic_hatchback_ex_2017_can_generated', None),
   )
   HONDA_CIVIC_BOSCH_DIESEL = HondaBoschPlatformConfig(
@@ -150,7 +150,7 @@ class CAR(Platforms):
       HondaCarDocs("Honda Civic 2022-24", "All", video_link="https://youtu.be/ytiOT5lcp6Q"),
       HondaCarDocs("Honda Civic Hatchback 2022-24", "All", video_link="https://youtu.be/ytiOT5lcp6Q"),
     ],
-    HONDA_CIVIC_BOSCH.specs.override(minSteerSpeed=0.),
+    HONDA_CIVIC_BOSCH.specs,
     dbc_dict('honda_civic_ex_2022_can_generated', None),
     flags=HondaFlags.BOSCH_RADARLESS,
   )
