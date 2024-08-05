@@ -246,10 +246,10 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s)
 
   bool show_dm_engaged = s->engaged() || isDMAlwaysOn();
 
-  QColor arc_color = QColor::fromRgbF(0.545 - 0.445 * show_dm_engaged,
-                                      0.545 + 0.4 * show_dm_engaged,
-                                      0.545 - 0.285 * show_dm_engaged,
-                                      0.4 * (1.0 - dm_fade_state));
+  const QColor ENGAGED_COLOR = QColor::fromRgbF(0.1, 0.945, 0.26, 0.6);
+  const QColor DISENGAGED_COLOR = QColor::fromRgbF(0.545, 0.545, 0.545, 0.6);
+
+  QColor arc_color = show_dm_engaged ? ENGAGED_COLOR : DISENGAGED_COLOR;
   float delta_x = -scene.driver_pose_sins[1] * arc_l / 2;
   float delta_y = -scene.driver_pose_sins[0] * arc_l / 2;
   painter.setPen(QPen(arc_color, arc_t_default+arc_t_extend*fmin(1.0, scene.driver_pose_diff[1] * 5.0), Qt::SolidLine, Qt::RoundCap));
