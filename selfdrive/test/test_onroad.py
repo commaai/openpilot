@@ -247,7 +247,8 @@ class TestOnroad:
     for pl in self.service_msgs['procLog']:
       for x in pl.procLog.procs:
         if len(x.cmdline) > 0:
-          plogs_by_proc[x.name].append(x)
+          n = list(x.cmdline)[0]
+          plogs_by_proc[n].append(x)
     print(plogs_by_proc.keys())
 
     cpu_ok = True
