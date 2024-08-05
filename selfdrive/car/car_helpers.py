@@ -12,28 +12,8 @@ from openpilot.selfdrive.car.fw_versions import get_fw_versions_ordered, get_pre
 from openpilot.selfdrive.car.mock.values import CAR as MOCK
 import cereal.messaging as messaging
 from openpilot.selfdrive.car import gen_empty_fingerprint
-from openpilot.system.version import get_build_metadata
 
 FRAME_FINGERPRINT = 100  # 1s
-
-EventName = car.CarEvent.EventName
-
-
-def get_startup_event(car_recognized, controller_available, fw_seen):
-  build_metadata = get_build_metadata()
-  if build_metadata.openpilot.comma_remote and build_metadata.tested_channel:
-    event = EventName.startup
-  else:
-    event = EventName.startupMaster
-
-  if not car_recognized:
-    if fw_seen:
-      event = EventName.startupNoCar
-    else:
-      event = EventName.startupNoFw
-  elif car_recognized and not controller_available:
-    event = EventName.startupNoControl
-  return event
 
 
 def get_one_can(logcan):
