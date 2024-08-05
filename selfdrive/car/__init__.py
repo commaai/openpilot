@@ -1,4 +1,5 @@
 # functions common among cars
+import logging
 from collections import namedtuple
 from dataclasses import dataclass
 from enum import IntFlag, ReprEnum, EnumType
@@ -11,6 +12,11 @@ from panda.python.uds import SERVICE_TYPE
 from openpilot.common.numpy_fast import clip, interp
 from openpilot.common.utils import Freezable
 from openpilot.selfdrive.car.docs_definitions import CarDocs
+
+# set up logging
+carlog = logging.getLogger('carlog')
+carlog.setLevel(logging.INFO)
+carlog.propagate = False
 
 DT_CTRL = 0.01  # car state and control loop timestep (s)
 

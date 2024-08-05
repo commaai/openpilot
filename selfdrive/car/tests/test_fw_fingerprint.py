@@ -322,11 +322,11 @@ class TestFwFingerprintTiming:
     # TODO: replace this with full fingerprint simulation testing
     # https://github.com/commaai/panda/pull/1329
 
-    def fake_cloudlog_exception(*args, **kwargs):
+    def fake_carlog_exception(*args, **kwargs):
       raise
 
     mocker.patch("openpilot.selfdrive.car.fw_versions.set_obd_multiplexing", lambda *args: None)
-    mocker.patch("openpilot.common.swaglog.cloudlog.exception", fake_cloudlog_exception)
+    mocker.patch("openpilot.selfdrive.car.carlog.exception", fake_carlog_exception)
     fake_socket = FakeSocket()
     for brand in FW_QUERY_CONFIGS.keys():
       with subtests.test(brand=brand):

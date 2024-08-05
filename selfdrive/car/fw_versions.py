@@ -9,7 +9,7 @@ import capnp
 import panda.python.uds as uds
 from cereal import car
 from openpilot.common.params import Params
-from openpilot.common.swaglog import cloudlog
+from openpilot.selfdrive.car import carlog
 from openpilot.selfdrive.car.ecu_addrs import get_ecu_addrs
 from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
 from openpilot.selfdrive.car.fw_query_definitions import AddrType, EcuAddrBusType, FwQueryConfig, LiveFwVersions, OfflineFwVersions
@@ -97,7 +97,7 @@ def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, match_brand: str = N
   # if there are enough matches. FIXME: parameterize this or require all ECUs to exist like exact matching
   if match and len(matched_ecus) >= 2:
     if log:
-      cloudlog.error(f"Fingerprinted {match} using fuzzy match. {len(matched_ecus)} matching ECUs")
+      carlog.error(f"Fingerprinted {match} using fuzzy match. {len(matched_ecus)} matching ECUs")
     return {match}
   else:
     return set()
@@ -230,11 +230,11 @@ def get_brand_ecu_matches(ecu_rx_addrs: set[EcuAddrBusType]) -> dict[str, set[Ad
 
 def set_obd_multiplexing(params: Params, obd_multiplexing: bool):
   if params.get_bool("ObdMultiplexingEnabled") != obd_multiplexing:
-    cloudlog.warning(f"Setting OBD multiplexing to {obd_multiplexing}")
+    carlog.warning(f"Setting OBD multiplexing to {obd_multiplexing}")
     params.remove("ObdMultiplexingChanged")
     params.put_bool("ObdMultiplexingEnabled", obd_multiplexing)
     params.get_bool("ObdMultiplexingChanged", block=True)
-    cloudlog.warning("OBD multiplexing set successfully")
+    carlog.warning("OBD multiplexing set successfully")
 
 
 def get_fw_versions_ordered(logcan, sendcan, vin: str, ecu_rx_addrs: set[EcuAddrBusType], timeout: float = 0.1, num_pandas: int = 1,
@@ -331,7 +331,7 @@ def get_fw_versions(logcan, sendcan, query_brand: str = None, extra: OfflineFwVe
 
               car_fw.append(f)
         except Exception:
-          cloudlog.exception("FW query exception")
+          carlog.exception("FW query exception")
 
   return car_fw
 
