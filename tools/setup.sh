@@ -39,8 +39,8 @@ function sentry_send_event() {
   SENTRY_URL=https://sentry.io/api/4507726145781760/store/
 
   EVENT=$1
-  EVENT_TYPE=$2
-  EVENT_LOG=$3
+  EVENT_TYPE=${2:-$EVENT}
+  EVENT_LOG=${3:-"NA"}
 
   PLATFORM=$(uname -s)
   ARCH=$(uname -m)
