@@ -165,11 +165,11 @@ function install_with_op() {
 
     ERROR_TYPE="$(cat "$LOG_FILE" | sed '1p;d')"
     ERROR_LOG="$(cat "$LOG_FILE" | sed '2p;d')"
-    sentry_send_event "SETUP_FAILURE" "$ERROR_TYPE" "$ERROR_LOG"
+    sentry_send_event "SETUP_FAILURE" "$ERROR_TYPE" "$ERROR_LOG" || true
 
     return 1
   else
-    sentry_send_event "SETUP_SUCCESS"
+    sentry_send_event "SETUP_SUCCESS" || true
   fi
 
   echo -e "\n----------------------------------------------------------------------"
