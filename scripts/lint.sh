@@ -44,6 +44,6 @@ fi
 
 if [[ -n "$ALL_FILES" ]]; then
   run "Codespell" codespell $ALL_FILES
-  run "Large files check" python3 -m pre_commit_hooks.check_added_large_files --enforce-all $ALL_FILES --maxkb=1
+  run "Large files check" python3 -m pre_commit_hooks.check_added_large_files --enforce-all $ALL_FILES --maxkb=120
   run "Shebang check" python3 -m pre_commit_hooks.check_shebang_scripts_are_executable $ALL_FILES
 fi
