@@ -132,7 +132,6 @@ def fingerprint(logcan, sendcan, num_pandas):
     carlog.error({"event": "Malformed VIN", "vin": vin})
     vin = VIN_UNKNOWN
   carlog.warning("VIN %s", vin)
-  params.put("CarVin", vin)
 
   # disable OBD multiplexing for CAN fingerprinting and potential ECU knockouts
   set_obd_multiplexing(params, False)
