@@ -12,6 +12,7 @@ source_modules =
 forbidden_modules =
     cereal
     capnp
+    openpilot.common
     openpilot.common.params
     openpilot.system
     openpilot.body
