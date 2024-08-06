@@ -61,17 +61,18 @@ jobs:
         cd $STRIPPED_DIR
         ${{ env.RUN }} "release/check-dirty.sh && \
                         MAX_EXAMPLES=5 $PYTEST -m 'not slow' selfdrive/car"
-    - name: getting commit ancestor
+    - name: getting modified files
       run: |
-        cd $STRIPPED_DIR
-        ${{ env.RUN }} "git fetch --unshallow --recurse-submodules=no origin master:master"
+        cd $GITHUB_WORKSPACE
+        git fetch --unshallow --recurse-submodules=no origin master:master
+        echo "FILES=$(git diff --name-only --cached --diff-filter=AM $(git merge-base HEAD master))" >> $GITHUB_ENV
     - name: static analysis
       timeout-minutes: 1
       run: |
         cd $GITHUB_WORKSPACE
         cp pyproject.toml $STRIPPED_DIR
         cd $STRIPPED_DIR
-        ${{ env.RUN }} "scripts/lint.sh"
+        ${{ env.RUN }} "scripts/lint.sh --files $FILES"
 
   build:
     strategy:

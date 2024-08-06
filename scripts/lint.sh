@@ -10,11 +10,6 @@ cd $DIR/../
 
 IGNORED_FILES="uv\.lock|docs\/CARS.md"
 
-ALL_FILES=$(git diff --name-only --cached --diff-filter=AM $(git merge-base HEAD master) | sed -E "s/$IGNORED_FILES//g")
-PYTHON_FILES=$(echo "$ALL_FILES" | grep --color=never '.py$' || true)
-echo $ALL_FILES
-echo $PYTHON_FILES
-
 function run() {
   echo -en "$1"
 
@@ -38,12 +33,36 @@ function run() {
   )
 }
 
-if [[ -n "$PYTHON_FILES" ]]; then
-  run "ruff" ruff check $PYTHON_FILES --quiet
-fi
+function run_tests() {
+  echo "FILES:"
+  echo $@
+  echo "xxxxxxxxxxxx"
 
-if [[ -n "$ALL_FILES" ]]; then
-  run "Codespell" codespell $ALL_FILES
-  run "Large files check" python3 -m pre_commit_hooks.check_added_large_files --enforce-all $ALL_FILES --maxkb=120
-  run "Shebang check" python3 -m pre_commit_hooks.check_shebang_scripts_are_executable $ALL_FILES
+  ALL_FILES=$(echo $@ | sed -E "s/$IGNORED_FILES//g")
+  PYTHON_FILES=$(echo "$ALL_FILES" | grep --color=never '.py$' || true)
+
+  echo $ALL_FILES
+  echo $PYTHON_FILES
+
+
+  if [[ -n "$PYTHON_FILES" ]]; then
+    run "ruff" ruff check $PYTHON_FILES --quiet
+  fi
+
+  if [[ -n "$ALL_FILES" ]]; then
+    run "Codespell" codespell $ALL_FILES
+    run "Large files check" python3 -m pre_commit_hooks.check_added_large_files --enforce-all $ALL_FILES --maxkb=120
+    run "Shebang check" python3 -m pre_commit_hooks.check_shebang_scripts_are_executable $ALL_FILES
+  fi
+}
+
+case $1 in
+  --files ) shift 1; FILES="$@" ;;
+  --all )   shift 1; ALL="1" ;;
+esac
+
+if [[ -n $FILES ]]; then
+  run_tests $FILES
+else
+  run_tests $(git diff --name-only --cached --diff-filter=AM $(git merge-base HEAD master))
 fi
