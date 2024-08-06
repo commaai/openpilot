@@ -22,6 +22,7 @@ forbidden_modules =
 ignore_imports =
     # remove these
     openpilot.selfdrive.car.interfaces -> openpilot.selfdrive.controls.lib.events
+    openpilot.selfdrive.car.body.carcontroller -> openpilot.selfdrive.controls.lib.pid
 
     # these are okay
     openpilot.selfdrive.car.card -> openpilot.common.swaglog
