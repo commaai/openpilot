@@ -40,4 +40,8 @@ ignore_imports =
     # these two will still live in openpilot, but require some modification
     openpilot.selfdrive.car.fw_versions -> openpilot.common.params
     openpilot.selfdrive.car.ecu_addrs -> openpilot.common.params
+    openpilot.selfdrive.car.tests.test_models -> openpilot.common.basedir
+    openpilot.selfdrive.car.tests.test_docs -> openpilot.common.basedir
+    openpilot.selfdrive.car.docs -> openpilot.common.basedir
+    openpilot.selfdrive.car.docs_definitions -> openpilot.common.conversions
 unmatched_ignore_imports_alerting = warn
