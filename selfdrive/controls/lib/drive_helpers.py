@@ -2,7 +2,7 @@ import math
 
 from cereal import car, log
 from openpilot.common.conversions import Conversions as CV
-from openpilot.common.numpy_fast import clip
+from numpy import clip
 from openpilot.common.realtime import DT_CTRL
 from openpilot.system.version import get_build_metadata
 

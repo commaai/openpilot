@@ -1,4 +1,4 @@
-from openpilot.common.numpy_fast import clip
+from numpy import clip
 from openpilot.selfdrive.car import CanBusBase
 from openpilot.selfdrive.car.hyundai.values import HyundaiFlags
 
