@@ -8,7 +8,7 @@ from openpilot.selfdrive.car import carlog
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from openpilot.selfdrive.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
-from openpilot.selfdrive.car.fw_versions import get_fw_versions_ordered, get_present_ecus, match_fw_to_car, set_obd_multiplexing
+from openpilot.selfdrive.car.fw_versions import get_fw_versions_ordered, get_present_ecus, match_fw_to_car
 from openpilot.selfdrive.car.mock.values import CAR as MOCK
 import cereal.messaging as messaging
 from openpilot.selfdrive.car import gen_empty_fingerprint
@@ -90,7 +90,7 @@ def can_fingerprint(next_can: Callable) -> tuple[str | None, dict[int, dict]]:
 
 
 # **** for use live only ****
-def fingerprint(logcan, sendcan, num_pandas):
+def fingerprint(logcan, sendcan, set_obd_multiplexing, num_pandas):
   fixed_fingerprint = os.environ.get('FINGERPRINT', "")
   skip_fw_query = os.environ.get('SKIP_FW_QUERY', False)
   disable_fw_cache = os.environ.get('DISABLE_FW_CACHE', False)
@@ -115,11 +115,11 @@ def fingerprint(logcan, sendcan, num_pandas):
       carlog.warning("Getting VIN & FW versions")
       # enable OBD multiplexing for VIN query
       # NOTE: this takes ~0.1s and is relied on to allow sendcan subscriber to connect in time
-      set_obd_multiplexing(params, True)
+      set_obd_multiplexing(True)
       # VIN query only reliably works through OBDII
       vin_rx_addr, vin_rx_bus, vin = get_vin(logcan, sendcan, (0, 1))
-      ecu_rx_addrs = get_present_ecus(logcan, sendcan, num_pandas=num_pandas)
-      car_fw = get_fw_versions_ordered(logcan, sendcan, vin, ecu_rx_addrs, num_pandas=num_pandas)
+      ecu_rx_addrs = get_present_ecus(logcan, sendcan, set_obd_multiplexing, num_pandas=num_pandas)
+      car_fw = get_fw_versions_ordered(logcan, sendcan, set_obd_multiplexing, vin, ecu_rx_addrs, num_pandas=num_pandas)
       cached = False
 
     exact_fw_match, fw_candidates = match_fw_to_car(car_fw, vin)
@@ -134,7 +134,7 @@ def fingerprint(logcan, sendcan, num_pandas):
   carlog.warning("VIN %s", vin)
 
   # disable OBD multiplexing for CAN fingerprinting and potential ECU knockouts
-  set_obd_multiplexing(params, False)
+  set_obd_multiplexing(False)
   params.put_bool("FirmwareQueryDone", True)
 
   fw_query_time = time.monotonic() - start_time
@@ -169,8 +169,8 @@ def get_car_interface(CP):
   return CarInterface(CP, CarController, CarState)
 
 
-def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
-  candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan, num_pandas)
+def get_car(logcan, sendcan, set_obd_multiplexing, experimental_long_allowed, num_pandas=1):
+  candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan, set_obd_multiplexing, num_pandas)
 
   if candidate is None:
     carlog.error({"event": "car doesn't match any fingerprints", "fingerprints": repr(fingerprints)})
