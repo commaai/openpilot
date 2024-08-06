@@ -14,7 +14,8 @@ from openpilot.common.swaglog import cloudlog, ForwardingHandler
 
 from openpilot.selfdrive.pandad import can_list_to_can_capnp
 from openpilot.selfdrive.car import DT_CTRL, carlog
-from openpilot.selfdrive.car.car_helpers import get_car, get_one_can
+from openpilot.selfdrive.car.car import Car as CarInterfacer  # FIXME: less confusing name
+from openpilot.selfdrive.car.car_helpers import get_one_can
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.controls.lib.events import Events
 
@@ -51,7 +52,8 @@ class Car:
 
       num_pandas = len(messaging.recv_one_retry(self.sm.sock['pandaStates']).pandaStates)
       experimental_long_allowed = self.params.get_bool("ExperimentalLongitudinalEnabled")
-      self.CI = get_car(self.can_sock, self.pm.sock['sendcan'], experimental_long_allowed, num_pandas)
+      self.car = CarInterfacer(self.can_sock, self.pm.sock['sendcan'], DT_CTRL)
+      self.CI = self.car.fingerprint(experimental_long_allowed, num_pandas)
       self.CP = self.CI.CP
     else:
       self.CI, self.CP = CI, CI.CP
