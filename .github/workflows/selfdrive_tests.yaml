@@ -149,9 +149,7 @@ jobs:
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: static analysis
       timeout-minutes: 1
-      run: |
-        git fetch --unshallow origin master:master
-        ${{ env.RUN }} "scripts/lint.sh"
+      run: ${{ env.RUN }} "git fetch --unshallow --recurse-submodules=no origin master:master && scripts/lint.sh"
 
   unit_tests:
     name: unit tests
