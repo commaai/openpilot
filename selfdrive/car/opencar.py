@@ -13,7 +13,7 @@ class CanData:
   src: int
 
 
-class Car:
+class OpenCar:
   """All encompassing class for interfacing with a vehicle."""
 
   def __init__(self, logcan, sendcan, dt_ctrl=DT_CTRL):
