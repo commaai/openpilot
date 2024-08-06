@@ -6,8 +6,8 @@ cd $DIR/../
 
 IGNORED_FILES="uv\.lock|docs\/CARS.md"
 
-PYTHON_FILES=$(git diff --name-only origin/master --diff-filter=AM | grep --color=never '.py$' || true)
 ALL_FILES=$(git diff --name-only origin/master --diff-filter=AM | sed -E "s/$IGNORED_FILES//g")
+PYTHON_FILES=$(echo "$ALL_FILES" | grep --color=never '.py$' || true)
 
 if [[ -n "$ALL_FILES" ]]; then
   codespell $ALL_FILES
@@ -16,5 +16,5 @@ if [[ -n "$ALL_FILES" ]]; then
 fi
 
 if [[ -n "$PYTHON_FILES" ]]; then
-  ruff check $PYTHON_FILES
+  ruff check $PYTHON_FILES --quiet
 fi
