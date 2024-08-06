@@ -127,10 +127,9 @@ class Rerunner:
     rr.init(RR_WIN)
     rr.connect(default_blueprint=blueprint)
 
-    size_hint = (h, w)
     for ts, frame in fr:
       rr.set_time_nanos(RR_TIMELINE_NAME, int(ts * 1e9))
-      rr.log(cam_type, rr.ImageEncoded(contents=frame,format=rr.ImageFormat.NV12(size_hint)))
+      rr.log(cam_type, rr.Image(bytes=frame, width=w, height=h, pixel_format=rr.PixelFormat.NV12))
 
   def load_data(self):
     self._start_rerun()
