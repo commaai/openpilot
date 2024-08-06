@@ -89,7 +89,7 @@ def can_fingerprint(next_can: Callable) -> tuple[str | None, dict[int, dict]]:
 
 
 # **** for use live only ****
-def fingerprint(logcan, sendcan, set_obd_multiplexing, num_pandas, cached_params):
+def fingerprint(logcan, sendcan, set_obd_multiplexing, num_pandas, cached_params_raw):
   fixed_fingerprint = os.environ.get('FINGERPRINT', "")
   skip_fw_query = os.environ.get('SKIP_FW_QUERY', False)
   disable_fw_cache = os.environ.get('DISABLE_FW_CACHE', False)
@@ -97,8 +97,9 @@ def fingerprint(logcan, sendcan, set_obd_multiplexing, num_pandas, cached_params
 
   start_time = time.monotonic()
   if not skip_fw_query:
-    if cached_params is not None:
-      with car.CarParams.from_bytes(cached_params) as cached_params:
+    cached_params = None
+    if cached_params_raw is not None:
+      with car.CarParams.from_bytes(cached_params_raw) as cached_params:
         if cached_params.carName == "mock":
           cached_params = None
 
