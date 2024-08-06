@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import re
 
-import cereal.messaging as messaging
 from panda.python.uds import get_rx_addr_for_tx_addr, FUNCTIONAL_ADDRS
 from openpilot.selfdrive.car import carlog
 from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
@@ -63,6 +62,7 @@ def get_vin(logcan, sendcan, buses, timeout=0.1, retry=2, debug=False):
 if __name__ == "__main__":
   import argparse
   import time
+  import cereal.messaging as messaging
 
   parser = argparse.ArgumentParser(description='Get VIN of the car')
   parser.add_argument('--debug', action='store_true')
