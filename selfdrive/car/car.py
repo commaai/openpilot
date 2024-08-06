@@ -6,6 +6,13 @@ from selfdrive.car.interfaces import CarInterfaceBase, DT_CTRL
 from openpilot.selfdrive.car.car_helpers import get_car, get_one_can
 
 
+@dataclass(frozen=True)
+class CanData:
+  address: int
+  dat: bytes
+  src: int
+
+
 class Car:
   """All encompassing class for interfacing with a vehicle."""
 
