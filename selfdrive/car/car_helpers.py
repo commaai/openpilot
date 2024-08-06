@@ -157,7 +157,7 @@ def fingerprint(logcan, sendcan, set_obd_multiplexing, num_pandas):
     car_fingerprint = fixed_fingerprint
     source = car.CarParams.FingerprintSource.fixed
 
-  carlog.error({"event": "fingerprinted", "car_fingerprint": car_fingerprint, "source": source, "fuzzy": not exact_match,
+  carlog.error({"event": "fingerprinted", "car_fingerprint": str(car_fingerprint), "source": source, "fuzzy": not exact_match,
                 "cached": cached, "fw_count": len(car_fw), "ecu_responses": list(ecu_rx_addrs), "vin_rx_addr": vin_rx_addr,
                 "vin_rx_bus": vin_rx_bus, "fingerprints": repr(finger), "fw_query_time": fw_query_time})
 
