@@ -23,9 +23,8 @@ def apply_ford_curvature_limits(apply_curvature, apply_curvature_last, current_c
 
 
 class CarController(CarControllerBase):
-  def __init__(self, dbc_name, CP, VM):
-    super().__init__(dbc_name, CP, VM)
-    self.VM = VM
+  def __init__(self, dbc_name, CP):
+    super().__init__(dbc_name, CP)
     self.packer = CANPacker(dbc_name)
     self.CAN = fordcan.CanBus(CP)
 
