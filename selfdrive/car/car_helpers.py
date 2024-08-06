@@ -159,8 +159,8 @@ def fingerprint(logcan, sendcan, num_pandas):
     source = car.CarParams.FingerprintSource.fixed
 
   carlog.error({"event": "fingerprinted", "car_fingerprint": car_fingerprint, "source": source, "fuzzy": not exact_match,
-                 "cached": cached, "fw_count": len(car_fw), "ecu_responses": list(ecu_rx_addrs), "vin_rx_addr": vin_rx_addr,
-                 "vin_rx_bus": vin_rx_bus, "fingerprints": repr(finger), "fw_query_time": fw_query_time})
+                "cached": cached, "fw_count": len(car_fw), "ecu_responses": list(ecu_rx_addrs), "vin_rx_addr": vin_rx_addr,
+                "vin_rx_bus": vin_rx_bus, "fingerprints": repr(finger), "fw_query_time": fw_query_time})
 
   return car_fingerprint, finger, vin, car_fw, source, exact_match
 
@@ -186,11 +186,6 @@ def get_car(logcan, sendcan, experimental_long_allowed, num_pandas=1):
 
   return get_car_interface(CP), CP
 
-def write_car_param(platform=MOCK.MOCK):
-  params = Params()
-  CarInterface, _, _ = interfaces[platform]
-  CP = CarInterface.get_non_essential_params(platform)
-  params.put("CarParams", CP.to_bytes())
 
 def get_demo_car_params():
   platform = MOCK.MOCK
