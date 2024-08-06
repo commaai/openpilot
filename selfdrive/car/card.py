@@ -26,6 +26,17 @@ EventName = car.CarEvent.EventName
 carlog.addHandler(ForwardingHandler(cloudlog))
 
 
+def obd_callback(params: Params):
+  def set_obd_multiplexing(obd_multiplexing: bool):
+    if params.get_bool("ObdMultiplexingEnabled") != obd_multiplexing:
+      cloudlog.warning(f"Setting OBD multiplexing to {obd_multiplexing}")
+      params.remove("ObdMultiplexingChanged")
+      params.put_bool("ObdMultiplexingEnabled", obd_multiplexing)
+      params.get_bool("ObdMultiplexingChanged", block=True)
+      cloudlog.warning("OBD multiplexing set successfully")
+  return set_obd_multiplexing
+
+
 class Car:
   CI: CarInterfaceBase
 
@@ -49,9 +60,9 @@ class Car:
       print("Waiting for CAN messages...")
       get_one_can(self.can_sock)
 
-      num_pandas = len(messaging.recv_one_retry(self.sm.sock['pandaStates']).pandaStates)
       experimental_long_allowed = self.params.get_bool("ExperimentalLongitudinalEnabled")
-      self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'], experimental_long_allowed, num_pandas)
+      num_pandas = len(messaging.recv_one_retry(self.sm.sock['pandaStates']).pandaStates)
+      self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'], obd_callback(self.params), experimental_long_allowed, num_pandas)
     else:
       self.CI, self.CP = CI, CI.CP
 
