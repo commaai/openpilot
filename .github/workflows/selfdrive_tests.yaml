@@ -284,12 +284,14 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
-      - name: Save diff
-        id: save_diff
+      - name: Load Docs
         run: |
           mkdir -p /tmp/openpilot_cache/base_car_docs/
           wget -O /tmp/openpilot_cache/base_car_docs/CARS.md https://raw.githubusercontent.com/commaai/openpilot/master/docs/CARS.md
-          output=$(${{ env.RUN }} "python selfdrive/debug/print_docs_diff.py --path /tmp/openpilot_cache/base_car_docs")
+      - name: Save diff
+        id: save_diff
+        run: |
+          output=$(python selfdrive/debug/print_docs_diff.py --path /tmp/openpilot_cache/base_car_docs)
           output="${output//$'\n'/'%0A'}"
           echo "::set-output name=diff::$output"
       - name: Find comment
