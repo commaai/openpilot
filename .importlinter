@@ -19,21 +19,19 @@ forbidden_modules =
     openpilot.tinygrad
 ignore_imports =
     # remove these
+    openpilot.selfdrive.car.interfaces -> openpilot.selfdrive.controls.lib.events
+
+    # these are okay
+    openpilot.selfdrive.car.card -> openpilot.common.swaglog
     openpilot.selfdrive.car.card -> openpilot.common.realtime
     openpilot.selfdrive.car.card -> openpilot.selfdrive.controls.lib.events
-    openpilot.selfdrive.car.interfaces -> openpilot.selfdrive.controls.lib.events
     openpilot.selfdrive.car.tests.test_models -> openpilot.tools.lib.logreader
     openpilot.selfdrive.car.tests.test_models -> openpilot.selfdrive.car.card
     openpilot.selfdrive.car.tests.test_models -> openpilot.tools.lib.route
     openpilot.selfdrive.car.tests.test_models -> openpilot.system.hardware.hw
     openpilot.selfdrive.car.tests.test_models -> openpilot.selfdrive.test.helpers
-    openpilot.selfdrive.car.car_helpers -> openpilot.system.version
-    openpilot.selfdrive.car.interfaces -> openpilot.selfdrive.controls.lib.drive_helpers
     openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.controls.lib.latcontrol_angle
     openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.controls.lib.longcontrol
     openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.controls.lib.latcontrol_torque
     openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.controls.lib.latcontrol_pid
-
-    # these are okay
-    openpilot.selfdrive.car.card -> openpilot.common.swaglog
 unmatched_ignore_imports_alerting = warn
