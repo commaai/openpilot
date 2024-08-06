@@ -20,29 +20,30 @@ def get_all_footnotes() -> dict[Enum, int]:
     all_footnotes.extend(footnotes)
   return {fn: idx + 1 for idx, fn in enumerate(all_footnotes)}
 
+
 CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS.md")
 CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
 
-def get_single_car_docs(model: str, footnotes: dict[Enum, int]) -> list[CarDocs]:
-  car_docs = PLATFORMS[model].config.car_docs
-  CP = interfaces[model][0].get_params(PLATFORMS[model], fingerprint=gen_empty_fingerprint(),
-                                       car_fw=[car.CarParams.CarFw(ecu="unknown")], experimental_long=True, docs=True)
-  if CP.dashcamOnly or not len(car_docs):
-    return []
-  model_car_docs = []
-  for _car_docs in car_docs:
-    if not hasattr(_car_docs, "row"):
-      _car_docs.init_make(CP)
-      _car_docs.init(CP, footnotes)
-    model_car_docs.append(_car_docs)
-  return model_car_docs
 
 def get_all_car_docs() -> list[CarDocs]:
   all_car_docs: list[CarDocs] = []
   footnotes = get_all_footnotes()
-  for model in PLATFORMS:
-    car_docs = get_single_car_docs(model, footnotes)
-    all_car_docs.extend(car_docs)
+  for model, platform in PLATFORMS.items():
+    car_docs = platform.config.car_docs
+    # If available, uses experimental longitudinal limits for the docs
+    CP = interfaces[model][0].get_params(platform, fingerprint=gen_empty_fingerprint(),
+                                         car_fw=[car.CarParams.CarFw(ecu="unknown")], experimental_long=True, docs=True)
+
+    if CP.dashcamOnly or not len(car_docs):
+      continue
+
+    # A platform can include multiple car models
+    for _car_docs in car_docs:
+      if not hasattr(_car_docs, "row"):
+        _car_docs.init_make(CP)
+        _car_docs.init(CP, footnotes)
+      all_car_docs.append(_car_docs)
+
   # Sort cars by make and model + year
   sorted_cars: list[CarDocs] = natsorted(all_car_docs, key=lambda car: car.name.lower())
   return sorted_cars
