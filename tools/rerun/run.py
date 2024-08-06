@@ -164,8 +164,10 @@ if __name__ == '__main__':
   sr = SegmentRange(route_or_segment_name)
   r = Route(sr.route_name)
 
-  if len(sr.seg_idxs) > 1:
-    print("You're requesting more than 1 segment, please be aware that might take a lot of memory")
+  hevc_requested = any([v for v in camera_config[1:]])
+  if len(sr.seg_idxs) > 1 and hevc_requested:
+    print("You're requesting more than 1 segment with hevc files," + \
+          "please be aware that might take a lot of memory since hevc files have high resolution")
     response = input("Do you wish to continue? (Y/n): ")
     if response.strip().lower() != "y":
       sys.exit()
