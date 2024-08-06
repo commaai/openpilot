@@ -302,7 +302,7 @@ class CarDocs:
 
   def get_detail_sentence(self, CP):
     if not CP.notCar:
-      return get_detail_sentence(self.make, self.model, self.op_long, CP.minEnableSpeed, CP.minSteerSpeed, self.row[Column.STEERING_TORQUE], self.auto_resume)
+      return get_detail_sentence(self.make, self.model, self.op_long, self.min_enable_speed, self.min_steer_speed, self.row[Column.STEERING_TORQUE], self.auto_resume)
     else:
       if CP.carFingerprint == "COMMA_BODY":
         return "The body is a robotics dev kit that can run openpilot. <a href='https://www.commabody.com'>Learn more.</a>"
