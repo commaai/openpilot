@@ -1,6 +1,8 @@
 [importlinter]
 root_packages =
     openpilot
+    cereal
+    capnp
 
 [importlinter:contract:1]
 name = Forbid imports from openpilot.selfdrive.car to openpilot.system
@@ -8,6 +10,8 @@ type = forbidden
 source_modules =
     openpilot.selfdrive.car
 forbidden_modules =
+    cereal
+    capnp
     openpilot.system
     openpilot.body
     openpilot.docs
@@ -34,4 +38,10 @@ ignore_imports =
     openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.controls.lib.longcontrol
     openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.controls.lib.latcontrol_torque
     openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.controls.lib.latcontrol_pid
+    openpilot.selfdrive.car.tests.test_models -> capnp
+    openpilot.selfdrive.car.tests.test_car_interfaces -> cereal.messaging
+    openpilot.selfdrive.car.tests.test_car_interfaces -> cereal
+    openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.test.fuzzy_generation
+    openpilot.selfdrive.car.tests.test_models -> cereal.messaging
+    openpilot.selfdrive.car.tests.test_models -> cereal
 unmatched_ignore_imports_alerting = warn
