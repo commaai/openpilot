@@ -10,7 +10,7 @@ cd $DIR/../
 
 IGNORED_FILES="uv\.lock|docs\/CARS.md"
 
-ALL_FILES=$(git diff --name-only --cached --diff-filter=AM master | sed -E "s/$IGNORED_FILES//g")
+ALL_FILES=$(git diff --name-only --cached --diff-filter=AM $(git merge-base HEAD master) | sed -E "s/$IGNORED_FILES//g")
 PYTHON_FILES=$(echo "$ALL_FILES" | grep --color=never '.py$' || true)
 
 function run() {
