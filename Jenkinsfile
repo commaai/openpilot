@@ -241,6 +241,11 @@ node {
           ["test qcomgpsd", "pytest system/qcomgpsd/tests/test_qcomgpsd.py"],
         ])
       },
+      'PC tests': {
+        pcStage("scons build") {
+          sh "scons --clean && scons --no-cache --random -j42"
+        }
+      },
 
     )
     }
