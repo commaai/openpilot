@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from collections import defaultdict
-from collections.abc import Iterator
-from typing import Any, Callable, Protocol, TypeVar
+from collections.abc import Callable, Iterator
+from typing import Any, Protocol, TypeVar
 
 from tqdm import tqdm
 import capnp
