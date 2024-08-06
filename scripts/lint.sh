@@ -38,12 +38,11 @@ function run_tests() {
   echo $@
   echo "xxxxxxxxxxxx"
 
-  ALL_FILES=$(echo $@ | sed -E "s/$IGNORED_FILES//g")
+  ALL_FILES=$(echo "$@" | sed -E "s/$IGNORED_FILES//g")
   PYTHON_FILES=$(echo "$ALL_FILES" | grep --color=never '.py$' || true)
 
   echo $ALL_FILES
   echo $PYTHON_FILES
-
 
   if [[ -n "$PYTHON_FILES" ]]; then
     run "ruff" ruff check $PYTHON_FILES --quiet
@@ -62,7 +61,7 @@ case $1 in
 esac
 
 if [[ -n $FILES ]]; then
-  run_tests $FILES
+  run_tests "$FILES"
 else
-  run_tests $(git diff --name-only --cached --diff-filter=AM $(git merge-base HEAD master))
+  run_tests "$(git diff --name-only --cached --diff-filter=AM $(git merge-base HEAD master))"
 fi

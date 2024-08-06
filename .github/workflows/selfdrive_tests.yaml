@@ -61,12 +61,22 @@ jobs:
         cd $STRIPPED_DIR
         ${{ env.RUN }} "release/check-dirty.sh && \
                         MAX_EXAMPLES=5 $PYTEST -m 'not slow' selfdrive/car"
-    - name: getting modified files
+
+    - name: Getting modified files
       run: |
         cd $GITHUB_WORKSPACE
         git fetch --unshallow --recurse-submodules=no origin master:master
-        echo FILES=$(git diff --name-only --cached --diff-filter=AM $(git merge-base HEAD master)) >> $GITHUB_ENV
-    - name: static analysis
+        FILES=$(git diff --name-only --cached --diff-filter=AM $(git merge-base HEAD master))
+        cd $STRIPPED_DIR
+        VALID_FILES=""
+        for f in $FILES; do
+          if [[ -f "$f" ]]; then
+            VALID_FILES+="$f "
+          fi
+        done
+        echo FILES=$(echo $VALID_FILES | tr ' ' '\n') >> $GITHUB_ENV
+
+    - name: Static analysis
       timeout-minutes: 1
       run: |
         cd $GITHUB_WORKSPACE
