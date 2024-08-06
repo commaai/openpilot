@@ -26,13 +26,15 @@ EventName = car.CarEvent.EventName
 carlog.addHandler(ForwardingHandler(cloudlog))
 
 
-def set_obd_multiplexing(params: Params, obd_multiplexing: bool):
-  if params.get_bool("ObdMultiplexingEnabled") != obd_multiplexing:
-    cloudlog.warning(f"Setting OBD multiplexing to {obd_multiplexing}")
-    params.remove("ObdMultiplexingChanged")
-    params.put_bool("ObdMultiplexingEnabled", obd_multiplexing)
-    params.get_bool("ObdMultiplexingChanged", block=True)
-    cloudlog.warning("OBD multiplexing set successfully")
+def obd_callback(params: Params):
+  def set_obd_multiplexing(obd_multiplexing: bool):
+    if params.get_bool("ObdMultiplexingEnabled") != obd_multiplexing:
+      cloudlog.warning(f"Setting OBD multiplexing to {obd_multiplexing}")
+      params.remove("ObdMultiplexingChanged")
+      params.put_bool("ObdMultiplexingEnabled", obd_multiplexing)
+      params.get_bool("ObdMultiplexingChanged", block=True)
+      cloudlog.warning("OBD multiplexing set successfully")
+  return set_obd_multiplexing
 
 
 class Car:
@@ -58,11 +60,10 @@ class Car:
       print("Waiting for CAN messages...")
       get_one_can(self.can_sock)
 
-      obd_callback = lambda obd_multiplexing: set_obd_multiplexing(self.params, obd_multiplexing)
       experimental_long_allowed = self.params.get_bool("ExperimentalLongitudinalEnabled")
       num_pandas = len(messaging.recv_one_retry(self.sm.sock['pandaStates']).pandaStates)
       cached_params = self.params.get("CarParamsCache")
-      self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'], obd_callback, experimental_long_allowed, num_pandas, cached_params)
+      self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'], obd_callback(self.params), experimental_long_allowed, num_pandas, cached_params)
 
       # continue onto next fingerprinting step in pandad
       self.params.put("CarVin", self.CP.carVin)

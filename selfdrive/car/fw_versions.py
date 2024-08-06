@@ -331,7 +331,7 @@ if __name__ == "__main__":
   import cereal.messaging as messaging
   from openpilot.common.params import Params
   from openpilot.selfdrive.car.vin import get_vin
-  from openpilot.selfdrive.car.card import set_obd_multiplexing
+  from openpilot.selfdrive.car.card import obd_callback
 
   parser = argparse.ArgumentParser(description='Get firmware version of ECUs')
   parser.add_argument('--scan', action='store_true')
@@ -349,6 +349,7 @@ if __name__ == "__main__":
   params.put_bool("IsOnroad", False)
   time.sleep(0.2)  # thread is 10 Hz
   params.put_bool("IsOnroad", True)
+  set_obd_multiplexing = obd_callback(params)
 
   extra: Any = None
   if args.scan:
@@ -364,14 +365,14 @@ if __name__ == "__main__":
 
   t = time.time()
   print("Getting vin...")
-  set_obd_multiplexing(params, True)
+  set_obd_multiplexing(True)
   vin_rx_addr, vin_rx_bus, vin = get_vin(logcan, sendcan, (0, 1), debug=args.debug)
   print(f'RX: {hex(vin_rx_addr)}, BUS: {vin_rx_bus}, VIN: {vin}')
   print(f"Getting VIN took {time.time() - t:.3f} s")
   print()
 
   t = time.time()
-  fw_vers = get_fw_versions(logcan, sendcan, query_brand=args.brand, extra=extra, num_pandas=num_pandas, debug=args.debug, progress=True)
+  fw_vers = get_fw_versions(logcan, sendcan, set_obd_multiplexing, query_brand=args.brand, extra=extra, num_pandas=num_pandas, debug=args.debug, progress=True)
   _, candidates = match_fw_to_car(fw_vers, vin)
 
   print()
