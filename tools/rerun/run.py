@@ -21,7 +21,6 @@ RR_WIN = "openpilot logs"
 
 """
 Relevant upstream Rerun issues:
-- large time series: https://github.com/rerun-io/rerun/issues/5967
 - loading videos directly: https://github.com/rerun-io/rerun/issues/6532
 """
 
