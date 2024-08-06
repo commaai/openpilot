@@ -147,9 +147,11 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
+    - name: Get ancestor commit
+      run: ${{ env.RUN }} "git fetch --unshallow --recurse-submodules=no origin master:master"
     - name: static analysis
       timeout-minutes: 1
-      run: ${{ env.RUN }} "git fetch --unshallow --recurse-submodules=no origin master:master && scripts/lint.sh"
+      run: ${{ env.RUN }} "scripts/lint.sh"
 
   unit_tests:
     name: unit tests
