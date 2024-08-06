@@ -62,7 +62,7 @@ def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, que
 if __name__ == "__main__":
   import argparse
   from openpilot.common.params import Params
-  from openpilot.selfdrive.car.fw_versions import set_obd_multiplexing
+  from openpilot.selfdrive.car.card import set_obd_multiplexing
 
   parser = argparse.ArgumentParser(description='Get addresses of all ECUs')
   parser.add_argument('--debug', action='store_true')
