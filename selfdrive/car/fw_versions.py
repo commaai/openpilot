@@ -8,7 +8,6 @@ import capnp
 
 import panda.python.uds as uds
 from cereal import car
-from openpilot.common.params import Params
 from openpilot.selfdrive.car import carlog
 from openpilot.selfdrive.car.ecu_addrs import get_ecu_addrs
 from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
