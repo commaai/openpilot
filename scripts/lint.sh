@@ -3,8 +3,6 @@ set -e
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
-UNDERLINE='\033[4m'
-BOLD='\033[1m'
 NC='\033[0m'
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
