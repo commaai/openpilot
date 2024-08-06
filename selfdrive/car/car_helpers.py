@@ -117,7 +117,7 @@ def fingerprint(logcan, sendcan, set_obd_multiplexing, num_pandas, cached_params
       # VIN query only reliably works through OBDII
       vin_rx_addr, vin_rx_bus, vin = get_vin(logcan, sendcan, (0, 1))
       ecu_rx_addrs = get_present_ecus(logcan, sendcan, set_obd_multiplexing, num_pandas=num_pandas)
-      car_fw = get_fw_versions_ordered(logcan, sendcan, vin, ecu_rx_addrs, set_obd_multiplexing, num_pandas=num_pandas)
+      car_fw = get_fw_versions_ordered(logcan, sendcan, set_obd_multiplexing, vin, ecu_rx_addrs, num_pandas=num_pandas)
       cached = False
 
     exact_fw_match, fw_candidates = match_fw_to_car(car_fw, vin)

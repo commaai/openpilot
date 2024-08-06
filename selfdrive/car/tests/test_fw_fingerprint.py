@@ -9,7 +9,7 @@ from openpilot.selfdrive.car import make_can_msg
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
 from openpilot.selfdrive.car.fw_versions import ESSENTIAL_ECUS, FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, build_fw_dict, \
-                                                match_fw_to_car, get_brand_ecu_matches, get_fw_versions, get_present_ecus
+                                                match_fw_to_car, get_brand_ecu_matches, get_fw_versions, get_fw_versions_ordered, get_present_ecus
 from openpilot.selfdrive.car.vin import get_vin
 from openpilot.selfdrive.pandad import can_list_to_can_capnp
 
@@ -325,6 +325,7 @@ class TestFwFingerprintTiming:
 
     mocker.patch("openpilot.selfdrive.car.carlog.exception", fake_carlog_exception)
     fake_socket = FakeSocket()
+    get_fw_versions_ordered(fake_socket, fake_socket, lambda obd: None, '0' * 17, set())
     for brand in FW_QUERY_CONFIGS.keys():
       with subtests.test(brand=brand):
-        get_fw_versions(fake_socket, fake_socket, lambda obd: None, brand, num_pandas=1)
+        get_fw_versions(fake_socket, fake_socket, lambda obd: None, brand)
