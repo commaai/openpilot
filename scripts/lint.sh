@@ -4,7 +4,17 @@ set -e
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 cd $DIR/../
 
-# TODO: bring back rest of pre-commit checks:
-# https://github.com/commaai/openpilot/blob/4b11c9e914707df9def598616995be2a5d355a6a/.pre-commit-config.yaml#L2
+IGNORED_FILES="uv\.lock|docs\/CARS.md"
 
-ruff check .
+PYTHON_FILES=$(git diff --name-only origin/master --diff-filter=AM | grep --color=never '.py$' || true)
+ALL_FILES=$(git diff --name-only origin/master --diff-filter=AM | sed -E "s/$IGNORED_FILES//g")
+
+if [[ -n "$ALL_FILES" ]]; then
+  codespell $ALL_FILES
+  python3 -m pre_commit_hooks.check_added_large_files --enforce-all $ALL_FILES --maxkb=120
+  python3 -m pre_commit_hooks.check_shebang_scripts_are_executable $ALL_FILES
+fi
+
+if [[ -n "$PYTHON_FILES" ]]; then
+  ruff check $PYTHON_FILES
+fi

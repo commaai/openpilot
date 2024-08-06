@@ -87,6 +87,7 @@ testing = [
   "pytest-repeat",
   "ruff",
   "codespell",
+  "pre-commit-hooks",
 ]
 
 dev = [
@@ -179,6 +180,9 @@ exclude = [
   "body/",
   "cereal/",
   "opendbc/",
+  "opendbc_repo",
+  "msg",
+  "msgq_repo",
   "panda/",
   "rednose/",
   "rednose_repo/",
