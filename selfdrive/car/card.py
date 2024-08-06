@@ -58,10 +58,10 @@ class Car:
       print("Waiting for CAN messages...")
       get_one_can(self.can_sock)
 
+      obd_callback = lambda obd_multiplexing: set_obd_multiplexing(self.params, obd_multiplexing)
       experimental_long_allowed = self.params.get_bool("ExperimentalLongitudinalEnabled")
       num_pandas = len(messaging.recv_one_retry(self.sm.sock['pandaStates']).pandaStates)
       cached_params = self.params.get("CarParamsCache")
-      obd_callback = lambda obd_multiplexing: set_obd_multiplexing(self.params, obd_multiplexing)
       self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'], obd_callback, experimental_long_allowed, num_pandas, cached_params)
 
       # continue onto next fingerprinting step in pandad
