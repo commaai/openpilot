@@ -25,9 +25,7 @@ Relevant upstream Rerun issues:
 """
 
 class Rerunner:
-  def __init__(self, route_or_segment_name, camera_config, enabled_services):
-    self.enabled_services = [s.lower() for s in enabled_services]
-    self.log_all = "all" in self.enabled_services
+  def __init__(self, route_or_segment_name, camera_config):
     self.lr = LogReader(route_or_segment_name)
 
     segment_range = SegmentRange(route_or_segment_name)
@@ -60,18 +58,18 @@ class Rerunner:
     blueprint = None
     service_views = []
 
-    log_msg_visible = len(self.enabled_services) <= 3 and not self.log_all
     for topic in sorted(SERVICE_LIST.keys()):
-      if not self.log_all and topic.lower() not in self.enabled_services:
-        continue
       View = rrb.TimeSeriesView if topic != "thumbnail" else rrb.Spatial2DView
-      service_views.append(View(name=topic, origin=f"/{topic}/", visible=log_msg_visible))
+      service_views.append(View(name=topic, origin=f"/{topic}/", visible=False))
       rr.log(topic, rr.SeriesLine(name=topic), timeless=True)
+
+    view_center_blueprint = [rrb.Vertical(*service_views)]
+    if len(self.camera_readers):
+      view_center_blueprint.append(rrb.Vertical(*[rrb.Spatial2DView(name=cam_type, origin=cam_type) for cam_type in self.camera_readers.keys()]))
 
     blueprint = rrb.Blueprint(
       rrb.Horizontal(
-        rrb.Vertical(*service_views),
-        rrb.Vertical(*[rrb.Spatial2DView(name=cam_type, origin=cam_type) for cam_type in self.camera_readers.keys()]),
+        *view_center_blueprint
       ),
       rrb.SelectionPanel(expanded=False),
       rrb.TimePanel(expanded=False)
@@ -106,7 +104,7 @@ class Rerunner:
 
   @staticmethod
   @rr.shutdown_at_exit
-  def _process_log_msgs(blueprint, enabled_services, log_all, lr):
+  def _process_log_msgs(blueprint, lr):
     rr.init(RR_WIN)
     rr.connect(default_blueprint=blueprint)
 
@@ -114,16 +112,13 @@ class Rerunner:
     for msg in lr:
       msg_type = msg.which()
 
-      if not log_all and msg_type.lower() not in enabled_services:
-        continue
-
       if msg_type != "thumbnail":
-        for entity_path, dat in Rerunner._parse_msg(msg.to_dict()[msg.which()], msg.which()):
+        for entity_path, dat in Rerunner._parse_msg(msg.to_dict()[msg_type], msg_type):
           log_msgs[entity_path]["times"].append(msg.logMonoTime / 1e9)
           log_msgs[entity_path]["data"].append(dat)
       else:
         rr.set_time_nanos(RR_TIMELINE_NAME, msg.logMonoTime)
-        rr.log("/thumbnail", rr.ImageEncoded(contents=msg.to_dict()[msg.which()].get("thumbnail")))
+        rr.log("/thumbnail", rr.ImageEncoded(contents=msg.to_dict()[msg_type].get("thumbnail")))
 
     for entity_path, log_msg in log_msgs.items():
       rr.log_temporal_batch(
@@ -146,8 +141,7 @@ class Rerunner:
 
   def load_data(self):
     self._start_rerun()
-    if len(self.enabled_services) > 0:
-      self.lr.run_across_segments(NUM_CPUS, partial(self._process_log_msgs, self.blueprint, self.enabled_services, self.log_all))
+    self.lr.run_across_segments(NUM_CPUS, partial(self._process_log_msgs, self.blueprint))
     for cam_type, cr in self.camera_readers.items():
       cr.run_across_segments(NUM_CPUS, partial(self._process_cam_readers, self.blueprint, cam_type, cr.h, cr.w))
 
@@ -160,23 +154,16 @@ if __name__ == '__main__':
   parser.add_argument("--fcam", action="store_true", help="Show driving camera")
   parser.add_argument("--ecam", action="store_true", help="Show wide camera")
   parser.add_argument("--dcam", action="store_true", help="Show driver monitoring camera")
-  parser.add_argument("--print_services", action="store_true", help="List out openpilot services")
-  parser.add_argument("--services", default=["all"], nargs='*', help="Specify openpilot services that will be logged.\
-                                                                All services will be logged if not specified.")
-  parser.add_argument("--route", nargs='?', help="The route or segment name to plot")
+  parser.add_argument("route_or_segment_name", nargs='?', help="The route or segment name to plot")
   args = parser.parse_args()
 
-  if not args.demo and not args.route:
+  if not args.demo and not args.route_or_segment_name:
     parser.print_help()
     sys.exit()
 
-  if args.print_services:
-    print("\n".join(SERVICE_LIST.keys()))
-    sys.exit()
-
   camera_config = CameraConfig(args.qcam, args.fcam, args.ecam, args.dcam)
-  route_or_segment_name = DEMO_ROUTE if args.demo else args.route.strip()
+  route_or_segment_name = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
 
-  rerunner = Rerunner(route_or_segment_name, camera_config, args.services)
+  rerunner = Rerunner(route_or_segment_name, camera_config)
   rerunner.load_data()
 
