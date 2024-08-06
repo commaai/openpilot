@@ -104,8 +104,8 @@ def rate_limit_steer(new_steer, last_steer):
 
 
 class CarController(CarControllerBase):
-  def __init__(self, dbc_name, CP, VM):
-    super().__init__(dbc_name, CP, VM)
+  def __init__(self, dbc_name, CP):
+    super().__init__(dbc_name, CP)
     self.packer = CANPacker(dbc_name)
     self.params = CarControllerParams(CP)
     self.CAN = hondacan.CanBus(CP)

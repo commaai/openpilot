@@ -16,7 +16,6 @@ from openpilot.common.numpy_fast import clip
 from openpilot.selfdrive.car import DT_CTRL, apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, get_friction, STD_CARGO_KG
 from openpilot.selfdrive.car.values import PLATFORMS
 from openpilot.selfdrive.controls.lib.events import Events
-from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 from openpilot.selfdrive.pandad import can_capnp_to_list
 
 ButtonType = car.CarState.ButtonEvent.Type
@@ -91,7 +90,6 @@ def get_torque_params():
 class CarInterfaceBase(ABC):
   def __init__(self, CP, CarController, CarState):
     self.CP = CP
-    self.VM = VehicleModel(CP)
 
     self.frame = 0
     self.steering_unpressed = 0
@@ -109,7 +107,7 @@ class CarInterfaceBase(ABC):
     self.can_parsers = [self.cp, self.cp_cam, self.cp_adas, self.cp_body, self.cp_loopback]
 
     dbc_name = "" if self.cp is None else self.cp.dbc_name
-    self.CC: CarControllerBase = CarController(dbc_name, CP, self.VM)
+    self.CC: CarControllerBase = CarController(dbc_name, CP)
 
   def apply(self, c: car.CarControl, now_nanos: int) -> tuple[car.CarControl.Actuators, list[SendCan]]:
     return self.CC.update(c, self.CS, now_nanos)
@@ -466,7 +464,7 @@ class CarStateBase(ABC):
 
 
 class CarControllerBase(ABC):
-  def __init__(self, dbc_name: str, CP, VM):
+  def __init__(self, dbc_name: str, CP):
     self.CP = CP
     self.frame = 0
 
