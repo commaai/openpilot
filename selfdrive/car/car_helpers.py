@@ -180,7 +180,7 @@ def get_car(logcan, sendcan, set_obd_multiplexing, experimental_long_allowed, nu
   CP.fingerprintSource = source
   CP.fuzzyFingerprint = not exact_match
 
-  return get_car_interface(CP), CP
+  return get_car_interface(CP)
 
 
 def get_demo_car_params():
