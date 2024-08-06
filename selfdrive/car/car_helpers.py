@@ -165,7 +165,7 @@ def get_car_interface(CP):
   return CarInterface(CP, CarController, CarState)
 
 
-def get_car(logcan, sendcan, experimental_long_allowed, set_obd_multiplexing, num_pandas=1, cached_params=None):
+def get_car(logcan, sendcan, set_obd_multiplexing, experimental_long_allowed, num_pandas=1, cached_params=None):
   candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan, set_obd_multiplexing, num_pandas, cached_params)
 
   if candidate is None:
