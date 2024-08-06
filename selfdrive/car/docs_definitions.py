@@ -234,15 +234,15 @@ class CarDocs:
     self.car_fingerprint = CP.carFingerprint
 
     # longitudinal column
-    op_long = "Stock"
+    self.op_long = "Stock"
     if CP.experimentalLongitudinalAvailable or CP.enableDsu:
-      op_long = "openpilot available"
+      self.op_long = "openpilot available"
       if CP.enableDsu:
         self.footnotes.append(CommonFootnote.EXP_LONG_DSU)
       else:
         self.footnotes.append(CommonFootnote.EXP_LONG_AVAIL)
     elif CP.openpilotLongitudinalControl and not CP.enableDsu:
-      op_long = "openpilot"
+      self.op_long = "openpilot"
 
     # min steer & enable speed columns
     # TODO: set all the min steer speeds in carParams and remove this
@@ -278,7 +278,7 @@ class CarDocs:
       Column.MAKE: self.make,
       Column.MODEL: self.model,
       Column.PACKAGE: self.package,
-      Column.LONGITUDINAL: op_long,
+      Column.LONGITUDINAL: self.op_long,
       Column.FSR_LONGITUDINAL: f"{max(self.min_enable_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.FSR_STEERING: f"{max(self.min_steer_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.STEERING_TORQUE: Star.EMPTY,
@@ -302,7 +302,7 @@ class CarDocs:
 
   def get_detail_sentence(self, CP):
     if not CP.notCar:
-      return get_detail_sentence(self.make, self.model, CP.longitudinalControl, CP.minEnableSpeed, CP.minSteerSpeed, CP.steeringTorque, CP.autoResumeSng)
+      return get_detail_sentence(self.make, self.model, self.op_long, CP.minEnableSpeed, CP.minSteerSpeed, self.row[Column.STEERING_TORQUE], self.auto_resume)
     else:
       if CP.carFingerprint == "COMMA_BODY":
         return "The body is a robotics dev kit that can run openpilot. <a href='https://www.commabody.com'>Learn more.</a>"
