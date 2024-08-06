@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 import argparse
-import pickle
 
-from openpilot.selfdrive.car.docs import get_all_car_docs
-
+import os
+import requests
 
 def dump_car_docs(path):
-  with open(path, 'wb') as f:
-    pickle.dump(get_all_car_docs(), f)
+  car_docs_url = "https://raw.githubusercontent.com/commaai/openpilot/master/docs/CARS.md"
+  output_path = os.path.join(path, "CARS.md")
+  response = requests.get(car_docs_url)
+  with open(output_path, "wb") as file:
+    file.write(response.content)
   print(f'Dumping car info to {path}')
 
 
