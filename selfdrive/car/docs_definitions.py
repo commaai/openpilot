@@ -6,29 +6,11 @@ from enum import Enum
 
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
+from openpilot.common.enums import Column, Star
+from openpilot.common.detail_sentence import get_detail_sentence
 
 GOOD_TORQUE_THRESHOLD = 1.0  # m/s^2
 MODEL_YEARS_RE = r"(?<= )((\d{4}-\d{2})|(\d{4}))(,|$)"
-
-
-class Column(Enum):
-  MAKE = "Make"
-  MODEL = "Model"
-  PACKAGE = "Supported Package"
-  LONGITUDINAL = "ACC"
-  FSR_LONGITUDINAL = "No ACC accel below"
-  FSR_STEERING = "No ALC below"
-  STEERING_TORQUE = "Steering Torque"
-  AUTO_RESUME = "Resume from stop"
-  HARDWARE = "Hardware Needed"
-  VIDEO = "Video"
-
-
-class Star(Enum):
-  FULL = "full"
-  HALF = "half"
-  EMPTY = "empty"
-
 
 # A part + its comprised parts
 @dataclass

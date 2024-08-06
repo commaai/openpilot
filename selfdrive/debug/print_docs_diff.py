@@ -6,8 +6,8 @@ import subprocess
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.conversions import Conversions as CV
-
-from openpilot.selfdrive.car.docs_definitions import Column, get_detail_sentence
+from openpilot.common.enums import Column
+from openpilot.common.detail_sentence import get_detail_sentence
 
 COLUMNS = "|" + "|".join([column.value for column in Column]) + "|"
 COLUMN_HEADER = "|---|---|---|{}|".format("|".join([":---:"] * (len(Column) - 3)))
