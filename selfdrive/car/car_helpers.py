@@ -105,8 +105,8 @@ def fingerprint(logcan, sendcan, num_pandas):
         if cached_params.carName == "mock":
           cached_params = None
 
-    if (cached_params is not None and len(cached_params.carFw) > 0 and
-      cached_params.carVin is not VIN_UNKNOWN and not disable_fw_cache):
+    if cached_params is not None and len(cached_params.carFw) > 0 and \
+       cached_params.carVin is not VIN_UNKNOWN and not disable_fw_cache:
       carlog.warning("Using cached CarParams")
       vin_rx_addr, vin_rx_bus, vin = -1, -1, cached_params.carVin
       car_fw = list(cached_params.carFw)
