@@ -285,7 +285,7 @@ jobs:
     if: github.event_name == 'pull_request'
     steps:
       - name: Create directory
-        run: mkdir -p /tmp/openpilot_cache/
+        run: mkdir -p ./tmp/openpilot_cache/
       - name: Download CARS.md
         run: wget -O ./tmp/openpilot_cache/CARS.md https://raw.githubusercontent.com/commaai/openpilot/master/docs/CARS.md
       - name: Run print_docs_diff.py
