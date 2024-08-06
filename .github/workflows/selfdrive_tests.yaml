@@ -63,6 +63,7 @@ jobs:
                         MAX_EXAMPLES=5 $PYTEST -m 'not slow' selfdrive/car"
 
     - name: Getting modified files
+      timeout-minutes: 1
       run: |
         cd $GITHUB_WORKSPACE
         git fetch --unshallow --recurse-submodules=no origin master:master
@@ -157,16 +158,17 @@ jobs:
                     (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-latest' }}
     steps:
     - uses: actions/checkout@v4
+    - name: Installing python
+      uses: actions/setup-python@v5
       with:
-        submodules: true
-    - uses: ./.github/workflows/setup-with-retry
-    - name: Build openpilot
-      run: ${{ env.RUN }} "scons -j$(nproc)"
+        python-version: '3.12.3'
+    - name: Setup
+      run: tools/op.sh setup
     - name: Get ancestor commit
-      run: ${{ env.RUN }} "git fetch --unshallow --recurse-submodules=no origin master:master"
+      run: git fetch --unshallow --recurse-submodules=no origin master:master
     - name: static analysis
       timeout-minutes: 1
-      run: ${{ env.RUN }} "scripts/lint.sh"
+      run: tools/op.sh lint
 
   unit_tests:
     name: unit tests
