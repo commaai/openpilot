@@ -61,13 +61,17 @@ jobs:
         cd $STRIPPED_DIR
         ${{ env.RUN }} "release/check-dirty.sh && \
                         MAX_EXAMPLES=5 $PYTEST -m 'not slow' selfdrive/car"
+    - name: getting commit ancestor
+      run: |
+        cd $STRIPPED_DIR
+        ${{ env.RUN }} "git fetch --unshallow --recurse-submodules=no origin master:master"
     - name: static analysis
       timeout-minutes: 1
       run: |
         cd $GITHUB_WORKSPACE
         cp pyproject.toml $STRIPPED_DIR
         cd $STRIPPED_DIR
-        ${{ env.RUN }} "git fetch --unshallow --recurse-submodules=no origin master:master && scripts/lint.sh"
+        ${{ env.RUN }} "scripts/lint.sh"
 
   build:
     strategy:
