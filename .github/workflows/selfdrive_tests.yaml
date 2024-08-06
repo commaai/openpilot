@@ -65,7 +65,7 @@ jobs:
       run: |
         cd $GITHUB_WORKSPACE
         git fetch --unshallow --recurse-submodules=no origin master:master
-        echo "FILES=$(git diff --name-only --cached --diff-filter=AM $(git merge-base HEAD master))" >> $GITHUB_ENV
+        echo FILES=$(git diff --name-only --cached --diff-filter=AM $(git merge-base HEAD master)) >> $GITHUB_ENV
     - name: static analysis
       timeout-minutes: 1
       run: |
