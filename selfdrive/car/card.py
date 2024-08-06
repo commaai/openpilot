@@ -28,11 +28,11 @@ carlog.addHandler(ForwardingHandler(cloudlog))
 
 def set_obd_multiplexing(params: Params, obd_multiplexing: bool):
   if params.get_bool("ObdMultiplexingEnabled") != obd_multiplexing:
-    carlog.warning(f"Setting OBD multiplexing to {obd_multiplexing}")
+    cloudlog.warning(f"Setting OBD multiplexing to {obd_multiplexing}")
     params.remove("ObdMultiplexingChanged")
     params.put_bool("ObdMultiplexingEnabled", obd_multiplexing)
     params.get_bool("ObdMultiplexingChanged", block=True)
-    carlog.warning("OBD multiplexing set successfully")
+    cloudlog.warning("OBD multiplexing set successfully")
 
 
 class Car:
