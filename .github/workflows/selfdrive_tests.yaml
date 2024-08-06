@@ -291,7 +291,7 @@ jobs:
       - name: Save diff
         id: save_diff
         run: |
-          output=$(python selfdrive/debug/print_docs_diff.py --path /tmp/openpilot_cache/base_car_docs)
+          output=$(${{ env.RUN }} python selfdrive/debug/print_docs_diff.py --path /tmp/openpilot_cache/base_car_docs)
           output="${output//$'\n'/'%0A'}"
           echo "::set-output name=diff::$output"
       - name: Find comment
