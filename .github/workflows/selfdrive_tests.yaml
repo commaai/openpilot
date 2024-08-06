@@ -284,18 +284,16 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     steps:
-      - name: Create directory
-        run: mkdir -p ./tmp/openpilot_cache/
-      - name: Download CARS.md
-        run: wget -O ./tmp/openpilot_cache/CARS.md https://raw.githubusercontent.com/commaai/openpilot/master/docs/CARS.md
-      - name: Run print_docs_diff.py
-        run: ${{ env.RUN }} "python selfdrive/debug/print_docs_diff.py --path ./tmp/openpilot_cache/"
-        id: print-diff
-      - name: Save diff
+      - name: Save car docs diff
         id: save_diff
-        run: echo "::set-output name=diff::${{ steps.print-diff.outputs.stdout }}"
-      - name: Delete directory
-        run: rm -rf /tmp/openpilot_cache/*
+        run: |
+          cd current
+          ${{ env.RUN }} "scons -j$(nproc)"
+          wget -O ./tmp/openpilot_cache/base_car_docs/CARS.md https://raw.githubusercontent.com/commaai/openpilot/master/docs/CARS.md
+          output=$(${{ env.RUN }} "python selfdrive/debug/print_docs_diff.py --path /tmp/openpilot_cache/base_car_docs")
+          output="${output//$'\n'/'%0A'}"
+          echo "::set-output name=diff::$output"
+          rm -rf /tmp/openpilot_cache/*
       - name: Find comment
         if: ${{ env.AZURE_TOKEN != '' }}
         uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e
