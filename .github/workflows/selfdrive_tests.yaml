@@ -287,9 +287,9 @@ jobs:
       - name: Create directory
         run: mkdir -p /tmp/openpilot_cache/
       - name: Download CARS.md
-        run: wget -O tmp/openpilot_cache/CARS.md https://raw.githubusercontent.com/commaai/openpilot/master/docs/CARS.md
+        run: wget -O ./tmp/openpilot_cache/CARS.md https://raw.githubusercontent.com/commaai/openpilot/master/docs/CARS.md
       - name: Run print_docs_diff.py
-        run: ${{ env.RUN }} "python selfdrive/debug/print_docs_diff.py --path tmp/openpilot_cache/"
+        run: ${{ env.RUN }} "python selfdrive/debug/print_docs_diff.py --path ./tmp/openpilot_cache/"
         id: print-diff
       - name: Save diff
         id: save_diff
