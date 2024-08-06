@@ -25,11 +25,8 @@ Relevant upstream Rerun issues:
 """
 
 class Rerunner:
-  def __init__(self, route_or_segment_name, camera_config):
+  def __init__(self, route, segment_range, camera_config):
     self.lr = LogReader(route_or_segment_name)
-
-    segment_range = SegmentRange(route_or_segment_name)
-    route = Route(segment_range.route_name)
 
     # hevc files don't have start_time. We get it from qcamera.ts
     start_time = 0
@@ -164,6 +161,15 @@ if __name__ == '__main__':
   camera_config = CameraConfig(args.qcam, args.fcam, args.ecam, args.dcam)
   route_or_segment_name = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
 
-  rerunner = Rerunner(route_or_segment_name, camera_config)
+  sr = SegmentRange(route_or_segment_name)
+  r = Route(sr.route_name)
+
+  if len(sr.seg_idxs) > 1:
+    print("You're requesting more than 1 segment, please be aware that might take a lot of memory")
+    response = input("Do you wish to continue? (Y/n): ")
+    if response.strip().lower() != "y":
+      sys.exit()
+
+  rerunner = Rerunner(r, sr, camera_config)
   rerunner.load_data()
 
