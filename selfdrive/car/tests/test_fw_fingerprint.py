@@ -325,7 +325,7 @@ class TestFwFingerprintTiming:
 
     mocker.patch("openpilot.selfdrive.car.carlog.exception", fake_carlog_exception)
     fake_socket = FakeSocket()
-    get_fw_versions_ordered(fake_socket, fake_socket, lambda obd: None, '0' * 17, set(), num_pandas=1)
+    get_fw_versions_ordered(fake_socket, fake_socket, lambda obd: None, '0' * 17, set())
     for brand in FW_QUERY_CONFIGS.keys():
       with subtests.test(brand=brand):
-        get_fw_versions(fake_socket, fake_socket, lambda obd: None, brand, num_pandas=1)
+        get_fw_versions(fake_socket, fake_socket, lambda obd: None, brand)
