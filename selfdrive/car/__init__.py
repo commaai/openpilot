@@ -9,9 +9,9 @@ import capnp
 
 from cereal import car
 from panda.python.uds import SERVICE_TYPE
-from openpilot.common.numpy_fast import clip, interp
 from openpilot.common.utils import Freezable
 from openpilot.selfdrive.car.docs_definitions import CarDocs
+from openpilot.selfdrive.car.numpy_fast import clip, interp
 
 # set up logging
 carlog = logging.getLogger('carlog')
