@@ -291,7 +291,7 @@ jobs:
       - uses: ./.github/workflows/setup-with-retry
       - name: Get base car info
         run: |
-          mkir -p /tmp/openpilot_cache/base_car_docs/
+          mkdir -p /tmp/openpilot_cache/base_car_docs/
           wget -O /tmp/openpilot_cache/base_car_docs/CARS.md https://raw.githubusercontent.com/commaai/openpilot/master/docs/CARS.md
           sudo chown -R $USER:$USER ${{ github.workspace }}
       - uses: actions/checkout@v4
