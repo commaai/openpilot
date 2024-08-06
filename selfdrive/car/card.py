@@ -66,7 +66,6 @@ class Car:
       self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'], obd_callback(self.params), experimental_long_allowed, num_pandas, cached_params)
 
       # continue onto next fingerprinting step in pandad
-      self.params.put("CarVin", self.CP.carVin)
       self.params.put_bool("FirmwareQueryDone", True)
     else:
       self.CI, self.CP = CI, CI.CP
