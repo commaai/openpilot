@@ -287,7 +287,6 @@ jobs:
       - name: Save car docs diff
         id: save_diff
         run: |
-          cd current
           ${{ env.RUN }} "scons -j$(nproc)"
           wget -O ./tmp/openpilot_cache/base_car_docs/CARS.md https://raw.githubusercontent.com/commaai/openpilot/master/docs/CARS.md
           output=$(${{ env.RUN }} "python selfdrive/debug/print_docs_diff.py --path /tmp/openpilot_cache/base_car_docs")
