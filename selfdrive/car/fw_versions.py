@@ -328,9 +328,9 @@ if __name__ == "__main__":
   import time
   import argparse
   import cereal.messaging as messaging
+  from openpilot.common.params import Params
   from openpilot.selfdrive.car.vin import get_vin
   from openpilot.selfdrive.car.card import set_obd_multiplexing
-  from openpilot.common.params import Params
 
   parser = argparse.ArgumentParser(description='Get firmware version of ECUs')
   parser.add_argument('--scan', action='store_true')
