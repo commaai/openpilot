@@ -26,6 +26,7 @@ MODEL_TO_BRAND = {c: b for b, e in VERSIONS.items() for c in e}
 REQUESTS = [(brand, config, r) for brand, config in FW_QUERY_CONFIGS.items() for r in config.requests]
 
 T = TypeVar('T')
+ObdCallback = Callable[[bool], None]
 
 
 def chunks(l: list[T], n: int = 128) -> Iterator[list[T]]:
@@ -170,7 +171,7 @@ def match_fw_to_car(fw_versions: list[capnp.lib.capnp._DynamicStructBuilder], vi
   return True, set()
 
 
-def get_present_ecus(logcan, sendcan, set_obd_multiplexing, num_pandas: int = 1) -> set[EcuAddrBusType]:
+def get_present_ecus(logcan, sendcan, set_obd_multiplexing: ObdCallback, num_pandas: int = 1) -> set[EcuAddrBusType]:
   # queries are split by OBD multiplexing mode
   queries: dict[bool, list[list[EcuAddrBusType]]] = {True: [], False: []}
   parallel_queries: dict[bool, list[EcuAddrBusType]] = {True: [], False: []}
@@ -226,7 +227,7 @@ def get_brand_ecu_matches(ecu_rx_addrs: set[EcuAddrBusType]) -> dict[str, set[Ad
   return brand_matches
 
 
-def get_fw_versions_ordered(logcan, sendcan, vin: str, ecu_rx_addrs: set[EcuAddrBusType], set_obd_multiplexing: Callable[[bool], None],
+def get_fw_versions_ordered(logcan, sendcan, vin: str, ecu_rx_addrs: set[EcuAddrBusType], set_obd_multiplexing: ObdCallback,
                             timeout: float = 0.1, num_pandas: int = 1, debug: bool = False, progress: bool = False) -> list[capnp.lib.capnp._DynamicStructBuilder]:
   """Queries for FW versions ordering brands by likelihood, breaks when exact match is found"""
 
@@ -249,8 +250,8 @@ def get_fw_versions_ordered(logcan, sendcan, vin: str, ecu_rx_addrs: set[EcuAddr
   return all_car_fw
 
 
-def get_fw_versions(logcan, sendcan, set_obd_multiplexing, query_brand: str = None, extra: OfflineFwVersions = None, timeout: float = 0.1, num_pandas: int = 1,
-                    debug: bool = False, progress: bool = False) -> list[capnp.lib.capnp._DynamicStructBuilder]:
+def get_fw_versions(logcan, sendcan, set_obd_multiplexing: ObdCallback, query_brand: str = None, extra: OfflineFwVersions = None, timeout: float = 0.1,
+                    num_pandas: int = 1, debug: bool = False, progress: bool = False) -> list[capnp.lib.capnp._DynamicStructBuilder]:
   versions = VERSIONS.copy()
 
   if query_brand is not None:
