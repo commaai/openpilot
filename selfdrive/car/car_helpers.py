@@ -154,8 +154,8 @@ def fingerprint(logcan, sendcan, set_obd_multiplexing, num_pandas, cached_params
     source = car.CarParams.FingerprintSource.fixed
 
   carlog.error({"event": "fingerprinted", "car_fingerprint": car_fingerprint, "source": source, "fuzzy": not exact_match,
-                 "cached": cached, "fw_count": len(car_fw), "ecu_responses": list(ecu_rx_addrs), "vin_rx_addr": vin_rx_addr,
-                 "vin_rx_bus": vin_rx_bus, "fingerprints": repr(finger), "fw_query_time": fw_query_time})
+                "cached": cached, "fw_count": len(car_fw), "ecu_responses": list(ecu_rx_addrs), "vin_rx_addr": vin_rx_addr,
+                "vin_rx_bus": vin_rx_bus, "fingerprints": repr(finger), "fw_query_time": fw_query_time})
 
   return car_fingerprint, finger, vin, car_fw, source, exact_match
 
@@ -180,6 +180,7 @@ def get_car(logcan, sendcan, experimental_long_allowed, set_obd_multiplexing, nu
   CP.fuzzyFingerprint = not exact_match
 
   return get_car_interface(CP), CP
+
 
 def get_demo_car_params():
   platform = MOCK.MOCK
