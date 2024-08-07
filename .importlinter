@@ -36,7 +36,6 @@ ignore_imports =
     # these two will still live in openpilot, but require some modification
     openpilot.selfdrive.car.fw_versions -> openpilot.common.params
     openpilot.selfdrive.car.ecu_addrs -> openpilot.common.params
-    # requires generic CAN send/receive functions
 
     # these are okay
     openpilot.selfdrive.car.card -> openpilot.common.swaglog
