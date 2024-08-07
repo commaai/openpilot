@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import time
-from dataclasses import dataclass
 from types import SimpleNamespace
 
 import cereal.messaging as messaging
@@ -16,7 +15,7 @@ from openpilot.common.swaglog import cloudlog, ForwardingHandler
 
 from openpilot.selfdrive.pandad import can_list_to_can_capnp, can_capnp_to_list
 from openpilot.selfdrive.car import DT_CTRL, carlog
-from openpilot.selfdrive.car.can_definitions import CanSendCallable
+from openpilot.selfdrive.car.can_definitions import CanData, CanSendCallable
 from openpilot.selfdrive.car.fw_versions import ObdCallback
 from openpilot.selfdrive.car.car_helpers import get_car
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
@@ -39,13 +38,6 @@ def obd_callback(params: Params) -> ObdCallback:
       params.get_bool("ObdMultiplexingChanged", block=True)
       cloudlog.warning("OBD multiplexing set successfully")
   return set_obd_multiplexing
-
-
-@dataclass
-class CanData:
-  address: int
-  dat: bytes
-  src: int
 
 
 def get_one_can(logcan: messaging.SubSocket) -> list[CanData]:
