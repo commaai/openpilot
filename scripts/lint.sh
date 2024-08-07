@@ -41,9 +41,6 @@ function run_tests() {
   ALL_FILES=$(echo "$@" | sed -E "s/$IGNORED_FILES|$IGNORED_DIRS//g")
   PYTHON_FILES=$(echo "$ALL_FILES" | grep --color=never '.py$' || true)
 
-  echo $ALL_FILES
-  echo $PYTHON_FILES
-
   if [[ -n "$PYTHON_FILES" ]]; then
     run "ruff" ruff check $PYTHON_FILES --quiet
     run "mypy" mypy $PYTHON_FILES
@@ -83,6 +80,5 @@ else
   STAGED_FILES="git diff --name-only --staged --diff-filter=AM $ANCESTOR"
   UNSTAGED_FILES="git diff --name-only --diff-filter=AM $ANCESTOR"
   FILES=$({ $STAGED_FILES ; $UNSTAGED_FILES ; } | sort | uniq )
-  echo $FILES
   run_tests "$FILES"
 fi
