@@ -193,8 +193,8 @@ def get_friction(lateral_accel_error: float, lateral_accel_deadzone: float, fric
   return friction
 
 
-def make_can_msg(addr, dat, bus):
-  return [addr, dat, bus]
+def make_can_msg(addr: int, dat: bytes, bus: int) -> tuple[int, bytes, int]:
+  return addr, dat, bus
 
 
 def make_tester_present_msg(addr, bus, subaddr=None, suppress_response=False):
