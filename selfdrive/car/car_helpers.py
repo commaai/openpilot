@@ -138,7 +138,8 @@ def fingerprint(logcan, sendcan, set_obd_multiplexing, num_pandas, cached_params
 
   # CAN fingerprint
   # drain CAN socket so we get the latest messages
-  messaging.drain_sock_raw(logcan)
+  # messaging.drain_sock_raw(logcan)
+  logcan()
   car_fingerprint, finger = can_fingerprint(lambda: get_one_can(logcan))
 
   exact_match = True

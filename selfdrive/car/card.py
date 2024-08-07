@@ -13,7 +13,7 @@ from openpilot.common.realtime import config_realtime_process, Priority, Ratekee
 from openpilot.common.swaglog import cloudlog, ForwardingHandler
 
 from openpilot.selfdrive.pandad import can_list_to_can_capnp
-from openpilot.selfdrive.car import DT_CTRL, carlog
+from openpilot.selfdrive.car import DT_CTRL, carlog, make_can_msg
 from openpilot.selfdrive.car.fw_versions import ObdCallback
 from openpilot.selfdrive.car.car_helpers import get_car, get_one_can
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
@@ -39,16 +39,14 @@ def obd_callback(params: Params) -> ObdCallback:
 
 
 def can_recv_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket):
-  def can_recv(wait_for_one=False):  # call rx/tx?
+  def can_recv(wait_for_one: bool = False) -> list[list[int, bytes, int]]:  # call rx/tx?
     can_packets = messaging.drain_sock(logcan, wait_for_one=wait_for_one)
-    return can_packets
+    return [make_can_msg(msg.address, msg.dat, msg.src) for msg in can_packets]
 
-  # def can_send(tx_addr: int, dat: bytes, bus: int):
-  def can_send(msg: list[int, bytes, int]):
+  def can_send(msg: list[int, bytes, int]) -> None:
     sendcan.send(can_list_to_can_capnp([msg], msgtype='sendcan'))
 
   return can_recv, can_send
-
 
 
 class Car:
@@ -78,9 +76,8 @@ class Car:
       num_pandas = len(messaging.recv_one_retry(self.sm.sock['pandaStates']).pandaStates)
       cached_params = self.params.get("CarParamsCache")
 
-      cr, cs = can_recv_callbacks(self.can_sock, self.pm.sock['sendcan'])
-
-      self.CI = get_car(self.can_sock, self.pm.sock['sendcan'], obd_callback(self.params), experimental_long_allowed, num_pandas, cached_params)
+      self.CI = get_car(*can_recv_callbacks(self.can_sock, self.pm.sock['sendcan']), obd_callback(self.params),
+                        experimental_long_allowed, num_pandas, cached_params)
       self.CP = self.CI.CP
 
       # continue onto next fingerprinting step in pandad
