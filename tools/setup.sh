@@ -34,6 +34,38 @@ cat << 'EOF'
 EOF
 }
 
+function sentry_send_event() {
+  SENTRY_KEY=dd0cba62ba0ac07ff9f388f8f1e6a7f4
+  SENTRY_URL=https://sentry.io/api/4507726145781760/store/
+
+  EVENT=$1
+  EVENT_TYPE=${2:-$EVENT}
+  EVENT_LOG=${3:-"NA"}
+
+  PLATFORM=$(uname -s)
+  ARCH=$(uname -m)
+  if [[ $PLATFORM == "Darwin" ]]; then
+    OS="macos"
+  elif [[ $PLATFORM == "Linux" ]]; then
+    OS="linux"
+  fi
+
+  if [[ $ARCH == armv8* ]] || [[ $ARCH == arm64* ]] || [[ $ARCH == aarch64* ]]; then
+    ARCH="aarch64"
+  elif [[ $ARCH == "x86_64" ]] || [[ $ARCH == i686* ]]; then
+    ARCH="x86"
+  fi
+
+  PYTHON_VERSION=$(echo $(python3 --version 2> /dev/null || echo "NA"))
+  BRANCH=$(echo $(git -C $OPENPILOT_ROOT rev-parse --abbrev-ref HEAD 2> /dev/null || echo "NA"))
+  COMMIT=$(echo $(git -C $OPENPILOT_ROOT rev-parse HEAD 2> /dev/null || echo "NA"))
+
+  curl -s -o /dev/null -X POST -g --data "{ \"exception\": { \"values\": [{ \"type\": \"$EVENT\" }] }, \"tags\" : { \"event_type\" : \"$EVENT_TYPE\", \"event_log\" : \"$EVENT_LOG\", \"os\" : \"$OS\", \"arch\" : \"$ARCH\", \"python_version\" : \"$PYTHON_VERSION\" , \"git_branch\" : \"$BRANCH\", \"git_commit\" : \"$COMMIT\" }  }" \
+    -H 'Content-Type: application/json' \
+    -H "X-Sentry-Auth: Sentry sentry_version=7, sentry_key=$SENTRY_KEY, sentry_client=op_setup/0.1" \
+    $SENTRY_URL 2> /dev/null
+}
+
 function check_stdin() {
   if [ -t 0 ]; then
     INTERACTIVE=1
@@ -99,6 +131,7 @@ function check_git() {
   echo "Checking for git..."
   if ! command -v "git" > /dev/null 2>&1; then
     echo -e " ↳ [${RED}✗${NC}] git not found on your system, can't continue!"
+    sentry_send_event "SETUP_FAILURE" "ERROR_GIT_NOT_FOUND"
     return 1
   else
     echo -e " ↳ [${GREEN}✔${NC}] git found.\n"
@@ -117,13 +150,27 @@ function git_clone() {
   fi
 
   echo -e " ↳ [${RED}✗${NC}] failed to clone openpilot!"
+  sentry_send_event "SETUP_FAILURE" "ERROR_GIT_CLONE"
   return 1
 }
 
 function install_with_op() {
   cd $OPENPILOT_ROOT
   $OPENPILOT_ROOT/tools/op.sh install
-  $OPENPILOT_ROOT/tools/op.sh setup || (echo -e "\n[${RED}✗${NC}] failed to install openpilot!" && return 1)
+
+  LOG_FILE=$(mktemp)
+
+  if ! $OPENPILOT_ROOT/tools/op.sh --log $LOG_FILE setup; then
+    echo -e "\n[${RED}✗${NC}] failed to install openpilot!"
+
+    ERROR_TYPE="$(cat "$LOG_FILE" | sed '1p;d')"
+    ERROR_LOG="$(cat "$LOG_FILE" | sed '2p;d')"
+    sentry_send_event "SETUP_FAILURE" "$ERROR_TYPE" "$ERROR_LOG" || true
+
+    return 1
+  else
+    sentry_send_event "SETUP_SUCCESS" || true
+  fi
 
   echo -e "\n----------------------------------------------------------------------"
   echo -e "[${GREEN}✔${NC}] openpilot was successfully installed into ${BOLD}$OPENPILOT_ROOT${NC}"
@@ -132,7 +179,6 @@ function install_with_op() {
 }
 
 show_motd
-
 check_stdin
 ask_dir
 check_dir

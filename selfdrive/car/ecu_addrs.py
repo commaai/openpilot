@@ -4,10 +4,9 @@ import time
 
 import cereal.messaging as messaging
 from panda.python.uds import SERVICE_TYPE
-from openpilot.selfdrive.car import make_tester_present_msg
+from openpilot.selfdrive.car import make_tester_present_msg, carlog
 from openpilot.selfdrive.car.fw_query_definitions import EcuAddrBusType
 from openpilot.selfdrive.pandad import can_list_to_can_capnp
-from openpilot.common.swaglog import cloudlog
 
 
 def _is_tester_present_response(msg: capnp.lib.capnp._DynamicStructReader, subaddr: int = None) -> bool:
@@ -45,7 +44,7 @@ def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, que
       for packet in can_packets:
         for msg in packet.can:
           if not len(msg.dat):
-            cloudlog.warning("ECU addr scan: skipping empty remote frame")
+            carlog.warning("ECU addr scan: skipping empty remote frame")
             continue
 
           subaddr = None if (msg.address, None, msg.src) in responses else msg.dat[0]
@@ -56,14 +55,14 @@ def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, que
                 print(f"Duplicate ECU address: {hex(msg.address)}")
             ecu_responses.add((msg.address, subaddr, msg.src))
   except Exception:
-    cloudlog.exception("ECU addr scan exception")
+    carlog.exception("ECU addr scan exception")
   return ecu_responses
 
 
 if __name__ == "__main__":
   import argparse
   from openpilot.common.params import Params
-  from openpilot.selfdrive.car.fw_versions import set_obd_multiplexing
+  from openpilot.selfdrive.car.card import obd_callback
 
   parser = argparse.ArgumentParser(description='Get addresses of all ECUs')
   parser.add_argument('--debug', action='store_true')
@@ -82,7 +81,7 @@ if __name__ == "__main__":
   time.sleep(0.2)  # thread is 10 Hz
   params.put_bool("IsOnroad", True)
 
-  set_obd_multiplexing(params, not args.no_obd)
+  obd_callback(params)(not args.no_obd)
 
   print("Getting ECU addresses ...")
   ecu_addrs = _get_all_ecu_addrs(logcan, sendcan, args.bus, args.timeout, debug=args.debug)

@@ -10,9 +10,10 @@ from panda import ALTERNATIVE_EXPERIENCE
 
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper
+from openpilot.common.swaglog import cloudlog, ForwardingHandler
 
-from openpilot.selfdrive.pandad import can_list_to_can_capnp
-from openpilot.selfdrive.car import DT_CTRL
+from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
+from openpilot.selfdrive.car import DT_CTRL, carlog
 from openpilot.selfdrive.car.car_helpers import get_car, get_one_can
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.controls.lib.events import Events
@@ -20,6 +21,20 @@ from openpilot.selfdrive.controls.lib.events import Events
 REPLAY = "REPLAY" in os.environ
 
 EventName = car.CarEvent.EventName
+
+# forward
+carlog.addHandler(ForwardingHandler(cloudlog))
+
+
+def obd_callback(params: Params):
+  def set_obd_multiplexing(obd_multiplexing: bool):
+    if params.get_bool("ObdMultiplexingEnabled") != obd_multiplexing:
+      cloudlog.warning(f"Setting OBD multiplexing to {obd_multiplexing}")
+      params.remove("ObdMultiplexingChanged")
+      params.put_bool("ObdMultiplexingEnabled", obd_multiplexing)
+      params.get_bool("ObdMultiplexingChanged", block=True)
+      cloudlog.warning("OBD multiplexing set successfully")
+  return set_obd_multiplexing
 
 
 class Car:
@@ -45,9 +60,14 @@ class Car:
       print("Waiting for CAN messages...")
       get_one_can(self.can_sock)
 
-      num_pandas = len(messaging.recv_one_retry(self.sm.sock['pandaStates']).pandaStates)
       experimental_long_allowed = self.params.get_bool("ExperimentalLongitudinalEnabled")
-      self.CI, self.CP = get_car(self.can_sock, self.pm.sock['sendcan'], experimental_long_allowed, num_pandas)
+      num_pandas = len(messaging.recv_one_retry(self.sm.sock['pandaStates']).pandaStates)
+      cached_params = self.params.get("CarParamsCache")
+      self.CI = get_car(self.can_sock, self.pm.sock['sendcan'], obd_callback(self.params), experimental_long_allowed, num_pandas, cached_params)
+      self.CP = self.CI.CP
+
+      # continue onto next fingerprinting step in pandad
+      self.params.put_bool("FirmwareQueryDone", True)
     else:
       self.CI, self.CP = CI, CI.CP
 
@@ -88,7 +108,7 @@ class Car:
 
     # Update carState from CAN
     can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
-    CS = self.CI.update(self.CC_prev, can_strs)
+    CS = self.CI.update(self.CC_prev, can_capnp_to_list(can_strs))
 
     self.sm.update(0)
 

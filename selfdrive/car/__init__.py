@@ -1,4 +1,5 @@
 # functions common among cars
+import logging
 from collections import namedtuple
 from dataclasses import dataclass
 from enum import IntFlag, ReprEnum, EnumType
@@ -8,9 +9,13 @@ import capnp
 
 from cereal import car
 from panda.python.uds import SERVICE_TYPE
-from openpilot.common.numpy_fast import clip, interp
-from openpilot.common.utils import Freezable
 from openpilot.selfdrive.car.docs_definitions import CarDocs
+from openpilot.selfdrive.car.helpers import clip, interp
+
+# set up logging
+carlog = logging.getLogger('carlog')
+carlog.setLevel(logging.INFO)
+carlog.propagate = False
 
 DT_CTRL = 0.01  # car state and control loop timestep (s)
 
@@ -255,6 +260,19 @@ class CarSpecs:
 
   def override(self, **kwargs):
     return replace(self, **kwargs)
+
+
+class Freezable:
+  _frozen: bool = False
+
+  def freeze(self):
+    if not self._frozen:
+      self._frozen = True
+
+  def __setattr__(self, *args, **kwargs):
+    if self._frozen:
+      raise Exception("cannot modify frozen object")
+    super().__setattr__(*args, **kwargs)
 
 
 @dataclass(order=True)
