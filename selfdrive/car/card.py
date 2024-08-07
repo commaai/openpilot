@@ -14,6 +14,7 @@ from openpilot.common.swaglog import cloudlog, ForwardingHandler
 
 from openpilot.selfdrive.pandad import can_list_to_can_capnp
 from openpilot.selfdrive.car import DT_CTRL, carlog
+from openpilot.selfdrive.car.fw_versions import ObdCallback
 from openpilot.selfdrive.car.car_helpers import get_car, get_one_can
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.controls.lib.events import Events
@@ -26,7 +27,7 @@ EventName = car.CarEvent.EventName
 carlog.addHandler(ForwardingHandler(cloudlog))
 
 
-def obd_callback(params: Params):
+def obd_callback(params: Params) -> ObdCallback:
   def set_obd_multiplexing(obd_multiplexing: bool):
     if params.get_bool("ObdMultiplexingEnabled") != obd_multiplexing:
       cloudlog.warning(f"Setting OBD multiplexing to {obd_multiplexing}")
@@ -35,6 +36,19 @@ def obd_callback(params: Params):
       params.get_bool("ObdMultiplexingChanged", block=True)
       cloudlog.warning("OBD multiplexing set successfully")
   return set_obd_multiplexing
+
+
+def can_recv_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket):
+  def can_recv(wait_for_one=False):  # call rx/tx?
+    can_packets = messaging.drain_sock(logcan, wait_for_one=wait_for_one)
+    return can_packets
+
+  # def can_send(tx_addr: int, dat: bytes, bus: int):
+  def can_send(msg: list[int, bytes, int]):
+    sendcan.send(can_list_to_can_capnp([msg], msgtype='sendcan'))
+
+  return can_recv, can_send
+
 
 
 class Car:
@@ -63,6 +77,9 @@ class Car:
       experimental_long_allowed = self.params.get_bool("ExperimentalLongitudinalEnabled")
       num_pandas = len(messaging.recv_one_retry(self.sm.sock['pandaStates']).pandaStates)
       cached_params = self.params.get("CarParamsCache")
+
+      cr, cs = can_recv_callbacks(self.can_sock, self.pm.sock['sendcan'])
+
       self.CI = get_car(self.can_sock, self.pm.sock['sendcan'], obd_callback(self.params), experimental_long_allowed, num_pandas, cached_params)
       self.CP = self.CI.CP
 
