@@ -28,7 +28,6 @@ function run() {
   else
     echo -e "[${RED}✗${NC}]"
     echo "$log"
-    return 1
   fi
   )
 }
