@@ -60,9 +60,9 @@ class Rerunner:
       service_views.append(View(name=topic, origin=f"/{topic}/", visible=False))
       rr.log(topic, rr.SeriesLine(name=topic), timeless=True)
 
-    center_view = [rrb.Vertical(*service_views)]
+    center_view = [rrb.Vertical(*service_views, name="streams")]
     if len(self.camera_readers):
-      center_view.append(rrb.Vertical(*[rrb.Spatial2DView(name=cam_type, origin=cam_type) for cam_type in self.camera_readers.keys()]))
+      center_view.append(rrb.Vertical(*[rrb.Spatial2DView(name=cam_type, origin=cam_type) for cam_type in self.camera_readers.keys()], name="cameras"))
 
     blueprint = rrb.Blueprint(
       rrb.Horizontal(
