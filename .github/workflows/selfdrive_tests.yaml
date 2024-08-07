@@ -61,20 +61,13 @@ jobs:
         cd $STRIPPED_DIR
         ${{ env.RUN }} "release/check-dirty.sh && \
                         MAX_EXAMPLES=5 $PYTEST -m 'not slow' selfdrive/car"
-    - name: Getting modified files
-      timeout-minutes: 1
-      run: |
-        cd $GITHUB_WORKSPACE
-        git fetch --unshallow --recurse-submodules=no origin master:master_remote
-        ALL_FILES=$(git diff --name-only --diff-filter=AM $(git merge-base HEAD master_remote))
-        echo FILES=$(echo $ALL_FILES) >> $GITHUB_ENV
     - name: Static analysis
       timeout-minutes: 1
       run: |
         cd $GITHUB_WORKSPACE
         cp pyproject.toml $STRIPPED_DIR
         cd $STRIPPED_DIR
-        ${{ env.RUN }} "scripts/lint.sh $FILES"
+        ${{ env.RUN }} "scripts/lint.sh"
 
   build:
     strategy:
@@ -153,13 +146,9 @@ jobs:
     - uses: actions/checkout@v4
     - name: Setup
       run: tools/op.sh setup
-    - name: Getting modified files
-      timeout-minutes: 1
-      run: |
-        git fetch --unshallow --recurse-submodules=no origin master:master_remote
     - name: Static analysis
       timeout-minutes: 1
-      run: tools/op.sh lint --branch master_remote
+      run: tools/op.sh lint
 
   unit_tests:
     name: unit tests

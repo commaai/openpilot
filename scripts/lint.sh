@@ -9,7 +9,6 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 cd $DIR/../
 
 FAILED=0
-REF_BRANCH="master"
 
 IGNORED_FILES="uv\.lock|docs\/CARS.md"
 IGNORED_DIRS="^third_party.*|^msgq.*|^msgq_repo.*|^opendbc.*|^opendbc_repo.*|^panda.*|^rednose.*|^rednose_repo.*|^tinygrad.*|^tinygrad_repo.*|^teleoprtc.*|^teleoprtc_repo.*"
@@ -38,47 +37,29 @@ function run() {
 }
 
 function run_tests() {
-  ALL_FILES=$(echo "$@" | sed -E "s/$IGNORED_FILES|$IGNORED_DIRS//g")
-  PYTHON_FILES=$(echo "$ALL_FILES" | grep --color=never '.py$' || true)
+  run "ruff" ruff check . --quiet
+  run "Import check" lint-imports
+  run "Large files check" python3 -m pre_commit_hooks.check_added_large_files --enforce-all $@ --maxkb=120
+  run "Shebang check" python3 -m pre_commit_hooks.check_shebang_scripts_are_executable $@
 
-  if [[ -n "$PYTHON_FILES" ]]; then
-    run "ruff" ruff check $PYTHON_FILES --quiet
-    run "mypy" mypy $PYTHON_FILES
-    run "Import check" lint-imports
-  fi
-
-  if [[ -n "$ALL_FILES" ]]; then
-    run "Codespell" codespell $ALL_FILES
-    run "Large files check" python3 -m pre_commit_hooks.check_added_large_files --enforce-all $ALL_FILES --maxkb=120
-    run "Shebang check" python3 -m pre_commit_hooks.check_shebang_scripts_are_executable $ALL_FILES
+  if [[ -z "$FAST" ]]; then
+    run "mypy" mypy .
+    run "Codespell" codespell
   fi
 
   return $FAILED
 }
 
 case $1 in
-  -b | --branch ) shift 1; REF_BRANCH="$1"; shift 1 ;;
+  -f | --fast ) shift 1; FAST="1" ;;
 esac
 
-# run against the given existing files
-if [[ -n $@ ]]; then
-  FILES=""
-  for f in $@; do
-    if [[ -f "$f" ]]; then
-      FILES+="$f"$'\n'
-    fi
-  done
-  run_tests "$FILES"
-
-# run against the the diff between HEAD and REF_BRANCH (default to master)
-else
-  ANCESTOR=$(git merge-base HEAD $REF_BRANCH || echo "")
-  if [[ -z $ANCESTOR ]]; then
-    echo -e "[${RED}✗${NC}] No common commit found between HEAD and $REF_BRANCH"
-    exit 1
+GIT_FILES="$(git ls-files | sed -E "s/$IGNORED_FILES|$IGNORED_DIRS//g")"
+FILES=""
+for f in $GIT_FILES; do
+  if [[ -f $f ]]; then
+    FILES+="$f "
   fi
-  STAGED_FILES="git diff --name-only --staged --diff-filter=AM $ANCESTOR"
-  UNSTAGED_FILES="git diff --name-only --diff-filter=AM $ANCESTOR"
-  FILES=$({ $STAGED_FILES ; $UNSTAGED_FILES ; } | sort | uniq )
-  run_tests "$FILES"
-fi
+done
+
+run_tests "$FILES"
