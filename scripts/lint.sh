@@ -11,7 +11,7 @@ cd $DIR/../
 FAILED=0
 
 IGNORED_FILES="uv\.lock|docs\/CARS.md"
-IGNORED_DIRS="^third_party.*|^msgq.*|^msgq_repo.*|^opendbc.*|^opendbc_repo.*|^panda.*|^rednose.*|^rednose_repo.*|^tinygrad.*|^tinygrad_repo.*|^teleoprtc.*|^teleoprtc_repo.*"
+IGNORED_DIRS="^third_party.*|^msgq.*|^msgq_repo.*|^opendbc.*|^opendbc_repo.*|^cereal.*|^panda.*|^rednose.*|^rednose_repo.*|^tinygrad.*|^tinygrad_repo.*|^teleoprtc.*|^teleoprtc_repo.*"
 
 function run() {
   echo -en "$1"
@@ -37,14 +37,17 @@ function run() {
 }
 
 function run_tests() {
-  run "ruff" ruff check . --quiet
-  run "Import check" lint-imports
-  run "Large files check" python3 -m pre_commit_hooks.check_added_large_files --enforce-all $@ --maxkb=120
-  run "Shebang check" python3 -m pre_commit_hooks.check_shebang_scripts_are_executable $@
+  ALL_FILES=$1
+  PYTHON_FILES=$2
+
+  run "ruff" ruff check $PYTHON_FILES --quiet
+  run "lint-imports" lint-imports
+  run "check_added_large_files" python3 -m pre_commit_hooks.check_added_large_files --enforce-all $ALL_FILES --maxkb=120
+  run "check_shebang_scripts_are_executable" python3 -m pre_commit_hooks.check_shebang_scripts_are_executable $ALL_FILES
 
   if [[ -z "$FAST" ]]; then
-    run "mypy" mypy .
-    run "Codespell" codespell
+    run "mypy" mypy $PYTHON_FILES
+    run "codespell" codespell $ALL_FILES
   fi
 
   return $FAILED
@@ -52,14 +55,16 @@ function run_tests() {
 
 case $1 in
   -f | --fast ) shift 1; FAST="1" ;;
+  -s | --skip ) shift 1; SKIP="$1" ;;
 esac
 
 GIT_FILES="$(git ls-files | sed -E "s/$IGNORED_FILES|$IGNORED_DIRS//g")"
-FILES=""
+ALL_FILES=""
 for f in $GIT_FILES; do
   if [[ -f $f ]]; then
-    FILES+="$f "
+    ALL_FILES+="$f"$'\n'
   fi
 done
+PYTHON_FILES=$(echo "$ALL_FILES" | grep --color=never '.py$' || true)
 
-run_tests "$FILES"
+run_tests "$ALL_FILES" "$PYTHON_FILES"
