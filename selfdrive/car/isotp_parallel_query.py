@@ -1,19 +1,19 @@
 import time
 from collections import defaultdict
 from functools import partial
+from types import SimpleNamespace
 
-import cereal.messaging as messaging
 from openpilot.selfdrive.car import carlog
+from openpilot.selfdrive.car.can_definitions import CanSendCallable
 from openpilot.selfdrive.car.fw_query_definitions import AddrType
-from openpilot.selfdrive.pandad import can_list_to_can_capnp
 from panda.python.uds import CanClient, IsoTpMessage, FUNCTIONAL_ADDRS, get_rx_addr_for_tx_addr
 
 
 class IsoTpParallelQuery:
-  def __init__(self, sendcan: messaging.PubSocket, logcan: messaging.SubSocket, bus: int, addrs: list[int] | list[AddrType],
+  def __init__(self, can_send: CanSendCallable, logcan: SimpleNamespace, bus: int, addrs: list[int] | list[AddrType],
                request: list[bytes], response: list[bytes], response_offset: int = 0x8,
                functional_addrs: list[int] = None, debug: bool = False, response_pending_timeout: float = 10) -> None:
-    self.sendcan = sendcan
+    self.can_send = can_send
     self.logcan = logcan
     self.bus = bus
     self.request = request
@@ -31,17 +31,17 @@ class IsoTpParallelQuery:
 
   def rx(self):
     """Drain can socket and sort messages into buffers based on address"""
-    can_packets = messaging.drain_sock(self.logcan, wait_for_one=True)
+    can_packets = self.logcan.drain(wait_for_one=True)
 
     for packet in can_packets:
-      for msg in packet.can:
+      for msg in packet:
         if msg.src == self.bus and msg.address in self.msg_addrs.values():
           self.msg_buffer[msg.address].append((msg.address, msg.dat, msg.src))
 
-  def _can_tx(self, tx_addr, dat, bus):
+  def _can_tx(self, tx_addr: int, dat: bytes, bus: int):
     """Helper function to send single message"""
-    msg = [tx_addr, dat, bus]
-    self.sendcan.send(can_list_to_can_capnp([msg], msgtype='sendcan'))
+    msg = (tx_addr, dat, bus)
+    self.can_send([msg])
 
   def _can_rx(self, addr, sub_addr=None):
     """Helper function to retrieve message with specified address and subadress from buffer"""
@@ -63,7 +63,7 @@ class IsoTpParallelQuery:
     return msgs
 
   def _drain_rx(self):
-    messaging.drain_sock_raw(self.logcan)
+    self.logcan.drain()
     self.msg_buffer = defaultdict(list)
 
   def _create_isotp_msg(self, tx_addr: int, sub_addr: int | None, rx_addr: int):

@@ -48,9 +48,7 @@ def can_fingerprint(next_can: Callable) -> tuple[str | None, dict[int, dict]]:
   done = False
 
   while not done:
-    a = next_can()
-
-    for can in a.can:
+    for can in next_can():
       # The fingerprint dict is generated for all buses, this way the car interface
       # can use it to detect a (valid) multipanda setup and initialize accordingly
       if can.src < 128:
@@ -81,7 +79,7 @@ def can_fingerprint(next_can: Callable) -> tuple[str | None, dict[int, dict]]:
 
 
 # **** for use live only ****
-def fingerprint(logcan, sendcan, set_obd_multiplexing, num_pandas, cached_params_raw):
+def fingerprint(logcan, can_send, set_obd_multiplexing, num_pandas, cached_params_raw):
   fixed_fingerprint = os.environ.get('FINGERPRINT', "")
   skip_fw_query = os.environ.get('SKIP_FW_QUERY', False)
   disable_fw_cache = os.environ.get('DISABLE_FW_CACHE', False)
@@ -107,9 +105,9 @@ def fingerprint(logcan, sendcan, set_obd_multiplexing, num_pandas, cached_params
       # NOTE: this takes ~0.1s and is relied on to allow sendcan subscriber to connect in time
       set_obd_multiplexing(True)
       # VIN query only reliably works through OBDII
-      vin_rx_addr, vin_rx_bus, vin = get_vin(logcan, sendcan, (0, 1))
-      ecu_rx_addrs = get_present_ecus(logcan, sendcan, set_obd_multiplexing, num_pandas=num_pandas)
-      car_fw = get_fw_versions_ordered(logcan, sendcan, set_obd_multiplexing, vin, ecu_rx_addrs, num_pandas=num_pandas)
+      vin_rx_addr, vin_rx_bus, vin = get_vin(logcan, can_send, (0, 1))
+      ecu_rx_addrs = get_present_ecus(logcan, can_send, set_obd_multiplexing, num_pandas=num_pandas)
+      car_fw = get_fw_versions_ordered(logcan, can_send, set_obd_multiplexing, vin, ecu_rx_addrs, num_pandas=num_pandas)
       cached = False
 
     exact_fw_match, fw_candidates = match_fw_to_car(car_fw, vin)
@@ -158,8 +156,8 @@ def get_car_interface(CP):
   return CarInterface(CP, CarController, CarState)
 
 
-def get_car(logcan, sendcan, set_obd_multiplexing, experimental_long_allowed, num_pandas=1, cached_params=None):
-  candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, sendcan, set_obd_multiplexing, num_pandas, cached_params)
+def get_car(logcan, can_send, set_obd_multiplexing, experimental_long_allowed, num_pandas=1, cached_params=None):
+  candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(logcan, can_send, set_obd_multiplexing, num_pandas, cached_params)
 
   if candidate is None:
     carlog.error({"event": "car doesn't match any fingerprints", "fingerprints": repr(fingerprints)})
