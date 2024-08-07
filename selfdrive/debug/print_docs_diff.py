@@ -5,9 +5,9 @@ import os
 import subprocess
 
 from openpilot.common.basedir import BASEDIR
-from openpilot.common.conversions import Conversions as CV
-from openpilot.common.enums import Column, Star
-from openpilot.common.detail_sentence import get_detail_sentence
+from openpilot.selfdrive.car.conversions import Conversions as CV
+from openpilot.selfdrive.car.doc_enums import Column, Star
+from openpilot.selfdrive.car.detail_sentences import get_detail_sentence
 
 FOOTNOTE_TAG = "<sup>{}</sup>"
 STAR_ICON = '<a href="##"><img valign="top" ' + \

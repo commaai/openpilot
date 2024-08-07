@@ -1,5 +1,5 @@
-from openpilot.common.conversions import Conversions as CV
-from openpilot.common.enums import Star
+from openpilot.selfdrive.car.conversions import Conversions as CV
+from openpilot.selfdrive.car.doc_enums import Star
 
 def get_detail_sentence(
     make: str,
