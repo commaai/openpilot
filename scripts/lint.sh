@@ -33,7 +33,6 @@ function run() {
     FAILED=1
   fi
   set -e
-
 }
 
 function run_tests() {
@@ -55,13 +54,8 @@ function run_tests() {
   return $FAILED
 }
 
-case $1 in
-  --files ) shift 1; FILES="$@" ;;
-  --all )   shift 1; ALL="1" ;;
-esac
-
-if [[ -n $FILES ]]; then
-  run_tests "$FILES"
+if [[ -n $@ ]]; then
+  run_tests "$@"
 else
   run_tests "$(git diff --name-only --cached --diff-filter=AM $(git merge-base HEAD master))"
 fi
