@@ -5,8 +5,8 @@ on:
   workflow_dispatch:
 
 env:
-  DAYS_BEFORE_PR_CLOSE: 3
-  DAYS_BEFORE_PR_STALE: 14
+  DAYS_BEFORE_PR_CLOSE: 2
+  DAYS_BEFORE_PR_STALE: 9
 
 jobs:
   stale:
@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/stale@v9
         with:
-          exempt-milestones: true
+          exempt-all-milestones: true
 
           # pull request config
           stale-pr-message: 'This PR has had no activity for ${{ env.DAYS_BEFORE_PR_STALE }} days. It will be automatically closed in ${{ env.DAYS_BEFORE_PR_CLOSE }} days if there is no activity.'

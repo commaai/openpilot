@@ -41,21 +41,18 @@ jobs:
     if: github.repository == 'commaai/openpilot'
     steps:
     - uses: actions/checkout@v4
-    - name: poetry lock
+    - name: uv lock
       run: |
-        pip install poetry
-        poetry lock
-    - name: pre-commit autoupdate
-      run: |
-        git config --global --add safe.directory '*'
-        pre-commit autoupdate
+        python3 -m ensurepip --upgrade
+        pip3 install uv
+        uv lock --upgrade
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@9153d834b60caba6d51c9b9510b087acf9f33f83
       with:
         author: Vehicle Researcher <user@comma.ai>
         token: ${{ secrets.ACTIONS_CREATE_PR_PAT }}
-        commit-message: Update Python packages and pre-commit hooks
-        title: '[bot] Update Python packages and pre-commit hooks'
+        commit-message: Update Python packages
+        title: '[bot] Update Python packages'
         branch: auto-package-updates
         base: master
         delete-branch: true

@@ -12,14 +12,14 @@ from parameterized import parameterized_class
 from cereal import messaging, log, car
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
-from openpilot.common.realtime import DT_CTRL
-from openpilot.selfdrive.car import gen_empty_fingerprint
-from openpilot.selfdrive.car.card import Car
+from openpilot.selfdrive.car import DT_CTRL, gen_empty_fingerprint
 from openpilot.selfdrive.car.fingerprints import all_known_cars, MIGRATION
 from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from openpilot.selfdrive.car.honda.values import CAR as HONDA, HondaFlags
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from openpilot.selfdrive.car.values import Platform
+from openpilot.selfdrive.car.card import Car
+from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
 from openpilot.tools.lib.logreader import LogReader, internal_source, openpilotci_source
@@ -217,7 +217,7 @@ class TestCarModelBase(unittest.TestCase):
     CC = car.CarControl.new_message().as_reader()
 
     for i, msg in enumerate(self.can_msgs):
-      CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
+      CS = self.CI.update(CC, can_capnp_to_list((msg.as_builder().to_bytes(),)))
       self.CI.apply(CC, msg.logMonoTime)
 
       if CS.canValid:
@@ -238,7 +238,7 @@ class TestCarModelBase(unittest.TestCase):
     # start parsing CAN messages after we've left ELM mode and can expect CAN traffic
     error_cnt = 0
     for i, msg in enumerate(self.can_msgs[self.elm_frame:]):
-      rr = RI.update((msg.as_builder().to_bytes(),))
+      rr = RI.update(can_capnp_to_list((msg.as_builder().to_bytes(),)))
       if rr is not None and i > 50:
         error_cnt += car.RadarData.Error.canError in rr.errors
     self.assertEqual(error_cnt, 0)
@@ -298,7 +298,7 @@ class TestCarModelBase(unittest.TestCase):
 
         now_nanos += DT_CTRL * 1e9
         msgs_sent += len(sendcan)
-        for addr, _, dat, bus in sendcan:
+        for addr, dat, bus in sendcan:
           to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
           self.assertTrue(self.safety.safety_tx_hook(to_send), (addr, dat, bus))
 
@@ -358,7 +358,7 @@ class TestCarModelBase(unittest.TestCase):
       can = messaging.new_message('can', 1)
       can.can = [log.CanData(address=address, dat=dat, src=bus)]
 
-      CS = self.CI.update(CC, (can.to_bytes(),))
+      CS = self.CI.update(CC, can_capnp_to_list((can.to_bytes(),)))
 
       if self.safety.get_gas_pressed_prev() != prev_panda_gas:
         self.assertEqual(CS.gasPressed, self.safety.get_gas_pressed_prev())
@@ -397,7 +397,7 @@ class TestCarModelBase(unittest.TestCase):
 
     # warm up pass, as initial states may be different
     for can in self.can_msgs[:300]:
-      self.CI.update(CC, (can.as_builder().to_bytes(), ))
+      self.CI.update(CC, can_capnp_to_list((can.as_builder().to_bytes(), )))
       for msg in filter(lambda m: m.src in range(64), can.can):
         to_send = libpanda_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
         self.safety.safety_rx_hook(to_send)
@@ -407,7 +407,7 @@ class TestCarModelBase(unittest.TestCase):
     checks = defaultdict(int)
     card = Car(CI=self.CI)
     for idx, can in enumerate(self.can_msgs):
-      CS = self.CI.update(CC, (can.as_builder().to_bytes(), ))
+      CS = self.CI.update(CC, can_capnp_to_list((can.as_builder().to_bytes(), )))
       for msg in filter(lambda m: m.src in range(64), can.can):
         to_send = libpanda_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
         ret = self.safety.safety_rx_hook(to_send)

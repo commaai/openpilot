@@ -8,20 +8,12 @@ class OnroadWindow : public QWidget {
 
 public:
   OnroadWindow(QWidget* parent = 0);
-  bool isMapVisible() const { return map && map->isVisible(); }
-  void showMapPanel(bool show) { if (map) map->setVisible(show); }
-
-signals:
-  void mapPanelRequested();
 
 private:
-  void createMapWidget();
   void paintEvent(QPaintEvent *event);
-  void mousePressEvent(QMouseEvent* e) override;
   OnroadAlerts *alerts;
   AnnotatedCameraWidget *nvg;
   QColor bg = bg_colors[STATUS_DISENGAGED];
-  QWidget *map = nullptr;
   QHBoxLayout* split;
 
 private slots:

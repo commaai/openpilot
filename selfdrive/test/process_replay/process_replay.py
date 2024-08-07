@@ -348,14 +348,15 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
     sendcan = DummySocket()
 
     canmsgs = [msg for msg in msgs if msg.which() == "can"]
-    has_cached_cp = params.get("CarParamsCache") is not None
+    cached_params = params.get("CarParamsCache")
+    has_cached_cp = cached_params is not None
     assert len(canmsgs) != 0, "CAN messages are required for fingerprinting"
     assert os.environ.get("SKIP_FW_QUERY", False) or has_cached_cp, \
             "CarParamsCache is required for fingerprinting. Make sure to keep carParams msgs in the logs."
 
     for m in canmsgs[:300]:
       can.send(m.as_builder().to_bytes())
-    _, CP = get_car(can, sendcan, Params().get_bool("ExperimentalLongitudinalEnabled"))
+    CP = get_car(can, sendcan, lambda obd: None, Params().get_bool("ExperimentalLongitudinalEnabled"), cached_params=cached_params).CP
 
     if not params.get_bool("DisengageOnAccelerator"):
       CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
@@ -390,7 +391,7 @@ def calibration_rcv_callback(msg, cfg, frame):
 
 def torqued_rcv_callback(msg, cfg, frame):
   # should_recv always true to increment frame
-  return (frame - 1) == 0 or msg.which() == 'liveLocationKalman'
+  return (frame - 1) == 0 or msg.which() == 'livePose'
 
 
 def dmonitoringmodeld_rcv_callback(msg, cfg, frame):
@@ -532,18 +533,18 @@ CONFIGS = [
       "cameraOdometry", "accelerometer", "gyroscope", "gpsLocationExternal",
       "liveCalibration", "carState", "gpsLocation"
     ],
-    subs=["liveLocationKalman"],
+    subs=["liveLocationKalman", "livePose"],
     ignore=["logMonoTime"],
     config_callback=locationd_config_pubsub_callback,
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
     proc_name="paramsd",
-    pubs=["liveLocationKalman", "carState"],
+    pubs=["livePose", "liveCalibration", "carState"],
     subs=["liveParameters"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
-    should_recv_callback=FrequencyBasedRcvCallback("liveLocationKalman"),
+    should_recv_callback=FrequencyBasedRcvCallback("livePose"),
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
   ),
@@ -555,7 +556,7 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="torqued",
-    pubs=["liveLocationKalman", "carState", "carControl", "carOutput"],
+    pubs=["livePose", "liveCalibration", "carState", "carControl", "carOutput"],
     subs=["liveTorqueParameters"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
@@ -565,7 +566,7 @@ CONFIGS = [
   ProcessConfig(
     proc_name="modeld",
     pubs=["deviceState", "roadCameraState", "wideRoadCameraState", "liveCalibration", "driverMonitoringState"],
-    subs=["modelV2", "cameraOdometry"],
+    subs=["modelV2", "drivingModelData", "cameraOdometry"],
     ignore=["logMonoTime", "modelV2.frameDropPerc", "modelV2.modelExecutionTime"],
     should_recv_callback=ModeldCameraSyncRcvCallback(),
     tolerance=NUMPY_TOLERANCE,
@@ -819,11 +820,15 @@ def check_openpilot_enabled(msgs: LogIterable) -> bool:
 
 
 def check_most_messages_valid(msgs: LogIterable, threshold: float = 0.9) -> bool:
+  relevant_services = {sock for cfg in CONFIGS for sock in cfg.subs}
   msgs_counts = Counter(msg.which() for msg in msgs)
   msgs_valid_counts = Counter(msg.which() for msg in msgs if msg.valid)
 
   most_valid_for_service = {}
   for msg_type in msgs_counts.keys():
+    if msg_type not in relevant_services:
+      continue
+
     valid_share = msgs_valid_counts.get(msg_type, 0) / msgs_counts[msg_type]
     ok = valid_share >= threshold
     if not ok:

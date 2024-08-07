@@ -10,8 +10,7 @@ from openpilot.tools.lib.openpilotci import BASE_URL, get_url
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.process_replay import get_process_config, replay_process
 from openpilot.tools.lib.framereader import FrameReader
-from openpilot.tools.lib.logreader import LogReader
-from openpilot.tools.lib.helpers import save_log
+from openpilot.tools.lib.logreader import LogReader, save_log
 
 TEST_ROUTE = "2f4452b03ccb98f0|2022-12-03--13-45-30"
 SEGMENT = 6
@@ -96,15 +95,16 @@ if __name__ == "__main__":
       all_logs = list(LogReader(BASE_URL + log_fn))
       cmp_log = []
 
-      # logs are ordered based on type: modelV2, driverStateV2
+      # logs are ordered based on type: modelV2, drivingModelData, driverStateV2
       if not NO_MODEL:
-        model_start_index = next(i for i, m in enumerate(all_logs) if m.which() in ("modelV2", "cameraOdometry"))
-        cmp_log += all_logs[model_start_index:model_start_index + MAX_FRAMES*2]
+        model_start_index = next(i for i, m in enumerate(all_logs) if m.which() in ("modelV2", "drivingModelData", "cameraOdometry"))
+        cmp_log += all_logs[model_start_index:model_start_index + MAX_FRAMES*3]
         dmon_start_index = next(i for i, m in enumerate(all_logs) if m.which() == "driverStateV2")
         cmp_log += all_logs[dmon_start_index:dmon_start_index + MAX_FRAMES]
 
       ignore = [
         'logMonoTime',
+        'drivingModelData.frameDropPerc',
         'modelV2.frameDropPerc',
         'modelV2.modelExecutionTime',
         'driverStateV2.modelExecutionTime',
