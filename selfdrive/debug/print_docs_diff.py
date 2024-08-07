@@ -13,24 +13,23 @@ COLUMNS = "|" + "|".join([column.value for column in Column]) + "|"
 COLUMN_HEADER = "|---|---|---|{}|".format("|".join([":---:"] * (len(Column) - 3)))
 ARROW_SYMBOL = "➡️"
 
-def process_detail_sentences(info):
-  detail_sentences = []
-  ind = info.index("---")
-  for line1, line2 in zip(info[1:ind], info[ind+1:], strict=True):
-    name = ' '.join(line1[3:].split("|")[:2]) # Make Model Year
-    cur_sentence = []
-    for line in [line1, line2]:
-      make, model, _, longitudinal, fsr_longitudinal, fsr_steering, steering_torque, auto_resume, _, _ = line.split("|")[1:-1]
-      min_steer_speed = float(fsr_steering[:-4]) / CV.MS_TO_MPH
-      min_enable_speed = float(fsr_longitudinal[:-4]) / CV.MS_TO_MPH
-      cur_sentence.append(get_detail_sentence(make, model, longitudinal, min_enable_speed, min_steer_speed, auto_resume, steering_torque))
-    if cur_sentence[0] != cur_sentence[1]:
-      detail_sentences.append(f"- Sentence for {name} changed!\n" +
-                                 "  ```diff\n" +
-                                 f"  - {cur_sentence[0]}\n" +
-                                 f"  + {cur_sentence[1]}\n" +
-                                 "  ```")
-  return detail_sentences
+def process_detail_sentence(old, new):
+  info = old
+  if any(" Supported Cars" in x for x in info):
+    return []
+  name = ' '.join(old[3:].split("|")[:2]) # Make Model Year
+  cur_sentence = []
+  for line in [old, new]:
+    make, model, _, longitudinal, fsr_longitudinal, fsr_steering, steering_torque, auto_resume, _, _ = line.split("|")[1:-1]
+    min_steer_speed = float(fsr_steering[:fsr_steering.index('mph')]) / CV.MS_TO_MPH
+    min_enable_speed = float(fsr_longitudinal[:fsr_longitudinal.index('mph')]) / CV.MS_TO_MPH
+    cur_sentence.append(get_detail_sentence(make, model, longitudinal, min_enable_speed, min_steer_speed, auto_resume, steering_torque))
+  if cur_sentence[0] != cur_sentence[1]:
+    return f"- Sentence for {name} changed!\n" + \
+            "  ```diff\n" + \
+            f"  - {cur_sentence[0]}\n" + \
+            f"  + {cur_sentence[1]}\n" + \
+            "  ```"
 
 def column_change_format(line1, line2):
   info1, info2 = line1.split('|'), line2.split('|')
@@ -38,17 +37,42 @@ def column_change_format(line1, line2):
 
 def process_diff_information(info):
   header = info[0]
-  category = None
-  final_strings = []
+  output = [] # (category, strings)
+  if any("> <sup>" in x for x in info):
+    return [] # Changes in footnotes ignored
+  if any("* " in x for x in info):
+    return [] # Changes in Toyota Security ignored
   if "c" in header:
-    category = "column"
+    categories = []
+    final_strings = []
     ind = info.index("---")
-    for line1, line2 in zip(info[1:ind], info[ind+1:], strict=True):
-      final_strings.append(column_change_format(line1[2:], line2[2:]))
+    remove = {' '.join(line[3:].split("|")[:2]): line for line in info[1:ind]}
+    add = {' '.join(line[3:].split("|")[:2]): line for line in info[ind+1:]}
+    makes = set(remove.keys()) | set(add.keys())
+    for make in makes:
+      if make in remove and make in add:
+        categories.append('column')
+        final_strings.append(column_change_format(remove[make][2:], add[make][2:]))
+        diff_detail_sentence = process_detail_sentence(remove[make], add[make])
+        if diff_detail_sentence:
+          categories.append('detail')
+          final_strings.append(diff_detail_sentence)
+        del add[make]
+        del remove[make]
+      elif make in remove:
+        categories.append('removals')
+        final_strings.append(remove[make][2:])
+        del remove[make]
+      else:
+        categories.append('additions')
+        final_strings.append(add[make][2:])
+        del add[make]
+    output = list(zip(categories, final_strings, strict=True))
   else:
     category = "additions" if "a" in header else "removals"
     final_strings = [x[2:] for x in info[1:]]
-  return category, final_strings
+    output = [(category, string) for string in final_strings]
+  return output
 
 def print_markdown(changes):
   markdown_builder = ["### ⚠️ This PR makes changes to [CARS.md](../blob/master/docs/CARS.md) ⚠️"]
@@ -76,10 +100,9 @@ def print_car_docs_diff(path):
       ind += 1
       while ind < len(changes) and changes[ind] and not changes[ind][0].isdigit():
         ind += 1
-      category, strings = process_diff_information(changes[start:ind])
-      changes_markdown[category] += strings
-      if category == "column":
-        changes_markdown["detail"] += process_detail_sentences(changes[start:ind])
+      diffs = process_diff_information(changes[start:ind])
+      for category, strings in diffs:
+        changes_markdown[category].append(strings)
     else:
       ind += 1
 
