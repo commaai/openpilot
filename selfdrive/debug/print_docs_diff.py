@@ -14,9 +14,6 @@ COLUMN_HEADER = "|---|---|---|{}|".format("|".join([":---:"] * (len(Column) - 3)
 ARROW_SYMBOL = "➡️"
 
 def process_detail_sentence(old, new):
-  info = old
-  if any(" Supported Cars" in x for x in info):
-    return []
   name = ' '.join(old[3:].split("|")[:2]) # Make Model Year
   cur_sentence = []
   for line in [old, new]:
@@ -42,6 +39,8 @@ def process_diff_information(info):
     return [] # Changes in footnotes ignored
   if any("* " in x for x in info):
     return [] # Changes in Toyota Security ignored
+  if any(" Supported Cars" in x for x in info):
+    return [] # Changes in number of supported cars ignored
   if "c" in header:
     categories = []
     final_strings = []
@@ -63,7 +62,7 @@ def process_diff_information(info):
         categories.append('removals')
         final_strings.append(remove[make][2:])
         del remove[make]
-      else:
+      elif make in add:
         categories.append('additions')
         final_strings.append(add[make][2:])
         del add[make]
