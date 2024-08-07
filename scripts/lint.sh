@@ -39,6 +39,9 @@ function run_tests() {
   ALL_FILES=$(echo "$@" | sed -E "s/$IGNORED_FILES//g")
   PYTHON_FILES=$(echo "$ALL_FILES" | grep --color=never '.py$' || true)
 
+  echo $ALL_FILES
+  echo $PYTHON_FILES
+
   if [[ -n "$PYTHON_FILES" ]]; then
     run "ruff" ruff check $PYTHON_FILES --quiet
     run "mypy" mypy $PYTHON_FILES
@@ -55,7 +58,13 @@ function run_tests() {
 }
 
 if [[ -n $@ ]]; then
-  run_tests "$@"
+  VALID_FILES=""
+  for f in $@; do
+    if [[ -f "$f" ]]; then
+      VALID_FILES+="$f "
+    fi
+  done
+  run_tests "$(echo $VALID_FILES | tr " " "\n")"
 else
   run_tests "$(git diff --name-only --cached --diff-filter=AM $(git merge-base HEAD master))"
 fi
