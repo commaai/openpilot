@@ -14,6 +14,11 @@ IGNORED_FILES="uv\.lock|docs\/CARS.md"
 IGNORED_DIRS="^third_party.*|^msgq.*|^msgq_repo.*|^opendbc.*|^opendbc_repo.*|^cereal.*|^panda.*|^rednose.*|^rednose_repo.*|^tinygrad.*|^tinygrad_repo.*|^teleoprtc.*|^teleoprtc_repo.*"
 
 function run() {
+  shopt -s extglob
+  case $1 in
+    $SKIP ) return 0 ;;
+  esac
+
   echo -en "$1"
 
   for ((i=0; i<$((50 - ${#1})); i++)); do
@@ -53,10 +58,15 @@ function run_tests() {
   return $FAILED
 }
 
-case $1 in
-  -f | --fast ) shift 1; FAST="1" ;;
-  -s | --skip ) shift 1; SKIP="$1" ;;
-esac
+while true; do
+  case $1 in
+    -f | --fast ) shift 1; FAST="1" ;;
+    -s | --skip ) shift 1; SKIP+="$1|"; shift 1 ;;
+    * )           break ;;
+  esac
+done
+
+SKIP="@($(echo $SKIP | sed 's/|$//'))"
 
 GIT_FILES="$(git ls-files | sed -E "s/$IGNORED_FILES|$IGNORED_DIRS//g")"
 ALL_FILES=""
