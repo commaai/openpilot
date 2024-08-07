@@ -37,6 +37,7 @@ class _FrameReader:
     frame_sz = self.w * self.h * 3 // 2
     proc = subprocess.Popen(
              ["ffmpeg", "-v", "quiet", "-i", self.camera_path, "-f", "rawvideo", "-pix_fmt", "nv12", "-"],
+             stdin=subprocess.PIPE,
              stdout=subprocess.PIPE,
              stderr=subprocess.DEVNULL
            )
