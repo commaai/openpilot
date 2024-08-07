@@ -9,8 +9,10 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 cd $DIR/../
 
 FAILED=0
+REF_BRANCH="master"
 
 IGNORED_FILES="uv\.lock|docs\/CARS.md"
+IGNORED_DIRS="^third_party.*|^msgq.*|^msgq_repo.*|^opendbc.*|^opendbc_repo.*|^panda.*|^rednose.*|^rednose_repo.*|^tinygrad.*|^tinygrad_repo.*|^teleoprtc.*|^teleoprtc_repo.*"
 
 function run() {
   echo -en "$1"
@@ -36,8 +38,11 @@ function run() {
 }
 
 function run_tests() {
-  ALL_FILES=$(echo "$@" | sed -E "s/$IGNORED_FILES//g")
+  ALL_FILES=$(echo "$@" | sed -E "s/$IGNORED_FILES|$IGNORED_DIRS//g")
   PYTHON_FILES=$(echo "$ALL_FILES" | grep --color=never '.py$' || true)
+
+  echo $ALL_FILES
+  echo $PYTHON_FILES
 
   if [[ -n "$PYTHON_FILES" ]]; then
     run "ruff" ruff check $PYTHON_FILES --quiet
@@ -54,14 +59,30 @@ function run_tests() {
   return $FAILED
 }
 
+case $1 in
+  -b | --branch ) shift 1; REF_BRANCH="$1"; shift 1 ;;
+esac
+
+# run against the given existing files
 if [[ -n $@ ]]; then
-  VALID_FILES=""
+  FILES=""
   for f in $@; do
     if [[ -f "$f" ]]; then
-      VALID_FILES+="$f"$'\n'
+      FILES+="$f"$'\n'
     fi
   done
-  run_tests "$VALID_FILES"
+  run_tests "$FILES"
+
+# run against the the diff between HEAD and REF_BRANCH (default to master)
 else
-  run_tests "$(git diff --name-only --cached --diff-filter=AM $(git merge-base HEAD master))"
+  ANCESTOR=$(git merge-base HEAD $REF_BRANCH || echo "")
+  if [[ -z $ANCESTOR ]]; then
+    echo -e "[${RED}✗${NC}] No common commit found between HEAD and $REF_BRANCH"
+    exit 1
+  fi
+  STAGED_FILES="git diff --name-only --staged --diff-filter=AM $ANCESTOR"
+  UNSTAGED_FILES="git diff --name-only --diff-filter=AM $ANCESTOR"
+  FILES=$({ $STAGED_FILES ; $UNSTAGED_FILES ; } | sort | uniq )
+  echo $FILES
+  run_tests "$FILES"
 fi
