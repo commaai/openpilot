@@ -66,7 +66,7 @@ jobs:
       run: |
         cd $GITHUB_WORKSPACE
         git fetch --unshallow --recurse-submodules=no origin master:master_remote
-        ALL_FILES=$(git diff --name-only --cached --diff-filter=AM $(git merge-base HEAD master_remote))
+        ALL_FILES=$(git diff --name-only --diff-filter=AM $(git merge-base HEAD master_remote))
         echo FILES=$(echo $ALL_FILES) >> $GITHUB_ENV
     - name: Static analysis
       timeout-minutes: 1
@@ -157,11 +157,9 @@ jobs:
       timeout-minutes: 1
       run: |
         git fetch --unshallow --recurse-submodules=no origin master:master_remote
-        ALL_FILES=$(git diff --name-only --cached --diff-filter=AM $(git merge-base HEAD master_remote))
-        echo FILES=$(echo $ALL_FILES) >> $GITHUB_ENV
     - name: Static analysis
       timeout-minutes: 1
-      run: tools/op.sh lint $FILES
+      run: tools/op.sh lint --branch master_remote
 
   unit_tests:
     name: unit tests
