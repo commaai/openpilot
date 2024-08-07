@@ -10,10 +10,10 @@ from functools import cache
 
 from cereal import car
 from openpilot.common.basedir import BASEDIR
-from openpilot.common.conversions import Conversions as CV
 from openpilot.common.simple_kalman import KF1D, get_kalman_gain
-from openpilot.common.numpy_fast import clip
 from openpilot.selfdrive.car import DT_CTRL, apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, get_friction, STD_CARGO_KG
+from openpilot.selfdrive.car.conversions import Conversions as CV
+from openpilot.selfdrive.car.helpers import clip
 from openpilot.selfdrive.car.values import PLATFORMS
 from openpilot.selfdrive.controls.lib.events import Events
 from openpilot.selfdrive.pandad import can_capnp_to_list
