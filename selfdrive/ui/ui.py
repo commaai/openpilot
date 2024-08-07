@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import signal
-#aaaaa
 
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
