@@ -43,7 +43,7 @@ function run_tests() {
   run "Shebang check" python3 -m pre_commit_hooks.check_shebang_scripts_are_executable $@
 
   if [[ -z "$FAST" ]]; then
-    run "mypy" mypy .
+    run "mypy" mypy -v .
     run "Codespell" codespell
   fi
 
