@@ -19,3 +19,4 @@ def interp(x, xp, fp):
 
 def mean(x):
   return sum(x) / len(x)
+

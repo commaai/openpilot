@@ -23,6 +23,8 @@ ignore_imports =
     # remove these
     openpilot.selfdrive.car.interfaces -> openpilot.selfdrive.controls.lib.events
     openpilot.selfdrive.car.body.carcontroller -> openpilot.selfdrive.controls.lib.pid
+    openpilot.selfdrive.car.tests.test_docs -> openpilot.common.basedir
+    openpilot.selfdrive.car.docs -> openpilot.common.basedir
 
     # these are okay
     openpilot.selfdrive.car.card -> openpilot.common.swaglog
@@ -43,7 +45,4 @@ ignore_imports =
     openpilot.selfdrive.car.fw_versions -> openpilot.common.params
     openpilot.selfdrive.car.ecu_addrs -> openpilot.common.params
     openpilot.selfdrive.car.tests.test_models -> openpilot.common.basedir
-    openpilot.selfdrive.car.tests.test_docs -> openpilot.common.basedir
-    openpilot.selfdrive.car.docs -> openpilot.common.basedir
-    openpilot.selfdrive.car.docs_definitions -> openpilot.common.conversions
 unmatched_ignore_imports_alerting = warn
