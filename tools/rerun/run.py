@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 import sys
 import argparse
 import multiprocessing
@@ -47,13 +48,15 @@ class Rerunner:
     if dcam:
       self.camera_readers[CameraType.dcam] = CameraReader(route.dcamera_paths(), start_time, segment_range.seg_idxs)
 
-  def _start_rerun(self):
-    self.blueprint = self._create_blueprint()
-    rr.init(RR_WIN, spawn=True)
 
-  def _create_blueprint(self):
+  def _create_blueprint(self, empty_blueprint=False):
     blueprint = None
     service_views = []
+
+    # empty blueprint for subprocesses during logging. Expecting a blank screen until finish logging
+    # Final blueprint is set by main process at the end of the logging process
+    if empty_blueprint:
+      return rrb.Blueprint(auto_space_views=False, auto_layout=False, collapse_panels=True)
 
     for topic in sorted(SERVICE_LIST.keys()):
       View = rrb.TimeSeriesView if topic != "thumbnail" else rrb.Spatial2DView
@@ -69,7 +72,7 @@ class Rerunner:
         *center_view
       ),
       rrb.SelectionPanel(expanded=False),
-      rrb.TimePanel(expanded=False)
+      rrb.TimePanel(expanded=False),
     )
     return blueprint
 
@@ -103,7 +106,8 @@ class Rerunner:
   @rr.shutdown_at_exit
   def _process_log_msgs(blueprint, lr):
     rr.init(RR_WIN)
-    rr.connect(default_blueprint=blueprint)
+    rr.connect()
+    rr.send_blueprint(blueprint)
 
     log_msgs = defaultdict(lambda: defaultdict(list))
     for msg in lr:
@@ -130,17 +134,22 @@ class Rerunner:
   @rr.shutdown_at_exit
   def _process_cam_readers(blueprint, cam_type, h, w, fr):
     rr.init(RR_WIN)
-    rr.connect(default_blueprint=blueprint)
+    rr.connect()
+    rr.send_blueprint(blueprint)
 
     for ts, frame in fr:
       rr.set_time_nanos(RR_TIMELINE_NAME, int(ts * 1e9))
       rr.log(cam_type, rr.Image(bytes=frame, width=w, height=h, pixel_format=rr.PixelFormat.NV12))
 
   def load_data(self):
-    self._start_rerun()
-    self.lr.run_across_segments(NUM_CPUS, partial(self._process_log_msgs, self.blueprint))
+    rr.init(RR_WIN, spawn=True)
+
+    empty_blueprint = self._create_blueprint(empty_blueprint=True)
+    self.lr.run_across_segments(NUM_CPUS, partial(self._process_log_msgs, empty_blueprint))
     for cam_type, cr in self.camera_readers.items():
-      cr.run_across_segments(NUM_CPUS, partial(self._process_cam_readers, self.blueprint, cam_type, cr.h, cr.w))
+      cr.run_across_segments(NUM_CPUS, partial(self._process_cam_readers, empty_blueprint, cam_type, cr.h, cr.w))
+
+    rr.send_blueprint(self._create_blueprint())
 
 
 if __name__ == '__main__':
