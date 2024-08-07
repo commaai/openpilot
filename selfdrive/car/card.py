@@ -88,6 +88,8 @@ class Car:
 
     self.params = Params()
 
+    self.can_callbacks = can_comm_callbacks(self.can_sock, self.pm.sock['sendcan'])
+
     if CI is None:
       # wait for one pandaState and one CAN packet
       print("Waiting for CAN messages...")
@@ -96,8 +98,7 @@ class Car:
       experimental_long_allowed = self.params.get_bool("ExperimentalLongitudinalEnabled")
       num_pandas = len(messaging.recv_one_retry(self.sm.sock['pandaStates']).pandaStates)
       cached_params = self.params.get("CarParamsCache")
-      self.CI = get_car(*can_comm_callbacks(self.can_sock, self.pm.sock['sendcan']), obd_callback(self.params),
-                        experimental_long_allowed, num_pandas, cached_params)
+      self.CI = get_car(*self.can_callbacks, obd_callback(self.params), experimental_long_allowed, num_pandas, cached_params)
       self.CP = self.CI.CP
 
       # continue onto next fingerprinting step in pandad
@@ -200,7 +201,7 @@ class Car:
     if not self.initialized_prev:
       # Initialize CarInterface, once controls are ready
       # TODO: this can make us miss at least a few cycles when doing an ECU knockout
-      self.CI.init(self.CP, self.can_sock, self.pm.sock['sendcan'])
+      self.CI.init(self.CP, *self.can_callbacks)
       # signal pandad to switch to car safety mode
       self.params.put_bool_nonblocking("ControlsReady", True)
 
