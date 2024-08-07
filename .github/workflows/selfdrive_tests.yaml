@@ -156,19 +156,13 @@ jobs:
     runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
                    ((github.event_name != 'pull_request') ||
                     (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-latest' }}
-    env:
-      PYTHONWARNINGS: default
     steps:
     - uses: actions/checkout@v4
-    - name: Installing python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.12.3'
     - name: Setup
       run: tools/op.sh setup
     - name: Get ancestor commit
       run: git fetch --unshallow --recurse-submodules=no origin master:master
-    - name: static analysis
+    - name: Static analysis
       timeout-minutes: 1
       run: tools/op.sh lint
 
