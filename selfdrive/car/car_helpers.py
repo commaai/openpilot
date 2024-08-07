@@ -9,17 +9,9 @@ from openpilot.selfdrive.car.fingerprints import eliminate_incompatible_cars, al
 from openpilot.selfdrive.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
 from openpilot.selfdrive.car.fw_versions import get_fw_versions_ordered, get_present_ecus, match_fw_to_car
 from openpilot.selfdrive.car.mock.values import CAR as MOCK
-import cereal.messaging as messaging
 from openpilot.selfdrive.car import gen_empty_fingerprint
 
 FRAME_FINGERPRINT = 100  # 1s
-
-
-def get_one_can(logcan):
-  while True:
-    can = messaging.recv_one_retry(logcan)
-    if len(can.can) > 0:
-      return can
 
 
 def load_interfaces(brand_names):
@@ -138,9 +130,8 @@ def fingerprint(logcan, sendcan, set_obd_multiplexing, num_pandas, cached_params
 
   # CAN fingerprint
   # drain CAN socket so we get the latest messages
-  # messaging.drain_sock_raw(logcan)
-  logcan()
-  car_fingerprint, finger = can_fingerprint(lambda: get_one_can(logcan))
+  logcan.drain()
+  car_fingerprint, finger = can_fingerprint(logcan.get_one_can)
 
   exact_match = True
   source = car.CarParams.FingerprintSource.can

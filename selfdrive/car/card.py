@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import time
+from types import SimpleNamespace
 
 import cereal.messaging as messaging
 
@@ -15,7 +16,7 @@ from openpilot.common.swaglog import cloudlog, ForwardingHandler
 from openpilot.selfdrive.pandad import can_list_to_can_capnp
 from openpilot.selfdrive.car import DT_CTRL, carlog, make_can_msg
 from openpilot.selfdrive.car.fw_versions import ObdCallback
-from openpilot.selfdrive.car.car_helpers import get_car, get_one_can
+from openpilot.selfdrive.car.car_helpers import get_car
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.controls.lib.events import Events
 
@@ -38,6 +39,13 @@ def obd_callback(params: Params) -> ObdCallback:
   return set_obd_multiplexing
 
 
+def get_one_can(logcan):
+  while True:
+    can = messaging.recv_one_retry(logcan)
+    if len(can.can) > 0:
+      return can
+
+
 def can_recv_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket):
   def can_recv(wait_for_one: bool = False) -> list[list[int, bytes, int]]:  # call rx/tx?
     can_packets = messaging.drain_sock(logcan, wait_for_one=wait_for_one)
@@ -46,7 +54,7 @@ def can_recv_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket
   def can_send(msg: list[int, bytes, int]) -> None:
     sendcan.send(can_list_to_can_capnp([msg], msgtype='sendcan'))
 
-  return can_recv, can_send
+  return SimpleNamespace(drain=can_recv, get_one_can=lambda: get_one_can(logcan)), SimpleNamespace(send=can_send)
 
 
 class Car:
