@@ -8,6 +8,8 @@ NC='\033[0m'
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 cd $DIR/../
 
+FAILED=0
+
 IGNORED_FILES="uv\.lock|docs\/CARS.md"
 
 function run() {
@@ -20,7 +22,7 @@ function run() {
   shift 1;
   CMD="$@"
 
-  ( set +e
+  set +e
   log="$((eval "$CMD" ) 2>&1)"
 
   if [[ $? -eq 0 ]]; then
@@ -28,8 +30,10 @@ function run() {
   else
     echo -e "[${RED}✗${NC}]"
     echo "$log"
+    FAILED=1
   fi
-  )
+  set -e
+
 }
 
 function run_tests() {
@@ -45,6 +49,8 @@ function run_tests() {
     run "Large files check" python3 -m pre_commit_hooks.check_added_large_files --enforce-all $ALL_FILES --maxkb=120
     run "Shebang check" python3 -m pre_commit_hooks.check_shebang_scripts_are_executable $ALL_FILES
   fi
+
+  return $FAILED
 }
 
 case $1 in
