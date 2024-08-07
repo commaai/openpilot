@@ -83,7 +83,7 @@ jobs:
         cd $GITHUB_WORKSPACE
         cp pyproject.toml $STRIPPED_DIR
         cd $STRIPPED_DIR
-        ${{ env.RUN }} "scripts/lint.sh --files $FILES"
+        ${{ env.RUN }} "scripts/lint.sh --files '$FILES'"
 
   build:
     strategy:
