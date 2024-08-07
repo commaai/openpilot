@@ -22,6 +22,7 @@ from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.common.timeout import Timeout
 from openpilot.common.realtime import DT_CTRL
 from panda.python import ALTERNATIVE_EXPERIENCE
+from openpilot.selfdrive.car.card import can_comm_callbacks
 from openpilot.selfdrive.car.car_helpers import get_car, interfaces
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state, available_streams
@@ -356,7 +357,8 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
 
     for m in canmsgs[:300]:
       can.send(m.as_builder().to_bytes())
-    CP = get_car(can, sendcan, lambda obd: None, Params().get_bool("ExperimentalLongitudinalEnabled"), cached_params=cached_params).CP
+    can_callbacks = can_comm_callbacks(can, sendcan)
+    CP = get_car(*can_callbacks, lambda obd: None, Params().get_bool("ExperimentalLongitudinalEnabled"), cached_params=cached_params).CP
 
     if not params.get_bool("DisengageOnAccelerator"):
       CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
