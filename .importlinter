@@ -38,7 +38,6 @@ ignore_imports =
     openpilot.selfdrive.car.ecu_addrs -> openpilot.common.params
     # requires generic CAN send/receive functions
     openpilot.selfdrive.car.ecu_addrs -> openpilot.selfdrive.pandad
-    openpilot.selfdrive.car.interfaces -> openpilot.selfdrive.pandad
     openpilot.selfdrive.car.isotp_parallel_query -> openpilot.selfdrive.pandad
     openpilot.selfdrive.car.tests.test_fw_fingerprint -> openpilot.selfdrive.pandad
 

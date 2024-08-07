@@ -16,7 +16,6 @@ from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.helpers import clip
 from openpilot.selfdrive.car.values import PLATFORMS
 from openpilot.selfdrive.controls.lib.events import Events
-from openpilot.selfdrive.pandad import can_capnp_to_list
 
 ButtonType = car.CarState.ButtonEvent.Type
 GearShifter = car.CarState.GearShifter
@@ -229,12 +228,11 @@ class CarInterfaceBase(ABC):
   def _update(self, c: car.CarControl) -> car.CarState:
     pass
 
-  def update(self, c: car.CarControl, can_strings: list[bytes]) -> car.CarState:
+  def update(self, c: car.CarControl, can_packets: list[int, list[int, bytes, int]]) -> car.CarState:
     # parse can
-    can_list = can_capnp_to_list(can_strings)
     for cp in self.can_parsers:
       if cp is not None:
-        cp.update_strings(can_list)
+        cp.update_strings(can_packets)
 
     # get CarState
     ret = self._update(c)

@@ -12,7 +12,7 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper
 from openpilot.common.swaglog import cloudlog, ForwardingHandler
 
-from openpilot.selfdrive.pandad import can_list_to_can_capnp
+from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
 from openpilot.selfdrive.car import DT_CTRL, carlog
 from openpilot.selfdrive.car.car_helpers import get_car, get_one_can
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
@@ -108,7 +108,7 @@ class Car:
 
     # Update carState from CAN
     can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
-    CS = self.CI.update(self.CC_prev, can_strs)
+    CS = self.CI.update(self.CC_prev, can_capnp_to_list(can_strs))
 
     self.sm.update(0)
 
