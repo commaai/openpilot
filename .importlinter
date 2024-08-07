@@ -33,7 +33,8 @@ ignore_imports =
     openpilot.selfdrive.car.interfaces -> openpilot.common.simple_kalman
     openpilot.selfdrive.car.gm.interface -> openpilot.common.basedir
     openpilot.selfdrive.car.interfaces -> openpilot.common.basedir
-    # these two will still live in openpilot, but require some modification
+
+    # params will need to move to new openpilot files that just call car files
     openpilot.selfdrive.car.fw_versions -> openpilot.common.params
     openpilot.selfdrive.car.ecu_addrs -> openpilot.common.params
 
