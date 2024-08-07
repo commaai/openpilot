@@ -4,7 +4,7 @@ import numpy as np
 import tomllib
 from abc import abstractmethod, ABC
 from enum import StrEnum
-from typing import Any, NamedTuple, Union
+from typing import Any, NamedTuple
 from collections.abc import Callable
 from functools import cache
 
@@ -228,7 +228,7 @@ class CarInterfaceBase(ABC):
   def _update(self, c: car.CarControl) -> car.CarState:
     pass
 
-  def update(self, c: car.CarControl, can_packets: list[Union[int, list[Union[int, bytes, int]]]]) -> car.CarState:
+  def update(self, c: car.CarControl, can_packets: list[int | list[int | bytes | int]]) -> car.CarState:
     # parse can
     for cp in self.can_parsers:
       if cp is not None:
