@@ -8,7 +8,7 @@ type = forbidden
 source_modules =
     openpilot.selfdrive.car
 forbidden_modules =
-    openpilot.common.params
+    openpilot.common
     openpilot.selfdrive.controls
     openpilot.system
     openpilot.body
@@ -23,6 +23,15 @@ ignore_imports =
     # remove these
     openpilot.selfdrive.car.interfaces -> openpilot.selfdrive.controls.lib.events
     openpilot.selfdrive.car.body.carcontroller -> openpilot.selfdrive.controls.lib.pid
+    openpilot.selfdrive.car.tests.test_docs -> openpilot.common.basedir
+    openpilot.selfdrive.car.docs -> openpilot.common.basedir
+    # car interface will not filter the speed
+    openpilot.selfdrive.car.interfaces -> openpilot.common.simple_kalman
+    openpilot.selfdrive.car.gm.interface -> openpilot.common.basedir
+    openpilot.selfdrive.car.interfaces -> openpilot.common.basedir
+    # these two will still live in openpilot, but require some modification
+    openpilot.selfdrive.car.fw_versions -> openpilot.common.params
+    openpilot.selfdrive.car.ecu_addrs -> openpilot.common.params
 
     # these are okay
     openpilot.selfdrive.car.card -> openpilot.common.swaglog
@@ -39,7 +48,5 @@ ignore_imports =
     openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.controls.lib.latcontrol_pid
     openpilot.selfdrive.car.card -> openpilot.common.params
     openpilot.selfdrive.car.tests.test_models -> openpilot.common.params
-    # these two will still live in openpilot, but require some modification
-    openpilot.selfdrive.car.fw_versions -> openpilot.common.params
-    openpilot.selfdrive.car.ecu_addrs -> openpilot.common.params
+    openpilot.selfdrive.car.tests.test_models -> openpilot.common.basedir
 unmatched_ignore_imports_alerting = warn

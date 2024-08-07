@@ -1,10 +1,10 @@
 from cereal import car
-from openpilot.common.conversions import Conversions as CV
-from openpilot.common.numpy_fast import interp
 from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import DT_CTRL, apply_driver_steer_torque_limits
+from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.gm import gmcan
 from openpilot.selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons
+from openpilot.selfdrive.car.helpers import interp
 from openpilot.selfdrive.car.interfaces import CarControllerBase
 
 VisualAlert = car.CarControl.HUDControl.VisualAlert
