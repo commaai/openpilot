@@ -78,7 +78,7 @@ int BMX055_Magn::init() {
   // suspend -> sleep
   int ret = set_register(BMX055_MAGN_I2C_REG_PWR_0, 0x01);
   if (ret < 0) {
-    LOGE("Enabling power failed: %d", ret);
+    LOGW("Enabling power failed: %d", ret);
     goto fail;
   }
   util::sleep_for(5); // wait until the chip is powered on

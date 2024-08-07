@@ -1,9 +1,9 @@
 from collections import namedtuple
 
 from cereal import car
-from openpilot.common.numpy_fast import clip, interp
 from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import DT_CTRL, rate_limit, make_tester_present_msg
+from openpilot.selfdrive.car.helpers import clip, interp
 from openpilot.selfdrive.car.honda import hondacan
 from openpilot.selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
 from openpilot.selfdrive.car.interfaces import CarControllerBase
@@ -104,8 +104,8 @@ def rate_limit_steer(new_steer, last_steer):
 
 
 class CarController(CarControllerBase):
-  def __init__(self, dbc_name, CP, VM):
-    super().__init__(dbc_name, CP, VM)
+  def __init__(self, dbc_name, CP):
+    super().__init__(dbc_name, CP)
     self.packer = CANPacker(dbc_name)
     self.params = CarControllerParams(CP)
     self.CAN = hondacan.CanBus(CP)
