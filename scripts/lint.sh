@@ -58,10 +58,10 @@ if [[ -n $@ ]]; then
   VALID_FILES=""
   for f in $@; do
     if [[ -f "$f" ]]; then
-      VALID_FILES+="$f "
+      VALID_FILES+="$f"$'\n'
     fi
   done
-  run_tests "$(echo $VALID_FILES | tr " " "\n")"
+  run_tests "$VALID_FILES"
 else
   run_tests "$(git diff --name-only --cached --diff-filter=AM $(git merge-base HEAD master))"
 fi
