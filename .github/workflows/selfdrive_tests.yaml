@@ -287,7 +287,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
-          ref: ${{ github.event.pull_request.base.ref }}
       - uses: ./.github/workflows/setup-with-retry
       - name: Get base car info
         run: |
