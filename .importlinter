@@ -10,8 +10,12 @@ source_modules =
 forbidden_modules =
     openpilot.common
     openpilot.selfdrive.controls
+    openpilot.selfdrive.debug
+    openpilot.selfdrive.pandad
+    openpilot.selfdrive.test
     openpilot.system
     openpilot.body
+    openpilot.tools
     openpilot.docs
     openpilot.msgq
     openpilot.panda
@@ -32,6 +36,11 @@ ignore_imports =
     # these two will still live in openpilot, but require some modification
     openpilot.selfdrive.car.fw_versions -> openpilot.common.params
     openpilot.selfdrive.car.ecu_addrs -> openpilot.common.params
+    # requires generic CAN send/receive functions
+    openpilot.selfdrive.car.ecu_addrs -> openpilot.selfdrive.pandad
+    openpilot.selfdrive.car.interfaces -> openpilot.selfdrive.pandad
+    openpilot.selfdrive.car.isotp_parallel_query -> openpilot.selfdrive.pandad
+    openpilot.selfdrive.car.tests.test_fw_fingerprint -> openpilot.selfdrive.pandad
 
     # these are okay
     openpilot.selfdrive.car.card -> openpilot.common.swaglog
@@ -49,4 +58,10 @@ ignore_imports =
     openpilot.selfdrive.car.card -> openpilot.common.params
     openpilot.selfdrive.car.tests.test_models -> openpilot.common.params
     openpilot.selfdrive.car.tests.test_models -> openpilot.common.basedir
+    openpilot.selfdrive.car.card -> openpilot.selfdrive.pandad
+    openpilot.selfdrive.car.tests.test_docs -> openpilot.selfdrive.debug.dump_car_docs
+    openpilot.selfdrive.car.tests.test_docs -> openpilot.selfdrive.debug.print_docs_diff
+    openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.pandad
+    openpilot.selfdrive.car.tests.test_models -> openpilot.selfdrive.pandad
+    openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.test.fuzzy_generation
 unmatched_ignore_imports_alerting = warn
