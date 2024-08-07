@@ -88,7 +88,6 @@ testing = [
   "pytest-repeat",
   "ruff",
   "codespell",
-  "pre-commit-hooks",
 ]
 
 dev = [
@@ -178,11 +177,9 @@ plugins = [
   "numpy.typing.mypy_plugin",
 ]
 exclude = [
+  "body/",
   "cereal/",
-  "msgq/",
-  "msgq_repo/",
   "opendbc/",
-  "opendbc_repo/",
   "panda/",
   "rednose/",
   "rednose_repo/",
@@ -206,9 +203,6 @@ warn_return_any=true
 
 # allow implicit optionals for default args
 implicit_optional = true
-
-local_partial_types=true
-explicit_package_bases=true
 
 # https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
 [tool.ruff]
