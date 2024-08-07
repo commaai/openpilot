@@ -289,7 +289,6 @@ jobs:
           submodules: true
           ref: ${{ github.event.pull_request.base.ref }}
       - uses: ./.github/workflows/setup-with-retry
-      - run: git lfs pull
       - name: Get base car info
         run: |
           ${{ env.RUN }} "mkdir -p /tmp/openpilot_cache/base_car_docs/"
@@ -298,7 +297,7 @@ jobs:
       - name: Save car docs diff
         id: save_diff
         run: |
-          ${{ env.RUN }} "scons -j$(nproc)"
+          ${{ env.RUN }} "git lfs pull && scons -j$(nproc)"
           output=$(${{ env.RUN }} "python selfdrive/debug/print_docs_diff.py --path /tmp/openpilot_cache/base_car_docs")
           echo "${output}"
           output="${output//$'\n'/'%0A'}"
