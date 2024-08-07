@@ -42,6 +42,7 @@ function run_tests() {
 
   if [[ -n "$PYTHON_FILES" ]]; then
     run "ruff" ruff check $PYTHON_FILES --quiet
+    run "Import check" lint-imports
   fi
 
   if [[ -n "$ALL_FILES" ]]; then
