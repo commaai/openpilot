@@ -13,7 +13,7 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper
 from openpilot.common.swaglog import cloudlog, ForwardingHandler
 
-from openpilot.selfdrive.pandad import can_list_to_can_capnp, can_capnp_to_list
+from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
 from openpilot.selfdrive.car import DT_CTRL, carlog
 from openpilot.selfdrive.car.can_definitions import CanData, CanSendCallable
 from openpilot.selfdrive.car.fw_versions import ObdCallback
