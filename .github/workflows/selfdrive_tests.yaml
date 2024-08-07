@@ -287,9 +287,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
-          lfs: true
           ref: ${{ github.event.pull_request.base.ref }}
       - uses: ./.github/workflows/setup-with-retry
+      - run: git lfs pull
       - name: Get base car info
         run: |
           ${{ env.RUN }} "mkdir -p /tmp/openpilot_cache/base_car_docs/"
