@@ -3,8 +3,8 @@ from collections import deque
 from cereal import car
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
-from openpilot.selfdrive.car.interfaces import CarStateBase
 from openpilot.selfdrive.car.conversions import Conversions as CV
+from openpilot.selfdrive.car.interfaces import CarStateBase
 from openpilot.selfdrive.car.nissan.values import CAR, DBC, CarControllerParams
 
 TORQUE_SAMPLES = 12
