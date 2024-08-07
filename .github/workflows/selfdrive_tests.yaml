@@ -61,13 +61,20 @@ jobs:
         cd $STRIPPED_DIR
         ${{ env.RUN }} "release/check-dirty.sh && \
                         MAX_EXAMPLES=5 $PYTEST -m 'not slow' selfdrive/car"
-    - name: static analysis
+    - name: Getting modified files
+      timeout-minutes: 1
+      run: |
+        cd $GITHUB_WORKSPACE
+        git fetch --unshallow --recurse-submodules=no origin master:master
+        ALL_FILES=$(git diff --name-only --cached --diff-filter=AM $(git merge-base HEAD master))
+        echo FILES=$(echo $ALL_FILES) >> $GITHUB_ENV
+    - name: Static analysis
       timeout-minutes: 1
       run: |
         cd $GITHUB_WORKSPACE
         cp pyproject.toml $STRIPPED_DIR
         cd $STRIPPED_DIR
-        ${{ env.RUN }} "scripts/lint.sh"
+        ${{ env.RUN }} "scripts/lint.sh $FILES"
 
   build:
     strategy:
@@ -140,16 +147,17 @@ jobs:
     runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
                    ((github.event_name != 'pull_request') ||
                     (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-latest' }}
+    env:
+      PYTHONWARNINGS: default
     steps:
     - uses: actions/checkout@v4
-      with:
-        submodules: true
-    - uses: ./.github/workflows/setup-with-retry
-    - name: Build openpilot
-      run: ${{ env.RUN }} "scons -j$(nproc)"
-    - name: static analysis
+    - name: Setup
+      run: tools/op.sh setup
+    - name: Get ancestor commit
+      run: git fetch --unshallow --recurse-submodules=no origin master:master
+    - name: Static analysis
       timeout-minutes: 1
-      run: ${{ env.RUN }} "scripts/lint.sh"
+      run: tools/op.sh lint
 
   unit_tests:
     name: unit tests
