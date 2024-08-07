@@ -43,8 +43,7 @@ function run_tests() {
   run "Shebang check" python3 -m pre_commit_hooks.check_shebang_scripts_are_executable $@
 
   if [[ -z "$FAST" ]]; then
-    cat selfdrive/car/interfaces.py
-    run "mypy" mypy --no-incremental .
+    run "mypy" mypy .
     run "Codespell" codespell
   fi
 
