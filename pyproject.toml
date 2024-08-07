@@ -181,6 +181,7 @@ exclude = [
   "cereal/",
   "msgq/",
   "msgq_repo/",
+  "openpilot/",
   "opendbc/",
   "opendbc_repo/",
   "panda/",
