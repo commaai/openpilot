@@ -29,8 +29,9 @@ def process_detail_sentence(old, new):
             "  ```"
 
 def column_change_format(line1, line2):
+  line1, line2 = line1[3:], line2[3:]
   info1, info2 = line1.split('|'), line2.split('|')
-  return "|".join([f"{i1} {ARROW_SYMBOL} {i2}|" if i1 != i2 else f"{i1}|" for i1, i2 in zip(info1, info2, strict=True)])
+  return "".join([f"{i1} {ARROW_SYMBOL} {i2}|" if i1 != i2 else f"{i1}|" for i1, i2 in zip(info1, info2, strict=True)])
 
 def process_diff_information(info):
   header = info[0]
@@ -51,7 +52,7 @@ def process_diff_information(info):
     for make in makes:
       if make in remove and make in add:
         categories.append('column')
-        final_strings.append(column_change_format(remove[make][2:], add[make][2:]))
+        final_strings.append(column_change_format(remove[make], add[make]))
         diff_detail_sentence = process_detail_sentence(remove[make], add[make])
         if diff_detail_sentence:
           categories.append('detail')
