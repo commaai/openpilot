@@ -6,9 +6,14 @@ import subprocess
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.conversions import Conversions as CV
-from openpilot.common.enums import Column
+from openpilot.common.enums import Column, Star
 from openpilot.common.detail_sentence import get_detail_sentence
 
+FOOTNOTE_TAG = "<sup>{}</sup>"
+STAR_ICON = '<a href="##"><img valign="top" ' + \
+            'src="https://media.githubusercontent.com/media/commaai/openpilot/master/docs/assets/icon-star-{}.svg" width="22" /></a>'
+VIDEO_ICON = '<a href="{}" target="_blank">' + \
+             '<img height="18px" src="https://media.githubusercontent.com/media/commaai/openpilot/master/docs/assets/icon-youtube.svg"></img></a>'
 COLUMNS = "|" + "|".join([column.value for column in Column]) + "|"
 COLUMN_HEADER = "|---|---|---|{}|".format("|".join([":---:"] * (len(Column) - 3)))
 ARROW_SYMBOL = "➡️"
@@ -28,10 +33,36 @@ def process_detail_sentence(old, new):
             f"  + {cur_sentence[1]}\n" + \
             "  ```"
 
-def column_change_format(line1, line2):
+def format_line(line1, line2=None):
+  """
+  Formats the line to show the changes between the two lines.
+  If line2 is not provided, it is assumed to be the same as line1.
+  This lets us format line1 on its own and handle the stars/video icons.
+  """
+  if not line2:
+    line2 = line1
   line1, line2 = line1[3:], line2[3:]
   info1, info2 = line1.split('|'), line2.split('|')
-  return "".join([f"{i1} {ARROW_SYMBOL} {i2}|" if i1 != i2 else f"{i1}|" for i1, i2 in zip(info1, info2, strict=True)])
+  row = "|"
+  for i1, i2 in zip(info1, info2, strict=True):
+    if '![star](assets/icon-star-' in i1 + i2: # Handle the star icons
+      for star_type in Star:
+        if star_type.value in i1:
+          i1 = STAR_ICON.format(star_type.value)
+        if star_type.value in i2:
+          i2 = STAR_ICON.format(star_type.value)
+    if 'icon-youtube.svg' in i1 + i2: # Handle the video icons
+      if i1:
+        link = i1[i1.index('href="')+6:i1.index('" target')]
+        i1 = VIDEO_ICON.format(link)
+      if i2:
+        link = i2[i2.index('href="')+6:i2.index('" target')]
+        i2 = VIDEO_ICON.format(link)
+    if i1 != i2:
+      row += f"{i1} {ARROW_SYMBOL} {i2}|"
+    else:
+      row += f"{i1}|"
+  return row
 
 def process_diff_information(info):
   header = info[0]
@@ -52,7 +83,7 @@ def process_diff_information(info):
     for make in makes:
       if make in remove and make in add:
         categories.append('column')
-        final_strings.append(column_change_format(remove[make], add[make]))
+        final_strings.append(format_line(remove[make], add[make]))
         diff_detail_sentence = process_detail_sentence(remove[make], add[make])
         if diff_detail_sentence:
           categories.append('detail')
@@ -61,17 +92,16 @@ def process_diff_information(info):
         del remove[make]
       elif make in remove:
         categories.append('removals')
-        final_strings.append(remove[make][2:])
+        final_strings.append(format_line(remove[make]))
         del remove[make]
       elif make in add:
         categories.append('additions')
-        final_strings.append(add[make][2:])
+        final_strings.append(format_line(add[make]))
         del add[make]
     output = list(zip(categories, final_strings, strict=True))
   else:
     category = "additions" if "a" in header else "removals"
-    final_strings = [x[2:] for x in info[1:]]
-    output = [(category, string) for string in final_strings]
+    output = [(category, format_line(line)) for line in info[1:]]
   return output
 
 def print_markdown(changes):
