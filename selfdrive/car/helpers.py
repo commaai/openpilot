@@ -1,6 +1,7 @@
 def clip(x, lo, hi):
   return max(lo, min(hi, x))
 
+
 def interp(x, xp, fp):
   N = len(xp)
 
@@ -14,6 +15,7 @@ def interp(x, xp, fp):
       (xv - xp[low]) * (fp[hi] - fp[low]) / (xp[hi] - xp[low]) + fp[low])
 
   return [get_interp(v) for v in x] if hasattr(x, '__iter__') else get_interp(x)
+
 
 def mean(x):
   return sum(x) / len(x)

@@ -11,7 +11,7 @@ from cereal import car
 from panda.python.uds import SERVICE_TYPE
 from openpilot.common.utils import Freezable
 from openpilot.selfdrive.car.docs_definitions import CarDocs
-from openpilot.selfdrive.car.numpy_fast import clip, interp
+from openpilot.selfdrive.car.helpers import clip, interp
 
 # set up logging
 carlog = logging.getLogger('carlog')

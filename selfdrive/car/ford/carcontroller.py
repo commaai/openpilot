@@ -4,7 +4,7 @@ from openpilot.selfdrive.car import apply_std_steer_angle_limits
 from openpilot.selfdrive.car.ford import fordcan
 from openpilot.selfdrive.car.ford.values import CarControllerParams, FordFlags
 from openpilot.selfdrive.car.interfaces import CarControllerBase, V_CRUISE_MAX
-from openpilot.selfdrive.car.numpy_fast import clip
+from openpilot.selfdrive.car.helpers import clip
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 VisualAlert = car.CarControl.HUDControl.VisualAlert
