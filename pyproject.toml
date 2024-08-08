@@ -88,6 +88,7 @@ testing = [
   "pytest-repeat",
   "ruff",
   "codespell",
+  "pre-commit-hooks",
 ]
 
 dev = [
@@ -169,7 +170,7 @@ quiet-level = 3
 # if you've got a short variable name that's getting flagged, add it here
 ignore-words-list = "bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup,bumb,nd,sie,preints,whit,indexIn,ws,uint,grey,deque,stdio,amin,BA,LITE,atEnd,UIs,errorString,arange,FocusIn,od,tim,relA,hist,copyable,jupyter,thead"
 builtin = "clear,rare,informal,code,names,en-GB_to_en-US"
-skip = "./third_party/*, ./tinygrad/*, ./tinygrad_repo/*, ./msgq/*, ./panda/*, ./opendbc/*, ./opendbc_repo/*, ./rednose/*, ./rednose_repo/*, ./teleoprtc/*, ./teleoprtc_repo/*, ./selfdrive/ui/translations/*.ts, uv.lock, *.onnx, ./cereal/gen/*, */c_generated_code/*"
+skip = "./third_party/*, ./tinygrad/*, ./tinygrad_repo/*, ./msgq/*, ./panda/*, ./opendbc/*, ./opendbc_repo/*, ./rednose/*, ./rednose_repo/*, ./teleoprtc/*, ./teleoprtc_repo/*, *.ts, uv.lock, *.onnx, ./cereal/gen/*, */c_generated_code/*"
 
 [tool.mypy]
 python_version = "3.11"
@@ -177,9 +178,11 @@ plugins = [
   "numpy.typing.mypy_plugin",
 ]
 exclude = [
-  "body/",
   "cereal/",
+  "msgq/",
+  "msgq_repo/",
   "opendbc/",
+  "opendbc_repo/",
   "panda/",
   "rednose/",
   "rednose_repo/",
@@ -203,6 +206,10 @@ warn_return_any=true
 
 # allow implicit optionals for default args
 implicit_optional = true
+
+local_partial_types=true
+explicit_package_bases=true
+disable_error_code = "annotation-unchecked"
 
 # https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
 [tool.ruff]
