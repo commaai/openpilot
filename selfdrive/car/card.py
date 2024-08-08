@@ -49,6 +49,7 @@ def get_one_can(logcan: messaging.SubSocket) -> list[CanData]:
 
 def can_comm_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket) -> tuple[SimpleNamespace, CanSendCallable]:
   def can_drain(wait_for_one: bool = False) -> list[list[CanData]]:
+    # wait_for_one: wait the normal logcan socket timeout for a CAN packet, may return empty list if nothing comes
     ret = []
     for can in messaging.drain_sock(logcan, wait_for_one=wait_for_one):
       ret.append([CanData(msg.address, msg.dat, msg.src) for msg in can.can])
