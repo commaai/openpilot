@@ -15,8 +15,7 @@ class TestCanFingerprint:
              for address, length in fingerprint.items() for src in (0, 1)]
 
       fingerprint_iter = iter([can])
-      default_can = [CanData(1, b'\x00', 128)]
-      car_fingerprint, finger = can_fingerprint(lambda **kwargs: [next(fingerprint_iter, default_can)])  # noqa: B023
+      car_fingerprint, finger = can_fingerprint(lambda **kwargs: [next(fingerprint_iter, [])])  # noqa: B023
 
       assert car_fingerprint == car_model
       assert finger[0] == fingerprint
