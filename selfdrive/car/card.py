@@ -48,7 +48,7 @@ def can_comm_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket
     """
     ret = []
     for can in messaging.drain_sock(logcan, wait_for_one=wait_for_one):
-      ret.append([CanData(int(msg.address), bytes(msg.dat), int(msg.src)) for msg in can.can])
+      ret.append([CanData(msg.address, msg.dat, msg.src) for msg in can.can])
     return ret
 
   def can_send(msgs: list[CanData]) -> None:
