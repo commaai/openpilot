@@ -48,8 +48,7 @@ def can_fingerprint(can_recv: CanRecvCallable) -> tuple[str | None, dict[int, di
   done = False
 
   while not done:
-    # can_recv(wait_for_one=True) may return zero or multiple packets,
-    # so we increment frame for each one we receive
+    # can_recv(wait_for_one=True) may return zero or multiple packets, so we increment frame for each one we receive
     can_packets = can_recv(wait_for_one=True)
     for can_packet in can_packets:
       for can in can_packet:
