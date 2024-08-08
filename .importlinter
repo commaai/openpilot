@@ -29,17 +29,16 @@ ignore_imports =
     openpilot.selfdrive.car.body.carcontroller -> openpilot.selfdrive.controls.lib.pid
     openpilot.selfdrive.car.tests.test_docs -> openpilot.common.basedir
     openpilot.selfdrive.car.docs -> openpilot.common.basedir
+
     # car interface will not filter the speed
     openpilot.selfdrive.car.interfaces -> openpilot.common.simple_kalman
+
     openpilot.selfdrive.car.gm.interface -> openpilot.common.basedir
     openpilot.selfdrive.car.interfaces -> openpilot.common.basedir
-    # these two will still live in openpilot, but require some modification
+
+    # params will need to move to new openpilot files that just call car files
     openpilot.selfdrive.car.fw_versions -> openpilot.common.params
     openpilot.selfdrive.car.ecu_addrs -> openpilot.common.params
-    # requires generic CAN send/receive functions
-    openpilot.selfdrive.car.ecu_addrs -> openpilot.selfdrive.pandad
-    openpilot.selfdrive.car.isotp_parallel_query -> openpilot.selfdrive.pandad
-    openpilot.selfdrive.car.tests.test_fw_fingerprint -> openpilot.selfdrive.pandad
 
     # these are okay
     openpilot.selfdrive.car.card -> openpilot.common.swaglog

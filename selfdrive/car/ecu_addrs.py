@@ -2,11 +2,10 @@
 import capnp
 import time
 
-import cereal.messaging as messaging
 from panda.python.uds import SERVICE_TYPE
 from openpilot.selfdrive.car import make_tester_present_msg, carlog
+from openpilot.selfdrive.car.can_definitions import CanRecvCallable, CanSendCallable
 from openpilot.selfdrive.car.fw_query_definitions import EcuAddrBusType
-from openpilot.selfdrive.pandad import can_list_to_can_capnp
 
 
 def _is_tester_present_response(msg: capnp.lib.capnp._DynamicStructReader, subaddr: int = None) -> bool:
@@ -23,26 +22,26 @@ def _is_tester_present_response(msg: capnp.lib.capnp._DynamicStructReader, subad
   return False
 
 
-def _get_all_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, bus: int, timeout: float = 1, debug: bool = True) -> set[EcuAddrBusType]:
+def _get_all_ecu_addrs(can_recv: CanRecvCallable, can_send: CanSendCallable, bus: int, timeout: float = 1, debug: bool = True) -> set[EcuAddrBusType]:
   addr_list = [0x700 + i for i in range(256)] + [0x18da00f1 + (i << 8) for i in range(256)]
   queries: set[EcuAddrBusType] = {(addr, None, bus) for addr in addr_list}
   responses = queries
-  return get_ecu_addrs(logcan, sendcan, queries, responses, timeout=timeout, debug=debug)
+  return get_ecu_addrs(can_recv, can_send, queries, responses, timeout=timeout, debug=debug)
 
 
-def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, queries: set[EcuAddrBusType],
+def get_ecu_addrs(can_recv: CanRecvCallable, can_send: CanSendCallable, queries: set[EcuAddrBusType],
                   responses: set[EcuAddrBusType], timeout: float = 1, debug: bool = False) -> set[EcuAddrBusType]:
   ecu_responses: set[EcuAddrBusType] = set()  # set((addr, subaddr, bus),)
   try:
     msgs = [make_tester_present_msg(addr, bus, subaddr) for addr, subaddr, bus in queries]
 
-    messaging.drain_sock_raw(logcan)
-    sendcan.send(can_list_to_can_capnp(msgs, msgtype='sendcan'))
+    can_recv()
+    can_send(msgs)
     start_time = time.monotonic()
     while time.monotonic() - start_time < timeout:
-      can_packets = messaging.drain_sock(logcan, wait_for_one=True)
+      can_packets = can_recv(wait_for_one=True)
       for packet in can_packets:
-        for msg in packet.can:
+        for msg in packet:
           if not len(msg.dat):
             carlog.warning("ECU addr scan: skipping empty remote frame")
             continue
@@ -61,6 +60,7 @@ def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, que
 
 if __name__ == "__main__":
   import argparse
+  import cereal.messaging as messaging
   from openpilot.common.params import Params
   from openpilot.selfdrive.car.card import obd_callback
 
