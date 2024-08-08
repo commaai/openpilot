@@ -1,13 +1,28 @@
 [
   {
     "name": "boot",
-    "url": "https://commadist.azureedge.net/agnosupdate/boot-5674ea6767e7198cf1e7def3de66a57061f001ed76d43dc4b4f84de545c53c6f.img.xz",
-    "hash": "5674ea6767e7198cf1e7def3de66a57061f001ed76d43dc4b4f84de545c53c6f",
-    "hash_raw": "5674ea6767e7198cf1e7def3de66a57061f001ed76d43dc4b4f84de545c53c6f",
+    "url": "https://commadist.azureedge.net/agnosupdate-staging/boot-87da54ce17d2c3446603480b09dd2e38e3899764df2be2dd5b802c8342c6c954.img.xz",
+    "hash": "87da54ce17d2c3446603480b09dd2e38e3899764df2be2dd5b802c8342c6c954",
+    "hash_raw": "87da54ce17d2c3446603480b09dd2e38e3899764df2be2dd5b802c8342c6c954",
     "size": 16029696,
     "sparse": false,
     "full_check": true,
     "has_ab": true
+  },
+  {
+    "name": "system",
+    "url": "https://commadist.azureedge.net/agnosupdate-staging/system-dc03a66338587fa268ad093555f1444b0a689cdedab2b06182c0c30cdf17a16a.img.xz",
+    "hash": "0b87177df3cfa196e2741b994d48c2633b7afd70a32435ed6905ecf865e77f3f",
+    "hash_raw": "dc03a66338587fa268ad093555f1444b0a689cdedab2b06182c0c30cdf17a16a",
+    "size": 10737418240,
+    "sparse": true,
+    "full_check": false,
+    "has_ab": true,
+    "alt": {
+      "hash": "d780c27da67a9ad91129cd7e5b9edb9ee291c6880b2e851687ed112efedf17b6",
+      "url": "https://commadist.azureedge.net/agnosupdate-staging/system-skip-chunks-dc03a66338587fa268ad093555f1444b0a689cdedab2b06182c0c30cdf17a16a.img.xz",
+      "size": 4776231192
+    }
   },
   {
     "name": "abl",
@@ -58,20 +73,5 @@
     "sparse": false,
     "full_check": true,
     "has_ab": true
-  },
-  {
-    "name": "system",
-    "url": "https://commadist.azureedge.net/agnosupdate/system-1badfe72851628d6cf9200a53a6151bb4e797b49c717141409fc57138eae388a.img.xz",
-    "hash": "328e90c62068222dfd98f71dd3f6251fcb962f082b49c6be66ab2699f5db6f4f",
-    "hash_raw": "1badfe72851628d6cf9200a53a6151bb4e797b49c717141409fc57138eae388a",
-    "size": 10737418240,
-    "sparse": true,
-    "full_check": false,
-    "has_ab": true,
-    "alt": {
-      "hash": "bc11d2148f29862ee1326aca2af1cf6bbf5fed831e3f8f6b8f7a0f110dfe8d26",
-      "url": "https://commadist.azureedge.net/agnosupdate/system-skip-chunks-1badfe72851628d6cf9200a53a6151bb4e797b49c717141409fc57138eae388a.img.xz",
-      "size": 4548070000
-    }
   }
 ]
