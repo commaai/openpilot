@@ -40,13 +40,6 @@ def obd_callback(params: Params) -> ObdCallback:
   return set_obd_multiplexing
 
 
-def get_one_can(logcan: messaging.SubSocket) -> list[CanData]:
-  while True:
-    can = messaging.recv_one_retry(logcan)
-    if len(can.can) > 0:
-      return [CanData(msg.address, msg.dat, msg.src) for msg in can.can]
-
-
 def can_comm_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket) -> tuple[SimpleNamespace, CanSendCallable]:
   def can_drain(wait_for_one: bool = False) -> list[list[CanData]]:
     # wait_for_one: wait the normal logcan socket timeout for a CAN packet, may return empty list if nothing comes
@@ -60,7 +53,7 @@ def can_comm_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket
     sendcan.send(can_list_to_can_capnp(msgs, msgtype='sendcan'))
 
   # TODO: do we want can_send as a function as well? remove SimpleNamespace?
-  return SimpleNamespace(drain=can_drain, get_one_can=lambda: get_one_can(logcan)), can_send
+  return SimpleNamespace(drain=can_drain), can_send
 
 
 class Car:
@@ -86,7 +79,10 @@ class Car:
     if CI is None:
       # wait for one pandaState and one CAN packet
       print("Waiting for CAN messages...")
-      get_one_can(self.can_sock)
+      while True:
+        can = messaging.recv_one_retry(self.can_sock)
+        if len(can.can) > 0:
+          break
 
       experimental_long_allowed = self.params.get_bool("ExperimentalLongitudinalEnabled")
       num_pandas = len(messaging.recv_one_retry(self.sm.sock['pandaStates']).pandaStates)
