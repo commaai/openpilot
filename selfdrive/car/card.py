@@ -52,7 +52,6 @@ def can_comm_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket
     return ret
 
   def can_send(msgs: list[CanData]) -> None:
-    """msgs: messages as created by selfdrive.car.make_can_msg"""
     sendcan.send(can_list_to_can_capnp(msgs, msgtype='sendcan'))
 
   return can_recv, can_send
