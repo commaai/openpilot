@@ -3,6 +3,8 @@ set -e
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
+UNDERLINE='\033[4m'
+BOLD='\033[1m'
 NC='\033[0m'
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
@@ -58,10 +60,27 @@ function run_tests() {
   return $FAILED
 }
 
+function help() {
+  echo "A fast linter"
+  echo ""
+  echo -e "${BOLD}${UNDERLINE}Usage:${NC} op lint [OPTIONS]"
+  echo ""
+  echo -e "${BOLD}${UNDERLINE}Options:${NC}"
+  echo -e "  ${BOLD}-f, --fast${NC}"
+  echo "          Skip slow tests"
+  echo -e "  ${BOLD}-s, --skip${NC}"
+  echo "          Specify a test to skip"
+  echo ""
+  echo -e "${BOLD}${UNDERLINE}Examples:${NC}"
+  echo "  op lint --skip mypy --skip ruff"
+  echo "          Skip the ruff and mypy check"
+}
+
 while true; do
   case $1 in
     -f | --fast ) shift 1; FAST="1" ;;
     -s | --skip ) shift 1; SKIP+="$1|"; shift 1 ;;
+    -h | --help | -help | --h ) help; exit 0 ;;
     * )           break ;;
   esac
 done
