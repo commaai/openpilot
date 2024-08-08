@@ -59,4 +59,4 @@ class TestCanFingerprint:
 
         car_fingerprint, _ = can_fingerprint(test)
         assert car_fingerprint == car_model
-        assert frames == expected_frames + 2# TODO: fix extra frames
+        assert frames == expected_frames + 2  # TODO: fix extra frames
