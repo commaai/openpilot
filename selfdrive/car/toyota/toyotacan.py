@@ -1,6 +1,6 @@
-from cereal import car
+from selfdrive.car.data_structures import CarParams
 
-SteerControlType = car.CarParams.SteerControlType
+SteerControlType = CarParams.SteerControlType
 
 
 def create_steer_command(packer, steer, steer_req):
