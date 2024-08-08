@@ -335,7 +335,7 @@ def card_fingerprint_callback(rc, pm, msgs, fingerprint):
 
     m = canmsgs.pop(0)
     rc.send_sync(pm, "can", m.as_builder().to_bytes())
-    rc.wait_for_next_recv(False)
+    rc.wait_for_next_recv(True)
 
 
 def get_car_params_callback(rc, pm, msgs, fingerprint):
