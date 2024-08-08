@@ -14,6 +14,7 @@ UNDERLINE='\033[4m'
 BOLD='\033[1m'
 NC='\033[0m'
 
+SHELL_NAME="$(basename ${SHELL})"
 RC_FILE="${HOME}/.$(basename ${SHELL})rc"
 if [ "$(uname)" == "Darwin" ] && [ $SHELL == "/bin/bash" ]; then
   RC_FILE="$HOME/.bash_profile"
@@ -223,12 +224,22 @@ function op_setup() {
 }
 
 function op_activate_venv() {
+  set +e
   source $OPENPILOT_ROOT/.venv/bin/activate &> /dev/null || true
+  set -e
 }
 
 function op_venv() {
   op_before_cmd
-  bash --rcfile <(echo "source $RC_FILE; source $OPENPILOT_ROOT/.venv/bin/activate")
+
+  case $SHELL_NAME in
+    "zsh")
+      ZSHRC_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'tmp_zsh')
+      echo "source $RC_FILE; source $OPENPILOT_ROOT/.venv/bin/activate" >> $ZSHRC_DIR/.zshrc
+      ZDOTDIR=$ZSHRC_DIR zsh ;;
+    *)
+      bash --rcfile <(echo "source $RC_FILE; source $OPENPILOT_ROOT/.venv/bin/activate") ;;
+  esac
 }
 
 function op_check() {
