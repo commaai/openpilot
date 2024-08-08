@@ -9,9 +9,9 @@ import capnp
 
 from cereal import car
 from panda.python.uds import SERVICE_TYPE
-from openpilot.common.numpy_fast import clip, interp
-from openpilot.common.utils import Freezable
+from openpilot.selfdrive.car.can_definitions import CanData
 from openpilot.selfdrive.car.docs_definitions import CarDocs
+from openpilot.selfdrive.car.helpers import clip, interp
 
 # set up logging
 carlog = logging.getLogger('carlog')
@@ -194,10 +194,6 @@ def get_friction(lateral_accel_error: float, lateral_accel_deadzone: float, fric
   return friction
 
 
-def make_can_msg(addr, dat, bus):
-  return [addr, dat, bus]
-
-
 def make_tester_present_msg(addr, bus, subaddr=None, suppress_response=False):
   dat = [0x02, SERVICE_TYPE.TESTER_PRESENT]
   if subaddr is not None:
@@ -205,7 +201,7 @@ def make_tester_present_msg(addr, bus, subaddr=None, suppress_response=False):
   dat.append(0x80 if suppress_response else 0x0)  # sub-function
 
   dat.extend([0x0] * (8 - len(dat)))
-  return make_can_msg(addr, bytes(dat), bus)
+  return CanData(addr, bytes(dat), bus)
 
 
 def get_safety_config(safety_model, safety_param = None):
@@ -261,6 +257,19 @@ class CarSpecs:
 
   def override(self, **kwargs):
     return replace(self, **kwargs)
+
+
+class Freezable:
+  _frozen: bool = False
+
+  def freeze(self):
+    if not self._frozen:
+      self._frozen = True
+
+  def __setattr__(self, *args, **kwargs):
+    if self._frozen:
+      raise Exception("cannot modify frozen object")
+    super().__setattr__(*args, **kwargs)
 
 
 @dataclass(order=True)

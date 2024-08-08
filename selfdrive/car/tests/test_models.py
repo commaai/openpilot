@@ -217,7 +217,7 @@ class TestCarModelBase(unittest.TestCase):
     CC = car.CarControl.new_message().as_reader()
 
     for i, msg in enumerate(self.can_msgs):
-      CS = self.CI.update(CC, (msg.as_builder().to_bytes(),))
+      CS = self.CI.update(CC, can_capnp_to_list((msg.as_builder().to_bytes(),)))
       self.CI.apply(CC, msg.logMonoTime)
 
       if CS.canValid:
@@ -358,7 +358,7 @@ class TestCarModelBase(unittest.TestCase):
       can = messaging.new_message('can', 1)
       can.can = [log.CanData(address=address, dat=dat, src=bus)]
 
-      CS = self.CI.update(CC, (can.to_bytes(),))
+      CS = self.CI.update(CC, can_capnp_to_list((can.to_bytes(),)))
 
       if self.safety.get_gas_pressed_prev() != prev_panda_gas:
         self.assertEqual(CS.gasPressed, self.safety.get_gas_pressed_prev())
@@ -397,7 +397,7 @@ class TestCarModelBase(unittest.TestCase):
 
     # warm up pass, as initial states may be different
     for can in self.can_msgs[:300]:
-      self.CI.update(CC, (can.as_builder().to_bytes(), ))
+      self.CI.update(CC, can_capnp_to_list((can.as_builder().to_bytes(), )))
       for msg in filter(lambda m: m.src in range(64), can.can):
         to_send = libpanda_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
         self.safety.safety_rx_hook(to_send)
@@ -407,7 +407,7 @@ class TestCarModelBase(unittest.TestCase):
     checks = defaultdict(int)
     card = Car(CI=self.CI)
     for idx, can in enumerate(self.can_msgs):
-      CS = self.CI.update(CC, (can.as_builder().to_bytes(), ))
+      CS = self.CI.update(CC, can_capnp_to_list((can.as_builder().to_bytes(), )))
       for msg in filter(lambda m: m.src in range(64), can.can):
         to_send = libpanda_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
         ret = self.safety.safety_rx_hook(to_send)

@@ -1,6 +1,6 @@
-from openpilot.common.numpy_fast import clip, interp
 from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import apply_driver_steer_torque_limits, common_fault_avoidance, make_tester_present_msg
+from openpilot.selfdrive.car.helpers import clip, interp
 from openpilot.selfdrive.car.interfaces import CarControllerBase
 from openpilot.selfdrive.car.subaru import subarucan
 from openpilot.selfdrive.car.subaru.values import DBC, GLOBAL_ES_ADDR, CanBus, CarControllerParams, SubaruFlags
@@ -12,8 +12,8 @@ MAX_STEER_RATE_FRAMES = 7  # tx control frames needed before torque can be cut
 
 
 class CarController(CarControllerBase):
-  def __init__(self, dbc_name, CP, VM):
-    super().__init__(dbc_name, CP, VM)
+  def __init__(self, dbc_name, CP):
+    super().__init__(dbc_name, CP)
     self.apply_steer_last = 0
 
     self.cruise_button_prev = 0
