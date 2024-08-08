@@ -18,6 +18,7 @@ NUM_CPUS = multiprocessing.cpu_count()
 DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 RR_TIMELINE_NAME = "Timeline"
 RR_WIN = "openpilot logs"
+STARTUP_TEXT = "# Logging..."
 
 
 """
@@ -48,15 +49,18 @@ class Rerunner:
     if dcam:
       self.camera_readers[CameraType.dcam] = CameraReader(route.dcamera_paths(), start_time, segment_range.seg_idxs)
 
+  def _start_rerun(self):
+    rr.init(RR_WIN, spawn=True)
+    rr.log("startup", rr.TextDocument(STARTUP_TEXT, media_type=rr.MediaType.MARKDOWN), static=True)
 
-  def _create_blueprint(self, empty_blueprint=False):
-    blueprint = None
-    service_views = []
-
+  def _create_blueprint(self, startup_blueprint=False):
     # empty blueprint for subprocesses during logging. Expecting a blank screen until finish logging
     # Final blueprint is set by main process at the end of the logging process
-    if empty_blueprint:
-      return rrb.Blueprint(auto_space_views=False, auto_layout=False, collapse_panels=True)
+    if startup_blueprint:
+      return rrb.Blueprint(rrb.TextDocumentView(name="startup", origin="startup", visible=True), collapse_panels=True)
+
+    blueprint = None
+    service_views = []
 
     for topic in sorted(SERVICE_LIST.keys()):
       View = rrb.TimeSeriesView if topic != "thumbnail" else rrb.Spatial2DView
@@ -142,12 +146,12 @@ class Rerunner:
       rr.log(cam_type, rr.Image(bytes=frame, width=w, height=h, pixel_format=rr.PixelFormat.NV12))
 
   def load_data(self):
-    rr.init(RR_WIN, spawn=True)
+    self._start_rerun()
 
-    empty_blueprint = self._create_blueprint(empty_blueprint=True)
-    self.lr.run_across_segments(NUM_CPUS, partial(self._process_log_msgs, empty_blueprint))
+    startup_blueprint = self._create_blueprint(startup_blueprint=True)
+    self.lr.run_across_segments(NUM_CPUS, partial(self._process_log_msgs, startup_blueprint))
     for cam_type, cr in self.camera_readers.items():
-      cr.run_across_segments(NUM_CPUS, partial(self._process_cam_readers, empty_blueprint, cam_type, cr.h, cr.w))
+      cr.run_across_segments(NUM_CPUS, partial(self._process_cam_readers, startup_blueprint, cam_type, cr.h, cr.w))
 
     rr.send_blueprint(self._create_blueprint())
 
