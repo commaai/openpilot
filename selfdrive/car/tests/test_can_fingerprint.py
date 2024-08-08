@@ -1,5 +1,4 @@
 from parameterized import parameterized
-from types import SimpleNamespace
 
 from openpilot.selfdrive.car.can_definitions import CanData
 from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, can_fingerprint
@@ -16,13 +15,8 @@ class TestCanFingerprint:
              for address, length in fingerprint.items() for src in (0, 1)]
 
       fingerprint_iter = iter([can])
-      def drain(wait_for_one=False):
-        # default is a msg that won't be added to the fingerprint
-        ret = next(fingerprint_iter, [CanData(1, b'\x00', 128)])  # noqa: B023
-        return [ret]
-
-      logcan = SimpleNamespace(drain=drain)
-      car_fingerprint, finger = can_fingerprint(logcan)
+      default_can = [CanData(1, b'\x00', 128)]
+      car_fingerprint, finger = can_fingerprint(lambda **kwargs: [next(fingerprint_iter, default_can)])  # noqa: B023
 
       assert car_fingerprint == car_model
       assert finger[0] == fingerprint
@@ -53,12 +47,11 @@ class TestCanFingerprint:
       with subtests.test(expected_frames=expected_frames, car_model=car_model):
         frames = 0
 
-        def drain(wait_for_one=False):
+        def can_recv(**kwargs):
           nonlocal frames
           frames += 1
           return [can]  # noqa: B023
 
-        logcan = SimpleNamespace(drain=drain)
-        car_fingerprint, _ = can_fingerprint(logcan)
+        car_fingerprint, _ = can_fingerprint(can_recv)
         assert car_fingerprint == car_model
         assert frames == expected_frames + 2  # TODO: fix extra frames

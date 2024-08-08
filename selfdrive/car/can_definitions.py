@@ -1,12 +1,15 @@
 from collections.abc import Callable
-from dataclasses import dataclass
-
-CanMsg = tuple[int, bytes, int]
-CanSendCallable = Callable[[list[CanMsg]], None]
+from typing import NamedTuple, Protocol
 
 
-@dataclass
-class CanData:
+class CanData(NamedTuple):
   address: int
   dat: bytes
   src: int
+
+
+CanSendCallable = Callable[[list[CanData]], None]
+
+
+class CanRecvCallable(Protocol):
+  def __call__(self, wait_for_one: bool = False) -> list[list[CanData]]: ...

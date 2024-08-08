@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import time
-from types import SimpleNamespace
 
 import cereal.messaging as messaging
 
@@ -15,7 +14,7 @@ from openpilot.common.swaglog import cloudlog, ForwardingHandler
 
 from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
 from openpilot.selfdrive.car import DT_CTRL, carlog
-from openpilot.selfdrive.car.can_definitions import CanData, CanSendCallable
+from openpilot.selfdrive.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
 from openpilot.selfdrive.car.fw_versions import ObdCallback
 from openpilot.selfdrive.car.car_helpers import get_car
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
@@ -40,26 +39,29 @@ def obd_callback(params: Params) -> ObdCallback:
   return set_obd_multiplexing
 
 
-def can_comm_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket) -> tuple[SimpleNamespace, CanSendCallable]:
-  def can_drain(wait_for_one: bool = False) -> list[list[CanData]]:
-    # wait_for_one: wait the normal logcan socket timeout for a CAN packet, may return empty list if nothing comes
+def can_comm_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket) -> tuple[CanRecvCallable, CanSendCallable]:
+  def can_recv(wait_for_one: bool = False) -> list[list[CanData]]:
+    """
+    wait_for_one: wait the normal logcan socket timeout for a CAN packet, may return empty list if nothing comes
+
+    Returns: CAN packets comprised of CanData objects for easy access
+    """
     ret = []
     for can in messaging.drain_sock(logcan, wait_for_one=wait_for_one):
-      ret.append([CanData(msg.address, msg.dat, msg.src) for msg in can.can])
+      ret.append([CanData(int(msg.address), bytes(msg.dat), int(msg.src)) for msg in can.can])
     return ret
 
-  def can_send(msgs: list[tuple[int, bytes, int]]) -> None:
-    """Input is N messages as created by selfdrive.car.make_can_msg"""
+  def can_send(msgs: list[CanData]) -> None:
+    """msgs: messages as created by selfdrive.car.make_can_msg"""
     sendcan.send(can_list_to_can_capnp(msgs, msgtype='sendcan'))
 
-  # TODO: do we want can_send as a function as well? remove SimpleNamespace?
-  return SimpleNamespace(drain=can_drain), can_send
+  return can_recv, can_send
 
 
 class Car:
   CI: CarInterfaceBase
 
-  def __init__(self, CI=None):
+  def __init__(self, CI=None) -> None:
     self.can_sock = messaging.sub_sock('can', timeout=20)
     self.sm = messaging.SubMaster(['pandaStates', 'carControl', 'onroadEvents'])
     self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams', 'carOutput'])

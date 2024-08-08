@@ -4,7 +4,6 @@ import numpy as np
 import tomllib
 from abc import abstractmethod, ABC
 from enum import StrEnum
-from types import SimpleNamespace
 from typing import Any, NamedTuple
 from collections.abc import Callable
 from functools import cache
@@ -13,7 +12,7 @@ from cereal import car
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.simple_kalman import KF1D, get_kalman_gain
 from openpilot.selfdrive.car import DT_CTRL, apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, get_friction, STD_CARGO_KG
-from openpilot.selfdrive.car.can_definitions import CanMsg, CanSendCallable
+from openpilot.selfdrive.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
 from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.helpers import clip
 from openpilot.selfdrive.car.values import PLATFORMS
@@ -109,7 +108,7 @@ class CarInterfaceBase(ABC):
     dbc_name = "" if self.cp is None else self.cp.dbc_name
     self.CC: CarControllerBase = CarController(dbc_name, CP)
 
-  def apply(self, c: car.CarControl, now_nanos: int) -> tuple[car.CarControl.Actuators, list[CanMsg]]:
+  def apply(self, c: car.CarControl, now_nanos: int) -> tuple[car.CarControl.Actuators, list[CanData]]:
     return self.CC.update(c, self.CS, now_nanos)
 
   @staticmethod
@@ -156,7 +155,7 @@ class CarInterfaceBase(ABC):
     raise NotImplementedError
 
   @staticmethod
-  def init(CP: car.CarParams, logcan: SimpleNamespace, can_send: CanSendCallable):
+  def init(CP: car.CarParams, can_recv: CanRecvCallable, can_send: CanSendCallable):
     pass
 
   @staticmethod
@@ -229,7 +228,7 @@ class CarInterfaceBase(ABC):
   def _update(self, c: car.CarControl) -> car.CarState:
     pass
 
-  def update(self, c: car.CarControl, can_packets: list[tuple[int, list[CanMsg]]]) -> car.CarState:
+  def update(self, c: car.CarControl, can_packets: list[tuple[int, list[CanData]]]) -> car.CarState:
     # parse can
     for cp in self.can_parsers:
       if cp is not None:
@@ -468,7 +467,7 @@ class CarControllerBase(ABC):
     self.frame = 0
 
   @abstractmethod
-  def update(self, CC: car.CarControl.Actuators, CS: car.CarState, now_nanos: int) -> tuple[car.CarControl.Actuators, list[CanMsg]]:
+  def update(self, CC: car.CarControl.Actuators, CS: car.CarState, now_nanos: int) -> tuple[car.CarControl.Actuators, list[CanData]]:
     pass
 
 

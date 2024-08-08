@@ -1,20 +1,19 @@
 import time
 from collections import defaultdict
 from functools import partial
-from types import SimpleNamespace
 
-from openpilot.selfdrive.car import carlog
-from openpilot.selfdrive.car.can_definitions import CanMsg, CanSendCallable
+from openpilot.selfdrive.car import carlog, make_can_msg
+from openpilot.selfdrive.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
 from openpilot.selfdrive.car.fw_query_definitions import AddrType
 from panda.python.uds import CanClient, IsoTpMessage, FUNCTIONAL_ADDRS, get_rx_addr_for_tx_addr
 
 
 class IsoTpParallelQuery:
-  def __init__(self, can_send: CanSendCallable, logcan: SimpleNamespace, bus: int, addrs: list[int] | list[AddrType],
+  def __init__(self, can_send: CanSendCallable, can_recv: CanRecvCallable, bus: int, addrs: list[int] | list[AddrType],
                request: list[bytes], response: list[bytes], response_offset: int = 0x8,
                functional_addrs: list[int] = None, debug: bool = False, response_pending_timeout: float = 10) -> None:
     self.can_send = can_send
-    self.logcan = logcan
+    self.can_recv = can_recv
     self.bus = bus
     self.request = request
     self.response = response
@@ -27,20 +26,20 @@ class IsoTpParallelQuery:
       assert tx_addr not in FUNCTIONAL_ADDRS, f"Functional address should be defined in functional_addrs: {hex(tx_addr)}"
 
     self.msg_addrs = {tx_addr: get_rx_addr_for_tx_addr(tx_addr[0], rx_offset=response_offset) for tx_addr in real_addrs}
-    self.msg_buffer: dict[int, list[CanMsg]] = defaultdict(list)
+    self.msg_buffer: dict[int, list[CanData]] = defaultdict(list)
 
-  def rx(self):
+  def rx(self) -> None:
     """Drain can socket and sort messages into buffers based on address"""
-    can_packets = self.logcan.drain(wait_for_one=True)
+    can_packets = self.can_recv(wait_for_one=True)
 
     for packet in can_packets:
       for msg in packet:
         if msg.src == self.bus and msg.address in self.msg_addrs.values():
-          self.msg_buffer[msg.address].append((msg.address, msg.dat, msg.src))
+          self.msg_buffer[msg.address].append(make_can_msg(msg.address, msg.dat, msg.src))
 
   def _can_tx(self, tx_addr: int, dat: bytes, bus: int):
     """Helper function to send single message"""
-    msg = (tx_addr, dat, bus)
+    msg = make_can_msg(tx_addr, dat, bus)
     self.can_send([msg])
 
   def _can_rx(self, addr, sub_addr=None):
@@ -62,8 +61,8 @@ class IsoTpParallelQuery:
     self.msg_buffer[addr] = keep_msgs
     return msgs
 
-  def _drain_rx(self):
-    self.logcan.drain()
+  def _drain_rx(self) -> None:
+    self.can_recv()
     self.msg_buffer = defaultdict(list)
 
   def _create_isotp_msg(self, tx_addr: int, sub_addr: int | None, rx_addr: int):
