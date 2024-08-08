@@ -153,6 +153,7 @@ class Rerunner:
     for cam_type, cr in self.camera_readers.items():
       cr.run_across_segments(NUM_CPUS, partial(self._process_cam_readers, startup_blueprint, cam_type, cr.h, cr.w), desc=cam_type)
 
+    print("Rerun Viewer is finishing up processing your logs in a few seconds")
     rr.send_blueprint(self._create_blueprint())
 
 
