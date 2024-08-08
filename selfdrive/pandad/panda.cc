@@ -10,6 +10,8 @@
 #include "common/swaglog.h"
 #include "common/util.h"
 
+const bool PANDAD_MAXOUT = getenv("PANDAD_MAXOUT") != nullptr;
+
 Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
   // try USB first, then SPI
   try {
@@ -219,7 +221,7 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
     return false;
   }
 
-  if (getenv("PANDAD_MAXOUT") != NULL) {
+  if (PANDAD_MAXOUT) {
     static uint8_t junk[RECV_SIZE];
     handle->bulk_read(0xab, junk, RECV_SIZE - recv);
   }
