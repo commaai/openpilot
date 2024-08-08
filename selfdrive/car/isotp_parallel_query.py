@@ -3,7 +3,8 @@ from collections import defaultdict
 from functools import partial
 
 import cereal.messaging as messaging
-from openpilot.selfdrive.car import carlog, CanMsgType
+from openpilot.selfdrive.car import carlog
+from openpilot.selfdrive.car.can_definitions import CanData
 from openpilot.selfdrive.car.fw_query_definitions import AddrType
 from openpilot.selfdrive.pandad import can_list_to_can_capnp
 from panda.python.uds import CanClient, IsoTpMessage, FUNCTIONAL_ADDRS, get_rx_addr_for_tx_addr
@@ -27,16 +28,16 @@ class IsoTpParallelQuery:
       assert tx_addr not in FUNCTIONAL_ADDRS, f"Functional address should be defined in functional_addrs: {hex(tx_addr)}"
 
     self.msg_addrs = {tx_addr: get_rx_addr_for_tx_addr(tx_addr[0], rx_offset=response_offset) for tx_addr in real_addrs}
-    self.msg_buffer: dict[int, list[CanMsgType]] = defaultdict(list)
+    self.msg_buffer: dict[int, list[CanData]] = defaultdict(list)
 
-  def rx(self):
+  def rx(self) -> None:
     """Drain can socket and sort messages into buffers based on address"""
     can_packets = messaging.drain_sock(self.logcan, wait_for_one=True)
 
     for packet in can_packets:
       for msg in packet.can:
         if msg.src == self.bus and msg.address in self.msg_addrs.values():
-          self.msg_buffer[msg.address].append((msg.address, msg.dat, msg.src))
+          self.msg_buffer[msg.address].append(CanData(msg.address, msg.dat, msg.src))
 
   def _can_tx(self, tx_addr, dat, bus):
     """Helper function to send single message"""
