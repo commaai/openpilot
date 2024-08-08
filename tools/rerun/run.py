@@ -107,13 +107,12 @@ class Rerunner:
     for msg in lr:
       msg_type = msg.which()
 
-      if msg_type != "thumbnail":
-        for entity_path, dat in Rerunner._parse_msg(msg.to_dict()[msg_type], msg_type):
-          log_msgs[entity_path]["times"].append(msg.logMonoTime / 1e9)
-          log_msgs[entity_path]["data"].append(dat)
-      else:
-        rr.set_time_nanos(RR_TIMELINE_NAME, msg.logMonoTime)
-        rr.log("/thumbnail", rr.ImageEncoded(contents=msg.to_dict()[msg_type].get("thumbnail")))
+      if msg_type == "thumbnail":
+        continue
+
+      for entity_path, dat in Rerunner._parse_msg(msg.to_dict()[msg_type], msg_type):
+        log_msgs[entity_path]["times"].append(msg.logMonoTime / 1e9)
+        log_msgs[entity_path]["data"].append(dat)
 
     for entity_path, log_msg in log_msgs.items():
       rr.log_temporal_batch(
