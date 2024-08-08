@@ -17,6 +17,7 @@ class TestCanFingerprint:
 
       fingerprint_iter = iter([can])
       def drain(wait_for_one=False):
+        # default is a msg that won't be added to the fingerprint
         ret = next(fingerprint_iter, [CanData(1, b'\x00', 128)])  # noqa: B023
         return [ret]
 
