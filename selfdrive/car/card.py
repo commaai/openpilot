@@ -14,7 +14,7 @@ from openpilot.common.swaglog import cloudlog, ForwardingHandler
 
 from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
 from openpilot.selfdrive.car import DT_CTRL, carlog
-from openpilot.selfdrive.car.car_helpers import get_car, get_one_can
+from openpilot.selfdrive.car.car_helpers import get_car
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.controls.lib.events import Events
 
@@ -58,7 +58,10 @@ class Car:
     if CI is None:
       # wait for one pandaState and one CAN packet
       print("Waiting for CAN messages...")
-      get_one_can(self.can_sock)
+      while True:
+        can = messaging.recv_one_retry(self.can_sock)
+        if len(can.can) > 0:
+          break
 
       experimental_long_allowed = self.params.get_bool("ExperimentalLongitudinalEnabled")
       num_pandas = len(messaging.recv_one_retry(self.sm.sock['pandaStates']).pandaStates)
