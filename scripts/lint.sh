@@ -18,7 +18,7 @@ IGNORED_DIRS="^third_party.*|^msgq.*|^msgq_repo.*|^opendbc.*|^opendbc_repo.*|^ce
 function run() {
   shopt -s extglob
   case $1 in
-    $SKIP ) return 0 ;;
+    $SKIP | $RUN ) return 0 ;;
   esac
 
   echo -en "$1"
@@ -63,29 +63,46 @@ function run_tests() {
 function help() {
   echo "A fast linter"
   echo ""
-  echo -e "${BOLD}${UNDERLINE}Usage:${NC} op lint [OPTIONS]"
+  echo -e "${BOLD}${UNDERLINE}Usage:${NC} op lint [TESTS] [OPTIONS]"
+  echo ""
+  echo -e "${BOLD}${UNDERLINE}Tests:${NC}"
+  echo -e "  ${BOLD}ruff${NC}"
+  echo -e "  ${BOLD}mypy${NC}"
+  echo -e "  ${BOLD}lint-imports${NC}"
+  echo -e "  ${BOLD}codespell${NC}"
+  echo -e "  ${BOLD}check_added_large_files${NC}"
+  echo -e "  ${BOLD}check_shebang_scripts_are_executable${NC}"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Options:${NC}"
   echo -e "  ${BOLD}-f, --fast${NC}"
   echo "          Skip slow tests"
   echo -e "  ${BOLD}-s, --skip${NC}"
-  echo "          Specify a test to skip"
+  echo "          Specify tests to skip separated by spaces"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Examples:${NC}"
-  echo "  op lint --skip mypy --skip ruff"
-  echo "          Skip the ruff and mypy check"
+  echo "  op lint mypy ruff"
+  echo "          Only run the mypy and ruff tests"
+  echo ""
+  echo "  op lint --skip mypy ruff"
+  echo "          Skip the mypy and ruff tests"
+  echo ""
+  echo "  op lint"
+  echo "          Run all the tests"
 }
 
-while true; do
+SKIP=""
+RUN=""
+while [[ $# -gt 0 ]]; do
   case $1 in
     -f | --fast ) shift 1; FAST="1" ;;
-    -s | --skip ) shift 1; SKIP+="$1|"; shift 1 ;;
+    -s | --skip ) shift 1; SKIP=" " ;;
     -h | --help | -help | --h ) help; exit 0 ;;
-    * )           break ;;
+    * ) if [[ -n $SKIP ]]; then SKIP+="$1 "; else RUN+="$1 "; fi; shift 1 ;;
   esac
 done
 
-SKIP="@($(echo $SKIP | sed 's/|$//'))"
+RUN=$([ -z "$RUN" ] && echo "" || echo "!($(echo $RUN | sed 's/ /|/g'))")
+SKIP="@($(echo $SKIP | sed 's/ /|/g'))"
 
 GIT_FILES="$(git ls-files | sed -E "s/$IGNORED_FILES|$IGNORED_DIRS//g")"
 ALL_FILES=""
