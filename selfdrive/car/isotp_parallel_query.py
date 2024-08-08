@@ -2,7 +2,7 @@ import time
 from collections import defaultdict
 from functools import partial
 
-from openpilot.selfdrive.car import carlog, make_can_msg
+from openpilot.selfdrive.car import carlog
 from openpilot.selfdrive.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
 from openpilot.selfdrive.car.fw_query_definitions import AddrType
 from panda.python.uds import CanClient, IsoTpMessage, FUNCTIONAL_ADDRS, get_rx_addr_for_tx_addr
@@ -35,11 +35,11 @@ class IsoTpParallelQuery:
     for packet in can_packets:
       for msg in packet:
         if msg.src == self.bus and msg.address in self.msg_addrs.values():
-          self.msg_buffer[msg.address].append(make_can_msg(msg.address, msg.dat, msg.src))
+          self.msg_buffer[msg.address].append(CanData(msg.address, msg.dat, msg.src))
 
   def _can_tx(self, tx_addr: int, dat: bytes, bus: int):
     """Helper function to send single message"""
-    msg = make_can_msg(tx_addr, dat, bus)
+    msg = CanData(tx_addr, dat, bus)
     self.can_send([msg])
 
   def _can_rx(self, addr, sub_addr=None):
