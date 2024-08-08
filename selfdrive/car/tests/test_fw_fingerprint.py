@@ -5,7 +5,7 @@ from collections import defaultdict
 from parameterized import parameterized
 
 from cereal import car
-from openpilot.selfdrive.car import make_can_msg
+from openpilot.selfdrive.car.can_definitions import CanData
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
 from openpilot.selfdrive.car.fw_versions import ESSENTIAL_ECUS, FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, build_fw_dict, \
@@ -21,7 +21,7 @@ ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 
 class FakeSocket:
   def receive(self, non_blocking=False):
-    return (can_list_to_can_capnp([make_can_msg(random.randint(0x600, 0x800), b'\x00' * 8, 0)])
+    return (can_list_to_can_capnp([CanData(random.randint(0x600, 0x800), b'\x00' * 8, 0)])
             if random.uniform(0, 1) > 0.5 else None)
 
   def send(self, msg):
