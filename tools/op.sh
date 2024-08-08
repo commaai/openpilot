@@ -14,6 +14,7 @@ UNDERLINE='\033[4m'
 BOLD='\033[1m'
 NC='\033[0m'
 
+SHELL_NAME="$(basename ${SHELL})"
 RC_FILE="${HOME}/.$(basename ${SHELL})rc"
 if [ "$(uname)" == "Darwin" ] && [ $SHELL == "/bin/bash" ]; then
   RC_FILE="$HOME/.bash_profile"
@@ -145,7 +146,7 @@ function op_check_python() {
 
 function op_check_venv() {
   echo "Checking for venv..."
-  if source $OPENPILOT_ROOT/.venv/bin/activate; then
+  if [[ -f $OPENPILOT_ROOT/.venv/bin/activate ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] venv detected."
   else
     echo -e " ↳ [${RED}✗${NC}] Can't activate venv in $OPENPILOT_ROOT. Assuming global env!"
@@ -223,12 +224,28 @@ function op_setup() {
 }
 
 function op_activate_venv() {
+  # bash 3.2 can't handle this without the 'set +e'
+  set +e
   source $OPENPILOT_ROOT/.venv/bin/activate &> /dev/null || true
+  set -e
 }
 
 function op_venv() {
   op_before_cmd
-  bash --rcfile <(echo "source $RC_FILE; source $OPENPILOT_ROOT/.venv/bin/activate")
+
+  if [[ ! -f $OPENPILOT_ROOT/.venv/bin/activate ]]; then
+    echo -e "No venv found in $OPENPILOT_ROOT"
+    return 1
+  fi
+
+  case $SHELL_NAME in
+    "zsh")
+      ZSHRC_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'tmp_zsh')
+      echo "source $RC_FILE; source $OPENPILOT_ROOT/.venv/bin/activate" >> $ZSHRC_DIR/.zshrc
+      ZDOTDIR=$ZSHRC_DIR zsh ;;
+    *)
+      bash --rcfile <(echo "source $RC_FILE; source $OPENPILOT_ROOT/.venv/bin/activate") ;;
+  esac
 }
 
 function op_check() {
