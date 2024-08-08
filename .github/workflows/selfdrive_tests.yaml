@@ -137,7 +137,7 @@ jobs:
 
   static_analysis:
     name: static analysis
-    runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
+    runs-on: ${{ ((github.repository == 'cccccommaai/openpilot') &&
                    ((github.event_name != 'pull_request') ||
                     (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
     env:
