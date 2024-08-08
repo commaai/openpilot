@@ -9,10 +9,9 @@ import capnp
 
 from cereal import car
 from panda.python.uds import SERVICE_TYPE
+from openpilot.selfdrive.car.can_definitions import CanMsg
 from openpilot.selfdrive.car.docs_definitions import CarDocs
 from openpilot.selfdrive.car.helpers import clip, interp
-
-CanMsgType = tuple[int, bytes, int]
 
 # set up logging
 carlog = logging.getLogger('carlog')
@@ -195,7 +194,7 @@ def get_friction(lateral_accel_error: float, lateral_accel_deadzone: float, fric
   return friction
 
 
-def make_can_msg(addr: int, dat: bytes, bus: int) -> CanMsgType:
+def make_can_msg(addr: int, dat: bytes, bus: int) -> CanMsg:
   return addr, dat, bus
 
 

@@ -1,7 +1,8 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 
-CanSendCallable = Callable[[list[tuple[int, bytes, int]]], None]
+CanMsg = tuple[int, bytes, int]
+CanSendCallable = Callable[[list[CanMsg]], None]
 
 
 @dataclass
