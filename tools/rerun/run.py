@@ -149,9 +149,9 @@ class Rerunner:
     self._start_rerun()
 
     startup_blueprint = self._create_blueprint(startup_blueprint=True)
-    self.lr.run_across_segments(NUM_CPUS, partial(self._process_log_msgs, startup_blueprint))
+    self.lr.run_across_segments(NUM_CPUS, partial(self._process_log_msgs, startup_blueprint), desc="Log messages")
     for cam_type, cr in self.camera_readers.items():
-      cr.run_across_segments(NUM_CPUS, partial(self._process_cam_readers, startup_blueprint, cam_type, cr.h, cr.w))
+      cr.run_across_segments(NUM_CPUS, partial(self._process_cam_readers, startup_blueprint, cam_type, cr.h, cr.w), desc=cam_type)
 
     rr.send_blueprint(self._create_blueprint())
 
