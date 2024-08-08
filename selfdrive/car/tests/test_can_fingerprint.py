@@ -16,8 +16,9 @@ class TestCanFingerprint:
                  for address, length in fingerprint.items() for src in (0, 1)]
 
       fingerprint_iter = iter([can])
-      empty_can = messaging.new_message('can', 0)
-      car_fingerprint, finger = can_fingerprint(lambda: next(fingerprint_iter, empty_can))  # noqa: B023
+      default_can = messaging.new_message('can', 1)
+      default_can.can = [log.CanData(address=1, dat=b'\x00', src=128)]  # won't be added to fingerprint
+      car_fingerprint, finger = can_fingerprint(lambda: [next(fingerprint_iter, default_can)])  # noqa: B023
 
       assert car_fingerprint == car_model
       assert finger[0] == fingerprint
@@ -54,7 +55,7 @@ class TestCanFingerprint:
         def test():
           nonlocal frames
           frames += 1
-          return can  # noqa: B023
+          return [can]  # noqa: B023
 
         car_fingerprint, _ = can_fingerprint(test)
         assert car_fingerprint == car_model
