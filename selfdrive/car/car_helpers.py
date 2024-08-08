@@ -133,7 +133,7 @@ def fingerprint(logcan, sendcan, set_obd_multiplexing, num_pandas, cached_params
   # CAN fingerprint
   # drain CAN socket so we get the latest messages
   messaging.drain_sock_raw(logcan)
-  car_fingerprint, finger = can_fingerprint(lambda: messaging.drain_sock_raw(logcan, wait_for_one=True))
+  car_fingerprint, finger = can_fingerprint(lambda: messaging.drain_sock(logcan, wait_for_one=True))
 
   exact_match = True
   source = car.CarParams.FingerprintSource.can
