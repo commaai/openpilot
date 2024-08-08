@@ -44,13 +44,7 @@
 ExitHandler do_exit;
 
 bool check_all_connected(const std::vector<Panda *> &pandas) {
-  for (const auto& panda : pandas) {
-    if (!panda->connected()) {
-      do_exit = true;
-      return false;
-    }
-  }
-  return true;
+  return std::all_of(pandas.begin(), pandas.end(), [](Panda *p) { return p->connected(); });
 }
 
 Panda *connect(std::string serial="", uint32_t index=0) {
