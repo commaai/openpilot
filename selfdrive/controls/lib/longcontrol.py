@@ -73,6 +73,9 @@ class LongControl:
       if output_accel > self.CP.stopAccel:
         output_accel = min(output_accel, 0.0)
         output_accel -= self.CP.stoppingDecelRate * DT_CTRL
+      elif output_accel < self.CP.stopAccel:
+        output_accel = min(output_accel, 0.0)
+        output_accel += self.CP.stoppingDecelRate * DT_CTRL
       self.reset()
 
     elif self.long_control_state == LongCtrlState.starting:
