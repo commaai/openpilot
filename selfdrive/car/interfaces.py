@@ -117,14 +117,14 @@ class CarInterfaceBase(ABC):
     return ACCEL_MIN, ACCEL_MAX
 
   @classmethod
-  def get_non_essential_params(cls, candidate: str):
+  def get_non_essential_params(cls, candidate: str) -> CarParams:
     """
     Parameters essential to controlling the car may be incomplete or wrong without FW versions or fingerprints.
     """
     return cls.get_params(candidate, gen_empty_fingerprint(), list(), False, False)
 
   @classmethod
-  def get_params(cls, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[CarParams.CarFw], experimental_long: bool, docs: bool):
+  def get_params(cls, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[CarParams.CarFw], experimental_long: bool, docs: bool) -> CarParams:
     ret = CarInterfaceBase.get_std_params(candidate)
 
     platform = PLATFORMS[candidate]
@@ -152,7 +152,7 @@ class CarInterfaceBase(ABC):
   @staticmethod
   @abstractmethod
   def _get_params(ret: CarParams, candidate, fingerprint: dict[int, dict[int, int]],
-                  car_fw: list[CarParams.CarFw], experimental_long: bool, docs: bool):
+                  car_fw: list[CarParams.CarFw], experimental_long: bool, docs: bool) -> CarParams:
     raise NotImplementedError
 
   @staticmethod

@@ -1,9 +1,9 @@
 import os
 import time
 
-from cereal import car
 from openpilot.selfdrive.car import carlog
 from openpilot.selfdrive.car.can_definitions import CanRecvCallable, CanSendCallable
+from openpilot.selfdrive.car.data_structures import CarParams
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from openpilot.selfdrive.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
@@ -135,17 +135,17 @@ def fingerprint(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_mu
   car_fingerprint, finger = can_fingerprint(can_recv)
 
   exact_match = True
-  source = car.CarParams.FingerprintSource.can
+  source = CarParams.FingerprintSource.can
 
   # If FW query returns exactly 1 candidate, use it
   if len(fw_candidates) == 1:
     car_fingerprint = list(fw_candidates)[0]
-    source = car.CarParams.FingerprintSource.fw
+    source = CarParams.FingerprintSource.fw
     exact_match = exact_fw_match
 
   if fixed_fingerprint:
     car_fingerprint = fixed_fingerprint
-    source = car.CarParams.FingerprintSource.fixed
+    source = CarParams.FingerprintSource.fixed
 
   carlog.error({"event": "fingerprinted", "car_fingerprint": str(car_fingerprint), "source": source, "fuzzy": not exact_match,
                 "cached": cached, "fw_count": len(car_fw), "ecu_responses": list(ecu_rx_addrs), "vin_rx_addr": vin_rx_addr,

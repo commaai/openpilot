@@ -170,8 +170,9 @@ class CarParams:
   carFw: list['CarParams.CarFw'] = auto_field()
 
   radarTimeStep: float = 0.05  # time delta between radar updates, 20Hz is very standard
-  # fingerprintSource: FingerprintSource = auto_field()
-  # networkLocation: NetworkLocation = auto_field()  # Where Panda/C2 is integrated into the car's CAN network
+  fingerprintSource: 'CarParams.FingerprintSource' = field(default_factory=lambda: CarParams.FingerprintSource.can)
+  # Where Panda/C2 is integrated into the car's CAN network
+  networkLocation: 'CarParams.NetworkLocation' = field(default_factory=lambda: CarParams.NetworkLocation.fwdCamera)
 
   wheelSpeedFactor: float = auto_field()  # Multiplier on wheels speeds to computer actual speeds
 
@@ -274,3 +275,12 @@ class CarParams:
     programmedFuelInjection = auto()
 
     debug = auto()
+
+  class FingerprintSource(StrEnum):
+    can = auto()
+    fw = auto()
+    fixed = auto()
+
+  class NetworkLocation(StrEnum):
+    fwdCamera = auto()  # Standard/default integration at LKAS camera
+    gateway = auto()    # Integration at vehicle's CAN gateway
