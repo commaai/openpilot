@@ -28,7 +28,15 @@ def apply_auto_fields(cls=None, /, **kwargs):
   return cls
 
 
-class StrEnum(_StrEnum):
+class EnumMeta(EnumType):
+  def __call__(cls, value=None, **kwargs):
+    # Return first enum if value is None
+    if value is None:
+      value = next(iter(cls))
+    return super().__call__(value, **kwargs)
+
+
+class StrEnum(_StrEnum, metaclass=EnumMeta):
   @staticmethod
   def _generate_next_value_(name, *args):
     # auto() defaults to name.lower()
