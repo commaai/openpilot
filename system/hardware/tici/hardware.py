@@ -5,7 +5,7 @@ import subprocess
 import time
 import tempfile
 from enum import IntEnum
-from functools import cached_property, lru_cache
+from functools import cached_property, lru_cache, wraps
 from pathlib import Path
 
 from cereal import log
@@ -60,6 +60,26 @@ NetworkStrength = log.DeviceState.NetworkStrength
 MM_MODEM_ACCESS_TECHNOLOGY_UMTS = 1 << 5
 MM_MODEM_ACCESS_TECHNOLOGY_LTE = 1 << 14
 
+
+def handle_exceptions(default_return_value=None):
+  def decorator(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+      try:
+        return func(*args, **kwargs)
+      except Exception as e:
+        # TODO: Replace print with cloudlog.error after fixing circular import issue
+        print(f"Exception in {func.__name__}: {e}")
+        return default_return_value
+    return wrapper
+
+  if callable(default_return_value):
+    # Handle the case where the decorator is used without parentheses
+    func = default_return_value
+    default_return_value = None
+    return decorator(func)
+
+  return decorator
 
 def sudo_write(val, path):
   try:
@@ -116,56 +136,60 @@ class Tici(HardwareBase):
       return None
     return Amplifier()
 
+  @handle_exceptions(default_return_value='')
   def get_os_version(self):
     with open("/VERSION") as f:
       return f.read().strip()
 
+  @handle_exceptions(default_return_value='')
   def get_device_type(self):
     return get_device_type()
 
+  @handle_exceptions(default_return_value=False)
   def get_sound_card_online(self):
     if os.path.isfile('/proc/asound/card0/state'):
       with open('/proc/asound/card0/state') as f:
         return f.read().strip() == 'ONLINE'
     return False
 
+  @handle_exceptions
   def reboot(self, reason=None):
     subprocess.check_output(["sudo", "reboot"])
 
+  @handle_exceptions
   def uninstall(self):
     Path("/data/__system_reset__").touch()
     os.sync()
     self.reboot()
 
+  @handle_exceptions(default_return_value='')
   def get_serial(self):
     return self.get_cmdline()['androidboot.serialno']
 
+  @handle_exceptions(default_return_value=NetworkType.none)
   def get_network_type(self):
-    try:
-      primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-      primary_connection = self.bus.get_object(NM, primary_connection)
-      primary_type = primary_connection.Get(NM_CON_ACT, 'Type', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+    primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+    primary_connection = self.bus.get_object(NM, primary_connection)
+    primary_type = primary_connection.Get(NM_CON_ACT, 'Type', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
 
-      if primary_type == '802-3-ethernet':
-        return NetworkType.ethernet
-      elif primary_type == '802-11-wireless':
-        return NetworkType.wifi
-      else:
-        active_connections = self.nm.Get(NM, 'ActiveConnections', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-        for conn in active_connections:
-          c = self.bus.get_object(NM, conn)
-          tp = c.Get(NM_CON_ACT, 'Type', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-          if tp == 'gsm':
-            modem = self.get_modem()
-            access_t = modem.Get(MM_MODEM, 'AccessTechnologies', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-            if access_t >= MM_MODEM_ACCESS_TECHNOLOGY_LTE:
-              return NetworkType.cell4G
-            elif access_t >= MM_MODEM_ACCESS_TECHNOLOGY_UMTS:
-              return NetworkType.cell3G
-            else:
-              return NetworkType.cell2G
-    except Exception:
-      pass
+    if primary_type == '802-3-ethernet':
+      return NetworkType.ethernet
+    elif primary_type == '802-11-wireless':
+      return NetworkType.wifi
+    else:
+      active_connections = self.nm.Get(NM, 'ActiveConnections', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+      for conn in active_connections:
+        c = self.bus.get_object(NM, conn)
+        tp = c.Get(NM_CON_ACT, 'Type', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+        if tp == 'gsm':
+          modem = self.get_modem()
+          access_t = modem.Get(MM_MODEM, 'AccessTechnologies', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+          if access_t >= MM_MODEM_ACCESS_TECHNOLOGY_LTE:
+            return NetworkType.cell4G
+          elif access_t >= MM_MODEM_ACCESS_TECHNOLOGY_UMTS:
+            return NetworkType.cell3G
+          else:
+            return NetworkType.cell2G
 
     return NetworkType.none
 
@@ -182,6 +206,7 @@ class Tici(HardwareBase):
     wwan_path = self.nm.GetDeviceByIpIface('wwan0', dbus_interface=NM, timeout=TIMEOUT)
     return self.bus.get_object(NM, wwan_path)
 
+  @handle_exceptions(default_return_value={})
   def get_sim_info(self):
     modem = self.get_modem()
     sim_path = modem.Get(MM_MODEM, 'Sim', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
@@ -210,14 +235,12 @@ class Tici(HardwareBase):
 
     return str(self.get_modem().Get(MM_MODEM, 'EquipmentIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
 
+  @handle_exceptions
   def get_network_info(self):
-    try:
-      modem = self.get_modem()
-      info = modem.Command("AT+QNWINFO", math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
-      extra = modem.Command('AT+QENG="servingcell"', math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
-      state = modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-    except Exception:
-      return None
+    modem = self.get_modem()
+    info = modem.Command("AT+QNWINFO", math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
+    extra = modem.Command('AT+QENG="servingcell"', math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
+    state = modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
 
     if info and info.startswith('+QNWINFO: '):
       info = info.replace('+QNWINFO: ', '').replace('"', '').split(',')
@@ -250,56 +273,51 @@ class Tici(HardwareBase):
     else:
       return NetworkStrength.great
 
+  @handle_exceptions(default_return_value=NetworkStrength.unknown)
   def get_network_strength(self, network_type):
     network_strength = NetworkStrength.unknown
 
-    try:
-      if network_type == NetworkType.none:
-        pass
-      elif network_type == NetworkType.wifi:
-        wlan = self.get_wlan()
-        active_ap_path = wlan.Get(NM_DEV_WL, 'ActiveAccessPoint', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-        if active_ap_path != "/":
-          active_ap = self.bus.get_object(NM, active_ap_path)
-          strength = int(active_ap.Get(NM_AP, 'Strength', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
-          network_strength = self.parse_strength(strength)
-      else:  # Cellular
-        modem = self.get_modem()
-        strength = int(modem.Get(MM_MODEM, 'SignalQuality', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)[0])
-        network_strength = self.parse_strength(strength)
-    except Exception:
+    if network_type == NetworkType.none:
       pass
+    elif network_type == NetworkType.wifi:
+      wlan = self.get_wlan()
+      active_ap_path = wlan.Get(NM_DEV_WL, 'ActiveAccessPoint', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+      if active_ap_path != "/":
+        active_ap = self.bus.get_object(NM, active_ap_path)
+        strength = int(active_ap.Get(NM_AP, 'Strength', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
+        network_strength = self.parse_strength(strength)
+    else:  # Cellular
+      modem = self.get_modem()
+      strength = int(modem.Get(MM_MODEM, 'SignalQuality', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)[0])
+      network_strength = self.parse_strength(strength)
 
     return network_strength
 
+  @handle_exceptions(default_return_value=False)
   def get_network_metered(self, network_type) -> bool:
-    try:
-      primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-      primary_connection = self.bus.get_object(NM, primary_connection)
-      primary_devices = primary_connection.Get(NM_CON_ACT, 'Devices', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+    primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+    primary_connection = self.bus.get_object(NM, primary_connection)
+    primary_devices = primary_connection.Get(NM_CON_ACT, 'Devices', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
 
-      for dev in primary_devices:
-        dev_obj = self.bus.get_object(NM, str(dev))
-        metered_prop = dev_obj.Get(NM_DEV, 'Metered', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
+    for dev in primary_devices:
+      dev_obj = self.bus.get_object(NM, str(dev))
+      metered_prop = dev_obj.Get(NM_DEV, 'Metered', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
 
-        if network_type == NetworkType.wifi:
-          if metered_prop in [NMMetered.NM_METERED_YES, NMMetered.NM_METERED_GUESS_YES]:
-            return True
-        elif network_type in [NetworkType.cell2G, NetworkType.cell3G, NetworkType.cell4G, NetworkType.cell5G]:
-          if metered_prop == NMMetered.NM_METERED_NO:
-            return False
-    except Exception:
-      pass
+      if network_type == NetworkType.wifi:
+        if metered_prop in [NMMetered.NM_METERED_YES, NMMetered.NM_METERED_GUESS_YES]:
+          return True
+      elif network_type in [NetworkType.cell2G, NetworkType.cell3G, NetworkType.cell4G, NetworkType.cell5G]:
+        if metered_prop == NMMetered.NM_METERED_NO:
+          return False
 
     return super().get_network_metered(network_type)
 
+  @handle_exceptions
   def get_modem_version(self):
-    try:
-      modem = self.get_modem()
-      return modem.Get(MM_MODEM, 'Revision', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
-    except Exception:
-      return None
+    modem = self.get_modem()
+    return modem.Get(MM_MODEM, 'Revision', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
 
+  @handle_exceptions
   def get_modem_nv(self):
     timeout = 0.2  # Default timeout is too short
     files = (
@@ -307,20 +325,16 @@ class Tici(HardwareBase):
       '/nv/item_files/ims/IMS_enable',
       '/nv/item_files/modem/mmode/sms_only',
     )
-    try:
-      modem = self.get_modem()
-      return { fn: str(modem.Command(f'AT+QNVFR="{fn}"', math.ceil(timeout), dbus_interface=MM_MODEM, timeout=timeout)) for fn in files}
-    except Exception:
-      return None
+    modem = self.get_modem()
+    return { fn: str(modem.Command(f'AT+QNVFR="{fn}"', math.ceil(timeout), dbus_interface=MM_MODEM, timeout=timeout)) for fn in files}
 
+  @handle_exceptions(default_return_value=[])
   def get_modem_temperatures(self):
     timeout = 0.2  # Default timeout is too short
-    try:
-      modem = self.get_modem()
-      temps = modem.Command("AT+QTEMP", math.ceil(timeout), dbus_interface=MM_MODEM, timeout=timeout)
-      return list(map(int, temps.split(' ')[1].split(',')))
-    except Exception:
-      return []
+
+    modem = self.get_modem()
+    temps = modem.Command("AT+QTEMP", math.ceil(timeout), dbus_interface=MM_MODEM, timeout=timeout)
+    return list(map(int, temps.split(' ')[1].split(',')))
 
   def get_nvme_temperatures(self):
     ret = []
@@ -338,6 +352,7 @@ class Tici(HardwareBase):
   def get_som_power_draw(self):
     return (self.read_param_file("/sys/class/power_supply/bms/voltage_now", int) * self.read_param_file("/sys/class/power_supply/bms/current_now", int) / 1e12)
 
+  @handle_exceptions
   def shutdown(self):
     os.system("sudo poweroff")
 
@@ -349,27 +364,24 @@ class Tici(HardwareBase):
                          bat=(None, 1),
                          pmic=(("pm8998_tz", "pm8005_tz"), 1000))
 
+  @handle_exceptions
   def set_screen_brightness(self, percentage):
-    try:
-      with open("/sys/class/backlight/panel0-backlight/max_brightness") as f:
-        max_brightness = float(f.read().strip())
+    with open("/sys/class/backlight/panel0-backlight/max_brightness") as f:
+      max_brightness = float(f.read().strip())
 
-      val = int(percentage * (max_brightness / 100.))
-      with open("/sys/class/backlight/panel0-backlight/brightness", "w") as f:
-        f.write(str(val))
-    except Exception:
-      pass
+    val = int(percentage * (max_brightness / 100.))
+    with open("/sys/class/backlight/panel0-backlight/brightness", "w") as f:
+      f.write(str(val))
 
+  @handle_exceptions(default_return_value=0)
   def get_screen_brightness(self):
-    try:
-      with open("/sys/class/backlight/panel0-backlight/max_brightness") as f:
-        max_brightness = float(f.read().strip())
+    with open("/sys/class/backlight/panel0-backlight/max_brightness") as f:
+      max_brightness = float(f.read().strip())
 
-      with open("/sys/class/backlight/panel0-backlight/brightness") as f:
-        return int(float(f.read()) / (max_brightness / 100.))
-    except Exception:
-      return 0
+    with open("/sys/class/backlight/panel0-backlight/brightness") as f:
+      return int(float(f.read()) / (max_brightness / 100.))
 
+  @handle_exceptions
   def set_power_save(self, powersave_enabled):
     # amplifier, 100mW at idle
     if self.amplifier is not None:
@@ -400,14 +412,13 @@ class Tici(HardwareBase):
     for n in camera_irqs:
       affine_irq(5, n)
 
+  @handle_exceptions(default_return_value=0)
   def get_gpu_usage_percent(self):
-    try:
-      with open('/sys/class/kgsl/kgsl-3d0/gpubusy') as f:
-        used, total = f.read().strip().split()
-      return 100.0 * int(used) / int(total)
-    except Exception:
-      return 0
+    with open('/sys/class/kgsl/kgsl-3d0/gpubusy') as f:
+      used, total = f.read().strip().split()
+    return 100.0 * int(used) / int(total)
 
+  @handle_exceptions
   def initialize_hardware(self):
     if self.amplifier is not None:
       self.amplifier.initialize_configuration(self.get_device_type())
@@ -454,13 +465,12 @@ class Tici(HardwareBase):
     if "tici" in self.get_device_type():
       affine_irq(3, "xhci-hcd:usb3")  # aux panda USB (or potentially anything else on USB)
       affine_irq(3, "xhci-hcd:usb1")  # internal panda USB (also modem)
-    try:
-      pid = subprocess.check_output(["pgrep", "-f", "spi0"], encoding='utf8').strip()
-      subprocess.call(["sudo", "chrt", "-f", "-p", "1", pid])
-      subprocess.call(["sudo", "taskset", "-pc", "3", pid])
-    except subprocess.CalledProcessException as e:
-      print(str(e))
 
+    pid = subprocess.check_output(["pgrep", "-f", "spi0"], encoding='utf8').strip()
+    subprocess.call(["sudo", "chrt", "-f", "-p", "1", pid])
+    subprocess.call(["sudo", "taskset", "-pc", "3", pid])
+
+  @handle_exceptions
   def configure_modem(self):
     sim_id = self.get_sim_info().get('sim_id', '')
 
@@ -515,6 +525,7 @@ class Tici(HardwareBase):
         os.system(f"sudo cp {tf.name} {dest}")
       os.system(f"sudo nmcli con load {dest}")
 
+  @handle_exceptions(default_return_value={})
   def get_networks(self):
     r = {}
 
@@ -561,6 +572,7 @@ class Tici(HardwareBase):
   def has_internal_panda(self):
     return True
 
+  @handle_exceptions
   def reset_internal_panda(self):
     gpio_init(GPIO.STM_RST_N, True)
     gpio_init(GPIO.STM_BOOT0, True)
@@ -570,6 +582,7 @@ class Tici(HardwareBase):
     time.sleep(1)
     gpio_set(GPIO.STM_RST_N, 0)
 
+  @handle_exceptions
   def recover_internal_panda(self):
     gpio_init(GPIO.STM_RST_N, True)
     gpio_init(GPIO.STM_BOOT0, True)
