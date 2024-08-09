@@ -99,7 +99,7 @@ class TestFwFingerprint:
     for car_model, ecus in FW_VERSIONS.items():
       with subtests.test(car_model=car_model.value):
         for ecu, ecu_fw in ecus.items():
-          with subtests.test(ecu.value):
+          with subtests.test((ecu[0].value, ecu[1], ecu[2])):
             duplicates = {fw for fw in ecu_fw if ecu_fw.count(fw) > 1}
             assert not len(duplicates), f'{car_model}: Duplicate FW versions: Ecu.{ECU_NAME[ecu[0]]}, {duplicates}'
             assert len(ecu_fw) > 0, f'{car_model}: No FW versions: Ecu.{ECU_NAME[ecu[0]]}'
