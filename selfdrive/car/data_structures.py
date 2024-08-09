@@ -145,7 +145,7 @@ class CarParams:
   # transmissionType: TransmissionType = auto_field()
   carFw: list['CarParams.CarFw'] = auto_field()
 
-  radarTimeStep: float = auto_field()  # time delta between radar updates, 20Hz is very standard
+  radarTimeStep: float = 0.05  # time delta between radar updates, 20Hz is very standard
   # fingerprintSource: FingerprintSource = auto_field()
   # networkLocation: NetworkLocation = auto_field()  # Where Panda/C2 is integrated into the car's CAN network
 
