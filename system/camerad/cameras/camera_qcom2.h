@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <utility>
+#include <vector>
 
 #include "system/camerad/cameras/camera_common.h"
 #include "system/camerad/cameras/camera_util.h"
@@ -47,6 +48,8 @@ const CameraConfig DRIVER_CAMERA_CONFIG = {
   .enabled = !getenv("DISABLE_DRIVER"),
 };
 
+const CameraConfig ALL_CAMERAS[] = {DRIVER_CAMERA_CONFIG, ROAD_CAMERA_CONFIG, WIDE_ROAD_CAMERA_CONFIG};
+
 class CameraState {
 public:
   MultiCameraState *multi_cam_state = nullptr;
@@ -58,6 +61,7 @@ public:
   float focal_len = 0;
 
   std::mutex exp_lock;
+  std::thread thread;
 
   int exposure_time = 5;
   bool dc_gain_enabled = false;
@@ -81,18 +85,18 @@ public:
   float fl_pix = 0;
 
   CameraState(MultiCameraState *multi_camera_state, const CameraConfig &config);
+  ~CameraState();
   void handle_camera_event(void *evdat);
   void update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain);
   void set_camera_exposure(float grey_frac);
 
   void sensors_start();
 
-  void camera_open();
+  void camera_open(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
   void set_exposure_rect();
   void sensor_set_parameters();
   void camera_map_bufs();
   void camera_init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
-  void camera_close();
   void run();
 
   int32_t session_handle = -1;
@@ -135,7 +139,9 @@ private:
 
 class MultiCameraState {
 public:
-  MultiCameraState();
+  MultiCameraState(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
+  void initializeCameraDevices();
+  void run();
 
   unique_fd video0_fd;
   unique_fd cam_sync_fd;
@@ -143,9 +149,8 @@ public:
   int device_iommu = -1;
   int cdm_iommu = -1;
 
-  CameraState road_cam;
-  CameraState wide_road_cam;
-  CameraState driver_cam;
+  std::unique_ptr<PubMaster> pm;
 
-  PubMaster *pm;
+  // Placed at the bottom to ensure it is destructed first
+  std::vector<std::unique_ptr<CameraState>> cameras;
 };
