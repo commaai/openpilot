@@ -1,6 +1,7 @@
 #include "system/camerad/cameras/camera_qcom2.h"
 
 #include <poll.h>
+#include <sys/mman.h>
 #include <sys/ioctl.h>
 
 #include <algorithm>
@@ -20,6 +21,9 @@
 #include "common/swaglog.h"
 
 const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
+
+// TODO: Replace ISP_BUFFER_SIZE with the correct calculated buffer size
+const int ISP_BUFFER_SIZE = 984480;
 
 // For debugging:
 // echo "4294967295" > /sys/module/cam_debug_util/parameters/debug_mdl
@@ -584,8 +588,9 @@ void CameraState::configISP() {
   LOGD("acquire isp dev");
 
   // config ISP
-  alloc_w_mmu_hdl(multi_cam_state->video0_fd, 984480, (uint32_t*)&buf0_handle, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS |
-                  CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, multi_cam_state->device_iommu, multi_cam_state->cdm_iommu);
+  buf0_address = alloc_w_mmu_hdl(multi_cam_state->video0_fd, ISP_BUFFER_SIZE, (uint32_t *)&buf0_handle, 0x20,
+                                 CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
+                                 multi_cam_state->device_iommu, multi_cam_state->cdm_iommu);
   config_isp(0, 0, 1, buf0_handle, 0);
 }
 
@@ -763,6 +768,11 @@ void CameraState::camera_close() {
   struct cam_req_mgr_session_info session_info = {.session_hdl = session_handle};
   ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_DESTROY_SESSION, &session_info, sizeof(session_info));
   LOGD("destroyed session %d: %d", camera_num, ret);
+
+  // Release the ISP buffer
+  ret = munmap(buf0_address, ISP_BUFFER_SIZE);
+  LOGD("unmap buf0_address %d: %d", camera_num, ret);
+  release_fd(multi_cam_state->video0_fd, buf0_handle);
 }
 
 void cameras_close(MultiCameraState *s) {

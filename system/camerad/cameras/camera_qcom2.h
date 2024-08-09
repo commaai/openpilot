@@ -102,6 +102,7 @@ public:
 
   int32_t link_handle = -1;
 
+  void *buf0_address = nullptr;
   int buf0_handle = 0;
   int buf_handle[FRAME_BUF_COUNT] = {};
   int sync_objs[FRAME_BUF_COUNT] = {};
