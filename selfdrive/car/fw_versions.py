@@ -7,7 +7,6 @@ from tqdm import tqdm
 import capnp
 
 import panda.python.uds as uds
-# from cereal import car
 from openpilot.selfdrive.car import carlog
 from openpilot.selfdrive.car.can_definitions import CanRecvCallable, CanSendCallable
 from openpilot.selfdrive.car.data_structures import CarParams
@@ -308,19 +307,20 @@ def get_fw_versions(can_recv: CanRecvCallable, can_send: CanSendCallable, set_ob
           if query_addrs:
             query = IsoTpParallelQuery(can_send, can_recv, r.bus, query_addrs, r.request, r.response, r.rx_offset, debug=debug)
             for (tx_addr, sub_addr), version in query.get_data(timeout).items():
-              f = CarParams.CarFw(
-                ecu=ecu_types.get((brand, tx_addr, sub_addr), Ecu.unknown),
-                fwVersion=version,
-                address=tx_addr,
-                responseAddress=uds.get_rx_addr_for_tx_addr(tx_addr, r.rx_offset),
-                request=r.request,
-                brand=brand,
-                bus=r.bus,
-                # TODO: this is what I don't like about no more builders
-                logging=r.logging or (ecu_types.get((brand, tx_addr, sub_addr), Ecu.unknown), tx_addr, sub_addr) in config.extra_ecus,
-                obdMultiplexing=r.obd_multiplexing,
-                subAddress=sub_addr if sub_addr is not None else 0,
-              )
+              f = CarParams.CarFw.new_message()
+
+              f.ecu = ecu_types.get((brand, tx_addr, sub_addr), Ecu.unknown)
+              f.fwVersion = version
+              f.address = tx_addr
+              f.responseAddress = uds.get_rx_addr_for_tx_addr(tx_addr, r.rx_offset)
+              f.request = r.request
+              f.brand = brand
+              f.bus = r.bus
+              f.logging = r.logging or (f.ecu, tx_addr, sub_addr) in config.extra_ecus
+              f.obdMultiplexing = r.obd_multiplexing
+
+              if sub_addr is not None:
+                f.subAddress = sub_addr
 
               car_fw.append(f)
         except Exception:
