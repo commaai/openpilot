@@ -98,9 +98,15 @@ class CarParams:
   tireStiffnessFront: float = auto_field()  # [N/rad] front tire coeff of stiff
   tireStiffnessRear: float = auto_field()  # [N/rad] rear tire coeff of stiff
 
-  longitudinalTuning: 'LongitudinalPIDTuning' = field(default_factory=lambda: CarParams.LongitudinalPIDTuning())
-  # lateralParams: LateralParams = auto_field()
+  longitudinalTuning: 'CarParams.LongitudinalPIDTuning' = field(default_factory=lambda: CarParams.LongitudinalPIDTuning())
+  lateralParams: 'CarParams.LateralParams' = field(default_factory=lambda: CarParams.LateralParams())
   lateralTuning: 'CarParams.LateralPIDTuning | CarParams.LateralTorqueTuning' = field(default_factory=lambda: CarParams.LateralPIDTuning())
+
+  @dataclass
+  @apply_auto_fields
+  class LateralParams:
+    torqueBP: list[int] = auto_field()
+    torqueV: list[int] = auto_field()
 
   @dataclass
   @apply_auto_fields

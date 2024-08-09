@@ -72,14 +72,14 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.4
     if ret.flags & VolkswagenFlags.PQ:
       ret.steerActuatorDelay = 0.2
-      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+      CarInterfaceBase.configure_torque_tune(candidate, ret)
     else:
       ret.steerActuatorDelay = 0.1
-      ret.lateralTuning.pid.kpBP = [0.]
-      ret.lateralTuning.pid.kiBP = [0.]
-      ret.lateralTuning.pid.kf = 0.00006
-      ret.lateralTuning.pid.kpV = [0.6]
-      ret.lateralTuning.pid.kiV = [0.2]
+      ret.lateralTuning.kpBP = [0.]
+      ret.lateralTuning.kiBP = [0.]
+      ret.lateralTuning.kf = 0.00006
+      ret.lateralTuning.kpV = [0.6]
+      ret.lateralTuning.kiV = [0.2]
 
     # Global longitudinal tuning defaults, can be overridden per-vehicle
 

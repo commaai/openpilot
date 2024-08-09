@@ -178,7 +178,7 @@ class CarInterfaceBase(ABC):
 
   # returns a set of default params to avoid repetition in car specific params
   @staticmethod
-  def get_std_params(candidate) -> CarParams:
+  def get_std_params(candidate: str) -> CarParams:
     ret = CarParams()
     ret.carFingerprint = candidate
 
@@ -189,6 +189,7 @@ class CarInterfaceBase(ABC):
     # standard ALC params
     ret.tireStiffnessFactor = 1.0
     ret.steerControlType = CarParams.SteerControlType.torque
+    ret.lateralParams = CarParams.LateralPIDTuning()
     ret.minSteerSpeed = 0.
     ret.wheelSpeedFactor = 1.0
 
