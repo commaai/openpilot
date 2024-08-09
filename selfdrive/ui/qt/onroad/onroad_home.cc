@@ -21,7 +21,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   split->addWidget(nvg);
 
   if (getenv("DUAL_CAMERA_VIEW")) {
-    CameraWidget *arCam = new CameraWidget("camerad", VISION_STREAM_ROAD, true, this);
+    CameraWidget *arCam = new CameraWidget("camerad", VISION_STREAM_ROAD, this);
     split->insertWidget(0, arCam);
   }
 
