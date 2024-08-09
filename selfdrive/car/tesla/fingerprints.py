@@ -1,7 +1,7 @@
-from cereal import car
+from openpilot.selfdrive.car.data_structures import CarParams
 from openpilot.selfdrive.car.tesla.values import CAR
 
-Ecu = car.CarParams.Ecu
+Ecu = CarParams.Ecu
 
 FW_VERSIONS = {
   CAR.TESLA_AP2_MODELS: {
