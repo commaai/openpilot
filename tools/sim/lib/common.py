@@ -10,6 +10,7 @@ W, H = 1928, 1208
 
 vec3 = namedtuple("vec3", ["x", "y", "z"])
 
+
 class GPSState:
   def __init__(self):
     self.latitude = 0

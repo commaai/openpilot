@@ -6,6 +6,7 @@ from multiprocessing import Queue
 
 from openpilot.tools.sim.bridge.metadrive.metadrive_bridge import MetaDriveBridge
 
+
 def create_bridge(dual_camera, high_quality):
   queue: Any = Queue()
 
@@ -14,9 +15,11 @@ def create_bridge(dual_camera, high_quality):
 
   return queue, simulator_process, simulator_bridge
 
+
 def main():
   _, simulator_process, _ = create_bridge(True, False)
   simulator_process.join()
+
 
 def parse_args(add_args=None):
   parser = argparse.ArgumentParser(description='Bridge between the simulator and openpilot.')
@@ -25,6 +28,7 @@ def parse_args(add_args=None):
   parser.add_argument('--dual_camera', action='store_true')
 
   return parser.parse_args(add_args)
+
 
 if __name__ == "__main__":
   args = parse_args()
