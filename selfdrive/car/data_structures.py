@@ -73,9 +73,92 @@ class CarParams:
 
   notCar: bool = auto_field()  # flag for non-car robotics platforms
 
+  pcmCruise: bool = auto_field()  # is openpilot's state tied to the PCM's cruise state?
+  enableDsu: bool = auto_field()  # driving support unit
+  enableBsm: bool = auto_field()  # blind spot monitoring
+  flags: int = auto_field()  # flags for car specific quirks
+  experimentalLongitudinalAvailable: bool = auto_field()
+
+  minEnableSpeed: float = auto_field()
+  minSteerSpeed: float = auto_field()
+  # safetyConfigs: list[SafetyConfig] = auto_field()
+  alternativeExperience: int = auto_field()  # panda flag for features like no disengage on gas
+
+  maxLateralAccel: float = auto_field()
+  autoResumeSng: bool = auto_field()  # describes whether car can resume from a stop automatically
+
+  mass: float = auto_field()  # [kg] curb weight: all fluids no cargo
+  wheelbase: float = auto_field()  # [m] distance from rear axle to front axle
+  centerToFront: float = auto_field()  # [m] distance from center of mass to front axle
+  steerRatio: float = auto_field()  # [] ratio of steering wheel angle to front wheel angle
+  steerRatioRear: float = auto_field()  # [] ratio of steering wheel angle to rear wheel angle (usually 0)
+
+  rotationalInertia: float = auto_field()  # [kg*m2] body rotational inertia
+  tireStiffnessFactor: float = auto_field()  # scaling factor used in calculating tireStiffness[Front,Rear]
+  tireStiffnessFront: float = auto_field()  # [N/rad] front tire coeff of stiff
+  tireStiffnessRear: float = auto_field()  # [N/rad] rear tire coeff of stiff
+
+  longitudinalTuning: 'LongitudinalPIDTuning' = field(default_factory=lambda: CarParams.LongitudinalPIDTuning())
+  # lateralParams: LateralParams = auto_field()
+  lateralTuning: 'CarParams.LateralPIDTuning | CarParams.LateralTorqueTuning' = field(default_factory=lambda: CarParams.LateralPIDTuning())
+
+  @dataclass
+  @apply_auto_fields
+  class LateralPIDTuning:
+    kpBP: list[float] = auto_field()
+    kpV: list[float] = auto_field()
+    kiBP: list[float] = auto_field()
+    kiV: list[float] = auto_field()
+    kf: float = auto_field()
+
+  @dataclass
+  @apply_auto_fields
+  class LateralTorqueTuning:
+    useSteeringAngle: bool = auto_field()
+    kp: float = auto_field()
+    ki: float = auto_field()
+    friction: float = auto_field()
+    kf: float = auto_field()
+    steeringAngleDeadzoneDeg: float = auto_field()
+    latAccelFactor: float = auto_field()
+    latAccelOffset: float = auto_field()
+
+  steerLimitAlert: bool = auto_field()
+  steerLimitTimer: float = auto_field()  # time before steerLimitAlert is issued
+
+  vEgoStopping: float = auto_field()  # Speed at which the car goes into stopping state
+  vEgoStarting: float = auto_field()  # Speed at which the car goes into starting state
+  stoppingControl: bool = auto_field()  # Does the car allow full control even at lows speeds when stopping
+  steerControlType: 'CarParams.SteerControlType' = field(default_factory=lambda: CarParams.SteerControlType.torque)
+  radarUnavailable: bool = auto_field()  # True when radar objects aren't visible on CAN or aren't parsed out
+  stopAccel: float = auto_field()  # Required acceleration to keep vehicle stationary
+  stoppingDecelRate: float = auto_field()  # m/s^2/s while trying to stop
+  startAccel: float = auto_field()  # Required acceleration to get car moving
+  startingState: bool = auto_field()  # Does this car make use of special starting state
+
+  steerActuatorDelay: float = auto_field()  # Steering wheel actuator delay in seconds
+  longitudinalActuatorDelay: float = auto_field()  # Gas/Brake actuator delay in seconds
+  openpilotLongitudinalControl: bool = auto_field()  # is openpilot doing the longitudinal control?
+  carVin: str = auto_field()  # VIN number queried during fingerprinting
+  dashcamOnly: bool = auto_field()
+  passive: bool = auto_field()  # is openpilot in control?
+  # transmissionType: TransmissionType = auto_field()
   carFw: list['CarParams.CarFw'] = auto_field()
 
-  carVin: str = auto_field()
+  radarTimeStep: float = auto_field()  # time delta between radar updates, 20Hz is very standard
+  # fingerprintSource: FingerprintSource = auto_field()
+  # networkLocation: NetworkLocation = auto_field()  # Where Panda/C2 is integrated into the car's CAN network
+
+  wheelSpeedFactor: float = auto_field()  # Multiplier on wheels speeds to computer actual speeds
+
+  @dataclass
+  @apply_auto_fields
+  class LongitudinalPIDTuning:
+    kpBP: list[float] = auto_field()
+    kpV: list[float] = auto_field()
+    kiBP: list[float] = auto_field()
+    kiV: list[float] = auto_field()
+    kf: float = auto_field()
 
   class SteerControlType(StrEnum):
     torque = auto()
@@ -126,15 +209,3 @@ class CarParams:
     programmedFuelInjection = auto()
 
     debug = auto()
-
-  @dataclass
-  @apply_auto_fields
-  class LateralTorqueTuning:
-    useSteeringAngle: bool = auto_field()
-    kp: float = auto_field()
-    ki: float = auto_field()
-    friction: float = auto_field()
-    kf: float = auto_field()
-    steeringAngleDeadzoneDeg: float = auto_field()
-    latAccelFactor: float = auto_field()
-    latAccelOffset: float = auto_field()

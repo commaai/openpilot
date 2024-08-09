@@ -8,6 +8,7 @@ from parameterized import parameterized
 from cereal import car, messaging
 from openpilot.selfdrive.car import DT_CTRL, gen_empty_fingerprint
 from openpilot.selfdrive.car.car_helpers import interfaces
+from openpilot.selfdrive.car.data_structures import CarParams
 from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.fw_versions import FW_VERSIONS, FW_QUERY_CONFIGS
 from openpilot.selfdrive.car.interfaces import get_interface_attr
@@ -42,8 +43,8 @@ def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
   })
 
   params: dict = draw(params_strategy)
-  params['car_fw'] = [car.CarParams.CarFw(ecu=fw[0], address=fw[1], subAddress=fw[2] or 0,
-                                          request=draw(st.sampled_from(sorted(ALL_REQUESTS))))
+  params['car_fw'] = [CarParams.CarFw(ecu=fw[0], address=fw[1], subAddress=fw[2] or 0,
+                                      request=draw(st.sampled_from(sorted(ALL_REQUESTS))))
                       for fw in params['car_fw']]
   return params
 
@@ -62,7 +63,7 @@ class TestCarInterfaces:
 
     car_params = CarInterface.get_params(car_name, args['fingerprints'], args['car_fw'],
                                          experimental_long=args['experimental_long'], docs=False)
-    car_params = car_params.as_reader()
+    # car_params = car_params.as_reader()
     car_interface = CarInterface(car_params, CarController, CarState)
     assert car_params
     assert car_interface
@@ -78,16 +79,16 @@ class TestCarInterfaces:
     assert len(car_params.longitudinalTuning.kiV) == len(car_params.longitudinalTuning.kiBP)
 
     # Lateral sanity checks
-    if car_params.steerControlType != car.CarParams.SteerControlType.angle:
+    if car_params.steerControlType != CarParams.SteerControlType.angle:
       tune = car_params.lateralTuning
-      if tune.which() == 'pid':
-        assert not math.isnan(tune.pid.kf) and tune.pid.kf > 0
-        assert len(tune.pid.kpV) > 0 and len(tune.pid.kpV) == len(tune.pid.kpBP)
-        assert len(tune.pid.kiV) > 0 and len(tune.pid.kiV) == len(tune.pid.kiBP)
+      if isinstance(tune, CarParams.LateralPIDTuning):
+        assert not math.isnan(tune.kf) and tune.kf > 0
+        assert len(tune.kpV) > 0 and len(tune.kpV) == len(tune.kpBP)
+        assert len(tune.kiV) > 0 and len(tune.kiV) == len(tune.kiBP)
 
-      elif tune.which() == 'torque':
-        assert not math.isnan(tune.torque.kf) and tune.torque.kf > 0
-        assert not math.isnan(tune.torque.friction) and tune.torque.friction > 0
+      elif isinstance(tune, CarParams.LateralTorqueTuning):
+        assert not math.isnan(tune.kf) and tune.kf > 0
+        assert not math.isnan(tune.friction) and tune.friction > 0
 
     cc_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
     # Run car interface
@@ -109,11 +110,11 @@ class TestCarInterfaces:
     # TODO: wait until card refactor is merged to run controller a few times,
     #  hypothesis also slows down significantly with just one more message draw
     LongControl(car_params)
-    if car_params.steerControlType == car.CarParams.SteerControlType.angle:
+    if car_params.steerControlType == CarParams.SteerControlType.angle:
       LatControlAngle(car_params, car_interface)
-    elif car_params.lateralTuning.which() == 'pid':
+    elif isinstance(car_params.lateralTuning, CarParams.LateralPIDTuning):
       LatControlPID(car_params, car_interface)
-    elif car_params.lateralTuning.which() == 'torque':
+    elif isinstance(car_params.lateralTuning, CarParams.LateralTorqueTuning):
       LatControlTorque(car_params, car_interface)
 
     # Test radar interface

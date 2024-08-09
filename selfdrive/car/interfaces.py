@@ -88,7 +88,7 @@ def get_torque_params():
 # generic car and radar interfaces
 
 class CarInterfaceBase(ABC):
-  def __init__(self, CP, CarController, CarState):
+  def __init__(self, CP: CarParams, CarController, CarState):
     self.CP = CP
 
     self.frame = 0
@@ -178,8 +178,8 @@ class CarInterfaceBase(ABC):
 
   # returns a set of default params to avoid repetition in car specific params
   @staticmethod
-  def get_std_params(candidate):
-    ret = car.CarParams.new_message()
+  def get_std_params(candidate) -> CarParams:
+    ret = CarParams()
     ret.carFingerprint = candidate
 
     # Car docs fields
@@ -212,18 +212,20 @@ class CarInterfaceBase(ABC):
     return ret
 
   @staticmethod
-  def configure_torque_tune(candidate, tune, steering_angle_deadzone_deg=0.0, use_steering_angle=True):
+  def configure_torque_tune(candidate: str, ret: CarParams, steering_angle_deadzone_deg: float = 0.0, use_steering_angle: bool = True):
     params = get_torque_params()[candidate]
 
-    tune.init('torque')
-    tune.torque.useSteeringAngle = use_steering_angle
-    tune.torque.kp = 1.0
-    tune.torque.kf = 1.0
-    tune.torque.ki = 0.1
-    tune.torque.friction = params['FRICTION']
-    tune.torque.latAccelFactor = params['LAT_ACCEL_FACTOR']
-    tune.torque.latAccelOffset = 0.0
-    tune.torque.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
+    tune = CarParams.LateralTorqueTuning()
+    tune.useSteeringAngle = use_steering_angle
+    tune.kp = 1.0
+    tune.kf = 1.0
+    tune.ki = 0.1
+    tune.friction = params['FRICTION']
+    tune.latAccelFactor = params['LAT_ACCEL_FACTOR']
+    tune.latAccelOffset = 0.0
+    tune.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
+
+    ret.lateralTuning = tune
 
   @abstractmethod
   def _update(self, c: car.CarControl) -> car.CarState:
@@ -343,10 +345,10 @@ class CarInterfaceBase(ABC):
 
 
 class RadarInterfaceBase(ABC):
-  def __init__(self, CP):
+  def __init__(self, CP: CarParams):
     self.CP = CP
     self.rcp = None
-    self.pts = {}
+    self.pts: dict[int, RadarData.RadarPoint] = {}
     self.delay = 0
     self.radar_ts = CP.radarTimeStep
     self.frame = 0
@@ -359,7 +361,7 @@ class RadarInterfaceBase(ABC):
 
 
 class CarStateBase(ABC):
-  def __init__(self, CP):
+  def __init__(self, CP: CarParams):
     self.CP = CP
     self.car_fingerprint = CP.carFingerprint
     self.out = car.CarState.new_message()
@@ -463,7 +465,7 @@ class CarStateBase(ABC):
 
 
 class CarControllerBase(ABC):
-  def __init__(self, dbc_name: str, CP):
+  def __init__(self, dbc_name: str, CP: CarParams):
     self.CP = CP
     self.frame = 0
 

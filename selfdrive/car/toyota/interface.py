@@ -4,6 +4,7 @@ from panda.python import uds
 from openpilot.selfdrive.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, CarControllerParams, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, \
                                         MIN_ACC_SPEED, EPS_SCALE, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR
 from openpilot.selfdrive.car import create_button_events, get_safety_config
+from openpilot.selfdrive.car.data_structures import CarParams
 from openpilot.selfdrive.car.disable_ecu import disable_ecu
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
@@ -35,7 +36,7 @@ class CarInterface(CarInterfaceBase):
       ret.steerActuatorDelay = 0.18
       ret.steerLimitTimer = 0.8
     else:
-      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+      CarInterfaceBase.configure_torque_tune(candidate, ret)
 
       ret.steerActuatorDelay = 0.12  # Default delay, Prius has larger delay
       ret.steerLimitTimer = 0.4
@@ -66,20 +67,20 @@ class CarInterface(CarInterfaceBase):
       stop_and_go = candidate != CAR.TOYOTA_AVALON
 
     elif candidate in (CAR.TOYOTA_RAV4_TSS2, CAR.TOYOTA_RAV4_TSS2_2022, CAR.TOYOTA_RAV4_TSS2_2023):
-      ret.lateralTuning.init('pid')
-      ret.lateralTuning.pid.kiBP = [0.0]
-      ret.lateralTuning.pid.kpBP = [0.0]
-      ret.lateralTuning.pid.kpV = [0.6]
-      ret.lateralTuning.pid.kiV = [0.1]
-      ret.lateralTuning.pid.kf = 0.00007818594
+      ret.lateralTuning = CarParams.LateralPIDTuning()
+      ret.lateralTuning.kiBP = [0.0]
+      ret.lateralTuning.kpBP = [0.0]
+      ret.lateralTuning.kpV = [0.6]
+      ret.lateralTuning.kiV = [0.1]
+      ret.lateralTuning.kf = 0.00007818594
 
       # 2019+ RAV4 TSS2 uses two different steering racks and specific tuning seems to be necessary.
       # See https://github.com/commaai/openpilot/pull/21429#issuecomment-873652891
       for fw in car_fw:
         if fw.ecu == "eps" and (fw.fwVersion.startswith(b'\x02') or fw.fwVersion in [b'8965B42181\x00\x00\x00\x00\x00\x00']):
-          ret.lateralTuning.pid.kpV = [0.15]
-          ret.lateralTuning.pid.kiV = [0.05]
-          ret.lateralTuning.pid.kf = 0.00004
+          ret.lateralTuning.kpV = [0.15]
+          ret.lateralTuning.kiV = [0.05]
+          ret.lateralTuning.kf = 0.00004
           break
 
     elif candidate in (CAR.TOYOTA_CHR, CAR.TOYOTA_CAMRY, CAR.TOYOTA_SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_NX):
