@@ -1,5 +1,6 @@
 from collections import defaultdict
 import os
+import shutil
 import pytest
 import re
 
@@ -29,7 +30,7 @@ class TestCarDocs:
     dump_path = os.path.join(BASEDIR, "selfdrive", "car", "tests", "cars_dump")
     dump_car_docs(dump_path)
     print_car_docs_diff(dump_path)
-    os.remove(dump_path)
+    shutil.rmtree(dump_path)
 
   def test_duplicate_years(self, subtests):
     make_model_years = defaultdict(list)

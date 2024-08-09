@@ -4,31 +4,13 @@ import copy
 from dataclasses import dataclass, field
 from enum import Enum
 
-from cereal import car
 from openpilot.selfdrive.car.conversions import Conversions as CV
+from openpilot.selfdrive.car.doc_enums import Column, Star
+from openpilot.selfdrive.car.detail_sentences import get_detail_sentence
+from cereal import car
 
 GOOD_TORQUE_THRESHOLD = 1.0  # m/s^2
 MODEL_YEARS_RE = r"(?<= )((\d{4}-\d{2})|(\d{4}))(,|$)"
-
-
-class Column(Enum):
-  MAKE = "Make"
-  MODEL = "Model"
-  PACKAGE = "Supported Package"
-  LONGITUDINAL = "ACC"
-  FSR_LONGITUDINAL = "No ACC accel below"
-  FSR_STEERING = "No ALC below"
-  STEERING_TORQUE = "Steering Torque"
-  AUTO_RESUME = "Resume from stop"
-  HARDWARE = "Hardware Needed"
-  VIDEO = "Video"
-
-
-class Star(Enum):
-  FULL = "full"
-  HALF = "half"
-  EMPTY = "empty"
-
 
 # A part + its comprised parts
 @dataclass
@@ -218,7 +200,6 @@ def split_name(name: str) -> tuple[str, str, str]:
     model = model[:match.start() - 1]
   return make, model, years
 
-
 @dataclass
 class CarDocs:
   # make + model + model years
@@ -253,15 +234,15 @@ class CarDocs:
     self.car_fingerprint = CP.carFingerprint
 
     # longitudinal column
-    op_long = "Stock"
+    self.op_long = "Stock"
     if CP.experimentalLongitudinalAvailable or CP.enableDsu:
-      op_long = "openpilot available"
+      self.op_long = "openpilot available"
       if CP.enableDsu:
         self.footnotes.append(CommonFootnote.EXP_LONG_DSU)
       else:
         self.footnotes.append(CommonFootnote.EXP_LONG_AVAIL)
     elif CP.openpilotLongitudinalControl and not CP.enableDsu:
-      op_long = "openpilot"
+      self.op_long = "openpilot"
 
     # min steer & enable speed columns
     # TODO: set all the min steer speeds in carParams and remove this
@@ -297,7 +278,7 @@ class CarDocs:
       Column.MAKE: self.make,
       Column.MODEL: self.model,
       Column.PACKAGE: self.package,
-      Column.LONGITUDINAL: op_long,
+      Column.LONGITUDINAL: self.op_long,
       Column.FSR_LONGITUDINAL: f"{max(self.min_enable_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.FSR_STEERING: f"{max(self.min_steer_speed * CV.MS_TO_MPH, 0):.0f} mph",
       Column.STEERING_TORQUE: Star.EMPTY,
@@ -321,30 +302,15 @@ class CarDocs:
 
   def get_detail_sentence(self, CP):
     if not CP.notCar:
-      sentence_builder = "openpilot upgrades your <strong>{car_model}</strong> with automated lane centering{alc} and adaptive cruise control{acc}."
-
-      if self.min_steer_speed > self.min_enable_speed:
-        alc = f" <strong>above {self.min_steer_speed * CV.MS_TO_MPH:.0f} mph</strong>," if self.min_steer_speed > 0 else " <strong>at all speeds</strong>,"
-      else:
-        alc = ""
-
-      # Exception for cars which do not auto-resume yet
-      acc = ""
-      if self.min_enable_speed > 0:
-        acc = f" <strong>while driving above {self.min_enable_speed * CV.MS_TO_MPH:.0f} mph</strong>"
-      elif self.auto_resume:
-        acc = " <strong>that automatically resumes from a stop</strong>"
-
-      if self.row[Column.STEERING_TORQUE] != Star.FULL:
-        sentence_builder += " This car may not be able to take tight turns on its own."
-
-      # experimental mode
-      exp_link = "<a href='https://blog.comma.ai/090release/#experimental-mode' target='_blank' class='link-light-new-regular-text'>Experimental mode</a>"
-      if CP.openpilotLongitudinalControl and not CP.experimentalLongitudinalAvailable:
-        sentence_builder += f" Traffic light and stop sign handling is also available in {exp_link}."
-
-      return sentence_builder.format(car_model=f"{self.make} {self.model}", alc=alc, acc=acc)
-
+      return get_detail_sentence(
+        self.make,
+        self.model,
+        self.op_long,
+        self.min_enable_speed,
+        self.min_steer_speed,
+        self.row[Column.STEERING_TORQUE],
+        self.auto_resume
+      )
     else:
       if CP.carFingerprint == "COMMA_BODY":
         return "The body is a robotics dev kit that can run openpilot. <a href='https://www.commabody.com'>Learn more.</a>"
