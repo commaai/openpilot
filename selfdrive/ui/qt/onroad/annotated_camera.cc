@@ -9,6 +9,10 @@
 #include "selfdrive/ui/qt/onroad/buttons.h"
 #include "selfdrive/ui/qt/util.h"
 
+// Colors for the DM tracking arcs
+const QColor DM_ENGAGED_COLOR = QColor::fromRgbF(0.1, 0.945, 0.26, 0.6);
+const QColor DM_DISENGAGED_COLOR = QColor::fromRgbF(0.545, 0.545, 0.545, 0.6);
+
 // Window that shows camera view and variety of info drawn on top
 AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraWidget("camerad", type, true, parent) {
   pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"uiDebug"});
@@ -236,10 +240,12 @@ void AnnotatedCameraWidget::drawDriverState(QPainter &painter, const UIState *s)
   const int arc_l = 133;
   const float arc_t_default = 6.7;
   const float arc_t_extend = 12.0;
-  QColor arc_color = QColor::fromRgbF(0.545 - 0.445 * s->engaged(),
-                                      0.545 + 0.4 * s->engaged(),
-                                      0.545 - 0.285 * s->engaged(),
-                                      0.4 * (1.0 - dm_fade_state));
+
+  bool show_dm_engaged = s->engaged() || scene.always_on_dm;
+
+  QColor arc_color = show_dm_engaged ? DM_ENGAGED_COLOR : DM_DISENGAGED_COLOR;
+  arc_color.setAlphaF(0.4 * (1.0 - dm_fade_state));
+
   float delta_x = -scene.driver_pose_sins[1] * arc_l / 2;
   float delta_y = -scene.driver_pose_sins[0] * arc_l / 2;
   painter.setPen(QPen(arc_color, arc_t_default+arc_t_extend*fmin(1.0, scene.driver_pose_diff[1] * 5.0), Qt::SolidLine, Qt::RoundCap));

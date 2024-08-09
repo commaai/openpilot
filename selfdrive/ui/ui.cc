@@ -213,6 +213,7 @@ static void update_state(UIState *s) {
 
 void ui_update_params(UIState *s) {
   auto params = Params();
+  s->scene.always_on_dm = params.getBool("AlwaysOnDM");
   s->scene.is_metric = params.getBool("IsMetric");
 }
 
