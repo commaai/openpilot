@@ -161,6 +161,8 @@ EOF
 SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddcc", MODE="0666"
 SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddee", MODE="0666"
 EOF
+
+  $SUDO udevadm control --reload-rules && $SUDO udevadm trigger || true
   fi
 
 else
