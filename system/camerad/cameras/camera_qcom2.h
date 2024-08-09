@@ -4,9 +4,9 @@
 #include <utility>
 
 #include "system/camerad/cameras/camera_common.h"
+#include "system/camerad/cameras/camera_exposure.h"
 #include "system/camerad/cameras/camera_util.h"
 #include "system/camerad/sensors/sensor.h"
-#include "common/params.h"
 #include "common/util.h"
 
 #define FRAME_BUF_COUNT 4
@@ -51,45 +51,25 @@ class CameraState {
 public:
   MultiCameraState *multi_cam_state = nullptr;
   std::unique_ptr<const SensorInfo> ci;
+  std::unique_ptr<CameraExposure> exposure;
+
   bool enabled = true;
   VisionStreamType stream_type;
   const char *publish_name = nullptr;
   cereal::FrameData::Builder (cereal::Event::Builder::*init_camera_state)() = nullptr;
   float focal_len = 0;
 
-  std::mutex exp_lock;
-
-  int exposure_time = 5;
-  bool dc_gain_enabled = false;
-  int dc_gain_weight = 0;
-  int gain_idx = 0;
-  float analog_gain_frac = 0;
-
-  float cur_ev[3] = {};
-  float best_ev_score = 0;
-  int new_exp_g = 0;
-  int new_exp_t = 0;
-
-  Rect ae_xywh = {};
-  float measured_grey_fraction = 0;
-  float target_grey_fraction = 0.3;
-
   unique_fd sensor_fd;
   unique_fd csiphy_fd;
 
   int camera_num = 0;
-  float fl_pix = 0;
 
   CameraState(MultiCameraState *multi_camera_state, const CameraConfig &config);
   void handle_camera_event(void *evdat);
-  void update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain);
-  void set_camera_exposure(float grey_frac);
 
   void sensors_start();
 
   void camera_open();
-  void set_exposure_rect();
-  void sensor_set_parameters();
   void camera_map_bufs();
   void camera_init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
   void camera_close();
@@ -128,9 +108,6 @@ private:
   void configISP();
   void configCSIPHY();
   void linkDevices();
-
-  // for debugging
-  Params params;
 };
 
 class MultiCameraState {
