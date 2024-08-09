@@ -12,21 +12,16 @@ def auto_field():
 
 def apply_auto_fields(cls):
   cls_annotations = cls.__dict__.get('__annotations__', {})
-  # type_hints = get_type_hints(cls)
   for name, typ in cls_annotations.items():
-    # typ = type_hints.get(name, typ)
     current_value = getattr(cls, name, None)
     if current_value is auto_obj:
       origin_typ = get_origin(typ) or typ
-      print('name123', name, typ, origin_typ)
       if isinstance(origin_typ, str):
         raise TypeError(f"Forward references are not supported for auto_field: '{origin_typ}'. Use a default_factory with lambda instead.")
-      elif origin_typ in (int, float, str, bytes, list, tuple, set, dict, bool):
+      elif origin_typ in (int, float, str, bytes, list, tuple, set, dict, bool) or is_dataclass(origin_typ):
         setattr(cls, name, field(default_factory=origin_typ))
       elif origin_typ is None:
         setattr(cls, name, field(default=origin_typ))
-      elif is_dataclass(origin_typ):
-        setattr(cls, name, field(default_factory=origin_typ))
       elif issubclass(origin_typ, Enum):  # first enum is the default
         setattr(cls, name, field(default=next(iter(origin_typ))))
       else:
