@@ -12,6 +12,7 @@ from cereal import car
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.simple_kalman import KF1D, get_kalman_gain
 from openpilot.selfdrive.car import DT_CTRL, apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, get_friction, STD_CARGO_KG
+from openpilot.selfdrive.car.data_structures import CarParams, RadarData
 from openpilot.selfdrive.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
 from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.helpers import clip
@@ -52,7 +53,7 @@ class LatControlInputs(NamedTuple):
   aego: float
 
 
-TorqueFromLateralAccelCallbackType = Callable[[LatControlInputs, car.CarParams.LateralTorqueTuning, float, float, bool, bool], float]
+TorqueFromLateralAccelCallbackType = Callable[[LatControlInputs, CarParams.LateralTorqueTuning, float, float, bool, bool], float]
 
 
 @cache
@@ -123,7 +124,7 @@ class CarInterfaceBase(ABC):
     return cls.get_params(candidate, gen_empty_fingerprint(), list(), False, False)
 
   @classmethod
-  def get_params(cls, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[car.CarParams.CarFw], experimental_long: bool, docs: bool):
+  def get_params(cls, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[CarParams.CarFw], experimental_long: bool, docs: bool):
     ret = CarInterfaceBase.get_std_params(candidate)
 
     platform = PLATFORMS[candidate]
@@ -150,12 +151,12 @@ class CarInterfaceBase(ABC):
 
   @staticmethod
   @abstractmethod
-  def _get_params(ret: car.CarParams, candidate, fingerprint: dict[int, dict[int, int]],
-                  car_fw: list[car.CarParams.CarFw], experimental_long: bool, docs: bool):
+  def _get_params(ret: CarParams, candidate, fingerprint: dict[int, dict[int, int]],
+                  car_fw: list[CarParams.CarFw], experimental_long: bool, docs: bool):
     raise NotImplementedError
 
   @staticmethod
-  def init(CP: car.CarParams, can_recv: CanRecvCallable, can_send: CanSendCallable):
+  def init(CP: CarParams, can_recv: CanRecvCallable, can_send: CanSendCallable):
     pass
 
   @staticmethod
@@ -166,7 +167,7 @@ class CarInterfaceBase(ABC):
   def get_steer_feedforward_function(self):
     return self.get_steer_feedforward_default
 
-  def torque_from_lateral_accel_linear(self, latcontrol_inputs: LatControlInputs, torque_params: car.CarParams.LateralTorqueTuning,
+  def torque_from_lateral_accel_linear(self, latcontrol_inputs: LatControlInputs, torque_params: CarParams.LateralTorqueTuning,
                                        lateral_accel_error: float, lateral_accel_deadzone: float, friction_compensation: bool, gravity_adjusted: bool) -> float:
     # The default is a linear relationship between torque and lateral acceleration (accounting for road roll and steering friction)
     friction = get_friction(lateral_accel_error, lateral_accel_deadzone, FRICTION_THRESHOLD, torque_params, friction_compensation)
@@ -187,7 +188,7 @@ class CarInterfaceBase(ABC):
 
     # standard ALC params
     ret.tireStiffnessFactor = 1.0
-    ret.steerControlType = car.CarParams.SteerControlType.torque
+    ret.steerControlType = CarParams.SteerControlType.torque
     ret.minSteerSpeed = 0.
     ret.wheelSpeedFactor = 1.0
 
@@ -350,10 +351,10 @@ class RadarInterfaceBase(ABC):
     self.radar_ts = CP.radarTimeStep
     self.frame = 0
 
-  def update(self, can_strings):
+  def update(self, can_strings) -> RadarData | None:
     self.frame += 1
     if (self.frame % int(100 * self.radar_ts)) == 0:
-      return car.RadarData.new_message()
+      return RadarData()
     return None
 
 

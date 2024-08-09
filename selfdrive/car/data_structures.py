@@ -74,6 +74,8 @@ class CarParams:
 
   carFw: list['CarParams.CarFw'] = auto_field()
 
+  carVin: str = auto_field()
+
   class SteerControlType(StrEnum):
     torque = auto()
     angle = auto()
@@ -122,3 +124,14 @@ class CarParams:
     programmedFuelInjection = auto()
 
     debug = auto()
+
+  @auto_dataclass
+  class LateralTorqueTuning:
+    useSteeringAngle: bool = auto_field()
+    kp: float = auto_field()
+    ki: float = auto_field()
+    friction: float = auto_field()
+    kf: float = auto_field()
+    steeringAngleDeadzoneDeg: float = auto_field()
+    latAccelFactor: float = auto_field()
+    latAccelOffset: float = auto_field()

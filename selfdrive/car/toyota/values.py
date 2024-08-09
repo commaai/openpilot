@@ -4,8 +4,8 @@ from dataclasses import dataclass, field
 from enum import Enum, IntFlag
 
 from openpilot.selfdrive.car import CarSpecs, PlatformConfig, Platforms, AngleRateLimit, dbc_dict
-from openpilot.selfdrive.car.data_structures import CarParams
 from openpilot.selfdrive.car.conversions import Conversions as CV
+from openpilot.selfdrive.car.data_structures import CarParams
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarDocs, Column, CarParts, CarHarness
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 

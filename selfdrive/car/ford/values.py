@@ -6,11 +6,12 @@ from enum import Enum, IntFlag
 import panda.python.uds as uds
 from cereal import car
 from openpilot.selfdrive.car import AngleRateLimit, CarSpecs, dbc_dict, DbcDict, PlatformConfig, Platforms
+from openpilot.selfdrive.car.data_structures import CarParams
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column, \
                                                      Device
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, LiveFwVersions, OfflineFwVersions, Request, StdQueries, p16
 
-Ecu = car.CarParams.Ecu
+Ecu = CarParams.Ecu
 
 
 class CarControllerParams:

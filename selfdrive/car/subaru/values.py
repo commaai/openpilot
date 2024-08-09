@@ -4,10 +4,11 @@ from enum import Enum, IntFlag
 from cereal import car
 from panda.python import uds
 from openpilot.selfdrive.car import CarSpecs, DbcDict, PlatformConfig, Platforms, dbc_dict
+from openpilot.selfdrive.car.data_structures import CarParams
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Tool, Column
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
-Ecu = car.CarParams.Ecu
+Ecu = CarParams.Ecu
 
 
 class CarControllerParams:
