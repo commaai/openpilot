@@ -12,39 +12,39 @@
 
 ExitHandler do_exit;
 
-struct EncoderdState {
-  int max_waiting = 0;
+class Barrier {
+public:
+  explicit Barrier(int count) : count_(count), initial_count_(count) {}
 
-  // Sync logic for startup
-  std::atomic<int> encoders_ready = 0;
-  std::atomic<uint32_t> start_frame_id = 0;
-  bool camera_ready[WideRoadCam + 1] = {};
-  bool camera_synced[WideRoadCam + 1] = {};
+  void wait() {
+    std::unique_lock<std::mutex> lock(mutex_);
+    if (--count_ == 0) {
+      count_ = initial_count_;  // Reset count for reuse
+      cv_.notify_all();
+    } else {
+      cv_.wait(lock, [this] { return count_ == initial_count_; });
+    }
+  }
+
+private:
+  std::mutex mutex_;
+  std::condition_variable cv_;
+  int count_;
+  const int initial_count_;
 };
 
-// Handle initial encoder syncing by waiting for all encoders to reach the same frame id
-bool sync_encoders(EncoderdState *s, CameraType cam_type, uint32_t frame_id) {
-  if (s->camera_synced[cam_type]) return true;
+std::atomic<uint32_t> start_frame_id(0);
 
-  if (s->max_waiting > 1 && s->encoders_ready != s->max_waiting) {
-    // add a small margin to the start frame id in case one of the encoders already dropped the next frame
-    update_max_atomic(s->start_frame_id, frame_id + 2);
-    if (std::exchange(s->camera_ready[cam_type], true) == false) {
-      ++s->encoders_ready;
-      LOGD("camera %d encoder ready", cam_type);
-    }
-    return false;
-  } else {
-    if (s->max_waiting == 1) update_max_atomic(s->start_frame_id, frame_id);
-    bool synced = frame_id >= s->start_frame_id;
-    s->camera_synced[cam_type] = synced;
-    if (!synced) LOGD("camera %d waiting for frame %d, cur %d", cam_type, (int)s->start_frame_id, frame_id);
-    return synced;
-  }
+// Handle initial encoder syncing by waiting for all encoders to reach the same frame id
+bool sync_encoders(Barrier &barrier, uint32_t frame_id) {
+  barrier.wait();
+  uint32_t expected = 0;
+  std::atomic_compare_exchange_strong(&start_frame_id, &expected, frame_id + 2);
+  return frame_id >= start_frame_id.load();
 }
 
 
-void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
+void encoder_thread(Barrier &barrier, const LogCameraInfo &cam_info) {
   util::set_thread_name(cam_info.thread_name);
 
   std::vector<std::unique_ptr<Encoder>> encoders;
@@ -85,14 +85,14 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       }
       lagging = false;
 
-      if (!sync_encoders(s, cam_info.type, extra.frame_id)) {
+      if (!sync_encoders(barrier, extra.frame_id)) {
         continue;
       }
       if (do_exit) break;
 
       // do rotation if required
       const int frames_per_seg = SEGMENT_LENGTH * MAIN_FPS;
-      if (cur_seg >= 0 && extra.frame_id >= ((cur_seg + 1) * frames_per_seg) + s->start_frame_id) {
+      if (cur_seg >= 0 && extra.frame_id >= ((cur_seg + 1) * frames_per_seg) + start_frame_id) {
         for (auto &e : encoders) {
           e->encoder_close();
           e->encoder_open(NULL);
@@ -114,7 +114,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
 
 template <size_t N>
 void encoderd_thread(const LogCameraInfo (&cameras)[N]) {
-  EncoderdState s;
+  Barrier barrier(N);
 
   std::set<VisionStreamType> streams;
   while (!do_exit) {
@@ -131,8 +131,7 @@ void encoderd_thread(const LogCameraInfo (&cameras)[N]) {
       auto it = std::find_if(std::begin(cameras), std::end(cameras),
                              [stream](auto &cam) { return cam.stream_type == stream; });
       assert(it != std::end(cameras));
-      ++s.max_waiting;
-      encoder_threads.push_back(std::thread(encoder_thread, &s, *it));
+      encoder_threads.push_back(std::thread(encoder_thread, std::ref(barrier), *it));
     }
 
     for (auto &t : encoder_threads) t.join();
