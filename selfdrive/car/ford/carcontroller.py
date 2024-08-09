@@ -1,11 +1,10 @@
 from cereal import car
 from opendbc.can.packer import CANPacker
-from openpilot.common.numpy_fast import clip
 from openpilot.selfdrive.car import apply_std_steer_angle_limits
 from openpilot.selfdrive.car.ford import fordcan
 from openpilot.selfdrive.car.ford.values import CarControllerParams, FordFlags
-from openpilot.selfdrive.car.interfaces import CarControllerBase
-from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
+from openpilot.selfdrive.car.helpers import clip
+from openpilot.selfdrive.car.interfaces import CarControllerBase, V_CRUISE_MAX
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 VisualAlert = car.CarControl.HUDControl.VisualAlert
@@ -24,12 +23,10 @@ def apply_ford_curvature_limits(apply_curvature, apply_curvature_last, current_c
 
 
 class CarController(CarControllerBase):
-  def __init__(self, dbc_name, CP, VM):
-    self.CP = CP
-    self.VM = VM
+  def __init__(self, dbc_name, CP):
+    super().__init__(dbc_name, CP)
     self.packer = CANPacker(dbc_name)
     self.CAN = fordcan.CanBus(CP)
-    self.frame = 0
 
     self.apply_curvature_last = 0
     self.main_on_last = False
@@ -92,6 +89,7 @@ class CarController(CarControllerBase):
       if not CC.longActive or gas < CarControllerParams.MIN_GAS:
         gas = CarControllerParams.INACTIVE_GAS
       stopping = CC.actuators.longControlState == LongCtrlState.stopping
+      # TODO: look into using the actuators packet to send the desired speed
       can_sends.append(fordcan.create_acc_msg(self.packer, self.CAN, CC.longActive, gas, accel, stopping, v_ego_kph=V_CRUISE_MAX))
 
     ### ui ###

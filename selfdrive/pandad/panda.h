@@ -39,7 +39,6 @@ struct __attribute__((packed)) can_header {
 struct can_frame {
   long address;
   std::string dat;
-  long busTime;
   long src;
 };
 

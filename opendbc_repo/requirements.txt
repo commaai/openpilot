@@ -1,0 +1,10 @@
+ruff
+Cython
+Jinja2
+numpy
+pycapnp
+pyyaml
+scons
+pytest
+pytest-xdist
+pytest-subtests

@@ -1,16 +1,14 @@
 from opendbc.can.packer import CANPacker
-from openpilot.common.realtime import DT_CTRL
-from openpilot.selfdrive.car import apply_meas_steer_torque_limits
+from openpilot.selfdrive.car import DT_CTRL, apply_meas_steer_torque_limits
 from openpilot.selfdrive.car.chrysler import chryslercan
 from openpilot.selfdrive.car.chrysler.values import RAM_CARS, CarControllerParams, ChryslerFlags
 from openpilot.selfdrive.car.interfaces import CarControllerBase
 
 
 class CarController(CarControllerBase):
-  def __init__(self, dbc_name, CP, VM):
-    self.CP = CP
+  def __init__(self, dbc_name, CP):
+    super().__init__(dbc_name, CP)
     self.apply_steer_last = 0
-    self.frame = 0
 
     self.hud_count = 0
     self.last_lkas_falling_edge = 0

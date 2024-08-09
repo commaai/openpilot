@@ -14,8 +14,8 @@ def test_safety_nooutput(p):
   time.sleep(0.05)
   r = p.can_recv()
   # bus 192 is messages blocked by TX safety hook on bus 0
-  assert len([x for x in r if x[3] != 192]) == 0
-  assert len([x for x in r if x[3] == 192]) == 1
+  assert len([x for x in r if x[2] != 192]) == 0
+  assert len([x for x in r if x[2] == 192]) == 1
 
 
 def test_canfd_safety_modes(p):

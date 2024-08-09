@@ -9,10 +9,9 @@ VisualAlert = car.CarControl.HUDControl.VisualAlert
 
 
 class CarController(CarControllerBase):
-  def __init__(self, dbc_name, CP, VM):
-    self.CP = CP
+  def __init__(self, dbc_name, CP):
+    super().__init__(dbc_name, CP)
     self.car_fingerprint = CP.carFingerprint
-    self.frame = 0
 
     self.lkas_max_torque = 0
     self.apply_angle_last = 0

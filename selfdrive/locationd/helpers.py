@@ -4,6 +4,14 @@ from typing import Any
 from cereal import log
 
 
+def rotate_cov(rot_matrix, cov_in):
+  return rot_matrix @ cov_in @ rot_matrix.T
+
+
+def rotate_std(rot_matrix, std_in):
+  return np.sqrt(np.diag(rotate_cov(rot_matrix, np.diag(std_in**2))))
+
+
 class NPQueue:
   def __init__(self, maxlen: int, rowsize: int) -> None:
     self.maxlen = maxlen
@@ -38,7 +46,7 @@ class PointBuckets:
   def is_calculable(self) -> bool:
     return all(len(v) > 0 for v in self.buckets.values())
 
-  def add_point(self, x: float, y: float, bucket_val: float) -> None:
+  def add_point(self, x: float, y: float) -> None:
     raise NotImplementedError
 
   def get_points(self, num_points: int = None) -> Any:

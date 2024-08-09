@@ -19,7 +19,6 @@ from openpilot.common.realtime import DT_MDL
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state
-from openpilot.tools.webcam.camera import Camera
 
 UI_DELAY = 0.5 # may be slower on CI?
 
@@ -76,7 +75,7 @@ def setup_onroad(click, pm: PubMaster):
 
   time.sleep(0.5) # give time for vipc server to start
 
-  IMG = Camera.bgr2nv12(np.random.randint(0, 255, (d.fcam.width, d.fcam.height, 3), dtype=np.uint8))
+  IMG = np.zeros((int(d.fcam.width*1.5), d.fcam.height), dtype=np.uint8)
   IMG_BYTES = IMG.flatten().tobytes()
 
   cams = ('roadCameraState', 'wideRoadCameraState')
@@ -116,7 +115,7 @@ CASES = {
 
 TEST_DIR = pathlib.Path(__file__).parent
 
-TEST_OUTPUT_DIR = TEST_DIR / "report"
+TEST_OUTPUT_DIR = TEST_DIR / "report_1"
 SCREENSHOTS_DIR = TEST_OUTPUT_DIR / "screenshots"
 
 

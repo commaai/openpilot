@@ -47,6 +47,10 @@ bool get_gas_pressed_prev(void){
   return gas_pressed_prev;
 }
 
+void set_gas_pressed_prev(bool c){
+  gas_pressed_prev = c;
+}
+
 bool get_brake_pressed_prev(void){
   return brake_pressed_prev;
 }

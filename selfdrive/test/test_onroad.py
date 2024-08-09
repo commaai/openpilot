@@ -1,4 +1,3 @@
-import bz2
 import math
 import json
 import os
@@ -9,6 +8,7 @@ import shutil
 import subprocess
 import time
 import numpy as np
+import zstandard as zstd
 from collections import Counter, defaultdict
 from functools import cached_property
 from pathlib import Path
@@ -20,9 +20,10 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.timeout import Timeout
 from openpilot.common.params import Params
 from openpilot.selfdrive.controls.lib.events import EVENTS, ET
-from openpilot.system.hardware import HARDWARE
 from openpilot.selfdrive.test.helpers import set_params_enabled, release_only
+from openpilot.system.hardware import HARDWARE
 from openpilot.system.hardware.hw import Paths
+from openpilot.system.loggerd.uploader import LOG_COMPRESSION_LEVEL
 from openpilot.tools.lib.logreader import LogReader
 
 """
@@ -56,11 +57,10 @@ PROCS = {
   "system.logmessaged": 0.2,
   "system.tombstoned": 0,
   "./logcatd": 0,
-  "system.micd": 6.0,
+  "system.micd": 5.0,
   "system.timed": 0,
   "selfdrive.pandad.pandad": 0,
   "system.statsd": 0.4,
-  "selfdrive.navd.navd": 0.4,
   "system.loggerd.uploader": (0.5, 15.0),
   "system.loggerd.deleter": 0.1,
 }
@@ -167,10 +167,10 @@ class TestOnroad:
     cls.log_sizes = {}
     for f in cls.log_path.iterdir():
       assert f.is_file()
-      cls.log_sizes[f]  = f.stat().st_size / 1e6
+      cls.log_sizes[f] = f.stat().st_size / 1e6
       if f.name in ("qlog", "rlog"):
         with open(f, 'rb') as ff:
-          cls.log_sizes[f] = len(bz2.compress(ff.read())) / 1e6
+          cls.log_sizes[f] = len(zstd.compress(ff.read(), LOG_COMPRESSION_LEVEL)) / 1e6
 
 
   @cached_property
@@ -207,7 +207,7 @@ class TestOnroad:
       if f.name == "qcamera.ts":
         assert 2.15 < sz < 2.35
       elif f.name == "qlog":
-        assert 0.7 < sz < 1.0
+        assert 0.4 < sz < 0.55
       elif f.name == "rlog":
         assert 5 < sz < 50
       elif f.name.endswith('.hevc'):
@@ -256,6 +256,7 @@ class TestOnroad:
     for proc_name, expected_cpu in PROCS.items():
 
       err = ""
+      exp = "???"
       cpu_usage = 0.
       x = plogs_by_proc[proc_name]
       if len(x) > 2:

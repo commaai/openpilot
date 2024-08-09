@@ -4,6 +4,7 @@ import json
 # for aiortc and its dependencies
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=RuntimeWarning) # TODO: remove this when google-crc32c publish a python3.12 wheel
 
 from openpilot.system.webrtc.webrtcd import get_stream
 

@@ -86,7 +86,7 @@ int VisionBuf::free() {
     if (err != 0) return err;
   }
 
-  err = munmap(this->addr, this->len);
+  err = munmap(this->addr, this->mmap_len);
   if (err != 0) return err;
 
   err = close(this->fd);

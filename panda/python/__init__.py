@@ -37,7 +37,7 @@ def calculate_checksum(data):
 
 def pack_can_buffer(arr):
   snds = [b'']
-  for address, _, dat, bus in arr:
+  for address, dat, bus in arr:
     assert len(dat) in LEN_TO_DLC
     #logging.debug("  W 0x%x: 0x%s", address, dat.hex())
 
@@ -85,7 +85,7 @@ def unpack_can_buffer(dat):
     data = dat[CANPACKET_HEAD_SIZE:(CANPACKET_HEAD_SIZE+data_len)]
     dat = dat[(CANPACKET_HEAD_SIZE+data_len):]
 
-    ret.append((address, 0, data, bus))
+    ret.append((address, data, bus))
 
   return (ret, dat)
 
@@ -812,7 +812,7 @@ class Panda:
         logging.error("CAN: BAD SEND MANY, RETRYING")
 
   def can_send(self, addr, dat, bus, timeout=CAN_SEND_TIMEOUT_MS):
-    self.can_send_many([[addr, None, dat, bus]], timeout=timeout)
+    self.can_send_many([[addr, dat, bus]], timeout=timeout)
 
   @ensure_can_packet_version
   def can_recv(self):

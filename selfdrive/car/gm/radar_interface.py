@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import math
 from cereal import car
-from openpilot.common.conversions import Conversions as CV
 from opendbc.can.parser import CANParser
+from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.gm.values import DBC, CanBus
 from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
 

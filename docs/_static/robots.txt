@@ -1,2 +1,0 @@
-User-agent: *
-Sitemap: https://docs.comma.ai/sitemap.xml

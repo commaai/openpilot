@@ -77,7 +77,7 @@ def create_lkas11(packer, frame, CP, apply_steer, steer_req,
     # Genesis and Optima fault when forwarding while engaged
     values["CF_Lkas_LdwsActivemode"] = 2
 
-  dat = packer.make_can_msg("LKAS11", 0, values)[2]
+  dat = packer.make_can_msg("LKAS11", 0, values)[1]
 
   if CP.flags & HyundaiFlags.CHECKSUM_CRC8:
     # CRC Checksum as seen on 2019 Hyundai Santa Fe
@@ -156,7 +156,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
     scc12_values["CF_VSM_ConfMode"] = 1
     scc12_values["AEB_Status"] = 1  # AEB disabled
 
-  scc12_dat = packer.make_can_msg("SCC12", 0, scc12_values)[2]
+  scc12_dat = packer.make_can_msg("SCC12", 0, scc12_values)[1]
   scc12_values["CR_VSM_ChkSum"] = 0x10 - sum(sum(divmod(i, 16)) for i in scc12_dat) % 0x10
 
   commands.append(packer.make_can_msg("SCC12", 0, scc12_values))
@@ -181,7 +181,7 @@ def create_acc_commands(packer, enabled, accel, upper_jerk, idx, hud_control, se
       "FCA_DrvSetStatus": 1,
       "FCA_Status": 1,  # AEB disabled
     }
-    fca11_dat = packer.make_can_msg("FCA11", 0, fca11_values)[2]
+    fca11_dat = packer.make_can_msg("FCA11", 0, fca11_values)[1]
     fca11_values["CR_FCA_ChkSum"] = hyundai_checksum(fca11_dat[:7])
     commands.append(packer.make_can_msg("FCA11", 0, fca11_values))
 

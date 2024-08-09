@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-import unittest
-
 from teleoprtc.info import parse_info_from_offer
 
 
@@ -9,7 +7,7 @@ def lf2crlf(x):
     return x.replace("\n", "\r\n")
 
 
-class TestStream(unittest.TestCase):
+class TestStream:
   def test_double_video_tracks(self):
     sdp = """v=0
 o=- 3910210993 3910210993 IN IP4 0.0.0.0
@@ -90,10 +88,10 @@ a=ice-pwd:1234
 a=fingerprint:sha-256 70:3A:2D:37:3C:52:96:0E:10:F6:4D:7A:EB:18:38:1B:FD:CA:A5:90:D7:6C:DA:A9:39:76:C9:2F:FB:FF:56:0C
 a=setup:actpass"""
     info = parse_info_from_offer(lf2crlf(sdp))
-    self.assertEqual(info.n_expected_camera_tracks, 2)
-    self.assertFalse(info.expected_audio_track)
-    self.assertFalse(info.incoming_audio_track)
-    self.assertFalse(info.incoming_datachannel)
+    assert info.n_expected_camera_tracks == 2
+    assert not info.expected_audio_track
+    assert not info.incoming_audio_track
+    assert not info.incoming_datachannel
 
   def test_recvonly_audio(self):
     sdp = """v=0
@@ -120,10 +118,10 @@ a=ice-pwd:1234
 a=fingerprint:sha-256 40:4B:14:CF:70:B8:67:E1:B1:FF:7E:F9:22:6E:60:7D:73:B5:1E:38:4B:10:20:9C:CD:1C:47:02:52:ED:45:25
 a=setup:actpass"""
     info = parse_info_from_offer(lf2crlf(sdp))
-    self.assertEqual(info.n_expected_camera_tracks, 0)
-    self.assertTrue(info.expected_audio_track)
-    self.assertFalse(info.incoming_audio_track)
-    self.assertFalse(info.incoming_datachannel)
+    assert info.n_expected_camera_tracks == 0
+    assert info.expected_audio_track
+    assert not info.incoming_audio_track
+    assert not info.incoming_datachannel
 
   def test_incoming_datachanel(self):
     sdp = """v=0
@@ -142,11 +140,7 @@ a=ice-pwd:1234
 a=fingerprint:sha-256 9B:C0:F3:35:8E:05:A1:15:DB:F8:39:0E:B0:E0:0C:EB:82:E4:B9:26:18:A6:43:2D:B9:9A:23:96:0A:59:B6:58
 a=setup:actpass"""
     info = parse_info_from_offer(lf2crlf(sdp))
-    self.assertEqual(info.n_expected_camera_tracks, 0)
-    self.assertFalse(info.expected_audio_track)
-    self.assertFalse(info.incoming_audio_track)
-    self.assertTrue(info.incoming_datachannel)
-
-
-if __name__ == '__main__':
-  unittest.main()
+    assert info.n_expected_camera_tracks == 0
+    assert not info.expected_audio_track
+    assert not info.incoming_audio_track
+    assert info.incoming_datachannel

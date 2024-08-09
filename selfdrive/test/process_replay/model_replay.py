@@ -10,8 +10,7 @@ from openpilot.tools.lib.openpilotci import BASE_URL, get_url
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.process_replay import get_process_config, replay_process
 from openpilot.tools.lib.framereader import FrameReader
-from openpilot.tools.lib.logreader import LogReader
-from openpilot.tools.lib.helpers import save_log
+from openpilot.tools.lib.logreader import LogReader, save_log
 
 TEST_ROUTE = "2f4452b03ccb98f0|2022-12-03--13-45-30"
 SEGMENT = 6
@@ -81,31 +80,6 @@ if __name__ == "__main__":
     'wideRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, log_type="ecamera"), readahead=True)
   }
 
-  # Update tile refs
-  if update:
-    import urllib
-    import requests
-    import threading
-    import http.server
-    from openpilot.tools.lib.openpilotci import upload_bytes
-    os.environ['MAPS_HOST'] = 'http://localhost:5000'
-
-    class HTTPRequestHandler(http.server.BaseHTTPRequestHandler):
-      def do_GET(self):
-        assert len(self.path) > 10  # Sanity check on path length
-        r = requests.get(f'https://api.mapbox.com{self.path}', timeout=30)
-        upload_bytes(r.content, urllib.parse.urlparse(self.path).path.lstrip('/'))
-        self.send_response(r.status_code)
-        self.send_header('Content-type','text/html')
-        self.end_headers()
-        self.wfile.write(r.content)
-
-    server = http.server.HTTPServer(("127.0.0.1", 5000), HTTPRequestHandler)
-    thread = threading.Thread(None, server.serve_forever, daemon=True)
-    thread.start()
-  else:
-    os.environ['MAPS_HOST'] = BASE_URL.rstrip('/')
-
   log_msgs = []
   # run replays
   if not NO_MODEL:
@@ -121,15 +95,16 @@ if __name__ == "__main__":
       all_logs = list(LogReader(BASE_URL + log_fn))
       cmp_log = []
 
-      # logs are ordered based on type: modelV2, driverStateV2
+      # logs are ordered based on type: modelV2, drivingModelData, driverStateV2
       if not NO_MODEL:
-        model_start_index = next(i for i, m in enumerate(all_logs) if m.which() in ("modelV2", "cameraOdometry"))
-        cmp_log += all_logs[model_start_index:model_start_index + MAX_FRAMES*2]
+        model_start_index = next(i for i, m in enumerate(all_logs) if m.which() in ("modelV2", "drivingModelData", "cameraOdometry"))
+        cmp_log += all_logs[model_start_index:model_start_index + MAX_FRAMES*3]
         dmon_start_index = next(i for i, m in enumerate(all_logs) if m.which() == "driverStateV2")
         cmp_log += all_logs[dmon_start_index:dmon_start_index + MAX_FRAMES]
 
       ignore = [
         'logMonoTime',
+        'drivingModelData.frameDropPerc',
         'modelV2.frameDropPerc',
         'modelV2.modelExecutionTime',
         'driverStateV2.modelExecutionTime',

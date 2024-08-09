@@ -1,11 +1,11 @@
 import copy
 from collections import deque
 from cereal import car
-from openpilot.common.conversions import Conversions as CV
-from openpilot.selfdrive.car.tesla.values import CAR, DBC, CANBUS, GEAR_MAP, DOORS, BUTTONS
-from openpilot.selfdrive.car.interfaces import CarStateBase
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
+from openpilot.selfdrive.car.conversions import Conversions as CV
+from openpilot.selfdrive.car.tesla.values import CAR, DBC, CANBUS, GEAR_MAP, DOORS, BUTTONS
+from openpilot.selfdrive.car.interfaces import CarStateBase
 
 class CarState(CarStateBase):
   def __init__(self, CP):

@@ -2,19 +2,18 @@ import time
 from collections import defaultdict
 from functools import partial
 
-import cereal.messaging as messaging
-from openpilot.common.swaglog import cloudlog
-from openpilot.selfdrive.pandad import can_list_to_can_capnp
+from openpilot.selfdrive.car import carlog
+from openpilot.selfdrive.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
 from openpilot.selfdrive.car.fw_query_definitions import AddrType
 from panda.python.uds import CanClient, IsoTpMessage, FUNCTIONAL_ADDRS, get_rx_addr_for_tx_addr
 
 
 class IsoTpParallelQuery:
-  def __init__(self, sendcan: messaging.PubSocket, logcan: messaging.SubSocket, bus: int, addrs: list[int] | list[AddrType],
+  def __init__(self, can_send: CanSendCallable, can_recv: CanRecvCallable, bus: int, addrs: list[int] | list[AddrType],
                request: list[bytes], response: list[bytes], response_offset: int = 0x8,
                functional_addrs: list[int] = None, debug: bool = False, response_pending_timeout: float = 10) -> None:
-    self.sendcan = sendcan
-    self.logcan = logcan
+    self.can_send = can_send
+    self.can_recv = can_recv
     self.bus = bus
     self.request = request
     self.response = response
@@ -27,21 +26,21 @@ class IsoTpParallelQuery:
       assert tx_addr not in FUNCTIONAL_ADDRS, f"Functional address should be defined in functional_addrs: {hex(tx_addr)}"
 
     self.msg_addrs = {tx_addr: get_rx_addr_for_tx_addr(tx_addr[0], rx_offset=response_offset) for tx_addr in real_addrs}
-    self.msg_buffer: dict[int, list[tuple[int, int, bytes, int]]] = defaultdict(list)
+    self.msg_buffer: dict[int, list[CanData]] = defaultdict(list)
 
-  def rx(self):
+  def rx(self) -> None:
     """Drain can socket and sort messages into buffers based on address"""
-    can_packets = messaging.drain_sock(self.logcan, wait_for_one=True)
+    can_packets = self.can_recv(wait_for_one=True)
 
     for packet in can_packets:
-      for msg in packet.can:
+      for msg in packet:
         if msg.src == self.bus and msg.address in self.msg_addrs.values():
-          self.msg_buffer[msg.address].append((msg.address, msg.busTime, msg.dat, msg.src))
+          self.msg_buffer[msg.address].append(CanData(msg.address, msg.dat, msg.src))
 
-  def _can_tx(self, tx_addr, dat, bus):
+  def _can_tx(self, tx_addr: int, dat: bytes, bus: int):
     """Helper function to send single message"""
-    msg = [tx_addr, 0, dat, bus]
-    self.sendcan.send(can_list_to_can_capnp([msg], msgtype='sendcan'))
+    msg = CanData(tx_addr, dat, bus)
+    self.can_send([msg])
 
   def _can_rx(self, addr, sub_addr=None):
     """Helper function to retrieve message with specified address and subadress from buffer"""
@@ -53,7 +52,7 @@ class IsoTpParallelQuery:
       # Filter based on subadress
       msgs = []
       for m in self.msg_buffer[addr]:
-        first_byte = m[2][0]
+        first_byte = m[1][0]
         if first_byte == sub_addr:
           msgs.append(m)
         else:
@@ -62,8 +61,8 @@ class IsoTpParallelQuery:
     self.msg_buffer[addr] = keep_msgs
     return msgs
 
-  def _drain_rx(self):
-    messaging.drain_sock_raw(self.logcan)
+  def _drain_rx(self) -> None:
+    self.can_recv()
     self.msg_buffer = defaultdict(list)
 
   def _create_isotp_msg(self, tx_addr: int, sub_addr: int | None, rx_addr: int):
@@ -109,7 +108,7 @@ class IsoTpParallelQuery:
         try:
           dat, rx_in_progress = msg.recv()
         except Exception:
-          cloudlog.exception(f"Error processing UDS response: {tx_addr}")
+          carlog.exception(f"Error processing UDS response: {tx_addr}")
           request_done[tx_addr] = True
           continue
 
@@ -123,7 +122,7 @@ class IsoTpParallelQuery:
 
         # Log unexpected empty responses
         if len(dat) == 0:
-          cloudlog.error(f"iso-tp query empty response: {tx_addr}")
+          carlog.error(f"iso-tp query empty response: {tx_addr}")
           request_done[tx_addr] = True
           continue
 
@@ -143,10 +142,10 @@ class IsoTpParallelQuery:
           error_code = dat[2] if len(dat) > 2 else -1
           if error_code == 0x78:
             response_timeouts[tx_addr] = time.monotonic() + self.response_pending_timeout
-            cloudlog.error(f"iso-tp query response pending: {tx_addr}")
+            carlog.error(f"iso-tp query response pending: {tx_addr}")
           else:
             request_done[tx_addr] = True
-            cloudlog.error(f"iso-tp query bad response: {tx_addr} - 0x{dat.hex()}")
+            carlog.error(f"iso-tp query bad response: {tx_addr} - 0x{dat.hex()}")
 
       # Mark request done if address timed out
       cur_time = time.monotonic()
@@ -154,12 +153,12 @@ class IsoTpParallelQuery:
         if cur_time - response_timeouts[tx_addr] > 0:
           if not request_done[tx_addr]:
             if request_counter[tx_addr] > 0:
-              cloudlog.error(f"iso-tp query timeout after receiving partial response: {tx_addr}")
+              carlog.error(f"iso-tp query timeout after receiving partial response: {tx_addr}")
             elif tx_addr in addrs_responded:
-              cloudlog.error(f"iso-tp query timeout while receiving response: {tx_addr}")
+              carlog.error(f"iso-tp query timeout while receiving response: {tx_addr}")
             # TODO: handle functional addresses
             # else:
-            #   cloudlog.error(f"iso-tp query timeout with no response: {tx_addr}")
+            #   carlog.error(f"iso-tp query timeout with no response: {tx_addr}")
           request_done[tx_addr] = True
 
       # Break if all requests are done (finished or timed out)
@@ -167,7 +166,7 @@ class IsoTpParallelQuery:
         break
 
       if cur_time - start_time > total_timeout:
-        cloudlog.error("iso-tp query timeout while receiving data")
+        carlog.error("iso-tp query timeout while receiving data")
         break
 
     return results

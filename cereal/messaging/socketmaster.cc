@@ -1,4 +1,3 @@
-#include <time.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <string>
@@ -7,14 +6,7 @@
 #include "cereal/services.h"
 #include "cereal/messaging/messaging.h"
 
-
 const bool SIMULATION = (getenv("SIMULATION") != nullptr) && (std::string(getenv("SIMULATION")) == "1");
-
-static inline uint64_t nanos_since_boot() {
-  struct timespec t;
-  clock_gettime(CLOCK_BOOTTIME, &t);
-  return t.tv_sec * 1000000000ULL + t.tv_nsec;
-}
 
 static inline bool inList(const std::vector<const char *> &list, const char *value) {
   for (auto &v : list) {

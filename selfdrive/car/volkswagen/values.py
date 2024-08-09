@@ -5,8 +5,8 @@ from enum import Enum, IntFlag, StrEnum
 from cereal import car
 from panda.python import uds
 from opendbc.can.can_define import CANDefine
-from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car import dbc_dict, CarSpecs, DbcDict, PlatformConfig, Platforms
+from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column, \
                                                      Device
 from openpilot.selfdrive.car.fw_query_definitions import EcuAddrSubAddr, FwQueryConfig, Request, p16
@@ -188,7 +188,7 @@ class Footnote(Enum):
 @dataclass
 class VWCarDocs(CarDocs):
   package: str = "Adaptive Cruise Control (ACC) & Lane Assist"
-  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.j533]))
+  car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.vw_j533]))
 
   def init_make(self, CP: car.CarParams):
     self.footnotes.append(Footnote.VW_EXP_LONG)
@@ -196,7 +196,7 @@ class VWCarDocs(CarDocs):
       self.footnotes.append(Footnote.SKODA_HEATED_WINDSHIELD)
 
     if CP.carFingerprint in (CAR.VOLKSWAGEN_CRAFTER_MK2, CAR.VOLKSWAGEN_TRANSPORTER_T61):
-      self.car_parts = CarParts([Device.threex_angled_mount, CarHarness.j533])
+      self.car_parts = CarParts([Device.threex_angled_mount, CarHarness.vw_j533])
 
     if abs(CP.minSteerSpeed - CarControllerParams.DEFAULT_MIN_STEER_SPEED) < 1e-3:
       self.min_steer_speed = 0

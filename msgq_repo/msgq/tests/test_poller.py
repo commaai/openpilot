@@ -1,4 +1,4 @@
-import unittest
+import pytest
 import time
 import msgq
 import concurrent.futures
@@ -20,7 +20,7 @@ def poller():
   return r
 
 
-class TestPoller(unittest.TestCase):
+class TestPoller:
   def test_poll_once(self):
     context = msgq.Context()
 
@@ -41,7 +41,7 @@ class TestPoller(unittest.TestCase):
     del pub
     context.term()
 
-    self.assertEqual(result, [b"a"])
+    assert result == [b"a"]
 
   def test_poll_and_create_many_subscribers(self):
     context = msgq.Context()
@@ -68,12 +68,12 @@ class TestPoller(unittest.TestCase):
     del pub
     context.term()
 
-    self.assertEqual(result, [b"a"])
+    assert result == [b"a"]
 
   def test_multiple_publishers_exception(self):
     context = msgq.Context()
 
-    with self.assertRaises(msgq.MultiplePublishersError):
+    with pytest.raises(msgq.MultiplePublishersError):
       pub1 = msgq.PubSocket()
       pub1.connect(context, SERVICE_NAME)
 
@@ -106,7 +106,7 @@ class TestPoller(unittest.TestCase):
       r = sub.receive(non_blocking=True)
 
       if r is not None:
-        self.assertEqual(b'a'*i, r)
+        assert b'a'*i == r
 
         msg_seen = True
         i += 1
@@ -131,12 +131,8 @@ class TestPoller(unittest.TestCase):
     pub.send(b'a')
     pub.send(b'b')
 
-    self.assertEqual(b'b', sub.receive())
+    assert b'b' == sub.receive()
 
     del pub
     del sub
     context.term()
-
-
-if __name__ == "__main__":
-  unittest.main()

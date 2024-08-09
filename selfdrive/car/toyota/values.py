@@ -4,9 +4,8 @@ from dataclasses import dataclass, field
 from enum import Enum, IntFlag
 
 from cereal import car
-from openpilot.common.conversions import Conversions as CV
-from openpilot.selfdrive.car import CarSpecs, PlatformConfig, Platforms
-from openpilot.selfdrive.car import AngleRateLimit, dbc_dict
+from openpilot.selfdrive.car import CarSpecs, PlatformConfig, Platforms, AngleRateLimit, dbc_dict
+from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarDocs, Column, CarParts, CarHarness
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
@@ -44,9 +43,7 @@ class CarControllerParams:
 class ToyotaFlags(IntFlag):
   # Detected flags
   HYBRID = 1
-  SMART_DSU = 2
   DISABLE_RADAR = 4
-  RADAR_CAN_FILTER = 1024
 
   # Static flags
   TSS2 = 8
@@ -56,7 +53,7 @@ class ToyotaFlags(IntFlag):
   # these cars use the Lane Tracing Assist (LTA) message for lateral control
   ANGLE_CONTROL = 128
   NO_STOP_TIMER = 256
-  # these cars are speculated to allow stop and go when the DSU is unplugged or disabled with sDSU
+  # these cars are speculated to allow stop and go when the DSU is unplugged
   SNG_WITHOUT_DSU = 512
 
 

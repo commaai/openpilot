@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import unittest
+import pytest
 
 import aiortc
 from aiortc.mediastreams import AudioStreamTrack
@@ -29,7 +29,8 @@ class DummyH264VideoStreamTrack(TiciVideoStreamTrack):
     return "H264"
 
 
-class TestOfferStream(unittest.IsolatedAsyncioTestCase):
+@pytest.mark.asyncio
+class TestOfferStream:
   async def test_offer_stream_sdp_recvonly_audio(self):
     capture = OfferCapture()
     builder = WebRTCOfferBuilder(capture)
@@ -42,8 +43,8 @@ class TestOfferStream(unittest.IsolatedAsyncioTestCase):
       pass
 
     info = parse_info_from_offer(capture.offer.sdp)
-    self.assertTrue(info.expected_audio_track)
-    self.assertFalse(info.incoming_audio_track)
+    assert info.expected_audio_track
+    assert not info.incoming_audio_track
 
   async def test_offer_stream_sdp_sendonly_audio(self):
     capture = OfferCapture()
@@ -57,8 +58,8 @@ class TestOfferStream(unittest.IsolatedAsyncioTestCase):
       pass
 
     info = parse_info_from_offer(capture.offer.sdp)
-    self.assertFalse(info.expected_audio_track)
-    self.assertTrue(info.incoming_audio_track)
+    assert not info.expected_audio_track
+    assert info.incoming_audio_track
 
   async def test_offer_stream_sdp_channel(self):
     capture = OfferCapture()
@@ -72,10 +73,11 @@ class TestOfferStream(unittest.IsolatedAsyncioTestCase):
       pass
 
     info = parse_info_from_offer(capture.offer.sdp)
-    self.assertTrue(info.incoming_datachannel)
+    assert info.incoming_datachannel
 
 
-class TestAnswerStream(unittest.IsolatedAsyncioTestCase):
+@pytest.mark.asyncio
+class TestAnswerStream:
   async def test_codec_preference(self):
     offer_sdp = """v=0
 o=- 3910274679 3910274679 IN IP4 0.0.0.0
@@ -115,7 +117,7 @@ a=setup:actpass"""
     sdp_desc = aiortc.sdp.SessionDescription.parse(answer.sdp)
     video_desc = [m for m in sdp_desc.media if m.kind == "video"][0]
     codecs = video_desc.rtp.codecs
-    self.assertEqual(codecs[0].mimeType, "video/H264")
+    assert codecs[0].mimeType == "video/H264"
 
   async def test_fail_if_preferred_codec_not_in_offer(self):
     offer_sdp = """v=0
@@ -147,9 +149,5 @@ a=setup:actpass"""
     builder.add_video_stream("road", DummyH264VideoStreamTrack("road", 0.05))
     stream = builder.stream()
 
-    with self.assertRaises(ValueError):
+    with pytest.raises(ValueError):
       _ = await stream.start()
-
-
-if __name__=="__main__":
-  unittest.main()

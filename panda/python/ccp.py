@@ -99,7 +99,7 @@ class CcpClient():
       msgs = self._panda.can_recv() or []
       if len(msgs) >= 256:
         print("CAN RX buffer overflow!!!", file=sys.stderr)
-      for rx_addr, _, rx_data_bytearray, rx_bus in msgs:
+      for rx_addr, rx_data_bytearray, rx_bus in msgs:
         if rx_bus == self.can_bus and rx_addr == self.rx_addr:
           rx_data = bytes(rx_data_bytearray)
           if self.debug:

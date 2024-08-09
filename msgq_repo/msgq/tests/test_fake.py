@@ -1,5 +1,5 @@
+import pytest
 import os
-import unittest
 import multiprocessing
 import platform
 import msgq
@@ -9,18 +9,18 @@ from typing import Optional
 WAIT_TIMEOUT = 5
 
 
-@unittest.skipIf(platform.system() == "Darwin", "Events not supported on macOS")
-class TestEvents(unittest.TestCase):
+@pytest.mark.skipif(condition=platform.system() == "Darwin", reason="Events not supported on macOS")
+class TestEvents:
 
   def test_mutation(self):
     handle = msgq.fake_event_handle("carState")
     event = handle.recv_called_event
 
-    self.assertFalse(event.peek())
+    assert not event.peek()
     event.set()
-    self.assertTrue(event.peek())
+    assert event.peek()
     event.clear()
-    self.assertFalse(event.peek())
+    assert not event.peek()
 
     del event
 
@@ -31,9 +31,9 @@ class TestEvents(unittest.TestCase):
     event.set()
     try:
       event.wait(WAIT_TIMEOUT)
-      self.assertTrue(event.peek())
+      assert event.peek()
     except RuntimeError:
-      self.fail("event.wait() timed out")
+      pytest.fail("event.wait() timed out")
 
   def test_wait_multiprocess(self):
     handle = msgq.fake_event_handle("carState")
@@ -46,9 +46,9 @@ class TestEvents(unittest.TestCase):
       p = multiprocessing.Process(target=set_event_run)
       p.start()
       event.wait(WAIT_TIMEOUT)
-      self.assertTrue(event.peek())
+      assert event.peek()
     except RuntimeError:
-      self.fail("event.wait() timed out")
+      pytest.fail("event.wait() timed out")
 
     p.kill()
 
@@ -58,34 +58,34 @@ class TestEvents(unittest.TestCase):
 
     try:
       event.wait(0)
-      self.fail("event.wait() did not time out")
+      pytest.fail("event.wait() did not time out")
     except RuntimeError:
-      self.assertFalse(event.peek())
+      assert not event.peek()
 
 
-@unittest.skipIf(platform.system() == "Darwin", "FakeSockets not supported on macOS")
-@unittest.skipIf("ZMQ" in os.environ, "FakeSockets not supported on ZMQ")
+@pytest.mark.skipif(condition=platform.system() == "Darwin", reason="FakeSockets not supported on macOS")
+@pytest.mark.skipif(condition="ZMQ" in os.environ, reason="FakeSockets not supported on ZMQ")
 @parameterized_class([{"prefix": None}, {"prefix": "test"}])
-class TestFakeSockets(unittest.TestCase):
+class TestFakeSockets:
   prefix: Optional[str] = None
 
-  def setUp(self):
+  def setup_method(self):
     msgq.toggle_fake_events(True)
     if self.prefix is not None:
       msgq.set_fake_prefix(self.prefix)
     else:
       msgq.delete_fake_prefix()
 
-  def tearDown(self):
+  def teardown_method(self):
     msgq.toggle_fake_events(False)
     msgq.delete_fake_prefix()
 
   def test_event_handle_init(self):
     handle = msgq.fake_event_handle("controlsState", override=True)
 
-    self.assertFalse(handle.enabled)
-    self.assertGreaterEqual(handle.recv_called_event.fd, 0)
-    self.assertGreaterEqual(handle.recv_ready_event.fd, 0)
+    assert not handle.enabled
+    assert handle.recv_called_event.fd >= 0
+    assert handle.recv_ready_event.fd >= 0
 
   def test_non_managed_socket_state(self):
     # non managed socket should have zero state
@@ -93,9 +93,9 @@ class TestFakeSockets(unittest.TestCase):
 
     handle = msgq.fake_event_handle("ubloxGnss", override=False)
 
-    self.assertFalse(handle.enabled)
-    self.assertEqual(handle.recv_called_event.fd, 0)
-    self.assertEqual(handle.recv_ready_event.fd, 0)
+    assert not handle.enabled
+    assert handle.recv_called_event.fd == 0
+    assert handle.recv_ready_event.fd == 0
 
   def test_managed_socket_state(self):
     # managed socket should not change anything about the state
@@ -108,9 +108,9 @@ class TestFakeSockets(unittest.TestCase):
 
     _ = msgq.pub_sock("ubloxGnss")
 
-    self.assertEqual(handle.enabled, expected_enabled)
-    self.assertEqual(handle.recv_called_event.fd, expected_recv_called_fd)
-    self.assertEqual(handle.recv_ready_event.fd, expected_recv_ready_fd)
+    assert handle.enabled == expected_enabled
+    assert handle.recv_called_event.fd == expected_recv_called_fd
+    assert handle.recv_ready_event.fd == expected_recv_ready_fd
 
   def test_sockets_enable_disable(self):
     carState_handle = msgq.fake_event_handle("ubloxGnss", enable=True)
@@ -125,16 +125,16 @@ class TestFakeSockets(unittest.TestCase):
       recv_ready.set()
       pub_sock.send(b"test")
       _ = sub_sock.receive()
-      self.assertTrue(recv_called.peek())
+      assert recv_called.peek()
       recv_called.clear()
 
       carState_handle.enabled = False
       recv_ready.set()
       pub_sock.send(b"test")
       _ = sub_sock.receive()
-      self.assertFalse(recv_called.peek())
+      assert not recv_called.peek()
     except RuntimeError:
-      self.fail("event.wait() timed out")
+      pytest.fail("event.wait() timed out")
 
   def test_synced_pub_sub(self):
     def daemon_repub_process_run():
@@ -177,16 +177,12 @@ class TestFakeSockets(unittest.TestCase):
         recv_called.wait(WAIT_TIMEOUT)
 
         msg = sub_sock.receive(non_blocking=True)
-        self.assertIsNotNone(msg)
-        self.assertEqual(len(msg), 8)
+        assert msg is not None
+        assert len(msg) == 8
 
         frame = int.from_bytes(msg, 'little')
-        self.assertEqual(frame, i)
+        assert frame == i
     except RuntimeError:
-      self.fail("event.wait() timed out")
+      pytest.fail("event.wait() timed out")
     finally:
       p.kill()
-
-
-if __name__ == "__main__":
-  unittest.main()

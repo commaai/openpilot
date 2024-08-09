@@ -30,7 +30,7 @@ def launcher(proc: str, name: str) -> None:
     setproctitle(proc)
 
     # create new context since we forked
-    messaging.context = messaging.Context()
+    messaging.reset_context()
 
     # add daemon name tag to logs
     cloudlog.bind(daemon=name)

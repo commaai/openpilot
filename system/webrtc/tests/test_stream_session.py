@@ -3,6 +3,7 @@ import json
 # for aiortc and its dependencies
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=RuntimeWarning) # TODO: remove this when google-crc32c publish a python3.12 wheel
 
 from aiortc import RTCDataChannel
 from aiortc.mediastreams import VIDEO_CLOCK_RATE, VIDEO_TIME_BASE
@@ -48,7 +49,7 @@ class TestStreamSession:
   def test_incoming_proxy(self, mocker):
     tested_msgs = [
       {"type": "customReservedRawData0", "data": "test"}, # primitive
-      {"type": "can", "data": [{"address": 0, "busTime": 0, "dat": "", "src": 0}]}, # list
+      {"type": "can", "data": [{"address": 0, "dat": "", "src": 0}]}, # list
       {"type": "testJoystick", "data": {"axes": [0, 0], "buttons": [False]}}, # dict
     ]
 

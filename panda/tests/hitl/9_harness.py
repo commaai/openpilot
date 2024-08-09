@@ -51,7 +51,7 @@ def test_harness_status(p, panda_jungle):
       time.sleep(0.5)
 
       msgs = p.can_recv()
-      buses = {int(dat): bus for _, _, dat, bus in msgs if bus <= 3}
+      buses = {int(dat): bus for _, dat, bus in msgs if bus <= 3}
       print(msgs)
 
       # jungle doesn't actually switch buses when switching orientation

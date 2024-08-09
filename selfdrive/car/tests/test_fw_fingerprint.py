@@ -5,24 +5,17 @@ from collections import defaultdict
 from parameterized import parameterized
 
 from cereal import car
+from openpilot.selfdrive.car.can_definitions import CanData
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
 from openpilot.selfdrive.car.fw_versions import ESSENTIAL_ECUS, FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, build_fw_dict, \
-                                                match_fw_to_car, get_brand_ecu_matches, get_fw_versions, get_present_ecus
+                                                match_fw_to_car, get_brand_ecu_matches, get_fw_versions, get_fw_versions_ordered, get_present_ecus
 from openpilot.selfdrive.car.vin import get_vin
 
 CarFw = car.CarParams.CarFw
 Ecu = car.CarParams.Ecu
 
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
-
-
-class FakeSocket:
-  def receive(self, non_blocking=False):
-    pass
-
-  def send(self, msg):
-    pass
 
 
 class TestFwFingerprint:
@@ -211,7 +204,16 @@ class TestFwFingerprintTiming:
   current_obd_multiplexing: bool
   total_time: float
 
-  def fake_set_obd_multiplexing(self, _, obd_multiplexing):
+  @staticmethod
+  def fake_can_send(msgs):
+    pass
+
+  @staticmethod
+  def fake_can_recv(wait_for_one: bool = False) -> list[list[CanData]]:
+    return ([[CanData(random.randint(0x600, 0x800), b'\x00' * 8, 0)]]
+            if random.uniform(0, 1) > 0.5 else [])
+
+  def fake_set_obd_multiplexing(self, obd_multiplexing):
     """The 10Hz blocking params loop adds on average 50ms to the query time for each OBD multiplexing change"""
     if obd_multiplexing != self.current_obd_multiplexing:
       self.current_obd_multiplexing = obd_multiplexing
@@ -222,16 +224,14 @@ class TestFwFingerprintTiming:
     return {}
 
   def _benchmark_brand(self, brand, num_pandas, mocker):
-    fake_socket = FakeSocket()
     self.total_time = 0
-    mocker.patch("openpilot.selfdrive.car.fw_versions.set_obd_multiplexing", self.fake_set_obd_multiplexing)
     mocker.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", self.fake_get_data)
     for _ in range(self.N):
       # Treat each brand as the most likely (aka, the first) brand with OBD multiplexing initially on
       self.current_obd_multiplexing = True
 
       t = time.perf_counter()
-      get_fw_versions(fake_socket, fake_socket, brand, num_pandas=num_pandas)
+      get_fw_versions(self.fake_can_recv, self.fake_can_send, self.fake_set_obd_multiplexing, brand, num_pandas=num_pandas)
       self.total_time += time.perf_counter() - t
 
     return self.total_time / self.N
@@ -249,13 +249,11 @@ class TestFwFingerprintTiming:
       self.total_time += timeout
       return set()
 
-    fake_socket = FakeSocket()
     self.total_time = 0.0
-    mocker.patch("openpilot.selfdrive.car.fw_versions.set_obd_multiplexing", self.fake_set_obd_multiplexing)
     mocker.patch("openpilot.selfdrive.car.fw_versions.get_ecu_addrs", fake_get_ecu_addrs)
     for _ in range(self.N):
       self.current_obd_multiplexing = True
-      get_present_ecus(fake_socket, fake_socket, num_pandas=2)
+      get_present_ecus(self.fake_can_recv, self.fake_can_send, self.fake_set_obd_multiplexing, num_pandas=2)
     self._assert_timing(self.total_time / self.N, present_ecu_ref_time)
     print(f'get_present_ecus, query time={self.total_time / self.N} seconds')
 
@@ -264,7 +262,7 @@ class TestFwFingerprintTiming:
         self.total_time = 0.0
         mocker.patch("openpilot.selfdrive.car.isotp_parallel_query.IsoTpParallelQuery.get_data", self.fake_get_data)
         for _ in range(self.N):
-          get_vin(fake_socket, fake_socket, (0, 1), **args)
+          get_vin(self.fake_can_recv, self.fake_can_send, (0, 1), **args)
         self._assert_timing(self.total_time / self.N, vin_ref_times[name])
         print(f'get_vin {name} case, query time={self.total_time / self.N} seconds')
 
@@ -313,3 +311,17 @@ class TestFwFingerprintTiming:
         total_time = round(total_times[num_pandas], 2)
         self._assert_timing(total_time, total_ref_time[num_pandas])
         print(f'all brands, total FW query time={total_time} seconds')
+
+  def test_get_fw_versions(self, subtests, mocker):
+    # some coverage on IsoTpParallelQuery and panda UDS library
+    # TODO: replace this with full fingerprint simulation testing
+    # https://github.com/commaai/panda/pull/1329
+
+    def fake_carlog_exception(*args, **kwargs):
+      raise
+
+    mocker.patch("openpilot.selfdrive.car.carlog.exception", fake_carlog_exception)
+    get_fw_versions_ordered(self.fake_can_recv, self.fake_can_send, lambda obd: None, '0' * 17, set())
+    for brand in FW_QUERY_CONFIGS.keys():
+      with subtests.test(brand=brand):
+        get_fw_versions(self.fake_can_recv, self.fake_can_send, lambda obd: None, brand)

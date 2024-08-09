@@ -19,7 +19,7 @@ def can_printer():
   canbus = int(os.getenv("CAN", "0"))
   while True:
     can_recv = p.can_recv()
-    for address, _, dat, src  in can_recv:
+    for address, dat, src  in can_recv:
       if src == canbus:
         msgs[address].append(dat)
 

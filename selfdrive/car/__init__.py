@@ -1,4 +1,5 @@
 # functions common among cars
+import logging
 from collections import namedtuple
 from dataclasses import dataclass
 from enum import IntFlag, ReprEnum, EnumType
@@ -7,10 +8,17 @@ from dataclasses import replace
 import capnp
 
 from cereal import car
-from openpilot.common.numpy_fast import clip, interp
-from openpilot.common.utils import Freezable
+from panda.python.uds import SERVICE_TYPE
+from openpilot.selfdrive.car.can_definitions import CanData
 from openpilot.selfdrive.car.docs_definitions import CarDocs
+from openpilot.selfdrive.car.helpers import clip, interp
 
+# set up logging
+carlog = logging.getLogger('carlog')
+carlog.setLevel(logging.INFO)
+carlog.propagate = False
+
+DT_CTRL = 0.01  # car state and control loop timestep (s)
 
 # kg of standard extra cargo to count for drive, gas, etc...
 STD_CARGO_KG = 136.
@@ -165,8 +173,35 @@ def common_fault_avoidance(fault_condition: bool, request: bool, above_limit_fra
   return above_limit_frames, request
 
 
-def make_can_msg(addr, dat, bus):
-  return [addr, 0, dat, bus]
+def apply_center_deadzone(error, deadzone):
+  if (error > - deadzone) and (error < deadzone):
+    error = 0.
+  return error
+
+
+def rate_limit(new_value, last_value, dw_step, up_step):
+  return clip(new_value, last_value + dw_step, last_value + up_step)
+
+
+def get_friction(lateral_accel_error: float, lateral_accel_deadzone: float, friction_threshold: float,
+                 torque_params: car.CarParams.LateralTorqueTuning, friction_compensation: bool) -> float:
+  friction_interp = interp(
+    apply_center_deadzone(lateral_accel_error, lateral_accel_deadzone),
+    [-friction_threshold, friction_threshold],
+    [-torque_params.friction, torque_params.friction]
+  )
+  friction = float(friction_interp) if friction_compensation else 0.0
+  return friction
+
+
+def make_tester_present_msg(addr, bus, subaddr=None, suppress_response=False):
+  dat = [0x02, SERVICE_TYPE.TESTER_PRESENT]
+  if subaddr is not None:
+    dat.insert(0, subaddr)
+  dat.append(0x80 if suppress_response else 0x0)  # sub-function
+
+  dat.extend([0x0] * (8 - len(dat)))
+  return CanData(addr, bytes(dat), bus)
 
 
 def get_safety_config(safety_model, safety_param = None):
@@ -222,6 +257,19 @@ class CarSpecs:
 
   def override(self, **kwargs):
     return replace(self, **kwargs)
+
+
+class Freezable:
+  _frozen: bool = False
+
+  def freeze(self):
+    if not self._frozen:
+      self._frozen = True
+
+  def __setattr__(self, *args, **kwargs):
+    if self._frozen:
+      raise Exception("cannot modify frozen object")
+    super().__setattr__(*args, **kwargs)
 
 
 @dataclass(order=True)

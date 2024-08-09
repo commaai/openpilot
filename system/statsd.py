@@ -133,7 +133,7 @@ def main() -> NoReturn:
       # flush when started state changes or after FLUSH_TIME_S
       if (time.monotonic() > last_flush_time + STATS_FLUSH_TIME_S) or (sm['deviceState'].started != started_prev):
         result = ""
-        current_time = datetime.utcnow().replace(tzinfo=UTC)
+        current_time = datetime.now(UTC)
         tags['started'] = sm['deviceState'].started
 
         for key, value in gauges.items():

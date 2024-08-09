@@ -108,7 +108,7 @@ int msgq_new_queue(msgq_queue_t * q, const char * path, size_t size){
   char * mem = (char*)mmap(NULL, size + sizeof(msgq_header_t), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
   close(fd);
 
-  if (mem == NULL){
+  if (mem == MAP_FAILED){
     return -1;
   }
   q->mmap_p = mem;

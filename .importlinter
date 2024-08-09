@@ -1,0 +1,65 @@
+[importlinter]
+root_packages =
+    openpilot
+
+[importlinter:contract:1]
+name = Forbid imports from openpilot.selfdrive.car to openpilot.system
+type = forbidden
+source_modules =
+    openpilot.selfdrive.car
+forbidden_modules =
+    openpilot.common
+    openpilot.selfdrive.controls
+    openpilot.selfdrive.debug
+    openpilot.selfdrive.pandad
+    openpilot.selfdrive.test
+    openpilot.system
+    openpilot.body
+    openpilot.tools
+    openpilot.docs
+    openpilot.msgq
+    openpilot.panda
+    openpilot.rednose
+    openpilot.release
+    openpilot.teleoprtc
+    openpilot.tinygrad
+ignore_imports =
+    # remove these
+    openpilot.selfdrive.car.interfaces -> openpilot.selfdrive.controls.lib.events
+    openpilot.selfdrive.car.body.carcontroller -> openpilot.selfdrive.controls.lib.pid
+    openpilot.selfdrive.car.tests.test_docs -> openpilot.common.basedir
+    openpilot.selfdrive.car.docs -> openpilot.common.basedir
+
+    # car interface will not filter the speed
+    openpilot.selfdrive.car.interfaces -> openpilot.common.simple_kalman
+
+    openpilot.selfdrive.car.gm.interface -> openpilot.common.basedir
+    openpilot.selfdrive.car.interfaces -> openpilot.common.basedir
+
+    # params will need to move to new openpilot files that just call car files
+    openpilot.selfdrive.car.fw_versions -> openpilot.common.params
+    openpilot.selfdrive.car.ecu_addrs -> openpilot.common.params
+
+    # these are okay
+    openpilot.selfdrive.car.card -> openpilot.common.swaglog
+    openpilot.selfdrive.car.card -> openpilot.common.realtime
+    openpilot.selfdrive.car.card -> openpilot.selfdrive.controls.lib.events
+    openpilot.selfdrive.car.tests.test_models -> openpilot.tools.lib.logreader
+    openpilot.selfdrive.car.tests.test_models -> openpilot.selfdrive.car.card
+    openpilot.selfdrive.car.tests.test_models -> openpilot.tools.lib.route
+    openpilot.selfdrive.car.tests.test_models -> openpilot.system.hardware.hw
+    openpilot.selfdrive.car.tests.test_models -> openpilot.selfdrive.test.helpers
+    openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.controls.lib.latcontrol_angle
+    openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.controls.lib.longcontrol
+    openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.controls.lib.latcontrol_torque
+    openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.controls.lib.latcontrol_pid
+    openpilot.selfdrive.car.card -> openpilot.common.params
+    openpilot.selfdrive.car.tests.test_models -> openpilot.common.params
+    openpilot.selfdrive.car.tests.test_models -> openpilot.common.basedir
+    openpilot.selfdrive.car.card -> openpilot.selfdrive.pandad
+    openpilot.selfdrive.car.tests.test_docs -> openpilot.selfdrive.debug.dump_car_docs
+    openpilot.selfdrive.car.tests.test_docs -> openpilot.selfdrive.debug.print_docs_diff
+    openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.pandad
+    openpilot.selfdrive.car.tests.test_models -> openpilot.selfdrive.pandad
+    openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.test.fuzzy_generation
+unmatched_ignore_imports_alerting = warn

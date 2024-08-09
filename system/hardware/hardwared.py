@@ -230,8 +230,8 @@ def hardware_thread(end_event, hw_queue) -> None:
         onroad_conditions["ignition"] = False
         cloudlog.error("panda timed out onroad")
 
-    # Run at 2Hz, plus rising edge of ignition
-    ign_edge = started_ts is None and onroad_conditions["ignition"]
+    # Run at 2Hz, plus either edge of ignition
+    ign_edge = (started_ts is not None) != onroad_conditions["ignition"]
     if (sm.frame % round(SERVICE_LIST['pandaStates'].frequency * DT_HW) != 0) and not ign_edge:
       continue
 

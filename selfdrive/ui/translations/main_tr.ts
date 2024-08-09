@@ -101,14 +101,6 @@
         <source>MAX</source>
         <translation type="unfinished">MAX</translation>
     </message>
-    <message>
-        <source>SPEED</source>
-        <translation type="unfinished">HIZ</translation>
-    </message>
-    <message>
-        <source>LIMIT</source>
-        <translation type="unfinished">LİMİT</translation>
-    </message>
 </context>
 <context>
     <name>ConfirmationDialog</name>
@@ -134,33 +126,6 @@
     <message>
         <source>Decline, uninstall %1</source>
         <translation>Reddet, Kurulumu kaldır. %1</translation>
-    </message>
-</context>
-<context>
-    <name>DestinationWidget</name>
-    <message>
-        <source>Home</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Work</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>No destination set</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>home</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>work</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>No %1 location set</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -345,47 +310,6 @@
     </message>
 </context>
 <context>
-    <name>MapETA</name>
-    <message>
-        <source>eta</source>
-        <translation>tahmini varış süresi</translation>
-    </message>
-    <message>
-        <source>min</source>
-        <translation>dk</translation>
-    </message>
-    <message>
-        <source>hr</source>
-        <translation>saat</translation>
-    </message>
-</context>
-<context>
-    <name>MapSettings</name>
-    <message>
-        <source>NAVIGATION</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Manage at connect.comma.ai</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>MapWindow</name>
-    <message>
-        <source>Map Loading</source>
-        <translation>Harita yükleniyor</translation>
-    </message>
-    <message>
-        <source>Waiting for GPS</source>
-        <translation>GPS verisi bekleniyor...</translation>
-    </message>
-    <message>
-        <source>Waiting for route</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>MultiOptionDialog</name>
     <message>
         <source>Select</source>
@@ -562,7 +486,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Turn-by-turn navigation</source>
+        <source>Remote snapshots</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -608,22 +532,6 @@
         <translation>
             <numerusform>%n gün önce</numerusform>
         </translation>
-    </message>
-    <message>
-        <source>km</source>
-        <translation>km</translation>
-    </message>
-    <message>
-        <source>m</source>
-        <translation>m</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation>mil</translation>
-    </message>
-    <message>
-        <source>ft</source>
-        <translation>ft</translation>
     </message>
     <message>
         <source>now</source>
@@ -1063,22 +971,6 @@ This may take up to a minute.</source>
     <message>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
         <translation>Aktifleştirilirse eğer gaz pedalına basınca openpilot devre dışı kalır.</translation>
-    </message>
-    <message>
-        <source>Show ETA in 24h Format</source>
-        <translation>Tahmini varış süresini 24 saat formatı şeklinde göster</translation>
-    </message>
-    <message>
-        <source>Use 24h format instead of am/pm</source>
-        <translation>24 saat formatını kullan</translation>
-    </message>
-    <message>
-        <source>Show Map on Left Side of UI</source>
-        <translation>Haritayı arayüzün sol tarafında göster</translation>
-    </message>
-    <message>
-        <source>Show map on left side when in split screen view.</source>
-        <translation>Bölünmüş ekran görünümündeyken haritayı sol tarafta göster.</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
