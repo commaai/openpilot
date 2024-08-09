@@ -55,7 +55,7 @@ class CarInterface(CarInterfaceBase):
       for fw in car_fw:
         if fw.ecu == "eps" and not fw.fwVersion == b'8965B47060\x00\x00\x00\x00\x00\x00':
           ret.steerActuatorDelay = 0.25
-          CarInterfaceBase.configure_torque_tune(candidate, ret, steering_angle_deadzone_deg=0.2)
+          CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning, steering_angle_deadzone_deg=0.2)
 
     elif candidate in (CAR.LEXUS_RX, CAR.LEXUS_RX_TSS2):
       stop_and_go = True
@@ -67,7 +67,7 @@ class CarInterface(CarInterfaceBase):
       stop_and_go = candidate != CAR.TOYOTA_AVALON
 
     elif candidate in (CAR.TOYOTA_RAV4_TSS2, CAR.TOYOTA_RAV4_TSS2_2022, CAR.TOYOTA_RAV4_TSS2_2023):
-      ret.lateralTuning = CarParams.LateralPIDTuning()
+      ret.lateralTuning.init('pid')
       ret.lateralTuning.pid.kiBP = [0.0]
       ret.lateralTuning.pid.kpBP = [0.0]
       ret.lateralTuning.pid.kpV = [0.6]
