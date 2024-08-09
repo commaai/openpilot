@@ -2,6 +2,7 @@ from cereal import car
 from panda import Panda
 from openpilot.selfdrive.car import create_button_events, get_safety_config
 from openpilot.selfdrive.car.conversions import Conversions as CV
+from openpilot.selfdrive.car.data_structures import CarParams
 from openpilot.selfdrive.car.ford.fordcan import CanBus
 from openpilot.selfdrive.car.ford.values import Ecu, FordFlags
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
@@ -13,7 +14,7 @@ GearShifter = car.CarState.GearShifter
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
+  def _get_params(ret: CarParams, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "ford"
     ret.dashcamOnly = bool(ret.flags & FordFlags.CANFD)
 

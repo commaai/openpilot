@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from cereal import car
 import cereal.messaging as messaging
+from openpilot.selfdrive.car.data_structures import CarParams
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 # mocked car interface for dashcam mode
@@ -12,7 +13,7 @@ class CarInterface(CarInterfaceBase):
     self.sm = messaging.SubMaster(['gpsLocation', 'gpsLocationExternal'])
 
   @staticmethod
-  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
+  def _get_params(ret: CarParams, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "mock"
     ret.mass = 1700.
     ret.wheelbase = 2.70

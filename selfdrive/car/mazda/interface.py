@@ -2,6 +2,7 @@
 from cereal import car
 from openpilot.selfdrive.car import create_button_events, get_safety_config
 from openpilot.selfdrive.car.conversions import Conversions as CV
+from openpilot.selfdrive.car.data_structures import CarParams
 from openpilot.selfdrive.car.mazda.values import CAR, LKAS_LIMITS
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
@@ -11,7 +12,7 @@ EventName = car.CarEvent.EventName
 class CarInterface(CarInterfaceBase):
 
   @staticmethod
-  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
+  def _get_params(ret: CarParams, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "mazda"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.mazda)]
     ret.radarUnavailable = True
@@ -21,7 +22,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.8
 
-    CarInterfaceBase.configure_torque_tune(candidate, ret)
+    CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     if candidate not in (CAR.MAZDA_CX5_2022, ):
       ret.minSteerSpeed = LKAS_LIMITS.DISABLE_SPEED * CV.KPH_TO_MS

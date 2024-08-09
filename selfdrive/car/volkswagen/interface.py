@@ -1,6 +1,7 @@
 from cereal import car
 from panda import Panda
 from openpilot.selfdrive.car import get_safety_config
+from openpilot.selfdrive.car.data_structures import CarParams
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.car.volkswagen.values import CAR, CANBUS, CarControllerParams, NetworkLocation, TransmissionType, GearShifter, VolkswagenFlags
 
@@ -20,7 +21,7 @@ class CarInterface(CarInterfaceBase):
       self.cp_ext = self.cp_cam
 
   @staticmethod
-  def _get_params(ret, candidate: CAR, fingerprint, car_fw, experimental_long, docs):
+  def _get_params(ret: CarParams, candidate: CAR, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "volkswagen"
     ret.radarUnavailable = True
 
@@ -72,14 +73,14 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.4
     if ret.flags & VolkswagenFlags.PQ:
       ret.steerActuatorDelay = 0.2
-      CarInterfaceBase.configure_torque_tune(candidate, ret)
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
     else:
       ret.steerActuatorDelay = 0.1
-      ret.lateralTuning.kpBP = [0.]
-      ret.lateralTuning.kiBP = [0.]
-      ret.lateralTuning.kf = 0.00006
-      ret.lateralTuning.kpV = [0.6]
-      ret.lateralTuning.kiV = [0.2]
+      ret.lateralTuning.pid.kpBP = [0.]
+      ret.lateralTuning.pid.kiBP = [0.]
+      ret.lateralTuning.pid.kf = 0.00006
+      ret.lateralTuning.pid.kpV = [0.6]
+      ret.lateralTuning.pid.kiV = [0.2]
 
     # Global longitudinal tuning defaults, can be overridden per-vehicle
 

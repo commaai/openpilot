@@ -81,7 +81,7 @@ class CarParams:
 
   minEnableSpeed: float = auto_field()
   minSteerSpeed: float = auto_field()
-  # safetyConfigs: list[SafetyConfig] = auto_field()
+  safetyConfigs: list['CarParams.SafetyConfig'] = auto_field()
   alternativeExperience: int = auto_field()  # panda flag for features like no disengage on gas
 
   maxLateralAccel: float = auto_field()
@@ -113,6 +113,12 @@ class CarParams:
 
     pid: 'CarParams.LateralPIDTuning' = field(default_factory=lambda: CarParams.LateralPIDTuning())
     torque: 'CarParams.LateralTorqueTuning' = field(default_factory=lambda: CarParams.LateralTorqueTuning())
+
+  @dataclass
+  @apply_auto_fields
+  class SafetyConfig:
+    safetyModel: 'CarParams.SafetyModel' = field(default_factory=lambda: CarParams.SafetyModel.silent)
+    safetyParam: int = auto_field()
 
   @dataclass
   @apply_auto_fields
@@ -160,7 +166,7 @@ class CarParams:
   carVin: str = auto_field()  # VIN number queried during fingerprinting
   dashcamOnly: bool = auto_field()
   passive: bool = auto_field()  # is openpilot in control?
-  # transmissionType: TransmissionType = auto_field()
+  transmissionType: 'CarParams.TransmissionType' = field(default_factory=lambda: CarParams.TransmissionType.unknown)
   carFw: list['CarParams.CarFw'] = auto_field()
 
   radarTimeStep: float = 0.05  # time delta between radar updates, 20Hz is very standard
@@ -178,9 +184,50 @@ class CarParams:
     kiV: list[float] = auto_field()
     kf: float = auto_field()
 
+  class SafetyModel(StrEnum):
+    silent = auto()
+    hondaNidec = auto()
+    toyota = auto()
+    elm327 = auto()
+    gm = auto()
+    hondaBoschGiraffe = auto()
+    ford = auto()
+    cadillac = auto()
+    hyundai = auto()
+    chrysler = auto()
+    tesla = auto()
+    subaru = auto()
+    gmPassive = auto()
+    mazda = auto()
+    nissan = auto()
+    volkswagen = auto()
+    toyotaIpas = auto()
+    allOutput = auto()
+    gmAscm = auto()
+    noOutput = auto()  # like silent but without silent CAN TXs
+    hondaBosch = auto()
+    volkswagenPq = auto()
+    subaruPreglobal = auto()  # pre-Global platform
+    hyundaiLegacy = auto()
+    hyundaiCommunity = auto()
+    volkswagenMlb = auto()
+    hongqi = auto()
+    body = auto()
+    hyundaiCanfd = auto()
+    volkswagenMqbEvo = auto()
+    chryslerCusw = auto()
+    psa = auto()
+
   class SteerControlType(StrEnum):
     torque = auto()
     angle = auto()
+
+  class TransmissionType(StrEnum):
+    unknown = auto()
+    automatic = auto()  # Traditional auto, including DSG
+    manual = auto()  # True "stick shift" only
+    direct = auto()  # Electric vehicle or other direct drive
+    cvt = auto()
 
   @dataclass
   @apply_auto_fields

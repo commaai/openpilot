@@ -1,6 +1,7 @@
 from cereal import car
 from panda import Panda
 from openpilot.selfdrive.car import create_button_events, get_safety_config
+from openpilot.selfdrive.car.data_structures import CarParams
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.car.nissan.values import CAR
 
@@ -10,7 +11,7 @@ ButtonType = car.CarState.ButtonEvent.Type
 class CarInterface(CarInterfaceBase):
 
   @staticmethod
-  def _get_params(ret, candidate, fingerprint, car_fw, experimental_long, docs):
+  def _get_params(ret: CarParams, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "nissan"
     ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.nissan)]
     ret.autoResumeSng = False
