@@ -7,16 +7,17 @@ from tqdm import tqdm
 import capnp
 
 import panda.python.uds as uds
-from cereal import car
+# from cereal import car
 from openpilot.selfdrive.car import carlog
+from openpilot.selfdrive.car.can_definitions import CanRecvCallable, CanSendCallable
+from openpilot.selfdrive.car.data_structures import CarParams
 from openpilot.selfdrive.car.ecu_addrs import get_ecu_addrs
 from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
-from openpilot.selfdrive.car.can_definitions import CanRecvCallable, CanSendCallable
 from openpilot.selfdrive.car.fw_query_definitions import AddrType, EcuAddrBusType, FwQueryConfig, LiveFwVersions, OfflineFwVersions
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 
-Ecu = car.CarParams.Ecu
+Ecu = CarParams.Ecu
 ESSENTIAL_ECUS = [Ecu.engine, Ecu.eps, Ecu.abs, Ecu.fwdRadar, Ecu.fwdCamera, Ecu.vsa]
 FUZZY_EXCLUDE_ECUS = [Ecu.fwdCamera, Ecu.fwdRadar, Ecu.eps, Ecu.debug]
 
@@ -307,20 +308,19 @@ def get_fw_versions(can_recv: CanRecvCallable, can_send: CanSendCallable, set_ob
           if query_addrs:
             query = IsoTpParallelQuery(can_send, can_recv, r.bus, query_addrs, r.request, r.response, r.rx_offset, debug=debug)
             for (tx_addr, sub_addr), version in query.get_data(timeout).items():
-              f = car.CarParams.CarFw.new_message()
-
-              f.ecu = ecu_types.get((brand, tx_addr, sub_addr), Ecu.unknown)
-              f.fwVersion = version
-              f.address = tx_addr
-              f.responseAddress = uds.get_rx_addr_for_tx_addr(tx_addr, r.rx_offset)
-              f.request = r.request
-              f.brand = brand
-              f.bus = r.bus
-              f.logging = r.logging or (f.ecu, tx_addr, sub_addr) in config.extra_ecus
-              f.obdMultiplexing = r.obd_multiplexing
-
-              if sub_addr is not None:
-                f.subAddress = sub_addr
+              f = CarParams.CarFw(
+                ecu=ecu_types.get((brand, tx_addr, sub_addr), Ecu.unknown),
+                fwVersion=version,
+                address=tx_addr,
+                responseAddress=uds.get_rx_addr_for_tx_addr(tx_addr, r.rx_offset),
+                request=r.request,
+                brand=brand,
+                bus=r.bus,
+                # TODO: this is what I don't like about no more builders
+                logging=r.logging or (ecu_types.get((brand, tx_addr, sub_addr), Ecu.unknown), tx_addr, sub_addr) in config.extra_ecus,
+                obdMultiplexing=r.obd_multiplexing,
+                subAddress=sub_addr if sub_addr is not None else 0,
+              )
 
               car_fw.append(f)
         except Exception:
