@@ -1,7 +1,6 @@
-from dataclasses import dataclass as _dataclass, field, is_dataclass
+from dataclasses import dataclass, field, is_dataclass
 from enum import Enum, StrEnum as _StrEnum, auto
 from typing import get_origin
-
 
 auto_obj = object()
 
@@ -10,7 +9,7 @@ def auto_field():
   return auto_obj
 
 
-def auto_dataclass(cls=None, /, **kwargs):
+def apply_auto_fields(cls=None, /, **kwargs):
   cls_annotations = cls.__dict__.get('__annotations__', {})
   for name, typ in cls_annotations.items():
     current_value = getattr(cls, name, None)
@@ -26,8 +25,7 @@ def auto_dataclass(cls=None, /, **kwargs):
         setattr(cls, name, field(default=next(iter(origin_typ))))
       else:
         raise TypeError(f"Unsupported type for auto_field: {origin_typ}")
-
-  return _dataclass(cls, **kwargs)
+  return cls
 
 
 class StrEnum(_StrEnum):
@@ -37,7 +35,8 @@ class StrEnum(_StrEnum):
     return name
 
 
-@auto_dataclass
+@dataclass
+@apply_auto_fields
 class RadarData:
   errors: list['Error'] = auto_field()
   points: list['RadarPoint'] = auto_field()
@@ -47,7 +46,8 @@ class RadarData:
     fault = auto()
     wrongConfig = auto()
 
-  @auto_dataclass
+  @dataclass
+  @apply_auto_fields
   class RadarPoint:
     trackId: int = auto_field()  # no trackId reuse
 
@@ -64,7 +64,8 @@ class RadarData:
     measured: bool = auto_field()
 
 
-@auto_dataclass
+@dataclass
+@apply_auto_fields
 class CarParams:
   carName: str = auto_field()
   carFingerprint: str = auto_field()
@@ -80,7 +81,8 @@ class CarParams:
     torque = auto()
     angle = auto()
 
-  @auto_dataclass
+  @dataclass
+  @apply_auto_fields
   class CarFw:
     ecu: 'CarParams.Ecu' = field(default_factory=lambda: CarParams.Ecu.unknown)
     fwVersion: bytes = auto_field()
@@ -125,7 +127,8 @@ class CarParams:
 
     debug = auto()
 
-  @auto_dataclass
+  @dataclass
+  @apply_auto_fields
   class LateralTorqueTuning:
     useSteeringAngle: bool = auto_field()
     kp: float = auto_field()

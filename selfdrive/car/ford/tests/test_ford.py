@@ -92,8 +92,8 @@ class TestFordFW:
         for ecu, fw_versions in fw_by_addr.items():
           ecu_name, addr, sub_addr = ecu
           fw = random.choice(fw_versions)
-          car_fw.append({"ecu": ecu_name, "fwVersion": fw, "address": addr,
-                         "subAddress": 0 if sub_addr is None else sub_addr})
+          car_fw.append(CarParams.CarFw(ecu=ecu_name, fwVersion=fw, address=addr,
+                                        subAddress=0 if sub_addr is None else sub_addr))
 
         CP = CarParams(carFw=car_fw)
         matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw), CP.carVin, FW_VERSIONS)

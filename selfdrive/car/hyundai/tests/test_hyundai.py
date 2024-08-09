@@ -2,7 +2,7 @@ from hypothesis import settings, given, strategies as st
 
 import pytest
 
-from cereal import car
+from openpilot.selfdrive.car.data_structures import CarParams
 from openpilot.selfdrive.car.fw_versions import build_fw_dict
 from openpilot.selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
                                          HYBRID_CAR, EV_CAR, FW_QUERY_CONFIG, LEGACY_SAFETY_MODE_CAR, CANFD_FUZZY_WHITELIST, \
@@ -10,8 +10,7 @@ from openpilot.selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CA
                                          get_platform_codes
 from openpilot.selfdrive.car.hyundai.fingerprints import FW_VERSIONS
 
-Ecu = car.CarParams.Ecu
-ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
+Ecu = CarParams.Ecu
 
 # Some platforms have date codes in a different format we don't yet parse (or are missing).
 # For now, assert list of expected missing date cars
@@ -58,7 +57,7 @@ class TestHyundaiFingerprint:
     for car_model in CANFD_CAR:
       ecus = {fw[0] for fw in FW_VERSIONS[car_model].keys()}
       ecus_not_in_whitelist = ecus - CANFD_EXPECTED_ECUS
-      ecu_strings = ", ".join([f"Ecu.{ECU_NAME[ecu]}" for ecu in ecus_not_in_whitelist])
+      ecu_strings = ", ".join([f"Ecu.{ecu}" for ecu in ecus_not_in_whitelist])
       assert len(ecus_not_in_whitelist) == 0, \
                        f"{car_model}: Car model has unexpected ECUs: {ecu_strings}"
 
@@ -205,10 +204,10 @@ class TestHyundaiFingerprint:
       for ecu, fw_versions in fw_by_addr.items():
         ecu_name, addr, sub_addr = ecu
         for fw in fw_versions:
-          car_fw.append({"ecu": ecu_name, "fwVersion": fw, "address": addr,
-                         "subAddress": 0 if sub_addr is None else sub_addr})
+          car_fw.append(CarParams.CarFw(ecu=ecu_name, fwVersion=fw, address=addr,
+                                        subAddress=0 if sub_addr is None else sub_addr))
 
-      CP = car.CarParams.new_message(carFw=car_fw)
+      CP = CarParams(carFw=car_fw)
       matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw), CP.carVin, FW_VERSIONS)
       if len(matches) == 1:
         assert list(matches)[0] == platform
