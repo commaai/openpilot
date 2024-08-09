@@ -114,6 +114,8 @@ class CarHarness(EnumBase):
   custom = BaseCarHarness("Developer connector")
   obd_ii = BaseCarHarness("OBD-II connector", parts=[Cable.long_obdc_cable, Cable.long_obdc_cable], has_connector=False)
   gm = BaseCarHarness("GM connector", parts=[Accessory.harness_box])
+  gmsdgm = BaseCarHarness("GM SDGM connector", parts=[Accessory.harness_box, Cable.rj45_cable_7ft, Cable.long_obdc_cable,
+                                                      Cable.usbc_coupler, Accessory.comma_power_v2])
   nissan_a = BaseCarHarness("Nissan A connector", parts=[Accessory.harness_box, Cable.rj45_cable_7ft, Cable.long_obdc_cable, Cable.usbc_coupler])
   nissan_b = BaseCarHarness("Nissan B connector", parts=[Accessory.harness_box, Cable.rj45_cable_7ft, Cable.long_obdc_cable, Cable.usbc_coupler])
   mazda = BaseCarHarness("Mazda connector")

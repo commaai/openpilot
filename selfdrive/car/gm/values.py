@@ -36,7 +36,7 @@ class CarControllerParams:
     self.ZERO_GAS = 2048  # Coasting
     self.MAX_BRAKE = 400  # ~ -4.0 m/s^2 with regen
 
-    if CP.carFingerprint in CAMERA_ACC_CAR:
+    if CP.carFingerprint in (CAMERA_ACC_CAR | SDGM_CAR):
       self.MAX_GAS = 3400
       self.MAX_ACC_REGEN = 1514
       self.INACTIVE_REGEN = 1554
@@ -65,7 +65,10 @@ class GMCarDocs(CarDocs):
 
   def init_make(self, CP: car.CarParams):
     if CP.networkLocation == car.CarParams.NetworkLocation.fwdCamera:
-      self.car_parts = CarParts.common([CarHarness.gm])
+      if CP.carFingerprint in SDGM_CAR:
+        self.car_parts = CarParts.common([CarHarness.gmsdgm])
+      else:
+        self.car_parts = CarParts.common([CarHarness.gm])
     else:
       self.car_parts = CarParts.common([CarHarness.obd_ii])
 
@@ -84,6 +87,12 @@ class GMPlatformConfig(PlatformConfig):
 class GMASCMPlatformConfig(GMPlatformConfig):
   def init(self):
     # ASCM is supported, but due to a janky install and hardware configuration, we are not showing in the car docs
+    self.car_docs = []
+
+@dataclass
+class GMSDGMPlatformConfig(GMPlatformConfig):
+  def init(self):
+    # SDGM is supported, but due to harness not being sold by comma, we are not showing in the car docs
     self.car_docs = []
 
 
@@ -149,6 +158,10 @@ class CAR(Platforms):
   CHEVROLET_TRAILBLAZER = GMPlatformConfig(
     [GMCarDocs("Chevrolet Trailblazer 2021-22")],
     GMCarSpecs(mass=1345, wheelbase=2.64, steerRatio=16.8, centerToFrontRatio=0.4, tireStiffnessFactor=1.0),
+  )
+  CADILLAC_XT4 = GMSDGMPlatformConfig(
+    [GMCarDocs("Cadillac XT4 2023", "Driver Assist Package")],
+    CarSpecs(mass=1660, wheelbase=2.78, steerRatio=14.4, centerToFrontRatio=0.4),
   )
 
 
@@ -228,6 +241,9 @@ EV_CAR = {CAR.CHEVROLET_VOLT, CAR.CHEVROLET_BOLT_EUV}
 
 # We're integrated at the camera with VOACC on these cars (instead of ASCM w/ OBD-II harness)
 CAMERA_ACC_CAR = {CAR.CHEVROLET_BOLT_EUV, CAR.CHEVROLET_SILVERADO, CAR.CHEVROLET_EQUINOX, CAR.CHEVROLET_TRAILBLAZER}
+
+# We're integrated at the Safety Data Gateway Module on these cars
+SDGM_CAR = {CAR.CADILLAC_XT4}
 
 STEER_THRESHOLD = 1.0
 

@@ -5,7 +5,7 @@ from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.helpers import mean
 from openpilot.selfdrive.car.interfaces import CarStateBase
-from openpilot.selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD
+from openpilot.selfdrive.car.gm.values import DBC, AccState, CanBus, STEER_THRESHOLD, SDGM_CAR
 
 TransmissionType = car.CarParams.TransmissionType
 NetworkLocation = car.CarParams.NetworkLocation
@@ -115,7 +115,8 @@ class CarState(CarStateBase):
     ret.cruiseState.standstill = pt_cp.vl["AcceleratorPedal2"]["CruiseState"] == AccState.STANDSTILL
     if self.CP.networkLocation == NetworkLocation.fwdCamera:
       ret.cruiseState.speed = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCSpeedSetpoint"] * CV.KPH_TO_MS
-      ret.stockAeb = cam_cp.vl["AEBCmd"]["AEBCmdActive"] != 0
+      if self.CP.carFingerprint not in SDGM_CAR:
+        ret.stockAeb = cam_cp.vl["AEBCmd"]["AEBCmdActive"] != 0
       # openpilot controls nonAdaptive when not pcmCruise
       if self.CP.pcmCruise:
         ret.cruiseState.nonAdaptive = cam_cp.vl["ASCMActiveCruiseControlStatus"]["ACCCruiseState"] not in (2, 3)
@@ -131,10 +132,13 @@ class CarState(CarStateBase):
     messages = []
     if CP.networkLocation == NetworkLocation.fwdCamera:
       messages += [
-        ("AEBCmd", 10),
         ("ASCMLKASteeringCmd", 10),
         ("ASCMActiveCruiseControlStatus", 25),
       ]
+      if CP.carFingerprint not in SDGM_CAR:
+        messages += [
+          ("AEBCmd", 10),
+        ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus.CAMERA)
 

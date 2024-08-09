@@ -8,7 +8,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.car import create_button_events, get_safety_config, get_friction
 from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.gm.radar_interface import RADAR_HEADER_MSG
-from openpilot.selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, CanBus
+from openpilot.selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, SDGM_CAR, CanBus
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, FRICTION_THRESHOLD, LatControlInputs, NanoFFModel
 
 ButtonType = car.CarState.ButtonEvent.Type
@@ -100,13 +100,13 @@ class CarInterface(CarInterfaceBase):
 
     ret.longitudinalTuning.kiBP = [5., 35.]
 
-    if candidate in CAMERA_ACC_CAR:
-      ret.experimentalLongitudinalAvailable = True
+    if candidate in (CAMERA_ACC_CAR | SDGM_CAR):
+      ret.experimentalLongitudinalAvailable = candidate not in SDGM_CAR
       ret.networkLocation = NetworkLocation.fwdCamera
       ret.radarUnavailable = True  # no radar
       ret.pcmCruise = True
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_GM_HW_CAM
-      ret.minEnableSpeed = 5 * CV.KPH_TO_MS
+      ret.minEnableSpeed = -1 if candidate in SDGM_CAR else 5 * CV.KPH_TO_MS
       ret.minSteerSpeed = 10 * CV.KPH_TO_MS
 
       # Tuning for experimental long
@@ -196,6 +196,11 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate == CAR.CHEVROLET_TRAILBLAZER:
       ret.steerActuatorDelay = 0.2
+      CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
+
+    elif candidate == CAR.CADILLAC_XT4:
+      ret.steerActuatorDelay = 0.2
+      ret.minSteerSpeed = 30 * CV.MPH_TO_MS
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     return ret
