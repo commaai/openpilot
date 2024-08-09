@@ -122,35 +122,3 @@ class CarParams:
     programmedFuelInjection = auto()
 
     debug = auto()
-
-
-@auto_dataclass
-class CarControl:
-  enabled: bool = auto_field()
-  pts: list[int] = auto_field()
-  logMonoTime: int = auto_field()
-  test: None = auto_field()
-
-
-# testing: if origin_typ in (int, float, str, bytes, list, tuple, set, dict, bool):
-@auto_dataclass
-class Test997:
-  a: int = auto_field()
-  b: float = auto_field()
-  c: str = auto_field()
-  d: bytes = auto_field()
-  e: list[int] = auto_field()
-  f: tuple[int] = auto_field()
-  g: set[int] = auto_field()
-  h: dict[str, int] = auto_field()
-  i: bool = auto_field()
-  ecu: CarParams.Ecu = auto_field()
-  carFw: CarParams.CarFw = auto_field()
-
-# Out[4]: Test997(a=0, b=0.0, c='', d=b'', e=[], f=(), g=set(), h={}, i=False)
-
-CarControl()
-
-CP = CarParams()
-CP.carFw = [CarParams.CarFw()]
-# CP.carFw = [CarParams.Ecu.eps]
