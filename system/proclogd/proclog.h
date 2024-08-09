@@ -1,4 +1,5 @@
 #include <optional>
+#include <set>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -13,7 +14,8 @@ struct CPUTime {
 
 struct ProcCache {
   int pid;
-  std::string name, exe;
+  unsigned long start_time;
+  std::string exe;
   std::vector<std::string> cmdline;
 };
 
@@ -28,12 +30,12 @@ struct ProcStat {
 
 namespace Parser {
 
-std::vector<int> pids();
+std::set<int> pids();
 std::optional<ProcStat> procStat(std::string stat);
 std::vector<std::string> cmdline(std::istream &stream);
 std::vector<CPUTime> cpuTimes(std::istream &stream);
 std::unordered_map<std::string, uint64_t> memInfo(std::istream &stream);
-const ProcCache &getProcExtraInfo(int pid, const std::string &name);
+ProcCache getProcExtraInfo(int pid, unsigned long start_time);
 
 };  // namespace Parser
 

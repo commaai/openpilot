@@ -7,6 +7,7 @@
 #include <iterator>
 #include <sstream>
 
+#include "common/timing.h"
 #include "common/swaglog.h"
 #include "common/util.h"
 
@@ -108,8 +109,8 @@ std::optional<ProcStat> procStat(std::string stat) {
 }
 
 // return list of PIDs from /proc
-std::vector<int> pids() {
-  std::vector<int> ids;
+std::set<int> pids() {
+  std::set<int> ids;
   DIR *d = opendir("/proc");
   assert(d);
   char *p_end;
@@ -118,7 +119,7 @@ std::vector<int> pids() {
     if (de->d_type == DT_DIR) {
       int pid = strtol(de->d_name, &p_end, 10);
       if (p_end == (de->d_name + strlen(de->d_name))) {
-        ids.push_back(pid);
+        ids.insert(pid);
       }
     }
   }
@@ -138,18 +139,15 @@ std::vector<std::string> cmdline(std::istream &stream) {
   return ret;
 }
 
-const ProcCache &getProcExtraInfo(int pid, const std::string &name) {
-  static std::unordered_map<pid_t, ProcCache> proc_cache;
-  ProcCache &cache = proc_cache[pid];
-  if (cache.pid != pid || cache.name != name) {
-    cache.pid = pid;
-    cache.name = name;
-    std::string proc_path = "/proc/" + std::to_string(pid);
-    cache.exe = util::readlink(proc_path + "/exe");
-    std::ifstream stream(proc_path + "/cmdline");
-    cache.cmdline = cmdline(stream);
-  }
-  return cache;
+ProcCache getProcExtraInfo(int pid, unsigned long start_time) {
+  std::string proc_path = "/proc/" + std::to_string(pid);
+  std::ifstream stream(proc_path + "/cmdline");
+  return {
+    .pid = pid,
+    .start_time = start_time,
+    .exe = util::readlink(proc_path + "/exe"),
+    .cmdline = cmdline(stream),
+  };
 }
 
 }  // namespace Parser
@@ -192,7 +190,24 @@ void buildMemInfo(cereal::ProcLog::Builder &builder) {
 }
 
 void buildProcs(cereal::ProcLog::Builder &builder) {
+  static std::unordered_map<pid_t, ProcCache> proc_cache;
+
+  // Timestamp of the last cache cleanup
+  static double last_cleanup_ts = millis_since_boot();
+  double current_ts = millis_since_boot();
+
+  // Get the current set of active process IDs
   auto pids = Parser::pids();
+
+  // Remove stale entries from proc_cache if they no longer correspond to active PIDs
+  if (current_ts - last_cleanup_ts > 30000) {  // 30 seconds
+    for (auto it = proc_cache.begin(); it != proc_cache.end();) {
+      it = pids.count(it->first) ? std::next(it) : proc_cache.erase(it);
+    }
+    last_cleanup_ts = current_ts;
+  }
+
+  // Collect process statistics for active PIDs
   std::vector<ProcStat> proc_stats;
   proc_stats.reserve(pids.size());
   for (int pid : pids) {
@@ -202,10 +217,18 @@ void buildProcs(cereal::ProcLog::Builder &builder) {
     }
   }
 
+  // Build procs message
   auto procs = builder.initProcs(proc_stats.size());
   for (size_t i = 0; i < proc_stats.size(); i++) {
-    auto l = procs[i];
     const ProcStat &r = proc_stats[i];
+    auto &extra_info = proc_cache[r.pid];
+
+    // Update cache if the process is new or has restarted
+    if (extra_info.pid != r.pid || extra_info.start_time != r.starttime) {
+      extra_info = Parser::getProcExtraInfo(r.pid, r.starttime);
+    }
+
+    auto l = procs[i];
     l.setPid(r.pid);
     l.setState(r.state);
     l.setPpid(r.ppid);
@@ -221,9 +244,8 @@ void buildProcs(cereal::ProcLog::Builder &builder) {
     l.setMemRss((uint64_t)r.rss * page_size);
     l.setProcessor(r.processor);
     l.setName(r.name);
-
-    const ProcCache &extra_info = Parser::getProcExtraInfo(r.pid, r.name);
     l.setExe(extra_info.exe);
+
     auto lcmdline = l.initCmdline(extra_info.cmdline.size());
     for (size_t j = 0; j < lcmdline.size(); j++) {
       lcmdline.set(j, extra_info.cmdline[j]);

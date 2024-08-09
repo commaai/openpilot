@@ -31,7 +31,7 @@ TEST_CASE("Parser::procStat") {
     REQUIRE(stat->processor == 2);
   }
   SECTION("all processes") {
-    std::vector<int> pids = Parser::pids();
+    std::set<int> pids = Parser::pids();
     REQUIRE(pids.size() > 1);
     for (int pid : pids) {
       std::string stat_path = "/proc/" + std::to_string(pid) + "/stat";
