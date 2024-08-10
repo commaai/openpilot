@@ -3,6 +3,7 @@ import math
 
 import numpy as np
 
+from openpilot.selfdrive.car.card import convert_to_capnp
 from openpilot.selfdrive.car.honda.interface import CarInterface
 from openpilot.selfdrive.car.honda.values import CAR
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel, dyn_ss_sol, create_dyn_state_matrices
@@ -11,7 +12,7 @@ from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel, dyn_ss_
 class TestVehicleModel:
   def setup_method(self):
     CP = CarInterface.get_non_essential_params(CAR.HONDA_CIVIC)
-    self.VM = VehicleModel(CP)
+    self.VM = VehicleModel(convert_to_capnp(CP))
 
   def test_round_trip_yaw_rate(self):
     # TODO: fix VM to work at zero speed
