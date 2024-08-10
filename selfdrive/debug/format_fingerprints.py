@@ -14,7 +14,7 @@ FINGERPRINTS_PY_TEMPLATE = jinja2.Template("""
 # ruff: noqa: E501
 {% endif %}
 {% if FW_VERSIONS[brand] %}
-from openpilot.selfdrive.car.data_structures import CarParams
+from openpilot.selfdrive.car.structs import CarParams
 {% endif %}
 from openpilot.selfdrive.car.{{brand}}.values import CAR
 {% if FW_VERSIONS[brand] %}
