@@ -1009,7 +1009,7 @@ void cameras_run(MultiCameraState *s) {
       break;
     }
 
-    if (!fds[0].revents) continue;
+    if (!(fds[0].revents & POLLPRI)) continue;
 
     struct v4l2_event ev = {0};
     ret = HANDLE_EINTR(ioctl(fds[0].fd, VIDIOC_DQEVENT, &ev));
