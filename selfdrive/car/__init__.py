@@ -10,7 +10,7 @@ import capnp
 from cereal import car
 from panda.python.uds import SERVICE_TYPE
 from openpilot.selfdrive.car.can_definitions import CanData
-from openpilot.selfdrive.car.structs import CarParams
+from openpilot.selfdrive.car import structs
 from openpilot.selfdrive.car.docs_definitions import CarDocs
 from openpilot.selfdrive.car.helpers import clip, interp
 
@@ -24,7 +24,7 @@ DT_CTRL = 0.01  # car state and control loop timestep (s)
 # kg of standard extra cargo to count for drive, gas, etc...
 STD_CARGO_KG = 136.
 
-ButtonType = car.CarState.ButtonEvent.Type
+ButtonType = structs.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 AngleRateLimit = namedtuple('AngleRateLimit', ['speed_bp', 'angle_v'])
 
@@ -38,7 +38,7 @@ def apply_hysteresis(val: float, val_steady: float, hyst_gap: float) -> float:
 
 
 def create_button_events(cur_btn: int, prev_btn: int, buttons_dict: dict[int, capnp.lib.capnp._EnumModule],
-                         unpressed_btn: int = 0) -> list[capnp.lib.capnp._DynamicStructBuilder]:
+                         unpressed_btn: int = 0) -> list[structs.CarState.ButtonEvent]:
   events: list[capnp.lib.capnp._DynamicStructBuilder] = []
 
   if cur_btn == prev_btn:
@@ -47,8 +47,8 @@ def create_button_events(cur_btn: int, prev_btn: int, buttons_dict: dict[int, ca
   # Add events for button presses, multiple when a button switches without going to unpressed
   for pressed, btn in ((False, prev_btn), (True, cur_btn)):
     if btn != unpressed_btn:
-      events.append(car.CarState.ButtonEvent(pressed=pressed,
-                                             type=buttons_dict.get(btn, ButtonType.unknown)))
+      events.append(structs.CarState.ButtonEvent(pressed=pressed,
+                                                 type=buttons_dict.get(btn, ButtonType.unknown)))
   return events
 
 
@@ -185,7 +185,7 @@ def rate_limit(new_value, last_value, dw_step, up_step):
 
 
 def get_friction(lateral_accel_error: float, lateral_accel_deadzone: float, friction_threshold: float,
-                 torque_params: CarParams.LateralTorqueTuning, friction_compensation: bool) -> float:
+                 torque_params: structs.CarParams.LateralTorqueTuning, friction_compensation: bool) -> float:
   friction_interp = interp(
     apply_center_deadzone(lateral_accel_error, lateral_accel_deadzone),
     [-friction_threshold, friction_threshold],
@@ -205,8 +205,8 @@ def make_tester_present_msg(addr, bus, subaddr=None, suppress_response=False):
   return CanData(addr, bytes(dat), bus)
 
 
-def get_safety_config(safety_model: CarParams.SafetyModel, safety_param: int = None) -> CarParams.SafetyConfig:
-  ret = CarParams.SafetyConfig()
+def get_safety_config(safety_model: structs.CarParams.SafetyModel, safety_param: int = None) -> structs.CarParams.SafetyConfig:
+  ret = structs.CarParams.SafetyConfig()
   ret.safetyModel = safety_model
   if safety_param is not None:
     ret.safetyParam = safety_param
