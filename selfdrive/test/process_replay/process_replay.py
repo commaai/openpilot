@@ -359,19 +359,18 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
     for m in canmsgs[:300]:
       can.send(m.as_builder().to_bytes())
     can_callbacks = can_comm_callbacks(can, sendcan)
-    # TODO: clean this up a bit
+
     cached_params = None
     if has_cached_cp:
       with car.CarParams.from_bytes(cached_params_raw) as _cached_params:
-        # TODO: even more generic?
         cached_params = structs.CarParams(carName=_cached_params.carName, carFw=_cached_params.carFw, carVin=_cached_params.carVin)
+
     CP = get_car(*can_callbacks, lambda obd: None, Params().get_bool("ExperimentalLongitudinalEnabled"), cached_params=cached_params).CP
 
     if not params.get_bool("DisengageOnAccelerator"):
       CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
 
   params.put("CarParams", convert_to_capnp(CP).to_bytes())
-  # return CP  # TODO: this isn't used?
 
 
 def controlsd_rcv_callback(msg, cfg, frame):

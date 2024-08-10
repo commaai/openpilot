@@ -115,7 +115,6 @@ class Car:
       cached_params_raw = self.params.get("CarParamsCache")
       if cached_params_raw is not None:
         with car.CarParams.from_bytes(cached_params_raw) as _cached_params:
-          # TODO: even more generic?
           cached_params = CarParams(carName=_cached_params.carName, carFw=_cached_params.carFw, carVin=_cached_params.carVin)
 
       self.CI = get_car(*self.can_callbacks, obd_callback(self.params), experimental_long_allowed, num_pandas, cached_params)
