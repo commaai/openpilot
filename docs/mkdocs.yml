@@ -1,6 +1,6 @@
 site_name: openpilot
 site_url: https://docs.comma.ai
-github_repo: commaai/openpilot
+repo_url: https://github.com/commaai/openpilot
 discord_url: https://discord.comma.ai
 
 # TODO automate somehow?
@@ -13,8 +13,10 @@ theme:
   name: null
   custom_dir: "theme/"
 
-# TODO use macros to automate version tag?
-# plugins:
+plugins:
+  - redirects:
+        redirect_maps:
+          'index.md': 'getting-started/what-is-openpilot.md'
 #   # TODO implement search ?
 #   - search
 #   - macros

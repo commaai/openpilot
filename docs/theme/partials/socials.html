@@ -1,9 +1,9 @@
 <ul class="menu menu-horizontal px-1">
     {#  github  #}
-    {% if config.github_repo %}
+    {% if config.repo_url %}
     <li>
         <a
-            href="https://github.com/{{ config.github_repo }}"
+            href="{{ config.repo_url | url }}"
             title="GitHub Repo"
             target="_blank"
         >
