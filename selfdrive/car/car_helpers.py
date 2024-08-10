@@ -2,14 +2,13 @@ import os
 import time
 
 from cereal import car
-from openpilot.selfdrive.car import carlog
+from openpilot.selfdrive.car import carlog, gen_empty_fingerprint
 from openpilot.selfdrive.car.can_definitions import CanRecvCallable, CanSendCallable
-from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
-from openpilot.selfdrive.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
 from openpilot.selfdrive.car.fw_versions import ObdCallback, get_fw_versions_ordered, get_present_ecus, match_fw_to_car
+from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.mock.values import CAR as MOCK
-from openpilot.selfdrive.car import gen_empty_fingerprint
+from openpilot.selfdrive.car.vin import get_vin, is_valid_vin, VIN_UNKNOWN
 
 FRAME_FINGERPRINT = 100  # 1s
 
@@ -82,7 +81,8 @@ def can_fingerprint(can_recv: CanRecvCallable) -> tuple[str | None, dict[int, di
 
 
 # **** for use live only ****
-def fingerprint(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multiplexing: ObdCallback, num_pandas: int, cached_params_raw: bytes | None):
+def fingerprint(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multiplexing: ObdCallback, num_pandas: int,
+                cached_params: type[car.CarParams] | None) -> tuple[str | None, dict, str, list, int, bool]:
   fixed_fingerprint = os.environ.get('FINGERPRINT', "")
   skip_fw_query = os.environ.get('SKIP_FW_QUERY', False)
   disable_fw_cache = os.environ.get('DISABLE_FW_CACHE', False)
@@ -90,13 +90,7 @@ def fingerprint(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_mu
 
   start_time = time.monotonic()
   if not skip_fw_query:
-    cached_params = None
-    if cached_params_raw is not None:
-      with car.CarParams.from_bytes(cached_params_raw) as cached_params:
-        if cached_params.carName == "mock":
-          cached_params = None
-
-    if cached_params is not None and len(cached_params.carFw) > 0 and \
+    if cached_params is not None and cached_params.carName != "mock" and len(cached_params.carFw) > 0 and \
        cached_params.carVin is not VIN_UNKNOWN and not disable_fw_cache:
       carlog.warning("Using cached CarParams")
       vin_rx_addr, vin_rx_bus, vin = -1, -1, cached_params.carVin
@@ -160,7 +154,7 @@ def get_car_interface(CP):
 
 
 def get_car(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multiplexing: ObdCallback, experimental_long_allowed: bool,
-            num_pandas: int = 1, cached_params: bytes | None = None):
+            num_pandas: int = 1, cached_params: type[car.CarParams] | None = None):
   candidate, fingerprints, vin, car_fw, source, exact_match = fingerprint(can_recv, can_send, set_obd_multiplexing, num_pandas, cached_params)
 
   if candidate is None:
