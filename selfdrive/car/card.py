@@ -87,7 +87,13 @@ class Car:
 
       experimental_long_allowed = self.params.get_bool("ExperimentalLongitudinalEnabled")
       num_pandas = len(messaging.recv_one_retry(self.sm.sock['pandaStates']).pandaStates)
-      cached_params = self.params.get("CarParamsCache")
+
+      cached_params = None
+      cached_params_raw = self.params.get("CarParamsCache")
+      if cached_params_raw is not None:
+        with car.CarParams.from_bytes(cached_params_raw) as _cached_params:
+          cached_params = _cached_params
+
       self.CI = get_car(*self.can_callbacks, obd_callback(self.params), experimental_long_allowed, num_pandas, cached_params)
       self.CP = self.CI.CP
 
