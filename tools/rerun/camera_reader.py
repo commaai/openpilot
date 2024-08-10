@@ -37,6 +37,7 @@ class _FrameReader:
     frame_sz = self.w * self.h * 3 // 2
     proc = subprocess.Popen(
              ["ffmpeg", "-v", "quiet", "-i", self.camera_path, "-f", "rawvideo", "-pix_fmt", "nv12", "-"],
+             stdin=subprocess.PIPE,
              stdout=subprocess.PIPE,
              stderr=subprocess.DEVNULL
            )
@@ -84,9 +85,9 @@ class CameraReader:
   def _run_on_segment(self, func, i):
     return func(self._get_fr(i))
 
-  def run_across_segments(self, num_processes, func):
+  def run_across_segments(self, num_processes, func, desc=None):
     with multiprocessing.Pool(num_processes) as pool:
       num_segs = len(self.seg_idxs)
-      for _ in tqdm.tqdm(pool.imap_unordered(partial(self._run_on_segment, func), self.seg_idxs), total=num_segs):
+      for _ in tqdm.tqdm(pool.imap_unordered(partial(self._run_on_segment, func), self.seg_idxs), total=num_segs, desc=desc):
         continue
 
