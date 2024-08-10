@@ -44,6 +44,7 @@ function sentry_send_event() {
 
   PLATFORM=$(uname -s)
   ARCH=$(uname -m)
+  SYSTEM=$(uname -a)
   if [[ $PLATFORM == "Darwin" ]]; then
     OS="macos"
   elif [[ $PLATFORM == "Linux" ]]; then
@@ -60,7 +61,7 @@ function sentry_send_event() {
   BRANCH=$(echo $(git -C $OPENPILOT_ROOT rev-parse --abbrev-ref HEAD 2> /dev/null || echo "NA"))
   COMMIT=$(echo $(git -C $OPENPILOT_ROOT rev-parse HEAD 2> /dev/null || echo "NA"))
 
-  curl -s -o /dev/null -X POST -g --data "{ \"exception\": { \"values\": [{ \"type\": \"$EVENT\" }] }, \"tags\" : { \"event_type\" : \"$EVENT_TYPE\", \"event_log\" : \"$EVENT_LOG\", \"os\" : \"$OS\", \"arch\" : \"$ARCH\", \"python_version\" : \"$PYTHON_VERSION\" , \"git_branch\" : \"$BRANCH\", \"git_commit\" : \"$COMMIT\" }  }" \
+  curl -s -o /dev/null -X POST -g --data "{ \"exception\": { \"values\": [{ \"type\": \"$EVENT\" }] }, \"tags\" : { \"event_type\" : \"$EVENT_TYPE\", \"event_log\" : \"$EVENT_LOG\", \"os\" : \"$OS\", \"arch\" : \"$ARCH\", \"python_version\" : \"$PYTHON_VERSION\" , \"git_branch\" : \"$BRANCH\", \"git_commit\" : \"$COMMIT\", \"system\" : \"$SYSTEM\" }  }" \
     -H 'Content-Type: application/json' \
     -H "X-Sentry-Auth: Sentry sentry_version=7, sentry_key=$SENTRY_KEY, sentry_client=op_setup/0.1" \
     $SENTRY_URL 2> /dev/null
