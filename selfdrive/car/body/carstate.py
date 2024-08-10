@@ -1,4 +1,5 @@
 from opendbc.can.parser import CANParser
+from openpilot.selfdrive.car import structs
 from openpilot.selfdrive.car.interfaces import CarStateBase
 from openpilot.selfdrive.car.body.values import DBC
 
@@ -6,7 +7,7 @@ STARTUP_TICKS = 100
 
 class CarState(CarStateBase):
   def update(self, cp):
-    ret = CarState.new_message()
+    ret = structs.CarState()
 
     ret.wheelSpeeds.fl = cp.vl['MOTORS_DATA']['SPEED_L']
     ret.wheelSpeeds.fr = cp.vl['MOTORS_DATA']['SPEED_R']
@@ -23,7 +24,7 @@ class CarState(CarStateBase):
     ret.fuelGauge = cp.vl["BODY_DATA"]["BATT_PERCENTAGE"] / 100
 
     # irrelevant for non-car
-    ret.gearShifter = CarState.GearShifter.drive
+    ret.gearShifter = structs.CarState.GearShifter.drive
     ret.cruiseState.enabled = True
     ret.cruiseState.available = True
 
