@@ -60,6 +60,7 @@ def can_comm_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket
 
 
 def convert_to_capnp(CP: CarParams) -> car.CarParams:
+  # TODO: better name or support CarState, CarControl, etc.
   CP_dict = dataclasses.asdict(CP)
   del CP_dict['lateralTuning']
   CP_capnp = car.CarParams.new_message(**CP_dict)
