@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 from panda import Panda
-from openpilot.selfdrive.car import get_safety_config
-from openpilot.selfdrive.car.structs import CarParams
+from openpilot.selfdrive.car import get_safety_config, structs
+from openpilot.selfdrive.car.tesla.carstate import CarState
 from openpilot.selfdrive.car.tesla.values import CANBUS, CAR
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 
 class CarInterface(CarInterfaceBase):
+  CS: CarState
+
   @staticmethod
-  def _get_params(ret: CarParams, candidate, fingerprint, car_fw, experimental_long, docs):
+  def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "tesla"
 
     # There is no safe way to do steer blending with user torque,
@@ -16,7 +18,7 @@ class CarInterface(CarInterfaceBase):
     # how openpilot should be, hence dashcamOnly
     ret.dashcamOnly = True
 
-    ret.steerControlType = CarParams.SteerControlType.angle
+    ret.steerControlType = structs.CarParams.SteerControlType.angle
 
     ret.longitudinalActuatorDelay = 0.5 # s
     ret.radarTimeStep = (1.0 / 8) # 8Hz
@@ -28,18 +30,18 @@ class CarInterface(CarInterfaceBase):
       ret.openpilotLongitudinalControl = True
       flags |= Panda.FLAG_TESLA_LONG_CONTROL
       ret.safetyConfigs = [
-        get_safety_config(CarParams.SafetyModel.tesla, flags),
-        get_safety_config(CarParams.SafetyModel.tesla, flags | Panda.FLAG_TESLA_POWERTRAIN),
+        get_safety_config(structs.CarParams.SafetyModel.tesla, flags),
+        get_safety_config(structs.CarParams.SafetyModel.tesla, flags | Panda.FLAG_TESLA_POWERTRAIN),
       ]
     else:
       ret.openpilotLongitudinalControl = False
-      ret.safetyConfigs = [get_safety_config(CarParams.SafetyModel.tesla, flags)]
+      ret.safetyConfigs = [get_safety_config(structs.CarParams.SafetyModel.tesla, flags)]
 
     ret.steerLimitTimer = 1.0
     ret.steerActuatorDelay = 0.25
     return ret
 
-  def _update(self, c):
+  def _update(self, c) -> structs.CarState:
     ret = self.CS.update(self.cp, self.cp_cam)
 
     ret.events = self.create_common_events(ret).to_msg()

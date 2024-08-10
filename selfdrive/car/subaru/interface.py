@@ -1,15 +1,16 @@
 from panda import Panda
-from openpilot.selfdrive.car import get_safety_config
-from openpilot.selfdrive.car.structs import CarParams
+from openpilot.selfdrive.car import get_safety_config, structs
 from openpilot.selfdrive.car.disable_ecu import disable_ecu
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
+from openpilot.selfdrive.car.subaru.carstate import CarState
 from openpilot.selfdrive.car.subaru.values import CAR, GLOBAL_ES_ADDR, SubaruFlags
 
 
 class CarInterface(CarInterfaceBase):
+  CS: CarState
 
   @staticmethod
-  def _get_params(ret: CarParams, candidate: CAR, fingerprint, car_fw, experimental_long, docs):
+  def _get_params(ret: structs.CarParams, candidate: CAR, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "subaru"
     ret.radarUnavailable = True
     # for HYBRID CARS to be upstreamed, we need:
@@ -25,10 +26,10 @@ class CarInterface(CarInterfaceBase):
 
     if ret.flags & SubaruFlags.PREGLOBAL:
       ret.enableBsm = 0x25c in fingerprint[0]
-      ret.safetyConfigs = [get_safety_config(CarParams.SafetyModel.subaruPreglobal)]
+      ret.safetyConfigs = [get_safety_config(structs.CarParams.SafetyModel.subaruPreglobal)]
     else:
       ret.enableBsm = 0x228 in fingerprint[0]
-      ret.safetyConfigs = [get_safety_config(CarParams.SafetyModel.subaru)]
+      ret.safetyConfigs = [get_safety_config(structs.CarParams.SafetyModel.subaru)]
       if ret.flags & SubaruFlags.GLOBAL_GEN2:
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_SUBARU_GEN2
 
@@ -36,7 +37,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.1
 
     if ret.flags & SubaruFlags.LKAS_ANGLE:
-      ret.steerControlType = CarParams.SteerControlType.angle
+      ret.steerControlType = structs.CarParams.SteerControlType.angle
     else:
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
@@ -97,7 +98,7 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   # returns a car.CarState
-  def _update(self, c):
+  def _update(self, c) -> structs.CarState:
 
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_body)
 

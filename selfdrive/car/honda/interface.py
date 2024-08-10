@@ -4,6 +4,7 @@ from panda import Panda
 from openpilot.selfdrive.car import create_button_events, get_safety_config, structs
 from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.helpers import interp
+from openpilot.selfdrive.car.honda.carstate import CarState
 from openpilot.selfdrive.car.honda.hondacan import CanBus
 from openpilot.selfdrive.car.honda.values import CarControllerParams, CruiseButtons, CruiseSettings, HondaFlags, CAR, HONDA_BOSCH, \
                                                  HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_RADARLESS
@@ -20,6 +21,8 @@ SETTINGS_BUTTONS_DICT = {CruiseSettings.DISTANCE: ButtonType.gapAdjustCruise, Cr
 
 
 class CarInterface(CarInterfaceBase):
+  CS: CarState
+
   @staticmethod
   def get_pid_accel_limits(CP, current_speed, cruise_speed):
     if CP.carFingerprint in HONDA_BOSCH:
@@ -222,7 +225,7 @@ class CarInterface(CarInterfaceBase):
       disable_ecu(can_recv, can_send, bus=1, addr=0x18DAB0F1, com_cont_req=b'\x28\x83\x03')
 
   # returns a car.CarState
-  def _update(self, c):
+  def _update(self, c) -> structs.CarState:
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_body)
 
     ret.buttonEvents = [

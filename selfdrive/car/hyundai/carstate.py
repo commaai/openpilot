@@ -52,7 +52,7 @@ class CarState(CarStateBase):
 
     self.params = CarControllerParams(CP)
 
-  def update(self, cp, cp_cam):
+  def update(self, cp, cp_cam) -> structs.CarState:
     if self.CP.carFingerprint in CANFD_CAR:
       return self.update_canfd(cp, cp_cam)
 
@@ -168,7 +168,7 @@ class CarState(CarStateBase):
 
     return ret
 
-  def update_canfd(self, cp, cp_cam):
+  def update_canfd(self, cp, cp_cam) -> structs.CarState:
     ret = structs.CarState()
 
     self.is_metric = cp.vl["CRUISE_BUTTONS_ALT"]["DISTANCE_UNIT"] != 1

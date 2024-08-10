@@ -1,16 +1,18 @@
 import math
 from cereal import car
-from openpilot.selfdrive.car import DT_CTRL, get_safety_config
-from openpilot.selfdrive.car.structs import CarParams
+from openpilot.selfdrive.car import DT_CTRL, get_safety_config, structs
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
+from openpilot.selfdrive.car.body.carstate import CarState
 from openpilot.selfdrive.car.body.values import SPEED_FROM_RPM
 
 class CarInterface(CarInterfaceBase):
+  CS: CarState
+
   @staticmethod
-  def _get_params(ret: CarParams, candidate, fingerprint, car_fw, experimental_long, docs):
+  def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.notCar = True
     ret.carName = "body"
-    ret.safetyConfigs = [get_safety_config(CarParams.SafetyModel.body)]
+    ret.safetyConfigs = [get_safety_config(structs.CarParams.SafetyModel.body)]
 
     ret.minSteerSpeed = -math.inf
     ret.maxLateralAccel = math.inf  # TODO: set to a reasonable value
@@ -21,11 +23,11 @@ class CarInterface(CarInterfaceBase):
 
     ret.radarUnavailable = True
     ret.openpilotLongitudinalControl = True
-    ret.steerControlType = CarParams.SteerControlType.angle
+    ret.steerControlType = structs.CarParams.SteerControlType.angle
 
     return ret
 
-  def _update(self, c):
+  def _update(self, c) -> structs.CarState:
     ret = self.CS.update(self.cp)
 
     # wait for everything to init first

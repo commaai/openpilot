@@ -2,6 +2,7 @@
 from cereal import car
 from openpilot.selfdrive.car import create_button_events, get_safety_config, structs
 from openpilot.selfdrive.car.conversions import Conversions as CV
+from openpilot.selfdrive.car.mazda.carstate import CarState
 from openpilot.selfdrive.car.mazda.values import CAR, LKAS_LIMITS
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
@@ -9,6 +10,7 @@ ButtonType = structs.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 
 class CarInterface(CarInterfaceBase):
+  CS: CarState
 
   @staticmethod
   def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, experimental_long, docs):
@@ -31,7 +33,7 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   # returns a car.CarState
-  def _update(self, c):
+  def _update(self, c) -> structs.CarState:
     ret = self.CS.update(self.cp, self.cp_cam)
 
      # TODO: add button types for inc and dec

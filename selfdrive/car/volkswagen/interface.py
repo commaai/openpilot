@@ -2,6 +2,8 @@ from cereal import car
 from panda import Panda
 from openpilot.selfdrive.car import get_safety_config, structs
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
+from openpilot.selfdrive.car.volkswagen.carcontroller import CarController
+from openpilot.selfdrive.car.volkswagen.carstate import CarState
 from openpilot.selfdrive.car.volkswagen.values import CAR, CANBUS, CarControllerParams, NetworkLocation, TransmissionType, GearShifter, VolkswagenFlags
 
 ButtonType = structs.CarState.ButtonEvent.Type
@@ -9,6 +11,9 @@ EventName = car.CarEvent.EventName
 
 
 class CarInterface(CarInterfaceBase):
+  CS: CarState
+  CC: CarController
+
   def __init__(self, CP, CarController, CarState):
     super().__init__(CP, CarController, CarState)
 
@@ -101,7 +106,7 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   # returns a car.CarState
-  def _update(self, c):
+  def _update(self, c) -> structs.CarState:
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_ext, self.CP.transmissionType)
 
     events = self.create_common_events(ret, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic],

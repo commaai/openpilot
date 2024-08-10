@@ -6,7 +6,7 @@ from openpilot.selfdrive.car.body.values import DBC
 STARTUP_TICKS = 100
 
 class CarState(CarStateBase):
-  def update(self, cp):
+  def update(self, cp) -> structs.CarState:
     ret = structs.CarState()
 
     ret.wheelSpeeds.fl = cp.vl['MOTORS_DATA']['SPEED_L']
