@@ -8,8 +8,8 @@ from openpilot.selfdrive.controls.lib.pid import PIDController
 class LatControlPID(LatControl):
   def __init__(self, CP, CI):
     super().__init__(CP, CI)
-    self.pid = PIDController((CP.lateralTuning.kpBP, CP.lateralTuning.kpV),
-                             (CP.lateralTuning.kiBP, CP.lateralTuning.kiV),
+    self.pid = PIDController((CP.lateralTuning.pid.kpBP, CP.lateralTuning.pid.kpV),
+                             (CP.lateralTuning.pid.kiBP, CP.lateralTuning.pid.kiV),
                              k_f=CP.lateralTuning.kf, pos_limit=self.steer_max, neg_limit=-self.steer_max)
     self.get_steer_feedforward = CI.get_steer_feedforward_function()
 
