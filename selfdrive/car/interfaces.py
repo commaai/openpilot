@@ -20,8 +20,8 @@ from openpilot.selfdrive.car.helpers import clip
 from openpilot.selfdrive.car.values import PLATFORMS
 from openpilot.selfdrive.controls.lib.events import Events
 
-ButtonType = car.CarState.ButtonEvent.Type
-GearShifter = car.CarState.GearShifter
+ButtonType = structs.CarState.ButtonEvent.Type
+GearShifter = structs.CarState.GearShifter
 EventName = car.CarEvent.EventName
 
 V_CRUISE_MAX = 145
@@ -34,7 +34,7 @@ TORQUE_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/params.tom
 TORQUE_OVERRIDE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/override.toml')
 TORQUE_SUBSTITUTE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/substitute.toml')
 
-GEAR_SHIFTER_MAP: dict[str, car.CarState.GearShifter] = {
+GEAR_SHIFTER_MAP: dict[str, structs.CarState.GearShifter] = {
   'P': GearShifter.park, 'PARK': GearShifter.park,
   'R': GearShifter.reverse, 'REVERSE': GearShifter.reverse,
   'N': GearShifter.neutral, 'NEUTRAL': GearShifter.neutral,
@@ -99,6 +99,8 @@ class CarInterfaceBase(ABC):
     self.silent_steer_warning = True
     self.v_ego_cluster_seen = False
 
+    # TODO: this
+    # self.CS: CarStateBase = CarState(CP)
     self.CS = CarState(CP)
     self.cp = self.CS.get_can_parser(CP)
     self.cp_cam = self.CS.get_cam_can_parser(CP)
@@ -397,7 +399,7 @@ class CarStateBase(ABC):
   def get_wheel_speeds(self, fl, fr, rl, rr, unit=CV.KPH_TO_MS):
     factor = unit * self.CP.wheelSpeedFactor
 
-    wheelSpeeds = car.CarState.WheelSpeeds.new_message()
+    wheelSpeeds = structs.CarState.WheelSpeeds()
     wheelSpeeds.fl = fl * factor
     wheelSpeeds.fr = fr * factor
     wheelSpeeds.rl = rl * factor
@@ -442,7 +444,7 @@ class CarStateBase(ABC):
     return bool(left_blinker_stalk or self.left_blinker_cnt > 0), bool(right_blinker_stalk or self.right_blinker_cnt > 0)
 
   @staticmethod
-  def parse_gear_shifter(gear: str | None) -> car.CarState.GearShifter:
+  def parse_gear_shifter(gear: str | None) -> structs.CarState.GearShifter:
     if gear is None:
       return GearShifter.unknown
     return GEAR_SHIFTER_MAP.get(gear.upper(), GearShifter.unknown)
