@@ -369,7 +369,6 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
       CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
 
   params.put("CarParams", CP.to_bytes())
-  return CP
 
 
 def controlsd_rcv_callback(msg, cfg, frame):
