@@ -1,6 +1,6 @@
-from cereal import car
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
+from openpilot.selfdrive.car import structs
 from openpilot.selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD, RAM_CARS
 from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.interfaces import CarStateBase

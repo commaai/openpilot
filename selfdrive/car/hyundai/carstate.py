@@ -2,9 +2,9 @@ from collections import deque
 import copy
 import math
 
-from cereal import car
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
+from openpilot.selfdrive.car import structs
 from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.hyundai.hyundaicanfd import CanBus
 from openpilot.selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CAN_GEARS, CAMERA_SCC_CAR, \
