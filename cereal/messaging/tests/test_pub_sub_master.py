@@ -89,8 +89,8 @@ class TestSubMaster:
       for service, (max_freq, min_freq) in checks.items():
         if max_freq is not None:
           assert sm._check_avg_freq(service)
-          assert sm.max_freq[service] == max_freq*1.2
-          assert sm.min_freq[service] == min_freq*0.8
+          assert sm.freq_tracker[service].max_freq == max_freq*1.2
+          assert sm.freq_tracker[service].min_freq == min_freq*0.8
         else:
           assert not sm._check_avg_freq(service)
 
