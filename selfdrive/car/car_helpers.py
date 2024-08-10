@@ -147,7 +147,7 @@ def fingerprint(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_mu
   return car_fingerprint, finger, vin, car_fw, source, exact_match
 
 
-def get_car_interface(CP):
+def get_car_interface(CP: CarParams):
   CarInterface, CarController, CarState = interfaces[CP.carFingerprint]
   return CarInterface(CP, CarController, CarState)
 
