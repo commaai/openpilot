@@ -349,15 +349,20 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
     sendcan = DummySocket()
 
     canmsgs = [msg for msg in msgs if msg.which() == "can"]
-    cached_params = params.get("CarParamsCache")
-    has_cached_cp = cached_params is not None
+    cached_params_raw = params.get("CarParamsCache")
     assert len(canmsgs) != 0, "CAN messages are required for fingerprinting"
-    assert os.environ.get("SKIP_FW_QUERY", False) or has_cached_cp, \
+    assert os.environ.get("SKIP_FW_QUERY", False) or cached_params_raw is not None, \
             "CarParamsCache is required for fingerprinting. Make sure to keep carParams msgs in the logs."
 
     for m in canmsgs[:300]:
       can.send(m.as_builder().to_bytes())
     can_callbacks = can_comm_callbacks(can, sendcan)
+
+    cached_params = None
+    if cached_params_raw is not None:
+      with car.CarParams.from_bytes(cached_params_raw) as _cached_params:
+        cached_params = _cached_params
+
     CP = get_car(*can_callbacks, lambda obd: None, Params().get_bool("ExperimentalLongitudinalEnabled"), cached_params=cached_params).CP
 
     if not params.get_bool("DisengageOnAccelerator"):
