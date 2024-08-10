@@ -41,10 +41,12 @@ class StrEnum(_StrEnum):
 class CarState:
   # events: list[CarEvent] = auto_field()
 
+  # CAN health
   canValid: bool = auto_field()  # invalid counter/checksums
   canTimeout: bool = auto_field()  # CAN bus dropped out
   canErrorCounter: int = auto_field()
 
+  # car speed
   vEgo: float = auto_field()  # best estimate of speed
   aEgo: float = auto_field()  # best estimate of acceleration
   vEgoRaw: float = auto_field()  # unfiltered speed from CAN sensors
@@ -52,19 +54,22 @@ class CarState:
 
   yawRate: float = auto_field()  # best estimate of yaw rate
   standstill: bool = auto_field()
-  # wheelSpeeds: WheelSpeeds = auto_field()
+  wheelSpeeds: 'CarState.WheelSpeeds' = field(default_factory=lambda: CarState.WheelSpeeds())
 
+  # gas pedal, 0.0-1.0
   gas: float = auto_field()  # this is user pedal only
   gasPressed: bool = auto_field()  # this is user pedal only
 
   engineRpm: float = auto_field()
 
+  # brake pedal, 0.0-1.0
   brake: float = auto_field()  # this is user pedal only
   brakePressed: bool = auto_field()  # this is user pedal only
   regenBraking: bool = auto_field()  # this is user pedal only
   parkingBrake: bool = auto_field()
   brakeHoldActive: bool = auto_field()
 
+  # steering wheel
   steeringAngleDeg: float = auto_field()
   steeringAngleOffsetDeg: float = auto_field()  # Offset betweens sensors in case there multiple
   steeringRateDeg: float = auto_field()
@@ -80,27 +85,84 @@ class CarState:
   carFaultedNonCritical: bool = auto_field()  # some ECU is faulted, but car remains controllable
   espActive: bool = auto_field()
 
-  # cruiseState: CruiseState = auto_field()
+  # cruise state
+  cruiseState: 'CarState.CruiseState' = field(default_factory=lambda: CarState.CruiseState())
 
-  # gearShifter: GearShifter = auto_field()
+  # gear
+  gearShifter: 'CarState.GearShifter' = field(default_factory=lambda: CarState.GearShifter.unknown)
 
-  # buttonEvents: list[ButtonEvent] = auto_field()
+  # button presses
+  buttonEvents: list['CarState.ButtonEvent'] = auto_field()
   leftBlinker: bool = auto_field()
   rightBlinker: bool = auto_field()
   genericToggle: bool = auto_field()
 
+  # lock info
   doorOpen: bool = auto_field()
   seatbeltUnlatched: bool = auto_field()
 
+  # clutch (manual transmission only)
   clutchPressed: bool = auto_field()
 
+  # blindspot sensors
   leftBlindspot: bool = auto_field()  # Is there something blocking the left lane change
   rightBlindspot: bool = auto_field()  # Is there something blocking the right lane change
 
   fuelGauge: float = auto_field()  # battery or fuel tank level from 0.0 to 1.0
   charging: bool = auto_field()
 
+  # process meta
   cumLagMs: float = auto_field()
+
+  @auto_dataclass
+  class WheelSpeeds:
+    # optional wheel speeds
+    fl: float = auto_field()
+    fr: float = auto_field()
+    rl: float = auto_field()
+    rr: float = auto_field()
+
+  @auto_dataclass
+  class CruiseState:
+    enabled: bool = auto_field()
+    speed: float = auto_field()
+    speedCluster: float = auto_field()  # Set speed as shown on instrument cluster
+    available: bool = auto_field()
+    speedOffset: float = auto_field()
+    standstill: bool = auto_field()
+    nonAdaptive: bool = auto_field()
+
+  class GearShifter(StrEnum):
+    unknown = auto()
+    park = auto()
+    drive = auto()
+    neutral = auto()
+    reverse = auto()
+    sport = auto()
+    low = auto()
+    brake = auto()
+    eco = auto()
+    manumatic = auto()
+
+  # send on change
+  @auto_dataclass
+  class ButtonEvent:
+    pressed: bool = auto_field()
+    type: 'CarState.ButtonEvent.Type' = field(default_factory=lambda: CarState.ButtonEvent.Type.unknown)
+
+    class Type(StrEnum):
+      unknown = auto()
+      leftBlinker = auto()
+      rightBlinker = auto()
+      accelCruise = auto()
+      decelCruise = auto()
+      cancel = auto()
+      altButton1 = auto()
+      altButton2 = auto()
+      altButton3 = auto()
+      setCruise = auto()
+      resumeCruise = auto()
+      gapAdjustCruise = auto()
 
 
 @auto_dataclass
