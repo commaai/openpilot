@@ -118,7 +118,7 @@ function op_check_os() {
     fi
 
   elif [[ "$OSTYPE" == "darwin"* ]]; then
-    echo -e " ↳ [${GREEN}✔${NC}] macos detected.\n"
+    echo -e " ↳ [${GREEN}✔${NC}] macOS detected.\n"
   else
     echo -e " ↳ [${RED}✗${NC}] OS type $OSTYPE not supported!"
     loge "ERROR_UNKNOWN_OS" "$OSTYPE"
@@ -308,14 +308,14 @@ function op_default() {
   echo -e "${BOLD}${UNDERLINE}Usage:${NC} op [OPTIONS] <COMMAND>"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands:${NC}"
-  echo -e "  ${BOLD}venv${NC}     Activate the Python virtual environment"
+  echo -e "  ${BOLD}venv${NC}     Activate the python virtual environment"
   echo -e "  ${BOLD}check${NC}    Check the development environment (git, os, python) to start using openpilot"
   echo -e "  ${BOLD}setup${NC}    Install openpilot dependencies"
   echo -e "  ${BOLD}build${NC}    Run the openpilot build system in the current working directory"
   echo -e "  ${BOLD}sim${NC}      Run openpilot in a simulator"
-  echo -e "  ${BOLD}juggle${NC}   Run Plotjuggler"
-  echo -e "  ${BOLD}replay${NC}   Run replay"
-  echo -e "  ${BOLD}cabana${NC}   Run cabana"
+  echo -e "  ${BOLD}juggle${NC}   Run PlotJuggler"
+  echo -e "  ${BOLD}replay${NC}   Run Replay"
+  echo -e "  ${BOLD}cabana${NC}   Run Cabana"
   echo -e "  ${BOLD}lint${NC}     Run the linter"
   echo -e "  ${BOLD}test${NC}     Run all unit tests from pytest"
   echo -e "  ${BOLD}help${NC}     Show this message"
