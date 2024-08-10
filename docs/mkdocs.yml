@@ -14,6 +14,7 @@ theme:
   custom_dir: "theme/"
 
 plugins:
+  - git-revision-date-localized
   - redirects:
         redirect_maps:
           'index.md': 'getting-started/what-is-openpilot.md'

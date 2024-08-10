@@ -1,3 +1,4 @@
 mkdocs
 mkdocs-redirects
+mkdocs-git-revision-date-localized-plugin
 pytailwindcss-extra

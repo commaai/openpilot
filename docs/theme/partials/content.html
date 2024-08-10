@@ -5,13 +5,24 @@
             prose-a:decoration-accent prose-a:bg-gradient-to-l from-accent/30
             hover:prose-a:bg-accent/30 hover:prose-a:decoration-2
             w-full max-w-4xl flex-grow pt-10">
-            {# TODO add 'last modified' date
+            {#- TODO add 'last modified' date
             <div class="badge" >
                 Last Built: {{ build_date_utc.strftime("%b %d, %Y %H:%M:%S")  }}
             </div>
-            <div class="divider"></div>
-            #}
+            -#}
+
             {{ page.content }}
+
+            <div class="divider"></div>
+
+            <!-- This section adds support for localized revision dates -->
+            {% if page.meta.git_revision_date_localized %}
+                Last update: <span class="badge">{{ page.meta.git_revision_date_localized }}</span>
+            {% endif %}
+            {% if page.meta.git_created_date_localized %}
+                Created: <span class="badge">{{ page.meta.git_created_date_localized }}</span>
+            {% endif %}
+
         </div>
 
         {# FIXME TOC AnchorLinks go too far up
