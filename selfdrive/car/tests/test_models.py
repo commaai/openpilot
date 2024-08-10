@@ -15,7 +15,7 @@ from cereal import messaging, log, car
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.selfdrive.car import DT_CTRL, gen_empty_fingerprint
-from openpilot.selfdrive.car.data_structures import CarParams
+from openpilot.selfdrive.car.structs import CarParams
 from openpilot.selfdrive.car.fingerprints import all_known_cars, MIGRATION
 from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from openpilot.selfdrive.car.honda.values import CAR as HONDA, HondaFlags

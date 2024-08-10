@@ -1,4 +1,4 @@
-from openpilot.selfdrive.car.data_structures import CarParams
+from openpilot.selfdrive.car.structs import CarParams
 
 SteerControlType = CarParams.SteerControlType
 

@@ -3,7 +3,7 @@ import time
 
 from openpilot.selfdrive.car import carlog, gen_empty_fingerprint
 from openpilot.selfdrive.car.can_definitions import CanRecvCallable, CanSendCallable
-from openpilot.selfdrive.car.data_structures import CarParams
+from openpilot.selfdrive.car.structs import CarParams
 from openpilot.selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 from openpilot.selfdrive.car.fw_versions import ObdCallback, get_fw_versions_ordered, get_present_ecus, match_fw_to_car
 from openpilot.selfdrive.car.interfaces import get_interface_attr

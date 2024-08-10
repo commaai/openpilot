@@ -6,7 +6,7 @@ from parameterized import parameterized
 
 from openpilot.selfdrive.car.can_definitions import CanData
 from openpilot.selfdrive.car.car_helpers import interfaces
-from openpilot.selfdrive.car.data_structures import CarParams
+from openpilot.selfdrive.car.structs import CarParams
 from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
 from openpilot.selfdrive.car.fw_versions import ESSENTIAL_ECUS, FW_QUERY_CONFIGS, FUZZY_EXCLUDE_ECUS, VERSIONS, build_fw_dict, \
                                                 match_fw_to_car, get_brand_ecu_matches, get_fw_versions, get_fw_versions_ordered, get_present_ecus

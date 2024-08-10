@@ -12,7 +12,7 @@ from cereal import car
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.simple_kalman import KF1D, get_kalman_gain
 from openpilot.selfdrive.car import DT_CTRL, apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, get_friction, STD_CARGO_KG
-from openpilot.selfdrive.car.data_structures import CarParams, RadarData
+from openpilot.selfdrive.car import structs
 from openpilot.selfdrive.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
 from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.helpers import clip
@@ -53,7 +53,7 @@ class LatControlInputs(NamedTuple):
   aego: float
 
 
-TorqueFromLateralAccelCallbackType = Callable[[LatControlInputs, CarParams.LateralTorqueTuning, float, float, bool, bool], float]
+TorqueFromLateralAccelCallbackType = Callable[[LatControlInputs, structs.CarParams.LateralTorqueTuning, float, float, bool, bool], float]
 
 
 @cache
@@ -88,7 +88,7 @@ def get_torque_params():
 # generic car and radar interfaces
 
 class CarInterfaceBase(ABC):
-  def __init__(self, CP: CarParams, CarController, CarState):
+  def __init__(self, CP: structs.CarParams, CarController, CarState):
     self.CP = CP
 
     self.frame = 0
@@ -117,14 +117,14 @@ class CarInterfaceBase(ABC):
     return ACCEL_MIN, ACCEL_MAX
 
   @classmethod
-  def get_non_essential_params(cls, candidate: str) -> CarParams:
+  def get_non_essential_params(cls, candidate: str) -> structs.CarParams:
     """
     Parameters essential to controlling the car may be incomplete or wrong without FW versions or fingerprints.
     """
     return cls.get_params(candidate, gen_empty_fingerprint(), list(), False, False)
 
   @classmethod
-  def get_params(cls, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[CarParams.CarFw], experimental_long: bool, docs: bool) -> CarParams:
+  def get_params(cls, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[structs.CarParams.CarFw], experimental_long: bool, docs: bool) -> structs.CarParams:
     ret = CarInterfaceBase.get_std_params(candidate)
 
     platform = PLATFORMS[candidate]
@@ -151,12 +151,12 @@ class CarInterfaceBase(ABC):
 
   @staticmethod
   @abstractmethod
-  def _get_params(ret: CarParams, candidate, fingerprint: dict[int, dict[int, int]],
-                  car_fw: list[CarParams.CarFw], experimental_long: bool, docs: bool) -> CarParams:
+  def _get_params(ret: structs.CarParams, candidate, fingerprint: dict[int, dict[int, int]],
+                  car_fw: list[structs.CarParams.CarFw], experimental_long: bool, docs: bool) -> structs.CarParams:
     raise NotImplementedError
 
   @staticmethod
-  def init(CP: CarParams, can_recv: CanRecvCallable, can_send: CanSendCallable):
+  def init(CP: structs.CarParams, can_recv: CanRecvCallable, can_send: CanSendCallable):
     pass
 
   @staticmethod
@@ -167,7 +167,7 @@ class CarInterfaceBase(ABC):
   def get_steer_feedforward_function(self):
     return self.get_steer_feedforward_default
 
-  def torque_from_lateral_accel_linear(self, latcontrol_inputs: LatControlInputs, torque_params: CarParams.LateralTorqueTuning,
+  def torque_from_lateral_accel_linear(self, latcontrol_inputs: LatControlInputs, torque_params: structs.CarParams.LateralTorqueTuning,
                                        lateral_accel_error: float, lateral_accel_deadzone: float, friction_compensation: bool, gravity_adjusted: bool) -> float:
     # The default is a linear relationship between torque and lateral acceleration (accounting for road roll and steering friction)
     friction = get_friction(lateral_accel_error, lateral_accel_deadzone, FRICTION_THRESHOLD, torque_params, friction_compensation)
@@ -178,8 +178,8 @@ class CarInterfaceBase(ABC):
 
   # returns a set of default params to avoid repetition in car specific params
   @staticmethod
-  def get_std_params(candidate: str) -> CarParams:
-    ret = CarParams()
+  def get_std_params(candidate: str) -> structs.CarParams:
+    ret = structs.CarParams()
     ret.carFingerprint = candidate
 
     # Car docs fields
@@ -188,7 +188,7 @@ class CarInterfaceBase(ABC):
 
     # standard ALC params
     ret.tireStiffnessFactor = 1.0
-    ret.steerControlType = CarParams.SteerControlType.torque
+    ret.steerControlType = structs.CarParams.SteerControlType.torque
     ret.minSteerSpeed = 0.
     ret.wheelSpeedFactor = 1.0
 
@@ -212,7 +212,7 @@ class CarInterfaceBase(ABC):
     return ret
 
   @staticmethod
-  def configure_torque_tune(candidate: str, tune: CarParams.LateralTuning, steering_angle_deadzone_deg: float = 0.0, use_steering_angle: bool = True):
+  def configure_torque_tune(candidate: str, tune: structs.CarParams.LateralTuning, steering_angle_deadzone_deg: float = 0.0, use_steering_angle: bool = True):
     params = get_torque_params()[candidate]
 
     tune.init('torque')
@@ -226,10 +226,10 @@ class CarInterfaceBase(ABC):
     tune.torque.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
 
   @abstractmethod
-  def _update(self, c: car.CarControl) -> car.CarState:
+  def _update(self, c: car.CarControl) -> structs.CarState:
     pass
 
-  def update(self, c: car.CarControl, can_packets: list[tuple[int, list[CanData]]]) -> car.CarState:
+  def update(self, c: car.CarControl, can_packets: list[tuple[int, list[CanData]]]) -> structs.CarState:
     # parse can
     for cp in self.can_parsers:
       if cp is not None:
@@ -343,23 +343,23 @@ class CarInterfaceBase(ABC):
 
 
 class RadarInterfaceBase(ABC):
-  def __init__(self, CP: CarParams):
+  def __init__(self, CP: structs.CarParams):
     self.CP = CP
     self.rcp = None
-    self.pts: dict[int, RadarData.RadarPoint] = {}
+    self.pts: dict[int, structs.RadarData.RadarPoint] = {}
     self.delay = 0
     self.radar_ts = CP.radarTimeStep
     self.frame = 0
 
-  def update(self, can_strings) -> RadarData | None:
+  def update(self, can_strings) -> structs.RadarData | None:
     self.frame += 1
     if (self.frame % int(100 * self.radar_ts)) == 0:
-      return RadarData()
+      return structs.RadarData()
     return None
 
 
 class CarStateBase(ABC):
-  def __init__(self, CP: CarParams):
+  def __init__(self, CP: structs.CarParams):
     self.CP = CP
     self.car_fingerprint = CP.carFingerprint
     self.out = car.CarState.new_message()
@@ -463,7 +463,7 @@ class CarStateBase(ABC):
 
 
 class CarControllerBase(ABC):
-  def __init__(self, dbc_name: str, CP: CarParams):
+  def __init__(self, dbc_name: str, CP: structs.CarParams):
     self.CP = CP
     self.frame = 0
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from collections import defaultdict
 
-from openpilot.selfdrive.car.data_structures import CarParams
+from openpilot.selfdrive.car.structs import CarParams
 from openpilot.selfdrive.car.ford.values import get_platform_codes
 from openpilot.selfdrive.car.ford.fingerprints import FW_VERSIONS
 

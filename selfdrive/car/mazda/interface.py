@@ -2,7 +2,7 @@
 from cereal import car
 from openpilot.selfdrive.car import create_button_events, get_safety_config
 from openpilot.selfdrive.car.conversions import Conversions as CV
-from openpilot.selfdrive.car.data_structures import CarParams
+from openpilot.selfdrive.car.structs import CarParams
 from openpilot.selfdrive.car.mazda.values import CAR, LKAS_LIMITS
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 

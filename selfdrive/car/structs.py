@@ -38,6 +38,72 @@ class StrEnum(_StrEnum):
 
 
 @auto_dataclass
+class CarState:
+  # events: list[CarEvent] = auto_field()
+
+  canValid: bool = auto_field()  # invalid counter/checksums
+  canTimeout: bool = auto_field()  # CAN bus dropped out
+  canErrorCounter: int = auto_field()
+
+  vEgo: float = auto_field()  # best estimate of speed
+  aEgo: float = auto_field()  # best estimate of acceleration
+  vEgoRaw: float = auto_field()  # unfiltered speed from CAN sensors
+  vEgoCluster: float = auto_field()  # best estimate of speed shown on car's instrument cluster, used for UI
+
+  yawRate: float = auto_field()  # best estimate of yaw rate
+  standstill: bool = auto_field()
+  # wheelSpeeds: WheelSpeeds = auto_field()
+
+  gas: float = auto_field()  # this is user pedal only
+  gasPressed: bool = auto_field()  # this is user pedal only
+
+  engineRpm: float = auto_field()
+
+  brake: float = auto_field()  # this is user pedal only
+  brakePressed: bool = auto_field()  # this is user pedal only
+  regenBraking: bool = auto_field()  # this is user pedal only
+  parkingBrake: bool = auto_field()
+  brakeHoldActive: bool = auto_field()
+
+  steeringAngleDeg: float = auto_field()
+  steeringAngleOffsetDeg: float = auto_field()  # Offset betweens sensors in case there multiple
+  steeringRateDeg: float = auto_field()
+  steeringTorque: float = auto_field()  # TODO: standardize units
+  steeringTorqueEps: float = auto_field()  # TODO: standardize units
+  steeringPressed: bool = auto_field()  # if the user is using the steering wheel
+  steerFaultTemporary: bool = auto_field()  # temporary EPS fault
+  steerFaultPermanent: bool = auto_field()  # permanent EPS fault
+  stockAeb: bool = auto_field()
+  stockFcw: bool = auto_field()
+  espDisabled: bool = auto_field()
+  accFaulted: bool = auto_field()
+  carFaultedNonCritical: bool = auto_field()  # some ECU is faulted, but car remains controllable
+  espActive: bool = auto_field()
+
+  # cruiseState: CruiseState = auto_field()
+
+  # gearShifter: GearShifter = auto_field()
+
+  # buttonEvents: list[ButtonEvent] = auto_field()
+  leftBlinker: bool = auto_field()
+  rightBlinker: bool = auto_field()
+  genericToggle: bool = auto_field()
+
+  doorOpen: bool = auto_field()
+  seatbeltUnlatched: bool = auto_field()
+
+  clutchPressed: bool = auto_field()
+
+  leftBlindspot: bool = auto_field()  # Is there something blocking the left lane change
+  rightBlindspot: bool = auto_field()  # Is there something blocking the right lane change
+
+  fuelGauge: float = auto_field()  # battery or fuel tank level from 0.0 to 1.0
+  charging: bool = auto_field()
+
+  cumLagMs: float = auto_field()
+
+
+@auto_dataclass
 class RadarData:
   errors: list['Error'] = auto_field()
   points: list['RadarPoint'] = auto_field()

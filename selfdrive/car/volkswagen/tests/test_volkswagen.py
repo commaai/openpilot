@@ -1,7 +1,7 @@
 import random
 import re
 
-from openpilot.selfdrive.car.data_structures import CarParams
+from openpilot.selfdrive.car.structs import CarParams
 from openpilot.selfdrive.car.volkswagen.values import CAR, FW_QUERY_CONFIG, WMI
 from openpilot.selfdrive.car.volkswagen.fingerprints import FW_VERSIONS
 

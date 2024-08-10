@@ -3,7 +3,7 @@ from hypothesis import settings, given, strategies as st
 import pytest
 
 from openpilot.selfdrive.car import gen_empty_fingerprint
-from openpilot.selfdrive.car.data_structures import CarParams
+from openpilot.selfdrive.car.structs import CarParams
 from openpilot.selfdrive.car.fw_versions import build_fw_dict
 from openpilot.selfdrive.car.hyundai.interface import CarInterface
 from openpilot.selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR

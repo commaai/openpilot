@@ -8,7 +8,7 @@ from tqdm import tqdm
 import panda.python.uds as uds
 from openpilot.selfdrive.car import carlog
 from openpilot.selfdrive.car.can_definitions import CanRecvCallable, CanSendCallable
-from openpilot.selfdrive.car.data_structures import CarParams
+from openpilot.selfdrive.car.structs import CarParams
 from openpilot.selfdrive.car.ecu_addrs import get_ecu_addrs
 from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
 from openpilot.selfdrive.car.fw_query_definitions import AddrType, EcuAddrBusType, FwQueryConfig, LiveFwVersions, OfflineFwVersions

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from openpilot.selfdrive.car.data_structures import CarParams
+from openpilot.selfdrive.car.structs import CarParams
 from openpilot.selfdrive.car.hyundai.values import PLATFORM_CODE_ECUS, get_platform_codes
 from openpilot.selfdrive.car.hyundai.fingerprints import FW_VERSIONS
 

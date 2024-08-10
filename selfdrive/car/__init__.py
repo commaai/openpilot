@@ -10,7 +10,7 @@ import capnp
 from cereal import car
 from panda.python.uds import SERVICE_TYPE
 from openpilot.selfdrive.car.can_definitions import CanData
-from openpilot.selfdrive.car.data_structures import CarParams
+from openpilot.selfdrive.car.structs import CarParams
 from openpilot.selfdrive.car.docs_definitions import CarDocs
 from openpilot.selfdrive.car.helpers import clip, interp
 

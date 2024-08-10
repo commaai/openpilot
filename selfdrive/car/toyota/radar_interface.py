@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from opendbc.can.parser import CANParser
-from openpilot.selfdrive.car.data_structures import RadarData
+from openpilot.selfdrive.car.structs import RadarData
 from openpilot.selfdrive.car.toyota.values import DBC, TSS2_CAR
 from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
 
