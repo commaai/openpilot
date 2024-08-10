@@ -1,4 +1,4 @@
-<ul class="menu bg-base-100 min-h-full w-90 p-4 border-r-2 border-neutral shadow-none">
+<ul class="menu bg-base-100 min-h-full p-4 border-r-2 border-neutral">
     <div class="flex flex-col items-center justify-center space-y-2">
         {#-  logo  -#}
         <svg
@@ -15,31 +15,25 @@
             />
         </svg>
     </div>
-
-    <div class="h-4"></div>
-    {% if nav|length>1 %}
-        <ul class="menu px-4 py-0 flex">
-        {% for nav_item in nav %}
-            {% if nav_item.children %}
-                <li>
-                    <details {% if nav_item.active  %}open{% endif %}>
-                    <summary class="font-inter font-bold">{{ nav_item.title }}</summary>
-                    <ul>
-                    {% for nav_item in nav_item.children %}
-                        <li class="{% if nav_item.active%}bg-neutral text-neutral-content{% endif %}">
-                            <a href="{{ nav_item.url|url }}" class="hover:bg-accent hover:text-accent-content">{{ nav_item.title }}</a>
-                      </li>
-                    {% endfor %}
-                    </ul>
-                    </details>
-                </li>
-            {% else %}
-                <li class="{% if nav_item.active%}bg-neutral text-neutral-content{% endif %}">
-                    <a href="{{ nav_item.url|url }}" class="hover:bg-accent hover:text-accent-content">{{ nav_item.title }}</a>
-                </li>
-            {% endif %}
-        {% endfor %}
-        </ul>
-    {% endif %}
+    {% for nav_item in nav %}
+        {% if nav_item.children %}
+        <li>
+            <details {% if nav_item.active %}open{% endif %}>
+                <summary class="font-bold">{{ nav_item.title }}</summary>
+                <ul>
+                {% for nav_item in nav_item.children %}
+                    <li class="{% if nav_item.active%}bg-neutral text-neutral-content{% endif %}">
+                        <a href="{{ nav_item.url|url }}" class="hover:bg-accent hover:text-accent-content">{{ nav_item.title }}</a>
+                    </li>
+                {% endfor %}
+                </ul>
+            </details>
+        </li>
+        {% else %}
+        <li class="{% if nav_item.active%}bg-neutral text-neutral-content{% endif %}">
+            <a href="{{ nav_item.url|url }}" class="hover:bg-accent hover:text-accent-content">{{ nav_item.title }}</a>
+        </li>
+        {% endif %}
+    {% endfor %}
     <div class="bg-base-100 pointer-events-none sticky bottom-0 flex h-40 [mask-image:linear-gradient(transparent,#000000)]"></div>
 </ul>

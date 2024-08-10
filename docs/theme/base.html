@@ -69,26 +69,24 @@
   </head>
 
   {#- main -#}
-  <body>
-      <div class="xl:max-w-none">
-            <div class="drawer lg:drawer-open">
-                <input id="drawer" type="checkbox" class="drawer-toggle" />
-                <div class="drawer-content flex flex-col">
-                    {#-  Navbar  -#}
-                    {% include "partials/nav.html" %}
-                    {#-  markdown content  -#}
-                    {% include "partials/content.html" %}
-                </div>
-                {#-  left sidebar nav  -#}
-                <div class="drawer-side" style="scroll-behavior: smooth; scroll-padding-top: 5rem;">
-                    <label for="drawer" aria-label="close sidebar" class="drawer-overlay"></label>
-                    {% include "partials/sidebar.html" %}
-                </div>
-            </div>
+    <body>
+        <div class="drawer lg:drawer-open">
+            <input id="drawer" type="checkbox" class="drawer-toggle" />
+            <div class="drawer-content">
+                {#-  Navbar  -#}
+                {% include "partials/nav.html" %}
 
-            {# TODO footer
+                {#-  markdown content  -#}
+                {% include "partials/content.html" %}
+
+                {#- TODO footer
                 {% include "partials/footer.html" %}
-            #}
+                -#}
+            </div>
+            <div class="drawer-side">
+                <label for="drawer" aria-label="close sidebar" class="drawer-overlay"></label>
+                {% include "partials/sidebar.html" %}
+            </div>
         </div>
-  </body>
+    </body>
 </html>
