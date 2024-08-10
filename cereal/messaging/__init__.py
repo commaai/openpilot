@@ -116,9 +116,9 @@ class SubMaster:
     polled_services = set([poll, ] if poll is not None else services)
     self.non_polled_services = set(services) - polled_services
 
-    self.ignore_average_freq = [] if ignore_avg_freq is None else ignore_avg_freq
-    self.ignore_alive = [] if ignore_alive is None else ignore_alive
-    self.ignore_valid = [] if ignore_valid is None else ignore_valid
+    self.ignore_average_freq = ignore_avg_freq or []
+    self.ignore_alive = ignore_alive or []
+    self.ignore_valid = ignore_valid or []
 
     self.simulation = bool(int(os.getenv("SIMULATION", "0")))
 
@@ -217,18 +217,15 @@ class SubMaster:
           self.alive[s] = True
 
   def all_alive(self, service_list: Optional[List[str]] = None) -> bool:
-    if service_list is None:
-      service_list = list(self.sock.keys())
+    service_list = service_list or self.sock.keys()
     return all(self.alive[s] for s in service_list if s not in self.ignore_alive)
 
   def all_freq_ok(self, service_list: Optional[List[str]] = None) -> bool:
-    if service_list is None:
-      service_list = list(self.sock.keys())
+    service_list = service_list or self.sock.keys()
     return all(self.freq_ok[s] for s in service_list if self._check_avg_freq(s))
 
   def all_valid(self, service_list: Optional[List[str]] = None) -> bool:
-    if service_list is None:
-      service_list = list(self.sock.keys())
+    service_list = service_list or self.sock.keys()
     return all(self.valid[s] for s in service_list if s not in self.ignore_valid)
 
   def all_checks(self, service_list: Optional[List[str]] = None) -> bool:
