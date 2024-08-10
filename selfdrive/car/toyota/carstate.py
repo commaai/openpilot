@@ -2,9 +2,8 @@ import copy
 
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
-from openpilot.selfdrive.car import DT_CTRL
+from openpilot.selfdrive.car import DT_CTRL, structs
 from openpilot.selfdrive.car.conversions import Conversions as CV
-from openpilot.selfdrive.car import structs
 from openpilot.selfdrive.car.filter_simple import FirstOrderFilter
 from openpilot.selfdrive.car.helpers import mean
 from openpilot.selfdrive.car.interfaces import CarStateBase
