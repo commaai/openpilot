@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 import numpy as np
@@ -124,7 +125,8 @@ class CarInterfaceBase(ABC):
     return cls.get_params(candidate, gen_empty_fingerprint(), list(), False, False)
 
   @classmethod
-  def get_params(cls, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[structs.CarParams.CarFw], experimental_long: bool, docs: bool) -> structs.CarParams:
+  def get_params(cls, candidate: str, fingerprint: dict[int, dict[int, int]], car_fw: list[structs.CarParams.CarFw],
+                 experimental_long: bool, docs: bool) -> structs.CarParams:
     ret = CarInterfaceBase.get_std_params(candidate)
 
     platform = PLATFORMS[candidate]
@@ -257,7 +259,7 @@ class CarInterfaceBase(ABC):
 
     # copy back for next iteration
     if self.CS is not None:
-      self.CS.out = ret.as_reader()
+      self.CS.out = copy.deepcopy(ret)
 
     return ret
 
@@ -362,7 +364,7 @@ class CarStateBase(ABC):
   def __init__(self, CP: structs.CarParams):
     self.CP = CP
     self.car_fingerprint = CP.carFingerprint
-    self.out = car.CarState.new_message()
+    self.out = structs.CarState()
 
     self.cruise_buttons = 0
     self.left_blinker_cnt = 0

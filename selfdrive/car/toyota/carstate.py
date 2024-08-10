@@ -1,6 +1,5 @@
 import copy
 
-from cereal import car
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car import DT_CTRL
@@ -51,7 +50,7 @@ class CarState(CarStateBase):
     self.lkas_hud = {}
 
   def update(self, cp, cp_cam) -> structs.CarState:
-    ret = car.CarState.new_message()
+    ret = structs.CarState()
 
     ret.doorOpen = any([cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_FL"], cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_FR"],
                         cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_RL"], cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_RR"]])

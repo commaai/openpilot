@@ -8,7 +8,7 @@ from openpilot.selfdrive.car import structs
 from openpilot.selfdrive.car.disable_ecu import disable_ecu
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
-ButtonType = car.CarState.ButtonEvent.Type
+ButtonType = structs.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 SteerControlType = structs.CarParams.SteerControlType
 
