@@ -11,7 +11,6 @@ import tqdm
 import urllib.parse
 import warnings
 import zstandard as zstd
-import socket
 
 from collections.abc import Callable, Iterable, Iterator
 from urllib.parse import parse_qs, urlparse
@@ -176,12 +175,9 @@ def comma_car_segments_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
 
 
 def testing_closet_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
-  try:
-    with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
-      s.connect(("testing.comma.life", 80))
-    return [f"http://testing.comma.life/download/{sr.route_name.replace('|', '/')}/{seg}/rlog" for seg in sr.seg_idxs]
-  except (socket.gaierror, ConnectionRefusedError) as err:
-    raise InternalUnavailableException from err
+  if not internal_source_available('http://testing.comma.life'):
+    raise InternalUnavailableException
+  return [f"http://testing.comma.life/download/{sr.route_name.replace('|', '/')}/{seg}/rlog" for seg in sr.seg_idxs]
 
 
 def direct_source(file_or_url: str) -> LogPaths:
