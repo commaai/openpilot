@@ -10,7 +10,7 @@ from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
-SteerControlType = car.CarParams.SteerControlType
+SteerControlType = CarParams.SteerControlType
 
 
 class CarInterface(CarInterfaceBase):

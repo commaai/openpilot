@@ -4,7 +4,6 @@ from dataclasses import dataclass, field, replace
 from enum import Enum, IntFlag
 
 import panda.python.uds as uds
-from cereal import car
 from openpilot.selfdrive.car import AngleRateLimit, CarSpecs, dbc_dict, DbcDict, PlatformConfig, Platforms
 from openpilot.selfdrive.car.data_structures import CarParams
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column, \
@@ -66,7 +65,7 @@ class FordCarDocs(CarDocs):
   hybrid: bool = False
   plug_in_hybrid: bool = False
 
-  def init_make(self, CP: car.CarParams):
+  def init_make(self, CP: CarParams):
     harness = CarHarness.ford_q4 if CP.flags & FordFlags.CANFD else CarHarness.ford_q3
     if CP.carFingerprint in (CAR.FORD_BRONCO_SPORT_MK1, CAR.FORD_MAVERICK_MK1, CAR.FORD_F_150_MK14, CAR.FORD_F_150_LIGHTNING_MK1):
       self.car_parts = CarParts([Device.threex_angled_mount, harness])

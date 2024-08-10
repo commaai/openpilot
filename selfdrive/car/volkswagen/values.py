@@ -13,8 +13,8 @@ from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, Ca
 from openpilot.selfdrive.car.fw_query_definitions import EcuAddrSubAddr, FwQueryConfig, Request, p16
 
 Ecu = CarParams.Ecu
-NetworkLocation = car.CarParams.NetworkLocation
-TransmissionType = car.CarParams.TransmissionType
+NetworkLocation = CarParams.NetworkLocation
+TransmissionType = CarParams.TransmissionType
 GearShifter = car.CarState.GearShifter
 Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 
@@ -191,7 +191,7 @@ class VWCarDocs(CarDocs):
   package: str = "Adaptive Cruise Control (ACC) & Lane Assist"
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.vw_j533]))
 
-  def init_make(self, CP: car.CarParams):
+  def init_make(self, CP: CarParams):
     self.footnotes.append(Footnote.VW_EXP_LONG)
     if "SKODA" in CP.carFingerprint:
       self.footnotes.append(Footnote.SKODA_HEATED_WINDSHIELD)

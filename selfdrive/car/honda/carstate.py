@@ -4,6 +4,7 @@ from cereal import car
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.conversions import Conversions as CV
+from openpilot.selfdrive.car.data_structures import CarParams
 from openpilot.selfdrive.car.helpers import interp
 from openpilot.selfdrive.car.honda.hondacan import CanBus, get_cruise_speed_conversion
 from openpilot.selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, HONDA_BOSCH, \
@@ -11,7 +12,7 @@ from openpilot.selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, HOND
                                                  HondaFlags
 from openpilot.selfdrive.car.interfaces import CarStateBase
 
-TransmissionType = car.CarParams.TransmissionType
+TransmissionType = CarParams.TransmissionType
 
 
 def get_can_messages(CP, gearbox_msg):

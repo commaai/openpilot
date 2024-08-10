@@ -6,9 +6,9 @@ import os
 from enum import Enum
 from natsort import natsorted
 
-from cereal import car
 from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.car import gen_empty_fingerprint
+from openpilot.selfdrive.car.data_structures import CarParams
 from openpilot.selfdrive.car.docs_definitions import CarDocs, Column, CommonFootnote, PartType
 from openpilot.selfdrive.car.car_helpers import interfaces, get_interface_attr
 from openpilot.selfdrive.car.values import PLATFORMS
@@ -32,7 +32,7 @@ def get_all_car_docs() -> list[CarDocs]:
     car_docs = platform.config.car_docs
     # If available, uses experimental longitudinal limits for the docs
     CP = interfaces[model][0].get_params(platform, fingerprint=gen_empty_fingerprint(),
-                                         car_fw=[car.CarParams.CarFw(ecu="unknown")], experimental_long=True, docs=True)
+                                         car_fw=[CarParams.CarFw(ecu=CarParams.Ecu.unknown)], experimental_long=True, docs=True)
 
     if CP.dashcamOnly or not len(car_docs):
       continue

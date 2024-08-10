@@ -91,7 +91,7 @@ VISUAL_HUD = {
 class HondaCarDocs(CarDocs):
   package: str = "Honda Sensing"
 
-  def init_make(self, CP: car.CarParams):
+  def init_make(self, CP: CarParams):
     if CP.flags & HondaFlags.BOSCH:
       self.car_parts = CarParts.common([CarHarness.bosch_b]) if CP.flags & HondaFlags.BOSCH_RADARLESS else CarParts.common([CarHarness.bosch_a])
     else:

@@ -2,7 +2,6 @@ import re
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag
 
-from cereal import car
 from panda.python import uds
 from openpilot.selfdrive.car import CarSpecs, DbcDict, PlatformConfig, Platforms, dbc_dict
 from openpilot.selfdrive.car.conversions import Conversions as CV
@@ -108,7 +107,7 @@ class Footnote(Enum):
 class HyundaiCarDocs(CarDocs):
   package: str = "Smart Cruise Control (SCC)"
 
-  def init_make(self, CP: car.CarParams):
+  def init_make(self, CP: CarParams):
     if CP.flags & HyundaiFlags.CANFD:
       self.footnotes.insert(0, Footnote.CANFD)
 

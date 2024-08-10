@@ -14,6 +14,7 @@ from openpilot.common.swaglog import cloudlog, ForwardingHandler
 
 from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
 from openpilot.selfdrive.car import DT_CTRL, carlog
+from openpilot.selfdrive.car.data_structures import CarParams
 from openpilot.selfdrive.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
 from openpilot.selfdrive.car.fw_versions import ObdCallback
 from openpilot.selfdrive.car.car_helpers import get_car
@@ -108,8 +109,8 @@ class Car:
 
     self.CP.passive = not controller_available or self.CP.dashcamOnly
     if self.CP.passive:
-      safety_config = car.CarParams.SafetyConfig.new_message()
-      safety_config.safetyModel = car.CarParams.SafetyModel.noOutput
+      safety_config = CarParams.SafetyConfig()
+      safety_config.safetyModel = CarParams.SafetyModel.noOutput
       self.CP.safetyConfigs = [safety_config]
 
     # Write previous route's CarParams
