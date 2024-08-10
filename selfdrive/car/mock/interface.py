@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from cereal import car
 import cereal.messaging as messaging
 from openpilot.selfdrive.car.structs import CarParams
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
@@ -26,7 +25,7 @@ class CarInterface(CarInterfaceBase):
     self.sm.update(0)
     gps_sock = 'gpsLocationExternal' if self.sm.recv_frame['gpsLocationExternal'] > 1 else 'gpsLocation'
 
-    ret = car.CarState.new_message()
+    ret = structs.CarState()
     ret.vEgo = self.sm[gps_sock].speed
     ret.vEgoRaw = self.sm[gps_sock].speed
 

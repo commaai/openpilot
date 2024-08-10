@@ -106,7 +106,7 @@ class CarState(CarStateBase):
     self.dash_speed_seen = False
 
   def update(self, cp, cp_cam, cp_body):
-    ret = car.CarState.new_message()
+    ret = structs.CarState()
 
     # car params
     v_weight_v = [0., 1.]  # don't trust smooth speed at low values to avoid premature zero snapping

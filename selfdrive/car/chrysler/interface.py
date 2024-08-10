@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
 from cereal import car
 from panda import Panda
-from openpilot.selfdrive.car import create_button_events, get_safety_config
+from openpilot.selfdrive.car import create_button_events, get_safety_config, structs
 from openpilot.selfdrive.car.chrysler.values import CAR, RAM_HD, RAM_DT, RAM_CARS, ChryslerFlags
-from openpilot.selfdrive.car.structs import CarParams
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
-ButtonType = car.CarState.ButtonEvent.Type
+ButtonType = structs.CarState.ButtonEvent.Type
 
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def _get_params(ret: CarParams, candidate, fingerprint, car_fw, experimental_long, docs):
+  def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "chrysler"
     ret.dashcamOnly = candidate in RAM_HD
 
@@ -21,7 +20,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.4
 
     # safety config
-    ret.safetyConfigs = [get_safety_config(CarParams.SafetyModel.chrysler)]
+    ret.safetyConfigs = [get_safety_config(structs.CarParams.SafetyModel.chrysler)]
     if candidate in RAM_HD:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_CHRYSLER_RAM_HD
     elif candidate in RAM_DT:
@@ -83,7 +82,7 @@ class CarInterface(CarInterfaceBase):
     ret.buttonEvents = create_button_events(self.CS.distance_button, self.CS.prev_distance_button, {1: ButtonType.gapAdjustCruise})
 
     # events
-    events = self.create_common_events(ret, extra_gears=[car.CarState.GearShifter.low])
+    events = self.create_common_events(ret, extra_gears=[structs.CarState.GearShifter.low])
 
     # Low speed steer alert hysteresis logic
     if self.CP.minSteerSpeed > 0. and ret.vEgo < (self.CP.minSteerSpeed + 0.5):

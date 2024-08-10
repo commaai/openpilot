@@ -56,7 +56,7 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint in CANFD_CAR:
       return self.update_canfd(cp, cp_cam)
 
-    ret = car.CarState.new_message()
+    ret = structs.CarState()
     cp_cruise = cp_cam if self.CP.carFingerprint in CAMERA_SCC_CAR else cp
     self.is_metric = cp.vl["CLU11"]["CF_Clu_SPEED_UNIT"] == 0
     speed_conv = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS
@@ -169,7 +169,7 @@ class CarState(CarStateBase):
     return ret
 
   def update_canfd(self, cp, cp_cam):
-    ret = car.CarState.new_message()
+    ret = structs.CarState()
 
     self.is_metric = cp.vl["CRUISE_BUTTONS_ALT"]["DISTANCE_UNIT"] != 1
     speed_factor = CV.KPH_TO_MS if self.is_metric else CV.MPH_TO_MS

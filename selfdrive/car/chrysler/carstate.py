@@ -26,7 +26,7 @@ class CarState(CarStateBase):
 
   def update(self, cp, cp_cam):
 
-    ret = car.CarState.new_message()
+    ret = structs.CarState()
 
     self.prev_distance_button = self.distance_button
     self.distance_button = cp.vl["CRUISE_BUTTONS"]["ACC_Distance_Dec"]

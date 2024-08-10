@@ -21,7 +21,7 @@ class CarState(CarStateBase):
     self.das_control_counters = deque(maxlen=32)
 
   def update(self, cp, cp_cam):
-    ret = car.CarState.new_message()
+    ret = structs.CarState()
 
     # Vehicle speed
     ret.vEgoRaw = cp.vl["ESP_B"]["ESP_vehicleSpeed"] * CV.KPH_TO_MS

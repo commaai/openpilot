@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from opendbc.can.parser import CANParser
-from cereal import car
+from openpilot.selfdrive.car import structs
 from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
 from openpilot.selfdrive.car.chrysler.values import DBC
 
@@ -53,7 +53,7 @@ class RadarInterface(RadarInterfaceBase):
     if self.trigger_msg not in self.updated_messages:
       return None
 
-    ret = car.RadarData.new_message()
+    ret = structs.RadarData()
     errors = []
     if not self.rcp.can_valid:
       errors.append("canError")
@@ -64,7 +64,7 @@ class RadarInterface(RadarInterfaceBase):
       trackId = _address_to_track(ii)
 
       if trackId not in self.pts:
-        self.pts[trackId] = car.RadarData.RadarPoint.new_message()
+        self.pts[trackId] = structs.RadarData.RadarPoint()
         self.pts[trackId].trackId = trackId
         self.pts[trackId].aRel = float('nan')
         self.pts[trackId].yvRel = float('nan')

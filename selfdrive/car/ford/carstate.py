@@ -1,14 +1,13 @@
-from cereal import car
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.conversions import Conversions as CV
-from openpilot.selfdrive.car.structs import CarParams
+from openpilot.selfdrive.car import structs
 from openpilot.selfdrive.car.ford.fordcan import CanBus
 from openpilot.selfdrive.car.ford.values import DBC, CarControllerParams, FordFlags
 from openpilot.selfdrive.car.interfaces import CarStateBase
 
-GearShifter = car.CarState.GearShifter
-TransmissionType = CarParams.TransmissionType
+GearShifter = structs.CarState.GearShifter
+TransmissionType = structs.CarParams.TransmissionType
 
 
 class CarState(CarStateBase):
@@ -24,7 +23,7 @@ class CarState(CarStateBase):
     self.distance_button = 0
 
   def update(self, cp, cp_cam):
-    ret = car.CarState.new_message()
+    ret = structs.CarState()
 
     # Occasionally on startup, the ABS module recalibrates the steering pinion offset, so we need to block engagement
     # The vehicle usually recovers out of this state within a minute of normal driving

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-from cereal import car
 from opendbc.can.parser import CANParser
+from openpilot.selfdrive.car import structs
 from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
 from openpilot.selfdrive.car.honda.values import DBC
 
@@ -47,7 +47,7 @@ class RadarInterface(RadarInterfaceBase):
     return rr
 
   def _update(self, updated_messages):
-    ret = car.RadarData.new_message()
+    ret = structs.RadarData()
 
     for ii in sorted(updated_messages):
       cpt = self.rcp.vl[ii]
@@ -57,7 +57,7 @@ class RadarInterface(RadarInterfaceBase):
         self.radar_wrong_config = cpt['RADAR_STATE'] == 0x69
       elif cpt['LONG_DIST'] < 255:
         if ii not in self.pts or cpt['NEW_TRACK']:
-          self.pts[ii] = car.RadarData.RadarPoint.new_message()
+          self.pts[ii] = structs.RadarData.RadarPoint()
           self.pts[ii].trackId = self.track_id
           self.track_id += 1
         self.pts[ii].dRel = cpt['LONG_DIST']  # from front of car

@@ -1,26 +1,25 @@
 from cereal import car
 from panda import Panda
-from openpilot.selfdrive.car import create_button_events, get_safety_config
-from openpilot.selfdrive.car.structs import CarParams
+from openpilot.selfdrive.car import create_button_events, get_safety_config, structs
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.car.nissan.values import CAR
 
-ButtonType = car.CarState.ButtonEvent.Type
+ButtonType = structs.CarState.ButtonEvent.Type
 
 
 class CarInterface(CarInterfaceBase):
 
   @staticmethod
-  def _get_params(ret: CarParams, candidate, fingerprint, car_fw, experimental_long, docs):
+  def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "nissan"
-    ret.safetyConfigs = [get_safety_config(CarParams.SafetyModel.nissan)]
+    ret.safetyConfigs = [get_safety_config(structs.CarParams.SafetyModel.nissan)]
     ret.autoResumeSng = False
 
     ret.steerLimitTimer = 1.0
 
     ret.steerActuatorDelay = 0.1
 
-    ret.steerControlType = CarParams.SteerControlType.angle
+    ret.steerControlType = structs.CarParams.SteerControlType.angle
     ret.radarUnavailable = True
 
     if candidate == CAR.NISSAN_ALTIMA:
@@ -35,7 +34,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.buttonEvents = create_button_events(self.CS.distance_button, self.CS.prev_distance_button, {1: ButtonType.gapAdjustCruise})
 
-    events = self.create_common_events(ret, extra_gears=[car.CarState.GearShifter.brake])
+    events = self.create_common_events(ret, extra_gears=[CarState.GearShifter.brake])
 
     if self.CS.lkas_enabled:
       events.add(car.CarEvent.EventName.invalidLkasSetting)
