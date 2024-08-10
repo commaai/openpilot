@@ -3,7 +3,8 @@
     <div class="flex flex-col-reverse justify-between xl:flex-row">
         <div class="prose md:max-w-none pt-10
             prose-a:decoration-accent prose-a:bg-gradient-to-l from-accent/30
-            hover:prose-a:bg-accent/30 hover:prose-a:decoration-2">
+            hover:prose-a:bg-accent/30 hover:prose-a:decoration-2"
+        >
 
             {{ page.content }}
 
@@ -19,15 +20,15 @@
 
         </div>
 
-        {# FIXME TOC AnchorLinks go too far up
-            <ul class="hidden lg:block">
-            {% for toc_item in page.toc %}
+        {#- TODO table of contents
+        <ul>
+        {% for toc_item in page.toc %}
+            <li><a href="{{ toc_item.url }}">{{ toc_item.title }}</a></li>
+            {% for toc_item in toc_item.children %}
                 <li><a href="{{ toc_item.url }}">{{ toc_item.title }}</a></li>
-                {% for toc_item in toc_item.children %}
-                    <li><a href="{{ toc_item.url }}">{{ toc_item.title }}</a></li>
-                {% endfor %}
             {% endfor %}
-            </ul>
-        #}
+        {% endfor %}
+        </ul>
+        -#}
     </div>
 </div>

@@ -13,6 +13,12 @@ theme:
   name: null
   custom_dir: "theme/"
 
+# TODO some js to make anchor links not go too far up
+# TODO dont make anchor links accent colored
+#markdown_extensions:
+#  - toc:
+#      permalink: true
+
 plugins:
   - git-revision-date-localized
   - redirects:
