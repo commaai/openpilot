@@ -1,4 +1,6 @@
 import capnp
+import copy
+import dataclasses
 import os
 import importlib
 import pytest
@@ -13,6 +15,7 @@ from cereal import messaging, log, car
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.selfdrive.car import DT_CTRL, gen_empty_fingerprint
+from openpilot.selfdrive.car.data_structures import CarParams
 from openpilot.selfdrive.car.fingerprints import all_known_cars, MIGRATION
 from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from openpilot.selfdrive.car.honda.values import CAR as HONDA, HondaFlags
@@ -29,7 +32,7 @@ from panda.tests.libpanda import libpanda_py
 
 EventName = car.CarEvent.EventName
 PandaType = log.PandaState.PandaType
-SafetyModel = car.CarParams.SafetyModel
+SafetyModel = CarParams.SafetyModel
 
 NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
@@ -181,7 +184,7 @@ class TestCarModelBase(unittest.TestCase):
     del cls.can_msgs
 
   def setUp(self):
-    self.CI = self.CarInterface(self.CP.copy(), self.CarController, self.CarState)
+    self.CI = self.CarInterface(copy.deepcopy(self.CP), self.CarController, self.CarState)
     assert self.CI
 
     Params().put_bool("OpenpilotEnabledToggle", self.openpilot_enabled)
@@ -189,7 +192,7 @@ class TestCarModelBase(unittest.TestCase):
     # TODO: check safetyModel is in release panda build
     self.safety = libpanda_py.libpanda
 
-    cfg = self.CP.safetyConfigs[-1]
+    cfg = car.CarParams.SafetyConfig(**dataclasses.asdict(self.CP.safetyConfigs[-1]))
     set_status = self.safety.set_safety_hooks(cfg.safetyModel.raw, cfg.safetyParam)
     self.assertEqual(0, set_status, f"failed to set safetyModel {cfg}")
     self.safety.init_tests()
@@ -201,7 +204,7 @@ class TestCarModelBase(unittest.TestCase):
     # make sure car params are within a valid range
     self.assertGreater(self.CP.mass, 1)
 
-    if self.CP.steerControlType != car.CarParams.SteerControlType.angle:
+    if self.CP.steerControlType != CarParams.SteerControlType.angle:
       tuning = self.CP.lateralTuning.which()
       if tuning == 'pid':
         self.assertTrue(len(self.CP.lateralTuning.pid.kpV))
