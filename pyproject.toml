@@ -68,6 +68,8 @@ dependencies = [
 docs = [
   "mkdocs",
   "pytailwindcss-extra",
+  "mkdocs-redirects",
+  "mkdocs-git-revision-date-localized-plugin"
 ]
 
 testing = [
