@@ -14,7 +14,7 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params(ret: CarParams, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "mazda"
-    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.mazda)]
+    ret.safetyConfigs = [get_safety_config(CarParams.SafetyModel.mazda)]
     ret.radarUnavailable = True
 
     ret.dashcamOnly = candidate not in (CAR.MAZDA_CX5_2022, CAR.MAZDA_CX9_2021)

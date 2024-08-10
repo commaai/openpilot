@@ -21,7 +21,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.4
 
     # safety config
-    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.chrysler)]
+    ret.safetyConfigs = [get_safety_config(CarParams.SafetyModel.chrysler)]
     if candidate in RAM_HD:
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_CHRYSLER_RAM_HD
     elif candidate in RAM_DT:

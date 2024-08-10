@@ -16,8 +16,8 @@ from openpilot.selfdrive.car.interfaces import CarInterfaceBase, TorqueFromLater
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
 GearShifter = car.CarState.GearShifter
-TransmissionType = car.CarParams.TransmissionType
-NetworkLocation = car.CarParams.NetworkLocation
+TransmissionType = CarParams.TransmissionType
+NetworkLocation = CarParams.NetworkLocation
 BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
                 CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
 
@@ -49,7 +49,7 @@ class CarInterface(CarInterfaceBase):
     else:
       return CarInterfaceBase.get_steer_feedforward_default
 
-  def torque_from_lateral_accel_siglin(self, latcontrol_inputs: LatControlInputs, torque_params: car.CarParams.LateralTorqueTuning, lateral_accel_error: float,
+  def torque_from_lateral_accel_siglin(self, latcontrol_inputs: LatControlInputs, torque_params: CarParams.LateralTorqueTuning, lateral_accel_error: float,
                                        lateral_accel_deadzone: float, friction_compensation: bool, gravity_adjusted: bool) -> float:
     friction = get_friction(lateral_accel_error, lateral_accel_deadzone, FRICTION_THRESHOLD, torque_params, friction_compensation)
 
@@ -71,7 +71,7 @@ class CarInterface(CarInterfaceBase):
     steer_torque = (sig(latcontrol_inputs.lateral_acceleration * a) * b) + (latcontrol_inputs.lateral_acceleration * c)
     return float(steer_torque) + friction
 
-  def torque_from_lateral_accel_neural(self, latcontrol_inputs: LatControlInputs, torque_params: car.CarParams.LateralTorqueTuning, lateral_accel_error: float,
+  def torque_from_lateral_accel_neural(self, latcontrol_inputs: LatControlInputs, torque_params: CarParams.LateralTorqueTuning, lateral_accel_error: float,
                                        lateral_accel_deadzone: float, friction_compensation: bool, gravity_adjusted: bool) -> float:
     friction = get_friction(lateral_accel_error, lateral_accel_deadzone, FRICTION_THRESHOLD, torque_params, friction_compensation)
     inputs = list(latcontrol_inputs)
@@ -91,7 +91,7 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params(ret: CarParams, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "gm"
-    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.gm)]
+    ret.safetyConfigs = [get_safety_config(CarParams.SafetyModel.gm)]
     ret.autoResumeSng = False
     ret.enableBsm = 0x142 in fingerprint[CanBus.POWERTRAIN]
 

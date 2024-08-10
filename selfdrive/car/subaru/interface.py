@@ -1,4 +1,3 @@
-from cereal import car
 from panda import Panda
 from openpilot.selfdrive.car import get_safety_config
 from openpilot.selfdrive.car.data_structures import CarParams
@@ -26,10 +25,10 @@ class CarInterface(CarInterfaceBase):
 
     if ret.flags & SubaruFlags.PREGLOBAL:
       ret.enableBsm = 0x25c in fingerprint[0]
-      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.subaruPreglobal)]
+      ret.safetyConfigs = [get_safety_config(CarParams.SafetyModel.subaruPreglobal)]
     else:
       ret.enableBsm = 0x228 in fingerprint[0]
-      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.subaru)]
+      ret.safetyConfigs = [get_safety_config(CarParams.SafetyModel.subaru)]
       if ret.flags & SubaruFlags.GLOBAL_GEN2:
         ret.safetyConfigs[0].safetyParam |= Panda.FLAG_SUBARU_GEN2
 
@@ -37,7 +36,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.1
 
     if ret.flags & SubaruFlags.LKAS_ANGLE:
-      ret.steerControlType = car.CarParams.SteerControlType.angle
+      ret.steerControlType = CarParams.SteerControlType.angle
     else:
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 

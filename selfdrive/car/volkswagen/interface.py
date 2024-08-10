@@ -27,7 +27,7 @@ class CarInterface(CarInterfaceBase):
 
     if ret.flags & VolkswagenFlags.PQ:
       # Set global PQ35/PQ46/NMS parameters
-      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.volkswagenPq)]
+      ret.safetyConfigs = [get_safety_config(CarParams.SafetyModel.volkswagenPq)]
       ret.enableBsm = 0x3BA in fingerprint[0]  # SWA_1
 
       if 0x440 in fingerprint[0] or docs:  # Getriebe_1
@@ -50,7 +50,7 @@ class CarInterface(CarInterfaceBase):
 
     else:
       # Set global MQB parameters
-      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.volkswagen)]
+      ret.safetyConfigs = [get_safety_config(CarParams.SafetyModel.volkswagen)]
       ret.enableBsm = 0x30F in fingerprint[0]  # SWA_01
 
       if 0xAD in fingerprint[0] or docs:  # Getriebe_11

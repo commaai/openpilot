@@ -14,7 +14,7 @@ from openpilot.selfdrive.car.disable_ecu import disable_ecu
 
 ButtonType = car.CarState.ButtonEvent.Type
 EventName = car.CarEvent.EventName
-TransmissionType = car.CarParams.TransmissionType
+TransmissionType = CarParams.TransmissionType
 BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
                 CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
 SETTINGS_BUTTONS_DICT = {CruiseSettings.DISTANCE: ButtonType.gapAdjustCruise, CruiseSettings.LKAS: ButtonType.altButton1}
@@ -39,7 +39,7 @@ class CarInterface(CarInterfaceBase):
     CAN = CanBus(ret, fingerprint)
 
     if candidate in HONDA_BOSCH:
-      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaBosch)]
+      ret.safetyConfigs = [get_safety_config(CarParams.SafetyModel.hondaBosch)]
       ret.radarUnavailable = True
       # Disable the radar and let openpilot control longitudinal
       # WARNING: THIS DISABLES AEB!
@@ -48,7 +48,7 @@ class CarInterface(CarInterfaceBase):
       ret.openpilotLongitudinalControl = experimental_long
       ret.pcmCruise = not ret.openpilotLongitudinalControl
     else:
-      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.hondaNidec)]
+      ret.safetyConfigs = [get_safety_config(CarParams.SafetyModel.hondaNidec)]
       ret.openpilotLongitudinalControl = True
 
       ret.pcmCruise = True

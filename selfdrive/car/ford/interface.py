@@ -8,7 +8,7 @@ from openpilot.selfdrive.car.ford.values import Ecu, FordFlags
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
-TransmissionType = car.CarParams.TransmissionType
+TransmissionType = CarParams.TransmissionType
 GearShifter = car.CarState.GearShifter
 
 
@@ -19,14 +19,14 @@ class CarInterface(CarInterfaceBase):
     ret.dashcamOnly = bool(ret.flags & FordFlags.CANFD)
 
     ret.radarUnavailable = True
-    ret.steerControlType = car.CarParams.SteerControlType.angle
+    ret.steerControlType = CarParams.SteerControlType.angle
     ret.steerActuatorDelay = 0.2
     ret.steerLimitTimer = 1.0
 
     CAN = CanBus(fingerprint=fingerprint)
-    cfgs = [get_safety_config(car.CarParams.SafetyModel.ford)]
+    cfgs = [get_safety_config(CarParams.SafetyModel.ford)]
     if CAN.main >= 4:
-      cfgs.insert(0, get_safety_config(car.CarParams.SafetyModel.noOutput))
+      cfgs.insert(0, get_safety_config(CarParams.SafetyModel.noOutput))
     ret.safetyConfigs = cfgs
 
     ret.experimentalLongitudinalAvailable = True

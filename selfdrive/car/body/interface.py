@@ -10,7 +10,7 @@ class CarInterface(CarInterfaceBase):
   def _get_params(ret: CarParams, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.notCar = True
     ret.carName = "body"
-    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.body)]
+    ret.safetyConfigs = [get_safety_config(CarParams.SafetyModel.body)]
 
     ret.minSteerSpeed = -math.inf
     ret.maxLateralAccel = math.inf  # TODO: set to a reasonable value
@@ -21,7 +21,7 @@ class CarInterface(CarInterfaceBase):
 
     ret.radarUnavailable = True
     ret.openpilotLongitudinalControl = True
-    ret.steerControlType = car.CarParams.SteerControlType.angle
+    ret.steerControlType = CarParams.SteerControlType.angle
 
     return ret
 

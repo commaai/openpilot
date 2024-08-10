@@ -10,6 +10,7 @@ import capnp
 from cereal import car
 from panda.python.uds import SERVICE_TYPE
 from openpilot.selfdrive.car.can_definitions import CanData
+from openpilot.selfdrive.car.data_structures import CarParams
 from openpilot.selfdrive.car.docs_definitions import CarDocs
 from openpilot.selfdrive.car.helpers import clip, interp
 
@@ -204,8 +205,8 @@ def make_tester_present_msg(addr, bus, subaddr=None, suppress_response=False):
   return CanData(addr, bytes(dat), bus)
 
 
-def get_safety_config(safety_model, safety_param = None):
-  ret = car.CarParams.SafetyConfig.new_message()
+def get_safety_config(safety_model: CarParams.SafetyModel, safety_param: int = None) -> CarParams.SafetyConfig:
+  ret = CarParams.SafetyConfig()
   ret.safetyModel = safety_model
   if safety_param is not None:
     ret.safetyParam = safety_param

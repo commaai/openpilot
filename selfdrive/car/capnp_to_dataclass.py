@@ -28,7 +28,7 @@ if __name__ == '__main__':
     if re.search(':.*;', line):
       if not in_struct:
         # print(line)
-        name, typ, cmt = re.search('([a-zA-Z]+)\s*@\s*\d+\s*:\s*([a-zA-Z0-9\(\)]+)(?:.*#(.*))?', line.strip()).groups()  # noqa # type: ignore
+        name, typ, cmt = re.search('([a-zA-Z]+)\s*@\s*\d+\s*:\s*([a-zA-Z0-9\(\)]+)(?:.*#(.*))?', line.strip()).groups()  # type: ignore  # noqa
         # print((name, typ, cmt))
         if name.endswith('DEPRECATED'):
           continue

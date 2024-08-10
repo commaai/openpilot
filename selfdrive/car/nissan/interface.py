@@ -13,14 +13,14 @@ class CarInterface(CarInterfaceBase):
   @staticmethod
   def _get_params(ret: CarParams, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "nissan"
-    ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.nissan)]
+    ret.safetyConfigs = [get_safety_config(CarParams.SafetyModel.nissan)]
     ret.autoResumeSng = False
 
     ret.steerLimitTimer = 1.0
 
     ret.steerActuatorDelay = 0.1
 
-    ret.steerControlType = car.CarParams.SteerControlType.angle
+    ret.steerControlType = CarParams.SteerControlType.angle
     ret.radarUnavailable = True
 
     if candidate == CAR.NISSAN_ALTIMA:

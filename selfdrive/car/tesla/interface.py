@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from cereal import car
 from panda import Panda
 from openpilot.selfdrive.car import get_safety_config
 from openpilot.selfdrive.car.data_structures import CarParams
@@ -17,7 +16,7 @@ class CarInterface(CarInterfaceBase):
     # how openpilot should be, hence dashcamOnly
     ret.dashcamOnly = True
 
-    ret.steerControlType = car.CarParams.SteerControlType.angle
+    ret.steerControlType = CarParams.SteerControlType.angle
 
     ret.longitudinalActuatorDelay = 0.5 # s
     ret.radarTimeStep = (1.0 / 8) # 8Hz
@@ -29,12 +28,12 @@ class CarInterface(CarInterfaceBase):
       ret.openpilotLongitudinalControl = True
       flags |= Panda.FLAG_TESLA_LONG_CONTROL
       ret.safetyConfigs = [
-        get_safety_config(car.CarParams.SafetyModel.tesla, flags),
-        get_safety_config(car.CarParams.SafetyModel.tesla, flags | Panda.FLAG_TESLA_POWERTRAIN),
+        get_safety_config(CarParams.SafetyModel.tesla, flags),
+        get_safety_config(CarParams.SafetyModel.tesla, flags | Panda.FLAG_TESLA_POWERTRAIN),
       ]
     else:
       ret.openpilotLongitudinalControl = False
-      ret.safetyConfigs = [get_safety_config(car.CarParams.SafetyModel.tesla, flags)]
+      ret.safetyConfigs = [get_safety_config(CarParams.SafetyModel.tesla, flags)]
 
     ret.steerLimitTimer = 1.0
     ret.steerActuatorDelay = 0.25
