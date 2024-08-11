@@ -24,8 +24,8 @@ int fsync_dir(const std::string &path) {
   int result = -1;
   int fd = HANDLE_EINTR(open(path.c_str(), O_RDONLY, 0755));
   if (fd >= 0) {
-    result = fsync(fd);
-    close(fd);
+    result = HANDLE_EINTR(fsync(fd));
+    HANDLE_EINTR(close(fd));
   }
   return result;
 }
@@ -104,7 +104,6 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"CarParamsCache", CLEAR_ON_MANAGER_START},
     {"CarParamsPersistent", PERSISTENT},
     {"CarParamsPrevRoute", PERSISTENT},
-    {"CarVin", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"CompletedTrainingVersion", PERSISTENT},
     {"ControlsReady", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"CurrentBootlog", PERSISTENT},

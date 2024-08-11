@@ -26,7 +26,7 @@ dependencies = [
   "pycapnp",
   "Cython",
   "setuptools",
-  "numpy",
+  "numpy < 2.0.0",
 
   # body / webrtcd
   "aiohttp",
@@ -52,13 +52,13 @@ dependencies = [
   "websocket_client",
 
   # acados deps
-  "casadi @ https://github.com/commaai/casadi/releases/download/nightly-release-3.6.6/casadi-3.6.6-cp312-none-manylinux2014_aarch64.whl ; (python_version == '3.12' and platform_machine == 'aarch64')", # TODO: Go back to pypi casadi when they fix aarch64 for python312
-  "casadi; platform_machine != 'aarch64' or python_version != '3.12'",
+  "casadi >=3.6.6",  # 3.12 fixed in 3.6.6
   "future-fstrings",
 
   # these should be removed
   "psutil",
   "pycryptodome", # used in updated/casync, panda, body, and a test
+  "setproctitle",
 
   # logreader
   "zstandard",
@@ -76,7 +76,6 @@ testing = [
   "hypothesis ==6.47.*",
   "import-linter",
   "mypy",
-  "pre-commit",
   "pytest",
   "pytest-cov",
   "pytest-cpp",
@@ -87,7 +86,9 @@ testing = [
   "pytest-asyncio",
   "pytest-mock",
   "pytest-repeat",
-  "ruff"
+  "ruff",
+  "codespell",
+  "pre-commit-hooks",
 ]
 
 dev = [
@@ -164,15 +165,24 @@ testpaths = [
   "cereal/messaging/tests",
 ]
 
+[tool.codespell]
+quiet-level = 3
+# if you've got a short variable name that's getting flagged, add it here
+ignore-words-list = "bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup,bumb,nd,sie,preints,whit,indexIn,ws,uint,grey,deque,stdio,amin,BA,LITE,atEnd,UIs,errorString,arange,FocusIn,od,tim,relA,hist,copyable,jupyter,thead"
+builtin = "clear,rare,informal,code,names,en-GB_to_en-US"
+skip = "./third_party/*, ./tinygrad/*, ./tinygrad_repo/*, ./msgq/*, ./panda/*, ./opendbc/*, ./opendbc_repo/*, ./rednose/*, ./rednose_repo/*, ./teleoprtc/*, ./teleoprtc_repo/*, *.ts, uv.lock, *.onnx, ./cereal/gen/*, */c_generated_code/*"
+
 [tool.mypy]
 python_version = "3.11"
 plugins = [
   "numpy.typing.mypy_plugin",
 ]
 exclude = [
-  "body/",
   "cereal/",
+  "msgq/",
+  "msgq_repo/",
   "opendbc/",
+  "opendbc_repo/",
   "panda/",
   "rednose/",
   "rednose_repo/",
@@ -196,6 +206,10 @@ warn_return_any=true
 
 # allow implicit optionals for default args
 implicit_optional = true
+
+local_partial_types=true
+explicit_package_bases=true
+disable_error_code = "annotation-unchecked"
 
 # https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
 [tool.ruff]

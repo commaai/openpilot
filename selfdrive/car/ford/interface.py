@@ -1,7 +1,7 @@
 from cereal import car
 from panda import Panda
-from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car import create_button_events, get_safety_config
+from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.ford.fordcan import CanBus
 from openpilot.selfdrive.car.ford.values import Ecu, FordFlags
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase

@@ -53,7 +53,6 @@ private:
   int frame_buf_count;
 
 public:
-  cl_command_queue q;
   FrameMetadata cur_frame_data;
   VisionBuf *cur_yuv_buf;
   VisionBuf *cur_camera_buf;
