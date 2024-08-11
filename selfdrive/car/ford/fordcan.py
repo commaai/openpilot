@@ -38,7 +38,7 @@ def create_lka_msg(packer, CAN: CanBus):
   """
   Creates an empty CAN message for the Ford LKA Command.
 
-  This command can apply "Lane Keeping Aid" manoeuvres, which are subject to the PSCM lockout.
+  This command can apply "Lane Keeping Aid" maneuvers, which are subject to the PSCM lockout.
 
   Frequency is 33Hz.
   """
@@ -51,7 +51,7 @@ def create_lat_ctl_msg(packer, CAN: CanBus, lat_active: bool, path_offset: float
   """
   Creates a CAN message for the Ford TJA/LCA Command.
 
-  This command can apply "Lane Centering" manoeuvres: continuous lane centering for traffic jam assist and highway
+  This command can apply "Lane Centering" maneuvers: continuous lane centering for traffic jam assist and highway
   driving. It is not subject to the PSCM lockout.
 
   Ford lane centering command uses a third order polynomial to describe the road centerline. The polynomial is defined
@@ -112,7 +112,7 @@ def create_lat_ctl2_msg(packer, CAN: CanBus, mode: int, path_offset: float, path
   }
 
   # calculate checksum
-  dat = packer.make_can_msg("LateralMotionControl2", 0, values)[2]
+  dat = packer.make_can_msg("LateralMotionControl2", 0, values)[1]
   values["LatCtlPath_No_Cs"] = calculate_lat_ctl2_checksum(mode, counter, dat)
 
   return packer.make_can_msg("LateralMotionControl2", CAN.main, values)

@@ -9,7 +9,9 @@
 </p>
 
 <h3>
-  <a href="https://docs.comma.ai">Read the docs</a>
+  <a href="https://docs.comma.ai">Docs</a>
+  <span> · </span>
+  <a href="https://docs.comma.ai/contributing/roadmap/">Roadmap</a>
   <span> · </span>
   <a href="https://github.com/commaai/openpilot/blob/master/docs/CONTRIBUTING.md">Contribute</a>
   <span> · </span>
@@ -18,7 +20,7 @@
   <a href="https://comma.ai/shop">Try it on a comma 3X</a>
 </h3>
 
-Quick start: `curl -fsSL openpilot.comma.ai | bash`
+Quick start: `bash <(curl -fsSL openpilot.comma.ai)`
 
 ![openpilot tests](https://github.com/commaai/openpilot/actions/workflows/selfdrive_tests.yaml/badge.svg)
 [![codecov](https://codecov.io/gh/commaai/openpilot/branch/master/graph/badge.svg)](https://codecov.io/gh/commaai/openpilot)
@@ -59,7 +61,7 @@ openpilot is developed by [comma](https://comma.ai/) and by users like you. We w
 * Code documentation lives at https://docs.comma.ai
 * Information about running openpilot lives on the [community wiki](https://github.com/commaai/openpilot/wiki)
 
-Want to get paid to work on openpilot? [comma is hiring](https://comma.ai/jobs#open-positions) and offers lots of [bounties](docs/BOUNTIES.md) for external contributors.
+Want to get paid to work on openpilot? [comma is hiring](https://comma.ai/jobs#open-positions) and offers lots of [bounties](https://comma.ai/bounties) for external contributors.
 
 Safety and Testing
 ----
