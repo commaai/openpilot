@@ -27,6 +27,7 @@
 #define I2C_BUS_IMU 1
 
 ExitHandler do_exit;
+const int MAX_EVENTS = 32;
 
 // Read all GPIO events and return the latest event timestamp
 uint64_t get_latest_event_time(int fd) {
@@ -34,7 +35,7 @@ uint64_t get_latest_event_time(int fd) {
   const uint64_t offset = nanos_since_epoch() - nanos_since_boot();
 
   while (true) {
-    struct gpioevent_data evdata[16];
+    struct gpioevent_data evdata[MAX_EVENTS];
     int bytes_read = HANDLE_EINTR(read(fd, evdata, sizeof(evdata)));
 
     if (bytes_read < 0) {
