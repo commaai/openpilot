@@ -39,7 +39,7 @@ uint64_t get_latest_event_time(int fd) {
     int bytes_read = HANDLE_EINTR(read(fd, evdata, sizeof(evdata)));
 
     if (bytes_read < 0) {
-      LOGE("error reading event data: %s", strerror(errno));
+      LOGE("Error reading event data: %s", strerror(errno));
       break;  // Exit loop on read error
     }
 
@@ -53,7 +53,6 @@ uint64_t get_latest_event_time(int fd) {
     }
 
     // Process each event to find the latest timestamp
-    // Note: The timestamps in the evdata array are not guaranteed to be in order
     int num_events = bytes_read / sizeof(struct gpioevent_data);
     for (int i = 0; i < num_events; ++i) {
       latest_ts = std::max<uint64_t>(latest_ts, evdata[i].timestamp - offset);
