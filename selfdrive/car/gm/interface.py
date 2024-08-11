@@ -236,6 +236,6 @@ class CarInterface(CarInterfaceBase):
     if ret.vEgo < self.CP.minSteerSpeed:
       events.add(EventName.belowSteerSpeed)
 
-    ret.events = events.to_msg()
+    # ret.events = events.to_msg()
 
     return ret

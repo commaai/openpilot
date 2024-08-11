@@ -112,7 +112,7 @@ class CarInterfaceBase(ABC):
     dbc_name = "" if self.cp is None else self.cp.dbc_name
     self.CC: CarControllerBase = CarController(dbc_name, CP)
 
-  def apply(self, c: car.CarControl, now_nanos: int) -> tuple[car.CarControl.Actuators, list[CanData]]:
+  def apply(self, c: structs.CarControl, now_nanos: int) -> tuple[structs.CarControl.Actuators, list[CanData]]:
     return self.CC.update(c, self.CS, now_nanos)
 
   @staticmethod
@@ -230,10 +230,10 @@ class CarInterfaceBase(ABC):
     tune.torque.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
 
   @abstractmethod
-  def _update(self, c: car.CarControl) -> structs.CarState:
+  def _update(self, c: structs.CarControl) -> structs.CarState:
     pass
 
-  def update(self, c: car.CarControl, can_packets: list[tuple[int, list[CanData]]]) -> structs.CarState:
+  def update(self, c: structs.CarControl, can_packets: list[tuple[int, list[CanData]]]) -> structs.CarState:
     # parse can
     for cp in self.can_parsers:
       if cp is not None:
@@ -476,7 +476,7 @@ class CarControllerBase(ABC):
     self.frame = 0
 
   @abstractmethod
-  def update(self, CC: car.CarControl.Actuators, CS: CarStateBase, now_nanos: int) -> tuple[car.CarControl.Actuators, list[CanData]]:
+  def update(self, CC: structs.CarControl.Actuators, CS: CarStateBase, now_nanos: int) -> tuple[structs.CarControl.Actuators, list[CanData]]:
     pass
 
 

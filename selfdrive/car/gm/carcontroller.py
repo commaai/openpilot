@@ -1,16 +1,14 @@
-from cereal import car
 from opendbc.can.packer import CANPacker
-from openpilot.selfdrive.car import DT_CTRL, apply_driver_steer_torque_limits
+from openpilot.selfdrive.car import DT_CTRL, apply_driver_steer_torque_limits, structs
 from openpilot.selfdrive.car.gm import gmcan
 from openpilot.selfdrive.car.conversions import Conversions as CV
-from openpilot.selfdrive.car.structs import CarParams
 from openpilot.selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons
 from openpilot.selfdrive.car.helpers import interp
 from openpilot.selfdrive.car.interfaces import CarControllerBase
 
-VisualAlert = car.CarControl.HUDControl.VisualAlert
-NetworkLocation = CarParams.NetworkLocation
-LongCtrlState = car.CarControl.Actuators.LongControlState
+VisualAlert = structs.CarControl.HUDControl.VisualAlert
+NetworkLocation = structs.CarParams.NetworkLocation
+LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 # Camera cancels up to 0.1s after brake is pressed, ECM allows 0.5s
 CAMERA_CANCEL_DELAY_FRAMES = 10

@@ -79,6 +79,6 @@ class CarInterface(CarInterfaceBase):
     if not self.CS.vehicle_sensors_valid:
       events.add(car.CarEvent.EventName.vehicleSensorsInvalid)
 
-    ret.events = events.to_msg()
+    # ret.events = events.to_msg()
 
     return ret

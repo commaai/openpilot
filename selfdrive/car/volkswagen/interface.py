@@ -130,7 +130,7 @@ class CarInterface(CarInterfaceBase):
     if self.CC.eps_timer_soft_disable_alert:
       events.add(EventName.steerTimeLimit)
 
-    ret.events = events.to_msg()
+    # ret.events = events.to_msg()
 
     return ret
 

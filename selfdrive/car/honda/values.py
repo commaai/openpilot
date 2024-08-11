@@ -1,16 +1,14 @@
 from dataclasses import dataclass
 from enum import Enum, IntFlag
 
-from cereal import car
 from panda.python import uds
-from openpilot.selfdrive.car import CarSpecs, PlatformConfig, Platforms, dbc_dict
+from openpilot.selfdrive.car import CarSpecs, PlatformConfig, Platforms, dbc_dict, structs
 from openpilot.selfdrive.car.conversions import Conversions as CV
-from openpilot.selfdrive.car.structs import CarParams
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
-Ecu = CarParams.Ecu
-VisualAlert = car.CarControl.HUDControl.VisualAlert
+Ecu = structs.CarParams.Ecu
+VisualAlert = structs.CarControl.HUDControl.VisualAlert
 
 
 class CarControllerParams:
@@ -91,7 +89,7 @@ VISUAL_HUD = {
 class HondaCarDocs(CarDocs):
   package: str = "Honda Sensing"
 
-  def init_make(self, CP: CarParams):
+  def init_make(self, CP: structs.CarParams):
     if CP.flags & HondaFlags.BOSCH:
       self.car_parts = CarParts.common([CarHarness.bosch_b]) if CP.flags & HondaFlags.BOSCH_RADARLESS else CarParts.common([CarHarness.bosch_a])
     else:
