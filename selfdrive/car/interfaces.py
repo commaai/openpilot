@@ -474,7 +474,7 @@ class CarControllerBase(ABC):
     self.frame = 0
 
   @abstractmethod
-  def update(self, CC: structs.CarControl.Actuators, CS: CarStateBase, now_nanos: int) -> tuple[structs.CarControl.Actuators, list[CanData]]:
+  def update(self, CC: structs.CarControl, CS: CarStateBase, now_nanos: int) -> tuple[structs.CarControl.Actuators, list[CanData]]:
     pass
 
 
