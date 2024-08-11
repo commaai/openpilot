@@ -1,4 +1,4 @@
-Import('env', 'envCython', 'arch', 'msgq_python', 'common_python', 'opendbc_python')
+Import('env', 'envCython', 'arch', 'msgq_python', 'common_python', 'opendbc_python', 'pandad_python', 'np_version')
 
 gen = "c_generated_code"
 
@@ -66,13 +66,15 @@ lenv.Clean(generated_files, Dir(gen))
 generated_long = lenv.Command(generated_files,
                               source_list,
                               f"cd {Dir('.').abspath} && python3 long_mpc.py")
-lenv.Depends(generated_long, [msgq_python, common_python, opendbc_python])
+lenv.Depends(generated_long, [msgq_python, common_python, opendbc_python, pandad_python])
 
 lenv["CFLAGS"].append("-DACADOS_WITH_QPOASES")
 lenv["CXXFLAGS"].append("-DACADOS_WITH_QPOASES")
 lenv["CCFLAGS"].append("-Wno-unused")
 if arch != "Darwin":
   lenv["LINKFLAGS"].append("-Wl,--disable-new-dtags")
+else:
+  lenv["LINKFLAGS"].append("-Wl,-install_name,@loader_path/libacados_ocp_solver_long.dylib")
 lib_solver = lenv.SharedLibrary(f"{gen}/acados_ocp_solver_long",
                                 build_files,
                                 LIBS=['m', 'acados', 'hpipm', 'blasfeo', 'qpOASES_e'])
@@ -94,3 +96,4 @@ lenv2.Command(libacados_ocp_solver_c,
   f' {acados_ocp_solver_pyx.get_labspath()}')
 lib_cython = lenv2.Program(f'{gen}/acados_ocp_solver_pyx.so', [libacados_ocp_solver_c])
 lenv2.Depends(lib_cython, lib_solver)
+lenv2.Depends(libacados_ocp_solver_c, np_version)

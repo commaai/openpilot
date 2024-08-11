@@ -1,6 +1,6 @@
 import crcmod
 
-from openpilot.common.conversions import Conversions as CV
+from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.tesla.values import CANBUS, CarControllerParams
 
 

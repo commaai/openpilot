@@ -1,0 +1,101 @@
+name: weekly CI test report
+on:
+  schedule:
+    - cron: '37 9 * * 1' # 9:37AM UTC -> 2:37AM PST every monday
+  workflow_dispatch:
+    inputs:
+      ci_runs:
+        description: 'The amount of runs to trigger in CI test report'
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI_RUNS: ${{ github.event.inputs.ci_runs || '50' }}
+
+jobs:
+  setup:
+    if: github.repository == 'commaai/openpilot'
+    runs-on: ubuntu-latest
+    outputs:
+      ci_runs: ${{ steps.ci_runs_setup.outputs.matrix }}
+    steps:
+      - id: ci_runs_setup
+        name: CI_RUNS=${{ env.CI_RUNS }}
+        run: |
+          matrix=$(python3 -c "import json; print(json.dumps({ 'run_number' : list(range(${{ env.CI_RUNS }})) }))")
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+
+  ci_matrix_run:
+    needs: [ setup ]
+    strategy:
+      fail-fast: false
+      matrix: ${{fromJSON(needs.setup.outputs.ci_runs)}}
+    uses: commaai/openpilot/.github/workflows/ci_weekly_run.yaml@master
+    with:
+      run_number: ${{ matrix.run_number }}
+
+  report:
+    needs: [ci_matrix_run]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Get job results
+        uses: actions/github-script@v7
+        id: get-job-results
+        with:
+          script: |
+            const jobs = await github
+              .paginate("GET /repos/{owner}/{repo}/actions/runs/{run_id}/attempts/{attempt}/jobs", {
+                owner: "commaai",
+                repo: "${{ github.event.repository.name }}",
+                run_id: "${{ github.run_id }}",
+                attempt: "${{ github.run_attempt }}",
+              })
+            var report = {}
+            jobs.slice(1, jobs.length-1).forEach(job => {
+              if (job.conclusion === "skipped") return;
+              const jobName = job.name.split(" / ")[2];
+              const runRegex = /\((.*?)\)/;
+              const run = job.name.match(runRegex)[1];
+              report[jobName] = report[jobName] || { successes: [], failures: [], canceled: [] };
+              switch (job.conclusion) {
+                case "success":
+                  report[jobName].successes.push({ "run_number": run, "link": job.html_url}); break;
+                case "failure":
+                  report[jobName].failures.push({ "run_number": run, "link": job.html_url }); break;
+                case "canceled":
+                  report[jobName].canceled.push({ "run_number": run, "link": job.html_url }); break;
+              }
+            });
+            return JSON.stringify({"jobs": report});
+
+      - name: Add job results to summary
+        env:
+          JOB_RESULTS: ${{ fromJSON(steps.get-job-results.outputs.result) }}
+        run: |
+          cat <<EOF >> template.html
+          <table>
+            <thead>
+              <tr>
+                <th></th>
+                <th>Job</th>
+                <th>✅ Passing</th>
+                <th>❌ Failure Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for key in jobs.keys() %}<tr>
+                <td>{% for i in range(5) %}{% if i+1 <= (5 * jobs[key]["successes"]|length // ${{ env.CI_RUNS }}) %}🟩{% else %}🟥{% endif %}{% endfor%}</td>
+                <td>{{ key }}</td>
+                <td>{{ 100 * jobs[key]["successes"]|length // ${{ env.CI_RUNS }} }}%</td>
+                <td>{% if jobs[key]["failures"]|length > 0 %}<details>{% for failure in jobs[key]["failures"] %}<a href="{{ failure['link'] }}">Log for run #{{ failure['run_number'] }}</a><br>{% endfor %}</details>{% else %}{% endif %}</td>
+                </td>
+              </tr>{% endfor %}
+          </table>
+          EOF
+
+          pip install jinja2-cli
+          echo $JOB_RESULTS | jinja2 template.html > report.html
+          echo "# CI Test Report - ${{ env.CI_RUNS }} Runs" >> $GITHUB_STEP_SUMMARY
+          cat report.html >> $GITHUB_STEP_SUMMARY

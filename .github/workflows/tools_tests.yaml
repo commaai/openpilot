@@ -5,9 +5,14 @@ on:
     branches:
       - master
   pull_request:
-
+  workflow_call:
+    inputs:
+      run_number:
+        default: '1'
+        required: true
+        type: string
 concurrency:
-  group: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}
+  group: tools-tests-ci-run-${{ inputs.run_number }}-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}
   cancel-in-progress: true
 
 env:
@@ -16,7 +21,7 @@ env:
 
   BUILD: selfdrive/test/docker_build.sh base
 
-  RUN: docker run --shm-size 1G -v $GITHUB_WORKSPACE:/tmp/openpilot -w /tmp/openpilot -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/bash -c
+  RUN: docker run --shm-size 2G -v $GITHUB_WORKSPACE:/tmp/openpilot -w /tmp/openpilot -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/bash -c
 
 
 jobs:
@@ -34,8 +39,7 @@ jobs:
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run bridge test
       run: |
-        ${{ env.RUN }} "export MAPBOX_TOKEN='pk.eyJ1Ijoiam5ld2IiLCJhIjoiY2xxNW8zZXprMGw1ZzJwbzZneHd2NHljbSJ9.gV7VPRfbXFetD-1OVF0XZg' && \
-                        source selfdrive/test/setup_xvfb.sh && \
+        ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
                         source selfdrive/test/setup_vsound.sh && \
                         CI=1 pytest tools/sim/tests/test_metadrive_bridge.py"
 
@@ -54,10 +58,8 @@ jobs:
         python-version: '3.11.4'
     - name: Installing pip
       run: pip install pip==24.0
-    - name: Installing poetry
-      run: pip install poetry==1.7.0
-    - name: Installing python dependencies
-      run: poetry install --no-cache --no-root
+    - name: Installing uv
+      run: pip install uv
     - name: git LFS
       run: git lfs pull
     - run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
@@ -70,13 +72,7 @@ jobs:
           scons-${{ runner.arch }}-ubuntu2004-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}-ubuntu2004
     - name: Building openpilot
-      run: poetry run scons -u -j$(nproc)
-    - name: Saving scons cache
-      uses: actions/cache/save@v4
-      if: github.ref == 'refs/heads/master'
-      with:
-        path: /tmp/scons_cache
-        key: scons-${{ runner.arch }}-ubuntu2004-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+      run: uv run scons -u -j$(nproc)
 
   devcontainer:
     name: devcontainer
@@ -101,6 +97,6 @@ jobs:
     - name: Test environment
       run: |
         devcontainer exec --workspace-folder . scons -j$(nproc) cereal/ common/
-        devcontainer exec --workspace-folder . pip install pip-install-test
+        devcontainer exec --workspace-folder . pip3 install pip-install-test
         devcontainer exec --workspace-folder . touch /home/batman/.comma/auth.json
         devcontainer exec --workspace-folder . sudo touch /root/test.txt

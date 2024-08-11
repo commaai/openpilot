@@ -133,7 +133,7 @@ class TestBaseUpdate:
 class ParamsBaseUpdateTest(TestBaseUpdate):
   def _test_finalized_update(self, branch, version, agnos_version, release_notes):
     assert self.params.get("UpdaterNewDescription", encoding="utf-8").startswith(f"{version} / {branch}")
-    assert self.params.get("UpdaterNewReleaseNotes", encoding="utf-8") == f"<p>{release_notes}</p>\n"
+    assert self.params.get("UpdaterNewReleaseNotes", encoding="utf-8") == f"{release_notes}\n"
     super()._test_finalized_update(branch, version, agnos_version, release_notes)
 
   def send_check_for_updates_signal(self, updated: ManagerProcess):

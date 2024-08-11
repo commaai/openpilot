@@ -8,7 +8,7 @@ from collections.abc import Callable, ValuesView
 from abc import ABC, abstractmethod
 from multiprocessing import Process
 
-from openpilot.common.threadname import setthreadname
+from setproctitle import setproctitle
 
 from cereal import car, log
 import cereal.messaging as messaging
@@ -27,10 +27,10 @@ def launcher(proc: str, name: str) -> None:
     mod = importlib.import_module(proc)
 
     # rename the process
-    setthreadname(proc)
+    setproctitle(proc)
 
     # create new context since we forked
-    messaging.context = messaging.Context()
+    messaging.reset_context()
 
     # add daemon name tag to logs
     cloudlog.bind(daemon=name)

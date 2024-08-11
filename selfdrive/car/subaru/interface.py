@@ -106,6 +106,6 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   @staticmethod
-  def init(CP, logcan, sendcan):
+  def init(CP, can_recv, can_send):
     if CP.flags & SubaruFlags.DISABLE_EYESIGHT:
-      disable_ecu(logcan, sendcan, bus=2, addr=GLOBAL_ES_ADDR, com_cont_req=b'\x28\x03\x01')
+      disable_ecu(can_recv, can_send, bus=2, addr=GLOBAL_ES_ADDR, com_cont_req=b'\x28\x03\x01')

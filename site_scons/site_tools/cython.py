@@ -2,14 +2,17 @@ import re
 import SCons
 from SCons.Action import Action
 from SCons.Scanner import Scanner
+import numpy as np
 
 pyx_from_import_re = re.compile(r'^from\s+(\S+)\s+cimport', re.M)
 pyx_import_re = re.compile(r'^cimport\s+(\S+)', re.M)
 cdef_import_re = re.compile(r'^cdef extern from\s+.(\S+).:', re.M)
 
+np_version = SCons.Script.Value(np.__version__)
 
 def pyx_scan(node, env, path, arg=None):
   contents = node.get_text_contents()
+  env.Depends(str(node).split('.')[0] + env['CYTHONCFILESUFFIX'], np_version)
 
   # from <module> cimport ...
   matches = pyx_from_import_re.findall(contents)
