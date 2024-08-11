@@ -97,7 +97,7 @@ class CarInterfaceBase(ABC):
     self.silent_steer_warning = True
     self.v_ego_cluster_seen = False
 
-    self.CS = CarState(CP)
+    self.CS: CarStateBase = CarState(CP)
     self.cp = self.CS.get_can_parser(CP)
     self.cp_cam = self.CS.get_cam_can_parser(CP)
     self.cp_adas = self.CS.get_adas_can_parser(CP)
@@ -467,7 +467,7 @@ class CarControllerBase(ABC):
     self.frame = 0
 
   @abstractmethod
-  def update(self, CC: car.CarControl.Actuators, CS: car.CarState, now_nanos: int) -> tuple[car.CarControl.Actuators, list[CanData]]:
+  def update(self, CC: car.CarControl, CS: CarStateBase, now_nanos: int) -> tuple[car.CarControl.Actuators, list[CanData]]:
     pass
 
 
