@@ -182,7 +182,7 @@ class Car:
   def update_events(self, CS: car.CarState) -> car.CarState:
     self.events.clear()
 
-    self.events.add_from_msg(CS.events)
+    # self.events.add_from_msg(CS.events)
 
     # Disable on rising edge of accelerator or brake. Also disable on brake when speed > 0
     if (CS.gasPressed and not self.CS_prev.gasPressed and self.disengage_on_accelerator) or \
