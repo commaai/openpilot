@@ -52,9 +52,15 @@ uint64_t get_latest_event_time(int fd) {
       break;  // Exit loop on data inconsistency
     }
 
+    // Process each event to find the latest timestamp
+    // Note: The timestamps in the evdata array are not guaranteed to be in order
     int num_events = bytes_read / sizeof(struct gpioevent_data);
     for (int i = 0; i < num_events; ++i) {
       latest_ts = std::max<uint64_t>(latest_ts, evdata[i].timestamp - offset);
+    }
+
+    if (bytes_read < sizeof(evdata)) {
+      break;  // All events processed
     }
   }
   return latest_ts;
