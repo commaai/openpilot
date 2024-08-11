@@ -43,6 +43,7 @@ class CarController(CarControllerBase):
     if self.CP.openpilotLongitudinalControl:
       acc_state = CS.das_control["DAS_accState"]
       target_accel = actuators.accel
+      target_accel = clip(target_accel, CarControllerParams.ACCEL_MIN, CarControllerParams.ACCEL_MAX)
       target_speed = max(CS.out.vEgo + (target_accel * CarControllerParams.ACCEL_TO_SPEED_MULTIPLIER), 0)
       max_accel = 0 if target_accel < 0 else target_accel
       min_accel = 0 if target_accel > 0 else target_accel
