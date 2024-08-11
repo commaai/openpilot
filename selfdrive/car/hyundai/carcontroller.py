@@ -4,6 +4,7 @@ from openpilot.selfdrive.car import DT_CTRL, apply_driver_steer_torque_limits, c
 from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.helpers import clip
 from openpilot.selfdrive.car.hyundai import hyundaicanfd, hyundaican
+from openpilot.selfdrive.car.hyundai.carstate import CarState
 from openpilot.selfdrive.car.hyundai.hyundaicanfd import CanBus
 from openpilot.selfdrive.car.hyundai.values import HyundaiFlags, Buttons, CarControllerParams, CANFD_CAR, CAR
 from openpilot.selfdrive.car.interfaces import CarControllerBase
@@ -169,7 +170,7 @@ class CarController(CarControllerBase):
     self.frame += 1
     return new_actuators, can_sends
 
-  def create_button_messages(self, CC: car.CarControl, CS: car.CarState, use_clu11: bool):
+  def create_button_messages(self, CC: car.CarControl, CS: CarState, use_clu11: bool):
     can_sends = []
     if use_clu11:
       if CC.cruiseControl.cancel:
