@@ -30,12 +30,12 @@ class CarInterface(CarInterfaceBase):
   def _update(self, c) -> structs.CarState:
     ret = self.CS.update(self.cp)
 
-    # wait for everything to init first
-    if self.frame > int(5. / DT_CTRL):
-      # body always wants to enable
-      ret.init('events', 1)
-      ret.events[0].name = car.CarEvent.EventName.pcmEnable
-      ret.events[0].enable = True
-    self.frame += 1
+    # # wait for everything to init first
+    # if self.frame > int(5. / DT_CTRL):
+    #   # body always wants to enable
+    #   ret.init('events', 1)
+    #   ret.events[0].name = car.CarEvent.EventName.pcmEnable
+    #   ret.events[0].enable = True
+    # self.frame += 1
 
     return ret
