@@ -1,13 +1,5 @@
 #!/usr/bin/env bash
-
 set -e
-
-echo "---------------   macOS support   ---------------"
-echo "Running openpilot natively on macOS is still a work-in-progress."
-echo "It might build, some parts of it might work, but it's not fully tested, so there might be some issues."
-echo
-echo "Check out devcontainers for a seamless experience (see tools/README.md)."
-echo "-------------------------------------------------"
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 ROOT="$(cd $DIR/../ && pwd)"

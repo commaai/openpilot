@@ -1,14 +1,13 @@
 from cereal import car
 from opendbc.can.packer import CANPacker
-from openpilot.common.numpy_fast import clip
 from openpilot.selfdrive.car import apply_std_steer_angle_limits
 from openpilot.selfdrive.car.ford import fordcan
 from openpilot.selfdrive.car.ford.values import CarControllerParams, FordFlags
-from openpilot.selfdrive.car.interfaces import CarControllerBase
+from openpilot.selfdrive.car.helpers import clip
+from openpilot.selfdrive.car.interfaces import CarControllerBase, V_CRUISE_MAX
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 VisualAlert = car.CarControl.HUDControl.VisualAlert
-V_CRUISE_MAX = 145
 
 
 def apply_ford_curvature_limits(apply_curvature, apply_curvature_last, current_curvature, v_ego_raw):
@@ -24,9 +23,8 @@ def apply_ford_curvature_limits(apply_curvature, apply_curvature_last, current_c
 
 
 class CarController(CarControllerBase):
-  def __init__(self, dbc_name, CP, VM):
-    super().__init__(dbc_name, CP, VM)
-    self.VM = VM
+  def __init__(self, dbc_name, CP):
+    super().__init__(dbc_name, CP)
     self.packer = CANPacker(dbc_name)
     self.CAN = fordcan.CanBus(CP)
 
