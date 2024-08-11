@@ -47,7 +47,7 @@ uint64_t get_latest_event_time(int fd) {
       break;  // no more events
     }
 
-    if (bytes_read % sizeof(*evdata) != 0) {
+    if (bytes_read % sizeof(struct gpioevent_data) != 0) {
       LOGE("Unexpected number of bytes read: %d", bytes_read);
       break;  // Exit loop on data inconsistency
     }
