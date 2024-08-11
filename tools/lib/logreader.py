@@ -174,6 +174,12 @@ def comma_car_segments_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
   return [get_comma_segments_url(sr.route_name, seg) for seg in sr.seg_idxs]
 
 
+def testing_closet_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
+  if not internal_source_available('http://testing.comma.life'):
+    raise InternalUnavailableException
+  return [f"http://testing.comma.life/download/{sr.route_name.replace('|', '/')}/{seg}/rlog" for seg in sr.seg_idxs]
+
+
 def direct_source(file_or_url: str) -> LogPaths:
   return [file_or_url]
 
@@ -195,7 +201,7 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
   if mode == ReadMode.SANITIZED:
     return comma_car_segments_source(sr, mode)
 
-  SOURCES: list[Source] = [internal_source, internal_source_zst, openpilotci_source, comma_api_source, comma_car_segments_source,]
+  SOURCES: list[Source] = [internal_source, internal_source_zst, openpilotci_source, comma_api_source, comma_car_segments_source, testing_closet_source,]
   exceptions = {}
 
   # for automatic fallback modes, auto_source needs to first check if rlogs exist for any source
