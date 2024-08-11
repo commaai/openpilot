@@ -28,6 +28,37 @@
 
 ExitHandler do_exit;
 
+// Read all GPIO events and return the latest event timestamp
+uint64_t get_latest_event_time(int fd) {
+  uint64_t latest_ts = 0;
+  const uint64_t offset = nanos_since_epoch() - nanos_since_boot();
+
+  while (true) {
+    struct gpioevent_data evdata[16];
+    int bytes_read = HANDLE_EINTR(read(fd, evdata, sizeof(evdata)));
+
+    if (bytes_read < 0) {
+      LOGE("error reading event data: %s", strerror(errno));
+      break;  // Exit loop on read error
+    }
+
+    if (bytes_read == 0) {
+      break;  // no more events
+    }
+
+    if (bytes_read % sizeof(*evdata) != 0) {
+      LOGE("Unexpected number of bytes read: %d", bytes_read);
+      break;  // Exit loop on data inconsistency
+    }
+
+    int num_events = bytes_read / sizeof(struct gpioevent_data);
+    for (int i = 0; i < num_events; ++i) {
+      latest_ts = std::max<uint64_t>(latest_ts, evdata[i].timestamp - offset);
+    }
+  }
+  return latest_ts;
+}
+
 void interrupt_loop(std::vector<std::tuple<Sensor *, std::string>> sensors) {
   PubMaster pm({"gyroscope", "accelerometer"});
 
@@ -60,17 +91,10 @@ void interrupt_loop(std::vector<std::tuple<Sensor *, std::string>> sensors) {
       continue;
     }
 
-    // Read all events
-    struct gpioevent_data evdata[16];
-    err = read(fd, evdata, sizeof(evdata));
-    if (err < 0 || err % sizeof(*evdata) != 0) {
-      LOGE("error reading event data %d", err);
-      continue;
+    uint64_t ts = get_latest_event_time(fd);
+    if (ts == 0) {
+      continue;  // No valid timestamp, continue to the next iteration
     }
-
-    int num_events = err / sizeof(*evdata);
-    uint64_t offset = nanos_since_epoch() - nanos_since_boot();
-    uint64_t ts = evdata[num_events - 1].timestamp - offset;
 
     for (auto &[sensor, msg_name] : sensors) {
       if (!sensor->has_interrupt_enabled()) {
