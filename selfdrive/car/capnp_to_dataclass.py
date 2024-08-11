@@ -3,6 +3,7 @@ import re
 TYPE_MAP = {
   'Text': 'str',
   'Bool': 'bool',
+  'Int8': 'int',
   'Int16': 'int',
   'UInt32': 'int',
   'UInt64': 'int',

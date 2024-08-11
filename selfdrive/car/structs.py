@@ -193,6 +193,95 @@ class RadarData:
 
 
 @auto_dataclass
+class CarControl:
+  # must be true for any actuator commands to work
+  enabled: bool = auto_field()
+  latActive: bool = auto_field()
+  longActive: bool = auto_field()
+
+  # Actuator commands as computed by controlsd
+  actuators: 'CarControl.Actuators' = field(default_factory=lambda: CarControl.Actuators())
+
+  leftBlinker: bool = auto_field()
+  rightBlinker: bool = auto_field()
+
+  orientationNED: list[float] = auto_field()
+  angularVelocity: list[float] = auto_field()
+
+  cruiseControl: 'CarControl.CruiseControl' = field(default_factory=lambda: CarControl.CruiseControl())
+  hudControl: 'CarControl.HUDControl' = field(default_factory=lambda: CarControl.HUDControl())
+
+  @auto_dataclass
+  class Actuators:
+    # range from 0.0 - 1.0
+    gas: float = auto_field()
+    brake: float = auto_field()
+    # range from -1.0 - 1.0
+    steer: float = auto_field()
+    # value sent over can to the car
+    steerOutputCan: float = auto_field()
+    steeringAngleDeg: float = auto_field()
+
+    curvature: float = auto_field()
+
+    speed: float = auto_field()  # m/s
+    accel: float = auto_field()  # m/s^2
+    longControlState: 'CarControl.Actuators.LongControlState' = field(default_factory=lambda: CarControl.Actuators.LongControlState.off)
+
+    class LongControlState(StrEnum):
+      off = auto()
+      pid = auto()
+      stopping = auto()
+      starting = auto()
+
+  @auto_dataclass
+  class CruiseControl:
+    cancel: bool = auto_field()
+    resume: bool = auto_field()
+    override: bool = auto_field()
+
+  @auto_dataclass
+  class HUDControl:
+    speedVisible: bool = auto_field()
+    setSpeed: float = auto_field()
+    lanesVisible: bool = auto_field()
+    leadVisible: bool = auto_field()
+    visualAlert: 'CarControl.HUDControl.VisualAlert' = field(default_factory=lambda: CarControl.HUDControl.VisualAlert.none)
+    audibleAlert: 'CarControl.HUDControl.AudibleAlert' = field(default_factory=lambda: CarControl.HUDControl.AudibleAlert.none)
+    rightLaneVisible: bool = auto_field()
+    leftLaneVisible: bool = auto_field()
+    rightLaneDepart: bool = auto_field()
+    leftLaneDepart: bool = auto_field()
+    leadDistanceBars: int = auto_field()  # 1-3: 1 is closest, 3 is farthest. some ports may utilize 2-4 bars instead
+
+    class VisualAlert(StrEnum):
+      # these are the choices from the Honda
+      # map as good as you can for your car
+      none = auto()
+      fcw = auto()
+      steerRequired = auto()
+      brakePressed = auto()
+      wrongGear = auto()
+      seatbeltUnbuckled = auto()
+      speedTooHigh = auto()
+      ldw = auto()
+
+    class AudibleAlert(StrEnum):
+      none = auto()
+
+      engage = auto()
+      disengage = auto()
+      refuse = auto()
+
+      warningSoft = auto()
+      warningImmediate = auto()
+
+      prompt = auto()
+      promptRepeat = auto()
+      promptDistracted = auto()
+
+
+@auto_dataclass
 class CarParams:
   carName: str = auto_field()
   carFingerprint: str = auto_field()
