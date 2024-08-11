@@ -163,7 +163,7 @@ TEST_CASE("seek_to") {
   Replay replay(DEMO_ROUTE, {}, {}, nullptr, REPLAY_FLAG_NO_VIPC);
 
   QObject::connect(&replay, &Replay::seekedTo, [&](double sec) {
-    INFO("seek to " << seek_to << "s seeked to" << sec);
+    INFO("seek to " << seek_to << "s sought to" << sec);
     REQUIRE(sec >= seek_to);
     loop.quit();
   });
