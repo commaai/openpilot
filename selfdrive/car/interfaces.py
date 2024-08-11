@@ -350,7 +350,7 @@ class RadarInterfaceBase(ABC):
     self.radar_ts = CP.radarTimeStep
     self.frame = 0
 
-  def update(self, can_strings) -> type[car.RadarData] | None:
+  def update(self, can_strings):
     self.frame += 1
     if (self.frame % int(100 * self.radar_ts)) == 0:
       return car.RadarData.new_message()
