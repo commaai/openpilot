@@ -15,6 +15,14 @@ FAILED=0
 IGNORED_FILES="uv\.lock|docs\/CARS.md"
 IGNORED_DIRS="^third_party.*|^msgq.*|^msgq_repo.*|^opendbc.*|^opendbc_repo.*|^cereal.*|^panda.*|^rednose.*|^rednose_repo.*|^tinygrad.*|^tinygrad_repo.*|^teleoprtc.*|^teleoprtc_repo.*"
 
+function check_banned_patterns() {
+  BANNED_PATTERN='ret\.vEgo(?!Stopping|Starting|Raw|Cluster)'
+  if grep -r -P "$BANNED_PATTERN" --include='*.py' selfdrive/car; then
+    echo 'Found banned pattern!'
+    exit 1
+  fi
+}
+
 function run() {
   shopt -s extglob
   case $1 in
@@ -51,6 +59,7 @@ function run_tests() {
   run "lint-imports" lint-imports
   run "check_added_large_files" python3 -m pre_commit_hooks.check_added_large_files --enforce-all $ALL_FILES --maxkb=120
   run "check_shebang_scripts_are_executable" python3 -m pre_commit_hooks.check_shebang_scripts_are_executable $ALL_FILES
+  run "banned_patterns" "check_banned_patterns"
 
   if [[ -z "$FAST" ]]; then
     run "mypy" mypy $PYTHON_FILES
