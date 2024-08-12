@@ -6,6 +6,7 @@ on:
       - 'master'
     paths:
       - 'selfdrive/ui/**'
+  workflow_dispatch:
 
 env:
   UI_JOB_NAME: "Create UI Report"
