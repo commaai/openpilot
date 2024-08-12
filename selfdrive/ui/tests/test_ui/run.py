@@ -92,16 +92,8 @@ def setup_onroad(click, pm: PubMaster):
     pm.send(msg.which(), msg)
     server.send(cam_meta.stream, IMG_BYTES, cs.frameId, cs.timestampSof, cs.timestampEof)
 
-@mock_messages(['liveLocationKalman'])
-def setup_onroad_map(click, pm: PubMaster):
-  setup_onroad(click, pm)
-
-  click(500, 500)
-
-  time.sleep(UI_DELAY) # give time for the map to render
-
 def setup_onroad_sidebar(click, pm: PubMaster):
-  setup_onroad_map(click, pm)
+  setup_onroad(click, pm)
   click(500, 500)
 
 CASES = {
@@ -109,7 +101,6 @@ CASES = {
   "settings_device": setup_settings_device,
   "settings_network": setup_settings_network,
   "onroad": setup_onroad,
-  "onroad_map": setup_onroad_map,
   "onroad_sidebar": setup_onroad_sidebar
 }
 
