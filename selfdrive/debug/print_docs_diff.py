@@ -11,7 +11,7 @@ def get_cars_docs_in_markdown(docs_content):
     lines = md_table.strip().split('\n')
     headers = [h.strip() for h in lines[0].split('|') if h]
     assert len(headers) == len(set(headers)), 'Duplicate headers found in the markdown table'
-    return headers, [dict(zip(headers, [cell.strip() for cell in line.split('|')[1:-1]])) for line in lines[2:]]
+    return headers, [dict(zip(headers, [cell.strip() for cell in line.split('|')[1:-1]], strict=True)) for line in lines[2:]]
 
   match = re.search(r"(\d+)\s+supported\s+cars\s*\n([\s\S]*?\|.*?\|[\s\S]*?\|[-:]+\|[\s\S]*?\n(?:[^\S\r\n]*\S.*\n)*\n?)", docs_content, re.IGNORECASE)
   if not match:
