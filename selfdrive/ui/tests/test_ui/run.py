@@ -58,7 +58,6 @@ def setup_settings_network(click, pm: PubMaster):
   click(300, 600)
 
 def setup_onroad(click, pm: PubMaster):
-
   setup_common(click, pm)
 
   dat = messaging.new_message('pandaStates', 1)
@@ -133,7 +132,6 @@ class TestUI:
     time.sleep(UI_DELAY) # wait a bit more for the UI to start rendering
     try:
       self.ui = pywinctl.getWindowsWithTitle(window_title)[0]
-      print(self.ui)
     except Exception as e:
       print(f"failed to find ui window, assuming that it's in the top left (for Xvfb) {e}")
       self.ui = namedtuple("bb", ["left", "top", "width", "height"])(0,0,2160,1080)
