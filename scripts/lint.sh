@@ -16,7 +16,7 @@ IGNORED_FILES="uv\.lock|docs\/CARS.md"
 IGNORED_DIRS="^third_party.*|^msgq.*|^msgq_repo.*|^opendbc.*|^opendbc_repo.*|^cereal.*|^panda.*|^rednose.*|^rednose_repo.*|^tinygrad.*|^tinygrad_repo.*|^teleoprtc.*|^teleoprtc_repo.*"
 
 function check_banned_patterns() {
-  BANNED_PATTERN='ret\.vEgo(?!Stopping|Starting|Raw|Cluster)'
+  BANNED_PATTERN='\.vEgo(?!Stopping|Starting|Raw|Cluster)'
   if grep -r -P "$BANNED_PATTERN" --include='*.py' selfdrive/car; then
     echo 'Found banned pattern!'
     exit 1
