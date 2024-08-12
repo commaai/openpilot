@@ -1,4 +1,5 @@
 from collections import namedtuple
+from contextlib import contextmanager
 import pathlib
 import shutil
 import sys
@@ -8,6 +9,7 @@ import numpy as np
 import os
 import pywinctl
 import time
+import subprocess
 
 from cereal import messaging, car, log
 from msgq.visionipc import VisionIpcServer, VisionStreamType
@@ -16,6 +18,7 @@ from cereal.messaging import SubMaster, PubMaster
 from openpilot.common.mock import mock_messages
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_MDL
+from openpilot.common.spinner import Spinner
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state
@@ -29,6 +32,7 @@ EventName = car.CarEvent.EventName
 EVENTS_BY_NAME = {v: k for k, v in EventName.schema.enumerants.items()}
 
 
+@contextmanager
 def setup_common(click, pm: PubMaster):
   Params().put("DongleId", "123456789012345")
   dat = messaging.new_message('deviceState')
@@ -42,21 +46,29 @@ def setup_common(click, pm: PubMaster):
   dat.deviceState.cpuUsagePercent = [2,]*8
 
   pm.send("deviceState", dat)
+  yield
 
+@contextmanager
 def setup_homescreen(click, pm: PubMaster):
   setup_common(click, pm)
+  yield
 
+@contextmanager
 def setup_settings_device(click, pm: PubMaster):
   setup_common(click, pm)
 
   click(100, 100)
+  yield
 
+@contextmanager
 def setup_settings_network(click, pm: PubMaster):
   setup_common(click, pm)
 
   setup_settings_device(click, pm)
   click(300, 600)
+  yield
 
+@contextmanager
 def setup_onroad(click, pm: PubMaster):
   setup_common(click, pm)
 
@@ -91,7 +103,9 @@ def setup_onroad(click, pm: PubMaster):
 
     pm.send(msg.which(), msg)
     server.send(cam_meta.stream, IMG_BYTES, cs.frameId, cs.timestampSof, cs.timestampEof)
+  yield
 
+@contextmanager
 @mock_messages(['liveLocationKalman'])
 def setup_onroad_map(click, pm: PubMaster):
   setup_onroad(click, pm)
@@ -99,10 +113,22 @@ def setup_onroad_map(click, pm: PubMaster):
   click(500, 500)
 
   time.sleep(UI_DELAY) # give time for the map to render
+  yield
 
+@contextmanager
 def setup_onroad_sidebar(click, pm: PubMaster):
   setup_onroad_map(click, pm)
   click(500, 500)
+  yield
+
+
+@contextmanager
+def setup_spinner(click, pm: PubMaster):
+  s = Spinner()
+  s.update_progress(30, 100)
+  yield
+  s.close()
+
 
 CASES = {
   "homescreen": setup_homescreen,
@@ -110,7 +136,8 @@ CASES = {
   "settings_network": setup_settings_network,
   "onroad": setup_onroad,
   "onroad_map": setup_onroad_map,
-  "onroad_sidebar": setup_onroad_sidebar
+  "onroad_sidebar": setup_onroad_sidebar,
+  "spinner": setup_spinner,
 }
 
 TEST_DIR = pathlib.Path(__file__).parent
@@ -131,7 +158,7 @@ class TestUI:
       self.sm.update(1)
     time.sleep(UI_DELAY) # wait a bit more for the UI to start rendering
     try:
-      self.ui = pywinctl.getWindowsWithTitle("ui")[0]
+      self.ui = pywinctl.getWindowsWithTitle("_spinner")[0]
     except Exception as e:
       print(f"failed to find ui window, assuming that it's in the top left (for Xvfb) {e}")
       self.ui = namedtuple("bb", ["left", "top", "width", "height"])(0,0,2160,1080)
@@ -154,12 +181,11 @@ class TestUI:
   def test_ui(self, name, setup_case):
     self.setup()
 
-    setup_case(self.click, self.pm)
+    with setup_case(self.click, self.pm):
+      time.sleep(UI_DELAY) # wait a bit more for the UI to finish rendering
 
-    time.sleep(UI_DELAY) # wait a bit more for the UI to finish rendering
-
-    im = self.screenshot()
-    plt.imsave(SCREENSHOTS_DIR / f"{name}.png", im)
+      im = self.screenshot()
+      plt.imsave(SCREENSHOTS_DIR / f"{name}.png", im)
 
 
 def create_html_report():
