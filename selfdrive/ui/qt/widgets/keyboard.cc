@@ -80,6 +80,8 @@ KeyboardLayout::KeyboardLayout(QWidget* parent, const std::vector<QVector<QStrin
     main_layout->addLayout(hlayout);
   }
 
+  // TODO: Fix variable usage. `key_spacing_vertical` should be used for vertical margins (top and bottom),
+  // and `key_spacing_horizontal` should be used for horizontal margins (left and right).
   setStyleSheet(QString(R"(
     QPushButton {
       font-size: 75px;
