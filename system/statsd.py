@@ -115,9 +115,11 @@ def main() -> NoReturn:
         try:
           metric = sock.recv_string(zmq.NOBLOCK)
           try:
-            metric_type = metric.split('|')[1]
-            metric_name = metric.split(':')[0]
-            metric_value = float(metric.split('|')[0].split(':')[1])
+            # The metric format is "name:value|type"
+            metric_name_value, metric_type = metric.split('|', 1)
+            metric_name, metric_value_str = metric_name_value.split(':', 1)
+
+            metric_value = float(metric_value_str)
 
             if metric_type == METRIC_TYPE.GAUGE:
               gauges[metric_name] = metric_value
