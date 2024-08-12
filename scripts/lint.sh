@@ -81,6 +81,7 @@ function help() {
   echo -e "  ${BOLD}codespell${NC}"
   echo -e "  ${BOLD}check_added_large_files${NC}"
   echo -e "  ${BOLD}check_shebang_scripts_are_executable${NC}"
+  echo -e "  ${BOLD}banned_patterns${NC}"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Options:${NC}"
   echo -e "  ${BOLD}-f, --fast${NC}"
