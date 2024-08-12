@@ -154,11 +154,6 @@ class CarInterface(CarInterfaceBase):
     # events
     events = self.create_common_events(ret)
 
-    # Lane Tracing Assist control is unavailable (EPS_STATUS->LTA_STATE=0) until
-    # the more accurate angle sensor signal is initialized
-    if self.CP.steerControlType == SteerControlType.angle and not self.CS.accurate_steer_angle_seen:
-      events.add(EventName.vehicleSensorsInvalid)
-
     if self.CP.openpilotLongitudinalControl:
       if ret.cruiseState.standstill and not ret.brakePressed:
         events.add(EventName.resumeRequired)
