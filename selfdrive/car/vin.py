@@ -63,6 +63,7 @@ if __name__ == "__main__":
   import argparse
   import time
   import cereal.messaging as messaging
+  from openpilot.selfdrive.car.card import can_comm_callbacks
 
   parser = argparse.ArgumentParser(description='Get VIN of the car')
   parser.add_argument('--debug', action='store_true')
@@ -73,7 +74,8 @@ if __name__ == "__main__":
 
   sendcan = messaging.pub_sock('sendcan')
   logcan = messaging.sub_sock('can')
+  can_callbacks = can_comm_callbacks(logcan, sendcan)
   time.sleep(1)
 
-  vin_rx_addr, vin_rx_bus, vin = get_vin(logcan, sendcan, (args.bus,), args.timeout, args.retry, debug=args.debug)
+  vin_rx_addr, vin_rx_bus, vin = get_vin(*can_callbacks, (args.bus,), args.timeout, args.retry, debug=args.debug)
   print(f'RX: {hex(vin_rx_addr)}, BUS: {vin_rx_bus}, VIN: {vin}')
