@@ -10,20 +10,19 @@ from functools import cache
 
 from cereal import car
 from openpilot.common.basedir import BASEDIR
-from openpilot.common.conversions import Conversions as CV
 from openpilot.common.simple_kalman import KF1D, get_kalman_gain
-from openpilot.common.numpy_fast import clip
 from openpilot.selfdrive.car import DT_CTRL, apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, get_friction, STD_CARGO_KG
+from openpilot.selfdrive.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
+from openpilot.selfdrive.car.conversions import Conversions as CV
+from openpilot.selfdrive.car.helpers import clip
 from openpilot.selfdrive.car.values import PLATFORMS
-from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX
 from openpilot.selfdrive.controls.lib.events import Events
-from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
-from openpilot.selfdrive.pandad import can_capnp_to_list
 
 ButtonType = car.CarState.ButtonEvent.Type
 GearShifter = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
 
+V_CRUISE_MAX = 145
 MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS
 ACCEL_MAX = 2.0
 ACCEL_MIN = -3.5
@@ -53,7 +52,6 @@ class LatControlInputs(NamedTuple):
   aego: float
 
 
-SendCan = tuple[int, bytes, int]
 TorqueFromLateralAccelCallbackType = Callable[[LatControlInputs, car.CarParams.LateralTorqueTuning, float, float, bool, bool], float]
 
 
@@ -89,9 +87,8 @@ def get_torque_params():
 # generic car and radar interfaces
 
 class CarInterfaceBase(ABC):
-  def __init__(self, CP, CarController, CarState):
+  def __init__(self, CP: car.CarParams, CarController, CarState):
     self.CP = CP
-    self.VM = VehicleModel(CP)
 
     self.frame = 0
     self.steering_unpressed = 0
@@ -100,7 +97,7 @@ class CarInterfaceBase(ABC):
     self.silent_steer_warning = True
     self.v_ego_cluster_seen = False
 
-    self.CS = CarState(CP)
+    self.CS: CarStateBase = CarState(CP)
     self.cp = self.CS.get_can_parser(CP)
     self.cp_cam = self.CS.get_cam_can_parser(CP)
     self.cp_adas = self.CS.get_adas_can_parser(CP)
@@ -109,9 +106,9 @@ class CarInterfaceBase(ABC):
     self.can_parsers = [self.cp, self.cp_cam, self.cp_adas, self.cp_body, self.cp_loopback]
 
     dbc_name = "" if self.cp is None else self.cp.dbc_name
-    self.CC: CarControllerBase = CarController(dbc_name, CP, self.VM)
+    self.CC: CarControllerBase = CarController(dbc_name, CP)
 
-  def apply(self, c: car.CarControl, now_nanos: int) -> tuple[car.CarControl.Actuators, list[SendCan]]:
+  def apply(self, c: car.CarControl, now_nanos: int) -> tuple[car.CarControl.Actuators, list[CanData]]:
     return self.CC.update(c, self.CS, now_nanos)
 
   @staticmethod
@@ -119,7 +116,7 @@ class CarInterfaceBase(ABC):
     return ACCEL_MIN, ACCEL_MAX
 
   @classmethod
-  def get_non_essential_params(cls, candidate: str):
+  def get_non_essential_params(cls, candidate: str) -> car.CarParams:
     """
     Parameters essential to controlling the car may be incomplete or wrong without FW versions or fingerprints.
     """
@@ -154,11 +151,11 @@ class CarInterfaceBase(ABC):
   @staticmethod
   @abstractmethod
   def _get_params(ret: car.CarParams, candidate, fingerprint: dict[int, dict[int, int]],
-                  car_fw: list[car.CarParams.CarFw], experimental_long: bool, docs: bool):
+                  car_fw: list[car.CarParams.CarFw], experimental_long: bool, docs: bool) -> car.CarParams:
     raise NotImplementedError
 
   @staticmethod
-  def init(CP, logcan, sendcan):
+  def init(CP: car.CarParams, can_recv: CanRecvCallable, can_send: CanSendCallable):
     pass
 
   @staticmethod
@@ -214,7 +211,7 @@ class CarInterfaceBase(ABC):
     return ret
 
   @staticmethod
-  def configure_torque_tune(candidate, tune, steering_angle_deadzone_deg=0.0, use_steering_angle=True):
+  def configure_torque_tune(candidate: str, tune: car.CarParams.LateralTuning, steering_angle_deadzone_deg: float = 0.0, use_steering_angle: bool = True):
     params = get_torque_params()[candidate]
 
     tune.init('torque')
@@ -231,12 +228,11 @@ class CarInterfaceBase(ABC):
   def _update(self, c: car.CarControl) -> car.CarState:
     pass
 
-  def update(self, c: car.CarControl, can_strings: list[bytes]) -> car.CarState:
+  def update(self, c: car.CarControl, can_packets: list[tuple[int, list[CanData]]]) -> car.CarState:
     # parse can
-    can_list = can_capnp_to_list(can_strings)
     for cp in self.can_parsers:
       if cp is not None:
-        cp.update_strings(can_list)
+        cp.update_strings(can_packets)
 
     # get CarState
     ret = self._update(c)
@@ -304,6 +300,8 @@ class CarInterfaceBase(ABC):
       events.add(EventName.preEnableStandstill)
     if cs_out.gasPressed:
       events.add(EventName.gasPressedOverride)
+    if cs_out.vehicleSensorsInvalid:
+      events.add(EventName.vehicleSensorsInvalid)
 
     # Handle button presses
     for b in cs_out.buttonEvents:
@@ -346,10 +344,10 @@ class CarInterfaceBase(ABC):
 
 
 class RadarInterfaceBase(ABC):
-  def __init__(self, CP):
+  def __init__(self, CP: car.CarParams):
     self.CP = CP
     self.rcp = None
-    self.pts = {}
+    self.pts: dict[int, car.RadarData.RadarPoint] = {}
     self.delay = 0
     self.radar_ts = CP.radarTimeStep
     self.frame = 0
@@ -362,7 +360,7 @@ class RadarInterfaceBase(ABC):
 
 
 class CarStateBase(ABC):
-  def __init__(self, CP):
+  def __init__(self, CP: car.CarParams):
     self.CP = CP
     self.car_fingerprint = CP.carFingerprint
     self.out = car.CarState.new_message()
@@ -383,6 +381,10 @@ class CarStateBase(ABC):
     x0=[[0.0], [0.0]]
     K = get_kalman_gain(DT_CTRL, np.array(A), np.array(C), np.array(Q), R)
     self.v_ego_kf = KF1D(x0=x0, A=A, C=C[0], K=K)
+
+  @abstractmethod
+  def update(self, *args) -> car.CarState:
+    pass
 
   def update_speed_kf(self, v_ego_raw):
     if abs(v_ego_raw - self.v_ego_kf.x[0][0]) > 2.0:  # Prevent large accelerations when car starts at non zero speed
@@ -466,12 +468,12 @@ class CarStateBase(ABC):
 
 
 class CarControllerBase(ABC):
-  def __init__(self, dbc_name: str, CP, VM):
+  def __init__(self, dbc_name: str, CP: car.CarParams):
     self.CP = CP
     self.frame = 0
 
   @abstractmethod
-  def update(self, CC: car.CarControl.Actuators, CS: car.CarState, now_nanos: int) -> tuple[car.CarControl.Actuators, list[SendCan]]:
+  def update(self, CC: car.CarControl, CS: CarStateBase, now_nanos: int) -> tuple[car.CarControl.Actuators, list[CanData]]:
     pass
 
 

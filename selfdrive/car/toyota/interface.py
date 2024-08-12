@@ -138,11 +138,11 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   @staticmethod
-  def init(CP, logcan, sendcan):
+  def init(CP, can_recv, can_send):
     # disable radar if alpha longitudinal toggled on radar-ACC car
     if CP.flags & ToyotaFlags.DISABLE_RADAR.value:
       communication_control = bytes([uds.SERVICE_TYPE.COMMUNICATION_CONTROL, uds.CONTROL_TYPE.ENABLE_RX_DISABLE_TX, uds.MESSAGE_TYPE.NORMAL])
-      disable_ecu(logcan, sendcan, bus=0, addr=0x750, sub_addr=0xf, com_cont_req=communication_control)
+      disable_ecu(can_recv, can_send, bus=0, addr=0x750, sub_addr=0xf, com_cont_req=communication_control)
 
   # returns a car.CarState
   def _update(self, c):
@@ -153,11 +153,6 @@ class CarInterface(CarInterfaceBase):
 
     # events
     events = self.create_common_events(ret)
-
-    # Lane Tracing Assist control is unavailable (EPS_STATUS->LTA_STATE=0) until
-    # the more accurate angle sensor signal is initialized
-    if self.CP.steerControlType == SteerControlType.angle and not self.CS.accurate_steer_angle_seen:
-      events.add(EventName.vehicleSensorsInvalid)
 
     if self.CP.openpilotLongitudinalControl:
       if ret.cruiseState.standstill and not ret.brakePressed:

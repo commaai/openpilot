@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 from cereal import car
-from openpilot.common.conversions import Conversions as CV
+from openpilot.selfdrive.car.conversions import Conversions as CV
 
 GOOD_TORQUE_THRESHOLD = 1.0  # m/s^2
 MODEL_YEARS_RE = r"(?<= )((\d{4}-\d{2})|(\d{4}))(,|$)"

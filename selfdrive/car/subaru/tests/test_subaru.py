@@ -1,9 +1,4 @@
-from cereal import car
 from openpilot.selfdrive.car.subaru.fingerprints import FW_VERSIONS
-
-Ecu = car.CarParams.Ecu
-
-ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 
 
 class TestSubaruFingerprint:
@@ -13,4 +8,3 @@ class TestSubaruFingerprint:
         fw_size = len(fws[0])
         for fw in fws:
           assert len(fw) == fw_size, f"{platform} {ecu}: {len(fw)} {fw_size}"
-

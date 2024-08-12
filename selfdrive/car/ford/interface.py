@@ -1,7 +1,7 @@
 from cereal import car
 from panda import Panda
-from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.car import create_button_events, get_safety_config
+from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.ford.fordcan import CanBus
 from openpilot.selfdrive.car.ford.values import Ecu, FordFlags
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
@@ -73,8 +73,6 @@ class CarInterface(CarInterfaceBase):
     ret.buttonEvents = create_button_events(self.CS.distance_button, self.CS.prev_distance_button, {1: ButtonType.gapAdjustCruise})
 
     events = self.create_common_events(ret, extra_gears=[GearShifter.manumatic])
-    if not self.CS.vehicle_sensors_valid:
-      events.add(car.CarEvent.EventName.vehicleSensorsInvalid)
 
     ret.events = events.to_msg()
 
