@@ -112,6 +112,10 @@ class CarState(CarStateBase):
       ret.steerFaultTemporary = ret.steerFaultTemporary or cp.vl["EPS_STATUS"]["LTA_STATE"] in TEMP_STEER_FAULTS
       ret.steerFaultPermanent = ret.steerFaultPermanent or cp.vl["EPS_STATUS"]["LTA_STATE"] in PERM_STEER_FAULTS
 
+      # Lane Tracing Assist control is unavailable (EPS_STATUS->LTA_STATE=0) until
+      # the more accurate angle sensor signal is initialized
+      ret.vehicleSensorsInvalid = not self.accurate_steer_angle_seen
+
     if self.CP.carFingerprint in UNSUPPORTED_DSU_CAR:
       # TODO: find the bit likely in DSU_CRUISE that describes an ACC fault. one may also exist in CLUTCH
       ret.cruiseState.available = cp.vl["DSU_CRUISE"]["MAIN_ON"] != 0

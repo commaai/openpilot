@@ -300,6 +300,8 @@ class CarInterfaceBase(ABC):
       events.add(EventName.preEnableStandstill)
     if cs_out.gasPressed:
       events.add(EventName.gasPressedOverride)
+    if cs_out.vehicleSensorsInvalid:
+      events.add(EventName.vehicleSensorsInvalid)
 
     # Handle button presses
     for b in cs_out.buttonEvents:
