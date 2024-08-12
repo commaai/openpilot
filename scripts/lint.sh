@@ -17,7 +17,7 @@ IGNORED_DIRS="^third_party.*|^msgq.*|^msgq_repo.*|^opendbc.*|^opendbc_repo.*|^ce
 
 function check_banned_patterns() {
   BANNED_PATTERN='\.vEgo(?!Stopping|Starting|Raw|Cluster)|\.aEgo'
-  if grep -r -P "$BANNED_PATTERN" --include='*.py' selfdrive/car; then
+  if grep --color=always -r -P "$BANNED_PATTERN" --include='*.py' selfdrive/car; then
     echo 'Found banned pattern!'
     exit 1
   fi
