@@ -13,7 +13,6 @@ from cereal import messaging, car, log
 from msgq.visionipc import VisionIpcServer, VisionStreamType
 
 from cereal.messaging import SubMaster, PubMaster
-from openpilot.common.mock import mock_messages
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_MDL
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
