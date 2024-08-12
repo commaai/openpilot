@@ -1110,7 +1110,7 @@ wheels = [
 [[package]]
 name = "metadrive-simulator"
 version = "0.4.2.3"
-source = { git = "https://github.com/commaai/metadrive?rev=opencv_headless#9b6ddb791919249effa0573883076681514787e4" }
+source = { git = "https://github.com/commaai/metadrive?rev=main#0dd67b8a924d65c5c263c63863c3e766850e0b66" }
 dependencies = [
     { name = "filelock" },
     { name = "geopandas" },
