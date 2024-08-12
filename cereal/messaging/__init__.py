@@ -122,14 +122,13 @@ class FrequencyTracker:
     if not self.recv_dts:
       return False
 
-    avg_freq = 1 / (sum(self.recv_dts) / len(self.recv_dts))
+    avg_freq = len(self.recv_dts) / sum(self.recv_dts)
     if self.min_freq <= avg_freq <= self.max_freq:
       return True
 
     recent_dts = list(self.recv_dts)[-int(self.recv_dts.maxlen / 10):]
-    avg_freq_recent = 1 / (sum(recent_dts) / len(recent_dts))
+    avg_freq_recent = len(recent_dts) / sum(recent_dts)
     return self.min_freq <= avg_freq_recent <= self.max_freq
-
 
 
 class SubMaster:
