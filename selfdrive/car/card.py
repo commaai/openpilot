@@ -159,6 +159,12 @@ class Car:
 
     self.events.add_from_msg(CS.events)
 
+    if self.CP.notCar:
+      # wait for everything to init first
+      if self.sm.frame > int(5. / DT_CTRL) and self.initialized_prev:
+        # body always wants to enable
+        self.events.add(EventName.pcmEnable)
+
     # Disable on rising edge of accelerator or brake. Also disable on brake when speed > 0
     if (CS.gasPressed and not self.CS_prev.gasPressed and self.disengage_on_accelerator) or \
       (CS.brakePressed and (not self.CS_prev.brakePressed or not CS.standstill)) or \
