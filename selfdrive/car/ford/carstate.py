@@ -17,8 +17,6 @@ class CarState(CarStateBase):
     if CP.transmissionType == TransmissionType.automatic:
       self.shifter_values = can_define.dv["PowertrainData_10"]["TrnRng_D_Rq"]
 
-    self.vehicle_sensors_valid = False
-
     self.prev_distance_button = 0
     self.distance_button = 0
 
