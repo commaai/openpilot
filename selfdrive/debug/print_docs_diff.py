@@ -81,7 +81,7 @@ def print_car_docs_diff(new_docs_path):
         markdown_builder.append("|---|---|---|{}|".format("|".join([":---:"] * (len(ordered_headers) - 3))))
         markdown_builder.extend(changes[category][:max_rows_to_show])
         if len(changes[category]) > max_rows_to_show:
-          markdown_builder.append(f'+ {len(changes[category]) - max_rows_to_show} others')
+          markdown_builder.append(f"\n_+ {len(changes[category]) - max_rows_to_show} other rows_")
 
     print("\n".join(markdown_builder))
 
