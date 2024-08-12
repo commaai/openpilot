@@ -59,6 +59,7 @@ def setup_settings_network(click, pm: PubMaster):
   click(300, 600)
 
 def setup_onroad(click, pm: PubMaster):
+
   setup_common(click, pm)
 
   dat = messaging.new_message('pandaStates', 1)
