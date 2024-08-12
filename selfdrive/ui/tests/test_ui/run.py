@@ -9,7 +9,6 @@ import numpy as np
 import os
 import pywinctl
 import time
-import subprocess
 
 from cereal import messaging, car, log
 from msgq.visionipc import VisionIpcServer, VisionStreamType
@@ -50,76 +49,72 @@ def setup_common(click, pm: PubMaster):
 
 @contextmanager
 def setup_homescreen(click, pm: PubMaster):
-  setup_common(click, pm)
-  yield
+  with setup_common(click, pm):
+    yield
 
 @contextmanager
 def setup_settings_device(click, pm: PubMaster):
-  setup_common(click, pm)
-
-  click(100, 100)
-  yield
+  with setup_common(click, pm):
+    click(100, 100)
+    yield
 
 @contextmanager
 def setup_settings_network(click, pm: PubMaster):
-  setup_common(click, pm)
-
-  setup_settings_device(click, pm)
-  click(300, 600)
-  yield
+  with setup_common(click, pm):
+    with setup_settings_device(click, pm):
+      click(300, 600)
+      yield
 
 @contextmanager
 def setup_onroad(click, pm: PubMaster):
-  setup_common(click, pm)
+  with setup_common(click, pm):
+    dat = messaging.new_message('pandaStates', 1)
+    dat.pandaStates[0].ignitionLine = True
+    dat.pandaStates[0].pandaType = log.PandaState.PandaType.uno
 
-  dat = messaging.new_message('pandaStates', 1)
-  dat.pandaStates[0].ignitionLine = True
-  dat.pandaStates[0].pandaType = log.PandaState.PandaType.uno
+    pm.send("pandaStates", dat)
 
-  pm.send("pandaStates", dat)
+    d = DEVICE_CAMERAS[("tici", "ar0231")]
+    server = VisionIpcServer("camerad")
+    server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 40, False, d.fcam.width, d.fcam.height)
+    server.create_buffers(VisionStreamType.VISION_STREAM_DRIVER, 40, False, d.dcam.width, d.dcam.height)
+    server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, d.fcam.width, d.fcam.height)
+    server.start_listener()
 
-  d = DEVICE_CAMERAS[("tici", "ar0231")]
-  server = VisionIpcServer("camerad")
-  server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 40, False, d.fcam.width, d.fcam.height)
-  server.create_buffers(VisionStreamType.VISION_STREAM_DRIVER, 40, False, d.dcam.width, d.dcam.height)
-  server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, d.fcam.width, d.fcam.height)
-  server.start_listener()
+    time.sleep(0.5) # give time for vipc server to start
 
-  time.sleep(0.5) # give time for vipc server to start
+    IMG = np.zeros((int(d.fcam.width*1.5), d.fcam.height), dtype=np.uint8)
+    IMG_BYTES = IMG.flatten().tobytes()
 
-  IMG = np.zeros((int(d.fcam.width*1.5), d.fcam.height), dtype=np.uint8)
-  IMG_BYTES = IMG.flatten().tobytes()
+    cams = ('roadCameraState', 'wideRoadCameraState')
 
-  cams = ('roadCameraState', 'wideRoadCameraState')
+    frame_id = 0
+    for cam in cams:
+      msg = messaging.new_message(cam)
+      cs = getattr(msg, cam)
+      cs.frameId = frame_id
+      cs.timestampSof = int((frame_id * DT_MDL) * 1e9)
+      cs.timestampEof = int((frame_id * DT_MDL) * 1e9)
+      cam_meta = meta_from_camera_state(cam)
 
-  frame_id = 0
-  for cam in cams:
-    msg = messaging.new_message(cam)
-    cs = getattr(msg, cam)
-    cs.frameId = frame_id
-    cs.timestampSof = int((frame_id * DT_MDL) * 1e9)
-    cs.timestampEof = int((frame_id * DT_MDL) * 1e9)
-    cam_meta = meta_from_camera_state(cam)
-
-    pm.send(msg.which(), msg)
-    server.send(cam_meta.stream, IMG_BYTES, cs.frameId, cs.timestampSof, cs.timestampEof)
-  yield
+      pm.send(msg.which(), msg)
+      server.send(cam_meta.stream, IMG_BYTES, cs.frameId, cs.timestampSof, cs.timestampEof)
+    yield
 
 @contextmanager
 @mock_messages(['liveLocationKalman'])
 def setup_onroad_map(click, pm: PubMaster):
-  setup_onroad(click, pm)
+  with setup_onroad(click, pm):
+    click(500, 500)
 
-  click(500, 500)
-
-  time.sleep(UI_DELAY) # give time for the map to render
-  yield
+    time.sleep(UI_DELAY) # give time for the map to render
+    yield
 
 @contextmanager
 def setup_onroad_sidebar(click, pm: PubMaster):
-  setup_onroad_map(click, pm)
-  click(500, 500)
-  yield
+  with setup_onroad_map(click, pm):
+    click(500, 500)
+    yield
 
 
 @contextmanager
@@ -127,7 +122,6 @@ def setup_spinner(click, pm: PubMaster):
   s = Spinner()
   s.update_progress(30, 100)
   yield
-  s.close()
 
 
 CASES = {
