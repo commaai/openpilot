@@ -11,7 +11,6 @@ import time
 
 from typing import Optional, List, Union, Dict, Deque
 from collections import deque
-import numpy as np
 
 from cereal import log
 from cereal.services import SERVICE_LIST
@@ -118,12 +117,14 @@ class FrequencyTracker:
       self.recv_dts.append(cur_time - self.prev_time)
     self.prev_time = cur_time
 
-  def is_frequency_ok(self) -> bool:
+  @property
+  def valid(self) -> bool:
     if not self.recv_dts:
       return False
 
-    avg_freq = 1 / np.mean(self.recv_dts)
-    avg_freq_recent = 1 / np.mean(list(self.recv_dts)[-int(self.recv_dts.maxlen / 10):])
+    avg_freq = 1 / (sum(self.recv_dts) / len(self.recv_dts))
+    recent_dts = list(self.recv_dts)[-int(self.recv_dts.maxlen / 10):]
+    avg_freq_recent = 1 / (sum(recent_dts) / len(recent_dts))
     return (self.min_freq <= avg_freq <= self.max_freq) or (self.min_freq <= avg_freq_recent <= self.max_freq)
 
 
@@ -211,7 +212,7 @@ class SubMaster:
       if SERVICE_LIST[s].frequency > 1e-5 and not self.simulation:
         # alive if delay is within 10x the expected frequency
         self.alive[s] = (cur_time - self.recv_time[s]) < (10. / SERVICE_LIST[s].frequency)
-        self.freq_ok[s] = self.freq_tracker[s].is_frequency_ok()
+        self.freq_ok[s] = self.freq_tracker[s].valid
       else:
         self.freq_ok[s] = True
         self.alive[s] = self.seen[s] if self.simulation else True
