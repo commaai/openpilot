@@ -1,5 +1,4 @@
 from collections import namedtuple
-from contextlib import contextmanager
 import pathlib
 import shutil
 import sys
@@ -9,7 +8,6 @@ import numpy as np
 import os
 import pywinctl
 import time
-import subprocess
 
 from cereal import messaging, car, log
 from msgq.visionipc import VisionIpcServer, VisionStreamType
@@ -32,7 +30,6 @@ EventName = car.CarEvent.EventName
 EVENTS_BY_NAME = {v: k for k, v in EventName.schema.enumerants.items()}
 
 
-@contextmanager
 def setup_common(click, pm: PubMaster):
   Params().put("DongleId", "123456789012345")
   dat = messaging.new_message('deviceState')
@@ -46,29 +43,21 @@ def setup_common(click, pm: PubMaster):
   dat.deviceState.cpuUsagePercent = [2,]*8
 
   pm.send("deviceState", dat)
-  yield
 
-@contextmanager
 def setup_homescreen(click, pm: PubMaster):
   setup_common(click, pm)
-  yield
 
-@contextmanager
 def setup_settings_device(click, pm: PubMaster):
   setup_common(click, pm)
 
   click(100, 100)
-  yield
 
-@contextmanager
 def setup_settings_network(click, pm: PubMaster):
   setup_common(click, pm)
 
   setup_settings_device(click, pm)
   click(300, 600)
-  yield
 
-@contextmanager
 def setup_onroad(click, pm: PubMaster):
   setup_common(click, pm)
 
@@ -103,41 +92,26 @@ def setup_onroad(click, pm: PubMaster):
 
     pm.send(msg.which(), msg)
     server.send(cam_meta.stream, IMG_BYTES, cs.frameId, cs.timestampSof, cs.timestampEof)
-  yield
 
-@contextmanager
-@mock_messages(['liveLocationKalman'])
-def setup_onroad_map(click, pm: PubMaster):
-  setup_onroad(click, pm)
-
-  click(500, 500)
-
-  time.sleep(UI_DELAY) # give time for the map to render
-  yield
-
-@contextmanager
 def setup_onroad_sidebar(click, pm: PubMaster):
-  setup_onroad_map(click, pm)
+  setup_onroad(click, pm)
   click(500, 500)
-  yield
 
-
-@contextmanager
 def setup_spinner(click, pm: PubMaster):
   s = Spinner()
   s.update_progress(30, 100)
-  yield
+  return s,
+
+def close_spinner(s):
   s.close()
 
-
 CASES = {
-  "homescreen": setup_homescreen,
-  "settings_device": setup_settings_device,
-  "settings_network": setup_settings_network,
-  "onroad": setup_onroad,
-  "onroad_map": setup_onroad_map,
-  "onroad_sidebar": setup_onroad_sidebar,
-  "spinner": setup_spinner,
+  "homescreen": (setup_homescreen, None, "ui"),
+  "settings_device": (setup_settings_device, None, "ui"),
+  "settings_network": (setup_settings_network, None, "ui"),
+  "onroad": (setup_onroad, None, "ui"),
+  "onroad_sidebar": (setup_onroad_sidebar, None, "ui"),
+  "spinner": (setup_spinner, close_spinner, "_spinner"),
 }
 
 TEST_DIR = pathlib.Path(__file__).parent
@@ -151,14 +125,15 @@ class TestUI:
     os.environ["SCALE"] = "1"
     sys.modules["mouseinfo"] = False
 
-  def setup(self):
+  def setup(self, window_title):
     self.sm = SubMaster(["uiDebug"])
     self.pm = PubMaster(["deviceState", "pandaStates", "controlsState", 'roadCameraState', 'wideRoadCameraState', 'liveLocationKalman'])
     while not self.sm.valid["uiDebug"]:
       self.sm.update(1)
     time.sleep(UI_DELAY) # wait a bit more for the UI to start rendering
     try:
-      self.ui = pywinctl.getWindowsWithTitle("_spinner")[0]
+      self.ui = pywinctl.getWindowsWithTitle(window_title)[0]
+      print(self.ui)
     except Exception as e:
       print(f"failed to find ui window, assuming that it's in the top left (for Xvfb) {e}")
       self.ui = namedtuple("bb", ["left", "top", "width", "height"])(0,0,2160,1080)
@@ -178,14 +153,18 @@ class TestUI:
     time.sleep(UI_DELAY) # give enough time for the UI to react
 
   @with_processes(["ui"])
-  def test_ui(self, name, setup_case):
-    self.setup()
+  def test_ui(self, name, setup_case, cleanup_case, window_title):
+    self.setup(window_title)
 
-    with setup_case(self.click, self.pm):
-      time.sleep(UI_DELAY) # wait a bit more for the UI to finish rendering
+    args = setup_case(self.click, self.pm)
 
-      im = self.screenshot()
-      plt.imsave(SCREENSHOTS_DIR / f"{name}.png", im)
+    time.sleep(UI_DELAY) # wait a bit more for the UI to finish rendering
+
+    im = self.screenshot()
+    plt.imsave(SCREENSHOTS_DIR / f"{name}.png", im)
+
+    if cleanup_case is not None:
+      cleanup_case(*args)
 
 
 def create_html_report():
@@ -207,8 +186,8 @@ def create_screenshots():
   SCREENSHOTS_DIR.mkdir(parents=True)
 
   t = TestUI()
-  for name, setup in CASES.items():
-    t.test_ui(name, setup)
+  for name, (setup, cleanup, window_title) in CASES.items():
+    t.test_ui(name, setup, cleanup, window_title)
 
 if __name__ == "__main__":
   print("creating test screenshots")
