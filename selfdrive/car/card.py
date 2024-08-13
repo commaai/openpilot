@@ -15,8 +15,7 @@ from openpilot.common.realtime import config_realtime_process, Priority, Ratekee
 from openpilot.common.swaglog import cloudlog, ForwardingHandler
 
 from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
-from openpilot.selfdrive.car import DT_CTRL, carlog
-from openpilot.selfdrive.car.structs import CarParams, CarState
+from openpilot.selfdrive.car import DT_CTRL, carlog, structs
 from openpilot.selfdrive.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
 from openpilot.selfdrive.car.fw_versions import ObdCallback
 from openpilot.selfdrive.car.car_helpers import get_car
@@ -60,10 +59,10 @@ def can_comm_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket
   return can_recv, can_send
 
 
-def convert_to_capnp(struct: CarParams | CarState) -> capnp.lib.capnp._DynamicStructBuilder:
+def convert_to_capnp(struct: structs.CarParams | structs.CarState) -> capnp.lib.capnp._DynamicStructBuilder:
   struct_dict = dataclasses.asdict(struct)
 
-  if isinstance(struct, CarParams):
+  if isinstance(struct, structs.CarParams):
     del struct_dict['lateralTuning']
     struct_capnp = car.CarParams.new_message(**struct_dict)
 
@@ -78,9 +77,46 @@ def convert_to_capnp(struct: CarParams | CarState) -> capnp.lib.capnp._DynamicSt
   return struct_capnp
 
 
+# def convert_to_dataclass(struct: capnp.lib.capnp._DynamicStructReader, struct_name: str) -> object:
+#   if struct_name == 'CarParams':
+#     raise NotImplementedError("CarParams conversion to dataclass not implemented")
+#
+#
+#
+#   struct_dict = {k: v for k, v in struct.to_dict().items() if not k.endswith('DEPRECATED')}
+#   return getattr(structs, struct_name)(**struct_dict)
+
+
+# def convert_to_dataclass(struct: dict, name: str, _structs=structs) -> object:
+#   name = name[0].upper() + name[1:]
+#   if name == ('CarParams',):
+#     raise NotImplementedError("CarParams conversion to dataclass not implemented")
+#
+#   for field, value in struct.items():
+#     if isinstance(value, dict):
+#       struct[field] = convert_to_dataclass(value, field, getattr(_structs, field))
+#
+#   struct_dict = {k: v for k, v in struct.items() if not k.endswith('DEPRECATED')}
+#   return getattr(_structs, *name)(**struct_dict)
+
+
+def convert_carControl(struct: capnp.lib.capnp._DynamicStructReader) -> structs.CarControl:
+  # TODO: recursively handle any car struct as needed
+  def remove_deprecated(s: dict) -> dict:
+    return {k: v for k, v in s.items() if not k.endswith('DEPRECATED')}
+
+  for field, value in struct.to_dict().items():
+    if isinstance(value, dict):
+      name = field[0].upper() + field[1:]
+      struct[field] = getattr(structs.CarControl, name)(**remove_deprecated(value))
+
+  return structs.CarControl(**remove_deprecated(struct))
+
+
+
 class Car:
   CI: CarInterfaceBase
-  CP: CarParams
+  CP: structs.CarParams
   CP_capnp: car.CarParams
 
   def __init__(self, CI=None) -> None:
@@ -94,7 +130,7 @@ class Car:
     self.CS_prev = car.CarState.new_message()
     self.initialized_prev = False
 
-    self.last_actuators_output = car.CarControl.Actuators.new_message()
+    self.last_actuators_output = structs.CarControl.Actuators()
 
     self.params = Params()
 
@@ -115,7 +151,7 @@ class Car:
       cached_params_raw = self.params.get("CarParamsCache")
       if cached_params_raw is not None:
         with car.CarParams.from_bytes(cached_params_raw) as _cached_params:
-          cached_params = CarParams(carName=_cached_params.carName, carFw=_cached_params.carFw, carVin=_cached_params.carVin)
+          cached_params = structs.CarParams(carName=_cached_params.carName, carFw=_cached_params.carFw, carVin=_cached_params.carVin)
 
       self.CI = get_car(*self.can_callbacks, obd_callback(self.params), experimental_long_allowed, num_pandas, cached_params)
       self.CP = self.CI.CP
@@ -137,8 +173,8 @@ class Car:
 
     self.CP.passive = not controller_available or self.CP.dashcamOnly
     if self.CP.passive:
-      safety_config = CarParams.SafetyConfig()
-      safety_config.safetyModel = CarParams.SafetyModel.noOutput
+      safety_config = structs.CarParams.SafetyConfig()
+      safety_config.safetyModel = structs.CarParams.SafetyModel.noOutput
       self.CP.safetyConfigs = [safety_config]
 
     # Write previous route's CarParams
@@ -179,7 +215,7 @@ class Car:
 
     return CS
 
-  def update_events(self, CS: car.CarState) -> car.CarState:
+  def update_events(self, CS: car.CarState) -> car.CarState:  # TODO: this is wrong
     self.events.clear()
 
     # self.events.add_from_msg(CS.events)
@@ -235,7 +271,7 @@ class Car:
     if self.sm.all_alive(['carControl']):
       # send car controls over can
       now_nanos = self.can_log_mono_time if REPLAY else int(time.monotonic() * 1e9)
-      self.last_actuators_output, can_sends = self.CI.apply(CC, now_nanos)
+      self.last_actuators_output, can_sends = self.CI.apply(convert_to_dataclass(CC, 'CarControl'), now_nanos)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
 
       self.CC_prev = CC
