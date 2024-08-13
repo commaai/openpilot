@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
-import requests
 import re
+from openpilot.common.basedir import BASEDIR
 
 ARROW_SYMBOL = "➡️"
 
@@ -53,10 +53,11 @@ def build_row(headers, base_car, new_car=None):
   return "|" + "|".join(row_builder) + "|"
 
 
-def print_car_docs_diff(new_docs_path):
-  base_docs_content = requests.get("https://raw.githubusercontent.com/commaai/openpilot/master/docs/CARS.md").text
+def print_car_docs_diff(base_docs_path):
+  with open(base_docs_path) as base_docs_file:
+    base_docs_content = base_docs_file.read()
 
-  with open(new_docs_path) as new_docs_file:
+  with open(BASEDIR + '/docs/CARS.md') as new_docs_file:
     new_docs_content = new_docs_file.read()
 
   base_headers, base_cars = get_cars_docs_in_markdown(base_docs_content)
@@ -85,6 +86,6 @@ def print_car_docs_diff(new_docs_path):
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
-  parser.add_argument("--new-docs-path", required=True)
+  parser.add_argument("--base-docs-path", required=True)
   args = parser.parse_args()
-  print_car_docs_diff(args.new_docs_path)
+  print_car_docs_diff(args.base_docs_path)
