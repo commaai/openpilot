@@ -16,8 +16,8 @@ def get_cars_docs_in_markdown(docs_content):
   match = re.search(r"(\d+)\s+supported\s+cars\s*\n([\s\S]*?\|.*?\|[\s\S]*?\|[-:]+\|[\s\S]*?\n(?:[^\S\r\n]*\S.*\n)*\n?)", docs_content, re.IGNORECASE)
   if not match:
     raise RuntimeError("Couldn't find the car docs Markdown table.")
-  num_cars = int(match.group(1))
-  md_table = match.group(2).strip()
+  num_cars, md_table = match.groups()
+  num_cars = int(num_cars)
   headers, results = _parse_markdown_table(md_table)
   results = {f'{r['Make']} {r['Model']}': r for r in results}
   assert len(results) == num_cars
