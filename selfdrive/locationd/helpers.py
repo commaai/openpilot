@@ -1,7 +1,5 @@
 import numpy as np
-import capnp
 from typing import Any
-from enum import Enum
 
 from cereal import log
 from openpilot.common.transformations.orientation import rot_from_euler, euler_from_rot
@@ -76,20 +74,17 @@ class ParameterEstimator:
 
 
 class Measurement:
+  x, y, z = (property(lambda self: self.xyz[0]), property(lambda self: self.xyz[1]), property(lambda self: self.xyz[2]))
+  x_std, y_std, z_std = (property(lambda self: self.xyz_std[0]), property(lambda self: self.xyz_std[1]), property(lambda self: self.xyz_std[2]))
+  roll, pitch, yaw = x, y, z
+  roll_std, pitch_std, yaw_std = x_std, y_std, z_std
+
   def __init__(self, xyz: np.ndarray, xyz_std: np.ndarray):
     self.xyz: np.ndarray = xyz
     self.xyz_std: np.ndarray = xyz_std
 
-    # properties for convenient access
-    xyz_props = [property(lambda self, i=i: float(self.xyz[i])) for i in range(3)]
-    xyz_std_props = [property(lambda self, i=i: float(self.xyz_std[i])) for i in range(3)]
-    Measurement.x, Measurement.y, Measurement.z = xyz_props
-    Measurement.x_std, Measurement.y_std, Measurement.z_std = xyz_std_props
-    Measurement.roll, Measurement.pitch, Measurement.yaw = xyz_props
-    Measurement.roll_std, Measurement.pitch_std, Measurement.yaw_std = xyz_std_props
-
   @classmethod
-  def from_measurement_xyz(cls, measurement: log.LivePose.Measurement) -> 'Measurement':
+  def from_measurement_xyz(cls, measurement: log.LivePose.XYZMeasurement) -> 'Measurement':
     return cls(
       xyz=np.array([measurement.x, measurement.y, measurement.z]),
       xyz_std=np.array([measurement.xStd, measurement.yStd, measurement.zStd])
