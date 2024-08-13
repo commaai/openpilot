@@ -77,29 +77,6 @@ def convert_to_capnp(struct: structs.CarParams | structs.CarState) -> capnp.lib.
   return struct_capnp
 
 
-# def convert_to_dataclass(struct: capnp.lib.capnp._DynamicStructReader, struct_name: str) -> object:
-#   if struct_name == 'CarParams':
-#     raise NotImplementedError("CarParams conversion to dataclass not implemented")
-#
-#
-#
-#   struct_dict = {k: v for k, v in struct.to_dict().items() if not k.endswith('DEPRECATED')}
-#   return getattr(structs, struct_name)(**struct_dict)
-
-
-# def convert_to_dataclass(struct: dict, name: str, _structs=structs) -> object:
-#   name = name[0].upper() + name[1:]
-#   if name == ('CarParams',):
-#     raise NotImplementedError("CarParams conversion to dataclass not implemented")
-#
-#   for field, value in struct.items():
-#     if isinstance(value, dict):
-#       struct[field] = convert_to_dataclass(value, field, getattr(_structs, field))
-#
-#   struct_dict = {k: v for k, v in struct.items() if not k.endswith('DEPRECATED')}
-#   return getattr(_structs, *name)(**struct_dict)
-
-
 def convert_carControl(struct: capnp.lib.capnp._DynamicStructReader) -> structs.CarControl:
   # TODO: recursively handle any car struct as needed
   def remove_deprecated(s: dict) -> dict:
@@ -111,7 +88,6 @@ def convert_carControl(struct: capnp.lib.capnp._DynamicStructReader) -> structs.
       struct[field] = getattr(structs.CarControl, name)(**remove_deprecated(value))
 
   return structs.CarControl(**remove_deprecated(struct))
-
 
 
 class Car:
@@ -271,7 +247,7 @@ class Car:
     if self.sm.all_alive(['carControl']):
       # send car controls over can
       now_nanos = self.can_log_mono_time if REPLAY else int(time.monotonic() * 1e9)
-      self.last_actuators_output, can_sends = self.CI.apply(convert_to_dataclass(CC, 'CarControl'), now_nanos)
+      self.last_actuators_output, can_sends = self.CI.apply(convert_carControl(CC), now_nanos)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
 
       self.CC_prev = CC
