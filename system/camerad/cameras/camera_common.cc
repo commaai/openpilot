@@ -33,9 +33,11 @@ public:
     krnl_ = CL_CHECK_ERR(clCreateKernel(prg_imgproc, "process_raw", &err));
     CL_CHECK(clReleaseProgram(prg_imgproc));
 
+    const cl_queue_properties props[] = {0};  //CL_QUEUE_PRIORITY_KHR, CL_QUEUE_PRIORITY_HIGH_KHR, 0};
+    queue = CL_CHECK_ERR(clCreateCommandQueueWithProperties(context, device_id, props, &err));
   }
 
-  void runKernel(cl_command_queue q, cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, int expo_time) {
+  void runKernel(cl_mem cam_buf_cl, cl_mem buf_cl, int width, int height, int expo_time) {
     CL_CHECK(clSetKernelArg(krnl_, 0, sizeof(cl_mem), &cam_buf_cl));
     CL_CHECK(clSetKernelArg(krnl_, 1, sizeof(cl_mem), &buf_cl));
     CL_CHECK(clSetKernelArg(krnl_, 2, sizeof(cl_int), &expo_time));
@@ -45,17 +47,19 @@ public:
     const size_t localWorkSize[] = {imgproc_local_worksize, imgproc_local_worksize};
 
     cl_event event;
-    CL_CHECK(clEnqueueNDRangeKernel(q, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, &event));
+    CL_CHECK(clEnqueueNDRangeKernel(queue, krnl_, 2, NULL, globalWorkSize, localWorkSize, 0, 0, &event));
     clWaitForEvents(1, &event);
     CL_CHECK(clReleaseEvent(event));
   }
 
   ~ImgProc() {
     CL_CHECK(clReleaseKernel(krnl_));
+    CL_CHECK(clReleaseCommandQueue(queue));
   }
 
 private:
   cl_kernel krnl_;
+  cl_command_queue queue;
 };
 
 void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType type) {
@@ -92,9 +96,6 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   LOGD("created %d YUV vipc buffers with size %dx%d", YUV_BUFFER_COUNT, nv12_width, nv12_height);
 
   imgproc = new ImgProc(device_id, context, this, s, nv12_width, nv12_uv_offset);
-
-  const cl_queue_properties props[] = {0};  //CL_QUEUE_PRIORITY_KHR, CL_QUEUE_PRIORITY_HIGH_KHR, 0};
-  q = CL_CHECK_ERR(clCreateCommandQueueWithProperties(context, device_id, props, &err));
 }
 
 CameraBuf::~CameraBuf() {
@@ -102,7 +103,6 @@ CameraBuf::~CameraBuf() {
     camera_bufs[i].free();
   }
   if (imgproc) delete imgproc;
-  if (q) CL_CHECK(clReleaseCommandQueue(q));
 }
 
 bool CameraBuf::acquire() {
@@ -118,7 +118,7 @@ bool CameraBuf::acquire() {
   cur_camera_buf = &camera_bufs[cur_buf_idx];
 
   double start_time = millis_since_boot();
-  imgproc->runKernel(q, camera_bufs[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, cur_frame_data.integ_lines);
+  imgproc->runKernel(camera_bufs[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, cur_frame_data.integ_lines);
   cur_frame_data.processing_time = (millis_since_boot() - start_time) / 1000.0;
 
   VisionIpcBufExtra extra = {
