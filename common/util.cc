@@ -271,4 +271,27 @@ std::string check_output(const std::string& command) {
   return result;
 }
 
+void sleep_for(double milliseconds) {
+  if (milliseconds <= 1e-5) {
+    return;
+  }
+
+  struct timespec req, rem;
+  req.tv_sec = (time_t)(milliseconds / 1000.0);
+  req.tv_nsec = (long)((milliseconds - (req.tv_sec * 1000.0)) * 1000000.0);
+  while (true) {
+#ifdef __APPLE__
+    int ret = nanosleep(&req, &rem);
+    if (ret == 0 || errno != EINTR)
+      break;
+#else
+    int ret = clock_nanosleep(CLOCK_MONOTONIC, 0, &req, &rem);
+    if (ret == 0 || ret != EINTR)
+      break;
+#endif
+    // Retry sleep if interrupted by a signal
+    req = rem;
+  }
+}
+
 }  // namespace util
