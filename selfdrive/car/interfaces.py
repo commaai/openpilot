@@ -16,11 +16,8 @@ from openpilot.selfdrive.car.can_definitions import CanData, CanRecvCallable, Ca
 from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.helpers import clip
 from openpilot.selfdrive.car.values import PLATFORMS
-from openpilot.selfdrive.controls.lib.events import Events
 
-ButtonType = car.CarState.ButtonEvent.Type
 GearShifter = car.CarState.GearShifter
-EventName = car.CarEvent.EventName
 
 V_CRUISE_MAX = 145
 MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS
@@ -91,10 +88,6 @@ class CarInterfaceBase(ABC):
     self.CP = CP
 
     self.frame = 0
-    # self.steering_unpressed = 0
-    # self.low_speed_alert = False
-    # self.no_steer_warning = False
-    # self.silent_steer_warning = True
     self.v_ego_cluster_seen = False
 
     self.CS: CarStateBase = CarState(CP)

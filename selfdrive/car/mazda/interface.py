@@ -6,7 +6,6 @@ from openpilot.selfdrive.car.mazda.values import CAR, LKAS_LIMITS
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
-EventName = car.CarEvent.EventName
 
 class CarInterface(CarInterfaceBase):
 

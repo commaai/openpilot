@@ -8,7 +8,6 @@ from openpilot.selfdrive.car.disable_ecu import disable_ecu
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
-EventName = car.CarEvent.EventName
 SteerControlType = car.CarParams.SteerControlType
 
 

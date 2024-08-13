@@ -12,7 +12,6 @@ from openpilot.selfdrive.car.disable_ecu import disable_ecu
 
 
 ButtonType = car.CarState.ButtonEvent.Type
-EventName = car.CarEvent.EventName
 TransmissionType = car.CarParams.TransmissionType
 BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
                 CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}

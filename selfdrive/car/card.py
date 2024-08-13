@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import time
-from dataclasses import dataclass
 
 import cereal.messaging as messaging
 

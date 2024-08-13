@@ -2,10 +2,9 @@ from cereal import car
 from panda import Panda
 from openpilot.selfdrive.car import get_safety_config
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
-from openpilot.selfdrive.car.volkswagen.values import CAR, CANBUS, CarControllerParams, NetworkLocation, TransmissionType, GearShifter, VolkswagenFlags
+from openpilot.selfdrive.car.volkswagen.values import CAR, CANBUS, NetworkLocation, TransmissionType, VolkswagenFlags
 
 ButtonType = car.CarState.ButtonEvent.Type
-EventName = car.CarEvent.EventName
 
 
 class CarInterface(CarInterfaceBase):
