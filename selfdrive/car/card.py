@@ -162,7 +162,7 @@ class Car:
     self.events.clear()
 
     # TODO: some brands use variables not in cereal CarState
-    CS.events = self.car_events.update(CS, self.CS_prev).to_msg()
+    CS.events = self.car_events.update(CS, self.CS_prev, self.CC_prev).to_msg()
 
     self.events.add_from_msg(CS.events)
 

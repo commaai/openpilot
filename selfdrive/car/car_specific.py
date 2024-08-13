@@ -34,7 +34,7 @@ class CarSpecificEvents:
     self.no_steer_warning = False
     self.silent_steer_warning = True
 
-  def update(self, CS, CS_prev):
+  def update(self, CS, CS_prev, CC_prev):
     if self.CP.carName == 'chrysler':
       events = self.create_common_events(CS, CS_prev, extra_gears=[car.CarState.GearShifter.low])
 
@@ -45,6 +45,31 @@ class CarSpecificEvents:
         self.low_speed_alert = False
       if self.low_speed_alert:
         events.add(car.CarEvent.EventName.belowSteerSpeed)
+
+    elif self.CP.carName == 'ford':
+      events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.manumatic])
+
+    elif self.CP.carName == 'honda':
+      events = self.create_common_events(CS, CS_prev, pcm_enable=False)
+
+      if self.CP.pcmCruise and CS.vEgo < self.CP.minEnableSpeed:
+        events.add(EventName.belowEngageSpeed)
+
+      if self.CP.pcmCruise:
+        # we engage when pcm is active (rising edge)
+        if CS.cruiseState.enabled and not CS_prev.cruiseState.enabled:
+          events.add(EventName.pcmEnable)
+        elif not CS.cruiseState.enabled and (CC_prev.actuators.accel >= 0. or not self.CP.openpilotLongitudinalControl):
+          # it can happen that car cruise disables while comma system is enabled: need to
+          # keep braking if needed or if the speed is very low
+          if CS.vEgo < self.CP.minEnableSpeed + 2.:
+            # non loud alert if cruise disables below 25mph as expected (+ a little margin)
+            events.add(EventName.speedTooLow)
+          else:
+            events.add(EventName.cruiseDisabled)
+      if self.CP.minEnableSpeed > 0 and CS.vEgo < 0.001:
+        events.add(EventName.manualRestart)
+
     else:
       raise ValueError(f"Unsupported car: {self.CP.carName}")
 

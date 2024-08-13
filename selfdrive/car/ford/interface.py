@@ -72,8 +72,4 @@ class CarInterface(CarInterfaceBase):
 
     ret.buttonEvents = create_button_events(self.CS.distance_button, self.CS.prev_distance_button, {1: ButtonType.gapAdjustCruise})
 
-    events = self.create_common_events(ret, extra_gears=[GearShifter.manumatic])
-
-    ret.events = events.to_msg()
-
     return ret
