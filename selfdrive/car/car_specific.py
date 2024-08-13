@@ -14,6 +14,8 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.simple_kalman import KF1D, get_kalman_gain
 from openpilot.selfdrive.car import DT_CTRL, apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, get_friction, STD_CARGO_KG
 from openpilot.selfdrive.car.interfaces import MAX_CTRL_SPEED
+from openpilot.selfdrive.car.volkswagen.values import CarControllerParams as VWCarControllerParams
+from openpilot.selfdrive.car.hyundai.interface import ENABLE_BUTTONS as HYUNDAI_ENABLE_BUTTONS
 from openpilot.selfdrive.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
 from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.helpers import clip
@@ -23,6 +25,7 @@ from openpilot.selfdrive.controls.lib.events import Events
 ButtonType = car.CarState.ButtonEvent.Type
 GearShifter = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
+NetworkLocation = car.CarParams.NetworkLocation
 
 
 class CarSpecificEvents:
@@ -35,7 +38,27 @@ class CarSpecificEvents:
     self.silent_steer_warning = True
 
   def update(self, CS, CS_prev, CC_prev):
-    if self.CP.carName == 'chrysler':
+    if self.CP.carName in ('tesla', 'subaru'):
+      events = self.create_common_events(CS, CS_prev)
+
+    elif self.CP.carName == 'ford':
+      events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.manumatic])
+
+    elif self.CP.carName == 'nissan':
+      events = self.create_common_events(CS, CS_prev, extra_gears=[car.CarState.GearShifter.brake])
+
+      if CS.lkas_enabled:
+        events.add(car.CarEvent.EventName.invalidLkasSetting)
+
+    elif self.CP.carName == 'mazda':
+      events = self.create_common_events(CS, CS_prev)
+
+      if CS.lkas_disabled:
+        events.add(EventName.lkasDisabled)
+      elif CS.low_speed_alert:
+        events.add(EventName.belowSteerSpeed)
+
+    elif self.CP.carName == 'chrysler':
       events = self.create_common_events(CS, CS_prev, extra_gears=[car.CarState.GearShifter.low])
 
       # Low speed steer alert hysteresis logic
@@ -45,9 +68,6 @@ class CarSpecificEvents:
         self.low_speed_alert = False
       if self.low_speed_alert:
         events.add(car.CarEvent.EventName.belowSteerSpeed)
-
-    elif self.CP.carName == 'ford':
-      events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.manumatic])
 
     elif self.CP.carName == 'honda':
       events = self.create_common_events(CS, CS_prev, pcm_enable=False)
@@ -70,19 +90,83 @@ class CarSpecificEvents:
       if self.CP.minEnableSpeed > 0 and CS.out.vEgo < 0.001:
         events.add(EventName.manualRestart)
 
-    elif self.CP.carName == 'tesla':
+    elif self.CP.carName == 'toyota':
       events = self.create_common_events(CS, CS_prev)
 
-    elif self.CP.carName == 'subaru':
-      events = self.create_common_events(CS, CS_prev)
+      if self.CP.openpilotLongitudinalControl:
+        if CS.out.cruiseState.standstill and not CS.out.brakePressed:
+          events.add(EventName.resumeRequired)
+        if CS.low_speed_lockout:
+          events.add(EventName.lowSpeedLockout)
+        if CS.out.vEgo < self.CP.minEnableSpeed:
+          events.add(EventName.belowEngageSpeed)
+          if CC_prev.actuators.accel > 0.3:
+            # some margin on the actuator to not false trigger cancellation while stopping
+            events.add(EventName.speedTooLow)
+          if CS.out.vEgo < 0.001:
+            # while in standstill, send a user alert
+            events.add(EventName.manualRestart)
 
-    elif self.CP.carName == 'mazda':
-      events = self.create_common_events(CS, CS_prev)
+    elif self.CP.carName == 'gm':
+      # The ECM allows enabling on falling edge of set, but only rising edge of resume
+      events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.sport, GearShifter.low,
+                                                                   GearShifter.eco, GearShifter.manumatic],
+                                         pcm_enable=self.CP.pcmCruise, enable_buttons=(ButtonType.decelCruise,))
+      if not self.CP.pcmCruise:
+        if any(b.type == ButtonType.accelCruise and b.pressed for b in CS.out.buttonEvents):
+          events.add(EventName.buttonEnable)
 
-      if CS.lkas_disabled:
-        events.add(EventName.lkasDisabled)
-      elif CS.low_speed_alert:
+      # Enabling at a standstill with brake is allowed
+      # TODO: verify 17 Volt can enable for the first time at a stop and allow for all GMs
+      below_min_enable_speed = CS.out.vEgo < self.CP.minEnableSpeed or CS.moving_backward
+      if below_min_enable_speed and not (CS.out.standstill and CS.out.brake >= 20 and
+                                         self.CP.networkLocation == NetworkLocation.fwdCamera):
+        events.add(EventName.belowEngageSpeed)
+      if CS.out.cruiseState.standstill:
+        events.add(EventName.resumeRequired)
+      if CS.out.vEgo < self.CP.minSteerSpeed:
         events.add(EventName.belowSteerSpeed)
+
+    elif self.CP.carName == 'volkswagen':
+      events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic],
+                                         pcm_enable=not self.CP.openpilotLongitudinalControl,
+                                         enable_buttons=(ButtonType.setCruise, ButtonType.resumeCruise))
+
+      # Low speed steer alert hysteresis logic
+      if (self.CP.minSteerSpeed - 1e-3) > VWCarControllerParams.DEFAULT_MIN_STEER_SPEED and CS.out.vEgo < (self.CP.minSteerSpeed + 1.):
+        self.low_speed_alert = True
+      elif CS.out.vEgo > (self.CP.minSteerSpeed + 2.):
+        self.low_speed_alert = False
+      if self.low_speed_alert:
+        events.add(EventName.belowSteerSpeed)
+
+      if self.CP.openpilotLongitudinalControl:
+        if CS.out.vEgo < self.CP.minEnableSpeed + 0.5:
+          events.add(EventName.belowEngageSpeed)
+        if CC_prev.enabled and CS.out.vEgo < self.CP.minEnableSpeed:
+          events.add(EventName.speedTooLow)
+
+      # TODO: we don't have the CC here
+      # if self.CC.eps_timer_soft_disable_alert:
+      #   events.add(EventName.steerTimeLimit)
+
+    elif self.CP.carName == 'hyundai':
+      # On some newer model years, the CANCEL button acts as a pause/resume button based on the PCM state
+      # To avoid re-engaging when openpilot cancels, check user engagement intention via buttons
+      # Main button also can trigger an engagement on these cars
+      allow_enable = any(btn in HYUNDAI_ENABLE_BUTTONS for btn in CS.cruise_buttons) or any(CS.main_buttons)
+      events = self.create_common_events(CS, CS_prev, pcm_enable=self.CP.pcmCruise, allow_enable=allow_enable)
+
+      # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
+      if CS.out.vEgo < (self.CP.minSteerSpeed + 2.) and self.CP.minSteerSpeed > 10.:
+        self.low_speed_alert = True
+      if CS.out.vEgo > (self.CP.minSteerSpeed + 4.):
+        self.low_speed_alert = False
+      if self.low_speed_alert:
+        events.add(car.CarEvent.EventName.belowSteerSpeed)
+
+    elif self.CP.carName == 'body':
+      events = Events()
 
     else:
       raise ValueError(f"Unsupported car: {self.CP.carName}")
