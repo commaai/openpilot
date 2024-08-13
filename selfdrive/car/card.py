@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import time
+from dataclasses import dataclass
 
 import cereal.messaging as messaging
 
@@ -15,6 +16,7 @@ from openpilot.common.swaglog import cloudlog, ForwardingHandler
 from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
 from openpilot.selfdrive.car import DT_CTRL, carlog
 from openpilot.selfdrive.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
+from openpilot.selfdrive.car.car_specific import CarSpecificEvents
 from openpilot.selfdrive.car.fw_versions import ObdCallback
 from openpilot.selfdrive.car.car_helpers import get_car
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
@@ -131,6 +133,8 @@ class Car:
 
     self.events = Events()
 
+    self.car_events = CarSpecificEvents(self.CP)
+
     # card is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
 
@@ -156,6 +160,9 @@ class Car:
 
   def update_events(self, CS: car.CarState) -> car.CarState:
     self.events.clear()
+
+    # TODO: some brands use variables not in cereal CarState
+    CS.events = self.car_events.update(CS, self.CS_prev).to_msg()
 
     self.events.add_from_msg(CS.events)
 
