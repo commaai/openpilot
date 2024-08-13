@@ -17,6 +17,7 @@ from openpilot.common.swaglog import cloudlog, ForwardingHandler
 from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
 from openpilot.selfdrive.car import DT_CTRL, carlog, structs
 from openpilot.selfdrive.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
+from openpilot.selfdrive.car.car_specific import create_car_events
 from openpilot.selfdrive.car.fw_versions import ObdCallback
 from openpilot.selfdrive.car.car_helpers import get_car
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
@@ -199,6 +200,8 @@ class Car:
     self.events.clear()
 
     # self.events.add_from_msg(CS.events)
+
+    car_events = create_car_events(self.CP)
 
     if self.CP.notCar:
       # wait for everything to init first
