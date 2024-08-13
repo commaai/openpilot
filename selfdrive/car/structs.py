@@ -84,6 +84,7 @@ class CarState:
   accFaulted: bool = auto_field()
   carFaultedNonCritical: bool = auto_field()  # some ECU is faulted, but car remains controllable
   espActive: bool = auto_field()
+  vehicleSensorsInvalid: bool = auto_field()  # invalid steering angle readings, etc.
 
   # cruise state
   cruiseState: 'CarState.CruiseState' = field(default_factory=lambda: CarState.CruiseState())
