@@ -81,8 +81,8 @@ class Measurement:
     self.xyz_std: np.ndarray = xyz_std
 
     # properties for convenient access
-    xyz_props = [property(lambda self, i=i: self.xyz[i]) for i in range(3)]
-    xyz_std_props = [property(lambda self, i=i: self.xyz_std[i]) for i in range(3)]
+    xyz_props = [property(lambda self, i=i: float(self.xyz[i])) for i in range(3)]
+    xyz_std_props = [property(lambda self, i=i: float(self.xyz_std[i])) for i in range(3)]
     Measurement.x, Measurement.y, Measurement.z = xyz_props
     Measurement.x_std, Measurement.y_std, Measurement.z_std = xyz_std_props
     Measurement.roll, Measurement.pitch, Measurement.yaw = xyz_props
@@ -123,7 +123,7 @@ class PoseCalibrator:
     new_xyz_std = rotate_std(self.calib_from_device, meas.xyz_std)
     return Measurement(new_xyz, new_xyz_std)
 
-  def _ned_from_calib(self, orientation: Pose):
+  def _ned_from_calib(self, orientation: Measurement):
     ned_from_device = rot_from_euler(orientation.xyz)
     ned_from_calib = ned_from_device * self.calib_from_device.T
     ned_from_calib_euler_meas = Measurement(euler_from_rot(ned_from_calib), np.full(3, np.nan))
