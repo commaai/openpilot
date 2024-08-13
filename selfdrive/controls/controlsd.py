@@ -571,6 +571,7 @@ class Controls:
       # Steering PID loop and lateral MPC
       self.desired_curvature = clip_curvature(CS.vEgo, self.desired_curvature, model_v2.action.desiredCurvature)
       actuators.curvature = self.desired_curvature
+      print("is pose none", self.calibrated_pose is None)
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
                                                                              self.steer_limited, self.desired_curvature,
                                                                              self.calibrated_pose) # TODO what if not available
@@ -651,8 +652,8 @@ class Controls:
     # Orientation and angle rates can be useful for carcontroller
     # Only calibrated (car) frame is relevant for the carcontroller
     if self.calibrated_pose is not None:
-      CC.orientationNED = self.calibrated_pose.orientation.xyz
-      CC.angularVelocity = self.calibrated_pose.angular_velocity.xyz
+      CC.orientationNED = self.calibrated_pose.orientation.xyz.tolist()
+      CC.angularVelocity = self.calibrated_pose.angular_velocity.xyz.tolist()
 
     CC.cruiseControl.override = self.enabled and not CC.longActive and self.CP.openpilotLongitudinalControl
     CC.cruiseControl.cancel = CS.cruiseState.enabled and (not self.enabled or not self.CP.pcmCruise)

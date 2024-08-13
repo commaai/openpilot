@@ -478,7 +478,7 @@ CONFIGS = [
     proc_name="controlsd",
     pubs=[
       "carState", "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
-      "longitudinalPlan", "liveLocationKalman", "liveParameters", "radarState",
+      "longitudinalPlan", "livePose", "liveParameters", "radarState",
       "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
       "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope", "carOutput"
     ],
