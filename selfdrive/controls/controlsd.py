@@ -571,7 +571,6 @@ class Controls:
       # Steering PID loop and lateral MPC
       self.desired_curvature = clip_curvature(CS.vEgo, self.desired_curvature, model_v2.action.desiredCurvature)
       actuators.curvature = self.desired_curvature
-      print("is pose none", self.calibrated_pose is None)
       actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
                                                                              self.steer_limited, self.desired_curvature,
                                                                              self.calibrated_pose) # TODO what if not available
