@@ -19,7 +19,7 @@ def get_cars_docs_in_markdown(docs_content):
   num_cars, md_table = match.groups()
   num_cars = int(num_cars)
   headers, results = _parse_markdown_table(md_table)
-  results = {f'{r['Make']} {r['Model']}': r for r in results}
+  results = {f"{r['Make']} {r['Model']}": r for r in results}
   assert len(results) == num_cars
   return headers, results
 
