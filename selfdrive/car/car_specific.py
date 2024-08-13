@@ -22,17 +22,20 @@ class CarSpecificEvents:
     self.silent_steer_warning = True
 
   def update(self, CS, CS_prev, CC_prev):
-    if self.CP.carName in ('tesla', 'subaru'):
+    if self.CP.carName in ('body', 'mock'):
+      events = Events()
+
+    elif self.CP.carName in ('tesla', 'subaru'):
       events = self.create_common_events(CS, CS_prev)
 
     elif self.CP.carName == 'ford':
       events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.manumatic])
 
     elif self.CP.carName == 'nissan':
-      events = self.create_common_events(CS, CS_prev, extra_gears=[car.CarState.GearShifter.brake])
+      events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.brake])
 
       if CS.lkas_enabled:
-        events.add(car.CarEvent.EventName.invalidLkasSetting)
+        events.add(EventName.invalidLkasSetting)
 
     elif self.CP.carName == 'mazda':
       events = self.create_common_events(CS, CS_prev)
@@ -43,7 +46,7 @@ class CarSpecificEvents:
         events.add(EventName.belowSteerSpeed)
 
     elif self.CP.carName == 'chrysler':
-      events = self.create_common_events(CS, CS_prev, extra_gears=[car.CarState.GearShifter.low])
+      events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.low])
 
       # Low speed steer alert hysteresis logic
       if self.CP.minSteerSpeed > 0. and CS.out.vEgo < (self.CP.minSteerSpeed + 0.5):
@@ -51,7 +54,7 @@ class CarSpecificEvents:
       elif CS.out.vEgo > (self.CP.minSteerSpeed + 1.):
         self.low_speed_alert = False
       if self.low_speed_alert:
-        events.add(car.CarEvent.EventName.belowSteerSpeed)
+        events.add(EventName.belowSteerSpeed)
 
     elif self.CP.carName == 'honda':
       events = self.create_common_events(CS, CS_prev, pcm_enable=False)
@@ -147,10 +150,7 @@ class CarSpecificEvents:
       if CS.out.vEgo > (self.CP.minSteerSpeed + 4.):
         self.low_speed_alert = False
       if self.low_speed_alert:
-        events.add(car.CarEvent.EventName.belowSteerSpeed)
-
-    elif self.CP.carName == 'body':
-      events = Events()
+        events.add(EventName.belowSteerSpeed)
 
     else:
       raise ValueError(f"Unsupported car: {self.CP.carName}")
