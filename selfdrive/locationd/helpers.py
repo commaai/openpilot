@@ -1,7 +1,10 @@
 import numpy as np
+import capnp
 from typing import Any
+from enum import Enum
 
 from cereal import log
+from openpilot.common.transformations.orientation import rot_from_euler, euler_from_rot
 
 
 def rotate_cov(rot_matrix, cov_in):
@@ -70,3 +73,72 @@ class ParameterEstimator:
 
   def get_msg(self, valid: bool, with_points: bool) -> log.Event:
     raise NotImplementedError
+
+
+class Measurement:
+  def __init__(self, xyz: np.ndarray, xyz_std: np.ndarray):
+    self.xyz: np.ndarray = xyz
+    self.xyz_std: np.ndarray = xyz_std
+
+    # properties for convenient access
+    xyz_props = [property(lambda self, i=i: self.xyz[i]) for i in range(3)]
+    xyz_std_props = [property(lambda self, i=i: self.xyz_std[i]) for i in range(3)]
+    Measurement.x, Measurement.y, Measurement.z = xyz_props
+    Measurement.x_std, Measurement.y_std, Measurement.z_std = xyz_std_props
+    Measurement.roll, Measurement.pitch, Measurement.yaw = xyz_props
+    Measurement.roll_std, Measurement.pitch_std, Measurement.yaw_std = xyz_std_props
+
+  @classmethod
+  def from_measurement_xyz(cls, measurement: log.LivePose.Measurement) -> 'Measurement':
+    return cls(
+      xyz=np.array([measurement.x, measurement.y, measurement.z]),
+      xyz_std=np.array([measurement.xStd, measurement.yStd, measurement.zStd])
+    )
+
+
+class Pose:
+  def __init__(self, orientation: Measurement, velocity: Measurement, acceleration: Measurement, angular_velocity: Measurement):
+    self.orientation = orientation
+    self.velocity = velocity
+    self.acceleration = acceleration
+    self.angular_velocity = angular_velocity
+
+  @classmethod
+  def from_live_pose(cls, live_pose: log.LivePose) -> 'Pose':
+    return Pose(
+      orientation=Measurement.from_measurement_xyz(live_pose.orientationNED),
+      velocity=Measurement.from_measurement_xyz(live_pose.velocityDevice),
+      acceleration=Measurement.from_measurement_xyz(live_pose.accelerationDevice),
+      angular_velocity=Measurement.from_measurement_xyz(live_pose.angularVelocityDevice)
+    )
+
+
+class PoseCalibrator:
+  def __init__(self):
+    self.calib_valid = False
+    self.calib_from_device = np.eye(3)
+
+  def _transform_calib_from_device(self, meas: Measurement):
+    new_xyz = self.calib_from_device @ meas.xyz
+    new_xyz_std = rotate_std(self.calib_from_device, meas.xyz_std)
+    return Measurement(new_xyz, new_xyz_std)
+
+  def _ned_from_calib(self, orientation: Pose):
+    ned_from_device = rot_from_euler(orientation.xyz)
+    ned_from_calib = ned_from_device * self.calib_from_device.T
+    ned_from_calib_euler_meas = Measurement(euler_from_rot(ned_from_calib), np.full(3, np.nan))
+    return ned_from_calib_euler_meas
+
+  def build_calibrated_pose(self, pose: Pose) -> Pose:
+    ned_from_calib_euler = self._ned_from_calib(pose.orientation)
+    angular_velocity_calib = self._transform_calib_from_device(pose.angular_velocity)
+    acceleration_calib = self._transform_calib_from_device(pose.acceleration)
+    velocity_calib = self._transform_calib_from_device(pose.angular_velocity)
+
+    return Pose(ned_from_calib_euler, velocity_calib, acceleration_calib, angular_velocity_calib)
+
+  def feed_live_calib(self, live_calib: log.LiveCalibrationData):
+    calib_rpy = np.array(live_calib.rpyCalib)
+    device_from_calib = rot_from_euler(calib_rpy)
+    self.calib_from_device = device_from_calib.T
+    self.calib_valid = live_calib.calStatus == log.LiveCalibrationData.Status.calibrated
