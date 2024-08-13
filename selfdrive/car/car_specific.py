@@ -39,9 +39,9 @@ class CarSpecificEvents:
       events = self.create_common_events(CS, CS_prev, extra_gears=[car.CarState.GearShifter.low])
 
       # Low speed steer alert hysteresis logic
-      if self.CP.minSteerSpeed > 0. and CS.vEgo < (self.CP.minSteerSpeed + 0.5):
+      if self.CP.minSteerSpeed > 0. and CS.out.vEgo < (self.CP.minSteerSpeed + 0.5):
         self.low_speed_alert = True
-      elif CS.vEgo > (self.CP.minSteerSpeed + 1.):
+      elif CS.out.vEgo > (self.CP.minSteerSpeed + 1.):
         self.low_speed_alert = False
       if self.low_speed_alert:
         events.add(car.CarEvent.EventName.belowSteerSpeed)
@@ -52,23 +52,37 @@ class CarSpecificEvents:
     elif self.CP.carName == 'honda':
       events = self.create_common_events(CS, CS_prev, pcm_enable=False)
 
-      if self.CP.pcmCruise and CS.vEgo < self.CP.minEnableSpeed:
+      if self.CP.pcmCruise and CS.out.vEgo < self.CP.minEnableSpeed:
         events.add(EventName.belowEngageSpeed)
 
       if self.CP.pcmCruise:
         # we engage when pcm is active (rising edge)
-        if CS.cruiseState.enabled and not CS_prev.cruiseState.enabled:
+        if CS.out.cruiseState.enabled and not CS_prev.cruiseState.enabled:
           events.add(EventName.pcmEnable)
-        elif not CS.cruiseState.enabled and (CC_prev.actuators.accel >= 0. or not self.CP.openpilotLongitudinalControl):
+        elif not CS.out.cruiseState.enabled and (CC_prev.actuators.accel >= 0. or not self.CP.openpilotLongitudinalControl):
           # it can happen that car cruise disables while comma system is enabled: need to
           # keep braking if needed or if the speed is very low
-          if CS.vEgo < self.CP.minEnableSpeed + 2.:
+          if CS.out.vEgo < self.CP.minEnableSpeed + 2.:
             # non loud alert if cruise disables below 25mph as expected (+ a little margin)
             events.add(EventName.speedTooLow)
           else:
             events.add(EventName.cruiseDisabled)
-      if self.CP.minEnableSpeed > 0 and CS.vEgo < 0.001:
+      if self.CP.minEnableSpeed > 0 and CS.out.vEgo < 0.001:
         events.add(EventName.manualRestart)
+
+    elif self.CP.carName == 'tesla':
+      events = self.create_common_events(CS, CS_prev)
+
+    elif self.CP.carName == 'subaru':
+      events = self.create_common_events(CS, CS_prev)
+
+    elif self.CP.carName == 'mazda':
+      events = self.create_common_events(CS, CS_prev)
+
+      if CS.lkas_disabled:
+        events.add(EventName.lkasDisabled)
+      elif CS.low_speed_alert:
+        events.add(EventName.belowSteerSpeed)
 
     else:
       raise ValueError(f"Unsupported car: {self.CP.carName}")
@@ -79,46 +93,46 @@ class CarSpecificEvents:
                            enable_buttons=(ButtonType.accelCruise, ButtonType.decelCruise)):
     events = Events()
 
-    if CS.doorOpen:
+    if CS.out.doorOpen:
       events.add(EventName.doorOpen)
-    if CS.seatbeltUnlatched:
+    if CS.out.seatbeltUnlatched:
       events.add(EventName.seatbeltNotLatched)
-    if CS.gearShifter != GearShifter.drive and (extra_gears is None or
-       CS.gearShifter not in extra_gears):
+    if CS.out.gearShifter != GearShifter.drive and (extra_gears is None or
+       CS.out.gearShifter not in extra_gears):
       events.add(EventName.wrongGear)
-    if CS.gearShifter == GearShifter.reverse:
+    if CS.out.gearShifter == GearShifter.reverse:
       events.add(EventName.reverseGear)
-    if not CS.cruiseState.available:
+    if not CS.out.cruiseState.available:
       events.add(EventName.wrongCarMode)
-    if CS.espDisabled:
+    if CS.out.espDisabled:
       events.add(EventName.espDisabled)
-    if CS.espActive:
+    if CS.out.espActive:
       events.add(EventName.espActive)
-    if CS.stockFcw:
+    if CS.out.stockFcw:
       events.add(EventName.stockFcw)
-    if CS.stockAeb:
+    if CS.out.stockAeb:
       events.add(EventName.stockAeb)
-    if CS.vEgo > MAX_CTRL_SPEED:
+    if CS.out.vEgo > MAX_CTRL_SPEED:
       events.add(EventName.speedTooHigh)
-    if CS.cruiseState.nonAdaptive:
+    if CS.out.cruiseState.nonAdaptive:
       events.add(EventName.wrongCruiseMode)
-    if CS.brakeHoldActive and self.CP.openpilotLongitudinalControl:
+    if CS.out.brakeHoldActive and self.CP.openpilotLongitudinalControl:
       events.add(EventName.brakeHold)
-    if CS.parkingBrake:
+    if CS.out.parkingBrake:
       events.add(EventName.parkBrake)
-    if CS.accFaulted:
+    if CS.out.accFaulted:
       events.add(EventName.accFaulted)
-    if CS.steeringPressed:
+    if CS.out.steeringPressed:
       events.add(EventName.steerOverride)
-    if CS.brakePressed and CS.standstill:
+    if CS.out.brakePressed and CS.out.standstill:
       events.add(EventName.preEnableStandstill)
-    if CS.gasPressed:
+    if CS.out.gasPressed:
       events.add(EventName.gasPressedOverride)
-    if CS.vehicleSensorsInvalid:
+    if CS.out.vehicleSensorsInvalid:
       events.add(EventName.vehicleSensorsInvalid)
 
     # Handle button presses
-    for b in CS.buttonEvents:
+    for b in CS.out.buttonEvents:
       # Enable OP long on falling edge of enable buttons (defaults to accelCruise and decelCruise, overridable per-port)
       if not self.CP.pcmCruise and (b.type in enable_buttons and not b.pressed):
         events.add(EventName.buttonEnable)
@@ -127,15 +141,15 @@ class CarSpecificEvents:
         events.add(EventName.buttonCancel)
 
     # Handle permanent and temporary steering faults
-    self.steering_unpressed = 0 if CS.steeringPressed else self.steering_unpressed + 1
-    if CS.steerFaultTemporary:
-      if CS.steeringPressed and (not CS_prev.steerFaultTemporary or self.no_steer_warning):
+    self.steering_unpressed = 0 if CS.out.steeringPressed else self.steering_unpressed + 1
+    if CS.out.steerFaultTemporary:
+      if CS.out.steeringPressed and (not CS_prev.steerFaultTemporary or self.no_steer_warning):
         self.no_steer_warning = True
       else:
         self.no_steer_warning = False
 
         # if the user overrode recently, show a less harsh alert
-        if self.silent_steer_warning or CS.standstill or self.steering_unpressed < int(1.5 / DT_CTRL):
+        if self.silent_steer_warning or CS.out.standstill or self.steering_unpressed < int(1.5 / DT_CTRL):
           self.silent_steer_warning = True
           events.add(EventName.steerTempUnavailableSilent)
         else:
@@ -143,15 +157,15 @@ class CarSpecificEvents:
     else:
       self.no_steer_warning = False
       self.silent_steer_warning = False
-    if CS.steerFaultPermanent:
+    if CS.out.steerFaultPermanent:
       events.add(EventName.steerUnavailable)
 
     # we engage when pcm is active (rising edge)
     # enabling can optionally be blocked by the car interface
     if pcm_enable:
-      if CS.cruiseState.enabled and not CS_prev.cruiseState.enabled and allow_enable:
+      if CS.out.cruiseState.enabled and not CS_prev.cruiseState.enabled and allow_enable:
         events.add(EventName.pcmEnable)
-      elif not CS.cruiseState.enabled:
+      elif not CS.out.cruiseState.enabled:
         events.add(EventName.pcmDisable)
 
     return events

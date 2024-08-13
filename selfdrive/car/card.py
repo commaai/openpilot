@@ -161,8 +161,8 @@ class Car:
   def update_events(self, CS: car.CarState) -> car.CarState:
     self.events.clear()
 
-    # TODO: some brands use variables not in cereal CarState
-    CS.events = self.car_events.update(CS, self.CS_prev, self.CC_prev).to_msg()
+    # TODO: what if CI.CS is None? when does that happen? mock?
+    CS.events = self.car_events.update(self.CI.CS, self.CS_prev, self.CC_prev).to_msg()
 
     self.events.add_from_msg(CS.events)
 
