@@ -59,7 +59,7 @@ def can_comm_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket
   return can_recv, can_send
 
 
-def convert_to_capnp(struct: structs.CarParams | structs.CarState) -> capnp.lib.capnp._DynamicStructBuilder:
+def convert_to_capnp(struct: structs.CarParams | structs.CarState | structs.CarControl.Actuators) -> capnp.lib.capnp._DynamicStructBuilder:
   struct_dict = dataclasses.asdict(struct)
 
   if isinstance(struct, structs.CarParams):
@@ -71,8 +71,10 @@ def convert_to_capnp(struct: structs.CarParams | structs.CarState) -> capnp.lib.
     struct_capnp.lateralTuning.init(which)
     lateralTuning_dict = dataclasses.asdict(getattr(struct.lateralTuning, which))
     setattr(struct_capnp.lateralTuning, which, lateralTuning_dict)
-  else:
+  elif isinstance(struct, structs.CarState):
     struct_capnp = car.CarState.new_message(**struct_dict)
+  else:
+    struct_capnp = car.CarControl.Actuators.new_message(**struct_dict)
 
   return struct_capnp
 
@@ -82,12 +84,14 @@ def convert_carControl(struct: capnp.lib.capnp._DynamicStructReader) -> structs.
   def remove_deprecated(s: dict) -> dict:
     return {k: v for k, v in s.items() if not k.endswith('DEPRECATED')}
 
-  for field, value in struct.to_dict().items():
-    if isinstance(value, dict):
-      name = field[0].upper() + field[1:]
-      struct[field] = getattr(structs.CarControl, name)(**remove_deprecated(value))
+  struct_dict = struct.to_dict()
+  struct_dataclass = structs.CarControl(**remove_deprecated({k: v for k, v in struct_dict.items() if not isinstance(k, dict)}))
 
-  return structs.CarControl(**remove_deprecated(struct))
+  struct_dataclass.actuators = structs.CarControl.Actuators(**remove_deprecated(struct_dict.get('actuators', {})))
+  struct_dataclass.cruiseControl = structs.CarControl.CruiseControl(**remove_deprecated(struct_dict.get('cruiseControl', {})))
+  struct_dataclass.hudControl = structs.CarControl.HUDControl(**remove_deprecated(struct_dict.get('hudControl', {})))
+
+  return struct_dataclass
 
 
 class Car:
@@ -223,7 +227,7 @@ class Car:
     # publish new carOutput
     co_send = messaging.new_message('carOutput')
     co_send.valid = self.sm.all_checks(['carControl'])
-    co_send.carOutput.actuatorsOutput = self.last_actuators_output
+    co_send.carOutput.actuatorsOutput = convert_to_capnp(self.last_actuators_output)
     self.pm.send('carOutput', co_send)
 
     # kick off controlsd step while we actuate the latest carControl packet

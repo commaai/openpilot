@@ -1,3 +1,4 @@
+import copy
 from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import apply_driver_steer_torque_limits, structs
 from openpilot.selfdrive.car.interfaces import CarControllerBase
@@ -56,7 +57,7 @@ class CarController(CarControllerBase):
     can_sends.append(mazdacan.create_steering_control(self.packer, self.CP,
                                                       self.frame, apply_steer, CS.cam_lkas))
 
-    new_actuators = CC.actuators.as_builder()
+    new_actuators = copy.deepcopy(CC.actuators)
     new_actuators.steer = apply_steer / CarControllerParams.STEER_MAX
     new_actuators.steerOutputCan = apply_steer
 

@@ -1,3 +1,4 @@
+import copy
 from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import apply_std_steer_angle_limits
 from openpilot.selfdrive.car.helpers import clip
@@ -59,7 +60,7 @@ class CarController(CarControllerBase):
 
     # TODO: HUD control
 
-    new_actuators = actuators.as_builder()
+    new_actuators = copy.deepcopy(actuators)
     new_actuators.steeringAngleDeg = self.apply_angle_last
 
     self.frame += 1

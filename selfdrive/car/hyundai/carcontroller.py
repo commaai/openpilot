@@ -1,3 +1,4 @@
+import copy
 from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import DT_CTRL, apply_driver_steer_torque_limits, common_fault_avoidance, make_tester_present_msg, structs
 from openpilot.selfdrive.car.conversions import Conversions as CV
@@ -161,7 +162,7 @@ class CarController(CarControllerBase):
       if self.frame % 50 == 0 and self.CP.openpilotLongitudinalControl:
         can_sends.append(hyundaican.create_frt_radar_opt(self.packer))
 
-    new_actuators = actuators.as_builder()
+    new_actuators = copy.deepcopy(actuators)
     new_actuators.steer = apply_steer / self.params.STEER_MAX
     new_actuators.steerOutputCan = apply_steer
     new_actuators.accel = accel
