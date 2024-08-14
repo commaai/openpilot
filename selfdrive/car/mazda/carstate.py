@@ -22,14 +22,13 @@ class CarState(CarStateBase):
     self.lkas_allowed_speed = False
     self.lkas_disabled = False
 
-    self.prev_distance_button = 0
     self.distance_button = 0
 
   def update(self, cp, cp_cam):
 
     ret = car.CarState.new_message()
 
-    self.prev_distance_button = self.distance_button
+    prev_distance_button = self.distance_button
     self.distance_button = cp.vl["CRZ_BTNS"]["DISTANCE_LESS"]
 
     ret.wheelSpeeds = self.get_wheel_speeds(
@@ -115,7 +114,7 @@ class CarState(CarStateBase):
     ret.steerFaultPermanent = cp_cam.vl["CAM_LKAS"]["ERR_BIT_1"] == 1
 
     # TODO: add button types for inc and dec
-    ret.buttonEvents = create_button_events(self.distance_button, self.prev_distance_button, {1: ButtonType.gapAdjustCruise})
+    ret.buttonEvents = create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise})
 
     return ret
 
