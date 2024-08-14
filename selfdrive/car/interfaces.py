@@ -217,9 +217,8 @@ class CarInterfaceBase(ABC):
     tune.torque.latAccelOffset = 0.0
     tune.torque.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
 
-  @abstractmethod
   def _update(self) -> car.CarState:
-    pass
+    return self.CS.update(*self.can_parsers)
 
   def update(self, can_packets: list[tuple[int, list[CanData]]]) -> car.CarState:
     # parse can
@@ -292,7 +291,7 @@ class CarStateBase(ABC):
     self.v_ego_kf = KF1D(x0=x0, A=A, C=C[0], K=K)
 
   @abstractmethod
-  def update(self, *args) -> car.CarState:
+  def update(self, cp, cp_cam, cp_adas, cp_body, cp_loopback) -> car.CarState:
     pass
 
   def update_speed_kf(self, v_ego_raw):

@@ -28,7 +28,3 @@ class CarInterface(CarInterfaceBase):
     ret.centerToFront = ret.wheelbase * 0.41
 
     return ret
-
-  # returns a car.CarState
-  def _update(self):
-    return self.CS.update(self.cp, self.cp_cam)

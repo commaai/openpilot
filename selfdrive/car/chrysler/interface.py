@@ -73,6 +73,3 @@ class CarInterface(CarInterfaceBase):
     ret.enableBsm = 720 in fingerprint[0]
 
     return ret
-
-  def _update(self):
-    return self.CS.update(self.cp, self.cp_cam)

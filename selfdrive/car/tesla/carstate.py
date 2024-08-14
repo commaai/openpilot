@@ -21,7 +21,7 @@ class CarState(CarStateBase):
     self.acc_state = 0
     self.das_control_counters = deque(maxlen=32)
 
-  def update(self, cp, cp_cam):
+  def update(self, cp, cp_cam, *_):
     ret = car.CarState.new_message()
 
     # Vehicle speed

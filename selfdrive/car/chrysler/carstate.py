@@ -26,7 +26,7 @@ class CarState(CarStateBase):
 
     self.distance_button = 0
 
-  def update(self, cp, cp_cam):
+  def update(self, cp, cp_cam, *_):
 
     ret = car.CarState.new_message()
 

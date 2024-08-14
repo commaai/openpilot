@@ -25,7 +25,3 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs[0].safetyParam |= Panda.FLAG_NISSAN_ALT_EPS_BUS
 
     return ret
-
-  # returns a car.CarState
-  def _update(self):
-    return self.CS.update(self.cp, self.cp_adas, self.cp_cam)
