@@ -465,6 +465,11 @@ def controlsd_config_callback(params, cfg, lr):
   assert controlsState is not None and initialized, "controlsState never initialized"
   params.put("ReplayControlsState", controlsState.as_builder().to_bytes())
 
+  ublox = params.get_bool("UbloxAvailable")
+  sub_keys = ({"gpsLocation", } if ublox else {"gpsLocationExternal", })
+
+  cfg.pubs = set(cfg.pubs) - sub_keys
+
 
 def locationd_config_pubsub_callback(params, cfg, lr):
   ublox = params.get_bool("UbloxAvailable")
@@ -478,9 +483,10 @@ CONFIGS = [
     proc_name="controlsd",
     pubs=[
       "carState", "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
-      "longitudinalPlan", "liveLocationKalman", "liveParameters", "radarState",
+      "longitudinalPlan", "livePose", "liveParameters", "radarState",
       "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
-      "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope", "carOutput"
+      "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope", "carOutput",
+      "gpsLocationExternal", "gpsLocation",
     ],
     subs=["controlsState", "carControl", "onroadEvents"],
     ignore=["logMonoTime", "controlsState.startMonoTime", "controlsState.cumLagMs"],
