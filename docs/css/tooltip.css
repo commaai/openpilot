@@ -1,0 +1,30 @@
+[data-tooltip] {
+  position: relative;
+  display: inline-block;
+  border-bottom: 1px dotted black;
+}
+
+[data-tooltip]::after {
+  width: max-content;
+  max-width: 25em;
+  content: attr(data-tooltip);
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: white;
+  color: #404040;
+  box-shadow: 0 4px 14px 0 rgba(0,0,0,.2), 0 0 0 1px rgba(0,0,0,.05);
+  padding: 10px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.1s, visibility 0s;
+  font: 14px/1.5 Lato, proxima-nova, Helvetica Neue, Arial, sans-serif;
+  text-decoration: none;
+}
+
+[data-tooltip]:hover::after {
+  opacity: 1;
+  visibility: visible;
+  z-index: 1000;
+}
