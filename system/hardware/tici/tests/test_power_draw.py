@@ -95,7 +95,7 @@ class TestPowerDraw:
 
     return now, msg_counts, time.monotonic() - start_time - SAMPLE_TIME
 
-  @mock_messages(['liveLocationKalman'])
+  @mock_messages(['livePose'])
   def test_camera_procs(self, subtests):
     baseline = get_power()
 
