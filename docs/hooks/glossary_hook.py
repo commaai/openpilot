@@ -25,7 +25,7 @@ def tooltip_html(glossary, html):
   for _, terms in glossary.items():
     for term, definition in terms.items():
       if "description" in definition:
-        # Removes markdown link formating, but keeps the link text
+        # Removes markdown link formatting, but keeps the link text
         clean_description = re.sub(r"\[(.+)\]\(.+\)", r"\1", definition["description"])
 
         html = re.sub(
