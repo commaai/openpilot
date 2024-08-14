@@ -6,7 +6,7 @@
 
 ```bash
 # Log in via browser to have access to routes from your comma account
-python tools/lib/auth.py
+python3 tools/lib/auth.py
 
 # Start a replay
 tools/replay/replay <route-name>
@@ -20,7 +20,7 @@ tools/replay/replay --demo
 cd selfdrive/ui && ./ui
 
 # or try out radar point visualization in Rerun:
-python replay/rp_visualization.py
+python3 replay/rp_visualization.py
 
 # NOTE: To visualize radar points, make sure tools/replay/replay is running.
 ```
