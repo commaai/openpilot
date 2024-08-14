@@ -39,7 +39,7 @@ class CarInterface(CarInterfaceBase):
     ret.steerActuatorDelay = 0.25
     return ret
 
-  def _update(self, c):
+  def _update(self):
     ret = self.CS.update(self.cp, self.cp_cam)
 
     return ret

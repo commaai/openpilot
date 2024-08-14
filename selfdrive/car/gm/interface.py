@@ -12,7 +12,6 @@ from openpilot.selfdrive.car.gm.values import CAR, CruiseButtons, CarControllerP
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, FRICTION_THRESHOLD, LatControlInputs, NanoFFModel
 
 ButtonType = car.CarState.ButtonEvent.Type
-GearShifter = car.CarState.GearShifter
 TransmissionType = car.CarParams.TransmissionType
 NetworkLocation = car.CarParams.NetworkLocation
 BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
@@ -200,7 +199,7 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   # returns a car.CarState
-  def _update(self, c):
+  def _update(self):
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_loopback)
 
     # Don't add event if transitioning from INIT, unless it's to an actual button
