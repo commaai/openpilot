@@ -1,10 +1,11 @@
 from cereal import car
 import cereal.messaging as messaging
+import numpy as np
+from openpilot.common.simple_kalman import KF1D, get_kalman_gain
 from openpilot.selfdrive.car import DT_CTRL
 from openpilot.selfdrive.car.interfaces import MAX_CTRL_SPEED
 from openpilot.selfdrive.car.volkswagen.values import CarControllerParams as VWCarControllerParams
 from openpilot.selfdrive.car.hyundai.interface import ENABLE_BUTTONS as HYUNDAI_ENABLE_BUTTONS
-
 from openpilot.selfdrive.controls.lib.events import Events
 
 ButtonType = car.CarState.ButtonEvent.Type
@@ -14,16 +15,34 @@ NetworkLocation = car.CarParams.NetworkLocation
 
 
 # TODO: the goal is to abstract this file into the CarState struct and make events generic
-class MockCarState:
-  def __init__(self):
+class CarStateFields:
+  def __init__(self, CP: car.CarParams):
+    self.CP = CP
     self.sm = messaging.SubMaster(['gpsLocation', 'gpsLocationExternal'])
 
-  def update(self, CS: car.CarState):
-    self.sm.update(0)
-    gps_sock = 'gpsLocationExternal' if self.sm.recv_frame['gpsLocationExternal'] > 1 else 'gpsLocation'
+    Q = [[0.0, 0.0], [0.0, 100.0]]
+    R = 0.3
+    A = [[1.0, DT_CTRL], [0.0, 1.0]]
+    C = [[1.0, 0.0]]
+    x0 = [[0.0], [0.0]]
+    K = get_kalman_gain(DT_CTRL, np.array(A), np.array(C), np.array(Q), R)
+    self.v_ego_kf = KF1D(x0=x0, A=A, C=C[0], K=K)
 
-    CS.vEgo = self.sm[gps_sock].speed
-    CS.vEgoRaw = self.sm[gps_sock].speed
+  def update(self, CS: car.CarState):
+    if self.CP.carName != 'mock':
+      if abs(CS.vEgoRaw - self.v_ego_kf.x[0][0]) > 2.0:  # Prevent large accelerations when car starts at non zero speed
+        self.v_ego_kf.set_x([[CS.vEgoRaw], [0.0]])
+
+      v_ego_x = self.v_ego_kf.update(CS.vEgoRaw)
+      CS.vEgo = float(v_ego_x[0])
+      CS.aEgo = float(v_ego_x[1])
+
+    else:
+      self.sm.update(0)
+      gps_sock = 'gpsLocationExternal' if self.sm.recv_frame['gpsLocationExternal'] > 1 else 'gpsLocation'
+
+      CS.vEgo = self.sm[gps_sock].speed
+      CS.vEgoRaw = self.sm[gps_sock].speed
 
     return CS
 
