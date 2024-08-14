@@ -15,6 +15,7 @@ from openpilot.common.swaglog import cloudlog, ForwardingHandler
 from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
 from openpilot.selfdrive.car import DT_CTRL, carlog
 from openpilot.selfdrive.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
+from openpilot.selfdrive.car.car_specific import CarSpecificEvents, MockCarState
 from openpilot.selfdrive.car.fw_versions import ObdCallback
 from openpilot.selfdrive.car.car_helpers import get_car
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
@@ -131,6 +132,9 @@ class Car:
 
     self.events = Events()
 
+    self.car_events = CarSpecificEvents(self.CP)
+    self.mock_carstate = MockCarState()
+
     # card is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
 
@@ -139,7 +143,10 @@ class Car:
 
     # Update carState from CAN
     can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
-    CS = self.CI.update(self.CC_prev, can_capnp_to_list(can_strs))
+    CS = self.CI.update(can_capnp_to_list(can_strs))
+
+    if self.CP.carName == 'mock':
+      CS = self.mock_carstate.update(CS)
 
     self.sm.update(0)
 
@@ -156,6 +163,8 @@ class Car:
 
   def update_events(self, CS: car.CarState) -> car.CarState:
     self.events.clear()
+
+    CS.events = self.car_events.update(self.CI.CS, self.CS_prev, self.CI.CC, self.CC_prev).to_msg()
 
     self.events.add_from_msg(CS.events)
 

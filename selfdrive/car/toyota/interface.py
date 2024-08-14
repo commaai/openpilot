@@ -2,13 +2,11 @@ from cereal import car
 from panda import Panda
 from panda.python import uds
 from openpilot.selfdrive.car.toyota.values import Ecu, CAR, DBC, ToyotaFlags, CarControllerParams, TSS2_CAR, RADAR_ACC_CAR, NO_DSU_CAR, \
-                                        MIN_ACC_SPEED, EPS_SCALE, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR
-from openpilot.selfdrive.car import create_button_events, get_safety_config
+                                                  MIN_ACC_SPEED, EPS_SCALE, UNSUPPORTED_DSU_CAR, NO_STOP_TIMER_CAR, ANGLE_CONTROL_CAR
+from openpilot.selfdrive.car import get_safety_config
 from openpilot.selfdrive.car.disable_ecu import disable_ecu
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
-ButtonType = car.CarState.ButtonEvent.Type
-EventName = car.CarEvent.EventName
 SteerControlType = car.CarParams.SteerControlType
 
 
@@ -143,31 +141,3 @@ class CarInterface(CarInterfaceBase):
     if CP.flags & ToyotaFlags.DISABLE_RADAR.value:
       communication_control = bytes([uds.SERVICE_TYPE.COMMUNICATION_CONTROL, uds.CONTROL_TYPE.ENABLE_RX_DISABLE_TX, uds.MESSAGE_TYPE.NORMAL])
       disable_ecu(can_recv, can_send, bus=0, addr=0x750, sub_addr=0xf, com_cont_req=communication_control)
-
-  # returns a car.CarState
-  def _update(self, c):
-    ret = self.CS.update(self.cp, self.cp_cam)
-
-    if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
-      ret.buttonEvents = create_button_events(self.CS.distance_button, self.CS.prev_distance_button, {1: ButtonType.gapAdjustCruise})
-
-    # events
-    events = self.create_common_events(ret)
-
-    if self.CP.openpilotLongitudinalControl:
-      if ret.cruiseState.standstill and not ret.brakePressed:
-        events.add(EventName.resumeRequired)
-      if self.CS.low_speed_lockout:
-        events.add(EventName.lowSpeedLockout)
-      if ret.vEgo < self.CP.minEnableSpeed:
-        events.add(EventName.belowEngageSpeed)
-        if c.actuators.accel > 0.3:
-          # some margin on the actuator to not false trigger cancellation while stopping
-          events.add(EventName.speedTooLow)
-        if ret.vEgo < 0.001:
-          # while in standstill, send a user alert
-          events.add(EventName.manualRestart)
-
-    ret.events = events.to_msg()
-
-    return ret

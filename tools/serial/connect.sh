@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 while true; do
   if ls /dev/serial/by-id/usb-FTDI_FT230X* 2> /dev/null; then

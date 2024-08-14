@@ -217,7 +217,7 @@ class TestCarModelBase(unittest.TestCase):
     CC = car.CarControl.new_message().as_reader()
 
     for i, msg in enumerate(self.can_msgs):
-      CS = self.CI.update(CC, can_capnp_to_list((msg.as_builder().to_bytes(),)))
+      CS = self.CI.update(can_capnp_to_list((msg.as_builder().to_bytes(),)))
       self.CI.apply(CC, msg.logMonoTime)
 
       if CS.canValid:
@@ -293,7 +293,7 @@ class TestCarModelBase(unittest.TestCase):
       msgs_sent = 0
       CI = self.CarInterface(self.CP, self.CarController, self.CarState)
       for _ in range(round(10.0 / DT_CTRL)):  # make sure we hit the slowest messages
-        CI.update(car_control, [])
+        CI.update([])
         _, sendcan = CI.apply(car_control, now_nanos)
 
         now_nanos += DT_CTRL * 1e9
@@ -339,8 +339,6 @@ class TestCarModelBase(unittest.TestCase):
     msg_strategy = st.binary(min_size=size, max_size=size)
     msgs = data.draw(st.lists(msg_strategy, min_size=20))
 
-    CC = car.CarControl.new_message()
-
     for dat in msgs:
       # due to panda updating state selectively, only edges are expected to match
       # TODO: warm up CarState with real CAN messages to check edge of both sources
@@ -358,7 +356,7 @@ class TestCarModelBase(unittest.TestCase):
       can = messaging.new_message('can', 1)
       can.can = [log.CanData(address=address, dat=dat, src=bus)]
 
-      CS = self.CI.update(CC, can_capnp_to_list((can.to_bytes(),)))
+      CS = self.CI.update(can_capnp_to_list((can.to_bytes(),)))
 
       if self.safety.get_gas_pressed_prev() != prev_panda_gas:
         self.assertEqual(CS.gasPressed, self.safety.get_gas_pressed_prev())
@@ -393,11 +391,9 @@ class TestCarModelBase(unittest.TestCase):
     if self.CP.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
 
-    CC = car.CarControl.new_message()
-
     # warm up pass, as initial states may be different
     for can in self.can_msgs[:300]:
-      self.CI.update(CC, can_capnp_to_list((can.as_builder().to_bytes(), )))
+      self.CI.update(can_capnp_to_list((can.as_builder().to_bytes(), )))
       for msg in filter(lambda m: m.src in range(64), can.can):
         to_send = libpanda_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
         self.safety.safety_rx_hook(to_send)
@@ -407,7 +403,7 @@ class TestCarModelBase(unittest.TestCase):
     checks = defaultdict(int)
     card = Car(CI=self.CI)
     for idx, can in enumerate(self.can_msgs):
-      CS = self.CI.update(CC, can_capnp_to_list((can.as_builder().to_bytes(), )))
+      CS = self.CI.update(can_capnp_to_list((can.as_builder().to_bytes(), )))
       for msg in filter(lambda m: m.src in range(64), can.can):
         to_send = libpanda_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
         ret = self.safety.safety_rx_hook(to_send)

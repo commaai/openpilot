@@ -9,7 +9,8 @@ from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
-from openpilot.common.mock.generators import generate_liveLocationKalman
+from openpilot.selfdrive.locationd.helpers import Pose
+from openpilot.common.mock.generators import generate_livePose
 
 
 class TestLatControl:
@@ -29,8 +30,10 @@ class TestLatControl:
 
     params = log.LiveParametersData.new_message()
 
-    llk = generate_liveLocationKalman()
+    lp = generate_livePose()
+    pose = Pose.from_live_pose(lp.livePose)
+
     for _ in range(1000):
-      _, _, lac_log = controller.update(True, CS, VM, params, False, 1, llk)
+      _, _, lac_log = controller.update(True, CS, VM, params, False, 1, pose)
 
     assert lac_log.saturated
