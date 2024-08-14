@@ -24,6 +24,3 @@ class CarInterface(CarInterfaceBase):
     ret.steerControlType = car.CarParams.SteerControlType.angle
 
     return ret
-
-  def _update(self):
-    return self.CS.update(self.cp)

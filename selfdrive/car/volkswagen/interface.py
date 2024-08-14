@@ -2,20 +2,10 @@ from cereal import car
 from panda import Panda
 from openpilot.selfdrive.car import get_safety_config
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
-from openpilot.selfdrive.car.volkswagen.values import CAR, CANBUS, NetworkLocation, TransmissionType, VolkswagenFlags
+from openpilot.selfdrive.car.volkswagen.values import CAR, NetworkLocation, TransmissionType, VolkswagenFlags
 
 
 class CarInterface(CarInterfaceBase):
-  def __init__(self, CP, CarController, CarState):
-    super().__init__(CP, CarController, CarState)
-
-    if CP.networkLocation == NetworkLocation.fwdCamera:
-      self.ext_bus = CANBUS.pt
-      self.cp_ext = self.cp
-    else:
-      self.ext_bus = CANBUS.cam
-      self.cp_ext = self.cp_cam
-
   @staticmethod
   def _get_params(ret, candidate: CAR, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "volkswagen"
@@ -96,7 +86,3 @@ class CarInterface(CarInterfaceBase):
     ret.autoResumeSng = ret.minEnableSpeed == -1
 
     return ret
-
-  # returns a car.CarState
-  def _update(self):
-    return self.CS.update(self.cp, self.cp_cam, self.cp_ext, self.CP.transmissionType)

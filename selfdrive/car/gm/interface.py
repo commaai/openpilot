@@ -193,7 +193,3 @@ class CarInterface(CarInterfaceBase):
       CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
     return ret
-
-  # returns a car.CarState
-  def _update(self):
-    return self.CS.update(self.cp, self.cp_cam, self.cp_loopback)

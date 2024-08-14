@@ -64,6 +64,3 @@ class CarInterface(CarInterfaceBase):
     ret.autoResumeSng = ret.minEnableSpeed == -1.
     ret.centerToFront = ret.wheelbase * 0.44
     return ret
-
-  def _update(self):
-    return self.CS.update(self.cp, self.cp_cam)
