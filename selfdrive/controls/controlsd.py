@@ -423,6 +423,13 @@ class Controls:
            if ps.safetyModel not in IGNORED_SAFETY_MODES):
       self.mismatch_counter += 1
 
+    # calibrate the live pose and save it for later use
+    if self.sm.updated["liveCalibration"]:
+      self.pose_calibrator.feed_live_calib(self.sm['liveCalibration'])
+    if self.sm.updated["livePose"]:
+      device_pose = Pose.from_live_pose(self.sm['livePose'])
+      self.calibrated_pose = self.pose_calibrator.build_calibrated_pose(device_pose)
+
     return CS
 
   def state_transition(self, CS):
@@ -510,12 +517,6 @@ class Controls:
     self.active = self.state in ACTIVE_STATES
     if self.active:
       self.current_alert_types.append(ET.WARNING)
-
-    if self.sm.updated["liveCalibration"]:
-      self.pose_calibrator.feed_live_calib(self.sm['liveCalibration'])
-    if self.sm.updated["livePose"]:
-      device_pose = Pose.from_live_pose(self.sm['livePose'])
-      self.calibrated_pose = self.pose_calibrator.build_calibrated_pose(device_pose)
 
   def state_control(self, CS):
     """Given the state, this function returns a CarControl packet"""
