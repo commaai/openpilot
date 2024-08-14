@@ -273,7 +273,7 @@ function op_juggle() {
 
 function op_lint() {
   op_before_cmd
-  op_run_command scripts/lint.sh $@
+  op_run_command scripts/lint/lint.sh $@
 }
 
 function op_test() {
