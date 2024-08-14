@@ -149,8 +149,8 @@ class CarInterface(CarInterfaceBase):
     if CP.flags & HyundaiFlags.ENABLE_BLINKERS:
       disable_ecu(can_recv, can_send, bus=CanBus(CP).ECAN, addr=0x7B1, com_cont_req=b'\x28\x83\x01')
 
-  def _update(self, c):
-    ret = self.CS.update(self.cp, self.cp_cam)
+  def _update(self):
+    ret = super()._update()
 
     if self.CS.CP.openpilotLongitudinalControl:
       ret.buttonEvents = create_button_events(self.CS.cruise_buttons[-1], self.CS.prev_cruise_buttons, BUTTONS_DICT)

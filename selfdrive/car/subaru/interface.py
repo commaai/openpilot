@@ -97,9 +97,9 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   # returns a car.CarState
-  def _update(self, c):
+  def _update(self):
 
-    ret = self.CS.update(self.cp, self.cp_cam, self.cp_body)
+    ret = super()._update()
 
     return ret
 

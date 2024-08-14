@@ -221,8 +221,8 @@ class CarInterface(CarInterfaceBase):
       disable_ecu(can_recv, can_send, bus=1, addr=0x18DAB0F1, com_cont_req=b'\x28\x83\x03')
 
   # returns a car.CarState
-  def _update(self, c):
-    ret = self.CS.update(self.cp, self.cp_cam, self.cp_body)
+  def _update(self):
+    ret = super()._update()
 
     ret.buttonEvents = [
       *create_button_events(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT),

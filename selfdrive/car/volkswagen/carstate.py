@@ -32,7 +32,10 @@ class CarState(CarStateBase):
 
     return button_events
 
-  def update(self, pt_cp, cam_cp, ext_cp):
+  def update(self, pt_cp, cam_cp, *_):
+
+    ext_cp = pt_cp if self.CP.networkLocation == NetworkLocation.fwdCamera else cam_cp
+
     if self.CP.flags & VolkswagenFlags.PQ:
       return self.update_pq(pt_cp, cam_cp, ext_cp)
 
