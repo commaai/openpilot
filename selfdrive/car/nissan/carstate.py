@@ -9,6 +9,7 @@ from openpilot.selfdrive.car.nissan.values import CAR, DBC, CarControllerParams
 
 TORQUE_SAMPLES = 12
 
+
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)

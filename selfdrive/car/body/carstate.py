@@ -3,6 +3,7 @@ from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.interfaces import CarStateBase
 from openpilot.selfdrive.car.body.values import DBC
 
+
 class CarState(CarStateBase):
   def update(self, cp):
     ret = car.CarState.new_message()

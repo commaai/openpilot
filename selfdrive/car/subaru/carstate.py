@@ -52,7 +52,7 @@ class CarState(CarStateBase):
 
     # continuous blinker signals for assisted lane change
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, cp.vl["Dashlights"]["LEFT_BLINKER"],
-                                                                          cp.vl["Dashlights"]["RIGHT_BLINKER"])
+                                                                      cp.vl["Dashlights"]["RIGHT_BLINKER"])
 
     if self.CP.enableBsm:
       ret.leftBlindspot = (cp.vl["BSD_RCTA"]["L_ADJACENT"] == 1) or (cp.vl["BSD_RCTA"]["L_APPROACHING"] == 1)
@@ -226,4 +226,3 @@ class CarState(CarStateBase):
       ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus.alt)
-

@@ -4,7 +4,7 @@ from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car.interfaces import CarStateBase
 from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.volkswagen.values import DBC, CANBUS, NetworkLocation, TransmissionType, GearShifter, \
-                                            CarControllerParams, VolkswagenFlags
+                                                      CarControllerParams, VolkswagenFlags
 
 
 class CarState(CarStateBase):
@@ -386,6 +386,7 @@ class MqbExtraSignals:
   bsm_radar_messages = [
     ("SWA_01", 20),                              # From J1086 Lane Change Assist
   ]
+
 
 class PqExtraSignals:
   # Additional signal and message lists for optional or bus-portable controllers
