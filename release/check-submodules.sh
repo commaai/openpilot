@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 while read hash submodule ref; do
   git -C $submodule fetch --depth 3000 origin master

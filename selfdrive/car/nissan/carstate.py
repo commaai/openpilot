@@ -3,11 +3,15 @@ from collections import deque
 from cereal import car
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
+from openpilot.selfdrive.car import create_button_events
 from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.interfaces import CarStateBase
 from openpilot.selfdrive.car.nissan.values import CAR, DBC, CarControllerParams
 
+ButtonType = car.CarState.ButtonEvent.Type
+
 TORQUE_SAMPLES = 12
+
 
 class CarState(CarStateBase):
   def __init__(self, CP):
@@ -20,13 +24,12 @@ class CarState(CarStateBase):
     self.steeringTorqueSamples = deque(TORQUE_SAMPLES*[0], TORQUE_SAMPLES)
     self.shifter_values = can_define.dv["GEARBOX"]["GEAR_SHIFTER"]
 
-    self.prev_distance_button = 0
     self.distance_button = 0
 
-  def update(self, cp, cp_adas, cp_cam):
+  def update(self, cp, cp_cam, cp_adas, *_):
     ret = car.CarState.new_message()
 
-    self.prev_distance_button = self.distance_button
+    prev_distance_button = self.distance_button
     self.distance_button = cp.vl["CRUISE_THROTTLE"]["FOLLOW_DISTANCE_BUTTON"]
 
     if self.CP.carFingerprint in (CAR.NISSAN_ROGUE, CAR.NISSAN_XTRAIL, CAR.NISSAN_ALTIMA):
@@ -120,6 +123,8 @@ class CarState(CarStateBase):
     if self.CP.carFingerprint != CAR.NISSAN_ALTIMA:
       self.lkas_hud_msg = copy.copy(cp_adas.vl["PROPILOT_HUD"])
       self.lkas_hud_info_msg = copy.copy(cp_adas.vl["PROPILOT_HUD_INFO_MSG"])
+
+    ret.buttonEvents = create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise})
 
     return ret
 
