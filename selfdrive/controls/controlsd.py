@@ -383,7 +383,7 @@ class Controls:
     # TODO: fix simulator
     if not SIMULATION or REPLAY:
       gps_ok = self.sm.recv_frame[self.gps_location_service] > 0 and (self.sm.frame - self.sm.recv_frame[self.gps_location_service]) * DT_CTRL < 2.0
-      if not gps_ok and (self.distance_traveled > 1500):
+      if not gps_ok and self.sm['livePose'].inputsOK and (self.distance_traveled > 1500):
         self.events.add(EventName.noGps)
       if gps_ok:
         self.distance_traveled = 0
