@@ -17,7 +17,7 @@ class LatControl(ABC):
     self.steer_max = 1.0
 
   @abstractmethod
-  def update(self, active, CS, VM, params, steer_limited, desired_curvature, llk):
+  def update(self, active, CS, VM, params, steer_limited, desired_curvature, calibrated_pose):
     pass
 
   def reset(self):
