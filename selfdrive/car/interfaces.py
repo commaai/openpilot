@@ -16,11 +16,8 @@ from openpilot.selfdrive.car.can_definitions import CanData, CanRecvCallable, Ca
 from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.helpers import clip
 from openpilot.selfdrive.car.values import PLATFORMS
-from openpilot.selfdrive.controls.lib.events import Events
 
-ButtonType = car.CarState.ButtonEvent.Type
 GearShifter = car.CarState.GearShifter
-EventName = car.CarEvent.EventName
 
 V_CRUISE_MAX = 145
 MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS
@@ -91,10 +88,6 @@ class CarInterfaceBase(ABC):
     self.CP = CP
 
     self.frame = 0
-    self.steering_unpressed = 0
-    self.low_speed_alert = False
-    self.no_steer_warning = False
-    self.silent_steer_warning = True
     self.v_ego_cluster_seen = False
 
     self.CS: CarStateBase = CarState(CP)
@@ -257,88 +250,6 @@ class CarInterfaceBase(ABC):
     self.CS.out = ret.as_reader()
 
     return ret
-
-
-  def create_common_events(self, cs_out, extra_gears=None, pcm_enable=True, allow_enable=True,
-                           enable_buttons=(ButtonType.accelCruise, ButtonType.decelCruise)):
-    events = Events()
-
-    if cs_out.doorOpen:
-      events.add(EventName.doorOpen)
-    if cs_out.seatbeltUnlatched:
-      events.add(EventName.seatbeltNotLatched)
-    if cs_out.gearShifter != GearShifter.drive and (extra_gears is None or
-       cs_out.gearShifter not in extra_gears):
-      events.add(EventName.wrongGear)
-    if cs_out.gearShifter == GearShifter.reverse:
-      events.add(EventName.reverseGear)
-    if not cs_out.cruiseState.available:
-      events.add(EventName.wrongCarMode)
-    if cs_out.espDisabled:
-      events.add(EventName.espDisabled)
-    if cs_out.espActive:
-      events.add(EventName.espActive)
-    if cs_out.stockFcw:
-      events.add(EventName.stockFcw)
-    if cs_out.stockAeb:
-      events.add(EventName.stockAeb)
-    if cs_out.vEgo > MAX_CTRL_SPEED:
-      events.add(EventName.speedTooHigh)
-    if cs_out.cruiseState.nonAdaptive:
-      events.add(EventName.wrongCruiseMode)
-    if cs_out.brakeHoldActive and self.CP.openpilotLongitudinalControl:
-      events.add(EventName.brakeHold)
-    if cs_out.parkingBrake:
-      events.add(EventName.parkBrake)
-    if cs_out.accFaulted:
-      events.add(EventName.accFaulted)
-    if cs_out.steeringPressed:
-      events.add(EventName.steerOverride)
-    if cs_out.brakePressed and cs_out.standstill:
-      events.add(EventName.preEnableStandstill)
-    if cs_out.gasPressed:
-      events.add(EventName.gasPressedOverride)
-    if cs_out.vehicleSensorsInvalid:
-      events.add(EventName.vehicleSensorsInvalid)
-
-    # Handle button presses
-    for b in cs_out.buttonEvents:
-      # Enable OP long on falling edge of enable buttons (defaults to accelCruise and decelCruise, overridable per-port)
-      if not self.CP.pcmCruise and (b.type in enable_buttons and not b.pressed):
-        events.add(EventName.buttonEnable)
-      # Disable on rising and falling edge of cancel for both stock and OP long
-      if b.type == ButtonType.cancel:
-        events.add(EventName.buttonCancel)
-
-    # Handle permanent and temporary steering faults
-    self.steering_unpressed = 0 if cs_out.steeringPressed else self.steering_unpressed + 1
-    if cs_out.steerFaultTemporary:
-      if cs_out.steeringPressed and (not self.CS.out.steerFaultTemporary or self.no_steer_warning):
-        self.no_steer_warning = True
-      else:
-        self.no_steer_warning = False
-
-        # if the user overrode recently, show a less harsh alert
-        if self.silent_steer_warning or cs_out.standstill or self.steering_unpressed < int(1.5 / DT_CTRL):
-          self.silent_steer_warning = True
-          events.add(EventName.steerTempUnavailableSilent)
-        else:
-          events.add(EventName.steerTempUnavailable)
-    else:
-      self.no_steer_warning = False
-      self.silent_steer_warning = False
-    if cs_out.steerFaultPermanent:
-      events.add(EventName.steerUnavailable)
-
-    # we engage when pcm is active (rising edge)
-    # enabling can optionally be blocked by the car interface
-    if pcm_enable:
-      if cs_out.cruiseState.enabled and not self.CS.out.cruiseState.enabled and allow_enable:
-        events.add(EventName.pcmEnable)
-      elif not cs_out.cruiseState.enabled:
-        events.add(EventName.pcmDisable)
-
-    return events
 
 
 class RadarInterfaceBase(ABC):
