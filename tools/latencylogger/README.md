@@ -5,7 +5,7 @@ LatencyLogger is a tool to track the time from first pixel to actuation. Timesta
 ## Usage
 
 ```
-$ python latency_logger.py -h
+$ python3 latency_logger.py -h
 usage: latency_logger.py [-h] [--relative] [--demo] [--plot] [route_or_segment_name]
 
 A tool for analyzing openpilot's end-to-end latency
