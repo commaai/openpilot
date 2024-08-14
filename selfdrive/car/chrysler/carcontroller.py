@@ -49,13 +49,13 @@ class CarController(CarControllerBase):
 
       # TODO: can we make this more sane? why is it different for all the cars?
       lkas_control_bit = self.lkas_control_bit_prev
-      if CS.out.vEgo > self.CP.minSteerSpeed:
+      if CS.out.vEgoRaw > self.CP.minSteerSpeed:
         lkas_control_bit = True
       elif self.CP.flags & ChryslerFlags.HIGHER_MIN_STEERING_SPEED:
-        if CS.out.vEgo < (self.CP.minSteerSpeed - 3.0):
+        if CS.out.vEgoRaw < (self.CP.minSteerSpeed - 3.0):
           lkas_control_bit = False
       elif self.CP.carFingerprint in RAM_CARS:
-        if CS.out.vEgo < (self.CP.minSteerSpeed - 0.5):
+        if CS.out.vEgoRaw < (self.CP.minSteerSpeed - 0.5):
           lkas_control_bit = False
 
       # EPS faults if LKAS re-enables too quickly

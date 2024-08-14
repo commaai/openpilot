@@ -132,7 +132,7 @@ class CarController(CarControllerBase):
 
     if CC.longActive:
       accel = actuators.accel
-      gas, brake = compute_gas_brake(actuators.accel, CS.out.vEgo, self.CP.carFingerprint)
+      gas, brake = compute_gas_brake(actuators.accel, CS.out.vEgoRaw, self.CP.carFingerprint)
     else:
       accel = 0.0
       gas, brake = 0.0, 0.0
@@ -143,7 +143,7 @@ class CarController(CarControllerBase):
 
     # *** apply brake hysteresis ***
     pre_limit_brake, self.braking, self.brake_steady = actuator_hysteresis(brake, self.braking, self.brake_steady,
-                                                                           CS.out.vEgo, self.CP.carFingerprint)
+                                                                           CS.out.vEgoRaw, self.CP.carFingerprint)
 
     # *** rate limit after the enable check ***
     self.brake_last = rate_limit(pre_limit_brake, self.brake_last, -2., DT_CTRL)
@@ -170,9 +170,9 @@ class CarController(CarControllerBase):
                                                       CS.CP.openpilotLongitudinalControl))
 
     # wind brake from air resistance decel at high speed
-    wind_brake = interp(CS.out.vEgo, [0.0, 2.3, 35.0], [0.001, 0.002, 0.15])
+    wind_brake = interp(CS.out.vEgoRaw, [0.0, 2.3, 35.0], [0.001, 0.002, 0.15])
     # all of this is only relevant for HONDA NIDEC
-    max_accel = interp(CS.out.vEgo, self.params.NIDEC_MAX_ACCEL_BP, self.params.NIDEC_MAX_ACCEL_V)
+    max_accel = interp(CS.out.vEgoRaw, self.params.NIDEC_MAX_ACCEL_BP, self.params.NIDEC_MAX_ACCEL_V)
     # TODO this 1.44 is just to maintain previous behavior
     pcm_speed_BP = [-wind_brake,
                     -wind_brake * (3 / 4),
@@ -185,16 +185,16 @@ class CarController(CarControllerBase):
       pcm_accel = int(0.0)
     elif self.CP.carFingerprint in HONDA_NIDEC_ALT_PCM_ACCEL:
       pcm_speed_V = [0.0,
-                     clip(CS.out.vEgo - 3.0, 0.0, 100.0),
-                     clip(CS.out.vEgo + 0.0, 0.0, 100.0),
-                     clip(CS.out.vEgo + 5.0, 0.0, 100.0)]
+                     clip(CS.out.vEgoRaw - 3.0, 0.0, 100.0),
+                     clip(CS.out.vEgoRaw + 0.0, 0.0, 100.0),
+                     clip(CS.out.vEgoRaw + 5.0, 0.0, 100.0)]
       pcm_speed = interp(gas - brake, pcm_speed_BP, pcm_speed_V)
       pcm_accel = int(1.0 * self.params.NIDEC_GAS_MAX)
     else:
       pcm_speed_V = [0.0,
-                     clip(CS.out.vEgo - 2.0, 0.0, 100.0),
-                     clip(CS.out.vEgo + 2.0, 0.0, 100.0),
-                     clip(CS.out.vEgo + 5.0, 0.0, 100.0)]
+                     clip(CS.out.vEgoRaw - 2.0, 0.0, 100.0),
+                     clip(CS.out.vEgoRaw + 2.0, 0.0, 100.0),
+                     clip(CS.out.vEgoRaw + 5.0, 0.0, 100.0)]
       pcm_speed = interp(gas - brake, pcm_speed_BP, pcm_speed_V)
       pcm_accel = int(clip((accel / 1.44) / max_accel, 0.0, 1.0) * self.params.NIDEC_GAS_MAX)
 

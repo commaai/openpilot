@@ -100,7 +100,7 @@ class CarController(CarControllerBase):
         idx = (self.frame // 4) % 4
 
         at_full_stop = CC.longActive and CS.out.standstill
-        near_stop = CC.longActive and (CS.out.vEgo < self.params.NEAR_STOP_BRAKE_PHASE)
+        near_stop = CC.longActive and (CS.out.vEgoRaw < self.params.NEAR_STOP_BRAKE_PHASE)
         friction_brake_bus = CanBus.CHASSIS
         # GM Camera exceptions
         # TODO: can we always check the longControlState?
@@ -132,7 +132,7 @@ class CarController(CarControllerBase):
         if self.frame % speed_and_accelerometer_step == 0:
           idx = (self.frame // speed_and_accelerometer_step) % 4
           can_sends.append(gmcan.create_adas_steering_status(CanBus.OBSTACLE, idx))
-          can_sends.append(gmcan.create_adas_accelerometer_speed_status(CanBus.OBSTACLE, CS.out.vEgo, idx))
+          can_sends.append(gmcan.create_adas_accelerometer_speed_status(CanBus.OBSTACLE, CS.out.vEgoRaw, idx))
 
       if self.CP.networkLocation == NetworkLocation.gateway and self.frame % self.params.ADAS_KEEPALIVE_STEP == 0:
         can_sends += gmcan.create_adas_keepalive(CanBus.POWERTRAIN)
