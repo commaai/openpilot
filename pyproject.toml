@@ -69,6 +69,7 @@ docs = [
   "Jinja2",
   "natsort",
   "mkdocs",
+  "tomllib",
 ]
 
 testing = [
