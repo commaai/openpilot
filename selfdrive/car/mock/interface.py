@@ -21,7 +21,7 @@ class CarInterface(CarInterfaceBase):
     ret.dashcamOnly = True
     return ret
 
-  def _update(self, c):
+  def _update(self):
     self.sm.update(0)
     gps_sock = 'gpsLocationExternal' if self.sm.recv_frame['gpsLocationExternal'] > 1 else 'gpsLocation'
 

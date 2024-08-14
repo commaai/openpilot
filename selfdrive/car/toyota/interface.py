@@ -144,7 +144,7 @@ class CarInterface(CarInterfaceBase):
       disable_ecu(can_recv, can_send, bus=0, addr=0x750, sub_addr=0xf, com_cont_req=communication_control)
 
   # returns a car.CarState
-  def _update(self, c):
+  def _update(self):
     ret = self.CS.update(self.cp, self.cp_cam)
 
     if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
