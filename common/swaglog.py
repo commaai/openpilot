@@ -110,7 +110,10 @@ class ForwardingHandler(logging.Handler):
     self.target_logger = target_logger
 
   def emit(self, record):
-    self.target_logger.handle(record)
+    if record.levelno == logging.INFO and hasattr(record, 'important') and hasattr(self.target_logger, 'important'):
+      self.target_logger.important(record.msg)
+    else:
+      self.target_logger.handle(record)
 
 
 def add_file_handler(log):

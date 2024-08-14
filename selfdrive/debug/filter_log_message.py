@@ -9,6 +9,7 @@ LEVELS = {
   "DEBUG": 10,
   "INFO": 20,
   "WARNING": 30,
+  "IMPORTANT": 35,
   "ERROR": 40,
   "CRITICAL": 50,
 }

@@ -153,6 +153,11 @@ class SwagLogger(logging.Logger):
   def bind_global(self, **kwargs):
     self.global_ctx.update(kwargs)
 
+  def important(self, msg, *args, **kwargs):
+    IMPORTANT = 35
+    if self.isEnabledFor(IMPORTANT):
+      self._log(IMPORTANT, msg, args, **kwargs)
+
   def event(self, event, *args, **kwargs):
     evt = NiceOrderedDict()
     evt['event'] = event
@@ -161,6 +166,8 @@ class SwagLogger(logging.Logger):
     evt.update(kwargs)
     if 'error' in kwargs:
       self.error(evt)
+    elif 'important' in kwargs:
+      self.important(evt)
     elif 'debug' in kwargs:
       self.debug(evt)
     else:

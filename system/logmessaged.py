@@ -38,7 +38,7 @@ def main() -> NoReturn:
       msg = messaging.new_message(None, valid=True, logMessage=record)
       log_message_sock.send(msg.to_bytes())
 
-      if level >= 40:  # logging.ERROR
+      if level >= 35:  # logging.IMPORTANT
         msg = messaging.new_message(None, valid=True, errorLogMessage=record)
         error_log_message_sock.send(msg.to_bytes())
   finally:
