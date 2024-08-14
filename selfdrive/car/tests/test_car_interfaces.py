@@ -11,6 +11,7 @@ from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.fw_versions import FW_VERSIONS, FW_QUERY_CONFIGS
 from openpilot.selfdrive.car.interfaces import get_interface_attr
+from openpilot.selfdrive.car.mock.values import CAR as MOCK
 from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
@@ -51,7 +52,7 @@ def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
 class TestCarInterfaces:
   # FIXME: Due to the lists used in carParams, Phase.target is very slow and will cause
   #  many generated examples to overrun when max_examples > ~20, don't use it
-  @parameterized.expand([(car,) for car in sorted(all_known_cars())])
+  @parameterized.expand([(car,) for car in sorted(all_known_cars())] + [MOCK.MOCK])
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
             phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
@@ -81,9 +82,10 @@ class TestCarInterfaces:
     if car_params.steerControlType != car.CarParams.SteerControlType.angle:
       tune = car_params.lateralTuning
       if tune.which() == 'pid':
-        assert not math.isnan(tune.pid.kf) and tune.pid.kf > 0
-        assert len(tune.pid.kpV) > 0 and len(tune.pid.kpV) == len(tune.pid.kpBP)
-        assert len(tune.pid.kiV) > 0 and len(tune.pid.kiV) == len(tune.pid.kiBP)
+        if car_name != MOCK.MOCK:
+          assert not math.isnan(tune.pid.kf) and tune.pid.kf > 0
+          assert len(tune.pid.kpV) > 0 and len(tune.pid.kpV) == len(tune.pid.kpBP)
+          assert len(tune.pid.kiV) > 0 and len(tune.pid.kiV) == len(tune.pid.kiBP)
 
       elif tune.which() == 'torque':
         assert not math.isnan(tune.torque.kf) and tune.torque.kf > 0
