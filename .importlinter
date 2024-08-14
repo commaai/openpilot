@@ -25,7 +25,6 @@ forbidden_modules =
     openpilot.tinygrad
 ignore_imports =
     # remove these
-    openpilot.selfdrive.car.interfaces -> openpilot.selfdrive.controls.lib.events
     openpilot.selfdrive.car.body.carcontroller -> openpilot.selfdrive.controls.lib.pid
     openpilot.selfdrive.car.tests.test_docs -> openpilot.common.basedir
     openpilot.selfdrive.car.docs -> openpilot.common.basedir
@@ -62,4 +61,5 @@ ignore_imports =
     openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.pandad
     openpilot.selfdrive.car.tests.test_models -> openpilot.selfdrive.pandad
     openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.test.fuzzy_generation
+    openpilot.selfdrive.car.car_specific -> openpilot.selfdrive.controls.lib.events
 unmatched_ignore_imports_alerting = warn

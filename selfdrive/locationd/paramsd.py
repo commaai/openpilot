@@ -9,10 +9,9 @@ from cereal import car, log
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, DT_MDL
 from openpilot.common.numpy_fast import clip
-from openpilot.common.transformations.orientation import rot_from_euler
 from openpilot.selfdrive.locationd.models.car_kf import CarKalman, ObservationKind, States
 from openpilot.selfdrive.locationd.models.constants import GENERATED_DIR
-from openpilot.selfdrive.locationd.helpers import rotate_std
+from openpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose
 from openpilot.common.swaglog import cloudlog
 
 
@@ -40,9 +39,8 @@ class ParamsLearner:
     self.kf.filter.set_global("stiffness_rear", CP.tireStiffnessRear)
 
     self.active = False
-    self.calibrated = False
 
-    self.calib_from_device = np.eye(3)
+    self.calibrator = PoseCalibrator()
 
     self.speed = 0.0
     self.yaw_rate = 0.0
@@ -53,15 +51,12 @@ class ParamsLearner:
 
   def handle_log(self, t, which, msg):
     if which == 'livePose':
-      angular_velocity_device = np.array([msg.angularVelocityDevice.x, msg.angularVelocityDevice.y, msg.angularVelocityDevice.z])
-      angular_velocity_device_std = np.array([msg.angularVelocityDevice.xStd, msg.angularVelocityDevice.yStd, msg.angularVelocityDevice.zStd])
-      angular_velocity_calibrated = np.matmul(self.calib_from_device, angular_velocity_device)
-      angular_velocity_calibrated_std = rotate_std(self.calib_from_device, angular_velocity_device_std)
+      device_pose = Pose.from_live_pose(msg)
+      calibrated_pose = self.calibrator.build_calibrated_pose(device_pose)
+      self.yaw_rate, self.yaw_rate_std = calibrated_pose.angular_velocity.z, calibrated_pose.angular_velocity.z_std
 
-      self.yaw_rate, self.yaw_rate_std = angular_velocity_calibrated[2], angular_velocity_calibrated_std[2]
-
-      localizer_roll = msg.orientationNED.x
-      localizer_roll_std = np.radians(1) if np.isnan(msg.orientationNED.xStd) else msg.orientationNED.xStd
+      localizer_roll, localizer_roll_std = device_pose.orientation.x, device_pose.orientation.x_std
+      localizer_roll_std = np.radians(1) if np.isnan(localizer_roll_std) else localizer_roll_std
       self.roll_valid = (localizer_roll_std < ROLL_STD_MAX) and (ROLL_MIN < localizer_roll < ROLL_MAX) and msg.sensorsOK
       if self.roll_valid:
         roll = localizer_roll
@@ -73,7 +68,7 @@ class ParamsLearner:
         roll_std = np.radians(10.0)
       self.roll = clip(roll, self.roll - ROLL_MAX_DELTA, self.roll + ROLL_MAX_DELTA)
 
-      yaw_rate_valid = msg.angularVelocityDevice.valid and self.calibrated
+      yaw_rate_valid = msg.angularVelocityDevice.valid and self.calibrator.calib_valid
       yaw_rate_valid = yaw_rate_valid and 0 < self.yaw_rate_std < 10  # rad/s
       yaw_rate_valid = yaw_rate_valid and abs(self.yaw_rate) < 1  # rad/s
 
@@ -101,9 +96,7 @@ class ParamsLearner:
         self.kf.predict_and_observe(t, ObservationKind.STEER_RATIO, np.array([[steer_ratio]]))
 
     elif which == 'liveCalibration':
-      self.calibrated  = msg.calStatus == log.LiveCalibrationData.Status.calibrated
-      device_from_calib = rot_from_euler(np.array(msg.rpyCalib))
-      self.calib_from_device = device_from_calib.T
+      self.calibrator.feed_live_calib(msg)
 
     elif which == 'carState':
       self.steering_angle = msg.steeringAngleDeg
