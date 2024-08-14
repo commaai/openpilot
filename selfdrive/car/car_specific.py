@@ -1,8 +1,8 @@
 from cereal import car
-import cereal.messaging as messaging
 import numpy as np
+import cereal.messaging as messaging
+from openpilot.common.realtime import DT_CTRL
 from openpilot.common.simple_kalman import KF1D, get_kalman_gain
-from openpilot.selfdrive.car import DT_CTRL
 from openpilot.selfdrive.car.interfaces import MAX_CTRL_SPEED
 from openpilot.selfdrive.car.volkswagen.values import CarControllerParams as VWCarControllerParams
 from openpilot.selfdrive.car.hyundai.interface import ENABLE_BUTTONS as HYUNDAI_ENABLE_BUTTONS
