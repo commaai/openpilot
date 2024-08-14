@@ -84,9 +84,9 @@ class CarSpecificEvents:
       events = self.create_common_events(CS.out, CS_prev, extra_gears=[GearShifter.low])
 
       # Low speed steer alert hysteresis logic
-      if self.CP.minSteerSpeed > 0. and CS.out.vEgo < (self.CP.minSteerSpeed + 0.5):
+      if self.CP.minSteerSpeed > 0. and CS.out.vEgoRaw < (self.CP.minSteerSpeed + 0.5):
         self.low_speed_alert = True
-      elif CS.out.vEgo > (self.CP.minSteerSpeed + 1.):
+      elif CS.out.vEgoRaw > (self.CP.minSteerSpeed + 1.):
         self.low_speed_alert = False
       if self.low_speed_alert:
         events.add(EventName.belowSteerSpeed)
@@ -94,7 +94,7 @@ class CarSpecificEvents:
     elif self.CP.carName == 'honda':
       events = self.create_common_events(CS.out, CS_prev, pcm_enable=False)
 
-      if self.CP.pcmCruise and CS.out.vEgo < self.CP.minEnableSpeed:
+      if self.CP.pcmCruise and CS.out.vEgoRaw < self.CP.minEnableSpeed:
         events.add(EventName.belowEngageSpeed)
 
       if self.CP.pcmCruise:
@@ -104,12 +104,12 @@ class CarSpecificEvents:
         elif not CS.out.cruiseState.enabled and (CC_prev.actuators.accel >= 0. or not self.CP.openpilotLongitudinalControl):
           # it can happen that car cruise disables while comma system is enabled: need to
           # keep braking if needed or if the speed is very low
-          if CS.out.vEgo < self.CP.minEnableSpeed + 2.:
+          if CS.out.vEgoRaw < self.CP.minEnableSpeed + 2.:
             # non loud alert if cruise disables below 25mph as expected (+ a little margin)
             events.add(EventName.speedTooLow)
           else:
             events.add(EventName.cruiseDisabled)
-      if self.CP.minEnableSpeed > 0 and CS.out.vEgo < 0.001:
+      if self.CP.minEnableSpeed > 0 and CS.out.vEgoRaw < 0.001:
         events.add(EventName.manualRestart)
 
     elif self.CP.carName == 'toyota':
@@ -120,12 +120,12 @@ class CarSpecificEvents:
           events.add(EventName.resumeRequired)
         if CS.low_speed_lockout:
           events.add(EventName.lowSpeedLockout)
-        if CS.out.vEgo < self.CP.minEnableSpeed:
+        if CS.out.vEgoRaw < self.CP.minEnableSpeed:
           events.add(EventName.belowEngageSpeed)
           if CC_prev.actuators.accel > 0.3:
             # some margin on the actuator to not false trigger cancellation while stopping
             events.add(EventName.speedTooLow)
-          if CS.out.vEgo < 0.001:
+          if CS.out.vEgoRaw < 0.001:
             # while in standstill, send a user alert
             events.add(EventName.manualRestart)
 
@@ -140,13 +140,13 @@ class CarSpecificEvents:
 
       # Enabling at a standstill with brake is allowed
       # TODO: verify 17 Volt can enable for the first time at a stop and allow for all GMs
-      below_min_enable_speed = CS.out.vEgo < self.CP.minEnableSpeed or CS.moving_backward
+      below_min_enable_speed = CS.out.vEgoRaw < self.CP.minEnableSpeed or CS.moving_backward
       if below_min_enable_speed and not (CS.out.standstill and CS.out.brake >= 20 and
                                          self.CP.networkLocation == NetworkLocation.fwdCamera):
         events.add(EventName.belowEngageSpeed)
       if CS.out.cruiseState.standstill:
         events.add(EventName.resumeRequired)
-      if CS.out.vEgo < self.CP.minSteerSpeed:
+      if CS.out.vEgoRaw < self.CP.minSteerSpeed:
         events.add(EventName.belowSteerSpeed)
 
     elif self.CP.carName == 'volkswagen':
@@ -155,17 +155,17 @@ class CarSpecificEvents:
                                          enable_buttons=(ButtonType.setCruise, ButtonType.resumeCruise))
 
       # Low speed steer alert hysteresis logic
-      if (self.CP.minSteerSpeed - 1e-3) > VWCarControllerParams.DEFAULT_MIN_STEER_SPEED and CS.out.vEgo < (self.CP.minSteerSpeed + 1.):
+      if (self.CP.minSteerSpeed - 1e-3) > VWCarControllerParams.DEFAULT_MIN_STEER_SPEED and CS.out.vEgoRaw < (self.CP.minSteerSpeed + 1.):
         self.low_speed_alert = True
-      elif CS.out.vEgo > (self.CP.minSteerSpeed + 2.):
+      elif CS.out.vEgoRaw > (self.CP.minSteerSpeed + 2.):
         self.low_speed_alert = False
       if self.low_speed_alert:
         events.add(EventName.belowSteerSpeed)
 
       if self.CP.openpilotLongitudinalControl:
-        if CS.out.vEgo < self.CP.minEnableSpeed + 0.5:
+        if CS.out.vEgoRaw < self.CP.minEnableSpeed + 0.5:
           events.add(EventName.belowEngageSpeed)
-        if CC_prev.enabled and CS.out.vEgo < self.CP.minEnableSpeed:
+        if CC_prev.enabled and CS.out.vEgoRaw < self.CP.minEnableSpeed:
           events.add(EventName.speedTooLow)
 
       if CC.eps_timer_soft_disable_alert:
@@ -179,9 +179,9 @@ class CarSpecificEvents:
       events = self.create_common_events(CS.out, CS_prev, pcm_enable=self.CP.pcmCruise, allow_enable=allow_enable)
 
       # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
-      if CS.out.vEgo < (self.CP.minSteerSpeed + 2.) and self.CP.minSteerSpeed > 10.:
+      if CS.out.vEgoRaw < (self.CP.minSteerSpeed + 2.) and self.CP.minSteerSpeed > 10.:
         self.low_speed_alert = True
-      if CS.out.vEgo > (self.CP.minSteerSpeed + 4.):
+      if CS.out.vEgoRaw > (self.CP.minSteerSpeed + 4.):
         self.low_speed_alert = False
       if self.low_speed_alert:
         events.add(EventName.belowSteerSpeed)
@@ -214,7 +214,7 @@ class CarSpecificEvents:
       events.add(EventName.stockFcw)
     if CS.stockAeb:
       events.add(EventName.stockAeb)
-    if CS.vEgo > MAX_CTRL_SPEED:
+    if CS.vEgoRaw > MAX_CTRL_SPEED:
       events.add(EventName.speedTooHigh)
     if CS.cruiseState.nonAdaptive:
       events.add(EventName.wrongCruiseMode)
