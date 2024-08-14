@@ -7,6 +7,7 @@ from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.tesla.values import CAR, DBC, CANBUS, GEAR_MAP, DOORS, BUTTONS
 from openpilot.selfdrive.car.interfaces import CarStateBase
 
+
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)

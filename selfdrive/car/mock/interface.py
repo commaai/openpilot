@@ -3,6 +3,7 @@ from cereal import car
 import cereal.messaging as messaging
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
+
 # mocked car interface for dashcam mode
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
