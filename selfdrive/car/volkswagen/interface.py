@@ -101,7 +101,7 @@ class CarInterface(CarInterfaceBase):
 
   # returns a car.CarState
   def _update(self, c):
-    ret = self.CS.update(self.cp, self.cp_cam, self.cp_ext, self.CP.transmissionType)
+    ret = self.CS.update(self.cp, self.cp_cam, self.cp_ext)
 
     return ret
 
