@@ -98,10 +98,7 @@ class CarInterface(CarInterfaceBase):
 
   # returns a car.CarState
   def _update(self):
-
-    ret = self.CS.update(self.cp, self.cp_cam, self.cp_body)
-
-    return ret
+    return self.CS.update(self.cp, self.cp_cam, self.cp_body)
 
   @staticmethod
   def init(CP, can_recv, can_send):
