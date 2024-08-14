@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # export the block below when call manager.py
 export BLOCK="${BLOCK},camerad"
