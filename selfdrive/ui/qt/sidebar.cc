@@ -100,18 +100,8 @@ void Sidebar::updateState(const UIState &s) {
   setProperty("tempStatus", QVariant::fromValue(tempStatus));
 
   ItemStatus pandaStatus = {{tr("VEHICLE"), tr("ONLINE")}, good_color};
-  bool gpsOK = true;
-  for (auto event : sm["onroadEvents"].getOnroadEvents()) {
-    if (event.getName() == cereal::CarEvent::EventName::NO_GPS) {
-      gpsOK = false;
-      break;
-    }
-  }
-
   if (s.scene.pandaType == cereal::PandaState::PandaType::UNKNOWN) {
     pandaStatus = {{tr("NO"), tr("PANDA")}, danger_color};
-  } else if (s.scene.started && !gpsOK) {
-    pandaStatus = {{tr("GPS"), tr("SEARCH")}, warning_color};
   }
   setProperty("pandaStatus", QVariant::fromValue(pandaStatus));
 }
