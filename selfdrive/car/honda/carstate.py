@@ -7,8 +7,8 @@ from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.helpers import interp
 from openpilot.selfdrive.car.honda.hondacan import CanBus, get_cruise_speed_conversion
 from openpilot.selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, HONDA_BOSCH, \
-  HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_RADARLESS, \
-  HondaFlags
+                                                 HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_RADARLESS, \
+                                                 HondaFlags
 from openpilot.selfdrive.car.interfaces import CarStateBase
 
 TransmissionType = car.CarParams.TransmissionType
@@ -109,7 +109,7 @@ class CarState(CarStateBase):
 
     # car params
     v_weight_v = [0., 1.]  # don't trust smooth speed at low values to avoid premature zero snapping
-    v_weight_bp = [1., 6.]  # smooth blending, below ~0.6m/s the smooth speed snaps to zero
+    v_weight_bp = [1., 6.]   # smooth blending, below ~0.6m/s the smooth speed snaps to zero
 
     # update prevs, update must run once per loop
     self.prev_cruise_buttons = self.cruise_buttons
@@ -292,6 +292,6 @@ class CarState(CarStateBase):
         ("BSM_STATUS_LEFT", 3),
         ("BSM_STATUS_RIGHT", 3),
       ]
-      bus_body = CanBus(CP).radar  # B-CAN is forwarded to ACC-CAN radar side (CAN 0 on fake ethernet port)
+      bus_body = CanBus(CP).radar # B-CAN is forwarded to ACC-CAN radar side (CAN 0 on fake ethernet port)
       return CANParser(DBC[CP.carFingerprint]["body"], messages, bus_body)
     return None

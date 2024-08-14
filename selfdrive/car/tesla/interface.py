@@ -18,8 +18,8 @@ class CarInterface(CarInterfaceBase):
 
     ret.steerControlType = car.CarParams.SteerControlType.angle
 
-    ret.longitudinalActuatorDelay = 0.5  # s
-    ret.radarTimeStep = (1.0 / 8)  # 8Hz
+    ret.longitudinalActuatorDelay = 0.5 # s
+    ret.radarTimeStep = (1.0 / 8) # 8Hz
 
     # Check if we have messages on an auxiliary panda, and that 0x2bf (DAS_control) is present on the AP powertrain bus
     # If so, we assume that it is connected to the longitudinal harness.
