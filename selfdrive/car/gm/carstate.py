@@ -11,9 +11,12 @@ from openpilot.selfdrive.car.gm.values import DBC, AccState, CanBus, CruiseButto
 ButtonType = car.CarState.ButtonEvent.Type
 TransmissionType = car.CarParams.TransmissionType
 NetworkLocation = car.CarParams.NetworkLocation
+
 STANDSTILL_THRESHOLD = 10 * 0.0311 * CV.KPH_TO_MS
+
 BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
                 CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
+
 
 class CarState(CarStateBase):
   def __init__(self, CP):
