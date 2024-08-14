@@ -218,7 +218,6 @@ class CarInterfaceBase(ABC):
     tune.torque.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
 
   def _update(self) -> car.CarState:
-    # TODO: child classes override to add buttonEvents, in the future this should be removed entirely
     return self.CS.update(*self.can_parsers)
 
   def update(self, can_packets: list[tuple[int, list[CanData]]]) -> car.CarState:
