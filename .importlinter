@@ -59,4 +59,5 @@ ignore_imports =
     openpilot.selfdrive.car.tests.test_models -> openpilot.selfdrive.pandad
     openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.test.fuzzy_generation
     openpilot.selfdrive.car.car_specific -> openpilot.selfdrive.controls.lib.events
+    openpilot.selfdrive.car.car_specific -> openpilot.common.simple_kalman
 unmatched_ignore_imports_alerting = warn
