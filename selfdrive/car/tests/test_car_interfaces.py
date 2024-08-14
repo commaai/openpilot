@@ -7,6 +7,7 @@ from parameterized import parameterized
 
 from cereal import car, messaging
 from openpilot.selfdrive.car import DT_CTRL, gen_empty_fingerprint
+from openpilot.selfdrive.car.card import convert_carControl
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.structs import CarParams
 from openpilot.selfdrive.car.fingerprints import all_known_cars
@@ -97,16 +98,18 @@ class TestCarInterfaces:
     # Run car interface
     now_nanos = 0
     CC = car.CarControl.new_message(**cc_msg)
+    CC = convert_carControl(CC.as_reader())
     for _ in range(10):
       car_interface.update([])
-      car_interface.apply(CC.as_reader(), now_nanos)
+      car_interface.apply(CC, now_nanos)
       now_nanos += DT_CTRL * 1e9  # 10 ms
 
     CC = car.CarControl.new_message(**cc_msg)
     CC.enabled = True
+    CC = convert_carControl(CC.as_reader())
     for _ in range(10):
       car_interface.update([])
-      car_interface.apply(CC.as_reader(), now_nanos)
+      car_interface.apply(CC, now_nanos)
       now_nanos += DT_CTRL * 1e9  # 10ms
 
     # Test controller initialization
