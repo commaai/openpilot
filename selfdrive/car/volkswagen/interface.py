@@ -2,10 +2,9 @@ from cereal import car
 from panda import Panda
 from openpilot.selfdrive.car import get_safety_config
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
-from openpilot.selfdrive.car.volkswagen.values import CAR, CANBUS, CarControllerParams, NetworkLocation, TransmissionType, GearShifter, VolkswagenFlags
+from openpilot.selfdrive.car.volkswagen.values import CAR, CANBUS, NetworkLocation, TransmissionType, VolkswagenFlags
 
 ButtonType = car.CarState.ButtonEvent.Type
-EventName = car.CarEvent.EventName
 
 
 class CarInterface(CarInterfaceBase):
@@ -103,29 +102,6 @@ class CarInterface(CarInterfaceBase):
   # returns a car.CarState
   def _update(self, c):
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_ext, self.CP.transmissionType)
-
-    events = self.create_common_events(ret, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic],
-                                       pcm_enable=not self.CS.CP.openpilotLongitudinalControl,
-                                       enable_buttons=(ButtonType.setCruise, ButtonType.resumeCruise))
-
-    # Low speed steer alert hysteresis logic
-    if (self.CP.minSteerSpeed - 1e-3) > CarControllerParams.DEFAULT_MIN_STEER_SPEED and ret.vEgo < (self.CP.minSteerSpeed + 1.):
-      self.low_speed_alert = True
-    elif ret.vEgo > (self.CP.minSteerSpeed + 2.):
-      self.low_speed_alert = False
-    if self.low_speed_alert:
-      events.add(EventName.belowSteerSpeed)
-
-    if self.CS.CP.openpilotLongitudinalControl:
-      if ret.vEgo < self.CP.minEnableSpeed + 0.5:
-        events.add(EventName.belowEngageSpeed)
-      if c.enabled and ret.vEgo < self.CP.minEnableSpeed:
-        events.add(EventName.speedTooLow)
-
-    if self.CC.eps_timer_soft_disable_alert:
-      events.add(EventName.steerTimeLimit)
-
-    ret.events = events.to_msg()
 
     return ret
 

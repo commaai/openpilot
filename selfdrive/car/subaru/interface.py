@@ -101,8 +101,6 @@ class CarInterface(CarInterfaceBase):
 
     ret = self.CS.update(self.cp, self.cp_cam, self.cp_body)
 
-    ret.events = self.create_common_events(ret).to_msg()
-
     return ret
 
   @staticmethod
