@@ -1,5 +1,4 @@
 import numpy as np
-from cereal import car
 from opendbc.can.parser import CANParser
 from openpilot.selfdrive.car import structs
 from openpilot.selfdrive.car.interfaces import CarStateBase
@@ -25,7 +24,7 @@ class CarState(CarStateBase):
     for button in buttons:
       state = pt_cp.vl[button.can_addr][button.can_msg] in button.values
       if self.button_states[button.event_type] != state:
-        event = car.CarState.ButtonEvent.new_message()
+        event = structs.CarState.ButtonEvent()
         event.type = button.event_type
         event.pressed = state
         button_events.append(event)

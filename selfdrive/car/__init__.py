@@ -7,7 +7,6 @@ from dataclasses import replace
 
 import capnp
 
-from cereal import car
 from panda.python.uds import SERVICE_TYPE
 from openpilot.selfdrive.car import structs
 from openpilot.selfdrive.car.can_definitions import CanData

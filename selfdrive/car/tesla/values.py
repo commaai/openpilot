@@ -1,12 +1,11 @@
 from collections import namedtuple
 
-from cereal import car
 from openpilot.selfdrive.car import AngleRateLimit, CarSpecs, PlatformConfig, Platforms, dbc_dict
-from openpilot.selfdrive.car.structs import CarParams
+from openpilot.selfdrive.car import structs
 from openpilot.selfdrive.car.docs_definitions import CarDocs
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
-Ecu = CarParams.Ecu
+Ecu = structs.CarParams.Ecu
 
 Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 
@@ -65,24 +64,24 @@ class CANBUS:
   autopilot_powertrain = 6
 
 GEAR_MAP = {
-  "DI_GEAR_INVALID": car.CarState.GearShifter.unknown,
-  "DI_GEAR_P": car.CarState.GearShifter.park,
-  "DI_GEAR_R": car.CarState.GearShifter.reverse,
-  "DI_GEAR_N": car.CarState.GearShifter.neutral,
-  "DI_GEAR_D": car.CarState.GearShifter.drive,
-  "DI_GEAR_SNA": car.CarState.GearShifter.unknown,
+  "DI_GEAR_INVALID": structs.CarState.GearShifter.unknown,
+  "DI_GEAR_P": structs.CarState.GearShifter.park,
+  "DI_GEAR_R": structs.CarState.GearShifter.reverse,
+  "DI_GEAR_N": structs.CarState.GearShifter.neutral,
+  "DI_GEAR_D": structs.CarState.GearShifter.drive,
+  "DI_GEAR_SNA": structs.CarState.GearShifter.unknown,
 }
 
 DOORS = ["DOOR_STATE_FL", "DOOR_STATE_FR", "DOOR_STATE_RL", "DOOR_STATE_RR", "DOOR_STATE_FrontTrunk", "BOOT_STATE"]
 
 # Make sure the message and addr is also in the CAN parser!
 BUTTONS = [
-  Button(car.CarState.ButtonEvent.Type.leftBlinker, "STW_ACTN_RQ", "TurnIndLvr_Stat", [1]),
-  Button(car.CarState.ButtonEvent.Type.rightBlinker, "STW_ACTN_RQ", "TurnIndLvr_Stat", [2]),
-  Button(car.CarState.ButtonEvent.Type.accelCruise, "STW_ACTN_RQ", "SpdCtrlLvr_Stat", [4, 16]),
-  Button(car.CarState.ButtonEvent.Type.decelCruise, "STW_ACTN_RQ", "SpdCtrlLvr_Stat", [8, 32]),
-  Button(car.CarState.ButtonEvent.Type.cancel, "STW_ACTN_RQ", "SpdCtrlLvr_Stat", [1]),
-  Button(car.CarState.ButtonEvent.Type.resumeCruise, "STW_ACTN_RQ", "SpdCtrlLvr_Stat", [2]),
+  Button(structs.CarState.ButtonEvent.Type.leftBlinker, "STW_ACTN_RQ", "TurnIndLvr_Stat", [1]),
+  Button(structs.CarState.ButtonEvent.Type.rightBlinker, "STW_ACTN_RQ", "TurnIndLvr_Stat", [2]),
+  Button(structs.CarState.ButtonEvent.Type.accelCruise, "STW_ACTN_RQ", "SpdCtrlLvr_Stat", [4, 16]),
+  Button(structs.CarState.ButtonEvent.Type.decelCruise, "STW_ACTN_RQ", "SpdCtrlLvr_Stat", [8, 32]),
+  Button(structs.CarState.ButtonEvent.Type.cancel, "STW_ACTN_RQ", "SpdCtrlLvr_Stat", [1]),
+  Button(structs.CarState.ButtonEvent.Type.resumeCruise, "STW_ACTN_RQ", "SpdCtrlLvr_Stat", [2]),
 ]
 
 class CarControllerParams:

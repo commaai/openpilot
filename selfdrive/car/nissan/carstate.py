@@ -7,7 +7,7 @@ from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.interfaces import CarStateBase
 from openpilot.selfdrive.car.nissan.values import CAR, DBC, CarControllerParams
 
-ButtonType = car.CarState.ButtonEvent.Type
+ButtonType = structs.CarState.ButtonEvent.Type
 
 TORQUE_SAMPLES = 12
 

@@ -1,6 +1,5 @@
 import copy
 from collections import deque
-from cereal import car
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
 from openpilot.selfdrive.car import structs
@@ -74,7 +73,7 @@ class CarState(CarStateBase):
     for button in BUTTONS:
       state = (cp.vl[button.can_addr][button.can_msg] in button.values)
       if self.button_states[button.event_type] != state:
-        event = car.CarState.ButtonEvent.new_message()
+        event = structs.CarState.ButtonEvent()
         event.type = button.event_type
         event.pressed = state
         buttonEvents.append(event)

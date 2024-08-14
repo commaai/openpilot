@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-from cereal import car
 from opendbc.can.parser import CANParser
+from openpilot.selfdrive.car import structs
 from openpilot.selfdrive.car.tesla.values import CAR, DBC, CANBUS
 from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
 
@@ -38,7 +38,7 @@ class RadarInterface(RadarInterfaceBase):
     if self.trigger_msg not in self.updated_messages:
       return None
 
-    ret = car.RadarData.new_message()
+    ret = structs.RadarData()
 
     # Errors
     errors = []
@@ -73,7 +73,7 @@ class RadarInterface(RadarInterfaceBase):
 
       # New track!
       if i not in self.pts:
-        self.pts[i] = car.RadarData.RadarPoint.new_message()
+        self.pts[i] = structs.RadarData.RadarPoint()
         self.pts[i].trackId = self.track_id
         self.track_id += 1
 

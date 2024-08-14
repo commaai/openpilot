@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from cereal import car
 from openpilot.selfdrive.car import get_safety_config, structs
 from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.mazda.carstate import CarState
