@@ -12,7 +12,6 @@ from openpilot.selfdrive.car.subaru.values import CAR as SUBARU
 from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
 from openpilot.selfdrive.car.values import Platform
 from openpilot.selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
-from openpilot.selfdrive.car.tesla.values import CAR as TESLA
 from openpilot.selfdrive.car.body.values import CAR as COMMA
 
 # TODO: add routes for these cars
@@ -288,10 +287,6 @@ routes = [
   CarTestRoute("fb53c640f499b73d|2021-06-01--04-17-56", MAZDA.MAZDA_6),
   CarTestRoute("f6d5b1a9d7a1c92e|2021-07-08--06-56-59", MAZDA.MAZDA_CX9_2021),
   CarTestRoute("a4af1602d8e668ac|2022-02-03--12-17-07", MAZDA.MAZDA_CX5_2022),
-
-  CarTestRoute("6c14ee12b74823ce|2021-06-30--11-49-02", TESLA.TESLA_AP1_MODELS),
-  CarTestRoute("bb50caf5f0945ab1|2021-06-19--17-20-18", TESLA.TESLA_AP2_MODELS),
-  CarTestRoute("66c1699b7697267d/2024-03-03--13-09-53", TESLA.TESLA_MODELS_RAVEN),
 
   # Segments that test specific issues
   # Controls mismatch due to standstill threshold

@@ -9,7 +9,6 @@ from openpilot.selfdrive.car.mazda.values import CAR as MAZDA
 from openpilot.selfdrive.car.mock.values import CAR as MOCK
 from openpilot.selfdrive.car.nissan.values import CAR as NISSAN
 from openpilot.selfdrive.car.subaru.values import CAR as SUBARU
-from openpilot.selfdrive.car.tesla.values import CAR as TESLA
 from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
 from openpilot.selfdrive.car.volkswagen.values import CAR as VW
 
@@ -276,9 +275,6 @@ MIGRATION = {
   "SUBARU FORESTER 2022": SUBARU.SUBARU_FORESTER_2022,
   "SUBARU OUTBACK 7TH GEN": SUBARU.SUBARU_OUTBACK_2023,
   "SUBARU ASCENT 2023": SUBARU.SUBARU_ASCENT_2023,
-  'TESLA AP1 MODEL S': TESLA.TESLA_AP1_MODELS,
-  'TESLA AP2 MODEL S': TESLA.TESLA_AP2_MODELS,
-  'TESLA MODEL S RAVEN': TESLA.TESLA_MODELS_RAVEN,
   "TOYOTA ALPHARD 2020": TOYOTA.TOYOTA_ALPHARD_TSS2,
   "TOYOTA AVALON 2016": TOYOTA.TOYOTA_AVALON,
   "TOYOTA AVALON 2019": TOYOTA.TOYOTA_AVALON_2019,
