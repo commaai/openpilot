@@ -26,6 +26,4 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   def _update(self):
-    ret = self.CS.update(self.cp)
-
-    return ret
+    return self.CS.update(self.cp)
