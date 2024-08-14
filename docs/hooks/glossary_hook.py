@@ -14,7 +14,7 @@ def glossary_markdown(glossary):
     for name, definition in terms.items():
       markdown_string += f"* **{name}**"
       if "abbreviation" in definition:
-        markdown_string += f" *({definition["abbreviation"]})*"
+        markdown_string += f" *({definition['abbreviation']})*"
       if "description" in definition:
         markdown_string += f": {definition['description']}\n"
 
