@@ -138,7 +138,7 @@ class TestCarInterfaces:
   def test_interface_attrs(self):
     """Asserts basic behavior of interface attribute getter"""
     num_brands = len(get_interface_attr('CAR'))
-    assert num_brands >= 13
+    assert num_brands >= 12
 
     # Should return value for all brands when not combining, even if attribute doesn't exist
     ret = get_interface_attr('FAKE_ATTR')
