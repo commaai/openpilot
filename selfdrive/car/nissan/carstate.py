@@ -9,6 +9,7 @@ from openpilot.selfdrive.car.nissan.values import CAR, DBC, CarControllerParams
 
 TORQUE_SAMPLES = 12
 
+
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
@@ -17,7 +18,7 @@ class CarState(CarStateBase):
     self.lkas_hud_msg = {}
     self.lkas_hud_info_msg = {}
 
-    self.steeringTorqueSamples = deque(TORQUE_SAMPLES*[0], TORQUE_SAMPLES)
+    self.steeringTorqueSamples = deque(TORQUE_SAMPLES * [0], TORQUE_SAMPLES)
     self.shifter_values = can_define.dv["GEARBOX"]["GEAR_SHIFTER"]
 
     self.prev_distance_button = 0

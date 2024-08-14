@@ -52,7 +52,7 @@ class CarState(CarStateBase):
 
     # continuous blinker signals for assisted lane change
     ret.leftBlinker, ret.rightBlinker = self.update_blinker_from_lamp(50, cp.vl["Dashlights"]["LEFT_BLINKER"],
-                                                                          cp.vl["Dashlights"]["RIGHT_BLINKER"])
+                                                                      cp.vl["Dashlights"]["RIGHT_BLINKER"])
 
     if self.CP.enableBsm:
       ret.leftBlindspot = (cp.vl["BSD_RCTA"]["L_ADJACENT"] == 1) or (cp.vl["BSD_RCTA"]["L_APPROACHING"] == 1)
@@ -84,7 +84,7 @@ class CarState(CarStateBase):
     ret.cruiseState.speed = cp_cam.vl["ES_DashStatus"]["Cruise_Set_Speed"] * CV.KPH_TO_MS
 
     if (self.CP.flags & SubaruFlags.PREGLOBAL and cp.vl["Dash_State2"]["UNITS"] == 1) or \
-       (not (self.CP.flags & SubaruFlags.PREGLOBAL) and cp.vl["Dashlights"]["UNITS"] == 1):
+      (not (self.CP.flags & SubaruFlags.PREGLOBAL) and cp.vl["Dashlights"]["UNITS"] == 1):
       ret.cruiseState.speed *= CV.MPH_TO_KPH
 
     ret.seatbeltUnlatched = cp.vl["Dashlights"]["SEATBELT_FL"] == 1
@@ -226,4 +226,3 @@ class CarState(CarStateBase):
       ]
 
     return CANParser(DBC[CP.carFingerprint]["pt"], messages, CanBus.alt)
-

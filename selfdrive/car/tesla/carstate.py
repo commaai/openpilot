@@ -7,6 +7,7 @@ from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.tesla.values import CAR, DBC, CANBUS, GEAR_MAP, DOORS, BUTTONS
 from openpilot.selfdrive.car.interfaces import CarStateBase
 
+
 class CarState(CarStateBase):
   def __init__(self, CP):
     super().__init__(CP)
@@ -44,7 +45,7 @@ class CarState(CarStateBase):
     steer_status = self.can_define.dv["EPAS_sysStatus"]["EPAS_eacStatus"].get(int(epas_status["EPAS_eacStatus"]), None)
 
     ret.steeringAngleDeg = -epas_status["EPAS_internalSAS"]
-    ret.steeringRateDeg = -cp.vl["STW_ANGLHP_STAT"]["StW_AnglHP_Spd"] # This is from a different angle sensor, and at different rate
+    ret.steeringRateDeg = -cp.vl["STW_ANGLHP_STAT"]["StW_AnglHP_Spd"]  # This is from a different angle sensor, and at different rate
     ret.steeringTorque = -epas_status["EPAS_torsionBarTorque"]
     ret.steeringPressed = (self.hands_on_level > 0)
     ret.steerFaultPermanent = steer_status == "EAC_FAULT"
@@ -62,7 +63,7 @@ class CarState(CarStateBase):
     elif speed_units == "MPH":
       ret.cruiseState.speed = cp.vl["DI_state"]["DI_digitalSpeed"] * CV.MPH_TO_MS
     ret.cruiseState.available = ((cruise_state == "STANDBY") or ret.cruiseState.enabled)
-    ret.cruiseState.standstill = False # This needs to be false, since we can resume from stop without sending anything special
+    ret.cruiseState.standstill = False  # This needs to be false, since we can resume from stop without sending anything special
 
     # Gear
     ret.gearShifter = GEAR_MAP[self.can_define.dv["DI_torque2"]["DI_gear"].get(int(cp.vl["DI_torque2"]["DI_gear"]), "DI_GEAR_INVALID")]
