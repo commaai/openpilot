@@ -21,7 +21,7 @@ class CarSpecificEvents:
     self.no_steer_warning = False
     self.silent_steer_warning = True
 
-  def update(self, CS, CS_prev, CC_prev):
+  def update(self, CS, CS_prev, CC, CC_prev):
     if self.CP.carName in ('body', 'mock'):
       events = Events()
 
@@ -133,9 +133,8 @@ class CarSpecificEvents:
         if CC_prev.enabled and CS.out.vEgo < self.CP.minEnableSpeed:
           events.add(EventName.speedTooLow)
 
-      # TODO: we don't have the CC here
-      # if self.CC.eps_timer_soft_disable_alert:
-      #   events.add(EventName.steerTimeLimit)
+      if CC.eps_timer_soft_disable_alert:
+        events.add(EventName.steerTimeLimit)
 
     elif self.CP.carName == 'hyundai':
       # On some newer model years, the CANCEL button acts as a pause/resume button based on the PCM state
