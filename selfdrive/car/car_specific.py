@@ -1,4 +1,5 @@
 from cereal import car
+import cereal.messaging as messaging
 from openpilot.selfdrive.car import DT_CTRL
 from openpilot.selfdrive.car.interfaces import MAX_CTRL_SPEED
 from openpilot.selfdrive.car.volkswagen.values import CarControllerParams as VWCarControllerParams
@@ -10,6 +11,21 @@ ButtonType = car.CarState.ButtonEvent.Type
 GearShifter = car.CarState.GearShifter
 EventName = car.CarEvent.EventName
 NetworkLocation = car.CarParams.NetworkLocation
+
+
+# TODO: the goal is to abstract this file into the CarState struct and make events generic
+class MockCarState:
+  def __init__(self):
+    self.sm = messaging.SubMaster(['gpsLocation', 'gpsLocationExternal'])
+
+  def update(self, CS: car.CarState):
+    self.sm.update(0)
+    gps_sock = 'gpsLocationExternal' if self.sm.recv_frame['gpsLocationExternal'] > 1 else 'gpsLocation'
+
+    CS.vEgo = self.sm[gps_sock].speed
+    CS.vEgoRaw = self.sm[gps_sock].speed
+
+    return CS
 
 
 class CarSpecificEvents:
