@@ -15,7 +15,7 @@ from cereal import messaging, log, car
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.selfdrive.car import DT_CTRL, gen_empty_fingerprint
-from openpilot.selfdrive.car.structs import CarParams
+from openpilot.selfdrive.car import structs
 from openpilot.selfdrive.car.fingerprints import all_known_cars, MIGRATION
 from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from openpilot.selfdrive.car.honda.values import CAR as HONDA, HondaFlags
@@ -32,7 +32,7 @@ from panda.tests.libpanda import libpanda_py
 
 EventName = car.CarEvent.EventName
 PandaType = log.PandaState.PandaType
-SafetyModel = CarParams.SafetyModel
+SafetyModel = car.CarParams.SafetyModel
 
 NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
@@ -204,7 +204,7 @@ class TestCarModelBase(unittest.TestCase):
     # make sure car params are within a valid range
     self.assertGreater(self.CP.mass, 1)
 
-    if self.CP.steerControlType != CarParams.SteerControlType.angle:
+    if self.CP.steerControlType != structs.CarParams.SteerControlType.angle:
       tuning = self.CP.lateralTuning.which()
       if tuning == 'pid':
         self.assertTrue(len(self.CP.lateralTuning.pid.kpV))
@@ -217,7 +217,7 @@ class TestCarModelBase(unittest.TestCase):
     # TODO: also check for checksum violations from can parser
     can_invalid_cnt = 0
     can_valid = False
-    CC = car.CarControl.new_message().as_reader()
+    CC = structs.CarControl()
 
     for i, msg in enumerate(self.can_msgs):
       CS = self.CI.update(can_capnp_to_list((msg.as_builder().to_bytes(),)))
