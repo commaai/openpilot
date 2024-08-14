@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 from cereal import car
-from openpilot.selfdrive.car import create_button_events, get_safety_config, structs
+from openpilot.selfdrive.car import get_safety_config, structs
 from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.mazda.carstate import CarState
 from openpilot.selfdrive.car.mazda.values import CAR, LKAS_LIMITS
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
-ButtonType = structs.CarState.ButtonEvent.Type
-EventName = car.CarEvent.EventName
 
 class CarInterface(CarInterfaceBase):
   CS: CarState
@@ -25,28 +23,9 @@ class CarInterface(CarInterfaceBase):
 
     CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    if candidate not in (CAR.MAZDA_CX5_2022, ):
+    if candidate not in (CAR.MAZDA_CX5_2022,):
       ret.minSteerSpeed = LKAS_LIMITS.DISABLE_SPEED * CV.KPH_TO_MS
 
     ret.centerToFront = ret.wheelbase * 0.41
-
-    return ret
-
-  # returns a car.CarState
-  def _update(self, c) -> structs.CarState:
-    ret = self.CS.update(self.cp, self.cp_cam)
-
-     # TODO: add button types for inc and dec
-    ret.buttonEvents = create_button_events(self.CS.distance_button, self.CS.prev_distance_button, {1: ButtonType.gapAdjustCruise})
-
-    # events
-    events = self.create_common_events(ret)
-
-    if self.CS.lkas_disabled:
-      events.add(EventName.lkasDisabled)
-    elif self.CS.low_speed_alert:
-      events.add(EventName.belowSteerSpeed)
-
-    # ret.events = events.to_msg()
 
     return ret

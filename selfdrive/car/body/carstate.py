@@ -3,10 +3,9 @@ from openpilot.selfdrive.car import structs
 from openpilot.selfdrive.car.interfaces import CarStateBase
 from openpilot.selfdrive.car.body.values import DBC
 
-STARTUP_TICKS = 100
 
 class CarState(CarStateBase):
-  def update(self, cp) -> structs.CarState:
+  def update(self, cp, *_) -> structs.CarState:
     ret = structs.CarState()
 
     ret.wheelSpeeds.fl = cp.vl['MOTORS_DATA']['SPEED_L']

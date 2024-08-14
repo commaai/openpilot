@@ -54,7 +54,7 @@ def cycle_alerts(duration=200, is_metric=False):
   CS = car.CarState.new_message()
   CP = CarInterface.get_non_essential_params("HONDA_CIVIC")
   sm = messaging.SubMaster(['deviceState', 'pandaStates', 'roadCameraState', 'modelV2', 'liveCalibration',
-                            'driverMonitoringState', 'longitudinalPlan', 'liveLocationKalman',
+                            'driverMonitoringState', 'longitudinalPlan', 'livePose',
                             'managerState'] + cameras)
 
   pm = messaging.PubMaster(['controlsState', 'pandaStates', 'deviceState'])

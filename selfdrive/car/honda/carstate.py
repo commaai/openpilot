@@ -3,16 +3,21 @@ from typing import cast
 
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
-from openpilot.selfdrive.car import structs
+from openpilot.selfdrive.car import create_button_events, structs
 from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.helpers import interp
 from openpilot.selfdrive.car.honda.hondacan import CanBus, get_cruise_speed_conversion
 from openpilot.selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, HONDA_BOSCH, \
                                                  HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_RADARLESS, \
-                                                 HondaFlags
+                                                 HondaFlags, CruiseButtons, CruiseSettings
 from openpilot.selfdrive.car.interfaces import CarStateBase
 
 TransmissionType = structs.CarParams.TransmissionType
+ButtonType = structs.CarState.ButtonEvent.Type
+
+BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
+                CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
+SETTINGS_BUTTONS_DICT = {CruiseSettings.DISTANCE: ButtonType.gapAdjustCruise, CruiseSettings.LKAS: ButtonType.altButton1}
 
 
 def get_can_messages(CP, gearbox_msg):
@@ -105,16 +110,16 @@ class CarState(CarStateBase):
     # However, on cars without a digital speedometer this is not always present (HRV, FIT, CRV 2016, ILX and RDX)
     self.dash_speed_seen = False
 
-  def update(self, cp, cp_cam, cp_body) -> structs.CarState:
-    ret = structs.CarState()
+  def update(self, cp, cp_cam, _, cp_body, __) -> structs.CarState:
+    ret = structs.CarState.new_message()
 
     # car params
     v_weight_v = [0., 1.]  # don't trust smooth speed at low values to avoid premature zero snapping
     v_weight_bp = [1., 6.]   # smooth blending, below ~0.6m/s the smooth speed snaps to zero
 
     # update prevs, update must run once per loop
-    self.prev_cruise_buttons = self.cruise_buttons
-    self.prev_cruise_setting = self.cruise_setting
+    prev_cruise_buttons = self.cruise_buttons
+    prev_cruise_setting = self.cruise_setting
     self.cruise_setting = cp.vl["SCM_BUTTONS"]["CRUISE_SETTING"]
     self.cruise_buttons = cp.vl["SCM_BUTTONS"]["CRUISE_BUTTONS"]
 
@@ -258,6 +263,11 @@ class CarState(CarStateBase):
       # more info here: https://github.com/commaai/openpilot/pull/1867
       ret.leftBlindspot = cp_body.vl["BSM_STATUS_LEFT"]["BSM_ALERT"] == 1
       ret.rightBlindspot = cp_body.vl["BSM_STATUS_RIGHT"]["BSM_ALERT"] == 1
+
+    ret.buttonEvents = [
+      *create_button_events(self.cruise_buttons, prev_cruise_buttons, BUTTONS_DICT),
+      *create_button_events(self.cruise_setting, prev_cruise_setting, SETTINGS_BUTTONS_DICT),
+    ]
 
     return ret
 

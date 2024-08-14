@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -e
 
 RED='\033[0;31m'
@@ -8,7 +8,7 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-cd $DIR/../
+cd $DIR/../../
 
 FAILED=0
 
@@ -51,6 +51,7 @@ function run_tests() {
   run "lint-imports" lint-imports
   run "check_added_large_files" python3 -m pre_commit_hooks.check_added_large_files --enforce-all $ALL_FILES --maxkb=120
   run "check_shebang_scripts_are_executable" python3 -m pre_commit_hooks.check_shebang_scripts_are_executable $ALL_FILES
+  run "check_shebang_format" $DIR/check_shebang_format.sh $ALL_FILES
 
   if [[ -z "$FAST" ]]; then
     run "mypy" mypy $PYTHON_FILES

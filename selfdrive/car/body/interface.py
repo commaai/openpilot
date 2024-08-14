@@ -4,6 +4,7 @@ from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.car.body.carstate import CarState
 from openpilot.selfdrive.car.body.values import SPEED_FROM_RPM
 
+
 class CarInterface(CarInterfaceBase):
   CS: CarState
 
@@ -23,10 +24,5 @@ class CarInterface(CarInterfaceBase):
     ret.radarUnavailable = True
     ret.openpilotLongitudinalControl = True
     ret.steerControlType = structs.CarParams.SteerControlType.angle
-
-    return ret
-
-  def _update(self, c) -> structs.CarState:
-    ret = self.CS.update(self.cp)
 
     return ret

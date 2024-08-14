@@ -1,15 +1,12 @@
-from cereal import car
 from panda import Panda
-from openpilot.selfdrive.car import create_button_events, get_safety_config, structs
+from openpilot.selfdrive.car import get_safety_config, structs
 from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.ford.carstate import CarState
 from openpilot.selfdrive.car.ford.fordcan import CanBus
 from openpilot.selfdrive.car.ford.values import Ecu, FordFlags
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
-ButtonType = structs.CarState.ButtonEvent.Type
 TransmissionType = structs.CarParams.TransmissionType
-GearShifter = structs.CarState.GearShifter
 
 
 class CarInterface(CarInterfaceBase):
@@ -68,15 +65,4 @@ class CarInterface(CarInterfaceBase):
 
     ret.autoResumeSng = ret.minEnableSpeed == -1.
     ret.centerToFront = ret.wheelbase * 0.44
-    return ret
-
-  def _update(self, c) -> structs.CarState:
-    ret = self.CS.update(self.cp, self.cp_cam)
-
-    ret.buttonEvents = create_button_events(self.CS.distance_button, self.CS.prev_distance_button, {1: ButtonType.gapAdjustCruise})
-
-    events = self.create_common_events(ret, extra_gears=[GearShifter.manumatic])
-
-    # ret.events = events.to_msg()
-
     return ret

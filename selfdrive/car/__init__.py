@@ -25,7 +25,6 @@ DT_CTRL = 0.01  # car state and control loop timestep (s)
 STD_CARGO_KG = 136.
 
 ButtonType = structs.CarState.ButtonEvent.Type
-EventName = car.CarEvent.EventName
 AngleRateLimit = namedtuple('AngleRateLimit', ['speed_bp', 'angle_v'])
 
 

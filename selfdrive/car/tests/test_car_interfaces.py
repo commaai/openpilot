@@ -12,6 +12,7 @@ from openpilot.selfdrive.car.structs import CarParams
 from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.fw_versions import FW_VERSIONS, FW_QUERY_CONFIGS
 from openpilot.selfdrive.car.interfaces import get_interface_attr
+from openpilot.selfdrive.car.mock.values import CAR as MOCK
 from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
@@ -52,7 +53,7 @@ def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
 class TestCarInterfaces:
   # FIXME: Due to the lists used in carParams, Phase.target is very slow and will cause
   #  many generated examples to overrun when max_examples > ~20, don't use it
-  @parameterized.expand([(car,) for car in sorted(all_known_cars())])
+  @parameterized.expand([(car,) for car in sorted(all_known_cars())] + [MOCK.MOCK])
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
             phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
@@ -81,10 +82,12 @@ class TestCarInterfaces:
     # Lateral sanity checks
     if car_params.steerControlType != CarParams.SteerControlType.angle:
       tune = car_params.lateralTuning
+      # TODO: we use which again, this is wrong
       if isinstance(tune, CarParams.LateralPIDTuning):
-        assert not math.isnan(tune.kf) and tune.kf > 0
-        assert len(tune.kpV) > 0 and len(tune.kpV) == len(tune.kpBP)
-        assert len(tune.kiV) > 0 and len(tune.kiV) == len(tune.kiBP)
+        if car_name != MOCK.MOCK:
+          assert not math.isnan(tune.kf) and tune.kf > 0
+          assert len(tune.kpV) > 0 and len(tune.kpV) == len(tune.kpBP)
+          assert len(tune.kiV) > 0 and len(tune.kiV) == len(tune.kiBP)
 
       elif isinstance(tune, CarParams.LateralTorqueTuning):
         assert not math.isnan(tune.kf) and tune.kf > 0
@@ -95,14 +98,14 @@ class TestCarInterfaces:
     now_nanos = 0
     CC = car.CarControl.new_message(**cc_msg)
     for _ in range(10):
-      car_interface.update(CC, [])
+      car_interface.update([])
       car_interface.apply(CC.as_reader(), now_nanos)
       now_nanos += DT_CTRL * 1e9  # 10 ms
 
     CC = car.CarControl.new_message(**cc_msg)
     CC.enabled = True
     for _ in range(10):
-      car_interface.update(CC, [])
+      car_interface.update([])
       car_interface.apply(CC.as_reader(), now_nanos)
       now_nanos += DT_CTRL * 1e9  # 10ms
 

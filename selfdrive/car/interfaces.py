@@ -18,11 +18,8 @@ from openpilot.selfdrive.car.can_definitions import CanData, CanRecvCallable, Ca
 from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.helpers import clip
 from openpilot.selfdrive.car.values import PLATFORMS
-from openpilot.selfdrive.controls.lib.events import Events
 
-ButtonType = structs.CarState.ButtonEvent.Type
 GearShifter = structs.CarState.GearShifter
-EventName = car.CarEvent.EventName
 
 V_CRUISE_MAX = 145
 MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS
@@ -93,10 +90,6 @@ class CarInterfaceBase(ABC):
     self.CP = CP
 
     self.frame = 0
-    self.steering_unpressed = 0
-    self.low_speed_alert = False
-    self.no_steer_warning = False
-    self.silent_steer_warning = True
     self.v_ego_cluster_seen = False
 
     self.CS: CarStateBase = CarState(CP)
@@ -105,7 +98,7 @@ class CarInterfaceBase(ABC):
     self.cp_adas = self.CS.get_adas_can_parser(CP)
     self.cp_body = self.CS.get_body_can_parser(CP)
     self.cp_loopback = self.CS.get_loopback_can_parser(CP)
-    self.can_parsers = [self.cp, self.cp_cam, self.cp_adas, self.cp_body, self.cp_loopback]
+    self.can_parsers = (self.cp, self.cp_cam, self.cp_adas, self.cp_body, self.cp_loopback)
 
     dbc_name = "" if self.cp is None else self.cp.dbc_name
     self.CC: CarControllerBase = CarController(dbc_name, CP)
@@ -227,18 +220,17 @@ class CarInterfaceBase(ABC):
     tune.torque.latAccelOffset = 0.0
     tune.torque.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
 
-  @abstractmethod
-  def _update(self, c: structs.CarControl) -> structs.CarState:
-    pass
+  def _update(self) -> structs.CarState:
+    return self.CS.update(*self.can_parsers)
 
-  def update(self, c: structs.CarControl, can_packets: list[tuple[int, list[CanData]]]) -> structs.CarState:
+  def update(self, can_packets: list[tuple[int, list[CanData]]]) -> car.CarState:
     # parse can
     for cp in self.can_parsers:
       if cp is not None:
         cp.update_strings(can_packets)
 
     # get CarState
-    ret = self._update(c)
+    ret = self._update()
 
     ret.canValid = all(cp.can_valid for cp in self.can_parsers if cp is not None)
     ret.canTimeout = any(cp.bus_timeout for cp in self.can_parsers if cp is not None)
@@ -249,101 +241,18 @@ class CarInterfaceBase(ABC):
       self.v_ego_cluster_seen = True
 
     # Many cars apply hysteresis to the ego dash speed
-    if self.CS is not None:
-      ret.vEgoCluster = apply_hysteresis(ret.vEgoCluster, self.CS.out.vEgoCluster, self.CS.cluster_speed_hyst_gap)
-      if abs(ret.vEgo) < self.CS.cluster_min_speed:
-        ret.vEgoCluster = 0.0
+    ret.vEgoCluster = apply_hysteresis(ret.vEgoCluster, self.CS.out.vEgoCluster, self.CS.cluster_speed_hyst_gap)
+    if abs(ret.vEgo) < self.CS.cluster_min_speed:
+      ret.vEgoCluster = 0.0
 
     if ret.cruiseState.speedCluster == 0:
       ret.cruiseState.speedCluster = ret.cruiseState.speed
 
     # copy back for next iteration
-    if self.CS is not None:
-      self.CS.out = copy.deepcopy(ret)
+    # TODO: do we need to deepcopy?
+    self.CS.out = copy.deepcopy(ret)
 
     return ret
-
-
-  def create_common_events(self, cs_out, extra_gears=None, pcm_enable=True, allow_enable=True,
-                           enable_buttons=(ButtonType.accelCruise, ButtonType.decelCruise)):
-    events = Events()
-
-    if cs_out.doorOpen:
-      events.add(EventName.doorOpen)
-    if cs_out.seatbeltUnlatched:
-      events.add(EventName.seatbeltNotLatched)
-    if cs_out.gearShifter != GearShifter.drive and (extra_gears is None or
-       cs_out.gearShifter not in extra_gears):
-      events.add(EventName.wrongGear)
-    if cs_out.gearShifter == GearShifter.reverse:
-      events.add(EventName.reverseGear)
-    if not cs_out.cruiseState.available:
-      events.add(EventName.wrongCarMode)
-    if cs_out.espDisabled:
-      events.add(EventName.espDisabled)
-    if cs_out.espActive:
-      events.add(EventName.espActive)
-    if cs_out.stockFcw:
-      events.add(EventName.stockFcw)
-    if cs_out.stockAeb:
-      events.add(EventName.stockAeb)
-    if cs_out.vEgo > MAX_CTRL_SPEED:
-      events.add(EventName.speedTooHigh)
-    if cs_out.cruiseState.nonAdaptive:
-      events.add(EventName.wrongCruiseMode)
-    if cs_out.brakeHoldActive and self.CP.openpilotLongitudinalControl:
-      events.add(EventName.brakeHold)
-    if cs_out.parkingBrake:
-      events.add(EventName.parkBrake)
-    if cs_out.accFaulted:
-      events.add(EventName.accFaulted)
-    if cs_out.steeringPressed:
-      events.add(EventName.steerOverride)
-    if cs_out.brakePressed and cs_out.standstill:
-      events.add(EventName.preEnableStandstill)
-    if cs_out.gasPressed:
-      events.add(EventName.gasPressedOverride)
-    if cs_out.vehicleSensorsInvalid:
-      events.add(EventName.vehicleSensorsInvalid)
-
-    # Handle button presses
-    for b in cs_out.buttonEvents:
-      # Enable OP long on falling edge of enable buttons (defaults to accelCruise and decelCruise, overridable per-port)
-      if not self.CP.pcmCruise and (b.type in enable_buttons and not b.pressed):
-        events.add(EventName.buttonEnable)
-      # Disable on rising and falling edge of cancel for both stock and OP long
-      if b.type == ButtonType.cancel:
-        events.add(EventName.buttonCancel)
-
-    # Handle permanent and temporary steering faults
-    self.steering_unpressed = 0 if cs_out.steeringPressed else self.steering_unpressed + 1
-    if cs_out.steerFaultTemporary:
-      if cs_out.steeringPressed and (not self.CS.out.steerFaultTemporary or self.no_steer_warning):
-        self.no_steer_warning = True
-      else:
-        self.no_steer_warning = False
-
-        # if the user overrode recently, show a less harsh alert
-        if self.silent_steer_warning or cs_out.standstill or self.steering_unpressed < int(1.5 / DT_CTRL):
-          self.silent_steer_warning = True
-          events.add(EventName.steerTempUnavailableSilent)
-        else:
-          events.add(EventName.steerTempUnavailable)
-    else:
-      self.no_steer_warning = False
-      self.silent_steer_warning = False
-    if cs_out.steerFaultPermanent:
-      events.add(EventName.steerUnavailable)
-
-    # we engage when pcm is active (rising edge)
-    # enabling can optionally be blocked by the car interface
-    if pcm_enable:
-      if cs_out.cruiseState.enabled and not self.CS.out.cruiseState.enabled and allow_enable:
-        events.add(EventName.pcmEnable)
-      elif not cs_out.cruiseState.enabled:
-        events.add(EventName.pcmDisable)
-
-    return events
 
 
 class RadarInterfaceBase(ABC):
@@ -386,7 +295,7 @@ class CarStateBase(ABC):
     self.v_ego_kf = KF1D(x0=x0, A=A, C=C[0], K=K)
 
   @abstractmethod
-  def update(self, *args) -> structs.CarState:
+  def update(self, cp, cp_cam, cp_adas, cp_body, cp_loopback) -> structs.CarState:
     pass
 
   def update_speed_kf(self, v_ego_raw):
