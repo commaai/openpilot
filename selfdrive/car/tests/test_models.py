@@ -339,8 +339,6 @@ class TestCarModelBase(unittest.TestCase):
     msg_strategy = st.binary(min_size=size, max_size=size)
     msgs = data.draw(st.lists(msg_strategy, min_size=20))
 
-    CC = car.CarControl.new_message()
-
     for dat in msgs:
       # due to panda updating state selectively, only edges are expected to match
       # TODO: warm up CarState with real CAN messages to check edge of both sources
@@ -392,8 +390,6 @@ class TestCarModelBase(unittest.TestCase):
     """
     if self.CP.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
-
-    CC = car.CarControl.new_message()
 
     # warm up pass, as initial states may be different
     for can in self.can_msgs[:300]:
