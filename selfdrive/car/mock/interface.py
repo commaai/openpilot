@@ -14,6 +14,3 @@ class CarInterface(CarInterfaceBase):
     ret.steerRatio = 13.
     ret.dashcamOnly = True
     return ret
-
-  def _update(self):
-    return self.CS.update()
