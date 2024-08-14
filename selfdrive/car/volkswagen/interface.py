@@ -4,8 +4,6 @@ from openpilot.selfdrive.car import get_safety_config
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.car.volkswagen.values import CAR, CANBUS, NetworkLocation, TransmissionType, VolkswagenFlags
 
-ButtonType = car.CarState.ButtonEvent.Type
-
 
 class CarInterface(CarInterfaceBase):
   def __init__(self, CP, CarController, CarState):
