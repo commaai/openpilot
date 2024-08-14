@@ -164,7 +164,7 @@ class Car:
   def update_events(self, CS: car.CarState) -> car.CarState:
     self.events.clear()
 
-    # add car-specific events for managing the state machine and alerts
+    # add car-specific events for alerts and managing the state machine
     CS.events = self.car_events.update(self.CI.CS, self.CS_prev, self.CI.CC, self.CC_prev).to_msg()
 
     self.events.add_from_msg(CS.events)
