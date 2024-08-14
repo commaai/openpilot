@@ -23,7 +23,7 @@ function op_install() {
   echo "Installing op system-wide..."
   CMD="\nalias op='"$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh" \"\$@\"'\n"
   grep "alias op=" "$RC_FILE" &> /dev/null || printf "$CMD" >> $RC_FILE
-  echo -e " ↳ [${GREEN}✔${NC}] op installed successfully. Open a new shell to use it.\n"
+  echo -e " ↳ [${GREEN}✔${NC}] op installed successfully. Open a new shell to use it."
 }
 
 function loge() {
@@ -37,7 +37,13 @@ function loge() {
 
 function op_run_command() {
   CMD="$@"
-  echo -e "${BOLD}Running:${NC} $CMD"
+
+  echo -e "${BOLD}Running command →${NC} $CMD │"
+  for ((i=0; i<$((19 + ${#CMD})); i++)); do
+    echo -n "─"
+  done
+  echo -e "┘\n"
+
   if [[ -z "$DRY" ]]; then
     eval "$CMD"
   fi
@@ -58,7 +64,7 @@ function op_get_openpilot_dir() {
 function op_check_openpilot_dir() {
   echo "Checking for openpilot directory..."
   if [[ -f "$OPENPILOT_ROOT/launch_openpilot.sh" ]]; then
-    echo -e " ↳ [${GREEN}✔${NC}] openpilot found.\n"
+    echo -e " ↳ [${GREEN}✔${NC}] openpilot found."
     return 0
   fi
 
@@ -118,7 +124,7 @@ function op_check_os() {
     fi
 
   elif [[ "$OSTYPE" == "darwin"* ]]; then
-    echo -e " ↳ [${GREEN}✔${NC}] macOS detected.\n"
+    echo -e " ↳ [${GREEN}✔${NC}] macOS detected."
   else
     echo -e " ↳ [${RED}✗${NC}] OS type $OSTYPE not supported!"
     loge "ERROR_UNKNOWN_OS" "$OSTYPE"
@@ -171,7 +177,7 @@ function op_before_cmd() {
   result="${result}\n$(( op_check_python ) 2>&1)" || (echo -e "$result" && return 1)
 
   if [[ -z $VERBOSE ]]; then
-    echo -e "Checking system → [${GREEN}✔${NC}] system is good."
+    echo -e "${BOLD}Checking system →${NC} [${GREEN}✔${NC}]"
   else
     echo -e "$result"
   fi
@@ -192,33 +198,33 @@ function op_setup() {
   elif [[ "$OSTYPE" == "darwin"* ]]; then
     SETUP_SCRIPT="tools/mac_setup.sh"
   fi
-  if ! op_run_command "$OPENPILOT_ROOT/$SETUP_SCRIPT"; then
+  if ! $OPENPILOT_ROOT/$SETUP_SCRIPT; then
     echo -e " ↳ [${RED}✗${NC}] Dependencies installation failed!"
     loge "ERROR_DEPENDENCIES_INSTALLATION"
     return 1
   fi
   et="$(date +%s)"
-  echo -e " ↳ [${GREEN}✔${NC}] Dependencies installed successfully in $((et - st)) seconds.\n"
+  echo -e " ↳ [${GREEN}✔${NC}] Dependencies installed successfully in $((et - st)) seconds."
 
   echo "Getting git submodules..."
   st="$(date +%s)"
-  if ! op_run_command git submodule update --filter=blob:none --jobs 4 --init --recursive; then
+  if ! git submodule update --filter=blob:none --jobs 4 --init --recursive; then
     echo -e " ↳ [${RED}✗${NC}] Getting git submodules failed!"
     loge "ERROR_GIT_SUBMODULES"
     return 1
   fi
   et="$(date +%s)"
-  echo -e " ↳ [${GREEN}✔${NC}] Submodules installed successfully in $((et - st)) seconds.\n"
+  echo -e " ↳ [${GREEN}✔${NC}] Submodules installed successfully in $((et - st)) seconds."
 
   echo "Pulling git lfs files..."
   st="$(date +%s)"
-  if ! op_run_command git lfs pull; then
+  if ! git lfs pull; then
     echo -e " ↳ [${RED}✗${NC}] Pulling git lfs files failed!"
     loge "ERROR_GIT_LFS"
     return 1
   fi
   et="$(date +%s)"
-  echo -e " ↳ [${GREEN}✔${NC}] Files pulled successfully in $((et - st)) seconds.\n"
+  echo -e " ↳ [${GREEN}✔${NC}] Files pulled successfully in $((et - st)) seconds."
 
   op_check
 }
@@ -328,8 +334,6 @@ function op_default() {
   echo "          Don't actually run anything, just print what would be run"
   echo -e "  ${BOLD}-n, --no-verify${NC}"
   echo "          Skip environment check before running commands"
-  echo -e "  ${BOLD}-v, --verbose${NC}"
-  echo "          Show the result of all checks before running a command"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Examples:${NC}"
   echo "  op setup"
@@ -350,7 +354,6 @@ function _op() {
     -d | --dir )       shift 1; OPENPILOT_ROOT="$1"; shift 1 ;;
     --dry )            shift 1; DRY="1" ;;
     -n | --no-verify ) shift 1; NO_VERIFY="1" ;;
-    -v | --verbose )   shift 1; VERBOSE="1" ;;
     -l | --log )       shift 1; LOG_FILE="$1" ; shift 1 ;;
   esac
 
