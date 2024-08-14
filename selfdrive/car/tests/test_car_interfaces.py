@@ -83,16 +83,15 @@ class TestCarInterfaces:
     # Lateral sanity checks
     if car_params.steerControlType != CarParams.SteerControlType.angle:
       tune = car_params.lateralTuning
-      # TODO: we use which again, this is wrong
-      if isinstance(tune, CarParams.LateralPIDTuning):
+      if tune.which() == 'pid':
         if car_name != MOCK.MOCK:
-          assert not math.isnan(tune.kf) and tune.kf > 0
-          assert len(tune.kpV) > 0 and len(tune.kpV) == len(tune.kpBP)
-          assert len(tune.kiV) > 0 and len(tune.kiV) == len(tune.kiBP)
+          assert not math.isnan(tune.pid.kf) and tune.pid.kf > 0
+          assert len(tune.pid.kpV) > 0 and len(tune.pid.kpV) == len(tune.pid.kpBP)
+          assert len(tune.pid.kiV) > 0 and len(tune.pid.kiV) == len(tune.pid.kiBP)
 
-      elif isinstance(tune, CarParams.LateralTorqueTuning):
-        assert not math.isnan(tune.kf) and tune.kf > 0
-        assert not math.isnan(tune.friction) and tune.friction > 0
+      elif tune.which() == 'torque':
+        assert not math.isnan(tune.torque.kf) and tune.torque.kf > 0
+        assert not math.isnan(tune.torque.friction) and tune.torque.friction > 0
 
     cc_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
     # Run car interface
@@ -118,9 +117,9 @@ class TestCarInterfaces:
     LongControl(car_params)
     if car_params.steerControlType == CarParams.SteerControlType.angle:
       LatControlAngle(car_params, car_interface)
-    elif isinstance(car_params.lateralTuning, CarParams.LateralPIDTuning):
+    elif car_params.lateralTuning.which() == 'pid':
       LatControlPID(car_params, car_interface)
-    elif isinstance(car_params.lateralTuning, CarParams.LateralTorqueTuning):
+    elif car_params.lateralTuning.which() == 'torque':
       LatControlTorque(car_params, car_interface)
 
     # Test radar interface
