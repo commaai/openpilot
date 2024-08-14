@@ -79,7 +79,7 @@ class Controls:
     # Setup sockets
     self.pm = messaging.PubMaster(['controlsState', 'carControl', 'onroadEvents'])
 
-    if self.params.getBool("UbloxAvailable"):
+    if self.params.get_bool("UbloxAvailable"):
       self.gps_location_service = "gpsLocationExternal"
     else:
       self.gps_location_service = "gpsLocation"
@@ -382,6 +382,13 @@ class Controls:
 
     # TODO: fix simulator
     if not SIMULATION or REPLAY:
+      gps_ok = self.sm.recv_frame[self.gps_location_service] > 0 and (self.sm.frame - self.sm.recv_frame[self.gps_location_service]) * DT_CTRL < 2.0
+      if not gps_ok and (self.distance_traveled > 1500):
+        self.events.add(EventName.noGps)
+      if gps_ok:
+        self.distance_traveled = 0
+      self.distance_traveled += CS.vEgo * DT_CTRL
+
       if self.sm['modelV2'].frameDropPerc > 20:
         self.events.add(EventName.modeldLagging)
 
