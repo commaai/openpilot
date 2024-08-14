@@ -89,6 +89,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     fcw @79;
     steerSaturated @80;
     belowEngageSpeed @84;
+    noGps @85;
     wrongCruiseMode @87;
     modeldLagging @89;
     deviceFalling @90;
@@ -143,7 +144,6 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     brakeUnavailableDEPRECATED @2;
     plannerErrorDEPRECATED @32;
     gpsMalfunctionDEPRECATED @94;
-    noGpsDEPRECATED @85;
   }
 }
 
