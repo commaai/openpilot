@@ -201,7 +201,6 @@ class CarInterface(CarInterfaceBase):
   # returns a car.CarState
   def _update(self):
     ret = super()._update()
-    ret = self.CS.update(self.cp, self.cp_cam, self.cp_loopback)
 
     # Don't add event if transitioning from INIT, unless it's to an actual button
     if self.CS.cruise_buttons != CruiseButtons.UNPRESS or self.CS.prev_cruise_buttons != CruiseButtons.INIT:

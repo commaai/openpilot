@@ -38,7 +38,3 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 1.0
     ret.steerActuatorDelay = 0.25
     return ret
-
-  def _update(self):
-    ret = super()._update()
-    return ret

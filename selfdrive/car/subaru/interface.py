@@ -96,13 +96,6 @@ class CarInterface(CarInterfaceBase):
 
     return ret
 
-  # returns a car.CarState
-  def _update(self):
-
-    ret = super()._update()
-
-    return ret
-
   @staticmethod
   def init(CP, can_recv, can_send):
     if CP.flags & SubaruFlags.DISABLE_EYESIGHT:
