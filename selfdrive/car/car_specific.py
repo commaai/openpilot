@@ -16,7 +16,6 @@ NetworkLocation = car.CarParams.NetworkLocation
 # TODO: the goal is to abstract this file into the CarState struct and make events generic
 class MockCarState:
   def __init__(self):
-    self.speed = 0.
     self.sm = messaging.SubMaster(['gpsLocation', 'gpsLocationExternal'])
 
   def update(self, CS: car.CarState):
