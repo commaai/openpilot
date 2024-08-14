@@ -9,7 +9,6 @@ from typing import Any, NamedTuple
 from collections.abc import Callable
 from functools import cache
 
-from cereal import car
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.simple_kalman import KF1D, get_kalman_gain
 from openpilot.selfdrive.car import DT_CTRL, apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, get_friction, STD_CARGO_KG
@@ -223,7 +222,7 @@ class CarInterfaceBase(ABC):
   def _update(self) -> structs.CarState:
     return self.CS.update(*self.can_parsers)
 
-  def update(self, can_packets: list[tuple[int, list[CanData]]]) -> car.CarState:
+  def update(self, can_packets: list[tuple[int, list[CanData]]]) -> structs.CarState:
     # parse can
     for cp in self.can_parsers:
       if cp is not None:

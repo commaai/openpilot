@@ -5,8 +5,6 @@ from dataclasses import dataclass
 from enum import IntFlag, ReprEnum, EnumType
 from dataclasses import replace
 
-import capnp
-
 from panda.python.uds import SERVICE_TYPE
 from openpilot.selfdrive.car import structs
 from openpilot.selfdrive.car.can_definitions import CanData
@@ -35,9 +33,9 @@ def apply_hysteresis(val: float, val_steady: float, hyst_gap: float) -> float:
   return val_steady
 
 
-def create_button_events(cur_btn: int, prev_btn: int, buttons_dict: dict[int, capnp.lib.capnp._EnumModule],
+def create_button_events(cur_btn: int, prev_btn: int, buttons_dict: dict[int, structs.CarState.ButtonEvent.Type],
                          unpressed_btn: int = 0) -> list[structs.CarState.ButtonEvent]:
-  events: list[capnp.lib.capnp._DynamicStructBuilder] = []
+  events: list[structs.CarState.ButtonEvent] = []
 
   if cur_btn == prev_btn:
     return events
