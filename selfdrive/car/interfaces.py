@@ -103,7 +103,7 @@ class CarInterfaceBase(ABC):
     self.cp_adas = self.CS.get_adas_can_parser(CP)
     self.cp_body = self.CS.get_body_can_parser(CP)
     self.cp_loopback = self.CS.get_loopback_can_parser(CP)
-    self.can_parsers = [self.cp, self.cp_cam, self.cp_adas, self.cp_body, self.cp_loopback]
+    self.can_parsers = (self.cp, self.cp_cam, self.cp_adas, self.cp_body, self.cp_loopback)
 
     dbc_name = "" if self.cp is None else self.cp.dbc_name
     self.CC: CarControllerBase = CarController(dbc_name, CP)
@@ -246,17 +246,15 @@ class CarInterfaceBase(ABC):
       self.v_ego_cluster_seen = True
 
     # Many cars apply hysteresis to the ego dash speed
-    if self.CS is not None:
-      ret.vEgoCluster = apply_hysteresis(ret.vEgoCluster, self.CS.out.vEgoCluster, self.CS.cluster_speed_hyst_gap)
-      if abs(ret.vEgo) < self.CS.cluster_min_speed:
-        ret.vEgoCluster = 0.0
+    ret.vEgoCluster = apply_hysteresis(ret.vEgoCluster, self.CS.out.vEgoCluster, self.CS.cluster_speed_hyst_gap)
+    if abs(ret.vEgo) < self.CS.cluster_min_speed:
+      ret.vEgoCluster = 0.0
 
     if ret.cruiseState.speedCluster == 0:
       ret.cruiseState.speedCluster = ret.cruiseState.speed
 
     # copy back for next iteration
-    if self.CS is not None:
-      self.CS.out = ret.as_reader()
+    self.CS.out = ret.as_reader()
 
     return ret
 
