@@ -232,13 +232,13 @@ class CarInterfaceBase(ABC):
     ret.canTimeout = any(cp.bus_timeout for cp in self.can_parsers if cp is not None)
 
     if ret.vEgoCluster == 0.0 and not self.v_ego_cluster_seen:
-      ret.vEgoCluster = ret.vEgo
+      ret.vEgoCluster = ret.vEgoRaw
     else:
       self.v_ego_cluster_seen = True
 
     # Many cars apply hysteresis to the ego dash speed
     ret.vEgoCluster = apply_hysteresis(ret.vEgoCluster, self.CS.out.vEgoCluster, self.CS.cluster_speed_hyst_gap)
-    if abs(ret.vEgo) < self.CS.cluster_min_speed:
+    if abs(ret.vEgoRaw) < self.CS.cluster_min_speed:
       ret.vEgoCluster = 0.0
 
     if ret.cruiseState.speedCluster == 0:
