@@ -189,7 +189,6 @@ function op_setup() {
 
   op_check_openpilot_dir
   op_check_os
-  op_check_python
 
   echo "Installing dependencies..."
   st="$(date +%s)"

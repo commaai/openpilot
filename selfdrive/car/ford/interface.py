@@ -8,7 +8,6 @@ from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 ButtonType = car.CarState.ButtonEvent.Type
 TransmissionType = car.CarParams.TransmissionType
-GearShifter = car.CarState.GearShifter
 
 
 class CarInterface(CarInterfaceBase):
