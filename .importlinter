@@ -24,10 +24,6 @@ forbidden_modules =
     openpilot.teleoprtc
     openpilot.tinygrad
 ignore_imports =
-    # remove these
-    openpilot.selfdrive.car.gm.interface -> openpilot.common.basedir
-    openpilot.selfdrive.car.interfaces -> openpilot.common.basedir
-
     # these are okay
     openpilot.selfdrive.car.card -> openpilot.common.swaglog
     openpilot.selfdrive.car.card -> openpilot.common.realtime
