@@ -7,7 +7,7 @@ from parameterized import parameterized
 
 from cereal import car, messaging
 from openpilot.selfdrive.car import DT_CTRL, gen_empty_fingerprint
-from openpilot.selfdrive.car.card import convert_carControl
+from openpilot.selfdrive.car.card import convert_carControl, convert_to_capnp
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.structs import CarParams
 from openpilot.selfdrive.car.fingerprints import all_known_cars
@@ -114,13 +114,14 @@ class TestCarInterfaces:
     # Test controller initialization
     # TODO: wait until card refactor is merged to run controller a few times,
     #  hypothesis also slows down significantly with just one more message draw
-    LongControl(car_params)
-    if car_params.steerControlType == CarParams.SteerControlType.angle:
-      LatControlAngle(car_params, car_interface)
-    elif car_params.lateralTuning.which() == 'pid':
-      LatControlPID(car_params, car_interface)
-    elif car_params.lateralTuning.which() == 'torque':
-      LatControlTorque(car_params, car_interface)
+    car_params_capnp = convert_to_capnp(car_params).as_reader()
+    LongControl(car_params_capnp)
+    if car_params_capnp.steerControlType == CarParams.SteerControlType.angle:
+      LatControlAngle(car_params_capnp, car_interface)
+    elif car_params_capnp.lateralTuning.which() == 'pid':
+      LatControlPID(car_params_capnp, car_interface)
+    elif car_params_capnp.lateralTuning.which() == 'torque':
+      LatControlTorque(car_params_capnp, car_interface)
 
     # Test radar interface
     RadarInterface = importlib.import_module(f'selfdrive.car.{car_params.carName}.radar_interface').RadarInterface
