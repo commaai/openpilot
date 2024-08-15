@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import re
 
 from panda.python.uds import get_rx_addr_for_tx_addr, FUNCTIONAL_ADDRS

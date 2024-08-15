@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import time
 import cereal.messaging as messaging
 from openpilot.selfdrive.car.card import can_comm_callbacks

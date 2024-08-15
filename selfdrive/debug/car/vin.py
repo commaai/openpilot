@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import argparse
 import time
 import cereal.messaging as messaging

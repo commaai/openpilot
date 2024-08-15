@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from openpilot.selfdrive.car import carlog
 from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 

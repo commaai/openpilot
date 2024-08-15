@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from collections import defaultdict
 from collections.abc import Callable, Iterator
 from typing import Protocol, TypeVar
