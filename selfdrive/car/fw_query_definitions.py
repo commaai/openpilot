@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import copy
 from dataclasses import dataclass, field
 import struct
