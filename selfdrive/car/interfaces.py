@@ -11,7 +11,7 @@ from functools import cache
 from cereal import car
 from openpilot.selfdrive.car import DT_CTRL, apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, get_friction, STD_CARGO_KG
 from openpilot.selfdrive.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
-from openpilot.selfdrive.car.common import BASEDIR
+from openpilot.selfdrive.car.common.basedir import BASEDIR
 from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.common.simple_kalman import KF1D, get_kalman_gain
 from openpilot.selfdrive.car.common.numpy_fast import clip
