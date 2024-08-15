@@ -74,7 +74,7 @@ class CarController(CarControllerBase):
           self.packer, CS.lkas_hud_info_msg, steer_hud_alert
         ))
 
-    new_actuators = copy.deepcopy(actuators)
+    new_actuators = copy.copy(actuators)
     new_actuators.steeringAngleDeg = apply_angle
 
     self.frame += 1
