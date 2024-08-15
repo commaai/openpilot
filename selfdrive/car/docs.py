@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from collections import defaultdict
 import jinja2
 from enum import Enum
