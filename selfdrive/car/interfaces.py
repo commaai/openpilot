@@ -1,4 +1,3 @@
-import copy
 import json
 import os
 import numpy as np
@@ -247,9 +246,8 @@ class CarInterfaceBase(ABC):
     if ret.cruiseState.speedCluster == 0:
       ret.cruiseState.speedCluster = ret.cruiseState.speed
 
-    # copy back for next iteration
-    # TODO: do we need to deepcopy?
-    self.CS.out = copy.deepcopy(ret)
+    # save for next iteration
+    self.CS.out = ret
 
     return ret
 
