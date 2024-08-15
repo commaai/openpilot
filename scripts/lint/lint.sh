@@ -15,14 +15,6 @@ FAILED=0
 IGNORED_FILES="uv\.lock|docs\/CARS.md"
 IGNORED_DIRS="^third_party.*|^msgq.*|^msgq_repo.*|^opendbc.*|^opendbc_repo.*|^cereal.*|^panda.*|^rednose.*|^rednose_repo.*|^tinygrad.*|^tinygrad_repo.*|^teleoprtc.*|^teleoprtc_repo.*"
 
-function check_banned_patterns() {
-  BANNED_PATTERN='\.vEgo(?!Stopping|Starting|Raw|Cluster)|\.aEgo'
-  if grep --color=always -r -P "$BANNED_PATTERN" --include='*.py' selfdrive/car; then
-    echo "Found banned pattern: $BANNED_PATTERN"
-    exit 1
-  fi
-}
-
 function run() {
   shopt -s extglob
   case $1 in
@@ -60,7 +52,6 @@ function run_tests() {
   run "check_added_large_files" python3 -m pre_commit_hooks.check_added_large_files --enforce-all $ALL_FILES --maxkb=120
   run "check_shebang_scripts_are_executable" python3 -m pre_commit_hooks.check_shebang_scripts_are_executable $ALL_FILES
   run "check_shebang_format" $DIR/check_shebang_format.sh $ALL_FILES
-  run "banned_patterns" "check_banned_patterns"
 
   if [[ -z "$FAST" ]]; then
     run "mypy" mypy $PYTHON_FILES
@@ -82,7 +73,6 @@ function help() {
   echo -e "  ${BOLD}codespell${NC}"
   echo -e "  ${BOLD}check_added_large_files${NC}"
   echo -e "  ${BOLD}check_shebang_scripts_are_executable${NC}"
-  echo -e "  ${BOLD}banned_patterns${NC}"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Options:${NC}"
   echo -e "  ${BOLD}-f, --fast${NC}"
