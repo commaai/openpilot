@@ -29,9 +29,6 @@ ignore_imports =
     openpilot.selfdrive.car.tests.test_docs -> openpilot.common.basedir
     openpilot.selfdrive.car.docs -> openpilot.common.basedir
 
-    # car interface will not filter the speed
-    openpilot.selfdrive.car.interfaces -> openpilot.common.simple_kalman
-
     openpilot.selfdrive.car.gm.interface -> openpilot.common.basedir
     openpilot.selfdrive.car.interfaces -> openpilot.common.basedir
 

@@ -3,7 +3,7 @@ from collections import namedtuple
 from cereal import car
 from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import DT_CTRL, rate_limit, make_tester_present_msg
-from openpilot.selfdrive.car.helpers import clip, interp
+from openpilot.selfdrive.car.common.numpy_fast import clip, interp
 from openpilot.selfdrive.car.honda import hondacan
 from openpilot.selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
 from openpilot.selfdrive.car.interfaces import CarControllerBase

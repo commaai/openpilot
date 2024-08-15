@@ -3,7 +3,7 @@ from opendbc.can.packer import CANPacker
 from openpilot.selfdrive.car import apply_std_steer_angle_limits
 from openpilot.selfdrive.car.ford import fordcan
 from openpilot.selfdrive.car.ford.values import CarControllerParams, FordFlags
-from openpilot.selfdrive.car.helpers import clip
+from openpilot.selfdrive.car.common.numpy_fast import clip
 from openpilot.selfdrive.car.interfaces import CarControllerBase, V_CRUISE_MAX
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
