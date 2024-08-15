@@ -27,6 +27,7 @@ def auto_dataclass(cls=None, /, **kwargs):
       else:
         raise TypeError(f"Unsupported type for auto_field: {origin_typ}")
 
+  # TODO: use slots, this prevents accidentally setting attributes that don't exist
   return _dataclass(cls, **kwargs)
 
 
