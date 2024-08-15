@@ -31,6 +31,7 @@ _services: dict[str, tuple] = {
   "liveTracks": (True, 20.),
   "sendcan": (True, 100., 139),
   "logMessage": (True, 0.),
+  "importantLogMessage": (True, 0., 1),
   "errorLogMessage": (True, 0., 1),
   "liveCalibration": (True, 4., 4),
   "liveTorqueParameters": (True, 4., 1),

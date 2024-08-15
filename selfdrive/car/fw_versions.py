@@ -98,7 +98,7 @@ def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, match_brand: str = N
   # if there are enough matches. FIXME: parameterize this or require all ECUs to exist like exact matching
   if match and len(matched_ecus) >= 2:
     if log:
-      carlog.error(f"Fingerprinted {match} using fuzzy match. {len(matched_ecus)} matching ECUs")
+      carlog.info(f"Fingerprinted {match} using fuzzy match. {len(matched_ecus)} matching ECUs", extra={"important": True})
     return {match}
   else:
     return set()

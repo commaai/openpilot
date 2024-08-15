@@ -4,15 +4,7 @@ import json
 
 import cereal.messaging as messaging
 from openpilot.tools.lib.logreader import LogReader
-
-LEVELS = {
-  "DEBUG": 10,
-  "INFO": 20,
-  "WARNING": 30,
-  "IMPORTANT": 35,
-  "ERROR": 40,
-  "CRITICAL": 50,
-}
+from openpilot.common.logging_extra import LEVELS
 
 ANDROID_LOG_SOURCE = {
   0: "MAIN",
@@ -66,6 +58,8 @@ if __name__ == "__main__":
           print_logmessage(m.logMonoTime-st, m.logMessage, min_level)
         elif m.which() == 'errorLogMessage':
           print_logmessage(m.logMonoTime-st, m.errorLogMessage, min_level)
+        elif m.which() == 'importantLogMessage':
+          print_logmessage(m.logMonoTime-st, m.importantLogMessage, min_level)
         elif m.which() == 'androidLog':
           print_androidlog(m.logMonoTime-st, m.androidLog)
   else:

@@ -3,7 +3,7 @@ import zmq
 from typing import NoReturn
 
 import cereal.messaging as messaging
-from openpilot.common.logging_extra import SwagLogFileFormatter
+from openpilot.common.logging_extra import SwagLogFileFormatter, LEVELS
 from openpilot.system.hardware.hw import Paths
 from openpilot.common.swaglog import get_file_handler
 
@@ -20,6 +20,7 @@ def main() -> NoReturn:
   # and we publish them
   log_message_sock = messaging.pub_sock('logMessage')
   error_log_message_sock = messaging.pub_sock('errorLogMessage')
+  important_log_message_sock = messaging.pub_sock('importantLogMessage')
 
   try:
     while True:
@@ -38,7 +39,10 @@ def main() -> NoReturn:
       msg = messaging.new_message(None, valid=True, logMessage=record)
       log_message_sock.send(msg.to_bytes())
 
-      if level >= 35:  # logging.IMPORTANT
+      if level == LEVELS["IMPORTANT"]:
+        msg = messaging.new_message(None, valid=True, importantLogMessage=record)
+        important_log_message_sock.send(msg.to_bytes())
+      elif level >= LEVELS["ERROR"]:
         msg = messaging.new_message(None, valid=True, errorLogMessage=record)
         error_log_message_sock.send(msg.to_bytes())
   finally:
