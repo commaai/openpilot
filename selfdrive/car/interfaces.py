@@ -397,7 +397,7 @@ def get_interface_attr(attr: str, combine_brands: bool = False, ignore_none: boo
   # - keys are all the car models or brand names
   # - values are attr values from all car folders
   result = {}
-  for car_folder in sorted([x[0] for x in os.walk(BASEDIR + '/selfdrive/car')]):
+  for car_folder in sorted([x[0] for x in os.walk(BASEDIR)]):
     try:
       brand_name = car_folder.split('/')[-1]
       brand_values = __import__(f'openpilot.selfdrive.car.{brand_name}.{INTERFACE_ATTR_FILE.get(attr, "values")}', fromlist=[attr])
