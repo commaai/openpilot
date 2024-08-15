@@ -1,14 +1,14 @@
 import time
 import argparse
 import cereal.messaging as messaging
+from cereal import car
 from openpilot.common.params import Params
-from openpilot.selfdrive.car import structs
 from openpilot.selfdrive.car.card import can_comm_callbacks, obd_callback
 from openpilot.selfdrive.car.fw_versions import get_fw_versions, match_fw_to_car
 from openpilot.selfdrive.car.vin import get_vin
 from typing import Any
 
-Ecu = structs.CarParams.Ecu
+Ecu = car.CarParams.Ecu
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Get firmware version of ECUs')
@@ -61,7 +61,7 @@ if __name__ == "__main__":
   for version in fw_vers:
     subaddr = None if version.subAddress == 0 else hex(version.subAddress)
     print(f"  Brand: {version.brand:{padding}}, bus: {version.bus}, OBD: {version.obdMultiplexing} - " +
-          f"(Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion!r}]")
+          f"(Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}]")
   print("}")
 
   print()
