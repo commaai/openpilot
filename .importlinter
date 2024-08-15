@@ -25,7 +25,6 @@ forbidden_modules =
     openpilot.tinygrad
 ignore_imports =
     # remove these
-    openpilot.selfdrive.car.body.carcontroller -> openpilot.selfdrive.controls.lib.pid
     openpilot.selfdrive.car.tests.test_docs -> openpilot.common.basedir
     openpilot.selfdrive.car.docs -> openpilot.common.basedir
 
