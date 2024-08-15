@@ -2,7 +2,7 @@
 from panda import Panda
 from openpilot.selfdrive.car import get_safety_config, structs
 from openpilot.selfdrive.car.conversions import Conversions as CV
-from openpilot.selfdrive.car.helpers import interp
+from openpilot.selfdrive.car.common.numpy_fast import interp
 from openpilot.selfdrive.car.honda.carstate import CarState
 from openpilot.selfdrive.car.honda.hondacan import CanBus
 from openpilot.selfdrive.car.honda.values import CarControllerParams, HondaFlags, CAR, HONDA_BOSCH, \

@@ -102,8 +102,6 @@ void Sidebar::updateState(const UIState &s) {
   ItemStatus pandaStatus = {{tr("VEHICLE"), tr("ONLINE")}, good_color};
   if (s.scene.pandaType == cereal::PandaState::PandaType::UNKNOWN) {
     pandaStatus = {{tr("NO"), tr("PANDA")}, danger_color};
-  } else if (s.scene.started && !sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK()) {
-    pandaStatus = {{tr("GPS"), tr("SEARCH")}, warning_color};
   }
   setProperty("pandaStatus", QVariant::fromValue(pandaStatus));
 }
