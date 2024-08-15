@@ -1,29 +1,49 @@
 #!/usr/bin/env bash
 
+if [[ ! "${BASH_SOURCE[0]}" = "${0}" ]]; then
+  echo "Invalid invocation! This script must not be sourced."
+  echo "Run 'op.sh' directly or check your .bashrc for a valid alias"
+  return 0
+fi
+
+set -e
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 UNDERLINE='\033[4m'
 BOLD='\033[1m'
 NC='\033[0m'
 
+SHELL_NAME="$(basename ${SHELL})"
+RC_FILE="${HOME}/.$(basename ${SHELL})rc"
+if [ "$(uname)" == "Darwin" ] && [ $SHELL == "/bin/bash" ]; then
+  RC_FILE="$HOME/.bash_profile"
+fi
 function op_install() {
-  (set -e
-
   echo "Installing op system-wide..."
-  RC_FILE="${HOME}/.$(basename ${SHELL})rc"
-  if [ "$(uname)" == "Darwin" ] && [ $SHELL == "/bin/bash" ]; then
-    RC_FILE="$HOME/.bash_profile"
-  fi
-  CMD="\nalias op='source "$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh" \"\$@\"'\n"
+  CMD="\nalias op='"$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh" \"\$@\"'\n"
   grep "alias op=" "$RC_FILE" &> /dev/null || printf "$CMD" >> $RC_FILE
-  echo -e " ↳ [${GREEN}✔${NC}] op installed successfully. Open a new shell to use it.\n"
+  echo -e " ↳ [${GREEN}✔${NC}] op installed successfully. Open a new shell to use it."
+}
 
-  )
+function loge() {
+  if [[ -f "$LOG_FILE" ]]; then
+    # error type
+    echo "$1" >> $LOG_FILE
+    # error log
+    echo "$2" >> $LOG_FILE
+  fi
 }
 
 function op_run_command() {
   CMD="$@"
-  echo -e "${BOLD}Running:${NC} $CMD"
+
+  echo -e "${BOLD}Running command →${NC} $CMD │"
+  for ((i=0; i<$((19 + ${#CMD})); i++)); do
+    echo -n "─"
+  done
+  echo -e "┘\n"
+
   if [[ -z "$DRY" ]]; then
     eval "$CMD"
   fi
@@ -44,7 +64,7 @@ function op_get_openpilot_dir() {
 function op_check_openpilot_dir() {
   echo "Checking for openpilot directory..."
   if [[ -f "$OPENPILOT_ROOT/launch_openpilot.sh" ]]; then
-    echo -e " ↳ [${GREEN}✔${NC}] openpilot found.\n"
+    echo -e " ↳ [${GREEN}✔${NC}] openpilot found."
     return 0
   fi
 
@@ -55,8 +75,6 @@ function op_check_openpilot_dir() {
 }
 
 function op_check_git() {
-  (set -e
-
   echo "Checking for git..."
   if ! command -v "git" > /dev/null 2>&1; then
     echo -e " ↳ [${RED}✗${NC}] git not found on your system!"
@@ -81,13 +99,9 @@ function op_check_git() {
     fi
   done
   echo -e " ↳ [${GREEN}✔${NC}] git submodules found."
-
-  )
 }
 
 function op_check_os() {
-  (set -e
-
   echo "Checking for compatible os version..."
   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
 
@@ -99,47 +113,46 @@ function op_check_os() {
           ;;
         * )
           echo -e " ↳ [${RED}✗${NC}] Incompatible Ubuntu version $VERSION_CODENAME detected!"
+          loge "ERROR_INCOMPATIBLE_UBUNTU" "$VERSION_CODENAME"
           return 1
           ;;
       esac
     else
       echo -e " ↳ [${RED}✗${NC}] No /etc/os-release on your system. Make sure you're running on Ubuntu, or similar!"
+      loge "ERROR_UNKNOWN_UBUNTU"
       return 1
     fi
 
   elif [[ "$OSTYPE" == "darwin"* ]]; then
-    echo -e " ↳ [${GREEN}✔${NC}] macos detected.\n"
+    echo -e " ↳ [${GREEN}✔${NC}] macOS detected."
   else
     echo -e " ↳ [${RED}✗${NC}] OS type $OSTYPE not supported!"
+    loge "ERROR_UNKNOWN_OS" "$OSTYPE"
     return 1
   fi
-
-  )
 }
 
 function op_check_python() {
-  (set -e
-
   echo "Checking for compatible python version..."
   REQUIRED_PYTHON_VERSION=$(grep "requires-python" $OPENPILOT_ROOT/pyproject.toml)
   INSTALLED_PYTHON_VERSION=$(python3 --version 2> /dev/null || true)
 
   if [[ -z $INSTALLED_PYTHON_VERSION ]]; then
     echo -e " ↳ [${RED}✗${NC}] python3 not found on your system. You need python version at least $(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9.]') to continue!"
+    loge "ERROR_PYTHON_NOT_FOUND"
     return 1
-  elif [[ $(echo $INSTALLED_PYTHON_VERSION | tr -d -c '[0-9]') -ge $(($(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9]') * 10)) ]]; then
+  elif [[ $(echo $INSTALLED_PYTHON_VERSION | grep -o '[0-9]\+\.[0-9]\+' | tr -d -c '[0-9]') -ge $(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9]') ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] $INSTALLED_PYTHON_VERSION detected."
   else
     echo -e " ↳ [${RED}✗${NC}] You need python version at least $(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9.]') to continue!"
+    loge "ERROR_PYTHON_VERSION" "$INSTALLED_PYTHON_VERSION"
     return 1
   fi
-
-  )
 }
 
 function op_check_venv() {
   echo "Checking for venv..."
-  if source $OPENPILOT_ROOT/.venv/bin/activate; then
+  if [[ -f $OPENPILOT_ROOT/.venv/bin/activate ]]; then
     echo -e " ↳ [${GREEN}✔${NC}] venv detected."
   else
     echo -e " ↳ [${RED}✗${NC}] Can't activate venv in $OPENPILOT_ROOT. Assuming global env!"
@@ -164,141 +177,124 @@ function op_before_cmd() {
   result="${result}\n$(( op_check_python ) 2>&1)" || (echo -e "$result" && return 1)
 
   if [[ -z $VERBOSE ]]; then
-    echo -e "Checking system → [${GREEN}✔${NC}] system is good."
+    echo -e "${BOLD}Checking system →${NC} [${GREEN}✔${NC}]"
   else
     echo -e "$result"
   fi
 }
 
 function op_setup() {
-  (set -e
-
   op_get_openpilot_dir
   cd $OPENPILOT_ROOT
 
   op_check_openpilot_dir
   op_check_os
-  op_check_python
 
   echo "Installing dependencies..."
+  st="$(date +%s)"
   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    op_run_command $OPENPILOT_ROOT/tools/ubuntu_setup.sh
+    SETUP_SCRIPT="tools/ubuntu_setup.sh"
   elif [[ "$OSTYPE" == "darwin"* ]]; then
-    op_run_command $OPENPILOT_ROOT/tools/mac_setup.sh
+    SETUP_SCRIPT="tools/mac_setup.sh"
   fi
-  echo -e " ↳ [${GREEN}✔${NC}] Dependencies installed successfully.\n"
+  if ! $OPENPILOT_ROOT/$SETUP_SCRIPT; then
+    echo -e " ↳ [${RED}✗${NC}] Dependencies installation failed!"
+    loge "ERROR_DEPENDENCIES_INSTALLATION"
+    return 1
+  fi
+  et="$(date +%s)"
+  echo -e " ↳ [${GREEN}✔${NC}] Dependencies installed successfully in $((et - st)) seconds."
 
   echo "Getting git submodules..."
-  op_run_command git submodule update --jobs 4 --init --recursive
-  echo -e " ↳ [${GREEN}✔${NC}] Submodules installed successfully.\n"
+  st="$(date +%s)"
+  if ! git submodule update --filter=blob:none --jobs 4 --init --recursive; then
+    echo -e " ↳ [${RED}✗${NC}] Getting git submodules failed!"
+    loge "ERROR_GIT_SUBMODULES"
+    return 1
+  fi
+  et="$(date +%s)"
+  echo -e " ↳ [${GREEN}✔${NC}] Submodules installed successfully in $((et - st)) seconds."
 
   echo "Pulling git lfs files..."
-  op_run_command git lfs pull
-  echo -e " ↳ [${GREEN}✔${NC}] Files pulled successfully.\n"
+  st="$(date +%s)"
+  if ! git lfs pull; then
+    echo -e " ↳ [${RED}✗${NC}] Pulling git lfs files failed!"
+    loge "ERROR_GIT_LFS"
+    return 1
+  fi
+  et="$(date +%s)"
+  echo -e " ↳ [${GREEN}✔${NC}] Files pulled successfully in $((et - st)) seconds."
 
   op_check
-
-  )
 }
 
 function op_activate_venv() {
+  # bash 3.2 can't handle this without the 'set +e'
+  set +e
   source $OPENPILOT_ROOT/.venv/bin/activate &> /dev/null || true
+  set -e
 }
 
 function op_venv() {
-  ( set -e
-
   op_before_cmd
 
-  )
-
-  if [[ "$?" -eq 0 ]]; then
-
-    if [[ "${BASH_SOURCE[0]}" = "${0}" ]]; then
-      echo "Run 'op venv' or 'source op.sh venv' to activate your venv!"
-      return 1
-    fi
-
-    # this must be run in the same shell as the user calling "op"
-    op_get_openpilot_dir
-    op_run_command source $OPENPILOT_ROOT/.venv/bin/activate
+  if [[ ! -f $OPENPILOT_ROOT/.venv/bin/activate ]]; then
+    echo -e "No venv found in $OPENPILOT_ROOT"
+    return 1
   fi
+
+  case $SHELL_NAME in
+    "zsh")
+      ZSHRC_DIR=$(mktemp -d 2>/dev/null || mktemp -d -t 'tmp_zsh')
+      echo "source $RC_FILE; source $OPENPILOT_ROOT/.venv/bin/activate" >> $ZSHRC_DIR/.zshrc
+      ZDOTDIR=$ZSHRC_DIR zsh ;;
+    *)
+      bash --rcfile <(echo "source $RC_FILE; source $OPENPILOT_ROOT/.venv/bin/activate") ;;
+  esac
 }
 
 function op_check() {
-  (set -e
-
   VERBOSE=1
   op_before_cmd
   unset VERBOSE
-
-  )
 }
 
 function op_build() {
-  (set -e
-
   CDIR=$(pwd)
   op_before_cmd
   cd "$CDIR"
   op_run_command scons $@
-
-  )
 }
 
 function op_juggle() {
-  (set -e
-
   op_before_cmd
   op_run_command tools/plotjuggler/juggle.py $@
-
-  )
 }
 
 function op_lint() {
-  (set -e
-
   op_before_cmd
-  op_run_command pre-commit run --all $@
-
-  )
+  op_run_command scripts/lint/lint.sh $@
 }
 
 function op_test() {
-  (set -e
-
   op_before_cmd
   op_run_command pytest $@
-
-  )
 }
 
 function op_replay() {
-  (set -e
-
   op_before_cmd
   op_run_command tools/replay/replay $@
-
-  )
 }
 
 function op_cabana() {
-  (set -e
-
   op_before_cmd
   op_run_command tools/cabana/cabana $@
-
-  )
 }
 
 function op_sim() {
-  (set -e
-
   op_before_cmd
   op_run_command exec tools/sim/run_bridge.py &
   op_run_command exec tools/sim/launch_openpilot.sh
-
-  )
 }
 
 function op_default() {
@@ -316,19 +312,22 @@ function op_default() {
   echo ""
   echo -e "${BOLD}${UNDERLINE}Usage:${NC} op [OPTIONS] <COMMAND>"
   echo ""
-  echo -e "${BOLD}${UNDERLINE}Commands:${NC}"
-  echo -e "  ${BOLD}venv${NC}     Activate the Python virtual environment"
+  echo -e "${BOLD}${UNDERLINE}Commands [System]:${NC}"
   echo -e "  ${BOLD}check${NC}    Check the development environment (git, os, python) to start using openpilot"
+  echo -e "  ${BOLD}venv${NC}     Activate the python virtual environment"
   echo -e "  ${BOLD}setup${NC}    Install openpilot dependencies"
   echo -e "  ${BOLD}build${NC}    Run the openpilot build system in the current working directory"
-  echo -e "  ${BOLD}sim${NC}      Run openpilot in a simulator"
-  echo -e "  ${BOLD}juggle${NC}   Run Plotjuggler"
-  echo -e "  ${BOLD}replay${NC}   Run replay"
-  echo -e "  ${BOLD}cabana${NC}   Run cabana"
-  echo -e "  ${BOLD}lint${NC}     Run all the pre-commit checks"
-  echo -e "  ${BOLD}test${NC}     Run all unit tests from pytest"
-  echo -e "  ${BOLD}help${NC}     Show this message"
   echo -e "  ${BOLD}install${NC}  Install the 'op' tool system wide"
+  echo ""
+  echo -e "${BOLD}${UNDERLINE}Commands [Tooling]:${NC}"
+  echo -e "  ${BOLD}juggle${NC}   Run PlotJuggler"
+  echo -e "  ${BOLD}replay${NC}   Run Replay"
+  echo -e "  ${BOLD}cabana${NC}   Run Cabana"
+  echo ""
+  echo -e "${BOLD}${UNDERLINE}Commands [Testing]:${NC}"
+  echo -e "  ${BOLD}sim${NC}      Run openpilot in a simulator"
+  echo -e "  ${BOLD}lint${NC}     Run the linter"
+  echo -e "  ${BOLD}test${NC}     Run all unit tests from pytest"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Options:${NC}"
   echo -e "  ${BOLD}-d, --dir${NC}"
@@ -337,20 +336,17 @@ function op_default() {
   echo "          Don't actually run anything, just print what would be run"
   echo -e "  ${BOLD}-n, --no-verify${NC}"
   echo "          Skip environment check before running commands"
-  echo -e "  ${BOLD}-v, --verbose${NC}"
-  echo "          Show the result of all checks before running a command"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Examples:${NC}"
-  echo "  op --dir /tmp/openpilot check"
-  echo "          Run the check command on openpilot located in /tmp/openpilot"
+  echo "  op setup"
+  echo "          Run the setup script to install"
+  echo "          openpilot's dependencies."
   echo ""
-  echo "  op juggle --install"
-  echo "          Install plotjuggler in the openpilot located in your current"
-  echo "          working directory"
+  echo "  op build -j4"
+  echo "          Compile openpilot using 4 cores"
   echo ""
-  echo "  op --dir /tmp/openpilot build -j4"
-  echo "          Run the build command on openpilot located in /tmp/openpilot"
-  echo "          on 4 cores"
+  echo "  op juggle --demo"
+  echo "          Run PlotJuggler on the demo route"
 }
 
 
@@ -360,7 +356,7 @@ function _op() {
     -d | --dir )       shift 1; OPENPILOT_ROOT="$1"; shift 1 ;;
     --dry )            shift 1; DRY="1" ;;
     -n | --no-verify ) shift 1; NO_VERIFY="1" ;;
-    -v | --verbose ) shift 1; VERBOSE="1" ;;
+    -l | --log )       shift 1; LOG_FILE="$1" ; shift 1 ;;
   esac
 
   # parse Commands
@@ -381,36 +377,3 @@ function _op() {
 }
 
 _op $@
-
-# remove from env
-unset -f _op
-unset -f op_check
-unset -f op_setup
-unset -f op_build
-unset -f op_juggle
-unset -f op_venv
-unset -f op_check_openpilot_dir
-unset -f op_check_git
-unset -f op_check_python
-unset -f op_check_os
-unset -f op_install
-unset -f op_default
-unset -f op_run_command
-unset -f op_lint
-unset -f op_replay
-unset -f op_cabana
-unset -f op_check_venv
-unset -f op_before_cmd
-unset -f op_sim
-unset -f op_activate_venv
-unset -f op_get_openpilot_dir
-unset -f op_test
-unset DRY
-unset NC
-unset RED
-unset GREEN
-unset UNDERLINE
-unset BOLD
-unset OPENPILOT_ROOT
-unset NO_VERIFY
-unset VERBOSE

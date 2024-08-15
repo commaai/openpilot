@@ -96,16 +96,7 @@ class CarInterface(CarInterfaceBase):
 
     return ret
 
-  # returns a car.CarState
-  def _update(self, c):
-
-    ret = self.CS.update(self.cp, self.cp_cam, self.cp_body)
-
-    ret.events = self.create_common_events(ret).to_msg()
-
-    return ret
-
   @staticmethod
-  def init(CP, logcan, sendcan):
+  def init(CP, can_recv, can_send):
     if CP.flags & SubaruFlags.DISABLE_EYESIGHT:
-      disable_ecu(logcan, sendcan, bus=2, addr=GLOBAL_ES_ADDR, com_cont_req=b'\x28\x03\x01')
+      disable_ecu(can_recv, can_send, bus=2, addr=GLOBAL_ES_ADDR, com_cont_req=b'\x28\x03\x01')

@@ -32,20 +32,16 @@ fi
 echo "updating uv..."
 update_uv
 
-# TODO: remove --no-cache once this is fixed: https://github.com/astral-sh/uv/issues/4378
 echo "installing python packages..."
-uv --no-cache sync --frozen --all-extras
+uv sync --frozen --all-extras
 source .venv/bin/activate
+
+# TODO: remove this. Workaround till get a new release. PEP508 doesn't seem to have find-links option
+uv pip install --pre -f https://build.rerun.io/commit/a93faab/wheels --upgrade rerun-sdk
 
 echo "PYTHONPATH=${PWD}" > $ROOT/.env
 if [[ "$(uname)" == 'Darwin' ]]; then
   echo "# msgq doesn't work on mac" >> $ROOT/.env
   echo "export ZMQ=1" >> $ROOT/.env
   echo "export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES" >> $ROOT/.env
-fi
-
-if [ "$(uname)" != "Darwin" ] && [ -e "$ROOT/.git" ]; then
-  echo "pre-commit hooks install..."
-  pre-commit install
-  git submodule foreach pre-commit install
 fi

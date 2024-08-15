@@ -1,4 +1,4 @@
-from openpilot.selfdrive.car import make_can_msg
+from openpilot.selfdrive.car.can_definitions import CanData
 from openpilot.selfdrive.car.gm.values import CAR
 
 
@@ -49,7 +49,7 @@ def create_steering_control(packer, bus, apply_steer, idx, lkas_active):
 
 def create_adas_keepalive(bus):
   dat = b"\x00\x00\x00\x00\x00\x00\x00"
-  return [make_can_msg(0x409, dat, bus), make_can_msg(0x40a, dat, bus)]
+  return [CanData(0x409, dat, bus), CanData(0x40a, dat, bus)]
 
 
 def create_gas_regen_command(packer, bus, throttle, idx, enabled, at_full_stop):
@@ -64,7 +64,7 @@ def create_gas_regen_command(packer, bus, throttle, idx, enabled, at_full_stop):
     "GasRegenAlwaysOne3": 1,
   }
 
-  dat = packer.make_can_msg("ASCMGasRegenCmd", bus, values)[2]
+  dat = packer.make_can_msg("ASCMGasRegenCmd", bus, values)[1]
   values["GasRegenChecksum"] = (((0xff - dat[1]) & 0xff) << 16) | \
                                (((0xff - dat[2]) & 0xff) << 8) | \
                                ((0x100 - dat[3] - idx) & 0xff)
@@ -125,14 +125,14 @@ def create_adas_time_status(bus, tt, idx):
   chksum = 0x1000 - dat[0] - dat[1] - dat[2] - dat[3]
   chksum = chksum & 0xfff
   dat += [0x40 + (chksum >> 8), chksum & 0xff, 0x12]
-  return make_can_msg(0xa1, bytes(dat), bus)
+  return CanData(0xa1, bytes(dat), bus)
 
 
 def create_adas_steering_status(bus, idx):
   dat = [idx << 6, 0xf0, 0x20, 0, 0, 0]
   chksum = 0x60 + sum(dat)
   dat += [chksum >> 8, chksum & 0xff]
-  return make_can_msg(0x306, bytes(dat), bus)
+  return CanData(0x306, bytes(dat), bus)
 
 
 def create_adas_accelerometer_speed_status(bus, speed_ms, idx):
@@ -146,7 +146,7 @@ def create_adas_accelerometer_speed_status(bus, speed_ms, idx):
   dat = [0x08, spd >> 4, ((spd & 0xf) << 4) | (accel >> 8), accel & 0xff, 0]
   chksum = 0x62 + far_range_mode + (idx << 2) + dat[0] + dat[1] + dat[2] + dat[3] + dat[4]
   dat += [(idx << 5) + (far_range_mode << 4) + (near_range_mode << 3) + (chksum >> 8), chksum & 0xff]
-  return make_can_msg(0x308, bytes(dat), bus)
+  return CanData(0x308, bytes(dat), bus)
 
 
 def create_adas_headlights_status(packer, bus):
@@ -170,4 +170,4 @@ def create_lka_icon_command(bus, active, critical, steer):
       dat = b"\x40\x40\x18"
   else:
     dat = b"\x00\x00\x00"
-  return make_can_msg(0x104c006c, dat, bus)
+  return CanData(0x104c006c, dat, bus)

@@ -22,6 +22,7 @@ from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.common.timeout import Timeout
 from openpilot.common.realtime import DT_CTRL
 from panda.python import ALTERNATIVE_EXPERIENCE
+from openpilot.selfdrive.car.card import can_comm_callbacks
 from openpilot.selfdrive.car.car_helpers import get_car, interfaces
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state, available_streams
@@ -335,7 +336,7 @@ def card_fingerprint_callback(rc, pm, msgs, fingerprint):
 
     m = canmsgs.pop(0)
     rc.send_sync(pm, "can", m.as_builder().to_bytes())
-    rc.wait_for_next_recv(False)
+    rc.wait_for_next_recv(True)
 
 
 def get_car_params_callback(rc, pm, msgs, fingerprint):
@@ -348,20 +349,27 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
     sendcan = DummySocket()
 
     canmsgs = [msg for msg in msgs if msg.which() == "can"]
-    has_cached_cp = params.get("CarParamsCache") is not None
+    cached_params_raw = params.get("CarParamsCache")
+    has_cached_cp = cached_params_raw is not None
     assert len(canmsgs) != 0, "CAN messages are required for fingerprinting"
     assert os.environ.get("SKIP_FW_QUERY", False) or has_cached_cp, \
             "CarParamsCache is required for fingerprinting. Make sure to keep carParams msgs in the logs."
 
     for m in canmsgs[:300]:
       can.send(m.as_builder().to_bytes())
-    _, CP = get_car(can, sendcan, Params().get_bool("ExperimentalLongitudinalEnabled"))
+    can_callbacks = can_comm_callbacks(can, sendcan)
+
+    cached_params = None
+    if has_cached_cp:
+      with car.CarParams.from_bytes(cached_params_raw) as _cached_params:
+        cached_params = _cached_params
+
+    CP = get_car(*can_callbacks, lambda obd: None, Params().get_bool("ExperimentalLongitudinalEnabled"), cached_params=cached_params).CP
 
     if not params.get_bool("DisengageOnAccelerator"):
       CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
 
   params.put("CarParams", CP.to_bytes())
-  return CP
 
 
 def controlsd_rcv_callback(msg, cfg, frame):
@@ -457,6 +465,11 @@ def controlsd_config_callback(params, cfg, lr):
   assert controlsState is not None and initialized, "controlsState never initialized"
   params.put("ReplayControlsState", controlsState.as_builder().to_bytes())
 
+  ublox = params.get_bool("UbloxAvailable")
+  sub_keys = ({"gpsLocation", } if ublox else {"gpsLocationExternal", })
+
+  cfg.pubs = set(cfg.pubs) - sub_keys
+
 
 CONFIGS = [
   ProcessConfig(
@@ -465,7 +478,8 @@ CONFIGS = [
       "carState", "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
       "longitudinalPlan", "livePose", "liveParameters", "radarState",
       "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
-      "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope", "carOutput"
+      "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope", "carOutput",
+      "gpsLocationExternal", "gpsLocation",
     ],
     subs=["controlsState", "carControl", "onroadEvents"],
     ignore=["logMonoTime", "controlsState.startMonoTime", "controlsState.cumLagMs"],

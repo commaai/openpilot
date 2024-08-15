@@ -10,19 +10,16 @@ from functools import cache
 
 from cereal import car
 from openpilot.common.basedir import BASEDIR
-from openpilot.common.conversions import Conversions as CV
 from openpilot.common.simple_kalman import KF1D, get_kalman_gain
-from openpilot.common.numpy_fast import clip
-from openpilot.selfdrive.car import DT_CTRL, apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, STD_CARGO_KG
+from openpilot.selfdrive.car import DT_CTRL, apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, get_friction, STD_CARGO_KG
+from openpilot.selfdrive.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
+from openpilot.selfdrive.car.conversions import Conversions as CV
+from openpilot.selfdrive.car.helpers import clip
 from openpilot.selfdrive.car.values import PLATFORMS
-from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, get_friction
-from openpilot.selfdrive.controls.lib.events import Events
-from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 
-ButtonType = car.CarState.ButtonEvent.Type
 GearShifter = car.CarState.GearShifter
-EventName = car.CarEvent.EventName
 
+V_CRUISE_MAX = 145
 MAX_CTRL_SPEED = (V_CRUISE_MAX + 4) * CV.KPH_TO_MS
 ACCEL_MAX = 2.0
 ACCEL_MIN = -3.5
@@ -87,29 +84,24 @@ def get_torque_params():
 # generic car and radar interfaces
 
 class CarInterfaceBase(ABC):
-  def __init__(self, CP, CarController, CarState):
+  def __init__(self, CP: car.CarParams, CarController, CarState):
     self.CP = CP
-    self.VM = VehicleModel(CP)
 
     self.frame = 0
-    self.steering_unpressed = 0
-    self.low_speed_alert = False
-    self.no_steer_warning = False
-    self.silent_steer_warning = True
     self.v_ego_cluster_seen = False
 
-    self.CS = CarState(CP)
+    self.CS: CarStateBase = CarState(CP)
     self.cp = self.CS.get_can_parser(CP)
     self.cp_cam = self.CS.get_cam_can_parser(CP)
     self.cp_adas = self.CS.get_adas_can_parser(CP)
     self.cp_body = self.CS.get_body_can_parser(CP)
     self.cp_loopback = self.CS.get_loopback_can_parser(CP)
-    self.can_parsers = [self.cp, self.cp_cam, self.cp_adas, self.cp_body, self.cp_loopback]
+    self.can_parsers = (self.cp, self.cp_cam, self.cp_adas, self.cp_body, self.cp_loopback)
 
     dbc_name = "" if self.cp is None else self.cp.dbc_name
-    self.CC: CarControllerBase = CarController(dbc_name, CP, self.VM)
+    self.CC: CarControllerBase = CarController(dbc_name, CP)
 
-  def apply(self, c: car.CarControl, now_nanos: int) -> tuple[car.CarControl.Actuators, list[tuple[int, int, bytes, int]]]:
+  def apply(self, c: car.CarControl, now_nanos: int) -> tuple[car.CarControl.Actuators, list[CanData]]:
     return self.CC.update(c, self.CS, now_nanos)
 
   @staticmethod
@@ -117,7 +109,7 @@ class CarInterfaceBase(ABC):
     return ACCEL_MIN, ACCEL_MAX
 
   @classmethod
-  def get_non_essential_params(cls, candidate: str):
+  def get_non_essential_params(cls, candidate: str) -> car.CarParams:
     """
     Parameters essential to controlling the car may be incomplete or wrong without FW versions or fingerprints.
     """
@@ -152,11 +144,11 @@ class CarInterfaceBase(ABC):
   @staticmethod
   @abstractmethod
   def _get_params(ret: car.CarParams, candidate, fingerprint: dict[int, dict[int, int]],
-                  car_fw: list[car.CarParams.CarFw], experimental_long: bool, docs: bool):
+                  car_fw: list[car.CarParams.CarFw], experimental_long: bool, docs: bool) -> car.CarParams:
     raise NotImplementedError
 
   @staticmethod
-  def init(CP, logcan, sendcan):
+  def init(CP: car.CarParams, can_recv: CanRecvCallable, can_send: CanSendCallable):
     pass
 
   @staticmethod
@@ -212,7 +204,7 @@ class CarInterfaceBase(ABC):
     return ret
 
   @staticmethod
-  def configure_torque_tune(candidate, tune, steering_angle_deadzone_deg=0.0, use_steering_angle=True):
+  def configure_torque_tune(candidate: str, tune: car.CarParams.LateralTuning, steering_angle_deadzone_deg: float = 0.0, use_steering_angle: bool = True):
     params = get_torque_params()[candidate]
 
     tune.init('torque')
@@ -225,18 +217,17 @@ class CarInterfaceBase(ABC):
     tune.torque.latAccelOffset = 0.0
     tune.torque.steeringAngleDeadzoneDeg = steering_angle_deadzone_deg
 
-  @abstractmethod
-  def _update(self, c: car.CarControl) -> car.CarState:
-    pass
+  def _update(self) -> car.CarState:
+    return self.CS.update(*self.can_parsers)
 
-  def update(self, c: car.CarControl, can_strings: list[bytes]) -> car.CarState:
+  def update(self, can_packets: list[tuple[int, list[CanData]]]) -> car.CarState:
     # parse can
     for cp in self.can_parsers:
       if cp is not None:
-        cp.update_strings(can_strings)
+        cp.update_strings(can_packets)
 
     # get CarState
-    ret = self._update(c)
+    ret = self._update()
 
     ret.canValid = all(cp.can_valid for cp in self.can_parsers if cp is not None)
     ret.canTimeout = any(cp.bus_timeout for cp in self.can_parsers if cp is not None)
@@ -247,105 +238,24 @@ class CarInterfaceBase(ABC):
       self.v_ego_cluster_seen = True
 
     # Many cars apply hysteresis to the ego dash speed
-    if self.CS is not None:
-      ret.vEgoCluster = apply_hysteresis(ret.vEgoCluster, self.CS.out.vEgoCluster, self.CS.cluster_speed_hyst_gap)
-      if abs(ret.vEgo) < self.CS.cluster_min_speed:
-        ret.vEgoCluster = 0.0
+    ret.vEgoCluster = apply_hysteresis(ret.vEgoCluster, self.CS.out.vEgoCluster, self.CS.cluster_speed_hyst_gap)
+    if abs(ret.vEgo) < self.CS.cluster_min_speed:
+      ret.vEgoCluster = 0.0
 
     if ret.cruiseState.speedCluster == 0:
       ret.cruiseState.speedCluster = ret.cruiseState.speed
 
     # copy back for next iteration
-    if self.CS is not None:
-      self.CS.out = ret.as_reader()
+    self.CS.out = ret.as_reader()
 
     return ret
 
 
-  def create_common_events(self, cs_out, extra_gears=None, pcm_enable=True, allow_enable=True,
-                           enable_buttons=(ButtonType.accelCruise, ButtonType.decelCruise)):
-    events = Events()
-
-    if cs_out.doorOpen:
-      events.add(EventName.doorOpen)
-    if cs_out.seatbeltUnlatched:
-      events.add(EventName.seatbeltNotLatched)
-    if cs_out.gearShifter != GearShifter.drive and (extra_gears is None or
-       cs_out.gearShifter not in extra_gears):
-      events.add(EventName.wrongGear)
-    if cs_out.gearShifter == GearShifter.reverse:
-      events.add(EventName.reverseGear)
-    if not cs_out.cruiseState.available:
-      events.add(EventName.wrongCarMode)
-    if cs_out.espDisabled:
-      events.add(EventName.espDisabled)
-    if cs_out.espActive:
-      events.add(EventName.espActive)
-    if cs_out.stockFcw:
-      events.add(EventName.stockFcw)
-    if cs_out.stockAeb:
-      events.add(EventName.stockAeb)
-    if cs_out.vEgo > MAX_CTRL_SPEED:
-      events.add(EventName.speedTooHigh)
-    if cs_out.cruiseState.nonAdaptive:
-      events.add(EventName.wrongCruiseMode)
-    if cs_out.brakeHoldActive and self.CP.openpilotLongitudinalControl:
-      events.add(EventName.brakeHold)
-    if cs_out.parkingBrake:
-      events.add(EventName.parkBrake)
-    if cs_out.accFaulted:
-      events.add(EventName.accFaulted)
-    if cs_out.steeringPressed:
-      events.add(EventName.steerOverride)
-    if cs_out.brakePressed and cs_out.standstill:
-      events.add(EventName.preEnableStandstill)
-    if cs_out.gasPressed:
-      events.add(EventName.gasPressedOverride)
-
-    # Handle button presses
-    for b in cs_out.buttonEvents:
-      # Enable OP long on falling edge of enable buttons (defaults to accelCruise and decelCruise, overridable per-port)
-      if not self.CP.pcmCruise and (b.type in enable_buttons and not b.pressed):
-        events.add(EventName.buttonEnable)
-      # Disable on rising and falling edge of cancel for both stock and OP long
-      if b.type == ButtonType.cancel:
-        events.add(EventName.buttonCancel)
-
-    # Handle permanent and temporary steering faults
-    self.steering_unpressed = 0 if cs_out.steeringPressed else self.steering_unpressed + 1
-    if cs_out.steerFaultTemporary:
-      if cs_out.steeringPressed and (not self.CS.out.steerFaultTemporary or self.no_steer_warning):
-        self.no_steer_warning = True
-      else:
-        self.no_steer_warning = False
-
-        # if the user overrode recently, show a less harsh alert
-        if self.silent_steer_warning or cs_out.standstill or self.steering_unpressed < int(1.5 / DT_CTRL):
-          self.silent_steer_warning = True
-          events.add(EventName.steerTempUnavailableSilent)
-        else:
-          events.add(EventName.steerTempUnavailable)
-    else:
-      self.no_steer_warning = False
-      self.silent_steer_warning = False
-    if cs_out.steerFaultPermanent:
-      events.add(EventName.steerUnavailable)
-
-    # we engage when pcm is active (rising edge)
-    # enabling can optionally be blocked by the car interface
-    if pcm_enable:
-      if cs_out.cruiseState.enabled and not self.CS.out.cruiseState.enabled and allow_enable:
-        events.add(EventName.pcmEnable)
-      elif not cs_out.cruiseState.enabled:
-        events.add(EventName.pcmDisable)
-
-    return events
-
-
 class RadarInterfaceBase(ABC):
-  def __init__(self, CP):
+  def __init__(self, CP: car.CarParams):
+    self.CP = CP
     self.rcp = None
-    self.pts = {}
+    self.pts: dict[int, car.RadarData.RadarPoint] = {}
     self.delay = 0
     self.radar_ts = CP.radarTimeStep
     self.frame = 0
@@ -358,7 +268,7 @@ class RadarInterfaceBase(ABC):
 
 
 class CarStateBase(ABC):
-  def __init__(self, CP):
+  def __init__(self, CP: car.CarParams):
     self.CP = CP
     self.car_fingerprint = CP.carFingerprint
     self.out = car.CarState.new_message()
@@ -379,6 +289,10 @@ class CarStateBase(ABC):
     x0=[[0.0], [0.0]]
     K = get_kalman_gain(DT_CTRL, np.array(A), np.array(C), np.array(Q), R)
     self.v_ego_kf = KF1D(x0=x0, A=A, C=C[0], K=K)
+
+  @abstractmethod
+  def update(self, cp, cp_cam, cp_adas, cp_body, cp_loopback) -> car.CarState:
+    pass
 
   def update_speed_kf(self, v_ego_raw):
     if abs(v_ego_raw - self.v_ego_kf.x[0][0]) > 2.0:  # Prevent large accelerations when car starts at non zero speed
@@ -461,15 +375,13 @@ class CarStateBase(ABC):
     return None
 
 
-SendCan = tuple[int, int, bytes, int]
-
-
 class CarControllerBase(ABC):
-  def __init__(self, dbc_name: str, CP, VM):
-    pass
+  def __init__(self, dbc_name: str, CP: car.CarParams):
+    self.CP = CP
+    self.frame = 0
 
   @abstractmethod
-  def update(self, CC: car.CarControl.Actuators, CS: car.CarState, now_nanos: int) -> tuple[car.CarControl.Actuators, list[SendCan]]:
+  def update(self, CC: car.CarControl, CS: CarStateBase, now_nanos: int) -> tuple[car.CarControl.Actuators, list[CanData]]:
     pass
 
 

@@ -15,7 +15,7 @@ def create_steering_control(packer, apply_steer, frame, steer_on, lkas_max_torqu
     "LKA_ACTIVE": steer_on,
   }
 
-  dat = packer.make_can_msg("LKAS", 0, values)[2]
+  dat = packer.make_can_msg("LKAS", 0, values)[1]
 
   values["CHECKSUM"] = nissan_checksum(dat[:7])
   return packer.make_can_msg("LKAS", 0, values)

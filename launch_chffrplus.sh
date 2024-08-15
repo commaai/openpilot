@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 
 if [ -z "$BASEDIR" ]; then
   BASEDIR="/data/openpilot"

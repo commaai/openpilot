@@ -12,6 +12,11 @@ if [[ ! $(id -u) -eq 0 ]]; then
   SUDO="sudo"
 fi
 
+# Check if stdin is open
+if [ -t 0 ]; then
+  INTERACTIVE=1
+fi
+
 # Install common packages
 function install_ubuntu_common_requirements() {
   $SUDO apt-get update
@@ -133,7 +138,7 @@ if [ -f "/etc/os-release" ]; then
   esac
 
   # Install extra packages
-  if [[ -z "$INSTALL_EXTRA_PACKAGES" ]]; then
+  if [[ -z "$INSTALL_EXTRA_PACKAGES" && -n "$INTERACTIVE" ]]; then
     read -p "Base setup done. Do you want to install extra development packages? [Y/n]: " -n 1 -r
     echo ""
     if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -143,6 +148,23 @@ if [ -f "/etc/os-release" ]; then
   if [[ "$INSTALL_EXTRA_PACKAGES" == "yes" ]]; then
     install_extra_packages
   fi
+
+  if [[ -d "/etc/udev/rules.d/" ]]; then
+    # Setup panda udev rules
+    $SUDO tee /etc/udev/rules.d/12-panda_jungle.rules > /dev/null <<EOF
+SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddcf", MODE="0666"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddef", MODE="0666"
+EOF
+
+    # Setup jungle udev rules
+    $SUDO tee /etc/udev/rules.d/11-panda.rules > /dev/null <<EOF
+SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddcc", MODE="0666"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddee", MODE="0666"
+EOF
+
+  $SUDO udevadm control --reload-rules && $SUDO udevadm trigger || true
+  fi
+
 else
   echo "No /etc/os-release in the system. Make sure you're running on Ubuntu, or similar."
   exit 1

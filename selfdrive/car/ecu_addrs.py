@@ -2,21 +2,10 @@
 import capnp
 import time
 
-import cereal.messaging as messaging
 from panda.python.uds import SERVICE_TYPE
-from openpilot.selfdrive.car import make_can_msg
+from openpilot.selfdrive.car import make_tester_present_msg, carlog
+from openpilot.selfdrive.car.can_definitions import CanRecvCallable, CanSendCallable
 from openpilot.selfdrive.car.fw_query_definitions import EcuAddrBusType
-from openpilot.selfdrive.pandad import can_list_to_can_capnp
-from openpilot.common.swaglog import cloudlog
-
-
-def _make_tester_present_msg(addr, bus, subaddr=None):
-  dat = [0x02, SERVICE_TYPE.TESTER_PRESENT, 0x0]
-  if subaddr is not None:
-    dat.insert(0, subaddr)
-
-  dat.extend([0x0] * (8 - len(dat)))
-  return make_can_msg(addr, bytes(dat), bus)
 
 
 def _is_tester_present_response(msg: capnp.lib.capnp._DynamicStructReader, subaddr: int = None) -> bool:
@@ -33,28 +22,28 @@ def _is_tester_present_response(msg: capnp.lib.capnp._DynamicStructReader, subad
   return False
 
 
-def _get_all_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, bus: int, timeout: float = 1, debug: bool = True) -> set[EcuAddrBusType]:
+def _get_all_ecu_addrs(can_recv: CanRecvCallable, can_send: CanSendCallable, bus: int, timeout: float = 1, debug: bool = True) -> set[EcuAddrBusType]:
   addr_list = [0x700 + i for i in range(256)] + [0x18da00f1 + (i << 8) for i in range(256)]
   queries: set[EcuAddrBusType] = {(addr, None, bus) for addr in addr_list}
   responses = queries
-  return get_ecu_addrs(logcan, sendcan, queries, responses, timeout=timeout, debug=debug)
+  return get_ecu_addrs(can_recv, can_send, queries, responses, timeout=timeout, debug=debug)
 
 
-def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, queries: set[EcuAddrBusType],
+def get_ecu_addrs(can_recv: CanRecvCallable, can_send: CanSendCallable, queries: set[EcuAddrBusType],
                   responses: set[EcuAddrBusType], timeout: float = 1, debug: bool = False) -> set[EcuAddrBusType]:
   ecu_responses: set[EcuAddrBusType] = set()  # set((addr, subaddr, bus),)
   try:
-    msgs = [_make_tester_present_msg(addr, bus, subaddr) for addr, subaddr, bus in queries]
+    msgs = [make_tester_present_msg(addr, bus, subaddr) for addr, subaddr, bus in queries]
 
-    messaging.drain_sock_raw(logcan)
-    sendcan.send(can_list_to_can_capnp(msgs, msgtype='sendcan'))
+    can_recv()
+    can_send(msgs)
     start_time = time.monotonic()
     while time.monotonic() - start_time < timeout:
-      can_packets = messaging.drain_sock(logcan, wait_for_one=True)
+      can_packets = can_recv(wait_for_one=True)
       for packet in can_packets:
-        for msg in packet.can:
+        for msg in packet:
           if not len(msg.dat):
-            cloudlog.warning("ECU addr scan: skipping empty remote frame")
+            carlog.warning("ECU addr scan: skipping empty remote frame")
             continue
 
           subaddr = None if (msg.address, None, msg.src) in responses else msg.dat[0]
@@ -65,14 +54,15 @@ def get_ecu_addrs(logcan: messaging.SubSocket, sendcan: messaging.PubSocket, que
                 print(f"Duplicate ECU address: {hex(msg.address)}")
             ecu_responses.add((msg.address, subaddr, msg.src))
   except Exception:
-    cloudlog.exception("ECU addr scan exception")
+    carlog.exception("ECU addr scan exception")
   return ecu_responses
 
 
 if __name__ == "__main__":
   import argparse
+  import cereal.messaging as messaging
   from openpilot.common.params import Params
-  from openpilot.selfdrive.car.fw_versions import set_obd_multiplexing
+  from openpilot.selfdrive.car.card import can_comm_callbacks, obd_callback
 
   parser = argparse.ArgumentParser(description='Get addresses of all ECUs')
   parser.add_argument('--debug', action='store_true')
@@ -83,6 +73,7 @@ if __name__ == "__main__":
 
   logcan = messaging.sub_sock('can')
   sendcan = messaging.pub_sock('sendcan')
+  can_callbacks = can_comm_callbacks(logcan, sendcan)
 
   # Set up params for pandad
   params = Params()
@@ -91,10 +82,10 @@ if __name__ == "__main__":
   time.sleep(0.2)  # thread is 10 Hz
   params.put_bool("IsOnroad", True)
 
-  set_obd_multiplexing(params, not args.no_obd)
+  obd_callback(params)(not args.no_obd)
 
   print("Getting ECU addresses ...")
-  ecu_addrs = _get_all_ecu_addrs(logcan, sendcan, args.bus, args.timeout, debug=args.debug)
+  ecu_addrs = _get_all_ecu_addrs(*can_callbacks, args.bus, args.timeout, debug=args.debug)
 
   print()
   print("Found ECUs on rx addresses:")

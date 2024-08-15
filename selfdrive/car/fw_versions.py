@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from collections import defaultdict
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from typing import Any, Protocol, TypeVar
 
 from tqdm import tqdm
@@ -8,10 +8,10 @@ import capnp
 
 import panda.python.uds as uds
 from cereal import car
-from openpilot.common.params import Params
-from openpilot.common.swaglog import cloudlog
+from openpilot.selfdrive.car import carlog
 from openpilot.selfdrive.car.ecu_addrs import get_ecu_addrs
 from openpilot.selfdrive.car.fingerprints import FW_VERSIONS
+from openpilot.selfdrive.car.can_definitions import CanRecvCallable, CanSendCallable
 from openpilot.selfdrive.car.fw_query_definitions import AddrType, EcuAddrBusType, FwQueryConfig, LiveFwVersions, OfflineFwVersions
 from openpilot.selfdrive.car.interfaces import get_interface_attr
 from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
@@ -27,6 +27,7 @@ MODEL_TO_BRAND = {c: b for b, e in VERSIONS.items() for c in e}
 REQUESTS = [(brand, config, r) for brand, config in FW_QUERY_CONFIGS.items() for r in config.requests]
 
 T = TypeVar('T')
+ObdCallback = Callable[[bool], None]
 
 
 def chunks(l: list[T], n: int = 128) -> Iterator[list[T]]:
@@ -97,7 +98,7 @@ def match_fw_to_car_fuzzy(live_fw_versions: LiveFwVersions, match_brand: str = N
   # if there are enough matches. FIXME: parameterize this or require all ECUs to exist like exact matching
   if match and len(matched_ecus) >= 2:
     if log:
-      cloudlog.error(f"Fingerprinted {match} using fuzzy match. {len(matched_ecus)} matching ECUs")
+      carlog.error(f"Fingerprinted {match} using fuzzy match. {len(matched_ecus)} matching ECUs")
     return {match}
   else:
     return set()
@@ -171,8 +172,7 @@ def match_fw_to_car(fw_versions: list[capnp.lib.capnp._DynamicStructBuilder], vi
   return True, set()
 
 
-def get_present_ecus(logcan, sendcan, num_pandas: int = 1) -> set[EcuAddrBusType]:
-  params = Params()
+def get_present_ecus(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multiplexing: ObdCallback, num_pandas: int = 1) -> set[EcuAddrBusType]:
   # queries are split by OBD multiplexing mode
   queries: dict[bool, list[list[EcuAddrBusType]]] = {True: [], False: []}
   parallel_queries: dict[bool, list[EcuAddrBusType]] = {True: [], False: []}
@@ -204,9 +204,9 @@ def get_present_ecus(logcan, sendcan, num_pandas: int = 1) -> set[EcuAddrBusType
 
   ecu_responses = set()
   for obd_multiplexing in queries:
-    set_obd_multiplexing(params, obd_multiplexing)
+    set_obd_multiplexing(obd_multiplexing)
     for query in queries[obd_multiplexing]:
-      ecu_responses.update(get_ecu_addrs(logcan, sendcan, set(query), responses, timeout=0.1))
+      ecu_responses.update(get_ecu_addrs(can_recv, can_send, set(query), responses, timeout=0.1))
   return ecu_responses
 
 
@@ -228,17 +228,9 @@ def get_brand_ecu_matches(ecu_rx_addrs: set[EcuAddrBusType]) -> dict[str, set[Ad
   return brand_matches
 
 
-def set_obd_multiplexing(params: Params, obd_multiplexing: bool):
-  if params.get_bool("ObdMultiplexingEnabled") != obd_multiplexing:
-    cloudlog.warning(f"Setting OBD multiplexing to {obd_multiplexing}")
-    params.remove("ObdMultiplexingChanged")
-    params.put_bool("ObdMultiplexingEnabled", obd_multiplexing)
-    params.get_bool("ObdMultiplexingChanged", block=True)
-    cloudlog.warning("OBD multiplexing set successfully")
-
-
-def get_fw_versions_ordered(logcan, sendcan, vin: str, ecu_rx_addrs: set[EcuAddrBusType], timeout: float = 0.1, num_pandas: int = 1,
-                            debug: bool = False, progress: bool = False) -> list[capnp.lib.capnp._DynamicStructBuilder]:
+def get_fw_versions_ordered(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multiplexing: ObdCallback, vin: str,
+                            ecu_rx_addrs: set[EcuAddrBusType], timeout: float = 0.1, num_pandas: int = 1, debug: bool = False,
+                            progress: bool = False) -> list[capnp.lib.capnp._DynamicStructBuilder]:
   """Queries for FW versions ordering brands by likelihood, breaks when exact match is found"""
 
   all_car_fw = []
@@ -249,7 +241,8 @@ def get_fw_versions_ordered(logcan, sendcan, vin: str, ecu_rx_addrs: set[EcuAddr
     if not len(brand_matches[brand]):
       continue
 
-    car_fw = get_fw_versions(logcan, sendcan, query_brand=brand, timeout=timeout, num_pandas=num_pandas, debug=debug, progress=progress)
+    car_fw = get_fw_versions(can_recv, can_send, set_obd_multiplexing, query_brand=brand, timeout=timeout, num_pandas=num_pandas, debug=debug,
+                             progress=progress)
     all_car_fw.extend(car_fw)
 
     # If there is a match using this brand's FW alone, finish querying early
@@ -260,10 +253,10 @@ def get_fw_versions_ordered(logcan, sendcan, vin: str, ecu_rx_addrs: set[EcuAddr
   return all_car_fw
 
 
-def get_fw_versions(logcan, sendcan, query_brand: str = None, extra: OfflineFwVersions = None, timeout: float = 0.1, num_pandas: int = 1,
-                    debug: bool = False, progress: bool = False) -> list[capnp.lib.capnp._DynamicStructBuilder]:
+def get_fw_versions(can_recv: CanRecvCallable, can_send: CanSendCallable, set_obd_multiplexing: ObdCallback, query_brand: str = None,
+                    extra: OfflineFwVersions = None, timeout: float = 0.1, num_pandas: int = 1, debug: bool = False,
+                    progress: bool = False) -> list[capnp.lib.capnp._DynamicStructBuilder]:
   versions = VERSIONS.copy()
-  params = Params()
 
   if query_brand is not None:
     versions = {query_brand: versions[query_brand]}
@@ -305,14 +298,14 @@ def get_fw_versions(logcan, sendcan, query_brand: str = None, extra: OfflineFwVe
 
         # Toggle OBD multiplexing for each request
         if r.bus % 4 == 1:
-          set_obd_multiplexing(params, r.obd_multiplexing)
+          set_obd_multiplexing(r.obd_multiplexing)
 
         try:
           query_addrs = [(a, s) for (b, a, s) in addr_chunk if b in (brand, 'any') and
                          (len(r.whitelist_ecus) == 0 or ecu_types[(b, a, s)] in r.whitelist_ecus)]
 
           if query_addrs:
-            query = IsoTpParallelQuery(sendcan, logcan, r.bus, query_addrs, r.request, r.response, r.rx_offset, debug=debug)
+            query = IsoTpParallelQuery(can_send, can_recv, r.bus, query_addrs, r.request, r.response, r.rx_offset, debug=debug)
             for (tx_addr, sub_addr), version in query.get_data(timeout).items():
               f = car.CarParams.CarFw.new_message()
 
@@ -331,7 +324,7 @@ def get_fw_versions(logcan, sendcan, query_brand: str = None, extra: OfflineFwVe
 
               car_fw.append(f)
         except Exception:
-          cloudlog.exception("FW query exception")
+          carlog.exception("FW query exception")
 
   return car_fw
 
@@ -340,7 +333,9 @@ if __name__ == "__main__":
   import time
   import argparse
   import cereal.messaging as messaging
+  from openpilot.common.params import Params
   from openpilot.selfdrive.car.vin import get_vin
+  from openpilot.selfdrive.car.card import can_comm_callbacks, obd_callback
 
   parser = argparse.ArgumentParser(description='Get firmware version of ECUs')
   parser.add_argument('--scan', action='store_true')
@@ -351,6 +346,7 @@ if __name__ == "__main__":
   logcan = messaging.sub_sock('can')
   pandaStates_sock = messaging.sub_sock('pandaStates')
   sendcan = messaging.pub_sock('sendcan')
+  can_callbacks = can_comm_callbacks(logcan, sendcan)
 
   # Set up params for pandad
   params = Params()
@@ -358,6 +354,7 @@ if __name__ == "__main__":
   params.put_bool("IsOnroad", False)
   time.sleep(0.2)  # thread is 10 Hz
   params.put_bool("IsOnroad", True)
+  set_obd_multiplexing = obd_callback(params)
 
   extra: Any = None
   if args.scan:
@@ -373,14 +370,14 @@ if __name__ == "__main__":
 
   t = time.time()
   print("Getting vin...")
-  set_obd_multiplexing(params, True)
-  vin_rx_addr, vin_rx_bus, vin = get_vin(logcan, sendcan, (0, 1), debug=args.debug)
+  set_obd_multiplexing(True)
+  vin_rx_addr, vin_rx_bus, vin = get_vin(*can_callbacks, (0, 1), debug=args.debug)
   print(f'RX: {hex(vin_rx_addr)}, BUS: {vin_rx_bus}, VIN: {vin}')
   print(f"Getting VIN took {time.time() - t:.3f} s")
   print()
 
   t = time.time()
-  fw_vers = get_fw_versions(logcan, sendcan, query_brand=args.brand, extra=extra, num_pandas=num_pandas, debug=args.debug, progress=True)
+  fw_vers = get_fw_versions(*can_callbacks, set_obd_multiplexing, query_brand=args.brand, extra=extra, num_pandas=num_pandas, debug=args.debug, progress=True)
   _, candidates = match_fw_to_car(fw_vers, vin)
 
   print()

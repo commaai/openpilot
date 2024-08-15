@@ -1,16 +1,17 @@
 import copy
 
 from cereal import car
-from openpilot.common.conversions import Conversions as CV
-from openpilot.common.numpy_fast import mean
-from openpilot.common.filter_simple import FirstOrderFilter
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
-from openpilot.selfdrive.car import DT_CTRL
+from openpilot.selfdrive.car import DT_CTRL, create_button_events
+from openpilot.selfdrive.car.conversions import Conversions as CV
+from openpilot.selfdrive.car.filter_simple import FirstOrderFilter
+from openpilot.selfdrive.car.helpers import mean
 from openpilot.selfdrive.car.interfaces import CarStateBase
 from openpilot.selfdrive.car.toyota.values import ToyotaFlags, CAR, DBC, STEER_THRESHOLD, NO_STOP_TIMER_CAR, \
                                                   TSS2_CAR, RADAR_ACC_CAR, EPS_SCALE, UNSUPPORTED_DSU_CAR
 
+ButtonType = car.CarState.ButtonEvent.Type
 SteerControlType = car.CarParams.SteerControlType
 
 # These steering fault definitions seem to be common across LKA (torque) and LTA (angle):
@@ -40,7 +41,6 @@ class CarState(CarStateBase):
     self.accurate_steer_angle_seen = False
     self.angle_offset = FirstOrderFilter(None, 60.0, DT_CTRL, initialized=False)
 
-    self.prev_distance_button = 0
     self.distance_button = 0
 
     self.pcm_follow_distance = 0
@@ -49,7 +49,7 @@ class CarState(CarStateBase):
     self.acc_type = 1
     self.lkas_hud = {}
 
-  def update(self, cp, cp_cam):
+  def update(self, cp, cp_cam, *_):
     ret = car.CarState.new_message()
 
     ret.doorOpen = any([cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_FL"], cp.vl["BODY_CONTROL_STATE"]["DOOR_OPEN_FR"],
@@ -112,6 +112,10 @@ class CarState(CarStateBase):
       ret.steerFaultTemporary = ret.steerFaultTemporary or cp.vl["EPS_STATUS"]["LTA_STATE"] in TEMP_STEER_FAULTS
       ret.steerFaultPermanent = ret.steerFaultPermanent or cp.vl["EPS_STATUS"]["LTA_STATE"] in PERM_STEER_FAULTS
 
+      # Lane Tracing Assist control is unavailable (EPS_STATUS->LTA_STATE=0) until
+      # the more accurate angle sensor signal is initialized
+      ret.vehicleSensorsInvalid = not self.accurate_steer_angle_seen
+
     if self.CP.carFingerprint in UNSUPPORTED_DSU_CAR:
       # TODO: find the bit likely in DSU_CRUISE that describes an ACC fault. one may also exist in CLUTCH
       ret.cruiseState.available = cp.vl["DSU_CRUISE"]["MAIN_ON"] != 0
@@ -168,9 +172,10 @@ class CarState(CarStateBase):
 
     if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
       # distance button is wired to the ACC module (camera or radar)
-      self.prev_distance_button = self.distance_button
-      if self.CP.carFingerprint in (TSS2_CAR - RADAR_ACC_CAR):
-        self.distance_button = cp_acc.vl["ACC_CONTROL"]["DISTANCE"]
+      prev_distance_button = self.distance_button
+      self.distance_button = cp_acc.vl["ACC_CONTROL"]["DISTANCE"]
+
+      ret.buttonEvents = create_button_events(self.distance_button, prev_distance_button, {1: ButtonType.gapAdjustCruise})
 
     return ret
 

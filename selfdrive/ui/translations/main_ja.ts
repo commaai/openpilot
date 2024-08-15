@@ -758,14 +758,6 @@ This may take up to a minute.</source>
         <translation>PANDA</translation>
     </message>
     <message>
-        <source>GPS</source>
-        <translation>GPS</translation>
-    </message>
-    <message>
-        <source>SEARCH</source>
-        <translation>検索</translation>
-    </message>
-    <message>
         <source>--</source>
         <translation>--</translation>
     </message>

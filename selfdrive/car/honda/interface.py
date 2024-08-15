@@ -1,22 +1,16 @@
 #!/usr/bin/env python3
 from cereal import car
 from panda import Panda
-from openpilot.common.conversions import Conversions as CV
-from openpilot.common.numpy_fast import interp
+from openpilot.selfdrive.car.conversions import Conversions as CV
+from openpilot.selfdrive.car.helpers import interp
 from openpilot.selfdrive.car.honda.hondacan import CanBus
-from openpilot.selfdrive.car.honda.values import CarControllerParams, CruiseButtons, CruiseSettings, HondaFlags, CAR, HONDA_BOSCH, \
+from openpilot.selfdrive.car.honda.values import CarControllerParams, HondaFlags, CAR, HONDA_BOSCH, \
                                                  HONDA_NIDEC_ALT_SCM_MESSAGES, HONDA_BOSCH_RADARLESS
-from openpilot.selfdrive.car import create_button_events, get_safety_config
+from openpilot.selfdrive.car import get_safety_config
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.car.disable_ecu import disable_ecu
 
-
-ButtonType = car.CarState.ButtonEvent.Type
-EventName = car.CarEvent.EventName
 TransmissionType = car.CarParams.TransmissionType
-BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
-                CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
-SETTINGS_BUTTONS_DICT = {CruiseSettings.DISTANCE: ButtonType.gapAdjustCruise, CruiseSettings.LKAS: ButtonType.altButton1}
 
 
 class CarInterface(CarInterfaceBase):
@@ -209,7 +203,7 @@ class CarInterface(CarInterfaceBase):
     # to a negative value, so it won't matter. Otherwise, add 0.5 mph margin to not
     # conflict with PCM acc
     ret.autoResumeSng = candidate in (HONDA_BOSCH | {CAR.HONDA_CIVIC})
-    ret.minEnableSpeed = -1. if ret.autoResumeSng else 25.5 * CV.MPH_TO_MS
+    ret.minEnableSpeed = -1. if ret.autoResumeSng else 25.51 * CV.MPH_TO_MS
 
     ret.steerActuatorDelay = 0.1
     ret.steerLimitTimer = 0.8
@@ -217,39 +211,6 @@ class CarInterface(CarInterfaceBase):
     return ret
 
   @staticmethod
-  def init(CP, logcan, sendcan):
+  def init(CP, can_recv, can_send):
     if CP.carFingerprint in (HONDA_BOSCH - HONDA_BOSCH_RADARLESS) and CP.openpilotLongitudinalControl:
-      disable_ecu(logcan, sendcan, bus=1, addr=0x18DAB0F1, com_cont_req=b'\x28\x83\x03')
-
-  # returns a car.CarState
-  def _update(self, c):
-    ret = self.CS.update(self.cp, self.cp_cam, self.cp_body)
-
-    ret.buttonEvents = [
-      *create_button_events(self.CS.cruise_buttons, self.CS.prev_cruise_buttons, BUTTONS_DICT),
-      *create_button_events(self.CS.cruise_setting, self.CS.prev_cruise_setting, SETTINGS_BUTTONS_DICT),
-    ]
-
-    # events
-    events = self.create_common_events(ret, pcm_enable=False)
-    if self.CP.pcmCruise and ret.vEgo < self.CP.minEnableSpeed:
-      events.add(EventName.belowEngageSpeed)
-
-    if self.CP.pcmCruise:
-      # we engage when pcm is active (rising edge)
-      if ret.cruiseState.enabled and not self.CS.out.cruiseState.enabled:
-        events.add(EventName.pcmEnable)
-      elif not ret.cruiseState.enabled and (c.actuators.accel >= 0. or not self.CP.openpilotLongitudinalControl):
-        # it can happen that car cruise disables while comma system is enabled: need to
-        # keep braking if needed or if the speed is very low
-        if ret.vEgo < self.CP.minEnableSpeed + 2.:
-          # non loud alert if cruise disables below 25mph as expected (+ a little margin)
-          events.add(EventName.speedTooLow)
-        else:
-          events.add(EventName.cruiseDisabled)
-    if self.CS.CP.minEnableSpeed > 0 and ret.vEgo < 0.001:
-      events.add(EventName.manualRestart)
-
-    ret.events = events.to_msg()
-
-    return ret
+      disable_ecu(can_recv, can_send, bus=1, addr=0x18DAB0F1, com_cont_req=b'\x28\x83\x03')

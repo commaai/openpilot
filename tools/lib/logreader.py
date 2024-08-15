@@ -174,6 +174,12 @@ def comma_car_segments_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
   return [get_comma_segments_url(sr.route_name, seg) for seg in sr.seg_idxs]
 
 
+def testing_closet_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
+  if not internal_source_available('http://testing.comma.life'):
+    raise InternalUnavailableException
+  return [f"http://testing.comma.life/download/{sr.route_name.replace('|', '/')}/{seg}/rlog" for seg in sr.seg_idxs]
+
+
 def direct_source(file_or_url: str) -> LogPaths:
   return [file_or_url]
 
@@ -195,7 +201,7 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
   if mode == ReadMode.SANITIZED:
     return comma_car_segments_source(sr, mode)
 
-  SOURCES: list[Source] = [internal_source, internal_source_zst, openpilotci_source, comma_api_source, comma_car_segments_source,]
+  SOURCES: list[Source] = [internal_source, internal_source_zst, openpilotci_source, comma_api_source, comma_car_segments_source, testing_closet_source,]
   exceptions = {}
 
   # for automatic fallback modes, auto_source needs to first check if rlogs exist for any source
@@ -293,11 +299,11 @@ are uploaded or auto fallback to qlogs with '/a' selector at the end of the rout
   def _run_on_segment(self, func, i):
     return func(self._get_lr(i))
 
-  def run_across_segments(self, num_processes, func):
+  def run_across_segments(self, num_processes, func, desc=None):
     with multiprocessing.Pool(num_processes) as pool:
       ret = []
       num_segs = len(self.logreader_identifiers)
-      for p in tqdm.tqdm(pool.imap(partial(self._run_on_segment, func), range(num_segs)), total=num_segs):
+      for p in tqdm.tqdm(pool.imap(partial(self._run_on_segment, func), range(num_segs)), total=num_segs, desc=desc):
         ret.extend(p)
       return ret
 
