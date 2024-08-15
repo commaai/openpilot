@@ -145,6 +145,7 @@ testpaths = [
   "common",
   "selfdrive/pandad",
   "selfdrive/car",
+  "selfdrive/opcar",
   "selfdrive/controls",
   "selfdrive/locationd",
   "selfdrive/monitoring",

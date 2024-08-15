@@ -25,9 +25,6 @@ forbidden_modules =
     openpilot.tinygrad
 ignore_imports =
     # remove these
-    openpilot.selfdrive.car.tests.test_docs -> openpilot.common.basedir
-    openpilot.selfdrive.car.docs -> openpilot.common.basedir
-
     openpilot.selfdrive.car.gm.interface -> openpilot.common.basedir
     openpilot.selfdrive.car.interfaces -> openpilot.common.basedir
 
@@ -48,8 +45,6 @@ ignore_imports =
     openpilot.selfdrive.car.tests.test_models -> openpilot.common.params
     openpilot.selfdrive.car.tests.test_models -> openpilot.common.basedir
     openpilot.selfdrive.car.card -> openpilot.selfdrive.pandad
-    openpilot.selfdrive.car.tests.test_docs -> openpilot.selfdrive.debug.dump_car_docs
-    openpilot.selfdrive.car.tests.test_docs -> openpilot.selfdrive.debug.print_docs_diff
     openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.pandad
     openpilot.selfdrive.car.tests.test_models -> openpilot.selfdrive.pandad
     openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.test.fuzzy_generation
