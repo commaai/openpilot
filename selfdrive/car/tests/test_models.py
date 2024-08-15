@@ -241,9 +241,9 @@ class TestCarModelBase(unittest.TestCase):
     # start parsing CAN messages after we've left ELM mode and can expect CAN traffic
     error_cnt = 0
     for i, msg in enumerate(self.can_msgs[self.elm_frame:]):
-      rr = RI.update(can_capnp_to_list((msg.as_builder().to_bytes(),)))
+      rr: structs.RadarData | None = RI.update(can_capnp_to_list((msg.as_builder().to_bytes(),)))
       if rr is not None and i > 50:
-        error_cnt += car.RadarData.Error.canError in rr.errors
+        error_cnt += structs.RadarData.Error.canError in rr.errors
     self.assertEqual(error_cnt, 0)
 
   def test_panda_safety_rx_checks(self):
