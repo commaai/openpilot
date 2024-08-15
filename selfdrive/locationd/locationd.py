@@ -81,13 +81,13 @@ class LocationEstimator:
     if not self._validate_timestamp(t):
       return HandleLogResult.TIMING_INVALID
 
-    if which == "accelerometer" and msg.which() == "accelerometer":
+    if which == "accelerometer" and msg.which() == "acceleration":
       sensor_time = msg.timestamp * 1e-9
 
       if not self._validate_sensor_time(sensor_time, t) or not self._validate_timestamp(sensor_time):
         return HandleLogResult.TIMING_INVALID
 
-      v = msg.accelerometer.v
+      v = msg.acceleration.v
       meas = np.array([-v[2], -v[1], -v[0]])
       if np.linalg.norm(meas) >= ACCEL_SANITY_CHECK:
         return HandleLogResult.INPUT_INVALID
