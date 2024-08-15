@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import capnp
 import copy
 from dataclasses import dataclass, field
