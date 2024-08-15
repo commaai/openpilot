@@ -2,7 +2,7 @@
 import argparse
 import pickle
 
-from openpilot.selfdrive.car.docs import get_all_car_docs
+from openpilot.selfdrive.opcar.docs import get_all_car_docs
 
 
 def dump_car_docs(path):

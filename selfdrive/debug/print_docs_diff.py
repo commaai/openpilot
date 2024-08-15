@@ -4,7 +4,7 @@ from collections import defaultdict
 import difflib
 import pickle
 
-from openpilot.selfdrive.car.docs import get_all_car_docs
+from openpilot.selfdrive.opcar.docs import get_all_car_docs
 from openpilot.selfdrive.car.docs_definitions import Column
 
 FOOTNOTE_TAG = "<sup>{}</sup>"

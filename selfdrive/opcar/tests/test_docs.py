@@ -5,12 +5,12 @@ import re
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.car.car_helpers import interfaces
-from openpilot.selfdrive.car.docs import CARS_MD_OUT, CARS_MD_TEMPLATE, generate_cars_md, get_all_car_docs
 from openpilot.selfdrive.car.docs_definitions import Cable, Column, PartType, Star
 from openpilot.selfdrive.car.honda.values import CAR as HONDA
 from openpilot.selfdrive.car.values import PLATFORMS
 from openpilot.selfdrive.debug.dump_car_docs import dump_car_docs
 from openpilot.selfdrive.debug.print_docs_diff import print_car_docs_diff
+from openpilot.selfdrive.opcar.docs import CARS_MD_OUT, CARS_MD_TEMPLATE, generate_cars_md, get_all_car_docs
 
 
 class TestCarDocs:
@@ -23,7 +23,7 @@ class TestCarDocs:
     with open(CARS_MD_OUT) as f:
       current_cars_md = f.read()
 
-    assert generated_cars_md == current_cars_md, "Run selfdrive/car/docs.py to update the compatibility documentation"
+    assert generated_cars_md == current_cars_md, "Run selfdrive/opcar/docs.py to update the compatibility documentation"
 
   def test_docs_diff(self):
     dump_path = os.path.join(BASEDIR, "selfdrive", "car", "tests", "cars_dump")
