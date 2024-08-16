@@ -1,7 +1,7 @@
-from cereal import car
+from openpilot.selfdrive.car.structs import CarParams
 from openpilot.selfdrive.car.toyota.values import CAR
 
-Ecu = car.CarParams.Ecu
+Ecu = CarParams.Ecu
 
 FW_VERSIONS = {
   CAR.TOYOTA_AVALON: {

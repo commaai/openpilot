@@ -1,7 +1,6 @@
-from cereal import car
-from openpilot.selfdrive.car import CanBusBase
+from openpilot.selfdrive.car import CanBusBase, structs
 
-HUDControl = car.CarControl.HUDControl
+HUDControl = structs.CarControl.HUDControl
 
 
 class CanBus(CanBusBase):

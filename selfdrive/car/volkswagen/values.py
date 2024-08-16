@@ -2,19 +2,19 @@ from collections import defaultdict, namedtuple
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag, StrEnum
 
-from cereal import car
 from panda.python import uds
 from opendbc.can.can_define import CANDefine
 from openpilot.selfdrive.car import dbc_dict, CarSpecs, DbcDict, PlatformConfig, Platforms
 from openpilot.selfdrive.car.conversions import Conversions as CV
+from openpilot.selfdrive.car import structs
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column, \
                                                      Device
 from openpilot.selfdrive.car.fw_query_definitions import EcuAddrSubAddr, FwQueryConfig, Request, p16
 
-Ecu = car.CarParams.Ecu
-NetworkLocation = car.CarParams.NetworkLocation
-TransmissionType = car.CarParams.TransmissionType
-GearShifter = car.CarState.GearShifter
+Ecu = structs.CarParams.Ecu
+NetworkLocation = structs.CarParams.NetworkLocation
+TransmissionType = structs.CarParams.TransmissionType
+GearShifter = structs.CarState.GearShifter
 Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
 
 
@@ -54,12 +54,12 @@ class CarControllerParams:
       self.hca_status_values = can_define.dv["Lenkhilfe_2"]["LH2_Sta_HCA"]
 
       self.BUTTONS = [
-        Button(car.CarState.ButtonEvent.Type.setCruise, "GRA_Neu", "GRA_Neu_Setzen", [1]),
-        Button(car.CarState.ButtonEvent.Type.resumeCruise, "GRA_Neu", "GRA_Recall", [1]),
-        Button(car.CarState.ButtonEvent.Type.accelCruise, "GRA_Neu", "GRA_Up_kurz", [1]),
-        Button(car.CarState.ButtonEvent.Type.decelCruise, "GRA_Neu", "GRA_Down_kurz", [1]),
-        Button(car.CarState.ButtonEvent.Type.cancel, "GRA_Neu", "GRA_Abbrechen", [1]),
-        Button(car.CarState.ButtonEvent.Type.gapAdjustCruise, "GRA_Neu", "GRA_Zeitluecke", [1]),
+        Button(structs.CarState.ButtonEvent.Type.setCruise, "GRA_Neu", "GRA_Neu_Setzen", [1]),
+        Button(structs.CarState.ButtonEvent.Type.resumeCruise, "GRA_Neu", "GRA_Recall", [1]),
+        Button(structs.CarState.ButtonEvent.Type.accelCruise, "GRA_Neu", "GRA_Up_kurz", [1]),
+        Button(structs.CarState.ButtonEvent.Type.decelCruise, "GRA_Neu", "GRA_Down_kurz", [1]),
+        Button(structs.CarState.ButtonEvent.Type.cancel, "GRA_Neu", "GRA_Abbrechen", [1]),
+        Button(structs.CarState.ButtonEvent.Type.gapAdjustCruise, "GRA_Neu", "GRA_Zeitluecke", [1]),
       ]
 
       self.LDW_MESSAGES = {
@@ -85,12 +85,12 @@ class CarControllerParams:
       self.hca_status_values = can_define.dv["LH_EPS_03"]["EPS_HCA_Status"]
 
       self.BUTTONS = [
-        Button(car.CarState.ButtonEvent.Type.setCruise, "GRA_ACC_01", "GRA_Tip_Setzen", [1]),
-        Button(car.CarState.ButtonEvent.Type.resumeCruise, "GRA_ACC_01", "GRA_Tip_Wiederaufnahme", [1]),
-        Button(car.CarState.ButtonEvent.Type.accelCruise, "GRA_ACC_01", "GRA_Tip_Hoch", [1]),
-        Button(car.CarState.ButtonEvent.Type.decelCruise, "GRA_ACC_01", "GRA_Tip_Runter", [1]),
-        Button(car.CarState.ButtonEvent.Type.cancel, "GRA_ACC_01", "GRA_Abbrechen", [1]),
-        Button(car.CarState.ButtonEvent.Type.gapAdjustCruise, "GRA_ACC_01", "GRA_Verstellung_Zeitluecke", [1]),
+        Button(structs.CarState.ButtonEvent.Type.setCruise, "GRA_ACC_01", "GRA_Tip_Setzen", [1]),
+        Button(structs.CarState.ButtonEvent.Type.resumeCruise, "GRA_ACC_01", "GRA_Tip_Wiederaufnahme", [1]),
+        Button(structs.CarState.ButtonEvent.Type.accelCruise, "GRA_ACC_01", "GRA_Tip_Hoch", [1]),
+        Button(structs.CarState.ButtonEvent.Type.decelCruise, "GRA_ACC_01", "GRA_Tip_Runter", [1]),
+        Button(structs.CarState.ButtonEvent.Type.cancel, "GRA_ACC_01", "GRA_Abbrechen", [1]),
+        Button(structs.CarState.ButtonEvent.Type.gapAdjustCruise, "GRA_ACC_01", "GRA_Verstellung_Zeitluecke", [1]),
       ]
 
       self.LDW_MESSAGES = {
@@ -190,7 +190,7 @@ class VWCarDocs(CarDocs):
   package: str = "Adaptive Cruise Control (ACC) & Lane Assist"
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.vw_j533]))
 
-  def init_make(self, CP: car.CarParams):
+  def init_make(self, CP: structs.CarParams):
     self.footnotes.append(Footnote.VW_EXP_LONG)
     if "SKODA" in CP.carFingerprint:
       self.footnotes.append(Footnote.SKODA_HEATED_WINDSHIELD)

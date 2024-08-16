@@ -1,5 +1,5 @@
-from cereal import car
-from openpilot.selfdrive.car import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, common_fault_avoidance, make_tester_present_msg
+import copy
+from openpilot.selfdrive.car import apply_meas_steer_torque_limits, apply_std_steer_angle_limits, common_fault_avoidance, make_tester_present_msg, structs
 from openpilot.selfdrive.car.can_definitions import CanData
 from openpilot.selfdrive.car.common.numpy_fast import clip
 from openpilot.selfdrive.car.interfaces import CarControllerBase
@@ -9,8 +9,8 @@ from openpilot.selfdrive.car.toyota.values import CAR, STATIC_DSU_MSGS, NO_STOP_
                                         UNSUPPORTED_DSU_CAR
 from opendbc.can.packer import CANPacker
 
-SteerControlType = car.CarParams.SteerControlType
-VisualAlert = car.CarControl.HUDControl.VisualAlert
+SteerControlType = structs.CarParams.SteerControlType
+VisualAlert = structs.CarControl.HUDControl.VisualAlert
 
 # LKA limits
 # EPS faults if you apply torque while the steering rate is above 100 deg/s for too long
@@ -168,7 +168,7 @@ class CarController(CarControllerBase):
     if self.frame % 20 == 0 and self.CP.flags & ToyotaFlags.DISABLE_RADAR.value:
       can_sends.append(make_tester_present_msg(0x750, 0, 0xF))
 
-    new_actuators = actuators.as_builder()
+    new_actuators = copy.copy(actuators)
     new_actuators.steer = apply_steer / self.params.STEER_MAX
     new_actuators.steerOutputCan = apply_steer
     new_actuators.steeringAngleDeg = self.last_angle

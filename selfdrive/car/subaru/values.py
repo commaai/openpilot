@@ -1,13 +1,13 @@
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag
 
-from cereal import car
 from panda.python import uds
 from openpilot.selfdrive.car import CarSpecs, DbcDict, PlatformConfig, Platforms, dbc_dict
+from openpilot.selfdrive.car.structs import CarParams
 from openpilot.selfdrive.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Tool, Column
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
-Ecu = car.CarParams.Ecu
+Ecu = CarParams.Ecu
 
 
 class CarControllerParams:
@@ -93,7 +93,7 @@ class SubaruCarDocs(CarDocs):
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.subaru_a]))
   footnotes: list[Enum] = field(default_factory=lambda: [Footnote.GLOBAL])
 
-  def init_make(self, CP: car.CarParams):
+  def init_make(self, CP: CarParams):
     self.car_parts.parts.extend([Tool.socket_8mm_deep, Tool.pry_tool])
 
     if CP.experimentalLongitudinalAvailable:

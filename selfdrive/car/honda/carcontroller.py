@@ -1,15 +1,15 @@
+import copy
 from collections import namedtuple
 
-from cereal import car
 from opendbc.can.packer import CANPacker
-from openpilot.selfdrive.car import DT_CTRL, rate_limit, make_tester_present_msg
+from openpilot.selfdrive.car import DT_CTRL, rate_limit, make_tester_present_msg, structs
 from openpilot.selfdrive.car.common.numpy_fast import clip, interp
 from openpilot.selfdrive.car.honda import hondacan
 from openpilot.selfdrive.car.honda.values import CruiseButtons, VISUAL_HUD, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, HONDA_NIDEC_ALT_PCM_ACCEL, CarControllerParams
 from openpilot.selfdrive.car.interfaces import CarControllerBase
 
-VisualAlert = car.CarControl.HUDControl.VisualAlert
-LongCtrlState = car.CarControl.Actuators.LongControlState
+VisualAlert = structs.CarControl.HUDControl.VisualAlert
+LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 
 def compute_gb_honda_bosch(accel, speed):
@@ -83,11 +83,11 @@ def process_hud_alert(hud_alert):
 
   # priority is: FCW, steer required, all others
   if hud_alert == VisualAlert.fcw:
-    fcw_display = VISUAL_HUD[hud_alert.raw]
+    fcw_display = VISUAL_HUD[hud_alert]
   elif hud_alert in (VisualAlert.steerRequired, VisualAlert.ldw):
-    steer_required = VISUAL_HUD[hud_alert.raw]
+    steer_required = VISUAL_HUD[hud_alert]
   else:
-    acc_alert = VISUAL_HUD[hud_alert.raw]
+    acc_alert = VISUAL_HUD[hud_alert]
 
   return fcw_display, steer_required, acc_alert
 
@@ -242,7 +242,7 @@ class CarController(CarControllerBase):
         self.speed = pcm_speed
         self.gas = pcm_accel / self.params.NIDEC_GAS_MAX
 
-    new_actuators = actuators.as_builder()
+    new_actuators = copy.copy(actuators)
     new_actuators.speed = self.speed
     new_actuators.accel = self.accel
     new_actuators.gas = self.gas

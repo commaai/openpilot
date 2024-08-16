@@ -7,7 +7,9 @@ from parameterized import parameterized
 
 from cereal import car, messaging
 from openpilot.selfdrive.car import DT_CTRL, gen_empty_fingerprint
+from openpilot.selfdrive.car.card import convert_carControl, convert_to_capnp
 from openpilot.selfdrive.car.car_helpers import interfaces
+from openpilot.selfdrive.car.structs import CarParams
 from openpilot.selfdrive.car.fingerprints import all_known_cars
 from openpilot.selfdrive.car.fw_versions import FW_VERSIONS, FW_QUERY_CONFIGS
 from openpilot.selfdrive.car.interfaces import get_interface_attr
@@ -43,8 +45,8 @@ def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
   })
 
   params: dict = draw(params_strategy)
-  params['car_fw'] = [car.CarParams.CarFw(ecu=fw[0], address=fw[1], subAddress=fw[2] or 0,
-                                          request=draw(st.sampled_from(sorted(ALL_REQUESTS))))
+  params['car_fw'] = [CarParams.CarFw(ecu=fw[0], address=fw[1], subAddress=fw[2] or 0,
+                                      request=draw(st.sampled_from(sorted(ALL_REQUESTS))))
                       for fw in params['car_fw']]
   return params
 
@@ -63,7 +65,6 @@ class TestCarInterfaces:
 
     car_params = CarInterface.get_params(car_name, args['fingerprints'], args['car_fw'],
                                          experimental_long=args['experimental_long'], docs=False)
-    car_params = car_params.as_reader()
     car_interface = CarInterface(car_params, CarController, CarState)
     assert car_params
     assert car_interface
@@ -79,7 +80,7 @@ class TestCarInterfaces:
     assert len(car_params.longitudinalTuning.kiV) == len(car_params.longitudinalTuning.kiBP)
 
     # Lateral sanity checks
-    if car_params.steerControlType != car.CarParams.SteerControlType.angle:
+    if car_params.steerControlType != CarParams.SteerControlType.angle:
       tune = car_params.lateralTuning
       if tune.which() == 'pid':
         if car_name != MOCK.MOCK:
@@ -95,28 +96,31 @@ class TestCarInterfaces:
     # Run car interface
     now_nanos = 0
     CC = car.CarControl.new_message(**cc_msg)
+    CC = convert_carControl(CC.as_reader())
     for _ in range(10):
       car_interface.update([])
-      car_interface.apply(CC.as_reader(), now_nanos)
+      car_interface.apply(CC, now_nanos)
       now_nanos += DT_CTRL * 1e9  # 10 ms
 
     CC = car.CarControl.new_message(**cc_msg)
     CC.enabled = True
+    CC = convert_carControl(CC.as_reader())
     for _ in range(10):
       car_interface.update([])
-      car_interface.apply(CC.as_reader(), now_nanos)
+      car_interface.apply(CC, now_nanos)
       now_nanos += DT_CTRL * 1e9  # 10ms
 
     # Test controller initialization
     # TODO: wait until card refactor is merged to run controller a few times,
     #  hypothesis also slows down significantly with just one more message draw
-    LongControl(car_params)
-    if car_params.steerControlType == car.CarParams.SteerControlType.angle:
-      LatControlAngle(car_params, car_interface)
+    car_params_capnp = convert_to_capnp(car_params).as_reader()
+    LongControl(car_params_capnp)
+    if car_params.steerControlType == CarParams.SteerControlType.angle:
+      LatControlAngle(car_params_capnp, car_interface)
     elif car_params.lateralTuning.which() == 'pid':
-      LatControlPID(car_params, car_interface)
+      LatControlPID(car_params_capnp, car_interface)
     elif car_params.lateralTuning.which() == 'torque':
-      LatControlTorque(car_params, car_interface)
+      LatControlTorque(car_params_capnp, car_interface)
 
     # Test radar interface
     RadarInterface = importlib.import_module(f'selfdrive.car.{car_params.carName}.radar_interface').RadarInterface

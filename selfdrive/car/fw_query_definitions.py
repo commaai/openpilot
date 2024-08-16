@@ -1,4 +1,3 @@
-import capnp
 import copy
 from dataclasses import dataclass, field
 import struct
@@ -6,9 +5,11 @@ from collections.abc import Callable
 
 import panda.python.uds as uds
 
+from openpilot.selfdrive.car.structs import CarParams
+
 AddrType = tuple[int, int | None]
 EcuAddrBusType = tuple[int, int | None, int]
-EcuAddrSubAddr = tuple[int, int, int | None]
+EcuAddrSubAddr = tuple[CarParams.Ecu, int, int | None]
 
 LiveFwVersions = dict[AddrType, set[bytes]]
 OfflineFwVersions = dict[str, dict[EcuAddrSubAddr, list[bytes]]]
@@ -77,7 +78,7 @@ class StdQueries:
 class Request:
   request: list[bytes]
   response: list[bytes]
-  whitelist_ecus: list[int] = field(default_factory=list)
+  whitelist_ecus: list[CarParams.Ecu] = field(default_factory=list)
   rx_offset: int = 0x8
   bus: int = 1
   # Whether this query should be run on the first auxiliary panda (CAN FD cars for example)
@@ -93,9 +94,9 @@ class FwQueryConfig:
   requests: list[Request]
   # TODO: make this automatic and remove hardcoded lists, or do fingerprinting with ecus
   # Overrides and removes from essential ecus for specific models and ecus (exact matching)
-  non_essential_ecus: dict[capnp.lib.capnp._EnumModule, list[str]] = field(default_factory=dict)
+  non_essential_ecus: dict[CarParams.Ecu, list[str]] = field(default_factory=dict)
   # Ecus added for data collection, not to be fingerprinted on
-  extra_ecus: list[tuple[capnp.lib.capnp._EnumModule, int, int | None]] = field(default_factory=list)
+  extra_ecus: list[tuple[CarParams.Ecu, int, int | None]] = field(default_factory=list)
   # Function a brand can implement to provide better fuzzy matching. Takes in FW versions and VIN,
   # returns set of candidates. Only will match if one candidate is returned
   match_fw_to_car_fuzzy: Callable[[LiveFwVersions, str, OfflineFwVersions], set[str]] | None = None

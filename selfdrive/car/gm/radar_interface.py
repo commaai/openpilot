@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import math
-from cereal import car
 from opendbc.can.parser import CANParser
+from openpilot.selfdrive.car import structs
 from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.gm.values import DBC, CanBus
 from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
@@ -52,7 +52,7 @@ class RadarInterface(RadarInterfaceBase):
     if self.trigger_msg not in self.updated_messages:
       return None
 
-    ret = car.RadarData.new_message()
+    ret = structs.RadarData()
     header = self.rcp.vl[RADAR_HEADER_MSG]
     fault = header['FLRRSnsrBlckd'] or header['FLRRSnstvFltPrsntInt'] or \
       header['FLRRYawRtPlsblityFlt'] or header['FLRRHWFltPrsntInt'] or \
@@ -82,7 +82,7 @@ class RadarInterface(RadarInterfaceBase):
         targetId = cpt['TrkObjectID']
         currentTargets.add(targetId)
         if targetId not in self.pts:
-          self.pts[targetId] = car.RadarData.RadarPoint.new_message()
+          self.pts[targetId] = structs.RadarData.RadarPoint()
           self.pts[targetId].trackId = targetId
         distance = cpt['TrkRange']
         self.pts[targetId].dRel = distance  # from front of car

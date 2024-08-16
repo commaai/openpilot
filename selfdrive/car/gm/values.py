@@ -1,11 +1,11 @@
 from dataclasses import dataclass, field
 
-from cereal import car
 from openpilot.selfdrive.car import dbc_dict, PlatformConfig, DbcDict, Platforms, CarSpecs
+from openpilot.selfdrive.car.structs import CarParams
 from openpilot.selfdrive.car.docs_definitions import CarHarness, CarDocs, CarParts
 from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
-Ecu = car.CarParams.Ecu
+Ecu = CarParams.Ecu
 
 
 class CarControllerParams:
@@ -63,8 +63,8 @@ class CarControllerParams:
 class GMCarDocs(CarDocs):
   package: str = "Adaptive Cruise Control (ACC)"
 
-  def init_make(self, CP: car.CarParams):
-    if CP.networkLocation == car.CarParams.NetworkLocation.fwdCamera:
+  def init_make(self, CP: CarParams):
+    if CP.networkLocation == CarParams.NetworkLocation.fwdCamera:
       self.car_parts = CarParts.common([CarHarness.gm])
     else:
       self.car_parts = CarParts.common([CarHarness.obd_ii])
