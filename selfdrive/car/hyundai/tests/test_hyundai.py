@@ -3,11 +3,14 @@ from hypothesis import settings, given, strategies as st
 import pytest
 
 from cereal import car
+from openpilot.selfdrive.car import gen_empty_fingerprint
 from openpilot.selfdrive.car.fw_versions import build_fw_dict
+from openpilot.selfdrive.car.hyundai.interface import CarInterface
+from openpilot.selfdrive.car.hyundai.radar_interface import RADAR_START_ADDR
 from openpilot.selfdrive.car.hyundai.values import CAMERA_SCC_CAR, CANFD_CAR, CAN_GEARS, CAR, CHECKSUM, DATE_FW_ECUS, \
                                          HYBRID_CAR, EV_CAR, FW_QUERY_CONFIG, LEGACY_SAFETY_MODE_CAR, CANFD_FUZZY_WHITELIST, \
                                          UNSUPPORTED_LONGITUDINAL_CAR, PLATFORM_CODE_ECUS, HYUNDAI_VERSION_REQUEST_LONG, \
-                                         get_platform_codes
+                                         HyundaiFlags, get_platform_codes
 from openpilot.selfdrive.car.hyundai.fingerprints import FW_VERSIONS
 
 Ecu = car.CarParams.Ecu
@@ -40,6 +43,21 @@ CANFD_EXPECTED_ECUS = {Ecu.fwdCamera, Ecu.fwdRadar}
 
 
 class TestHyundaiFingerprint:
+  def test_feature_detection(self):
+    # HDA2
+    for has_adas in (True, False):
+      car_fw = [car.CarParams.CarFw(ecu=Ecu.adas if has_adas else Ecu.fwdCamera)]
+      CP = CarInterface.get_params(CAR.KIA_EV6, gen_empty_fingerprint(), car_fw, False, False)
+      assert bool(CP.flags & HyundaiFlags.CANFD_HDA2) == has_adas
+
+    # radar available
+    for radar in (True, False):
+      fingerprint = gen_empty_fingerprint()
+      if radar:
+        fingerprint[1][RADAR_START_ADDR] = 8
+      CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, fingerprint, car_fw, False, False)
+      assert CP.radarUnavailable != radar
+
   def test_can_features(self):
     # Test no EV/HEV in any gear lists (should all use ELECT_GEAR)
     assert set.union(*CAN_GEARS.values()) & (HYBRID_CAR | EV_CAR) == set()
