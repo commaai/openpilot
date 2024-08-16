@@ -63,11 +63,11 @@ def can_comm_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket
 
 def asdictref(obj) -> dict[str, Any]:
   """Note that the resulting dict will contain references to the struct field values"""
-  if not dataclasses._is_dataclass_instance(obj):
+  if not dataclasses._is_dataclass_instance(obj):  # type: ignore[attr-defined]
     raise TypeError("asdictref() should be called on dataclass instances")
 
-  def _asdictref_inner(obj):
-    if dataclasses._is_dataclass_instance(obj):
+  def _asdictref_inner(obj) -> dict[str, Any] | Any:
+    if dataclasses._is_dataclass_instance(obj):  # type: ignore[attr-defined]
       ret = {}
       for field in obj.__dataclass_fields__:
         ret[field] = _asdictref_inner(getattr(obj, field))
