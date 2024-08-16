@@ -62,16 +62,15 @@ def can_comm_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket
 
 
 def asdict(obj) -> dict[str, Any]:
-  """Note that this function returns references rather than copies where possible"""
-
-  if not dataclasses.is_dataclass(obj):
+  """Note that the resulting dict will contain references to the struct field values"""
+  if not dataclasses._is_dataclass_instance(obj):
     raise TypeError("asdict() should be called on dataclass instances")
 
   def _asdict_inner(obj):
-    if dataclasses.is_dataclass(obj):
+    if dataclasses._is_dataclass_instance(obj):
       ret = {}
-      for f in dataclasses.fields(obj):
-        ret[f.name] = _asdict_inner(getattr(obj, f.name))
+      for field in obj.__dataclass_fields__:
+        ret[field] = _asdict_inner(getattr(obj, field))
       return ret
     elif isinstance(obj, (tuple, list)):
       return type(obj)(_asdict_inner(v) for v in obj)
