@@ -24,6 +24,7 @@ from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.controls.lib.events import Events
 
 REPLAY = "REPLAY" in os.environ
+_FIELDS = '__dataclass_fields__'  # copy of dataclasses._FIELDS
 
 EventName = car.CarEvent.EventName
 
@@ -60,23 +61,23 @@ def can_comm_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket
   return can_recv, can_send
 
 
-_FIELDS = '__dataclass_fields__'
-
-
-def is_dataclass_instance(obj):
-  """Returns True if obj is an instance of a dataclass."""
+def is_dataclass(obj):
+  """Similar to dataclasses.is_dataclass without instance type check checking"""
   return hasattr(obj, _FIELDS)
 
 
 def asdictref(obj) -> dict[str, Any]:
-  """Note that the resulting dict will contain references to the struct field values"""
-  if not is_dataclass_instance(obj):  # type: ignore[attr-defined]
+  """
+  Similar to dataclasses.asdict without recursive type checking and copy.deepcopy
+  Note that the resulting dict will contain references to the original struct as a result
+  """
+  if not is_dataclass(obj):
     raise TypeError("asdictref() should be called on dataclass instances")
 
   def _asdictref_inner(obj) -> dict[str, Any] | Any:
-    if is_dataclass_instance(obj):  # type: ignore[attr-defined]
+    if is_dataclass(obj):
       ret = {}
-      for field in obj.__dataclass_fields__:
+      for field in getattr(obj, _FIELDS):  # similar to dataclasses.fields()
         ret[field] = _asdictref_inner(getattr(obj, field))
       return ret
     elif isinstance(obj, (tuple, list)):

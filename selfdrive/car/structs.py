@@ -38,8 +38,6 @@ class StrEnum(_StrEnum):
 
 @auto_dataclass
 class CarState:
-  # events: list[CarEvent] = auto_field()
-
   # CAN health
   canValid: bool = auto_field()  # invalid counter/checksums
   canTimeout: bool = auto_field()  # CAN bus dropped out
