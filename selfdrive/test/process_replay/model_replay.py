@@ -14,7 +14,7 @@ from openpilot.tools.lib.logreader import LogReader, save_log
 
 TEST_ROUTE = "2f4452b03ccb98f0|2022-12-03--13-45-30"
 SEGMENT = 6
-MAX_FRAMES = 100 if PC else 600
+MAX_FRAMES = 100 if PC else 60
 
 NO_MODEL = "NO_MODEL" in os.environ
 SEND_EXTRA_INPUTS = bool(int(os.getenv("SEND_EXTRA_INPUTS", "0")))

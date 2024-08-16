@@ -87,7 +87,9 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
             device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
           }
           steps.each { item ->
-            device(device_ip, item[0], item[1])
+            timeout(time: 1, unit: 'MINUTES') {
+              device(device_ip, item[0], item[1])
+            }
           }
         }
       }

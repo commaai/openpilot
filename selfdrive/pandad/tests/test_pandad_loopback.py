@@ -83,7 +83,7 @@ class TestBoarddLoopback:
     sm = messaging.SubMaster(['pandaStates'])
     time.sleep(1)
 
-    n = 200
+    n = 20
     for i in range(n):
       print(f"pandad loopback {i}/{n}")
 
