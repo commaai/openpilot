@@ -1,5 +1,4 @@
 from collections import defaultdict
-from typing import cast
 
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
@@ -198,7 +197,7 @@ class CarState(CarStateBase):
 
     ret.steeringTorque = cp.vl["STEER_STATUS"]["STEER_TORQUE_SENSOR"]
     ret.steeringTorqueEps = cp.vl["STEER_MOTOR_TORQUE"]["MOTOR_TORQUE"]
-    ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD.get(cast(CAR, self.CP.carFingerprint), 1200)
+    ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD.get(self.CP.carFingerprint, 1200)  # type: ignore[call-overload]
 
     if self.CP.carFingerprint in HONDA_BOSCH:
       # The PCM always manages its own cruise control state, but doesn't publish it
