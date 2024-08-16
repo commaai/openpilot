@@ -2,26 +2,24 @@ from dataclasses import dataclass as _dataclass, field, is_dataclass
 from enum import Enum, StrEnum as _StrEnum, auto
 from typing import dataclass_transform, get_origin
 
-auto_obj = object()
+AUTO_OBJ = object()
 
 
 def auto_field():
-  return auto_obj
+  return AUTO_OBJ
 
 
 @dataclass_transform()
 def auto_dataclass(cls=None, /, **kwargs):
   cls_annotations = cls.__dict__.get('__annotations__', {})
   for name, typ in cls_annotations.items():
-    current_value = getattr(cls, name, None)
-    if current_value is auto_obj:
+    current_value = getattr(cls, name)
+    if current_value is AUTO_OBJ:
       origin_typ = get_origin(typ) or typ
       if isinstance(origin_typ, str):
         raise TypeError(f"Forward references are not supported for auto_field: '{origin_typ}'. Use a default_factory with lambda instead.")
       elif origin_typ in (int, float, str, bytes, list, tuple, set, bool) or is_dataclass(origin_typ):
         setattr(cls, name, field(default_factory=origin_typ))
-      elif origin_typ is None:
-        setattr(cls, name, field(default=origin_typ))
       elif issubclass(origin_typ, Enum):  # first enum is the default
         setattr(cls, name, field(default=next(iter(origin_typ))))
       else:
