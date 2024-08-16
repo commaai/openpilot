@@ -80,14 +80,10 @@ def asdictref(obj) -> dict[str, Any]:
       for field in getattr(obj, _FIELDS):  # similar to dataclasses.fields()
         ret[field] = _asdictref_inner(getattr(obj, field))
       return ret
+    elif isinstance(obj, (tuple, list)):
+      return type(obj)(_asdictref_inner(v) for v in obj)
     else:
-      obj_type = type(obj)
-      if obj_type is list:
-        return [_asdictref_inner(v) for v in obj]
-      elif obj_type is tuple:
-        return tuple(_asdictref_inner(v) for v in obj)
-      else:
-        return obj
+      return obj
 
   return _asdictref_inner(obj)
 
