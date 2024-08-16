@@ -79,7 +79,7 @@ def asdict(obj) -> dict[str, any]:
 
 
 def convert_to_capnp(struct: structs.CarParams | structs.CarState | structs.CarControl.Actuators) -> capnp.lib.capnp._DynamicStructBuilder:
-  struct_dict = dataclasses.asdict(struct)
+  struct_dict = asdict(struct)
 
   if isinstance(struct, structs.CarParams):
     del struct_dict['lateralTuning']
@@ -88,7 +88,7 @@ def convert_to_capnp(struct: structs.CarParams | structs.CarState | structs.CarC
     # this is the only union, special handling
     which = struct.lateralTuning.which()
     struct_capnp.lateralTuning.init(which)
-    lateralTuning_dict = dataclasses.asdict(getattr(struct.lateralTuning, which))
+    lateralTuning_dict = asdict(getattr(struct.lateralTuning, which))
     setattr(struct_capnp.lateralTuning, which, lateralTuning_dict)
   elif isinstance(struct, structs.CarState):
     struct_capnp = car.CarState.new_message(**struct_dict)
