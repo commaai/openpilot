@@ -29,7 +29,7 @@ class MockCarState:
 
 
 class CarSpecificEvents:
-  def __init__(self, CP: car.CarParams):
+  def __init__(self, CP: structs.CarParams):
     self.CP = CP
 
     self.steering_unpressed = 0
