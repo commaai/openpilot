@@ -32,7 +32,7 @@ class CarControllerParams:
   ANGLE_RATE_LIMIT_DOWN = AngleRateLimit(speed_bp=[5, 25], angle_v=[0.36, 0.26])
 
   def __init__(self, CP):
-    if CP.lateralTuning.which == 'torque':
+    if CP.lateralTuning.which() == 'torque':
       self.STEER_DELTA_UP = 15       # 1.0s time to peak torque
       self.STEER_DELTA_DOWN = 25     # always lower than 45 otherwise the Rav4 faults (Prius seems ok with 50)
     else:
