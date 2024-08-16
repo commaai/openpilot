@@ -5,6 +5,7 @@ from openpilot.selfdrive.car.mazda.values import CAR, LKAS_LIMITS
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 
+
 class CarInterface(CarInterfaceBase):
 
   @staticmethod
