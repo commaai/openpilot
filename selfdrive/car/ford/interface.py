@@ -1,6 +1,6 @@
 from panda import Panda
 from openpilot.selfdrive.car import get_safety_config, structs
-from openpilot.selfdrive.car.conversions import Conversions as CV
+from openpilot.selfdrive.car.common.conversions import Conversions as CV
 from openpilot.selfdrive.car.ford.fordcan import CanBus
 from openpilot.selfdrive.car.ford.values import Ecu, FordFlags
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase

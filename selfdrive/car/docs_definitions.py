@@ -4,7 +4,7 @@ import copy
 from dataclasses import dataclass, field
 from enum import Enum
 
-from openpilot.selfdrive.car.conversions import Conversions as CV
+from openpilot.selfdrive.car.common.conversions import Conversions as CV
 from openpilot.selfdrive.car.structs import CarParams
 
 GOOD_TORQUE_THRESHOLD = 1.0  # m/s^2

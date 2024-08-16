@@ -1,5 +1,5 @@
 from openpilot.selfdrive.car import CanBusBase
-from openpilot.selfdrive.car.conversions import Conversions as CV
+from openpilot.selfdrive.car.common.conversions import Conversions as CV
 from openpilot.selfdrive.car.honda.values import HondaFlags, HONDA_BOSCH, HONDA_BOSCH_RADARLESS, CAR, CarControllerParams
 
 # CAN bus layout with relay

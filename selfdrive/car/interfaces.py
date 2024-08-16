@@ -12,7 +12,7 @@ from openpilot.selfdrive.car import DT_CTRL, apply_hysteresis, gen_empty_fingerp
 from openpilot.selfdrive.car import structs
 from openpilot.selfdrive.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
 from openpilot.selfdrive.car.common.basedir import BASEDIR
-from openpilot.selfdrive.car.conversions import Conversions as CV
+from openpilot.selfdrive.car.common.conversions import Conversions as CV
 from openpilot.selfdrive.car.common.simple_kalman import KF1D, get_kalman_gain
 from openpilot.selfdrive.car.common.numpy_fast import clip
 from openpilot.selfdrive.car.values import PLATFORMS
