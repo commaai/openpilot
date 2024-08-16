@@ -62,7 +62,7 @@ if __name__ == "__main__":
   for version in fw_vers:
     subaddr = None if version.subAddress == 0 else hex(version.subAddress)
     print(f"  Brand: {version.brand:{padding}}, bus: {version.bus}, OBD: {version.obdMultiplexing} - " +
-          f"(Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion}]")
+          f"(Ecu.{version.ecu}, {hex(version.address)}, {subaddr}): [{version.fwVersion!r}]")
   print("}")
 
   print()
