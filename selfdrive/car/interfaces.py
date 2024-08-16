@@ -29,7 +29,7 @@ TORQUE_PARAMS_PATH = os.path.join(BASEDIR, 'torque_data/params.toml')
 TORQUE_OVERRIDE_PATH = os.path.join(BASEDIR, 'torque_data/override.toml')
 TORQUE_SUBSTITUTE_PATH = os.path.join(BASEDIR, 'torque_data/substitute.toml')
 
-GEAR_SHIFTER_MAP: dict[str, structs.CarState.GearShifter] = {
+GEAR_SHIFTER_MAP: dict[str, GearShifter] = {
   'P': GearShifter.park, 'PARK': GearShifter.park,
   'R': GearShifter.reverse, 'REVERSE': GearShifter.reverse,
   'N': GearShifter.neutral, 'NEUTRAL': GearShifter.neutral,
@@ -350,7 +350,7 @@ class CarStateBase(ABC):
     return bool(left_blinker_stalk or self.left_blinker_cnt > 0), bool(right_blinker_stalk or self.right_blinker_cnt > 0)
 
   @staticmethod
-  def parse_gear_shifter(gear: str | None) -> structs.CarState.GearShifter:
+  def parse_gear_shifter(gear: str | None) -> GearShifter:
     if gear is None:
       return GearShifter.unknown
     return GEAR_SHIFTER_MAP.get(gear.upper(), GearShifter.unknown)
