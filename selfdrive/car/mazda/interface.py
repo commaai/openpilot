@@ -6,6 +6,7 @@ from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 
 class CarInterface(CarInterfaceBase):
+
   @staticmethod
   def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "mazda"

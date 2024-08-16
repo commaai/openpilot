@@ -1,5 +1,4 @@
 from panda import Panda
-
 from openpilot.selfdrive.car import get_safety_config, structs
 from openpilot.selfdrive.car.hyundai.hyundaicanfd import CanBus
 from openpilot.selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, CANFD_RADAR_SCC_CAR, \

@@ -6,6 +6,7 @@ from openpilot.selfdrive.car.subaru.values import CAR, GLOBAL_ES_ADDR, SubaruFla
 
 
 class CarInterface(CarInterfaceBase):
+
   @staticmethod
   def _get_params(ret: structs.CarParams, candidate: CAR, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "subaru"
