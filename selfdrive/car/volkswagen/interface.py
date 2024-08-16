@@ -6,7 +6,7 @@ from openpilot.selfdrive.car.volkswagen.values import CAR, NetworkLocation, Tran
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def _get_params(ret: structs.CarParams, candidate: CAR, fingerprint, car_fw, experimental_long, docs):
+  def _get_params(ret: structs.CarParams, candidate: CAR, fingerprint, car_fw, experimental_long, docs) -> structs.CarParams:
     ret.carName = "volkswagen"
     ret.radarUnavailable = True
 

@@ -6,7 +6,7 @@ from openpilot.selfdrive.car.body.values import SPEED_FROM_RPM
 
 class CarInterface(CarInterfaceBase):
   @staticmethod
-  def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, experimental_long, docs):
+  def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, experimental_long, docs) -> structs.CarParams:
     ret.notCar = True
     ret.carName = "body"
     ret.safetyConfigs = [get_safety_config(structs.CarParams.SafetyModel.body)]
