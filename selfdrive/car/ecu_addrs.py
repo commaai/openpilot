@@ -1,13 +1,12 @@
-import capnp
 import time
 
 from panda.python.uds import SERVICE_TYPE
 from openpilot.selfdrive.car import make_tester_present_msg, carlog
-from openpilot.selfdrive.car.can_definitions import CanRecvCallable, CanSendCallable
+from openpilot.selfdrive.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
 from openpilot.selfdrive.car.fw_query_definitions import EcuAddrBusType
 
 
-def _is_tester_present_response(msg: capnp.lib.capnp._DynamicStructReader, subaddr: int = None) -> bool:
+def _is_tester_present_response(msg: CanData, subaddr: int = None) -> bool:
   # ISO-TP messages are always padded to 8 bytes
   # tester present response is always a single frame
   dat_offset = 1 if subaddr is not None else 0
