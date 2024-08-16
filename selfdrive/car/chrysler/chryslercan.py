@@ -1,8 +1,8 @@
-from cereal import car
+from openpilot.selfdrive.car import structs
 from openpilot.selfdrive.car.chrysler.values import RAM_CARS
 
-GearShifter = car.CarState.GearShifter
-VisualAlert = car.CarControl.HUDControl.VisualAlert
+GearShifter = structs.CarState.GearShifter
+VisualAlert = structs.CarControl.HUDControl.VisualAlert
 
 def create_lkas_hud(packer, CP, lkas_active, hud_alert, hud_count, car_model, auto_high_beam):
   # LKAS_HUD - Controls what lane-keeping icon is displayed

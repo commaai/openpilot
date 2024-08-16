@@ -1,6 +1,7 @@
 from parameterized import parameterized
 
 from cereal import car, log
+from openpilot.selfdrive.car.card import convert_to_capnp
 from openpilot.selfdrive.car.car_helpers import interfaces
 from openpilot.selfdrive.car.honda.values import CAR as HONDA
 from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
@@ -20,6 +21,7 @@ class TestLatControl:
     CarInterface, CarController, CarState = interfaces[car_name]
     CP = CarInterface.get_non_essential_params(car_name)
     CI = CarInterface(CP, CarController, CarState)
+    CP = convert_to_capnp(CP)
     VM = VehicleModel(CP)
 
     controller = controller(CP.as_reader(), CI)

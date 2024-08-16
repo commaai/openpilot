@@ -1,9 +1,8 @@
 from collections import defaultdict
 
-from cereal import car
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
-from openpilot.selfdrive.car import create_button_events
+from openpilot.selfdrive.car import create_button_events, structs
 from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.common.numpy_fast import interp
 from openpilot.selfdrive.car.honda.hondacan import CanBus, get_cruise_speed_conversion
@@ -12,8 +11,8 @@ from openpilot.selfdrive.car.honda.values import CAR, DBC, STEER_THRESHOLD, HOND
                                                  HondaFlags, CruiseButtons, CruiseSettings
 from openpilot.selfdrive.car.interfaces import CarStateBase
 
-TransmissionType = car.CarParams.TransmissionType
-ButtonType = car.CarState.ButtonEvent.Type
+TransmissionType = structs.CarParams.TransmissionType
+ButtonType = structs.CarState.ButtonEvent.Type
 
 BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
                 CruiseButtons.MAIN: ButtonType.altButton3, CruiseButtons.CANCEL: ButtonType.cancel}
@@ -110,8 +109,8 @@ class CarState(CarStateBase):
     # However, on cars without a digital speedometer this is not always present (HRV, FIT, CRV 2016, ILX and RDX)
     self.dash_speed_seen = False
 
-  def update(self, cp, cp_cam, _, cp_body, __):
-    ret = car.CarState.new_message()
+  def update(self, cp, cp_cam, _, cp_body, __) -> structs.CarState:
+    ret = structs.CarState()
 
     # car params
     v_weight_v = [0., 1.]  # don't trust smooth speed at low values to avoid premature zero snapping
@@ -198,7 +197,7 @@ class CarState(CarStateBase):
 
     ret.steeringTorque = cp.vl["STEER_STATUS"]["STEER_TORQUE_SENSOR"]
     ret.steeringTorqueEps = cp.vl["STEER_MOTOR_TORQUE"]["MOTOR_TORQUE"]
-    ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD.get(self.CP.carFingerprint, 1200)
+    ret.steeringPressed = abs(ret.steeringTorque) > STEER_THRESHOLD.get(self.CP.carFingerprint, 1200)  # type: ignore[call-overload]
 
     if self.CP.carFingerprint in HONDA_BOSCH:
       # The PCM always manages its own cruise control state, but doesn't publish it

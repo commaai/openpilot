@@ -1,11 +1,11 @@
 import random
 import re
 
-from cereal import car
+from openpilot.selfdrive.car.structs import CarParams
 from openpilot.selfdrive.car.volkswagen.values import CAR, FW_QUERY_CONFIG, WMI
 from openpilot.selfdrive.car.volkswagen.fingerprints import FW_VERSIONS
 
-Ecu = car.CarParams.Ecu
+Ecu = CarParams.Ecu
 
 CHASSIS_CODE_PATTERN = re.compile('[A-Z0-9]{2}')
 # TODO: determine the unknown groups

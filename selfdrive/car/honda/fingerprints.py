@@ -1,7 +1,7 @@
-from cereal import car
+from openpilot.selfdrive.car.structs import CarParams
 from openpilot.selfdrive.car.honda.values import CAR
 
-Ecu = car.CarParams.Ecu
+Ecu = CarParams.Ecu
 
 # Modified FW can be identified by the second dash being replaced by a comma
 # For example: `b'39990-TVA,A150\x00\x00'`

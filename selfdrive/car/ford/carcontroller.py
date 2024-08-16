@@ -1,13 +1,13 @@
-from cereal import car
+import copy
 from opendbc.can.packer import CANPacker
-from openpilot.selfdrive.car import apply_std_steer_angle_limits
+from openpilot.selfdrive.car import apply_std_steer_angle_limits, structs
 from openpilot.selfdrive.car.ford import fordcan
 from openpilot.selfdrive.car.ford.values import CarControllerParams, FordFlags
 from openpilot.selfdrive.car.common.numpy_fast import clip
 from openpilot.selfdrive.car.interfaces import CarControllerBase, V_CRUISE_MAX
 
-LongCtrlState = car.CarControl.Actuators.LongControlState
-VisualAlert = car.CarControl.HUDControl.VisualAlert
+LongCtrlState = structs.CarControl.Actuators.LongControlState
+VisualAlert = structs.CarControl.HUDControl.VisualAlert
 
 
 def apply_ford_curvature_limits(apply_curvature, apply_curvature_last, current_curvature, v_ego_raw):
@@ -111,7 +111,7 @@ class CarController(CarControllerBase):
     self.steer_alert_last = steer_alert
     self.lead_distance_bars_last = hud_control.leadDistanceBars
 
-    new_actuators = actuators.as_builder()
+    new_actuators = copy.copy(actuators)
     new_actuators.curvature = self.apply_curvature_last
 
     self.frame += 1

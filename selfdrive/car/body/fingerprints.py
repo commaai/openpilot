@@ -1,8 +1,8 @@
 # ruff: noqa: E501
-from cereal import car
+from openpilot.selfdrive.car.structs import CarParams
 from openpilot.selfdrive.car.body.values import CAR
 
-Ecu = car.CarParams.Ecu
+Ecu = CarParams.Ecu
 
 # debug ecu fw version is the git hash of the firmware
 

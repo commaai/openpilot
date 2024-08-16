@@ -1,15 +1,15 @@
-from cereal import car
+import copy
 from opendbc.can.packer import CANPacker
-from openpilot.selfdrive.car import DT_CTRL, apply_driver_steer_torque_limits
-from openpilot.selfdrive.car.conversions import Conversions as CV
+from openpilot.selfdrive.car import DT_CTRL, apply_driver_steer_torque_limits, structs
 from openpilot.selfdrive.car.gm import gmcan
+from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.gm.values import DBC, CanBus, CarControllerParams, CruiseButtons
 from openpilot.selfdrive.car.common.numpy_fast import interp
 from openpilot.selfdrive.car.interfaces import CarControllerBase
 
-VisualAlert = car.CarControl.HUDControl.VisualAlert
-NetworkLocation = car.CarParams.NetworkLocation
-LongCtrlState = car.CarControl.Actuators.LongControlState
+VisualAlert = structs.CarControl.HUDControl.VisualAlert
+NetworkLocation = structs.CarParams.NetworkLocation
+LongCtrlState = structs.CarControl.Actuators.LongControlState
 
 # Camera cancels up to 0.1s after brake is pressed, ECM allows 0.5s
 CAMERA_CANCEL_DELAY_FRAMES = 10
@@ -153,7 +153,7 @@ class CarController(CarControllerBase):
       if self.frame % 10 == 0:
         can_sends.append(gmcan.create_pscm_status(self.packer_pt, CanBus.CAMERA, CS.pscm_status))
 
-    new_actuators = actuators.as_builder()
+    new_actuators = copy.copy(actuators)
     new_actuators.steer = self.apply_steer_last / self.params.STEER_MAX
     new_actuators.steerOutputCan = self.apply_steer_last
     new_actuators.gas = self.apply_gas

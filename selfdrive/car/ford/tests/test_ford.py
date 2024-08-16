@@ -1,16 +1,15 @@
 import random
 from collections.abc import Iterable
 
-import capnp
 from hypothesis import settings, given, strategies as st
 from parameterized import parameterized
 
-from cereal import car
+from openpilot.selfdrive.car.structs import CarParams
 from openpilot.selfdrive.car.fw_versions import build_fw_dict
 from openpilot.selfdrive.car.ford.values import CAR, FW_QUERY_CONFIG, FW_PATTERN, get_platform_codes
 from openpilot.selfdrive.car.ford.fingerprints import FW_VERSIONS
 
-Ecu = car.CarParams.Ecu
+Ecu = CarParams.Ecu
 
 
 ECU_ADDRESSES = {
@@ -49,7 +48,7 @@ class TestFordFW:
       assert subaddr is None, "Unexpected ECU subaddress"
 
   @parameterized.expand(FW_VERSIONS.items())
-  def test_fw_versions(self, car_model: str, fw_versions: dict[tuple[capnp.lib.capnp._EnumModule, int, int | None], Iterable[bytes]]):
+  def test_fw_versions(self, car_model: str, fw_versions: dict[tuple[Ecu, int, int | None], Iterable[bytes]]):
     for (ecu, addr, subaddr), fws in fw_versions.items():
       assert ecu in ECU_PART_NUMBER, "Unexpected ECU"
       assert addr == ECU_ADDRESSES[ecu], "ECU address mismatch"
@@ -93,10 +92,10 @@ class TestFordFW:
         for ecu, fw_versions in fw_by_addr.items():
           ecu_name, addr, sub_addr = ecu
           fw = random.choice(fw_versions)
-          car_fw.append({"ecu": ecu_name, "fwVersion": fw, "address": addr,
-                         "subAddress": 0 if sub_addr is None else sub_addr})
+          car_fw.append(CarParams.CarFw(ecu=ecu_name, fwVersion=fw, address=addr,
+                                        subAddress=0 if sub_addr is None else sub_addr))
 
-        CP = car.CarParams.new_message(carFw=car_fw)
+        CP = CarParams(carFw=car_fw)
         matches = FW_QUERY_CONFIG.match_fw_to_car_fuzzy(build_fw_dict(CP.carFw), CP.carVin, FW_VERSIONS)
         assert matches == {platform}
 

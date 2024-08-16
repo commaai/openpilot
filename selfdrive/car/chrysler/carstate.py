@@ -1,12 +1,11 @@
-from cereal import car
 from opendbc.can.parser import CANParser
 from opendbc.can.can_define import CANDefine
-from openpilot.selfdrive.car import create_button_events
+from openpilot.selfdrive.car import create_button_events, structs
 from openpilot.selfdrive.car.chrysler.values import DBC, STEER_THRESHOLD, RAM_CARS
 from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.interfaces import CarStateBase
 
-ButtonType = car.CarState.ButtonEvent.Type
+ButtonType = structs.CarState.ButtonEvent.Type
 
 
 class CarState(CarStateBase):
@@ -26,9 +25,9 @@ class CarState(CarStateBase):
 
     self.distance_button = 0
 
-  def update(self, cp, cp_cam, *_):
+  def update(self, cp, cp_cam, *_) -> structs.CarState:
 
-    ret = car.CarState.new_message()
+    ret = structs.CarState()
 
     prev_distance_button = self.distance_button
     self.distance_button = cp.vl["CRUISE_BUTTONS"]["ACC_Distance_Dec"]

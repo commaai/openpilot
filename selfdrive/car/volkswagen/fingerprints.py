@@ -1,7 +1,7 @@
-from cereal import car
+from openpilot.selfdrive.car.structs import CarParams
 from openpilot.selfdrive.car.volkswagen.values import CAR
 
-Ecu = car.CarParams.Ecu
+Ecu = CarParams.Ecu
 
 # TODO: Sharan Mk2 EPS and DQ250 auto trans both require KWP2000 support for fingerprinting
 

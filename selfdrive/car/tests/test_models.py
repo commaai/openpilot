@@ -1,4 +1,6 @@
 import capnp
+import copy
+import dataclasses
 import os
 import importlib
 import pytest
@@ -13,12 +15,13 @@ from cereal import messaging, log, car
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.selfdrive.car import DT_CTRL, gen_empty_fingerprint
+from openpilot.selfdrive.car import structs
 from openpilot.selfdrive.car.fingerprints import all_known_cars, MIGRATION
 from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from openpilot.selfdrive.car.honda.values import CAR as HONDA, HondaFlags
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from openpilot.selfdrive.car.values import Platform
-from openpilot.selfdrive.car.card import Car
+from openpilot.selfdrive.car.card import Car, convert_to_capnp
 from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
@@ -181,7 +184,7 @@ class TestCarModelBase(unittest.TestCase):
     del cls.can_msgs
 
   def setUp(self):
-    self.CI = self.CarInterface(self.CP.copy(), self.CarController, self.CarState)
+    self.CI = self.CarInterface(copy.deepcopy(self.CP), self.CarController, self.CarState)
     assert self.CI
 
     Params().put_bool("OpenpilotEnabledToggle", self.openpilot_enabled)
@@ -189,7 +192,7 @@ class TestCarModelBase(unittest.TestCase):
     # TODO: check safetyModel is in release panda build
     self.safety = libpanda_py.libpanda
 
-    cfg = self.CP.safetyConfigs[-1]
+    cfg = car.CarParams.SafetyConfig(**dataclasses.asdict(self.CP.safetyConfigs[-1]))
     set_status = self.safety.set_safety_hooks(cfg.safetyModel.raw, cfg.safetyParam)
     self.assertEqual(0, set_status, f"failed to set safetyModel {cfg}")
     self.safety.init_tests()
@@ -201,7 +204,7 @@ class TestCarModelBase(unittest.TestCase):
     # make sure car params are within a valid range
     self.assertGreater(self.CP.mass, 1)
 
-    if self.CP.steerControlType != car.CarParams.SteerControlType.angle:
+    if self.CP.steerControlType != structs.CarParams.SteerControlType.angle:
       tuning = self.CP.lateralTuning.which()
       if tuning == 'pid':
         self.assertTrue(len(self.CP.lateralTuning.pid.kpV))
@@ -214,7 +217,7 @@ class TestCarModelBase(unittest.TestCase):
     # TODO: also check for checksum violations from can parser
     can_invalid_cnt = 0
     can_valid = False
-    CC = car.CarControl.new_message().as_reader()
+    CC = structs.CarControl()
 
     for i, msg in enumerate(self.can_msgs):
       CS = self.CI.update(can_capnp_to_list((msg.as_builder().to_bytes(),)))
@@ -238,9 +241,9 @@ class TestCarModelBase(unittest.TestCase):
     # start parsing CAN messages after we've left ELM mode and can expect CAN traffic
     error_cnt = 0
     for i, msg in enumerate(self.can_msgs[self.elm_frame:]):
-      rr = RI.update(can_capnp_to_list((msg.as_builder().to_bytes(),)))
+      rr: structs.RadarData | None = RI.update(can_capnp_to_list((msg.as_builder().to_bytes(),)))
       if rr is not None and i > 50:
-        error_cnt += car.RadarData.Error.canError in rr.errors
+        error_cnt += structs.RadarData.Error.canError in rr.errors
     self.assertEqual(error_cnt, 0)
 
   def test_panda_safety_rx_checks(self):
@@ -306,18 +309,18 @@ class TestCarModelBase(unittest.TestCase):
       self.assertGreater(msgs_sent, 50)
 
     # Make sure we can send all messages while inactive
-    CC = car.CarControl.new_message()
-    test_car_controller(CC.as_reader())
+    CC = structs.CarControl()
+    test_car_controller(CC)
 
     # Test cancel + general messages (controls_allowed=False & cruise_engaged=True)
     self.safety.set_cruise_engaged_prev(True)
-    CC = car.CarControl.new_message(cruiseControl={'cancel': True})
-    test_car_controller(CC.as_reader())
+    CC = structs.CarControl(cruiseControl=structs.CarControl.CruiseControl(cancel=True))
+    test_car_controller(CC)
 
     # Test resume + general messages (controls_allowed=True & cruise_engaged=True)
     self.safety.set_controls_allowed(True)
-    CC = car.CarControl.new_message(cruiseControl={'resume': True})
-    test_car_controller(CC.as_reader())
+    CC = structs.CarControl(cruiseControl=structs.CarControl.CruiseControl(resume=True))
+    test_car_controller(CC)
 
   # Skip stdout/stderr capture with pytest, causes elevated memory usage
   @pytest.mark.nocapture
@@ -403,7 +406,7 @@ class TestCarModelBase(unittest.TestCase):
     checks = defaultdict(int)
     card = Car(CI=self.CI)
     for idx, can in enumerate(self.can_msgs):
-      CS = self.CI.update(can_capnp_to_list((can.as_builder().to_bytes(), )))
+      CS = convert_to_capnp(self.CI.update(can_capnp_to_list((can.as_builder().to_bytes(), ))))
       for msg in filter(lambda m: m.src in range(64), can.can):
         to_send = libpanda_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
         ret = self.safety.safety_rx_hook(to_send)

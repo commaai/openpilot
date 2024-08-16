@@ -1,6 +1,6 @@
-from cereal import car
+from openpilot.selfdrive.car.structs import CarParams
 
-SteerControlType = car.CarParams.SteerControlType
+SteerControlType = CarParams.SteerControlType
 
 
 def create_steer_command(packer, steer, steer_req):

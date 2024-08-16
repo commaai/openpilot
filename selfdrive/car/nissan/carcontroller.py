@@ -1,11 +1,11 @@
-from cereal import car
+import copy
 from opendbc.can.packer import CANPacker
-from openpilot.selfdrive.car import apply_std_steer_angle_limits
+from openpilot.selfdrive.car import apply_std_steer_angle_limits, structs
 from openpilot.selfdrive.car.interfaces import CarControllerBase
 from openpilot.selfdrive.car.nissan import nissancan
 from openpilot.selfdrive.car.nissan.values import CAR, CarControllerParams
 
-VisualAlert = car.CarControl.HUDControl.VisualAlert
+VisualAlert = structs.CarControl.HUDControl.VisualAlert
 
 
 class CarController(CarControllerBase):
@@ -74,7 +74,7 @@ class CarController(CarControllerBase):
           self.packer, CS.lkas_hud_info_msg, steer_hud_alert
         ))
 
-    new_actuators = actuators.as_builder()
+    new_actuators = copy.copy(actuators)
     new_actuators.steeringAngleDeg = apply_angle
 
     self.frame += 1

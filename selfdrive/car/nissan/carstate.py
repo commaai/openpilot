@@ -1,14 +1,13 @@
 import copy
 from collections import deque
-from cereal import car
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
-from openpilot.selfdrive.car import create_button_events
+from openpilot.selfdrive.car import create_button_events, structs
 from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.interfaces import CarStateBase
 from openpilot.selfdrive.car.nissan.values import CAR, DBC, CarControllerParams
 
-ButtonType = car.CarState.ButtonEvent.Type
+ButtonType = structs.CarState.ButtonEvent.Type
 
 TORQUE_SAMPLES = 12
 
@@ -26,8 +25,8 @@ class CarState(CarStateBase):
 
     self.distance_button = 0
 
-  def update(self, cp, cp_cam, cp_adas, *_):
-    ret = car.CarState.new_message()
+  def update(self, cp, cp_cam, cp_adas, *_) -> structs.CarState:
+    ret = structs.CarState()
 
     prev_distance_button = self.distance_button
     self.distance_button = cp.vl["CRUISE_THROTTLE"]["FOLLOW_DISTANCE_BUTTON"]

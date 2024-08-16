@@ -1,7 +1,7 @@
 import math
 
-from cereal import car
 from opendbc.can.parser import CANParser
+from openpilot.selfdrive.car import structs
 from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
 from openpilot.selfdrive.car.hyundai.values import DBC
 
@@ -44,7 +44,7 @@ class RadarInterface(RadarInterfaceBase):
     return rr
 
   def _update(self, updated_messages):
-    ret = car.RadarData.new_message()
+    ret = structs.RadarData()
     if self.rcp is None:
       return ret
 
@@ -58,7 +58,7 @@ class RadarInterface(RadarInterfaceBase):
       msg = self.rcp.vl[f"RADAR_TRACK_{addr:x}"]
 
       if addr not in self.pts:
-        self.pts[addr] = car.RadarData.RadarPoint.new_message()
+        self.pts[addr] = structs.RadarData.RadarPoint()
         self.pts[addr].trackId = self.track_id
         self.track_id += 1
 

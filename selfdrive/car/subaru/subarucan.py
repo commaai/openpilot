@@ -1,7 +1,7 @@
-from cereal import car
+from openpilot.selfdrive.car import structs
 from openpilot.selfdrive.car.subaru.values import CanBus
 
-VisualAlert = car.CarControl.HUDControl.VisualAlert
+VisualAlert = structs.CarControl.HUDControl.VisualAlert
 
 
 def create_steering_control(packer, apply_steer, steer_req):

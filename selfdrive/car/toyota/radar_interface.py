@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from opendbc.can.parser import CANParser
-from cereal import car
+from openpilot.selfdrive.car.structs import RadarData
 from openpilot.selfdrive.car.toyota.values import DBC, TSS2_CAR
 from openpilot.selfdrive.car.interfaces import RadarInterfaceBase
 
@@ -54,7 +54,7 @@ class RadarInterface(RadarInterfaceBase):
     return rr
 
   def _update(self, updated_messages):
-    ret = car.RadarData.new_message()
+    ret = RadarData()
     errors = []
     if not self.rcp.can_valid:
       errors.append("canError")
@@ -77,7 +77,7 @@ class RadarInterface(RadarInterfaceBase):
         # radar point only valid if it's a valid measurement and score is above 50
         if cpt['VALID'] or (score > 50 and cpt['LONG_DIST'] < 255 and self.valid_cnt[ii] > 0):
           if ii not in self.pts or cpt['NEW_TRACK']:
-            self.pts[ii] = car.RadarData.RadarPoint.new_message()
+            self.pts[ii] = RadarData.RadarPoint()
             self.pts[ii].trackId = self.track_id
             self.track_id += 1
           self.pts[ii].dRel = cpt['LONG_DIST']  # from front of car

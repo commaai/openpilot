@@ -1,3 +1,4 @@
+import copy
 import numpy as np
 from numbers import Number
 
@@ -132,7 +133,7 @@ class CarController(CarControllerBase):
     can_sends = []
     can_sends.append(bodycan.create_control(self.packer, torque_l, torque_r))
 
-    new_actuators = CC.actuators.as_builder()
+    new_actuators = copy.copy(CC.actuators)
     new_actuators.accel = torque_l
     new_actuators.steer = torque_r
     new_actuators.steerOutputCan = torque_r

@@ -1,16 +1,15 @@
 import copy
-from cereal import car
 from opendbc.can.can_define import CANDefine
 from opendbc.can.parser import CANParser
-from openpilot.selfdrive.car import create_button_events
+from openpilot.selfdrive.car import create_button_events, structs
 from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.common.numpy_fast import mean
 from openpilot.selfdrive.car.interfaces import CarStateBase
 from openpilot.selfdrive.car.gm.values import DBC, AccState, CanBus, CruiseButtons, STEER_THRESHOLD
 
-ButtonType = car.CarState.ButtonEvent.Type
-TransmissionType = car.CarParams.TransmissionType
-NetworkLocation = car.CarParams.NetworkLocation
+ButtonType = structs.CarState.ButtonEvent.Type
+TransmissionType = structs.CarParams.TransmissionType
+NetworkLocation = structs.CarParams.NetworkLocation
 
 STANDSTILL_THRESHOLD = 10 * 0.0311 * CV.KPH_TO_MS
 
@@ -34,8 +33,8 @@ class CarState(CarStateBase):
 
     self.distance_button = 0
 
-  def update(self, pt_cp, cam_cp, _, __, loopback_cp):
-    ret = car.CarState.new_message()
+  def update(self, pt_cp, cam_cp, _, __, loopback_cp) -> structs.CarState:
+    ret = structs.CarState()
 
     prev_cruise_buttons = self.cruise_buttons
     prev_distance_button = self.distance_button
