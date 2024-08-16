@@ -65,7 +65,6 @@ class TestCarInterfaces:
 
     car_params = CarInterface.get_params(car_name, args['fingerprints'], args['car_fw'],
                                          experimental_long=args['experimental_long'], docs=False)
-    # car_params = car_params.as_reader()
     car_interface = CarInterface(car_params, CarController, CarState)
     assert car_params
     assert car_interface
@@ -116,11 +115,11 @@ class TestCarInterfaces:
     #  hypothesis also slows down significantly with just one more message draw
     car_params_capnp = convert_to_capnp(car_params).as_reader()
     LongControl(car_params_capnp)
-    if car_params_capnp.steerControlType == CarParams.SteerControlType.angle:
+    if car_params.steerControlType == CarParams.SteerControlType.angle:
       LatControlAngle(car_params_capnp, car_interface)
-    elif car_params_capnp.lateralTuning.which() == 'pid':
+    elif car_params.lateralTuning.which() == 'pid':
       LatControlPID(car_params_capnp, car_interface)
-    elif car_params_capnp.lateralTuning.which() == 'torque':
+    elif car_params.lateralTuning.which() == 'torque':
       LatControlTorque(car_params_capnp, car_interface)
 
     # Test radar interface
