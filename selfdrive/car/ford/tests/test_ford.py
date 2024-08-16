@@ -48,7 +48,7 @@ class TestFordFW:
       assert subaddr is None, "Unexpected ECU subaddress"
 
   @parameterized.expand(FW_VERSIONS.items())
-  def test_fw_versions(self, car_model: str, fw_versions: dict[tuple[CarParams.Ecu, int, int | None], Iterable[bytes]]):
+  def test_fw_versions(self, car_model: str, fw_versions: dict[tuple[Ecu, int, int | None], Iterable[bytes]]):
     for (ecu, addr, subaddr), fws in fw_versions.items():
       assert ecu in ECU_PART_NUMBER, "Unexpected ECU"
       assert addr == ECU_ADDRESSES[ecu], "ECU address mismatch"
