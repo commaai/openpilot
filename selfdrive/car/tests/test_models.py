@@ -21,7 +21,7 @@ from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from openpilot.selfdrive.car.honda.values import CAR as HONDA, HondaFlags
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from openpilot.selfdrive.car.values import Platform
-from openpilot.selfdrive.car.card import Car, convert_carControl, convert_to_capnp
+from openpilot.selfdrive.car.card import Car, convert_to_capnp
 from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
@@ -309,18 +309,18 @@ class TestCarModelBase(unittest.TestCase):
       self.assertGreater(msgs_sent, 50)
 
     # Make sure we can send all messages while inactive
-    CC = car.CarControl.new_message()
-    test_car_controller(convert_carControl(CC.as_reader()))
+    CC = structs.CarControl()
+    test_car_controller(CC)
 
     # Test cancel + general messages (controls_allowed=False & cruise_engaged=True)
     self.safety.set_cruise_engaged_prev(True)
-    CC = car.CarControl.new_message(cruiseControl={'cancel': True})
-    test_car_controller(convert_carControl(CC.as_reader()))
+    CC = structs.CarControl(cruiseControl=structs.CarControl.CruiseControl(cancel=True))
+    test_car_controller(CC)
 
     # Test resume + general messages (controls_allowed=True & cruise_engaged=True)
     self.safety.set_controls_allowed(True)
-    CC = car.CarControl.new_message(cruiseControl={'resume': True})
-    test_car_controller(convert_carControl(CC.as_reader()))
+    CC = structs.CarControl(cruiseControl=structs.CarControl.CruiseControl(resume=True))
+    test_car_controller(CC)
 
   # Skip stdout/stderr capture with pytest, causes elevated memory usage
   @pytest.mark.nocapture
