@@ -61,27 +61,27 @@ def can_comm_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket
   return can_recv, can_send
 
 
-def asdict(obj) -> dict[str, Any]:
+def asdictref(obj) -> dict[str, Any]:
   """Note that the resulting dict will contain references to the struct field values"""
   if not dataclasses._is_dataclass_instance(obj):
-    raise TypeError("asdict() should be called on dataclass instances")
+    raise TypeError("asdictref() should be called on dataclass instances")
 
-  def _asdict_inner(obj):
+  def _asdictref_inner(obj):
     if dataclasses._is_dataclass_instance(obj):
       ret = {}
       for field in obj.__dataclass_fields__:
-        ret[field] = _asdict_inner(getattr(obj, field))
+        ret[field] = _asdictref_inner(getattr(obj, field))
       return ret
     elif isinstance(obj, (tuple, list)):
-      return type(obj)(_asdict_inner(v) for v in obj)
+      return type(obj)(_asdictref_inner(v) for v in obj)
     else:
       return obj
 
-  return _asdict_inner(obj)
+  return _asdictref_inner(obj)
 
 
 def convert_to_capnp(struct: structs.CarParams | structs.CarState | structs.CarControl.Actuators) -> capnp.lib.capnp._DynamicStructBuilder:
-  struct_dict = asdict(struct)
+  struct_dict = asdictref(struct)
 
   if isinstance(struct, structs.CarParams):
     del struct_dict['lateralTuning']
@@ -90,7 +90,7 @@ def convert_to_capnp(struct: structs.CarParams | structs.CarState | structs.CarC
     # this is the only union, special handling
     which = struct.lateralTuning.which()
     struct_capnp.lateralTuning.init(which)
-    lateralTuning_dict = asdict(getattr(struct.lateralTuning, which))
+    lateralTuning_dict = asdictref(getattr(struct.lateralTuning, which))
     setattr(struct_capnp.lateralTuning, which, lateralTuning_dict)
   elif isinstance(struct, structs.CarState):
     struct_capnp = car.CarState.new_message(**struct_dict)
