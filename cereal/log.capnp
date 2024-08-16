@@ -2082,9 +2082,15 @@ struct LiveParametersData {
   stiffnessFactorStd @12 :Float32;
   steerRatioStd @13 :Float32;
   roll @14 :Float32;
-  filterState @15 :LiveLocationKalman.Measurement;
+  debugFilterState @16 :FilterState;
 
   yawRateDEPRECATED @7 :Float32;
+  filterStateDEPRECATED @15 :LiveLocationKalman.Measurement;
+
+  struct FilterState {
+    value @0 : List(Float64);
+    std @1 : List(Float64);
+  }
 }
 
 struct LiveTorqueParametersData {
