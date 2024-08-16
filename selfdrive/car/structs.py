@@ -328,7 +328,7 @@ class CarParams:
       def __call__(self):
         return self.value
 
-    which: 'CarParams.LateralTuning.Which' = field(default_factory=lambda: CarParams.LateralTuning.Which.torque)
+    which: 'CarParams.LateralTuning.Which' = field(default_factory=lambda: CarParams.LateralTuning.Which.pid)
 
     pid: 'CarParams.LateralPIDTuning' = field(default_factory=lambda: CarParams.LateralPIDTuning())
     torque: 'CarParams.LateralTorqueTuning' = field(default_factory=lambda: CarParams.LateralTorqueTuning())
