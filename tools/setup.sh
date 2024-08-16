@@ -89,7 +89,7 @@ function ask_dir() {
   read
   if [[ ! -z "$REPLY" ]]; then
     mkdir -p $REPLY
-    OPENPILOT_ROOT="$(realpath $REPLY/openpilot)"
+    OPENPILOT_ROOT="$(realpath $REPLY)/openpilot"
   fi
 }
 

@@ -764,14 +764,6 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
         <translation>PANDA</translation>
     </message>
     <message>
-        <source>GPS</source>
-        <translation>GPS</translation>
-    </message>
-    <message>
-        <source>SEARCH</source>
-        <translation>RECHERCHE</translation>
-    </message>
-    <message>
         <source>--</source>
         <translation>--</translation>
     </message>

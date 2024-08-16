@@ -24,21 +24,6 @@ forbidden_modules =
     openpilot.teleoprtc
     openpilot.tinygrad
 ignore_imports =
-    # remove these
-    openpilot.selfdrive.car.body.carcontroller -> openpilot.selfdrive.controls.lib.pid
-    openpilot.selfdrive.car.tests.test_docs -> openpilot.common.basedir
-    openpilot.selfdrive.car.docs -> openpilot.common.basedir
-
-    # car interface will not filter the speed
-    openpilot.selfdrive.car.interfaces -> openpilot.common.simple_kalman
-
-    openpilot.selfdrive.car.gm.interface -> openpilot.common.basedir
-    openpilot.selfdrive.car.interfaces -> openpilot.common.basedir
-
-    # params will need to move to new openpilot files that just call car files
-    openpilot.selfdrive.car.fw_versions -> openpilot.common.params
-    openpilot.selfdrive.car.ecu_addrs -> openpilot.common.params
-
     # these are okay
     openpilot.selfdrive.car.card -> openpilot.common.swaglog
     openpilot.selfdrive.car.card -> openpilot.common.realtime
@@ -56,8 +41,6 @@ ignore_imports =
     openpilot.selfdrive.car.tests.test_models -> openpilot.common.params
     openpilot.selfdrive.car.tests.test_models -> openpilot.common.basedir
     openpilot.selfdrive.car.card -> openpilot.selfdrive.pandad
-    openpilot.selfdrive.car.tests.test_docs -> openpilot.selfdrive.debug.dump_car_docs
-    openpilot.selfdrive.car.tests.test_docs -> openpilot.selfdrive.debug.print_docs_diff
     openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.pandad
     openpilot.selfdrive.car.tests.test_models -> openpilot.selfdrive.pandad
     openpilot.selfdrive.car.tests.test_car_interfaces -> openpilot.selfdrive.test.fuzzy_generation

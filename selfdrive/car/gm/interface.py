@@ -4,8 +4,8 @@ from cereal import car
 from math import fabs, exp
 from panda import Panda
 
-from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.car import get_safety_config, get_friction
+from openpilot.selfdrive.car.common.basedir import BASEDIR
 from openpilot.selfdrive.car.conversions import Conversions as CV
 from openpilot.selfdrive.car.gm.radar_interface import RADAR_HEADER_MSG
 from openpilot.selfdrive.car.gm.values import CAR, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, CanBus
@@ -20,7 +20,7 @@ NON_LINEAR_TORQUE_PARAMS = {
   CAR.CHEVROLET_SILVERADO: [3.29974374, 1.0, 0.25571356, 0.0465122]
 }
 
-NEURAL_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/neural_ff_weights.json')
+NEURAL_PARAMS_PATH = os.path.join(BASEDIR, 'torque_data/neural_ff_weights.json')
 
 
 class CarInterface(CarInterfaceBase):

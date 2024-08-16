@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 from openpilot.selfdrive.car import carlog
 from openpilot.selfdrive.car.isotp_parallel_query import IsoTpParallelQuery
 
@@ -35,17 +34,3 @@ def disable_ecu(can_recv, can_send, bus=0, addr=0x7d0, sub_addr=None, com_cont_r
     carlog.error(f"ecu disable retry ({i + 1}) ...")
   carlog.error("ecu disable failed")
   return False
-
-
-if __name__ == "__main__":
-  import time
-  import cereal.messaging as messaging
-  from openpilot.selfdrive.car.card import can_comm_callbacks
-  sendcan = messaging.pub_sock('sendcan')
-  logcan = messaging.sub_sock('can')
-  can_callbacks = can_comm_callbacks(logcan, sendcan)
-  time.sleep(1)
-
-  # honda bosch radar disable
-  disabled = disable_ecu(*can_callbacks, bus=1, addr=0x18DAB0F1, com_cont_req=b'\x28\x83\x03', timeout=0.5, debug=False)
-  print(f"disabled: {disabled}")

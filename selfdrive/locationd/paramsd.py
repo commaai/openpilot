@@ -177,7 +177,7 @@ def main():
 
   pInitial = None
   if DEBUG:
-    pInitial = np.array(params['filterState']['std']) if 'filterState' in params else None
+    pInitial = np.array(params['debugFilterState']['std']) if 'debugFilterState' in params else None
 
   learner = ParamsLearner(CP, params['steerRatio'], params['stiffnessFactor'], math.radians(params['angleOffsetAverageDeg']), pInitial)
   angle_offset_average = params['angleOffsetAverageDeg']
@@ -242,10 +242,9 @@ def main():
       liveParameters.angleOffsetAverageStd = float(P[States.ANGLE_OFFSET].item())
       liveParameters.angleOffsetFastStd = float(P[States.ANGLE_OFFSET_FAST].item())
       if DEBUG:
-        liveParameters.filterState = log.LiveLocationKalman.Measurement.new_message()
-        liveParameters.filterState.value = x.tolist()
-        liveParameters.filterState.std = P.tolist()
-        liveParameters.filterState.valid = True
+        liveParameters.debugFilterState = log.LiveParametersData.FilterState.new_message()
+        liveParameters.debugFilterState.value = x.tolist()
+        liveParameters.debugFilterState.std = P.tolist()
 
       msg.valid = sm.all_checks()
 

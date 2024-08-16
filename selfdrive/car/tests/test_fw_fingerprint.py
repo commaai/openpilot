@@ -133,7 +133,7 @@ class TestFwFingerprint:
 
         elif CP.carName == "chrysler":
           # Some HD trucks have a combined TCM and ECM
-          if CP.carFingerprint.startswith("RAM HD"):
+          if CP.carFingerprint.startswith("RAM_HD"):
             for ecu in ecus.keys():
               assert ecu[0] != Ecu.transmission, f"{car_model}: Blacklisted ecu: (Ecu.{ECU_NAME[ecu[0]]}, {hex(ecu[1])})"
 
