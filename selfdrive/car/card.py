@@ -3,6 +3,7 @@ import capnp
 import dataclasses
 import os
 import time
+from typing import Any
 
 import cereal.messaging as messaging
 
@@ -60,18 +61,20 @@ def can_comm_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket
   return can_recv, can_send
 
 
-def asdict(obj) -> dict[str, any]:
+def asdict(obj) -> dict[str, Any]:
   """Note that this function returns references rather than copies where possible"""
 
   if not dataclasses.is_dataclass(obj):
     raise TypeError("asdict() should be called on dataclass instances")
 
-  def _asdict_inner(obj: any) -> dict[str, any]:
+  def _asdict_inner(obj):
     if dataclasses.is_dataclass(obj):
       ret = {}
       for f in dataclasses.fields(obj):
         ret[f.name] = _asdict_inner(getattr(obj, f.name))
       return ret
+    elif isinstance(obj, (tuple, list)):
+      return type(obj)(_asdict_inner(v) for v in obj)
     else:
       return obj
 

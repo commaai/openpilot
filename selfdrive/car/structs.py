@@ -18,7 +18,7 @@ def auto_dataclass(cls=None, /, **kwargs):
       origin_typ = get_origin(typ) or typ
       if isinstance(origin_typ, str):
         raise TypeError(f"Forward references are not supported for auto_field: '{origin_typ}'. Use a default_factory with lambda instead.")
-      elif origin_typ in (int, float, str, bytes, list, tuple, set, dict, bool) or is_dataclass(origin_typ):
+      elif origin_typ in (int, float, str, bytes, list, tuple, set, bool) or is_dataclass(origin_typ):
         setattr(cls, name, field(default_factory=origin_typ))
       elif origin_typ is None:
         setattr(cls, name, field(default=origin_typ))
