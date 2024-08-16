@@ -9,12 +9,12 @@ from collections.abc import Callable
 from functools import cache
 
 from cereal import car
-from openpilot.common.basedir import BASEDIR
-from openpilot.common.simple_kalman import KF1D, get_kalman_gain
 from openpilot.selfdrive.car import DT_CTRL, apply_hysteresis, gen_empty_fingerprint, scale_rot_inertia, scale_tire_stiffness, get_friction, STD_CARGO_KG
 from openpilot.selfdrive.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
+from openpilot.selfdrive.car.common.basedir import BASEDIR
 from openpilot.selfdrive.car.conversions import Conversions as CV
-from openpilot.selfdrive.car.helpers import clip
+from openpilot.selfdrive.car.common.simple_kalman import KF1D, get_kalman_gain
+from openpilot.selfdrive.car.common.numpy_fast import clip
 from openpilot.selfdrive.car.values import PLATFORMS
 
 GearShifter = car.CarState.GearShifter
@@ -25,9 +25,9 @@ ACCEL_MAX = 2.0
 ACCEL_MIN = -3.5
 FRICTION_THRESHOLD = 0.3
 
-TORQUE_PARAMS_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/params.toml')
-TORQUE_OVERRIDE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/override.toml')
-TORQUE_SUBSTITUTE_PATH = os.path.join(BASEDIR, 'selfdrive/car/torque_data/substitute.toml')
+TORQUE_PARAMS_PATH = os.path.join(BASEDIR, 'torque_data/params.toml')
+TORQUE_OVERRIDE_PATH = os.path.join(BASEDIR, 'torque_data/override.toml')
+TORQUE_SUBSTITUTE_PATH = os.path.join(BASEDIR, 'torque_data/substitute.toml')
 
 GEAR_SHIFTER_MAP: dict[str, car.CarState.GearShifter] = {
   'P': GearShifter.park, 'PARK': GearShifter.park,
@@ -397,7 +397,7 @@ def get_interface_attr(attr: str, combine_brands: bool = False, ignore_none: boo
   # - keys are all the car models or brand names
   # - values are attr values from all car folders
   result = {}
-  for car_folder in sorted([x[0] for x in os.walk(BASEDIR + '/selfdrive/car')]):
+  for car_folder in sorted([x[0] for x in os.walk(BASEDIR)]):
     try:
       brand_name = car_folder.split('/')[-1]
       brand_values = __import__(f'openpilot.selfdrive.car.{brand_name}.{INTERFACE_ATTR_FILE.get(attr, "values")}', fromlist=[attr])

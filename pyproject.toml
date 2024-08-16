@@ -108,7 +108,7 @@ dev = [
   "pytools < 2024.1.11; platform_machine != 'aarch64'", # pyopencl use a broken version
   "pywinctl",
   "pyprof2calltree",
-  "rerun-sdk",
+  "rerun-sdk >= 0.18",
   "tabulate",
   "types-requests",
   "types-tabulate",
@@ -145,6 +145,7 @@ testpaths = [
   "common",
   "selfdrive/pandad",
   "selfdrive/car",
+  "selfdrive/opcar",
   "selfdrive/controls",
   "selfdrive/locationd",
   "selfdrive/monitoring",
