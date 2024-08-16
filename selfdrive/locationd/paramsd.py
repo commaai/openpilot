@@ -242,9 +242,9 @@ def main():
       liveParameters.angleOffsetAverageStd = float(P[States.ANGLE_OFFSET].item())
       liveParameters.angleOffsetFastStd = float(P[States.ANGLE_OFFSET_FAST].item())
       if DEBUG:
-        liveParameters.filterState = log.LiveParametersData.FilterState.new_message()
-        liveParameters.filterState.value = x.tolist()
-        liveParameters.filterState.std = P.tolist()
+        liveParameters.debugFilterState = log.LiveParametersData.FilterState.new_message()
+        liveParameters.debugFilterState.value = x.tolist()
+        liveParameters.debugFilterState.std = P.tolist()
 
       msg.valid = sm.all_checks()
 
