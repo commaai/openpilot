@@ -20,7 +20,7 @@ class CarState(CarStateBase):
     self.lkas_hud_msg = {}
     self.lkas_hud_info_msg = {}
 
-    self.steeringTorqueSamples = deque(TORQUE_SAMPLES*[0], TORQUE_SAMPLES)
+    self.steeringTorqueSamples = deque(TORQUE_SAMPLES*[0.0], TORQUE_SAMPLES)
     self.shifter_values = can_define.dv["GEARBOX"]["GEAR_SHIFTER"]
 
     self.distance_button = 0

@@ -318,14 +318,17 @@ class CarParams:
 
   @auto_dataclass
   class LateralTuning:
-    def init(self, _which: str):
-      assert _which in ('pid', 'torque'), 'Invalid union type'
-      self._which = _which
+    def init(self, which: str):
+      self.which = CarParams.LateralTuning.Which(which)
 
-    def which(self):
-      return self._which
+    class Which(StrEnum):
+      pid = auto()
+      torque = auto()
 
-    _which: str = 'pid'
+      def __call__(self):
+        return self.value
+
+    which: 'CarParams.LateralTuning.Which' = field(default_factory=lambda: CarParams.LateralTuning.Which.torque)
 
     pid: 'CarParams.LateralPIDTuning' = field(default_factory=lambda: CarParams.LateralPIDTuning())
     torque: 'CarParams.LateralTorqueTuning' = field(default_factory=lambda: CarParams.LateralTorqueTuning())
