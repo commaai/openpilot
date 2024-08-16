@@ -177,7 +177,7 @@ def main():
 
   pInitial = None
   if DEBUG:
-    pInitial = np.array(params['filterState']['std']) if 'filterState' in params else None
+    pInitial = np.array(params['debugFilterState']['std']) if 'debugFilterState' in params else None
 
   learner = ParamsLearner(CP, params['steerRatio'], params['stiffnessFactor'], math.radians(params['angleOffsetAverageDeg']), pInitial)
   angle_offset_average = params['angleOffsetAverageDeg']
