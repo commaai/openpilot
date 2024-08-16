@@ -1,13 +1,10 @@
 import math
 from openpilot.selfdrive.car import get_safety_config, structs
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
-from openpilot.selfdrive.car.body.carstate import CarState
 from openpilot.selfdrive.car.body.values import SPEED_FROM_RPM
 
 
 class CarInterface(CarInterfaceBase):
-  CS: CarState
-
   @staticmethod
   def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.notCar = True

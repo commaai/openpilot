@@ -1,7 +1,6 @@
 from panda import Panda
 from openpilot.selfdrive.car import get_safety_config, structs
 from openpilot.selfdrive.car.conversions import Conversions as CV
-from openpilot.selfdrive.car.ford.carstate import CarState
 from openpilot.selfdrive.car.ford.fordcan import CanBus
 from openpilot.selfdrive.car.ford.values import Ecu, FordFlags
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
@@ -10,8 +9,6 @@ TransmissionType = structs.CarParams.TransmissionType
 
 
 class CarInterface(CarInterfaceBase):
-  CS: CarState
-
   @staticmethod
   def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "ford"

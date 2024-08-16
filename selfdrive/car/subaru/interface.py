@@ -2,13 +2,10 @@ from panda import Panda
 from openpilot.selfdrive.car import get_safety_config, structs
 from openpilot.selfdrive.car.disable_ecu import disable_ecu
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
-from openpilot.selfdrive.car.subaru.carstate import CarState
 from openpilot.selfdrive.car.subaru.values import CAR, GLOBAL_ES_ADDR, SubaruFlags
 
 
 class CarInterface(CarInterfaceBase):
-  CS: CarState
-
   @staticmethod
   def _get_params(ret: structs.CarParams, candidate: CAR, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "subaru"

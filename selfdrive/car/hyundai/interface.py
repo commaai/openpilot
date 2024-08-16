@@ -1,7 +1,6 @@
 from panda import Panda
 
 from openpilot.selfdrive.car import get_safety_config, structs
-from openpilot.selfdrive.car.hyundai.carstate import CarState
 from openpilot.selfdrive.car.hyundai.hyundaicanfd import CanBus
 from openpilot.selfdrive.car.hyundai.values import HyundaiFlags, CAR, DBC, CANFD_CAR, CAMERA_SCC_CAR, CANFD_RADAR_SCC_CAR, \
                                                    CANFD_UNSUPPORTED_LONGITUDINAL_CAR, EV_CAR, HYBRID_CAR, LEGACY_SAFETY_MODE_CAR, \
@@ -16,8 +15,6 @@ ENABLE_BUTTONS = (Buttons.RES_ACCEL, Buttons.SET_DECEL, Buttons.CANCEL)
 
 
 class CarInterface(CarInterfaceBase):
-  CS: CarState
-
   @staticmethod
   def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "hyundai"

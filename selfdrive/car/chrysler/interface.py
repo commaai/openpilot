@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 from panda import Panda
 from openpilot.selfdrive.car import get_safety_config, structs
-from openpilot.selfdrive.car.chrysler.carstate import CarState
 from openpilot.selfdrive.car.chrysler.values import CAR, RAM_HD, RAM_DT, RAM_CARS, ChryslerFlags
 from openpilot.selfdrive.car.interfaces import CarInterfaceBase
 
 
 class CarInterface(CarInterfaceBase):
-  CS: CarState
-
   @staticmethod
   def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, experimental_long, docs):
     ret.carName = "chrysler"
