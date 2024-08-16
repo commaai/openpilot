@@ -242,10 +242,9 @@ def main():
       liveParameters.angleOffsetAverageStd = float(P[States.ANGLE_OFFSET].item())
       liveParameters.angleOffsetFastStd = float(P[States.ANGLE_OFFSET_FAST].item())
       if DEBUG:
-        liveParameters.filterState = log.LiveLocationKalman.Measurement.new_message()
+        liveParameters.filterState = log.LiveParametersData.FilterState.new_message()
         liveParameters.filterState.value = x.tolist()
         liveParameters.filterState.std = P.tolist()
-        liveParameters.filterState.valid = True
 
       msg.valid = sm.all_checks()
 
