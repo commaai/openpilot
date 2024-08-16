@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import capnp
-import dataclasses
 import os
 import time
 from typing import Any
@@ -61,13 +60,21 @@ def can_comm_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket
   return can_recv, can_send
 
 
+_FIELDS = '__dataclass_fields__'
+
+
+def is_dataclass_instance(obj):
+  """Returns True if obj is an instance of a dataclass."""
+  return hasattr(obj, _FIELDS)
+
+
 def asdictref(obj) -> dict[str, Any]:
   """Note that the resulting dict will contain references to the struct field values"""
-  if not dataclasses._is_dataclass_instance(obj):  # type: ignore[attr-defined]
+  if not is_dataclass_instance(obj):  # type: ignore[attr-defined]
     raise TypeError("asdictref() should be called on dataclass instances")
 
   def _asdictref_inner(obj) -> dict[str, Any] | Any:
-    if dataclasses._is_dataclass_instance(obj):  # type: ignore[attr-defined]
+    if is_dataclass_instance(obj):  # type: ignore[attr-defined]
       ret = {}
       for field in obj.__dataclass_fields__:
         ret[field] = _asdictref_inner(getattr(obj, field))
