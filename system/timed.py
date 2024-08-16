@@ -47,7 +47,7 @@ def main() -> NoReturn:
     pm.send('clocks', msg)
 
     gps = sm[gps_location_service]
-    if not sm.updated[gps_location_service] or (time.monotonic() - sm.logMonoTime[gps_location_service] / 1e9) > 0.2:
+    if not sm.updated[gps_location_service] or (time.monotonic() - sm.logMonoTime[gps_location_service] / 1e9) > 2.0:
       continue
 
     # set time
