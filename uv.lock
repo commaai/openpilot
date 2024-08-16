@@ -1,9 +1,15 @@
 version = 1
 requires-python = ">=3.11"
 environment-markers = [
-    "python_version == '3.11'",
-    "python_version >= '3.12'",
-    "python_version < '3.11' or (python_version > '3.11' and python_version < '3.12')",
+    "python_full_version == '3.11.*' and platform_system == 'Darwin'",
+    "python_full_version == '3.11.*' and platform_machine == 'aarch64' and platform_system == 'Linux'",
+    "(python_full_version == '3.11.*' and platform_machine != 'aarch64' and platform_system != 'Darwin') or (python_full_version == '3.11.*' and platform_system != 'Darwin' and platform_system != 'Linux')",
+    "python_full_version >= '3.12' and platform_system == 'Darwin'",
+    "python_full_version >= '3.12' and platform_machine == 'aarch64' and platform_system == 'Linux'",
+    "(python_full_version >= '3.12' and platform_machine != 'aarch64' and platform_system != 'Darwin') or (python_full_version >= '3.12' and platform_system != 'Darwin' and platform_system != 'Linux')",
+    "python_full_version < '3.11' and platform_system == 'Darwin'",
+    "python_full_version < '3.11' and platform_machine == 'aarch64' and platform_system == 'Linux'",
+    "(python_full_version < '3.11' and platform_machine != 'aarch64' and platform_system != 'Darwin') or (python_full_version < '3.11' and platform_system != 'Darwin' and platform_system != 'Linux')",
 ]
 
 [[package]]
@@ -1200,7 +1206,6 @@ version = "1.30.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cryptography" },
-    { name = "pyjwt" },
     { name = "pyjwt", extra = ["crypto"] },
     { name = "requests" },
 ]
@@ -1496,6 +1501,82 @@ testing = [
     { name = "ruff" },
 ]
 
+[package.metadata]
+requires-dist = [
+    { name = "aiohttp" },
+    { name = "aiortc" },
+    { name = "av", marker = "extra == 'dev'" },
+    { name = "azure-identity", marker = "extra == 'dev'" },
+    { name = "azure-storage-blob", marker = "extra == 'dev'" },
+    { name = "casadi", specifier = ">=3.6.6" },
+    { name = "cffi" },
+    { name = "codespell", marker = "extra == 'testing'" },
+    { name = "coverage", marker = "extra == 'testing'" },
+    { name = "crcmod" },
+    { name = "cython" },
+    { name = "dictdiffer", marker = "extra == 'dev'" },
+    { name = "flaky", marker = "extra == 'dev'" },
+    { name = "future-fstrings" },
+    { name = "hypothesis", marker = "extra == 'testing'", specifier = "==6.47.*" },
+    { name = "import-linter", marker = "extra == 'testing'" },
+    { name = "inputs", marker = "extra == 'dev'" },
+    { name = "jinja2", marker = "extra == 'docs'" },
+    { name = "json-rpc" },
+    { name = "libusb1" },
+    { name = "lru-dict", marker = "extra == 'dev'" },
+    { name = "matplotlib", marker = "extra == 'dev'" },
+    { name = "metadrive-simulator", marker = "platform_machine != 'aarch64' and extra == 'dev'", git = "https://github.com/commaai/metadrive?rev=main" },
+    { name = "mkdocs", marker = "extra == 'docs'" },
+    { name = "mypy", marker = "extra == 'testing'" },
+    { name = "natsort", marker = "extra == 'docs'" },
+    { name = "numpy", specifier = "<2.0.0" },
+    { name = "onnx", specifier = ">=1.14.0" },
+    { name = "onnxruntime", marker = "platform_machine == 'aarch64' and platform_system == 'Linux'", specifier = ">=1.16.3" },
+    { name = "onnxruntime-gpu", marker = "platform_machine == 'x86_64' and platform_system == 'Linux'", specifier = ">=1.16.3" },
+    { name = "parameterized", marker = "extra == 'dev'", specifier = ">=0.8,<0.9" },
+    { name = "pre-commit-hooks", marker = "extra == 'testing'" },
+    { name = "psutil" },
+    { name = "pyaudio" },
+    { name = "pyautogui", marker = "extra == 'dev'" },
+    { name = "pycapnp" },
+    { name = "pycryptodome" },
+    { name = "pyjwt" },
+    { name = "pyopencl", marker = "platform_machine != 'aarch64' and extra == 'dev'" },
+    { name = "pyprof2calltree", marker = "extra == 'dev'" },
+    { name = "pyqt5", marker = "platform_machine == 'x86_64' and extra == 'dev'", specifier = "==5.15.2" },
+    { name = "pyserial" },
+    { name = "pytest", marker = "extra == 'testing'" },
+    { name = "pytest-asyncio", marker = "extra == 'testing'" },
+    { name = "pytest-cov", marker = "extra == 'testing'" },
+    { name = "pytest-cpp", marker = "extra == 'testing'" },
+    { name = "pytest-mock", marker = "extra == 'testing'" },
+    { name = "pytest-randomly", marker = "extra == 'testing'" },
+    { name = "pytest-repeat", marker = "extra == 'testing'" },
+    { name = "pytest-subtests", marker = "extra == 'testing'" },
+    { name = "pytest-timeout", marker = "extra == 'testing'" },
+    { name = "pytest-xdist", marker = "extra == 'testing'" },
+    { name = "pytools", marker = "platform_machine != 'aarch64' and extra == 'dev'", specifier = "<2024.1.11" },
+    { name = "pywinctl", marker = "extra == 'dev'" },
+    { name = "pyzmq" },
+    { name = "requests" },
+    { name = "rerun-sdk", marker = "extra == 'dev'", specifier = ">=0.18" },
+    { name = "ruff", marker = "extra == 'testing'" },
+    { name = "scons" },
+    { name = "sentry-sdk" },
+    { name = "setproctitle" },
+    { name = "setuptools" },
+    { name = "smbus2" },
+    { name = "sounddevice" },
+    { name = "spidev", marker = "platform_system == 'Linux'" },
+    { name = "sympy" },
+    { name = "tabulate", marker = "extra == 'dev'" },
+    { name = "tqdm" },
+    { name = "types-requests", marker = "extra == 'dev'" },
+    { name = "types-tabulate", marker = "extra == 'dev'" },
+    { name = "websocket-client" },
+    { name = "zstandard" },
+]
+
 [[package]]
 name = "packaging"
 version = "24.1"
@@ -1554,7 +1635,7 @@ name = "pandas"
 version = "2.2.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy", marker = "python_version == '3.11' or python_version >= '3.12'" },
+    { name = "numpy" },
     { name = "python-dateutil" },
     { name = "pytz" },
     { name = "tzdata" },
@@ -4540,7 +4621,7 @@ name = "pyscreeze"
 version = "0.1.30"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pillow", marker = "python_version == '3.11'" },
+    { name = "pillow", marker = "python_full_version < '3.12'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/88/f5/754a6f29a25c7ec375a2e2468ceb83926856b1f0532abd9ec7720ab26b30/PyScreeze-0.1.30.tar.gz", hash = "sha256:74098ad048e76a6231dcfa6243343af94459b8c829f9ccb7a44a5d3b147a67d1", size = 27789 }
 
@@ -4585,7 +4666,6 @@ name = "pytest-cov"
 version = "5.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "coverage" },
     { name = "coverage", extra = ["toml"] },
     { name = "pytest" },
 ]
@@ -4718,7 +4798,7 @@ source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "platformdirs" },
     { name = "siphash24" },
-    { name = "typing-extensions", marker = "python_version < '3.13'" },
+    { name = "typing-extensions", marker = "python_full_version < '3.13'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ee/0f/56e109c0307f831b5d598ad73976aaaa84b4d0e98da29a642e797eaa940c/pytools-2024.1.10.tar.gz", hash = "sha256:9af6f4b045212c49be32bb31fe19606c478ee4b09631886d05a32459f4ce0a12", size = 81741 }
 wheels = [
@@ -4905,7 +4985,7 @@ wheels = [
 
 [[package]]
 name = "rerun-sdk"
-version = "0.17.0"
+version = "0.18.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
@@ -4915,11 +4995,11 @@ dependencies = [
     { name = "typing-extensions" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/30/5f/ce02381b9d7e1e14f60c421c76dce12b7d823690181784780b30266017b1/rerun_sdk-0.17.0-cp38-abi3-macosx_10_12_x86_64.whl", hash = "sha256:abd34f746eada83b8bb0bc50007183151981d7ccf18306f3d42165819a3f6fcb", size = 33166544 },
-    { url = "https://files.pythonhosted.org/packages/b7/c5/d47ba7b774bc563aa3c07ba500dd304ea24b31fe438e10ea9ad5e10ffe17/rerun_sdk-0.17.0-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:8b0a8a6feab3f8e679801d158216a71d88a81480021587719330f50d083c4d26", size = 32237860 },
-    { url = "https://files.pythonhosted.org/packages/87/0a/b5fe1ffea700eeaa8d28817a92ad3cb4a7d56dc4af45de76ea412cfc5cd5/rerun_sdk-0.17.0-cp38-abi3-manylinux_2_31_aarch64.whl", hash = "sha256:ad55807abafb01e527846742e087819aac8e103f1ec15aadc563a4038bb44e1d", size = 38608604 },
-    { url = "https://files.pythonhosted.org/packages/d9/74/6c1ff0c8dbe6da09ceb5ea838a72382fa3131ef6bb9377a30003299743fa/rerun_sdk-0.17.0-cp38-abi3-manylinux_2_31_x86_64.whl", hash = "sha256:9d41f1f475270b1e0d50ddb8cb62e0d828988f0c371ac8457af25c8be5aa1dc0", size = 38917319 },
-    { url = "https://files.pythonhosted.org/packages/8c/28/92423fe9673b738c180fb5b6b8ea4203fe4b02c1d20b06b7fae79d11cc24/rerun_sdk-0.17.0-cp38-abi3-win_amd64.whl", hash = "sha256:34e5595a326cbdddfebdf00b08e877358c564fce74cc8c6d617fc89ef3a6aa70", size = 29490986 },
+    { url = "https://files.pythonhosted.org/packages/12/05/639478e82e619554067e99f646af32df2b8f5c3a3e19c5e0899aa3fe7077/rerun_sdk-0.18.0-cp38-abi3-macosx_10_12_x86_64.whl", hash = "sha256:dc18de6f5e1a7b344d02d24a454bdcc10ce1099ce7151c2d93a044d76c6ce8f3", size = 32935334 },
+    { url = "https://files.pythonhosted.org/packages/21/ec/8faf4150b84548bab9d58da24a2be5e7f79dfe9ba8a7af1ec0ea4e1a50ac/rerun_sdk-0.18.0-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:a7bb437636ad69ade2dbc06f837cb506fcffc192a0881f4a44e1a89681eba4b0", size = 32014149 },
+    { url = "https://files.pythonhosted.org/packages/8a/a8/20708dcedce4e1ed15148a3d12052152854e3239c69cc276d0d0f3cf21e9/rerun_sdk-0.18.0-cp38-abi3-manylinux_2_31_aarch64.whl", hash = "sha256:c17cb73de92be9c0bbd5d08e02bdec1defa86328dcb05f8154d5c3fa7e42fcc7", size = 38365605 },
+    { url = "https://files.pythonhosted.org/packages/a3/95/f1133bcfa08f4c93c1ee2ee67c7e13f5b9cdb9b978e8a7607896272dbf91/rerun_sdk-0.18.0-cp38-abi3-manylinux_2_31_x86_64.whl", hash = "sha256:db4f783c22b5ce61915394e5fa3ad3c4045bdb00f12984862cd0c4372bff89da", size = 38685748 },
+    { url = "https://files.pythonhosted.org/packages/f9/41/8f80942f4a7166c871f3c20648debe87bf6f8a8884f36372f2cab5cb5f19/rerun_sdk-0.18.0-cp38-abi3-win_amd64.whl", hash = "sha256:4c4dde49fcb08eb34c51dfe8a12733f96102f44bd1dc89063b08d65de1a06cdb", size = 29437290 },
 ]
 
 [[package]]
@@ -4927,7 +5007,7 @@ name = "ruamel-yaml"
 version = "0.18.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ruamel-yaml-clib", marker = "python_version < '3.13' and platform_python_implementation == 'CPython'" },
+    { name = "ruamel-yaml-clib", marker = "python_full_version < '3.13' and platform_python_implementation == 'CPython'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/29/81/4dfc17eb6ebb1aac314a3eb863c1325b907863a1b8b1382cdffcb6ac0ed9/ruamel.yaml-0.18.6.tar.gz", hash = "sha256:8b27e6a217e786c6fbe5634d8f3f11bc63e0f80f6a5890f28863d9c45aac311b", size = 143362 }
 wheels = [
