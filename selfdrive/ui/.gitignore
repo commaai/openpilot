@@ -8,6 +8,7 @@ _spinner
 
 ui
 mui
+raylib_demo
 watch3
 installer/installers/*
 qt/setup/setup

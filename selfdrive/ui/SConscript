@@ -114,3 +114,4 @@ if GetOption('extras') and arch != "Darwin":
 # build watch3
 if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):
   qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'json11', 'msgq', 'visionipc'])
+  qt_env.Program("raylib_demo", ["raylib_demo.cc"], LIBS= base_libs + [ 'common', 'json11', 'msgq', 'visionipc', 'zmq', 'raylib'])
