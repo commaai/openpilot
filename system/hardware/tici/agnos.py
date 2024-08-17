@@ -41,7 +41,7 @@ class StreamingDecompressor:
       else:
         compressed = b''
 
-      out = self.decompressor.decompress(compressed, max_length=256 * 1024 * 1024)
+      out = self.decompressor.decompress(compressed, max_length=length)
       self.buf += out
 
       if self.decompressor.eof:
