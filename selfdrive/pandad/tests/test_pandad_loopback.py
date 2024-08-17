@@ -8,11 +8,11 @@ from pprint import pprint
 
 import cereal.messaging as messaging
 from cereal import car, log
+from opendbc.car.can_definitions import CanData
 from openpilot.common.retry import retry
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.pandad import can_list_to_can_capnp
-from openpilot.selfdrive.car.can_definitions import CanData
 from openpilot.system.hardware import TICI
 from openpilot.selfdrive.test.helpers import phone_only, with_processes
 

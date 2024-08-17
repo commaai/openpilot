@@ -3,7 +3,7 @@ import argparse
 import os
 
 from openpilot.common.basedir import BASEDIR
-from openpilot.selfdrive.car.docs import get_all_car_docs, generate_cars_md
+from opendbc.car.docs import get_all_car_docs, generate_cars_md
 
 CARS_MD_OUT = os.path.join(BASEDIR, "docs", "CARS.md")
 CARS_MD_TEMPLATE = os.path.join(BASEDIR, "selfdrive", "car", "CARS_template.md")
