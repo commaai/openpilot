@@ -114,6 +114,13 @@ class HondaNidecPlatformConfig(PlatformConfig):
 
 class CAR(Platforms):
   # Bosch Cars
+  HONDA_NBOX = HondaBoschPlatformConfig(
+    [
+      HondaCarDocs("Honda N-Box 2018", "All", min_steer_speed=5.),
+    ],
+    CarSpecs(mass=890., wheelbase=2.520, steerRatio=18.64),  # https://www.honda.co.jp/auto-archive/nbox/2019/ sterRatio is from liveParameters
+    dbc_dict('honda_nbox_2018_can_generated', None),
+  )
   HONDA_ACCORD = HondaBoschPlatformConfig(
     [
       HondaCarDocs("Honda Accord 2018-22", "All", video_link="https://www.youtube.com/watch?v=mrUwlj3Mi58", min_steer_speed=3. * CV.MPH_TO_MS),

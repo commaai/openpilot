@@ -10,6 +10,23 @@ Ecu = CarParams.Ecu
 
 
 FW_VERSIONS = {
+  CAR.HONDA_NBOX: {
+    (Ecu.vsa, 0x18da28f1, None): [
+      b'57114-TTA-J030\x00\x00',
+    ],
+    (Ecu.eps, 0x18da30f1, None): [
+      b'39990-TTA-J040\x00\x00',
+    ],
+    (Ecu.srs, 0x18da53f1, None): [
+      b'77959-TTA-N930\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x18dab0f1, None): [
+      b'36802-TTA-J070\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x18dab5f1, None): [
+      b'38897-TTA-J010\x00\x00',
+    ]
+  },
   CAR.HONDA_ACCORD: {
     (Ecu.shiftByWire, 0x18da0bf1, None): [
       b'54008-TVC-A910\x00\x00',
