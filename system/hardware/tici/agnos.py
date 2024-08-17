@@ -30,15 +30,23 @@ class StreamingDecompressor:
 
   def read(self, length: int) -> bytes:
     while len(self.buf) < length:
-      self.req.raise_for_status()
+      if self.decompressor.needs_input:
+        self.req.raise_for_status()
 
-      try:
-        compressed = next(self.it)
-      except StopIteration:
+        try:
+          compressed = next(self.it)
+        except StopIteration:
+          self.eof = True
+          break
+      else:
+        compressed = b''
+
+      out = self.decompressor.decompress(compressed, max_length=256 * 1024 * 1024)
+      self.buf += out
+
+      if self.decompressor.eof:
         self.eof = True
         break
-      out = self.decompressor.decompress(compressed)
-      self.buf += out
 
     result = self.buf[:length]
     self.buf = self.buf[length:]
