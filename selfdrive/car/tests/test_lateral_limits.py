@@ -5,10 +5,10 @@ from parameterized import parameterized_class
 import pytest
 import sys
 
-from openpilot.selfdrive.car import DT_CTRL
-from openpilot.selfdrive.car.car_helpers import interfaces
-from openpilot.selfdrive.car.fingerprints import all_known_cars
-from openpilot.selfdrive.car.interfaces import get_torque_params
+from opendbc.car import DT_CTRL
+from opendbc.car.car_helpers import interfaces
+from opendbc.car.fingerprints import all_known_cars
+from opendbc.car.interfaces import get_torque_params
 
 CAR_MODELS = all_known_cars()
 
@@ -41,7 +41,7 @@ class TestLateralLimits:
     if CP.notCar:
       pytest.skip()
 
-    CarControllerParams = importlib.import_module(f'selfdrive.car.{CP.carName}.values').CarControllerParams
+    CarControllerParams = importlib.import_module(f'opendbc.car.{CP.carName}.values').CarControllerParams
     cls.control_params = CarControllerParams(CP)
     cls.torque_params = get_torque_params()[cls.car_model]
 
