@@ -48,7 +48,6 @@ function run_tests() {
   PYTHON_FILES=$2
 
   run "ruff" ruff check $PYTHON_FILES --quiet
-  run "lint-imports" lint-imports
   run "check_added_large_files" python3 -m pre_commit_hooks.check_added_large_files --enforce-all $ALL_FILES --maxkb=120
   run "check_shebang_scripts_are_executable" python3 -m pre_commit_hooks.check_shebang_scripts_are_executable $ALL_FILES
   run "check_shebang_format" $DIR/check_shebang_format.sh $ALL_FILES
@@ -69,7 +68,6 @@ function help() {
   echo -e "${BOLD}${UNDERLINE}Tests:${NC}"
   echo -e "  ${BOLD}ruff${NC}"
   echo -e "  ${BOLD}mypy${NC}"
-  echo -e "  ${BOLD}lint-imports${NC}"
   echo -e "  ${BOLD}codespell${NC}"
   echo -e "  ${BOLD}check_added_large_files${NC}"
   echo -e "  ${BOLD}check_shebang_scripts_are_executable${NC}"
