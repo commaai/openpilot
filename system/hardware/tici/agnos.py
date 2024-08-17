@@ -29,7 +29,7 @@ class StreamingDecompressor:
     self.sha256 = hashlib.sha256()
 
   def read(self, length: int) -> bytes:
-    while len(self.buf) < length:
+    while len(self.buf) < length and not self.eof:
       if self.decompressor.needs_input:
         self.req.raise_for_status()
 
@@ -91,8 +91,11 @@ def unsparsify(f: StreamingDecompressor) -> Generator[bytes, None, None]:
 
 # noop wrapper with same API as unsparsify() for non sparse images
 def noop(f: StreamingDecompressor) -> Generator[bytes, None, None]:
-  while not f.eof:
-    yield f.read(1024 * 1024)
+  while True:
+    chunk = f.read(1024 * 1024)
+    if not chunk:
+      break
+    yield chunk
 
 
 def get_target_slot_number() -> int:
