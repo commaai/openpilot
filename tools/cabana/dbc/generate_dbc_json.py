@@ -2,8 +2,8 @@
 import argparse
 import json
 
-from openpilot.selfdrive.car.fingerprints import MIGRATION
-from openpilot.selfdrive.car.values import PLATFORMS
+from opendbc.car.fingerprints import MIGRATION
+from opendbc.car.values import PLATFORMS
 
 
 def generate_dbc_json() -> str:
