@@ -6,14 +6,14 @@ import importlib
 from parameterized import parameterized
 
 from cereal import car, messaging
-from openpilot.selfdrive.car import DT_CTRL, gen_empty_fingerprint
+from opendbc.car import DT_CTRL, gen_empty_fingerprint
+from opendbc.car.car_helpers import interfaces
+from opendbc.car.structs import CarParams
+from opendbc.car.fingerprints import all_known_cars
+from opendbc.car.fw_versions import FW_VERSIONS, FW_QUERY_CONFIGS
+from opendbc.car.interfaces import get_interface_attr
+from opendbc.car.mock.values import CAR as MOCK
 from openpilot.selfdrive.car.card import convert_carControl, convert_to_capnp
-from openpilot.selfdrive.car.car_helpers import interfaces
-from openpilot.selfdrive.car.structs import CarParams
-from openpilot.selfdrive.car.fingerprints import all_known_cars
-from openpilot.selfdrive.car.fw_versions import FW_VERSIONS, FW_QUERY_CONFIGS
-from openpilot.selfdrive.car.interfaces import get_interface_attr
-from openpilot.selfdrive.car.mock.values import CAR as MOCK
 from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
@@ -123,7 +123,7 @@ class TestCarInterfaces:
       LatControlTorque(car_params_capnp, car_interface)
 
     # Test radar interface
-    RadarInterface = importlib.import_module(f'selfdrive.car.{car_params.carName}.radar_interface').RadarInterface
+    RadarInterface = importlib.import_module(f'opendbc.car.{car_params.carName}.radar_interface').RadarInterface
     radar_interface = RadarInterface(car_params)
     assert radar_interface
 
