@@ -83,6 +83,5 @@ Learn about the openpilot ecosystem and tools by playing our [CTF](/tools/CTF.md
 ├── scripts/            # Miscellaneous scripts
 ├── serial/             # Tools for using the comma serial
 ├── sim/                # Run openpilot in a simulator
-├── ssh/                # SSH into a comma device
 └── webcam/             # Run openpilot on a PC with webcams
 ```
