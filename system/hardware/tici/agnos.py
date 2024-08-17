@@ -41,8 +41,7 @@ class StreamingDecompressor:
       else:
         compressed = b''
 
-      out = self.decompressor.decompress(compressed, max_length=length)
-      self.buf += out
+      self.buf += self.decompressor.decompress(compressed, max_length=length)
 
       if self.decompressor.eof:
         self.eof = True
@@ -91,10 +90,7 @@ def unsparsify(f: StreamingDecompressor) -> Generator[bytes, None, None]:
 
 # noop wrapper with same API as unsparsify() for non sparse images
 def noop(f: StreamingDecompressor) -> Generator[bytes, None, None]:
-  while True:
-    chunk = f.read(1024 * 1024)
-    if not chunk:
-      break
+  while len(chunk := f.read(1024 * 1024)) > 0:
     yield chunk
 
 
