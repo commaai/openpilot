@@ -1,9 +1,9 @@
 from collections import defaultdict
 
 from cereal import messaging
-from openpilot.selfdrive.car.fingerprints import MIGRATION
+from opendbc.car.fingerprints import MIGRATION
+from opendbc.car.toyota.values import EPS_SCALE
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
-from openpilot.selfdrive.car.toyota.values import EPS_SCALE
 from openpilot.system.manager.process_config import managed_processes
 from panda import Panda
 

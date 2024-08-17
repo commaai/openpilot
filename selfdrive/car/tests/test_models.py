@@ -14,13 +14,12 @@ from parameterized import parameterized_class
 from cereal import messaging, log, car
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
-from openpilot.selfdrive.car import DT_CTRL, gen_empty_fingerprint
-from openpilot.selfdrive.car import structs
-from openpilot.selfdrive.car.fingerprints import all_known_cars, MIGRATION
-from openpilot.selfdrive.car.car_helpers import FRAME_FINGERPRINT, interfaces
-from openpilot.selfdrive.car.honda.values import CAR as HONDA, HondaFlags
+from opendbc.car import DT_CTRL, gen_empty_fingerprint, structs
+from opendbc.car.fingerprints import all_known_cars, MIGRATION
+from opendbc.car.car_helpers import FRAME_FINGERPRINT, interfaces
+from opendbc.car.honda.values import CAR as HONDA, HondaFlags
+from opendbc.car.values import Platform
 from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
-from openpilot.selfdrive.car.values import Platform
 from openpilot.selfdrive.car.card import Car, convert_to_capnp
 from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.selfdrive.test.helpers import read_segment_list
@@ -233,7 +232,7 @@ class TestCarModelBase(unittest.TestCase):
     self.assertEqual(can_invalid_cnt, 0)
 
   def test_radar_interface(self):
-    RadarInterface = importlib.import_module(f'selfdrive.car.{self.CP.carName}.radar_interface').RadarInterface
+    RadarInterface = importlib.import_module(f'opendbc.car.{self.CP.carName}.radar_interface').RadarInterface
     RI = RadarInterface(self.CP)
     assert RI
 

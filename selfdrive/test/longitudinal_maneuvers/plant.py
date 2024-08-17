@@ -47,8 +47,8 @@ class Plant:
     time.sleep(0.1)
     self.sm = messaging.SubMaster(['longitudinalPlan'])
 
-    from openpilot.selfdrive.car.honda.values import CAR
-    from openpilot.selfdrive.car.honda.interface import CarInterface
+    from opendbc.car.honda.values import CAR
+    from opendbc.car.honda.interface import CarInterface
 
     self.planner = LongitudinalPlanner(CarInterface.get_non_essential_params(CAR.HONDA_CIVIC), init_v=self.speed)
 

@@ -1,9 +1,9 @@
 from cereal import car
 import cereal.messaging as messaging
-from openpilot.selfdrive.car import DT_CTRL, structs
-from openpilot.selfdrive.car.interfaces import MAX_CTRL_SPEED, CarStateBase, CarControllerBase
-from openpilot.selfdrive.car.volkswagen.values import CarControllerParams as VWCarControllerParams
-from openpilot.selfdrive.car.hyundai.interface import ENABLE_BUTTONS as HYUNDAI_ENABLE_BUTTONS
+from opendbc.car import DT_CTRL, structs
+from opendbc.car.interfaces import MAX_CTRL_SPEED, CarStateBase, CarControllerBase
+from opendbc.car.volkswagen.values import CarControllerParams as VWCarControllerParams
+from opendbc.car.hyundai.interface import ENABLE_BUTTONS as HYUNDAI_ENABLE_BUTTONS
 
 from openpilot.selfdrive.controls.lib.events import Events
 

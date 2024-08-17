@@ -3,11 +3,11 @@ import random
 
 import cereal.messaging as messaging
 from msgq.visionipc import VisionIpcServer, VisionStreamType
+from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.common.params import Params
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.car.card import convert_to_capnp
-from openpilot.selfdrive.car.car_helpers import get_demo_car_params
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state
 
