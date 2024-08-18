@@ -13,13 +13,11 @@ from cereal import messaging, car, log
 from msgq.visionipc import VisionIpcServer, VisionStreamType
 
 from cereal.messaging import SubMaster, PubMaster
-from openpilot.common.mock import mock_messages
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_MDL
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state
-from openpilot.tools.webcam.camera import Camera
 
 UI_DELAY = 0.5 # may be slower on CI?
 
@@ -76,7 +74,7 @@ def setup_onroad(click, pm: PubMaster):
 
   time.sleep(0.5) # give time for vipc server to start
 
-  IMG = Camera.bgr2nv12(np.random.randint(0, 255, (d.fcam.width, d.fcam.height, 3), dtype=np.uint8))
+  IMG = np.zeros((int(d.fcam.width*1.5), d.fcam.height), dtype=np.uint8)
   IMG_BYTES = IMG.flatten().tobytes()
 
   cams = ('roadCameraState', 'wideRoadCameraState')
@@ -93,16 +91,8 @@ def setup_onroad(click, pm: PubMaster):
     pm.send(msg.which(), msg)
     server.send(cam_meta.stream, IMG_BYTES, cs.frameId, cs.timestampSof, cs.timestampEof)
 
-@mock_messages(['liveLocationKalman'])
-def setup_onroad_map(click, pm: PubMaster):
-  setup_onroad(click, pm)
-
-  click(500, 500)
-
-  time.sleep(UI_DELAY) # give time for the map to render
-
 def setup_onroad_sidebar(click, pm: PubMaster):
-  setup_onroad_map(click, pm)
+  setup_onroad(click, pm)
   click(500, 500)
 
 CASES = {
@@ -110,13 +100,12 @@ CASES = {
   "settings_device": setup_settings_device,
   "settings_network": setup_settings_network,
   "onroad": setup_onroad,
-  "onroad_map": setup_onroad_map,
   "onroad_sidebar": setup_onroad_sidebar
 }
 
 TEST_DIR = pathlib.Path(__file__).parent
 
-TEST_OUTPUT_DIR = TEST_DIR / "report"
+TEST_OUTPUT_DIR = TEST_DIR / "report_1"
 SCREENSHOTS_DIR = TEST_OUTPUT_DIR / "screenshots"
 
 
@@ -127,7 +116,7 @@ class TestUI:
 
   def setup(self):
     self.sm = SubMaster(["uiDebug"])
-    self.pm = PubMaster(["deviceState", "pandaStates", "controlsState", 'roadCameraState', 'wideRoadCameraState', 'liveLocationKalman'])
+    self.pm = PubMaster(["deviceState", "pandaStates", "controlsState", 'roadCameraState', 'wideRoadCameraState'])
     while not self.sm.valid["uiDebug"]:
       self.sm.update(1)
     time.sleep(UI_DELAY) # wait a bit more for the UI to start rendering

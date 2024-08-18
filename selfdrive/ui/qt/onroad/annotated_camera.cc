@@ -31,11 +31,13 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   const auto cs = sm["controlsState"].getControlsState();
   const auto car_state = sm["carState"].getCarState();
 
+  is_metric = s.scene.is_metric;
+
   // Handle older routes where vCruiseCluster is not set
   float v_cruise = cs.getVCruiseCluster() == 0.0 ? cs.getVCruise() : cs.getVCruiseCluster();
   setSpeed = cs_alive ? v_cruise : SET_SPEED_NA;
   is_cruise_set = setSpeed > 0 && (int)setSpeed != SET_SPEED_NA;
-  if (is_cruise_set && !s.scene.is_metric) {
+  if (is_cruise_set && !is_metric) {
     setSpeed *= KM_TO_MILE;
   }
 
@@ -43,10 +45,9 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   v_ego_cluster_seen = v_ego_cluster_seen || car_state.getVEgoCluster() != 0.0;
   float v_ego = v_ego_cluster_seen ? car_state.getVEgoCluster() : car_state.getVEgo();
   speed = cs_alive ? std::max<float>(0.0, v_ego) : 0.0;
-  speed *= s.scene.is_metric ? MS_TO_KPH : MS_TO_MPH;
+  speed *= is_metric ? MS_TO_KPH : MS_TO_MPH;
 
-  is_metric = s.scene.is_metric;
-  speedUnit =  s.scene.is_metric ? tr("km/h") : tr("mph");
+  speedUnit = is_metric ? tr("km/h") : tr("mph");
   hideBottomIcons = (cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE);
   status = s.status;
 
@@ -176,10 +177,11 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
 
     for (int i = 0; i < max_len; ++i) {
       // Some points are out of frame
-      if (scene.track_vertices[i].y() < 0 || scene.track_vertices[i].y() > height()) continue;
+      int track_idx = (scene.track_vertices.length() / 2) - i;  // flip idx to start from top
+      if (scene.track_vertices[track_idx].y() < 0 || scene.track_vertices[track_idx].y() > height()) continue;
 
       // Flip so 0 is bottom of frame
-      float lin_grad_point = (height() - scene.track_vertices[i].y()) / height();
+      float lin_grad_point = (height() - scene.track_vertices[track_idx].y()) / height();
 
       // speed up: 120, slow down: 0
       float path_hue = fmax(fmin(60 + acceleration[i] * 35, 120), 0);

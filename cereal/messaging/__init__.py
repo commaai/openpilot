@@ -2,7 +2,8 @@
 from msgq.ipc_pyx import Context, Poller, SubSocket, PubSocket, SocketEventHandle, toggle_fake_events, \
                                 set_fake_prefix, get_fake_prefix, delete_fake_prefix, wait_for_one_event
 from msgq.ipc_pyx import MultiplePublishersError, IpcError
-from msgq import fake_event_handle, pub_sock, sub_sock, drain_sock_raw, context
+from msgq import fake_event_handle, pub_sock, sub_sock, drain_sock_raw
+import msgq
 
 import os
 import capnp
@@ -17,8 +18,12 @@ from cereal.services import SERVICE_LIST
 NO_TRAVERSAL_LIMIT = 2**64-1
 
 
-def log_from_bytes(dat: bytes) -> capnp.lib.capnp._DynamicStructReader:
-  with log.Event.from_bytes(dat, traversal_limit_in_words=NO_TRAVERSAL_LIMIT) as msg:
+def reset_context():
+  msgq.context = Context()
+
+
+def log_from_bytes(dat: bytes, struct: capnp.lib.capnp._StructModule = log.Event) -> capnp.lib.capnp._DynamicStructReader:
+  with struct.from_bytes(dat, traversal_limit_in_words=NO_TRAVERSAL_LIMIT) as msg:
     return msg
 
 

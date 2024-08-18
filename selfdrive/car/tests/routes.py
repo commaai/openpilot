@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
 from typing import NamedTuple
 
-from openpilot.selfdrive.car.chrysler.values import CAR as CHRYSLER
-from openpilot.selfdrive.car.gm.values import CAR as GM
-from openpilot.selfdrive.car.ford.values import CAR as FORD
-from openpilot.selfdrive.car.honda.values import CAR as HONDA
-from openpilot.selfdrive.car.hyundai.values import CAR as HYUNDAI
-from openpilot.selfdrive.car.nissan.values import CAR as NISSAN
-from openpilot.selfdrive.car.mazda.values import CAR as MAZDA
-from openpilot.selfdrive.car.subaru.values import CAR as SUBARU
-from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
-from openpilot.selfdrive.car.values import Platform
-from openpilot.selfdrive.car.volkswagen.values import CAR as VOLKSWAGEN
-from openpilot.selfdrive.car.tesla.values import CAR as TESLA
-from openpilot.selfdrive.car.body.values import CAR as COMMA
+from opendbc.car.chrysler.values import CAR as CHRYSLER
+from opendbc.car.gm.values import CAR as GM
+from opendbc.car.ford.values import CAR as FORD
+from opendbc.car.honda.values import CAR as HONDA
+from opendbc.car.hyundai.values import CAR as HYUNDAI
+from opendbc.car.nissan.values import CAR as NISSAN
+from opendbc.car.mazda.values import CAR as MAZDA
+from opendbc.car.subaru.values import CAR as SUBARU
+from opendbc.car.toyota.values import CAR as TOYOTA
+from opendbc.car.values import Platform
+from opendbc.car.volkswagen.values import CAR as VOLKSWAGEN
+from opendbc.car.body.values import CAR as COMMA
 
 # TODO: add routes for these cars
 non_tested_cars = [
@@ -39,7 +38,7 @@ routes = [
 
   CarTestRoute("0c94aa1e1296d7c6|2021-05-05--19-48-37", CHRYSLER.JEEP_GRAND_CHEROKEE),
   CarTestRoute("91dfedae61d7bd75|2021-05-22--20-07-52", CHRYSLER.JEEP_GRAND_CHEROKEE_2019),
-  CarTestRoute("420a8e183f1aed48|2020-03-05--07-15-29", CHRYSLER.CHRYSLER_PACIFICA_2017_HYBRID),
+  CarTestRoute("420a8e183f1aed48|2020-03-05--07-15-29", CHRYSLER.CHRYSLER_PACIFICA_2018_HYBRID),  # 2017
   CarTestRoute("43a685a66291579b|2021-05-27--19-47-29", CHRYSLER.CHRYSLER_PACIFICA_2018),
   CarTestRoute("378472f830ee7395|2021-05-28--07-38-43", CHRYSLER.CHRYSLER_PACIFICA_2018_HYBRID),
   CarTestRoute("8190c7275a24557b|2020-01-29--08-33-58", CHRYSLER.CHRYSLER_PACIFICA_2019_HYBRID),
@@ -288,10 +287,6 @@ routes = [
   CarTestRoute("fb53c640f499b73d|2021-06-01--04-17-56", MAZDA.MAZDA_6),
   CarTestRoute("f6d5b1a9d7a1c92e|2021-07-08--06-56-59", MAZDA.MAZDA_CX9_2021),
   CarTestRoute("a4af1602d8e668ac|2022-02-03--12-17-07", MAZDA.MAZDA_CX5_2022),
-
-  CarTestRoute("6c14ee12b74823ce|2021-06-30--11-49-02", TESLA.TESLA_AP1_MODELS),
-  CarTestRoute("bb50caf5f0945ab1|2021-06-19--17-20-18", TESLA.TESLA_AP2_MODELS),
-  CarTestRoute("66c1699b7697267d/2024-03-03--13-09-53", TESLA.TESLA_MODELS_RAVEN),
 
   # Segments that test specific issues
   # Controls mismatch due to standstill threshold

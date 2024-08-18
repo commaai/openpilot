@@ -6,7 +6,7 @@
 
 ```bash
 # Log in via browser to have access to routes from your comma account
-python tools/lib/auth.py
+python3 tools/lib/auth.py
 
 # Start a replay
 tools/replay/replay <route-name>
@@ -19,8 +19,10 @@ tools/replay/replay --demo
 # watch the replay with the normal openpilot UI
 cd selfdrive/ui && ./ui
 
-# or try out a debug visualizer:
-python replay/ui.py
+# or try out radar point visualization in Rerun:
+python3 replay/rp_visualization.py
+
+# NOTE: To visualize radar points, make sure tools/replay/replay is running.
 ```
 
 ## usage
@@ -34,10 +36,21 @@ Options:
   -h, --help             Displays this help.
   -a, --allow <allow>    whitelist of services to send
   -b, --block <block>    blacklist of services to send
+  -c, --cache <n>        cache <n> segments in memory. default is 5
   -s, --start <seconds>  start from <seconds>
+  -x <speed>             playback <speed>. between 0.2 - 3
   --demo                 use a demo route instead of providing your own
+  --data_dir <data_dir>  local directory with routes
+  --prefix <prefix>      set OPENPILOT_PREFIX
   --dcam                 load driver camera
   --ecam                 load wide road camera
+  --no-loop              stop at the end of the route
+  --no-cache             turn off local cache
+  --qcam                 load qcamera
+  --no-hw-decoder        disable HW video decoding
+  --no-vipc              do not output video
+  --all                  do output all messages including uiDebug, userFlag.
+                         this may causes issues when used along with UI
 
 Arguments:
   route                  the drive to replay. find your drives at

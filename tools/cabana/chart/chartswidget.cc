@@ -93,7 +93,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
   current_theme = settings.theme;
   column_count = std::clamp(settings.chart_column_count, 1, MAX_COLUMN_COUNT);
   max_chart_range = std::clamp(settings.chart_range, 1, settings.max_cached_minutes * 60);
-  display_range = {0, max_chart_range};
+  display_range = std::make_pair(can->minSeconds(), can->minSeconds() + max_chart_range);
   range_slider->setValue(max_chart_range);
   updateToolBar();
 
@@ -192,10 +192,10 @@ void ChartsWidget::updateState() {
   if (!time_range.has_value()) {
     double pos = (cur_sec - display_range.first) / std::max<float>(1.0, max_chart_range);
     if (pos < 0 || pos > 0.8) {
-      display_range.first = std::max(0.0, cur_sec - max_chart_range * 0.1);
+      display_range.first = std::max(can->minSeconds(), cur_sec - max_chart_range * 0.1);
     }
-    double max_sec = std::min(display_range.first + max_chart_range, can->totalSeconds());
-    display_range.first = std::max(0.0, max_sec - max_chart_range);
+    double max_sec = std::min(display_range.first + max_chart_range, can->maxSeconds());
+    display_range.first = std::max(can->minSeconds(), max_sec - max_chart_range);
     display_range.second = display_range.first + max_chart_range;
   }
 
@@ -435,14 +435,20 @@ void ChartsWidget::alignCharts() {
 
 bool ChartsWidget::eventFilter(QObject *o, QEvent *e) {
   if (value_tip_visible_ && e->type() == QEvent::MouseMove) {
-    auto pos = static_cast<QMouseEvent *>(e)->globalPos();
-    bool outside_plot_area =std::none_of(charts.begin(), charts.end(), [&pos](auto c) {
-      return c->chart()->plotArea().contains(c->mapFromGlobal(pos));
-    });
+    bool on_tip = qobject_cast<TipLabel *>(o) != nullptr;
+    auto global_pos = static_cast<QMouseEvent *>(e)->globalPos();
 
-    if (outside_plot_area) {
-      showValueTip(-1);
+    for (const auto &c : charts) {
+      auto local_pos = c->mapFromGlobal(global_pos);
+      if (c->chart()->plotArea().contains(local_pos)) {
+        if (on_tip) {
+          showValueTip(c->secondsAtPoint(local_pos));
+        }
+        return false;
+      }
     }
+
+    showValueTip(-1);
   }
   return false;
 }

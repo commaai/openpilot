@@ -9,6 +9,7 @@ Most development happens on normal Ubuntu workstations, and not in cars or direc
 ```bash
 # get the latest stuff
 git pull
+git lfs pull
 git submodule update --init --recursive
 
 # update dependencies
@@ -28,7 +29,7 @@ pytest
 cd system/loggerd && pytest .
 
 # run the linter
-pre-commit run --all
+op lint
 ```
 
 ## Testing

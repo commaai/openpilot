@@ -7,8 +7,10 @@ from tabulate import tabulate
 
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
+from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.common.mock import mock_messages
-from openpilot.selfdrive.car.car_helpers import write_car_param
+from openpilot.common.params import Params
+from openpilot.selfdrive.car.card import convert_to_capnp
 from openpilot.system.hardware.tici.power_monitor import get_power
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.manager.manager import manager_cleanup
@@ -41,7 +43,7 @@ PROCS = [
 class TestPowerDraw:
 
   def setup_method(self):
-    write_car_param()
+    Params().put("CarParams", convert_to_capnp(get_demo_car_params()).to_bytes())
 
     # wait a bit for power save to disable
     time.sleep(5)
@@ -94,7 +96,7 @@ class TestPowerDraw:
 
     return now, msg_counts, time.monotonic() - start_time - SAMPLE_TIME
 
-  @mock_messages(['liveLocationKalman'])
+  @mock_messages(['livePose'])
   def test_camera_procs(self, subtests):
     baseline = get_power()
 

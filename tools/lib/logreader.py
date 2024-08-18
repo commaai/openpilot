@@ -10,7 +10,7 @@ import sys
 import tqdm
 import urllib.parse
 import warnings
-import zstd
+import zstandard as zstd
 
 from collections.abc import Callable, Iterable, Iterator
 from urllib.parse import parse_qs, urlparse
@@ -25,6 +25,18 @@ from openpilot.tools.lib.route import Route, SegmentRange
 LogMessage = type[capnp._DynamicStructReader]
 LogIterable = Iterable[LogMessage]
 RawLogIterable = Iterable[bytes]
+
+
+def save_log(dest, log_msgs, compress=True):
+  dat = b"".join(msg.as_builder().to_bytes() for msg in log_msgs)
+
+  if compress and dest.endswith(".bz2"):
+    dat = bz2.compress(dat)
+  elif compress and dest.endswith(".zst"):
+    dat = zstd.compress(dat, 10)
+
+  with open(dest, "wb") as f:
+    f.write(dat)
 
 
 class _LogFileReader:
@@ -98,10 +110,10 @@ def auto_strategy(rlog_paths: LogPaths, qlog_paths: LogPaths, interactive: bool,
   missing_rlogs = [rlog is None or not valid_file(rlog) for rlog in rlog_paths].count(True)
   if missing_rlogs != 0:
     if interactive:
-      if input(f"{missing_rlogs} rlogs were not found, would you like to fallback to qlogs for those segments? (y/n) ").lower() != "y":
+      if input(f"{missing_rlogs}/{len(rlog_paths)} rlogs were not found, would you like to fallback to qlogs for those segments? (y/n) ").lower() != "y":
         return rlog_paths
     else:
-      cloudlog.warning(f"{missing_rlogs} rlogs were not found, falling back to qlogs for those segments...")
+      cloudlog.warning(f"{missing_rlogs}/{len(rlog_paths)} rlogs were not found, falling back to qlogs for those segments...")
 
     return [rlog if valid_file(rlog) else (qlog if valid_file(qlog) else None)
             for (rlog, qlog) in zip(rlog_paths, qlog_paths, strict=True)]
@@ -140,6 +152,7 @@ def internal_source(sr: SegmentRange, mode: ReadMode, file_ext: str = "bz2") -> 
   def get_internal_url(sr: SegmentRange, seg, file):
     return f"cd:/{sr.dongle_id}/{sr.log_id}/{seg}/{file}.{file_ext}"
 
+  # TODO: list instead of using static URLs to support routes with multiple file extensions
   rlog_paths = [get_internal_url(sr, seg, "rlog") for seg in sr.seg_idxs]
   qlog_paths = [get_internal_url(sr, seg, "qlog") for seg in sr.seg_idxs]
 
@@ -159,6 +172,12 @@ def openpilotci_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
 
 def comma_car_segments_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
   return [get_comma_segments_url(sr.route_name, seg) for seg in sr.seg_idxs]
+
+
+def testing_closet_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
+  if not internal_source_available('http://testing.comma.life'):
+    raise InternalUnavailableException
+  return [f"http://testing.comma.life/download/{sr.route_name.replace('|', '/')}/{seg}/rlog" for seg in sr.seg_idxs]
 
 
 def direct_source(file_or_url: str) -> LogPaths:
@@ -182,7 +201,7 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
   if mode == ReadMode.SANITIZED:
     return comma_car_segments_source(sr, mode)
 
-  SOURCES: list[Source] = [internal_source, internal_source_zst, openpilotci_source, comma_api_source, comma_car_segments_source,]
+  SOURCES: list[Source] = [internal_source, internal_source_zst, openpilotci_source, comma_api_source, comma_car_segments_source, testing_closet_source,]
   exceptions = {}
 
   # for automatic fallback modes, auto_source needs to first check if rlogs exist for any source
@@ -280,11 +299,11 @@ are uploaded or auto fallback to qlogs with '/a' selector at the end of the rout
   def _run_on_segment(self, func, i):
     return func(self._get_lr(i))
 
-  def run_across_segments(self, num_processes, func):
+  def run_across_segments(self, num_processes, func, desc=None):
     with multiprocessing.Pool(num_processes) as pool:
       ret = []
       num_segs = len(self.logreader_identifiers)
-      for p in tqdm.tqdm(pool.imap(partial(self._run_on_segment, func), range(num_segs)), total=num_segs):
+      for p in tqdm.tqdm(pool.imap(partial(self._run_on_segment, func), range(num_segs)), total=num_segs, desc=desc):
         ret.extend(p)
       return ret
 

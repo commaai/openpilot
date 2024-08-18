@@ -760,14 +760,6 @@ This may take up to a minute.</source>
         <translation>PANDA</translation>
     </message>
     <message>
-        <source>GPS</source>
-        <translation>จีพีเอส</translation>
-    </message>
-    <message>
-        <source>SEARCH</source>
-        <translation>ค้นหา</translation>
-    </message>
-    <message>
         <source>--</source>
         <translation>--</translation>
     </message>

@@ -1,25 +1,15 @@
-[submodule "panda"]
-  path = panda
-  # url = ../../commaai/panda.git
-  url = https://github.com/alexandresato/panda.git
-  branch = port_gwm_haval_h6
 [submodule "opendbc"]
-  path = opendbc
-  # url = ../../commaai/opendbc.git
-  url = https://github.com/alexandresato/opendbc.git
-  branch = port_gwm_haval_h6
+  path = opendbc_repo
+  url = ../../commaai/opendbc.git
 [submodule "msgq"]
   path = msgq_repo
   url = ../../commaai/msgq.git
 [submodule "rednose_repo"]
   path = rednose_repo
   url = ../../commaai/rednose.git
-[submodule "body"]
-  path = body
-  url = ../../commaai/body.git
 [submodule "teleoprtc_repo"]
   path = teleoprtc_repo
   url = ../../commaai/teleoprtc
 [submodule "tinygrad"]
   path = tinygrad_repo
-  url = https://github.com/geohot/tinygrad.git
+  url = https://github.com/tinygrad/tinygrad.git

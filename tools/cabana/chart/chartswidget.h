@@ -110,7 +110,6 @@ private:
   QTimer *align_timer;
   int current_theme = 0;
   bool value_tip_visible_ = false;
-  friend class ZoomCommand;
   friend class ChartView;
   friend class ChartsContainer;
 };

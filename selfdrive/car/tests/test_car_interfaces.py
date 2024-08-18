@@ -6,16 +6,19 @@ import importlib
 from parameterized import parameterized
 
 from cereal import car, messaging
-from openpilot.common.realtime import DT_CTRL
-from openpilot.selfdrive.car import gen_empty_fingerprint
-from openpilot.selfdrive.car.car_helpers import interfaces
-from openpilot.selfdrive.car.fingerprints import all_known_cars
-from openpilot.selfdrive.car.fw_versions import FW_VERSIONS, FW_QUERY_CONFIGS
-from openpilot.selfdrive.car.interfaces import get_interface_attr
+from opendbc.car import DT_CTRL, gen_empty_fingerprint
+from opendbc.car.car_helpers import interfaces
+from opendbc.car.structs import CarParams
+from opendbc.car.fingerprints import all_known_cars
+from opendbc.car.fw_versions import FW_VERSIONS, FW_QUERY_CONFIGS
+from opendbc.car.interfaces import get_interface_attr
+from opendbc.car.mock.values import CAR as MOCK
+from openpilot.selfdrive.car.card import convert_carControl, convert_to_capnp
 from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.longcontrol import LongControl
+from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
 
 ALL_ECUS = {ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()}
@@ -42,8 +45,8 @@ def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
   })
 
   params: dict = draw(params_strategy)
-  params['car_fw'] = [car.CarParams.CarFw(ecu=fw[0], address=fw[1], subAddress=fw[2] or 0,
-                                          request=draw(st.sampled_from(sorted(ALL_REQUESTS))))
+  params['car_fw'] = [CarParams.CarFw(ecu=fw[0], address=fw[1], subAddress=fw[2] or 0,
+                                      request=draw(st.sampled_from(sorted(ALL_REQUESTS))))
                       for fw in params['car_fw']]
   return params
 
@@ -51,7 +54,7 @@ def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
 class TestCarInterfaces:
   # FIXME: Due to the lists used in carParams, Phase.target is very slow and will cause
   #  many generated examples to overrun when max_examples > ~20, don't use it
-  @parameterized.expand([(car,) for car in sorted(all_known_cars())])
+  @parameterized.expand([(car,) for car in sorted(all_known_cars())] + [MOCK.MOCK])
   @settings(max_examples=MAX_EXAMPLES, deadline=None,
             phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
@@ -77,12 +80,13 @@ class TestCarInterfaces:
     assert len(car_params.longitudinalTuning.kiV) == len(car_params.longitudinalTuning.kiBP)
 
     # Lateral sanity checks
-    if car_params.steerControlType != car.CarParams.SteerControlType.angle:
+    if car_params.steerControlType != CarParams.SteerControlType.angle:
       tune = car_params.lateralTuning
       if tune.which() == 'pid':
-        assert not math.isnan(tune.pid.kf) and tune.pid.kf > 0
-        assert len(tune.pid.kpV) > 0 and len(tune.pid.kpV) == len(tune.pid.kpBP)
-        assert len(tune.pid.kiV) > 0 and len(tune.pid.kiV) == len(tune.pid.kiBP)
+        if car_name != MOCK.MOCK:
+          assert not math.isnan(tune.pid.kf) and tune.pid.kf > 0
+          assert len(tune.pid.kpV) > 0 and len(tune.pid.kpV) == len(tune.pid.kpBP)
+          assert len(tune.pid.kiV) > 0 and len(tune.pid.kiV) == len(tune.pid.kiBP)
 
       elif tune.which() == 'torque':
         assert not math.isnan(tune.torque.kf) and tune.torque.kf > 0
@@ -92,31 +96,34 @@ class TestCarInterfaces:
     # Run car interface
     now_nanos = 0
     CC = car.CarControl.new_message(**cc_msg)
+    CC = convert_carControl(CC.as_reader())
     for _ in range(10):
-      car_interface.update(CC, [])
-      car_interface.apply(CC.as_reader(), now_nanos)
+      car_interface.update([])
+      car_interface.apply(CC, now_nanos)
       now_nanos += DT_CTRL * 1e9  # 10 ms
 
     CC = car.CarControl.new_message(**cc_msg)
     CC.enabled = True
+    CC = convert_carControl(CC.as_reader())
     for _ in range(10):
-      car_interface.update(CC, [])
-      car_interface.apply(CC.as_reader(), now_nanos)
+      car_interface.update([])
+      car_interface.apply(CC, now_nanos)
       now_nanos += DT_CTRL * 1e9  # 10ms
 
     # Test controller initialization
     # TODO: wait until card refactor is merged to run controller a few times,
     #  hypothesis also slows down significantly with just one more message draw
-    LongControl(car_params)
-    if car_params.steerControlType == car.CarParams.SteerControlType.angle:
-      LatControlAngle(car_params, car_interface)
+    car_params_capnp = convert_to_capnp(car_params).as_reader()
+    LongControl(car_params_capnp)
+    if car_params.steerControlType == CarParams.SteerControlType.angle:
+      LatControlAngle(car_params_capnp, car_interface)
     elif car_params.lateralTuning.which() == 'pid':
-      LatControlPID(car_params, car_interface)
+      LatControlPID(car_params_capnp, car_interface)
     elif car_params.lateralTuning.which() == 'torque':
-      LatControlTorque(car_params, car_interface)
+      LatControlTorque(car_params_capnp, car_interface)
 
     # Test radar interface
-    RadarInterface = importlib.import_module(f'selfdrive.car.{car_params.carName}.radar_interface').RadarInterface
+    RadarInterface = importlib.import_module(f'opendbc.car.{car_params.carName}.radar_interface').RadarInterface
     radar_interface = RadarInterface(car_params)
     assert radar_interface
 
@@ -128,14 +135,14 @@ class TestCarInterfaces:
 
     # Test radar fault
     if not car_params.radarUnavailable and radar_interface.rcp is not None:
-      cans = [messaging.new_message('can', 1).to_bytes() for _ in range(5)]
+      cans = can_capnp_to_list([messaging.new_message('can', 1).to_bytes() for _ in range(5)])
       rr = radar_interface.update(cans)
       assert rr is None or len(rr.errors) > 0
 
   def test_interface_attrs(self):
     """Asserts basic behavior of interface attribute getter"""
     num_brands = len(get_interface_attr('CAR'))
-    assert num_brands >= 13
+    assert num_brands >= 12
 
     # Should return value for all brands when not combining, even if attribute doesn't exist
     ret = get_interface_attr('FAKE_ATTR')

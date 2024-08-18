@@ -4,8 +4,8 @@ from collections import defaultdict
 import difflib
 import pickle
 
-from openpilot.selfdrive.car.docs import get_all_car_docs
-from openpilot.selfdrive.car.docs_definitions import Column
+from opendbc.car.docs import get_all_car_docs
+from opendbc.car.docs_definitions import Column
 
 FOOTNOTE_TAG = "<sup>{}</sup>"
 STAR_ICON = '<a href="##"><img valign="top" ' + \

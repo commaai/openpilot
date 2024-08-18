@@ -4,8 +4,8 @@ import random
 
 from cereal import car, log
 import cereal.messaging as messaging
+from opendbc.car.honda.interface import CarInterface
 from openpilot.common.realtime import DT_CTRL
-from openpilot.selfdrive.car.honda.interface import CarInterface
 from openpilot.selfdrive.controls.lib.events import ET, Events
 from openpilot.selfdrive.controls.lib.alertmanager import AlertManager
 from openpilot.system.manager.process_config import managed_processes
@@ -54,7 +54,7 @@ def cycle_alerts(duration=200, is_metric=False):
   CS = car.CarState.new_message()
   CP = CarInterface.get_non_essential_params("HONDA_CIVIC")
   sm = messaging.SubMaster(['deviceState', 'pandaStates', 'roadCameraState', 'modelV2', 'liveCalibration',
-                            'driverMonitoringState', 'longitudinalPlan', 'liveLocationKalman',
+                            'driverMonitoringState', 'longitudinalPlan', 'livePose',
                             'managerState'] + cameras)
 
   pm = messaging.PubMaster(['controlsState', 'pandaStates', 'deviceState'])
