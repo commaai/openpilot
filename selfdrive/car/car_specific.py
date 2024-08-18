@@ -167,6 +167,13 @@ class CarSpecificEvents:
       if self.low_speed_alert:
         events.add(EventName.belowSteerSpeed)
 
+    elif self.CP.carName == 'gwm':
+      events = self.create_common_events(CS.out, CS_prev)
+      # BEGIN TODO clean-after-port
+      if CS.out.brakePressed:
+        events.add(EventName.reverseGear)
+      # END TODO clean-after-port
+
     else:
       raise ValueError(f"Unsupported car: {self.CP.carName}")
 
