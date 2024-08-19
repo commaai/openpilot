@@ -136,6 +136,7 @@ class SubMaster:
                ignore_alive: Optional[List[str]] = None, ignore_avg_freq: Optional[List[str]] = None,
                ignore_valid: Optional[List[str]] = None, addr: str = "127.0.0.1", frequency: Optional[float] = None):
     self.frame = -1
+    self.services = services
     self.seen = {s: False for s in services}
     self.updated = {s: False for s in services}
     self.recv_time = {s: 0. for s in services}
@@ -194,7 +195,7 @@ class SubMaster:
 
   def update_msgs(self, cur_time: float, msgs: List[capnp.lib.capnp._DynamicStructReader]) -> None:
     self.frame += 1
-    self.updated = dict.fromkeys(self.updated, False)
+    self.updated = dict.fromkeys(self.services, False)
     for msg in msgs:
       if msg is None:
         continue
@@ -210,7 +211,7 @@ class SubMaster:
       self.logMonoTime[s] = msg.logMonoTime
       self.valid[s] = msg.valid
 
-    for s in self.data:
+    for s in self.services:
       if SERVICE_LIST[s].frequency > 1e-5 and not self.simulation:
         # alive if delay is within 10x the expected frequency
         self.alive[s] = (cur_time - self.recv_time[s]) < (10. / SERVICE_LIST[s].frequency)
@@ -220,19 +221,13 @@ class SubMaster:
         self.alive[s] = self.seen[s] if self.simulation else True
 
   def all_alive(self, service_list: Optional[List[str]] = None) -> bool:
-    if service_list is None:
-      service_list = list(self.sock.keys())
-    return all(self.alive[s] for s in service_list if s not in self.ignore_alive)
+    return all(self.alive[s] for s in (service_list or self.services) if s not in self.ignore_alive)
 
   def all_freq_ok(self, service_list: Optional[List[str]] = None) -> bool:
-    if service_list is None:
-      service_list = list(self.sock.keys())
-    return all(self.freq_ok[s] for s in service_list if self._check_avg_freq(s))
+    return all(self.freq_ok[s] for s in (service_list or self.services) if self._check_avg_freq(s))
 
   def all_valid(self, service_list: Optional[List[str]] = None) -> bool:
-    if service_list is None:
-      service_list = list(self.sock.keys())
-    return all(self.valid[s] for s in service_list if s not in self.ignore_valid)
+    return all(self.valid[s] for s in (service_list or self.services) if s not in self.ignore_valid)
 
   def all_checks(self, service_list: Optional[List[str]] = None) -> bool:
     return self.all_alive(service_list) and self.all_freq_ok(service_list) and self.all_valid(service_list)
