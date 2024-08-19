@@ -3,8 +3,6 @@ import capnp
 import os
 import time
 from typing import Any
-from dataclasses import asdict
-import copy
 
 import cereal.messaging as messaging
 
@@ -36,7 +34,6 @@ carlog.addHandler(ForwardingHandler(cloudlog))
 
 def obd_callback(params: Params) -> ObdCallback:
   def set_obd_multiplexing(obd_multiplexing: bool):
-    return
     if params.get_bool("ObdMultiplexingEnabled") != obd_multiplexing:
       cloudlog.warning(f"Setting OBD multiplexing to {obd_multiplexing}")
       params.remove("ObdMultiplexingChanged")
@@ -135,7 +132,7 @@ class Car:
   CP_capnp: car.CarParams
 
   def __init__(self, CI=None) -> None:
-    self.can_sock = messaging.sub_sock('can', timeout=5)
+    self.can_sock = messaging.sub_sock('can', timeout=20)
     self.sm = messaging.SubMaster(['pandaStates', 'carControl', 'onroadEvents'])
     self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams', 'carOutput'])
 
@@ -197,8 +194,6 @@ class Car:
     if prev_cp is not None:
       self.params.put("CarParamsPrevRoute", prev_cp)
 
-    self.can_strs = []
-
     # Write CarParams for controls and radard
     # convert to pycapnp representation for caching and logging
     self.CP_capnp = convert_to_capnp(self.CP)
@@ -213,17 +208,13 @@ class Car:
     self.mock_carstate = MockCarState()
 
     # card is driven by can recv, expected at 100Hz
-    self.rk = Ratekeeper(10000, print_delay_threshold=None)
+    self.rk = Ratekeeper(100, print_delay_threshold=None)
 
   def state_update(self) -> car.CarState:
     """carState update loop, driven by can"""
 
     # Update carState from CAN
-    if len(self.can_strs) < 100:
-      can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
-      self.can_strs.append(can_strs)
-    else:
-      can_strs = self.can_strs[50]
+    can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
     CS = convert_to_capnp(self.CI.update(can_capnp_to_list(can_strs)))
 
     if self.CP.carName == 'mock':
@@ -323,8 +314,7 @@ class Car:
   def card_thread(self):
     while True:
       self.step()
-      # self.rk.monitor_time()
-      self.rk.keep_time()
+      self.rk.monitor_time()
 
 
 def main():
