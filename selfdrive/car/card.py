@@ -213,7 +213,7 @@ class Car:
     self.mock_carstate = MockCarState()
 
     # card is driven by can recv, expected at 100Hz
-    self.rk = Ratekeeper(5000, print_delay_threshold=None)
+    self.rk = Ratekeeper(10000, print_delay_threshold=None)
 
   def state_update(self) -> car.CarState:
     """carState update loop, driven by can"""
@@ -271,13 +271,13 @@ class Car:
       cp_send = messaging.new_message('carParams')
       cp_send.valid = True
       cp_send.carParams = self.CP_capnp
-      # self.pm.send('carParams', cp_send)
+      self.pm.send('carParams', cp_send)
 
     # publish new carOutput
     co_send = messaging.new_message('carOutput')
     co_send.valid = self.sm.all_checks(['carControl'])
     co_send.carOutput.actuatorsOutput = convert_to_capnp(self.last_actuators_output)
-    # self.pm.send('carOutput', co_send)
+    self.pm.send('carOutput', co_send)
 
     # kick off controlsd step while we actuate the latest carControl packet
     cs_send = messaging.new_message('carState')
@@ -285,7 +285,7 @@ class Car:
     cs_send.carState = CS
     cs_send.carState.canErrorCounter = self.can_rcv_cum_timeout_counter
     cs_send.carState.cumLagMs = -self.rk.remaining * 1000.
-    # self.pm.send('carState', cs_send)
+    self.pm.send('carState', cs_send)
 
   def controls_update(self, CS: car.CarState, CC: car.CarControl):
     """control update loop, driven by carControl"""
