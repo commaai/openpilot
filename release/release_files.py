@@ -118,6 +118,8 @@ whitelist = [
   "opendbc_repo/dbc/toyota_tss2_adas.dbc",
   "opendbc_repo/dbc/vw_golf_mk4.dbc",
   "opendbc_repo/dbc/vw_mqb_2010.dbc",
+  "opendbc_repo/dbc/tesla_model3_party.dbc",
+  "opendbc_repo/dbc/tesla_model3_vehicle.dbc",
 ]
 
 
