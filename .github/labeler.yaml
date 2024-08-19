@@ -2,6 +2,10 @@ CI / testing:
   - changed-files:
     - any-glob-to-all-files: "{.github/**,**/test_*,Jenkinsfile}"
 
+car:
+  - changed-files:
+    - any-glob-to-all-files: 'selfdrive/car/**'
+
 simulation:
   - changed-files:
     - any-glob-to-all-files: 'tools/sim/**'
