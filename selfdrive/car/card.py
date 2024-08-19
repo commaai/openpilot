@@ -202,10 +202,10 @@ class Car:
     # Write CarParams for controls and radard
     # convert to pycapnp representation for caching and logging
     self.CP_capnp = convert_to_capnp(self.CP)
-    # cp_bytes = self.CP_capnp.to_bytes()
-    # self.params.put("CarParams", cp_bytes)
-    # self.params.put_nonblocking("CarParamsCache", cp_bytes)
-    # self.params.put_nonblocking("CarParamsPersistent", cp_bytes)
+    cp_bytes = self.CP_capnp.to_bytes()
+    self.params.put("CarParams", cp_bytes)
+    self.params.put_nonblocking("CarParamsCache", cp_bytes)
+    self.params.put_nonblocking("CarParamsPersistent", cp_bytes)
 
     self.events = Events()
 
@@ -225,7 +225,6 @@ class Car:
     else:
       can_strs = self.can_strs[50]
     CS = convert_to_capnp(self.CI.update(can_capnp_to_list(can_strs)))
-    return
 
     if self.CP.carName == 'mock':
       CS = self.mock_carstate.update(CS)
@@ -265,7 +264,6 @@ class Car:
     CS.events = self.events.to_msg()
 
   def state_publish(self, CS: car.CarState):
-    print('loop')
     """carState and carParams publish loop"""
 
     # carParams - logged every 50 seconds (> 1 per segment)
@@ -273,13 +271,13 @@ class Car:
       cp_send = messaging.new_message('carParams')
       cp_send.valid = True
       cp_send.carParams = self.CP_capnp
-      self.pm.send('carParams', cp_send)
+      # self.pm.send('carParams', cp_send)
 
     # publish new carOutput
     co_send = messaging.new_message('carOutput')
     co_send.valid = self.sm.all_checks(['carControl'])
     co_send.carOutput.actuatorsOutput = convert_to_capnp(self.last_actuators_output)
-    self.pm.send('carOutput', co_send)
+    # self.pm.send('carOutput', co_send)
 
     # kick off controlsd step while we actuate the latest carControl packet
     cs_send = messaging.new_message('carState')
@@ -287,7 +285,7 @@ class Car:
     cs_send.carState = CS
     cs_send.carState.canErrorCounter = self.can_rcv_cum_timeout_counter
     cs_send.carState.cumLagMs = -self.rk.remaining * 1000.
-    self.pm.send('carState', cs_send)
+    # self.pm.send('carState', cs_send)
 
   def controls_update(self, CS: car.CarState, CC: car.CarControl):
     """control update loop, driven by carControl"""
@@ -309,8 +307,6 @@ class Car:
 
   def step(self):
     CS = self.state_update()
-
-    return
 
     self.update_events(CS)
 
