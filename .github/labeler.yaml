@@ -4,7 +4,7 @@ CI / testing:
 
 car:
   - changed-files:
-    - any-glob-to-all-files: 'selfdrive/car/**'
+    - any-glob-to-all-files: 'selfdrive/car/**,opendbc'
 
 simulation:
   - changed-files:
