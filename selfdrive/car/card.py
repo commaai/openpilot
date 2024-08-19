@@ -3,6 +3,8 @@ import capnp
 import os
 import time
 from typing import Any
+from dataclasses import asdict
+import copy
 
 import cereal.messaging as messaging
 
@@ -34,6 +36,7 @@ carlog.addHandler(ForwardingHandler(cloudlog))
 
 def obd_callback(params: Params) -> ObdCallback:
   def set_obd_multiplexing(obd_multiplexing: bool):
+    return
     if params.get_bool("ObdMultiplexingEnabled") != obd_multiplexing:
       cloudlog.warning(f"Setting OBD multiplexing to {obd_multiplexing}")
       params.remove("ObdMultiplexingChanged")
@@ -66,6 +69,18 @@ def is_dataclass(obj):
   return hasattr(obj, _FIELDS)
 
 
+def _asdictref_inner(obj) -> dict[str, Any] | Any:
+  if is_dataclass(obj):
+    ret = {}
+    for field in getattr(obj, _FIELDS):  # similar to dataclasses.fields()
+      ret[field] = _asdictref_inner(getattr(obj, field))
+    return ret
+  elif isinstance(obj, (tuple, list)):
+    return type(obj)(_asdictref_inner(v) for v in obj)
+  else:
+    return obj
+
+
 def asdictref(obj) -> dict[str, Any]:
   """
   Similar to dataclasses.asdict without recursive type checking and copy.deepcopy
@@ -73,17 +88,6 @@ def asdictref(obj) -> dict[str, Any]:
   """
   if not is_dataclass(obj):
     raise TypeError("asdictref() should be called on dataclass instances")
-
-  def _asdictref_inner(obj) -> dict[str, Any] | Any:
-    if is_dataclass(obj):
-      ret = {}
-      for field in getattr(obj, _FIELDS):  # similar to dataclasses.fields()
-        ret[field] = _asdictref_inner(getattr(obj, field))
-      return ret
-    elif isinstance(obj, (tuple, list)):
-      return type(obj)(_asdictref_inner(v) for v in obj)
-    else:
-      return obj
 
   return _asdictref_inner(obj)
 
@@ -131,7 +135,7 @@ class Car:
   CP_capnp: car.CarParams
 
   def __init__(self, CI=None) -> None:
-    self.can_sock = messaging.sub_sock('can', timeout=20)
+    self.can_sock = messaging.sub_sock('can', timeout=5)
     self.sm = messaging.SubMaster(['pandaStates', 'carControl', 'onroadEvents'])
     self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams', 'carOutput'])
 
@@ -193,13 +197,15 @@ class Car:
     if prev_cp is not None:
       self.params.put("CarParamsPrevRoute", prev_cp)
 
+    self.can_strs = []
+
     # Write CarParams for controls and radard
     # convert to pycapnp representation for caching and logging
     self.CP_capnp = convert_to_capnp(self.CP)
-    cp_bytes = self.CP_capnp.to_bytes()
-    self.params.put("CarParams", cp_bytes)
-    self.params.put_nonblocking("CarParamsCache", cp_bytes)
-    self.params.put_nonblocking("CarParamsPersistent", cp_bytes)
+    # cp_bytes = self.CP_capnp.to_bytes()
+    # self.params.put("CarParams", cp_bytes)
+    # self.params.put_nonblocking("CarParamsCache", cp_bytes)
+    # self.params.put_nonblocking("CarParamsPersistent", cp_bytes)
 
     self.events = Events()
 
@@ -207,14 +213,19 @@ class Car:
     self.mock_carstate = MockCarState()
 
     # card is driven by can recv, expected at 100Hz
-    self.rk = Ratekeeper(100, print_delay_threshold=None)
+    self.rk = Ratekeeper(5000, print_delay_threshold=None)
 
   def state_update(self) -> car.CarState:
     """carState update loop, driven by can"""
 
     # Update carState from CAN
-    can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
+    if len(self.can_strs) < 100:
+      can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
+      self.can_strs.append(can_strs)
+    else:
+      can_strs = self.can_strs[50]
     CS = convert_to_capnp(self.CI.update(can_capnp_to_list(can_strs)))
+    return
 
     if self.CP.carName == 'mock':
       CS = self.mock_carstate.update(CS)
@@ -254,6 +265,7 @@ class Car:
     CS.events = self.events.to_msg()
 
   def state_publish(self, CS: car.CarState):
+    print('loop')
     """carState and carParams publish loop"""
 
     # carParams - logged every 50 seconds (> 1 per segment)
@@ -298,6 +310,8 @@ class Car:
   def step(self):
     CS = self.state_update()
 
+    return
+
     self.update_events(CS)
 
     self.state_publish(CS)
@@ -313,7 +327,8 @@ class Car:
   def card_thread(self):
     while True:
       self.step()
-      self.rk.monitor_time()
+      # self.rk.monitor_time()
+      self.rk.keep_time()
 
 
 def main():
