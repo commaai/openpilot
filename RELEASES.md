@@ -1,6 +1,7 @@
 Version 0.9.8 (2024-XX-XX)
 ========================
 * Added toggle to enable driver monitoring even when openpilot is not engaged
+* Hyundai Creta (Non-US only) 2024 support thanks to sunnyhaibin!
 
 Version 0.9.7 (2024-06-13)
 ========================
