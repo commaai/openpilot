@@ -112,18 +112,18 @@ def convert_to_capnp(struct: structs.CarParams | structs.CarState | structs.CarC
 
 
 def convert_carControl(struct: capnp.lib.capnp._DynamicStructReader) -> structs.CarControl:
-  # TODO: recursively handle any car struct as needed
-  def remove_deprecated(s: dict) -> dict:
-    return {k: v for k, v in s.items() if not k.endswith('DEPRECATED')}
+  def remove_deprecated_recursive(d: dict) -> dict:
+    cleaned_dict = {}
+    for k, v in d.items():
+      if not k.endswith('DEPRECATED'):
+        if isinstance(v, dict):
+          cleaned_dict[k] = remove_deprecated_recursive(v)
+        else:
+          cleaned_dict[k] = v
+    return cleaned_dict
 
-  struct_dict = struct.to_dict()
-  struct_dataclass = structs.CarControl(**remove_deprecated({k: v for k, v in struct_dict.items() if not isinstance(k, dict)}))
-
-  struct_dataclass.actuators = structs.CarControl.Actuators(**remove_deprecated(struct_dict.get('actuators', {})))
-  struct_dataclass.cruiseControl = structs.CarControl.CruiseControl(**remove_deprecated(struct_dict.get('cruiseControl', {})))
-  struct_dataclass.hudControl = structs.CarControl.HUDControl(**remove_deprecated(struct_dict.get('hudControl', {})))
-
-  return struct_dataclass
+  struct_dict = remove_deprecated_recursive(struct.to_dict())
+  return structs.CarControl(**struct_dict)
 
 
 class Car:
