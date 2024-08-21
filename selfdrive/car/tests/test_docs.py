@@ -1,5 +1,6 @@
 from opendbc.car.docs import generate_cars_md, get_all_car_docs
 from openpilot.selfdrive.car.docs import CARS_MD_OUT, CARS_MD_TEMPLATE
+from openpilot.selfdrive.debug.print_docs_diff import print_car_docs_diff
 
 
 class TestCarDocs:
@@ -13,3 +14,6 @@ class TestCarDocs:
       current_cars_md = f.read()
 
     assert generated_cars_md == current_cars_md, "Run selfdrive/opcar/docs.py to update the compatibility documentation"
+
+  def test_docs_diff(self):
+    print_car_docs_diff(CARS_MD_OUT)
