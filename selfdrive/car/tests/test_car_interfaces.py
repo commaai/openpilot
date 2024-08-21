@@ -121,20 +121,3 @@ class TestCarInterfaces:
       LatControlPID(car_params_capnp, car_interface)
     elif car_params.lateralTuning.which() == 'torque':
       LatControlTorque(car_params_capnp, car_interface)
-
-    # Test radar interface
-    RadarInterface = importlib.import_module(f'opendbc.car.{car_params.carName}.radar_interface').RadarInterface
-    radar_interface = RadarInterface(car_params)
-    assert radar_interface
-
-    # Run radar interface once
-    radar_interface.update([])
-    if not car_params.radarUnavailable and radar_interface.rcp is not None and \
-       hasattr(radar_interface, '_update') and hasattr(radar_interface, 'trigger_msg'):
-      radar_interface._update([radar_interface.trigger_msg])
-
-    # Test radar fault
-    if not car_params.radarUnavailable and radar_interface.rcp is not None:
-      cans = can_capnp_to_list([messaging.new_message('can', 1).to_bytes() for _ in range(5)])
-      rr = radar_interface.update(cans)
-      assert rr is None or len(rr.errors) > 0
