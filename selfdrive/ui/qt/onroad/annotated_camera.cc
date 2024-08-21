@@ -178,7 +178,6 @@ void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
     for (int i = 0; i < max_len; ++i) {
       // Some points are out of frame
       int track_idx = max_len - i - 1;  // flip idx to start from bottom right
-
       if (scene.track_vertices[track_idx].y() < 0 || scene.track_vertices[track_idx].y() > height()) {
         continue;
       }
