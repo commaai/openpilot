@@ -2,24 +2,22 @@ import os
 import math
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
-import importlib
 from parameterized import parameterized
 
-from cereal import car, messaging
-from opendbc.car import DT_CTRL, gen_empty_fingerprint
+from cereal import car
+from opendbc.car import DT_CTRL
 from opendbc.car.car_helpers import interfaces
 from opendbc.car.structs import CarParams
+from opendbc.car.tests.test_car_interfaces import get_fuzzy_car_interface_args
 from opendbc.car.fingerprints import all_known_cars
 from opendbc.car.fw_versions import FW_VERSIONS, FW_QUERY_CONFIGS
-from opendbc.car.interfaces import get_interface_attr
 from opendbc.car.mock.values import CAR as MOCK
 from openpilot.selfdrive.car.card import convert_carControl, convert_to_capnp
 from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.longcontrol import LongControl
-from openpilot.selfdrive.pandad import can_capnp_to_list
-from openpilot.selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
+from openpilot.selfdrive.test.fuzzy_generation import FuzzyGenerator
 
 ALL_ECUS = {ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()}
 ALL_ECUS |= {ecu for config in FW_QUERY_CONFIGS.values() for ecu in config.extra_ecus}
@@ -27,28 +25,6 @@ ALL_ECUS |= {ecu for config in FW_QUERY_CONFIGS.values() for ecu in config.extra
 ALL_REQUESTS = {tuple(r.request) for config in FW_QUERY_CONFIGS.values() for r in config.requests}
 
 MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '60'))
-
-
-def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
-  # Fuzzy CAN fingerprints and FW versions to test more states of the CarInterface
-  fingerprint_strategy = st.fixed_dictionaries({key: st.dictionaries(st.integers(min_value=0, max_value=0x800),
-                                                                     st.integers(min_value=0, max_value=64)) for key in
-                                                gen_empty_fingerprint()})
-
-  # only pick from possible ecus to reduce search space
-  car_fw_strategy = st.lists(st.sampled_from(sorted(ALL_ECUS)))
-
-  params_strategy = st.fixed_dictionaries({
-    'fingerprints': fingerprint_strategy,
-    'car_fw': car_fw_strategy,
-    'experimental_long': st.booleans(),
-  })
-
-  params: dict = draw(params_strategy)
-  params['car_fw'] = [CarParams.CarFw(ecu=fw[0], address=fw[1], subAddress=fw[2] or 0,
-                                      request=draw(st.sampled_from(sorted(ALL_REQUESTS))))
-                      for fw in params['car_fw']]
-  return params
 
 
 class TestCarInterfaces:
@@ -121,45 +97,3 @@ class TestCarInterfaces:
       LatControlPID(car_params_capnp, car_interface)
     elif car_params.lateralTuning.which() == 'torque':
       LatControlTorque(car_params_capnp, car_interface)
-
-    # Test radar interface
-    RadarInterface = importlib.import_module(f'opendbc.car.{car_params.carName}.radar_interface').RadarInterface
-    radar_interface = RadarInterface(car_params)
-    assert radar_interface
-
-    # Run radar interface once
-    radar_interface.update([])
-    if not car_params.radarUnavailable and radar_interface.rcp is not None and \
-       hasattr(radar_interface, '_update') and hasattr(radar_interface, 'trigger_msg'):
-      radar_interface._update([radar_interface.trigger_msg])
-
-    # Test radar fault
-    if not car_params.radarUnavailable and radar_interface.rcp is not None:
-      cans = can_capnp_to_list([messaging.new_message('can', 1).to_bytes() for _ in range(5)])
-      rr = radar_interface.update(cans)
-      assert rr is None or len(rr.errors) > 0
-
-  def test_interface_attrs(self):
-    """Asserts basic behavior of interface attribute getter"""
-    num_brands = len(get_interface_attr('CAR'))
-    assert num_brands >= 12
-
-    # Should return value for all brands when not combining, even if attribute doesn't exist
-    ret = get_interface_attr('FAKE_ATTR')
-    assert len(ret) == num_brands
-
-    # Make sure we can combine dicts
-    ret = get_interface_attr('DBC', combine_brands=True)
-    assert len(ret) >= 160
-
-    # We don't support combining non-dicts
-    ret = get_interface_attr('CAR', combine_brands=True)
-    assert len(ret) == 0
-
-    # If brand has None value, it shouldn't return when ignore_none=True is specified
-    none_brands = {b for b, v in get_interface_attr('FINGERPRINTS').items() if v is None}
-    assert len(none_brands) >= 1
-
-    ret = get_interface_attr('FINGERPRINTS', ignore_none=True)
-    none_brands_in_ret = none_brands.intersection(ret)
-    assert len(none_brands_in_ret) == 0, f'Brands with None values in ignore_none=True result: {none_brands_in_ret}'
