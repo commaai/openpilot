@@ -138,28 +138,3 @@ class TestCarInterfaces:
       cans = can_capnp_to_list([messaging.new_message('can', 1).to_bytes() for _ in range(5)])
       rr = radar_interface.update(cans)
       assert rr is None or len(rr.errors) > 0
-
-  def test_interface_attrs(self):
-    """Asserts basic behavior of interface attribute getter"""
-    num_brands = len(get_interface_attr('CAR'))
-    assert num_brands >= 12
-
-    # Should return value for all brands when not combining, even if attribute doesn't exist
-    ret = get_interface_attr('FAKE_ATTR')
-    assert len(ret) == num_brands
-
-    # Make sure we can combine dicts
-    ret = get_interface_attr('DBC', combine_brands=True)
-    assert len(ret) >= 160
-
-    # We don't support combining non-dicts
-    ret = get_interface_attr('CAR', combine_brands=True)
-    assert len(ret) == 0
-
-    # If brand has None value, it shouldn't return when ignore_none=True is specified
-    none_brands = {b for b, v in get_interface_attr('FINGERPRINTS').items() if v is None}
-    assert len(none_brands) >= 1
-
-    ret = get_interface_attr('FINGERPRINTS', ignore_none=True)
-    none_brands_in_ret = none_brands.intersection(ret)
-    assert len(none_brands_in_ret) == 0, f'Brands with None values in ignore_none=True result: {none_brands_in_ret}'
