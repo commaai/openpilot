@@ -86,8 +86,8 @@ class VCruiseHelper:
         button_type = b.type.raw
         break
     else:
-      for k in self.button_timers.keys():
-        if self.button_timers[k] and self.button_timers[k] % CRUISE_LONG_PRESS == 0:
+      for k, timer in self.button_timers.items():
+        if timer and timer % CRUISE_LONG_PRESS == 0:
           button_type = k
           long_press = True
           break
