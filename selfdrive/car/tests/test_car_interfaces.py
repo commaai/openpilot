@@ -5,9 +5,10 @@ from hypothesis import Phase, given, settings
 from parameterized import parameterized
 
 from cereal import car
-from opendbc.car import DT_CTRL, gen_empty_fingerprint
+from opendbc.car import DT_CTRL
 from opendbc.car.car_helpers import interfaces
 from opendbc.car.structs import CarParams
+from opendbc.car.tests.test_car_interfaces import get_fuzzy_car_interface_args
 from opendbc.car.fingerprints import all_known_cars
 from opendbc.car.fw_versions import FW_VERSIONS, FW_QUERY_CONFIGS
 from opendbc.car.mock.values import CAR as MOCK
@@ -16,7 +17,7 @@ from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.longcontrol import LongControl
-from openpilot.selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
+from openpilot.selfdrive.test.fuzzy_generation import FuzzyGenerator
 
 ALL_ECUS = {ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()}
 ALL_ECUS |= {ecu for config in FW_QUERY_CONFIGS.values() for ecu in config.extra_ecus}
@@ -24,28 +25,6 @@ ALL_ECUS |= {ecu for config in FW_QUERY_CONFIGS.values() for ecu in config.extra
 ALL_REQUESTS = {tuple(r.request) for config in FW_QUERY_CONFIGS.values() for r in config.requests}
 
 MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '60'))
-
-
-def get_fuzzy_car_interface_args(draw: DrawType) -> dict:
-  # Fuzzy CAN fingerprints and FW versions to test more states of the CarInterface
-  fingerprint_strategy = st.fixed_dictionaries({key: st.dictionaries(st.integers(min_value=0, max_value=0x800),
-                                                                     st.integers(min_value=0, max_value=64)) for key in
-                                                gen_empty_fingerprint()})
-
-  # only pick from possible ecus to reduce search space
-  car_fw_strategy = st.lists(st.sampled_from(sorted(ALL_ECUS)))
-
-  params_strategy = st.fixed_dictionaries({
-    'fingerprints': fingerprint_strategy,
-    'car_fw': car_fw_strategy,
-    'experimental_long': st.booleans(),
-  })
-
-  params: dict = draw(params_strategy)
-  params['car_fw'] = [CarParams.CarFw(ecu=fw[0], address=fw[1], subAddress=fw[2] or 0,
-                                      request=draw(st.sampled_from(sorted(ALL_REQUESTS))))
-                      for fw in params['car_fw']]
-  return params
 
 
 class TestCarInterfaces:
