@@ -2,23 +2,20 @@ import os
 import math
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
-import importlib
 from parameterized import parameterized
 
-from cereal import car, messaging
+from cereal import car
 from opendbc.car import DT_CTRL, gen_empty_fingerprint
 from opendbc.car.car_helpers import interfaces
 from opendbc.car.structs import CarParams
 from opendbc.car.fingerprints import all_known_cars
 from opendbc.car.fw_versions import FW_VERSIONS, FW_QUERY_CONFIGS
-from opendbc.car.interfaces import get_interface_attr
 from opendbc.car.mock.values import CAR as MOCK
 from openpilot.selfdrive.car.card import convert_carControl, convert_to_capnp
 from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.longcontrol import LongControl
-from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.selfdrive.test.fuzzy_generation import DrawType, FuzzyGenerator
 
 ALL_ECUS = {ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()}
