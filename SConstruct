@@ -185,8 +185,6 @@ env = Environment(
     "-Werror",
     "-Wshadow",
     "-Wno-unknown-warning-option",
-    "-Wno-deprecated-register",
-    "-Wno-register",
     "-Wno-inconsistent-missing-override",
     "-Wno-c99-designator",
     "-Wno-reorder-init-list",
