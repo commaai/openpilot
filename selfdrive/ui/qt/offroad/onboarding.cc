@@ -4,8 +4,7 @@
 
 #include <QLabel>
 #include <QPainter>
-#include <QQmlContext>
-#include <QQuickWidget>
+#include <QScrollBar>
 #include <QTransform>
 #include <QVBoxLayout>
 
@@ -13,6 +12,7 @@
 #include "common/params.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/input.h"
+#include "selfdrive/ui/qt/widgets/scrollview.h"
 
 TrainingGuide::TrainingGuide(QWidget *parent) : QFrame(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
@@ -98,24 +98,16 @@ void TermsPage::showEvent(QShowEvent *event) {
   title->setStyleSheet("font-size: 90px; font-weight: 600;");
   main_layout->addWidget(title);
 
+  QLabel *text = new QLabel(this);
+  text->setTextFormat(Qt::RichText);
+  text->setWordWrap(true);
+  text->setText(QString::fromStdString(util::read_file("../assets/offroad/tc.html")));
+  text->setStyleSheet("font-size:50px; font-weight: 200; color: #C9C9C9; background-color:#1B1B1B; padding:50px 50px;");
+  ScrollView *scroll = new ScrollView(text, this);
+
   main_layout->addSpacing(30);
-
-  QQuickWidget *text = new QQuickWidget(this);
-  text->setResizeMode(QQuickWidget::SizeRootObjectToView);
-  text->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-  text->setAttribute(Qt::WA_AlwaysStackOnTop);
-  text->setClearColor(QColor("#1B1B1B"));
-
-  QString text_view = util::read_file("../assets/offroad/tc.html").c_str();
-  text->rootContext()->setContextProperty("text_view", text_view);
-
-  text->setSource(QUrl::fromLocalFile("qt/offroad/text_view.qml"));
-
-  main_layout->addWidget(text, 1);
+  main_layout->addWidget(scroll);
   main_layout->addSpacing(50);
-
-  QObject *obj = (QObject*)text->rootObject();
-  QObject::connect(obj, SIGNAL(scroll()), SLOT(enableAccept()));
 
   QHBoxLayout* buttons = new QHBoxLayout;
   buttons->setMargin(0);
@@ -141,6 +133,12 @@ void TermsPage::showEvent(QShowEvent *event) {
   )");
   buttons->addWidget(accept_btn);
   QObject::connect(accept_btn, &QPushButton::clicked, this, &TermsPage::acceptedTerms);
+  QScrollBar *scroll_bar = scroll->verticalScrollBar();
+  connect(scroll_bar, &QScrollBar::valueChanged, this, [this, scroll_bar](int value) {
+    if (value == scroll_bar->maximum()) {
+      enableAccept();
+    }
+  });
 }
 
 void TermsPage::enableAccept() {
