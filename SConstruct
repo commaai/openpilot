@@ -190,7 +190,6 @@ env = Environment(
     "-Wno-inconsistent-missing-override",
     "-Wno-c99-designator",
     "-Wno-reorder-init-list",
-    "-Wno-error=unused-but-set-variable",
     "-Wno-vla-cxx-extension",
   ] + cflags + ccflags,
 
