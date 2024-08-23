@@ -3,11 +3,11 @@ from parameterized import parameterized
 
 from cereal import log, car
 import cereal.messaging as messaging
+from opendbc.car.fingerprints import _FINGERPRINTS
+from opendbc.car.toyota.values import CAR as TOYOTA
+from opendbc.car.mazda.values import CAR as MAZDA
 from openpilot.common.params import Params
 from openpilot.selfdrive.pandad.pandad_api_impl import can_list_to_can_capnp
-from openpilot.selfdrive.car.fingerprints import _FINGERPRINTS
-from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
-from openpilot.selfdrive.car.mazda.values import CAR as MAZDA
 from openpilot.selfdrive.controls.lib.events import EVENT_NAME
 from openpilot.system.manager.process_config import managed_processes
 

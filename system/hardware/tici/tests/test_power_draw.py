@@ -7,9 +7,10 @@ from tabulate import tabulate
 
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
+from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.common.mock import mock_messages
 from openpilot.common.params import Params
-from openpilot.selfdrive.car.car_helpers import get_demo_car_params
+from openpilot.selfdrive.car.card import convert_to_capnp
 from openpilot.system.hardware.tici.power_monitor import get_power
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.manager.manager import manager_cleanup
@@ -42,7 +43,7 @@ PROCS = [
 class TestPowerDraw:
 
   def setup_method(self):
-    Params().put("CarParams", get_demo_car_params().to_bytes())
+    Params().put("CarParams", convert_to_capnp(get_demo_car_params()).to_bytes())
 
     # wait a bit for power save to disable
     time.sleep(5)

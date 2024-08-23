@@ -2,8 +2,8 @@
 import argparse
 import time
 import cereal.messaging as messaging
+from opendbc.car.vin import get_vin
 from openpilot.selfdrive.car.card import can_comm_callbacks
-from openpilot.selfdrive.car.vin import get_vin
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='Get VIN of the car')

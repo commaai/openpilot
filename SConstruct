@@ -185,12 +185,9 @@ env = Environment(
     "-Werror",
     "-Wshadow",
     "-Wno-unknown-warning-option",
-    "-Wno-deprecated-register",
-    "-Wno-register",
     "-Wno-inconsistent-missing-override",
     "-Wno-c99-designator",
     "-Wno-reorder-init-list",
-    "-Wno-error=unused-but-set-variable",
     "-Wno-vla-cxx-extension",
   ] + cflags + ccflags,
 
@@ -207,7 +204,6 @@ env = Environment(
     "#third_party",
     "#cereal",
     "#msgq",
-    "#opendbc/can",
   ],
 
   CC='clang',
@@ -273,7 +269,7 @@ Export('envCython', 'np_version')
 
 # Qt build environment
 qt_env = env.Clone()
-qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick", "Qml", "QuickWidgets", "DBus", "Xml"]
+qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Quick", "Qml", "QuickWidgets", "DBus", "Xml"]
 
 qt_libs = []
 if arch == "Darwin":
@@ -346,7 +342,7 @@ Export('env', 'qt_env', 'arch', 'real_arch')
 SConscript(['common/SConscript'])
 Import('_common', '_gpucommon')
 
-common = [_common, 'json11']
+common = [_common, 'json11', 'zmq']
 gpucommon = [_gpucommon]
 
 Export('common', 'gpucommon')

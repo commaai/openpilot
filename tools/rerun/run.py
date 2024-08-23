@@ -111,13 +111,13 @@ class Rerunner:
         continue
 
       for entity_path, dat in Rerunner._parse_msg(msg.to_dict()[msg_type], msg_type):
-        log_msgs[entity_path]["times"].append(msg.logMonoTime / 1e9)
+        log_msgs[entity_path]["times"].append(msg.logMonoTime)
         log_msgs[entity_path]["data"].append(dat)
 
     for entity_path, log_msg in log_msgs.items():
-      rr.log_temporal_batch(
+      rr.send_columns(
         entity_path,
-        times=[rr.TimeSecondsBatch(RR_TIMELINE_NAME, log_msg["times"])],
+        times=[rr.TimeNanosColumn(RR_TIMELINE_NAME, log_msg["times"])],
         components=[rr.components.ScalarBatch(log_msg["data"])]
       )
 
