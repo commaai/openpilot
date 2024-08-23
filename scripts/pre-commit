@@ -21,3 +21,4 @@ if ! tools/op.sh lint --fast; then
     exit 1
   fi
 fi
+echo ""
