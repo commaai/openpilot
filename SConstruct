@@ -168,9 +168,6 @@ else:
 if arch != "Darwin":
   ldflags += ["-Wl,--as-needed", "-Wl,--no-undefined"]
 
-# Enable swaglog include in submodules
-cxxflags += ['-DSWAGLOG="\\"common/swaglog.h\\""']
-
 ccflags_option = GetOption('ccflags')
 if ccflags_option:
   ccflags += ccflags_option.split(' ')
@@ -348,18 +345,21 @@ gpucommon = [_gpucommon]
 Export('common', 'gpucommon')
 
 # Build messaging (cereal + msgq + socketmaster + their dependencies)
-SConscript(['msgq_repo/SConscript'])
+# Enable swaglog include in submodules
+env_swaglog = env.Clone()
+env_swaglog['CXXFLAGS'].append('-DSWAGLOG="\\"common/swaglog.h\\""')
+SConscript(['msgq_repo/SConscript'], exports={'env': env_swaglog})
+SConscript(['opendbc/can/SConscript'], exports={'env': env_swaglog})
+
 SConscript(['cereal/SConscript'])
+
 Import('socketmaster', 'msgq')
 messaging = [socketmaster, msgq, 'zmq', 'capnp', 'kj',]
 Export('messaging')
 
 
 # Build other submodules
-SConscript([
-  'opendbc/can/SConscript',
-  'panda/SConscript',
-])
+SConscript(['panda/SConscript'])
 
 # Build rednose library
 SConscript(['rednose/SConscript'])
