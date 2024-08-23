@@ -61,12 +61,6 @@ qt_env.Command(assets, [assets_src, translations_assets_src], f"rcc $SOURCES -o 
 qt_env.Depends(assets, Glob('#selfdrive/assets/*', exclude=[assets, assets_src, translations_assets_src, "#selfdrive/assets/assets.o"]) + [lrelease])
 asset_obj = qt_env.Object("assets", assets)
 
-qt_env.SharedLibrary("qt/python_helpers", ["qt/qt_window.cc"], LIBS=qt_libs)
-
-# spinner and text window
-qt_env.Program("_text", ["qt/text.cc"], LIBS=qt_libs)
-qt_env.Program("_spinner", ["qt/spinner.cc"], LIBS=qt_libs)
-
 # build main UI
 qt_env.Program("ui", qt_src + [asset_obj], LIBS=qt_libs)
 if GetOption('extras'):
@@ -74,8 +68,14 @@ if GetOption('extras'):
   qt_env.Program('tests/test_translations', [asset_obj, 'tests/test_runner.cc', 'tests/test_translations.cc'] + qt_src, LIBS=qt_libs)
   qt_env.Program('tests/ui_snapshot', [asset_obj, "tests/ui_snapshot.cc"] + qt_src, LIBS=qt_libs)
 
-
 if GetOption('extras') and arch != "Darwin":
+  qt_env.SharedLibrary("qt/python_helpers", ["qt/qt_window.cc"], LIBS=qt_libs)
+
+  # spinner and text window
+  qt_env.Program("_text", ["qt/text.cc"], LIBS=qt_libs)
+  qt_env.Program("_spinner", ["qt/spinner.cc"], LIBS=qt_libs)
+
+
   # setup and factory resetter
   qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
   qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc", asset_obj],
