@@ -185,12 +185,9 @@ env = Environment(
     "-Werror",
     "-Wshadow",
     "-Wno-unknown-warning-option",
-    "-Wno-deprecated-register",
-    "-Wno-register",
     "-Wno-inconsistent-missing-override",
     "-Wno-c99-designator",
     "-Wno-reorder-init-list",
-    "-Wno-error=unused-but-set-variable",
     "-Wno-vla-cxx-extension",
   ] + cflags + ccflags,
 
@@ -207,7 +204,6 @@ env = Environment(
     "#third_party",
     "#cereal",
     "#msgq",
-    "#opendbc/can",
   ],
 
   CC='clang',
@@ -346,7 +342,7 @@ Export('env', 'qt_env', 'arch', 'real_arch')
 SConscript(['common/SConscript'])
 Import('_common', '_gpucommon')
 
-common = [_common, 'json11']
+common = [_common, 'json11', 'zmq']
 gpucommon = [_gpucommon]
 
 Export('common', 'gpucommon')

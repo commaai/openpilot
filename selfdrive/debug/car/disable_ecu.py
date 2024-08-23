@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import time
 import cereal.messaging as messaging
+from opendbc.car.disable_ecu import disable_ecu
 from openpilot.selfdrive.car.card import can_comm_callbacks
-from openpilot.selfdrive.car.disable_ecu import disable_ecu
 
 if __name__ == "__main__":
   sendcan = messaging.pub_sock('sendcan')

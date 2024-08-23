@@ -36,7 +36,7 @@ MAX_TOTAL_CPU = 250.  # total for all 8 cores
 PROCS = {
   # Baseline CPU usage by process
   "selfdrive.controls.controlsd": 32.0,
-  "selfdrive.car.card": 22.0,
+  "selfdrive.car.card": 26.0,
   "./loggerd": 14.0,
   "./encoderd": 17.0,
   "./camerad": 14.5,

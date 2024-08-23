@@ -6,6 +6,7 @@ from typing import Any
 
 import capnp
 from cereal import messaging, log, car
+from opendbc.car import structs
 from openpilot.common.numpy_fast import interp
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_CTRL, Ratekeeper, Priority, config_realtime_process
@@ -208,7 +209,7 @@ class RadarD:
 
     self.ready = False
 
-  def update(self, sm: messaging.SubMaster, rr: car.RadarData):
+  def update(self, sm: messaging.SubMaster, rr: structs.RadarData):
     self.ready = sm.seen['modelV2']
     self.current_time = 1e-9*max(sm.logMonoTime.values())
 
@@ -287,7 +288,7 @@ def main() -> None:
 
   # import the radar from the fingerprint
   cloudlog.info("radard is importing %s", CP.carName)
-  RadarInterface = importlib.import_module(f'selfdrive.car.{CP.carName}.radar_interface').RadarInterface
+  RadarInterface = importlib.import_module(f'opendbc.car.{CP.carName}.radar_interface').RadarInterface
 
   # *** setup messaging
   can_sock = messaging.sub_sock('can')
@@ -301,7 +302,7 @@ def main() -> None:
 
   while 1:
     can_strings = messaging.drain_sock_raw(can_sock, wait_for_one=True)
-    rr: car.RadarData | None = RI.update(can_capnp_to_list(can_strings))
+    rr: structs.RadarData | None = RI.update(can_capnp_to_list(can_strings))
     sm.update(0)
     if rr is None:
       continue

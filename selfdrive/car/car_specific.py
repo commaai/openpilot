@@ -1,16 +1,16 @@
 from cereal import car
 import cereal.messaging as messaging
-from openpilot.selfdrive.car import DT_CTRL
-from openpilot.selfdrive.car.interfaces import MAX_CTRL_SPEED
-from openpilot.selfdrive.car.volkswagen.values import CarControllerParams as VWCarControllerParams
-from openpilot.selfdrive.car.hyundai.interface import ENABLE_BUTTONS as HYUNDAI_ENABLE_BUTTONS
+from opendbc.car import DT_CTRL, structs
+from opendbc.car.interfaces import MAX_CTRL_SPEED, CarStateBase, CarControllerBase
+from opendbc.car.volkswagen.values import CarControllerParams as VWCarControllerParams
+from opendbc.car.hyundai.interface import ENABLE_BUTTONS as HYUNDAI_ENABLE_BUTTONS
 
 from openpilot.selfdrive.controls.lib.events import Events
 
-ButtonType = car.CarState.ButtonEvent.Type
-GearShifter = car.CarState.GearShifter
+ButtonType = structs.CarState.ButtonEvent.Type
+GearShifter = structs.CarState.GearShifter
 EventName = car.CarEvent.EventName
-NetworkLocation = car.CarParams.NetworkLocation
+NetworkLocation = structs.CarParams.NetworkLocation
 
 
 # TODO: the goal is to abstract this file into the CarState struct and make events generic
@@ -29,7 +29,7 @@ class MockCarState:
 
 
 class CarSpecificEvents:
-  def __init__(self, CP: car.CarParams):
+  def __init__(self, CP: structs.CarParams):
     self.CP = CP
 
     self.steering_unpressed = 0
@@ -37,7 +37,7 @@ class CarSpecificEvents:
     self.no_steer_warning = False
     self.silent_steer_warning = True
 
-  def update(self, CS, CS_prev, CC, CC_prev):
+  def update(self, CS: CarStateBase, CS_prev: car.CarState, CC: CarControllerBase, CC_prev: car.CarControl):
     if self.CP.carName in ('body', 'mock'):
       events = Events()
 
@@ -50,15 +50,15 @@ class CarSpecificEvents:
     elif self.CP.carName == 'nissan':
       events = self.create_common_events(CS.out, CS_prev, extra_gears=[GearShifter.brake])
 
-      if CS.lkas_enabled:
+      if CS.lkas_enabled:  # type: ignore[attr-defined]
         events.add(EventName.invalidLkasSetting)
 
     elif self.CP.carName == 'mazda':
       events = self.create_common_events(CS.out, CS_prev)
 
-      if CS.lkas_disabled:
+      if CS.lkas_disabled:  # type: ignore[attr-defined]
         events.add(EventName.lkasDisabled)
-      elif CS.low_speed_alert:
+      elif CS.low_speed_alert:  # type: ignore[attr-defined]
         events.add(EventName.belowSteerSpeed)
 
     elif self.CP.carName == 'chrysler':
@@ -99,7 +99,7 @@ class CarSpecificEvents:
       if self.CP.openpilotLongitudinalControl:
         if CS.out.cruiseState.standstill and not CS.out.brakePressed:
           events.add(EventName.resumeRequired)
-        if CS.low_speed_lockout:
+        if CS.low_speed_lockout:  # type: ignore[attr-defined]
           events.add(EventName.lowSpeedLockout)
         if CS.out.vEgo < self.CP.minEnableSpeed:
           events.add(EventName.belowEngageSpeed)
@@ -121,7 +121,7 @@ class CarSpecificEvents:
 
       # Enabling at a standstill with brake is allowed
       # TODO: verify 17 Volt can enable for the first time at a stop and allow for all GMs
-      below_min_enable_speed = CS.out.vEgo < self.CP.minEnableSpeed or CS.moving_backward
+      below_min_enable_speed = CS.out.vEgo < self.CP.minEnableSpeed or CS.moving_backward  # type: ignore[attr-defined]
       if below_min_enable_speed and not (CS.out.standstill and CS.out.brake >= 20 and
                                          self.CP.networkLocation == NetworkLocation.fwdCamera):
         events.add(EventName.belowEngageSpeed)
@@ -149,14 +149,14 @@ class CarSpecificEvents:
         if CC_prev.enabled and CS.out.vEgo < self.CP.minEnableSpeed:
           events.add(EventName.speedTooLow)
 
-      if CC.eps_timer_soft_disable_alert:
+      if CC.eps_timer_soft_disable_alert:  # type: ignore[attr-defined]
         events.add(EventName.steerTimeLimit)
 
     elif self.CP.carName == 'hyundai':
       # On some newer model years, the CANCEL button acts as a pause/resume button based on the PCM state
       # To avoid re-engaging when openpilot cancels, check user engagement intention via buttons
       # Main button also can trigger an engagement on these cars
-      allow_enable = any(btn in HYUNDAI_ENABLE_BUTTONS for btn in CS.cruise_buttons) or any(CS.main_buttons)
+      allow_enable = any(btn in HYUNDAI_ENABLE_BUTTONS for btn in CS.cruise_buttons) or any(CS.main_buttons)  # type: ignore[attr-defined]
       events = self.create_common_events(CS.out, CS_prev, pcm_enable=self.CP.pcmCruise, allow_enable=allow_enable)
 
       # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
@@ -172,8 +172,8 @@ class CarSpecificEvents:
 
     return events
 
-  def create_common_events(self, CS, CS_prev, extra_gears=None, pcm_enable=True, allow_enable=True,
-                           enable_buttons=(ButtonType.accelCruise, ButtonType.decelCruise)):
+  def create_common_events(self, CS: structs.CarState, CS_prev: car.CarState, extra_gears=None, pcm_enable=True,
+                           allow_enable=True, enable_buttons=(ButtonType.accelCruise, ButtonType.decelCruise)):
     events = Events()
 
     if CS.doorOpen:
