@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+if [[ -f .git/hooks/post-commit.d/post-commit ]]; then
+  .git/hooks/post-commit.d/post-commit
+fi
+tools/op.sh lint --fast
+echo ""
