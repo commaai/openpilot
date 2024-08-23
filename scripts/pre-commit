@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+BOLD='\033[1m'
+NC='\033[0m'
+
+if ! tools/op.sh lint --fast; then
+  # open stdin if closed
+  if [[ ! -t 0 ]]; then
+    # handle git environment like PyCharm without a writable console
+    if ! 2>/dev/null exec < /dev/tty; then
+      exit 1
+    fi
+  fi
+
+  echo -e -n "\n${BOLD}Do you want to commit anyway? [Y/n]:${NC} "
+  read -n 1 -r
+  echo ""
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    exit 0
+  else
+    exit 1
+  fi
+fi

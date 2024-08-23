@@ -61,6 +61,20 @@ function op_get_openpilot_dir() {
   done
 }
 
+function op_install_pre_commit() {
+  op_get_openpilot_dir
+
+  if [[ -f "$OPENPILOT_ROOT/.git/hooks/pre-commit" ]]; then
+    read -p "pre-commit already installed! Do you want to install anyway? [Y/n] " -n 1 -r
+    echo -e "\n"
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+      return 0
+    fi
+  fi
+
+  cp $OPENPILOT_ROOT/scripts/pre-commit $OPENPILOT_ROOT/.git/hooks
+}
+
 function op_check_openpilot_dir() {
   echo "Checking for openpilot directory..."
   if [[ -f "$OPENPILOT_ROOT/launch_openpilot.sh" ]]; then
@@ -313,21 +327,22 @@ function op_default() {
   echo -e "${BOLD}${UNDERLINE}Usage:${NC} op [OPTIONS] <COMMAND>"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [System]:${NC}"
-  echo -e "  ${BOLD}check${NC}    Check the development environment (git, os, python) to start using openpilot"
-  echo -e "  ${BOLD}venv${NC}     Activate the python virtual environment"
-  echo -e "  ${BOLD}setup${NC}    Install openpilot dependencies"
-  echo -e "  ${BOLD}build${NC}    Run the openpilot build system in the current working directory"
-  echo -e "  ${BOLD}install${NC}  Install the 'op' tool system wide"
+  echo -e "  ${BOLD}check${NC}       Check the development environment (git, os, python) to start using openpilot"
+  echo -e "  ${BOLD}venv${NC}        Activate the python virtual environment"
+  echo -e "  ${BOLD}setup${NC}       Install openpilot dependencies"
+  echo -e "  ${BOLD}build${NC}       Run the openpilot build system in the current working directory"
+  echo -e "  ${BOLD}install${NC}     Install the 'op' tool system wide"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Tooling]:${NC}"
-  echo -e "  ${BOLD}juggle${NC}   Run PlotJuggler"
-  echo -e "  ${BOLD}replay${NC}   Run Replay"
-  echo -e "  ${BOLD}cabana${NC}   Run Cabana"
+  echo -e "  ${BOLD}juggle${NC}      Run PlotJuggler"
+  echo -e "  ${BOLD}replay${NC}      Run Replay"
+  echo -e "  ${BOLD}cabana${NC}      Run Cabana"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Testing]:${NC}"
-  echo -e "  ${BOLD}sim${NC}      Run openpilot in a simulator"
-  echo -e "  ${BOLD}lint${NC}     Run the linter"
-  echo -e "  ${BOLD}test${NC}     Run all unit tests from pytest"
+  echo -e "  ${BOLD}sim${NC}         Run openpilot in a simulator"
+  echo -e "  ${BOLD}lint${NC}        Run the linter"
+  echo -e "  ${BOLD}pre-commit${NC}  Install the linter as a pre-commit hook"
+  echo -e "  ${BOLD}test${NC}        Run all unit tests from pytest"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Options:${NC}"
   echo -e "  ${BOLD}-d, --dir${NC}"
@@ -361,17 +376,18 @@ function _op() {
 
   # parse Commands
   case $1 in
-    venv )      shift 1; op_venv "$@" ;;
-    check )     shift 1; op_check "$@" ;;
-    setup )     shift 1; op_setup "$@" ;;
-    build )     shift 1; op_build "$@" ;;
-    juggle )    shift 1; op_juggle "$@" ;;
-    cabana )    shift 1; op_cabana "$@" ;;
-    lint )      shift 1; op_lint "$@" ;;
-    test )      shift 1; op_test "$@" ;;
-    replay )    shift 1; op_replay "$@" ;;
-    sim )       shift 1; op_sim "$@" ;;
-    install )   shift 1; op_install "$@" ;;
+    venv )         shift 1; op_venv "$@" ;;
+    check )        shift 1; op_check "$@" ;;
+    setup )        shift 1; op_setup "$@" ;;
+    build )        shift 1; op_build "$@" ;;
+    juggle )       shift 1; op_juggle "$@" ;;
+    cabana )       shift 1; op_cabana "$@" ;;
+    lint )         shift 1; op_lint "$@" ;;
+    test )         shift 1; op_test "$@" ;;
+    replay )       shift 1; op_replay "$@" ;;
+    sim )          shift 1; op_sim "$@" ;;
+    install )      shift 1; op_install "$@" ;;
+    pre-commit )   shift 1; op_install_pre_commit "$@" ;;
     * ) op_default "$@" ;;
   esac
 }
