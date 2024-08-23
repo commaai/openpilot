@@ -142,8 +142,6 @@ else:
     libpath = [
       f"#third_party/acados/{arch}/lib",
       f"#third_party/libyuv/{arch}/lib",
-      "/usr/lib",
-      "/usr/local/lib",
     ]
 
     if arch == "x86_64":
