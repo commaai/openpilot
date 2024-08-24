@@ -199,7 +199,6 @@ env = Environment(
     "#third_party/linux/include",
     "#third_party/snpe/include",
     "#third_party",
-    "#cereal",
     "#msgq",
   ],
 
