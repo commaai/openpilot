@@ -1,13 +1,11 @@
 #include "selfdrive/ui/ui.h"
 
 #include <algorithm>
-#include <cassert>
 #include <cmath>
 
 #include <QtConcurrent>
 
 #include "common/transformations/orientation.hpp"
-#include "common/params.h"
 #include "common/swaglog.h"
 #include "common/util.h"
 #include "common/watchdog.h"
@@ -19,20 +17,10 @@
 // Projects a point in car to space to the corresponding point in full frame
 // image space.
 static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, float in_z, QPointF *out) {
-  const float margin = 500.0f;
-  const QRectF clip_region{-margin, -margin, s->fb_w + 2 * margin, s->fb_h + 2 * margin};
-
-  const vec3 pt = (vec3){{in_x, in_y, in_z}};
-  const vec3 Ep = matvecmul3(s->scene.wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib, pt);
-  const vec3 KEp = matvecmul3(s->scene.wide_cam ? ECAM_INTRINSIC_MATRIX : FCAM_INTRINSIC_MATRIX, Ep);
-
-  // Project.
-  QPointF point = s->car_space_transform.map(QPointF{KEp.v[0] / KEp.v[2], KEp.v[1] / KEp.v[2]});
-  if (clip_region.contains(point)) {
-    *out = point;
-    return true;
-  }
-  return false;
+  Eigen::Vector3d input(in_x, in_y, in_z);
+  auto transformed = s->car_space_transform * input;
+  *out = QPointF(transformed.x() / transformed.z(), transformed.y() / transformed.z());
+  return s->clip_region.contains(*out);
 }
 
 int get_path_length_idx(const cereal::XYZTData::Reader &line, const float path_height) {
@@ -119,29 +107,17 @@ static void update_state(UIState *s) {
   UIScene &scene = s->scene;
 
   if (sm.updated("liveCalibration")) {
+    auto list2rot = [](const capnp::List<float>::Reader &rpy_list) {
+      return euler2rot({rpy_list[0], rpy_list[1], rpy_list[2]});
+    };
+
     auto live_calib = sm["liveCalibration"].getLiveCalibration();
-    auto rpy_list = live_calib.getRpyCalib();
-    auto wfde_list = live_calib.getWideFromDeviceEuler();
-    Eigen::Vector3d rpy;
-    Eigen::Vector3d wfde;
-    if (rpy_list.size() == 3) rpy << rpy_list[0], rpy_list[1], rpy_list[2];
-    if (wfde_list.size() == 3) wfde << wfde_list[0], wfde_list[1], wfde_list[2];
-    Eigen::Matrix3d device_from_calib = euler2rot(rpy);
-    Eigen::Matrix3d wide_from_device = euler2rot(wfde);
-    Eigen::Matrix3d view_from_device;
-    view_from_device << 0, 1, 0,
-                        0, 0, 1,
-                        1, 0, 0;
-    Eigen::Matrix3d view_from_calib = view_from_device * device_from_calib;
-    Eigen::Matrix3d view_from_wide_calib = view_from_device * wide_from_device * device_from_calib;
-    for (int i = 0; i < 3; i++) {
-      for (int j = 0; j < 3; j++) {
-        scene.view_from_calib.v[i*3 + j] = view_from_calib(i, j);
-        scene.view_from_wide_calib.v[i*3 + j] = view_from_wide_calib(i, j);
-      }
+    if (live_calib.getCalStatus() == cereal::LiveCalibrationData::Status::CALIBRATED) {
+      s->scene.view_from_calib = VIEW_FROM_DEVICE * list2rot(live_calib.getRpyCalib());
+      s->scene.view_from_wide_calib = s->scene.view_from_calib * list2rot(live_calib.getWideFromDeviceEuler());
+    } else {
+      s->scene.view_from_calib = s->scene.view_from_wide_calib = VIEW_FROM_DEVICE;
     }
-    scene.calibration_valid = live_calib.getCalStatus() == cereal::LiveCalibrationData::Status::CALIBRATED;
-    scene.calibration_wide_valid = wfde_list.size() == 3;
   }
   if (sm.updated("pandaStates")) {
     auto pandaStates = sm["pandaStates"].getPandaStates();
