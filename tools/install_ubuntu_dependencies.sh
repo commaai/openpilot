@@ -70,11 +70,6 @@ function install_ubuntu_common_requirements() {
 function install_extra_packages() {
   echo "Installing extra packages..."
   $SUDO apt-get install -y --no-install-recommends \
-    casync \
-    cmake \
-    make \
-    clinfo \
-    libqt5sql5-sqlite \
     libreadline-dev \
     libdw1 \
     autoconf \
