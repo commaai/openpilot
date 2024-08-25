@@ -12,10 +12,14 @@ The serial is available on the [comma shop](https://comma.ai/shop/products/comma
 
 ## usage
 
-```
-sudo screen /dev/ttyUSB0 115200
-```
-or use `connect.sh` to run the previous command in a loop.
+On the comma three, the serial console is exposed through a UART-to-USB chip, and
 
+```
+tools/serial/connect.sh can be used to connect.
+```
 
-The username and password are both `comma`.
+On the comma 3X, the serial console is accessible through the `panda` use the script
+
+```
+panda/tests/som_debug.sh
+```
