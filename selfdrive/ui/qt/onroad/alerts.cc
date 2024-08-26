@@ -4,6 +4,7 @@
 #include <map>
 
 #include "selfdrive/ui/qt/util.h"
+#include "system/hardware/hw.h"
 
 void OnroadAlerts::updateState(const UIState &s) {
   Alert a = getAlert(*(s.sm), s.scene.started_frame);
