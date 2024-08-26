@@ -2,7 +2,6 @@ import capnp
 from typing import Any
 
 from cereal import car
-
 from opendbc.car import structs
 
 _FIELDS = '__dataclass_fields__'  # copy of dataclasses._FIELDS
