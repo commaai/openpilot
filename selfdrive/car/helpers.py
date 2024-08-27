@@ -1,5 +1,6 @@
 import capnp
-from typing import Any
+from functools import cache
+from typing import Any, cast, get_type_hints
 
 from cereal import car
 from opendbc.car import structs
@@ -57,16 +58,19 @@ def convert_to_capnp(struct: structs.CarParams | structs.CarState | structs.CarC
   return struct_capnp
 
 
+@cache
+def _get_fieldtypes(cls: Any) -> dict[str, Any]:
+  return get_type_hints(cls)
+
+
 def convert_carControl(struct: capnp.lib.capnp._DynamicStructReader) -> structs.CarControl:
-  # TODO: recursively handle any car struct as needed
-  def remove_deprecated(s: dict) -> dict:
-    return {k: v for k, v in s.items() if not k.endswith('DEPRECATED')}
 
-  struct_dict = struct.to_dict()
-  struct_dataclass = structs.CarControl(**remove_deprecated({k: v for k, v in struct_dict.items() if not isinstance(k, dict)}))
+  def initialize_dataclass(cls: Any, data: capnp.lib.capnp._DynamicStructReader) -> Any:
+    fieldtypes = _get_fieldtypes(cls)
+    return cls(**{
+        f: initialize_dataclass(fieldtypes[f], getattr(data, f))
+        if is_dataclass(fieldtypes[f]) else getattr(data, f)
+        for f in fieldtypes if hasattr(data, f)
+    })
 
-  struct_dataclass.actuators = structs.CarControl.Actuators(**remove_deprecated(struct_dict.get('actuators', {})))
-  struct_dataclass.cruiseControl = structs.CarControl.CruiseControl(**remove_deprecated(struct_dict.get('cruiseControl', {})))
-  struct_dataclass.hudControl = structs.CarControl.HUDControl(**remove_deprecated(struct_dict.get('hudControl', {})))
-
-  return struct_dataclass
+  return cast(structs.CarControl, initialize_dataclass(structs.CarControl, struct))
