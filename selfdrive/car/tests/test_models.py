@@ -19,7 +19,7 @@ from opendbc.car.fingerprints import all_known_cars, MIGRATION
 from opendbc.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from opendbc.car.honda.values import CAR as HONDA, HondaFlags
 from opendbc.car.values import Platform
-from openpilot.selfdrive.car.tests.routes import non_tested_cars, routes, CarTestRoute
+from opendbc.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from openpilot.selfdrive.car.card import Car, convert_to_capnp
 from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.selfdrive.test.helpers import read_segment_list

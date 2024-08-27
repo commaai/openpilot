@@ -168,9 +168,6 @@ else:
 if arch != "Darwin":
   ldflags += ["-Wl,--as-needed", "-Wl,--no-undefined"]
 
-# Enable swaglog include in submodules
-cxxflags += ['-DSWAGLOG="\\"common/swaglog.h\\""']
-
 ccflags_option = GetOption('ccflags')
 if ccflags_option:
   ccflags += ccflags_option.split(' ')
@@ -202,7 +199,6 @@ env = Environment(
     "#third_party/linux/include",
     "#third_party/snpe/include",
     "#third_party",
-    "#cereal",
     "#msgq",
   ],
 
@@ -269,7 +265,7 @@ Export('envCython', 'np_version')
 
 # Qt build environment
 qt_env = env.Clone()
-qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "Multimedia", "Quick", "Qml", "QuickWidgets", "DBus", "Xml"]
+qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "DBus", "Xml"]
 
 qt_libs = []
 if arch == "Darwin":
@@ -315,9 +311,6 @@ qt_flags = [
   "-DQT_NO_DEBUG",
   "-DQT_WIDGETS_LIB",
   "-DQT_GUI_LIB",
-  "-DQT_QUICK_LIB",
-  "-DQT_QUICKWIDGETS_LIB",
-  "-DQT_QML_LIB",
   "-DQT_CORE_LIB",
   "-DQT_MESSAGELOGCONTEXT",
 ]
@@ -348,18 +341,21 @@ gpucommon = [_gpucommon]
 Export('common', 'gpucommon')
 
 # Build messaging (cereal + msgq + socketmaster + their dependencies)
-SConscript(['msgq_repo/SConscript'])
+# Enable swaglog include in submodules
+env_swaglog = env.Clone()
+env_swaglog['CXXFLAGS'].append('-DSWAGLOG="\\"common/swaglog.h\\""')
+SConscript(['msgq_repo/SConscript'], exports={'env': env_swaglog})
+SConscript(['opendbc/can/SConscript'], exports={'env': env_swaglog})
+
 SConscript(['cereal/SConscript'])
+
 Import('socketmaster', 'msgq')
 messaging = [socketmaster, msgq, 'zmq', 'capnp', 'kj',]
 Export('messaging')
 
 
 # Build other submodules
-SConscript([
-  'opendbc/can/SConscript',
-  'panda/SConscript',
-])
+SConscript(['panda/SConscript'])
 
 # Build rednose library
 SConscript(['rednose/SConscript'])

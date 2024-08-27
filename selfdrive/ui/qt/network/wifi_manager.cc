@@ -446,7 +446,7 @@ void WifiManager::addTetheringConnection() {
 
 void WifiManager::tetheringActivated(QDBusPendingCallWatcher *call) {
   int prime_type = uiState()->primeType();
-  int ipv4_forward = (prime_type == PrimeType::NONE || prime_type == PrimeType::LITE);
+  int ipv4_forward = (prime_type == PrimeType::PRIME_TYPE_NONE || prime_type == PrimeType::PRIME_TYPE_LITE);
 
   if (!ipv4_forward) {
     QTimer::singleShot(5000, this, [=] {
