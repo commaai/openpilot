@@ -4,8 +4,6 @@
 #include <cassert>
 #include <cmath>
 
-#include <QtConcurrent>
-
 #include "common/transformations/orientation.hpp"
 #include "common/params.h"
 #include "common/swaglog.h"
@@ -339,8 +337,9 @@ void Device::updateBrightness(const UIState &s) {
   }
 
   if (brightness != last_brightness) {
-    if (!brightness_future.isRunning()) {
-      brightness_future = QtConcurrent::run(Hardware::set_brightness, brightness);
+    if (!brightness_future.valid() ||
+        brightness_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+      brightness_future = std::async(std::launch::async, Hardware::set_brightness, brightness);
       last_brightness = brightness;
     }
   }

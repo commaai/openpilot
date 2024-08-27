@@ -265,14 +265,14 @@ Export('envCython', 'np_version')
 
 # Qt build environment
 qt_env = env.Clone()
-qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "DBus", "Xml"]
+qt_modules = ["Widgets", "Gui", "Core", "Network", "DBus", "Xml"]
 
 qt_libs = []
 if arch == "Darwin":
   qt_env['QTDIR'] = f"{brew_prefix}/opt/qt@5"
-  qt_dirs = [
-    os.path.join(qt_env['QTDIR'], "include"),
-  ]
+  qt_install_headers = os.path.join(qt_env['QTDIR'], "include")
+  qt_env['QT_INSTALL_HEADERS'] = qt_install_headers
+  qt_dirs = [qt_install_headers ]
   qt_dirs += [f"{qt_env['QTDIR']}/include/Qt{m}" for m in qt_modules]
   qt_env["LINKFLAGS"] += ["-F" + os.path.join(qt_env['QTDIR'], "lib")]
   qt_env["FRAMEWORKS"] += [f"Qt{m}" for m in qt_modules] + ["OpenGL"]
@@ -282,6 +282,7 @@ else:
   qt_install_headers = subprocess.check_output(['qmake', '-query', 'QT_INSTALL_HEADERS'], encoding='utf8').strip()
 
   qt_env['QTDIR'] = qt_install_prefix
+  qt_env['QT_INSTALL_HEADERS'] = qt_install_headers
   qt_dirs = [
     f"{qt_install_headers}",
   ]

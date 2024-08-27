@@ -1,19 +1,22 @@
-Import('env', 'qt_env', 'arch', 'common', 'messaging', 'visionipc', 'cereal')
+import os
+Import('qt_env', 'arch', 'common', 'messaging', 'visionipc', 'cereal')
 
-base_frameworks = qt_env['FRAMEWORKS']
+replay_env = qt_env.Clone()
+base_frameworks = replay_env['FRAMEWORKS']
 base_libs = [common, messaging, cereal, visionipc,
-             'm', 'ssl', 'crypto', 'pthread', 'qt_util'] + qt_env["LIBS"]
+             'm', 'ssl', 'crypto', 'pthread', 'qt_util'] + replay_env["LIBS"]
 
 if arch == "Darwin":
-  base_frameworks.append('OpenCL')
+  base_frameworks += ['QtConcurrent', 'OpenCL']
 else:
-  base_libs.append('OpenCL')
+  base_libs += ['Qt5Concurrent', 'OpenCL']
 
+replay_env['CPPPATH'].append(os.path.join(replay_env['QT_INSTALL_HEADERS'], 'QtConcurrent'))
 replay_lib_src = ["replay.cc", "consoleui.cc", "camera.cc", "filereader.cc", "logreader.cc", "framereader.cc", "route.cc", "util.cc"]
-replay_lib = qt_env.Library("qt_replay", replay_lib_src, LIBS=base_libs, FRAMEWORKS=base_frameworks)
+replay_lib = replay_env.Library("qt_replay", replay_lib_src, LIBS=base_libs, FRAMEWORKS=base_frameworks)
 Export('replay_lib')
 replay_libs = [replay_lib, 'avutil', 'avcodec', 'avformat', 'bz2', 'zstd', 'curl', 'yuv', 'ncurses'] + base_libs
-qt_env.Program("replay", ["main.cc"], LIBS=replay_libs, FRAMEWORKS=base_frameworks)
+replay_env.Program("replay", ["main.cc"], LIBS=replay_libs, FRAMEWORKS=base_frameworks)
 
 if GetOption('extras'):
-  qt_env.Program('tests/test_replay', ['tests/test_runner.cc', 'tests/test_replay.cc'], LIBS=[replay_libs, base_libs])
+  replay_env.Program('tests/test_replay', ['tests/test_runner.cc', 'tests/test_replay.cc'], LIBS=[replay_libs, base_libs])

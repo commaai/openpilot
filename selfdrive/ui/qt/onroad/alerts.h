@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QMap>
 #include <QWidget>
 
 #include "selfdrive/ui/ui.h"

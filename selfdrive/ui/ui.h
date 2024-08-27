@@ -1,12 +1,12 @@
 #pragma once
 
+#include <future>
 #include <memory>
 #include <string>
 
 #include <QObject>
 #include <QTimer>
 #include <QColor>
-#include <QFuture>
 #include <QPolygonF>
 #include <QTransform>
 
@@ -164,7 +164,7 @@ private:
   int offroad_brightness = BACKLIGHT_OFFROAD;
   int last_brightness = 0;
   FirstOrderFilter brightness_filter;
-  QFuture<void> brightness_future;
+  std::future<void> brightness_future;
 
   void updateBrightness(const UIState &s);
   void updateWakefulness(const UIState &s);
