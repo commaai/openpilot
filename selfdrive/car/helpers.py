@@ -12,50 +12,43 @@ def is_dataclass(obj):
   return hasattr(obj, _FIELDS)
 
 
-def _asdictref_inner(obj) -> dict[str, Any] | Any:
-  if is_dataclass(obj):
-    ret = {}
-    for field in getattr(obj, _FIELDS):  # similar to dataclasses.fields()
-      ret[field] = _asdictref_inner(getattr(obj, field))
-    return ret
-  elif isinstance(obj, (tuple, list)):
-    return type(obj)(_asdictref_inner(v) for v in obj)
-  else:
-    return obj
+def _populate_capnp_fields(dataclass: Any, capnp_builder: capnp.lib.capnp._DynamicStructBuilder) -> None:
+  union_fields = capnp_builder.schema.union_fields
 
+  for field in getattr(dataclass, _FIELDS):
+    value = getattr(dataclass, field)
 
-def asdictref(obj) -> dict[str, Any]:
-  """
-  Similar to dataclasses.asdict without recursive type checking and copy.deepcopy
-  Note that the resulting dict will contain references to the original struct as a result
-  """
-  if not is_dataclass(obj):
-    raise TypeError("asdictref() should be called on dataclass instances")
-
-  return _asdictref_inner(obj)
+    if is_dataclass(value):
+      if field not in union_fields or field == dataclass.which:
+        nested_builder = capnp_builder.init(field)
+        _populate_capnp_fields(value, nested_builder)
+    elif isinstance(value, (list, tuple)):
+      if value:
+        list_builder = capnp_builder.init(field, len(value))
+        # Check if items in the list/tuple are dataclasses
+        item_is_dataclass = is_dataclass(value[0])
+        for i, item in enumerate(value):
+          if item_is_dataclass:
+            _populate_capnp_fields(item, list_builder[i])
+          else:
+            list_builder[i] = item
+    elif field != 'which':
+      setattr(capnp_builder, field, value)
 
 
 def convert_to_capnp(struct: structs.CarParams | structs.CarState | structs.CarControl.Actuators | structs.RadarData) -> capnp.lib.capnp._DynamicStructBuilder:
-  struct_dict = asdictref(struct)
-
   if isinstance(struct, structs.CarParams):
-    del struct_dict['lateralTuning']
-    struct_capnp = car.CarParams.new_message(**struct_dict)
-
-    # this is the only union, special handling
-    which = struct.lateralTuning.which()
-    struct_capnp.lateralTuning.init(which)
-    lateralTuning_dict = asdictref(getattr(struct.lateralTuning, which))
-    setattr(struct_capnp.lateralTuning, which, lateralTuning_dict)
+    struct_capnp = car.CarParams.new_message()
   elif isinstance(struct, structs.CarState):
-    struct_capnp = car.CarState.new_message(**struct_dict)
+    struct_capnp = car.CarState.new_message()
   elif isinstance(struct, structs.CarControl.Actuators):
-    struct_capnp = car.CarControl.Actuators.new_message(**struct_dict)
+    struct_capnp = car.CarControl.Actuators.new_message()
   elif isinstance(struct, structs.RadarData):
-    struct_capnp = car.RadarData.new_message(**struct_dict)
+    struct_capnp = car.RadarData.new_message()
   else:
     raise ValueError(f"Unsupported struct type: {type(struct)}")
 
+  _populate_capnp_fields(struct, struct_capnp)
   return struct_capnp
 
 
