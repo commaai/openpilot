@@ -175,8 +175,8 @@ class LongitudinalPlanner:
     longitudinalPlan.aTarget = a_target
     longitudinalPlan.shouldStop = should_stop
     if len(sm['modelV2'].meta.disengagePredictions.brakePressProbs) > 0:
-      longitudinalPlan.allowBrake = sm['modelV2'].meta.disengagePredictions.brakePressProbs[0] > 0.5
+      longitudinalPlan.allowBrake = sm['modelV2'].meta.disengagePredictions.brakePressProbs[0] > 0.1
     if len(sm['modelV2'].meta.disengagePredictions.gasPressProbs) > 0:
-      longitudinalPlan.allowThrottle = sm['modelV2'].meta.disengagePredictions.gasPressProbs[0] > 0.5
+      longitudinalPlan.allowThrottle = sm['modelV2'].meta.disengagePredictions.gasPressProbs[0] > 0.2
 
     pm.send('longitudinalPlan', plan_send)
