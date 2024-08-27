@@ -8,7 +8,6 @@
 #include <QColor>
 #include <QFuture>
 #include <QPolygonF>
-#include <QTransform>
 
 #include "cereal/messaging/messaging.h"
 #include "common/mat.h"
@@ -117,16 +116,14 @@ public:
   inline PrimeType primeType() const { return prime_type; }
   inline bool hasPrime() const { return prime_type > PrimeType::PRIME_TYPE_NONE; }
 
-  int fb_w = 0, fb_h = 0;
-
   std::unique_ptr<SubMaster> sm;
-
   UIStatus status;
   UIScene scene = {};
 
   QString language;
 
-  QTransform car_space_transform;
+  mat3 car_space_transform;
+  QRectF clip_region;
 
 signals:
   void uiUpdate(const UIState &s);

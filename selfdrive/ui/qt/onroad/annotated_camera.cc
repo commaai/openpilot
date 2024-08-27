@@ -134,20 +134,21 @@ void AnnotatedCameraWidget::initializeGL() {
 
 void AnnotatedCameraWidget::updateFrameMat() {
   CameraWidget::updateFrameMat();
-  UIState *s = uiState();
-  int w = width(), h = height();
-
-  s->fb_w = w;
-  s->fb_h = h;
 
   // Apply transformation such that video pixel coordinates match video
   // 1) Put (0, 0) in the middle of the video
   // 2) Apply same scaling as video
   // 3) Put (0, 0) in top left corner of video
-  s->car_space_transform.reset();
-  s->car_space_transform.translate(w / 2 - x_offset, h / 2 - y_offset)
-      .scale(zoom, zoom)
-      .translate(-intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
+  mat3 video_transform = {{
+    zoom, 0.0f, (width() / 2 - x_offset) - (intrinsic_matrix.v[2] * zoom),
+    0.0f, zoom, (height() / 2 - y_offset) - (intrinsic_matrix.v[5] * zoom),
+    0.0f, 0.0f, 1.0f
+  }};
+
+  UIState *s = uiState();
+  auto calib_transform = matmul3(intrinsic_matrix, calibration);
+  s->car_space_transform = matmul3(video_transform, calib_transform);
+  s->clip_region = rect().adjusted(-500, -500, 500, 500);
 }
 
 void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
