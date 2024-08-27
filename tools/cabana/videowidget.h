@@ -13,8 +13,8 @@
 #include <QSlider>
 #include <QTabBar>
 
-#include "selfdrive/ui/qt/widgets/cameraview.h"
 #include "tools/cabana/utils/util.h"
+#include "tools/cabana/widgets/camerawidget.h"
 #include "tools/replay/logreader.h"
 
 struct AlertInfo {
@@ -64,7 +64,7 @@ class StreamCameraView : public CameraWidget {
   Q_PROPERTY(float overlayOpacity READ overlayOpacity WRITE setOverlayOpacity)
 
 public:
-  StreamCameraView(std::string stream_name, VisionStreamType stream_type, bool zoom, QWidget *parent = nullptr);
+  StreamCameraView(std::string stream_name, VisionStreamType stream_type, QWidget *parent = nullptr);
   void paintGL() override;
   void showPausedOverlay() { fade_animation->start(); }
   float overlayOpacity() const { return overlay_opacity; }
