@@ -72,7 +72,6 @@ const QColor bg_colors [] = {
 typedef struct UIScene {
   bool calibration_valid = false;
   bool calibration_wide_valid  = false;
-  bool wide_cam = true;
   mat3 view_from_calib = DEFAULT_CALIBRATION;
   mat3 view_from_wide_calib = DEFAULT_CALIBRATION;
   cereal::PandaState::PandaType pandaType;
