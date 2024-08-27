@@ -560,6 +560,8 @@ class Controls:
 
     actuators = CC.actuators
     actuators.longControlState = self.LoC.long_control_state
+    actuators.allowBrake = long_plan.allowBrake
+    actuators.allowThrottle = long_plan.allowThrottle
 
     # Enable blinkers while lane changing
     if model_v2.meta.laneChangeState != LaneChangeState.off:

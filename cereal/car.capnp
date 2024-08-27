@@ -354,6 +354,9 @@ struct CarControl {
     steerOutputCan @8: Float32;
     steeringAngleDeg @3: Float32;
 
+    allowBrake @9: Bool;
+    allowThrottle @10: Bool;
+
     curvature @7: Float32;
 
     speed @6: Float32; # m/s
