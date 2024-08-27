@@ -281,7 +281,8 @@ jobs:
   car_docs_diff:
     name: PR comments
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    #if: github.event_name == 'pull_request'
+    if: false  # TODO: run this in opendbc?
     steps:
       - uses: actions/checkout@v4
         with:
