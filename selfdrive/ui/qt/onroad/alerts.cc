@@ -1,9 +1,19 @@
 #include "selfdrive/ui/qt/onroad/alerts.h"
 
 #include <QPainter>
-#include <map>
 
 #include "selfdrive/ui/qt/util.h"
+
+namespace {
+  constexpr int ALERT_MARGIN = 40;                      // Margin for alert boxes
+  constexpr int ALERT_RADIUS = 30;                      // Corner radius for alert boxes
+  constexpr int ALERT_SIZE_SMALL = 271;                 // Height for small alerts
+  constexpr int ALERT_SIZE_MID = 420;                   // Height for mid-size alerts
+  constexpr int ALERT_FULL_TEXT_LENGTH_THRESHOLD = 15;  // Text length threshold for full alerts
+  constexpr int CONTROLS_TIMEOUT = 5;                   // Timeout duration in seconds
+  constexpr float GRADIENT_TOP_ALPHA = 0.05f;           // Gradient top alpha value
+  constexpr float GRADIENT_BOTTOM_ALPHA = 0.35f;        // Gradient bottom alpha value
+}  // namespace
 
 void OnroadAlerts::updateState(const UIState &s) {
   Alert a = getAlert(*(s.sm), s.scene.started_frame);
@@ -29,7 +39,6 @@ OnroadAlerts::Alert OnroadAlerts::getAlert(const SubMaster &sm, uint64_t started
   }
 
   if (!sm.updated("selfdriveState") && (sm.frame - started_frame) > 5 * UI_FREQ) {
-    const int CONTROLS_TIMEOUT = 5;
     const int controls_missing = (nanos_since_boot() - sm.rcv_time("selfdriveState")) / 1e9;
 
     // Handle controls timeout
@@ -58,23 +67,19 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   if (alert.size == cereal::SelfdriveState::AlertSize::NONE) {
     return;
   }
-  static std::map<cereal::SelfdriveState::AlertSize, const int> alert_heights = {
-    {cereal::SelfdriveState::AlertSize::SMALL, 271},
-    {cereal::SelfdriveState::AlertSize::MID, 420},
-    {cereal::SelfdriveState::AlertSize::FULL, height()},
-  };
-  int h = alert_heights[alert.size];
 
-  int margin = 40;
-  int radius = 30;
-  if (alert.size == cereal::SelfdriveState::AlertSize::FULL) {
-    margin = 0;
-    radius = 0;
+  int h = height();
+  if (alert.size == cereal::SelfdriveState::AlertSize::SMALL) {
+    h = ALERT_SIZE_SMALL;
+  } else if (alert.size == cereal::SelfdriveState::AlertSize::MID) {
+    h = ALERT_SIZE_MID;
   }
-  QRect r = QRect(0 + margin, height() - h + margin, width() - margin*2, h - margin*2);
+
+  int margin = alert.size == cereal::SelfdriveState::AlertSize::FULL ? 0 : ALERT_MARGIN;
+  int radius = alert.size == cereal::SelfdriveState::AlertSize::FULL ? 0 : ALERT_RADIUS;
+  QRect r(0 + margin, height() - h + margin, width() - margin * 2, h - margin * 2);
 
   QPainter p(this);
-
   // draw background + gradient
   p.setPen(Qt::NoPen);
   p.setCompositionMode(QPainter::CompositionMode_SourceOver);
@@ -82,8 +87,8 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   p.drawRoundedRect(r, radius, radius);
 
   QLinearGradient g(0, r.y(), 0, r.bottom());
-  g.setColorAt(0, QColor::fromRgbF(0, 0, 0, 0.05));
-  g.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0.35));
+  g.setColorAt(0, QColor::fromRgbF(0, 0, 0, GRADIENT_TOP_ALPHA));
+  g.setColorAt(1, QColor::fromRgbF(0, 0, 0, GRADIENT_BOTTOM_ALPHA));
 
   p.setCompositionMode(QPainter::CompositionMode_DestinationOver);
   p.setBrush(QBrush(g));
@@ -103,10 +108,10 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
     p.setFont(InterFont(66));
     p.drawText(QRect(0, c.y() + 21, width(), 90), Qt::AlignHCenter, alert.text2);
   } else if (alert.size == cereal::SelfdriveState::AlertSize::FULL) {
-    bool l = alert.text1.length() > 15;
-    p.setFont(InterFont(l ? 132 : 177, QFont::Bold));
-    p.drawText(QRect(0, r.y() + (l ? 240 : 270), width(), 600), Qt::AlignHCenter | Qt::TextWordWrap, alert.text1);
+    bool long_text = alert.text1.length() > ALERT_FULL_TEXT_LENGTH_THRESHOLD;
+    p.setFont(InterFont(long_text ? 132 : 177, QFont::Bold));
+    p.drawText(QRect(0, r.y() + (long_text ? 240 : 270), width(), 600), Qt::AlignHCenter | Qt::TextWordWrap, alert.text1);
     p.setFont(InterFont(88));
-    p.drawText(QRect(0, r.height() - (l ? 361 : 420), width(), 300), Qt::AlignHCenter | Qt::TextWordWrap, alert.text2);
+    p.drawText(QRect(0, r.height() - (long_text ? 361 : 420), width(), 300), Qt::AlignHCenter | Qt::TextWordWrap, alert.text2);
   }
 }
