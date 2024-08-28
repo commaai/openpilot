@@ -23,7 +23,7 @@ MODEL_HEIGHT = 960
 OUTPUT_SIZE = 84
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 MODEL_PATHS = {
-  ModelRunner.SNPE: Path(__file__).parent / 'models/dmonitoring_model_q.dlc',
+  ModelRunner.THNEED: Path(__file__).parent / 'models/dmonitoring_model.thneed',
   ModelRunner.ONNX: Path(__file__).parent / 'models/dmonitoring_model.onnx'}
 
 class DriverStateResult(ctypes.Structure):
@@ -63,7 +63,7 @@ class ModelState:
       'input_img': np.zeros(MODEL_HEIGHT * MODEL_WIDTH, dtype=np.uint8),
       'calib': np.zeros(CALIB_LEN, dtype=np.float32)}
 
-    self.model = ModelRunner(MODEL_PATHS, self.output, Runtime.DSP, True, None)
+    self.model = ModelRunner(MODEL_PATHS, self.output, Runtime.GPU, True, None)
     self.model.addInput("input_img", None)
     self.model.addInput("calib", self.inputs['calib'])
 
