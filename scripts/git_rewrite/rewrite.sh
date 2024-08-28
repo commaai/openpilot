@@ -21,7 +21,7 @@ ROOT_COMMIT=$(git rev-list --max-parents=0 HEAD | tail -n 1)
 
 # link master and devel
 git replace --graft $ROOT_COMMIT v0.7.1
-git-filter-repo --prune-empty never --force --commit-callback 'h=commit.original_id.decode("utf-8");m=commit.message.decode("utf-8");commit.message=str.encode(m + "\n" + "old-commit-hash: https://github.com/commaai/openpilot/commit/" + h)'
+git-filter-repo --prune-empty never --force --commit-callback 'h=commit.original_id.decode("utf-8");m=commit.message.decode("utf-8");commit.message=str.encode(m + "\n" + "old-commit-hash: " + h)'
 
 # clean replace refs
 git for-each-ref --format='delete %(refname)' refs/replace | git update-ref --stdin
