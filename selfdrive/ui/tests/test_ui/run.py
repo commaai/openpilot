@@ -97,6 +97,7 @@ def setup_onroad_sidebar(click, pm: PubMaster):
 
 
 def setup_onroad_alert(click, pm: PubMaster, text1, text2, size, status=log.ControlsState.AlertStatus.normal):
+  print(f'setup onroad alert, size: {size}')
   setup_onroad(click, pm)
   dat = messaging.new_message('controlsState')
   cs = dat.controlsState
