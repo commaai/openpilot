@@ -95,12 +95,37 @@ def setup_onroad_sidebar(click, pm: PubMaster):
   setup_onroad(click, pm)
   click(500, 500)
 
+
+def setup_onroad_alert(click, pm: PubMaster, text1, text2, size, status=log.ControlsState.AlertStatus.normal):
+  print(f'setup onroad alert, size: {size}')
+  setup_onroad(click, pm)
+  dat = messaging.new_message('controlsState')
+  cs = dat.controlsState
+  cs.alertText1 = text1
+  cs.alertText2 = text2
+  cs.alertSize = size
+  cs.alertStatus = status
+  cs.alertType = "test_onorad_alert"
+  pm.send('controlsState', dat)
+
+def setup_onroad_alert_small(click, pm: PubMaster):
+  setup_onroad_alert(click, pm, 'This is a small alert message', '', log.ControlsState.AlertSize.small)
+
+def setup_onroad_alert_mid(click, pm: PubMaster):
+  setup_onroad_alert(click, pm, 'Medium Alert', 'This is a medium alert message', log.ControlsState.AlertSize.mid)
+
+def setup_onroad_alert_full(click, pm: PubMaster):
+  setup_onroad_alert(click, pm, 'Full Alert', 'This is a full alert message', log.ControlsState.AlertSize.full)
+
 CASES = {
   "homescreen": setup_homescreen,
   "settings_device": setup_settings_device,
   "settings_network": setup_settings_network,
   "onroad": setup_onroad,
-  "onroad_sidebar": setup_onroad_sidebar
+  "onroad_sidebar": setup_onroad_sidebar,
+  "onroad_alert_small": setup_onroad_alert_small,
+  "onroad_alert_mid": setup_onroad_alert_mid,
+  "onroad_alert_full": setup_onroad_alert_full,
 }
 
 TEST_DIR = pathlib.Path(__file__).parent
