@@ -105,8 +105,10 @@ class LocationEstimator:
       if np.linalg.norm(meas) >= ACCEL_SANITY_CHECK:
         return HandleLogResult.INPUT_INVALID
 
-      _, _, _, _, _, _, (expected_acc,), _, _ = self.kf.predict_and_observe(sensor_time, ObservationKind.PHONE_ACCEL, meas)
-      self.expected_meas[ObservationKind.PHONE_ACCEL] = np.array(expected_acc)
+      acc_res = self.kf.predict_and_observe(sensor_time, ObservationKind.PHONE_ACCEL, meas)
+      if acc_res is not None:
+        _, _, _, _, _, _, (expected_acc,), _, _ = acc_res
+        self.expected_meas[ObservationKind.PHONE_ACCEL] = np.array(expected_acc)
 
     elif which == "gyroscope" and msg.which() == "gyroUncalibrated":
       sensor_time = msg.timestamp * 1e-9
@@ -128,8 +130,10 @@ class LocationEstimator:
       if np.linalg.norm(meas) >= ROTATION_SANITY_CHECK or not gyro_valid:
         return HandleLogResult.INPUT_INVALID
 
-      _, _, _, _, _, _, (expected_gyro,), _, _ = self.kf.predict_and_observe(sensor_time, ObservationKind.PHONE_GYRO, meas)
-      self.expected_meas[ObservationKind.PHONE_GYRO] = np.array(expected_gyro)
+      gyro_res = self.kf.predict_and_observe(sensor_time, ObservationKind.PHONE_GYRO, meas)
+      if gyro_res is not None:
+        _, _, _, _, _, _, (expected_gyro,), _, _ = gyro_res
+        self.expected_meas[ObservationKind.PHONE_GYRO] = np.array(expected_gyro)
 
     elif which == "carState":
       self.car_speed = abs(msg.vEgo)
@@ -171,11 +175,15 @@ class LocationEstimator:
       rot_device_noise = rot_device_std ** 2
       trans_device_noise = trans_device_std ** 2
 
-      _, _, _, _, _, _, (expected_odo_rot,), _, _ = self.kf.predict_and_observe(t, ObservationKind.CAMERA_ODO_ROTATION, rot_device, rot_device_noise)
-      _, _, _, _, _, _, (expected_odo_trans,), _, _ = self.kf.predict_and_observe(t, ObservationKind.CAMERA_ODO_TRANSLATION, trans_device, trans_device_noise)
+      cam_odo_rot_res = self.kf.predict_and_observe(t, ObservationKind.CAMERA_ODO_ROTATION, rot_device, rot_device_noise)
+      cam_odo_trans_res = self.kf.predict_and_observe(t, ObservationKind.CAMERA_ODO_TRANSLATION, trans_device, trans_device_noise)
       self.camodo_yawrate_distribution =  np.array([rot_device[2], rot_device_std[2]])
-      self.expected_meas[ObservationKind.CAMERA_ODO_ROTATION] = np.array(expected_odo_rot)
-      self.expected_meas[ObservationKind.CAMERA_ODO_TRANSLATION] = np.array(expected_odo_trans)
+      if cam_odo_rot_res is not None:
+        _, _, _, _, _, _, (expected_cam_odo_rot,), _, _ = cam_odo_rot_res
+        self.expected_meas[ObservationKind.CAMERA_ODO_ROTATION] = np.array(expected_cam_odo_rot)
+      if cam_odo_trans_res is not None:
+        _, _, _, _, _, _, (expected_cam_odo_trans,), _, _ = cam_odo_trans_res
+        self.expected_meas[ObservationKind.CAMERA_ODO_TRANSLATION] = np.array(expected_cam_odo_trans)
 
     self._finite_check(t)
     return HandleLogResult.SUCCESS
