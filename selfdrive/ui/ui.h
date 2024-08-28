@@ -53,14 +53,14 @@ typedef enum UIStatus {
 } UIStatus;
 
 enum PrimeType {
-  UNKNOWN = -2,
-  UNPAIRED = -1,
-  NONE = 0,
-  MAGENTA = 1,
-  LITE = 2,
-  BLUE = 3,
-  MAGENTA_NEW = 4,
-  PURPLE = 5,
+  PRIME_TYPE_UNKNOWN = -2,
+  PRIME_TYPE_UNPAIRED = -1,
+  PRIME_TYPE_NONE = 0,
+  PRIME_TYPE_MAGENTA = 1,
+  PRIME_TYPE_LITE = 2,
+  PRIME_TYPE_BLUE = 3,
+  PRIME_TYPE_MAGENTA_NEW = 4,
+  PRIME_TYPE_PURPLE = 5,
 };
 
 const QColor bg_colors [] = {
@@ -115,7 +115,7 @@ public:
 
   void setPrimeType(PrimeType type);
   inline PrimeType primeType() const { return prime_type; }
-  inline bool hasPrime() const { return prime_type > PrimeType::NONE; }
+  inline bool hasPrime() const { return prime_type > PrimeType::PRIME_TYPE_NONE; }
 
   int fb_w = 0, fb_h = 0;
 
@@ -140,7 +140,7 @@ private slots:
 private:
   QTimer *timer;
   bool started_prev = false;
-  PrimeType prime_type = PrimeType::UNKNOWN;
+  PrimeType prime_type = PrimeType::PRIME_TYPE_UNKNOWN;
 };
 
 UIState *uiState();

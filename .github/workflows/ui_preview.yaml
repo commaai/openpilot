@@ -6,6 +6,7 @@ on:
       - 'master'
     paths:
       - 'selfdrive/ui/**'
+  workflow_dispatch:
 
 env:
   UI_JOB_NAME: "Create UI Report"
@@ -78,12 +79,16 @@ jobs:
                 <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/openpilot/pr-${{ github.event.number }}/onroad.png"></td>
               </tr>
               <tr>
-                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/openpilot/pr-${{ github.event.number }}/onroad_map.png"></td>
                 <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/openpilot/pr-${{ github.event.number }}/onroad_sidebar.png"></td>
+                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/openpilot/pr-${{ github.event.number }}/settings_network.png"></td>
               </tr>
               <tr>
-                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/openpilot/pr-${{ github.event.number }}/settings_network.png"></td>
                 <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/openpilot/pr-${{ github.event.number }}/settings_device.png"></td>
+                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/openpilot/pr-${{ github.event.number }}/onroad_alert_small.png"></td>
+              </tr>
+              <tr>
+                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/openpilot/pr-${{ github.event.number }}/onroad_alert_mid.png"></td>
+                <td><img src="https://raw.githubusercontent.com/commaai/ci-artifacts/openpilot/pr-${{ github.event.number }}/onroad_alert_full.png"></td>
               </tr>
             </table>
           comment_tag: run_id_screenshots

@@ -7,6 +7,8 @@ from typing import NoReturn
 import cereal.messaging as messaging
 from openpilot.common.time import system_time_valid
 from openpilot.common.swaglog import cloudlog
+from openpilot.common.params import Params
+from openpilot.common.gps import get_gps_location_service
 
 
 def set_time(new_time):
@@ -31,8 +33,11 @@ def main() -> NoReturn:
     AGNOS will also use NTP to update the time.
   """
 
+  params = Params()
+  gps_location_service = get_gps_location_service(params)
+
   pm = messaging.PubMaster(['clocks'])
-  sm = messaging.SubMaster(['liveLocationKalman'])
+  sm = messaging.SubMaster([gps_location_service])
   while True:
     sm.update(1000)
 
@@ -41,13 +46,13 @@ def main() -> NoReturn:
     msg.clocks.wallTimeNanos = time.time_ns()
     pm.send('clocks', msg)
 
-    llk = sm['liveLocationKalman']
-    if not llk.gpsOK or (time.monotonic() - sm.logMonoTime['liveLocationKalman']/1e9) > 0.2:
+    gps = sm[gps_location_service]
+    if not sm.updated[gps_location_service] or (time.monotonic() - sm.logMonoTime[gps_location_service] / 1e9) > 2.0:
       continue
 
     # set time
     # TODO: account for unixTimesatmpMillis being a (usually short) time in the past
-    gps_time = datetime.datetime.fromtimestamp(llk.unixTimestampMillis / 1000.)
+    gps_time = datetime.datetime.fromtimestamp(gps.unixTimestampMillis / 1000.)
     set_time(gps_time)
 
     time.sleep(10)

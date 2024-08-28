@@ -1,7 +1,7 @@
 import cereal.messaging as messaging
 
+from opendbc.car.toyota.values import CAR as TOYOTA
 from openpilot.selfdrive.test.process_replay import replay_process_with_name
-from openpilot.selfdrive.car.toyota.values import CAR as TOYOTA
 
 
 class TestLeads:
