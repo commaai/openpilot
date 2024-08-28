@@ -14,7 +14,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_realtime_priority
 from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
-from openpilot.selfdrive.modeld.models.commonmodel_pyx import sigmoid
+from openpilot.selfdrive.modeld.models.commonmodel_pyx import sigmoid, CLContext
 
 CALIB_LEN = 3
 REG_SCALE = 0.25
@@ -56,14 +56,14 @@ class ModelState:
   output: np.ndarray
   model: ModelRunner
 
-  def __init__(self):
+  def __init__(self, cl_ctx):
     assert ctypes.sizeof(DMonitoringModelResult) == OUTPUT_SIZE * ctypes.sizeof(ctypes.c_float)
     self.output = np.zeros(OUTPUT_SIZE, dtype=np.float32)
     self.inputs = {
       'input_img': np.zeros(MODEL_HEIGHT * MODEL_WIDTH, dtype=np.uint8),
       'calib': np.zeros(CALIB_LEN, dtype=np.float32)}
 
-    self.model = ModelRunner(MODEL_PATHS, self.output, Runtime.GPU, True, None)
+    self.model = ModelRunner(MODEL_PATHS, self.output, Runtime.GPU, False, cl_ctx)
     self.model.addInput("input_img", None)
     self.model.addInput("calib", self.inputs['calib'])
 
@@ -77,7 +77,7 @@ class ModelState:
     input_data[:] = buf_data[v_offset:v_offset+MODEL_HEIGHT, h_offset:h_offset+MODEL_WIDTH]
 
     t1 = time.perf_counter()
-    self.model.setInputBuffer("input_img", self.inputs['input_img'].view(np.float32))
+    self.model.setInputBuffer("input_img", self.inputs['input_img'].astype(np.float32))
     self.model.execute()
     t2 = time.perf_counter()
     return self.output, t2 - t1
@@ -117,12 +117,13 @@ def main():
   gc.disable()
   set_realtime_priority(1)
 
-  model = ModelState()
+  cl_context = CLContext()
+  model = ModelState(cl_context)
   cloudlog.warning("models loaded, dmonitoringmodeld starting")
   Params().put_bool("DmModelInitialized", True)
 
   cloudlog.warning("connecting to driver stream")
-  vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_DRIVER, True)
+  vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_DRIVER, True, cl_context)
   while not vipc_client.connect(False):
     time.sleep(0.1)
   assert vipc_client.is_connected()
