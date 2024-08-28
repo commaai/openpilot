@@ -56,7 +56,7 @@ class LocationEstimator:
 
     obs_kinds = [ObservationKind.PHONE_ACCEL, ObservationKind.PHONE_GYRO, ObservationKind.CAMERA_ODO_ROTATION, ObservationKind.CAMERA_ODO_TRANSLATION]
     self.observations = {kind: np.zeros(3, dtype=np.float32) for kind in obs_kinds}
-    self.expected_observations = {kind: np.zeros(3, dtype=np.float32) for kind in obs_kinds}
+    self.observation_errors = {kind: np.zeros(3, dtype=np.float32) for kind in obs_kinds}
 
   def reset(self, t: float, x_initial: np.ndarray = PoseKalman.initial_x, P_initial: np.ndarray = PoseKalman.initial_P):
     self.kf.reset(t, x_initial, P_initial)
@@ -109,7 +109,7 @@ class LocationEstimator:
       acc_res = self.kf.predict_and_observe(sensor_time, ObservationKind.PHONE_ACCEL, meas)
       if acc_res is not None:
         _, _, _, _, _, _, (expected_acc,), _, _ = acc_res
-        self.expected_observations[ObservationKind.PHONE_ACCEL] = np.array(expected_acc)
+        self.observation_errors[ObservationKind.PHONE_ACCEL] = np.array(expected_acc)
         self.observations[ObservationKind.PHONE_ACCEL] = meas
 
     elif which == "gyroscope" and msg.which() == "gyroUncalibrated":
@@ -135,7 +135,7 @@ class LocationEstimator:
       gyro_res = self.kf.predict_and_observe(sensor_time, ObservationKind.PHONE_GYRO, meas)
       if gyro_res is not None:
         _, _, _, _, _, _, (expected_gyro,), _, _ = gyro_res
-        self.expected_observations[ObservationKind.PHONE_GYRO] = np.array(expected_gyro)
+        self.observation_errors[ObservationKind.PHONE_GYRO] = np.array(expected_gyro)
         self.observations[ObservationKind.PHONE_GYRO] = meas
 
     elif which == "carState":
@@ -183,11 +183,11 @@ class LocationEstimator:
       self.camodo_yawrate_distribution =  np.array([rot_device[2], rot_device_std[2]])
       if cam_odo_rot_res is not None:
         _, _, _, _, _, _, (expected_cam_odo_rot,), _, _ = cam_odo_rot_res
-        self.expected_observations[ObservationKind.CAMERA_ODO_ROTATION] = np.array(expected_cam_odo_rot)
+        self.observation_errors[ObservationKind.CAMERA_ODO_ROTATION] = np.array(expected_cam_odo_rot)
         self.observations[ObservationKind.CAMERA_ODO_ROTATION] = rot_device
       if cam_odo_trans_res is not None:
         _, _, _, _, _, _, (expected_cam_odo_trans,), _, _ = cam_odo_trans_res
-        self.expected_observations[ObservationKind.CAMERA_ODO_TRANSLATION] = np.array(expected_cam_odo_trans)
+        self.observation_errors[ObservationKind.CAMERA_ODO_TRANSLATION] = np.array(expected_cam_odo_trans)
         self.observations[ObservationKind.CAMERA_ODO_TRANSLATION] = trans_device
 
     self._finite_check(t)
@@ -214,8 +214,10 @@ class LocationEstimator:
       livePose.debugFilterState.value = state.tolist()
       livePose.debugFilterState.std = std.tolist()
       livePose.debugFilterState.valid = filter_valid
-      livePose.debugFilterState.expectedObservations = [{'kind': k, 'value': v.tolist()} for k, v in self.expected_observations.items()]
-      livePose.debugFilterState.observations = [{'kind': k, 'value': v.tolist()} for k, v in self.observations.items()]
+      livePose.debugFilterState.observations = [
+        {'kind': k, 'value': self.observations[k].tolist(), 'error': self.observation_errors[k].tolist()}
+        for k in self.observations.keys()
+      ]
 
     old_mean = np.mean(self.posenet_stds[:POSENET_STD_HIST_HALF])
     new_mean = np.mean(self.posenet_stds[POSENET_STD_HIST_HALF:])

@@ -1282,11 +1282,11 @@ struct LivePose {
     valid @2 : Bool;
 
     observations @3 :List(Observation);
-    expectedObservations @4 :List(Observation);
 
     struct Observation {
       kind @0 :Int32;
       value @1 :List(Float32);
+      error @2 :List(Float32);
     }
   }
 }
