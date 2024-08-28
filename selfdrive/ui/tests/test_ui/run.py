@@ -1,4 +1,5 @@
 from collections import namedtuple
+import capnp
 import pathlib
 import shutil
 import sys
@@ -11,7 +12,6 @@ import time
 
 from cereal import messaging, log
 from msgq.visionipc import VisionIpcServer, VisionStreamType
-
 from cereal.messaging import SubMaster, PubMaster
 from openpilot.common.params import Params
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
@@ -22,9 +22,10 @@ UI_DELAY = 0.5 # may be slower on CI?
 TEST_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 
 CAM = DEVICE_CAMERAS[("tici", "ar0231")]
-DATA = dict.fromkeys(["deviceState", "pandaStates", "controlsState", "liveCalibration",
-                      "modelV2", "radarState", "driverMonitoringState",
-                      "carState", "driverStateV2", "roadCameraState", "wideRoadCameraState"], None)
+DATA: dict[str, capnp.lib.capnp._DynamicStructBuilder | None] = dict.fromkeys(
+  ["deviceState", "pandaStates", "controlsState", "liveCalibration",
+  "modelV2", "radarState", "driverMonitoringState",
+  "carState", "driverStateV2", "roadCameraState", "wideRoadCameraState"], None)
 
 def setup_common(click, pm: PubMaster):
   Params().put("DongleId", "123456789012345")
@@ -57,17 +58,18 @@ def setup_onroad(click, pm: PubMaster):
 
   vipc_server.start_listener()
 
-  id = 0
-  for i in range(10):
+  packet_id = 0
+  for _ in range(10):
     for service, data in DATA.items():
-      data.clear_write_flag()
-      pm.send(service, data)
+      if data:
+        data.clear_write_flag()
+        pm.send(service, data)
 
     for stream_type, cam in streams:
       IMG = np.zeros((int(cam.width*1.5), cam.height), dtype=np.uint8)
       IMG_BYTES = IMG.flatten().tobytes()
-      id = id + 1
-      vipc_server.send(stream_type, IMG_BYTES, id, id, id)
+      packet_id = packet_id + 1
+      vipc_server.send(stream_type, IMG_BYTES, packet_id, packet_id, packet_id)
 
     time.sleep(0.05)
 
@@ -176,9 +178,9 @@ def create_screenshots():
   SCREENSHOTS_DIR.mkdir(parents=True)
 
   lr = list(LogReader(f'{TEST_ROUTE}/1/q'))
-  for log in lr:
-    if log.which() in DATA:
-      DATA[log.which()] = log.as_builder()
+  for event in lr:
+    if event.which() in DATA:
+      DATA[event.which()] = event.as_builder()
 
     if all(DATA.values()):
       break
