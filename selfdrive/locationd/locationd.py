@@ -231,7 +231,7 @@ def main():
   observation_timing_invalid = False
   observation_input_invalid = defaultdict(int)
 
-  initial_pose = params.get("LivePoseFilterInitialValues")
+  initial_pose = params.get("LocationFilterInitialState")
   if initial_pose is not None:
     initial_pose = json.loads(initial_pose)
     x_initial = np.array(initial_pose["x"], dtype=np.float64)
