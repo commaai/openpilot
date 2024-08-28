@@ -1280,6 +1280,13 @@ struct LivePose {
     value @0 : List(Float64);
     std @1 : List(Float64);
     valid @2 : Bool;
+
+    expectedObervations @3 :List(Observation);
+
+    struct Observation {
+      kind @0 :Int32;
+      value @1 :List(Float32);
+    }
   }
 }
 

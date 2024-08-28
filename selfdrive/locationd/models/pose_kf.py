@@ -119,7 +119,7 @@ class PoseKalman:
     R = self._get_R(len(data), obs_noise)
     return self.filter.predict_and_update_batch(t, kind, data, R)
 
-  def reset(self, t, x_init=initial_x, P_init=initial_P):
+  def reset(self, t, x_init, P_init):
     self.filter.init_state(x_init, P_init, t)
 
   def _get_R(self, n, obs_noise):

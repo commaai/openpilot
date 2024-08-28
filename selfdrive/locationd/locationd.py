@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import json
 import capnp
 import numpy as np
 from enum import Enum
@@ -8,6 +9,7 @@ from collections import defaultdict
 from cereal import log, messaging
 from openpilot.common.transformations.orientation import rot_from_euler
 from openpilot.common.realtime import config_realtime_process
+from openpilot.common.params import Params
 from openpilot.selfdrive.locationd.helpers import rotate_std
 from openpilot.selfdrive.locationd.models.pose_kf import PoseKalman, States
 from openpilot.selfdrive.locationd.models.constants import ObservationKind, GENERATED_DIR
@@ -52,8 +54,11 @@ class LocationEstimator:
     self.camodo_yawrate_distribution = np.array([0.0, 10.0])  # mean, std
     self.device_from_calib = np.eye(3)
 
-  def reset(self, t: float):
-    self.kf.reset(t)
+    obs_kinds = [ObservationKind.PHONE_ACCEL, ObservationKind.PHONE_GYRO, ObservationKind.CAMERA_ODO_ROTATION, ObservationKind.CAMERA_ODO_TRANSLATION]
+    self.expected_meas = {kind: np.zeros(3, dtype=np.float32) for kind in obs_kinds}
+
+  def reset(self, t: float, x_initial: np.ndarray = PoseKalman.initial_x, P_initial: np.ndarray = PoseKalman.initial_P):
+    self.kf.reset(t, x_initial, P_initial)
 
   def _validate_sensor_source(self, source: log.SensorEventData.SensorSource):
     # some segments have two IMUs, ignore the second one
@@ -100,7 +105,8 @@ class LocationEstimator:
       if np.linalg.norm(meas) >= ACCEL_SANITY_CHECK:
         return HandleLogResult.INPUT_INVALID
 
-      self.kf.predict_and_observe(sensor_time, ObservationKind.PHONE_ACCEL, meas)
+      _, _, _, _, _, _, expected_acc, _, _ = self.kf.predict_and_observe(sensor_time, ObservationKind.PHONE_ACCEL, meas)
+      self.expected_meas[ObservationKind.PHONE_ACCEL] = expected_acc
 
     elif which == "gyroscope" and msg.which() == "gyroUncalibrated":
       sensor_time = msg.timestamp * 1e-9
@@ -122,7 +128,8 @@ class LocationEstimator:
       if np.linalg.norm(meas) >= ROTATION_SANITY_CHECK or not gyro_valid:
         return HandleLogResult.INPUT_INVALID
 
-      self.kf.predict_and_observe(sensor_time, ObservationKind.PHONE_GYRO, meas)
+      _, _, _, _, _, _, expected_gyro, _, _ = self.kf.predict_and_observe(sensor_time, ObservationKind.PHONE_GYRO, meas)
+      self.expected_meas[ObservationKind.PHONE_GYRO] = expected_gyro
 
     elif which == "carState":
       self.car_speed = abs(msg.vEgo)
@@ -164,9 +171,11 @@ class LocationEstimator:
       rot_device_noise = rot_device_std ** 2
       trans_device_noise = trans_device_std ** 2
 
-      self.kf.predict_and_observe(t, ObservationKind.CAMERA_ODO_ROTATION, rot_device, rot_device_noise)
-      self.kf.predict_and_observe(t, ObservationKind.CAMERA_ODO_TRANSLATION, trans_device, trans_device_noise)
+      _, _, _, _, _, _, expected_odo_rot, _, _ = self.kf.predict_and_observe(t, ObservationKind.CAMERA_ODO_ROTATION, rot_device, rot_device_noise)
+      _, _, _, _, _, _, expected_odo_trans, _, _ = self.kf.predict_and_observe(t, ObservationKind.CAMERA_ODO_TRANSLATION, trans_device, trans_device_noise)
       self.camodo_yawrate_distribution =  np.array([rot_device[2], rot_device_std[2]])
+      self.expected_meas[ObservationKind.CAMERA_ODO_ROTATION] = expected_odo_rot
+      self.expected_meas[ObservationKind.CAMERA_ODO_TRANSLATION] = expected_odo_trans
 
     self._finite_check(t)
     return HandleLogResult.SUCCESS
@@ -192,6 +201,7 @@ class LocationEstimator:
       livePose.filterState.value = state.tolist()
       livePose.filterState.std = std.tolist()
       livePose.filterState.valid = filter_valid
+      livePose.filterState.expectedObervations = {k: v.tolist() for k, v in self.expected_meas.items()}
 
     old_mean = np.mean(self.posenet_stds[:POSENET_STD_HIST_HALF])
     new_mean = np.mean(self.posenet_stds[POSENET_STD_HIST_HALF:])
@@ -212,12 +222,21 @@ def main():
   pm = messaging.PubMaster(['livePose'])
   sm = messaging.SubMaster(['accelerometer', 'gyroscope', 'carState', 'liveCalibration', 'cameraOdometry'])
 
+  params = Params()
+
   estimator = LocationEstimator(DEBUG)
 
   filter_initialized = False
   critcal_services = ["accelerometer", "gyroscope", "liveCalibration", "cameraOdometry"]
   observation_timing_invalid = False
   observation_input_invalid = defaultdict(int)
+
+  initial_pose = params.get("LivePoseFilterInitialValues")
+  if initial_pose is not None:
+    initial_pose = json.loads(initial_pose)
+    x_initial = np.array(initial_pose["x"], dtype=np.float64)
+    P_initial = np.diag(np.array(initial_pose["P"], dtype=np.float64))
+    estimator.reset(None, x_initial, P_initial)
 
   while True:
     sm.update()
