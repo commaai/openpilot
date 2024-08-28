@@ -209,7 +209,7 @@ class LocationEstimator:
       livePose.filterState.value = state.tolist()
       livePose.filterState.std = std.tolist()
       livePose.filterState.valid = filter_valid
-      livePose.filterState.expectedObervations = [{'kind': k, 'value': v.tolist()} for k, v in self.expected_meas.items()]
+      livePose.filterState.expectedObservations = [{'kind': k, 'value': v.tolist()} for k, v in self.expected_meas.items()]
 
     old_mean = np.mean(self.posenet_stds[:POSENET_STD_HIST_HALF])
     new_mean = np.mean(self.posenet_stds[POSENET_STD_HIST_HALF:])
