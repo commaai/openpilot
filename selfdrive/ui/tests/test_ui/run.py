@@ -9,6 +9,7 @@ import os
 import pywinctl
 import time
 
+from cereal import messaging, log
 from msgq.visionipc import VisionIpcServer, VisionStreamType
 
 from cereal.messaging import SubMaster, PubMaster
