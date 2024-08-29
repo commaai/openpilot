@@ -72,7 +72,7 @@ class PoseKalman:
 
     dt = sp.Symbol('dt')
 
-    ned_from_device = euler_rotate(roll, pitch, yaw)
+    ned_from_device = euler_rotate(roll, pitch, 0.0)
     device_from_ned = ned_from_device.T
 
     state_dot = sp.Matrix(np.zeros((dim_state, 1)))
