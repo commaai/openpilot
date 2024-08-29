@@ -8,7 +8,7 @@ from openpilot.selfdrive.locationd.models.constants import ObservationKind
 if __name__=="__main__":
   import sympy as sp
   from rednose.helpers.ekf_sym import gen_code
-  from rednose.helpers.sympy_helpers import euler_rotate
+  from rednose.helpers.sympy_helpers import euler_rotate, rot_to_euler
 else:
   from rednose.helpers.ekf_sym_pyx import EKF_sym_pyx
 
@@ -66,17 +66,22 @@ class PoseKalman:
     roll, pitch, yaw = state[States.NED_ORIENTATION, :]
     velocity = state[States.DEVICE_VELOCITY, :]
     angular_velocity = state[States.ANGULAR_VELOCITY, :]
+    vroll, vpitch, vyaw = angular_velocity
     gyro_bias = state[States.GYRO_BIAS, :]
     acceleration = state[States.ACCELERATION, :]
     acc_bias = state[States.ACCEL_BIAS, :]
 
     dt = sp.Symbol('dt')
 
-    ned_from_device = euler_rotate(roll, pitch, 0.0)
+    ned_from_device = euler_rotate(roll, pitch, yaw)
     device_from_ned = ned_from_device.T
 
+    device_from_device_t1 = euler_rotate(vroll, vpitch, vyaw)
+    ned_from_device_t1 = ned_from_device * device_from_device_t1
+    angular_velocity_ned = rot_to_euler(ned_from_device_t1) - rot_to_euler(ned_from_device)
+
     state_dot = sp.Matrix(np.zeros((dim_state, 1)))
-    state_dot[States.NED_ORIENTATION, :] = ned_from_device * angular_velocity
+    state_dot[States.NED_ORIENTATION, :] = angular_velocity_ned
     state_dot[States.DEVICE_VELOCITY, :] = acceleration
 
     f_sym = state + dt * state_dot
