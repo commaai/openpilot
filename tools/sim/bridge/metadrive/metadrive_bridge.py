@@ -86,7 +86,8 @@ class MetaDriveBridge(SimulatorBridge):
       decision_repeat=1,
       physics_world_step_size=self.TICKS_PER_FRAME/100,
       preload_models=False,
-      show_logo=True
+      show_logo=False,
+      anisotropic_filtering=False
     )
 
     return MetaDriveWorld(queue, config, self.test_duration, self.test_run, self.dual_camera)
