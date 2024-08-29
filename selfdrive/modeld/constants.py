@@ -72,13 +72,14 @@ class Plan:
 class Meta:
   ENGAGED = slice(0, 1)
   # next 2, 4, 6, 8, 10 seconds
-  GAS_DISENGAGE = slice(1, 36, 7)
-  BRAKE_DISENGAGE = slice(2, 36, 7)
-  STEER_OVERRIDE = slice(3, 36, 7)
-  HARD_BRAKE_3 = slice(4, 36, 7)
-  HARD_BRAKE_4 = slice(5, 36, 7)
-  HARD_BRAKE_5 = slice(6, 36, 7)
-  GAS_PRESS = slice(7, 36, 7)
+  GAS_DISENGAGE = slice(1, 41, 8)
+  BRAKE_DISENGAGE = slice(2, 41, 8)
+  STEER_OVERRIDE = slice(3, 41, 8)
+  HARD_BRAKE_3 = slice(4, 41, 8)
+  HARD_BRAKE_4 = slice(5, 41, 8)
+  HARD_BRAKE_5 = slice(6, 41, 8)
+  GAS_PRESS = slice(7, 41, 8)
+  BRAKE_PRESS = slice(8, 41, 8)
   # next 0, 2, 4, 6, 8, 10 seconds
-  LEFT_BLINKER = slice(36, 48, 2)
-  RIGHT_BLINKER = slice(37, 48, 2)
+  LEFT_BLINKER = slice(41, 53, 2)
+  RIGHT_BLINKER = slice(42, 53, 2)
