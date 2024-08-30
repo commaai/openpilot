@@ -328,8 +328,8 @@ def joystick_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster,
 def personality_changed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
   personality = sm['controlsState'].personality
   return Alert(
-    "Personality:",
-    f"{personality}",
+    f"Personality: {personality}",
+    "",
     AlertStatus.userPrompt, AlertSize.mid,
     Priority.LOW, VisualAlert.none, AudibleAlert.none, 1.)
 
