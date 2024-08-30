@@ -164,8 +164,10 @@ def internal_source_zst(sr: SegmentRange, mode: ReadMode, file_ext: str = "zst")
 
 
 def openpilotci_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
-  rlog_paths = [get_url(sr.route_name, seg, "rlog") for seg in sr.seg_idxs]
-  qlog_paths = [get_url(sr.route_name, seg, "qlog") for seg in sr.seg_idxs]
+  rlog_paths = [get_url(sr.route_name, seg, "rlog.bz2") for seg in sr.seg_idxs]
+  rlog_paths += [get_url(sr.route_name, seg, "rlog.zst") for seg in sr.seg_idxs]
+  qlog_paths = [get_url(sr.route_name, seg, "qlog.bz2") for seg in sr.seg_idxs]
+  qlog_paths += [get_url(sr.route_name, seg, "qlog.zst") for seg in sr.seg_idxs]
 
   return apply_strategy(mode, rlog_paths, qlog_paths)
 
