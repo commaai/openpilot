@@ -7,12 +7,12 @@ from openpilot.tools.lib.logreader import LogReader
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
 from openpilot.selfdrive.test.process_replay.process_replay import replay_process_with_name
 
+# TODO find a new segment to test
 TEST_ROUTE = "ff2bd20623fcaeaa|2023-09-05--10-14-54/4"
 GPS_MESSAGES = ['gpsLocationExternal', 'gpsLocation']
 SELECT_COMPARE_FIELDS = {
-  'yaw_rate': ['angularVelocityCalibrated', 'value', 2],
-  'roll': ['orientationNED', 'value', 0],
-  'gps_flag': ['gpsOK'],
+  'yaw_rate': ['angularVelocityDevice', 'z'],
+  'roll': ['orientationNED', 'x'],
   'inputs_flag': ['inputsOK'],
   'sensors_flag': ['sensorsOK'],
 }
@@ -21,10 +21,6 @@ JUNK_IDX = 100
 
 class Scenario(Enum):
   BASE = 'base'
-  GPS_OFF = 'gps_off'
-  GPS_OFF_MIDWAY = 'gps_off_midway'
-  GPS_ON_MIDWAY = 'gps_on_midway'
-  GPS_TUNNEL = 'gps_tunnel'
   GYRO_OFF = 'gyro_off'
   GYRO_SPIKE_MIDWAY = 'gyro_spike_midway'
   ACCEL_OFF = 'accel_off'
@@ -37,9 +33,9 @@ def get_select_fields_data(logs):
     for key in keys:
       val = getattr(msg if val is None else val, key) if isinstance(key, str) else val[key]
     return val
-  llk = [x.liveLocationKalman for x in logs if x.which() == 'liveLocationKalman']
+  lp = [x.livePose for x in logs if x.which() == 'livePose']
   data = defaultdict(list)
-  for msg in llk:
+  for msg in lp:
     for key, fields in SELECT_COMPARE_FIELDS.items():
       data[key].append(get_nested_keys(msg, fields))
   for key in data:
@@ -130,7 +126,6 @@ class TestLocationdScenarios:
     orig_data, replayed_data = run_scenarios(Scenario.GPS_OFF, self.logs)
     assert np.allclose(orig_data['yaw_rate'], replayed_data['yaw_rate'], atol=np.radians(0.2))
     assert np.allclose(orig_data['roll'], replayed_data['roll'], atol=np.radians(0.5))
-    assert np.all(replayed_data['gps_flag'] == 0.0)
 
   def test_gps_off_midway(self):
     """
@@ -138,12 +133,10 @@ class TestLocationdScenarios:
     Expected Result:
       - yaw_rate: unchanged
       - roll:
-      - gpsOK: True for the first half, False for the second half
     """
     orig_data, replayed_data = run_scenarios(Scenario.GPS_OFF_MIDWAY, self.logs)
     assert np.allclose(orig_data['yaw_rate'], replayed_data['yaw_rate'], atol=np.radians(0.2))
     assert np.allclose(orig_data['roll'], replayed_data['roll'], atol=np.radians(0.5))
-    assert np.diff(replayed_data['gps_flag'])[512] == -1.0
 
   def test_gps_on_midway(self):
     """
@@ -151,12 +144,10 @@ class TestLocationdScenarios:
     Expected Result:
       - yaw_rate: unchanged
       - roll:
-      - gpsOK: False for the first half, True for the second half
     """
     orig_data, replayed_data = run_scenarios(Scenario.GPS_ON_MIDWAY, self.logs)
     assert np.allclose(orig_data['yaw_rate'], replayed_data['yaw_rate'], atol=np.radians(0.2))
     assert np.allclose(orig_data['roll'], replayed_data['roll'], atol=np.radians(1.5))
-    assert np.diff(replayed_data['gps_flag'])[505] == 1.0
 
   def test_gps_tunnel(self):
     """
@@ -164,13 +155,10 @@ class TestLocationdScenarios:
     Expected Result:
       - yaw_rate: unchanged
       - roll:
-      - gpsOK: False for the middle section, True for the rest
     """
     orig_data, replayed_data = run_scenarios(Scenario.GPS_TUNNEL, self.logs)
     assert np.allclose(orig_data['yaw_rate'], replayed_data['yaw_rate'], atol=np.radians(0.2))
     assert np.allclose(orig_data['roll'], replayed_data['roll'], atol=np.radians(0.5))
-    assert np.diff(replayed_data['gps_flag'])[213] == -1.0
-    assert np.diff(replayed_data['gps_flag'])[805] == 1.0
 
   def test_gyro_off(self):
     """
