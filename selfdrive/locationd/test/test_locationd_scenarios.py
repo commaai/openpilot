@@ -21,6 +21,10 @@ JUNK_IDX = 100
 
 class Scenario(Enum):
   BASE = 'base'
+  GPS_OFF = 'gps_off'
+  GPS_OFF_MIDWAY = 'gps_off_midway'
+  GPS_ON_MIDWAY = 'gps_on_midway'
+  GPS_TUNNEL = 'gps_tunnel'
   GYRO_OFF = 'gyro_off'
   GYRO_SPIKE_MIDWAY = 'gyro_spike_midway'
   ACCEL_OFF = 'accel_off'
