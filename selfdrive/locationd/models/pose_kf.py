@@ -76,15 +76,13 @@ class PoseKalman:
     ned_from_device = euler_rotate(roll, pitch, yaw)
     device_from_ned = ned_from_device.T
 
-    device_from_device_t1 = euler_rotate(vroll, vpitch, vyaw)
-    ned_from_device_t1 = ned_from_device * device_from_device_t1
-    angular_velocity_ned = rot_to_euler(ned_from_device_t1) - rot_to_euler(ned_from_device)
-
     state_dot = sp.Matrix(np.zeros((dim_state, 1)))
-    state_dot[States.NED_ORIENTATION, :] = angular_velocity_ned
     state_dot[States.DEVICE_VELOCITY, :] = acceleration
 
     f_sym = state + dt * state_dot
+    device_from_device_t1 = euler_rotate(dt*vroll, dt*vpitch, dt*vyaw)
+    ned_from_device_t1 = ned_from_device * device_from_device_t1
+    f_sym[States.NED_ORIENTATION, :] = rot_to_euler(ned_from_device_t1)
 
     centripetal_acceleration = angular_velocity.cross(velocity)
     gravity = sp.Matrix([0, 0, -EARTH_G])
