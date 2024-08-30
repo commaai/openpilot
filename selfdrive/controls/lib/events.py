@@ -330,7 +330,7 @@ def personality_changed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging
   return Alert(
     f"Personality: {personality}",
     "",
-    AlertStatus.userPrompt, AlertSize.mid,
+    AlertStatus.userPrompt, AlertSize.small,
     Priority.LOW, VisualAlert.none, AudibleAlert.none, 1.)
 
 
