@@ -53,9 +53,8 @@ class AzureContainer:
     key = get_container_sas(self.ACCOUNT, self.CONTAINER)
     return client, key
 
-  def get_url(self, route_name: str, segment_num, log_type="rlog") -> str:
-    ext = "hevc" if log_type.endswith('camera') else "bz2"
-    return self.BASE_URL + f"{route_name.replace('|', '/')}/{segment_num}/{log_type}.{ext}"
+  def get_url(self, route_name: str, segment_num: str, filename: str) -> str:
+    return self.BASE_URL + f"{route_name.replace('|', '/')}/{segment_num}/{filename}"
 
   def upload_bytes(self, data: bytes | IO, blob_name: str, overwrite=False) -> str:
     from azure.storage.blob import BlobClient

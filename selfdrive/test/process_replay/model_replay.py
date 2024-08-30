@@ -73,11 +73,11 @@ if __name__ == "__main__":
   ref_commit_fn = os.path.join(replay_dir, "model_replay_ref_commit")
 
   # load logs
-  lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT)))
+  lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT, "rlog.bz2")))
   frs = {
-    'roadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, log_type="fcamera"), readahead=True),
-    'driverCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, log_type="dcamera"), readahead=True),
-    'wideRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, log_type="ecamera"), readahead=True)
+    'roadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "fcamera.hevc"), readahead=True),
+    'driverCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "dcamera.hevc"), readahead=True),
+    'wideRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "ecamera.hevc"), readahead=True)
   }
 
   log_msgs = []
