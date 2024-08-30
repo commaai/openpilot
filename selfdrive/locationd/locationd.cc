@@ -161,7 +161,7 @@ void Localizer::build_live_pose(cereal::LivePose::Builder& fix) {
   // write measurements to msg
   init_xyz_measurement(fix.initVelocityDevice(), vel_device, vel_device_std, true);
   init_xyz_measurement(fix.initAccelerationDevice(), accDevice, accDeviceErr, true);
-  init_xyz_measurement(fix.initOrientationNED(), orientation_ned, orientation_ned_std, true);
+  init_xyz_measurement(fix.initOrientationNED(), orientation_ned, orientation_ned_std, this->gps_mode);
   init_xyz_measurement(fix.initAngularVelocityDevice(), angVelocityDevice, angVelocityDeviceErr, true);
   if (DEBUG) {
     cereal::LivePose::FilterState::Builder filter_state_builder = fix.initFilterState();
