@@ -493,7 +493,7 @@
     </message>
     <message>
         <source>Remote snapshots</source>
-        <translation type="unfinished"></translation>
+        <translation>لقطات عن بُعد</translation>
     </message>
 </context>
 <context>
@@ -1060,15 +1060,15 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
-        <translation type="unfinished"></translation>
+        <translation>ستتحول واجهة القيادة إلى الكاميرا الواسعة المواجهة للطريق عند السرعات المنخفضة لعرض بعض المنعطفات بشكل أفضل. كما سيتم عرض شعار وضع التجريبي في الزاوية العلوية اليمنى.</translation>
     </message>
     <message>
         <source>Always-On Driver Monitoring</source>
-        <translation type="unfinished"></translation>
+        <translation>مراقبة السائق المستمرة</translation>
     </message>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
-        <translation type="unfinished"></translation>
+        <translation>تمكين مراقبة السائق حتى عندما لا يكون نظام OpenPilot مُفعّلاً.</translation>
     </message>
 </context>
 <context>
