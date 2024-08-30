@@ -325,6 +325,14 @@ def joystick_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster,
   vals = f"Gas: {round(gb * 100.)}%, Steer: {round(steer * 100.)}%"
   return NormalPermanentAlert("Joystick Mode", vals)
 
+def personality_changed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
+  personality = sm['controlsState'].personality
+  return Alert(
+    "Personality:",
+    f"{personality}",
+    AlertStatus.userPrompt, AlertSize.mid,
+    Priority.LOW, VisualAlert.steerRequired, AudibleAlert.promptRepeat, 2.),
+
 
 
 EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
@@ -955,6 +963,10 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Vehicle Sensors Invalid"),
     ET.PERMANENT: NormalPermanentAlert("Vehicle Sensors Calibrating", "Drive to Calibrate"),
     ET.NO_ENTRY: NoEntryAlert("Vehicle Sensors Calibrating"),
+  },
+
+  EventName.personalityChanged: {
+    ET.WARNING: personality_changed_alert,
   },
 
 }
