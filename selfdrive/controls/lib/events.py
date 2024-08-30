@@ -326,9 +326,17 @@ def joystick_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster,
   return NormalPermanentAlert("Joystick Mode", vals)
 
 def personality_changed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
-  personality = sm['controlsState'].personality
+  personality = log.LongitudinalPersonality
+  personality_text = "unknown"
+
+  if personality == log.LongitudinalPersonality.relaxed:
+    personality_text = "relaxed"
+  elif personality == log.LongitudinalPersonality.standard:
+    personality_text = "standard"
+  elif personality == log.LongitudinalPersonality.aggressive:
+    personality_text = "aggressive"
   return Alert(
-    f"Personality: {personality}",
+    f"Personality: {personality_text}",
     "",
     AlertStatus.normal, AlertSize.small,
     Priority.LOW, VisualAlert.none, AudibleAlert.none, 1.)
