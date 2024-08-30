@@ -92,7 +92,7 @@ def setup_onroad_alert(click, pm: PubMaster, text1, text2, size, status=log.Cont
   cs.alertText2 = text2
   cs.alertSize = size
   cs.alertStatus = status
-  cs.alertType = "test_onorad_alert"
+  cs.alertType = "test_onroad_alert"
   pm.send('controlsState', dat)
 
 def setup_onroad_alert_small(click, pm: PubMaster):
