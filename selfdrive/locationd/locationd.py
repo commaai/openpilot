@@ -77,7 +77,8 @@ class LocationEstimator:
     return not sensor_time_invalid
 
   def _validate_timestamp(self, t: float):
-    invalid = not np.isnan(self.kf.t) and (self.kf.t - t) > MAX_FILTER_REWIND_TIME
+    kf_t = self.kf.t
+    invalid = not np.isnan(kf_t) and (kf_t - t) > MAX_FILTER_REWIND_TIME
     if invalid:
       print("Observation timestamp is older than the max rewind threshold of the filter")
     return not invalid
