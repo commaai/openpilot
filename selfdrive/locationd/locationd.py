@@ -83,7 +83,7 @@ class LocationEstimator:
     return not invalid
 
   def _finite_check(self, t: float, new_x: np.ndarray, new_P: np.ndarray):
-    all_finite = np.all(np.isfinite(new_x)) and np.all(np.isfinite(new_P))
+    all_finite = np.isfinite(new_x).all() and np.isfinite(new_P).all()
     if not all_finite:
       print("Non-finite values detected, kalman reset")
       self.reset(t)
