@@ -263,7 +263,7 @@ def main():
     if filter_initialized:
       observation_timing_invalid = False
       for which in sm.updated.keys():
-        if sm.valid[which]:
+        if sm.updated[which] and sm.valid[which]:
           t = sm.logMonoTime[which] * 1e-9
           res = estimator.handle_log(t, which, sm[which])
           if res == HandleLogResult.TIMING_INVALID:
