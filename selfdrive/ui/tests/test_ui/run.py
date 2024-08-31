@@ -26,8 +26,8 @@ TEST_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 STREAMS: list[tuple[VisionStreamType, CameraConfig, bytes]] = []
 DATA: dict[str, capnp.lib.capnp._DynamicStructBuilder] = dict.fromkeys(
   ["deviceState", "pandaStates", "controlsState", "liveCalibration",
-  "modelV2", "radarState", "driverMonitoringState",
-  "carState", "driverStateV2", "roadCameraState", "wideRoadCameraState"], None)
+  "modelV2", "radarState", "driverMonitoringState", "carState",
+  "driverStateV2", "roadCameraState", "wideRoadCameraState", "driverCameraState"], None)
 
 def setup_common(click, pm: PubMaster):
   Params().put("DongleId", "123456789012345")
@@ -42,8 +42,6 @@ def setup_settings_device(click, pm: PubMaster):
   click(100, 100)
 
 def setup_settings_network(click, pm: PubMaster):
-  setup_common(click, pm)
-
   setup_settings_device(click, pm)
   click(300, 600)
 
@@ -51,8 +49,6 @@ def setup_onroad(click, pm: PubMaster):
   setup_common(click, pm)
 
   vipc_server = VisionIpcServer("camerad")
-
-
   for stream_type, cam, _ in STREAMS:
     vipc_server.create_buffers(stream_type, 5, False, cam.width, cam.height)
   vipc_server.start_listener()
@@ -82,6 +78,13 @@ def setup_onroad_sidebar(click, pm: PubMaster):
 def setup_onroad_wide_sidebar(click, pm: PubMaster):
   setup_onroad_wide(click, pm)
   click(500, 500)
+
+def setup_driver_camera(click, pm: PubMaster):
+  setup_settings_device(click, pm)
+  click(1950, 435)
+  DATA['deviceState'].deviceState.started = False
+  setup_onroad(click, pm)
+  DATA['deviceState'].deviceState.started = True
 
 def setup_onroad_alert(click, pm: PubMaster, text1, text2, size, status=log.ControlsState.AlertStatus.normal):
   print(f'setup onroad alert, size: {size}')
@@ -115,6 +118,7 @@ CASES = {
   "onroad_alert_small": setup_onroad_alert_small,
   "onroad_alert_mid": setup_onroad_alert_mid,
   "onroad_alert_full": setup_onroad_alert_full,
+  "driver_camera": setup_driver_camera
 }
 
 TEST_DIR = pathlib.Path(__file__).parent
@@ -201,6 +205,9 @@ def create_screenshots():
 
   wide_road_img = FrameReader(route.ecamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
   STREAMS.append((VisionStreamType.VISION_STREAM_WIDE_ROAD, cam.ecam, wide_road_img.flatten().tobytes()))
+
+  driver_img = FrameReader(route.dcamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
+  STREAMS.append((VisionStreamType.VISION_STREAM_DRIVER, cam.dcam, driver_img.flatten().tobytes()))
 
   t = TestUI()
   for name, setup in CASES.items():
