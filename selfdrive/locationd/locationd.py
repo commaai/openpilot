@@ -90,9 +90,6 @@ class LocationEstimator:
       self.reset(t)
 
   def handle_log(self, t: float, which: str, msg: capnp._DynamicStructReader) -> HandleLogResult:
-    if not self._validate_timestamp(t):
-      return HandleLogResult.TIMING_INVALID
-
     new_x, new_P = None, None
     if which == "accelerometer" and msg.which() == "acceleration":
       sensor_time = msg.timestamp * 1e-9
@@ -153,6 +150,9 @@ class LocationEstimator:
         self.calibrated = msg.calStatus == log.LiveCalibrationData.Status.calibrated
 
     elif which == "cameraOdometry":
+      if not self._validate_timestamp(t):
+        return HandleLogResult.TIMING_INVALID
+
       rot_device = np.matmul(self.device_from_calib, np.array(msg.rot))
       trans_device = np.matmul(self.device_from_calib, np.array(msg.trans))
 
