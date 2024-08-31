@@ -1,5 +1,5 @@
 import numpy as np
-from openpilot.selfdrive.controls.radard import RADAR_TO_CAMERA
+from openpilot.selfdrive.car.radard import RADAR_TO_CAMERA
 
 # Color palette used for rerun AnnotationContext
 rerunColorPalette = [(96, "red", (255, 0, 0)),
