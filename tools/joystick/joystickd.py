@@ -10,6 +10,8 @@ from openpilot.common.numpy_fast import interp, clip
 from openpilot.common.params import Params
 from openpilot.tools.lib.kbhit import KBHit
 
+JS_EXPO = 0.4
+
 
 class Keyboard:
   def __init__(self):
@@ -67,6 +69,7 @@ class Joystick:
       self.min_axis_value[event[0]] = min(event[1], self.min_axis_value[event[0]])
 
       norm = -interp(event[1], [self.min_axis_value[event[0]], self.max_axis_value[event[0]]], [-1., 1.])
+      norm = JS_EXPO * norm ** 3 + (1 - JS_EXPO) * norm
       self.axes_values[event[0]] = norm if abs(norm) > 0.05 else 0.  # center can be noisy, deadzone of 5%
     else:
       return False
