@@ -94,7 +94,8 @@ def joystick_thread(joystick):
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Publishes events from your joystick to control your car.\n' +
-                                               'openpilot must be offroad before starting joysticked.',
+                                               'openpilot must be offroad before starting joystickd. This tool supports ' +
+                                               'a PlayStation 5 DualSense controller on the comma 3X.',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument('--keyboard', action='store_true', help='Use your keyboard instead of a joystick')
   args = parser.parse_args()
@@ -112,6 +113,7 @@ if __name__ == '__main__':
     print('- `C`: Cancel cruise control')
   else:
     print('Using joystick, make sure to run cereal/messaging/bridge on your device if running over the network!')
+    print('If running not on a comma device, the mapping may need to be adjusted.')
 
   joystick = Keyboard() if args.keyboard else Joystick()
   joystick_thread(joystick)
