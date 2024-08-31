@@ -260,7 +260,6 @@ def main():
   while True:
     sm.update()
 
-    filter_initialized = sm.all_checks()
     if filter_initialized:
       observation_timing_invalid = False
       for which in sorted(sm.updated.keys(), key=lambda x: sm.logMonoTime[x]):
@@ -273,6 +272,8 @@ def main():
             observation_input_invalid[which] += 1
           else:
             observation_input_invalid[which] *= INPUT_INVALID_DECAY
+    else:
+      filter_initialized = sm.all_checks()
 
     if sm.updated["cameraOdometry"]:
       critical_service_inputs_valid = all(observation_input_invalid[s] < INPUT_INVALID_THRESHOLD for s in critcal_services)
