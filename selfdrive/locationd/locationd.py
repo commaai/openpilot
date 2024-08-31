@@ -82,8 +82,8 @@ class LocationEstimator:
       print("Observation timestamp is older than the max rewind threshold of the filter")
     return not invalid
 
-  def _finite_check(self, t: float):
-    all_finite = np.all(np.isfinite(self.kf.x)) and np.all(np.isfinite(self.kf.P))
+  def _finite_check(self, t: float, new_x: np.ndarray, new_P: np.ndarray):
+    all_finite = np.all(np.isfinite(new_x)) and np.all(np.isfinite(new_P))
     if not all_finite:
       print("Non-finite values detected, kalman reset")
       self.reset(t)
@@ -92,6 +92,7 @@ class LocationEstimator:
     if not self._validate_timestamp(t):
       return HandleLogResult.TIMING_INVALID
 
+    new_x, new_P = None, None
     if which == "accelerometer" and msg.which() == "acceleration":
       sensor_time = msg.timestamp * 1e-9
 
@@ -108,7 +109,7 @@ class LocationEstimator:
 
       acc_res = self.kf.predict_and_observe(sensor_time, ObservationKind.PHONE_ACCEL, meas)
       if acc_res is not None:
-        _, _, _, _, _, _, (acc_err,), _, _ = acc_res
+        _, new_x, _, new_P, _, _, (acc_err,), _, _ = acc_res
         self.observation_errors[ObservationKind.PHONE_ACCEL] = np.array(acc_err)
         self.observations[ObservationKind.PHONE_ACCEL] = meas
 
@@ -134,7 +135,7 @@ class LocationEstimator:
 
       gyro_res = self.kf.predict_and_observe(sensor_time, ObservationKind.PHONE_GYRO, meas)
       if gyro_res is not None:
-        _, _, _, _, _, _, (gyro_err,), _, _ = gyro_res
+        _, new_x, _, new_P, _, _, (gyro_err,), _, _ = gyro_res
         self.observation_errors[ObservationKind.PHONE_GYRO] = np.array(gyro_err)
         self.observations[ObservationKind.PHONE_GYRO] = meas
 
@@ -182,15 +183,16 @@ class LocationEstimator:
       cam_odo_trans_res = self.kf.predict_and_observe(t, ObservationKind.CAMERA_ODO_TRANSLATION, trans_device, trans_device_noise)
       self.camodo_yawrate_distribution =  np.array([rot_device[2], rot_device_std[2]])
       if cam_odo_rot_res is not None:
-        _, _, _, _, _, _, (cam_odo_rot_err,), _, _ = cam_odo_rot_res
+        _, new_x, _, new_P, _, _, (cam_odo_rot_err,), _, _ = cam_odo_rot_res
         self.observation_errors[ObservationKind.CAMERA_ODO_ROTATION] = np.array(cam_odo_rot_err)
         self.observations[ObservationKind.CAMERA_ODO_ROTATION] = rot_device
       if cam_odo_trans_res is not None:
-        _, _, _, _, _, _, (cam_odo_trans_err,), _, _ = cam_odo_trans_res
+        _, new_x, _, new_P, _, _, (cam_odo_trans_err,), _, _ = cam_odo_trans_res
         self.observation_errors[ObservationKind.CAMERA_ODO_TRANSLATION] = np.array(cam_odo_trans_err)
         self.observations[ObservationKind.CAMERA_ODO_TRANSLATION] = trans_device
 
-    self._finite_check(t)
+    if new_x is not None and new_P is not None:
+      self._finite_check(t, new_x, new_P)
     return HandleLogResult.SUCCESS
 
   def get_msg(self, sensors_valid: bool, inputs_valid: bool, filter_valid: bool):
