@@ -262,7 +262,7 @@ def main():
 
     if filter_initialized:
       observation_timing_invalid = False
-      for which in sorted(sm.updated.keys(), key=lambda x: sm.logMonoTime[x]):
+      for which in sm.updated.keys():
         if sm.valid[which]:
           t = sm.logMonoTime[which] * 1e-9
           res = estimator.handle_log(t, which, sm[which])
