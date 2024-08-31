@@ -238,7 +238,7 @@ def main():
   DEBUG = bool(int(os.getenv("DEBUG", "0")))
 
   pm = messaging.PubMaster(['livePose'])
-  sm = messaging.SubMaster(['accelerometer', 'gyroscope', 'carState', 'liveCalibration', 'cameraOdometry'], poll="cameraOdometry")
+  sm = messaging.SubMaster(['accelerometer', 'gyroscope', 'carState', 'liveCalibration', 'cameraOdometry'])
 
   params = Params()
 
