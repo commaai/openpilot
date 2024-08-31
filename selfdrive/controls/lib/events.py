@@ -224,7 +224,7 @@ def user_soft_disable_alert(alert_text_2: str) -> AlertCallbackType:
     return UserSoftDisableAlert(alert_text_2)
   return func
 
-def startup_master_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
+def startup_master_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, control_state: log.ControlsState) -> Alert:
   branch = get_short_branch()  # Ensure get_short_branch is cached to avoid lags on startup
   if "REPLAY" in os.environ:
     branch = "replay"
@@ -325,16 +325,16 @@ def joystick_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster,
   vals = f"Gas: {round(gb * 100.)}%, Steer: {round(steer * 100.)}%"
   return NormalPermanentAlert("Joystick Mode", vals)
 
-def personality_changed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int) -> Alert:
-  personality = log.LongitudinalPersonality
+def personality_changed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, control_state: log.ControlsState) -> Alert:
+  personality = control_state.personality
   personality_text = "unknown"
 
   if personality == log.LongitudinalPersonality.relaxed:
-    personality_text = "relaxed"
+    personality_text = "Standard"
   elif personality == log.LongitudinalPersonality.standard:
-    personality_text = "standard"
+    personality_text = "Aggressive"
   elif personality == log.LongitudinalPersonality.aggressive:
-    personality_text = "aggressive"
+    personality_text = "Relaxed"
   return Alert(
     f"Personality: {personality_text}",
     "",
