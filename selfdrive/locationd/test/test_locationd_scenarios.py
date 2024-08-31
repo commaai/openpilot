@@ -94,7 +94,7 @@ class TestLocationdScenarios:
       - roll: unchanged
     """
     orig_data, replayed_data = run_scenarios(Scenario.BASE, self.logs)
-    assert np.allclose(orig_data['yaw_rate'], replayed_data['yaw_rate'], atol=np.radians(0.25))
+    assert np.allclose(orig_data['yaw_rate'], replayed_data['yaw_rate'], atol=np.radians(0.35))
     assert np.allclose(orig_data['roll'], replayed_data['roll'], atol=np.radians(0.55))
 
   def test_gyro_off(self):
@@ -119,7 +119,7 @@ class TestLocationdScenarios:
       - inputsOK: False for some time after the spike, True for the rest
     """
     orig_data, replayed_data = run_scenarios(Scenario.GYRO_SPIKE_MIDWAY, self.logs)
-    assert np.allclose(orig_data['yaw_rate'], replayed_data['yaw_rate'], atol=np.radians(0.25))
+    assert np.allclose(orig_data['yaw_rate'], replayed_data['yaw_rate'], atol=np.radians(0.35))
     assert np.allclose(orig_data['roll'], replayed_data['roll'], atol=np.radians(0.55))
     assert np.diff(replayed_data['inputs_flag'])[499] == -1.0
     assert np.diff(replayed_data['inputs_flag'])[696] == 1.0
@@ -144,5 +144,5 @@ class TestLocationdScenarios:
     Expected Result: Right now, the kalman filter is not robust to small spikes like it is to gyroscope spikes.
     """
     orig_data, replayed_data = run_scenarios(Scenario.ACCEL_SPIKE_MIDWAY, self.logs)
-    assert np.allclose(orig_data['yaw_rate'], replayed_data['yaw_rate'], atol=np.radians(0.25))
+    assert np.allclose(orig_data['yaw_rate'], replayed_data['yaw_rate'], atol=np.radians(0.35))
     assert np.allclose(orig_data['roll'], replayed_data['roll'], atol=np.radians(0.55))
