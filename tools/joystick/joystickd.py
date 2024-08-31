@@ -69,8 +69,8 @@ class Joystick:
       self.min_axis_value[event[0]] = min(event[1], self.min_axis_value[event[0]])
 
       norm = -interp(event[1], [self.min_axis_value[event[0]], self.max_axis_value[event[0]]], [-1., 1.])
-      norm = JS_EXPO * norm ** 3 + (1 - JS_EXPO) * norm
-      self.axes_values[event[0]] = norm if abs(norm) > 0.02 else 0.  # center can be noisy, deadzone of 2%
+      norm = norm if abs(norm) > 0.02 else 0.  # center can be noisy, deadzone of 2%
+      self.axes_values[event[0]] = JS_EXPO * norm ** 3 + (1 - JS_EXPO) * norm  # less action near center for fine control
     else:
       return False
     return True
