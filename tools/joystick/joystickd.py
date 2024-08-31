@@ -10,6 +10,8 @@ from openpilot.common.numpy_fast import interp, clip
 from openpilot.common.params import Params
 from openpilot.tools.lib.kbhit import KBHit
 
+JS_EXPO = 0.4
+
 
 class Keyboard:
   def __init__(self):
@@ -38,16 +40,13 @@ class Keyboard:
 
 
 class Joystick:
-  def __init__(self, gamepad=False):
-    # TODO: find a way to get this from API, perhaps "inputs" doesn't support it
-    if gamepad:
-      self.cancel_button = 'BTN_NORTH'  # (BTN_NORTH=X, ABS_RZ=Right Trigger)
-      accel_axis = 'ABS_Y'
-      steer_axis = 'ABS_RX'
-    else:
-      self.cancel_button = 'BTN_TRIGGER'
-      accel_axis = 'ABS_Y'
-      steer_axis = 'ABS_RX'
+  def __init__(self):
+    # This class supports a PlayStation 5 DualSense controller on the comma 3X
+    # TODO: find a way to get this from API or detect gamepad/PC, perhaps "inputs" doesn't support it
+    # TODO: the mapping can also be wrong on PC depending on the driver
+    self.cancel_button = 'BTN_NORTH'  # BTN_NORTH=X/triangle
+    accel_axis = 'ABS_Y'
+    steer_axis = 'ABS_Z'
     self.min_axis_value = {accel_axis: 0., steer_axis: 0.}
     self.max_axis_value = {accel_axis: 255., steer_axis: 255.}
     self.axes_values = {accel_axis: 0., steer_axis: 0.}
@@ -67,7 +66,8 @@ class Joystick:
       self.min_axis_value[event[0]] = min(event[1], self.min_axis_value[event[0]])
 
       norm = -interp(event[1], [self.min_axis_value[event[0]], self.max_axis_value[event[0]]], [-1., 1.])
-      self.axes_values[event[0]] = norm if abs(norm) > 0.05 else 0.  # center can be noisy, deadzone of 5%
+      norm = norm if abs(norm) > 0.02 else 0.  # center can be noisy, deadzone of 2%
+      self.axes_values[event[0]] = JS_EXPO * norm ** 3 + (1 - JS_EXPO) * norm  # less action near center for fine control
     else:
       return False
     return True
@@ -84,18 +84,20 @@ def send_thread(joystick):
     print('\n' + ', '.join(f'{name}: {round(v, 3)}' for name, v in joystick.axes_values.items()))
     rk.keep_time()
 
+
 def joystick_thread(joystick):
   Params().put_bool('JoystickDebugMode', True)
   threading.Thread(target=send_thread, args=(joystick,), daemon=True).start()
   while True:
     joystick.update()
 
+
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Publishes events from your joystick to control your car.\n' +
-                                               'openpilot must be offroad before starting joysticked.',
+                                               'openpilot must be offroad before starting joystickd. This tool supports ' +
+                                               'a PlayStation 5 DualSense controller on the comma 3X.',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument('--keyboard', action='store_true', help='Use your keyboard instead of a joystick')
-  parser.add_argument('--gamepad', action='store_true', help='Use gamepad configuration instead of joystick')
   args = parser.parse_args()
 
   if not Params().get_bool("IsOffroad") and "ZMQ" not in os.environ:
@@ -111,6 +113,7 @@ if __name__ == '__main__':
     print('- `C`: Cancel cruise control')
   else:
     print('Using joystick, make sure to run cereal/messaging/bridge on your device if running over the network!')
+    print('If not running on a comma device, the mapping may need to be adjusted.')
 
-  joystick = Keyboard() if args.keyboard else Joystick(args.gamepad)
+  joystick = Keyboard() if args.keyboard else Joystick()
   joystick_thread(joystick)
