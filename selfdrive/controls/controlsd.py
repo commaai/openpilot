@@ -717,7 +717,8 @@ class Controls:
     alerts = self.events.create_alerts(self.current_alert_types, [self.CP, CS, self.sm, self.is_metric, self.soft_disable_timer])
     self.AM.add_many(self.sm.frame, alerts)
     current_alert = self.AM.process_alerts(self.sm.frame, clear_event_types)
-    hudControl.visualAlert = current_alert.visual_alert
+    if current_alert:
+      hudControl.visualAlert = current_alert.visual_alert
 
     if not self.CP.passive and self.initialized:
       CO = self.sm['carOutput']
@@ -740,12 +741,13 @@ class Controls:
     dat = messaging.new_message('controlsState')
     dat.valid = CS.canValid
     controlsState = dat.controlsState
-    controlsState.alertText1 = current_alert.alert_text_1
-    controlsState.alertText2 = current_alert.alert_text_2
-    controlsState.alertSize = current_alert.alert_size
-    controlsState.alertStatus = current_alert.alert_status
-    controlsState.alertType = current_alert.alert_type
-    controlsState.alertSound = current_alert.audible_alert
+    if current_alert:
+      controlsState.alertText1 = current_alert.alert_text_1
+      controlsState.alertText2 = current_alert.alert_text_2
+      controlsState.alertSize = current_alert.alert_size
+      controlsState.alertStatus = current_alert.alert_status
+      controlsState.alertType = current_alert.alert_type
+      controlsState.alertSound = current_alert.audible_alert
 
     controlsState.longitudinalPlanMonoTime = self.sm.logMonoTime['longitudinalPlan']
     controlsState.lateralPlanMonoTime = self.sm.logMonoTime['modelV2']
