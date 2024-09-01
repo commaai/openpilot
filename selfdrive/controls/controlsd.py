@@ -44,7 +44,7 @@ TESTING_CLOSET = "TESTING_CLOSET" in os.environ
 IGNORE_PROCESSES = {"loggerd", "encoderd", "statsd"}
 
 ThermalStatus = log.DeviceState.ThermalStatus
-State = log.ControlsState.OpenpilotState
+State = log.SelfdriveState.OpenpilotState
 PandaType = log.PandaState.PandaType
 Desire = log.Desire
 LaneChangeState = log.LaneChangeState
@@ -78,7 +78,7 @@ class Controls:
     self.branch = get_short_branch()
 
     # Setup sockets
-    self.pm = messaging.PubMaster(['controlsState', 'carControl', 'onroadEvents'])
+    self.pm = messaging.PubMaster(['selfdriveState', 'controlsState', 'carControl', 'onroadEvents'])
 
     self.gps_location_service = get_gps_location_service(self.params)
     self.gps_packets = [self.gps_location_service]
@@ -108,7 +108,6 @@ class Controls:
     # read params
     self.is_metric = self.params.get_bool("IsMetric")
     self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
-    self.controlsState = 0
 
     # detect sound card presence and ensure successful init
     sounds_available = HARDWARE.get_sound_card_online()
@@ -716,7 +715,8 @@ class Controls:
     if self.enabled:
       clear_event_types.add(ET.NO_ENTRY)
 
-    alerts = self.events.create_alerts(self.current_alert_types, [self.CP, CS, self.sm, self.is_metric, self.soft_disable_timer, self.controlsState])
+    pers = {v: k for k, v in log.LongitudinalPersonality.schema.enumerants.items()}[self.personality]
+    alerts = self.events.create_alerts(self.current_alert_types, [self.CP, CS, self.sm, self.is_metric, self.soft_disable_timer, pers])
     self.AM.add_many(self.sm.frame, alerts)
     current_alert = self.AM.process_alerts(self.sm.frame, clear_event_types)
     if current_alert:
@@ -742,47 +742,65 @@ class Controls:
     # controlsState
     dat = messaging.new_message('controlsState')
     dat.valid = CS.canValid
-    self.controlsState = dat.controlsState
+    controlsState = dat.controlsState
     if current_alert:
-      self.controlsState.alertText1 = current_alert.alert_text_1
-      self.controlsState.alertText2 = current_alert.alert_text_2
-      self.controlsState.alertSize = current_alert.alert_size
-      self.controlsState.alertStatus = current_alert.alert_status
-      self.controlsState.alertBlinkingRate = current_alert.alert_rate
-      self.controlsState.alertType = current_alert.alert_type
-      self.controlsState.alertSound = current_alert.audible_alert
+      controlsState.alertText1 = current_alert.alert_text_1
+      controlsState.alertText2 = current_alert.alert_text_2
+      controlsState.alertSize = current_alert.alert_size
+      controlsState.alertStatus = current_alert.alert_status
+      controlsState.alertType = current_alert.alert_type
+      controlsState.alertSound = current_alert.audible_alert
 
-    self.controlsState.longitudinalPlanMonoTime = self.sm.logMonoTime['longitudinalPlan']
-    self.controlsState.lateralPlanMonoTime = self.sm.logMonoTime['modelV2']
-    self.controlsState.enabled = self.enabled
-    self.controlsState.active = self.active
-    self.controlsState.curvature = curvature
-    self.controlsState.desiredCurvature = self.desired_curvature
-    self.controlsState.state = self.state
-    self.controlsState.engageable = not self.events.contains(ET.NO_ENTRY)
-    self.controlsState.longControlState = self.LoC.long_control_state
-    self.controlsState.vCruise = float(self.v_cruise_helper.v_cruise_kph)
-    self.controlsState.vCruiseCluster = float(self.v_cruise_helper.v_cruise_cluster_kph)
-    self.controlsState.upAccelCmd = float(self.LoC.pid.p)
-    self.controlsState.uiAccelCmd = float(self.LoC.pid.i)
-    self.controlsState.ufAccelCmd = float(self.LoC.pid.f)
-    self.controlsState.cumLagMs = -self.rk.remaining * 1000.
-    self.controlsState.startMonoTime = int(start_time * 1e9)
-    self.controlsState.forceDecel = bool(force_decel)
-    self.controlsState.experimentalMode = self.experimental_mode
-    self.controlsState.personality = self.personality
+    controlsState.longitudinalPlanMonoTime = self.sm.logMonoTime['longitudinalPlan']
+    controlsState.lateralPlanMonoTime = self.sm.logMonoTime['modelV2']
+    controlsState.enabled = self.enabled
+    controlsState.active = self.active
+    controlsState.curvature = curvature
+    controlsState.desiredCurvature = self.desired_curvature
+    controlsState.state = self.state
+    controlsState.engageable = not self.events.contains(ET.NO_ENTRY)
+    controlsState.longControlState = self.LoC.long_control_state
+    controlsState.vCruise = float(self.v_cruise_helper.v_cruise_kph)
+    controlsState.vCruiseCluster = float(self.v_cruise_helper.v_cruise_cluster_kph)
+    controlsState.upAccelCmd = float(self.LoC.pid.p)
+    controlsState.uiAccelCmd = float(self.LoC.pid.i)
+    controlsState.ufAccelCmd = float(self.LoC.pid.f)
+    controlsState.cumLagMs = -self.rk.remaining * 1000.
+    controlsState.startMonoTime = int(start_time * 1e9)
+    controlsState.forceDecel = bool(force_decel)
+    controlsState.experimentalMode = self.experimental_mode
+    controlsState.personality = self.personality
 
     lat_tuning = self.CP.lateralTuning.which()
     if self.joystick_mode:
-      self.controlsState.lateralControlState.debugState = lac_log
+      controlsState.lateralControlState.debugState = lac_log
     elif self.CP.steerControlType == car.CarParams.SteerControlType.angle:
-      self.controlsState.lateralControlState.angleState = lac_log
+      controlsState.lateralControlState.angleState = lac_log
     elif lat_tuning == 'pid':
-      self.controlsState.lateralControlState.pidState = lac_log
+      controlsState.lateralControlState.pidState = lac_log
     elif lat_tuning == 'torque':
-      self.controlsState.lateralControlState.torqueState = lac_log
+      controlsState.lateralControlState.torqueState = lac_log
 
     self.pm.send('controlsState', dat)
+
+    # selfdriveState
+    ss_msg = messaging.new_message('selfdriveState')
+    ss_msg.valid = CS.canValid
+    ss = ss_msg.selfdriveState
+    if current_alert:
+      ss.alertText1 = current_alert.alert_text_1
+      ss.alertText2 = current_alert.alert_text_2
+      ss.alertSize = current_alert.alert_size
+      ss.alertStatus = current_alert.alert_status
+      ss.alertType = current_alert.alert_type
+      ss.alertSound = current_alert.audible_alert
+    ss.enabled = self.enabled
+    ss.active = self.active
+    ss.state = self.state
+    ss.engageable = not self.events.contains(ET.NO_ENTRY)
+    ss.experimentalMode = self.experimental_mode
+    ss.personality = self.personality
+    self.pm.send('selfdriveState', ss_msg)
 
     # onroadEvents - logged every second or on change
     if (self.sm.frame % int(1. / DT_CTRL) == 0) or (self.events.names != self.events_prev):

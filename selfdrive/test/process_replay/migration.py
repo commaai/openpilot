@@ -15,6 +15,7 @@ def migrate_all(lr, old_logtime=False, manager_states=False, panda_states=False,
   msgs = migrate_gpsLocation(msgs)
   msgs = migrate_deviceState(msgs)
   msgs = migrate_carOutput(msgs)
+  msgs = migrate_selfdriveState(msgs)
   if manager_states:
     msgs = migrate_managerState(msgs)
   if panda_states:
@@ -24,6 +25,23 @@ def migrate_all(lr, old_logtime=False, manager_states=False, panda_states=False,
     msgs = migrate_cameraStates(msgs)
 
   return msgs
+
+
+def migrate_selfdriveState(lr):
+  ret = []
+  for msg in lr:
+    if msg.which() == 'controlsState':
+      m = messaging.new_message('selfdriveState')
+      m.valid = msg.valid
+      m.logMonoTime = msg.logMonoTime
+      ss = m.selfdriveState
+      for field in ("enabled", "active", "state", "engageable", "alertText1", "alertText2",
+                    "alertStatus", "alertSize", "alertType", "alertSound", "experimentalMode",
+                    "personality"):
+        setattr(ss, field, getattr(msg.controlsState, field))
+      ret.append(m.as_reader())
+    ret.append(msg)
+  return ret
 
 
 def migrate_managerState(lr):

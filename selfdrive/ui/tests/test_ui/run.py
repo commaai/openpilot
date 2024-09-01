@@ -16,6 +16,7 @@ from cereal.messaging import SubMaster, PubMaster
 from openpilot.common.params import Params
 from openpilot.common.transformations.camera import CameraConfig, DEVICE_CAMERAS
 from openpilot.selfdrive.test.helpers import with_processes
+from openpilot.selfdrive.test.process_replay.migration import migrate_selfdriveState
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.route import Route
@@ -25,9 +26,9 @@ TEST_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 
 STREAMS: list[tuple[VisionStreamType, CameraConfig, bytes]] = []
 DATA: dict[str, capnp.lib.capnp._DynamicStructBuilder] = dict.fromkeys(
-  ["deviceState", "pandaStates", "controlsState", "liveCalibration",
-  "modelV2", "radarState", "driverMonitoringState",
-  "carState", "driverStateV2", "roadCameraState", "wideRoadCameraState"], None)
+  ["deviceState", "pandaStates", "selfdriveState", "liveCalibration",
+  "modelV2", "radarState", "driverMonitoringState", "carState",
+  "driverStateV2", "roadCameraState", "wideRoadCameraState", "driverCameraState"], None)
 
 def setup_common(click, pm: PubMaster):
   Params().put("DongleId", "123456789012345")
@@ -42,8 +43,6 @@ def setup_settings_device(click, pm: PubMaster):
   click(100, 100)
 
 def setup_settings_network(click, pm: PubMaster):
-  setup_common(click, pm)
-
   setup_settings_device(click, pm)
   click(300, 600)
 
@@ -51,8 +50,6 @@ def setup_onroad(click, pm: PubMaster):
   setup_common(click, pm)
 
   vipc_server = VisionIpcServer("camerad")
-
-
   for stream_type, cam, _ in STREAMS:
     vipc_server.create_buffers(stream_type, 5, False, cam.width, cam.height)
   vipc_server.start_listener()
@@ -71,7 +68,7 @@ def setup_onroad(click, pm: PubMaster):
     time.sleep(0.05)
 
 def setup_onroad_wide(click, pm: PubMaster):
-  DATA['controlsState'].controlsState.experimentalMode = True
+  DATA['selfdriveState'].selfdriveState.experimentalMode = True
   DATA["carState"].carState.vEgo = 1
   setup_onroad(click, pm)
 
@@ -83,26 +80,33 @@ def setup_onroad_wide_sidebar(click, pm: PubMaster):
   setup_onroad_wide(click, pm)
   click(500, 500)
 
-def setup_onroad_alert(click, pm: PubMaster, text1, text2, size, status=log.ControlsState.AlertStatus.normal):
+def setup_driver_camera(click, pm: PubMaster):
+  setup_settings_device(click, pm)
+  click(1950, 435)
+  DATA['deviceState'].deviceState.started = False
+  setup_onroad(click, pm)
+  DATA['deviceState'].deviceState.started = True
+
+def setup_onroad_alert(click, pm: PubMaster, text1, text2, size, status=log.SelfdriveState.AlertStatus.normal):
   print(f'setup onroad alert, size: {size}')
   setup_onroad(click, pm)
-  dat = messaging.new_message('controlsState')
-  cs = dat.controlsState
+  dat = messaging.new_message('selfdriveState')
+  cs = dat.selfdriveState
   cs.alertText1 = text1
   cs.alertText2 = text2
   cs.alertSize = size
   cs.alertStatus = status
-  cs.alertType = "test_onorad_alert"
-  pm.send('controlsState', dat)
+  cs.alertType = "test_onroad_alert"
+  pm.send('selfdriveState', dat)
 
 def setup_onroad_alert_small(click, pm: PubMaster):
-  setup_onroad_alert(click, pm, 'This is a small alert message', '', log.ControlsState.AlertSize.small)
+  setup_onroad_alert(click, pm, 'This is a small alert message', '', log.SelfdriveState.AlertSize.small)
 
 def setup_onroad_alert_mid(click, pm: PubMaster):
-  setup_onroad_alert(click, pm, 'Medium Alert', 'This is a medium alert message', log.ControlsState.AlertSize.mid)
+  setup_onroad_alert(click, pm, 'Medium Alert', 'This is a medium alert message', log.SelfdriveState.AlertSize.mid)
 
 def setup_onroad_alert_full(click, pm: PubMaster):
-  setup_onroad_alert(click, pm, 'Full Alert', 'This is a full alert message', log.ControlsState.AlertSize.full)
+  setup_onroad_alert(click, pm, 'Full Alert', 'This is a full alert message', log.SelfdriveState.AlertSize.full)
 
 CASES = {
   "homescreen": setup_homescreen,
@@ -115,6 +119,7 @@ CASES = {
   "onroad_alert_small": setup_onroad_alert_small,
   "onroad_alert_mid": setup_onroad_alert_mid,
   "onroad_alert_full": setup_onroad_alert_full,
+  "driver_camera": setup_driver_camera
 }
 
 TEST_DIR = pathlib.Path(__file__).parent
@@ -188,7 +193,7 @@ def create_screenshots():
 
   segnum = 2
   lr = LogReader(route.qlog_paths()[segnum])
-  for event in lr:
+  for event in migrate_selfdriveState(lr):
     if event.which() in DATA:
       DATA[event.which()] = event.as_builder()
 
@@ -201,6 +206,9 @@ def create_screenshots():
 
   wide_road_img = FrameReader(route.ecamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
   STREAMS.append((VisionStreamType.VISION_STREAM_WIDE_ROAD, cam.ecam, wide_road_img.flatten().tobytes()))
+
+  driver_img = FrameReader(route.dcamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
+  STREAMS.append((VisionStreamType.VISION_STREAM_DRIVER, cam.dcam, driver_img.flatten().tobytes()))
 
   t = TestUI()
   for name, setup in CASES.items():
