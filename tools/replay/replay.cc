@@ -171,7 +171,7 @@ void Replay::buildTimeline() {
 
     std::vector<std::tuple<double, double, TimelineType>> timeline;
     for (const Event &e : log->events) {
-      if (e.which == cereal::Event::Which::CONTROLS_STATE) {
+      if (e.which == cereal::Event::Which::SELFDRIVE_STATE) {
         capnp::FlatArrayMessageReader reader(e.data);
         auto event = reader.getRoot<cereal::Event>();
         auto cs = event.getSelfdriveState();
