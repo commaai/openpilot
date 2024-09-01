@@ -7,8 +7,8 @@ from collections import defaultdict
 from tqdm import tqdm
 from typing import Any
 
+from opendbc.car.car_helpers import interface_names
 from openpilot.common.git import get_commit
-from openpilot.selfdrive.car.car_helpers import interface_names
 from openpilot.tools.lib.openpilotci import get_url, upload_file
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, replay_process, \
@@ -36,32 +36,31 @@ source_segments = [
   ("FORD", "54827bf84c38b14f|2023-01-26--21-59-07--4"),        # FORD.FORD_BRONCO_SPORT_MK1
 
   # Enable when port is tested and dashcamOnly is no longer set
-  #("TESLA", "bb50caf5f0945ab1|2021-06-19--17-20-18--3"),      # TESLA.TESLA_AP2_MODELS
   #("VOLKSWAGEN2", "3cfdec54aa035f3f|2022-07-19--23-45-10--2"),  # VOLKSWAGEN.VOLKSWAGEN_PASSAT_NMS
 ]
 
 segments = [
-  ("BODY", "regen34ECCE11CA1|2024-07-29--22-55-10--0"),
-  ("HYUNDAI", "regenC713CE6FA82|2024-07-29--22-56-31--0"),
-  ("HYUNDAI2", "regenD81F3A374A7|2024-07-29--22-58-45--0"),
-  ("TOYOTA", "regenE6D76723DC2|2024-07-29--23-00-08--0"),
-  ("TOYOTA2", "regen198859A572C|2024-07-29--23-01-31--0"),
-  ("TOYOTA3", "regenDF1EB621A66|2024-07-29--23-03-49--0"),
-  ("HONDA", "regen0FE7C4758B5|2024-07-29--23-05-14--0"),
-  ("HONDA2", "regen510A1F60E60|2024-07-29--23-06-39--0"),
-  ("CHRYSLER", "regenDACF082E83B|2024-07-29--23-08-01--0"),
-  ("RAM", "regen8BFB7E62F52|2024-07-29--23-10-14--0"),
-  ("SUBARU", "regen4EE2D45369E|2024-07-29--23-12-31--0"),
-  ("GM", "regenB38D92E6A4D|2024-07-29--23-13-54--0"),
-  ("GM2", "regenC5488470F1A|2024-07-29--23-16-09--0"),
-  ("NISSAN", "regenE5400EB4689|2024-07-29--23-17-30--0"),
-  ("VOLKSWAGEN", "regenD0B5635A8B9|2024-07-29--23-18-54--0"),
-  ("MAZDA", "regen57F8511F082|2024-07-29--23-21-09--0"),
-  ("FORD", "regen5708620AA2E|2024-07-29--23-23-20--0"),
+  ("BODY", "regenA67A128BCD8|2024-08-30--02-36-22--0"),
+  ("HYUNDAI", "regen9CBD921E93E|2024-08-30--02-38-51--0"),
+  ("HYUNDAI2", "regen12E0C4EA1A7|2024-08-30--02-42-40--0"),
+  ("TOYOTA", "regen1CA7A48E6F7|2024-08-30--02-45-08--0"),
+  ("TOYOTA2", "regen6E484EDAB96|2024-08-30--02-47-37--0"),
+  ("TOYOTA3", "regen4CE950B0267|2024-08-30--02-51-30--0"),
+  ("HONDA", "regenC8F0D6ADC5C|2024-08-30--02-54-01--0"),
+  ("HONDA2", "regen4B38A7428CD|2024-08-30--02-56-31--0"),
+  ("CHRYSLER", "regenF3DBBA9E8DF|2024-08-30--02-59-03--0"),
+  ("RAM", "regenDB02684E00A|2024-08-30--03-02-54--0"),
+  ("SUBARU", "regenAA1FF48CF1F|2024-08-30--03-06-45--0"),
+  ("GM", "regen720F2BA4CF6|2024-08-30--03-09-15--0"),
+  ("GM2", "regen9ADBECBCD1C|2024-08-30--03-13-04--0"),
+  ("NISSAN", "regen58464878D07|2024-08-30--03-15-31--0"),
+  ("VOLKSWAGEN", "regenED976DEB757|2024-08-30--03-18-02--0"),
+  ("MAZDA", "regenACF84CCF482|2024-08-30--03-21-55--0"),
+  ("FORD", "regen6ECC59A6307|2024-08-30--03-25-42--0"),
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
-excluded_interfaces = ["mock", "tesla"]
+excluded_interfaces = ["mock"]
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
@@ -87,7 +86,7 @@ def run_test_process(data):
 
 def get_log_data(segment):
   r, n = segment.rsplit("--", 1)
-  with FileReader(get_url(r, n)) as f:
+  with FileReader(get_url(r, n, "rlog.zst")) as f:
     return (segment, f.read())
 
 
@@ -200,7 +199,7 @@ if __name__ == "__main__":
 
         cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.zst")
         if args.update_refs:  # reference logs will not exist if routes were just regenerated
-          ref_log_path = get_url(*segment.rsplit("--", 1))
+          ref_log_path = get_url(*segment.rsplit("--", 1,), "rlog.zst")
         else:
           ref_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{ref_commit}.zst")
           ref_log_path = ref_log_fn if os.path.exists(ref_log_fn) else BASE_URL + os.path.basename(ref_log_fn)

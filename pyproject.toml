@@ -74,7 +74,6 @@ docs = [
 testing = [
   "coverage",
   "hypothesis ==6.47.*",
-  "import-linter",
   "mypy",
   "pytest",
   "pytest-cov",
@@ -100,7 +99,7 @@ dev = [
   "inputs",
   "lru-dict",
   "matplotlib",
-  "metadrive-simulator@git+https://github.com/commaai/metadrive@opencv_headless ; platform_machine != 'aarch64'",
+  "metadrive-simulator @ https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal/metadrive_simulator-0.4.2.3-py3-none-any.whl ; (platform_machine != 'aarch64')",
   "parameterized >=0.8, <0.9",
   #"pprofile",
   "pyautogui",
@@ -108,7 +107,7 @@ dev = [
   "pytools < 2024.1.11; platform_machine != 'aarch64'", # pyopencl use a broken version
   "pywinctl",
   "pyprof2calltree",
-  "rerun-sdk",
+  "rerun-sdk >= 0.18",
   "tabulate",
   "types-requests",
   "types-tabulate",
@@ -145,6 +144,7 @@ testpaths = [
   "common",
   "selfdrive/pandad",
   "selfdrive/car",
+  "selfdrive/opcar",
   "selfdrive/controls",
   "selfdrive/locationd",
   "selfdrive/monitoring",

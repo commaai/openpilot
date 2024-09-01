@@ -6,6 +6,7 @@ from typing import Any
 
 import capnp
 from cereal import messaging, log, car
+from opendbc.car import structs
 from openpilot.common.numpy_fast import interp
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_CTRL, Ratekeeper, Priority, config_realtime_process
@@ -208,15 +209,9 @@ class RadarD:
 
     self.ready = False
 
-  def update(self, sm: messaging.SubMaster, rr):
+  def update(self, sm: messaging.SubMaster, rr: structs.RadarData):
     self.ready = sm.seen['modelV2']
     self.current_time = 1e-9*max(sm.logMonoTime.values())
-
-    radar_points = []
-    radar_errors = []
-    if rr is not None:
-      radar_points = rr.points
-      radar_errors = rr.errors
 
     if sm.recv_frame['carState'] != self.last_v_ego_frame:
       self.v_ego = sm['carState'].vEgo
@@ -224,7 +219,7 @@ class RadarD:
       self.last_v_ego_frame = sm.recv_frame['carState']
 
     ar_pts = {}
-    for pt in radar_points:
+    for pt in rr.points:
       ar_pts[pt.trackId] = [pt.dRel, pt.yRel, pt.vRel, pt.measured]
 
     # *** remove missing points from meta data ***
@@ -245,10 +240,10 @@ class RadarD:
       self.tracks[ids].update(rpt[0], rpt[1], rpt[2], v_lead, rpt[3])
 
     # *** publish radarState ***
-    self.radar_state_valid = sm.all_checks() and len(radar_errors) == 0
+    self.radar_state_valid = sm.all_checks() and len(rr.errors) == 0
     self.radar_state = log.RadarState.new_message()
     self.radar_state.mdMonoTime = sm.logMonoTime['modelV2']
-    self.radar_state.radarErrors = list(radar_errors)
+    self.radar_state.radarErrors = list(rr.errors)
     self.radar_state.carStateMonoTime = sm.logMonoTime['carState']
 
     if len(sm['modelV2'].temporalPose.trans):
@@ -283,7 +278,7 @@ class RadarD:
 
 
 # fuses camera and radar data for best lead detection
-def main():
+def main() -> None:
   config_realtime_process(5, Priority.CTRL_LOW)
 
   # wait for stats about the car to come in from controls
@@ -293,7 +288,7 @@ def main():
 
   # import the radar from the fingerprint
   cloudlog.info("radard is importing %s", CP.carName)
-  RadarInterface = importlib.import_module(f'selfdrive.car.{CP.carName}.radar_interface').RadarInterface
+  RadarInterface = importlib.import_module(f'opendbc.car.{CP.carName}.radar_interface').RadarInterface
 
   # *** setup messaging
   can_sock = messaging.sub_sock('can')
@@ -307,7 +302,7 @@ def main():
 
   while 1:
     can_strings = messaging.drain_sock_raw(can_sock, wait_for_one=True)
-    rr = RI.update(can_capnp_to_list(can_strings))
+    rr: structs.RadarData | None = RI.update(can_capnp_to_list(can_strings))
     sm.update(0)
     if rr is None:
       continue

@@ -1,4 +1,5 @@
 from collections import namedtuple
+import capnp
 import pathlib
 import shutil
 import sys
@@ -9,39 +10,33 @@ import os
 import pywinctl
 import time
 
-from cereal import messaging, car, log
+from cereal import messaging, log
 from msgq.visionipc import VisionIpcServer, VisionStreamType
-
 from cereal.messaging import SubMaster, PubMaster
-from openpilot.common.mock import mock_messages
+from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
-from openpilot.common.realtime import DT_MDL
-from openpilot.common.transformations.camera import DEVICE_CAMERAS
+from openpilot.common.prefix import OpenpilotPrefix
+from openpilot.common.transformations.camera import CameraConfig, DEVICE_CAMERAS
+from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
 from openpilot.selfdrive.test.helpers import with_processes
-from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state
+from openpilot.selfdrive.test.process_replay.migration import migrate_selfdriveState
+from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.framereader import FrameReader
+from openpilot.tools.lib.route import Route
 
 UI_DELAY = 0.5 # may be slower on CI?
+TEST_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 
-NetworkType = log.DeviceState.NetworkType
-NetworkStrength = log.DeviceState.NetworkStrength
-
-EventName = car.CarEvent.EventName
-EVENTS_BY_NAME = {v: k for k, v in EventName.schema.enumerants.items()}
-
+STREAMS: list[tuple[VisionStreamType, CameraConfig, bytes]] = []
+OFFROAD_ALERTS = ['Offroad_StorageMissing', 'Offroad_IsTakingSnapshot']
+DATA: dict[str, capnp.lib.capnp._DynamicStructBuilder] = dict.fromkeys(
+  ["carParams", "deviceState", "pandaStates", "controlsState", "selfdriveState",
+  "liveCalibration", "modelV2", "radarState", "driverMonitoringState", "carState",
+  "driverStateV2", "roadCameraState", "wideRoadCameraState", "driverCameraState"], None)
 
 def setup_common(click, pm: PubMaster):
   Params().put("DongleId", "123456789012345")
-  dat = messaging.new_message('deviceState')
-  dat.deviceState.started = True
-  dat.deviceState.networkType = NetworkType.cell4G
-  dat.deviceState.networkStrength = NetworkStrength.moderate
-  dat.deviceState.freeSpacePercent = 80
-  dat.deviceState.memoryUsagePercent = 2
-  dat.deviceState.cpuTempC = [2,]*3
-  dat.deviceState.gpuTempC = [2,]*3
-  dat.deviceState.cpuUsagePercent = [2,]*8
-
-  pm.send("deviceState", dat)
+  pm.send('deviceState', DATA['deviceState'])
 
 def setup_homescreen(click, pm: PubMaster):
   setup_common(click, pm)
@@ -51,66 +46,102 @@ def setup_settings_device(click, pm: PubMaster):
 
   click(100, 100)
 
-def setup_settings_network(click, pm: PubMaster):
-  setup_common(click, pm)
-
-  setup_settings_device(click, pm)
-  click(300, 600)
-
 def setup_onroad(click, pm: PubMaster):
   setup_common(click, pm)
 
-  dat = messaging.new_message('pandaStates', 1)
-  dat.pandaStates[0].ignitionLine = True
-  dat.pandaStates[0].pandaType = log.PandaState.PandaType.uno
+  vipc_server = VisionIpcServer("camerad")
+  for stream_type, cam, _ in STREAMS:
+    vipc_server.create_buffers(stream_type, 5, False, cam.width, cam.height)
+  vipc_server.start_listener()
 
-  pm.send("pandaStates", dat)
+  packet_id = 0
+  for _ in range(20):
+    for service, data in DATA.items():
+      if data:
+        data.clear_write_flag()
+        pm.send(service, data)
 
-  d = DEVICE_CAMERAS[("tici", "ar0231")]
-  server = VisionIpcServer("camerad")
-  server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 40, False, d.fcam.width, d.fcam.height)
-  server.create_buffers(VisionStreamType.VISION_STREAM_DRIVER, 40, False, d.dcam.width, d.dcam.height)
-  server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, d.fcam.width, d.fcam.height)
-  server.start_listener()
+    packet_id = packet_id + 1
+    for stream_type, _, image in STREAMS:
+      vipc_server.send(stream_type, image, packet_id, packet_id, packet_id)
 
-  time.sleep(0.5) # give time for vipc server to start
+    time.sleep(0.05)
 
-  IMG = np.zeros((int(d.fcam.width*1.5), d.fcam.height), dtype=np.uint8)
-  IMG_BYTES = IMG.flatten().tobytes()
-
-  cams = ('roadCameraState', 'wideRoadCameraState')
-
-  frame_id = 0
-  for cam in cams:
-    msg = messaging.new_message(cam)
-    cs = getattr(msg, cam)
-    cs.frameId = frame_id
-    cs.timestampSof = int((frame_id * DT_MDL) * 1e9)
-    cs.timestampEof = int((frame_id * DT_MDL) * 1e9)
-    cam_meta = meta_from_camera_state(cam)
-
-    pm.send(msg.which(), msg)
-    server.send(cam_meta.stream, IMG_BYTES, cs.frameId, cs.timestampSof, cs.timestampEof)
-
-@mock_messages(['liveLocationKalman'])
-def setup_onroad_map(click, pm: PubMaster):
+def setup_onroad_wide(click, pm: PubMaster):
+  DATA['selfdriveState'].selfdriveState.experimentalMode = True
+  DATA["carState"].carState.vEgo = 1
   setup_onroad(click, pm)
 
-  click(500, 500)
-
-  time.sleep(UI_DELAY) # give time for the map to render
-
 def setup_onroad_sidebar(click, pm: PubMaster):
-  setup_onroad_map(click, pm)
+  setup_onroad(click, pm)
   click(500, 500)
+
+def setup_onroad_wide_sidebar(click, pm: PubMaster):
+  setup_onroad_wide(click, pm)
+  click(500, 500)
+
+def setup_driver_camera(click, pm: PubMaster):
+  setup_settings_device(click, pm)
+  click(1950, 435)
+  DATA['deviceState'].deviceState.started = False
+  setup_onroad(click, pm)
+  DATA['deviceState'].deviceState.started = True
+
+def setup_onroad_alert(click, pm: PubMaster, text1, text2, size, status=log.SelfdriveState.AlertStatus.normal):
+  print(f'setup onroad alert, size: {size}')
+  setup_onroad(click, pm)
+  dat = messaging.new_message('selfdriveState')
+  cs = dat.selfdriveState
+  cs.alertText1 = text1
+  cs.alertText2 = text2
+  cs.alertSize = size
+  cs.alertStatus = status
+  cs.alertType = "test_onroad_alert"
+  pm.send('selfdriveState', dat)
+
+def setup_onroad_alert_small(click, pm: PubMaster):
+  setup_onroad_alert(click, pm, 'This is a small alert message', '', log.SelfdriveState.AlertSize.small)
+
+def setup_onroad_alert_mid(click, pm: PubMaster):
+  setup_onroad_alert(click, pm, 'Medium Alert', 'This is a medium alert message', log.SelfdriveState.AlertSize.mid)
+
+def setup_onroad_alert_full(click, pm: PubMaster):
+  setup_onroad_alert(click, pm, 'Full Alert', 'This is a full alert message', log.SelfdriveState.AlertSize.full)
+
+def setup_offorad_alert(click, pm: PubMaster):
+  setup_common(click, pm)
+  for alert in OFFROAD_ALERTS:
+    set_offroad_alert(alert, True)
+
+  # Toggle between settings and home to refresh the offroad alert widget
+  setup_settings_device(click, pm)
+  click(240, 216)
+
+def setup_update_available(click, pm: PubMaster):
+  setup_common(click, pm)
+  Params().put_bool("UpdateAvailable", True)
+  release_notes_path = os.path.join(BASEDIR, "RELEASES.md")
+  with open(release_notes_path) as file:
+    release_notes = file.read().split('\n\n', 1)[0]
+  Params().put("UpdaterNewReleaseNotes", release_notes + "\n")
+
+  setup_settings_device(click, pm)
+  click(240, 216)
+
 
 CASES = {
   "homescreen": setup_homescreen,
   "settings_device": setup_settings_device,
-  "settings_network": setup_settings_network,
   "onroad": setup_onroad,
-  "onroad_map": setup_onroad_map,
-  "onroad_sidebar": setup_onroad_sidebar
+  "onroad_sidebar": setup_onroad_sidebar,
+  "onroad_alert_small": setup_onroad_alert_small,
+  "onroad_alert_mid": setup_onroad_alert_mid,
+  "onroad_alert_full": setup_onroad_alert_full,
+  "onroad_wide": setup_onroad_wide,
+  "onroad_wide_sidebar": setup_onroad_wide_sidebar,
+  "driver_camera": setup_driver_camera,
+  "offroad_alert": setup_offorad_alert,
+  "update_available": setup_update_available
 }
 
 TEST_DIR = pathlib.Path(__file__).parent
@@ -126,7 +157,7 @@ class TestUI:
 
   def setup(self):
     self.sm = SubMaster(["uiDebug"])
-    self.pm = PubMaster(["deviceState", "pandaStates", "controlsState", 'roadCameraState', 'wideRoadCameraState', 'liveLocationKalman'])
+    self.pm = PubMaster(list(DATA.keys()))
     while not self.sm.valid["uiDebug"]:
       self.sm.update(1)
     time.sleep(UI_DELAY) # wait a bit more for the UI to start rendering
@@ -180,9 +211,33 @@ def create_screenshots():
 
   SCREENSHOTS_DIR.mkdir(parents=True)
 
+  route = Route(TEST_ROUTE)
+
+  segnum = 2
+  lr = LogReader(route.qlog_paths()[segnum])
+  DATA['carParams'] = next((event.as_builder() for event in lr if event.which() == 'carParams'), None)
+  for event in migrate_selfdriveState(lr):
+    if event.which() in DATA:
+      DATA[event.which()] = event.as_builder()
+
+    if all(DATA.values()):
+      break
+
+  cam = DEVICE_CAMERAS[("tici", "ar0231")]
+  road_img = FrameReader(route.camera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
+  STREAMS.append((VisionStreamType.VISION_STREAM_ROAD, cam.fcam, road_img.flatten().tobytes()))
+
+  wide_road_img = FrameReader(route.ecamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
+  STREAMS.append((VisionStreamType.VISION_STREAM_WIDE_ROAD, cam.ecam, wide_road_img.flatten().tobytes()))
+
+  driver_img = FrameReader(route.dcamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
+  STREAMS.append((VisionStreamType.VISION_STREAM_DRIVER, cam.dcam, driver_img.flatten().tobytes()))
+
   t = TestUI()
-  for name, setup in CASES.items():
-    t.test_ui(name, setup)
+
+  with OpenpilotPrefix():
+    for name, setup in CASES.items():
+      t.test_ui(name, setup)
 
 if __name__ == "__main__":
   print("creating test screenshots")

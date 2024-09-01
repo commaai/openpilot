@@ -36,7 +36,7 @@ MAX_TOTAL_CPU = 250.  # total for all 8 cores
 PROCS = {
   # Baseline CPU usage by process
   "selfdrive.controls.controlsd": 32.0,
-  "selfdrive.car.card": 22.0,
+  "selfdrive.car.card": 26.0,
   "./loggerd": 14.0,
   "./encoderd": 17.0,
   "./camerad": 14.5,
@@ -91,7 +91,7 @@ TIMINGS = {
   "driverCameraState": [2.5, 0.35],
   "modelV2": [2.5, 0.35],
   "driverStateV2": [2.5, 0.40],
-  "liveLocationKalman": [2.5, 0.35],
+  "livePose": [2.5, 0.35],
   "wideRoadCameraState": [1.5, 0.35],
 }
 
@@ -416,8 +416,8 @@ class TestOnroad:
     startup_alert = None
     for msg in self.lrs[0]:
       # can't use onroadEvents because the first msg can be dropped while loggerd is starting up
-      if msg.which() == "controlsState":
-        startup_alert = msg.controlsState.alertText1
+      if msg.which() == "selfdriveState":
+        startup_alert = msg.selfdriveState.alertText1
         break
     expected = EVENTS[car.CarEvent.EventName.startup][ET.PERMANENT].alert_text_1
     assert startup_alert == expected, "wrong startup alert"

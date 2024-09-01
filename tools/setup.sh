@@ -89,7 +89,7 @@ function ask_dir() {
   read
   if [[ ! -z "$REPLY" ]]; then
     mkdir -p $REPLY
-    OPENPILOT_ROOT="$(realpath $REPLY/openpilot)"
+    OPENPILOT_ROOT="$(realpath $REPLY)/openpilot"
   fi
 }
 
@@ -158,6 +158,7 @@ function git_clone() {
 function install_with_op() {
   cd $OPENPILOT_ROOT
   $OPENPILOT_ROOT/tools/op.sh install
+  $OPENPILOT_ROOT/tools/op.sh post-commit
 
   LOG_FILE=$(mktemp)
 

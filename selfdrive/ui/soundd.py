@@ -41,10 +41,10 @@ sound_list: dict[int, tuple[str, int | None, float]] = {
 }
 
 def check_controls_timeout_alert(sm):
-  controls_missing = time.monotonic() - sm.recv_time['controlsState']
+  controls_missing = time.monotonic() - sm.recv_time['selfdriveState']
 
   if controls_missing > CONTROLS_TIMEOUT:
-    if sm['controlsState'].enabled and (controls_missing - CONTROLS_TIMEOUT) < 10:
+    if sm['selfdriveState'].enabled and (controls_missing - CONTROLS_TIMEOUT) < 10:
       return True
 
   return False
@@ -111,8 +111,8 @@ class Soundd:
       self.current_sound_frame = 0
 
   def get_audible_alert(self, sm):
-    if sm.updated['controlsState']:
-      new_alert = sm['controlsState'].alertSound.raw
+    if sm.updated['selfdriveState']:
+      new_alert = sm['selfdriveState'].alertSound.raw
       self.update_alert(new_alert)
     elif check_controls_timeout_alert(sm):
       self.update_alert(AudibleAlert.warningImmediate)
@@ -136,7 +136,7 @@ class Soundd:
     # sounddevice must be imported after forking processes
     import sounddevice as sd
 
-    sm = messaging.SubMaster(['controlsState', 'microphone'])
+    sm = messaging.SubMaster(['selfdriveState', 'microphone'])
 
     with self.get_stream(sd) as stream:
       rk = Ratekeeper(20)

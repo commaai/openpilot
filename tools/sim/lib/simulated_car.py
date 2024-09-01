@@ -23,8 +23,7 @@ class SimulatedCar:
   @staticmethod
   def get_car_can_parser():
     dbc_f = 'honda_civic_ex_2022_can_generated'
-    checks = [
-    ]
+    checks = []
     return CANParser(dbc_f, checks, 0)
 
   def send_can_messages(self, simulator_state: SimulatorState):

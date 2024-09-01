@@ -217,13 +217,13 @@ void ui_update_params(UIState *s) {
 }
 
 void UIState::updateStatus() {
-  if (scene.started && sm->updated("controlsState")) {
-    auto controls_state = (*sm)["controlsState"].getControlsState();
-    auto state = controls_state.getState();
-    if (state == cereal::ControlsState::OpenpilotState::PRE_ENABLED || state == cereal::ControlsState::OpenpilotState::OVERRIDING) {
+  if (scene.started && sm->updated("selfdriveState")) {
+    auto ss = (*sm)["selfdriveState"].getSelfdriveState();
+    auto state = ss .getState();
+    if (state == cereal::SelfdriveState::OpenpilotState::PRE_ENABLED || state == cereal::SelfdriveState::OpenpilotState::OVERRIDING) {
       status = STATUS_OVERRIDE;
     } else {
-      status = controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
+      status = ss.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
     }
   }
 
@@ -240,10 +240,10 @@ void UIState::updateStatus() {
 }
 
 UIState::UIState(QObject *parent) : QObject(parent) {
-  sm = std::make_unique<SubMaster, const std::initializer_list<const char *>>({
+  sm = std::make_unique<SubMaster>(std::vector<const char*>{
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState",
-    "pandaStates", "carParams", "driverMonitoringState", "carState", "liveLocationKalman", "driverStateV2",
-    "wideRoadCameraState", "managerState", "clocks",
+    "pandaStates", "carParams", "driverMonitoringState", "carState", "driverStateV2",
+    "wideRoadCameraState", "managerState", "selfdriveState",
   });
 
   Params params;

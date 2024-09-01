@@ -205,7 +205,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   wifi->updateGsmSettings(roamingEnabled, QString::fromStdString(params.get("GsmApn")), metered);
 
   connect(uiState(), &UIState::primeTypeChanged, this, [=](PrimeType prime_type) {
-    bool gsmVisible = prime_type == PrimeType::NONE || prime_type == PrimeType::LITE;
+    bool gsmVisible = prime_type == PrimeType::PRIME_TYPE_NONE || prime_type == PrimeType::PRIME_TYPE_LITE;
     roamingToggle->setVisible(gsmVisible);
     editApnButton->setVisible(gsmVisible);
     meteredToggle->setVisible(gsmVisible);

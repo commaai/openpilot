@@ -23,7 +23,7 @@ function op_install() {
   echo "Installing op system-wide..."
   CMD="\nalias op='"$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )/op.sh" \"\$@\"'\n"
   grep "alias op=" "$RC_FILE" &> /dev/null || printf "$CMD" >> $RC_FILE
-  echo -e " ↳ [${GREEN}✔${NC}] op installed successfully. Open a new shell to use it.\n"
+  echo -e " ↳ [${GREEN}✔${NC}] op installed successfully. Open a new shell to use it."
 }
 
 function loge() {
@@ -37,7 +37,13 @@ function loge() {
 
 function op_run_command() {
   CMD="$@"
-  echo -e "${BOLD}Running:${NC} $CMD"
+
+  echo -e "${BOLD}Running command →${NC} $CMD │"
+  for ((i=0; i<$((19 + ${#CMD})); i++)); do
+    echo -n "─"
+  done
+  echo -e "┘\n"
+
   if [[ -z "$DRY" ]]; then
     eval "$CMD"
   fi
@@ -55,10 +61,20 @@ function op_get_openpilot_dir() {
   done
 }
 
+function op_install_post_commit() {
+  op_get_openpilot_dir
+  if [[ ! -d $OPENPILOT_ROOT/.git/hooks/post-commit.d ]]; then
+    mkdir $OPENPILOT_ROOT/.git/hooks/post-commit.d
+    mv $OPENPILOT_ROOT/.git/hooks/post-commit $OPENPILOT_ROOT/.git/hooks/post-commit.d 2>/dev/null || true
+  fi
+  cd $OPENPILOT_ROOT/.git/hooks
+  ln -sf ../../scripts/post-commit post-commit
+}
+
 function op_check_openpilot_dir() {
   echo "Checking for openpilot directory..."
   if [[ -f "$OPENPILOT_ROOT/launch_openpilot.sh" ]]; then
-    echo -e " ↳ [${GREEN}✔${NC}] openpilot found.\n"
+    echo -e " ↳ [${GREEN}✔${NC}] openpilot found."
     return 0
   fi
 
@@ -118,7 +134,7 @@ function op_check_os() {
     fi
 
   elif [[ "$OSTYPE" == "darwin"* ]]; then
-    echo -e " ↳ [${GREEN}✔${NC}] macOS detected.\n"
+    echo -e " ↳ [${GREEN}✔${NC}] macOS detected."
   else
     echo -e " ↳ [${RED}✗${NC}] OS type $OSTYPE not supported!"
     loge "ERROR_UNKNOWN_OS" "$OSTYPE"
@@ -171,7 +187,7 @@ function op_before_cmd() {
   result="${result}\n$(( op_check_python ) 2>&1)" || (echo -e "$result" && return 1)
 
   if [[ -z $VERBOSE ]]; then
-    echo -e "Checking system → [${GREEN}✔${NC}] system is good."
+    echo -e "${BOLD}Checking system →${NC} [${GREEN}✔${NC}]"
   else
     echo -e "$result"
   fi
@@ -183,7 +199,6 @@ function op_setup() {
 
   op_check_openpilot_dir
   op_check_os
-  op_check_python
 
   echo "Installing dependencies..."
   st="$(date +%s)"
@@ -192,33 +207,33 @@ function op_setup() {
   elif [[ "$OSTYPE" == "darwin"* ]]; then
     SETUP_SCRIPT="tools/mac_setup.sh"
   fi
-  if ! op_run_command "$OPENPILOT_ROOT/$SETUP_SCRIPT"; then
+  if ! $OPENPILOT_ROOT/$SETUP_SCRIPT; then
     echo -e " ↳ [${RED}✗${NC}] Dependencies installation failed!"
     loge "ERROR_DEPENDENCIES_INSTALLATION"
     return 1
   fi
   et="$(date +%s)"
-  echo -e " ↳ [${GREEN}✔${NC}] Dependencies installed successfully in $((et - st)) seconds.\n"
+  echo -e " ↳ [${GREEN}✔${NC}] Dependencies installed successfully in $((et - st)) seconds."
 
   echo "Getting git submodules..."
   st="$(date +%s)"
-  if ! op_run_command git submodule update --filter=blob:none --jobs 4 --init --recursive; then
+  if ! git submodule update --filter=blob:none --jobs 4 --init --recursive; then
     echo -e " ↳ [${RED}✗${NC}] Getting git submodules failed!"
     loge "ERROR_GIT_SUBMODULES"
     return 1
   fi
   et="$(date +%s)"
-  echo -e " ↳ [${GREEN}✔${NC}] Submodules installed successfully in $((et - st)) seconds.\n"
+  echo -e " ↳ [${GREEN}✔${NC}] Submodules installed successfully in $((et - st)) seconds."
 
   echo "Pulling git lfs files..."
   st="$(date +%s)"
-  if ! op_run_command git lfs pull; then
+  if ! git lfs pull; then
     echo -e " ↳ [${RED}✗${NC}] Pulling git lfs files failed!"
     loge "ERROR_GIT_LFS"
     return 1
   fi
   et="$(date +%s)"
-  echo -e " ↳ [${GREEN}✔${NC}] Files pulled successfully in $((et - st)) seconds.\n"
+  echo -e " ↳ [${GREEN}✔${NC}] Files pulled successfully in $((et - st)) seconds."
 
   op_check
 }
@@ -268,7 +283,7 @@ function op_juggle() {
 
 function op_lint() {
   op_before_cmd
-  op_run_command scripts/lint.sh $@
+  op_run_command scripts/lint/lint.sh $@
 }
 
 function op_test() {
@@ -307,19 +322,23 @@ function op_default() {
   echo ""
   echo -e "${BOLD}${UNDERLINE}Usage:${NC} op [OPTIONS] <COMMAND>"
   echo ""
-  echo -e "${BOLD}${UNDERLINE}Commands:${NC}"
-  echo -e "  ${BOLD}venv${NC}     Activate the python virtual environment"
-  echo -e "  ${BOLD}check${NC}    Check the development environment (git, os, python) to start using openpilot"
-  echo -e "  ${BOLD}setup${NC}    Install openpilot dependencies"
-  echo -e "  ${BOLD}build${NC}    Run the openpilot build system in the current working directory"
-  echo -e "  ${BOLD}sim${NC}      Run openpilot in a simulator"
-  echo -e "  ${BOLD}juggle${NC}   Run PlotJuggler"
-  echo -e "  ${BOLD}replay${NC}   Run Replay"
-  echo -e "  ${BOLD}cabana${NC}   Run Cabana"
-  echo -e "  ${BOLD}lint${NC}     Run the linter"
-  echo -e "  ${BOLD}test${NC}     Run all unit tests from pytest"
-  echo -e "  ${BOLD}help${NC}     Show this message"
-  echo -e "  ${BOLD}install${NC}  Install the 'op' tool system wide"
+  echo -e "${BOLD}${UNDERLINE}Commands [System]:${NC}"
+  echo -e "  ${BOLD}check${NC}        Check the development environment (git, os, python) to start using openpilot"
+  echo -e "  ${BOLD}venv${NC}         Activate the python virtual environment"
+  echo -e "  ${BOLD}setup${NC}        Install openpilot dependencies"
+  echo -e "  ${BOLD}build${NC}        Run the openpilot build system in the current working directory"
+  echo -e "  ${BOLD}install${NC}      Install the 'op' tool system wide"
+  echo ""
+  echo -e "${BOLD}${UNDERLINE}Commands [Tooling]:${NC}"
+  echo -e "  ${BOLD}juggle${NC}       Run PlotJuggler"
+  echo -e "  ${BOLD}replay${NC}       Run Replay"
+  echo -e "  ${BOLD}cabana${NC}       Run Cabana"
+  echo ""
+  echo -e "${BOLD}${UNDERLINE}Commands [Testing]:${NC}"
+  echo -e "  ${BOLD}sim${NC}          Run openpilot in a simulator"
+  echo -e "  ${BOLD}lint${NC}         Run the linter"
+  echo -e "  ${BOLD}post-commit${NC}  Install the linter as a post-commit hook"
+  echo -e "  ${BOLD}test${NC}         Run all unit tests from pytest"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Options:${NC}"
   echo -e "  ${BOLD}-d, --dir${NC}"
@@ -328,8 +347,6 @@ function op_default() {
   echo "          Don't actually run anything, just print what would be run"
   echo -e "  ${BOLD}-n, --no-verify${NC}"
   echo "          Skip environment check before running commands"
-  echo -e "  ${BOLD}-v, --verbose${NC}"
-  echo "          Show the result of all checks before running a command"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Examples:${NC}"
   echo "  op setup"
@@ -350,23 +367,23 @@ function _op() {
     -d | --dir )       shift 1; OPENPILOT_ROOT="$1"; shift 1 ;;
     --dry )            shift 1; DRY="1" ;;
     -n | --no-verify ) shift 1; NO_VERIFY="1" ;;
-    -v | --verbose )   shift 1; VERBOSE="1" ;;
     -l | --log )       shift 1; LOG_FILE="$1" ; shift 1 ;;
   esac
 
   # parse Commands
   case $1 in
-    venv )      shift 1; op_venv "$@" ;;
-    check )     shift 1; op_check "$@" ;;
-    setup )     shift 1; op_setup "$@" ;;
-    build )     shift 1; op_build "$@" ;;
-    juggle )    shift 1; op_juggle "$@" ;;
-    cabana )    shift 1; op_cabana "$@" ;;
-    lint )      shift 1; op_lint "$@" ;;
-    test )      shift 1; op_test "$@" ;;
-    replay )    shift 1; op_replay "$@" ;;
-    sim )       shift 1; op_sim "$@" ;;
-    install )   shift 1; op_install "$@" ;;
+    venv )          shift 1; op_venv "$@" ;;
+    check )         shift 1; op_check "$@" ;;
+    setup )         shift 1; op_setup "$@" ;;
+    build )         shift 1; op_build "$@" ;;
+    juggle )        shift 1; op_juggle "$@" ;;
+    cabana )        shift 1; op_cabana "$@" ;;
+    lint )          shift 1; op_lint "$@" ;;
+    test )          shift 1; op_test "$@" ;;
+    replay )        shift 1; op_replay "$@" ;;
+    sim )           shift 1; op_sim "$@" ;;
+    install )       shift 1; op_install "$@" ;;
+    post-commit )   shift 1; op_install_post_commit "$@" ;;
     * ) op_default "$@" ;;
   esac
 }

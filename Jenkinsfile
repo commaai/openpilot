@@ -95,42 +95,6 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
   }
 }
 
-def pcStage(String stageName, Closure body) {
-  node {
-  stage(stageName) {
-    if (currentBuild.result != null) {
-        return
-    }
-
-    checkout scm
-
-    def dockerArgs = "--user=batman -v /tmp/comma_download_cache:/tmp/comma_download_cache -v /tmp/scons_cache:/tmp/scons_cache -e PYTHONPATH=${env.WORKSPACE} --cpus=8 --memory 16g -e PYTEST_ADDOPTS='-n8'";
-
-    def openpilot_base = retryWithDelay (3, 15) {
-      return docker.build("openpilot-base:build-${env.GIT_COMMIT}", "-f Dockerfile.openpilot_base .")
-    }
-
-    lock(resource: "", label: 'pc', inversePrecedence: true, quantity: 1) {
-      openpilot_base.inside(dockerArgs) {
-        timeout(time: 20, unit: 'MINUTES') {
-          try {
-            retryWithDelay (3, 15) {
-              sh "git config --global --add safe.directory '*'"
-              sh "git submodule update --init --recursive"
-              sh "git lfs pull"
-            }
-            body()
-          } finally {
-              sh "rm -rf ${env.WORKSPACE}/* || true"
-              sh "rm -rf .* || true"
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
 def setupCredentials() {
   withCredentials([
     string(credentialsId: 'azure_token', variable: 'AZURE_TOKEN'),
