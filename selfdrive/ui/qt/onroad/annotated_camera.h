@@ -4,7 +4,7 @@
 #include <memory>
 
 #include "selfdrive/ui/qt/onroad/buttons.h"
-#include "selfdrive/ui/qt/onroad/dmon.h"
+#include "selfdrive/ui/qt/onroad/driver_monitoring.h"
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
 class AnnotatedCameraWidget : public CameraWidget {
