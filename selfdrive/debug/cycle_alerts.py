@@ -108,7 +108,6 @@ def cycle_alerts(duration=200, is_metric=False):
           dat.controlsState.alertText2 = alert.alert_text_2
           dat.controlsState.alertSize = alert.alert_size
           dat.controlsState.alertStatus = alert.alert_status
-          dat.controlsState.alertBlinkingRate = alert.alert_rate
           dat.controlsState.alertType = alert.alert_type
           dat.controlsState.alertSound = alert.audible_alert
         pm.send('controlsState', dat)
