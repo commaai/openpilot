@@ -13,8 +13,11 @@ import time
 from cereal import messaging, log
 from msgq.visionipc import VisionIpcServer, VisionStreamType
 from cereal.messaging import SubMaster, PubMaster
+from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
+from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.common.transformations.camera import CameraConfig, DEVICE_CAMERAS
+from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
 from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.test.process_replay.migration import migrate_selfdriveState
 from openpilot.tools.lib.logreader import LogReader
@@ -25,6 +28,7 @@ UI_DELAY = 0.5 # may be slower on CI?
 TEST_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 
 STREAMS: list[tuple[VisionStreamType, CameraConfig, bytes]] = []
+OFFROAD_ALERTS = ['Offroad_StorageMissing', 'Offroad_IsTakingSnapshot']
 DATA: dict[str, capnp.lib.capnp._DynamicStructBuilder] = dict.fromkeys(
   ["carParams", "deviceState", "pandaStates", "controlsState", "selfdriveState",
   "liveCalibration", "modelV2", "radarState", "driverMonitoringState", "carState",
@@ -42,10 +46,6 @@ def setup_settings_device(click, pm: PubMaster):
 
   click(100, 100)
 
-def setup_settings_network(click, pm: PubMaster):
-  setup_settings_device(click, pm)
-  click(300, 600)
-
 def setup_onroad(click, pm: PubMaster):
   setup_common(click, pm)
 
@@ -55,7 +55,7 @@ def setup_onroad(click, pm: PubMaster):
   vipc_server.start_listener()
 
   packet_id = 0
-  for _ in range(30):
+  for _ in range(20):
     for service, data in DATA.items():
       if data:
         data.clear_write_flag()
@@ -108,18 +108,40 @@ def setup_onroad_alert_mid(click, pm: PubMaster):
 def setup_onroad_alert_full(click, pm: PubMaster):
   setup_onroad_alert(click, pm, 'Full Alert', 'This is a full alert message', log.SelfdriveState.AlertSize.full)
 
+def setup_offorad_alert(click, pm: PubMaster):
+  setup_common(click, pm)
+  for alert in OFFROAD_ALERTS:
+    set_offroad_alert(alert, True)
+
+  # Toggle between settings and home to refresh the offroad alert widget
+  setup_settings_device(click, pm)
+  click(240, 216)
+
+def setup_update_available(click, pm: PubMaster):
+  setup_common(click, pm)
+  Params().put_bool("UpdateAvailable", True)
+  release_notes_path = os.path.join(BASEDIR, "RELEASES.md")
+  with open(release_notes_path) as file:
+    release_notes = file.read().split('\n\n', 1)[0]
+  Params().put("UpdaterNewReleaseNotes", release_notes + "\n")
+
+  setup_settings_device(click, pm)
+  click(240, 216)
+
+
 CASES = {
   "homescreen": setup_homescreen,
   "settings_device": setup_settings_device,
-  "settings_network": setup_settings_network,
   "onroad": setup_onroad,
   "onroad_sidebar": setup_onroad_sidebar,
-  "onroad_wide": setup_onroad_wide,
-  "onroad_wide_sidebar": setup_onroad_wide_sidebar,
   "onroad_alert_small": setup_onroad_alert_small,
   "onroad_alert_mid": setup_onroad_alert_mid,
   "onroad_alert_full": setup_onroad_alert_full,
-  "driver_camera": setup_driver_camera
+  "onroad_wide": setup_onroad_wide,
+  "onroad_wide_sidebar": setup_onroad_wide_sidebar,
+  "driver_camera": setup_driver_camera,
+  "offroad_alert": setup_offorad_alert,
+  "update_available": setup_update_available
 }
 
 TEST_DIR = pathlib.Path(__file__).parent
@@ -212,8 +234,10 @@ def create_screenshots():
   STREAMS.append((VisionStreamType.VISION_STREAM_DRIVER, cam.dcam, driver_img.flatten().tobytes()))
 
   t = TestUI()
-  for name, setup in CASES.items():
-    t.test_ui(name, setup)
+
+  with OpenpilotPrefix():
+    for name, setup in CASES.items():
+      t.test_ui(name, setup)
 
 if __name__ == "__main__":
   print("creating test screenshots")
