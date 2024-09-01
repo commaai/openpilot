@@ -416,8 +416,8 @@ class TestOnroad:
     startup_alert = None
     for msg in self.lrs[0]:
       # can't use onroadEvents because the first msg can be dropped while loggerd is starting up
-      if msg.which() == "controlsState":
-        startup_alert = msg.controlsState.alertText1
+      if msg.which() == "selfdriveState":
+        startup_alert = msg.selfdriveState.alertText1
         break
     expected = EVENTS[car.CarEvent.EventName.startup][ET.PERMANENT].alert_text_1
     assert startup_alert == expected, "wrong startup alert"
