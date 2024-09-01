@@ -16,7 +16,7 @@ from cereal.messaging import SubMaster, PubMaster
 from openpilot.common.params import Params
 from openpilot.common.transformations.camera import CameraConfig, DEVICE_CAMERAS
 from openpilot.selfdrive.test.helpers import with_processes
-from openpilot.selfdrive.test.process_replay.migration import migrate_all
+from openpilot.selfdrive.test.process_replay.migration import migrate_selfdriveState
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.route import Route
@@ -193,7 +193,7 @@ def create_screenshots():
 
   segnum = 2
   lr = LogReader(route.qlog_paths()[segnum])
-  for event in migrate_all(lr):
+  for event in migrate_selfdriveState(lr):
     if event.which() in DATA:
       DATA[event.which()] = event.as_builder()
 
