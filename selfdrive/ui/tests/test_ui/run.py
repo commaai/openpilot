@@ -26,7 +26,7 @@ TEST_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 
 STREAMS: list[tuple[VisionStreamType, CameraConfig, bytes]] = []
 DATA: dict[str, capnp.lib.capnp._DynamicStructBuilder] = dict.fromkeys(
-  ["deviceState", "pandaStates", "selfdriveState", "liveCalibration",
+  ["deviceState", "pandaStates", "controlsState", "selfdriveState", "liveCalibration",
   "modelV2", "radarState", "driverMonitoringState", "carState",
   "driverStateV2", "roadCameraState", "wideRoadCameraState", "driverCameraState"], None)
 
