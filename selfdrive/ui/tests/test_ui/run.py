@@ -10,7 +10,7 @@ import os
 import pywinctl
 import time
 
-from cereal import messaging, log
+from cereal import messaging, selfdrive
 from msgq.visionipc import VisionIpcServer, VisionStreamType
 from cereal.messaging import SubMaster, PubMaster
 from openpilot.common.basedir import BASEDIR
@@ -94,7 +94,7 @@ def setup_driver_camera(click, pm: PubMaster):
   setup_onroad(click, pm)
   DATA['deviceState'].deviceState.started = True
 
-def setup_onroad_alert(click, pm: PubMaster, text1, text2, size, status=log.SelfdriveState.AlertStatus.normal):
+def setup_onroad_alert(click, pm: PubMaster, text1, text2, size, status=selfdrive.SelfdriveState.AlertStatus.normal):
   print(f'setup onroad alert, size: {size}')
   setup_onroad(click, pm)
   dat = messaging.new_message('selfdriveState')
@@ -107,13 +107,13 @@ def setup_onroad_alert(click, pm: PubMaster, text1, text2, size, status=log.Self
   pm.send('selfdriveState', dat)
 
 def setup_onroad_alert_small(click, pm: PubMaster):
-  setup_onroad_alert(click, pm, 'This is a small alert message', '', log.SelfdriveState.AlertSize.small)
+  setup_onroad_alert(click, pm, 'This is a small alert message', '', selfdrive.SelfdriveState.AlertSize.small)
 
 def setup_onroad_alert_mid(click, pm: PubMaster):
-  setup_onroad_alert(click, pm, 'Medium Alert', 'This is a medium alert message', log.SelfdriveState.AlertSize.mid)
+  setup_onroad_alert(click, pm, 'Medium Alert', 'This is a medium alert message', selfdrive.SelfdriveState.AlertSize.mid)
 
 def setup_onroad_alert_full(click, pm: PubMaster):
-  setup_onroad_alert(click, pm, 'Full Alert', 'This is a full alert message', log.SelfdriveState.AlertSize.full)
+  setup_onroad_alert(click, pm, 'Full Alert', 'This is a full alert message', selfdrive.SelfdriveState.AlertSize.full)
 
 def setup_offorad_alert(click, pm: PubMaster):
   setup_common(click, pm)

@@ -5,15 +5,15 @@ import os
 from enum import IntEnum
 from collections.abc import Callable
 
-from cereal import log, car
+from cereal import log, car, selfdrive
 import cereal.messaging as messaging
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.git import get_short_branch
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.locationd.calibrationd import MIN_SPEED_FILTER
 
-AlertSize = log.SelfdriveState.AlertSize
-AlertStatus = log.SelfdriveState.AlertStatus
+AlertSize = selfdrive.SelfdriveState.AlertSize
+AlertStatus = selfdrive.SelfdriveState.AlertStatus
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
 EventName = car.OnroadEvent.EventName
@@ -110,8 +110,8 @@ class Alert:
   def __init__(self,
                alert_text_1: str,
                alert_text_2: str,
-               alert_status: log.SelfdriveState.AlertStatus,
-               alert_size: log.SelfdriveState.AlertSize,
+               alert_status: selfdrive.SelfdriveState.AlertStatus,
+               alert_size: selfdrive.SelfdriveState.AlertSize,
                priority: Priority,
                visual_alert: car.CarControl.HUDControl.VisualAlert,
                audible_alert: car.CarControl.HUDControl.AudibleAlert,
@@ -981,7 +981,7 @@ if __name__ == '__main__':
   for i, alerts in EVENTS.items():
     for et, alert in alerts.items():
       if callable(alert):
-        alert = alert(CP, CS, sm, False, 1, log.LongitudinalPersonality.standard)
+        alert = alert(CP, CS, sm, False, 1, selfdrive.LongitudinalPersonality.standard)
       alerts_by_type[et][alert.priority].append(event_names[i])
 
   all_alerts: dict[str, list[tuple[Priority, list[str]]]] = {}

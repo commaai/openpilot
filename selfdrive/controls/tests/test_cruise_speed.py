@@ -3,7 +3,7 @@ import itertools
 import numpy as np
 
 from parameterized import parameterized_class
-from cereal import log
+from cereal import selfdrive
 from openpilot.selfdrive.controls.lib.drive_helpers import VCruiseHelper, V_CRUISE_MIN, V_CRUISE_MAX, V_CRUISE_INITIAL, IMPERIAL_INCREMENT
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
@@ -33,7 +33,7 @@ def run_cruise_simulation(cruise, e2e, personality, t_end=20.):
 
 @parameterized_class(("e2e", "personality", "speed"), itertools.product(
                       [True, False], # e2e
-                      log.LongitudinalPersonality.schema.enumerants, # personality
+                      selfdrive.LongitudinalPersonality.schema.enumerants, # personality
                       [5,35])) # speed
 class TestCruiseSpeed:
   def test_cruise_speed(self):

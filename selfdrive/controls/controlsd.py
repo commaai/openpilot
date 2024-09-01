@@ -7,7 +7,7 @@ from typing import SupportsFloat
 
 import cereal.messaging as messaging
 
-from cereal import car, log
+from cereal import car, log, selfdrive
 from msgq.visionipc import VisionIpcClient, VisionStreamType
 
 
@@ -44,7 +44,7 @@ TESTING_CLOSET = "TESTING_CLOSET" in os.environ
 IGNORE_PROCESSES = {"loggerd", "encoderd", "statsd"}
 
 ThermalStatus = log.DeviceState.ThermalStatus
-State = log.SelfdriveState.OpenpilotState
+State = selfdrive.SelfdriveState.OpenpilotState
 PandaType = log.PandaState.PandaType
 Desire = log.Desire
 LaneChangeState = log.LaneChangeState
@@ -715,7 +715,7 @@ class Controls:
     if self.enabled:
       clear_event_types.add(ET.NO_ENTRY)
 
-    pers = {v: k for k, v in log.LongitudinalPersonality.schema.enumerants.items()}[self.personality]
+    pers = {v: k for k, v in selfdrive.LongitudinalPersonality.schema.enumerants.items()}[self.personality]
     alerts = self.events.create_alerts(self.current_alert_types, [self.CP, CS, self.sm, self.is_metric, self.soft_disable_timer, pers])
     self.AM.add_many(self.sm.frame, alerts)
     current_alert = self.AM.process_alerts(self.sm.frame, clear_event_types)
@@ -842,7 +842,7 @@ class Controls:
     try:
       return int(self.params.get('LongitudinalPersonality'))
     except (ValueError, TypeError):
-      return log.LongitudinalPersonality.standard
+      return selfdrive.LongitudinalPersonality.standard
 
   def params_thread(self, evt):
     while not evt.is_set():

@@ -2,7 +2,7 @@ import pytest
 import itertools
 from parameterized import parameterized_class
 
-from cereal import log
+from cereal import selfdrive
 
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import desired_follow_distance, get_T_FOLLOW
 from openpilot.selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver
@@ -27,9 +27,9 @@ def run_following_distance_simulation(v_lead, t_end=100.0, e2e=False, personalit
 
 @parameterized_class(("e2e", "personality", "speed"), itertools.product(
                       [True, False], # e2e
-                      [log.LongitudinalPersonality.relaxed, # personality
-                       log.LongitudinalPersonality.standard,
-                       log.LongitudinalPersonality.aggressive],
+                      [selfdrive.LongitudinalPersonality.relaxed, # personality
+                       selfdrive.LongitudinalPersonality.standard,
+                       selfdrive.LongitudinalPersonality.aggressive],
                       [0,10,35])) # speed
 class TestFollowingDistance:
   def test_following_distance(self):

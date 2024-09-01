@@ -4,7 +4,7 @@ import os
 import random
 from PIL import Image, ImageDraw, ImageFont
 
-from cereal import log, car
+from cereal import car, selfdrive
 from cereal.messaging import SubMaster
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
@@ -12,7 +12,7 @@ from openpilot.selfdrive.controls.lib.events import Alert, EVENTS, ET
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS
 
-AlertSize = log.SelfdriveState.AlertSize
+AlertSize = selfdrive.SelfdriveState.AlertSize
 
 OFFROAD_ALERTS_PATH = os.path.join(BASEDIR, "selfdrive/controls/lib/alerts_offroad.json")
 
@@ -63,7 +63,7 @@ class TestAlerts:
 
     for alert in ALERTS:
       if not isinstance(alert, Alert):
-        alert = alert(self.CP, self.CS, self.sm, metric=False, soft_disable_time=100, personality=log.LongitudinalPersonality.standard)
+        alert = alert(self.CP, self.CS, self.sm, metric=False, soft_disable_time=100, personality=selfdrive.LongitudinalPersonality.standard)
 
       # for full size alerts, both text fields wrap the text,
       # so it's unlikely that they  would go past the max width
