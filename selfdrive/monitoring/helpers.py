@@ -9,7 +9,7 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.stat_live import RunningStatFilter
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
 
-EventName = car.CarEvent.EventName
+EventName = car.OnroadEvent.EventName
 
 # ******************************************************************************************
 #  NOTE: To fork maintainers.

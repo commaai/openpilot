@@ -10,7 +10,7 @@ from openpilot.selfdrive.controls.lib.events import ET, Events
 from openpilot.selfdrive.controls.lib.alertmanager import AlertManager
 from openpilot.system.manager.process_config import managed_processes
 
-EventName = car.CarEvent.EventName
+EventName = car.OnroadEvent.EventName
 
 def randperc() -> float:
   return 100. * random.random()

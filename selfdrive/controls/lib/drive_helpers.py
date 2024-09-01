@@ -6,7 +6,7 @@ from openpilot.common.numpy_fast import clip
 from openpilot.common.realtime import DT_CTRL
 from openpilot.system.version import get_build_metadata
 
-EventName = car.CarEvent.EventName
+EventName = car.OnroadEvent.EventName
 
 # WARNING: this value was determined based on the model's training distribution,
 #          model predictions above this speed can be unpredictable

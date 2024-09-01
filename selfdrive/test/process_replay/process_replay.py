@@ -461,7 +461,7 @@ def controlsd_config_callback(params, cfg, lr):
       if initialized:
         break
     elif msg.which() == "onroadEvents":
-      initialized = car.CarEvent.EventName.controlsInitializing not in [e.name for e in msg.onroadEvents]
+      initialized = car.OnroadEvent.EventName.controlsInitializing not in [e.name for e in msg.onroadEvents]
 
   assert controlsState is not None and initialized, "controlsState never initialized"
   params.put("ReplayControlsState", controlsState.as_builder().to_bytes())
