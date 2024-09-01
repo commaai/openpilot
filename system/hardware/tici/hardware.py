@@ -9,7 +9,6 @@ from functools import cached_property, lru_cache
 from pathlib import Path
 
 from cereal import log
-from openpilot.common.params import Params
 from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
 from openpilot.system.hardware.base import HardwareBase, ThermalConfig
 from openpilot.system.hardware.tici import iwlist
@@ -28,8 +27,6 @@ MM = 'org.freedesktop.ModemManager1'
 MM_MODEM = MM + ".Modem"
 MM_MODEM_SIMPLE = MM + ".Modem.Simple"
 MM_SIM = MM + ".Sim"
-
-DONGLE_ID = Params().get("DongleId", encoding='utf-8')
 
 class MM_MODEM_STATE(IntEnum):
   FAILED        = -1
@@ -266,8 +263,8 @@ class Tici(HardwareBase):
           active_ap = self.bus.get_object(NM, active_ap_path)
           ssid = active_ap.Get(NM_AP, 'Ssid', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
           ssid_str = "".join(chr(x) for x in ssid)
-          if ssid_str == f'weedle-{DONGLE_ID}':
-            strength = 100
+          if ssid_str.startswith(f'weedle-'):
+            strength = 100  # Set signal strength to 100 for tethering SSID
           else:
             strength = int(active_ap.Get(NM_AP, 'Strength', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
           network_strength = self.parse_strength(strength)
