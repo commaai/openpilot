@@ -26,8 +26,8 @@ TEST_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 
 STREAMS: list[tuple[VisionStreamType, CameraConfig, bytes]] = []
 DATA: dict[str, capnp.lib.capnp._DynamicStructBuilder] = dict.fromkeys(
-  ["deviceState", "pandaStates", "controlsState", "selfdriveState", "liveCalibration",
-  "modelV2", "radarState", "driverMonitoringState", "carState",
+  ["carParams", "deviceState", "pandaStates", "controlsState", "selfdriveState",
+  "liveCalibration", "modelV2", "radarState", "driverMonitoringState", "carState",
   "driverStateV2", "roadCameraState", "wideRoadCameraState", "driverCameraState"], None)
 
 def setup_common(click, pm: PubMaster):
@@ -193,6 +193,7 @@ def create_screenshots():
 
   segnum = 2
   lr = LogReader(route.qlog_paths()[segnum])
+  DATA['carParams'] = next((event.as_builder() for event in lr if event.which() == 'carParams'), None)
   for event in migrate_selfdriveState(lr):
     if event.which() in DATA:
       DATA[event.which()] = event.as_builder()
