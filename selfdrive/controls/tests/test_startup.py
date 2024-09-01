@@ -11,7 +11,7 @@ from openpilot.selfdrive.pandad.pandad_api_impl import can_list_to_can_capnp
 from openpilot.selfdrive.controls.lib.events import EVENT_NAME
 from openpilot.system.manager.process_config import managed_processes
 
-EventName = car.CarEvent.EventName
+EventName = car.OnroadEvent.EventName
 Ecu = car.CarParams.Ecu
 
 COROLLA_FW_VERSIONS = [

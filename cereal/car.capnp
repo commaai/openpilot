@@ -5,7 +5,9 @@ $Cxx.namespace("cereal");
 
 # ******* events causing controls state machine transition *******
 
-struct CarEvent @0x9b1657f34caf3ad3 {
+# FIXME: OnroadEvent shouldn't be in car.capnp, but can't immediately
+#        move due to being referenced by structs in this file
+struct OnroadEvent @0x9b1657f34caf3ad3 {
   name @0 :EventName;
 
   # event types
@@ -152,7 +154,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
 # all speeds in m/s
 
 struct CarState {
-  events @13 :List(CarEvent);
+  events @13 :List(OnroadEvent);
 
   # CAN health
   canValid @26 :Bool;       # invalid counter/checksums
@@ -281,7 +283,7 @@ struct CarState {
   }
 
   # deprecated
-  errorsDEPRECATED @0 :List(CarEvent.EventName);
+  errorsDEPRECATED @0 :List(OnroadEvent.EventName);
   brakeLightsDEPRECATED @19 :Bool;
   steeringRateLimitedDEPRECATED @29 :Bool;
   canMonoTimesDEPRECATED @12: List(UInt64);

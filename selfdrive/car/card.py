@@ -24,7 +24,7 @@ from openpilot.selfdrive.controls.lib.events import Events
 
 REPLAY = "REPLAY" in os.environ
 
-EventName = car.CarEvent.EventName
+EventName = car.OnroadEvent.EventName
 
 # forward
 carlog.addHandler(ForwardingHandler(cloudlog))
