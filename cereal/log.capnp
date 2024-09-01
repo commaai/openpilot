@@ -3,6 +3,7 @@ $Cxx.namespace("cereal");
 
 using Car = import "car.capnp";
 using Legacy = import "legacy.capnp";
+using Selfdrive = import "selfdrive.capnp";
 using Custom = import "custom.capnp";
 
 @0xf3b1f17e25a4285b;
@@ -15,12 +16,6 @@ struct Map(Key, Value) {
     key @0 :Key;
     value @1 :Value;
   }
-}
-
-enum LongitudinalPersonality {
-  aggressive @0;
-  standard @1;
-  relaxed @2;
 }
 
 struct InitData {
@@ -684,47 +679,6 @@ struct LiveTracks {
   oncoming @9 :Bool;
 }
 
-struct SelfdriveState {
-  # high level system state
-  state @0 :OpenpilotState;
-  enabled @1 :Bool;
-  active @2 :Bool;
-  engageable @9 :Bool;  # can OP be engaged?
-
-  # UI alerts
-  alertText1 @3 :Text;
-  alertText2 @4 :Text;
-  alertStatus @5 :AlertStatus;
-  alertSize @6 :AlertSize;
-  alertType @7 :Text;
-  alertSound @8 :Car.CarControl.HUDControl.AudibleAlert;
-
-  # configurable driving settings
-  experimentalMode @10 :Bool;
-  personality @11 :LongitudinalPersonality;
-
-  enum OpenpilotState @0xdbe58b96d2d1ac61 {
-    disabled @0;
-    preEnabled @1;
-    enabled @2;
-    softDisabling @3;
-    overriding @4;  # superset of overriding with steering or accelerator
-  }
-
-  enum AlertStatus @0xa0d0dcd113193c62 {
-    normal @0;
-    userPrompt @1;
-    critical @2;
-  }
-
-  enum AlertSize @0xe98bb99d6e985f64 {
-    none @0;
-    small @1;
-    mid @2;
-    full @3;
-  }
-}
-
 struct ControlsState @0x97ff69c53601abf1 {
   cumLagMs @15 :Float32;
   startMonoTime @48 :UInt64;
@@ -745,17 +699,17 @@ struct ControlsState @0x97ff69c53601abf1 {
   # TODO: remove these, they're now in selfdriveState
   alertText1 @24 :Text;
   alertText2 @25 :Text;
-  alertStatus @38 :SelfdriveState.AlertStatus;
-  alertSize @39 :SelfdriveState.AlertSize;
+  alertStatus @38 :Selfdrive.SelfdriveState.AlertStatus;
+  alertSize @39 :Selfdrive.SelfdriveState.AlertSize;
   alertType @44 :Text;
   alertSound @56 :Car.CarControl.HUDControl.AudibleAlert;
   engageable @41 :Bool;  # can OP be engaged?
   forceDecel @51 :Bool;
-  state @31 :SelfdriveState.OpenpilotState;
+  state @31 :Selfdrive.SelfdriveState.OpenpilotState;
   enabled @19 :Bool;
   active @36 :Bool;
   experimentalMode @64 :Bool;
-  personality @66 :LongitudinalPersonality;
+  personality @66 :Selfdrive.LongitudinalPersonality;
 
   lateralControlState :union {
     indiState @52 :LateralINDIState;
@@ -1152,7 +1106,7 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
   eventsDEPRECATED @13 :List(Car.OnroadEvent);
   gpsTrajectoryDEPRECATED @12 :GpsTrajectory;
   gpsPlannerActiveDEPRECATED @19 :Bool;
-  personalityDEPRECATED @36 :LongitudinalPersonality;
+  personalityDEPRECATED @36 :Selfdrive.LongitudinalPersonality;
 
   struct GpsTrajectory {
     x @0 :List(Float32);
@@ -2317,7 +2271,7 @@ struct Event {
     gpsNMEA @3 :GPSNMEAData;
     can @5 :List(CanData);
     controlsState @7 :ControlsState;
-    selfdriveState @130 :SelfdriveState;
+    selfdriveState @130 :Selfdrive.SelfdriveState;
     gyroscope @99 :SensorEventData;
     gyroscope2 @100 :SensorEventData;
     accelerometer @98 :SensorEventData;
