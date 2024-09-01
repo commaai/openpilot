@@ -63,7 +63,7 @@ class TestAlerts:
 
     for alert in ALERTS:
       if not isinstance(alert, Alert):
-        alert = alert(self.CP, self.CS, self.sm, metric=False, soft_disable_time=100)
+        alert = alert(self.CP, self.CS, self.sm, metric=False, soft_disable_time=100, personality=log.LongitudinalPersonality.standard)
 
       # for full size alerts, both text fields wrap the text,
       # so it's unlikely that they  would go past the max width
