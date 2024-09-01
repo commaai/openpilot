@@ -790,15 +790,12 @@ class Controls:
       ss.alertText2 = current_alert.alert_text_2
       ss.alertSize = current_alert.alert_size
       ss.alertStatus = current_alert.alert_status
-      ss.alertBlinkingRate = current_alert.alert_rate
       ss.alertType = current_alert.alert_type
       ss.alertSound = current_alert.audible_alert
-
     ss.enabled = self.enabled
     ss.active = self.active
     ss.state = self.state
     ss.engageable = not self.events.contains(ET.NO_ENTRY)
-    ss.forceDecel = bool(force_decel)
     ss.experimentalMode = self.experimental_mode
     ss.personality = self.personality
     self.pm.send('selfdriveState', ss_msg)
