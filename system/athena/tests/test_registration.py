@@ -1,8 +1,6 @@
 import json
-import pytest
 from Crypto.PublicKey import RSA
 from pathlib import Path
-from parameterized import parameterized
 
 from openpilot.common.params import Params
 from openpilot.system.athena.registration import register, UNREGISTERED_DONGLE_ID
