@@ -80,6 +80,13 @@ def setup_onroad_wide_sidebar(click, pm: PubMaster):
   setup_onroad_wide(click, pm)
   click(500, 500)
 
+def setup_body(click, pm: PubMaster):
+  DATA['carParams'].carParams.carName = "BODY"
+  DATA['carParams'].carParams.notCar = True
+  DATA['carState'].carState.charging = True
+  DATA['carState'].carState.fuelGauge = 50.0
+  setup_onroad(click, pm)
+
 def setup_driver_camera(click, pm: PubMaster):
   setup_settings_device(click, pm)
   click(1950, 435)
@@ -140,6 +147,7 @@ CASES = {
   "onroad_wide": setup_onroad_wide,
   "onroad_wide_sidebar": setup_onroad_wide_sidebar,
   "driver_camera": setup_driver_camera,
+  "body": setup_body,
   "offroad_alert": setup_offorad_alert,
   "update_available": setup_update_available
 }
