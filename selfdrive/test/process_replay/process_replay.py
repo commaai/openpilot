@@ -489,7 +489,7 @@ CONFIGS = [
       "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope", "carOutput",
       "gpsLocationExternal", "gpsLocation",
     ],
-    subs=["controlsState", "carControl", "onroadEvents"],
+    subs=["selfdriveState", "controlsState", "carControl", "onroadEvents"],
     ignore=["logMonoTime", "controlsState.startMonoTime", "controlsState.cumLagMs"],
     config_callback=controlsd_config_callback,
     init_callback=get_car_params_callback,
