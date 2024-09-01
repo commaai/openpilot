@@ -277,7 +277,7 @@ void Slider::parseQLog(std::shared_ptr<LogReader> qlog) {
         std::lock_guard lk(mutex);
         thumbnails[thumb.getTimestampEof()] = scaled;
       }
-    } else if (e.which == cereal::Event::Which::CONTROLS_STATE) {
+    } else if (e.which == cereal::Event::Which::SELFDRIVE_STATE) {
       capnp::FlatArrayMessageReader reader(e.data);
       auto cs = reader.getRoot<cereal::Event>().getSelfdriveState();
       if (cs.getAlertType().size() > 0 && cs.getAlertText1().size() > 0 &&
