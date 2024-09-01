@@ -26,8 +26,8 @@ DriverMonitorRenderer::DriverMonitorRenderer() : face_kpts_draw(std::size(DEFAUL
 
 void DriverMonitorRenderer::updateState(const UIState &s) {
   auto &sm = *(s.sm);
-  is_visible = sm["controlsState"].getControlsState().getAlertSize() == cereal::ControlsState::AlertSize::NONE &&
-              sm.rcv_frame("driverStateV2") > s.scene.started_frame;
+  is_visible = sm["selfdriveState"].getSelfdriveState().getAlertSize() == cereal::SelfdriveState::AlertSize::NONE &&
+               sm.rcv_frame("driverStateV2") > s.scene.started_frame;
   if (!is_visible) return;
 
   auto dm_state = sm["driverMonitoringState"].getDriverMonitoringState();
