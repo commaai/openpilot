@@ -9,7 +9,7 @@ from openpilot.selfdrive.controls.lib.events import Events
 
 ButtonType = structs.CarState.ButtonEvent.Type
 GearShifter = structs.CarState.GearShifter
-EventName = car.CarEvent.EventName
+EventName = car.OnroadEvent.EventName
 NetworkLocation = structs.CarParams.NetworkLocation
 
 
