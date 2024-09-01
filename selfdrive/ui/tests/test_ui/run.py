@@ -25,7 +25,7 @@ TEST_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 
 STREAMS: list[tuple[VisionStreamType, CameraConfig, bytes]] = []
 DATA: dict[str, capnp.lib.capnp._DynamicStructBuilder] = dict.fromkeys(
-  ["deviceState", "pandaStates", "controlsState", "liveCalibration",
+  ["deviceState", "pandaStates", "selfdriveState", "liveCalibration",
   "modelV2", "radarState", "driverMonitoringState", "carState",
   "driverStateV2", "roadCameraState", "wideRoadCameraState", "driverCameraState"], None)
 
@@ -67,7 +67,7 @@ def setup_onroad(click, pm: PubMaster):
     time.sleep(0.05)
 
 def setup_onroad_wide(click, pm: PubMaster):
-  DATA['controlsState'].controlsState.experimentalMode = True
+  DATA['selfdriveState'].selfdriveState.experimentalMode = True
   DATA["carState"].carState.vEgo = 1
   setup_onroad(click, pm)
 
@@ -86,26 +86,26 @@ def setup_driver_camera(click, pm: PubMaster):
   setup_onroad(click, pm)
   DATA['deviceState'].deviceState.started = True
 
-def setup_onroad_alert(click, pm: PubMaster, text1, text2, size, status=log.ControlsState.AlertStatus.normal):
+def setup_onroad_alert(click, pm: PubMaster, text1, text2, size, status=log.SelfdriveState.AlertStatus.normal):
   print(f'setup onroad alert, size: {size}')
   setup_onroad(click, pm)
-  dat = messaging.new_message('controlsState')
-  cs = dat.controlsState
+  dat = messaging.new_message('selfdriveState')
+  cs = dat.selfdriveState
   cs.alertText1 = text1
   cs.alertText2 = text2
   cs.alertSize = size
   cs.alertStatus = status
   cs.alertType = "test_onroad_alert"
-  pm.send('controlsState', dat)
+  pm.send('selfdriveState', dat)
 
 def setup_onroad_alert_small(click, pm: PubMaster):
-  setup_onroad_alert(click, pm, 'This is a small alert message', '', log.ControlsState.AlertSize.small)
+  setup_onroad_alert(click, pm, 'This is a small alert message', '', log.SelfdriveState.AlertSize.small)
 
 def setup_onroad_alert_mid(click, pm: PubMaster):
-  setup_onroad_alert(click, pm, 'Medium Alert', 'This is a medium alert message', log.ControlsState.AlertSize.mid)
+  setup_onroad_alert(click, pm, 'Medium Alert', 'This is a medium alert message', log.SelfdriveState.AlertSize.mid)
 
 def setup_onroad_alert_full(click, pm: PubMaster):
-  setup_onroad_alert(click, pm, 'Full Alert', 'This is a full alert message', log.ControlsState.AlertSize.full)
+  setup_onroad_alert(click, pm, 'Full Alert', 'This is a full alert message', log.SelfdriveState.AlertSize.full)
 
 CASES = {
   "homescreen": setup_homescreen,

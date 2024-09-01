@@ -18,7 +18,7 @@
 #include "tools/replay/logreader.h"
 
 struct AlertInfo {
-  cereal::ControlsState::AlertStatus status;
+  cereal::SelfdriveState::AlertStatus status;
   QString text1;
   QString text2;
 };
