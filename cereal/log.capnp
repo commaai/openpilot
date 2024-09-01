@@ -713,7 +713,6 @@ struct ControlsState @0x97ff69c53601abf1 {
   alertText2 @25 :Text;
   alertStatus @38 :AlertStatus;
   alertSize @39 :AlertSize;
-  alertBlinkingRate @42 :Float32;
   alertType @44 :Text;
   alertSound @56 :Car.CarControl.HUDControl.AudibleAlert;
   engageable @41 :Bool;  # can OP be engaged?
@@ -865,6 +864,7 @@ struct ControlsState @0x97ff69c53601abf1 {
   desiredCurvatureRateDEPRECATED @62 :Float32;
   canErrorCounterDEPRECATED @57 :UInt32;
   vPidDEPRECATED @2 :Float32;
+  alertBlinkingRateDEPRECATED @42 :Float32;
 }
 
 struct DrivingModelData {

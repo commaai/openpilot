@@ -746,7 +746,6 @@ class Controls:
       controlsState.alertText2 = current_alert.alert_text_2
       controlsState.alertSize = current_alert.alert_size
       controlsState.alertStatus = current_alert.alert_status
-      controlsState.alertBlinkingRate = current_alert.alert_rate
       controlsState.alertType = current_alert.alert_type
       controlsState.alertSound = current_alert.audible_alert
 

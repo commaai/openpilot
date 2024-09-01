@@ -116,7 +116,6 @@ class Alert:
                visual_alert: car.CarControl.HUDControl.VisualAlert,
                audible_alert: car.CarControl.HUDControl.AudibleAlert,
                duration: float,
-               alert_rate: float = 0.,
                creation_delay: float = 0.):
 
     self.alert_text_1 = alert_text_1
@@ -129,7 +128,6 @@ class Alert:
 
     self.duration = int(duration / DT_CTRL)
 
-    self.alert_rate = alert_rate
     self.creation_delay = creation_delay
 
     self.alert_type = ""
@@ -456,7 +454,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       "Touch Steering Wheel: No Face Detected",
       "",
       AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, .1, alert_rate=0.75),
+      Priority.LOW, VisualAlert.steerRequired, AudibleAlert.none, .1),
   },
 
   EventName.promptDriverUnresponsive: {
@@ -500,7 +498,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       "Steer Left to Start Lane Change Once Safe",
       "",
       AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, .1, alert_rate=0.75),
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
   },
 
   EventName.preLaneChangeRight: {
@@ -508,7 +506,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       "Steer Right to Start Lane Change Once Safe",
       "",
       AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, .1, alert_rate=0.75),
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .1),
   },
 
   EventName.laneChangeBlocked: {
