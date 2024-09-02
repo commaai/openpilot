@@ -44,10 +44,10 @@ def migrate_controlsState(lr):
         setattr(ss, field, getattr(msg.controlsState, field))
       ret.append(m.as_reader())
     elif msg.which() == 'carState' and last_cs is not None:
-      if last_cs.controlsState.vCruise - msg.carState.vCruise > 0.1:
+      if last_cs.controlsState.vCruiseDEPRECATED - msg.carState.vCruise > 0.1:
         msg = msg.as_builder()
-        msg.carState.vCruise = last_cs.controlsState.vCruise
-        msg.carState.vCruiseCluster = last_cs.controlsState.vCruise
+        msg.carState.vCruise = last_cs.controlsState.vCruiseDEPRECATED
+        msg.carState.vCruiseCluster = last_cs.controlsState.vCruiseClusterDEPRECATED
         msg = msg.as_reader()
 
     ret.append(msg)
