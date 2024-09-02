@@ -19,10 +19,10 @@ from opendbc.car.fw_versions import ObdCallback
 from opendbc.car.car_helpers import get_car
 from opendbc.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
+from openpilot.selfdrive.car.cruise import VCruiseHelper
 from openpilot.selfdrive.car.car_specific import CarSpecificEvents, MockCarState
 from openpilot.selfdrive.car.helpers import convert_carControl, convert_to_capnp
 from openpilot.selfdrive.controls.lib.events import Events, ET
-from openpilot.selfdrive.controls.lib.drive_helpers import VCruiseHelper
 
 REPLAY = "REPLAY" in os.environ
 
