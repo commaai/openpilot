@@ -115,7 +115,7 @@ def setup_onroad_alert_mid(click, pm: PubMaster):
 def setup_onroad_alert_full(click, pm: PubMaster):
   setup_onroad_alert(click, pm, 'Full Alert', 'This is a full alert message', log.SelfdriveState.AlertSize.full)
 
-def setup_offorad_alert(click, pm: PubMaster):
+def setup_offroad_alert(click, pm: PubMaster):
   setup_common(click, pm)
   for alert in OFFROAD_ALERTS:
     set_offroad_alert(alert, True)
@@ -148,7 +148,7 @@ CASES = {
   "onroad_wide_sidebar": setup_onroad_wide_sidebar,
   "driver_camera": setup_driver_camera,
   "body": setup_body,
-  "offroad_alert": setup_offorad_alert,
+  "offroad_alert": setup_offroad_alert,
   "update_available": setup_update_available
 }
 
