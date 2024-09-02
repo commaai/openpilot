@@ -8,7 +8,8 @@ BOLD='\033[1m'
 NC='\033[0m'
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-cd $DIR/../../
+ROOT="$DIR/../../"
+cd $ROOT
 
 FAILED=0
 
@@ -47,7 +48,7 @@ function run_tests() {
   ALL_FILES=$1
   PYTHON_FILES=$2
 
-  run "ruff" ruff check $PYTHON_FILES --quiet
+  run "ruff" ruff check $ROOT --quiet
   run "check_added_large_files" python3 -m pre_commit_hooks.check_added_large_files --enforce-all $ALL_FILES --maxkb=120
   run "check_shebang_scripts_are_executable" python3 -m pre_commit_hooks.check_shebang_scripts_are_executable $ALL_FILES
   run "check_shebang_format" $DIR/check_shebang_format.sh $ALL_FILES
