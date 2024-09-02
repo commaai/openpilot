@@ -5,10 +5,11 @@ import subprocess
 import time
 import tempfile
 from enum import IntEnum
-from functools import cached_property, lru_cache, wraps
+from functools import cached_property, lru_cache
 from pathlib import Path
 
 from cereal import log
+from openpilot.common.decorators import catch_exceptions
 from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
 from openpilot.system.hardware.base import HardwareBase, ThermalConfig
 from openpilot.system.hardware.tici import iwlist
@@ -60,26 +61,6 @@ NetworkStrength = log.DeviceState.NetworkStrength
 MM_MODEM_ACCESS_TECHNOLOGY_UMTS = 1 << 5
 MM_MODEM_ACCESS_TECHNOLOGY_LTE = 1 << 14
 
-
-def handle_exceptions(default_return_value=None):
-  def decorator(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-      try:
-        return func(*args, **kwargs)
-      except Exception as e:
-        # TODO: Replace print with cloudlog.error after fixing circular import issue
-        print(f"Exception in {func.__name__}: {e}")
-        return default_return_value
-    return wrapper
-
-  if callable(default_return_value):
-    # Handle the case where the decorator is used without parentheses
-    func = default_return_value
-    default_return_value = None
-    return decorator(func)
-
-  return decorator
 
 def sudo_write(val, path):
   try:
@@ -136,37 +117,36 @@ class Tici(HardwareBase):
       return None
     return Amplifier()
 
-  @handle_exceptions(default_return_value='')
+  @catch_exceptions(return_on_error='')
   def get_os_version(self):
     with open("/VERSION") as f:
       return f.read().strip()
 
-  @handle_exceptions(default_return_value='')
+  @catch_exceptions(return_on_error='')
   def get_device_type(self):
     return get_device_type()
 
-  @handle_exceptions(default_return_value=False)
+  @catch_exceptions(return_on_error=False)
   def get_sound_card_online(self):
     if os.path.isfile('/proc/asound/card0/state'):
       with open('/proc/asound/card0/state') as f:
         return f.read().strip() == 'ONLINE'
     return False
 
-  @handle_exceptions
+  @catch_exceptions(return_on_error=None)
   def reboot(self, reason=None):
     subprocess.check_output(["sudo", "reboot"])
 
-  @handle_exceptions
+  @catch_exceptions(return_on_error=None)
   def uninstall(self):
     Path("/data/__system_reset__").touch()
     os.sync()
     self.reboot()
 
-  @handle_exceptions(default_return_value='')
   def get_serial(self):
     return self.get_cmdline()['androidboot.serialno']
 
-  @handle_exceptions(default_return_value=NetworkType.none)
+  @catch_exceptions(return_on_error=NetworkType.none)
   def get_network_type(self):
     primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
     primary_connection = self.bus.get_object(NM, primary_connection)
@@ -206,7 +186,7 @@ class Tici(HardwareBase):
     wwan_path = self.nm.GetDeviceByIpIface('wwan0', dbus_interface=NM, timeout=TIMEOUT)
     return self.bus.get_object(NM, wwan_path)
 
-  @handle_exceptions(default_return_value={})
+  @catch_exceptions(return_on_error={})
   def get_sim_info(self):
     modem = self.get_modem()
     sim_path = modem.Get(MM_MODEM, 'Sim', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
@@ -235,7 +215,7 @@ class Tici(HardwareBase):
 
     return str(self.get_modem().Get(MM_MODEM, 'EquipmentIdentifier', dbus_interface=DBUS_PROPS, timeout=TIMEOUT))
 
-  @handle_exceptions
+  @catch_exceptions(return_on_error=None)
   def get_network_info(self):
     modem = self.get_modem()
     info = modem.Command("AT+QNWINFO", math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
@@ -273,7 +253,7 @@ class Tici(HardwareBase):
     else:
       return NetworkStrength.great
 
-  @handle_exceptions(default_return_value=NetworkStrength.unknown)
+  @catch_exceptions(return_on_error=NetworkStrength.unknown)
   def get_network_strength(self, network_type):
     network_strength = NetworkStrength.unknown
 
@@ -293,7 +273,7 @@ class Tici(HardwareBase):
 
     return network_strength
 
-  @handle_exceptions(default_return_value=False)
+  @catch_exceptions(return_on_error=False)
   def get_network_metered(self, network_type) -> bool:
     primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
     primary_connection = self.bus.get_object(NM, primary_connection)
@@ -312,12 +292,12 @@ class Tici(HardwareBase):
 
     return super().get_network_metered(network_type)
 
-  @handle_exceptions
+  @catch_exceptions(return_on_error=None)
   def get_modem_version(self):
     modem = self.get_modem()
     return modem.Get(MM_MODEM, 'Revision', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
 
-  @handle_exceptions
+  @catch_exceptions(return_on_error=None)
   def get_modem_nv(self):
     timeout = 0.2  # Default timeout is too short
     files = (
@@ -328,7 +308,7 @@ class Tici(HardwareBase):
     modem = self.get_modem()
     return { fn: str(modem.Command(f'AT+QNVFR="{fn}"', math.ceil(timeout), dbus_interface=MM_MODEM, timeout=timeout)) for fn in files}
 
-  @handle_exceptions(default_return_value=[])
+  @catch_exceptions(return_on_error=[])
   def get_modem_temperatures(self):
     timeout = 0.2  # Default timeout is too short
 
@@ -352,7 +332,7 @@ class Tici(HardwareBase):
   def get_som_power_draw(self):
     return (self.read_param_file("/sys/class/power_supply/bms/voltage_now", int) * self.read_param_file("/sys/class/power_supply/bms/current_now", int) / 1e12)
 
-  @handle_exceptions
+  @catch_exceptions(return_on_error=None)
   def shutdown(self):
     os.system("sudo poweroff")
 
@@ -364,7 +344,7 @@ class Tici(HardwareBase):
                          bat=(None, 1),
                          pmic=(("pm8998_tz", "pm8005_tz"), 1000))
 
-  @handle_exceptions
+  @catch_exceptions(return_on_error=None)
   def set_screen_brightness(self, percentage):
     with open("/sys/class/backlight/panel0-backlight/max_brightness") as f:
       max_brightness = float(f.read().strip())
@@ -373,7 +353,7 @@ class Tici(HardwareBase):
     with open("/sys/class/backlight/panel0-backlight/brightness", "w") as f:
       f.write(str(val))
 
-  @handle_exceptions(default_return_value=0)
+  @catch_exceptions(return_on_error=0)
   def get_screen_brightness(self):
     with open("/sys/class/backlight/panel0-backlight/max_brightness") as f:
       max_brightness = float(f.read().strip())
@@ -381,7 +361,7 @@ class Tici(HardwareBase):
     with open("/sys/class/backlight/panel0-backlight/brightness") as f:
       return int(float(f.read()) / (max_brightness / 100.))
 
-  @handle_exceptions
+  @catch_exceptions(return_on_error=None)
   def set_power_save(self, powersave_enabled):
     # amplifier, 100mW at idle
     if self.amplifier is not None:
@@ -412,13 +392,13 @@ class Tici(HardwareBase):
     for n in camera_irqs:
       affine_irq(5, n)
 
-  @handle_exceptions(default_return_value=0)
+  @catch_exceptions(return_on_error=0)
   def get_gpu_usage_percent(self):
     with open('/sys/class/kgsl/kgsl-3d0/gpubusy') as f:
       used, total = f.read().strip().split()
     return 100.0 * int(used) / int(total)
 
-  @handle_exceptions
+  @catch_exceptions(return_on_error=None)
   def initialize_hardware(self):
     if self.amplifier is not None:
       self.amplifier.initialize_configuration(self.get_device_type())
@@ -470,7 +450,7 @@ class Tici(HardwareBase):
     subprocess.call(["sudo", "chrt", "-f", "-p", "1", pid])
     subprocess.call(["sudo", "taskset", "-pc", "3", pid])
 
-  @handle_exceptions
+  @catch_exceptions(return_on_error=None)
   def configure_modem(self):
     sim_id = self.get_sim_info().get('sim_id', '')
 
@@ -525,7 +505,7 @@ class Tici(HardwareBase):
         os.system(f"sudo cp {tf.name} {dest}")
       os.system(f"sudo nmcli con load {dest}")
 
-  @handle_exceptions(default_return_value={})
+  @catch_exceptions(return_on_error={})
   def get_networks(self):
     r = {}
 
@@ -572,7 +552,7 @@ class Tici(HardwareBase):
   def has_internal_panda(self):
     return True
 
-  @handle_exceptions
+  @catch_exceptions(return_on_error=None)
   def reset_internal_panda(self):
     gpio_init(GPIO.STM_RST_N, True)
     gpio_init(GPIO.STM_BOOT0, True)
@@ -582,7 +562,7 @@ class Tici(HardwareBase):
     time.sleep(1)
     gpio_set(GPIO.STM_RST_N, 0)
 
-  @handle_exceptions
+  @catch_exceptions(return_on_error=None)
   def recover_internal_panda(self):
     gpio_init(GPIO.STM_RST_N, True)
     gpio_init(GPIO.STM_BOOT0, True)
