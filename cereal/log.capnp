@@ -741,21 +741,7 @@ struct ControlsState @0x97ff69c53601abf1 {
   aTarget @35 :Float32;
   curvature @37 :Float32;  # path curvature from vehicle model
   desiredCurvature @61 :Float32;  # lag adjusted curvatures used by lateral controllers
-
-  # TODO: remove these, they're now in selfdriveState
-  alertText1 @24 :Text;
-  alertText2 @25 :Text;
-  alertStatus @38 :SelfdriveState.AlertStatus;
-  alertSize @39 :SelfdriveState.AlertSize;
-  alertType @44 :Text;
-  alertSound @56 :Car.CarControl.HUDControl.AudibleAlert;
-  engageable @41 :Bool;  # can OP be engaged?
   forceDecel @51 :Bool;
-  state @31 :SelfdriveState.OpenpilotState;
-  enabled @19 :Bool;
-  active @36 :Bool;
-  experimentalMode @64 :Bool;
-  personality @66 :LongitudinalPersonality;
 
   lateralControlState :union {
     indiState @52 :LateralINDIState;
@@ -882,6 +868,18 @@ struct ControlsState @0x97ff69c53601abf1 {
   canErrorCounterDEPRECATED @57 :UInt32;
   vPidDEPRECATED @2 :Float32;
   alertBlinkingRateDEPRECATED @42 :Float32;
+  alertText1DEPRECATED @24 :Text;
+  alertText2DEPRECATED @25 :Text;
+  alertStatusDEPRECATED @38 :SelfdriveState.AlertStatus;
+  alertSizeDEPRECATED @39 :SelfdriveState.AlertSize;
+  alertTypeDEPRECATED @44 :Text;
+  alertSound2DEPRECATED @56 :Car.CarControl.HUDControl.AudibleAlert;
+  engageableDEPRECATED @41 :Bool;  # can OP be engaged?
+  stateDEPRECATED @31 :SelfdriveState.OpenpilotState;
+  enabledDEPRECATED @19 :Bool;
+  activeDEPRECATED @36 :Bool;
+  experimentalModeDEPRECATED @64 :Bool;
+  personalityDEPRECATED @66 :LongitudinalPersonality;
 }
 
 struct DrivingModelData {
