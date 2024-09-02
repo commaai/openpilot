@@ -104,7 +104,7 @@ jobs:
                 <td></td>
               </tr>
             </table>
-            </detail>
+            </details>
           comment_tag: run_id_screenshots
           pr_number: ${{ github.event.number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
