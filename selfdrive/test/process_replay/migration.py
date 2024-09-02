@@ -15,7 +15,7 @@ def migrate_all(lr, old_logtime=False, manager_states=False, panda_states=False,
   msgs = migrate_gpsLocation(msgs)
   msgs = migrate_deviceState(msgs)
   msgs = migrate_carOutput(msgs)
-  msgs = migrate_selfdriveState(msgs)
+  msgs = migrate_controlsState(msgs)
   if manager_states:
     msgs = migrate_managerState(msgs)
   if panda_states:
@@ -27,10 +27,13 @@ def migrate_all(lr, old_logtime=False, manager_states=False, panda_states=False,
   return msgs
 
 
-def migrate_selfdriveState(lr):
+def migrate_controlsState(lr):
   ret = []
+  last_cs = None
   for msg in lr:
     if msg.which() == 'controlsState':
+      last_cs = msg
+
       m = messaging.new_message('selfdriveState')
       m.valid = msg.valid
       m.logMonoTime = msg.logMonoTime
@@ -40,6 +43,13 @@ def migrate_selfdriveState(lr):
                     "personality"):
         setattr(ss, field, getattr(msg.controlsState, field))
       ret.append(m.as_reader())
+    elif msg.which() == 'carState' and last_cs is not None:
+      if last_cs.controlsState.vCruise - msg.carState.vCruise > 0.1:
+        msg = msg.as_builder()
+        msg.carState.vCruise = last_cs.controlsState.vCruise
+        msg.carState.vCruiseCluster = last_cs.controlsState.vCruise
+        msg = msg.as_reader()
+
     ret.append(msg)
   return ret
 

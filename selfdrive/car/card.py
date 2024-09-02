@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import time
+import threading
 
 import cereal.messaging as messaging
 
@@ -20,7 +21,8 @@ from opendbc.car.interfaces import CarInterfaceBase
 from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
 from openpilot.selfdrive.car.car_specific import CarSpecificEvents, MockCarState
 from openpilot.selfdrive.car.helpers import convert_carControl, convert_to_capnp
-from openpilot.selfdrive.controls.lib.events import Events
+from openpilot.selfdrive.controls.lib.events import Events, ET
+from openpilot.selfdrive.controls.lib.drive_helpers import VCruiseHelper
 
 REPLAY = "REPLAY" in os.environ
 
@@ -139,6 +141,10 @@ class Car:
 
     self.car_events = CarSpecificEvents(self.CP)
     self.mock_carstate = MockCarState()
+    self.v_cruise_helper = VCruiseHelper(self.CP)
+
+    self.is_metric = self.params.get_bool("IsMetric")
+    self.experimental_mode = self.params.get_bool("ExperimentalMode")
 
     # card is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
@@ -163,6 +169,11 @@ class Car:
 
     if can_rcv_valid and REPLAY:
       self.can_log_mono_time = messaging.log_from_bytes(can_strs[0]).logMonoTime
+
+    # TODO: mirror the carState.cruiseState struct?
+    self.v_cruise_helper.update_v_cruise(CS, self.sm['carControl'].enabled, self.is_metric)
+    CS.vCruise = float(self.v_cruise_helper.v_cruise_kph)
+    CS.vCruiseCluster = float(self.v_cruise_helper.v_cruise_cluster_kph)
 
     return CS
 
@@ -234,6 +245,9 @@ class Car:
 
     self.update_events(CS)
 
+    if not self.sm['carControl'].enabled and self.events.contains(ET.ENABLE):
+      self.v_cruise_helper.initialize_v_cruise(CS, self.experimental_mode)
+
     self.state_publish(CS)
 
     initialized = (not any(e.name == EventName.controlsInitializing for e in self.sm['onroadEvents']) and
@@ -244,10 +258,23 @@ class Car:
     self.initialized_prev = initialized
     self.CS_prev = CS.as_reader()
 
+  def params_thread(self, evt):
+    while not evt.is_set():
+      self.is_metric = self.params.get_bool("IsMetric")
+      self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
+      time.sleep(0.1)
+
   def card_thread(self):
-    while True:
-      self.step()
-      self.rk.monitor_time()
+    e = threading.Event()
+    t = threading.Thread(target=self.params_thread, args=(e, ))
+    try:
+      t.start()
+      while True:
+        self.step()
+        self.rk.monitor_time()
+    finally:
+      e.set()
+      t.join()
 
 
 def main():

@@ -464,7 +464,7 @@ def controlsd_config_callback(params, cfg, lr):
       initialized = car.OnroadEvent.EventName.controlsInitializing not in [e.name for e in msg.onroadEvents]
 
   assert controlsState is not None and initialized, "controlsState never initialized"
-  params.put("ReplayControlsState", controlsState.as_builder().to_bytes())
+  #params.put("ReplayControlsState", controlsState.as_builder().to_bytes())
 
   ublox = params.get_bool("UbloxAvailable")
   sub_keys = ({"gpsLocation", } if ublox else {"gpsLocationExternal", })
