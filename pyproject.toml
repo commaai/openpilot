@@ -245,6 +245,7 @@ exclude = [
   "teleoprtc",
   "teleoprtc_repo",
   "third_party",
+  "*.ipynb",
 ]
 lint.flake8-implicit-str-concat.allow-multiline = false
 

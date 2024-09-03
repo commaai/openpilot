@@ -453,19 +453,6 @@ class FrequencyBasedRcvCallback:
 
 
 def controlsd_config_callback(params, cfg, lr):
-  controlsState = None
-  initialized = False
-  for msg in lr:
-    if msg.which() == "controlsState":
-      controlsState = msg.controlsState
-      if initialized:
-        break
-    elif msg.which() == "onroadEvents":
-      initialized = car.OnroadEvent.EventName.controlsInitializing not in [e.name for e in msg.onroadEvents]
-
-  assert controlsState is not None and initialized, "controlsState never initialized"
-  params.put("ReplayControlsState", controlsState.as_builder().to_bytes())
-
   ublox = params.get_bool("UbloxAvailable")
   sub_keys = ({"gpsLocation", } if ublox else {"gpsLocationExternal", })
 
