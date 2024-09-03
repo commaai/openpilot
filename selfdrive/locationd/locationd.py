@@ -282,7 +282,7 @@ def main():
   while True:
     sm.update()
 
-    acc_msgs, gyro_msgs = [messaging.drain_sock(sock) for sock in sensor_sockets]
+    acc_msgs, gyro_msgs = (messaging.drain_sock(sock) for sock in sensor_sockets)
 
     if filter_initialized:
       observation_timing_invalid = False
