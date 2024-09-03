@@ -191,10 +191,24 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   prime_state = new PrimeState(this);
   language = QString::fromStdString(Params().get("LanguageSetting"));
 
-  // update timer
-  timer = new QTimer(this);
-  QObject::connect(timer, &QTimer::timeout, this, &UIState::update);
-  timer->start(1000 / UI_FREQ);
+  thread = new QThread();
+  QObject::connect(thread, &QThread::started, [this]() { sheduleUpdate(); });
+  thread->start();
+}
+
+UIState::~UIState() {
+  thread->requestInterruption();
+  thread->quit();
+  thread->wait();
+  delete thread;
+}
+
+void UIState::sheduleUpdate() {
+  SubMaster sub_master({"modelV2"});
+  while (!QThread::currentThread()->isInterruptionRequested()) {
+    sub_master.update(100);
+    QMetaObject::invokeMethod(this, std::bind(&UIState::update, this), Qt::QueuedConnection);
+  }
 }
 
 void UIState::update() {
