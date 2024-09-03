@@ -39,9 +39,9 @@ def migrate_controlsState(lr):
       m.logMonoTime = msg.logMonoTime
       ss = m.selfdriveState
       for field in ("enabled", "active", "state", "engageable", "alertText1", "alertText2",
-                    "alertStatus", "alertSize", "alertType", "alertSound", "experimentalMode",
+                    "alertStatus", "alertSize", "alertType", "experimentalMode",
                     "personality"):
-        setattr(ss, field, getattr(msg.controlsState, field))
+        setattr(ss, field, getattr(msg.controlsState, field+"DEPRECATED"))
       ret.append(m.as_reader())
     elif msg.which() == 'carState' and last_cs is not None:
       if last_cs.controlsState.vCruiseDEPRECATED - msg.carState.vCruise > 0.1:

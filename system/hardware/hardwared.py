@@ -164,7 +164,7 @@ def hw_state_thread(end_event, hw_queue):
 
 def hardware_thread(end_event, hw_queue) -> None:
   pm = messaging.PubMaster(['deviceState'])
-  sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "controlsState", "pandaStates"], poll="pandaStates")
+  sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "selfdriveState", "pandaStates"], poll="pandaStates")
 
   count = 0
 
@@ -341,8 +341,8 @@ def hardware_thread(end_event, hw_queue) -> None:
       engaged_prev = False
       HARDWARE.set_power_save(not should_start)
 
-    if sm.updated['controlsState']:
-      engaged = sm['controlsState'].enabled
+    if sm.updated['selfdriveState']:
+      engaged = sm['selfdriveState'].enabled
       if engaged != engaged_prev:
         params.put_bool("IsEngaged", engaged)
         engaged_prev = engaged
