@@ -111,12 +111,12 @@ class Plant:
     model.modelV2.acceleration = acceleration
 
     control.controlsState.longControlState = LongCtrlState.pid if self.enabled else LongCtrlState.off
-    control.controlsState.vCruise = float(v_cruise * 3.6)
     control.controlsState.experimentalMode = self.e2e
     control.controlsState.personality = self.personality
     control.controlsState.forceDecel = self.force_decel
     car_state.carState.vEgo = float(self.speed)
     car_state.carState.standstill = self.speed < 0.01
+    car_state.carState.vCruise = float(v_cruise * 3.6)
 
     # ******** get controlsState messages for plotting ***
     sm = {'radarState': radar.radarState,

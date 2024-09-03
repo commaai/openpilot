@@ -162,10 +162,13 @@ struct CarState {
   canErrorCounter @48 :UInt32;
 
   # car speed
-  vEgo @1 :Float32;          # best estimate of speed
-  aEgo @16 :Float32;         # best estimate of acceleration
-  vEgoRaw @17 :Float32;      # unfiltered speed from CAN sensors
-  vEgoCluster @44 :Float32;  # best estimate of speed shown on car's instrument cluster, used for UI
+  vEgo @1 :Float32;            # best estimate of speed
+  aEgo @16 :Float32;           # best estimate of aCAN cceleration
+  vEgoRaw @17 :Float32;        # unfiltered speed from wheel speed sensors
+  vEgoCluster @44 :Float32;    # best estimate of speed shown on car's instrument cluster, used for UI
+
+  vCruise @53 :Float32;        # actual set speed
+  vCruiseCluster @54 :Float32; # set speed to display in the UI
 
   yawRate @22 :Float32;     # best estimate of yaw rate
   standstill @18 :Bool;
