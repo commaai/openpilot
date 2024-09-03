@@ -20,16 +20,17 @@ void HudRenderer::updateState(const UIState &s) {
     return;
   }
 
-  const auto &cs = sm["controlsState"].getControlsState();
+  const auto &controls_state = sm["controlsState"].getControlsState();
+  const auto &car_state = sm["carState"].getCarState();
+
   // Handle older routes where vCruiseCluster is not set
-  set_speed = cs.getVCruiseCluster() == 0.0 ? cs.getVCruise() : cs.getVCruiseCluster();
+  set_speed = car_state.getVCruiseCluster() == 0.0 ? controls_state.getVCruiseDEPRECATED() : car_state.getVCruiseCluster();
   is_cruise_set = set_speed > 0 && set_speed != SET_SPEED_NA;
 
   if (is_cruise_set && !is_metric) {
     set_speed *= KM_TO_MILE;
   }
 
-  const auto &car_state = sm["carState"].getCarState();
   // Handle older routes where vEgoCluster is not set
   v_ego_cluster_seen = v_ego_cluster_seen || car_state.getVEgoCluster() != 0.0;
   float v_ego = v_ego_cluster_seen ? car_state.getVEgoCluster() : car_state.getVEgo();
