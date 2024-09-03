@@ -37,6 +37,7 @@ public:
   explicit CameraWidget(std::string stream_name, VisionStreamType stream_type, bool zoom, QWidget* parent = nullptr);
   ~CameraWidget();
   void setBackgroundColor(const QColor &color) { bg = color; }
+  void setUpdateOnFrame(bool v) { update_on_frame = v; }
   void setFrameId(int frame_id) { draw_frame_id = frame_id; }
   void setStreamType(VisionStreamType type) { requested_stream_type = type; }
   VisionStreamType getStreamType() { return active_stream_type; }
@@ -91,7 +92,8 @@ protected:
 
   std::recursive_mutex frame_lock;
   std::deque<std::pair<uint32_t, VisionBuf*>> frames;
-  uint32_t draw_frame_id = 0;
+  bool update_on_frame = true;
+  uint32_t draw_frame_id = -1;
   uint32_t prev_frame_id = 0;
 
 protected slots:

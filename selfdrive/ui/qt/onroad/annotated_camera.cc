@@ -19,11 +19,15 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
 
   experimental_btn = new ExperimentalButton(this);
   main_layout->addWidget(experimental_btn, 0, Qt::AlignTop | Qt::AlignRight);
+  // Disable automatic UI updates on frame received
+  setUpdateOnFrame(false);
 }
 
 void AnnotatedCameraWidget::updateState(const UIState &s) {
   const int SET_SPEED_NA = 255;
   const SubMaster &sm = *(s.sm);
+
+  if (!sm.updated("modelV2")) return;
 
   const bool cs_alive = sm.alive("controlsState");
   const auto cs = sm["controlsState"].getControlsState();
@@ -53,6 +57,8 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
 
   // update DM icon
   dmon.updateState(s);
+
+  update();
 }
 
 void AnnotatedCameraWidget::drawHud(QPainter &p) {

@@ -4,10 +4,10 @@
 #include <string>
 
 #include <QObject>
-#include <QTimer>
 #include <QColor>
 #include <QFuture>
 #include <QPolygonF>
+#include <QThread>
 #include <QTransform>
 
 #include "cereal/messaging/messaging.h"
@@ -89,6 +89,7 @@ class UIState : public QObject {
 
 public:
   UIState(QObject* parent = 0);
+  ~UIState();
   void updateStatus();
   inline bool engaged() const {
     return scene.started && (*sm)["selfdriveState"].getSelfdriveState().getEnabled();
@@ -119,9 +120,11 @@ private slots:
   void update();
 
 private:
-  QTimer *timer;
+  void sheduleUpdate();
+
   bool started_prev = false;
   PrimeType prime_type = PrimeType::PRIME_TYPE_UNKNOWN;
+  QThread *thread = nullptr;
 };
 
 UIState *uiState();

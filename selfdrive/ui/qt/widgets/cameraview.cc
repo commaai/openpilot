@@ -277,11 +277,11 @@ void CameraWidget::paintGL() {
   if (frames.empty()) return;
 
   int frame_idx = frames.size() - 1;
-
-  // Always draw latest frame until sync logic is more stable
-  // for (frame_idx = 0; frame_idx < frames.size() - 1; frame_idx++) {
-  //   if (frames[frame_idx].first == draw_frame_id) break;
-  // }
+  if (draw_frame_id >= 0) {
+    for (frame_idx = 0; frame_idx < frames.size() - 1; ++frame_idx) {
+      if (frames[frame_idx].first == draw_frame_id) break;
+    }
+  }
 
   // Log duplicate/dropped frames
   if (frames[frame_idx].first == prev_frame_id) {
@@ -382,7 +382,7 @@ void CameraWidget::vipcConnected(VisionIpcClient *vipc_client) {
 }
 
 void CameraWidget::vipcFrameReceived() {
-  update();
+  if (update_on_frame) update();
 }
 
 void CameraWidget::vipcThread() {
