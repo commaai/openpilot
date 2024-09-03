@@ -22,9 +22,10 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget *par
 }
 
 void AnnotatedCameraWidget::updateState(const UIState &s) {
-  // update engageability/experimental mode button
   experimental_btn->updateState(s);
   dmon.updateState(s);
+
+  update();
 }
 
 void AnnotatedCameraWidget::initializeGL() {
@@ -46,7 +47,7 @@ mat4 AnnotatedCameraWidget::calcFrameMatrix() {
 
   // Select intrinsic matrix and calibration based on camera type
   auto *s = uiState();
-  bool wide_cam = active_stream_type == VISION_STREAM_WIDE_ROAD;
+  bool wide_cam = getStreamType() == VISION_STREAM_WIDE_ROAD;
   const auto &intrinsic_matrix = wide_cam ? ECAM_INTRINSIC_MATRIX : FCAM_INTRINSIC_MATRIX;
   const auto &calibration = wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib;
 
@@ -94,21 +95,6 @@ void AnnotatedCameraWidget::paintGL() {
 
   // draw camera frame
   {
-    std::lock_guard lk(frame_lock);
-
-    if (frames.empty()) {
-      if (skip_frame_count > 0) {
-        skip_frame_count--;
-        qDebug() << "skipping frame, not ready";
-        return;
-      }
-    } else {
-      // skip drawing up to this many frames if we're
-      // missing camera frames. this smooths out the
-      // transitions from the narrow and wide cameras
-      skip_frame_count = 5;
-    }
-
     // Wide or narrow cam dependent on speed
     bool has_wide_cam = available_streams.count(VISION_STREAM_WIDE_ROAD);
     if (has_wide_cam) {
@@ -121,7 +107,6 @@ void AnnotatedCameraWidget::paintGL() {
       wide_cam_requested = wide_cam_requested && sm["selfdriveState"].getSelfdriveState().getExperimentalMode();
     }
     CameraWidget::setStreamType(wide_cam_requested ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
-    CameraWidget::setFrameId(sm["modelV2"].getModelV2().getFrameId());
     CameraWidget::paintGL();
   }
 

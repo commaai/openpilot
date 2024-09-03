@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common/params.h"
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 
 class DriverViewWindow : public CameraWidget {

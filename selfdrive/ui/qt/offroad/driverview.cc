@@ -4,6 +4,7 @@
 #include <QPainter>
 
 #include "selfdrive/ui/qt/util.h"
+#include "selfdrive/ui/ui.h"
 
 const int FACE_IMG_SIZE = 130;
 
@@ -25,17 +26,14 @@ void DriverViewWindow::showEvent(QShowEvent* event) {
 
 void DriverViewWindow::hideEvent(QHideEvent* event) {
   params.putBool("IsDriverViewEnabled", false);
-  stopVipcThread();
   CameraWidget::hideEvent(event);
 }
 
 void DriverViewWindow::paintGL() {
   CameraWidget::paintGL();
 
-  std::lock_guard lk(frame_lock);
   QPainter p(this);
-  // startup msg
-  if (frames.empty()) {
+  if (!connected()) {
     p.setPen(Qt::white);
     p.setRenderHint(QPainter::TextAntialiasing);
     p.setFont(InterFont(100, QFont::Bold));
