@@ -12,7 +12,8 @@ from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
-from openpilot.selfdrive.controls.lib.drive_helpers import V_CRUISE_MAX, CONTROL_N, get_speed_error
+from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, get_speed_error
+from openpilot.selfdrive.car.cruise import V_CRUISE_MAX
 from openpilot.common.swaglog import cloudlog
 
 LON_MPC_STEP = 0.2  # first step is 0.2s
@@ -98,7 +99,7 @@ class LongitudinalPlanner:
     self.mpc.mode = 'blended' if sm['controlsState'].experimentalMode else 'acc'
 
     v_ego = sm['carState'].vEgo
-    v_cruise_kph = min(sm['controlsState'].vCruise, V_CRUISE_MAX)
+    v_cruise_kph = min(sm['carState'].vCruise, V_CRUISE_MAX)
     v_cruise = v_cruise_kph * CV.KPH_TO_MS
 
     long_control_off = sm['controlsState'].longControlState == LongCtrlState.off

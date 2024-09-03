@@ -733,8 +733,6 @@ struct ControlsState @0x97ff69c53601abf1 {
 
   longControlState @30 :Car.CarControl.Actuators.LongControlState;
   vTargetLead @3 :Float32;
-  vCruise @22 :Float32;  # actual set speed
-  vCruiseCluster @63 :Float32;  # set speed to display in the UI
   upAccelCmd @4 :Float32;
   uiAccelCmd @5 :Float32;
   ufAccelCmd @33 :Float32;
@@ -882,6 +880,8 @@ struct ControlsState @0x97ff69c53601abf1 {
   canErrorCounterDEPRECATED @57 :UInt32;
   vPidDEPRECATED @2 :Float32;
   alertBlinkingRateDEPRECATED @42 :Float32;
+  vCruiseDEPRECATED @22 :Float32;  # actual set speed
+  vCruiseClusterDEPRECATED @63 :Float32;  # set speed to display in the UI
 }
 
 struct DrivingModelData {
