@@ -541,7 +541,9 @@ CONFIGS = [
     ],
     subs=["livePose"],
     ignore=["logMonoTime"],
+    should_recv_callback=MessageBasedRcvCallback("cameraOdometry"),
     tolerance=NUMPY_TOLERANCE,
+    unlocked_pubs=["accelerometer", "gyroscope"],
   ),
   ProcessConfig(
     proc_name="paramsd",

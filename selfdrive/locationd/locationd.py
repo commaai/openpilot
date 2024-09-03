@@ -239,7 +239,9 @@ def main():
   DEBUG = bool(int(os.getenv("DEBUG", "0")))
 
   pm = messaging.PubMaster(['livePose'])
-  sm = messaging.SubMaster(['accelerometer', 'gyroscope', 'carState', 'liveCalibration', 'cameraOdometry'])
+  sm = messaging.SubMaster(['carState', 'liveCalibration', 'cameraOdometry'], poll='cameraOdometry')
+  # separate sensor sockets for efficiency
+  sensor_sockets = [messaging.sub_sock(which, timeout=20) for which in ['accelerometer', 'gyroscope']]
 
   params = Params()
 
@@ -262,10 +264,14 @@ def main():
 
     if filter_initialized:
       observation_timing_invalid = False
-      for which in sm.updated.keys():
-        if sm.updated[which] and sm.valid[which]:
-          t = sm.logMonoTime[which] * 1e-9
-          res = estimator.handle_log(t, which, sm[which])
+
+      msgs  = [(msg.logMonoTime, msg.valid, msg.which(), getattr(msg, msg.which())) for sock in sensor_sockets for msg in messaging.drain_sock(sock)]
+      msgs += [(sm.logMonoTime[which], sm.valid[which], which, sm[which]) for which, updated in sm.updated.items() if updated]
+
+      for log_mono_time, valid, which, msg in sorted(msgs, key=lambda x: x[0]):
+        if valid:
+          t = log_mono_time * 1e-9
+          res = estimator.handle_log(t, which, msg)
           if res == HandleLogResult.TIMING_INVALID:
             observation_timing_invalid = True
           elif res == HandleLogResult.INPUT_INVALID:
@@ -278,7 +284,7 @@ def main():
     if sm.updated["cameraOdometry"]:
       critical_service_inputs_valid = all(observation_input_invalid[s] < INPUT_INVALID_THRESHOLD for s in critcal_services)
       inputs_valid = sm.all_valid() and critical_service_inputs_valid and not observation_timing_invalid
-      sensors_valid = sm.all_checks(["accelerometer", "gyroscope"])
+      sensors_valid = True
 
       msg = estimator.get_msg(sensors_valid, inputs_valid, filter_initialized)
       pm.send("livePose", msg)
