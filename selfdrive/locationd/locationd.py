@@ -287,8 +287,15 @@ def main():
     if filter_initialized:
       observation_timing_invalid = False
 
-      msgs  = [(msg.logMonoTime, msg.valid, msg.which(), getattr(msg, msg.which())) for msg in acc_msgs + gyro_msgs]
-      msgs += [(sm.logMonoTime[which], sm.valid[which], which, sm[which]) for which, updated in sm.updated.items() if updated]
+      msgs = []
+      for msg in acc_msgs + gyro_msgs:
+        t, valid, which, data = msg.logMonoTime, msg.valid, msg.which(), getattr(msg, msg.which())
+        msgs.append((t, valid, which, data))
+      for which, updated in sm.updated.items():
+        if not updated:
+          continue
+        t, valid, data = sm.logMonoTime[which], sm.valid[which], sm[which]
+        msgs.append((t, valid, which, data))
 
       for log_mono_time, valid, which, msg in sorted(msgs, key=lambda x: x[0]):
         if valid:
