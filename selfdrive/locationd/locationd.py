@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import json
+import time
 import capnp
 import numpy as np
 from enum import Enum
@@ -233,15 +234,34 @@ class LocationEstimator:
     return msg
 
 
+def sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, simulation):
+  cur_time = time.monotonic()
+  for which, msgs in [("accelerometer", acc_msgs), ("gyroscope", gyro_msgs)]:
+    if len(msgs) > 0:
+      sensor_valid[which] = msgs[-1].valid
+      sensor_recv_time[which] = cur_time
+
+    if not simulation:
+      sensor_alive[which] = (cur_time - sensor_recv_time[which]) < 0.1
+    else:
+      sensor_alive[which] = len(msgs) > 0
+
+  return all(sensor_alive.values()) and all(sensor_valid.values())
+
+
 def main():
   config_realtime_process([0, 1, 2, 3], 5)
 
   DEBUG = bool(int(os.getenv("DEBUG", "0")))
+  SIMULATION = bool(int(os.getenv("SIMULATION", "0")))
 
   pm = messaging.PubMaster(['livePose'])
   sm = messaging.SubMaster(['carState', 'liveCalibration', 'cameraOdometry'], poll='cameraOdometry')
   # separate sensor sockets for efficiency
   sensor_sockets = [messaging.sub_sock(which, timeout=20) for which in ['accelerometer', 'gyroscope']]
+  sensor_alive = defaultdict(bool)
+  sensor_recv_time = defaultdict(float)
+  sensor_valid = defaultdict(bool)
 
   params = Params()
 
@@ -262,10 +282,12 @@ def main():
   while True:
     sm.update()
 
+    acc_msgs, gyro_msgs = [messaging.drain_sock(sock) for sock in sensor_sockets]
+
     if filter_initialized:
       observation_timing_invalid = False
 
-      msgs  = [(msg.logMonoTime, msg.valid, msg.which(), getattr(msg, msg.which())) for sock in sensor_sockets for msg in messaging.drain_sock(sock)]
+      msgs  = [(msg.logMonoTime, msg.valid, msg.which(), getattr(msg, msg.which())) for msg in acc_msgs + gyro_msgs]
       msgs += [(sm.logMonoTime[which], sm.valid[which], which, sm[which]) for which, updated in sm.updated.items() if updated]
 
       for log_mono_time, valid, which, msg in sorted(msgs, key=lambda x: x[0]):
@@ -279,12 +301,12 @@ def main():
           else:
             observation_input_invalid[which] *= INPUT_INVALID_DECAY
     else:
-      filter_initialized = sm.all_checks()
+      filter_initialized = sm.all_checks() and sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
 
     if sm.updated["cameraOdometry"]:
       critical_service_inputs_valid = all(observation_input_invalid[s] < INPUT_INVALID_THRESHOLD for s in critcal_services)
       inputs_valid = sm.all_valid() and critical_service_inputs_valid and not observation_timing_invalid
-      sensors_valid = True
+      sensors_valid = sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
 
       msg = estimator.get_msg(sensors_valid, inputs_valid, filter_initialized)
       pm.send("livePose", msg)
