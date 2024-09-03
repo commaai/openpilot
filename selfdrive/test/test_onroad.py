@@ -429,6 +429,6 @@ class TestOnroad:
         if evt.noEntry:
           no_entries[evt.name] += 1
 
-    eng = [m.controlsState.engageable for m in self.service_msgs['controlsState']]
+    eng = [m.selfdriveState.engageable for m in self.service_msgs['selfdriveState']]
     assert all(eng), \
-           f"Not engageable for whole segment:\n- controlsState.engageable: {Counter(eng)}\n- No entry events: {no_entries}"
+           f"Not engageable for whole segment:\n- selfdriveState.engageable: {Counter(eng)}\n- No entry events: {no_entries}"
