@@ -259,9 +259,7 @@ def main():
   sm = messaging.SubMaster(['carState', 'liveCalibration', 'cameraOdometry'], poll='cameraOdometry')
   # separate sensor sockets for efficiency
   sensor_sockets = [messaging.sub_sock(which, timeout=20) for which in ['accelerometer', 'gyroscope']]
-  sensor_alive = defaultdict(bool)
-  sensor_recv_time = defaultdict(float)
-  sensor_valid = defaultdict(bool)
+  sensor_alive, sensor_valid, sensor_recv_time = defaultdict(bool), defaultdict(bool), defaultdict(float)
 
   params = Params()
 
