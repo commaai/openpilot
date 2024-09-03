@@ -28,7 +28,7 @@ def make_event(event_types):
 class TestStateMachine:
 
   def setup_method(self):
-    CarInterface, CarController, CarState = interfaces[MOCK.MOCK]
+    CarInterface, CarController, CarState, RadarInterface = interfaces[MOCK.MOCK]
     CP = CarInterface.get_non_essential_params(MOCK.MOCK)
     CI = CarInterface(CP, CarController, CarState)
 
