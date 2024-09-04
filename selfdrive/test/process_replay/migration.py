@@ -10,8 +10,8 @@ from panda import Panda
 
 # TODO: message migration should happen in-place
 def migrate_all(lr, manager_states=False, panda_states=False, camera_states=False):
-  msgs = migrate_sensorEvents(lr, old_logtime)
-  msgs = migrate_carParams(msgs, old_logtime)
+  msgs = migrate_sensorEvents(lr)
+  msgs = migrate_carParams(msgs)
   msgs = migrate_gpsLocation(msgs)
   msgs = migrate_deviceState(msgs)
   msgs = migrate_carOutput(msgs)
