@@ -38,6 +38,8 @@ LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
 LANE_DEPARTURE_THRESHOLD = 0.1
 CAMERA_OFFSET = 0.04
 
+JOYSTICK_MAX_LAT_ACCEL = 2.5  # m/s^2
+
 REPLAY = "REPLAY" in os.environ
 SIMULATION = "SIMULATION" in os.environ
 TESTING_CLOSET = "TESTING_CLOSET" in os.environ
@@ -591,9 +593,11 @@ class Controls:
           actuators.accel = 4.0*clip(joystick_axes[0], -1, 1)
 
         if CC.latActive:
+          max_curvature = JOYSTICK_MAX_LAT_ACCEL / max(CS.vEgo ** 2, 1)
+          max_angle = math.degrees(self.VM.get_steer_from_curvature(max_curvature, CS.vEgo, lp.roll))
+
           steer = clip(joystick_axes[1], -1, 1)
-          # max angle is 45 for angle-based cars, max curvature is 0.02
-          actuators.steer, actuators.steeringAngleDeg, actuators.curvature = steer, steer * 90., steer * -0.02
+          actuators.steer, actuators.steeringAngleDeg, actuators.curvature = steer, steer * max_angle, steer * -max_curvature
 
         lac_log.active = self.active
         lac_log.steeringAngleDeg = CS.steeringAngleDeg
