@@ -29,6 +29,10 @@ def migrate_all(lr, manager_states=False, panda_states=False, camera_states=Fals
 
 
 def migrate_liveLocationKalman(lr):
+  # migration needed only for routes before livePose
+  if any(msg.which() == 'livePose' for msg in lr):
+    return lr
+
   all_msgs = []
   for msg in lr:
     if msg.which() != 'liveLocationKalmanDEPRECATED':
