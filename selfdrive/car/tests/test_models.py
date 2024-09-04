@@ -2,7 +2,6 @@ import capnp
 import copy
 import dataclasses
 import os
-import importlib
 import pytest
 import random
 import unittest # noqa: TID251
@@ -173,7 +172,7 @@ class TestCarModelBase(unittest.TestCase):
 
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
-    cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.platform]
+    cls.CarInterface, cls.CarController, cls.CarState, cls.RadarInterface = interfaces[cls.platform]
     cls.CP = cls.CarInterface.get_params(cls.platform,  cls.fingerprint, car_fw, experimental_long, docs=False)
     assert cls.CP
     assert cls.CP.carFingerprint == cls.platform
@@ -234,8 +233,7 @@ class TestCarModelBase(unittest.TestCase):
     self.assertEqual(can_invalid_cnt, 0)
 
   def test_radar_interface(self):
-    RadarInterface = importlib.import_module(f'opendbc.car.{self.CP.carName}.radar_interface').RadarInterface
-    RI = RadarInterface(self.CP)
+    RI = self.RadarInterface(self.CP)
     assert RI
 
     # Since OBD port is multiplexed to bus 1 (commonly radar bus) while fingerprinting,
