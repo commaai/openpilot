@@ -133,7 +133,7 @@ class TestCarModelBase(unittest.TestCase):
       segment_range = f"{cls.test_route.route}/{seg}"
 
       try:
-        source = partial(auto_source, sources=internal_source if is_internal else [openpilotci_source, openpilotci_source_zst])
+        source = partial(auto_source, sources=[internal_source] if is_internal else [openpilotci_source, openpilotci_source_zst])
         lr = LogReader(segment_range, source=source)
         return cls.get_testing_data_from_logreader(lr)
       except Exception:
