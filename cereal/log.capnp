@@ -1281,7 +1281,7 @@ struct LivePose {
   posenetOK @5 :Bool = false;
   sensorsOK @6 :Bool = false;
 
-  filterState @7 :FilterState;
+  debugFilterState @7 :FilterState;
 
   struct XYZMeasurement {
     x @0 :Float32;
@@ -1297,6 +1297,14 @@ struct LivePose {
     value @0 : List(Float64);
     std @1 : List(Float64);
     valid @2 : Bool;
+
+    observations @3 :List(Observation);
+
+    struct Observation {
+      kind @0 :Int32;
+      value @1 :List(Float32);
+      error @2 :List(Float32);
+    }
   }
 }
 
