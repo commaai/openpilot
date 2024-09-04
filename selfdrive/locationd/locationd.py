@@ -285,26 +285,18 @@ def main():
     if filter_initialized:
       observation_timing_invalid = False
 
-      msgs = []
-      for msg in acc_msgs + gyro_msgs:
-        t, valid, which, data = msg.logMonoTime, msg.valid, msg.which(), getattr(msg, msg.which())
-        msgs.append((t, valid, which, data))
-      for which, updated in sm.updated.items():
-        if not updated:
-          continue
-        t, valid, data = sm.logMonoTime[which], sm.valid[which], sm[which]
-        msgs.append((t, valid, which, data))
+      msgs = [(m.logMonoTime, m.which(), getattr(m, m.which())) for m in acc_msgs + gyro_msgs if m.valid]
+      msgs.extend((sm.logMonoTime[which], which, sm[which]) for which, updated in sm.updated.items() if updated and sm.valid[which])
 
-      for log_mono_time, valid, which, msg in sorted(msgs, key=lambda x: x[0]):
-        if valid:
-          t = log_mono_time * 1e-9
-          res = estimator.handle_log(t, which, msg)
-          if res == HandleLogResult.TIMING_INVALID:
-            observation_timing_invalid = True
-          elif res == HandleLogResult.INPUT_INVALID:
-            observation_input_invalid[which] += 1
-          else:
-            observation_input_invalid[which] *= INPUT_INVALID_DECAY
+      for log_mono_time, which, msg in sorted(msgs, key=lambda x: x[0]):
+        t = log_mono_time * 1e-9
+        res = estimator.handle_log(t, which, msg)
+        if res == HandleLogResult.TIMING_INVALID:
+          observation_timing_invalid = True
+        elif res == HandleLogResult.INPUT_INVALID:
+          observation_input_invalid[which] += 1
+        else:
+          observation_input_invalid[which] *= INPUT_INVALID_DECAY
     else:
       filter_initialized = sm.all_checks() and sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
 
