@@ -227,7 +227,7 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> list[LogPath]:
                   "\n  - ".join([f"{k}: {repr(v)}" for k, v in exceptions.items()]))
 
 
-def parse_useradmin(identifier: str) -> str:
+def parse_indirect(identifier: str) -> str:
   if "useradmin.comma.ai" in identifier:
     query = parse_qs(urlparse(identifier).query)
     return query["onebox"][0]
@@ -242,8 +242,10 @@ def parse_direct(identifier: str):
 
 class LogReader:
   def _parse_identifier(self, identifier: str) -> list[LogPath]:
-    identifier = parse_useradmin(identifier)
+    # useradmin, etc.
+    identifier = parse_indirect(identifier)
 
+    # direct url or file
     direct_parsed = parse_direct(identifier)
     if direct_parsed is not None:
       return direct_source(identifier)
