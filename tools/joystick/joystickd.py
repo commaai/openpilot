@@ -45,10 +45,10 @@ class Joystick:
     # TODO: find a way to get this from API or detect gamepad/PC, perhaps "inputs" doesn't support it
     # TODO: the mapping can also be wrong on PC depending on the driver
     self.cancel_button = 'BTN_NORTH'  # BTN_NORTH=X/triangle
-    accel_axis = 'ABS_RY'
+    accel_axis = 'ABS_RX'
     steer_axis = 'ABS_Z'
     # TODO: once the API is finalized, we can replace this with outputting gas/brake and steering
-    self.flip_map = {'ABS_RX': 'ABS_RY'}
+    self.flip_map = {'ABS_RY': accel_axis}
     self.min_axis_value = {accel_axis: 0., steer_axis: 0.}
     self.max_axis_value = {accel_axis: 255., steer_axis: 255.}
     self.axes_values = {accel_axis: 0., steer_axis: 0.}
@@ -58,9 +58,11 @@ class Joystick:
   def update(self):
     joystick_event = get_gamepad()[0]
     event = (joystick_event.code, joystick_event.state)
+
     # flip left trigger to negative accel
     if event[0] in self.flip_map:
       event = (self.flip_map[event[0]], -event[1])
+
     if event[0] == self.cancel_button:
       if event[1] == 1:
         self.cancel = True
