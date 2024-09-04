@@ -70,10 +70,9 @@ class TestLogReader:
     (f"https://useradmin.comma.ai/?onebox={TEST_ROUTE}", ALL_SEGS),
     (f"https://useradmin.comma.ai/?onebox={TEST_ROUTE.replace('/', '|')}", ALL_SEGS),
     (f"https://useradmin.comma.ai/?onebox={TEST_ROUTE.replace('/', '%7C')}", ALL_SEGS),
-    (f"https://cabana.comma.ai/?route={TEST_ROUTE}", ALL_SEGS),
   ])
   def test_indirect_parsing(self, identifier, expected):
-    parsed, _, _ = parse_indirect(identifier)
+    parsed = parse_indirect(identifier)
     sr = SegmentRange(parsed)
     assert list(sr.seg_idxs) == expected, identifier
 
@@ -194,17 +193,17 @@ class TestLogReader:
 
     with subtests.test("interactive_yes"):
       mocker.patch("sys.stdin", new=io.StringIO("y\n"))
-      lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO_INTERACTIVE, default_source=comma_api_source)
+      lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO_INTERACTIVE, source=comma_api_source)
       log_len = len(list(lr))
       assert qlog_len == log_len
 
     with subtests.test("interactive_no"):
       mocker.patch("sys.stdin", new=io.StringIO("n\n"))
       with pytest.raises(AssertionError):
-        lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO_INTERACTIVE, default_source=comma_api_source)
+        lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO_INTERACTIVE, source=comma_api_source)
 
     with subtests.test("non_interactive"):
-      lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO, default_source=comma_api_source)
+      lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO, source=comma_api_source)
       log_len = len(list(lr))
       assert qlog_len == log_len
 

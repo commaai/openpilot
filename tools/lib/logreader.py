@@ -265,6 +265,8 @@ class LogReader:
     self.default_mode = default_mode
     self.source = source
     self.identifier = identifier
+    if isinstance(identifier, str):
+      self.identifier = [identifier]
 
     self.sort_by_time = sort_by_time
     self.only_union_types = only_union_types

@@ -132,7 +132,7 @@ class TestCarModelBase(unittest.TestCase):
       segment_range = f"{cls.test_route.route}/{seg}"
 
       try:
-        lr = LogReader(segment_range, default_source=internal_source if is_internal else openpilotci_source)
+        lr = LogReader(segment_range, source=internal_source if is_internal else openpilotci_source)
         return cls.get_testing_data_from_logreader(lr)
       except Exception:
         pass
