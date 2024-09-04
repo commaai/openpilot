@@ -93,9 +93,8 @@ class ReadMode(enum.StrEnum):
 
 
 LogPath = str | None
-LogPaths = list[LogPath]
 ValidFileCallable = Callable[[LogPath], bool]
-Source = Callable[[SegmentRange, ReadMode], LogPaths]
+Source = Callable[[SegmentRange, ReadMode], list[LogPath]]
 
 InternalUnavailableException = Exception("Internal source not available")
 
@@ -105,7 +104,7 @@ def default_valid_file(fn: LogPath) -> bool:
   return fn is not None and file_exists(fn)
 
 
-def auto_strategy(rlog_paths: LogPaths, qlog_paths: LogPaths, interactive: bool, valid_file: ValidFileCallable) -> LogPaths:
+def auto_strategy(rlog_paths: list[LogPath], qlog_paths: list[LogPath], interactive: bool, valid_file: ValidFileCallable) -> list[LogPath]:
   # auto select logs based on availability
   missing_rlogs = [rlog is None or not valid_file(rlog) for rlog in rlog_paths].count(True)
   if missing_rlogs != 0:
@@ -120,7 +119,7 @@ def auto_strategy(rlog_paths: LogPaths, qlog_paths: LogPaths, interactive: bool,
   return rlog_paths
 
 
-def apply_strategy(mode: ReadMode, rlog_paths: LogPaths, qlog_paths: LogPaths, valid_file: ValidFileCallable = default_valid_file) -> LogPaths:
+def apply_strategy(mode: ReadMode, rlog_paths: list[LogPath], qlog_paths: list[LogPath], valid_file: ValidFileCallable = default_valid_file) -> list[LogPath]:
   if mode == ReadMode.RLOG:
     return rlog_paths
   elif mode == ReadMode.QLOG:
@@ -132,7 +131,7 @@ def apply_strategy(mode: ReadMode, rlog_paths: LogPaths, qlog_paths: LogPaths, v
   raise Exception(f"invalid mode: {mode}")
 
 
-def comma_api_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
+def comma_api_source(sr: SegmentRange, mode: ReadMode) -> list[LogPath]:
   route = Route(sr.route_name)
 
   rlog_paths = [route.log_paths()[seg] for seg in sr.seg_idxs]
@@ -145,7 +144,7 @@ def comma_api_source(sr: SegmentRange, mode: ReadMode) -> LogPaths:
   return apply_strategy(mode, rlog_paths, qlog_paths, valid_file=valid_file)
 
 
-def internal_source(sr: SegmentRange, mode: ReadMode, file_ext: str = "bz2") -> LogPaths:
+def internal_source(sr: SegmentRange, mode: ReadMode, file_ext: str = "bz2") -> list[LogPath]:
   if not internal_source_available():
     raise InternalUnavailableException
 
@@ -159,32 +158,32 @@ def internal_source(sr: SegmentRange, mode: ReadMode, file_ext: str = "bz2") -> 
   return apply_strategy(mode, rlog_paths, qlog_paths)
 
 
-def internal_source_zst(sr: SegmentRange, mode: ReadMode, file_ext: str = "zst") -> LogPaths:
+def internal_source_zst(sr: SegmentRange, mode: ReadMode, file_ext: str = "zst") -> list[LogPath]:
   return internal_source(sr, mode, file_ext)
 
 
-def openpilotci_source(sr: SegmentRange, mode: ReadMode, file_ext: str = "bz2") -> LogPaths:
+def openpilotci_source(sr: SegmentRange, mode: ReadMode, file_ext: str = "bz2") -> list[LogPath]:
   rlog_paths = [get_url(sr.route_name, seg, f"rlog.{file_ext}") for seg in sr.seg_idxs]
   qlog_paths = [get_url(sr.route_name, seg, f"qlog.{file_ext}") for seg in sr.seg_idxs]
 
   return apply_strategy(mode, rlog_paths, qlog_paths)
 
 
-def openpilotci_source_zst(sr: SegmentRange, mode: ReadMode) -> LogPaths:
+def openpilotci_source_zst(sr: SegmentRange, mode: ReadMode) -> list[LogPath]:
   return openpilotci_source(sr, mode, "zst")
 
 
-def comma_car_segments_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
+def comma_car_segments_source(sr: SegmentRange, mode=ReadMode.RLOG) -> list[LogPath]:
   return [get_comma_segments_url(sr.route_name, seg) for seg in sr.seg_idxs]
 
 
-def testing_closet_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
+def testing_closet_source(sr: SegmentRange, mode=ReadMode.RLOG) -> list[LogPath]:
   if not internal_source_available('http://testing.comma.life'):
     raise InternalUnavailableException
   return [f"http://testing.comma.life/download/{sr.route_name.replace('|', '/')}/{seg}/rlog" for seg in sr.seg_idxs]
 
 
-def direct_source(file_or_url: str) -> LogPaths:
+def direct_source(file_or_url: str) -> list[LogPath]:
   return [file_or_url]
 
 
@@ -194,14 +193,14 @@ def get_invalid_files(files):
       yield f
 
 
-def check_source(source: Source, *args) -> LogPaths:
+def check_source(source: Source, *args) -> list[LogPath]:
   files = source(*args)
   assert len(files) > 0, "No files on source"
   assert next(get_invalid_files(files), False) is False, "Some files are invalid"
   return files
 
 
-def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> LogPaths:
+def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> list[LogPath]:
   if mode == ReadMode.SANITIZED:
     return comma_car_segments_source(sr, mode)
 
@@ -249,7 +248,7 @@ def parse_direct(identifier: str):
 
 
 def parse_indirect(identifier: str):
-  parsed = parse_useradmin(identifier) or parse_cabana(identifier)
+  parsed = parse_useradmin(identifier)
 
   if parsed is not None:
     return parsed, comma_api_source, True
@@ -258,11 +257,15 @@ def parse_indirect(identifier: str):
 
 
 class LogReader:
-  def _parse_identifiers(self, identifier: str | list[str]):
+  def _parse_identifiers(self, identifier: str | list[str]) -> list[LogPath]:
+    print('got', identifier)
     if isinstance(identifier, list):
+      print('parsing', [i for j in identifier for i in self._parse_identifiers(j)])
       return [i for j in identifier for i in self._parse_identifiers(j)]
+    return []
 
     parsed, source, is_indirect = parse_indirect(identifier)
+    print(source)
 
     if not is_indirect:
       direct_parsed = parse_direct(identifier)
@@ -281,7 +284,7 @@ class LogReader:
     return identifiers
 
   def __init__(self, identifier: str | list[str], default_mode: ReadMode = ReadMode.RLOG,
-               default_source=auto_source, sort_by_time=False, only_union_types=False):
+               default_source: Source = auto_source, sort_by_time=False, only_union_types=False):
     self.default_mode = default_mode
     self.default_source = default_source
     self.identifier = identifier
