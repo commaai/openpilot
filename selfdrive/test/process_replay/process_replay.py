@@ -343,7 +343,7 @@ def card_fingerprint_callback(rc, pm, msgs, fingerprint):
 def get_car_params_callback(rc, pm, msgs, fingerprint):
   params = Params()
   if fingerprint:
-    CarInterface, _, _ = interfaces[fingerprint]
+    CarInterface, _, _, _ = interfaces[fingerprint]
     CP = CarInterface.get_non_essential_params(fingerprint)
   else:
     can = DummySocket()
@@ -453,19 +453,6 @@ class FrequencyBasedRcvCallback:
 
 
 def controlsd_config_callback(params, cfg, lr):
-  controlsState = None
-  initialized = False
-  for msg in lr:
-    if msg.which() == "controlsState":
-      controlsState = msg.controlsState
-      if initialized:
-        break
-    elif msg.which() == "onroadEvents":
-      initialized = car.CarEvent.EventName.controlsInitializing not in [e.name for e in msg.onroadEvents]
-
-  assert controlsState is not None and initialized, "controlsState never initialized"
-  params.put("ReplayControlsState", controlsState.as_builder().to_bytes())
-
   ublox = params.get_bool("UbloxAvailable")
   sub_keys = ({"gpsLocation", } if ublox else {"gpsLocationExternal", })
 
@@ -482,8 +469,8 @@ CONFIGS = [
       "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope", "carOutput",
       "gpsLocationExternal", "gpsLocation",
     ],
-    subs=["controlsState", "carControl", "onroadEvents"],
-    ignore=["logMonoTime", "controlsState.startMonoTime", "controlsState.cumLagMs"],
+    subs=["selfdriveState", "controlsState", "carControl", "onroadEvents"],
+    ignore=["logMonoTime", "controlsState.cumLagMs"],
     config_callback=controlsd_config_callback,
     init_callback=get_car_params_callback,
     should_recv_callback=controlsd_rcv_callback,
@@ -512,7 +499,7 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="plannerd",
-    pubs=["modelV2", "carControl", "carState", "controlsState", "radarState"],
+    pubs=["modelV2", "carControl", "carState", "controlsState", "radarState", "selfdriveState"],
     subs=["longitudinalPlan"],
     ignore=["logMonoTime", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime"],
     init_callback=get_car_params_callback,
@@ -528,7 +515,7 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="dmonitoringd",
-    pubs=["driverStateV2", "liveCalibration", "carState", "modelV2", "controlsState"],
+    pubs=["driverStateV2", "liveCalibration", "carState", "modelV2", "selfdriveState"],
     subs=["driverMonitoringState"],
     ignore=["logMonoTime"],
     should_recv_callback=FrequencyBasedRcvCallback("driverStateV2"),
@@ -816,8 +803,8 @@ def check_openpilot_enabled(msgs: LogIterable) -> bool:
     if msg.which() == "carParams":
       if msg.carParams.notCar:
         return True
-    elif msg.which() == "controlsState":
-      if msg.controlsState.active:
+    elif msg.which() == "selfdriveState":
+      if msg.selfdriveState.active:
         cur_enabled_count += 1
       else:
         cur_enabled_count = 0

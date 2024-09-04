@@ -135,6 +135,7 @@ addopts = "--ignore=openpilot/ --ignore=opendbc/ --ignore=panda/ --ignore=rednos
 cpp_files = "test_*"
 cpp_harness = "selfdrive/test/cpp_harness.py"
 python_files = "test_*.py"
+asyncio_default_fixture_loop_scope = "function"
 #timeout = "30"  # you get this long by default
 markers = [
   "slow: tests that take awhile to run and can be skipped with -m 'not slow'",
@@ -245,6 +246,7 @@ exclude = [
   "teleoprtc",
   "teleoprtc_repo",
   "third_party",
+  "*.ipynb",
 ]
 lint.flake8-implicit-str-concat.allow-multiline = false
 

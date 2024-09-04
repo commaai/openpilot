@@ -12,7 +12,7 @@ from openpilot.selfdrive.controls.lib.events import Alert, EVENTS, ET
 from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS
 
-AlertSize = log.ControlsState.AlertSize
+AlertSize = log.SelfdriveState.AlertSize
 
 OFFROAD_ALERTS_PATH = os.path.join(BASEDIR, "selfdrive/controls/lib/alerts_offroad.json")
 
@@ -38,7 +38,7 @@ class TestAlerts:
 
   def test_events_defined(self):
     # Ensure all events in capnp schema are defined in events.py
-    events = car.CarEvent.EventName.schema.enumerants
+    events = car.OnroadEvent.EventName.schema.enumerants
 
     for name, e in events.items():
       if not name.endswith("DEPRECATED"):
@@ -63,7 +63,7 @@ class TestAlerts:
 
     for alert in ALERTS:
       if not isinstance(alert, Alert):
-        alert = alert(self.CP, self.CS, self.sm, metric=False, soft_disable_time=100)
+        alert = alert(self.CP, self.CS, self.sm, metric=False, soft_disable_time=100, personality=log.LongitudinalPersonality.standard)
 
       # for full size alerts, both text fields wrap the text,
       # so it's unlikely that they  would go past the max width

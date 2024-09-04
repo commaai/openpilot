@@ -153,15 +153,15 @@ void Replay::buildTimeline() {
   uint64_t engaged_begin = 0;
   bool engaged = false;
 
-  auto alert_status = cereal::ControlsState::AlertStatus::NORMAL;
-  auto alert_size = cereal::ControlsState::AlertSize::NONE;
+  auto alert_status = cereal::SelfdriveState::AlertStatus::NORMAL;
+  auto alert_size = cereal::SelfdriveState::AlertSize::NONE;
   uint64_t alert_begin = 0;
   std::string alert_type;
 
   const TimelineType timeline_types[] = {
-    [(int)cereal::ControlsState::AlertStatus::NORMAL] = TimelineType::AlertInfo,
-    [(int)cereal::ControlsState::AlertStatus::USER_PROMPT] = TimelineType::AlertWarning,
-    [(int)cereal::ControlsState::AlertStatus::CRITICAL] = TimelineType::AlertCritical,
+    [(int)cereal::SelfdriveState::AlertStatus::NORMAL] = TimelineType::AlertInfo,
+    [(int)cereal::SelfdriveState::AlertStatus::USER_PROMPT] = TimelineType::AlertWarning,
+    [(int)cereal::SelfdriveState::AlertStatus::CRITICAL] = TimelineType::AlertCritical,
   };
 
   const auto &route_segments = route_->segments();
@@ -171,10 +171,10 @@ void Replay::buildTimeline() {
 
     std::vector<std::tuple<double, double, TimelineType>> timeline;
     for (const Event &e : log->events) {
-      if (e.which == cereal::Event::Which::CONTROLS_STATE) {
+      if (e.which == cereal::Event::Which::SELFDRIVE_STATE) {
         capnp::FlatArrayMessageReader reader(e.data);
         auto event = reader.getRoot<cereal::Event>();
-        auto cs = event.getControlsState();
+        auto cs = event.getSelfdriveState();
 
         if (engaged != cs.getEnabled()) {
           if (engaged) {
@@ -185,7 +185,7 @@ void Replay::buildTimeline() {
         }
 
         if (alert_type != cs.getAlertType().cStr() || alert_status != cs.getAlertStatus()) {
-          if (!alert_type.empty() && alert_size != cereal::ControlsState::AlertSize::NONE) {
+          if (!alert_type.empty() && alert_size != cereal::SelfdriveState::AlertSize::NONE) {
             timeline.push_back({toSeconds(alert_begin), toSeconds(e.mono_time), timeline_types[(int)alert_status]});
           }
           alert_begin = e.mono_time;
@@ -202,7 +202,7 @@ void Replay::buildTimeline() {
       if (engaged) {
         timeline.push_back({toSeconds(engaged_begin), toSeconds(log->events.back().mono_time), TimelineType::Engaged});
       }
-      if (!alert_type.empty() && alert_size != cereal::ControlsState::AlertSize::NONE) {
+      if (!alert_type.empty() && alert_size != cereal::SelfdriveState::AlertSize::NONE) {
         timeline.push_back({toSeconds(alert_begin), toSeconds(log->events.back().mono_time), timeline_types[(int)alert_status]});
       }
 

@@ -34,7 +34,10 @@ public:
   std::vector<Event> events;
 
 private:
+  void migrateOldEvents();
+
   std::string raw_;
+  bool requires_migration = true;
   std::vector<bool> filters_;
   MonotonicBuffer buffer_{1024 * 1024};
 };

@@ -2,11 +2,11 @@ import capnp
 import copy
 import dataclasses
 import os
-import importlib
 import pytest
 import random
 import unittest # noqa: TID251
 from collections import defaultdict, Counter
+from functools import partial
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
 from parameterized import parameterized_class
@@ -24,12 +24,12 @@ from openpilot.selfdrive.car.card import Car, convert_to_capnp
 from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
-from openpilot.tools.lib.logreader import LogReader, internal_source, openpilotci_source
+from openpilot.tools.lib.logreader import LogReader, auto_source, internal_source, openpilotci_source, openpilotci_source_zst
 from openpilot.tools.lib.route import SegmentName
 
 from panda.tests.libpanda import libpanda_py
 
-EventName = car.CarEvent.EventName
+EventName = car.OnroadEvent.EventName
 PandaType = log.PandaState.PandaType
 SafetyModel = car.CarParams.SafetyModel
 
@@ -132,7 +132,8 @@ class TestCarModelBase(unittest.TestCase):
       segment_range = f"{cls.test_route.route}/{seg}"
 
       try:
-        lr = LogReader(segment_range, default_source=internal_source if is_internal else openpilotci_source)
+        source = partial(auto_source, sources=[internal_source] if is_internal else [openpilotci_source, openpilotci_source_zst])
+        lr = LogReader(segment_range, source=source)
         return cls.get_testing_data_from_logreader(lr)
       except Exception:
         pass
@@ -171,7 +172,7 @@ class TestCarModelBase(unittest.TestCase):
 
     cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
 
-    cls.CarInterface, cls.CarController, cls.CarState = interfaces[cls.platform]
+    cls.CarInterface, cls.CarController, cls.CarState, cls.RadarInterface = interfaces[cls.platform]
     cls.CP = cls.CarInterface.get_params(cls.platform,  cls.fingerprint, car_fw, experimental_long, docs=False)
     assert cls.CP
     assert cls.CP.carFingerprint == cls.platform
@@ -232,8 +233,7 @@ class TestCarModelBase(unittest.TestCase):
     self.assertEqual(can_invalid_cnt, 0)
 
   def test_radar_interface(self):
-    RadarInterface = importlib.import_module(f'opendbc.car.{self.CP.carName}.radar_interface').RadarInterface
-    RI = RadarInterface(self.CP)
+    RI = self.RadarInterface(self.CP)
     assert RI
 
     # Since OBD port is multiplexed to bus 1 (commonly radar bus) while fingerprinting,

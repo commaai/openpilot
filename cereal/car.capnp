@@ -5,7 +5,9 @@ $Cxx.namespace("cereal");
 
 # ******* events causing controls state machine transition *******
 
-struct CarEvent @0x9b1657f34caf3ad3 {
+# FIXME: OnroadEvent shouldn't be in car.capnp, but can't immediately
+#        move due to being referenced by structs in this file
+struct OnroadEvent @0x9b1657f34caf3ad3 {
   name @0 :EventName;
 
   # event types
@@ -117,6 +119,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
     paramsdPermanentError @119;
     actuatorsApiUnavailable @120;
     espActive @121;
+    personalityChanged @122;
 
     radarCanErrorDEPRECATED @15;
     communityFeatureDisallowedDEPRECATED @62;
@@ -151,7 +154,7 @@ struct CarEvent @0x9b1657f34caf3ad3 {
 # all speeds in m/s
 
 struct CarState {
-  events @13 :List(CarEvent);
+  events @13 :List(OnroadEvent);
 
   # CAN health
   canValid @26 :Bool;       # invalid counter/checksums
@@ -159,10 +162,13 @@ struct CarState {
   canErrorCounter @48 :UInt32;
 
   # car speed
-  vEgo @1 :Float32;          # best estimate of speed
-  aEgo @16 :Float32;         # best estimate of acceleration
-  vEgoRaw @17 :Float32;      # unfiltered speed from CAN sensors
-  vEgoCluster @44 :Float32;  # best estimate of speed shown on car's instrument cluster, used for UI
+  vEgo @1 :Float32;            # best estimate of speed
+  aEgo @16 :Float32;           # best estimate of aCAN cceleration
+  vEgoRaw @17 :Float32;        # unfiltered speed from wheel speed sensors
+  vEgoCluster @44 :Float32;    # best estimate of speed shown on car's instrument cluster, used for UI
+
+  vCruise @53 :Float32;        # actual set speed
+  vCruiseCluster @54 :Float32; # set speed to display in the UI
 
   yawRate @22 :Float32;     # best estimate of yaw rate
   standstill @18 :Bool;
@@ -280,7 +286,7 @@ struct CarState {
   }
 
   # deprecated
-  errorsDEPRECATED @0 :List(CarEvent.EventName);
+  errorsDEPRECATED @0 :List(OnroadEvent.EventName);
   brakeLightsDEPRECATED @19 :Bool;
   steeringRateLimitedDEPRECATED @29 :Bool;
   canMonoTimesDEPRECATED @12: List(UInt64);

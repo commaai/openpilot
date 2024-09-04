@@ -277,11 +277,11 @@ void Slider::parseQLog(std::shared_ptr<LogReader> qlog) {
         std::lock_guard lk(mutex);
         thumbnails[thumb.getTimestampEof()] = scaled;
       }
-    } else if (e.which == cereal::Event::Which::CONTROLS_STATE) {
+    } else if (e.which == cereal::Event::Which::SELFDRIVE_STATE) {
       capnp::FlatArrayMessageReader reader(e.data);
-      auto cs = reader.getRoot<cereal::Event>().getControlsState();
+      auto cs = reader.getRoot<cereal::Event>().getSelfdriveState();
       if (cs.getAlertType().size() > 0 && cs.getAlertText1().size() > 0 &&
-          cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE) {
+          cs.getAlertSize() != cereal::SelfdriveState::AlertSize::NONE) {
         std::lock_guard lk(mutex);
         alerts.emplace(e.mono_time, AlertInfo{cs.getAlertStatus(), cs.getAlertText1().cStr(), cs.getAlertText2().cStr()});
       }
@@ -397,9 +397,9 @@ void InfoLabel::paintEvent(QPaintEvent *event) {
   }
   if (alert_info.text1.size() > 0) {
     QColor color = timeline_colors[(int)TimelineType::AlertInfo];
-    if (alert_info.status == cereal::ControlsState::AlertStatus::USER_PROMPT) {
+    if (alert_info.status == cereal::SelfdriveState::AlertStatus::USER_PROMPT) {
       color = timeline_colors[(int)TimelineType::AlertWarning];
-    } else if (alert_info.status == cereal::ControlsState::AlertStatus::CRITICAL) {
+    } else if (alert_info.status == cereal::SelfdriveState::AlertStatus::CRITICAL) {
       color = timeline_colors[(int)TimelineType::AlertCritical];
     }
     color.setAlphaF(0.5);

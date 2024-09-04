@@ -11,7 +11,7 @@ from openpilot.selfdrive.pandad.pandad_api_impl import can_list_to_can_capnp
 from openpilot.selfdrive.controls.lib.events import EVENT_NAME
 from openpilot.system.manager.process_config import managed_processes
 
-EventName = car.CarEvent.EventName
+EventName = car.OnroadEvent.EventName
 Ecu = car.CarParams.Ecu
 
 COROLLA_FW_VERSIONS = [
@@ -59,7 +59,7 @@ CX5_FW_VERSIONS = [
   (EventName.startupMaster, TOYOTA.TOYOTA_COROLLA, COROLLA_FW_VERSIONS_FUZZY, "toyota"),
 ])
 def test_startup_alert(expected_event, car_model, fw_versions, brand):
-  controls_sock = messaging.sub_sock("controlsState")
+  controls_sock = messaging.sub_sock("selfdriveState")
   pm = messaging.PubMaster(['can', 'pandaStates'])
 
   params = Params()
@@ -114,7 +114,7 @@ def test_startup_alert(expected_event, car_model, fw_versions, brand):
 
     ctrls = messaging.drain_sock(controls_sock)
     if len(ctrls):
-      event_name = ctrls[0].controlsState.alertType.split("/")[0]
+      event_name = ctrls[0].selfdriveState.alertType.split("/")[0]
       assert EVENT_NAME[expected_event] == event_name, f"expected {EVENT_NAME[expected_event]} for '{car_model}', got {event_name}"
       break
   else:

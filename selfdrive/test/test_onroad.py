@@ -416,10 +416,10 @@ class TestOnroad:
     startup_alert = None
     for msg in self.lrs[0]:
       # can't use onroadEvents because the first msg can be dropped while loggerd is starting up
-      if msg.which() == "controlsState":
-        startup_alert = msg.controlsState.alertText1
+      if msg.which() == "selfdriveState":
+        startup_alert = msg.selfdriveState.alertText1
         break
-    expected = EVENTS[car.CarEvent.EventName.startup][ET.PERMANENT].alert_text_1
+    expected = EVENTS[car.OnroadEvent.EventName.startup][ET.PERMANENT].alert_text_1
     assert startup_alert == expected, "wrong startup alert"
 
   def test_engagable(self):
@@ -429,6 +429,6 @@ class TestOnroad:
         if evt.noEntry:
           no_entries[evt.name] += 1
 
-    eng = [m.controlsState.engageable for m in self.service_msgs['controlsState']]
+    eng = [m.selfdriveState.engageable for m in self.service_msgs['selfdriveState']]
     assert all(eng), \
-           f"Not engageable for whole segment:\n- controlsState.engageable: {Counter(eng)}\n- No entry events: {no_entries}"
+           f"Not engageable for whole segment:\n- selfdriveState.engageable: {Counter(eng)}\n- No entry events: {no_entries}"

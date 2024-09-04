@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+set -e
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 cd $DIR
@@ -8,10 +9,10 @@ cp -r openpilot.git openpilot_backup
 cd openpilot.git
 
 # backup old repo
-git push git@github.com:maxime-desroches/openpilot_archive.git +refs/heads/master:refs/heads/master
-git push git@github.com:maxime-desroches/openpilot_archive.git +refs/heads/*:refs/heads/*
-git push git@github.com:maxime-desroches/openpilot_archive.git +refs/tags/*:refs/tags/*
-git push --mirror git@github.com:maxime-desroches/openpilot_archive.git
+git push git@github.com:commaai/openpilot-archive.git +refs/heads/master:refs/heads/master
+git push git@github.com:commaai/openpilot-archive.git +refs/heads/*:refs/heads/*
+git push git@github.com:commaai/openpilot-archive.git +refs/tags/*:refs/tags/*
+git push --mirror git@github.com:commaai/openpilot-archive.git
 
 # ignore all release branches
 git for-each-ref --format='delete %(refname)' | grep 'dashcam3\|devel\|master-ci\|nightly\|release2\|release3\|release3-staging' | git update-ref --stdin
@@ -30,25 +31,29 @@ git-filter-repo --prune-empty never --force --commit-callback 'h=commit.original
 # delete replace refs
 git for-each-ref --format='delete %(refname)' refs/replace | git update-ref --stdin
 
-# validate
-tail -n +2 "filter-repo/commit-map" | tr ' ' '\n' | xargs -P $(nproc) -n 2 bash -c 'diff <(cd ../openpilot_backup && git ls-tree -r $0 | sha1sum) <(git ls-tree -r $1 | sha1sum) || exit 255'
+# machine validation
+tail -n +2 "filter-repo/commit-map" | tr ' ' '\n' | xargs -P $(nproc) -n 2 bash -c 'H1=$(cd ../openpilot_backup && git ls-tree -r $0 | sha1sum) && H2=$(git ls-tree -r $1 | sha1sum) && echo "$H1 $H2" >> /tmp/GIT_HASHES && diff <(echo $H1) <(echo $H2) || exit 255'
+# human validation
+less /tmp/GIT_HASH
 
 # cleanup
 git reflog expire --expire=now --all
 git gc --prune=now --aggressive
 
 # get all lfs files
+set +e
 git config lfs.url https://github.com/commaai/openpilot.git/info/lfs
 git lfs fetch --all
 git config lfs.url https://gitlab.com/commaai/openpilot-lfs.git/info/lfs
 git lfs fetch --all
+set -e
 
 # add new files to lfs
-git lfs migrate import --everything --include="*.dlc,*.onnx,*.svg,*.png,*.gif,*.ttf,*.wav,selfdrive/car/tests/test_models_segs.txt,system/hardware/tici/updater,selfdrive/ui/qt/spinner_larch64,selfdrive/ui/qt/text_larch64,third_party/**/*.a,third_party/**/*.so,third_party/**/*.so.*,third_party/**/*.dylib,third_party/acados/*/t_renderer,third_party/qt5/larch64/bin/lrelease,third_party/qt5/larch64/bin/lupdate,third_party/catch2/include/catch2/catch.hpp,*.apk,*.apkpatch,*.jar,*.pdf,*.jpg,*.mp3,*.thneed,*.tar.gz,*.npy,*.csv,*.a,*.so*,*.dylib,*.o,*.b64,selfdrive/hardware/tici/updater,selfdrive/boardd/tests/test_boardd,selfdrive/ui/qt/spinner_aarch64,installer/updater/updater,selfdrive/debug/profiling/simpleperf/**/*,selfdrive/hardware/eon/updater,selfdrive/ui/qt/text_aarch64,selfdrive/debug/profiling/pyflame/**/*,installer/installers/installer_openpilot,installer/installers/installer_dashcam,selfdrive/ui/text/text,selfdrive/ui/android/text/text,selfdrive/ui/spinner/spinner,selfdrive/visiond/visiond,selfdrive/loggerd/loggerd,selfdrive/sensord/sensord,selfdrive/sensord/gpsd,selfdrive/ui/android/spinner/spinner,selfdrive/ui/qt/spinner,selfdrive/ui/qt/text,_stringdefs.py,dfu-util-aarch64-linux,dfu-util-aarch64,dfu-util-x86_64-linux,dfu-util-x86_64,stb_image.h,clpeak3,clwaste,apk/**/*,external/**/*,phonelibs/**/*,third_party/boringssl/**/*,flask/**/*,panda/**/*,board/**/*,messaging/**/*,opendbc/**/*,tools/cabana/chartswidget.cc,third_party/nanovg/**/*,selfdrive/controls/lib/lateral_mpc/lib_mpc_export/**/*,selfdrive/ui/paint.cc,werkzeug/**/*,pyextra/**/*,third_party/android_hardware_libhardware/**/*,selfdrive/controls/lib/lead_mpc_lib/lib_mpc_export/**/*,selfdrive/locationd/laikad.py,selfdrive/locationd/test/test_laikad.py,tools/gpstest/test_laikad.py,selfdrive/locationd/laikad_helpers.py,tools/nui/**/*,jsonrpc/**/*,selfdrive/controls/lib/longitudinal_mpc/lib_mpc_export/**/*,selfdrive/controls/lib/lateral_mpc/mpc_export/**/*,selfdrive/camerad/cameras/camera_qcom.cc,selfdrive/manager.py,selfdrive/modeld/models/driving.cc,third_party/curl/**/*,selfdrive/modeld/thneed/debug/**/*,selfdrive/modeld/thneed/include/**/*,third_party/openmax/**/*,selfdrive/controls/lib/longitudinal_mpc/mpc_export/**/*,selfdrive/controls/lib/longitudinal_mpc_model/lib_mpc_export/**/*,Pipfile,Pipfile.lock,poetry.lock,gunicorn/**/*,*.qm,jinja2/**/*,click/**/*,dbcs/**/*,websocket/**/*"
+git lfs migrate import --everything --include="*.ico,*.dlc,*.onnx,*.svg,*.png,*.gif,*.ttf,*.wav,system/hardware/tici/updater,selfdrive/ui/qt/spinner_larch64,selfdrive/ui/qt/text_larch64,third_party/**/*.a,third_party/**/*.so,third_party/**/*.so.*,third_party/**/*.dylib,third_party/acados/*/t_renderer,third_party/qt5/larch64/bin/lrelease,third_party/qt5/larch64/bin/lupdate,third_party/catch2/include/catch2/catch.hpp,*.apk,*.apkpatch,*.jar,*.pdf,*.jpg,*.mp3,*.thneed,*.tar.gz,*.npy,*.csv,*.a,*.so*,*.dylib,*.o,*.b64,selfdrive/hardware/tici/updater,selfdrive/boardd/tests/test_boardd,selfdrive/ui/qt/spinner_aarch64,installer/updater/updater,selfdrive/debug/profiling/simpleperf/**/*,selfdrive/hardware/eon/updater,selfdrive/ui/qt/text_aarch64,selfdrive/debug/profiling/pyflame/**/*,installer/installers/installer_openpilot,installer/installers/installer_dashcam,selfdrive/ui/text/text,selfdrive/ui/android/text/text,selfdrive/ui/spinner/spinner,selfdrive/visiond/visiond,selfdrive/loggerd/loggerd,selfdrive/sensord/sensord,selfdrive/sensord/gpsd,selfdrive/ui/android/spinner/spinner,selfdrive/ui/qt/spinner,selfdrive/ui/qt/text,_stringdefs.py,dfu-util-aarch64-linux,dfu-util-aarch64,dfu-util-x86_64-linux,dfu-util-x86_64,stb_image.h,clpeak3,clwaste,apk/**/*,external/**/*,phonelibs/**/*,third_party/boringssl/**/*,pyextra/**/*,panda/board/**/inc/*.h,panda/board/obj/*.elf,board/inc/*.h,third_party/nanovg/**/*,selfdrive/controls/lib/lateral_mpc/lib_mpc_export/**/*,pyextra/**/*,third_party/android_hardware_libhardware/**/*,selfdrive/controls/lib/lead_mpc_lib/lib_mpc_export/**/*,*.pro,selfdrive/controls/lib/longitudinal_mpc/lib_mpc_export/**/*,selfdrive/controls/lib/lateral_mpc/mpc_export/**/*,third_party/curl/**/*,selfdrive/modeld/thneed/debug/**/*,selfdrive/modeld/thneed/include/**/*,third_party/openmax/**/*,selfdrive/controls/lib/longitudinal_mpc/mpc_export/**/*,selfdrive/controls/lib/longitudinal_mpc_model/lib_mpc_export/**/*,Pipfile,Pipfile.lock,poetry.lock,*.qm"
 
 # set new lfs endpoint
-git config lfs.url https://gitlab.com/commaai/openpilot_rewrite_lfs.git/info/lfs
-git config lfs.pushurl ssh://git@gitlab.com/commaai/openpilot_rewrite_lfs.git
+git config lfs.url https://gitlab.com/commaai/openpilot-lfs.git/info/lfs
+git config lfs.pushurl ssh://git@gitlab.com/commaai/openpilot-lfs.git
 
 # push all branch+tag (scary stuff...)
-git push -f --set-upstream git@github.com:maxime-desroches/tinypilot.git +refs/heads/*:refs/heads/* +refs/tags/*:refs/tags/*
+git push -f --set-upstream git@github.com:commaai/openpilot.git +refs/heads/*:refs/heads/* +refs/tags/*:refs/tags/*

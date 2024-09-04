@@ -16,20 +16,32 @@ from openpilot.common.swaglog import cloudlog
 
 UNREGISTERED_DONGLE_ID = "UnregisteredDevice"
 
-
 def is_registered_device() -> bool:
   dongle = Params().get("DongleId", encoding='utf-8')
   return dongle not in (None, UNREGISTERED_DONGLE_ID)
 
 
 def register(show_spinner=False) -> str | None:
+  """
+  All devices built since March 2024 come with all
+  info stored in /persist/. This is kept around
+  only for devices built before then.
+
+  With a backend update to take serial number instead
+  of dongle ID to some endpoints, this can be removed
+  entirely.
+  """
   params = Params()
 
   IMEI = params.get("IMEI", encoding='utf8')
   HardwareSerial = params.get("HardwareSerial", encoding='utf8')
   dongle_id: str | None = params.get("DongleId", encoding='utf8')
-  needs_registration = None in (IMEI, HardwareSerial, dongle_id)
+  if dongle_id is None and Path(Paths.persist_root()+"/comma/dongle_id").is_file():
+    # not all devices will have this; added early in comma 3X production (2/28/24)
+    with open(Paths.persist_root()+"/comma/dongle_id") as f:
+      dongle_id = f.read().strip()
 
+  needs_registration = None in (IMEI, HardwareSerial, dongle_id)
   pubkey = Path(Paths.persist_root()+"/comma/id_rsa.pub")
   if not pubkey.is_file():
     dongle_id = UNREGISTERED_DONGLE_ID

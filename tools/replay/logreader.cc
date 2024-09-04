@@ -32,6 +32,9 @@ bool LogReader::load(const char *data, size_t size, std::atomic<bool> *abort) {
       auto which = event.which();
       auto event_data = kj::arrayPtr(words.begin(), reader.getEnd());
       words = kj::arrayPtr(reader.getEnd(), words.end());
+      if (which == cereal::Event::Which::SELFDRIVE_STATE) {
+        requires_migration = false;
+      }
 
       if (!filters_.empty()) {
         if (which >= filters_.size() || !filters_[which])
@@ -58,10 +61,56 @@ bool LogReader::load(const char *data, size_t size, std::atomic<bool> *abort) {
     rWarning("Failed to parse log : %s.\nRetrieved %zu events from corrupt log", e.getDescription().cStr(), events.size());
   }
 
+  if (requires_migration) {
+    migrateOldEvents();
+  }
+
   if (!events.empty() && !(abort && *abort)) {
     events.shrink_to_fit();
     std::sort(events.begin(), events.end());
     return true;
   }
   return false;
+}
+
+void LogReader::migrateOldEvents() {
+  size_t events_size = events.size();
+  for (int i = 0; i < events_size; ++i) {
+    // Check if the event is of the old CONTROLS_STATE type
+    auto &event = events[i];
+    if (event.which == cereal::Event::CONTROLS_STATE) {
+      // Read the old event data
+      capnp::FlatArrayMessageReader reader(event.data);
+      auto old_evt = reader.getRoot<cereal::Event>();
+      auto old_state = old_evt.getControlsState();
+
+      // Migrate relevant fields from old CONTROLS_STATE to new SelfdriveState
+      MessageBuilder msg;
+      auto new_evt = msg.initEvent(old_evt.getValid());
+      new_evt.setLogMonoTime(old_evt.getLogMonoTime());
+      auto new_state = new_evt.initSelfdriveState();
+
+      new_state.setActive(old_state.getActiveDEPRECATED());
+      new_state.setAlertSize(old_state.getAlertSizeDEPRECATED());
+      new_state.setAlertSound(old_state.getAlertSound2DEPRECATED());
+      new_state.setAlertStatus(old_state.getAlertStatusDEPRECATED());
+      new_state.setAlertText1(old_state.getAlertText1DEPRECATED());
+      new_state.setAlertText2(old_state.getAlertText2DEPRECATED());
+      new_state.setAlertType(old_state.getAlertTypeDEPRECATED());
+      new_state.setEnabled(old_state.getEnabledDEPRECATED());
+      new_state.setEngageable(old_state.getEngageableDEPRECATED());
+      new_state.setExperimentalMode(old_state.getExperimentalModeDEPRECATED());
+      new_state.setPersonality(old_state.getPersonalityDEPRECATED());
+      new_state.setState(old_state.getStateDEPRECATED());
+
+      // Serialize the new event to the buffer
+      auto buf_size = msg.getSerializedSize();
+      auto buf = buffer_.allocate(buf_size);
+      msg.serializeToBuffer(reinterpret_cast<unsigned char *>(buf), buf_size);
+
+      // Store the migrated event in the events list
+      auto event_data = kj::arrayPtr(reinterpret_cast<const capnp::word *>(buf), buf_size);
+      events.emplace_back(new_evt.which(), new_evt.getLogMonoTime(), event_data);
+    }
+  }
 }

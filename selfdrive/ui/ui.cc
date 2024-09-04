@@ -110,41 +110,6 @@ void update_model(UIState *s,
   update_line_data(s, model_position, 0.9, 1.22, &scene.track_vertices, max_idx, false);
 }
 
-void update_dmonitoring(UIState *s, const cereal::DriverStateV2::Reader &driverstate, float dm_fade_state, bool is_rhd) {
-  UIScene &scene = s->scene;
-  const auto driver_orient = is_rhd ? driverstate.getRightDriverData().getFaceOrientation() : driverstate.getLeftDriverData().getFaceOrientation();
-  for (int i = 0; i < std::size(scene.driver_pose_vals); i++) {
-    float v_this = (i == 0 ? (driver_orient[i] < 0 ? 0.7 : 0.9) : 0.4) * driver_orient[i];
-    scene.driver_pose_diff[i] = fabs(scene.driver_pose_vals[i] - v_this);
-    scene.driver_pose_vals[i] = 0.8 * v_this + (1 - 0.8) * scene.driver_pose_vals[i];
-    scene.driver_pose_sins[i] = sinf(scene.driver_pose_vals[i]*(1.0-dm_fade_state));
-    scene.driver_pose_coss[i] = cosf(scene.driver_pose_vals[i]*(1.0-dm_fade_state));
-  }
-
-  auto [sin_y, sin_x, sin_z] = scene.driver_pose_sins;
-  auto [cos_y, cos_x, cos_z] = scene.driver_pose_coss;
-
-  const mat3 r_xyz = (mat3){{
-    cos_x * cos_z,
-    cos_x * sin_z,
-    -sin_x,
-
-    -sin_y * sin_x * cos_z - cos_y * sin_z,
-    -sin_y * sin_x * sin_z + cos_y * cos_z,
-    -sin_y * cos_x,
-
-    cos_y * sin_x * cos_z - sin_y * sin_z,
-    cos_y * sin_x * sin_z + sin_y * cos_z,
-    cos_y * cos_x,
-  }};
-
-  // transform vertices
-  for (int kpi = 0; kpi < std::size(default_face_kpts_3d); kpi++) {
-    vec3 kpt_this = matvecmul3(r_xyz, default_face_kpts_3d[kpi]);
-    scene.face_kpts_draw[kpi] = (vec3){{kpt_this.v[0], kpt_this.v[1], (float)(kpt_this.v[2] * (1.0-dm_fade_state) + 8 * dm_fade_state)}};
-  }
-}
-
 static void update_sockets(UIState *s) {
   s->sm->update(0);
 }
@@ -217,13 +182,13 @@ void ui_update_params(UIState *s) {
 }
 
 void UIState::updateStatus() {
-  if (scene.started && sm->updated("controlsState")) {
-    auto controls_state = (*sm)["controlsState"].getControlsState();
-    auto state = controls_state.getState();
-    if (state == cereal::ControlsState::OpenpilotState::PRE_ENABLED || state == cereal::ControlsState::OpenpilotState::OVERRIDING) {
+  if (scene.started && sm->updated("selfdriveState")) {
+    auto ss = (*sm)["selfdriveState"].getSelfdriveState();
+    auto state = ss .getState();
+    if (state == cereal::SelfdriveState::OpenpilotState::PRE_ENABLED || state == cereal::SelfdriveState::OpenpilotState::OVERRIDING) {
       status = STATUS_OVERRIDE;
     } else {
-      status = controls_state.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
+      status = ss.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
     }
   }
 
@@ -243,7 +208,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   sm = std::make_unique<SubMaster>(std::vector<const char*>{
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState",
     "pandaStates", "carParams", "driverMonitoringState", "carState", "driverStateV2",
-    "wideRoadCameraState", "managerState", "clocks",
+    "wideRoadCameraState", "managerState", "selfdriveState",
   });
 
   Params params;

@@ -6,7 +6,7 @@ from openpilot.selfdrive.controls.controlsd import Controls, SOFT_DISABLE_TIME
 from openpilot.selfdrive.controls.lib.events import Events, ET, Alert, Priority, AlertSize, AlertStatus, VisualAlert, \
                                           AudibleAlert, EVENTS
 
-State = log.ControlsState.OpenpilotState
+State = log.SelfdriveState.OpenpilotState
 
 # The event types that maintain the current state
 MAINTAIN_STATES = {State.enabled: (None,), State.disabled: (None,), State.softDisabling: (ET.SOFT_DISABLE,),
@@ -28,7 +28,7 @@ def make_event(event_types):
 class TestStateMachine:
 
   def setup_method(self):
-    CarInterface, CarController, CarState = interfaces[MOCK.MOCK]
+    CarInterface, CarController, CarState, RadarInterface = interfaces[MOCK.MOCK]
     CP = CarInterface.get_non_essential_params(MOCK.MOCK)
     CI = CarInterface(CP, CarController, CarState)
 
