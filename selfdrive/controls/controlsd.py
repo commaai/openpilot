@@ -649,7 +649,7 @@ class Controls:
 
     return CC, lac_log
 
-  def publish_logs(self, CS, start_time, CC, lac_log):
+  def publish_logs(self, CS, CC, lac_log):
     """Send actuators and hud commands to the car, send controlsstate and MPC logging"""
 
     # Orientation and angle rates can be useful for carcontroller
@@ -742,7 +742,6 @@ class Controls:
     controlsState.uiAccelCmd = float(self.LoC.pid.i)
     controlsState.ufAccelCmd = float(self.LoC.pid.f)
     controlsState.cumLagMs = -self.rk.remaining * 1000.
-    controlsState.startMonoTime = int(start_time * 1e9)
     controlsState.forceDecel = bool(force_decel)
 
     lat_tuning = self.CP.lateralTuning.which()
@@ -791,8 +790,6 @@ class Controls:
     self.pm.send('carControl', cc_send)
 
   def step(self):
-    start_time = time.monotonic()
-
     # Sample data from sockets and get a carState
     CS = self.data_sample()
     cloudlog.timestamp("Data sampled")
@@ -808,7 +805,7 @@ class Controls:
     CC, lac_log = self.state_control(CS)
 
     # Publish data
-    self.publish_logs(CS, start_time, CC, lac_log)
+    self.publish_logs(CS, CC, lac_log)
 
     self.CS_prev = CS
 
