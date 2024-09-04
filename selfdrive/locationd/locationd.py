@@ -5,7 +5,6 @@ import time
 import capnp
 import numpy as np
 from enum import Enum
-from collections import defaultdict
 
 from cereal import log, messaging
 from openpilot.common.transformations.orientation import rot_from_euler
@@ -28,6 +27,8 @@ INPUT_INVALID_DECAY = 0.9993  # ~10 secs to resume after a bad input
 POSENET_STD_INITIAL_VALUE = 10.0
 POSENET_STD_HIST_HALF = 20
 
+SENSOR_SERVICE_LIST = ['accelerometer', 'gyroscope']
+SUBMASTER_SERVICE_LIST = ['carState', 'liveCalibration', 'cameraOdometry']
 
 def init_xyz_measurement(measurement: capnp._DynamicStructBuilder, values: np.ndarray, stds: np.ndarray, valid: bool):
   assert len(values) == len(stds) == 3
@@ -256,10 +257,12 @@ def main():
   SIMULATION = bool(int(os.getenv("SIMULATION", "0")))
 
   pm = messaging.PubMaster(['livePose'])
-  sm = messaging.SubMaster(['carState', 'liveCalibration', 'cameraOdometry'], poll='cameraOdometry')
+  sm = messaging.SubMaster(SUBMASTER_SERVICE_LIST, poll='cameraOdometry')
   # separate sensor sockets for efficiency
-  sensor_sockets = [messaging.sub_sock(which, timeout=20) for which in ['accelerometer', 'gyroscope']]
-  sensor_alive, sensor_valid, sensor_recv_time = defaultdict(bool), defaultdict(bool), defaultdict(float)
+  sensor_sockets = [messaging.sub_sock(which, timeout=20) for which in SENSOR_SERVICE_LIST]
+  sensor_alive: dict[str, bool] = {s: False for s in SENSOR_SERVICE_LIST}
+  sensor_valid: dict[str, bool] = {s: False for s in SENSOR_SERVICE_LIST}
+  sensor_recv_time: dict[str, float] = {s: 0.0 for s in SENSOR_SERVICE_LIST}
 
   params = Params()
 
@@ -268,7 +271,7 @@ def main():
   filter_initialized = False
   critcal_services = ["accelerometer", "gyroscope", "liveCalibration", "cameraOdometry"]
   observation_timing_invalid = False
-  observation_input_invalid = defaultdict(int)
+  observation_input_invalid: dict[str, float] = {s: 0.0 for s in SUBMASTER_SERVICE_LIST + SENSOR_SERVICE_LIST}
 
   initial_pose = params.get("LocationFilterInitialState")
   if initial_pose is not None:
