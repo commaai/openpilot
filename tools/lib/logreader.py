@@ -227,18 +227,11 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> list[LogPath]:
                   "\n  - ".join([f"{k}: {repr(v)}" for k, v in exceptions.items()]))
 
 
-def parse_useradmin(identifier: str):
+def parse_useradmin(identifier: str) -> str:
   if "useradmin.comma.ai" in identifier:
     query = parse_qs(urlparse(identifier).query)
     return query["onebox"][0]
-  return None
-
-
-def parse_cabana(identifier: str):
-  if "cabana.comma.ai" in identifier:
-    query = parse_qs(urlparse(identifier).query)
-    return query["route"][0]
-  return None
+  return identifier
 
 
 def parse_direct(identifier: str):
@@ -247,36 +240,18 @@ def parse_direct(identifier: str):
   return None
 
 
-def parse_indirect(identifier: str):
-  parsed = parse_useradmin(identifier)
-
-  if parsed is not None:
-    return parsed, comma_api_source, True
-
-  return identifier, None, False
-
-
 class LogReader:
-  def _parse_identifiers(self, identifier: str | list[str]) -> list[LogPath]:
-    print('got', identifier)
-    if isinstance(identifier, list):
-      print('parsing', [i for j in identifier for i in self._parse_identifiers(j)])
-      return [i for j in identifier for i in self._parse_identifiers(j)]
-    return []
+  def _parse_identifier(self, identifier: str) -> list[LogPath]:
+    identifier = parse_useradmin(identifier)
 
-    parsed, source, is_indirect = parse_indirect(identifier)
-    print(source)
+    direct_parsed = parse_direct(identifier)
+    if direct_parsed is not None:
+      return direct_source(identifier)
 
-    if not is_indirect:
-      direct_parsed = parse_direct(identifier)
-      if direct_parsed is not None:
-        return direct_source(identifier)
-
-    sr = SegmentRange(parsed)
+    sr = SegmentRange(identifier)
     mode = self.default_mode if sr.selector is None else ReadMode(sr.selector)
-    source = self.default_source if source is None else source
 
-    identifiers = source(sr, mode)
+    identifiers = self.default_source(sr, mode)
 
     invalid_count = len(list(get_invalid_files(identifiers)))
     assert invalid_count == 0, (f"{invalid_count}/{len(identifiers)} invalid log(s) found, please ensure all logs " +
@@ -316,7 +291,9 @@ class LogReader:
       return ret
 
   def reset(self):
-    self.logreader_identifiers = self._parse_identifiers(self.identifier)
+    self.logreader_identifiers = []
+    for identifier in self.identifier:
+      self.logreader_identifiers.extend(self._parse_identifier(identifier))
 
   @staticmethod
   def from_bytes(dat):
