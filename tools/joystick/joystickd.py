@@ -45,20 +45,22 @@ class Joystick:
     # TODO: find a way to get this from API or detect gamepad/PC, perhaps "inputs" doesn't support it
     # TODO: the mapping can also be wrong on PC depending on the driver
     self.cancel_button = 'BTN_NORTH'  # BTN_NORTH=X/triangle
-    self.accel_axis = 'ABS_Y'
-    self.decel_axis = 'ABS_RZ'  # flipped to negative accel
+    accel_axis = 'ABS_RY'
     steer_axis = 'ABS_Z'
-    self.min_axis_value = {self.accel_axis: 0., steer_axis: 0.}
-    self.max_axis_value = {self.accel_axis: 255., steer_axis: 255.}
-    self.axes_values = {self.accel_axis: 0., steer_axis: 0.}
-    self.axes_order = [self.accel_axis, steer_axis]
+    # TODO: once the API is finalized, we can replace this with outputting gas/brake and steering
+    self.flip_map = {'ABS_RX': 'ABS_RY'}
+    self.min_axis_value = {accel_axis: 0., steer_axis: 0.}
+    self.max_axis_value = {accel_axis: 255., steer_axis: 255.}
+    self.axes_values = {accel_axis: 0., steer_axis: 0.}
+    self.axes_order = [accel_axis, steer_axis]
     self.cancel = False
 
   def update(self):
     joystick_event = get_gamepad()[0]
     event = (joystick_event.code, joystick_event.state)
-    if event[0] == self.decel_axis:
-      event = (self.accel_axis, -event[1])
+    # flip left trigger to negative accel
+    if event[0] in self.flip_map:
+      event = (self.flip_map[event[0]], -event[1])
     if event[0] == self.cancel_button:
       if event[1] == 1:
         self.cancel = True
@@ -69,7 +71,7 @@ class Joystick:
       self.min_axis_value[event[0]] = min(event[1], self.min_axis_value[event[0]])
 
       norm = -interp(event[1], [self.min_axis_value[event[0]], self.max_axis_value[event[0]]], [-1., 1.])
-      norm = norm if abs(norm) > 0.02 else 0.  # center can be noisy, deadzone of 2%
+      norm = norm if abs(norm) > 0.03 else 0.  # center can be noisy, deadzone of 3%
       self.axes_values[event[0]] = JS_EXPO * norm ** 3 + (1 - JS_EXPO) * norm  # less action near center for fine control
     else:
       return False
