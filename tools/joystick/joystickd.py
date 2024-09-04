@@ -45,17 +45,20 @@ class Joystick:
     # TODO: find a way to get this from API or detect gamepad/PC, perhaps "inputs" doesn't support it
     # TODO: the mapping can also be wrong on PC depending on the driver
     self.cancel_button = 'BTN_NORTH'  # BTN_NORTH=X/triangle
-    accel_axis = 'ABS_Y'
+    self.accel_axis = 'ABS_Y'
+    self.decel_axis = 'ABS_RZ'  # flipped to negative accel
     steer_axis = 'ABS_Z'
-    self.min_axis_value = {accel_axis: 0., steer_axis: 0.}
-    self.max_axis_value = {accel_axis: 255., steer_axis: 255.}
-    self.axes_values = {accel_axis: 0., steer_axis: 0.}
-    self.axes_order = [accel_axis, steer_axis]
+    self.min_axis_value = {self.accel_axis: 0., steer_axis: 0.}
+    self.max_axis_value = {self.accel_axis: 255., steer_axis: 255.}
+    self.axes_values = {self.accel_axis: 0., steer_axis: 0.}
+    self.axes_order = [self.accel_axis, steer_axis]
     self.cancel = False
 
   def update(self):
     joystick_event = get_gamepad()[0]
     event = (joystick_event.code, joystick_event.state)
+    if event[0] == self.decel_axis:
+      event = (self.accel_axis, -event[1])
     if event[0] == self.cancel_button:
       if event[1] == 1:
         self.cancel = True
