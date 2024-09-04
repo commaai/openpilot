@@ -101,14 +101,15 @@ class LongitudinalPlanner:
     v_ego = sm['carState'].vEgo
     v_cruise_kph = min(sm['carState'].vCruise, V_CRUISE_MAX)
     v_cruise = v_cruise_kph * CV.KPH_TO_MS
-    # some PCM messages may be updated a few cycles later, check if initialized
     v_cruise_initialized = abs(sm['carState'].vCruise - V_CRUISE_UNSET) < 1e-3
 
     long_control_off = sm['controlsState'].longControlState == LongCtrlState.off
     force_slow_decel = sm['controlsState'].forceDecel
 
     # Reset current state when not engaged, or user is controlling the speed
-    reset_state = (long_control_off or not v_cruise_initialized) if self.CP.openpilotLongitudinalControl else not sm['selfdriveState'].enabled
+    reset_state = long_control_off if self.CP.openpilotLongitudinalControl else not sm['selfdriveState'].enabled
+    # some PCM messages may be updated a few cycles later, check if initialized
+    reset_state = reset_state or not v_cruise_initialized
 
     # No change cost when user is controlling the speed, or when standstill
     prev_accel_constraint = not (reset_state or sm['carState'].standstill)
