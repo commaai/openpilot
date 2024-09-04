@@ -134,7 +134,7 @@ class TestCarModelBase(unittest.TestCase):
 
       try:
         source = partial(auto_source, sources=internal_source if is_internal else [openpilotci_source, openpilotci_source_zst])
-        lr = LogReader(segment_range, default_source=source)
+        lr = LogReader(segment_range, source=source)
         return cls.get_testing_data_from_logreader(lr)
       except Exception:
         pass
