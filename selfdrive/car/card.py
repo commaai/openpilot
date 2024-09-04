@@ -17,7 +17,7 @@ from opendbc.car import DT_CTRL, carlog, structs
 from opendbc.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
 from opendbc.car.fw_versions import ObdCallback
 from opendbc.car.car_helpers import get_car
-from opendbc.car.interfaces import CarInterfaceBase
+from opendbc.car.interfaces import CarInterfaceBase, RadarInterfaceBase
 from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
 from openpilot.selfdrive.car.cruise import VCruiseHelper
 from openpilot.selfdrive.car.car_specific import CarSpecificEvents, MockCarState
@@ -63,10 +63,11 @@ def can_comm_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket
 
 class Car:
   CI: CarInterfaceBase
+  RI: RadarInterfaceBase
   CP: structs.CarParams
   CP_capnp: car.CarParams
 
-  def __init__(self, CI=None) -> None:
+  def __init__(self, CI=None, RI=None) -> None:
     self.can_sock = messaging.sub_sock('can', timeout=20)
     self.sm = messaging.SubMaster(['pandaStates', 'carControl', 'onroadEvents'])
     self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams', 'carOutput'])
@@ -100,13 +101,14 @@ class Car:
         with car.CarParams.from_bytes(cached_params_raw) as _cached_params:
           cached_params = structs.CarParams(carName=_cached_params.carName, carFw=_cached_params.carFw, carVin=_cached_params.carVin)
 
-      self.CI = get_car(*self.can_callbacks, obd_callback(self.params), experimental_long_allowed, num_pandas, cached_params)
+      self.CI, self.RI = get_car(*self.can_callbacks, obd_callback(self.params), experimental_long_allowed, num_pandas, cached_params)
       self.CP = self.CI.CP
 
       # continue onto next fingerprinting step in pandad
       self.params.put_bool("FirmwareQueryDone", True)
     else:
       self.CI, self.CP = CI, CI.CP
+      self.RI = RI
 
     # set alternative experiences from parameters
     self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
