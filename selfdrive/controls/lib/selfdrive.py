@@ -90,9 +90,9 @@ class StateMachine:
           self.current_alert_types.append(ET.ENABLE)
 
     # Check if openpilot is engaged and actuators are enabled
-    self.enabled = self.state in ENABLED_STATES
-    self.active = self.state in ACTIVE_STATES
-    if self.active:
+    enabled = self.state in ENABLED_STATES
+    active = self.state in ACTIVE_STATES
+    if active:
       self.current_alert_types.append(ET.WARNING)
-
+    return enabled, active
 
