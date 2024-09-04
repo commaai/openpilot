@@ -172,9 +172,9 @@ class LocationEstimator:
       self.posenet_stds.pop(0)
       self.posenet_stds.append(trans_calib_std[0])
 
-      # Multiply by 10 to avoid to high certainty in kalman filter because of temporally correlated noise
+      # Multiply by N to avoid to high certainty in kalman filter because of temporally correlated noise
       rot_calib_std *= 10
-      trans_calib_std *= 10
+      trans_calib_std *= 2
 
       rot_device_std = rotate_std(self.device_from_calib, rot_calib_std)
       trans_device_std = rotate_std(self.device_from_calib, trans_calib_std)
