@@ -251,7 +251,7 @@ class LogReader:
     sr = SegmentRange(identifier)
     mode = self.default_mode if sr.selector is None else ReadMode(sr.selector)
 
-    identifiers = self.default_source(sr, mode)
+    identifiers = self.source(sr, mode)
 
     invalid_count = len(list(get_invalid_files(identifiers)))
     assert invalid_count == 0, (f"{invalid_count}/{len(identifiers)} invalid log(s) found, please ensure all logs " +
@@ -259,9 +259,9 @@ class LogReader:
     return identifiers
 
   def __init__(self, identifier: str | list[str], default_mode: ReadMode = ReadMode.RLOG,
-               default_source: Source = auto_source, sort_by_time=False, only_union_types=False):
+               source: Source = auto_source, sort_by_time=False, only_union_types=False):
     self.default_mode = default_mode
-    self.default_source = default_source
+    self.source = source
     self.identifier = identifier
 
     self.sort_by_time = sort_by_time
