@@ -227,18 +227,11 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG) -> list[LogPath]:
                   "\n  - ".join([f"{k}: {repr(v)}" for k, v in exceptions.items()]))
 
 
-def parse_useradmin(identifier: str):
+def parse_indirect(identifier: str) -> str:
   if "useradmin.comma.ai" in identifier:
     query = parse_qs(urlparse(identifier).query)
     return query["onebox"][0]
-  return None
-
-
-def parse_cabana(identifier: str):
-  if "cabana.comma.ai" in identifier:
-    query = parse_qs(urlparse(identifier).query)
-    return query["route"][0]
-  return None
+  return identifier
 
 
 def parse_direct(identifier: str):
@@ -247,32 +240,20 @@ def parse_direct(identifier: str):
   return None
 
 
-def parse_indirect(identifier: str):
-  parsed = parse_useradmin(identifier) or parse_cabana(identifier)
-
-  if parsed is not None:
-    return parsed, comma_api_source, True
-
-  return identifier, None, False
-
-
 class LogReader:
-  def _parse_identifiers(self, identifier: str | list[str]):
-    if isinstance(identifier, list):
-      return [i for j in identifier for i in self._parse_identifiers(j)]
+  def _parse_identifier(self, identifier: str) -> list[LogPath]:
+    # useradmin, etc.
+    identifier = parse_indirect(identifier)
 
-    parsed, source, is_indirect = parse_indirect(identifier)
+    # direct url or file
+    direct_parsed = parse_direct(identifier)
+    if direct_parsed is not None:
+      return direct_source(identifier)
 
-    if not is_indirect:
-      direct_parsed = parse_direct(identifier)
-      if direct_parsed is not None:
-        return direct_source(identifier)
-
-    sr = SegmentRange(parsed)
+    sr = SegmentRange(identifier)
     mode = self.default_mode if sr.selector is None else ReadMode(sr.selector)
-    source = self.default_source if source is None else source
 
-    identifiers = source(sr, mode)
+    identifiers = self.source(sr, mode)
 
     invalid_count = len(list(get_invalid_files(identifiers)))
     assert invalid_count == 0, (f"{invalid_count}/{len(identifiers)} invalid log(s) found, please ensure all logs " +
@@ -280,10 +261,12 @@ class LogReader:
     return identifiers
 
   def __init__(self, identifier: str | list[str], default_mode: ReadMode = ReadMode.RLOG,
-               default_source: Source = auto_source, sort_by_time=False, only_union_types=False):
+               source: Source = auto_source, sort_by_time=False, only_union_types=False):
     self.default_mode = default_mode
-    self.default_source = default_source
+    self.source = source
     self.identifier = identifier
+    if isinstance(identifier, str):
+      self.identifier = [identifier]
 
     self.sort_by_time = sort_by_time
     self.only_union_types = only_union_types
@@ -312,7 +295,9 @@ class LogReader:
       return ret
 
   def reset(self):
-    self.logreader_identifiers = self._parse_identifiers(self.identifier)
+    self.logreader_identifiers = []
+    for identifier in self.identifier:
+      self.logreader_identifiers.extend(self._parse_identifier(identifier))
 
   @staticmethod
   def from_bytes(dat):
