@@ -206,7 +206,7 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG, sources: list[Source] = No
 
   if sources is None:
     sources: list[Source] = [internal_source, internal_source_zst, openpilotci_source, openpilotci_source_zst,
-                             comma_api_source, comma_car_segments_source, testing_closet_source, ]
+                             comma_api_source, comma_car_segments_source, testing_closet_source]
   exceptions = {}
 
   # for automatic fallback modes, auto_source needs to first check if rlogs exist for any source
