@@ -9,13 +9,14 @@ from panda import Panda
 
 
 # TODO: message migration should happen in-place
-def migrate_all(lr, old_logtime=False, manager_states=False, panda_states=False, camera_states=False):
+def migrate_all(lr, manager_states=False, panda_states=False, camera_states=False):
   msgs = migrate_sensorEvents(lr, old_logtime)
   msgs = migrate_carParams(msgs, old_logtime)
   msgs = migrate_gpsLocation(msgs)
   msgs = migrate_deviceState(msgs)
   msgs = migrate_carOutput(msgs)
   msgs = migrate_controlsState(msgs)
+  msgs = migrate_liveLocationKalman(msgs)
   if manager_states:
     msgs = migrate_managerState(msgs)
   if panda_states:
@@ -25,6 +26,29 @@ def migrate_all(lr, old_logtime=False, manager_states=False, panda_states=False,
     msgs = migrate_cameraStates(msgs)
 
   return msgs
+
+
+def migrate_liveLocationKalman(lr):
+  all_msgs = []
+  for msg in lr:
+    if msg.which() != 'liveLocationKalmanDEPRECATED':
+      all_msgs.append(msg)
+      continue
+
+    m = messaging.new_message('livePose')
+    m.valid = msg.valid
+    m.logMonoTime = msg.logMonoTime
+    for field in ["orientationNED", "velocityDevice", "accelerationDevice", "angularVelocityDevice"]:
+      lp_field, llk_field = getattr(m.livePose, field), getattr(msg.liveLocationKalmanDEPRECATED, field)
+      lp_field.x, lp_field.y, lp_field.z = llk_field.value
+      lp_field.xStd, lp_field.yStd, lp_field.zStd = llk_field.std
+      lp_field.valid = llk_field.valid
+    for flag in ["inputsOK", "posenetOK", "sensorsOK"]:
+      setattr(m.livePose, flag, getattr(msg.liveLocationKalmanDEPRECATED, flag))
+
+    all_msgs.append(m.as_reader())
+
+  return all_msgs
 
 
 def migrate_controlsState(lr):
@@ -225,7 +249,7 @@ def migrate_cameraStates(lr):
   return all_msgs
 
 
-def migrate_carParams(lr, old_logtime=False):
+def migrate_carParams(lr):
   all_msgs = []
   for msg in lr:
     if msg.which() == 'carParams':
@@ -233,15 +257,14 @@ def migrate_carParams(lr, old_logtime=False):
       CP.carParams.carFingerprint = MIGRATION.get(CP.carParams.carFingerprint, CP.carParams.carFingerprint)
       for car_fw in CP.carParams.carFw:
         car_fw.brand = CP.carParams.carName
-      if old_logtime:
-        CP.logMonoTime = msg.logMonoTime
+      CP.logMonoTime = msg.logMonoTime
       msg = CP.as_reader()
     all_msgs.append(msg)
 
   return all_msgs
 
 
-def migrate_sensorEvents(lr, old_logtime=False):
+def migrate_sensorEvents(lr):
   all_msgs = []
   for msg in lr:
     if msg.which() != 'sensorEventsDEPRECATED':
@@ -265,16 +288,14 @@ def migrate_sensorEvents(lr, old_logtime=False):
 
       m = messaging.new_message(sensor_service)
       m.valid = True
-      if old_logtime:
-        m.logMonoTime = msg.logMonoTime
+      m.logMonoTime = msg.logMonoTime
 
       m_dat = getattr(m, sensor_service)
       m_dat.version = evt.version
       m_dat.sensor = evt.sensor
       m_dat.type = evt.type
       m_dat.source = evt.source
-      if old_logtime:
-        m_dat.timestamp = evt.timestamp
+      m_dat.timestamp = evt.timestamp
       setattr(m_dat, evt.which(), getattr(evt, evt.which()))
 
       all_msgs.append(m.as_reader())
