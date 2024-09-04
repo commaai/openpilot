@@ -477,7 +477,7 @@ CONFIGS = [
       "gpsLocationExternal", "gpsLocation",
     ],
     subs=["selfdriveState", "controlsState", "carControl", "onroadEvents"],
-    ignore=["logMonoTime", "controlsState.startMonoTime", "controlsState.cumLagMs"],
+    ignore=["logMonoTime", "controlsState.cumLagMs"],
     config_callback=controlsd_config_callback,
     init_callback=get_car_params_callback,
     should_recv_callback=controlsd_rcv_callback,
