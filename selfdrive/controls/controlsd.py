@@ -29,11 +29,11 @@ from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle, S
 from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.longcontrol import LongControl
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
+from openpilot.selfdrive.controls.lib.selfdrive import StateMachine
 from openpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose
 
 from openpilot.system.hardware import HARDWARE
 
-SOFT_DISABLE_TIME = 3  # seconds
 LDW_MIN_SPEED = 31 * CV.MPH_TO_MS
 LANE_DEPARTURE_THRESHOLD = 0.1
 CAMERA_OFFSET = 0.04
@@ -56,8 +56,6 @@ SafetyModel = car.CarParams.SafetyModel
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
 CSID_MAP = {"1": EventName.roadCameraError, "2": EventName.wideRoadCameraError, "0": EventName.driverCameraError}
 ACTUATOR_FIELDS = tuple(car.CarControl.Actuators.schema.fields.keys())
-ACTIVE_STATES = (State.enabled, State.softDisabling, State.overriding)
-ENABLED_STATES = (State.preEnabled, *ACTIVE_STATES)
 
 
 class Controls:
@@ -139,10 +137,8 @@ class Controls:
       self.LaC = LatControlTorque(self.CP, self.CI)
 
     self.initialized = False
-    self.state = State.disabled
     self.enabled = False
     self.active = False
-    self.soft_disable_timer = 0
     self.mismatch_counter = 0
     self.cruise_mismatch_counter = 0
     self.last_blinker_frame = 0
@@ -150,7 +146,6 @@ class Controls:
     self.distance_traveled = 0
     self.last_functional_fan_frame = 0
     self.events_prev = []
-    self.current_alert_types = [ET.PERMANENT]
     self.logged_comm_issue = None
     self.not_running_prev = None
     self.steer_limited = False
@@ -158,6 +153,7 @@ class Controls:
     self.experimental_mode = False
     self.personality = self.read_personality_param()
     self.recalibrating_seen = False
+    self.state_machine = StateMachine()
 
     self.can_log_mono_time = 0
 
@@ -179,7 +175,7 @@ class Controls:
 
   def set_initial_state(self):
     if REPLAY and any(ps.controlsAllowed for ps in self.sm['pandaStates']):
-        self.state = State.enabled
+        self.state_machine.state = State.enabled
 
   def update_events(self, CS):
     """Compute onroadEvents from carState"""
@@ -437,89 +433,6 @@ class Controls:
 
     return CS
 
-  def state_transition(self, CS):
-    """Compute conditional state transitions and execute actions on state transitions"""
-
-    # decrement the soft disable timer at every step, as it's reset on
-    # entrance in SOFT_DISABLING state
-    self.soft_disable_timer = max(0, self.soft_disable_timer - 1)
-
-    self.current_alert_types = [ET.PERMANENT]
-
-    # ENABLED, SOFT DISABLING, PRE ENABLING, OVERRIDING
-    if self.state != State.disabled:
-      # user and immediate disable always have priority in a non-disabled state
-      if self.events.contains(ET.USER_DISABLE):
-        self.state = State.disabled
-        self.current_alert_types.append(ET.USER_DISABLE)
-
-      elif self.events.contains(ET.IMMEDIATE_DISABLE):
-        self.state = State.disabled
-        self.current_alert_types.append(ET.IMMEDIATE_DISABLE)
-
-      else:
-        # ENABLED
-        if self.state == State.enabled:
-          if self.events.contains(ET.SOFT_DISABLE):
-            self.state = State.softDisabling
-            self.soft_disable_timer = int(SOFT_DISABLE_TIME / DT_CTRL)
-            self.current_alert_types.append(ET.SOFT_DISABLE)
-
-          elif self.events.contains(ET.OVERRIDE_LATERAL) or self.events.contains(ET.OVERRIDE_LONGITUDINAL):
-            self.state = State.overriding
-            self.current_alert_types += [ET.OVERRIDE_LATERAL, ET.OVERRIDE_LONGITUDINAL]
-
-        # SOFT DISABLING
-        elif self.state == State.softDisabling:
-          if not self.events.contains(ET.SOFT_DISABLE):
-            # no more soft disabling condition, so go back to ENABLED
-            self.state = State.enabled
-
-          elif self.soft_disable_timer > 0:
-            self.current_alert_types.append(ET.SOFT_DISABLE)
-
-          elif self.soft_disable_timer <= 0:
-            self.state = State.disabled
-
-        # PRE ENABLING
-        elif self.state == State.preEnabled:
-          if not self.events.contains(ET.PRE_ENABLE):
-            self.state = State.enabled
-          else:
-            self.current_alert_types.append(ET.PRE_ENABLE)
-
-        # OVERRIDING
-        elif self.state == State.overriding:
-          if self.events.contains(ET.SOFT_DISABLE):
-            self.state = State.softDisabling
-            self.soft_disable_timer = int(SOFT_DISABLE_TIME / DT_CTRL)
-            self.current_alert_types.append(ET.SOFT_DISABLE)
-          elif not (self.events.contains(ET.OVERRIDE_LATERAL) or self.events.contains(ET.OVERRIDE_LONGITUDINAL)):
-            self.state = State.enabled
-          else:
-            self.current_alert_types += [ET.OVERRIDE_LATERAL, ET.OVERRIDE_LONGITUDINAL]
-
-    # DISABLED
-    elif self.state == State.disabled:
-      if self.events.contains(ET.ENABLE):
-        if self.events.contains(ET.NO_ENTRY):
-          self.current_alert_types.append(ET.NO_ENTRY)
-
-        else:
-          if self.events.contains(ET.PRE_ENABLE):
-            self.state = State.preEnabled
-          elif self.events.contains(ET.OVERRIDE_LATERAL) or self.events.contains(ET.OVERRIDE_LONGITUDINAL):
-            self.state = State.overriding
-          else:
-            self.state = State.enabled
-          self.current_alert_types.append(ET.ENABLE)
-
-    # Check if openpilot is engaged and actuators are enabled
-    self.enabled = self.state in ENABLED_STATES
-    self.active = self.state in ACTIVE_STATES
-    if self.active:
-      self.current_alert_types.append(ET.WARNING)
-
   def state_control(self, CS):
     """Given the state, this function returns a CarControl packet"""
 
@@ -700,13 +613,14 @@ class Controls:
       self.events.add(EventName.ldw)
 
     clear_event_types = set()
-    if ET.WARNING not in self.current_alert_types:
+    if ET.WARNING not in self.state_machine.current_alert_types:
       clear_event_types.add(ET.WARNING)
     if self.enabled:
       clear_event_types.add(ET.NO_ENTRY)
 
     pers = {v: k for k, v in log.LongitudinalPersonality.schema.enumerants.items()}[self.personality]
-    alerts = self.events.create_alerts(self.current_alert_types, [self.CP, CS, self.sm, self.is_metric, self.soft_disable_timer, pers])
+    alerts = self.events.create_alerts(self.state_machine.current_alert_types, [self.CP, CS, self.sm, self.is_metric,
+                                                                                self.state_machine.soft_disable_timer, pers])
     self.AM.add_many(self.sm.frame, alerts)
     current_alert = self.AM.process_alerts(self.sm.frame, clear_event_types)
     if current_alert:
@@ -721,7 +635,7 @@ class Controls:
         self.steer_limited = abs(CC.actuators.steer - CO.actuatorsOutput.steer) > 1e-2
 
     force_decel = (self.sm['driverMonitoringState'].awarenessStatus < 0.) or \
-                  (self.state == State.softDisabling)
+                  (self.state_machine.state == State.softDisabling)
 
     # Curvature & Steering angle
     lp = self.sm['liveParameters']
@@ -769,7 +683,7 @@ class Controls:
       ss.alertSound = current_alert.audible_alert
     ss.enabled = self.enabled
     ss.active = self.active
-    ss.state = self.state
+    ss.state = self.state_machine.state
     ss.engageable = not self.events.contains(ET.NO_ENTRY)
     ss.experimentalMode = self.experimental_mode
     ss.personality = self.personality
@@ -798,8 +712,7 @@ class Controls:
     cloudlog.timestamp("Events updated")
 
     if not self.CP.passive and self.initialized:
-      # Update control state
-      self.state_transition(CS)
+      self.state_machine.update(self.events)
 
     # Compute actuators (runs PID loops and lateral MPC)
     CC, lac_log = self.state_control(CS)

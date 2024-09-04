@@ -2,7 +2,8 @@ from cereal import car, log
 from opendbc.car.car_helpers import interfaces
 from opendbc.car.mock.values import CAR as MOCK
 from openpilot.common.realtime import DT_CTRL
-from openpilot.selfdrive.controls.controlsd import Controls, SOFT_DISABLE_TIME
+from openpilot.selfdrive.controls.lib.selfdrive import SOFT_DISABLE_TIME
+from openpilot.selfdrive.controls.controlsd import Controls
 from openpilot.selfdrive.controls.lib.events import Events, ET, Alert, Priority, AlertSize, AlertStatus, VisualAlert, \
                                           AudibleAlert, EVENTS
 
