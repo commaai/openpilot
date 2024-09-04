@@ -210,13 +210,8 @@ UIState::UIState(QObject *parent) : QObject(parent) {
     "pandaStates", "carParams", "driverMonitoringState", "carState", "driverStateV2",
     "wideRoadCameraState", "managerState", "selfdriveState",
   });
-
-  Params params;
-  language = QString::fromStdString(params.get("LanguageSetting"));
-  auto prime_value = params.get("PrimeType");
-  if (!prime_value.empty()) {
-    prime_type = static_cast<PrimeType>(std::atoi(prime_value.c_str()));
-  }
+  prime_state = new PrimeState(this);
+  language = QString::fromStdString(Params().get("LanguageSetting"));
 
   // update timer
   timer = new QTimer(this);
@@ -229,29 +224,10 @@ void UIState::update() {
   update_state(this);
   updateStatus();
 
-  if (std::getenv("PRIME_TYPE")) {
-      setPrimeType((PrimeType)atoi(std::getenv("PRIME_TYPE")));
-  }
-
   if (sm->frame % UI_FREQ == 0) {
     watchdog_kick(nanos_since_boot());
   }
   emit uiUpdate(*this);
-}
-
-void UIState::setPrimeType(PrimeType type) {
-  if (type != prime_type) {
-    bool prev_prime = hasPrime();
-
-    prime_type = type;
-    Params().put("PrimeType", std::to_string(prime_type));
-    emit primeTypeChanged(prime_type);
-
-    bool prime = hasPrime();
-    if (prev_prime != prime) {
-      emit primeChanged(prime);
-    }
-  }
 }
 
 Device::Device(QObject *parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QObject(parent) {
