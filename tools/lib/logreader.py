@@ -276,8 +276,8 @@ class LogReader:
     identifiers = source(sr, mode)
 
     invalid_count = len(list(get_invalid_files(identifiers)))
-    assert invalid_count == 0, f"{invalid_count}/{len(identifiers)} invalid log(s) found, please ensure all logs \
-are uploaded or auto fallback to qlogs with '/a' selector at the end of the route name."
+    assert invalid_count == 0, (f"{invalid_count}/{len(identifiers)} invalid log(s) found, please ensure all logs " +
+                                "are uploaded or auto fallback to qlogs with '/a' selector at the end of the route name.")
     return identifiers
 
   def __init__(self, identifier: str | list[str], default_mode: ReadMode = ReadMode.RLOG,
