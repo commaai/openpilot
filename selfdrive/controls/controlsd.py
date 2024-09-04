@@ -593,7 +593,7 @@ class Controls:
           actuators.accel = 4.0*clip(joystick_axes[0], -1, 1)
 
         if CC.latActive:
-          max_curvature = JOYSTICK_MAX_LAT_ACCEL / (CS.vEgo ** 2)
+          max_curvature = JOYSTICK_MAX_LAT_ACCEL / max(CS.vEgo ** 2, 1)
           max_angle = self.VM.get_steer_from_curvature(max_curvature, CS.vEgo, lp.roll)
 
           steer = clip(joystick_axes[1], -1, 1)
