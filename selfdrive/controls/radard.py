@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import importlib
 import math
 from collections import deque
 from typing import Any
@@ -286,19 +285,14 @@ def main() -> None:
   CP = messaging.log_from_bytes(Params().get("CarParams", block=True), car.CarParams)
   cloudlog.info("radard got CarParams")
 
-  # import the radar from the fingerprint
-  cloudlog.info("radard is importing %s", CP.carName)
-  RadarInterface = importlib.import_module(f'opendbc.car.{CP.carName}.radar_interface').RadarInterface
-
   # *** setup messaging
   can_sock = messaging.sub_sock('can')
-  sm = messaging.SubMaster(['modelV2', 'carState'], frequency=int(1./DT_CTRL))
-  pm = messaging.PubMaster(['radarState', 'liveTracks'])
-
-  RI = RadarInterface(CP)
+  sm = messaging.SubMaster(['modelV2', 'carState', 'liveTracks'], frequency=int(1./DT_CTRL))
+  pm = messaging.PubMaster(['radarState'])
 
   rk = Ratekeeper(1.0 / CP.radarTimeStep, print_delay_threshold=None)
-  RD = RadarD(CP.radarTimeStep, RI.delay)
+  delay = 0  # TODO: add delay to params
+  RD = RadarD(CP.radarTimeStep, delay)
 
   while 1:
     can_strings = messaging.drain_sock_raw(can_sock, wait_for_one=True)

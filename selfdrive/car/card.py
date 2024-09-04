@@ -22,6 +22,7 @@ from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
 from openpilot.selfdrive.car.cruise import VCruiseHelper
 from openpilot.selfdrive.car.car_specific import CarSpecificEvents, MockCarState
 from openpilot.selfdrive.car.helpers import convert_carControl, convert_to_capnp
+from openpilot.selfdrive.controls.radard import Track
 from openpilot.selfdrive.controls.lib.events import Events, ET
 
 REPLAY = "REPLAY" in os.environ
@@ -70,7 +71,7 @@ class Car:
   def __init__(self, CI=None, RI=None) -> None:
     self.can_sock = messaging.sub_sock('can', timeout=20)
     self.sm = messaging.SubMaster(['pandaStates', 'carControl', 'onroadEvents'])
-    self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams', 'carOutput'])
+    self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams', 'carOutput', 'liveTracks'])
 
     self.can_rcv_cum_timeout_counter = 0
 
@@ -144,6 +145,7 @@ class Car:
     self.car_events = CarSpecificEvents(self.CP)
     self.mock_carstate = MockCarState()
     self.v_cruise_helper = VCruiseHelper(self.CP)
+    self.tracks: dict[int, Track] = {}
 
     self.is_metric = self.params.get_bool("IsMetric")
     self.experimental_mode = self.params.get_bool("ExperimentalMode")
@@ -160,6 +162,9 @@ class Car:
 
     if self.CP.carName == 'mock':
       CS = self.mock_carstate.update(CS)
+
+    # Update radar tracks from CAN
+    rr: structs.RadarData | None = self.RI.update(can_capnp_to_list(can_strs))
 
     self.sm.update(0)
 
