@@ -35,7 +35,7 @@ class TestCarInterfaces:
             phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
   def test_car_interfaces(self, car_name, data):
-    CarInterface, CarController, CarState = interfaces[car_name]
+    CarInterface, CarController, CarState, RadarInterface = interfaces[car_name]
 
     args = get_fuzzy_car_interface_args(data.draw)
 

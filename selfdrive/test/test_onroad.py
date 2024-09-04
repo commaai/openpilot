@@ -32,7 +32,7 @@ CPU usage budget
 * total CPU usage of openpilot (sum(PROCS.values())
   should not exceed MAX_TOTAL_CPU
 """
-MAX_TOTAL_CPU = 250.  # total for all 8 cores
+MAX_TOTAL_CPU = 260.  # total for all 8 cores
 PROCS = {
   # Baseline CPU usage by process
   "selfdrive.controls.controlsd": 32.0,
@@ -40,7 +40,6 @@ PROCS = {
   "./loggerd": 14.0,
   "./encoderd": 17.0,
   "./camerad": 14.5,
-  "./locationd": 11.0,
   "selfdrive.controls.plannerd": 11.0,
   "./ui": 18.0,
   "selfdrive.locationd.paramsd": 9.0,
@@ -51,6 +50,7 @@ PROCS = {
   "system.hardware.hardwared": 3.87,
   "selfdrive.locationd.calibrationd": 2.0,
   "selfdrive.locationd.torqued": 5.0,
+  "selfdrive.locationd.locationd": 25.0,
   "selfdrive.ui.soundd": 3.5,
   "selfdrive.monitoring.dmonitoringd": 4.0,
   "./proclogd": 1.54,
