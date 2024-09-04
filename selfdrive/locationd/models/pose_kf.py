@@ -126,11 +126,7 @@ class PoseKalman:
     self.filter.init_state(x_init, P_init, t)
 
   def _get_R(self, n, obs_noise):
-    dim = obs_noise.shape[0]
-    R = np.zeros((n, dim, dim))
-    for i in range(n):
-      R[i, :, :] = np.diag(obs_noise)
-    return R
+    return np.tile(np.diag(obs_noise), (n, 1, 1))
 
 
 if __name__ == "__main__":
