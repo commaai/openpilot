@@ -1,4 +1,4 @@
-from cereal import car, log
+from cereal import log
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.controls.lib.selfdrive import StateMachine, SOFT_DISABLE_TIME
 from openpilot.selfdrive.controls.lib.events import Events, ET, EVENTS, NormalPermanentAlert

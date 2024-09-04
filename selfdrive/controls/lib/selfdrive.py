@@ -14,7 +14,7 @@ class StateMachine:
     self.state = State.disabled
     self.soft_disable_timer = 0
 
-  def update(self, events: Events) -> None:
+  def update(self, events: Events):
     # decrement the soft disable timer at every step, as it's reset on
     # entrance in SOFT_DISABLING state
     self.soft_disable_timer = max(0, self.soft_disable_timer - 1)
