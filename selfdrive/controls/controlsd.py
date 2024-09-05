@@ -563,9 +563,7 @@ class Controls:
 
     return CC, lac_log
 
-  def publish_logs(self, CS, CC, lac_log):
-    """Send actuators and hud commands to the car, send controlsstate and MPC logging"""
-
+  def publish_carControl(self, CS, CC, lac_log):
     # Orientation and angle rates can be useful for carcontroller
     # Only calibrated (car) frame is relevant for the carcontroller
     if self.calibrated_pose is not None:
@@ -608,9 +606,9 @@ class Controls:
     alerts = self.events.create_alerts(self.state_machine.current_alert_types, [self.CP, CS, self.sm, self.is_metric,
                                                                                 self.state_machine.soft_disable_timer, pers])
     self.AM.add_many(self.sm.frame, alerts)
-    current_alert = self.AM.process_alerts(self.sm.frame, clear_event_types)
-    if current_alert:
-      hudControl.visualAlert = current_alert.visual_alert
+    self.AM.process_alerts(self.sm.frame, clear_event_types)
+    if self.AM.current_alert:
+      hudControl.visualAlert = self.AM.current_alert.visual_alert
 
     if not self.CP.passive and self.initialized:
       CO = self.sm['carOutput']
@@ -656,17 +654,24 @@ class Controls:
 
     self.pm.send('controlsState', dat)
 
+    # carControl
+    cc_send = messaging.new_message('carControl')
+    cc_send.valid = CS.canValid
+    cc_send.carControl = CC
+    self.pm.send('carControl', cc_send)
+
+  def publish_selfdriveState(self, CS):
     # selfdriveState
     ss_msg = messaging.new_message('selfdriveState')
     ss_msg.valid = CS.canValid
     ss = ss_msg.selfdriveState
-    if current_alert:
-      ss.alertText1 = current_alert.alert_text_1
-      ss.alertText2 = current_alert.alert_text_2
-      ss.alertSize = current_alert.alert_size
-      ss.alertStatus = current_alert.alert_status
-      ss.alertType = current_alert.alert_type
-      ss.alertSound = current_alert.audible_alert
+    if self.AM.current_alert:
+      ss.alertText1 = self.AM.current_alert.alert_text_1
+      ss.alertText2 = self.AM.current_alert.alert_text_2
+      ss.alertSize = self.AM.current_alert.alert_size
+      ss.alertStatus = self.AM.current_alert.alert_status
+      ss.alertType = self.AM.current_alert.alert_type
+      ss.alertSound = self.AM.current_alert.audible_alert
     ss.enabled = self.enabled
     ss.active = self.active
     ss.state = self.state_machine.state
@@ -683,12 +688,6 @@ class Controls:
       self.pm.send('onroadEvents', ce_send)
     self.events_prev = self.events.names.copy()
 
-    # carControl
-    cc_send = messaging.new_message('carControl')
-    cc_send.valid = CS.canValid
-    cc_send.carControl = CC
-    self.pm.send('carControl', cc_send)
-
   def step(self):
     # Sample data from sockets and get a carState
     CS = self.data_sample()
@@ -704,7 +703,8 @@ class Controls:
     CC, lac_log = self.state_control(CS)
 
     # Publish data
-    self.publish_logs(CS, CC, lac_log)
+    self.publish_carControl(CS, CC, lac_log)
+    self.publish_selfdriveState(CS)
 
     self.CS_prev = CS
 
