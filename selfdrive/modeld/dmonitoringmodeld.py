@@ -49,8 +49,8 @@ class DMonitoringModelResult(ctypes.Structure):
     ("driver_state_lhd", DriverStateResult),
     ("driver_state_rhd", DriverStateResult),
     ("poor_vision_prob", ctypes.c_float),
-    ("feats", ctypes.c_float*512),
-    ("wheel_on_right_prob", ctypes.c_float)]
+    ("wheel_on_right_prob", ctypes.c_float),
+    ("feats", ctypes.c_float*512)]
 
 class ModelState:
   inputs: dict[str, np.ndarray]
