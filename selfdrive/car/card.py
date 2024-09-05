@@ -183,7 +183,7 @@ class Car:
 
     return CS, RD
 
-  def update_events(self, CS: car.CarState):
+  def update_events(self, CS: car.CarState, RD: structs.RadarData | None):
     self.events.clear()
 
     CS.events = self.car_events.update(self.CI.CS, self.CS_prev, self.CI.CC, self.CC_prev).to_msg()
@@ -201,6 +201,10 @@ class Car:
       (CS.brakePressed and (not self.CS_prev.brakePressed or not CS.standstill)) or \
       (CS.regenBraking and (not self.CS_prev.regenBraking or not CS.standstill)):
       self.events.add(EventName.pedalPressed)
+
+    if RD is not None:
+      if len(RD.errors):
+        self.events.add(EventName.radarFault)
 
     CS.events = self.events.to_msg()
 
@@ -255,8 +259,7 @@ class Car:
   def step(self):
     CS, RD = self.state_update()
 
-    # TODO: do we want to add error events here? or leave in controlsd/selfdrived?
-    self.update_events(CS)
+    self.update_events(CS, RD)
 
     if not self.sm['carControl'].enabled and self.events.contains(ET.ENABLE):
       self.v_cruise_helper.initialize_v_cruise(CS, self.experimental_mode)
