@@ -17,7 +17,7 @@ from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import sigmoid, CLContext
 
 CALIB_LEN = 3
-REG_SCALE = 0.25
+REG_SCALE = 1.0
 MODEL_WIDTH = 1440
 MODEL_HEIGHT = 960
 OUTPUT_SIZE = 84 + 512
