@@ -248,8 +248,6 @@ class Controls:
     if self.sm.valid['modelV2'] and CS.canValid:
       self.ldw.update(self.sm.frame, self.sm['modelV2'], CS, self.CC_prev)
       if self.is_ldw_enabled and self.sm['liveCalibration'].calStatus == log.LiveCalibrationData.Status.calibrated:
-        hudControl.leftLaneDepart = self.ldw.left
-        hudControl.rightLaneDepart = self.ldw.right
         if self.ldw.warning:
           self.events.add(EventName.ldw)
 
@@ -607,6 +605,10 @@ class Controls:
 
     hudControl.rightLaneVisible = True
     hudControl.leftLaneVisible = True
+
+    if self.sm.valid['modelV2'] and CS.canValid and self.is_ldw_enabled and self.sm['liveCalibration'].calStatus == log.LiveCalibrationData.Status.calibrated:
+      hudControl.leftLaneDepart = self.ldw.left
+      hudControl.rightLaneDepart = self.ldw.right
 
     if self.AM.current_alert:
       hudControl.visualAlert = self.AM.current_alert.visual_alert

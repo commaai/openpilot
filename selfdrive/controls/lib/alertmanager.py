@@ -45,7 +45,7 @@ class AlertManager:
       min_end_frame = entry.start_frame + alert.duration
       entry.end_frame = max(frame + 1, min_end_frame)
 
-  def process_alerts(self, frame: int, clear_event_types: set) -> Alert | None:
+  def process_alerts(self, frame: int, clear_event_types: set):
     ae = AlertEntry()
     for v in self.alerts.values():
       if not v.alert:
