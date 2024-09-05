@@ -153,7 +153,7 @@ class Car:
     # card is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
 
-  def state_update(self) -> car.CarState:
+  def state_update(self) -> tuple[car.CarState, structs.RadarData | None]:
     """carState update loop, driven by can"""
 
     # Update carState from CAN
@@ -164,7 +164,7 @@ class Car:
       CS = self.mock_carstate.update(CS)
 
     # Update radar tracks from CAN
-    rr: structs.RadarData | None = self.RI.update(can_capnp_to_list(can_strs))
+    RD: structs.RadarData | None = self.RI.update(can_capnp_to_list(can_strs))
 
     self.sm.update(0)
 
@@ -182,7 +182,7 @@ class Car:
     CS.vCruise = float(self.v_cruise_helper.v_cruise_kph)
     CS.vCruiseCluster = float(self.v_cruise_helper.v_cruise_cluster_kph)
 
-    return CS
+    return CS, RD
 
   def update_events(self, CS: car.CarState):
     self.events.clear()
@@ -205,7 +205,7 @@ class Car:
 
     CS.events = self.events.to_msg()
 
-  def state_publish(self, CS: car.CarState):
+  def state_publish(self, CS: car.CarState, RD: structs.RadarData | None):
     """carState and carParams publish loop"""
 
     # carParams - logged every 50 seconds (> 1 per segment)
@@ -229,6 +229,12 @@ class Car:
     cs_send.carState.cumLagMs = -self.rk.remaining * 1000.
     self.pm.send('carState', cs_send)
 
+    if RD is not None:
+      tracks_msg = messaging.new_message('liveTracks')
+      tracks_msg.valid = self.sm.all_checks() and len(RD.errors) == 0
+      tracks_msg.liveTracks = convert_to_capnp(RD)
+      self.pm.send('liveTracks', tracks_msg)
+
   def controls_update(self, CS: car.CarState, CC: car.CarControl):
     """control update loop, driven by carControl"""
 
@@ -248,14 +254,15 @@ class Car:
       self.CC_prev = CC
 
   def step(self):
-    CS = self.state_update()
+    CS, RD = self.state_update()
 
+    # TODO: do we want to add error events here? or leave in controlsd/selfdrived?
     self.update_events(CS)
 
     if not self.sm['carControl'].enabled and self.events.contains(ET.ENABLE):
       self.v_cruise_helper.initialize_v_cruise(CS, self.experimental_mode)
 
-    self.state_publish(CS)
+    self.state_publish(CS, RD)
 
     initialized = (not any(e.name == EventName.controlsInitializing for e in self.sm['onroadEvents']) and
                    self.sm.seen['onroadEvents'])
