@@ -569,6 +569,19 @@ class Controls:
 
     return CC, lac_log
 
+  def update_alerts(self, CS):
+    clear_event_types = set()
+    if ET.WARNING not in self.state_machine.current_alert_types:
+      clear_event_types.add(ET.WARNING)
+    if self.enabled:
+      clear_event_types.add(ET.NO_ENTRY)
+
+    pers = {v: k for k, v in log.LongitudinalPersonality.schema.enumerants.items()}[self.personality]
+    alerts = self.events.create_alerts(self.state_machine.current_alert_types, [self.CP, CS, self.sm, self.is_metric,
+                                                                                self.state_machine.soft_disable_timer, pers])
+    self.AM.add_many(self.sm.frame, alerts)
+    self.AM.process_alerts(self.sm.frame, clear_event_types)
+
   def publish_carControl(self, CS, CC, lac_log):
     # Orientation and angle rates can be useful for carcontroller
     # Only calibrated (car) frame is relevant for the carcontroller
@@ -595,17 +608,6 @@ class Controls:
     hudControl.rightLaneVisible = True
     hudControl.leftLaneVisible = True
 
-    clear_event_types = set()
-    if ET.WARNING not in self.state_machine.current_alert_types:
-      clear_event_types.add(ET.WARNING)
-    if self.enabled:
-      clear_event_types.add(ET.NO_ENTRY)
-
-    pers = {v: k for k, v in log.LongitudinalPersonality.schema.enumerants.items()}[self.personality]
-    alerts = self.events.create_alerts(self.state_machine.current_alert_types, [self.CP, CS, self.sm, self.is_metric,
-                                                                                self.state_machine.soft_disable_timer, pers])
-    self.AM.add_many(self.sm.frame, alerts)
-    self.AM.process_alerts(self.sm.frame, clear_event_types)
     if self.AM.current_alert:
       hudControl.visualAlert = self.AM.current_alert.visual_alert
 
@@ -688,15 +690,11 @@ class Controls:
     self.events_prev = self.events.names.copy()
 
   def step(self):
-    # Sample data from sockets and get a carState
     CS = self.data_sample()
-    cloudlog.timestamp("Data sampled")
-
     self.update_events(CS)
-    cloudlog.timestamp("Events updated")
-
     if not self.CP.passive and self.initialized:
       self.enabled, self.active = self.state_machine.update(self.events)
+    self.update_alerts(CS)
 
     # Compute actuators (runs PID loops and lateral MPC)
     CC, lac_log = self.state_control(CS)
