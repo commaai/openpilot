@@ -20,7 +20,7 @@ CALIB_LEN = 3
 REG_SCALE = 0.25
 MODEL_WIDTH = 1440
 MODEL_HEIGHT = 960
-OUTPUT_SIZE = 84
+OUTPUT_SIZE = 84 + 512
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 MODEL_PATHS = {
   ModelRunner.THNEED: Path(__file__).parent / 'models/dmonitoring_model.thneed',
@@ -49,6 +49,7 @@ class DMonitoringModelResult(ctypes.Structure):
     ("driver_state_lhd", DriverStateResult),
     ("driver_state_rhd", DriverStateResult),
     ("poor_vision_prob", ctypes.c_float),
+    ("feats", ctypes.c_float*512),
     ("wheel_on_right_prob", ctypes.c_float)]
 
 class ModelState:
