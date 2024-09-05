@@ -4,6 +4,7 @@ import sys
 from collections import defaultdict
 from typing import Any
 
+from cereal import log
 from openpilot.common.git import get_commit
 from openpilot.system.hardware import PC
 from openpilot.tools.lib.openpilotci import BASE_URL, get_url
@@ -56,6 +57,8 @@ def model_replay(lr, frs):
   for s in ('liveCalibration', 'deviceState'):
     msg = next(msg for msg in lr if msg.which() == s).as_builder()
     msg.logMonoTime = lr[0].logMonoTime
+    if s == 'liveCalibration':
+      msg.liveCalibration.calStatus = log.LiveCalibrationData.Status.calibrated
     modeld_logs.insert(1, msg.as_reader())
     dmodeld_logs.insert(1, msg.as_reader())
 
