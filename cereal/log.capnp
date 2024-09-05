@@ -2465,6 +2465,6 @@ struct Event {
     navModelDEPRECATED @104 :NavModelData;
     uiPlanDEPRECATED @106 :UiPlan;
     liveLocationKalmanDEPRECATED @72 :LiveLocationKalman;
-    liveTracksDEPRECATED @16 :List(LiveTracks);
+    liveTracksDEPRECATED @16 :List(LiveTracksDEPRECATED);
   }
 }
