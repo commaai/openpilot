@@ -57,6 +57,6 @@ class AlertManager:
       # sort by priority first and then by start_frame
       greater = ae.alert is None or (v.alert.priority, v.start_frame) > (ae.alert.priority, ae.start_frame)
       if v.active(frame) and greater:
-        ae= v
+        ae = v
 
     self.current_alert = ae.alert

@@ -117,6 +117,8 @@ class Controls:
       self.params.remove("ExperimentalMode")
 
     self.CS_prev = car.CarState.new_message()
+    self.CC_prev = car.CarControl.new_message()
+    self.lac_log_prev = None
     self.AM = AlertManager()
     self.events = Events()
 
@@ -216,15 +218,9 @@ class Controls:
     if self.sm['deviceState'].thermalStatus >= ThermalStatus.red:
       self.events.add(EventName.overheat)
     if self.sm['deviceState'].freeSpacePercent < 7 and not SIMULATION:
-      # under 7% of space free no enable allowed
       self.events.add(EventName.outOfSpace)
     if self.sm['deviceState'].memoryUsagePercent > 90 and not SIMULATION:
       self.events.add(EventName.lowMemory)
-
-    # TODO: enable this once loggerd CPU usage is more reasonable
-    #cpus = list(self.sm['deviceState'].cpuUsagePercent)
-    #if max(cpus, default=0) > 95 and not SIMULATION:
-    #  self.events.add(EventName.highCpuUsage)
 
     # Alert if fan isn't spinning for 5 seconds
     if self.sm['peripheralState'].pandaType != log.PandaState.PandaType.unknown:
@@ -247,6 +243,15 @@ class Controls:
         self.events.add(EventName.calibrationRecalibrating)
       else:
         self.events.add(EventName.calibrationInvalid)
+
+    # Lane departure warning
+    if self.sm.valid['modelV2'] and CS.canValid:
+      self.ldw.update(self.sm.frame, self.sm['modelV2'], CS, self.CC_prev)
+      if self.is_ldw_enabled and self.sm['liveCalibration'].calStatus == log.LiveCalibrationData.Status.calibrated:
+        hudControl.leftLaneDepart = self.ldw.left
+        hudControl.rightLaneDepart = self.ldw.right
+        if self.ldw.warning:
+          self.events.add(EventName.ldw)
 
     # Handle lane change
     if self.sm['modelV2'].meta.laneChangeState == LaneChangeState.preLaneChange:
@@ -347,6 +352,37 @@ class Controls:
       self.cruise_mismatch_counter = self.cruise_mismatch_counter + 1 if cruise_mismatch else 0
       if self.cruise_mismatch_counter > int(6. / DT_CTRL):
         self.events.add(EventName.cruiseMismatch)
+
+    # Send a "steering required alert" if saturation count has reached the limit
+    lac_log = self.lac_log_prev
+    if CS.steeringPressed:
+      self.last_steering_pressed_frame = self.sm.frame
+    recent_steer_pressed = (self.sm.frame - self.last_steering_pressed_frame)*DT_CTRL < 2.0
+    if self.lac_log_prev is not None and self.lac_log_prev.active and not recent_steer_pressed and not self.CP.notCar:
+      lac_log = self.lac_log_prev
+      if self.CP.lateralTuning.which() == 'torque' and not self.joystick_mode:
+        undershooting = abs(lac_log.desiredLateralAccel) / abs(1e-3 + lac_log.actualLateralAccel) > 1.2
+        turning = abs(lac_log.desiredLateralAccel) > 1.0
+        good_speed = CS.vEgo > 5
+        max_torque = abs(self.sm['carOutput'].actuatorsOutput.steer) > 0.99
+        if undershooting and turning and good_speed and max_torque:
+          lac_log.active and self.events.add(EventName.steerSaturated)
+      elif lac_log.saturated:
+        # TODO probably should not use dpath_points but curvature
+        dpath_points = self.sm['modelV2'].position.y
+        if len(dpath_points):
+          # Check if we deviated from the path
+          # TODO use desired vs actual curvature
+          if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
+            steering_value = self.CC_prev.actuators.steeringAngleDeg
+          else:
+            steering_value = self.CC_prev.actuators.steer
+
+          left_deviation = steering_value > 0 and dpath_points[0] < -0.20
+          right_deviation = steering_value < 0 and dpath_points[0] > 0.20
+
+          if left_deviation or right_deviation:
+            self.events.add(EventName.steerSaturated)
 
     # Check for FCW
     stock_long_is_braking = self.enabled and not self.CP.openpilotLongitudinalControl and CS.aEgo < -1.25
@@ -521,36 +557,6 @@ class Controls:
         lac_log.output = actuators.steer
         lac_log.saturated = abs(actuators.steer) >= 0.9
 
-    if CS.steeringPressed:
-      self.last_steering_pressed_frame = self.sm.frame
-    recent_steer_pressed = (self.sm.frame - self.last_steering_pressed_frame)*DT_CTRL < 2.0
-
-    # Send a "steering required alert" if saturation count has reached the limit
-    if lac_log.active and not recent_steer_pressed and not self.CP.notCar:
-      if self.CP.lateralTuning.which() == 'torque' and not self.joystick_mode:
-        undershooting = abs(lac_log.desiredLateralAccel) / abs(1e-3 + lac_log.actualLateralAccel) > 1.2
-        turning = abs(lac_log.desiredLateralAccel) > 1.0
-        good_speed = CS.vEgo > 5
-        max_torque = abs(self.sm['carOutput'].actuatorsOutput.steer) > 0.99
-        if undershooting and turning and good_speed and max_torque:
-          lac_log.active and self.events.add(EventName.steerSaturated)
-      elif lac_log.saturated:
-        # TODO probably should not use dpath_points but curvature
-        dpath_points = model_v2.position.y
-        if len(dpath_points):
-          # Check if we deviated from the path
-          # TODO use desired vs actual curvature
-          if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
-            steering_value = actuators.steeringAngleDeg
-          else:
-            steering_value = actuators.steer
-
-          left_deviation = steering_value > 0 and dpath_points[0] < -0.20
-          right_deviation = steering_value < 0 and dpath_points[0] > 0.20
-
-          if left_deviation or right_deviation:
-            self.events.add(EventName.steerSaturated)
-
     # Ensure no NaNs/Infs
     for p in ACTUATOR_FIELDS:
       attr = getattr(actuators, p)
@@ -588,13 +594,6 @@ class Controls:
 
     hudControl.rightLaneVisible = True
     hudControl.leftLaneVisible = True
-
-    self.ldw.update(self.sm.frame, self.sm['modelV2'], CS, CC)
-    if self.is_ldw_enabled and  self.sm['liveCalibration'].calStatus == log.LiveCalibrationData.Status.calibrated:
-      hudControl.leftLaneDepart = self.ldw.left
-      hudControl.rightLaneDepart = self.ldw.right
-      if self.ldw.warning:
-        self.events.add(EventName.ldw)
 
     clear_event_types = set()
     if ET.WARNING not in self.state_machine.current_alert_types:
@@ -707,6 +706,8 @@ class Controls:
     self.publish_selfdriveState(CS)
 
     self.CS_prev = CS
+    self.CC_prev = CC
+    self.lac_log_prev = lac_log
 
   def read_personality_param(self):
     try:
