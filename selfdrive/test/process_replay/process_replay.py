@@ -490,12 +490,11 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="radard",
-    pubs=["can", "carState", "modelV2"],
-    subs=["radarState", "liveTracks"],
+    pubs=["liveTracks", "carState", "modelV2"],
+    subs=["radarState"],
     ignore=["logMonoTime", "radarState.cumLagMs"],
     init_callback=get_car_params_callback,
-    should_recv_callback=MessageBasedRcvCallback("can"),
-    main_pub="can",
+    should_recv_callback=FrequencyBasedRcvCallback("modelV2"),
   ),
   ProcessConfig(
     proc_name="plannerd",
