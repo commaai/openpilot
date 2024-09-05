@@ -448,7 +448,7 @@ class TestCarModelBase(unittest.TestCase):
           checks['cruiseState'] += CS.cruiseState.enabled != self.safety.get_cruise_engaged_prev()
       else:
         # Check for enable events on rising edge of controls allowed
-        card.update_events(CS)
+        card.update_events(CS, None)
         card.CS_prev = CS
         button_enable = (any(evt.enable for evt in CS.events) and
                          not any(evt == EventName.pedalPressed for evt in card.events.names))
