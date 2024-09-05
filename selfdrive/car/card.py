@@ -202,9 +202,8 @@ class Car:
       (CS.regenBraking and (not self.CS_prev.regenBraking or not CS.standstill)):
       self.events.add(EventName.pedalPressed)
 
-    if RD is not None:
-      if len(RD.errors):
-        self.events.add(EventName.radarFault)
+    if RD is not None and len(RD.errors):
+      self.events.add(EventName.radarFault)
 
     CS.events = self.events.to_msg()
 
