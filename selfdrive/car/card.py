@@ -229,7 +229,7 @@ class Car:
 
     if RD is not None:
       tracks_msg = messaging.new_message('liveTracks')
-      tracks_msg.valid = self.sm.all_checks() and len(RD.errors) == 0
+      tracks_msg.valid = CS.canValid and len(RD.errors) == 0
       tracks_msg.liveTracks = convert_to_capnp(RD)
       self.pm.send('liveTracks', tracks_msg)
 
