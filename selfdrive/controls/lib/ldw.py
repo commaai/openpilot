@@ -31,11 +31,11 @@ class LaneDepartureWarning:
       l_lane_close = left_lane_visible and (lane_lines[1].y[0] > -(1.08 + CAMERA_OFFSET))
       r_lane_close = right_lane_visible and (lane_lines[2].y[0] < (1.08 - CAMERA_OFFSET))
 
-      self.left = l_lane_change_prob > LANE_DEPARTURE_THRESHOLD and l_lane_close
-      self.right = r_lane_change_prob > LANE_DEPARTURE_THRESHOLD and r_lane_close
+      self.left = bool(l_lane_change_prob > LANE_DEPARTURE_THRESHOLD and l_lane_close)
+      self.right = bool(r_lane_change_prob > LANE_DEPARTURE_THRESHOLD and r_lane_close)
     else:
       self.left, self.right = False, False
 
   @property
   def warning(self) -> bool:
-    return self.left or self.right
+    return bool(self.left or self.right)
