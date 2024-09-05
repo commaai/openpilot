@@ -619,39 +619,36 @@ class Controls:
       else:
         self.steer_limited = abs(CC.actuators.steer - CO.actuatorsOutput.steer) > 1e-2
 
-    force_decel = (self.sm['driverMonitoringState'].awarenessStatus < 0.) or \
-                  (self.state_machine.state == State.softDisabling)
-
-    # Curvature & Steering angle
-    lp = self.sm['liveParameters']
-
-    steer_angle_without_offset = math.radians(CS.steeringAngleDeg - lp.angleOffsetDeg)
-    curvature = -self.VM.calc_curvature(steer_angle_without_offset, CS.vEgo, lp.roll)
 
     # controlsState
     dat = messaging.new_message('controlsState')
     dat.valid = CS.canValid
-    controlsState = dat.controlsState
-    controlsState.longitudinalPlanMonoTime = self.sm.logMonoTime['longitudinalPlan']
-    controlsState.lateralPlanMonoTime = self.sm.logMonoTime['modelV2']
-    controlsState.curvature = curvature
-    controlsState.desiredCurvature = self.desired_curvature
-    controlsState.longControlState = self.LoC.long_control_state
-    controlsState.upAccelCmd = float(self.LoC.pid.p)
-    controlsState.uiAccelCmd = float(self.LoC.pid.i)
-    controlsState.ufAccelCmd = float(self.LoC.pid.f)
-    controlsState.cumLagMs = -self.rk.remaining * 1000.
-    controlsState.forceDecel = bool(force_decel)
+    cs = dat.controlsState
+
+    lp = self.sm['liveParameters']
+    steer_angle_without_offset = math.radians(CS.steeringAngleDeg - lp.angleOffsetDeg)
+    cs.curvature = -self.VM.calc_curvature(steer_angle_without_offset, CS.vEgo, lp.roll)
+
+    cs.longitudinalPlanMonoTime = self.sm.logMonoTime['longitudinalPlan']
+    cs.lateralPlanMonoTime = self.sm.logMonoTime['modelV2']
+    cs.desiredCurvature = self.desired_curvature
+    cs.longControlState = self.LoC.long_control_state
+    cs.upAccelCmd = float(self.LoC.pid.p)
+    cs.uiAccelCmd = float(self.LoC.pid.i)
+    cs.ufAccelCmd = float(self.LoC.pid.f)
+    cs.cumLagMs = -self.rk.remaining * 1000.
+    cs.forceDecel = bool((self.sm['driverMonitoringState'].awarenessStatus < 0.) or
+                         (self.state_machine.state == State.softDisabling))
 
     lat_tuning = self.CP.lateralTuning.which()
     if self.joystick_mode:
-      controlsState.lateralControlState.debugState = lac_log
+      cs.lateralControlState.debugState = lac_log
     elif self.CP.steerControlType == car.CarParams.SteerControlType.angle:
-      controlsState.lateralControlState.angleState = lac_log
+      cs.lateralControlState.angleState = lac_log
     elif lat_tuning == 'pid':
-      controlsState.lateralControlState.pidState = lac_log
+      cs.lateralControlState.pidState = lac_log
     elif lat_tuning == 'torque':
-      controlsState.lateralControlState.torqueState = lac_log
+      cs.lateralControlState.torqueState = lac_log
 
     self.pm.send('controlsState', dat)
 
