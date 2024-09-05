@@ -611,7 +611,6 @@ struct RadarState @0x9a185389d6fdd05f {
 
   leadOne @3 :LeadData;
   leadTwo @4 :LeadData;
-  cumLagMs @5 :Float32;
 
   struct LeadData {
     dRel @0 :Float32;
@@ -641,6 +640,7 @@ struct RadarState @0x9a185389d6fdd05f {
   calCycleDEPRECATED @8 :Int32;
   calPercDEPRECATED @9 :Int8;
   canMonoTimesDEPRECATED @10 :List(UInt64);
+  cumLagMsDEPRECATED @5 :Float32;
 }
 
 struct LiveCalibrationData {
