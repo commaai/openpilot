@@ -66,7 +66,7 @@ class Controls:
       cloudlog.info("controlsd got CarParams")
 
       # Uses car interface helper functions, altering state won't be considered by card for actuation
-      self.CI, _ = get_car_interface(self.CP)
+      self.CI = get_car_interface(self.CP)
     else:
       self.CI, self.CP = CI, CI.CP
 
