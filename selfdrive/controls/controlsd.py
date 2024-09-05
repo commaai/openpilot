@@ -105,7 +105,7 @@ class Controls:
                                   ignore_alive=ignore, ignore_avg_freq=ignore+['radarState', 'testJoystick'], ignore_valid=['testJoystick', ],
                                   frequency=int(1/DT_CTRL))
 
-    self.joystick_mode = self.params.get_bool("JoystickDebugMode")
+    self.joystick_mode = False  # self.params.get_bool("JoystickDebugMode")
 
     # read params
     self.is_metric = self.params.get_bool("IsMetric")
