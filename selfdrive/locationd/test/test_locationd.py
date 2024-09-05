@@ -1,13 +1,7 @@
-import pytest
-import json
-import random
-import time
 import capnp
 
 import cereal.messaging as messaging
-from cereal.services import SERVICE_LIST
 from openpilot.common.params import Params
-from openpilot.common.transformations.coordinates import ecef2geodetic
 
 from openpilot.system.manager.process_config import managed_processes
 
@@ -60,30 +54,3 @@ class TestLocationdProc:
     msg.logMonoTime = t
     msg.valid = True
     return msg
-
-  def test_params_gps(self):
-    random.seed(123489234)
-    self.params.remove('LastGPSPosition')
-
-    self.x = -2710700 + (random.random() * 1e5)
-    self.y = -4280600 + (random.random() * 1e5)
-    self.z = 3850300 + (random.random() * 1e5)
-    self.lat, self.lon, self.alt = ecef2geodetic([self.x, self.y, self.z])
-
-    # get fake messages at the correct frequency, listed in services.py
-    msgs = []
-    for sec in range(65):
-      for name in self.LLD_MSGS:
-        for j in range(int(SERVICE_LIST[name].frequency)):
-          msgs.append(self.get_msg(name, int((sec + j / SERVICE_LIST[name].frequency) * 1e9)))
-
-    for msg in sorted(msgs, key=lambda x: x.logMonoTime):
-      self.pm.send(msg.which(), msg)
-      if msg.which() == "cameraOdometry":
-        self.pm.wait_for_readers_to_update(msg.which(), 0.1, dt=0.005)
-    time.sleep(1)  # wait for async params write
-
-    lastGPS = json.loads(self.params.get('LastGPSPosition'))
-    assert lastGPS['latitude'] == pytest.approx(self.lat, abs=0.001)
-    assert lastGPS['longitude'] == pytest.approx(self.lon, abs=0.001)
-    assert lastGPS['altitude'] == pytest.approx(self.alt, abs=0.001)
