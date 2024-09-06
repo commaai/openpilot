@@ -34,34 +34,24 @@ DATA: dict[str, capnp.lib.capnp._DynamicStructBuilder] = dict.fromkeys(
   "liveCalibration", "modelV2", "radarState", "driverMonitoringState", "carState",
   "driverStateV2", "roadCameraState", "wideRoadCameraState", "driverCameraState"], None)
 
-def setup_common(click, pm: PubMaster):
-  Params().put("DongleId", "123456789012345")
-  pm.send('deviceState', DATA['deviceState'])
-
 def setup_homescreen(click, pm: PubMaster):
-  setup_common(click, pm)
+  pass
 
 def setup_settings_device(click, pm: PubMaster):
-  setup_common(click, pm)
-
   click(100, 100)
 
 def setup_onroad(click, pm: PubMaster):
-  setup_common(click, pm)
-
   vipc_server = VisionIpcServer("camerad")
   for stream_type, cam, _ in STREAMS:
     vipc_server.create_buffers(stream_type, 5, False, cam.width, cam.height)
   vipc_server.start_listener()
 
-  packet_id = 0
-  for _ in range(20):
+  for packet_id in range(20):
     for service, data in DATA.items():
       if data:
         data.clear_write_flag()
         pm.send(service, data)
 
-    packet_id = packet_id + 1
     for stream_type, _, image in STREAMS:
       vipc_server.send(stream_type, image, packet_id, packet_id, packet_id)
 
@@ -116,7 +106,6 @@ def setup_onroad_alert_full(click, pm: PubMaster):
   setup_onroad_alert(click, pm, 'Full Alert', 'This is a full alert message', log.SelfdriveState.AlertSize.full)
 
 def setup_offroad_alert(click, pm: PubMaster):
-  setup_common(click, pm)
   for alert in OFFROAD_ALERTS:
     set_offroad_alert(alert, True)
 
@@ -125,7 +114,6 @@ def setup_offroad_alert(click, pm: PubMaster):
   click(240, 216)
 
 def setup_update_available(click, pm: PubMaster):
-  setup_common(click, pm)
   Params().put_bool("UpdateAvailable", True)
   release_notes_path = os.path.join(BASEDIR, "RELEASES.md")
   with open(release_notes_path) as file:
@@ -164,11 +152,13 @@ class TestUI:
     sys.modules["mouseinfo"] = False
 
   def setup(self):
+    Params().put("DongleId", "123456789012345")
     self.sm = SubMaster(["uiDebug"])
     self.pm = PubMaster(list(DATA.keys()))
     while not self.sm.valid["uiDebug"]:
       self.sm.update(1)
     time.sleep(UI_DELAY) # wait a bit more for the UI to start rendering
+    self.pm.send('deviceState', DATA['deviceState'])
     try:
       self.ui = pywinctl.getWindowsWithTitle("ui")[0]
     except Exception as e:
@@ -194,8 +184,6 @@ class TestUI:
     self.setup()
 
     setup_case(self.click, self.pm)
-
-    time.sleep(UI_DELAY) # wait a bit more for the UI to finish rendering
 
     im = self.screenshot()
     plt.imsave(SCREENSHOTS_DIR / f"{name}.png", im)
