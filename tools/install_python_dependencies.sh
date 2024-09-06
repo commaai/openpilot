@@ -33,7 +33,7 @@ echo "updating uv..."
 update_uv
 
 echo "installing python packages..."
-uv sync --frozen --all-extras
+uv sync --frozen --all-extras --inexact
 source .venv/bin/activate
 
 echo "PYTHONPATH=${PWD}" > $ROOT/.env
