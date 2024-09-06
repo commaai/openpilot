@@ -414,20 +414,20 @@
         <translation>openpilot ไม่สามารถใช้งานได้</translation>
     </message>
     <message>
-        <source>Waiting for controls to start</source>
-        <translation>กำลังรอให้ controls เริ่มทำงาน</translation>
-    </message>
-    <message>
         <source>TAKE CONTROL IMMEDIATELY</source>
         <translation>เข้าควบคุมรถเดี๋ยวนี้</translation>
     </message>
     <message>
-        <source>Controls Unresponsive</source>
-        <translation>Controls ไม่ตอบสนอง</translation>
-    </message>
-    <message>
         <source>Reboot Device</source>
         <translation>รีบูตอุปกรณ์</translation>
+    </message>
+    <message>
+        <source>Waiting to start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>System Unresponsive</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

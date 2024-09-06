@@ -415,20 +415,20 @@
         <translation>openpilot Indisponível</translation>
     </message>
     <message>
-        <source>Waiting for controls to start</source>
-        <translation>Aguardando controles para iniciar</translation>
-    </message>
-    <message>
         <source>TAKE CONTROL IMMEDIATELY</source>
         <translation>ASSUMA IMEDIATAMENTE</translation>
     </message>
     <message>
-        <source>Controls Unresponsive</source>
-        <translation>Controles Não Respondem</translation>
-    </message>
-    <message>
         <source>Reboot Device</source>
         <translation>Reinicie o Dispositivo</translation>
+    </message>
+    <message>
+        <source>Waiting to start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>System Unresponsive</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

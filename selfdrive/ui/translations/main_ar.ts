@@ -419,20 +419,20 @@
         <translation>openpilot غير متوفر</translation>
     </message>
     <message>
-        <source>Waiting for controls to start</source>
-        <translation>في انتظار بدء عناصر التحكم</translation>
-    </message>
-    <message>
         <source>TAKE CONTROL IMMEDIATELY</source>
         <translation>تحكم على الفور</translation>
     </message>
     <message>
-        <source>Controls Unresponsive</source>
-        <translation>الضوابط غير مستجيبة</translation>
-    </message>
-    <message>
         <source>Reboot Device</source>
         <translation>إعادة التشغيل</translation>
+    </message>
+    <message>
+        <source>Waiting to start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>System Unresponsive</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

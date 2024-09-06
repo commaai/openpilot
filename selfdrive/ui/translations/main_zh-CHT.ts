@@ -414,20 +414,20 @@
         <translation>無法使用 openpilot</translation>
     </message>
     <message>
-        <source>Waiting for controls to start</source>
-        <translation>等待操控服務開始</translation>
-    </message>
-    <message>
         <source>TAKE CONTROL IMMEDIATELY</source>
         <translation>立即接管</translation>
     </message>
     <message>
-        <source>Controls Unresponsive</source>
-        <translation>操控服務沒有反應</translation>
-    </message>
-    <message>
         <source>Reboot Device</source>
         <translation>請重新啟裝置</translation>
+    </message>
+    <message>
+        <source>Waiting to start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>System Unresponsive</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
