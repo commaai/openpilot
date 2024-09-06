@@ -81,13 +81,14 @@ class Joystick:
 
 
 def send_thread(joystick):
-  joystick_sock = messaging.pub_sock('testJoystick')
+  pm = messaging.PubMaster(['testJoystick', 'carControl'])
+
   rk = Ratekeeper(100, print_delay_threshold=None)
   while 1:
     dat = messaging.new_message('testJoystick')
     dat.testJoystick.axes = [joystick.axes_values[a] for a in joystick.axes_order]
     dat.testJoystick.buttons = [joystick.cancel]
-    joystick_sock.send(dat.to_bytes())
+    pm.send('testJoystick', dat)
     print('\n' + ', '.join(f'{name}: {round(v, 3)}' for name, v in joystick.axes_values.items()))
     rk.keep_time()
 
