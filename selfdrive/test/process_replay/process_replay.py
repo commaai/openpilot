@@ -467,7 +467,7 @@ CONFIGS = [
       "longitudinalPlan", "livePose", "liveParameters", "radarState",
       "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
       "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope", "carOutput",
-      "gpsLocationExternal", "gpsLocation",
+      "gpsLocationExternal", "gpsLocation", "driverAssistance"
     ],
     subs=["selfdriveState", "controlsState", "carControl", "onroadEvents"],
     ignore=["logMonoTime", "controlsState.cumLagMs"],
@@ -499,7 +499,7 @@ CONFIGS = [
   ProcessConfig(
     proc_name="plannerd",
     pubs=["modelV2", "carControl", "carState", "controlsState", "radarState", "selfdriveState"],
-    subs=["longitudinalPlan"],
+    subs=["longitudinalPlan", "driverAssistance"],
     ignore=["logMonoTime", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime"],
     init_callback=get_car_params_callback,
     should_recv_callback=FrequencyBasedRcvCallback("modelV2"),
