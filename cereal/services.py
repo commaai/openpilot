@@ -40,6 +40,7 @@ _services: dict[str, tuple] = {
   "carControl": (True, 100., 10),
   "carOutput": (True, 100., 10),
   "longitudinalPlan": (True, 20., 10),
+  "driverAssistance": (True, 20., 20),
   "procLog": (True, 0.5, 15),
   "gpsLocationExternal": (True, 10., 10),
   "gpsLocation": (True, 1., 1),

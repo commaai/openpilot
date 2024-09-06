@@ -18,6 +18,7 @@ def migrate_all(lr, manager_states=False, panda_states=False, camera_states=Fals
   msgs = migrate_controlsState(msgs)
   msgs = migrate_liveLocationKalman(msgs)
   msgs = migrate_liveTracks(msgs)
+  msgs = migrate_driverAssistance(msgs)
   if manager_states:
     msgs = migrate_managerState(msgs)
   if panda_states:
@@ -28,6 +29,15 @@ def migrate_all(lr, manager_states=False, panda_states=False, camera_states=Fals
 
   return msgs
 
+def migrate_driverAssistance(lr):
+  all_msgs = []
+  for msg in lr:
+    all_msgs.append(msg)
+    if msg.which() == 'longitudinalPlan':
+      all_msgs.append(messaging.new_message('driverAssistance', valid=True, logMonoTime=msg.logMonoTime).as_reader())
+    if msg.which() == 'driverAssistance':
+      return lr
+  return all_msgs
 
 def migrate_liveTracks(lr):
   all_msgs = []
