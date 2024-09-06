@@ -109,7 +109,7 @@ struct OnroadEvent @0x9b1657f34caf3ad3 {
     cruiseMismatch @106;
     lkasDisabled @107;
     canBusMissing @111;
-    controlsdLagging @112;
+    selfdrivedLagging @112;
     resumeBlocked @113;
     steerTimeLimit @115;
     vehicleSensorsInvalid @116;

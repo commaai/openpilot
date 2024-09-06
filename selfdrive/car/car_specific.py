@@ -5,7 +5,7 @@ from opendbc.car.interfaces import MAX_CTRL_SPEED, CarStateBase, CarControllerBa
 from opendbc.car.volkswagen.values import CarControllerParams as VWCarControllerParams
 from opendbc.car.hyundai.interface import ENABLE_BUTTONS as HYUNDAI_ENABLE_BUTTONS
 
-from openpilot.selfdrive.controls.lib.events import Events
+from openpilot.selfdrive.selfdrived.events import Events
 
 ButtonType = structs.CarState.ButtonEvent.Type
 GearShifter = structs.CarState.GearShifter

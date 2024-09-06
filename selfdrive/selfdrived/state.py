@@ -1,5 +1,5 @@
 from cereal import log
-from openpilot.selfdrive.controls.lib.events import Events, ET
+from openpilot.selfdrive.selfdrived.events import Events, ET
 from openpilot.common.realtime import DT_CTRL
 
 State = log.SelfdriveState.OpenpilotState

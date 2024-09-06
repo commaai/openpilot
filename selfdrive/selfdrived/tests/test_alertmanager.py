@@ -1,7 +1,7 @@
 import random
 
-from openpilot.selfdrive.controls.lib.events import Alert, EVENTS
-from openpilot.selfdrive.controls.lib.alertmanager import AlertManager
+from openpilot.selfdrive.selfdrived.events import Alert, EVENTS
+from openpilot.selfdrive.selfdrived.alertmanager import AlertManager
 
 
 class TestAlertManager:

@@ -22,7 +22,7 @@ from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
 from openpilot.selfdrive.car.cruise import VCruiseHelper
 from openpilot.selfdrive.car.car_specific import CarSpecificEvents, MockCarState
 from openpilot.selfdrive.car.helpers import convert_carControl, convert_to_capnp
-from openpilot.selfdrive.controls.lib.events import Events, ET
+from openpilot.selfdrive.selfdrived.events import Events, ET
 
 REPLAY = "REPLAY" in os.environ
 

@@ -6,8 +6,8 @@ from cereal import car, log
 import cereal.messaging as messaging
 from opendbc.car.honda.interface import CarInterface
 from openpilot.common.realtime import DT_CTRL
-from openpilot.selfdrive.controls.lib.events import ET, Events
-from openpilot.selfdrive.controls.lib.alertmanager import AlertManager
+from openpilot.selfdrive.selfdrived.events import ET, Events
+from openpilot.selfdrive.selfdrived.alertmanager import AlertManager
 from openpilot.system.manager.process_config import managed_processes
 
 EventName = car.OnroadEvent.EventName

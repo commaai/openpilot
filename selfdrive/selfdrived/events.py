@@ -773,9 +773,9 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.NO_ENTRY: NoEntryAlert("Low Communication Rate Between Processes"),
   },
 
-  EventName.controlsdLagging: {
-    ET.SOFT_DISABLE: soft_disable_alert("Controls Lagging"),
-    ET.NO_ENTRY: NoEntryAlert("Controls Process Lagging: Reboot Your Device"),
+  EventName.selfdrivedLagging: {
+    ET.SOFT_DISABLE: soft_disable_alert("System Lagging"),
+    ET.NO_ENTRY: NoEntryAlert("Selfdrive Process Lagging: Reboot Your Device"),
   },
 
   # Thrown when manager detects a service exited unexpectedly while driving
