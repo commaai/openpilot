@@ -19,34 +19,34 @@ void OnroadAlerts::clear() {
 }
 
 OnroadAlerts::Alert OnroadAlerts::getAlert(const SubMaster &sm, uint64_t started_frame) {
-  const cereal::SelfdriveState::Reader &cs = sm["selfdriveState"].getSelfdriveState();
-  const uint64_t controls_frame = sm.rcv_frame("selfdriveState");
+  const cereal::SelfdriveState::Reader &ss = sm["selfdriveState"].getSelfdriveState();
+  const uint64_t selfdrive_frame = sm.rcv_frame("selfdriveState");
 
   Alert a = {};
-  if (controls_frame >= started_frame) {  // Don't get old alert.
-    a = {cs.getAlertText1().cStr(), cs.getAlertText2().cStr(),
-         cs.getAlertType().cStr(), cs.getAlertSize(), cs.getAlertStatus()};
+  if (selfdrive_frame >= started_frame) {  // Don't get old alert.
+    a = {ss.getAlertText1().cStr(), ss.getAlertText2().cStr(),
+         ss.getAlertType().cStr(), ss.getAlertSize(), ss.getAlertStatus()};
   }
 
   if (!sm.updated("selfdriveState") && (sm.frame - started_frame) > 5 * UI_FREQ) {
-    const int CONTROLS_TIMEOUT = 5;
-    const int controls_missing = (nanos_since_boot() - sm.rcv_time("selfdriveState")) / 1e9;
+    const int SELFDRIVE_STATE_TIMEOUT = 5;
+    const int ss_missing = (nanos_since_boot() - sm.rcv_time("selfdriveState")) / 1e9;
 
-    // Handle controls timeout
-    if (controls_frame < started_frame) {
+    // Handle selfdrive timeout
+    if (selfdrive_frame < started_frame) {
       // car is started, but selfdriveState hasn't been seen at all
-      a = {tr("openpilot Unavailable"), tr("Waiting for controls to start"),
-           "controlsWaiting", cereal::SelfdriveState::AlertSize::MID,
+      a = {tr("openpilot Unavailable"), tr("Waiting to start"),
+           "selfdriveWaiting", cereal::SelfdriveState::AlertSize::MID,
            cereal::SelfdriveState::AlertStatus::NORMAL};
-    } else if (controls_missing > CONTROLS_TIMEOUT && !Hardware::PC()) {
-      // car is started, but controls is lagging or died
-      if (cs.getEnabled() && (controls_missing - CONTROLS_TIMEOUT) < 10) {
-        a = {tr("TAKE CONTROL IMMEDIATELY"), tr("Controls Unresponsive"),
-             "controlsUnresponsive", cereal::SelfdriveState::AlertSize::FULL,
+    } else if (ss_missing > SELFDRIVE_STATE_TIMEOUT && !Hardware::PC()) {
+      // car is started, but selfdrive is lagging or died
+      if (ss.getEnabled() && (ss_missing - SELFDRIVE_STATE_TIMEOUT) < 10) {
+        a = {tr("TAKE CONTROL IMMEDIATELY"), tr("System Unresponsive"),
+             "selfdriveUnresponsive", cereal::SelfdriveState::AlertSize::FULL,
              cereal::SelfdriveState::AlertStatus::CRITICAL};
       } else {
-        a = {tr("Controls Unresponsive"), tr("Reboot Device"),
-             "controlsUnresponsivePermanent", cereal::SelfdriveState::AlertSize::MID,
+        a = {tr("System Unresponsive"), tr("Reboot Device"),
+             "selfdriveUnresponsivePermanent", cereal::SelfdriveState::AlertSize::MID,
              cereal::SelfdriveState::AlertStatus::NORMAL};
       }
     }

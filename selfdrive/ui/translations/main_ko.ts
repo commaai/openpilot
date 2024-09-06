@@ -414,20 +414,20 @@
         <translation>오픈파일럿을 사용할수없습니다</translation>
     </message>
     <message>
-        <source>Waiting for controls to start</source>
-        <translation>프로세스가 준비중입니다</translation>
-    </message>
-    <message>
         <source>TAKE CONTROL IMMEDIATELY</source>
         <translation>핸들을 잡아주세요</translation>
     </message>
     <message>
-        <source>Controls Unresponsive</source>
-        <translation>프로세스가 응답하지않습니다</translation>
-    </message>
-    <message>
         <source>Reboot Device</source>
         <translation>장치를 재부팅하세요</translation>
+    </message>
+    <message>
+        <source>Waiting to start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>System Unresponsive</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

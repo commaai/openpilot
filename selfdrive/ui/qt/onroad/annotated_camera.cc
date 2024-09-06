@@ -25,13 +25,13 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   const int SET_SPEED_NA = 255;
   const SubMaster &sm = *(s.sm);
 
-  const bool cs_alive = sm.alive("controlsState");
+  const bool cs_alive = sm.alive("carState");
   const auto cs = sm["controlsState"].getControlsState();
   const auto car_state = sm["carState"].getCarState();
 
   is_metric = s.scene.is_metric;
 
-  // Handle older routes where vCruiseCluster is not set
+  // Handle older routes where vCruise was in controlsState
   float v_cruise = car_state.getVCruiseCluster() == 0.0 ? cs.getVCruiseDEPRECATED() : car_state.getVCruiseCluster();
   setSpeed = cs_alive ? v_cruise : SET_SPEED_NA;
   is_cruise_set = setSpeed > 0 && (int)setSpeed != SET_SPEED_NA;
