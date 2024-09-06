@@ -17,7 +17,6 @@ from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import sigmoid, CLContext
 
 CALIB_LEN = 3
-REG_SCALE = 1.0
 MODEL_WIDTH = 1440
 MODEL_HEIGHT = 960
 OUTPUT_SIZE = 84 + 512
@@ -85,9 +84,9 @@ class ModelState:
 
 
 def fill_driver_state(msg, ds_result: DriverStateResult):
-  msg.faceOrientation = [x * REG_SCALE for x in ds_result.face_orientation]
+  msg.faceOrientation = [x for x in ds_result.face_orientation]
   msg.faceOrientationStd = [math.exp(x) for x in ds_result.face_orientation_std]
-  msg.facePosition = [x * REG_SCALE for x in ds_result.face_position[:2]]
+  msg.facePosition = [x for x in ds_result.face_position[:2]]
   msg.facePositionStd = [math.exp(x) for x in ds_result.face_position_std[:2]]
   msg.faceProb = sigmoid(ds_result.face_prob)
   msg.leftEyeProb = sigmoid(ds_result.left_eye_prob)
