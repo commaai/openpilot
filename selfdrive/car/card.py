@@ -155,15 +155,16 @@ class Car:
   def state_update(self) -> tuple[car.CarState, structs.RadarData | None]:
     """carState update loop, driven by can"""
 
-    # Update carState from CAN
     can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
-    CS = convert_to_capnp(self.CI.update(can_capnp_to_list(can_strs)))
+    can_data = can_capnp_to_list(can_strs)
 
+    # Update carState from CAN
+    CS = convert_to_capnp(self.CI.update(can_data))
     if self.CP.carName == 'mock':
       CS = self.mock_carstate.update(CS)
 
     # Update radar tracks from CAN
-    RD: structs.RadarData | None = self.RI.update(can_capnp_to_list(can_strs))
+    RD: structs.RadarData | None = self.RI.update(can_data)
 
     self.sm.update(0)
 
