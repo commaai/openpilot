@@ -611,7 +611,6 @@ struct RadarState @0x9a185389d6fdd05f {
 
   leadOne @3 :LeadData;
   leadTwo @4 :LeadData;
-  cumLagMs @5 :Float32;
 
   struct LeadData {
     dRel @0 :Float32;
@@ -641,6 +640,7 @@ struct RadarState @0x9a185389d6fdd05f {
   calCycleDEPRECATED @8 :Int32;
   calPercDEPRECATED @9 :Int8;
   canMonoTimesDEPRECATED @10 :List(UInt64);
+  cumLagMsDEPRECATED @5 :Float32;
 }
 
 struct LiveCalibrationData {
@@ -671,7 +671,7 @@ struct LiveCalibrationData {
   }
 }
 
-struct LiveTracks {
+struct LiveTracksDEPRECATED {
   trackId @0 :Int32;
   dRel @1 :Float32;
   yRel @2 :Float32;
@@ -2335,7 +2335,7 @@ struct Event {
     pandaStates @81 :List(PandaState);
     peripheralState @80 :PeripheralState;
     radarState @13 :RadarState;
-    liveTracks @16 :List(LiveTracks);
+    liveTracks @131 :Car.RadarData;
     sendcan @17 :List(CanData);
     liveCalibration @19 :LiveCalibrationData;
     carState @22 :Car.CarState;
@@ -2465,5 +2465,6 @@ struct Event {
     navModelDEPRECATED @104 :NavModelData;
     uiPlanDEPRECATED @106 :UiPlan;
     liveLocationKalmanDEPRECATED @72 :LiveLocationKalman;
+    liveTracksDEPRECATED @16 :List(LiveTracksDEPRECATED);
   }
 }

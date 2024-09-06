@@ -480,7 +480,7 @@ CONFIGS = [
   ProcessConfig(
     proc_name="card",
     pubs=["pandaStates", "carControl", "onroadEvents", "can"],
-    subs=["sendcan", "carState", "carParams", "carOutput"],
+    subs=["sendcan", "carState", "carParams", "carOutput", "liveTracks"],
     ignore=["logMonoTime", "carState.cumLagMs"],
     init_callback=card_fingerprint_callback,
     should_recv_callback=card_rcv_callback,
@@ -490,12 +490,11 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="radard",
-    pubs=["can", "carState", "modelV2"],
-    subs=["radarState", "liveTracks"],
-    ignore=["logMonoTime", "radarState.cumLagMs"],
+    pubs=["liveTracks", "carState", "modelV2"],
+    subs=["radarState"],
+    ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
-    should_recv_callback=MessageBasedRcvCallback("can"),
-    main_pub="can",
+    should_recv_callback=FrequencyBasedRcvCallback("modelV2"),
   ),
   ProcessConfig(
     proc_name="plannerd",

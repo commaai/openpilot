@@ -1,18 +1,15 @@
 #!/usr/bin/env python3
-import importlib
 import math
 from collections import deque
 from typing import Any
 
 import capnp
 from cereal import messaging, log, car
-from opendbc.car import structs
 from openpilot.common.numpy_fast import interp
 from openpilot.common.params import Params
-from openpilot.common.realtime import DT_CTRL, Ratekeeper, Priority, config_realtime_process
+from openpilot.common.realtime import DT_MDL, Priority, config_realtime_process
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.simple_kalman import KF1D
-from openpilot.selfdrive.pandad import can_capnp_to_list
 
 
 # Default lead acceleration decay set to 50% at 1s
@@ -194,14 +191,14 @@ def get_lead(v_ego: float, ready: bool, tracks: dict[int, Track], lead_msg: capn
 
 
 class RadarD:
-  def __init__(self, radar_ts: float, delay: int = 0):
+  def __init__(self, delay: float = 0.0):
     self.current_time = 0.0
 
     self.tracks: dict[int, Track] = {}
-    self.kalman_params = KalmanParams(radar_ts)
+    self.kalman_params = KalmanParams(DT_MDL)
 
     self.v_ego = 0.0
-    self.v_ego_hist = deque([0.0], maxlen=delay+1)
+    self.v_ego_hist = deque([0.0], maxlen=int(round(delay / DT_MDL))+1)
     self.last_v_ego_frame = -1
 
     self.radar_state: capnp._DynamicStructBuilder | None = None
@@ -209,7 +206,7 @@ class RadarD:
 
     self.ready = False
 
-  def update(self, sm: messaging.SubMaster, rr: structs.RadarData):
+  def update(self, sm: messaging.SubMaster, rr: car.RadarData):
     self.ready = sm.seen['modelV2']
     self.current_time = 1e-9*max(sm.logMonoTime.values())
 
@@ -255,26 +252,13 @@ class RadarD:
       self.radar_state.leadOne = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[0], model_v_ego, low_speed_override=True)
       self.radar_state.leadTwo = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[1], model_v_ego, low_speed_override=False)
 
-  def publish(self, pm: messaging.PubMaster, lag_ms: float):
+  def publish(self, pm: messaging.PubMaster):
     assert self.radar_state is not None
 
     radar_msg = messaging.new_message("radarState")
     radar_msg.valid = self.radar_state_valid
     radar_msg.radarState = self.radar_state
-    radar_msg.radarState.cumLagMs = lag_ms
     pm.send("radarState", radar_msg)
-
-    # publish tracks for UI debugging (keep last)
-    tracks_msg = messaging.new_message('liveTracks', len(self.tracks))
-    tracks_msg.valid = self.radar_state_valid
-    for index, tid in enumerate(sorted(self.tracks.keys())):
-      tracks_msg.liveTracks[index] = {
-        "trackId": tid,
-        "dRel": float(self.tracks[tid].dRel),
-        "yRel": float(self.tracks[tid].yRel),
-        "vRel": float(self.tracks[tid].vRel),
-      }
-    pm.send('liveTracks', tracks_msg)
 
 
 # fuses camera and radar data for best lead detection
@@ -286,31 +270,17 @@ def main() -> None:
   CP = messaging.log_from_bytes(Params().get("CarParams", block=True), car.CarParams)
   cloudlog.info("radard got CarParams")
 
-  # import the radar from the fingerprint
-  cloudlog.info("radard is importing %s", CP.carName)
-  RadarInterface = importlib.import_module(f'opendbc.car.{CP.carName}.radar_interface').RadarInterface
-
   # *** setup messaging
-  can_sock = messaging.sub_sock('can')
-  sm = messaging.SubMaster(['modelV2', 'carState'], frequency=int(1./DT_CTRL))
-  pm = messaging.PubMaster(['radarState', 'liveTracks'])
+  sm = messaging.SubMaster(['modelV2', 'carState', 'liveTracks'], poll='modelV2')
+  pm = messaging.PubMaster(['radarState'])
 
-  RI = RadarInterface(CP)
-
-  rk = Ratekeeper(1.0 / CP.radarTimeStep, print_delay_threshold=None)
-  RD = RadarD(CP.radarTimeStep, RI.delay)
+  RD = RadarD(CP.radarDelay)
 
   while 1:
-    can_strings = messaging.drain_sock_raw(can_sock, wait_for_one=True)
-    rr: structs.RadarData | None = RI.update(can_capnp_to_list(can_strings))
-    sm.update(0)
-    if rr is None:
-      continue
+    sm.update()
 
-    RD.update(sm, rr)
-    RD.publish(pm, -rk.remaining*1000.0)
-
-    rk.monitor_time()
+    RD.update(sm, sm['liveTracks'])
+    RD.publish(pm)
 
 
 if __name__ == "__main__":
