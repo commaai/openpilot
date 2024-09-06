@@ -492,7 +492,7 @@ CONFIGS = [
     proc_name="radard",
     pubs=["liveTracks", "carState", "modelV2"],
     subs=["radarState"],
-    ignore=["logMonoTime", "radarState.cumLagMs"],
+    ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
     should_recv_callback=FrequencyBasedRcvCallback("modelV2"),
   ),
