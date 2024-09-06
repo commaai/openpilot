@@ -22,7 +22,6 @@ from openpilot.common.gps import get_gps_location_service
 from opendbc.car.car_helpers import get_car_interface
 from openpilot.selfdrive.controls.lib.alertmanager import AlertManager, set_offroad_alert
 from openpilot.selfdrive.controls.lib.drive_helpers import clip_curvature, get_startup_event
-from openpilot.selfdrive.controls.lib.ldw import LaneDepartureWarning
 from openpilot.selfdrive.controls.lib.events import Events, ET
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl, MIN_LATERAL_CONTROL_SPEED
 from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
@@ -95,7 +94,7 @@ class Controls:
     self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                    'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'livePose',
                                    'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
-                                   'testJoystick'] + self.camera_packets + self.sensor_packets + self.gps_packets,
+                                   'testJoystick', 'driverAssistance'] + self.camera_packets + self.sensor_packets + self.gps_packets,
                                   ignore_alive=ignore, ignore_avg_freq=ignore+['testJoystick'], ignore_valid=['testJoystick', ],
                                   frequency=int(1/DT_CTRL))
 
@@ -127,8 +126,6 @@ class Controls:
 
     self.LoC = LongControl(self.CP)
     self.VM = VehicleModel(self.CP)
-
-    self.ldw = LaneDepartureWarning()
 
     self.LaC: LatControl
     if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
@@ -245,11 +242,9 @@ class Controls:
         self.events.add(EventName.calibrationInvalid)
 
     # Lane departure warning
-    if self.sm.valid['modelV2'] and CS.canValid:
-      self.ldw.update(self.sm.frame, self.sm['modelV2'], CS, self.CC_prev)
-      if self.is_ldw_enabled and self.sm['liveCalibration'].calStatus == log.LiveCalibrationData.Status.calibrated:
-        if self.ldw.warning:
-          self.events.add(EventName.ldw)
+    if self.is_ldw_enabled and self.sm.valid['driverAssistance']:
+      if self.sm['driverAssistance'].leftLaneDeparture or self.sm['driverAssistance'].rightLaneDeparture:
+        self.events.add(EventName.ldw)
 
     # Handle lane change
     if self.sm['modelV2'].meta.laneChangeState == LaneChangeState.preLaneChange:
@@ -606,9 +601,9 @@ class Controls:
     hudControl.rightLaneVisible = True
     hudControl.leftLaneVisible = True
 
-    if self.sm.valid['modelV2'] and CS.canValid and self.is_ldw_enabled and self.sm['liveCalibration'].calStatus == log.LiveCalibrationData.Status.calibrated:
-      hudControl.leftLaneDepart = self.ldw.left
-      hudControl.rightLaneDepart = self.ldw.right
+    if self.is_ldw_enabled and self.sm.valid['driverAssistance']:
+      hudControl.leftLaneDepart = self.sm['driverAssistance'].leftLaneDeparture
+      hudControl.rightLaneDepart = self.sm['driverAssistance'].rightLaneDeparture
 
     if self.AM.current_alert:
       hudControl.visualAlert = self.AM.current_alert.visual_alert

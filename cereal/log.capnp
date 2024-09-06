@@ -1099,7 +1099,7 @@ struct AndroidLogEntry {
 struct DriverAssistance {
   # Lane Departure Warnings
   leftLaneDeparture @0 :Bool;
-  rightLaneDeperature @1 :Bool;
+  rightLaneDeparture @1 :Bool;
 
   # Fordward Collision Warning
   forwardCollisionWarning @2 :Bool;
