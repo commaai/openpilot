@@ -57,7 +57,7 @@ class Controls:
       self.LaC = LatControlTorque(self.CP, self.CI)
 
   def update(self):
-    self.sm.update(10)
+    self.sm.update(15)
     if self.sm.updated["liveCalibration"]:
       self.pose_calibrator.feed_live_calib(self.sm['liveCalibration'])
     if self.sm.updated["livePose"]:
@@ -165,9 +165,12 @@ class Controls:
       else:
         self.steer_limited = abs(CC.actuators.steer - CO.actuatorsOutput.steer) > 1e-2
 
+    # TODO: both controlsState and carControl valids should be set by
+    #       sm.all_checks(), but this creates a circular dependency
+
     # controlsState
     dat = messaging.new_message('controlsState')
-    dat.valid = self.sm.all_checks()
+    dat.valid = CS.canValid
     cs = dat.controlsState
 
     lp = self.sm['liveParameters']
@@ -196,7 +199,7 @@ class Controls:
 
     # carControl
     cc_send = messaging.new_message('carControl')
-    cc_send.valid = self.sm.all_checks()
+    cc_send.valid = CS.canValid
     cc_send.carControl = CC
     self.pm.send('carControl', cc_send)
 
