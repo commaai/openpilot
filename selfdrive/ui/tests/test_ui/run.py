@@ -12,7 +12,7 @@ import time
 
 from cereal import messaging, log
 from msgq.visionipc import VisionIpcServer, VisionStreamType
-from cereal.messaging import SubMaster, PubMaster
+from cereal.messaging import PubMaster
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
@@ -95,6 +95,7 @@ def setup_onroad_alert(click, pm: PubMaster, text1, text2, size, status=log.Self
   cs.alertStatus = status
   cs.alertType = "test_onroad_alert"
   pm.send('selfdriveState', dat)
+  time.sleep(UI_DELAY)
 
 def setup_onroad_alert_small(click, pm: PubMaster):
   setup_onroad_alert(click, pm, 'This is a small alert message', '', log.SelfdriveState.AlertSize.small)
@@ -123,9 +124,14 @@ def setup_update_available(click, pm: PubMaster):
   setup_settings_device(click, pm)
   click(240, 216)
 
+def setup_pair_device(click, pm: PubMaster):
+  click(1950, 435)
+  click(1800, 900)
 
 CASES = {
   "homescreen": setup_homescreen,
+  "prime": setup_homescreen,
+  "pair_device": setup_pair_device,
   "settings_device": setup_settings_device,
   "onroad": setup_onroad,
   "onroad_sidebar": setup_onroad_sidebar,
@@ -152,13 +158,12 @@ class TestUI:
     sys.modules["mouseinfo"] = False
 
   def setup(self):
-    Params().put("DongleId", "123456789012345")
-    self.sm = SubMaster(["uiDebug"])
     self.pm = PubMaster(list(DATA.keys()))
-    while not self.sm.valid["uiDebug"]:
-      self.sm.update(1)
-    time.sleep(UI_DELAY) # wait a bit more for the UI to start rendering
-    self.pm.send('deviceState', DATA['deviceState'])
+    DATA['deviceState'].deviceState.networkType = log.DeviceState.NetworkType.wifi
+    for _ in range(10):
+      self.pm.send('deviceState', DATA['deviceState'])
+      DATA['deviceState'].clear_write_flag()
+      time.sleep(0.05)
     try:
       self.ui = pywinctl.getWindowsWithTitle("ui")[0]
     except Exception as e:
@@ -231,8 +236,15 @@ def create_screenshots():
 
   t = TestUI()
 
-  with OpenpilotPrefix():
-    for name, setup in CASES.items():
+  for name, setup in CASES.items():
+    with OpenpilotPrefix():
+      params = Params()
+      params.put("DongleId", "123456789012345")
+      if name == 'prime':
+        params.put('PrimeType', '1')
+      elif name == 'pair_device':
+        params.put('ApiCache_Device', '{"is_paired":0, "prime_type":-1}')
+
       t.test_ui(name, setup)
 
 if __name__ == "__main__":
