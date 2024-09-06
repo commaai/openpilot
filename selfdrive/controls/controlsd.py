@@ -5,9 +5,8 @@ from typing import SupportsFloat
 from cereal import car, log
 import cereal.messaging as messaging
 from openpilot.common.conversions import Conversions as CV
-from openpilot.common.numpy_fast import clip
 from openpilot.common.params import Params
-from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper, DT_CTRL
+from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper
 from openpilot.common.swaglog import cloudlog
 
 from opendbc.car.car_helpers import get_car_interface
@@ -168,7 +167,7 @@ class Controls:
 
     # controlsState
     dat = messaging.new_message('controlsState')
-    dat.valid = CS.canValid
+    dat.valid = self.sm.all_checks()
     cs = dat.controlsState
 
     lp = self.sm['liveParameters']
@@ -197,7 +196,7 @@ class Controls:
 
     # carControl
     cc_send = messaging.new_message('carControl')
-    cc_send.valid = CS.canValid
+    cc_send.valid = self.sm.all_checks()
     cc_send.carControl = CC
     self.pm.send('carControl', cc_send)
 

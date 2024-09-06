@@ -1,4 +1,4 @@
-from cereal import car, log
+from cereal import log
 from openpilot.common.numpy_fast import clip
 from openpilot.common.realtime import DT_CTRL
 

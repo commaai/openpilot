@@ -88,6 +88,7 @@ TIMINGS = {
   "carControl": [2.5, 0.35],
   "controlsState": [2.5, 0.35],
   "longitudinalPlan": [2.5, 0.5],
+  "driverAssistance": [2.5, 0.5],
   "roadCameraState": [2.5, 0.35],
   "driverCameraState": [2.5, 0.35],
   "modelV2": [2.5, 0.35],

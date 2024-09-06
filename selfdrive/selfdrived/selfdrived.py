@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 import os
-import math
 import time
 import threading
-from typing import SupportsFloat
 
 import cereal.messaging as messaging
 
@@ -11,15 +9,12 @@ from cereal import car, log
 from msgq.visionipc import VisionIpcClient, VisionStreamType
 
 
-from openpilot.common.conversions import Conversions as CV
 from openpilot.common.git import get_short_branch
-from openpilot.common.numpy_fast import clip
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper, DT_CTRL
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.gps import get_gps_location_service
 
-from opendbc.car.car_helpers import get_car_interface
 from openpilot.selfdrive.selfdrived.events import Events, ET
 from openpilot.selfdrive.selfdrived.state import StateMachine
 from openpilot.selfdrive.selfdrived.alertmanager import AlertManager, set_offroad_alert
@@ -452,7 +447,7 @@ class SelfdriveD:
   def publish_selfdriveState(self, CS):
     # selfdriveState
     ss_msg = messaging.new_message('selfdriveState')
-    ss_msg.valid = CS.canValid
+    ss_msg.valid = True
     ss = ss_msg.selfdriveState
     if self.AM.current_alert:
       ss.alertText1 = self.AM.current_alert.alert_text_1
