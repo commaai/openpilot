@@ -100,6 +100,10 @@ def joystick_thread(joystick):
     joystick.update()
 
 
+def main():
+  joystick_thread(Joystick())
+
+
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Publishes events from your joystick to control your car.\n' +
                                                'openpilot must be offroad before starting joystickd. This tool supports ' +
