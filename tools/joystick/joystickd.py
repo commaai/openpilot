@@ -14,7 +14,6 @@ from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 from openpilot.system.hardware import HARDWARE
 from openpilot.tools.lib.kbhit import KBHit
 
-
 JS_EXPO = 0.4
 JOYSTICK_MAX_LAT_ACCEL = 2.5
 
