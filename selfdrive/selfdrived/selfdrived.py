@@ -436,7 +436,7 @@ class SelfdriveD:
       ce_send.valid = True
       ce_send.onroadEvents = self.events.to_msg()
       self.pm.send('onroadEvents', ce_send)
-    self.events_prev = self.events.names.copy()
+      self.events_prev = self.events.names.copy()
 
   def step(self):
     CS = self.data_sample()
