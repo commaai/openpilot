@@ -343,7 +343,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.PERMANENT: NormalPermanentAlert("Joystick Mode"),
   },
 
-  EventName.controlsInitializing: {
+  EventName.selfdriveInitializing: {
     ET.NO_ENTRY: NoEntryAlert("System Initializing"),
   },
 

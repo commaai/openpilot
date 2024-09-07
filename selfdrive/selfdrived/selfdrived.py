@@ -165,7 +165,7 @@ class SelfdriveD:
 
     # Don't add any more events if not initialized
     if not self.initialized:
-      self.events.add(EventName.controlsInitializing)
+      self.events.add(EventName.selfdriveInitializing)
       return
 
     # no more events while in dashcam mode

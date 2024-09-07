@@ -34,7 +34,7 @@ def test_time_to_onroad():
         while True:
           sm.update(100)
 
-          if sm.seen['onroadEvents'] and not any(EventName.controlsInitializing == e.name for e in sm['onroadEvents']):
+          if sm.seen['onroadEvents'] and not any(EventName.selfdriveInitializing == e.name for e in sm['onroadEvents']):
             initialized = True
 
           if initialized:

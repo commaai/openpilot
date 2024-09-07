@@ -100,7 +100,7 @@ struct OnroadEvent @0x9b1657f34caf3ad3 {
     cameraFrameRate @110;
     processNotRunning @95;
     dashcamMode @96;
-    controlsInitializing @98;
+    selfdriveInitializing @98;
     usbError @99;
     roadCameraError @100;
     driverCameraError @101;
