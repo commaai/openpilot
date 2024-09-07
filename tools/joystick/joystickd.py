@@ -3,14 +3,21 @@ import os
 import argparse
 import threading
 from inputs import get_gamepad
+import math
 
-import cereal.messaging as messaging
+from cereal import messaging, car
 from openpilot.common.realtime import Ratekeeper
 from openpilot.common.numpy_fast import interp, clip
 from openpilot.common.params import Params
+from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
+from openpilot.system.hardware import HARDWARE
 from openpilot.tools.lib.kbhit import KBHit
 
+from common.realtime import DT_CTRL
+from common.swaglog import cloudlog
+
 JS_EXPO = 0.4
+JOYSTICK_MAX_LAT_ACCEL = 5
 
 
 class Keyboard:
@@ -43,12 +50,17 @@ class Joystick:
   def __init__(self):
     # This class supports a PlayStation 5 DualSense controller on the comma 3X
     # TODO: find a way to get this from API or detect gamepad/PC, perhaps "inputs" doesn't support it
-    # TODO: the mapping can also be wrong on PC depending on the driver
     self.cancel_button = 'BTN_NORTH'  # BTN_NORTH=X/triangle
-    accel_axis = 'ABS_RX'
-    steer_axis = 'ABS_Z'
-    # TODO: once the longcontrol API is finalized, we can replace this with outputting gas/brake and steering
-    self.flip_map = {'ABS_RY': accel_axis}
+    if HARDWARE.get_device_type() == 'pc':
+      accel_axis = 'ABS_Z'
+      steer_axis = 'ABS_RX'
+      # TODO: once the longcontrol API is finalized, we can replace this with outputting gas/brake and steering
+      self.flip_map = {'ABS_RZ': accel_axis}
+    else:
+      accel_axis = 'ABS_RX'
+      steer_axis = 'ABS_Z'
+      # TODO: once the longcontrol API is finalized, we can replace this with outputting gas/brake and steering
+      self.flip_map = {'ABS_RY': accel_axis}
     self.min_axis_value = {accel_axis: 0., steer_axis: 0.}
     self.max_axis_value = {accel_axis: 255., steer_axis: 255.}
     self.axes_values = {accel_axis: 0., steer_axis: 0.}
@@ -81,15 +93,47 @@ class Joystick:
 
 
 def send_thread(joystick):
-  pm = messaging.PubMaster(['testJoystick', 'carControl'])
+  params = Params()
+  cloudlog.info("controlsd is waiting for CarParams")
+  CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
+  VM = VehicleModel(CP)
+
+  sm = messaging.SubMaster(['carState', 'onroadEvents', 'liveParameters'], frequency=1. / DT_CTRL)
+  pm = messaging.PubMaster(['testJoystick', 'carControl', 'controlsState'])
 
   rk = Ratekeeper(100, print_delay_threshold=None)
   while 1:
-    dat = messaging.new_message('testJoystick')
-    dat.testJoystick.axes = [joystick.axes_values[a] for a in joystick.axes_order]
-    dat.testJoystick.buttons = [joystick.cancel]
-    pm.send('testJoystick', dat)
-    print('\n' + ', '.join(f'{name}: {round(v, 3)}' for name, v in joystick.axes_values.items()))
+    sm.update(0)
+
+    joy = messaging.new_message('testJoystick')
+    joy.testJoystick.axes = [joystick.axes_values[a] for a in joystick.axes_order]
+    joy.testJoystick.buttons = [joystick.cancel]
+    pm.send('testJoystick', joy)
+    if rk.frame % 20 == 0:
+      print('\n' + ', '.join(f'{name}: {round(v, 3)}' for name, v in joystick.axes_values.items()))
+
+    cc_msg = messaging.new_message('carControl')
+    CC = cc_msg.carControl
+    CC.enabled = True
+    CC.latActive = True
+    CC.longActive = True
+
+    actuators = CC.actuators
+    actuators.accel = 4.0 * clip(joy.testJoystick.axes[0], -1, 1)
+    actuators.steer = clip(joy.testJoystick.axes[1], -1, 1)
+
+    max_curvature = JOYSTICK_MAX_LAT_ACCEL / max(sm['carState'].vEgo ** 2, 5)
+    max_angle = math.degrees(VM.get_steer_from_curvature(max_curvature, sm['carState'].vEgo, sm['liveParameters'].roll))
+
+    actuators.steeringAngleDeg, actuators.curvature = actuators.steer * max_angle, actuators.steer * -max_curvature
+
+    pm.send('carControl', cc_msg)
+
+    cs_msg = messaging.new_message('controlsState')
+    controlsState = cs_msg.controlsState
+    controlsState.lateralControlState.init('debugState')
+    pm.send('controlsState', cs_msg)
+
     rk.keep_time()
 
 
@@ -112,9 +156,9 @@ if __name__ == '__main__':
   parser.add_argument('--keyboard', action='store_true', help='Use your keyboard instead of a joystick')
   args = parser.parse_args()
 
-  if not Params().get_bool("IsOffroad") and "ZMQ" not in os.environ:
-    print("The car must be off before running joystickd.")
-    exit()
+  # if not Params().get_bool("IsOffroad") and "ZMQ" not in os.environ:
+  #   print("The car must be off before running joystickd.")
+  #   exit()
 
   print()
   if args.keyboard:

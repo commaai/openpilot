@@ -77,7 +77,7 @@ class StateMachine:
     # DISABLED
     elif self.state == State.disabled:
       if events.contains(ET.ENABLE):
-        if events.contains(ET.NO_ENTRY):
+        if events.contains(ET.NO_ENTRY) and False:
           self.current_alert_types.append(ET.NO_ENTRY)
 
         else:
