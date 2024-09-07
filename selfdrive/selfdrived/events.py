@@ -822,12 +822,6 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.NO_ENTRY: NoEntryAlert("Low Memory: Reboot Your Device"),
   },
 
-  EventName.highCpuUsage: {
-    #ET.SOFT_DISABLE: soft_disable_alert("System Malfunction: Reboot Your Device"),
-    #ET.PERMANENT: NormalPermanentAlert("System Malfunction", "Reboot your Device"),
-    ET.NO_ENTRY: high_cpu_usage_alert,
-  },
-
   EventName.accFaulted: {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Cruise Fault: Restart the Car"),
     ET.PERMANENT: NormalPermanentAlert("Cruise Fault: Restart the car to engage"),
@@ -842,24 +836,6 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   EventName.controlsMismatch: {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Controls Mismatch"),
     ET.NO_ENTRY: NoEntryAlert("Controls Mismatch"),
-  },
-
-  EventName.roadCameraError: {
-    ET.PERMANENT: NormalPermanentAlert("Camera CRC Error - Road",
-                                       duration=1.,
-                                       creation_delay=30.),
-  },
-
-  EventName.wideRoadCameraError: {
-    ET.PERMANENT: NormalPermanentAlert("Camera CRC Error - Road Fisheye",
-                                       duration=1.,
-                                       creation_delay=30.),
-  },
-
-  EventName.driverCameraError: {
-    ET.PERMANENT: NormalPermanentAlert("Camera CRC Error - Driver",
-                                       duration=1.,
-                                       creation_delay=30.),
   },
 
   # Sometimes the USB stack on the device can get into a bad state
