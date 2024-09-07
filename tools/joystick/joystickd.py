@@ -14,8 +14,8 @@ from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 from openpilot.system.hardware import HARDWARE
 from openpilot.tools.lib.kbhit import KBHit
 
-JS_EXPO = 0.4
-JOYSTICK_MAX_LAT_ACCEL = 2.5
+EXPO = 0.4
+MAX_LAT_ACCEL = 2.5
 
 
 class Keyboard:
@@ -84,7 +84,7 @@ class Joystick:
 
       norm = -interp(event[1], [self.min_axis_value[event[0]], self.max_axis_value[event[0]]], [-1., 1.])
       norm = norm if abs(norm) > 0.03 else 0.  # center can be noisy, deadzone of 3%
-      self.axes_values[event[0]] = JS_EXPO * norm ** 3 + (1 - JS_EXPO) * norm  # less action near center for fine control
+      self.axes_values[event[0]] = EXPO * norm ** 3 + (1 - EXPO) * norm  # less action near center for fine control
     else:
       return False
     return True
@@ -120,7 +120,7 @@ def send_thread(joystick):
       actuators.accel = 4.0 * clip(joystick_axes[0], -1, 1)
 
     if CC.latActive:
-      max_curvature = JOYSTICK_MAX_LAT_ACCEL / max(sm['carState'].vEgo ** 2, 5)
+      max_curvature = MAX_LAT_ACCEL / max(sm['carState'].vEgo ** 2, 5)
       max_angle = math.degrees(VM.get_steer_from_curvature(max_curvature, sm['carState'].vEgo, sm['liveParameters'].roll))
 
       actuators.steer = clip(joystick_axes[1], -1, 1)
