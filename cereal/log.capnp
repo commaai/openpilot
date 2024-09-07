@@ -1103,6 +1103,8 @@ struct DriverAssistance {
   rightLaneDeparture @1 :Bool;
 
   # FCW, AEB, etc. will go here
+
+  emergencyBrake @2 :Bool;
 }
 
 struct LongitudinalPlan @0xe00b5b3eba12876c {
