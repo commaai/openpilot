@@ -281,6 +281,11 @@ function op_juggle() {
   op_run_command tools/plotjuggler/juggle.py $@
 }
 
+function op_rerun() {
+  op_before_cmd
+  op_run_command tools/rerun/run.sh $@
+}
+
 function op_lint() {
   op_before_cmd
   op_run_command scripts/lint/lint.sh $@
@@ -331,6 +336,7 @@ function op_default() {
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Tooling]:${NC}"
   echo -e "  ${BOLD}juggle${NC}       Run PlotJuggler"
+  echo -e "  ${BOLD}rerun${NC}        Run rerun"
   echo -e "  ${BOLD}replay${NC}       Run Replay"
   echo -e "  ${BOLD}cabana${NC}       Run Cabana"
   echo ""
@@ -377,6 +383,7 @@ function _op() {
     setup )         shift 1; op_setup "$@" ;;
     build )         shift 1; op_build "$@" ;;
     juggle )        shift 1; op_juggle "$@" ;;
+    rerun )         shift 1; op_rerun "$@" ;;
     cabana )        shift 1; op_cabana "$@" ;;
     lint )          shift 1; op_lint "$@" ;;
     test )          shift 1; op_test "$@" ;;
