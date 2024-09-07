@@ -420,11 +420,11 @@
     </message>
     <message>
         <source>Waiting to start</source>
-        <translation type="unfinished"></translation>
+        <translation>Aguardando para iniciar</translation>
     </message>
     <message>
         <source>System Unresponsive</source>
-        <translation type="unfinished"></translation>
+        <translation>Sistema sem Resposta</translation>
     </message>
 </context>
 <context>
