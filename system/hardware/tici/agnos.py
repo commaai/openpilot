@@ -90,7 +90,7 @@ def unsparsify(f: StreamingDecompressor) -> Generator[bytes, None, None]:
 
 # noop wrapper with same API as unsparsify() for non sparse images
 def noop(f: StreamingDecompressor) -> Generator[bytes, None, None]:
-  while len(chunk := f.read(1024 * 1024)) > 0:
+  while chunk := f.read(1024 * 1024):
     yield chunk
 
 
