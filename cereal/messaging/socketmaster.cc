@@ -34,7 +34,7 @@ struct SubMaster::SubMessage {
   std::string name;
   SubSocket *socket = nullptr;
   int freq = 0;
-  bool updated = false, alive = false, valid = true, ignore_alive;
+  bool updated = false, alive = false, valid = false, ignore_alive;
   uint64_t rcv_time = 0, rcv_frame = 0;
   void *allocated_msg_reader = nullptr;
   bool is_polled = false;
