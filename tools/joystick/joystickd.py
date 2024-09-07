@@ -113,6 +113,7 @@ def send_thread(joystick):
       print('\n' + ', '.join(f'{name}: {round(v, 3)}' for name, v in joystick.axes_values.items()))
 
     cc_msg = messaging.new_message('carControl')
+    cc_msg.valid = True
     CC = cc_msg.carControl
     CC.enabled = True
     CC.latActive = True
@@ -130,6 +131,7 @@ def send_thread(joystick):
     pm.send('carControl', cc_msg)
 
     cs_msg = messaging.new_message('controlsState')
+    cs_msg.valid = True
     controlsState = cs_msg.controlsState
     controlsState.lateralControlState.init('debugState')
     pm.send('controlsState', cs_msg)

@@ -259,14 +259,11 @@ class SelfdriveD:
     no_system_errors = (not has_disable_events) or (len(self.events) == num_events)
     if not self.sm.all_checks() and no_system_errors:
       if not self.sm.all_alive():
-        pass
-        # self.events.add(EventName.commIssue)
+        self.events.add(EventName.commIssue)
       elif not self.sm.all_freq_ok():
-        pass
-        # self.events.add(EventName.commIssueAvgFreq)
+        self.events.add(EventName.commIssueAvgFreq)
       else:
-        pass
-        # self.events.add(EventName.commIssue)
+        self.events.add(EventName.commIssue)
 
       logs = {
         'invalid': [s for s, valid in self.sm.valid.items() if not valid],
