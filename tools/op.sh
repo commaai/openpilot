@@ -362,8 +362,8 @@ function op_default() {
   echo "  op build -j4"
   echo "          Compile openpilot using 4 cores"
   echo ""
-  echo "  op juggle --demo"
-  echo "          Run PlotJuggler on the demo route"
+  echo "  op rerun --demo"
+  echo "          Run rerun on the demo route"
 }
 
 
