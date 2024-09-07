@@ -32,7 +32,6 @@ blacklist = [
 
   ".git/",
   ".github/",
-  ".devcontainer/",
   "Darwin/",
   ".vscode",
 
