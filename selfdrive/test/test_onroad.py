@@ -19,7 +19,7 @@ from cereal.services import SERVICE_LIST
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.timeout import Timeout
 from openpilot.common.params import Params
-from openpilot.selfdrive.controls.lib.events import EVENTS, ET
+from openpilot.selfdrive.selfdrived.events import EVENTS, ET
 from openpilot.selfdrive.test.helpers import set_params_enabled, release_only
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.hardware.hw import Paths
@@ -35,7 +35,8 @@ CPU usage budget
 MAX_TOTAL_CPU = 260.  # total for all 8 cores
 PROCS = {
   # Baseline CPU usage by process
-  "selfdrive.controls.controlsd": 32.0,
+  "selfdrive.controls.controlsd": 18.0,
+  "selfdrive.selfdrived.selfdrived": 21.0,
   "selfdrive.car.card": 30.0,
   "./loggerd": 14.0,
   "./encoderd": 17.0,
@@ -87,6 +88,7 @@ TIMINGS = {
   "carControl": [2.5, 0.35],
   "controlsState": [2.5, 0.35],
   "longitudinalPlan": [2.5, 0.5],
+  "driverAssistance": [2.5, 0.5],
   "roadCameraState": [2.5, 0.35],
   "driverCameraState": [2.5, 0.35],
   "modelV2": [2.5, 0.35],

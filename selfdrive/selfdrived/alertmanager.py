@@ -6,10 +6,10 @@ from dataclasses import dataclass
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
-from openpilot.selfdrive.controls.lib.events import Alert
+from openpilot.selfdrive.selfdrived.events import Alert
 
 
-with open(os.path.join(BASEDIR, "selfdrive/controls/lib/alerts_offroad.json")) as f:
+with open(os.path.join(BASEDIR, "selfdrive/selfdrived/alerts_offroad.json")) as f:
   OFFROAD_ALERTS = json.load(f)
 
 

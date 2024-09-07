@@ -22,7 +22,7 @@ from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
 from openpilot.selfdrive.car.cruise import VCruiseHelper
 from openpilot.selfdrive.car.car_specific import CarSpecificEvents, MockCarState
 from openpilot.selfdrive.car.helpers import convert_carControl, convert_to_capnp
-from openpilot.selfdrive.controls.lib.events import Events, ET
+from openpilot.selfdrive.selfdrived.events import Events, ET
 
 REPLAY = "REPLAY" in os.environ
 
@@ -266,7 +266,7 @@ class Car:
 
     self.state_publish(CS, RD)
 
-    initialized = (not any(e.name == EventName.controlsInitializing for e in self.sm['onroadEvents']) and
+    initialized = (not any(e.name == EventName.selfdriveInitializing for e in self.sm['onroadEvents']) and
                    self.sm.seen['onroadEvents'])
     if not self.CP.passive and initialized:
       self.controls_update(CS, self.sm['carControl'])

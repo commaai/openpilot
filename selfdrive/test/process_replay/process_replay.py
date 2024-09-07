@@ -373,7 +373,7 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
   params.put("CarParams", convert_to_capnp(CP).to_bytes())
 
 
-def controlsd_rcv_callback(msg, cfg, frame):
+def selfdrived_rcv_callback(msg, cfg, frame):
   return (frame - 1) == 0 or msg.which() == 'carState'
 
 
@@ -452,7 +452,7 @@ class FrequencyBasedRcvCallback:
     return bool(len(resp_sockets))
 
 
-def controlsd_config_callback(params, cfg, lr):
+def selfdrived_config_callback(params, cfg, lr):
   ublox = params.get_bool("UbloxAvailable")
   sub_keys = ({"gpsLocation", } if ublox else {"gpsLocationExternal", })
 
@@ -461,21 +461,32 @@ def controlsd_config_callback(params, cfg, lr):
 
 CONFIGS = [
   ProcessConfig(
-    proc_name="controlsd",
+    proc_name="selfdrived",
     pubs=[
       "carState", "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
       "longitudinalPlan", "livePose", "liveParameters", "radarState",
       "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
-      "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope", "carOutput",
-      "gpsLocationExternal", "gpsLocation", "driverAssistance"
+      "liveTorqueParameters", "accelerometer", "gyroscope", "carOutput",
+      "gpsLocationExternal", "gpsLocation", "controlsState", "carControl", "driverAssistance",
     ],
-    subs=["selfdriveState", "controlsState", "carControl", "onroadEvents"],
-    ignore=["logMonoTime", "controlsState.cumLagMs"],
-    config_callback=controlsd_config_callback,
+    subs=["selfdriveState", "onroadEvents"],
+    ignore=["logMonoTime"],
+    config_callback=selfdrived_config_callback,
     init_callback=get_car_params_callback,
-    should_recv_callback=controlsd_rcv_callback,
+    should_recv_callback=selfdrived_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
+  ),
+  ProcessConfig(
+    proc_name="controlsd",
+    pubs=["liveParameters", "liveTorqueParameters", "modelV2", "selfdriveState",
+          "liveCalibration", "livePose", "longitudinalPlan", "carState", "carOutput",
+          "driverMonitoringState", "onroadEvents", "driverAssistance"],
+    subs=["carControl", "controlsState"],
+    ignore=["logMonoTime", ],
+    init_callback=get_car_params_callback,
+    should_recv_callback=MessageBasedRcvCallback("carState"),
+    tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
     proc_name="card",

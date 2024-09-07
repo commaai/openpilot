@@ -2,7 +2,7 @@ from math import atan2
 
 from cereal import car
 import cereal.messaging as messaging
-from openpilot.selfdrive.controls.lib.events import Events
+from openpilot.selfdrive.selfdrived.events import Events
 from openpilot.common.numpy_fast import interp
 from openpilot.common.realtime import DT_DMON
 from openpilot.common.filter_simple import FirstOrderFilter

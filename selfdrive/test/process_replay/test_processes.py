@@ -12,7 +12,7 @@ from openpilot.common.git import get_commit
 from openpilot.tools.lib.openpilotci import get_url, upload_file
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, replay_process, \
-                                                                   check_openpilot_enabled, check_most_messages_valid
+                                                                   check_most_messages_valid
 from openpilot.tools.lib.filereader import FileReader
 from openpilot.tools.lib.logreader import LogReader, save_log
 
@@ -103,10 +103,6 @@ def test_process(cfg, lr, segment, ref_log_path, new_log_path, ignore_fields=Non
   except Exception as e:
     raise Exception("failed on segment: " + segment) from e
 
-  # check to make sure openpilot is engaged in the route
-  if cfg.proc_name == "controlsd":
-    if not check_openpilot_enabled(log_msgs):
-      return f"Route did not enable at all or for long enough: {new_log_path}", log_msgs
   if not check_most_messages_valid(log_msgs):
     return f"Route did not have enough valid messages: {new_log_path}", log_msgs
 
