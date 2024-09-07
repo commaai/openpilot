@@ -68,7 +68,7 @@ class Joystick:
   def update(self):
     try:
       joystick_event = get_gamepad()[0]
-    except UnpluggedError:
+    except (OSError, UnpluggedError):
       self.axes_values = {ax: 0. for ax in self.axes_values}
       return False
 
