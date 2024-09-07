@@ -1,9 +1,9 @@
 [submodule "panda"]
   path = panda
-  url = ../../commaai/panda.git
+  url = https://github.com/lukasloetkolben/panda.git
 [submodule "opendbc"]
   path = opendbc_repo
-  url = ../../commaai/opendbc.git
+  url = https://github.com/lukasloetkolben/opendbc.git
 [submodule "msgq"]
   path = msgq_repo
   url = ../../commaai/msgq.git
