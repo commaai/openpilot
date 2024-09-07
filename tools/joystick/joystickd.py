@@ -8,6 +8,7 @@ import cereal.messaging as messaging
 from openpilot.common.realtime import Ratekeeper
 from openpilot.common.numpy_fast import interp, clip
 from openpilot.common.params import Params
+from openpilot.system.hardware import HARDWARE
 from openpilot.tools.lib.kbhit import KBHit
 
 JS_EXPO = 0.4
@@ -43,12 +44,17 @@ class Joystick:
   def __init__(self):
     # This class supports a PlayStation 5 DualSense controller on the comma 3X
     # TODO: find a way to get this from API or detect gamepad/PC, perhaps "inputs" doesn't support it
-    # TODO: the mapping can also be wrong on PC depending on the driver
     self.cancel_button = 'BTN_NORTH'  # BTN_NORTH=X/triangle
-    accel_axis = 'ABS_RX'
-    steer_axis = 'ABS_Z'
-    # TODO: once the longcontrol API is finalized, we can replace this with outputting gas/brake and steering
-    self.flip_map = {'ABS_RY': accel_axis}
+    if HARDWARE.get_device_type() == 'pc':
+      accel_axis = 'ABS_Z'
+      steer_axis = 'ABS_RX'
+      # TODO: once the longcontrol API is finalized, we can replace this with outputting gas/brake and steering
+      self.flip_map = {'ABS_RZ': accel_axis}
+    else:
+      accel_axis = 'ABS_RX'
+      steer_axis = 'ABS_Z'
+      self.flip_map = {'ABS_RY': accel_axis}
+
     self.min_axis_value = {accel_axis: 0., steer_axis: 0.}
     self.max_axis_value = {accel_axis: 255., steer_axis: 255.}
     self.axes_values = {accel_axis: 0., steer_axis: 0.}
