@@ -355,21 +355,13 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.PERMANENT: startup_master_alert,
   },
 
-  # Car is recognized, but marked as dashcam only
   EventName.startupNoControl: {
     ET.PERMANENT: StartupAlert("Dashcam mode"),
     ET.NO_ENTRY: NoEntryAlert("Dashcam mode"),
   },
 
-  # Car is not recognized
   EventName.startupNoCar: {
     ET.PERMANENT: StartupAlert("Dashcam mode for unsupported car"),
-  },
-
-  EventName.startupNoFw: {
-    ET.PERMANENT: StartupAlert("Car Unrecognized",
-                               "Check comma power connections",
-                               alert_status=AlertStatus.userPrompt),
   },
 
   EventName.dashcamMode: {

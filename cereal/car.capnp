@@ -87,7 +87,6 @@ struct OnroadEvent @0x9b1657f34caf3ad3 {
     startupNoCar @76;
     startupNoControl @77;
     startupMaster @78;
-    startupNoFw @104;
     fcw @79;
     steerSaturated @80;
     belowEngageSpeed @84;
@@ -147,6 +146,7 @@ struct OnroadEvent @0x9b1657f34caf3ad3 {
     driverCameraErrorDEPRECATED @101;
     wideRoadCameraErrorDEPRECATED @102;
     highCpuUsageDEPRECATED @105;
+    startupNoFwDEPRECATED @104;
   }
 }
 

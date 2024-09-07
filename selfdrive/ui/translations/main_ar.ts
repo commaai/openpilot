@@ -389,10 +389,6 @@
         <translation>لم يكن openpilot قادراً على تحديد سيارتك. إما أن تكون سيارتك غير مدعومة أو أنه لم يتم التعرف على وحدة التحكم الإلكتروني (ECUs) فيها. يرجى تقديم طلب سحب من أجل إضافة نسخ برمجيات ثابتة إلى السيارة المناسبة. هل تحتاج إلى أي مساعدة؟ لا تتردد في التواصل مع doscord.comma.ai.</translation>
     </message>
     <message>
-        <source>openpilot was unable to identify your car. Check integrity of cables and ensure all connections are secure, particularly that the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.</source>
-        <translation>لم يتمكن openpilot من تحديد سيارتك. تحقق من سلامة الكابلات وتأكد من تأمين جميع الوصلات، لا سيما أنه قد تم إدخال طاقة الفاصلة بالكامل في منفذ OBD-II في السيارة. هل تريد أي مساعدة؟ لا تتردد في الانضمام إلى discord.comma.ai.</translation>
-    </message>
-    <message>
         <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
         <translation>لقد اكتشف openpilot تغييراً في موقع تركيب الجهاز. تأكد من تثبيت الجهاز بشكل كامل في موقعه وتثبيته بإحكام على الزجاج الأمامي.</translation>
     </message>

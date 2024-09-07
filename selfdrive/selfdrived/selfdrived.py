@@ -9,7 +9,6 @@ from cereal import car, log
 from msgq.visionipc import VisionIpcClient, VisionStreamType
 
 
-from openpilot.common.git import get_short_branch
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper, DT_CTRL
 from openpilot.common.swaglog import cloudlog
@@ -115,7 +114,7 @@ class SelfdriveD:
     self.startup_event = EventName.startup if build_metadata.openpilot.comma_remote and build_metadata.tested_channel else EventName.startupMaster
     if not car_recognized:
       self.startup_event = EventName.startupNoCar
-    elif car_recognized and not controller_available:
+    elif car_recognized and self.CP.passive:
       self.startup_event = EventName.startupNoControl
 
     if not sounds_available:
