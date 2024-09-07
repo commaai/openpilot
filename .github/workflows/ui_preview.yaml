@@ -100,12 +100,14 @@ jobs:
               composite mask.png ${{ github.workspace }}/master_ui/${A[$i]}.png composite_diff.png
               convert -delay 20 ${{ github.workspace }}/master_ui/${A[$i]}.png composite_diff.png -loop 0 ${{ github.workspace }}/pr_ui/${A[$i]}_diff.gif
 
+              mv ${{ github.workspace }}/master_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}_master_ref.png
+
               DIFF="${DIFF}<details>"
               DIFF="${DIFF}<summary>${A[$i]} : \$\${\\color{red}\\text{DIFFERENT}}\$\$</summary>"
               DIFF="${DIFF}<table>"
 
               DIFF="${DIFF}<tr>"
-              DIFF="${DIFF}  <td> master <img src=\"https://raw.githubusercontent.com/commaai/ci-artifacts/openpilot_master_ui/${A[$i]}.png\"> </td>"
+              DIFF="${DIFF}  <td> master <img src=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/${A[$i]}_master_ref.png\"> </td>"
               DIFF="${DIFF}  <td> proposed <img src=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/${A[$i]}.png\"> </td>"
               DIFF="${DIFF}</tr>"
 
