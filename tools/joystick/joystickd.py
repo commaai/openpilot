@@ -98,7 +98,7 @@ def send_thread(joystick):
   CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
   VM = VehicleModel(CP)
 
-  sm = messaging.SubMaster(['carState', 'onroadEvents', 'liveParameters'], frequency=1. / DT_CTRL)
+  sm = messaging.SubMaster(['carState', 'onroadEvents', 'liveParameters', 'selfdriveState'], frequency=1. / DT_CTRL)
   pm = messaging.PubMaster(['carControl', 'controlsState'])
 
   rk = Ratekeeper(100, print_delay_threshold=None)
@@ -112,18 +112,21 @@ def send_thread(joystick):
     cc_msg = messaging.new_message('carControl')
     cc_msg.valid = True
     CC = cc_msg.carControl
-    CC.enabled = True
-    CC.latActive = True
-    CC.longActive = True
+    CC.enabled = sm['selfdriveState'].enabled
+    CC.latActive = sm['selfdriveState'].active and not sm['carState'].steerFaultTemporary and not sm['carState'].steerFaultPermanent
+    CC.longActive = CC.enabled and not any(e.overrideLongitudinal for e in sm['onroadEvents']) and CP.openpilotLongitudinalControl
 
     actuators = CC.actuators
-    actuators.accel = 4.0 * clip(joystick_axes[0], -1, 1)
-    actuators.steer = clip(joystick_axes[1], -1, 1)
 
-    max_curvature = JOYSTICK_MAX_LAT_ACCEL / max(sm['carState'].vEgo ** 2, 5)
-    max_angle = math.degrees(VM.get_steer_from_curvature(max_curvature, sm['carState'].vEgo, sm['liveParameters'].roll))
+    if CC.longActive:
+      actuators.accel = 4.0 * clip(joystick_axes[0], -1, 1)
 
-    actuators.steeringAngleDeg, actuators.curvature = actuators.steer * max_angle, actuators.steer * -max_curvature
+    if CC.latActive:
+      max_curvature = JOYSTICK_MAX_LAT_ACCEL / max(sm['carState'].vEgo ** 2, 5)
+      max_angle = math.degrees(VM.get_steer_from_curvature(max_curvature, sm['carState'].vEgo, sm['liveParameters'].roll))
+
+      actuators.steer = clip(joystick_axes[1], -1, 1)
+      actuators.steeringAngleDeg, actuators.curvature = actuators.steer * max_angle, actuators.steer * -max_curvature
 
     pm.send('carControl', cc_msg)
 
