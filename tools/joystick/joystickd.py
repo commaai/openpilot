@@ -6,15 +6,14 @@ from inputs import get_gamepad
 import math
 
 from cereal import messaging, car
-from openpilot.common.realtime import Ratekeeper
+from openpilot.common.realtime import DT_CTRL, Ratekeeper
 from openpilot.common.numpy_fast import interp, clip
 from openpilot.common.params import Params
+from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 from openpilot.system.hardware import HARDWARE
 from openpilot.tools.lib.kbhit import KBHit
 
-from common.realtime import DT_CTRL
-from common.swaglog import cloudlog
 
 JS_EXPO = 0.4
 JOYSTICK_MAX_LAT_ACCEL = 2.5

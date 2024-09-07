@@ -29,10 +29,10 @@ def ublox(started, params, CP: car.CarParams) -> bool:
     params.put_bool("UbloxAvailable", use_ublox)
   return started and use_ublox
 
-def joystick(started, params, CP: car.CarParams) -> bool:
+def joystick(started: bool, params, CP: car.CarParams) -> bool:
   return started and params.get_bool("JoystickDebugMode")
 
-def not_joystick(started, params, CP: car.CarParams) -> bool:
+def not_joystick(started: bool, params, CP: car.CarParams) -> bool:
   return started and not params.get_bool("JoystickDebugMode")
 
 def qcomgps(started, params, CP: car.CarParams) -> bool:
