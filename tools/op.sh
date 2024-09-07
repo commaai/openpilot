@@ -336,7 +336,7 @@ function op_default() {
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Tooling]:${NC}"
   echo -e "  ${BOLD}juggle${NC}       Run PlotJuggler"
-  echo -e "  ${BOLD}rerun${NC}        Run rerun"
+  echo -e "  ${BOLD}rerun${NC}        Run Rerun"
   echo -e "  ${BOLD}replay${NC}       Run Replay"
   echo -e "  ${BOLD}cabana${NC}       Run Cabana"
   echo ""
