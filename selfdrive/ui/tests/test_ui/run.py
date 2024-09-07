@@ -46,7 +46,7 @@ def setup_onroad(click, pm: PubMaster):
     vipc_server.create_buffers(stream_type, 5, False, cam.width, cam.height)
   vipc_server.start_listener()
 
-  for packet_id in range(20):
+  for packet_id in range(30):
     for service, data in DATA.items():
       if data:
         data.clear_write_flag()
