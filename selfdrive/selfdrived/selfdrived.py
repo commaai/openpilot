@@ -9,7 +9,6 @@ from cereal import car, log
 from msgq.visionipc import VisionIpcClient, VisionStreamType
 
 
-from openpilot.common.git import get_short_branch
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper, DT_CTRL
 from openpilot.common.swaglog import cloudlog
@@ -37,23 +36,6 @@ ButtonType = car.CarState.ButtonEvent.Type
 SafetyModel = car.CarParams.SafetyModel
 
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
-CSID_MAP = {"1": EventName.roadCameraError, "2": EventName.wideRoadCameraError, "0": EventName.driverCameraError}
-
-def get_startup_event(car_recognized, controller_available, fw_seen):
-  build_metadata = get_build_metadata()
-  if build_metadata.openpilot.comma_remote and build_metadata.tested_channel:
-    event = EventName.startup
-  else:
-    event = EventName.startupMaster
-
-  if not car_recognized:
-    if fw_seen:
-      event = EventName.startupNoCar
-    else:
-      event = EventName.startupNoFw
-  elif car_recognized and not controller_available:
-    event = EventName.startupNoControl
-  return event
 
 
 class SelfdriveD:
@@ -61,7 +43,7 @@ class SelfdriveD:
     self.params = Params()
 
     # Ensure the current branch is cached, otherwise the first cycle lags
-    self.branch = get_short_branch()
+    build_metadata = get_build_metadata()
 
     cloudlog.info("selfdrived is waiting for CarParams")
     self.CP = messaging.log_from_bytes(self.params.get("CarParams", block=True), car.CarParams)
@@ -74,8 +56,6 @@ class SelfdriveD:
     self.gps_packets = [self.gps_location_service]
     self.sensor_packets = ["accelerometer", "gyroscope"]
     self.camera_packets = ["roadCameraState", "driverCameraState", "wideRoadCameraState"]
-
-    self.log_sock = messaging.sub_sock('androidLog')
 
     # TODO: de-couple selfdrived with card/conflate on carState without introducing controls mismatches
     self.car_state_sock = messaging.sub_sock('carState', timeout=20)
@@ -128,26 +108,22 @@ class SelfdriveD:
     self.personality = self.read_personality_param()
     self.recalibrating_seen = False
     self.state_machine = StateMachine()
+    self.rk = Ratekeeper(100, print_delay_threshold=None)
 
-    self.startup_event = get_startup_event(car_recognized, not self.CP.passive, len(self.CP.carFw) > 0)
+    # Determine startup event
+    self.startup_event = EventName.startup if build_metadata.openpilot.comma_remote and build_metadata.tested_channel else EventName.startupMaster
+    if not car_recognized:
+      self.startup_event = EventName.startupNoCar
+    elif car_recognized and self.CP.passive:
+      self.startup_event = EventName.startupNoControl
 
     if not sounds_available:
       self.events.add(EventName.soundsUnavailable, static=True)
     if not car_recognized:
       self.events.add(EventName.carUnrecognized, static=True)
-      if len(self.CP.carFw) > 0:
-        set_offroad_alert("Offroad_CarUnrecognized", True)
-      else:
-        set_offroad_alert("Offroad_NoFirmware", True)
+      set_offroad_alert("Offroad_CarUnrecognized", True)
     elif self.CP.passive:
       self.events.add(EventName.dashcamMode, static=True)
-
-    # selfdrived is driven by carState, expected at 100Hz
-    self.rk = Ratekeeper(100, print_delay_threshold=None)
-
-  def set_initial_state(self):
-    if REPLAY and any(ps.controlsAllowed for ps in self.sm['pandaStates']):
-        self.state_machine.state = State.enabled
 
   def update_events(self, CS):
     """Compute onroadEvents from carState"""
@@ -355,18 +331,6 @@ class SelfdriveD:
     if (planner_fcw or model_fcw) and not self.CP.notCar:
       self.events.add(EventName.fcw)
 
-    # Camera errors from the kernel
-    for m in messaging.drain_sock(self.log_sock, wait_for_one=False):
-      try:
-        msg = m.androidLog.message
-        if any(err in msg for err in ("ERROR_CRC", "ERROR_ECC", "ERROR_STREAM_UNDERFLOW", "APPLY FAILED")):
-          csid = msg.split("CSID:")[-1].split(" ")[0]
-          evt = CSID_MAP.get(csid, None)
-          if evt is not None:
-            self.events.add(evt)
-      except UnicodeDecodeError:
-        pass
-
     # TODO: fix simulator
     if not SIMULATION or REPLAY:
       # Not show in first 1.5 km to allow for driving out of garage. This event shows after 5 minutes
@@ -403,9 +367,10 @@ class SelfdriveD:
         if VisionStreamType.VISION_STREAM_WIDE_ROAD not in available_streams:
           self.sm.ignore_alive.append('wideRoadCameraState')
 
-        self.initialized = True
-        self.set_initial_state()
+        if REPLAY and any(ps.controlsAllowed for ps in self.sm['pandaStates']):
+          self.state_machine.state = State.enabled
 
+        self.initialized = True
         cloudlog.event(
           "selfdrived.initialized",
           dt=self.sm.frame*DT_CTRL,
@@ -449,19 +414,20 @@ class SelfdriveD:
     ss_msg = messaging.new_message('selfdriveState')
     ss_msg.valid = True
     ss = ss_msg.selfdriveState
-    if self.AM.current_alert:
-      ss.alertText1 = self.AM.current_alert.alert_text_1
-      ss.alertText2 = self.AM.current_alert.alert_text_2
-      ss.alertSize = self.AM.current_alert.alert_size
-      ss.alertStatus = self.AM.current_alert.alert_status
-      ss.alertType = self.AM.current_alert.alert_type
-      ss.alertSound = self.AM.current_alert.audible_alert
     ss.enabled = self.enabled
     ss.active = self.active
     ss.state = self.state_machine.state
     ss.engageable = not self.events.contains(ET.NO_ENTRY)
     ss.experimentalMode = self.experimental_mode
     ss.personality = self.personality
+
+    ss.alertText1 = self.AM.current_alert.alert_text_1
+    ss.alertText2 = self.AM.current_alert.alert_text_2
+    ss.alertSize = self.AM.current_alert.alert_size
+    ss.alertStatus = self.AM.current_alert.alert_status
+    ss.alertType = self.AM.current_alert.alert_type
+    ss.alertSound = self.AM.current_alert.audible_alert
+
     self.pm.send('selfdriveState', ss_msg)
 
     # onroadEvents - logged every second or on change
