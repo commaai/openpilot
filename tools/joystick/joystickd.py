@@ -2,7 +2,7 @@
 import os
 import argparse
 import threading
-from inputs import get_gamepad
+from inputs import UnpluggedError, get_gamepad
 import math
 
 from cereal import messaging, car
@@ -66,7 +66,12 @@ class Joystick:
     self.cancel = False
 
   def update(self):
-    joystick_event = get_gamepad()[0]
+    try:
+      joystick_event = get_gamepad()[0]
+    except UnpluggedError:
+      cloudlog.error("No joystick found")
+      return False
+
     event = (joystick_event.code, joystick_event.state)
 
     # flip left trigger to negative accel
