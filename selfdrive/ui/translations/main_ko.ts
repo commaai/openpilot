@@ -419,11 +419,11 @@
     </message>
     <message>
         <source>Waiting to start</source>
-        <translation type="unfinished"></translation>
+        <translation>시작을 기다리는중</translation>
     </message>
     <message>
         <source>System Unresponsive</source>
-        <translation type="unfinished"></translation>
+        <translation>시스템이 응답하지않습니다</translation>
     </message>
 </context>
 <context>
@@ -484,7 +484,7 @@
     </message>
     <message>
         <source>Remote snapshots</source>
-        <translation type="unfinished"></translation>
+        <translation>원격 스냅샷</translation>
     </message>
 </context>
 <context>
@@ -1036,15 +1036,15 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
-        <translation type="unfinished"></translation>
+        <translation>운전 시각화는 일부 회전을 더 잘 보여주기 위해 저속에서 도로를 향한 광각 카메라로 전환됩니다. 실험 모드 로고도 우측 상단에 표시됩니다.</translation>
     </message>
     <message>
         <source>Always-On Driver Monitoring</source>
-        <translation type="unfinished"></translation>
+        <translation>상시 운전자 모니터링</translation>
     </message>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Openpilot이 활성화되지 않은 경우에도 드라이버 모니터링을 활성화합니다.</translation>
     </message>
 </context>
 <context>
