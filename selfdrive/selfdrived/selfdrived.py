@@ -367,6 +367,9 @@ class SelfdriveD:
         if VisionStreamType.VISION_STREAM_WIDE_ROAD not in available_streams:
           self.sm.ignore_alive.append('wideRoadCameraState')
 
+        if REPLAY and any(ps.controlsAllowed for ps in self.sm['pandaStates']):
+          self.state_machine.state = State.enabled
+
         self.initialized = True
         cloudlog.event(
           "selfdrived.initialized",
