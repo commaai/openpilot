@@ -69,7 +69,7 @@ class Joystick:
     try:
       joystick_event = get_gamepad()[0]
     except UnpluggedError:
-      cloudlog.error("No joystick found")
+      self.axes_values = {ax: 0. for ax in self.axes_values}
       return False
 
     event = (joystick_event.code, joystick_event.state)
