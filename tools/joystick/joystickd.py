@@ -59,8 +59,8 @@ class Joystick:
     else:
       accel_axis = 'ABS_RX'
       steer_axis = 'ABS_Z'
-      # TODO: once the longcontrol API is finalized, we can replace this with outputting gas/brake and steering
       self.flip_map = {'ABS_RY': accel_axis}
+
     self.min_axis_value = {accel_axis: 0., steer_axis: 0.}
     self.max_axis_value = {accel_axis: 255., steer_axis: 255.}
     self.axes_values = {accel_axis: 0., steer_axis: 0.}

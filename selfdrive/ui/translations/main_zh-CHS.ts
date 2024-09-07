@@ -380,10 +380,6 @@
         <translation>openpilot 无法识别您的车辆。您的车辆可能未被支持，或是其电控单元 (ECU) 未被识别。请提交一个 Pull Request 为您的车辆添加正确的固件版本。需要帮助吗？请加入 discord.comma.ai。</translation>
     </message>
     <message>
-        <source>openpilot was unable to identify your car. Check integrity of cables and ensure all connections are secure, particularly that the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.</source>
-        <translation>openpilot 无法识别您的车辆。请检查线路是否正确安装并确保所有的连接都牢固，特别是确保 comma power 完全插入车辆的 OBD-II 接口。需要帮助吗？请加入 discord.comma.ai。</translation>
-    </message>
-    <message>
         <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
         <translation>openpilot 检测到设备的安装位置发生变化。请确保设备完全安装在支架上，并确保支架牢固地固定在挡风玻璃上。</translation>
     </message>
