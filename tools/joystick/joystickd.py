@@ -17,7 +17,7 @@ from common.realtime import DT_CTRL
 from common.swaglog import cloudlog
 
 JS_EXPO = 0.4
-JOYSTICK_MAX_LAT_ACCEL = 5
+JOYSTICK_MAX_LAT_ACCEL = 2.5
 
 
 class Keyboard:
@@ -94,21 +94,18 @@ class Joystick:
 
 def send_thread(joystick):
   params = Params()
-  cloudlog.info("controlsd is waiting for CarParams")
+  cloudlog.info("joystickd is waiting for CarParams")
   CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
   VM = VehicleModel(CP)
 
   sm = messaging.SubMaster(['carState', 'onroadEvents', 'liveParameters'], frequency=1. / DT_CTRL)
-  pm = messaging.PubMaster(['testJoystick', 'carControl', 'controlsState'])
+  pm = messaging.PubMaster(['carControl', 'controlsState'])
 
   rk = Ratekeeper(100, print_delay_threshold=None)
   while 1:
     sm.update(0)
 
-    joy = messaging.new_message('testJoystick')
-    joy.testJoystick.axes = [joystick.axes_values[a] for a in joystick.axes_order]
-    joy.testJoystick.buttons = [joystick.cancel]
-    pm.send('testJoystick', joy)
+    joystick_axes = [joystick.axes_values[a] for a in joystick.axes_order]
     if rk.frame % 20 == 0:
       print('\n' + ', '.join(f'{name}: {round(v, 3)}' for name, v in joystick.axes_values.items()))
 
@@ -120,8 +117,8 @@ def send_thread(joystick):
     CC.longActive = True
 
     actuators = CC.actuators
-    actuators.accel = 4.0 * clip(joy.testJoystick.axes[0], -1, 1)
-    actuators.steer = clip(joy.testJoystick.axes[1], -1, 1)
+    actuators.accel = 4.0 * clip(joystick_axes[0], -1, 1)
+    actuators.steer = clip(joystick_axes[1], -1, 1)
 
     max_curvature = JOYSTICK_MAX_LAT_ACCEL / max(sm['carState'].vEgo ** 2, 5)
     max_angle = math.degrees(VM.get_steer_from_curvature(max_curvature, sm['carState'].vEgo, sm['liveParameters'].roll))

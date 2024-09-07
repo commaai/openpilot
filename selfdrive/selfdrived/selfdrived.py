@@ -442,7 +442,6 @@ class SelfdriveD:
     CS = self.data_sample()
     self.update_events(CS)
     if not self.CP.passive and self.initialized:
-      # print('events123', self.events.names)
       self.enabled, self.active = self.state_machine.update(self.events)
     self.update_alerts(CS)
 
