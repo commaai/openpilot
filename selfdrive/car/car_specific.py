@@ -93,6 +93,22 @@ class CarSpecificEvents:
       if self.CP.minEnableSpeed > 0 and CS.out.vEgo < 0.001:
         events.add(EventName.manualRestart)
 
+      # Similar policy to Hyundai
+      # low speed steer alert hysteresis logic for cars with steer cut off above 6 m/s
+      if CS.out.vEgo < (self.CP.minSteerSpeed + 1.) and self.CP.minSteerSpeed > 6.:
+        self.low_speed_alert = True
+      if CS.out.vEgo > (self.CP.minSteerSpeed + 2.5) or CS.out.standstill:
+        self.low_speed_alert = False
+
+      # For cars that can forcibly disengage steering without setting a fault
+      if CS.out.vEgo > self.CP.minSteerSpeed and CC_prev.enabled and not CS.steer_on:
+        CS.steer_off_cnt += 1
+      else:
+        CS.steer_off_cnt = 0
+
+      if self.low_speed_alert:  # type: ignore[attr-defined]
+        events.add(EventName.belowSteerSpeed)
+
     elif self.CP.carName == 'toyota':
       events = self.create_common_events(CS.out, CS_prev)
 
