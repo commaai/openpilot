@@ -173,7 +173,7 @@ class Controls:
 
     # controlsState
     dat = messaging.new_message('controlsState')
-    dat.valid = CS.canValid and self.sm.all_checks(['modelV2', 'longitudinalPlan',])
+    dat.valid = CS.canValid
     cs = dat.controlsState
 
     lp = self.sm['liveParameters']
