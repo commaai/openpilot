@@ -10,33 +10,15 @@ from collections import defaultdict
 from dataclasses import dataclass, asdict
 from pathlib import Path
 
+from cereal import messaging
 from opendbc.car.structs import CarControl
-from opendbc.car.panda_runner import PandaRunner
 from opendbc.car.common.conversions import Conversions
-
-DT = 0.01  # step time (s)
+from openpilot.common.realtime import DT_CTRL, Ratekeeper
 
 # TODOs
 # - support lateral maneuvers
 # - setup: show countdown?
 
-
-class Ratekeeper:
-  def __init__(self, rate: float) -> None:
-    self.interval = 1. / rate
-    self.next_frame_time = time.monotonic() + self.interval
-
-  def keep_time(self) -> bool:
-    lagged = False
-    remaining = self.next_frame_time - time.monotonic()
-    self.next_frame_time += self.interval
-    if remaining < -0.1:
-      print(f"lagging by {-remaining * 1000:.2f} ms")
-      lagged = True
-
-    if remaining > 0:
-      time.sleep(remaining)
-    return lagged
 
 @dataclass
 class Action:
@@ -54,7 +36,7 @@ class Action:
           longControlState=self.longControlState,
         ),
       ))
-      for t in np.linspace(0, self.duration, int(self.duration/DT))
+      for t in np.linspace(0, self.duration, int(self.duration/DT_CTRL))
     ]
 
 @dataclass
@@ -159,66 +141,102 @@ def report(args, logs, fp):
   print(f"\nReport written to {output_fn}\n")
 
 def main(args):
-  with PandaRunner() as p:
-    print("\n\n")
+  sm = messaging.SubMaster(['carState', 'controlsState', 'selfdriveState', 'modelV2'], poll='modelV2')
+  pm = messaging.PubMaster(['longitudinalPlan', 'driverAssistance'])
 
-    maneuvers = MANEUVERS
-    if len(args.maneuvers):
-      maneuvers = [MANEUVERS[i-1] for i in set(args.maneuvers)]
+  maneuvers = iter(MANEUVERS)
 
-    logs = {}
-    rk = Ratekeeper(int(1./DT))
-    for i, m in enumerate(maneuvers):
-      logs[m.description] = {}
-      print(f"Running {i+1}/{len(MANEUVERS)} '{m.description}'")
-      for run in range(m.repeat):
-        print(f"- run #{run}")
-        print("- setting up, engage cruise")
-        ready_cnt = 0
-        for _ in range(int(2*60./DT)):
-          cs = p.read(strict=False)
-          cc = CarControl(
-            enabled=True,
-            longActive=True,
-            actuators=CarControl.Actuators(
-              accel=(m.initial_speed - cs.vEgo)*0.8,
-              longControlState=CarControl.Actuators.LongControlState.pid,
-            ),
-          )
-          if m.initial_speed < 0.1:
-            cc.actuators.accel = -2
-            cc.actuators.longControlState = CarControl.Actuators.LongControlState.stopping
-          p.write(cc)
+  while True:
+    sm.update()
 
-          ready = cs.cruiseState.enabled and not cs.cruiseState.standstill and ((m.initial_speed - 0.6) < cs.vEgo < (m.initial_speed + 0.6))
-          ready_cnt = (ready_cnt+1) if ready else 0
-          if ready_cnt > (2./DT):
-            break
-          rk.keep_time()
-        else:
-          print("ERROR: failed to setup")
-          continue
+    maneuver = next(maneuvers, None)
 
-        print("- executing maneuver")
-        logs[m.description][run] = defaultdict(list)
-        for t, cc in m.get_msgs():
-          cs = p.read()
-          p.write(cc)
+    if maneuver is not None:
+      pass
 
-          logs[m.description][run]["t"].append(t)
-          to_log = {"carControl": cc, "carState": cs, "carControl.actuators": cc.actuators,
-                    "carControl.cruiseControl": cc.cruiseControl, "carState.cruiseState": cs.cruiseState}
-          for k, v in to_log.items():
-            for k2, v2 in asdict(v).items():
-              logs[m.description][run][f"{k}.{k2}"].append(v2)
+    plan_send = messaging.new_message('longitudinalPlan')
+    plan_send.valid = sm.all_checks()
 
-          rk.keep_time()
+    longitudinalPlan = plan_send.longitudinalPlan
 
-  print("writing out report")
-  with open('/tmp/logs.json', 'w') as f:
-    import json
-    json.dump(logs, f, indent=2)
-  report(args, logs, p.CI.CP.carFingerprint)
+    longitudinalPlan.speeds = []
+    longitudinalPlan.accels = []
+    longitudinalPlan.jerks = []
+
+    longitudinalPlan.aTarget = 0.
+    longitudinalPlan.shouldStop = False
+    longitudinalPlan.allowBrake = True
+    longitudinalPlan.allowThrottle = True
+
+    longitudinalPlan.hasLead = True
+
+    pm.send('longitudinalPlan', plan_send)
+
+
+    assistance_send = messaging.new_message('driverAssistance')
+    assistance_send.valid = True
+    pm.send('driverAssistance', assistance_send)
+
+
+  print("\n\n")
+
+  maneuvers = MANEUVERS
+  if len(args.maneuvers):
+    maneuvers = [MANEUVERS[i-1] for i in set(args.maneuvers)]
+
+  logs = {}
+  rk = Ratekeeper(int(1./DT_CTRL))
+  for i, m in enumerate(maneuvers):
+    logs[m.description] = {}
+    print(f"Running {i+1}/{len(MANEUVERS)} '{m.description}'")
+    for run in range(m.repeat):
+      print(f"- run #{run}")
+      print("- setting up, engage cruise")
+      ready_cnt = 0
+      for _ in range(int(2*60./DT_CTRL)):
+        cs = p.read(strict=False)
+        cc = CarControl(
+          enabled=True,
+          longActive=True,
+          actuators=CarControl.Actuators(
+            accel=(m.initial_speed - cs.vEgo)*0.8,
+            longControlState=CarControl.Actuators.LongControlState.pid,
+          ),
+        )
+        if m.initial_speed < 0.1:
+          cc.actuators.accel = -2
+          cc.actuators.longControlState = CarControl.Actuators.LongControlState.stopping
+        p.write(cc)
+
+        ready = cs.cruiseState.enabled and not cs.cruiseState.standstill and ((m.initial_speed - 0.6) < cs.vEgo < (m.initial_speed + 0.6))
+        ready_cnt = (ready_cnt+1) if ready else 0
+        if ready_cnt > (2./DT_CTRL):
+          break
+        rk.keep_time()
+      else:
+        print("ERROR: failed to setup")
+        continue
+
+      print("- executing maneuver")
+      logs[m.description][run] = defaultdict(list)
+      for t, cc in m.get_msgs():
+        cs = p.read()
+        p.write(cc)
+
+        logs[m.description][run]["t"].append(t)
+        to_log = {"carControl": cc, "carState": cs, "carControl.actuators": cc.actuators,
+                  "carControl.cruiseControl": cc.cruiseControl, "carState.cruiseState": cs.cruiseState}
+        for k, v in to_log.items():
+          for k2, v2 in asdict(v).items():
+            logs[m.description][run][f"{k}.{k2}"].append(v2)
+
+        rk.keep_time()
+
+  # print("writing out report")
+  # with open('/tmp/logs.json', 'w') as f:
+  #   import json
+  #   json.dump(logs, f, indent=2)
+  # report(args, logs, p.CI.CP.carFingerprint)
 
 
 if __name__ == "__main__":
