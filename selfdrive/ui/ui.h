@@ -15,6 +15,7 @@
 #include "common/params.h"
 #include "common/timing.h"
 #include "system/hardware/hw.h"
+#include "selfdrive/ui/qt/prime_state.h"
 
 const int UI_BORDER_SIZE = 30;
 const int UI_HEADER_HEIGHT = 420;
@@ -39,17 +40,6 @@ typedef enum UIStatus {
   STATUS_OVERRIDE,
   STATUS_ENGAGED,
 } UIStatus;
-
-enum PrimeType {
-  PRIME_TYPE_UNKNOWN = -2,
-  PRIME_TYPE_UNPAIRED = -1,
-  PRIME_TYPE_NONE = 0,
-  PRIME_TYPE_MAGENTA = 1,
-  PRIME_TYPE_LITE = 2,
-  PRIME_TYPE_BLUE = 3,
-  PRIME_TYPE_MAGENTA_NEW = 4,
-  PRIME_TYPE_PURPLE = 5,
-};
 
 const QColor bg_colors [] = {
   [STATUS_DISENGAGED] = QColor(0x17, 0x33, 0x49, 0xc8),
@@ -94,10 +84,6 @@ public:
     return scene.started && (*sm)["selfdriveState"].getSelfdriveState().getEnabled();
   }
 
-  void setPrimeType(PrimeType type);
-  inline PrimeType primeType() const { return prime_type; }
-  inline bool hasPrime() const { return prime_type > PrimeType::PRIME_TYPE_NONE; }
-
   int fb_w = 0, fb_h = 0;
 
   std::unique_ptr<SubMaster> sm;
@@ -108,12 +94,11 @@ public:
   QString language;
 
   QTransform car_space_transform;
+  PrimeState *prime_state;
 
 signals:
   void uiUpdate(const UIState &s);
   void offroadTransition(bool offroad);
-  void primeChanged(bool prime);
-  void primeTypeChanged(PrimeType prime_type);
 
 private slots:
   void update();
@@ -121,7 +106,6 @@ private slots:
 private:
   QTimer *timer;
   bool started_prev = false;
-  PrimeType prime_type = PrimeType::PRIME_TYPE_UNKNOWN;
 };
 
 UIState *uiState();
