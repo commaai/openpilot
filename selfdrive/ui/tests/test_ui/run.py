@@ -169,6 +169,7 @@ class TestUI:
   def setup(self):
     self.pm = PubMaster(list(DATA.keys()))
     DATA['deviceState'].deviceState.networkType = log.DeviceState.NetworkType.wifi
+    DATA['deviceState'].deviceState.lastAthenaPingTime = 0
     for _ in range(10):
       self.pm.send('deviceState', DATA['deviceState'])
       DATA['deviceState'].clear_write_flag()
