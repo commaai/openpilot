@@ -55,6 +55,9 @@ dependencies = [
   "casadi >=3.6.6",  # 3.12 fixed in 3.6.6
   "future-fstrings",
 
+  # joystickd
+  "inputs",
+
   # these should be removed
   "psutil",
   "pycryptodome", # used in updated/casync, panda, body, and a test
@@ -96,7 +99,6 @@ dev = [
   "azure-storage-blob",
   "dictdiffer",
   "flaky",
-  "inputs",
   "lru-dict",
   "matplotlib",
   "metadrive-simulator @ https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal/metadrive_simulator-0.4.2.3-py3-none-any.whl ; (platform_machine != 'aarch64')",
