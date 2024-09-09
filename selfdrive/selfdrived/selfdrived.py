@@ -104,7 +104,7 @@ class SelfdriveD:
     self.last_functional_fan_frame = 0
     self.events_prev = []
     self.logged_comm_issue = None
-    self.not_running_prev = None
+    self.current_not_running = set()
     self.experimental_mode = False
     self.personality = self.read_personality_param()
     self.recalibrating_seen = False
@@ -232,18 +232,8 @@ class SelfdriveD:
     # All events here should at least have NO_ENTRY and SOFT_DISABLE.
     num_events = len(self.events)
 
-    not_running = {p.name for p in self.sm['managerState'].processes if not p.running and p.shouldBeRunning}
-    if self.sm.recv_frame['managerState'] and (not_running - IGNORE_PROCESSES):
-      self.events.add(EventName.processNotRunning)
-      if not_running != self.not_running_prev:
-        cloudlog.event("process_not_running", not_running=not_running, error=True)
-      self.not_running_prev = not_running
-    else:
-      if not SIMULATION and not self.rk.lagging:
-        if not self.sm.all_alive(self.camera_packets):
-          self.events.add(EventName.cameraMalfunction)
-        elif not self.sm.all_freq_ok(self.camera_packets):
-          self.events.add(EventName.cameraFrameRate)
+    self._handle_manager_state()
+
     if not REPLAY and self.rk.lagging:
       self.events.add(EventName.selfdrivedLagging)
     if len(self.sm['radarState'].radarErrors) or ((not self.rk.lagging or REPLAY) and not self.sm.all_checks(['radarState'])):
@@ -351,6 +341,23 @@ class SelfdriveD:
         self.personality = (self.personality - 1) % 3
         self.params.put_nonblocking('LongitudinalPersonality', str(self.personality))
         self.events.add(EventName.personalityChanged)
+
+  def _handle_manager_state(self):
+    if self.sm.updated['managerState']:
+      not_running = {p.name for p in self.sm['managerState'].processes if not p.running and p.shouldBeRunning}
+      if not_running.issubset(IGNORE_PROCESSES):
+        self.current_not_running.clear()
+      elif self.current_not_running != not_running:
+        cloudlog.event("process_not_running", not_running=not_running, error=True)
+        self.current_not_running = not_running
+
+    if self.current_not_running:
+      self.events.add(EventName.processNotRunning)
+    elif not SIMULATION and not self.rk.lagging:
+      if not self.sm.all_alive(self.camera_packets):
+        self.events.add(EventName.cameraMalfunction)
+      elif not self.sm.all_freq_ok(self.camera_packets):
+        self.events.add(EventName.cameraFrameRate)
 
   def data_sample(self):
     car_state = messaging.recv_one(self.car_state_sock)
