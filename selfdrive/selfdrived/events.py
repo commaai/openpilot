@@ -3,6 +3,7 @@ import bisect
 import math
 import os
 from enum import IntEnum
+from collections import defaultdict
 from collections.abc import Callable
 
 from cereal import log, car
@@ -51,7 +52,7 @@ class Events:
   def __init__(self):
     self.events: list[int] = []
     self.static_events: list[int] = []
-    self.event_counters = dict.fromkeys(EVENTS.keys(), 0)
+    self.event_counters = defaultdict(int)
     self.prev_event_set: set[int] = set()
 
   @property
