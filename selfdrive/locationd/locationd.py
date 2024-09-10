@@ -296,7 +296,7 @@ def main():
         if valid:
           t = log_mono_time * 1e-9
           res = estimator.handle_log(t, which, msg)
-          if res in [res == HandleLogResult.INPUT_INVALID, HandleLogResult.TIMING_INVALID]:
+          if res in [HandleLogResult.INPUT_INVALID, HandleLogResult.TIMING_INVALID]:
             observation_input_invalid[which] += 1
           else:
             observation_input_invalid[which] *= INPUT_INVALID_DECAY
