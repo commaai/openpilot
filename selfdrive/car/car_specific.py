@@ -104,7 +104,7 @@ class CarSpecificEvents:
       if CS.out.vEgo > self.CP.minSteerSpeed and CC_prev.enabled and not CS.steer_on: # type: ignore[attr-defined]
         CS.steer_off_cnt += 1 # type: ignore[attr-defined]
       else:
-        CS.steer_off_cnt = 0
+        CS.steer_off_cnt = 0 # type: ignore[attr-defined]
 
       if self.low_speed_alert:
         events.add(EventName.belowSteerSpeed)
