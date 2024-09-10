@@ -115,12 +115,12 @@ class PoseKalman:
   def t(self):
     return self.filter.get_filter_time()
 
-  def predict_and_observe(self, t, kind, data, obs_noise=None):
+  def predict_and_observe(self, t, kind, data, obs_noise=None, return_result=False):
     data = np.atleast_2d(data)
     if obs_noise is None:
       obs_noise = self.obs_noise[kind]
     R = self._get_R(len(data), obs_noise)
-    return self.filter.predict_and_update_batch(t, kind, data, R)
+    return self.filter.predict_and_update_batch(t, kind, data, R, return_result=return_result)
 
   def reset(self, t, x_init, P_init):
     self.filter.init_state(x_init, P_init, t)
