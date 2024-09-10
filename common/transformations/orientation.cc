@@ -7,7 +7,7 @@
 #include "common/transformations/orientation.hpp"
 #include "common/transformations/coordinates.hpp"
 
-Eigen::Quaterniond ensure_unique(Eigen::Quaterniond quat){
+Eigen::Quaterniond ensure_unique(const Eigen::Quaterniond &quat) {
   if (quat.w() > 0){
     return quat;
   } else {
@@ -15,7 +15,7 @@ Eigen::Quaterniond ensure_unique(Eigen::Quaterniond quat){
   }
 }
 
-Eigen::Quaterniond euler2quat(Eigen::Vector3d euler){
+Eigen::Quaterniond euler2quat(const Eigen::Vector3d &euler) {
   Eigen::Quaterniond q;
 
   q = Eigen::AngleAxisd(euler(2), Eigen::Vector3d::UnitZ())
@@ -25,7 +25,7 @@ Eigen::Quaterniond euler2quat(Eigen::Vector3d euler){
 }
 
 
-Eigen::Vector3d quat2euler(Eigen::Quaterniond quat){
+Eigen::Vector3d quat2euler(const Eigen::Quaterniond &quat) {
   // TODO: switch to eigen implementation if the range of the Euler angles doesn't matter anymore
   // Eigen::Vector3d euler = quat.toRotationMatrix().eulerAngles(2, 1, 0);
   // return {euler(2), euler(1), euler(0)};
@@ -36,34 +36,34 @@ Eigen::Vector3d quat2euler(Eigen::Quaterniond quat){
   return {gamma, theta, psi};
 }
 
-Eigen::Matrix3d quat2rot(Eigen::Quaterniond quat){
+Eigen::Matrix3d quat2rot(const Eigen::Quaterniond &quat) {
   return quat.toRotationMatrix();
 }
 
-Eigen::Quaterniond rot2quat(const Eigen::Matrix3d &rot){
+Eigen::Quaterniond rot2quat(const Eigen::Matrix3d &rot) {
   return ensure_unique(Eigen::Quaterniond(rot));
 }
 
-Eigen::Matrix3d euler2rot(Eigen::Vector3d euler){
+Eigen::Matrix3d euler2rot(const Eigen::Vector3d &euler) {
   return quat2rot(euler2quat(euler));
 }
 
-Eigen::Vector3d rot2euler(const Eigen::Matrix3d &rot){
+Eigen::Vector3d rot2euler(const Eigen::Matrix3d &rot) {
   return quat2euler(rot2quat(rot));
 }
 
-Eigen::Matrix3d rot_matrix(double roll, double pitch, double yaw){
+Eigen::Matrix3d rot_matrix(double roll, double pitch, double yaw) {
   return euler2rot({roll, pitch, yaw});
 }
 
-Eigen::Matrix3d rot(Eigen::Vector3d axis, double angle){
+Eigen::Matrix3d rot(const Eigen::Vector3d &axis, double angle) {
   Eigen::Quaterniond q;
   q = Eigen::AngleAxisd(angle, axis);
   return q.toRotationMatrix();
 }
 
 
-Eigen::Vector3d ecef_euler_from_ned(ECEF ecef_init, Eigen::Vector3d ned_pose) {
+Eigen::Vector3d ecef_euler_from_ned(const ECEF &ecef_init, const Eigen::Vector3d &ned_pose) {
   /*
     Using Rotations to Build Aerospace Coordinate Systems
     Don Koks
@@ -103,7 +103,7 @@ Eigen::Vector3d ecef_euler_from_ned(ECEF ecef_init, Eigen::Vector3d ned_pose) {
   return {phi, theta, psi};
 }
 
-Eigen::Vector3d ned_euler_from_ecef(ECEF ecef_init, Eigen::Vector3d ecef_pose){
+Eigen::Vector3d ned_euler_from_ecef(const ECEF &ecef_init, const Eigen::Vector3d &ecef_pose) {
   /*
     Using Rotations to Build Aerospace Coordinate Systems
     Don Koks

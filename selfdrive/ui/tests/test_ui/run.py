@@ -77,6 +77,14 @@ def setup_body(click, pm: PubMaster):
   DATA['carState'].carState.fuelGauge = 50.0
   setup_onroad(click, pm)
 
+def setup_keyboard(click, pm: PubMaster):
+  setup_settings_device(click, pm)
+  click(250, 575)
+  click(2020, 218)
+  click(1830, 80)
+  click(2035, 808)
+  click(90, 480)
+
 def setup_driver_camera(click, pm: PubMaster):
   setup_settings_device(click, pm)
   click(1950, 435)
@@ -143,7 +151,8 @@ CASES = {
   "driver_camera": setup_driver_camera,
   "body": setup_body,
   "offroad_alert": setup_offroad_alert,
-  "update_available": setup_update_available
+  "update_available": setup_update_available,
+  "keyboard": setup_keyboard
 }
 
 TEST_DIR = pathlib.Path(__file__).parent
@@ -160,6 +169,7 @@ class TestUI:
   def setup(self):
     self.pm = PubMaster(list(DATA.keys()))
     DATA['deviceState'].deviceState.networkType = log.DeviceState.NetworkType.wifi
+    DATA['deviceState'].deviceState.lastAthenaPingTime = 0
     for _ in range(10):
       self.pm.send('deviceState', DATA['deviceState'])
       DATA['deviceState'].clear_write_flag()

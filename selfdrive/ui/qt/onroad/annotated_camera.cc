@@ -10,7 +10,8 @@
 #include "selfdrive/ui/qt/util.h"
 
 // Window that shows camera view and variety of info drawn on top
-AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraWidget("camerad", type, true, parent) {
+AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget *parent)
+    : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraWidget("camerad", type, parent) {
   pm = std::make_unique<PubMaster>(std::vector<const char*>{"uiDebug"});
 
   main_layout = new QVBoxLayout(this);
@@ -125,22 +126,54 @@ void AnnotatedCameraWidget::initializeGL() {
   setBackgroundColor(bg_colors[STATUS_DISENGAGED]);
 }
 
-void AnnotatedCameraWidget::updateFrameMat() {
-  CameraWidget::updateFrameMat();
-  UIState *s = uiState();
-  int w = width(), h = height();
+mat4 AnnotatedCameraWidget::calcFrameMatrix() {
+  // Project point at "infinity" to compute x and y offsets
+  // to ensure this ends up in the middle of the screen
+  // for narrow come and a little lower for wide cam.
+  // TODO: use proper perspective transform?
 
-  s->fb_w = w;
-  s->fb_h = h;
+  // Select intrinsic matrix and calibration based on camera type
+  auto *s = uiState();
+  bool wide_cam = active_stream_type == VISION_STREAM_WIDE_ROAD;
+  const auto &intrinsic_matrix = wide_cam ? ECAM_INTRINSIC_MATRIX : FCAM_INTRINSIC_MATRIX;
+  const auto &calibration = wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib;
+
+   // Compute the calibration transformation matrix
+  const auto calib_transform = intrinsic_matrix * calibration;
+
+  float zoom = wide_cam ? 2.0 : 1.1;
+  Eigen::Vector3f inf(1000., 0., 0.);
+  auto Kep = calib_transform * inf;
+
+  int w = width(), h = height();
+  float center_x = intrinsic_matrix(0, 2);
+  float center_y = intrinsic_matrix(1, 2);
+
+  float max_x_offset = center_x * zoom - w / 2 - 5;
+  float max_y_offset = center_y * zoom - h / 2 - 5;
+  float x_offset = std::clamp<float>((Kep.x() / Kep.z() - center_x) * zoom, -max_x_offset, max_x_offset);
+  float y_offset = std::clamp<float>((Kep.y() / Kep.z() - center_y) * zoom, -max_y_offset, max_y_offset);
 
   // Apply transformation such that video pixel coordinates match video
   // 1) Put (0, 0) in the middle of the video
   // 2) Apply same scaling as video
   // 3) Put (0, 0) in top left corner of video
-  s->car_space_transform.reset();
-  s->car_space_transform.translate(w / 2 - x_offset, h / 2 - y_offset)
-      .scale(zoom, zoom)
-      .translate(-intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
+  Eigen::Matrix3f video_transform =(Eigen::Matrix3f() <<
+    zoom, 0.0f, (w / 2 - x_offset) - (center_x * zoom),
+    0.0f, zoom, (h / 2 - y_offset) - (center_y * zoom),
+    0.0f, 0.0f, 1.0f).finished();
+
+  s->car_space_transform = video_transform * calib_transform;
+  s->clip_region = rect().adjusted(-500, -500, 500, 500);
+
+  float zx = zoom * 2 * center_x / w;
+  float zy = zoom * 2 * center_y / h;
+  return mat4{{
+    zx, 0.0, 0.0, -x_offset / w * 2,
+    0.0, zy, 0.0, y_offset / h * 2,
+    0.0, 0.0, 1.0, 0.0,
+    0.0, 0.0, 0.0, 1.0,
+  }};
 }
 
 void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
@@ -271,18 +304,8 @@ void AnnotatedCameraWidget::paintGL() {
         wide_cam_requested = false;
       }
       wide_cam_requested = wide_cam_requested && sm["selfdriveState"].getSelfdriveState().getExperimentalMode();
-      // for replay of old routes, never go to widecam
-      wide_cam_requested = wide_cam_requested && s->scene.calibration_wide_valid;
     }
     CameraWidget::setStreamType(wide_cam_requested ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
-
-    s->scene.wide_cam = CameraWidget::getStreamType() == VISION_STREAM_WIDE_ROAD;
-    if (s->scene.calibration_valid) {
-      auto calib = s->scene.wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib;
-      CameraWidget::updateCalibration(calib);
-    } else {
-      CameraWidget::updateCalibration(DEFAULT_CALIBRATION);
-    }
     CameraWidget::setFrameId(model.getFrameId());
     CameraWidget::paintGL();
   }

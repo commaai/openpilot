@@ -174,7 +174,7 @@ class SubMaster:
 
       self.data[s] = getattr(data.as_reader(), s)
       self.logMonoTime[s] = 0
-      self.valid[s] = True  # FIXME: this should default to False
+      self.valid[s] = False
       self.freq_tracker[s] = FrequencyTracker(SERVICE_LIST[s].frequency, self.update_freq, s == poll)
 
   def __getitem__(self, s: str) -> capnp.lib.capnp._DynamicStructReader:
