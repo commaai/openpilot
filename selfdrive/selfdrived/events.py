@@ -388,6 +388,15 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
                                        priority=Priority.LOWEST),
   },
 
+  EventName.aeb: {
+    ET.PERMANENT: Alert(
+      "BRAKE!",
+      "Emergency Braking: Risk of Collision",
+      AlertStatus.critical, AlertSize.full,
+      Priority.HIGHEST, VisualAlert.fcw, AudibleAlert.none, 2.),
+    ET.NO_ENTRY: NoEntryAlert("AEB: Risk of Collision"),
+  },
+
   EventName.stockAeb: {
     ET.PERMANENT: Alert(
       "BRAKE!",
