@@ -101,12 +101,12 @@ class CarSpecificEvents:
         self.low_speed_alert = False
 
       # For cars that can forcibly disengage steering without setting a fault
-      if CS.out.vEgo > self.CP.minSteerSpeed and CC_prev.enabled and not CS.steer_on:
-        CS.steer_off_cnt += 1
+      if CS.out.vEgo > self.CP.minSteerSpeed and CC_prev.enabled and not CS.steer_on: # type: ignore[attr-defined]
+        CS.steer_off_cnt += 1 # type: ignore[attr-defined]
       else:
         CS.steer_off_cnt = 0
 
-      if self.low_speed_alert:  # type: ignore[attr-defined]
+      if self.low_speed_alert:
         events.add(EventName.belowSteerSpeed)
 
     elif self.CP.carName == 'toyota':
