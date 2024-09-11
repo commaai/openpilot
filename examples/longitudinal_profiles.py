@@ -80,6 +80,10 @@ class Maneuver:
   def finished(self):
     return self._finished
 
+  @property
+  def active(self):
+    return self._active
+
 
 MANEUVERS = [
   Maneuver(
@@ -176,7 +180,7 @@ def main():
   CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
 
   sm = messaging.SubMaster(['carState', 'controlsState', 'selfdriveState', 'modelV2'], poll='modelV2')
-  pm = messaging.PubMaster(['longitudinalPlan', 'driverAssistance'])
+  pm = messaging.PubMaster(['longitudinalPlan', 'driverAssistance', 'alertDebug'])
 
   maneuvers = iter(MANEUVERS)
   maneuver = None
@@ -190,6 +194,9 @@ def main():
     if maneuver is None:
       print('We are done!')
 
+    alert_msg = messaging.new_message('alertDebug')
+    alert_msg.valid = True
+
     plan_send = messaging.new_message('longitudinalPlan')
     plan_send.valid = sm.all_checks()
 
@@ -199,6 +206,12 @@ def main():
 
     if maneuver is not None:
       accel = maneuver.get_accel(cs.vEgo, cs.cruiseState.enabled, cs.cruiseState.standstill)
+
+      if maneuver.active:
+        alert_msg.alertDebug.alertText1 = 'Maneuver: Active'
+      else:
+        alert_msg.alertDebug.alertText1 = f'Reaching Target Speed: {maneuver.initial_speed * Conversions.MS_TO_MPH:0.2f} mph'
+      alert_msg.alertDebug.alertText2 = f'Requesting {accel:0.2f} m/s^2'
 
     longitudinalPlan.aTarget = accel
     longitudinalPlan.shouldStop = cs.vEgo < CP.vEgoStopping and accel < 0  # should_stop
@@ -215,6 +228,7 @@ def main():
 
     print('finished?', maneuver is not None and maneuver.finished)
     print('aTarget:', longitudinalPlan.aTarget)
+    print('shouldStop:', longitudinalPlan.shouldStop)
 
     if maneuver is not None and maneuver.finished:
       maneuver = None

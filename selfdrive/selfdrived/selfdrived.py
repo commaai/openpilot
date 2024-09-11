@@ -27,6 +27,10 @@ TESTING_CLOSET = "TESTING_CLOSET" in os.environ
 IGNORE_PROCESSES = {"loggerd", "encoderd", "statsd"}
 LONGITUDINAL_PERSONALITY_MAP = {v: k for k, v in log.LongitudinalPersonality.schema.enumerants.items()}
 
+AlertSize = log.SelfdriveState.AlertSize
+AlertStatus = log.SelfdriveState.AlertStatus
+AudibleAlert = car.CarControl.HUDControl.AudibleAlert
+
 ThermalStatus = log.DeviceState.ThermalStatus
 State = log.SelfdriveState.OpenpilotState
 PandaType = log.PandaState.PandaType
@@ -61,7 +65,7 @@ class SelfdriveD:
     # TODO: de-couple selfdrived with card/conflate on carState without introducing controls mismatches
     self.car_state_sock = messaging.sub_sock('carState', timeout=20)
 
-    ignore = self.sensor_packets + self.gps_packets
+    ignore = self.sensor_packets + self.gps_packets + ['debugAlert']
     if SIMULATION:
       ignore += ['driverCameraState', 'managerState']
     if REPLAY:
@@ -70,7 +74,7 @@ class SelfdriveD:
     self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                    'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'livePose',
                                    'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
-                                   'controlsState', 'carControl', 'driverAssistance'] + \
+                                   'controlsState', 'carControl', 'driverAssistance', 'alertDebug'] + \
                                    self.camera_packets + self.sensor_packets + self.gps_packets,
                                   ignore_alive=ignore, ignore_avg_freq=ignore+['radarState',],
                                   ignore_valid=ignore, frequency=int(1/DT_CTRL))
@@ -430,6 +434,14 @@ class SelfdriveD:
     ss.alertStatus = self.AM.current_alert.alert_status
     ss.alertType = self.AM.current_alert.alert_type
     ss.alertSound = self.AM.current_alert.audible_alert
+
+    if self.sm['alertDebug'].alertText1 != '':
+      ss.alertText1 = self.sm['alertDebug'].alertText1
+      ss.alertText2 = self.sm['alertDebug'].alertText2
+      ss.alertSize = AlertSize.mid
+      ss.alertStatus = AlertStatus.normal
+      ss.alertType = ''
+      ss.alertSound = AudibleAlert.none
 
     self.pm.send('selfdriveState', ss_msg)
 

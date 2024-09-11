@@ -2304,6 +2304,11 @@ struct EncodeData {
   height @5 :UInt32;
 }
 
+struct DebugAlert {
+  alertText1 @0 :Text;
+  alertText2 @1 :Text;
+}
+
 struct UserFlag {
 }
 
@@ -2411,7 +2416,7 @@ struct Event {
     driverEncodeData @87 :EncodeData;
     wideRoadEncodeData @88 :EncodeData;
     qRoadEncodeData @89 :EncodeData;
-    # debugAlert @104 :DebugAlert;
+    alertDebug @133 :DebugAlert;
 
     livestreamRoadEncodeData @120 :EncodeData;
     livestreamWideRoadEncodeData @121 :EncodeData;
