@@ -13,7 +13,7 @@ from pathlib import Path
 from cereal import messaging, car
 from opendbc.car.structs import CarControl
 from opendbc.car.common.conversions import Conversions
-from openpilot.common.realtime import DT_CTRL, Ratekeeper
+from openpilot.common.realtime import DT_CTRL, DT_MDL, Ratekeeper
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N
@@ -70,25 +70,25 @@ MANEUVERS = [
   # ),
   Maneuver(
     "brake step response: -1m/ss from 20mph",
-    [Action(0, 2), Action(-1, 3)],
+    [Action(-1, 3)],
     repeat=3,
     initial_speed=20. * Conversions.MPH_TO_MS,
   ),
   Maneuver(
     "brake step response: -4m/ss from 20mph",
-    [Action(0, 2), Action(-4, 3)],
+    [Action(-4, 3)],
     repeat=3,
     initial_speed=20. * Conversions.MPH_TO_MS,
   ),
   Maneuver(
     "gas step response: +1m/ss from 20mph",
-    [Action(0, 2), Action(1, 3)],
+    [Action(1, 3)],
     repeat=3,
     initial_speed=20. * Conversions.MPH_TO_MS,
   ),
   Maneuver(
     "gas step response: +4m/ss from 20mph",
-    [Action(0, 2), Action(4, 3)],
+    [Action(4, 3)],
     repeat=3,
     initial_speed=20. * Conversions.MPH_TO_MS,
   ),
@@ -156,7 +156,9 @@ def main():
 
   maneuvers = iter(MANEUVERS)
   maneuver = None
+  ready_cnt = 0
   repeat = 0
+  maneuver_active = False
 
   while True:
     sm.update()
@@ -166,7 +168,7 @@ def main():
 
     if maneuver is None:
       print('We are done!')
-    print(maneuver)
+    # print(maneuver)
 
     if maneuver is not None:
       pass
@@ -177,17 +179,39 @@ def main():
     longitudinalPlan = plan_send.longitudinalPlan
 
     if maneuver is not None:
+      # desired_
+
       v_ego = sm['carState'].vEgo
-      diff = maneuver.initial_speed - v_ego
-      longitudinalPlan.speeds = [(v_ego + min(i / (CONTROL_N - 1), 1) * diff) for i in range(CONTROL_N)]
-      longitudinalPlan.accels = [(maneuver.initial_speed - sm['carState'].vEgo) * 0.8] * CONTROL_N
-      longitudinalPlan.jerks = [0] * CONTROL_N
-      print('v_ego', sm['carState'].vEgo)
-      print('speeds:', longitudinalPlan.speeds)
-      print('accels:', longitudinalPlan.accels)
+      cs = sm['carState']
+
+      ready = abs(v_ego - maneuver.initial_speed) < 0.4 and cs.cruiseState.enabled and not cs.cruiseState.standstill
+      ready_cnt = (ready_cnt + 1) if ready else 0
+      if ready_cnt > (2. / DT_MDL):
+        print('ready!!!')
+        maneuver_active = True
+
+      if maneuver_active:
+        accel = maneuver.actions[0].accel
+        diff = v_ego *  - v_ego
+        # longitudinalPlan.speeds = [(v_ego + min(i / (CONTROL_N - 1), 1) * diff) for i in range(CONTROL_N)]
+        longitudinalPlan.speeds = [v_ego + accel for i in range(CONTROL_N)]
+        longitudinalPlan.accels = [accel] * CONTROL_N
+        longitudinalPlan.jerks = [0] * CONTROL_N
+        print('v_ego', sm['carState'].vEgo)
+        print('speeds:', longitudinalPlan.speeds)
+        print('accels:', longitudinalPlan.accels)
+      else:
+        accel = (maneuver.initial_speed - cs.vEgo)
+        diff = maneuver.initial_speed - v_ego
+        longitudinalPlan.speeds = [(v_ego + min(i / (CONTROL_N - 1), 1) * diff) for i in range(CONTROL_N)]
+        longitudinalPlan.accels = [accel] * CONTROL_N
+        longitudinalPlan.jerks = [0] * CONTROL_N
+        # print('v_ego', sm['carState'].vEgo)
+        # print('speeds:', longitudinalPlan.speeds)
+        # print('accels:', longitudinalPlan.accels)
 
     a_target, should_stop = get_accel_from_plan(CP, longitudinalPlan.speeds, longitudinalPlan.accels)
-    longitudinalPlan.aTarget = a_target
+    longitudinalPlan.aTarget = accel
     longitudinalPlan.shouldStop = should_stop
     print('aTarget:', longitudinalPlan.aTarget)
     longitudinalPlan.allowBrake = True
