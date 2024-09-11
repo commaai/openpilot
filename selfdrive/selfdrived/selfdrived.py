@@ -435,7 +435,8 @@ class SelfdriveD:
     ss.alertType = self.AM.current_alert.alert_type
     ss.alertSound = self.AM.current_alert.audible_alert
 
-    if self.sm['alertDebug'].alertText1 != '':
+    # TODO: all very hacky
+    if self.sm['alertDebug'].alertText1 != '' and self.sm.frame - self.sm.recv_frame['alertDebug'] < 100:
       ss.alertText1 = self.sm['alertDebug'].alertText1
       ss.alertText2 = self.sm['alertDebug'].alertText2
       ss.alertSize = AlertSize.mid

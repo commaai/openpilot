@@ -2,7 +2,8 @@
 from dataclasses import dataclass
 
 from cereal import messaging, car
-from opendbc.car.common.conversions import Conversions
+from opendbc.car.common.conversions import Conversions as CV
+from openpilot.common.numpy_fast import clip
 from openpilot.common.realtime import DT_MDL
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
@@ -36,7 +37,7 @@ class Maneuver:
       self._active = True
 
     if not self._active:
-      return self.initial_speed - v_ego
+      return clip(self.initial_speed - v_ego, -2., 2.)
 
     action = self.actions[self._action_index]
 
@@ -84,25 +85,25 @@ MANEUVERS = [
     "brake step response: -1m/ss from 20mph",
     [Action(-1, 3)],
     repeat=2,
-    initial_speed=20. * Conversions.MPH_TO_MS,
+    initial_speed=20. * CV.MPH_TO_MS,
   ),
   Maneuver(
     "brake step response: -4m/ss from 20mph",
     [Action(-4, 3)],
     repeat=2,
-    initial_speed=20. * Conversions.MPH_TO_MS,
+    initial_speed=20. * CV.MPH_TO_MS,
   ),
   Maneuver(
     "gas step response: +1m/ss from 20mph",
     [Action(1, 3)],
     repeat=2,
-    initial_speed=20. * Conversions.MPH_TO_MS,
+    initial_speed=20. * CV.MPH_TO_MS,
   ),
   Maneuver(
     "gas step response: +4m/ss from 20mph",
     [Action(4, 3)],
     repeat=2,
-    initial_speed=20. * Conversions.MPH_TO_MS,
+    initial_speed=20. * CV.MPH_TO_MS,
   ),
 ]
 
@@ -136,19 +137,20 @@ def main():
     longitudinalPlan = plan_send.longitudinalPlan
     accel = 0
     cs = sm['carState']
+    v_ego = max(cs.vEgo, 0)
 
     if maneuver is not None:
-      accel = maneuver.get_accel(cs.vEgo, cs.cruiseState.enabled, cs.cruiseState.standstill)
+      accel = maneuver.get_accel(v_ego, cs.cruiseState.enabled, cs.cruiseState.standstill)
 
       if maneuver.active:
         alert_msg.alertDebug.alertText1 = 'Maneuver: Active'
       else:
-        alert_msg.alertDebug.alertText1 = f'Reaching Speed: {maneuver.initial_speed * Conversions.MS_TO_MPH:0.2f} mph'
+        alert_msg.alertDebug.alertText1 = f'Reaching Speed: {maneuver.initial_speed * CV.MS_TO_MPH:0.2f} mph'
       alert_msg.alertDebug.alertText2 = f'Requesting {accel:0.2f} m/s^2'
     pm.send('alertDebug', alert_msg)
 
     longitudinalPlan.aTarget = accel
-    longitudinalPlan.shouldStop = cs.vEgo < CP.vEgoStopping and accel < 0
+    longitudinalPlan.shouldStop = v_ego < CP.vEgoStopping and accel < 1e-2
 
     longitudinalPlan.allowBrake = True
     longitudinalPlan.allowThrottle = True
