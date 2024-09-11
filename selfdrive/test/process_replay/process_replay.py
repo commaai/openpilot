@@ -485,7 +485,7 @@ CONFIGS = [
     subs=["carControl", "controlsState"],
     ignore=["logMonoTime", ],
     init_callback=get_car_params_callback,
-    should_recv_callback=MessageBasedRcvCallback("carState"),
+    should_recv_callback=MessageBasedRcvCallback("selfdriveState"),
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
