@@ -68,6 +68,7 @@ DriverViewDialog::DriverViewDialog(QWidget *parent) : DialogBase(parent) {
   device()->resetInteractiveTimeout(60);
 
   QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(0, 0, 0, 0);
   auto camera = new DriverViewWindow(this);
   main_layout->addWidget(camera);
   QObject::connect(camera, &DriverViewWindow::clicked, this, &DialogBase::accept);
