@@ -30,7 +30,7 @@ class Maneuver:
   _repeated: int = 0
 
   def get_accel(self, v_ego: float, enabled: bool, standstill: bool) -> float:
-    ready = abs(v_ego - self.initial_speed) < 0.4 and enabled and not standstill
+    ready = abs(v_ego - self.initial_speed) < 0.3 and enabled and not standstill
     self._ready_cnt = (self._ready_cnt + 1) if ready else 0
 
     if self._ready_cnt > (3. / DT_MDL):
