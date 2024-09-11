@@ -143,7 +143,7 @@ def main():
       if maneuver.active:
         alert_msg.alertDebug.alertText1 = 'Maneuver: Active'
       else:
-        alert_msg.alertDebug.alertText1 = f'Reaching Target Speed: {maneuver.initial_speed * Conversions.MS_TO_MPH:0.2f} mph'
+        alert_msg.alertDebug.alertText1 = f'Reaching Speed: {maneuver.initial_speed * Conversions.MS_TO_MPH:0.2f} mph'
       alert_msg.alertDebug.alertText2 = f'Requesting {accel:0.2f} m/s^2'
     pm.send('alertDebug', alert_msg)
 
