@@ -21,6 +21,7 @@ static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, 
   auto transformed = s->car_space_transform * input;
   *out = QPointF(transformed.x() / transformed.z(), transformed.y() / transformed.z());
   return s->clip_region.contains(*out);
+
 }
 
 int get_path_length_idx(const cereal::XYZTData::Reader &line, const float path_height) {
