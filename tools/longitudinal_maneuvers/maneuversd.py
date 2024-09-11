@@ -145,6 +145,7 @@ def main():
       else:
         alert_msg.alertDebug.alertText1 = f'Reaching Target Speed: {maneuver.initial_speed * Conversions.MS_TO_MPH:0.2f} mph'
       alert_msg.alertDebug.alertText2 = f'Requesting {accel:0.2f} m/s^2'
+    pm.send('alertDebug', alert_msg)
 
     longitudinalPlan.aTarget = accel
     longitudinalPlan.shouldStop = cs.vEgo < CP.vEgoStopping and accel < 0  # should_stop
