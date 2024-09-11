@@ -66,7 +66,4 @@ signals:
 private:
   PairingPopup *popup;
   QStackedWidget *mainLayout;
-
-private slots:
-  void replyFinished(const QString &response, bool success);
 };
