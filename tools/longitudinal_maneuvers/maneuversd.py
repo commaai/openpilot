@@ -143,10 +143,10 @@ def main():
       accel = maneuver.get_accel(v_ego, cs.cruiseState.enabled, cs.cruiseState.standstill)
 
       if maneuver.active:
-        alert_msg.alertDebug.alertText1 = 'Maneuver: Active'
+        alert_msg.alertDebug.alertText1 = f'Maneuver Active: {accel:0.2f} m/s^2'
       else:
         alert_msg.alertDebug.alertText1 = f'Reaching Speed: {maneuver.initial_speed * CV.MS_TO_MPH:0.2f} mph'
-      alert_msg.alertDebug.alertText2 = f'Requesting {accel:0.2f} m/s^2'
+      alert_msg.alertDebug.alertText2 = f'{maneuver.description}'
     pm.send('alertDebug', alert_msg)
 
     longitudinalPlan.aTarget = accel
