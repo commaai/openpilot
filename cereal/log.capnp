@@ -2407,7 +2407,6 @@ struct Event {
     uiDebug @102 :UIDebug;
 
     # *********** debug ***********
-    testJoystick @52 :Joystick;
     roadEncodeData @86 :EncodeData;
     driverEncodeData @87 :EncodeData;
     wideRoadEncodeData @88 :EncodeData;
@@ -2476,5 +2475,6 @@ struct Event {
     uiPlanDEPRECATED @106 :UiPlan;
     liveLocationKalmanDEPRECATED @72 :LiveLocationKalman;
     liveTracksDEPRECATED @16 :List(LiveTracksDEPRECATED);
+    testJoystickDEPRECATED @52 :Joystick;
   }
 }
