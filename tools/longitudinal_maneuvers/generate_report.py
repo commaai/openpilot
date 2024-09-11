@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.system.hardware.hw import Paths
-from weasyprint import HTML
 
 
 def report(platform, maneuvers):
@@ -80,7 +79,6 @@ def report(platform, maneuvers):
         f.write("</details>\n")
 
   print(f"\nReport written to {output_fn}\n")
-  HTML(output_fn).write_pdf(output_fn.with_suffix('.pdf'))
 
 
 if __name__ == '__main__':
