@@ -35,6 +35,12 @@ def joystick(started: bool, params, CP: car.CarParams) -> bool:
 def not_joystick(started: bool, params, CP: car.CarParams) -> bool:
   return started and not params.get_bool("JoystickDebugMode")
 
+def long_maneuver(started: bool, params, CP: car.CarParams) -> bool:
+  return started and params.get_bool("LongitudinalManeuverMode")
+
+def not_long_maneuver(started: bool, params, CP: car.CarParams) -> bool:
+  return started and not params.get_bool("LongitudinalManeuverMode")
+
 def qcomgps(started, params, CP: car.CarParams) -> bool:
   return started and not ublox_available()
 
@@ -70,8 +76,8 @@ procs = [
   PythonProcess("calibrationd", "selfdrive.locationd.calibrationd", only_onroad),
   PythonProcess("torqued", "selfdrive.locationd.torqued", only_onroad),
   PythonProcess("controlsd", "selfdrive.controls.controlsd", not_joystick),
-  # PythonProcess("joystickd", "tools.joystick.joystickd", joystick),
-  PythonProcess("longitudinal_profilesd", "examples.longitudinal_profiles", joystick),
+  PythonProcess("joystickd", "tools.joystick.joystickd", joystick),
+  PythonProcess("longitudinal_profilesd", "examples.longitudinal_profiles", long_maneuver),
   PythonProcess("selfdrived", "selfdrive.selfdrived.selfdrived", only_onroad),
   PythonProcess("card", "selfdrive.car.card", only_onroad),
   PythonProcess("deleter", "system.loggerd.deleter", always_run),
@@ -82,7 +88,7 @@ procs = [
   PythonProcess("paramsd", "selfdrive.locationd.paramsd", only_onroad),
   NativeProcess("ubloxd", "system/ubloxd", ["./ubloxd"], ublox, enabled=TICI),
   PythonProcess("pigeond", "system.ubloxd.pigeond", ublox, enabled=TICI),
-  PythonProcess("plannerd", "selfdrive.controls.plannerd", only_onroad),
+  PythonProcess("plannerd", "selfdrive.controls.plannerd", not_long_maneuver),
   PythonProcess("radard", "selfdrive.controls.radard", only_onroad),
   PythonProcess("hardwared", "system.hardware.hardwared", always_run),
   PythonProcess("tombstoned", "system.tombstoned", always_run, enabled=not PC),

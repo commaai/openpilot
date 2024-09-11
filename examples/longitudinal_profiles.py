@@ -10,10 +10,14 @@ from collections import defaultdict
 from dataclasses import dataclass, asdict
 from pathlib import Path
 
-from cereal import messaging
+from cereal import messaging, car
 from opendbc.car.structs import CarControl
 from opendbc.car.common.conversions import Conversions
 from openpilot.common.realtime import DT_CTRL, Ratekeeper
+from openpilot.common.params import Params
+from openpilot.common.swaglog import cloudlog
+from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N
+from openpilot.selfdrive.controls.lib.longitudinal_planner import get_accel_from_plan
 
 # TODOs
 # - support lateral maneuvers
@@ -54,16 +58,16 @@ class Maneuver:
       t0 += lt
 
 MANEUVERS = [
-  Maneuver(
-   "creep: alternate between +1m/ss and -1m/ss",
-   [
-     Action(1, 2), Action(-1, 2),
-     Action(1, 2), Action(-1, 2),
-     Action(1, 2), Action(-1, 2),
-   ],
-   repeat=2,
-   initial_speed=0.,
-  ),
+  # Maneuver(
+  #  "creep: alternate between +1m/ss and -1m/ss",
+  #  [
+  #    Action(1, 2), Action(-1, 2),
+  #    Action(1, 2), Action(-1, 2),
+  #    Action(1, 2), Action(-1, 2),
+  #  ],
+  #  repeat=2,
+  #  initial_speed=0.,
+  # ),
   Maneuver(
     "brake step response: -1m/ss from 20mph",
     [Action(0, 2), Action(-1, 3)],
@@ -89,6 +93,7 @@ MANEUVERS = [
     initial_speed=20. * Conversions.MPH_TO_MS,
   ),
 ]
+
 
 def report(args, logs, fp):
   output_path = Path(__file__).resolve().parent / "longitudinal_reports"
@@ -140,16 +145,28 @@ def report(args, logs, fp):
     f.write(f"<p style='display: none'>{json.dumps(logs)}</p>")
   print(f"\nReport written to {output_fn}\n")
 
-def main(args):
+
+def main():
+  params = Params()
+  cloudlog.info("joystickd is waiting for CarParams")
+  CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
+
   sm = messaging.SubMaster(['carState', 'controlsState', 'selfdriveState', 'modelV2'], poll='modelV2')
   pm = messaging.PubMaster(['longitudinalPlan', 'driverAssistance'])
 
   maneuvers = iter(MANEUVERS)
+  maneuver = None
+  repeat = 0
 
   while True:
     sm.update()
 
-    maneuver = next(maneuvers, None)
+    if maneuver is None:
+      maneuver = next(maneuvers, None)
+
+    if maneuver is None:
+      print('We are done!')
+    print(maneuver)
 
     if maneuver is not None:
       pass
@@ -159,19 +176,26 @@ def main(args):
 
     longitudinalPlan = plan_send.longitudinalPlan
 
-    longitudinalPlan.speeds = []
-    longitudinalPlan.accels = []
-    longitudinalPlan.jerks = []
+    if maneuver is not None:
+      v_ego = sm['carState'].vEgo
+      diff = maneuver.initial_speed - v_ego
+      longitudinalPlan.speeds = [(v_ego + min(i / (CONTROL_N - 1), 1) * diff) for i in range(CONTROL_N)]
+      longitudinalPlan.accels = [(maneuver.initial_speed - sm['carState'].vEgo) * 0.8] * CONTROL_N
+      longitudinalPlan.jerks = [0] * CONTROL_N
+      print('v_ego', sm['carState'].vEgo)
+      print('speeds:', longitudinalPlan.speeds)
+      print('accels:', longitudinalPlan.accels)
 
-    longitudinalPlan.aTarget = 0.
-    longitudinalPlan.shouldStop = False
+    a_target, should_stop = get_accel_from_plan(CP, longitudinalPlan.speeds, longitudinalPlan.accels)
+    longitudinalPlan.aTarget = a_target
+    longitudinalPlan.shouldStop = should_stop
+    print('aTarget:', longitudinalPlan.aTarget)
     longitudinalPlan.allowBrake = True
     longitudinalPlan.allowThrottle = True
 
     longitudinalPlan.hasLead = True
 
     pm.send('longitudinalPlan', plan_send)
-
 
     assistance_send = messaging.new_message('driverAssistance')
     assistance_send.valid = True
@@ -240,6 +264,9 @@ def main(args):
 
 
 if __name__ == "__main__":
+  main()
+  exit()
+
   maneuver_help = "\n".join([f"{i+1}. {m.description}" for i, m in enumerate(MANEUVERS)])
   parser = argparse.ArgumentParser(description="A tool for longitudinal control testing.",
                                    formatter_class=argparse.RawTextHelpFormatter)
