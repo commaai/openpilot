@@ -50,7 +50,7 @@ class TestStreamSession:
     tested_msgs = [
       {"type": "customReservedRawData0", "data": "test"}, # primitive
       {"type": "can", "data": [{"address": 0, "dat": "", "src": 0}]}, # list
-      {"type": "testJoystick", "data": {"axes": [0, 0], "buttons": [False]}}, # dict
+      {"type": "testJoystickDEPRECATED", "data": {"axes": [0, 0], "buttons": [False]}}, # dict
     ]
 
     mocked_pubmaster = mocker.MagicMock(spec=messaging.PubMaster)
