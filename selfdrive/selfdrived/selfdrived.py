@@ -440,9 +440,9 @@ class SelfdriveD:
       ss.alertText1 = self.sm['alertDebug'].alertText1
       ss.alertText2 = self.sm['alertDebug'].alertText2
       ss.alertSize = AlertSize.mid
-      ss.alertStatus = AlertStatus.normal
+      ss.alertStatus = AlertStatus.critical if 'Active' in ss.alertText1 else AlertStatus.normal
       ss.alertType = ''
-      ss.alertSound = AudibleAlert.none
+      ss.alertSound = AudibleAlert.prompt if 'Active' in ss.alertText1 else AudibleAlert.none
 
     self.pm.send('selfdriveState', ss_msg)
 
