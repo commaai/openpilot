@@ -126,7 +126,7 @@ class Soundd:
 
   def calculate_volume(self, weighted_db):
     volume = ((weighted_db - AMBIENT_DB) / DB_SCALE) * (MAX_VOLUME - MIN_VOLUME) + MIN_VOLUME
-    return math.pow(10, (np.clip(volume, MIN_VOLUME, MAX_VOLUME) - (1 if "TESTING_CLOSET" not in os.environ else 2)))
+    return math.pow(10, (np.clip(volume, MIN_VOLUME, MAX_VOLUME) - (1 if not TESTING_CLOSET else 2)))
 
   @retry(attempts=7, delay=3)
   def get_stream(self, sd):
