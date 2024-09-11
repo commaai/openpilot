@@ -18,7 +18,6 @@ from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.longcontrol import LongControl
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 from openpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose
-from opendbc.car.fingerprints import MIGRATION
 
 
 State = log.SelfdriveState.OpenpilotState
@@ -31,9 +30,7 @@ class Controls:
   def __init__(self) -> None:
     self.params = Params()
     cloudlog.info("controlsd is waiting for CarParams")
-    self.CP = messaging.log_from_bytes(self.params.get("CarParams", block=True), car.CarParams).as_builder()
-    self.CP.carFingerprint = MIGRATION.get(self.CP.carFingerprint, self.CP.carFingerprint)
-    self.CP = self.CP.as_reader()
+    self.CP = messaging.log_from_bytes(self.params.get("CarParams", block=True), car.CarParams)
     cloudlog.info("controlsd got CarParams")
 
     self.CI = get_car_interface(self.CP)
