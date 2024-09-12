@@ -337,12 +337,10 @@ struct CarControl {
   latActive @11: Bool;
   longActive @12: Bool;
 
-  # Actuator commands as computed by controlsd
+  # Final actuator commands
   actuators @6 :Actuators;
 
-  # moved to CarOutput
-  actuatorsOutputDEPRECATED @10 :Actuators;
-
+  # Blinker controls
   leftBlinker @15: Bool;
   rightBlinker @16: Bool;
 
@@ -353,20 +351,20 @@ struct CarControl {
   hudControl @5 :HUDControl;
 
   struct Actuators {
-    # range from 0.0 - 1.0
-    gas @0: Float32;
-    brake @1: Float32;
-    # range from -1.0 - 1.0
-    steer @2: Float32;
-    # value sent over can to the car
-    steerOutputCan @8: Float32;
+    # lateral commands, mutually exclusive
+    steer @2: Float32;  # [0.0, 1.0]
     steeringAngleDeg @3: Float32;
-
     curvature @7: Float32;
 
-    speed @6: Float32; # m/s
-    accel @4: Float32; # m/s^2
+    # longitudinal commands
+    accel @4: Float32;  # m/s^2
     longControlState @5: LongControlState;
+
+    # these are only for logging the actual values sent to the car over CAN
+    gas @0: Float32;   # [0.0, 1.0]
+    brake @1: Float32; # [0.0, 1.0]
+    steerOutputCan @8: Float32;   # value sent over can to the car
+    speed @6: Float32;  # m/s
 
     enum LongControlState @0xe40f3a917d908282{
       off @0;
@@ -432,6 +430,7 @@ struct CarControl {
   activeDEPRECATED @7 :Bool;
   rollDEPRECATED @8 :Float32;
   pitchDEPRECATED @9 :Float32;
+  actuatorsOutputDEPRECATED @10 :Actuators;
 }
 
 struct CarOutput {
