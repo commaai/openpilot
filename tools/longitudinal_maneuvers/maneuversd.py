@@ -3,7 +3,6 @@ from dataclasses import dataclass
 
 from cereal import messaging, car
 from opendbc.car.common.conversions import Conversions as CV
-from openpilot.common.numpy_fast import clip
 from openpilot.common.realtime import DT_MDL
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
@@ -37,7 +36,7 @@ class Maneuver:
       self._active = True
 
     if not self._active:
-      return clip(self.initial_speed - v_ego, -2., 2.)
+      return min(max(self.initial_speed - v_ego, -2.), 2.)
 
     action = self.actions[self._action_index]
 

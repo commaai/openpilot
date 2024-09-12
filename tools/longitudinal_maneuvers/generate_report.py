@@ -4,7 +4,6 @@ import base64
 import io
 import os
 import time
-from collections import defaultdict
 from pathlib import Path
 import matplotlib.pyplot as plt
 
@@ -84,8 +83,6 @@ if __name__ == '__main__':
   parser.add_argument('route', type=str, help='Route name (e.g. 00000000--5f742174be)')
 
   args = parser.parse_args()
-
-  logs = defaultdict(dict)
 
   if '/' in args.route or '|' in args.route:
     lr = LogReader(args.route)
