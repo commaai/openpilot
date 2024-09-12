@@ -115,9 +115,9 @@ class Controls:
                                                                             self.steer_limited, self.desired_curvature,
                                                                             self.calibrated_pose) # TODO what if not available
 
-    if CC.enabled and CS.leftBlinker:
-      actuators.accel = -2.0
-      actuators.longControlState = car.CarControl.LongControlState.emergencyBraking
+    if CS.leftBlinker:
+      actuators.accel = -5.0
+      actuators.longControlState = car.CarControl.Actuators.LongControlState.emergencyBraking
 
     # Ensure no NaNs/Infs
     for p in ACTUATOR_FIELDS:
