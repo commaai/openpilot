@@ -19,8 +19,6 @@ def report(platform, maneuvers):
   with open(output_fn, "w") as f:
     f.write("<h1>Longitudinal maneuver report</h1>\n")
     f.write(f"<h3>{platform}</h3>\n")
-    # if args.desc:
-    #   f.write(f"<h3>{args.desc}</h3>")
     for description, runs in maneuvers:
       print('plotting maneuver:', description, 'runs:', len(runs))
       f.write("<div style='border-top: 1px solid #000; margin: 20px 0;'></div>\n")

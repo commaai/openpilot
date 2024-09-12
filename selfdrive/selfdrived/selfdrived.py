@@ -27,10 +27,6 @@ TESTING_CLOSET = "TESTING_CLOSET" in os.environ
 IGNORE_PROCESSES = {"loggerd", "encoderd", "statsd"}
 LONGITUDINAL_PERSONALITY_MAP = {v: k for k, v in log.LongitudinalPersonality.schema.enumerants.items()}
 
-AlertSize = log.SelfdriveState.AlertSize
-AlertStatus = log.SelfdriveState.AlertStatus
-AudibleAlert = car.CarControl.HUDControl.AudibleAlert
-
 ThermalStatus = log.DeviceState.ThermalStatus
 State = log.SelfdriveState.OpenpilotState
 PandaType = log.PandaState.PandaType
@@ -471,6 +467,7 @@ class SelfdriveD:
       self.is_metric = self.params.get_bool("IsMetric")
       self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
       self.personality = self.read_personality_param()
+      # TODO: remove
       self.params.put_bool_nonblocking("LongitudinalManeuverMode", self.experimental_mode)
       time.sleep(0.1)
 

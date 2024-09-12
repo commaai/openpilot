@@ -162,9 +162,5 @@ def main():
     assistance_send.valid = True
     pm.send('driverAssistance', assistance_send)
 
-    # print('finished?', maneuver is not None and maneuver.finished)
-    # print('aTarget:', longitudinalPlan.aTarget)
-    # print('shouldStop:', longitudinalPlan.shouldStop)
-
     if maneuver is not None and maneuver.finished:
       maneuver = None
