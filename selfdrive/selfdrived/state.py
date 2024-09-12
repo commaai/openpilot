@@ -86,8 +86,7 @@ class StateMachine:
           elif events.contains(ET.OVERRIDE_LATERAL) or events.contains(ET.OVERRIDE_LONGITUDINAL):
             self.state = State.overriding
           else:
-            pass
-            # self.state = State.enabled
+            self.state = State.enabled
           self.current_alert_types.append(ET.ENABLE)
 
     # Check if openpilot is engaged and actuators are enabled
