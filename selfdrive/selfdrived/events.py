@@ -331,7 +331,6 @@ def longitudinal_maneuver_alert(CP: car.CarParams, CS: car.CarState, sm: messagi
   audible_alert = AudibleAlert.prompt if 'Active' in ad.alertText1 else AudibleAlert.none
   alert_status = AlertStatus.userPrompt if 'Active' in ad.alertText1 else AlertStatus.normal
   alert_size = AlertSize.mid if ad.alertText2 else AlertSize.small
-
   return Alert(ad.alertText1, ad.alertText2,
                alert_status, alert_size,
                Priority.LOW, VisualAlert.none, audible_alert, 0.2)
