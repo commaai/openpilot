@@ -139,7 +139,7 @@ class SelfdriveD:
       self.events.add(EventName.joystickDebug)
       self.startup_event = None
 
-    if self.sm.frame - self.sm.recv_frame['alertDebug'] < 100:
+    if self.sm.alive['alertDebug']:
       self.events.add(EventName.longitudinalManeuver)
       self.startup_event = None
 
