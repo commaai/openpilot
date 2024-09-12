@@ -111,7 +111,6 @@ if __name__ == '__main__':
           maneuvers.append((msg.alertDebug.alertText2, [[]]))
         description_prev = maneuvers[-1][0]
       active_prev = active
-      # print((msg.alertDebug.alertText1, msg.alertDebug.alertText2))
 
     if active_prev:
       maneuvers[-1][1][-1].append(msg)
