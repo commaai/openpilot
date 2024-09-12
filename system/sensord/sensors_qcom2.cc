@@ -27,8 +27,46 @@
 #define I2C_BUS_IMU 1
 
 ExitHandler do_exit;
+const int MAX_EVENTS = 32;
+
+// Read all GPIO events and return the latest event timestamp
+uint64_t get_latest_event_time(int fd) {
+  uint64_t latest_ts = 0;
+  const uint64_t offset = nanos_since_epoch() - nanos_since_boot();
+
+  while (true) {
+    struct gpioevent_data evdata[MAX_EVENTS];
+    int bytes_read = HANDLE_EINTR(read(fd, evdata, sizeof(evdata)));
+
+    if (bytes_read < 0) {
+      LOGE("Error reading event data: %s", strerror(errno));
+      break;  // Exit loop on read error
+    }
+
+    if (bytes_read == 0) {
+      break;  // no more events
+    }
+
+    if (bytes_read % sizeof(struct gpioevent_data) != 0) {
+      LOGE("Unexpected number of bytes read: %d", bytes_read);
+      break;  // Exit loop on data inconsistency
+    }
+
+    // Process each event to find the latest timestamp
+    int num_events = bytes_read / sizeof(struct gpioevent_data);
+    for (int i = 0; i < num_events; ++i) {
+      latest_ts = std::max<uint64_t>(latest_ts, evdata[i].timestamp - offset);
+    }
+
+    if (bytes_read < sizeof(evdata)) {
+      break;  // All events processed
+    }
+  }
+  return latest_ts;
+}
 
 void interrupt_loop(std::vector<std::tuple<Sensor *, std::string>> sensors) {
+  RateKeeper rk("gyroscope", services.at("gyroscope").frequency);
   PubMaster pm({"gyroscope", "accelerometer"});
 
   int fd = -1;
@@ -39,38 +77,12 @@ void interrupt_loop(std::vector<std::tuple<Sensor *, std::string>> sensors) {
     }
   }
 
-  struct pollfd fd_list[1] = {0};
-  fd_list[0].fd = fd;
-  fd_list[0].events = POLLIN | POLLPRI;
-
   while (!do_exit) {
-    int err = poll(fd_list, 1, 100);
-    if (err == -1) {
-      if (errno == EINTR) {
-        continue;
-      }
-      return;
-    } else if (err == 0) {
-      LOGE("poll timed out");
-      continue;
+    uint64_t ts = get_latest_event_time(fd);
+    if (ts == 0) {
+      rk.keepTime();
+      continue;  // No valid timestamp, continue to the next iteration
     }
-
-    if ((fd_list[0].revents & (POLLIN | POLLPRI)) == 0) {
-      LOGE("no poll events set");
-      continue;
-    }
-
-    // Read all events
-    struct gpioevent_data evdata[16];
-    err = read(fd, evdata, sizeof(evdata));
-    if (err < 0 || err % sizeof(*evdata) != 0) {
-      LOGE("error reading event data %d", err);
-      continue;
-    }
-
-    int num_events = err / sizeof(*evdata);
-    uint64_t offset = nanos_since_epoch() - nanos_since_boot();
-    uint64_t ts = evdata[num_events - 1].timestamp - offset;
 
     for (auto &[sensor, msg_name] : sensors) {
       if (!sensor->has_interrupt_enabled()) {
@@ -88,6 +100,8 @@ void interrupt_loop(std::vector<std::tuple<Sensor *, std::string>> sensors) {
 
       pm.send(msg_name.c_str(), msg);
     }
+
+    rk.keepTime();
   }
 }
 
