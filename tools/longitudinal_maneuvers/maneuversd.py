@@ -72,7 +72,7 @@ class Maneuver:
 
 MANEUVERS = [
   Maneuver(
-   "creep: alternate between +1m/ss and -1m/ss",
+   "creep: alternate between +1m/s^2 and -1m/s^2",
    [
      Action(1, 2), Action(-1, 2),
      Action(1, 2), Action(-1, 2),
@@ -82,25 +82,25 @@ MANEUVERS = [
    initial_speed=0.,
   ),
   Maneuver(
-    "brake step response: -1m/ss from 20mph",
+    "brake step response: -1m/s^2 from 20mph",
     [Action(-1, 3)],
     repeat=2,
     initial_speed=20. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "brake step response: -4m/ss from 20mph",
+    "brake step response: -4m/s^2 from 20mph",
     [Action(-4, 3)],
     repeat=2,
     initial_speed=20. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "gas step response: +1m/ss from 20mph",
+    "gas step response: +1m/s^2 from 20mph",
     [Action(1, 3)],
     repeat=2,
     initial_speed=20. * CV.MPH_TO_MS,
   ),
   Maneuver(
-    "gas step response: +4m/ss from 20mph",
+    "gas step response: +4m/s^2 from 20mph",
     [Action(4, 3)],
     repeat=2,
     initial_speed=20. * CV.MPH_TO_MS,
@@ -125,9 +125,6 @@ def main():
     if maneuver is None:
       maneuver = next(maneuvers, None)
 
-    if maneuver is None:
-      print('We are done!')
-
     alert_msg = messaging.new_message('alertDebug')
     alert_msg.valid = True
 
@@ -147,6 +144,9 @@ def main():
       else:
         alert_msg.alertDebug.alertText1 = f'Reaching Speed: {maneuver.initial_speed * CV.MS_TO_MPH:0.2f} mph'
       alert_msg.alertDebug.alertText2 = f'{maneuver.description}'
+    else:
+      alert_msg.alertDebug.alertText1 = 'Maneuvers Finished'
+
     pm.send('alertDebug', alert_msg)
 
     longitudinalPlan.aTarget = accel

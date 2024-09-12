@@ -139,6 +139,10 @@ class SelfdriveD:
       self.events.add(EventName.joystickDebug)
       self.startup_event = None
 
+    if self.sm.frame - self.sm.recv_frame['alertDebug'] < 100:
+      self.events.add(EventName.longitudinalManeuver)
+      self.startup_event = None
+
     # Add startup event
     if self.startup_event is not None:
       self.events.add(self.startup_event)
@@ -434,15 +438,6 @@ class SelfdriveD:
     ss.alertStatus = self.AM.current_alert.alert_status
     ss.alertType = self.AM.current_alert.alert_type
     ss.alertSound = self.AM.current_alert.audible_alert
-
-    # TODO: all very hacky
-    if self.sm['alertDebug'].alertText1 != '' and self.sm.frame - self.sm.recv_frame['alertDebug'] < 100:
-      ss.alertText1 = self.sm['alertDebug'].alertText1
-      ss.alertText2 = self.sm['alertDebug'].alertText2
-      ss.alertSize = AlertSize.mid
-      ss.alertStatus = AlertStatus.critical if 'Active' in ss.alertText1 else AlertStatus.normal
-      ss.alertType = ''
-      ss.alertSound = AudibleAlert.prompt if 'Active' in ss.alertText1 else AudibleAlert.none
 
     self.pm.send('selfdriveState', ss_msg)
 

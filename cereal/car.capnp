@@ -54,6 +54,7 @@ struct OnroadEvent @0x9b1657f34caf3ad3 {
     manualRestart @30;
     lowSpeedLockout @31;
     joystickDebug @34;
+    longitudinalManeuver @124;
     steerTempUnavailableSilent @35;
     resumeRequired @36;
     preDriverDistracted @37;
