@@ -30,7 +30,7 @@ LOG_COMPRESSION_LEVEL = 10  # little benefit up to level 15. level ~17 is a smal
 allow_sleep = bool(os.getenv("UPLOADER_SLEEP", "1"))
 force_wifi = os.getenv("FORCEWIFI") is not None
 fake_upload = os.getenv("FAKEUPLOAD") is not None
-TESTING_CLOSET = "TESTING_CLOSET" in os.environ
+TESTING_CLOSET = os.getenv("TESTING_CLOSET") is not None
 
 
 class FakeRequest:
