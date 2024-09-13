@@ -19,7 +19,8 @@ from openpilot.selfdrive.modeld.models.commonmodel_pyx import sigmoid, CLContext
 CALIB_LEN = 3
 MODEL_WIDTH = 1440
 MODEL_HEIGHT = 960
-OUTPUT_SIZE = 84 + 512
+FEATURE_LEN = 512
+OUTPUT_SIZE = 84 + FEATURE_LEN
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 MODEL_PATHS = {
   ModelRunner.THNEED: Path(__file__).parent / 'models/dmonitoring_model.thneed',
@@ -49,7 +50,7 @@ class DMonitoringModelResult(ctypes.Structure):
     ("driver_state_rhd", DriverStateResult),
     ("poor_vision_prob", ctypes.c_float),
     ("wheel_on_right_prob", ctypes.c_float),
-    ("feats", ctypes.c_float*512)]
+    ("features", ctypes.c_float*FEATURE_LEN)]
 
 class ModelState:
   inputs: dict[str, np.ndarray]
