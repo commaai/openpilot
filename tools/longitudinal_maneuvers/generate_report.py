@@ -3,7 +3,6 @@ import argparse
 import base64
 import io
 import os
-import time
 from pathlib import Path
 import matplotlib.pyplot as plt
 
@@ -11,13 +10,14 @@ from openpilot.tools.lib.logreader import LogReader
 from openpilot.system.hardware.hw import Paths
 
 
-def report(platform, maneuvers):
+def report(platform, route, maneuvers):
   output_path = Path(__file__).resolve().parent / "longitudinal_reports"
-  output_fn = output_path / f"{platform}_{time.strftime('%Y%m%d-%H_%M_%S')}.html"
+  output_fn = output_path / f"{platform}_{route}.html"
   output_path.mkdir(exist_ok=True)
   with open(output_fn, "w") as f:
     f.write("<h1>Longitudinal maneuver report</h1>\n")
     f.write(f"<h3>{platform}</h3>\n")
+    f.write(f"<h3>{route}</h3>\n")
     for description, runs in maneuvers:
       print('plotting maneuver:', description, 'runs:', len(runs))
       f.write("<div style='border-top: 1px solid #000; margin: 20px 0;'></div>\n")
@@ -112,4 +112,4 @@ if __name__ == '__main__':
     if active_prev:
       maneuvers[-1][1][-1].append(msg)
 
-  report(platform, maneuvers)
+  report(platform, args.route, maneuvers)
