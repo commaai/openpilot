@@ -110,7 +110,7 @@ def report(platform, route, CP, maneuvers):
       f.write(f"<h3>{description}</h3>\n")
       f.write(f"<p>Target crossed {len(times)} out of {len(maneuvers[idx][1])} runs</p>\n")
       if len(times):
-        f.write(f"<p>Mean time to cross: {sum(times) / len(times):.3f}s</p>\n")
+        f.write(f"<p>Mean time to cross: {sum(times) / len(times):.3f}s, min: {min(times):.3f}s, max: {max(times):.3f}s</p>\n")
 
   print(f"\nReport written to {output_fn}\n")
 
