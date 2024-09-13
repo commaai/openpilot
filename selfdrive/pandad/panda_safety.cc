@@ -17,6 +17,7 @@ void PandaSafety::configureSafetyMode() {
   } else if (!is_onroad) {
     initialized_ = false;
     safety_configured_ = false;
+    log_once_ = false;
   }
 }
 
@@ -46,9 +47,12 @@ std::string PandaSafety::fetchCarParams() {
   if (!params_.getBool("FirmwareQueryDone")) {
     return {};
   }
-  LOGW("Finished FW query");
 
-  LOGW("Waiting for params to set safety model");
+  if (!log_once_) {
+    LOGW("Finished FW query, Waiting for params to set safety model");
+    log_once_ = true;
+  }
+
   if (!params_.getBool("ControlsReady")) {
     return {};
   }

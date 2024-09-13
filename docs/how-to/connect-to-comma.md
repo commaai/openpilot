@@ -7,7 +7,7 @@ A comma 3/3X is a normal [Linux](https://github.com/commaai/agnos-builder) compu
 On both the comma three and 3X, the serial console is accessible from the main OBD-C port.
 Connect the comma 3/3X to your computer with a normal USB C cable, or use a [comma serial](https://comma.ai/shop/comma-serial) for steady 12V power.
 
-On the comma three, the serial console is exposed through a UART-to-USB chip, and `tools/serial/connect.sh` can be used to connect.
+On the comma three, the serial console is exposed through a UART-to-USB chip, and `tools/scripts/serial.sh` can be used to connect.
 
 On the comma 3X, the serial console is accessible through the [panda](https://github.com/commaai/panda) using the `panda/tests/som_debug.sh` script.
 

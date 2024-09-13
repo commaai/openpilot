@@ -381,10 +381,6 @@
         <translation>O openpilot não conseguiu identificar o seu carro. Seu carro não é suportado ou seus ECUs não são reconhecidos. Envie um pull request para adicionar as versões de firmware ao veículo adequado. Precisa de ajuda? Junte-se discord.comma.ai.</translation>
     </message>
     <message>
-        <source>openpilot was unable to identify your car. Check integrity of cables and ensure all connections are secure, particularly that the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.</source>
-        <translation>O openpilot não conseguiu identificar o seu carro. Verifique a integridade dos cabos e certifique-se de que todas as conexões estejam seguras, especialmente se o comma power está totalmente inserido na porta OBD-II do veículo. Precisa de ajuda? Junte-se discord.comma.ai.</translation>
-    </message>
-    <message>
         <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
         <translation>O openpilot detectou uma mudança na posição de montagem do dispositivo. Verifique se o dispositivo está totalmente encaixado no suporte e se o suporte está firmemente preso ao para-brisa.</translation>
     </message>
@@ -415,20 +411,20 @@
         <translation>openpilot Indisponível</translation>
     </message>
     <message>
-        <source>Waiting for controls to start</source>
-        <translation>Aguardando controles para iniciar</translation>
-    </message>
-    <message>
         <source>TAKE CONTROL IMMEDIATELY</source>
         <translation>ASSUMA IMEDIATAMENTE</translation>
     </message>
     <message>
-        <source>Controls Unresponsive</source>
-        <translation>Controles Não Respondem</translation>
-    </message>
-    <message>
         <source>Reboot Device</source>
         <translation>Reinicie o Dispositivo</translation>
+    </message>
+    <message>
+        <source>Waiting to start</source>
+        <translation>Aguardando para iniciar</translation>
+    </message>
+    <message>
+        <source>System Unresponsive</source>
+        <translation>Sistema sem Resposta</translation>
     </message>
 </context>
 <context>

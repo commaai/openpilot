@@ -24,6 +24,7 @@ _services: dict[str, tuple] = {
   "deviceState": (True, 2., 1),
   "can": (True, 100., 2053),  # decimation gives ~3 msgs in a full segment
   "controlsState": (True, 100., 10),
+  "selfdriveState": (True, 100., 10),
   "pandaStates": (True, 10., 1),
   "peripheralState": (True, 2., 1),
   "radarState": (True, 20., 5),
@@ -39,6 +40,7 @@ _services: dict[str, tuple] = {
   "carControl": (True, 100., 10),
   "carOutput": (True, 100., 10),
   "longitudinalPlan": (True, 20., 10),
+  "driverAssistance": (True, 20., 20),
   "procLog": (True, 0.5, 15),
   "gpsLocationExternal": (True, 10., 10),
   "gpsLocation": (True, 1., 1),
@@ -48,7 +50,6 @@ _services: dict[str, tuple] = {
   "clocks": (True, 0.1, 1),
   "ubloxRaw": (True, 20.),
   "livePose": (True, 20., 4),
-  "liveLocationKalman": (True, 20.),
   "liveParameters": (True, 20., 5),
   "cameraOdometry": (True, 20., 10),
   "thumbnail": (True, 0.2, 1),
@@ -74,7 +75,7 @@ _services: dict[str, tuple] = {
 
   # debug
   "uiDebug": (True, 0., 1),
-  "testJoystick": (True, 0.),
+  "alertDebug": (True, 20., 5),
   "roadEncodeData": (False, 20.),
   "driverEncodeData": (False, 20.),
   "wideRoadEncodeData": (False, 20.),

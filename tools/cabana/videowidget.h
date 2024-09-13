@@ -18,7 +18,7 @@
 #include "tools/replay/logreader.h"
 
 struct AlertInfo {
-  cereal::ControlsState::AlertStatus status;
+  cereal::SelfdriveState::AlertStatus status;
   QString text1;
   QString text2;
 };
@@ -64,7 +64,7 @@ class StreamCameraView : public CameraWidget {
   Q_PROPERTY(float overlayOpacity READ overlayOpacity WRITE setOverlayOpacity)
 
 public:
-  StreamCameraView(std::string stream_name, VisionStreamType stream_type, bool zoom, QWidget *parent = nullptr);
+  StreamCameraView(std::string stream_name, VisionStreamType stream_type, QWidget *parent = nullptr);
   void paintGL() override;
   void showPausedOverlay() { fade_animation->start(); }
   float overlayOpacity() const { return overlay_opacity; }

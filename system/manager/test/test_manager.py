@@ -18,7 +18,6 @@ MAX_STARTUP_TIME = 3
 BLACKLIST_PROCS = ['manage_athenad', 'pandad', 'pigeond']
 
 
-@pytest.mark.tici
 class TestManager:
   def setup_method(self):
     HARDWARE.set_power_save(False)

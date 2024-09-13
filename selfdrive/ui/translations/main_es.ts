@@ -385,10 +385,6 @@
         <translation>openpilot no pudo identificar su automóvil. Su automóvil no es compatible o no se reconocen sus ECU. Por favor haga un pull request para agregar las versiones de firmware del vehículo adecuado. ¿Necesita ayuda? Únase a discord.comma.ai.</translation>
     </message>
     <message>
-        <source>openpilot was unable to identify your car. Check integrity of cables and ensure all connections are secure, particularly that the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.</source>
-        <translation>openpilot no pudo identificar su automóvil. Verifique la integridad de los cables y asegúrese de que todas las conexiones estén seguras, en particular que el comma power esté completamente insertado en el puerto OBD-II del vehículo. ¿Necesita ayuda? Únase discord.comma.ai.</translation>
-    </message>
-    <message>
         <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
         <translation>openpilot detectó un cambio en la posición de montaje del dispositivo. Asegúrese de que el dispositivo esté completamente asentado en el soporte y que el soporte esté firmemente asegurado al parabrisas.</translation>
     </message>
@@ -415,20 +411,20 @@
         <translation>openpilot no disponible</translation>
     </message>
     <message>
-        <source>Waiting for controls to start</source>
-        <translation>Esperando que los controles inicien</translation>
-    </message>
-    <message>
         <source>TAKE CONTROL IMMEDIATELY</source>
         <translation>TOME CONTROL INMEDIATAMENTE</translation>
     </message>
     <message>
-        <source>Controls Unresponsive</source>
-        <translation>Controles no responden</translation>
-    </message>
-    <message>
         <source>Reboot Device</source>
         <translation>Reiniciar Dispositivo</translation>
+    </message>
+    <message>
+        <source>Waiting to start</source>
+        <translation>Esperando para iniciar</translation>
+    </message>
+    <message>
+        <source>System Unresponsive</source>
+        <translation>Systema no responde</translation>
     </message>
 </context>
 <context>

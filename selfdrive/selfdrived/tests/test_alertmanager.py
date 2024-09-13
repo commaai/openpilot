@@ -1,7 +1,7 @@
 import random
 
-from openpilot.selfdrive.controls.lib.events import Alert, EVENTS
-from openpilot.selfdrive.controls.lib.alertmanager import AlertManager
+from openpilot.selfdrive.selfdrived.events import Alert, EVENTS
+from openpilot.selfdrive.selfdrived.alertmanager import AlertManager
 
 
 class TestAlertManager:
@@ -32,8 +32,8 @@ class TestAlertManager:
         for frame in range(duration+10):
           if frame < add_duration:
             AM.add_many(frame, [alert, ])
-          current_alert = AM.process_alerts(frame, {})
+          AM.process_alerts(frame, {})
 
-          shown = current_alert is not None
+          shown = AM.current_alert is not None
           should_show = frame <= show_duration
           assert shown == should_show, f"{frame=} {add_duration=} {duration=}"

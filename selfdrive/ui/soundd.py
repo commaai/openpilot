@@ -17,7 +17,7 @@ SAMPLE_RATE = 48000
 SAMPLE_BUFFER = 4096 # (approx 100ms)
 MAX_VOLUME = 1.0
 MIN_VOLUME = 0.1
-CONTROLS_TIMEOUT = 5 # 5 seconds
+SELFDRIVE_STATE_TIMEOUT = 5 # 5 seconds
 FILTER_DT = 1. / (micd.SAMPLE_RATE / micd.FFT_SAMPLES)
 
 AMBIENT_DB = 30 # DB where MIN_VOLUME is applied
@@ -40,11 +40,11 @@ sound_list: dict[int, tuple[str, int | None, float]] = {
   AudibleAlert.warningImmediate: ("warning_immediate.wav", None, MAX_VOLUME),
 }
 
-def check_controls_timeout_alert(sm):
-  controls_missing = time.monotonic() - sm.recv_time['controlsState']
+def check_selfdrive_timeout_alert(sm):
+  ss_missing = time.monotonic() - sm.recv_time['selfdriveState']
 
-  if controls_missing > CONTROLS_TIMEOUT:
-    if sm['controlsState'].enabled and (controls_missing - CONTROLS_TIMEOUT) < 10:
+  if ss_missing > SELFDRIVE_STATE_TIMEOUT:
+    if sm['selfdriveState'].enabled and (ss_missing - SELFDRIVE_STATE_TIMEOUT) < 10:
       return True
 
   return False
@@ -58,7 +58,7 @@ class Soundd:
     self.current_volume = MIN_VOLUME
     self.current_sound_frame = 0
 
-    self.controls_timeout_alert = False
+    self.selfdrive_timeout_alert = False
 
     self.spl_filter_weighted = FirstOrderFilter(0, 2.5, FILTER_DT, initialized=False)
 
@@ -111,15 +111,15 @@ class Soundd:
       self.current_sound_frame = 0
 
   def get_audible_alert(self, sm):
-    if sm.updated['controlsState']:
-      new_alert = sm['controlsState'].alertSound.raw
+    if sm.updated['selfdriveState']:
+      new_alert = sm['selfdriveState'].alertSound.raw
       self.update_alert(new_alert)
-    elif check_controls_timeout_alert(sm):
+    elif check_selfdrive_timeout_alert(sm):
       self.update_alert(AudibleAlert.warningImmediate)
-      self.controls_timeout_alert = True
-    elif self.controls_timeout_alert:
+      self.selfdrive_timeout_alert = True
+    elif self.selfdrive_timeout_alert:
       self.update_alert(AudibleAlert.none)
-      self.controls_timeout_alert = False
+      self.selfdrive_timeout_alert = False
 
   def calculate_volume(self, weighted_db):
     volume = ((weighted_db - AMBIENT_DB) / DB_SCALE) * (MAX_VOLUME - MIN_VOLUME) + MIN_VOLUME
@@ -136,7 +136,7 @@ class Soundd:
     # sounddevice must be imported after forking processes
     import sounddevice as sd
 
-    sm = messaging.SubMaster(['controlsState', 'microphone'])
+    sm = messaging.SubMaster(['selfdriveState', 'microphone'])
 
     with self.get_stream(sd) as stream:
       rk = Ratekeeper(20)

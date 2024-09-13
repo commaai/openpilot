@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from cereal import messaging
+from cereal import messaging, car
 from opendbc.car.fingerprints import MIGRATION
 from opendbc.car.toyota.values import EPS_SCALE
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
@@ -9,12 +9,16 @@ from panda import Panda
 
 
 # TODO: message migration should happen in-place
-def migrate_all(lr, old_logtime=False, manager_states=False, panda_states=False, camera_states=False):
-  msgs = migrate_sensorEvents(lr, old_logtime)
-  msgs = migrate_carParams(msgs, old_logtime)
+def migrate_all(lr, manager_states=False, panda_states=False, camera_states=False):
+  msgs = migrate_sensorEvents(lr)
+  msgs = migrate_carParams(msgs)
   msgs = migrate_gpsLocation(msgs)
   msgs = migrate_deviceState(msgs)
   msgs = migrate_carOutput(msgs)
+  msgs = migrate_controlsState(msgs)
+  msgs = migrate_liveLocationKalman(msgs)
+  msgs = migrate_liveTracks(msgs)
+  msgs = migrate_driverAssistance(msgs)
   if manager_states:
     msgs = migrate_managerState(msgs)
   if panda_states:
@@ -24,6 +28,98 @@ def migrate_all(lr, old_logtime=False, manager_states=False, panda_states=False,
     msgs = migrate_cameraStates(msgs)
 
   return msgs
+
+def migrate_driverAssistance(lr):
+  all_msgs = []
+  for msg in lr:
+    all_msgs.append(msg)
+    if msg.which() == 'longitudinalPlan':
+      all_msgs.append(messaging.new_message('driverAssistance', valid=True, logMonoTime=msg.logMonoTime).as_reader())
+    if msg.which() == 'driverAssistance':
+      return lr
+  return all_msgs
+
+def migrate_liveTracks(lr):
+  all_msgs = []
+  for msg in lr:
+    if msg.which() != "liveTracksDEPRECATED":
+      all_msgs.append(msg)
+      continue
+
+    new_msg = messaging.new_message('liveTracks')
+    new_msg.valid = msg.valid
+    new_msg.logMonoTime = msg.logMonoTime
+
+    pts = []
+    for track in msg.liveTracksDEPRECATED:
+      pt = car.RadarData.RadarPoint()
+      pt.trackId = track.trackId
+
+      pt.dRel = track.dRel
+      pt.yRel = track.yRel
+      pt.vRel = track.vRel
+      pt.aRel = track.aRel
+      pt.measured = True
+      pts.append(pt)
+
+    new_msg.liveTracks.points = pts
+    all_msgs.append(new_msg.as_reader())
+
+  return all_msgs
+
+
+def migrate_liveLocationKalman(lr):
+  # migration needed only for routes before livePose
+  if any(msg.which() == 'livePose' for msg in lr):
+    return lr
+
+  all_msgs = []
+  for msg in lr:
+    if msg.which() != 'liveLocationKalmanDEPRECATED':
+      all_msgs.append(msg)
+      continue
+
+    m = messaging.new_message('livePose')
+    m.valid = msg.valid
+    m.logMonoTime = msg.logMonoTime
+    for field in ["orientationNED", "velocityDevice", "accelerationDevice", "angularVelocityDevice"]:
+      lp_field, llk_field = getattr(m.livePose, field), getattr(msg.liveLocationKalmanDEPRECATED, field)
+      lp_field.x, lp_field.y, lp_field.z = llk_field.value
+      lp_field.xStd, lp_field.yStd, lp_field.zStd = llk_field.std
+      lp_field.valid = llk_field.valid
+    for flag in ["inputsOK", "posenetOK", "sensorsOK"]:
+      setattr(m.livePose, flag, getattr(msg.liveLocationKalmanDEPRECATED, flag))
+
+    all_msgs.append(m.as_reader())
+
+  return all_msgs
+
+
+def migrate_controlsState(lr):
+  ret = []
+  last_cs = None
+  for msg in lr:
+    if msg.which() == 'controlsState':
+      last_cs = msg
+
+      m = messaging.new_message('selfdriveState')
+      m.valid = msg.valid
+      m.logMonoTime = msg.logMonoTime
+      ss = m.selfdriveState
+      for field in ("enabled", "active", "state", "engageable", "alertText1", "alertText2",
+                    "alertStatus", "alertSize", "alertType", "experimentalMode",
+                    "personality"):
+        setattr(ss, field, getattr(msg.controlsState, field+"DEPRECATED"))
+      ret.append(m.as_reader())
+    elif msg.which() == 'carState' and last_cs is not None:
+      if last_cs.controlsState.vCruiseDEPRECATED - msg.carState.vCruise > 0.1:
+        msg = msg.as_builder()
+        msg.carState.vCruise = last_cs.controlsState.vCruiseDEPRECATED
+        msg.carState.vCruiseCluster = last_cs.controlsState.vCruiseClusterDEPRECATED
+        msg = msg.as_reader()
+
+    ret.append(msg)
+  return ret
 
 
 def migrate_managerState(lr):
@@ -197,7 +293,7 @@ def migrate_cameraStates(lr):
   return all_msgs
 
 
-def migrate_carParams(lr, old_logtime=False):
+def migrate_carParams(lr):
   all_msgs = []
   for msg in lr:
     if msg.which() == 'carParams':
@@ -205,15 +301,14 @@ def migrate_carParams(lr, old_logtime=False):
       CP.carParams.carFingerprint = MIGRATION.get(CP.carParams.carFingerprint, CP.carParams.carFingerprint)
       for car_fw in CP.carParams.carFw:
         car_fw.brand = CP.carParams.carName
-      if old_logtime:
-        CP.logMonoTime = msg.logMonoTime
+      CP.logMonoTime = msg.logMonoTime
       msg = CP.as_reader()
     all_msgs.append(msg)
 
   return all_msgs
 
 
-def migrate_sensorEvents(lr, old_logtime=False):
+def migrate_sensorEvents(lr):
   all_msgs = []
   for msg in lr:
     if msg.which() != 'sensorEventsDEPRECATED':
@@ -237,16 +332,14 @@ def migrate_sensorEvents(lr, old_logtime=False):
 
       m = messaging.new_message(sensor_service)
       m.valid = True
-      if old_logtime:
-        m.logMonoTime = msg.logMonoTime
+      m.logMonoTime = msg.logMonoTime
 
       m_dat = getattr(m, sensor_service)
       m_dat.version = evt.version
       m_dat.sensor = evt.sensor
       m_dat.type = evt.type
       m_dat.source = evt.source
-      if old_logtime:
-        m_dat.timestamp = evt.timestamp
+      m_dat.timestamp = evt.timestamp
       setattr(m_dat, evt.which(), getattr(evt, evt.which()))
 
       all_msgs.append(m.as_reader())
