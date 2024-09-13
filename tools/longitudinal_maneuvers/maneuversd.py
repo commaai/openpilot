@@ -120,7 +120,7 @@ def main():
   cloudlog.info("joystickd is waiting for CarParams")
   CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
 
-  sm = messaging.SubMaster(['carState', 'controlsState', 'selfdriveState', 'modelV2'], poll='modelV2')
+  sm = messaging.SubMaster(['carState', 'carControl', 'controlsState', 'selfdriveState', 'modelV2'], poll='modelV2')
   pm = messaging.PubMaster(['longitudinalPlan', 'driverAssistance', 'alertDebug'])
 
   maneuvers = iter(MANEUVERS)
@@ -146,7 +146,7 @@ def main():
       accel = maneuver.get_accel(v_ego, sm['carControl'].longActive, sm['carState'].standstill, sm['carState'].cruiseState.standstill)
 
       if maneuver.active:
-        alert_msg.alertDebug.alertText1 = f'Maneuver Running: {accel:0.2f} m/s^2'
+        alert_msg.alertDebug.alertText1 = f'Maneuver Active: {accel:0.2f} m/s^2'
       else:
         alert_msg.alertDebug.alertText1 = f'Setting up to {maneuver.initial_speed * CV.MS_TO_MPH:0.2f} mph'
       alert_msg.alertDebug.alertText2 = f'{maneuver.description}'
