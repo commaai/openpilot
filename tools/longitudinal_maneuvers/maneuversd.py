@@ -132,11 +132,10 @@ def main():
 
     longitudinalPlan = plan_send.longitudinalPlan
     accel = 0
-    cs = sm['carState']
-    v_ego = max(cs.vEgo, 0)
+    v_ego = max(sm['carState'].vEgo, 0)
 
     if maneuver is not None:
-      accel = maneuver.get_accel(v_ego, sm['carControl'].longActive, cs.cruiseState.standstill)
+      accel = maneuver.get_accel(v_ego, sm['carControl'].longActive, sm['carState'].cruiseState.standstill)
 
       if maneuver.active:
         alert_msg.alertDebug.alertText1 = f'Maneuver Active: {accel:0.2f} m/s^2'
