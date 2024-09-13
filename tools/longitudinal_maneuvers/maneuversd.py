@@ -28,8 +28,8 @@ class Maneuver:
   _ready_cnt: int = 0
   _repeated: int = 0
 
-  def get_accel(self, v_ego: float, enabled: bool, standstill: bool) -> float:
-    ready = abs(v_ego - self.initial_speed) < 0.3 and enabled and not standstill
+  def get_accel(self, v_ego: float, long_active: bool, standstill: bool) -> float:
+    ready = abs(v_ego - self.initial_speed) < 0.3 and long_active and not standstill
     self._ready_cnt = (self._ready_cnt + 1) if ready else 0
 
     if self._ready_cnt > (3. / DT_MDL):
@@ -132,11 +132,10 @@ def main():
 
     longitudinalPlan = plan_send.longitudinalPlan
     accel = 0
-    cs = sm['carState']
-    v_ego = max(cs.vEgo, 0)
+    v_ego = max(sm['carState'].vEgo, 0)
 
     if maneuver is not None:
-      accel = maneuver.get_accel(v_ego, cs.cruiseState.enabled, cs.cruiseState.standstill)
+      accel = maneuver.get_accel(v_ego, sm['carControl'].longActive, sm['carState'].cruiseState.standstill)
 
       if maneuver.active:
         alert_msg.alertDebug.alertText1 = f'Maneuver Active: {accel:0.2f} m/s^2'
