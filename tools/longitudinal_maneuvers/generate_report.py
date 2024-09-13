@@ -52,7 +52,7 @@ def report(platform, route, CP, maneuvers):
 
         plt.rcParams['font.size'] = 40
         fig = plt.figure(figsize=(30, 25))
-        ax = fig.subplots(4, 1, sharex=True, gridspec_kw={'hspace': 0, 'height_ratios': [5, 3, 1, 1]})
+        ax = fig.subplots(4, 1, sharex=True, gridspec_kw={'height_ratios': [5, 3, 1, 1]})
 
         ax[0].grid(linewidth=4)
         ax[0].plot(t_carControl, [m.actuators.accel for m in carControl], label='carControl.actuators.accel', linewidth=6)
