@@ -3,6 +3,7 @@ import argparse
 import base64
 import io
 import os
+import json
 from pathlib import Path
 import matplotlib.pyplot as plt
 
@@ -10,7 +11,11 @@ from openpilot.tools.lib.logreader import LogReader
 from openpilot.system.hardware.hw import Paths
 
 
-def report(platform, route, maneuvers):
+def format_car_params(CP):
+  return json.dumps({k: v for k, v in CP.to_dict().items() if not k.endswith('DEPRECATED')}, indent=2)
+
+
+def report(platform, route, CP, maneuvers):
   output_path = Path(__file__).resolve().parent / "longitudinal_reports"
   output_fn = output_path / f"{platform}_{route}.html"
   output_path.mkdir(exist_ok=True)
@@ -18,8 +23,9 @@ def report(platform, route, maneuvers):
     f.write("<h1>Longitudinal maneuver report</h1>\n")
     f.write(f"<h3>{platform}</h3>\n")
     f.write(f"<h3>{route}</h3>\n")
+    f.write(f"<details><summary><h3 style='display: inline-block;'>CarParams</h3></summary><pre>{format_car_params(CP)}</pre></details>\n")
     for description, runs in maneuvers:
-      print('plotting maneuver:', description, 'runs:', len(runs))
+      print(f'plotting maneuver: {description}, runs: {len(runs)}')
       f.write("<div style='border-top: 1px solid #000; margin: 20px 0;'></div>\n")
       f.write(f"<h2>{description}</h2>\n")
       for run, msgs in enumerate(runs):
@@ -27,6 +33,11 @@ def report(platform, route, maneuvers):
         t_carOutput, carOutput = zip(*[(m.logMonoTime, m.carOutput) for m in msgs if m.which() == 'carOutput'], strict=True)
         t_carState, carState = zip(*[(m.logMonoTime, m.carState) for m in msgs if m.which() == 'carState'], strict=True)
         t_longitudinalPlan, longitudinalPlan = zip(*[(m.logMonoTime, m.longitudinalPlan) for m in msgs if m.which() == 'longitudinalPlan'], strict=True)
+
+        t_carControl = [(t - t_carControl[0]) / 1e9 for t in t_carControl]
+        t_carOutput = [(t - t_carOutput[0]) / 1e9 for t in t_carOutput]
+        t_carState = [(t - t_carState[0]) / 1e9 for t in t_carState]
+        t_longitudinalPlan = [(t - t_longitudinalPlan[0]) / 1e9 for t in t_longitudinalPlan]
 
         longActive = [m.longActive for m in carControl]
         gasPressed = [m.gasPressed for m in carState]
@@ -112,4 +123,4 @@ if __name__ == '__main__':
     if active_prev:
       maneuvers[-1][1][-1].append(msg)
 
-  report(platform, args.route, maneuvers)
+  report(platform, args.route, CP, maneuvers)
