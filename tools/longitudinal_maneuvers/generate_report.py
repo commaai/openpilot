@@ -34,16 +34,19 @@ def report(platform, route, CP, maneuvers):
         t_carState, carState = zip(*[(m.logMonoTime, m.carState) for m in msgs if m.which() == 'carState'], strict=True)
         t_longitudinalPlan, longitudinalPlan = zip(*[(m.logMonoTime, m.longitudinalPlan) for m in msgs if m.which() == 'longitudinalPlan'], strict=True)
 
+        # make time relative seconds
         t_carControl = [(t - t_carControl[0]) / 1e9 for t in t_carControl]
         t_carOutput = [(t - t_carOutput[0]) / 1e9 for t in t_carOutput]
         t_carState = [(t - t_carState[0]) / 1e9 for t in t_carState]
         t_longitudinalPlan = [(t - t_longitudinalPlan[0]) / 1e9 for t in t_longitudinalPlan]
 
-        longActive = [m.longActive for m in carControl]
-        gasPressed = [m.gasPressed for m in carState]
-        brakePressed = [m.brakePressed for m in carState]
+        # get first acceleration target and get first
+        aTarget = longitudinalPlan[0].aTarget
+        f.write(f'first target: {aTarget}')
 
-        maneuver_valid = all(longActive) and not (any(gasPressed) or any(brakePressed))
+        # maneuver validity
+        longActive = [m.longActive for m in carControl]
+        maneuver_valid = all(longActive)
 
         _open = 'open' if maneuver_valid else ''
         title = f'Run #{int(run)+1}' + (' <span style="color: red">(invalid maneuver!)</span>' if not maneuver_valid else '')
@@ -70,8 +73,8 @@ def report(platform, route, CP, maneuvers):
         ax[1].legend()
 
         ax[2].plot(t_carControl, longActive, label='longActive', linewidth=6)
-        ax[3].plot(t_carState, gasPressed, label='gasPressed', linewidth=6)
-        ax[3].plot(t_carState, brakePressed, label='brakePressed', linewidth=6)
+        ax[3].plot(t_carState, [m.gasPressed for m in carState], label='gasPressed', linewidth=6)
+        ax[3].plot(t_carState, [m.brakePressed for m in carState], label='brakePressed', linewidth=6)
         for i in (2, 3):
           ax[i].set_yticks([0, 1], minor=False)
           ax[i].set_ylim(-1, 2)
