@@ -19,7 +19,6 @@ IGN_ON = int(os.getenv("ON", "0"))
 IGN_OFF = int(os.getenv("OFF", "0"))
 ENABLE_IGN = IGN_ON > 0 and IGN_OFF > 0
 ENABLE_PWR = PWR_ON > 0 and PWR_OFF > 0
-SERIAL = os.getenv("SERIAL")
 
 
 def send_thread(j: PandaJungle, flock):
@@ -66,7 +65,7 @@ def connect():
   while True:
     # look for new devices
     for s in PandaJungle.list():
-      if s not in serials and (SERIAL is None or s == SERIAL):
+      if s not in serials:
         print("starting send thread for", s)
         serials[s] = threading.Thread(target=send_thread, args=(PandaJungle(s), flashing_lock))
         serials[s].start()
