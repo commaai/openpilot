@@ -4,6 +4,7 @@ import base64
 import io
 import os
 import pprint
+from collections import defaultdict
 from pathlib import Path
 import matplotlib.pyplot as plt
 
@@ -19,6 +20,7 @@ def report(platform, route, CP, maneuvers):
   output_path = Path(__file__).resolve().parent / "longitudinal_reports"
   output_fn = output_path / f"{platform}_{route.replace('/', '_')}.html"
   output_path.mkdir(exist_ok=True)
+  target_cross_times = defaultdict(list)
   with open(output_fn, "w") as f:
     f.write("<h1>Longitudinal maneuver report</h1>\n")
     f.write(f"<h3>{platform}</h3>\n")
@@ -57,6 +59,8 @@ def report(platform, route, CP, maneuvers):
           if (0 < aTarget < cs.aEgo) or (0 > aTarget > cs.aEgo):
             f.write(f', <strong>crossed in {t:.3f}s</strong>')
             target_cross_time = t
+            if maneuver_valid:
+              target_cross_times[description].append(t)
             break
         else:
           f.write(', <strong>not crossed</strong>')
@@ -100,6 +104,13 @@ def report(platform, route, CP, maneuvers):
         buffer.seek(0)
         f.write(f"<img src='data:image/png;base64,{base64.b64encode(buffer.getvalue()).decode()}' style='width:100%; max-width:800px;'>\n")
         f.write("</details>\n")
+
+    f.write("<h2>Summary</h2>\n")
+    for idx, (description, times) in enumerate(target_cross_times.items()):
+      f.write(f"<h3>{description}</h3>\n")
+      f.write(f"<p>Target crossed {len(times)} out of {len(maneuvers[idx][1])} runs</p>\n")
+      if len(times):
+        f.write(f"<p>Mean time to cross: {sum(times) / len(times):.3f}s</p>\n")
 
   print(f"\nReport written to {output_fn}\n")
 
