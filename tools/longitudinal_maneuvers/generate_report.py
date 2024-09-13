@@ -54,7 +54,7 @@ def report(platform, route, CP, maneuvers):
         target_cross_time = None
         f.write(f'<h3 style="font-weight: normal">Initial aTarget: {aTarget} m/s^2')
         for t, cs in zip(t_carState, carState, strict=True):
-          if (aTarget > 0 and cs.aEgo > aTarget) or (aTarget < 0 and cs.aEgo < aTarget):
+          if (0 < aTarget < cs.aEgo) or (0 > aTarget > cs.aEgo):
             f.write(f', <strong>crossed in {t:.3f}s</strong>')
             target_cross_time = t
             break
