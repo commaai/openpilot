@@ -84,9 +84,9 @@ class ModelState:
 
 
 def fill_driver_state(msg, ds_result: DriverStateResult):
-  msg.faceOrientation = [x for x in ds_result.face_orientation]
+  msg.faceOrientation = list(ds_result.face_orientation)
   msg.faceOrientationStd = [math.exp(x) for x in ds_result.face_orientation_std]
-  msg.facePosition = [x for x in ds_result.face_position[:2]]
+  msg.facePosition = list(ds_result.face_position[:2])
   msg.facePositionStd = [math.exp(x) for x in ds_result.face_position_std[:2]]
   msg.faceProb = sigmoid(ds_result.face_prob)
   msg.leftEyeProb = sigmoid(ds_result.left_eye_prob)
