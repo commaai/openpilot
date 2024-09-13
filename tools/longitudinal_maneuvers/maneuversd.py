@@ -112,7 +112,7 @@ def main():
   cloudlog.info("joystickd is waiting for CarParams")
   CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
 
-  sm = messaging.SubMaster(['carState', 'controlsState', 'selfdriveState', 'modelV2'], poll='modelV2')
+  sm = messaging.SubMaster(['carState', 'carControl', 'controlsState', 'selfdriveState', 'modelV2'], poll='modelV2')
   pm = messaging.PubMaster(['longitudinalPlan', 'driverAssistance', 'alertDebug'])
 
   maneuvers = iter(MANEUVERS)
