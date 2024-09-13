@@ -3,7 +3,7 @@ import argparse
 import base64
 import io
 import os
-import json
+import pprint
 from pathlib import Path
 import matplotlib.pyplot as plt
 
@@ -12,12 +12,12 @@ from openpilot.system.hardware.hw import Paths
 
 
 def format_car_params(CP):
-  return json.dumps({k: v for k, v in CP.to_dict().items() if not k.endswith('DEPRECATED')}, indent=2)
+  return pprint.pformat({k: v for k, v in CP.to_dict().items() if not k.endswith('DEPRECATED')}, indent=2)
 
 
 def report(platform, route, CP, maneuvers):
   output_path = Path(__file__).resolve().parent / "longitudinal_reports"
-  output_fn = output_path / f"{platform}_{route}.html"
+  output_fn = output_path / f"{platform}_{route.replace('/', '_')}.html"
   output_path.mkdir(exist_ok=True)
   with open(output_fn, "w") as f:
     f.write("<h1>Longitudinal maneuver report</h1>\n")
@@ -40,10 +40,6 @@ def report(platform, route, CP, maneuvers):
         t_carState = [(t - t_carState[0]) / 1e9 for t in t_carState]
         t_longitudinalPlan = [(t - t_longitudinalPlan[0]) / 1e9 for t in t_longitudinalPlan]
 
-        # get first acceleration target and get first
-        aTarget = longitudinalPlan[0].aTarget
-        f.write(f'first target: {aTarget}')
-
         # maneuver validity
         longActive = [m.longActive for m in carControl]
         maneuver_valid = all(longActive)
@@ -53,8 +49,21 @@ def report(platform, route, CP, maneuvers):
 
         f.write(f"<details {_open}><summary><h3 style='display: inline-block;'>{title}</h3></summary>\n")
 
+        # get first acceleration target and first intersection
+        aTarget = longitudinalPlan[0].aTarget
+        target_cross_time = None
+        f.write(f'<h3 style="font-weight: normal">Initial aTarget: {aTarget} m/s^2')
+        for t, cs in zip(t_carState, carState, strict=True):
+          if (aTarget > 0 and cs.aEgo > aTarget) or (aTarget < 0 and cs.aEgo < aTarget):
+            f.write(f', <strong>crossed in {t:.3f}s</strong>')
+            target_cross_time = t
+            break
+        else:
+          f.write(', <strong>not crossed</strong>')
+        f.write('</h3>')
+
         plt.rcParams['font.size'] = 40
-        fig = plt.figure(figsize=(30, 25))
+        fig = plt.figure(figsize=(30, 26))
         ax = fig.subplots(4, 1, sharex=True, gridspec_kw={'height_ratios': [5, 3, 1, 1]})
 
         ax[0].grid(linewidth=4)
@@ -66,6 +75,9 @@ def report(platform, route, CP, maneuvers):
         ax[0].set_ylabel('Acceleration (m/s^2)')
         #ax[0].set_ylim(-6.5, 6.5)
         ax[0].legend()
+
+        if target_cross_time is not None:
+          ax[0].plot(target_cross_time, aTarget, marker='o', markersize=50, markeredgewidth=7, markeredgecolor='black', markerfacecolor='None')
 
         ax[1].grid(linewidth=4)
         ax[1].plot(t_carState, [m.vEgo for m in carState], 'g', label='vEgo', linewidth=6)
