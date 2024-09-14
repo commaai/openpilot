@@ -75,7 +75,7 @@ def connect():
     # try to join all send threads
     cur_serials = serials.copy()
     for s, t in cur_serials.items():
-      if t is  not None:
+      if t is not None:
         t.join(0.01)
         if not t.is_alive():
           del serials[s]
@@ -90,7 +90,7 @@ def load_route(route_or_segment_name):
   sr = LogReader(route_or_segment_name)
   CP = sr.first("carParams")
   print(f"carFingerprint (for hardcoding fingerprint): '{CP.carFingerprint}'")
-  CAN_MSGS = sr.run_across_segments(24, process)
+  CAN_MSGS = sr.run_across_segments(os.cpu_count()//2, process)
   print("Finished loading...")
   return CAN_MSGS
 
