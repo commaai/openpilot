@@ -4,12 +4,14 @@ import os
 import time
 import usb1
 import threading
+import subprocess
 
 os.environ['FILEREADER_CACHE'] = '1'
 
 from openpilot.common.realtime import config_realtime_process, Ratekeeper, DT_CTRL
 from openpilot.selfdrive.pandad import can_capnp_to_can_list
 from openpilot.tools.lib.logreader import LogReader
+from openpilot.system.hardware import TICI
 from panda import PandaJungle
 
 # set both to cycle power or ignition
@@ -92,6 +94,27 @@ def load_route(route_or_segment_name):
   print("Finished loading...")
   return CAN_MSGS
 
+
+def remove_pandas():
+  '''With Jungle V2, the panda on each connected Comma 3X is an enumerated USB device. If the CAN Replay host is a 3X,
+  we run into an issue where the 3X is not fast enough to handle enumeration of many devices connected to Jungles,
+  so we automatically remove new 3X pandas from connecting to the host and also remove already connected pandas.
+  TODO: This should eventually be fixed in Panda firmware.'''
+
+  subprocess.run("""
+    sudo mkdir -p /run/udev/rules.d &&
+    sudo tee /run/udev/rules.d/99-ignore-bbaa-ddcc.rules << EOL
+ACTION=="add", ATTR{idVendor}=="bbaa", ATTR{idProduct}=="ddcc", RUN+="/bin/sh -c 'echo 1 > /sys/\\$devpath/remove'"
+EOL
+    sudo udevadm control --reload-rules &&
+    sudo udevadm trigger &&
+    for dev in /sys/bus/usb/devices/*/; do
+      if [ "$(sudo cat $dev/idVendor 2>/dev/null)" = "bbaa" ] && [ "$(sudo cat $dev/idProduct 2>/dev/null)" = "ddcc" ]; then
+        echo 1 | sudo tee "$dev/remove" >/dev/null
+      fi
+    done
+  """, shell=True, check=True)
+
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Replay CAN messages from a route to all connected pandas and jungles in a loop.",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -107,5 +130,8 @@ if __name__ == "__main__":
     print(f"Cycling power: on for {PWR_ON}s, off for {PWR_OFF}s")
   if ENABLE_IGN:
     print(f"Cycling ignition: on for {IGN_ON}s, off for {IGN_OFF}s")
+
+  if TICI:
+    remove_pandas()
 
   connect()
