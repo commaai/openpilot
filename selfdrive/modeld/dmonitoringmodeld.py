@@ -6,6 +6,7 @@ import time
 import ctypes
 import numpy as np
 from pathlib import Path
+from setproctitle import setproctitle
 
 from cereal import messaging
 from cereal.messaging import PubMaster, SubMaster
@@ -21,6 +22,8 @@ MODEL_WIDTH = 1440
 MODEL_HEIGHT = 960
 FEATURE_LEN = 512
 OUTPUT_SIZE = 84 + FEATURE_LEN
+
+PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 MODEL_PATHS = {
   ModelRunner.THNEED: Path(__file__).parent / 'models/dmonitoring_model.thneed',
@@ -116,6 +119,7 @@ def get_driverstate_packet(model_output: np.ndarray, frame_id: int, location_ts:
 
 def main():
   gc.disable()
+  setproctitle(PROCESS_NAME)
   set_realtime_priority(1)
 
   cl_context = CLContext()
