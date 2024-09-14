@@ -48,6 +48,8 @@ cabana "a2a0ccea32023010|2023-07-27--13-01-19"
 
 Replace "0ccea32023010|2023-07-27--13-01-19" with your desired route identifier.
 
+For more details on how to load specific segments from a route, refer to the [Segment Ranges](../SEGMENTRANGES.md#segment-ranges) section.
+
 
 ### Running Cabana with multiple cameras
 To run Cabana with multiple cameras, use the following command:

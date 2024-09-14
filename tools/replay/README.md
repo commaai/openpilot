@@ -25,6 +25,8 @@ tools/replay/replay 'a2a0ccea32023010|2023-07-27--13-01-19'
 tools/replay/replay --demo
 ```
 
+For more details on how to load specific segments from a route, refer to the [Segment Ranges](../SEGMENTRANGES.md#segment-ranges) section.
+
 ## Replay a Local Route
 To replay a route stored locally on your machine, specify the route name and provide the path to the directory where the route files are stored.
 
