@@ -22,6 +22,11 @@ IGN_OFF = int(os.getenv("OFF", "0"))
 ENABLE_IGN = IGN_ON > 0 and IGN_OFF > 0
 ENABLE_PWR = PWR_ON > 0 and PWR_OFF > 0
 
+# map jungle serial numbers to route names
+SERIAL_TO_SEGMENT = {
+  # "123456789abcdef000000000": '77611a1fac303767/2020-03-24--09-50-38/10:20', # Example
+}
+
 
 def send_thread(j: PandaJungle, flock):
   if "FLASH" in os.environ:
@@ -46,7 +51,8 @@ def send_thread(j: PandaJungle, flock):
       i = (rk.frame*DT_CTRL) % (IGN_ON + IGN_OFF) < IGN_ON
       j.set_ignition(i)
 
-    send = CAN_MSGS[rk.frame % len(CAN_MSGS)]
+    can_msgs = CAN_MSGS.get(SERIAL_TO_SEGMENT.get(j._serial, "default"), CAN_MSGS["default"])
+    send = can_msgs[rk.frame % len(can_msgs)]
     send = list(filter(lambda x: x[-1] <= 2, send))
     try:
       j.can_send_many(send)
@@ -86,7 +92,7 @@ def process(lr):
   return [can_capnp_to_can_list(m.can) for m in lr if m.which() == 'can']
 
 def load_route(route_or_segment_name):
-  print("Loading log...")
+  print(f"Loading log: {route_or_segment_name}")
   sr = LogReader(route_or_segment_name)
   CP = sr.first("carParams")
   print(f"carFingerprint (for hardcoding fingerprint): '{CP.carFingerprint}'")
@@ -121,10 +127,15 @@ if __name__ == "__main__":
   parser.add_argument("route_or_segment_name", nargs='?', help="The route or segment name to replay. If not specified, a default public route will be used.")
   args = parser.parse_args()
 
+  CAN_MSGS = {}
   if args.route_or_segment_name is None:
-    args.route_or_segment_name = "77611a1fac303767/2020-03-24--09-50-38/1:3"
-
-  CAN_MSGS = load_route(args.route_or_segment_name)
+    CAN_MSGS["default"] = load_route("77611a1fac303767/2020-03-24--09-50-38/1:3")
+    if SERIAL_TO_SEGMENT:
+      print("Using serial to segment mappings defined in can_replay.py:", SERIAL_TO_SEGMENT)
+      for route in set(SERIAL_TO_SEGMENT.values()):
+        CAN_MSGS[route] = load_route(route)
+  else:
+    CAN_MSGS["default"] = load_route(args.route_or_segment_name)
 
   if ENABLE_PWR:
     print(f"Cycling power: on for {PWR_ON}s, off for {PWR_OFF}s")
