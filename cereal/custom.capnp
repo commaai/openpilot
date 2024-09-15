@@ -12,7 +12,7 @@ struct CustomReserved0 @0x81c2f05a394cf4af {
 }
 
 struct CustomReserved1 @0xaedffd8f31e7b55d {
-  speed @0 :Float32;  # The advisory speed data (e.g., in km/h)
+  advisorySpeed @0 :Float32;  # The advisory speed data (e.g., in km/h)
 }
 
 
