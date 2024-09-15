@@ -34,9 +34,9 @@ class Controls:
     cloudlog.info("controlsd got CarParams")
 
     self.CI = get_car_interface(self.CP)
-
+    ## add 'advisorySpeed' to the subscribed messages in the control thread
     self.sm = messaging.SubMaster(['liveParameters', 'liveTorqueParameters', 'modelV2', 'selfdriveState',
-                                   'liveCalibration', 'livePose', 'longitudinalPlan', 'carState', 'carOutput',
+                                   'liveCalibration', 'livePose', 'longitudinalPlan', 'carState', 'carOutput', 'advisorySpeed', 
                                    'driverMonitoringState', 'onroadEvents', 'driverAssistance'], poll='selfdriveState')
     self.pm = messaging.PubMaster(['carControl', 'controlsState'])
 
