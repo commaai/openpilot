@@ -102,6 +102,13 @@ class LongitudinalPlanner:
     v_cruise_kph = min(sm['carState'].vCruise, V_CRUISE_MAX)
     v_cruise = v_cruise_kph * CV.KPH_TO_MS
 
+    #66 Get the advisory speed from the SubMaster
+    advisory_speed = sm['advisorySpeed'].advisorySpeed
+    advisory_speed_ms = advisory_speed * CV.KPH_TO_MS  # Convert advisory speed from km/h to m/s
+
+    #66 Limit the cruise speed by the advisory speed
+    v_cruise = min(v_cruise, advisory_speed_ms)
+
     long_control_off = sm['controlsState'].longControlState == LongCtrlState.off
     force_slow_decel = sm['controlsState'].forceDecel
 
