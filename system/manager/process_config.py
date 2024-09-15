@@ -96,6 +96,9 @@ procs = [
   PythonProcess("uploader", "system.loggerd.uploader", always_run),
   PythonProcess("statsd", "system.statsd", always_run),
 
+  ##66 add the new process for receiving advisory speed
+  PythonProcess("advisory_speed_receiver", "selfdrive.controls.advisory_speed_receiver", always_run),
+
   # debug procs
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar),
   PythonProcess("webrtcd", "system.webrtc.webrtcd", notcar),
