@@ -108,7 +108,7 @@ class LongitudinalPlanner:
 
     # Reset current state when not engaged, or user is controlling the speed
     reset_state = long_control_off if self.CP.openpilotLongitudinalControl else not sm['selfdriveState'].enabled
-    # some PCM messages may be updated a few cycles later, check if initialized
+    # PCM cruise speed may be updated a few cycles later, check if initialized
     reset_state = reset_state or not v_cruise_initialized
 
     # No change cost when user is controlling the speed, or when standstill
