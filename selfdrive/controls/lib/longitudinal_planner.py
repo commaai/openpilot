@@ -95,7 +95,8 @@ class LongitudinalPlanner:
     return x, v, a, j
 
   def update(self, sm):
-    self.mpc.mode = 'blended' if sm['controlsState'].experimentalMode else 'acc'
+    # TODO delete all other MPC modes
+    self.mpc.mode = 'acc'
 
     v_ego = sm['carState'].vEgo
     v_cruise_kph = min(sm['controlsState'].vCruise, V_CRUISE_MAX)
@@ -110,7 +111,7 @@ class LongitudinalPlanner:
     # No change cost when user is controlling the speed, or when standstill
     prev_accel_constraint = not (reset_state or sm['carState'].standstill)
 
-    if self.mpc.mode == 'acc':
+    if not sm['controlsState'].experimentalMode:
       accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
       accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
     else:
@@ -171,9 +172,20 @@ class LongitudinalPlanner:
     longitudinalPlan.longitudinalPlanSource = self.mpc.source
     longitudinalPlan.fcw = self.fcw
 
-    a_target, should_stop = get_accel_from_plan(self.CP, longitudinalPlan.speeds, longitudinalPlan.accels)
-    longitudinalPlan.aTarget = a_target
-    longitudinalPlan.shouldStop = should_stop
+    a_target_mpc, should_stop_mpc = get_accel_from_plan(self.CP, longitudinalPlan.speeds, longitudinalPlan.accels)
+    if sm['controlsState'].experimentalMode:
+      model_speeds = np.interp(CONTROL_N_T_IDX, ModelConstants.T_IDXS, sm['modelV2'].velocity.x)
+      model_accels = np.interp(CONTROL_N_T_IDX, ModelConstants.T_IDXS, sm['modelV2'].acceleration.x)
+      a_target_model, should_stop_model = get_accel_from_plan(self.CP, model_speeds, model_accels)
+      a_target = min(a_target_mpc, a_target_model)
+      should_stop = should_stop_mpc or should_stop_model
+    else:
+      a_target = a_target_mpc
+      should_stop = should_stop_mpc
+
+    longitudinalPlan.aTarget = float(a_target)
+    longitudinalPlan.shouldStop = bool(should_stop)
+
     longitudinalPlan.allowBrake = True
     longitudinalPlan.allowThrottle = True
 
