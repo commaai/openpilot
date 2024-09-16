@@ -64,7 +64,7 @@ class ModelState:
 
   def __init__(self, cl_ctx):
     assert ctypes.sizeof(DMonitoringModelResult) == OUTPUT_SIZE * ctypes.sizeof(ctypes.c_float)
-    self.frame = MonitoringModelFrame(context)
+    self.frame = MonitoringModelFrame(cl_ctx)
     self.output = np.zeros(OUTPUT_SIZE, dtype=np.float32)
     self.inputs = {
       # 'input_img': np.zeros(MODEL_HEIGHT * MODEL_WIDTH, dtype=np.uint8),

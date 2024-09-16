@@ -54,7 +54,7 @@ float sigmoid(float input) {
 }
 
 MonitoringModelFrame::MonitoringModelFrame(cl_device_id device_id, cl_context context) {
-  input_frame = std::make_unique<unsigned char[]>(MODEL_FRAME_SIZE);
+  input_frame = std::make_unique<float[]>(MODEL_FRAME_SIZE);
 
   q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
   y_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, MODEL_WIDTH * MODEL_HEIGHT, NULL, &err));
@@ -64,7 +64,7 @@ MonitoringModelFrame::MonitoringModelFrame(cl_device_id device_id, cl_context co
   transform_init(&transform, context, device_id);
 }
 
-unsigned char* MonitoringModelFrame::prepare(cl_mem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3 &projection) {
+float* MonitoringModelFrame::prepare(cl_mem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3 &projection) {
   transform_queue(&this->transform, q,
                   yuv_cl, frame_width, frame_height, frame_stride, frame_uv_offset,
                   y_cl, u_cl, v_cl, MODEL_WIDTH, MODEL_HEIGHT, projection);

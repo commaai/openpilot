@@ -58,5 +58,5 @@ cdef class MonitoringModelFrame(ModelFrame):
   def prepare(self, VisionBuf buf, float[:] projection):
     cdef mat3 cprojection
     memcpy(cprojection.v, &projection[0], 9*sizeof(float))
-    cdef unsigned char * data = self.dmframe.prepare(buf.buf.buf_cl, buf.width, buf.height, buf.stride, buf.uv_offset, cprojection)
+    cdef float * data = self.dmframe.prepare(buf.buf.buf_cl, buf.width, buf.height, buf.stride, buf.uv_offset, cprojection)
     return np.asarray(<cnp.float32_t[:self.dmframe.MODEL_FRAME_SIZE]> data)

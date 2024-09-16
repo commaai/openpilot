@@ -41,7 +41,7 @@ class MonitoringModelFrame {
 public:
   MonitoringModelFrame(cl_device_id device_id, cl_context context);
   ~MonitoringModelFrame();
-  unsigned char* prepare(cl_mem yuv_cl, int width, int height, int frame_stride, int frame_uv_offset, const mat3& transform);
+  float* prepare(cl_mem yuv_cl, int width, int height, int frame_stride, int frame_uv_offset, const mat3& transform);
 
   const int MODEL_WIDTH = 1440;
   const int MODEL_HEIGHT = 960;
@@ -51,5 +51,5 @@ private:
   Transform transform;
   cl_command_queue q;
   cl_mem y_cl, u_cl, v_cl;
-  std::unique_ptr<unsigned char[]> input_frame;
+  std::unique_ptr<float[]> input_frame;
 };
