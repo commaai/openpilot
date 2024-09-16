@@ -47,7 +47,7 @@ std::vector<std::string> Panda::list(bool usb_only) {
 
 #ifndef __APPLE__
   if (!usb_only) {
-    for (auto s : PandaSpiHandle::list()) {
+    for (const auto &s : PandaSpiHandle::list()) {
       if (std::find(serials.begin(), serials.end(), s) == serials.end()) {
         serials.push_back(s);
       }
@@ -169,7 +169,7 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
   int32_t pos = 0;
   uint8_t send_buf[2 * USB_TX_SOFT_LIMIT];
 
-  for (auto cmsg : can_data_list) {
+  for (const auto &cmsg : can_data_list) {
     // check if the message is intended for this panda
     uint8_t bus = cmsg.getSrc();
     if (bus < bus_offset || bus >= (bus_offset + PANDA_BUS_OFFSET)) {
@@ -206,7 +206,7 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
   if (pos > 0) write_func(send_buf, pos);
 }
 
-void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
+void Panda::can_send(const capnp::List<cereal::CanData>::Reader &can_data_list) {
   pack_can_buffer(can_data_list, [=](uint8_t* data, size_t size) {
     handle->bulk_write(3, data, size, 5);
   });
