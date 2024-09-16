@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
+set -x
 
 if [ -z "$SOURCE_DIR" ]; then
   echo "SOURCE_DIR must be set"
