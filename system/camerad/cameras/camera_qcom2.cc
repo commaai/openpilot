@@ -19,6 +19,8 @@
 #include "media/cam_sync.h"
 #include "common/swaglog.h"
 
+#include "system/camerad/cameras/isp_programs.h"
+
 const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 
 // For debugging:
@@ -234,12 +236,25 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
   struct cam_buf_io_cfg *io_cfg = (struct cam_buf_io_cfg *)((char*)&pkt->payload + pkt->io_configs_offset);
 
   // TODO: support MMU
+  // This is ISP command
   buf_desc[0].size = 65624;
   buf_desc[0].length = 0;
   buf_desc[0].type = CAM_CMD_BUF_DIRECT;
   buf_desc[0].meta_data = 3;
   buf_desc[0].mem_handle = buf0_mem_handle;
   buf_desc[0].offset = buf0_offset;
+
+  unsigned char* isp_prog;
+  if (buf0_offset == 0) {
+    buf_desc[0].length = sizeof(isp_prog1)-1;
+    isp_prog = isp_prog1;
+  } else {
+    buf_desc[0].length = sizeof(isp_prog2)-1;
+    isp_prog = isp_prog2;
+  }
+  printf("isp program length %d\n", buf_desc[0].length);
+  memcpy((unsigned char*)buf0_ptr + buf0_offset, isp_prog, buf_desc[0].length);
+  pkt->kmd_cmd_buf_offset = buf_desc[0].length;
 
   // parsed by cam_isp_packet_generic_blob_handler
   struct isp_packet {
@@ -310,14 +325,14 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
   memcpy(buf2.get(), &tmp, sizeof(tmp));
 
   if (io_mem_handle != 0) {
-    io_cfg[0].mem_handle[0] = io_mem_handle;
+    io_cfg[0].mem_handle[1] = io_mem_handle;
     io_cfg[0].planes[0] = (struct cam_plane_cfg){
       .width = ci->frame_width,
       .height = ci->frame_height + ci->extra_height,
       .plane_stride = ci->frame_stride,
       .slice_height = ci->frame_height + ci->extra_height,
-      .meta_stride = 0x0,  // YUV has meta(stride=0x400, size=0x5000)
-      .meta_size = 0x0,
+      .meta_stride = 0x400,  // YUV has meta(stride=0x400, size=0x5000)
+      .meta_size = 0x5000,
       .meta_offset = 0x0,
       .packer_config = 0x0,  // 0xb for YUV
       .mode_config = 0x0,    // 0x9ef for YUV
@@ -325,11 +340,11 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
       .h_init = 0x0,
       .v_init = 0x0,
     };
-    io_cfg[0].format = ci->mipi_format;                    // CAM_FORMAT_UBWC_TP10 for YUV
-    io_cfg[0].color_space = CAM_COLOR_SPACE_BASE;          // CAM_COLOR_SPACE_BT601_FULL for YUV
-    io_cfg[0].color_pattern = 0x5;                         // 0x0 for YUV
-    io_cfg[0].bpp = (ci->mipi_format == CAM_FORMAT_MIPI_RAW_10 ? 0xa : 0xc);  // bits per pixel
-    io_cfg[0].resource_type = CAM_ISP_IFE_OUT_RES_RDI_0;   // CAM_ISP_IFE_OUT_RES_FULL for YUV
+    io_cfg[0].format = CAM_FORMAT_NV12;
+    io_cfg[0].color_space = CAM_COLOR_SPACE_BT601_FULL;
+    io_cfg[0].color_pattern = 0x0;
+    io_cfg[0].bpp = 0;
+    io_cfg[0].resource_type = CAM_ISP_IFE_OUT_RES_FULL;
     io_cfg[0].fence = fence;
     io_cfg[0].direction = CAM_BUF_OUTPUT;
     io_cfg[0].subsample_pattern = 0x1;
@@ -564,8 +579,8 @@ void CameraState::configISP() {
 
     .num_out_res = 0x1,
     .data[0] = (struct cam_isp_out_port_info){
-      .res_type = CAM_ISP_IFE_OUT_RES_RDI_0,
-      .format = ci->mipi_format,
+      .res_type = CAM_ISP_IFE_OUT_RES_FULL,
+      .format = CAM_FORMAT_NV12,
       .width = ci->frame_width,
       .height = ci->frame_height + ci->extra_height,
       .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
@@ -584,7 +599,7 @@ void CameraState::configISP() {
   LOGD("acquire isp dev");
 
   // config ISP
-  alloc_w_mmu_hdl(multi_cam_state->video0_fd, 984480, (uint32_t*)&buf0_handle, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS |
+  buf0_ptr = alloc_w_mmu_hdl(multi_cam_state->video0_fd, 984480, (uint32_t*)&buf0_handle, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS |
                   CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, multi_cam_state->device_iommu, multi_cam_state->cdm_iommu);
   config_isp(0, 0, 1, buf0_handle, 0);
 }
