@@ -1481,7 +1481,6 @@ dev = [
     { name = "flaky" },
     { name = "lru-dict" },
     { name = "matplotlib" },
-    { name = "metadrive-simulator", marker = "platform_machine != 'aarch64'" },
     { name = "parameterized" },
     { name = "pyautogui" },
     { name = "pyopencl", marker = "platform_machine != 'aarch64'" },
@@ -1489,7 +1488,6 @@ dev = [
     { name = "pyqt5", marker = "platform_machine == 'x86_64'" },
     { name = "pytools", marker = "platform_machine != 'aarch64'" },
     { name = "pywinctl" },
-    { name = "rerun-sdk" },
     { name = "tabulate" },
     { name = "types-requests" },
     { name = "types-tabulate" },
@@ -1517,6 +1515,10 @@ testing = [
     { name = "pytest-xdist" },
     { name = "ruff" },
 ]
+tools = [
+    { name = "metadrive-simulator", marker = "platform_machine != 'aarch64'" },
+    { name = "rerun-sdk" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -1541,7 +1543,7 @@ requires-dist = [
     { name = "libusb1" },
     { name = "lru-dict", marker = "extra == 'dev'" },
     { name = "matplotlib", marker = "extra == 'dev'" },
-    { name = "metadrive-simulator", marker = "platform_machine != 'aarch64' and extra == 'dev'", url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal/metadrive_simulator-0.4.2.3-py3-none-any.whl" },
+    { name = "metadrive-simulator", marker = "platform_machine != 'aarch64' and extra == 'tools'", url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal/metadrive_simulator-0.4.2.3-py3-none-any.whl" },
     { name = "mkdocs", marker = "extra == 'docs'" },
     { name = "mypy", marker = "extra == 'testing'" },
     { name = "natsort", marker = "extra == 'docs'" },
@@ -1575,7 +1577,7 @@ requires-dist = [
     { name = "pywinctl", marker = "extra == 'dev'" },
     { name = "pyzmq" },
     { name = "requests" },
-    { name = "rerun-sdk", marker = "extra == 'dev'", specifier = ">=0.18" },
+    { name = "rerun-sdk", marker = "extra == 'tools'", specifier = ">=0.18" },
     { name = "ruff", marker = "extra == 'testing'" },
     { name = "scons" },
     { name = "sentry-sdk" },
