@@ -1034,10 +1034,8 @@ void cameras_run(MultiCameraState *s) {
         if (env_debug_frames) {
           printf("sess_hdl 0x%6X, link_hdl 0x%6X, frame_id %lu, req_id %lu, timestamp %.2f ms, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl,
                  event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp/1e6, event_data->u.frame_msg.sof_status);
+          do_exit = do_exit || event_data->u.frame_msg.frame_id > (1*20);
         }
-
-        // for debugging
-        //do_exit = do_exit || event_data->u.frame_msg.frame_id > (30*20);
 
         if (event_data->session_hdl == s->road_cam.session_handle) {
           s->road_cam.handle_camera_event(event_data);
