@@ -57,9 +57,9 @@ MonitoringModelFrame::MonitoringModelFrame(cl_device_id device_id, cl_context co
   input_frame = std::make_unique<float[]>(MODEL_FRAME_SIZE);
 
   q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
-  y_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, MODEL_WIDTH * MODEL_HEIGHT, NULL, &err));
-  u_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, (MODEL_WIDTH / 2) * (MODEL_HEIGHT / 2), NULL, &err));
-  v_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, (MODEL_WIDTH / 2) * (MODEL_HEIGHT / 2), NULL, &err));
+  y_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, MODEL_WIDTH * MODEL_HEIGHT *sizeof(float), NULL, &err));
+  u_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, (MODEL_WIDTH / 2) * (MODEL_HEIGHT / 2) *sizeof(float), NULL, &err));
+  v_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, (MODEL_WIDTH / 2) * (MODEL_HEIGHT / 2) *sizeof(float), NULL, &err));
 
   transform_init(&transform, context, device_id);
 }

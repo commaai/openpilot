@@ -82,7 +82,7 @@ class ModelState:
     # buf_data = buf.data.reshape(-1, buf.stride)
     # input_data = self.inputs['input_img'].reshape(MODEL_HEIGHT, MODEL_WIDTH)
     # input_data[:] = buf_data[v_offset:v_offset+MODEL_HEIGHT, h_offset:h_offset+MODEL_WIDTH]
-    self.model.setInputBuffer("input_img", self.frame.prepare(buf, transform.flatten()).view(np.float32))
+    self.model.setInputBuffer("input_img", self.frame.prepare(buf, transform.flatten()))
 
     t1 = time.perf_counter()
     self.model.execute()
@@ -152,7 +152,6 @@ def main():
     if model_transform is None:
       from_intr = _os_fisheye.intrinsics if buf.width > 2000 else _ar_ox_fisheye.intrinsics
       model_transform = np.linalg.inv(np.dot(dmonitoringmodel_intrinsics, np.linalg.inv(from_intr))).astype(np.float32)
-      transform_set = True
 
     sm.update(0)
     if sm.updated["liveCalibration"]:
