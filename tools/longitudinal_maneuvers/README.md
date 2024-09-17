@@ -6,8 +6,6 @@ Test your vehicle's longitudinal control with this tool. The tool will test the 
 
 ## Instructions
 
-These instructions are fairly detailed but may not cover every possible issue. If you have questions, please ask on Discord.
-
 1. Check out a development branch such as `master` on your comma device.
 2. Locate either a large empty parking lot or road devoid of any car or foot traffic. Flat, straight road is preferred. The full maneuver suite can take 1 mile or more if left running, however it is recommended to disengage openpilot between maneuvers and turn around if there is not enough space.
 3. Turn off the vehicle and set this parameter which will signal to openpilot to start the longitudinal maneuvers daemon:
@@ -43,3 +41,5 @@ These instructions are fairly detailed but may not cover every possible issue. I
 
     Report written to /home/batman/openpilot/tools/longitudinal_maneuvers/longitudinal_reports/LEXUS_ES_TSS2_57048cfce01d9625_0000010e--5b26bc3be7.html
     ```
+
+You can reach out on [Discord](https://discord.comma.ai) if you have any questions about these instructions or the tool itself.
