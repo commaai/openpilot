@@ -19,6 +19,9 @@ Test your vehicle's longitudinal control with this tool. The tool will test the 
    ![videoframe_6652](https://github.com/user-attachments/assets/e9d4c95a-cd76-4ab7-933e-19937792fa0f)
 
 5. Ensure the road ahead is clear, as openpilot will not brake for any obstructions in this mode. If so, press "Set" on your steering wheel to start the tests. The tests will run for about 4 minutes. If you need to pause the tests, press "Cancel" on your steering wheel. You can resume the tests by pressing "Resume" on your steering wheel.
+
+   ![cog-clip-00 01 11 250-00 01 22 250](https://github.com/user-attachments/assets/c312c1cc-76e8-46e1-a05e-bb9dfb58994f)
+
 6. When the testing is complete, you'll see an alert that says "Maneuvers Finished," complete the route by pulling over and turning off the vehicle.
 
    ![fin2](https://github.com/user-attachments/assets/c06960ae-7cfb-44af-beaa-4dc28848e49d)
