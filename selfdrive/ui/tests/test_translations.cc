@@ -24,7 +24,6 @@ void checkWidgetTrWrap(MainWindow &w) {
     QString parentWidgets = getParentWidgets(widget).join("->");
 
     if (!text.isEmpty() && !isNumber && !wrapped) {
-      // FIXME: FAIL is not picked up by pytest-cpp, add to pytest testpaths when https://github.com/pytest-dev/pytest-cpp/pull/147 is merged
       FAIL(("\"" + text + "\" must be wrapped. Parent widgets: " + parentWidgets).toStdString());
     }
 
