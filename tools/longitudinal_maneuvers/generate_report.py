@@ -7,7 +7,6 @@ import pprint
 from collections import defaultdict
 from pathlib import Path
 import matplotlib.pyplot as plt
-import PIL
 
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.system.hardware.hw import Paths
@@ -103,14 +102,7 @@ def report(platform, route, CP, maneuvers):
         buffer = io.BytesIO()
         fig.savefig(buffer, format='png')
         buffer.seek(0)
-        # Run this through PIL to reduce file size
-        compressed_buffer = io.BytesIO()
-        img = PIL.Image.open(buffer)
-        # Resize to max 800px width as that's the max width in the report anyway
-        img.thumbnail((800, 800))
-        img.save(compressed_buffer, format='PNG', optimize=True)
-        compressed_buffer.seek(0)
-        f.write(f"<img src='data:image/png;base64,{base64.b64encode(compressed_buffer.getvalue()).decode()}' style='width:100%; max-width:800px;'>\n")
+        f.write(f"<img src='data:image/png;base64,{base64.b64encode(buffer.getvalue()).decode()}' style='width:100%; max-width:800px;'>\n")
         f.write("</details>\n")
 
     f.write("<h2>Summary</h2>\n")
