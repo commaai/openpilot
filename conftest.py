@@ -8,6 +8,9 @@ from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.system.manager import manager
 from openpilot.system.hardware import TICI, HARDWARE
 
+# TODO: pytest-cpp doesn't support FAIL, and we need to create test translations in sessionstart
+collect_ignore = ["selfdrive/ui/tests/test_translations"]
+
 
 def pytest_sessionstart(session):
   # TODO: fix tests and enable test order randomization
