@@ -4,11 +4,7 @@ Test your vehicle's longitudinal control with this tool. The tool will test the 
 
 Sample snapshot of a report:
 
-<img width="500px" src="https://github.com/user-attachments/assets/4cddb012-5fc9-4207-ab40-71e0b3812218">
-
-Sample Test Video:
-
-https://github.com/user-attachments/assets/0aec84ce-2a24-44c9-a929-1b1073b00039
+<img width="600px" src="https://github.com/user-attachments/assets/d18d0c7d-2bde-44c1-8e86-1741ed442ad8">
 
 ## Instructions
 
@@ -22,7 +18,7 @@ These instructions are fairly detailed but may not cover every possible issue. I
    echo -n 1 > /data/params/d/LongitudinalManeuverMode
    ```
 
-4. Turn your vehicle back on. You will see this screen:
+4. Turn your vehicle back on. You will see the "Longitudinal Maneuver Mode" alert:
 
    ![videoframe_6652](https://github.com/user-attachments/assets/e9d4c95a-cd76-4ab7-933e-19937792fa0f)
 
@@ -31,7 +27,7 @@ These instructions are fairly detailed but may not cover every possible issue. I
 
    ![fin2](https://github.com/user-attachments/assets/c06960ae-7cfb-44af-beaa-4dc28848e49d)
 
-7. Visit https://connect.comma.ai and locate "Longitudinal Maneuvers Mode" routes. They will stand out with lots of orange intervals in their timeline:
+7. Visit https://connect.comma.ai and locate "Longitudinal Maneuver Mode" routes. They will stand out with lots of orange intervals in their timeline:
 
    ![image](https://github.com/user-attachments/assets/cfe4c6d9-752f-4b24-b421-4b90a01933dc)
 
