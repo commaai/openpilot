@@ -1,6 +1,7 @@
 from cereal import log
 from openpilot.common.realtime import DT_CTRL
-from openpilot.selfdrive.controls.lib.selfdrive import StateMachine, SOFT_DISABLE_TIME
+from openpilot.selfdrive.selfdrived.selfdrived import StateMachine
+from openpilot.selfdrive.selfdrived.state import SOFT_DISABLE_TIME
 from openpilot.selfdrive.selfdrived.events import Events, ET, EVENTS, NormalPermanentAlert
 
 State = log.SelfdriveState.OpenpilotState
