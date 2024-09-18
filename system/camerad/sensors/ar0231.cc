@@ -33,7 +33,7 @@ std::map<uint16_t, std::pair<int, int>> ar0231_build_register_lut(CameraState *c
 
   std::map<uint16_t, std::pair<int, int>> registers;
   for (int register_row = 0; register_row < 2; register_row++) {
-    uint8_t *registers_raw = data + c->ci->frame_stride * register_row;
+    uint8_t *registers_raw = data + c->sensor->frame_stride * register_row;
     assert(registers_raw[0] == 0x0a);  // Start of line
 
     int value_tag_count = 0;
@@ -58,7 +58,7 @@ std::map<uint16_t, std::pair<int, int>> ar0231_build_register_lut(CameraState *c
           cur_addr += 2;
           first_val_idx = val_idx;
         } else {
-          registers[cur_addr] = std::make_pair(first_val_idx + c->ci->frame_stride * register_row, val_idx + c->ci->frame_stride * register_row);
+          registers[cur_addr] = std::make_pair(first_val_idx + c->sensor->frame_stride * register_row, val_idx + c->sensor->frame_stride * register_row);
         }
 
         value_tag_count++;
@@ -121,7 +121,7 @@ AR0231::AR0231() {
 
 void AR0231::processRegisters(CameraState *c, cereal::FrameData::Builder &framed) const {
   const uint8_t expected_preamble[] = {0x0a, 0xaa, 0x55, 0x20, 0xa5, 0x55};
-  uint8_t *data = (uint8_t *)c->buf.cur_camera_buf->addr + c->ci->registers_offset;
+  uint8_t *data = (uint8_t *)c->buf.cur_camera_buf->addr + c->sensor->registers_offset;
 
   if (memcmp(data, expected_preamble, std::size(expected_preamble)) != 0) {
     LOGE("unexpected register data found");

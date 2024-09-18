@@ -25,9 +25,9 @@ public:
              "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d -DFRAME_OFFSET=%d "
              "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DYUV_STRIDE=%d -DUV_OFFSET=%d "
              "-DSENSOR_ID=%hu -DHDR_OFFSET=%d -DVIGNETTING=%d ",
-             ci->frame_width, ci->frame_height, ci->hdr_offset > 0 ? ci->frame_stride * 2 : ci->frame_stride, ci->frame_offset,
+             sensor->frame_width, sensor->frame_height, sensor->hdr_offset > 0 ? sensor->frame_stride * 2 : sensor->frame_stride, sensor->frame_offset,
              b->rgb_width, b->rgb_height, buf_width, uv_offset,
-             static_cast<unsigned short>(ci->image_sensor), ci->hdr_offset, s->cc.camera_num == 1);
+             static_cast<unsigned short>(sensor->image_sensor), sensor->hdr_offset, s->cc.camera_num == 1);
     const char *cl_file = "cameras/process_raw.cl";
     cl_program prg_imgproc = cl_program_from_file(context, device_id, cl_file, args);
     krnl_ = CL_CHECK_ERR(clCreateKernel(prg_imgproc, "process_raw", &err));
@@ -69,7 +69,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
 
   const SensorInfo *ci = s->ci.get();
   // RAW frame
-  const int frame_size = (ci->frame_height + ci->extra_height) * ci->frame_stride;
+  const int frame_size = (sensor->frame_height + sensor->extra_height) * sensor->frame_stride;
   camera_bufs = std::make_unique<VisionBuf[]>(frame_buf_count);
   camera_bufs_metadata = std::make_unique<FrameMetadata[]>(frame_buf_count);
 
@@ -79,8 +79,8 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   }
   LOGD("allocated %d CL buffers", frame_buf_count);
 
-  rgb_width = ci->frame_width;
-  rgb_height = ci->hdr_offset > 0 ? (ci->frame_height - ci->hdr_offset) / 2 : ci->frame_height;
+  rgb_width = sensor->frame_width;
+  rgb_height = sensor->hdr_offset > 0 ? (sensor->frame_height - sensor->hdr_offset) / 2 : sensor->frame_height;
 
   int nv12_width = VENUS_Y_STRIDE(COLOR_FMT_NV12, rgb_width);
   int nv12_height = VENUS_Y_SCANLINES(COLOR_FMT_NV12, rgb_height);
@@ -151,9 +151,9 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
   framed.setProcessingTime(frame_data.processing_time);
 
   const float ev = c->cur_ev[frame_data.frame_id % 3];
-  const float perc = util::map_val(ev, c->ci->min_ev, c->ci->max_ev, 0.0f, 100.0f);
+  const float perc = util::map_val(ev, c->sensor->min_ev, c->sensor->max_ev, 0.0f, 100.0f);
   framed.setExposureValPercent(perc);
-  framed.setSensor(c->ci->image_sensor);
+  framed.setSensor(c->sensor->image_sensor);
 }
 
 kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b) {

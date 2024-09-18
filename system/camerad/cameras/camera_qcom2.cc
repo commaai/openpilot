@@ -47,7 +47,7 @@ int CameraState::clear_req_queue() {
 void CameraState::sensors_start() {
   if (!enabled) return;
   LOGD("starting sensor %d", cc.camera_num);
-  sensors_i2c(ci->start_reg_array.data(), ci->start_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, ci->data_word);
+  sensors_i2c(sensor->start_reg_array.data(), sensor->start_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, sensor->data_word);
 }
 
 void CameraState::sensors_poke(int request_id) {
@@ -122,7 +122,7 @@ int CameraState::sensors_init() {
   auto probe = (struct cam_cmd_probe *)(i2c_info.get() + 1);
 
   probe->camera_id = cc.camera_num;
-  i2c_info->slave_addr = ci->getSlaveAddress(cc.camera_num);
+  i2c_info->slave_addr = sensor->getSlaveAddress(cc.camera_num);
   // 0(I2C_STANDARD_MODE) = 100khz, 1(I2C_FAST_MODE) = 400khz
   //i2c_info->i2c_freq_mode = I2C_STANDARD_MODE;
   i2c_info->i2c_freq_mode = I2C_FAST_MODE;
@@ -132,8 +132,8 @@ int CameraState::sensors_init() {
   probe->addr_type = CAMERA_SENSOR_I2C_TYPE_WORD;
   probe->op_code = 3;   // don't care?
   probe->cmd_type = CAMERA_SENSOR_CMD_TYPE_PROBE;
-  probe->reg_addr = ci->probe_reg_addr;
-  probe->expected_data = ci->probe_expected_data;
+  probe->reg_addr = sensor->probe_reg_addr;
+  probe->expected_data = sensor->probe_expected_data;
   probe->data_mask = 0;
 
   //buf_desc[1].size = buf_desc[1].length = 148;
@@ -155,7 +155,7 @@ int CameraState::sensors_init() {
   power->count = 1;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
   power->power_settings[0].power_seq_type = 0;
-  power->power_settings[0].config_val_low = ci->mclk_frequency;
+  power->power_settings[0].config_val_low = sensor->mclk_frequency;
   power = power_set_wait(power, 1);
 
   // reset high
@@ -309,10 +309,10 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
   if (io_mem_handle != 0) {
     io_cfg[0].mem_handle[0] = io_mem_handle;
     io_cfg[0].planes[0] = (struct cam_plane_cfg){
-      .width = ci->frame_width,
-      .height = ci->frame_height + ci->extra_height,
-      .plane_stride = ci->frame_stride,
-      .slice_height = ci->frame_height + ci->extra_height,
+      .width = sensor->frame_width,
+      .height = sensor->frame_height + sensor->extra_height,
+      .plane_stride = sensor->frame_stride,
+      .slice_height = sensor->frame_height + sensor->extra_height,
       .meta_stride = 0x0,  // YUV has meta(stride=0x400, size=0x5000)
       .meta_size = 0x0,
       .meta_offset = 0x0,
@@ -322,10 +322,10 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
       .h_init = 0x0,
       .v_init = 0x0,
     };
-    io_cfg[0].format = ci->mipi_format;                    // CAM_FORMAT_UBWC_TP10 for YUV
+    io_cfg[0].format = sensor->mipi_format;                    // CAM_FORMAT_UBWC_TP10 for YUV
     io_cfg[0].color_space = CAM_COLOR_SPACE_BASE;          // CAM_COLOR_SPACE_BT601_FULL for YUV
     io_cfg[0].color_pattern = 0x5;                         // 0x0 for YUV
-    io_cfg[0].bpp = (ci->mipi_format == CAM_FORMAT_MIPI_RAW_10 ? 0xa : 0xc);  // bits per pixel
+    io_cfg[0].bpp = (sensor->mipi_format == CAM_FORMAT_MIPI_RAW_10 ? 0xa : 0xc);  // bits per pixel
     io_cfg[0].resource_type = CAM_ISP_IFE_OUT_RES_RDI_0;   // CAM_ISP_IFE_OUT_RES_FULL for YUV
     io_cfg[0].fence = fence;
     io_cfg[0].direction = CAM_BUF_OUTPUT;
@@ -432,9 +432,9 @@ void CameraState::set_exposure_rect() {
 }
 
 void CameraState::sensor_set_parameters() {
-  dc_gain_weight = ci->dc_gain_min_weight;
-  gain_idx = ci->analog_gain_rec_idx;
-  cur_ev[0] = cur_ev[1] = cur_ev[2] = (1 + dc_gain_weight * (ci->dc_gain_factor-1) / ci->dc_gain_max_weight) * ci->sensor_analog_gains[gain_idx] * exposure_time;
+  dc_gain_weight = sensor->dc_gain_min_weight;
+  gain_idx = sensor->analog_gain_rec_idx;
+  cur_ev[0] = cur_ev[1] = cur_ev[2] = (1 + dc_gain_weight * (sensor->dc_gain_factor-1) / sensor->dc_gain_max_weight) * sensor->sensor_analog_gains[gain_idx] * exposure_time;
 }
 
 void CameraState::camera_map_bufs() {
@@ -459,7 +459,7 @@ void CameraState::camera_init(VisionIpcServer * v, cl_device_id device_id, cl_co
   buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, cc.stream_type);
   camera_map_bufs();
 
-  fl_pix = cc.focal_len / ci->pixel_size_mm;
+  fl_pix = cc.focal_len / sensor->pixel_size_mm;
   set_exposure_rect();
 }
 
@@ -518,7 +518,7 @@ bool CameraState::openSensor() {
   LOGD("acquire sensor dev");
 
   LOG("-- Configuring sensor");
-  sensors_i2c(ci->init_reg_array.data(), ci->init_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, ci->data_word);
+  sensors_i2c(sensor->init_reg_array.data(), sensor->init_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, sensor->data_word);
   return true;
 }
 
@@ -535,23 +535,23 @@ void CameraState::configISP() {
     .lane_cfg = 0x3210,
 
     .vc = 0x0,
-    .dt = ci->frame_data_type,
-    .format = ci->mipi_format,
+    .dt = sensor->frame_data_type,
+    .format = sensor->mipi_format,
 
     .test_pattern = 0x2,  // 0x3?
     .usage_type = 0x0,
 
     .left_start = 0,
-    .left_stop = ci->frame_width - 1,
-    .left_width = ci->frame_width,
+    .left_stop = sensor->frame_width - 1,
+    .left_width = sensor->frame_width,
 
     .right_start = 0,
-    .right_stop = ci->frame_width - 1,
-    .right_width = ci->frame_width,
+    .right_stop = sensor->frame_width - 1,
+    .right_width = sensor->frame_width,
 
     .line_start = 0,
-    .line_stop = ci->frame_height + ci->extra_height - 1,
-    .height = ci->frame_height + ci->extra_height,
+    .line_stop = sensor->frame_height + sensor->extra_height - 1,
+    .height = sensor->frame_height + sensor->extra_height,
 
     .pixel_clk = 0x0,
     .batch_size = 0x0,
@@ -562,9 +562,9 @@ void CameraState::configISP() {
     .num_out_res = 0x1,
     .data[0] = (struct cam_isp_out_port_info){
       .res_type = CAM_ISP_IFE_OUT_RES_RDI_0,
-      .format = ci->mipi_format,
-      .width = ci->frame_width,
-      .height = ci->frame_height + ci->extra_height,
+      .format = sensor->mipi_format,
+      .width = sensor->frame_width,
+      .height = sensor->frame_height + sensor->extra_height,
       .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
     },
   };
@@ -809,7 +809,7 @@ void CameraState::handle_camera_event(void *evdat) {
     meta_data.request_id = real_id;
     meta_data.timestamp_sof = timestamp;
     exp_lock.lock();
-    meta_data.gain = analog_gain_frac * (1 + dc_gain_weight * (ci->dc_gain_factor-1) / ci->dc_gain_max_weight);
+    meta_data.gain = analog_gain_frac * (1 + dc_gain_weight * (sensor->dc_gain_factor-1) / sensor->dc_gain_max_weight);
     meta_data.high_conversion_gain = dc_gain_enabled;
     meta_data.integ_lines = exposure_time;
     meta_data.measured_grey_fraction = measured_grey_fraction;
@@ -830,7 +830,7 @@ void CameraState::handle_camera_event(void *evdat) {
 }
 
 void CameraState::update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain) {
-  float score = ci->getExposureScore(desired_ev, exp_t, exp_g_idx, exp_gain, gain_idx);
+  float score = sensor->getExposureScore(desired_ev, exp_t, exp_g_idx, exp_gain, gain_idx);
   if (score < best_ev_score) {
     new_exp_t = exp_t;
     new_exp_g = exp_g_idx;
@@ -856,10 +856,10 @@ void CameraState::set_camera_exposure(float grey_frac) {
   const float cur_ev_ = cur_ev[buf.cur_frame_data.frame_id % 3];
 
   // Scale target grey between 0.1 and 0.4 depending on lighting conditions
-  float new_target_grey = std::clamp(0.4 - 0.3 * log2(1.0 + ci->target_grey_factor*cur_ev_) / log2(6000.0), 0.1, 0.4);
+  float new_target_grey = std::clamp(0.4 - 0.3 * log2(1.0 + sensor->target_grey_factor*cur_ev_) / log2(6000.0), 0.1, 0.4);
   float target_grey = (1.0 - k_grey) * target_grey_fraction + k_grey * new_target_grey;
 
-  float desired_ev = std::clamp(cur_ev_ * target_grey / grey_frac, ci->min_ev, ci->max_ev);
+  float desired_ev = std::clamp(cur_ev_ * target_grey / grey_frac, sensor->min_ev, sensor->max_ev);
   float k = (1.0 - k_ev) / 3.0;
   desired_ev = (k * cur_ev[0]) + (k * cur_ev[1]) + (k * cur_ev[2]) + (k_ev * desired_ev);
 
@@ -870,16 +870,16 @@ void CameraState::set_camera_exposure(float grey_frac) {
   // Hysteresis around high conversion gain
   // We usually want this on since it results in lower noise, but turn off in very bright day scenes
   bool enable_dc_gain = dc_gain_enabled;
-  if (!enable_dc_gain && target_grey < ci->dc_gain_on_grey) {
+  if (!enable_dc_gain && target_grey < sensor->dc_gain_on_grey) {
     enable_dc_gain = true;
-    dc_gain_weight = ci->dc_gain_min_weight;
-  } else if (enable_dc_gain && target_grey > ci->dc_gain_off_grey) {
+    dc_gain_weight = sensor->dc_gain_min_weight;
+  } else if (enable_dc_gain && target_grey > sensor->dc_gain_off_grey) {
     enable_dc_gain = false;
-    dc_gain_weight = ci->dc_gain_max_weight;
+    dc_gain_weight = sensor->dc_gain_max_weight;
   }
 
-  if (enable_dc_gain && dc_gain_weight < ci->dc_gain_max_weight) {dc_gain_weight += 1;}
-  if (!enable_dc_gain && dc_gain_weight > ci->dc_gain_min_weight) {dc_gain_weight -= 1;}
+  if (enable_dc_gain && dc_gain_weight < sensor->dc_gain_max_weight) {dc_gain_weight += 1;}
+  if (!enable_dc_gain && dc_gain_weight > sensor->dc_gain_min_weight) {dc_gain_weight -= 1;}
 
   std::string gain_bytes, time_bytes;
   if (env_ctrl_exp_from_params) {
@@ -898,14 +898,14 @@ void CameraState::set_camera_exposure(float grey_frac) {
   } else {
     // Simple brute force optimizer to choose sensor parameters
     // to reach desired EV
-    for (int g = std::max((int)ci->analog_gain_min_idx, gain_idx - 1); g <= std::min((int)ci->analog_gain_max_idx, gain_idx + 1); g++) {
-      float gain = ci->sensor_analog_gains[g] * (1 + dc_gain_weight * (ci->dc_gain_factor-1) / ci->dc_gain_max_weight);
+    for (int g = std::max((int)sensor->analog_gain_min_idx, gain_idx - 1); g <= std::min((int)sensor->analog_gain_max_idx, gain_idx + 1); g++) {
+      float gain = sensor->sensor_analog_gains[g] * (1 + dc_gain_weight * (sensor->dc_gain_factor-1) / sensor->dc_gain_max_weight);
 
       // Compute optimal time for given gain
-      int t = std::clamp(int(std::round(desired_ev / gain)), ci->exposure_time_min, ci->exposure_time_max);
+      int t = std::clamp(int(std::round(desired_ev / gain)), sensor->exposure_time_min, sensor->exposure_time_max);
 
       // Only go below recommended gain when absolutely necessary to not overexpose
-      if (g < ci->analog_gain_rec_idx && t > 20 && g < gain_idx) {
+      if (g < sensor->analog_gain_rec_idx && t > 20 && g < gain_idx) {
         continue;
       }
 
@@ -918,12 +918,12 @@ void CameraState::set_camera_exposure(float grey_frac) {
   measured_grey_fraction = grey_frac;
   target_grey_fraction = target_grey;
 
-  analog_gain_frac = ci->sensor_analog_gains[new_exp_g];
+  analog_gain_frac = sensor->sensor_analog_gains[new_exp_g];
   gain_idx = new_exp_g;
   exposure_time = new_exp_t;
   dc_gain_enabled = enable_dc_gain;
 
-  float gain = analog_gain_frac * (1 + dc_gain_weight * (ci->dc_gain_factor-1) / ci->dc_gain_max_weight);
+  float gain = analog_gain_frac * (1 + dc_gain_weight * (sensor->dc_gain_factor-1) / sensor->dc_gain_max_weight);
   cur_ev[buf.cur_frame_data.frame_id % 3] = exposure_time * gain;
 
   exp_lock.unlock();
@@ -936,8 +936,8 @@ void CameraState::set_camera_exposure(float grey_frac) {
   }
   // LOGE("ae - camera %d, cur_t %.5f, sof %.5f, dt %.5f", cc.camera_num, 1e-9 * nanos_since_boot(), 1e-9 * buf.cur_frame_data.timestamp_sof, 1e-9 * (nanos_since_boot() - buf.cur_frame_data.timestamp_sof));
 
-  auto exp_reg_array = ci->getExposureRegisters(exposure_time, new_exp_g, dc_gain_enabled);
-  sensors_i2c(exp_reg_array.data(), exp_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, ci->data_word);
+  auto exp_reg_array = sensor->getExposureRegisters(exposure_time, new_exp_g, dc_gain_enabled);
+  sensors_i2c(exp_reg_array.data(), exp_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, sensor->data_word);
 }
 
 void CameraState::run() {
@@ -961,7 +961,7 @@ void CameraState::run() {
     }
 
     // Process camera registers and set camera exposure
-    ci->processRegisters(this, framed);
+    sensor->processRegisters(this, framed);
     set_camera_exposure(set_exposure_target(&buf, ae_xywh, 2, cc.stream_type != VISION_STREAM_DRIVER ? 2 : 4));
 
     // Send the message
