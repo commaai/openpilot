@@ -8,7 +8,6 @@
 #include "system/camerad/cameras/camera_common.h"
 #include "system/camerad/cameras/camera_util.h"
 #include "system/camerad/sensors/sensor.h"
-#include "common/params.h"
 #include "common/util.h"
 
 #define FRAME_BUF_COUNT 4
@@ -132,9 +131,6 @@ private:
   void configISP();
   void configCSIPHY();
   void linkDevices();
-
-  // for debugging
-  Params params;
 };
 
 class MultiCameraState {

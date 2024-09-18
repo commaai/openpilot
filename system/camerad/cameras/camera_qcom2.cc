@@ -18,6 +18,7 @@
 #include "media/cam_sensor_cmn_header.h"
 #include "media/cam_sync.h"
 
+#include "common/params.h"
 #include "common/swaglog.h"
 
 const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
@@ -31,7 +32,6 @@ CameraState::CameraState(MultiCameraState *multi_camera_state, const CameraConfi
 }
 
 CameraState::~CameraState() {
-  // order here changes?
   if (open) {
     camera_close();
   }
@@ -412,9 +412,9 @@ void CameraState::set_exposure_rect() {
   // set areas for each camera, shouldn't be changed
   std::vector<std::pair<Rect, float>> ae_targets = {
     // (Rect, F)
-    std::make_pair((Rect){96, 250, 1734, 524}, 567.0), // wide
+    std::make_pair((Rect){96, 250, 1734, 524}, 567.0),  // wide
     std::make_pair((Rect){96, 160, 1734, 986}, 2648.0), // road
-    std::make_pair((Rect){96, 242, 1736, 906}, 567.0) // driver
+    std::make_pair((Rect){96, 242, 1736, 906}, 567.0)   // driver
   };
   int h_ref = 1208;
   /*
@@ -879,6 +879,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
 
   std::string gain_bytes, time_bytes;
   if (env_ctrl_exp_from_params) {
+    static Params params;
     gain_bytes = params.get("CameraDebugExpGain");
     time_bytes = params.get("CameraDebugExpTime");
   }
