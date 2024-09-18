@@ -55,7 +55,8 @@ def setup_onroad(click, pm: PubMaster):
   packet_id = 0
   uidebug_sock = sub_sock('uiDebug')
   is_body = DATA['carParams'].carParams.notCar == True
-  # Loop until we've received at least 20 'uiDebug' messages
+
+  # Loop until 20 'uiDebug' messages are received
   while (uidebug_received_cnt <= 20):
     for service, data in DATA.items():
       if data:
@@ -66,18 +67,14 @@ def setup_onroad(click, pm: PubMaster):
       vipc_server.send(stream_type, image, packet_id, packet_id, packet_id)
 
     if not is_body:
-      # Process incoming 'uiDebug' messages
-      while True:
-        recv = uidebug_sock.receive(non_blocking = True)
-        if not recv:
-          break
-        uidebug_received_cnt += 1
+      # Process 'uiDebug' messages only if not in body mode
+      while uidebug_sock.receive(non_blocking=True):
+          uidebug_received_cnt += 1
     else:
       uidebug_received_cnt += 1
 
     print(uidebug_received_cnt)
     packet_id += 1
-
     time.sleep(0.05)
 
 def setup_onroad_wide(click, pm: PubMaster):
