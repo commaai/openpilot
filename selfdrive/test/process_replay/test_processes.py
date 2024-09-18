@@ -60,7 +60,8 @@ segments = [
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
-excluded_interfaces = ["mock", "tesla"]
+# FIXME: Revert before merging, need a process_replay test route for fca_giorgio
+excluded_interfaces = ["mock", "tesla", "fca_giorgio"]
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
