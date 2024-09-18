@@ -190,7 +190,7 @@ wheels = [
 
 [[package]]
 name = "azure-storage-blob"
-version = "12.22.0"
+version = "12.23.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "azure-core" },
@@ -198,9 +198,9 @@ dependencies = [
     { name = "isodate" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/92/de/9cea85c0d5fc21f99bcf9f060fc2287cb95236b70431fa63cb69890a121e/azure-storage-blob-12.22.0.tar.gz", hash = "sha256:b3804bb4fe8ab1c32771fa464053da772a682c2737b19da438a3f4e5e3b3736e", size = 564873 }
+sdist = { url = "https://files.pythonhosted.org/packages/6b/64/eb0fbd7865463d9551bcfd6a92947d235f2128aa0b12b6f0254959aa31eb/azure_storage_blob-12.23.0.tar.gz", hash = "sha256:2fadbceda1d99c4a72dfd32e0122d7bca8b5e8d2563f5c624d634aeaff49c9df", size = 566106 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a8/52/b578c94048469fbf9f6378e2b2a46a2d0ccba3d59a7845dbed22ebf61601/azure_storage_blob-12.22.0-py3-none-any.whl", hash = "sha256:bb7d2d824ce3f11f14a27ee7d9281289f7e072ac8311c52e3652672455b7d5e8", size = 404892 },
+    { url = "https://files.pythonhosted.org/packages/60/02/024b71fc0af7a361cfaecbd96120615ef53787e0b4213285e18eb259d198/azure_storage_blob-12.23.0-py3-none-any.whl", hash = "sha256:8ac4b34624ed075eda1e38f0c6dadb601e1b199e27a09aa63edc429bf4a23329", size = 405594 },
 ]
 
 [[package]]
@@ -603,11 +603,11 @@ wheels = [
 
 [[package]]
 name = "filelock"
-version = "3.16.0"
+version = "3.16.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e6/76/3981447fd369539aba35797db99a8e2ff7ed01d9aa63e9344a31658b8d81/filelock-3.16.0.tar.gz", hash = "sha256:81de9eb8453c769b63369f87f11131a7ab04e367f8d97ad39dc230daa07e3bec", size = 18008 }
+sdist = { url = "https://files.pythonhosted.org/packages/9d/db/3ef5bb276dae18d6ec2124224403d1d67bccdbefc17af4cc8f553e341ab1/filelock-3.16.1.tar.gz", hash = "sha256:c249fbfcd5db47e5e2d6d62198e565475ee65e4831e2561c8e313fa7eb961435", size = 18037 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2f/95/f9310f35376024e1086c59cbb438d319fc9a4ef853289ce7c661539edbd4/filelock-3.16.0-py3-none-any.whl", hash = "sha256:f6ed4c963184f4c84dd5557ce8fece759a3724b37b80c6c4f20a2f63a4dc6609", size = 16170 },
+    { url = "https://files.pythonhosted.org/packages/b9/f8/feced7779d755758a52d1f6635d990b8d98dc0a29fa568bbe0625f18fdf3/filelock-3.16.1-py3-none-any.whl", hash = "sha256:2082e5703d51fbf98ea75855d9d5527e33d8ff23099bec374a134febee6946b0", size = 16163 },
 ]
 
 [[package]]
@@ -1709,11 +1709,11 @@ wheels = [
 
 [[package]]
 name = "platformdirs"
-version = "4.3.3"
+version = "4.3.6"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/f5/19/f7bee3a71decedd8d7bc4d3edb7970b8e899f3caef257b0f0d623f2f7b11/platformdirs-4.3.3.tar.gz", hash = "sha256:d4e0b7d8ec176b341fb03cb11ca12d0276faa8c485f9cd218f613840463fc2c0", size = 21304 }
+sdist = { url = "https://files.pythonhosted.org/packages/13/fc/128cc9cb8f03208bdbf93d3aa862e16d376844a14f9a0ce5cf4507372de4/platformdirs-4.3.6.tar.gz", hash = "sha256:357fb2acbc885b0419afd3ce3ed34564c13c9b95c89360cd9563f73aa5e2b907", size = 21302 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/69/e6/7c8e8c326903bd97c6c0c47e0a3c5de815faaae986cab7defdeddf5fddcd/platformdirs-4.3.3-py3-none-any.whl", hash = "sha256:50a5450e2e84f44539718293cbb1da0a0885c9d14adf21b77bae4e66fc99d9b5", size = 18437 },
+    { url = "https://files.pythonhosted.org/packages/3c/a6/bc1012356d8ece4d66dd75c4b9fc6c1f6650ddd5991e421177d9f8f671be/platformdirs-4.3.6-py3-none-any.whl", hash = "sha256:73e575e1408ab8103900836b97580d5307456908a03e92031bab39e4554cc3fb", size = 18439 },
 ]
 
 [[package]]
@@ -4598,15 +4598,14 @@ wheels = [
 
 [[package]]
 name = "pytest-cpp"
-version = "2.5.0"
+version = "2.6.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama" },
     { name = "pytest" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0f/72/6da4fd6ea5afd44e10dbed76ef666c0732e27317a753099bc163f3330a91/pytest-cpp-2.5.0.tar.gz", hash = "sha256:695604baa21bc95291bb4ea7263a7aa960753de57c2d17d224c4652fbcf65cdc", size = 465039 }
+sdist = { url = "https://files.pythonhosted.org/packages/cf/a1/c2679d7ff2da20a0f89c7820ae2739cde739eac9b43c192531117b31b5f4/pytest_cpp-2.6.0.tar.gz", hash = "sha256:c2f49d3c038539ac84786a94d852e4f4619c34c95979c2bc69c20b3bdf051d85", size = 465490 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/32/d5/b7b5c75dc2e11555898fbec78f88970c43f27439436ac83e65de6afcd2c6/pytest_cpp-2.5.0-py3-none-any.whl", hash = "sha256:137bcaa6487307b4c362245fcd4abf35de64ee85e6375f4d06cd31e6a64f9701", size = 15064 },
+    { url = "https://files.pythonhosted.org/packages/2a/44/dc2f5d53165264ae5831f361fe7723c45da05718a97015b2eddc452cf503/pytest_cpp-2.6.0-py3-none-any.whl", hash = "sha256:b33de94609450feea2fba9efff3558b8ac8f1fdf40a99e263b395d4798b911bb", size = 15074 },
 ]
 
 [[package]]
