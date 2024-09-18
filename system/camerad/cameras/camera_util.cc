@@ -10,6 +10,9 @@
 #include "common/swaglog.h"
 #include "common/util.h"
 
+// For debugging:
+// echo "4294967295" > /sys/module/cam_debug_util/parameters/debug_mdl
+
 // ************** low level camera helpers ****************
 int do_cam_control(int fd, int op_code, void *handle, int size) {
   struct cam_control camcontrol = {0};
@@ -93,11 +96,7 @@ void release(int video0_fd, uint32_t handle) {
   assert(ret == 0);
 }
 
-void release_fd(int video0_fd, uint32_t handle) {
-  // handle to fd
-  close(handle>>16);
-  release(video0_fd, handle);
-}
+// *** MemoryManager ***
 
 void *MemoryManager::alloc_buf(int size, uint32_t *handle) {
   lock.lock();
@@ -129,7 +128,11 @@ MemoryManager::~MemoryManager() {
       x.second.pop();
       LOGD("freeing cached allocation %p with size %d", ptr, size_lookup[ptr]);
       munmap(ptr, size_lookup[ptr]);
-      release_fd(video0_fd, handle_lookup[ptr]);
+
+      // release fd
+      close(handle_lookup[ptr] >> 16);
+      release(video0_fd, handle_lookup[ptr]);
+
       handle_lookup.erase(ptr);
       size_lookup.erase(ptr);
     }

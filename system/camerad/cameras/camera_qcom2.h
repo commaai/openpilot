@@ -59,6 +59,7 @@ public:
   MultiCameraState *multi_cam_state = nullptr;
   std::unique_ptr<const SensorInfo> sensor;
   bool enabled = true;
+  bool open = false;
 
   std::mutex exp_lock;
 
@@ -83,6 +84,7 @@ public:
   float fl_pix = 0;
 
   CameraState(MultiCameraState *multi_camera_state, const CameraConfig &config);
+  ~CameraState();
   void handle_camera_event(void *evdat);
   void update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain);
   void set_camera_exposure(float grey_frac);
@@ -138,6 +140,11 @@ private:
 class MultiCameraState {
 public:
   MultiCameraState();
+  ~MultiCameraState() {
+    if (pm != nullptr) {
+      delete pm;
+    }
+  };
 
   unique_fd video0_fd;
   unique_fd cam_sync_fd;
@@ -149,5 +156,5 @@ public:
   CameraState wide_road_cam;
   CameraState driver_cam;
 
-  PubMaster *pm;
+  PubMaster *pm = nullptr;
 };

@@ -17,12 +17,10 @@
 #include "media/cam_req_mgr.h"
 #include "media/cam_sensor_cmn_header.h"
 #include "media/cam_sync.h"
+
 #include "common/swaglog.h"
 
 const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
-
-// For debugging:
-// echo "4294967295" > /sys/module/cam_debug_util/parameters/debug_mdl
 
 ExitHandler do_exit;
 
@@ -31,6 +29,14 @@ CameraState::CameraState(MultiCameraState *multi_camera_state, const CameraConfi
     enabled(config.enabled) ,
     cc(config) {
 }
+
+CameraState::~CameraState() {
+  // order here changes?
+  if (open) {
+    camera_close();
+  }
+}
+
 
 int CameraState::clear_req_queue() {
   struct cam_req_mgr_flush_info req_mgr_flush_request = {0};
@@ -470,6 +476,7 @@ void CameraState::camera_open() {
     return;
   }
 
+  open = true;
   configISP();
   configCSIPHY();
   linkDevices();
@@ -655,15 +662,7 @@ void CameraState::linkDevices() {
   //LOGD("start sensor: %d", ret);
 }
 
-void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  s->driver_cam.camera_init(v, device_id, ctx);
-  s->road_cam.camera_init(v, device_id, ctx);
-  s->wide_road_cam.camera_init(v, device_id, ctx);
-
-  s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
-}
-
-void cameras_open(MultiCameraState *s) {
+void cameras_init(MultiCameraState *s, VisionIpcServer *v, cl_device_id device_id, cl_context ctx) {
   LOG("-- Opening devices");
   // video0 is req_mgr, the target of many ioctls
   s->video0_fd = HANDLE_EINTR(open("/dev/v4l/by-path/platform-soc:qcom_cam-req-mgr-video-index0", O_RDWR | O_NONBLOCK));
@@ -702,12 +701,18 @@ void cameras_open(MultiCameraState *s) {
   ret = HANDLE_EINTR(ioctl(s->video0_fd, VIDIOC_SUBSCRIBE_EVENT, &sub));
   LOGD("req mgr subscribe: %d", ret);
 
+  // open
   s->driver_cam.camera_open();
   LOGD("driver camera opened");
   s->road_cam.camera_open();
   LOGD("road camera opened");
   s->wide_road_cam.camera_open();
   LOGD("wide road camera opened");
+
+  // init
+  s->driver_cam.camera_init(v, device_id, ctx);
+  s->road_cam.camera_init(v, device_id, ctx);
+  s->wide_road_cam.camera_init(v, device_id, ctx);
 }
 
 void CameraState::camera_close() {
@@ -759,14 +764,6 @@ void CameraState::camera_close() {
   struct cam_req_mgr_session_info session_info = {.session_hdl = session_handle};
   ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_DESTROY_SESSION, &session_info, sizeof(session_info));
   LOGD("destroyed session %d: %d", cc.camera_num, ret);
-}
-
-void cameras_close(MultiCameraState *s) {
-  s->driver_cam.camera_close();
-  s->road_cam.camera_close();
-  s->wide_road_cam.camera_close();
-
-  delete s->pm;
 }
 
 void CameraState::handle_camera_event(void *evdat) {
@@ -1035,6 +1032,4 @@ void cameras_run(MultiCameraState *s) {
   LOG(" ************** STOPPING **************");
 
   for (auto &t : threads) t.join();
-
-  cameras_close(s);
 }

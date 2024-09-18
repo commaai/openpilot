@@ -71,8 +71,7 @@ void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &fr
 kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b);
 float set_exposure_target(const CameraBuf *b, Rect ae_xywh, int x_skip, int y_skip);
 void publish_thumbnail(PubMaster *pm, const CameraBuf *b);
-void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx);
-void cameras_open(MultiCameraState *s);
+void cameras_init(MultiCameraState *s, VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
 void cameras_run(MultiCameraState *s);
 void cameras_close(MultiCameraState *s);
 void camerad_thread();
