@@ -40,6 +40,11 @@ def setup_homescreen(click, pm: PubMaster):
 def setup_settings_device(click, pm: PubMaster):
   click(100, 100)
 
+def setup_settings_toggles(click, pm: PubMaster):
+  setup_settings_device(click, pm)
+  click(278, 760)
+  time.sleep(UI_DELAY)
+
 def setup_onroad(click, pm: PubMaster):
   vipc_server = VisionIpcServer("camerad")
   for stream_type, cam, _ in STREAMS:
@@ -141,6 +146,7 @@ CASES = {
   "prime": setup_homescreen,
   "pair_device": setup_pair_device,
   "settings_device": setup_settings_device,
+  "settings_toggles": setup_settings_toggles,
   "onroad": setup_onroad,
   "onroad_sidebar": setup_onroad_sidebar,
   "onroad_alert_small": setup_onroad_alert_small,
