@@ -317,14 +317,13 @@ void CameraWidget::vipcThread() {
   while (!QThread::currentThread()->isInterruptionRequested()) {
     if (!vipc_client || cur_stream != requested_stream_type) {
       clearFrames();
-      qWarning().nospace() << "connecting to stream " << requested_stream_type << ", was connected to " << cur_stream;
+      qDebug().nospace() << "connecting to stream " << requested_stream_type << ", was connected to " << cur_stream;
       cur_stream = requested_stream_type;
       vipc_client.reset(new VisionIpcClient(stream_name, cur_stream, false));
     }
     active_stream_type = cur_stream;
 
     if (!vipc_client->connected) {
-      qWarning() << "connecting";
       clearFrames();
       auto streams = VisionIpcClient::getAvailableStreams(stream_name, false);
       if (streams.empty()) {
@@ -338,7 +337,6 @@ void CameraWidget::vipcThread() {
         continue;
       }
       emit vipcThreadConnected(vipc_client.get());
-      qWarning() << "connected";
     }
 
     if (VisionBuf *buf = vipc_client->recv(&meta_main, 1000)) {
@@ -350,7 +348,6 @@ void CameraWidget::vipcThread() {
         }
       }
       emit vipcThreadFrameReceived();
-      qWarning() << "frame received" << frames.size();
     } else {
       if (!isVisible()) {
         vipc_client->connected = false;
