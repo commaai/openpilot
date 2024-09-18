@@ -25,7 +25,9 @@ const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 
 ExitHandler do_exit;
 
-CameraState::CameraState(MultiCameraState *multi_camera_state, const CameraConfig &config)
+CameraState::CameraState(MultiCameraState *multi_camera_state, const CameraConfig &config) : QcomCamera(multi_camera_state, config) {};
+
+QcomCamera::QcomCamera(MultiCameraState *multi_camera_state, const CameraConfig &config)
   : multi_cam_state(multi_camera_state),
     enabled(config.enabled) ,
     cc(config) {
@@ -74,7 +76,7 @@ void CameraState::sensors_poke(int request_id) {
   }
 }
 
-void CameraState::sensors_i2c(const struct i2c_random_wr_payload* dat, int len, int op_code, bool data_word) {
+void QcomCamera::sensors_i2c(const struct i2c_random_wr_payload* dat, int len, int op_code, bool data_word) {
   // LOGD("sensors_i2c: %d", len);
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1;
@@ -112,7 +114,7 @@ static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay_ms) {
   return (struct cam_cmd_power *)(unconditional_wait + 1);
 }
 
-int CameraState::sensors_init() {
+int QcomCamera::sensors_init() {
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*2;
   auto pkt = mm.alloc<struct cam_packet>(size, &cam_packet_handle);
@@ -207,7 +209,7 @@ int CameraState::sensors_init() {
   return ret;
 }
 
-void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset) {
+void QcomCamera::config_isp(int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset) {
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*2;
   if (io_mem_handle != 0) {
@@ -469,7 +471,7 @@ void CameraState::camera_init(VisionIpcServer * v, cl_device_id device_id, cl_co
   set_exposure_rect();
 }
 
-void CameraState::camera_open() {
+void QcomCamera::camera_open() {
   if (!enabled) return;
 
   if (!openSensor()) {
@@ -482,7 +484,7 @@ void CameraState::camera_open() {
   linkDevices();
 }
 
-bool CameraState::openSensor() {
+bool QcomCamera::openSensor() {
   sensor_fd = open_v4l_by_name_and_index("cam-sensor-driver", cc.camera_num);
   assert(sensor_fd >= 0);
   LOGD("opened sensor for %d", cc.camera_num);
@@ -496,7 +498,8 @@ bool CameraState::openSensor() {
     sensor.reset(s);
     int ret = sensors_init();
     if (ret == 0) {
-      sensor_set_parameters();
+      // TODO: add this back
+      //sensor_set_parameters();
     }
     return ret == 0;
   };
@@ -529,7 +532,7 @@ bool CameraState::openSensor() {
   return true;
 }
 
-void CameraState::configISP() {
+void QcomCamera::configISP() {
   // NOTE: to be able to disable road and wide road, we still have to configure the sensor over i2c
   // If you don't do this, the strobe GPIO is an output (even in reset it seems!)
   if (!enabled) return;
@@ -592,7 +595,7 @@ void CameraState::configISP() {
   config_isp(0, 0, 1, buf0_handle, 0);
 }
 
-void CameraState::configCSIPHY() {
+void QcomCamera::configCSIPHY() {
   csiphy_fd = open_v4l_by_name_and_index("cam-csiphy-driver", cc.camera_num);
   assert(csiphy_fd >= 0);
   LOGD("opened csiphy for %d", cc.camera_num);
@@ -632,7 +635,7 @@ void CameraState::configCSIPHY() {
   }
 }
 
-void CameraState::linkDevices() {
+void QcomCamera::linkDevices() {
   LOG("-- Link devices");
   struct cam_req_mgr_link_info req_mgr_link_info = {0};
   req_mgr_link_info.session_hdl = session_handle;

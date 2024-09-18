@@ -54,14 +54,28 @@ const CameraConfig DRIVER_CAMERA_CONFIG = {
 
 class QcomCamera {
 public:
+  QcomCamera(MultiCameraState *multi_camera_state, const CameraConfig &config);
+  ~QcomCamera();
+
+  void camera_open();
   void camera_close();
   int clear_req_queue();
-  ~QcomCamera();
+  int sensors_init();
+  void config_isp(int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset);
+  void sensors_i2c(const struct i2c_random_wr_payload* dat, int len, int op_code, bool data_word);
+
+  bool openSensor();
+  void configISP();
+  void configCSIPHY();
+  void linkDevices();
+
+  // *** state ***
 
   bool open = false;
   bool enabled = true;
   CameraConfig cc;
   MultiCameraState *multi_cam_state = nullptr;
+  std::unique_ptr<const SensorInfo> sensor;
 
   unique_fd sensor_fd;
   unique_fd csiphy_fd;
@@ -88,11 +102,6 @@ public:
 
 class CameraState : public QcomCamera {
 public:
-  CameraConfig cc;
-  MultiCameraState *multi_cam_state = nullptr;
-  std::unique_ptr<const SensorInfo> sensor;
-  bool enabled = true;
-
   std::mutex exp_lock;
 
   int exposure_time = 5;
@@ -119,26 +128,16 @@ public:
 
   void sensors_start();
 
-  void camera_open();
-  void set_exposure_rect();
-  void sensor_set_parameters();
   void camera_map_bufs();
   void camera_init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
-  void run();
-
-  void config_isp(int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset);
   void enqueue_req_multi(uint64_t start, int n, bool dp);
   void enqueue_buffer(int i, bool dp);
-
-  int sensors_init();
   void sensors_poke(int request_id);
-  void sensors_i2c(const struct i2c_random_wr_payload* dat, int len, int op_code, bool data_word);
 
-private:
-  bool openSensor();
-  void configISP();
-  void configCSIPHY();
-  void linkDevices();
+  // these stay
+  void set_exposure_rect();
+  void sensor_set_parameters();
+  void run();
 };
 
 class MultiCameraState {
