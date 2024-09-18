@@ -49,13 +49,10 @@ const CameraConfig DRIVER_CAMERA_CONFIG = {
 
 class CameraState {
 public:
+  CameraConfig cc;
   MultiCameraState *multi_cam_state = nullptr;
   std::unique_ptr<const SensorInfo> ci;
   bool enabled = true;
-  VisionStreamType stream_type;
-  const char *publish_name = nullptr;
-  cereal::FrameData::Builder (cereal::Event::Builder::*init_camera_state)() = nullptr;
-  float focal_len = 0;
 
   std::mutex exp_lock;
 
@@ -77,7 +74,6 @@ public:
   unique_fd sensor_fd;
   unique_fd csiphy_fd;
 
-  int camera_num = 0;
   float fl_pix = 0;
 
   CameraState(MultiCameraState *multi_camera_state, const CameraConfig &config);

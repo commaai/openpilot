@@ -28,12 +28,8 @@ ExitHandler do_exit;
 
 CameraState::CameraState(MultiCameraState *multi_camera_state, const CameraConfig &config)
   : multi_cam_state(multi_camera_state),
-    camera_num(config.camera_num),
-    stream_type(config.stream_type),
-    focal_len(config.focal_len),
-    publish_name(config.publish_name),
-    init_camera_state(config.init_camera_state),
-    enabled(config.enabled) {
+    enabled(config.enabled) ,
+    cc(config) {
 }
 
 int CameraState::clear_req_queue() {
@@ -50,7 +46,7 @@ int CameraState::clear_req_queue() {
 
 void CameraState::sensors_start() {
   if (!enabled) return;
-  LOGD("starting sensor %d", camera_num);
+  LOGD("starting sensor %d", cc.camera_num);
   sensors_i2c(ci->start_reg_array.data(), ci->start_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, ci->data_word);
 }
 
@@ -66,7 +62,7 @@ void CameraState::sensors_poke(int request_id) {
 
   int ret = device_config(sensor_fd, session_handle, sensor_dev_handle, cam_packet_handle);
   if (ret != 0) {
-    LOGE("** sensor %d FAILED poke, disabling", camera_num);
+    LOGE("** sensor %d FAILED poke, disabling", cc.camera_num);
     enabled = false;
     return;
   }
@@ -96,7 +92,7 @@ void CameraState::sensors_i2c(const struct i2c_random_wr_payload* dat, int len, 
 
   int ret = device_config(sensor_fd, session_handle, sensor_dev_handle, cam_packet_handle);
   if (ret != 0) {
-    LOGE("** sensor %d FAILED i2c, disabling", camera_num);
+    LOGE("** sensor %d FAILED i2c, disabling", cc.camera_num);
     enabled = false;
     return;
   }
@@ -125,8 +121,8 @@ int CameraState::sensors_init() {
   auto i2c_info = mm.alloc<struct cam_cmd_i2c_info>(buf_desc[0].size, (uint32_t*)&buf_desc[0].mem_handle);
   auto probe = (struct cam_cmd_probe *)(i2c_info.get() + 1);
 
-  probe->camera_id = camera_num;
-  i2c_info->slave_addr = ci->getSlaveAddress(camera_num);
+  probe->camera_id = cc.camera_num;
+  i2c_info->slave_addr = ci->getSlaveAddress(cc.camera_num);
   // 0(I2C_STANDARD_MODE) = 100khz, 1(I2C_FAST_MODE) = 400khz
   //i2c_info->i2c_freq_mode = I2C_STANDARD_MODE;
   i2c_info->i2c_freq_mode = I2C_FAST_MODE;
@@ -423,7 +419,7 @@ void CameraState::set_exposure_rect() {
       [0, 0, 1]
     ]
   */
-  auto ae_target = ae_targets[camera_num];
+  auto ae_target = ae_targets[cc.camera_num];
   Rect xywh_ref = ae_target.first;
   float fl_ref = ae_target.second;
 
@@ -459,11 +455,11 @@ void CameraState::camera_map_bufs() {
 void CameraState::camera_init(VisionIpcServer * v, cl_device_id device_id, cl_context ctx) {
   if (!enabled) return;
 
-  LOGD("camera init %d", camera_num);
-  buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, stream_type);
+  LOGD("camera init %d", cc.camera_num);
+  buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, cc.stream_type);
   camera_map_bufs();
 
-  fl_pix = focal_len / ci->pixel_size_mm;
+  fl_pix = cc.focal_len / ci->pixel_size_mm;
   set_exposure_rect();
 }
 
@@ -480,14 +476,14 @@ void CameraState::camera_open() {
 }
 
 bool CameraState::openSensor() {
-  sensor_fd = open_v4l_by_name_and_index("cam-sensor-driver", camera_num);
+  sensor_fd = open_v4l_by_name_and_index("cam-sensor-driver", cc.camera_num);
   assert(sensor_fd >= 0);
-  LOGD("opened sensor for %d", camera_num);
+  LOGD("opened sensor for %d", cc.camera_num);
 
   // init memorymanager for this camera
   mm.init(multi_cam_state->video0_fd);
 
-  LOGD("-- Probing sensor %d", camera_num);
+  LOGD("-- Probing sensor %d", cc.camera_num);
 
   auto init_sensor_lambda = [this](SensorInfo *sensor) {
     ci.reset(sensor);
@@ -502,11 +498,11 @@ bool CameraState::openSensor() {
   if (!init_sensor_lambda(new AR0231) &&
       !init_sensor_lambda(new OX03C10) &&
       !init_sensor_lambda(new OS04C10)) {
-    LOGE("** sensor %d FAILED bringup, disabling", camera_num);
+    LOGE("** sensor %d FAILED bringup, disabling", cc.camera_num);
     enabled = false;
     return false;
   }
-  LOGD("-- Probing sensor %d success", camera_num);
+  LOGD("-- Probing sensor %d success", cc.camera_num);
 
   // create session
   struct cam_req_mgr_session_info session_info = {};
@@ -532,7 +528,7 @@ void CameraState::configISP() {
   if (!enabled) return;
 
   struct cam_isp_in_port_info in_port_info = {
-    .res_type = (uint32_t[]){CAM_ISP_IFE_IN_RES_PHY_0, CAM_ISP_IFE_IN_RES_PHY_1, CAM_ISP_IFE_IN_RES_PHY_2}[camera_num],
+    .res_type = (uint32_t[]){CAM_ISP_IFE_IN_RES_PHY_0, CAM_ISP_IFE_IN_RES_PHY_1, CAM_ISP_IFE_IN_RES_PHY_2}[cc.camera_num],
 
     .lane_type = CAM_ISP_LANE_TYPE_DPHY,
     .lane_num = 4,
@@ -591,9 +587,9 @@ void CameraState::configISP() {
 }
 
 void CameraState::configCSIPHY() {
-  csiphy_fd = open_v4l_by_name_and_index("cam-csiphy-driver", camera_num);
+  csiphy_fd = open_v4l_by_name_and_index("cam-csiphy-driver", cc.camera_num);
   assert(csiphy_fd >= 0);
-  LOGD("opened csiphy for %d", camera_num);
+  LOGD("opened csiphy for %d", cc.camera_num);
 
   struct cam_csiphy_acquire_dev_info csiphy_acquire_dev_info = {.combo_mode = 0};
   auto csiphy_dev_handle_ = device_acquire(csiphy_fd, session_handle, &csiphy_acquire_dev_info);
@@ -717,7 +713,7 @@ void cameras_open(MultiCameraState *s) {
 
 void CameraState::camera_close() {
   // stop devices
-  LOG("-- Stop devices %d", camera_num);
+  LOG("-- Stop devices %d", cc.camera_num);
 
   if (enabled) {
     // ret = device_control(sensor_fd, CAM_STOP_DEV, session_handle, sensor_dev_handle);
@@ -763,7 +759,7 @@ void CameraState::camera_close() {
   // destroyed session
   struct cam_req_mgr_session_info session_info = {.session_hdl = session_handle};
   ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_DESTROY_SESSION, &session_info, sizeof(session_info));
-  LOGD("destroyed session %d: %d", camera_num, ret);
+  LOGD("destroyed session %d: %d", cc.camera_num, ret);
 }
 
 void cameras_close(MultiCameraState *s) {
@@ -790,7 +786,7 @@ void CameraState::handle_camera_event(void *evdat) {
 
     // check for skipped frames
     if (main_id > frame_id_last + 1 && !skipped) {
-      LOGE("camera %d realign", camera_num);
+      LOGE("camera %d realign", cc.camera_num);
       clear_req_queue();
       enqueue_req_multi(real_id + 1, FRAME_BUF_COUNT - 1, 0);
       skipped = true;
@@ -800,7 +796,7 @@ void CameraState::handle_camera_event(void *evdat) {
 
     // check for dropped requests
     if (real_id > request_id_last + 1) {
-      LOGE("camera %d dropped requests %ld %ld", camera_num, real_id, request_id_last);
+      LOGE("camera %d dropped requests %ld %ld", cc.camera_num, real_id, request_id_last);
       enqueue_req_multi(request_id_last + 1 + FRAME_BUF_COUNT, real_id - (request_id_last + 1), 0);
     }
 
@@ -824,7 +820,7 @@ void CameraState::handle_camera_event(void *evdat) {
     enqueue_req_multi(real_id + FRAME_BUF_COUNT, 1, 1);
   } else { // not ready
     if (main_id > frame_id_last + 10) {
-      LOGE("camera %d reset after half second of no response", camera_num);
+      LOGE("camera %d reset after half second of no response", cc.camera_num);
       clear_req_queue();
       enqueue_req_multi(request_id_last + 1, FRAME_BUF_COUNT, 0);
       frame_id_last = main_id;
@@ -938,39 +934,39 @@ void CameraState::set_camera_exposure(float grey_frac) {
   if (ms < 60) {
     util::sleep_for(60 - ms);
   }
-  // LOGE("ae - camera %d, cur_t %.5f, sof %.5f, dt %.5f", camera_num, 1e-9 * nanos_since_boot(), 1e-9 * buf.cur_frame_data.timestamp_sof, 1e-9 * (nanos_since_boot() - buf.cur_frame_data.timestamp_sof));
+  // LOGE("ae - camera %d, cur_t %.5f, sof %.5f, dt %.5f", cc.camera_num, 1e-9 * nanos_since_boot(), 1e-9 * buf.cur_frame_data.timestamp_sof, 1e-9 * (nanos_since_boot() - buf.cur_frame_data.timestamp_sof));
 
   auto exp_reg_array = ci->getExposureRegisters(exposure_time, new_exp_g, dc_gain_enabled);
   sensors_i2c(exp_reg_array.data(), exp_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, ci->data_word);
 }
 
 void CameraState::run() {
-  util::set_thread_name(publish_name);
+  util::set_thread_name(cc.publish_name);
 
   for (uint32_t cnt = 0; !do_exit; ++cnt) {
     // Acquire the buffer; continue if acquisition fails
     if (!buf.acquire()) continue;
 
     MessageBuilder msg;
-    auto framed = (msg.initEvent().*init_camera_state)();
+    auto framed = (msg.initEvent().*cc.init_camera_state)();
     fill_frame_data(framed, buf.cur_frame_data, this);
 
     // Log raw frames for road camera
-    if (env_log_raw_frames && stream_type == VISION_STREAM_ROAD && cnt % 100 == 5) {  // no overlap with qlog decimation
+    if (env_log_raw_frames && cc.stream_type == VISION_STREAM_ROAD && cnt % 100 == 5) {  // no overlap with qlog decimation
       framed.setImage(get_raw_frame_image(&buf));
     }
     // Log frame id for road and wide road cameras
-    if (stream_type != VISION_STREAM_DRIVER) {
-      LOGT(buf.cur_frame_data.frame_id, "%s: Image set", publish_name);
+    if (cc.stream_type != VISION_STREAM_DRIVER) {
+      LOGT(buf.cur_frame_data.frame_id, "%s: Image set", cc.publish_name);
     }
 
     // Process camera registers and set camera exposure
     ci->processRegisters(this, framed);
-    set_camera_exposure(set_exposure_target(&buf, ae_xywh, 2, stream_type != VISION_STREAM_DRIVER ? 2 : 4));
+    set_camera_exposure(set_exposure_target(&buf, ae_xywh, 2, cc.stream_type != VISION_STREAM_DRIVER ? 2 : 4));
 
     // Send the message
-    multi_cam_state->pm->send(publish_name, msg);
-    if (stream_type == VISION_STREAM_ROAD && cnt % 100 == 3) {
+    multi_cam_state->pm->send(cc.publish_name, msg);
+    if (cc.stream_type == VISION_STREAM_ROAD && cnt % 100 == 3) {
       publish_thumbnail(multi_cam_state->pm, &buf);  // this takes 10ms???
     }
   }
@@ -1020,10 +1016,8 @@ void cameras_run(MultiCameraState *s) {
         if (env_debug_frames) {
           printf("sess_hdl 0x%6X, link_hdl 0x%6X, frame_id %lu, req_id %lu, timestamp %.2f ms, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl,
                  event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp/1e6, event_data->u.frame_msg.sof_status);
+          do_exit = do_exit || event_data->u.frame_msg.frame_id > (1*20);
         }
-
-        // for debugging
-        //do_exit = do_exit || event_data->u.frame_msg.frame_id > (30*20);
 
         if (event_data->session_hdl == s->road_cam.session_handle) {
           s->road_cam.handle_camera_event(event_data);
