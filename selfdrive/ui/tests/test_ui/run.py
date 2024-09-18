@@ -54,9 +54,11 @@ def setup_onroad(click, pm: PubMaster):
   uidebug_received_cnt = 0
   packet_id = 0
   uidebug_sock = sub_sock('uiDebug')
-  is_body = DATA['carParams'].carParams.notCar == True
 
-  # Loop until 20 'uiDebug' messages are received
+  # Condition check for uiDebug processing
+  check_uidebug = DATA['deviceState'].deviceState.started and not DATA['carParams'].carParams.notCar
+
+  # Loop until 30 'uiDebug' messages are received
   while (uidebug_received_cnt <= 20):
     for service, data in DATA.items():
       if data:
@@ -66,8 +68,8 @@ def setup_onroad(click, pm: PubMaster):
     for stream_type, _, image in STREAMS:
       vipc_server.send(stream_type, image, packet_id, packet_id, packet_id)
 
-    if not is_body:
-      # Process 'uiDebug' messages only if not in body mode
+    # Increment uidebug_received_cnt based on condition
+    if check_uidebug:
       while uidebug_sock.receive(non_blocking=True):
           uidebug_received_cnt += 1
     else:
