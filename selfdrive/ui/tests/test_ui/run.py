@@ -11,6 +11,7 @@ import pywinctl
 import time
 
 from cereal import log
+from msgq import sub_sock
 from msgq.visionipc import VisionIpcServer, VisionStreamType
 from cereal.messaging import PubMaster, log_from_bytes
 from openpilot.common.basedir import BASEDIR
@@ -51,7 +52,12 @@ def setup_onroad(click, pm: PubMaster):
     vipc_server.create_buffers(stream_type, 5, False, cam.width, cam.height)
   vipc_server.start_listener()
 
-  for packet_id in range(30):
+  uidebug_received_cnt = 0
+  packet_id = 0
+  uidebug_sock = sub_sock('uiDebug')
+
+  # Loop until we've received at least 20 'uiDebug' messages
+  while (uidebug_received_cnt <= 20):
     for service, data in DATA.items():
       if data:
         data.clear_write_flag()
@@ -59,6 +65,16 @@ def setup_onroad(click, pm: PubMaster):
 
     for stream_type, _, image in STREAMS:
       vipc_server.send(stream_type, image, packet_id, packet_id, packet_id)
+
+    # Process incoming 'uiDebug' messages
+    while True:
+      recv = uidebug_sock.receive(non_blocking = True)
+      if not recv:
+        break
+      uidebug_received_cnt += 1
+
+    print(uidebug_received_cnt)
+    packet_id += 1
 
     time.sleep(0.05)
 
