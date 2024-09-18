@@ -25,20 +25,22 @@ const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 
 ExitHandler do_exit;
 
-CameraState::CameraState(MultiCameraState *multi_camera_state, const CameraConfig &config)
+CameraState::CameraState(MultiCameraState *multi_camera_state, const CameraConfig &config) : SpectraCamera(multi_camera_state, config) {};
+
+SpectraCamera::SpectraCamera(MultiCameraState *multi_camera_state, const CameraConfig &config)
   : multi_cam_state(multi_camera_state),
     enabled(config.enabled) ,
     cc(config) {
 }
 
-CameraState::~CameraState() {
+SpectraCamera::~SpectraCamera() {
   if (open) {
     camera_close();
   }
 }
 
 
-int CameraState::clear_req_queue() {
+int SpectraCamera::clear_req_queue() {
   struct cam_req_mgr_flush_info req_mgr_flush_request = {0};
   req_mgr_flush_request.session_hdl = session_handle;
   req_mgr_flush_request.link_hdl = link_handle;
@@ -74,7 +76,7 @@ void CameraState::sensors_poke(int request_id) {
   }
 }
 
-void CameraState::sensors_i2c(const struct i2c_random_wr_payload* dat, int len, int op_code, bool data_word) {
+void SpectraCamera::sensors_i2c(const struct i2c_random_wr_payload* dat, int len, int op_code, bool data_word) {
   // LOGD("sensors_i2c: %d", len);
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*1;
@@ -112,7 +114,7 @@ static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay_ms) {
   return (struct cam_cmd_power *)(unconditional_wait + 1);
 }
 
-int CameraState::sensors_init() {
+int SpectraCamera::sensors_init() {
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*2;
   auto pkt = mm.alloc<struct cam_packet>(size, &cam_packet_handle);
@@ -207,7 +209,7 @@ int CameraState::sensors_init() {
   return ret;
 }
 
-void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset) {
+void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset) {
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*2;
   if (io_mem_handle != 0) {
@@ -230,6 +232,7 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
     pkt->header.request_id = request_id;
   } else {
     pkt->header.op_code = 0xf000000;
+    pkt->header.request_id = 1;
   }
   pkt->header.size = size;
   struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
@@ -468,7 +471,7 @@ void CameraState::camera_init(VisionIpcServer * v, cl_device_id device_id, cl_co
   set_exposure_rect();
 }
 
-void CameraState::camera_open() {
+void SpectraCamera::camera_open() {
   if (!enabled) return;
 
   if (!openSensor()) {
@@ -481,7 +484,7 @@ void CameraState::camera_open() {
   linkDevices();
 }
 
-bool CameraState::openSensor() {
+bool SpectraCamera::openSensor() {
   sensor_fd = open_v4l_by_name_and_index("cam-sensor-driver", cc.camera_num);
   assert(sensor_fd >= 0);
   LOGD("opened sensor for %d", cc.camera_num);
@@ -495,7 +498,8 @@ bool CameraState::openSensor() {
     sensor.reset(s);
     int ret = sensors_init();
     if (ret == 0) {
-      sensor_set_parameters();
+      // TODO: add this back
+      //sensor_set_parameters();
     }
     return ret == 0;
   };
@@ -528,7 +532,7 @@ bool CameraState::openSensor() {
   return true;
 }
 
-void CameraState::configISP() {
+void SpectraCamera::configISP() {
   // NOTE: to be able to disable road and wide road, we still have to configure the sensor over i2c
   // If you don't do this, the strobe GPIO is an output (even in reset it seems!)
   if (!enabled) return;
@@ -591,7 +595,7 @@ void CameraState::configISP() {
   config_isp(0, 0, 1, buf0_handle, 0);
 }
 
-void CameraState::configCSIPHY() {
+void SpectraCamera::configCSIPHY() {
   csiphy_fd = open_v4l_by_name_and_index("cam-csiphy-driver", cc.camera_num);
   assert(csiphy_fd >= 0);
   LOGD("opened csiphy for %d", cc.camera_num);
@@ -631,7 +635,7 @@ void CameraState::configCSIPHY() {
   }
 }
 
-void CameraState::linkDevices() {
+void SpectraCamera::linkDevices() {
   LOG("-- Link devices");
   struct cam_req_mgr_link_info req_mgr_link_info = {0};
   req_mgr_link_info.session_hdl = session_handle;
@@ -714,7 +718,7 @@ void cameras_init(MultiCameraState *s, VisionIpcServer *v, cl_device_id device_i
   s->wide_road_cam.camera_init(v, device_id, ctx);
 }
 
-void CameraState::camera_close() {
+void SpectraCamera::camera_close() {
   // stop devices
   LOG("-- Stop devices %d", cc.camera_num);
 
