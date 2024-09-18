@@ -528,8 +528,7 @@ void CameraState::configISP() {
   if (!enabled) return;
 
   struct cam_isp_in_port_info in_port_info = {
-    .res_type = (uint32_t[]){CAM_ISP_IFE_IN_RES_PHY_0, CAM_ISP_IFE_IN_RES_PHY_1, CAM_ISP_IFE_IN_RES_PHY_2}[cc.camera_num],
-
+    .res_type = cc.phy,
     .lane_type = CAM_ISP_LANE_TYPE_DPHY,
     .lane_num = 4,
     .lane_cfg = 0x3210,
