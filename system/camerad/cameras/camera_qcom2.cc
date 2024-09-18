@@ -295,7 +295,7 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
     .rdi_hz[0] = 404000000,
   };
 
-
+  // TODO: this is where we can setup dual ISP?
   tmp.type_2 = CAM_ISP_GENERIC_BLOB_TYPE_BW_CONFIG;
   tmp.type_2 |= (sizeof(cam_isp_bw_config) + sizeof(tmp.extra_rdi_vote)) << 8;
   static_assert((sizeof(cam_isp_bw_config) + sizeof(tmp.extra_rdi_vote)) == 0xe0);
@@ -327,16 +327,20 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
   if (io_mem_handle != 0) {
     io_cfg[0].mem_handle[0] = io_mem_handle;
     io_cfg[0].mem_handle[1] = io_mem_handle;
+    io_cfg[0].offsets[1] = 0x2ad000;  // TODO
+
     io_cfg[0].planes[0] = (struct cam_plane_cfg){
       .width = ci->frame_width,
       .height = ci->frame_height + ci->extra_height,
       .plane_stride = ci->frame_stride,
       .slice_height = ci->frame_height + ci->extra_height,
-      .meta_stride = 0x00,  // YUV has meta(stride=0x400, size=0x5000)
-      .meta_size = 0x000,
+
+      // all this is for UBWC, we'll want to use it later
+      .meta_stride = 0x0,  // TODO: these aren't 0 in the dump, but probably because of the 10?
+      .meta_size = 0x0,
       .meta_offset = 0x0,
-      .packer_config = 0x0,  // 0xb for YUV
-      .mode_config = 0x0,    // 0x9ef for YUV
+      .packer_config = 0x0,
+      .mode_config = 0x0,
       .tile_config = 0x0,
       .h_init = 0x0,
       .v_init = 0x0,
@@ -546,6 +550,7 @@ void CameraState::configISP() {
   // If you don't do this, the strobe GPIO is an output (even in reset it seems!)
   if (!enabled) return;
 
+  // ISP input (from sensor)
   struct cam_isp_in_port_info in_port_info = {
     .res_type = (uint32_t[]){CAM_ISP_IFE_IN_RES_PHY_0, CAM_ISP_IFE_IN_RES_PHY_1, CAM_ISP_IFE_IN_RES_PHY_2}[camera_num],
 
@@ -578,6 +583,7 @@ void CameraState::configISP() {
     .hbi_cnt = 0x0,
     .custom_csid = 0x0,
 
+    // ISP output
     .num_out_res = 0x1,
     .data[0] = (struct cam_isp_out_port_info){
       .res_type = CAM_ISP_IFE_OUT_RES_FULL,
@@ -601,13 +607,14 @@ void CameraState::configISP() {
 
   // config ISP
   buf0_ptr = alloc_w_mmu_hdl(multi_cam_state->video0_fd, 984480, (uint32_t*)&buf0_handle, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS |
-                  CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, multi_cam_state->device_iommu, multi_cam_state->cdm_iommu);
+                             CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, multi_cam_state->device_iommu, multi_cam_state->cdm_iommu);
   config_isp(0, 0, 1, buf0_handle, 0);
 }
 
 void CameraState::configCSIPHY() {
   csiphy_fd = open_v4l_by_name_and_index("cam-csiphy-driver", camera_num);
   assert(csiphy_fd >= 0);
+
   LOGD("opened csiphy for %d", camera_num);
 
   struct cam_csiphy_acquire_dev_info csiphy_acquire_dev_info = {.combo_mode = 0};
