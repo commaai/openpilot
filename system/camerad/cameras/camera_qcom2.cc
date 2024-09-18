@@ -485,8 +485,8 @@ bool CameraState::openSensor() {
 
   LOGD("-- Probing sensor %d", cc.camera_num);
 
-  auto init_sensor_lambda = [this](SensorInfo *sensor) {
-    ci.reset(sensor);
+  auto init_sensor_lambda = [this](SensorInfo *s) {
+    sensor.reset(s);
     int ret = sensors_init();
     if (ret == 0) {
       sensor_set_parameters();
@@ -954,10 +954,6 @@ void CameraState::run() {
     // Log raw frames for road camera
     if (env_log_raw_frames && cc.stream_type == VISION_STREAM_ROAD && cnt % 100 == 5) {  // no overlap with qlog decimation
       framed.setImage(get_raw_frame_image(&buf));
-    }
-    // Log frame id for road and wide road cameras
-    if (cc.stream_type != VISION_STREAM_DRIVER) {
-      LOGT(buf.cur_frame_data.frame_id, "%s: Image set", cc.publish_name);
     }
 
     // Process camera registers and set camera exposure
