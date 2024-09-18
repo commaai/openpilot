@@ -339,7 +339,7 @@ void CameraWidget::vipcThread() {
       emit vipcThreadConnected(vipc_client.get());
     }
 
-    if (VisionBuf *buf = vipc_client->recv(&meta_main, 1000)) {
+    if (VisionBuf *buf = vipc_client->recv(&meta_main, 100)) {
       {
         std::lock_guard lk(frame_lock);
         frames.push_back(std::make_pair(meta_main.frame_id, buf));
