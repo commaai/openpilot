@@ -35,6 +35,7 @@ void DriverMonitorRenderer::updateState(const UIState &s) {
   is_rhd = dm_state.getIsRHD();
   dm_fade_state = std::clamp(dm_fade_state + 0.2f * (0.5f - is_active), 0.0f, 1.0f);
 
+
   const auto &driverstate = sm["driverStateV2"].getDriverStateV2();
   const auto driver_orient = is_rhd ? driverstate.getRightDriverData().getFaceOrientation() : driverstate.getLeftDriverData().getFaceOrientation();
 
@@ -44,7 +45,9 @@ void DriverMonitorRenderer::updateState(const UIState &s) {
     driver_pose_vals[i] = 0.8f * v_this + (1 - 0.8) * driver_pose_vals[i];
     driver_pose_sins[i] = std::sin(driver_pose_vals[i] * (1.0f - dm_fade_state));
     driver_pose_coss[i] = std::cos(driver_pose_vals[i] * (1.0f - dm_fade_state));
+
   }
+  qWarning() << is_active << dm_fade_state << driver_pose_sins[0] << driver_pose_sins[1] << driver_pose_sins[2];
 
   auto [sin_y, sin_x, sin_z] = driver_pose_sins;
   auto [cos_y, cos_x, cos_z] = driver_pose_coss;
