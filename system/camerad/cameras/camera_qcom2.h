@@ -51,24 +51,24 @@ public:
   void run();
 };
 
-class MultiCameraState {
+class MultiCameraState : public SpectraMaster {
 public:
-  MultiCameraState();
-  ~MultiCameraState() {
-    if (pm != nullptr) {
-      delete pm;
-    }
+  MultiCameraState()
+    : driver_cam(this, DRIVER_CAMERA_CONFIG),
+      road_cam(this, ROAD_CAMERA_CONFIG),
+      wide_road_cam(this, WIDE_ROAD_CAMERA_CONFIG) {
   };
 
+  /*
+  // ISP state
   unique_fd video0_fd;
   unique_fd cam_sync_fd;
   unique_fd isp_fd;
   int device_iommu = -1;
   int cdm_iommu = -1;
+  */
 
   CameraState road_cam;
   CameraState wide_road_cam;
   CameraState driver_cam;
-
-  PubMaster *pm = nullptr;
 };

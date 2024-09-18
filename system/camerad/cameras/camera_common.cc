@@ -294,7 +294,6 @@ void camerad_thread() {
 
   {
     MultiCameraState cameras;
-    cameras.pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
     VisionIpcServer vipc_server("camerad", device_id, context);
 
     cameras_init(&cameras, &vipc_server, device_id, context);

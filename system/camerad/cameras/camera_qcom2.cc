@@ -27,18 +27,6 @@ ExitHandler do_exit;
 
 CameraState::CameraState(MultiCameraState *multi_camera_state, const CameraConfig &config) : SpectraCamera(multi_camera_state, config) {};
 
-SpectraCamera::SpectraCamera(MultiCameraState *multi_camera_state, const CameraConfig &config)
-  : multi_cam_state(multi_camera_state),
-    enabled(config.enabled) ,
-    cc(config) {
-}
-
-SpectraCamera::~SpectraCamera() {
-  if (open) {
-    camera_close();
-  }
-}
-
 
 int SpectraCamera::clear_req_queue() {
   struct cam_req_mgr_flush_info req_mgr_flush_request = {0};
@@ -666,43 +654,7 @@ void SpectraCamera::linkDevices() {
 }
 
 void cameras_init(MultiCameraState *s, VisionIpcServer *v, cl_device_id device_id, cl_context ctx) {
-  LOG("-- Opening devices");
-  // video0 is req_mgr, the target of many ioctls
-  s->video0_fd = HANDLE_EINTR(open("/dev/v4l/by-path/platform-soc:qcom_cam-req-mgr-video-index0", O_RDWR | O_NONBLOCK));
-  assert(s->video0_fd >= 0);
-  LOGD("opened video0");
-
-  // video1 is cam_sync, the target of some ioctls
-  s->cam_sync_fd = HANDLE_EINTR(open("/dev/v4l/by-path/platform-cam_sync-video-index0", O_RDWR | O_NONBLOCK));
-  assert(s->cam_sync_fd >= 0);
-  LOGD("opened video1 (cam_sync)");
-
-  // looks like there's only one of these
-  s->isp_fd = open_v4l_by_name_and_index("cam-isp");
-  assert(s->isp_fd >= 0);
-  LOGD("opened isp");
-
-  // query icp for MMU handles
-  LOG("-- Query ICP for MMU handles");
-  struct cam_isp_query_cap_cmd isp_query_cap_cmd = {0};
-  struct cam_query_cap_cmd query_cap_cmd = {0};
-  query_cap_cmd.handle_type = 1;
-  query_cap_cmd.caps_handle = (uint64_t)&isp_query_cap_cmd;
-  query_cap_cmd.size = sizeof(isp_query_cap_cmd);
-  int ret = do_cam_control(s->isp_fd, CAM_QUERY_CAP, &query_cap_cmd, sizeof(query_cap_cmd));
-  assert(ret == 0);
-  LOGD("using MMU handle: %x", isp_query_cap_cmd.device_iommu.non_secure);
-  LOGD("using MMU handle: %x", isp_query_cap_cmd.cdm_iommu.non_secure);
-  s->device_iommu = isp_query_cap_cmd.device_iommu.non_secure;
-  s->cdm_iommu = isp_query_cap_cmd.cdm_iommu.non_secure;
-
-  // subscribe
-  LOG("-- Subscribing");
-  struct v4l2_event_subscription sub = {0};
-  sub.type = V4L_EVENT_CAM_REQ_MGR_EVENT;
-  sub.id = V4L_EVENT_CAM_REQ_MGR_SOF_BOOT_TS;
-  ret = HANDLE_EINTR(ioctl(s->video0_fd, VIDIOC_SUBSCRIBE_EVENT, &sub));
-  LOGD("req mgr subscribe: %d", ret);
+  s->init();
 
   // open
   s->driver_cam.camera_open();
@@ -943,6 +895,10 @@ void CameraState::set_camera_exposure(float grey_frac) {
 void CameraState::run() {
   util::set_thread_name(cc.publish_name);
 
+  std::vector<const char*> pubs = {cc.publish_name};
+  if (cc.stream_type == VISION_STREAM_ROAD) pubs.push_back("thumbnail");
+  PubMaster pm(pubs);
+
   for (uint32_t cnt = 0; !do_exit; ++cnt) {
     // Acquire the buffer; continue if acquisition fails
     if (!buf.acquire()) continue;
@@ -961,17 +917,11 @@ void CameraState::run() {
     set_camera_exposure(set_exposure_target(&buf, ae_xywh, 2, cc.stream_type != VISION_STREAM_DRIVER ? 2 : 4));
 
     // Send the message
-    multi_cam_state->pm->send(cc.publish_name, msg);
+    pm.send(cc.publish_name, msg);
     if (cc.stream_type == VISION_STREAM_ROAD && cnt % 100 == 3) {
-      publish_thumbnail(multi_cam_state->pm, &buf);  // this takes 10ms???
+      publish_thumbnail(&pm, &buf);  // this takes 10ms???
     }
   }
-}
-
-MultiCameraState::MultiCameraState()
-  : driver_cam(this, DRIVER_CAMERA_CONFIG),
-    road_cam(this, ROAD_CAMERA_CONFIG),
-    wide_road_cam(this, WIDE_ROAD_CAMERA_CONFIG) {
 }
 
 void cameras_run(MultiCameraState *s) {

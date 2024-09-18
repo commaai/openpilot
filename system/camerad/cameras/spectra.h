@@ -16,6 +16,17 @@
 // For use with the Spectra 280 ISP in the SDM845
 // https://github.com/commaai/agnos-kernel-sdm845 
 
+class SpectraMaster {
+public:
+  void init();
+
+  unique_fd video0_fd;
+  unique_fd cam_sync_fd;
+  unique_fd isp_fd;
+  int device_iommu = -1;
+  int cdm_iommu = -1;
+};
+
 class SpectraCamera {
 public:
   SpectraCamera(MultiCameraState *multi_camera_state, const CameraConfig &config);
