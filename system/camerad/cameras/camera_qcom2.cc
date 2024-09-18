@@ -31,14 +31,14 @@ CameraState::CameraState(MultiCameraState *multi_camera_state, const CameraConfi
     cc(config) {
 }
 
-CameraState::~CameraState() {
+QcomCamera::~QcomCamera() {
   if (open) {
     camera_close();
   }
 }
 
 
-int CameraState::clear_req_queue() {
+int QcomCamera::clear_req_queue() {
   struct cam_req_mgr_flush_info req_mgr_flush_request = {0};
   req_mgr_flush_request.session_hdl = session_handle;
   req_mgr_flush_request.link_hdl = link_handle;
@@ -715,7 +715,7 @@ void cameras_init(MultiCameraState *s, VisionIpcServer *v, cl_device_id device_i
   s->wide_road_cam.camera_init(v, device_id, ctx);
 }
 
-void CameraState::camera_close() {
+void QcomCamera::camera_close() {
   // stop devices
   LOG("-- Stop devices %d", cc.camera_num);
 
