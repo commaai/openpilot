@@ -10,9 +10,9 @@ import os
 import pywinctl
 import time
 
-from cereal import messaging, log
+from cereal import log
 from msgq.visionipc import VisionIpcServer, VisionStreamType
-from cereal.messaging import PubMaster
+from cereal.messaging import PubMaster, log_from_bytes
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
@@ -39,6 +39,11 @@ def setup_homescreen(click, pm: PubMaster):
 
 def setup_settings_device(click, pm: PubMaster):
   click(100, 100)
+
+def setup_settings_toggles(click, pm: PubMaster):
+  setup_settings_device(click, pm)
+  click(278, 760)
+  time.sleep(UI_DELAY)
 
 def setup_onroad(click, pm: PubMaster):
   vipc_server = VisionIpcServer("camerad")
@@ -94,16 +99,16 @@ def setup_driver_camera(click, pm: PubMaster):
 
 def setup_onroad_alert(click, pm: PubMaster, text1, text2, size, status=log.SelfdriveState.AlertStatus.normal):
   print(f'setup onroad alert, size: {size}')
-  setup_onroad(click, pm)
-  dat = messaging.new_message('selfdriveState')
-  cs = dat.selfdriveState
+  state = DATA['selfdriveState']
+  origin_state_bytes = state.to_bytes()
+  cs = state.selfdriveState
   cs.alertText1 = text1
   cs.alertText2 = text2
   cs.alertSize = size
   cs.alertStatus = status
   cs.alertType = "test_onroad_alert"
-  pm.send('selfdriveState', dat)
-  time.sleep(UI_DELAY)
+  setup_onroad(click, pm)
+  DATA['selfdriveState'] = log_from_bytes(origin_state_bytes).as_builder()
 
 def setup_onroad_alert_small(click, pm: PubMaster):
   setup_onroad_alert(click, pm, 'This is a small alert message', '', log.SelfdriveState.AlertSize.small)
@@ -141,6 +146,7 @@ CASES = {
   "prime": setup_homescreen,
   "pair_device": setup_pair_device,
   "settings_device": setup_settings_device,
+  "settings_toggles": setup_settings_toggles,
   "onroad": setup_onroad,
   "onroad_sidebar": setup_onroad_sidebar,
   "onroad_alert_small": setup_onroad_alert_small,

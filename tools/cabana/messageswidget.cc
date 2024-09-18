@@ -14,16 +14,18 @@
 #include "tools/cabana/commands.h"
 
 static bool isMessageActive(const MessageId &id) {
-  if (auto dummy_stream = dynamic_cast<DummyStream *>(can)) {
-    return true;
-  }
   if (id.source == INVALID_SOURCE) {
     return false;
   }
   // Check if the message is active based on time difference and frequency
   const auto &m = can->lastMessage(id);
   float delta = can->currentSec() - m.ts;
-  return (m.freq == 0 && delta < 1.5) || (m.freq > 0 && ((delta - 1.0 / settings.fps) < (5.0 / m.freq)));
+
+  if (m.freq < std::numeric_limits<double>::epsilon()) {
+    return delta < 1.5;
+  }
+
+  return delta < (5.0 / m.freq) + (1.0 / settings.fps);
 }
 
 MessagesWidget::MessagesWidget(QWidget *parent) : menu(new QMenu(this)), QWidget(parent) {
@@ -215,8 +217,8 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
     return QVariant::fromValue((void*)(&can->lastMessage(item.id).colors));
   } else if (role == BytesRole && index.column() == Column::DATA && item.id.source != INVALID_SOURCE) {
     return QVariant::fromValue((void*)(&can->lastMessage(item.id).dat));
-  } else if (role == Qt::ForegroundRole && !item.active) {
-    return settings.theme == DARK_THEME ? QApplication::palette().color(QPalette::Text).darker(150) : QColor(Qt::gray);
+  } else if (role == Qt::ForegroundRole && !isMessageActive(item.id)) {
+    return QApplication::palette().color(QPalette::Disabled, QPalette::Text);
   } else if (role == Qt::ToolTipRole && index.column() == Column::NAME) {
     auto msg = dbc()->msg(item.id);
     auto tooltip = item.name;
@@ -335,11 +337,9 @@ bool MessageListModel::filterAndSort() {
   std::vector<Item> items;
   items.reserve(all_messages.size());
   for (const auto &id : all_messages) {
-    bool active = isMessageActive(id);
-    if (active || show_inactive_messages) {
+    if (show_inactive_messages || isMessageActive(id)) {
       auto msg = dbc()->msg(id);
       Item item = {.id = id,
-                  .active = active,
                   .name = msg ? msg->name : UNTITLED,
                   .node = msg ? msg->transmitter : QString()};
       if (match(item))
@@ -364,9 +364,6 @@ void MessageListModel::msgsReceived(const std::set<MessageId> *new_msgs, bool ha
     if (filterAndSort()) return;
   }
 
-  for (auto &item : items_) {
-    item.active = isMessageActive(item.id);
-  }
   // Update viewport
   emit dataChanged(index(0, 0), index(rowCount() - 1, columnCount() - 1));
 }

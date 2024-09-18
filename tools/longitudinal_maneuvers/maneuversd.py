@@ -28,8 +28,10 @@ class Maneuver:
   _ready_cnt: int = 0
   _repeated: int = 0
 
-  def get_accel(self, v_ego: float, long_active: bool, standstill: bool) -> float:
-    ready = abs(v_ego - self.initial_speed) < 0.3 and long_active and not standstill
+  def get_accel(self, v_ego: float, long_active: bool, standstill: bool, cruise_standstill: bool) -> float:
+    ready = abs(v_ego - self.initial_speed) < 0.3 and long_active and not cruise_standstill
+    if self.initial_speed < 0.01:
+      ready = ready and standstill
     self._ready_cnt = (self._ready_cnt + 1) if ready else 0
 
     if self._ready_cnt > (3. / DT_MDL):
@@ -70,6 +72,12 @@ class Maneuver:
 
 
 MANEUVERS = [
+  Maneuver(
+   "start from stop",
+   [Action(1.5, 3)],
+   repeat=3,
+   initial_speed=0.,
+  ),
   Maneuver(
    "creep: alternate between +1m/s^2 and -1m/s^2",
    [
@@ -112,7 +120,7 @@ def main():
   cloudlog.info("joystickd is waiting for CarParams")
   CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
 
-  sm = messaging.SubMaster(['carState', 'controlsState', 'selfdriveState', 'modelV2'], poll='modelV2')
+  sm = messaging.SubMaster(['carState', 'carControl', 'controlsState', 'selfdriveState', 'modelV2'], poll='modelV2')
   pm = messaging.PubMaster(['longitudinalPlan', 'driverAssistance', 'alertDebug'])
 
   maneuvers = iter(MANEUVERS)
@@ -135,12 +143,12 @@ def main():
     v_ego = max(sm['carState'].vEgo, 0)
 
     if maneuver is not None:
-      accel = maneuver.get_accel(v_ego, sm['carControl'].longActive, sm['carState'].cruiseState.standstill)
+      accel = maneuver.get_accel(v_ego, sm['carControl'].longActive, sm['carState'].standstill, sm['carState'].cruiseState.standstill)
 
       if maneuver.active:
         alert_msg.alertDebug.alertText1 = f'Maneuver Active: {accel:0.2f} m/s^2'
       else:
-        alert_msg.alertDebug.alertText1 = f'Reaching Speed: {maneuver.initial_speed * CV.MS_TO_MPH:0.2f} mph'
+        alert_msg.alertDebug.alertText1 = f'Setting up to {maneuver.initial_speed * CV.MS_TO_MPH:0.2f} mph'
       alert_msg.alertDebug.alertText2 = f'{maneuver.description}'
     else:
       alert_msg.alertDebug.alertText1 = 'Maneuvers Finished'

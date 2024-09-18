@@ -735,7 +735,6 @@ struct ControlsState @0x97ff69c53601abf1 {
   upAccelCmd @4 :Float32;
   uiAccelCmd @5 :Float32;
   ufAccelCmd @33 :Float32;
-  aTarget @35 :Float32;
   curvature @37 :Float32;  # path curvature from vehicle model
   desiredCurvature @61 :Float32;  # lag adjusted curvatures used by lateral controllers
   forceDecel @51 :Bool;
@@ -881,6 +880,7 @@ struct ControlsState @0x97ff69c53601abf1 {
   vCruiseClusterDEPRECATED @63 :Float32;  # set speed to display in the UI
   startMonoTimeDEPRECATED @48 :UInt64;
   cumLagMsDEPRECATED @15 :Float32;
+  aTargetDEPRECATED @35 :Float32;
 }
 
 struct DrivingModelData {
