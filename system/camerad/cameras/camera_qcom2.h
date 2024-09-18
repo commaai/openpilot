@@ -3,10 +3,11 @@
 #include <memory>
 #include <utility>
 
+#include "media/cam_isp_ife.h"
+
 #include "system/camerad/cameras/camera_common.h"
 #include "system/camerad/cameras/camera_util.h"
 #include "system/camerad/sensors/sensor.h"
-#include "common/params.h"
 #include "common/util.h"
 
 #define FRAME_BUF_COUNT 4
@@ -18,6 +19,7 @@ struct CameraConfig {
   const char *publish_name;
   cereal::FrameData::Builder (cereal::Event::Builder::*init_camera_state)();
   bool enabled;
+  uint32_t phy;
 };
 
 const CameraConfig WIDE_ROAD_CAMERA_CONFIG = {
@@ -27,6 +29,7 @@ const CameraConfig WIDE_ROAD_CAMERA_CONFIG = {
   .publish_name = "wideRoadCameraState",
   .init_camera_state = &cereal::Event::Builder::initWideRoadCameraState,
   .enabled = !getenv("DISABLE_WIDE_ROAD"),
+  .phy = CAM_ISP_IFE_IN_RES_PHY_0,
 };
 
 const CameraConfig ROAD_CAMERA_CONFIG = {
@@ -36,6 +39,7 @@ const CameraConfig ROAD_CAMERA_CONFIG = {
   .publish_name = "roadCameraState",
   .init_camera_state = &cereal::Event::Builder::initRoadCameraState,
   .enabled = !getenv("DISABLE_ROAD"),
+  .phy = CAM_ISP_IFE_IN_RES_PHY_1,
 };
 
 const CameraConfig DRIVER_CAMERA_CONFIG = {
@@ -45,17 +49,16 @@ const CameraConfig DRIVER_CAMERA_CONFIG = {
   .publish_name = "driverCameraState",
   .init_camera_state = &cereal::Event::Builder::initDriverCameraState,
   .enabled = !getenv("DISABLE_DRIVER"),
+  .phy = CAM_ISP_IFE_IN_RES_PHY_2,
 };
 
 class CameraState {
 public:
+  CameraConfig cc;
   MultiCameraState *multi_cam_state = nullptr;
-  std::unique_ptr<const SensorInfo> ci;
+  std::unique_ptr<const SensorInfo> sensor;
   bool enabled = true;
-  VisionStreamType stream_type;
-  const char *publish_name = nullptr;
-  cereal::FrameData::Builder (cereal::Event::Builder::*init_camera_state)() = nullptr;
-  float focal_len = 0;
+  bool open = false;
 
   std::mutex exp_lock;
 
@@ -77,10 +80,10 @@ public:
   unique_fd sensor_fd;
   unique_fd csiphy_fd;
 
-  int camera_num = 0;
   float fl_pix = 0;
 
   CameraState(MultiCameraState *multi_camera_state, const CameraConfig &config);
+  ~CameraState();
   void handle_camera_event(void *evdat);
   void update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain);
   void set_camera_exposure(float grey_frac);
@@ -128,14 +131,16 @@ private:
   void configISP();
   void configCSIPHY();
   void linkDevices();
-
-  // for debugging
-  Params params;
 };
 
 class MultiCameraState {
 public:
   MultiCameraState();
+  ~MultiCameraState() {
+    if (pm != nullptr) {
+      delete pm;
+    }
+  };
 
   unique_fd video0_fd;
   unique_fd cam_sync_fd;
@@ -147,5 +152,5 @@ public:
   CameraState wide_road_cam;
   CameraState driver_cam;
 
-  PubMaster *pm;
+  PubMaster *pm = nullptr;
 };
