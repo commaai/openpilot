@@ -67,7 +67,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   stream_type = type;
   frame_buf_count = frame_cnt;
 
-  const SensorInfo *sensor = s->s.get();
+  const SensorInfo *sensor = s->sensor.get();
   // RAW frame
   const int frame_size = (sensor->frame_height + sensor->extra_height) * sensor->frame_stride;
   camera_bufs = std::make_unique<VisionBuf[]>(frame_buf_count);
