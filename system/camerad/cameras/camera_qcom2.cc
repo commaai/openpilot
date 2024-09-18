@@ -230,7 +230,6 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
     pkt->header.request_id = request_id;
   } else {
     pkt->header.op_code = 0xf000000;
-    pkt->header.request_id = 1;
   }
   pkt->header.size = size;
   struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
