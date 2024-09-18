@@ -350,6 +350,7 @@ void CameraWidget::vipcThread() {
         }
       }
       emit vipcThreadFrameReceived();
+      qWarning() << "frame received" << frames.size();
     } else {
       if (!isVisible()) {
         vipc_client->connected = false;
