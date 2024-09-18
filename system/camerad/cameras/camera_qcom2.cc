@@ -17,24 +17,26 @@
 #include "media/cam_req_mgr.h"
 #include "media/cam_sensor_cmn_header.h"
 #include "media/cam_sync.h"
+
+#include "common/params.h"
 #include "common/swaglog.h"
 
 const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
-
-// For debugging:
-// echo "4294967295" > /sys/module/cam_debug_util/parameters/debug_mdl
 
 ExitHandler do_exit;
 
 CameraState::CameraState(MultiCameraState *multi_camera_state, const CameraConfig &config)
   : multi_cam_state(multi_camera_state),
-    camera_num(config.camera_num),
-    stream_type(config.stream_type),
-    focal_len(config.focal_len),
-    publish_name(config.publish_name),
-    init_camera_state(config.init_camera_state),
-    enabled(config.enabled) {
+    enabled(config.enabled) ,
+    cc(config) {
 }
+
+CameraState::~CameraState() {
+  if (open) {
+    camera_close();
+  }
+}
+
 
 int CameraState::clear_req_queue() {
   struct cam_req_mgr_flush_info req_mgr_flush_request = {0};
@@ -50,8 +52,8 @@ int CameraState::clear_req_queue() {
 
 void CameraState::sensors_start() {
   if (!enabled) return;
-  LOGD("starting sensor %d", camera_num);
-  sensors_i2c(ci->start_reg_array.data(), ci->start_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, ci->data_word);
+  LOGD("starting sensor %d", cc.camera_num);
+  sensors_i2c(sensor->start_reg_array.data(), sensor->start_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, sensor->data_word);
 }
 
 void CameraState::sensors_poke(int request_id) {
@@ -66,7 +68,7 @@ void CameraState::sensors_poke(int request_id) {
 
   int ret = device_config(sensor_fd, session_handle, sensor_dev_handle, cam_packet_handle);
   if (ret != 0) {
-    LOGE("** sensor %d FAILED poke, disabling", camera_num);
+    LOGE("** sensor %d FAILED poke, disabling", cc.camera_num);
     enabled = false;
     return;
   }
@@ -96,7 +98,7 @@ void CameraState::sensors_i2c(const struct i2c_random_wr_payload* dat, int len, 
 
   int ret = device_config(sensor_fd, session_handle, sensor_dev_handle, cam_packet_handle);
   if (ret != 0) {
-    LOGE("** sensor %d FAILED i2c, disabling", camera_num);
+    LOGE("** sensor %d FAILED i2c, disabling", cc.camera_num);
     enabled = false;
     return;
   }
@@ -125,8 +127,8 @@ int CameraState::sensors_init() {
   auto i2c_info = mm.alloc<struct cam_cmd_i2c_info>(buf_desc[0].size, (uint32_t*)&buf_desc[0].mem_handle);
   auto probe = (struct cam_cmd_probe *)(i2c_info.get() + 1);
 
-  probe->camera_id = camera_num;
-  i2c_info->slave_addr = ci->getSlaveAddress(camera_num);
+  probe->camera_id = cc.camera_num;
+  i2c_info->slave_addr = sensor->getSlaveAddress(cc.camera_num);
   // 0(I2C_STANDARD_MODE) = 100khz, 1(I2C_FAST_MODE) = 400khz
   //i2c_info->i2c_freq_mode = I2C_STANDARD_MODE;
   i2c_info->i2c_freq_mode = I2C_FAST_MODE;
@@ -136,8 +138,8 @@ int CameraState::sensors_init() {
   probe->addr_type = CAMERA_SENSOR_I2C_TYPE_WORD;
   probe->op_code = 3;   // don't care?
   probe->cmd_type = CAMERA_SENSOR_CMD_TYPE_PROBE;
-  probe->reg_addr = ci->probe_reg_addr;
-  probe->expected_data = ci->probe_expected_data;
+  probe->reg_addr = sensor->probe_reg_addr;
+  probe->expected_data = sensor->probe_expected_data;
   probe->data_mask = 0;
 
   //buf_desc[1].size = buf_desc[1].length = 148;
@@ -159,7 +161,7 @@ int CameraState::sensors_init() {
   power->count = 1;
   power->cmd_type = CAMERA_SENSOR_CMD_TYPE_PWR_UP;
   power->power_settings[0].power_seq_type = 0;
-  power->power_settings[0].config_val_low = ci->mclk_frequency;
+  power->power_settings[0].config_val_low = sensor->mclk_frequency;
   power = power_set_wait(power, 1);
 
   // reset high
@@ -228,6 +230,7 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
     pkt->header.request_id = request_id;
   } else {
     pkt->header.op_code = 0xf000000;
+    pkt->header.request_id = 1;
   }
   pkt->header.size = size;
   struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
@@ -312,10 +315,10 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
   if (io_mem_handle != 0) {
     io_cfg[0].mem_handle[0] = io_mem_handle;
     io_cfg[0].planes[0] = (struct cam_plane_cfg){
-      .width = ci->frame_width,
-      .height = ci->frame_height + ci->extra_height,
-      .plane_stride = ci->frame_stride,
-      .slice_height = ci->frame_height + ci->extra_height,
+      .width = sensor->frame_width,
+      .height = sensor->frame_height + sensor->extra_height,
+      .plane_stride = sensor->frame_stride,
+      .slice_height = sensor->frame_height + sensor->extra_height,
       .meta_stride = 0x0,  // YUV has meta(stride=0x400, size=0x5000)
       .meta_size = 0x0,
       .meta_offset = 0x0,
@@ -325,10 +328,10 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
       .h_init = 0x0,
       .v_init = 0x0,
     };
-    io_cfg[0].format = ci->mipi_format;                    // CAM_FORMAT_UBWC_TP10 for YUV
+    io_cfg[0].format = sensor->mipi_format;                    // CAM_FORMAT_UBWC_TP10 for YUV
     io_cfg[0].color_space = CAM_COLOR_SPACE_BASE;          // CAM_COLOR_SPACE_BT601_FULL for YUV
     io_cfg[0].color_pattern = 0x5;                         // 0x0 for YUV
-    io_cfg[0].bpp = (ci->mipi_format == CAM_FORMAT_MIPI_RAW_10 ? 0xa : 0xc);  // bits per pixel
+    io_cfg[0].bpp = (sensor->mipi_format == CAM_FORMAT_MIPI_RAW_10 ? 0xa : 0xc);  // bits per pixel
     io_cfg[0].resource_type = CAM_ISP_IFE_OUT_RES_RDI_0;   // CAM_ISP_IFE_OUT_RES_FULL for YUV
     io_cfg[0].fence = fence;
     io_cfg[0].direction = CAM_BUF_OUTPUT;
@@ -409,9 +412,9 @@ void CameraState::set_exposure_rect() {
   // set areas for each camera, shouldn't be changed
   std::vector<std::pair<Rect, float>> ae_targets = {
     // (Rect, F)
-    std::make_pair((Rect){96, 250, 1734, 524}, 567.0), // wide
+    std::make_pair((Rect){96, 250, 1734, 524}, 567.0),  // wide
     std::make_pair((Rect){96, 160, 1734, 986}, 2648.0), // road
-    std::make_pair((Rect){96, 242, 1736, 906}, 567.0) // driver
+    std::make_pair((Rect){96, 242, 1736, 906}, 567.0)   // driver
   };
   int h_ref = 1208;
   /*
@@ -422,7 +425,7 @@ void CameraState::set_exposure_rect() {
       [0, 0, 1]
     ]
   */
-  auto ae_target = ae_targets[camera_num];
+  auto ae_target = ae_targets[cc.camera_num];
   Rect xywh_ref = ae_target.first;
   float fl_ref = ae_target.second;
 
@@ -435,9 +438,9 @@ void CameraState::set_exposure_rect() {
 }
 
 void CameraState::sensor_set_parameters() {
-  dc_gain_weight = ci->dc_gain_min_weight;
-  gain_idx = ci->analog_gain_rec_idx;
-  cur_ev[0] = cur_ev[1] = cur_ev[2] = (1 + dc_gain_weight * (ci->dc_gain_factor-1) / ci->dc_gain_max_weight) * ci->sensor_analog_gains[gain_idx] * exposure_time;
+  dc_gain_weight = sensor->dc_gain_min_weight;
+  gain_idx = sensor->analog_gain_rec_idx;
+  cur_ev[0] = cur_ev[1] = cur_ev[2] = (1 + dc_gain_weight * (sensor->dc_gain_factor-1) / sensor->dc_gain_max_weight) * sensor->sensor_analog_gains[gain_idx] * exposure_time;
 }
 
 void CameraState::camera_map_bufs() {
@@ -458,11 +461,11 @@ void CameraState::camera_map_bufs() {
 void CameraState::camera_init(VisionIpcServer * v, cl_device_id device_id, cl_context ctx) {
   if (!enabled) return;
 
-  LOGD("camera init %d", camera_num);
-  buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, stream_type);
+  LOGD("camera init %d", cc.camera_num);
+  buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, cc.stream_type);
   camera_map_bufs();
 
-  fl_pix = focal_len / ci->pixel_size_mm;
+  fl_pix = cc.focal_len / sensor->pixel_size_mm;
   set_exposure_rect();
 }
 
@@ -473,23 +476,24 @@ void CameraState::camera_open() {
     return;
   }
 
+  open = true;
   configISP();
   configCSIPHY();
   linkDevices();
 }
 
 bool CameraState::openSensor() {
-  sensor_fd = open_v4l_by_name_and_index("cam-sensor-driver", camera_num);
+  sensor_fd = open_v4l_by_name_and_index("cam-sensor-driver", cc.camera_num);
   assert(sensor_fd >= 0);
-  LOGD("opened sensor for %d", camera_num);
+  LOGD("opened sensor for %d", cc.camera_num);
 
   // init memorymanager for this camera
   mm.init(multi_cam_state->video0_fd);
 
-  LOGD("-- Probing sensor %d", camera_num);
+  LOGD("-- Probing sensor %d", cc.camera_num);
 
-  auto init_sensor_lambda = [this](SensorInfo *sensor) {
-    ci.reset(sensor);
+  auto init_sensor_lambda = [this](SensorInfo *s) {
+    sensor.reset(s);
     int ret = sensors_init();
     if (ret == 0) {
       sensor_set_parameters();
@@ -501,11 +505,11 @@ bool CameraState::openSensor() {
   if (!init_sensor_lambda(new AR0231) &&
       !init_sensor_lambda(new OX03C10) &&
       !init_sensor_lambda(new OS04C10)) {
-    LOGE("** sensor %d FAILED bringup, disabling", camera_num);
+    LOGE("** sensor %d FAILED bringup, disabling", cc.camera_num);
     enabled = false;
     return false;
   }
-  LOGD("-- Probing sensor %d success", camera_num);
+  LOGD("-- Probing sensor %d success", cc.camera_num);
 
   // create session
   struct cam_req_mgr_session_info session_info = {};
@@ -521,7 +525,7 @@ bool CameraState::openSensor() {
   LOGD("acquire sensor dev");
 
   LOG("-- Configuring sensor");
-  sensors_i2c(ci->init_reg_array.data(), ci->init_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, ci->data_word);
+  sensors_i2c(sensor->init_reg_array.data(), sensor->init_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, sensor->data_word);
   return true;
 }
 
@@ -531,30 +535,29 @@ void CameraState::configISP() {
   if (!enabled) return;
 
   struct cam_isp_in_port_info in_port_info = {
-    .res_type = (uint32_t[]){CAM_ISP_IFE_IN_RES_PHY_0, CAM_ISP_IFE_IN_RES_PHY_1, CAM_ISP_IFE_IN_RES_PHY_2}[camera_num],
-
+    .res_type = cc.phy,
     .lane_type = CAM_ISP_LANE_TYPE_DPHY,
     .lane_num = 4,
     .lane_cfg = 0x3210,
 
     .vc = 0x0,
-    .dt = ci->frame_data_type,
-    .format = ci->mipi_format,
+    .dt = sensor->frame_data_type,
+    .format = sensor->mipi_format,
 
     .test_pattern = 0x2,  // 0x3?
     .usage_type = 0x0,
 
     .left_start = 0,
-    .left_stop = ci->frame_width - 1,
-    .left_width = ci->frame_width,
+    .left_stop = sensor->frame_width - 1,
+    .left_width = sensor->frame_width,
 
     .right_start = 0,
-    .right_stop = ci->frame_width - 1,
-    .right_width = ci->frame_width,
+    .right_stop = sensor->frame_width - 1,
+    .right_width = sensor->frame_width,
 
     .line_start = 0,
-    .line_stop = ci->frame_height + ci->extra_height - 1,
-    .height = ci->frame_height + ci->extra_height,
+    .line_stop = sensor->frame_height + sensor->extra_height - 1,
+    .height = sensor->frame_height + sensor->extra_height,
 
     .pixel_clk = 0x0,
     .batch_size = 0x0,
@@ -565,9 +568,9 @@ void CameraState::configISP() {
     .num_out_res = 0x1,
     .data[0] = (struct cam_isp_out_port_info){
       .res_type = CAM_ISP_IFE_OUT_RES_RDI_0,
-      .format = ci->mipi_format,
-      .width = ci->frame_width,
-      .height = ci->frame_height + ci->extra_height,
+      .format = sensor->mipi_format,
+      .width = sensor->frame_width,
+      .height = sensor->frame_height + sensor->extra_height,
       .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
     },
   };
@@ -590,9 +593,9 @@ void CameraState::configISP() {
 }
 
 void CameraState::configCSIPHY() {
-  csiphy_fd = open_v4l_by_name_and_index("cam-csiphy-driver", camera_num);
+  csiphy_fd = open_v4l_by_name_and_index("cam-csiphy-driver", cc.camera_num);
   assert(csiphy_fd >= 0);
-  LOGD("opened csiphy for %d", camera_num);
+  LOGD("opened csiphy for %d", cc.camera_num);
 
   struct cam_csiphy_acquire_dev_info csiphy_acquire_dev_info = {.combo_mode = 0};
   auto csiphy_dev_handle_ = device_acquire(csiphy_fd, session_handle, &csiphy_acquire_dev_info);
@@ -659,15 +662,7 @@ void CameraState::linkDevices() {
   //LOGD("start sensor: %d", ret);
 }
 
-void cameras_init(VisionIpcServer *v, MultiCameraState *s, cl_device_id device_id, cl_context ctx) {
-  s->driver_cam.camera_init(v, device_id, ctx);
-  s->road_cam.camera_init(v, device_id, ctx);
-  s->wide_road_cam.camera_init(v, device_id, ctx);
-
-  s->pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
-}
-
-void cameras_open(MultiCameraState *s) {
+void cameras_init(MultiCameraState *s, VisionIpcServer *v, cl_device_id device_id, cl_context ctx) {
   LOG("-- Opening devices");
   // video0 is req_mgr, the target of many ioctls
   s->video0_fd = HANDLE_EINTR(open("/dev/v4l/by-path/platform-soc:qcom_cam-req-mgr-video-index0", O_RDWR | O_NONBLOCK));
@@ -706,17 +701,23 @@ void cameras_open(MultiCameraState *s) {
   ret = HANDLE_EINTR(ioctl(s->video0_fd, VIDIOC_SUBSCRIBE_EVENT, &sub));
   LOGD("req mgr subscribe: %d", ret);
 
+  // open
   s->driver_cam.camera_open();
   LOGD("driver camera opened");
   s->road_cam.camera_open();
   LOGD("road camera opened");
   s->wide_road_cam.camera_open();
   LOGD("wide road camera opened");
+
+  // init
+  s->driver_cam.camera_init(v, device_id, ctx);
+  s->road_cam.camera_init(v, device_id, ctx);
+  s->wide_road_cam.camera_init(v, device_id, ctx);
 }
 
 void CameraState::camera_close() {
   // stop devices
-  LOG("-- Stop devices %d", camera_num);
+  LOG("-- Stop devices %d", cc.camera_num);
 
   if (enabled) {
     // ret = device_control(sensor_fd, CAM_STOP_DEV, session_handle, sensor_dev_handle);
@@ -762,15 +763,7 @@ void CameraState::camera_close() {
   // destroyed session
   struct cam_req_mgr_session_info session_info = {.session_hdl = session_handle};
   ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_DESTROY_SESSION, &session_info, sizeof(session_info));
-  LOGD("destroyed session %d: %d", camera_num, ret);
-}
-
-void cameras_close(MultiCameraState *s) {
-  s->driver_cam.camera_close();
-  s->road_cam.camera_close();
-  s->wide_road_cam.camera_close();
-
-  delete s->pm;
+  LOGD("destroyed session %d: %d", cc.camera_num, ret);
 }
 
 void CameraState::handle_camera_event(void *evdat) {
@@ -789,7 +782,7 @@ void CameraState::handle_camera_event(void *evdat) {
 
     // check for skipped frames
     if (main_id > frame_id_last + 1 && !skipped) {
-      LOGE("camera %d realign", camera_num);
+      LOGE("camera %d realign", cc.camera_num);
       clear_req_queue();
       enqueue_req_multi(real_id + 1, FRAME_BUF_COUNT - 1, 0);
       skipped = true;
@@ -799,7 +792,7 @@ void CameraState::handle_camera_event(void *evdat) {
 
     // check for dropped requests
     if (real_id > request_id_last + 1) {
-      LOGE("camera %d dropped requests %ld %ld", camera_num, real_id, request_id_last);
+      LOGE("camera %d dropped requests %ld %ld", cc.camera_num, real_id, request_id_last);
       enqueue_req_multi(request_id_last + 1 + FRAME_BUF_COUNT, real_id - (request_id_last + 1), 0);
     }
 
@@ -812,7 +805,7 @@ void CameraState::handle_camera_event(void *evdat) {
     meta_data.request_id = real_id;
     meta_data.timestamp_sof = timestamp;
     exp_lock.lock();
-    meta_data.gain = analog_gain_frac * (1 + dc_gain_weight * (ci->dc_gain_factor-1) / ci->dc_gain_max_weight);
+    meta_data.gain = analog_gain_frac * (1 + dc_gain_weight * (sensor->dc_gain_factor-1) / sensor->dc_gain_max_weight);
     meta_data.high_conversion_gain = dc_gain_enabled;
     meta_data.integ_lines = exposure_time;
     meta_data.measured_grey_fraction = measured_grey_fraction;
@@ -823,7 +816,7 @@ void CameraState::handle_camera_event(void *evdat) {
     enqueue_req_multi(real_id + FRAME_BUF_COUNT, 1, 1);
   } else { // not ready
     if (main_id > frame_id_last + 10) {
-      LOGE("camera %d reset after half second of no response", camera_num);
+      LOGE("camera %d reset after half second of no response", cc.camera_num);
       clear_req_queue();
       enqueue_req_multi(request_id_last + 1, FRAME_BUF_COUNT, 0);
       frame_id_last = main_id;
@@ -833,7 +826,7 @@ void CameraState::handle_camera_event(void *evdat) {
 }
 
 void CameraState::update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain) {
-  float score = ci->getExposureScore(desired_ev, exp_t, exp_g_idx, exp_gain, gain_idx);
+  float score = sensor->getExposureScore(desired_ev, exp_t, exp_g_idx, exp_gain, gain_idx);
   if (score < best_ev_score) {
     new_exp_t = exp_t;
     new_exp_g = exp_g_idx;
@@ -859,10 +852,10 @@ void CameraState::set_camera_exposure(float grey_frac) {
   const float cur_ev_ = cur_ev[buf.cur_frame_data.frame_id % 3];
 
   // Scale target grey between 0.1 and 0.4 depending on lighting conditions
-  float new_target_grey = std::clamp(0.4 - 0.3 * log2(1.0 + ci->target_grey_factor*cur_ev_) / log2(6000.0), 0.1, 0.4);
+  float new_target_grey = std::clamp(0.4 - 0.3 * log2(1.0 + sensor->target_grey_factor*cur_ev_) / log2(6000.0), 0.1, 0.4);
   float target_grey = (1.0 - k_grey) * target_grey_fraction + k_grey * new_target_grey;
 
-  float desired_ev = std::clamp(cur_ev_ * target_grey / grey_frac, ci->min_ev, ci->max_ev);
+  float desired_ev = std::clamp(cur_ev_ * target_grey / grey_frac, sensor->min_ev, sensor->max_ev);
   float k = (1.0 - k_ev) / 3.0;
   desired_ev = (k * cur_ev[0]) + (k * cur_ev[1]) + (k * cur_ev[2]) + (k_ev * desired_ev);
 
@@ -873,19 +866,20 @@ void CameraState::set_camera_exposure(float grey_frac) {
   // Hysteresis around high conversion gain
   // We usually want this on since it results in lower noise, but turn off in very bright day scenes
   bool enable_dc_gain = dc_gain_enabled;
-  if (!enable_dc_gain && target_grey < ci->dc_gain_on_grey) {
+  if (!enable_dc_gain && target_grey < sensor->dc_gain_on_grey) {
     enable_dc_gain = true;
-    dc_gain_weight = ci->dc_gain_min_weight;
-  } else if (enable_dc_gain && target_grey > ci->dc_gain_off_grey) {
+    dc_gain_weight = sensor->dc_gain_min_weight;
+  } else if (enable_dc_gain && target_grey > sensor->dc_gain_off_grey) {
     enable_dc_gain = false;
-    dc_gain_weight = ci->dc_gain_max_weight;
+    dc_gain_weight = sensor->dc_gain_max_weight;
   }
 
-  if (enable_dc_gain && dc_gain_weight < ci->dc_gain_max_weight) {dc_gain_weight += 1;}
-  if (!enable_dc_gain && dc_gain_weight > ci->dc_gain_min_weight) {dc_gain_weight -= 1;}
+  if (enable_dc_gain && dc_gain_weight < sensor->dc_gain_max_weight) {dc_gain_weight += 1;}
+  if (!enable_dc_gain && dc_gain_weight > sensor->dc_gain_min_weight) {dc_gain_weight -= 1;}
 
   std::string gain_bytes, time_bytes;
   if (env_ctrl_exp_from_params) {
+    static Params params;
     gain_bytes = params.get("CameraDebugExpGain");
     time_bytes = params.get("CameraDebugExpTime");
   }
@@ -901,14 +895,14 @@ void CameraState::set_camera_exposure(float grey_frac) {
   } else {
     // Simple brute force optimizer to choose sensor parameters
     // to reach desired EV
-    for (int g = std::max((int)ci->analog_gain_min_idx, gain_idx - 1); g <= std::min((int)ci->analog_gain_max_idx, gain_idx + 1); g++) {
-      float gain = ci->sensor_analog_gains[g] * (1 + dc_gain_weight * (ci->dc_gain_factor-1) / ci->dc_gain_max_weight);
+    for (int g = std::max((int)sensor->analog_gain_min_idx, gain_idx - 1); g <= std::min((int)sensor->analog_gain_max_idx, gain_idx + 1); g++) {
+      float gain = sensor->sensor_analog_gains[g] * (1 + dc_gain_weight * (sensor->dc_gain_factor-1) / sensor->dc_gain_max_weight);
 
       // Compute optimal time for given gain
-      int t = std::clamp(int(std::round(desired_ev / gain)), ci->exposure_time_min, ci->exposure_time_max);
+      int t = std::clamp(int(std::round(desired_ev / gain)), sensor->exposure_time_min, sensor->exposure_time_max);
 
       // Only go below recommended gain when absolutely necessary to not overexpose
-      if (g < ci->analog_gain_rec_idx && t > 20 && g < gain_idx) {
+      if (g < sensor->analog_gain_rec_idx && t > 20 && g < gain_idx) {
         continue;
       }
 
@@ -921,12 +915,12 @@ void CameraState::set_camera_exposure(float grey_frac) {
   measured_grey_fraction = grey_frac;
   target_grey_fraction = target_grey;
 
-  analog_gain_frac = ci->sensor_analog_gains[new_exp_g];
+  analog_gain_frac = sensor->sensor_analog_gains[new_exp_g];
   gain_idx = new_exp_g;
   exposure_time = new_exp_t;
   dc_gain_enabled = enable_dc_gain;
 
-  float gain = analog_gain_frac * (1 + dc_gain_weight * (ci->dc_gain_factor-1) / ci->dc_gain_max_weight);
+  float gain = analog_gain_frac * (1 + dc_gain_weight * (sensor->dc_gain_factor-1) / sensor->dc_gain_max_weight);
   cur_ev[buf.cur_frame_data.frame_id % 3] = exposure_time * gain;
 
   exp_lock.unlock();
@@ -937,39 +931,35 @@ void CameraState::set_camera_exposure(float grey_frac) {
   if (ms < 60) {
     util::sleep_for(60 - ms);
   }
-  // LOGE("ae - camera %d, cur_t %.5f, sof %.5f, dt %.5f", camera_num, 1e-9 * nanos_since_boot(), 1e-9 * buf.cur_frame_data.timestamp_sof, 1e-9 * (nanos_since_boot() - buf.cur_frame_data.timestamp_sof));
+  // LOGE("ae - camera %d, cur_t %.5f, sof %.5f, dt %.5f", cc.camera_num, 1e-9 * nanos_since_boot(), 1e-9 * buf.cur_frame_data.timestamp_sof, 1e-9 * (nanos_since_boot() - buf.cur_frame_data.timestamp_sof));
 
-  auto exp_reg_array = ci->getExposureRegisters(exposure_time, new_exp_g, dc_gain_enabled);
-  sensors_i2c(exp_reg_array.data(), exp_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, ci->data_word);
+  auto exp_reg_array = sensor->getExposureRegisters(exposure_time, new_exp_g, dc_gain_enabled);
+  sensors_i2c(exp_reg_array.data(), exp_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, sensor->data_word);
 }
 
 void CameraState::run() {
-  util::set_thread_name(publish_name);
+  util::set_thread_name(cc.publish_name);
 
   for (uint32_t cnt = 0; !do_exit; ++cnt) {
     // Acquire the buffer; continue if acquisition fails
     if (!buf.acquire()) continue;
 
     MessageBuilder msg;
-    auto framed = (msg.initEvent().*init_camera_state)();
+    auto framed = (msg.initEvent().*cc.init_camera_state)();
     fill_frame_data(framed, buf.cur_frame_data, this);
 
     // Log raw frames for road camera
-    if (env_log_raw_frames && stream_type == VISION_STREAM_ROAD && cnt % 100 == 5) {  // no overlap with qlog decimation
+    if (env_log_raw_frames && cc.stream_type == VISION_STREAM_ROAD && cnt % 100 == 5) {  // no overlap with qlog decimation
       framed.setImage(get_raw_frame_image(&buf));
-    }
-    // Log frame id for road and wide road cameras
-    if (stream_type != VISION_STREAM_DRIVER) {
-      LOGT(buf.cur_frame_data.frame_id, "%s: Image set", publish_name);
     }
 
     // Process camera registers and set camera exposure
-    ci->processRegisters(this, framed);
-    set_camera_exposure(set_exposure_target(&buf, ae_xywh, 2, stream_type != VISION_STREAM_DRIVER ? 2 : 4));
+    sensor->processRegisters(this, framed);
+    set_camera_exposure(set_exposure_target(&buf, ae_xywh, 2, cc.stream_type != VISION_STREAM_DRIVER ? 2 : 4));
 
     // Send the message
-    multi_cam_state->pm->send(publish_name, msg);
-    if (stream_type == VISION_STREAM_ROAD && cnt % 100 == 3) {
+    multi_cam_state->pm->send(cc.publish_name, msg);
+    if (cc.stream_type == VISION_STREAM_ROAD && cnt % 100 == 3) {
       publish_thumbnail(multi_cam_state->pm, &buf);  // this takes 10ms???
     }
   }
@@ -1019,10 +1009,8 @@ void cameras_run(MultiCameraState *s) {
         if (env_debug_frames) {
           printf("sess_hdl 0x%6X, link_hdl 0x%6X, frame_id %lu, req_id %lu, timestamp %.2f ms, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl,
                  event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp/1e6, event_data->u.frame_msg.sof_status);
+          do_exit = do_exit || event_data->u.frame_msg.frame_id > (1*20);
         }
-
-        // for debugging
-        //do_exit = do_exit || event_data->u.frame_msg.frame_id > (30*20);
 
         if (event_data->session_hdl == s->road_cam.session_handle) {
           s->road_cam.handle_camera_event(event_data);
@@ -1045,6 +1033,4 @@ void cameras_run(MultiCameraState *s) {
   LOG(" ************** STOPPING **************");
 
   for (auto &t : threads) t.join();
-
-  cameras_close(s);
 }
