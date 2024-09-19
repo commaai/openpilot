@@ -69,9 +69,8 @@ public:
   void queue(size_t buf_idx);
 };
 
+void camerad_thread();
 kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b);
 float set_exposure_target(const CameraBuf *b, Rect ae_xywh, int x_skip, int y_skip);
 void publish_thumbnail(PubMaster *pm, const CameraBuf *b);
-void camerad_thread();
-
 int open_v4l_by_name_and_index(const char name[], int index = 0, int flags = O_RDWR | O_NONBLOCK);

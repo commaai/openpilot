@@ -8,6 +8,7 @@
 #include "common/util.h"
 #include "system/camerad/cameras/tici.h"
 #include "system/camerad/cameras/camera_util.h"
+#include "system/camerad/cameras/camera_common.h"
 #include "system/camerad/sensors/sensor.h"
 
 #define FRAME_BUF_COUNT 4
@@ -16,6 +17,7 @@ const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 
 // For use with the Spectra 280 ISP in the SDM845
 // https://github.com/commaai/agnos-kernel-sdm845
+
 
 class SpectraMaster {
 public:

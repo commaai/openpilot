@@ -76,6 +76,7 @@ SpectraCamera::SpectraCamera(SpectraMaster *master, const CameraConfig &config)
   : m(master),
     enabled(config.enabled) ,
     cc(config) {
+  mm.init(m->video0_fd);
 }
 
 SpectraCamera::~SpectraCamera() {
@@ -280,9 +281,6 @@ void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int
   auto pkt = mm.alloc<struct cam_packet>(size, &cam_packet_handle);
   pkt->num_cmd_buf = 2;
   pkt->kmd_cmd_buf_index = 0;
-  // YUV has kmd_cmd_buf_offset = 1780
-  // I guess this is the ISP command
-  // YUV also has patch_offset = 0x1030 and num_patches = 10
 
   if (io_mem_handle != 0) {
     pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf;
@@ -482,18 +480,14 @@ bool SpectraCamera::openSensor() {
   assert(sensor_fd >= 0);
   LOGD("opened sensor for %d", cc.camera_num);
 
-  // init memorymanager for this camera
-  mm.init(m->video0_fd);
-
   LOGD("-- Probing sensor %d", cc.camera_num);
 
   auto init_sensor_lambda = [this](SensorInfo *s) {
     sensor.reset(s);
-    int ret = sensors_init();
-    return ret == 0;
+    return (sensors_init() == 0);
   };
 
-  // Try different sensors one by one.
+  // Figure out which sensor we have
   if (!init_sensor_lambda(new AR0231) &&
       !init_sensor_lambda(new OX03C10) &&
       !init_sensor_lambda(new OS04C10)) {
@@ -648,10 +642,6 @@ void SpectraCamera::linkDevices() {
   ret = device_control(m->isp_fd, CAM_START_DEV, session_handle, isp_dev_handle);
   LOGD("start isp: %d", ret);
   assert(ret == 0);
-
-  // TODO: this is unneeded, should we be doing the start i2c in a different way?
-  //ret = device_control(sensor_fd, CAM_START_DEV, session_handle, sensor_dev_handle);
-  //LOGD("start sensor: %d", ret);
 }
 
 void SpectraCamera::camera_close() {

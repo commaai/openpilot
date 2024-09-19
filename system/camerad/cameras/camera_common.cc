@@ -136,9 +136,6 @@ void CameraBuf::queue(size_t buf_idx) {
 
 // common functions
 
-void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, CameraState *c) {
-}
-
 kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b) {
   const uint8_t *dat = (const uint8_t *)b->cur_camera_buf->addr;
 

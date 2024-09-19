@@ -1,3 +1,4 @@
+#include "system/camerad/cameras/camera_common.h"
 #include "system/camerad/cameras/spectra.h"
 
 #include <poll.h>
