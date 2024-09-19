@@ -37,15 +37,6 @@ public:
   void update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain);
   void set_camera_exposure(float grey_frac);
 
-  void sensors_start();
-
-  void camera_map_bufs();
-  void camera_init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
-  void enqueue_req_multi(uint64_t start, int n, bool dp);
-  void enqueue_buffer(int i, bool dp);
-  void sensors_poke(int request_id);
-
-  // these stay
   void set_exposure_rect();
   void sensor_set_parameters();
   void run();
@@ -58,15 +49,6 @@ public:
       road_cam(this, ROAD_CAMERA_CONFIG),
       wide_road_cam(this, WIDE_ROAD_CAMERA_CONFIG) {
   };
-
-  /*
-  // ISP state
-  unique_fd video0_fd;
-  unique_fd cam_sync_fd;
-  unique_fd isp_fd;
-  int device_iommu = -1;
-  int cdm_iommu = -1;
-  */
 
   CameraState road_cam;
   CameraState wide_road_cam;

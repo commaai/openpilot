@@ -17,9 +17,8 @@
 
 class ImgProc {
 public:
-  ImgProc(cl_device_id device_id, cl_context context, const CameraBuf *b, const CameraState *s, int buf_width, int uv_offset) {
+  ImgProc(cl_device_id device_id, cl_context context, const CameraBuf *b, const SensorInfo *sensor, int camera_num, int buf_width, int uv_offset) {
     char args[4096];
-    const SensorInfo *sensor = s->sensor.get();
     snprintf(args, sizeof(args),
              "-cl-fast-relaxed-math -cl-denorms-are-zero -Isensors "
              "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d -DFRAME_OFFSET=%d "
@@ -27,7 +26,7 @@ public:
              "-DSENSOR_ID=%hu -DHDR_OFFSET=%d -DVIGNETTING=%d ",
              sensor->frame_width, sensor->frame_height, sensor->hdr_offset > 0 ? sensor->frame_stride * 2 : sensor->frame_stride, sensor->frame_offset,
              b->rgb_width, b->rgb_height, buf_width, uv_offset,
-             static_cast<unsigned short>(sensor->image_sensor), sensor->hdr_offset, s->cc.camera_num == 1);
+             static_cast<unsigned short>(sensor->image_sensor), sensor->hdr_offset, camera_num == 1);
     const char *cl_file = "cameras/process_raw.cl";
     cl_program prg_imgproc = cl_program_from_file(context, device_id, cl_file, args);
     krnl_ = CL_CHECK_ERR(clCreateKernel(prg_imgproc, "process_raw", &err));
@@ -62,12 +61,13 @@ private:
   cl_command_queue queue;
 };
 
-void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType type) {
+void CameraBuf::init(cl_device_id device_id, cl_context context, SpectraCamera *cam, VisionIpcServer * v, int frame_cnt, VisionStreamType type) {
   vipc_server = v;
   stream_type = type;
   frame_buf_count = frame_cnt;
 
-  const SensorInfo *sensor = s->sensor.get();
+  const SensorInfo *sensor = cam->sensor.get();
+
   // RAW frame
   const int frame_size = (sensor->frame_height + sensor->extra_height) * sensor->frame_stride;
   camera_bufs = std::make_unique<VisionBuf[]>(frame_buf_count);
@@ -95,7 +95,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   vipc_server->create_buffers_with_sizes(stream_type, YUV_BUFFER_COUNT, false, rgb_width, rgb_height, nv12_size, nv12_width, nv12_uv_offset);
   LOGD("created %d YUV vipc buffers with size %dx%d", YUV_BUFFER_COUNT, nv12_width, nv12_height);
 
-  imgproc = new ImgProc(device_id, context, this, s, nv12_width, nv12_uv_offset);
+  imgproc = new ImgProc(device_id, context, this, sensor, cam->cc.camera_num, nv12_width, nv12_uv_offset);
 }
 
 CameraBuf::~CameraBuf() {

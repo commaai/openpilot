@@ -40,13 +40,13 @@ int SpectraCamera::clear_req_queue() {
 
 // ************** high level camera helpers ****************
 
-void CameraState::sensors_start() {
+void SpectraCamera::sensors_start() {
   if (!enabled) return;
   LOGD("starting sensor %d", cc.camera_num);
   sensors_i2c(sensor->start_reg_array.data(), sensor->start_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, sensor->data_word);
 }
 
-void CameraState::sensors_poke(int request_id) {
+void SpectraCamera::sensors_poke(int request_id) {
   uint32_t cam_packet_handle = 0;
   int size = sizeof(struct cam_packet);
   auto pkt = mm.alloc<struct cam_packet>(size, &cam_packet_handle);
@@ -336,7 +336,7 @@ void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int
   }
 }
 
-void CameraState::enqueue_buffer(int i, bool dp) {
+void SpectraCamera::enqueue_buffer(int i, bool dp) {
   int ret;
   uint64_t request_id = request_ids[i];
 
@@ -389,7 +389,7 @@ void CameraState::enqueue_buffer(int i, bool dp) {
   config_isp(buf_handle[i], sync_objs[i], request_id, buf0_handle, 65632*(i+1));
 }
 
-void CameraState::enqueue_req_multi(uint64_t start, int n, bool dp) {
+void SpectraCamera::enqueue_req_multi(uint64_t start, int n, bool dp) {
   for (uint64_t i = start; i < start + n; ++i) {
     request_ids[(i - 1) % FRAME_BUF_COUNT] = i;
     enqueue_buffer((i - 1) % FRAME_BUF_COUNT, dp);
@@ -433,7 +433,7 @@ void CameraState::sensor_set_parameters() {
   cur_ev[0] = cur_ev[1] = cur_ev[2] = (1 + dc_gain_weight * (sensor->dc_gain_factor-1) / sensor->dc_gain_max_weight) * sensor->sensor_analog_gains[gain_idx] * exposure_time;
 }
 
-void CameraState::camera_map_bufs() {
+void SpectraCamera::camera_map_bufs() {
   for (int i = 0; i < FRAME_BUF_COUNT; i++) {
     // configure ISP to put the image in place
     struct cam_mem_mgr_map_cmd mem_mgr_map_cmd = {0};
@@ -448,15 +448,16 @@ void CameraState::camera_map_bufs() {
   enqueue_req_multi(1, FRAME_BUF_COUNT, 0);
 }
 
-void CameraState::camera_init(VisionIpcServer * v, cl_device_id device_id, cl_context ctx) {
+void SpectraCamera::camera_init(VisionIpcServer * v, cl_device_id device_id, cl_context ctx) {
   if (!enabled) return;
 
   LOGD("camera init %d", cc.camera_num);
   buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, cc.stream_type);
   camera_map_bufs();
 
-  fl_pix = cc.focal_len / sensor->pixel_size_mm;
-  set_exposure_rect();
+  // TODO: fix these
+  //fl_pix = cc.focal_len / sensor->pixel_size_mm;
+  //set_exposure_rect();
 }
 
 void SpectraCamera::camera_open() {
@@ -913,7 +914,7 @@ void CameraState::run() {
     }
 
     // Process camera registers and set camera exposure
-    sensor->processRegisters(this, framed);
+    sensor->processRegisters((uint8_t *)buf.cur_camera_buf->addr, framed);
     set_camera_exposure(set_exposure_target(&buf, ae_xywh, 2, cc.stream_type != VISION_STREAM_DRIVER ? 2 : 4));
 
     // Send the message

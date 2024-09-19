@@ -8,6 +8,8 @@
 #include "common/queue.h"
 #include "common/util.h"
 
+#include "system/camerad/sensors/sensor.h"
+
 const int YUV_BUFFER_COUNT = 20;
 
 enum CameraType {
@@ -39,6 +41,7 @@ typedef struct FrameMetadata {
   float processing_time;
 } FrameMetadata;
 
+class SpectraCamera;
 struct MultiCameraState;
 class CameraState;
 class ImgProc;
@@ -62,7 +65,7 @@ public:
 
   CameraBuf() = default;
   ~CameraBuf();
-  void init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType type);
+  void init(cl_device_id device_id, cl_context context, SpectraCamera *cam, VisionIpcServer * v, int frame_cnt, VisionStreamType type);
   bool acquire();
   void queue(size_t buf_idx);
 };
