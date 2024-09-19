@@ -11,6 +11,7 @@
 #include "common/util.h"
 
 
+// high level camera state
 class CameraState : public SpectraCamera {
 public:
   std::mutex exp_lock;

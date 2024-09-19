@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+#include "CL/cl_ext_qcom.h"
+
 #include "media/cam_defs.h"
 #include "media/cam_isp.h"
 #include "media/cam_isp_ife.h"
@@ -18,6 +20,7 @@
 #include "media/cam_sensor_cmn_header.h"
 #include "media/cam_sync.h"
 
+#include "common/clutil.h"
 #include "common/params.h"
 #include "common/swaglog.h"
 
@@ -654,23 +657,6 @@ void SpectraCamera::linkDevices() {
   //LOGD("start sensor: %d", ret);
 }
 
-void cameras_init(MultiCameraState *s, VisionIpcServer *v, cl_device_id device_id, cl_context ctx) {
-  s->init();
-
-  // open
-  s->driver_cam.camera_open();
-  LOGD("driver camera opened");
-  s->road_cam.camera_open();
-  LOGD("road camera opened");
-  s->wide_road_cam.camera_open();
-  LOGD("wide road camera opened");
-
-  // init
-  s->driver_cam.camera_init(v, device_id, ctx);
-  s->road_cam.camera_init(v, device_id, ctx);
-  s->wide_road_cam.camera_init(v, device_id, ctx);
-}
-
 void SpectraCamera::camera_close() {
   // stop devices
   LOG("-- Stop devices %d", cc.camera_num);
@@ -925,7 +911,32 @@ void CameraState::run() {
   }
 }
 
-void cameras_run(MultiCameraState *s) {
+void camerad_thread() {
+  cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
+  const cl_context_properties props[] = {CL_CONTEXT_PRIORITY_HINT_QCOM, CL_PRIORITY_HINT_HIGH_QCOM, 0};
+  cl_context ctx = CL_CHECK_ERR(clCreateContext(props, 1, &device_id, NULL, NULL, &err));
+
+  VisionIpcServer v("camerad", device_id, ctx);
+
+  MultiCameraState ss;
+  MultiCameraState *s = &ss;
+  s->init();
+
+  // open
+  s->driver_cam.camera_open();
+  LOGD("driver camera opened");
+  s->road_cam.camera_open();
+  LOGD("road camera opened");
+  s->wide_road_cam.camera_open();
+  LOGD("wide road camera opened");
+
+  // init
+  s->driver_cam.camera_init(&v, device_id, ctx);
+  s->road_cam.camera_init(&v, device_id, ctx);
+  s->wide_road_cam.camera_init(&v, device_id, ctx);
+
+  v.start_listener();
+
   LOG("-- Starting threads");
   std::vector<std::thread> threads;
   if (s->driver_cam.enabled) threads.emplace_back(&CameraState::run, &s->driver_cam);

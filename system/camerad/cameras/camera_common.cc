@@ -283,29 +283,6 @@ float set_exposure_target(const CameraBuf *b, Rect ae_xywh, int x_skip, int y_sk
   return lum_med / 256.0;
 }
 
-void camerad_thread() {
-  cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-#ifdef QCOM2
-  const cl_context_properties props[] = {CL_CONTEXT_PRIORITY_HINT_QCOM, CL_PRIORITY_HINT_HIGH_QCOM, 0};
-  cl_context context = CL_CHECK_ERR(clCreateContext(props, 1, &device_id, NULL, NULL, &err));
-#else
-  cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
-#endif
-
-  {
-    MultiCameraState cameras;
-    VisionIpcServer vipc_server("camerad", device_id, context);
-
-    cameras_init(&cameras, &vipc_server, device_id, context);
-
-    vipc_server.start_listener();
-
-    cameras_run(&cameras);
-  }
-
-  CL_CHECK(clReleaseContext(context));
-}
-
 int open_v4l_by_name_and_index(const char name[], int index, int flags) {
   for (int v4l_index = 0; /**/; ++v4l_index) {
     std::string v4l_name = util::read_file(util::string_format("/sys/class/video4linux/v4l-subdev%d/name", v4l_index));
