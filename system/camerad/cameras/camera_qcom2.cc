@@ -25,6 +25,11 @@
 
 ExitHandler do_exit;
 
+// for debugging
+const bool env_debug_frames = getenv("DEBUG_FRAMES") != nullptr;
+const bool env_log_raw_frames = getenv("LOG_RAW_FRAMES") != nullptr;
+const bool env_ctrl_exp_from_params = getenv("CTRL_EXP_FROM_PARAMS") != nullptr;
+
 
 // high level camera state
 class CameraState : public SpectraCamera {
