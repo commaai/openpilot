@@ -3,7 +3,6 @@
 #include <memory>
 #include <utility>
 
-#include "media/cam_isp_ife.h"
 #include "media/cam_req_mgr.h"
 
 #include "common/util.h"

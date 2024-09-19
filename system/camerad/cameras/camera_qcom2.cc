@@ -14,9 +14,7 @@
 
 #include "CL/cl_ext_qcom.h"
 
-#include "media/cam_defs.h"
 #include "media/cam_sensor_cmn_header.h"
-#include "media/cam_sync.h"
 
 #include "common/clutil.h"
 #include "common/params.h"
