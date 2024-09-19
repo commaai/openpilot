@@ -1,5 +1,9 @@
 #pragma once
 
+// has to be in this order
+#include "third_party/linux/include/v4l2-controls.h"
+#include <linux/videodev2.h>
+
 #include <cassert>
 #include <cstdint>
 #include <memory>
@@ -11,8 +15,6 @@
 #include "common/queue.h"
 #include "system/camerad/cameras/camera_common.h"
 #include "system/loggerd/loggerd.h"
-
-#define V4L2_BUF_FLAG_KEYFRAME 8
 
 class VideoEncoder {
 public:
