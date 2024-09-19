@@ -70,7 +70,7 @@ def setup_onroad(click, pm: PubMaster):
 
     if check_uidebug:
       while uidebug_sock.receive(non_blocking=True):
-          uidebug_received_cnt += 1
+        uidebug_received_cnt += 1
     else:
       uidebug_received_cnt += 1
 
