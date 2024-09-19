@@ -18,6 +18,8 @@ struct CameraConfig {
   uint32_t phy;
 };
 
+// NOTE: to be able to disable road and wide road, we still have to configure the sensor over i2c
+// If you don't do this, the strobe GPIO is an output (even in reset it seems!)
 const CameraConfig WIDE_ROAD_CAMERA_CONFIG = {
   .camera_num = 0,
   .stream_type = VISION_STREAM_WIDE_ROAD,
