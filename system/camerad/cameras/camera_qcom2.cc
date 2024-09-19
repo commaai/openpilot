@@ -215,34 +215,24 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
   }
   auto pkt = mm.alloc<struct cam_packet>(size, &cam_packet_handle);
   pkt->num_cmd_buf = 2;
-  pkt->kmd_cmd_buf_index = 0;
-  // YUV has kmd_cmd_buf_offset = 1780
-  // I guess this is the ISP command
-  // YUV also has patch_offset = 0x1030 and num_patches = 10
-
-  if (io_mem_handle != 0) {
-    pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf;
-    pkt->num_io_configs = 1;
-  }
 
   if (io_mem_handle != 0) {
     pkt->header.op_code = 0xf000001;
     pkt->header.request_id = request_id;
   } else {
     pkt->header.op_code = 0xf000000;
+    // dump has request_id as 1 here
   }
   pkt->header.size = size;
   struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
-  struct cam_buf_io_cfg *io_cfg = (struct cam_buf_io_cfg *)((char*)&pkt->payload + pkt->io_configs_offset);
 
   // TODO: support MMU
-  // This is ISP command
-  buf_desc[0].size = 65624;
-  buf_desc[0].length = 0;
+  buf_desc[0].size = 68472;
   buf_desc[0].type = CAM_CMD_BUF_DIRECT;
   buf_desc[0].meta_data = 3;
   buf_desc[0].mem_handle = buf0_mem_handle;
   buf_desc[0].offset = buf0_offset;
+  printf("buf0 offset %d\n", buf0_offset);
 
   unsigned char* isp_prog;
   if (buf0_offset == 0) {
@@ -255,6 +245,7 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
   printf("isp program length %d\n", buf_desc[0].length);
   memcpy((unsigned char*)buf0_ptr + buf0_offset, isp_prog, buf_desc[0].length);
   pkt->kmd_cmd_buf_offset = buf_desc[0].length;
+  pkt->kmd_cmd_buf_index = 0;
 
   // parsed by cam_isp_packet_generic_blob_handler
   struct isp_packet {
@@ -316,15 +307,22 @@ void CameraState::config_isp(int io_mem_handle, int fence, int request_id, int b
 
   static_assert(offsetof(struct isp_packet, type_2) == 0x60);
 
+  // TODO: missing mem_handle?
   buf_desc[1].size = sizeof(tmp);
   buf_desc[1].offset = io_mem_handle != 0 ? 0x60 : 0;
   buf_desc[1].length = buf_desc[1].size - buf_desc[1].offset;
   buf_desc[1].type = CAM_CMD_BUF_GENERIC;
   buf_desc[1].meta_data = CAM_ISP_PACKET_META_GENERIC_BLOB_COMMON;
+  buf_desc[1].mem_handle = io_mem_handle;  // FIXME
   auto buf2 = mm.alloc<uint32_t>(buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle);
   memcpy(buf2.get(), &tmp, sizeof(tmp));
 
+  // TODO: missing patch?
   if (io_mem_handle != 0) {
+    pkt->num_io_configs = 1;
+    pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf;
+
+    struct cam_buf_io_cfg *io_cfg = (struct cam_buf_io_cfg *)((char*)&pkt->payload + pkt->io_configs_offset);
     io_cfg[0].mem_handle[0] = io_mem_handle;
     io_cfg[0].mem_handle[1] = io_mem_handle;
     io_cfg[0].offsets[1] = 0x2ad000;  // TODO
