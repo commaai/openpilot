@@ -59,7 +59,7 @@ def setup_onroad(click, pm: PubMaster):
   check_uidebug = DATA['deviceState'].deviceState.started and not DATA['carParams'].carParams.notCar
 
   # Loop until 20 'uiDebug' messages are received
-  while (uidebug_received_cnt <= 20):
+  while uidebug_received_cnt <= 20:
     for service, data in DATA.items():
       if data:
         data.clear_write_flag()
