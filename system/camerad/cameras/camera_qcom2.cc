@@ -429,10 +429,10 @@ void CameraState::set_exposure_rect() {
   float fl_ref = ae_target.second;
 
   ae_xywh = (Rect){
-    std::max(0, buf.rgb_width / 2 - (int)(fl_pix / fl_ref * xywh_ref.w / 2)),
-    std::max(0, buf.rgb_height / 2 - (int)(fl_pix / fl_ref * (h_ref / 2 - xywh_ref.y))),
-    std::min((int)(fl_pix / fl_ref * xywh_ref.w), buf.rgb_width / 2 + (int)(fl_pix / fl_ref * xywh_ref.w / 2)),
-    std::min((int)(fl_pix / fl_ref * xywh_ref.h), buf.rgb_height / 2 + (int)(fl_pix / fl_ref * (h_ref / 2 - xywh_ref.y)))
+    std::max(0, buf.out_img_width / 2 - (int)(fl_pix / fl_ref * xywh_ref.w / 2)),
+    std::max(0, buf.out_img_height / 2 - (int)(fl_pix / fl_ref * (h_ref / 2 - xywh_ref.y))),
+    std::min((int)(fl_pix / fl_ref * xywh_ref.w), buf.out_img_width / 2 + (int)(fl_pix / fl_ref * xywh_ref.w / 2)),
+    std::min((int)(fl_pix / fl_ref * xywh_ref.h), buf.out_img_height / 2 + (int)(fl_pix / fl_ref * (h_ref / 2 - xywh_ref.y)))
   };
 }
 
