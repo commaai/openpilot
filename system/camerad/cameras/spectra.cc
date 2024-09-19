@@ -1,13 +1,9 @@
 #include <sys/ioctl.h>
 
-#include <algorithm>
 #include <cassert>
-#include <cerrno>
-#include <cmath>
 #include <cstring>
 #include <string>
 #include <vector>
-
 
 #include "media/cam_defs.h"
 #include "media/cam_isp.h"
@@ -15,7 +11,6 @@
 #include "media/cam_req_mgr.h"
 #include "media/cam_sensor_cmn_header.h"
 #include "media/cam_sync.h"
-
 
 #include "common/util.h"
 #include "common/swaglog.h"
@@ -34,8 +29,8 @@ static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay_ms) {
 
 // *** SpectraCamera ***
 
-SpectraCamera::SpectraCamera(MultiCameraState *multi_camera_state, const CameraConfig &config)
-  : multi_cam_state(multi_camera_state),
+SpectraCamera::SpectraCamera(SpectraMaster *master, const CameraConfig &config)
+  : m(master),
     enabled(config.enabled) ,
     cc(config) {
 }
@@ -43,6 +38,38 @@ SpectraCamera::SpectraCamera(MultiCameraState *multi_camera_state, const CameraC
 SpectraCamera::~SpectraCamera() {
   if (open) {
     camera_close();
+  }
+}
+
+void SpectraCamera::camera_open() {
+  if (!enabled) return;
+
+  if (!openSensor()) {
+    return;
+  }
+
+  open = true;
+  configISP();
+  configCSIPHY();
+  linkDevices();
+}
+
+void SpectraCamera::camera_init(VisionIpcServer * v, cl_device_id device_id, cl_context ctx) {
+  if (!enabled) return;
+
+  LOGD("camera init %d", cc.camera_num);
+  buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, cc.stream_type);
+  camera_map_bufs();
+
+  // TODO: fix these
+  //fl_pix = cc.focal_len / sensor->pixel_size_mm;
+  //set_exposure_rect();
+}
+
+void SpectraCamera::enqueue_req_multi(uint64_t start, int n, bool dp) {
+  for (uint64_t i = start; i < start + n; ++i) {
+    request_ids[(i - 1) % FRAME_BUF_COUNT] = i;
+    enqueue_buffer((i - 1) % FRAME_BUF_COUNT, dp);
   }
 }
 

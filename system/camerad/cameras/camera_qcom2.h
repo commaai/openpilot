@@ -33,7 +33,7 @@ public:
 
   float fl_pix = 0;
 
-  CameraState(MultiCameraState *multi_camera_state, const CameraConfig &config);
+  CameraState(SpectraMaster *master, const CameraConfig &config) : SpectraCamera(master, config) {};
   void handle_camera_event(void *evdat);
   void update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain);
   void set_camera_exposure(float grey_frac);
@@ -41,17 +41,4 @@ public:
   void set_exposure_rect();
   void sensor_set_parameters();
   void run();
-};
-
-class MultiCameraState : public SpectraMaster {
-public:
-  MultiCameraState()
-    : driver_cam(this, DRIVER_CAMERA_CONFIG),
-      road_cam(this, ROAD_CAMERA_CONFIG),
-      wide_road_cam(this, WIDE_ROAD_CAMERA_CONFIG) {
-  };
-
-  CameraState road_cam;
-  CameraState wide_road_cam;
-  CameraState driver_cam;
 };

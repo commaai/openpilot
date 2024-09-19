@@ -29,7 +29,7 @@ public:
 
 class SpectraCamera {
 public:
-  SpectraCamera(MultiCameraState *multi_camera_state, const CameraConfig &config);
+  SpectraCamera(SpectraMaster *master, const CameraConfig &config);
   ~SpectraCamera();
 
   void camera_open();
@@ -57,7 +57,6 @@ public:
   bool open = false;
   bool enabled = true;
   CameraConfig cc;
-  MultiCameraState *multi_cam_state = nullptr;
   std::unique_ptr<const SensorInfo> sensor;
 
   unique_fd sensor_fd;
@@ -81,6 +80,5 @@ public:
 
   CameraBuf buf;
   MemoryManager mm;
+  SpectraMaster *m;
 };
-
-

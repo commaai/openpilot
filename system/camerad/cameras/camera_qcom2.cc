@@ -28,15 +28,13 @@ const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 
 ExitHandler do_exit;
 
-CameraState::CameraState(MultiCameraState *multi_camera_state, const CameraConfig &config) : SpectraCamera(multi_camera_state, config) {};
-
 
 int SpectraCamera::clear_req_queue() {
   struct cam_req_mgr_flush_info req_mgr_flush_request = {0};
   req_mgr_flush_request.session_hdl = session_handle;
   req_mgr_flush_request.link_hdl = link_handle;
   req_mgr_flush_request.flush_type = CAM_REQ_MGR_FLUSH_TYPE_ALL;
-  int ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_FLUSH_REQ, &req_mgr_flush_request, sizeof(req_mgr_flush_request));
+  int ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_FLUSH_REQ, &req_mgr_flush_request, sizeof(req_mgr_flush_request));
   // LOGD("flushed all req: %d", ret);
   return ret;
 }
@@ -175,7 +173,7 @@ void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int
     io_cfg[0].framedrop_pattern = 0x1;
   }
 
-  int ret = device_config(multi_cam_state->isp_fd, session_handle, isp_dev_handle, cam_packet_handle);
+  int ret = device_config(m->isp_fd, session_handle, isp_dev_handle, cam_packet_handle);
   assert(ret == 0);
   if (ret != 0) {
     LOGE("isp config failed");
@@ -191,7 +189,7 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
     struct cam_sync_wait sync_wait = {0};
     sync_wait.sync_obj = sync_objs[i];
     sync_wait.timeout_ms = 50; // max dt tolerance, typical should be 23
-    ret = do_cam_control(multi_cam_state->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
+    ret = do_cam_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
     if (ret != 0) {
       LOGE("failed to wait for sync: %d %d", ret, sync_wait.sync_obj);
       // TODO: handle frame drop cleanly
@@ -203,7 +201,7 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
     // destroy old output fence
     struct cam_sync_info sync_destroy = {0};
     sync_destroy.sync_obj = sync_objs[i];
-    ret = do_cam_control(multi_cam_state->cam_sync_fd, CAM_SYNC_DESTROY, &sync_destroy, sizeof(sync_destroy));
+    ret = do_cam_control(m->cam_sync_fd, CAM_SYNC_DESTROY, &sync_destroy, sizeof(sync_destroy));
     if (ret != 0) {
       LOGE("failed to destroy sync object: %d %d", ret, sync_destroy.sync_obj);
     }
@@ -212,7 +210,7 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
   // create output fence
   struct cam_sync_info sync_create = {0};
   strcpy(sync_create.name, "NodeOutputPortFence");
-  ret = do_cam_control(multi_cam_state->cam_sync_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
+  ret = do_cam_control(m->cam_sync_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
   if (ret != 0) {
     LOGE("failed to create fence: %d %d", ret, sync_create.sync_obj);
   }
@@ -223,7 +221,7 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
   req_mgr_sched_request.session_hdl = session_handle;
   req_mgr_sched_request.link_hdl = link_handle;
   req_mgr_sched_request.req_id = request_id;
-  ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_SCHED_REQ, &req_mgr_sched_request, sizeof(req_mgr_sched_request));
+  ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_SCHED_REQ, &req_mgr_sched_request, sizeof(req_mgr_sched_request));
   if (ret != 0) {
     LOGE("failed to schedule cam mgr request: %d %lu", ret, request_id);
   }
@@ -233,13 +231,6 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
 
   // submit request to the ife
   config_isp(buf_handle[i], sync_objs[i], request_id, buf0_handle, 65632*(i+1));
-}
-
-void SpectraCamera::enqueue_req_multi(uint64_t start, int n, bool dp) {
-  for (uint64_t i = start; i < start + n; ++i) {
-    request_ids[(i - 1) % FRAME_BUF_COUNT] = i;
-    enqueue_buffer((i - 1) % FRAME_BUF_COUNT, dp);
-  }
 }
 
 // ******************* camera *******************
@@ -283,40 +274,15 @@ void SpectraCamera::camera_map_bufs() {
   for (int i = 0; i < FRAME_BUF_COUNT; i++) {
     // configure ISP to put the image in place
     struct cam_mem_mgr_map_cmd mem_mgr_map_cmd = {0};
-    mem_mgr_map_cmd.mmu_hdls[0] = multi_cam_state->device_iommu;
+    mem_mgr_map_cmd.mmu_hdls[0] = m->device_iommu;
     mem_mgr_map_cmd.num_hdl = 1;
     mem_mgr_map_cmd.flags = CAM_MEM_FLAG_HW_READ_WRITE;
     mem_mgr_map_cmd.fd = buf.camera_bufs[i].fd;
-    int ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
+    int ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
     LOGD("map buf req: (fd: %d) 0x%x %d", buf.camera_bufs[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
     buf_handle[i] = mem_mgr_map_cmd.out.buf_handle;
   }
   enqueue_req_multi(1, FRAME_BUF_COUNT, 0);
-}
-
-void SpectraCamera::camera_init(VisionIpcServer * v, cl_device_id device_id, cl_context ctx) {
-  if (!enabled) return;
-
-  LOGD("camera init %d", cc.camera_num);
-  buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, cc.stream_type);
-  camera_map_bufs();
-
-  // TODO: fix these
-  //fl_pix = cc.focal_len / sensor->pixel_size_mm;
-  //set_exposure_rect();
-}
-
-void SpectraCamera::camera_open() {
-  if (!enabled) return;
-
-  if (!openSensor()) {
-    return;
-  }
-
-  open = true;
-  configISP();
-  configCSIPHY();
-  linkDevices();
 }
 
 bool SpectraCamera::openSensor() {
@@ -325,7 +291,7 @@ bool SpectraCamera::openSensor() {
   LOGD("opened sensor for %d", cc.camera_num);
 
   // init memorymanager for this camera
-  mm.init(multi_cam_state->video0_fd);
+  mm.init(m->video0_fd);
 
   LOGD("-- Probing sensor %d", cc.camera_num);
 
@@ -351,7 +317,7 @@ bool SpectraCamera::openSensor() {
 
   // create session
   struct cam_req_mgr_session_info session_info = {};
-  int ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_CREATE_SESSION, &session_info, sizeof(session_info));
+  int ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_CREATE_SESSION, &session_info, sizeof(session_info));
   LOGD("get session: %d 0x%X", ret, session_info.session_hdl);
   session_handle = session_info.session_hdl;
 
@@ -419,14 +385,14 @@ void SpectraCamera::configISP() {
     .length = sizeof(in_port_info),
   };
 
-  auto isp_dev_handle_ = device_acquire(multi_cam_state->isp_fd, session_handle, &isp_resource);
+  auto isp_dev_handle_ = device_acquire(m->isp_fd, session_handle, &isp_resource);
   assert(isp_dev_handle_);
   isp_dev_handle = *isp_dev_handle_;
   LOGD("acquire isp dev");
 
   // config ISP
-  alloc_w_mmu_hdl(multi_cam_state->video0_fd, 984480, (uint32_t*)&buf0_handle, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS |
-                  CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, multi_cam_state->device_iommu, multi_cam_state->cdm_iommu);
+  alloc_w_mmu_hdl(m->video0_fd, 984480, (uint32_t*)&buf0_handle, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS |
+                  CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, m->device_iommu, m->cdm_iommu);
   config_isp(0, 0, 1, buf0_handle, 0);
 }
 
@@ -477,7 +443,7 @@ void SpectraCamera::linkDevices() {
   req_mgr_link_info.num_devices = 2;
   req_mgr_link_info.dev_hdls[0] = isp_dev_handle;
   req_mgr_link_info.dev_hdls[1] = sensor_dev_handle;
-  int ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_LINK, &req_mgr_link_info, sizeof(req_mgr_link_info));
+  int ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_LINK, &req_mgr_link_info, sizeof(req_mgr_link_info));
   link_handle = req_mgr_link_info.link_hdl;
   LOGD("link: %d session: 0x%X isp: 0x%X sensors: 0x%X link: 0x%X", ret, session_handle, isp_dev_handle, sensor_dev_handle, link_handle);
 
@@ -486,12 +452,12 @@ void SpectraCamera::linkDevices() {
   req_mgr_link_control.session_hdl = session_handle;
   req_mgr_link_control.num_links = 1;
   req_mgr_link_control.link_hdls[0] = link_handle;
-  ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_LINK_CONTROL, &req_mgr_link_control, sizeof(req_mgr_link_control));
+  ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_LINK_CONTROL, &req_mgr_link_control, sizeof(req_mgr_link_control));
   LOGD("link control: %d", ret);
 
   ret = device_control(csiphy_fd, CAM_START_DEV, session_handle, csiphy_dev_handle);
   LOGD("start csiphy: %d", ret);
-  ret = device_control(multi_cam_state->isp_fd, CAM_START_DEV, session_handle, isp_dev_handle);
+  ret = device_control(m->isp_fd, CAM_START_DEV, session_handle, isp_dev_handle);
   LOGD("start isp: %d", ret);
   assert(ret == 0);
 
@@ -507,7 +473,7 @@ void SpectraCamera::camera_close() {
   if (enabled) {
     // ret = device_control(sensor_fd, CAM_STOP_DEV, session_handle, sensor_dev_handle);
     // LOGD("stop sensor: %d", ret);
-    int ret = device_control(multi_cam_state->isp_fd, CAM_STOP_DEV, session_handle, isp_dev_handle);
+    int ret = device_control(m->isp_fd, CAM_STOP_DEV, session_handle, isp_dev_handle);
     LOGD("stop isp: %d", ret);
     ret = device_control(csiphy_fd, CAM_STOP_DEV, session_handle, csiphy_dev_handle);
     LOGD("stop csiphy: %d", ret);
@@ -518,7 +484,7 @@ void SpectraCamera::camera_close() {
     req_mgr_link_control.session_hdl = session_handle;
     req_mgr_link_control.num_links = 1;
     req_mgr_link_control.link_hdls[0] = link_handle;
-    ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_LINK_CONTROL, &req_mgr_link_control, sizeof(req_mgr_link_control));
+    ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_LINK_CONTROL, &req_mgr_link_control, sizeof(req_mgr_link_control));
     LOGD("link control stop: %d", ret);
 
     // unlink
@@ -526,18 +492,18 @@ void SpectraCamera::camera_close() {
     struct cam_req_mgr_unlink_info req_mgr_unlink_info = {0};
     req_mgr_unlink_info.session_hdl = session_handle;
     req_mgr_unlink_info.link_hdl = link_handle;
-    ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_UNLINK, &req_mgr_unlink_info, sizeof(req_mgr_unlink_info));
+    ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_UNLINK, &req_mgr_unlink_info, sizeof(req_mgr_unlink_info));
     LOGD("unlink: %d", ret);
 
     // release devices
     LOGD("-- Release devices");
-    ret = device_control(multi_cam_state->isp_fd, CAM_RELEASE_DEV, session_handle, isp_dev_handle);
+    ret = device_control(m->isp_fd, CAM_RELEASE_DEV, session_handle, isp_dev_handle);
     LOGD("release isp: %d", ret);
     ret = device_control(csiphy_fd, CAM_RELEASE_DEV, session_handle, csiphy_dev_handle);
     LOGD("release csiphy: %d", ret);
 
     for (int i = 0; i < FRAME_BUF_COUNT; i++) {
-      release(multi_cam_state->video0_fd, buf_handle[i]);
+      release(m->video0_fd, buf_handle[i]);
     }
     LOGD("released buffers");
   }
@@ -547,7 +513,7 @@ void SpectraCamera::camera_close() {
 
   // destroyed session
   struct cam_req_mgr_session_info session_info = {.session_hdl = session_handle};
-  ret = do_cam_control(multi_cam_state->video0_fd, CAM_REQ_MGR_DESTROY_SESSION, &session_info, sizeof(session_info));
+  ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_DESTROY_SESSION, &session_info, sizeof(session_info));
   LOGD("destroyed session %d: %d", cc.camera_num, ret);
 }
 
@@ -761,36 +727,39 @@ void camerad_thread() {
 
   VisionIpcServer v("camerad", device_id, ctx);
 
-  MultiCameraState ss;
-  MultiCameraState *s = &ss;
+  SpectraMaster m;
+  SpectraMaster *s = &m;
   s->init();
 
-  // open
-  s->driver_cam.camera_open();
+  CameraState road_cam(s, ROAD_CAMERA_CONFIG);
+  CameraState wide_road_cam(s, WIDE_ROAD_CAMERA_CONFIG);
+  CameraState driver_cam(s, DRIVER_CAMERA_CONFIG);
+
+  // open + init
+  driver_cam.camera_open();
   LOGD("driver camera opened");
-  s->road_cam.camera_open();
+  road_cam.camera_open();
   LOGD("road camera opened");
-  s->wide_road_cam.camera_open();
+  wide_road_cam.camera_open();
   LOGD("wide road camera opened");
 
-  // init
-  s->driver_cam.camera_init(&v, device_id, ctx);
-  s->road_cam.camera_init(&v, device_id, ctx);
-  s->wide_road_cam.camera_init(&v, device_id, ctx);
+  driver_cam.camera_init(&v, device_id, ctx);
+  road_cam.camera_init(&v, device_id, ctx);
+  wide_road_cam.camera_init(&v, device_id, ctx);
 
   v.start_listener();
 
   LOG("-- Starting threads");
   std::vector<std::thread> threads;
-  if (s->driver_cam.enabled) threads.emplace_back(&CameraState::run, &s->driver_cam);
-  if (s->road_cam.enabled) threads.emplace_back(&CameraState::run, &s->road_cam);
-  if (s->wide_road_cam.enabled) threads.emplace_back(&CameraState::run, &s->wide_road_cam);
+  if (driver_cam.enabled) threads.emplace_back(&CameraState::run, &driver_cam);
+  if (road_cam.enabled) threads.emplace_back(&CameraState::run, &road_cam);
+  if (wide_road_cam.enabled) threads.emplace_back(&CameraState::run, &wide_road_cam);
 
   // start devices
   LOG("-- Starting devices");
-  s->driver_cam.sensors_start();
-  s->road_cam.sensors_start();
-  s->wide_road_cam.sensors_start();
+  driver_cam.sensors_start();
+  road_cam.sensors_start();
+  wide_road_cam.sensors_start();
 
   // poll events
   LOG("-- Dequeueing Video events");
@@ -820,12 +789,12 @@ void camerad_thread() {
           do_exit = do_exit || event_data->u.frame_msg.frame_id > (1*20);
         }
 
-        if (event_data->session_hdl == s->road_cam.session_handle) {
-          s->road_cam.handle_camera_event(event_data);
-        } else if (event_data->session_hdl == s->wide_road_cam.session_handle) {
-          s->wide_road_cam.handle_camera_event(event_data);
-        } else if (event_data->session_hdl == s->driver_cam.session_handle) {
-          s->driver_cam.handle_camera_event(event_data);
+        if (event_data->session_hdl == road_cam.session_handle) {
+          road_cam.handle_camera_event(event_data);
+        } else if (event_data->session_hdl == wide_road_cam.session_handle) {
+          wide_road_cam.handle_camera_event(event_data);
+        } else if (event_data->session_hdl == driver_cam.session_handle) {
+          driver_cam.handle_camera_event(event_data);
         } else {
           LOGE("Unknown vidioc event source");
           assert(false);
