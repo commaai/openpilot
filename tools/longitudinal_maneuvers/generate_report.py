@@ -59,13 +59,18 @@ def report(platform, route, _description, CP, maneuvers):
         aTarget = longitudinalPlan[0].aTarget
         target_cross_time = None
         f.write(f'<h3 style="font-weight: normal">Initial aTarget: {aTarget} m/s^2')
+
+        # Localizer is noisy, require two consecutive 20Hz frames above threshold
+        prev_crossed = False
         for t, lp in zip(t_livePose, livePose, strict=True):
-          if (0 < aTarget < lp.accelerationDevice.x) or (0 > aTarget > lp.accelerationDevice.x):
+          crossed = (0 < aTarget < lp.accelerationDevice.x) or (0 > aTarget > lp.accelerationDevice.x)
+          if crossed and prev_crossed:
             f.write(f', <strong>crossed in {t:.3f}s</strong>')
             target_cross_time = t
             if maneuver_valid:
               target_cross_times[description].append(t)
             break
+          prev_crossed = crossed
         else:
           f.write(', <strong>not crossed</strong>')
         f.write('</h3>')
