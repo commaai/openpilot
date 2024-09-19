@@ -7,7 +7,6 @@
 
 #include "common/util.h"
 #include "system/camerad/cameras/tici.h"
-#include "system/camerad/cameras/camera_util.h"
 #include "system/camerad/cameras/camera_common.h"
 #include "system/camerad/sensors/sensor.h"
 
