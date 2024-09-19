@@ -12,12 +12,6 @@
 
 const int YUV_BUFFER_COUNT = 20;
 
-enum CameraType {
-  RoadCam = 0,
-  DriverCam,
-  WideRoadCam
-};
-
 // for debugging
 const bool env_debug_frames = getenv("DEBUG_FRAMES") != NULL;
 const bool env_log_raw_frames = getenv("LOG_RAW_FRAMES") != NULL;

@@ -1,13 +1,8 @@
 #pragma once
 
-#include <memory>
-#include <utility>
-
-#include "system/camerad/cameras/camera_common.h"
-#include "system/camerad/cameras/camera_util.h"
-#include "system/camerad/cameras/tici.h"
-#include "system/camerad/sensors/sensor.h"
 #include "common/util.h"
+#include "cereal/gen/cpp/log.capnp.h"
+#include "msgq/visionipc/visionipc_server.h"
 
 #include "media/cam_isp_ife.h"
 

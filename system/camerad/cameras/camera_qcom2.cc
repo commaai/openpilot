@@ -274,14 +274,15 @@ void camerad_thread() {
 
   VisionIpcServer v("camerad", device_id, ctx);
 
+  // *** initial ISP init ***
   SpectraMaster m;
-  SpectraMaster *s = &m;
-  s->init();
+  m.init();
 
+  // *** per-cam init ***
   std::vector<CameraState*> cams = {
-   new CameraState(s, ROAD_CAMERA_CONFIG),
-   new CameraState(s, WIDE_ROAD_CAMERA_CONFIG),
-   new CameraState(s, DRIVER_CAMERA_CONFIG),
+   new CameraState(&m, ROAD_CAMERA_CONFIG),
+   new CameraState(&m, WIDE_ROAD_CAMERA_CONFIG),
+   new CameraState(&m, DRIVER_CAMERA_CONFIG),
   };
 
   // open + init
@@ -304,7 +305,7 @@ void camerad_thread() {
   while (!do_exit) {
     struct pollfd fds[1] = {{0}};
 
-    fds[0].fd = s->video0_fd;
+    fds[0].fd = m.video0_fd;
     fds[0].events = POLLPRI;
 
     int ret = poll(fds, std::size(fds), 1000);
