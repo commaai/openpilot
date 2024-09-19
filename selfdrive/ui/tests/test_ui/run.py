@@ -75,7 +75,6 @@ def setup_onroad(click, pm: PubMaster):
     else:
       uidebug_received_cnt += 1
 
-    print(uidebug_received_cnt)
     packet_id += 1
     time.sleep(0.05)
 
