@@ -205,14 +205,12 @@ void UIState::update() {
   if (sm->frame % UI_FREQ == 0) {
     watchdog_kick(nanos_since_boot());
   }
-
   emit uiUpdate(*this);
 }
 
 Device::Device(QObject *parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QObject(parent) {
   setAwake(true);
   resetInteractiveTimeout();
-
 
   QObject::connect(uiState(), &UIState::uiUpdate, this, &Device::update);
 }
@@ -228,7 +226,6 @@ void Device::setAwake(bool on) {
     Hardware::set_display_power(awake);
     LOGD("setting display power %d", awake);
     emit displayPowerChanged(awake);
-
   }
 }
 
@@ -283,7 +280,6 @@ void Device::updateWakefulness(const UIState &s) {
 
 UIState *uiState() {
   static UIState ui_state;
-
   return &ui_state;
 }
 

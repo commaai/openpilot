@@ -102,7 +102,6 @@ void DriverMonitorRenderer::draw(QPainter &painter, const QRect &surface_rect) {
   // Draw vertical tracking arc
   painter.setPen(QPen(arc_color, arc_t_default + arc_t_extend * std::min(1.0, driver_pose_diff[0] * 5.0), Qt::SolidLine, Qt::RoundCap));
   painter.drawArc(QRectF(x - arc_l / 2, std::min(y + delta_y, y), arc_l, std::abs(delta_y)), (driver_pose_sins[0] > 0 ? 0 : 180) * 16, 180 * 16);
-  static int dd = 0;
-  qWarning() << "paint:" << ++dd << is_active << dm_fade_state << driver_pose_sins[0] << driver_pose_sins[1] << driver_pose_sins[2];
+
   painter.restore();
 }
