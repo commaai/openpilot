@@ -406,6 +406,10 @@ void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int
   auto pkt = mm.alloc<struct cam_packet>(size, &cam_packet_handle);
   pkt->num_cmd_buf = 2;
   pkt->kmd_cmd_buf_index = 0;
+  pkt->kmd_cmd_buf_offset = 0;
+
+  //pkt->patch_offset = 0x1030;
+  pkt->num_patches = 0;
 
   if (io_mem_handle != 0) {
     pkt->header.op_code = 0xf000001;
@@ -416,81 +420,87 @@ void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int
   }
   pkt->header.size = size;
 
-  // TODO: support MMU
+  // first command
   struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
-  buf_desc[0].size = 65624;
-  buf_desc[0].length = 0;
-  buf_desc[0].type = CAM_CMD_BUF_DIRECT;
-  buf_desc[0].meta_data = 3;
-  buf_desc[0].mem_handle = buf0_mem_handle;
-  buf_desc[0].offset = buf0_offset;
+  {
+    // TODO: support MMU
+    buf_desc[0].size = 65624;
+    buf_desc[0].length = 0;
+    buf_desc[0].type = CAM_CMD_BUF_DIRECT;
+    buf_desc[0].meta_data = 3;
+    buf_desc[0].mem_handle = buf0_mem_handle;
+    buf_desc[0].offset = buf0_offset;
+  }
 
-  // parsed by cam_isp_packet_generic_blob_handler
-  struct isp_packet {
-    uint32_t type_0;
-    cam_isp_resource_hfr_config resource_hfr;
+  // second command
+  {
+    // parsed by cam_isp_packet_generic_blob_handler
+    struct isp_packet {
+      uint32_t type_0;
+      cam_isp_resource_hfr_config resource_hfr;
 
-    uint32_t type_1;
-    cam_isp_clock_config clock;
-    uint64_t extra_rdi_hz[3];
+      uint32_t type_1;
+      cam_isp_clock_config clock;
+      uint64_t extra_rdi_hz[3];
 
-    uint32_t type_2;
-    cam_isp_bw_config bw;
-    struct cam_isp_bw_vote extra_rdi_vote[6];
-  } __attribute__((packed)) tmp;
-  memset(&tmp, 0, sizeof(tmp));
+      uint32_t type_2;
+      cam_isp_bw_config bw;
+      struct cam_isp_bw_vote extra_rdi_vote[6];
+    } __attribute__((packed)) tmp;
+    memset(&tmp, 0, sizeof(tmp));
 
-  tmp.type_0 = CAM_ISP_GENERIC_BLOB_TYPE_HFR_CONFIG;
-  tmp.type_0 |= sizeof(cam_isp_resource_hfr_config) << 8;
-  static_assert(sizeof(cam_isp_resource_hfr_config) == 0x20);
-  tmp.resource_hfr = {
-    .num_ports = 1,  // 10 for YUV (but I don't think we need them)
-    .port_hfr_config[0] = {
-      .resource_type = CAM_ISP_IFE_OUT_RES_RDI_0, // CAM_ISP_IFE_OUT_RES_FULL for YUV
-      .subsample_pattern = 1,
-      .subsample_period = 0,
-      .framedrop_pattern = 1,
-      .framedrop_period = 0,
-    }};
+    tmp.type_0 = CAM_ISP_GENERIC_BLOB_TYPE_HFR_CONFIG;
+    tmp.type_0 |= sizeof(cam_isp_resource_hfr_config) << 8;
+    static_assert(sizeof(cam_isp_resource_hfr_config) == 0x20);
+    tmp.resource_hfr = {
+      .num_ports = 1,  // 10 for YUV (but I don't think we need them)
+      .port_hfr_config[0] = {
+        .resource_type = CAM_ISP_IFE_OUT_RES_RDI_0, // CAM_ISP_IFE_OUT_RES_FULL for YUV
+        .subsample_pattern = 1,
+        .subsample_period = 0,
+        .framedrop_pattern = 1,
+        .framedrop_period = 0,
+      }};
 
-  tmp.type_1 = CAM_ISP_GENERIC_BLOB_TYPE_CLOCK_CONFIG;
-  tmp.type_1 |= (sizeof(cam_isp_clock_config) + sizeof(tmp.extra_rdi_hz)) << 8;
-  static_assert((sizeof(cam_isp_clock_config) + sizeof(tmp.extra_rdi_hz)) == 0x38);
-  tmp.clock = {
-    .usage_type = 1, // dual mode
-    .num_rdi = 4,
-    .left_pix_hz = 404000000,
-    .right_pix_hz = 404000000,
-    .rdi_hz[0] = 404000000,
-  };
+    tmp.type_1 = CAM_ISP_GENERIC_BLOB_TYPE_CLOCK_CONFIG;
+    tmp.type_1 |= (sizeof(cam_isp_clock_config) + sizeof(tmp.extra_rdi_hz)) << 8;
+    static_assert((sizeof(cam_isp_clock_config) + sizeof(tmp.extra_rdi_hz)) == 0x38);
+    tmp.clock = {
+      .usage_type = 1, // dual mode
+      .num_rdi = 4,
+      .left_pix_hz = 404000000,
+      .right_pix_hz = 404000000,
+      .rdi_hz[0] = 404000000,
+    };
 
-  tmp.type_2 = CAM_ISP_GENERIC_BLOB_TYPE_BW_CONFIG;
-  tmp.type_2 |= (sizeof(cam_isp_bw_config) + sizeof(tmp.extra_rdi_vote)) << 8;
-  static_assert((sizeof(cam_isp_bw_config) + sizeof(tmp.extra_rdi_vote)) == 0xe0);
-  tmp.bw = {
-    .usage_type = 1, // dual mode
-    .num_rdi = 4,
-    .left_pix_vote = {
-      .resource_id = 0,
-      .cam_bw_bps = 450000000,
-      .ext_bw_bps = 450000000,
-    },
-    .rdi_vote[0] = {
-      .resource_id = 0,
-      .cam_bw_bps = 8706200000,
-      .ext_bw_bps = 8706200000,
-    },
-  };
+    tmp.type_2 = CAM_ISP_GENERIC_BLOB_TYPE_BW_CONFIG;
+    tmp.type_2 |= (sizeof(cam_isp_bw_config) + sizeof(tmp.extra_rdi_vote)) << 8;
+    static_assert((sizeof(cam_isp_bw_config) + sizeof(tmp.extra_rdi_vote)) == 0xe0);
+    tmp.bw = {
+      .usage_type = 1, // dual mode
+      .num_rdi = 4,
+      .left_pix_vote = {
+        .resource_id = 0,
+        .cam_bw_bps = 450000000,
+        .ext_bw_bps = 450000000,
+      },
+      .rdi_vote[0] = {
+        .resource_id = 0,
+        .cam_bw_bps = 8706200000,
+        .ext_bw_bps = 8706200000,
+      },
+    };
 
-  static_assert(offsetof(struct isp_packet, type_2) == 0x60);
+    static_assert(offsetof(struct isp_packet, type_2) == 0x60);
 
-  buf_desc[1].size = sizeof(tmp);
-  buf_desc[1].offset = io_mem_handle != 0 ? 0x60 : 0;
-  buf_desc[1].length = buf_desc[1].size - buf_desc[1].offset;
-  buf_desc[1].type = CAM_CMD_BUF_GENERIC;
-  buf_desc[1].meta_data = CAM_ISP_PACKET_META_GENERIC_BLOB_COMMON;
-  auto buf2 = mm.alloc<uint32_t>(buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle);
-  memcpy(buf2.get(), &tmp, sizeof(tmp));
+    buf_desc[1].size = sizeof(tmp);
+    buf_desc[1].offset = io_mem_handle != 0 ? 0x60 : 0;
+    buf_desc[1].length = buf_desc[1].size - buf_desc[1].offset;
+    buf_desc[1].type = CAM_CMD_BUF_GENERIC;
+    buf_desc[1].meta_data = CAM_ISP_PACKET_META_GENERIC_BLOB_COMMON;
+    auto buf2 = mm.alloc<uint32_t>(buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle);
+    memcpy(buf2.get(), &tmp, sizeof(tmp));
+  }
 
   // configure output frame
   if (io_mem_handle != 0) {
@@ -498,7 +508,9 @@ void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int
     pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf;
 
     struct cam_buf_io_cfg *io_cfg = (struct cam_buf_io_cfg *)((char*)&pkt->payload + pkt->io_configs_offset);
+    io_cfg[0].offsets[0] = 0;
     io_cfg[0].mem_handle[0] = io_mem_handle;
+
     io_cfg[0].planes[0] = (struct cam_plane_cfg){
       .width = sensor->frame_width,
       .height = sensor->frame_height + sensor->extra_height,
