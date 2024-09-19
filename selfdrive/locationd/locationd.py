@@ -31,9 +31,8 @@ POSENET_STD_HIST_HALF = 20
 
 def init_xyz_measurement(measurement: capnp._DynamicStructBuilder, values: np.ndarray, stds: np.ndarray, valid: bool):
   assert len(values) == len(stds) == 3
-  for i, d in enumerate(("x", "y", "z")):
-    setattr(measurement, d, float(values[i]))
-    setattr(measurement, f"{d}Std", float(stds[i]))
+  measurement.x, measurement.y, measurement.z = map(float, values)
+  measurement.xStd, measurement.yStd, measurement.zStd = map(float, stds)
   measurement.valid = valid
 
 
