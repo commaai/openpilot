@@ -86,6 +86,7 @@ public:
   // *** state ***
 
   bool open = false;
+  bool enabled = true;
   CameraConfig cc;
   std::unique_ptr<const SensorInfo> sensor;
 

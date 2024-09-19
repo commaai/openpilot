@@ -123,6 +123,7 @@ void CameraState::update_exposure_score(float desired_ev, int exp_t, int exp_g_i
 }
 
 void CameraState::set_camera_exposure(float grey_frac) {
+  if (!enabled) return;
   const float dt = 0.05;
 
   const float ts_grey = 10.0;
@@ -267,11 +268,6 @@ void CameraState::run() {
 }
 
 void camerad_thread() {
-  /*
-    TODO: future cleanups
-    - centralize enabled handling
-  */
-
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
   const cl_context_properties props[] = {CL_CONTEXT_PRIORITY_HINT_QCOM, CL_PRIORITY_HINT_HIGH_QCOM, 0};
   cl_context ctx = CL_CHECK_ERR(clCreateContext(props, 1, &device_id, NULL, NULL, &err));

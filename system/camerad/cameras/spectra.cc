@@ -197,6 +197,7 @@ void SpectraMaster::init() {
 
 SpectraCamera::SpectraCamera(SpectraMaster *master, const CameraConfig &config)
   : m(master),
+    enabled(true),
     cc(config) {
   mm.init(m->video0_fd);
 }
@@ -259,6 +260,7 @@ void SpectraCamera::sensors_poke(int request_id) {
   int ret = device_config(sensor_fd, session_handle, sensor_dev_handle, cam_packet_handle);
   if (ret != 0) {
     LOGE("** sensor %d FAILED poke, disabling", cc.camera_num);
+    enabled = false;
     return;
   }
 }
@@ -288,6 +290,7 @@ void SpectraCamera::sensors_i2c(const struct i2c_random_wr_payload* dat, int len
   int ret = device_config(sensor_fd, session_handle, sensor_dev_handle, cam_packet_handle);
   if (ret != 0) {
     LOGE("** sensor %d FAILED i2c, disabling", cc.camera_num);
+    enabled = false;
     return;
   }
 }
