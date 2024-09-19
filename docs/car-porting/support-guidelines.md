@@ -85,9 +85,9 @@ at shop.comma.ai. They are all actively maintained, with full CI testing.
 * Lateral API fault signals must be populated in CarState, must alert on loss of control
 * If the car's API is torque based, use the lat accel torque controller unless justified not to
 * Lateral control operates within safe limits
-  * 2.5 m/s/s lateral accel for torque
-  * XXX what are steering angle control limits?
-  * XXX what are curvature control limits?
+  * 2.5 m/s/s lateral accel for torque control
+  * TODO: what are the steering angle control limits?
+  * TODO: what are the curvature control limits?
   * Handles variability in actuator performance between cars (see HKG)
 * Driver override is handled correctly and safely
   * openpilot should detect driver input and back off
@@ -101,8 +101,8 @@ at shop.comma.ai. They are all actively maintained, with full CI testing.
 * Maximum actuation limits don't exceed comma safety guidelines
 * Good driving plan conformance, check with PlotJuggler
   * Test lane changes on both flat and road crown boundaries
-  * XXX Test std dev?
-  * XXX Test cost with algorithm from controls challenge?
+  * TODO: Can we test std dev between desired and actual?
+  * TODO: Can we test cost with the algorithm from the controls challenge?
 * Reasonable steerActuatorDelay, check with PlotJuggler
 * Reasonable wheel touch threshold (DM, lane change)
 * Sane learned value for tire stiffness, CarParams startup value is set similarly
@@ -183,7 +183,7 @@ Applies to both stock and openpilot longitudinal control.
 * openpilot longitudinal control
 * Radar points
 * BSM
-  * Verify both normal and warning states if applicable
+  * Verify both presence/not-blinking and warning/blinking states
 * FCW/AEB
   * Detect activation of stock FCW/AEB (may be a good application for comma car dataset)
   * Signals for FCW/AEB actuation (this is still in development, extreme care required)
