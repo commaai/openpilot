@@ -65,15 +65,12 @@ public:
   };
 
   // TODO: this should move to SpectraCamera
-  void handle_camera_event(void *evdat);
+  void handle_camera_event(const cam_req_mgr_message *event_data);
 };
 
 
-void CameraState::handle_camera_event(void *evdat) {
+void CameraState::handle_camera_event(const cam_req_mgr_message *event_data) {
   if (!enabled) return;
-  struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)evdat;
-  assert(event_data->session_hdl == session_handle);
-  assert(event_data->u.frame_msg.link_hdl == link_handle);
 
   uint64_t timestamp = event_data->u.frame_msg.timestamp;
   uint64_t main_id = event_data->u.frame_msg.frame_id;
@@ -375,7 +372,7 @@ void camerad_thread() {
     ret = HANDLE_EINTR(ioctl(fds[0].fd, VIDIOC_DQEVENT, &ev));
     if (ret == 0) {
       if (ev.type == V4L_EVENT_CAM_REQ_MGR_EVENT) {
-        struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)ev.u.data;
+        const auto *event_data = (const cam_req_mgr_message *)ev.u.data;
         if (env_debug_frames) {
           printf("sess_hdl 0x%6X, link_hdl 0x%6X, frame_id %lu, req_id %lu, timestamp %.2f ms, sof_status %d\n", event_data->session_hdl, event_data->u.frame_msg.link_hdl,
                  event_data->u.frame_msg.frame_id, event_data->u.frame_msg.request_id, event_data->u.frame_msg.timestamp/1e6, event_data->u.frame_msg.sof_status);
