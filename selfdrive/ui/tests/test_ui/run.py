@@ -87,10 +87,12 @@ def setup_onroad_wide(click, pm: PubMaster):
 def setup_onroad_sidebar(click, pm: PubMaster):
   setup_onroad(click, pm)
   click(500, 500)
+  setup_onroad(click, pm)
 
 def setup_onroad_wide_sidebar(click, pm: PubMaster):
   setup_onroad_wide(click, pm)
   click(500, 500)
+  setup_onroad_wide(click, pm)
 
 def setup_body(click, pm: PubMaster):
   DATA['carParams'].carParams.carName = "BODY"
