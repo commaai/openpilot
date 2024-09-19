@@ -11,12 +11,6 @@
 
 const int YUV_BUFFER_COUNT = 20;
 
-enum CameraType {
-  RoadCam = 0,
-  DriverCam,
-  WideRoadCam
-};
-
 typedef struct FrameMetadata {
   uint32_t frame_id;
   uint32_t request_id;
