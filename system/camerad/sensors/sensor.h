@@ -6,7 +6,8 @@
 #include <utility>
 #include <vector>
 #include "media/cam_sensor.h"
-#include "system/camerad/cameras/camera_common.h"
+
+#include "cereal/gen/cpp/log.capnp.h"
 #include "system/camerad/sensors/ar0231_registers.h"
 #include "system/camerad/sensors/ox03c10_registers.h"
 #include "system/camerad/sensors/os04c10_registers.h"

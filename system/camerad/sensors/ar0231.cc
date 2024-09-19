@@ -1,7 +1,6 @@
 #include <cassert>
 
 #include "common/swaglog.h"
-#include "system/camerad/cameras/camera_common.h"
 #include "system/camerad/sensors/sensor.h"
 
 namespace {

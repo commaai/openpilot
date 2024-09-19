@@ -10,16 +10,13 @@
 #include "common/swaglog.h"
 #include "third_party/linux/include/msm_media_info.h"
 
-#include "system/camerad/cameras/camera_qcom2.h"
-#ifdef QCOM2
-#include "CL/cl_ext_qcom.h"
-#endif
+#include "system/camerad/cameras/spectra.h"
+
 
 class ImgProc {
 public:
-  ImgProc(cl_device_id device_id, cl_context context, const CameraBuf *b, const CameraState *s, int buf_width, int uv_offset) {
+  ImgProc(cl_device_id device_id, cl_context context, const CameraBuf *b, const SensorInfo *sensor, int camera_num, int buf_width, int uv_offset) {
     char args[4096];
-    const SensorInfo *sensor = s->sensor.get();
     snprintf(args, sizeof(args),
              "-cl-fast-relaxed-math -cl-denorms-are-zero -Isensors "
              "-DFRAME_WIDTH=%d -DFRAME_HEIGHT=%d -DFRAME_STRIDE=%d -DFRAME_OFFSET=%d "
@@ -27,7 +24,7 @@ public:
              "-DSENSOR_ID=%hu -DHDR_OFFSET=%d -DVIGNETTING=%d ",
              sensor->frame_width, sensor->frame_height, sensor->hdr_offset > 0 ? sensor->frame_stride * 2 : sensor->frame_stride, sensor->frame_offset,
              b->out_img_width, b->out_img_height, buf_width, uv_offset,
-             static_cast<unsigned short>(sensor->image_sensor), sensor->hdr_offset, s->cc.camera_num == 1);
+             static_cast<unsigned short>(sensor->image_sensor), sensor->hdr_offset, camera_num == 1);
     const char *cl_file = "cameras/process_raw.cl";
     cl_program prg_imgproc = cl_program_from_file(context, device_id, cl_file, args);
     krnl_ = CL_CHECK_ERR(clCreateKernel(prg_imgproc, "process_raw", &err));
@@ -62,12 +59,13 @@ private:
   cl_command_queue queue;
 };
 
-void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s, VisionIpcServer * v, int frame_cnt, VisionStreamType type) {
+void CameraBuf::init(cl_device_id device_id, cl_context context, SpectraCamera *cam, VisionIpcServer * v, int frame_cnt, VisionStreamType type) {
   vipc_server = v;
   stream_type = type;
   frame_buf_count = frame_cnt;
 
-  const SensorInfo *sensor = s->sensor.get();
+  const SensorInfo *sensor = cam->sensor.get();
+
   // RAW frame
   const int frame_size = (sensor->frame_height + sensor->extra_height) * sensor->frame_stride;
   camera_bufs = std::make_unique<VisionBuf[]>(frame_buf_count);
@@ -95,7 +93,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, CameraState *s,
   vipc_server->create_buffers_with_sizes(stream_type, YUV_BUFFER_COUNT, false, out_img_width, out_img_height, nv12_size, nv12_width, nv12_uv_offset);
   LOGD("created %d YUV vipc buffers with size %dx%d", YUV_BUFFER_COUNT, nv12_width, nv12_height);
 
-  imgproc = new ImgProc(device_id, context, this, s, nv12_width, nv12_uv_offset);
+  imgproc = new ImgProc(device_id, context, this, sensor, cam->cc.camera_num, nv12_width, nv12_uv_offset);
 }
 
 CameraBuf::~CameraBuf() {
@@ -137,24 +135,6 @@ void CameraBuf::queue(size_t buf_idx) {
 }
 
 // common functions
-
-void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, CameraState *c) {
-  framed.setFrameId(frame_data.frame_id);
-  framed.setRequestId(frame_data.request_id);
-  framed.setTimestampEof(frame_data.timestamp_eof);
-  framed.setTimestampSof(frame_data.timestamp_sof);
-  framed.setIntegLines(frame_data.integ_lines);
-  framed.setGain(frame_data.gain);
-  framed.setHighConversionGain(frame_data.high_conversion_gain);
-  framed.setMeasuredGreyFraction(frame_data.measured_grey_fraction);
-  framed.setTargetGreyFraction(frame_data.target_grey_fraction);
-  framed.setProcessingTime(frame_data.processing_time);
-
-  const float ev = c->cur_ev[frame_data.frame_id % 3];
-  const float perc = util::map_val(ev, c->sensor->min_ev, c->sensor->max_ev, 0.0f, 100.0f);
-  framed.setExposureValPercent(perc);
-  framed.setSensor(c->sensor->image_sensor);
-}
 
 kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b) {
   const uint8_t *dat = (const uint8_t *)b->cur_camera_buf->addr;
@@ -281,30 +261,6 @@ float set_exposure_target(const CameraBuf *b, Rect ae_xywh, int x_skip, int y_sk
   }
 
   return lum_med / 256.0;
-}
-
-void camerad_thread() {
-  cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-#ifdef QCOM2
-  const cl_context_properties props[] = {CL_CONTEXT_PRIORITY_HINT_QCOM, CL_PRIORITY_HINT_HIGH_QCOM, 0};
-  cl_context context = CL_CHECK_ERR(clCreateContext(props, 1, &device_id, NULL, NULL, &err));
-#else
-  cl_context context = CL_CHECK_ERR(clCreateContext(NULL, 1, &device_id, NULL, NULL, &err));
-#endif
-
-  {
-    MultiCameraState cameras;
-    cameras.pm = new PubMaster({"roadCameraState", "driverCameraState", "wideRoadCameraState", "thumbnail"});
-    VisionIpcServer vipc_server("camerad", device_id, context);
-
-    cameras_init(&cameras, &vipc_server, device_id, context);
-
-    vipc_server.start_listener();
-
-    cameras_run(&cameras);
-  }
-
-  CL_CHECK(clReleaseContext(context));
 }
 
 int open_v4l_by_name_and_index(const char name[], int index, int flags) {
