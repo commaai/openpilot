@@ -107,7 +107,7 @@ void SpectraCamera::camera_open() {
   linkDevices();
 }
 
-void SpectraCamera::camera_init(VisionIpcServer * v, cl_device_id device_id, cl_context ctx) {
+void SpectraCamera::camera_init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx) {
   if (!enabled) return;
 
   LOGD("camera init %d", cc.camera_num);
@@ -502,7 +502,7 @@ bool SpectraCamera::openSensor() {
     return ret == 0;
   };
 
-  // Try different sensors one by one until it success.
+  // Try different sensors one by one.
   if (!init_sensor_lambda(new AR0231) &&
       !init_sensor_lambda(new OX03C10) &&
       !init_sensor_lambda(new OS04C10)) {
@@ -664,7 +664,6 @@ void SpectraCamera::linkDevices() {
 }
 
 void SpectraCamera::camera_close() {
-  // stop devices
   LOG("-- Stop devices %d", cc.camera_num);
 
   if (enabled) {

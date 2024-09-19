@@ -60,7 +60,7 @@ public:
   VisionBuf *cur_camera_buf;
   std::unique_ptr<VisionBuf[]> camera_bufs;
   std::unique_ptr<FrameMetadata[]> camera_bufs_metadata;
-  int rgb_width, rgb_height;
+  int out_img_width, out_img_height;
 
   CameraBuf() = default;
   ~CameraBuf();
@@ -69,7 +69,6 @@ public:
   void queue(size_t buf_idx);
 };
 
-void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, CameraState *c);
 kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b);
 float set_exposure_target(const CameraBuf *b, Rect ae_xywh, int x_skip, int y_skip);
 void publish_thumbnail(PubMaster *pm, const CameraBuf *b);

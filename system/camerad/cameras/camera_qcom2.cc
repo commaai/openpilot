@@ -1,4 +1,4 @@
-#include "system/camerad/cameras/camera_qcom2.h"
+#include "system/camerad/cameras/spectra.h"
 
 #include <poll.h>
 #include <sys/ioctl.h>
@@ -26,6 +26,42 @@
 
 
 ExitHandler do_exit;
+
+
+// high level camera state
+class CameraState : public SpectraCamera {
+public:
+  std::mutex exp_lock;
+
+  int exposure_time = 5;
+  bool dc_gain_enabled = false;
+  int dc_gain_weight = 0;
+  int gain_idx = 0;
+  float analog_gain_frac = 0;
+
+  float cur_ev[3] = {};
+  float best_ev_score = 0;
+  int new_exp_g = 0;
+  int new_exp_t = 0;
+
+  Rect ae_xywh = {};
+  float measured_grey_fraction = 0;
+  float target_grey_fraction = 0.3;
+
+  float fl_pix = 0;
+
+  CameraState(SpectraMaster *master, const CameraConfig &config) : SpectraCamera(master, config) {};
+  void update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain);
+  void set_camera_exposure(float grey_frac);
+
+  void set_exposure_rect();
+  void sensor_set_parameters();
+  void run();
+
+  // TODO: this should move to SpectraCamera
+  void handle_camera_event(void *evdat);
+};
+
 
 void CameraState::handle_camera_event(void *evdat) {
   if (!enabled) return;
@@ -110,10 +146,10 @@ void CameraState::set_exposure_rect() {
   float fl_ref = ae_target.second;
 
   ae_xywh = (Rect){
-    std::max(0, buf.rgb_width / 2 - (int)(fl_pix / fl_ref * xywh_ref.w / 2)),
-    std::max(0, buf.rgb_height / 2 - (int)(fl_pix / fl_ref * (h_ref / 2 - xywh_ref.y))),
-    std::min((int)(fl_pix / fl_ref * xywh_ref.w), buf.rgb_width / 2 + (int)(fl_pix / fl_ref * xywh_ref.w / 2)),
-    std::min((int)(fl_pix / fl_ref * xywh_ref.h), buf.rgb_height / 2 + (int)(fl_pix / fl_ref * (h_ref / 2 - xywh_ref.y)))
+    std::max(0, buf.out_img_width / 2 - (int)(fl_pix / fl_ref * xywh_ref.w / 2)),
+    std::max(0, buf.out_img_height / 2 - (int)(fl_pix / fl_ref * (h_ref / 2 - xywh_ref.y))),
+    std::min((int)(fl_pix / fl_ref * xywh_ref.w), buf.out_img_width / 2 + (int)(fl_pix / fl_ref * xywh_ref.w / 2)),
+    std::min((int)(fl_pix / fl_ref * xywh_ref.h), buf.out_img_height / 2 + (int)(fl_pix / fl_ref * (h_ref / 2 - xywh_ref.y)))
   };
 }
 
@@ -248,7 +284,21 @@ void CameraState::run() {
 
     MessageBuilder msg;
     auto framed = (msg.initEvent().*cc.init_camera_state)();
-    fill_frame_data(framed, buf.cur_frame_data, this);
+    framed.setFrameId(buf.cur_frame_data.frame_id);
+    framed.setRequestId(buf.cur_frame_data.request_id);
+    framed.setTimestampEof(buf.cur_frame_data.timestamp_eof);
+    framed.setTimestampSof(buf.cur_frame_data.timestamp_sof);
+    framed.setIntegLines(buf.cur_frame_data.integ_lines);
+    framed.setGain(buf.cur_frame_data.gain);
+    framed.setHighConversionGain(buf.cur_frame_data.high_conversion_gain);
+    framed.setMeasuredGreyFraction(buf.cur_frame_data.measured_grey_fraction);
+    framed.setTargetGreyFraction(buf.cur_frame_data.target_grey_fraction);
+    framed.setProcessingTime(buf.cur_frame_data.processing_time);
+
+    const float ev = cur_ev[buf.cur_frame_data.frame_id % 3];
+    const float perc = util::map_val(ev, sensor->min_ev, sensor->max_ev, 0.0f, 100.0f);
+    framed.setExposureValPercent(perc);
+    framed.setSensor(sensor->image_sensor);
 
     // Log raw frames for road camera
     if (env_log_raw_frames && cc.stream_type == VISION_STREAM_ROAD && cnt % 100 == 5) {  // no overlap with qlog decimation

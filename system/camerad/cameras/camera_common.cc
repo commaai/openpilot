@@ -10,7 +10,7 @@
 #include "common/swaglog.h"
 #include "third_party/linux/include/msm_media_info.h"
 
-#include "system/camerad/cameras/camera_qcom2.h"
+#include "system/camerad/cameras/spectra.h"
 
 
 class ImgProc {
@@ -23,7 +23,7 @@ public:
              "-DRGB_WIDTH=%d -DRGB_HEIGHT=%d -DYUV_STRIDE=%d -DUV_OFFSET=%d "
              "-DSENSOR_ID=%hu -DHDR_OFFSET=%d -DVIGNETTING=%d ",
              sensor->frame_width, sensor->frame_height, sensor->hdr_offset > 0 ? sensor->frame_stride * 2 : sensor->frame_stride, sensor->frame_offset,
-             b->rgb_width, b->rgb_height, buf_width, uv_offset,
+             b->out_img_width, b->out_img_height, buf_width, uv_offset,
              static_cast<unsigned short>(sensor->image_sensor), sensor->hdr_offset, camera_num == 1);
     const char *cl_file = "cameras/process_raw.cl";
     cl_program prg_imgproc = cl_program_from_file(context, device_id, cl_file, args);
@@ -77,20 +77,20 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, SpectraCamera *
   }
   LOGD("allocated %d CL buffers", frame_buf_count);
 
-  rgb_width = sensor->frame_width;
-  rgb_height = sensor->hdr_offset > 0 ? (sensor->frame_height - sensor->hdr_offset) / 2 : sensor->frame_height;
+  out_img_width = sensor->frame_width;
+  out_img_height = sensor->hdr_offset > 0 ? (sensor->frame_height - sensor->hdr_offset) / 2 : sensor->frame_height;
 
-  int nv12_width = VENUS_Y_STRIDE(COLOR_FMT_NV12, rgb_width);
-  int nv12_height = VENUS_Y_SCANLINES(COLOR_FMT_NV12, rgb_height);
-  assert(nv12_width == VENUS_UV_STRIDE(COLOR_FMT_NV12, rgb_width));
-  assert(nv12_height/2 == VENUS_UV_SCANLINES(COLOR_FMT_NV12, rgb_height));
+  int nv12_width = VENUS_Y_STRIDE(COLOR_FMT_NV12, out_img_width);
+  int nv12_height = VENUS_Y_SCANLINES(COLOR_FMT_NV12, out_img_height);
+  assert(nv12_width == VENUS_UV_STRIDE(COLOR_FMT_NV12, out_img_width));
+  assert(nv12_height/2 == VENUS_UV_SCANLINES(COLOR_FMT_NV12, out_img_height));
   size_t nv12_uv_offset = nv12_width * nv12_height;
 
   // the encoder HW tells us the size it wants after setting it up.
   // TODO: VENUS_BUFFER_SIZE should give the size, but it's too small. dependent on encoder settings?
-  size_t nv12_size = (rgb_width <= 1344 ? 2900 : 2346)*nv12_width;
+  size_t nv12_size = (out_img_width <= 1344 ? 2900 : 2346)*nv12_width;
 
-  vipc_server->create_buffers_with_sizes(stream_type, YUV_BUFFER_COUNT, false, rgb_width, rgb_height, nv12_size, nv12_width, nv12_uv_offset);
+  vipc_server->create_buffers_with_sizes(stream_type, YUV_BUFFER_COUNT, false, out_img_width, out_img_height, nv12_size, nv12_width, nv12_uv_offset);
   LOGD("created %d YUV vipc buffers with size %dx%d", YUV_BUFFER_COUNT, nv12_width, nv12_height);
 
   imgproc = new ImgProc(device_id, context, this, sensor, cam->cc.camera_num, nv12_width, nv12_uv_offset);
@@ -116,7 +116,7 @@ bool CameraBuf::acquire() {
   cur_camera_buf = &camera_bufs[cur_buf_idx];
 
   double start_time = millis_since_boot();
-  imgproc->runKernel(camera_bufs[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, rgb_width, rgb_height, cur_frame_data.integ_lines);
+  imgproc->runKernel(camera_bufs[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, out_img_width, out_img_height, cur_frame_data.integ_lines);
   cur_frame_data.processing_time = (millis_since_boot() - start_time) / 1000.0;
 
   VisionIpcBufExtra extra = {
@@ -137,21 +137,6 @@ void CameraBuf::queue(size_t buf_idx) {
 // common functions
 
 void fill_frame_data(cereal::FrameData::Builder &framed, const FrameMetadata &frame_data, CameraState *c) {
-  framed.setFrameId(frame_data.frame_id);
-  framed.setRequestId(frame_data.request_id);
-  framed.setTimestampEof(frame_data.timestamp_eof);
-  framed.setTimestampSof(frame_data.timestamp_sof);
-  framed.setIntegLines(frame_data.integ_lines);
-  framed.setGain(frame_data.gain);
-  framed.setHighConversionGain(frame_data.high_conversion_gain);
-  framed.setMeasuredGreyFraction(frame_data.measured_grey_fraction);
-  framed.setTargetGreyFraction(frame_data.target_grey_fraction);
-  framed.setProcessingTime(frame_data.processing_time);
-
-  const float ev = c->cur_ev[frame_data.frame_id % 3];
-  const float perc = util::map_val(ev, c->sensor->min_ev, c->sensor->max_ev, 0.0f, 100.0f);
-  framed.setExposureValPercent(perc);
-  framed.setSensor(c->sensor->image_sensor);
 }
 
 kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b) {
@@ -242,7 +227,7 @@ static kj::Array<capnp::byte> yuv420_to_jpeg(const CameraBuf *b, int thumbnail_w
 }
 
 void publish_thumbnail(PubMaster *pm, const CameraBuf *b) {
-  auto thumbnail = yuv420_to_jpeg(b, b->rgb_width / 4, b->rgb_height / 4);
+  auto thumbnail = yuv420_to_jpeg(b, b->out_img_width / 4, b->out_img_height / 4);
   if (thumbnail.size() == 0) return;
 
   MessageBuilder msg;
@@ -262,7 +247,7 @@ float set_exposure_target(const CameraBuf *b, Rect ae_xywh, int x_skip, int y_sk
   unsigned int lum_total = 0;
   for (int y = ae_xywh.y; y < ae_xywh.y + ae_xywh.h; y += y_skip) {
     for (int x = ae_xywh.x; x < ae_xywh.x + ae_xywh.w; x += x_skip) {
-      uint8_t lum = pix_ptr[(y * b->rgb_width) + x];
+      uint8_t lum = pix_ptr[(y * b->out_img_width) + x];
       lum_binning[lum]++;
       lum_total += 1;
     }
