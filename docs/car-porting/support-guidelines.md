@@ -16,8 +16,8 @@ In case of conflicts between this guide and comma safety standards, SAFETY.md al
 
 New brand ports will initially be merged in dashcam mode. This allows for the comma.ai openpilot team
 to further validate safety and quality before enabling official support with plug-and-play operation.
-New model ports, which only add a new model to an already-supported ADAS platform, are usually reviewed
-and merged as fully supported.
+New model ports, which only add a new model to an already-supported ADAS platform, may be reviewable
+with driving logs only, and may be directly merged as fully supported.
 
 Cars that don't meet all guidelines aren't eligible for full support. However, on a case-by-case basis,
 they may still be merged behind the dashcam flag.
