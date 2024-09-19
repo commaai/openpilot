@@ -397,19 +397,15 @@ int SpectraCamera::sensors_init() {
 }
 
 void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset) {
-  uint32_t cam_packet_handle = 0;
-  int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*2;
+  int size = sizeof(struct cam_packet) + sizeof(struct cam_cmd_buf_desc)*2;
   if (io_mem_handle != 0) {
     size += sizeof(struct cam_buf_io_cfg);
   }
+
+  uint32_t cam_packet_handle = 0;
   auto pkt = mm.alloc<struct cam_packet>(size, &cam_packet_handle);
   pkt->num_cmd_buf = 2;
   pkt->kmd_cmd_buf_index = 0;
-
-  if (io_mem_handle != 0) {
-    pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf;
-    pkt->num_io_configs = 1;
-  }
 
   if (io_mem_handle != 0) {
     pkt->header.op_code = 0xf000001;
@@ -419,10 +415,9 @@ void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int
     pkt->header.request_id = 1;
   }
   pkt->header.size = size;
-  struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
-  struct cam_buf_io_cfg *io_cfg = (struct cam_buf_io_cfg *)((char*)&pkt->payload + pkt->io_configs_offset);
 
   // TODO: support MMU
+  struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
   buf_desc[0].size = 65624;
   buf_desc[0].length = 0;
   buf_desc[0].type = CAM_CMD_BUF_DIRECT;
@@ -497,18 +492,25 @@ void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int
   auto buf2 = mm.alloc<uint32_t>(buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle);
   memcpy(buf2.get(), &tmp, sizeof(tmp));
 
+  // configure output frame
   if (io_mem_handle != 0) {
+    pkt->num_io_configs = 1;
+    pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf;
+
+    struct cam_buf_io_cfg *io_cfg = (struct cam_buf_io_cfg *)((char*)&pkt->payload + pkt->io_configs_offset);
     io_cfg[0].mem_handle[0] = io_mem_handle;
     io_cfg[0].planes[0] = (struct cam_plane_cfg){
       .width = sensor->frame_width,
       .height = sensor->frame_height + sensor->extra_height,
       .plane_stride = sensor->frame_stride,
       .slice_height = sensor->frame_height + sensor->extra_height,
-      .meta_stride = 0x0,  // YUV has meta(stride=0x400, size=0x5000)
+
+      // these are for UBWC, we'll want that eventually
+      .meta_stride = 0x0,
       .meta_size = 0x0,
       .meta_offset = 0x0,
-      .packer_config = 0x0,  // 0xb for YUV
-      .mode_config = 0x0,    // 0x9ef for YUV
+      .packer_config = 0x0,
+      .mode_config = 0x0,
       .tile_config = 0x0,
       .h_init = 0x0,
       .v_init = 0x0,
@@ -526,9 +528,6 @@ void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int
 
   int ret = device_config(m->isp_fd, session_handle, isp_dev_handle, cam_packet_handle);
   assert(ret == 0);
-  if (ret != 0) {
-    LOGE("isp config failed");
-  }
 }
 
 void SpectraCamera::enqueue_buffer(int i, bool dp) {
@@ -640,11 +639,10 @@ bool SpectraCamera::openSensor() {
 }
 
 void SpectraCamera::configISP() {
-  // NOTE: to be able to disable road and wide road, we still have to configure the sensor over i2c
-  // If you don't do this, the strobe GPIO is an output (even in reset it seems!)
   if (!enabled) return;
 
   struct cam_isp_in_port_info in_port_info = {
+    // ISP input to the CSID
     .res_type = cc.phy,
     .lane_type = CAM_ISP_LANE_TYPE_DPHY,
     .lane_num = 4,
@@ -675,6 +673,7 @@ void SpectraCamera::configISP() {
     .hbi_cnt = 0x0,
     .custom_csid = 0x0,
 
+    // ISP outputs
     .num_out_res = 0x1,
     .data[0] = (struct cam_isp_out_port_info){
       .res_type = CAM_ISP_IFE_OUT_RES_RDI_0,
