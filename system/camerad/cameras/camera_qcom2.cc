@@ -48,28 +48,41 @@ public:
   float target_grey_fraction = 0.3;
 
   float fl_pix = 0;
+  std::thread thread;
 
   CameraState(SpectraMaster *master, const CameraConfig &config) : SpectraCamera(master, config) {};
+  ~CameraState();
   void update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain);
   void set_camera_exposure(float grey_frac);
 
+  bool init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
   void set_exposure_rect();
   void run();
-
   float get_gain_factor() const {
-    return (1 + dc_gain_weight * (sensor->dc_gain_factor-1) / sensor->dc_gain_max_weight);
+    return (1 + dc_gain_weight * (sensor->dc_gain_factor - 1) / sensor->dc_gain_max_weight);
   }
-
-  void init() {
-    fl_pix = cc.focal_len / sensor->pixel_size_mm;
-    set_exposure_rect();
-
-    dc_gain_weight = sensor->dc_gain_min_weight;
-    gain_idx = sensor->analog_gain_rec_idx;
-    cur_ev[0] = cur_ev[1] = cur_ev[2] = get_gain_factor() * sensor->sensor_analog_gains[gain_idx] * exposure_time;
-  };
 };
 
+bool CameraState::init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx) {
+  if (!camera_open(v, device_id, ctx)) {
+    return false;
+  }
+
+  fl_pix = cc.focal_len / sensor->pixel_size_mm;
+  set_exposure_rect();
+
+  dc_gain_weight = sensor->dc_gain_min_weight;
+  gain_idx = sensor->analog_gain_rec_idx;
+  cur_ev[0] = cur_ev[1] = cur_ev[2] = get_gain_factor() * sensor->sensor_analog_gains[gain_idx] * exposure_time;
+
+  // start camera thread
+  thread = std::thread(&CameraState::run, this);
+  return true;
+}
+
+CameraState::~CameraState() {
+  if (thread.joinable()) thread.join();
+}
 
 void CameraState::set_exposure_rect() {
   // set areas for each camera, shouldn't be changed
@@ -110,7 +123,6 @@ void CameraState::update_exposure_score(float desired_ev, int exp_t, int exp_g_i
 }
 
 void CameraState::set_camera_exposure(float grey_frac) {
-  if (!enabled) return;
   const float dt = 0.05;
 
   const float ts_grey = 10.0;
@@ -258,7 +270,6 @@ void camerad_thread() {
   /*
     TODO: future cleanups
     - centralize enabled handling
-    - open/init/etc mess
   */
 
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
@@ -272,34 +283,30 @@ void camerad_thread() {
   m.init();
 
   // *** per-cam init ***
-  std::vector<CameraState*> cams = {
-   new CameraState(&m, ROAD_CAMERA_CONFIG),
-   new CameraState(&m, WIDE_ROAD_CAMERA_CONFIG),
-   new CameraState(&m, DRIVER_CAMERA_CONFIG),
-  };
-  for (auto cam : cams) cam->camera_open();
-  for (auto cam : cams) cam->camera_init(&v, device_id, ctx);
-  for (auto cam : cams) cam->init();
-  v.start_listener();
-
-  LOG("-- Starting threads");
-  std::vector<std::thread> threads;
-  for (auto cam : cams) {
-    if (cam->enabled) threads.emplace_back(&CameraState::run, cam);
+  std::vector<std::unique_ptr<CameraState>> cams;
+  for (const auto &config : {ROAD_CAMERA_CONFIG, WIDE_ROAD_CAMERA_CONFIG, DRIVER_CAMERA_CONFIG}) {
+    if (config.enabled) {
+      auto camera = std::make_unique<CameraState>(&m, config);
+      if (camera->init(&v, device_id, ctx)) {
+        cams.emplace_back(std::move(camera));
+      }
+    }
   }
 
-  // start devices
+  if (cams.empty()) {
+    LOGE("No cameras successfully opened.");
+    return;
+  }
+
+  v.start_listener();
+
   LOG("-- Starting devices");
-  for (auto cam : cams) cam->sensors_start();
+  for (auto &cam : cams) cam->sensors_start();
 
   // poll events
   LOG("-- Dequeueing Video events");
   while (!do_exit) {
-    struct pollfd fds[1] = {{0}};
-
-    fds[0].fd = m.video0_fd;
-    fds[0].events = POLLPRI;
-
+    struct pollfd fds[1] = {{.fd = m.video0_fd, .events = POLLPRI}};
     int ret = poll(fds, std::size(fds), 1000);
     if (ret < 0) {
       if (errno == EINTR || errno == EAGAIN) continue;
@@ -320,7 +327,7 @@ void camerad_thread() {
           do_exit = do_exit || event_data->u.frame_msg.frame_id > (1*20);
         }
 
-        for (auto cam : cams) {
+        for (auto &cam : cams) {
           if (event_data->session_hdl == cam->session_handle) {
             cam->handle_camera_event(event_data);
             break;
@@ -333,8 +340,4 @@ void camerad_thread() {
       LOGE("VIDIOC_DQEVENT failed, errno=%d", errno);
     }
   }
-
-  LOG(" ************** STOPPING **************");
-  for (auto &t : threads) t.join();
-  for (auto cam : cams) delete cam;
 }

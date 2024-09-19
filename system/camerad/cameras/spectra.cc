@@ -197,7 +197,6 @@ void SpectraMaster::init() {
 
 SpectraCamera::SpectraCamera(SpectraMaster *master, const CameraConfig &config)
   : m(master),
-    enabled(config.enabled) ,
     cc(config) {
   mm.init(m->video0_fd);
 }
@@ -218,25 +217,21 @@ int SpectraCamera::clear_req_queue() {
   return ret;
 }
 
-void SpectraCamera::camera_open() {
-  if (!enabled) return;
-
+bool SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_context ctx) {
   if (!openSensor()) {
-    return;
+    return false;
   }
 
   open = true;
   configISP();
   configCSIPHY();
   linkDevices();
-}
-
-void SpectraCamera::camera_init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx) {
-  if (!enabled) return;
 
   LOGD("camera init %d", cc.camera_num);
   buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, cc.stream_type);
   camera_map_bufs();
+
+  return true;
 }
 
 void SpectraCamera::enqueue_req_multi(uint64_t start, int n, bool dp) {
@@ -247,7 +242,6 @@ void SpectraCamera::enqueue_req_multi(uint64_t start, int n, bool dp) {
 }
 
 void SpectraCamera::sensors_start() {
-  if (!enabled) return;
   LOGD("starting sensor %d", cc.camera_num);
   sensors_i2c(sensor->start_reg_array.data(), sensor->start_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, sensor->data_word);
 }
@@ -265,7 +259,6 @@ void SpectraCamera::sensors_poke(int request_id) {
   int ret = device_config(sensor_fd, session_handle, sensor_dev_handle, cam_packet_handle);
   if (ret != 0) {
     LOGE("** sensor %d FAILED poke, disabling", cc.camera_num);
-    enabled = false;
     return;
   }
 }
@@ -295,7 +288,6 @@ void SpectraCamera::sensors_i2c(const struct i2c_random_wr_payload* dat, int len
   int ret = device_config(sensor_fd, session_handle, sensor_dev_handle, cam_packet_handle);
   if (ret != 0) {
     LOGE("** sensor %d FAILED i2c, disabling", cc.camera_num);
-    enabled = false;
     return;
   }
 }
@@ -634,7 +626,6 @@ bool SpectraCamera::openSensor() {
       !init_sensor_lambda(new OX03C10) &&
       !init_sensor_lambda(new OS04C10)) {
     LOGE("** sensor %d FAILED bringup, disabling", cc.camera_num);
-    enabled = false;
     return false;
   }
   LOGD("-- Probing sensor %d success", cc.camera_num);
@@ -658,8 +649,6 @@ bool SpectraCamera::openSensor() {
 }
 
 void SpectraCamera::configISP() {
-  if (!enabled) return;
-
   struct cam_isp_in_port_info in_port_info = {
     // ISP input to the CSID
     .res_type = cc.phy,
@@ -791,7 +780,7 @@ void SpectraCamera::linkDevices() {
 void SpectraCamera::camera_close() {
   LOG("-- Stop devices %d", cc.camera_num);
 
-  if (enabled) {
+  {
     // ret = device_control(sensor_fd, CAM_STOP_DEV, session_handle, sensor_dev_handle);
     // LOGD("stop sensor: %d", ret);
     int ret = device_control(m->isp_fd, CAM_STOP_DEV, session_handle, isp_dev_handle);
