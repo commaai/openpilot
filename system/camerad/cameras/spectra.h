@@ -33,7 +33,7 @@ public:
 class SpectraCamera {
 public:
   SpectraCamera(SpectraMaster *master, const CameraConfig &config);
-  ~SpectraCamera();
+  virtual ~SpectraCamera();
 
   void camera_open();
   void camera_close();
