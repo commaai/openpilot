@@ -1,9 +1,6 @@
 #include <sys/ioctl.h>
 
 #include <cassert>
-#include <cstring>
-#include <string>
-#include <vector>
 
 #include "media/cam_defs.h"
 #include "media/cam_isp.h"
