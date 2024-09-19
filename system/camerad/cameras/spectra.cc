@@ -432,7 +432,7 @@ void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int
     struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
     pkt->num_cmd_buf = 2;
 
-    // first command
+    // *** first command ***
     // TODO: support MMU
     buf_desc[0].size = buf0_size;
     buf_desc[0].length = 0;
@@ -441,7 +441,7 @@ void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int
     buf_desc[0].mem_handle = buf0_handle;
     buf_desc[0].offset = ALIGNED_SIZE(buf0_size, buf0_alignment)*buf0_idx;
 
-    // second command
+    // *** second command ***
     // parsed by cam_isp_packet_generic_blob_handler
     struct isp_packet {
       uint32_t type_0;
