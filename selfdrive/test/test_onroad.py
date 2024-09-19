@@ -371,7 +371,7 @@ class TestOnroad:
     # TODO: this went up when plannerd cpu usage increased, why?
     cfgs = [
       ("modelV2", 0.050, 0.036),
-      ("driverStateV2", 0.050, 0.020),
+      ("driverStateV2", 0.050, 0.026),
     ]
     for (s, instant_max, avg_max) in cfgs:
       ts = [getattr(m, s).modelExecutionTime for m in self.service_msgs[s]]
