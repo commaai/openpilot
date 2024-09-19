@@ -228,6 +228,7 @@ void Device::setAwake(bool on) {
     Hardware::set_display_power(awake);
     LOGD("setting display power %d", awake);
     emit displayPowerChanged(awake);
+
   }
 }
 
