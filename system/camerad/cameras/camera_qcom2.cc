@@ -48,8 +48,6 @@ public:
   float measured_grey_fraction = 0;
   float target_grey_fraction = 0.3;
 
-  float fl_pix = 0;
-
   CameraState(SpectraMaster *master, const CameraConfig &config) : camera(master, config) {};
   ~CameraState();
   void init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
@@ -66,7 +64,6 @@ public:
 void CameraState::init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx) {
   camera.camera_open(v, device_id, ctx);
 
-  fl_pix = camera.cc.focal_len / camera.sensor->pixel_size_mm;
   set_exposure_rect();
 
   dc_gain_weight = camera.sensor->dc_gain_min_weight;
@@ -81,13 +78,6 @@ CameraState::~CameraState() {
 }
 
 void CameraState::set_exposure_rect() {
-  // set areas for each camera, shouldn't be changed
-  std::vector<std::pair<Rect, float>> ae_targets = {
-    // (Rect, F)
-    std::make_pair((Rect){96, 250, 1734, 524}, 567.0),  // wide
-    std::make_pair((Rect){96, 160, 1734, 986}, 2648.0), // road
-    std::make_pair((Rect){96, 242, 1736, 906}, 567.0)   // driver
-  };
   int h_ref = 1208;
   /*
     exposure target intrinics is
@@ -97,15 +87,15 @@ void CameraState::set_exposure_rect() {
       [0, 0, 1]
     ]
   */
-  auto ae_target = ae_targets[camera.cc.camera_num];
-  Rect xywh_ref = ae_target.first;
-  float fl_ref = ae_target.second;
+  const float fl_pix = camera.cc.focal_length_mm / camera.sensor->pixel_size_mm;
+  const float ratio = fl_pix / camera.cc.expo_focal_length;
+  const Rect &xywh_ref = camera.cc.expo_rect;
 
   ae_xywh = (Rect){
-    std::max(0, camera.buf.out_img_width / 2 - (int)(fl_pix / fl_ref * xywh_ref.w / 2)),
-    std::max(0, camera.buf.out_img_height / 2 - (int)(fl_pix / fl_ref * (h_ref / 2 - xywh_ref.y))),
-    std::min((int)(fl_pix / fl_ref * xywh_ref.w), camera.buf.out_img_width / 2 + (int)(fl_pix / fl_ref * xywh_ref.w / 2)),
-    std::min((int)(fl_pix / fl_ref * xywh_ref.h), camera.buf.out_img_height / 2 + (int)(fl_pix / fl_ref * (h_ref / 2 - xywh_ref.y)))
+    std::max(0, camera.buf.out_img_width / 2 - (int)(ratio * xywh_ref.w / 2)),
+    std::max(0, camera.buf.out_img_height / 2 - (int)(ratio * (h_ref / 2 - xywh_ref.y))),
+    std::min((int)(ratio * xywh_ref.w), camera.buf.out_img_width / 2 + (int)(ratio * xywh_ref.w / 2)),
+    std::min((int)(ratio * xywh_ref.h), camera.buf.out_img_height / 2 + (int)(ratio * (h_ref / 2 - xywh_ref.y)))
   };
 }
 
