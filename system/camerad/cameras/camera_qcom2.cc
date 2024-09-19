@@ -278,35 +278,26 @@ void camerad_thread() {
   SpectraMaster *s = &m;
   s->init();
 
-  CameraState road_cam(s, ROAD_CAMERA_CONFIG);
-  CameraState wide_road_cam(s, WIDE_ROAD_CAMERA_CONFIG);
-  CameraState driver_cam(s, DRIVER_CAMERA_CONFIG);
+  std::vector<CameraState*> cams = {
+   new CameraState(s, ROAD_CAMERA_CONFIG),
+   new CameraState(s, WIDE_ROAD_CAMERA_CONFIG),
+   new CameraState(s, DRIVER_CAMERA_CONFIG),
+  };
 
   // open + init
-  driver_cam.camera_open();
-  LOGD("driver camera opened");
-  road_cam.camera_open();
-  LOGD("road camera opened");
-  wide_road_cam.camera_open();
-  LOGD("wide road camera opened");
-
-  driver_cam.camera_init(&v, device_id, ctx);
-  road_cam.camera_init(&v, device_id, ctx);
-  wide_road_cam.camera_init(&v, device_id, ctx);
-
+  for (auto cam : cams) cam->camera_open();
+  for (auto cam : cams) cam->camera_init(&v, device_id, ctx);
   v.start_listener();
 
   LOG("-- Starting threads");
   std::vector<std::thread> threads;
-  if (driver_cam.enabled) threads.emplace_back(&CameraState::run, &driver_cam);
-  if (road_cam.enabled) threads.emplace_back(&CameraState::run, &road_cam);
-  if (wide_road_cam.enabled) threads.emplace_back(&CameraState::run, &wide_road_cam);
+  for (auto cam : cams) {
+    if (cam->enabled) threads.emplace_back(&CameraState::run, cam);
+  }
 
   // start devices
   LOG("-- Starting devices");
-  driver_cam.sensors_start();
-  road_cam.sensors_start();
-  wide_road_cam.sensors_start();
+  for (auto cam : cams) cam->sensors_start();
 
   // poll events
   LOG("-- Dequeueing Video events");
@@ -336,15 +327,11 @@ void camerad_thread() {
           do_exit = do_exit || event_data->u.frame_msg.frame_id > (1*20);
         }
 
-        if (event_data->session_hdl == road_cam.session_handle) {
-          road_cam.handle_camera_event(event_data);
-        } else if (event_data->session_hdl == wide_road_cam.session_handle) {
-          wide_road_cam.handle_camera_event(event_data);
-        } else if (event_data->session_hdl == driver_cam.session_handle) {
-          driver_cam.handle_camera_event(event_data);
-        } else {
-          LOGE("Unknown vidioc event source");
-          assert(false);
+        for (auto cam : cams) {
+          if (event_data->session_hdl == cam->session_handle) {
+            cam->handle_camera_event(event_data);
+            break;
+          }
         }
       } else {
         LOGE("unhandled event %d\n", ev.type);
@@ -355,6 +342,6 @@ void camerad_thread() {
   }
 
   LOG(" ************** STOPPING **************");
-
   for (auto &t : threads) t.join();
+  for (auto cam : cams) delete cam;
 }
