@@ -1,6 +1,5 @@
-#include <sys/ioctl.h>
-
 #include <cassert>
+#include <sys/ioctl.h>
 
 #include "media/cam_defs.h"
 #include "media/cam_isp.h"
@@ -11,7 +10,6 @@
 
 #include "common/util.h"
 #include "common/swaglog.h"
-
 #include "system/camerad/cameras/spectra.h"
 
 // For debugging:
@@ -101,6 +99,14 @@ void release(int video0_fd, uint32_t handle) {
   assert(ret == 0);
 }
 
+static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay_ms) {
+  cam_cmd_unconditional_wait *unconditional_wait = (cam_cmd_unconditional_wait *)((char *)power + (sizeof(struct cam_cmd_power) + (power->count - 1) * sizeof(struct cam_power_settings)));
+  unconditional_wait->cmd_type = CAMERA_SENSOR_CMD_TYPE_WAIT;
+  unconditional_wait->delay = delay_ms;
+  unconditional_wait->op_code = CAMERA_SENSOR_WAIT_OP_SW_UCND;
+  return (struct cam_cmd_power *)(unconditional_wait + 1);
+}
+
 // *** MemoryManager ***
 
 void *MemoryManager::alloc_buf(int size, uint32_t *handle) {
@@ -142,13 +148,6 @@ MemoryManager::~MemoryManager() {
       size_lookup.erase(ptr);
     }
   }
-}
-static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay_ms) {
-  cam_cmd_unconditional_wait *unconditional_wait = (cam_cmd_unconditional_wait *)((char *)power + (sizeof(struct cam_cmd_power) + (power->count - 1) * sizeof(struct cam_power_settings)));
-  unconditional_wait->cmd_type = CAMERA_SENSOR_CMD_TYPE_WAIT;
-  unconditional_wait->delay = delay_ms;
-  unconditional_wait->op_code = CAMERA_SENSOR_WAIT_OP_SW_UCND;
-  return (struct cam_cmd_power *)(unconditional_wait + 1);
 }
 
 // *** SpectraMaster ***
