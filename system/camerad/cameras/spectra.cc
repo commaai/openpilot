@@ -113,10 +113,6 @@ void SpectraCamera::camera_init(VisionIpcServer *v, cl_device_id device_id, cl_c
   LOGD("camera init %d", cc.camera_num);
   buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, cc.stream_type);
   camera_map_bufs();
-
-  // TODO: fix these
-  //fl_pix = cc.focal_len / sensor->pixel_size_mm;
-  //set_exposure_rect();
 }
 
 void SpectraCamera::enqueue_req_multi(uint64_t start, int n, bool dp) {
@@ -351,7 +347,6 @@ void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int
     .rdi_hz[0] = 404000000,
   };
 
-
   tmp.type_2 = CAM_ISP_GENERIC_BLOB_TYPE_BW_CONFIG;
   tmp.type_2 |= (sizeof(cam_isp_bw_config) + sizeof(tmp.extra_rdi_vote)) << 8;
   static_assert((sizeof(cam_isp_bw_config) + sizeof(tmp.extra_rdi_vote)) == 0xe0);
@@ -495,10 +490,6 @@ bool SpectraCamera::openSensor() {
   auto init_sensor_lambda = [this](SensorInfo *s) {
     sensor.reset(s);
     int ret = sensors_init();
-    if (ret == 0) {
-      // TODO: add this back
-      //sensor_set_parameters();
-    }
     return ret == 0;
   };
 

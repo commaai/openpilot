@@ -14,9 +14,6 @@
 #include "CL/cl_ext_qcom.h"
 
 #include "media/cam_defs.h"
-#include "media/cam_isp.h"
-#include "media/cam_isp_ife.h"
-#include "media/cam_req_mgr.h"
 #include "media/cam_sensor_cmn_header.h"
 #include "media/cam_sync.h"
 
@@ -55,8 +52,16 @@ public:
   void set_camera_exposure(float grey_frac);
 
   void set_exposure_rect();
-  void sensor_set_parameters();
   void run();
+
+  void init() {
+    fl_pix = cc.focal_len / sensor->pixel_size_mm;
+    set_exposure_rect();
+
+    dc_gain_weight = sensor->dc_gain_min_weight;
+    gain_idx = sensor->analog_gain_rec_idx;
+    cur_ev[0] = cur_ev[1] = cur_ev[2] = (1 + dc_gain_weight * (sensor->dc_gain_factor-1) / sensor->dc_gain_max_weight) * sensor->sensor_analog_gains[gain_idx] * exposure_time;
+  };
 
   // TODO: this should move to SpectraCamera
   void handle_camera_event(void *evdat);
@@ -122,8 +127,6 @@ void CameraState::handle_camera_event(void *evdat) {
   }
 }
 
-
-
 void CameraState::set_exposure_rect() {
   // set areas for each camera, shouldn't be changed
   std::vector<std::pair<Rect, float>> ae_targets = {
@@ -151,12 +154,6 @@ void CameraState::set_exposure_rect() {
     std::min((int)(fl_pix / fl_ref * xywh_ref.w), buf.out_img_width / 2 + (int)(fl_pix / fl_ref * xywh_ref.w / 2)),
     std::min((int)(fl_pix / fl_ref * xywh_ref.h), buf.out_img_height / 2 + (int)(fl_pix / fl_ref * (h_ref / 2 - xywh_ref.y)))
   };
-}
-
-void CameraState::sensor_set_parameters() {
-  dc_gain_weight = sensor->dc_gain_min_weight;
-  gain_idx = sensor->analog_gain_rec_idx;
-  cur_ev[0] = cur_ev[1] = cur_ev[2] = (1 + dc_gain_weight * (sensor->dc_gain_factor-1) / sensor->dc_gain_max_weight) * sensor->sensor_analog_gains[gain_idx] * exposure_time;
 }
 
 void CameraState::update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain) {
@@ -318,6 +315,13 @@ void CameraState::run() {
 }
 
 void camerad_thread() {
+  /*
+    TODO: future cleanups
+    - centralize enabled handling
+    - open/init/etc mess
+    - no ISP stuff in this file
+  */
+
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
   const cl_context_properties props[] = {CL_CONTEXT_PRIORITY_HINT_QCOM, CL_PRIORITY_HINT_HIGH_QCOM, 0};
   cl_context ctx = CL_CHECK_ERR(clCreateContext(props, 1, &device_id, NULL, NULL, &err));
@@ -334,10 +338,9 @@ void camerad_thread() {
    new CameraState(&m, WIDE_ROAD_CAMERA_CONFIG),
    new CameraState(&m, DRIVER_CAMERA_CONFIG),
   };
-
-  // open + init
   for (auto cam : cams) cam->camera_open();
   for (auto cam : cams) cam->camera_init(&v, device_id, ctx);
+  for (auto cam : cams) cam->init();
   v.start_listener();
 
   LOG("-- Starting threads");
