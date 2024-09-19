@@ -8,7 +8,6 @@
 #include "common/queue.h"
 #include "common/util.h"
 
-#include "system/camerad/sensors/sensor.h"
 
 const int YUV_BUFFER_COUNT = 20;
 
