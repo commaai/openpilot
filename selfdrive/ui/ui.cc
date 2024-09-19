@@ -233,6 +233,7 @@ void Device::resetInteractiveTimeout(int timeout) {
   if (timeout == -1) {
     timeout = (ignition_on ? 10 : 30);
   }
+
   interactive_timeout = timeout * UI_FREQ;
 }
 
