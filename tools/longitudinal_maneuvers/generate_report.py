@@ -124,7 +124,7 @@ def report(platform, route, _description, CP, maneuvers):
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Generate longitudinal maneuver report from route')
   parser.add_argument('route', type=str, help='Route name (e.g. 00000000--5f742174be)')
-  parser.add_argument('description', type=str, default=None)
+  parser.add_argument('description', type=str, nargs='?')
 
   args = parser.parse_args()
 
