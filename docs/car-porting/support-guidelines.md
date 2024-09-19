@@ -124,13 +124,10 @@ at shop.comma.ai. They are all actively maintained, with full CI testing.
 * Probe the car's longitudinal control API limits
   * Identify speed envelope limits, any cutoff above zero handled correctly
   * Identify actuation limits, document even if openpilot cannot use the maximum
-* Longitudinal control speed envelope probed, limits set if applicable
-  * Any speed limits have hysteresis control
-  * Limits may differ between stock ACC and the car's API when using openpilot longitudinal
 * Don't exceed actuation limits in SAFETY.md
 * Longitudinal API fault signals must be populated in CarState, must alert on loss of control
 * Main switch on/off states explicitly identified (may require special state tracking)
-* All CC button signals explicitly identified, driver experience matches stock
+* All CC button signals explicitly identified, driver control experience matches stock
 * Test for good conformance to the openpilot longitudinal plan
 
 ### Longitudinal Testing
