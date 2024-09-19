@@ -174,6 +174,8 @@ Applies to both stock and openpilot longitudinal control.
     * Full cruise button logic for openpilot longitudinal cars
 * Match openpilot logic for detecting vehicle standstill
 * All CI tests passing, including MISRA
+* No instances of Controls Mismatch
+* No CAN messages dropped during normal driving (a few discards are expected at startup/shutdown)
 
 ## Optional
 
