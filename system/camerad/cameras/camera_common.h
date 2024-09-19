@@ -19,13 +19,6 @@ typedef struct FrameMetadata {
   uint64_t timestamp_sof;
   uint64_t timestamp_eof;
 
-  // Exposure
-  unsigned int integ_lines;
-  bool high_conversion_gain;
-  float gain;
-  float measured_grey_fraction;
-  float target_grey_fraction;
-
   float processing_time;
 } FrameMetadata;
 
@@ -53,7 +46,7 @@ public:
   CameraBuf() = default;
   ~CameraBuf();
   void init(cl_device_id device_id, cl_context context, SpectraCamera *cam, VisionIpcServer * v, int frame_cnt, VisionStreamType type);
-  bool acquire();
+  bool acquire(int expo_time);
   void queue(size_t buf_idx);
 };
 

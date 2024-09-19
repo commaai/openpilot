@@ -36,6 +36,7 @@ public:
   ~SpectraCamera();
 
   void camera_open();
+  void handle_camera_event(const cam_req_mgr_message *event_data);
   void camera_close();
   void camera_map_bufs();
   void camera_init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);

@@ -102,7 +102,7 @@ CameraBuf::~CameraBuf() {
   if (imgproc) delete imgproc;
 }
 
-bool CameraBuf::acquire() {
+bool CameraBuf::acquire(int expo_time) {
   if (!safe_queue.try_pop(cur_buf_idx, 50)) return false;
 
   if (camera_bufs_metadata[cur_buf_idx].frame_id == -1) {
@@ -115,7 +115,7 @@ bool CameraBuf::acquire() {
   cur_camera_buf = &camera_bufs[cur_buf_idx];
 
   double start_time = millis_since_boot();
-  imgproc->runKernel(camera_bufs[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, out_img_width, out_img_height, cur_frame_data.integ_lines);
+  imgproc->runKernel(camera_bufs[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, out_img_width, out_img_height, expo_time);
   cur_frame_data.processing_time = (millis_since_boot() - start_time) / 1000.0;
 
   VisionIpcBufExtra extra = {

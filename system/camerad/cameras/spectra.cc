@@ -693,3 +693,52 @@ void SpectraCamera::camera_close() {
   ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_DESTROY_SESSION, &session_info, sizeof(session_info));
   LOGD("destroyed session %d: %d", cc.camera_num, ret);
 }
+
+void SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
+  if (!enabled) return;
+
+  uint64_t timestamp = event_data->u.frame_msg.timestamp;
+  uint64_t main_id = event_data->u.frame_msg.frame_id;
+  uint64_t real_id = event_data->u.frame_msg.request_id;
+
+  if (real_id != 0) { // next ready
+    if (real_id == 1) {idx_offset = main_id;}
+    int buf_idx = (real_id - 1) % FRAME_BUF_COUNT;
+
+    // check for skipped frames
+    if (main_id > frame_id_last + 1 && !skipped) {
+      LOGE("camera %d realign", cc.camera_num);
+      clear_req_queue();
+      enqueue_req_multi(real_id + 1, FRAME_BUF_COUNT - 1, 0);
+      skipped = true;
+    } else if (main_id == frame_id_last + 1) {
+      skipped = false;
+    }
+
+    // check for dropped requests
+    if (real_id > request_id_last + 1) {
+      LOGE("camera %d dropped requests %ld %ld", cc.camera_num, real_id, request_id_last);
+      enqueue_req_multi(request_id_last + 1 + FRAME_BUF_COUNT, real_id - (request_id_last + 1), 0);
+    }
+
+    // metas
+    frame_id_last = main_id;
+    request_id_last = real_id;
+
+    auto &meta_data = buf.camera_bufs_metadata[buf_idx];
+    meta_data.frame_id = main_id - idx_offset;
+    meta_data.request_id = real_id;
+    meta_data.timestamp_sof = timestamp;
+
+    // dispatch
+    enqueue_req_multi(real_id + FRAME_BUF_COUNT, 1, 1);
+  } else { // not ready
+    if (main_id > frame_id_last + 10) {
+      LOGE("camera %d reset after half second of no response", cc.camera_num);
+      clear_req_queue();
+      enqueue_req_multi(request_id_last + 1, FRAME_BUF_COUNT, 0);
+      frame_id_last = main_id;
+      skipped = true;
+    }
+  }
+}

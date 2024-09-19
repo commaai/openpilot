@@ -34,8 +34,6 @@ const bool env_ctrl_exp_from_params = getenv("CTRL_EXP_FROM_PARAMS") != nullptr;
 // high level camera state
 class CameraState : public SpectraCamera {
 public:
-  std::mutex exp_lock;
-
   int exposure_time = 5;
   bool dc_gain_enabled = false;
   int dc_gain_weight = 0;
@@ -72,69 +70,8 @@ public:
     gain_idx = sensor->analog_gain_rec_idx;
     cur_ev[0] = cur_ev[1] = cur_ev[2] = get_gain_factor() * sensor->sensor_analog_gains[gain_idx] * exposure_time;
   };
-
-  // TODO: this should move to SpectraCamera
-  void handle_camera_event(void *evdat);
 };
 
-void CameraState::handle_camera_event(void *evdat) {
-  if (!enabled) return;
-  struct cam_req_mgr_message *event_data = (struct cam_req_mgr_message *)evdat;
-  assert(event_data->session_hdl == session_handle);
-  assert(event_data->u.frame_msg.link_hdl == link_handle);
-
-  uint64_t timestamp = event_data->u.frame_msg.timestamp;
-  uint64_t main_id = event_data->u.frame_msg.frame_id;
-  uint64_t real_id = event_data->u.frame_msg.request_id;
-
-  if (real_id != 0) { // next ready
-    if (real_id == 1) {idx_offset = main_id;}
-    int buf_idx = (real_id - 1) % FRAME_BUF_COUNT;
-
-    // check for skipped frames
-    if (main_id > frame_id_last + 1 && !skipped) {
-      LOGE("camera %d realign", cc.camera_num);
-      clear_req_queue();
-      enqueue_req_multi(real_id + 1, FRAME_BUF_COUNT - 1, 0);
-      skipped = true;
-    } else if (main_id == frame_id_last + 1) {
-      skipped = false;
-    }
-
-    // check for dropped requests
-    if (real_id > request_id_last + 1) {
-      LOGE("camera %d dropped requests %ld %ld", cc.camera_num, real_id, request_id_last);
-      enqueue_req_multi(request_id_last + 1 + FRAME_BUF_COUNT, real_id - (request_id_last + 1), 0);
-    }
-
-    // metas
-    frame_id_last = main_id;
-    request_id_last = real_id;
-
-    auto &meta_data = buf.camera_bufs_metadata[buf_idx];
-    meta_data.frame_id = main_id - idx_offset;
-    meta_data.request_id = real_id;
-    meta_data.timestamp_sof = timestamp;
-    exp_lock.lock();
-    meta_data.gain = analog_gain_frac * get_gain_factor();
-    meta_data.high_conversion_gain = dc_gain_enabled;
-    meta_data.integ_lines = exposure_time;
-    meta_data.measured_grey_fraction = measured_grey_fraction;
-    meta_data.target_grey_fraction = target_grey_fraction;
-    exp_lock.unlock();
-
-    // dispatch
-    enqueue_req_multi(real_id + FRAME_BUF_COUNT, 1, 1);
-  } else { // not ready
-    if (main_id > frame_id_last + 10) {
-      LOGE("camera %d reset after half second of no response", cc.camera_num);
-      clear_req_queue();
-      enqueue_req_multi(request_id_last + 1, FRAME_BUF_COUNT, 0);
-      frame_id_last = main_id;
-      skipped = true;
-    }
-  }
-}
 
 void CameraState::set_exposure_rect() {
   // set areas for each camera, shouldn't be changed
@@ -250,8 +187,6 @@ void CameraState::set_camera_exposure(float grey_frac) {
     }
   }
 
-  exp_lock.lock();
-
   measured_grey_fraction = grey_frac;
   target_grey_fraction = target_grey;
 
@@ -262,8 +197,6 @@ void CameraState::set_camera_exposure(float grey_frac) {
 
   float gain = analog_gain_frac * get_gain_factor();
   cur_ev[buf.cur_frame_data.frame_id % 3] = exposure_time * gain;
-
-  exp_lock.unlock();
 
   // Processing a frame takes right about 50ms, so we need to wait a few ms
   // so we don't send i2c commands around the frame start.
@@ -286,7 +219,7 @@ void CameraState::run() {
 
   for (uint32_t cnt = 0; !do_exit; ++cnt) {
     // Acquire the buffer; continue if acquisition fails
-    if (!buf.acquire()) continue;
+    if (!buf.acquire(exposure_time)) continue;
 
     MessageBuilder msg;
     auto framed = (msg.initEvent().*cc.init_camera_state)();
@@ -294,11 +227,11 @@ void CameraState::run() {
     framed.setRequestId(buf.cur_frame_data.request_id);
     framed.setTimestampEof(buf.cur_frame_data.timestamp_eof);
     framed.setTimestampSof(buf.cur_frame_data.timestamp_sof);
-    framed.setIntegLines(buf.cur_frame_data.integ_lines);
-    framed.setGain(buf.cur_frame_data.gain);
-    framed.setHighConversionGain(buf.cur_frame_data.high_conversion_gain);
-    framed.setMeasuredGreyFraction(buf.cur_frame_data.measured_grey_fraction);
-    framed.setTargetGreyFraction(buf.cur_frame_data.target_grey_fraction);
+    framed.setIntegLines(exposure_time);
+    framed.setGain(analog_gain_frac * get_gain_factor());
+    framed.setHighConversionGain(dc_gain_enabled);
+    framed.setMeasuredGreyFraction(measured_grey_fraction);
+    framed.setTargetGreyFraction(target_grey_fraction);
     framed.setProcessingTime(buf.cur_frame_data.processing_time);
 
     const float ev = cur_ev[buf.cur_frame_data.frame_id % 3];
@@ -328,7 +261,6 @@ void camerad_thread() {
     TODO: future cleanups
     - centralize enabled handling
     - open/init/etc mess
-    - no ISP stuff in this file
   */
 
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
