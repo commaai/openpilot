@@ -396,7 +396,8 @@ int SpectraCamera::sensors_init() {
   return ret;
 }
 
-void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset) {
+void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int buf0_idx) {
+  printf("cam cmd buf %lu %lx\n", sizeof(struct cam_cmd_buf_desc), sizeof(struct cam_cmd_buf_desc));
   int size = sizeof(struct cam_packet) + sizeof(struct cam_cmd_buf_desc)*2;
   if (io_mem_handle != 0) {
     size += sizeof(struct cam_buf_io_cfg);
@@ -424,12 +425,12 @@ void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int
   struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
   {
     // TODO: support MMU
-    buf_desc[0].size = 65624;
+    buf_desc[0].size = buf0_size;
     buf_desc[0].length = 0;
     buf_desc[0].type = CAM_CMD_BUF_DIRECT;
     buf_desc[0].meta_data = 3;
-    buf_desc[0].mem_handle = buf0_mem_handle;
-    buf_desc[0].offset = buf0_offset;
+    buf_desc[0].mem_handle = buf0_handle;
+    buf_desc[0].offset = ALIGNED_SIZE(buf0_size, buf0_alignment)*buf0_idx;
   }
 
   // second command
@@ -592,7 +593,7 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
   sensors_poke(request_id);
 
   // submit request to the ife
-  config_isp(buf_handle[i], sync_objs[i], request_id, buf0_handle, 65632*(i+1));
+  config_isp(buf_handle[i], sync_objs[i], request_id, i);
 }
 
 void SpectraCamera::camera_map_bufs() {
@@ -708,9 +709,11 @@ void SpectraCamera::configISP() {
   LOGD("acquire isp dev");
 
   // config ISP
-  alloc_w_mmu_hdl(m->video0_fd, 984480, (uint32_t*)&buf0_handle, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS |
-                  CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, m->device_iommu, m->cdm_iommu);
-  config_isp(0, 0, 1, buf0_handle, 0);
+  // TODO: unclear where this 15 comes from
+  alloc_w_mmu_hdl(m->video0_fd, 15*ALIGNED_SIZE(buf0_size, buf0_alignment), (uint32_t*)&buf0_handle, buf0_alignment,
+                  CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
+                  m->device_iommu, m->cdm_iommu);
+  config_isp(0, 0, 1, 0);
 }
 
 void SpectraCamera::configCSIPHY() {
