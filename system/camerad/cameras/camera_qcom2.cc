@@ -55,19 +55,22 @@ public:
   void set_exposure_rect();
   void run();
 
+  float get_gain_factor() const {
+    return (1 + dc_gain_weight * (sensor->dc_gain_factor-1) / sensor->dc_gain_max_weight);
+  }
+
   void init() {
     fl_pix = cc.focal_len / sensor->pixel_size_mm;
     set_exposure_rect();
 
     dc_gain_weight = sensor->dc_gain_min_weight;
     gain_idx = sensor->analog_gain_rec_idx;
-    cur_ev[0] = cur_ev[1] = cur_ev[2] = (1 + dc_gain_weight * (sensor->dc_gain_factor-1) / sensor->dc_gain_max_weight) * sensor->sensor_analog_gains[gain_idx] * exposure_time;
+    cur_ev[0] = cur_ev[1] = cur_ev[2] = get_gain_factor() * sensor->sensor_analog_gains[gain_idx] * exposure_time;
   };
 
   // TODO: this should move to SpectraCamera
   void handle_camera_event(void *evdat);
 };
-
 
 void CameraState::handle_camera_event(void *evdat) {
   if (!enabled) return;
@@ -108,7 +111,7 @@ void CameraState::handle_camera_event(void *evdat) {
     meta_data.request_id = real_id;
     meta_data.timestamp_sof = timestamp;
     exp_lock.lock();
-    meta_data.gain = analog_gain_frac * (1 + dc_gain_weight * (sensor->dc_gain_factor-1) / sensor->dc_gain_max_weight);
+    meta_data.gain = analog_gain_frac * get_gain_factor();
     meta_data.high_conversion_gain = dc_gain_enabled;
     meta_data.integ_lines = exposure_time;
     meta_data.measured_grey_fraction = measured_grey_fraction;
@@ -228,7 +231,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
     // Simple brute force optimizer to choose sensor parameters
     // to reach desired EV
     for (int g = std::max((int)sensor->analog_gain_min_idx, gain_idx - 1); g <= std::min((int)sensor->analog_gain_max_idx, gain_idx + 1); g++) {
-      float gain = sensor->sensor_analog_gains[g] * (1 + dc_gain_weight * (sensor->dc_gain_factor-1) / sensor->dc_gain_max_weight);
+      float gain = sensor->sensor_analog_gains[g] * get_gain_factor();
 
       // Compute optimal time for given gain
       int t = std::clamp(int(std::round(desired_ev / gain)), sensor->exposure_time_min, sensor->exposure_time_max);
@@ -252,7 +255,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
   exposure_time = new_exp_t;
   dc_gain_enabled = enable_dc_gain;
 
-  float gain = analog_gain_frac * (1 + dc_gain_weight * (sensor->dc_gain_factor-1) / sensor->dc_gain_max_weight);
+  float gain = analog_gain_frac * get_gain_factor();
   cur_ev[buf.cur_frame_data.frame_id % 3] = exposure_time * gain;
 
   exp_lock.unlock();
