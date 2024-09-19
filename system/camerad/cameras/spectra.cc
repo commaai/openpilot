@@ -397,7 +397,7 @@ int SpectraCamera::sensors_init() {
 }
 
 void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int buf0_idx) {
-  printf("cam cmd buf %lu %lx\n", sizeof(struct cam_cmd_buf_desc), sizeof(struct cam_cmd_buf_desc));
+  printf("cam cmd buf %lu %lu\n", sizeof(struct cam_cmd_buf_desc), sizeof(struct cam_buf_io_cfg));
   int size = sizeof(struct cam_packet) + sizeof(struct cam_cmd_buf_desc)*2;
   if (io_mem_handle != 0) {
     size += sizeof(struct cam_buf_io_cfg);
@@ -405,12 +405,6 @@ void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int
 
   uint32_t cam_packet_handle = 0;
   auto pkt = mm.alloc<struct cam_packet>(size, &cam_packet_handle);
-  pkt->num_cmd_buf = 2;
-  pkt->kmd_cmd_buf_index = 0;
-  pkt->kmd_cmd_buf_offset = 0;
-
-  //pkt->patch_offset = 0x1030;
-  pkt->num_patches = 0;
 
   if (io_mem_handle != 0) {
     pkt->header.op_code = 0xf000001;
@@ -421,9 +415,24 @@ void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int
   }
   pkt->header.size = size;
 
-  // first command
-  struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
+  // *** kmd cmd buf ***
   {
+    pkt->kmd_cmd_buf_index = 0;
+    pkt->kmd_cmd_buf_offset = 0;
+  }
+
+  // *** patches ***
+  {
+    pkt->num_patches = 0;
+    pkt->patch_offset = 0x0;
+  }
+
+  // *** cmd buf ***
+  {
+    struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
+    pkt->num_cmd_buf = 2;
+
+    // first command
     // TODO: support MMU
     buf_desc[0].size = buf0_size;
     buf_desc[0].length = 0;
@@ -431,10 +440,8 @@ void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int
     buf_desc[0].meta_data = 3;
     buf_desc[0].mem_handle = buf0_handle;
     buf_desc[0].offset = ALIGNED_SIZE(buf0_size, buf0_alignment)*buf0_idx;
-  }
 
-  // second command
-  {
+    // second command
     // parsed by cam_isp_packet_generic_blob_handler
     struct isp_packet {
       uint32_t type_0;
@@ -503,8 +510,9 @@ void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int
     memcpy(buf2.get(), &tmp, sizeof(tmp));
   }
 
-  // configure output frame
+  // *** io config ***
   if (io_mem_handle != 0) {
+    // configure output frame
     pkt->num_io_configs = 1;
     pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf;
 
