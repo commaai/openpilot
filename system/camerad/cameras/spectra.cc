@@ -396,7 +396,6 @@ int SpectraCamera::sensors_init() {
 }
 
 void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int buf0_idx) {
-  printf("cam cmd buf %lu %lu\n", sizeof(struct cam_cmd_buf_desc), sizeof(struct cam_buf_io_cfg));
   int size = sizeof(struct cam_packet) + sizeof(struct cam_cmd_buf_desc)*2;
   if (io_mem_handle != 0) {
     size += sizeof(struct cam_buf_io_cfg);
