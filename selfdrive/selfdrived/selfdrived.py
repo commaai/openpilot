@@ -17,6 +17,7 @@ from openpilot.common.gps import get_gps_location_service
 from openpilot.selfdrive.selfdrived.events import Events, ET
 from openpilot.selfdrive.selfdrived.state import StateMachine
 from openpilot.selfdrive.selfdrived.alertmanager import AlertManager, set_offroad_alert
+from openpilot.selfdrive.controls.lib.latcontrol import MIN_LATERAL_CONTROL_SPEED
 
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.version import get_build_metadata
