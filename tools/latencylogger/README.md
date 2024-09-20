@@ -51,7 +51,7 @@ Frame ID: 1202
     Execution finished                                   63.002552
     modelV2 published                                    63.148747
     modelV2.modelExecutionTime                           23.62649142742157
-    modelV2.gpuExecutionTime                             0.0
+    modelV2.gpuExecutionTimeDEPRECATED                   0.0
   plannerd
     longitudinalPlan published                           69.715999
     longitudinalPlan.solverExecutionTime                 0.5619999719783664
