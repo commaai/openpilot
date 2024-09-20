@@ -419,12 +419,6 @@ void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int
     pkt->kmd_cmd_buf_offset = 0;
   }
 
-  // *** patches ***
-  {
-    pkt->num_patches = 0;
-    pkt->patch_offset = 0x0;
-  }
-
   // *** cmd buf ***
   {
     struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
@@ -543,6 +537,12 @@ void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int
     io_cfg[0].direction = CAM_BUF_OUTPUT;
     io_cfg[0].subsample_pattern = 0x1;
     io_cfg[0].framedrop_pattern = 0x1;
+  }
+
+  // *** patches ***
+  {
+    pkt->num_patches = 0;
+    pkt->patch_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf + sizeof(struct cam_buf_io_cfg)*pkt->num_io_configs;
   }
 
   int ret = device_config(m->isp_fd, session_handle, isp_dev_handle, cam_packet_handle);
