@@ -63,11 +63,10 @@ public:
   SpectraCamera(SpectraMaster *master, const CameraConfig &config);
   ~SpectraCamera();
 
-  void camera_open();
+  void camera_open(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
   void handle_camera_event(const cam_req_mgr_message *event_data);
   void camera_close();
   void camera_map_bufs();
-  void camera_init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
   void config_isp(int io_mem_handle, int fence, int request_id, int buf0_idx);
 
   int clear_req_queue();

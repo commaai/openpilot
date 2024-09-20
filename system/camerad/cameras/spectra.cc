@@ -218,7 +218,7 @@ int SpectraCamera::clear_req_queue() {
   return ret;
 }
 
-void SpectraCamera::camera_open() {
+void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_context ctx) {
   if (!enabled) return;
 
   if (!openSensor()) {
@@ -229,10 +229,6 @@ void SpectraCamera::camera_open() {
   configISP();
   configCSIPHY();
   linkDevices();
-}
-
-void SpectraCamera::camera_init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx) {
-  if (!enabled) return;
 
   LOGD("camera init %d", cc.camera_num);
   buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, cc.stream_type);
