@@ -178,7 +178,6 @@ class LongitudinalPlanner:
     a_target, should_stop = get_accel_from_plan(self.CP, longitudinalPlan.speeds, longitudinalPlan.accels)
     longitudinalPlan.aTarget = a_target
     longitudinalPlan.shouldStop = should_stop
-
     longitudinalPlan.allowBrake = True
     longitudinalPlan.allowThrottle = True
 
