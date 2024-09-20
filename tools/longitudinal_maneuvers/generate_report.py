@@ -3,6 +3,7 @@ import argparse
 import base64
 import io
 import os
+import math
 import pprint
 from collections import defaultdict
 from pathlib import Path
@@ -77,7 +78,7 @@ def report(platform, route, _description, CP, maneuvers):
 
         plt.rcParams['font.size'] = 40
         fig = plt.figure(figsize=(30, 26))
-        ax = fig.subplots(4, 1, sharex=True, gridspec_kw={'height_ratios': [5, 3, 1, 1]})
+        ax = fig.subplots(5, 1, sharex=True, gridspec_kw={'height_ratios': [5, 3, 2, 1, 1]})
 
         ax[0].grid(linewidth=4)
         ax[0].plot(t_carControl, [m.actuators.accel for m in carControl], label='carControl.actuators.accel', linewidth=6)
@@ -98,10 +99,15 @@ def report(platform, route, _description, CP, maneuvers):
         ax[1].set_ylabel('Velocity (m/s)')
         ax[1].legend()
 
-        ax[2].plot(t_carControl, longActive, label='longActive', linewidth=6)
-        ax[3].plot(t_carState, [m.gasPressed for m in carState], label='gasPressed', linewidth=6)
-        ax[3].plot(t_carState, [m.brakePressed for m in carState], label='brakePressed', linewidth=6)
-        for i in (2, 3):
+        ax[2].grid(linewidth=4)
+        ax[2].plot(t_carControl, [math.degrees(m.orientationNED[1]) for m in carControl], 'r', label='carControl.orientationNED[1]', linewidth=6)
+        ax[2].set_ylabel('Pitch (deg)')
+        ax[2].legend()
+
+        ax[3].plot(t_carControl, longActive, label='longActive', linewidth=6)
+        ax[4].plot(t_carState, [m.gasPressed for m in carState], label='gasPressed', linewidth=6)
+        ax[4].plot(t_carState, [m.brakePressed for m in carState], label='brakePressed', linewidth=6)
+        for i in (3, 4):
           ax[i].set_yticks([0, 1], minor=False)
           ax[i].set_ylim(-1, 2)
           ax[i].legend()
