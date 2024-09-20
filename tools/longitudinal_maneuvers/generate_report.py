@@ -75,6 +75,9 @@ def report(platform, route, _description, CP, maneuvers):
           f.write(', <strong>not crossed</strong>')
         f.write('</h3>')
 
+        pitches = [math.degrees(m.orientationNED[1]) for m in carControl]
+        f.write(f'<h3 style="font-weight: normal">Average pitch: <strong>{sum(pitches) / len(pitches):0.2f} degrees</strong></h3>')
+
         plt.rcParams['font.size'] = 40
         fig = plt.figure(figsize=(30, 26))
         ax = fig.subplots(4, 1, sharex=True, gridspec_kw={'height_ratios': [5, 3, 1, 1]})
