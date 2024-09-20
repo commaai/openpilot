@@ -102,13 +102,13 @@ def fill_driver_state(msg, ds_result: DriverStateResult):
   msg.readyProb = [sigmoid(x) for x in ds_result.ready_prob]
   msg.notReadyProb = [sigmoid(x) for x in ds_result.not_ready_prob]
 
-def get_driverstate_packet(model_output: np.ndarray, frame_id: int, location_ts: int, execution_time: float, dsp_execution_time: float):
+def get_driverstate_packet(model_output: np.ndarray, frame_id: int, location_ts: int, execution_time: float, gpu_execution_time: float):
   model_result = ctypes.cast(model_output.ctypes.data, ctypes.POINTER(DMonitoringModelResult)).contents
   msg = messaging.new_message('driverStateV2', valid=True)
   ds = msg.driverStateV2
   ds.frameId = frame_id
   ds.modelExecutionTime = execution_time
-  ds.dspExecutionTime = dsp_execution_time
+  ds.gpuExecutionTime = gpu_execution_time
   ds.poorVisionProb = sigmoid(model_result.poor_vision_prob)
   ds.wheelOnRightProb = sigmoid(model_result.wheel_on_right_prob)
   ds.rawPredictions = model_output.tobytes() if SEND_RAW_PRED else b''
@@ -150,10 +150,10 @@ def main():
       calib[:] = np.array(sm["liveCalibration"].rpyCalib)
 
     t1 = time.perf_counter()
-    model_output, dsp_execution_time = model.run(buf, calib)
+    model_output, gpu_execution_time = model.run(buf, calib)
     t2 = time.perf_counter()
 
-    pm.send("driverStateV2", get_driverstate_packet(model_output, vipc_client.frame_id, vipc_client.timestamp_sof, t2 - t1, dsp_execution_time))
+    pm.send("driverStateV2", get_driverstate_packet(model_output, vipc_client.frame_id, vipc_client.timestamp_sof, t2 - t1, gpu_execution_time))
     # print("dmonitoring process: %.2fms, from last %.2fms\n" % (t2 - t1, t1 - last))
     # last = t1
 
