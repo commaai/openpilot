@@ -311,7 +311,7 @@ class SelfdriveD:
       actual_lateral_accel = controlstate.curvature * (clipped_speed**2)
       desired_lateral_accel = controlstate.desiredCurvature * (clipped_speed**2)
       undershooting = abs(desired_lateral_accel) / abs(1e-3 + actual_lateral_accel) > 1.2
-      turning = abs(actual_lateral_accel) > 1.0
+      turning = abs(desired_lateral_accel) > 1.0
       good_speed = CS.vEgo > 5
       if undershooting and turning and good_speed and lac_log.saturated:
         self.events.add(EventName.steerSaturated)
