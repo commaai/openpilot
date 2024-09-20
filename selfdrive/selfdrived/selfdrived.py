@@ -313,7 +313,7 @@ class SelfdriveD:
       undershooting = abs(desired_lateral_accel) / abs(1e-3 + actual_lateral_accel) > 1.2
       turning = abs(desired_lateral_accel) > 1.0
       good_speed = CS.vEgo > 5
-      if undershooting and turning and good_speed and lac_log.saturated:
+      if undershooting and turning and good_speed and lac.saturated:
         self.events.add(EventName.steerSaturated)
 
     # Check for FCW
