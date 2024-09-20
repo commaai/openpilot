@@ -68,7 +68,7 @@ public:
   void camera_close();
   void camera_map_bufs();
   void camera_init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
-  void config_isp(int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset);
+  void config_isp(int io_mem_handle, int fence, int request_id, int buf0_idx);
 
   int clear_req_queue();
   void enqueue_buffer(int i, bool dp);
@@ -100,6 +100,9 @@ public:
   int32_t csiphy_dev_handle = -1;
 
   int32_t link_handle = -1;
+
+  const int buf0_size = 65624; // unclear what this is and how it's determined, for internal ISP use? it's just copied from an ioctl dump
+  const int buf0_alignment = 0x20;
 
   int buf0_handle = 0;
   int buf_handle[FRAME_BUF_COUNT] = {};
