@@ -406,7 +406,7 @@ class TestCarModelBase(unittest.TestCase):
         cs_msg["vEgoRaw"] = panda_vehicle_speed_last
         self.CI.CS.out = car.CarState.new_message(**cs_msg).as_reader()
 
-    # no long controls if gas_pressed_prev
+    # no longitudinal controls if gas_pressed_prev
     if self.safety.get_gas_pressed_prev():
       cc_msg["longActive"] = False
       cc_msg["enabled"] = False
