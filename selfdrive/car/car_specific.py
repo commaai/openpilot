@@ -158,6 +158,8 @@ class CarSpecificEvents:
       if self.low_speed_alert:
         events.add(EventName.belowSteerSpeed)
 
+    # TODO: Shouldn't be necessary. Refactor CarSpecificEvents with a simple default case, override only if necessary.
+    #       Default case should cover FCA Giorgio, Subaru, Mazda, maybe Ford. Further simplification possible.
     elif self.CP.carName == 'fca_giorgio':
       events = self.create_common_events(CS.out, CS_prev)
 
