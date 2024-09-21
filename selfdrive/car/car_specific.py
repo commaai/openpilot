@@ -34,6 +34,7 @@ class CarSpecificEvents:
 
     self.steering_unpressed = 0
     self.low_speed_alert = False
+    self.low_speed_pre_alert = False
     self.no_steer_warning = False
     self.silent_steer_warning = True
 
@@ -93,20 +94,25 @@ class CarSpecificEvents:
       if self.CP.minEnableSpeed > 0 and CS.out.vEgo < 0.001:
         events.add(EventName.manualRestart)
 
-      # Similar policy to Hyundai
       # low speed steer alert hysteresis logic for cars with steer cut off above 6 m/s
-      if CS.out.vEgo < (self.CP.minSteerSpeed + 1.) and self.CP.minSteerSpeed > 6.:
+      # warn before the steer dropout. reset if disengaged.
+      if not CC_prev.enabled or CS.out.vEgo >= (self.CP.minSteerSpeed + 1.5):
+        self.low_speed_pre_alert = False
+      if CS.out.vEgo > (self.CP.minSteerSpeed + 3.):
+        self.low_speed_pre_alert = True
+
+      if CS.out.vEgo < self.CP.minSteerSpeed or (self.low_speed_pre_alert and CS.out.vEgo < (self.CP.minSteerSpeed + 1.)):
         self.low_speed_alert = True
-      if CS.out.vEgo > (self.CP.minSteerSpeed + 2.5) or CS.out.standstill:
+      if (CS.out.vEgo >= self.CP.minSteerSpeed and not self.low_speed_pre_alert) or CS.out.standstill:
         self.low_speed_alert = False
 
-      # For cars that can forcibly disengage steering without setting a fault
+      # For cars that can forcibly disengage steering without setting an EPS fault (i.e. Odyssey Bosch)
       if CS.out.vEgo > self.CP.minSteerSpeed and CC_prev.enabled and not CS.steer_on: # type: ignore[attr-defined]
         CS.steer_off_cnt += 1 # type: ignore[attr-defined]
       else:
         CS.steer_off_cnt = 0 # type: ignore[attr-defined]
 
-      if self.low_speed_alert:
+      if self.low_speed_alert and self.CP.minSteerSpeed > 6.:
         events.add(EventName.belowSteerSpeed)
 
     elif self.CP.carName == 'toyota':
