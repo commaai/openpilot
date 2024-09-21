@@ -26,6 +26,7 @@ from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.route import SegmentName
 from openpilot.selfdrive.test.fuzzy_generation import FuzzyGenerator
+from openpilot.selfdrive.car.helpers import convert_carControl
 
 from panda.tests.libpanda import libpanda_py
 from panda.tests.safety.common import VEHICLE_SPEED_FACTOR
@@ -181,6 +182,8 @@ class TestCarModelBase(unittest.TestCase):
     set_status = self.safety.set_safety_hooks(cfg.safetyModel.raw, cfg.safetyParam)
     self.assertEqual(0, set_status, f"failed to set safetyModel {cfg}")
     self.safety.init_tests()
+
+    self.tx_fuzzy_ts_nanos = 0
 
   def test_car_params(self):
     if self.CP.dashcamOnly:
@@ -380,17 +383,14 @@ class TestCarModelBase(unittest.TestCase):
 
     cc_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
 
-    def set_controls_allowed(status):
-      self.safety.set_controls_allowed(status)
-      self.safety.set_cruise_engaged_prev(status)
-
     # check for controls_allowed and set True if not already in these cases:
     # - cancel button messages before controls_allowed
     # - actuator commands before controls_allowed
     # - resume button message before controls_allowed
     controls_state = any([cc_msg["enabled"], cc_msg["latActive"], cc_msg["longActive"]])
     panda_controls_allowed = any([controls_state, cc_msg["cruiseControl"]["resume"], cc_msg["cruiseControl"]["cancel"]])
-    set_controls_allowed(panda_controls_allowed)
+    self.safety.set_controls_allowed(panda_controls_allowed)
+    self.safety.set_cruise_engaged_prev(panda_controls_allowed) # ford: violation if cancel engage without cruise_engaged_prev
 
     # relay_malfunction might be set during randomizing carState
     if self.safety.get_relay_malfunction():
@@ -420,14 +420,13 @@ class TestCarModelBase(unittest.TestCase):
     if self.CP.carName == "honda" and self.safety.get_honda_fwd_brake():
       self.safety.set_honda_fwd_brake(False)
 
-    CC = car.CarControl.new_message(**cc_msg).as_reader()
+    CC = convert_carControl(car.CarControl.new_message(**cc_msg).as_reader())
 
     self.safety.set_timer(int(self.tx_fuzzy_ts_nanos / 1e3))
-    new_actuators, sendcans = self.CI.apply(CC, self.tx_fuzzy_ts_nanos)
-    new_actuators = new_actuators.as_reader()
+    _, sendcans = self.CI.apply(CC, self.tx_fuzzy_ts_nanos)
     self.tx_fuzzy_ts_nanos += DT_CTRL * 1e9
 
-    for addr, _, dat, bus in sendcans:
+    for addr, dat, bus in sendcans:
       to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
       self.assertTrue(self.safety.safety_tx_hook(to_send), (addr, dat, bus))
 
