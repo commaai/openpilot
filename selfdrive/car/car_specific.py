@@ -94,6 +94,7 @@ class CarSpecificEvents:
       if self.CP.minEnableSpeed > 0 and CS.out.vEgo < 0.001:
         events.add(EventName.manualRestart)
 
+      # way too complicated
       # low speed steer alert hysteresis logic for cars with steer cut off above 6 m/s
       # warn before the steer dropout. reset if disengaged.
       if not CC_prev.enabled or CS.out.vEgo >= (self.CP.minSteerSpeed + 1.5):
