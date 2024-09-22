@@ -1,18 +1,18 @@
-#!/usr/bin/env python3
-
 from cereal import car
-from opendbc.car.honda.values import CAR
+
 from opendbc.car import gen_empty_fingerprint
-from openpilot.selfdrive.car.car_specific import CarSpecificEvents
 from opendbc.car.car_helpers import interfaces
+from opendbc.car.honda.values import CAR
+
 from openpilot.selfdrive.car.card import Car
+from openpilot.selfdrive.car.car_specific import CarSpecificEvents
 
 
 BelowSteerSpeed = car.OnroadEvent.EventName.belowSteerSpeed
 
 
 class TestHondaLowSpeedAlert:
-  def __init__(self):
+  def setUp(self):
     # test other models later
     test_car = CAR.HONDA_ODYSSEY_BOSCH
 
@@ -33,23 +33,32 @@ class TestHondaLowSpeedAlert:
 
     self.car_events = CarSpecificEvents(self.CP)
 
-  def test_low_speed_alert(self):
-#     not enabled > speed 36 > enabled > alert > speed 48 > no alert > speed 55 > speed 50 > pre\
+  def run(self):
+    self.CS.events = self.car_events.update(self.CS, self.CS_prev, self.CC, self.CC_prev)
 
-    # test 1
+  def set_speeds(self, cs, cs_prev):
+    self.CS.out.vEgo = cs
+    self.CP.minSteerSpeed = cs_prev
 
-    self.CS.out.vEgo, self.CS_prev.vEgo = self.CP.minSteerSpeed , self.CP.minSteerSpeed - 1
-
+  def test_no_alert(self):
+    self.setUp()
+    self.set_speeds(self.CP.minSteerSpeed , max(self.CP.minSteerSpeed - 1, 0))
+    self.run()
     if self.CS.out.vEgo < self.CP.minSteerSpeed:
       assert self.car_events.low_speed_alert
-    elif self.CS.out.vEgo >= self.CP.minSteerSpeed:
+    if self.CS.out.vEgo >= self.CP.minSteerSpeed:
       assert self.car_events.low_speed_pre_alert == self.car_events.low_speed_alert
-
-    self.CS.events = self.car_events.update(self.CS, self.CS_prev, self.CC, self.CC_prev)
     assert BelowSteerSpeed not in self.CS.events.names
 
+  def test_under_speed(self):
+    self.setUp()
+    for speed in range(100):
+      self.set_speeds(speed, self.CP.minSteerSpeed)
+      self.run()
+      assert self.car_events.low_speed_alert == bool(speed < self.CP.minSteerSpeed)
 
+  def test_transitions(self):
+    #     not enabled > speed 36 > enabled > alert > speed 48 > no alert > speed 55 > speed 50 > pre\
 
-if __name__ == "__main__":
-  _ = TestHondaLowSpeedAlert()
-  _.test_low_speed_alert()
+    # test 1
+    pass
