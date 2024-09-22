@@ -711,8 +711,7 @@ void SpectraCamera::configISP() {
   LOGD("acquire isp dev");
 
   // config ISP
-  // TODO: unclear where this 15 comes from
-  alloc_w_mmu_hdl(m->video0_fd, 15*ALIGNED_SIZE(buf0_size, buf0_alignment), (uint32_t*)&buf0_handle, buf0_alignment,
+  alloc_w_mmu_hdl(m->video0_fd, FRAME_BUF_COUNT*ALIGNED_SIZE(buf0_size, buf0_alignment), (uint32_t*)&buf0_handle, buf0_alignment,
                   CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
                   m->device_iommu, m->cdm_iommu);
   config_isp(0, 0, 1, 0);
