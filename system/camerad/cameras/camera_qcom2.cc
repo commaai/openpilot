@@ -268,15 +268,9 @@ void CameraState::run() {
   }
 }
 
-void camerad_thread() {
+void camerad_run(cl_device_id device_id, cl_context ctx) {
   // TODO: centralize enabled handling
-
-  cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-  const cl_context_properties props[] = {CL_CONTEXT_PRIORITY_HINT_QCOM, CL_PRIORITY_HINT_HIGH_QCOM, 0};
-  cl_context ctx = CL_CHECK_ERR(clCreateContext(props, 1, &device_id, NULL, NULL, &err));
-
   VisionIpcServer v("camerad", device_id, ctx);
-
   // *** initial ISP init ***
   SpectraMaster m;
   m.init();
@@ -332,4 +326,14 @@ void camerad_thread() {
       LOGE("VIDIOC_DQEVENT failed, errno=%d", errno);
     }
   }
+}
+
+void camerad_thread() {
+  cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
+  const cl_context_properties props[] = {CL_CONTEXT_PRIORITY_HINT_QCOM, CL_PRIORITY_HINT_HIGH_QCOM, 0};
+  cl_context ctx = CL_CHECK_ERR(clCreateContext(props, 1, &device_id, nullptr, nullptr, &err));
+
+  camerad_run(device_id, ctx);
+
+  clReleaseContext(ctx);
 }
