@@ -302,7 +302,7 @@ int SpectraCamera::sensors_init() {
   auto pkt = mm.alloc<struct cam_packet>(size, &cam_packet_handle);
   pkt->num_cmd_buf = 2;
   pkt->kmd_cmd_buf_index = -1;
-  pkt->header.op_code = 0x1000000 | CAM_SENSOR_PACKET_OPCODE_SENSOR_PROBE;
+  pkt->header.op_code = CSLDeviceTypeImageSensor | CAM_SENSOR_PACKET_OPCODE_SENSOR_PROBE;
   pkt->header.size = size;
   struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
 
@@ -391,7 +391,7 @@ int SpectraCamera::sensors_init() {
   return ret;
 }
 
-void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int buf0_idx) {
+void SpectraCamera::config_ife(int io_mem_handle, int fence, int request_id, int buf0_idx) {
   int size = sizeof(struct cam_packet) + sizeof(struct cam_cmd_buf_desc)*2;
   if (io_mem_handle != 0) {
     size += sizeof(struct cam_buf_io_cfg);
@@ -401,10 +401,10 @@ void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int
   auto pkt = mm.alloc<struct cam_packet>(size, &cam_packet_handle);
 
   if (io_mem_handle != 0) {
-    pkt->header.op_code = 0xf000001;
+    pkt->header.op_code =  CSLDeviceTypeIFE | OpcodesIFEUpdate;  // 0xf000001
     pkt->header.request_id = request_id;
   } else {
-    pkt->header.op_code = 0xf000000;
+    pkt->header.op_code = CSLDeviceTypeIFE | OpcodesIFEInitialConfig; // 0xf000000
     pkt->header.request_id = 1;
   }
   pkt->header.size = size;
@@ -595,7 +595,7 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
   sensors_poke(request_id);
 
   // submit request to the ife
-  config_isp(buf_handle[i], sync_objs[i], request_id, i);
+  config_ife(buf_handle[i], sync_objs[i], request_id, i);
 }
 
 void SpectraCamera::camera_map_bufs() {
@@ -714,7 +714,7 @@ void SpectraCamera::configISP() {
   alloc_w_mmu_hdl(m->video0_fd, FRAME_BUF_COUNT*ALIGNED_SIZE(buf0_size, buf0_alignment), (uint32_t*)&buf0_handle, buf0_alignment,
                   CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
                   m->device_iommu, m->cdm_iommu);
-  config_isp(0, 0, 1, 0);
+  config_ife(0, 0, 1, 0);
 }
 
 void SpectraCamera::configCSIPHY() {

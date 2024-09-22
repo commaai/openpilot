@@ -16,9 +16,16 @@
 
 const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 
-// For use with the Spectra 280 ISP in the SDM845
+// For use with the Titan 170 ISP in the SDM845
 // https://github.com/commaai/agnos-kernel-sdm845
 
+
+// CSLDeviceType/CSLPacketOpcodesIFE from camx
+// cam_packet_header.op_code = (device << 24) | (opcode);
+#define CSLDeviceTypeImageSensor (0x1 << 24)
+#define CSLDeviceTypeIFE         (0xF << 24)
+#define OpcodesIFEInitialConfig  0x0
+#define OpcodesIFEUpdate         0x1
 
 std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data, uint32_t num_resources=1);
 int device_config(int fd, int32_t session_handle, int32_t dev_handle, uint64_t packet_handle);
@@ -69,7 +76,7 @@ public:
   void handle_camera_event(const cam_req_mgr_message *event_data);
   void camera_close();
   void camera_map_bufs();
-  void config_isp(int io_mem_handle, int fence, int request_id, int buf0_idx);
+  void config_ife(int io_mem_handle, int fence, int request_id, int buf0_idx);
 
   int clear_req_queue();
   void enqueue_buffer(int i, bool dp);
