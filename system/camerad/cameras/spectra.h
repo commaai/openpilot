@@ -1,6 +1,8 @@
 #pragma once
 
+#include <functional>
 #include <memory>
+#include <optional>
 #include <utility>
 
 #include "media/cam_req_mgr.h"
