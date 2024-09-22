@@ -392,6 +392,10 @@ int SpectraCamera::sensors_init() {
 }
 
 void SpectraCamera::config_ife(int io_mem_handle, int fence, int request_id, int buf0_idx) {
+  /*
+    Handles initial + per-frame IFE config.
+    IFE = Image Front End
+  */
   int size = sizeof(struct cam_packet) + sizeof(struct cam_cmd_buf_desc)*2;
   if (io_mem_handle != 0) {
     size += sizeof(struct cam_buf_io_cfg);
@@ -710,7 +714,7 @@ void SpectraCamera::configISP() {
   isp_dev_handle = *isp_dev_handle_;
   LOGD("acquire isp dev");
 
-  // config ISP
+  // config IFE
   alloc_w_mmu_hdl(m->video0_fd, FRAME_BUF_COUNT*ALIGNED_SIZE(buf0_size, buf0_alignment), (uint32_t*)&buf0_handle, buf0_alignment,
                   CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
                   m->device_iommu, m->cdm_iommu);
