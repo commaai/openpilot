@@ -343,6 +343,12 @@ class TestCarModelBase(unittest.TestCase):
       prev_panda_cruise_engaged = self.safety.get_cruise_engaged_prev()
       prev_panda_acc_main_on = self.safety.get_acc_main_on()
 
+      # Make sure dat has initializing bit if steering sensor is ready
+      if self.CP.carFingerprint in TOYOTA_ANGLE_CONTROL_CAR and self.CI.CS.accurate_steer_angle_seen:
+        dat = bytearray(dat)
+        dat[0] |= 8
+        dat = bytes(dat)
+
       to_send = libpanda_py.make_CANPacket(address, bus, dat)
       self.safety.safety_rx_hook(to_send)
 
@@ -350,6 +356,10 @@ class TestCarModelBase(unittest.TestCase):
       can.can = [log.CanData(address=address, dat=dat, src=bus)]
 
       CS = self.CI.update(can_capnp_to_list((can.to_bytes(),)))
+
+      # panda doesn't register angle if steering sensor isn't yet initialized -> set steeringAngleDeg to 0
+      if self.CP.carFingerprint in TOYOTA_ANGLE_CONTROL_CAR and not self.CI.CS.accurate_steer_angle_seen:
+        self.CI.CS.out.steeringAngleDeg = 0
 
       if self.safety.get_gas_pressed_prev() != prev_panda_gas:
         self.assertEqual(CS.gasPressed, self.safety.get_gas_pressed_prev())
@@ -402,9 +412,7 @@ class TestCarModelBase(unittest.TestCase):
     if self.CP.carName == "nissan":
       panda_vehicle_speed_last = self.safety.get_vehicle_speed_last() / VEHICLE_SPEED_FACTOR
       if abs(self.CI.CS.out.vEgoRaw - panda_vehicle_speed_last) > 0.2:
-        cs_msg = self.CI.CS.out.to_dict()
-        cs_msg["vEgoRaw"] = panda_vehicle_speed_last
-        self.CI.CS.out = car.CarState.new_message(**cs_msg).as_reader()
+        self.CI.CS.out.vEgoRaw = panda_vehicle_speed_last
 
     # no longitudinal controls if gas_pressed_prev
     if self.safety.get_gas_pressed_prev():
