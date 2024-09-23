@@ -25,11 +25,6 @@ def joystickd_thread():
   while 1:
     sm.update(0)
 
-    joystick = sm['testJoystick']
-
-    if rk.frame % 20 == 0:
-      print('\n' + ', '.join(f'{index}: {round(v, 3)}' for index, v in enumerate(joystick.axes)))
-
     cc_msg = messaging.new_message('carControl')
     cc_msg.valid = True
     CC = cc_msg.carControl
@@ -39,14 +34,25 @@ def joystickd_thread():
 
     actuators = CC.actuators
 
+    # reset joystick if it hasn't been received in a while
+    should_reset_joystick = sm.recv_frame['testJoystick'] == 0 or (self.sm.frame - self.sm.recv_frame['testJoystick'])*DT_CTRL > 0.2
+
+    if not should_reset_joystick:
+      joystick_axes = sm['testJoystick'].axes
+    else:
+      joystick_axes = [0.0, 0.0]
+
+    if rk.frame % 20 == 0:
+      print(f'\n {sm.recv_frame['testJoystick']}: ' + ', '.join(f'{index}: {round(v, 3)}' for index, v in enumerate(joystick_axes)))
+
     if CC.longActive:
-      actuators.accel = 4.0 * clip(joystick.axes[0], -1, 1)
+      actuators.accel = 4.0 * clip(joystick_axes[0], -1, 1)
 
     if CC.latActive:
       max_curvature = MAX_LAT_ACCEL / max(sm['carState'].vEgo ** 2, 5)
       max_angle = math.degrees(VM.get_steer_from_curvature(max_curvature, sm['carState'].vEgo, sm['liveParameters'].roll))
 
-      actuators.steer = clip(joystick.axes[1], -1, 1)
+      actuators.steer = clip(joystick_axes[1], -1, 1)
       actuators.steeringAngleDeg, actuators.curvature = actuators.steer * max_angle, actuators.steer * -max_curvature
 
     pm.send('carControl', cc_msg)
