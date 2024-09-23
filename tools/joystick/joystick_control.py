@@ -106,14 +106,14 @@ def joystick_control_thread(joystick):
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Publishes events from your joystick to control your car.\n' +
-                                               'openpilot must be offroad before starting joystickd. This tool supports ' +
+                                               'openpilot must be offroad before starting joystick_control. This tool supports ' +
                                                'a PlayStation 5 DualSense controller on the comma 3X.',
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument('--keyboard', action='store_true', help='Use your keyboard instead of a joystick')
   args = parser.parse_args()
 
   if not Params().get_bool("IsOffroad") and "ZMQ" not in os.environ:
-    print("The car must be off before running joystickd.")
+    print("The car must be off before running joystick_control.")
     exit()
 
   print()
