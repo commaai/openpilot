@@ -3,6 +3,7 @@
 A car port enables openpilot support on a particular car. Each car model openpilot supports needs to be individually ported. All car ports live in `openpilot/selfdrive/car/car_specific.py` and `opendbc_repo/opendbc/car`.
 
 The complexity of a car port varies depending on many factors including:
+
 * existing openpilot support for similar cars
 * architecture and APIs available in the car
 
@@ -15,7 +16,7 @@ The complexity of a car port varies depending on many factors including:
 * `radar_interface.py`: Interface for parsing radar points from the car
 
 
-# Overiew
+# Overview
 
 [Jason Young](https://github.com/jyoung8607) gave a talk at COMMA_CON with an overview of the car porting process. The talk is available on YouTube:
 
