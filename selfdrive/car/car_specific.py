@@ -102,10 +102,9 @@ class CarSpecificEvents:
         self.low_speed_pre_alert = True
       if not CC_prev.enabled or CS.out.vEgo <= self.CP.minSteerSpeed:
         self.low_speed_pre_alert = False
-        self.low_speed_alert = True
 
-      if CS.out.vEgo <= self.CP.minSteerSpeed or \
-         (self.low_speed_pre_alert and CS.out.vEgo <= (self.CP.minSteerSpeed + 1.5)):
+      if CS.out.vEgo <= self.CP.minSteerSpeed or self.low_speed_pre_alert and \
+         CS.out.vEgo <= (self.CP.minSteerSpeed + 1.5) > self.CP.minSteerSpeed:
             self.low_speed_alert = True
             print('here1')
       if (not self.low_speed_pre_alert and CS.out.vEgo > self.CP.minSteerSpeed) or \
