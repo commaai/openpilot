@@ -1,21 +1,15 @@
 #!/usr/bin/env python3
 import os
 import argparse
-import threading
 from inputs import UnpluggedError, get_gamepad
-import math
 
-from cereal import messaging, car
-from openpilot.common.realtime import DT_CTRL, Ratekeeper
+from cereal import messaging
 from openpilot.common.numpy_fast import interp, clip
 from openpilot.common.params import Params
-from openpilot.common.swaglog import cloudlog
-from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 from openpilot.system.hardware import HARDWARE
 from openpilot.tools.lib.kbhit import KBHit
 
 EXPO = 0.4
-MAX_LAT_ACCEL = 2.5
 
 
 class Keyboard:
@@ -110,10 +104,6 @@ def joystick_control_thread(joystick):
     pm.send('testJoystick', joystick_msg)
 
 
-def main():
-  joystick_control_thread(Joystick())
-
-
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(description='Publishes events from your joystick to control your car.\n' +
                                                'openpilot must be offroad before starting joystickd. This tool supports ' +
@@ -138,4 +128,4 @@ if __name__ == '__main__':
     print('If not running on a comma device, the mapping may need to be adjusted.')
 
   joystick = Keyboard() if args.keyboard else Joystick()
-  joystick_thread(joystick)
+  joystick_control_thread(joystick)

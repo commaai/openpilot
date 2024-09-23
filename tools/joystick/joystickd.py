@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+import math
+
 from cereal import messaging, car
 from openpilot.common.numpy_fast import clip
 from openpilot.common.realtime import DT_CTRL, Ratekeeper
