@@ -107,6 +107,7 @@ class Plant:
     model.modelV2.position = position
     velocity = log.XYZTData.new_message()
     velocity.x = [float(x) for x in (self.speed + 0.5) * np.ones_like(ModelConstants.T_IDXS)]
+    velocity.x[0] = float(self.speed) # always start at current speed
     model.modelV2.velocity = velocity
     acceleration = log.XYZTData.new_message()
     acceleration.x = [float(x) for x in np.zeros_like(ModelConstants.T_IDXS)]
