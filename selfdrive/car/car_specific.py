@@ -96,24 +96,32 @@ class CarSpecificEvents:
 
       # way too complicated
       # low speed steer alert hysteresis logic for cars with steer cut off above 6 m/s
+
       # warn before the steer dropout. reset if disengaged.
-      if not CC_prev.enabled or CS.out.vEgo >= (self.CP.minSteerSpeed + 1.5):
-        self.low_speed_pre_alert = False
-      if CS.out.vEgo > (self.CP.minSteerSpeed + 3.):
+      if CS.out.vEgo > (self.CP.minSteerSpeed + 3.5):
         self.low_speed_pre_alert = True
-
-      if CS.out.vEgo < self.CP.minSteerSpeed or (self.low_speed_pre_alert and CS.out.vEgo < (self.CP.minSteerSpeed + 1.)):
+      if not CC_prev.enabled or CS.out.vEgo <= self.CP.minSteerSpeed:
+        self.low_speed_pre_alert = False
         self.low_speed_alert = True
-      if (CS.out.vEgo >= self.CP.minSteerSpeed and not self.low_speed_pre_alert) or CS.out.standstill:
-        self.low_speed_alert = False
 
-      # For cars that can forcibly disengage steering without setting an EPS fault (i.e. Odyssey Bosch)
-      if CS.out.vEgo > self.CP.minSteerSpeed and CC_prev.enabled and not CS.steer_on: # type: ignore[attr-defined]
-        CS.steer_off_cnt += 1 # type: ignore[attr-defined]
-      else:
-        CS.steer_off_cnt = 0 # type: ignore[attr-defined]
+      if CS.out.vEgo <= self.CP.minSteerSpeed or \
+         (self.low_speed_pre_alert and CS.out.vEgo <= (self.CP.minSteerSpeed + 1.5)):
+            self.low_speed_alert = True
+            print('here1')
+      if (not self.low_speed_pre_alert and CS.out.vEgo > self.CP.minSteerSpeed) or \
+          (self.low_speed_pre_alert and CS.out.vEgo > self.CP.minSteerSpeed + 1.5) or \
+          CS.out.standstill or self.CP.minSteerSpeed < 6.:
+            self.low_speed_alert = False
+            print('here2')
 
-      if self.low_speed_alert and self.CP.minSteerSpeed > 6.:
+      # # Some cars can forcibly disengage steer without setting an EPS fault (i.e. Odyssey Bosch w/Stock ACC)
+      # if CS.out.vEgo > self.CP.minSteerSpeed and CC_prev.enabled and not CS.steer_on: # type: ignore[attr-defined]
+      #   CS.steer_off_cnt += 1 # type: ignore[attr-defined]
+      # else:
+      #   CS.steer_off_cnt = 0 # type: ignore[attr-defined]
+      print(f'{CS.out.vEgo} vEgo vs {self.CP.minSteerSpeed} minsteer {self.low_speed_alert} alert')
+
+      if self.low_speed_alert:
         events.add(EventName.belowSteerSpeed)
 
     elif self.CP.carName == 'toyota':

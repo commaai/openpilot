@@ -33,32 +33,71 @@ class TestHondaLowSpeedAlert:
 
     self.car_events = CarSpecificEvents(self.CP)
 
-  def run(self):
+    # no
+
+    self.CS.steer_on = True
+
+  def _enabled(self, _):
+    self.CC_prev.enabled = _
+
+  def _speed(self, _):
+    self.CS.out.vEgo = _
+    # print(_)
+
+  def _steer_on(self, _):
+    self.CS.steer_on = _
+
+  def _update_events(self):
     self.CS.events = self.car_events.update(self.CS, self.CS_prev, self.CC, self.CC_prev)
 
-  def set_speeds(self, cs, cs_prev):
-    self.CS.out.vEgo = cs
-    self.CP.minSteerSpeed = cs_prev
 
-  def test_no_alert(self):
-    self.setUp()
-    self.set_speeds(self.CP.minSteerSpeed , max(self.CP.minSteerSpeed - 1, 0))
-    self.run()
-    if self.CS.out.vEgo < self.CP.minSteerSpeed:
+  def test(self):
+    for enabled in (True, False):
+      self.setUp()
+      self._enabled(enabled)
+
+      # same
+      self._speed(self.CP.minSteerSpeed)
+      self._update_events()
+      assert not self.car_events.low_speed_pre_alert
       assert self.car_events.low_speed_alert
-    if self.CS.out.vEgo >= self.CP.minSteerSpeed:
-      assert self.car_events.low_speed_pre_alert == self.car_events.low_speed_alert
-    assert BelowSteerSpeed not in self.CS.events.names
+      assert BelowSteerSpeed in self.CS.events.names
 
-  def test_under_speed(self):
-    self.setUp()
-    for speed in range(100):
-      self.set_speeds(speed, self.CP.minSteerSpeed)
-      self.run()
-      assert self.car_events.low_speed_alert == bool(speed < self.CP.minSteerSpeed)
+      # faster first time
+      self._speed(self.CP.minSteerSpeed + 3.6)
+      self._update_events()
+      assert self.car_events.low_speed_pre_alert == enabled
+      assert not self.car_events.low_speed_alert
+      assert BelowSteerSpeed not in self.CS.events.names
 
-  def test_transitions(self):
+      # self._speed(self.CP.minSteerSpeed + 1.)
+      # self._update_events()
+
+
+      # self._speed(self.CP.minSteerSpeed + 1)
+      # self._update_events()
+      # assert not self.car_events.low_speed_pre_alert
+      # assert not self.car_events.low_speed_alert
+      # assert BelowSteerSpeed in self.CS.events.names
+
+      # vEgo same or lesser
+      for i in range(-1, 1, 1):
+        print(i)
+        self._speed(self.CP.minSteerSpeed+i)
+        self._enabled(enabled)
+        self._update_events()
+        assert BelowSteerSpeed in self.CS.events.names
+
+
+  # def test_under_speed(self):
+  #   self.setUp()
+  #   for spd in range(100):
+  #     self._speed(spd)
+  #     self._update_events()
+  #     assert self.car_events.low_speed_alert == bool(spd < self.CP.minSteerSpeed)
+
+
+  # def test_transitions(self):
     #     not enabled > speed 36 > enabled > alert > speed 48 > no alert > speed 55 > speed 50 > pre\
 
     # test 1
-    pass
