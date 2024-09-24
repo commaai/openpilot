@@ -104,12 +104,12 @@ class ModelState:
     new_img = self.frame.prepare(buf, transform.flatten(), self.model.getCLBuffer("input_imgs"))
     self.input_imgs[:MODEL_FRAME_SIZE] = self.input_imgs[-MODEL_FRAME_SIZE:]
     self.input_imgs[MODEL_FRAME_SIZE:] = new_img[:]
-    self.model.setInputBuffer("input_imgs", self.input_imgs)
+    self.model.setInputBuffer("input_imgs", self.input_imgs.view(np.float32))
     if wbuf is not None:
       new_big_img = self.wide_frame.prepare(wbuf, transform_wide.flatten(), self.model.getCLBuffer("big_input_imgs"))
       self.big_input_imgs[:MODEL_FRAME_SIZE] = self.big_input_imgs[-MODEL_FRAME_SIZE:]
       self.big_input_imgs[MODEL_FRAME_SIZE:] = new_big_img[:]
-      self.model.setInputBuffer("big_input_imgs", self.big_input_imgs)
+      self.model.setInputBuffer("big_input_imgs", self.big_input_imgs.view(np.float32))
 
 
     if prepare_only:
