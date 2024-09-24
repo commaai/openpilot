@@ -1,7 +1,7 @@
 #define UV_SIZE ((TRANSFORMED_WIDTH/2)*(TRANSFORMED_HEIGHT/2))
 
 __kernel void loadys(__global uchar8 const * const Y,
-                     __global float * out,
+                     __global uchar * out,
                      int out_offset)
 {
     const int gid = get_global_id(0);
