@@ -2,6 +2,8 @@ import numpy as np
 from openpilot.selfdrive.modeld.constants import ModelConstants
 
 def sigmoid(x):
+  # -11 is around 10**14, more causes float16 overflow
+  clipped_x = np.clip(x, -11, np.inf)
   return 1. / (1. + np.exp(-x))
 
 def softmax(x, axis=-1):
