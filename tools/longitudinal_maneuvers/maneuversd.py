@@ -79,6 +79,12 @@ MANEUVERS = [
    initial_speed=0.,
   ),
   Maneuver(
+    "come to stop",
+    [Action(-0.8, 4)],
+    repeat=3,
+    initial_speed=5. * CV.MPH_TO_MS,
+  ),
+  Maneuver(
    "creep: alternate between +1m/s^2 and -1m/s^2",
    [
      Action(1, 2), Action(-1, 2),
