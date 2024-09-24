@@ -34,7 +34,6 @@ class CarSpecificEvents:
 
     self.steering_unpressed = 0
     self.low_speed_alert = False
-    self.low_speed_pre_alert = False
     self.no_steer_warning = False
     self.silent_steer_warning = True
 
@@ -103,22 +102,19 @@ class CarSpecificEvents:
       if not CC_prev.enabled or CS.out.vEgo <= self.CP.minSteerSpeed:
         self.low_speed_pre_alert = False
 
-      if CS.out.vEgo <= self.CP.minSteerSpeed or self.low_speed_pre_alert and \
-         CS.out.vEgo <= (self.CP.minSteerSpeed + 1.5):
-            self.low_speed_alert = True
-            print('here1')
+      if CS.out.vEgo <= self.CP.minSteerSpeed or \
+        (self.low_speed_pre_alert and CS.out.vEgo <= (self.CP.minSteerSpeed + 1.5)):
+        self.low_speed_alert = True
       if (not self.low_speed_pre_alert and CS.out.vEgo > self.CP.minSteerSpeed) or \
           (self.low_speed_pre_alert and CS.out.vEgo > self.CP.minSteerSpeed + 1.5) or \
           CS.out.standstill or self.CP.minSteerSpeed < 6.:
             self.low_speed_alert = False
-            print('here2')
 
       # Some cars can forcibly disengage steer without setting an EPS fault (i.e. Odyssey Bosch w/Stock ACC)
       if CS.out.vEgo > self.CP.minSteerSpeed and CC_prev.enabled and not CS.steer_on: # type: ignore[attr-defined]
         CS.steer_off_cnt += 1 # type: ignore[attr-defined]
       else:
         CS.steer_off_cnt = 0 # type: ignore[attr-defined]
-      print(f'{CS.out.vEgo} vEgo vs {self.CP.minSteerSpeed} minsteer {self.low_speed_alert} alert')
 
       if self.low_speed_alert:
         events.add(EventName.belowSteerSpeed)
