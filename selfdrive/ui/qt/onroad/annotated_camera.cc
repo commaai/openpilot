@@ -6,11 +6,11 @@
 #include <cmath>
 
 #include "common/swaglog.h"
-#include "selfdrive/ui/qt/onroad/buttons.h"
 #include "selfdrive/ui/qt/util.h"
 
 // Window that shows camera view and variety of info drawn on top
-AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* parent) : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraWidget("camerad", type, true, parent) {
+AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget *parent)
+    : fps_filter(UI_FREQ, 3, 1. / UI_FREQ), CameraWidget("camerad", type, parent) {
   pm = std::make_unique<PubMaster>(std::vector<const char*>{"uiDebug"});
 
   main_layout = new QVBoxLayout(this);
@@ -22,96 +22,9 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget* par
 }
 
 void AnnotatedCameraWidget::updateState(const UIState &s) {
-  const int SET_SPEED_NA = 255;
-  const SubMaster &sm = *(s.sm);
-
-  const bool cs_alive = sm.alive("carState");
-  const auto cs = sm["controlsState"].getControlsState();
-  const auto car_state = sm["carState"].getCarState();
-
-  is_metric = s.scene.is_metric;
-
-  // Handle older routes where vCruise was in controlsState
-  float v_cruise = car_state.getVCruiseCluster() == 0.0 ? cs.getVCruiseDEPRECATED() : car_state.getVCruiseCluster();
-  setSpeed = cs_alive ? v_cruise : SET_SPEED_NA;
-  is_cruise_set = setSpeed > 0 && (int)setSpeed != SET_SPEED_NA;
-  if (is_cruise_set && !is_metric) {
-    setSpeed *= KM_TO_MILE;
-  }
-
-  // Handle older routes where vEgoCluster is not set
-  v_ego_cluster_seen = v_ego_cluster_seen || car_state.getVEgoCluster() != 0.0;
-  float v_ego = v_ego_cluster_seen ? car_state.getVEgoCluster() : car_state.getVEgo();
-  speed = cs_alive ? std::max<float>(0.0, v_ego) : 0.0;
-  speed *= is_metric ? MS_TO_KPH : MS_TO_MPH;
-
-  speedUnit = is_metric ? tr("km/h") : tr("mph");
-  status = s.status;
-
   // update engageability/experimental mode button
   experimental_btn->updateState(s);
-
-  // update DM icon
   dmon.updateState(s);
-}
-
-void AnnotatedCameraWidget::drawHud(QPainter &p) {
-  p.save();
-
-  // Header gradient
-  QLinearGradient bg(0, UI_HEADER_HEIGHT - (UI_HEADER_HEIGHT / 2.5), 0, UI_HEADER_HEIGHT);
-  bg.setColorAt(0, QColor::fromRgbF(0, 0, 0, 0.45));
-  bg.setColorAt(1, QColor::fromRgbF(0, 0, 0, 0));
-  p.fillRect(0, 0, width(), UI_HEADER_HEIGHT, bg);
-
-  QString speedStr = QString::number(std::nearbyint(speed));
-  QString setSpeedStr = is_cruise_set ? QString::number(std::nearbyint(setSpeed)) : "–";
-
-  // Draw outer box + border to contain set speed
-  const QSize default_size = {172, 204};
-  QSize set_speed_size = default_size;
-  if (is_metric) set_speed_size.rwidth() = 200;
-
-  QRect set_speed_rect(QPoint(60 + (default_size.width() - set_speed_size.width()) / 2, 45), set_speed_size);
-  p.setPen(QPen(whiteColor(75), 6));
-  p.setBrush(blackColor(166));
-  p.drawRoundedRect(set_speed_rect, 32, 32);
-
-  // Draw MAX
-  QColor max_color = QColor(0x80, 0xd8, 0xa6, 0xff);
-  QColor set_speed_color = whiteColor();
-  if (is_cruise_set) {
-    if (status == STATUS_DISENGAGED) {
-      max_color = whiteColor();
-    } else if (status == STATUS_OVERRIDE) {
-      max_color = QColor(0x91, 0x9b, 0x95, 0xff);
-    }
-  } else {
-    max_color = QColor(0xa6, 0xa6, 0xa6, 0xff);
-    set_speed_color = QColor(0x72, 0x72, 0x72, 0xff);
-  }
-  p.setFont(InterFont(40, QFont::DemiBold));
-  p.setPen(max_color);
-  p.drawText(set_speed_rect.adjusted(0, 27, 0, 0), Qt::AlignTop | Qt::AlignHCenter, tr("MAX"));
-  p.setFont(InterFont(90, QFont::Bold));
-  p.setPen(set_speed_color);
-  p.drawText(set_speed_rect.adjusted(0, 77, 0, 0), Qt::AlignTop | Qt::AlignHCenter, setSpeedStr);
-
-  // current speed
-  p.setFont(InterFont(176, QFont::Bold));
-  drawText(p, rect().center().x(), 210, speedStr);
-  p.setFont(InterFont(66));
-  drawText(p, rect().center().x(), 290, speedUnit, 200);
-
-  p.restore();
-}
-
-void AnnotatedCameraWidget::drawText(QPainter &p, int x, int y, const QString &text, int alpha) {
-  QRect real_rect = p.fontMetrics().boundingRect(text);
-  real_rect.moveCenter({x, y - real_rect.height() / 2});
-
-  p.setPen(QColor(0xff, 0xff, 0xff, alpha));
-  p.drawText(real_rect.x(), real_rect.bottom(), text);
 }
 
 void AnnotatedCameraWidget::initializeGL() {
@@ -125,22 +38,54 @@ void AnnotatedCameraWidget::initializeGL() {
   setBackgroundColor(bg_colors[STATUS_DISENGAGED]);
 }
 
-void AnnotatedCameraWidget::updateFrameMat() {
-  CameraWidget::updateFrameMat();
-  UIState *s = uiState();
-  int w = width(), h = height();
+mat4 AnnotatedCameraWidget::calcFrameMatrix() {
+  // Project point at "infinity" to compute x and y offsets
+  // to ensure this ends up in the middle of the screen
+  // for narrow come and a little lower for wide cam.
+  // TODO: use proper perspective transform?
 
-  s->fb_w = w;
-  s->fb_h = h;
+  // Select intrinsic matrix and calibration based on camera type
+  auto *s = uiState();
+  bool wide_cam = active_stream_type == VISION_STREAM_WIDE_ROAD;
+  const auto &intrinsic_matrix = wide_cam ? ECAM_INTRINSIC_MATRIX : FCAM_INTRINSIC_MATRIX;
+  const auto &calibration = wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib;
+
+   // Compute the calibration transformation matrix
+  const auto calib_transform = intrinsic_matrix * calibration;
+
+  float zoom = wide_cam ? 2.0 : 1.1;
+  Eigen::Vector3f inf(1000., 0., 0.);
+  auto Kep = calib_transform * inf;
+
+  int w = width(), h = height();
+  float center_x = intrinsic_matrix(0, 2);
+  float center_y = intrinsic_matrix(1, 2);
+
+  float max_x_offset = center_x * zoom - w / 2 - 5;
+  float max_y_offset = center_y * zoom - h / 2 - 5;
+  float x_offset = std::clamp<float>((Kep.x() / Kep.z() - center_x) * zoom, -max_x_offset, max_x_offset);
+  float y_offset = std::clamp<float>((Kep.y() / Kep.z() - center_y) * zoom, -max_y_offset, max_y_offset);
 
   // Apply transformation such that video pixel coordinates match video
   // 1) Put (0, 0) in the middle of the video
   // 2) Apply same scaling as video
   // 3) Put (0, 0) in top left corner of video
-  s->car_space_transform.reset();
-  s->car_space_transform.translate(w / 2 - x_offset, h / 2 - y_offset)
-      .scale(zoom, zoom)
-      .translate(-intrinsic_matrix.v[2], -intrinsic_matrix.v[5]);
+  Eigen::Matrix3f video_transform =(Eigen::Matrix3f() <<
+    zoom, 0.0f, (w / 2 - x_offset) - (center_x * zoom),
+    0.0f, zoom, (h / 2 - y_offset) - (center_y * zoom),
+    0.0f, 0.0f, 1.0f).finished();
+
+  s->car_space_transform = video_transform * calib_transform;
+  s->clip_region = rect().adjusted(-500, -500, 500, 500);
+
+  float zx = zoom * 2 * center_x / w;
+  float zy = zoom * 2 * center_y / h;
+  return mat4{{
+    zx, 0.0, 0.0, -x_offset / w * 2,
+    0.0, zy, 0.0, y_offset / h * 2,
+    0.0, 0.0, 1.0, 0.0,
+    0.0, 0.0, 0.0, 1.0,
+  }};
 }
 
 void AnnotatedCameraWidget::drawLaneLines(QPainter &painter, const UIState *s) {
@@ -271,18 +216,8 @@ void AnnotatedCameraWidget::paintGL() {
         wide_cam_requested = false;
       }
       wide_cam_requested = wide_cam_requested && sm["selfdriveState"].getSelfdriveState().getExperimentalMode();
-      // for replay of old routes, never go to widecam
-      wide_cam_requested = wide_cam_requested && s->scene.calibration_wide_valid;
     }
     CameraWidget::setStreamType(wide_cam_requested ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
-
-    s->scene.wide_cam = CameraWidget::getStreamType() == VISION_STREAM_WIDE_ROAD;
-    if (s->scene.calibration_valid) {
-      auto calib = s->scene.wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib;
-      CameraWidget::updateCalibration(calib);
-    } else {
-      CameraWidget::updateCalibration(DEFAULT_CALIBRATION);
-    }
     CameraWidget::setFrameId(model.getFrameId());
     CameraWidget::paintGL();
   }
@@ -310,8 +245,8 @@ void AnnotatedCameraWidget::paintGL() {
   }
 
   dmon.draw(painter, rect());
-
-  drawHud(painter);
+  hud.updateState(*s);
+  hud.draw(painter, rect());
 
   double cur_draw_t = millis_since_boot();
   double dt = cur_draw_t - prev_draw_t;

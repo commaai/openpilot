@@ -158,6 +158,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"LiveParameters", PERSISTENT},
     {"LiveTorqueParameters", PERSISTENT | DONT_LOG},
     {"LocationFilterInitialState", PERSISTENT},
+    {"LongitudinalManeuverMode", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
     {"LongitudinalPersonality", PERSISTENT},
     {"NetworkMetered", PERSISTENT},
     {"ObdMultiplexingChanged", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},

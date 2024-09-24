@@ -48,7 +48,3 @@ ModelFrame::~ModelFrame() {
   CL_CHECK(clReleaseMemObject(y_cl));
   CL_CHECK(clReleaseCommandQueue(q));
 }
-
-float sigmoid(float input) {
-  return 1 / (1 + expf(-input));
-}

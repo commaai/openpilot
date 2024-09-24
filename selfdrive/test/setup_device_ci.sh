@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
+set -x
 
 if [ -z "$SOURCE_DIR" ]; then
   echo "SOURCE_DIR must be set"
@@ -17,9 +18,11 @@ if [ -z "$TEST_DIR" ]; then
   exit 1
 fi
 
-umount /data/safe_staging/merged/ || true
-sudo umount /data/safe_staging/merged/ || true
-rm -rf /data/safe_staging/* || true
+rm -rf /data/safe_staging/ || true
+if [ -d /data/safe_staging/ ]; then
+  sudo umount /data/safe_staging/merged/ || true
+  rm -rf /data/safe_staging/ || true
+fi
 
 CONTINUE_PATH="/data/continue.sh"
 tee $CONTINUE_PATH << EOF
