@@ -2,9 +2,9 @@ import numpy as np
 from openpilot.selfdrive.modeld.constants import ModelConstants
 
 
-def safe_exp(x):
+def safe_exp(x, out=None):
   # -11 is around 10**14, more causes float16 overflow
-  return np.exp(np.clip(x, -11, 11))
+  return np.exp(np.clip(x, -11, 11), out=out)
 
 def sigmoid(x):
   return 1. / (1. + safe_exp(-x))
