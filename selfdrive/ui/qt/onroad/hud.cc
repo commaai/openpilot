@@ -68,13 +68,13 @@ void HudRenderer::drawSetSpeed(QPainter &p, const QRect &surface_rect) {
   QColor max_color = QColor(0xa6, 0xa6, 0xa6, 0xff);
   QColor set_speed_color = QColor(0x72, 0x72, 0x72, 0xff);
   if (is_cruise_set) {
+    set_speed_color = QColor(255, 255, 255);
     if (status == STATUS_DISENGAGED) {
       max_color = QColor(255, 255, 255);
     } else if (status == STATUS_OVERRIDE) {
       max_color = QColor(0x91, 0x9b, 0x95, 0xff);
     } else {
       max_color = QColor(0x80, 0xd8, 0xa6, 0xff);
-      set_speed_color = QColor(255, 255, 255);
     }
   }
 
