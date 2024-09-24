@@ -14,7 +14,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_realtime_priority
 from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
-from openpilot.selfdrive.modeld.models.commonmodel_pyx import sigmoid
+from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid
 
 CALIB_LEN = 3
 REG_SCALE = 0.25
