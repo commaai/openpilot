@@ -89,19 +89,29 @@ class Joystick:
     return True
 
 
-def joystick_control_thread(joystick):
-  Params().put_bool('JoystickDebugMode', True)
-
+def send_thread(joystick):
   pm = messaging.PubMaster(['testJoystick'])
 
+  rk = Ratekeeper(100, print_delay_threshold=None)
+
   while True:
-    joystick.update()
+    if rk.frame % 20 == 0:
+      print('\n' + ', '.join(f'{name}: {round(v, 3)}' for name, v in joystick.axes_values.items()))
 
     joystick_msg = messaging.new_message('testJoystick')
     joystick_msg.valid = True
     joystick_msg.testJoystick.axes = [joystick.axes_values[ax] for ax in joystick.axes_order]
 
     pm.send('testJoystick', joystick_msg)
+
+    rk.keep_time()
+
+
+def joystick_control_thread(joystick):
+  Params().put_bool('JoystickDebugMode', True)
+  threading.Thread(target=send_thread, args=(joystick,), daemon=True).start()
+  while True:
+    joystick.update()
 
 
 if __name__ == '__main__':

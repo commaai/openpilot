@@ -42,9 +42,6 @@ def joystickd_thread():
     else:
       joystick_axes = [0.0, 0.0]
 
-    if rk.frame % 20 == 0:
-      print(f'\n {sm.recv_frame["testJoystick"]}: ' + ', '.join(f'{index}: {round(v, 3)}' for index, v in enumerate(joystick_axes)))
-
     if CC.longActive:
       actuators.accel = 4.0 * clip(joystick_axes[0], -1, 1)
 
