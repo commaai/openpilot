@@ -101,7 +101,6 @@ dev = [
   "flaky",
   "lru-dict",
   "matplotlib",
-  "metadrive-simulator @ https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal/metadrive_simulator-0.4.2.3-py3-none-any.whl ; (platform_machine != 'aarch64')",
   "parameterized >=0.8, <0.9",
   #"pprofile",
   "pyautogui",
@@ -109,13 +108,17 @@ dev = [
   "pytools < 2024.1.11; platform_machine != 'aarch64'", # pyopencl use a broken version
   "pywinctl",
   "pyprof2calltree",
-  "rerun-sdk >= 0.18",
   "tabulate",
   "types-requests",
   "types-tabulate",
 
   # this is only pinned since 5.15.11 is broken
   "pyqt5 ==5.15.2; platform_machine == 'x86_64'", # no aarch64 wheels for macOS/linux
+]
+
+tools = [
+  "metadrive-simulator @ https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal/metadrive_simulator-0.4.2.3-py3-none-any.whl ; (platform_machine != 'aarch64')",
+  "rerun-sdk >= 0.18",
 ]
 
 [project.urls]

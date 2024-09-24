@@ -10,9 +10,9 @@ import os
 import pywinctl
 import time
 
-from cereal import messaging, log
+from cereal import log
 from msgq.visionipc import VisionIpcServer, VisionStreamType
-from cereal.messaging import PubMaster
+from cereal.messaging import PubMaster, log_from_bytes, sub_sock
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
@@ -40,13 +40,26 @@ def setup_homescreen(click, pm: PubMaster):
 def setup_settings_device(click, pm: PubMaster):
   click(100, 100)
 
+def setup_settings_toggles(click, pm: PubMaster):
+  setup_settings_device(click, pm)
+  click(278, 760)
+  time.sleep(UI_DELAY)
+
 def setup_onroad(click, pm: PubMaster):
   vipc_server = VisionIpcServer("camerad")
   for stream_type, cam, _ in STREAMS:
     vipc_server.create_buffers(stream_type, 5, False, cam.width, cam.height)
   vipc_server.start_listener()
 
-  for packet_id in range(30):
+  uidebug_received_cnt = 0
+  packet_id = 0
+  uidebug_sock = sub_sock('uiDebug')
+
+  # Condition check for uiDebug processing
+  check_uidebug = DATA['deviceState'].deviceState.started and not DATA['carParams'].carParams.notCar
+
+  # Loop until 20 'uiDebug' messages are received
+  while uidebug_received_cnt <= 20:
     for service, data in DATA.items():
       if data:
         data.clear_write_flag()
@@ -55,7 +68,25 @@ def setup_onroad(click, pm: PubMaster):
     for stream_type, _, image in STREAMS:
       vipc_server.send(stream_type, image, packet_id, packet_id, packet_id)
 
+    if check_uidebug:
+      while uidebug_sock.receive(non_blocking=True):
+        uidebug_received_cnt += 1
+    else:
+      uidebug_received_cnt += 1
+
+    packet_id += 1
     time.sleep(0.05)
+
+def setup_onroad_disengaged(click, pm: PubMaster):
+  DATA['selfdriveState'].selfdriveState.enabled = False
+  setup_onroad(click, pm)
+  DATA['selfdriveState'].selfdriveState.enabled = True
+
+def setup_onroad_override(click, pm: PubMaster):
+  DATA['selfdriveState'].selfdriveState.state = log.SelfdriveState.OpenpilotState.overriding
+  setup_onroad(click, pm)
+  DATA['selfdriveState'].selfdriveState.state = log.SelfdriveState.OpenpilotState.enabled
+
 
 def setup_onroad_wide(click, pm: PubMaster):
   DATA['selfdriveState'].selfdriveState.experimentalMode = True
@@ -65,10 +96,12 @@ def setup_onroad_wide(click, pm: PubMaster):
 def setup_onroad_sidebar(click, pm: PubMaster):
   setup_onroad(click, pm)
   click(500, 500)
+  setup_onroad(click, pm)
 
 def setup_onroad_wide_sidebar(click, pm: PubMaster):
   setup_onroad_wide(click, pm)
   click(500, 500)
+  setup_onroad_wide(click, pm)
 
 def setup_body(click, pm: PubMaster):
   DATA['carParams'].carParams.carName = "BODY"
@@ -94,16 +127,16 @@ def setup_driver_camera(click, pm: PubMaster):
 
 def setup_onroad_alert(click, pm: PubMaster, text1, text2, size, status=log.SelfdriveState.AlertStatus.normal):
   print(f'setup onroad alert, size: {size}')
-  setup_onroad(click, pm)
-  dat = messaging.new_message('selfdriveState')
-  cs = dat.selfdriveState
+  state = DATA['selfdriveState']
+  origin_state_bytes = state.to_bytes()
+  cs = state.selfdriveState
   cs.alertText1 = text1
   cs.alertText2 = text2
   cs.alertSize = size
   cs.alertStatus = status
   cs.alertType = "test_onroad_alert"
-  pm.send('selfdriveState', dat)
-  time.sleep(UI_DELAY)
+  setup_onroad(click, pm)
+  DATA['selfdriveState'] = log_from_bytes(origin_state_bytes).as_builder()
 
 def setup_onroad_alert_small(click, pm: PubMaster):
   setup_onroad_alert(click, pm, 'This is a small alert message', '', log.SelfdriveState.AlertSize.small)
@@ -141,7 +174,10 @@ CASES = {
   "prime": setup_homescreen,
   "pair_device": setup_pair_device,
   "settings_device": setup_settings_device,
+  "settings_toggles": setup_settings_toggles,
   "onroad": setup_onroad,
+  "onroad_disengaged": setup_onroad_disengaged,
+  "onroad_override": setup_onroad_override,
   "onroad_sidebar": setup_onroad_sidebar,
   "onroad_alert_small": setup_onroad_alert_small,
   "onroad_alert_mid": setup_onroad_alert_mid,

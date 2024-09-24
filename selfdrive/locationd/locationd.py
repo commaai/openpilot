@@ -31,9 +31,8 @@ POSENET_STD_HIST_HALF = 20
 
 def init_xyz_measurement(measurement: capnp._DynamicStructBuilder, values: np.ndarray, stds: np.ndarray, valid: bool):
   assert len(values) == len(stds) == 3
-  for i, d in enumerate(("x", "y", "z")):
-    setattr(measurement, d, float(values[i]))
-    setattr(measurement, f"{d}Std", float(stds[i]))
+  measurement.x, measurement.y, measurement.z = map(float, values)
+  measurement.xStd, measurement.yStd, measurement.zStd = map(float, stds)
   measurement.valid = valid
 
 
@@ -50,7 +49,7 @@ class LocationEstimator:
 
     self.debug = debug
 
-    self.posenet_stds = [POSENET_STD_INITIAL_VALUE] * (POSENET_STD_HIST_HALF * 2)
+    self.posenet_stds = np.array([POSENET_STD_INITIAL_VALUE] * (POSENET_STD_HIST_HALF * 2))
     self.car_speed = 0.0
     self.camodo_yawrate_distribution = np.array([0.0, 10.0])  # mean, std
     self.device_from_calib = np.eye(3)
@@ -169,8 +168,8 @@ class LocationEstimator:
       if np.linalg.norm(rot_calib_std) > 10 * ROTATION_SANITY_CHECK or np.linalg.norm(trans_calib_std) > 10 * TRANS_SANITY_CHECK:
         return HandleLogResult.INPUT_INVALID
 
-      self.posenet_stds.pop(0)
-      self.posenet_stds.append(trans_calib_std[0])
+      self.posenet_stds = np.roll(self.posenet_stds, -1)
+      self.posenet_stds[-1] = trans_calib_std[0]
 
       # Multiply by N to avoid to high certainty in kalman filter because of temporally correlated noise
       rot_calib_std *= 10

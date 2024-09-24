@@ -53,6 +53,7 @@ whitelist = [
   "tools/lib/",
   "tools/bodyteleop/",
   "tools/joystick/",
+  "tools/longitudinal_maneuvers/",
 
   "tinygrad_repo/openpilot/compile2.py",
   "tinygrad_repo/extra/onnx.py",

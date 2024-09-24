@@ -485,7 +485,7 @@ CONFIGS = [
     subs=["carControl", "controlsState"],
     ignore=["logMonoTime", ],
     init_callback=get_car_params_callback,
-    should_recv_callback=MessageBasedRcvCallback("carState"),
+    should_recv_callback=MessageBasedRcvCallback("selfdriveState"),
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
@@ -571,7 +571,7 @@ CONFIGS = [
     proc_name="modeld",
     pubs=["deviceState", "roadCameraState", "wideRoadCameraState", "liveCalibration", "driverMonitoringState"],
     subs=["modelV2", "drivingModelData", "cameraOdometry"],
-    ignore=["logMonoTime", "modelV2.frameDropPerc", "modelV2.modelExecutionTime"],
+    ignore=["logMonoTime", "modelV2.frameDropPerc", "modelV2.modelExecutionTime", "drivingModelData.frameDropPerc", "drivingModelData.modelExecutionTime"],
     should_recv_callback=ModeldCameraSyncRcvCallback(),
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.020,

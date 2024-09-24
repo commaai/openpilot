@@ -735,7 +735,6 @@ struct ControlsState @0x97ff69c53601abf1 {
   upAccelCmd @4 :Float32;
   uiAccelCmd @5 :Float32;
   ufAccelCmd @33 :Float32;
-  aTarget @35 :Float32;
   curvature @37 :Float32;  # path curvature from vehicle model
   desiredCurvature @61 :Float32;  # lag adjusted curvatures used by lateral controllers
   forceDecel @51 :Bool;
@@ -881,12 +880,14 @@ struct ControlsState @0x97ff69c53601abf1 {
   vCruiseClusterDEPRECATED @63 :Float32;  # set speed to display in the UI
   startMonoTimeDEPRECATED @48 :UInt64;
   cumLagMsDEPRECATED @15 :Float32;
+  aTargetDEPRECATED @35 :Float32;
 }
 
 struct DrivingModelData {
   frameId @0 :UInt32;
   frameIdExtra @1 :UInt32;
   frameDropPerc @6 :Float32;
+  modelExecutionTime @7 :Float32;
 
   action @2 :ModelDataV2.Action;
 
@@ -932,7 +933,6 @@ struct ModelDataV2 {
   frameDropPerc @2 :Float32;
   timestampEof @3 :UInt64;
   modelExecutionTime @15 :Float32;
-  gpuExecutionTime @17 :Float32;
   rawPredictions @16 :Data;
 
   # predicted future position, orientation, etc..
@@ -959,12 +959,13 @@ struct ModelDataV2 {
   # Model perceived motion
   temporalPose @21 :Pose;
 
+  # e2e lateral planner
+  action @26: Action;
+
+  gpuExecutionTimeDEPRECATED @17 :Float32;
   navEnabledDEPRECATED @22 :Bool;
   locationMonoTimeDEPRECATED @24 :UInt64;
-
-  # e2e lateral planner
   lateralPlannerSolutionDEPRECATED @25: LateralPlannerSolution;
-  action @26: Action;
 
   struct LeadDataV2 {
     prob @0 :Float32; # probability that car is your lead at time t
@@ -2304,6 +2305,11 @@ struct EncodeData {
   height @5 :UInt32;
 }
 
+struct DebugAlert {
+  alertText1 @0 :Text;
+  alertText2 @1 :Text;
+}
+
 struct UserFlag {
 }
 
@@ -2412,6 +2418,7 @@ struct Event {
     driverEncodeData @87 :EncodeData;
     wideRoadEncodeData @88 :EncodeData;
     qRoadEncodeData @89 :EncodeData;
+    alertDebug @133 :DebugAlert;
 
     livestreamRoadEncodeData @120 :EncodeData;
     livestreamWideRoadEncodeData @121 :EncodeData;

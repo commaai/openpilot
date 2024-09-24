@@ -325,6 +325,17 @@ def joystick_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster,
   vals = f"Gas: {round(gb * 100.)}%, Steer: {round(steer * 100.)}%"
   return NormalPermanentAlert("Joystick Mode", vals)
 
+
+def longitudinal_maneuver_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
+  ad = sm['alertDebug']
+  audible_alert = AudibleAlert.prompt if 'Active' in ad.alertText1 else AudibleAlert.none
+  alert_status = AlertStatus.userPrompt if 'Active' in ad.alertText1 else AlertStatus.normal
+  alert_size = AlertSize.mid if ad.alertText2 else AlertSize.small
+  return Alert(ad.alertText1, ad.alertText2,
+               alert_status, alert_size,
+               Priority.LOW, VisualAlert.none, audible_alert, 0.2)
+
+
 def personality_changed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
   personality = str(personality).title()
   return NormalPermanentAlert(f"Driving Personality: {personality}", duration=1.5)
@@ -342,6 +353,12 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   EventName.joystickDebug: {
     ET.WARNING: joystick_alert,
     ET.PERMANENT: NormalPermanentAlert("Joystick Mode"),
+  },
+
+  EventName.longitudinalManeuver: {
+    ET.WARNING: longitudinal_maneuver_alert,
+    ET.PERMANENT: NormalPermanentAlert("Longitudinal Maneuver Mode",
+                                       "Ensure road ahead is clear"),
   },
 
   EventName.selfdriveInitializing: {
@@ -386,6 +403,15 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.PERMANENT: NormalPermanentAlert("Dashcam Mode",
                                        "Car Unrecognized",
                                        priority=Priority.LOWEST),
+  },
+
+  EventName.aeb: {
+    ET.PERMANENT: Alert(
+      "BRAKE!",
+      "Emergency Braking: Risk of Collision",
+      AlertStatus.critical, AlertSize.full,
+      Priority.HIGHEST, VisualAlert.fcw, AudibleAlert.none, 2.),
+    ET.NO_ENTRY: NoEntryAlert("AEB: Risk of Collision"),
   },
 
   EventName.stockAeb: {
