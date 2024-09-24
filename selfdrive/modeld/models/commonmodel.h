@@ -25,11 +25,12 @@ public:
   const int MODEL_WIDTH = 512;
   const int MODEL_HEIGHT = 256;
   const int MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT * 3 / 2;
+  const int buf_size = MODEL_FRAME_SIZE * 2;
 
 private:
   Transform transform;
   LoadYUVState loadyuv;
   cl_command_queue q;
   cl_mem y_cl, u_cl, v_cl, net_input_cl;
-  std::unique_ptr<uint8_t[]> frame;
+  std::unique_ptr<uint8_t[]> input_frames;
 };

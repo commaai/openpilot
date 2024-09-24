@@ -42,4 +42,4 @@ cdef class ModelFrame:
       data = self.frame.prepare(buf.buf.buf_cl, buf.width, buf.height, buf.stride, buf.uv_offset, cprojection, output.mem)
     if not data:
       return None
-    return np.asarray(<cnp.uint8_t[:self.frame.MODEL_FRAME_SIZE]> data)
+    return np.asarray(<cnp.uint8_t[:self.frame.buf_size]> data)
