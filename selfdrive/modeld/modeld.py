@@ -67,8 +67,8 @@ class ModelState:
       'features_buffer': np.zeros(ModelConstants.HISTORY_BUFFER_LEN * ModelConstants.FEATURE_LEN, dtype=np.float32),
     }
 
-    self.input_imgs = np.zeros(MODEL_FRAME_SIZE*2, dtype=np.float32)
-    self.big_input_imgs = np.zeros(MODEL_FRAME_SIZE*2, dtype=np.float32)
+    self.input_imgs = np.zeros(MODEL_FRAME_SIZE*2, dtype=np.uint8)
+    self.big_input_imgs = np.zeros(MODEL_FRAME_SIZE*2, dtype=np.uint8)
 
     with open(METADATA_PATH, 'rb') as f:
       model_metadata = pickle.load(f)
