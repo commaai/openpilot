@@ -33,6 +33,10 @@ MODEL_PATHS = {
   ModelRunner.ONNX: Path(__file__).parent / 'models/supercombo.onnx'}
 
 METADATA_PATH = Path(__file__).parent / 'models/supercombo_metadata.pkl'
+MODEL_WIDTH = 512
+MODEL_HEIGHT = 256
+MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT * 3 // 2
+
 
 class FrameMeta:
   frame_id: int = 0
@@ -61,6 +65,8 @@ class ModelState:
       'lateral_control_params': np.zeros(ModelConstants.LATERAL_CONTROL_PARAMS_LEN, dtype=np.float32),
       'prev_desired_curv': np.zeros(ModelConstants.PREV_DESIRED_CURV_LEN * (ModelConstants.HISTORY_BUFFER_LEN+1), dtype=np.float32),
       'features_buffer': np.zeros(ModelConstants.HISTORY_BUFFER_LEN * ModelConstants.FEATURE_LEN, dtype=np.float32),
+      'input_imgs': np.zeros(MODEL_FRAME_SIZE*2, dtype=np.uint8),
+      'big_input_imgs': np.zeros(MODEL_FRAME_SIZE*2, dtype=np.uint8),
     }
 
     with open(METADATA_PATH, 'rb') as f:
@@ -72,8 +78,8 @@ class ModelState:
     self.parser = Parser()
 
     self.model = ModelRunner(MODEL_PATHS, self.output, Runtime.GPU, False, context)
-    self.model.addInput("input_imgs", None)
-    self.model.addInput("big_input_imgs", None)
+    #self.model.addInput("input_imgs", None)
+    #self.model.addInput("big_input_imgs", None)
     for k,v in self.inputs.items():
       self.model.addInput(k, v)
 
@@ -95,9 +101,10 @@ class ModelState:
     self.inputs['lateral_control_params'][:] = inputs['lateral_control_params']
 
     # if getCLBuffer is not None, frame will be None
-    self.model.setInputBuffer("input_imgs", self.frame.prepare(buf, transform.flatten(), self.model.getCLBuffer("input_imgs")))
+    self.inputs['input_imgs'][:] = self.frame.prepare(buf, transform.flatten(), self.model.getCLBuffer("input_imgs"))
+    #self.model.setInputBuffer("input_imgs", self.frame.prepare(buf, transform.flatten(), self.model.getCLBuffer("input_imgs")))
     if wbuf is not None:
-      self.model.setInputBuffer("big_input_imgs", self.wide_frame.prepare(wbuf, transform_wide.flatten(), self.model.getCLBuffer("big_input_imgs")))
+      self.inputs['big_input_imgs'][:] = self.wide_frame.prepare(wbuf, transform_wide.flatten(), self.model.getCLBuffer("big_input_imgs"))
 
     if prepare_only:
       return None
