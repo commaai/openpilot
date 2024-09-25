@@ -18,11 +18,13 @@ class TestHondaLowSpeedAlert:
     # setup
     CarInterface, CarController, CarState, RadarInterface = interfaces[test_car]
 
-    self.CP = CarInterface.get_params(test_car, gen_empty_fingerprint(), {}, experimental_long=False, docs=False)
+    CP = CarInterface.get_params(test_car, gen_empty_fingerprint(), {}, experimental_long=False, docs=False)
 
-    self.CI = CarInterface(self.CP, CarController, CarState)
-    self.RI = RadarInterface(self.CP) # unused
+    self.CI = CarInterface(CP, CarController, CarState)
+    self.RI = RadarInterface(CP) # unused
     self.Card = Car(self.CI, RadarInterface)
+
+    self.CP = self.CI.CP
 
     self.CC = self.CI.CC
     self.CS = self.CI.CS
@@ -51,124 +53,125 @@ class TestHondaLowSpeedAlert:
 
   def test_alert_transitions(self):
     self.setUp()
-
-    if self.CP.minSteerSpeed < 6.:
-      assert not self.car_events.low_speed_alert
-      assert BelowSteerSpeed not in self.CS.events.names
+    self._update_events()
 
     for e in (True, False):
-      self._enabled(e)
+      if self.CP.minSteerSpeed < 6.:
+        assert not self.car_events.low_speed_alert
+        assert BelowSteerSpeed not in self.CS.events.names
+      else:
+        self._enabled(e)
 
-      # never at standstill
-      self.CS.out.standstill = True
-      self._update_events()
-      assert not self.car_events.low_speed_alert
-      assert BelowSteerSpeed not in self.CS.events.names
-      # reset
-      self.CS.out.standstill = False
-      self._update_events()
+        # never at standstill
+        self.CS.out.standstill = True
+        self._update_events()
+        assert not self.car_events.low_speed_alert
+        assert BelowSteerSpeed not in self.CS.events.names
+        # reset
+        self.CS.out.standstill = False
+        self._update_events()
 
-      # crawling, in traffic, show alert
-      self._speed(0.1)
-      self._update_events()
-      assert not self.car_events.low_speed_pre_alert
-      assert self.car_events.low_speed_alert
-      assert BelowSteerSpeed in self.CS.events.names
-
-      # a little slower, show alert
-      self._speed(self.CP.minSteerSpeed-1)
-      self._update_events()
-      assert not self.car_events.low_speed_pre_alert
-      assert self.car_events.low_speed_alert
-      assert BelowSteerSpeed in self.CS.events.names
-
-      # same, show alert
-      self._speed(self.CP.minSteerSpeed)
-      self._update_events()
-      assert not self.car_events.low_speed_pre_alert
-      assert self.car_events.low_speed_alert
-      assert BelowSteerSpeed in self.CS.events.names
-
-      # just over min steer
-      self._speed(self.CP.minSteerSpeed+0.001)
-      self._update_events()
-      assert not self.car_events.low_speed_pre_alert
-      assert not self.car_events.low_speed_alert
-      assert BelowSteerSpeed not in self.CS.events.names
-
-      # faster first time, below threshold
-      self._speed(self.CP.minSteerSpeed + 3.4)
-      self._update_events()
-      assert not self.car_events.low_speed_pre_alert
-      assert not self.car_events.low_speed_alert
-      assert BelowSteerSpeed not in self.CS.events.names
-
-      # slower again
-      self._speed(self.CP.minSteerSpeed + 1)
-      self._update_events()
-      assert not self.car_events.low_speed_pre_alert
-      assert not self.car_events.low_speed_alert
-      assert BelowSteerSpeed not in self.CS.events.names
-
-      # slow back below, show alert
-      self._speed(self.CP.minSteerSpeed - 1)
-      self._update_events()
-      assert not self.car_events.low_speed_pre_alert
-      assert self.car_events.low_speed_alert
-      assert BelowSteerSpeed in self.CS.events.names
-
-      # faster second time
-      self._speed(self.CP.minSteerSpeed + 1)
-      self._update_events()
-      assert not self.car_events.low_speed_pre_alert
-      assert not self.car_events.low_speed_alert
-      assert BelowSteerSpeed not in self.CS.events.names
-
-      # faster again, but over the pre_alert threshold
-      self._speed(self.CP.minSteerSpeed + 3.6)
-      self._update_events()
-      assert self.car_events.low_speed_pre_alert == e
-      assert not self.car_events.low_speed_alert
-      assert BelowSteerSpeed not in self.CS.events.names
-
-      # faster again, but just under the pre_alert threshold
-      self._speed(self.CP.minSteerSpeed + 3.4)
-      self._update_events()
-      assert self.car_events.low_speed_pre_alert == e
-      assert not self.car_events.low_speed_alert
-      assert BelowSteerSpeed not in self.CS.events.names
-
-     # slow down at the lower threshold, show alert
-      self._speed(self.CP.minSteerSpeed + 1.5)
-      self._update_events()
-      assert self.car_events.low_speed_pre_alert == e
-      if self.car_events.low_speed_pre_alert:
+        # crawling, in traffic, show alert
+        self._speed(0.1)
+        self._update_events()
+        assert not self.car_events.low_speed_pre_alert
         assert self.car_events.low_speed_alert
         assert BelowSteerSpeed in self.CS.events.names
-      else:
-        assert BelowSteerSpeed not in self.CS.events.names
 
-     # slow down below the lower threshold, show alert
-      self._speed(self.CP.minSteerSpeed + 1.4)
-      self._update_events()
-      assert self.car_events.low_speed_pre_alert == e
-      if self.car_events.low_speed_pre_alert:
+        # a little slower, show alert
+        self._speed(self.CP.minSteerSpeed-1)
+        self._update_events()
+        assert not self.car_events.low_speed_pre_alert
         assert self.car_events.low_speed_alert
         assert BelowSteerSpeed in self.CS.events.names
-      else:
+
+        # same, show alert
+        self._speed(self.CP.minSteerSpeed)
+        self._update_events()
+        assert not self.car_events.low_speed_pre_alert
+        assert self.car_events.low_speed_alert
+        assert BelowSteerSpeed in self.CS.events.names
+
+        # just over min steer
+        self._speed(self.CP.minSteerSpeed+0.001)
+        self._update_events()
+        assert not self.car_events.low_speed_pre_alert
+        assert not self.car_events.low_speed_alert
         assert BelowSteerSpeed not in self.CS.events.names
 
-      # same, show alert
-      self._speed(self.CP.minSteerSpeed)
-      self._update_events()
-      assert not self.car_events.low_speed_pre_alert
-      assert self.car_events.low_speed_alert
-      assert BelowSteerSpeed in self.CS.events.names
+        # faster first time, below threshold
+        self._speed(self.CP.minSteerSpeed + 3.4)
+        self._update_events()
+        assert not self.car_events.low_speed_pre_alert
+        assert not self.car_events.low_speed_alert
+        assert BelowSteerSpeed not in self.CS.events.names
 
-      # slow down again for the last time, show alert
-      self._speed(self.CP.minSteerSpeed - 1)
-      self._update_events()
-      assert not self.car_events.low_speed_pre_alert
-      assert self.car_events.low_speed_alert
-      assert BelowSteerSpeed in self.CS.events.names
+        # slower again
+        self._speed(self.CP.minSteerSpeed + 1)
+        self._update_events()
+        assert not self.car_events.low_speed_pre_alert
+        assert not self.car_events.low_speed_alert
+        assert BelowSteerSpeed not in self.CS.events.names
+
+        # slow back below, show alert
+        self._speed(self.CP.minSteerSpeed - 1)
+        self._update_events()
+        assert not self.car_events.low_speed_pre_alert
+        assert self.car_events.low_speed_alert
+        assert BelowSteerSpeed in self.CS.events.names
+
+        # faster second time
+        self._speed(self.CP.minSteerSpeed + 1)
+        self._update_events()
+        assert not self.car_events.low_speed_pre_alert
+        assert not self.car_events.low_speed_alert
+        assert BelowSteerSpeed not in self.CS.events.names
+
+        # faster again, but over the pre_alert threshold
+        self._speed(self.CP.minSteerSpeed + 3.6)
+        self._update_events()
+        assert self.car_events.low_speed_pre_alert == e
+        assert not self.car_events.low_speed_alert
+        assert BelowSteerSpeed not in self.CS.events.names
+
+        # faster again, but just under the pre_alert threshold
+        self._speed(self.CP.minSteerSpeed + 3.4)
+        self._update_events()
+        assert self.car_events.low_speed_pre_alert == e
+        assert not self.car_events.low_speed_alert
+        assert BelowSteerSpeed not in self.CS.events.names
+
+      # slow down at the lower threshold, show alert
+        self._speed(self.CP.minSteerSpeed + 1.5)
+        self._update_events()
+        assert self.car_events.low_speed_pre_alert == e
+        if self.car_events.low_speed_pre_alert:
+          assert self.car_events.low_speed_alert
+          assert BelowSteerSpeed in self.CS.events.names
+        else:
+          assert BelowSteerSpeed not in self.CS.events.names
+
+      # slow down below the lower threshold, show alert
+        self._speed(self.CP.minSteerSpeed + 1.4)
+        self._update_events()
+        assert self.car_events.low_speed_pre_alert == e
+        if self.car_events.low_speed_pre_alert:
+          assert self.car_events.low_speed_alert
+          assert BelowSteerSpeed in self.CS.events.names
+        else:
+          assert BelowSteerSpeed not in self.CS.events.names
+
+        # same, show alert
+        self._speed(self.CP.minSteerSpeed)
+        self._update_events()
+        assert not self.car_events.low_speed_pre_alert
+        assert self.car_events.low_speed_alert
+        assert BelowSteerSpeed in self.CS.events.names
+
+        # slow down again for the last time, show alert
+        self._speed(self.CP.minSteerSpeed - 1)
+        self._update_events()
+        assert not self.car_events.low_speed_pre_alert
+        assert self.car_events.low_speed_alert
+        assert BelowSteerSpeed in self.CS.events.names
 
