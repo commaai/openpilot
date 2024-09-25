@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 import os
+from openpilot.system.hardware import TICI
 ## TODO this is hack
-os.environ['QCOM'] = '1'
+if TICI:
+  os.environ['QCOM'] = '1'
+else:
+  os.environ['GPU'] = '1'
 import time
 import pickle
 import numpy as np
