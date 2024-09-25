@@ -62,6 +62,7 @@ def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._D
   driving_model_data.frameId = vipc_frame_id
   driving_model_data.frameIdExtra = vipc_frame_id_extra
   driving_model_data.frameDropPerc = frame_drop_perc
+  driving_model_data.modelExecutionTime = model_execution_time
 
   action = driving_model_data.action
   action.desiredCurvature = float(net_output_data['desired_curvature'][0,0])
@@ -166,13 +167,6 @@ def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._D
   hard_brake_predicted = (publish_state.prev_brake_5ms2_probs > ModelConstants.FCW_THRESHOLDS_5MS2).all() and \
     (publish_state.prev_brake_3ms2_probs > ModelConstants.FCW_THRESHOLDS_3MS2).all()
   meta.hardBrakePredicted = hard_brake_predicted.item()
-
-  # temporal pose
-  temporal_pose = modelV2.temporalPose
-  temporal_pose.trans = net_output_data['sim_pose'][0,:3].tolist()
-  temporal_pose.transStd = net_output_data['sim_pose_stds'][0,:3].tolist()
-  temporal_pose.rot = net_output_data['sim_pose'][0,3:].tolist()
-  temporal_pose.rotStd = net_output_data['sim_pose_stds'][0,3:].tolist()
 
   # confidence
   if vipc_frame_id % (2*ModelConstants.MODEL_FREQ) == 0:

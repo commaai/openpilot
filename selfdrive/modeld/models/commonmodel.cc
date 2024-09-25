@@ -49,10 +49,6 @@ ModelFrame::~ModelFrame() {
   CL_CHECK(clReleaseCommandQueue(q));
 }
 
-float sigmoid(float input) {
-  return 1 / (1 + expf(-input));
-}
-
 MonitoringModelFrame::MonitoringModelFrame(cl_device_id device_id, cl_context context) {
   input_frame = std::make_unique<float[]>(MODEL_FRAME_SIZE);
 
