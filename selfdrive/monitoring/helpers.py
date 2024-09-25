@@ -57,7 +57,7 @@ class DRIVER_MONITOR_SETTINGS:
     self._POSESTD_THRESHOLD = 0.3
     self._HI_STD_FALLBACK_TIME = int(10  / self._DT_DMON)  # fall back to wheel touch if model is uncertain for 10s
     self._DISTRACTED_FILTER_TS = 0.25  # 0.6Hz
-    self._ALWAYS_ON_ALERT_MIN_SPEED = 7
+    self._ALWAYS_ON_ALERT_MIN_SPEED = 11
 
     self._POSE_CALIB_MIN_SPEED = 13  # 30 mph
     self._POSE_OFFSET_MIN_COUNT = int(60 / self._DT_DMON)  # valid data counts before calibration completes, 1min cumulative
@@ -337,9 +337,9 @@ class DriverMonitoring:
 
     _reaching_audible = self.awareness - self.step_change <= self.threshold_prompt
     _reaching_terminal = self.awareness - self.step_change <= 0
-    standstill_exemption = standstill and _reaching_audible
+    standstill_orange_exemption = standstill and _reaching_audible
     always_on_red_exemption = always_on_valid and not op_engaged and _reaching_terminal
-    always_on_lowspeed_exemption = always_on_valid and not op_engaged and car_speed < self.settings._ALWAYS_ON_ALERT_MIN_SPEED and _reaching_audible
+    always_on_lowspeed_exemption = always_on_valid and not op_engaged and car_speed < self.settings._ALWAYS_ON_ALERT_MIN_SPEED
 
     certainly_distracted = self.driver_distraction_filter.x > 0.63 and self.driver_distracted and self.face_detected
     maybe_distracted = self.hi_stds > self.settings._HI_STD_FALLBACK_TIME or not self.face_detected
@@ -347,7 +347,7 @@ class DriverMonitoring:
     if certainly_distracted or maybe_distracted:
       # should always be counting if distracted unless at standstill (lowspeed for always-on) and reaching orange
       # also will not be reaching 0 if DM is active when not engaged
-      if not (standstill_exemption or always_on_red_exemption or always_on_lowspeed_exemption):
+      if not (standstill_orange_exemption or always_on_red_exemption or (always_on_lowspeed_exemption and _reaching_audible)):
         self.awareness = max(self.awareness - self.step_change, -0.1)
 
     alert = None
@@ -360,7 +360,7 @@ class DriverMonitoring:
     elif self.awareness <= self.threshold_prompt:
       # prompt orange alert
       alert = EventName.promptDriverDistracted if self.active_monitoring_mode else EventName.promptDriverUnresponsive
-    elif self.awareness <= self.threshold_pre:
+    elif self.awareness <= self.threshold_pre and not always_on_lowspeed_exemption:
       # pre green alert
       alert = EventName.preDriverDistracted if self.active_monitoring_mode else EventName.preDriverUnresponsive
 
