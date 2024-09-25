@@ -63,13 +63,13 @@ class ModelState:
     self.wide_frame = ModelFrame(context)
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
     self.inputs = {
-      'input_imgs': np.zeros((1, 12, 128, 256), dtype=np.float16),
-      'big_input_imgs': np.zeros((1, 12, 128,  256), dtype=np.float16),
-      'desire': np.zeros((1, (ModelConstants.HISTORY_BUFFER_LEN+1), ModelConstants.DESIRE_LEN), dtype=np.float16),
-      'traffic_convention': np.zeros((1, ModelConstants.TRAFFIC_CONVENTION_LEN), dtype=np.float16),
-      'lateral_control_params': np.zeros((1, ModelConstants.LATERAL_CONTROL_PARAMS_LEN), dtype=np.float16),
-      'prev_desired_curv': np.zeros((1,(ModelConstants.HISTORY_BUFFER_LEN+1), ModelConstants.PREV_DESIRED_CURV_LEN), dtype=np.float16),
-      'features_buffer': np.zeros((1, ModelConstants.HISTORY_BUFFER_LEN,  ModelConstants.FEATURE_LEN), dtype=np.float16),
+      'input_imgs': np.zeros((1, 12, 128, 256), dtype=np.uint8),
+      'big_input_imgs': np.zeros((1, 12, 128,  256), dtype=np.uint8),
+      'desire': np.zeros((1, (ModelConstants.HISTORY_BUFFER_LEN+1), ModelConstants.DESIRE_LEN), dtype=np.float32),
+      'traffic_convention': np.zeros((1, ModelConstants.TRAFFIC_CONVENTION_LEN), dtype=np.float32),
+      'lateral_control_params': np.zeros((1, ModelConstants.LATERAL_CONTROL_PARAMS_LEN), dtype=np.float32),
+      'prev_desired_curv': np.zeros((1,(ModelConstants.HISTORY_BUFFER_LEN+1), ModelConstants.PREV_DESIRED_CURV_LEN), dtype=np.float32),
+      'features_buffer': np.zeros((1, ModelConstants.HISTORY_BUFFER_LEN,  ModelConstants.FEATURE_LEN), dtype=np.float32),
     }
 
     with open(METADATA_PATH, 'rb') as f:
@@ -99,9 +99,9 @@ class ModelState:
 
     self.inputs['traffic_convention'][:] = inputs['traffic_convention']
     self.inputs['lateral_control_params'][:] = inputs['lateral_control_params']
-    self.inputs['input_imgs'] = self.frame.prepare(buf, transform.flatten(), None).astype(np.float16).reshape(self.inputs['input_imgs'].shape)
+    self.inputs['input_imgs'] = self.frame.prepare(buf, transform.flatten(), None).reshape(self.inputs['input_imgs'].shape)
     if wbuf is not None:
-      self.inputs['big_input_imgs'] = self.wide_frame.prepare(wbuf, transform_wide.flatten(), None).astype(np.float16).reshape(self.inputs['input_imgs'].shape)
+      self.inputs['big_input_imgs'] = self.wide_frame.prepare(wbuf, transform_wide.flatten(), None).reshape(self.inputs['input_imgs'].shape)
 
     if prepare_only:
       return None
