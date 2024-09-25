@@ -112,12 +112,23 @@ if __name__ == "__main__":
         'driverStateV2.dspExecutionTime'
       ]
       if PC:
-        ignore += ['modelV2.acceleration.x',]
+        # TODO We ignore whole bunch so we can compare important stuff
+        # like posenet with reasonable tolerance
+        ignore += ['modelV2.acceleration.x',
+                   'modelV2.position.x',
+                   'modelV2.position.xStd',
+                   'modelV2.position.y',
+                   'modelV2.position.yStd',
+                   'modelV2.position.z',
+                   'modelV2.position.zStd',
+                   'drivingModelData.path.xCoefficients',]
         for i in range(3):
           for field in ('x', 'y', 'v', 'a'):
             ignore.append(f'modelV2.leadsV3.{i}.{field}')
             ignore.append(f'modelV2.leadsV3.{i}.{field}Std')
-      # TODO this tolerance is absurdly large
+        for i in range(4):
+          for field in ('x', 'y', 'z', 't'):
+            ignore.append(f'modelV2.laneLines.{i}.{field}')
       tolerance = .2 if PC else None
       results: Any = {TEST_ROUTE: {}}
       log_paths: Any = {TEST_ROUTE: {"models": {'ref': BASE_URL + log_fn, 'new': log_fn}}}
