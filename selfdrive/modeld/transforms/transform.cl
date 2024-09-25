@@ -7,7 +7,7 @@
 
 __kernel void warpPerspective(__global const uchar * src,
                               int src_row_stride, int src_px_stride, int src_offset, int src_rows, int src_cols,
-                              __global float * dst,
+                              __global uchar * dst,
                               int dst_row_stride, int dst_offset, int dst_rows, int dst_cols,
                               __constant float * M)
 {
@@ -49,6 +49,6 @@ __kernel void warpPerspective(__global const uchar * src,
         int val = v0 * itab0 +  v1 * itab1 + v2 * itab2 + v3 * itab3;
 
         uchar pix = convert_uchar_sat((val + (1 << (INTER_REMAP_COEF_BITS-1))) >> INTER_REMAP_COEF_BITS);
-        dst[dst_index] = (float)pix;
+        dst[dst_index] = pix;
     }
 }

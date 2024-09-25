@@ -20,4 +20,4 @@ cdef extern from "selfdrive/modeld/models/commonmodel.h":
   cppclass MonitoringModelFrame:
     int MODEL_FRAME_SIZE
     MonitoringModelFrame(cl_device_id, cl_context)
-    float * prepare(cl_mem, int, int, int, int, mat3)
+    unsigned char * prepare(cl_mem, int, int, int, int, mat3)

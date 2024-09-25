@@ -83,7 +83,8 @@ class ModelState:
     # buf_data = buf.data.reshape(-1, buf.stride)
     # input_data = self.inputs['input_img'].reshape(MODEL_HEIGHT, MODEL_WIDTH)
     # input_data[:] = buf_data[v_offset:v_offset+MODEL_HEIGHT, h_offset:h_offset+MODEL_WIDTH]
-    self.model.setInputBuffer("input_img", self.frame.prepare(buf, transform.flatten()))
+    preped = self.frame.prepare(buf, transform.flatten())
+    self.model.setInputBuffer("input_img", preped.view(np.float32))
 
     t1 = time.perf_counter()
     self.model.execute()
