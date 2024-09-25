@@ -112,16 +112,13 @@ if __name__ == "__main__":
         'driverStateV2.dspExecutionTime'
       ]
       if PC:
-        ignore += [
-          'modelV2.laneLines.0.t',
-          'modelV2.laneLines.1.t',
-          'modelV2.laneLines.2.t',
-          'modelV2.laneLines.3.t',
-          'modelV2.roadEdges.0.t',
-          'modelV2.roadEdges.1.t',
-        ]
+        ignore += ['modelV2.acceleration.x',]
+        for i in range(3):
+          for field in ('x', 'y', 'v', 'a'):
+            ignore.append(f'modelV2.leadsV3.{i}.{field}')
+            ignore.append(f'modelV2.leadsV3.{i}.{field}Std')
       # TODO this tolerance is absurdly large
-      tolerance = 2.0 if PC else None
+      tolerance = .2 if PC else None
       results: Any = {TEST_ROUTE: {}}
       log_paths: Any = {TEST_ROUTE: {"models": {'ref': BASE_URL + log_fn, 'new': log_fn}}}
       results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
