@@ -12,13 +12,13 @@ BelowSteerSpeed = car.OnroadEvent.EventName.belowSteerSpeed
 
 
 class TestHondaLowSpeedAlert:
-  def setUp(self):
+  def setUp(self, op_long):
     test_car = CAR.HONDA_ODYSSEY_BOSCH
 
     # setup
     CarInterface, CarController, CarState, RadarInterface = interfaces[test_car]
 
-    CP = CarInterface.get_params(test_car, gen_empty_fingerprint(), {}, experimental_long=False, docs=False)
+    CP = CarInterface.get_params(test_car, gen_empty_fingerprint(), {}, experimental_long=op_long, docs=False)
 
     self.CI = CarInterface(CP, CarController, CarState)
     self.RI = RadarInterface(CP) # unused
@@ -52,10 +52,12 @@ class TestHondaLowSpeedAlert:
 
 
   def test_alert_transitions(self):
-    self.setUp()
-    self._update_events()
-
     for e in (True, False):
+
+      # check stock and op long
+      self.setUp(op_long=e)
+      self._update_events()
+
       if self.CP.minSteerSpeed < 6.:
         assert not self.car_events.low_speed_alert
         assert BelowSteerSpeed not in self.CS.events.names
