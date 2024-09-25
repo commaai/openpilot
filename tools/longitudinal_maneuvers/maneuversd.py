@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import numpy as np
 from dataclasses import dataclass
 
 from cereal import messaging, car
@@ -10,8 +11,14 @@ from openpilot.common.swaglog import cloudlog
 
 @dataclass
 class Action:
-  accel: float      # m/s^2
-  duration: float   # seconds
+  accel_bp: float | list[float]  # m/s^2
+  time_bp: float | list[float]   # seconds
+
+  def __post_init__(self):
+    if isinstance(self.accel_bp, list):
+      assert len(self.accel_bp) == len(self.time_bp)
+    else:
+      assert isinstance(self.accel_bp, (int, float)) and isinstance(self.time_bp, (int, float))
 
 
 @dataclass
@@ -44,8 +51,13 @@ class Maneuver:
 
     self._action_frames += 1
 
+    action_accel = action.accel_bp
+    if isinstance(action.accel_bp, list):
+      action_accel = np.interp(self._action_frames * DT_MDL, action.time_bp, action.accel_bp)
+
     # reached duration of action
-    if self._action_frames > (action.duration / DT_MDL):
+    last_bp = action.time_bp[-1] if isinstance(action.time_bp, list) else action.time_bp
+    if self._action_frames > (last_bp / DT_MDL):
       # next action
       if self._action_index < len(self.actions) - 1:
         self._action_index += 1
@@ -60,7 +72,7 @@ class Maneuver:
       else:
         self._finished = True
 
-    return action.accel
+    return float(action_accel)
 
   @property
   def finished(self):
@@ -74,44 +86,47 @@ class Maneuver:
 MANEUVERS = [
   Maneuver(
    "start from stop",
-   [Action(1.5, 3)],
+   [
+     Action(-2.5, 4),
+     Action([0.1, 1.6, 1.6], [0, 2, 6]),
+   ],
    repeat=3,
    initial_speed=0.,
   ),
-  Maneuver(
-   "creep: alternate between +1m/s^2 and -1m/s^2",
-   [
-     Action(1, 2), Action(-1, 2),
-     Action(1, 2), Action(-1, 2),
-     Action(1, 2), Action(-1, 2),
-   ],
-   repeat=1,
-   initial_speed=0.,
-  ),
-  Maneuver(
-    "brake step response: -1m/s^2 from 20mph",
-    [Action(-1, 3)],
-    repeat=2,
-    initial_speed=20. * CV.MPH_TO_MS,
-  ),
-  Maneuver(
-    "brake step response: -4m/s^2 from 20mph",
-    [Action(-4, 3)],
-    repeat=2,
-    initial_speed=20. * CV.MPH_TO_MS,
-  ),
-  Maneuver(
-    "gas step response: +1m/s^2 from 20mph",
-    [Action(1, 3)],
-    repeat=2,
-    initial_speed=20. * CV.MPH_TO_MS,
-  ),
-  Maneuver(
-    "gas step response: +4m/s^2 from 20mph",
-    [Action(4, 3)],
-    repeat=2,
-    initial_speed=20. * CV.MPH_TO_MS,
-  ),
+  # Maneuver(
+  #  "creep: alternate between +1m/s^2 and -1m/s^2",
+  #  [
+  #    Action(1, 2), Action(-1, 2),
+  #    Action(1, 2), Action(-1, 2),
+  #    Action(1, 2), Action(-1, 2),
+  #  ],
+  #  repeat=1,
+  #  initial_speed=0.,
+  # ),
+  # Maneuver(
+  #   "brake step response: -1m/s^2 from 20mph",
+  #   [Action(-1, 3)],
+  #   repeat=2,
+  #   initial_speed=20. * CV.MPH_TO_MS,
+  # ),
+  # Maneuver(
+  #   "brake step response: -4m/s^2 from 20mph",
+  #   [Action(-4, 3)],
+  #   repeat=2,
+  #   initial_speed=20. * CV.MPH_TO_MS,
+  # ),
+  # Maneuver(
+  #   "gas step response: +1m/s^2 from 20mph",
+  #   [Action(1, 3)],
+  #   repeat=2,
+  #   initial_speed=20. * CV.MPH_TO_MS,
+  # ),
+  # Maneuver(
+  #   "gas step response: +4m/s^2 from 20mph",
+  #   [Action(4, 3)],
+  #   repeat=2,
+  #   initial_speed=20. * CV.MPH_TO_MS,
+  # ),
 ]
 
 
