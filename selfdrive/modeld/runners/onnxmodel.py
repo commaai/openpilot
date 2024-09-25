@@ -28,7 +28,7 @@ def convert_fp16_to_fp32(onnx_path_or_bytes):
       i.type.tensor_type.elem_type = 1
   for i in model.graph.node:
     if i.op_type == 'Cast' and i.attribute[0].i == 10:
-        i.attribute[0].i = 1
+      i.attribute[0].i = 1
     for a in i.attribute:
       if hasattr(a, 't'):
         if a.t.data_type == 10:

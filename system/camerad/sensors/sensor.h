@@ -6,7 +6,8 @@
 #include <utility>
 #include <vector>
 #include "media/cam_sensor.h"
-#include "system/camerad/cameras/camera_common.h"
+
+#include "cereal/gen/cpp/log.capnp.h"
 #include "system/camerad/sensors/ar0231_registers.h"
 #include "system/camerad/sensors/ox03c10_registers.h"
 #include "system/camerad/sensors/os04c10_registers.h"
@@ -19,7 +20,7 @@ public:
   virtual std::vector<i2c_random_wr_payload> getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const { return {}; }
   virtual float getExposureScore(float desired_ev, int exp_t, int exp_g_idx, float exp_gain, int gain_idx) const {return 0; }
   virtual int getSlaveAddress(int port) const { assert(0); }
-  virtual void processRegisters(CameraState *c, cereal::FrameData::Builder &framed) const {}
+  virtual void processRegisters(uint8_t *cur_buf, cereal::FrameData::Builder &framed) const {}
 
   cereal::FrameData::ImageSensor image_sensor = cereal::FrameData::ImageSensor::UNKNOWN;
   float pixel_size_mm;
@@ -68,7 +69,7 @@ public:
   std::vector<i2c_random_wr_payload> getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const override;
   float getExposureScore(float desired_ev, int exp_t, int exp_g_idx, float exp_gain, int gain_idx) const override;
   int getSlaveAddress(int port) const override;
-  void processRegisters(CameraState *c, cereal::FrameData::Builder &framed) const override;
+  void processRegisters(uint8_t *cur_buf, cereal::FrameData::Builder &framed) const override;
 
 private:
   mutable std::map<uint16_t, std::pair<int, int>> ar0231_register_lut;
