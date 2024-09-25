@@ -4,6 +4,8 @@
 #include "selfdrive/ui/ui.h"
 
 class HudRenderer : public QObject {
+  Q_OBJECT
+
 public:
   HudRenderer();
   void updateState(const UIState &s);
