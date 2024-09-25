@@ -65,8 +65,8 @@ class ModelState:
       'lateral_control_params': np.zeros(ModelConstants.LATERAL_CONTROL_PARAMS_LEN, dtype=np.float32),
       'prev_desired_curv': np.zeros(ModelConstants.PREV_DESIRED_CURV_LEN * (ModelConstants.HISTORY_BUFFER_LEN+1), dtype=np.float32),
       'features_buffer': np.zeros(ModelConstants.HISTORY_BUFFER_LEN * ModelConstants.FEATURE_LEN, dtype=np.float32),
-      'input_imgs': None,
-      'big_input_imgs': None,
+      'input_imgs': np.zeros(MODEL_FRAME_SIZE*2, dtype=np.uint8),
+      'big_input_imgs': np.zeros(MODEL_FRAME_SIZE*2, dtype=np.uint8),
     }
 
     with open(METADATA_PATH, 'rb') as f:
