@@ -65,10 +65,9 @@ class ModelState:
       'lateral_control_params': np.zeros(ModelConstants.LATERAL_CONTROL_PARAMS_LEN, dtype=np.float32),
       'prev_desired_curv': np.zeros(ModelConstants.PREV_DESIRED_CURV_LEN * (ModelConstants.HISTORY_BUFFER_LEN+1), dtype=np.float32),
       'features_buffer': np.zeros(ModelConstants.HISTORY_BUFFER_LEN * ModelConstants.FEATURE_LEN, dtype=np.float32),
+      'input_imgs': np.zeros(MODEL_FRAME_SIZE*2, dtype=np.uint8),
+      'big_input_imgs': np.zeros(MODEL_FRAME_SIZE*2, dtype=np.uint8),
     }
-
-    self.input_imgs = np.zeros(MODEL_FRAME_SIZE*2, dtype=np.uint8)
-    self.big_input_imgs = np.zeros(MODEL_FRAME_SIZE*2, dtype=np.uint8)
 
     with open(METADATA_PATH, 'rb') as f:
       model_metadata = pickle.load(f)
@@ -79,8 +78,6 @@ class ModelState:
     self.parser = Parser()
 
     self.model = ModelRunner(MODEL_PATHS, self.output, Runtime.GPU, False, context)
-    self.model.addInput("input_imgs", None)
-    self.model.addInput("big_input_imgs", None)
     for k,v in self.inputs.items():
       self.model.addInput(k, v)
 
@@ -102,14 +99,10 @@ class ModelState:
     self.inputs['lateral_control_params'][:] = inputs['lateral_control_params']
 
     new_img = self.frame.prepare(buf, transform.flatten(), self.model.getCLBuffer("input_imgs"))
-    self.input_imgs[:MODEL_FRAME_SIZE] = self.input_imgs[-MODEL_FRAME_SIZE:]
-    self.input_imgs[MODEL_FRAME_SIZE:] = new_img[:]
-    self.model.setInputBuffer("input_imgs", self.input_imgs.view(np.float32))
+    self.model.setInputBuffer("input_imgs", new_img)
     if wbuf is not None:
       new_big_img = self.wide_frame.prepare(wbuf, transform_wide.flatten(), self.model.getCLBuffer("big_input_imgs"))
-      self.big_input_imgs[:MODEL_FRAME_SIZE] = self.big_input_imgs[-MODEL_FRAME_SIZE:]
-      self.big_input_imgs[MODEL_FRAME_SIZE:] = new_big_img[:]
-      self.model.setInputBuffer("big_input_imgs", self.big_input_imgs.view(np.float32))
+      self.model.setInputBuffer("big_input_imgs", new_big_img)
 
 
     if prepare_only:
