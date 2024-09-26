@@ -64,12 +64,11 @@ def get_accel_from_plan(CP, speeds, accels):
 
 
 class LongitudinalPlanner:
-  def __init__(self, CP, init_v=0.0, init_a=0.0, dt=DT_MDL, calibrate_v_model_error=True):
+  def __init__(self, CP, init_v=0.0, init_a=0.0, dt=DT_MDL):
     self.CP = CP
     self.mpc = LongitudinalMpc(dt=dt)
     self.fcw = False
     self.dt = dt
-    self.calibrate_v_model_error = calibrate_v_model_error
 
     self.a_desired = init_a
     self.v_desired_filter = FirstOrderFilter(init_v, 2.0, self.dt)
@@ -130,7 +129,7 @@ class LongitudinalPlanner:
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
     # Compute model v_ego error
-    self.v_model_error = get_speed_error(sm['modelV2'], v_ego) if self.calibrate_v_model_error else 0.0
+    self.v_model_error = get_speed_error(sm['modelV2'], v_ego)
 
     if force_slow_decel:
       v_cruise = 0.0
