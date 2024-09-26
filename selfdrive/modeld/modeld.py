@@ -116,9 +116,6 @@ class ModelState:
       tensor_inputs['input_imgs'] = Tensor.from_blob(rawbuf_ptr, IMG_INPUT_SHAPE, dtype=dtypes.uint8, device='QCOM')
     else:
       tensor_inputs['input_imgs'] = Tensor(self.frame.buffer_from_cl(input_imgs_cl)).reshape(IMG_INPUT_SHAPE)
-    a = tensor_inputs['input_imgs'].numpy().flatten()
-
-    print(a[:10], a[MODEL_FRAME_SIZE:MODEL_FRAME_SIZE+10])
 
     if wbuf is not None:
       big_input_imgs_cl = self.wide_frame.prepare(wbuf, transform_wide.flatten(), None)
