@@ -4,13 +4,30 @@
 #define BLACK_LVL 64
 #define VIGNETTE_RSZ 1.0f
 
-float4 ox_lut_func(int4 parsed) {
-  return (exp(convert_float4(parsed) / 271.0) - 1.0) * 2.73845678e-07;
-}
+float ox_lut_func(int x) {
+  if (x < 512) {
+    return x * 5.94873e-8;
+  } else if (512 <= x < 768) {
+    return 3.0458e-05 + (x-512) * 1.19913e-7;
+  } else if (768 <= x < 1536) {
+    return 6.1154e-05 + (x-768) * 2.38493e-7;
+  } else if (1536 <= x < 1792) {
+    return 0.0002448 + (x-1536) * 9.56930e-7;
+  } else if (1792 <= x < 2048) {
+    return 0.00048977 + (x-1792) * 1.91441e-6;
+  } else if (2048 <= x < 2304) {
+    return 0.00097984 + (x-2048) * 3.82937e-6;
+  } else if (2304 <= x < 2560) {
+    return 0.0019601 + (x-2304) * 7.659055e-6;
+  } else if (2560 <= x < 2816) {
+    return 0.0039207 + (x-2560) * 1.525e-5;
+  } else {
+    return 0.0078421 + (exp((x-2816)/273.0) - 1) * 0.0092421;
+  }
 
 float4 normalize_pv(int4 parsed, float vignette_factor) {
   // PWL
-  float4 pv = ox_lut_func(parsed);
+  float4 pv = {ox_lut_func(parsed.s0), ox_lut_func(parsed.s1), ox_lut_func(parsed.s2), ox_lut_func(parsed.s3)}
   return clamp(pv*vignette_factor*256.0, 0.0, 1.0);
 }
 
