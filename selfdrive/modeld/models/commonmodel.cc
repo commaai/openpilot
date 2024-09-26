@@ -21,12 +21,12 @@ ModelFrame::ModelFrame(cl_device_id device_id, cl_context context) {
 }
 
 cl_mem* ModelFrame::prepare(cl_mem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3 &projection, cl_mem *output) {
+  CL_CHECK(clEnqueueCopyBuffer(q, input_frames_cl, input_frames_cl, MODEL_FRAME_SIZE * sizeof(uint8_t), 0, MODEL_FRAME_SIZE * sizeof(uint8_t), 0, nullptr, nullptr));
   transform_queue(&this->transform, q,
                   yuv_cl, frame_width, frame_height, frame_stride, frame_uv_offset,
                   y_cl, u_cl, v_cl, MODEL_WIDTH, MODEL_HEIGHT, projection);
 
   loadyuv_queue(&loadyuv, q, y_cl, u_cl, v_cl, net_input_cl);
-  CL_CHECK(clEnqueueCopyBuffer(q, input_frames_cl, input_frames_cl, MODEL_FRAME_SIZE * sizeof(uint8_t), 0, MODEL_FRAME_SIZE * sizeof(uint8_t), 0, nullptr, nullptr));
   CL_CHECK(clEnqueueCopyBuffer(q, net_input_cl, input_frames_cl, 0,  MODEL_FRAME_SIZE * sizeof(uint8_t), MODEL_FRAME_SIZE * sizeof(uint8_t), 0, nullptr, nullptr));
 
   // NOTE: Since thneed is using a different command queue, this clFinish is needed to ensure the image is ready.
