@@ -190,7 +190,7 @@ QPixmap bootstrapPixmap(const QString &id) {
   return pixmap;
 }
 
-bool hasLongitudinalControl(const cereal::CarParams::Reader &car_params) {
+bool hasLongitudinalControl(const car::CarParams::Reader &car_params) {
   // Using the experimental longitudinal toggle, returns whether longitudinal control
   // will be active without needing a restart of openpilot
   return car_params.getExperimentalLongitudinalAvailable()

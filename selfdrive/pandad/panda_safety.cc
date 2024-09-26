@@ -26,7 +26,7 @@ void PandaSafety::updateMultiplexingMode() {
   if (!initialized_) {
     prev_obd_multiplexing_ = false;
     for (int i = 0; i < pandas_.size(); ++i) {
-      pandas_[i]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, 1U);
+      pandas_[i]->set_safety_model(car::CarParams::SafetyModel::ELM327, 1U);
     }
     initialized_ = true;
   }
@@ -36,7 +36,7 @@ void PandaSafety::updateMultiplexingMode() {
   if (obd_multiplexing_requested != prev_obd_multiplexing_) {
     for (int i = 0; i < pandas_.size(); ++i) {
       const uint16_t safety_param = (i > 0 || !obd_multiplexing_requested) ? 1U : 0U;
-      pandas_[i]->set_safety_model(cereal::CarParams::SafetyModel::ELM327, safety_param);
+      pandas_[i]->set_safety_model(car::CarParams::SafetyModel::ELM327, safety_param);
     }
     prev_obd_multiplexing_ = obd_multiplexing_requested;
     params_.putBool("ObdMultiplexingChanged", true);
@@ -62,14 +62,14 @@ std::string PandaSafety::fetchCarParams() {
 void PandaSafety::setSafetyMode(const std::string &params_string) {
   AlignedBuffer aligned_buf;
   capnp::FlatArrayMessageReader cmsg(aligned_buf.align(params_string.data(), params_string.size()));
-  cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
+  car::CarParams::Reader car_params = cmsg.getRoot<car::CarParams>();
 
   auto safety_configs = car_params.getSafetyConfigs();
   uint16_t alternative_experience = car_params.getAlternativeExperience();
 
   for (int i = 0; i < pandas_.size(); ++i) {
     // Default to SILENT safety model if not specified
-    cereal::CarParams::SafetyModel safety_model = cereal::CarParams::SafetyModel::SILENT;
+    car::CarParams::SafetyModel safety_model = car::CarParams::SafetyModel::SILENT;
     uint16_t safety_param = 0U;
     if (i < safety_configs.size()) {
       safety_model = safety_configs[i].getSafetyModel();

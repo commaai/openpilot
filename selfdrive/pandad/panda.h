@@ -62,7 +62,7 @@ public:
 
   // Panda functionality
   cereal::PandaState::PandaType get_hw_type();
-  void set_safety_model(cereal::CarParams::SafetyModel safety_model, uint16_t safety_param=0U);
+  void set_safety_model(car::CarParams::SafetyModel safety_model, uint16_t safety_param=0U);
   void set_alternative_experience(uint16_t alternative_experience);
   void set_fan_speed(uint16_t fan_speed);
   uint16_t get_fan_speed();

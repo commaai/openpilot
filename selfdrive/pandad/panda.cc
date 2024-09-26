@@ -58,7 +58,7 @@ std::vector<std::string> Panda::list(bool usb_only) {
   return serials;
 }
 
-void Panda::set_safety_model(cereal::CarParams::SafetyModel safety_model, uint16_t safety_param) {
+void Panda::set_safety_model(car::CarParams::SafetyModel safety_model, uint16_t safety_param) {
   handle->control_write(0xdc, (uint16_t)safety_model, safety_param);
 }
 
