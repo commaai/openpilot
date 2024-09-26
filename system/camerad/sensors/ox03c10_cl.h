@@ -24,10 +24,11 @@ float ox_lut_func(int x) {
   } else {
     return 0.0078421 + (exp((x-2816)/273.0) - 1) * 0.0092421;
   }
+}
 
 float4 normalize_pv(int4 parsed, float vignette_factor) {
   // PWL
-  float4 pv = {ox_lut_func(parsed.s0), ox_lut_func(parsed.s1), ox_lut_func(parsed.s2), ox_lut_func(parsed.s3)}
+  float4 pv = {ox_lut_func(parsed.s0), ox_lut_func(parsed.s1), ox_lut_func(parsed.s2), ox_lut_func(parsed.s3)};
   return clamp(pv*vignette_factor*256.0, 0.0, 1.0);
 }
 
