@@ -31,12 +31,14 @@ from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
 
 from tinygrad.tensor import Tensor
+import ctypes, array
+from tinygrad.dtype import dtypes
+from tinygrad.helpers import getenv, to_mv, mv_address
 Tensor.manual_seed(1337)
 Tensor.no_grad = True
 
 PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
-
 
 MODEL_PATH = Path(__file__).parent / 'models/supercombo.onnx'
 MODEL_PKL_PATH = Path(__file__).parent / 'models/supercombo_tinygrad.pkl'
@@ -45,6 +47,8 @@ METADATA_PATH = Path(__file__).parent / 'models/supercombo_metadata.pkl'
 MODEL_WIDTH = 512
 MODEL_HEIGHT = 256
 MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT * 3 // 2
+IMG_INPUT_SHAPE = (1, 12, 128, 256)
+
 
 class FrameMeta:
   frame_id: int = 0
@@ -67,8 +71,6 @@ class ModelState:
     self.wide_frame = ModelFrame(context)
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
     self.inputs = {
-      'input_imgs': np.zeros((1, 12, 128, 256), dtype=np.uint8),
-      'big_input_imgs': np.zeros((1, 12, 128,  256), dtype=np.uint8),
       'desire': np.zeros((1, (ModelConstants.HISTORY_BUFFER_LEN+1), ModelConstants.DESIRE_LEN), dtype=np.float32),
       'traffic_convention': np.zeros((1, ModelConstants.TRAFFIC_CONVENTION_LEN), dtype=np.float32),
       'lateral_control_params': np.zeros((1, ModelConstants.LATERAL_CONTROL_PARAMS_LEN), dtype=np.float32),
@@ -103,42 +105,30 @@ class ModelState:
 
     self.inputs['traffic_convention'][:] = inputs['traffic_convention']
     self.inputs['lateral_control_params'][:] = inputs['lateral_control_params']
-    
-    cl_thing = self.frame.prepare(buf, transform.flatten(), None)
-    numpy_array = self.frame.buffer_from_cl(cl_thing)
+    tensor_inputs = {k: Tensor(v) for k, v in self.inputs.items()}
 
-    self.inputs['input_imgs'] = numpy_array.reshape(self.inputs['input_imgs'].shape)
 
-    
-    #self.inputs['input_imgs'] = self.frame.prepare(buf, transform.flatten(), None).reshape(self.inputs['input_imgs'].shape)
 
-    # if getCLBuffer is not None, frame will be None
-
-    #cl_buf = cl_thing.mem_address #- int(10)
-    #from hexdump import hexdump
-    #import ctypes, array
-    #from tinygrad import Tensor
-    #from tinygrad.dtype import dtypes
-    #from tinygrad.helpers import getenv, to_mv, mv_address
-    #cl_buf_desc_ptr = to_mv(cl_thing.mem_address, 8).cast('Q')[0]
-    #rawbuf_ptr = to_mv(cl_buf_desc_ptr, 0x100).cast('Q')[20] # offset 0xA0 is a raw gpu pointer.
-    #x = Tensor.from_blob(rawbuf_ptr, (256, 128,12), dtype=dtypes.uint8, device='GPU')
-    #print(x.flatten()[:10].numpy())
-    #y = (x + 1).numpy()
-    #print(y)
-
-    #assert False
-    #self.model.setInputBuffer("input_imgs", self.frame.prepare(buf, transform.flatten(), self.model.getCLBuffer("input_imgs")))
+    input_imgs_cl = self.frame.prepare(buf, transform.flatten(), None)
+    if TICI:
+      cl_buf_desc_ptr = to_mv(input_imgs_cl.mem_address, 8).cast('Q')[0]
+      rawbuf_ptr = to_mv(cl_buf_desc_ptr, 0x100).cast('Q')[20] # offset 0xA0 is a raw gpu pointer.
+      tensor_inputs['input_imgs'] = Tensor.from_blob(rawbuf_ptr, IMG_INPUT_SHAPE, dtype=dtypes.uint8, device='QCOM')
+    else:
+      tensor_inputs['input_imgs'] = Tensor(self.frame.buffer_from_cl(input_imgs_cl)).reshape(IMG_INPUT_SHAPE)
     if wbuf is not None:
-      cl_thing = self.wide_frame.prepare(wbuf, transform_wide.flatten(), None)
-      numpy_array = self.wide_frame.buffer_from_cl(cl_thing)
-      self.inputs['big_input_imgs'] = numpy_array.reshape(self.inputs['big_input_imgs'].shape)
-
+      big_input_imgs_cl = self.wide_frame.prepare(wbuf, transform_wide.flatten(), None)
+      if TICI:
+        cl_buf_desc_ptr = to_mv(big_input_imgs_cl.mem_address, 8).cast('Q')[0]
+        rawbuf_ptr = to_mv(cl_buf_desc_ptr, 0x100).cast('Q')[20] # offset 0xA0 is a raw gpu pointer.
+        tensor_inputs['big_input_imgs'] = Tensor.from_blob(rawbuf_ptr, IMG_INPUT_SHAPE, dtype=dtypes.uint8, device='QCOM')
+      else:
+        tensor_inputs['big_input_imgs'] = Tensor(self.wide_frame.buffer_from_cl(big_input_imgs_cl)).reshape(IMG_INPUT_SHAPE)
+  
     if prepare_only:
       return None
 
-    self.tensor_inputs = {k: Tensor(v) for k, v in self.inputs.items()}
-    self.output = self.model_run(**self.tensor_inputs)['outputs'].numpy().flatten()
+    self.output = self.model_run(**tensor_inputs)['outputs'].numpy().flatten()
     outputs = self.parser.parse_outputs(self.slice_outputs(self.output))
 
     self.inputs['features_buffer'][:-ModelConstants.FEATURE_LEN] = self.inputs['features_buffer'][ModelConstants.FEATURE_LEN:]

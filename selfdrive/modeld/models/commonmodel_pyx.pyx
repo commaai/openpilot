@@ -44,7 +44,7 @@ cdef class ModelFrame:
     data = self.frame.prepare(buf.buf.buf_cl, buf.width, buf.height, buf.stride, buf.uv_offset, cprojection, NULL)
     return CLMem.create(data)
 
-  def buffer_from_cl(self, CLMem in_frame):
+  def buffer_from_cl(self, CLMem in_frames):
     cdef unsigned char * data2
-    data2 = self.frame.buffer_from_cl(in_frame.mem)
+    data2 = self.frame.buffer_from_cl(in_frames.mem)
     return np.asarray(<cnp.uint8_t[:self.frame.buf_size]> data2)
