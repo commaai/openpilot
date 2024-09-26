@@ -120,10 +120,10 @@ class ModelState:
     #from tinygrad import Tensor
     #from tinygrad.dtype import dtypes
     #from tinygrad.helpers import getenv, to_mv, mv_address
-    #cl_buf_desc_ptr = to_mv(cl_buf, 8).cast('Q')[0]
-    #hexdump(to_mv(cl_buf_desc_ptr, 0x100))
+    #cl_buf_desc_ptr = to_mv(cl_thing.mem_address, 8).cast('Q')[0]
     #rawbuf_ptr = to_mv(cl_buf_desc_ptr, 0x100).cast('Q')[20] # offset 0xA0 is a raw gpu pointer.
     #x = Tensor.from_blob(rawbuf_ptr, (256, 128,12), dtype=dtypes.uint8, device='GPU')
+    #print(x.flatten()[:10].numpy())
     #y = (x + 1).numpy()
     #print(y)
 
