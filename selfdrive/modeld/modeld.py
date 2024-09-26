@@ -103,9 +103,36 @@ class ModelState:
 
     self.inputs['traffic_convention'][:] = inputs['traffic_convention']
     self.inputs['lateral_control_params'][:] = inputs['lateral_control_params']
-    self.inputs['input_imgs'] = self.frame.prepare(buf, transform.flatten(), None).reshape(self.inputs['input_imgs'].shape)
+    
+    cl_thing = self.frame.prepare(buf, transform.flatten(), None)
+    numpy_array = self.frame.buffer_from_cl(cl_thing)
+
+    self.inputs['input_imgs'] = numpy_array.reshape(self.inputs['input_imgs'].shape)
+
+    
+    #self.inputs['input_imgs'] = self.frame.prepare(buf, transform.flatten(), None).reshape(self.inputs['input_imgs'].shape)
+
+    # if getCLBuffer is not None, frame will be None
+
+    #cl_buf = cl_thing.mem_address #- int(10)
+    #from hexdump import hexdump
+    #import ctypes, array
+    #from tinygrad import Tensor
+    #from tinygrad.dtype import dtypes
+    #from tinygrad.helpers import getenv, to_mv, mv_address
+    #cl_buf_desc_ptr = to_mv(cl_buf, 8).cast('Q')[0]
+    #hexdump(to_mv(cl_buf_desc_ptr, 0x100))
+    #rawbuf_ptr = to_mv(cl_buf_desc_ptr, 0x100).cast('Q')[20] # offset 0xA0 is a raw gpu pointer.
+    #x = Tensor.from_blob(rawbuf_ptr, (256, 128,12), dtype=dtypes.uint8, device='GPU')
+    #y = (x + 1).numpy()
+    #print(y)
+
+    #assert False
+    #self.model.setInputBuffer("input_imgs", self.frame.prepare(buf, transform.flatten(), self.model.getCLBuffer("input_imgs")))
     if wbuf is not None:
-      self.inputs['big_input_imgs'] = self.wide_frame.prepare(wbuf, transform_wide.flatten(), None).reshape(self.inputs['input_imgs'].shape)
+      cl_thing = self.wide_frame.prepare(wbuf, transform_wide.flatten(), None)
+      numpy_array = self.wide_frame.buffer_from_cl(cl_thing)
+      self.inputs['big_input_imgs'] = numpy_array.reshape(self.inputs['big_input_imgs'].shape)
 
     if prepare_only:
       return None
