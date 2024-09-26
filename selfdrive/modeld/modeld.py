@@ -116,6 +116,10 @@ class ModelState:
       tensor_inputs['input_imgs'] = Tensor.from_blob(rawbuf_ptr, IMG_INPUT_SHAPE, dtype=dtypes.uint8, device='QCOM')
     else:
       tensor_inputs['input_imgs'] = Tensor(self.frame.buffer_from_cl(input_imgs_cl)).reshape(IMG_INPUT_SHAPE)
+    a = tensor_inputs['input_imgs'].numpy().flatten()
+
+    print(a[:10], a[MODEL_FRAME_SIZE:MODEL_FRAME_SIZE+10])
+
     if wbuf is not None:
       big_input_imgs_cl = self.wide_frame.prepare(wbuf, transform_wide.flatten(), None)
       if TICI:
@@ -195,15 +199,10 @@ def main(demo=False):
   meta_main = FrameMeta()
   meta_extra = FrameMeta()
 
-
-  if demo:
-    CP = convert_to_capnp(get_demo_car_params())
-  else:
-    CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
-  cloudlog.info("modeld got CarParams: %s", CP.carName)
+  #TODO dont read car params for demo
 
   # TODO this needs more thought, use .2s extra for now to estimate other delays
-  steer_delay = CP.steerActuatorDelay + .2
+  steer_delay =  .2
 
   DH = DesireHelper()
 
