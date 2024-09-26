@@ -13,7 +13,7 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper
 from openpilot.common.swaglog import cloudlog, ForwardingHandler
 
-from opendbc.car import DT_CTRL, carlog, structs
+from opendbc.car import DT_CTRL, carlog
 from opendbc.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
 from opendbc.car.fw_versions import ObdCallback
 from opendbc.car.car_helpers import get_car, get_radar_interface
@@ -21,7 +21,6 @@ from opendbc.car.interfaces import CarInterfaceBase, RadarInterfaceBase
 from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
 from openpilot.selfdrive.car.cruise import VCruiseHelper
 from openpilot.selfdrive.car.car_specific import CarSpecificEvents, MockCarState
-from openpilot.selfdrive.car.helpers import convert_carControl, convert_to_capnp
 from openpilot.selfdrive.selfdrived.events import Events, ET
 
 REPLAY = "REPLAY" in os.environ
@@ -64,8 +63,7 @@ def can_comm_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket
 class Car:
   CI: CarInterfaceBase
   RI: RadarInterfaceBase
-  CP: structs.CarParams
-  CP_capnp: car.CarParams
+  CP: car.CarParams
 
   def __init__(self, CI=None, RI=None) -> None:
     self.can_sock = messaging.sub_sock('can', timeout=20)
@@ -78,7 +76,7 @@ class Car:
     self.CS_prev = car.CarState.new_message()
     self.initialized_prev = False
 
-    self.last_actuators_output = structs.CarControl.Actuators()
+    self.last_actuators_output = car.CarControl.Actuators.new_message()
 
     self.params = Params()
 
@@ -99,7 +97,7 @@ class Car:
       cached_params_raw = self.params.get("CarParamsCache")
       if cached_params_raw is not None:
         with car.CarParams.from_bytes(cached_params_raw) as _cached_params:
-          cached_params = structs.CarParams(carName=_cached_params.carName, carFw=_cached_params.carFw, carVin=_cached_params.carVin)
+          cached_params = car.CarParams(carName=_cached_params.carName, carFw=_cached_params.carFw, carVin=_cached_params.carVin)
 
       self.CI = get_car(*self.can_callbacks, obd_callback(self.params), experimental_long_allowed, num_pandas, cached_params)
       self.RI = get_radar_interface(self.CI.CP)
@@ -123,8 +121,8 @@ class Car:
 
     self.CP.passive = not controller_available or self.CP.dashcamOnly
     if self.CP.passive:
-      safety_config = structs.CarParams.SafetyConfig()
-      safety_config.safetyModel = structs.CarParams.SafetyModel.noOutput
+      safety_config = car.CarParams.SafetyConfig.new_message()
+      safety_config.safetyModel = car.CarParams.SafetyModel.noOutput
       self.CP.safetyConfigs = [safety_config]
 
     # Write previous route's CarParams
@@ -134,8 +132,7 @@ class Car:
 
     # Write CarParams for controls and radard
     # convert to pycapnp representation for caching and logging
-    self.CP_capnp = convert_to_capnp(self.CP)
-    cp_bytes = self.CP_capnp.to_bytes()
+    cp_bytes = self.CP.to_bytes()
     self.params.put("CarParams", cp_bytes)
     self.params.put_nonblocking("CarParamsCache", cp_bytes)
     self.params.put_nonblocking("CarParamsPersistent", cp_bytes)
@@ -152,19 +149,19 @@ class Car:
     # card is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
 
-  def state_update(self) -> tuple[car.CarState, structs.RadarData | None]:
+  def state_update(self) -> tuple[car.CarState, car.RadarData]:
     """carState update loop, driven by can"""
 
     can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
     can_list = can_capnp_to_list(can_strs)
 
     # Update carState from CAN
-    CS = convert_to_capnp(self.CI.update(can_list))
+    CS = self.CI.update(can_list)
     if self.CP.carName == 'mock':
       CS = self.mock_carstate.update(CS)
 
     # Update radar tracks from CAN
-    RD: structs.RadarData | None = self.RI.update(can_list)
+    RD: car.RadarData = self.RI.update(can_list)
 
     self.sm.update(0)
 
@@ -184,7 +181,7 @@ class Car:
 
     return CS, RD
 
-  def update_events(self, CS: car.CarState, RD: structs.RadarData | None):
+  def update_events(self, CS: car.CarState, RD: car.RadarData):
     self.events.clear()
 
     CS.events = self.car_events.update(self.CI.CS, self.CS_prev, self.CI.CC, self.CC_prev).to_msg()
@@ -208,20 +205,20 @@ class Car:
 
     CS.events = self.events.to_msg()
 
-  def state_publish(self, CS: car.CarState, RD: structs.RadarData | None):
+  def state_publish(self, CS: car.CarState, RD: car.RadarData):
     """carState and carParams publish loop"""
 
     # carParams - logged every 50 seconds (> 1 per segment)
     if self.sm.frame % int(50. / DT_CTRL) == 0:
       cp_send = messaging.new_message('carParams')
       cp_send.valid = True
-      cp_send.carParams = self.CP_capnp
+      cp_send.carParams = self.CP
       self.pm.send('carParams', cp_send)
 
     # publish new carOutput
     co_send = messaging.new_message('carOutput')
     co_send.valid = self.sm.all_checks(['carControl'])
-    co_send.carOutput.actuatorsOutput = convert_to_capnp(self.last_actuators_output)
+    co_send.carOutput.actuatorsOutput = self.last_actuators_output
     self.pm.send('carOutput', co_send)
 
     # kick off controlsd step while we actuate the latest carControl packet
@@ -235,7 +232,7 @@ class Car:
     if RD is not None:
       tracks_msg = messaging.new_message('liveTracks')
       tracks_msg.valid = len(RD.errors) == 0
-      tracks_msg.liveTracks = convert_to_capnp(RD)
+      tracks_msg.liveTracks = RD
       self.pm.send('liveTracks', tracks_msg)
 
   def controls_update(self, CS: car.CarState, CC: car.CarControl):
@@ -251,7 +248,7 @@ class Car:
     if self.sm.all_alive(['carControl']):
       # send car controls over can
       now_nanos = self.can_log_mono_time if REPLAY else int(time.monotonic() * 1e9)
-      self.last_actuators_output, can_sends = self.CI.apply(convert_carControl(CC), now_nanos)
+      self.last_actuators_output, can_sends = self.CI.apply(CC, now_nanos)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
 
       self.CC_prev = CC
@@ -269,7 +266,7 @@ class Car:
     initialized = (not any(e.name == EventName.selfdriveInitializing for e in self.sm['onroadEvents']) and
                    self.sm.seen['onroadEvents'])
     if not self.CP.passive and initialized:
-      self.controls_update(CS, self.sm['carControl'])
+      self.controls_update(CS, self.sm['carControl'].as_builder())
 
     self.initialized_prev = initialized
     self.CS_prev = CS.as_reader()

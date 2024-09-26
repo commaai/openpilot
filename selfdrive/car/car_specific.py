@@ -1,16 +1,16 @@
 from cereal import car
 import cereal.messaging as messaging
-from opendbc.car import DT_CTRL, structs
+from opendbc.car import DT_CTRL
 from opendbc.car.interfaces import MAX_CTRL_SPEED, CarStateBase, CarControllerBase
 from opendbc.car.volkswagen.values import CarControllerParams as VWCarControllerParams
 from opendbc.car.hyundai.interface import ENABLE_BUTTONS as HYUNDAI_ENABLE_BUTTONS
 
 from openpilot.selfdrive.selfdrived.events import Events
 
-ButtonType = structs.CarState.ButtonEvent.Type
-GearShifter = structs.CarState.GearShifter
+ButtonType = car.CarState.ButtonEvent.Type
+GearShifter = car.CarState.GearShifter
 EventName = car.OnroadEvent.EventName
-NetworkLocation = structs.CarParams.NetworkLocation
+NetworkLocation = car.CarParams.NetworkLocation
 
 
 # TODO: the goal is to abstract this file into the CarState struct and make events generic
@@ -29,7 +29,7 @@ class MockCarState:
 
 
 class CarSpecificEvents:
-  def __init__(self, CP: structs.CarParams):
+  def __init__(self, CP: car.CarParams):
     self.CP = CP
 
     self.steering_unpressed = 0
@@ -172,7 +172,7 @@ class CarSpecificEvents:
 
     return events
 
-  def create_common_events(self, CS: structs.CarState, CS_prev: car.CarState, extra_gears=None, pcm_enable=True,
+  def create_common_events(self, CS: car.CarState, CS_prev: car.CarState, extra_gears=None, pcm_enable=True,
                            allow_enable=True, enable_buttons=(ButtonType.accelCruise, ButtonType.decelCruise)):
     events = Events()
 

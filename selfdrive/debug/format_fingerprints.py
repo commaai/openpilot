@@ -14,7 +14,7 @@ FINGERPRINTS_PY_TEMPLATE = jinja2.Template("""
 # ruff: noqa: E501
 {% endif %}
 {% if FW_VERSIONS[brand] %}
-from opendbc.car.structs import CarParams
+from opendbc.car import CarParams
 {% endif %}
 from opendbc.car.{{brand}}.values import CAR
 {% if FW_VERSIONS[brand] %}
