@@ -173,7 +173,7 @@ struct cam_icp_acquire_dev_info {
 	int32_t chain_info;
 	struct cam_icp_res_info in_res;
 	uint32_t num_out_res;
-	struct cam_icp_res_info out_res[1];
+	struct cam_icp_res_info out_res[0x3];
 } __attribute__((__packed__));
 
 #endif /* __UAPI_CAM_ICP_H__ */

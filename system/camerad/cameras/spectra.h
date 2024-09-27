@@ -77,6 +77,7 @@ public:
   void camera_close();
   void camera_map_bufs();
   void config_ife(int io_mem_handle, int fence, int request_id, int buf0_idx);
+  void config_ipe(int io_mem_handle, int fence, int request_id, int buf0_idx);
 
   int clear_req_queue();
   void enqueue_buffer(int i, bool dp);
@@ -109,10 +110,19 @@ public:
 
   int32_t link_handle = -1;
 
-  const int buf0_size = 65624; // unclear what this is and how it's determined, for internal ISP use? it's just copied from an ioctl dump
+  void *buf0_ptr;
+  int buf0_handle = 0;
+  const int buf0_size = 68472; // unclear what this is and how it's determined, for internal ISP use? it's just copied from an ioctl dump
   const int buf0_alignment = 0x20;
 
-  int buf0_handle = 0;
+  void *ipe_buf_ptr;
+  int ipe_buf_handle = 0;
+  const int ipe_buf_size = 4826;
+  const int ipe_buf_alignment = 0x20;
+
+  void *src_ptr;
+  int src_handle = 0;
+
   int buf_handle[FRAME_BUF_COUNT] = {};
   int sync_objs[FRAME_BUF_COUNT] = {};
   uint64_t request_ids[FRAME_BUF_COUNT] = {};
