@@ -63,8 +63,10 @@ public:
   unique_fd video0_fd;
   unique_fd cam_sync_fd;
   unique_fd isp_fd;
-  int device_iommu = -1;
-  int cdm_iommu = -1;
+  unique_fd icp_fd;
+  int device_iommu = -1;  // isp
+  int cdm_iommu = -1;     // isp
+  int icp_device_iommu = -1;  // icp
 };
 
 class SpectraCamera {

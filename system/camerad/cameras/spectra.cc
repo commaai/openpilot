@@ -4,6 +4,7 @@
 #include <sys/mman.h>
 
 #include "media/cam_defs.h"
+#include "media/cam_icp.h"
 #include "media/cam_isp.h"
 #include "media/cam_isp_ife.h"
 #include "media/cam_sensor_cmn_header.h"
@@ -89,7 +90,7 @@ void *alloc_w_mmu_hdl(int video0_fd, int len, uint32_t *handle, int align, int f
     assert(ptr != MAP_FAILED);
   }
 
-  // LOGD("allocated: %x %d %llx mapped %p", mem_mgr_alloc_cmd.out.buf_handle, mem_mgr_alloc_cmd.out.fd, mem_mgr_alloc_cmd.out.vaddr, ptr);
+  //LOGD("allocated: %x %d %lx mapped %p", mem_mgr_alloc_cmd.out.buf_handle, mem_mgr_alloc_cmd.out.fd, mem_mgr_alloc_cmd.out.vaddr, ptr);
 
   return ptr;
 }
@@ -172,11 +173,16 @@ void SpectraMaster::init() {
   assert(isp_fd >= 0);
   LOGD("opened isp");
 
+  int abc = open_v4l_by_name_and_index("cam-icp");
+  LOGD("opened icp %d %d", abc, errno);
+  icp_fd = abc;
+  assert(icp_fd >= 0);
+
   // query icp for MMU handles
-  LOG("-- Query ICP for MMU handles");
+  LOG("-- Query ISP & ICP for MMU handles");
   struct cam_isp_query_cap_cmd isp_query_cap_cmd = {0};
   struct cam_query_cap_cmd query_cap_cmd = {0};
-  query_cap_cmd.handle_type = 1;
+  query_cap_cmd.handle_type = CAM_HANDLE_USER_POINTER;
   query_cap_cmd.caps_handle = (uint64_t)&isp_query_cap_cmd;
   query_cap_cmd.size = sizeof(isp_query_cap_cmd);
   int ret = do_cam_control(isp_fd, CAM_QUERY_CAP, &query_cap_cmd, sizeof(query_cap_cmd));
@@ -185,6 +191,14 @@ void SpectraMaster::init() {
   LOGD("using MMU handle: %x", isp_query_cap_cmd.cdm_iommu.non_secure);
   device_iommu = isp_query_cap_cmd.device_iommu.non_secure;
   cdm_iommu = isp_query_cap_cmd.cdm_iommu.non_secure;
+
+  struct cam_icp_query_cap_cmd icp_query_cap_cmd = {0};
+  query_cap_cmd.caps_handle = (uint64_t)&icp_query_cap_cmd;
+  query_cap_cmd.size = sizeof(icp_query_cap_cmd);
+  ret = do_cam_control(icp_fd, CAM_QUERY_CAP, &query_cap_cmd, sizeof(query_cap_cmd));
+  assert(ret == 0);
+  LOGD("using ICP MMU handle: %x", icp_query_cap_cmd.dev_iommu_handle.non_secure);
+  icp_device_iommu = icp_query_cap_cmd.dev_iommu_handle.non_secure;
 
   // subscribe
   LOG("-- Subscribing");
@@ -525,14 +539,14 @@ void SpectraCamera::config_ipe(int io_mem_handle, int fence, int request_id, int
       .plane_stride = sensor->frame_stride,
       .slice_height = ALIGNED_SIZE(sensor->frame_height/2, 0x20),
     };
-    io_cfg[0].format = CAM_FORMAT_NV12;
-    io_cfg[0].color_space = 0;
-    io_cfg[0].color_pattern = 0x0;
-    io_cfg[0].resource_type = 0x8;
-    io_cfg[0].fence = fence;
-    io_cfg[0].direction = CAM_BUF_OUTPUT;
-    io_cfg[0].subsample_pattern = 0x1;
-    io_cfg[0].framedrop_pattern = 0x1;
+    io_cfg[1].format = CAM_FORMAT_NV12;
+    io_cfg[1].color_space = 0;
+    io_cfg[1].color_pattern = 0x0;
+    io_cfg[1].resource_type = 0x8;
+    io_cfg[1].fence = fence;
+    io_cfg[1].direction = CAM_BUF_OUTPUT;
+    io_cfg[1].subsample_pattern = 0x1;
+    io_cfg[1].framedrop_pattern = 0x1;
 
   }
 
@@ -554,7 +568,7 @@ void SpectraCamera::config_ife(int request_id, int buf0_idx, bool init) {
   */
   int size = sizeof(struct cam_packet) + sizeof(struct cam_cmd_buf_desc)*2;
   if (!init) {
-    size += sizeof(struct cam_buf_io_cfg)*0x3;
+    size += sizeof(struct cam_buf_io_cfg);
     //size += sizeof(struct cam_patch_desc)*0x8;
   }
 
@@ -602,6 +616,7 @@ void SpectraCamera::config_ife(int request_id, int buf0_idx, bool init) {
       buf_desc[0].length = sizeof(isp_ife_update)-1;
       isp_prog = isp_ife_update;
     }
+    buf_desc[0].length = 0;
     printf("isp program length %d\n", buf_desc[0].length);
     memcpy((unsigned char*)buf0_ptr + buf_desc[0].offset, isp_prog, buf_desc[0].length);
     pkt->kmd_cmd_buf_offset = buf_desc[0].length;
@@ -627,7 +642,7 @@ void SpectraCamera::config_ife(int request_id, int buf0_idx, bool init) {
     tmp.type_0 |= sizeof(cam_isp_resource_hfr_config) << 8;
     static_assert(sizeof(cam_isp_resource_hfr_config) == 0x20);
     tmp.resource_hfr = {
-      .num_ports = 0x3,
+      .num_ports = 1,
       .port_hfr_config[0] = {
         .resource_type = CAM_ISP_IFE_OUT_RES_FULL,
         .subsample_pattern = 1,
@@ -666,7 +681,7 @@ void SpectraCamera::config_ife(int request_id, int buf0_idx, bool init) {
       },
     };
 
-    //static_assert(offsetof(struct isp_packet, type_2) == 0x60);
+    static_assert(offsetof(struct isp_packet, type_2) == 0x60);
 
     buf_desc[1].size = sizeof(tmp);
     buf_desc[1].offset = !init ? offsetof(struct isp_packet, type_2) : 0;
@@ -723,10 +738,8 @@ void SpectraCamera::config_ife(int request_id, int buf0_idx, bool init) {
     io_cfg[0].fence = 0;
     io_cfg[0].subsample_pattern = 0x1;
     io_cfg[0].framedrop_pattern = 0x1;
-  }
 
-  // *** address patches ***
-  {
+    // *** address patches ***
     pkt->num_patches = 0x0;
     pkt->patch_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf + sizeof(struct cam_buf_io_cfg)*pkt->num_io_configs;
     for (int i = 0; i < pkt->num_patches; i++) {
@@ -922,11 +935,11 @@ void SpectraCamera::configISP() {
 
   // TODO: where does 0x5000 come from? also how's the total size determined?
   ife_out_size = 0x5000 + (0xa00 * ALIGNED_SIZE(sensor->frame_height, 0x20));
-  ife_out_ptr = alloc_w_mmu_hdl(m->video0_fd, ife_out_size*2, (uint32_t*)&ife_out_handle, ife_out_alignment,
-                                CAM_MEM_FLAG_HW_READ_WRITE, m->device_iommu, m->cdm_iommu);
+  alloc_w_mmu_hdl(m->video0_fd, ife_out_size*2, (uint32_t*)&ife_out_handle, ife_out_alignment,
+                  CAM_MEM_FLAG_HW_READ_WRITE, m->device_iommu, m->cdm_iommu);
 
   // config IFE
-  config_ife(1, true);
+  config_ife(1, 0, true);
 }
 
 void SpectraCamera::configCSIPHY() {

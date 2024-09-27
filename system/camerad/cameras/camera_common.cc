@@ -268,9 +268,11 @@ int open_v4l_by_name_and_index(const char name[], int index, int flags) {
     if (v4l_name.empty()) return -1;
     if (v4l_name.find(name) == 0) {
       if (index == 0) {
+        printf("FOUND %s %d\n", name, v4l_index);
         return HANDLE_EINTR(open(util::string_format("/dev/v4l-subdev%d", v4l_index).c_str(), flags));
       }
       index--;
     }
   }
+  printf("NOT FOUND %s\n", name);
 }
