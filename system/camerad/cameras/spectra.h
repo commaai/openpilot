@@ -42,7 +42,9 @@ public:
 
   template <class T>
   auto alloc(int len, uint32_t *handle) {
-    return std::unique_ptr<T, std::function<void(void *)>>((T*)alloc_buf(len, handle), [this](void *ptr) { this->free(ptr); });
+    return std::unique_ptr<T, std::function<void(void *)>>((T*)alloc_buf(len, handle), [this](void *ptr) {
+      this->free(ptr);
+    });
   }
 
 private:
@@ -52,7 +54,7 @@ private:
   std::mutex lock;
   std::map<void *, uint32_t> handle_lookup;
   std::map<void *, int> size_lookup;
-  std::map<int, std::queue<void *> > cached_allocations;
+  std::map<int, std::queue<void *>> cached_allocations;
   int video0_fd;
 };
 
@@ -92,6 +94,7 @@ public:
 
   bool openSensor();
   void configISP();
+  void configICP();
   void configCSIPHY();
   void linkDevices();
 
@@ -108,6 +111,7 @@ public:
   int32_t session_handle = -1;
   int32_t sensor_dev_handle = -1;
   int32_t isp_dev_handle = -1;
+  int32_t icp_dev_handle = -1;
   int32_t csiphy_dev_handle = -1;
 
   int32_t link_handle = -1;

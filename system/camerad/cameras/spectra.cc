@@ -173,12 +173,11 @@ void SpectraMaster::init() {
   assert(isp_fd >= 0);
   LOGD("opened isp");
 
-  int abc = open_v4l_by_name_and_index("cam-icp");
-  LOGD("opened icp %d %d", abc, errno);
-  icp_fd = abc;
+  icp_fd = open_v4l_by_name_and_index("cam-icp");
   assert(icp_fd >= 0);
+  LOGD("opened icp");
 
-  // query icp for MMU handles
+  // query ISP for MMU handles
   LOG("-- Query ISP & ICP for MMU handles");
   struct cam_isp_query_cap_cmd isp_query_cap_cmd = {0};
   struct cam_query_cap_cmd query_cap_cmd = {0};
@@ -192,6 +191,7 @@ void SpectraMaster::init() {
   device_iommu = isp_query_cap_cmd.device_iommu.non_secure;
   cdm_iommu = isp_query_cap_cmd.cdm_iommu.non_secure;
 
+  // query ISP for MMU handles
   struct cam_icp_query_cap_cmd icp_query_cap_cmd = {0};
   query_cap_cmd.caps_handle = (uint64_t)&icp_query_cap_cmd;
   query_cap_cmd.size = sizeof(icp_query_cap_cmd);
@@ -244,6 +244,7 @@ void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_c
   open = true;
   configISP();
   configCSIPHY();
+  configICP();
   linkDevices();
 
   LOGD("camera init %d", cc.camera_num);
@@ -929,10 +930,6 @@ void SpectraCamera::configISP() {
   buf0_ptr = alloc_w_mmu_hdl(m->video0_fd, FRAME_BUF_COUNT*ALIGNED_SIZE(buf0_size, buf0_alignment), (uint32_t*)&buf0_handle, buf0_alignment,
                              CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
                              m->device_iommu, m->cdm_iommu);
-  ipe_buf_ptr = alloc_w_mmu_hdl(m->video0_fd, FRAME_BUF_COUNT*ALIGNED_SIZE(ipe_buf_size, ipe_buf_alignment), (uint32_t*)&ipe_buf_handle, ipe_buf_alignment,
-                                CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE | CAM_MEM_FLAG_HW_SHARED_ACCESS,
-                                m->device_iommu, m->cdm_iommu);
-
   // TODO: where does 0x5000 come from? also how's the total size determined?
   ife_out_size = 0x5000 + (0xa00 * ALIGNED_SIZE(sensor->frame_height, 0x20));
   alloc_w_mmu_hdl(m->video0_fd, ife_out_size*2, (uint32_t*)&ife_out_handle, ife_out_alignment,
@@ -940,6 +937,53 @@ void SpectraCamera::configISP() {
 
   // config IFE
   config_ife(1, 0, true);
+}
+
+void SpectraCamera::configICP() {
+  if (!enabled) return;
+
+  /*
+    Configures both the ICP and IPE.
+  */
+
+  // don't think we have this struct...
+  int tmp_handle;
+  void *tmp = alloc_w_mmu_hdl(m->video0_fd, sizeof(icp_acquire_io_cmd), (uint32_t*)&tmp_handle, 0x1,
+                              CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_HW_SHARED_ACCESS,
+                              m->icp_device_iommu);
+  memcpy(tmp, icp_acquire_io_cmd, sizeof(icp_acquire_io_cmd));
+
+  struct cam_icp_acquire_dev_info icp_info = {
+    .scratch_mem_size = 0x30,
+    .dev_type = 0x2,  // CSLICPResourceIDIPERealTime
+    .io_config_cmd_size = sizeof(icp_acquire_io_cmd),
+    .io_config_cmd_handle = tmp_handle,
+    .secure_mode = 0,
+    .num_out_res = 1,
+    .in_res = (struct cam_icp_res_info){
+      .format = 0xc,  // UBWCTP10
+      .width = sensor->frame_width,
+      .height = sensor->frame_height,
+      .fps = 20,
+    },
+    .out_res[0] = (struct cam_icp_res_info){
+      .format = 0x3,  // YUV420NV12 (it's some other format definition...)
+      .width = sensor->frame_width,
+      .height = sensor->frame_height,
+      .fps = 20,
+    },
+  };
+  auto h = device_acquire(m->icp_fd, session_handle, &icp_info);
+  assert(h);
+  icp_dev_handle = *h;
+  LOGD("acquire icp dev");
+
+  release(m->video0_fd, tmp_handle);
+
+  // IPE CMD buffer
+  ipe_buf_ptr = alloc_w_mmu_hdl(m->video0_fd, FRAME_BUF_COUNT*ALIGNED_SIZE(ipe_buf_size, ipe_buf_alignment), (uint32_t*)&ipe_buf_handle, ipe_buf_alignment,
+                                CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE | CAM_MEM_FLAG_HW_SHARED_ACCESS,
+                                m->device_iommu, m->cdm_iommu);
 }
 
 void SpectraCamera::configCSIPHY() {
@@ -1005,6 +1049,8 @@ void SpectraCamera::linkDevices() {
   LOGD("start csiphy: %d", ret);
   ret = device_control(m->isp_fd, CAM_START_DEV, session_handle, isp_dev_handle);
   LOGD("start isp: %d", ret);
+  ret = device_control(m->icp_fd, CAM_START_DEV, session_handle, icp_dev_handle);
+  LOGD("start icp: %d", ret);
   assert(ret == 0);
 }
 
@@ -1014,6 +1060,8 @@ void SpectraCamera::camera_close() {
   if (enabled) {
     // ret = device_control(sensor_fd, CAM_STOP_DEV, session_handle, sensor_dev_handle);
     // LOGD("stop sensor: %d", ret);
+    int ret = device_control(m->icp_fd, CAM_STOP_DEV, session_handle, icp_dev_handle);
+    LOGD("stop icp: %d", ret);
     int ret = device_control(m->isp_fd, CAM_STOP_DEV, session_handle, isp_dev_handle);
     LOGD("stop isp: %d", ret);
     ret = device_control(csiphy_fd, CAM_STOP_DEV, session_handle, csiphy_dev_handle);
@@ -1038,6 +1086,8 @@ void SpectraCamera::camera_close() {
 
     // release devices
     LOGD("-- Release devices");
+    ret = device_control(m->icp_fd, CAM_RELEASE_DEV, session_handle, isp_dev_handle);
+    LOGD("release isp: %d", ret);
     ret = device_control(m->isp_fd, CAM_RELEASE_DEV, session_handle, isp_dev_handle);
     LOGD("release isp: %d", ret);
     ret = device_control(csiphy_fd, CAM_RELEASE_DEV, session_handle, csiphy_dev_handle);
