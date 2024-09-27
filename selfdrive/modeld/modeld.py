@@ -50,6 +50,15 @@ MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT * 3 // 2
 IMG_INPUT_SHAPE = (1, 12, 128, 256)
 
 
+def Tensor_from_cl(frame, cl_buffer):
+  if TICI:
+    cl_buf_desc_ptr = to_mv(cl_buffer.mem_address, 8).cast('Q')[0]
+    rawbuf_ptr = to_mv(cl_buf_desc_ptr, 0x100).cast('Q')[20] # offset 0xA0 is a raw gpu pointer.
+    return Tensor.from_blob(rawbuf_ptr, IMG_INPUT_SHAPE, dtype=dtypes.uint8)
+  else:
+    return Tensor(frame.buffer_from_cl(cl_buffer)).reshape(IMG_INPUT_SHAPE)
+  
+
 class FrameMeta:
   frame_id: int = 0
   timestamp_sof: int = 0
@@ -107,25 +116,12 @@ class ModelState:
     self.inputs['lateral_control_params'][:] = inputs['lateral_control_params']
     tensor_inputs = {k: Tensor(v) for k, v in self.inputs.items()}
 
-
-
     input_imgs_cl = self.frame.prepare(buf, transform.flatten())
-    if TICI:
-      cl_buf_desc_ptr = to_mv(input_imgs_cl.mem_address, 8).cast('Q')[0]
-      rawbuf_ptr = to_mv(cl_buf_desc_ptr, 0x100).cast('Q')[20] # offset 0xA0 is a raw gpu pointer.
-      tensor_inputs['input_imgs'] = Tensor.from_blob(rawbuf_ptr, IMG_INPUT_SHAPE, dtype=dtypes.uint8, device='QCOM')
-    else:
-      tensor_inputs['input_imgs'] = Tensor(self.frame.buffer_from_cl(input_imgs_cl)).reshape(IMG_INPUT_SHAPE)
-
+    tensor_inputs['input_imgs'] = Tensor_from_cl(self.frame, input_imgs_cl)
     if wbuf is not None:
       big_input_imgs_cl = self.wide_frame.prepare(wbuf, transform_wide.flatten())
-      if TICI:
-        cl_buf_desc_ptr = to_mv(big_input_imgs_cl.mem_address, 8).cast('Q')[0]
-        rawbuf_ptr = to_mv(cl_buf_desc_ptr, 0x100).cast('Q')[20] # offset 0xA0 is a raw gpu pointer.
-        tensor_inputs['big_input_imgs'] = Tensor.from_blob(rawbuf_ptr, IMG_INPUT_SHAPE, dtype=dtypes.uint8, device='QCOM')
-      else:
-        tensor_inputs['big_input_imgs'] = Tensor(self.wide_frame.buffer_from_cl(big_input_imgs_cl)).reshape(IMG_INPUT_SHAPE)
-  
+      tensor_inputs['big_input_imgs'] = Tensor_from_cl(self.wide_frame, big_input_imgs_cl)
+
     if prepare_only:
       return None
 
