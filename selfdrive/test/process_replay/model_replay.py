@@ -109,19 +109,27 @@ if __name__ == "__main__":
         'modelV2.frameDropPerc',
         'modelV2.modelExecutionTime',
         'driverStateV2.modelExecutionTime',
-        'driverStateV2.dspExecutionTime'
+        'driverStateV2.gpuExecutionTime'
       ]
       if PC:
-        ignore += [
-          'modelV2.laneLines.0.t',
-          'modelV2.laneLines.1.t',
-          'modelV2.laneLines.2.t',
-          'modelV2.laneLines.3.t',
-          'modelV2.roadEdges.0.t',
-          'modelV2.roadEdges.1.t',
-        ]
-      # TODO this tolerance is absurdly large
-      tolerance = 2.0 if PC else None
+        # TODO We ignore whole bunch so we can compare important stuff
+        # like posenet with reasonable tolerance
+        ignore += ['modelV2.acceleration.x',
+                   'modelV2.position.x',
+                   'modelV2.position.xStd',
+                   'modelV2.position.y',
+                   'modelV2.position.yStd',
+                   'modelV2.position.z',
+                   'modelV2.position.zStd',
+                   'drivingModelData.path.xCoefficients',]
+        for i in range(3):
+          for field in ('x', 'y', 'v', 'a'):
+            ignore.append(f'modelV2.leadsV3.{i}.{field}')
+            ignore.append(f'modelV2.leadsV3.{i}.{field}Std')
+        for i in range(4):
+          for field in ('x', 'y', 'z', 't'):
+            ignore.append(f'modelV2.laneLines.{i}.{field}')
+      tolerance = .2 if PC else None
       results: Any = {TEST_ROUTE: {}}
       log_paths: Any = {TEST_ROUTE: {"models": {'ref': BASE_URL + log_fn, 'new': log_fn}}}
       results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)

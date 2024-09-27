@@ -2012,7 +2012,8 @@ struct Joystick {
 struct DriverStateV2 {
   frameId @0 :UInt32;
   modelExecutionTime @1 :Float32;
-  dspExecutionTime @2 :Float32;
+  dspExecutionTimeDEPRECATED @2 :Float32;
+  gpuExecutionTime @8 :Float32;
   rawPredictions @3 :Data;
 
   poorVisionProb @4 :Float32;

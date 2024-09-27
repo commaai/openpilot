@@ -73,6 +73,12 @@ class Maneuver:
 
 MANEUVERS = [
   Maneuver(
+    "come to stop",
+    [Action(-0.5, 12)],
+    repeat=2,
+    initial_speed=5.,
+  ),
+  Maneuver(
    "start from stop",
    [Action(1.5, 3)],
    repeat=3,
