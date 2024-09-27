@@ -20,7 +20,7 @@ class ModelFrame {
 public:
   ModelFrame(cl_device_id device_id, cl_context context);
   ~ModelFrame();
-  cl_mem* prepare(cl_mem yuv_cl, int width, int height, int frame_stride, int frame_uv_offset, const mat3& transform, cl_mem *output);
+  cl_mem* prepare(cl_mem yuv_cl, int width, int height, int frame_stride, int frame_uv_offset, const mat3& transform);
   uint8_t* buffer_from_cl(cl_mem *in_frames);
 
   const int MODEL_WIDTH = 512;

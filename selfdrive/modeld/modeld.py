@@ -109,7 +109,7 @@ class ModelState:
 
 
 
-    input_imgs_cl = self.frame.prepare(buf, transform.flatten(), None)
+    input_imgs_cl = self.frame.prepare(buf, transform.flatten())
     if TICI:
       cl_buf_desc_ptr = to_mv(input_imgs_cl.mem_address, 8).cast('Q')[0]
       rawbuf_ptr = to_mv(cl_buf_desc_ptr, 0x100).cast('Q')[20] # offset 0xA0 is a raw gpu pointer.
@@ -118,7 +118,7 @@ class ModelState:
       tensor_inputs['input_imgs'] = Tensor(self.frame.buffer_from_cl(input_imgs_cl)).reshape(IMG_INPUT_SHAPE)
 
     if wbuf is not None:
-      big_input_imgs_cl = self.wide_frame.prepare(wbuf, transform_wide.flatten(), None)
+      big_input_imgs_cl = self.wide_frame.prepare(wbuf, transform_wide.flatten())
       if TICI:
         cl_buf_desc_ptr = to_mv(big_input_imgs_cl.mem_address, 8).cast('Q')[0]
         rawbuf_ptr = to_mv(cl_buf_desc_ptr, 0x100).cast('Q')[20] # offset 0xA0 is a raw gpu pointer.
