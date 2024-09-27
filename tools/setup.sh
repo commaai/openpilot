@@ -142,7 +142,7 @@ function check_git() {
 function git_clone() {
   st="$(date +%s)"
   echo "Cloning openpilot..."
-  if $(git clone --filter=blob:none https://github.com/commaai/openpilot.git "$OPENPILOT_ROOT"); then
+  if $(git clone --filter=blob:none --recurse-submodules https://github.com/commaai/openpilot.git "$OPENPILOT_ROOT"); then
     if [[ -f $OPENPILOT_ROOT/launch_openpilot.sh ]]; then
       et="$(date +%s)"
       echo -e " ↳ [${GREEN}✔${NC}] Successfully cloned openpilot in $((et - st)) seconds.\n"
