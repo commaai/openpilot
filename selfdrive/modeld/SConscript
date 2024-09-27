@@ -69,6 +69,10 @@ if arch == "larch64" or GetOption('pc_thneed'):
 
   lenv.Command(fn + ".thneed", [fn + ".onnx"] + tinygrad_files, cmd)
 
+  fn_dm = File("models/dmonitoring_model").abspath
+  cmd = f"cd {Dir('#').abspath}/tinygrad_repo && " + ' '.join(tinygrad_opts) + f" python3 openpilot/compile2.py {fn_dm}.onnx {fn_dm}.thneed"
+  lenv.Command(fn_dm + ".thneed", [fn_dm + ".onnx"] + tinygrad_files, cmd)
+
   thneed_lib = env.SharedLibrary('thneed', thneed_src, LIBS=[gpucommon, common, 'OpenCL', 'dl'])
   thneedmodel_lib = env.Library('thneedmodel', ['runners/thneedmodel.cc'])
   lenvCython.Program('runners/thneedmodel_pyx.so', 'runners/thneedmodel_pyx.pyx', LIBS=envCython["LIBS"]+[thneedmodel_lib, thneed_lib, gpucommon, common, 'dl', 'OpenCL'])
