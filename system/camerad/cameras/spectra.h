@@ -76,7 +76,7 @@ public:
   void handle_camera_event(const cam_req_mgr_message *event_data);
   void camera_close();
   void camera_map_bufs();
-  void config_ife(int io_mem_handle, int fence, int request_id, int buf0_idx);
+  void config_ife(int request_id, int buf0_idx, bool init = false);
   void config_ipe(int io_mem_handle, int fence, int request_id, int buf0_idx);
 
   int clear_req_queue();
@@ -119,6 +119,11 @@ public:
   int ipe_buf_handle = 0;
   const int ipe_buf_size = 4826;
   const int ipe_buf_alignment = 0x20;
+
+  void *ife_out_ptr;
+  int ife_out_handle = 0;
+  int ife_out_size;
+  const int ife_out_alignment = 0x1000;
 
   void *src_ptr;
   int src_handle = 0;
