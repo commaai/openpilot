@@ -92,7 +92,7 @@ def frame_prepare_tinygrad(input_frame, M_inv, M_inv_uv, W, H):
   v = warp_perspective_tinygrad(input_frame[H*W+1::2].reshape((H//2,W//2)), M_inv_uv, (MODEL_WIDTH//2, MODEL_HEIGHT//2)).numpy()
   yuv = np.concatenate([y.copy().flatten(), u.copy().flatten(), v.copy().flatten()]).reshape((1,MODEL_HEIGHT*3//2,MODEL_WIDTH))
   tensor = frames_to_tensor(yuv.copy())
-  return tensor
+  return Tensor(tensor)
 
 
 
@@ -147,6 +147,8 @@ class ModelState:
       'prev_desired_curv': np.zeros((1,(ModelConstants.HISTORY_BUFFER_LEN+1), ModelConstants.PREV_DESIRED_CURV_LEN), dtype=np.float32),
       'features_buffer': np.zeros((1, ModelConstants.HISTORY_BUFFER_LEN,  ModelConstants.FEATURE_LEN), dtype=np.float32),
     }
+    self.tensor_inputs = {'input_imgs': Tensor.zeros(IMG_INPUT_SHAPE, dtype='uint8').contiguous().realize(),
+                          'big_input_imgs': Tensor.zeros(IMG_INPUT_SHAPE, dtype='uint8').contiguous().realize(),}
 
     with open(METADATA_PATH, 'rb') as f:
       model_metadata = pickle.load(f)
@@ -180,33 +182,29 @@ class ModelState:
 
     self.inputs['traffic_convention'][:] = inputs['traffic_convention']
     self.inputs['lateral_control_params'][:] = inputs['lateral_control_params']
+    for k, v in self.inputs.items():
+      self.tensor_inputs[k] = Tensor(v)
+
 
     scale_matrix = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]])
-    M_inv = transform
-    M_inv_uv = scale_matrix @ M_inv @ np.linalg.inv(scale_matrix)
-    M_inv_wide = transform_wide
-    M_inv_uv_wide = scale_matrix @ M_inv_wide @ np.linalg.inv(scale_matrix)
-    
-    tensor_inputs = {k: Tensor(v) for k, v in self.inputs.items()}
+    self.tensor_inputs['M_inv'] = Tensor(transform)
+    self.tensor_inputs['M_inv_uv'] = Tensor(scale_matrix @ transform @ np.linalg.inv(scale_matrix))
+    self.tensor_inputs['M_inv_wide'] = Tensor(transform_wide)
+    self.tensor_inputs['M_inv_uv_wide'] = Tensor(scale_matrix @ transform_wide @ np.linalg.inv(scale_matrix))
+
+    input_frame = Tensor(self.frame.array_from_vision_buf(buf))
+    wide_input_frame = Tensor(self.wide_frame.array_from_vision_buf(wbuf))
 
 
+    # PURE TG
+    self.tensor_inputs['input_imgs'][:,:6] = self.tensor_inputs['input_imgs'][:,6:]
+    self.tensor_inputs['input_imgs'][:,6:] = frame_prepare_tinygrad(input_frame, self.tensor_inputs['M_inv'], self.tensor_inputs['M_inv_uv'], buf.width, buf.height)
+
+    self.tensor_inputs['big_input_imgs'][:,:6] = self.tensor_inputs['big_input_imgs'][:,6:]
+    self.tensor_inputs['big_input_imgs'][:,6:] = frame_prepare_tinygrad(wide_input_frame, self.tensor_inputs['M_inv_wide'], self.tensor_inputs['M_inv_uv_wide'], wbuf.width, wbuf.height)
 
 
-
-
-    input_frame = self.frame.array_from_vision_buf(buf)
-  
-    self.input_imgs[:,:6] = self.input_imgs[:,6:]
-    self.input_imgs[:,6:] = frame_prepare_tinygrad(Tensor(input_frame), Tensor(M_inv), Tensor(M_inv_uv), buf.width, buf.height)
-    tensor_inputs['input_imgs'] = Tensor(self.input_imgs)
-    if wbuf is not None:
-      wide_input_frame = self.wide_frame.array_from_vision_buf(wbuf)
-      self.big_input_imgs[:,:6] = self.big_input_imgs[:,6:]
-      self.big_input_imgs[:,6:] = frame_prepare_tinygrad(Tensor(wide_input_frame), Tensor(M_inv_wide), Tensor(M_inv_uv_wide), wbuf.width, wbuf.height)
-      tensor_inputs['big_input_imgs'] = Tensor(self.big_input_imgs)
-
-
-
+  # END OF PURE TG
 
 
 
@@ -215,7 +213,10 @@ class ModelState:
     if prepare_only:
       return None
 
-    self.output = self.model_run(**tensor_inputs)['outputs'].numpy().flatten()
+    print(len(self.tensor_inputs))
+    print(len(set(self.tensor_inputs.values())))
+    other_tensor_inputs = {k: v for k, v in self.tensor_inputs.items() if k not in ['M_inv', 'M_inv_uv', 'M_inv_wide', 'M_inv_uv_wide']}
+    self.output = self.model_run(**other_tensor_inputs)['outputs'].numpy().flatten()
     outputs = self.parser.parse_outputs(self.slice_outputs(self.output))
 
     self.inputs['features_buffer'][:-ModelConstants.FEATURE_LEN] = self.inputs['features_buffer'][ModelConstants.FEATURE_LEN:]
