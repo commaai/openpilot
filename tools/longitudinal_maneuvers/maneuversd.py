@@ -22,7 +22,6 @@ class Maneuver:
   initial_speed: float = 0.  # m/s
 
   _active: bool = False
-  _prev_cruise_standstill: bool = False
   _finished: bool = False
   _action_index: int = 0
   _action_frames: int = 0
@@ -33,14 +32,10 @@ class Maneuver:
     ready = abs(v_ego - self.initial_speed) < 0.3 and long_active and not cruise_standstill
     if self.initial_speed < 0.01:
       ready = ready and standstill
-      if ready and self._prev_cruise_standstill:
-        self._active = True
     self._ready_cnt = (self._ready_cnt + 1) if ready else 0
 
     if self._ready_cnt > (3. / DT_MDL):
       self._active = True
-
-    self._prev_cruise_standstill = cruise_standstill
 
     if not self._active:
       return min(max(self.initial_speed - v_ego, -2.), 2.)
