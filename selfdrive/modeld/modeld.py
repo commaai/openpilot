@@ -51,6 +51,64 @@ MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT * 3 // 2
 IMG_INPUT_SHAPE = (1, 12, 128, 256)
 
 
+
+def tensor_arange(end):
+    return Tensor([float(i) for i in range(end)])
+
+def tensor_round(tensor):
+    return (tensor + 0.5).floor()
+
+def warp_perspective_tinygrad(src, M, dsize):
+
+    M_inv = Tensor(np.linalg.inv(M).astype(np.float32))
+
+    src = Tensor(src)
+
+    h_dst, w_dst = dsize[1], dsize[0]
+    h_src, w_src = src.shape[:2]
+
+    x = tensor_arange(w_dst).reshape(1, w_dst).expand(h_dst, w_dst)
+    y = tensor_arange(h_dst).reshape(h_dst, 1).expand(h_dst, w_dst)
+    ones = Tensor.ones_like(x)
+    dst_coords = x.reshape((1,-1)).cat(y.reshape((1,-1))).cat(ones.reshape((1,-1)))
+
+
+    src_coords = M_inv @ dst_coords
+    src_coords = src_coords / src_coords[2:3, :]
+
+    x_src = src_coords[0].reshape(h_dst, w_dst)
+    y_src = src_coords[1].reshape(h_dst, w_dst)
+
+    x_nearest = tensor_round(x_src).clip(0, w_src - 1).cast('int')
+    y_nearest = tensor_round(y_src).clip(0, h_src - 1).cast('int')
+
+    src_np = src
+    if src_np.ndim == 3:
+        dst = src[y_nearest, x_nearest, :]
+    else:
+        dst = src[y_nearest, x_nearest]
+
+    return dst.numpy()
+
+
+def python_frame_prepare(input_frame, transform, W, H):
+  transform = np.linalg.inv(transform) # TODO
+  scale_matrix = np.array([
+  [0.5, 0, 0],
+  [0, 0.5, 0],
+  [0, 0, 1]
+])
+
+  transform_uv = scale_matrix @ transform @ np.linalg.inv(scale_matrix)
+  y = warp_perspective_tinygrad(input_frame[:H*W].reshape((H,W)), transform, (MODEL_WIDTH, MODEL_HEIGHT))
+  u = warp_perspective_tinygrad(input_frame[H*W::2].reshape((H//2,W//2)), transform_uv, (MODEL_WIDTH//2, MODEL_HEIGHT//2))
+  v = warp_perspective_tinygrad(input_frame[H*W+1::2].reshape((H//2,W//2)), transform_uv, (MODEL_WIDTH//2, MODEL_HEIGHT//2))
+  yuv = np.concatenate([y.copy().flatten(), u.copy().flatten(), v.copy().flatten()]).reshape((1,MODEL_HEIGHT*3//2,MODEL_WIDTH))
+  tensor = frames_to_tensor(yuv.copy())
+  return tensor
+
+
+
 def Tensor_from_cl(frame, cl_buffer):
   if TICI:
     cl_buf_desc_ptr = to_mv(cl_buffer.mem_address, 8).cast('Q')[0]
@@ -113,6 +171,7 @@ class ModelState:
     net_output_size = model_metadata['output_shapes']['outputs'][1]
     self.output = np.zeros(net_output_size, dtype=np.float32)
     self.parser = Parser()
+    self.scale_matrix = np.array([[0.5, 0, 0], [0, 0.5, 0], [0, 0, 1]])
 
     with open(MODEL_PKL_PATH, "rb") as f:
       self.model_run = pickle.load(f)
@@ -122,24 +181,6 @@ class ModelState:
     if SEND_RAW_PRED:
       parsed_model_outputs['raw_pred'] = model_outputs.copy()
     return parsed_model_outputs
-
-  def python_frame_prepare(self, input_frame, transform, W, H):
-    transform = np.linalg.inv(transform) # TODO
-    scale_matrix = np.array([
-    [0.5, 0, 0],
-    [0, 0.5, 0],
-    [0, 0, 1]
-])
-
-    transform_uv = scale_matrix @ transform @ np.linalg.inv(scale_matrix)
-
-    print(transform)
-    y = cv2.warpPerspective(input_frame[:H*W].reshape((H,W)), transform, (MODEL_WIDTH, MODEL_HEIGHT))
-    u = cv2.warpPerspective(input_frame[H*W::2].reshape((H//2,W//2)), transform_uv, (MODEL_WIDTH//2, MODEL_HEIGHT//2))
-    v = cv2.warpPerspective(input_frame[H*W+1::2].reshape((H//2,W//2)), transform_uv, (MODEL_WIDTH//2, MODEL_HEIGHT//2))
-    yuv = np.concatenate([y.copy().flatten(), u.copy().flatten(), v.copy().flatten()]).reshape((1,MODEL_HEIGHT*3//2,MODEL_WIDTH))
-    tensor = frames_to_tensor(yuv.copy())
-    return tensor
 
 
   def run(self, buf: VisionBuf, wbuf: VisionBuf, transform: np.ndarray, transform_wide: np.ndarray,
@@ -152,37 +193,22 @@ class ModelState:
 
     self.inputs['traffic_convention'][:] = inputs['traffic_convention']
     self.inputs['lateral_control_params'][:] = inputs['lateral_control_params']
+
+
+
+    
     tensor_inputs = {k: Tensor(v) for k, v in self.inputs.items()}
 
     input_frame = self.frame.array_from_vision_buf(buf)
-    print(input_frame.shape)
-
-
+  
     self.input_imgs[:,:6] = self.input_imgs[:,6:]
-    self.input_imgs[:,6:] = self.python_frame_prepare(input_frame.copy(), transform, buf.width, buf.height)
-
-    #print(yuv.shape)
-    #rgb_frame = cv2.cvtColor(yuv.reshape((-1, 512)), cv2.COLOR_YUV2RGB_I420)
-
-    #rgb_frame[:,:,1:] = 0 
-    #from PIL import Image
-    #im = Image.fromarray(rgb_frame)
-    #im.save("your_file.jpeg")
-    #assert False
+    self.input_imgs[:,6:] = python_frame_prepare(input_frame.copy(), transform, buf.width, buf.height)
     tensor_inputs['input_imgs'] = Tensor(self.input_imgs)
     if wbuf is not None:
       wide_input_frame = self.wide_frame.array_from_vision_buf(wbuf)
       self.big_input_imgs[:,:6] = self.big_input_imgs[:,6:]
-      self.big_input_imgs[:,6:] = self.python_frame_prepare(wide_input_frame, transform_wide, wbuf.width, wbuf.height)
+      self.big_input_imgs[:,6:] = python_frame_prepare(wide_input_frame, transform_wide, wbuf.width, wbuf.height)
       tensor_inputs['big_input_imgs'] = Tensor(self.big_input_imgs)
-
-
-    #assert False
-    #input_imgs_cl = self.frame.prepare(buf, transform.flatten())
-    #tensor_inputs['input_imgs'] = Tensor_from_cl(self.frame, input_imgs_cl)
-    #if wbuf is not None:
-    #  big_input_imgs_cl = self.wide_frame.prepare(wbuf, transform_wide.flatten())
-    #  tensor_inputs['big_input_imgs'] = Tensor_from_cl(self.wide_frame, big_input_imgs_cl)
 
     if prepare_only:
       return None
