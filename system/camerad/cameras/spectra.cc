@@ -433,16 +433,18 @@ void SpectraCamera::config_ipe(int io_mem_handle, int fence, int request_id, int
     struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
     pkt->num_cmd_buf = 2;
 
+    // looks like we might not have these structs :(
     // see camxcmdbuffer.h
     // *** first command ***
     // TODO: support MMU
-    buf_desc[0].size = ipe_buf_size;
+    buf_desc[0].size = ipe_cmd.size;
     buf_desc[0].type = CAM_CMD_BUF_FW;
     buf_desc[0].meta_data = 0;
-    buf_desc[0].mem_handle = ipe_buf_handle;
-    buf_desc[0].offset = ALIGNED_SIZE(ipe_buf_size, ipe_buf_alignment)*idx;
-    // TODO: copy the ICP commands from the dump
-    // looks like we might not have these structs :(
+    buf_desc[0].mem_handle = ipe_cmd.handle;
+    buf_desc[0].offset = ipe_cmd.aligned_size()*idx;
+    buf_desc[0].length = 0;
+    //buf_desc[0].length = sizeof(isp_ipe_program1) - 1;
+    //memcpy((unsigned char*)ipe_cmd.ptr + buf_desc[0].offset, isp_ipe_program1, buf_desc[0].length);
 
     // *** second command ***
     // see camxcslicpdefs.h
@@ -485,9 +487,9 @@ void SpectraCamera::config_ipe(int io_mem_handle, int fence, int request_id, int
     pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf;
 
     struct cam_buf_io_cfg *io_cfg = (struct cam_buf_io_cfg *)((char*)&pkt->payload + pkt->io_configs_offset);
-    io_cfg[0].offsets[1] = ife_out_size;
-    io_cfg[0].mem_handle[0] = ife_out_handle;
-    io_cfg[0].mem_handle[1] = ife_out_handle;
+    io_cfg[0].offsets[1] = ife_out.size;
+    io_cfg[0].mem_handle[0] = ife_out.handle;
+    io_cfg[0].mem_handle[1] = ife_out.handle;
     io_cfg[0].planes[0] = (struct cam_plane_cfg){
       .width = 0xa00,
       .height = sensor->frame_height,
@@ -562,7 +564,7 @@ void SpectraCamera::config_ipe(int io_mem_handle, int fence, int request_id, int
 }
 
 
-void SpectraCamera::config_ife(int request_id, int buf0_idx, bool init) {
+void SpectraCamera::config_ife(int request_id, int idx, bool init) {
   /*
     Handles initial + per-frame IFE config.
     IFE = Image Front End
@@ -578,18 +580,11 @@ void SpectraCamera::config_ife(int request_id, int buf0_idx, bool init) {
 
   if (!init) {
     pkt->header.op_code =  CSLDeviceTypeIFE | OpcodesIFEUpdate;  // 0xf000001
-    pkt->header.request_id = request_id;
   } else {
     pkt->header.op_code = CSLDeviceTypeIFE | OpcodesIFEInitialConfig; // 0xf000000
-    pkt->header.request_id = 1;
   }
   pkt->header.size = size;
-
-  // *** kmd cmd buf ***
-  {
-    pkt->kmd_cmd_buf_index = 0;
-    pkt->kmd_cmd_buf_offset = 0;
-  }
+  pkt->header.request_id = request_id;
 
   // *** cmd buf ***
   {
@@ -599,11 +594,11 @@ void SpectraCamera::config_ife(int request_id, int buf0_idx, bool init) {
     // see camxcmdbuffer.h
     // *** first command ***
     // TODO: support MMU
-    buf_desc[0].size = buf0_size;
+    buf_desc[0].size = ife_cmd.size;
     buf_desc[0].type = CAM_CMD_BUF_DIRECT;
     buf_desc[0].meta_data = CAM_ISP_PACKET_META_COMMON;
-    buf_desc[0].mem_handle = buf0_handle;
-    buf_desc[0].offset = ALIGNED_SIZE(buf0_size, buf0_alignment)*buf0_idx;
+    buf_desc[0].mem_handle = ife_cmd.handle;
+    buf_desc[0].offset = ife_cmd.aligned_size()*idx;
 
     /*
       TODO: build this
@@ -611,15 +606,15 @@ void SpectraCamera::config_ife(int request_id, int buf0_idx, bool init) {
     */
     unsigned char* isp_prog;
     if (init) {
-      buf_desc[0].length = sizeof(isp_ife_update)-1;
+      buf_desc[0].length = sizeof(isp_ife_init)-1;
       isp_prog = isp_ife_init;
     } else {
       buf_desc[0].length = sizeof(isp_ife_update)-1;
       isp_prog = isp_ife_update;
     }
-    buf_desc[0].length = 0;
+    //buf_desc[0].length = 0;
     printf("isp program length %d\n", buf_desc[0].length);
-    memcpy((unsigned char*)buf0_ptr + buf_desc[0].offset, isp_prog, buf_desc[0].length);
+    memcpy((unsigned char*)ife_cmd.ptr + buf_desc[0].offset, isp_prog, buf_desc[0].length);
     pkt->kmd_cmd_buf_offset = buf_desc[0].length;
     pkt->kmd_cmd_buf_index = 0;
 
@@ -702,9 +697,9 @@ void SpectraCamera::config_ife(int request_id, int buf0_idx, bool init) {
     pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf;
 
     struct cam_buf_io_cfg *io_cfg = (struct cam_buf_io_cfg *)((char*)&pkt->payload + pkt->io_configs_offset);
-    io_cfg[0].offsets[1] = ife_out_size;
-    io_cfg[0].mem_handle[0] = ife_out_handle;
-    io_cfg[0].mem_handle[1] = ife_out_handle;
+    io_cfg[0].offsets[1] = ife_out.size;
+    io_cfg[0].mem_handle[0] = ife_out.handle;
+    io_cfg[0].mem_handle[1] = ife_out.handle;
     io_cfg[0].planes[0] = (struct cam_plane_cfg){
       .width = 0xa00,
       .height = sensor->frame_height,
@@ -741,18 +736,20 @@ void SpectraCamera::config_ife(int request_id, int buf0_idx, bool init) {
     io_cfg[0].framedrop_pattern = 0x1;
 
     // *** address patches ***
-    pkt->num_patches = 0x0;
     pkt->patch_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf + sizeof(struct cam_buf_io_cfg)*pkt->num_io_configs;
-    for (int i = 0; i < pkt->num_patches; i++) {
-      struct cam_patch_desc *patch = (struct cam_patch_desc *)((char*)&pkt->payload + pkt->patch_offset*i);
-      // correct
-      patch->dst_buf_hdl = buf0_handle;
+    if (init && false) {
+      pkt->num_patches = 0x8;
+      for (int i = 0; i < pkt->num_patches; i++) {
+        struct cam_patch_desc *patch = (struct cam_patch_desc *)((char*)&pkt->payload + pkt->patch_offset*i);
+        // correct
+        patch->dst_buf_hdl = ife_cmd.handle;
+        //patch->dst_offset = {0xfc, 0x198, 0x1d8, 0x1e4, 0x26c, 0x284, 0x290, 0x29c}[i];
 
-      // not correct
-      //patch->dst_offset = {0xfc, 0x198, 0x1d8, 0x1e4, 0x26c, 0x284, 0x290, 0x29c}[i];  // FIXME
-      //patch->src_offset = {0x0, 0x17e0, 0x19e0, 0x1d54, 0xfc0, 0x27b0, 0x28b0, 0x29b0, 0x11c0, 0x2ab0}[i];  // FIXME
-      //patch->src_buf_hdl = src_handle;
-      //if (i == 0 || i == 4 || i == 8) patch->src_buf_hdl = 0;
+        // not correct
+        //patch->src_offset = {0x0, 0x17e0, 0x19e0, 0x1d54, 0xfc0, 0x27b0, 0x28b0, 0x29b0, 0x11c0, 0x2ab0}[i];  // FIXME
+        //patch->src_buf_hdl = src_handle;
+        //if (i == 0 || i == 4 || i == 8) patch->src_buf_hdl = 0;
+      }
     }
   }
 
@@ -818,7 +815,7 @@ void SpectraCamera::camera_map_bufs() {
   for (int i = 0; i < FRAME_BUF_COUNT; i++) {
     // configure ISP to put the image in place
     struct cam_mem_mgr_map_cmd mem_mgr_map_cmd = {0};
-    mem_mgr_map_cmd.mmu_hdls[0] = m->device_iommu;
+    mem_mgr_map_cmd.mmu_hdls[0] = m->icp_device_iommu;
     mem_mgr_map_cmd.num_hdl = 1;
     mem_mgr_map_cmd.flags = CAM_MEM_FLAG_HW_READ_WRITE;
     mem_mgr_map_cmd.fd = buf.camera_bufs[i].fd;
@@ -927,13 +924,19 @@ void SpectraCamera::configISP() {
   LOGD("acquire isp dev");
 
   // *** allocate internal ISP pipeline memory ***
-  buf0_ptr = alloc_w_mmu_hdl(m->video0_fd, FRAME_BUF_COUNT*ALIGNED_SIZE(buf0_size, buf0_alignment), (uint32_t*)&buf0_handle, buf0_alignment,
-                             CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
-                             m->device_iommu, m->cdm_iommu);
-  // TODO: where does 0x5000 come from? also how's the total size determined?
-  ife_out_size = 0x5000 + (0xa00 * ALIGNED_SIZE(sensor->frame_height, 0x20));
-  alloc_w_mmu_hdl(m->video0_fd, ife_out_size*2, (uint32_t*)&ife_out_handle, ife_out_alignment,
-                  CAM_MEM_FLAG_HW_READ_WRITE, m->device_iommu, m->cdm_iommu);
+  ife_cmd.init(m, FRAME_BUF_COUNT*ALIGNED_SIZE(68472, 0x20), 0x20,
+               CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
+               m->device_iommu, m->cdm_iommu);
+
+  // TODO: this is the intermediate frame between IFE <-> IPE, we'll want more of these when running at 20fps
+  // TODO: where does 0x5000 come from? also how's the total size determined? some UBWC stuff?
+  int ife_out_size = 0x5000 + (0xa00 * ALIGNED_SIZE(sensor->frame_height, 0x20));
+  ife_out.init(m, ife_out_size*2, 0x1000, CAM_MEM_FLAG_HW_READ_WRITE, m->device_iommu, m->icp_device_iommu);
+
+  // extra ife shit
+  // 0x3d000a  + 0x3e000b
+  ife_patch1.init(m, 12480, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, m->device_iommu, m->cdm_iommu);
+  ife_patch2.init(m, 80160, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, m->device_iommu, m->cdm_iommu);
 
   // config IFE
   config_ife(1, 0, true);
@@ -948,15 +951,16 @@ void SpectraCamera::configICP() {
 
   // don't think we have this struct...
   int tmp_handle;
-  void *tmp = alloc_w_mmu_hdl(m->video0_fd, sizeof(icp_acquire_io_cmd), (uint32_t*)&tmp_handle, 0x1,
+  uint32_t io_size = sizeof(icp_acquire_io_cmd) - 1;
+  void *tmp = alloc_w_mmu_hdl(m->video0_fd, io_size, (uint32_t*)&tmp_handle, 0x1,
                               CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_HW_SHARED_ACCESS,
                               m->icp_device_iommu);
-  memcpy(tmp, icp_acquire_io_cmd, sizeof(icp_acquire_io_cmd));
+  memcpy(tmp, icp_acquire_io_cmd, io_size);
 
   struct cam_icp_acquire_dev_info icp_info = {
     .scratch_mem_size = 0x30,
     .dev_type = 0x2,  // CSLICPResourceIDIPERealTime
-    .io_config_cmd_size = sizeof(icp_acquire_io_cmd),
+    .io_config_cmd_size = io_size,
     .io_config_cmd_handle = tmp_handle,
     .secure_mode = 0,
     .num_out_res = 1,
@@ -967,7 +971,7 @@ void SpectraCamera::configICP() {
       .fps = 20,
     },
     .out_res[0] = (struct cam_icp_res_info){
-      .format = 0x3,  // YUV420NV12 (it's some other format definition...)
+      .format = 0x3,  // YUV420NV12
       .width = sensor->frame_width,
       .height = sensor->frame_height,
       .fps = 20,
@@ -981,9 +985,9 @@ void SpectraCamera::configICP() {
   release(m->video0_fd, tmp_handle);
 
   // IPE CMD buffer
-  ipe_buf_ptr = alloc_w_mmu_hdl(m->video0_fd, FRAME_BUF_COUNT*ALIGNED_SIZE(ipe_buf_size, ipe_buf_alignment), (uint32_t*)&ipe_buf_handle, ipe_buf_alignment,
-                                CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE | CAM_MEM_FLAG_HW_SHARED_ACCESS,
-                                m->device_iommu, m->cdm_iommu);
+  ipe_cmd.init(m, FRAME_BUF_COUNT*ALIGNED_SIZE(4826, 0x20), 0x20,
+               CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE | CAM_MEM_FLAG_HW_SHARED_ACCESS,
+               m->device_iommu, m->cdm_iommu);
 }
 
 void SpectraCamera::configCSIPHY() {
@@ -1049,6 +1053,7 @@ void SpectraCamera::linkDevices() {
   LOGD("start csiphy: %d", ret);
   ret = device_control(m->isp_fd, CAM_START_DEV, session_handle, isp_dev_handle);
   LOGD("start isp: %d", ret);
+  assert(ret == 0);
   ret = device_control(m->icp_fd, CAM_START_DEV, session_handle, icp_dev_handle);
   LOGD("start icp: %d", ret);
   assert(ret == 0);
@@ -1057,12 +1062,13 @@ void SpectraCamera::linkDevices() {
 void SpectraCamera::camera_close() {
   LOG("-- Stop devices %d", cc.camera_num);
 
+  int ret;
   if (enabled) {
     // ret = device_control(sensor_fd, CAM_STOP_DEV, session_handle, sensor_dev_handle);
     // LOGD("stop sensor: %d", ret);
-    int ret = device_control(m->icp_fd, CAM_STOP_DEV, session_handle, icp_dev_handle);
+    ret = device_control(m->icp_fd, CAM_STOP_DEV, session_handle, icp_dev_handle);
     LOGD("stop icp: %d", ret);
-    int ret = device_control(m->isp_fd, CAM_STOP_DEV, session_handle, isp_dev_handle);
+    ret = device_control(m->isp_fd, CAM_STOP_DEV, session_handle, isp_dev_handle);
     LOGD("stop isp: %d", ret);
     ret = device_control(csiphy_fd, CAM_STOP_DEV, session_handle, csiphy_dev_handle);
     LOGD("stop csiphy: %d", ret);
@@ -1099,7 +1105,7 @@ void SpectraCamera::camera_close() {
     LOGD("released buffers");
   }
 
-  int ret = device_control(sensor_fd, CAM_RELEASE_DEV, session_handle, sensor_dev_handle);
+  ret = device_control(sensor_fd, CAM_RELEASE_DEV, session_handle, sensor_dev_handle);
   LOGD("release sensor: %d", ret);
 
   // destroyed session

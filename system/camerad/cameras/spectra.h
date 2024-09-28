@@ -71,6 +71,22 @@ public:
   int icp_device_iommu = -1;  // icp
 };
 
+class SpectraBuf {
+public:
+  void init(SpectraMaster *m, int s, int a, int flags, int mmu_hdl = 0, int mmu_hdl2 = 0) {
+    size = s;
+    alignment = a;
+    ptr = alloc_w_mmu_hdl(m->video0_fd, size, (uint32_t*)&handle, alignment, flags, mmu_hdl, mmu_hdl2);
+  };
+
+  int aligned_size() {
+    return ALIGNED_SIZE(size, alignment);
+  };
+
+  void *ptr;
+  int size, alignment, handle;
+};
+
 class SpectraCamera {
 public:
   SpectraCamera(SpectraMaster *master, const CameraConfig &config);
@@ -80,8 +96,8 @@ public:
   void handle_camera_event(const cam_req_mgr_message *event_data);
   void camera_close();
   void camera_map_bufs();
-  void config_ife(int request_id, int buf0_idx, bool init = false);
-  void config_ipe(int io_mem_handle, int fence, int request_id, int buf0_idx);
+  void config_ife(int request_id, int idx, bool init = false);
+  void config_ipe(int io_mem_handle, int fence, int request_id, int idx);
 
   int clear_req_queue();
   void enqueue_buffer(int i, bool dp);
@@ -116,23 +132,12 @@ public:
 
   int32_t link_handle = -1;
 
-  void *buf0_ptr;
-  int buf0_handle = 0;
-  const int buf0_size = 68472; // unclear what this is and how it's determined, for internal ISP use? it's just copied from an ioctl dump
-  const int buf0_alignment = 0x20;
+  SpectraBuf ife_cmd;
+  SpectraBuf ife_out;
+  SpectraBuf ife_patch1;
+  SpectraBuf ife_patch2;
 
-  void *ipe_buf_ptr;
-  int ipe_buf_handle = 0;
-  const int ipe_buf_size = 4826;
-  const int ipe_buf_alignment = 0x20;
-
-  void *ife_out_ptr;
-  int ife_out_handle = 0;
-  int ife_out_size;
-  const int ife_out_alignment = 0x1000;
-
-  void *src_ptr;
-  int src_handle = 0;
+  SpectraBuf ipe_cmd;
 
   int buf_handle[FRAME_BUF_COUNT] = {};
   int sync_objs[FRAME_BUF_COUNT] = {};
