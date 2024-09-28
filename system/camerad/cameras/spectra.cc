@@ -558,7 +558,7 @@ void SpectraCamera::config_ipe(int io_mem_handle, int request_id, int idx) {
     pkt->patch_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf + sizeof(struct cam_buf_io_cfg)*pkt->num_io_configs;
   }
 
-  int ret = device_config(m->isp_fd, session_handle, isp_dev_handle, cam_packet_handle);
+  int ret = device_config(m->icp_fd, session_handle, icp_dev_handle, cam_packet_handle);
   assert(ret == 0);
 }
 
@@ -569,7 +569,8 @@ void SpectraCamera::config_ife(int request_id, int idx, bool init) {
     IFE = Image Front End
   */
   int size = sizeof(struct cam_packet) + sizeof(struct cam_cmd_buf_desc)*2;
-  size += sizeof(struct cam_patch_desc)*(request_id == 1 ? 0x8 : 0x2);
+  //size += sizeof(struct cam_patch_desc)*(request_id == 1 ? 0x8 : 0x2);
+  size += sizeof(struct cam_patch_desc)*8;
   if (!init) {
     size += sizeof(struct cam_buf_io_cfg);
   }
@@ -597,7 +598,7 @@ void SpectraCamera::config_ife(int request_id, int idx, bool init) {
     buf_desc[0].type = CAM_CMD_BUF_DIRECT;
     buf_desc[0].meta_data = CAM_ISP_PACKET_META_COMMON;
     buf_desc[0].mem_handle = ife_cmd.handle;
-    buf_desc[0].offset = ife_cmd.aligned_size()*idx;
+    buf_desc[0].offset = ALIGNED_SIZE(ife_cmd_size, 0x20)*idx;
 
     /*
       TODO: build this
@@ -747,7 +748,8 @@ void SpectraCamera::config_ife(int request_id, int idx, bool init) {
       patch->src_buf_hdl = (i == 0 || i == 4 || i == 8) ? ife_patch2.handle : ife_patch1.handle;
       patch->src_offset = (uint32_t[]){0x0, 0x200, 0x400, 0x774, 0x120, 0x11d0, 0x12d0, 0x13d0}[i];
     }
-  } else if (request_id == 1) {
+  //} else if (request_id == 1) {
+  } else {
     pkt->num_patches = 0x8;
     for (int i = 0; i < pkt->num_patches; i++) {
       struct cam_patch_desc *patch = (struct cam_patch_desc *)((char*)&pkt->payload + pkt->patch_offset + sizeof(cam_patch_desc)*i);
