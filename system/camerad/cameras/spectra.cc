@@ -570,9 +570,9 @@ void SpectraCamera::config_ife(int request_id, int idx, bool init) {
     IFE = Image Front End
   */
   int size = sizeof(struct cam_packet) + sizeof(struct cam_cmd_buf_desc)*2;
+  size += sizeof(struct cam_patch_desc)*(request_id == 1 ? 0x8 : 0x2);
   if (!init) {
     size += sizeof(struct cam_buf_io_cfg);
-    //size += sizeof(struct cam_patch_desc)*0x8;
   }
 
   uint32_t cam_packet_handle = 0;
@@ -594,7 +594,7 @@ void SpectraCamera::config_ife(int request_id, int idx, bool init) {
     // see camxcmdbuffer.h
     // *** first command ***
     // TODO: support MMU
-    buf_desc[0].size = ife_cmd.size;
+    buf_desc[0].size = ife_cmd_size;
     buf_desc[0].type = CAM_CMD_BUF_DIRECT;
     buf_desc[0].meta_data = CAM_ISP_PACKET_META_COMMON;
     buf_desc[0].mem_handle = ife_cmd.handle;
@@ -734,22 +734,28 @@ void SpectraCamera::config_ife(int request_id, int idx, bool init) {
     io_cfg[0].fence = 0;
     io_cfg[0].subsample_pattern = 0x1;
     io_cfg[0].framedrop_pattern = 0x1;
+    io_cfg[0].direction = CAM_BUF_OUTPUT;
+  }
 
-    // *** address patches ***
-    pkt->patch_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf + sizeof(struct cam_buf_io_cfg)*pkt->num_io_configs;
-    if (init && false) {
-      pkt->num_patches = 0x8;
-      for (int i = 0; i < pkt->num_patches; i++) {
-        struct cam_patch_desc *patch = (struct cam_patch_desc *)((char*)&pkt->payload + pkt->patch_offset*i);
-        // correct
-        patch->dst_buf_hdl = ife_cmd.handle;
-        //patch->dst_offset = {0xfc, 0x198, 0x1d8, 0x1e4, 0x26c, 0x284, 0x290, 0x29c}[i];
-
-        // not correct
-        //patch->src_offset = {0x0, 0x17e0, 0x19e0, 0x1d54, 0xfc0, 0x27b0, 0x28b0, 0x29b0, 0x11c0, 0x2ab0}[i];  // FIXME
-        //patch->src_buf_hdl = src_handle;
-        //if (i == 0 || i == 4 || i == 8) patch->src_buf_hdl = 0;
-      }
+  // *** address patches ***
+  pkt->patch_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf + sizeof(struct cam_buf_io_cfg)*pkt->num_io_configs;
+  if (init) {
+    pkt->num_patches = 0x8;
+    for (int i = 0; i < pkt->num_patches; i++) {
+      struct cam_patch_desc *patch = (struct cam_patch_desc *)((char*)&pkt->payload + pkt->patch_offset + sizeof(cam_patch_desc)*i);
+      patch->dst_buf_hdl = ife_cmd.handle;
+      patch->dst_offset = (uint32_t[]){0xfc, 0x198, 0x1d8, 0x1e4, 0x26c, 0x284, 0x290, 0x29c}[i];
+      patch->src_buf_hdl = (i == 0 || i == 4 || i == 8) ? ife_patch2.handle : ife_patch1.handle;
+      patch->src_offset = (uint32_t[]){0x0, 0x200, 0x400, 0x774, 0x120, 0x11d0, 0x12d0, 0x13d0}[i];
+    }
+  } else if (request_id == 1) {
+    pkt->num_patches = 0x8;
+    for (int i = 0; i < pkt->num_patches; i++) {
+      struct cam_patch_desc *patch = (struct cam_patch_desc *)((char*)&pkt->payload + pkt->patch_offset + sizeof(cam_patch_desc)*i);
+      patch->dst_buf_hdl = ife_cmd.handle;
+      patch->dst_offset = (uint32_t[]){0x10a5c, 0x10af8, 0x10b38, 0x10b44, 0x10bcc, 0x10be4, 0x10bf0, 0x10bfc}[i];
+      patch->src_buf_hdl = (i == 0 || i == 4) ? ife_patch1.handle : ife_patch2.handle;
+      patch->src_offset = (uint32_t[]){0x340, 0x16e0, 0x18e0, 0x1c54, 0x460, 0x26b0, 0x27b0, 0x28b0}[i];
     }
   }
 
@@ -783,7 +789,6 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
       LOGE("failed to destroy sync object: %d %d", ret, sync_destroy.sync_obj);
     }
   }
-
   // create output fence
   struct cam_sync_info sync_create = {0};
   strcpy(sync_create.name, "NodeOutputPortFence");
@@ -924,7 +929,7 @@ void SpectraCamera::configISP() {
   LOGD("acquire isp dev");
 
   // *** allocate internal ISP pipeline memory ***
-  ife_cmd.init(m, FRAME_BUF_COUNT*ALIGNED_SIZE(68472, 0x20), 0x20,
+  ife_cmd.init(m, FRAME_BUF_COUNT*ALIGNED_SIZE(ife_cmd_size, 0x20), 0x20,
                CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
                m->device_iommu, m->cdm_iommu);
 

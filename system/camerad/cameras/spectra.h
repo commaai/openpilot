@@ -132,6 +132,7 @@ public:
 
   int32_t link_handle = -1;
 
+  const int ife_cmd_size = 67984;
   SpectraBuf ife_cmd;
   SpectraBuf ife_out;
   SpectraBuf ife_patch1;
