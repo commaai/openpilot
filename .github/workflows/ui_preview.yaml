@@ -88,7 +88,6 @@ jobs:
           A=($scenes)
 
           DIFF=""
-          # TABLE="<details>"
           open=false
           TABLE="<summary>All Screenshots</summary>"
           TABLE="${TABLE}<table>"
