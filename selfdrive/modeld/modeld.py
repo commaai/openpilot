@@ -58,12 +58,7 @@ def tensor_arange(end):
 def tensor_round(tensor):
     return (tensor + 0.5).floor()
 
-def warp_perspective_tinygrad(src, M, dsize):
-
-    M_inv = Tensor(np.linalg.inv(M).astype(np.float32))
-
-    src = Tensor(src)
-
+def warp_perspective_tinygrad(src, M_inv, dsize):
     h_dst, w_dst = dsize[1], dsize[0]
     h_src, w_src = src.shape[:2]
 
@@ -88,21 +83,20 @@ def warp_perspective_tinygrad(src, M, dsize):
     else:
         dst = src[y_nearest, x_nearest]
 
-    return dst.numpy()
+    return dst
 
 
-def python_frame_prepare(input_frame, transform, W, H):
-  transform = np.linalg.inv(transform) # TODO
+def python_frame_prepare(input_frame, M_inv, W, H):
   scale_matrix = np.array([
   [0.5, 0, 0],
   [0, 0.5, 0],
   [0, 0, 1]
 ])
 
-  transform_uv = scale_matrix @ transform @ np.linalg.inv(scale_matrix)
-  y = warp_perspective_tinygrad(input_frame[:H*W].reshape((H,W)), transform, (MODEL_WIDTH, MODEL_HEIGHT))
-  u = warp_perspective_tinygrad(input_frame[H*W::2].reshape((H//2,W//2)), transform_uv, (MODEL_WIDTH//2, MODEL_HEIGHT//2))
-  v = warp_perspective_tinygrad(input_frame[H*W+1::2].reshape((H//2,W//2)), transform_uv, (MODEL_WIDTH//2, MODEL_HEIGHT//2))
+  M_inv_uv = scale_matrix @ M_inv @ np.linalg.inv(scale_matrix)
+  y = warp_perspective_tinygrad(Tensor(input_frame[:H*W].reshape((H,W))), Tensor(M_inv), (MODEL_WIDTH, MODEL_HEIGHT)).numpy()
+  u = warp_perspective_tinygrad(Tensor(input_frame[H*W::2].reshape((H//2,W//2))), Tensor(M_inv_uv), (MODEL_WIDTH//2, MODEL_HEIGHT//2)).numpy()
+  v = warp_perspective_tinygrad(Tensor(input_frame[H*W+1::2].reshape((H//2,W//2))), Tensor(M_inv_uv), (MODEL_WIDTH//2, MODEL_HEIGHT//2)).numpy()
   yuv = np.concatenate([y.copy().flatten(), u.copy().flatten(), v.copy().flatten()]).reshape((1,MODEL_HEIGHT*3//2,MODEL_WIDTH))
   tensor = frames_to_tensor(yuv.copy())
   return tensor
