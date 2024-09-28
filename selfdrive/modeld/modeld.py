@@ -9,6 +9,7 @@ else:
 import time
 import pickle
 import numpy as np
+import cv2
 import cereal.messaging as messaging
 from cereal import car, log
 from pathlib import Path
@@ -59,6 +60,21 @@ def Tensor_from_cl(frame, cl_buffer):
     return Tensor(frame.buffer_from_cl(cl_buffer)).reshape(IMG_INPUT_SHAPE)
   
 
+def frames_to_tensor(frames: np.ndarray) -> np.ndarray:
+  H = (frames.shape[1]*2)//3
+  W = frames.shape[2]
+  in_img1 = np.zeros((frames.shape[0], 6, H//2, W//2), dtype=np.uint8)
+
+  in_img1[:, 0] = frames[:, 0:H:2, 0::2]
+  in_img1[:, 1] = frames[:, 1:H:2, 0::2]
+  in_img1[:, 2] = frames[:, 0:H:2, 1::2]
+  in_img1[:, 3] = frames[:, 1:H:2, 1::2]
+  in_img1[:, 4] = frames[:, H:H+H//4].reshape((-1, H//2,W//2))
+  in_img1[:, 5] = frames[:, H+H//4:H+H//2].reshape((-1, H//2,W//2))
+
+  return in_img1
+
+
 class FrameMeta:
   frame_id: int = 0
   timestamp_sof: int = 0
@@ -90,6 +106,9 @@ class ModelState:
     with open(METADATA_PATH, 'rb') as f:
       model_metadata = pickle.load(f)
 
+
+    self.input_imgs = np.zeros(IMG_INPUT_SHAPE, dtype=np.uint8)
+    self.big_input_imgs = np.zeros(IMG_INPUT_SHAPE, dtype=np.uint8)
     self.output_slices = model_metadata['output_slices']
     net_output_size = model_metadata['output_shapes']['outputs'][1]
     self.output = np.zeros(net_output_size, dtype=np.float32)
@@ -104,6 +123,25 @@ class ModelState:
       parsed_model_outputs['raw_pred'] = model_outputs.copy()
     return parsed_model_outputs
 
+  def python_frame_prepare(self, input_frame, transform, W, H):
+    transform = np.linalg.inv(transform) # TODO
+    scale_matrix = np.array([
+    [0.5, 0, 0],
+    [0, 0.5, 0],
+    [0, 0, 1]
+])
+
+    transform_uv = scale_matrix @ transform @ np.linalg.inv(scale_matrix)
+
+    print(transform)
+    y = cv2.warpPerspective(input_frame[:H*W].reshape((H,W)), transform, (MODEL_WIDTH, MODEL_HEIGHT))
+    u = cv2.warpPerspective(input_frame[H*W::2].reshape((H//2,W//2)), transform_uv, (MODEL_WIDTH//2, MODEL_HEIGHT//2))
+    v = cv2.warpPerspective(input_frame[H*W+1::2].reshape((H//2,W//2)), transform_uv, (MODEL_WIDTH//2, MODEL_HEIGHT//2))
+    yuv = np.concatenate([y.copy().flatten(), u.copy().flatten(), v.copy().flatten()]).reshape((1,MODEL_HEIGHT*3//2,MODEL_WIDTH))
+    tensor = frames_to_tensor(yuv.copy())
+    return tensor
+
+
   def run(self, buf: VisionBuf, wbuf: VisionBuf, transform: np.ndarray, transform_wide: np.ndarray,
                 inputs: dict[str, np.ndarray], prepare_only: bool) -> dict[str, np.ndarray] | None:
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
@@ -116,11 +154,35 @@ class ModelState:
     self.inputs['lateral_control_params'][:] = inputs['lateral_control_params']
     tensor_inputs = {k: Tensor(v) for k, v in self.inputs.items()}
 
-    input_imgs_cl = self.frame.prepare(buf, transform.flatten())
-    tensor_inputs['input_imgs'] = Tensor_from_cl(self.frame, input_imgs_cl)
+    input_frame = self.frame.array_from_vision_buf(buf)
+    print(input_frame.shape)
+
+
+    self.input_imgs[:,:6] = self.input_imgs[:,6:]
+    self.input_imgs[:,6:] = self.python_frame_prepare(input_frame.copy(), transform, buf.width, buf.height)
+
+    #print(yuv.shape)
+    #rgb_frame = cv2.cvtColor(yuv.reshape((-1, 512)), cv2.COLOR_YUV2RGB_I420)
+
+    #rgb_frame[:,:,1:] = 0 
+    #from PIL import Image
+    #im = Image.fromarray(rgb_frame)
+    #im.save("your_file.jpeg")
+    #assert False
+    tensor_inputs['input_imgs'] = Tensor(self.input_imgs)
     if wbuf is not None:
-      big_input_imgs_cl = self.wide_frame.prepare(wbuf, transform_wide.flatten())
-      tensor_inputs['big_input_imgs'] = Tensor_from_cl(self.wide_frame, big_input_imgs_cl)
+      wide_input_frame = self.wide_frame.array_from_vision_buf(wbuf)
+      self.big_input_imgs[:,:6] = self.big_input_imgs[:,6:]
+      self.big_input_imgs[:,6:] = self.python_frame_prepare(wide_input_frame, transform_wide, wbuf.width, wbuf.height)
+      tensor_inputs['big_input_imgs'] = Tensor(self.big_input_imgs)
+
+
+    #assert False
+    #input_imgs_cl = self.frame.prepare(buf, transform.flatten())
+    #tensor_inputs['input_imgs'] = Tensor_from_cl(self.frame, input_imgs_cl)
+    #if wbuf is not None:
+    #  big_input_imgs_cl = self.wide_frame.prepare(wbuf, transform_wide.flatten())
+    #  tensor_inputs['big_input_imgs'] = Tensor_from_cl(self.wide_frame, big_input_imgs_cl)
 
     if prepare_only:
       return None

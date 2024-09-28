@@ -7,6 +7,7 @@
 #include "common/clutil.h"
 
 ModelFrame::ModelFrame(cl_device_id device_id, cl_context context) {
+  full_input_frame = std::make_unique<uint8_t[]>(full_img_size);
   input_frames = std::make_unique<uint8_t[]>(buf_size);
   input_frames_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, buf_size, NULL, &err));
 
@@ -40,6 +41,12 @@ uint8_t* ModelFrame::buffer_from_cl(cl_mem *in_frames) {
   CL_CHECK(clEnqueueReadBuffer(q, *in_frames, CL_TRUE, 0, MODEL_FRAME_SIZE * 2 * sizeof(uint8_t), &input_frames[0], 0, nullptr, nullptr));
   clFinish(q);
   return &input_frames[0];
+}
+
+uint8_t* ModelFrame::array_from_vision_buf(cl_mem *vision_buf) {
+  CL_CHECK(clEnqueueReadBuffer(q, *vision_buf, CL_TRUE, 0, full_img_size * sizeof(uint8_t), &full_input_frame[0], 0, nullptr, nullptr));
+  clFinish(q);
+  return &full_input_frame[0];
 }
 
 ModelFrame::~ModelFrame() {

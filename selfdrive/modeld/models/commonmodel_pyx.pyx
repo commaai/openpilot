@@ -48,3 +48,8 @@ cdef class ModelFrame:
     cdef unsigned char * data2
     data2 = self.frame.buffer_from_cl(in_frames.mem)
     return np.asarray(<cnp.uint8_t[:self.frame.buf_size]> data2)
+
+  def array_from_vision_buf(self, VisionBuf vbuf):
+    cdef unsigned char * data3
+    data3 = self.frame.array_from_vision_buf(&vbuf.buf.buf_cl)
+    return np.asarray(<cnp.uint8_t[:(vbuf.width*vbuf.height*3//2)]> data3)

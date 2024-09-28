@@ -22,11 +22,16 @@ public:
   ~ModelFrame();
   cl_mem* prepare(cl_mem yuv_cl, int width, int height, int frame_stride, int frame_uv_offset, const mat3& transform);
   uint8_t* buffer_from_cl(cl_mem *in_frames);
+  uint8_t* array_from_vision_buf(cl_mem *vision_buf);
 
   const int MODEL_WIDTH = 512;
   const int MODEL_HEIGHT = 256;
   const int MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT * 3 / 2;
   const int buf_size = MODEL_FRAME_SIZE * 2;
+  // DONT HARDCODE THIS
+  const int RAW_IMG_HEIGHT = 1208;
+  const int RAW_IMG_WIDTH = 1928;
+  const int full_img_size = RAW_IMG_HEIGHT * RAW_IMG_WIDTH * 3 / 2;
 
 private:
   Transform transform;
@@ -34,4 +39,5 @@ private:
   cl_command_queue q;
   cl_mem y_cl, u_cl, v_cl, net_input_cl, input_frames_cl;
   std::unique_ptr<uint8_t[]> input_frames;
+  std::unique_ptr<uint8_t[]> full_input_frame;
 };
