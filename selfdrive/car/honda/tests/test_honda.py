@@ -153,7 +153,7 @@ class TestHondaLowSpeedAlert:
         else:
           assert BelowSteerSpeed not in self.CS.events.names
 
-      # slow down below the lower threshold, show alert
+      # slow down below the lower threshold, show alert if pre_alert
         self._speed(self.CP.minSteerSpeed + 1.4)
         self._update_events()
         assert self.car_events.low_speed_pre_alert == e
