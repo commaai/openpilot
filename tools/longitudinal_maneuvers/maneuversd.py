@@ -87,9 +87,9 @@ MANEUVERS = [
   Maneuver(
    "creep: alternate between +1m/s^2 and -1m/s^2",
    [
-     Action(1, 2), Action(-1, 2),
-     Action(1, 2), Action(-1, 2),
-     Action(1, 2), Action(-1, 2),
+     Action(1, 3), Action(-1, 3),
+     Action(1, 3), Action(-1, 3),
+     Action(1, 3), Action(-1, 3),
    ],
    repeat=2,
    initial_speed=0.,
