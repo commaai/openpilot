@@ -12,6 +12,10 @@ GearShifter = structs.CarState.GearShifter
 EventName = car.OnroadEvent.EventName
 NetworkLocation = structs.CarParams.NetworkLocation
 
+LOW_SPEED_MINSTEER = 6.
+UPPER_THRESHOLD = 3.5
+LOWER_THRESHOLD = 1.5
+
 
 # TODO: the goal is to abstract this file into the CarState struct and make events generic
 class MockCarState:
@@ -93,31 +97,29 @@ class CarSpecificEvents:
       if self.CP.minEnableSpeed > 0 and CS.out.vEgo < 0.001:
         events.add(EventName.manualRestart)
 
-      # way too complicated
       # low speed steer alert hysteresis logic for cars with steer cut off above 6 m/s
+      min_steer_speed = self.CP.minSteerSpeed
+      if min_steer_speed > LOW_SPEED_MINSTEER:
+        if CS.out.vEgo > (min_steer_speed + UPPER_THRESHOLD) and CC_prev.enabled:
+          self.low_speed_pre_alert = True   # warn before the steer dropout
+        elif CS.out.vEgo <= min_steer_speed or not CC_prev.enabled:
+          self.low_speed_pre_alert = False  # reset
 
-      # warn before the steer dropout. reset if disengaged.
-      if CS.out.vEgo > (self.CP.minSteerSpeed + 3.5):
-        self.low_speed_pre_alert = True
-      if not CC_prev.enabled or CS.out.vEgo <= self.CP.minSteerSpeed:
-        self.low_speed_pre_alert = False
+        if self.low_speed_pre_alert:
+          min_steer_speed += LOWER_THRESHOLD
 
-      if CS.out.vEgo <= self.CP.minSteerSpeed or \
-        (self.low_speed_pre_alert and CS.out.vEgo <= (self.CP.minSteerSpeed + 1.5)):
-        self.low_speed_alert = True
-      if (not self.low_speed_pre_alert and CS.out.vEgo > self.CP.minSteerSpeed) or \
-          (self.low_speed_pre_alert and CS.out.vEgo > self.CP.minSteerSpeed + 1.5) or \
-          CS.out.standstill or self.CP.minSteerSpeed < 6.:
-            self.low_speed_alert = False
+        self.low_speed_alert = True if CS.out.vEgo <= min_steer_speed else False
+        if CS.out.standstill:
+          self.low_speed_alert = False
+
+        if self.low_speed_alert:
+          events.add(EventName.belowSteerSpeed)
 
       # Some cars can forcibly disengage steer without setting an EPS fault (i.e. Odyssey Bosch w/Stock ACC)
-      if CS.out.vEgo > self.CP.minSteerSpeed and CC_prev.enabled and not CS.steer_on: # type: ignore[attr-defined]
+      if CC_prev.latActive and not CS.steer_on: # type: ignore[attr-defined]
         CS.steer_off_cnt += 1 # type: ignore[attr-defined]
       else:
         CS.steer_off_cnt = 0 # type: ignore[attr-defined]
-
-      if self.low_speed_alert:
-        events.add(EventName.belowSteerSpeed)
 
     elif self.CP.carName == 'toyota':
       events = self.create_common_events(CS.out, CS_prev)
