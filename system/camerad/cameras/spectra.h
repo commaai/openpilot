@@ -77,6 +77,7 @@ public:
     size = s;
     alignment = a;
     ptr = alloc_w_mmu_hdl(m->video0_fd, size, (uint32_t*)&handle, alignment, flags, mmu_hdl, mmu_hdl2);
+    assert(ptr != NULL);
   };
 
   int aligned_size() {
@@ -97,7 +98,7 @@ public:
   void camera_close();
   void camera_map_bufs();
   void config_ife(int request_id, int idx, bool init = false);
-  void config_ipe(int io_mem_handle, int fence, int request_id, int idx);
+  void config_ipe(int io_mem_handle, int request_id, int idx);
 
   int clear_req_queue();
   void enqueue_buffer(int i, bool dp);
@@ -141,7 +142,8 @@ public:
   SpectraBuf ipe_cmd;
 
   int buf_handle[FRAME_BUF_COUNT] = {};
-  int sync_objs[FRAME_BUF_COUNT] = {};
+  int sync_objs_ife[FRAME_BUF_COUNT] = {};
+  int sync_objs_ipe[FRAME_BUF_COUNT] = {};
   uint64_t request_ids[FRAME_BUF_COUNT] = {};
   uint64_t request_id_last = 0;
   uint64_t frame_id_last = 0;

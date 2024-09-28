@@ -408,7 +408,7 @@ int SpectraCamera::sensors_init() {
   return ret;
 }
 
-void SpectraCamera::config_ipe(int io_mem_handle, int fence, int request_id, int idx) {
+void SpectraCamera::config_ipe(int io_mem_handle, int request_id, int idx) {
   /*
     IPE per-frame config
     * goes through the ICP (Imaging Control Processor)
@@ -437,14 +437,13 @@ void SpectraCamera::config_ipe(int io_mem_handle, int fence, int request_id, int
     // see camxcmdbuffer.h
     // *** first command ***
     // TODO: support MMU
-    buf_desc[0].size = ipe_cmd.size;
     buf_desc[0].type = CAM_CMD_BUF_FW;
     buf_desc[0].meta_data = 0;
     buf_desc[0].mem_handle = ipe_cmd.handle;
     buf_desc[0].offset = ipe_cmd.aligned_size()*idx;
-    buf_desc[0].length = 0;
-    //buf_desc[0].length = sizeof(isp_ipe_program1) - 1;
-    //memcpy((unsigned char*)ipe_cmd.ptr + buf_desc[0].offset, isp_ipe_program1, buf_desc[0].length);
+    buf_desc[0].length = sizeof(isp_ipe_program1) - 1;
+    buf_desc[0].size = buf_desc[0].length + 2;
+    memcpy((unsigned char*)ipe_cmd.ptr + buf_desc[0].offset, isp_ipe_program1, buf_desc[0].length);
 
     // *** second command ***
     // see camxcslicpdefs.h
@@ -520,8 +519,8 @@ void SpectraCamera::config_ipe(int io_mem_handle, int fence, int request_id, int
     io_cfg[0].color_space = CAM_COLOR_SPACE_BT601_FULL;
     io_cfg[0].color_pattern = 0x0;
     io_cfg[0].bpp = 0;  // bits per pixel (only for RAW)
-    io_cfg[0].resource_type = CAM_ISP_IFE_OUT_RES_FULL;
-    io_cfg[0].fence = 0;
+    io_cfg[0].resource_type = 0;
+    io_cfg[0].fence = sync_objs_ife[idx];
     io_cfg[0].direction = CAM_BUF_INPUT;
     io_cfg[0].subsample_pattern = 0x1;
     io_cfg[0].framedrop_pattern = 0x1;
@@ -546,7 +545,7 @@ void SpectraCamera::config_ipe(int io_mem_handle, int fence, int request_id, int
     io_cfg[1].color_space = 0;
     io_cfg[1].color_pattern = 0x0;
     io_cfg[1].resource_type = 0x8;
-    io_cfg[1].fence = fence;
+    io_cfg[1].fence = sync_objs_ipe[idx];
     io_cfg[1].direction = CAM_BUF_OUTPUT;
     io_cfg[1].subsample_pattern = 0x1;
     io_cfg[1].framedrop_pattern = 0x1;
@@ -555,7 +554,7 @@ void SpectraCamera::config_ipe(int io_mem_handle, int fence, int request_id, int
 
   // *** address patches ***
   {
-    pkt->num_patches = 0x8;
+    pkt->num_patches = 0x0;
     pkt->patch_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf + sizeof(struct cam_buf_io_cfg)*pkt->num_io_configs;
   }
 
@@ -731,7 +730,7 @@ void SpectraCamera::config_ife(int request_id, int idx, bool init) {
     io_cfg[0].color_pattern = 0x0;
     io_cfg[0].bpp = 0;  // bits per pixel (only for RAW)
     io_cfg[0].resource_type = CAM_ISP_IFE_OUT_RES_FULL;
-    io_cfg[0].fence = 0;
+    io_cfg[0].fence = sync_objs_ife[idx];
     io_cfg[0].subsample_pattern = 0x1;
     io_cfg[0].framedrop_pattern = 0x1;
     io_cfg[0].direction = CAM_BUF_OUTPUT;
@@ -767,10 +766,10 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
   int ret;
   uint64_t request_id = request_ids[i];
 
-  if (buf_handle[i] && sync_objs[i]) {
-    // wait
+  if (buf_handle[i] && sync_objs_ife[i]) {
+    // wait on IPE fence
     struct cam_sync_wait sync_wait = {0};
-    sync_wait.sync_obj = sync_objs[i];
+    sync_wait.sync_obj = sync_objs_ipe[i];
     sync_wait.timeout_ms = 50; // max dt tolerance, typical should be 23
     ret = do_cam_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
     if (ret != 0) {
@@ -781,9 +780,14 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
     buf.camera_bufs_metadata[i].timestamp_eof = (uint64_t)nanos_since_boot(); // set true eof
     if (dp) buf.queue(i);
 
-    // destroy old output fence
+    // destroy old output fences
     struct cam_sync_info sync_destroy = {0};
-    sync_destroy.sync_obj = sync_objs[i];
+    sync_destroy.sync_obj = sync_objs_ife[i];
+    ret = do_cam_control(m->cam_sync_fd, CAM_SYNC_DESTROY, &sync_destroy, sizeof(sync_destroy));
+    if (ret != 0) {
+      LOGE("failed to destroy sync object: %d %d", ret, sync_destroy.sync_obj);
+    }
+    sync_destroy.sync_obj = sync_objs_ipe[i];
     ret = do_cam_control(m->cam_sync_fd, CAM_SYNC_DESTROY, &sync_destroy, sizeof(sync_destroy));
     if (ret != 0) {
       LOGE("failed to destroy sync object: %d %d", ret, sync_destroy.sync_obj);
@@ -796,7 +800,12 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
   if (ret != 0) {
     LOGE("failed to create fence: %d %d", ret, sync_create.sync_obj);
   }
-  sync_objs[i] = sync_create.sync_obj;
+  sync_objs_ife[i] = sync_create.sync_obj;
+  ret = do_cam_control(m->cam_sync_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
+  if (ret != 0) {
+    LOGE("failed to create fence: %d %d", ret, sync_create.sync_obj);
+  }
+  sync_objs_ipe[i] = sync_create.sync_obj;
 
   // schedule request with camera request manager
   struct cam_req_mgr_sched_request req_mgr_sched_request = {0};
@@ -813,7 +822,7 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
 
   // submit request to the IFE and IPE
   config_ife(request_id, i);
-  config_ipe(buf_handle[i], sync_objs[i], request_id, i);
+  config_ipe(buf_handle[i], request_id, i);
 }
 
 void SpectraCamera::camera_map_bufs() {
@@ -992,7 +1001,7 @@ void SpectraCamera::configICP() {
   // IPE CMD buffer
   ipe_cmd.init(m, FRAME_BUF_COUNT*ALIGNED_SIZE(4826, 0x20), 0x20,
                CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE | CAM_MEM_FLAG_HW_SHARED_ACCESS,
-               m->device_iommu, m->cdm_iommu);
+               m->icp_device_iommu);
 }
 
 void SpectraCamera::configCSIPHY() {
