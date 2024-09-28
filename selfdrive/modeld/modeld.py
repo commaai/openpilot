@@ -77,22 +77,17 @@ def warp_perspective_tinygrad(src, M_inv, dsize):
     x_nearest = tensor_round(x_src).clip(0, w_src - 1).cast('int')
     y_nearest = tensor_round(y_src).clip(0, h_src - 1).cast('int')
 
-    src_np = src
-    if src_np.ndim == 3:
-        dst = src[y_nearest, x_nearest, :]
-    else:
-        dst = src[y_nearest, x_nearest]
-
+    dst = src[y_nearest, x_nearest]
     return dst
 
 
 def frame_prepare_tinygrad(input_frame, M_inv, M_inv_uv, W, H):
-  y = warp_perspective_tinygrad(input_frame[:H*W].reshape((H,W)), M_inv, (MODEL_WIDTH, MODEL_HEIGHT)).numpy()
-  u = warp_perspective_tinygrad(input_frame[H*W::2].reshape((H//2,W//2)), M_inv_uv, (MODEL_WIDTH//2, MODEL_HEIGHT//2)).numpy()
-  v = warp_perspective_tinygrad(input_frame[H*W+1::2].reshape((H//2,W//2)), M_inv_uv, (MODEL_WIDTH//2, MODEL_HEIGHT//2)).numpy()
-  yuv = np.concatenate([y.copy().flatten(), u.copy().flatten(), v.copy().flatten()]).reshape((1,MODEL_HEIGHT*3//2,MODEL_WIDTH))
-  tensor = frames_to_tensor(yuv.copy())
-  return Tensor(tensor)
+  y = warp_perspective_tinygrad(input_frame[:H*W].reshape((H,W)), M_inv, (MODEL_WIDTH, MODEL_HEIGHT)).flatten()
+  u = warp_perspective_tinygrad(input_frame[H*W::2].reshape((H//2,W//2)), M_inv_uv, (MODEL_WIDTH//2, MODEL_HEIGHT//2)).flatten()
+  v = warp_perspective_tinygrad(input_frame[H*W+1::2].reshape((H//2,W//2)), M_inv_uv, (MODEL_WIDTH//2, MODEL_HEIGHT//2)).flatten()
+  yuv = y.cat(u).cat(v).reshape((1,MODEL_HEIGHT*3//2,MODEL_WIDTH))
+  tensor = frames_to_tensor(yuv)
+  return tensor
 
 
 
@@ -105,10 +100,10 @@ def Tensor_from_cl(frame, cl_buffer):
     return Tensor(frame.buffer_from_cl(cl_buffer)).reshape(IMG_INPUT_SHAPE)
   
 
-def frames_to_tensor(frames: np.ndarray) -> np.ndarray:
+def frames_to_tensor(frames):
   H = (frames.shape[1]*2)//3
   W = frames.shape[2]
-  in_img1 = np.zeros((frames.shape[0], 6, H//2, W//2), dtype=np.uint8)
+  in_img1 = Tensor.zeros((frames.shape[0], 6, H//2, W//2), dtype='uint8').contiguous()
 
   in_img1[:, 0] = frames[:, 0:H:2, 0::2]
   in_img1[:, 1] = frames[:, 1:H:2, 0::2]
@@ -208,13 +203,9 @@ class ModelState:
 
 
 
-
-
     if prepare_only:
       return None
 
-    print(len(self.tensor_inputs))
-    print(len(set(self.tensor_inputs.values())))
     other_tensor_inputs = {k: v for k, v in self.tensor_inputs.items() if k not in ['M_inv', 'M_inv_uv', 'M_inv_wide', 'M_inv_uv_wide']}
     self.output = self.model_run(**other_tensor_inputs)['outputs'].numpy().flatten()
     outputs = self.parser.parse_outputs(self.slice_outputs(self.output))
