@@ -182,7 +182,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
     int min_g = std::max(gain_idx - 1, sensor->analog_gain_min_idx);
     int max_g = std::min(gain_idx + 1, sensor->analog_gain_max_idx);
 
-    for (int g = min_g; g <= max_g; ++g) {
+    for (int g = min_g; g <= max_g; g++) {
       float gain = sensor->sensor_analog_gains[g] * get_gain_factor();
 
       // Compute optimal time for given gain
