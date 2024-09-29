@@ -36,19 +36,19 @@ CPU usage budget
 MAX_TOTAL_CPU = 265.  # total for all 8 cores
 PROCS = {
   # Baseline CPU usage by process
-  "selfdrive.controls.controlsd": 18.0,
-  "selfdrive.selfdrived.selfdrived": 21.0,
+  "selfdrive.controls.controlsd": 16.0,
+  "selfdrive.selfdrived.selfdrived": 16.0,
   "selfdrive.car.card": 30.0,
   "./loggerd": 14.0,
   "./encoderd": 17.0,
   "./camerad": 14.5,
-  "selfdrive.controls.plannerd": 11.0,
+  "selfdrive.controls.plannerd": 9.0,
   "./ui": 18.0,
   "selfdrive.locationd.paramsd": 9.0,
   "./sensord": 7.0,
   "selfdrive.controls.radard": 2.0,
   "selfdrive.modeld.modeld": 17.0,
-  "selfdrive.modeld.dmonitoringmodeld": 8.0,
+  "selfdrive.modeld.dmonitoringmodeld": 11.0,
   "system.hardware.hardwared": 3.87,
   "selfdrive.locationd.calibrationd": 2.0,
   "selfdrive.locationd.torqued": 5.0,
