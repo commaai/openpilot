@@ -109,12 +109,26 @@ class FrequencyTracker:
     self.min_freq = min_freq * 0.8
     self.max_freq = max_freq * 1.2
     self.recv_dts: Deque[float] = deque(maxlen=int(10 * freq))
+    self.recv_dts_sum = 0.0
+    self.recent_recv_dts: Deque[float] = deque(maxlen=int(freq))
+    self.recent_recv_dts_sum = 0.0
     self.prev_time = 0.0
 
   def record_recv_time(self, cur_time: float) -> None:
     # TODO: Handle case where cur_time is less than prev_time
     if self.prev_time > 1e-5:
-      self.recv_dts.append(cur_time - self.prev_time)
+      dt = cur_time - self.prev_time
+
+      if len(self.recv_dts) == self.recv_dts.maxlen:
+        self.recv_dts_sum -= self.recv_dts[0]
+      self.recv_dts.append(dt)
+      self.recv_dts_sum += dt
+
+      if len(self.recent_recv_dts) == self.recent_recv_dts.maxlen:
+        self.recent_recv_dts_sum -= self.recent_recv_dts[0]
+      self.recent_recv_dts.append(dt)
+      self.recent_recv_dts_sum += dt
+
     self.prev_time = cur_time
 
   @property
@@ -122,12 +136,11 @@ class FrequencyTracker:
     if not self.recv_dts:
       return False
 
-    avg_freq = len(self.recv_dts) / sum(self.recv_dts)
+    avg_freq = len(self.recv_dts) / self.recv_dts_sum
     if self.min_freq <= avg_freq <= self.max_freq:
       return True
 
-    recent_dts = list(self.recv_dts)[-int(self.recv_dts.maxlen / 10):]
-    avg_freq_recent = len(recent_dts) / sum(recent_dts)
+    avg_freq_recent = len(self.recent_recv_dts) / self.recent_recv_dts_sum
     return self.min_freq <= avg_freq_recent <= self.max_freq
 
 
