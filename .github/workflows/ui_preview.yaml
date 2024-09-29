@@ -135,7 +135,7 @@ jobs:
 
           TABLE="${TABLE}</table>"
           TABLE="${TABLE}</details>"
-          if [[ $test = true ]]; then
+          if [[ $open = true ]]; then
             TABLE="<details open>${TABLE}"
           else
             TABLE="<details>${TABLE}"
