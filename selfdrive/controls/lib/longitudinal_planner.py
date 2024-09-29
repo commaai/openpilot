@@ -13,6 +13,7 @@ from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
 from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, get_speed_error
+from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 from openpilot.selfdrive.car.cruise import V_CRUISE_MAX, V_CRUISE_UNSET
 from openpilot.common.swaglog import cloudlog
 
@@ -36,15 +37,13 @@ def get_coast_accel(pitch):
   return np.sin(pitch) * -5.65 - 0.3  # fitted from data using xx/projects/allow_throttle/compute_coast_accel.py
 
 
-def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
+def limit_accel_in_turns(v_ego, a_y, a_target, CP):
   """
   This function returns a limited long acceleration allowed, depending on the existing lateral acceleration
   this should avoid accelerating when losing the target in turns
   """
-  # FIXME: This function to calculate lateral accel is incorrect and should use the VehicleModel
-  # The lookup table for turns should also be updated if we do this
+  # FIXME: The lookup table for turns should be updated to account for switch to using vehicle model
   a_total_max = interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
-  a_y = v_ego ** 2 * angle_steers * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
   a_x_allowed = math.sqrt(max(a_total_max ** 2 - a_y ** 2, 0.))
 
   return [a_target[0], min(a_target[1], a_x_allowed)]
@@ -71,6 +70,7 @@ def get_accel_from_plan(CP, speeds, accels):
 class LongitudinalPlanner:
   def __init__(self, CP, init_v=0.0, init_a=0.0, dt=DT_MDL):
     self.CP = CP
+    self.VM = VehicleModel(self.CP)
     self.mpc = LongitudinalMpc(dt=dt)
     self.fcw = False
     self.dt = dt
@@ -113,10 +113,12 @@ class LongitudinalPlanner:
     else:
       accel_coast = ACCEL_MAX
 
-    v_ego = sm['carState'].vEgo
-    v_cruise_kph = min(sm['carState'].vCruise, V_CRUISE_MAX)
+    CS = sm['carState']
+
+    v_ego = CS.vEgo
+    v_cruise_kph = min(CS.vCruise, V_CRUISE_MAX)
     v_cruise = v_cruise_kph * CV.KPH_TO_MS
-    v_cruise_initialized = sm['carState'].vCruise != V_CRUISE_UNSET
+    v_cruise_initialized = CS.vCruise != V_CRUISE_UNSET
 
     long_control_off = sm['controlsState'].longControlState == LongCtrlState.off
     force_slow_decel = sm['controlsState'].forceDecel
@@ -127,11 +129,18 @@ class LongitudinalPlanner:
     reset_state = reset_state or not v_cruise_initialized
 
     # No change cost when user is controlling the speed, or when standstill
-    prev_accel_constraint = not (reset_state or sm['carState'].standstill)
+    prev_accel_constraint = not (reset_state or CS.standstill)
 
     if self.mpc.mode == 'acc':
+      # Update VehicleModel
+      LP = sm['liveParameters']
+      x = max(LP.stiffnessFactor, 0.1)
+      sr = max(LP.steerRatio, 0.1)
+      self.VM.update_params(x, sr)
+      current_curvature = self.VM.calc_curvature(math.radians(CS.steeringAngleDeg - LP.angleOffsetAverageDeg), CS.vEgo, LP.roll)
+      current_lateral_accel = current_curvature * CS.vEgo ** 2
       accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
-      accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
+      accel_limits_turns = limit_accel_in_turns(v_ego, current_lateral_accel, accel_limits, self.CP)
     else:
       accel_limits = [ACCEL_MIN, ACCEL_MAX]
       accel_limits_turns = [ACCEL_MIN, ACCEL_MAX]
@@ -139,7 +148,7 @@ class LongitudinalPlanner:
     if reset_state:
       self.v_desired_filter.x = v_ego
       # Clip aEgo to cruise limits to prevent large accelerations when becoming active
-      self.a_desired = clip(sm['carState'].aEgo, accel_limits[0], accel_limits[1])
+      self.a_desired = clip(CS.aEgo, accel_limits[0], accel_limits[1])
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
@@ -170,7 +179,7 @@ class LongitudinalPlanner:
     self.j_desired_trajectory = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC[:-1], self.mpc.j_solution)
 
     # TODO counter is only needed because radar is glitchy, remove once radar is gone
-    self.fcw = self.mpc.crash_cnt > 2 and not sm['carState'].standstill
+    self.fcw = self.mpc.crash_cnt > 2 and not CS.standstill
     if self.fcw:
       cloudlog.info("FCW triggered")
 
