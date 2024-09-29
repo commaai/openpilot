@@ -67,7 +67,6 @@ class ONNXModel(RunModel):
   def __init__(self, path, output, runtime, use_tf8, cl_context):
     self.inputs = {}
     self.output = output
-    self.use_tf8 = use_tf8
 
     self.session = create_ort_session(path, fp16_to_fp32=True)
     self.input_names = [x.name for x in self.session.get_inputs()]
@@ -91,7 +90,7 @@ class ONNXModel(RunModel):
     return None
 
   def execute(self):
-    inputs = {k: (v.view(np.uint8) / 255. if self.use_tf8 and k == 'input_img' else v) for k,v in self.inputs.items()}
+    inputs = {k: v.view(self.input_dtypes[k]) for k,v in self.inputs.items()}
     inputs = {k: v.reshape(self.input_shapes[k]).astype(self.input_dtypes[k]) for k,v in inputs.items()}
     outputs = self.session.run(None, inputs)
     assert len(outputs) == 1, "Only single model outputs are supported"
