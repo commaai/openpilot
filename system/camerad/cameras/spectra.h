@@ -135,11 +135,12 @@ public:
 
   const int ife_cmd_size = 67984;
   SpectraBuf ife_cmd;
-  SpectraBuf ife_out;
+  SpectraBuf ife_out[FRAME_BUF_COUNT];
   SpectraBuf ife_patch1;
   SpectraBuf ife_patch2;
 
   SpectraBuf ipe_cmd;
+  SpectraBuf ipe_patch1;
 
   int buf_handle[FRAME_BUF_COUNT] = {};
   int sync_objs_ife[FRAME_BUF_COUNT] = {};

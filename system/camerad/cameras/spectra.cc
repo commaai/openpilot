@@ -409,6 +409,7 @@ int SpectraCamera::sensors_init() {
 }
 
 void SpectraCamera::config_ipe(int io_mem_handle, int request_id, int idx) {
+  LOGD("IPE config, request_id=%d", request_id);
   /*
     IPE per-frame config
     * goes through the ICP (Imaging Control Processor)
@@ -488,9 +489,8 @@ void SpectraCamera::config_ipe(int io_mem_handle, int request_id, int idx) {
     struct cam_buf_io_cfg *io_cfg = (struct cam_buf_io_cfg *)((char*)&pkt->payload + pkt->io_configs_offset);
 
     // 0 = input image from the IFE
-    io_cfg[0].offsets[1] = ife_out.size;
-    io_cfg[0].mem_handle[0] = ife_out.handle;
-    io_cfg[0].mem_handle[1] = ife_out.handle;
+    io_cfg[0].mem_handle[0] = ife_out[idx].handle;
+    io_cfg[0].mem_handle[1] = ife_out[idx].handle;
     io_cfg[0].planes[0] = (struct cam_plane_cfg){
       .width = 0xa00,
       .height = sensor->frame_height,
@@ -517,6 +517,7 @@ void SpectraCamera::config_ipe(int io_mem_handle, int request_id, int idx) {
       .packer_config = 0xb,
       .mode_config = 0xdef,
     };
+    io_cfg[0].offsets[1] = (io_cfg[0].planes[0].plane_stride*io_cfg[0].planes[0].slice_height + io_cfg[0].planes[0].meta_size);
     io_cfg[0].format = CAM_FORMAT_UBWC_TP10;
     io_cfg[0].color_space = CAM_COLOR_SPACE_BT601_FULL;
     io_cfg[0].color_pattern = 0x0;
@@ -555,8 +556,17 @@ void SpectraCamera::config_ipe(int io_mem_handle, int request_id, int idx) {
 
   // *** address patches ***
   {
-    pkt->num_patches = 0x0;
+    /*
+    pkt->num_patches = 71;
     pkt->patch_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf + sizeof(struct cam_buf_io_cfg)*pkt->num_io_configs;
+    for (int i = 0; i < pkt->num_patches; i++) {
+      struct cam_patch_desc *patch = (struct cam_patch_desc *)((char*)&pkt->payload + pkt->patch_offset + sizeof(cam_patch_desc)*i);
+      patch->dst_buf_hdl = i <= 27 ? ipe_cmd.handle : ipe_patch1.handle;
+      patch->dst_offset = (uint32_t[]){0xfc, 0x198, 0x1d8, 0x1e4, 0x26c, 0x284, 0x290, 0x29c}[i];
+      patch->src_buf_hdl = (i == 0 || i == 4 || i == 8) ? ife_patch2.handle : ife_patch1.handle;
+      patch->src_offset = (uint32_t[]){0x0, 0x200, 0x400, 0x774, 0x120, 0x11d0, 0x12d0, 0x13d0}[i];
+    }
+    */
   }
 
   int ret = device_config(m->icp_fd, session_handle, icp_dev_handle, cam_packet_handle);
@@ -565,6 +575,7 @@ void SpectraCamera::config_ipe(int io_mem_handle, int request_id, int idx) {
 
 
 void SpectraCamera::config_ife(int request_id, int idx, bool init) {
+  LOGD("IFE config, request_id=%d (init %d)", request_id, init);
   /*
     Handles initial + per-frame IFE config.
     IFE = Image Front End
@@ -696,9 +707,8 @@ void SpectraCamera::config_ife(int request_id, int idx, bool init) {
     pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf;
 
     struct cam_buf_io_cfg *io_cfg = (struct cam_buf_io_cfg *)((char*)&pkt->payload + pkt->io_configs_offset);
-    io_cfg[0].offsets[1] = ife_out.size;
-    io_cfg[0].mem_handle[0] = ife_out.handle;
-    io_cfg[0].mem_handle[1] = ife_out.handle;
+    io_cfg[0].mem_handle[0] = ife_out[idx].handle;
+    io_cfg[0].mem_handle[1] = ife_out[idx].handle;
     io_cfg[0].planes[0] = (struct cam_plane_cfg){
       .width = 0xa00,
       .height = sensor->frame_height,
@@ -725,6 +735,7 @@ void SpectraCamera::config_ife(int request_id, int idx, bool init) {
       .packer_config = 0xb,
       .mode_config = 0xdef,
     };
+    io_cfg[0].offsets[1] = (io_cfg[0].planes[0].plane_stride*io_cfg[0].planes[0].slice_height + io_cfg[0].planes[0].meta_size);
     io_cfg[0].format = CAM_FORMAT_UBWC_TP10;
     io_cfg[0].color_space = CAM_COLOR_SPACE_BT601_FULL;
     io_cfg[0].color_pattern = 0x0;
@@ -943,10 +954,12 @@ void SpectraCamera::configISP() {
                CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
                m->device_iommu, m->cdm_iommu);
 
-  // TODO: this is the intermediate frame between IFE <-> IPE, we'll want more of these when running at 20fps
-  // TODO: where does 0x5000 come from? also how's the total size determined? some UBWC stuff?
-  int ife_out_size = 0x5000 + (0xa00 * ALIGNED_SIZE(sensor->frame_height, 0x20));
-  ife_out.init(m, ife_out_size*2, 0x1000, CAM_MEM_FLAG_HW_READ_WRITE, m->device_iommu, m->icp_device_iommu);
+  // TODO: cleanup this duplication, it's in config_ife and config_ipe
+  // sum of io_cfg[{0, 1, 2}].{plane_stride,slice_height,meta_size}
+  int ife_out_size = 0x5000 + 0x3000 + (0xa00 * ALIGNED_SIZE(sensor->frame_height, 0x20)) + (0xa00 * ALIGNED_SIZE(sensor->frame_height/2, 0x20));
+  for (int i = 0; i < FRAME_BUF_COUNT; i++) {
+    ife_out[i].init(m, ife_out_size, 0x1000, CAM_MEM_FLAG_HW_READ_WRITE, m->device_iommu, m->icp_device_iommu);
+  }
 
   // extra ife shit
   // 0x3d000a  + 0x3e000b
@@ -1003,6 +1016,8 @@ void SpectraCamera::configICP() {
   ipe_cmd.init(m, FRAME_BUF_COUNT*ALIGNED_SIZE(4826, 0x20), 0x20,
                CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE | CAM_MEM_FLAG_HW_SHARED_ACCESS,
                m->icp_device_iommu);
+  ipe_patch1.init(m, 4864, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
+                 m->icp_device_iommu);
 }
 
 void SpectraCamera::configCSIPHY() {
