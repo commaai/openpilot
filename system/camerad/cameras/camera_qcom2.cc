@@ -178,9 +178,10 @@ void CameraState::set_camera_exposure(float grey_frac) {
     new_exp_t = exposure_time;
     enable_dc_gain = false;
   } else {
-    // Simple brute force optimizer to choose sensor parameters
-    // to reach desired EV
-    for (int g = std::max((int)sensor->analog_gain_min_idx, gain_idx - 1); g <= std::min((int)sensor->analog_gain_max_idx, gain_idx + 1); g++) {
+    // Simple brute force optimizer to choose sensor parameters to reach desired EV
+    int min_g = std::max(gain_idx - 1, sensor->analog_gain_min_idx);
+    int max_g = std::min(gain_idx + 1, sensor->analog_gain_max_idx);
+    for (int g = min_g; g <= max_g; g++) {
       float gain = sensor->sensor_analog_gains[g] * get_gain_factor();
 
       // Compute optimal time for given gain
