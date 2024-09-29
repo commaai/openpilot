@@ -106,12 +106,8 @@ class LongitudinalPlanner:
   def update(self, sm):
     self.mpc.mode = 'blended' if sm['selfdriveState'].experimentalMode else 'acc'
 
-    if len(sm['liveCalibration'].rpyCalib) == 3 and len(sm['carControl'].orientationNED) == 3:
-      device_from_calib = rot_from_euler(sm['liveCalibration'].rpyCalib)
-      ned_from_device = rot_from_euler(sm['carControl'].orientationNED)
-      ned_from_calib = np.dot(ned_from_device, device_from_calib)
-      ned_from_calib_eulers = euler_from_rot(ned_from_calib)
-      accel_coast = np.sin(ned_from_calib_eulers[1]) * -5.65 - 0.3  # fitted from data
+    if len(sm['carControl'].orientationNED) == 3:
+      accel_coast = np.sin(sm['carControl'].orientationNED[1]) * -5.65 - 0.3  # fitted from data
     else:
       accel_coast = ACCEL_MAX
 
