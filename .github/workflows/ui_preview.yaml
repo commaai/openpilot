@@ -135,7 +135,7 @@ jobs:
 
           TABLE="${TABLE}</table>"
           TABLE="${TABLE}</details>"
-          if open; then
+          if $open; then
             TABLE="<details open>${TABLE}"
           else
             TABLE="<details>${TABLE}"
