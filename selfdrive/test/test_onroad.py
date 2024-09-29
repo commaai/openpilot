@@ -32,7 +32,8 @@ CPU usage budget
 * total CPU usage of openpilot (sum(PROCS.values())
   should not exceed MAX_TOTAL_CPU
 """
-MAX_TOTAL_CPU = 260.  # total for all 8 cores
+
+MAX_TOTAL_CPU = 265.  # total for all 8 cores
 PROCS = {
   # Baseline CPU usage by process
   "selfdrive.controls.controlsd": 18.0,
@@ -46,7 +47,7 @@ PROCS = {
   "selfdrive.locationd.paramsd": 9.0,
   "./sensord": 7.0,
   "selfdrive.controls.radard": 2.0,
-  "selfdrive.modeld.modeld": 13.0,
+  "selfdrive.modeld.modeld": 17.0,
   "selfdrive.modeld.dmonitoringmodeld": 8.0,
   "system.hardware.hardwared": 3.87,
   "selfdrive.locationd.calibrationd": 2.0,
@@ -312,7 +313,7 @@ class TestOnroad:
     assert max(mems) - min(mems) <= 3.0
 
   def test_gpu_usage(self):
-    assert self.gpu_procs == {"weston", "ui", "camerad", "selfdrive.modeld.modeld"}
+    assert self.gpu_procs == {"weston", "ui", "camerad", "selfdrive.modeld.modeld", "selfdrive.modeld.dmonitoringmodeld"}
 
   def test_camera_processing_time(self):
     result = "\n"

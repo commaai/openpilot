@@ -17,6 +17,7 @@ from openpilot.common.gps import get_gps_location_service
 from openpilot.selfdrive.selfdrived.events import Events, ET
 from openpilot.selfdrive.selfdrived.state import StateMachine
 from openpilot.selfdrive.selfdrived.alertmanager import AlertManager, set_offroad_alert
+from openpilot.selfdrive.controls.lib.latcontrol import MIN_LATERAL_CONTROL_SPEED
 
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.version import get_build_metadata
@@ -304,30 +305,17 @@ class SelfdriveD:
     if CS.steeringPressed:
       self.last_steering_pressed_frame = self.sm.frame
     recent_steer_pressed = (self.sm.frame - self.last_steering_pressed_frame)*DT_CTRL < 2.0
-    lac = getattr(self.sm['controlsState'].lateralControlState, self.sm['controlsState'].lateralControlState.which())
+    controlstate = self.sm['controlsState']
+    lac = getattr(controlstate.lateralControlState, controlstate.lateralControlState.which())
     if lac.active and not recent_steer_pressed and not self.CP.notCar:
-      if self.CP.lateralTuning.which() == 'torque':
-        undershooting = abs(lac.desiredLateralAccel) / abs(1e-3 + lac.actualLateralAccel) > 1.2
-        turning = abs(lac.desiredLateralAccel) > 1.0
-        good_speed = CS.vEgo > 5
-        max_torque = abs(self.sm['carOutput'].actuatorsOutput.steer) > 0.99
-        if undershooting and turning and good_speed and max_torque:
-          self.events.add(EventName.steerSaturated)
-      elif lac.saturated:
-        # TODO probably should not use dpath_points but curvature
-        dpath_points = self.sm['modelV2'].position.y
-        if len(dpath_points):
-          # Check if we deviated from the path
-          # TODO use desired vs actual curvature
-          if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
-            steering_value = self.sm['carControl'].actuators.steeringAngleDeg
-          else:
-            steering_value = self.sm['carControl'].actuators.steer
-
-          left_deviation = steering_value > 0 and dpath_points[0] < -0.20
-          right_deviation = steering_value < 0 and dpath_points[0] > 0.20
-          if left_deviation or right_deviation:
-            self.events.add(EventName.steerSaturated)
+      clipped_speed = max(CS.vEgo, MIN_LATERAL_CONTROL_SPEED)
+      actual_lateral_accel = controlstate.curvature * (clipped_speed**2)
+      desired_lateral_accel = controlstate.desiredCurvature * (clipped_speed**2)
+      undershooting = abs(desired_lateral_accel) / abs(1e-3 + actual_lateral_accel) > 1.2
+      turning = abs(desired_lateral_accel) > 1.0
+      good_speed = CS.vEgo > 5
+      if undershooting and turning and good_speed and lac.saturated:
+        self.events.add(EventName.steerSaturated)
 
     # Check for FCW
     stock_long_is_braking = self.enabled and not self.CP.openpilotLongitudinalControl and CS.aEgo < -1.25

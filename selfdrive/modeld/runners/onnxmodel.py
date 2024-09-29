@@ -14,8 +14,12 @@ def attributeproto_fp16_to_fp32(attr):
   attr.data_type = 1
   attr.raw_data = float32_list.astype(np.float32).tobytes()
 
-def convert_fp16_to_fp32(path):
-  model = onnx.load(path)
+def convert_fp16_to_fp32(onnx_path_or_bytes):
+  if isinstance(onnx_path_or_bytes, bytes):
+    model = onnx.load_from_string(onnx_path_or_bytes)
+  elif isinstance(onnx_path_or_bytes, str):
+    model = onnx.load(onnx_path_or_bytes)
+
   for i in model.graph.initializer:
     if i.data_type == 10:
       attributeproto_fp16_to_fp32(i)
@@ -23,6 +27,8 @@ def convert_fp16_to_fp32(path):
     if i.type.tensor_type.elem_type == 10:
       i.type.tensor_type.elem_type = 1
   for i in model.graph.node:
+    if i.op_type == 'Cast' and i.attribute[0].i == 10:
+      i.attribute[0].i = 1
     for a in i.attribute:
       if hasattr(a, 't'):
         if a.t.data_type == 10:
@@ -61,7 +67,6 @@ class ONNXModel(RunModel):
   def __init__(self, path, output, runtime, use_tf8, cl_context):
     self.inputs = {}
     self.output = output
-    self.use_tf8 = use_tf8
 
     self.session = create_ort_session(path, fp16_to_fp32=True)
     self.input_names = [x.name for x in self.session.get_inputs()]
@@ -85,7 +90,7 @@ class ONNXModel(RunModel):
     return None
 
   def execute(self):
-    inputs = {k: (v.view(np.uint8) / 255. if self.use_tf8 and k == 'input_img' else v) for k,v in self.inputs.items()}
+    inputs = {k: v.view(self.input_dtypes[k]) for k,v in self.inputs.items()}
     inputs = {k: v.reshape(self.input_shapes[k]).astype(self.input_dtypes[k]) for k,v in inputs.items()}
     outputs = self.session.run(None, inputs)
     assert len(outputs) == 1, "Only single model outputs are supported"

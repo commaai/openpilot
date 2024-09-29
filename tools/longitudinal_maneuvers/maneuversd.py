@@ -31,7 +31,7 @@ class Maneuver:
   def get_accel(self, v_ego: float, long_active: bool, standstill: bool, cruise_standstill: bool) -> float:
     ready = abs(v_ego - self.initial_speed) < 0.3 and long_active and not cruise_standstill
     if self.initial_speed < 0.01:
-      ready = v_ego < 0.1 and standstill
+      ready = ready and standstill
     self._ready_cnt = (self._ready_cnt + 1) if ready else 0
 
     if self._ready_cnt > (3. / DT_MDL):
@@ -73,19 +73,25 @@ class Maneuver:
 
 MANEUVERS = [
   Maneuver(
+    "come to stop",
+    [Action(-0.5, 12)],
+    repeat=2,
+    initial_speed=5.,
+  ),
+  Maneuver(
    "start from stop",
-   [Action(1.5, 3)],
+   [Action(1.5, 5)],
    repeat=3,
    initial_speed=0.,
   ),
   Maneuver(
    "creep: alternate between +1m/s^2 and -1m/s^2",
    [
-     Action(1, 2), Action(-1, 2),
-     Action(1, 2), Action(-1, 2),
-     Action(1, 2), Action(-1, 2),
+     Action(1, 3), Action(-1, 3),
+     Action(1, 3), Action(-1, 3),
+     Action(1, 3), Action(-1, 3),
    ],
-   repeat=1,
+   repeat=2,
    initial_speed=0.,
   ),
   Maneuver(

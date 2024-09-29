@@ -39,7 +39,7 @@ All of these are examples of good PRs:
 
 ### First contribution
 
-[Bounties](https://comma.ai/bounties) are the best place to get started.
+[Projects / openpilot bounties](https://github.com/orgs/commaai/projects/26/views/1?pane=info) is the best place to get started and goes in-depth on what's expected when working on a bounty.
 There's lot of bounties that don't require a comma 3/3X or a car.
 
 ## Pull Requests

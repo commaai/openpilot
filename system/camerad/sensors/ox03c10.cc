@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "system/camerad/sensors/sensor.h"
 
 namespace {
