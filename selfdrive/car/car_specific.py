@@ -101,11 +101,11 @@ class CarSpecificEvents:
       if self.CP.minSteerSpeed > MINSTEER_ALLOW_ALERTS:
         # exceed this speed to allow pre-alerts
         if CS.out.vEgo >= (self.CP.minSteerSpeed + MINSTEER_UPPER):
-          self.min_steer_alert_speed = (self.CP.minSteerSpeed + MINSTEER_LOWER) # type: ignore[attr-defined]
+          self.min_steer_alert_speed = (self.CP.minSteerSpeed + MINSTEER_LOWER)
         elif CS.out.vEgo <= self.CP.minSteerSpeed or not CC_prev.enabled:
-          self.min_steer_alert_speed = self.CP.minSteerSpeed # type: ignore[attr-defined]
+          self.min_steer_alert_speed = self.CP.minSteerSpeed
         # don't nag the user when stopped
-        self.low_speed_alert = CS.out.vEgo <= self.min_steer_alert_speed and not CS.out.standstill # type: ignore[attr-defined]
+        self.low_speed_alert = CS.out.vEgo <= self.min_steer_alert_speed and not CS.out.standstill
         if self.low_speed_alert:
           events.add(EventName.belowSteerSpeed)
 
