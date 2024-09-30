@@ -346,7 +346,7 @@ class TestCarModelBase(unittest.TestCase):
       # Make sure dat has initializing bit if steering sensor is ready
       if self.CP.carFingerprint in TOYOTA_ANGLE_CONTROL_CAR and self.CI.CS.accurate_steer_angle_seen:
         dat = bytearray(dat)
-        dat[0] |= 8
+        dat[0] &= 8
         dat = bytes(dat)
 
       to_send = libpanda_py.make_CANPacket(address, bus, dat)
