@@ -118,8 +118,7 @@ class Car:
       if len(saved_secoc_key) != 16:
         cloudlog.warning("Saved SecOC key is invalid")
       else:
-        self.CI.CS.secoc_key = saved_secoc_key
-        self.CI.CC.secoc_key = saved_secoc_key
+        self.CI.CS.secoc_key = self.CI.CC.secoc_key = saved_secoc_key
 
     # set alternative experiences from parameters
     self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
