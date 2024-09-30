@@ -111,6 +111,16 @@ class Car:
       self.CI, self.CP = CI, CI.CP
       self.RI = RI
 
+    # TODO: additional read-time validation of key length and format
+    secoc_key = self.params.get("SecOCKey", encoding='utf8')
+    if secoc_key is None:
+      secoc_key = "0" * 32
+    self.secoc_key = bytes.fromhex(secoc_key.strip())
+
+    # TODO: seems a bit abstraction-breaking, but required if not putting the key in CarParams, and not touching every port
+    self.CI.CS.secoc_key = self.secoc_key
+    self.CI.CC.secoc_key = self.secoc_key
+
     # set alternative experiences from parameters
     self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
     self.CP.alternativeExperience = 0
