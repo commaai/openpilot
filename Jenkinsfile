@@ -102,9 +102,8 @@ def hasDirectoryChanged(List<String> paths) {
   for (change in currentBuild.changeSets) {
     for (item in change.getItems()) {
       for (file in item.getAffectedFiles()) {
-        println "FILE '${file}' CHANGED!"
         for (path in paths) {
-          if (file.startsWith(path)) {
+          if (file.getPath().startsWith(path)) {
             return true
           }
         }
