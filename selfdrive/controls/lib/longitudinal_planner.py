@@ -5,7 +5,6 @@ from openpilot.common.numpy_fast import clip, interp
 
 import cereal.messaging as messaging
 from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX
-from openpilot.common.transformations.orientation import rot_from_euler, euler_from_rot
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import DT_MDL
@@ -147,7 +146,7 @@ class LongitudinalPlanner:
     self.allow_throttle = throttle_prob > ALLOW_THROTTLE_THRESHOLD
 
     if not self.allow_throttle and v_ego > 5.0:  # Don't clip at low speeds since throttle_prob doesn't account for creep
-      # MPC breaks with accel limits that would result in negative velocity within the MPC horizon, so we clip the max accel limit at vEgo / T_MAX (plus a bit of margin)
+      # MPC breaks when accel limits would cause negative velocity within the MPC horizon, so we clip the max accel limit at vEgo/T_MAX plus a bit of margin
       clipped_accel_coast = max(accel_coast, accel_limits_turns[0], -v_ego / T_IDXS_MPC[-1] + ACCEL_LIMIT_MARGIN)
       accel_limits_turns[1] = min(accel_limits_turns[1], clipped_accel_coast)
 
