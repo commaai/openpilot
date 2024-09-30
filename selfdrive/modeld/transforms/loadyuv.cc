@@ -33,7 +33,7 @@ void loadyuv_destroy(LoadYUVState* s) {
 
 void loadyuv_queue(LoadYUVState* s, cl_command_queue q,
                    cl_mem y_cl, cl_mem u_cl, cl_mem v_cl,
-                   cl_mem out_cl, bool do_shift) {
+                   cl_mem out_cl) {
   cl_int global_out_off = 0;
 
   CL_CHECK(clSetKernelArg(s->loadys_krnl, 0, sizeof(cl_mem), &y_cl));
