@@ -87,12 +87,31 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
             device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
           }
           steps.each { item ->
+            if (branch != "master" && item.size() == 3 && !hasDirectoryChanged(item[2])) {
+              return;
+            }
             device(device_ip, item[0], item[1])
           }
         }
       }
     }
   }
+}
+
+def hasDirectoryChanged(List<String> paths) {
+  for (change in currentBuild.changeSets) {
+    for (item in change.getItems()) {
+      for (file in item.getAffectedFiles()) {
+        println "FILE '${file}' CHANGED!"
+        for (path in paths) {
+          if (file.startsWith(path)) {
+            return true
+          }
+        }
+      }
+    }
+  }
+  return false
 }
 
 def setupCredentials() {
@@ -199,7 +218,7 @@ node {
           ["build openpilot", "cd system/manager && ./build.py"],
           ["test pandad loopback", "SINGLE_PANDA=1 pytest selfdrive/pandad/tests/test_pandad_loopback.py"],
           ["test pandad spi", "pytest selfdrive/pandad/tests/test_pandad_spi.py"],
-          ["test pandad", "pytest selfdrive/pandad/tests/test_pandad.py"],
+          ["test pandad", "pytest selfdrive/pandad/tests/test_pandad.py", ["panda/", "selfdrive/pandad/"]],
           ["test amp", "pytest system/hardware/tici/tests/test_amplifier.py"],
           ["test hw", "pytest system/hardware/tici/tests/test_hardware.py"],
           ["test qcomgpsd", "pytest system/qcomgpsd/tests/test_qcomgpsd.py"],
