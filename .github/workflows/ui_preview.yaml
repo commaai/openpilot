@@ -135,11 +135,13 @@ jobs:
 
           TABLE="${TABLE}</table>"
           TABLE="${TABLE}</details>"
+
           if $open; then
             TABLE="<details open>${TABLE}"
           else
             TABLE="<details>${TABLE}"
           fi
+
           echo "DIFF=$DIFF$TABLE" >> "$GITHUB_OUTPUT"
 
       - name: Saving proposed ui
