@@ -13,4 +13,4 @@ void loadyuv_destroy(LoadYUVState* s);
 
 void loadyuv_queue(LoadYUVState* s, cl_command_queue q,
                    cl_mem y_cl, cl_mem u_cl, cl_mem v_cl,
-                   cl_mem out_cl, bool do_shift = false);
+                   cl_mem out_cl);
