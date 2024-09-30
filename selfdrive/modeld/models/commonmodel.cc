@@ -26,13 +26,13 @@ uint8_t* ModelFrame::prepare(cl_mem yuv_cl, int frame_width, int frame_height, i
 
   loadyuv_queue(&loadyuv, q, y_cl, u_cl, v_cl, net_input_cl);
   if (output == NULL) {
-    std::memmove(&input_frames[0], &input_frames[MODEL_FRAME_SIZE], sizeof(uint8_t) * MODEL_FRAME_SIZE);
+    std::memmove(&input_frames[0], &input_frames[MODEL_FRAME_SIZE], frame_size_bytes);
     CL_CHECK(clEnqueueReadBuffer(q, net_input_cl, CL_TRUE, 0, frame_size_bytes, &input_frames[MODEL_FRAME_SIZE], 0, nullptr, nullptr));
     clFinish(q);
     return &input_frames[0];
   } else {
-    CL_CHECK(clEnqueueCopyBuffer(q, *output, *output, frame_size_bytes, 0, frame_size_bytes, 0, nullptr, nullptr));
-    CL_CHECK(clEnqueueCopyBuffer(q, net_input_cl, *output, 0, frame_size_bytes, frame_size_bytes, 0, nullptr, nullptr));
+    copy_queue(&loadyuv, q, *output, *output, frame_size_bytes, 0, frame_size_bytes);
+    copy_queue(&loadyuv, q, net_input_cl, *output, 0, frame_size_bytes, frame_size_bytes);
 
     // NOTE: Since thneed is using a different command queue, this clFinish is needed to ensure the image is ready.
     clFinish(q);

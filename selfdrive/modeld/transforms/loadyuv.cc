@@ -33,8 +33,9 @@ void loadyuv_destroy(LoadYUVState* s) {
 
 void loadyuv_queue(LoadYUVState* s, cl_command_queue q,
                    cl_mem y_cl, cl_mem u_cl, cl_mem v_cl,
-                   cl_mem out_cl) {
+                   cl_mem out_cl, bool do_shift) {
   cl_int global_out_off = 0;
+
   CL_CHECK(clSetKernelArg(s->loadys_krnl, 0, sizeof(cl_mem), &y_cl));
   CL_CHECK(clSetKernelArg(s->loadys_krnl, 1, sizeof(cl_mem), &out_cl));
   CL_CHECK(clSetKernelArg(s->loadys_krnl, 2, sizeof(cl_int), &global_out_off));
@@ -61,4 +62,15 @@ void loadyuv_queue(LoadYUVState* s, cl_command_queue q,
 
   CL_CHECK(clEnqueueNDRangeKernel(q, s->loaduv_krnl, 1, NULL,
                                &loaduv_work_size, NULL, 0, 0, NULL));
+}
+
+void copy_queue(LoadYUVState* s, cl_command_queue q, cl_mem src, cl_mem dst,
+                 size_t src_offset, size_t dst_offset, size_t size) {
+  CL_CHECK(clSetKernelArg(s->copy_krnl, 0, sizeof(cl_mem), &src));
+  CL_CHECK(clSetKernelArg(s->copy_krnl, 1, sizeof(cl_mem), &dst));
+  CL_CHECK(clSetKernelArg(s->copy_krnl, 2, sizeof(cl_int), &src_offset));
+  CL_CHECK(clSetKernelArg(s->copy_krnl, 3, sizeof(cl_int), &dst_offset));
+  const size_t copy_work_size = size/8;
+  CL_CHECK(clEnqueueNDRangeKernel(q, s->copy_krnl, 1, NULL,
+                              &copy_work_size, NULL, 0, 0, NULL));
 }
