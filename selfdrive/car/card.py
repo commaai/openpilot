@@ -130,10 +130,8 @@ class Car:
     secoc_key = self.params.get("SecOCKey", encoding='utf8')
     if secoc_key is not None:
       saved_secoc_key = bytes.fromhex(secoc_key.strip())
-      if len(saved_secoc_key) == 16:
-        security_config = structs.CarParams.SecurityConfig()
-        security_config.secOcKeyAvailable = True
-        self.CP.securityConfig = security_config
+      if len(saved_secoc_key) == 16 and self.CP.securityConfig.secOcRequired:
+        self.CP.securityConfig.secOcKeyAvailable = True
         self.CI.CS.secoc_key = saved_secoc_key
         if controller_available:
           self.CI.CC.secoc_key = saved_secoc_key
