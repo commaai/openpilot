@@ -26,6 +26,7 @@ public:
   const int MODEL_HEIGHT = 256;
   const int MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT * 3 / 2;
   const int buf_size = MODEL_FRAME_SIZE * 2;
+  const size_t frame_size_bytes = MODEL_FRAME_SIZE * sizeof(uint8_t);
 
 private:
   Transform transform;
