@@ -111,15 +111,6 @@ class Car:
       self.CI, self.CP = CI, CI.CP
       self.RI = RI
 
-    # TODO: any better way to pass down? a bit abstraction-breaking, but keeps key out of CarParams, and doesn't touch every car port
-    secoc_key = self.params.get("SecOCKey", encoding='utf8')
-    if secoc_key is not None:
-      saved_secoc_key = bytes.fromhex(secoc_key.strip())
-      if len(saved_secoc_key) != 16:
-        cloudlog.warning("Saved SecOC key is invalid")
-      else:
-        self.CI.CS.secoc_key = self.CI.CC.secoc_key = saved_secoc_key
-
     # set alternative experiences from parameters
     self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
     self.CP.alternativeExperience = 0
@@ -135,6 +126,19 @@ class Car:
       safety_config = structs.CarParams.SafetyConfig()
       safety_config.safetyModel = structs.CarParams.SafetyModel.noOutput
       self.CP.safetyConfigs = [safety_config]
+
+    secoc_key = self.params.get("SecOCKey", encoding='utf8')
+    if secoc_key is not None:
+      saved_secoc_key = bytes.fromhex(secoc_key.strip())
+      if len(saved_secoc_key) == 16:
+        security_config = structs.CarParams.SecurityConfig()
+        security_config.secOcKeyAvailable = True
+        self.CP.securityConfig = security_config
+        self.CI.CS.secoc_key = saved_secoc_key
+        if controller_available:
+          self.CI.CC.secoc_key = saved_secoc_key
+      else:
+        cloudlog.warning("Saved SecOC key is invalid")
 
     # Write previous route's CarParams
     prev_cp = self.params.get("CarParamsPersistent")
