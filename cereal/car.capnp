@@ -515,7 +515,7 @@ struct CarParams {
 
   wheelSpeedFactor @63 :Float32; # Multiplier on wheels speeds to computer actual speeds
 
-  securityConfig @75 :SecurityConfig;  # Requirement and enablement of AUTOSAR Secure Onboard Communication
+  securityConfig @75 :SecurityConfig;  # Requirement and setup info for AUTOSAR Secure Onboard Communication
 
   struct SafetyConfig {
     safetyModel @0 :SafetyModel;
