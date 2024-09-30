@@ -112,12 +112,14 @@ class Car:
       self.RI = RI
 
     # TODO: any better way to pass down? a bit abstraction-breaking, but keeps key out of CarParams, and doesn't touch every car port
-    # TODO: additional read-time validation of key length and format
     secoc_key = self.params.get("SecOCKey", encoding='utf8')
     if secoc_key is not None:
       saved_secoc_key = bytes.fromhex(secoc_key.strip())
-      self.CI.CS.secoc_key = saved_secoc_key
-      self.CI.CC.secoc_key = saved_secoc_key
+      if len(saved_secoc_key) != 16:
+        cloudlog.warning("Saved SecOC key is invalid")
+      else:
+        self.CI.CS.secoc_key = saved_secoc_key
+        self.CI.CC.secoc_key = saved_secoc_key
 
     # set alternative experiences from parameters
     self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
