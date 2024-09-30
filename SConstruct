@@ -64,6 +64,10 @@ AddOption('--pc-thneed',
           dest='pc_thneed',
           help='use thneed on pc')
 
+AddOption('--mutation',
+          action='store_true',
+          help='generate mutation-ready code')
+
 AddOption('--minimal',
           action='store_false',
           dest='extras',
@@ -355,9 +359,7 @@ Export('messaging')
 
 
 # Build other submodules
-if Dir('#panda/').exists():
-  AddOption('--mutation', action='store_true', help='generate mutation-ready code')
-  SConscript(['panda/SConscript'])
+SConscript(['panda/SConscript'])
 
 # Build rednose library
 SConscript(['rednose/SConscript'])
