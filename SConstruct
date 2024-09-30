@@ -355,7 +355,9 @@ Export('messaging')
 
 
 # Build other submodules
-SConscript(['panda/SConscript'])
+if Dir('#panda/').exists():
+  AddOption('--mutation', action='store_true', help='generate mutation-ready code')
+  SConscript(['panda/SConscript'])
 
 # Build rednose library
 SConscript(['rednose/SConscript'])
