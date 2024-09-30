@@ -32,6 +32,9 @@ _A_TOTAL_MAX_BP = [20., 40.]
 def get_max_accel(v_ego):
   return interp(v_ego, A_CRUISE_MAX_BP, A_CRUISE_MAX_VALS)
 
+def get_coast_accel(pitch):
+  return np.sin(pitch) * -5.65 - 0.3  # fitted from data using xx/projects/allow_throttle/compute_coast_accel.py
+
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   """
@@ -106,7 +109,7 @@ class LongitudinalPlanner:
     self.mpc.mode = 'blended' if sm['selfdriveState'].experimentalMode else 'acc'
 
     if len(sm['carControl'].orientationNED) == 3:
-      accel_coast = np.sin(sm['carControl'].orientationNED[1]) * -5.65 - 0.3  # fitted from data
+      accel_coast = get_coast_accel(sm['carControl'].orientationNED[1])
     else:
       accel_coast = ACCEL_MAX
 
