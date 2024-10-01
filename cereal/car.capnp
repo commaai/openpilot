@@ -516,11 +516,18 @@ struct CarParams {
 
   wheelSpeedFactor @63 :Float32; # Multiplier on wheels speeds to computer actual speeds
 
+  securityConfig @75 :SecurityConfig;  # Requirement and setup info for AUTOSAR Secure Onboard Communication
+
   struct SafetyConfig {
     safetyModel @0 :SafetyModel;
     safetyParam @3 :UInt16;
     safetyParamDEPRECATED @1 :Int16;
     safetyParam2DEPRECATED @2 :UInt32;
+  }
+
+  struct SecurityConfig {
+    secOcRequired @0 :Bool;
+    secOcKeyAvailable @1 :Bool;
   }
 
   struct LateralParams {
