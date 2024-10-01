@@ -99,16 +99,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
 }
 
 def hasDirectoryChanged(List<String> paths) {
-  for (change in currentBuild.changeSets) {
-    for (item in change.getItems()) {
-      for (file in item.getAffectedFiles()) {
-        println "FILE '${file.getPath()}' CHANGED!"
-        for (path in paths) {
-          println "FILE '${file.getPath()}' CHANGED! '${path}'"
-        }
-      }
-    }
-  }
+  sh 'git diff-tree -r --no-commit-id --name-only HEAD master'
   return false
 }
 
