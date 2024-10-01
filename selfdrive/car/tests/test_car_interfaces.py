@@ -5,8 +5,9 @@ from hypothesis import Phase, given, settings
 from parameterized import parameterized
 
 from cereal import car
-from opendbc.car import DT_CTRL, CarParams
+from opendbc.car import DT_CTRL
 from opendbc.car.car_helpers import interfaces
+from opendbc.car.structs import CarParams
 from opendbc.car.tests.test_car_interfaces import get_fuzzy_car_interface_args
 from opendbc.car.fingerprints import all_known_cars
 from opendbc.car.fw_versions import FW_VERSIONS, FW_QUERY_CONFIGS
@@ -39,6 +40,7 @@ class TestCarInterfaces:
 
     car_params = CarInterface.get_params(car_name, args['fingerprints'], args['car_fw'],
                                          experimental_long=args['experimental_long'], docs=False)
+    car_params = car_params.as_reader()
     car_interface = CarInterface(car_params, CarController, CarState)
     assert car_params
     assert car_interface
@@ -70,6 +72,7 @@ class TestCarInterfaces:
     # Run car interface
     now_nanos = 0
     CC = car.CarControl.new_message(**cc_msg)
+    CC = CC.as_reader()
     for _ in range(10):
       car_interface.update([])
       car_interface.apply(CC, now_nanos)
@@ -77,6 +80,7 @@ class TestCarInterfaces:
 
     CC = car.CarControl.new_message(**cc_msg)
     CC.enabled = True
+    CC = CC.as_reader()
     for _ in range(10):
       car_interface.update([])
       car_interface.apply(CC, now_nanos)
@@ -85,11 +89,10 @@ class TestCarInterfaces:
     # Test controller initialization
     # TODO: wait until card refactor is merged to run controller a few times,
     #  hypothesis also slows down significantly with just one more message draw
-    car_params_capnp = car_params.as_reader()
-    LongControl(car_params_capnp)
-    if car_params.steerControlType == CarParams.SteerControlType.angle:
-      LatControlAngle(car_params_capnp, car_interface)
+    LongControl(car_params)
+    if car_params.steerControlType == car.CarParams.SteerControlType.angle:
+      LatControlAngle(car_params, car_interface)
     elif car_params.lateralTuning.which() == 'pid':
-      LatControlPID(car_params_capnp, car_interface)
+      LatControlPID(car_params, car_interface)
     elif car_params.lateralTuning.which() == 'torque':
-      LatControlTorque(car_params_capnp, car_interface)
+      LatControlTorque(car_params, car_interface)
