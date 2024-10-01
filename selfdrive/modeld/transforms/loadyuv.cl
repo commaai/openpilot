@@ -37,9 +37,11 @@ __kernel void loaduv(__global uchar8 const * const in,
   out[gid + out_offset / 8] = inv;
 }
 
-__kernel void copy(__global uchar8 * inout,
-                   int in_offset)
+__kernel void copy(__global uchar8 * in,
+                   __global uchar8 * out,
+                   int in_offset,
+                   int out_offset)
 {
   const int gid = get_global_id(0);
-  inout[gid] = inout[gid + in_offset / 8];
+  out[gid + out_offset / 8] = in[gid + in_offset / 8];
 }
