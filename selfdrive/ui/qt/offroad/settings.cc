@@ -149,7 +149,7 @@ void TogglesPanel::updateToggles() {
   if (!cp_bytes.empty()) {
     AlignedBuffer aligned_buf;
     capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
-    car::CarParams::Reader CP = cmsg.getRoot<car::CarParams>();
+    cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
 
     if (!CP.getExperimentalLongitudinalAvailable() || is_release) {
       params.remove("ExperimentalLongitudinalEnabled");

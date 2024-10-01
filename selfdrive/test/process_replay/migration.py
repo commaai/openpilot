@@ -52,7 +52,7 @@ def migrate_liveTracks(lr):
 
     pts = []
     for track in msg.liveTracksDEPRECATED:
-      pt = car.RadarData.RadarPoint.new_message()
+      pt = car.RadarData.RadarPoint()
       pt.trackId = track.trackId
 
       pt.dRel = track.dRel
