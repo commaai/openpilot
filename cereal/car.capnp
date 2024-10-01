@@ -491,7 +491,6 @@ struct CarParams {
 
   vEgoStopping @29 :Float32; # Speed at which the car goes into stopping state
   vEgoStarting @59 :Float32; # Speed at which the car goes into starting state
-  stoppingControl @31 :Bool; # Does the car allow full control even at lows speeds when stopping
   steerControlType @34 :SteerControlType;
   radarUnavailable @35 :Bool; # True when radar objects aren't visible on CAN or aren't parsed out
   stopAccel @60 :Float32; # Required acceleration to keep vehicle stationary
@@ -715,4 +714,5 @@ struct CarParams {
   directAccelControlDEPRECATED @30 :Bool;
   maxSteeringAngleDegDEPRECATED @54 :Float32;
   longitudinalActuatorDelayLowerBoundDEPRECATED @61 :Float32;
+  stoppingControlDEPRECATED @31 :Bool;
 }
