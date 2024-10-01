@@ -131,7 +131,7 @@ class Car:
     if secoc_key is not None:
       saved_secoc_key = bytes.fromhex(secoc_key.strip())
       if len(saved_secoc_key) == 16 and self.CP.securityConfig.secOcRequired:
-        self.CP.securityConfig.secOcKeyAvailable = True
+        self.CP.secOcKeyAvailable = True
         self.CI.CS.secoc_key = saved_secoc_key
         if controller_available:
           self.CI.CC.secoc_key = saved_secoc_key
