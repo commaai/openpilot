@@ -76,7 +76,7 @@ class Car:
     self.CS_prev = car.CarState.new_message()
     self.initialized_prev = False
 
-    self.last_actuators_output = car.CarControl.Actuators.new_message()
+    self.last_actuators_output = car.CarControl.Actuators()
 
     self.params = Params()
 
@@ -121,7 +121,7 @@ class Car:
 
     self.CP.passive = not controller_available or self.CP.dashcamOnly
     if self.CP.passive:
-      safety_config = car.CarParams.SafetyConfig.new_message()
+      safety_config = car.CarParams.SafetyConfig()
       safety_config.safetyModel = car.CarParams.SafetyModel.noOutput
       self.CP.safetyConfigs = [safety_config]
 
