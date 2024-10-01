@@ -56,8 +56,9 @@ def migrate_drivingModelData(lr):
         setattr(dmd.drivingModelData.meta, meta_field, getattr(msg.modelV2.meta, meta_field))
       if len(msg.modelV2.laneLines) and len(msg.modelV2.laneLineProbs):
         fill_lane_line_meta(dmd.drivingModelData.laneLineMeta, msg.modelV2.laneLines, msg.modelV2.laneLineProbs)
-      if len(msg.modelV2.position.x):
+      if all(len(a) for a in [msg.modelV2.position.x, msg.modelV2.position.y, msg.modelV2.position.z]):
         fill_xyz_poly(dmd.drivingModelData.path, ModelConstants.POLY_PATH_DEGREE, msg.modelV2.position.x, msg.modelV2.position.y, msg.modelV2.position.z)
+      all_msgs.append(dmd.as_reader())
     elif msg.which() == "drivingModelData":
       return lr
   return all_msgs
