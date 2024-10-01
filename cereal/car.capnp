@@ -87,6 +87,7 @@ struct OnroadEvent @0x9b1657f34caf3ad3 {
     startup @75;
     startupNoCar @76;
     startupNoControl @77;
+    startupNoSecOcKey @125;
     startupMaster @78;
     fcw @79;
     steerSaturated @80;
