@@ -149,8 +149,9 @@ class CarSpecificEvents:
         if CC_prev.enabled and CS.out.vEgo < self.CP.minEnableSpeed:
           events.add(EventName.speedTooLow)
 
-      if CC.eps_timer_soft_disable_alert:  # type: ignore[attr-defined]
-        events.add(EventName.steerTimeLimit)
+      # TODO: this needs to be implemented generically in carState struct
+      # if CC.eps_timer_soft_disable_alert:  # type: ignore[attr-defined]
+      #   events.add(EventName.steerTimeLimit)
 
     elif self.CP.carName == 'hyundai':
       # On some newer model years, the CANCEL button acts as a pause/resume button based on the PCM state
