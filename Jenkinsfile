@@ -87,6 +87,8 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
             device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
           }
           steps.each { item ->
+            env.MY_VAR = "TEST TEST TEST"
+            return;
             if (branch != "master" && item.size() == 3 && !hasDirectoryChanged(item[2])) {
               return;
             }
@@ -99,7 +101,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
 }
 
 def hasDirectoryChanged(List<String> paths) {
-  sh 'git diff-tree -r --no-commit-id --name-only HEAD master'
+  env.MY_VAR = "TEST TEST TEST"
   return false
 }
 
