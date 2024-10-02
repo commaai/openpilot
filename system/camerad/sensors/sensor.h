@@ -12,8 +12,6 @@
 #include "system/camerad/sensors/ox03c10_registers.h"
 #include "system/camerad/sensors/os04c10_registers.h"
 
-#define ANALOG_GAIN_MAX_CNT 55
-
 class SensorInfo {
 public:
   SensorInfo() = default;
@@ -41,7 +39,7 @@ public:
   float dc_gain_on_grey;
   float dc_gain_off_grey;
 
-  float sensor_analog_gains[ANALOG_GAIN_MAX_CNT];
+  std::vector<float> sensor_analog_gains;
   int analog_gain_min_idx;
   int analog_gain_max_idx;
   int analog_gain_rec_idx;

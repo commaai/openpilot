@@ -53,7 +53,7 @@ OX03C10::OX03C10() {
   analog_gain_cost_low = 0.4;
   analog_gain_cost_high = 6.4;
   for (int i = 0; i <= analog_gain_max_idx; i++) {
-    sensor_analog_gains[i] = sensor_analog_gains_OX03C10[i];
+    sensor_analog_gains.push_back(sensor_analog_gains_OX03C10[i]);
   }
   min_ev = (exposure_time_min + VS_TIME_MIN_OX03C10) * sensor_analog_gains[analog_gain_min_idx];
   max_ev = exposure_time_max * dc_gain_factor * sensor_analog_gains[analog_gain_max_idx];
