@@ -235,7 +235,7 @@ def migrate_pandaStates(msgs):
     "KIA_EV6": Panda.FLAG_HYUNDAI_EV_GAS | Panda.FLAG_HYUNDAI_CANFD_HDA2,
   }
 
-  # Migrate safety param base on carState
+  # Migrate safety param base on carParams
   CP = next((m.carParams for _, m in msgs if m.which() == 'carParams'), None)
   assert CP is not None, "carParams message not found"
   if CP.carFingerprint in safety_param_migration:
@@ -339,7 +339,6 @@ def migrate_carParams(msgs):
     CP.carParams.carFingerprint = MIGRATION.get(CP.carParams.carFingerprint, CP.carParams.carFingerprint)
     for car_fw in CP.carParams.carFw:
       car_fw.brand = CP.carParams.carName
-    CP.logMonoTime = msg.logMonoTime
     ops.append((index, CP.as_reader()))
   return ops, [], []
 
