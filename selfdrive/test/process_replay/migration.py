@@ -24,6 +24,7 @@ def migrate_all(lr, manager_states=False, panda_states=False, camera_states=Fals
     migrate_deviceState,
     migrate_carOutput,
     migrate_controlsState,
+    migrate_carState,
     migrate_liveLocationKalman,
     migrate_liveTracks,
     migrate_driverAssistance,
