@@ -79,7 +79,7 @@ jobs:
           git push origin openpilot_master_ui --force
 
       - name: Finding diff
-        if: github.event_name == 'pull_request_target'
+        if: github.event_name == 'pull_request_target' && github.event.pull_request.draft == false
         id: find_diff
         run: >-
           sudo apt-get install -y imagemagick
