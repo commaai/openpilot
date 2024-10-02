@@ -226,7 +226,6 @@ def migrate_carOutput(msgs):
   return [], ops, []
 
 
-# TODO
 @migration(inputs=["pandaStates", "pandaStateDEPRECATED", "carParams"])
 def migrate_pandaStates(msgs):
   # TODO: safety param migration should be handled automatically
@@ -343,6 +342,7 @@ def migrate_carParams(msgs):
     CP.logMonoTime = msg.logMonoTime
     ops.append((index, CP.as_reader()))
   return ops, [], []
+
 
 @migration(inputs=["sensorEventsDEPRECATED"], product="sensorEvents")
 def migrate_sensorEvents(msgs):
