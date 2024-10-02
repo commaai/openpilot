@@ -37,7 +37,7 @@ class CarSpecificEvents:
     self.no_steer_warning = False
     self.silent_steer_warning = True
 
-  def update(self, CS: CarStateBase, CS_prev: car.CarState, CC_prev: car.CarControl):
+  def update(self, CS: car.CarState, CS_prev: car.CarState, CC: car.CarControl):
     if self.CP.carName in ('body', 'mock'):
       events = Events()
 
@@ -82,7 +82,7 @@ class CarSpecificEvents:
         # we engage when pcm is active (rising edge)
         if CS.out.cruiseState.enabled and not CS_prev.cruiseState.enabled:
           events.add(EventName.pcmEnable)
-        elif not CS.out.cruiseState.enabled and (CC_prev.actuators.accel >= 0. or not self.CP.openpilotLongitudinalControl):
+        elif not CS.out.cruiseState.enabled and (CC.actuators.accel >= 0. or not self.CP.openpilotLongitudinalControl):
           # it can happen that car cruise disables while comma system is enabled: need to
           # keep braking if needed or if the speed is very low
           if CS.out.vEgo < self.CP.minEnableSpeed + 2.:
@@ -101,7 +101,7 @@ class CarSpecificEvents:
           events.add(EventName.resumeRequired)
         if CS.out.vEgo < self.CP.minEnableSpeed:
           events.add(EventName.belowEngageSpeed)
-          if CC_prev.actuators.accel > 0.3:
+          if CC.actuators.accel > 0.3:
             # some margin on the actuator to not false trigger cancellation while stopping
             events.add(EventName.speedTooLow)
           if CS.out.vEgo < 0.001:
@@ -143,7 +143,7 @@ class CarSpecificEvents:
       if self.CP.openpilotLongitudinalControl:
         if CS.out.vEgo < self.CP.minEnableSpeed + 0.5:
           events.add(EventName.belowEngageSpeed)
-        if CC_prev.enabled and CS.out.vEgo < self.CP.minEnableSpeed:
+        if CC.enabled and CS.out.vEgo < self.CP.minEnableSpeed:
           events.add(EventName.speedTooLow)
 
       # TODO: this needs to be implemented generically in carState struct
