@@ -11,50 +11,7 @@ from openpilot.system.manager.process_config import managed_processes
 from panda import Panda
 
 
-# TODO: message migration should happen in-place
 def migrate_all(lr, manager_states=False, panda_states=False, camera_states=False):
-  msgs = migrate_sensorEvents(lr)
-  msgs = migrate_carParams(msgs)
-  msgs = migrate_gpsLocation(msgs)
-  msgs = migrate_deviceState(msgs)
-  msgs = migrate_carOutput(msgs)
-  msgs = migrate_controlsState(msgs)
-  msgs = migrate_liveLocationKalman(msgs)
-  msgs = migrate_liveTracks(msgs)
-  msgs = migrate_driverAssistance(msgs)
-  msgs = migrate_drivingModelData(msgs)
-  if manager_states:
-    msgs = migrate_managerState(msgs)
-  if panda_states:
-    msgs = migrate_pandaStates(msgs)
-    msgs = migrate_peripheralState(msgs)
-  if camera_states:
-    msgs = migrate_cameraStates(msgs)
-
-  return msgs
-
-
-def migration(inputs: list[str], product: str|None=None):
-  def decorator(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-      return func(*args, **kwargs)
-    wrapper.inputs = inputs
-    wrapper.product = product
-    return wrapper
-  return decorator
-
-
-## Migration operations
-def _m_delete(index):
-  return ("delete", index, None)
-def _m_replace(index, msg):
-  return ("replace", index, msg)
-def _m_add(msg):
-  return ("add", None, msg)
-
-
-def migrate_all_v2(lr, manager_states=False, panda_states=False, camera_states=False):
   migrations = [
     migrate_sensorEvents,
     migrate_carParams,
@@ -84,11 +41,7 @@ def migrate_all_v2(lr, manager_states=False, panda_states=False, camera_states=F
     if migration.product in grouped: # skip if product already exists
       continue
 
-
-
-    #sorted_indices = sorted(ii for i in migration.inputs for ii in grouped[i])
-    sorted_indices = []
-
+    sorted_indices = sorted(ii for i in migration.inputs for ii in grouped[i])
     msg_gen = ((i, lr[i]) for i in sorted_indices)
     ops = migration(msg_gen)
     all_ops.extend(ops)
@@ -103,6 +56,27 @@ def migrate_all_v2(lr, manager_states=False, panda_states=False, camera_states=F
 
   lr = sorted(lr, key=lambda x: x.logMonoTime)
   return lr
+
+
+
+def migration(inputs: list[str], product: str|None=None):
+  def decorator(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+      return func(*args, **kwargs)
+    wrapper.inputs = inputs
+    wrapper.product = product
+    return wrapper
+  return decorator
+
+
+## Migration operations
+def _m_delete(index):
+  return ("delete", index, None)
+def _m_replace(index, msg):
+  return ("replace", index, msg)
+def _m_add(msg):
+  return ("add", None, msg)
 
 
 @migration(inputs=["longitudinalPlan"], product="driverAssistance")
