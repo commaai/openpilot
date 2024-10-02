@@ -698,7 +698,7 @@ def _replay_multi_process(
     required_vision_pubs = {m.camera_state for m in available_streams(lr)} & set(all_vision_pubs)
     assert all(st in frs for st in required_vision_pubs), f"frs for this process must contain following vision streams: {required_vision_pubs}"
 
-  all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
+  all_msgs = sorted(lr, key=lambda msg: (msg.logMonoTime, msg.which()))
   log_msgs = []
   try:
     containers = []
