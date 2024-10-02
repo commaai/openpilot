@@ -56,7 +56,7 @@ def migrate_all(lr, manager_states=False, panda_states=False, camera_states=Fals
 
   for index, msg in replace_ops:
     lr[index] = msg
-  for index, _ in del_ops:
+  for index, _ in sorted(del_ops, reverse=True, key=lambda x: x[0]):
     del lr[index]
   for _, msg in add_ops:
     lr.append(msg)
