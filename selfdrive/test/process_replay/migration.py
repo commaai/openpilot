@@ -306,6 +306,7 @@ def migrate_cameraStates(msgs):
     if encode_id is None:
       print(f"Missing encoded frame for camera feed {msg.which()} with frameId: {camera_state.frameId}")
       if len(frame_to_encode_id[msg.which()]) != 0:
+        del_ops.append((index, None))
         continue
 
       # fallback mechanism for logs without encodeIdx (e.g. logs from before 2022 with dcamera recording disabled)
@@ -326,8 +327,8 @@ def migrate_cameraStates(msgs):
     new_msg.logMonoTime = msg.logMonoTime
     new_msg.valid = msg.valid
 
-    add_ops.append((None, new_msg.as_reader()))
     del_ops.append((index, None))
+    add_ops.append((None, new_msg.as_reader()))
   return [], add_ops, del_ops
 
 
