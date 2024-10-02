@@ -119,8 +119,7 @@ class CarSpecificEvents:
 
       # Enabling at a standstill with brake is allowed
       # TODO: verify 17 Volt can enable for the first time at a stop and allow for all GMs
-      below_min_enable_speed = CS.out.vEgo < self.CP.minEnableSpeed or CS.moving_backward  # type: ignore[attr-defined]
-      if below_min_enable_speed and not (CS.out.standstill and CS.out.brake >= 20 and
+      if CS.out.vEgo < self.CP.minEnableSpeed and not (CS.out.standstill and CS.out.brake >= 20 and
                                          self.CP.networkLocation == NetworkLocation.fwdCamera):
         events.add(EventName.belowEngageSpeed)
       if CS.out.cruiseState.standstill:
