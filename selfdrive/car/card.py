@@ -187,7 +187,7 @@ class Car:
   def update_events(self, CS: car.CarState, RD: structs.RadarData | None):
     self.events.clear()
 
-    CS.events = self.car_events.update(self.CI.CS, self.CS_prev, self.CI.CC, self.CC_prev).to_msg()
+    CS.events = self.car_events.update(self.CI.CS, self.CS_prev, self.CC_prev).to_msg()
 
     self.events.add_from_msg(CS.events)
 

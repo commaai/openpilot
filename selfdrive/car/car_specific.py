@@ -1,7 +1,7 @@
 from cereal import car
 import cereal.messaging as messaging
 from opendbc.car import DT_CTRL, structs
-from opendbc.car.interfaces import MAX_CTRL_SPEED, CarStateBase, CarControllerBase
+from opendbc.car.interfaces import MAX_CTRL_SPEED, CarStateBase
 from opendbc.car.volkswagen.values import CarControllerParams as VWCarControllerParams
 from opendbc.car.hyundai.interface import ENABLE_BUTTONS as HYUNDAI_ENABLE_BUTTONS
 
@@ -37,7 +37,7 @@ class CarSpecificEvents:
     self.no_steer_warning = False
     self.silent_steer_warning = True
 
-  def update(self, CS: CarStateBase, CS_prev: car.CarState, CC: CarControllerBase, CC_prev: car.CarControl):
+  def update(self, CS: CarStateBase, CS_prev: car.CarState, CC_prev: car.CarControl):
     if self.CP.carName in ('body', 'mock'):
       events = Events()
 
@@ -149,8 +149,9 @@ class CarSpecificEvents:
         if CC_prev.enabled and CS.out.vEgo < self.CP.minEnableSpeed:
           events.add(EventName.speedTooLow)
 
-      if CC.eps_timer_soft_disable_alert:  # type: ignore[attr-defined]
-        events.add(EventName.steerTimeLimit)
+      # TODO: this needs to be implemented generically in carState struct
+      # if CC.eps_timer_soft_disable_alert:  # type: ignore[attr-defined]
+      #   events.add(EventName.steerTimeLimit)
 
     elif self.CP.carName == 'hyundai':
       # On some newer model years, the CANCEL button acts as a pause/resume button based on the PCM state
