@@ -37,13 +37,17 @@ def migrate_all(lr, manager_states=False, panda_states=False, camera_states=Fals
   if camera_states:
     migrations.append(migrate_cameraStates)
 
+  return migrate(lr, migrations)
+
+
+def migrate(lr, migration_funcs):
   lr = list(lr)
   grouped = defaultdict(list)
   for i, msg in enumerate(lr):
     grouped[msg.which()].append(i)
 
   replace_ops, add_ops, del_ops = [], [], []
-  for migration in migrations:
+  for migration in migration_funcs:
     if migration.product in grouped: # skip if product already exists
       continue
 
