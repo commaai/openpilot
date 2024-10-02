@@ -15,7 +15,7 @@ from openpilot.common.realtime import config_realtime_process, Priority, Ratekee
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.gps import get_gps_location_service
 
-from openpilot.selfdrive.car.car_specific import CarSpecificEvents, MockCarState
+from openpilot.selfdrive.car.car_specific import CarSpecificEvents
 from openpilot.selfdrive.selfdrived.events import Events, ET
 from openpilot.selfdrive.selfdrived.state import StateMachine
 from openpilot.selfdrive.selfdrived.alertmanager import AlertManager, set_offroad_alert
@@ -74,7 +74,7 @@ class SelfdriveD:
       # no vipc in replay will make them ignored anyways
       ignore += ['roadCameraState', 'wideRoadCameraState']
     self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
-                                   'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'livePose', 'liveTracks',
+                                   'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'livePose',
                                    'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
                                    'controlsState', 'carControl', 'driverAssistance', 'alertDebug'] + \
                                    self.camera_packets + self.sensor_packets + self.gps_packets,
@@ -185,10 +185,6 @@ class SelfdriveD:
         (CS.brakePressed and (not self.CS_prev.brakePressed or not CS.standstill)) or \
         (CS.regenBraking and (not self.CS_prev.regenBraking or not CS.standstill)):
         self.events.add(EventName.pedalPressed)
-
-      # TODO: do we need? since errors are passe as well as bad frequency
-      if not self.sm.valid['liveTracks']:
-        self.events.add(EventName.radarFault)
 
     # Create events for temperature, disk space, and memory
     if self.sm['deviceState'].thermalStatus >= ThermalStatus.red:

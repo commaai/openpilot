@@ -2,7 +2,7 @@ from collections import deque
 from cereal import car
 import cereal.messaging as messaging
 from opendbc.car import DT_CTRL, structs
-from opendbc.car.interfaces import MAX_CTRL_SPEED, CarStateBase
+from opendbc.car.interfaces import MAX_CTRL_SPEED
 from opendbc.car.volkswagen.values import CarControllerParams as VWCarControllerParams
 from opendbc.car.hyundai.interface import ENABLE_BUTTONS as HYUNDAI_ENABLE_BUTTONS
 from opendbc.car.hyundai.carstate import PREV_BUTTON_SAMPLES as HYUNDAI_PREV_BUTTON_SAMPLES
