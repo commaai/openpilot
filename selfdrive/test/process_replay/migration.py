@@ -1,4 +1,5 @@
 from collections import defaultdict
+import functools
 
 from cereal import messaging, car
 from opendbc.car.fingerprints import MIGRATION
@@ -33,44 +34,107 @@ def migrate_all(lr, manager_states=False, panda_states=False, camera_states=Fals
   return msgs
 
 
-def migrate_driverAssistance(lr):
-  all_msgs = []
-  for msg in lr:
-    all_msgs.append(msg)
-    if msg.which() == 'longitudinalPlan':
-      all_msgs.append(messaging.new_message('driverAssistance', valid=True, logMonoTime=msg.logMonoTime).as_reader())
-    if msg.which() == 'driverAssistance':
-      return lr
-  return all_msgs
+def migration(inputs: list[str], product: str|None=None):
+  def decorator(func):
+    @functools.wraps(func)
+    def wrapper(*args, **kwargs):
+      return func(*args, **kwargs)
+    wrapper.inputs = inputs
+    wrapper.product = product
+    return wrapper
+  return decorator
 
 
-def migrate_drivingModelData(lr):
-  all_msgs = []
-  for msg in lr:
-    all_msgs.append(msg)
-    if msg.which() == "modelV2":
-      dmd = messaging.new_message('drivingModelData', valid=msg.valid, logMonoTime=msg.logMonoTime)
-      for field in ["frameId", "frameIdExtra", "frameDropPerc", "modelExecutionTime", "action"]:
-        setattr(dmd.drivingModelData, field, getattr(msg.modelV2, field))
-      for meta_field in ["laneChangeState", "laneChangeState"]:
-        setattr(dmd.drivingModelData.meta, meta_field, getattr(msg.modelV2.meta, meta_field))
-      if len(msg.modelV2.laneLines) and len(msg.modelV2.laneLineProbs):
-        fill_lane_line_meta(dmd.drivingModelData.laneLineMeta, msg.modelV2.laneLines, msg.modelV2.laneLineProbs)
-      if all(len(a) for a in [msg.modelV2.position.x, msg.modelV2.position.y, msg.modelV2.position.z]):
-        fill_xyz_poly(dmd.drivingModelData.path, ModelConstants.POLY_PATH_DEGREE, msg.modelV2.position.x, msg.modelV2.position.y, msg.modelV2.position.z)
-      all_msgs.append(dmd.as_reader())
-    elif msg.which() == "drivingModelData":
-      return lr
-  return all_msgs
+## Migration operations
+def _m_delete(index):
+  return ("delete", index, None)
+def _m_replace(index, msg):
+  return ("replace", index, msg)
+def _m_add(msg):
+  return ("add", None, msg)
 
 
-def migrate_liveTracks(lr):
-  all_msgs = []
-  for msg in lr:
-    if msg.which() != "liveTracksDEPRECATED":
-      all_msgs.append(msg)
+def migrate_all_v2(lr, manager_states=False, panda_states=False, camera_states=False):
+  migrations = [
+    migrate_sensorEvents,
+    migrate_carParams,
+    migrate_gpsLocation,
+    migrate_deviceState,
+    migrate_carOutput,
+    migrate_controlsState,
+    migrate_liveLocationKalman,
+    migrate_liveTracks,
+    migrate_driverAssistance,
+    migrate_drivingModelData,
+  ]
+  if manager_states:
+    migrations.append(migrate_managerState)
+  if panda_states:
+    migrations.extend([migrate_pandaStates, migrate_peripheralState])
+  if camera_states:
+    migrations.append(migrate_cameraStates)
+
+  lr = list(lr)
+  grouped = defaultdict(list)
+  for i, msg in enumerate(lr):
+    grouped[msg.which()].append(i)
+
+  all_ops = []
+  for migration in migrations:
+    if migration.product in grouped: # skip if product already exists
       continue
 
+
+
+    #sorted_indices = sorted(ii for i in migration.inputs for ii in grouped[i])
+    sorted_indices = []
+
+    msg_gen = ((i, lr[i]) for i in sorted_indices)
+    ops = migration(msg_gen)
+    all_ops.extend(ops)
+
+  for op in all_ops:
+    if op[0] == "delete":
+      del lr[op[1]]
+    elif op[0] == "replace":
+      lr[op[1]] = op[2]
+    elif op[0] == "add":
+      lr.append(op[2])
+
+  lr = sorted(lr, key=lambda x: x.logMonoTime)
+  return lr
+
+
+@migration(inputs=["longitudinalPlan"], product="driverAssistance")
+def migrate_driverAssistance(msgs):
+  ops = []
+  for _, msg in msgs:
+    new_msg = messaging.new_message('driverAssistance', valid=True, logMonoTime=msg.logMonoTime)
+    ops.append(_m_add(new_msg.as_reader()))
+  return ops
+
+
+@migration(inputs=["modelV2"], product="drivingModelData")
+def migrate_drivingModelData(msgs):
+  ops = []
+  for _, msg in msgs:
+    dmd = messaging.new_message('drivingModelData', valid=msg.valid, logMonoTime=msg.logMonoTime)
+    for field in ["frameId", "frameIdExtra", "frameDropPerc", "modelExecutionTime", "action"]:
+      setattr(dmd.drivingModelData, field, getattr(msg.modelV2, field))
+    for meta_field in ["laneChangeState", "laneChangeState"]:
+      setattr(dmd.drivingModelData.meta, meta_field, getattr(msg.modelV2.meta, meta_field))
+    if len(msg.modelV2.laneLines) and len(msg.modelV2.laneLineProbs):
+      fill_lane_line_meta(dmd.drivingModelData.laneLineMeta, msg.modelV2.laneLines, msg.modelV2.laneLineProbs)
+    if all(len(a) for a in [msg.modelV2.position.x, msg.modelV2.position.y, msg.modelV2.position.z]):
+      fill_xyz_poly(dmd.drivingModelData.path, ModelConstants.POLY_PATH_DEGREE, msg.modelV2.position.x, msg.modelV2.position.y, msg.modelV2.position.z)
+    ops.append(_m_add(dmd.as_reader()))
+  return ops
+
+
+@migration(inputs=["liveTracksDEPRECATED"], product="liveTracks")
+def migrate_liveTracks(msgs):
+  ops = []
+  for index, msg in msgs:
     new_msg = messaging.new_message('liveTracks')
     new_msg.valid = msg.valid
     new_msg.logMonoTime = msg.logMonoTime
@@ -88,22 +152,14 @@ def migrate_liveTracks(lr):
       pts.append(pt)
 
     new_msg.liveTracks.points = pts
-    all_msgs.append(new_msg.as_reader())
+    ops.append(_m_replace(index, new_msg.as_reader()))
+  return ops
 
-  return all_msgs
 
-
-def migrate_liveLocationKalman(lr):
-  # migration needed only for routes before livePose
-  if any(msg.which() == 'livePose' for msg in lr):
-    return lr
-
-  all_msgs = []
-  for msg in lr:
-    if msg.which() != 'liveLocationKalmanDEPRECATED':
-      all_msgs.append(msg)
-      continue
-
+@migration(inputs=["liveLocationKalmanDEPRECATED"], product="livePose")
+def migrate_liveLocationKalman(msgs):
+  ops = []
+  for index, msg in msgs:
     m = messaging.new_message('livePose')
     m.valid = msg.valid
     m.logMonoTime = msg.logMonoTime
@@ -114,102 +170,95 @@ def migrate_liveLocationKalman(lr):
       lp_field.valid = llk_field.valid
     for flag in ["inputsOK", "posenetOK", "sensorsOK"]:
       setattr(m.livePose, flag, getattr(msg.liveLocationKalmanDEPRECATED, flag))
-
-    all_msgs.append(m.as_reader())
-
-  return all_msgs
+    ops.append(_m_replace(index, m.as_reader()))
+  return ops
 
 
-def migrate_controlsState(lr):
-  ret = []
+@migration(inputs=["controlsState"], product="selfdriveState")
+def migrate_controlsState(msgs):
+  ops = []
+  for index, msg in msgs:
+    m = messaging.new_message('selfdriveState')
+    m.valid = msg.valid
+    m.logMonoTime = msg.logMonoTime
+    ss = m.selfdriveState
+    for field in ("enabled", "active", "state", "engageable", "alertText1", "alertText2",
+                  "alertStatus", "alertSize", "alertType", "experimentalMode",
+                  "personality"):
+      setattr(ss, field, getattr(msg.controlsState, field+"DEPRECATED"))
+    ops.append(_m_add(m.as_reader()))
+  return ops
+
+
+@migration(inputs=["carState", "controlsState"])
+def migrate_carState(msgs):
+  ops = []
   last_cs = None
-  for msg in lr:
+  for index, msg in msgs:
     if msg.which() == 'controlsState':
       last_cs = msg
-
-      m = messaging.new_message('selfdriveState')
-      m.valid = msg.valid
-      m.logMonoTime = msg.logMonoTime
-      ss = m.selfdriveState
-      for field in ("enabled", "active", "state", "engageable", "alertText1", "alertText2",
-                    "alertStatus", "alertSize", "alertType", "experimentalMode",
-                    "personality"):
-        setattr(ss, field, getattr(msg.controlsState, field+"DEPRECATED"))
-      ret.append(m.as_reader())
     elif msg.which() == 'carState' and last_cs is not None:
       if last_cs.controlsState.vCruiseDEPRECATED - msg.carState.vCruise > 0.1:
         msg = msg.as_builder()
         msg.carState.vCruise = last_cs.controlsState.vCruiseDEPRECATED
         msg.carState.vCruiseCluster = last_cs.controlsState.vCruiseClusterDEPRECATED
         msg = msg.as_reader()
+        ops.append(_m_replace(index, msg))
+  return ops
 
-    ret.append(msg)
-  return ret
 
-
-def migrate_managerState(lr):
-  all_msgs = []
-  for msg in lr:
-    if msg.which() != "managerState":
-      all_msgs.append(msg)
-      continue
-
+@migration(inputs=["managerState"])
+def migrate_managerState(msgs):
+  ops = []
+  for index, msg in msgs:
     new_msg = msg.as_builder()
     new_msg.managerState.processes = [{'name': name, 'running': True} for name in managed_processes]
-    all_msgs.append(new_msg.as_reader())
-
-  return all_msgs
-
-
-def migrate_gpsLocation(lr):
-  all_msgs = []
-  for msg in lr:
-    if msg.which() in ('gpsLocation', 'gpsLocationExternal'):
-      new_msg = msg.as_builder()
-      g = getattr(new_msg, new_msg.which())
-      # hasFix is a newer field
-      if not g.hasFix and g.flags == 1:
-        g.hasFix = True
-      all_msgs.append(new_msg.as_reader())
-    else:
-      all_msgs.append(msg)
-  return all_msgs
+    ops.append(_m_replace(index, new_msg.as_reader()))
+  return ops
 
 
-def migrate_deviceState(lr):
-  all_msgs = []
+@migration(inputs=["gpsLocation", "gpsLocationExternal"])
+def migrate_gpsLocation(msgs):
+  ops = []
+  for index, msg in msgs:
+    new_msg = msg.as_builder()
+    g = getattr(new_msg, new_msg.which())
+    # hasFix is a newer field
+    if not g.hasFix and g.flags == 1:
+      g.hasFix = True
+    ops.append(_m_replace(index, new_msg.as_reader()))
+  return ops
+
+
+@migration(inputs=["deviceState", "initData"])
+def migrate_deviceState(msgs):
+  ops = []
   dt = None
-  for msg in lr:
+  for i, msg in msgs:
     if msg.which() == 'initData':
       dt = msg.initData.deviceType
     if msg.which() == 'deviceState':
       n = msg.as_builder()
       n.deviceState.deviceType = dt
-      all_msgs.append(n.as_reader())
-    else:
-      all_msgs.append(msg)
-  return all_msgs
+      ops.append(_m_replace(i, n.as_reader()))
+  return ops
 
 
-def migrate_carOutput(lr):
-  # migration needed only for routes before carOutput
-  if any(msg.which() == 'carOutput' for msg in lr):
-    return lr
-
-  all_msgs = []
-  for msg in lr:
-    if msg.which() == 'carControl':
-      co = messaging.new_message('carOutput')
-      co.valid = msg.valid
-      co.logMonoTime = msg.logMonoTime
-      co.carOutput.actuatorsOutput = msg.carControl.actuatorsOutputDEPRECATED
-      all_msgs.append(co.as_reader())
-    all_msgs.append(msg)
-  return all_msgs
+@migration(inputs=["carControl"], product="carOutput")
+def migrate_carOutput(msgs):
+  ops = []
+  for _, msg in msgs:
+    co = messaging.new_message('carOutput')
+    co.valid = msg.valid
+    co.logMonoTime = msg.logMonoTime
+    co.carOutput.actuatorsOutput = msg.carControl.actuatorsOutputDEPRECATED
+    ops.append(_m_add(co.as_reader()))
+  return ops
 
 
-def migrate_pandaStates(lr):
-  all_msgs = []
+# TODO
+@migration(inputs=["pandaStates", "pandaStateDEPRECATED", "carParams"])
+def migrate_pandaStates(msgs):
   # TODO: safety param migration should be handled automatically
   safety_param_migration = {
     "TOYOTA_PRIUS": EPS_SCALE["TOYOTA_PRIUS"] | Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL,
@@ -218,7 +267,7 @@ def migrate_pandaStates(lr):
   }
 
   # Migrate safety param base on carState
-  CP = next((m.carParams for m in lr if m.which() == 'carParams'), None)
+  CP = next((m.carParams for m in msgs if m.which() == 'carParams'), None)
   assert CP is not None, "carParams message not found"
   if CP.carFingerprint in safety_param_migration:
     safety_param = safety_param_migration[CP.carFingerprint]
@@ -229,49 +278,45 @@ def migrate_pandaStates(lr):
   else:
     safety_param = CP.safetyParamDEPRECATED
 
-  for msg in lr:
+  ops = []
+  for index, msg in msgs:
     if msg.which() == 'pandaStateDEPRECATED':
       new_msg = messaging.new_message('pandaStates', 1)
       new_msg.valid = msg.valid
       new_msg.logMonoTime = msg.logMonoTime
       new_msg.pandaStates[0] = msg.pandaStateDEPRECATED
       new_msg.pandaStates[0].safetyParam = safety_param
-      all_msgs.append(new_msg.as_reader())
+      ops.append(_m_replace(index, new_msg.as_reader()))
     elif msg.which() == 'pandaStates':
       new_msg = msg.as_builder()
       new_msg.pandaStates[-1].safetyParam = safety_param
-      all_msgs.append(new_msg.as_reader())
-    else:
-      all_msgs.append(msg)
-
-  return all_msgs
+      ops.append(_m_replace(index, new_msg.as_reader()))
+  return ops
 
 
-def migrate_peripheralState(lr):
-  if any(msg.which() == "peripheralState" for msg in lr):
-    return lr
+@migration(inputs=["pandaStates", "pandaStateDEPRECATED"], product="peripheralState")
+def migrate_peripheralState(msgs):
+  ops = []
 
-  all_msg = []
-  for msg in lr:
-    all_msg.append(msg)
-    if msg.which() not in ["pandaStates", "pandaStateDEPRECATED"]:
+  which = "pandaStates" if any(msg.which() == "pandaStates" for msg in msgs) else "pandaStateDEPRECATED"
+  for index, msg in msgs:
+    if msg.which() != which:
       continue
-
     new_msg = messaging.new_message("peripheralState")
     new_msg.valid = msg.valid
     new_msg.logMonoTime = msg.logMonoTime
-    all_msg.append(new_msg.as_reader())
+    ops.append(_m_add(new_msg.as_reader()))
+  return ops
 
-  return all_msg
 
-
-def migrate_cameraStates(lr):
-  all_msgs = []
+@migration(inputs=["roadEncodeIdx", "wideRoadEncodeIdx", "driverEncodeIdx", "roadCameraState", "wideRoadCameraState", "driverCameraState"])
+def migrate_cameraStates(msgs):
+  ops = []
   frame_to_encode_id = defaultdict(dict)
   # just for encodeId fallback mechanism
   min_frame_id = defaultdict(lambda: float('inf'))
 
-  for msg in lr:
+  for _, msg in msgs:
     if msg.which() not in ["roadEncodeIdx", "wideRoadEncodeIdx", "driverEncodeIdx"]:
       continue
 
@@ -281,9 +326,8 @@ def migrate_cameraStates(lr):
     assert encode_index.segmentId < 1200, f"Encoder index segmentId greater that 1200: {msg.which()} {encode_index.segmentId}"
     frame_to_encode_id[meta.camera_state][encode_index.frameId] = encode_index.segmentId
 
-  for msg in lr:
+  for index, msg in msgs:
     if msg.which() not in ["roadCameraState", "wideRoadCameraState", "driverCameraState"]:
-      all_msgs.append(msg)
       continue
 
     camera_state = getattr(msg, msg.which())
@@ -313,33 +357,27 @@ def migrate_cameraStates(lr):
     new_msg.logMonoTime = msg.logMonoTime
     new_msg.valid = msg.valid
 
-    all_msgs.append(new_msg.as_reader())
-
-  return all_msgs
-
-
-def migrate_carParams(lr):
-  all_msgs = []
-  for msg in lr:
-    if msg.which() == 'carParams':
-      CP = msg.as_builder()
-      CP.carParams.carFingerprint = MIGRATION.get(CP.carParams.carFingerprint, CP.carParams.carFingerprint)
-      for car_fw in CP.carParams.carFw:
-        car_fw.brand = CP.carParams.carName
-      CP.logMonoTime = msg.logMonoTime
-      msg = CP.as_reader()
-    all_msgs.append(msg)
-
-  return all_msgs
+    ops.append(_m_add(new_msg.as_reader()))
+    ops.append(_m_delete(index))
+  return ops
 
 
-def migrate_sensorEvents(lr):
-  all_msgs = []
-  for msg in lr:
-    if msg.which() != 'sensorEventsDEPRECATED':
-      all_msgs.append(msg)
-      continue
+@migration(inputs=["carParams"])
+def migrate_carParams(msgs):
+  ops = []
+  for index, msg in msgs:
+    CP = msg.as_builder()
+    CP.carParams.carFingerprint = MIGRATION.get(CP.carParams.carFingerprint, CP.carParams.carFingerprint)
+    for car_fw in CP.carParams.carFw:
+      car_fw.brand = CP.carParams.carName
+    CP.logMonoTime = msg.logMonoTime
+    ops.append(_m_replace(index, CP.as_reader()))
+  return ops
 
+@migration(inputs=["sensorEventsDEPRECATED"], product="sensorEvents")
+def migrate_sensorEvents(msgs):
+  ops = []
+  for index, msg in msgs:
     # migrate to split sensor events
     for evt in msg.sensorEventsDEPRECATED:
       # build new message for each sensor type
@@ -367,6 +405,6 @@ def migrate_sensorEvents(lr):
       m_dat.timestamp = evt.timestamp
       setattr(m_dat, evt.which(), getattr(evt, evt.which()))
 
-      all_msgs.append(m.as_reader())
-
-  return all_msgs
+      ops.append(_m_add(m.as_reader()))
+    ops.append(_m_delete(index))
+  return ops
