@@ -55,9 +55,6 @@ selfdrive/test/longitudinal_maneuvers/out
 selfdrive/car/tests/cars_dump
 system/camerad/camerad
 system/camerad/test/ae_gray_test
-selfdrive/modeld/_modeld
-selfdrive/modeld/_dmonitoringmodeld
-/src/
 
 notebooks
 hyperthneed
