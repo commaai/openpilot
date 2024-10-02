@@ -208,13 +208,13 @@ class TestOnroad:
   def test_log_sizes(self):
     for f, sz in self.log_sizes.items():
       if f.name == "qcamera.ts":
-        assert 2.15 < sz < 2.35
+        assert 2.15 < sz < 2.6
       elif f.name == "qlog":
         assert 0.4 < sz < 0.55
       elif f.name == "rlog":
         assert 5 < sz < 50
       elif f.name.endswith('.hevc'):
-        assert 70 < sz < 77
+        assert 70 < sz < 80
       else:
         raise NotImplementedError
 

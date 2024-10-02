@@ -1,6 +1,10 @@
 Version 0.9.8 (2024-XX-XX)
 ========================
-* New Tomb Raider driving model
+* New driving model
+  * Trained in brand new ML simulator
+  * Model now gates applying positive accel in Chill mode
+* New driving monitoring model
+  * Reduced false positives related to passengers 
 * Added toggle to enable driver monitoring even when openpilot is not engaged
 * New Toyota TSS2 longitudinal tune
 
