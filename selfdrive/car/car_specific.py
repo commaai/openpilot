@@ -104,7 +104,7 @@ class CarSpecificEvents:
       if self.low_speed_alert:
         events.add(EventName.belowSteerSpeed)
 
-      # Some Bosch radar fw can forcibly disengage steering depending on vehicle conditions (i.e. Odyssey 2021 w/early fw, RDX 3G w/later fw).
+      # Some Bosch radar fw can forcibly disengage steering depending on vehicle conditions (i.e. Odyssey w/early fw & RDX 3G w/later fw).
       if CC_prev.latActive and not CS.steer_on: # type: ignore[attr-defined]
         CS.steer_off_cnt += 1 # type: ignore[attr-defined]
       else:
