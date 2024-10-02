@@ -13,8 +13,7 @@ from openpilot.system.manager.process_config import managed_processes
 from openpilot.tools.lib.logreader import LogIterable
 from panda import Panda
 
-MigrationOp = tuple[int|None, capnp.lib.capnp._DynamicStructReader|None]
-MigrationFunc = Callable[[LogIterable], tuple[list[MigrationOp], list[MigrationOp], list[MigrationOp]]]
+MigrationFunc = Callable[[LogIterable], tuple[list[tuple[int, capnp.lib.capnp._DynamicStructReader]], list[capnp.lib.capnp._DynamicStructReader], list[int]]]
 
 
 ## rules for migration functions
@@ -66,9 +65,9 @@ def migrate(lr: LogIterable, migration_funcs: list[MigrationFunc]):
 
   for index, msg in replace_ops:
     lr[index] = msg
-  for index, _ in sorted(del_ops, reverse=True, key=lambda x: x[0]):
+  for index in sorted(del_ops, reverse=True):
     del lr[index]
-  for _, msg in add_ops:
+  for msg in add_ops:
     lr.append(msg)
 
   return lr
@@ -87,16 +86,16 @@ def migration(inputs: list[str], product: str|None=None):
 
 @migration(inputs=["longitudinalPlan"], product="driverAssistance")
 def migrate_driverAssistance(msgs):
-  ops = []
+  add_ops = []
   for _, msg in msgs:
     new_msg = messaging.new_message('driverAssistance', valid=True, logMonoTime=msg.logMonoTime)
-    ops.append((None, new_msg.as_reader()))
-  return [], ops, []
+    add_ops.append(new_msg.as_reader())
+  return [], add_ops, []
 
 
 @migration(inputs=["modelV2"], product="drivingModelData")
 def migrate_drivingModelData(msgs):
-  ops = []
+  add_ops = []
   for _, msg in msgs:
     dmd = messaging.new_message('drivingModelData', valid=msg.valid, logMonoTime=msg.logMonoTime)
     for field in ["frameId", "frameIdExtra", "frameDropPerc", "modelExecutionTime", "action"]:
@@ -107,8 +106,8 @@ def migrate_drivingModelData(msgs):
       fill_lane_line_meta(dmd.drivingModelData.laneLineMeta, msg.modelV2.laneLines, msg.modelV2.laneLineProbs)
     if all(len(a) for a in [msg.modelV2.position.x, msg.modelV2.position.y, msg.modelV2.position.z]):
       fill_xyz_poly(dmd.drivingModelData.path, ModelConstants.POLY_PATH_DEGREE, msg.modelV2.position.x, msg.modelV2.position.y, msg.modelV2.position.z)
-    ops.append((None, dmd.as_reader()))
-  return [], ops, []
+    add_ops.append( dmd.as_reader())
+  return [], add_ops, []
 
 
 @migration(inputs=["liveTracksDEPRECATED"], product="liveTracks")
@@ -156,7 +155,7 @@ def migrate_liveLocationKalman(msgs):
 
 @migration(inputs=["controlsState"], product="selfdriveState")
 def migrate_controlsState(msgs):
-  ops = []
+  add_ops = []
   for _, msg in msgs:
     m = messaging.new_message('selfdriveState')
     m.valid = msg.valid
@@ -166,8 +165,8 @@ def migrate_controlsState(msgs):
                   "alertStatus", "alertSize", "alertType", "experimentalMode",
                   "personality"):
       setattr(ss, field, getattr(msg.controlsState, field+"DEPRECATED"))
-    ops.append((None, m.as_reader()))
-  return [], ops, []
+    add_ops.append(m.as_reader())
+  return [], add_ops, []
 
 
 @migration(inputs=["carState", "controlsState"])
@@ -225,14 +224,14 @@ def migrate_deviceState(msgs):
 
 @migration(inputs=["carControl"], product="carOutput")
 def migrate_carOutput(msgs):
-  ops = []
+  add_ops = []
   for _, msg in msgs:
     co = messaging.new_message('carOutput')
     co.valid = msg.valid
     co.logMonoTime = msg.logMonoTime
     co.carOutput.actuatorsOutput = msg.carControl.actuatorsOutputDEPRECATED
-    ops.append((None, co.as_reader()))
-  return [], ops, []
+    add_ops.append(co.as_reader())
+  return [], add_ops, []
 
 
 @migration(inputs=["pandaStates", "pandaStateDEPRECATED", "carParams"])
@@ -274,7 +273,7 @@ def migrate_pandaStates(msgs):
 
 @migration(inputs=["pandaStates", "pandaStateDEPRECATED"], product="peripheralState")
 def migrate_peripheralState(msgs):
-  ops = []
+  add_ops = []
 
   which = "pandaStates" if any(msg.which() == "pandaStates" for msg in msgs) else "pandaStateDEPRECATED"
   for _, msg in msgs:
@@ -283,8 +282,8 @@ def migrate_peripheralState(msgs):
     new_msg = messaging.new_message("peripheralState")
     new_msg.valid = msg.valid
     new_msg.logMonoTime = msg.logMonoTime
-    ops.append((None, new_msg.as_reader()))
-  return [], ops, []
+    add_ops.append(new_msg.as_reader())
+  return [], add_ops, []
 
 
 @migration(inputs=["roadEncodeIdx", "wideRoadEncodeIdx", "driverEncodeIdx", "roadCameraState", "wideRoadCameraState", "driverCameraState"])
@@ -315,7 +314,7 @@ def migrate_cameraStates(msgs):
     if encode_id is None:
       print(f"Missing encoded frame for camera feed {msg.which()} with frameId: {camera_state.frameId}")
       if len(frame_to_encode_id[msg.which()]) != 0:
-        del_ops.append((index, None))
+        del_ops.append(index)
         continue
 
       # fallback mechanism for logs without encodeIdx (e.g. logs from before 2022 with dcamera recording disabled)
@@ -336,8 +335,8 @@ def migrate_cameraStates(msgs):
     new_msg.logMonoTime = msg.logMonoTime
     new_msg.valid = msg.valid
 
-    del_ops.append((index, None))
-    add_ops.append((None, new_msg.as_reader()))
+    del_ops.append(index)
+    add_ops.append(new_msg.as_reader())
   return [], add_ops, del_ops
 
 
@@ -384,6 +383,6 @@ def migrate_sensorEvents(msgs):
       m_dat.timestamp = evt.timestamp
       setattr(m_dat, evt.which(), getattr(evt, evt.which()))
 
-      add_ops.append((None, m.as_reader()))
-    del_ops.append((index, None))
+      add_ops.append(m.as_reader())
+    del_ops.append(index)
   return [], add_ops, del_ops
