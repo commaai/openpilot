@@ -55,7 +55,7 @@ def migrate(lr: LogIterable, migration_funcs: list[MigrationFunc]):
 
   replace_ops, add_ops, del_ops = [], [], []
   for migration in migration_funcs:
-    assert hasattr(migration, "inputs") and hasattr(migration, "product"), f"Migration functions must use @migration decorator"
+    assert hasattr(migration, "inputs") and hasattr(migration, "product"), "Migration functions must use @migration decorator"
     if migration.product in grouped: # skip if product already exists
       continue
 
