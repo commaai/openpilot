@@ -61,7 +61,6 @@ def migrate_all(lr, manager_states=False, panda_states=False, camera_states=Fals
   for _, msg in add_ops:
     lr.append(msg)
 
-  lr = sorted(lr, key=lambda x: x.logMonoTime)
   return lr
 
 
