@@ -207,7 +207,7 @@ struct CarState {
   carFaultedNonCritical @47 :Bool;  # some ECU is faulted, but car remains controllable
   espActive @51 :Bool;
   vehicleSensorsInvalid @52 :Bool;  # invalid steering angle readings, etc.
-  lowSpeedAlert @56 :Bool;
+  lowSpeedAlert @56 :Bool;  # lost steering control due to a dynamic min steering speed
 
   # cruise state
   cruiseState @10 :CruiseState;
