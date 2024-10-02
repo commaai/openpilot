@@ -19,7 +19,7 @@ env:
 
 jobs:
   preview:
-    if: github.repository == 'commaai/openpilot'
+    if: github.repository == 'commaai/openpilot' && github.event.pull_request.draft == false
     name: preview
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -79,7 +79,7 @@ jobs:
           git push origin openpilot_master_ui --force
 
       - name: Finding diff
-        if: github.event_name == 'pull_request_target' && github.event.pull_request.draft == false
+        if: github.event_name == 'pull_request_target'
         id: find_diff
         run: >-
           sudo apt-get install -y imagemagick
