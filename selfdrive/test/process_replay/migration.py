@@ -237,7 +237,7 @@ def migrate_pandaStates(msgs):
   }
 
   # Migrate safety param base on carState
-  CP = next((m.carParams for m in msgs if m.which() == 'carParams'), None)
+  CP = next((m.carParams for _, m in msgs if m.which() == 'carParams'), None)
   assert CP is not None, "carParams message not found"
   if CP.carFingerprint in safety_param_migration:
     safety_param = safety_param_migration[CP.carFingerprint]
