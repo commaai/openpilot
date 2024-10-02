@@ -104,7 +104,7 @@ class CarSpecificEvents:
     elif self.CP.carName == 'gm':
       # The ECM allows enabling on falling edge of set, but only rising edge of resume
       events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.sport, GearShifter.low,
-                                                                       GearShifter.eco, GearShifter.manumatic],
+                                                                   GearShifter.eco, GearShifter.manumatic],
                                          pcm_enable=self.CP.pcmCruise, enable_buttons=(ButtonType.decelCruise,))
       if not self.CP.pcmCruise:
         if any(b.type == ButtonType.accelCruise and b.pressed for b in CS.buttonEvents):
@@ -113,7 +113,7 @@ class CarSpecificEvents:
       # Enabling at a standstill with brake is allowed
       # TODO: verify 17 Volt can enable for the first time at a stop and allow for all GMs
       if CS.vEgo < self.CP.minEnableSpeed and not (CS.standstill and CS.brake >= 20 and
-                                                       self.CP.networkLocation == NetworkLocation.fwdCamera):
+                                                   self.CP.networkLocation == NetworkLocation.fwdCamera):
         events.add(EventName.belowEngageSpeed)
       if CS.cruiseState.standstill:
         events.add(EventName.resumeRequired)
