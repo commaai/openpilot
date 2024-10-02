@@ -48,7 +48,7 @@ def migrate_all(lr, manager_states=False, panda_states=False, camera_states=Fals
       continue
 
     sorted_indices = sorted(ii for i in migration.inputs for ii in grouped[i])
-    msg_gen = ((i, lr[i]) for i in sorted_indices)
+    msg_gen = [(i, lr[i]) for i in sorted_indices]
     r_ops, a_ops, d_ops = migration(msg_gen)
     replace_ops.extend(r_ops)
     add_ops.extend(a_ops)
