@@ -94,16 +94,14 @@ class CarSpecificEvents:
         events.add(EventName.manualRestart)
 
       # low speed steer alert hysteresis logic for cars with steer cut off above 6 m/s
-      if self.CP.minSteerSpeed > 6.0:
-        # exceed this speed to allow alerts over the minSteerSpeed
-        if CS.out.vEgo >= (self.CP.minSteerSpeed + 3.5):
-          self.min_steer_alert_speed = (self.CP.minSteerSpeed + 1.5)
-        elif CS.out.vEgo <= self.CP.minSteerSpeed or not CC_prev.enabled:
-          self.min_steer_alert_speed = self.CP.minSteerSpeed
-        # don't nag the user when stopped
-        self.low_speed_alert = CS.out.vEgo <= self.min_steer_alert_speed and not CS.out.standstill
-        if self.low_speed_alert:
-          events.add(EventName.belowSteerSpeed)
+      # exceed this speed to allow alerts over the minSteerSpeed
+      if CS.out.vEgo >= (self.CP.minSteerSpeed + 3.5):
+        self.min_steer_alert_speed = (self.CP.minSteerSpeed + 1.5)
+      elif CS.out.vEgo <= self.CP.minSteerSpeed or not CC_prev.enabled:
+        self.min_steer_alert_speed = self.CP.minSteerSpeed
+      self.low_speed_alert = 0 < CS.out.vEgo <= self.min_steer_alert_speed and self.CP.minSteerSpeed > 6.0
+      if self.low_speed_alert:
+        events.add(EventName.belowSteerSpeed)
 
       # Some Bosch radar fw can forcibly disengage steer. EPS shows no fault (i.e. Odyssey 2021, RDX 3G w/newer ADAS firmware).
       if CC_prev.latActive and not CS.steer_on: # type: ignore[attr-defined]
