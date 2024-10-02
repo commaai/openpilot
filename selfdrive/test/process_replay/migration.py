@@ -278,7 +278,7 @@ def migrate_pandaStates(msgs):
 def migrate_peripheralState(msgs):
   add_ops = []
 
-  which = "pandaStates" if any(msg.which() == "pandaStates" for msg in msgs) else "pandaStateDEPRECATED"
+  which = "pandaStates" if any(msg.which() == "pandaStates" for _, msg in msgs) else "pandaStateDEPRECATED"
   for _, msg in msgs:
     if msg.which() != which:
       continue
