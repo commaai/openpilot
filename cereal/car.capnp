@@ -102,7 +102,6 @@ struct OnroadEvent @0x9b1657f34caf3ad3 {
     selfdriveInitializing @98;
     usbError @99;
     cruiseMismatch @106;
-    lkasDisabled @107;
     canBusMissing @111;
     selfdrivedLagging @112;
     resumeBlocked @113;
@@ -149,6 +148,7 @@ struct OnroadEvent @0x9b1657f34caf3ad3 {
     highCpuUsageDEPRECATED @105;
     startupNoFwDEPRECATED @104;
     lowSpeedLockoutDEPRECATED @31;
+    lkasDisabledDEPRECATED @107;
   }
 }
 
@@ -198,8 +198,7 @@ struct CarState {
   steeringPressed @9 :Bool;        # if the user is using the steering wheel
   steerFaultTemporary @35 :Bool;   # temporary EPS fault
   steerFaultPermanent @36 :Bool;   # permanent EPS fault
-  lkasDisabled @55 :Bool;          # LKAS being enabled is required to control car
-  lkasEnabled @56 :Bool;           # LKAS being disabled is required to control car
+  invalidLkasSetting @56 :Bool;           # stock LKAS is incorrectly configured (i.e. on or off)
   stockAeb @30 :Bool;
   stockFcw @31 :Bool;
   espDisabled @32 :Bool;
