@@ -74,6 +74,7 @@ class Car:
     self.can_rcv_cum_timeout_counter = 0
 
     self.CS_prev = car.CarState.new_message()
+    self.CC_prev = car.CarControl.new_message()
     self.initialized_prev = False
 
     self.last_actuators_output = structs.CarControl.Actuators()
@@ -237,11 +238,12 @@ class Car:
       self.last_actuators_output, can_sends = self.CI.apply(convert_carControl(CC), now_nanos)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
 
+      self.CC_prev = CC
+
   def step(self):
     CS, RD = self.state_update()
 
-    # TODO: ahhhhhh
-    if not self.sm['carControl'].enabled and self.events.contains(ET.ENABLE):
+    if self.sm['carControl'].enabled and not self.CC_prev.enabled:
       self.v_cruise_helper.initialize_v_cruise(CS, self.experimental_mode)
 
     self.state_publish(CS, RD)
