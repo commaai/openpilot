@@ -14,6 +14,7 @@ from openpilot.common.realtime import config_realtime_process, Priority, Ratekee
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.gps import get_gps_location_service
 
+from openpilot.selfdrive.car.car_specific import CarSpecificEvents, MockCarState
 from openpilot.selfdrive.selfdrived.events import Events, ET
 from openpilot.selfdrive.selfdrived.state import StateMachine
 from openpilot.selfdrive.selfdrived.alertmanager import AlertManager, set_offroad_alert
@@ -50,6 +51,8 @@ class SelfdriveD:
     cloudlog.info("selfdrived is waiting for CarParams")
     self.CP = messaging.log_from_bytes(self.params.get("CarParams", block=True), car.CarParams)
     cloudlog.info("selfdrived got CarParams")
+
+    self.car_events = CarSpecificEvents(self.CP)
 
     # Setup sockets
     self.pm = messaging.PubMaster(['selfdriveState', 'onroadEvents'])
@@ -92,6 +95,7 @@ class SelfdriveD:
       self.params.remove("ExperimentalMode")
 
     self.CS_prev = car.CarState.new_message()
+    self.CC_prev = car.CarControl.new_message()
     self.AM = AlertManager()
     self.events = Events()
 
@@ -164,7 +168,9 @@ class SelfdriveD:
 
     # Add car events, ignore if CAN isn't valid
     if CS.canValid:
-      self.events.add_from_msg(CS.events)
+      CS_events = self.car_events.update(CS, self.CS_prev, self.CI.CC, self.CC_prev).to_msg()
+
+      self.events.add_from_msg(CS_events)
 
     # Create events for temperature, disk space, and memory
     if self.sm['deviceState'].thermalStatus >= ThermalStatus.red:

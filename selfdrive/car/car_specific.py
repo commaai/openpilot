@@ -58,7 +58,7 @@ class CarSpecificEvents:
 
       if CS.out.lkasDisabled:
         events.add(EventName.lkasDisabled)
-      elif CS.low_speed_alert:  # type: ignore[attr-defined]
+      elif CS.out.lowSpeedAlert:
         events.add(EventName.belowSteerSpeed)
 
     elif self.CP.carName == 'chrysler':
