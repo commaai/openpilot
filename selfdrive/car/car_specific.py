@@ -39,8 +39,7 @@ class CarSpecificEvents:
     self.no_steer_warning = False
     self.silent_steer_warning = True
 
-    self.cruise_buttons: deque = deque([0] * HYUNDAI_PREV_BUTTON_SAMPLES, maxlen=HYUNDAI_PREV_BUTTON_SAMPLES)
-    self.main_buttons: deque = deque([0] * HYUNDAI_PREV_BUTTON_SAMPLES, maxlen=HYUNDAI_PREV_BUTTON_SAMPLES)
+    self.cruise_buttons: deque = deque([], maxlen=HYUNDAI_PREV_BUTTON_SAMPLES)
 
   def update(self, CS: CarStateBase, CS_prev: car.CarState, CC_prev: car.CarControl):
     if self.CP.carName in ('body', 'mock'):
@@ -155,8 +154,7 @@ class CarSpecificEvents:
       # To avoid re-engaging when openpilot cancels, check user engagement intention via buttons
       # Main button also can trigger an engagement on these cars
       self.cruise_buttons.append(any(ev.pressed and ev.type in HYUNDAI_ENABLE_BUTTONS for ev in CS.out.buttonEvents))
-      allow_enable = any(self.cruise_buttons)
-      events = self.create_common_events(CS.out, CS_prev, pcm_enable=self.CP.pcmCruise, allow_enable=allow_enable)
+      events = self.create_common_events(CS.out, CS_prev, pcm_enable=self.CP.pcmCruise, allow_enable=any(self.cruise_buttons))
 
       # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
       if CS.out.vEgo < (self.CP.minSteerSpeed + 2.) and self.CP.minSteerSpeed > 10.:
