@@ -99,8 +99,6 @@ class CarSpecificEvents:
       if self.CP.openpilotLongitudinalControl:
         if CS.out.cruiseState.standstill and not CS.out.brakePressed:
           events.add(EventName.resumeRequired)
-        if CS.low_speed_lockout:  # type: ignore[attr-defined]
-          events.add(EventName.lowSpeedLockout)
         if CS.out.vEgo < self.CP.minEnableSpeed:
           events.add(EventName.belowEngageSpeed)
           if CC_prev.actuators.accel > 0.3:
