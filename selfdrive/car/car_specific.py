@@ -53,7 +53,7 @@ class CarSpecificEvents:
     elif self.CP.carName == 'mazda':
       events = self.create_common_events(CS.out, CS_prev)
 
-      if not CS.out.invalidLkasSetting and CS.low_speed_alert:  # type: ignore[attr-defined]
+      if CS.low_speed_alert:  # type: ignore[attr-defined]
         events.add(EventName.belowSteerSpeed)
 
     elif self.CP.carName == 'chrysler':
