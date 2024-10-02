@@ -18,7 +18,6 @@ from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.longcontrol import LongControl
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 from openpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose
-from openpilot.system import sentry
 
 
 State = log.SelfdriveState.OpenpilotState
@@ -56,28 +55,6 @@ class Controls:
       self.LaC = LatControlPID(self.CP, self.CI)
     elif self.CP.lateralTuning.which() == 'torque':
       self.LaC = LatControlTorque(self.CP, self.CI)
-
-    # Send car port data to @csouers. I only care about the car. NO PII or location data. I don't want it.
-    _sentry = sentry.init(sentry.SentryProject.AF)
-    sentry_out = ""
-    if self.CP.dashcamOnly:
-      sentry.set_tag('carFw', 'unrecognized')
-      sentry_out = "new FP"
-    elif len(self.CP.carFw) == 0:
-      sentry.set_tag('carFw', 'empty')
-      sentry_out = "empty FP"
-    elif self.CP.fuzzyFingerprint:
-      sentry.set_tag('carFw', 'fuzzy')
-      sentry_out = f'fuzzy FP: {self.CP.carFingerprint}'
-    else:
-      sentry.set_tag('carFw', 'confirmed')
-      sentry_out = f'good FP: {self.CP.carFingerprint}'
-    if _sentry:
-      try:
-        sentry.set_tag('vin', self.CP.carVin)
-        sentry.capture_message(f'{sentry_out}', self.CP, 'carParams')
-      except Exception:
-        print('sentry failed')
 
   def update(self):
     self.sm.update(15)
