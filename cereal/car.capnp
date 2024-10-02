@@ -52,7 +52,6 @@ struct OnroadEvent @0x9b1657f34caf3ad3 {
     brakeHold @28;
     parkBrake @29;
     manualRestart @30;
-    lowSpeedLockout @31;
     joystickDebug @34;
     longitudinalManeuver @124;
     steerTempUnavailableSilent @35;
@@ -150,6 +149,7 @@ struct OnroadEvent @0x9b1657f34caf3ad3 {
     wideRoadCameraErrorDEPRECATED @102;
     highCpuUsageDEPRECATED @105;
     startupNoFwDEPRECATED @104;
+    lowSpeedLockoutDEPRECATED @31;
   }
 }
 
