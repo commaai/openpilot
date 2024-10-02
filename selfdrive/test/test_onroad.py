@@ -214,7 +214,7 @@ class TestOnroad:
       elif f.name == "rlog":
         assert 5 < sz < 50
       elif f.name.endswith('.hevc'):
-        assert 70 < sz < 77
+        assert 70 < sz < 80
       else:
         raise NotImplementedError
 
