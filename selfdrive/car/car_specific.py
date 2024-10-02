@@ -93,8 +93,9 @@ class CarSpecificEvents:
       if self.CP.minEnableSpeed > 0 and CS.out.vEgo < 0.001:
         events.add(EventName.manualRestart)
 
-      # low speed steer alert hysteresis logic for cars with steer cut off above 6 m/s
-      # exceed this speed to allow alerts over the minSteerSpeed
+      # Low speed steer alert logic; for cars with steer cut off above 6 m/s
+      # Raise the alert speed after a greater speed has been exceeded.
+      # note: done a little differently. continuing to see the alert after the car has just began to steer has caused some confusion
       if CS.out.vEgo >= (self.CP.minSteerSpeed + 3.5):
         self.min_steer_alert_speed = (self.CP.minSteerSpeed + 1.5)
       elif CS.out.vEgo <= self.CP.minSteerSpeed or not CC_prev.enabled:
