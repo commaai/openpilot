@@ -199,7 +199,7 @@ struct CarState {
   steeringPressed @9 :Bool;        # if the user is using the steering wheel
   steerFaultTemporary @35 :Bool;   # temporary EPS fault
   steerFaultPermanent @36 :Bool;   # permanent EPS fault
-  invalidLkasSetting @56 :Bool;    # stock LKAS is incorrectly configured (i.e. on or off)
+  invalidLkasSetting @55 :Bool;    # stock LKAS is incorrectly configured (i.e. on or off)
   stockAeb @30 :Bool;
   stockFcw @31 :Bool;
   espDisabled @32 :Bool;
@@ -207,7 +207,7 @@ struct CarState {
   carFaultedNonCritical @47 :Bool;  # some ECU is faulted, but car remains controllable
   espActive @51 :Bool;
   vehicleSensorsInvalid @52 :Bool;  # invalid steering angle readings, etc.
-  lowSpeedAlert @57 :Bool;
+  lowSpeedAlert @56 :Bool;
 
   # cruise state
   cruiseState @10 :CruiseState;

@@ -50,15 +50,10 @@ class CarSpecificEvents:
     elif self.CP.carName == 'nissan':
       events = self.create_common_events(CS.out, CS_prev, extra_gears=[GearShifter.brake])
 
-      if CS.out.invalidLkasSetting:
-        events.add(EventName.invalidLkasSetting)
-
     elif self.CP.carName == 'mazda':
       events = self.create_common_events(CS.out, CS_prev)
 
-      if CS.out.invalidLkasSetting:
-        events.add(EventName.invalidLkasSetting)
-      elif CS.out.lowSpeedAlert:
+      if CS.out.lowSpeedAlert:
         events.add(EventName.belowSteerSpeed)
 
     elif self.CP.carName == 'chrysler':
@@ -211,6 +206,8 @@ class CarSpecificEvents:
       events.add(EventName.gasPressedOverride)
     if CS.vehicleSensorsInvalid:
       events.add(EventName.vehicleSensorsInvalid)
+    if CS.invalidLkasSetting:
+      events.add(EventName.invalidLkasSetting)
 
     # Handle button presses
     for b in CS.buttonEvents:

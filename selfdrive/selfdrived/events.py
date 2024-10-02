@@ -395,7 +395,8 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   EventName.invalidLkasSetting: {
     ET.PERMANENT: NormalPermanentAlert("Invalid LKAS setting",
-                                       "Turn stock LKAS on or off to engage"),
+                                       "Toggle stock LKAS on or off to engage"),
+    ET.NO_ENTRY: NoEntryAlert("Invalid LKAS setting"),
   },
 
   EventName.cruiseMismatch: {
