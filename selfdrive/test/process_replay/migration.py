@@ -1,5 +1,7 @@
 from collections import defaultdict
+from typing import List, Callable, Optional, Tuple
 import functools
+import capnp
 
 from cereal import messaging, car
 from opendbc.car.fingerprints import MIGRATION
@@ -8,15 +10,19 @@ from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.fill_model_msg import fill_xyz_poly, fill_lane_line_meta
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
 from openpilot.system.manager.process_config import managed_processes
+from openpilot.tools.lib.logreader import LogIterable
 from panda import Panda
+
+MigrationOp = Tuple[Optional[int], Optional[capnp.lib.capnp._DynamicStructReader]]
+MigrationFunc = Callable[[LogIterable], Tuple[List[MigrationOp], List[MigrationOp], List[MigrationOp]]]
 
 
 ## rules for migration functions
 ## 1. must use the decorator @migration(inputs=[...], product="...")
 ## 2. it only gets the messages that are in the inputs list
-## 3. product is the name of the messages type created by the migration function, and function will be skipped if product type already exists in lr
+## 3. product is the message type created by the migration function, and the function will be skipped if product type already exists in lr
 ## 3. it must return a list of operations to be applied to the logreader (replace, add, delete)
-def migrate_all(lr, manager_states=False, panda_states=False, camera_states=False):
+def migrate_all(lr: LogIterable, manager_states: bool = False, panda_states: bool = False, camera_states: bool = False):
   migrations = [
     migrate_sensorEvents,
     migrate_carParams,
@@ -40,7 +46,7 @@ def migrate_all(lr, manager_states=False, panda_states=False, camera_states=Fals
   return migrate(lr, migrations)
 
 
-def migrate(lr, migration_funcs):
+def migrate(lr: LogIterable, migration_funcs: List[MigrationFunc]):
   lr = list(lr)
   grouped = defaultdict(list)
   for i, msg in enumerate(lr):
