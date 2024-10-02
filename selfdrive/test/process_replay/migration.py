@@ -64,7 +64,6 @@ def migrate_all(lr, manager_states=False, panda_states=False, camera_states=Fals
   return lr
 
 
-
 def migration(inputs: list[str], product: str|None=None):
   def decorator(func):
     @functools.wraps(func)
