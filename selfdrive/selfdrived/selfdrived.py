@@ -7,6 +7,7 @@ import cereal.messaging as messaging
 
 from cereal import car, log
 from msgq.visionipc import VisionIpcClient, VisionStreamType
+from panda import ALTERNATIVE_EXPERIENCE
 
 
 from openpilot.common.params import Params
@@ -53,6 +54,7 @@ class SelfdriveD:
     cloudlog.info("selfdrived got CarParams")
 
     self.car_events = CarSpecificEvents(self.CP)
+    self.disengage_on_accelerator = not (self.CP.alternativeExperience & ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS)
 
     # Setup sockets
     self.pm = messaging.PubMaster(['selfdriveState', 'onroadEvents'])
@@ -72,7 +74,7 @@ class SelfdriveD:
       # no vipc in replay will make them ignored anyways
       ignore += ['roadCameraState', 'wideRoadCameraState']
     self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
-                                   'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'livePose',
+                                   'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'livePose', 'liveTracks',
                                    'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
                                    'controlsState', 'carControl', 'driverAssistance', 'alertDebug'] + \
                                    self.camera_packets + self.sensor_packets + self.gps_packets,
@@ -95,7 +97,6 @@ class SelfdriveD:
       self.params.remove("ExperimentalMode")
 
     self.CS_prev = car.CarState.new_message()
-    self.CC_prev = car.CarControl.new_message()
     self.AM = AlertManager()
     self.events = Events()
 
@@ -170,9 +171,24 @@ class SelfdriveD:
 
     # Add car events, ignore if CAN isn't valid
     if CS.canValid:
-      CS_events = self.car_events.update(CS, self.CS_prev, self.CI.CC, self.CC_prev).to_msg()
+      car_events = self.car_events.update(CS, self.CS_prev, self.sm['carControl']).to_msg()
+      self.events.add_from_msg(car_events)
 
-      self.events.add_from_msg(CS_events)
+      if self.CP.notCar:
+        # wait for everything to init first
+        if self.sm.frame > int(5. / DT_CTRL) and self.initialized:
+          # body always wants to enable
+          self.events.add(EventName.pcmEnable)
+
+      # Disable on rising edge of accelerator or brake. Also disable on brake when speed > 0
+      if (CS.gasPressed and not self.CS_prev.gasPressed and self.disengage_on_accelerator) or \
+        (CS.brakePressed and (not self.CS_prev.brakePressed or not CS.standstill)) or \
+        (CS.regenBraking and (not self.CS_prev.regenBraking or not CS.standstill)):
+        self.events.add(EventName.pedalPressed)
+
+      # TODO: do we need? since errors are passe as well as bad frequency
+      if not self.sm.valid['liveTracks']:
+        self.events.add(EventName.radarFault)
 
     # Create events for temperature, disk space, and memory
     if self.sm['deviceState'].thermalStatus >= ThermalStatus.red:
