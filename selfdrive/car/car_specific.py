@@ -12,10 +12,6 @@ GearShifter = structs.CarState.GearShifter
 EventName = car.OnroadEvent.EventName
 NetworkLocation = structs.CarParams.NetworkLocation
 
-MINSTEER_ALLOW_ALERTS = 6. # m/s # these defs are here for dev. will go away with pr
-MINSTEER_UPPER = 3.5 # m/s
-MINSTEER_LOWER = 1.5 # m/s
-
 
 # TODO: the goal is to abstract this file into the CarState struct and make events generic
 class MockCarState:
@@ -98,10 +94,10 @@ class CarSpecificEvents:
         events.add(EventName.manualRestart)
 
       # low speed steer alert hysteresis logic for cars with steer cut off above 6 m/s
-      if self.CP.minSteerSpeed > MINSTEER_ALLOW_ALERTS:
-        # exceed this speed to allow pre-alerts
-        if CS.out.vEgo >= (self.CP.minSteerSpeed + MINSTEER_UPPER):
-          self.min_steer_alert_speed = (self.CP.minSteerSpeed + MINSTEER_LOWER)
+      if self.CP.minSteerSpeed > 6.0:
+        # exceed this speed to allow alerts over the minSteerSpeed
+        if CS.out.vEgo >= (self.CP.minSteerSpeed + 3.5):
+          self.min_steer_alert_speed = (self.CP.minSteerSpeed + 1.5)
         elif CS.out.vEgo <= self.CP.minSteerSpeed or not CC_prev.enabled:
           self.min_steer_alert_speed = self.CP.minSteerSpeed
         # don't nag the user when stopped
