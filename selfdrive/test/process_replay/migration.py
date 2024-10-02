@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import List, Callable, Optional, Tuple
+from collections.abc import Callable
 import functools
 import capnp
 
@@ -13,8 +13,8 @@ from openpilot.system.manager.process_config import managed_processes
 from openpilot.tools.lib.logreader import LogIterable
 from panda import Panda
 
-MigrationOp = Tuple[Optional[int], Optional[capnp.lib.capnp._DynamicStructReader]]
-MigrationFunc = Callable[[LogIterable], Tuple[List[MigrationOp], List[MigrationOp], List[MigrationOp]]]
+MigrationOp = tuple[int|None, capnp.lib.capnp._DynamicStructReader|None]
+MigrationFunc = Callable[[LogIterable], tuple[list[MigrationOp], list[MigrationOp], list[MigrationOp]]]
 
 
 ## rules for migration functions
@@ -46,7 +46,7 @@ def migrate_all(lr: LogIterable, manager_states: bool = False, panda_states: boo
   return migrate(lr, migrations)
 
 
-def migrate(lr: LogIterable, migration_funcs: List[MigrationFunc]):
+def migrate(lr: LogIterable, migration_funcs: list[MigrationFunc]):
   lr = list(lr)
   grouped = defaultdict(list)
   for i, msg in enumerate(lr):
