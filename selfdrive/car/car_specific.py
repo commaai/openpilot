@@ -105,7 +105,7 @@ class CarSpecificEvents:
         if self.low_speed_alert:
           events.add(EventName.belowSteerSpeed)
 
-      # Some cars can forcibly disengage steer without an active fault (i.e. Odyssey 2021, RDX 3G w/newer ADAS firmware).
+      # Some cars can forcibly disengage steer. EPS shows no fault (i.e. Odyssey 2021, RDX 3G w/newer ADAS firmware).
       if CC_prev.latActive and not CS.steer_on: # type: ignore[attr-defined]
         CS.steer_off_cnt += 1 # type: ignore[attr-defined]
       else:
