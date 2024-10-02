@@ -11,6 +11,11 @@ from openpilot.system.manager.process_config import managed_processes
 from panda import Panda
 
 
+## rules for migration functions
+## 1. must use the decorator @migration(inputs=[...], product="...")
+## 2. it only gets the messages that are in the inputs list
+## 3. product is the name of the messages type created by the migration function, and function will be skipped if product type already exists in lr
+## 3. it must return a list of operations to be applied to the logreader (helpers: _m_delete, _m_replace, _m_add)
 def migrate_all(lr, manager_states=False, panda_states=False, camera_states=False):
   migrations = [
     migrate_sensorEvents,
