@@ -345,7 +345,7 @@ Export('common', 'gpucommon')
 env_swaglog = env.Clone()
 env_swaglog['CXXFLAGS'].append('-DSWAGLOG="\\"common/swaglog.h\\""')
 SConscript(['msgq_repo/SConscript'], exports={'env': env_swaglog})
-SConscript(['opendbc/can/SConscript'], exports={'env': env_swaglog})
+SConscript(['opendbc/can/SConscript', 'opendbc/dbc/generator/SConscript'], exports={'env': env_swaglog})
 
 SConscript(['cereal/SConscript'])
 
