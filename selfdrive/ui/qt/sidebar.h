@@ -26,7 +26,7 @@ signals:
   void valueChanged();
 
 public slots:
-  void offroadTransition(bool offroad);
+  void offroadTransition(bool offroad, bool isUpdating);
   void updateState(const UIState &s);
 
 protected:

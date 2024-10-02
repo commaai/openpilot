@@ -12,8 +12,8 @@
         <translation>更新の一時停止</translation>
     </message>
     <message>
-        <source>Reboot and Update</source>
-        <translation>再起動してアップデート</translation>
+        <source>Update Now</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1061,7 +1061,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Install</source>
-        <translation>インストール</translation>
+        <translation type="vanished">インストール</translation>
     </message>
     <message>
         <source>Back</source>
@@ -1078,6 +1078,10 @@ This may take up to a minute.</source>
     <message>
         <source>Update failed</source>
         <translation>更新失敗</translation>
+    </message>
+    <message>
+        <source>Update Now</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

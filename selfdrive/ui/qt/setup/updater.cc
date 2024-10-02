@@ -44,9 +44,9 @@ Updater::Updater(const QString &updater_path, const QString &manifest_path, QWid
     });
     hlayout->addWidget(connect);
 
-    QPushButton *install = new QPushButton(tr("Install"));
-    install->setObjectName("navBtn");
-    install->setStyleSheet(R"(
+    QPushButton *update = new QPushButton(tr("Update Now"));
+    update->setObjectName("navBtn");
+    update->setStyleSheet(R"(
       QPushButton {
         background-color: #465BEA;
       }
@@ -54,8 +54,8 @@ Updater::Updater(const QString &updater_path, const QString &manifest_path, QWid
         background-color: #3049F4;
       }
     )");
-    QObject::connect(install, &QPushButton::clicked, this, &Updater::installUpdate);
-    hlayout->addWidget(install);
+    QObject::connect(update, &QPushButton::clicked, this, &Updater::updateNow);
+    hlayout->addWidget(update);
   }
 
   // wifi connection screen
@@ -144,7 +144,7 @@ Updater::Updater(const QString &updater_path, const QString &manifest_path, QWid
   )");
 }
 
-void Updater::installUpdate() {
+void Updater::updateNow() {
   setCurrentWidget(progress);
   QObject::connect(&proc, &QProcess::readyReadStandardOutput, this, &Updater::readProgress);
   QObject::connect(&proc, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, &Updater::updateFinished);
@@ -168,9 +168,7 @@ void Updater::readProgress() {
 
 void Updater::updateFinished(int exitCode, QProcess::ExitStatus exitStatus) {
   qDebug() << "finished with " << exitCode;
-  if (exitCode == 0) {
-    Hardware::reboot();
-  } else {
+  if (exitCode != 0) {
     text->setText(tr("Update failed"));
     reboot->show();
   }

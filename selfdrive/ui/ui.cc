@@ -178,7 +178,9 @@ void UIState::updateStatus() {
     }
     started_prev = scene.started;
     scene.world_objects_visible = false;
-    emit offroadTransition(!scene.started);
+    auto params = Params();
+    bool isUpdating = params.getBool("Updating"); // TODO: figure out why this is true
+    emit offroadTransition(!scene.started, isUpdating);
   }
 }
 

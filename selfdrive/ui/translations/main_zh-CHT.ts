@@ -12,8 +12,8 @@
         <translation>暫停更新</translation>
     </message>
     <message>
-        <source>Reboot and Update</source>
-        <translation>重啟並更新</translation>
+        <source>Update Now</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1063,7 +1063,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Install</source>
-        <translation>安裝</translation>
+        <translation type="vanished">安裝</translation>
     </message>
     <message>
         <source>Back</source>
@@ -1080,6 +1080,10 @@ This may take up to a minute.</source>
     <message>
         <source>Update failed</source>
         <translation>更新失敗</translation>
+    </message>
+    <message>
+        <source>Update Now</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

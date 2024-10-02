@@ -52,7 +52,7 @@ signals:
   void closeSettings();
 
 public slots:
-  void offroadTransition(bool offroad);
+  void offroadTransition(bool offroad, bool isUpdating);
   void showDriverView(bool show);
   void showSidebar(bool show);
 

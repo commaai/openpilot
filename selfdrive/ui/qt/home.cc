@@ -58,10 +58,10 @@ void HomeWindow::updateState(const UIState &s) {
   }
 }
 
-void HomeWindow::offroadTransition(bool offroad) {
+void HomeWindow::offroadTransition(bool offroad, bool isUpdating) {
   body->setEnabled(false);
-  sidebar->setVisible(offroad);
-  if (offroad) {
+  sidebar->setVisible(offroad || isUpdating);
+  if (offroad || isUpdating) {
     slayout->setCurrentWidget(home);
   } else {
     slayout->setCurrentWidget(onroad);

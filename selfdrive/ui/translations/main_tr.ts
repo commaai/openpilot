@@ -12,8 +12,8 @@
         <translation>Güncellemeyi sessize al</translation>
     </message>
     <message>
-        <source>Reboot and Update</source>
-        <translation>Güncelle ve Yeniden başlat</translation>
+        <source>Update Now</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1061,7 +1061,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Install</source>
-        <translation>Yükle</translation>
+        <translation type="vanished">Yükle</translation>
     </message>
     <message>
         <source>Back</source>
@@ -1078,6 +1078,10 @@ This may take up to a minute.</source>
     <message>
         <source>Update failed</source>
         <translation>Güncelleme başarız oldu</translation>
+    </message>
+    <message>
+        <source>Update Now</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -122,7 +122,7 @@ void BodyWindow::paintEvent(QPaintEvent *event) {
   }
 }
 
-void BodyWindow::offroadTransition(bool offroad) {
+void BodyWindow::offroadTransition(bool offroad, bool isUpdating) {
   btn->setChecked(true);
   btn->setEnabled(true);
   fuel_filter.reset(1.0);

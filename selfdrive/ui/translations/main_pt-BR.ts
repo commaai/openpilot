@@ -12,8 +12,8 @@
         <translation>Adiar Atualização</translation>
     </message>
     <message>
-        <source>Reboot and Update</source>
-        <translation>Reiniciar e Atualizar</translation>
+        <source>Update Now</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1067,7 +1067,7 @@ Isso pode levar até um minuto.</translation>
     </message>
     <message>
         <source>Install</source>
-        <translation>Instalar</translation>
+        <translation type="vanished">Instalar</translation>
     </message>
     <message>
         <source>Back</source>
@@ -1084,6 +1084,10 @@ Isso pode levar até um minuto.</translation>
     <message>
         <source>Update failed</source>
         <translation>Falha na atualização</translation>
+    </message>
+    <message>
+        <source>Update Now</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

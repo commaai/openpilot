@@ -12,8 +12,8 @@
         <translation>Posponer Actualización</translation>
     </message>
     <message>
-        <source>Reboot and Update</source>
-        <translation>Reiniciar y Actualizar</translation>
+        <source>Update Now</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1067,7 +1067,7 @@ Esto puede tardar un minuto.</translation>
     </message>
     <message>
         <source>Install</source>
-        <translation>Instalar</translation>
+        <translation type="vanished">Instalar</translation>
     </message>
     <message>
         <source>Back</source>
@@ -1084,6 +1084,10 @@ Esto puede tardar un minuto.</translation>
     <message>
         <source>Update failed</source>
         <translation>Actualización fallida</translation>
+    </message>
+    <message>
+        <source>Update Now</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

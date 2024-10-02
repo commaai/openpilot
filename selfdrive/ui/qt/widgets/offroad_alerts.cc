@@ -43,7 +43,7 @@ AbstractAlert::AbstractAlert(bool hasRebootBtn, QWidget *parent) : QFrame(parent
   snooze_btn->setStyleSheet(R"(color: white; background-color: #4F4F4F;)");
 
   if (hasRebootBtn) {
-    QPushButton *rebootBtn = new QPushButton(tr("Reboot and Update"));
+    QPushButton *rebootBtn = new QPushButton(tr("Reboot"));
     rebootBtn->setFixedSize(600, 125);
     footer_layout->addWidget(rebootBtn, 0, Qt::AlignBottom | Qt::AlignRight);
     QObject::connect(rebootBtn, &QPushButton::clicked, [=]() { Hardware::reboot(); });

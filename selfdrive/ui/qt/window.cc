@@ -33,8 +33,8 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
     main_layout->setCurrentWidget(onboardingWindow);
   }
 
-  QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
-    if (!offroad) {
+  QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad, bool isUpdating) {
+    if (!offroad && !isUpdating) {
       closeSettings();
     }
   });

@@ -12,8 +12,8 @@
         <translation>Update pausieren</translation>
     </message>
     <message>
-        <source>Reboot and Update</source>
-        <translation>Aktualisieren und neu starten</translation>
+        <source>Update Now</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1067,7 +1067,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Install</source>
-        <translation>Installieren</translation>
+        <translation type="vanished">Installieren</translation>
     </message>
     <message>
         <source>Back</source>
@@ -1084,6 +1084,10 @@ This may take up to a minute.</source>
     <message>
         <source>Update failed</source>
         <translation>Aktualisierung fehlgeschlagen</translation>
+    </message>
+    <message>
+        <source>Update Now</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -143,6 +143,7 @@ def init_overlay() -> None:
 
   params = Params()
   params.put_bool("UpdateAvailable", False)
+  params.put_bool("Updating", False)
   set_consistent_flag(False)
   dismount_overlay()
   run(["sudo", "rm", "-rf", STAGING_ROOT])
@@ -318,6 +319,8 @@ class Updater:
     self.params.put("UpdaterNewDescription", get_description(FINALIZED))
     self.params.put("UpdaterNewReleaseNotes", parse_release_notes(FINALIZED))
     self.params.put_bool("UpdateAvailable", self.update_ready)
+    self.params.put_bool("Updating", False)
+
 
     # Handle user prompt
     for alert in ("Offroad_UpdateFailed", "Offroad_ConnectivityNeeded", "Offroad_ConnectivityNeededPrompt"):
@@ -377,6 +380,7 @@ class Updater:
     # TODO: cleanly interrupt this and invalidate old update
     set_consistent_flag(False)
     self.params.put_bool("UpdateAvailable", False)
+    self.params.put_bool("Updating", False)
 
     setup_git_options(OVERLAY_MERGED)
 

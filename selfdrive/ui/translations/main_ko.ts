@@ -12,8 +12,8 @@
         <translation>업데이트 일시 중지</translation>
     </message>
     <message>
-        <source>Reboot and Update</source>
-        <translation>업데이트 및 재부팅</translation>
+        <source>Update Now</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1063,7 +1063,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Install</source>
-        <translation>설치</translation>
+        <translation type="vanished">설치</translation>
     </message>
     <message>
         <source>Back</source>
@@ -1080,6 +1080,10 @@ This may take up to a minute.</source>
     <message>
         <source>Update failed</source>
         <translation>업데이트 실패</translation>
+    </message>
+    <message>
+        <source>Update Now</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -88,7 +88,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
     updateLabels();
   });
 
-  connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
+  connect(uiState(), &UIState::offroadTransition, [=](bool offroad, bool isUpdating) {
     is_onroad = !offroad;
     updateLabels();
   });
@@ -109,6 +109,7 @@ void SoftwarePanel::updateLabels() {
   fs_watch->addParam("UpdateFailedCount");
   fs_watch->addParam("UpdaterState");
   fs_watch->addParam("UpdateAvailable");
+  fs_watch->addParam("Updating");
 
   if (!isVisible()) {
     return;

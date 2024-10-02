@@ -64,7 +64,7 @@ void Sidebar::mouseReleaseEvent(QMouseEvent *event) {
   }
 }
 
-void Sidebar::offroadTransition(bool offroad) {
+void Sidebar::offroadTransition(bool offroad, bool isUpdating) {
   onroad = !offroad;
   update();
 }

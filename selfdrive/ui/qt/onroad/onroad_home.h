@@ -17,6 +17,6 @@ private:
   QHBoxLayout* split;
 
 private slots:
-  void offroadTransition(bool offroad);
+  void offroadTransition(bool offroad, bool isUpdating);
   void updateState(const UIState &s);
 };

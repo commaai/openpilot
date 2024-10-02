@@ -12,8 +12,8 @@
         <translation>เลื่อนการอัปเดต</translation>
     </message>
     <message>
-        <source>Reboot and Update</source>
-        <translation>รีบูตและอัปเดต</translation>
+        <source>Update Now</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1063,7 +1063,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Install</source>
-        <translation>ติดตั้ง</translation>
+        <translation type="vanished">ติดตั้ง</translation>
     </message>
     <message>
         <source>Back</source>
@@ -1080,6 +1080,10 @@ This may take up to a minute.</source>
     <message>
         <source>Update failed</source>
         <translation>การอัปเดตล้มเหลว</translation>
+    </message>
+    <message>
+        <source>Update Now</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

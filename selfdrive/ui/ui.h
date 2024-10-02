@@ -98,7 +98,7 @@ public:
 
 signals:
   void uiUpdate(const UIState &s);
-  void offroadTransition(bool offroad);
+  void offroadTransition(bool offroad, bool isUpdating);
 
 private slots:
   void update();

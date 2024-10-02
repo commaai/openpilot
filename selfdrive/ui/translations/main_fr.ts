@@ -12,8 +12,8 @@
         <translation>Reporter la mise à jour</translation>
     </message>
     <message>
-        <source>Reboot and Update</source>
-        <translation>Redémarrer et mettre à jour</translation>
+        <source>Update Now</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1067,7 +1067,7 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     </message>
     <message>
         <source>Install</source>
-        <translation>Installer</translation>
+        <translation type="vanished">Installer</translation>
     </message>
     <message>
         <source>Back</source>
@@ -1084,6 +1084,10 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     <message>
         <source>Update failed</source>
         <translation>Échec de la mise à jour</translation>
+    </message>
+    <message>
+        <source>Update Now</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

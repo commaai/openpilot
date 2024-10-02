@@ -12,8 +12,8 @@
         <translation>تأخير التحديث</translation>
     </message>
     <message>
-        <source>Reboot and Update</source>
-        <translation>إعادة التشغيل والتحديث</translation>
+        <source>Update Now</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1083,7 +1083,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Install</source>
-        <translation>تثبيت</translation>
+        <translation type="vanished">تثبيت</translation>
     </message>
     <message>
         <source>Back</source>
@@ -1100,6 +1100,10 @@ This may take up to a minute.</source>
     <message>
         <source>Update failed</source>
         <translation>فشل التحديث</translation>
+    </message>
+    <message>
+        <source>Update Now</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -55,7 +55,7 @@ void OnroadWindow::updateState(const UIState &s) {
   }
 }
 
-void OnroadWindow::offroadTransition(bool offroad) {
+void OnroadWindow::offroadTransition(bool offroad, bool isUpdating) {
   alerts->clear();
 }
 
