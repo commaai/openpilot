@@ -72,6 +72,7 @@ def migrate(lr: LogIterable, migration_funcs: list[MigrationFunc]):
     del lr[index]
   for msg in add_ops:
     lr.append(msg)
+  lr = sorted(lr, key=lambda x: x.logMonoTime)
 
   return lr
 
