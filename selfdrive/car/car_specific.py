@@ -50,13 +50,13 @@ class CarSpecificEvents:
     elif self.CP.carName == 'nissan':
       events = self.create_common_events(CS.out, CS_prev, extra_gears=[GearShifter.brake])
 
-      if CS.lkas_enabled:  # type: ignore[attr-defined]
+      if CS.out.lkasEnabled:
         events.add(EventName.invalidLkasSetting)
 
     elif self.CP.carName == 'mazda':
       events = self.create_common_events(CS.out, CS_prev)
 
-      if CS.lkas_disabled:  # type: ignore[attr-defined]
+      if CS.out.lkasDisabled:
         events.add(EventName.lkasDisabled)
       elif CS.low_speed_alert:  # type: ignore[attr-defined]
         events.add(EventName.belowSteerSpeed)
