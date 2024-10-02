@@ -283,7 +283,7 @@ struct CarState {
       cancel @5;
       altButton1 @6;
       altButton2 @7;
-      altButton3 @8;
+      mainCruise @8;
       setCruise @9;
       resumeCruise @10;
       gapAdjustCruise @11;
