@@ -45,7 +45,7 @@ class CarSpecificEvents:
     if self.CP.carName in ('body', 'mock'):
       events = Events()
 
-    elif self.CP.carName == 'subaru':
+    elif self.CP.carName in ('subaru', 'mazda'):
       events = self.create_common_events(CS.out, CS_prev)
 
     elif self.CP.carName == 'ford':
@@ -53,12 +53,6 @@ class CarSpecificEvents:
 
     elif self.CP.carName == 'nissan':
       events = self.create_common_events(CS.out, CS_prev, extra_gears=[GearShifter.brake])
-
-    elif self.CP.carName == 'mazda':
-      events = self.create_common_events(CS.out, CS_prev)
-
-      if CS.out.lowSpeedAlert:
-        events.add(EventName.belowSteerSpeed)
 
     elif self.CP.carName == 'chrysler':
       events = self.create_common_events(CS.out, CS_prev, extra_gears=[GearShifter.low])
@@ -212,6 +206,8 @@ class CarSpecificEvents:
       events.add(EventName.vehicleSensorsInvalid)
     if CS.invalidLkasSetting:
       events.add(EventName.invalidLkasSetting)
+    if CS.lowSpeedAlert:
+      events.add(EventName.belowSteerSpeed)
 
     # Handle button presses
     for b in CS.buttonEvents:
