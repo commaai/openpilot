@@ -149,7 +149,7 @@ struct OnroadEvent @0x9b1657f34caf3ad3 {
     highCpuUsageDEPRECATED @105;
     startupNoFwDEPRECATED @104;
     lowSpeedLockoutDEPRECATED @31;
-    lkasDisabled @107;
+    lkasDisabledDEPRECATED @107;
   }
 }
 
