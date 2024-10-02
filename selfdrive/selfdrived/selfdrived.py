@@ -118,7 +118,7 @@ class SelfdriveD:
       self.startup_event = EventName.startupNoCar
     elif car_recognized and self.CP.passive:
       self.startup_event = EventName.startupNoControl
-    elif self.CP.securityConfig.secOcRequired and not self.CP.securityConfig.secOcKeyAvailable:
+    elif self.CP.secOcRequired and not self.CP.secOcKeyAvailable:
       self.startup_event = EventName.startupNoSecOcKey
 
     if not sounds_available:
