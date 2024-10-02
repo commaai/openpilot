@@ -1,4 +1,5 @@
 #include <cassert>
+#include <cmath>
 
 #include "common/swaglog.h"
 #include "system/camerad/sensors/sensor.h"

@@ -887,6 +887,7 @@ struct DrivingModelData {
   frameId @0 :UInt32;
   frameIdExtra @1 :UInt32;
   frameDropPerc @6 :Float32;
+  modelExecutionTime @7 :Float32;
 
   action @2 :ModelDataV2.Action;
 
@@ -932,7 +933,6 @@ struct ModelDataV2 {
   frameDropPerc @2 :Float32;
   timestampEof @3 :UInt64;
   modelExecutionTime @15 :Float32;
-  gpuExecutionTime @17 :Float32;
   rawPredictions @16 :Data;
 
   # predicted future position, orientation, etc..
@@ -959,12 +959,13 @@ struct ModelDataV2 {
   # Model perceived motion
   temporalPose @21 :Pose;
 
+  # e2e lateral planner
+  action @26: Action;
+
+  gpuExecutionTimeDEPRECATED @17 :Float32;
   navEnabledDEPRECATED @22 :Bool;
   locationMonoTimeDEPRECATED @24 :UInt64;
-
-  # e2e lateral planner
   lateralPlannerSolutionDEPRECATED @25: LateralPlannerSolution;
-  action @26: Action;
 
   struct LeadDataV2 {
     prob @0 :Float32; # probability that car is your lead at time t
@@ -2011,7 +2012,8 @@ struct Joystick {
 struct DriverStateV2 {
   frameId @0 :UInt32;
   modelExecutionTime @1 :Float32;
-  dspExecutionTime @2 :Float32;
+  dspExecutionTimeDEPRECATED @2 :Float32;
+  gpuExecutionTime @8 :Float32;
   rawPredictions @3 :Data;
 
   poorVisionProb @4 :Float32;
@@ -2412,6 +2414,7 @@ struct Event {
     uiDebug @102 :UIDebug;
 
     # *********** debug ***********
+    testJoystick @52 :Joystick;
     roadEncodeData @86 :EncodeData;
     driverEncodeData @87 :EncodeData;
     wideRoadEncodeData @88 :EncodeData;
@@ -2481,6 +2484,5 @@ struct Event {
     uiPlanDEPRECATED @106 :UiPlan;
     liveLocationKalmanDEPRECATED @72 :LiveLocationKalman;
     liveTracksDEPRECATED @16 :List(LiveTracksDEPRECATED);
-    testJoystickDEPRECATED @52 :Joystick;
   }
 }

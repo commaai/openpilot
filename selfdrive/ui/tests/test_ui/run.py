@@ -77,6 +77,17 @@ def setup_onroad(click, pm: PubMaster):
     packet_id += 1
     time.sleep(0.05)
 
+def setup_onroad_disengaged(click, pm: PubMaster):
+  DATA['selfdriveState'].selfdriveState.enabled = False
+  setup_onroad(click, pm)
+  DATA['selfdriveState'].selfdriveState.enabled = True
+
+def setup_onroad_override(click, pm: PubMaster):
+  DATA['selfdriveState'].selfdriveState.state = log.SelfdriveState.OpenpilotState.overriding
+  setup_onroad(click, pm)
+  DATA['selfdriveState'].selfdriveState.state = log.SelfdriveState.OpenpilotState.enabled
+
+
 def setup_onroad_wide(click, pm: PubMaster):
   DATA['selfdriveState'].selfdriveState.experimentalMode = True
   DATA["carState"].carState.vEgo = 1
@@ -165,6 +176,8 @@ CASES = {
   "settings_device": setup_settings_device,
   "settings_toggles": setup_settings_toggles,
   "onroad": setup_onroad,
+  "onroad_disengaged": setup_onroad_disengaged,
+  "onroad_override": setup_onroad_override,
   "onroad_sidebar": setup_onroad_sidebar,
   "onroad_alert_small": setup_onroad_alert_small,
   "onroad_alert_mid": setup_onroad_alert_mid,

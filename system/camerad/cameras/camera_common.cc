@@ -3,7 +3,6 @@
 #include <cassert>
 #include <string>
 
-#include "third_party/libyuv/include/libyuv.h"
 #include <jpeglib.h>
 
 #include "common/clutil.h"
@@ -103,7 +102,7 @@ CameraBuf::~CameraBuf() {
   if (imgproc) delete imgproc;
 }
 
-bool CameraBuf::acquire() {
+bool CameraBuf::acquire(int expo_time) {
   if (!safe_queue.try_pop(cur_buf_idx, 50)) return false;
 
   if (camera_bufs_metadata[cur_buf_idx].frame_id == -1) {
@@ -116,7 +115,7 @@ bool CameraBuf::acquire() {
   cur_camera_buf = &camera_bufs[cur_buf_idx];
 
   double start_time = millis_since_boot();
-  imgproc->runKernel(camera_bufs[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, out_img_width, out_img_height, cur_frame_data.integ_lines);
+  imgproc->runKernel(camera_bufs[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, out_img_width, out_img_height, expo_time);
   cur_frame_data.processing_time = (millis_since_boot() - start_time) / 1000.0;
 
   VisionIpcBufExtra extra = {
@@ -153,7 +152,7 @@ static kj::Array<capnp::byte> yuv420_to_jpeg(const CameraBuf *b, int thumbnail_w
   int in_stride = b->cur_yuv_buf->stride;
 
   // make the buffer big enough. jpeg_write_raw_data requires 16-pixels aligned height to be used.
-  std::unique_ptr<uint8[]> buf(new uint8_t[(thumbnail_width * ((thumbnail_height + 15) & ~15) * 3) / 2]);
+  std::unique_ptr<uint8_t[]> buf(new uint8_t[(thumbnail_width * ((thumbnail_height + 15) & ~15) * 3) / 2]);
   uint8_t *y_plane = buf.get();
   uint8_t *u_plane = y_plane + thumbnail_width * thumbnail_height;
   uint8_t *v_plane = u_plane + (thumbnail_width * thumbnail_height) / 4;

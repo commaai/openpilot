@@ -1,24 +1,104 @@
-#include <sys/ioctl.h>
-
+#include <stdint.h>
 #include <cassert>
-#include <cstring>
-#include <string>
-#include <vector>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
 
 #include "media/cam_defs.h"
 #include "media/cam_isp.h"
 #include "media/cam_isp_ife.h"
-#include "media/cam_req_mgr.h"
 #include "media/cam_sensor_cmn_header.h"
 #include "media/cam_sync.h"
 
 #include "common/util.h"
 #include "common/swaglog.h"
-
 #include "system/camerad/cameras/spectra.h"
 
+// For debugging:
+// echo "4294967295" > /sys/module/cam_debug_util/parameters/debug_mdl
 
-// *** helpers ***
+// ************** low level camera helpers ****************
+
+int do_cam_control(int fd, int op_code, void *handle, int size) {
+  struct cam_control camcontrol = {0};
+  camcontrol.op_code = op_code;
+  camcontrol.handle = (uint64_t)handle;
+  if (size == 0) {
+    camcontrol.size = 8;
+    camcontrol.handle_type = CAM_HANDLE_MEM_HANDLE;
+  } else {
+    camcontrol.size = size;
+    camcontrol.handle_type = CAM_HANDLE_USER_POINTER;
+  }
+
+  int ret = HANDLE_EINTR(ioctl(fd, VIDIOC_CAM_CONTROL, &camcontrol));
+  if (ret == -1) {
+    LOGE("VIDIOC_CAM_CONTROL error: op_code %d - errno %d", op_code, errno);
+  }
+  return ret;
+}
+
+std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data, uint32_t num_resources) {
+  struct cam_acquire_dev_cmd cmd = {
+    .session_handle = session_handle,
+    .handle_type = CAM_HANDLE_USER_POINTER,
+    .num_resources = (uint32_t)(data ? num_resources : 0),
+    .resource_hdl = (uint64_t)data,
+  };
+  int err = do_cam_control(fd, CAM_ACQUIRE_DEV, &cmd, sizeof(cmd));
+  return err == 0 ? std::make_optional(cmd.dev_handle) : std::nullopt;
+}
+
+int device_config(int fd, int32_t session_handle, int32_t dev_handle, uint64_t packet_handle) {
+  struct cam_config_dev_cmd cmd = {
+    .session_handle = session_handle,
+    .dev_handle = dev_handle,
+    .packet_handle = packet_handle,
+  };
+  return do_cam_control(fd, CAM_CONFIG_DEV, &cmd, sizeof(cmd));
+}
+
+int device_control(int fd, int op_code, int session_handle, int dev_handle) {
+  // start stop and release are all the same
+  struct cam_start_stop_dev_cmd cmd { .session_handle = session_handle, .dev_handle = dev_handle };
+  return do_cam_control(fd, op_code, &cmd, sizeof(cmd));
+}
+
+void *alloc_w_mmu_hdl(int video0_fd, int len, uint32_t *handle, int align, int flags, int mmu_hdl, int mmu_hdl2) {
+  struct cam_mem_mgr_alloc_cmd mem_mgr_alloc_cmd = {0};
+  mem_mgr_alloc_cmd.len = len;
+  mem_mgr_alloc_cmd.align = align;
+  mem_mgr_alloc_cmd.flags = flags;
+  mem_mgr_alloc_cmd.num_hdl = 0;
+  if (mmu_hdl != 0) {
+    mem_mgr_alloc_cmd.mmu_hdls[0] = mmu_hdl;
+    mem_mgr_alloc_cmd.num_hdl++;
+  }
+  if (mmu_hdl2 != 0) {
+    mem_mgr_alloc_cmd.mmu_hdls[1] = mmu_hdl2;
+    mem_mgr_alloc_cmd.num_hdl++;
+  }
+
+  do_cam_control(video0_fd, CAM_REQ_MGR_ALLOC_BUF, &mem_mgr_alloc_cmd, sizeof(mem_mgr_alloc_cmd));
+  *handle = mem_mgr_alloc_cmd.out.buf_handle;
+
+  void *ptr = NULL;
+  if (mem_mgr_alloc_cmd.out.fd > 0) {
+    ptr = mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED, mem_mgr_alloc_cmd.out.fd, 0);
+    assert(ptr != MAP_FAILED);
+  }
+
+  // LOGD("allocated: %x %d %llx mapped %p", mem_mgr_alloc_cmd.out.buf_handle, mem_mgr_alloc_cmd.out.fd, mem_mgr_alloc_cmd.out.vaddr, ptr);
+
+  return ptr;
+}
+
+void release(int video0_fd, uint32_t handle) {
+  struct cam_mem_mgr_release_cmd mem_mgr_release_cmd = {0};
+  mem_mgr_release_cmd.buf_handle = handle;
+
+  int ret = do_cam_control(video0_fd, CAM_REQ_MGR_RELEASE_BUF, &mem_mgr_release_cmd, sizeof(mem_mgr_release_cmd));
+  assert(ret == 0);
+}
 
 static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay_ms) {
   cam_cmd_unconditional_wait *unconditional_wait = (cam_cmd_unconditional_wait *)((char *)power + (sizeof(struct cam_cmd_power) + (power->count - 1) * sizeof(struct cam_power_settings)));
@@ -26,6 +106,49 @@ static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay_ms) {
   unconditional_wait->delay = delay_ms;
   unconditional_wait->op_code = CAMERA_SENSOR_WAIT_OP_SW_UCND;
   return (struct cam_cmd_power *)(unconditional_wait + 1);
+}
+
+// *** MemoryManager ***
+
+void *MemoryManager::alloc_buf(int size, uint32_t *handle) {
+  lock.lock();
+  void *ptr;
+  if (!cached_allocations[size].empty()) {
+    ptr = cached_allocations[size].front();
+    cached_allocations[size].pop();
+    *handle = handle_lookup[ptr];
+  } else {
+    ptr = alloc_w_mmu_hdl(video0_fd, size, handle);
+    handle_lookup[ptr] = *handle;
+    size_lookup[ptr] = size;
+  }
+  lock.unlock();
+  memset(ptr, 0, size);
+  return ptr;
+}
+
+void MemoryManager::free(void *ptr) {
+  lock.lock();
+  cached_allocations[size_lookup[ptr]].push(ptr);
+  lock.unlock();
+}
+
+MemoryManager::~MemoryManager() {
+  for (auto& x : cached_allocations) {
+    while (!x.second.empty()) {
+      void *ptr = x.second.front();
+      x.second.pop();
+      LOGD("freeing cached allocation %p with size %d", ptr, size_lookup[ptr]);
+      munmap(ptr, size_lookup[ptr]);
+
+      // release fd
+      close(handle_lookup[ptr] >> 16);
+      release(video0_fd, handle_lookup[ptr]);
+
+      handle_lookup.erase(ptr);
+      size_lookup.erase(ptr);
+    }
+  }
 }
 
 // *** SpectraMaster ***
@@ -95,7 +218,7 @@ int SpectraCamera::clear_req_queue() {
   return ret;
 }
 
-void SpectraCamera::camera_open() {
+void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_context ctx) {
   if (!enabled) return;
 
   if (!openSensor()) {
@@ -106,10 +229,6 @@ void SpectraCamera::camera_open() {
   configISP();
   configCSIPHY();
   linkDevices();
-}
-
-void SpectraCamera::camera_init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx) {
-  if (!enabled) return;
 
   LOGD("camera init %d", cc.camera_num);
   buf.init(device_id, ctx, this, v, FRAME_BUF_COUNT, cc.stream_type);
@@ -183,7 +302,7 @@ int SpectraCamera::sensors_init() {
   auto pkt = mm.alloc<struct cam_packet>(size, &cam_packet_handle);
   pkt->num_cmd_buf = 2;
   pkt->kmd_cmd_buf_index = -1;
-  pkt->header.op_code = 0x1000000 | CAM_SENSOR_PACKET_OPCODE_SENSOR_PROBE;
+  pkt->header.op_code = CSLDeviceTypeImageSensor | CAM_SENSOR_PACKET_OPCODE_SENSOR_PROBE;
   pkt->header.size = size;
   struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
 
@@ -272,119 +391,139 @@ int SpectraCamera::sensors_init() {
   return ret;
 }
 
-void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int buf0_mem_handle, int buf0_offset) {
-  uint32_t cam_packet_handle = 0;
-  int size = sizeof(struct cam_packet)+sizeof(struct cam_cmd_buf_desc)*2;
+void SpectraCamera::config_ife(int io_mem_handle, int fence, int request_id, int buf0_idx) {
+  /*
+    Handles initial + per-frame IFE config.
+    IFE = Image Front End
+  */
+  int size = sizeof(struct cam_packet) + sizeof(struct cam_cmd_buf_desc)*2;
   if (io_mem_handle != 0) {
     size += sizeof(struct cam_buf_io_cfg);
   }
+
+  uint32_t cam_packet_handle = 0;
   auto pkt = mm.alloc<struct cam_packet>(size, &cam_packet_handle);
-  pkt->num_cmd_buf = 2;
-  pkt->kmd_cmd_buf_index = 0;
 
   if (io_mem_handle != 0) {
-    pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf;
-    pkt->num_io_configs = 1;
-  }
-
-  if (io_mem_handle != 0) {
-    pkt->header.op_code = 0xf000001;
+    pkt->header.op_code =  CSLDeviceTypeIFE | OpcodesIFEUpdate;  // 0xf000001
     pkt->header.request_id = request_id;
   } else {
-    pkt->header.op_code = 0xf000000;
+    pkt->header.op_code = CSLDeviceTypeIFE | OpcodesIFEInitialConfig; // 0xf000000
     pkt->header.request_id = 1;
   }
   pkt->header.size = size;
-  struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
-  struct cam_buf_io_cfg *io_cfg = (struct cam_buf_io_cfg *)((char*)&pkt->payload + pkt->io_configs_offset);
 
-  // TODO: support MMU
-  buf_desc[0].size = 65624;
-  buf_desc[0].length = 0;
-  buf_desc[0].type = CAM_CMD_BUF_DIRECT;
-  buf_desc[0].meta_data = 3;
-  buf_desc[0].mem_handle = buf0_mem_handle;
-  buf_desc[0].offset = buf0_offset;
+  // *** kmd cmd buf ***
+  {
+    pkt->kmd_cmd_buf_index = 0;
+    pkt->kmd_cmd_buf_offset = 0;
+  }
 
-  // parsed by cam_isp_packet_generic_blob_handler
-  struct isp_packet {
-    uint32_t type_0;
-    cam_isp_resource_hfr_config resource_hfr;
+  // *** cmd buf ***
+  {
+    struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
+    pkt->num_cmd_buf = 2;
 
-    uint32_t type_1;
-    cam_isp_clock_config clock;
-    uint64_t extra_rdi_hz[3];
+    // *** first command ***
+    // TODO: support MMU
+    buf_desc[0].size = buf0_size;
+    buf_desc[0].length = 0;
+    buf_desc[0].type = CAM_CMD_BUF_DIRECT;
+    buf_desc[0].meta_data = 3;
+    buf_desc[0].mem_handle = buf0_handle;
+    buf_desc[0].offset = ALIGNED_SIZE(buf0_size, buf0_alignment)*buf0_idx;
 
-    uint32_t type_2;
-    cam_isp_bw_config bw;
-    struct cam_isp_bw_vote extra_rdi_vote[6];
-  } __attribute__((packed)) tmp;
-  memset(&tmp, 0, sizeof(tmp));
+    // *** second command ***
+    // parsed by cam_isp_packet_generic_blob_handler
+    struct isp_packet {
+      uint32_t type_0;
+      cam_isp_resource_hfr_config resource_hfr;
 
-  tmp.type_0 = CAM_ISP_GENERIC_BLOB_TYPE_HFR_CONFIG;
-  tmp.type_0 |= sizeof(cam_isp_resource_hfr_config) << 8;
-  static_assert(sizeof(cam_isp_resource_hfr_config) == 0x20);
-  tmp.resource_hfr = {
-    .num_ports = 1,  // 10 for YUV (but I don't think we need them)
-    .port_hfr_config[0] = {
-      .resource_type = CAM_ISP_IFE_OUT_RES_RDI_0, // CAM_ISP_IFE_OUT_RES_FULL for YUV
-      .subsample_pattern = 1,
-      .subsample_period = 0,
-      .framedrop_pattern = 1,
-      .framedrop_period = 0,
-    }};
+      uint32_t type_1;
+      cam_isp_clock_config clock;
+      uint64_t extra_rdi_hz[3];
 
-  tmp.type_1 = CAM_ISP_GENERIC_BLOB_TYPE_CLOCK_CONFIG;
-  tmp.type_1 |= (sizeof(cam_isp_clock_config) + sizeof(tmp.extra_rdi_hz)) << 8;
-  static_assert((sizeof(cam_isp_clock_config) + sizeof(tmp.extra_rdi_hz)) == 0x38);
-  tmp.clock = {
-    .usage_type = 1, // dual mode
-    .num_rdi = 4,
-    .left_pix_hz = 404000000,
-    .right_pix_hz = 404000000,
-    .rdi_hz[0] = 404000000,
-  };
+      uint32_t type_2;
+      cam_isp_bw_config bw;
+      struct cam_isp_bw_vote extra_rdi_vote[6];
+    } __attribute__((packed)) tmp;
+    memset(&tmp, 0, sizeof(tmp));
 
-  tmp.type_2 = CAM_ISP_GENERIC_BLOB_TYPE_BW_CONFIG;
-  tmp.type_2 |= (sizeof(cam_isp_bw_config) + sizeof(tmp.extra_rdi_vote)) << 8;
-  static_assert((sizeof(cam_isp_bw_config) + sizeof(tmp.extra_rdi_vote)) == 0xe0);
-  tmp.bw = {
-    .usage_type = 1, // dual mode
-    .num_rdi = 4,
-    .left_pix_vote = {
-      .resource_id = 0,
-      .cam_bw_bps = 450000000,
-      .ext_bw_bps = 450000000,
-    },
-    .rdi_vote[0] = {
-      .resource_id = 0,
-      .cam_bw_bps = 8706200000,
-      .ext_bw_bps = 8706200000,
-    },
-  };
+    tmp.type_0 = CAM_ISP_GENERIC_BLOB_TYPE_HFR_CONFIG;
+    tmp.type_0 |= sizeof(cam_isp_resource_hfr_config) << 8;
+    static_assert(sizeof(cam_isp_resource_hfr_config) == 0x20);
+    tmp.resource_hfr = {
+      .num_ports = 1,  // 10 for YUV (but I don't think we need them)
+      .port_hfr_config[0] = {
+        .resource_type = CAM_ISP_IFE_OUT_RES_RDI_0, // CAM_ISP_IFE_OUT_RES_FULL for YUV
+        .subsample_pattern = 1,
+        .subsample_period = 0,
+        .framedrop_pattern = 1,
+        .framedrop_period = 0,
+      }};
 
-  static_assert(offsetof(struct isp_packet, type_2) == 0x60);
+    tmp.type_1 = CAM_ISP_GENERIC_BLOB_TYPE_CLOCK_CONFIG;
+    tmp.type_1 |= (sizeof(cam_isp_clock_config) + sizeof(tmp.extra_rdi_hz)) << 8;
+    static_assert((sizeof(cam_isp_clock_config) + sizeof(tmp.extra_rdi_hz)) == 0x38);
+    tmp.clock = {
+      .usage_type = 1, // dual mode
+      .num_rdi = 4,
+      .left_pix_hz = 404000000,
+      .right_pix_hz = 404000000,
+      .rdi_hz[0] = 404000000,
+    };
 
-  buf_desc[1].size = sizeof(tmp);
-  buf_desc[1].offset = io_mem_handle != 0 ? 0x60 : 0;
-  buf_desc[1].length = buf_desc[1].size - buf_desc[1].offset;
-  buf_desc[1].type = CAM_CMD_BUF_GENERIC;
-  buf_desc[1].meta_data = CAM_ISP_PACKET_META_GENERIC_BLOB_COMMON;
-  auto buf2 = mm.alloc<uint32_t>(buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle);
-  memcpy(buf2.get(), &tmp, sizeof(tmp));
+    tmp.type_2 = CAM_ISP_GENERIC_BLOB_TYPE_BW_CONFIG;
+    tmp.type_2 |= (sizeof(cam_isp_bw_config) + sizeof(tmp.extra_rdi_vote)) << 8;
+    static_assert((sizeof(cam_isp_bw_config) + sizeof(tmp.extra_rdi_vote)) == 0xe0);
+    tmp.bw = {
+      .usage_type = 1, // dual mode
+      .num_rdi = 4,
+      .left_pix_vote = {
+        .resource_id = 0,
+        .cam_bw_bps = 450000000,
+        .ext_bw_bps = 450000000,
+      },
+      .rdi_vote[0] = {
+        .resource_id = 0,
+        .cam_bw_bps = 8706200000,
+        .ext_bw_bps = 8706200000,
+      },
+    };
 
+    static_assert(offsetof(struct isp_packet, type_2) == 0x60);
+
+    buf_desc[1].size = sizeof(tmp);
+    buf_desc[1].offset = io_mem_handle != 0 ? 0x60 : 0;
+    buf_desc[1].length = buf_desc[1].size - buf_desc[1].offset;
+    buf_desc[1].type = CAM_CMD_BUF_GENERIC;
+    buf_desc[1].meta_data = CAM_ISP_PACKET_META_GENERIC_BLOB_COMMON;
+    auto buf2 = mm.alloc<uint32_t>(buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle);
+    memcpy(buf2.get(), &tmp, sizeof(tmp));
+  }
+
+  // *** io config ***
   if (io_mem_handle != 0) {
+    // configure output frame
+    pkt->num_io_configs = 1;
+    pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf;
+
+    struct cam_buf_io_cfg *io_cfg = (struct cam_buf_io_cfg *)((char*)&pkt->payload + pkt->io_configs_offset);
+    io_cfg[0].offsets[0] = 0;
     io_cfg[0].mem_handle[0] = io_mem_handle;
+
     io_cfg[0].planes[0] = (struct cam_plane_cfg){
       .width = sensor->frame_width,
       .height = sensor->frame_height + sensor->extra_height,
       .plane_stride = sensor->frame_stride,
       .slice_height = sensor->frame_height + sensor->extra_height,
-      .meta_stride = 0x0,  // YUV has meta(stride=0x400, size=0x5000)
+
+      // these are for UBWC, we'll want that eventually
+      .meta_stride = 0x0,
       .meta_size = 0x0,
       .meta_offset = 0x0,
-      .packer_config = 0x0,  // 0xb for YUV
-      .mode_config = 0x0,    // 0x9ef for YUV
+      .packer_config = 0x0,
+      .mode_config = 0x0,
       .tile_config = 0x0,
       .h_init = 0x0,
       .v_init = 0x0,
@@ -400,11 +539,14 @@ void SpectraCamera::config_isp(int io_mem_handle, int fence, int request_id, int
     io_cfg[0].framedrop_pattern = 0x1;
   }
 
+  // *** patches ***
+  {
+    pkt->num_patches = 0;
+    pkt->patch_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf + sizeof(struct cam_buf_io_cfg)*pkt->num_io_configs;
+  }
+
   int ret = device_config(m->isp_fd, session_handle, isp_dev_handle, cam_packet_handle);
   assert(ret == 0);
-  if (ret != 0) {
-    LOGE("isp config failed");
-  }
 }
 
 void SpectraCamera::enqueue_buffer(int i, bool dp) {
@@ -457,7 +599,7 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
   sensors_poke(request_id);
 
   // submit request to the ife
-  config_isp(buf_handle[i], sync_objs[i], request_id, buf0_handle, 65632*(i+1));
+  config_ife(buf_handle[i], sync_objs[i], request_id, i);
 }
 
 void SpectraCamera::camera_map_bufs() {
@@ -516,11 +658,10 @@ bool SpectraCamera::openSensor() {
 }
 
 void SpectraCamera::configISP() {
-  // NOTE: to be able to disable road and wide road, we still have to configure the sensor over i2c
-  // If you don't do this, the strobe GPIO is an output (even in reset it seems!)
   if (!enabled) return;
 
   struct cam_isp_in_port_info in_port_info = {
+    // ISP input to the CSID
     .res_type = cc.phy,
     .lane_type = CAM_ISP_LANE_TYPE_DPHY,
     .lane_num = 4,
@@ -551,6 +692,7 @@ void SpectraCamera::configISP() {
     .hbi_cnt = 0x0,
     .custom_csid = 0x0,
 
+    // ISP outputs
     .num_out_res = 0x1,
     .data[0] = (struct cam_isp_out_port_info){
       .res_type = CAM_ISP_IFE_OUT_RES_RDI_0,
@@ -572,10 +714,11 @@ void SpectraCamera::configISP() {
   isp_dev_handle = *isp_dev_handle_;
   LOGD("acquire isp dev");
 
-  // config ISP
-  alloc_w_mmu_hdl(m->video0_fd, 984480, (uint32_t*)&buf0_handle, 0x20, CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS |
-                  CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE, m->device_iommu, m->cdm_iommu);
-  config_isp(0, 0, 1, buf0_handle, 0);
+  // config IFE
+  alloc_w_mmu_hdl(m->video0_fd, FRAME_BUF_COUNT*ALIGNED_SIZE(buf0_size, buf0_alignment), (uint32_t*)&buf0_handle, buf0_alignment,
+                  CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
+                  m->device_iommu, m->cdm_iommu);
+  config_ife(0, 0, 1, 0);
 }
 
 void SpectraCamera::configCSIPHY() {
@@ -692,4 +835,53 @@ void SpectraCamera::camera_close() {
   struct cam_req_mgr_session_info session_info = {.session_hdl = session_handle};
   ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_DESTROY_SESSION, &session_info, sizeof(session_info));
   LOGD("destroyed session %d: %d", cc.camera_num, ret);
+}
+
+void SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
+  if (!enabled) return;
+
+  uint64_t timestamp = event_data->u.frame_msg.timestamp;
+  uint64_t main_id = event_data->u.frame_msg.frame_id;
+  uint64_t real_id = event_data->u.frame_msg.request_id;
+
+  if (real_id != 0) { // next ready
+    if (real_id == 1) {idx_offset = main_id;}
+    int buf_idx = (real_id - 1) % FRAME_BUF_COUNT;
+
+    // check for skipped frames
+    if (main_id > frame_id_last + 1 && !skipped) {
+      LOGE("camera %d realign", cc.camera_num);
+      clear_req_queue();
+      enqueue_req_multi(real_id + 1, FRAME_BUF_COUNT - 1, 0);
+      skipped = true;
+    } else if (main_id == frame_id_last + 1) {
+      skipped = false;
+    }
+
+    // check for dropped requests
+    if (real_id > request_id_last + 1) {
+      LOGE("camera %d dropped requests %ld %ld", cc.camera_num, real_id, request_id_last);
+      enqueue_req_multi(request_id_last + 1 + FRAME_BUF_COUNT, real_id - (request_id_last + 1), 0);
+    }
+
+    // metas
+    frame_id_last = main_id;
+    request_id_last = real_id;
+
+    auto &meta_data = buf.camera_bufs_metadata[buf_idx];
+    meta_data.frame_id = main_id - idx_offset;
+    meta_data.request_id = real_id;
+    meta_data.timestamp_sof = timestamp;
+
+    // dispatch
+    enqueue_req_multi(real_id + FRAME_BUF_COUNT, 1, 1);
+  } else { // not ready
+    if (main_id > frame_id_last + 10) {
+      LOGE("camera %d reset after half second of no response", cc.camera_num);
+      clear_req_queue();
+      enqueue_req_multi(request_id_last + 1, FRAME_BUF_COUNT, 0);
+      frame_id_last = main_id;
+      skipped = true;
+    }
+  }
 }

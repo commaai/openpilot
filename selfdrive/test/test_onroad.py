@@ -32,27 +32,28 @@ CPU usage budget
 * total CPU usage of openpilot (sum(PROCS.values())
   should not exceed MAX_TOTAL_CPU
 """
+
 MAX_TOTAL_CPU = 265.  # total for all 8 cores
 PROCS = {
   # Baseline CPU usage by process
-  "selfdrive.controls.controlsd": 18.0,
-  "selfdrive.selfdrived.selfdrived": 21.0,
+  "selfdrive.controls.controlsd": 16.0,
+  "selfdrive.selfdrived.selfdrived": 16.0,
   "selfdrive.car.card": 30.0,
   "./loggerd": 14.0,
   "./encoderd": 17.0,
   "./camerad": 14.5,
-  "selfdrive.controls.plannerd": 11.0,
+  "selfdrive.controls.plannerd": 9.0,
   "./ui": 18.0,
   "selfdrive.locationd.paramsd": 9.0,
   "./sensord": 7.0,
   "selfdrive.controls.radard": 2.0,
   "selfdrive.modeld.modeld": 17.0,
-  "selfdrive.modeld.dmonitoringmodeld": 8.0,
+  "selfdrive.modeld.dmonitoringmodeld": 11.0,
   "system.hardware.hardwared": 3.87,
   "selfdrive.locationd.calibrationd": 2.0,
   "selfdrive.locationd.torqued": 5.0,
   "selfdrive.locationd.locationd": 25.0,
-  "selfdrive.ui.soundd": 3.5,
+  "selfdrive.ui.soundd": 3.38,
   "selfdrive.monitoring.dmonitoringd": 4.0,
   "./proclogd": 1.54,
   "system.logmessaged": 0.2,
@@ -213,7 +214,7 @@ class TestOnroad:
       elif f.name == "rlog":
         assert 5 < sz < 50
       elif f.name.endswith('.hevc'):
-        assert 70 < sz < 77
+        assert 70 < sz < 80
       else:
         raise NotImplementedError
 
@@ -312,7 +313,7 @@ class TestOnroad:
     assert max(mems) - min(mems) <= 3.0
 
   def test_gpu_usage(self):
-    assert self.gpu_procs == {"weston", "ui", "camerad", "selfdrive.modeld.modeld"}
+    assert self.gpu_procs == {"weston", "ui", "camerad", "selfdrive.modeld.modeld", "selfdrive.modeld.dmonitoringmodeld"}
 
   def test_camera_processing_time(self):
     result = "\n"

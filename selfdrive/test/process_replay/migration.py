@@ -3,6 +3,8 @@ from collections import defaultdict
 from cereal import messaging, car
 from opendbc.car.fingerprints import MIGRATION
 from opendbc.car.toyota.values import EPS_SCALE
+from openpilot.selfdrive.modeld.constants import ModelConstants
+from openpilot.selfdrive.modeld.fill_model_msg import fill_xyz_poly, fill_lane_line_meta
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
 from openpilot.system.manager.process_config import managed_processes
 from panda import Panda
@@ -19,6 +21,7 @@ def migrate_all(lr, manager_states=False, panda_states=False, camera_states=Fals
   msgs = migrate_liveLocationKalman(msgs)
   msgs = migrate_liveTracks(msgs)
   msgs = migrate_driverAssistance(msgs)
+  msgs = migrate_drivingModelData(msgs)
   if manager_states:
     msgs = migrate_managerState(msgs)
   if panda_states:
@@ -29,6 +32,7 @@ def migrate_all(lr, manager_states=False, panda_states=False, camera_states=Fals
 
   return msgs
 
+
 def migrate_driverAssistance(lr):
   all_msgs = []
   for msg in lr:
@@ -38,6 +42,27 @@ def migrate_driverAssistance(lr):
     if msg.which() == 'driverAssistance':
       return lr
   return all_msgs
+
+
+def migrate_drivingModelData(lr):
+  all_msgs = []
+  for msg in lr:
+    all_msgs.append(msg)
+    if msg.which() == "modelV2":
+      dmd = messaging.new_message('drivingModelData', valid=msg.valid, logMonoTime=msg.logMonoTime)
+      for field in ["frameId", "frameIdExtra", "frameDropPerc", "modelExecutionTime", "action"]:
+        setattr(dmd.drivingModelData, field, getattr(msg.modelV2, field))
+      for meta_field in ["laneChangeState", "laneChangeState"]:
+        setattr(dmd.drivingModelData.meta, meta_field, getattr(msg.modelV2.meta, meta_field))
+      if len(msg.modelV2.laneLines) and len(msg.modelV2.laneLineProbs):
+        fill_lane_line_meta(dmd.drivingModelData.laneLineMeta, msg.modelV2.laneLines, msg.modelV2.laneLineProbs)
+      if all(len(a) for a in [msg.modelV2.position.x, msg.modelV2.position.y, msg.modelV2.position.z]):
+        fill_xyz_poly(dmd.drivingModelData.path, ModelConstants.POLY_PATH_DEGREE, msg.modelV2.position.x, msg.modelV2.position.y, msg.modelV2.position.z)
+      all_msgs.append(dmd.as_reader())
+    elif msg.which() == "drivingModelData":
+      return lr
+  return all_msgs
+
 
 def migrate_liveTracks(lr):
   all_msgs = []

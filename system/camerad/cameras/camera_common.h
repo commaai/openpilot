@@ -1,6 +1,5 @@
 #pragma once
 
-#include <fcntl.h>
 #include <memory>
 
 #include "cereal/messaging/messaging.h"
@@ -11,17 +10,6 @@
 
 const int YUV_BUFFER_COUNT = 20;
 
-enum CameraType {
-  RoadCam = 0,
-  DriverCam,
-  WideRoadCam
-};
-
-// for debugging
-const bool env_debug_frames = getenv("DEBUG_FRAMES") != NULL;
-const bool env_log_raw_frames = getenv("LOG_RAW_FRAMES") != NULL;
-const bool env_ctrl_exp_from_params = getenv("CTRL_EXP_FROM_PARAMS") != NULL;
-
 typedef struct FrameMetadata {
   uint32_t frame_id;
   uint32_t request_id;
@@ -29,13 +17,6 @@ typedef struct FrameMetadata {
   // Timestamps
   uint64_t timestamp_sof;
   uint64_t timestamp_eof;
-
-  // Exposure
-  unsigned int integ_lines;
-  bool high_conversion_gain;
-  float gain;
-  float measured_grey_fraction;
-  float target_grey_fraction;
 
   float processing_time;
 } FrameMetadata;
@@ -64,7 +45,7 @@ public:
   CameraBuf() = default;
   ~CameraBuf();
   void init(cl_device_id device_id, cl_context context, SpectraCamera *cam, VisionIpcServer * v, int frame_cnt, VisionStreamType type);
-  bool acquire();
+  bool acquire(int expo_time);
   void queue(size_t buf_idx);
 };
 

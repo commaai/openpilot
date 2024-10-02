@@ -1,7 +1,7 @@
 from cereal import car
 import cereal.messaging as messaging
 from opendbc.car import DT_CTRL, structs
-from opendbc.car.interfaces import MAX_CTRL_SPEED, CarStateBase, CarControllerBase
+from opendbc.car.interfaces import MAX_CTRL_SPEED, CarStateBase
 from opendbc.car.volkswagen.values import CarControllerParams as VWCarControllerParams
 from opendbc.car.hyundai.interface import ENABLE_BUTTONS as HYUNDAI_ENABLE_BUTTONS
 
@@ -37,7 +37,7 @@ class CarSpecificEvents:
     self.no_steer_warning = False
     self.silent_steer_warning = True
 
-  def update(self, CS: CarStateBase, CS_prev: car.CarState, CC: CarControllerBase, CC_prev: car.CarControl):
+  def update(self, CS: CarStateBase, CS_prev: car.CarState, CC_prev: car.CarControl):
     if self.CP.carName in ('body', 'mock'):
       events = Events()
 
@@ -50,15 +50,10 @@ class CarSpecificEvents:
     elif self.CP.carName == 'nissan':
       events = self.create_common_events(CS.out, CS_prev, extra_gears=[GearShifter.brake])
 
-      if CS.lkas_enabled:  # type: ignore[attr-defined]
-        events.add(EventName.invalidLkasSetting)
-
     elif self.CP.carName == 'mazda':
       events = self.create_common_events(CS.out, CS_prev)
 
-      if CS.lkas_disabled:  # type: ignore[attr-defined]
-        events.add(EventName.lkasDisabled)
-      elif CS.low_speed_alert:  # type: ignore[attr-defined]
+      if CS.low_speed_alert:  # type: ignore[attr-defined]
         events.add(EventName.belowSteerSpeed)
 
     elif self.CP.carName == 'chrysler':
@@ -99,8 +94,6 @@ class CarSpecificEvents:
       if self.CP.openpilotLongitudinalControl:
         if CS.out.cruiseState.standstill and not CS.out.brakePressed:
           events.add(EventName.resumeRequired)
-        if CS.low_speed_lockout:  # type: ignore[attr-defined]
-          events.add(EventName.lowSpeedLockout)
         if CS.out.vEgo < self.CP.minEnableSpeed:
           events.add(EventName.belowEngageSpeed)
           if CC_prev.actuators.accel > 0.3:
@@ -121,9 +114,8 @@ class CarSpecificEvents:
 
       # Enabling at a standstill with brake is allowed
       # TODO: verify 17 Volt can enable for the first time at a stop and allow for all GMs
-      below_min_enable_speed = CS.out.vEgo < self.CP.minEnableSpeed or CS.moving_backward  # type: ignore[attr-defined]
-      if below_min_enable_speed and not (CS.out.standstill and CS.out.brake >= 20 and
-                                         self.CP.networkLocation == NetworkLocation.fwdCamera):
+      if CS.out.vEgo < self.CP.minEnableSpeed and not (CS.out.standstill and CS.out.brake >= 20 and
+                                                       self.CP.networkLocation == NetworkLocation.fwdCamera):
         events.add(EventName.belowEngageSpeed)
       if CS.out.cruiseState.standstill:
         events.add(EventName.resumeRequired)
@@ -149,8 +141,9 @@ class CarSpecificEvents:
         if CC_prev.enabled and CS.out.vEgo < self.CP.minEnableSpeed:
           events.add(EventName.speedTooLow)
 
-      if CC.eps_timer_soft_disable_alert:  # type: ignore[attr-defined]
-        events.add(EventName.steerTimeLimit)
+      # TODO: this needs to be implemented generically in carState struct
+      # if CC.eps_timer_soft_disable_alert:  # type: ignore[attr-defined]
+      #   events.add(EventName.steerTimeLimit)
 
     elif self.CP.carName == 'hyundai':
       # On some newer model years, the CANCEL button acts as a pause/resume button based on the PCM state
@@ -213,6 +206,8 @@ class CarSpecificEvents:
       events.add(EventName.gasPressedOverride)
     if CS.vehicleSensorsInvalid:
       events.add(EventName.vehicleSensorsInvalid)
+    if CS.invalidLkasSetting:
+      events.add(EventName.invalidLkasSetting)
 
     # Handle button presses
     for b in CS.buttonEvents:
