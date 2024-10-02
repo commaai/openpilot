@@ -52,7 +52,6 @@ struct OnroadEvent @0x9b1657f34caf3ad3 {
     brakeHold @28;
     parkBrake @29;
     manualRestart @30;
-    lowSpeedLockout @31;
     joystickDebug @34;
     longitudinalManeuver @124;
     steerTempUnavailableSilent @35;
@@ -87,6 +86,7 @@ struct OnroadEvent @0x9b1657f34caf3ad3 {
     startup @75;
     startupNoCar @76;
     startupNoControl @77;
+    startupNoSecOcKey @125;
     startupMaster @78;
     fcw @79;
     steerSaturated @80;
@@ -149,6 +149,7 @@ struct OnroadEvent @0x9b1657f34caf3ad3 {
     wideRoadCameraErrorDEPRECATED @102;
     highCpuUsageDEPRECATED @105;
     startupNoFwDEPRECATED @104;
+    lowSpeedLockoutDEPRECATED @31;
   }
 }
 
@@ -514,6 +515,9 @@ struct CarParams {
   networkLocation @50 :NetworkLocation;  # Where Panda/C2 is integrated into the car's CAN network
 
   wheelSpeedFactor @63 :Float32; # Multiplier on wheels speeds to computer actual speeds
+
+  secOcRequired @75 :Bool;  # Car requires SecOC message authentication to operate
+  secOcKeyAvailable @76 :Bool;  # Stored SecOC key loaded from params
 
   struct SafetyConfig {
     safetyModel @0 :SafetyModel;

@@ -118,6 +118,8 @@ class SelfdriveD:
       self.startup_event = EventName.startupNoCar
     elif car_recognized and self.CP.passive:
       self.startup_event = EventName.startupNoControl
+    elif self.CP.secOcRequired and not self.CP.secOcKeyAvailable:
+      self.startup_event = EventName.startupNoSecOcKey
 
     if not sounds_available:
       self.events.add(EventName.soundsUnavailable, static=True)
@@ -332,7 +334,7 @@ class SelfdriveD:
         self.events.add(EventName.noGps)
       if gps_ok:
         self.distance_traveled = 0
-      self.distance_traveled += CS.vEgo * DT_CTRL
+      self.distance_traveled += abs(CS.vEgo) * DT_CTRL
 
       if self.sm['modelV2'].frameDropPerc > 20:
         self.events.add(EventName.modeldLagging)

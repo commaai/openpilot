@@ -18,7 +18,9 @@ Test your vehicle's longitudinal control tuning with this tool. The tool will te
 
    ![videoframe_6652](https://github.com/user-attachments/assets/e9d4c95a-cd76-4ab7-933e-19937792fa0f)
 
-5. Ensure the road ahead is clear, as openpilot will not brake for any obstructions in this mode. Once you are ready, press "Set" on your steering wheel to start the tests. The tests will run for about 4 minutes. If you need to pause the tests, press "Cancel" on your steering wheel. You can resume the tests by pressing "Resume" on your steering wheel.
+5. Ensure the road ahead is clear, as openpilot will not brake for any obstructions in this mode. Once you are ready, press "Set" on your steering wheel to start the tests. The tests will run for about 4 minutes. If you need to pause the tests, press "Cancel" on your steering wheel. You can resume the tests by pressing "Resume" on your steering wheel. 
+
+   **Note:** For GM cars, it is recommended to hold down the resume button for all low-speed tests (starting, stopping and creep) to avoid the car entering standstill.
 
    ![cog-clip-00 01 11 250-00 01 22 250](https://github.com/user-attachments/assets/c312c1cc-76e8-46e1-a05e-bb9dfb58994f)
 
