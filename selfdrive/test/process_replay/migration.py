@@ -13,7 +13,9 @@ from openpilot.system.manager.process_config import managed_processes
 from openpilot.tools.lib.logreader import LogIterable
 from panda import Panda
 
-MigrationFunc = Callable[[LogIterable], tuple[list[tuple[int, capnp.lib.capnp._DynamicStructReader]], list[capnp.lib.capnp._DynamicStructReader], list[int]]]
+MessageWithIndex = tuple[int, capnp.lib.capnp._DynamicStructReader]
+MigrationOps = tuple[list[tuple[int, capnp.lib.capnp._DynamicStructReader]], list[capnp.lib.capnp._DynamicStructReader], list[int]]
+MigrationFunc = Callable[[list[MessageWithIndex]], MigrationOps]
 
 
 ## rules for migration functions
@@ -53,6 +55,7 @@ def migrate(lr: LogIterable, migration_funcs: list[MigrationFunc]):
 
   replace_ops, add_ops, del_ops = [], [], []
   for migration in migration_funcs:
+    assert hasattr(migration, "inputs") and hasattr(migration, "product"), f"Migration functions must use @migration decorator"
     if migration.product in grouped: # skip if product already exists
       continue
 
