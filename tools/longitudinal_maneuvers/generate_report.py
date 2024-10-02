@@ -92,7 +92,7 @@ def report(platform, route, _description, CP, maneuvers):
         # TODO localizer accel
         ax[0].set_ylabel('Acceleration (m/s^2)')
         #ax[0].set_ylim(-6.5, 6.5)
-        ax[0].legend()
+        ax[0].legend(prop={'size': 30})
 
         if target_cross_time is not None:
           ax[0].plot(target_cross_time, aTarget, marker='o', markersize=50, markeredgewidth=7, markeredgecolor='black', markerfacecolor='None')

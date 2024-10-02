@@ -88,14 +88,15 @@ jobs:
           A=($scenes)
 
           DIFF=""
-          TABLE="<details>"
-          TABLE="${TABLE}<summary>All Screenshots</summary>"
+          open=false
+          TABLE="<summary>All Screenshots</summary>"
           TABLE="${TABLE}<table>"
 
           for ((i=0; i<${#A[*]}; i=i+1));
           do
 
             if ! compare -fuzz 2% -highlight-color DeepSkyBlue1 -lowlight-color Black -compose Src ${{ github.workspace }}/master_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png; then
+              open=true
               convert ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png -transparent black mask.png
               composite mask.png ${{ github.workspace }}/master_ui/${A[$i]}.png composite_diff.png
               convert -delay 20 ${{ github.workspace }}/master_ui/${A[$i]}.png composite_diff.png -loop 0 ${{ github.workspace }}/pr_ui/${A[$i]}_diff.gif
@@ -134,6 +135,12 @@ jobs:
 
           TABLE="${TABLE}</table>"
           TABLE="${TABLE}</details>"
+
+          if $open; then
+            TABLE="<details open>${TABLE}"
+          else
+            TABLE="<details>${TABLE}"
+          fi
 
           echo "DIFF=$DIFF$TABLE" >> "$GITHUB_OUTPUT"
 
