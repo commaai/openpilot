@@ -94,7 +94,7 @@ class CarSpecificEvents:
         events.add(EventName.manualRestart)
 
       # Low speed steer alert logic; for cars with steer cut off above 6 m/s
-      # Show the alert earlier after exceeding a greater speed.
+      # Show the alert earlier when slowing. Must first exceed a greater speed while engaged.
       # PR NOTE: chose this policy as continuing to see the alert after the car has just began to steer has caused some confusion.
       if CS.out.vEgo > (self.CP.minSteerSpeed + 3.5):
         self.min_steer_alert_speed = (self.CP.minSteerSpeed + 1.5)
