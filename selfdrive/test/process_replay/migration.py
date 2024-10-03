@@ -19,11 +19,11 @@ MigrationFunc = Callable[[list[MessageWithIndex]], MigrationOps]
 
 
 ## rules for migration functions
-## 1. must use the decorator @migration(inputs=[...], product="...")
+## 1. must use the decorator @migration(inputs=[...], product="...") and MigrationFunc signature
 ## 2. it only gets the messages that are in the inputs list
 ## 3. product is the message type created by the migration function, and the function will be skipped if product type already exists in lr
-## 3. it must return a list of operations to be applied to the logreader (replace, add, delete)
-## 4. all migration functions must be independent of each other
+## 4. it must return a list of operations to be applied to the logreader (replace, add, delete)
+## 5. all migration functions must be independent of each other
 def migrate_all(lr: LogIterable, manager_states: bool = False, panda_states: bool = False, camera_states: bool = False):
   migrations = [
     migrate_sensorEvents,
