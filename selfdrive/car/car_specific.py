@@ -1,9 +1,11 @@
+from collections import deque
 from cereal import car
 import cereal.messaging as messaging
 from opendbc.car import DT_CTRL, structs
 from opendbc.car.interfaces import MAX_CTRL_SPEED, CarStateBase
 from opendbc.car.volkswagen.values import CarControllerParams as VWCarControllerParams
 from opendbc.car.hyundai.interface import ENABLE_BUTTONS as HYUNDAI_ENABLE_BUTTONS
+from opendbc.car.hyundai.carstate import PREV_BUTTON_SAMPLES as HYUNDAI_PREV_BUTTON_SAMPLES
 
 from openpilot.selfdrive.selfdrived.events import Events
 
@@ -37,11 +39,13 @@ class CarSpecificEvents:
     self.no_steer_warning = False
     self.silent_steer_warning = True
 
+    self.cruise_buttons: deque = deque([], maxlen=HYUNDAI_PREV_BUTTON_SAMPLES)
+
   def update(self, CS: CarStateBase, CS_prev: car.CarState, CC_prev: car.CarControl):
     if self.CP.carName in ('body', 'mock'):
       events = Events()
 
-    elif self.CP.carName == 'subaru':
+    elif self.CP.carName in ('subaru', 'mazda'):
       events = self.create_common_events(CS.out, CS_prev)
 
     elif self.CP.carName == 'ford':
@@ -49,12 +53,6 @@ class CarSpecificEvents:
 
     elif self.CP.carName == 'nissan':
       events = self.create_common_events(CS.out, CS_prev, extra_gears=[GearShifter.brake])
-
-    elif self.CP.carName == 'mazda':
-      events = self.create_common_events(CS.out, CS_prev)
-
-      if CS.low_speed_alert:  # type: ignore[attr-defined]
-        events.add(EventName.belowSteerSpeed)
 
     elif self.CP.carName == 'chrysler':
       events = self.create_common_events(CS.out, CS_prev, extra_gears=[GearShifter.low])
@@ -149,8 +147,8 @@ class CarSpecificEvents:
       # On some newer model years, the CANCEL button acts as a pause/resume button based on the PCM state
       # To avoid re-engaging when openpilot cancels, check user engagement intention via buttons
       # Main button also can trigger an engagement on these cars
-      allow_enable = any(btn in HYUNDAI_ENABLE_BUTTONS for btn in CS.cruise_buttons) or any(CS.main_buttons)  # type: ignore[attr-defined]
-      events = self.create_common_events(CS.out, CS_prev, pcm_enable=self.CP.pcmCruise, allow_enable=allow_enable)
+      self.cruise_buttons.append(any(ev.type in HYUNDAI_ENABLE_BUTTONS for ev in CS.out.buttonEvents))
+      events = self.create_common_events(CS.out, CS_prev, pcm_enable=self.CP.pcmCruise, allow_enable=any(self.cruise_buttons))
 
       # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
       if CS.out.vEgo < (self.CP.minSteerSpeed + 2.) and self.CP.minSteerSpeed > 10.:
@@ -208,6 +206,8 @@ class CarSpecificEvents:
       events.add(EventName.vehicleSensorsInvalid)
     if CS.invalidLkasSetting:
       events.add(EventName.invalidLkasSetting)
+    if CS.lowSpeedAlert:
+      events.add(EventName.belowSteerSpeed)
 
     # Handle button presses
     for b in CS.buttonEvents:
