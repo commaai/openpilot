@@ -8,7 +8,6 @@ from opendbc.car.fingerprints import MIGRATION
 from opendbc.car.toyota.values import EPS_SCALE
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.fill_model_msg import fill_xyz_poly, fill_lane_line_meta
-from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.tools.lib.logreader import LogIterable
 from panda import Panda
@@ -142,6 +141,7 @@ def migrate_liveTracks(msgs):
 
 @migration(inputs=["liveLocationKalmanDEPRECATED"], product="livePose")
 def migrate_liveLocationKalman(msgs):
+  nans = [float('nan')] * 3
   ops = []
   for index, msg in msgs:
     m = messaging.new_message('livePose')
@@ -149,8 +149,8 @@ def migrate_liveLocationKalman(msgs):
     m.logMonoTime = msg.logMonoTime
     for field in ["orientationNED", "velocityDevice", "accelerationDevice", "angularVelocityDevice"]:
       lp_field, llk_field = getattr(m.livePose, field), getattr(msg.liveLocationKalmanDEPRECATED, field)
-      lp_field.x, lp_field.y, lp_field.z = llk_field.value
-      lp_field.xStd, lp_field.yStd, lp_field.zStd = llk_field.std
+      lp_field.x, lp_field.y, lp_field.z = llk_field.value or nans
+      lp_field.xStd, lp_field.yStd, lp_field.zStd = llk_field.std or nans
       lp_field.valid = llk_field.valid
     for flag in ["inputsOK", "posenetOK", "sensorsOK"]:
       setattr(m.livePose, flag, getattr(msg.liveLocationKalmanDEPRECATED, flag))
@@ -294,6 +294,8 @@ def migrate_peripheralState(msgs):
 
 @migration(inputs=["roadEncodeIdx", "wideRoadEncodeIdx", "driverEncodeIdx", "roadCameraState", "wideRoadCameraState", "driverCameraState"])
 def migrate_cameraStates(msgs):
+  from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
+
   add_ops, del_ops = [], []
   frame_to_encode_id = defaultdict(dict)
   # just for encodeId fallback mechanism
