@@ -156,7 +156,7 @@ class Car:
     # card is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
 
-  def state_update(self) -> tuple[car.CarState, structs.RadarData | None]:
+  def state_update(self) -> tuple[car.CarState, structs.RadarDataT | None]:
     """carState update loop, driven by can"""
 
     can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
@@ -168,7 +168,7 @@ class Car:
       CS = self.mock_carstate.update(CS)
 
     # Update radar tracks from CAN
-    RD: structs.RadarData | None = self.RI.update(can_list)
+    RD: structs.RadarDataT | None = self.RI.update(can_list)
 
     self.sm.update(0)
 
@@ -188,7 +188,7 @@ class Car:
 
     return CS, RD
 
-  def state_publish(self, CS: car.CarState, RD: structs.RadarData | None):
+  def state_publish(self, CS: car.CarState, RD: structs.RadarDataT | None):
     """carState and carParams publish loop"""
 
     # carParams - logged every 50 seconds (> 1 per segment)
