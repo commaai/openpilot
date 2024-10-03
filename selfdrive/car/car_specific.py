@@ -86,23 +86,6 @@ class CarSpecificEvents:
       if self.CP.minEnableSpeed > 0 and CS.vEgo < 0.001:
         events.add(EventName.manualRestart)
 
-      # Low speed steer alert logic; for cars with steer cut off above 6 m/s
-      # Show the alert earlier when slowing. Must first exceed a greater speed while engaged.
-      if CS.out.vEgo > (self.CP.minSteerSpeed + 3.5):
-        CS.min_steer_alert_speed = (self.CP.minSteerSpeed + 1.5)
-      elif not CC.latActive:
-        CS.min_steer_alert_speed = self.CP.minSteerSpeed
-      self.low_speed_alert = (0 < CS.out.vEgo <= CS.min_steer_alert_speed) and self.CP.minSteerSpeed > 6.0
-      if self.low_speed_alert:
-        events.add(EventName.belowSteerSpeed)
-
-      # Some cars forcibly disengage steering depending on vehicle conditions (i.e. some Odyssey Bosch & late model Acura RDX 3G).
-      # carState sets the steerFaultTemporary flag if controls are on and steering has not engaged within 1 second.
-      if CC.latActive and not CS.steer_on: # type: ignore[attr-defined]
-        CS.steer_off_cnt += 1 # type: ignore[attr-defined]
-      else:
-        CS.steer_off_cnt = 0 # type: ignore[attr-defined]
-
     elif self.CP.carName == 'toyota':
       events = self.create_common_events(CS, CS_prev)
 
