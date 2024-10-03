@@ -105,11 +105,10 @@ def setupCredentials() {
     env.AZURE_TOKEN = "${AZURE_TOKEN}"
   }
 
-  withCredentials([
-    string(credentialsId: 'commaci-public-git', variable: 'GIT_TOKEN'),
-  ]) {
+  withCredentials([usernamePassword(credentialsId: 'commaci-public-git', usernameVariable: 'GIT_TOKEN_USERNAME', passwordVariable: 'GIT_TOKEN')]) {
     env.GIT_TOKEN = "${GIT_TOKEN}"
   }
+
 }
 
 
