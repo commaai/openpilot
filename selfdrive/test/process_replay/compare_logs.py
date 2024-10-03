@@ -58,7 +58,7 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
 
   diff = []
   for msg1, msg2 in zip(log1, log2, strict=True):
-    if msg1.which() != msg2.which():
+    if msg1.which().rstrip('DEPRECATED') != msg2.which():
       raise Exception("msgs not aligned between logs")
 
     msg1 = remove_ignored_fields(msg1, ignore_fields)
@@ -67,6 +67,18 @@ def compare_logs(log1, log2, ignore_fields=None, ignore_msgs=None, tolerance=Non
     if msg1.to_bytes() != msg2.to_bytes():
       msg1_dict = msg1.as_reader().to_dict(verbose=True)
       msg2_dict = msg2.as_reader().to_dict(verbose=True)
+      if 'onroadEventsDEPRECATED' in msg1_dict:
+        msg1_dict['onroadEvents'] = msg1_dict['onroadEventsDEPRECATED']
+        del msg1_dict['onroadEventsDEPRECATED']
+        msg1_dict['onroadEvents'] = sorted(msg1_dict['onroadEvents'], key=lambda x: x['name'])
+      if 'driverMonitoringState' in msg1_dict:
+        msg1_dict['driverMonitoringState']['events'] = sorted(msg1_dict['driverMonitoringState']['eventsDEPRECATED'], key=lambda x: x['name'])
+        del msg1_dict['driverMonitoringState']['eventsDEPRECATED']
+      if 'onroadEvents' in msg2_dict:
+        msg2_dict['onroadEvents'] = sorted(msg2_dict['onroadEvents'], key=lambda x: x['name'])
+      if 'driverMonitoringState' in msg2_dict:
+        msg2_dict['driverMonitoringState']['events'] = sorted(msg2_dict['driverMonitoringState']['events'], key=lambda x: x['name'])
+        del msg2_dict['driverMonitoringState']['eventsDEPRECATED']
 
       dd = dictdiffer.diff(msg1_dict, msg2_dict, ignore=ignore_fields)
 
