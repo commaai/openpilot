@@ -43,15 +43,18 @@ IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
 
 
 class SelfdriveD:
-  def __init__(self):
+  def __init__(self, CP=None):
     self.params = Params()
 
     # Ensure the current branch is cached, otherwise the first cycle lags
     build_metadata = get_build_metadata()
 
-    cloudlog.info("selfdrived is waiting for CarParams")
-    self.CP = messaging.log_from_bytes(self.params.get("CarParams", block=True), car.CarParams)
-    cloudlog.info("selfdrived got CarParams")
+    if CP is None:
+      cloudlog.info("selfdrived is waiting for CarParams")
+      self.CP = messaging.log_from_bytes(self.params.get("CarParams", block=True), car.CarParams)
+      cloudlog.info("selfdrived got CarParams")
+    else:
+      self.CP = CP
 
     self.car_events = CarSpecificEvents(self.CP)
     self.disengage_on_accelerator = not (self.CP.alternativeExperience & ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS)
