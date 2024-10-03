@@ -17,6 +17,152 @@ struct Map(Key, Value) {
   }
 }
 
+struct OnroadEvent @0xc4fa6047f024e718 {
+  name @0 :EventName;
+
+  # event types
+  enable @1 :Bool;
+  noEntry @2 :Bool;
+  warning @3 :Bool;   # alerts presented only when  enabled or soft disabling
+  userDisable @4 :Bool;
+  softDisable @5 :Bool;
+  immediateDisable @6 :Bool;
+  preEnable @7 :Bool;
+  permanent @8 :Bool; # alerts presented regardless of openpilot state
+  overrideLateral @10 :Bool;
+  overrideLongitudinal @9 :Bool;
+
+  enum EventName @0x91f1992a1f77fb03 {
+    canError @0;
+    steerUnavailable @1;
+    wrongGear @4;
+    doorOpen @5;
+    seatbeltNotLatched @6;
+    espDisabled @7;
+    wrongCarMode @8;
+    steerTempUnavailable @9;
+    reverseGear @10;
+    buttonCancel @11;
+    buttonEnable @12;
+    pedalPressed @13;  # exits active state
+    preEnableStandstill @73;  # added during pre-enable state with brake
+    gasPressedOverride @108;  # added when user is pressing gas with no disengage on gas
+    steerOverride @114;
+    cruiseDisabled @14;
+    speedTooLow @17;
+    outOfSpace @18;
+    overheat @19;
+    calibrationIncomplete @20;
+    calibrationInvalid @21;
+    calibrationRecalibrating @117;
+    controlsMismatch @22;
+    pcmEnable @23;
+    pcmDisable @24;
+    radarFault @26;
+    brakeHold @28;
+    parkBrake @29;
+    manualRestart @30;
+    joystickDebug @34;
+    longitudinalManeuver @124;
+    steerTempUnavailableSilent @35;
+    resumeRequired @36;
+    preDriverDistracted @37;
+    promptDriverDistracted @38;
+    driverDistracted @39;
+    preDriverUnresponsive @43;
+    promptDriverUnresponsive @44;
+    driverUnresponsive @45;
+    belowSteerSpeed @46;
+    lowBattery @48;
+    accFaulted @51;
+    sensorDataInvalid @52;
+    commIssue @53;
+    commIssueAvgFreq @109;
+    tooDistracted @54;
+    posenetInvalid @55;
+    soundsUnavailable @56;
+    preLaneChangeLeft @57;
+    preLaneChangeRight @58;
+    laneChange @59;
+    lowMemory @63;
+    stockAeb @64;
+    ldw @65;
+    carUnrecognized @66;
+    invalidLkasSetting @69;
+    speedTooHigh @70;
+    laneChangeBlocked @71;
+    relayMalfunction @72;
+    stockFcw @74;
+    startup @75;
+    startupNoCar @76;
+    startupNoControl @77;
+    startupNoSecOcKey @125;
+    startupMaster @78;
+    fcw @79;
+    steerSaturated @80;
+    belowEngageSpeed @84;
+    noGps @85;
+    wrongCruiseMode @87;
+    modeldLagging @89;
+    deviceFalling @90;
+    fanMalfunction @91;
+    cameraMalfunction @92;
+    cameraFrameRate @110;
+    processNotRunning @95;
+    dashcamMode @96;
+    selfdriveInitializing @98;
+    usbError @99;
+    cruiseMismatch @106;
+    canBusMissing @111;
+    selfdrivedLagging @112;
+    resumeBlocked @113;
+    steerTimeLimit @115;
+    vehicleSensorsInvalid @116;
+    locationdTemporaryError @103;
+    locationdPermanentError @118;
+    paramsdTemporaryError @50;
+    paramsdPermanentError @119;
+    actuatorsApiUnavailable @120;
+    espActive @121;
+    personalityChanged @122;
+    aeb @123;
+
+    radarCanErrorDEPRECATED @15;
+    communityFeatureDisallowedDEPRECATED @62;
+    radarCommIssueDEPRECATED @67;
+    driverMonitorLowAccDEPRECATED @68;
+    gasUnavailableDEPRECATED @3;
+    dataNeededDEPRECATED @16;
+    modelCommIssueDEPRECATED @27;
+    ipasOverrideDEPRECATED @33;
+    geofenceDEPRECATED @40;
+    driverMonitorOnDEPRECATED @41;
+    driverMonitorOffDEPRECATED @42;
+    calibrationProgressDEPRECATED @47;
+    invalidGiraffeHondaDEPRECATED @49;
+    invalidGiraffeToyotaDEPRECATED @60;
+    internetConnectivityNeededDEPRECATED @61;
+    whitePandaUnsupportedDEPRECATED @81;
+    commIssueWarningDEPRECATED @83;
+    focusRecoverActiveDEPRECATED @86;
+    neosUpdateRequiredDEPRECATED @88;
+    modelLagWarningDEPRECATED @93;
+    startupOneplusDEPRECATED @82;
+    startupFuzzyFingerprintDEPRECATED @97;
+    noTargetDEPRECATED @25;
+    brakeUnavailableDEPRECATED @2;
+    plannerErrorDEPRECATED @32;
+    gpsMalfunctionDEPRECATED @94;
+    roadCameraErrorDEPRECATED @100;
+    driverCameraErrorDEPRECATED @101;
+    wideRoadCameraErrorDEPRECATED @102;
+    highCpuUsageDEPRECATED @105;
+    startupNoFwDEPRECATED @104;
+    lowSpeedLockoutDEPRECATED @31;
+    lkasDisabledDEPRECATED @107;
+  }
+}
+
 enum LongitudinalPersonality {
   aggressive @0;
   standard @1;
@@ -1157,7 +1303,7 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
   radarValidDEPRECATED @28 :Bool;
   radarCanErrorDEPRECATED @30 :Bool;
   commIssueDEPRECATED @31 :Bool;
-  eventsDEPRECATED @13 :List(Car.OnroadEvent);
+  eventsDEPRECATED @13 :List(Car.OnroadEventDEPRECATED);
   gpsTrajectoryDEPRECATED @12 :GpsTrajectory;
   gpsPlannerActiveDEPRECATED @19 :Bool;
   personalityDEPRECATED @36 :LongitudinalPersonality;
@@ -2072,7 +2218,7 @@ struct DriverStateDEPRECATED @0xb83c6cc593ed0a00 {
 }
 
 struct DriverMonitoringState @0xb83cda094a1da284 {
-  events @0 :List(Car.OnroadEvent);
+  events @18 :List(OnroadEvent);
   faceDetected @1 :Bool;
   isDistracted @2 :Bool;
   distractedType @17 :UInt32;
@@ -2091,6 +2237,7 @@ struct DriverMonitoringState @0xb83cda094a1da284 {
 
   isPreviewDEPRECATED @15 :Bool;
   rhdCheckedDEPRECATED @5 :Bool;
+  eventsDEPRECATED @0 :List(Car.OnroadEventDEPRECATED);
 }
 
 struct Boot {
@@ -2369,7 +2516,7 @@ struct Event {
     liveTorqueParameters @94 :LiveTorqueParametersData;
     cameraOdometry @63 :CameraOdometry;
     thumbnail @66: Thumbnail;
-    onroadEvents @68: List(Car.OnroadEvent);
+    onroadEvents @134: List(OnroadEvent);
     carParams @69: Car.CarParams;
     driverMonitoringState @71: DriverMonitoringState;
     livePose @129 :LivePose;
@@ -2484,5 +2631,6 @@ struct Event {
     uiPlanDEPRECATED @106 :UiPlan;
     liveLocationKalmanDEPRECATED @72 :LiveLocationKalman;
     liveTracksDEPRECATED @16 :List(LiveTracksDEPRECATED);
+    onroadEventsDEPRECATED @68: List(Car.OnroadEventDEPRECATED);
   }
 }
