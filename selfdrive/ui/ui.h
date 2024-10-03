@@ -7,7 +7,6 @@
 #include <QTimer>
 #include <QColor>
 #include <QFuture>
-#include <QPolygonF>
 
 #include "cereal/messaging/messaging.h"
 #include "common/mat.h"
@@ -22,8 +21,6 @@ const int UI_HEADER_HEIGHT = 420;
 const int UI_FREQ = 20; // Hz
 const int BACKLIGHT_OFFROAD = 50;
 
-const float MIN_DRAW_DISTANCE = 10.0;
-const float MAX_DRAW_DISTANCE = 100.0;
 const Eigen::Matrix3f VIEW_FROM_DEVICE = (Eigen::Matrix3f() <<
   0.0, 1.0, 0.0,
   0.0, 0.0, 1.0,
@@ -58,21 +55,10 @@ typedef struct UIScene {
   Eigen::Matrix3f view_from_wide_calib = VIEW_FROM_DEVICE;
   cereal::PandaState::PandaType pandaType;
 
-  // modelV2
-  float lane_line_probs[4];
-  float road_edge_stds[2];
-  QPolygonF track_vertices;
-  QPolygonF lane_line_vertices[4];
-  QPolygonF road_edge_vertices[2];
-
-  // lead
-  QPointF lead_vertices[2];
-
   cereal::LongitudinalPersonality personality;
 
   float light_sensor = -1;
-  bool started, ignition, is_metric, longitudinal_control;
-  bool world_objects_visible = false;
+  bool started, ignition, is_metric;
   uint64_t started_frame;
 } UIScene;
 
@@ -89,12 +75,8 @@ public:
   std::unique_ptr<SubMaster> sm;
   UIStatus status;
   UIScene scene = {};
-
   QString language;
   PrimeState *prime_state;
-
-  Eigen::Matrix3f car_space_transform = Eigen::Matrix3f::Zero();
-  QRectF clip_region;
 
 signals:
   void uiUpdate(const UIState &s);
@@ -145,11 +127,4 @@ public slots:
 };
 
 Device *device();
-
 void ui_update_params(UIState *s);
-int get_path_length_idx(const cereal::XYZTData::Reader &line, const float path_height);
-void update_model(UIState *s,
-                  const cereal::ModelDataV2::Reader &model);
-void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, const cereal::XYZTData::Reader &line);
-void update_line_data(const UIState *s, const cereal::XYZTData::Reader &line,
-                      float y_off, float z_off, QPolygonF *pvd, int max_idx, bool allow_invert);
