@@ -8,6 +8,7 @@ from opendbc.car.fingerprints import MIGRATION
 from opendbc.car.toyota.values import EPS_SCALE
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.fill_model_msg import fill_xyz_poly, fill_lane_line_meta
+from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.tools.lib.logreader import LogIterable
 from panda import Panda
@@ -294,8 +295,6 @@ def migrate_peripheralState(msgs):
 
 @migration(inputs=["roadEncodeIdx", "wideRoadEncodeIdx", "driverEncodeIdx", "roadCameraState", "wideRoadCameraState", "driverCameraState"])
 def migrate_cameraStates(msgs):
-  from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
-
   add_ops, del_ops = [], []
   frame_to_encode_id = defaultdict(dict)
   # just for encodeId fallback mechanism
