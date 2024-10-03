@@ -13,7 +13,7 @@ from collections import Counter, defaultdict
 from functools import cached_property
 from pathlib import Path
 
-from cereal import car
+from cereal import log
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
 from openpilot.common.basedir import BASEDIR
@@ -422,7 +422,7 @@ class TestOnroad:
       if msg.which() == "selfdriveState":
         startup_alert = msg.selfdriveState.alertText1
         break
-    expected = EVENTS[car.OnroadEvent.EventName.startup][ET.PERMANENT].alert_text_1
+    expected = EVENTS[log.OnroadEvent.EventName.startup][ET.PERMANENT].alert_text_1
     assert startup_alert == expected, "wrong startup alert"
 
   def test_engagable(self):

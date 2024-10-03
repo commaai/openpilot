@@ -16,7 +16,7 @@ AlertSize = log.SelfdriveState.AlertSize
 AlertStatus = log.SelfdriveState.AlertStatus
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
-EventName = car.OnroadEvent.EventName
+EventName = log.OnroadEvent.EventName
 
 
 # Alert priorities
@@ -98,7 +98,7 @@ class Events:
   def to_msg(self):
     ret = []
     for event_name in self.events:
-      event = car.OnroadEvent.new_message()
+      event = log.OnroadEvent.new_message()
       event.name = event_name
       for event_type in EVENTS.get(event_name, {}):
         setattr(event, event_type, True)

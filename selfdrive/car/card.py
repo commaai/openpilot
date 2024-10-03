@@ -5,7 +5,7 @@ import threading
 
 import cereal.messaging as messaging
 
-from cereal import car
+from cereal import car, log
 
 from panda import ALTERNATIVE_EXPERIENCE
 
@@ -25,7 +25,7 @@ from openpilot.selfdrive.car.helpers import convert_carControl, convert_to_capnp
 
 REPLAY = "REPLAY" in os.environ
 
-EventName = car.OnroadEvent.EventName
+EventName = log.OnroadEvent.EventName
 
 # forward
 carlog.addHandler(ForwardingHandler(cloudlog))
