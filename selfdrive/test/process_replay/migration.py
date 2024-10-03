@@ -3,7 +3,7 @@ from collections.abc import Callable
 import functools
 import capnp
 
-from cereal import messaging, car
+from cereal import messaging, car, log
 from opendbc.car.fingerprints import MIGRATION
 from opendbc.car.toyota.values import EPS_SCALE
 from openpilot.selfdrive.modeld.constants import ModelConstants
@@ -37,6 +37,8 @@ def migrate_all(lr: LogIterable, manager_states: bool = False, panda_states: boo
     migrate_liveTracks,
     migrate_driverAssistance,
     migrate_drivingModelData,
+    migrate_onroadEvents,
+    migrate_driverMonitoringState,
   ]
   if manager_states:
     migrations.append(migrate_managerState)
@@ -393,3 +395,31 @@ def migrate_sensorEvents(msgs):
       add_ops.append(m.as_reader())
     del_ops.append(index)
   return [], add_ops, del_ops
+
+
+@migration(inputs=["onroadEventsDEPRECATED"], product="onroadEvents")
+def migrate_onroadEvents(msgs):
+  ops = []
+  for index, msg in msgs:
+    new_msg = messaging.new_message('onroadEvents', len(msg.onroadEventsDEPRECATED))
+    new_msg.valid = msg.valid
+    new_msg.logMonoTime = msg.logMonoTime
+
+    # dict converts name enum into string representation
+    new_msg.onroadEvents = [log.OnroadEvent(**event.to_dict()) for event in msg.onroadEventsDEPRECATED]
+    ops.append((index, new_msg.as_reader()))
+
+  return ops, [], []
+
+
+@migration(inputs=["driverMonitoringState"])
+def migrate_driverMonitoringState(msgs):
+  ops = []
+  for index, msg in msgs:
+    msg = msg.as_builder()
+    # dict converts name enum into string representation
+    msg.driverMonitoringState.events = [log.OnroadEvent(**event.to_dict()) for event in
+                                        msg.driverMonitoringState.eventsDEPRECATED]
+    ops.append((index, msg.as_reader()))
+
+  return ops, [], []
