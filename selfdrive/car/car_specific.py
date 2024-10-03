@@ -98,7 +98,7 @@ class CarSpecificEvents:
 
       # Some cars forcibly disengage steering depending on vehicle conditions (i.e. some Odyssey Bosch & late model Acura RDX 3G).
       # carState sets the steerFaultTemporary flag if controls are on and steering has not engaged within 1 second.
-      if CC_prev.latActive and not CS.steer_on: # type: ignore[attr-defined]
+      if CC.latActive and not CS.steer_on: # type: ignore[attr-defined]
         CS.steer_off_cnt += 1 # type: ignore[attr-defined]
       else:
         CS.steer_off_cnt = 0 # type: ignore[attr-defined]
