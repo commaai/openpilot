@@ -24,7 +24,7 @@ from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.common.timeout import Timeout
 from openpilot.common.realtime import DT_CTRL
 from panda.python import ALTERNATIVE_EXPERIENCE
-from openpilot.selfdrive.car.card import can_comm_callbacks, convert_to_capnp
+from openpilot.selfdrive.car.card import can_comm_callbacks
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state, available_streams
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
@@ -370,7 +370,7 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
     if not params.get_bool("DisengageOnAccelerator"):
       CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
 
-  params.put("CarParams", convert_to_capnp(CP).to_bytes())
+  params.put("CarParams", CP.to_bytes())
 
 
 def selfdrived_rcv_callback(msg, cfg, frame):
