@@ -21,7 +21,6 @@ from opendbc.car.interfaces import CarInterfaceBase, RadarInterfaceBase
 from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
 from openpilot.selfdrive.car.cruise import VCruiseHelper
 from openpilot.selfdrive.car.car_specific import MockCarState
-from openpilot.selfdrive.car.helpers import convert_carControl, convert_to_capnp
 
 REPLAY = "REPLAY" in os.environ
 
@@ -63,8 +62,7 @@ def can_comm_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket
 class Car:
   CI: CarInterfaceBase
   RI: RadarInterfaceBase
-  CP: structs.CarParams
-  CP_capnp: car.CarParams
+  CP: car.CarParams
 
   def __init__(self, CI=None, RI=None) -> None:
     self.can_sock = messaging.sub_sock('can', timeout=20)
@@ -144,9 +142,7 @@ class Car:
       self.params.put("CarParamsPrevRoute", prev_cp)
 
     # Write CarParams for controls and radard
-    # convert to pycapnp representation for caching and logging
-    self.CP_capnp = convert_to_capnp(self.CP)
-    cp_bytes = self.CP_capnp.to_bytes()
+    cp_bytes = self.CP.to_bytes()
     self.params.put("CarParams", cp_bytes)
     self.params.put_nonblocking("CarParamsCache", cp_bytes)
     self.params.put_nonblocking("CarParamsPersistent", cp_bytes)
@@ -167,7 +163,7 @@ class Car:
     can_list = can_capnp_to_list(can_strs)
 
     # Update carState from CAN
-    CS = convert_to_capnp(self.CI.update(can_list))
+    CS = self.CI.update(can_list)
     if self.CP.carName == 'mock':
       CS = self.mock_carstate.update(CS)
 
@@ -199,13 +195,13 @@ class Car:
     if self.sm.frame % int(50. / DT_CTRL) == 0:
       cp_send = messaging.new_message('carParams')
       cp_send.valid = True
-      cp_send.carParams = self.CP_capnp
+      cp_send.carParams = self.CP
       self.pm.send('carParams', cp_send)
 
     # publish new carOutput
     co_send = messaging.new_message('carOutput')
     co_send.valid = self.sm.all_checks(['carControl'])
-    co_send.carOutput.actuatorsOutput = convert_to_capnp(self.last_actuators_output)
+    co_send.carOutput.actuatorsOutput = self.last_actuators_output
     self.pm.send('carOutput', co_send)
 
     # kick off controlsd step while we actuate the latest carControl packet
@@ -219,7 +215,7 @@ class Car:
     if RD is not None:
       tracks_msg = messaging.new_message('liveTracks')
       tracks_msg.valid = len(RD.errors) == 0
-      tracks_msg.liveTracks = convert_to_capnp(RD)
+      tracks_msg.liveTracks = RD
       self.pm.send('liveTracks', tracks_msg)
 
   def controls_update(self, CS: car.CarState, CC: car.CarControl):
@@ -235,7 +231,7 @@ class Car:
     if self.sm.all_alive(['carControl']):
       # send car controls over can
       now_nanos = self.can_log_mono_time if REPLAY else int(time.monotonic() * 1e9)
-      self.last_actuators_output, can_sends = self.CI.apply(convert_carControl(CC), now_nanos)
+      self.last_actuators_output, can_sends = self.CI.apply(CC, now_nanos)
       self.pm.send('sendcan', can_list_to_can_capnp(can_sends, msgtype='sendcan', valid=CS.canValid))
 
       self.CC_prev = CC
