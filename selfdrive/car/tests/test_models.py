@@ -454,7 +454,8 @@ class TestCarModelBase(unittest.TestCase):
         # Check for enable events on rising edge of controls allowed
         selfdrived.update_events(CS)
         selfdrived.CS_prev = CS
-        button_enable = selfdrived.events.contains(ET.ENABLE)
+        button_enable = (selfdrived.events.contains(ET.ENABLE) and
+                         EventName.pedalPressed not in selfdrived.events.names)
         mismatch = button_enable != (self.safety.get_controls_allowed() and not controls_allowed_prev)
         checks['controlsAllowed'] += mismatch
         controls_allowed_prev = self.safety.get_controls_allowed()
