@@ -23,7 +23,7 @@ class TestModeld:
     self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_DRIVER, 40, False, CAM.width, CAM.height)
     self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, CAM.width, CAM.height)
     self.vipc_server.start_listener()
-    Params().put("CarParams", get_demo_car_params()).to_bytes()
+    Params().put("CarParams", get_demo_car_params().to_bytes())
 
     self.sm = messaging.SubMaster(['modelV2', 'cameraOdometry'])
     self.pm = messaging.PubMaster(['roadCameraState', 'wideRoadCameraState', 'liveCalibration'])
