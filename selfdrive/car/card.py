@@ -20,9 +20,8 @@ from opendbc.car.car_helpers import get_car, get_radar_interface
 from opendbc.car.interfaces import CarInterfaceBase, RadarInterfaceBase
 from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
 from openpilot.selfdrive.car.cruise import VCruiseHelper
-from openpilot.selfdrive.car.car_specific import CarSpecificEvents, MockCarState
+from openpilot.selfdrive.car.car_specific import MockCarState
 from openpilot.selfdrive.car.helpers import convert_carControl, convert_to_capnp
-from openpilot.selfdrive.selfdrived.events import Events, ET
 
 REPLAY = "REPLAY" in os.environ
 
@@ -112,9 +111,9 @@ class Car:
       self.RI = RI
 
     # set alternative experiences from parameters
-    self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
+    disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
     self.CP.alternativeExperience = 0
-    if not self.disengage_on_accelerator:
+    if not disengage_on_accelerator:
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
 
     openpilot_enabled_toggle = self.params.get_bool("OpenpilotEnabledToggle")
@@ -152,9 +151,6 @@ class Car:
     self.params.put_nonblocking("CarParamsCache", cp_bytes)
     self.params.put_nonblocking("CarParamsPersistent", cp_bytes)
 
-    self.events = Events()
-
-    self.car_events = CarSpecificEvents(self.CP)
     self.mock_carstate = MockCarState()
     self.v_cruise_helper = VCruiseHelper(self.CP)
 
@@ -195,30 +191,6 @@ class Car:
     CS.vCruiseCluster = float(self.v_cruise_helper.v_cruise_cluster_kph)
 
     return CS, RD
-
-  def update_events(self, CS: car.CarState, RD: structs.RadarData | None):
-    self.events.clear()
-
-    CS.events = self.car_events.update(self.CI.CS, self.CS_prev, self.CC_prev).to_msg()
-
-    self.events.add_from_msg(CS.events)
-
-    if self.CP.notCar:
-      # wait for everything to init first
-      if self.sm.frame > int(5. / DT_CTRL) and self.initialized_prev:
-        # body always wants to enable
-        self.events.add(EventName.pcmEnable)
-
-    # Disable on rising edge of accelerator or brake. Also disable on brake when speed > 0
-    if (CS.gasPressed and not self.CS_prev.gasPressed and self.disengage_on_accelerator) or \
-      (CS.brakePressed and (not self.CS_prev.brakePressed or not CS.standstill)) or \
-      (CS.regenBraking and (not self.CS_prev.regenBraking or not CS.standstill)):
-      self.events.add(EventName.pedalPressed)
-
-    if RD is not None and len(RD.errors):
-      self.events.add(EventName.radarFault)
-
-    CS.events = self.events.to_msg()
 
   def state_publish(self, CS: car.CarState, RD: structs.RadarData | None):
     """carState and carParams publish loop"""
@@ -271,9 +243,7 @@ class Car:
   def step(self):
     CS, RD = self.state_update()
 
-    self.update_events(CS, RD)
-
-    if not self.sm['carControl'].enabled and self.events.contains(ET.ENABLE):
+    if self.sm['carControl'].enabled and not self.CC_prev.enabled:
       self.v_cruise_helper.initialize_v_cruise(CS, self.experimental_mode)
 
     self.state_publish(CS, RD)

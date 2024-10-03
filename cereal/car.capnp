@@ -157,8 +157,6 @@ struct OnroadEvent @0x9b1657f34caf3ad3 {
 # all speeds in m/s
 
 struct CarState {
-  events @13 :List(OnroadEvent);
-
   # CAN health
   canValid @26 :Bool;       # invalid counter/checksums
   canTimeout @40 :Bool;     # CAN bus dropped out
@@ -296,6 +294,7 @@ struct CarState {
   steeringRateLimitedDEPRECATED @29 :Bool;
   canMonoTimesDEPRECATED @12: List(UInt64);
   canRcvTimeoutDEPRECATED @49 :Bool;
+  eventsDEPRECATED @13 :List(OnroadEvent);
 }
 
 # ******* radar state @ 20hz *******

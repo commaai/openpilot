@@ -20,7 +20,9 @@ from opendbc.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from opendbc.car.honda.values import CAR as HONDA, HondaFlags
 from opendbc.car.values import Platform
 from opendbc.car.tests.routes import non_tested_cars, routes, CarTestRoute
-from openpilot.selfdrive.car.card import Car, convert_to_capnp
+from openpilot.selfdrive.car.card import convert_to_capnp
+from openpilot.selfdrive.selfdrived.events import ET
+from openpilot.selfdrive.selfdrived.selfdrived import SelfdriveD
 from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
@@ -404,7 +406,8 @@ class TestCarModelBase(unittest.TestCase):
     controls_allowed_prev = False
     CS_prev = car.CarState.new_message()
     checks = defaultdict(int)
-    card = Car(CI=self.CI)
+    selfdrived = SelfdriveD(CP=self.CP)
+    selfdrived.initialized = True
     for idx, can in enumerate(self.can_msgs):
       CS = convert_to_capnp(self.CI.update(can_capnp_to_list((can.as_builder().to_bytes(), ))))
       for msg in filter(lambda m: m.src in range(64), can.can):
@@ -449,10 +452,10 @@ class TestCarModelBase(unittest.TestCase):
           checks['cruiseState'] += CS.cruiseState.enabled != self.safety.get_cruise_engaged_prev()
       else:
         # Check for enable events on rising edge of controls allowed
-        card.update_events(CS, None)
-        card.CS_prev = CS
-        button_enable = (any(evt.enable for evt in CS.events) and
-                         not any(evt == EventName.pedalPressed for evt in card.events.names))
+        selfdrived.update_events(CS)
+        selfdrived.CS_prev = CS
+        button_enable = (selfdrived.events.contains(ET.ENABLE) and
+                         EventName.pedalPressed not in selfdrived.events.names)
         mismatch = button_enable != (self.safety.get_controls_allowed() and not controls_allowed_prev)
         checks['controlsAllowed'] += mismatch
         controls_allowed_prev = self.safety.get_controls_allowed()
