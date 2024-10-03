@@ -31,7 +31,7 @@ from openpilot.tools.lib.route import SegmentName
 
 from panda.tests.libpanda import libpanda_py
 
-EventName = car.OnroadEvent.EventName
+EventName = log.OnroadEvent.EventName
 PandaType = log.PandaState.PandaType
 SafetyModel = car.CarParams.SafetyModel
 
