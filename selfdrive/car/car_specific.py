@@ -90,7 +90,7 @@ class CarSpecificEvents:
       # Show the alert earlier when slowing. Must first exceed a greater speed while engaged.
       if CS.out.vEgo > (self.CP.minSteerSpeed + 3.5):
         CS.min_steer_alert_speed = (self.CP.minSteerSpeed + 1.5)
-      elif CS.out.vEgo <= self.CP.minSteerSpeed or not CC_prev.enabled:
+      elif not CC.latActive:
         CS.min_steer_alert_speed = self.CP.minSteerSpeed
       self.low_speed_alert = (0 < CS.out.vEgo <= CS.min_steer_alert_speed) and self.CP.minSteerSpeed > 6.0
       if self.low_speed_alert:
