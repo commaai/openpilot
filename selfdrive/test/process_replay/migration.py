@@ -23,6 +23,7 @@ MigrationFunc = Callable[[list[MessageWithIndex]], MigrationOps]
 ## 2. it only gets the messages that are in the inputs list
 ## 3. product is the message type created by the migration function, and the function will be skipped if product type already exists in lr
 ## 3. it must return a list of operations to be applied to the logreader (replace, add, delete)
+## 4. all migration functions must be independent of each other
 def migrate_all(lr: LogIterable, manager_states: bool = False, panda_states: bool = False, camera_states: bool = False):
   migrations = [
     migrate_sensorEvents,
@@ -250,8 +251,9 @@ def migrate_pandaStates(msgs):
   # Migrate safety param base on carParams
   CP = next((m.carParams for _, m in msgs if m.which() == 'carParams'), None)
   assert CP is not None, "carParams message not found"
-  if CP.carFingerprint in safety_param_migration:
-    safety_param = safety_param_migration[CP.carFingerprint]
+  fingerprint = MIGRATION.get(CP.carFingerprint, CP.carFingerprint)
+  if fingerprint in safety_param_migration:
+    safety_param = safety_param_migration[fingerprint]
   elif len(CP.safetyConfigs):
     safety_param = CP.safetyConfigs[0].safetyParam
     if CP.safetyConfigs[0].safetyParamDEPRECATED != 0:
