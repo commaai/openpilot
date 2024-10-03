@@ -1,6 +1,6 @@
 Import('env', 'arch', 'messaging', 'common', 'gpucommon', 'visionipc')
 
-libs = ['m', 'pthread', common, 'jpeg', 'OpenCL', messaging, visionipc, gpucommon, 'atomic']
+libs = ['pthread', common, 'jpeg', 'OpenCL', messaging, visionipc, gpucommon]
 
 camera_obj = env.Object(['cameras/camera_qcom2.cc', 'cameras/camera_common.cc', 'cameras/spectra.cc',
                          'sensors/ar0231.cc', 'sensors/ox03c10.cc', 'sensors/os04c10.cc'])
