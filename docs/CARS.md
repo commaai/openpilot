@@ -304,7 +304,7 @@ A supported vehicle is one that just works when you install a comma device. All 
 <sup>2</sup>By default, this car will use the stock Adaptive Cruise Control (ACC) for longitudinal control. If the Driver Support Unit (DSU) is disconnected, openpilot ACC will replace stock ACC. <b><i>NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).</i></b> <br />
 <sup>3</sup>Refers only to the Focus Mk4 (C519) available in Europe/China/Taiwan/Australasia, not the Focus Mk3 (C346) in North and South America/Southeast Asia. <br />
 <sup>4</sup>2019 Honda Civic 1.6L Diesel Sedan does not have ALC below 12mph. <br />
-<sup>5</sup>This model is capable of steering control at any speed when openpilot Longitudinal Control is enabled. Factory-equipped safety features such as AEB and FCW will be disabled. <br />
+<sup>5</sup>This car is capable of ALC at all speeds when openpilot ACC is enabled. <b><i>NOTE: The car's radar and all related features such as AEB and FCW will be disabled.</i></b> <br />
 <sup>6</sup>Requires a <a href="https://comma.ai/shop/can-fd-panda-kit" target="_blank">CAN FD panda kit</a> if not using comma 3X for this <a href="https://en.wikipedia.org/wiki/CAN_FD" target="_blank">CAN FD car</a>. <br />
 <sup>7</sup>In the non-US market, openpilot requires the car to come equipped with EyeSight with Lane Keep Assistance. <br />
 <sup>8</sup>Enabling longitudinal control (alpha) will disable all EyeSight functionality, including AEB, LDW, and RAB. <br />
