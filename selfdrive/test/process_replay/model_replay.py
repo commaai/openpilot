@@ -41,7 +41,7 @@ def comment_replay_report():
     GIT_PATH=tmp
     GIT_TOKEN=os.environ['GIT_TOKEN']
 
-    run_cmd(["git", "clone", "--depth=1", "-b", "master", "https://github.com/commaai/ci-artifacts", tmp]);
+    run_cmd(["git", "clone", "--depth=1", "-b", "master", "https://github.com/commaai/ci-artifacts", tmp])
 
     # create nice report
     Image.new('RGB', (480, 480), color = (0,255,0)).save(f'{tmp}/img.jpg')
@@ -50,7 +50,7 @@ def comment_replay_report():
     run_cmd(["git", "-C", GIT_PATH, "checkout", "-b", GIT_BRANCH]);
     run_cmd(["git", "-C", GIT_PATH, "add", "."]);
     run_cmd(["git", "-C", GIT_PATH, "commit", "-m", "model replay artifacts"]);
-    run_cmd(["git", "-C", GIT_PATH, "push", "-f", f"https://commaci-public:{GIT_TOKEN}@github.com/commaai/ci-artifacts", GIT_BRANCH]);
+    run_cmd(["git", "-C", GIT_PATH, "push", "-f", f"https://commaci-public:{GIT_TOKEN}@github.com/commaai/ci-artifacts", GIT_BRANCH])
 
     headers = {"Authorization": f"token {GIT_TOKEN}", "Accept": "application/vnd.github+json"}
     comment = f'{"body": "<img src=\\"https://raw.githubusercontent.com/commaai/ci-artifacts/{GIT_BRANCH}/img.jpg\\">"}'
