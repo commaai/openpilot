@@ -9,7 +9,7 @@ from PIL import Image
 import requests
 
 from openpilot.common.git import get_commit
-from openpilot.common.run import run_cmd, run_cmd_default
+from openpilot.common.run import run_cmd
 from openpilot.system.hardware import PC
 from openpilot.tools.lib.openpilotci import BASE_URL, get_url
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
@@ -47,9 +47,9 @@ def comment_replay_report():
     Image.new('RGB', (480, 480), color = (0,255,0)).save(f'{tmp}/img.jpg')
 
     # save report
-    run_cmd(["git", "-C", GIT_PATH, "checkout", "-b", GIT_BRANCH]);
-    run_cmd(["git", "-C", GIT_PATH, "add", "."]);
-    run_cmd(["git", "-C", GIT_PATH, "commit", "-m", "model replay artifacts"]);
+    run_cmd(["git", "-C", GIT_PATH, "checkout", "-b", GIT_BRANCH])
+    run_cmd(["git", "-C", GIT_PATH, "add", "."])
+    run_cmd(["git", "-C", GIT_PATH, "commit", "-m", "model replay artifacts"])
     run_cmd(["git", "-C", GIT_PATH, "push", "-f", f"https://commaci-public:{GIT_TOKEN}@github.com/commaai/ci-artifacts", GIT_BRANCH])
 
     headers = {"Authorization": f"token {GIT_TOKEN}", "Accept": "application/vnd.github+json"}
