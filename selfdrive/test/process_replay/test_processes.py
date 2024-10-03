@@ -42,7 +42,7 @@ source_segments = [
 segments = [
   ("BODY", "regenA67A128BCD8|2024-08-30--02-36-22--0"),
   ("HYUNDAI", "regen9CBD921E93E|2024-08-30--02-38-51--0"),
-  ("HYUNDAI2", "regen12E0C4EA1A7|2024-08-30--02-42-40--0"),
+  ("HYUNDAI2", "regen306779F6870|2024-10-03--04-03-23--0"),
   ("TOYOTA", "regen1CA7A48E6F7|2024-08-30--02-45-08--0"),
   ("TOYOTA2", "regen6E484EDAB96|2024-08-30--02-47-37--0"),
   ("TOYOTA3", "regen4CE950B0267|2024-08-30--02-51-30--0"),
@@ -135,7 +135,7 @@ if __name__ == "__main__":
   parser.add_argument("--blacklist-cars", type=str, nargs="*", default=[],
                       help="Blacklist given cars from the test (e.g. HONDA)")
   parser.add_argument("--ignore-fields", type=str, nargs="*", default=[],
-                      help="Extra fields or msgs to ignore (e.g. carState.events)")
+                      help="Extra fields or msgs to ignore (e.g. driverMonitoringState.events)")
   parser.add_argument("--ignore-msgs", type=str, nargs="*", default=[],
                       help="Msgs to ignore (e.g. carEvents)")
   parser.add_argument("--update-refs", action="store_true",
