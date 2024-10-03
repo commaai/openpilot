@@ -142,6 +142,7 @@ def migrate_liveTracks(msgs):
 
 @migration(inputs=["liveLocationKalmanDEPRECATED"], product="livePose")
 def migrate_liveLocationKalman(msgs):
+  nans = [float('nan')] * 3
   ops = []
   for index, msg in msgs:
     m = messaging.new_message('livePose')
@@ -149,8 +150,8 @@ def migrate_liveLocationKalman(msgs):
     m.logMonoTime = msg.logMonoTime
     for field in ["orientationNED", "velocityDevice", "accelerationDevice", "angularVelocityDevice"]:
       lp_field, llk_field = getattr(m.livePose, field), getattr(msg.liveLocationKalmanDEPRECATED, field)
-      lp_field.x, lp_field.y, lp_field.z = llk_field.value
-      lp_field.xStd, lp_field.yStd, lp_field.zStd = llk_field.std
+      lp_field.x, lp_field.y, lp_field.z = llk_field.value or nans
+      lp_field.xStd, lp_field.yStd, lp_field.zStd = llk_field.std or nans
       lp_field.valid = llk_field.valid
     for flag in ["inputsOK", "posenetOK", "sensorsOK"]:
       setattr(m.livePose, flag, getattr(msg.liveLocationKalmanDEPRECATED, flag))
