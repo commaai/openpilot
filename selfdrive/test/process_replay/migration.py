@@ -38,6 +38,7 @@ def migrate_all(lr: LogIterable, manager_states: bool = False, panda_states: boo
     migrate_driverAssistance,
     migrate_drivingModelData,
     migrate_onroadEvents,
+    migrate_driverMonitoringState,
   ]
   if manager_states:
     migrations.append(migrate_managerState)
@@ -406,5 +407,18 @@ def migrate_onroadEvents(msgs):
     # dict converts name enum into string representation
     new_msg.onroadEvents = [log.OnroadEvent(**event.to_dict()) for event in msg.onroadEventsDEPRECATED]
     ops.append((index, new_msg.as_reader()))
+
+  return ops, [], []
+
+
+@migration(inputs=["driverMonitoringState"])
+def migrate_driverMonitoringState(msgs):
+  ops = []
+  for index, msg in msgs:
+    msg = msg.as_builder()
+    # dict converts name enum into string representation
+    msg.driverMonitoringState.events = [log.OnroadEvent(**event.to_dict()) for event in
+                                        msg.driverMonitoringState.eventsDEPRECATED]
+    ops.append((index, msg.as_reader()))
 
   return ops, [], []
