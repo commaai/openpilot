@@ -25,6 +25,7 @@ export TEST_DIR=${env.TEST_DIR}
 export SOURCE_DIR=${env.SOURCE_DIR}
 export GIT_BRANCH=${env.GIT_BRANCH}
 export GIT_COMMIT=${env.GIT_COMMIT}
+export GIT_TOKEN=${env.GIT_TOKEN}
 export AZURE_TOKEN='${env.AZURE_TOKEN}'
 # only use 1 thread for tici tests since most require HIL
 export PYTEST_ADDOPTS="-n 0"
@@ -102,6 +103,12 @@ def setupCredentials() {
     string(credentialsId: 'azure_token', variable: 'AZURE_TOKEN'),
   ]) {
     env.AZURE_TOKEN = "${AZURE_TOKEN}"
+  }
+
+  withCredentials([
+    string(credentialsId: 'commaci-public-git', variable: 'GIT_TOKEN'),
+  ]) {
+    env.GIT_TOKEN = "${GIT_TOKEN}"
   }
 }
 

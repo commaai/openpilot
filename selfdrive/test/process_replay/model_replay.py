@@ -3,8 +3,13 @@ import os
 import sys
 from collections import defaultdict
 from typing import Any
+import tempfile
+
+from PIL import Image
+import requests
 
 from openpilot.common.git import get_commit
+from openpilot.common.run import run_cmd, run_cmd_default
 from openpilot.system.hardware import PC
 from openpilot.tools.lib.openpilotci import BASE_URL, get_url
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
@@ -23,6 +28,41 @@ SEND_EXTRA_INPUTS = bool(int(os.getenv("SEND_EXTRA_INPUTS", "0")))
 def get_log_fn(ref_commit, test_route):
   return f"{test_route}_model_tici_{ref_commit}.bz2"
 
+def comment_replay_report():
+  # TODO:
+  # clone repo
+  # add img to repo
+  # push repo
+  # get PR from branch if available
+  # get previous comment if available
+  # comment on PR with img link from repo
+  with tempfile.TemporaryDirectory() as tmp:
+    GIT_BRANCH=f"model_replay_{os.environ['GIT_BRANCH']}"
+    GIT_PATH=tmp
+    GIT_TOKEN=os.environ['GIT_TOKEN']
+
+    run_cmd(["git", "clone", "--depth=1", "-b", "master", "https://github.com/commaai/ci-artifacts", tmp]);
+
+    # create nice report
+    Image.new('RGB', (480, 480), color = (0,255,0)).save(f'{tmp}/img.jpg')
+
+    # save report
+    run_cmd(["git", "-C", GIT_PATH, "checkout", "-b", GIT_BRANCH]);
+    run_cmd(["git", "-C", GIT_PATH, "add", "."]);
+    run_cmd(["git", "-C", GIT_PATH, "commit", "-m", "model replay artifacts"]);
+    run_cmd(["git", "-C", GIT_PATH, "push", "-f", f"https://commaci-public:{GIT_TOKEN}@github.com/commaai/ci-artifacts", GIT_BRANCH]);
+
+    headers = {"Authorization": f"token {GIT_TOKEN}", "Accept": "application/vnd.github+json"}
+    comment = f'{"body": "<img src=\\"https://raw.githubusercontent.com/commaai/ci-artifacts/{GIT_BRANCH}/img.jpg\\">"}'
+
+    # get PR number
+    r = requests.get(f'https://api.github.com/repos/commaai/openpilot/commits/{GIT_BRANCH}/pulls', headers=headers)
+    assert r.ok, r.status_code
+    pr_number = r.json()[0]['number']
+
+    # comment on PR
+    r = requests.post(f'https://api.github.com/repos/commaai/openpilot/issues/{pr_number}/comments', headers=headers, data=comment)
+    assert r.ok, r.status_code
 
 def trim_logs_to_max_frames(logs, max_frames, frs_types, include_all_types):
   all_msgs = []
@@ -68,6 +108,8 @@ def model_replay(lr, frs):
 
 
 if __name__ == "__main__":
+  comment_replay_report()
+  quit(0)
   update = "--update" in sys.argv
   replay_dir = os.path.dirname(os.path.abspath(__file__))
   ref_commit_fn = os.path.join(replay_dir, "model_replay_ref_commit")
@@ -139,6 +181,8 @@ if __name__ == "__main__":
       diff_short, diff_long, failed = format_diff(results, log_paths, ref_commit)
 
       if "CI" in os.environ:
+        comment_replay_report()
+        failed = False
         print(diff_long)
       print('-------------\n'*5)
       print(diff_short)
