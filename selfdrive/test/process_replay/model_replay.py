@@ -11,7 +11,6 @@ import requests
 #matplotlib.use('inline')
 import matplotlib.pyplot as plt
 
-from openpilot.common.git import get_commit
 from openpilot.common.run import run_cmd
 from openpilot.system.hardware import PC
 from openpilot.tools.lib.openpilotci import BASE_URL, get_url
@@ -207,7 +206,7 @@ if __name__ == "__main__":
       results: Any = {TEST_ROUTE: {}}
       log_paths: Any = {TEST_ROUTE: {"models": {'ref': BASE_URL + log_fn, 'new': log_fn}}}
       results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
-      diff_short, diff_long, failed = format_diff(results, log_paths, ref_commit)
+      diff_short, diff_long, failed = format_diff(results, log_paths, 'master')
 
       if "CI" in os.environ:
         if not PC:
