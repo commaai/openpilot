@@ -6,7 +6,6 @@ from typing import Any
 import tempfile
 from itertools import zip_longest
 
-from PIL import Image
 import requests
 import matplotlib
 matplotlib.use('inline')
