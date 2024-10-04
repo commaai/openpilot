@@ -7,8 +7,6 @@ import tempfile
 from itertools import zip_longest
 
 import requests
-#import matplotlib
-#matplotlib.use('inline')
 import matplotlib.pyplot as plt
 
 from openpilot.common.run import run_cmd
@@ -47,11 +45,11 @@ def zl(array, fill):
 
 def generate_report(proposed, master, tmp):
   ModelV2_Plots = zl([
+                     (lambda x: x.velocity.x[0], "velocity"),
                      (lambda x: x.action.desiredCurvature, "curvature"),
-                     (lambda x: x.meta.disengagePredictions.gasPressProbs[1], "gasPress"),
-                     (lambda x: x.velocity.x[0], "title3"),
-                     (lambda x: x.action.desiredCurvature, "title4"),
-                     (lambda x: x.leadsV3[0].x[0], "title5")
+                     (lambda x: x.leadsV3[0].x[0], "lead"),
+                     (lambda x: x.laneLines[1].y[0], "laneline"),
+                     (lambda x: x.meta.disengagePredictions.gasPressProbs[1], "gasPress")
                     ], "modelV2")
 
   return [plot(map(v[0], get_event(proposed, event)), \
@@ -221,7 +219,6 @@ if __name__ == "__main__":
       if "CI" in os.environ:
         if not PC:
           comment_replay_report(log_msgs, cmp_log)
-          quit()
           failed = False
         print(diff_long)
       print('-------------\n'*5)
