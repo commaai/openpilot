@@ -33,6 +33,10 @@ def comment_replay_report():
     GIT_BRANCH=f"model_replay_{os.environ['GIT_BRANCH']}"
     GIT_PATH=tmp
     GIT_TOKEN=os.environ['GIT_TOKEN']
+    API_ROUTE="https://api.github.com/repos/commaai/openpilot"
+
+    if GIT_BRANCH == 'master':
+      return
 
     run_cmd(["git", "clone", "--depth=1", "-b", "master", "https://github.com/commaai/ci-artifacts", tmp])
 
@@ -49,18 +53,18 @@ def comment_replay_report():
     comment = f'{"body": "<img src=\\"https://raw.githubusercontent.com/commaai/ci-artifacts/{GIT_BRANCH}/img.jpg\\">"}'
 
     # get PR number
-    r = requests.get(f'https://api.github.com/repos/commaai/openpilot/commits/{GIT_BRANCH}/pulls', headers=headers)
+    r = requests.get(f'{API_ROUTE}/commits/{GIT_BRANCH}/pulls', headers=headers)
     assert r.ok, r.status_code
     pr_number = r.json()[0]['number']
 
     # comment on PR
-    r = requests.get(f'https://api.github.com/repos/commaai/openpilot/issues/{pr_number}/comments', headers=headers)
+    r = requests.get(f'{API_ROUTE}/issues/{pr_number}/comments', headers=headers)
     assert r.ok, r.status_code
     comments = [x['id'] for x in r.json() if x['user']['login'] == 'commaci-public']
     if comments:
-      r = requests.patch(f'https://api.github.com/repos/commaai/openpilot/issues/comments/{comments[0]}', headers=headers, data=comment)
+      r = requests.patch(f'{API_ROUTE}/issues/comments/{comments[0]}', headers=headers, data=comment)
     else:
-      r = requests.post(f'https://api.github.com/repos/commaai/openpilot/issues/{pr_number}/comments', headers=headers, data=comment)
+      r = requests.post(f'{API_ROUTE}/issues/{pr_number}/comments', headers=headers, data=comment)
     assert r.ok, r.status_code
 
 def trim_logs_to_max_frames(logs, max_frames, frs_types, include_all_types):
@@ -180,8 +184,9 @@ if __name__ == "__main__":
       diff_short, diff_long, failed = format_diff(results, log_paths, ref_commit)
 
       if "CI" in os.environ:
-        comment_replay_report()
-        failed = False
+        if not PC:
+          comment_replay_report()
+          failed = False
         print(diff_long)
       print('-------------\n'*5)
       print(diff_short)
