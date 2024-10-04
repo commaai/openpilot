@@ -27,9 +27,11 @@ MAX_FRAMES = 100 if PC else 600
 NO_MODEL = "NO_MODEL" in os.environ
 SEND_EXTRA_INPUTS = bool(int(os.getenv("SEND_EXTRA_INPUTS", "0")))
 
+UPDATE_REF=f"model_replay_{os.environ['GIT_BRANCH']}"
 
-def get_log_fn(ref_commit, test_route):
-  return f"{test_route}_model_tici_{ref_commit}.bz2"
+
+def get_log_fn(test_route):
+  return f"{test_route}_model_tici_master.bz2"
 
 def plot(proposed, master, title, tmp):
   fig, ax = plt.subplots()
@@ -65,9 +67,6 @@ def comment_replay_report(proposed, master):
     GIT_PATH=tmp
     GIT_TOKEN=os.environ['GIT_TOKEN']
     API_ROUTE="https://api.github.com/repos/commaai/openpilot"
-
-    if GIT_BRANCH == 'master':
-      return
 
     run_cmd(["git", "clone", "--depth=1", "-b", "master", "https://github.com/commaai/ci-artifacts", tmp])
 
@@ -142,7 +141,7 @@ def model_replay(lr, frs):
 
 
 if __name__ == "__main__":
-  update = "--update" in sys.argv
+  update = "--update" in sys.argv or (os.getenv("GIT_BRANCH", "") == 'master')
   replay_dir = os.path.dirname(os.path.abspath(__file__))
   ref_commit_fn = os.path.join(replay_dir, "model_replay_ref_commit")
 
@@ -162,9 +161,7 @@ if __name__ == "__main__":
   # get diff
   failed = False
   if not update:
-    with open(ref_commit_fn) as f:
-      ref_commit = f.read().strip()
-    log_fn = get_log_fn(ref_commit, TEST_ROUTE)
+    log_fn = get_log_fn(TEST_ROUTE)
     try:
       all_logs = list(LogReader(BASE_URL + log_fn))
       cmp_log = []
@@ -227,22 +224,16 @@ if __name__ == "__main__":
       failed = True
 
   # upload new refs
-  if (update or failed) and not PC:
+  if update and not PC:
     from openpilot.tools.lib.openpilotci import upload_file
 
     print("Uploading new refs")
 
-    new_commit = get_commit()
-    log_fn = get_log_fn(new_commit, TEST_ROUTE)
+    log_fn = get_log_fn(TEST_ROUTE)
     save_log(log_fn, log_msgs)
     try:
-      upload_file(log_fn, os.path.basename(log_fn))
+      upload_file(log_fn, os.path.basename(log_fn), overwrite=True)
     except Exception as e:
       print("failed to upload", e)
-
-    with open(ref_commit_fn, 'w') as f:
-      f.write(str(new_commit))
-
-    print("\n\nNew ref commit: ", new_commit)
 
   sys.exit(int(failed))
