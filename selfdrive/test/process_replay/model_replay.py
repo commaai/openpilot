@@ -7,8 +7,8 @@ import tempfile
 from itertools import zip_longest
 
 import requests
-import matplotlib
-matplotlib.use('inline')
+#import matplotlib
+#matplotlib.use('inline')
 import matplotlib.pyplot as plt
 
 from openpilot.common.git import get_commit
