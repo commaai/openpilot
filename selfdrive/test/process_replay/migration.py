@@ -406,7 +406,8 @@ def migrate_onroadEvents(msgs):
     new_msg.logMonoTime = msg.logMonoTime
 
     # dict converts name enum into string representation
-    new_msg.onroadEvents = [log.OnroadEvent(**event.to_dict()) for event in msg.onroadEventsDEPRECATED]
+    new_msg.onroadEvents = [log.OnroadEvent(**event.to_dict()) for event in msg.onroadEventsDEPRECATED if
+                            not str(event.name).endswith('DEPRECATED')]
     ops.append((index, new_msg.as_reader()))
 
   return ops, [], []
@@ -419,7 +420,8 @@ def migrate_driverMonitoringState(msgs):
     msg = msg.as_builder()
     # dict converts name enum into string representation
     msg.driverMonitoringState.events = [log.OnroadEvent(**event.to_dict()) for event in
-                                        msg.driverMonitoringState.eventsDEPRECATED]
+                                        msg.driverMonitoringState.eventsDEPRECATED if
+                                        not str(event.name).endswith('DEPRECATED')]
     ops.append((index, msg.as_reader()))
 
   return ops, [], []
