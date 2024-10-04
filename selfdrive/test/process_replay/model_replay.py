@@ -60,7 +60,8 @@ def generate_report(proposed, master, tmp):
 
 def comment_replay_report(proposed, master):
   with tempfile.TemporaryDirectory() as tmp:
-    GIT_BRANCH=f"model_replay_{os.environ['GIT_BRANCH']}"
+    GIT_BRANCH=os.environ['GIT_BRANCH']
+    ARTIFACTS_GIT_BRANCH=f"model_replay_{GIT_BRANCH}"
     GIT_PATH=tmp
     GIT_TOKEN=os.environ['CI_ARTIFACTS_TOKEN']
     GITHUB_API_TOKEN=os.environ['GITHUB_COMMENTS_TOKEN']
@@ -72,13 +73,13 @@ def comment_replay_report(proposed, master):
     files = generate_report(proposed, master, tmp)
 
     # save report
-    run_cmd(["git", "-C", GIT_PATH, "checkout", "-b", GIT_BRANCH])
+    run_cmd(["git", "-C", GIT_PATH, "checkout", "-b", ARTIFACTS_GIT_BRANCH])
     run_cmd(["git", "-C", GIT_PATH, "add", "."])
     run_cmd(["git", "-C", GIT_PATH, "commit", "-m", "model replay artifacts"])
-    run_cmd(["git", "-C", GIT_PATH, "push", "-f", f"https://commaci-public:{GIT_TOKEN}@github.com/commaai/ci-artifacts", GIT_BRANCH])
+    run_cmd(["git", "-C", GIT_PATH, "push", "-f", f"https://commaci-public:{GIT_TOKEN}@github.com/commaai/ci-artifacts", ARTIFACTS_GIT_BRANCH])
 
     headers = {"Authorization": f"token {GITHUB_API_TOKEN}", "Accept": "application/vnd.github+json"}
-    comment = f'{"body": "<img src=\\"https://raw.githubusercontent.com/commaai/ci-artifacts/{GIT_BRANCH}/{files[0]}.png\\">"}'
+    comment = f'{"body": "<img src=\\"https://raw.githubusercontent.com/commaai/ci-artifacts/{ARTIFACTS_GIT_BRANCH}/{files[0]}.png\\">"}'
 
     # get PR number
     r = requests.get(f'{API_ROUTE}/commits/{GIT_BRANCH}/pulls', headers=headers)
