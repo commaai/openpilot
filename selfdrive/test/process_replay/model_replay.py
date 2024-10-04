@@ -45,11 +45,11 @@ def zl(array, fill):
 
 def generate_report(proposed, master, tmp):
   ModelV2_Plots = zl([
-                     (lambda x: x.velocity.x[0], "velocity"),
-                     (lambda x: x.action.desiredCurvature, "curvature"),
-                     (lambda x: x.leadsV3[0].x[0], "lead"),
-                     (lambda x: x.laneLines[1].y[0], "laneline"),
-                     (lambda x: x.meta.disengagePredictions.gasPressProbs[1], "gasPress")
+                     (lambda x: x.velocity.x[0], "velocity.x"),
+                     (lambda x: x.action.desiredCurvature, "desiredCurvature"),
+                     (lambda x: x.leadsV3[0].x[0], "leadsV3.x"),
+                     (lambda x: x.laneLines[1].y[0], "laneLines.y"),
+                     (lambda x: x.meta.disengagePredictions.gasPressProbs[1], "gasPressProbs")
                     ], "modelV2")
 
   return [plot(map(v[0], get_event(proposed, event)), \
