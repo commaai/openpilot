@@ -7,7 +7,7 @@ import pytest
 
 from functools import wraps
 
-from cereal import car, messaging
+import cereal.messaging as messaging
 from openpilot.common.params import Params
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.hardware import PC
@@ -19,7 +19,6 @@ def set_params_enabled():
   os.environ['LOGPRINT'] = "debug"
 
   params = Params()
-  params.put("CarParamsCache", car.CarParams().to_bytes())
   params.put("HasAcceptedTerms", terms_version)
   params.put("CompletedTrainingVersion", training_version)
   params.put_bool("OpenpilotEnabledToggle", True)

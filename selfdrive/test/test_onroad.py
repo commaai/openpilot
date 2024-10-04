@@ -13,7 +13,7 @@ from collections import Counter, defaultdict
 from functools import cached_property
 from pathlib import Path
 
-from cereal import log
+from cereal import car, log
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
 from openpilot.common.basedir import BASEDIR
@@ -142,6 +142,9 @@ class TestOnroad:
         while route is None:
           route = params.get("CurrentRoute", encoding="utf-8")
           time.sleep(0.1)
+
+        # test car params caching
+        params.put("CarParamsCache", car.CarParams().to_bytes())
 
         while len(cls.segments) < 3:
           segs = set()
