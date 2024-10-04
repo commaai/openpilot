@@ -83,7 +83,7 @@ def comment_replay_report(proposed, master):
     for i,f in enumerate(files):
       if not (i % 2):
         table.append('<tr>')
-      table.append(f'<td><img src=\\"https://raw.githubusercontent.com/commaai/ci-artifacts/{ARTIFACTS_GIT_BRANCH}/{files[i]}.png\\"></td>')
+      table.append(f'<td><img src=\\"https://raw.githubusercontent.com/commaai/ci-artifacts/{ARTIFACTS_GIT_BRANCH}/{f}.png\\"></td>')
       if (i % 2):
         table.append('</tr>')
     table.append('</table></details>')
