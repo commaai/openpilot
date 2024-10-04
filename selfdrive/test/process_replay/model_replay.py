@@ -47,8 +47,8 @@ def zl(array, fill):
 
 def generate_report(proposed, master, tmp):
   ModelV2_Plots = zl([
-                     (lambda x: x.action.desiredCurvature, "title1"),
-                     (lambda x: x.meta.disengagePredictions.gasPressProbs[1], "title2"),
+                     (lambda x: x.action.desiredCurvature, "curvature"),
+                     (lambda x: x.meta.disengagePredictions.gasPressProbs[1], "gasPress"),
                      (lambda x: x.velocity.x[0], "title3"),
                      (lambda x: x.action.desiredCurvature, "title4"),
                      (lambda x: x.leadsV3[0].x[0], "title5")
@@ -79,7 +79,17 @@ def comment_replay_report(proposed, master):
     run_cmd(["git", "-C", GIT_PATH, "push", "-f", f"https://commaci-public:{GIT_TOKEN}@github.com/commaai/ci-artifacts", ARTIFACTS_GIT_BRANCH])
 
     headers = {"Authorization": f"token {GITHUB_API_TOKEN}", "Accept": "application/vnd.github+json"}
-    comment = f'{"body": "<img src=\\"https://raw.githubusercontent.com/commaai/ci-artifacts/{ARTIFACTS_GIT_BRANCH}/{files[0]}.png\\">"}'
+    table = ['<details><summary>Model Replay Plots</summary><table>']
+    for i,f in enumerate(files):
+      if not (i % 2):
+        table.append('<tr>')
+      table.append(f'<td><img src=\\"https://raw.githubusercontent.com/commaai/ci-artifacts/{ARTIFACTS_GIT_BRANCH}/{files[i]}.png\\"></td>')
+      if (i % 2):
+        table.append('</tr>')
+    table.append('</table></details>')
+    table = ''.join(table)
+
+    comment = f'{{"body": "{table}"}}'
 
     # get PR number
     r = requests.get(f'{API_ROUTE}/commits/{GIT_BRANCH}/pulls', headers=headers)
