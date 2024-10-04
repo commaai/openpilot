@@ -4,9 +4,13 @@ import sys
 from collections import defaultdict
 from typing import Any
 import tempfile
+from itertools import zip_longest
 
 from PIL import Image
 import requests
+import matplotlib
+matplotlib.use('inline')
+import matplotlib.pyplot as plt
 
 from openpilot.common.git import get_commit
 from openpilot.common.run import run_cmd
@@ -28,7 +32,35 @@ SEND_EXTRA_INPUTS = bool(int(os.getenv("SEND_EXTRA_INPUTS", "0")))
 def get_log_fn(ref_commit, test_route):
   return f"{test_route}_model_tici_{ref_commit}.bz2"
 
-def comment_replay_report():
+def plot(proposed, master, title, tmp):
+  fig, ax = plt.subplots()
+  ax.plot(list(proposed), label='PROPOSED')
+  ax.plot(list(master), label='MASTER')
+  plt.legend(loc='best')
+  plt.title(title)
+  plt.savefig(f'{tmp}/{title}.png')
+  return title
+
+def get_event(logs, event):
+  return (getattr(m, m.which()) for m in filter(lambda m: m.which() == event, logs))
+
+def zl(array, fill):
+  return zip_longest(array, [], fillvalue=fill)
+
+def generate_report(proposed, master, tmp):
+  ModelV2_Plots = [
+                   (lambda x: x.action.desiredCurvature, "title1"),
+                   (lambda x: x.meta.disengagePredictions.gasPressProbs[1], "title2"),
+                   (lambda x: x.velocity.x[0], "title3"),
+                   (lambda x: x.action.desiredCurvature, "title4"),
+                   (lambda x: x.leadsV3[0].x[0], "title5")
+                  ]
+
+  return [plot(map(v[0], get_event(proposed, event)), \
+               map(v[0], get_event(master, event)), v[1], tmp) \
+               for v,event in [*zl(ModelV2_Plots, 'modelV2')]]
+
+def comment_replay_report(proposed, master):
   with tempfile.TemporaryDirectory() as tmp:
     GIT_BRANCH=f"model_replay_{os.environ['GIT_BRANCH']}"
     GIT_PATH=tmp
@@ -40,8 +72,8 @@ def comment_replay_report():
 
     run_cmd(["git", "clone", "--depth=1", "-b", "master", "https://github.com/commaai/ci-artifacts", tmp])
 
-    # create nice report
-    Image.new('RGB', (480, 480), color = (0,255,0)).save(f'{tmp}/img.jpg')
+    # create report
+    files = generate_report(proposed, master, tmp)
 
     # save report
     run_cmd(["git", "-C", GIT_PATH, "checkout", "-b", GIT_BRANCH])
@@ -50,7 +82,7 @@ def comment_replay_report():
     run_cmd(["git", "-C", GIT_PATH, "push", "-f", f"https://commaci-public:{GIT_TOKEN}@github.com/commaai/ci-artifacts", GIT_BRANCH])
 
     headers = {"Authorization": f"token {GIT_TOKEN}", "Accept": "application/vnd.github+json"}
-    comment = f'{"body": "<img src=\\"https://raw.githubusercontent.com/commaai/ci-artifacts/{GIT_BRANCH}/img.jpg\\">"}'
+    comment = f'{"body": "<img src=\\"https://raw.githubusercontent.com/commaai/ci-artifacts/{GIT_BRANCH}/{files[0]}.png\\">"}'
 
     # get PR number
     r = requests.get(f'{API_ROUTE}/commits/{GIT_BRANCH}/pulls', headers=headers)
@@ -111,8 +143,6 @@ def model_replay(lr, frs):
 
 
 if __name__ == "__main__":
-  comment_replay_report()
-  quit(0)
   update = "--update" in sys.argv
   replay_dir = os.path.dirname(os.path.abspath(__file__))
   ref_commit_fn = os.path.join(replay_dir, "model_replay_ref_commit")
@@ -185,7 +215,8 @@ if __name__ == "__main__":
 
       if "CI" in os.environ:
         if not PC:
-          comment_replay_report()
+          comment_replay_report(log_msgs, cmp_log)
+          quit()
           failed = False
         print(diff_long)
       print('-------------\n'*5)
