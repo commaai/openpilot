@@ -29,13 +29,6 @@ def get_log_fn(ref_commit, test_route):
   return f"{test_route}_model_tici_{ref_commit}.bz2"
 
 def comment_replay_report():
-  # TODO:
-  # clone repo
-  # add img to repo
-  # push repo
-  # get PR from branch if available
-  # get previous comment if available
-  # comment on PR with img link from repo
   with tempfile.TemporaryDirectory() as tmp:
     GIT_BRANCH=f"model_replay_{os.environ['GIT_BRANCH']}"
     GIT_PATH=tmp
@@ -61,7 +54,13 @@ def comment_replay_report():
     pr_number = r.json()[0]['number']
 
     # comment on PR
-    r = requests.post(f'https://api.github.com/repos/commaai/openpilot/issues/{pr_number}/comments', headers=headers, data=comment)
+    r = requests.get(f'https://api.github.com/repos/commaai/openpilot/issues/{pr_number}/comments', headers=headers)
+    assert r.ok, r.status_code
+    comments = [x['id'] for x in r.json() if x['user']['login'] == 'commaci-public']
+    if comments:
+      r = requests.patch(f'https://api.github.com/repos/commaai/openpilot/issues/comments/{comments[0]}', headers=headers, data=comment)
+    else:
+      r = requests.post(f'https://api.github.com/repos/commaai/openpilot/issues/{pr_number}/comments', headers=headers, data=comment)
     assert r.ok, r.status_code
 
 def trim_logs_to_max_frames(logs, max_frames, frs_types, include_all_types):
