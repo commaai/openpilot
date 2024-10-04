@@ -38,7 +38,7 @@ class TestAlerts:
 
   def test_events_defined(self):
     # Ensure all events in capnp schema are defined in events.py
-    events = car.OnroadEvent.EventName.schema.enumerants
+    events = log.OnroadEvent.EventName.schema.enumerants
 
     for name, e in events.items():
       if not name.endswith("DEPRECATED"):

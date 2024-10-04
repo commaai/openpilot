@@ -5,7 +5,6 @@ from opendbc.car.car_helpers import interfaces
 from opendbc.car.honda.values import CAR as HONDA
 from opendbc.car.toyota.values import CAR as TOYOTA
 from opendbc.car.nissan.values import CAR as NISSAN
-from openpilot.selfdrive.car.card import convert_to_capnp
 from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
@@ -21,7 +20,6 @@ class TestLatControl:
     CarInterface, CarController, CarState, RadarInterface = interfaces[car_name]
     CP = CarInterface.get_non_essential_params(car_name)
     CI = CarInterface(CP, CarController, CarState)
-    CP = convert_to_capnp(CP)
     VM = VehicleModel(CP)
 
     controller = controller(CP.as_reader(), CI)

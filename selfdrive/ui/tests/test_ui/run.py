@@ -12,14 +12,14 @@ import time
 
 from cereal import log
 from msgq.visionipc import VisionIpcServer, VisionStreamType
-from cereal.messaging import PubMaster, log_from_bytes
+from cereal.messaging import PubMaster, log_from_bytes, sub_sock
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.common.transformations.camera import CameraConfig, DEVICE_CAMERAS
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.selfdrive.test.helpers import with_processes
-from openpilot.selfdrive.test.process_replay.migration import migrate_controlsState
+from openpilot.selfdrive.test.process_replay.migration import migrate, migrate_controlsState, migrate_carState
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.route import Route
@@ -40,13 +40,26 @@ def setup_homescreen(click, pm: PubMaster):
 def setup_settings_device(click, pm: PubMaster):
   click(100, 100)
 
+def setup_settings_toggles(click, pm: PubMaster):
+  setup_settings_device(click, pm)
+  click(278, 760)
+  time.sleep(UI_DELAY)
+
 def setup_onroad(click, pm: PubMaster):
   vipc_server = VisionIpcServer("camerad")
   for stream_type, cam, _ in STREAMS:
     vipc_server.create_buffers(stream_type, 5, False, cam.width, cam.height)
   vipc_server.start_listener()
 
-  for packet_id in range(30):
+  uidebug_received_cnt = 0
+  packet_id = 0
+  uidebug_sock = sub_sock('uiDebug')
+
+  # Condition check for uiDebug processing
+  check_uidebug = DATA['deviceState'].deviceState.started and not DATA['carParams'].carParams.notCar
+
+  # Loop until 20 'uiDebug' messages are received
+  while uidebug_received_cnt <= 20:
     for service, data in DATA.items():
       if data:
         data.clear_write_flag()
@@ -55,7 +68,25 @@ def setup_onroad(click, pm: PubMaster):
     for stream_type, _, image in STREAMS:
       vipc_server.send(stream_type, image, packet_id, packet_id, packet_id)
 
+    if check_uidebug:
+      while uidebug_sock.receive(non_blocking=True):
+        uidebug_received_cnt += 1
+    else:
+      uidebug_received_cnt += 1
+
+    packet_id += 1
     time.sleep(0.05)
+
+def setup_onroad_disengaged(click, pm: PubMaster):
+  DATA['selfdriveState'].selfdriveState.enabled = False
+  setup_onroad(click, pm)
+  DATA['selfdriveState'].selfdriveState.enabled = True
+
+def setup_onroad_override(click, pm: PubMaster):
+  DATA['selfdriveState'].selfdriveState.state = log.SelfdriveState.OpenpilotState.overriding
+  setup_onroad(click, pm)
+  DATA['selfdriveState'].selfdriveState.state = log.SelfdriveState.OpenpilotState.enabled
+
 
 def setup_onroad_wide(click, pm: PubMaster):
   DATA['selfdriveState'].selfdriveState.experimentalMode = True
@@ -65,10 +96,12 @@ def setup_onroad_wide(click, pm: PubMaster):
 def setup_onroad_sidebar(click, pm: PubMaster):
   setup_onroad(click, pm)
   click(500, 500)
+  setup_onroad(click, pm)
 
 def setup_onroad_wide_sidebar(click, pm: PubMaster):
   setup_onroad_wide(click, pm)
   click(500, 500)
+  setup_onroad_wide(click, pm)
 
 def setup_body(click, pm: PubMaster):
   DATA['carParams'].carParams.carName = "BODY"
@@ -141,7 +174,10 @@ CASES = {
   "prime": setup_homescreen,
   "pair_device": setup_pair_device,
   "settings_device": setup_settings_device,
+  "settings_toggles": setup_settings_toggles,
   "onroad": setup_onroad,
+  "onroad_disengaged": setup_onroad_disengaged,
+  "onroad_override": setup_onroad_override,
   "onroad_sidebar": setup_onroad_sidebar,
   "onroad_alert_small": setup_onroad_alert_small,
   "onroad_alert_mid": setup_onroad_alert_mid,
@@ -227,7 +263,7 @@ def create_screenshots():
   segnum = 2
   lr = LogReader(route.qlog_paths()[segnum])
   DATA['carParams'] = next((event.as_builder() for event in lr if event.which() == 'carParams'), None)
-  for event in migrate_controlsState(lr):
+  for event in migrate(lr, [migrate_controlsState, migrate_carState]):
     if event.which() in DATA:
       DATA[event.which()] = event.as_builder()
 

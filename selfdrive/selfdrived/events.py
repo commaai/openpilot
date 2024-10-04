@@ -16,7 +16,7 @@ AlertSize = log.SelfdriveState.AlertSize
 AlertStatus = log.SelfdriveState.AlertStatus
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
-EventName = car.OnroadEvent.EventName
+EventName = log.OnroadEvent.EventName
 
 
 # Alert priorities
@@ -98,7 +98,7 @@ class Events:
   def to_msg(self):
     ret = []
     for event_name in self.events:
-      event = car.OnroadEvent.new_message()
+      event = log.OnroadEvent.new_message()
       event.name = event_name
       for event_type in EVENTS.get(event_name, {}):
         setattr(event, event_type, True)
@@ -382,14 +382,21 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.PERMANENT: StartupAlert("Dashcam mode for unsupported car"),
   },
 
+  EventName.startupNoSecOcKey: {
+    ET.PERMANENT: NormalPermanentAlert("Dashcam Mode",
+                                       "Security Key Not Available",
+                                       priority=Priority.HIGH),
+  },
+
   EventName.dashcamMode: {
     ET.PERMANENT: NormalPermanentAlert("Dashcam Mode",
                                        priority=Priority.LOWEST),
   },
 
   EventName.invalidLkasSetting: {
-    ET.PERMANENT: NormalPermanentAlert("Stock LKAS is on",
-                                       "Turn off stock LKAS to engage"),
+    ET.PERMANENT: NormalPermanentAlert("Invalid LKAS setting",
+                                       "Toggle stock LKAS on or off to engage"),
+    ET.NO_ENTRY: NoEntryAlert("Invalid LKAS setting"),
   },
 
   EventName.cruiseMismatch: {
@@ -937,16 +944,6 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       AlertStatus.userPrompt, AlertSize.mid,
       Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.promptRepeat, 4.),
     ET.NO_ENTRY: NoEntryAlert("Slow down to engage"),
-  },
-
-  EventName.lowSpeedLockout: {
-    ET.PERMANENT: NormalPermanentAlert("Cruise Fault: Restart the car to engage"),
-    ET.NO_ENTRY: NoEntryAlert("Cruise Fault: Restart the Car"),
-  },
-
-  EventName.lkasDisabled: {
-    ET.PERMANENT: NormalPermanentAlert("LKAS Disabled: Enable LKAS to engage"),
-    ET.NO_ENTRY: NoEntryAlert("LKAS Disabled"),
   },
 
   EventName.vehicleSensorsInvalid: {
