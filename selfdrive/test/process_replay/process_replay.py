@@ -466,7 +466,7 @@ CONFIGS = [
       "longitudinalPlan", "livePose", "liveParameters", "radarState",
       "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
       "liveTorqueParameters", "accelerometer", "gyroscope", "carOutput",
-      "gpsLocationExternal", "gpsLocation", "controlsState", "carControl", "driverAssistance",
+      "gpsLocationExternal", "gpsLocation", "controlsState", "carControl", "driverAssistance", "alertDebug",
     ],
     subs=["selfdriveState", "onroadEvents"],
     ignore=["logMonoTime"],

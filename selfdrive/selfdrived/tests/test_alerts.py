@@ -33,7 +33,7 @@ class TestAlerts:
       # Create fake objects for callback
       cls.CS = car.CarState.new_message()
       cls.CP = car.CarParams.new_message()
-      cfg = [c for c in CONFIGS if c.proc_name == 'controlsd'][0]
+      cfg = [c for c in CONFIGS if c.proc_name == 'selfdrived'][0]
       cls.sm = SubMaster(cfg.pubs)
 
   def test_events_defined(self):
