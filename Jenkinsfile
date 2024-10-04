@@ -25,7 +25,8 @@ export TEST_DIR=${env.TEST_DIR}
 export SOURCE_DIR=${env.SOURCE_DIR}
 export GIT_BRANCH=${env.GIT_BRANCH}
 export GIT_COMMIT=${env.GIT_COMMIT}
-export GIT_TOKEN=${env.GIT_TOKEN}
+export CI_ARTIFACTS_TOKEN=${env.CI_ARTIFACTS_TOKEN}
+export GITHUB_COMMENTS_TOKEN=${env.GITHUB_COMMENTS_TOKEN}
 export AZURE_TOKEN='${env.AZURE_TOKEN}'
 # only use 1 thread for tici tests since most require HIL
 export PYTEST_ADDOPTS="-n 0"
@@ -105,10 +106,17 @@ def setupCredentials() {
     env.AZURE_TOKEN = "${AZURE_TOKEN}"
   }
 
-  withCredentials([usernamePassword(credentialsId: 'commaci-public-git', usernameVariable: 'GIT_TOKEN_USERNAME', passwordVariable: 'GIT_TOKEN')]) {
-    env.GIT_TOKEN = "${GIT_TOKEN}"
+  withCredentials([
+    string(credentialsId: 'ci_artifacts_pat', variable: 'CI_ARTIFACTS_TOKEN'),
+  ]) {
+    env.CI_ARTIFACTS_TOKEN = "${CI_ARTIFACTS_TOKEN}"
   }
 
+  withCredentials([
+    string(credentialsId: 'post_comments_github_pat', variable: 'GITHUB_COMMENTS_TOKEN'),
+  ]) {
+    env.GITHUB_COMMENTS_TOKEN = "${GITHUB_COMMENTS_TOKEN}"
+  }
 }
 
 

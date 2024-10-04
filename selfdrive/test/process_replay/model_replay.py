@@ -26,8 +26,6 @@ MAX_FRAMES = 100 if PC else 600
 NO_MODEL = "NO_MODEL" in os.environ
 SEND_EXTRA_INPUTS = bool(int(os.getenv("SEND_EXTRA_INPUTS", "0")))
 
-UPDATE_REF=f"model_replay_{os.environ['GIT_BRANCH']}"
-
 
 def get_log_fn(test_route):
   return f"{test_route}_model_tici_master.bz2"
@@ -64,7 +62,8 @@ def comment_replay_report(proposed, master):
   with tempfile.TemporaryDirectory() as tmp:
     GIT_BRANCH=f"model_replay_{os.environ['GIT_BRANCH']}"
     GIT_PATH=tmp
-    GIT_TOKEN=os.environ['GIT_TOKEN']
+    GIT_TOKEN=os.environ['CI_ARTIFACTS_TOKEN']
+    GITHUB_API_TOKEN=os.environ['GITHUB_COMMENTS_TOKEN']
     API_ROUTE="https://api.github.com/repos/commaai/openpilot"
 
     run_cmd(["git", "clone", "--depth=1", "-b", "master", "https://github.com/commaai/ci-artifacts", tmp])
@@ -78,7 +77,7 @@ def comment_replay_report(proposed, master):
     run_cmd(["git", "-C", GIT_PATH, "commit", "-m", "model replay artifacts"])
     run_cmd(["git", "-C", GIT_PATH, "push", "-f", f"https://commaci-public:{GIT_TOKEN}@github.com/commaai/ci-artifacts", GIT_BRANCH])
 
-    headers = {"Authorization": f"token {GIT_TOKEN}", "Accept": "application/vnd.github+json"}
+    headers = {"Authorization": f"token {GITHUB_API_TOKEN}", "Accept": "application/vnd.github+json"}
     comment = f'{"body": "<img src=\\"https://raw.githubusercontent.com/commaai/ci-artifacts/{GIT_BRANCH}/{files[0]}.png\\">"}'
 
     # get PR number
