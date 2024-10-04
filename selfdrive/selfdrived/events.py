@@ -16,7 +16,7 @@ AlertSize = log.SelfdriveState.AlertSize
 AlertStatus = log.SelfdriveState.AlertStatus
 VisualAlert = car.CarControl.HUDControl.VisualAlert
 AudibleAlert = car.CarControl.HUDControl.AudibleAlert
-EventName = car.OnroadEvent.EventName
+EventName = log.OnroadEvent.EventName
 
 
 # Alert priorities
@@ -98,7 +98,7 @@ class Events:
   def to_msg(self):
     ret = []
     for event_name in self.events:
-      event = car.OnroadEvent.new_message()
+      event = log.OnroadEvent.new_message()
       event.name = event_name
       for event_type in EVENTS.get(event_name, {}):
         setattr(event, event_type, True)
@@ -141,6 +141,8 @@ class Alert:
       return False
     return self.priority > alert2.priority
 
+EmptyAlert = Alert("" , "", AlertStatus.normal, AlertSize.none, Priority.LOWEST,
+                   VisualAlert.none, AudibleAlert.none, 0)
 
 class NoEntryAlert(Alert):
   def __init__(self, alert_text_2: str,
@@ -318,10 +320,21 @@ def wrong_car_mode_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubM
 
 
 def joystick_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
-  axes = sm['testJoystick'].axes
-  gb, steer = list(axes)[:2] if len(axes) else (0., 0.)
+  gb = sm['carControl'].actuators.accel / 4.
+  steer = sm['carControl'].actuators.steer
   vals = f"Gas: {round(gb * 100.)}%, Steer: {round(steer * 100.)}%"
   return NormalPermanentAlert("Joystick Mode", vals)
+
+
+def longitudinal_maneuver_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
+  ad = sm['alertDebug']
+  audible_alert = AudibleAlert.prompt if 'Active' in ad.alertText1 else AudibleAlert.none
+  alert_status = AlertStatus.userPrompt if 'Active' in ad.alertText1 else AlertStatus.normal
+  alert_size = AlertSize.mid if ad.alertText2 else AlertSize.small
+  return Alert(ad.alertText1, ad.alertText2,
+               alert_status, alert_size,
+               Priority.LOW, VisualAlert.none, audible_alert, 0.2)
+
 
 def personality_changed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
   personality = str(personality).title()
@@ -342,7 +355,13 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.PERMANENT: NormalPermanentAlert("Joystick Mode"),
   },
 
-  EventName.controlsInitializing: {
+  EventName.longitudinalManeuver: {
+    ET.WARNING: longitudinal_maneuver_alert,
+    ET.PERMANENT: NormalPermanentAlert("Longitudinal Maneuver Mode",
+                                       "Ensure road ahead is clear"),
+  },
+
+  EventName.selfdriveInitializing: {
     ET.NO_ENTRY: NoEntryAlert("System Initializing"),
   },
 
@@ -354,21 +373,19 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.PERMANENT: startup_master_alert,
   },
 
-  # Car is recognized, but marked as dashcam only
   EventName.startupNoControl: {
     ET.PERMANENT: StartupAlert("Dashcam mode"),
     ET.NO_ENTRY: NoEntryAlert("Dashcam mode"),
   },
 
-  # Car is not recognized
   EventName.startupNoCar: {
     ET.PERMANENT: StartupAlert("Dashcam mode for unsupported car"),
   },
 
-  EventName.startupNoFw: {
-    ET.PERMANENT: StartupAlert("Car Unrecognized",
-                               "Check comma power connections",
-                               alert_status=AlertStatus.userPrompt),
+  EventName.startupNoSecOcKey: {
+    ET.PERMANENT: NormalPermanentAlert("Dashcam Mode",
+                                       "Security Key Not Available",
+                                       priority=Priority.HIGH),
   },
 
   EventName.dashcamMode: {
@@ -377,8 +394,9 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
   EventName.invalidLkasSetting: {
-    ET.PERMANENT: NormalPermanentAlert("Stock LKAS is on",
-                                       "Turn off stock LKAS to engage"),
+    ET.PERMANENT: NormalPermanentAlert("Invalid LKAS setting",
+                                       "Toggle stock LKAS on or off to engage"),
+    ET.NO_ENTRY: NoEntryAlert("Invalid LKAS setting"),
   },
 
   EventName.cruiseMismatch: {
@@ -392,6 +410,15 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.PERMANENT: NormalPermanentAlert("Dashcam Mode",
                                        "Car Unrecognized",
                                        priority=Priority.LOWEST),
+  },
+
+  EventName.aeb: {
+    ET.PERMANENT: Alert(
+      "BRAKE!",
+      "Emergency Braking: Risk of Collision",
+      AlertStatus.critical, AlertSize.full,
+      Priority.HIGHEST, VisualAlert.fcw, AudibleAlert.none, 2.),
+    ET.NO_ENTRY: NoEntryAlert("AEB: Risk of Collision"),
   },
 
   EventName.stockAeb: {
@@ -773,9 +800,9 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.NO_ENTRY: NoEntryAlert("Low Communication Rate Between Processes"),
   },
 
-  EventName.controlsdLagging: {
-    ET.SOFT_DISABLE: soft_disable_alert("Controls Lagging"),
-    ET.NO_ENTRY: NoEntryAlert("Controls Process Lagging: Reboot Your Device"),
+  EventName.selfdrivedLagging: {
+    ET.SOFT_DISABLE: soft_disable_alert("System Lagging"),
+    ET.NO_ENTRY: NoEntryAlert("Selfdrive Process Lagging: Reboot Your Device"),
   },
 
   # Thrown when manager detects a service exited unexpectedly while driving
@@ -821,12 +848,6 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.NO_ENTRY: NoEntryAlert("Low Memory: Reboot Your Device"),
   },
 
-  EventName.highCpuUsage: {
-    #ET.SOFT_DISABLE: soft_disable_alert("System Malfunction: Reboot Your Device"),
-    #ET.PERMANENT: NormalPermanentAlert("System Malfunction", "Reboot your Device"),
-    ET.NO_ENTRY: high_cpu_usage_alert,
-  },
-
   EventName.accFaulted: {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Cruise Fault: Restart the Car"),
     ET.PERMANENT: NormalPermanentAlert("Cruise Fault: Restart the car to engage"),
@@ -841,24 +862,6 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   EventName.controlsMismatch: {
     ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Controls Mismatch"),
     ET.NO_ENTRY: NoEntryAlert("Controls Mismatch"),
-  },
-
-  EventName.roadCameraError: {
-    ET.PERMANENT: NormalPermanentAlert("Camera CRC Error - Road",
-                                       duration=1.,
-                                       creation_delay=30.),
-  },
-
-  EventName.wideRoadCameraError: {
-    ET.PERMANENT: NormalPermanentAlert("Camera CRC Error - Road Fisheye",
-                                       duration=1.,
-                                       creation_delay=30.),
-  },
-
-  EventName.driverCameraError: {
-    ET.PERMANENT: NormalPermanentAlert("Camera CRC Error - Driver",
-                                       duration=1.,
-                                       creation_delay=30.),
   },
 
   # Sometimes the USB stack on the device can get into a bad state
@@ -941,16 +944,6 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       AlertStatus.userPrompt, AlertSize.mid,
       Priority.HIGH, VisualAlert.steerRequired, AudibleAlert.promptRepeat, 4.),
     ET.NO_ENTRY: NoEntryAlert("Slow down to engage"),
-  },
-
-  EventName.lowSpeedLockout: {
-    ET.PERMANENT: NormalPermanentAlert("Cruise Fault: Restart the car to engage"),
-    ET.NO_ENTRY: NoEntryAlert("Cruise Fault: Restart the Car"),
-  },
-
-  EventName.lkasDisabled: {
-    ET.PERMANENT: NormalPermanentAlert("LKAS Disabled: Enable LKAS to engage"),
-    ET.NO_ENTRY: NoEntryAlert("LKAS Disabled"),
   },
 
   EventName.vehicleSensorsInvalid: {

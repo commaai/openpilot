@@ -1,4 +1,5 @@
 import os
+import operator
 
 from cereal import car
 from openpilot.common.params import Params
@@ -29,6 +30,18 @@ def ublox(started, params, CP: car.CarParams) -> bool:
     params.put_bool("UbloxAvailable", use_ublox)
   return started and use_ublox
 
+def joystick(started: bool, params, CP: car.CarParams) -> bool:
+  return started and params.get_bool("JoystickDebugMode")
+
+def not_joystick(started: bool, params, CP: car.CarParams) -> bool:
+  return started and not params.get_bool("JoystickDebugMode")
+
+def long_maneuver(started: bool, params, CP: car.CarParams) -> bool:
+  return started and params.get_bool("LongitudinalManeuverMode")
+
+def not_long_maneuver(started: bool, params, CP: car.CarParams) -> bool:
+  return started and not params.get_bool("LongitudinalManeuverMode")
+
 def qcomgps(started, params, CP: car.CarParams) -> bool:
   return started and not ublox_available()
 
@@ -41,6 +54,12 @@ def only_onroad(started: bool, params, CP: car.CarParams) -> bool:
 def only_offroad(started, params, CP: car.CarParams) -> bool:
   return not started
 
+def or_(*fns):
+  return lambda *args: operator.or_(*(fn(*args) for fn in fns))
+
+def and_(*fns):
+  return lambda *args: operator.and_(*(fn(*args) for fn in fns))
+
 procs = [
   DaemonProcess("manage_athenad", "system.athena.manage_athenad", "AthenadPid"),
 
@@ -51,7 +70,7 @@ procs = [
   PythonProcess("micd", "system.micd", iscar),
   PythonProcess("timed", "system.timed", always_run, enabled=not PC),
 
-  PythonProcess("dmonitoringmodeld", "selfdrive.modeld.dmonitoringmodeld", driverview, enabled=(not PC or WEBCAM)),
+  NativeProcess("dmonitoringmodeld", "selfdrive/modeld", ["./dmonitoringmodeld"], driverview, enabled=(not PC or WEBCAM)),
   NativeProcess("encoderd", "system/loggerd", ["./encoderd"], only_onroad),
   NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], notcar),
   NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging),
@@ -63,7 +82,9 @@ procs = [
   NativeProcess("pandad", "selfdrive/pandad", ["./pandad"], always_run, enabled=False),
   PythonProcess("calibrationd", "selfdrive.locationd.calibrationd", only_onroad),
   PythonProcess("torqued", "selfdrive.locationd.torqued", only_onroad),
-  PythonProcess("controlsd", "selfdrive.controls.controlsd", only_onroad),
+  PythonProcess("controlsd", "selfdrive.controls.controlsd", and_(not_joystick, iscar)),
+  PythonProcess("joystickd", "tools.joystick.joystickd", or_(joystick, notcar)),
+  PythonProcess("selfdrived", "selfdrive.selfdrived.selfdrived", only_onroad),
   PythonProcess("card", "selfdrive.car.card", only_onroad),
   PythonProcess("deleter", "system.loggerd.deleter", always_run),
   PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", driverview, enabled=(not PC or WEBCAM)),
@@ -73,7 +94,8 @@ procs = [
   PythonProcess("paramsd", "selfdrive.locationd.paramsd", only_onroad),
   NativeProcess("ubloxd", "system/ubloxd", ["./ubloxd"], ublox, enabled=TICI),
   PythonProcess("pigeond", "system.ubloxd.pigeond", ublox, enabled=TICI),
-  PythonProcess("plannerd", "selfdrive.controls.plannerd", only_onroad),
+  PythonProcess("plannerd", "selfdrive.controls.plannerd", not_long_maneuver),
+  PythonProcess("maneuversd", "tools.longitudinal_maneuvers.maneuversd", long_maneuver),
   PythonProcess("radard", "selfdrive.controls.radard", only_onroad),
   PythonProcess("hardwared", "system.hardware.hardwared", always_run),
   PythonProcess("tombstoned", "system.tombstoned", always_run, enabled=not PC),
@@ -85,6 +107,7 @@ procs = [
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar),
   PythonProcess("webrtcd", "system.webrtc.webrtcd", notcar),
   PythonProcess("webjoystick", "tools.bodyteleop.web", notcar),
+  PythonProcess("joystick", "tools.joystick.joystick_control", and_(joystick, iscar)),
 ]
 
 managed_processes = {p.name: p for p in procs}

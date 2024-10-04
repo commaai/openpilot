@@ -6,10 +6,10 @@ from dataclasses import dataclass
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
-from openpilot.selfdrive.controls.lib.events import Alert
+from openpilot.selfdrive.selfdrived.events import Alert, EmptyAlert
 
 
-with open(os.path.join(BASEDIR, "selfdrive/controls/lib/alerts_offroad.json")) as f:
+with open(os.path.join(BASEDIR, "selfdrive/selfdrived/alerts_offroad.json")) as f:
   OFFROAD_ALERTS = json.load(f)
 
 
@@ -38,6 +38,7 @@ class AlertEntry:
 class AlertManager:
   def __init__(self):
     self.alerts: dict[str, AlertEntry] = defaultdict(AlertEntry)
+    self.current_alert = EmptyAlert
 
   def add_many(self, frame: int, alerts: list[Alert]) -> None:
     for alert in alerts:
@@ -49,8 +50,8 @@ class AlertManager:
       entry.end_frame = max(frame + 1, min_end_frame)
       entry.last_frame = frame
 
-  def process_alerts(self, frame: int, clear_event_types: set) -> Alert | None:
-    current_alert = AlertEntry()
+  def process_alerts(self, frame: int, clear_event_types: set):
+    ae = AlertEntry()
     for v in self.alerts.values():
       if not v.alert:
         continue
@@ -59,8 +60,8 @@ class AlertManager:
         v.end_frame = -1
 
       # sort by priority first and then by start_frame
-      greater = current_alert.alert is None or (v.alert.priority, v.start_frame) > (current_alert.alert.priority, current_alert.start_frame)
+      greater = ae.alert is None or (v.alert.priority, v.start_frame) > (ae.alert.priority, ae.start_frame)
       if v.active(frame) and greater:
-        current_alert = v
+        ae = v
 
-    return current_alert.alert
+    self.current_alert = ae.alert if ae.alert is not None else EmptyAlert

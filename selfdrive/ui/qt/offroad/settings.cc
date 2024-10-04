@@ -22,7 +22,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "OpenpilotEnabledToggle",
       tr("Enable openpilot"),
       tr("Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off."),
-      "../assets/offroad/icon_openpilot.png",
+      "../assets/img_chffr_wheel.png",
     },
     {
       "ExperimentalLongitudinalEnabled",
@@ -247,8 +247,8 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   addItem(translateBtn);
 
-  QObject::connect(uiState(), &UIState::primeTypeChanged, [this] (PrimeType type) {
-    pair_device->setVisible(type == PrimeType::PRIME_TYPE_UNPAIRED);
+  QObject::connect(uiState()->prime_state, &PrimeState::changed, [this] (PrimeState::Type type) {
+    pair_device->setVisible(type == PrimeState::PRIME_TYPE_UNPAIRED);
   });
   QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
     for (auto btn : findChildren<ButtonControl *>()) {
@@ -335,11 +335,6 @@ void DevicePanel::poweroff() {
   }
 }
 
-void DevicePanel::showEvent(QShowEvent *event) {
-  pair_device->setVisible(uiState()->primeType() == PrimeType::PRIME_TYPE_UNPAIRED);
-  ListWidget::showEvent(event);
-}
-
 void SettingsWindow::showEvent(QShowEvent *event) {
   setCurrentPanel(0);
 }
@@ -386,9 +381,12 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   TogglesPanel *toggles = new TogglesPanel(this);
   QObject::connect(this, &SettingsWindow::expandToggleDescription, toggles, &TogglesPanel::expandToggleDescription);
 
+  auto networking = new Networking(this);
+  QObject::connect(uiState()->prime_state, &PrimeState::changed, networking, &Networking::setPrimeType);
+
   QList<QPair<QString, QWidget *>> panels = {
     {tr("Device"), device},
-    {tr("Network"), new Networking(this)},
+    {tr("Network"), networking},
     {tr("Toggles"), toggles},
     {tr("Software"), new SoftwarePanel(this)},
   };

@@ -11,7 +11,7 @@ import openpilot.selfdrive.test.process_replay.process_replay as pr
 # These processes currently fail because of unrealistic data breaking assumptions
 # that openpilot makes causing error with NaN, inf, int size, array indexing ...
 # TODO: Make each one testable
-NOT_TESTED = ['controlsd', 'card', 'plannerd', 'calibrationd', 'dmonitoringd', 'paramsd', 'dmonitoringmodeld', 'modeld']
+NOT_TESTED = ['selfdrived', 'controlsd', 'card', 'plannerd', 'calibrationd', 'dmonitoringd', 'paramsd', 'dmonitoringmodeld', 'modeld']
 
 TEST_CASES = [(cfg.proc_name, copy.deepcopy(cfg)) for cfg in pr.CONFIGS if cfg.proc_name not in NOT_TESTED]
 

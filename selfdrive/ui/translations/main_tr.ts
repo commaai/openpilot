@@ -88,21 +88,6 @@
     </message>
 </context>
 <context>
-    <name>AnnotatedCameraWidget</name>
-    <message>
-        <source>km/h</source>
-        <translation type="unfinished">km/h</translation>
-    </message>
-    <message>
-        <source>mph</source>
-        <translation type="unfinished">mph</translation>
-    </message>
-    <message>
-        <source>MAX</source>
-        <translation type="unfinished">MAX</translation>
-    </message>
-</context>
-<context>
     <name>ConfirmationDialog</name>
     <message>
         <source>Ok</source>
@@ -290,6 +275,21 @@
     </message>
 </context>
 <context>
+    <name>HudRenderer</name>
+    <message>
+        <source>km/h</source>
+        <translation>km/h</translation>
+    </message>
+    <message>
+        <source>mph</source>
+        <translation>mph</translation>
+    </message>
+    <message>
+        <source>MAX</source>
+        <translation>MAX</translation>
+    </message>
+</context>
+<context>
     <name>InputDialog</name>
     <message>
         <source>Cancel</source>
@@ -383,10 +383,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>openpilot was unable to identify your car. Check integrity of cables and ensure all connections are secure, particularly that the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -413,19 +409,19 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Waiting for controls to start</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>TAKE CONTROL IMMEDIATELY</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Controls Unresponsive</source>
+        <source>Reboot Device</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Reboot Device</source>
+        <source>Waiting to start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>System Unresponsive</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -60,7 +60,7 @@ jobs:
       run: |
         cd $STRIPPED_DIR
         ${{ env.RUN }} "release/check-dirty.sh && \
-                        MAX_EXAMPLES=5 $PYTEST -m 'not slow' selfdrive/car"
+                        MAX_EXAMPLES=5 $PYTEST -m 'not slow' selfdrive/car system/manager"
     - name: Static analysis
       timeout-minutes: 1
       run: |
@@ -337,7 +337,6 @@ jobs:
     # This job name needs to be the same as UI_JOB_NAME in ui_preview.yaml
     name: Create UI Report
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
         with:
@@ -353,5 +352,5 @@ jobs:
       - name: Upload Test Report
         uses: actions/upload-artifact@v4
         with:
-          name: report-${{ github.event.number }}
+          name: report-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'master' || github.event.number }}
           path: selfdrive/ui/tests/test_ui/report_1/screenshots

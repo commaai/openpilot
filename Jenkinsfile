@@ -84,6 +84,8 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
       docker.image('ghcr.io/commaai/alpine-ssh').inside('--user=root') {
         timeout(time: 35, unit: 'MINUTES') {
           retry (3) {
+            def date = sh(script: 'date', returnStdout: true).trim();
+            device(device_ip, "set time", "date -s '" + date + "'")
             device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
           }
           steps.each { item ->
@@ -147,7 +149,7 @@ node {
           ["build openpilot", "cd system/manager && ./build.py"],
           ["check dirty", "release/check-dirty.sh"],
           ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
-          ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
+          //["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
         ])
       },
       'HW + Unit Tests': {

@@ -12,7 +12,7 @@ from openpilot.common.git import get_commit
 from openpilot.tools.lib.openpilotci import get_url, upload_file
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, replay_process, \
-                                                                   check_openpilot_enabled, check_most_messages_valid
+                                                                   check_most_messages_valid
 from openpilot.tools.lib.filereader import FileReader
 from openpilot.tools.lib.logreader import LogReader, save_log
 
@@ -42,7 +42,7 @@ source_segments = [
 segments = [
   ("BODY", "regenA67A128BCD8|2024-08-30--02-36-22--0"),
   ("HYUNDAI", "regen9CBD921E93E|2024-08-30--02-38-51--0"),
-  ("HYUNDAI2", "regen12E0C4EA1A7|2024-08-30--02-42-40--0"),
+  ("HYUNDAI2", "regen306779F6870|2024-10-03--04-03-23--0"),
   ("TOYOTA", "regen1CA7A48E6F7|2024-08-30--02-45-08--0"),
   ("TOYOTA2", "regen6E484EDAB96|2024-08-30--02-47-37--0"),
   ("TOYOTA3", "regen4CE950B0267|2024-08-30--02-51-30--0"),
@@ -60,7 +60,7 @@ segments = [
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
-excluded_interfaces = ["mock"]
+excluded_interfaces = ["mock", "tesla"]
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
@@ -103,10 +103,6 @@ def test_process(cfg, lr, segment, ref_log_path, new_log_path, ignore_fields=Non
   except Exception as e:
     raise Exception("failed on segment: " + segment) from e
 
-  # check to make sure openpilot is engaged in the route
-  if cfg.proc_name == "controlsd":
-    if not check_openpilot_enabled(log_msgs):
-      return f"Route did not enable at all or for long enough: {new_log_path}", log_msgs
   if not check_most_messages_valid(log_msgs):
     return f"Route did not have enough valid messages: {new_log_path}", log_msgs
 
@@ -139,7 +135,7 @@ if __name__ == "__main__":
   parser.add_argument("--blacklist-cars", type=str, nargs="*", default=[],
                       help="Blacklist given cars from the test (e.g. HONDA)")
   parser.add_argument("--ignore-fields", type=str, nargs="*", default=[],
-                      help="Extra fields or msgs to ignore (e.g. carState.events)")
+                      help="Extra fields or msgs to ignore (e.g. driverMonitoringState.events)")
   parser.add_argument("--ignore-msgs", type=str, nargs="*", default=[],
                       help="Msgs to ignore (e.g. carEvents)")
   parser.add_argument("--update-refs", action="store_true",

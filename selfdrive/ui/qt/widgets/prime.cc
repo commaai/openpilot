@@ -180,20 +180,20 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
 
   QFrame* finishRegistration = new QFrame;
   finishRegistration->setObjectName("primeWidget");
-  QVBoxLayout* finishRegistationLayout = new QVBoxLayout(finishRegistration);
-  finishRegistationLayout->setSpacing(38);
-  finishRegistationLayout->setContentsMargins(64, 48, 64, 48);
+  QVBoxLayout* finishRegistrationLayout = new QVBoxLayout(finishRegistration);
+  finishRegistrationLayout->setSpacing(38);
+  finishRegistrationLayout->setContentsMargins(64, 48, 64, 48);
 
   QLabel* registrationTitle = new QLabel(tr("Finish Setup"));
   registrationTitle->setStyleSheet("font-size: 75px; font-weight: bold;");
-  finishRegistationLayout->addWidget(registrationTitle);
+  finishRegistrationLayout->addWidget(registrationTitle);
 
   QLabel* registrationDescription = new QLabel(tr("Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."));
   registrationDescription->setWordWrap(true);
   registrationDescription->setStyleSheet("font-size: 50px; font-weight: light;");
-  finishRegistationLayout->addWidget(registrationDescription);
+  finishRegistrationLayout->addWidget(registrationDescription);
 
-  finishRegistationLayout->addStretch();
+  finishRegistrationLayout->addStretch();
 
   QPushButton* pair = new QPushButton(tr("Pair device"));
   pair->setStyleSheet(R"(
@@ -208,7 +208,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
       background-color: #3049F4;
     }
   )");
-  finishRegistationLayout->addWidget(pair);
+  finishRegistrationLayout->addWidget(pair);
 
   popup = new PairingPopup(this);
   QObject::connect(pair, &QPushButton::clicked, popup, &PairingPopup::exec);
@@ -246,33 +246,12 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   sp_retain.setRetainSizeWhenHidden(true);
   setSizePolicy(sp_retain);
 
-  // set up API requests
-  if (auto dongleId = getDongleId()) {
-    QString url = CommaApi::BASE_URL + "/v1.1/devices/" + *dongleId + "/";
-    RequestRepeater* repeater = new RequestRepeater(this, url, "ApiCache_Device", 5);
-
-    QObject::connect(repeater, &RequestRepeater::requestDone, this, &SetupWidget::replyFinished);
-  }
-}
-
-void SetupWidget::replyFinished(const QString &response, bool success) {
-  if (!success) return;
-
-  QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
-  if (doc.isNull()) {
-    qDebug() << "JSON Parse failed on getting pairing and prime status";
-    return;
-  }
-
-  QJsonObject json = doc.object();
-  bool is_paired = json["is_paired"].toBool();
-  PrimeType prime_type = static_cast<PrimeType>(json["prime_type"].toInt());
-  uiState()->setPrimeType(is_paired ? prime_type : PrimeType::PRIME_TYPE_UNPAIRED);
-
-  if (!is_paired) {
-    mainLayout->setCurrentIndex(0);
-  } else {
-    popup->reject();
-    mainLayout->setCurrentIndex(1);
-  }
+  QObject::connect(uiState()->prime_state, &PrimeState::changed, [this](PrimeState::Type type) {
+    if (type == PrimeState::PRIME_TYPE_UNPAIRED) {
+      mainLayout->setCurrentIndex(0);  // Display "Pair your device" widget
+    } else {
+      popup->reject();
+      mainLayout->setCurrentIndex(1);  // Display Wi-Fi prompt widget
+    }
+  });
 }

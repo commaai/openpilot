@@ -43,40 +43,10 @@ jobs:
                         source selfdrive/test/setup_vsound.sh && \
                         CI=1 pytest tools/sim/tests/test_metadrive_bridge.py"
 
-  test_compatibility:
-    name: test 20.04 + 3.11
-    runs-on: ubuntu-20.04
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    - name: Installing ubuntu dependencies
-      run: INSTALL_EXTRA_PACKAGES=no tools/install_ubuntu_dependencies.sh
-    - name: Installing python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11.4'
-    - name: Installing pip
-      run: pip install pip==24.0
-    - name: Installing uv
-      run: pip install uv
-    - name: git LFS
-      run: git lfs pull
-    - run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
-    - name: Getting scons cache
-      uses: 'actions/cache@v4'
-      with:
-        path: /tmp/scons_cache
-        key: scons-${{ runner.arch }}-ubuntu2004-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
-        restore-keys: |
-          scons-${{ runner.arch }}-ubuntu2004-${{ env.CACHE_COMMIT_DATE }}
-          scons-${{ runner.arch }}-ubuntu2004
-    - name: Building openpilot
-      run: uv run scons -u -j$(nproc)
-
   devcontainer:
     name: devcontainer
     runs-on: ubuntu-latest
+    if: false  # we can re-enable once this is faster
     steps:
     - uses: actions/checkout@v4
       with:

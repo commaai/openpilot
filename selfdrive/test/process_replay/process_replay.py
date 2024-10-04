@@ -17,14 +17,13 @@ import cereal.messaging as messaging
 from cereal import car
 from cereal.services import SERVICE_LIST
 from msgq.visionipc import VisionIpcServer, get_endpoint_name as vipc_get_endpoint_name
-from opendbc.car import structs
 from opendbc.car.car_helpers import get_car, interfaces
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.common.timeout import Timeout
 from openpilot.common.realtime import DT_CTRL
 from panda.python import ALTERNATIVE_EXPERIENCE
-from openpilot.selfdrive.car.card import can_comm_callbacks, convert_to_capnp
+from openpilot.selfdrive.car.card import can_comm_callbacks
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state, available_streams
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
@@ -363,17 +362,17 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
     cached_params = None
     if has_cached_cp:
       with car.CarParams.from_bytes(cached_params_raw) as _cached_params:
-        cached_params = structs.CarParams(carName=_cached_params.carName, carFw=_cached_params.carFw, carVin=_cached_params.carVin)
+        cached_params = _cached_params
 
     CP = get_car(*can_callbacks, lambda obd: None, Params().get_bool("ExperimentalLongitudinalEnabled"), cached_params=cached_params).CP
 
     if not params.get_bool("DisengageOnAccelerator"):
       CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
 
-  params.put("CarParams", convert_to_capnp(CP).to_bytes())
+  params.put("CarParams", CP.to_bytes())
 
 
-def controlsd_rcv_callback(msg, cfg, frame):
+def selfdrived_rcv_callback(msg, cfg, frame):
   return (frame - 1) == 0 or msg.which() == 'carState'
 
 
@@ -452,7 +451,7 @@ class FrequencyBasedRcvCallback:
     return bool(len(resp_sockets))
 
 
-def controlsd_config_callback(params, cfg, lr):
+def selfdrived_config_callback(params, cfg, lr):
   ublox = params.get_bool("UbloxAvailable")
   sub_keys = ({"gpsLocation", } if ublox else {"gpsLocationExternal", })
 
@@ -461,26 +460,37 @@ def controlsd_config_callback(params, cfg, lr):
 
 CONFIGS = [
   ProcessConfig(
-    proc_name="controlsd",
+    proc_name="selfdrived",
     pubs=[
       "carState", "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
       "longitudinalPlan", "livePose", "liveParameters", "radarState",
       "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
-      "testJoystick", "liveTorqueParameters", "accelerometer", "gyroscope", "carOutput",
-      "gpsLocationExternal", "gpsLocation",
+      "liveTorqueParameters", "accelerometer", "gyroscope", "carOutput",
+      "gpsLocationExternal", "gpsLocation", "controlsState", "carControl", "driverAssistance", "alertDebug",
     ],
-    subs=["selfdriveState", "controlsState", "carControl", "onroadEvents"],
-    ignore=["logMonoTime", "controlsState.cumLagMs"],
-    config_callback=controlsd_config_callback,
+    subs=["selfdriveState", "onroadEvents"],
+    ignore=["logMonoTime"],
+    config_callback=selfdrived_config_callback,
     init_callback=get_car_params_callback,
-    should_recv_callback=controlsd_rcv_callback,
+    should_recv_callback=selfdrived_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
   ),
   ProcessConfig(
+    proc_name="controlsd",
+    pubs=["liveParameters", "liveTorqueParameters", "modelV2", "selfdriveState",
+          "liveCalibration", "livePose", "longitudinalPlan", "carState", "carOutput",
+          "driverMonitoringState", "onroadEvents", "driverAssistance"],
+    subs=["carControl", "controlsState"],
+    ignore=["logMonoTime", ],
+    init_callback=get_car_params_callback,
+    should_recv_callback=MessageBasedRcvCallback("selfdriveState"),
+    tolerance=NUMPY_TOLERANCE,
+  ),
+  ProcessConfig(
     proc_name="card",
     pubs=["pandaStates", "carControl", "onroadEvents", "can"],
-    subs=["sendcan", "carState", "carParams", "carOutput"],
+    subs=["sendcan", "carState", "carParams", "carOutput", "liveTracks"],
     ignore=["logMonoTime", "carState.cumLagMs"],
     init_callback=card_fingerprint_callback,
     should_recv_callback=card_rcv_callback,
@@ -490,17 +500,16 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="radard",
-    pubs=["can", "carState", "modelV2"],
-    subs=["radarState", "liveTracks"],
-    ignore=["logMonoTime", "radarState.cumLagMs"],
+    pubs=["liveTracks", "carState", "modelV2"],
+    subs=["radarState"],
+    ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
-    should_recv_callback=MessageBasedRcvCallback("can"),
-    main_pub="can",
+    should_recv_callback=FrequencyBasedRcvCallback("modelV2"),
   ),
   ProcessConfig(
     proc_name="plannerd",
     pubs=["modelV2", "carControl", "carState", "controlsState", "radarState", "selfdriveState"],
-    subs=["longitudinalPlan"],
+    subs=["longitudinalPlan", "driverAssistance"],
     ignore=["logMonoTime", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime"],
     init_callback=get_car_params_callback,
     should_recv_callback=FrequencyBasedRcvCallback("modelV2"),
@@ -559,9 +568,9 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="modeld",
-    pubs=["deviceState", "roadCameraState", "wideRoadCameraState", "liveCalibration", "driverMonitoringState"],
+    pubs=["deviceState", "roadCameraState", "wideRoadCameraState", "liveCalibration", "driverMonitoringState", "carState"],
     subs=["modelV2", "drivingModelData", "cameraOdometry"],
-    ignore=["logMonoTime", "modelV2.frameDropPerc", "modelV2.modelExecutionTime"],
+    ignore=["logMonoTime", "modelV2.frameDropPerc", "modelV2.modelExecutionTime", "drivingModelData.frameDropPerc", "drivingModelData.modelExecutionTime"],
     should_recv_callback=ModeldCameraSyncRcvCallback(),
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.020,
@@ -575,7 +584,7 @@ CONFIGS = [
     proc_name="dmonitoringmodeld",
     pubs=["liveCalibration", "driverCameraState"],
     subs=["driverStateV2"],
-    ignore=["logMonoTime", "driverStateV2.modelExecutionTime", "driverStateV2.dspExecutionTime"],
+    ignore=["logMonoTime", "driverStateV2.modelExecutionTime", "driverStateV2.gpuExecutionTime"],
     should_recv_callback=dmonitoringmodeld_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.020,

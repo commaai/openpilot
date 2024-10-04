@@ -17,6 +17,118 @@ struct Map(Key, Value) {
   }
 }
 
+struct OnroadEvent @0xc4fa6047f024e718 {
+  name @0 :EventName;
+
+  # event types
+  enable @1 :Bool;
+  noEntry @2 :Bool;
+  warning @3 :Bool;   # alerts presented only when  enabled or soft disabling
+  userDisable @4 :Bool;
+  softDisable @5 :Bool;
+  immediateDisable @6 :Bool;
+  preEnable @7 :Bool;
+  permanent @8 :Bool; # alerts presented regardless of openpilot state
+  overrideLateral @10 :Bool;
+  overrideLongitudinal @9 :Bool;
+
+  enum EventName @0x91f1992a1f77fb03 {
+    canError @0;
+    steerUnavailable @1;
+    wrongGear @2;
+    doorOpen @3;
+    seatbeltNotLatched @4;
+    espDisabled @5;
+    wrongCarMode @6;
+    steerTempUnavailable @7;
+    reverseGear @8;
+    buttonCancel @9;
+    buttonEnable @10;
+    pedalPressed @11;  # exits active state
+    preEnableStandstill @12;  # added during pre-enable state with brake
+    gasPressedOverride @13;  # added when user is pressing gas with no disengage on gas
+    steerOverride @14;
+    cruiseDisabled @15;
+    speedTooLow @16;
+    outOfSpace @17;
+    overheat @18;
+    calibrationIncomplete @19;
+    calibrationInvalid @20;
+    calibrationRecalibrating @21;
+    controlsMismatch @22;
+    pcmEnable @23;
+    pcmDisable @24;
+    radarFault @25;
+    brakeHold @26;
+    parkBrake @27;
+    manualRestart @28;
+    joystickDebug @29;
+    longitudinalManeuver @30;
+    steerTempUnavailableSilent @31;
+    resumeRequired @32;
+    preDriverDistracted @33;
+    promptDriverDistracted @34;
+    driverDistracted @35;
+    preDriverUnresponsive @36;
+    promptDriverUnresponsive @37;
+    driverUnresponsive @38;
+    belowSteerSpeed @39;
+    lowBattery @40;
+    accFaulted @41;
+    sensorDataInvalid @42;
+    commIssue @43;
+    commIssueAvgFreq @44;
+    tooDistracted @45;
+    posenetInvalid @46;
+    soundsUnavailable @47;
+    preLaneChangeLeft @48;
+    preLaneChangeRight @49;
+    laneChange @50;
+    lowMemory @51;
+    stockAeb @52;
+    ldw @53;
+    carUnrecognized @54;
+    invalidLkasSetting @55;
+    speedTooHigh @56;
+    laneChangeBlocked @57;
+    relayMalfunction @58;
+    stockFcw @59;
+    startup @60;
+    startupNoCar @61;
+    startupNoControl @62;
+    startupNoSecOcKey @63;
+    startupMaster @64;
+    fcw @65;
+    steerSaturated @66;
+    belowEngageSpeed @67;
+    noGps @68;
+    wrongCruiseMode @69;
+    modeldLagging @70;
+    deviceFalling @71;
+    fanMalfunction @72;
+    cameraMalfunction @73;
+    cameraFrameRate @74;
+    processNotRunning @75;
+    dashcamMode @76;
+    selfdriveInitializing @77;
+    usbError @78;
+    cruiseMismatch @79;
+    canBusMissing @80;
+    selfdrivedLagging @81;
+    resumeBlocked @82;
+    steerTimeLimit @83;
+    vehicleSensorsInvalid @84;
+    locationdTemporaryError @85;
+    locationdPermanentError @86;
+    paramsdTemporaryError @87;
+    paramsdPermanentError @88;
+    actuatorsApiUnavailable @89;
+    espActive @90;
+    personalityChanged @91;
+    aeb @92;
+  }
+}
+
 enum LongitudinalPersonality {
   aggressive @0;
   standard @1;
@@ -611,7 +723,6 @@ struct RadarState @0x9a185389d6fdd05f {
 
   leadOne @3 :LeadData;
   leadTwo @4 :LeadData;
-  cumLagMs @5 :Float32;
 
   struct LeadData {
     dRel @0 :Float32;
@@ -641,6 +752,7 @@ struct RadarState @0x9a185389d6fdd05f {
   calCycleDEPRECATED @8 :Int32;
   calPercDEPRECATED @9 :Int8;
   canMonoTimesDEPRECATED @10 :List(UInt64);
+  cumLagMsDEPRECATED @5 :Float32;
 }
 
 struct LiveCalibrationData {
@@ -671,7 +783,7 @@ struct LiveCalibrationData {
   }
 }
 
-struct LiveTracks {
+struct LiveTracksDEPRECATED {
   trackId @0 :Int32;
   dRel @1 :Float32;
   yRel @2 :Float32;
@@ -698,6 +810,7 @@ struct SelfdriveState {
   alertSize @6 :AlertSize;
   alertType @7 :Text;
   alertSound @8 :Car.CarControl.HUDControl.AudibleAlert;
+  alertHudVisual @12 :Car.CarControl.HUDControl.VisualAlert;
 
   # configurable driving settings
   experimentalMode @10 :Bool;
@@ -726,7 +839,6 @@ struct SelfdriveState {
 }
 
 struct ControlsState @0x97ff69c53601abf1 {
-  cumLagMs @15 :Float32;
   longitudinalPlanMonoTime @28 :UInt64;
   lateralPlanMonoTime @50 :UInt64;
 
@@ -735,7 +847,6 @@ struct ControlsState @0x97ff69c53601abf1 {
   upAccelCmd @4 :Float32;
   uiAccelCmd @5 :Float32;
   ufAccelCmd @33 :Float32;
-  aTarget @35 :Float32;
   curvature @37 :Float32;  # path curvature from vehicle model
   desiredCurvature @61 :Float32;  # lag adjusted curvatures used by lateral controllers
   forceDecel @51 :Bool;
@@ -880,12 +991,15 @@ struct ControlsState @0x97ff69c53601abf1 {
   vCruiseDEPRECATED @22 :Float32;  # actual set speed
   vCruiseClusterDEPRECATED @63 :Float32;  # set speed to display in the UI
   startMonoTimeDEPRECATED @48 :UInt64;
+  cumLagMsDEPRECATED @15 :Float32;
+  aTargetDEPRECATED @35 :Float32;
 }
 
 struct DrivingModelData {
   frameId @0 :UInt32;
   frameIdExtra @1 :UInt32;
   frameDropPerc @6 :Float32;
+  modelExecutionTime @7 :Float32;
 
   action @2 :ModelDataV2.Action;
 
@@ -931,7 +1045,6 @@ struct ModelDataV2 {
   frameDropPerc @2 :Float32;
   timestampEof @3 :UInt64;
   modelExecutionTime @15 :Float32;
-  gpuExecutionTime @17 :Float32;
   rawPredictions @16 :Data;
 
   # predicted future position, orientation, etc..
@@ -958,12 +1071,13 @@ struct ModelDataV2 {
   # Model perceived motion
   temporalPose @21 :Pose;
 
+  # e2e lateral planner
+  action @26: Action;
+
+  gpuExecutionTimeDEPRECATED @17 :Float32;
   navEnabledDEPRECATED @22 :Bool;
   locationMonoTimeDEPRECATED @24 :UInt64;
-
-  # e2e lateral planner
   lateralPlannerSolutionDEPRECATED @25: LateralPlannerSolution;
-  action @26: Action;
 
   struct LeadDataV2 {
     prob @0 :Float32; # probability that car is your lead at time t
@@ -1096,6 +1210,14 @@ struct AndroidLogEntry {
   message @6 :Text;
 }
 
+struct DriverAssistance {
+  # Lane Departure Warnings
+  leftLaneDeparture @0 :Bool;
+  rightLaneDeparture @1 :Bool;
+
+  # FCW, AEB, etc. will go here
+}
+
 struct LongitudinalPlan @0xe00b5b3eba12876c {
   modelMonoTime @9 :UInt64;
   hasLead @7 :Bool;
@@ -1147,7 +1269,7 @@ struct LongitudinalPlan @0xe00b5b3eba12876c {
   radarValidDEPRECATED @28 :Bool;
   radarCanErrorDEPRECATED @30 :Bool;
   commIssueDEPRECATED @31 :Bool;
-  eventsDEPRECATED @13 :List(Car.OnroadEvent);
+  eventsDEPRECATED @13 :List(Car.OnroadEventDEPRECATED);
   gpsTrajectoryDEPRECATED @12 :GpsTrajectory;
   gpsPlannerActiveDEPRECATED @19 :Bool;
   personalityDEPRECATED @36 :LongitudinalPersonality;
@@ -2002,7 +2124,8 @@ struct Joystick {
 struct DriverStateV2 {
   frameId @0 :UInt32;
   modelExecutionTime @1 :Float32;
-  dspExecutionTime @2 :Float32;
+  dspExecutionTimeDEPRECATED @2 :Float32;
+  gpuExecutionTime @8 :Float32;
   rawPredictions @3 :Data;
 
   poorVisionProb @4 :Float32;
@@ -2061,7 +2184,7 @@ struct DriverStateDEPRECATED @0xb83c6cc593ed0a00 {
 }
 
 struct DriverMonitoringState @0xb83cda094a1da284 {
-  events @0 :List(Car.OnroadEvent);
+  events @18 :List(OnroadEvent);
   faceDetected @1 :Bool;
   isDistracted @2 :Bool;
   distractedType @17 :UInt32;
@@ -2080,6 +2203,7 @@ struct DriverMonitoringState @0xb83cda094a1da284 {
 
   isPreviewDEPRECATED @15 :Bool;
   rhdCheckedDEPRECATED @5 :Bool;
+  eventsDEPRECATED @0 :List(Car.OnroadEventDEPRECATED);
 }
 
 struct Boot {
@@ -2295,6 +2419,11 @@ struct EncodeData {
   height @5 :UInt32;
 }
 
+struct DebugAlert {
+  alertText1 @0 :Text;
+  alertText2 @1 :Text;
+}
+
 struct UserFlag {
 }
 
@@ -2335,13 +2464,14 @@ struct Event {
     pandaStates @81 :List(PandaState);
     peripheralState @80 :PeripheralState;
     radarState @13 :RadarState;
-    liveTracks @16 :List(LiveTracks);
+    liveTracks @131 :Car.RadarData;
     sendcan @17 :List(CanData);
     liveCalibration @19 :LiveCalibrationData;
     carState @22 :Car.CarState;
     carControl @23 :Car.CarControl;
     carOutput @127 :Car.CarOutput;
     longitudinalPlan @24 :LongitudinalPlan;
+    driverAssistance @132 :DriverAssistance;
     ubloxGnss @34 :UbloxGnss;
     ubloxRaw @39 :Data;
     qcomGnss @31 :QcomGnss;
@@ -2352,7 +2482,7 @@ struct Event {
     liveTorqueParameters @94 :LiveTorqueParametersData;
     cameraOdometry @63 :CameraOdometry;
     thumbnail @66: Thumbnail;
-    onroadEvents @68: List(Car.OnroadEvent);
+    onroadEvents @134: List(OnroadEvent);
     carParams @69: Car.CarParams;
     driverMonitoringState @71: DriverMonitoringState;
     livePose @129 :LivePose;
@@ -2402,6 +2532,7 @@ struct Event {
     driverEncodeData @87 :EncodeData;
     wideRoadEncodeData @88 :EncodeData;
     qRoadEncodeData @89 :EncodeData;
+    alertDebug @133 :DebugAlert;
 
     livestreamRoadEncodeData @120 :EncodeData;
     livestreamWideRoadEncodeData @121 :EncodeData;
@@ -2465,5 +2596,7 @@ struct Event {
     navModelDEPRECATED @104 :NavModelData;
     uiPlanDEPRECATED @106 :UiPlan;
     liveLocationKalmanDEPRECATED @72 :LiveLocationKalman;
+    liveTracksDEPRECATED @16 :List(LiveTracksDEPRECATED);
+    onroadEventsDEPRECATED @68: List(Car.OnroadEventDEPRECATED);
   }
 }
