@@ -35,7 +35,7 @@ State = log.SelfdriveState.OpenpilotState
 PandaType = log.PandaState.PandaType
 LaneChangeState = log.LaneChangeState
 LaneChangeDirection = log.LaneChangeDirection
-EventName = car.OnroadEvent.EventName
+EventName = log.OnroadEvent.EventName
 ButtonType = car.CarState.ButtonEvent.Type
 SafetyModel = car.CarParams.SafetyModel
 
