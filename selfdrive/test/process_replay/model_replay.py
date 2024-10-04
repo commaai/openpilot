@@ -47,17 +47,17 @@ def zl(array, fill):
   return zip_longest(array, [], fillvalue=fill)
 
 def generate_report(proposed, master, tmp):
-  ModelV2_Plots = [
-                   (lambda x: x.action.desiredCurvature, "title1"),
-                   (lambda x: x.meta.disengagePredictions.gasPressProbs[1], "title2"),
-                   (lambda x: x.velocity.x[0], "title3"),
-                   (lambda x: x.action.desiredCurvature, "title4"),
-                   (lambda x: x.leadsV3[0].x[0], "title5")
-                  ]
+  ModelV2_Plots = zl([
+                     (lambda x: x.action.desiredCurvature, "title1"),
+                     (lambda x: x.meta.disengagePredictions.gasPressProbs[1], "title2"),
+                     (lambda x: x.velocity.x[0], "title3"),
+                     (lambda x: x.action.desiredCurvature, "title4"),
+                     (lambda x: x.leadsV3[0].x[0], "title5")
+                    ], "modelV2")
 
   return [plot(map(v[0], get_event(proposed, event)), \
                map(v[0], get_event(master, event)), v[1], tmp) \
-               for v,event in [*zl(ModelV2_Plots, 'modelV2')]]
+               for v,event in [*ModelV2_Plots]]
 
 def comment_replay_report(proposed, master):
   with tempfile.TemporaryDirectory() as tmp:
