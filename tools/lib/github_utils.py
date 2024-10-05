@@ -19,8 +19,12 @@ class GithubUtils:
     return f"https://api.github.com/repos/{self.OWNER}/{self.DATA_REPO}"
 
   def api_call(self, path, data="", method=HTTPMethod.GET, accept="", data_call=False):
-    headers = {"Authorization": f"Bearer {self.DATA_TOKEN if data_call else self.API_TOKEN}", \
-               "Accept": f"application/vnd.github{accept}+json"}
+    token = self.DATA_TOKEN if data_call else self.API_TOKEN
+    if token:
+      headers = {"Authorization": f"Bearer {self.DATA_TOKEN if data_call else self.API_TOKEN}", \
+                 "Accept": f"application/vnd.github{accept}+json"}
+    else:
+      headers = {}
     path = f'{self.DATA_ROUTE if data_call else self.API_ROUTE}/{path}'
     match method:
       case HTTPMethod.GET:
