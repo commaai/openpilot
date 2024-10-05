@@ -1,6 +1,6 @@
 import base64
 import requests
-from http import HTTPMethod, HTTPStatus
+from http import HTTPMethod
 
 class GithubUtils:
   def __init__(self, token, owner='commaai', repo='openpilot', container='ci-artifacts'):
@@ -39,8 +39,8 @@ class GithubUtils:
       github_path = f"contents/{file_name}"
       return self.api_call(github_path, data=data, method=HTTPMethod.PUT).ok
 
-  def upload_files(self, branch, files):
-    return all([upload_file(branch, path, file_name) for path,file_name in files])
+  def upload_files(self, bucket, files):
+    return all(self.upload_file(bucket, path, file_name) for path,file_name in files)
 
   def get_file_url(self, bucket, file_name):
     github_path = f"contents/{file_name}?ref={bucket}"
