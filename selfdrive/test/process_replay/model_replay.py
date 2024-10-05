@@ -6,16 +6,17 @@ from typing import Any
 import tempfile
 from itertools import zip_longest
 
-import requests
+import matplotlib
+matplotlib.use('inline')
 import matplotlib.pyplot as plt
 
-from openpilot.common.run import run_cmd
 from openpilot.system.hardware import PC
-from openpilot.tools.lib.openpilotci import BASE_URL, get_url
+from openpilot.tools.lib.openpilotci import get_url
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.process_replay import get_process_config, replay_process
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.logreader import LogReader, save_log
+from openpilot.tools.lib.github_utils import GithubUtils
 
 TEST_ROUTE = "2f4452b03ccb98f0|2022-12-03--13-45-30"
 SEGMENT = 6
@@ -23,6 +24,11 @@ MAX_FRAMES = 100 if PC else 600
 
 NO_MODEL = "NO_MODEL" in os.environ
 SEND_EXTRA_INPUTS = bool(int(os.getenv("SEND_EXTRA_INPUTS", "0")))
+
+DATA_TOKEN=os.getenv("CI_ARTIFACTS_TOKEN","")
+API_TOKEN=os.getenv("GITHUB_COMMENTS_TOKEN","")
+MODEL_REPLAY_BUCKET="model_replay_master"
+GITHUB = GithubUtils(API_TOKEN, DATA_TOKEN)
 
 
 def get_log_fn(test_route):
@@ -35,7 +41,7 @@ def plot(proposed, master, title, tmp):
   plt.legend(loc='best')
   plt.title(title)
   plt.savefig(f'{tmp}/{title}.png')
-  return title
+  return title + '.png'
 
 def get_event(logs, event):
   return (getattr(m, m.which()) for m in filter(lambda m: m.which() == event, logs))
@@ -58,51 +64,16 @@ def generate_report(proposed, master, tmp):
 
 def comment_replay_report(proposed, master):
   with tempfile.TemporaryDirectory() as tmp:
-    GIT_BRANCH=os.environ['GIT_BRANCH']
-    ARTIFACTS_GIT_BRANCH=f"model_replay_{GIT_BRANCH}"
-    GIT_PATH=tmp
-    GIT_TOKEN=os.environ['CI_ARTIFACTS_TOKEN']
-    GITHUB_API_TOKEN=os.environ['GITHUB_COMMENTS_TOKEN']
-    API_ROUTE="https://api.github.com/repos/commaai/openpilot"
+    PR_BRANCH=os.getenv("GIT_BRANCH","")
+    DATA_BUCKET=f"model_replay_{PR_BRANCH}"
 
-    run_cmd(["git", "clone", "--depth=1", "-b", "master", "https://github.com/commaai/ci-artifacts", tmp])
-
-    # create report
     files = generate_report(proposed, master, tmp)
 
-    # save report
-    run_cmd(["git", "-C", GIT_PATH, "checkout", "-b", ARTIFACTS_GIT_BRANCH])
-    run_cmd(["git", "-C", GIT_PATH, "add", "."])
-    run_cmd(["git", "-C", GIT_PATH, "commit", "-m", "model replay artifacts"])
-    run_cmd(["git", "-C", GIT_PATH, "push", "-f", f"https://commaci-public:{GIT_TOKEN}@github.com/commaai/ci-artifacts", ARTIFACTS_GIT_BRANCH])
-
-    headers = {"Authorization": f"token {GITHUB_API_TOKEN}", "Accept": "application/vnd.github+json"}
-    table = ['<details><summary>Model Replay Plots</summary><table>']
-    for i,f in enumerate(files):
-      if not (i % 2):
-        table.append('<tr>')
-      table.append(f'<td><img src=\\"https://raw.githubusercontent.com/commaai/ci-artifacts/{ARTIFACTS_GIT_BRANCH}/{f}.png\\"></td>')
-      if (i % 2):
-        table.append('</tr>')
-    table.append('</table></details>')
-    table = ''.join(table)
-
-    comment = f'{{"body": "{table}"}}'
-
-    # get PR number
-    r = requests.get(f'{API_ROUTE}/commits/{GIT_BRANCH}/pulls', headers=headers)
-    assert r.ok, r.status_code
-    pr_number = r.json()[0]['number']
-
-    # comment on PR
-    r = requests.get(f'{API_ROUTE}/issues/{pr_number}/comments', headers=headers)
-    assert r.ok, r.status_code
-    comments = [x['id'] for x in r.json() if x['user']['login'] == 'commaci-public']
-    if comments:
-      r = requests.patch(f'{API_ROUTE}/issues/comments/{comments[0]}', headers=headers, data=comment)
-    else:
-      r = requests.post(f'{API_ROUTE}/issues/{pr_number}/comments', headers=headers, data=comment)
-    assert r.ok, r.status_code
+    GITHUB.comment_images_on_pr("Model Replay Plots",
+                                "commaci-public",
+                                PR_BRANCH,
+                                DATA_BUCKET,
+                                [(x, tmp + '/' + x) for x in files])
 
 def trim_logs_to_max_frames(logs, max_frames, frs_types, include_all_types):
   all_msgs = []
@@ -150,7 +121,6 @@ def model_replay(lr, frs):
 if __name__ == "__main__":
   update = "--update" in sys.argv or (os.getenv("GIT_BRANCH", "") == 'master')
   replay_dir = os.path.dirname(os.path.abspath(__file__))
-  ref_commit_fn = os.path.join(replay_dir, "model_replay_ref_commit")
 
   # load logs
   lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT, "rlog.bz2")))
@@ -170,7 +140,7 @@ if __name__ == "__main__":
   if not update:
     log_fn = get_log_fn(TEST_ROUTE)
     try:
-      all_logs = list(LogReader(BASE_URL + log_fn))
+      all_logs = list(LogReader(GITHUB.get_file_url(MODEL_REPLAY_BUCKET, log_fn)))
       cmp_log = []
 
       # logs are ordered based on type: modelV2, drivingModelData, driverStateV2
@@ -212,7 +182,7 @@ if __name__ == "__main__":
             ignore.append(f'modelV2.roadEdges.{i}.{field}')
       tolerance = .3 if PC else None
       results: Any = {TEST_ROUTE: {}}
-      log_paths: Any = {TEST_ROUTE: {"models": {'ref': BASE_URL + log_fn, 'new': log_fn}}}
+      log_paths: Any = {TEST_ROUTE: {"models": {'ref': log_fn, 'new': log_fn}}}
       results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
       diff_short, diff_long, failed = format_diff(results, log_paths, 'master')
 
@@ -231,14 +201,11 @@ if __name__ == "__main__":
 
   # upload new refs
   if update and not PC:
-    from openpilot.tools.lib.openpilotci import upload_file
-
     print("Uploading new refs")
-
     log_fn = get_log_fn(TEST_ROUTE)
     save_log(log_fn, log_msgs)
     try:
-      upload_file(log_fn, os.path.basename(log_fn), overwrite=True)
+      GITHUB.upload_file(MODEL_REPLAY_BUCKET, os.path.basename(log_fn), log_fn)
     except Exception as e:
       print("failed to upload", e)
 

@@ -3,20 +3,25 @@ import requests
 from http import HTTPMethod
 
 class GithubUtils:
-  def __init__(self, token, owner='commaai', repo='openpilot', container='ci-artifacts'):
+  def __init__(self, api_token, data_token, owner='commaai', api_repo='openpilot', data_repo='ci-artifacts'):
     self.OWNER = owner
-    self.REPO = repo
-    self.TOKEN = token
-    self.CONTAINER = container
+    self.API_REPO = api_repo
+    self.DATA_REPO = data_repo
+    self.API_TOKEN = api_token
+    self.DATA_TOKEN = data_token
 
   @property
   def API_ROUTE(self):
-    return f"https://api.github.com/repos/{self.OWNER}/{self.REPO}"
+    return f"https://api.github.com/repos/{self.OWNER}/{self.API_REPO}"
 
-  def api_call(self, path, data="", method=HTTPMethod.GET, accept=""):
-    headers = {"Authorization": f"Bearer {self.TOKEN}", \
+  @property
+  def DATA_ROUTE(self):
+    return f"https://api.github.com/repos/{self.OWNER}/{self.DATA_REPO}"
+
+  def api_call(self, path, data="", method=HTTPMethod.GET, accept="", data_call=False):
+    headers = {"Authorization": f"Bearer {self.DATA_TOKEN if data_call else self.API_TOKEN}", \
                "Accept": f"application/vnd.github{accept}+json"}
-    path = self.API_ROUTE + f'/{path}'
+    path = f'{self.DATA_ROUTE if data_call else self.API_ROUTE}/{path}'
     match method:
       case HTTPMethod.GET:
         return requests.get(path, headers=headers)
@@ -32,20 +37,31 @@ class GithubUtils:
   def upload_file(self, bucket, path, file_name):
     with open(path, "rb") as f:
       encoded = base64.b64encode(f.read()).decode()
+
+      # check if file already exists
+      sha = self.get_file_sha(bucket, file_name)
+      sha = f'"sha":"{sha}",' if sha else ''
+
       data = f'{{"message":"uploading {file_name}", \
                     "branch":"{bucket}", \
-                    "commiter":{{"name":"Vehicle Researcher", "email": "user@comma.ai"}}, \
+                    "committer":{{"name":"Vehicle Researcher", "email": "user@comma.ai"}}, \
+                    {sha} \
                     "content":"{encoded}"}}'
       github_path = f"contents/{file_name}"
-      return self.api_call(github_path, data=data, method=HTTPMethod.PUT).ok
+      return self.api_call(github_path, data=data, method=HTTPMethod.PUT, data_call=True).ok
 
   def upload_files(self, bucket, files):
-    return all(self.upload_file(bucket, path, file_name) for path,file_name in files)
+    return all(self.upload_file(bucket, path, file_name) for file_name,path in files)
 
   def get_file_url(self, bucket, file_name):
     github_path = f"contents/{file_name}?ref={bucket}"
-    r = self.api_call(github_path)
+    r = self.api_call(github_path, data_call=True)
     return r.json()['download_url'] if r.ok else None
+
+  def get_file_sha(self, bucket, file_name):
+    github_path = f"contents/{file_name}?ref={bucket}"
+    r = self.api_call(github_path, data_call=True)
+    return r.json()['sha'] if r.ok else None
 
   def get_pr_number(self, pr_branch):
     github_path = f"commits/{pr_branch}/pulls"
@@ -54,6 +70,8 @@ class GithubUtils:
 
   def comment_on_pr(self, comment, commenter, pr_branch):
     pr_number = self.get_pr_number(pr_branch)
+    if not pr_number:
+      return False
     data = f'{{"body": "{comment}"}}'
     github_path = f'issues/{pr_number}/comments'
     r = self.api_call(github_path)
@@ -67,12 +85,16 @@ class GithubUtils:
       github_path=f'issues/{pr_number}/comments'
       return self.api_call(github_path, data=data, method=HTTPMethod.POST).ok
 
+  # upload files to github and comment them on the pr
   def comment_images_on_pr(self, title, commenter, pr_branch, bucket, images):
+    if not self.upload_files(bucket, images):
+      return False
+
     table = [f'<details><summary>{title}</summary><table>']
     for i,f in enumerate(images):
       if not (i % 2):
         table.append('<tr>')
-      table.append(f'<td><img src=\\"https://raw.githubusercontent.com/{self.OWNER}/{self.CONTAINER}/{bucket}/{f}\\"></td>')
+      table.append(f'<td><img src=\\"https://raw.githubusercontent.com/{self.OWNER}/{self.DATA_REPO}/{bucket}/{f[0]}\\"></td>')
       if (i % 2):
         table.append('</tr>')
     table.append('</table></details>')
