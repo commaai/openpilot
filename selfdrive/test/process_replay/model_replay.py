@@ -6,8 +6,6 @@ from typing import Any
 import tempfile
 from itertools import zip_longest
 
-import matplotlib
-matplotlib.use('inline')
 import matplotlib.pyplot as plt
 
 from openpilot.system.hardware import PC
