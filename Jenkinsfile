@@ -96,6 +96,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
               println "NO CONTAINS"
             }
             println "'${env.MY_VAR}' !"
+            hasDirectoryChanged()
             return;
             if (branch != "master" && item.size() == 3 && !hasDirectoryChanged(item[2])) {
               return;
@@ -108,8 +109,18 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
   }
 }
 
-def hasDirectoryChanged(List<String> paths) {
+//def hasDirectoryChanged(List<String> paths) {
+def hasDirectoryChanged() {
   env.MY_VAR = "TEST TEST TEST"
+  changedFiles = []
+  for (changeLogSet in currentBuild.changeSets) {
+    for (entry in changeLogSet.getItems()) {
+      for (file in entry.getAffectedFiles()) {
+        changedFiles.add(file.getPath())
+      }
+    }
+  }
+  println "${changedFiles.join(", ")}"
   return false
 }
 
