@@ -57,4 +57,4 @@ if __name__ == "__main__":
   rr.init("RadarPoints", spawn= True)
   rr.log("tracks", rr.AnnotationContext(rerunColorPalette), static=True)
   visualize(args.ip_address)
-  
+
