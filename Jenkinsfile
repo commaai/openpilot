@@ -115,7 +115,9 @@ def hasPathChanged(List<String> paths) {
   }
   env.CHANGED_FILES = changedFiles.join(" ")
   prev = currentBuild.previousBuild.getBuildVariables().get("CHANGED_FILES")
+  println "PREV ${prev} env ${env.CHANGED_FILES}"
   if (prev?.trim()) {
+    println "SHOULD BE HERE"
     env.CHANGED_FILES += prev
   }
   println "${env.CHANGED_FILES}"

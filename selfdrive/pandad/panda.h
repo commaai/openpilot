@@ -9,8 +9,6 @@
 #include <string>
 #include <vector>
 
-// wowo
-
 #include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/gen/cpp/log.capnp.h"
 #include "panda/board/health.h"

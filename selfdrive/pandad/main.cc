@@ -1,7 +1,5 @@
 #include <cassert>
 
-// main t
-
 #include "selfdrive/pandad/pandad.h"
 #include "common/swaglog.h"
 #include "common/util.h"
