@@ -37,6 +37,10 @@ def visualize(addr):
     rr.set_time_nanos("TIMELINE", liveTracksTime)
     rr.log("tracks", rr.SegmentationImage(np.flip(np.rot90(lid_overlay, k=-1), axis=1)))
 
+def maybe_update_radar_points(live_tracks, lid_overlay):
+    if hasattr(live_tracks, 'trackList'):
+        for track in live_tracks.trackList:
+            pass
 
 def get_arg_parser():
   parser = argparse.ArgumentParser(
@@ -57,3 +61,4 @@ if __name__ == "__main__":
   rr.init("RadarPoints", spawn= True)
   rr.log("tracks", rr.AnnotationContext(rerunColorPalette), static=True)
   visualize(args.ip_address)
+  
