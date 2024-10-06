@@ -104,6 +104,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
   }
 }
 
+@NonCPS
 def hasPathChanged(List<String> paths) {
   changedFiles = []
   for (changeLogSet in currentBuild.changeSets) {
@@ -113,16 +114,17 @@ def hasPathChanged(List<String> paths) {
       }
     }
   }
-  env.CHANGED_FILES = changedFiles.join(" ")
-  prev = currentBuild.previousBuild.getBuildVariables().get("CHANGED_FILES")
-  println "PREV ${prev} env ${env.CHANGED_FILES}"
+  env.CHANGED_ILES = changedFiles.join(" ")
+  prev = currentBuild.previousBuild.getBuildVariables().get("CHANGED_ILES")
+  println "PREV ${prev} env ${env.CHANGED_ILES}"
   if (prev?.trim()) {
-    println "SHOULD BE HERE"
-    env.CHANGED_FILES += prev
+    env.CHANGED_ILES += prev
+  } else {
+    println "SHOULD BE HERE BECAUSE NULL VAR"
   }
-  println "${env.CHANGED_FILES}"
+  println "${env.CHANGED_ILES}"
   for (path in paths) {
-    if (env.CHANGED_FILES.contains(path)) {
+    if (env.CHANGED_ILES.contains(path)) {
       return true;
     }
   }
