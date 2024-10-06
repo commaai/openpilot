@@ -110,10 +110,14 @@ def hasPathChanged(List<String> paths) {
       }
     }
   }
-  env.CHANGED_FILES = changedFiles.join(", ") + currentBuild.previousBuild.getBuildVariables().get('CHANGED_FILES')
-  println "ALL CHANGED FILES : ${env.CHANGED_FILES}"
+  env.CHANGED_FILE = changedFiles.join(" ")
+  prev = currentBuild.previousBuild.getBuildVariables().get("CHANGED_FILE")
+  if (prev?.trim()) {
+    env.CHANGED_FILE += prev
+  }
+  println "ALL CHANGED FILES : ${env.CHANGED_FILE}"
   for (path in paths) {
-    if (env.CHANGED_FILES.contains(path)) {
+    if (env.CHANGED_FILE.contains(path)) {
       println "DETECTED CHANGES IN ${path}"
     }
   }
