@@ -70,25 +70,23 @@ def plot_lead(rs, lid_overlay):
 
 
 def maybe_update_radar_points(lt, lid_overlay):
-  ar_pts = []
-  if lt is not None:
-    ar_pts = {}
-    for track in lt:
-      ar_pts[track.trackId] = [track.dRel, track.yRel, track.vRel, track.aRel, track.oncoming, track.stationary]
-  for ids, pt in ar_pts.items():
-    # negative here since radar is left positive
-    px, py = to_topdown_pt(pt[0], -pt[1])
-    if px != -1:
-      if pt[-1]:
-        color = rerunColorPalette[4][0]
-      elif pt[-2]:
-        color = rerunColorPalette[3][0]
-      else:
-        color = rerunColorPalette[5][0]
-      if int(ids) == 1:
-        lid_overlay[px - 2:px + 2, py - 10:py + 10] = rerunColorPalette[1][0]
-      else:
-        lid_overlay[px - 2:px + 2, py - 2:py + 2] = color
+    if lt is not None and hasattr(lt, 'trackList'):
+        ar_pts = {}
+        for track in lt.trackList:
+            ar_pts[track.trackId] = [track.dRel, track.yRel, track.vRel, track.aRel, track.oncoming, track.stationary]
+        for ids, pt in ar_pts.items():
+            px, py = to_topdown_pt(pt[0], -pt[1])
+            if px != -1:
+                if pt[-1]:
+                    color = rerunColorPalette[4][0]
+                elif pt[-2]:
+                    color = rerunColorPalette[3][0]
+                else:
+                    color = rerunColorPalette[5][0]
+                if int(ids) == 1:
+                    lid_overlay[px - 2:px + 2, py - 10:py + 10] = rerunColorPalette[1][0]
+                else:
+                    lid_overlay[px - 2:px + 2, py - 2:py + 2] = color
 
 
 def get_blank_lid_overlay(UP):
