@@ -90,6 +90,11 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
           }
           steps.each { item ->
             env.MY_VAR = currentBuild.previousBuild.getBuildVariables().get('MY_VAR')
+            if (env.MY_VAR.contains('TEST')) {
+              println "YES CONTAINS"
+            } else {
+              println "NO CONTAINS"
+            }
             println "'${env.MY_VAR}' !"
             return;
             if (branch != "master" && item.size() == 3 && !hasDirectoryChanged(item[2])) {
