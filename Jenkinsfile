@@ -90,6 +90,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
           }
           steps.each { item ->
             if (branch != "master" && item.size() == 3 && !hasPathChanged(item[2])) {
+              println "No changes in ${item[2]}. Skipping ${item[0]}"
               return;
             } else {
               device(device_ip, item[0], item[1])
@@ -231,7 +232,7 @@ node {
           ["build openpilot", "cd system/manager && ./build.py"],
           ["test pandad loopback", "SINGLE_PANDA=1 pytest selfdrive/pandad/tests/test_pandad_loopback.py"],
           ["test pandad spi", "pytest selfdrive/pandad/tests/test_pandad_spi.py"],
-          ["test pandad", "pytest selfdrive/pandad/tests/test_pandad.py"],
+          ["test pandad", "pytest selfdrive/pandad/tests/test_pandad.py", ["something/", "selfdrive/wow/"]],
           ["test amp", "pytest system/hardware/tici/tests/test_amplifier.py"],
           ["test hw", "pytest system/hardware/tici/tests/test_hardware.py"],
           ["test qcomgpsd", "pytest system/qcomgpsd/tests/test_qcomgpsd.py"],
