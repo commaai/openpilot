@@ -90,13 +90,10 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
           }
           steps.each { item ->
             if (branch != "master" && item.size() == 3 && !hasPathChanged(item[2])) {
-              println "WILL RUN!"
               return;
             } else {
-              println "WONT RUN!"
+              device(device_ip, item[0], item[1])
             }
-            return;
-            device(device_ip, item[0], item[1])
           }
         }
       }
@@ -114,17 +111,15 @@ def hasPathChanged(List<String> paths) {
       }
     }
   }
-  env.CHANGED_ILES = changedFiles.join(" ")
-  prev = currentBuild.previousBuild.getBuildVariables().get("CHANGED_ILES")
-  println "PREV ${prev} env ${env.CHANGED_ILES}"
+
+  env.CHANGED_FILES = changedFiles.join(" ")
+  prev = currentBuild.previousBuild.getBuildVariables().get("CHANGED_FILES")
   if (prev?.trim()) {
     env.CHANGED_ILES += prev
-  } else {
-    println "SHOULD BE HERE BECAUSE NULL VAR"
   }
-  println "${env.CHANGED_ILES}"
+
   for (path in paths) {
-    if (env.CHANGED_ILES.contains(path)) {
+    if (env.CHANGED_FILES.contains(path)) {
       return true;
     }
   }
@@ -236,7 +231,7 @@ node {
           ["build openpilot", "cd system/manager && ./build.py"],
           ["test pandad loopback", "SINGLE_PANDA=1 pytest selfdrive/pandad/tests/test_pandad_loopback.py"],
           ["test pandad spi", "pytest selfdrive/pandad/tests/test_pandad_spi.py"],
-          ["test pandad", "pytest selfdrive/pandad/tests/test_pandad.py", ["selfdrive/pandad"]],
+          ["test pandad", "pytest selfdrive/pandad/tests/test_pandad.py"],
           ["test amp", "pytest system/hardware/tici/tests/test_amplifier.py"],
           ["test hw", "pytest system/hardware/tici/tests/test_hardware.py"],
           ["test qcomgpsd", "pytest system/qcomgpsd/tests/test_qcomgpsd.py"],
