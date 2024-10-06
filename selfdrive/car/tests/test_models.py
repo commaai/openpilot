@@ -1,6 +1,4 @@
 import capnp
-import copy
-import dataclasses
 import os
 import pytest
 import random
@@ -20,7 +18,8 @@ from opendbc.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from opendbc.car.honda.values import CAR as HONDA, HondaFlags
 from opendbc.car.values import Platform
 from opendbc.car.tests.routes import non_tested_cars, routes, CarTestRoute
-from openpilot.selfdrive.car.card import Car, convert_to_capnp
+from openpilot.selfdrive.selfdrived.events import ET
+from openpilot.selfdrive.selfdrived.selfdrived import SelfdriveD
 from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
@@ -29,7 +28,7 @@ from openpilot.tools.lib.route import SegmentName
 
 from panda.tests.libpanda import libpanda_py
 
-EventName = car.OnroadEvent.EventName
+EventName = log.OnroadEvent.EventName
 PandaType = log.PandaState.PandaType
 SafetyModel = car.CarParams.SafetyModel
 
@@ -185,7 +184,7 @@ class TestCarModelBase(unittest.TestCase):
     del cls.can_msgs
 
   def setUp(self):
-    self.CI = self.CarInterface(copy.deepcopy(self.CP), self.CarController, self.CarState)
+    self.CI = self.CarInterface(self.CP.copy(), self.CarController, self.CarState)
     assert self.CI
 
     Params().put_bool("OpenpilotEnabledToggle", self.openpilot_enabled)
@@ -193,7 +192,7 @@ class TestCarModelBase(unittest.TestCase):
     # TODO: check safetyModel is in release panda build
     self.safety = libpanda_py.libpanda
 
-    cfg = car.CarParams.SafetyConfig(**dataclasses.asdict(self.CP.safetyConfigs[-1]))
+    cfg = self.CP.safetyConfigs[-1]
     set_status = self.safety.set_safety_hooks(cfg.safetyModel.raw, cfg.safetyParam)
     self.assertEqual(0, set_status, f"failed to set safetyModel {cfg}")
     self.safety.init_tests()
@@ -218,7 +217,7 @@ class TestCarModelBase(unittest.TestCase):
     # TODO: also check for checksum violations from can parser
     can_invalid_cnt = 0
     can_valid = False
-    CC = structs.CarControl()
+    CC = structs.CarControl().as_reader()
 
     for i, msg in enumerate(self.can_msgs):
       CS = self.CI.update(can_capnp_to_list((msg.as_builder().to_bytes(),)))
@@ -310,17 +309,17 @@ class TestCarModelBase(unittest.TestCase):
 
     # Make sure we can send all messages while inactive
     CC = structs.CarControl()
-    test_car_controller(CC)
+    test_car_controller(CC.as_reader())
 
     # Test cancel + general messages (controls_allowed=False & cruise_engaged=True)
     self.safety.set_cruise_engaged_prev(True)
     CC = structs.CarControl(cruiseControl=structs.CarControl.CruiseControl(cancel=True))
-    test_car_controller(CC)
+    test_car_controller(CC.as_reader())
 
     # Test resume + general messages (controls_allowed=True & cruise_engaged=True)
     self.safety.set_controls_allowed(True)
     CC = structs.CarControl(cruiseControl=structs.CarControl.CruiseControl(resume=True))
-    test_car_controller(CC)
+    test_car_controller(CC.as_reader())
 
   # Skip stdout/stderr capture with pytest, causes elevated memory usage
   @pytest.mark.nocapture
@@ -404,9 +403,10 @@ class TestCarModelBase(unittest.TestCase):
     controls_allowed_prev = False
     CS_prev = car.CarState.new_message()
     checks = defaultdict(int)
-    card = Car(CI=self.CI)
+    selfdrived = SelfdriveD(CP=self.CP)
+    selfdrived.initialized = True
     for idx, can in enumerate(self.can_msgs):
-      CS = convert_to_capnp(self.CI.update(can_capnp_to_list((can.as_builder().to_bytes(), ))))
+      CS = self.CI.update(can_capnp_to_list((can.as_builder().to_bytes(), ))).as_reader()
       for msg in filter(lambda m: m.src in range(64), can.can):
         to_send = libpanda_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
         ret = self.safety.safety_rx_hook(to_send)
@@ -449,10 +449,10 @@ class TestCarModelBase(unittest.TestCase):
           checks['cruiseState'] += CS.cruiseState.enabled != self.safety.get_cruise_engaged_prev()
       else:
         # Check for enable events on rising edge of controls allowed
-        card.update_events(CS, None)
-        card.CS_prev = CS
-        button_enable = (any(evt.enable for evt in CS.events) and
-                         not any(evt == EventName.pedalPressed for evt in card.events.names))
+        selfdrived.update_events(CS)
+        selfdrived.CS_prev = CS
+        button_enable = (selfdrived.events.contains(ET.ENABLE) and
+                         EventName.pedalPressed not in selfdrived.events.names)
         mismatch = button_enable != (self.safety.get_controls_allowed() and not controls_allowed_prev)
         checks['controlsAllowed'] += mismatch
         controls_allowed_prev = self.safety.get_controls_allowed()

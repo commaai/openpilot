@@ -32,6 +32,7 @@ private:
   Transform transform;
   LoadYUVState loadyuv;
   cl_command_queue q;
-  cl_mem y_cl, u_cl, v_cl, net_input_cl;
+  cl_mem y_cl, u_cl, v_cl, img_buffer_20hz_cl, last_img_cl;
+  cl_buffer_region region;
   std::unique_ptr<uint8_t[]> input_frames;
 };

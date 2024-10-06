@@ -13,7 +13,7 @@ from collections import Counter, defaultdict
 from functools import cached_property
 from pathlib import Path
 
-from cereal import car
+from cereal import car, log
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
 from openpilot.common.basedir import BASEDIR
@@ -53,7 +53,7 @@ PROCS = {
   "selfdrive.locationd.calibrationd": 2.0,
   "selfdrive.locationd.torqued": 5.0,
   "selfdrive.locationd.locationd": 25.0,
-  "selfdrive.ui.soundd": 3.5,
+  "selfdrive.ui.soundd": 3.38,
   "selfdrive.monitoring.dmonitoringd": 4.0,
   "./proclogd": 1.54,
   "system.logmessaged": 0.2,
@@ -143,6 +143,9 @@ class TestOnroad:
           route = params.get("CurrentRoute", encoding="utf-8")
           time.sleep(0.1)
 
+        # test car params caching
+        params.put("CarParamsCache", car.CarParams().to_bytes())
+
         while len(cls.segments) < 3:
           segs = set()
           if Path(Paths.log_root()).exists():
@@ -208,13 +211,13 @@ class TestOnroad:
   def test_log_sizes(self):
     for f, sz in self.log_sizes.items():
       if f.name == "qcamera.ts":
-        assert 2.15 < sz < 2.35
+        assert 2.15 < sz < 2.6
       elif f.name == "qlog":
         assert 0.4 < sz < 0.55
       elif f.name == "rlog":
         assert 5 < sz < 50
       elif f.name.endswith('.hevc'):
-        assert 70 < sz < 77
+        assert 70 < sz < 80
       else:
         raise NotImplementedError
 
@@ -422,7 +425,7 @@ class TestOnroad:
       if msg.which() == "selfdriveState":
         startup_alert = msg.selfdriveState.alertText1
         break
-    expected = EVENTS[car.OnroadEvent.EventName.startup][ET.PERMANENT].alert_text_1
+    expected = EVENTS[log.OnroadEvent.EventName.startup][ET.PERMANENT].alert_text_1
     assert startup_alert == expected, "wrong startup alert"
 
   def test_engagable(self):

@@ -19,7 +19,7 @@ from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.common.transformations.camera import CameraConfig, DEVICE_CAMERAS
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.selfdrive.test.helpers import with_processes
-from openpilot.selfdrive.test.process_replay.migration import migrate_controlsState
+from openpilot.selfdrive.test.process_replay.migration import migrate, migrate_controlsState, migrate_carState
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.route import Route
@@ -263,7 +263,7 @@ def create_screenshots():
   segnum = 2
   lr = LogReader(route.qlog_paths()[segnum])
   DATA['carParams'] = next((event.as_builder() for event in lr if event.which() == 'carParams'), None)
-  for event in migrate_controlsState(lr):
+  for event in migrate(lr, [migrate_controlsState, migrate_carState]):
     if event.which() in DATA:
       DATA[event.which()] = event.as_builder()
 
