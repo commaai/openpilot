@@ -266,7 +266,6 @@ def main():
 
   filter_initialized = False
   critcal_services = ["accelerometer", "gyroscope", "liveCalibration", "cameraOdometry"]
-  observation_timing_invalid = False
   observation_input_invalid = defaultdict(int)
 
   initial_pose = params.get("LocationFilterInitialState")
@@ -282,8 +281,6 @@ def main():
     acc_msgs, gyro_msgs = (messaging.drain_sock(sock) for sock in sensor_sockets)
 
     if filter_initialized:
-      observation_timing_invalid = False
-
       msgs = []
       for msg in acc_msgs + gyro_msgs:
         t, valid, which, data = msg.logMonoTime, msg.valid, msg.which(), getattr(msg, msg.which())
@@ -298,9 +295,7 @@ def main():
         if valid:
           t = log_mono_time * 1e-9
           res = estimator.handle_log(t, which, msg)
-          if res == HandleLogResult.TIMING_INVALID:
-            observation_timing_invalid = True
-          elif res == HandleLogResult.INPUT_INVALID:
+          if res in [HandleLogResult.INPUT_INVALID, HandleLogResult.TIMING_INVALID]:
             observation_input_invalid[which] += 1
           else:
             observation_input_invalid[which] *= INPUT_INVALID_DECAY
@@ -309,7 +304,7 @@ def main():
 
     if sm.updated["cameraOdometry"]:
       critical_service_inputs_valid = all(observation_input_invalid[s] < INPUT_INVALID_THRESHOLD for s in critcal_services)
-      inputs_valid = sm.all_valid() and critical_service_inputs_valid and not observation_timing_invalid
+      inputs_valid = sm.all_valid() and critical_service_inputs_valid
       sensors_valid = sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
 
       msg = estimator.get_msg(sensors_valid, inputs_valid, filter_initialized)
