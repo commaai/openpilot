@@ -3,7 +3,6 @@
 #include <sys/ioctl.h>
 #include <linux/spi/spidev.h>
 
-// test
 #include <cassert>
 #include <cmath>
 #include <cstring>
