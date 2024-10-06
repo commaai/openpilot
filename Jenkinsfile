@@ -114,9 +114,8 @@ def hasPathChanged(List<String> paths) {
   }
 
   env.CHANGED_FILES = changedFiles.join(" ")
-  prev = currentBuild.previousBuild.getBuildVariables().get("CHANGED_FILES")
-  if (prev?.trim()) {
-    env.CHANGED_ILES += prev
+  if (currentBuild.number > 1) {
+    env.CHANGED_FILES += currentBuild.previousBuild.getBuildVariables().get("CHANGED_FILES")
   }
 
   for (path in paths) {
@@ -229,7 +228,7 @@ node {
       },
       'tizi': {
         deviceStage("tizi", "tizi", ["UNSAFE=1"], [
-          ["build openpilot", "cd system/manager && ./build.py"],
+          ["build openpilot", "cd system/manager && ./build.py", ["cool/wow"]],
           ["test pandad loopback", "SINGLE_PANDA=1 pytest selfdrive/pandad/tests/test_pandad_loopback.py"],
           ["test pandad spi", "pytest selfdrive/pandad/tests/test_pandad_spi.py"],
           ["test pandad", "pytest selfdrive/pandad/tests/test_pandad.py"],
