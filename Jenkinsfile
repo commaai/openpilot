@@ -228,7 +228,7 @@ node {
       },
       'tizi': {
         deviceStage("tizi", "tizi", ["UNSAFE=1"], [
-          ["build openpilot", "cd system/manager && ./build.py", ["cool/wow"]],
+          ["build openpilot", "cd system/manager && ./build.py"],
           ["test pandad loopback", "SINGLE_PANDA=1 pytest selfdrive/pandad/tests/test_pandad_loopback.py"],
           ["test pandad spi", "pytest selfdrive/pandad/tests/test_pandad_spi.py"],
           ["test pandad", "pytest selfdrive/pandad/tests/test_pandad.py"],
