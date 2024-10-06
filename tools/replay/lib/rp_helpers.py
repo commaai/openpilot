@@ -8,7 +8,8 @@ rerunColorPalette = [(96, "red", (255, 0, 0)),
                      (230, "vibrantpink", (255, 36, 170)),
                      (240, "orange", (255, 146, 0)),
                      (255, "white", (255, 255, 255)),
-                     (110, "carColor", (255,0,127))]
+                     (110, "carColor", (255, 0, 127)),
+                     (0, "background", (0, 0, 0)),]
 
 
 class UIParams:
