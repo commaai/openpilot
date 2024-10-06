@@ -90,7 +90,10 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
           }
           steps.each { item ->
             if (branch != "master" && item.size() == 3 && !hasPathChanged(item[2])) {
+              println "WILL RUN!"
               return;
+            } else {
+              println "WONT RUN!"
             }
             return;
             device(device_ip, item[0], item[1])
@@ -110,17 +113,18 @@ def hasPathChanged(List<String> paths) {
       }
     }
   }
-  env.CHANGED_FILE = changedFiles.join(" ")
-  prev = currentBuild.previousBuild.getBuildVariables().get("CHANGED_FILE")
+  env.CHANGED_FILES = changedFiles.join(" ")
+  prev = currentBuild.previousBuild.getBuildVariables().get("CHANGED_FILES")
   if (prev?.trim()) {
-    env.CHANGED_FILE += prev
+    env.CHANGED_FILES += prev
   }
-  println "ALL CHANGED FILES : ${env.CHANGED_FILE}"
   for (path in paths) {
-    if (env.CHANGED_FILE.contains(path)) {
-      println "DETECTED CHANGES IN ${path}"
+    if (env.CHANGED_FILES.contains(path)) {
+      return true;
     }
   }
+
+  return false;
 }
 
 def setupCredentials() {
