@@ -89,16 +89,9 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
             device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
           }
           steps.each { item ->
-            env.MY_VAR = currentBuild.previousBuild.getBuildVariables().get('MY_VAR')
-            if (env.MY_VAR.contains('TEST')) {
-              println "YES CONTAINS"
-            } else {
-              println "NO CONTAINS"
-            }
-            println "'${env.MY_VAR}' !"
-            hasDirectoryChanged()
-            return;
             if (branch != "master" && item.size() == 3 && !hasDirectoryChanged(item[2])) {
+              return;
+            } else {
               return;
             }
             device(device_ip, item[0], item[1])
@@ -109,9 +102,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
   }
 }
 
-//def hasDirectoryChanged(List<String> paths) {
-def hasDirectoryChanged() {
-  env.MY_VAR = "TEST TEST TEST"
+def hasDirectoryChanged(List<String> paths) {
   changedFiles = []
   for (changeLogSet in currentBuild.changeSets) {
     for (entry in changeLogSet.getItems()) {
@@ -120,8 +111,13 @@ def hasDirectoryChanged() {
       }
     }
   }
-  println "${changedFiles.join(", ")}"
-  return false
+  env.MY_VAR = changedFiles.join(", ") + currentBuild.previousBuild.getBuildVariables().get('MY_VAR')
+  println "CHANGED FILES : ${env.MY_VAR}"
+  for (path in paths) {
+    if (env.MY_VAR.contains(path)) {
+      println "DETECTED CHANGES IN ${path}"
+    }
+  }
 }
 
 def setupCredentials() {
