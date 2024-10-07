@@ -185,7 +185,7 @@ node {
       'HW + Unit Tests': {
         deviceStage("tici-hardware", "tici-common", ["UNSAFE=1"], [
           ["build", "cd system/manager && ./build.py"],
-          ["test pandad", "pytest selfdrive/pandad/tests/test_pandad.py"],
+          ["test pandad", "pytest selfdrive/pandad/tests/test_pandad.py", ["panda/", "selfdrive/pandad/"]],
           ["test power draw", "pytest -s system/hardware/tici/tests/test_power_draw.py"],
           ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py"],
           ["test pigeond", "pytest system/ubloxd/tests/test_pigeond.py"],
@@ -231,7 +231,7 @@ node {
           ["build openpilot", "cd system/manager && ./build.py"],
           ["test pandad loopback", "SINGLE_PANDA=1 pytest selfdrive/pandad/tests/test_pandad_loopback.py"],
           ["test pandad spi", "pytest selfdrive/pandad/tests/test_pandad_spi.py"],
-          ["test pandad", "pytest selfdrive/pandad/tests/test_pandad.py"],
+          ["test pandad", "pytest selfdrive/pandad/tests/test_pandad.py", ["panda/", "selfdrive/pandad/"]],
           ["test amp", "pytest system/hardware/tici/tests/test_amplifier.py"],
           ["test hw", "pytest system/hardware/tici/tests/test_hardware.py"],
           ["test qcomgpsd", "pytest system/qcomgpsd/tests/test_qcomgpsd.py"],
