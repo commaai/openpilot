@@ -212,7 +212,7 @@ class ProcessContainer:
     for meta in streams_metas:
       if meta.camera_state in self.cfg.vision_pubs:
         frame_size = (frs[meta.camera_state].w, frs[meta.camera_state].h)
-        vipc_server.create_buffers(meta.stream, 2, False, *frame_size)
+        vipc_server.create_buffers(meta.stream, 2, *frame_size)
     vipc_server.start_listener()
 
     self.vipc_server = vipc_server

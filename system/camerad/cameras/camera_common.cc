@@ -89,7 +89,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, SpectraCamera *
   // TODO: VENUS_BUFFER_SIZE should give the size, but it's too small. dependent on encoder settings?
   size_t nv12_size = (out_img_width <= 1344 ? 2900 : 2346)*nv12_width;
 
-  vipc_server->create_buffers_with_sizes(stream_type, YUV_BUFFER_COUNT, false, out_img_width, out_img_height, nv12_size, nv12_width, nv12_uv_offset);
+  vipc_server->create_buffers_with_sizes(stream_type, YUV_BUFFER_COUNT, out_img_width, out_img_height, nv12_size, nv12_width, nv12_uv_offset);
   LOGD("created %d YUV vipc buffers with size %dx%d", YUV_BUFFER_COUNT, nv12_width, nv12_height);
 
   imgproc = new ImgProc(device_id, context, this, sensor, cam->cc.camera_num, nv12_width, nv12_uv_offset);

@@ -19,9 +19,9 @@ class TestModeld:
 
   def setup_method(self):
     self.vipc_server = VisionIpcServer("camerad")
-    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 40, False, CAM.width, CAM.height)
-    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_DRIVER, 40, False, CAM.width, CAM.height)
-    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, CAM.width, CAM.height)
+    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 40, CAM.width, CAM.height)
+    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_DRIVER, 40, CAM.width, CAM.height)
+    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, CAM.width, CAM.height)
     self.vipc_server.start_listener()
     Params().put("CarParams", get_demo_car_params().to_bytes())
 
