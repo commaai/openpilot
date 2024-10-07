@@ -54,6 +54,8 @@ class GithubUtils:
       github_path = f"contents/{file_name}"
       if not self.api_call(github_path, data=data, method=HTTPMethod.PUT, data_call=True).ok:
         raise Exception(f"Error uploading {file_name} to {bucket}")
+      else:
+        return True
 
   def upload_files(self, bucket, files):
     self.create_bucket(bucket)
