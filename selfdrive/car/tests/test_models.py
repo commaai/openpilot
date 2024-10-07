@@ -68,7 +68,6 @@ def get_test_cases() -> list[tuple[str, CarTestRoute | None]]:
 class TestCarModelBase(unittest.TestCase):
   platform: Platform | None = None
   test_route: CarTestRoute | None = None
-  test_route_on_bucket: bool = True  # whether the route is on the preserved CI bucket
 
   can_msgs: list[capnp.lib.capnp._DynamicStructReader]
   fingerprint: dict[int, dict[int, int]]
@@ -126,30 +125,14 @@ class TestCarModelBase(unittest.TestCase):
     if cls.test_route.segment is not None:
       test_segs = (cls.test_route.segment,)
 
-    is_internal = len(INTERNAL_SEG_LIST)
-
     for seg in test_segs:
       segment_range = f"{cls.test_route.route}/{seg}"
 
       try:
-        source = partial(auto_source, sources=[internal_source] if is_internal else [openpilotci_source, openpilotci_source_zst])
-        lr = LogReader(segment_range, source=source)
+        lr = LogReader(segment_range)
         return cls.get_testing_data_from_logreader(lr)
       except Exception:
         pass
-
-    # Route is not in CI bucket, assume either user has access (private), or it is public
-    # test_route_on_ci_bucket will fail when running in CI
-    if not is_internal:
-      cls.test_route_on_bucket = False
-
-      for seg in test_segs:
-        segment_range = f"{cls.test_route.route}/{seg}"
-        try:
-          lr = LogReader(segment_range)
-          return cls.get_testing_data_from_logreader(lr)
-        except Exception:
-          pass
 
     raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded and public?")
 
@@ -466,11 +449,6 @@ class TestCarModelBase(unittest.TestCase):
 
     failed_checks = {k: v for k, v in checks.items() if v > 0}
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
-
-  @unittest.skipIf(not CI, "Accessing non CI-bucket routes is allowed only when not in CI")
-  def test_route_on_ci_bucket(self):
-    self.assertTrue(self.test_route_on_bucket, "Route not on CI bucket. " +
-                    "This is fine to fail for WIP car ports, just let us know and we can upload your routes to the CI bucket.")
 
 
 @parameterized_class(('platform', 'test_route'), get_test_cases())
