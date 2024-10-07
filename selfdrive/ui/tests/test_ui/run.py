@@ -48,7 +48,7 @@ def setup_settings_toggles(click, pm: PubMaster):
 def setup_onroad(click, pm: PubMaster):
   vipc_server = VisionIpcServer("camerad")
   for stream_type, cam, _ in STREAMS:
-    vipc_server.create_buffers(stream_type, 5, False, cam.width, cam.height)
+    vipc_server.create_buffers(stream_type, 5, cam.width, cam.height)
   vipc_server.start_listener()
 
   uidebug_received_cnt = 0
