@@ -4,7 +4,6 @@ import pytest
 import random
 import unittest # noqa: TID251
 from collections import defaultdict, Counter
-from functools import partial
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
 from parameterized import parameterized_class
