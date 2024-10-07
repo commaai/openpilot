@@ -52,10 +52,11 @@ class GithubUtils:
                     {sha} \
                     "content":"{encoded}"}}'
       github_path = f"contents/{file_name}"
-      return self.api_call(github_path, data=data, method=HTTPMethod.PUT, data_call=True).ok
+      if not self.api_call(github_path, data=data, method=HTTPMethod.PUT, data_call=True).ok:
+        raise Exception(f"Error uploading {file_name} to {bucket}")
 
   def upload_files(self, bucket, files):
-    return all(self.upload_file(bucket, path, file_name) for file_name,path in files)
+    all(self.upload_file(bucket, path, file_name) for file_name,path in files)
 
   def get_file_url(self, bucket, file_name):
     github_path = f"contents/{file_name}?ref={bucket}"
@@ -75,25 +76,23 @@ class GithubUtils:
   def comment_on_pr(self, comment, commenter, pr_branch):
     pr_number = self.get_pr_number(pr_branch)
     if not pr_number:
-      return False
+      raise Exception(f"No PR found for branch {pr_branch}")
     data = f'{{"body": "{comment}"}}'
     github_path = f'issues/{pr_number}/comments'
     r = self.api_call(github_path)
-    if not r.ok:
-      return False
     comments = [x['id'] for x in r.json() if x['user']['login'] == commenter]
     if comments:
       github_path = f'issues/comments/{comments[0]}'
-      return self.api_call(github_path, data=data, method=HTTPMethod.PATCH).ok
+      if not self.api_call(github_path, data=data, method=HTTPMethod.PATCH).ok:
+        raise Exception(f"Can't edit {commenter} previous comment on PR#{pr_number}")
     else:
       github_path=f'issues/{pr_number}/comments'
-      return self.api_call(github_path, data=data, method=HTTPMethod.POST).ok
+      if not self.api_call(github_path, data=data, method=HTTPMethod.POST).ok:
+        raise Exception(f"Can't post comment on PR#{pr_number}")
 
   # upload files to github and comment them on the pr
   def comment_images_on_pr(self, title, commenter, pr_branch, bucket, images):
-    if not self.upload_files(bucket, images):
-      return False
-
+    self.upload_files(bucket, images)
     table = [f'<details><summary>{title}</summary><table>']
     for i,f in enumerate(images):
       if not (i % 2):
@@ -103,5 +102,4 @@ class GithubUtils:
         table.append('</tr>')
     table.append('</table></details>')
     table = ''.join(table)
-
-    return self.comment_on_pr(table, commenter, pr_branch)
+    self.comment_on_pr(table, commenter, pr_branch)
