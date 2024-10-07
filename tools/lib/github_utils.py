@@ -56,7 +56,22 @@ class GithubUtils:
         raise Exception(f"Error uploading {file_name} to {bucket}")
 
   def upload_files(self, bucket, files):
+    self.create_bucket(bucket)
     all(self.upload_file(bucket, path, file_name) for file_name,path in files)
+
+  def create_bucket(self, bucket):
+    if self.get_bucket_sha(bucket):
+      return
+    master_sha = self.get_bucket_sha('master')
+    github_path = "git/refs"
+    data = f'{{"ref":"refs/heads/{bucket}", "sha":"{master_sha}"}}'
+    if not self.api_call(github_path, data=data, method=HTTPMethod.POST, data_call=True).ok:
+      raise Exception(f"Can't create bucket {bucket}")
+
+  def get_bucket_sha(self, bucket):
+    github_path = f"git/refs/heads/{bucket}"
+    r = self.api_call(github_path, data_call=True)
+    return r.json()['object']['sha'] if r.ok else None
 
   def get_file_url(self, bucket, file_name):
     github_path = f"contents/{file_name}?ref={bucket}"
