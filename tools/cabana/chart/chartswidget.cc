@@ -255,14 +255,15 @@ ChartView *ChartsWidget::findChart(const MessageId &id, const cabana::Signal *si
   return nullptr;
 }
 
-ChartView *ChartsWidget::createChart() {
+ChartView *ChartsWidget::createChart(int pos) {
   auto chart = new ChartView(can->timeRange().value_or(display_range), this);
   chart->setFixedHeight(settings.chart_height);
   chart->setMinimumWidth(CHART_MIN_WIDTH);
   chart->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
   QObject::connect(chart, &ChartView::axisYLabelWidthChanged, align_timer, qOverload<>(&QTimer::start));
-  charts.push_front(chart);
-  currentCharts().push_front(chart);
+  pos = std::clamp(pos, 0, charts.size());
+  charts.insert(pos, chart);
+  currentCharts().insert(pos, chart);
   updateLayout(true);
   updateToolBar();
   return chart;
@@ -281,8 +282,9 @@ void ChartsWidget::showChart(const MessageId &id, const cabana::Signal *sig, boo
 
 void ChartsWidget::splitChart(ChartView *src_chart) {
   if (src_chart->sigs.size() > 1) {
+    int pos = charts.indexOf(src_chart) + 1;
     for (auto it = src_chart->sigs.begin() + 1; it != src_chart->sigs.end(); /**/) {
-      auto c = createChart();
+      auto c = createChart(pos);
       src_chart->chart()->removeSeries(it->series);
 
       // Restore to the original color
