@@ -8,6 +8,7 @@ def get_fingerprint(lr):
   # TODO: make this a nice tool for car ports. should also work with qlogs for FW
 
   fw = None
+  vin = None
   msgs = {}
   for msg in lr:
     if msg.which() == 'carParams':
