@@ -434,7 +434,9 @@ void ChartsWidget::alignCharts() {
 }
 
 bool ChartsWidget::eventFilter(QObject *o, QEvent *e) {
-  if (value_tip_visible_ && e->type() == QEvent::MouseMove) {
+  if (!value_tip_visible_) return false;
+
+  if (e->type() == QEvent::MouseMove) {
     bool on_tip = qobject_cast<TipLabel *>(o) != nullptr;
     auto global_pos = static_cast<QMouseEvent *>(e)->globalPos();
 
@@ -449,6 +451,11 @@ bool ChartsWidget::eventFilter(QObject *o, QEvent *e) {
     }
 
     showValueTip(-1);
+  } else if (e->type() == QEvent::Wheel) {
+    if (auto tip = qobject_cast<TipLabel *>(o)) {
+      // Forward the event to the parent widget
+      QCoreApplication::sendEvent(tip->parentWidget(), e);
+    }
   }
   return false;
 }
