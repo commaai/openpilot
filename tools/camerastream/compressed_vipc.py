@@ -120,7 +120,7 @@ class CompressedVipc:
     self.vipc_server = VisionIpcServer("camerad")
     for vst in vision_streams:
       ed = sm[ENCODE_SOCKETS[vst]]
-      self.vipc_server.create_buffers(vst, 4, False, ed.width, ed.height)
+      self.vipc_server.create_buffers(vst, 4, ed.width, ed.height)
     self.vipc_server.start_listener()
 
     self.procs = []
