@@ -13,11 +13,8 @@ const int YUV_BUFFER_COUNT = 20;
 typedef struct FrameMetadata {
   uint32_t frame_id;
   uint32_t request_id;
-
-  // Timestamps
   uint64_t timestamp_sof;
   uint64_t timestamp_eof;
-
   float processing_time;
 } FrameMetadata;
 
