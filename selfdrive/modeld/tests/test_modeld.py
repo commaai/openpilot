@@ -7,7 +7,6 @@ from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.common.params import Params
 from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.common.realtime import DT_MDL
-from openpilot.selfdrive.car.card import convert_to_capnp
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state
 
@@ -20,11 +19,11 @@ class TestModeld:
 
   def setup_method(self):
     self.vipc_server = VisionIpcServer("camerad")
-    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 40, False, CAM.width, CAM.height)
-    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_DRIVER, 40, False, CAM.width, CAM.height)
-    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, False, CAM.width, CAM.height)
+    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_ROAD, 40, CAM.width, CAM.height)
+    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_DRIVER, 40, CAM.width, CAM.height)
+    self.vipc_server.create_buffers(VisionStreamType.VISION_STREAM_WIDE_ROAD, 40, CAM.width, CAM.height)
     self.vipc_server.start_listener()
-    Params().put("CarParams", convert_to_capnp(get_demo_car_params()).to_bytes())
+    Params().put("CarParams", get_demo_car_params().to_bytes())
 
     self.sm = messaging.SubMaster(['modelV2', 'cameraOdometry'])
     self.pm = messaging.PubMaster(['roadCameraState', 'wideRoadCameraState', 'liveCalibration'])

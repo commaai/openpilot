@@ -37,7 +37,7 @@ tools/replay/replay <route-name> --data_dir="/path_to/route"
 # a2a0ccea32023010|2023-07-27--13-01-19--0
 # a2a0ccea32023010|2023-07-27--13-01-19--1
 # You can replay it like this:
-tools/replay/replay "a2a0ccea32023010|2023-07-27--13-01-19" --data-dir="/path_to_routes"
+tools/replay/replay "a2a0ccea32023010|2023-07-27--13-01-19" --data_dir="/path_to_routes"
 ```
 
 ## Send Messages via ZMQ

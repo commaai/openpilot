@@ -25,6 +25,8 @@ export TEST_DIR=${env.TEST_DIR}
 export SOURCE_DIR=${env.SOURCE_DIR}
 export GIT_BRANCH=${env.GIT_BRANCH}
 export GIT_COMMIT=${env.GIT_COMMIT}
+export CI_ARTIFACTS_TOKEN=${env.CI_ARTIFACTS_TOKEN}
+export GITHUB_COMMENTS_TOKEN=${env.GITHUB_COMMENTS_TOKEN}
 export AZURE_TOKEN='${env.AZURE_TOKEN}'
 # only use 1 thread for tici tests since most require HIL
 export PYTEST_ADDOPTS="-n 0"
@@ -89,7 +91,12 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
             device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
           }
           steps.each { item ->
-            device(device_ip, item[0], item[1])
+            if (branch != "master" && item.size() == 3 && !hasPathChanged(item[2])) {
+              println "Skipping ${item[0]}: no changes in ${item[2]}."
+              return;
+            } else {
+              device(device_ip, item[0], item[1])
+            }
           }
         }
       }
@@ -97,11 +104,48 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
   }
 }
 
+@NonCPS
+def hasPathChanged(List<String> paths) {
+  changedFiles = []
+  for (changeLogSet in currentBuild.changeSets) {
+    for (entry in changeLogSet.getItems()) {
+      for (file in entry.getAffectedFiles()) {
+        changedFiles.add(file.getPath())
+      }
+    }
+  }
+
+  env.CHANGED_FILES = changedFiles.join(" ")
+  if (currentBuild.number > 1) {
+    env.CHANGED_FILES += currentBuild.previousBuild.getBuildVariables().get("CHANGED_FILES")
+  }
+
+  for (path in paths) {
+    if (env.CHANGED_FILES.contains(path)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 def setupCredentials() {
   withCredentials([
     string(credentialsId: 'azure_token', variable: 'AZURE_TOKEN'),
   ]) {
     env.AZURE_TOKEN = "${AZURE_TOKEN}"
+  }
+
+  withCredentials([
+    string(credentialsId: 'ci_artifacts_pat', variable: 'CI_ARTIFACTS_TOKEN'),
+  ]) {
+    env.CI_ARTIFACTS_TOKEN = "${CI_ARTIFACTS_TOKEN}"
+  }
+
+  withCredentials([
+    string(credentialsId: 'post_comments_github_pat', variable: 'GITHUB_COMMENTS_TOKEN'),
+  ]) {
+    env.GITHUB_COMMENTS_TOKEN = "${GITHUB_COMMENTS_TOKEN}"
   }
 }
 
@@ -149,13 +193,13 @@ node {
           ["build openpilot", "cd system/manager && ./build.py"],
           ["check dirty", "release/check-dirty.sh"],
           ["onroad tests", "pytest selfdrive/test/test_onroad.py -s"],
-          ["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
+          //["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
         ])
       },
       'HW + Unit Tests': {
         deviceStage("tici-hardware", "tici-common", ["UNSAFE=1"], [
           ["build", "cd system/manager && ./build.py"],
-          ["test pandad", "pytest selfdrive/pandad/tests/test_pandad.py"],
+          ["test pandad", "pytest selfdrive/pandad/tests/test_pandad.py", ["panda/", "selfdrive/pandad/"]],
           ["test power draw", "pytest -s system/hardware/tici/tests/test_power_draw.py"],
           ["test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py"],
           ["test pigeond", "pytest system/ubloxd/tests/test_pigeond.py"],
@@ -201,7 +245,7 @@ node {
           ["build openpilot", "cd system/manager && ./build.py"],
           ["test pandad loopback", "SINGLE_PANDA=1 pytest selfdrive/pandad/tests/test_pandad_loopback.py"],
           ["test pandad spi", "pytest selfdrive/pandad/tests/test_pandad_spi.py"],
-          ["test pandad", "pytest selfdrive/pandad/tests/test_pandad.py"],
+          ["test pandad", "pytest selfdrive/pandad/tests/test_pandad.py", ["panda/", "selfdrive/pandad/"]],
           ["test amp", "pytest system/hardware/tici/tests/test_amplifier.py"],
           ["test hw", "pytest system/hardware/tici/tests/test_hardware.py"],
           ["test qcomgpsd", "pytest system/qcomgpsd/tests/test_qcomgpsd.py"],

@@ -14,90 +14,6 @@
 #define BACKLIGHT_DT 0.05
 #define BACKLIGHT_TS 10.00
 
-// Projects a point in car to space to the corresponding point in full frame
-// image space.
-static bool calib_frame_to_full_frame(const UIState *s, float in_x, float in_y, float in_z, QPointF *out) {
-  Eigen::Vector3f input(in_x, in_y, in_z);
-  auto transformed = s->car_space_transform * input;
-  *out = QPointF(transformed.x() / transformed.z(), transformed.y() / transformed.z());
-  return s->clip_region.contains(*out);
-}
-
-int get_path_length_idx(const cereal::XYZTData::Reader &line, const float path_height) {
-  const auto line_x = line.getX();
-  int max_idx = 0;
-  for (int i = 1; i < line_x.size() && line_x[i] <= path_height; ++i) {
-    max_idx = i;
-  }
-  return max_idx;
-}
-
-void update_leads(UIState *s, const cereal::RadarState::Reader &radar_state, const cereal::XYZTData::Reader &line) {
-  for (int i = 0; i < 2; ++i) {
-    auto lead_data = (i == 0) ? radar_state.getLeadOne() : radar_state.getLeadTwo();
-    if (lead_data.getStatus()) {
-      float z = line.getZ()[get_path_length_idx(line, lead_data.getDRel())];
-      calib_frame_to_full_frame(s, lead_data.getDRel(), -lead_data.getYRel(), z + 1.22, &s->scene.lead_vertices[i]);
-    }
-  }
-}
-
-void update_line_data(const UIState *s, const cereal::XYZTData::Reader &line,
-                      float y_off, float z_off, QPolygonF *pvd, int max_idx, bool allow_invert=true) {
-  const auto line_x = line.getX(), line_y = line.getY(), line_z = line.getZ();
-  QPointF left, right;
-  pvd->clear();
-  for (int i = 0; i <= max_idx; i++) {
-    // highly negative x positions  are drawn above the frame and cause flickering, clip to zy plane of camera
-    if (line_x[i] < 0) continue;
-
-    bool l = calib_frame_to_full_frame(s, line_x[i], line_y[i] - y_off, line_z[i] + z_off, &left);
-    bool r = calib_frame_to_full_frame(s, line_x[i], line_y[i] + y_off, line_z[i] + z_off, &right);
-    if (l && r) {
-      // For wider lines the drawn polygon will "invert" when going over a hill and cause artifacts
-      if (!allow_invert && pvd->size() && left.y() > pvd->back().y()) {
-        continue;
-      }
-      pvd->push_back(left);
-      pvd->push_front(right);
-    }
-  }
-}
-
-void update_model(UIState *s,
-                  const cereal::ModelDataV2::Reader &model) {
-  UIScene &scene = s->scene;
-  auto model_position = model.getPosition();
-  float max_distance = std::clamp(*(model_position.getX().end() - 1),
-                                  MIN_DRAW_DISTANCE, MAX_DRAW_DISTANCE);
-
-  // update lane lines
-  const auto lane_lines = model.getLaneLines();
-  const auto lane_line_probs = model.getLaneLineProbs();
-  int max_idx = get_path_length_idx(lane_lines[0], max_distance);
-  for (int i = 0; i < std::size(scene.lane_line_vertices); i++) {
-    scene.lane_line_probs[i] = lane_line_probs[i];
-    update_line_data(s, lane_lines[i], 0.025 * scene.lane_line_probs[i], 0, &scene.lane_line_vertices[i], max_idx);
-  }
-
-  // update road edges
-  const auto road_edges = model.getRoadEdges();
-  const auto road_edge_stds = model.getRoadEdgeStds();
-  for (int i = 0; i < std::size(scene.road_edge_vertices); i++) {
-    scene.road_edge_stds[i] = road_edge_stds[i];
-    update_line_data(s, road_edges[i], 0.025, 0, &scene.road_edge_vertices[i], max_idx);
-  }
-
-  // update path
-  auto lead_one = (*s->sm)["radarState"].getRadarState().getLeadOne();
-  if (lead_one.getStatus()) {
-    const float lead_d = lead_one.getDRel() * 2.;
-    max_distance = std::clamp((float)(lead_d - fmin(lead_d * 0.35, 10.)), 0.0f, max_distance);
-  }
-  max_idx = get_path_length_idx(model_position, max_distance);
-  update_line_data(s, model_position, 0.9, 1.22, &scene.track_vertices, max_idx, false);
-}
-
 static void update_sockets(UIState *s) {
   s->sm->update(0);
 }
@@ -136,9 +52,6 @@ static void update_state(UIState *s) {
   } else if ((s->sm->frame - s->sm->rcv_frame("pandaStates")) > 5*UI_FREQ) {
     scene.pandaType = cereal::PandaState::PandaType::UNKNOWN;
   }
-  if (sm.updated("carParams")) {
-    scene.longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
-  }
   if (sm.updated("wideRoadCameraState")) {
     auto cam_state = sm["wideRoadCameraState"].getWideRoadCameraState();
     float scale = (cam_state.getSensor() == cereal::FrameData::ImageSensor::AR0231) ? 6.0f : 1.0f;
@@ -147,11 +60,6 @@ static void update_state(UIState *s) {
     scene.light_sensor = -1;
   }
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
-
-  scene.world_objects_visible = scene.world_objects_visible ||
-                                (scene.started &&
-                                 sm.rcv_frame("liveCalibration") > scene.started_frame &&
-                                 sm.rcv_frame("modelV2") > scene.started_frame);
 }
 
 void ui_update_params(UIState *s) {
@@ -162,7 +70,7 @@ void ui_update_params(UIState *s) {
 void UIState::updateStatus() {
   if (scene.started && sm->updated("selfdriveState")) {
     auto ss = (*sm)["selfdriveState"].getSelfdriveState();
-    auto state = ss .getState();
+    auto state = ss.getState();
     if (state == cereal::SelfdriveState::OpenpilotState::PRE_ENABLED || state == cereal::SelfdriveState::OpenpilotState::OVERRIDING) {
       status = STATUS_OVERRIDE;
     } else {
@@ -177,7 +85,6 @@ void UIState::updateStatus() {
       scene.started_frame = sm->frame;
     }
     started_prev = scene.started;
-    scene.world_objects_visible = false;
     emit offroadTransition(!scene.started);
   }
 }

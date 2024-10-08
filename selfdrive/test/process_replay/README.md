@@ -30,7 +30,7 @@ optional arguments:
   --whitelist-cars WHITELIST_CARS       Whitelist given cars from the test (e.g. HONDA)
   --blacklist-procs BLACKLIST_PROCS     Blacklist given processes from the test (e.g. controlsd)
   --blacklist-cars BLACKLIST_CARS       Blacklist given cars from the test (e.g. HONDA)
-  --ignore-fields IGNORE_FIELDS         Extra fields or msgs to ignore (e.g. carState.events)
+  --ignore-fields IGNORE_FIELDS         Extra fields or msgs to ignore (e.g. driverMonitoringState.events)
   --ignore-msgs IGNORE_MSGS             Msgs to ignore (e.g. onroadEvents)
   --update-refs                         Updates reference logs using current commit
   --upload-only                         Skips testing processes and uploads logs from previous test run
