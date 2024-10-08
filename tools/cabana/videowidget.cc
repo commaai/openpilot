@@ -368,6 +368,7 @@ bool Slider::event(QEvent *event) {
 
 InfoLabel::InfoLabel(QWidget *parent) : QWidget(parent, Qt::WindowStaysOnTopHint) {
   setAttribute(Qt::WA_ShowWithoutActivating);
+  setAttribute(Qt::WA_TransparentForMouseEvents);
   setVisible(false);
 }
 
