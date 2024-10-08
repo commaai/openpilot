@@ -18,7 +18,7 @@ class GithubUtils:
   def DATA_ROUTE(self):
     return f"https://api.github.com/repos/{self.OWNER}/{self.DATA_REPO}"
 
-  def api_call(self, path, data="", method=HTTPMethod.GET, accept="", data_call=False):
+  def api_call(self, path, data="", method=HTTPMethod.GET, accept="", data_call=False, raise_on_failure=True):
     token = self.DATA_TOKEN if data_call else self.API_TOKEN
     if token:
       headers = {"Authorization": f"Bearer {self.DATA_TOKEN if data_call else self.API_TOKEN}", \
@@ -26,17 +26,11 @@ class GithubUtils:
     else:
       headers = {}
     path = f'{self.DATA_ROUTE if data_call else self.API_ROUTE}/{path}'
-    match method:
-      case HTTPMethod.GET:
-        return requests.get(path, headers=headers)
-      case HTTPMethod.PUT:
-        return requests.put(path, headers=headers, data=data)
-      case HTTPMethod.POST:
-        return requests.post(path, headers=headers, data=data)
-      case HTTPMethod.PATCH:
-        return requests.patch(path, headers=headers, data=data)
-      case _:
-        raise NotImplementedError()
+    r = requests.request(method, path, headers=headers, data=data)
+    if not r.ok and raise_on_failure:
+      raise Exception(f"Call to {path} failed with {r.status_code}")
+    else:
+      return r
 
   def upload_file(self, bucket, path, file_name):
     with open(path, "rb") as f:
@@ -52,14 +46,12 @@ class GithubUtils:
                     {sha} \
                     "content":"{encoded}"}}'
       github_path = f"contents/{file_name}"
-      if not self.api_call(github_path, data=data, method=HTTPMethod.PUT, data_call=True).ok:
-        raise Exception(f"Error uploading {file_name} to {bucket}")
-      else:
-        return True
+      self.api_call(github_path, data=data, method=HTTPMethod.PUT, data_call=True)
 
   def upload_files(self, bucket, files):
     self.create_bucket(bucket)
-    all(self.upload_file(bucket, path, file_name) for file_name,path in files)
+    for file_name,path in files:
+      self.upload_file(bucket, path, file_name)
 
   def create_bucket(self, bucket):
     if self.get_bucket_sha(bucket):
@@ -67,45 +59,40 @@ class GithubUtils:
     master_sha = self.get_bucket_sha('master')
     github_path = "git/refs"
     data = f'{{"ref":"refs/heads/{bucket}", "sha":"{master_sha}"}}'
-    if not self.api_call(github_path, data=data, method=HTTPMethod.POST, data_call=True).ok:
-      raise Exception(f"Can't create bucket {bucket}")
+    self.api_call(github_path, data=data, method=HTTPMethod.POST, data_call=True)
 
   def get_bucket_sha(self, bucket):
     github_path = f"git/refs/heads/{bucket}"
-    r = self.api_call(github_path, data_call=True)
+    r = self.api_call(github_path, data_call=True, raise_on_failure=False)
     return r.json()['object']['sha'] if r.ok else None
 
   def get_file_url(self, bucket, file_name):
     github_path = f"contents/{file_name}?ref={bucket}"
     r = self.api_call(github_path, data_call=True)
-    return r.json()['download_url'] if r.ok else None
+    return r.json()['download_url']
 
   def get_file_sha(self, bucket, file_name):
     github_path = f"contents/{file_name}?ref={bucket}"
-    r = self.api_call(github_path, data_call=True)
+    r = self.api_call(github_path, data_call=True, raise_on_failure=False)
     return r.json()['sha'] if r.ok else None
 
   def get_pr_number(self, pr_branch):
     github_path = f"commits/{pr_branch}/pulls"
     r = self.api_call(github_path)
-    return r.json()[0]['number'] if r.ok else None
+    return r.json()[0]['number']
 
   def comment_on_pr(self, comment, commenter, pr_branch):
     pr_number = self.get_pr_number(pr_branch)
-    if not pr_number:
-      raise Exception(f"No PR found for branch {pr_branch}")
     data = f'{{"body": "{comment}"}}'
     github_path = f'issues/{pr_number}/comments'
     r = self.api_call(github_path)
     comments = [x['id'] for x in r.json() if x['user']['login'] == commenter]
     if comments:
       github_path = f'issues/comments/{comments[0]}'
-      if not self.api_call(github_path, data=data, method=HTTPMethod.PATCH).ok:
-        raise Exception(f"Can't edit {commenter} previous comment on PR#{pr_number}")
+      self.api_call(github_path, data=data, method=HTTPMethod.PATCH)
     else:
       github_path=f'issues/{pr_number}/comments'
-      if not self.api_call(github_path, data=data, method=HTTPMethod.POST).ok:
-        raise Exception(f"Can't post comment on PR#{pr_number}")
+      self.api_call(github_path, data=data, method=HTTPMethod.POST)
 
   # upload files to github and comment them on the pr
   def comment_images_on_pr(self, title, commenter, pr_branch, bucket, images):
