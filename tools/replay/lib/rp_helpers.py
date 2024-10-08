@@ -69,7 +69,7 @@ def plot_lead(rs, lid_overlay):
     lid_overlay[px_left:px_right, py] = rerunColorPalette[0][0]
 
 
-def maybe_update_radar_points(lt, lid_overlay):
+def update_radar_points(lt, lid_overlay):
   ar_pts = []
   if lt is not None:
     ar_pts = {}
