@@ -101,7 +101,7 @@ def normalize(img_pts: npt.NDArray[np.float64], intrinsics: npt.NDArray[np.float
   img_pts_homogeneous = np.hstack((img_pts, np.ones((img_pts.shape[0], 1))))
   img_pts_normalized = img_pts_homogeneous.dot(intrinsics_inv.T)
   img_pts_normalized[(img_pts < 0).any(axis=1)] = np.nan
-  return img_pts_normalized[:, :2].reshape(img_pts.shape)
+  return img_pts_normalized[:, :2].reshape(img_pts.shape).astype(np.float64)
 
 def denormalize(img_pts: npt.NDArray[np.float64], intrinsics: npt.NDArray[np.float64],
                 width: float = np.inf, height: float = np.inf) -> npt.NDArray[np.float64]:
@@ -114,7 +114,7 @@ def denormalize(img_pts: npt.NDArray[np.float64], intrinsics: npt.NDArray[np.flo
   if np.isfinite(height):
     img_pts_denormalized[np.logical_or(img_pts_denormalized[:, 1] > height, img_pts_denormalized[:, 1] < 0)] = np.nan
 
-  return img_pts_denormalized[:, :2].reshape(img_pts.shape)
+  return img_pts_denormalized[:, :2].reshape(img_pts.shape).astype(np.float64)
 
 def get_calib_from_vp(vp: npt.NDArray[np.float64], intrinsics: npt.NDArray[np.float64]) -> tuple[float, float, float]:
   vp_norm = normalize(vp, intrinsics)
@@ -130,13 +130,13 @@ def device_from_ecef(pos_ecef: npt.NDArray[np.float64], orientation_ecef: npt.ND
   device_from_ecef_rot = ecef_from_device_rot.T
   pt_ecef_rel = pt_ecef - pos_ecef
   pt_device = np.einsum('jk,ik->ij', device_from_ecef_rot, pt_ecef_rel)
-  return pt_device.reshape(pt_ecef.shape)
+  return pt_device.reshape(pt_ecef.shape).astype(np.float64)
 
 def img_from_device(pt_device: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
   pt_device = np.atleast_2d(pt_device)
   pt_view = np.einsum('jk,ik->ij', VIEW_FRAME_FROM_DEVICE_FRAME, pt_device)
   pt_view[pt_view[:, 2] < 0] = np.nan
   pt_img = pt_view / pt_view[:, 2:3]
-  return pt_img.reshape(pt_device.shape)[:, :2]
+  return pt_img.reshape(pt_device.shape)[:, :2].astype(np.float64)
 
 view_frame_from_device_frame = VIEW_FRAME_FROM_DEVICE_FRAME
