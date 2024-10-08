@@ -8,7 +8,7 @@ import cereal.messaging as messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.replay.lib.rp_helpers import (UP, rerunColorPalette,
                                          get_blank_lid_overlay,
-                                         maybe_update_radar_points, plot_lead,
+                                         update_radar_points, plot_lead,
                                          plot_model)
 from msgq.visionipc import VisionIpcClient, VisionStreamType
 
@@ -33,7 +33,8 @@ def visualize(addr):
     if sm.recv_frame['radarState']:
       plot_lead(sm['radarState'], lid_overlay)
     liveTracksTime = sm.logMonoTime['liveTracks']
-    maybe_update_radar_points(sm['liveTracks'], lid_overlay)
+    if sm.updated['liveTracks']:
+      update_radar_points(sm['liveTracks'], lid_overlay)
     rr.set_time_nanos("TIMELINE", liveTracksTime)
     rr.log("tracks", rr.SegmentationImage(np.flip(np.rot90(lid_overlay, k=-1), axis=1)))
 
