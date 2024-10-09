@@ -13,6 +13,7 @@ class TestMetaDriveBridge(TestSimBridgeBase):
   @pytest.fixture(autouse=True)
   def setup_create_bridge(self):
     self.test_duration = 15
+    self.minimal_distance = 10
 
   def create_bridge(self):
-    return MetaDriveBridge(False, False, self.test_duration, True)
+    return MetaDriveBridge(False, False, self.test_duration, self.minimal_distance, True)
