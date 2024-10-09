@@ -166,7 +166,7 @@ jobs:
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run unit tests
-      timeout-minutes: 30
+      timeout-minutes: 15
       run: |
         ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
                         $PYTEST --timeout 60 -m 'not slow' && \
@@ -222,6 +222,13 @@ jobs:
       if: ${{ failure() && steps.print-diff.outcome == 'success' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
       run: |
         ${{ env.RUN }} "unset PYTHONWARNINGS && AZURE_TOKEN='$AZURE_TOKEN' python3 selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
+    # PYTHONWARNINGS triggers a SyntaxError in onnxruntime
+    - name: Run model replay with ONNX
+      timeout-minutes: 4
+      run: |
+        ${{ env.RUN }} "unset PYTHONWARNINGS && \
+                        ONNXCPU=1 NO_NAV=1 coverage run selfdrive/test/process_replay/model_replay.py && \
+                        coverage combine && coverage xml"
     - name: Run regen
       timeout-minutes: 4
       run: |
@@ -257,7 +264,7 @@ jobs:
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Test car models
-      timeout-minutes: 20
+      timeout-minutes: 30
       run: |
         ${{ env.RUN }} "$PYTEST selfdrive/car/tests/test_models.py && \
                         chmod -R 777 /tmp/comma_download_cache"
