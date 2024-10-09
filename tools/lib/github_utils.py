@@ -84,18 +84,20 @@ class GithubUtils:
   def get_bucket_link(self, bucket):
     return f'https://raw.githubusercontent.com/{self.OWNER}/{self.DATA_REPO}/refs/heads/{bucket}'
 
-  def comment_on_pr(self, comment, commenter, pr_branch):
+  def comment_on_pr(self, comment, pr_branch, commenter="", overwrite=False):
     pr_number = self.get_pr_number(pr_branch)
     data = f'{{"body": "{comment}"}}'
-    github_path = f'issues/{pr_number}/comments'
-    r = self.api_call(github_path)
-    comments = [x['id'] for x in r.json() if x['user']['login'] == commenter]
-    if comments:
-      github_path = f'issues/comments/{comments[0]}'
-      self.api_call(github_path, data=data, method=HTTPMethod.PATCH)
-    else:
-      github_path=f'issues/{pr_number}/comments'
-      self.api_call(github_path, data=data, method=HTTPMethod.POST)
+    if overwrite:
+      github_path = f'issues/{pr_number}/comments'
+      r = self.api_call(github_path)
+      comments = [x['id'] for x in r.json() if x['user']['login'] == commenter]
+      if comments:
+        github_path = f'issues/comments/{comments[0]}'
+        self.api_call(github_path, data=data, method=HTTPMethod.PATCH)
+        return
+
+    github_path=f'issues/{pr_number}/comments'
+    self.api_call(github_path, data=data, method=HTTPMethod.POST)
 
   # upload files to github and comment them on the pr
   def comment_images_on_pr(self, title, commenter, pr_branch, bucket, images):

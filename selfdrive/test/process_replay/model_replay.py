@@ -86,7 +86,8 @@ def comment_replay_report(proposed, master, full_logs):
 
     GITHUB.upload_files(DATA_BUCKET, [(x[0], tmp + '/' + x[0]) for x in files])
 
-    log_name = get_log_fn(TEST_ROUTE, get_commit())
+    commit = get_commit()
+    log_name = get_log_fn(TEST_ROUTE, commit)
     save_log(log_name, full_logs)
     GITHUB.upload_file(DATA_BUCKET, os.path.basename(log_name), log_name)
 
@@ -94,8 +95,8 @@ def comment_replay_report(proposed, master, full_logs):
     link = GITHUB.get_bucket_link(DATA_BUCKET)
     diff_plots = create_table("Model Replay Differences", diff_files, link, open_table=True)
     all_plots = create_table("All Model Replay Plots", files, link)
-    comment = f"new ref: {link}/{log_name}" + diff_plots + all_plots
-    GITHUB.comment_on_pr(comment, "commaci-public", PR_BRANCH)
+    comment = f"ref for commit {commit}: {link}/{log_name}" + diff_plots + all_plots
+    GITHUB.comment_on_pr(comment, PR_BRANCH)
 
 def trim_logs_to_max_frames(logs, max_frames, frs_types, include_all_types):
   all_msgs = []
