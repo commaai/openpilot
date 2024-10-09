@@ -56,3 +56,32 @@ ModelFrame::~ModelFrame() {
   CL_CHECK(clReleaseMemObject(y_cl));
   CL_CHECK(clReleaseCommandQueue(q));
 }
+
+MonitoringModelFrame::MonitoringModelFrame(cl_device_id device_id, cl_context context) {
+  input_frame = std::make_unique<uint8_t[]>(MODEL_FRAME_SIZE);
+
+  q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
+  y_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, MODEL_WIDTH * MODEL_HEIGHT *sizeof(uint8_t), NULL, &err));
+  u_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, (MODEL_WIDTH / 2) * (MODEL_HEIGHT / 2) *sizeof(uint8_t), NULL, &err));
+  v_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, (MODEL_WIDTH / 2) * (MODEL_HEIGHT / 2) *sizeof(uint8_t), NULL, &err));
+
+  transform_init(&transform, context, device_id);
+}
+
+uint8_t* MonitoringModelFrame::prepare(cl_mem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3 &projection) {
+  transform_queue(&this->transform, q,
+                  yuv_cl, frame_width, frame_height, frame_stride, frame_uv_offset,
+                  y_cl, u_cl, v_cl, MODEL_WIDTH, MODEL_HEIGHT, projection);
+
+  CL_CHECK(clEnqueueReadBuffer(q, y_cl, CL_TRUE, 0, MODEL_FRAME_SIZE * sizeof(uint8_t), input_frame.get(), 0, nullptr, nullptr));
+  clFinish(q);
+  return input_frame.get();
+}
+
+MonitoringModelFrame::~MonitoringModelFrame() {
+  transform_destroy(&transform);
+  CL_CHECK(clReleaseMemObject(v_cl));
+  CL_CHECK(clReleaseMemObject(u_cl));
+  CL_CHECK(clReleaseMemObject(y_cl));
+  CL_CHECK(clReleaseCommandQueue(q));
+}
