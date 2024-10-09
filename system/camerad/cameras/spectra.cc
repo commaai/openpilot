@@ -37,6 +37,26 @@ int do_cam_control(int fd, int op_code, void *handle, int size) {
   return ret;
 }
 
+int do_sync_control(int fd, uint32_t id, void *handle, uint32_t size) {
+  struct cam_private_ioctl_arg arg = {
+    .id = id,
+    .size = size,
+    .ioctl_ptr = (uint64_t)handle,
+  };
+  int ret = HANDLE_EINTR(ioctl(fd, CAM_PRIVATE_IOCTL_CMD, &arg));
+
+  int32_t ioctl_result = (int32_t)arg.result;
+  if (ret < 0) {
+    LOGE("CAM_SYNC error: id %u - errno %d - ret %d - ioctl_result %d", id, errno, ret, ioctl_result);
+    return ret;
+  }
+  if (ioctl_result < 0) {
+    LOGE("CAM_SYNC error: id %u - errno %d - ret %d - ioctl_result %d", id, errno, ret, ioctl_result);
+    return ioctl_result;
+  }
+  return ret;
+}
+
 std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data, uint32_t num_resources) {
   struct cam_acquire_dev_cmd cmd = {
     .session_handle = session_handle,
@@ -558,7 +578,7 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
     struct cam_sync_wait sync_wait = {0};
     sync_wait.sync_obj = sync_objs[i];
     sync_wait.timeout_ms = 50; // max dt tolerance, typical should be 23
-    ret = do_cam_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
+    ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
     if (ret != 0) {
       LOGE("failed to wait for sync: %d %d", ret, sync_wait.sync_obj);
       // TODO: handle frame drop cleanly
@@ -570,7 +590,7 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
     // destroy old output fence
     struct cam_sync_info sync_destroy = {0};
     sync_destroy.sync_obj = sync_objs[i];
-    ret = do_cam_control(m->cam_sync_fd, CAM_SYNC_DESTROY, &sync_destroy, sizeof(sync_destroy));
+    ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_DESTROY, &sync_destroy, sizeof(sync_destroy));
     if (ret != 0) {
       LOGE("failed to destroy sync object: %d %d", ret, sync_destroy.sync_obj);
     }
@@ -579,7 +599,7 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
   // create output fence
   struct cam_sync_info sync_create = {0};
   strcpy(sync_create.name, "NodeOutputPortFence");
-  ret = do_cam_control(m->cam_sync_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
+  ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
   if (ret != 0) {
     LOGE("failed to create fence: %d %d", ret, sync_create.sync_obj);
   }
