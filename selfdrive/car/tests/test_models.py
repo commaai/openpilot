@@ -25,7 +25,6 @@ from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.route import SegmentName
 from openpilot.selfdrive.test.fuzzy_generation import FuzzyGenerator
-from openpilot.selfdrive.car.helpers import convert_carControl
 
 from panda.tests.libpanda import libpanda_py
 
@@ -417,7 +416,7 @@ class TestCarModelBase(unittest.TestCase):
       # follow logic of LoC in controlsd to set accel to 0 if longActive is False
       cc_msg["actuators"]["accel"] = 0
 
-    CC = convert_carControl(car.CarControl.new_message(**cc_msg).as_reader())
+    CC = car.CarControl.new_message(**cc_msg).as_reader()
 
     self.safety.set_timer(int(self.tx_fuzzy_ts_nanos / 1e3))
     _, sendcans = self.CI.apply(CC, self.tx_fuzzy_ts_nanos)
