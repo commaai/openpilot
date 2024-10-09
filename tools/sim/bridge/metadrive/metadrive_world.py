@@ -117,6 +117,7 @@ class MetaDriveWorld(World):
         self.last_check_timestamp = current_time
         self.distance_moved = 0
         self.vehicle_last_pos = curr_pos
+        assert False
 
   def read_cameras(self):
     pass
