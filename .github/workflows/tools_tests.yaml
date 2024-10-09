@@ -27,7 +27,9 @@ env:
 jobs:
   simulator_driving:
     name: simulator driving
-    runs-on: ubuntu-latest
+    runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
+               ((github.event_name != 'pull_request') ||
+                (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-latest' }}
     timeout-minutes: 20
     steps:
     - uses: actions/checkout@v4

@@ -19,6 +19,7 @@ from openpilot.tools.sim.lib.camerad import W, H
 C3_POSITION = Vec3(0.0, 0, 1.22)
 C3_HPR = Vec3(0, 0,0)
 
+VEHICLE_STARTING_POS = [110, 4.5]
 
 metadrive_simulation_state = namedtuple("metadrive_simulation_state", ["running", "done", "done_info"])
 metadrive_vehicle_state = namedtuple("metadrive_vehicle_state", ["velocity", "position", "bearing", "steering_angle"])
@@ -50,7 +51,7 @@ def apply_metadrive_patches(arrive_dest_done=True):
 
 def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera_array, image_lock,
                       controls_recv: Connection, simulation_state_send: Connection, vehicle_state_send: Connection,
-                      exit_event, op_engaged, test_duration, test_run):
+                      exit_event, op_engaged, test_duration, minimal_distance, test_run):
   arrive_dest_done = config.pop("arrive_dest_done", True)
   apply_metadrive_patches(arrive_dest_done)
 
@@ -70,6 +71,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
     env.reset()
     env.vehicle.config["max_speed_km_h"] = 1000
     lane_idx_prev, _ = get_current_lane_info(env.vehicle)
+    env.vehicle.set_position(VEHICLE_STARTING_POS)
 
     simulation_state = metadrive_simulation_state(
       running=True,
@@ -98,6 +100,9 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
   steer_ratio = 8
   vc = [0,0]
 
+  total_distance = 0
+  prev_x_pos = VEHICLE_STARTING_POS[0]
+
   while not exit_event.is_set():
     vehicle_state = metadrive_vehicle_state(
       velocity=vec3(x=float(env.vehicle.velocity[0]), y=float(env.vehicle.velocity[1]), z=0),
@@ -106,6 +111,9 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
       steering_angle=env.vehicle.steering * env.vehicle.MAX_STEERING
     )
     vehicle_state_send.send(vehicle_state)
+
+    total_distance += abs(env.vehicle.position[0] - prev_x_pos)
+    prev_x_pos = env.vehicle.position[0]
 
     if controls_recv.poll(0):
       while controls_recv.poll(0):
@@ -137,7 +145,10 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
         elif out_of_lane:
           done_result = (True, {"out_of_lane" : True})
         elif timeout:
-          done_result = (True, {"timeout" : True})
+          if total_distance < minimal_distance:
+            done_result = (True, {"minimal_distance" : True})
+          else:
+            done_result = (True, {"timeout" : True})
 
         simulation_state = metadrive_simulation_state(
           running=False,
