@@ -35,14 +35,13 @@ def create_map(track_size=60):
     lane_width=4.5,
     config=[
       None,
-      straight_block(track_size),
-      curve_block(curve_len, 90),
-      straight_block(track_size),
-      curve_block(curve_len, 90),
-      straight_block(track_size),
-      curve_block(curve_len, 90),
-      straight_block(track_size),
-      curve_block(curve_len, 90),
+      straight_block(2),
+      curve_block(60, 10),
+      straight_block(2),
+      curve_block(60, 10, direction=1),
+      straight_block(2),
+      curve_block(60, 10),
+      straight_block(500),
     ]
   )
 
