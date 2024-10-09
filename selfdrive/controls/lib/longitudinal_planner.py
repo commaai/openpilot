@@ -110,7 +110,8 @@ class LongitudinalPlanner:
 
   def update(self, sm):
     if sm['selfdriveState'].experimentalMode:
-      self.mpc.mode = self.dynamic_experimental_controller.get_mpc_mode(self.CP.radarUnavailable, sm['carState'], sm['radarState'].leadOne, sm['modelV2'], sm['controlsState'])
+      self.dynamic_experimental_controller.update(self.CP.radarUnavailable, sm['carState'], sm['radarState'].leadOne, sm['modelV2'], sm['controlsState'])
+      self.mpc.mode = self.dynamic_experimental_controller.get_mpc_mode()
     else:
       self.mpc.mode = 'blended' if sm['selfdriveState'].experimentalMode else 'acc'
 
