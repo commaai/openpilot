@@ -320,7 +320,7 @@ void camerad_thread() {
         }
 
         for (auto &cam : cams) {
-          if (event_data->session_hdl == cam->camera.session_handle) {
+          if (cam->camera.enabled && event_data->session_hdl == cam->camera.session_handle) {
             cam->camera.handle_camera_event(event_data);
             break;
           }
