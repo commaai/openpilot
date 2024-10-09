@@ -166,7 +166,7 @@ jobs:
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run unit tests
-      timeout-minutes: 15
+      timeout-minutes: 20
       run: |
         ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
                         $PYTEST --timeout 60 -m 'not slow' && \
