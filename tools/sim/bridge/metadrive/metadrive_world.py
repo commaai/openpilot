@@ -70,6 +70,8 @@ class MetaDriveWorld(World):
       self.vc[0] = 0
       self.vc[1] = 0
 
+    self.vc[0] = 0
+    self.vc[1] = 0
     self.controls_send.send([*self.vc, self.should_reset])
     self.should_reset = False
 
@@ -101,12 +103,12 @@ class MetaDriveWorld(World):
 
       x_dist = abs(curr_pos[0] - self.vehicle_last_pos[0])
       y_dist = abs(curr_pos[1] - self.vehicle_last_pos[1])
-      print(curr_pos)
+      print(curr_pos, time.monotonic())
       dist_threshold = 1
       if x_dist >= dist_threshold or y_dist >= dist_threshold: # position not the same during staying still, > threshold is considered moving
         self.distance_moved += x_dist + y_dist
 
-      time_check_threshold = 10
+      time_check_threshold = 30
       current_time = time.monotonic()
       since_last_check = current_time - self.last_check_timestamp
       if since_last_check >= time_check_threshold:
