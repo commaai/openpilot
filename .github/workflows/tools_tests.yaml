@@ -27,7 +27,7 @@ env:
 jobs:
   simulator_driving:
     name: simulator driving
-    runs-on: namespace-profile-amd64-8x16
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
     - uses: actions/checkout@v4
