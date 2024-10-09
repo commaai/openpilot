@@ -70,6 +70,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
     env.reset()
     env.vehicle.config["max_speed_km_h"] = 1000
     lane_idx_prev, _ = get_current_lane_info(env.vehicle)
+    env.vehicle.set_position([40, 4.5])
 
     simulation_state = metadrive_simulation_state(
       running=True,
