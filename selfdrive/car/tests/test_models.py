@@ -418,6 +418,10 @@ class TestCarModelBase(unittest.TestCase):
 
     CC = car.CarControl.new_message(**cc_msg).as_reader()
 
+    if self.CP.carName == "ford":
+      desired_angle_last = round(self.CI.CC.apply_curvature_last * 50000)
+      self.safety.set_angle_meas(desired_angle_last, desired_angle_last)
+
     self.safety.set_timer(int(self.tx_fuzzy_ts_nanos / 1e3))
     _, sendcans = self.CI.apply(CC, self.tx_fuzzy_ts_nanos)
     self.tx_fuzzy_ts_nanos += DT_CTRL * 1e9
