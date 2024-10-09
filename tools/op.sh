@@ -307,6 +307,11 @@ function op_sim() {
   op_run_command exec tools/sim/launch_openpilot.sh
 }
 
+function op_auth() {
+  op_before_cmd
+  op_run_command exec tools/lib/auth.py $@
+}
+
 function op_default() {
   echo "An openpilot helper"
   echo ""
@@ -333,6 +338,7 @@ function op_default() {
   echo -e "  ${BOLD}juggle${NC}       Run PlotJuggler"
   echo -e "  ${BOLD}replay${NC}       Run Replay"
   echo -e "  ${BOLD}cabana${NC}       Run Cabana"
+  echo -e "  ${BOLD}auth${NC}         Authenticate with your comma.ai account"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Testing]:${NC}"
   echo -e "  ${BOLD}sim${NC}          Run openpilot in a simulator"
@@ -382,6 +388,7 @@ function _op() {
     test )          shift 1; op_test "$@" ;;
     replay )        shift 1; op_replay "$@" ;;
     sim )           shift 1; op_sim "$@" ;;
+    auth )          shift 1; op_auth "$@" ;;
     install )       shift 1; op_install "$@" ;;
     post-commit )   shift 1; op_install_post_commit "$@" ;;
     * ) op_default "$@" ;;
