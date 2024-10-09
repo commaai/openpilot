@@ -62,7 +62,7 @@ void interrupt_loop(std::vector<std::tuple<Sensor *, std::string>> sensors) {
 
     // Read all events
     struct gpioevent_data evdata[16];
-    err = read(fd, evdata, sizeof(evdata));
+    err = HANDLE_EINTR(read(fd, evdata, sizeof(evdata)));
     if (err < 0 || err % sizeof(*evdata) != 0) {
       LOGE("error reading event data %d", err);
       continue;
