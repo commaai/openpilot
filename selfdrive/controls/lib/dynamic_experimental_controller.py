@@ -185,7 +185,7 @@ class DynamicExperimentalController:
       return LEAD_PROB + 0.1  # Increase the threshold on highways
     return LEAD_PROB
 
-  def _update(self, car_state, lead_one, md, controls_state, maneuver_distance):
+  def _update(self, car_state, lead_one, md, controls_state):
     self._v_ego_kph = car_state.vEgo * 3.6
     self._v_cruise_kph = controls_state.vCruise
     self._has_lead = lead_one.status
@@ -196,7 +196,7 @@ class DynamicExperimentalController:
     self._has_mpc_fcw = self._mpc_fcw_gmac.get_weighted_average() > MPC_FCW_PROB
 
     # nav enable detection
-    self._has_nav_instruction = md.navEnabledDEPRECATED and maneuver_distance / max(car_state.vEgo, 1) < 13
+    #self._has_nav_instruction = md.navEnabledDEPRECATED and maneuver_distance / max(car_state.vEgo, 1) < 13
 
     # lead detection with smoothing
     self._lead_gmac.add_data(lead_one.status)
@@ -260,9 +260,9 @@ class DynamicExperimentalController:
       return
 
     # Nav enabled and distance to upcoming turning is 300 or below
-    if self._has_nav_instruction:
-      self._set_mode('blended')
-      return
+    #if self._has_nav_instruction:
+    #  self._set_mode('blended')
+    #  return
 
     # when blinker is on and speed is driving below V_ACC_MIN: blended
     # we dont want it to switch mode at higher speed, blended may trigger hard brake
@@ -338,15 +338,15 @@ class DynamicExperimentalController:
       return
 
     # Nav enabled and distance to upcoming turning is 300 or below
-    if self._has_nav_instruction:
-      self._set_mode('blended')
-      return
+    #if self._has_nav_instruction:
+    #  self._set_mode('blended')
+    #  return
 
     self._set_mode('acc')
 
-  def update(self, radar_unavailable, car_state, lead_one, md, controls_state, maneuver_distance):
+  def update(self, radar_unavailable, car_state, lead_one, md, controls_state):
     if self._is_enabled:
-      self._update(car_state, lead_one, md, controls_state, maneuver_distance)
+      self._update(car_state, lead_one, md, controls_state)
       if radar_unavailable:
         self._radarless_mode()
       else:
