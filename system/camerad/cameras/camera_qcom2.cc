@@ -64,6 +64,8 @@ public:
 };
 
 void CameraState::init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx) {
+  if (!camera.enabled) return;
+
   camera.camera_open(v, device_id, ctx);
 
   fl_pix = camera.cc.focal_len / camera.sensor->pixel_size_mm;
@@ -73,7 +75,7 @@ void CameraState::init(VisionIpcServer *v, cl_device_id device_id, cl_context ct
   gain_idx = camera.sensor->analog_gain_rec_idx;
   cur_ev[0] = cur_ev[1] = cur_ev[2] = get_gain_factor() * camera.sensor->sensor_analog_gains[gain_idx] * exposure_time;
 
-  if (camera.enabled) thread = std::thread(&CameraState::run, this);
+  thread = std::thread(&CameraState::run, this);
 }
 
 CameraState::~CameraState() {
