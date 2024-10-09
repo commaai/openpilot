@@ -8,6 +8,7 @@ from itertools import zip_longest
 
 import matplotlib.pyplot as plt
 
+from openpilot.common.git import get_commit
 from openpilot.system.hardware import PC
 from openpilot.tools.lib.openpilotci import get_url
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
@@ -29,17 +30,19 @@ MODEL_REPLAY_BUCKET="model_replay_master"
 GITHUB = GithubUtils(API_TOKEN, DATA_TOKEN)
 
 
-def get_log_fn(test_route):
-  return f"{test_route}_model_tici_master.bz2"
+def get_log_fn(test_route, ref="master"):
+  return f"{test_route}_model_tici_{ref}.bz2"
 
 def plot(proposed, master, title, tmp):
+  proposed = list(proposed)
+  master = list(master)
   fig, ax = plt.subplots()
-  ax.plot(list(proposed), label='PROPOSED')
-  ax.plot(list(master), label='MASTER')
+  ax.plot(proposed, label='PROPOSED')
+  ax.plot(master, label='MASTER')
   plt.legend(loc='best')
   plt.title(title)
   plt.savefig(f'{tmp}/{title}.png')
-  return title + '.png'
+  return (title + '.png', proposed == master)
 
 def get_event(logs, event):
   return (getattr(m, m.which()) for m in filter(lambda m: m.which() == event, logs))
@@ -60,18 +63,39 @@ def generate_report(proposed, master, tmp):
                map(v[0], get_event(master, event)), v[1], tmp) \
                for v,event in [*ModelV2_Plots]]
 
-def comment_replay_report(proposed, master):
+def create_table(title, files, link, open_table=False):
+  if not files:
+    return ""
+  table = [f'<details {"open" if open_table else ""}><summary>{title}</summary><table>']
+  for i,f in enumerate(files):
+    if not (i % 2):
+      table.append("<tr>")
+    table.append(f'<td><img src=\\"{link}/{f[0]}\\"></td>')
+    if (i % 2):
+      table.append("</tr>")
+  table.append("</table></details>")
+  table = "".join(table)
+  return table
+
+def comment_replay_report(proposed, master, full_logs):
   with tempfile.TemporaryDirectory() as tmp:
-    PR_BRANCH=os.getenv("GIT_BRANCH","")
-    DATA_BUCKET=f"model_replay_{PR_BRANCH}"
+    PR_BRANCH = os.getenv("GIT_BRANCH","")
+    DATA_BUCKET = f"model_replay_{PR_BRANCH}"
 
     files = generate_report(proposed, master, tmp)
 
-    GITHUB.comment_images_on_pr("Model Replay Plots",
-                                "commaci-public",
-                                PR_BRANCH,
-                                DATA_BUCKET,
-                                [(x, tmp + '/' + x) for x in files])
+    GITHUB.upload_files(DATA_BUCKET, [(x[0], tmp + '/' + x[0]) for x in files])
+
+    log_name = get_log_fn(TEST_ROUTE, get_commit())
+    save_log(log_name, full_logs)
+    GITHUB.upload_file(DATA_BUCKET, os.path.basename(log_name), log_name)
+
+    diff_files = [x for x in files if not x[1]]
+    link = GITHUB.get_bucket_link(DATA_BUCKET)
+    diff_plots = create_table("Model Replay Differences", diff_files, link, open_table=True)
+    all_plots = create_table("All Model Replay Plots", files, link)
+    comment = f"new ref: {link}/{log_name}" + diff_plots + all_plots
+    GITHUB.comment_on_pr(comment, "commaci-public", PR_BRANCH)
 
 def trim_logs_to_max_frames(logs, max_frames, frs_types, include_all_types):
   all_msgs = []
@@ -185,9 +209,8 @@ if __name__ == "__main__":
       diff_short, diff_long, failed = format_diff(results, log_paths, 'master')
 
       if "CI" in os.environ:
-        if not PC:
-          comment_replay_report(log_msgs, cmp_log)
-          failed = False
+        comment_replay_report(log_msgs, cmp_log, log_msgs)
+        failed = False
         print(diff_long)
       print('-------------\n'*5)
       print(diff_short)

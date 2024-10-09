@@ -81,6 +81,9 @@ class GithubUtils:
     r = self.api_call(github_path)
     return r.json()[0]['number']
 
+  def get_bucket_link(self, bucket):
+    return f'https://raw.githubusercontent.com/{self.OWNER}/{self.DATA_REPO}/refs/heads/{bucket}'
+
   def comment_on_pr(self, comment, commenter, pr_branch):
     pr_number = self.get_pr_number(pr_branch)
     data = f'{{"body": "{comment}"}}'
