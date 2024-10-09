@@ -37,20 +37,22 @@ int do_cam_control(int fd, int op_code, void *handle, int size) {
   return ret;
 }
 
-int do_sync_control(int fd, uint32_t id, void *handle, int size) {
-  struct cam_private_ioctl_arg arg = {0};
-  arg.id = id;
-  arg.size = size;
-  arg.ioctl_ptr = (uint64_t)handle;
-
+int do_sync_control(int fd, uint32_t id, void *handle, uint32_t size) {
+  struct cam_private_ioctl_arg arg = {
+    .id = id,
+    .size = size,
+    .ioctl_ptr = (uint64_t)handle,
+  };
   int ret = HANDLE_EINTR(ioctl(fd, CAM_PRIVATE_IOCTL_CMD, &arg));
+
+  int32_t ioctl_result = (int32_t)arg.result;
   if (ret < 0) {
-    LOGE("CAM_SYNC error: id %u - errno %d - ret %d", id, errno, ret);
+    LOGE("CAM_SYNC error: id %u - errno %d - ret %d - ioctl_result %d", id, errno, ret, ioctl_result);
     return ret;
   }
-  if (arg.result < 0) {
-    LOGE("CAM_SYNC error: id %u - errno %d - ret %d", id, errno, ret);
-    return arg.result;
+  if (ioctl_result < 0) {
+    LOGE("CAM_SYNC error: id %u - errno %d - ret %d - ioctl_result %d", id, errno, ret, ioctl_result);
+    return ioctl_result;
   }
   return ret;
 }
