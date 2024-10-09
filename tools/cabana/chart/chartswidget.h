@@ -58,7 +58,7 @@ private:
   bool event(QEvent *event) override;
   void alignCharts();
   void newChart();
-  ChartView *createChart();
+  ChartView *createChart(int pos = 0);
   void removeChart(ChartView *chart);
   void splitChart(ChartView *chart);
   QRect chartVisibleRect(ChartView *chart);

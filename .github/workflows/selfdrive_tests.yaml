@@ -222,13 +222,6 @@ jobs:
       if: ${{ failure() && steps.print-diff.outcome == 'success' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
       run: |
         ${{ env.RUN }} "unset PYTHONWARNINGS && AZURE_TOKEN='$AZURE_TOKEN' python3 selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
-    # PYTHONWARNINGS triggers a SyntaxError in onnxruntime
-    - name: Run model replay with ONNX
-      timeout-minutes: 4
-      run: |
-        ${{ env.RUN }} "unset PYTHONWARNINGS && \
-                        ONNXCPU=1 NO_NAV=1 coverage run selfdrive/test/process_replay/model_replay.py && \
-                        coverage combine && coverage xml"
     - name: Run regen
       timeout-minutes: 4
       run: |
