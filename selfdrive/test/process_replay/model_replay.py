@@ -94,7 +94,7 @@ def comment_replay_report(proposed, master, full_logs):
     link = GITHUB.get_bucket_link(DATA_BUCKET)
     diff_plots = create_table("Model Replay Differences", diff_files, link, open_table=True)
     all_plots = create_table("All Model Replay Plots", files, link)
-    comment = diff_plots + all_plots + f"new ref: {link}/{log_name}"
+    comment = f"new ref: {link}/{log_name}" + diff_plots + all_plots
     GITHUB.comment_on_pr(comment, "commaci-public", PR_BRANCH)
 
 def trim_logs_to_max_frames(logs, max_frames, frs_types, include_all_types):
