@@ -115,12 +115,11 @@ def hasPathChanged(List<String> paths) {
     }
   }
 
+  println "NEW DIFF FILES : ${changedFiles}"
   env.CHANGED_FILES = changedFiles.join(" ")
-  println "NEW DIFF FILES : ${env.CHANGED_FILES}"
   if (currentBuild.number > 1) {
     env.CHANGED_FILES += currentBuild.previousBuild.getBuildVariables().get("CHANGED_FILES")
   }
-
 
   for (path in paths) {
     if (env.CHANGED_FILES.contains(path)) {
