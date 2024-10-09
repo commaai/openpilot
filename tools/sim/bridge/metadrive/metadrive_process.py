@@ -145,6 +145,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
         elif out_of_lane:
           done_result = (True, {"out_of_lane" : True})
         elif timeout:
+          print('XXXXXXXXXXXXXXXXXX', total_distance)
           if total_distance < minimal_distance:
             done_result = (True, {"minimal_distance" : True})
           else:
