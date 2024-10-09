@@ -101,7 +101,6 @@ class MetaDriveWorld(World):
 
       x_dist = abs(curr_pos[0] - self.vehicle_last_pos[0])
       y_dist = abs(curr_pos[1] - self.vehicle_last_pos[1])
-      #print(curr_pos, time.monotonic())
       dist_threshold = 1
       if x_dist >= dist_threshold or y_dist >= dist_threshold: # position not the same during staying still, > threshold is considered moving
         self.distance_moved += x_dist + y_dist

@@ -41,7 +41,7 @@ jobs:
       run: |
         ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
                         source selfdrive/test/setup_vsound.sh && \
-                        CI=1 pytest -rx -rP tools/sim/tests/test_metadrive_bridge.py"
+                        CI=1 pytest tools/sim/tests/test_metadrive_bridge.py"
 
   devcontainer:
     name: devcontainer
