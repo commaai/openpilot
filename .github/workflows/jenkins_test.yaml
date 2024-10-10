@@ -21,4 +21,5 @@ jobs:
                 'X-GitHub-Api-Version': '2022-11-28'
               }
             });
-            console.log(response.data);
+            console.log(response.data.statuses[0].context);
+            console.log(response.data.statuses[0].state);
