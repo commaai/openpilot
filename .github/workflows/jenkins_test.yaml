@@ -32,7 +32,7 @@ jobs:
             let prev_status = false;
             setInterval(() => {
 
-            const response = await github.request('GET /repos/{owner}/{repo}/commits/{ref}/status', {
+            const response = github.request('GET /repos/{owner}/{repo}/commits/{ref}/status', {
               owner: 'commaai',
               repo: 'openpilot',
               ref: 'heads/__jenkins_test_run_${{ matrix.run_id }}',
