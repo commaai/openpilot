@@ -170,6 +170,18 @@ node {
     ])
   }
 
+  if (env.BRANCH_NAME == 'jenkins_stress') {
+    sh '''#!/bin/bash
+
+          echo "test"
+          COOKIE_JAR=/tmp/cookies
+          CRUMB=$(curl --cookie-jar $COOKIE_JAR 'https://jenkins.comma.life/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)')
+          curl --cookie $COOKIE_JAR -H "$CRUMB" -X POST https://jenkins.comma.life/job/openpilot/job/__jenkins_stress/build?delay=0sec
+      '''
+      currentBuild.result = 'SUCCESS'
+      return
+  }
+
   try {
     if (env.BRANCH_NAME == 'devel-staging') {
       deviceStage("build release3-staging", "tici-needs-can", [], [
