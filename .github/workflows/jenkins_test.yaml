@@ -1,0 +1,21 @@
+name: Get Commit Status on PR
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  get-status:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Commit Status
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const response = await github.rest.repos.getCommitStatus({
+              owner: 'commaai',
+              repo: 'openpilot',
+              ref: 'heads/ui_screen_sleep'
+            });
+
+            console.log(response.data);
