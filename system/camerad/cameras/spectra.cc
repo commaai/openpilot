@@ -5,12 +5,14 @@
 
 #include "media/cam_defs.h"
 #include "media/cam_isp.h"
+#include "media/cam_icp.h"
 #include "media/cam_isp_ife.h"
 #include "media/cam_sensor_cmn_header.h"
 #include "media/cam_sync.h"
 
 #include "common/util.h"
 #include "common/swaglog.h"
+#include "system/camerad/cameras/bps.h"
 #include "system/camerad/cameras/spectra.h"
 
 // For debugging:
@@ -190,6 +192,10 @@ void SpectraMaster::init() {
   assert(isp_fd >= 0);
   LOGD("opened isp");
 
+  icp_fd = open_v4l_by_name_and_index("cam-icp");
+  assert(icp_fd >= 0);
+  LOGD("opened icp");
+
   // query icp for MMU handles
   LOG("-- Query ICP for MMU handles");
   struct cam_isp_query_cap_cmd isp_query_cap_cmd = {0};
@@ -203,6 +209,15 @@ void SpectraMaster::init() {
   LOGD("using MMU handle: %x", isp_query_cap_cmd.cdm_iommu.non_secure);
   device_iommu = isp_query_cap_cmd.device_iommu.non_secure;
   cdm_iommu = isp_query_cap_cmd.cdm_iommu.non_secure;
+
+  // query ISP for MMU handles
+  struct cam_icp_query_cap_cmd icp_query_cap_cmd = {0};
+  query_cap_cmd.caps_handle = (uint64_t)&icp_query_cap_cmd;
+  query_cap_cmd.size = sizeof(icp_query_cap_cmd);
+  ret = do_cam_control(icp_fd, CAM_QUERY_CAP, &query_cap_cmd, sizeof(query_cap_cmd));
+  assert(ret == 0);
+  LOGD("using ICP MMU handle: %x", icp_query_cap_cmd.dev_iommu_handle.non_secure);
+  icp_device_iommu = icp_query_cap_cmd.dev_iommu_handle.non_secure;
 
   // subscribe
   LOG("-- Subscribing");
@@ -247,6 +262,7 @@ void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_c
 
   open = true;
   configISP();
+  configICP();
   configCSIPHY();
   linkDevices();
 
@@ -411,20 +427,172 @@ int SpectraCamera::sensors_init() {
   return ret;
 }
 
-void SpectraCamera::config_ife(int io_mem_handle, int fence, int request_id, int buf0_idx) {
+void SpectraCamera::config_bps(int idx, int request_id) {
+  /*
+    Handles per-frame BPS config.
+    BPS = Bayer Processing Segment
+  */
+  int size = sizeof(struct cam_packet) + sizeof(struct cam_cmd_buf_desc)*2 + sizeof(struct cam_buf_io_cfg)*2;
+  size += sizeof(struct cam_patch_desc)*3;
+
+  uint32_t cam_packet_handle = 0;
+  auto pkt = mm.alloc<struct cam_packet>(size, &cam_packet_handle);
+
+  pkt->header.op_code = 0x10000001;
+  pkt->header.request_id = request_id;
+  pkt->header.size = size;
+
+  // *** cmd buf ***
+  struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
+  {
+    pkt->num_cmd_buf = 2;
+
+    /*
+      length 464, mostly zeros
+      29 patches, 13 in main cmd buffer
+
+      nodes in log:
+      * camxbpshnr10.cpp,         6 WriteDMI
+      * camxbpslsc34.cpp,         2 WriteDMI
+      * camxbpsabf40.cpp,         4 WriteDMI
+      * camxbpsawbbgstats14.cpp
+    */
+
+    buf_desc[0].meta_data = 0;
+    buf_desc[0].mem_handle = bps_cmd.handle;
+    buf_desc[0].type = CAM_CMD_BUF_FW;
+    buf_desc[0].offset = ALIGNED_SIZE(464, 0x20)*idx;
+    buf_desc[0].length = sizeof(bps_prog)-1;
+    memcpy((unsigned char *)bps_cmd.ptr + buf_desc[0].offset, bps_prog, buf_desc[0].length);
+    pkt->kmd_cmd_buf_index = -1;
+    pkt->kmd_cmd_buf_offset = 0;
+
+    // *** second command ***
+    // parsed by cam_icp_packet_generic_blob_handler
+    struct icp_clk {
+      uint64_t budgetNS;
+      uint32_t frameCycles;
+      uint32_t realtimeFlag;
+      uint64_t unCompressedBW;
+      uint64_t compressedBW;
+    } __attribute__((packed));
+    struct isp_packet {
+      uint32_t header;
+      struct icp_clk clk;
+    } __attribute__((packed)) tmp;
+    memset(&tmp, 0, sizeof(tmp));
+
+    tmp.header = CAM_ICP_CMD_GENERIC_BLOB_CLK; // CSLICPGenericBlobCmdBufferClk
+    tmp.header |= (sizeof(icp_clk)) << 8;
+    tmp.clk = {
+      .budgetNS = 0x1fca058,
+      .frameCycles = 0x12e8c6,
+      .realtimeFlag = 0x0,  // TODO: does this work?
+      .unCompressedBW = 0xeac57500,
+      .compressedBW = 0xeac5751c,
+    };
+
+    buf_desc[1].size = sizeof(tmp);
+    buf_desc[1].offset = 0;
+    buf_desc[1].length = buf_desc[1].size - buf_desc[1].offset;
+    buf_desc[1].type = CAM_CMD_BUF_GENERIC;
+    buf_desc[1].meta_data = 1;
+    auto buf2 = mm.alloc<uint32_t>(buf_desc[1].size, (uint32_t*)&buf_desc[1].mem_handle);
+    memcpy(buf2.get(), &tmp, sizeof(tmp));
+  }
+
+  // *** io config ***
+  pkt->num_io_configs = 2;
+  pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf;
+  struct cam_buf_io_cfg *io_cfg = (struct cam_buf_io_cfg *)((char*)&pkt->payload + pkt->io_configs_offset);
+  {
+    // input frame
+    io_cfg[0].offsets[0] = 0;
+    io_cfg[0].mem_handle[0] = buf_handle_raw[idx];
+
+    io_cfg[0].planes[0] = (struct cam_plane_cfg){
+      .width = sensor->frame_width,
+      .height = sensor->frame_height + sensor->extra_height,
+      .plane_stride = sensor->frame_stride,
+      .slice_height = sensor->frame_height + sensor->extra_height,
+    };
+    io_cfg[0].format = sensor->mipi_format;
+    io_cfg[0].color_space = CAM_COLOR_SPACE_BASE;
+    io_cfg[0].color_pattern = 0x5;
+    io_cfg[0].bpp = (sensor->mipi_format == CAM_FORMAT_MIPI_RAW_10 ? 0xa : 0xc);
+    io_cfg[0].resource_type = 0;
+    io_cfg[0].fence = sync_objs_bps_in[idx];
+    io_cfg[0].direction = CAM_BUF_INPUT;
+    io_cfg[0].subsample_pattern = 0x1;
+    io_cfg[0].framedrop_pattern = 0x1;
+
+    // output frame
+    io_cfg[1].mem_handle[0] = buf_handle[idx];
+    io_cfg[1].mem_handle[1] = buf_handle[idx];
+    io_cfg[1].planes[0] = (struct cam_plane_cfg){
+      .width = sensor->frame_width,
+      .height = sensor->frame_height,
+      .plane_stride = ALIGNED_SIZE(sensor->frame_width, 32),
+      .slice_height = ALIGNED_SIZE(sensor->frame_height, 32),
+    };
+    io_cfg[1].planes[1] = (struct cam_plane_cfg){
+      .width = sensor->frame_width,
+      .height = sensor->frame_height/2,
+      .plane_stride = ALIGNED_SIZE(sensor->frame_width, 32),
+      .slice_height = ALIGNED_SIZE(sensor->frame_height/2, 32),
+    };
+    io_cfg[1].offsets[1] = ALIGNED_SIZE(io_cfg[1].planes[0].plane_stride*io_cfg[1].planes[0].slice_height, 0x1000);
+
+    io_cfg[1].format = CAM_FORMAT_NV21;  // TODO: why is this 21 in the dump? should be 12
+    io_cfg[1].color_space = CAM_COLOR_SPACE_BT601_FULL;
+    io_cfg[1].color_pattern = 0;
+    io_cfg[1].bpp = 0;
+    io_cfg[1].resource_type = 1;
+    io_cfg[1].fence = sync_objs_bps_out[idx];
+    io_cfg[1].direction = CAM_BUF_OUTPUT;
+    io_cfg[1].subsample_pattern = 0x1;
+    io_cfg[1].framedrop_pattern = 0x1;
+  }
+
+  // *** patches ***
+  {
+    pkt->num_patches = 3;
+    pkt->patch_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf + sizeof(struct cam_buf_io_cfg)*pkt->num_io_configs;
+    for (int i = 0; i < pkt->num_patches; i++) {
+      struct cam_patch_desc *patch = (struct cam_patch_desc *)((char*)&pkt->payload + pkt->patch_offset + sizeof(cam_patch_desc)*i);
+      patch->dst_buf_hdl = bps_cmd.handle;
+      patch->dst_offset = buf_desc[0].offset + (uint32_t[]){0x0, 0x10, 0x14}[i];
+
+      if (i == 0) {
+        // input frame
+        patch->src_buf_hdl = buf_handle_raw[idx];
+        patch->src_offset = 0;
+      } else if ((i == 1) || (i == 2)) {
+        // output frame
+        patch->src_buf_hdl = buf_handle[idx];
+        patch->src_offset = (i == 1) ? 0 : io_cfg[1].offsets[1];
+      }
+    }
+  }
+
+  int ret = device_config(m->icp_fd, session_handle, icp_dev_handle, cam_packet_handle);
+  assert(ret == 0);
+}
+
+void SpectraCamera::config_ife(int idx, int request_id, bool init) {
   /*
     Handles initial + per-frame IFE config.
     IFE = Image Front End
   */
   int size = sizeof(struct cam_packet) + sizeof(struct cam_cmd_buf_desc)*2;
-  if (io_mem_handle != 0) {
+  if (!init) {
     size += sizeof(struct cam_buf_io_cfg);
   }
 
   uint32_t cam_packet_handle = 0;
   auto pkt = mm.alloc<struct cam_packet>(size, &cam_packet_handle);
 
-  if (io_mem_handle != 0) {
+  if (!init) {
     pkt->header.op_code =  CSLDeviceTypeIFE | OpcodesIFEUpdate;  // 0xf000001
     pkt->header.request_id = request_id;
   } else {
@@ -451,7 +619,7 @@ void SpectraCamera::config_ife(int io_mem_handle, int fence, int request_id, int
     buf_desc[0].type = CAM_CMD_BUF_DIRECT;
     buf_desc[0].meta_data = 3;
     buf_desc[0].mem_handle = buf0_handle;
-    buf_desc[0].offset = ALIGNED_SIZE(buf0_size, buf0_alignment)*buf0_idx;
+    buf_desc[0].offset = ALIGNED_SIZE(buf0_size, buf0_alignment)*idx;
 
     // *** second command ***
     // parsed by cam_isp_packet_generic_blob_handler
@@ -514,7 +682,7 @@ void SpectraCamera::config_ife(int io_mem_handle, int fence, int request_id, int
     static_assert(offsetof(struct isp_packet, type_2) == 0x60);
 
     buf_desc[1].size = sizeof(tmp);
-    buf_desc[1].offset = io_mem_handle != 0 ? 0x60 : 0;
+    buf_desc[1].offset = !init ? 0x60 : 0;
     buf_desc[1].length = buf_desc[1].size - buf_desc[1].offset;
     buf_desc[1].type = CAM_CMD_BUF_GENERIC;
     buf_desc[1].meta_data = CAM_ISP_PACKET_META_GENERIC_BLOB_COMMON;
@@ -523,14 +691,14 @@ void SpectraCamera::config_ife(int io_mem_handle, int fence, int request_id, int
   }
 
   // *** io config ***
-  if (io_mem_handle != 0) {
+  if (!init) {
     // configure output frame
     pkt->num_io_configs = 1;
     pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf;
 
     struct cam_buf_io_cfg *io_cfg = (struct cam_buf_io_cfg *)((char*)&pkt->payload + pkt->io_configs_offset);
     io_cfg[0].offsets[0] = 0;
-    io_cfg[0].mem_handle[0] = io_mem_handle;
+    io_cfg[0].mem_handle[0] = buf_handle_raw[idx];
 
     io_cfg[0].planes[0] = (struct cam_plane_cfg){
       .width = sensor->frame_width,
@@ -553,7 +721,7 @@ void SpectraCamera::config_ife(int io_mem_handle, int fence, int request_id, int
     io_cfg[0].color_pattern = 0x5;                         // 0x0 for YUV
     io_cfg[0].bpp = (sensor->mipi_format == CAM_FORMAT_MIPI_RAW_10 ? 0xa : 0xc);  // bits per pixel
     io_cfg[0].resource_type = CAM_ISP_IFE_OUT_RES_RDI_0;   // CAM_ISP_IFE_OUT_RES_FULL for YUV
-    io_cfg[0].fence = fence;
+    io_cfg[0].fence = sync_objs[idx];
     io_cfg[0].direction = CAM_BUF_OUTPUT;
     io_cfg[0].subsample_pattern = 0x1;
     io_cfg[0].framedrop_pattern = 0x1;
@@ -573,15 +741,59 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
   int ret;
   uint64_t request_id = request_ids[i];
 
+
+  printf("ENQ %d ****************\n", i);
+
+  //util::sleep_for(10000);
+
+  // create output fence
+  struct cam_sync_info sync_create = {0};
+  strcpy(sync_create.name, "InputBufferFence");
+  ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
+  if (ret != 0) {
+    LOGE("failed to create fence: %d %d", ret, sync_create.sync_obj);
+  }
+  sync_objs_bps_in[i] = sync_create.sync_obj;
+  strcpy(sync_create.name, "NodeOutputPortFence");
+  ret = do_cam_control(m->cam_sync_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
+  if (ret != 0) {
+    LOGE("failed to create fence: %d %d", ret, sync_create.sync_obj);
+  }
+  sync_objs_bps_out[i] = sync_create.sync_obj;
+
+  // signal
+  struct cam_sync_signal sig = {
+    .sync_obj = sync_objs_bps_in[i],
+    .sync_state = CAM_SYNC_STATE_SIGNALED_SUCCESS,
+  };
+  ret = do_cam_control(m->cam_sync_fd, CAM_SYNC_SIGNAL, &sig, sizeof(sig));
+  assert(ret == 0);
+
+  config_bps(0, 1);
+
+  // wait
+  struct cam_sync_wait wait = {0};
+  wait.sync_obj = sync_objs_bps_out[i];
+  wait.timeout_ms = 50; // max dt tolerance, typical should be 23
+  ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &wait, sizeof(wait));
+  if (ret != 0) {
+    LOGE("failed to wait for sync: %d %d", ret, wait.sync_obj);
+    // TODO: handle frame drop cleanly
+    assert(false);
+  }
+  printf("DONE******************8\n");
+
+
   if (buf_handle[i] && sync_objs[i]) {
     // wait
     struct cam_sync_wait sync_wait = {0};
-    sync_wait.sync_obj = sync_objs[i];
+    sync_wait.sync_obj = sync_objs_bps_out[i];
     sync_wait.timeout_ms = 50; // max dt tolerance, typical should be 23
     ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
     if (ret != 0) {
       LOGE("failed to wait for sync: %d %d", ret, sync_wait.sync_obj);
       // TODO: handle frame drop cleanly
+      assert(false);
     }
 
     buf.camera_bufs_metadata[i].timestamp_eof = (uint64_t)nanos_since_boot(); // set true eof
@@ -594,16 +806,27 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
     if (ret != 0) {
       LOGE("failed to destroy sync object: %d %d", ret, sync_destroy.sync_obj);
     }
+    sync_destroy.sync_obj = sync_objs_bps_out[i];
+    ret = do_cam_control(m->cam_sync_fd, CAM_SYNC_DESTROY, &sync_destroy, sizeof(sync_destroy));
+    if (ret != 0) {
+      LOGE("failed to destroy sync object: %d %d", ret, sync_destroy.sync_obj);
+    }
   }
 
   // create output fence
-  struct cam_sync_info sync_create = {0};
+  //struct cam_sync_info sync_create = {0};
   strcpy(sync_create.name, "NodeOutputPortFence");
   ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
   if (ret != 0) {
     LOGE("failed to create fence: %d %d", ret, sync_create.sync_obj);
   }
   sync_objs[i] = sync_create.sync_obj;
+  strcpy(sync_create.name, "NodeOutputPortFence");
+  ret = do_cam_control(m->cam_sync_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
+  if (ret != 0) {
+    LOGE("failed to create fence: %d %d", ret, sync_create.sync_obj);
+  }
+  sync_objs_bps_out[i] = sync_create.sync_obj;
 
   // schedule request with camera request manager
   struct cam_req_mgr_sched_request req_mgr_sched_request = {0};
@@ -618,21 +841,33 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
   // poke sensor, must happen after schedule
   sensors_poke(request_id);
 
-  // submit request to the ife
-  config_ife(buf_handle[i], sync_objs[i], request_id, i);
+  // submit request to IFE and BPS
+  config_ife(i, request_id);
+  if (request_id == 1) config_bps(i, request_id);
 }
 
 void SpectraCamera::camera_map_bufs() {
   for (int i = 0; i < FRAME_BUF_COUNT; i++) {
     // configure ISP to put the image in place
     struct cam_mem_mgr_map_cmd mem_mgr_map_cmd = {0};
-    mem_mgr_map_cmd.mmu_hdls[0] = m->device_iommu;
+    mem_mgr_map_cmd.mmu_hdls[0] = m->icp_device_iommu;
     mem_mgr_map_cmd.num_hdl = 1;
     mem_mgr_map_cmd.flags = CAM_MEM_FLAG_HW_READ_WRITE;
     mem_mgr_map_cmd.fd = buf.camera_bufs[i].fd;
     int ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
     LOGD("map buf req: (fd: %d) 0x%x %d", buf.camera_bufs[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
     buf_handle[i] = mem_mgr_map_cmd.out.buf_handle;
+
+    // raw images
+    mem_mgr_map_cmd.mmu_hdls[0] = m->icp_device_iommu;
+    mem_mgr_map_cmd.num_hdl = 1;
+    mem_mgr_map_cmd.flags = CAM_MEM_FLAG_HW_READ_WRITE;
+    mem_mgr_map_cmd.fd = buf.camera_bufs_raw[i].fd;
+    ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
+    LOGD("map buf req: (fd: %d) 0x%x %d", buf.camera_bufs_raw[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
+    buf_handle_raw[i] = mem_mgr_map_cmd.out.buf_handle;
+
+    memset(buf.camera_bufs[i].addr, 0x33, buf.camera_bufs[i].len);
   }
   enqueue_req_multi(1, FRAME_BUF_COUNT, 0);
 }
@@ -738,7 +973,61 @@ void SpectraCamera::configISP() {
   alloc_w_mmu_hdl(m->video0_fd, FRAME_BUF_COUNT*ALIGNED_SIZE(buf0_size, buf0_alignment), (uint32_t*)&buf0_handle, buf0_alignment,
                   CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
                   m->device_iommu, m->cdm_iommu);
-  config_ife(0, 0, 1, 0);
+  config_ife(0, 1, true);
+}
+
+void SpectraCamera::configICP() {
+  if (!enabled) return;
+
+  /*
+    Configures both the ICP and BPS.
+  */
+
+  int cfg_handle;
+  BpsCfg *cfg = (BpsCfg *)alloc_w_mmu_hdl(m->video0_fd, sizeof(BpsCfg), (uint32_t*)&cfg_handle, 0x1,
+                                                    CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_HW_SHARED_ACCESS,
+                                                    m->icp_device_iommu);
+  memset(cfg, 0, sizeof(BpsCfg));
+
+  cfg->cmdData.images[0].info.format = IMAGE_FORMAT_MIPI_10;
+  cfg->cmdData.images[0].info.bayerOrder = FIRST_PIXEL_B;
+  cfg->cmdData.images[0].info.dimensions.widthPixels = sensor->frame_width;
+  cfg->cmdData.images[0].info.dimensions.heightLines = sensor->frame_height;
+  cfg->cmdData.images[1].info.format = IMAGE_FORMAT_LINEAR_NV12;
+  cfg->cmdData.images[1].info.dimensions.widthPixels = sensor->frame_width;
+  cfg->cmdData.images[1].info.dimensions.heightLines = sensor->frame_height;
+
+  struct cam_icp_acquire_dev_info icp_info = {
+    .scratch_mem_size = 0x0,
+    .dev_type = 0x1,  // BPS
+    .io_config_cmd_size = sizeof(BpsCfg),
+    .io_config_cmd_handle = cfg_handle,
+    .secure_mode = 0,
+    .num_out_res = 1,
+    .in_res = (struct cam_icp_res_info){
+      .format = 0x9,  // RAW MIPI
+      .width = sensor->frame_width,
+      .height = sensor->frame_height,
+      .fps = 20,
+    },
+    .out_res[0] = (struct cam_icp_res_info){
+      .format = 0x3,  // YUV420NV12
+      .width = sensor->frame_width,
+      .height = sensor->frame_height,
+      .fps = 20,
+    },
+  };
+  auto h = device_acquire(m->icp_fd, session_handle, &icp_info);
+  assert(h);
+  icp_dev_handle = *h;
+  LOGD("acquire icp dev");
+
+  release(m->video0_fd, cfg_handle);
+
+  // BPS CMD buffer
+  bps_cmd.init(m, FRAME_BUF_COUNT*ALIGNED_SIZE(464, 0x20), 0x20,
+               CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE | CAM_MEM_FLAG_HW_SHARED_ACCESS,
+               m->icp_device_iommu);
 }
 
 void SpectraCamera::configCSIPHY() {

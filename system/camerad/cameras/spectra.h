@@ -63,8 +63,23 @@ public:
   unique_fd video0_fd;
   unique_fd cam_sync_fd;
   unique_fd isp_fd;
+  unique_fd icp_fd;
   int device_iommu = -1;
   int cdm_iommu = -1;
+  int icp_device_iommu = -1;
+};
+
+class SpectraBuf {
+public:
+  void init(SpectraMaster *m, int s, int a, int flags, int mmu_hdl = 0, int mmu_hdl2 = 0) {
+    size = s;
+    alignment = a;
+    ptr = alloc_w_mmu_hdl(m->video0_fd, size, (uint32_t*)&handle, alignment, flags, mmu_hdl, mmu_hdl2);
+    assert(ptr != NULL);
+  };
+
+  void *ptr;
+  int size, alignment, handle;
 };
 
 class SpectraCamera {
@@ -76,7 +91,8 @@ public:
   void handle_camera_event(const cam_req_mgr_message *event_data);
   void camera_close();
   void camera_map_bufs();
-  void config_ife(int io_mem_handle, int fence, int request_id, int buf0_idx);
+  void config_bps(int idx, int request_id);
+  void config_ife(int idx, int request_id, bool init=false);
 
   int clear_req_queue();
   void enqueue_buffer(int i, bool dp);
@@ -89,6 +105,7 @@ public:
 
   bool openSensor();
   void configISP();
+  void configICP();
   void configCSIPHY();
   void linkDevices();
 
@@ -105,6 +122,7 @@ public:
   int32_t session_handle = -1;
   int32_t sensor_dev_handle = -1;
   int32_t isp_dev_handle = -1;
+  int32_t icp_dev_handle = -1;
   int32_t csiphy_dev_handle = -1;
 
   int32_t link_handle = -1;
@@ -112,9 +130,14 @@ public:
   const int buf0_size = 65624; // unclear what this is and how it's determined, for internal ISP use? it's just copied from an ioctl dump
   const int buf0_alignment = 0x20;
 
+  SpectraBuf bps_cmd;
+
   int buf0_handle = 0;
   int buf_handle[FRAME_BUF_COUNT] = {};
+  int buf_handle_raw[FRAME_BUF_COUNT] = {};
   int sync_objs[FRAME_BUF_COUNT] = {};
+  int sync_objs_bps_in[FRAME_BUF_COUNT] = {};
+  int sync_objs_bps_out[FRAME_BUF_COUNT] = {};
   uint64_t request_ids[FRAME_BUF_COUNT] = {};
   uint64_t request_id_last = 0;
   uint64_t frame_id_last = 0;
