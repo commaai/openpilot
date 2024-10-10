@@ -44,7 +44,7 @@ jobs:
 
             response.then(function(r) {
               console.log('in promise');
-              console.log(r);
+              console.log(r.data.statuses);
             });
 
             console.log('in the loop');
