@@ -42,7 +42,11 @@ jobs:
               }
             });
 
+            response.then(function(r) {
+              console.log('in promise');
+              console.log(r);
+            });
+
             console.log('in the loop');
-            console.log(response);
 
             }, 10000);
