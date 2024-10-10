@@ -68,11 +68,14 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, SpectraCamera *
   // RAW frame
   const int frame_size = (sensor->frame_height + sensor->extra_height) * sensor->frame_stride;
   camera_bufs = std::make_unique<VisionBuf[]>(frame_buf_count);
+  camera_bufs_raw = std::make_unique<VisionBuf[]>(frame_buf_count);
   camera_bufs_metadata = std::make_unique<FrameMetadata[]>(frame_buf_count);
 
   for (int i = 0; i < frame_buf_count; i++) {
     camera_bufs[i].allocate(frame_size);
+    camera_bufs_raw[i].allocate(frame_size);
     camera_bufs[i].init_cl(device_id, context);
+    camera_bufs_raw[i].init_cl(device_id, context);
   }
   LOGD("allocated %d CL buffers", frame_buf_count);
 
@@ -98,6 +101,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, SpectraCamera *
 CameraBuf::~CameraBuf() {
   for (int i = 0; i < frame_buf_count; i++) {
     camera_bufs[i].free();
+    camera_bufs_raw[i].free();
   }
   if (imgproc) delete imgproc;
 }
