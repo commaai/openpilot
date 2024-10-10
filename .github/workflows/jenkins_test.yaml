@@ -23,3 +23,15 @@ jobs:
             });
             console.log(response.data.statuses[0].context);
             console.log(response.data.statuses[0].state);
+
+      - name: Push to tmp-jenkins branch
+        uses: actions/checkout@v4
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b jenkins_run-${{ github.event.issue.number }}
+          echo "TEST JENKINS 1" >> test_file
+          git add test_file
+          git commit -m "test run 1"
+          GIT_LFS_SKIP_PUSH=1 git push -f origin jenkins_run-${{ github.event.issue.number }}
+
