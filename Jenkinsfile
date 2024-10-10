@@ -173,38 +173,66 @@ node {
   if (env.BRANCH_NAME == 'jenkins_stress') {
     sh '''#!/bin/bash
 
+          # get crumb for CSRF
           COOKIE_JAR=/tmp/cookies
           CRUMB=$(curl --cookie-jar $COOKIE_JAR 'https://jenkins.comma.life/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)')
 
-          # delete previous build
-          curl --output /dev/null --cookie $COOKIE_JAR -H "$CRUMB" -X POST https://jenkins.comma.life/job/openpilot/job/__jenkins_stress/[1-3]/doDelete
+          N=5
+          FIRST_RUN=$(curl --cookie $COOKIE_JAR -H "$CRUMB" https://jenkins.comma.life/job/openpilot/job/__jenkins_stress/api/json | jq .nextBuildNumber)
+          LAST_RUN=$((FIRST_RUN+N))
 
-          for i in $(seq 1 3);
+          for i in $(seq $FIRST_RUN $LAST_RUN);
           do
+            # start build i
             curl --cookie $COOKIE_JAR -H "$CRUMB" -X POST https://jenkins.comma.life/job/openpilot/job/__jenkins_stress/build?delay=0sec
           done
 
           while true; do
+            sleep 5
+
             count=0
-            for i in $(seq 1 3);
+            FAIL=()
+            PASS=()
+
+            for i in $(seq $FIRST_RUN $LAST_RUN);
             do
               RES=$(curl -s -w "\n%{http_code}" --cookie $COOKIE_JAR -H "$CRUMB" https://jenkins.comma.life/job/openpilot/job/__jenkins_stress/$i/api/json)
               HTTP_CODE=$(tail -n1 <<< "$RES")
               JSON=$(sed '$ d' <<< "$RES")
+
               if [[ $HTTP_CODE == "200" ]]; then
-                echo $JSON
+                STILL_RUNNING=$(echo $JSON | jq .inProgress)
+                if [[ $STILL_RUNNING == "true" ]]; then
+                  continue
+                fi
+
+                RESULT=$(echo $JSON | jq .result)
+                ((count++))
+
+                if [[ $RESULT == "SUCCESS" ]]; then
+                  PASS+=($i)
+                elif [[ $RESULT == "FAILURE" ]]; then
+                  FAIL+=($i)
+                elif [[ $RESULT == "ABORTED" ]]; then
+                  FAIL+=($i)
+                else
+                  FAIL+=($i)
+                fi
+
               else
                 echo "Error getting build $i"
               fi
-              ((count++))
+
             done
-            if [[ count -eq 3 ]]; then
-              echo "ALL DONE"
+
+            if [[ $count -eq $N ]]; then
+              echo "DONE"
               break
             fi
-            sleep 5
+
           done
       '''
+
       currentBuild.result = 'SUCCESS'
       return
   }
