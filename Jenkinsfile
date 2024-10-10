@@ -164,7 +164,7 @@ node {
                          'testing-closet*', 'hotfix-*']
   def excludeRegex = excludeBranches.join('|').replaceAll('\\*', '.*')
 
-  if (env.BRANCH_NAME != 'master') {
+  if (env.BRANCH_NAME != 'master' || env.BRANCH_NAME != '__jenkins_stress') {
     properties([
         disableConcurrentBuilds(abortPrevious: true)
     ])
@@ -173,10 +173,29 @@ node {
   if (env.BRANCH_NAME == 'jenkins_stress') {
     sh '''#!/bin/bash
 
-          echo "test"
           COOKIE_JAR=/tmp/cookies
           CRUMB=$(curl --cookie-jar $COOKIE_JAR 'https://jenkins.comma.life/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)')
-          curl --cookie $COOKIE_JAR -H "$CRUMB" -X POST https://jenkins.comma.life/job/openpilot/job/__jenkins_stress/build?delay=0sec
+          for i in $(seq 1 3);
+          do
+            curl --cookie $COOKIE_JAR -H "$CRUMB" -X POST https://jenkins.comma.life/job/openpilot/job/__jenkins_stress/build?delay=0sec
+          done
+
+          while true; do
+            count=0
+            for i in $(seq 1 3);
+            do
+              RES=$(curl --cookie $COOKIE_JAR -H "$CRUMB" https://jenkins.comma.life/job/openpilot/job/__jenkins_stress/$i/api/json | jq .result)
+              echo $RES
+              if [[ $RES == "FAILURE" ]]; then
+                ((count++))
+              fi
+            done
+            if [[ count -eq 3 ]]; then
+              echo "ALL FAIL"
+              break
+            fi
+            sleep 5
+          done
       '''
       currentBuild.result = 'SUCCESS'
       return
