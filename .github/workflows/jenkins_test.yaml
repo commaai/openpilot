@@ -24,8 +24,10 @@ jobs:
             console.log(response.data.statuses[0].context);
             console.log(response.data.statuses[0].state);
 
-      - name: Push to tmp-jenkins branch
+      - name: get file
         uses: actions/checkout@v4
+
+      - name: Push to tmp-jenkins branch
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
