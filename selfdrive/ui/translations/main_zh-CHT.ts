@@ -306,7 +306,7 @@
     <name>Installer</name>
     <message>
         <source>Installing...</source>
-        <translation>安裝中…</translation>
+        <translation type="vanished">安裝中…</translation>
     </message>
 </context>
 <context>

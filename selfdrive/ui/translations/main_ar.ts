@@ -311,7 +311,7 @@
     <name>Installer</name>
     <message>
         <source>Installing...</source>
-        <translation>جارٍ التثبيت...</translation>
+        <translation type="vanished">جارٍ التثبيت...</translation>
     </message>
 </context>
 <context>

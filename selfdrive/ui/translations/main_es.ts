@@ -307,7 +307,7 @@
     <name>Installer</name>
     <message>
         <source>Installing...</source>
-        <translation>Instalando...</translation>
+        <translation type="vanished">Instalando...</translation>
     </message>
 </context>
 <context>
