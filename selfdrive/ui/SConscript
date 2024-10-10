@@ -1,6 +1,6 @@
 import os
 import json
-Import('qt_env', 'arch', 'common', 'messaging', 'visionipc', 'transformations')
+Import('env', 'qt_env', 'arch', 'common', 'messaging', 'visionipc', 'transformations')
 
 base_libs = [common, messaging, visionipc, transformations,
              'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
@@ -109,4 +109,14 @@ if GetOption('extras') and arch != "Darwin":
 
 # build watch3
 if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):
-  qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'msgq', 'visionipc'])
+  raylib_env = env.Clone()
+
+  raylib_frameworks = []
+  raylib_libs = [common, messaging, visionipc, transformations, 'common', 'msgq', 'visionipc', 'zmq', 'json11', 'pthread', 'raylib']
+  if arch == "Darwin":
+    raylib_frameworks += ['OpenCL', 'CoreVideo', 'Cocoa', 'GLUT', 'CoreFoundation', 'OpenGL', 'IOKit']
+  else:
+    raylib_libs.append('OpenCL')
+
+  raylib_env['LIBPATH'] += [f'#third_party/raylib/{arch}/']
+  raylib_env.Program("watch3", ['watch3.cc', 'raylib/cameraview.cc'], LIBS=raylib_libs, FRAMEWORKS=raylib_frameworks)
