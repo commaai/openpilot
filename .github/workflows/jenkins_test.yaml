@@ -28,6 +28,10 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
+
+            let prev_status = false;
+            setInterval(() => {
+
             const response = await github.request('GET /repos/{owner}/{repo}/commits/{ref}/status', {
               owner: 'commaai',
               repo: 'openpilot',
@@ -37,7 +41,13 @@ jobs:
                 'X-GitHub-Api-Version': '2022-11-28'
               }
             });
-            console.log(response);
-            setInterval(() => {
+
+            if ((response.data.statuses === undefined || response.data.statuses == 0) && !prev_status) {
+              console.log('NOT STARTED! exit loop');
+            } else {
+              prev_status = true;
               console.log('in the loop');
-            }, 5000);
+              console.log(response.data.statuses);
+            }
+
+            }, 10000);
