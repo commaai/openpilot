@@ -184,11 +184,9 @@ node {
             count=0
             for i in $(seq 1 3);
             do
-              RES=$(curl --cookie $COOKIE_JAR -H "$CRUMB" https://jenkins.comma.life/job/openpilot/job/__jenkins_stress/$i/api/json | jq .result)
+              RES=$(curl --cookie $COOKIE_JAR -H "$CRUMB" https://jenkins.comma.life/job/openpilot/job/__jenkins_stress/$i/api/json)
               echo $RES
-              if [[ $RES == "FAILURE" ]]; then
-                ((count++))
-              fi
+              ((count++))
             done
             if [[ count -eq 3 ]]; then
               echo "ALL FAIL"
