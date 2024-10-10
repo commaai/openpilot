@@ -12,10 +12,13 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            const response = await github.rest.repos.getCommitStatus({
+            const response = await github.request('GET /repos/{owner}/{repo}/commits/{ref}/status', {
               owner: 'commaai',
               repo: 'openpilot',
-              ref: 'heads/ui_screen_sleep'
+              ref: 'heads/master',
+              headers: {
+                'Accept': 'application/vnd.github+json',
+                'X-GitHub-Api-Version': '2022-11-28'
+              }
             });
-
             console.log(response.data);
