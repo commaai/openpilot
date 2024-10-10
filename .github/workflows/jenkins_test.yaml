@@ -5,9 +5,25 @@ on:
     types: [opened, synchronize]
 
 jobs:
-  get-status:
+  test-jenkins:
+    strategy:
+      matrix:
+        run_id: [1, 2]
     runs-on: ubuntu-latest
     steps:
+      - name: checkout
+        uses: actions/checkout@v4
+
+      - name: Push to tmp-jenkins branch
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b __jenkins_test_run_${{ matrix.run_id }}
+          echo "TEST JENKINS ${{ matrix.run_id }}" >> test_file
+          git add test_file
+          git commit -m "test run ${{ matrix.run_id }}"
+          GIT_LFS_SKIP_PUSH=1 git push -f origin __jenkins_test_run_${{ matrix.run_id }}
+
       - name: Get Commit Status
         uses: actions/github-script@v6
         with:
@@ -15,7 +31,7 @@ jobs:
             const response = await github.request('GET /repos/{owner}/{repo}/commits/{ref}/status', {
               owner: 'commaai',
               repo: 'openpilot',
-              ref: 'heads/master',
+              ref: 'heads/__jenkins_test_run_${{ matrix.run_id }}',
               headers: {
                 'Accept': 'application/vnd.github+json',
                 'X-GitHub-Api-Version': '2022-11-28'
@@ -23,17 +39,4 @@ jobs:
             });
             console.log(response.data.statuses[0].context);
             console.log(response.data.statuses[0].state);
-
-      - name: get file
-        uses: actions/checkout@v4
-
-      - name: Push to tmp-jenkins branch
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -b jenkins_run-${{ github.event.issue.number }}
-          echo "TEST JENKINS 1" >> test_file
-          git add test_file
-          git commit -m "test run 1"
-          GIT_LFS_SKIP_PUSH=1 git push -f origin jenkins_run-${{ github.event.issue.number }}
-
+            console.log(response.data.statuses[0].target_url);
