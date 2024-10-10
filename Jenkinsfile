@@ -175,6 +175,10 @@ node {
 
           COOKIE_JAR=/tmp/cookies
           CRUMB=$(curl --cookie-jar $COOKIE_JAR 'https://jenkins.comma.life/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)')
+
+          # delete previous build
+          curl --output /dev/null --cookie $COOKIE_JAR -H "$CRUMB" -X POST https://jenkins.comma.life/job/openpilot/job/__jenkins_stress/[1-3]/doDelete
+
           for i in $(seq 1 3);
           do
             curl --cookie $COOKIE_JAR -H "$CRUMB" -X POST https://jenkins.comma.life/job/openpilot/job/__jenkins_stress/build?delay=0sec
@@ -184,12 +188,18 @@ node {
             count=0
             for i in $(seq 1 3);
             do
-              RES=$(curl --cookie $COOKIE_JAR -H "$CRUMB" https://jenkins.comma.life/job/openpilot/job/__jenkins_stress/$i/api/json)
-              echo $RES
+              RES=$(curl -s -w "\n%{http_code}" --cookie $COOKIE_JAR -H "$CRUMB" https://jenkins.comma.life/job/openpilot/job/__jenkins_stress/$i/api/json)
+              HTTP_CODE=$(tail -n1 <<< "$RES")
+              JSON=$(sed '$ d' <<< "$RES")
+              if [[ $HTTP_CODE == "200" ]]; then
+                echo $JSON
+              else
+                echo "Error getting build $i"
+              fi
               ((count++))
             done
             if [[ count -eq 3 ]]; then
-              echo "ALL FAIL"
+              echo "ALL DONE"
               break
             fi
             sleep 5
