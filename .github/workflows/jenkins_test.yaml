@@ -43,6 +43,6 @@ jobs:
             });
 
             console.log('in the loop');
-            console.log(response.data.statuses);
+            console.log(response);
 
             }, 10000);
