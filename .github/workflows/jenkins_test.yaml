@@ -42,12 +42,7 @@ jobs:
               }
             });
 
-            if ((response.data.statuses === undefined || response.data.statuses == 0) && !prev_status) {
-              console.log('NOT STARTED! exit loop');
-            } else {
-              prev_status = true;
-              console.log('in the loop');
-              console.log(response.data.statuses);
-            }
+            console.log('in the loop');
+            console.log(response.data.statuses);
 
             }, 10000);
