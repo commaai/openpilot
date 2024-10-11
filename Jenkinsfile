@@ -211,16 +211,17 @@ node {
                 RESULT=$(echo $JSON | jq .result)
                 ((count++))
 
-                if [[ $RESULT == "SUCCESS" ]]; then
+                if [[ $RESULT == '"SUCCESS"' ]]; then
                   echo "build $i success"
                   PASS+=($i)
-                elif [[ $RESULT == "FAILURE" ]]; then
+                elif [[ $RESULT == '"FAILURE"' ]]; then
                   echo "build $i fail"
                   FAIL+=($i)
-                elif [[ $RESULT == "ABORTED" ]]; then
+                elif [[ $RESULT == '"ABORTED"' ]]; then
                   echo "build $i abort"
                   FAIL+=($i)
                 else
+                  echo "build $i $RESULT"
                   FAIL+=($i)
                 fi
 
@@ -231,7 +232,8 @@ node {
             done
 
             if [[ $count -eq $N ]]; then
-              echo "DONE"
+              echo "FAIL : ${FAIL[@]}"
+              echo "PASS : ${PASS[@]}"
               break
             fi
 
