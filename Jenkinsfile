@@ -164,7 +164,7 @@ node {
                          'testing-closet*', 'hotfix-*']
   def excludeRegex = excludeBranches.join('|').replaceAll('\\*', '.*')
 
-  if (env.BRANCH_NAME != 'master' || env.BRANCH_NAME != '__jenkins_stress') {
+  if (env.BRANCH_NAME != 'master' && env.BRANCH_NAME != '__jenkins_stress') {
     properties([
         disableConcurrentBuilds(abortPrevious: true)
     ])
@@ -179,6 +179,7 @@ node {
 
           N=5
           FIRST_RUN=$(curl --cookie $COOKIE_JAR -H "$CRUMB" https://jenkins.comma.life/job/openpilot/job/__jenkins_stress/api/json | jq .nextBuildNumber)
+          echo "FIRST RUN IS : $FIRST_RUN"
           LAST_RUN=$((FIRST_RUN+N))
 
           for i in $(seq $FIRST_RUN $LAST_RUN);
@@ -203,6 +204,7 @@ node {
               if [[ $HTTP_CODE == "200" ]]; then
                 STILL_RUNNING=$(echo $JSON | jq .inProgress)
                 if [[ $STILL_RUNNING == "true" ]]; then
+                  echo "build $i still running"
                   continue
                 fi
 
@@ -210,10 +212,13 @@ node {
                 ((count++))
 
                 if [[ $RESULT == "SUCCESS" ]]; then
+                  echo "build $i success"
                   PASS+=($i)
                 elif [[ $RESULT == "FAILURE" ]]; then
+                  echo "build $i fail"
                   FAIL+=($i)
                 elif [[ $RESULT == "ABORTED" ]]; then
+                  echo "build $i abort"
                   FAIL+=($i)
                 else
                   FAIL+=($i)
