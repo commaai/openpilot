@@ -25,7 +25,7 @@ void ModelRenderer::draw(QPainter &painter, const QRect &surface_rect) {
   }
 
   clip_region = surface_rect.adjusted(-CLIP_MARGIN, -CLIP_MARGIN, CLIP_MARGIN, CLIP_MARGIN);
-  experimental_model = sm["selfdriveState"].getSelfdriveState().getExperimentalMode();
+  experimental_mode = sm["selfdriveState"].getSelfdriveState().getExperimentalMode();
 
   painter.save();
 
@@ -107,7 +107,7 @@ void ModelRenderer::drawLaneLines(QPainter &painter) {
 
 void ModelRenderer::drawPath(QPainter &painter, const cereal::ModelDataV2::Reader &model, int height) {
   QLinearGradient bg(0, height, 0, 0);
-  if (experimental_model) {
+  if (experimental_mode) {
     // The first half of track_vertices are the points for the right side of the path
     const auto &acceleration = model.getAcceleration().getX();
     const int max_len = std::min<int>(track_vertices.length() / 2, acceleration.size());
