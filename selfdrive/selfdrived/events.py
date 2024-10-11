@@ -724,11 +724,6 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       Priority.LOWER, VisualAlert.none, AudibleAlert.none, .2, creation_delay=600.)
   },
 
-  EventName.soundsUnavailable: {
-    ET.PERMANENT: NormalPermanentAlert("Speaker not found", "Reboot your Device"),
-    ET.NO_ENTRY: NoEntryAlert("Speaker not found"),
-  },
-
   EventName.tooDistracted: {
     ET.NO_ENTRY: NoEntryAlert("Distraction Level Too High"),
   },

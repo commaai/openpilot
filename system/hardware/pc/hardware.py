@@ -14,9 +14,6 @@ class Pc(HardwareBase):
   def get_device_type(self):
     return "pc"
 
-  def get_sound_card_online(self):
-    return True
-
   def reboot(self, reason=None):
     print("REBOOT!")
 
