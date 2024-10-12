@@ -494,7 +494,7 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     buf_desc[0].size = ife_cmd.size;
     buf_desc[0].length = 0;
     buf_desc[0].type = CAM_CMD_BUF_DIRECT;
-    buf_desc[0].meta_data = 3;
+    buf_desc[0].meta_data = CAM_ISP_PACKET_META_COMMON;
     buf_desc[0].mem_handle = ife_cmd.handle;
     buf_desc[0].offset = ife_cmd.aligned_size()*idx;
 
@@ -752,7 +752,7 @@ void SpectraCamera::configISP() {
     .dt = sensor->frame_data_type,
     .format = sensor->mipi_format,
 
-    .test_pattern = 0x2,  // 0x3?
+    .test_pattern = sensor->bayer_pattern,
     .usage_type = 0x0,
 
     .left_start = 0,
@@ -796,7 +796,7 @@ void SpectraCamera::configISP() {
   LOGD("acquire isp dev");
 
   // config IFE
-  ife_cmd.init(m, 65624, 0x20,
+  ife_cmd.init(m, 67984, 0x20,
                CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
                m->device_iommu, m->cdm_iommu, FRAME_BUF_COUNT);
   config_ife(0, 1, true);
