@@ -608,7 +608,7 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
   int ret;
   uint64_t request_id = request_ids[i];
 
-  if (buf_handle[i] && sync_objs[i]) {
+  if (buf_handle_raw[i] && sync_objs[i]) {
     // wait
     struct cam_sync_wait sync_wait = {0};
     sync_wait.sync_obj = sync_objs[i];
@@ -624,6 +624,7 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
 
     // destroy old output fence
     for (auto so : {sync_objs, sync_objs_bps_out}) {
+      if (so[i] == 0) continue;
       struct cam_sync_info sync_destroy = {0};
       sync_destroy.sync_obj = so[i];
       ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_DESTROY, &sync_destroy, sizeof(sync_destroy));
@@ -642,11 +643,13 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
   }
   sync_objs[i] = sync_create.sync_obj;
 
+  /*
   ret = do_cam_control(m->cam_sync_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
   if (ret != 0) {
     LOGE("failed to create fence: %d %d", ret, sync_create.sync_obj);
   }
   sync_objs_bps_out[i] = sync_create.sync_obj;
+  */
 
   // schedule request with camera request manager
   struct cam_req_mgr_sched_request req_mgr_sched_request = {0};
