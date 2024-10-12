@@ -15,7 +15,8 @@
 #define BACKLIGHT_TS 10.00
 
 static void update_sockets(UIState *s) {
-  s->sm->update(0);
+  // Set a 10 ms poll timeout to ensure modelV2 is updated when onroad
+  s->sm->update(s->scene.started ? 10 : 0);
 }
 
 static void update_state(UIState *s) {
@@ -94,7 +95,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState",
     "pandaStates", "carParams", "driverMonitoringState", "carState", "driverStateV2",
     "wideRoadCameraState", "managerState", "selfdriveState", "longitudinalPlan",
-  });
+  }, std::vector<const char*>{"modelV2"});
   prime_state = new PrimeState(this);
   language = QString::fromStdString(Params().get("LanguageSetting"));
 
