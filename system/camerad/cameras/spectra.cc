@@ -702,10 +702,12 @@ void SpectraCamera::camera_map_bufs() {
     LOGD("map buf req: (fd: %d) 0x%x %d", buf.camera_bufs_raw[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
     buf_handle_raw[i] = mem_mgr_map_cmd.out.buf_handle;
 
+    // TODO: this needs to match camera bufs length
     // final processed images
-    mem_mgr_map_cmd.fd = buf.camera_bufs[i].fd;
+    VisionBuf *vb = buf.vipc_server->get_buffer(buf.stream_type, i);
+    mem_mgr_map_cmd.fd = vb->fd;
     ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
-    LOGD("map buf req: (fd: %d) 0x%x %d", buf.camera_bufs_raw[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
+    LOGD("map buf req: (fd: %d) 0x%x %d", vb->fd, mem_mgr_map_cmd.out.buf_handle, ret);
     buf_handle[i] = mem_mgr_map_cmd.out.buf_handle;
   }
   enqueue_req_multi(1, FRAME_BUF_COUNT, 0);
