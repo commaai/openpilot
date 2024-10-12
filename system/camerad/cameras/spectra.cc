@@ -272,8 +272,12 @@ void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_c
   stride = VENUS_Y_STRIDE(COLOR_FMT_NV12, sensor->frame_width);
   y_height = VENUS_Y_SCANLINES(COLOR_FMT_NV12, sensor->frame_height);
   uv_height = VENUS_UV_SCANLINES(COLOR_FMT_NV12, sensor->frame_height);
-  uv_offset = ALIGNED_SIZE(stride*y_height, 0x1000);
-  yuv_size = uv_offset + ALIGNED_SIZE(stride*uv_height, 0x1000);
+  uv_offset = stride*y_height;
+  yuv_size = uv_offset + stride*uv_height;
+  if (!is_raw) {
+    uv_offset = ALIGNED_SIZE(uv_offset, 0x1000);
+    yuv_size = uv_offset + ALIGNED_SIZE(stride*uv_height, 0x1000);
+  }
   assert(stride == VENUS_UV_STRIDE(COLOR_FMT_NV12, sensor->frame_width));
   assert(y_height/2 == uv_height);
 

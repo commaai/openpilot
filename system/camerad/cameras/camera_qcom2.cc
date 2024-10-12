@@ -50,7 +50,7 @@ public:
 
   float fl_pix = 0;
 
-  CameraState(SpectraMaster *master, const CameraConfig &config) : camera(master, config, config.camera_num == 2) {};
+  CameraState(SpectraMaster *master, const CameraConfig &config) : camera(master, config, true /*config.camera_num == 2*/) {};
   ~CameraState();
   void init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
   void update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain);

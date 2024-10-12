@@ -28,6 +28,7 @@ private:
   int cur_buf_idx;
   SafeQueue<int> safe_queue;
   int frame_buf_count;
+  bool is_raw;
 
 public:
   VisionIpcServer *vipc_server;

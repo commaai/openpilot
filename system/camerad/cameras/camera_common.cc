@@ -64,6 +64,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, SpectraCamera *
 
   const SensorInfo *sensor = cam->sensor.get();
 
+  is_raw = cam->is_raw;
   camera_bufs_raw = std::make_unique<VisionBuf[]>(frame_buf_count);
   frame_metadata = std::make_unique<FrameMetadata[]>(frame_buf_count);
 
@@ -107,10 +108,14 @@ bool CameraBuf::acquire(int expo_time) {
   cur_yuv_buf = vipc_server->get_buffer(stream_type, cur_buf_idx);
   cur_camera_buf = &camera_bufs_raw[cur_buf_idx];
 
-  if (stream_type == VISION_STREAM_DRIVER) {
+  if (is_raw) {
+    cur_yuv_buf = vipc_server->get_buffer(stream_type);
+
     double start_time = millis_since_boot();
     imgproc->runKernel(camera_bufs_raw[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, out_img_width, out_img_height, expo_time);
     cur_frame_data.processing_time = (millis_since_boot() - start_time) / 1000.0;
+  } else {
+    cur_yuv_buf = vipc_server->get_buffer(stream_type, cur_buf_idx);
   }
 
   VisionIpcBufExtra extra = {
