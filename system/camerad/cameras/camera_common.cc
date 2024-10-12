@@ -65,7 +65,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, SpectraCamera *
   const SensorInfo *sensor = cam->sensor.get();
 
   camera_bufs_raw = std::make_unique<VisionBuf[]>(frame_buf_count);
-  camera_bufs_metadata = std::make_unique<FrameMetadata[]>(frame_buf_count);
+  frame_metadata = std::make_unique<FrameMetadata[]>(frame_buf_count);
 
   // RAW + final frames from ISP
   const int raw_frame_size = (sensor->frame_height + sensor->extra_height) * sensor->frame_stride;
@@ -98,12 +98,12 @@ CameraBuf::~CameraBuf() {
 bool CameraBuf::acquire(int expo_time) {
   if (!safe_queue.try_pop(cur_buf_idx, 50)) return false;
 
-  if (camera_bufs_metadata[cur_buf_idx].frame_id == -1) {
+  if (frame_metadata[cur_buf_idx].frame_id == -1) {
     LOGE("no frame data? wtf");
     return false;
   }
 
-  cur_frame_data = camera_bufs_metadata[cur_buf_idx];
+  cur_frame_data = frame_metadata[cur_buf_idx];
   cur_yuv_buf = vipc_server->get_buffer(stream_type, cur_buf_idx);
   cur_camera_buf = &camera_bufs_raw[cur_buf_idx];
 

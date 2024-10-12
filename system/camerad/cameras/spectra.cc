@@ -458,7 +458,6 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     * IFE = Image Front End
   */
   int size = sizeof(struct cam_packet) + sizeof(struct cam_cmd_buf_desc)*2;
-  //size += sizeof(struct cam_patch_desc)*(request_id > 1 ? 0x2 : 0x8);
   if (!init) {
     size += sizeof(struct cam_buf_io_cfg);
   }
@@ -533,7 +532,7 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     tmp.type_1 |= (sizeof(cam_isp_clock_config) + sizeof(tmp.extra_rdi_hz)) << 8;
     static_assert((sizeof(cam_isp_clock_config) + sizeof(tmp.extra_rdi_hz)) == 0x38);
     tmp.clock = {
-      .usage_type = 0, // dual mode
+      .usage_type = 1, // dual mode
       .num_rdi = 4,
       .left_pix_hz = 404000000,
       .right_pix_hz = 404000000,
@@ -544,22 +543,17 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     tmp.type_2 |= (sizeof(cam_isp_bw_config) + sizeof(tmp.extra_rdi_vote)) << 8;
     static_assert((sizeof(cam_isp_bw_config) + sizeof(tmp.extra_rdi_vote)) == 0xe0);
     tmp.bw = {
-      .usage_type = 0, // dual mode
+      .usage_type = 1, // dual mode
       .num_rdi = 4,
       .left_pix_vote = {
         .resource_id = 0,
-        .cam_bw_bps = 0x59db2c80,
-        .ext_bw_bps = 0x59db2c80,
-      },
-      .right_pix_vote = {
-        .resource_id = 0,
-        .cam_bw_bps = 0x59db2c80,
-        .ext_bw_bps = 0x59db2c80,
+        .cam_bw_bps = 450000000,
+        .ext_bw_bps = 450000000,
       },
       .rdi_vote[0] = {
         .resource_id = 0,
-        .cam_bw_bps = 0,
-        .ext_bw_bps = 0,
+        .cam_bw_bps = 8706200000,
+        .ext_bw_bps = 8706200000,
       },
     };
 
@@ -581,8 +575,8 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf;
 
     struct cam_buf_io_cfg *io_cfg = (struct cam_buf_io_cfg *)((char*)&pkt->payload + pkt->io_configs_offset);
-    io_cfg[0].mem_handle[0] = buf_handle[idx];
-    io_cfg[0].mem_handle[1] = buf_handle[idx];
+    io_cfg[0].mem_handle[0] = buf_handle_yuv[idx];
+    io_cfg[0].mem_handle[1] = buf_handle_yuv[idx];
 
     io_cfg[0].planes[0] = (struct cam_plane_cfg){
       .width = sensor->frame_width,
@@ -634,7 +628,7 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
       // TODO: handle frame drop cleanly
     }
 
-    buf.camera_bufs_metadata[i].timestamp_eof = (uint64_t)nanos_since_boot(); // set true eof
+    buf.frame_metadata[i].timestamp_eof = (uint64_t)nanos_since_boot(); // set true eof
     if (dp) buf.queue(i);
 
     // destroy old output fence
@@ -708,7 +702,7 @@ void SpectraCamera::camera_map_bufs() {
     mem_mgr_map_cmd.fd = vb->fd;
     ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
     LOGD("map buf req: (fd: %d) 0x%x %d", vb->fd, mem_mgr_map_cmd.out.buf_handle, ret);
-    buf_handle[i] = mem_mgr_map_cmd.out.buf_handle;
+    buf_handle_yuv[i] = mem_mgr_map_cmd.out.buf_handle;
   }
   enqueue_req_multi(1, FRAME_BUF_COUNT, 0);
 }
@@ -973,7 +967,8 @@ void SpectraCamera::camera_close() {
     LOGD("release csiphy: %d", ret);
 
     for (int i = 0; i < FRAME_BUF_COUNT; i++) {
-      release(m->video0_fd, buf_handle[i]);
+      release(m->video0_fd, buf_handle_yuv[i]);
+      release(m->video0_fd, buf_handle_raw[i]);
     }
     LOGD("released buffers");
   }
@@ -1018,7 +1013,7 @@ void SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
     frame_id_last = main_id;
     request_id_last = real_id;
 
-    auto &meta_data = buf.camera_bufs_metadata[buf_idx];
+    auto &meta_data = buf.frame_metadata[buf_idx];
     meta_data.frame_id = main_id - idx_offset;
     meta_data.request_id = real_id;
     meta_data.timestamp_sof = timestamp;
