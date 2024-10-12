@@ -11,6 +11,7 @@
 #include "media/cam_isp_ife.h"
 #include "media/cam_sensor_cmn_header.h"
 #include "media/cam_sync.h"
+#include "third_party/linux/include/msm_media_info.h"
 
 #include "common/util.h"
 #include "common/swaglog.h"
@@ -280,9 +281,20 @@ void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_c
     return;
   }
 
+  // size is driven by all the HW that handles frames,
+  // the video encoder has certain alignment requirements in this case
+  stride = VENUS_Y_STRIDE(COLOR_FMT_NV12, sensor->frame_width);
+  y_height = VENUS_Y_SCANLINES(COLOR_FMT_NV12, sensor->frame_height);
+  uv_height = VENUS_UV_SCANLINES(COLOR_FMT_NV12, sensor->frame_height);
+  uv_offset = stride*y_height;
+  yuv_size = uv_offset + stride*uv_height;
+  // TODO: for when the frames are coming out of the IFE directly
+  //uv_offset = ALIGNED_SIZE(stride*y_height, 0x1000);
+  //yuv_size = uv_offset + ALIGNED_SIZE(stride*uv_height, 0x1000);
+
   open = true;
   configISP();
-  //configICP();  // neesd the new AGNOS kernel
+  //configICP();  // needs the new AGNOS kernel
   configCSIPHY();
   linkDevices();
 
@@ -688,12 +700,10 @@ void SpectraCamera::camera_map_bufs() {
     buf_handle_raw[i] = mem_mgr_map_cmd.out.buf_handle;
 
     // final processed images
-    /*
     mem_mgr_map_cmd.fd = buf.camera_bufs[i].fd;
     ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
     LOGD("map buf req: (fd: %d) 0x%x %d", buf.camera_bufs_raw[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
     buf_handle[i] = mem_mgr_map_cmd.out.buf_handle;
-    */
   }
   enqueue_req_multi(1, FRAME_BUF_COUNT, 0);
 }

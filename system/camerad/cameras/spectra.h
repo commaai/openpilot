@@ -120,6 +120,13 @@ public:
   CameraConfig cc;
   std::unique_ptr<const SensorInfo> sensor;
 
+  // YUV image size
+  uint32_t stride;
+  uint32_t y_height;
+  uint32_t uv_height;
+  uint32_t uv_offset;
+  uint32_t yuv_size;
+
   unique_fd sensor_fd;
   unique_fd csiphy_fd;
 
