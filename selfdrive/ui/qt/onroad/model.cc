@@ -155,13 +155,14 @@ void ModelRenderer::updatePathGradient(QLinearGradient &bg) {
   };
 
   // Transition speed; 0.1 corresponds to 0.5 seconds at UI_FREQ
-  const float transition_speed = 0.1f;
+  constexpr float transition_speed = 0.1f;
 
   // Start transition if throttle state changes
   bool allow_throttle = (*uiState()->sm)["longitudinalPlan"].getLongitudinalPlan().getAllowThrottle();
   if (allow_throttle != prev_allow_throttle) {
     prev_allow_throttle = allow_throttle;
-    blend_factor = 0.0f;
+    // Invert blend factor for a smooth transition when the state changes mid-animation
+    blend_factor = std::max(1.0f - blend_factor, 0.0f);
   }
 
   const QColor *begin_colors = allow_throttle ? no_throttle_colors : throttle_colors;
