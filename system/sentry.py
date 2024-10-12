@@ -72,7 +72,4 @@ def init(project: SentryProject) -> bool:
   sentry_sdk.set_tag("commit", build_metadata.openpilot.git_commit)
   sentry_sdk.set_tag("device", HARDWARE.get_device_type())
 
-  if project == SentryProject.SELFDRIVE:
-    sentry_sdk.Hub.current.start_session()
-
   return True
