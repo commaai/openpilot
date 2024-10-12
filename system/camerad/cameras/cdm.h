@@ -1,3 +1,15 @@
+#pragma once
+
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <vector>
+#include <memory>
+
+// our helpers
+int write_random(uint8_t *dst, std::vector<uint32_t> vals);
+int write_cont(uint8_t *dst, uint32_t reg, std::vector<uint32_t> vals);
+
 // from drivers/media/platform/msm/camera/cam_cdm/cam_cdm_util.{c,h}
 
 enum cam_cdm_command {
