@@ -236,10 +236,11 @@ void SpectraMaster::init() {
 
 // *** SpectraCamera ***
 
-SpectraCamera::SpectraCamera(SpectraMaster *master, const CameraConfig &config)
+SpectraCamera::SpectraCamera(SpectraMaster *master, const CameraConfig &config, bool raw)
   : m(master),
-    enabled(config.enabled) ,
-    cc(config) {
+    enabled(config.enabled),
+    cc(config),
+    is_raw(raw) {
   mm.init(m->video0_fd);
 }
 
@@ -480,7 +481,6 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     pkt->num_cmd_buf = 2;
 
     // *** first command ***
-    // TODO: support MMU
     buf_desc[0].size = ife_cmd.size;
     buf_desc[0].length = 0;
     buf_desc[0].type = CAM_CMD_BUF_DIRECT;
@@ -488,14 +488,17 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     buf_desc[0].mem_handle = ife_cmd.handle;
     buf_desc[0].offset = ife_cmd.aligned_size()*idx;
 
-    // this is a stream of IFE register configs and DMI commands
-    if (init) {
-      buf_desc[0].length = build_initial_config((unsigned char*)ife_cmd.ptr + buf_desc[0].offset);
-    } else if (request_id == 1) {
-      buf_desc[0].length = build_first_update((unsigned char*)ife_cmd.ptr + buf_desc[0].offset);
-    } else {
-      buf_desc[0].length = build_update((unsigned char*)ife_cmd.ptr + buf_desc[0].offset);
+    // stream of IFE register writes
+    if (!is_raw) {
+      if (init) {
+        buf_desc[0].length = build_initial_config((unsigned char*)ife_cmd.ptr + buf_desc[0].offset);
+      } else if (request_id == 1) {
+        buf_desc[0].length = build_first_update((unsigned char*)ife_cmd.ptr + buf_desc[0].offset);
+      } else {
+        buf_desc[0].length = build_update((unsigned char*)ife_cmd.ptr + buf_desc[0].offset);
+      }
     }
+
     pkt->kmd_cmd_buf_offset = buf_desc[0].length;
     pkt->kmd_cmd_buf_index = 0;
 
@@ -521,12 +524,13 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     tmp.resource_hfr = {
       .num_ports = 1,
       .port_hfr_config[0] = {
-        .resource_type = CAM_ISP_IFE_OUT_RES_FULL,
+        .resource_type = static_cast<uint32_t>(is_raw ? CAM_ISP_IFE_OUT_RES_RDI_0 : CAM_ISP_IFE_OUT_RES_FULL),
         .subsample_pattern = 1,
         .subsample_period = 0,
         .framedrop_pattern = 1,
         .framedrop_period = 0,
-      }};
+      }
+    };
 
     tmp.type_1 = CAM_ISP_GENERIC_BLOB_TYPE_CLOCK_CONFIG;
     tmp.type_1 |= (sizeof(cam_isp_clock_config) + sizeof(tmp.extra_rdi_hz)) << 8;
@@ -575,31 +579,50 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf;
 
     struct cam_buf_io_cfg *io_cfg = (struct cam_buf_io_cfg *)((char*)&pkt->payload + pkt->io_configs_offset);
-    io_cfg[0].mem_handle[0] = buf_handle_yuv[idx];
-    io_cfg[0].mem_handle[1] = buf_handle_yuv[idx];
 
-    io_cfg[0].planes[0] = (struct cam_plane_cfg){
-      .width = sensor->frame_width,
-      .height = sensor->frame_height,
-      .plane_stride = stride,
-      .slice_height = y_height,
-    };
-    io_cfg[0].planes[1] = (struct cam_plane_cfg){
-      .width = sensor->frame_width,
-      .height = sensor->frame_height/2,
-      .plane_stride = stride,
-      .slice_height = uv_height,
-    };
-    io_cfg[0].offsets[1] = uv_offset;
-    io_cfg[0].format = CAM_FORMAT_NV12;  // TODO: why is this NV21 here and NV12 in the initial device acquire?
-    io_cfg[0].color_space = 0;
-    io_cfg[0].color_pattern = 0x0;
-    io_cfg[0].bpp = 0;
-    io_cfg[0].resource_type = CAM_ISP_IFE_OUT_RES_FULL;
-    io_cfg[0].fence = sync_objs[idx];
-    io_cfg[0].direction = CAM_BUF_OUTPUT;
-    io_cfg[0].subsample_pattern = 0x1;
-    io_cfg[0].framedrop_pattern = 0x1;
+    if (is_raw) {
+      io_cfg[0].mem_handle[0] = buf_handle_raw[idx];
+      io_cfg[0].planes[0] = (struct cam_plane_cfg){
+        .width = sensor->frame_width,
+        .height = sensor->frame_height,
+        .plane_stride = stride,
+        .slice_height = y_height,
+      };
+      io_cfg[0].format = sensor->mipi_format;
+      io_cfg[0].color_space = CAM_COLOR_SPACE_BASE;
+      io_cfg[0].color_pattern = 0x5;
+      io_cfg[0].bpp = (sensor->mipi_format == CAM_FORMAT_MIPI_RAW_10 ? 0xa : 0xc);
+      io_cfg[0].resource_type = CAM_ISP_IFE_OUT_RES_RDI_0;
+      io_cfg[0].fence = sync_objs[idx];
+      io_cfg[0].direction = CAM_BUF_OUTPUT;
+      io_cfg[0].subsample_pattern = 0x1;
+      io_cfg[0].framedrop_pattern = 0x1;
+    } else {
+      io_cfg[0].mem_handle[0] = buf_handle_yuv[idx];
+      io_cfg[0].mem_handle[1] = buf_handle_yuv[idx];
+      io_cfg[0].planes[0] = (struct cam_plane_cfg){
+        .width = sensor->frame_width,
+        .height = sensor->frame_height,
+        .plane_stride = stride,
+        .slice_height = y_height,
+      };
+      io_cfg[0].planes[1] = (struct cam_plane_cfg){
+        .width = sensor->frame_width,
+        .height = sensor->frame_height/2,
+        .plane_stride = stride,
+        .slice_height = uv_height,
+      };
+      io_cfg[0].offsets[1] = uv_offset;
+      io_cfg[0].format = CAM_FORMAT_NV12;
+      io_cfg[0].color_space = 0;
+      io_cfg[0].color_pattern = 0x0;
+      io_cfg[0].bpp = 0;
+      io_cfg[0].resource_type = CAM_ISP_IFE_OUT_RES_FULL;
+      io_cfg[0].fence = sync_objs[idx];
+      io_cfg[0].direction = CAM_BUF_OUTPUT;
+      io_cfg[0].subsample_pattern = 0x1;
+      io_cfg[0].framedrop_pattern = 0x1;
+    }
   }
 
   // *** patches ***
@@ -792,6 +815,12 @@ void SpectraCamera::configISP() {
       .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
     },
   };
+
+  if (is_raw) {
+    in_port_info.data[0].res_type = CAM_ISP_IFE_OUT_RES_RDI_0;
+    in_port_info.data[0].format = sensor->mipi_format;
+  }
+
   struct cam_isp_resource isp_resource = {
     .resource_id = CAM_ISP_RES_ID_PORT,
     .handle_type = CAM_HANDLE_USER_POINTER,
