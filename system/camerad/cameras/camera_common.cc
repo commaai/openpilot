@@ -7,7 +7,6 @@
 
 #include "common/clutil.h"
 #include "common/swaglog.h"
-#include "third_party/linux/include/msm_media_info.h"
 
 #include "system/camerad/cameras/spectra.h"
 
@@ -114,7 +113,8 @@ bool CameraBuf::acquire(int expo_time) {
   cur_camera_buf = &camera_bufs_raw[cur_buf_idx];
 
   double start_time = millis_since_boot();
-  imgproc->runKernel(camera_bufs_raw[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, out_img_width, out_img_height, expo_time);
+  //imgproc->runKernel(camera_bufs_raw[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, out_img_width, out_img_height, expo_time);
+  memcpy(cur_yuv_buf->addr, cur_camera_buf->addr, cur_camera_buf->len);
   cur_frame_data.processing_time = (millis_since_boot() - start_time) / 1000.0;
 
   VisionIpcBufExtra extra = {

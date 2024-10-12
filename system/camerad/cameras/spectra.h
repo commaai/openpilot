@@ -147,7 +147,6 @@ public:
   SpectraBuf bps_iq;
   SpectraBuf bps_striping;
 
-  int buf0_handle = 0;
   int buf_handle[FRAME_BUF_COUNT] = {};
   int buf_handle_raw[FRAME_BUF_COUNT] = {};
   int sync_objs[FRAME_BUF_COUNT] = {};

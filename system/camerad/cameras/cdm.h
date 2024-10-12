@@ -1,3 +1,5 @@
+#pragma once
+
 // from drivers/media/platform/msm/camera/cam_cdm/cam_cdm_util.{c,h}
 
 enum cam_cdm_command {

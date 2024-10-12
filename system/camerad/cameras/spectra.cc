@@ -15,27 +15,12 @@
 
 #include "common/util.h"
 #include "common/swaglog.h"
+#include "system/camerad/cameras/ife.h"
 #include "system/camerad/cameras/spectra.h"
+#include "third_party/linux/include/msm_media_info.h"
 
 // For debugging:
 // echo "4294967295" > /sys/module/cam_debug_util/parameters/debug_mdl
-
-int write_cont(uint8_t *dst, uint32_t reg, std::vector<uint32_t> vals) {
-  struct cdm_regcontinuous_cmd *cmd = (struct cdm_regcontinuous_cmd*)dst;
-  cmd->cmd = CAM_CDM_CMD_REG_CONT;
-  cmd->count = vals.size();
-  cmd->offset = reg;
-  cmd->reserved0 = 0;
-  cmd->reserved1 = 0;
-
-  uint32_t *vd = (uint32_t*)(dst + sizeof(struct cdm_regcontinuous_cmd));
-  for (int i = 0; i < vals.size(); i++) {
-    *vd = vals[i];
-    vd++;
-  }
-
-  return sizeof(struct cdm_regcontinuous_cmd) + vals.size()*sizeof(uint32_t);
-}
 
 // ************** low level camera helpers ****************
 
@@ -286,11 +271,10 @@ void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_c
   stride = VENUS_Y_STRIDE(COLOR_FMT_NV12, sensor->frame_width);
   y_height = VENUS_Y_SCANLINES(COLOR_FMT_NV12, sensor->frame_height);
   uv_height = VENUS_UV_SCANLINES(COLOR_FMT_NV12, sensor->frame_height);
-  uv_offset = stride*y_height;
-  yuv_size = uv_offset + stride*uv_height;
-  // TODO: for when the frames are coming out of the IFE directly
-  //uv_offset = ALIGNED_SIZE(stride*y_height, 0x1000);
-  //yuv_size = uv_offset + ALIGNED_SIZE(stride*uv_height, 0x1000);
+  uv_offset = ALIGNED_SIZE(stride*y_height, 0x1000);
+  yuv_size = uv_offset + ALIGNED_SIZE(stride*uv_height, 0x1000);
+  assert(stride == VENUS_UV_STRIDE(COLOR_FMT_NV12, sensor->frame_width));
+  assert(y_height/2 == uv_height);
 
   open = true;
   configISP();
@@ -474,6 +458,7 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     * IFE = Image Front End
   */
   int size = sizeof(struct cam_packet) + sizeof(struct cam_cmd_buf_desc)*2;
+  //size += sizeof(struct cam_patch_desc)*(request_id > 1 ? 0x2 : 0x8);
   if (!init) {
     size += sizeof(struct cam_buf_io_cfg);
   }
@@ -490,12 +475,6 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
   }
   pkt->header.size = size;
 
-  // *** kmd cmd buf ***
-  {
-    pkt->kmd_cmd_buf_index = 0;
-    pkt->kmd_cmd_buf_offset = 0;
-  }
-
   // *** cmd buf ***
   {
     struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
@@ -509,6 +488,17 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     buf_desc[0].meta_data = CAM_ISP_PACKET_META_COMMON;
     buf_desc[0].mem_handle = ife_cmd.handle;
     buf_desc[0].offset = ife_cmd.aligned_size()*idx;
+
+    // this is a stream of IFE register configs and DMI commands
+    if (init) {
+      buf_desc[0].length = build_initial_config((unsigned char*)ife_cmd.ptr + buf_desc[0].offset);
+    } else if (request_id == 1) {
+      buf_desc[0].length = build_first_update((unsigned char*)ife_cmd.ptr + buf_desc[0].offset);
+    } else {
+      buf_desc[0].length = build_update((unsigned char*)ife_cmd.ptr + buf_desc[0].offset);
+    }
+    pkt->kmd_cmd_buf_offset = buf_desc[0].length;
+    pkt->kmd_cmd_buf_index = 0;
 
     // *** second command ***
     // parsed by cam_isp_packet_generic_blob_handler
@@ -530,9 +520,9 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     tmp.type_0 |= sizeof(cam_isp_resource_hfr_config) << 8;
     static_assert(sizeof(cam_isp_resource_hfr_config) == 0x20);
     tmp.resource_hfr = {
-      .num_ports = 1,  // 10 for YUV (but I don't think we need them)
+      .num_ports = 1,
       .port_hfr_config[0] = {
-        .resource_type = CAM_ISP_IFE_OUT_RES_RDI_0, // CAM_ISP_IFE_OUT_RES_FULL for YUV
+        .resource_type = CAM_ISP_IFE_OUT_RES_FULL,
         .subsample_pattern = 1,
         .subsample_period = 0,
         .framedrop_pattern = 1,
@@ -543,7 +533,7 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     tmp.type_1 |= (sizeof(cam_isp_clock_config) + sizeof(tmp.extra_rdi_hz)) << 8;
     static_assert((sizeof(cam_isp_clock_config) + sizeof(tmp.extra_rdi_hz)) == 0x38);
     tmp.clock = {
-      .usage_type = 1, // dual mode
+      .usage_type = 0, // dual mode
       .num_rdi = 4,
       .left_pix_hz = 404000000,
       .right_pix_hz = 404000000,
@@ -554,17 +544,22 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     tmp.type_2 |= (sizeof(cam_isp_bw_config) + sizeof(tmp.extra_rdi_vote)) << 8;
     static_assert((sizeof(cam_isp_bw_config) + sizeof(tmp.extra_rdi_vote)) == 0xe0);
     tmp.bw = {
-      .usage_type = 1, // dual mode
+      .usage_type = 0, // dual mode
       .num_rdi = 4,
       .left_pix_vote = {
         .resource_id = 0,
-        .cam_bw_bps = 450000000,
-        .ext_bw_bps = 450000000,
+        .cam_bw_bps = 0x59db2c80,
+        .ext_bw_bps = 0x59db2c80,
+      },
+      .right_pix_vote = {
+        .resource_id = 0,
+        .cam_bw_bps = 0x59db2c80,
+        .ext_bw_bps = 0x59db2c80,
       },
       .rdi_vote[0] = {
         .resource_id = 0,
-        .cam_bw_bps = 8706200000,
-        .ext_bw_bps = 8706200000,
+        .cam_bw_bps = 0,
+        .ext_bw_bps = 0,
       },
     };
 
@@ -586,20 +581,27 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf;
 
     struct cam_buf_io_cfg *io_cfg = (struct cam_buf_io_cfg *)((char*)&pkt->payload + pkt->io_configs_offset);
-    io_cfg[0].offsets[0] = 0;
-    io_cfg[0].mem_handle[0] = buf_handle_raw[idx];
+    io_cfg[0].mem_handle[0] = buf_handle[idx];
+    io_cfg[0].mem_handle[1] = buf_handle[idx];
 
     io_cfg[0].planes[0] = (struct cam_plane_cfg){
       .width = sensor->frame_width,
-      .height = sensor->frame_height + sensor->extra_height,
-      .plane_stride = sensor->frame_stride,
-      .slice_height = sensor->frame_height + sensor->extra_height,
+      .height = sensor->frame_height,
+      .plane_stride = stride,
+      .slice_height = y_height,
     };
-    io_cfg[0].format = sensor->mipi_format;
-    io_cfg[0].color_space = CAM_COLOR_SPACE_BASE;
-    io_cfg[0].color_pattern = 0x5;
-    io_cfg[0].bpp = (sensor->mipi_format == CAM_FORMAT_MIPI_RAW_10 ? 0xa : 0xc);
-    io_cfg[0].resource_type = CAM_ISP_IFE_OUT_RES_RDI_0;
+    io_cfg[0].planes[1] = (struct cam_plane_cfg){
+      .width = sensor->frame_width,
+      .height = sensor->frame_height/2,
+      .plane_stride = stride,
+      .slice_height = uv_height,
+    };
+    io_cfg[0].offsets[1] = uv_offset;
+    io_cfg[0].format = CAM_FORMAT_NV12;  // TODO: why is this NV21 here and NV12 in the initial device acquire?
+    io_cfg[0].color_space = 0;
+    io_cfg[0].color_pattern = 0x0;
+    io_cfg[0].bpp = 0;
+    io_cfg[0].resource_type = CAM_ISP_IFE_OUT_RES_FULL;
     io_cfg[0].fence = sync_objs[idx];
     io_cfg[0].direction = CAM_BUF_OUTPUT;
     io_cfg[0].subsample_pattern = 0x1;
@@ -607,6 +609,7 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
   }
 
   // *** patches ***
+  // sets up the kernel driver to do address translation for the IFE
   {
     pkt->num_patches = 0;
     pkt->patch_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf + sizeof(struct cam_buf_io_cfg)*pkt->num_io_configs;
@@ -786,8 +789,8 @@ void SpectraCamera::configISP() {
     // ISP outputs
     .num_out_res = 0x1,
     .data[0] = (struct cam_isp_out_port_info){
-      .res_type = CAM_ISP_IFE_OUT_RES_RDI_0,
-      .format = sensor->mipi_format,
+      .res_type = CAM_ISP_IFE_OUT_RES_FULL,
+      .format = CAM_FORMAT_NV12,
       .width = sensor->frame_width,
       .height = sensor->frame_height + sensor->extra_height,
       .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
