@@ -81,7 +81,7 @@ MANEUVERS = [
   Maneuver(
    "start from stop",
    [Action(1.5, 5)],
-   repeat=3,
+   repeat=2,
    initial_speed=0.,
   ),
   Maneuver(
