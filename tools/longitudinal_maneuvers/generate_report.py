@@ -8,6 +8,7 @@ import pprint
 from collections import defaultdict
 from pathlib import Path
 import matplotlib.pyplot as plt
+from tabulate import tabulate
 
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.system.hardware.hw import Paths
@@ -120,13 +121,20 @@ def report(platform, route, _description, CP, maneuvers):
       builder.append(f"<img src='data:image/png;base64,{base64.b64encode(buffer.getvalue()).decode()}' style='width:100%; max-width:800px;'>\n")
       builder.append("</details>\n")
 
-  builder.append("<h2>Summary</h2>\n")
+  summary = ["<h2>Summary</h2>\n"]
+  cols = ['maneuver', 'crossed', 'runs', 'mean', 'min', 'max']
+  table = []
   for description, runs in maneuvers:
     times = target_cross_times[description]
-    builder.append(f"<h3>{description}</h3>\n")
-    builder.append(f"<p>Target crossed {len(times)} out of {len(runs)} runs</p>\n")
+    l = [description, len(times), len(runs)]
     if len(times):
-      builder.append(f"<p>Mean time to cross: {sum(times) / len(times):.3f}s, min: {min(times):.3f}s, max: {max(times):.3f}s</p>\n")
+      l.extend([sum(times) / len(times), min(times), max(times)])
+    table.append(l)
+  summary.append(tabulate(table, headers=cols, tablefmt='html') + '\n')
+
+  builder[5:5] = summary
+
+  builder.append('<style>summary { cursor: pointer; }\n td { padding: 6px; } </style>\n')
 
   with open(output_fn, "w") as f:
     f.write(''.join(builder))
