@@ -72,10 +72,10 @@ class Events:
   def clear(self) -> None:
      # Get events no longer active
     current_event_set = set(self.events)
-    events_to_clear = self.prev_event_set - current_event_set
+    inactive_events = self.prev_event_set - current_event_set
 
      # Reset counters for inactive events
-    for event_name in events_to_clear:
+    for event_name in inactive_events:
       self.event_counters[event_name] = 0
 
      # Reset active events and update previous set
