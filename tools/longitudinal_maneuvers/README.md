@@ -14,7 +14,7 @@ Test your vehicle's longitudinal control tuning with this tool. The tool will te
    echo -n 1 > /data/params/d/LongitudinalManeuverMode
    ```
 
-4. Turn your vehicle back on. You will see the "Longitudinal Maneuver Mode" alert:
+4. Ensure openpilot longitudinal control is toggle **on** then turn your vehicle back on. You will see the "Longitudinal Maneuver Mode" alert:
 
    ![videoframe_6652](https://github.com/user-attachments/assets/e9d4c95a-cd76-4ab7-933e-19937792fa0f)
 
