@@ -187,7 +187,7 @@ class DynamicExperimentalController:
 
   def _update(self, car_state, lead_one, md, controls_state):
     self._v_ego_kph = car_state.vEgo * 3.6
-    self._v_cruise_kph = controls_state.vCruise
+    self._v_cruise_kph = car_state.vCruise
     self._has_lead = lead_one.status
     self._has_standstill = car_state.standstill
 
