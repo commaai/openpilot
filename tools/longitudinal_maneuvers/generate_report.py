@@ -24,13 +24,16 @@ def report(platform, route, _description, CP, maneuvers):
   output_path.mkdir(exist_ok=True)
   target_cross_times = defaultdict(list)
 
-  builder = []
-  builder.append("<h1>Longitudinal maneuver report</h1>\n")
-  builder.append(f"<h3>{platform}</h3>\n")
-  builder.append(f"<h3>{route}</h3>\n")
+  builder = [
+    "<style>summary { cursor: pointer; }\n td, th { padding: 8px; } </style>\n",
+    "<h1>Longitudinal maneuver report</h1>\n",
+    f"<h3>{platform}</h3>\n",
+    f"<h3>{route}</h3>\n"
+  ]
   if _description is not None:
     builder.append(f"<h3>Description: {_description}</h3>\n")
   builder.append(f"<details><summary><h3 style='display: inline-block;'>CarParams</h3></summary><pre>{format_car_params(CP)}</pre></details>\n")
+  builder.append('{ summary }')  # to be replaced below
   for description, runs in maneuvers:
     print(f'plotting maneuver: {description}, runs: {len(runs)}')
     builder.append("<div style='border-top: 1px solid #000; margin: 20px 0;'></div>\n")
@@ -128,13 +131,12 @@ def report(platform, route, _description, CP, maneuvers):
     times = target_cross_times[description]
     l = [description, len(times), len(runs)]
     if len(times):
-      l.extend([sum(times) / len(times), min(times), max(times)])
+      l.extend([round(sum(times) / len(times), 2), round(min(times), 2), round(max(times), 2)])
     table.append(l)
-  summary.append(tabulate(table, headers=cols, tablefmt='html') + '\n')
+  summary.append(tabulate(table, headers=cols, tablefmt='html', numalign='left') + '\n')
 
-  builder[5:5] = summary
-
-  builder.append('<style>summary { cursor: pointer; }\n td { padding: 6px; } </style>\n')
+  sum_idx = builder.index('{ summary }')
+  builder[sum_idx:sum_idx + 1] = summary
 
   with open(output_fn, "w") as f:
     f.write(''.join(builder))
