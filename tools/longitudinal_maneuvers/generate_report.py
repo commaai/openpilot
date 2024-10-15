@@ -28,8 +28,8 @@ def report(platform, route, _description, CP, ID, maneuvers):
     "<style>summary { cursor: pointer; }\n td, th { padding: 8px; } </style>\n",
     "<h1>Longitudinal maneuver report</h1>\n",
     f"<h3>{platform}</h3>\n",
-    f"<h3>{route}</h3>\n"
-    f"<h3>{ID.gitCommit}, {ID.gitBranch}, {ID.gitRemote}</h3>\n"
+    f"<h3>{route}</h3>\n",
+    f"<h3>{ID.gitCommit}, {ID.gitBranch}, {ID.gitRemote}</h3>\n",
   ]
   if _description is not None:
     builder.append(f"<h3>Description: {_description}</h3>\n")
