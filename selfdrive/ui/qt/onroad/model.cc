@@ -16,7 +16,7 @@ static int get_path_length_idx(const cereal::XYZTData::Reader &line, const float
 void ModelRenderer::draw(QPainter &painter, const QRect &surface_rect) {
   auto &sm = *(uiState()->sm);
   // Check if data is up-to-date
-  if (Hardware::TICI() && !(sm.alive("liveCalibration") && sm.alive("modelV2"))) {
+  if (!REPLAY && !(sm.alive("liveCalibration") && sm.alive("modelV2"))) {
     return;
   }
 
