@@ -50,7 +50,7 @@ Texture2D LoadTextureResized(const char *fileName, int size) {
 void initApp(const char *title, int fps) {
   Hardware::set_display_power(true);
   Hardware::set_brightness(65);
-  SetTraceLogLevel(LOG_NONE);
+  // SetTraceLogLevel(LOG_NONE);
   InitWindow(0, 0, title);
   SetTargetFPS(fps);
 }

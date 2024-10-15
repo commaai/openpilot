@@ -112,11 +112,13 @@ if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):
 # raylib env
 raylib_env = env.Clone()
 raylib_lib = env.Library("raylib_lib", ['raylib/util.cc'], LIBS='raylib')
-raylib_libs = ['raylib', raylib_lib]
+raylib_libs = ['raylib', raylib_lib, common]
 raylib_env['LIBPATH'] += [f'#third_party/raylib/{arch}/']
 raylib_frameworks = []
 if arch == "Darwin":
   raylib_frameworks += ['OpenCL', 'CoreVideo', 'Cocoa', 'GLUT', 'CoreFoundation', 'OpenGL', 'IOKit']
+elif arch == 'larch64':
+  raylib_libs += []
 else:
   raylib_libs.append('OpenCL')
 raylib_env.Program("_spinner", ["raylib/spinner.cc"], LIBS=raylib_libs, FRAMEWORKS=raylib_frameworks)
