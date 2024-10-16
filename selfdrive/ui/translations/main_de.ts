@@ -114,6 +114,61 @@
     </message>
 </context>
 <context>
+    <name>DeveloperPanel</name>
+    <message>
+        <source>Updates are only downloaded while the car is off.</source>
+        <translation type="obsolete">Updates werden nur heruntergeladen, wenn das Auto aus ist.</translation>
+    </message>
+    <message>
+        <source>Current Version</source>
+        <translation type="obsolete">Aktuelle Version</translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <translation type="obsolete">Download</translation>
+    </message>
+    <message>
+        <source>CHECK</source>
+        <translation type="obsolete">ÜBERPRÜFEN</translation>
+    </message>
+    <message>
+        <source>Install Update</source>
+        <translation type="obsolete">Update installieren</translation>
+    </message>
+    <message>
+        <source>INSTALL</source>
+        <translation type="obsolete">INSTALLIEREN</translation>
+    </message>
+    <message>
+        <source>Target Branch</source>
+        <translation type="obsolete">Ziel Branch</translation>
+    </message>
+    <message>
+        <source>SELECT</source>
+        <translation type="obsolete">AUSWÄHLEN</translation>
+    </message>
+    <message>
+        <source>Select a branch</source>
+        <translation type="obsolete">Wähle einen Branch</translation>
+    </message>
+    <message>
+        <source>Uninstall %1</source>
+        <translation type="obsolete">Deinstalliere %1</translation>
+    </message>
+    <message>
+        <source>UNINSTALL</source>
+        <translation type="obsolete">DEINSTALL</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to uninstall?</source>
+        <translation type="obsolete">Bist du sicher, dass du Openpilot entfernen möchtest?</translation>
+    </message>
+    <message>
+        <source>Uninstall</source>
+        <translation type="obsolete">Deinstallieren</translation>
+    </message>
+</context>
+<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -599,6 +654,10 @@ This may take up to a minute.</source>
     <message>
         <source>Software</source>
         <translation>Software</translation>
+    </message>
+    <message>
+        <source>Developer</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -114,6 +114,81 @@
     </message>
 </context>
 <context>
+    <name>DeveloperPanel</name>
+    <message>
+        <source>Updates are only downloaded while the car is off.</source>
+        <translation type="obsolete">车辆熄火时才能下载升级文件。</translation>
+    </message>
+    <message>
+        <source>Current Version</source>
+        <translation type="obsolete">当前版本</translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <translation type="obsolete">下载</translation>
+    </message>
+    <message>
+        <source>CHECK</source>
+        <translation type="obsolete">查看</translation>
+    </message>
+    <message>
+        <source>Install Update</source>
+        <translation type="obsolete">安装更新</translation>
+    </message>
+    <message>
+        <source>INSTALL</source>
+        <translation type="obsolete">安装</translation>
+    </message>
+    <message>
+        <source>Target Branch</source>
+        <translation type="obsolete">目标分支</translation>
+    </message>
+    <message>
+        <source>SELECT</source>
+        <translation type="obsolete">选择</translation>
+    </message>
+    <message>
+        <source>Select a branch</source>
+        <translation type="obsolete">选择分支</translation>
+    </message>
+    <message>
+        <source>Uninstall %1</source>
+        <translation type="obsolete">卸载 %1</translation>
+    </message>
+    <message>
+        <source>UNINSTALL</source>
+        <translation type="obsolete">卸载</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to uninstall?</source>
+        <translation type="obsolete">您确定要卸载吗？</translation>
+    </message>
+    <message>
+        <source>Uninstall</source>
+        <translation type="obsolete">卸载</translation>
+    </message>
+    <message>
+        <source>failed to check for update</source>
+        <translation type="obsolete">检查更新失败</translation>
+    </message>
+    <message>
+        <source>DOWNLOAD</source>
+        <translation type="obsolete">下载</translation>
+    </message>
+    <message>
+        <source>update available</source>
+        <translation type="obsolete">有可用的更新</translation>
+    </message>
+    <message>
+        <source>never</source>
+        <translation type="obsolete">从未更新</translation>
+    </message>
+    <message>
+        <source>up to date, last checked %1</source>
+        <translation type="obsolete">已经是最新版本，上次检查时间为 %1</translation>
+    </message>
+</context>
+<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -597,6 +672,10 @@ This may take up to a minute.</source>
     <message>
         <source>Software</source>
         <translation>软件</translation>
+    </message>
+    <message>
+        <source>Developer</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

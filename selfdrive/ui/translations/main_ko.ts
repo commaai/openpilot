@@ -114,6 +114,81 @@
     </message>
 </context>
 <context>
+    <name>DeveloperPanel</name>
+    <message>
+        <source>Updates are only downloaded while the car is off.</source>
+        <translation type="obsolete">업데이트는 차량 시동이 꺼졌을 때 다운로드됩니다.</translation>
+    </message>
+    <message>
+        <source>Current Version</source>
+        <translation type="obsolete">현재 버전</translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <translation type="obsolete">다운로드</translation>
+    </message>
+    <message>
+        <source>CHECK</source>
+        <translation type="obsolete">확인</translation>
+    </message>
+    <message>
+        <source>Install Update</source>
+        <translation type="obsolete">업데이트 설치</translation>
+    </message>
+    <message>
+        <source>INSTALL</source>
+        <translation type="obsolete">설치</translation>
+    </message>
+    <message>
+        <source>Target Branch</source>
+        <translation type="obsolete">대상 브랜치</translation>
+    </message>
+    <message>
+        <source>SELECT</source>
+        <translation type="obsolete">선택</translation>
+    </message>
+    <message>
+        <source>Select a branch</source>
+        <translation type="obsolete">브랜치 선택</translation>
+    </message>
+    <message>
+        <source>Uninstall %1</source>
+        <translation type="obsolete">%1 제거</translation>
+    </message>
+    <message>
+        <source>UNINSTALL</source>
+        <translation type="obsolete">제거</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to uninstall?</source>
+        <translation type="obsolete">제거하시겠습니까?</translation>
+    </message>
+    <message>
+        <source>Uninstall</source>
+        <translation type="obsolete">제거</translation>
+    </message>
+    <message>
+        <source>failed to check for update</source>
+        <translation type="obsolete">업데이트를 확인하지 못했습니다</translation>
+    </message>
+    <message>
+        <source>DOWNLOAD</source>
+        <translation type="obsolete">다운로드</translation>
+    </message>
+    <message>
+        <source>update available</source>
+        <translation type="obsolete">업데이트 가능</translation>
+    </message>
+    <message>
+        <source>never</source>
+        <translation type="obsolete">업데이트 안함</translation>
+    </message>
+    <message>
+        <source>up to date, last checked %1</source>
+        <translation type="obsolete">최신 버전입니다. 마지막 확인: %1</translation>
+    </message>
+</context>
+<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -597,6 +672,10 @@ This may take up to a minute.</source>
     <message>
         <source>Software</source>
         <translation>소프트웨어</translation>
+    </message>
+    <message>
+        <source>Developer</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
