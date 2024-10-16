@@ -103,7 +103,7 @@ def metadrive_process(dual_camera: bool, config: dict, camera_array, wide_camera
       velocity=vec3(x=float(env.vehicle.velocity[0]), y=float(env.vehicle.velocity[1]), z=0),
       position=env.vehicle.position,
       bearing=float(math.degrees(env.vehicle.heading_theta)),
-      steering_angle=env.vehicle.steering * env.vehicle.MAX_STEERING
+      steering_angle=env.vehicle.steering * env.vehicle.MAX_STEERING * steer_ratio
     )
     vehicle_state_send.send(vehicle_state)
 
