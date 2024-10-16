@@ -65,7 +65,7 @@ def report(platform, route, _description, CP, ID, maneuvers):
       # get first acceleration target and first intersection
       aTarget = longitudinalPlan[0].aTarget
       target_cross_time = None
-      builder.append(f'<h3 style="font-weight: normal">Initial aTarget: {aTarget} m/s^2')
+      builder.append(f'<h3 style="font-weight: normal">Initial aTarget: {round(aTarget, 2)} m/s^2')
 
       # Localizer is noisy, require two consecutive 20Hz frames above threshold
       prev_crossed = False
