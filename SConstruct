@@ -309,7 +309,8 @@ try:
 except SCons.Errors.UserError:
   qt_env.Tool('qt')
 
-qt_env['CPPPATH'] += qt_dirs + ["#third_party/qrcode"]
+#pkg-config --cflags --libs dbus-1
+qt_env['CPPPATH'] += qt_dirs + ["#third_party/qrcode", "/usr/include/dbus-1.0", "/usr/lib/x86_64-linux-gnu/dbus-1.0/include"]
 qt_flags = [
   "-D_REENTRANT",
   "-DQT_NO_DEBUG",

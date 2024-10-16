@@ -17,20 +17,20 @@ const int NM_802_11_AP_SEC_GROUP_WEP104    = 0x00000020;
 const int NM_802_11_AP_SEC_KEY_MGMT_PSK    = 0x00000100;
 const int NM_802_11_AP_SEC_KEY_MGMT_802_1X = 0x00000200;
 
-const QString NM_DBUS_PATH                          = "/org/freedesktop/NetworkManager";
-const QString NM_DBUS_PATH_SETTINGS                 = "/org/freedesktop/NetworkManager/Settings";
+#define NM_DBUS_PATH                          "/org/freedesktop/NetworkManager"
+#define  NM_DBUS_PATH_SETTINGS                "/org/freedesktop/NetworkManager/Settings"
 
-const QString NM_DBUS_INTERFACE                     = "org.freedesktop.NetworkManager";
-const QString NM_DBUS_INTERFACE_PROPERTIES          = "org.freedesktop.DBus.Properties";
-const QString NM_DBUS_INTERFACE_SETTINGS            = "org.freedesktop.NetworkManager.Settings";
-const QString NM_DBUS_INTERFACE_SETTINGS_CONNECTION = "org.freedesktop.NetworkManager.Settings.Connection";
-const QString NM_DBUS_INTERFACE_DEVICE              = "org.freedesktop.NetworkManager.Device";
-const QString NM_DBUS_INTERFACE_DEVICE_WIRELESS     = "org.freedesktop.NetworkManager.Device.Wireless";
-const QString NM_DBUS_INTERFACE_ACCESS_POINT        = "org.freedesktop.NetworkManager.AccessPoint";
-const QString NM_DBUS_INTERFACE_ACTIVE_CONNECTION   = "org.freedesktop.NetworkManager.Connection.Active";
-const QString NM_DBUS_INTERFACE_IP4_CONFIG          = "org.freedesktop.NetworkManager.IP4Config";
+#define NM_DBUS_INTERFACE                     "org.freedesktop.NetworkManager"
+#define NM_DBUS_INTERFACE_PROPERTIES          "org.freedesktop.DBus.Properties"
+#define NM_DBUS_INTERFACE_SETTINGS            "org.freedesktop.NetworkManager.Settings"
+#define NM_DBUS_INTERFACE_SETTINGS_CONNECTION "org.freedesktop.NetworkManager.Settings.Connection"
+#define NM_DBUS_INTERFACE_DEVICE              "org.freedesktop.NetworkManager.Device"
+#define NM_DBUS_INTERFACE_DEVICE_WIRELESS     "org.freedesktop.NetworkManager.Device.Wireless"
+#define NM_DBUS_INTERFACE_ACCESS_POINT        "org.freedesktop.NetworkManager.AccessPoint"
+#define NM_DBUS_INTERFACE_ACTIVE_CONNECTION   "org.freedesktop.NetworkManager.Connection.Active"
+#define NM_DBUS_INTERFACE_IP4_CONFIG          "org.freedesktop.NetworkManager.IP4Config"
 
-const QString NM_DBUS_SERVICE                        = "org.freedesktop.NetworkManager";
+#define NM_DBUS_SERVICE                       "org.freedesktop.NetworkManager"
 
 const int NM_DEVICE_STATE_UNKNOWN = 0;
 const int NM_DEVICE_STATE_ACTIVATED = 100;

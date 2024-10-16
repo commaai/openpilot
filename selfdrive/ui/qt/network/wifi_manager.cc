@@ -1,7 +1,6 @@
 #include "selfdrive/ui/qt/network/wifi_manager.h"
 
 #include <utility>
-
 #include "common/swaglog.h"
 #include "selfdrive/ui/qt/util.h"
 
@@ -49,6 +48,14 @@ WifiManager::WifiManager(QObject *parent) : QObject(parent) {
   qDBusRegisterMetaType<Connection>();
   qDBusRegisterMetaType<IpConfig>();
 
+  dbus_error_init(&error);
+  dbus = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
+  if (dbus_error_is_set(&error)) {
+    dbus_error_free(&error);
+    assert(0);
+  }
+
+
   // Set tethering ssid as "weedle" + first 4 characters of a dongle id
   tethering_ssid = "weedle";
   if (auto dongle_id = getDongleId()) {
@@ -65,6 +72,14 @@ WifiManager::WifiManager(QObject *parent) : QObject(parent) {
   timer.callOnTimeout(this, &WifiManager::requestScan);
 
   initConnections();
+
+  auto result = sendMethodCall<std::vector<std::string>>(NM_DBUS_PATH, NM_DBUS_INTERFACE, "GetDevices");
+  for (const auto &devicePath : result) {
+    auto type = getAdapterType(devicePath.c_str());
+    if (type == NM_DEVICE_TYPE_WIFI) {
+      // listAccessPoints(devicePath.c_str());
+    }
+  }
 }
 
 void WifiManager::setup() {
@@ -249,6 +264,10 @@ void WifiManager::setCurrentConnecting(const QString &ssid) {
 
 uint WifiManager::getAdapterType(const QDBusObjectPath &path) {
   return call<uint>(path.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_DEVICE, "DeviceType");
+}
+
+uint WifiManager::getAdapterType(const std::string &path) {
+  return sendMethodCall<uint32_t>(path.c_str(),NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_DEVICE, "DeviceType");
 }
 
 void WifiManager::requestScan() {

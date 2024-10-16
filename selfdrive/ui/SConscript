@@ -24,7 +24,7 @@ widgets_src = ["qt/widgets/input.cc", "qt/widgets/wifi.cc", "qt/prime_state.cc",
 
 widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
 Export('widgets')
-qt_libs = [widgets, qt_util] + base_libs
+qt_libs = [widgets, qt_util, 'dbus-1'] + base_libs
 
 qt_src = ["main.cc", "ui.cc", "qt/sidebar.cc", "qt/body.cc",
           "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc",
