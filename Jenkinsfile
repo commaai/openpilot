@@ -164,12 +164,6 @@ node {
                          'testing-closet*', 'hotfix-*']
   def excludeRegex = excludeBranches.join('|').replaceAll('\\*', '.*')
 
-  if (env.BRANCH_NAME != 'master' && env.BRANCH_NAME != '__jenkins_stress') {
-    properties([
-        disableConcurrentBuilds(abortPrevious: true)
-    ])
-  }
-
   try {
     if (env.BRANCH_NAME == 'devel-staging') {
       deviceStage("build release3-staging", "tici-needs-can", [], [
