@@ -28,7 +28,7 @@ jobs:
 
   ci_matrix_jenkins_run:
     needs: [ setup ]
-    uses: commaai/openpilot/.github/workflows/ci_weekly_run_jenkins.yaml@master
+    uses: commaai/openpilot/.github/workflows/ci_weekly_run_jenkins.yaml@jenkins_stress
     with:
       build_count: ${{ env.CI_RUNS }}
 
