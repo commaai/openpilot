@@ -1,4 +1,4 @@
-name: weekly CI test run
+name: weekly Github Actions CI test run
 on:
   workflow_call:
     inputs:

@@ -178,7 +178,7 @@ node {
 
       N=5
       FIRST_RUN=$(curl --cookie $COOKIE_JAR -H "$CRUMB" https://jenkins.comma.life/job/openpilot/job/jenkins_test_runner/api/json | jq .nextBuildNumber)
-      LAST_RUN=$((FIRST_RUN+N))
+      LAST_RUN=$((FIRST_RUN+N-1))
 
       for i in $(seq $FIRST_RUN $LAST_RUN);
       do
