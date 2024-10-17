@@ -174,7 +174,7 @@ node {
     environment {
       CI_ARTIFACTS_TOKEN="${env.CI_ARTIFACTS_TOKEN}"
     }
-    sh """
+    sh '''
       # get crumb for CSRF
       COOKIE_JAR=/tmp/cookies
       CRUMB=$(curl --cookie-jar $COOKIE_JAR 'https://jenkins.comma.life/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)')
@@ -266,7 +266,7 @@ node {
       git add jenkins_report
       git commit -m "jenkins report"
       git push -f origin jenkins_test_report
-      """
+      '''
 
       currentBuild.result = 'SUCCESS'
       return
