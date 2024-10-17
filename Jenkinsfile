@@ -170,7 +170,7 @@ node {
     ])
   }
 
-  if (env.BRANCH_NAME == 'jenkins_stress') {
+  if (env.BRANCH_NAME == 'jenkins_stress_NOT_NOW') {
     sh '''#!/bin/bash
 
           # get crumb for CSRF
@@ -179,13 +179,12 @@ node {
 
           N=5
           FIRST_RUN=$(curl --cookie $COOKIE_JAR -H "$CRUMB" https://jenkins.comma.life/job/openpilot/job/__jenkins_stress/api/json | jq .nextBuildNumber)
-          echo "FIRST RUN IS : $FIRST_RUN"
           LAST_RUN=$((FIRST_RUN+N))
 
           for i in $(seq $FIRST_RUN $LAST_RUN);
           do
             # start build i
-            curl --cookie $COOKIE_JAR -H "$CRUMB" -X POST https://jenkins.comma.life/job/openpilot/job/__jenkins_stress/build?delay=0sec
+            curl --output /dev/null --cookie $COOKIE_JAR -H "$CRUMB" -X POST https://jenkins.comma.life/job/openpilot/job/__jenkins_stress/build?delay=0sec
           done
 
           while true; do
@@ -210,23 +209,20 @@ node {
 
                 RESULT=$(echo $JSON | jq .result)
                 ((count++))
+                echo "build $i $RESULT"
 
                 if [[ $RESULT == '"SUCCESS"' ]]; then
-                  echo "build $i success"
                   PASS+=($i)
                 elif [[ $RESULT == '"FAILURE"' ]]; then
-                  echo "build $i fail"
                   FAIL+=($i)
                 elif [[ $RESULT == '"ABORTED"' ]]; then
-                  echo "build $i abort"
                   FAIL+=($i)
                 else
-                  echo "build $i $RESULT"
                   FAIL+=($i)
                 fi
 
               else
-                echo "Error getting build $i"
+                echo "Error getting status of build $i"
               fi
 
             done
