@@ -63,20 +63,40 @@ public:
   unique_fd video0_fd;
   unique_fd cam_sync_fd;
   unique_fd isp_fd;
+  unique_fd icp_fd;
   int device_iommu = -1;
   int cdm_iommu = -1;
+  int icp_device_iommu = -1;
+};
+
+class SpectraBuf {
+public:
+  void init(SpectraMaster *m, int s, int a, int flags, int mmu_hdl = 0, int mmu_hdl2 = 0, int count=1) {
+    size = s;
+    alignment = a;
+    ptr = alloc_w_mmu_hdl(m->video0_fd, ALIGNED_SIZE(size, alignment)*count, (uint32_t*)&handle, alignment, flags, mmu_hdl, mmu_hdl2);
+    assert(ptr != NULL);
+  };
+
+  uint32_t aligned_size() {
+    return ALIGNED_SIZE(size, alignment);
+  };
+
+  void *ptr;
+  int size, alignment, handle;
 };
 
 class SpectraCamera {
 public:
-  SpectraCamera(SpectraMaster *master, const CameraConfig &config);
+  SpectraCamera(SpectraMaster *master, const CameraConfig &config, bool raw);
   ~SpectraCamera();
 
   void camera_open(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
   void handle_camera_event(const cam_req_mgr_message *event_data);
   void camera_close();
   void camera_map_bufs();
-  void config_ife(int io_mem_handle, int fence, int request_id, int buf0_idx);
+  void config_bps(int idx, int request_id);
+  void config_ife(int idx, int request_id, bool init=false);
 
   int clear_req_queue();
   void enqueue_buffer(int i, bool dp);
@@ -89,6 +109,7 @@ public:
 
   bool openSensor();
   void configISP();
+  void configICP();
   void configCSIPHY();
   void linkDevices();
 
@@ -99,27 +120,44 @@ public:
   CameraConfig cc;
   std::unique_ptr<const SensorInfo> sensor;
 
+  // YUV image size
+  uint32_t stride;
+  uint32_t y_height;
+  uint32_t uv_height;
+  uint32_t uv_offset;
+  uint32_t yuv_size;
+
   unique_fd sensor_fd;
   unique_fd csiphy_fd;
 
   int32_t session_handle = -1;
   int32_t sensor_dev_handle = -1;
   int32_t isp_dev_handle = -1;
+  int32_t icp_dev_handle = -1;
   int32_t csiphy_dev_handle = -1;
 
   int32_t link_handle = -1;
 
-  const int buf0_size = 65624; // unclear what this is and how it's determined, for internal ISP use? it's just copied from an ioctl dump
-  const int buf0_alignment = 0x20;
+  SpectraBuf ife_cmd;
 
-  int buf0_handle = 0;
-  int buf_handle[FRAME_BUF_COUNT] = {};
+  SpectraBuf bps_cmd;
+  SpectraBuf bps_cdm_buffer;
+  SpectraBuf bps_cdm_program_array;
+  SpectraBuf bps_cdm_striping_bl;
+  SpectraBuf bps_iq;
+  SpectraBuf bps_striping;
+
+  int buf_handle_yuv[FRAME_BUF_COUNT] = {};
+  int buf_handle_raw[FRAME_BUF_COUNT] = {};
   int sync_objs[FRAME_BUF_COUNT] = {};
+  int sync_objs_bps_out[FRAME_BUF_COUNT] = {};
   uint64_t request_ids[FRAME_BUF_COUNT] = {};
   uint64_t request_id_last = 0;
   uint64_t frame_id_last = 0;
   uint64_t idx_offset = 0;
   bool skipped = true;
+
+  bool is_raw;
 
   CameraBuf buf;
   MemoryManager mm;

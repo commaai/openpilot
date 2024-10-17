@@ -15,17 +15,14 @@ static int get_path_length_idx(const cereal::XYZTData::Reader &line, const float
 
 void ModelRenderer::draw(QPainter &painter, const QRect &surface_rect) {
   auto &sm = *(uiState()->sm);
-  if (sm.updated("carParams")) {
-    longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
-  }
-
   // Check if data is up-to-date
   if (!(sm.alive("liveCalibration") && sm.alive("modelV2"))) {
     return;
   }
 
   clip_region = surface_rect.adjusted(-CLIP_MARGIN, -CLIP_MARGIN, CLIP_MARGIN, CLIP_MARGIN);
-  experimental_model = sm["selfdriveState"].getSelfdriveState().getExperimentalMode();
+  experimental_mode = sm["selfdriveState"].getSelfdriveState().getExperimentalMode();
+  longitudinal_control = sm["carParams"].getCarParams().getOpenpilotLongitudinalControl();
 
   painter.save();
 
@@ -107,7 +104,7 @@ void ModelRenderer::drawLaneLines(QPainter &painter) {
 
 void ModelRenderer::drawPath(QPainter &painter, const cereal::ModelDataV2::Reader &model, int height) {
   QLinearGradient bg(0, height, 0, 0);
-  if (experimental_model) {
+  if (experimental_mode) {
     // The first half of track_vertices are the points for the right side of the path
     const auto &acceleration = model.getAcceleration().getX();
     const int max_len = std::min<int>(track_vertices.length() / 2, acceleration.size());
@@ -135,13 +132,55 @@ void ModelRenderer::drawPath(QPainter &painter, const cereal::ModelDataV2::Reade
     }
 
   } else {
-    bg.setColorAt(0.0, QColor::fromHslF(148 / 360., 0.94, 0.51, 0.4));
-    bg.setColorAt(0.5, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.35));
-    bg.setColorAt(1.0, QColor::fromHslF(112 / 360., 1.0, 0.68, 0.0));
+    updatePathGradient(bg);
   }
 
   painter.setBrush(bg);
   painter.drawPolygon(track_vertices);
+}
+
+void ModelRenderer::updatePathGradient(QLinearGradient &bg) {
+  static const QColor throttle_colors[] = {
+      QColor::fromHslF(148. / 360., 0.94, 0.51, 0.4),
+      QColor::fromHslF(112. / 360., 1.0, 0.68, 0.35),
+      QColor::fromHslF(112. / 360., 1.0, 0.68, 0.0)};
+
+  static const QColor no_throttle_colors[] = {
+      QColor::fromHslF(148. / 360., 0.0, 0.95, 0.4),
+      QColor::fromHslF(112. / 360., 0.0, 0.95, 0.35),
+      QColor::fromHslF(112. / 360., 0.0, 0.95, 0.0),
+  };
+
+  // Transition speed; 0.1 corresponds to 0.5 seconds at UI_FREQ
+  constexpr float transition_speed = 0.1f;
+
+  // Start transition if throttle state changes
+  bool allow_throttle = (*uiState()->sm)["longitudinalPlan"].getLongitudinalPlan().getAllowThrottle() || !longitudinal_control;
+  if (allow_throttle != prev_allow_throttle) {
+    prev_allow_throttle = allow_throttle;
+    // Invert blend factor for a smooth transition when the state changes mid-animation
+    blend_factor = std::max(1.0f - blend_factor, 0.0f);
+  }
+
+  const QColor *begin_colors = allow_throttle ? no_throttle_colors : throttle_colors;
+  const QColor *end_colors = allow_throttle ? throttle_colors : no_throttle_colors;
+  if (blend_factor < 1.0f) {
+    blend_factor = std::min(blend_factor + transition_speed, 1.0f);
+  }
+
+  // Set gradient colors by blending the start and end colors
+  bg.setColorAt(0.0f, blendColors(begin_colors[0], end_colors[0], blend_factor));
+  bg.setColorAt(0.5f, blendColors(begin_colors[1], end_colors[1], blend_factor));
+  bg.setColorAt(1.0f, blendColors(begin_colors[2], end_colors[2], blend_factor));
+}
+
+QColor ModelRenderer::blendColors(const QColor &start, const QColor &end, float t) {
+  if (t == 1.0f) return end;
+  return QColor::fromRgbF(
+      (1 - t) * start.redF() + t * end.redF(),
+      (1 - t) * start.greenF() + t * end.greenF(),
+      (1 - t) * start.blueF() + t * end.blueF(),
+      (1 - t) * start.alphaF() + t * end.alphaF());
 }
 
 void ModelRenderer::drawLead(QPainter &painter, const cereal::RadarState::LeadData::Reader &lead_data,

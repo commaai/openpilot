@@ -7,7 +7,6 @@
 
 #include "common/clutil.h"
 #include "common/swaglog.h"
-#include "third_party/linux/include/msm_media_info.h"
 
 #include "system/camerad/cameras/spectra.h"
 
@@ -65,39 +64,34 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, SpectraCamera *
 
   const SensorInfo *sensor = cam->sensor.get();
 
-  // RAW frame
-  const int frame_size = (sensor->frame_height + sensor->extra_height) * sensor->frame_stride;
-  camera_bufs = std::make_unique<VisionBuf[]>(frame_buf_count);
-  camera_bufs_metadata = std::make_unique<FrameMetadata[]>(frame_buf_count);
+  is_raw = cam->is_raw;
+  camera_bufs_raw = std::make_unique<VisionBuf[]>(frame_buf_count);
+  frame_metadata = std::make_unique<FrameMetadata[]>(frame_buf_count);
 
+  // RAW + final frames from ISP
+  const int raw_frame_size = (sensor->frame_height + sensor->extra_height) * sensor->frame_stride;
   for (int i = 0; i < frame_buf_count; i++) {
-    camera_bufs[i].allocate(frame_size);
-    camera_bufs[i].init_cl(device_id, context);
+    camera_bufs_raw[i].allocate(raw_frame_size);
+    camera_bufs_raw[i].init_cl(device_id, context);
   }
   LOGD("allocated %d CL buffers", frame_buf_count);
 
   out_img_width = sensor->frame_width;
   out_img_height = sensor->hdr_offset > 0 ? (sensor->frame_height - sensor->hdr_offset) / 2 : sensor->frame_height;
 
-  int nv12_width = VENUS_Y_STRIDE(COLOR_FMT_NV12, out_img_width);
-  int nv12_height = VENUS_Y_SCANLINES(COLOR_FMT_NV12, out_img_height);
-  assert(nv12_width == VENUS_UV_STRIDE(COLOR_FMT_NV12, out_img_width));
-  assert(nv12_height/2 == VENUS_UV_SCANLINES(COLOR_FMT_NV12, out_img_height));
-  size_t nv12_uv_offset = nv12_width * nv12_height;
-
   // the encoder HW tells us the size it wants after setting it up.
   // TODO: VENUS_BUFFER_SIZE should give the size, but it's too small. dependent on encoder settings?
-  size_t nv12_size = (out_img_width <= 1344 ? 2900 : 2346)*nv12_width;
+  size_t nv12_size = (out_img_width <= 1344 ? 2900 : 2346)*cam->stride;
 
-  vipc_server->create_buffers_with_sizes(stream_type, YUV_BUFFER_COUNT, out_img_width, out_img_height, nv12_size, nv12_width, nv12_uv_offset);
-  LOGD("created %d YUV vipc buffers with size %dx%d", YUV_BUFFER_COUNT, nv12_width, nv12_height);
+  vipc_server->create_buffers_with_sizes(stream_type, YUV_BUFFER_COUNT, out_img_width, out_img_height, nv12_size, cam->stride, cam->uv_offset);
+  LOGD("created %d YUV vipc buffers with size %dx%d", YUV_BUFFER_COUNT, cam->stride, cam->y_height);
 
-  imgproc = new ImgProc(device_id, context, this, sensor, cam->cc.camera_num, nv12_width, nv12_uv_offset);
+  imgproc = new ImgProc(device_id, context, this, sensor, cam->cc.camera_num, cam->stride, cam->uv_offset);
 }
 
 CameraBuf::~CameraBuf() {
   for (int i = 0; i < frame_buf_count; i++) {
-    camera_bufs[i].free();
+    camera_bufs_raw[i].free();
   }
   if (imgproc) delete imgproc;
 }
@@ -105,18 +99,22 @@ CameraBuf::~CameraBuf() {
 bool CameraBuf::acquire(int expo_time) {
   if (!safe_queue.try_pop(cur_buf_idx, 50)) return false;
 
-  if (camera_bufs_metadata[cur_buf_idx].frame_id == -1) {
+  if (frame_metadata[cur_buf_idx].frame_id == -1) {
     LOGE("no frame data? wtf");
     return false;
   }
 
-  cur_frame_data = camera_bufs_metadata[cur_buf_idx];
-  cur_yuv_buf = vipc_server->get_buffer(stream_type);
-  cur_camera_buf = &camera_bufs[cur_buf_idx];
+  cur_frame_data = frame_metadata[cur_buf_idx];
+  cur_camera_buf = &camera_bufs_raw[cur_buf_idx];
+  if (is_raw) {
+    cur_yuv_buf = vipc_server->get_buffer(stream_type);
 
-  double start_time = millis_since_boot();
-  imgproc->runKernel(camera_bufs[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, out_img_width, out_img_height, expo_time);
-  cur_frame_data.processing_time = (millis_since_boot() - start_time) / 1000.0;
+    double start_time = millis_since_boot();
+    imgproc->runKernel(camera_bufs_raw[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, out_img_width, out_img_height, expo_time);
+    cur_frame_data.processing_time = (millis_since_boot() - start_time) / 1000.0;
+  } else {
+    cur_yuv_buf = vipc_server->get_buffer(stream_type, cur_buf_idx);
+  }
 
   VisionIpcBufExtra extra = {
     cur_frame_data.frame_id,

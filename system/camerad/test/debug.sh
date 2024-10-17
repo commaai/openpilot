@@ -5,6 +5,7 @@ set -e
 
 # no CCI and UTIL, very spammy
 echo 0xfffdbfff | sudo tee /sys/module/cam_debug_util/parameters/debug_mdl
+echo 0 | sudo tee /sys/module/cam_debug_util/parameters/debug_mdl
 
 sudo dmesg -C
 scons -u -j8 --minimal .

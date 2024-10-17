@@ -20,9 +20,13 @@ private:
   void update_model(const cereal::ModelDataV2::Reader &model, const cereal::RadarState::LeadData::Reader &lead);
   void drawLaneLines(QPainter &painter);
   void drawPath(QPainter &painter, const cereal::ModelDataV2::Reader &model, int height);
+  void updatePathGradient(QLinearGradient &bg);
+  QColor blendColors(const QColor &start, const QColor &end, float t);
 
   bool longitudinal_control = false;
-  bool experimental_model = false;
+  bool experimental_mode = false;
+  float blend_factor = 1.0f;
+  bool prev_allow_throttle = true;
   float lane_line_probs[4] = {};
   float road_edge_stds[2] = {};
   QPolygonF track_vertices;
