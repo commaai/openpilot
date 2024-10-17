@@ -253,15 +253,15 @@ node {
       done
       TABLE="${TABLE}</table>"
 
-      git config --global user.email "user@comma.ai"
-      git config --global user.name "Vehicle Researcher"
       git clone -b master --depth=1 https://github.com/commaai/ci-artifacts
       cd ci-artifacts
+      git config --local user.email "user@comma.ai"
+      git config --local user.name "Vehicle Researcher"
+      git config --local url.https://${{env.CI_ARTIFACTS_TOKEN}}@github.com/.insteadOf https://github.com/
       git checkout -b "jenkins_test_report"
       echo "$TABLE" >> jenkins_report
       git add jenkins_report
       git commit -m "jenkins report"
-      git remote set-url origin https://${env.CI_ARTIFACTS_TOKEN}@github.com/commaai/ci-artifacts.git
       git push -f origin jenkins_test_report
       '''
 
