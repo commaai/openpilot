@@ -60,7 +60,7 @@ jobs:
               })
             var report = {}
             jobs.slice(1, jobs.length-1).forEach(job => {
-              if (job.conclusion === "skipped") return;
+              if (job.conclusion === "skipped" || job.name.includes("ci_matrix_jenkins_run")) return;
               const jobName = job.name.split(" / ")[2];
               const runRegex = /\((.*?)\)/;
               const run = job.name.match(runRegex)[1];
