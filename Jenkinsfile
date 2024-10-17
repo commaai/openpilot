@@ -172,6 +172,8 @@ node {
 
   if (env.BRANCH_NAME == 'jenkins_test_master') {
     sh '''#!/bin/bash
+      CI_ARTIFACTS_TOKEN=${env.CI_ARTIFACTS_TOKEN}
+
       # get crumb for CSRF
       COOKIE_JAR=/tmp/cookies
       CRUMB=$(curl --cookie-jar $COOKIE_JAR 'https://jenkins.comma.life/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)')
@@ -257,7 +259,7 @@ node {
       cd ci-artifacts
       git config --local user.email "user@comma.ai"
       git config --local user.name "Vehicle Researcher"
-      git config --local url.https://${env.CI_ARTIFACTS_TOKEN}@github.com/.insteadOf https://github.com/
+      git config --local url.https://$CI_ARTIFACTS_TOKEN@github.com/.insteadOf https://github.com/
       git checkout -b "jenkins_test_report"
       echo "$TABLE" >> jenkins_report
       git add jenkins_report
