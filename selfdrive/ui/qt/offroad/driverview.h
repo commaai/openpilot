@@ -1,6 +1,7 @@
 #pragma once
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
+#include "selfdrive/ui/qt/onroad/driver_monitoring.h"
 
 class DriverViewWindow : public CameraWidget {
   Q_OBJECT
@@ -18,5 +19,5 @@ protected:
   void paintGL() override;
 
   Params params;
-  QPixmap face_img;
+  DriverMonitorRenderer driver_monitor;
 };
