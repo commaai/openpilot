@@ -40,6 +40,7 @@ function install_ubuntu_common_requirements() {
     libavutil-dev \
     libavfilter-dev \
     libbz2-dev \
+    libdbus-1-dev\
     libeigen3-dev \
     libffi-dev \
     libglew-dev \
