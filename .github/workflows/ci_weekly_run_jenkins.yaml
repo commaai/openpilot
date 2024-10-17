@@ -42,7 +42,7 @@ jobs:
         script: |
 
           let prev_status = false;
-          const interval setInterval(() => {
+          const interval = setInterval(() => {
 
             const response = github.request('GET /repos/{owner}/{repo}/commits/{ref}/status', {
               owner: 'commaai',
