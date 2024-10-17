@@ -58,6 +58,8 @@ jobs:
               if (r.data.statuses && r.data.statuses.length) {
                 if (r.data.statuses[0].state != "pending") {
                   clearInterval(interval)
+                } else {
+                  console.log('Still running');
                 }
               }
             });

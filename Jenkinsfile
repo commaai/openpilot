@@ -253,6 +253,8 @@ node {
       done
       TABLE="${TABLE}</table>"
 
+      git config --global user.email "user@comma.ai"
+      git config --global user.name "Vehicle Researcher"
       git clone -b master --depth=1 https://github.com/commaai/ci-artifacts
       cd ci-artifacts
       git checkout -b "jenkins_test_report"
