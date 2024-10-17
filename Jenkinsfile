@@ -91,7 +91,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
             device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
           }
           steps.each { item ->
-            if (branch != "master" && item.size() == 3 && !hasPathChanged(item[2])) {
+            if (branch != "master" && branch != "jenkins_test_runner" && item.size() == 3 && !hasPathChanged(item[2])) {
               println "Skipping ${item[0]}: no changes in ${item[2]}."
               return;
             } else {
@@ -164,13 +164,13 @@ node {
                          'testing-closet*', 'hotfix-*']
   def excludeRegex = excludeBranches.join('|').replaceAll('\\*', '.*')
 
-  if (env.BRANCH_NAME != 'master' && env.BRANCH_NAME != '__jenkins_stress') {
+  if (env.BRANCH_NAME != 'master' && env.BRANCH_NAME != 'jenkins_test_runner') {
     properties([
         disableConcurrentBuilds(abortPrevious: true)
     ])
   }
 
-  if (env.BRANCH_NAME == 'jenkins_stress_NOT_NOW') {
+  if (env.BRANCH_NAME == 'jenkins_test_master') {
     sh '''#!/bin/bash
       # get crumb for CSRF
       COOKIE_JAR=/tmp/cookies
