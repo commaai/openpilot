@@ -175,7 +175,6 @@ node {
       CI_ARTIFACTS_TOKEN="${env.CI_ARTIFACTS_TOKEN}"
     }
     sh '''#!/bin/bash
-      echo "$CI_ARTIFACTS_TOKEN"
       # get crumb for CSRF
       COOKIE_JAR=/tmp/cookies
       CRUMB=$(curl --cookie-jar $COOKIE_JAR 'https://jenkins.comma.life/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)')
