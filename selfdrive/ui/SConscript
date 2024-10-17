@@ -1,6 +1,6 @@
 import os
 import json
-Import('qt_env', 'arch', 'common', 'messaging', 'visionipc', 'transformations')
+Import('env','qt_env', 'arch', 'common', 'messaging', 'visionipc', 'transformations')
 
 base_libs = [common, messaging, visionipc, transformations,
              'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
@@ -77,8 +77,6 @@ if GetOption('extras') and arch != "Darwin":
 
   # setup and factory resetter
   qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
-  qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc", asset_obj],
-                 LIBS=qt_libs + ['curl', 'common'])
 
   # build updater UI
   qt_env.Program("qt/setup/updater", ["qt/setup/updater.cc", asset_obj], LIBS=qt_libs)
@@ -110,3 +108,15 @@ if GetOption('extras') and arch != "Darwin":
 # build watch3
 if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):
   qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'msgq', 'visionipc'])
+
+# raylib env
+raylib_env = env.Clone()
+raylib_lib = env.Library("raylib_lib", ['raylib/util.cc'], LIBS='raylib')
+raylib_libs = ['raylib', raylib_lib]
+raylib_env['LIBPATH'] += [f'#third_party/raylib/{arch}/']
+raylib_frameworks = []
+if arch == "Darwin":
+  raylib_frameworks += ['OpenCL', 'CoreVideo', 'Cocoa', 'GLUT', 'CoreFoundation', 'OpenGL', 'IOKit']
+else:
+  raylib_libs.append('OpenCL')
+raylib_env.Program("_setup", ["raylib/setup.cc"], LIBS=raylib_libs, FRAMEWORKS=raylib_frameworks)
