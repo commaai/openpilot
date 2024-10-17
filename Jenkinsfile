@@ -172,68 +172,95 @@ node {
 
   if (env.BRANCH_NAME == 'jenkins_stress_NOT_NOW') {
     sh '''#!/bin/bash
+      # get crumb for CSRF
+      COOKIE_JAR=/tmp/cookies
+      CRUMB=$(curl --cookie-jar $COOKIE_JAR 'https://jenkins.comma.life/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)')
 
-          # get crumb for CSRF
-          COOKIE_JAR=/tmp/cookies
-          CRUMB=$(curl --cookie-jar $COOKIE_JAR 'https://jenkins.comma.life/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)')
+      N=5
+      FIRST_RUN=$(curl --cookie $COOKIE_JAR -H "$CRUMB" https://jenkins.comma.life/job/openpilot/job/jenkins_test_runner/api/json | jq .nextBuildNumber)
+      LAST_RUN=$((FIRST_RUN+N))
 
-          N=5
-          FIRST_RUN=$(curl --cookie $COOKIE_JAR -H "$CRUMB" https://jenkins.comma.life/job/openpilot/job/__jenkins_stress/api/json | jq .nextBuildNumber)
-          LAST_RUN=$((FIRST_RUN+N))
+      for i in $(seq $FIRST_RUN $LAST_RUN);
+      do
+        # start build i
+        curl --output /dev/null --cookie $COOKIE_JAR -H "$CRUMB" -X POST https://jenkins.comma.life/job/openpilot/job/jenkins_test_runner/build?delay=0sec
+      done
 
-          for i in $(seq $FIRST_RUN $LAST_RUN);
-          do
-            # start build i
-            curl --output /dev/null --cookie $COOKIE_JAR -H "$CRUMB" -X POST https://jenkins.comma.life/job/openpilot/job/__jenkins_stress/build?delay=0sec
-          done
+      while true; do
+        sleep 60
 
-          while true; do
-            sleep 5
+        count=0
+        for i in $(seq $FIRST_RUN $LAST_RUN);
+        do
+          RES=$(curl -s -w "\n%{http_code}" --cookie $COOKIE_JAR -H "$CRUMB" https://jenkins.comma.life/job/openpilot/job/jenkins_test_runner/$i/api/json)
+          HTTP_CODE=$(tail -n1 <<< "$RES")
+          JSON=$(sed '$ d' <<< "$RES")
 
-            count=0
-            FAIL=()
-            PASS=()
-
-            for i in $(seq $FIRST_RUN $LAST_RUN);
-            do
-              RES=$(curl -s -w "\n%{http_code}" --cookie $COOKIE_JAR -H "$CRUMB" https://jenkins.comma.life/job/openpilot/job/__jenkins_stress/$i/api/json)
-              HTTP_CODE=$(tail -n1 <<< "$RES")
-              JSON=$(sed '$ d' <<< "$RES")
-
-              if [[ $HTTP_CODE == "200" ]]; then
-                STILL_RUNNING=$(echo $JSON | jq .inProgress)
-                if [[ $STILL_RUNNING == "true" ]]; then
-                  echo "build $i still running"
-                  continue
-                fi
-
-                RESULT=$(echo $JSON | jq .result)
-                ((count++))
-                echo "build $i $RESULT"
-
-                if [[ $RESULT == '"SUCCESS"' ]]; then
-                  PASS+=($i)
-                elif [[ $RESULT == '"FAILURE"' ]]; then
-                  FAIL+=($i)
-                elif [[ $RESULT == '"ABORTED"' ]]; then
-                  FAIL+=($i)
-                else
-                  FAIL+=($i)
-                fi
-
-              else
-                echo "Error getting status of build $i"
-              fi
-
-            done
-
-            if [[ $count -eq $N ]]; then
-              echo "FAIL : ${FAIL[@]}"
-              echo "PASS : ${PASS[@]}"
-              break
+          if [[ $HTTP_CODE == "200" ]]; then
+            STILL_RUNNING=$(echo $JSON | jq .inProgress)
+            if [[ $STILL_RUNNING == "true" ]]; then
+              echo "build $i still running"
+              continue
             fi
+            ((count++))
+          else
+            echo "Error getting status of build $i"
+          fi
+        done
 
-          done
+        if [[ $count -eq $N ]]; then
+          break
+        fi
+      done
+
+
+      STAGES_NAMES=()
+      while read stage; do
+        STAGES_NAMES[$index]=$stage
+        ((index++))
+      done < <(curl -s -H "$CRUMB" https://jenkins.comma.life/job/openpilot/job/jenkins_test_runner/lastBuild/wfapi/ | jq .stages[].name)
+      STAGES_COUNT=${#STAGES_NAMES[@]}
+
+      STAGES_FAILURES=($(for i in $(seq 1 $STAGES_COUNT); do echo 0; done))
+      STAGES_FAILURES_LOGS=()
+
+      for i in $(seq $FIRST_RUN $LAST_RUN);
+      do
+
+      index=0
+      while read result; do
+        if [[ $result != '"SUCCESS"' ]]; then
+          STAGES_FAILURES[$index]=$((STAGES_FAILURES[$index]+1))
+          STAGES_FAILURES_LOGS[$index]="${STAGES_FAILURES_LOGS[$index]}<a href=\"https://jenkins.comma.life/blue/organizations/jenkins/openpilot/detail/jenkins_test_runner/$i/pipeline/\">Log for run #$(($i-$FIRST_RUN))</a><br>"
+        fi
+        ((index++))
+      done < <(curl https://jenkins.comma.life/job/openpilot/job/jenkins_test_runner/$i/wfapi/ | jq .stages[].status)
+
+      done
+
+      TABLE="<table><thead><tr> <th>Stage</th> <th>✅ Passing</th> <th>❌ Failure Details</th> </tr></thead><tbody>"
+      for i in $(seq 0 $(($STAGES_COUNT-1)));
+      do
+        TABLE="${TABLE}<tr>"
+        TABLE="${TABLE}<td>${STAGES_NAMES[$i]}</td>"
+        TABLE="${TABLE}<td>$((100-(${STAGES_FAILURES[$i]}*100/$N)))%</td>"
+        if [[ ${STAGES_FAILURES[$i]} -eq 0 ]]; then
+          TABLE="${TABLE}<td></td>"
+        else
+          TABLE="${TABLE}<td><details>${STAGES_FAILURES_LOGS[$i]}</details></td>"
+        fi
+        TABLE="${TABLE}</tr>"
+      done
+      TABLE="${TABLE}</table>"
+
+      git clone -b master --depth=1 https://github.com/commaai/ci-artifacts
+      cd ci-artifacts
+      git checkout -b "jenkins_test_report"
+      echo "$TABLE" >> jenkins_report
+      git add jenkins_report
+      git commit -m "jenkins report"
+      git remote set-url origin https://${env.CI_ARTIFACTS_TOKEN}@github.com/commaai/ci-artifacts.git
+      git push -f origin jenkins_test_report
       '''
 
       currentBuild.result = 'SUCCESS'
