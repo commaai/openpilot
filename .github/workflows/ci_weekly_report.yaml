@@ -26,17 +26,23 @@ jobs:
           matrix=$(python3 -c "import json; print(json.dumps({ 'run_number' : list(range(${{ env.CI_RUNS }})) }))")
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
-  ci_matrix_run:
+  ci_matrix_jenkins_run:
+    needs: [ setup ]
+    uses: commaai/openpilot/.github/workflows/ci_weekly_run_jenkins.yaml@master
+    with:
+      build_count: ${{ env.CI_RUNS }}
+
+  ci_matrix_github_actions_run:
     needs: [ setup ]
     strategy:
       fail-fast: false
       matrix: ${{fromJSON(needs.setup.outputs.ci_runs)}}
-    uses: commaai/openpilot/.github/workflows/ci_weekly_run.yaml@master
+    uses: commaai/openpilot/.github/workflows/ci_weekly_run_github_actions.yaml@master
     with:
       run_number: ${{ matrix.run_number }}
 
   report:
-    needs: [ci_matrix_run]
+    needs: [ci_matrix_jenkins_run, ci_matrix_github_actions_run]
     runs-on: ubuntu-latest
     if: always()
     steps:
@@ -75,6 +81,7 @@ jobs:
           JOB_RESULTS: ${{ fromJSON(steps.get-job-results.outputs.result) }}
         run: |
           cat <<EOF >> template.html
+          ## Github Actions CI
           <table>
             <thead>
               <tr>
@@ -99,3 +106,4 @@ jobs:
           echo $JOB_RESULTS | jinja2 template.html > report.html
           echo "# CI Test Report - ${{ env.CI_RUNS }} Runs" >> $GITHUB_STEP_SUMMARY
           cat report.html >> $GITHUB_STEP_SUMMARY
+          curl https://raw.githubusercontent.com/commaai/ci-artifacts/refs/heads/jenkins_test_report/jenkins_report >> $GITHUB_STEP_SUMMARY

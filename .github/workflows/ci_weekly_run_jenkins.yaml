@@ -1,0 +1,59 @@
+name: weekly CI test run
+on:
+  workflow_call:
+    inputs:
+      build_count:
+        required: true
+        type: string
+
+concurrency:
+  group: ci-run-${{ inputs.build_count }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  jenkins_run:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Create master/runner branches
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+        git checkout -b jenkins_test_master
+        echo "TEST JENKINS MASTER" >> test_jenkins
+        git add test_jenkins
+        git commit -m 'master jenkins'
+        GIT_LFS_SKIP_PUSH=1 git push -f origin jenkins_test_master
+
+        git checkout -b jenkins_test_runner
+        echo "TEST JENKINS RUNNER" >> test_jenkins
+        git add test_jenkins
+        git commit -m 'runner jenkins'
+        GIT_LFS_SKIP_PUSH=1 git push -f origin jenkins_test_runner
+
+    - name: Waiting on Jenkins runs
+      uses: actions/github-script@v6
+      with:
+        script: |
+
+          let prev_status = false;
+          const interval setInterval(() => {
+
+            const response = github.request('GET /repos/{owner}/{repo}/commits/{ref}/status', {
+              owner: 'commaai',
+              repo: 'openpilot',
+              ref: 'heads/jenkins_test_master',
+              headers: {
+                'Accept': 'application/vnd.github+json',
+                'X-GitHub-Api-Version': '2022-11-28'
+              }
+            });
+
+            response.then(function(r) {
+              if (r.data.statuses[0].state != "pending") {
+                clearInterval(interval)
+              }
+            });
+
+          }, 60000);
