@@ -171,8 +171,8 @@ node {
   }
 
   if (env.BRANCH_NAME == 'jenkins_test_master') {
-    sh '''#!/bin/bash
-      CI_ARTIFACTS_TOKEN=${env.CI_ARTIFACTS_TOKEN}
+    sh """
+      CI_ARTIFACTS_TOKEN="${env.CI_ARTIFACTS_TOKEN}"
 
       # get crumb for CSRF
       COOKIE_JAR=/tmp/cookies
@@ -265,7 +265,7 @@ node {
       git add jenkins_report
       git commit -m "jenkins report"
       git push -f origin jenkins_test_report
-      '''
+      """
 
       currentBuild.result = 'SUCCESS'
       return
