@@ -37,7 +37,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{fromJSON(needs.setup.outputs.ci_runs)}}
-    uses: commaai/openpilot/.github/workflows/ci_weekly_run_github_actions.yaml@master
+    uses: commaai/openpilot/.github/workflows/ci_weekly_run_github_actions.yaml@jenkins_stress
     with:
       run_number: ${{ matrix.run_number }}
 
