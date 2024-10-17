@@ -241,7 +241,7 @@ node {
 
       done
 
-      TABLE="<table><thead><tr> <th>Stage</th> <th>✅ Passing</th> <th>❌ Failure Details</th> </tr></thead><tbody>"
+      TABLE="\n### Jenkins CI\n<table><thead><tr> <th>Stage</th> <th>✅ Passing</th> <th>❌ Failure Details</th> </tr></thead><tbody>"
       for i in $(seq 0 $(($STAGES_COUNT-1)));
       do
         TABLE="${TABLE}<tr>"

@@ -81,7 +81,7 @@ jobs:
           JOB_RESULTS: ${{ fromJSON(steps.get-job-results.outputs.result) }}
         run: |
           cat <<EOF >> template.html
-          ## Github Actions CI
+          ### Github Actions CI
           <table>
             <thead>
               <tr>
