@@ -171,9 +171,10 @@ node {
   }
 
   if (env.BRANCH_NAME == 'jenkins_test_master') {
-    sh """
+    environment {
       CI_ARTIFACTS_TOKEN="${env.CI_ARTIFACTS_TOKEN}"
-
+    }
+    sh """
       # get crumb for CSRF
       COOKIE_JAR=/tmp/cookies
       CRUMB=$(curl --cookie-jar $COOKIE_JAR 'https://jenkins.comma.life/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)')
