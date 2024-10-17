@@ -30,7 +30,7 @@ jobs:
     needs: [ setup ]
     uses: commaai/openpilot/.github/workflows/ci_weekly_run_jenkins.yaml@jenkins_stress
     with:
-      build_count: ${{ env.CI_RUNS }}
+      build_count: ${{ github.event.inputs.ci_runs }}
 
   ci_matrix_github_actions_run:
     needs: [ setup ]
