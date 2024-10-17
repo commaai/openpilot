@@ -257,7 +257,7 @@ node {
       cd ci-artifacts
       git config --local user.email "user@comma.ai"
       git config --local user.name "Vehicle Researcher"
-      git config --local url.https://${{env.CI_ARTIFACTS_TOKEN}}@github.com/.insteadOf https://github.com/
+      git config --local url.https://${env.CI_ARTIFACTS_TOKEN}@github.com/.insteadOf https://github.com/
       git checkout -b "jenkins_test_report"
       echo "$TABLE" >> jenkins_report
       git add jenkins_report
