@@ -41,6 +41,7 @@ HEIGHT_INIT = np.array([1.22])
 PITCH_LIMITS = np.array([-0.09074112085129739, 0.17])
 YAW_LIMITS = np.array([-0.06912048084718224, 0.06912048084718235])
 DEBUG = os.getenv("DEBUG") is not None
+TESTING_CLOSET = os.getenv("TESTING_CLOSET") is not None
 
 
 def is_calibration_valid(rpy: np.ndarray) -> bool:
@@ -268,7 +269,7 @@ def main() -> NoReturn:
     timeout = 0 if sm.frame == -1 else 100
     sm.update(timeout)
 
-    calibrator.not_car = sm['carParams'].notCar
+    calibrator.not_car = sm['carParams'].notCar or TESTING_CLOSET
 
     if sm.updated['cameraOdometry']:
       calibrator.handle_v_ego(sm['carState'].vEgo)

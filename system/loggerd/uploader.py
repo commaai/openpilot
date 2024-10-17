@@ -30,6 +30,7 @@ LOG_COMPRESSION_LEVEL = 10  # little benefit up to level 15. level ~17 is a smal
 allow_sleep = bool(os.getenv("UPLOADER_SLEEP", "1"))
 force_wifi = os.getenv("FORCEWIFI") is not None
 fake_upload = os.getenv("FAKEUPLOAD") is not None
+TESTING_CLOSET = os.getenv("TESTING_CLOSET") is not None
 
 
 class FakeRequest:
@@ -83,7 +84,7 @@ class Uploader:
     self.last_filename = ""
 
     self.immediate_folders = ["crash/", "boot/"]
-    self.immediate_priority = {"qlog": 0, "qlog.zst": 0, "qcamera.ts": 1}
+    self.immediate_priority = {"qlog": 0, "qlog.zst": 0, "qcamera.ts": 1} if not TESTING_CLOSET else {"rlog": 0, "rlog.zst": 0}
 
   def list_upload_files(self, metered: bool) -> Iterator[tuple[str, str, str]]:
     r = self.params.get("AthenadRecentlyViewedRoutes", encoding="utf8")
@@ -170,7 +171,7 @@ class Uploader:
     if sz == 0:
       # tag files of 0 size as uploaded
       success = True
-    elif name in self.immediate_priority and sz > UPLOAD_QLOG_QCAM_MAX_SIZE:
+    elif name in self.immediate_priority and sz > UPLOAD_QLOG_QCAM_MAX_SIZE and not TESTING_CLOSET:
       cloudlog.event("uploader_too_large", key=key, fn=fn, sz=sz)
       success = True
     else:
