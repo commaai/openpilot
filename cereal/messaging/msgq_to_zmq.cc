@@ -48,11 +48,12 @@ void MsgqToZmq::run(const std::vector<std::string> &endpoints, const std::string
 
       for (auto sub_sock : msgq_poller->poll(100)) {
         // Process messages for each socket
+        ZMQPubSocket *pub_sock = sub2pub.at(sub_sock);
         for (int i = 0; i < MAX_MESSAGES_PER_SOCKET; ++i) {
           auto msg = std::unique_ptr<Message>(sub_sock->receive(true));
           if (!msg) break;
 
-          while (sub2pub[sub_sock]->sendMessage(msg.get()) == -1) {
+          while (pub_sock->sendMessage(msg.get()) == -1) {
             if (errno != EINTR) break;
           }
         }
