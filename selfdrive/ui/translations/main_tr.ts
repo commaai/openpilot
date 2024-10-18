@@ -306,7 +306,7 @@
     <name>Installer</name>
     <message>
         <source>Installing...</source>
-        <translation>Yükleniyor...</translation>
+        <translation type="vanished">Yükleniyor...</translation>
     </message>
 </context>
 <context>

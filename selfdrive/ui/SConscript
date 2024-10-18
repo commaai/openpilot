@@ -1,6 +1,6 @@
 import os
 import json
-Import('qt_env', 'arch', 'common', 'messaging', 'visionipc', 'transformations')
+Import('env', 'qt_env', 'arch', 'common', 'messaging', 'visionipc', 'transformations')
 
 base_libs = [common, messaging, visionipc, transformations,
              'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
@@ -84,8 +84,10 @@ if GetOption('extras') and arch != "Darwin":
   qt_env.Program("qt/setup/updater", ["qt/setup/updater.cc", asset_obj], LIBS=qt_libs)
 
   # build installers
-  senv = qt_env.Clone()
-  senv['LINKFLAGS'].append('-Wl,-strip-debug')
+  raylib_env = env.Clone()
+  raylib_env['LIBPATH'] += [f'#third_party/raylib/{arch}/']
+  raylib_frameworks = ['CoreVideo', 'Cocoa', 'GLUT', 'CoreFoundation', 'OpenGL', 'IOKit'] if arch == 'Darwin' else []
+  raylib_env['LINKFLAGS'].append('-Wl,-strip-debug')
 
   release = "release3"
   installers = [
@@ -95,15 +97,15 @@ if GetOption('extras') and arch != "Darwin":
     ("openpilot_internal", "master"),
   ]
 
-  cont = senv.Command(f"installer/continue_openpilot.o", f"installer/continue_openpilot.sh",
+  cont = raylib_env.Command(f"installer/continue_openpilot.o", f"installer/continue_openpilot.sh",
                       "ld -r -b binary -o $TARGET $SOURCE")
   for name, branch in installers:
     d = {'BRANCH': f"'\"{branch}\"'"}
     if "internal" in name:
       d['INTERNAL'] = "1"
 
-    obj = senv.Object(f"installer/installers/installer_{name}.o", ["installer/installer.cc"], CPPDEFINES=d)
-    f = senv.Program(f"installer/installers/installer_{name}", [obj, cont], LIBS=qt_libs)
+    obj = raylib_env.Object(f"installer/installers/installer_{name}.o", ["installer/installer.cc"], CPPDEFINES=d)
+    f = raylib_env.Program(f"installer/installers/installer_{name}", [obj, cont], LIBS=['raylib', common], FRAMEWORKS=raylib_frameworks)
     # keep installers small
     assert f[0].get_size() < 370*1e3
 
