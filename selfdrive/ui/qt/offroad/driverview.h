@@ -1,5 +1,6 @@
 #pragma once
 
+#include "common/params.h"
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 #include "selfdrive/ui/qt/onroad/driver_monitoring.h"
 
