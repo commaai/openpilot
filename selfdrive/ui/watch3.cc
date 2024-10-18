@@ -1,33 +1,33 @@
-#include <QApplication>
-#include <QtWidgets>
+#include "selfdrive/ui/raylib/cameraview.h"
 
-#include "selfdrive/ui/qt/qt_window.h"
-#include "selfdrive/ui/qt/util.h"
-#include "selfdrive/ui/qt/widgets/cameraview.h"
+void renderCameraViews() {
+  CameraView roadCamera("camerad", VISION_STREAM_ROAD);
+  CameraView wideRoadCamera("camerad", VISION_STREAM_WIDE_ROAD);
+  CameraView driverCamera("camerad", VISION_STREAM_DRIVER);
+
+  while (!WindowShouldClose()) {
+    float w = GetScreenWidth(), h = GetScreenHeight();
+    Rectangle roadCameraRec = {0, 0, w, h / 2};
+    Rectangle wideRoadCameraRec = {0, h / 2, w / 2, h / 2};
+    Rectangle driverCameraRec = {w / 2, h / 2, w / 2, h / 2};
+
+    BeginDrawing();
+      ClearBackground(BLACK);
+      roadCamera.draw(roadCameraRec);
+      wideRoadCamera.draw(wideRoadCameraRec);
+      driverCamera.draw(driverCameraRec);
+    EndDrawing();
+  }
+}
 
 int main(int argc, char *argv[]) {
-  initApp(argc, argv);
+  SetTraceLogLevel(LOG_NONE);
+  SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+  InitWindow(0, 0, "Watch 3 Cameras");
+  SetTargetFPS(20);
 
-  QApplication a(argc, argv);
-  QWidget w;
-  setMainWindow(&w);
+  renderCameraViews();
 
-  QVBoxLayout *layout = new QVBoxLayout(&w);
-  layout->setMargin(0);
-  layout->setSpacing(0);
-
-  {
-    QHBoxLayout *hlayout = new QHBoxLayout();
-    layout->addLayout(hlayout);
-    hlayout->addWidget(new CameraWidget("camerad", VISION_STREAM_ROAD));
-  }
-
-  {
-    QHBoxLayout *hlayout = new QHBoxLayout();
-    layout->addLayout(hlayout);
-    hlayout->addWidget(new CameraWidget("camerad", VISION_STREAM_DRIVER));
-    hlayout->addWidget(new CameraWidget("camerad", VISION_STREAM_WIDE_ROAD));
-  }
-
-  return a.exec();
+  CloseWindow();
+  return 0;
 }
