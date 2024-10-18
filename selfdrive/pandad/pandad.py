@@ -6,8 +6,6 @@ import time
 import subprocess
 from typing import NoReturn
 
-#test
-
 from panda import Panda, PandaDFU, PandaProtocolMismatch, FW_PATH
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
