@@ -93,6 +93,7 @@ AR0231::AR0231() {
   init_reg_array.assign(std::begin(init_array_ar0231), std::end(init_array_ar0231));
   probe_reg_addr = 0x3000;
   probe_expected_data = 0x354;
+  bits_per_pixel = 12;
   mipi_format = CAM_FORMAT_MIPI_RAW_12;
   frame_data_type = 0x12;  // Changing stats to 0x2C doesn't work, so change pixels to 0x12 instead
   mclk_frequency = 19200000; //Hz
@@ -116,6 +117,8 @@ AR0231::AR0231() {
   min_ev = exposure_time_min * sensor_analog_gains[analog_gain_min_idx];
   max_ev = exposure_time_max * dc_gain_factor * sensor_analog_gains[analog_gain_max_idx];
   target_grey_factor = 1.0;
+
+  black_level = 168;
 }
 
 void AR0231::processRegisters(uint8_t *cur_buf, cereal::FrameData::Builder &framed) const {

@@ -37,6 +37,7 @@ OX03C10::OX03C10() {
   init_reg_array.assign(std::begin(init_array_ox03c10), std::end(init_array_ox03c10));
   probe_reg_addr = 0x300a;
   probe_expected_data = 0x5803;
+  bits_per_pixel = 12;
   mipi_format = CAM_FORMAT_MIPI_RAW_12;
   frame_data_type = 0x2c; // one is 0x2a, two are 0x2b
   mclk_frequency = 24000000; //Hz
@@ -60,6 +61,8 @@ OX03C10::OX03C10() {
   min_ev = (exposure_time_min + VS_TIME_MIN_OX03C10) * sensor_analog_gains[analog_gain_min_idx];
   max_ev = exposure_time_max * dc_gain_factor * sensor_analog_gains[analog_gain_max_idx];
   target_grey_factor = 0.01;
+
+  black_level = 64;
 }
 
 std::vector<i2c_random_wr_payload> OX03C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {

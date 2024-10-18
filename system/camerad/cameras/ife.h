@@ -1,5 +1,9 @@
 #include "cdm.h"
 
+#include "system/camerad/cameras/tici.h"
+#include "system/camerad/sensors/sensor.h"
+
+
 int build_initial_config(uint8_t *dst) {
   uint8_t *start = dst;
 
@@ -655,7 +659,7 @@ int build_first_update(uint8_t *dst) {
   return dst - start;
 }
 
-int build_update(uint8_t *dst) {
+int build_update(uint8_t *dst, const CameraConfig &cc, const SensorInfo *s) {
   uint8_t *start = dst;
 
   dst += write_random(dst, {
@@ -708,7 +712,7 @@ int build_update(uint8_t *dst) {
   });
 
   dst += write_cont(dst, 0x40, {
-    0x00000444,
+    0x00000c04,
   });
 
   dst += write_cont(dst, 0x48, {
@@ -761,6 +765,15 @@ int build_update(uint8_t *dst) {
 
   dst += write_cont(dst, 0xf00, {
     0x00000000,
+  });
+
+  // *** extras, not in original dump ***
+
+  // black level scale + offset
+  dst += write_cont(dst, 0x6b0, {
+    (((uint32_t)(1 << s->bits_per_pixel) - 1) << 0xf) | (s->black_level << 0),
+    0x0,
+    0x0,
   });
 
   return dst - start;
