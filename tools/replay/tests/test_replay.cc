@@ -122,12 +122,12 @@ std::string download_demo_route() {
     assert(remote_route.load());
 
     // Create a local route from remote for testing
-    const std::string route_name = DEMO_ROUTE.mid(17).toStdString();
+    const std::string route_name = std::string(DEMO_ROUTE).substr(17);
     for (int i = 0; i < 2; ++i) {
       std::string log_path = util::string_format("%s/%s--%d/", data_dir.c_str(), route_name.c_str(), i);
       util::create_directories(log_path, 0755);
-      REQUIRE(download_to_file(remote_route.at(i).rlog.toStdString(), log_path + "rlog.bz2"));
-      REQUIRE(download_to_file(remote_route.at(i).qcamera.toStdString(), log_path + "qcamera.ts"));
+      REQUIRE(download_to_file(remote_route.at(i).rlog, log_path + "rlog.bz2"));
+      REQUIRE(download_to_file(remote_route.at(i).qcamera, log_path + "qcamera.ts"));
     }
   }
 
@@ -139,7 +139,7 @@ TEST_CASE("Local route") {
   std::string data_dir = download_demo_route();
 
   auto flags = GENERATE(0, REPLAY_FLAG_QCAMERA);
-  Route route(DEMO_ROUTE, QString::fromStdString(data_dir));
+  Route route(DEMO_ROUTE, data_dir);
   REQUIRE(route.load());
   REQUIRE(route.segments().size() == 2);
   for (int i = 0; i < TEST_REPLAY_SEGMENTS; ++i) {
