@@ -99,7 +99,7 @@ jobs:
               open=true
               convert ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png -transparent black mask.png
               composite mask.png ${{ github.workspace }}/master_ui/${A[$i]}.png composite_diff.png
-              convert -delay 20 ${{ github.workspace }}/master_ui/${A[$i]}.png composite_diff.png -loop 0 ${{ github.workspace }}/pr_ui/${A[$i]}_diff.gif
+              convert -delay 100 ${{ github.workspace }}/master_ui/${A[$i]}.png composite_diff.png -loop 0 ${{ github.workspace }}/pr_ui/${A[$i]}_diff.gif
 
               mv ${{ github.workspace }}/master_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}_master_ref.png
 
