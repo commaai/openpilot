@@ -20,7 +20,8 @@ class ModelFrame {
 public:
   ModelFrame(cl_device_id device_id, cl_context context);
   ~ModelFrame();
-  uint8_t* prepare(cl_mem yuv_cl, int width, int height, int frame_stride, int frame_uv_offset, const mat3& transform, cl_mem *output);
+  cl_mem* prepare(cl_mem yuv_cl, int width, int height, int frame_stride, int frame_uv_offset, const mat3& transform);
+  uint8_t* buffer_from_cl(cl_mem *in_frames);
 
   const int MODEL_WIDTH = 512;
   const int MODEL_HEIGHT = 256;
@@ -32,7 +33,7 @@ private:
   Transform transform;
   LoadYUVState loadyuv;
   cl_command_queue q;
-  cl_mem y_cl, u_cl, v_cl, img_buffer_20hz_cl, last_img_cl;
+  cl_mem y_cl, u_cl, v_cl, img_buffer_20hz_cl, last_img_cl, input_frames_cl;
   cl_buffer_region region;
   std::unique_ptr<uint8_t[]> input_frames;
 };

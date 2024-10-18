@@ -1,8 +1,16 @@
 #!/usr/bin/env python3
 import os
+from openpilot.system.hardware import TICI
+## TODO this is hack
+if TICI:
+  GPU_BACKEND = 'QCOM'
+else:
+  GPU_BACKEND = 'GPU'
+os.environ[GPU_BACKEND] = '1'
 import gc
 import math
 import time
+import pickle
 import ctypes
 import numpy as np
 from pathlib import Path
@@ -14,9 +22,11 @@ from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_realtime_priority
-from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
-from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext
+from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext, cl_from_visionbuf
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid
+from tinygrad.tensor import Tensor
+from tinygrad.helpers import to_mv, mv_address
+from tinygrad.dtype import dtypes
 
 CALIB_LEN = 3
 MODEL_WIDTH = 1440
@@ -26,9 +36,7 @@ OUTPUT_SIZE = 84 + FEATURE_LEN
 
 PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
-MODEL_PATHS = {
-  ModelRunner.THNEED: Path(__file__).parent / 'models/dmonitoring_model.thneed',
-  ModelRunner.ONNX: Path(__file__).parent / 'models/dmonitoring_model.onnx'}
+MODEL_PKL_PATH = Path(__file__).parent / 'models/dmonitoring_model_tinygrad.pkl'
 
 class DriverStateResult(ctypes.Structure):
   _fields_ = [
@@ -59,33 +67,36 @@ class DMonitoringModelResult(ctypes.Structure):
 class ModelState:
   inputs: dict[str, np.ndarray]
   output: np.ndarray
-  model: ModelRunner
 
   def __init__(self, cl_ctx):
     assert ctypes.sizeof(DMonitoringModelResult) == OUTPUT_SIZE * ctypes.sizeof(ctypes.c_float)
-    self.output = np.zeros(OUTPUT_SIZE, dtype=np.float32)
-    self.inputs = {
-      'input_img': np.zeros(MODEL_HEIGHT * MODEL_WIDTH, dtype=np.uint8),
-      'calib': np.zeros(CALIB_LEN, dtype=np.float32)}
+    self.numpy_inputs = {'calib': np.zeros((1, CALIB_LEN), dtype=np.float32)}
+    #TODO this only works on some backends, verified on CLANG
+    self.tensor_inputs = {k: Tensor.from_blob(mv_address(v), v.shape, dtype=dtypes.float) for k, v in self.numpy_inputs.items()}
+    self.tensor_inputs['input_img'] = None
 
-    self.model = ModelRunner(MODEL_PATHS, self.output, Runtime.GPU, False, cl_ctx)
-    self.model.addInput("input_img", None)
-    self.model.addInput("calib", self.inputs['calib'])
+
+    with open(MODEL_PKL_PATH, "rb") as f:
+      self.model_run = pickle.load(f)
 
   def run(self, buf:VisionBuf, calib:np.ndarray) -> tuple[np.ndarray, float]:
-    self.inputs['calib'][:] = calib
+    self.numpy_inputs['calib'][0,:] = calib
 
-    v_offset = buf.height - MODEL_HEIGHT
-    h_offset = (buf.width - MODEL_WIDTH) // 2
-    buf_data = buf.data.reshape(-1, buf.stride)
-    input_data = self.inputs['input_img'].reshape(MODEL_HEIGHT, MODEL_WIDTH)
-    input_data[:] = buf_data[v_offset:v_offset+MODEL_HEIGHT, h_offset:h_offset+MODEL_WIDTH]
-
-    self.model.setInputBuffer("input_img", self.inputs['input_img'].view(np.float32))
     t1 = time.perf_counter()
-    self.model.execute()
+    if TICI:
+      if self.tensor_inputs['input_img'] is None:
+        input_img_cl = cl_from_visionbuf(buf)
+        cl_buf_desc_ptr = to_mv(input_img_cl.mem_address, 8).cast('Q')[0]
+        rawbuf_ptr = to_mv(cl_buf_desc_ptr, 0x100).cast('Q')[20] # offset 0xA0 is a raw gpu pointer.
+        self.tensor_inputs['input_img'] = Tensor.from_blob(rawbuf_ptr, (1, buf.height * 3 // 2, buf.width), dtype=dtypes.uint8, device='QCOM')
+    else:
+      self.tensor_inputs = {k: Tensor(v) for k,v in self.numpy_inputs.items()}
+      self.tensor_inputs['input_img'] = Tensor(buf.data).reshape((1,buf.height * 3 // 2,buf.width))
+
+    output = self.model_run(**self.tensor_inputs)['outputs'].numpy().flatten()
+
     t2 = time.perf_counter()
-    return self.output, t2 - t1
+    return output, t2 - t1
 
 
 def fill_driver_state(msg, ds_result: DriverStateResult):
@@ -155,8 +166,6 @@ def main():
     t2 = time.perf_counter()
 
     pm.send("driverStateV2", get_driverstate_packet(model_output, vipc_client.frame_id, vipc_client.timestamp_sof, t2 - t1, gpu_execution_time))
-    # print("dmonitoring process: %.2fms, from last %.2fms\n" % (t2 - t1, t1 - last))
-    # last = t1
 
 
 if __name__ == "__main__":
