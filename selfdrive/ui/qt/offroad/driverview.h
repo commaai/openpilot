@@ -10,7 +10,7 @@ public:
   explicit DriverViewWindow(QWidget *parent);
   void paintGL() override;
   mat4 calcFrameMatrix() override;
-  QPixmap face_img;
+  DriverMonitorRenderer driver_monitor;
 };
 
 class DriverViewDialog : public DialogBase {
@@ -18,6 +18,4 @@ class DriverViewDialog : public DialogBase {
 public:
   DriverViewDialog(QWidget *parent);
   void done(int r) override;
-  Params params;
-  DriverMonitorRenderer driver_monitor;
 };

@@ -64,7 +64,7 @@ mat4 DriverViewWindow::calcFrameMatrix() {
 }
 
 DriverViewDialog::DriverViewDialog(QWidget *parent) : DialogBase(parent) {
-  params.putBool("IsDriverViewEnabled", true);
+  Params().putBool("IsDriverViewEnabled", true);
   device()->resetInteractiveTimeout(60);
 
   QVBoxLayout *main_layout = new QVBoxLayout(this);
@@ -76,6 +76,6 @@ DriverViewDialog::DriverViewDialog(QWidget *parent) : DialogBase(parent) {
 }
 
 void DriverViewDialog::done(int r) {
-  params.putBool("IsDriverViewEnabled", false);
+  Params().putBool("IsDriverViewEnabled", false);
   QDialog::done(r);
 }
