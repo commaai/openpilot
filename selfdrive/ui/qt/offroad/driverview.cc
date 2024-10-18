@@ -5,10 +5,7 @@
 
 #include "selfdrive/ui/qt/util.h"
 
-const int FACE_IMG_SIZE = 130;
-
 DriverViewWindow::DriverViewWindow(QWidget* parent) : CameraWidget("camerad", VISION_STREAM_DRIVER, parent) {
-  face_img = loadPixmap("../assets/img_driver_face_static.png", {FACE_IMG_SIZE, FACE_IMG_SIZE});
   QObject::connect(this, &CameraWidget::clicked, this, &DriverViewWindow::done);
   QObject::connect(device(), &Device::interactiveTimeout, this, [this]() {
     if (isVisible()) {
@@ -68,12 +65,8 @@ void DriverViewWindow::paintGL() {
     p.drawRoundedRect(fbox_x - box_size / 2, fbox_y - box_size / 2, box_size, box_size, 35.0, 35.0);
   }
 
-  // icon
-  const int img_offset = 60;
-  const int img_x = is_rhd ? rect().right() - FACE_IMG_SIZE - img_offset : rect().left() + img_offset;
-  const int img_y = rect().bottom() - FACE_IMG_SIZE - img_offset;
-  p.setOpacity(face_detected ? 1.0 : 0.2);
-  p.drawPixmap(img_x, img_y, face_img);
+  driver_monitor.updateState(*uiState());
+  driver_monitor.draw(p, rect());
 }
 
 mat4 DriverViewWindow::calcFrameMatrix() {
