@@ -7,7 +7,9 @@
 int build_initial_config(uint8_t *dst) {
   uint8_t *start = dst;
 
-  // constants, some kind of HW quirk?
+  // values are very different from the update one,
+  // so they probably don't matter?
+
   dst += write_random(dst, {
     0x2c, 0xffffffff,
     0x30, 0xffffffff,
@@ -178,6 +180,7 @@ int build_initial_config(uint8_t *dst) {
   });
 
   dst += write_cont(dst, 0x760, {
+    // 3x3 matrix
     0x00800080,
     0x00000000,
     0x00000000,
@@ -187,10 +190,14 @@ int build_initial_config(uint8_t *dst) {
     0x00000000,
     0x00000000,
     0x00800080,
+
+    // offsets
     0x00000000,
     0x00000000,
     0x00000000,
-    0x00000000,
+
+    // Q
+    (0x0 << 10) | (0x0 << 0),
   });
 
   dst += write_cont(dst, 0x794, {
@@ -716,7 +723,7 @@ int build_update(uint8_t *dst, const CameraConfig &cc, const SensorInfo *s) {
   });
 
   dst += write_cont(dst, 0x48, {
-    0x00000000,
+    0b10,
   });
 
   dst += write_cont(dst, 0x4c, {
