@@ -108,10 +108,10 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
 def hasPathChanged(String gitDiff, List<String> paths) {
   for (path in paths) {
     if (gitDiff.contains(path)) {
-      return true;
+      return true
     }
   }
-  return false;
+  return false
 }
 
 def setupCredentials() {
