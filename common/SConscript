@@ -1,6 +1,7 @@
 Import('env', 'envCython', 'arch')
 
 common_libs = [
+  'api.cc',
   'params.cc',
   'swaglog.cc',
   'util.cc',

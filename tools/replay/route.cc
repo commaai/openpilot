@@ -78,7 +78,7 @@ bool Route::loadFromServer(int retries) {
       result = json;
       loop.exit((int)err);
     });
-    http.sendRequest(CommaApi::BASE_URL + "/v1/route/" + QString::fromStdString(route_.str) + "/files");
+    http.sendRequest(QString::fromStdString(CommaApi::BASE_URL + "/v1/route/" + route_.str + "/files"));
     auto err = (QNetworkReply::NetworkError)loop.exec();
     if (err == QNetworkReply::NoError) {
       return loadFromJson(result);

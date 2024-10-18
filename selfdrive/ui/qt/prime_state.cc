@@ -1,6 +1,7 @@
 #include "selfdrive/ui/qt/prime_state.h"
 
 #include <QJsonDocument>
+#include <QJsonObject>
 
 #include "selfdrive/ui/qt/api.h"
 #include "selfdrive/ui/qt/request_repeater.h"
@@ -15,7 +16,7 @@ PrimeState::PrimeState(QObject* parent) : QObject(parent) {
   }
 
   if (auto dongleId = getDongleId()) {
-    QString url = CommaApi::BASE_URL + "/v1.1/devices/" + *dongleId + "/";
+    QString url = QString::fromStdString(CommaApi::BASE_URL) + "/v1.1/devices/" + *dongleId + "/";
     RequestRepeater* repeater = new RequestRepeater(this, url, "ApiCache_Device", 5);
     QObject::connect(repeater, &RequestRepeater::requestDone, this, &PrimeState::handleReply);
   }
