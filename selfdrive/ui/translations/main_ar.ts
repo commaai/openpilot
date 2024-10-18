@@ -114,6 +114,81 @@
     </message>
 </context>
 <context>
+    <name>DeveloperPanel</name>
+    <message>
+        <source>Updates are only downloaded while the car is off.</source>
+        <translation type="obsolete">يتم تحميل التحديثات فقط عندما تكون السيارة متوقفة.</translation>
+    </message>
+    <message>
+        <source>Current Version</source>
+        <translation type="obsolete">النسخة الحالية</translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <translation type="obsolete">تنزيل</translation>
+    </message>
+    <message>
+        <source>CHECK</source>
+        <translation type="obsolete">التحقق</translation>
+    </message>
+    <message>
+        <source>Install Update</source>
+        <translation type="obsolete">تثبيت التحديث</translation>
+    </message>
+    <message>
+        <source>INSTALL</source>
+        <translation type="obsolete">تثبيت</translation>
+    </message>
+    <message>
+        <source>Target Branch</source>
+        <translation type="obsolete">فرع الهدف</translation>
+    </message>
+    <message>
+        <source>SELECT</source>
+        <translation type="obsolete">اختيار</translation>
+    </message>
+    <message>
+        <source>Select a branch</source>
+        <translation type="obsolete">اختر فرعاً</translation>
+    </message>
+    <message>
+        <source>Uninstall %1</source>
+        <translation type="obsolete">إلغاء التثبيت %1</translation>
+    </message>
+    <message>
+        <source>UNINSTALL</source>
+        <translation type="obsolete">إلغاء التثبيت</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to uninstall?</source>
+        <translation type="obsolete">هل أنت متأكد أنك تريد إلغاء التثبيت؟</translation>
+    </message>
+    <message>
+        <source>Uninstall</source>
+        <translation type="obsolete">إلغاء التثبيت</translation>
+    </message>
+    <message>
+        <source>failed to check for update</source>
+        <translation type="obsolete">فشل التحقق من التحديث</translation>
+    </message>
+    <message>
+        <source>DOWNLOAD</source>
+        <translation type="obsolete">تنزيل</translation>
+    </message>
+    <message>
+        <source>update available</source>
+        <translation type="obsolete">يتوفر تحديث</translation>
+    </message>
+    <message>
+        <source>never</source>
+        <translation type="obsolete">إطلاقاً</translation>
+    </message>
+    <message>
+        <source>up to date, last checked %1</source>
+        <translation type="obsolete">أحدث نسخة، آخر تحقق %1</translation>
+    </message>
+</context>
+<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -617,6 +692,10 @@ This may take up to a minute.</source>
     <message>
         <source>Software</source>
         <translation>البرنامج</translation>
+    </message>
+    <message>
+        <source>Developer</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

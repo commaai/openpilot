@@ -114,6 +114,61 @@
     </message>
 </context>
 <context>
+    <name>DeveloperPanel</name>
+    <message>
+        <source>Updates are only downloaded while the car is off.</source>
+        <translation type="obsolete">車の電源がオフの間のみ、アップデートのダウンロードが行われます。</translation>
+    </message>
+    <message>
+        <source>Current Version</source>
+        <translation type="obsolete">現在のバージョン</translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <translation type="obsolete">ダウンロード</translation>
+    </message>
+    <message>
+        <source>CHECK</source>
+        <translation type="obsolete">確認</translation>
+    </message>
+    <message>
+        <source>Install Update</source>
+        <translation type="obsolete">アップデート</translation>
+    </message>
+    <message>
+        <source>INSTALL</source>
+        <translation type="obsolete">インストール</translation>
+    </message>
+    <message>
+        <source>Target Branch</source>
+        <translation type="obsolete">対象のブランチ</translation>
+    </message>
+    <message>
+        <source>SELECT</source>
+        <translation type="obsolete">選択</translation>
+    </message>
+    <message>
+        <source>Select a branch</source>
+        <translation type="obsolete">ブランチを選択</translation>
+    </message>
+    <message>
+        <source>Uninstall %1</source>
+        <translation type="obsolete">%1をアンインストール</translation>
+    </message>
+    <message>
+        <source>UNINSTALL</source>
+        <translation type="obsolete">実行</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to uninstall?</source>
+        <translation type="obsolete">アンインストールしてもよろしいですか？</translation>
+    </message>
+    <message>
+        <source>Uninstall</source>
+        <translation type="obsolete">アンインストール</translation>
+    </message>
+</context>
+<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -595,6 +650,10 @@ This may take up to a minute.</source>
     <message>
         <source>Software</source>
         <translation>ｿﾌﾄｳｪｱ</translation>
+    </message>
+    <message>
+        <source>Developer</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

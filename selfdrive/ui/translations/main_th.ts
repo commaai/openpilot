@@ -114,6 +114,81 @@
     </message>
 </context>
 <context>
+    <name>DeveloperPanel</name>
+    <message>
+        <source>Updates are only downloaded while the car is off.</source>
+        <translation type="obsolete">ตัวอัปเดตจะดำเนินการดาวน์โหลดเมื่อรถดับเครื่องยนต์อยู่เท่านั้น</translation>
+    </message>
+    <message>
+        <source>Current Version</source>
+        <translation type="obsolete">เวอร์ชั่นปัจจุบัน</translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <translation type="obsolete">ดาวน์โหลด</translation>
+    </message>
+    <message>
+        <source>CHECK</source>
+        <translation type="obsolete">ตรวจสอบ</translation>
+    </message>
+    <message>
+        <source>Install Update</source>
+        <translation type="obsolete">ติดตั้งตัวอัปเดต</translation>
+    </message>
+    <message>
+        <source>INSTALL</source>
+        <translation type="obsolete">ติดตั้ง</translation>
+    </message>
+    <message>
+        <source>Target Branch</source>
+        <translation type="obsolete">Branch ที่เลือก</translation>
+    </message>
+    <message>
+        <source>SELECT</source>
+        <translation type="obsolete">เลือก</translation>
+    </message>
+    <message>
+        <source>Select a branch</source>
+        <translation type="obsolete">เลือก Branch</translation>
+    </message>
+    <message>
+        <source>Uninstall %1</source>
+        <translation type="obsolete">ถอนการติดตั้ง %1</translation>
+    </message>
+    <message>
+        <source>UNINSTALL</source>
+        <translation type="obsolete">ถอนการติดตั้ง</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to uninstall?</source>
+        <translation type="obsolete">คุณแน่ใจหรือไม่ว่าต้องการถอนการติดตั้ง?</translation>
+    </message>
+    <message>
+        <source>Uninstall</source>
+        <translation type="obsolete">ถอนการติดตั้ง</translation>
+    </message>
+    <message>
+        <source>failed to check for update</source>
+        <translation type="obsolete">ไม่สามารถตรวจสอบอัปเดตได้</translation>
+    </message>
+    <message>
+        <source>DOWNLOAD</source>
+        <translation type="obsolete">ดาวน์โหลด</translation>
+    </message>
+    <message>
+        <source>update available</source>
+        <translation type="obsolete">มีอัปเดตใหม่</translation>
+    </message>
+    <message>
+        <source>never</source>
+        <translation type="obsolete">ไม่เคย</translation>
+    </message>
+    <message>
+        <source>up to date, last checked %1</source>
+        <translation type="obsolete">ล่าสุดแล้ว ตรวจสอบครั้งสุดท้ายเมื่อ %1</translation>
+    </message>
+</context>
+<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -597,6 +672,10 @@ This may take up to a minute.</source>
     <message>
         <source>Software</source>
         <translation>ซอฟต์แวร์</translation>
+    </message>
+    <message>
+        <source>Developer</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
