@@ -10,9 +10,9 @@ NC='\033[0m'
 COOKIE_JAR=/tmp/cookies
 CRUMB=$(curl -s --cookie-jar $COOKIE_JAR 'https://jenkins.comma.life/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)')
 
-TESTING_BRANCH="jenkins_test_runner"
+TESTING_BRANCH="__jenkins_test_loop"
 API_ROUTE="https://jenkins.comma.life/job/openpilot/job/$TESTING_BRANCH"
-N=5
+N=20
 TEST_BUILDS=()
 
 # Try to find previous builds
@@ -32,12 +32,12 @@ if [[ ${#ALL_BUILDS[@]} -eq 0 ]]; then
   sleep 90
 else
   # Found some builds. Check if they are still running
-  for i in $ALL_BUILDS; do
+  for i in ${ALL_BUILDS[@]}; do
     running=$(curl -s $API_ROUTE/$i/api/json/ | jq .inProgress)
     if [[ $running == "false" ]]; then
       continue
     fi
-    TEST_BUILDS=${ALL_BUILDS[@]}
+    TEST_BUILDS=( ${ALL_BUILDS[@]} )
     N=${#TEST_BUILDS[@]}
     break
   done
@@ -46,16 +46,16 @@ fi
 # No running builds found
 if [[ ${#TEST_BUILDS[@]} -eq 0 ]]; then
   # Delete all previous builds
-  for i in $ALL_BUILDS; do
+  for i in ${ALL_BUILDS[@]}; do
     curl -s --cookie $COOKIE_JAR -H "$CRUMB" -X POST $API_ROUTE/$i/doDelete
   done
 
   FIRST_RUN=$(curl -s $API_ROUTE/api/json | jq .nextBuildNumber)
   LAST_RUN=$((FIRST_RUN+N-1))
-  TEST_BUILDS=$(seq $FIRST_RUN $LAST_RUN)
+  TEST_BUILDS=( $(seq $FIRST_RUN $LAST_RUN) )
 
   # Start N new builds
-  for i in $TEST_BUILDS;
+  for i in ${TEST_BUILDS[@]};
   do
     echo "Starting build $i"
     curl -s --output /dev/null --cookie $COOKIE_JAR -H "$CRUMB" -X POST $API_ROUTE/build?delay=0sec
@@ -70,7 +70,7 @@ while true; do
   sleep 5
 
   count=0
-  for i in $TEST_BUILDS;
+  for i in ${TEST_BUILDS[@]};
   do
     RES=$(curl -s -w "\n%{http_code}" --cookie $COOKIE_JAR -H "$CRUMB" $API_ROUTE/$i/api/json)
     HTTP_CODE=$(tail -n1 <<< "$RES")
@@ -105,7 +105,7 @@ STAGES_COUNT=${#STAGES_NAMES[@]}
 
 STAGES_FAILURES=($(for i in $(seq 1 $STAGES_COUNT); do echo 0; done))
 
-for i in $TEST_BUILDS; do
+for i in ${TEST_BUILDS[@]}; do
 index=0
 while read result; do
   if [[ $result != '"SUCCESS"' ]]; then
@@ -123,9 +123,9 @@ echo "=========================================="
 for i in $(seq 0 $(($STAGES_COUNT-1))); do
   P=$((${STAGES_FAILURES[$i]}*100/$N))
   if [[ $P -eq 0 ]]; then
-    P=${GREEN}${BOLD}${P}${NC}
+    P=${GREEN}${BOLD}${P}
   else
-    P=${RED}${BOLD}${P}${NC}
+    P=${RED}${BOLD}${P}
   fi
   echo -e "${STAGES_NAMES[$i]} : $P% failure rate${NC}"
 done
