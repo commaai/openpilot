@@ -13,6 +13,7 @@
 #include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
+#include "selfdrive/ui/qt/widgets/ssh_keys.h"
 
 // ********** settings window + top-level panels **********
 class SettingsWindow : public QFrame {
@@ -108,5 +109,7 @@ public:
 
     addItem(new LabelControl(tr("Developer Options"), tr("Settings for developers")));
 
+    addItem(new SshToggle());
+    addItem(new SshControl());
   }
 };
