@@ -151,5 +151,5 @@ int main(int argc, char *argv[]) {
 
   ConsoleUI console_ui(replay);
   replay->start(config.start_seconds);
-  return app.exec();
+  return console_ui.exec();
 }

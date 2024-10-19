@@ -43,6 +43,7 @@ enum class FindFlag {
 
 enum class TimelineType { None, Engaged, AlertInfo, AlertWarning, AlertCritical, UserFlag };
 typedef bool (*replayEventFilter)(const Event *, void *);
+typedef std::map<int, std::unique_ptr<Segment>> SegmentMap;
 Q_DECLARE_METATYPE(std::shared_ptr<LogReader>);
 
 class Replay : public QObject {
@@ -82,8 +83,7 @@ public:
   inline double maxSeconds() const { return max_seconds_; }
   inline void setSpeed(float speed) { speed_ = speed; }
   inline float getSpeed() const { return speed_; }
-  inline const std::vector<Event> *events() const { return &events_; }
-  inline const std::map<int, std::unique_ptr<Segment>> &segments() const { return segments_; }
+  inline const SegmentMap &segments() const { return segments_; }
   inline const std::string &carFingerprint() const { return car_fingerprint_; }
   inline const std::vector<std::tuple<double, double, TimelineType>> getTimeline() {
     std::lock_guard lk(timeline_lock);
@@ -102,7 +102,6 @@ protected slots:
   void segmentLoadFinished(bool success);
 
 protected:
-  typedef std::map<int, std::unique_ptr<Segment>> SegmentMap;
   std::optional<uint64_t> find(FindFlag flag);
   void pauseStreamThread();
   void startStream(const Segment *cur_segment);
