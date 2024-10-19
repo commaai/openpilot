@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
+YELLOW='\033[0;33m'
+GREEN='\033[0;32m'
 RED='\033[0;31m'
 BOLD='\033[1m'
 NC='\033[0m'
@@ -10,52 +12,58 @@ CRUMB=$(curl -s --cookie-jar $COOKIE_JAR 'https://jenkins.comma.life/crumbIssuer
 
 TESTING_BRANCH="jenkins_test_runner"
 API_ROUTE="https://jenkins.comma.life/job/openpilot/job/$TESTING_BRANCH"
-N=1
+N=5
 TEST_BUILDS=()
 
-# try to find active builds
+# Try to find previous builds
 ALL_BUILDS=( $(curl -s $API_ROUTE/api/json | jq .builds.[].number || :) )
-for i in $ALL_BUILDS; do
-  running=$(curl -s $API_ROUTE/$i/api/json/ | jq .inProgress)
-  if [[ $running == "false" ]]; then
-    continue
-  fi
-  TEST_BUILDS=${ALL_BUILDS[@]}
-  N=${#TEST_BUILDS[@]}
-  break
-done
 
-# no active builds found
-if [[ ${#TEST_BUILDS[@]} -eq 0 ]]; then
-  # delete all previous builds
+# No builds. Create branch
+if [[ ${#ALL_BUILDS[@]} -eq 0 ]]; then
+  TEMP_DIR=$(mktemp -d)
+  GIT_LFS_SKIP_SMUDGE=1 git clone -b master --depth=1 --no-tags git@github.com:commaai/openpilot $TEMP_DIR
+  git -C $TEMP_DIR checkout -b $TESTING_BRANCH
+  echo "TESTING" >> $TEMP_DIR/testing_jenkins
+  git -C $TEMP_DIR add testing_jenkins
+  git -C $TEMP_DIR commit -m "testing"
+  git -C $TEMP_DIR push -f origin $TESTING_BRANCH
+  rm -rf $TEMP_DIR
+  FIRST_RUN=1
+  sleep 90
+else
+  # Found some builds. Check if they are still running
   for i in $ALL_BUILDS; do
-    curl --cookie $COOKIE_JAR -H "$CRUMB" -X POST $API_ROUTE/$i/doDelete
+    running=$(curl -s $API_ROUTE/$i/api/json/ | jq .inProgress)
+    if [[ $running == "false" ]]; then
+      continue
+    fi
+    TEST_BUILDS=${ALL_BUILDS[@]}
+    N=${#TEST_BUILDS[@]}
+    break
+  done
+fi
+
+# No running builds found
+if [[ ${#TEST_BUILDS[@]} -eq 0 ]]; then
+  # Delete all previous builds
+  for i in $ALL_BUILDS; do
+    curl -s --cookie $COOKIE_JAR -H "$CRUMB" -X POST $API_ROUTE/$i/doDelete
   done
 
-  # create running branch
-  if [[ ${#ALL_BUILDS[@]} -eq 0 ]]; then
-    TEMP_DIR=$(mktemp -d)
-    GIT_LFS_SKIP_SMUDGE=1 git clone -b master --depth=1 --no-tags git@github.com:commaai/openpilot $TEMP_DIR
-    git -C $TEMP_DIR checkout -b $TESTING_BRANCH
-    echo "TESTING" >> $TEMP_DIR/testing_jenkins
-    git -C $TEMP_DIR add testing_jenkins
-    git -C $TEMP_DIR commit -m "testing"
-    git -C $TEMP_DIR push -f origin $TESTING_BRANCH
-    rm -rf $TEMP_DIR
-    FIRST_RUN=1
-    sleep 60
-  else
-    FIRST_RUN=$(curl -s $API_ROUTE/api/json | jq .nextBuildNumber)
-  fi
+  FIRST_RUN=$(curl -s $API_ROUTE/api/json | jq .nextBuildNumber)
   LAST_RUN=$((FIRST_RUN+N-1))
   TEST_BUILDS=$(seq $FIRST_RUN $LAST_RUN)
 
-  # start N new builds
+  # Start N new builds
   for i in $TEST_BUILDS;
   do
-    curl --output /dev/null --cookie $COOKIE_JAR -H "$CRUMB" -X POST $API_ROUTE/build?delay=0sec
+    echo "Starting build $i"
+    curl -s --output /dev/null --cookie $COOKIE_JAR -H "$CRUMB" -X POST $API_ROUTE/build?delay=0sec
+    sleep 5
   done
 fi
+
+echo "Testing Jenkins with $N builds:"
 
 while true; do
   #sleep 60
@@ -71,16 +79,19 @@ while true; do
     if [[ $HTTP_CODE == "200" ]]; then
       STILL_RUNNING=$(echo $JSON | jq .inProgress)
       if [[ $STILL_RUNNING == "true" ]]; then
-        echo "build $i still running"
+        echo -e "Build $i: ${YELLOW}still running${NC}"
         continue
+      else
+        count=$((count+1))
+        echo -e "Build $i: ${GREEN}done${NC}"
       fi
-      count=$((count+1))
     else
-      echo "Error getting status of build $i"
+      echo "No status for build $i"
     fi
   done
+  echo ""
 
-  if [[ $count -eq $N ]]; then
+  if [[ $count -ge $N ]]; then
     break
   fi
 done
@@ -104,7 +115,21 @@ while read result; do
 done < <(curl -s $API_ROUTE/$i/wfapi/ | jq .stages[].status)
 done
 
+echo "=========================================="
+echo "===================DONE==================="
+echo "=========================================="
+
 # print results of all builds
 for i in $(seq 0 $(($STAGES_COUNT-1))); do
-  echo -e "${STAGES_NAMES[$i]} : ${RED}${BOLD}$((${STAGES_FAILURES[$i]}*100/$N))% failure rate${NC}"
+  P=$((${STAGES_FAILURES[$i]}*100/$N))
+  if [[ $P -eq 0 ]]; then
+    P=${GREEN}${BOLD}${P}${NC}
+  else
+    P=${RED}${BOLD}${P}${NC}
+  fi
+  echo -e "${STAGES_NAMES[$i]} : $P% failure rate${NC}"
 done
+
+echo "=========================================="
+echo "=========================================="
+echo "=========================================="
