@@ -23,10 +23,5 @@
     "system/**",
     "third_party/**",
     "tools/**",
-  ],
-  "files.associations": {
-    "*.py": "python",
-    "sstream": "cpp",
-    "regex": "cpp"
-  }
+  ]
 }
