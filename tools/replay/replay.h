@@ -15,7 +15,7 @@
 #include "tools/replay/camera.h"
 #include "tools/replay/route.h"
 
-const QString DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19";
+#define DEMO_ROUTE "a2a0ccea32023010|2023-07-27--13-01-19"
 
 // one segment uses about 100M of memory
 constexpr int MIN_SEGMENTS_CACHE = 5;
@@ -49,8 +49,8 @@ class Replay : public QObject {
   Q_OBJECT
 
 public:
-  Replay(QString route, QStringList allow, QStringList block, SubMaster *sm = nullptr,
-         uint32_t flags = REPLAY_FLAG_NONE, QString data_dir = "", QObject *parent = 0);
+  Replay(const std::string &route, std::vector<std::string> allow, std::vector<std::string> block, SubMaster *sm = nullptr,
+         uint32_t flags = REPLAY_FLAG_NONE, const std::string &data_dir = "", QObject *parent = 0);
   ~Replay();
   bool load();
   RouteLoadError lastRouteError() const { return route_->lastError(); }

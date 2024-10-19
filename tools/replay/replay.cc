@@ -11,36 +11,43 @@
 
 static void interrupt_sleep_handler(int signal) {}
 
-Replay::Replay(QString route, QStringList allow, QStringList block, SubMaster *sm_,
-               uint32_t flags, QString data_dir, QObject *parent) : sm(sm_), flags_(flags), QObject(parent) {
+Replay::Replay(const std::string &route, std::vector<std::string> allow, std::vector<std::string> block, SubMaster *sm_,
+               uint32_t flags, const std::string &data_dir, QObject *parent) : sm(sm_), flags_(flags), QObject(parent) {
   // Register signal handler for SIGUSR1
   std::signal(SIGUSR1, interrupt_sleep_handler);
 
   if (!(flags_ & REPLAY_FLAG_ALL_SERVICES)) {
-    block << "uiDebug" << "userFlag";
+    block.insert(block.end(), {"uiDebug", "userFlag"});
   }
-  auto event_struct = capnp::Schema::from<cereal::Event>().asStruct();
-  sockets_.resize(event_struct.getUnionFields().size());
+
+  auto event_schema = capnp::Schema::from<cereal::Event>().asStruct();
+  sockets_.resize(event_schema.getUnionFields().size());
+  std::vector<std::string> active_services;
+
   for (const auto &[name, _] : services) {
-    if (!block.contains(name.c_str()) && (allow.empty() || allow.contains(name.c_str()))) {
-      uint16_t which = event_struct.getFieldByName(name).getProto().getDiscriminantValue();
+    bool in_block = std::find(block.begin(), block.end(), name) != block.end();
+    bool in_allow = std::find(allow.begin(), allow.end(), name) != allow.end();
+    if (!in_block && (allow.empty() || in_allow)) {
+      uint16_t which = event_schema.getFieldByName(name).getProto().getDiscriminantValue();
       sockets_[which] = name.c_str();
+      active_services.push_back(name);
     }
   }
-  if (!allow.isEmpty()) {
+
+  if (!allow.empty()) {
     for (int i = 0; i < sockets_.size(); ++i) {
       filters_.push_back(i == cereal::Event::Which::INIT_DATA || i == cereal::Event::Which::CAR_PARAMS || sockets_[i]);
     }
   }
 
-  std::vector<const char *> s;
-  std::copy_if(sockets_.begin(), sockets_.end(), std::back_inserter(s),
-               [](const char *name) { return name != nullptr; });
-  qDebug() << "services " << s;
-  qDebug() << "loading route " << route;
+  rInfo("active services: %s", join(active_services, ',').c_str());
+  rInfo("loading route %s", route.c_str());
 
   if (sm == nullptr) {
-    pm = std::make_unique<PubMaster>(s);
+    std::vector<const char *> socket_names;
+    std::copy_if(sockets_.begin(), sockets_.end(), std::back_inserter(socket_names),
+                 [](const char *name) { return name != nullptr; });
+    pm = std::make_unique<PubMaster>(socket_names);
   }
   route_ = std::make_unique<Route>(route, data_dir);
 }
@@ -68,23 +75,23 @@ void Replay::stop() {
 
 bool Replay::load() {
   if (!route_->load()) {
-    qCritical() << "failed to load route" << route_->name()
-                << "from" << (route_->dir().isEmpty() ? "server" : route_->dir());
+    rError("failed to load route %s from %s", route_->name().c_str(),
+           route_->dir().empty() ? "server" : route_->dir().c_str());
     return false;
   }
 
   for (auto &[n, f] : route_->segments()) {
-    bool has_log = !f.rlog.isEmpty() || !f.qlog.isEmpty();
-    bool has_video = !f.road_cam.isEmpty() || !f.qcamera.isEmpty();
+    bool has_log = !f.rlog.empty() || !f.qlog.empty();
+    bool has_video = !f.road_cam.empty() || !f.qcamera.empty();
     if (has_log && (has_video || hasFlag(REPLAY_FLAG_NO_VIPC))) {
       segments_.insert({n, nullptr});
     }
   }
   if (segments_.empty()) {
-    qCritical() << "no valid segments in route" << route_->name();
+    rInfo("no valid segments in route: %s", route_->name().c_str());
     return false;
   }
-  rInfo("load route %s with %zu valid segments", qPrintable(route_->name()), segments_.size());
+  rInfo("load route %s with %zu valid segments", route_->name().c_str(), segments_.size());
   max_seconds_ = (segments_.rbegin()->first + 1) * 60;
   return true;
 }
@@ -167,7 +174,7 @@ void Replay::buildTimeline() {
   const auto &route_segments = route_->segments();
   for (auto it = route_segments.cbegin(); it != route_segments.cend() && !exit_; ++it) {
     std::shared_ptr<LogReader> log(new LogReader());
-    if (!log->load(it->second.qlog.toStdString(), &exit_, !hasFlag(REPLAY_FLAG_NO_FILE_CACHE), 0, 3) || log->events.empty()) continue;
+    if (!log->load(it->second.qlog, &exit_, !hasFlag(REPLAY_FLAG_NO_FILE_CACHE), 0, 3) || log->events.empty()) continue;
 
     std::vector<std::tuple<double, double, TimelineType>> timeline;
     for (const Event &e : log->events) {

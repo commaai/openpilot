@@ -21,42 +21,42 @@ enum class RouteLoadError {
 };
 
 struct RouteIdentifier {
-  QString dongle_id;
-  QString timestamp;
+  std::string dongle_id;
+  std::string timestamp;
   int begin_segment = 0;
   int end_segment = -1;
-  QString str;
+  std::string str;
 };
 
 struct SegmentFile {
-  QString rlog;
-  QString qlog;
-  QString road_cam;
-  QString driver_cam;
-  QString wide_road_cam;
-  QString qcamera;
+  std::string rlog;
+  std::string qlog;
+  std::string road_cam;
+  std::string driver_cam;
+  std::string wide_road_cam;
+  std::string qcamera;
 };
 
 class Route {
 public:
-  Route(const QString &route, const QString &data_dir = {});
+  Route(const std::string &route, const std::string &data_dir = {});
   bool load();
   RouteLoadError lastError() const { return err_; }
-  inline const QString &name() const { return route_.str; }
+  inline const std::string &name() const { return route_.str; }
   inline const QDateTime datetime() const { return date_time_; }
-  inline const QString &dir() const { return data_dir_; }
+  inline const std::string &dir() const { return data_dir_; }
   inline const RouteIdentifier &identifier() const { return route_; }
   inline const std::map<int, SegmentFile> &segments() const { return segments_; }
   inline const SegmentFile &at(int n) { return segments_.at(n); }
-  static RouteIdentifier parseRoute(const QString &str);
+  static RouteIdentifier parseRoute(const std::string &str);
 
 protected:
   bool loadFromLocal();
   bool loadFromServer(int retries = 3);
   bool loadFromJson(const QString &json);
-  void addFileToSegment(int seg_num, const QString &file);
+  void addFileToSegment(int seg_num, const std::string &file);
   RouteIdentifier route_ = {};
-  QString data_dir_;
+  std::string data_dir_;
   std::map<int, SegmentFile> segments_;
   QDateTime date_time_;
   RouteLoadError err_ = RouteLoadError::None;

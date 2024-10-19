@@ -4,10 +4,12 @@
 #include <iostream>
 #include <map>
 #include <string>
+#include <vector>
 
 #include "common/prefix.h"
 #include "tools/replay/consoleui.h"
 #include "tools/replay/replay.h"
+#include "tools/replay/util.h"
 
 const std::string helpText =
 R"(Usage: replay [options]
@@ -32,10 +34,10 @@ Options:
 )";
 
 struct ReplayConfig {
-  QString route;
-  QStringList allow;
-  QStringList block;
-  QString data_dir;
+  std::string route;
+  std::vector<std::string> allow;
+  std::vector<std::string> block;
+  std::string data_dir;
   std::string prefix;
   uint32_t flags = REPLAY_FLAG_NONE;
   int start_seconds = 0;
@@ -84,8 +86,8 @@ bool parseArgs(int argc, char *argv[], ReplayConfig &config) {
   int opt, option_index = 0;
   while ((opt = getopt_long(argc, argv, "a:b:c:s:x:d:p:h", cli_options, &option_index)) != -1) {
     switch (opt) {
-      case 'a': config.allow = QString(optarg).split(","); break;
-      case 'b': config.block = QString(optarg).split(","); break;
+      case 'a': config.allow = split(optarg, ','); break;
+      case 'b': config.block = split(optarg, ','); break;
       case 'c': config.cache_segments = std::atoi(optarg); break;
       case 's': config.start_seconds = std::atoi(optarg); break;
       case 'x': config.playback_speed = std::atof(optarg); break;
@@ -106,11 +108,11 @@ bool parseArgs(int argc, char *argv[], ReplayConfig &config) {
   }
 
   // Check for a route name (first positional argument)
-  if (config.route.isEmpty() && optind < argc) {
+  if (config.route.empty() && optind < argc) {
     config.route = argv[optind];
   }
 
-  if (config.route.isEmpty()) {
+  if (config.route.empty()) {
     std::cerr << "No route provided. Use --help for usage information.\n";
     return false;
   }

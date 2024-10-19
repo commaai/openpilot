@@ -20,7 +20,7 @@ public:
   bool eventFilter(const Event *event);
   void seekTo(double ts) override { replay->seekTo(std::max(double(0), ts), false); }
   bool liveStreaming() const override { return false; }
-  inline QString routeName() const override { return replay->route()->name(); }
+  inline QString routeName() const override { return QString::fromStdString(replay->route()->name()); }
   inline QString carFingerprint() const override { return replay->carFingerprint().c_str(); }
   double minSeconds() const override { return replay->minSeconds(); }
   double maxSeconds() const { return replay->maxSeconds(); }

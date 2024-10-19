@@ -14,6 +14,7 @@
 #include <map>
 #include <mutex>
 #include <numeric>
+#include <sstream>
 #include <utility>
 #include <zstd.h>
 
@@ -388,6 +389,35 @@ std::string sha256(const std::string &str) {
   SHA256_Update(&sha256, str.c_str(), str.size());
   SHA256_Final(hash, &sha256);
   return util::hexdump(hash, SHA256_DIGEST_LENGTH);
+}
+
+std::vector<std::string> split(std::string_view source, char delimiter) {
+  std::vector<std::string> fields;
+  size_t last = 0;
+  for (size_t i = 0; i < source.length(); ++i) {
+    if (source[i] == delimiter) {
+      fields.emplace_back(source.substr(last, i - last));
+      last = i + 1;
+    }
+  }
+  fields.emplace_back(source.substr(last));
+  return fields;
+}
+
+std::string join(const std::vector<std::string> &elements, char separator) {
+  std::ostringstream oss;
+  for (size_t i = 0; i < elements.size(); ++i) {
+    if (i != 0) oss << separator;
+    oss << elements[i];
+  }
+  return oss.str();
+}
+
+std::string extractFileName(const std::string &file) {
+  size_t queryPos = file.find_first_of("?");
+  std::string path = (queryPos != std::string::npos) ? file.substr(0, queryPos) : file;
+  size_t lastSlash = path.find_last_of("/\\");
+  return (lastSlash != std::string::npos) ? path.substr(lastSlash + 1) : path;
 }
 
 // MonotonicBuffer
