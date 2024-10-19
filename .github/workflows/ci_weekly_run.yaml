@@ -1,4 +1,4 @@
-name: weekly Github Actions CI test run
+name: weekly CI test run
 on:
   workflow_call:
     inputs:
@@ -11,6 +11,10 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  selfdrive_tests:
+    uses: commaai/openpilot/.github/workflows/selfdrive_tests.yaml@master
+    with:
+      run_number: ${{ inputs.run_number }}
   tools_tests:
     uses: commaai/openpilot/.github/workflows/tools_tests.yaml@master
     with:
