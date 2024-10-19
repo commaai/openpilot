@@ -114,6 +114,17 @@
     </message>
 </context>
 <context>
+    <name>DeveloperPanel</name>
+    <message>
+        <source>Developer Options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Settings for developers</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -601,6 +612,10 @@ Isso pode levar até um minuto.</translation>
     <message>
         <source>Software</source>
         <translation>Software</translation>
+    </message>
+    <message>
+        <source>Developer</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

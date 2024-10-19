@@ -384,10 +384,13 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   auto networking = new Networking(this);
   QObject::connect(uiState()->prime_state, &PrimeState::changed, networking, &Networking::setPrimeType);
 
+  DeveloperPanel *developer = new DeveloperPanel(this);
+
   QList<QPair<QString, QWidget *>> panels = {
     {tr("Device"), device},
     {tr("Network"), networking},
     {tr("Toggles"), toggles},
+    {tr("Developer"), developer},
     {tr("Software"), new SoftwarePanel(this)},
   };
 

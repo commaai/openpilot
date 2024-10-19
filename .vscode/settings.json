@@ -23,5 +23,19 @@
     "system/**",
     "third_party/**",
     "tools/**",
-  ]
+  ],
+  "files.associations": {
+    "cassert": "cpp",
+    "vector": "cpp",
+    "__hash_table": "cpp",
+    "__tree": "cpp",
+    "array": "cpp",
+    "type_traits": "cpp",
+    "forward_list": "cpp",
+    "limits": "cpp",
+    "ratio": "cpp",
+    "tuple": "cpp",
+    "variant": "cpp",
+    "string": "cpp"
+  }
 }

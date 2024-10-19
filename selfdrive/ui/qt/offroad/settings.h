@@ -98,3 +98,15 @@ private:
   Params params;
   ParamWatcher *fs_watch;
 };
+
+class DeveloperPanel : public ListWidget {
+  Q_OBJECT
+
+public:
+  explicit DeveloperPanel(QWidget *parent = nullptr) : ListWidget(parent) {
+    setSpacing(50);
+
+    addItem(new LabelControl(tr("Developer Options"), tr("Settings for developers")));
+
+  }
+};
