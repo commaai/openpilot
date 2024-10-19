@@ -37,7 +37,7 @@ def get_coast_accel(pitch):
   return np.sin(pitch) * -5.65 - 0.3  # fitted from data using xx/projects/allow_throttle/compute_coast_accel.py
 
 
-def limit_accel_in_turns(v_ego, a_y, a_target, CP):
+def limit_accel_in_turns(v_ego, a_y, a_target):
   """
   This function returns a limited long acceleration allowed, depending on the existing lateral acceleration
   this should avoid accelerating when losing the target in turns
@@ -140,7 +140,7 @@ class LongitudinalPlanner:
       current_curvature = self.VM.calc_curvature(math.radians(CS.steeringAngleDeg - LP.angleOffsetAverageDeg), CS.vEgo, LP.roll)
       current_lateral_accel = current_curvature * CS.vEgo ** 2
       accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
-      accel_limits_turns = limit_accel_in_turns(v_ego, current_lateral_accel, accel_limits, self.CP)
+      accel_limits_turns = limit_accel_in_turns(v_ego, current_lateral_accel, accel_limits)
     else:
       accel_limits = [ACCEL_MIN, ACCEL_MAX]
       accel_limits_turns = [ACCEL_MIN, ACCEL_MAX]
