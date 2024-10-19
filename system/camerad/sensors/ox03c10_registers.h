@@ -1,5 +1,11 @@
 #pragma once
 
+const struct uint32_t ife_cc_ox03c10[] = {
+  0x000000b6, 0x00000ff1, 0x00000fda,
+  0x00000fcc, 0x000000b9, 0x00000ffb,
+  0x00000fc2, 0x00000ff6, 0x000000c9,
+};
+
 const struct i2c_random_wr_payload start_reg_array_ox03c10[] = {{0x100, 1}};
 const struct i2c_random_wr_payload stop_reg_array_ox03c10[] = {{0x100, 0}};
 

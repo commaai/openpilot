@@ -60,6 +60,8 @@ public:
   std::vector<i2c_random_wr_payload> start_reg_array;
   std::vector<i2c_random_wr_payload> init_reg_array;
 
+  std::vector<uint32_t> ife_color_correct_array;
+
   uint32_t bits_per_pixel;
   uint32_t bayer_pattern = CAM_ISP_PATTERN_BAYER_GRGRGR;
   uint32_t mipi_format;

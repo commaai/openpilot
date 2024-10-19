@@ -91,6 +91,7 @@ AR0231::AR0231() {
 
   start_reg_array.assign(std::begin(start_reg_array_ar0231), std::end(start_reg_array_ar0231));
   init_reg_array.assign(std::begin(init_array_ar0231), std::end(init_array_ar0231));
+  ife_color_correct_array.assign(std::begin(ife_cc_ar0231), std::end(ife_cc_ar0231));
   probe_reg_addr = 0x3000;
   probe_expected_data = 0x354;
   bits_per_pixel = 12;

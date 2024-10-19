@@ -35,6 +35,7 @@ OX03C10::OX03C10() {
 
   start_reg_array.assign(std::begin(start_reg_array_ox03c10), std::end(start_reg_array_ox03c10));
   init_reg_array.assign(std::begin(init_array_ox03c10), std::end(init_array_ox03c10));
+  ife_color_correct_array.assign(std::begin(ife_cc_ox03c10), std::end(ife_cc_ox03c10));
   probe_reg_addr = 0x300a;
   probe_expected_data = 0x5803;
   bits_per_pixel = 12;

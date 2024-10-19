@@ -4,7 +4,7 @@
 #include "system/camerad/sensors/sensor.h"
 
 
-int build_initial_config(uint8_t *dst) {
+int build_initial_config(uint8_t *dst, const SensorInfo *s) {
   uint8_t *start = dst;
 
   // values are very different from the update one,
@@ -179,18 +179,7 @@ int build_initial_config(uint8_t *dst) {
     0x08000066,
   });
 
-  dst += write_cont(dst, 0x760, {
-    // 3x3 matrix
-    0x000000b6,
-    0x00000ff1,
-    0x00000fda,
-    0x00000fcc,
-    0x000000b9,
-    0x00000ffb,
-    0x00000fc2,
-    0x00000ff6,
-    0x000000c9,
-  });
+  dst += write_cont(dst, 0x760, s->ife_color_correct_array);
 
   dst += write_cont(dst, 0x794, {
     0x00000000,
