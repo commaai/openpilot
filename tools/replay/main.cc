@@ -76,6 +76,11 @@ bool parseArgs(int argc, char *argv[], ReplayConfig &config) {
       {"all", REPLAY_FLAG_ALL_SERVICES},
   };
 
+  if (argc == 1) {
+    std::cout << helpText;
+    return false;
+  }
+
   int opt, option_index = 0;
   while ((opt = getopt_long(argc, argv, "a:b:c:s:x:d:p:h", cli_options, &option_index)) != -1) {
     switch (opt) {
