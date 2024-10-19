@@ -37,27 +37,24 @@ runs:
       run: |
         docker login -u adeebshihadeh -p ${{ inputs.docker_hub_pat }}
 
-    # build cache
-    - id: date
-      shell: bash
-      run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
-    - shell: bash
-      run: echo "$CACHE_COMMIT_DATE"
-    - id: scons-cache
-      uses: ./.github/workflows/auto-cache
-      with:
-        path: .ci_cache/scons_cache
-        key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
-        restore-keys: |
-          scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
-          scons-${{ runner.arch }}
-    # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
-    - id: normalize-file-permissions
-      shell: bash
-      name: Normalize file permissions to ensure a consistent docker build cache
-      run: |
-        find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
-        find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
+    ## build cache
+    #- id: date
+    #  shell: bash
+    #  run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
+    #- shell: bash
+    #  run: echo "$CACHE_COMMIT_DATE"
+    #- id: scons-cache
+    #  uses: ./.github/workflows/auto-cache
+    #  with:
+    #    path: .ci_cache/scons_cache
+    #    key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+    #    restore-keys: |
+    #      scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
+    #      scons-${{ runner.arch }}
+    
+    - id: debug
+      uses: ./.github/workflows/ubuntu-chroot
+    
     # build our docker image
-    - shell: bash
-      run: eval ${{ env.BUILD }}
+    #- shell: bash
+    #  run: eval ${{ env.BUILD }}

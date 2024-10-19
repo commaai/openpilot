@@ -1,0 +1,41 @@
+name: 'build and mount an ubuntu chroot for openpilot ci.'
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Calculate Cache Key
+      id: cache-key
+      shell: bash
+      run: echo "CACHE_KEY=chroot-${{ hashFiles('tools/build_ci_chroot.sh') }}"  >> $GITHUB_ENV
+
+    - name: Restore cache
+      id: restore-cache
+      uses: 'actions/cache/restore@v4'
+      with:
+        path: /tmp/chroot.squashfs
+        key: ${{ env.CACHE_KEY }}
+
+    - name: Rebuild chroot
+      if: steps.restore-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        sudo bash -c "GITHUB_WORKSPACE=$GITHUB_WORKSPACE ./tools/build_ci_chroot.sh"
+
+    - name: Cache chroot
+      if: steps.restore-cache.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: /tmp/chroot.squashfs
+        key: ${{ env.CACHE_KEY }}
+
+    - name: Mount chroot
+      shell: bash
+      run: |
+        mkdir /tmp/chroot
+        mkdir /tmp/.chroot_lower
+        mkdir /tmp/.chroot_upper
+        mkdir /tmp/.chroot_work
+        sudo mount -t squashfs /tmp/chroot.squashfs /tmp/.chroot_lower
+        sudo mount -t overlay overlay -o lowerdir=/tmp/.chroot_lower,upperdir=/tmp/.chroot_upper,workdir=/tmp/.chroot_work /tmp/chroot
+        sudo mount --bind "$GITHUB_WORKSPACE" /tmp/chroot/tmp/openpilot
