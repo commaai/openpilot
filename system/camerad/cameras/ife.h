@@ -190,14 +190,6 @@ int build_initial_config(uint8_t *dst) {
     0x00000fc2,
     0x00000ff6,
     0x000000c9,
-
-    // offsets
-    0x00000000,
-    0x00000000,
-    0x00000000,
-
-    // Q
-    (0x0 << 10) | (0x0 << 0),
   });
 
   dst += write_cont(dst, 0x794, {
