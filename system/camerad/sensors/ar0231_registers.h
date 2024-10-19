@@ -1,6 +1,6 @@
 #pragma once
 
-const struct uint32_t ife_cc_ar0231[] = {
+const uint32_t ife_cc_ar0231[] = {
   0x000000af, 0x00000ff9, 0x00000fd8,
   0x00000fbc, 0x000000bb, 0x00000009,
   0x00000fb6, 0x00000fe0, 0x000000ea,
