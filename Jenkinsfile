@@ -91,7 +91,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
             device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
           }
           steps.each { item ->
-            if (branch != "master" && branch != "jenkins_test_runner" && item.size() == 3 && !hasPathChanged(item[2])) {
+            if (branch != "master" && item.size() == 3 && !hasPathChanged(item[2])) {
               println "Skipping ${item[0]}: no changes in ${item[2]}."
               return;
             } else {
@@ -164,112 +164,10 @@ node {
                          'testing-closet*', 'hotfix-*']
   def excludeRegex = excludeBranches.join('|').replaceAll('\\*', '.*')
 
-  if (env.BRANCH_NAME != 'master' && env.BRANCH_NAME != 'jenkins_test_runner') {
+  if (env.BRANCH_NAME != 'master') {
     properties([
         disableConcurrentBuilds(abortPrevious: true)
     ])
-  }
-
-  if (env.BRANCH_NAME == 'jenkins_test_master') {
-    environment {
-      CI_ARTIFACTS_TOKEN="${env.CI_ARTIFACTS_TOKEN}"
-    }
-    sh '''#!/bin/bash
-      # get crumb for CSRF
-      COOKIE_JAR=/tmp/cookies
-      CRUMB=$(curl --cookie-jar $COOKIE_JAR 'https://jenkins.comma.life/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)')
-
-      N=5
-      FIRST_RUN=$(curl --cookie $COOKIE_JAR -H "$CRUMB" https://jenkins.comma.life/job/openpilot/job/jenkins_test_runner/api/json | jq .nextBuildNumber)
-      LAST_RUN=$((FIRST_RUN+N-1))
-
-      for i in $(seq $FIRST_RUN $LAST_RUN);
-      do
-        # start build i
-        curl --output /dev/null --cookie $COOKIE_JAR -H "$CRUMB" -X POST https://jenkins.comma.life/job/openpilot/job/jenkins_test_runner/build?delay=0sec
-      done
-
-      while true; do
-        sleep 60
-
-        count=0
-        for i in $(seq $FIRST_RUN $LAST_RUN);
-        do
-          RES=$(curl -s -w "\n%{http_code}" --cookie $COOKIE_JAR -H "$CRUMB" https://jenkins.comma.life/job/openpilot/job/jenkins_test_runner/$i/api/json)
-          HTTP_CODE=$(tail -n1 <<< "$RES")
-          JSON=$(sed '$ d' <<< "$RES")
-
-          if [[ $HTTP_CODE == "200" ]]; then
-            STILL_RUNNING=$(echo $JSON | jq .inProgress)
-            if [[ $STILL_RUNNING == "true" ]]; then
-              echo "build $i still running"
-              continue
-            fi
-            ((count++))
-          else
-            echo "Error getting status of build $i"
-          fi
-        done
-
-        if [[ $count -eq $N ]]; then
-          break
-        fi
-      done
-
-
-      STAGES_NAMES=()
-      while read stage; do
-        STAGES_NAMES[$index]=$stage
-        ((index++))
-      done < <(curl -s -H "$CRUMB" https://jenkins.comma.life/job/openpilot/job/jenkins_test_runner/lastBuild/wfapi/ | jq .stages[].name)
-      STAGES_COUNT=${#STAGES_NAMES[@]}
-
-      STAGES_FAILURES=($(for i in $(seq 1 $STAGES_COUNT); do echo 0; done))
-      STAGES_FAILURES_LOGS=()
-
-      for i in $(seq $FIRST_RUN $LAST_RUN);
-      do
-
-      index=0
-      while read result; do
-        if [[ $result != '"SUCCESS"' ]]; then
-          STAGES_FAILURES[$index]=$((STAGES_FAILURES[$index]+1))
-          STAGES_FAILURES_LOGS[$index]="${STAGES_FAILURES_LOGS[$index]}<a href=\"https://jenkins.comma.life/blue/organizations/jenkins/openpilot/detail/jenkins_test_runner/$i/pipeline/\">Log for run #$(($i-$FIRST_RUN))</a><br>"
-        fi
-        ((index++))
-      done < <(curl https://jenkins.comma.life/job/openpilot/job/jenkins_test_runner/$i/wfapi/ | jq .stages[].status)
-
-      done
-
-      TABLE="\n### Jenkins CI\n<table><thead><tr> <th>Stage</th> <th>✅ Passing</th> <th>❌ Failure Details</th> </tr></thead><tbody>"
-      for i in $(seq 0 $(($STAGES_COUNT-1)));
-      do
-        TABLE="${TABLE}<tr>"
-        TABLE="${TABLE}<td>${STAGES_NAMES[$i]}</td>"
-        TABLE="${TABLE}<td>$((100-(${STAGES_FAILURES[$i]}*100/$N)))%</td>"
-        if [[ ${STAGES_FAILURES[$i]} -eq 0 ]]; then
-          TABLE="${TABLE}<td></td>"
-        else
-          TABLE="${TABLE}<td><details>${STAGES_FAILURES_LOGS[$i]}</details></td>"
-        fi
-        TABLE="${TABLE}</tr>"
-      done
-      TABLE="${TABLE}</table>"
-
-      git clone -b master --depth=1 https://github.com/commaai/ci-artifacts
-      cd ci-artifacts
-      git config --local user.email "user@comma.ai"
-      git config --local user.name "Vehicle Researcher"
-      git config --local url.https://$CI_ARTIFACTS_TOKEN@github.com/.insteadOf https://github.com/
-      git checkout -b "jenkins_test_report"
-      echo "$TABLE" >> jenkins_report
-      git add jenkins_report
-      git commit -m "jenkins report"
-      git push -f origin jenkins_test_report
-      '''
-
-      currentBuild.result = 'SUCCESS'
-      return
   }
 
   try {
