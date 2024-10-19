@@ -10,7 +10,7 @@ NC='\033[0m'
 COOKIE_JAR=/tmp/cookies
 CRUMB=$(curl -s --cookie-jar $COOKIE_JAR 'https://jenkins.comma.life/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)')
 
-TESTING_BRANCH="__jenkins_test_loop"
+TESTING_BRANCH="__jenkins_loop_test"
 API_ROUTE="https://jenkins.comma.life/job/openpilot/job/$TESTING_BRANCH"
 N=20
 TEST_BUILDS=()
