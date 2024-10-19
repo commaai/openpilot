@@ -7,7 +7,6 @@
 
 #include "common/clutil.h"
 #include "common/swaglog.h"
-#include "third_party/linux/include/msm_media_info.h"
 
 #include "system/camerad/cameras/spectra.h"
 
@@ -65,16 +64,13 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, SpectraCamera *
 
   const SensorInfo *sensor = cam->sensor.get();
 
-  camera_bufs = std::make_unique<VisionBuf[]>(frame_buf_count);
+  is_raw = cam->is_raw;
   camera_bufs_raw = std::make_unique<VisionBuf[]>(frame_buf_count);
-  camera_bufs_metadata = std::make_unique<FrameMetadata[]>(frame_buf_count);
+  frame_metadata = std::make_unique<FrameMetadata[]>(frame_buf_count);
 
   // RAW + final frames from ISP
   const int raw_frame_size = (sensor->frame_height + sensor->extra_height) * sensor->frame_stride;
   for (int i = 0; i < frame_buf_count; i++) {
-    camera_bufs[i].allocate(cam->yuv_size);
-    camera_bufs[i].init_cl(device_id, context);
-
     camera_bufs_raw[i].allocate(raw_frame_size);
     camera_bufs_raw[i].init_cl(device_id, context);
   }
@@ -95,7 +91,6 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, SpectraCamera *
 
 CameraBuf::~CameraBuf() {
   for (int i = 0; i < frame_buf_count; i++) {
-    camera_bufs[i].free();
     camera_bufs_raw[i].free();
   }
   if (imgproc) delete imgproc;
@@ -104,18 +99,22 @@ CameraBuf::~CameraBuf() {
 bool CameraBuf::acquire(int expo_time) {
   if (!safe_queue.try_pop(cur_buf_idx, 50)) return false;
 
-  if (camera_bufs_metadata[cur_buf_idx].frame_id == -1) {
+  if (frame_metadata[cur_buf_idx].frame_id == -1) {
     LOGE("no frame data? wtf");
     return false;
   }
 
-  cur_frame_data = camera_bufs_metadata[cur_buf_idx];
-  cur_yuv_buf = vipc_server->get_buffer(stream_type);
+  cur_frame_data = frame_metadata[cur_buf_idx];
   cur_camera_buf = &camera_bufs_raw[cur_buf_idx];
+  if (is_raw) {
+    cur_yuv_buf = vipc_server->get_buffer(stream_type);
 
-  double start_time = millis_since_boot();
-  imgproc->runKernel(camera_bufs_raw[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, out_img_width, out_img_height, expo_time);
-  cur_frame_data.processing_time = (millis_since_boot() - start_time) / 1000.0;
+    double start_time = millis_since_boot();
+    imgproc->runKernel(camera_bufs_raw[cur_buf_idx].buf_cl, cur_yuv_buf->buf_cl, out_img_width, out_img_height, expo_time);
+    cur_frame_data.processing_time = (millis_since_boot() - start_time) / 1000.0;
+  } else {
+    cur_yuv_buf = vipc_server->get_buffer(stream_type, cur_buf_idx);
+  }
 
   VisionIpcBufExtra extra = {
     cur_frame_data.frame_id,

@@ -50,13 +50,12 @@ def create_map(track_size=60):
 class MetaDriveBridge(SimulatorBridge):
   TICKS_PER_FRAME = 5
 
-  def __init__(self, dual_camera, high_quality, test_duration=math.inf, minimal_distance=0, test_run=False):
+  def __init__(self, dual_camera, high_quality, test_duration=math.inf, test_run=False):
     super().__init__(dual_camera, high_quality)
 
     self.should_render = False
     self.test_run = test_run
     self.test_duration = test_duration if self.test_run else math.inf
-    self.minimal_distance = minimal_distance if self.test_run else 0
 
   def spawn_world(self, queue: Queue):
     sensors = {
@@ -91,4 +90,4 @@ class MetaDriveBridge(SimulatorBridge):
       anisotropic_filtering=False
     )
 
-    return MetaDriveWorld(queue, config, self.test_duration, self.minimal_distance, self.test_run, self.dual_camera)
+    return MetaDriveWorld(queue, config, self.test_duration, self.test_run, self.dual_camera)

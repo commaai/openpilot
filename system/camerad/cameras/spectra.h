@@ -88,7 +88,7 @@ public:
 
 class SpectraCamera {
 public:
-  SpectraCamera(SpectraMaster *master, const CameraConfig &config);
+  SpectraCamera(SpectraMaster *master, const CameraConfig &config, bool raw);
   ~SpectraCamera();
 
   void camera_open(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
@@ -147,8 +147,7 @@ public:
   SpectraBuf bps_iq;
   SpectraBuf bps_striping;
 
-  int buf0_handle = 0;
-  int buf_handle[FRAME_BUF_COUNT] = {};
+  int buf_handle_yuv[FRAME_BUF_COUNT] = {};
   int buf_handle_raw[FRAME_BUF_COUNT] = {};
   int sync_objs[FRAME_BUF_COUNT] = {};
   int sync_objs_bps_out[FRAME_BUF_COUNT] = {};
@@ -157,6 +156,8 @@ public:
   uint64_t frame_id_last = 0;
   uint64_t idx_offset = 0;
   bool skipped = true;
+
+  bool is_raw;
 
   CameraBuf buf;
   MemoryManager mm;

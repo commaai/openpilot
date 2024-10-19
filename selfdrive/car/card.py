@@ -72,7 +72,6 @@ class Car:
     self.can_rcv_cum_timeout_counter = 0
 
     self.CC_prev = car.CarControl.new_message()
-    self.CS_prev = car.CarState.new_message()
     self.initialized_prev = False
 
     self.last_actuators_output = structs.CarControl.Actuators()
@@ -250,7 +249,6 @@ class Car:
       self.controls_update(CS, self.sm['carControl'])
 
     self.initialized_prev = initialized
-    self.CS_prev = CS.as_reader()
 
   def params_thread(self, evt):
     while not evt.is_set():

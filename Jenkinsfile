@@ -12,9 +12,11 @@ def retryWithDelay(int maxRetries, int delay, Closure body) {
 def device(String ip, String step_label, String cmd) {
   withCredentials([file(credentialsId: 'id_rsa', variable: 'key_file')]) {
     def ssh_cmd = """
-ssh -tt -o ConnectTimeout=5 -o ServerAliveInterval=5 -o ServerAliveCountMax=2 -o BatchMode=yes -o StrictHostKeyChecking=no -i ${key_file} 'comma@${ip}' /usr/bin/bash <<'END'
+ssh -o ConnectTimeout=5 -o ServerAliveInterval=5 -o ServerAliveCountMax=2 -o BatchMode=yes -o StrictHostKeyChecking=no -i ${key_file} 'comma@${ip}' exec /usr/bin/bash <<'END'
 
 set -e
+
+export TERM=xterm-256color
 
 shopt -s huponexit # kill all child processes when the shell exits
 
@@ -65,8 +67,6 @@ ln -snf ${env.TEST_DIR} /data/pythonpath
 
 cd ${env.TEST_DIR} || true
 ${cmd}
-exit 0
-
 END"""
 
     sh script: ssh_cmd, label: step_label
@@ -81,6 +81,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
 
     def extra = extra_env.collect { "export ${it}" }.join('\n');
     def branch = env.BRANCH_NAME ?: 'master';
+    def gitDiff = sh returnStdout: true, script: 'curl -s -H "Authorization: Bearer ${GITHUB_COMMENTS_TOKEN}" https://api.github.com/repos/commaai/openpilot/compare/master...${GIT_BRANCH} | jq .files[].filename', label: 'Getting changes'
 
     lock(resource: "", label: deviceType, inversePrecedence: true, variable: 'device_ip', quantity: 1, resourceSelectStrategy: 'random') {
       docker.image('ghcr.io/commaai/alpine-ssh').inside('--user=root') {
@@ -91,9 +92,9 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
             device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
           }
           steps.each { item ->
-            if (branch != "master" && item.size() == 3 && !hasPathChanged(item[2])) {
+            if (branch != "master" && item.size() == 3 && !hasPathChanged(gitDiff, item[2])) {
               println "Skipping ${item[0]}: no changes in ${item[2]}."
-              return;
+              return
             } else {
               device(device_ip, item[0], item[1])
             }
@@ -104,29 +105,13 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
   }
 }
 
-@NonCPS
-def hasPathChanged(List<String> paths) {
-  changedFiles = []
-  for (changeLogSet in currentBuild.changeSets) {
-    for (entry in changeLogSet.getItems()) {
-      for (file in entry.getAffectedFiles()) {
-        changedFiles.add(file.getPath())
-      }
-    }
-  }
-
-  env.CHANGED_FILES = changedFiles.join(" ")
-  if (currentBuild.number > 1) {
-    env.CHANGED_FILES += currentBuild.previousBuild.getBuildVariables().get("CHANGED_FILES")
-  }
-
+def hasPathChanged(String gitDiff, List<String> paths) {
   for (path in paths) {
-    if (env.CHANGED_FILES.contains(path)) {
-      return true;
+    if (gitDiff.contains(path)) {
+      return true
     }
   }
-
-  return false;
+  return false
 }
 
 def setupCredentials() {

@@ -50,7 +50,7 @@ public:
 
   float fl_pix = 0;
 
-  CameraState(SpectraMaster *master, const CameraConfig &config) : camera(master, config) {};
+  CameraState(SpectraMaster *master, const CameraConfig &config) : camera(master, config, true /*config.camera_num == 2*/) {};
   ~CameraState();
   void init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
   void update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain);
@@ -285,7 +285,7 @@ void camerad_thread() {
   std::vector<std::unique_ptr<CameraState>> cams;
   for (const auto &config : {ROAD_CAMERA_CONFIG, WIDE_ROAD_CAMERA_CONFIG, DRIVER_CAMERA_CONFIG}) {
     auto cam = std::make_unique<CameraState>(&m, config);
-    cam->init(&v, device_id ,ctx);
+    cam->init(&v, device_id, ctx);
     cams.emplace_back(std::move(cam));
   }
 
