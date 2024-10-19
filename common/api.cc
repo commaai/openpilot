@@ -3,6 +3,8 @@
 
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
+#include <openssl/evp.h>
+#include <openssl/sha.h>
 
 #include <cassert>
 #include <chrono>
@@ -37,28 +39,36 @@ std::string base64url_encode(const std::string &in) {
   return out;
 }
 
-RSA *get_rsa_private_key() {
-  static std::unique_ptr<RSA, decltype(&RSA_free)> rsa_private(nullptr, RSA_free);
+EVP_PKEY *get_rsa_private_key() {
+  static std::unique_ptr<EVP_PKEY, decltype(&EVP_PKEY_free)> rsa_private(nullptr, EVP_PKEY_free);
   if (!rsa_private) {
     FILE *fp = fopen(Path::rsa_file().c_str(), "rb");
     if (!fp) {
       std::cerr << "No RSA private key found, please run manager.py or registration.py" << std::endl;
       return nullptr;
     }
-    rsa_private.reset(PEM_read_RSAPrivateKey(fp, NULL, NULL, NULL));
+    rsa_private.reset(PEM_read_PrivateKey(fp, NULL, NULL, NULL));
     fclose(fp);
   }
   return rsa_private.get();
 }
 
 std::string rsa_sign(const std::string &data) {
-  RSA *rsa_private = get_rsa_private_key();
-  if (!rsa_private) return {};
+  EVP_PKEY *private_key = get_rsa_private_key();
+  if (!private_key) return {};
 
-  std::vector<uint8_t> sig(RSA_size(rsa_private));
-  unsigned int sig_len;
-  int ret = RSA_sign(NID_sha256, (unsigned char *)data.data(), data.size(),
-                     sig.data(), &sig_len, rsa_private);
+  EVP_MD_CTX *mdctx = EVP_MD_CTX_new();
+  assert(mdctx != nullptr);
+
+  std::vector<uint8_t> sig(EVP_PKEY_size(private_key));
+  uint32_t sig_len;
+
+  EVP_SignInit(mdctx, EVP_sha256());
+  EVP_SignUpdate(mdctx, data.data(), data.size());
+  int ret = EVP_SignFinal(mdctx, sig.data(), &sig_len, private_key);
+
+  EVP_MD_CTX_free(mdctx);
+
   assert(ret == 1);
   assert(sig.size() == sig_len);
   return std::string(sig.begin(), sig.begin() + sig_len);
