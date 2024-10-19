@@ -77,7 +77,7 @@ bool parseArgs(int argc, char *argv[], ReplayConfig &config) {
   };
 
   int opt, option_index = 0;
-  while ((opt = getopt_long(argc, argv, "a:b:c:s:x:d:p:", cli_options, &option_index)) != -1) {
+  while ((opt = getopt_long(argc, argv, "a:b:c:s:x:d:p:h", cli_options, &option_index)) != -1) {
     switch (opt) {
       case 'a': config.allow = QString(optarg).split(","); break;
       case 'b': config.block = QString(optarg).split(","); break;
