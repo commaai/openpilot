@@ -149,7 +149,7 @@ node {
                          'testing-closet*', 'hotfix-*']
   def excludeRegex = excludeBranches.join('|').replaceAll('\\*', '.*')
 
-  if (env.BRANCH_NAME != 'master') {
+  if (env.BRANCH_NAME != 'master' && env.BRANCH_NAME != '__jenkins_loop_test') {
     properties([
         disableConcurrentBuilds(abortPrevious: true)
     ])
