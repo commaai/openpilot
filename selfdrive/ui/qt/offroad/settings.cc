@@ -338,6 +338,10 @@ void DevicePanel::poweroff() {
 DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   hellolBtn = new ButtonControl("Hello World", "HAI WRLD");
   addItem(hellolBtn);
+
+  // SSH keys
+  addItem(new SshToggle());
+  addItem(new SshControl());
 }
 
 void SettingsWindow::showEvent(QShowEvent *event) {
