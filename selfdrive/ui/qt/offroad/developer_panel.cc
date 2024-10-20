@@ -18,7 +18,7 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   LongitudinalManeuverModeButton = new ButtonControl(tr("Longitudinal Maneuver Mode"), tr("MANEUVER"));
   addItem(LongitudinalManeuverModeButton);
   connect(LongitudinalManeuverModeButton, &ButtonControl::clicked, [=]() {
-    params.putBool("LongitudinalManeuverModeButton", true);
+    params.putBool("LongitudinalManeuverMode", true);
   });
 
   // Joystick and longitudinal maneuvers should be hidden on release branches
