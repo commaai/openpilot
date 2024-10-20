@@ -109,16 +109,18 @@ public:
 
     addItem(new LabelControl(tr("Developer Options"), tr("Settings for developers")));
 
+    // SSH Key Settings
     addItem(new SshToggle());
     addItem(new SshControl());
 
+    // Joystick Control
     ButtonControl *joystickBtn = new ButtonControl(tr("Joystick Control"), tr("RUN"));
-
     QObject::connect(joystickBtn, &ButtonControl::clicked, [=]() {
       std::system(("python " + std::string(getenv("OPENPILOT_PREFIX")) + "/tools/joystick/joystick_control.py").c_str());
     });
     addItem(joystickBtn);
 
+    // Longitudinal Maneuver Report Mode
     ButtonControl *longitudinalManeuverReportModeBtn = new ButtonControl(tr("Longitudinal Maneuver Report Mode"), tr("ACTIVATE"));
     QObject::connect(longitudinalManeuverReportModeBtn, &ButtonControl::clicked, [=]() {
       std::system("echo -n 1 > /data/params/d/LongitudinalManeuverMode");
