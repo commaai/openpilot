@@ -8,5 +8,7 @@ public:
   explicit DeveloperPanel(SettingsWindow *parent);
 
 private:
-  ButtonControl *hellolBtn;
+  Params params;
+  ButtonControl *joystickDebugModeButton;
+  ButtonControl *LongitudinalManeuverModeButton;
 };
