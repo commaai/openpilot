@@ -42,12 +42,12 @@ def setup_settings_device(click, pm: PubMaster):
 
 def setup_settings_toggles(click, pm: PubMaster):
   setup_settings_device(click, pm)
-  click(278, 760)
+  click(278, 672)
   time.sleep(UI_DELAY)
 
 def setup_settings_developer(click, pm: PubMaster):
   setup_settings_device(click, pm)
-  click(278, 760)
+  click(278, 810)
   time.sleep(UI_DELAY)
 
 def setup_onroad(click, pm: PubMaster):
