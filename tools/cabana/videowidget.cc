@@ -247,8 +247,9 @@ void Slider::paintEvent(QPaintEvent *ev) {
 
     QColor empty_color = palette().color(QPalette::Window);
     empty_color.setAlpha(160);
-    for (const auto &[n, seg] : replay->segments()) {
-      if (!(seg && seg->isLoaded()))
+    const auto event_data = replay->getEventData();
+    for (const auto &[n, _] : replay->route().segments()) {
+      if (!event_data->isSegmentLoaded(n))
         fillRange(n * 60.0, (n + 1) * 60.0, empty_color);
     }
   }
