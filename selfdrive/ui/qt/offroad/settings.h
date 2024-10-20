@@ -129,5 +129,20 @@ public:
       });
       addItem(longitudinalManeuverReportModeBtn);
     }
+
+    // Create a ZMQ toggle
+    bool zmqEnabled = qgetenv("ZMQ") == "1";
+    ButtonControl *zmqToggle = new ButtonControl(tr("Zero MQ Mode"), "");
+    zmqToggle->setText(zmqEnabled ? tr("ON") : tr("OFF"));
+    zmqToggle->setEnabled(true);
+
+    // Connect button click to toggle ZMQ state
+    QObject::connect(zmqToggle, &ButtonControl::clicked, [=]() {
+      bool newState = qgetenv("ZMQ") != "1";  // Toggle the state
+      qputenv("ZMQ", newState ? "1" : "0");
+      zmqToggle->setText(newState ? tr("ON") : tr("OFF"));
+    });
+
+    addItem(zmqToggle);
   }
 };

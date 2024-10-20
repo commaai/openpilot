@@ -143,6 +143,18 @@
         <source>ACTIVE</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Zero MQ Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ON</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>OFF</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DevicePanel</name>
