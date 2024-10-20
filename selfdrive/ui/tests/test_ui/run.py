@@ -180,6 +180,7 @@ CASES = {
   "pair_device": setup_pair_device,
   "settings_device": setup_settings_device,
   "settings_toggles": setup_settings_toggles,
+  "settings_developer": setup_settings_developer,
   "onroad": setup_onroad,
   "onroad_disengaged": setup_onroad_disengaged,
   "onroad_override": setup_onroad_override,
