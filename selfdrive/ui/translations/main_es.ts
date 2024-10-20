@@ -131,6 +131,18 @@
         <source>RUN</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Longitudinal Maneuver Report Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ACTIVATE</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ACTIVE</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DevicePanel</name>

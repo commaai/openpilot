@@ -118,5 +118,13 @@ public:
       std::system(("python " + std::string(getenv("OPENPILOT_PREFIX")) + "/tools/joystick/joystick_control.py").c_str());
     });
     addItem(joystickBtn);
+
+    ButtonControl *longitudinalManeuverReportModeBtn = new ButtonControl(tr("Longitudinal Maneuver Report Mode"), tr("ACTIVATE"));
+    QObject::connect(longitudinalManeuverReportModeBtn, &ButtonControl::clicked, [=]() {
+      std::system("echo -n 1 > /data/params/d/LongitudinalManeuverMode");
+      longitudinalManeuverReportModeBtn->setText(tr("ACTIVE"));
+      longitudinalManeuverReportModeBtn->setEnabled(false);
+    });
+    addItem(longitudinalManeuverReportModeBtn);
   }
 };
