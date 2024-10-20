@@ -123,6 +123,14 @@
         <source>Settings for developers</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Joystick Control</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>RUN</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DevicePanel</name>

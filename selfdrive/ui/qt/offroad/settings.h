@@ -111,5 +111,12 @@ public:
 
     addItem(new SshToggle());
     addItem(new SshControl());
+
+    ButtonControl *joystickBtn = new ButtonControl(tr("Joystick Control"), tr("RUN"));
+
+    QObject::connect(joystickBtn, &ButtonControl::clicked, [=]() {
+      std::system(("python " + std::string(getenv("OPENPILOT_PREFIX")) + "/tools/joystick/joystick_control.py").c_str());
+    });
+    addItem(joystickBtn);
   }
 };
