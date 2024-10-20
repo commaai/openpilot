@@ -110,7 +110,6 @@ public:
     addItem(new LabelControl(tr("Developer Options"), tr("Settings for developers")));
 
     // SSH Key Settings
-    addItem(new SshToggle());
     addItem(new SshControl());
 
     // Joystick Control

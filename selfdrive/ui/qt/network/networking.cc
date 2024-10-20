@@ -150,7 +150,6 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   list->addItem(ipLabel);
 
   // SSH keys
-  list->addItem(new SshToggle());
   list->addItem(new SshControl());
 
   // Roaming toggle
