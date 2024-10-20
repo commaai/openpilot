@@ -335,6 +335,11 @@ void DevicePanel::poweroff() {
   }
 }
 
+DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
+  hellolBtn = new ButtonControl("Hello World", "HAI WRLD");
+  addItem(hellolBtn);
+}
+
 void SettingsWindow::showEvent(QShowEvent *event) {
   setCurrentPanel(0);
 }
@@ -389,7 +394,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     {tr("Network"), networking},
     {tr("Toggles"), toggles},
     {tr("Software"), new SoftwarePanel(this)},
-    {tr("Developer"), new SoftwarePanel(this)},
+    {tr("Developer"), new DeveloperPanel(this)},
   };
 
   nav_btns = new QButtonGroup(this);
