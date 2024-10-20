@@ -98,12 +98,3 @@ private:
   Params params;
   ParamWatcher *fs_watch;
 };
-
-class DeveloperPanel : public ListWidget {
-  Q_OBJECT
-public:
-  explicit DeveloperPanel(SettingsWindow *parent);
-
-private:
-  ButtonControl *hellolBtn;
-};

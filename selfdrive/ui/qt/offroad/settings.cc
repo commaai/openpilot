@@ -13,7 +13,8 @@
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/widgets/prime.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
-#include "selfdrive/ui/qt/widgets/ssh_keys.h"
+// #include "selfdrive/ui/qt/widgets/ssh_keys.h"
+#include "selfdrive/ui/qt/offroad/developer_panel.h"
 
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   // param, title, desc, icon
@@ -333,15 +334,6 @@ void DevicePanel::poweroff() {
   } else {
     ConfirmationDialog::alert(tr("Disengage to Power Off"), this);
   }
-}
-
-DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
-  hellolBtn = new ButtonControl("Hello World", "HAI WRLD");
-  addItem(hellolBtn);
-
-  // SSH keys
-  addItem(new SshToggle());
-  addItem(new SshControl());
 }
 
 void SettingsWindow::showEvent(QShowEvent *event) {
