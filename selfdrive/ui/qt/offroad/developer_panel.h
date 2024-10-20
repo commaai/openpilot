@@ -9,6 +9,8 @@ public:
 
 private:
   Params params;
+  ButtonControl *sshControlButton;
   ButtonControl *joystickDebugModeButton;
   ButtonControl *LongitudinalManeuverModeButton;
+  ButtonControl *ZMQButton;
 };
