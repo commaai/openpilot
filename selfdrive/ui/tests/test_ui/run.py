@@ -45,6 +45,11 @@ def setup_settings_toggles(click, pm: PubMaster):
   click(278, 760)
   time.sleep(UI_DELAY)
 
+def setup_settings_developer(click, pm: PubMaster):
+  setup_settings_device(click, pm)
+  click(278, 760)
+  time.sleep(UI_DELAY)
+
 def setup_onroad(click, pm: PubMaster):
   vipc_server = VisionIpcServer("camerad")
   for stream_type, cam, _ in STREAMS:
