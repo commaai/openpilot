@@ -4,7 +4,7 @@
 #include "system/camerad/sensors/sensor.h"
 
 
-int build_initial_config(uint8_t *dst, const SensorInfo *s) {
+int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t> &patches) {
   uint8_t *start = dst;
 
   dst += write_random(dst, {
@@ -191,41 +191,17 @@ int build_initial_config(uint8_t *dst, const SensorInfo *s) {
     .DMISel = 24
   */
 
+  // gamma
   dst += write_cont(dst, 0x798, {
     0x00000000,
   });
-  /*
-  dst += write_dmi(dst, 256, 0xc24, 26);
-  dst += write_dmi(dst, 256, 0xc24, 28);
-  dst += write_dmi(dst, 256, 0xc24, 30);
-  */
-  /* TODO
-  cdm_dmi_cmd_t 580
-    .length = 255
-    .reserved = 33
-    .cmd = 10
-    .addr = 0
-    .DMIAddr = 3108
-    .DMISel = 26
-  */
-  /* TODO
-  cdm_dmi_cmd_t 580
-    .length = 255
-    .reserved = 33
-    .cmd = 10
-    .addr = 0
-    .DMIAddr = 3108
-    .DMISel = 28
-  */
-  /* TODO
-  cdm_dmi_cmd_t 580
-    .length = 255
-    .reserved = 33
-    .cmd = 10
-    .addr = 0
-    .DMIAddr = 3108
-    .DMISel = 30
-  */
+  uint64_t addr;
+  dst += write_dmi(dst, &addr, 256, 0xc24, 26);  // G
+  patches.push_back(addr - (uint64_t)start);
+  dst += write_dmi(dst, &addr, 256, 0xc24, 28);  // B
+  patches.push_back(addr - (uint64_t)start);
+  dst += write_dmi(dst, &addr, 256, 0xc24, 30);  // R
+  patches.push_back(addr - (uint64_t)start);
 
   dst += write_cont(dst, 0xf30, {
     0x00750259,
@@ -535,9 +511,11 @@ int build_first_update(uint8_t *dst) {
     .DMISel = 25
   */
 
+  /*
   dst += write_cont(dst, 0x798, {
     0x00000007,
   });
+  */
   /* TODO
   cdm_dmi_cmd_t 444
     .length = 255
@@ -649,7 +627,7 @@ int build_first_update(uint8_t *dst) {
   return dst - start;
 }
 
-int build_update(uint8_t *dst, const CameraConfig &cc, const SensorInfo *s, uint32_t *patch1, uint32_t *patch2, uint32_t *patch3) {
+int build_update(uint8_t *dst, const CameraConfig &cc, const SensorInfo *s, std::vector<uint32_t> &patches) {
   uint8_t *start = dst;
 
   dst += write_random(dst, {
