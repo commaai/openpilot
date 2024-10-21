@@ -12,6 +12,12 @@ from openpilot.tools.sim.bridge.metadrive.metadrive_process import (metadrive_pr
 from openpilot.tools.sim.lib.common import SimulatorState, World
 from openpilot.tools.sim.lib.camerad import W, H
 
+@dataclass
+class PreviousState:
+    timestamp: float = 0.0
+    velocity: vec3 = None
+    bearing: float = 0.0
+    position: tuple[float, float] = (0.0, 0.0)
 
 class MetaDriveWorld(World):
   def __init__(self, status_q, config, test_duration, test_run, dual_camera=False):
