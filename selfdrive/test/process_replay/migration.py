@@ -108,7 +108,7 @@ def migrate_longitudinalPlan(msgs):
     if msg.which() != 'longitudinalPlan':
       continue
     new_msg = msg.as_builder()
-    new_msg.longitudinalPlan.aTarget = get_accel_from_plan(CP, msg.longitudinalPlan.speeds, msg.longitudinalPlan.accels)
+    new_msg.longitudinalPlan.aTarget = get_accel_from_plan(CP, msg.longitudinalPlan.speeds, msg.longitudinalPlan.accels)[0]
     ops.append((index, new_msg.as_reader()))
   return ops, [], []
 
