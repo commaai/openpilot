@@ -9,8 +9,11 @@ from multiprocessing import Pipe, Array
 from openpilot.tools.sim.bridge.common import QueueMessage, QueueMessageType
 from openpilot.tools.sim.bridge.metadrive.metadrive_process import (metadrive_process, metadrive_simulation_state,
                                                                     metadrive_vehicle_state)
-from openpilot.tools.sim.lib.common import SimulatorState, World
+from openpilot.tools.sim.lib.common import SimulatorState, World , vec3
 from openpilot.tools.sim.lib.camerad import W, H
+from dataclasses import dataclass
+import math
+
 
 @dataclass
 class PreviousState:
@@ -20,51 +23,68 @@ class PreviousState:
     position: tuple[float, float] = (0.0, 0.0)
 
 class MetaDriveWorld(World):
-  def __init__(self, status_q, config, test_duration, test_run, dual_camera=False):
-    super().__init__(dual_camera)
-    self.status_q = status_q
-    self.camera_array = Array(ctypes.c_uint8, W*H*3)
-    self.road_image = np.frombuffer(self.camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
-    self.wide_camera_array = None
-    if dual_camera:
-      self.wide_camera_array = Array(ctypes.c_uint8, W*H*3)
-      self.wide_road_image = np.frombuffer(self.wide_camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
+    def __init__(self, status_q, config, test_duration, test_run, dual_camera=False):
+        super().__init__(dual_camera)
+        self.status_q = status_q
+        self.camera_array = Array(ctypes.c_uint8, W*H*3)
+        self.road_image = np.frombuffer(self.camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
+        self.wide_camera_array = None
+        if dual_camera:
+            self.wide_camera_array = Array(ctypes.c_uint8, W*H*3)
+            self.wide_road_image = np.frombuffer(self.wide_camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
 
-    self.controls_send, self.controls_recv = Pipe()
-    self.simulation_state_send, self.simulation_state_recv = Pipe()
-    self.vehicle_state_send, self.vehicle_state_recv = Pipe()
+        self.controls_send, self.controls_recv = Pipe()
+        self.simulation_state_send, self.simulation_state_recv = Pipe()
+        self.vehicle_state_send, self.vehicle_state_recv = Pipe()
 
-    self.exit_event = multiprocessing.Event()
-    self.op_engaged = multiprocessing.Event()
+        self.exit_event = multiprocessing.Event()
+        self.op_engaged = multiprocessing.Event()
 
-    self.test_run = test_run
+        self.test_run = test_run
 
-    self.first_engage = None
-    self.last_check_timestamp = 0
-    self.distance_moved = 0
+        self.first_engage = None
+        self.last_check_timestamp = 0
+        self.distance_moved = 0
 
-    self.metadrive_process = multiprocessing.Process(name="metadrive process", target=
-                              functools.partial(metadrive_process, dual_camera, config,
-                                                self.camera_array, self.wide_camera_array, self.image_lock,
-                                                self.controls_recv, self.simulation_state_send,
-                                                self.vehicle_state_send, self.exit_event, self.op_engaged, test_duration, self.test_run))
+        self.metadrive_process = multiprocessing.Process(
+            name="metadrive process",
+            target=functools.partial(
+                metadrive_process,
+                dual_camera,
+                config,
+                self.camera_array,
+                self.wide_camera_array,
+                self.image_lock,
+                self.controls_recv,
+                self.simulation_state_send,
+                self.vehicle_state_send,
+                self.exit_event,
+                self.op_engaged,
+                test_duration,
+                self.test_run
+            )
+        )
 
-    self.metadrive_process.start()
-    self.status_q.put(QueueMessage(QueueMessageType.START_STATUS, "starting"))
+        self.metadrive_process.start()
+        self.status_q.put(QueueMessage(QueueMessageType.START_STATUS, "starting"))
 
-    print("----------------------------------------------------------")
-    print("---- Spawning Metadrive world, this might take awhile ----")
-    print("----------------------------------------------------------")
+        print("----------------------------------------------------------")
+        print("---- Spawning Metadrive world, this might take awhile ----")
+        print("----------------------------------------------------------")
 
-    self.vehicle_last_pos = self.vehicle_state_recv.recv().position # wait for a state message to ensure metadrive is launched
-    self.status_q.put(QueueMessage(QueueMessageType.START_STATUS, "started"))
+        # Wait for initial state message to ensure metadrive is launched
+        self.vehicle_last_pos = self.vehicle_state_recv.recv().position
+        self.status_q.put(QueueMessage(QueueMessageType.START_STATUS, "started"))
 
-    self.steer_ratio = 15
-    self.vc = [0.0,0.0]
-    self.reset_time = 0
-    self.should_reset = False
+        self.steer_ratio = 15
+        self.vc = [0.0, 0.0]
+        self.reset_time = 0
+        self.should_reset = False
 
-  def calculate_imu_values(self, curr_velocity: vec3, curr_bearing: float,
+        # Initialize state tracking for IMU calculations
+        self.prev_state = PreviousState()
+
+    def calculate_imu_values(self, curr_velocity: vec3, curr_bearing: float,
                            curr_pos: tuple[float, float], curr_time: float) -> tuple[vec3, vec3]:
         """
         Calculate IMU accelerometer and gyroscope values from vehicle state.
@@ -107,29 +127,29 @@ class MetaDriveWorld(World):
 
         return vec3(adjusted_accel_x, adjusted_accel_y, accel_z), vec3(0, 0, angular_velocity_z)
 
-  def apply_controls(self, steer_angle, throttle_out, brake_out):
-    if (time.monotonic() - self.reset_time) > 2:
-      self.vc[0] = steer_angle
+    def apply_controls(self, steer_angle, throttle_out, brake_out):
+        if (time.monotonic() - self.reset_time) > 2:
+            self.vc[0] = steer_angle
 
-      if throttle_out:
-        self.vc[1] = throttle_out
-      else:
-        self.vc[1] = -brake_out
-    else:
-      self.vc[0] = 0
-      self.vc[1] = 0
+            if throttle_out:
+                self.vc[1] = throttle_out
+            else:
+                self.vc[1] = -brake_out
+        else:
+            self.vc[0] = 0
+            self.vc[1] = 0
 
-    self.controls_send.send([*self.vc, self.should_reset])
-    self.should_reset = False
+        self.controls_send.send([*self.vc, self.should_reset])
+        self.should_reset = False
 
-  def read_state(self):
-    while self.simulation_state_recv.poll(0):
-      md_state: metadrive_simulation_state = self.simulation_state_recv.recv()
-      if md_state.done:
-        self.status_q.put(QueueMessage(QueueMessageType.TERMINATION_INFO, md_state.done_info))
-        self.exit_event.set()
+    def read_state(self):
+        while self.simulation_state_recv.poll(0):
+            md_state: metadrive_simulation_state = self.simulation_state_recv.recv()
+            if md_state.done:
+                self.status_q.put(QueueMessage(QueueMessageType.TERMINATION_INFO, md_state.done_info))
+                self.exit_event.set()
 
-def read_sensors(self, state: SimulatorState):
+    def read_sensors(self, state: SimulatorState):
         while self.vehicle_state_recv.poll(0):
             md_vehicle: metadrive_vehicle_state = self.vehicle_state_recv.recv()
             curr_pos = md_vehicle.position
@@ -186,17 +206,18 @@ def read_sensors(self, state: SimulatorState):
                 self.last_check_timestamp = curr_time
                 self.distance_moved = 0
                 self.vehicle_last_pos = curr_pos
-  def read_cameras(self):
-    pass
 
-  def tick(self):
-    pass
+    def read_cameras(self):
+        pass
 
-  def reset(self):
+    def tick(self):
+        pass
+
+    def reset(self):
         self.should_reset = True
         self.prev_state = PreviousState()  # Reset IMU state tracking on vehicle reset
 
-  def close(self, reason: str):
-    self.status_q.put(QueueMessage(QueueMessageType.CLOSE_STATUS, reason))
-    self.exit_event.set()
-    self.metadrive_process.join()
+    def close(self, reason: str):
+        self.status_q.put(QueueMessage(QueueMessageType.CLOSE_STATUS, reason))
+        self.exit_event.set()
+        self.metadrive_process.join()
