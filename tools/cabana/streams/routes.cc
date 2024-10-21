@@ -56,7 +56,7 @@ RoutesDialog::RoutesDialog(QWidget *parent) : QDialog(parent) {
   // Send request to fetch devices
   HttpRequest *http = new HttpRequest(this, !Hardware::PC());
   QObject::connect(http, &HttpRequest::requestDone, this, &RoutesDialog::parseDeviceList);
-  http->sendRequest(CommaApi::BASE_URL + "/v1/me/devices/");
+  http->sendRequest(QString::fromStdString(CommaApi::BASE_URL) + "/v1/me/devices/");
 }
 
 void RoutesDialog::parseDeviceList(const QString &json, bool success, QNetworkReply::NetworkError err) {
@@ -89,7 +89,7 @@ void RoutesDialog::fetchRoutes() {
   auto dongle_id = device_list_->currentData().toString();
   QDateTime current = QDateTime::currentDateTime();
   QString url = QString("%1/v1/devices/%2/routes_segments?start=%3&end=%4")
-                    .arg(CommaApi::BASE_URL).arg(dongle_id)
+                    .arg(CommaApi::BASE_URL.c_str()).arg(dongle_id)
                     .arg(current.addDays(-(period_selector_->currentData().toInt())).toMSecsSinceEpoch())
                     .arg(current.toMSecsSinceEpoch());
   http->sendRequest(url);
