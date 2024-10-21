@@ -22,8 +22,9 @@ const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 
 // CSLDeviceType/CSLPacketOpcodesIFE from camx
 // cam_packet_header.op_code = (device << 24) | (opcode);
-#define CSLDeviceTypeImageSensor (0x1 << 24)
-#define CSLDeviceTypeIFE         (0xF << 24)
+#define CSLDeviceTypeImageSensor (0x01 << 24)
+#define CSLDeviceTypeIFE         (0x0F << 24)
+#define CSLDeviceTypeBPS         (0x10 << 24)
 #define OpcodesIFEInitialConfig  0x0
 #define OpcodesIFEUpdate         0x1
 
