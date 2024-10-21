@@ -15,7 +15,7 @@
 #include "tools/replay/camera.h"
 #include "tools/replay/route.h"
 
-const QString DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19";
+#define DEMO_ROUTE "a2a0ccea32023010|2023-07-27--13-01-19"
 
 // one segment uses about 100M of memory
 constexpr int MIN_SEGMENTS_CACHE = 5;
@@ -43,14 +43,15 @@ enum class FindFlag {
 
 enum class TimelineType { None, Engaged, AlertInfo, AlertWarning, AlertCritical, UserFlag };
 typedef bool (*replayEventFilter)(const Event *, void *);
+typedef std::map<int, std::unique_ptr<Segment>> SegmentMap;
 Q_DECLARE_METATYPE(std::shared_ptr<LogReader>);
 
 class Replay : public QObject {
   Q_OBJECT
 
 public:
-  Replay(QString route, QStringList allow, QStringList block, SubMaster *sm = nullptr,
-         uint32_t flags = REPLAY_FLAG_NONE, QString data_dir = "", QObject *parent = 0);
+  Replay(const std::string &route, std::vector<std::string> allow, std::vector<std::string> block, SubMaster *sm = nullptr,
+         uint32_t flags = REPLAY_FLAG_NONE, const std::string &data_dir = "", QObject *parent = 0);
   ~Replay();
   bool load();
   RouteLoadError lastRouteError() const { return route_->lastError(); }
@@ -82,8 +83,7 @@ public:
   inline double maxSeconds() const { return max_seconds_; }
   inline void setSpeed(float speed) { speed_ = speed; }
   inline float getSpeed() const { return speed_; }
-  inline const std::vector<Event> *events() const { return &events_; }
-  inline const std::map<int, std::unique_ptr<Segment>> &segments() const { return segments_; }
+  inline const SegmentMap &segments() const { return segments_; }
   inline const std::string &carFingerprint() const { return car_fingerprint_; }
   inline const std::vector<std::tuple<double, double, TimelineType>> getTimeline() {
     std::lock_guard lk(timeline_lock);
@@ -102,7 +102,6 @@ protected slots:
   void segmentLoadFinished(bool success);
 
 protected:
-  typedef std::map<int, std::unique_ptr<Segment>> SegmentMap;
   std::optional<uint64_t> find(FindFlag flag);
   void pauseStreamThread();
   void startStream(const Segment *cur_segment);

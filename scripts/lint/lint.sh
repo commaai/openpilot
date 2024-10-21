@@ -52,6 +52,7 @@ function run_tests() {
   run "check_added_large_files" python3 -m pre_commit_hooks.check_added_large_files --enforce-all $ALL_FILES --maxkb=120
   run "check_shebang_scripts_are_executable" python3 -m pre_commit_hooks.check_shebang_scripts_are_executable $ALL_FILES
   run "check_shebang_format" $DIR/check_shebang_format.sh $ALL_FILES
+  run "check_nomerge_comments" $DIR/check_nomerge_comments.sh $ALL_FILES
 
   if [[ -z "$FAST" ]]; then
     run "mypy" mypy $PYTHON_FILES

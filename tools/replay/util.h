@@ -4,6 +4,8 @@
 #include <deque>
 #include <functional>
 #include <string>
+#include <string_view>
+#include <vector>
 #include "cereal/messaging/messaging.h"
 
 enum CameraType {
@@ -57,3 +59,6 @@ typedef std::function<void(uint64_t cur, uint64_t total, bool success)> Download
 void installDownloadProgressHandler(DownloadProgressHandler);
 bool httpDownload(const std::string &url, const std::string &file, size_t chunk_size = 0, std::atomic<bool> *abort = nullptr);
 std::string formattedDataSize(size_t size);
+std::vector<std::string> split(std::string_view source, char delimiter);
+std::string join(const std::vector<std::string> &elements, char separator);
+std::string extractFileName(const std::string& file);
