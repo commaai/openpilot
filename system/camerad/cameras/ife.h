@@ -7,9 +7,6 @@
 int build_initial_config(uint8_t *dst, const SensorInfo *s) {
   uint8_t *start = dst;
 
-  // values are very different from the update one,
-  // so they probably don't matter?
-
   dst += write_random(dst, {
     0x2c, 0xffffffff,
     0x30, 0xffffffff,
@@ -179,7 +176,7 @@ int build_initial_config(uint8_t *dst, const SensorInfo *s) {
     0x08000066,
   });
 
-  dst += write_cont(dst, 0x760, s->ife_color_correct_array);
+  dst += write_cont(dst, 0x760, s->color_correct_matrix);
 
   dst += write_cont(dst, 0x794, {
     0x00000000,

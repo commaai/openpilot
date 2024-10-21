@@ -119,7 +119,7 @@ AR0231::AR0231() {
   target_grey_factor = 1.0;
 
   black_level = 168;
-  ife_color_correct_array = {
+  color_correct_matrix = {
     0x000000af, 0x00000ff9, 0x00000fd8,
     0x00000fbc, 0x000000bb, 0x00000009,
     0x00000fb6, 0x00000fe0, 0x000000ea,

@@ -63,7 +63,7 @@ OX03C10::OX03C10() {
   target_grey_factor = 0.01;
 
   black_level = 64;
-  ife_color_correct_array = {
+  color_correct_matrix = {
     0x000000b6, 0x00000ff1, 0x00000fda,
     0x00000fcc, 0x000000b9, 0x00000ffb,
     0x00000fc2, 0x00000ff6, 0x000000c9,
