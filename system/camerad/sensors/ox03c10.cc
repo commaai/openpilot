@@ -35,7 +35,6 @@ OX03C10::OX03C10() {
 
   start_reg_array.assign(std::begin(start_reg_array_ox03c10), std::end(start_reg_array_ox03c10));
   init_reg_array.assign(std::begin(init_array_ox03c10), std::end(init_array_ox03c10));
-  ife_color_correct_array.assign(std::begin(ife_cc_ox03c10), std::end(ife_cc_ox03c10));
   probe_reg_addr = 0x300a;
   probe_expected_data = 0x5803;
   bits_per_pixel = 12;
@@ -64,6 +63,11 @@ OX03C10::OX03C10() {
   target_grey_factor = 0.01;
 
   black_level = 64;
+  ife_color_correct_array = {
+    0x000000b6, 0x00000ff1, 0x00000fda,
+    0x00000fcc, 0x000000b9, 0x00000ffb,
+    0x00000fc2, 0x00000ff6, 0x000000c9,
+  };
 }
 
 std::vector<i2c_random_wr_payload> OX03C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {
