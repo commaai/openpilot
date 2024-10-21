@@ -114,6 +114,81 @@
     </message>
 </context>
 <context>
+    <name>DeveloperPanel</name>
+    <message>
+        <source>Updates are only downloaded while the car is off.</source>
+        <translation type="obsolete">Actualizaciones solo se descargan con el auto apagado.</translation>
+    </message>
+    <message>
+        <source>Current Version</source>
+        <translation type="obsolete">Versión Actual</translation>
+    </message>
+    <message>
+        <source>Download</source>
+        <translation type="obsolete">Descargar</translation>
+    </message>
+    <message>
+        <source>CHECK</source>
+        <translation type="obsolete">VERIFICAR</translation>
+    </message>
+    <message>
+        <source>Install Update</source>
+        <translation type="obsolete">Actualizar</translation>
+    </message>
+    <message>
+        <source>INSTALL</source>
+        <translation type="obsolete">INSTALAR</translation>
+    </message>
+    <message>
+        <source>Target Branch</source>
+        <translation type="obsolete">Rama objetivo</translation>
+    </message>
+    <message>
+        <source>SELECT</source>
+        <translation type="obsolete">SELECCIONAR</translation>
+    </message>
+    <message>
+        <source>Select a branch</source>
+        <translation type="obsolete">Selecione una rama</translation>
+    </message>
+    <message>
+        <source>Uninstall %1</source>
+        <translation type="obsolete">Desinstalar %1</translation>
+    </message>
+    <message>
+        <source>UNINSTALL</source>
+        <translation type="obsolete">DESINSTALAR</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to uninstall?</source>
+        <translation type="obsolete">¿Seguro qué desea desinstalar?</translation>
+    </message>
+    <message>
+        <source>Uninstall</source>
+        <translation type="obsolete">Desinstalar</translation>
+    </message>
+    <message>
+        <source>failed to check for update</source>
+        <translation type="obsolete">no se pudo buscar actualizaciones</translation>
+    </message>
+    <message>
+        <source>DOWNLOAD</source>
+        <translation type="obsolete">DESCARGAR</translation>
+    </message>
+    <message>
+        <source>update available</source>
+        <translation type="obsolete">actualización disponible</translation>
+    </message>
+    <message>
+        <source>never</source>
+        <translation type="obsolete">nunca</translation>
+    </message>
+    <message>
+        <source>up to date, last checked %1</source>
+        <translation type="obsolete">actualizado, último chequeo %1</translation>
+    </message>
+</context>
+<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -601,6 +676,10 @@ Esto puede tardar un minuto.</translation>
     <message>
         <source>Software</source>
         <translation>Software</translation>
+    </message>
+    <message>
+        <source>Developer</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
