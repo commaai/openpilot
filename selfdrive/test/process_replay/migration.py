@@ -98,11 +98,9 @@ def migrate_longitudinalPlan(msgs):
   ops = []
 
   needs_migration = all(msg.longitudinalPlan.aTarget == 0.0 for _, msg in msgs if msg.which() == 'longitudinalPlan')
-  if not needs_migration:
-    return [], [], []
-
   CP = next((m.carParams for _, m in msgs if m.which() == 'carParams'), None)
-  assert CP is not None, "carParams message not found"
+  if not needs_migration or CP is None:
+    return [], [], []
 
   for index, msg in msgs:
     if msg.which() != 'longitudinalPlan':
