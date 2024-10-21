@@ -25,10 +25,10 @@ OS04C10::OS04C10() {
   pixel_size_mm = 0.004;
   data_word = false;
 
-  hdr_offset = 64 * 2 + 8; // stagger
+  // hdr_offset = 64 * 2 + 8; // stagger
   frame_width = 1344;
-  frame_height = 760 * 2 + hdr_offset;
-  frame_stride = (frame_width * 10 / 8); // no alignment
+  frame_height = 760; //760 * 2 + hdr_offset;
+  frame_stride = (frame_width * 12 / 8); // no alignment
 
   extra_height = 0;
   frame_offset = 0;
@@ -37,9 +37,9 @@ OS04C10::OS04C10() {
   init_reg_array.assign(std::begin(init_array_os04c10), std::end(init_array_os04c10));
   probe_reg_addr = 0x300a;
   probe_expected_data = 0x5304;
-  bits_per_pixel = 10;
-  mipi_format = CAM_FORMAT_MIPI_RAW_10;
-  frame_data_type = 0x2b;
+  bits_per_pixel = 12;
+  mipi_format = CAM_FORMAT_MIPI_RAW_12;
+  frame_data_type = 0x2c;
   mclk_frequency = 24000000; // Hz
 
   dc_gain_factor = 1;
