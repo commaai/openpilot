@@ -194,6 +194,11 @@ int build_initial_config(uint8_t *dst, const SensorInfo *s) {
   dst += write_cont(dst, 0x798, {
     0x00000000,
   });
+  /*
+  dst += write_dmi(dst, 256, 0xc24, 26);
+  dst += write_dmi(dst, 256, 0xc24, 28);
+  dst += write_dmi(dst, 256, 0xc24, 30);
+  */
   /* TODO
   cdm_dmi_cmd_t 580
     .length = 255
@@ -644,7 +649,7 @@ int build_first_update(uint8_t *dst) {
   return dst - start;
 }
 
-int build_update(uint8_t *dst, const CameraConfig &cc, const SensorInfo *s) {
+int build_update(uint8_t *dst, const CameraConfig &cc, const SensorInfo *s, uint32_t *patch1, uint32_t *patch2, uint32_t *patch3) {
   uint8_t *start = dst;
 
   dst += write_random(dst, {
@@ -701,7 +706,7 @@ int build_update(uint8_t *dst, const CameraConfig &cc, const SensorInfo *s) {
   });
 
   dst += write_cont(dst, 0x48, {
-    0b10,
+    (1 << 3) | (1 << 1),
   });
 
   dst += write_cont(dst, 0x4c, {
