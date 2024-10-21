@@ -129,43 +129,63 @@ class MetaDriveWorld(World):
         self.status_q.put(QueueMessage(QueueMessageType.TERMINATION_INFO, md_state.done_info))
         self.exit_event.set()
 
-  def read_sensors(self, state: SimulatorState):
-    while self.vehicle_state_recv.poll(0):
-      md_vehicle: metadrive_vehicle_state = self.vehicle_state_recv.recv()
-      curr_pos = md_vehicle.position
+def read_sensors(self, state: SimulatorState):
+        while self.vehicle_state_recv.poll(0):
+            md_vehicle: metadrive_vehicle_state = self.vehicle_state_recv.recv()
+            curr_pos = md_vehicle.position
+            curr_time = time.monotonic()
 
-      state.velocity = md_vehicle.velocity
-      state.bearing = md_vehicle.bearing
-      state.steering_angle = md_vehicle.steering_angle
-      state.gps.from_xy(curr_pos)
-      state.valid = True
+            # Calculate IMU values
+            accelerometer, gyroscope = self.calculate_imu_values(
+                md_vehicle.velocity,
+                md_vehicle.bearing,
+                curr_pos,
+                curr_time
+            )
 
-      is_engaged = state.is_engaged
-      if is_engaged and self.first_engage is None:
-        self.first_engage = time.monotonic()
-        self.op_engaged.set()
+            # Update simulator state
+            state.velocity = md_vehicle.velocity
+            state.bearing = md_vehicle.bearing
+            state.steering_angle = md_vehicle.steering_angle
+            state.gps.from_xy(curr_pos)
 
-      # check moving 5 seconds after engaged, doesn't move right away
-      after_engaged_check = is_engaged and time.monotonic() - self.first_engage >= 5 and self.test_run
+            # Update IMU state
+            state.imu.accelerometer = accelerometer
+            state.imu.gyroscope = gyroscope
+            state.imu.bearing = md_vehicle.bearing
 
-      x_dist = abs(curr_pos[0] - self.vehicle_last_pos[0])
-      y_dist = abs(curr_pos[1] - self.vehicle_last_pos[1])
-      dist_threshold = 1
-      if x_dist >= dist_threshold or y_dist >= dist_threshold: # position not the same during staying still, > threshold is considered moving
-        self.distance_moved += x_dist + y_dist
+            state.valid = True
 
-      time_check_threshold = 30
-      current_time = time.monotonic()
-      since_last_check = current_time - self.last_check_timestamp
-      if since_last_check >= time_check_threshold:
-        if after_engaged_check and self.distance_moved == 0:
-          self.status_q.put(QueueMessage(QueueMessageType.TERMINATION_INFO, {"vehicle_not_moving" : True}))
-          self.exit_event.set()
+            # Store current state for next iteration
+            self.prev_state.timestamp = curr_time
+            self.prev_state.velocity = md_vehicle.velocity
+            self.prev_state.bearing = md_vehicle.bearing
+            self.prev_state.position = curr_pos
 
-        self.last_check_timestamp = current_time
-        self.distance_moved = 0
-        self.vehicle_last_pos = curr_pos
+            # Engagement and movement checks
+            is_engaged = state.is_engaged
+            if is_engaged and self.first_engage is None:
+                self.first_engage = curr_time
+                self.op_engaged.set()
 
+            after_engaged_check = is_engaged and curr_time - self.first_engage >= 5 and self.test_run
+
+            x_dist = abs(curr_pos[0] - self.vehicle_last_pos[0])
+            y_dist = abs(curr_pos[1] - self.vehicle_last_pos[1])
+            dist_threshold = 1
+            if x_dist >= dist_threshold or y_dist >= dist_threshold:
+                self.distance_moved += x_dist + y_dist
+
+            time_check_threshold = 30
+            since_last_check = curr_time - self.last_check_timestamp
+            if since_last_check >= time_check_threshold:
+                if after_engaged_check and self.distance_moved == 0:
+                    self.status_q.put(QueueMessage(QueueMessageType.TERMINATION_INFO, {"vehicle_not_moving": True}))
+                    self.exit_event.set()
+
+                self.last_check_timestamp = curr_time
+                self.distance_moved = 0
+                self.vehicle_last_pos = curr_pos
   def read_cameras(self):
     pass
 
