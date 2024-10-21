@@ -131,6 +131,22 @@
         <source>MANEUVER</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Are you sure you want to openpilot in JoystickDebugMode?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Joystick</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Are you sure you want to openpilot in LongitudinalManeuverMode?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Maneuver</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DevicePanel</name>

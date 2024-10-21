@@ -26,19 +26,12 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   addItem(LongitudinalManeuverModeButton);
 
-  ZMQButton = new ButtonControl(tr("Zero MQ Mode"), tr("ZMQ=1"));
-  connect(ZMQButton, &ButtonControl::clicked, [=]() {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to put openpilot in ZMQ mode?"), tr("ZMQ=1"), this)) {
-      qputenv("ZMQ", "1");
-    }
-  });
-  addItem(ZMQButton);
-
   // Joystick and longitudinal maneuvers should be hidden on release branches
+  // also the buttons should be not available to push in onroad state
   const bool is_release = params.getBool("IsReleaseBranch");
   QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
     for (auto btn : findChildren<ButtonControl *>()) {
-      if (!(btn == sshControlButton || btn == ZMQButton)) {
+      if (btn != sshControlButton) {
         btn->setVisible(!is_release);
       }
       btn->setEnabled(offroad);
