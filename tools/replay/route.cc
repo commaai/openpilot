@@ -1,14 +1,12 @@
 #include "tools/replay/route.h"
 
-#include <QDir>
-#include <QEventLoop>
-#include <QJsonArray>
-#include <QJsonDocument>
 #include <QtConcurrent>
 #include <array>
 #include <filesystem>
 #include <regex>
 
+#include <curl/curl.h>
+#include "third_party/json11/json11.hpp"
 #include "selfdrive/ui/qt/api.h"
 #include "system/hardware/hw.h"
 #include "tools/replay/replay.h"
@@ -70,42 +68,72 @@ bool Route::load() {
 }
 
 bool Route::loadFromServer(int retries) {
+  CURLcode res;
+  CURL *curl = curl_easy_init();
+  assert(curl);
+
+  std::string readBuffer;
+  std::string url = CommaApi::BASE_URL.toStdString() + "/v1/route/" + route_.str + "/files";
+
+  // Set up the lambda for the write callback
+  // The '+' makes the lambda non-capturing, allowing it to be used as a C function pointer
+  auto writeCallback = +[](char *contents, size_t size, size_t nmemb, std::string *userp) ->size_t{
+    size_t totalSize = size * nmemb;
+    userp->append((char *)contents, totalSize);
+    return totalSize;
+  };
+
   for (int i = 1; i <= retries; ++i) {
-    QString result;
-    QEventLoop loop;
-    HttpRequest http(nullptr, !Hardware::PC());
-    QObject::connect(&http, &HttpRequest::requestDone, [&loop, &result](const QString &json, bool success, QNetworkReply::NetworkError err) {
-      result = json;
-      loop.exit((int)err);
-    });
-    http.sendRequest(CommaApi::BASE_URL + "/v1/route/" + QString::fromStdString(route_.str) + "/files");
-    auto err = (QNetworkReply::NetworkError)loop.exec();
-    if (err == QNetworkReply::NoError) {
-      return loadFromJson(result);
-    } else if (err == QNetworkReply::ContentAccessDenied || err == QNetworkReply::AuthenticationRequiredError) {
-      rWarning(">>  Unauthorized. Authenticate with tools/lib/auth.py  <<");
-      err_ = RouteLoadError::AccessDenied;
-      return false;
-    } else if (err == QNetworkReply::ContentNotFoundError) {
-      rWarning("The specified route could not be found on the server.");
-      err_ = RouteLoadError::FileNotFound;
-      return false;
+    curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, writeCallback);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &readBuffer);
+    curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+
+    res = curl_easy_perform(curl);
+
+    if (res == CURLE_OK) {
+      return loadFromJson(readBuffer);
     } else {
-      err_ = RouteLoadError::NetworkError;
+      long response_code;
+      curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &response_code);
+      if (response_code == 401) {
+        rWarning(">> Unauthorized. Authenticate with tools/lib/auth.py <<");
+        err_ = RouteLoadError::AccessDenied;
+        break;
+      } else if (response_code == 404) {
+        rWarning("The specified route could not be found on the server.");
+        err_ = RouteLoadError::FileNotFound;
+        break;
+      } else {
+        err_ = RouteLoadError::NetworkError;
+        rWarning("CURL error: %s", curl_easy_strerror(res));
+      }
     }
+
     rWarning("Retrying %d/%d", i, retries);
     util::sleep_for(3000);
+    readBuffer.clear();  // Clear the buffer for the next request
   }
+
+  curl_easy_cleanup(curl);
   return false;
 }
 
-bool Route::loadFromJson(const QString &json) {
-  QRegExp rx(R"(\/(\d+)\/)");
-  for (const auto &value : QJsonDocument::fromJson(json.trimmed().toUtf8()).object()) {
-    for (const auto &url : value.toArray()) {
-      QString url_str = url.toString();
-      if (rx.indexIn(url_str) != -1) {
-        addFileToSegment(rx.cap(1).toInt(), url_str.toStdString());
+bool Route::loadFromJson(const std::string &json) {
+  const static std::regex rx(R"(\/(\d+)\/)");
+  std::string err;
+  auto jsonData = json11::Json::parse(json, err);
+  if (!err.empty()) {
+    rWarning("JSON parsing error: %s", err.c_str());
+    return false;
+  }
+  for (const auto &value : jsonData.object_items()) {
+    const auto &urlArray = value.second.array_items();
+    for (const auto &url : urlArray) {
+      std::string url_str = url.string_value();
+      std::smatch match;
+      if (std::regex_search(url_str, match, rx)) {
+        addFileToSegment(std::stoi(match[1]), url_str);
       }
     }
   }
