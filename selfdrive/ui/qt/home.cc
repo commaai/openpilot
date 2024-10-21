@@ -33,11 +33,6 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   body = new BodyWindow(this);
   slayout->addWidget(body);
 
-  driver_view = new DriverViewWindow(this);
-  connect(driver_view, &DriverViewWindow::done, [=] {
-    showDriverView(false);
-  });
-  slayout->addWidget(driver_view);
   setAttribute(Qt::WA_NoSystemBackground);
   QObject::connect(uiState(), &UIState::uiUpdate, this, &HomeWindow::updateState);
   QObject::connect(uiState(), &UIState::offroadTransition, this, &HomeWindow::offroadTransition);
@@ -66,16 +61,6 @@ void HomeWindow::offroadTransition(bool offroad) {
   } else {
     slayout->setCurrentWidget(onroad);
   }
-}
-
-void HomeWindow::showDriverView(bool show) {
-  if (show) {
-    emit closeSettings();
-    slayout->setCurrentWidget(driver_view);
-  } else {
-    slayout->setCurrentWidget(home);
-  }
-  sidebar->setVisible(show == false);
 }
 
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
