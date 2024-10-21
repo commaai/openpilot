@@ -40,7 +40,7 @@ float4 normalize_pv_hdr(int4 parsed, int4 short_parsed, float vignette_factor, i
 }
 
 float4 normalize_pv(int4 parsed, float vignette_factor) {
-  float4 pv = (convert_float4(parsed) - BLACK_LVL) / (PV_MAX - BLACK_LVL);
+  float4 pv = (convert_float4(parsed) - BLACK_LVL) / (PV_MAX12 - BLACK_LVL);
   return clamp(pv*vignette_factor, 0.0, 1.0);
 }
 
