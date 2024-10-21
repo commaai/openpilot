@@ -37,6 +37,7 @@ OS04C10::OS04C10() {
   init_reg_array.assign(std::begin(init_array_os04c10), std::end(init_array_os04c10));
   probe_reg_addr = 0x300a;
   probe_expected_data = 0x5304;
+  bits_per_pixel = 10;
   mipi_format = CAM_FORMAT_MIPI_RAW_10;
   frame_data_type = 0x2b;
   mclk_frequency = 24000000; // Hz
@@ -60,6 +61,13 @@ OS04C10::OS04C10() {
   min_ev = (exposure_time_min) * sensor_analog_gains[analog_gain_min_idx];
   max_ev = exposure_time_max * dc_gain_factor * sensor_analog_gains[analog_gain_max_idx];
   target_grey_factor = 0.01;
+
+  black_level = 64;
+  color_correct_matrix = {
+    0x000000c2, 0x00000fe0, 0x00000fde,
+    0x00000fa7, 0x000000d9, 0x00001000,
+    0x00000fca, 0x00000fef, 0x000000c7,
+  };
 }
 
 std::vector<i2c_random_wr_payload> OS04C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {

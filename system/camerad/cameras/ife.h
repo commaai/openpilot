@@ -1,9 +1,12 @@
 #include "cdm.h"
 
-int build_initial_config(uint8_t *dst) {
+#include "system/camerad/cameras/tici.h"
+#include "system/camerad/sensors/sensor.h"
+
+
+int build_initial_config(uint8_t *dst, const SensorInfo *s) {
   uint8_t *start = dst;
 
-  // constants, some kind of HW quirk?
   dst += write_random(dst, {
     0x2c, 0xffffffff,
     0x30, 0xffffffff,
@@ -173,21 +176,7 @@ int build_initial_config(uint8_t *dst) {
     0x08000066,
   });
 
-  dst += write_cont(dst, 0x760, {
-    0x00800080,
-    0x00000000,
-    0x00000000,
-    0x00000000,
-    0x00800080,
-    0x00000000,
-    0x00000000,
-    0x00000000,
-    0x00800080,
-    0x00000000,
-    0x00000000,
-    0x00000000,
-    0x00000000,
-  });
+  dst += write_cont(dst, 0x760, s->color_correct_matrix);
 
   dst += write_cont(dst, 0x794, {
     0x00000000,
@@ -655,7 +644,7 @@ int build_first_update(uint8_t *dst) {
   return dst - start;
 }
 
-int build_update(uint8_t *dst) {
+int build_update(uint8_t *dst, const CameraConfig &cc, const SensorInfo *s) {
   uint8_t *start = dst;
 
   dst += write_random(dst, {
@@ -708,11 +697,11 @@ int build_update(uint8_t *dst) {
   });
 
   dst += write_cont(dst, 0x40, {
-    0x00000444,
+    0x00000c04,
   });
 
   dst += write_cont(dst, 0x48, {
-    0x00000000,
+    0b10,
   });
 
   dst += write_cont(dst, 0x4c, {
@@ -761,6 +750,15 @@ int build_update(uint8_t *dst) {
 
   dst += write_cont(dst, 0xf00, {
     0x00000000,
+  });
+
+  // *** extras, not in original dump ***
+
+  // black level scale + offset
+  dst += write_cont(dst, 0x6b0, {
+    (((uint32_t)(1 << s->bits_per_pixel) - 1) << 0xf) | (s->black_level << 0),
+    0x0,
+    0x0,
   });
 
   return dst - start;
