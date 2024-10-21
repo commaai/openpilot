@@ -193,7 +193,8 @@ def read_sensors(self, state: SimulatorState):
     pass
 
   def reset(self):
-    self.should_reset = True
+        self.should_reset = True
+        self.prev_state = PreviousState()  # Reset IMU state tracking on vehicle reset
 
   def close(self, reason: str):
     self.status_q.put(QueueMessage(QueueMessageType.CLOSE_STATUS, reason))
