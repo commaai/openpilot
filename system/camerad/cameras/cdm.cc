@@ -6,8 +6,8 @@ int write_dmi(uint8_t *dst, uint64_t *addr, uint32_t length, uint32_t dmi_addr, 
   cmd->cmd = CAM_CDM_CMD_DMI_32;
   cmd->length = length - 1;
   cmd->reserved = 0;
-  cmd->addr = 0; // gets patched in?
-  cmd->DMIAddr = 0xc24;
+  cmd->addr = 0; // gets patched in
+  cmd->DMIAddr = dmi_addr;
   cmd->DMISel = sel;
 
   *addr = (uint64_t)(dst + offsetof(struct cdm_dmi_cmd, addr));

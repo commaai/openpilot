@@ -68,6 +68,11 @@ OX03C10::OX03C10() {
     0x00000fcc, 0x000000b9, 0x00000ffb,
     0x00000fc2, 0x00000ff6, 0x000000c9,
   };
+  for (int i = 0; i < 64; i++) {
+    gamma_lut_r.push_back(0xaa);
+    gamma_lut_g.push_back(0xaa);
+    gamma_lut_b.push_back(0xaa);
+  }
 }
 
 std::vector<i2c_random_wr_payload> OX03C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {

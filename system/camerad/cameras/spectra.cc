@@ -644,7 +644,7 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
         patch->dst_buf_hdl = ife_cmd.handle;
         patch->src_buf_hdl = ife_dmi.handle;
         patch->dst_offset = patches[i];
-        patch->src_offset = 256*i;
+        patch->src_offset = ife_dmi.size*i;
       }
     }
   }
@@ -854,9 +854,12 @@ void SpectraCamera::configISP() {
   ife_cmd.init(m, 67984, 0x20,
                CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
                m->device_iommu, m->cdm_iommu, FRAME_BUF_COUNT);
-  ife_dmi.init(m, 256*3, 0x20,
+  ife_dmi.init(m, 64*sizeof(uint32_t), 0x20,
                CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
-               m->device_iommu, m->cdm_iommu, FRAME_BUF_COUNT);
+               m->device_iommu, m->cdm_iommu, 3); // 3 for RGB
+  memcpy(ife_dmi.ptr + ife_dmi.size*0, sensor->gamma_lut_r.data(), ife_dmi.size);
+  memcpy(ife_dmi.ptr + ife_dmi.size*1, sensor->gamma_lut_g.data(), ife_dmi.size);
+  memcpy(ife_dmi.ptr + ife_dmi.size*2, sensor->gamma_lut_b.data(), ife_dmi.size);
 
   config_ife(0, 1, true);
 }
