@@ -64,6 +64,49 @@ class MetaDriveWorld(World):
     self.reset_time = 0
     self.should_reset = False
 
+  def calculate_imu_values(self, curr_velocity: vec3, curr_bearing: float,
+                           curr_pos: tuple[float, float], curr_time: float) -> tuple[vec3, vec3]:
+        """
+        Calculate IMU accelerometer and gyroscope values from vehicle state.
+        Returns (accelerometer_vec3, gyroscope_vec3)
+        """
+        dt = curr_time - self.prev_state.timestamp
+        if dt == 0 or self.prev_state.velocity is None:
+            return vec3(0, 0, 0), vec3(0, 0, 0)
+
+        # Calculate acceleration in vehicle's local frame
+        accel_x = (curr_velocity.x - self.prev_state.velocity.x) / dt
+        accel_y = (curr_velocity.y - self.prev_state.velocity.y) / dt
+        accel_z = (curr_velocity.z - self.prev_state.velocity.z) / dt
+
+        # Add gravitational acceleration
+        accel_z += 9.81
+
+        # Calculate angular velocity (gyroscope)
+        bearing_diff = (curr_bearing - self.prev_state.bearing)
+        # Normalize bearing difference to [-180, 180]
+        if bearing_diff > 180:
+            bearing_diff -= 360
+        elif bearing_diff < -180:
+            bearing_diff += 360
+
+        angular_velocity_z = math.radians(bearing_diff) / dt
+
+        # Calculate lateral acceleration from turning
+        speed = math.sqrt(curr_velocity.x**2 + curr_velocity.y**2)
+        centripetal_accel = speed * angular_velocity_z  # v * ω
+
+        # Adjust accelerations based on vehicle orientation
+        bearing_rad = math.radians(curr_bearing)
+        cos_bearing = math.cos(bearing_rad)
+        sin_bearing = math.sin(bearing_rad)
+
+        # Combine linear and centripetal accelerations
+        adjusted_accel_x = accel_x * cos_bearing - accel_y * sin_bearing - centripetal_accel * sin_bearing
+        adjusted_accel_y = accel_x * sin_bearing + accel_y * cos_bearing + centripetal_accel * cos_bearing
+
+        return vec3(adjusted_accel_x, adjusted_accel_y, accel_z), vec3(0, 0, angular_velocity_z)
+
   def apply_controls(self, steer_angle, throttle_out, brake_out):
     if (time.monotonic() - self.reset_time) > 2:
       self.vc[0] = steer_angle
