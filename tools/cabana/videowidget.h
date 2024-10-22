@@ -16,22 +16,17 @@
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 #include "tools/cabana/utils/util.h"
 #include "tools/replay/logreader.h"
-
-struct AlertInfo {
-  cereal::SelfdriveState::AlertStatus status;
-  QString text1;
-  QString text2;
-};
+#include "tools/cabana/streams/replaystream.h"
 
 class InfoLabel : public QWidget {
 public:
   InfoLabel(QWidget *parent);
-  void showPixmap(const QPoint &pt, const QString &sec, const QPixmap &pm, const AlertInfo &alert);
-  void showAlert(const AlertInfo &alert);
+  void showPixmap(const QPoint &pt, const QString &sec, const QPixmap &pm, const std::optional<Timeline::Entry> &alert);
+  void showAlert(const std::optional<Timeline::Entry> &alert);
   void paintEvent(QPaintEvent *event) override;
   QPixmap pixmap;
   QString second;
-  AlertInfo alert_info;
+  std::optional<Timeline::Entry> alert_info;
 };
 
 class Slider : public QSlider {
@@ -42,7 +37,7 @@ public:
   double currentSecond() const { return value() / factor; }
   void setCurrentSecond(double sec) { setValue(sec * factor); }
   void setTimeRange(double min, double max);
-  AlertInfo alertInfo(double sec);
+  std::optional<Timeline::Entry> alertInfo(double sec);
   QPixmap thumbnail(double sec);
   void parseQLog(std::shared_ptr<LogReader> qlog);
 
@@ -55,7 +50,6 @@ private:
   void paintEvent(QPaintEvent *ev) override;
 
   QMap<uint64_t, QPixmap> thumbnails;
-  std::map<uint64_t, AlertInfo> alerts;
   InfoLabel *thumbnail_label;
 };
 
