@@ -73,6 +73,9 @@ OX03C10::OX03C10() {
     fx = -0.507089*exp(-12.54124638*fx) + 0.9655*pow(fx, 0.5) - 0.472597*fx + 0.507089;
     gamma_lut_rgb.push_back((uint32_t)(fx*1023.0 + 0.5));
   }
+  for (int i = 0; i < 288; i++) {
+    linearization_lut.push_back(0);
+  }
 }
 
 std::vector<i2c_random_wr_payload> OX03C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {
