@@ -9,6 +9,7 @@ from opendbc.car.toyota.values import EPS_SCALE
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.fill_model_msg import fill_xyz_poly, fill_lane_line_meta
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
+from openpilot.selfdrive.controls.lib.longitudinal_planner import get_accel_from_plan
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.tools.lib.logreader import LogIterable
 from panda import Panda
@@ -39,6 +40,7 @@ def migrate_all(lr: LogIterable, manager_states: bool = False, panda_states: boo
     migrate_drivingModelData,
     migrate_onroadEvents,
     migrate_driverMonitoringState,
+    migrate_longitudinalPlan,
   ]
   if manager_states:
     migrations.append(migrate_managerState)
@@ -89,6 +91,24 @@ def migration(inputs: list[str], product: str|None=None):
     wrapper.product = product
     return wrapper
   return decorator
+
+
+@migration(inputs=["longitudinalPlan", "carParams"])
+def migrate_longitudinalPlan(msgs):
+  ops = []
+
+  needs_migration = all(msg.longitudinalPlan.aTarget == 0.0 for _, msg in msgs if msg.which() == 'longitudinalPlan')
+  CP = next((m.carParams for _, m in msgs if m.which() == 'carParams'), None)
+  if not needs_migration or CP is None:
+    return [], [], []
+
+  for index, msg in msgs:
+    if msg.which() != 'longitudinalPlan':
+      continue
+    new_msg = msg.as_builder()
+    new_msg.longitudinalPlan.aTarget, new_msg.longitudinalPlan.shouldStop = get_accel_from_plan(CP, msg.longitudinalPlan.speeds, msg.longitudinalPlan.accels)
+    ops.append((index, new_msg.as_reader()))
+  return ops, [], []
 
 
 @migration(inputs=["longitudinalPlan"], product="driverAssistance")
