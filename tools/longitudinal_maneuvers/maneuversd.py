@@ -168,6 +168,8 @@ def main():
     longitudinalPlan.allowThrottle = True
     longitudinalPlan.hasLead = True
 
+    longitudinalPlan.speeds = [0.2]  # triggers carControl.cruiseControl.resume in controlsd
+
     pm.send('longitudinalPlan', plan_send)
 
     assistance_send = messaging.new_message('driverAssistance')
