@@ -93,18 +93,14 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
           }
           steps.each { item ->
             def args = item[2]
-            def argPaths = args.find{ it.key == "diffPaths" }?.value
-            def argTimeout = args.find{ it.key == "timeout" }?.value
+            def argPaths = args.diffPaths ?: []
+            def argTimeout = args.timeout ?: 300
 
             if (branch != "master" && argPaths && !hasPathChanged(gitDiff, argPaths)) {
-              println "Skipping ${item[0]}: no changes in ${item[2]}."
+              println "Skipping ${item[0]}: no changes in ${argPaths}."
               return
             } else {
-              int timeoutTime = 600
-              if (argTimeout) {
-                timeoutTime = argTimeout
-              }
-              timeout(time: timeout_time, unit: 'SECONDS') {
+              timeout(time: argTimeout, unit: 'SECONDS') {
                 device(device_ip, item[0], item[1])
               }
             }
@@ -186,8 +182,8 @@ node {
     parallel (
       'model replay': {
         deviceStage("model replay", "tici-replay", ["UNSAFE=1"], [
-          step("build", "cd system/manager && ./build.py", [diffPaths: "selfdrive/modeld/"]),
-          step("model replay", "selfdrive/test/process_replay/model_replay.py", [diffPaths: "selfdrive/modeld/", timeout: 60]),
+          step("build", "cd system/manager && ./build.py", [diffPaths: ["selfdrive/modeld/"]]),
+          step("model replay", "selfdrive/test/process_replay/model_replay.py", [diffPaths: ["selfdrive/modeld/"], timeout: 60]),
         ])
       },
       'onroad tests': {

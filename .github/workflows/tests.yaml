@@ -42,7 +42,7 @@ jobs:
            ((github.repository == 'commaai/openpilot') &&
               ((github.event_name != 'pull_request') ||
                (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && '["x86_64", "aarch64"]' || '["x86_64"]' ) }}
-    runs-on: ${{ (matrix.arch == 'aarch64') && env.RUNNER_AARCH64 || env.RUNNER_X86 }}
+    runs-on: ${{ (matrix.arch == 'aarch64') && $RUNNER_AARCH64 || $RUNNER_X86 }}
     steps:
     - uses: actions/checkout@v4
       with:
