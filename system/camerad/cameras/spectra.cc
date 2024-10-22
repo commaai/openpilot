@@ -638,13 +638,12 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     pkt->patch_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf + sizeof(struct cam_buf_io_cfg)*pkt->num_io_configs;
     if (pkt->num_patches > 0) {
       // gamma LUT
-      for (int i = 0; i < pkt->num_patches; i++) {
-        printf("patching 0x%x\n", patches[i]);
+      for (int i = 0; i < 3; i++) {
         struct cam_patch_desc *patch = (struct cam_patch_desc *)((char*)&pkt->payload + pkt->patch_offset + sizeof(cam_patch_desc)*i);
         patch->dst_buf_hdl = ife_cmd.handle;
-        patch->src_buf_hdl = ife_dmi.handle;
+        patch->src_buf_hdl = ife_gamma_lut.handle;
         patch->dst_offset = patches[i];
-        patch->src_offset = ife_dmi.size*i;
+        patch->src_offset = ife_gamma_lut.size*i;
       }
     }
   }
@@ -858,11 +857,11 @@ void SpectraCamera::configISP() {
   ife_cmd.init(m, 67984, 0x20,
                CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
                m->device_iommu, m->cdm_iommu, FRAME_BUF_COUNT);
-  ife_dmi.init(m, 64*sizeof(uint32_t), 0x20,
-               CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
-               m->device_iommu, m->cdm_iommu, 3); // 3 for RGB
+  ife_gamma_lut.init(m, 64*sizeof(uint32_t), 0x20,
+                     CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
+                     m->device_iommu, m->cdm_iommu, 3); // 3 for RGB
   for (int i = 0; i < 3; i++) {
-    memcpy(ife_dmi.ptr + ife_dmi.size*i, sensor->gamma_lut_rgb.data(), ife_dmi.size);
+    memcpy(ife_gamma_lut.ptr + ife_gamma_lut.size*i, sensor->gamma_lut_rgb.data(), ife_gamma_lut.size);
   }
 
   config_ife(0, 1, true);

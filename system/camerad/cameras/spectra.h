@@ -140,7 +140,7 @@ public:
   int32_t link_handle = -1;
 
   SpectraBuf ife_cmd;
-  SpectraBuf ife_dmi;
+  SpectraBuf ife_gamma_lut;
 
   SpectraBuf bps_cmd;
   SpectraBuf bps_cdm_buffer;
