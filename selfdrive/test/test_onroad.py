@@ -213,7 +213,7 @@ class TestOnroad:
       if f.name == "qcamera.ts":
         assert 1.0 < sz < 2.6
       elif f.name == "qlog":
-        assert 0.1 < sz < 0.55
+        assert 0.15 < sz < 0.55
       elif f.name == "rlog":
         assert 2.5 < sz < 50
       elif f.name.endswith('.hevc'):
