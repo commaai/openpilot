@@ -86,7 +86,7 @@ jobs:
 
   static_analysis:
     name: static analysis
-    runs-on: $RUNNER_X86
+    runs-on: ${{ env.RUNNER_X86 }}
     env:
       PYTHONWARNINGS: default
     steps:
@@ -99,7 +99,7 @@ jobs:
 
   simulator_driving:
     name: simulator driving
-    runs-on: $RUNNER_X86
+    runs-on: ${{ env.RUNNER_X86 }}
     steps:
     - uses: actions/checkout@v4
       with:
