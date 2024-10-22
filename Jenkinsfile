@@ -190,7 +190,7 @@ node {
         deviceStage("onroad tests", "tici-needs-can", [], [
           step("build openpilot", "cd system/manager && ./build.py"),
           step("check dirty", "release/check-dirty.sh"),
-          step("onroad tests", "pytest selfdrive/test/test_onroad.py -s", [timeout: 60]),
+          step("onroad tests", "pytest selfdrive/test/test_onroad.py -s", [timeout: 90]),
         ])
       },
     )

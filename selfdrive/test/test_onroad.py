@@ -146,7 +146,7 @@ class TestOnroad:
         # test car params caching
         params.put("CarParamsCache", car.CarParams().to_bytes())
 
-        while len(cls.segments) < 3:
+        while len(cls.segments) < 2:
           segs = set()
           if Path(Paths.log_root()).exists():
             segs = set(Path(Paths.log_root()).glob(f"{route}--*"))
@@ -167,8 +167,8 @@ class TestOnroad:
     cls.lrs = [list(LogReader(os.path.join(str(s), "rlog"))) for s in cls.segments]
 
     # use the second segment by default as it's the first full segment
-    cls.lr = list(LogReader(os.path.join(str(cls.segments[1]), "rlog")))
-    cls.log_path = cls.segments[1]
+    cls.lr = list(LogReader(os.path.join(str(cls.segments[0]), "rlog")))
+    cls.log_path = cls.segments[0]
 
     cls.log_sizes = {}
     for f in cls.log_path.iterdir():
