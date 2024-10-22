@@ -41,7 +41,7 @@ jobs:
         arch: ${{ fromJson(
            ((github.repository == 'commaai/openpilot') &&
               ((github.event_name != 'pull_request') ||
-               (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && '{\"include\":[{\"arch\":\"x86_64\",\"runner\":\"namespace-profile-amd64-8x16\"},{\"arch\":\"aarch64\",\"runner\":\"namespace-profile-arm64-2x8\"}]}' || '["x86_64"]' ) }}
+        (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && '[{"arch": "x86_64", "runner": "namespace-profile-amd64-8x16"}, {"arch": "aarch64", "runner": "namespace-profile-arm64-2x8"}]' || '[{"arch": "x86_64", "runner": "namespace-profile-amd64-8x16"}]' ) }}
     runs-on: ${{ matrix.runner }}
     steps:
     - uses: actions/checkout@v4
