@@ -13,7 +13,6 @@ from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
 from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, get_speed_error
-from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 from openpilot.selfdrive.car.cruise import V_CRUISE_MAX, V_CRUISE_UNSET
 from openpilot.common.swaglog import cloudlog
 
@@ -37,13 +36,15 @@ def get_coast_accel(pitch):
   return np.sin(pitch) * -5.65 - 0.3  # fitted from data using xx/projects/allow_throttle/compute_coast_accel.py
 
 
-def limit_accel_in_turns(v_ego, a_y, a_target):
+def limit_accel_in_turns(v_ego, angle_steers, angle_offset, a_target, CP):
   """
   This function returns a limited long acceleration allowed, depending on the existing lateral acceleration
   this should avoid accelerating when losing the target in turns
   """
-  # FIXME: The lookup table for turns should be updated to account for switch to using vehicle model
+  # FIXME: This function to calculate lateral accel is incorrect and should use the VehicleModel
+  # The lookup table for turns should also be updated if we do this
   a_total_max = interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
+  a_y = v_ego ** 2 * (angle_steers - angle_offset) * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
   a_x_allowed = math.sqrt(max(a_total_max ** 2 - a_y ** 2, 0.))
 
   return [a_target[0], min(a_target[1], a_x_allowed)]
@@ -70,7 +71,6 @@ def get_accel_from_plan(CP, speeds, accels):
 class LongitudinalPlanner:
   def __init__(self, CP, init_v=0.0, init_a=0.0, dt=DT_MDL):
     self.CP = CP
-    self.VM = VehicleModel(self.CP)
     self.mpc = LongitudinalMpc(dt=dt)
     self.fcw = False
     self.dt = dt
@@ -132,15 +132,8 @@ class LongitudinalPlanner:
     prev_accel_constraint = not (reset_state or CS.standstill)
 
     if self.mpc.mode == 'acc':
-      # Update VehicleModel
-      LP = sm['liveParameters']
-      x = max(LP.stiffnessFactor, 0.1)
-      sr = max(LP.steerRatio, 0.1)
-      self.VM.update_params(x, sr)
-      current_curvature = self.VM.calc_curvature(math.radians(CS.steeringAngleDeg - LP.angleOffsetAverageDeg), CS.vEgo, LP.roll)
-      current_lateral_accel = current_curvature * CS.vEgo ** 2
       accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
-      accel_limits_turns = limit_accel_in_turns(v_ego, current_lateral_accel, accel_limits)
+      accel_limits_turns = limit_accel_in_turns(v_ego, CS.steeringAngleDeg, sm['liveParameters'].angleOffsetAverageDeg, accel_limits, self.CP)
     else:
       accel_limits = [ACCEL_MIN, ACCEL_MAX]
       accel_limits_turns = [ACCEL_MIN, ACCEL_MAX]
