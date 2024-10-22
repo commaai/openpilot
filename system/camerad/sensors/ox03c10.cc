@@ -74,7 +74,7 @@ OX03C10::OX03C10() {
     gamma_lut_rgb.push_back((uint32_t)(fx*1023.0 + 0.5));
   }
   for (int i = 0; i < 288; i++) {
-    linearization_lut.push_back(0);
+    linearization_lut.push_back(0xff);
   }
 }
 

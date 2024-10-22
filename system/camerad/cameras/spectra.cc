@@ -638,7 +638,7 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     pkt->patch_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf + sizeof(struct cam_buf_io_cfg)*pkt->num_io_configs;
     if (pkt->num_patches > 0) {
       // linearization LUT
-      struct cam_patch_desc *patch = (struct cam_patch_desc *)((char*)&pkt->payload + pkt->patch_offset + sizeof(cam_patch_desc));
+      struct cam_patch_desc *patch = (struct cam_patch_desc *)((char*)&pkt->payload + pkt->patch_offset);
       patch->dst_buf_hdl = ife_cmd.handle;
       patch->src_buf_hdl = ife_linearization_lut.handle;
       patch->dst_offset = patches[0];
@@ -870,7 +870,7 @@ void SpectraCamera::configISP() {
   for (int i = 0; i < 3; i++) {
     memcpy(ife_gamma_lut.ptr + ife_gamma_lut.size*i, sensor->gamma_lut_rgb.data(), ife_gamma_lut.size);
   }
-  ife_linearization_lut.init(m, 288, 0x20,
+  ife_linearization_lut.init(m, sensor->linearization_lut.size(), 0x20,
                              CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
                              m->device_iommu, m->cdm_iommu);
   memcpy(ife_linearization_lut.ptr, sensor->linearization_lut.data(), ife_linearization_lut.size);
