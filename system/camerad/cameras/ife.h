@@ -5,6 +5,7 @@
 
 
 int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t> &patches) {
+  uint64_t addr;
   uint8_t *start = dst;
 
   dst += write_random(dst, {
@@ -70,6 +71,9 @@ int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t
     0x2200297f,
     0x30ff387f,
   });
+  // TODO: this is DMI64 in the dump, does that matter?
+  dst += write_dmi(dst, &addr, 288, 0xc24, 9);
+  patches.push_back(addr - (uint64_t)start);
   /* TODO
   cdm_dmi_cmd_t 248
     .length = 287
@@ -182,7 +186,6 @@ int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t
   dst += write_cont(dst, 0x798, {
     0x00000000,
   });
-  uint64_t addr;
   dst += write_dmi(dst, &addr, 256, 0xc24, 26);  // G
   patches.push_back(addr - (uint64_t)start);
   dst += write_dmi(dst, &addr, 256, 0xc24, 28);  // B
@@ -295,7 +298,7 @@ int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t
   });
 
   dst += write_cont(dst, 0x40, {
-    0x00000586,
+    0x00000c06,
   });
 
   dst += write_cont(dst, 0x48, {
@@ -364,51 +367,6 @@ int build_first_update(uint8_t *dst) {
     0x38, 0xffffffff,
     0x3c, 0xffffffff,
   });
-
-  dst += write_cont(dst, 0x4dc, {
-    0x00000001,
-    0x04050b84,
-    0x13031a82,
-    0x22022981,
-    0x3100387f,
-    0x04010b80,
-    0x13001a80,
-    0x2200297f,
-    0x30ff387f,
-    0x04050b84,
-    0x13031a82,
-    0x22022981,
-    0x3100387f,
-    0x04010b80,
-    0x13001a80,
-    0x2200297f,
-    0x30ff387f,
-    0x04050b84,
-    0x13031a82,
-    0x22022981,
-    0x3100387f,
-    0x04010b80,
-    0x13001a80,
-    0x2200297f,
-    0x30ff387f,
-    0x04050b84,
-    0x13031a82,
-    0x22022981,
-    0x3100387f,
-    0x04010b80,
-    0x13001a80,
-    0x2200297f,
-    0x30ff387f,
-  });
-  /* TODO
-  cdm_dmi_cmd_t 184
-    .length = 287
-    .reserved = 33
-    .cmd = 11
-    .addr = 832
-    .DMIAddr = 3108
-    .DMISel = 10
-  */
 
   dst += write_cont(dst, 0x560, {
     0x00000001,
@@ -510,7 +468,7 @@ int build_first_update(uint8_t *dst) {
   });
 
   dst += write_cont(dst, 0x40, {
-    0x00000444,
+    0x00000c06,
   });
 
   dst += write_cont(dst, 0x48, {
@@ -621,7 +579,7 @@ int build_update(uint8_t *dst, const CameraConfig &cc, const SensorInfo *s, std:
   });
 
   dst += write_cont(dst, 0x40, {
-    0x00000c04,
+    0x00000c06,
   });
 
   dst += write_cont(dst, 0x48, {

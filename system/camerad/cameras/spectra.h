@@ -141,6 +141,7 @@ public:
 
   SpectraBuf ife_cmd;
   SpectraBuf ife_gamma_lut;
+  SpectraBuf ife_linearization_lut;
 
   SpectraBuf bps_cmd;
   SpectraBuf bps_cdm_buffer;

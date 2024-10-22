@@ -69,7 +69,8 @@ public:
   // ISP image processing params
   uint32_t black_level;
   std::vector<uint32_t> color_correct_matrix;  // 3x3
-  std::vector<uint32_t> gamma_lut_rgb;  // gamma LUTs are length 64 * sizeof(uint32_t); same for r/g/b here
+  std::vector<uint32_t> gamma_lut_rgb;         // gamma LUTs are length 64 * sizeof(uint32_t); same for r/g/b here
+  std::vector<uint32_t> linearization_lut;     // length 288
 };
 
 class AR0231 : public SensorInfo {
