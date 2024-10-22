@@ -178,19 +178,6 @@ int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t
 
   dst += write_cont(dst, 0x760, s->color_correct_matrix);
 
-  dst += write_cont(dst, 0x794, {
-    0x00000000,
-  });
-  /* TODO
-  cdm_dmi_cmd_t 568
-    .length = 511
-    .reserved = 33
-    .cmd = 11
-    .addr = 0
-    .DMIAddr = 3108
-    .DMISel = 24
-  */
-
   // gamma
   dst += write_cont(dst, 0x798, {
     0x00000000,
@@ -497,52 +484,6 @@ int build_first_update(uint8_t *dst) {
     0x00008000,
     0x08000066,
   });
-
-  dst += write_cont(dst, 0x794, {
-    0x00000001,
-  });
-  /* TODO
-  cdm_dmi_cmd_t 432
-    .length = 511
-    .reserved = 33
-    .cmd = 11
-    .addr = 832
-    .DMIAddr = 3108
-    .DMISel = 25
-  */
-
-  /*
-  dst += write_cont(dst, 0x798, {
-    0x00000007,
-  });
-  */
-  /* TODO
-  cdm_dmi_cmd_t 444
-    .length = 255
-    .reserved = 33
-    .cmd = 10
-    .addr = 5344
-    .DMIAddr = 3108
-    .DMISel = 27
-  */
-  /* TODO
-  cdm_dmi_cmd_t 444
-    .length = 255
-    .reserved = 33
-    .cmd = 10
-    .addr = 5344
-    .DMIAddr = 3108
-    .DMISel = 29
-  */
-  /* TODO
-  cdm_dmi_cmd_t 444
-    .length = 255
-    .reserved = 33
-    .cmd = 10
-    .addr = 5344
-    .DMIAddr = 3108
-    .DMISel = 31
-  */
 
   dst += write_cont(dst, 0xd84, {
     0x000004b7,
