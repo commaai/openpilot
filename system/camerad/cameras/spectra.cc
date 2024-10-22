@@ -463,6 +463,7 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     * IFE = Image Front End
   */
   int size = sizeof(struct cam_packet) + sizeof(struct cam_cmd_buf_desc)*2;
+  size += sizeof(struct cam_patch_desc)*3;
   if (!init) {
     size += sizeof(struct cam_buf_io_cfg);
   }
@@ -480,6 +481,7 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
   pkt->header.size = size;
 
   // *** cmd buf ***
+  std::vector<uint32_t> patches;
   {
     struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
     pkt->num_cmd_buf = 2;
@@ -495,11 +497,11 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     // stream of IFE register writes
     if (!is_raw) {
       if (init) {
-        buf_desc[0].length = build_initial_config((unsigned char*)ife_cmd.ptr + buf_desc[0].offset, sensor.get());
+        buf_desc[0].length = build_initial_config((unsigned char*)ife_cmd.ptr + buf_desc[0].offset, sensor.get(), patches);
       } else if (request_id == 1) {
         buf_desc[0].length = build_first_update((unsigned char*)ife_cmd.ptr + buf_desc[0].offset);
       } else {
-        buf_desc[0].length = build_update((unsigned char*)ife_cmd.ptr + buf_desc[0].offset, cc, sensor.get());
+        buf_desc[0].length = build_update((unsigned char*)ife_cmd.ptr + buf_desc[0].offset, cc, sensor.get(), patches);
       }
     }
 
@@ -632,8 +634,18 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
   // *** patches ***
   // sets up the kernel driver to do address translation for the IFE
   {
-    pkt->num_patches = 0;
+    pkt->num_patches = patches.size();
     pkt->patch_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf + sizeof(struct cam_buf_io_cfg)*pkt->num_io_configs;
+    if (pkt->num_patches > 0) {
+      // gamma LUT
+      for (int i = 0; i < 3; i++) {
+        struct cam_patch_desc *patch = (struct cam_patch_desc *)((char*)&pkt->payload + pkt->patch_offset + sizeof(cam_patch_desc)*i);
+        patch->dst_buf_hdl = ife_cmd.handle;
+        patch->src_buf_hdl = ife_gamma_lut.handle;
+        patch->dst_offset = patches[i];
+        patch->src_offset = ife_gamma_lut.size*i;
+      }
+    }
   }
 
   int ret = device_config(m->isp_fd, session_handle, isp_dev_handle, cam_packet_handle);
@@ -841,10 +853,17 @@ void SpectraCamera::configISP() {
   isp_dev_handle = *isp_dev_handle_;
   LOGD("acquire isp dev");
 
-  // config IFE
+  // allocate IFE memory, then configure it
   ife_cmd.init(m, 67984, 0x20,
                CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
                m->device_iommu, m->cdm_iommu, FRAME_BUF_COUNT);
+  ife_gamma_lut.init(m, 64*sizeof(uint32_t), 0x20,
+                     CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
+                     m->device_iommu, m->cdm_iommu, 3); // 3 for RGB
+  for (int i = 0; i < 3; i++) {
+    memcpy(ife_gamma_lut.ptr + ife_gamma_lut.size*i, sensor->gamma_lut_rgb.data(), ife_gamma_lut.size);
+  }
+
   config_ife(0, 1, true);
 }
 
