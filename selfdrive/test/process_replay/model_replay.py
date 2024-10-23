@@ -5,6 +5,7 @@ from collections import defaultdict
 from typing import Any
 import tempfile
 from itertools import zip_longest
+import time
 
 import matplotlib.pyplot as plt
 
@@ -82,21 +83,29 @@ def comment_replay_report(proposed, master, full_logs):
     PR_BRANCH = os.getenv("GIT_BRANCH","")
     DATA_BUCKET = f"model_replay_{PR_BRANCH}"
 
+    st = time.monotonic()
     files = generate_report(proposed, master, tmp)
+    print("Generating report: ", time.monotonic() - st)
 
+    st = time.monotonic()
     GITHUB.upload_files(DATA_BUCKET, [(x[0], tmp + '/' + x[0]) for x in files])
+    print("Uploading report: ", time.monotonic() - st)
 
+    st = time.monotonic()
     commit = get_commit()
     log_name = get_log_fn(TEST_ROUTE, commit)
     save_log(log_name, full_logs)
     GITHUB.upload_file(DATA_BUCKET, os.path.basename(log_name), log_name)
+    print("Saving log: ", time.monotonic() - st)
 
     diff_files = [x for x in files if not x[1]]
     link = GITHUB.get_bucket_link(DATA_BUCKET)
     diff_plots = create_table("Model Replay Differences", diff_files, link, open_table=True)
     all_plots = create_table("All Model Replay Plots", files, link)
     comment = f"ref for commit {commit}: {link}/{log_name}" + diff_plots + all_plots
+    st = time.monotonic()
     GITHUB.comment_on_pr(comment, PR_BRANCH)
+    print("Commenting table: ", time.monotonic() - st)
 
 def trim_logs_to_max_frames(logs, max_frames, frs_types, include_all_types):
   all_msgs = []
@@ -145,6 +154,7 @@ if __name__ == "__main__":
   update = "--update" in sys.argv or (os.getenv("GIT_BRANCH", "") == 'master')
   replay_dir = os.path.dirname(os.path.abspath(__file__))
 
+  st = time.monotonic()
   # load logs
   lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT, "rlog.bz2")))
   frs = {
@@ -152,11 +162,14 @@ if __name__ == "__main__":
     'driverCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "dcamera.hevc"), readahead=True),
     'wideRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "ecamera.hevc"), readahead=True)
   }
+  print("Getting logs + frames: ", time.monotonic() - st)
 
   log_msgs = []
   # run replays
   if not NO_MODEL:
+    st = time.monotonic()
     log_msgs += model_replay(lr, frs)
+    print("Model replay: ", time.monotonic() - st)
 
   # get diff
   failed = False
