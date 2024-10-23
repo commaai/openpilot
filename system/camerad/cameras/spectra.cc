@@ -671,8 +671,8 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
       LOGE("failed to wait for sync: %d %d", ret, sync_wait.sync_obj);
       // TODO: handle frame drop cleanly
     }
-
-    buf.frame_metadata[i].timestamp_eof = (uint64_t)nanos_since_boot(); // set true eof
+    buf.frame_metadata[i].timestamp_end_of_isp = (uint64_t)nanos_since_boot();
+    buf.frame_metadata[i].timestamp_eof = buf.frame_metadata[i].timestamp_sof + sensor->readout_time_ns;
     if (dp) buf.queue(i);
 
     // destroy old output fence
