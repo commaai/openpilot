@@ -87,22 +87,20 @@ int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t
     0x00000004,
     0x004000c0,
   });
-
   dst += write_cont(dst, 0x488, {
     0x00000000,
     0x00000000,
     0x00000f0f,
   });
-
   dst += write_cont(dst, 0x49c, {
     0x00000001,
   });
-
   dst += write_cont(dst, 0xce4, {
     0x00000000,
     0x00000000,
   });
 
+  // linearization
   dst += write_cont(dst, 0x4dc, {
     0x00000000,
     0x04050b84,
@@ -151,44 +149,7 @@ int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t
     .DMISel = 9
   */
 
-  dst += write_cont(dst, 0x5e8, {
-    0x06363005,
-  });
-
-  dst += write_cont(dst, 0x5f4, {
-    0x00000000,
-    0x00000000,
-    0x00000000,
-    0x00000000,
-    0x3b3839a0,
-    0x003f8040,
-    0x00000000,
-    0x00000000,
-    0x00078000,
-    0x00078000,
-    0x00078000,
-    0x00078000,
-    0x00078000,
-    0x00078000,
-    0x00078000,
-    0x00078000,
-    0x00000009,
-    0x00400808,
-    0x00000044,
-    0x004000a0,
-    0x0a0d00a6,
-    0x0a0d00a6,
-  });
-  /* TODO
-  cdm_dmi_cmd_t 392
-    .length = 255
-    .reserved = 33
-    .cmd = 10
-    .addr = 0
-    .DMIAddr = 3108
-    .DMISel = 12
-  */
-
+  // vignetting correction
   dst += write_cont(dst, 0x6bc, {
     0x0b3c0000,
     0x00670067,
@@ -221,15 +182,16 @@ int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t
     .DMISel = 15
   */
 
+  // debayer
   dst += write_cont(dst, 0x6f8, {
     0x00000100,
   });
-
   dst += write_cont(dst, 0x71c, {
     0x00008000,
     0x08000066,
   });
 
+  // color correction
   dst += write_cont(dst, 0x760, s->color_correct_matrix);
 
   // gamma
@@ -243,6 +205,7 @@ int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t
   dst += write_dmi(dst, &addr, 256, 0xc24, 30);  // R
   patches.push_back(addr - (uint64_t)start);
 
+  // YUV
   dst += write_cont(dst, 0xf30, {
     0x00750259,
     0x00000132,
@@ -258,6 +221,7 @@ int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t
     0x03ff0000,
   });
 
+  // TODO: remove this
   dst += write_cont(dst, 0xa3c, {
     0x00000003,
     0x07870787,
@@ -271,7 +235,6 @@ int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t
     0x00000000,
     0x000004b7,
   });
-
   dst += write_cont(dst, 0xa68, {
     0x00000003,
     0x03c30787,
@@ -286,39 +249,20 @@ int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t
     0x00000787,
   });
 
-
+  // cropping
   dst += write_cont(dst, 0xe10, {
     s->frame_height - 1,
     s->frame_width - 1,
   });
-
   dst += write_cont(dst, 0xe30, {
     s->frame_height/2 - 1,
     s->frame_width - 1,
   });
-
   dst += write_cont(dst, 0xe18, {
     0x0ff00000,
     0x00000016,
   });
-
   dst += write_cont(dst, 0xe38, {
-    0x0ff00000,
-    0x00000017,
-  });
-
-  dst += write_cont(dst, 0xd60, {
-    0x04380300,
-    0x09016c7d,
-    0x021c0300,
-  });
-
-  dst += write_cont(dst, 0xd98, {
-    0x0ff00000,
-    0x00000016,
-  });
-
-  dst += write_cont(dst, 0xdb8, {
     0x0ff00000,
     0x00000017,
   });
