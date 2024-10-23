@@ -36,7 +36,6 @@ JOB_ID = int(os.environ.get("JOB_ID", "0"))
 INTERNAL_SEG_LIST = os.environ.get("INTERNAL_SEG_LIST", "")
 INTERNAL_SEG_CNT = int(os.environ.get("INTERNAL_SEG_CNT", "0"))
 MAX_EXAMPLES = int(os.environ.get("MAX_EXAMPLES", "300"))
-MAX_TEST_CASES = int(os.environ.get("MAX_TEST_CASES", "0"))
 CI = os.environ.get("CI", None) is not None
 
 
@@ -60,10 +59,7 @@ def get_test_cases() -> list[tuple[str, CarTestRoute | None]]:
       segment_name = SegmentName(segment)
       test_cases.append((platform, CarTestRoute(segment_name.route_name.canonical_name, platform,
                                                 segment=segment_name.segment_num)))
-  if MAX_TEST_CASES:
-    return random.sample(test_cases, MAX_TEST_CASES)
-  else:
-    return test_cases
+  return test_cases
 
 
 @pytest.mark.slow
