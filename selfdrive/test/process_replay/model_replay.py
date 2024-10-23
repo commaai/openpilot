@@ -78,15 +78,15 @@ def create_table(title, files, link, open_table=False):
   return table
 
 def comment_replay_report(proposed, master, full_logs):
-  try:
-    GITHUB.get_pr_number(PR_BRANCH)
-  except Exception:
-    print("No PR associated with this branch. Skipping report.")
-    return
-
   with tempfile.TemporaryDirectory() as tmp:
     PR_BRANCH = os.getenv("GIT_BRANCH","")
     DATA_BUCKET = f"model_replay_{PR_BRANCH}"
+
+    try:
+      GITHUB.get_pr_number(PR_BRANCH)
+    except Exception:
+      print("No PR associated with this branch. Skipping report.")
+      return
 
     files = generate_report(proposed, master, tmp)
 
