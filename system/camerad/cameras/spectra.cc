@@ -1083,7 +1083,7 @@ void SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
     auto &meta_data = buf.frame_metadata[buf_idx];
     meta_data.frame_id = main_id - idx_offset;
     meta_data.request_id = real_id;
-    meta_data.timestamp_sof = timestamp;
+    meta_data.timestamp_sof = timestamp; // this is timestamped in the kernel's SOF IRQ callback
 
     // dispatch
     enqueue_req_multi(real_id + FRAME_BUF_COUNT, 1, 1);
