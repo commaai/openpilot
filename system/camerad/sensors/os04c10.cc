@@ -25,10 +25,10 @@ OS04C10::OS04C10() {
   pixel_size_mm = 0.004;
   data_word = false;
 
-  hdr_offset = 64 * 2 + 8; // stagger
+  // hdr_offset = 64 * 2 + 8; // stagger
   frame_width = 1344;
-  frame_height = 760 * 2 + hdr_offset;
-  frame_stride = (frame_width * 10 / 8); // no alignment
+  frame_height = 760; //760 * 2 + hdr_offset;
+  frame_stride = (frame_width * 12 / 8); // no alignment
 
   extra_height = 0;
   frame_offset = 0;
@@ -37,8 +37,9 @@ OS04C10::OS04C10() {
   init_reg_array.assign(std::begin(init_array_os04c10), std::end(init_array_os04c10));
   probe_reg_addr = 0x300a;
   probe_expected_data = 0x5304;
-  mipi_format = CAM_FORMAT_MIPI_RAW_10;
-  frame_data_type = 0x2b;
+  bits_per_pixel = 12;
+  mipi_format = CAM_FORMAT_MIPI_RAW_12;
+  frame_data_type = 0x2c;
   mclk_frequency = 24000000; // Hz
 
   dc_gain_factor = 1;
@@ -60,6 +61,17 @@ OS04C10::OS04C10() {
   min_ev = (exposure_time_min) * sensor_analog_gains[analog_gain_min_idx];
   max_ev = exposure_time_max * dc_gain_factor * sensor_analog_gains[analog_gain_max_idx];
   target_grey_factor = 0.01;
+
+  black_level = 64;
+  color_correct_matrix = {
+    0x000000c2, 0x00000fe0, 0x00000fde,
+    0x00000fa7, 0x000000d9, 0x00001000,
+    0x00000fca, 0x00000fef, 0x000000c7,
+  };
+  for (int i = 0; i < 64; i++) {
+    float fx = i / 63.0;
+    gamma_lut_rgb.push_back((uint32_t)(pow(fx, 0.7)*1023.0 + 0.5));
+  }
 }
 
 std::vector<i2c_random_wr_payload> OS04C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {

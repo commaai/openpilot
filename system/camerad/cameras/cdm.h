@@ -9,6 +9,7 @@
 // our helpers
 int write_random(uint8_t *dst, std::vector<uint32_t> vals);
 int write_cont(uint8_t *dst, uint32_t reg, std::vector<uint32_t> vals);
+int write_dmi(uint8_t *dst, uint64_t *addr, uint32_t length, uint32_t dmi_addr, uint8_t sel);
 
 // from drivers/media/platform/msm/camera/cam_cdm/cam_cdm_util.{c,h}
 

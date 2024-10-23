@@ -1,21 +1,17 @@
 #pragma once
 
 #include <array>
-#include <QBasicTimer>
-#include <QObject>
-#include <QSocketNotifier>
-#include <QTimer>
-#include <QTimerEvent>
+#include <mutex>
+#include <vector>
 
 #include "tools/replay/replay.h"
 #include <ncurses.h>
 
-class ConsoleUI : public QObject {
-  Q_OBJECT
-
+class ConsoleUI {
 public:
-  ConsoleUI(Replay *replay, QObject *parent = 0);
+  ConsoleUI(Replay *replay);
   ~ConsoleUI();
+  int exec();
   inline static const std::array speed_array = {0.2f, 0.5f, 1.0f, 2.0f, 3.0f};
 
 private:
@@ -27,25 +23,21 @@ private:
   void updateSummary();
   void updateStatus();
   void pauseReplay(bool pause);
+  void updateSize();
+  void updateProgressBar();
+  void logMessage(ReplyMsgType type, const std::string &msg);
 
-  enum Status { Waiting, Playing, Paused };
+  enum Status { Playing, Paused };
   enum Win { Title, Stats, Log, LogBorder, DownloadBar, Timeline, TimelineDesc, Help, CarState, Max};
   std::array<WINDOW*, Win::Max> w{};
   SubMaster sm;
   Replay *replay;
-  QBasicTimer getch_timer;
-  QTimer sm_timer;
-  QSocketNotifier notifier{0, QSocketNotifier::Read, this};
   int max_width, max_height;
-  Status status = Status::Waiting;
+  Status status = Status::Playing;
 
-signals:
-  void updateProgressBarSignal(uint64_t cur, uint64_t total, bool success);
-  void logMessageSignal(ReplyMsgType type, const QString &msg);
-
-private slots:
-  void readyRead();
-  void timerEvent(QTimerEvent *ev);
-  void updateProgressBar(uint64_t cur, uint64_t total, bool success);
-  void logMessage(ReplyMsgType type, const QString &msg);
+  std::mutex mutex;
+  std::vector<std::pair<ReplyMsgType, std::string>> logs;
+  uint64_t progress_cur = 0;
+  uint64_t progress_total = 0;
+  bool download_success = false;
 };

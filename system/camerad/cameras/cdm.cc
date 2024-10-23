@@ -1,4 +1,18 @@
 #include "cdm.h"
+#include "stddef.h"
+
+int write_dmi(uint8_t *dst, uint64_t *addr, uint32_t length, uint32_t dmi_addr, uint8_t sel) {
+  struct cdm_dmi_cmd *cmd = (struct cdm_dmi_cmd*)dst;
+  cmd->cmd = CAM_CDM_CMD_DMI_32;
+  cmd->length = length - 1;
+  cmd->reserved = 0;
+  cmd->addr = 0; // gets patched in
+  cmd->DMIAddr = dmi_addr;
+  cmd->DMISel = sel;
+
+  *addr = (uint64_t)(dst + offsetof(struct cdm_dmi_cmd, addr));
+  return sizeof(struct cdm_dmi_cmd);
+}
 
 int write_cont(uint8_t *dst, uint32_t reg, std::vector<uint32_t> vals) {
   struct cdm_regcontinuous_cmd *cmd = (struct cdm_regcontinuous_cmd*)dst;
