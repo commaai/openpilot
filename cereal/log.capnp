@@ -844,7 +844,6 @@ struct ControlsState @0x97ff69c53601abf1 {
   lateralPlanMonoTime @50 :UInt64;
 
   longControlState @30 :Car.CarControl.Actuators.LongControlState;
-  vTargetLead @3 :Float32;
   upAccelCmd @4 :Float32;
   uiAccelCmd @5 :Float32;
   ufAccelCmd @33 :Float32;
@@ -994,6 +993,7 @@ struct ControlsState @0x97ff69c53601abf1 {
   startMonoTimeDEPRECATED @48 :UInt64;
   cumLagMsDEPRECATED @15 :Float32;
   aTargetDEPRECATED @35 :Float32;
+  vTargetLeadDEPRECATED @3 :Float32;
 }
 
 struct DrivingModelData {
