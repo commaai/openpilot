@@ -15,7 +15,6 @@ int build_update(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t> &patch
     0x3c, 0xffffffff,
   });
 
-  // TODO: demux, disable and delete?
   dst += write_cont(dst, 0x560, {
     0x00000001,
     0x04440444,
@@ -25,6 +24,8 @@ int build_update(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t> &patch
     0x000000ca,
     0x0000009c,
   });
+
+  // white balance
   dst += write_cont(dst, 0x6fc, {
     0x00800080,
     0x00000080,
@@ -83,6 +84,7 @@ int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t
 
   uint64_t addr;
 
+  // setup
   dst += write_cont(dst, 0x478, {
     0x00000004,
     0x004000c0,
