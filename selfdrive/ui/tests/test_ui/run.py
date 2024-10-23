@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import pywinctl
-import pyautogui
 import time
 
 from cereal import log
@@ -25,7 +24,7 @@ from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.route import Route
 
-UI_DELAY = 0.01 # may be slower on CI?
+UI_DELAY = 0.5 # may be slower on CI?
 TEST_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 
 STREAMS: list[tuple[VisionStreamType, CameraConfig, bytes]] = []
@@ -76,7 +75,7 @@ def setup_onroad(click, pm: PubMaster):
       uidebug_received_cnt += 1
 
     packet_id += 1
-    time.sleep(0.01)
+    time.sleep(0.05)
 
 def setup_onroad_disengaged(click, pm: PubMaster):
   DATA['selfdriveState'].selfdriveState.enabled = False
@@ -210,7 +209,7 @@ class TestUI:
     for _ in range(10):
       self.pm.send('deviceState', DATA['deviceState'])
       DATA['deviceState'].clear_write_flag()
-      time.sleep(0.01)
+      time.sleep(0.05)
     try:
       self.ui = pywinctl.getWindowsWithTitle("ui")[0]
     except Exception as e:
@@ -218,6 +217,7 @@ class TestUI:
       self.ui = namedtuple("bb", ["left", "top", "width", "height"])(0,0,2160,1080)
 
   def screenshot(self):
+    import pyautogui
     im = pyautogui.screenshot(region=(self.ui.left, self.ui.top, self.ui.width, self.ui.height))
     assert im.width == 2160
     assert im.height == 1080
@@ -226,6 +226,7 @@ class TestUI:
     return img
 
   def click(self, x, y, *args, **kwargs):
+    import pyautogui
     pyautogui.click(self.ui.left + x, self.ui.top + y, *args, **kwargs)
     time.sleep(UI_DELAY) # give enough time for the UI to react
 
