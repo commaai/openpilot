@@ -15,6 +15,7 @@ int build_update(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t> &patch
     0x3c, 0xffffffff,
   });
 
+  // TODO: demux, disable and delete?
   dst += write_cont(dst, 0x560, {
     0x00000001,
     0x04440444,
@@ -24,36 +25,11 @@ int build_update(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t> &patch
     0x000000ca,
     0x0000009c,
   });
-
   dst += write_cont(dst, 0x6fc, {
     0x00800080,
     0x00000080,
     0x00000000,
     0x00000000,
-  });
-
-  dst += write_cont(dst, 0xd84, {
-    0x000004b7,
-    0x00000787,
-  });
-
-  dst += write_cont(dst, 0xda4, {
-    0x000004b7,
-    0x00000787,
-  });
-
-  dst += write_cont(dst, 0xd6c, {
-    0x00000300,
-  });
-
-  dst += write_cont(dst, 0xd70, {
-    0x02640f00,
-    0x09016c7d,
-    0x01320f00,
-  });
-
-  dst += write_cont(dst, 0xd7c, {
-    0x00000f00,
   });
 
   dst += write_cont(dst, 0x40, {
@@ -68,14 +44,6 @@ int build_update(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t> &patch
     0x00000019,
   });
 
-  dst += write_cont(dst, 0xe4c, {
-    0x00000000,
-  });
-
-  dst += write_cont(dst, 0xe6c, {
-    0x00000000,
-  });
-
   dst += write_cont(dst, 0xe0c, {
     0x00000e00,
   });
@@ -84,35 +52,17 @@ int build_update(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t> &patch
     0x00000e00,
   });
 
-  dst += write_cont(dst, 0xd8c, {
-    0x00000000,
-  });
-
-  dst += write_cont(dst, 0xdac, {
-    0x00000000,
-  });
-
-  dst += write_cont(dst, 0xdcc, {
-    0x00000000,
-  });
-
-  dst += write_cont(dst, 0xdec, {
-    0x00000000,
-  });
-
   dst += write_cont(dst, 0x44, {
     0x00000000,
   });
 
   dst += write_cont(dst, 0xaac, {
-    0x00000040,
+    0x00000000,
   });
 
   dst += write_cont(dst, 0xf00, {
     0x00000000,
   });
-
-  // *** extras, not in original dump ***
 
   // black level scale + offset
   dst += write_cont(dst, 0x6b0, {
@@ -338,13 +288,13 @@ int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t
 
 
   dst += write_cont(dst, 0xe10, {
-    0x000004b7,
-    0x00000787,
+    s->frame_height - 1,
+    s->frame_width - 1,
   });
 
   dst += write_cont(dst, 0xe30, {
-    0x0000025b,
-    0x00000787,
+    s->frame_height/2 - 1,
+    s->frame_width - 1,
   });
 
   dst += write_cont(dst, 0xe18, {
