@@ -24,7 +24,7 @@ from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.route import Route
 
-UI_DELAY = 0.5 # may be slower on CI?
+UI_DELAY = 0.01 # may be slower on CI?
 TEST_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 
 STREAMS: list[tuple[VisionStreamType, CameraConfig, bytes]] = []
@@ -75,7 +75,7 @@ def setup_onroad(click, pm: PubMaster):
       uidebug_received_cnt += 1
 
     packet_id += 1
-    time.sleep(0.05)
+    time.sleep(0.01)
 
 def setup_onroad_disengaged(click, pm: PubMaster):
   DATA['selfdriveState'].selfdriveState.enabled = False
