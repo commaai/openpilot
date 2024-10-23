@@ -74,28 +74,45 @@ OX03C10::OX03C10() {
     gamma_lut_rgb.push_back((uint32_t)(fx*1023.0 + 0.5));
   }
   for (int i = 0; i < 288; i++) {
-    float fx = i / 287.0 * 4095.0;
-    if (fx < 512) {
-      fx = fx * 5.94873e-8;
-    } else if (512 <= fx && fx < 768) {
-      fx = 3.0458e-05 + (fx-512) * 1.19913e-7;
-    } else if (768 <= fx && fx < 1536) {
-      fx = 6.1154e-05 + (fx-768) * 2.38493e-7;
-    } else if (1536 <= fx && fx < 1792) {
-      fx = 0.0002448 + (fx-1536) * 9.56930e-7;
-    } else if (1792 <= fx && fx < 2048) {
-      fx = 0.00048977 + (fx-1792) * 1.91441e-6;
-    } else if (2048 <= fx && fx < 2304) {
-      fx = 0.00097984 + (fx-2048) * 3.82937e-6;
-    } else if (2304 <= fx && fx < 2560) {
-      fx = 0.0019601 + (fx-2304) * 7.659055e-6;
-    } else if (2560 <= fx && fx < 2816) {
-      fx = 0.0039207 + (fx-2560) * 1.525e-5;
-    } else {
-      fx = 0.0078421 + (exp((fx-2816)/273.0) - 1) * 0.0092421;
-    }
-    linearization_lut.push_back((uint32_t)(fx*4095.0 + 0.5));
+    linearization_lut.push_back((uint32_t)(0));
   }
+
+  linearization_lut[0] = (0x00000000 & 0x3fff) | ((0x00000004 & 0x3ffffff) << 14);
+  linearization_lut[1] = (0x00000000 & 0x3fff) | ((0x00000004 & 0x3ffffff) << 14);
+  linearization_lut[2] = (0x00000000 & 0x3fff) | ((0x00000004 & 0x3ffffff) << 14);
+  linearization_lut[3] = (0x00000000 & 0x3fff) | ((0x00000004 & 0x3ffffff) << 14);
+  linearization_lut[4] = (0x00000003 & 0x3fff) | ((0x00000030 & 0x3ffffff) << 14);
+  linearization_lut[5] = (0x00000003 & 0x3fff) | ((0x00000030 & 0x3ffffff) << 14);
+  linearization_lut[6] = (0x00000003 & 0x3fff) | ((0x00000030 & 0x3ffffff) << 14);
+  linearization_lut[7] = (0x00000003 & 0x3fff) | ((0x00000030 & 0x3ffffff) << 14);
+  linearization_lut[8] = (0x0000000f & 0x3fff) | ((0x000000c0 & 0x3ffffff) << 14);
+  linearization_lut[9] = (0x0000000f & 0x3fff) | ((0x000000c0 & 0x3ffffff) << 14);
+  linearization_lut[10] = (0x0000000f & 0x3fff) | ((0x000000c0 & 0x3ffffff) << 14);
+  linearization_lut[11] = (0x0000000f & 0x3fff) | ((0x000000c0 & 0x3ffffff) << 14);
+  linearization_lut[12] = (0x0000003f & 0x3fff) | ((0x00000400 & 0x3ffffff) << 14);
+  linearization_lut[13] = (0x0000003f & 0x3fff) | ((0x00000400 & 0x3ffffff) << 14);
+  linearization_lut[14] = (0x0000003f & 0x3fff) | ((0x00000400 & 0x3ffffff) << 14);
+  linearization_lut[15] = (0x0000003f & 0x3fff) | ((0x00000400 & 0x3ffffff) << 14);
+  linearization_lut[16] = (0x0000007f & 0x3fff) | ((0x00000800 & 0x3ffffff) << 14);
+  linearization_lut[17] = (0x0000007f & 0x3fff) | ((0x00000800 & 0x3ffffff) << 14);
+  linearization_lut[18] = (0x0000007f & 0x3fff) | ((0x00000800 & 0x3ffffff) << 14);
+  linearization_lut[19] = (0x0000007f & 0x3fff) | ((0x00000800 & 0x3ffffff) << 14);
+  linearization_lut[20] = (0x0000017f & 0x3fff) | ((0x00000fff & 0x3ffffff) << 14);
+  linearization_lut[21] = (0x0000017f & 0x3fff) | ((0x00000fff & 0x3ffffff) << 14);
+  linearization_lut[22] = (0x0000017f & 0x3fff) | ((0x00000fff & 0x3ffffff) << 14);
+  linearization_lut[23] = (0x0000017f & 0x3fff) | ((0x00000fff & 0x3ffffff) << 14);
+  linearization_lut[24] = (0x000002ff & 0x3fff) | ((0x00001ffe & 0x3ffffff) << 14);
+  linearization_lut[25] = (0x000002ff & 0x3fff) | ((0x00001ffe & 0x3ffffff) << 14);
+  linearization_lut[26] = (0x000002ff & 0x3fff) | ((0x00001ffe & 0x3ffffff) << 14);
+  linearization_lut[27] = (0x000002ff & 0x3fff) | ((0x00001ffe & 0x3ffffff) << 14);
+  linearization_lut[28] = (0x000005ff & 0x3fff) | ((0x00003ffc & 0x3ffffff) << 14);
+  linearization_lut[29] = (0x000005ff & 0x3fff) | ((0x00003ffc & 0x3ffffff) << 14);
+  linearization_lut[30] = (0x000005ff & 0x3fff) | ((0x00003ffc & 0x3ffffff) << 14);
+  linearization_lut[31] = (0x000005ff & 0x3fff) | ((0x00003ffc & 0x3ffffff) << 14);
+  linearization_lut[32] = (0x00000bff & 0x3fff) | ((0x00007ff8 & 0x3ffffff) << 14);
+  linearization_lut[33] = (0x00000bff & 0x3fff) | ((0x00007ff8 & 0x3ffffff) << 14);
+  linearization_lut[34] = (0x00000bff & 0x3fff) | ((0x00007ff8 & 0x3ffffff) << 14);
+  linearization_lut[35] = (0x00000bff & 0x3fff) | ((0x00007ff8 & 0x3ffffff) << 14);
 }
 
 std::vector<i2c_random_wr_payload> OX03C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {
