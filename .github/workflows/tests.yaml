@@ -22,6 +22,45 @@ env:
 
 jobs:
 
+  build_release:
+    name: build release
+    runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
+                   ((github.event_name != 'pull_request') ||
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-latest' }}
+    env:
+      STRIPPED_DIR: /tmp/releasepilot
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - run: git lfs pull
+    - name: Build devel
+      timeout-minutes: 1
+      run: TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
+    - uses: ./.github/workflows/setup-with-retry
+    - name: Check submodules
+      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
+      timeout-minutes: 1
+      run: release/check-submodules.sh
+    - name: Build openpilot and run checks
+      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
+      run: |
+        cd $STRIPPED_DIR
+        ${{ env.RUN }} "python3 system/manager/build.py"
+    - name: car tests
+      timeout-minutes: 1
+      run: |
+        cd $STRIPPED_DIR
+        ${{ env.RUN }} "release/check-dirty.sh && \
+                        MAX_EXAMPLES=5 $PYTEST -m 'not slow' selfdrive/car system/manager"
+    - name: static analysis
+      timeout-minutes: 1
+      run: |
+        cd $GITHUB_WORKSPACE
+        cp pyproject.toml $STRIPPED_DIR
+        cd $STRIPPED_DIR
+        ${{ env.RUN }} "scripts/lint/lint.sh --skip check_added_large_files"
+
   build:
     strategy:
       matrix:

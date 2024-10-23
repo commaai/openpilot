@@ -92,16 +92,19 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
             device(device_ip, "git checkout", extra + "\n" + readFile("selfdrive/test/setup_device_ci.sh"))
           }
           steps.each { item ->
+            def name = item[0]
+            def cmd = item[1]
+
             def args = item[2]
             def argPaths = args.diffPaths ?: []
             def argTimeout = args.timeout ?: 300
 
             if (branch != "master" && argPaths && !hasPathChanged(gitDiff, argPaths)) {
-              println "Skipping ${item[0]}: no changes in ${argPaths}."
+              println "Skipping ${name}: no changes in ${argPaths}."
               return
             } else {
               timeout(time: argTimeout, unit: 'SECONDS') {
-                device(device_ip, item[0], item[1])
+                device(device_ip, name, cmd)
               }
             }
           }
