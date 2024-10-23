@@ -110,7 +110,7 @@ def create_maneuvers(kwargs):
     ),
     Maneuver(
       "slow to 5m/s with allow_throttle = False and pitch = +0.1",
-      duration=25.,
+      duration=30.,
       initial_speed=20.,
       lead_relevancy=False,
       prob_throttle_values=[1., 0., 0.],
