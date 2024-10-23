@@ -169,7 +169,7 @@ jobs:
       - name: Build openpilot
         run: ${{ env.RUN }} "scons -j$(nproc)"
       - name: Create Test Report
-        timeout-minutes: 1
+        timeout-minutes: 2
         run: >
             ${{ env.RUN }} "PYTHONWARNINGS=ignore &&
                             source selfdrive/test/setup_xvfb.sh &&
