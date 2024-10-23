@@ -72,6 +72,10 @@ OS04C10::OS04C10() {
     float fx = i / 63.0;
     gamma_lut_rgb.push_back((uint32_t)(pow(fx, 0.7)*1023.0 + 0.5));
   }
+  for (int i = 0; i < 288; i++) {
+    float fx = i / 287.0;
+    linearization_lut.push_back((uint32_t)(fx*4095.0 + 0.5));
+  }
 }
 
 std::vector<i2c_random_wr_payload> OS04C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {

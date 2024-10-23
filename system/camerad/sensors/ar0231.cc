@@ -136,6 +136,10 @@ AR0231::AR0231() {
       ((rk * (fx-mp) * (gamma_k*mp+gamma_b) * (1+1/(rk*mp)) / (1-rk*(fx-mp))) + gamma_k*mp + gamma_b);
     gamma_lut_rgb.push_back((uint32_t)(fx*1023.0 + 0.5));
   }
+  for (int i = 0; i < 288; i++) {
+    float fx = i / 287.0;
+    linearization_lut.push_back((uint32_t)(fx*4095.0 + 0.5));
+  }
 }
 
 void AR0231::processRegisters(uint8_t *cur_buf, cereal::FrameData::Builder &framed) const {

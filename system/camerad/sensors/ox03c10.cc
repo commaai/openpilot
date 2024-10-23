@@ -74,7 +74,27 @@ OX03C10::OX03C10() {
     gamma_lut_rgb.push_back((uint32_t)(fx*1023.0 + 0.5));
   }
   for (int i = 0; i < 288; i++) {
-    linearization_lut.push_back(0xff);
+    float fx = i / 287.0 * 4095.0;
+    if (fx < 512) {
+      fx = fx * 5.94873e-8;
+    } else if (512 <= fx && fx < 768) {
+      fx = 3.0458e-05 + (fx-512) * 1.19913e-7;
+    } else if (768 <= fx && fx < 1536) {
+      fx = 6.1154e-05 + (fx-768) * 2.38493e-7;
+    } else if (1536 <= fx && fx < 1792) {
+      fx = 0.0002448 + (fx-1536) * 9.56930e-7;
+    } else if (1792 <= fx && fx < 2048) {
+      fx = 0.00048977 + (fx-1792) * 1.91441e-6;
+    } else if (2048 <= fx && fx < 2304) {
+      fx = 0.00097984 + (fx-2048) * 3.82937e-6;
+    } else if (2304 <= fx && fx < 2560) {
+      fx = 0.0019601 + (fx-2304) * 7.659055e-6;
+    } else if (2560 <= fx && fx < 2816) {
+      fx = 0.0039207 + (fx-2560) * 1.525e-5;
+    } else {
+      fx = 0.0078421 + (exp((fx-2816)/273.0) - 1) * 0.0092421;
+    }
+    linearization_lut.push_back((uint32_t)(fx*4095.0 + 0.5));
   }
 }
 
