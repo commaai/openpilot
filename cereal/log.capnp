@@ -852,7 +852,6 @@ struct ControlsState @0x97ff69c53601abf1 {
   forceDecel @51 :Bool;
 
   lateralControlState :union {
-    indiState @52 :LateralINDIState;
     pidState @53 :LateralPIDState;
     angleState @58 :LateralAngleState;
     debugState @59 :LateralDebugState;
@@ -860,6 +859,7 @@ struct ControlsState @0x97ff69c53601abf1 {
 
     curvatureStateDEPRECATED @65 :LateralCurvatureState;
     lqrStateDEPRECATED @55 :LateralLQRState;
+    indiStateDEPRECATED @52 :LateralINDIState;
   }
 
   struct LateralINDIState {
