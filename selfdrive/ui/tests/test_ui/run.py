@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import pywinctl
+import pyautogui
 import time
 
 from cereal import log
@@ -209,7 +210,7 @@ class TestUI:
     for _ in range(10):
       self.pm.send('deviceState', DATA['deviceState'])
       DATA['deviceState'].clear_write_flag()
-      time.sleep(0.05)
+      time.sleep(0.01)
     try:
       self.ui = pywinctl.getWindowsWithTitle("ui")[0]
     except Exception as e:
@@ -217,7 +218,6 @@ class TestUI:
       self.ui = namedtuple("bb", ["left", "top", "width", "height"])(0,0,2160,1080)
 
   def screenshot(self):
-    import pyautogui
     im = pyautogui.screenshot(region=(self.ui.left, self.ui.top, self.ui.width, self.ui.height))
     assert im.width == 2160
     assert im.height == 1080
@@ -226,7 +226,6 @@ class TestUI:
     return img
 
   def click(self, x, y, *args, **kwargs):
-    import pyautogui
     pyautogui.click(self.ui.left + x, self.ui.top + y, *args, **kwargs)
     time.sleep(UI_DELAY) # give enough time for the UI to react
 
