@@ -151,7 +151,7 @@ class TestOnroad:
           if Path(Paths.log_root()).exists():
             segs = set(Path(Paths.log_root()).glob(f"{route}--*"))
           cls.segments = sorted(segs, key=lambda s: int(str(s).rsplit('--')[-1]))
-          time.sleep(2)
+          time.sleep(0.5)
 
         # generate logs for 25 seconds
         time.sleep(25)
