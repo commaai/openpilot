@@ -7,14 +7,13 @@
 #include <thread>
 #include <vector>
 
-#include <QString>
-
 #include "tools/replay/framereader.h"
 #include "tools/replay/logreader.h"
 #include "tools/replay/util.h"
 
 enum class RouteLoadError {
   None,
+  Unauthorized,
   AccessDenied,
   NetworkError,
   FileNotFound,
@@ -54,7 +53,7 @@ public:
 protected:
   bool loadFromLocal();
   bool loadFromServer(int retries = 3);
-  bool loadFromJson(const QString &json);
+  bool loadFromJson(const std::string &json);
   void addFileToSegment(int seg_num, const std::string &file);
   RouteIdentifier route_ = {};
   std::string data_dir_;
