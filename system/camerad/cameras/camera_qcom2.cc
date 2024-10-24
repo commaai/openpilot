@@ -9,6 +9,7 @@
 #include <cerrno>
 #include <cmath>
 #include <cstring>
+#include <functional>
 #include <string>
 #include <vector>
 
@@ -280,9 +281,11 @@ void camerad_thread() {
 
   cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
   const cl_context_properties props[] = {CL_CONTEXT_PRIORITY_HINT_QCOM, CL_PRIORITY_HINT_HIGH_QCOM, 0};
-  cl_context ctx = CL_CHECK_ERR(clCreateContext(props, 1, &device_id, NULL, NULL, &err));
+  std::unique_ptr<_cl_context, std::function<void(cl_context)>> ctx(
+      CL_CHECK_ERR(clCreateContext(props, 1, &device_id, nullptr, nullptr, &err)),
+      [](cl_context context) { clReleaseContext(context); });
 
-  VisionIpcServer v("camerad", device_id, ctx);
+  VisionIpcServer v("camerad", device_id, ctx.get());
 
   // *** initial ISP init ***
   SpectraMaster m;
@@ -292,7 +295,7 @@ void camerad_thread() {
   std::vector<std::unique_ptr<CameraState>> cams;
   for (const auto &config : {WIDE_ROAD_CAMERA_CONFIG, DRIVER_CAMERA_CONFIG, ROAD_CAMERA_CONFIG}) {
     auto cam = std::make_unique<CameraState>(&m, config);
-    cam->init(&v, device_id, ctx);
+    cam->init(&v, device_id ,ctx.get());
     cams.emplace_back(std::move(cam));
   }
 
