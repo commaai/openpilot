@@ -66,6 +66,8 @@ public:
   uint32_t mclk_frequency;
   uint32_t frame_data_type;
 
+  uint32_t readout_time_ns;  // used to recover EOF from SOF
+
   // ISP image processing params
   uint32_t black_level;
   std::vector<uint32_t> color_correct_matrix;  // 3x3

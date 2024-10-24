@@ -15,6 +15,7 @@ typedef struct FrameMetadata {
   uint32_t request_id;
   uint64_t timestamp_sof;
   uint64_t timestamp_eof;
+  uint64_t timestamp_end_of_isp;
   float processing_time;
 } FrameMetadata;
 
