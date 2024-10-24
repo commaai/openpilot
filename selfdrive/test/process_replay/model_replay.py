@@ -147,7 +147,7 @@ def get_logs_and_frames(cache=False):
   CACHE="/data/model_replay_cache" if TICI else '/tmp/model_replay_cache'
   Path(CACHE).mkdir(parents=True, exist_ok=True)
 
-  LOG_CACHE = f"{CACHE}/LOG_CACHED"
+  LOG_CACHE = f"{CACHE}/rlog"
   if cache and os.path.isfile(LOG_CACHE):
     with open(LOG_CACHE, "rb") as f:
       lr = pickle.load(f)
