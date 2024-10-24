@@ -226,29 +226,29 @@ int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t
   // TODO: remove this
   dst += write_cont(dst, 0xa3c, {
     0x00000003,
-    0x07870787,
+    ((s->frame_width - 1) << 16) | (s->frame_width - 1),
     0x30036666,
     0x00000000,
     0x00000000,
-    0x00000787,
-    0x04b704b7,
+    s->frame_width - 1,
+    ((s->frame_height - 1) << 16) | (s->frame_height - 1),
     0x30036666,
     0x00000000,
     0x00000000,
-    0x000004b7,
+    s->frame_height - 1,
   });
   dst += write_cont(dst, 0xa68, {
     0x00000003,
-    0x03c30787,
+    ((s->frame_width/2 - 1) << 16) | (s->frame_width - 1),
     0x3006cccc,
     0x00000000,
     0x00000000,
-    0x00000787,
-    0x025b04b7,
+    s->frame_width - 1,
+    ((s->frame_height/2 - 1) << 16) | (s->frame_height - 1),
     0x3006cccc,
     0x00000000,
     0x00000000,
-    0x00000787,
+    s->frame_height - 1,
   });
 
   // cropping
