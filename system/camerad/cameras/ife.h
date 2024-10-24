@@ -105,39 +105,8 @@ int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t
   // linearization
   dst += write_cont(dst, 0x4dc, {
     0x00000000,
-    0x04050b84,
-    0x13031a82,
-    0x22022981,
-    0x3100387f,
-    0x04010b80,
-    0x13001a80,
-    0x2200297f,
-    0x30ff387f,
-    0x04050b84,
-    0x13031a82,
-    0x22022981,
-    0x3100387f,
-    0x04010b80,
-    0x13001a80,
-    0x2200297f,
-    0x30ff387f,
-    0x04050b84,
-    0x13031a82,
-    0x22022981,
-    0x3100387f,
-    0x04010b80,
-    0x13001a80,
-    0x2200297f,
-    0x30ff387f,
-    0x04050b84,
-    0x13031a82,
-    0x22022981,
-    0x3100387f,
-    0x04010b80,
-    0x13001a80,
-    0x2200297f,
-    0x30ff387f,
   });
+  dst += write_cont(dst, 0x4e0, s->linearization_pts);
   // TODO: this is DMI64 in the dump, does that matter?
   dst += write_dmi(dst, &addr, 288, 0xc24, 9);
   patches.push_back(addr - (uint64_t)start);
