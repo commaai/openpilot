@@ -3,6 +3,7 @@ import bisect
 import math
 import os
 from enum import IntEnum
+from collections import defaultdict
 from collections.abc import Callable
 
 from cereal import log, car
@@ -51,7 +52,8 @@ class Events:
   def __init__(self):
     self.events: list[int] = []
     self.static_events: list[int] = []
-    self.event_counters = dict.fromkeys(EVENTS.keys(), 0)
+    self.event_counters = defaultdict(int)
+    self.prev_event_set: set[int] = set()
 
   @property
   def names(self) -> list[int]:
@@ -65,9 +67,20 @@ class Events:
       bisect.insort(self.static_events, event_name)
     bisect.insort(self.events, event_name)
 
+    self.event_counters[event_name] += 1
+
   def clear(self) -> None:
-    self.event_counters = {k: (v + 1 if k in self.events else 0) for k, v in self.event_counters.items()}
+     # Get events no longer active
+    current_event_set = set(self.events)
+    inactive_events = self.prev_event_set - current_event_set
+
+     # Reset counters for inactive events
+    for event_name in inactive_events:
+      self.event_counters[event_name] = 0
+
+     # Reset active events and update previous set
     self.events = self.static_events.copy()
+    self.prev_event_set = current_event_set
 
   def contains(self, event_type: str) -> bool:
     return any(event_type in EVENTS.get(e, {}) for e in self.events)
@@ -85,7 +98,7 @@ class Events:
           if not isinstance(alert, Alert):
             alert = alert(*callback_args)
 
-          if DT_CTRL * (self.event_counters[e] + 1) >= alert.creation_delay:
+          if (DT_CTRL * self.event_counters[e]) >= alert.creation_delay:
             alert.alert_type = f"{EVENT_NAME[e]}/{et}"
             alert.event_type = et
             ret.append(alert)
