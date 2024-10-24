@@ -471,7 +471,7 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     * IFE = Image Front End
   */
   int size = sizeof(struct cam_packet) + sizeof(struct cam_cmd_buf_desc)*2;
-  size += sizeof(struct cam_patch_desc)*4;
+  size += sizeof(struct cam_patch_desc)*10;
   if (!init) {
     size += sizeof(struct cam_buf_io_cfg);
   }
@@ -652,8 +652,8 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
       add_patch(p, 0, ife_cmd.handle, patches[0], ife_linearization_lut.handle, 0);
 
       // vignetting correction LUTs
-      add_patch(p, 1, ife_cmd.handle, patches[1], ife_vignetting.handle, 0);
-      add_patch(p, 2, ife_cmd.handle, patches[2], ife_vignetting.handle, ife_vignetting.size);
+      add_patch(p, 1, ife_cmd.handle, patches[1], ife_vignetting_lut.handle, 0);
+      add_patch(p, 2, ife_cmd.handle, patches[2], ife_vignetting_lut.handle, ife_vignetting_lut.size);
 
       // gamma LUTs
       for (int i = 0; i < 3; i++) {
