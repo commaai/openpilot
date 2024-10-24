@@ -82,6 +82,12 @@ def comment_replay_report(proposed, master, full_logs):
     PR_BRANCH = os.getenv("GIT_BRANCH","")
     DATA_BUCKET = f"model_replay_{PR_BRANCH}"
 
+    try:
+      GITHUB.get_pr_number(PR_BRANCH)
+    except Exception:
+      print("No PR associated with this branch. Skipping report.")
+      return
+
     files = generate_report(proposed, master, tmp)
 
     GITHUB.upload_files(DATA_BUCKET, [(x[0], tmp + '/' + x[0]) for x in files])
