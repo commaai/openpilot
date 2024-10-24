@@ -229,6 +229,7 @@ void VideoWidget::updateState() {
   } else {
     time_btn->setText(formatTime(can->currentSec(), true));
   }
+  cam_widget->update();
 }
 
 void VideoWidget::updatePlayBtnState() {
