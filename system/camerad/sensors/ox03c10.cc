@@ -42,7 +42,7 @@ OX03C10::OX03C10() {
   frame_data_type = 0x2c; // one is 0x2a, two are 0x2b
   mclk_frequency = 24000000; //Hz
 
-  readout_time_ns = 0;
+  readout_time_ns = 14697000;
 
   dc_gain_factor = 7.32;
   dc_gain_min_weight = 1;  // always on is fine

@@ -251,9 +251,6 @@ void CameraState::run() {
     framed.setTargetGreyFraction(target_grey_fraction);
     framed.setProcessingTime(meta.processing_time);
 
-    double dms = ((double)meta.timestamp_eof - (double)meta.timestamp_end_of_isp)*1e-9;
-    printf("%s diff %f ms\n", camera.cc.publish_name, dms);
-
     const float ev = cur_ev[meta.frame_id % 3];
     const float perc = util::map_val(ev, camera.sensor->min_ev, camera.sensor->max_ev, 0.0f, 100.0f);
     framed.setExposureValPercent(perc);
