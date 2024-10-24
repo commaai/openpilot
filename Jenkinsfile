@@ -66,7 +66,7 @@ fi
 ln -snf ${env.TEST_DIR} /data/pythonpath
 
 cd ${env.TEST_DIR} || true
-${cmd}
+time ${cmd}
 END"""
 
     sh script: ssh_cmd, label: step_label
@@ -186,14 +186,14 @@ node {
       'model replay': {
         deviceStage("model replay", "tici-replay", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py", [diffPaths: ["selfdrive/modeld/"]]),
-          step("model replay", "time selfdrive/test/process_replay/model_replay.py", [diffPaths: ["selfdrive/modeld/"], timeout: 90]),
+          step("model replay", "selfdrive/test/process_replay/model_replay.py", [diffPaths: ["selfdrive/modeld/"], timeout: 65]),
         ])
       },
       'onroad tests': {
         deviceStage("onroad tests", "tici-needs-can", [], [
           step("build openpilot", "cd system/manager && ./build.py"),
           step("check dirty", "release/check-dirty.sh"),
-          step("onroad tests", "pytest selfdrive/test/test_onroad.py -s", [timeout: 70]),
+          step("onroad tests", "pytest selfdrive/test/test_onroad.py -s", [timeout: 65]),
         ])
       },
     )
