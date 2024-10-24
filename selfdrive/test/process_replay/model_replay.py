@@ -6,6 +6,7 @@ from typing import Any
 import tempfile
 from itertools import zip_longest
 import time
+import pickle
 
 import matplotlib.pyplot as plt
 
@@ -156,7 +157,14 @@ if __name__ == "__main__":
 
   st = time.monotonic()
   # load logs
-  lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT, "rlog.bz2")))
+  if os.path.isfile("LOG_CACHED"):
+    with open("LOG_CACHED", "rb") as f:
+      lr = pickle.load(f)
+  else:
+    lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT, "rlog.bz2")))
+    with open("LOG_CACHED", "wb") as f:
+      pickle.dump(lr, f)
+
   frs = {
     'roadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "fcamera.hevc"), readahead=True),
     'driverCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "dcamera.hevc"), readahead=True),
