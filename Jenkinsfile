@@ -66,7 +66,7 @@ fi
 ln -snf ${env.TEST_DIR} /data/pythonpath
 
 cd ${env.TEST_DIR} || true
-"${cmd}"
+${cmd}
 END"""
 
     sh script: ssh_cmd, label: step_label
