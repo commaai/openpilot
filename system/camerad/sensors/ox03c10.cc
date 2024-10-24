@@ -75,47 +75,18 @@ OX03C10::OX03C10() {
     fx = -0.507089*exp(-12.54124638*fx) + 0.9655*pow(fx, 0.5) - 0.472597*fx + 0.507089;
     gamma_lut_rgb.push_back((uint32_t)(fx*1023.0 + 0.5));
   }
-  for (int i = 0; i < 288; i++) {
-    linearization_lut.push_back((uint32_t)(0));
-  }
-
-  linearization_lut[0] = (0x00000000 & 0x3fff) | ((0x00000004 & 0x3ffffff) << 14);
-  linearization_lut[1] = (0x00000000 & 0x3fff) | ((0x00000004 & 0x3ffffff) << 14);
-  linearization_lut[2] = (0x00000000 & 0x3fff) | ((0x00000004 & 0x3ffffff) << 14);
-  linearization_lut[3] = (0x00000000 & 0x3fff) | ((0x00000004 & 0x3ffffff) << 14);
-  linearization_lut[4] = (0x00000003 & 0x3fff) | ((0x00000030 & 0x3ffffff) << 14);
-  linearization_lut[5] = (0x00000003 & 0x3fff) | ((0x00000030 & 0x3ffffff) << 14);
-  linearization_lut[6] = (0x00000003 & 0x3fff) | ((0x00000030 & 0x3ffffff) << 14);
-  linearization_lut[7] = (0x00000003 & 0x3fff) | ((0x00000030 & 0x3ffffff) << 14);
-  linearization_lut[8] = (0x0000000f & 0x3fff) | ((0x000000c0 & 0x3ffffff) << 14);
-  linearization_lut[9] = (0x0000000f & 0x3fff) | ((0x000000c0 & 0x3ffffff) << 14);
-  linearization_lut[10] = (0x0000000f & 0x3fff) | ((0x000000c0 & 0x3ffffff) << 14);
-  linearization_lut[11] = (0x0000000f & 0x3fff) | ((0x000000c0 & 0x3ffffff) << 14);
-  linearization_lut[12] = (0x0000003f & 0x3fff) | ((0x00000400 & 0x3ffffff) << 14);
-  linearization_lut[13] = (0x0000003f & 0x3fff) | ((0x00000400 & 0x3ffffff) << 14);
-  linearization_lut[14] = (0x0000003f & 0x3fff) | ((0x00000400 & 0x3ffffff) << 14);
-  linearization_lut[15] = (0x0000003f & 0x3fff) | ((0x00000400 & 0x3ffffff) << 14);
-  linearization_lut[16] = (0x0000007f & 0x3fff) | ((0x00000800 & 0x3ffffff) << 14);
-  linearization_lut[17] = (0x0000007f & 0x3fff) | ((0x00000800 & 0x3ffffff) << 14);
-  linearization_lut[18] = (0x0000007f & 0x3fff) | ((0x00000800 & 0x3ffffff) << 14);
-  linearization_lut[19] = (0x0000007f & 0x3fff) | ((0x00000800 & 0x3ffffff) << 14);
-  linearization_lut[20] = (0x0000017f & 0x3fff) | ((0x00000fff & 0x3ffffff) << 14);
-  linearization_lut[21] = (0x0000017f & 0x3fff) | ((0x00000fff & 0x3ffffff) << 14);
-  linearization_lut[22] = (0x0000017f & 0x3fff) | ((0x00000fff & 0x3ffffff) << 14);
-  linearization_lut[23] = (0x0000017f & 0x3fff) | ((0x00000fff & 0x3ffffff) << 14);
-  linearization_lut[24] = (0x000002ff & 0x3fff) | ((0x00001ffe & 0x3ffffff) << 14);
-  linearization_lut[25] = (0x000002ff & 0x3fff) | ((0x00001ffe & 0x3ffffff) << 14);
-  linearization_lut[26] = (0x000002ff & 0x3fff) | ((0x00001ffe & 0x3ffffff) << 14);
-  linearization_lut[27] = (0x000002ff & 0x3fff) | ((0x00001ffe & 0x3ffffff) << 14);
-  linearization_lut[28] = (0x000005ff & 0x3fff) | ((0x00003ffc & 0x3ffffff) << 14);
-  linearization_lut[29] = (0x000005ff & 0x3fff) | ((0x00003ffc & 0x3ffffff) << 14);
-  linearization_lut[30] = (0x000005ff & 0x3fff) | ((0x00003ffc & 0x3ffffff) << 14);
-  linearization_lut[31] = (0x000005ff & 0x3fff) | ((0x00003ffc & 0x3ffffff) << 14);
-  linearization_lut[32] = (0x00000bff & 0x3fff) | ((0x00007ff8 & 0x3ffffff) << 14);
-  linearization_lut[33] = (0x00000bff & 0x3fff) | ((0x00007ff8 & 0x3ffffff) << 14);
-  linearization_lut[34] = (0x00000bff & 0x3fff) | ((0x00007ff8 & 0x3ffffff) << 14);
-  linearization_lut[35] = (0x00000bff & 0x3fff) | ((0x00007ff8 & 0x3ffffff) << 14);
-
+  linearization_lut = {
+    0x00010000, 0x00010000, 0x00010000, 0x00010000,
+    0x000c0003, 0x000c0003, 0x000c0003, 0x000c0003,
+    0x0030000f, 0x0030000f, 0x0030000f, 0x0030000f,
+    0x0100003f, 0x0100003f, 0x0100003f, 0x0100003f,
+    0x0200007f, 0x0200007f, 0x0200007f, 0x0200007f,
+    0x03ffc17f, 0x03ffc17f, 0x03ffc17f, 0x03ffc17f,
+    0x07ff82ff, 0x07ff82ff, 0x07ff82ff, 0x07ff82ff,
+    0x0fff05ff, 0x0fff05ff, 0x0fff05ff, 0x0fff05ff,
+    0x1ffe0bff, 0x1ffe0bff, 0x1ffe0bff, 0x1ffe0bff,
+  };
+  linearization_pts = {0x27fc1ffc, 0x31fc2ffc, 0x38fc35fc, 0x3efc3bfc};
   for (int i = 0; i < 884*2; i++) {
     vignetting_lut.push_back(0xff);
   }
