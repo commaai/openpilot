@@ -64,7 +64,7 @@ OX03C10::OX03C10() {
   max_ev = exposure_time_max * dc_gain_factor * sensor_analog_gains[analog_gain_max_idx];
   target_grey_factor = 0.01;
 
-  black_level = 64;
+  black_level = 0;
   color_correct_matrix = {
     0x000000b6, 0x00000ff1, 0x00000fda,
     0x00000fcc, 0x000000b9, 0x00000ffb,
