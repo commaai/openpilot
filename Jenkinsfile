@@ -103,7 +103,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
               println "Skipping ${name}: no changes in ${argPaths}."
               return
             } else {
-              timeout(time: 300, unit: 'SECONDS') {
+              timeout(time: argTimeout, unit: 'SECONDS') {
                 device(device_ip, name, cmd)
               }
             }
