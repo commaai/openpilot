@@ -66,7 +66,7 @@ fi
 ln -snf ${env.TEST_DIR} /data/pythonpath
 
 cd ${env.TEST_DIR} || true
-${cmd}
+time timeout 60 ${cmd}
 END"""
 
     sh script: ssh_cmd, label: step_label
@@ -103,7 +103,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
               println "Skipping ${name}: no changes in ${argPaths}."
               return
             } else {
-              timeout(time: argTimeout, unit: 'SECONDS') {
+              timeout(time: 300, unit: 'SECONDS') {
                 device(device_ip, name, cmd)
               }
             }
