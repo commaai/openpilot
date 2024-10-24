@@ -155,26 +155,34 @@ if __name__ == "__main__":
   update = "--update" in sys.argv or (os.getenv("GIT_BRANCH", "") == 'master')
   replay_dir = os.path.dirname(os.path.abspath(__file__))
 
-  st = time.monotonic()
   # load logs
+  st = time.monotonic()
   lr = []
-  if os.path.isfile("/tmp/LOG_CACHED"):
-    with open("/tmp/LOG_CACHED", "rb") as f:
+  CACHE="/data/model_replay_cache"
+  LOG_CACHE = f"{CACHE}/LOG_CACHED"
+  if os.path.isfile(LOG_CACHE):
+    with open(LOG_CACHE, "rb") as f:
       lr = pickle.load(f)
-      print("GOT CACHED LOG: ", lr[0])
+      print("GOT CACHED LOG")
   else:
     lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT, "rlog.bz2")))
     print("MISSED CACHED LOG")
-    with open("/tmp/LOG_CACHED", "wb") as f:
+    with open(LOG_CACHE, "wb") as f:
       pickle.dump(lr, f)
-
   print("Getting logs: ", time.monotonic() - st)
+
+  st = time.monotonic()
+  if not os.path.isfile("/data/model_replay_cache/fcamera.hevc"):
+    os.system(f'wget {get_url(TEST_ROUTE, SEGMENT, "fcamera.hevc")} -P {CACHE}')
+    os.system(f'wget {get_url(TEST_ROUTE, SEGMENT, "dcamera.hevc")} -P {CACHE}')
+    os.system(f'wget {get_url(TEST_ROUTE, SEGMENT, "ecamera.hevc")} -P {CACHE}')
+
   frs = {
-    'roadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "fcamera.hevc"), readahead=True),
-    'driverCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "dcamera.hevc"), readahead=True),
-    'wideRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "ecamera.hevc"), readahead=True)
+    'roadCameraState': FrameReader("/data/model_replay_cache/fcamera.hevc", readahead=True),
+    'driverCameraState': FrameReader("/data/model_replay_cache/dcamera.hevc", readahead=True),
+    'wideRoadCameraState': FrameReader("/data/model_replay_cache/ecamera.hevc", readahead=True)
   }
-  print("Getting logs + frames: ", time.monotonic() - st)
+  print("Getting frames: ", time.monotonic() - st)
 
   log_msgs = []
   # run replays
