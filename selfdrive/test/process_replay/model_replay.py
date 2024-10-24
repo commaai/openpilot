@@ -157,6 +157,7 @@ if __name__ == "__main__":
 
   st = time.monotonic()
   # load logs
+  lr = []
   if os.path.isfile("LOG_CACHED"):
     with open("LOG_CACHED", "rb") as f:
       lr = pickle.load(f)
