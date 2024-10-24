@@ -66,7 +66,7 @@ fi
 ln -snf ${env.TEST_DIR} /data/pythonpath
 
 cd ${env.TEST_DIR} || true
-time timeout 60 ${cmd}
+"${cmd}"
 END"""
 
     sh script: ssh_cmd, label: step_label
@@ -186,7 +186,7 @@ node {
       'model replay': {
         deviceStage("model replay", "tici-replay", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py", [diffPaths: ["selfdrive/modeld/"]]),
-          step("model replay", "selfdrive/test/process_replay/model_replay.py", [diffPaths: ["selfdrive/modeld/"], timeout: 90]),
+          step("model replay", "time selfdrive/test/process_replay/model_replay.py", [diffPaths: ["selfdrive/modeld/"], timeout: 90]),
         ])
       },
       'onroad tests': {

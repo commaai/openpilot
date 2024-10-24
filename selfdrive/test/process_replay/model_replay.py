@@ -161,11 +161,14 @@ if __name__ == "__main__":
   if os.path.isfile("LOG_CACHED"):
     with open("LOG_CACHED", "rb") as f:
       lr = pickle.load(f)
+      print("GOT CACHED LOG: ", lr[0])
   else:
     lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT, "rlog.bz2")))
+    print("MISSED CACHED LOG")
     with open("LOG_CACHED", "wb") as f:
       pickle.dump(lr, f)
 
+  print("Getting logs: ", time.monotonic() - st)
   frs = {
     'roadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "fcamera.hevc"), readahead=True),
     'driverCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "dcamera.hevc"), readahead=True),
