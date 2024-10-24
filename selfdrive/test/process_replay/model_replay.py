@@ -150,39 +150,35 @@ def model_replay(lr, frs):
   dmonitoringmodeld_msgs = replay_process(dmonitoringmodeld, dmodeld_logs, frs)
   return modeld_msgs + dmonitoringmodeld_msgs
 
+def get_logs_and_frames(cache=False):
+  TICI = os.path.isfile('/TICI')
+  CACHE="/data/model_replay_cache" if TICI else '/tmp/model_replay_cache'
+  LOG_CACHE = f"{CACHE}/LOG_CACHED"
+
+  if os.path.isfile(LOG_CACHE):
+    with open(LOG_CACHE, "rb") as f:
+      lr = pickle.load(f)
+  else:
+    lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT, "rlog.bz2")))
+    with open(LOG_CACHE, "wb") as f:
+      pickle.dump(lr, f)
+
+  videos = ["fcamera.hevc", "dcamera.hevc", "ecamera.hevc"]
+  for v in videos:
+    if not os.path.isfile(f"{CACHE}/{v}"):
+      os.system(f"wget {get_url(TEST_ROUTE, SEGMENT, v)} -P {CACHE}")
+
+  cams = ["roadCameraState", "driverCameraState", "wideRoadCameraState"]
+  frs = {c : FrameReader(f"{CACHE}/{v}", readahead=True) for c,v in zip(cams, videos, strict=True)}
+
+  return lr,frs
+
 
 if __name__ == "__main__":
   update = "--update" in sys.argv or (os.getenv("GIT_BRANCH", "") == 'master')
   replay_dir = os.path.dirname(os.path.abspath(__file__))
 
-  # load logs
-  st = time.monotonic()
-  lr = []
-  CACHE="/data/model_replay_cache"
-  LOG_CACHE = f"{CACHE}/LOG_CACHED"
-  if os.path.isfile(LOG_CACHE):
-    with open(LOG_CACHE, "rb") as f:
-      lr = pickle.load(f)
-      print("GOT CACHED LOG")
-  else:
-    lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT, "rlog.bz2")))
-    print("MISSED CACHED LOG")
-    with open(LOG_CACHE, "wb") as f:
-      pickle.dump(lr, f)
-  print("Getting logs: ", time.monotonic() - st)
-
-  st = time.monotonic()
-  if not os.path.isfile("/data/model_replay_cache/fcamera.hevc"):
-    os.system(f'wget {get_url(TEST_ROUTE, SEGMENT, "fcamera.hevc")} -P {CACHE}')
-    os.system(f'wget {get_url(TEST_ROUTE, SEGMENT, "dcamera.hevc")} -P {CACHE}')
-    os.system(f'wget {get_url(TEST_ROUTE, SEGMENT, "ecamera.hevc")} -P {CACHE}')
-
-  frs = {
-    'roadCameraState': FrameReader("/data/model_replay_cache/fcamera.hevc", readahead=True),
-    'driverCameraState': FrameReader("/data/model_replay_cache/dcamera.hevc", readahead=True),
-    'wideRoadCameraState': FrameReader("/data/model_replay_cache/ecamera.hevc", readahead=True)
-  }
-  print("Getting frames: ", time.monotonic() - st)
+  lr,frs = get_logs_and_frames("CI" in os.environ)
 
   log_msgs = []
   # run replays
