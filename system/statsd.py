@@ -2,6 +2,7 @@
 import os
 import zmq
 import time
+import uuid
 from pathlib import Path
 from collections import defaultdict
 from datetime import datetime, UTC
@@ -102,6 +103,7 @@ def main() -> NoReturn:
   sm = SubMaster(['deviceState'])
 
   idx = 0
+  boot_uid = str(uuid.uuid4())[:8]
   last_flush_time = time.monotonic()
   gauges = {}
   samples: dict[str, list[float]] = defaultdict(list)
@@ -164,7 +166,7 @@ def main() -> NoReturn:
         # check that we aren't filling up the drive
         if len(os.listdir(STATS_DIR)) < STATS_DIR_FILE_LIMIT:
           if len(result) > 0:
-            stats_path = os.path.join(STATS_DIR, f"{current_time.timestamp():.0f}_{idx}")
+            stats_path = os.path.join(STATS_DIR, f"{boot_uid}_{idx}")
             with atomic_write_in_dir(stats_path) as f:
               f.write(result)
             idx += 1
