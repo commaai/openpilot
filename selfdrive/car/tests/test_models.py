@@ -24,6 +24,7 @@ from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.route import SegmentName
+from openpilot.selfdrive.test.fuzzy_generation import FuzzyGenerator
 
 from panda.tests.libpanda import libpanda_py
 
@@ -178,6 +179,8 @@ class TestCarModelBase(unittest.TestCase):
     set_status = self.safety.set_safety_hooks(cfg.safetyModel.raw, cfg.safetyParam)
     self.assertEqual(0, set_status, f"failed to set safetyModel {cfg}")
     self.safety.init_tests()
+
+    self.tx_fuzzy_ts_nanos = 0
 
   def test_car_params(self):
     if self.CP.dashcamOnly:
@@ -367,6 +370,65 @@ class TestCarModelBase(unittest.TestCase):
       if self.CP.carName == "honda":
         if self.safety.get_acc_main_on() != prev_panda_acc_main_on:
           self.assertEqual(CS.cruiseState.available, self.safety.get_acc_main_on())
+
+  @pytest.mark.nocapture
+  @settings(max_examples=MAX_EXAMPLES, deadline=None,
+            phases=(Phase.reuse, Phase.generate, Phase.shrink))
+  @given(data=st.data())
+  def test_panda_safety_tx_fuzzy(self, data):
+    """
+    For each example, randomly imitate a carstate, send a randomly generated CarControl struct to
+    Openpilot and Panda. Check for matching logic between the two
+    """
+    if self.CP.dashcamOnly or self.CP.notCar:
+      self.skipTest("no need to check tx panda safety for dashcamOnly and notCar")
+
+    stop_frame = data.draw(st.integers(min_value=20, max_value=300))
+    for can in self.can_msgs[:stop_frame]:
+      self.CI.update(can_capnp_to_list((can.as_builder().to_bytes(), )))
+      for msg in filter(lambda m: m.src in range(64), can.can):
+        to_send = libpanda_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
+        self.safety.safety_rx_hook(to_send)
+
+    cc_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
+
+    # check for controls_allowed and set True if not already in these cases:
+    # - cancel button messages before controls_allowed
+    # - actuator commands before controls_allowed
+    # - resume button message before controls_allowed
+    controls_state = any([cc_msg["enabled"], cc_msg["latActive"], cc_msg["longActive"]])
+    panda_controls_allowed = any([controls_state, cc_msg["cruiseControl"]["resume"], cc_msg["cruiseControl"]["cancel"]])
+    self.safety.set_controls_allowed(panda_controls_allowed)
+    self.safety.set_cruise_engaged_prev(panda_controls_allowed) # ford: violation if cancel engage without cruise_engaged_prev
+
+    # relay_malfunction might be set during randomizing carState
+    if self.safety.get_relay_malfunction():
+      self.safety.set_relay_malfunction(False)
+
+    # no longitudinal controls if gas_pressed_prev
+    if self.safety.get_gas_pressed_prev():
+      cc_msg["longActive"] = False
+      cc_msg["enabled"] = False
+
+    if cc_msg["longActive"]:
+      cc_msg["enabled"] = True
+    else:
+      # follow logic of LoC in controlsd to set accel to 0 if longActive is False
+      cc_msg["actuators"]["accel"] = 0
+
+    CC = car.CarControl.new_message(**cc_msg).as_reader()
+
+    if self.CP.carName == "ford":
+      desired_angle_last = round(self.CI.CC.apply_curvature_last * 50000)
+      self.safety.set_angle_meas(desired_angle_last, desired_angle_last)
+
+    self.safety.set_timer(int(self.tx_fuzzy_ts_nanos / 1e3))
+    _, sendcans = self.CI.apply(CC, self.tx_fuzzy_ts_nanos)
+    self.tx_fuzzy_ts_nanos += DT_CTRL * 1e9
+
+    for addr, dat, bus in sendcans:
+      to_send = libpanda_py.make_CANPacket(addr, bus % 4, dat)
+      self.assertTrue(self.safety.safety_tx_hook(to_send), (addr, dat, bus))
 
   def test_panda_safety_carstate(self):
     """
