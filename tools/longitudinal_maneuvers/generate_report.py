@@ -55,7 +55,7 @@ def report(platform, route, _description, CP, ID, maneuvers):
 
       # maneuver validity
       longActive = [m.longActive for m in carControl]
-      maneuver_valid = all(longActive) and not any(cs.cruiseState.standstill for cs in carState)
+      maneuver_valid = all(longActive) and (not any(cs.cruiseState.standstill for cs in carState) or CP.autoResumeSng)
 
       _open = 'open' if maneuver_valid else ''
       title = f'Run #{int(run)+1}' + (' <span style="color: red">(invalid maneuver!)</span>' if not maneuver_valid else '')

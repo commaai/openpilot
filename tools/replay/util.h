@@ -3,6 +3,7 @@
 #include <atomic>
 #include <deque>
 #include <functional>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -59,6 +60,15 @@ typedef std::function<void(uint64_t cur, uint64_t total, bool success)> Download
 void installDownloadProgressHandler(DownloadProgressHandler);
 bool httpDownload(const std::string &url, const std::string &file, size_t chunk_size = 0, std::atomic<bool> *abort = nullptr);
 std::string formattedDataSize(size_t size);
-std::vector<std::string> split(std::string_view source, char delimiter);
-std::string join(const std::vector<std::string> &elements, char separator);
 std::string extractFileName(const std::string& file);
+std::vector<std::string> split(std::string_view source, char delimiter);
+
+template <typename Iterable>
+std::string join(const Iterable& elements, const std::string& separator) {
+  std::ostringstream oss;
+  for (auto it = elements.begin(); it != elements.end(); ++it) {
+    if (it != elements.begin()) oss << separator;
+    oss << *it;
+  }
+  return oss.str();
+}

@@ -42,6 +42,8 @@ OX03C10::OX03C10() {
   frame_data_type = 0x2c; // one is 0x2a, two are 0x2b
   mclk_frequency = 24000000; //Hz
 
+  readout_time_ns = 14697000;
+
   dc_gain_factor = 7.32;
   dc_gain_min_weight = 1;  // always on is fine
   dc_gain_max_weight = 1;
@@ -113,6 +115,10 @@ OX03C10::OX03C10() {
   linearization_lut[33] = (0x00000bff & 0x3fff) | ((0x00007ff8 & 0x3ffffff) << 14);
   linearization_lut[34] = (0x00000bff & 0x3fff) | ((0x00007ff8 & 0x3ffffff) << 14);
   linearization_lut[35] = (0x00000bff & 0x3fff) | ((0x00007ff8 & 0x3ffffff) << 14);
+
+  for (int i = 0; i < 884*2; i++) {
+    vignetting_lut.push_back(0xff);
+  }
 }
 
 std::vector<i2c_random_wr_payload> OX03C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {

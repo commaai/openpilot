@@ -66,11 +66,14 @@ public:
   uint32_t mclk_frequency;
   uint32_t frame_data_type;
 
+  uint32_t readout_time_ns;  // used to recover EOF from SOF
+
   // ISP image processing params
   uint32_t black_level;
   std::vector<uint32_t> color_correct_matrix;  // 3x3
   std::vector<uint32_t> gamma_lut_rgb;         // gamma LUTs are length 64 * sizeof(uint32_t); same for r/g/b here
   std::vector<uint32_t> linearization_lut;     // length 288
+  std::vector<uint32_t> vignetting_lut;        // 2x length 884
 };
 
 class AR0231 : public SensorInfo {

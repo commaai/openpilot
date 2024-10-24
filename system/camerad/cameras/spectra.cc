@@ -457,13 +457,21 @@ void SpectraCamera::config_bps(int idx, int request_id) {
   (void)request_id;
 }
 
+void add_patch(void *ptr, int n, int32_t dst_hdl, uint32_t dst_offset, int32_t src_hdl, uint32_t src_offset) {
+  struct cam_patch_desc *p = (struct cam_patch_desc *)((unsigned char*)ptr + sizeof(struct cam_patch_desc)*n);
+  p->dst_buf_hdl = dst_hdl;
+  p->src_buf_hdl = src_hdl;
+  p->dst_offset = dst_offset;
+  p->src_offset = src_offset;
+};
+
 void SpectraCamera::config_ife(int idx, int request_id, bool init) {
   /*
     Handles initial + per-frame IFE config.
     * IFE = Image Front End
   */
   int size = sizeof(struct cam_packet) + sizeof(struct cam_cmd_buf_desc)*2;
-  size += sizeof(struct cam_patch_desc)*4;
+  size += sizeof(struct cam_patch_desc)*10;
   if (!init) {
     size += sizeof(struct cam_buf_io_cfg);
   }
@@ -632,23 +640,24 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
   // *** patches ***
   // sets up the kernel driver to do address translation for the IFE
   {
+    // order here corresponds to the one in build_initial_config
+    assert(patches.size() == 6 || patches.size() == 0);
+
     pkt->num_patches = patches.size();
     pkt->patch_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf + sizeof(struct cam_buf_io_cfg)*pkt->num_io_configs;
     if (pkt->num_patches > 0) {
-      // linearization LUT
-      struct cam_patch_desc *patch = (struct cam_patch_desc *)((char*)&pkt->payload + pkt->patch_offset);
-      patch->dst_buf_hdl = ife_cmd.handle;
-      patch->src_buf_hdl = ife_linearization_lut.handle;
-      patch->dst_offset = patches[0];
-      patch->src_offset = 0;
+      void *p = (char*)&pkt->payload + pkt->patch_offset;
 
-      // gamma LUT
+      // linearization LUT
+      add_patch(p, 0, ife_cmd.handle, patches[0], ife_linearization_lut.handle, 0);
+
+      // vignetting correction LUTs
+      add_patch(p, 1, ife_cmd.handle, patches[1], ife_vignetting_lut.handle, 0);
+      add_patch(p, 2, ife_cmd.handle, patches[2], ife_vignetting_lut.handle, ife_vignetting_lut.size);
+
+      // gamma LUTs
       for (int i = 0; i < 3; i++) {
-        patch = (struct cam_patch_desc *)((char*)&pkt->payload + pkt->patch_offset + sizeof(cam_patch_desc)*(i+1));
-        patch->dst_buf_hdl = ife_cmd.handle;
-        patch->src_buf_hdl = ife_gamma_lut.handle;
-        patch->dst_offset = patches[i+1];
-        patch->src_offset = ife_gamma_lut.size*i;
+        add_patch(p, i+3, ife_cmd.handle, patches[i+3], ife_gamma_lut.handle, ife_gamma_lut.size*i);
       }
     }
   }
@@ -671,8 +680,8 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
       LOGE("failed to wait for sync: %d %d", ret, sync_wait.sync_obj);
       // TODO: handle frame drop cleanly
     }
-
-    buf.frame_metadata[i].timestamp_eof = (uint64_t)nanos_since_boot(); // set true eof
+    buf.frame_metadata[i].timestamp_end_of_isp = (uint64_t)nanos_since_boot();
+    buf.frame_metadata[i].timestamp_eof = buf.frame_metadata[i].timestamp_sof + sensor->readout_time_ns;
     if (dp) buf.queue(i);
 
     // destroy old output fence
@@ -873,6 +882,10 @@ void SpectraCamera::configISP() {
                                CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
                                m->device_iommu, m->cdm_iommu);
     memcpy(ife_linearization_lut.ptr, sensor->linearization_lut.data(), ife_linearization_lut.size);
+    ife_vignetting_lut.init(m, sensor->vignetting_lut.size(), 0x20,
+                            CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
+                            m->device_iommu, m->cdm_iommu, 2);
+    memcpy(ife_vignetting_lut.ptr, sensor->vignetting_lut.data(), ife_vignetting_lut.size*2);
   }
 
   config_ife(0, 1, true);
@@ -1083,7 +1096,7 @@ void SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
     auto &meta_data = buf.frame_metadata[buf_idx];
     meta_data.frame_id = main_id - idx_offset;
     meta_data.request_id = real_id;
-    meta_data.timestamp_sof = timestamp;
+    meta_data.timestamp_sof = timestamp; // this is timestamped in the kernel's SOF IRQ callback
 
     // dispatch
     enqueue_req_multi(real_id + FRAME_BUF_COUNT, 1, 1);
