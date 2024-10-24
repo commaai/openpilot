@@ -5,7 +5,7 @@ from collections import defaultdict
 from typing import Any
 import tempfile
 from itertools import zip_longest
-import time
+from pathlib import Path
 import pickle
 
 import matplotlib.pyplot as plt
@@ -84,29 +84,21 @@ def comment_replay_report(proposed, master, full_logs):
     PR_BRANCH = os.getenv("GIT_BRANCH","")
     DATA_BUCKET = f"model_replay_{PR_BRANCH}"
 
-    st = time.monotonic()
     files = generate_report(proposed, master, tmp)
-    print("Generating report: ", time.monotonic() - st)
 
-    st = time.monotonic()
     GITHUB.upload_files(DATA_BUCKET, [(x[0], tmp + '/' + x[0]) for x in files])
-    print("Uploading report: ", time.monotonic() - st)
 
-    st = time.monotonic()
     commit = get_commit()
     log_name = get_log_fn(TEST_ROUTE, commit)
     save_log(log_name, full_logs)
     GITHUB.upload_file(DATA_BUCKET, os.path.basename(log_name), log_name)
-    print("Saving log: ", time.monotonic() - st)
 
     diff_files = [x for x in files if not x[1]]
     link = GITHUB.get_bucket_link(DATA_BUCKET)
     diff_plots = create_table("Model Replay Differences", diff_files, link, open_table=True)
     all_plots = create_table("All Model Replay Plots", files, link)
     comment = f"ref for commit {commit}: {link}/{log_name}" + diff_plots + all_plots
-    st = time.monotonic()
     GITHUB.comment_on_pr(comment, PR_BRANCH)
-    print("Commenting table: ", time.monotonic() - st)
 
 def trim_logs_to_max_frames(logs, max_frames, frs_types, include_all_types):
   all_msgs = []
@@ -153,9 +145,10 @@ def model_replay(lr, frs):
 def get_logs_and_frames(cache=False):
   TICI = os.path.isfile('/TICI')
   CACHE="/data/model_replay_cache" if TICI else '/tmp/model_replay_cache'
-  LOG_CACHE = f"{CACHE}/LOG_CACHED"
+  Path(CACHE).mkdir(parents=True, exist_ok=True)
 
-  if os.path.isfile(LOG_CACHE):
+  LOG_CACHE = f"{CACHE}/LOG_CACHED"
+  if cache and os.path.isfile(LOG_CACHE):
     with open(LOG_CACHE, "rb") as f:
       lr = pickle.load(f)
   else:
@@ -164,9 +157,10 @@ def get_logs_and_frames(cache=False):
       pickle.dump(lr, f)
 
   videos = ["fcamera.hevc", "dcamera.hevc", "ecamera.hevc"]
-  for v in videos:
-    if not os.path.isfile(f"{CACHE}/{v}"):
-      os.system(f"wget {get_url(TEST_ROUTE, SEGMENT, v)} -P {CACHE}")
+  if cache:
+    for v in videos:
+      if not os.path.isfile(f"{CACHE}/{v}"):
+        os.system(f"wget {get_url(TEST_ROUTE, SEGMENT, v)} -P {CACHE}")
 
   cams = ["roadCameraState", "driverCameraState", "wideRoadCameraState"]
   frs = {c : FrameReader(f"{CACHE}/{v}", readahead=True) for c,v in zip(cams, videos, strict=True)}
@@ -183,9 +177,7 @@ if __name__ == "__main__":
   log_msgs = []
   # run replays
   if not NO_MODEL:
-    st = time.monotonic()
     log_msgs += model_replay(lr, frs)
-    print("Model replay: ", time.monotonic() - st)
 
   # get diff
   failed = False
