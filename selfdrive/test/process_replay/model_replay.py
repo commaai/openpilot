@@ -11,7 +11,7 @@ import pickle
 import matplotlib.pyplot as plt
 
 from openpilot.common.git import get_commit
-from openpilot.system.hardware import PC
+from openpilot.system.hardware import PC, HARDWARE
 from openpilot.tools.lib.openpilotci import get_url
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.process_replay import get_process_config, replay_process
@@ -169,6 +169,8 @@ def get_logs_and_frames(cache=False):
 
 
 if __name__ == "__main__":
+  HARDWARE.set_power_save(False)
+
   update = "--update" in sys.argv or (os.getenv("GIT_BRANCH", "") == 'master')
   replay_dir = os.path.dirname(os.path.abspath(__file__))
 
