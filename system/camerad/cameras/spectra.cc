@@ -816,12 +816,6 @@ void SpectraCamera::configISP() {
     .right_stop = sensor->frame_width - 1,
     .right_width = sensor->frame_width,
 
-    /*
-    .line_start = 0,
-    .line_stop = sensor->frame_height + sensor->extra_height - 1,
-    .height = sensor->frame_height + sensor->extra_height,
-    */
-
     .line_start = sensor->frame_offset,
     .line_stop = sensor->frame_height + sensor->frame_offset - 1,
     .height = sensor->frame_height + sensor->frame_offset,
