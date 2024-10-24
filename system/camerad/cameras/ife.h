@@ -34,7 +34,7 @@ int build_update(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t> &patch
   });
 
   dst += write_cont(dst, 0x40, {
-    0x00000c04,
+    0x00000c04, // (1<<8) to enable vignetting correction
   });
 
   dst += write_cont(dst, 0x48, {
@@ -165,24 +165,10 @@ int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t
     0xec4e4000,
     0x0100c003,
   });
-  /* TODO
-  cdm_dmi_cmd_t 444
-    .length = 883
-    .reserved = 33
-    .cmd = 10
-    .addr = 0
-    .DMIAddr = 3108
-    .DMISel = 14
-  */
-  /* TODO
-  cdm_dmi_cmd_t 444
-    .length = 883
-    .reserved = 33
-    .cmd = 10
-    .addr = 0
-    .DMIAddr = 3108
-    .DMISel = 15
-  */
+  dst += write_dmi(dst, &addr, 884, 0xc24, 14);
+  patches.push_back(addr - (uint64_t)start);
+  dst += write_dmi(dst, &addr, 884, 0xc24, 15);
+  patches.push_back(addr - (uint64_t)start);
 
   // debayer
   dst += write_cont(dst, 0x6f8, {
