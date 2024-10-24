@@ -78,6 +78,9 @@ OX03C10::OX03C10() {
   for (int i = 0; i < 288; i++) {
     linearization_lut.push_back(0xff);
   }
+  for (int i = 0; i < 884*2; i++) {
+    vignetting_lut.push_back(0xff);
+  }
 }
 
 std::vector<i2c_random_wr_payload> OX03C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {
