@@ -177,9 +177,10 @@ jobs:
       - name: Create Test Report
         run: >
             ${{ env.RUN }} "PYTHONWARNINGS=ignore &&
-                            CACHE_ROOT="/tmp/comma_download_cache" &&
+                            CACHE_ROOT=/tmp/comma_download_cache &&
                             source selfdrive/test/setup_xvfb.sh &&
-                            python3 selfdrive/ui/tests/test_ui/run.py"
+                            python3 selfdrive/ui/tests/test_ui/run.py &&
+                            chmod -R 777 /tmp/comma_download_cache"
       - name: Upload Test Report
         uses: actions/upload-artifact@v4
         with:
