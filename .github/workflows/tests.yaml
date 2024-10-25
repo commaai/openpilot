@@ -1,0 +1,156 @@
+name: tests
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      run_number:
+        default: '1'
+        required: true
+        type: string
+
+concurrency:
+  group: tests-ci-run-${{ inputs.run_number }}-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+env:
+  PYTHONWARNINGS: error
+  BASE_IMAGE: openpilot-base
+  AZURE_TOKEN: ${{ secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN }}
+
+  DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+  BUILD: selfdrive/test/docker_build.sh base
+
+  RUN: docker run --shm-size 2G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e CI=1 -e PYTHONWARNINGS=error -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/bash -c
+
+jobs:
+
+  build_release:
+    name: build release
+    runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
+                   ((github.event_name != 'pull_request') ||
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-latest' }}
+    env:
+      STRIPPED_DIR: /tmp/releasepilot
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - run: git lfs pull
+    - name: Build devel
+      timeout-minutes: 1
+      run: TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
+    - uses: ./.github/workflows/setup-with-retry
+    - name: Check submodules
+      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
+      timeout-minutes: 1
+      run: release/check-submodules.sh
+    - name: Build openpilot and run checks
+      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
+      run: |
+        cd $STRIPPED_DIR
+        ${{ env.RUN }} "python3 system/manager/build.py"
+    - name: car tests
+      timeout-minutes: 1
+      run: |
+        cd $STRIPPED_DIR
+        ${{ env.RUN }} "release/check-dirty.sh && \
+                        MAX_EXAMPLES=5 pytest -m 'not slow' selfdrive/car system/manager"
+    - name: static analysis
+      timeout-minutes: 1
+      run: |
+        cd $GITHUB_WORKSPACE
+        cp pyproject.toml $STRIPPED_DIR
+        cd $STRIPPED_DIR
+        ${{ env.RUN }} "scripts/lint/lint.sh --skip check_added_large_files"
+
+  build:
+    strategy:
+      matrix:
+        arch: ${{ fromJson(
+           ((github.repository == 'commaai/openpilot') &&
+              ((github.event_name != 'pull_request') ||
+               (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && '["x86_64", "aarch64"]' || '["x86_64"]' ) }}
+    runs-on: ${{ ((matrix.arch == 'aarch64') && 'namespace-profile-arm64-2x8') ||
+                 ((matrix.arch == 'x86_64') && ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16') ||
+                   'ubuntu-latest'}}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - name: Setup docker push
+      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
+      run: |
+        echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
+        echo "TARGET_ARCHITECTURE=${{ matrix.arch }}" >> "$GITHUB_ENV"
+        $DOCKER_LOGIN
+    - uses: ./.github/workflows/setup-with-retry
+      with:
+        docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
+    - uses: ./.github/workflows/compile-openpilot
+      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 15 || 30) }} # allow more time when we missed the scons cache
+
+  build_mac:
+    name: build macOS
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - run: git lfs pull
+    - name: Setup
+      run: tools/op.sh setup
+      env:
+        # package install has DeprecationWarnings
+        PYTHONWARNINGS: default
+    - run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
+    - name: Getting scons cache
+      uses: 'actions/cache@v4'
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        restore-keys: |
+          scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}
+          scons-${{ runner.arch }}-macos
+    - name: Building openpilot
+      run: . .venv/bin/activate && scons -j$(nproc)
+
+  static_analysis:
+    name: static analysis
+    runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
+                   ((github.event_name != 'pull_request') ||
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
+    env:
+      PYTHONWARNINGS: default
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - uses: ./.github/workflows/setup-with-retry
+    - name: Static analysis
+      timeout-minutes: 1
+      run: ${{ env.RUN }} "tools/op.sh lint"
+
+  simulator_driving:
+    name: simulator driving
+    runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
+                   ((github.event_name != 'pull_request') ||
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - uses: ./.github/workflows/setup-with-retry
+    - name: Build openpilot
+      run: |
+        ${{ env.RUN }} "scons -j$(nproc)"
+    - name: Driving test
+      timeout-minutes: 1
+      run: |
+        ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
+                        source selfdrive/test/setup_vsound.sh && \
+                        CI=1 pytest tools/sim/tests/test_metadrive_bridge.py"

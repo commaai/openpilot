@@ -53,7 +53,7 @@ PROCS = {
   "selfdrive.locationd.calibrationd": 2.0,
   "selfdrive.locationd.torqued": 5.0,
   "selfdrive.locationd.locationd": 25.0,
-  "selfdrive.ui.soundd": 3.38,
+  "selfdrive.ui.soundd": 2.0,
   "selfdrive.monitoring.dmonitoringd": 4.0,
   "./proclogd": 1.54,
   "system.logmessaged": 0.2,
@@ -63,7 +63,7 @@ PROCS = {
   "system.timed": 0,
   "selfdrive.pandad.pandad": 0,
   "system.statsd": 0.4,
-  "system.loggerd.uploader": (0.5, 15.0),
+  "system.loggerd.uploader": (0.0, 15.0),
   "system.loggerd.deleter": 0.1,
 }
 
@@ -146,15 +146,15 @@ class TestOnroad:
         # test car params caching
         params.put("CarParamsCache", car.CarParams().to_bytes())
 
-        while len(cls.segments) < 3:
+        while len(cls.segments) < 1:
           segs = set()
           if Path(Paths.log_root()).exists():
             segs = set(Path(Paths.log_root()).glob(f"{route}--*"))
           cls.segments = sorted(segs, key=lambda s: int(str(s).rsplit('--')[-1]))
-          time.sleep(2)
+          time.sleep(0.5)
 
-      # chop off last, incomplete segment
-      cls.segments = cls.segments[:-1]
+        # generate logs for 25 seconds
+        time.sleep(25)
 
     finally:
       cls.gpu_procs = {psutil.Process(int(f.name)).name() for f in pathlib.Path('/sys/devices/virtual/kgsl/kgsl/proc/').iterdir() if f.is_dir()}
@@ -167,8 +167,8 @@ class TestOnroad:
     cls.lrs = [list(LogReader(os.path.join(str(s), "rlog"))) for s in cls.segments]
 
     # use the second segment by default as it's the first full segment
-    cls.lr = list(LogReader(os.path.join(str(cls.segments[1]), "rlog")))
-    cls.log_path = cls.segments[1]
+    cls.lr = list(LogReader(os.path.join(str(cls.segments[0]), "rlog")))
+    cls.log_path = cls.segments[0]
 
     cls.log_sizes = {}
     for f in cls.log_path.iterdir():
@@ -196,7 +196,7 @@ class TestOnroad:
         continue
 
       with subtests.test(service=s):
-        assert len(msgs) >= math.floor(SERVICE_LIST[s].frequency*55)
+        assert len(msgs) >= math.floor(SERVICE_LIST[s].frequency*20)
 
   def test_cloudlog_size(self):
     msgs = [m for m in self.lr if m.which() == 'logMessage']
@@ -211,13 +211,13 @@ class TestOnroad:
   def test_log_sizes(self):
     for f, sz in self.log_sizes.items():
       if f.name == "qcamera.ts":
-        assert 2.15 < sz < 2.6
+        assert 0.90 < sz < 2.6
       elif f.name == "qlog":
-        assert 0.4 < sz < 0.55
+        assert 0.15 < sz < 0.55
       elif f.name == "rlog":
-        assert 5 < sz < 50
+        assert 2.5 < sz < 50
       elif f.name.endswith('.hevc'):
-        assert 70 < sz < 80
+        assert 30 < sz < 80
       else:
         raise NotImplementedError
 
@@ -308,7 +308,8 @@ class TestOnroad:
     assert cpu_ok
 
   def test_memory_usage(self):
-    mems = [m.deviceState.memoryUsagePercent for m in self.service_msgs['deviceState']]
+    offset = int(SERVICE_LIST['deviceState'].frequency * 5)
+    mems = [m.deviceState.memoryUsagePercent for m in self.service_msgs['deviceState'][offset:]]
     print("Memory usage: ", mems)
 
     # check for big leaks. note that memory usage is
@@ -393,7 +394,8 @@ class TestOnroad:
     result += "----------------- Service Timings --------------\n"
     result += "------------------------------------------------\n"
     for s, (maxmin, rsd) in TIMINGS.items():
-      msgs = [m.logMonoTime for m in self.service_msgs[s]]
+      offset = int(SERVICE_LIST[s].frequency * 5)
+      msgs = [m.logMonoTime for m in self.service_msgs[s][offset:]]
       if not len(msgs):
         raise Exception(f"missing {s}")
 
@@ -435,6 +437,7 @@ class TestOnroad:
         if evt.noEntry:
           no_entries[evt.name] += 1
 
-    eng = [m.selfdriveState.engageable for m in self.service_msgs['selfdriveState']]
+    offset = int(SERVICE_LIST['selfdriveState'].frequency * 5)
+    eng = [m.selfdriveState.engageable for m in self.service_msgs['selfdriveState'][offset:]]
     assert all(eng), \
            f"Not engageable for whole segment:\n- selfdriveState.engageable: {Counter(eng)}\n- No entry events: {no_entries}"

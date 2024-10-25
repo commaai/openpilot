@@ -5,11 +5,13 @@ from collections import defaultdict
 from typing import Any
 import tempfile
 from itertools import zip_longest
+from pathlib import Path
+import pickle
 
 import matplotlib.pyplot as plt
 
 from openpilot.common.git import get_commit
-from openpilot.system.hardware import PC
+from openpilot.system.hardware import PC, HARDWARE
 from openpilot.tools.lib.openpilotci import get_url
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.process_replay import get_process_config, replay_process
@@ -19,7 +21,7 @@ from openpilot.tools.lib.github_utils import GithubUtils
 
 TEST_ROUTE = "2f4452b03ccb98f0|2022-12-03--13-45-30"
 SEGMENT = 6
-MAX_FRAMES = 100 if PC else 600
+MAX_FRAMES = 100 if PC else 50
 
 NO_MODEL = "NO_MODEL" in os.environ
 SEND_EXTRA_INPUTS = bool(int(os.getenv("SEND_EXTRA_INPUTS", "0")))
@@ -146,18 +148,39 @@ def model_replay(lr, frs):
   dmonitoringmodeld_msgs = replay_process(dmonitoringmodeld, dmodeld_logs, frs)
   return modeld_msgs + dmonitoringmodeld_msgs
 
+def get_logs_and_frames(cache=False):
+  TICI = os.path.isfile('/TICI')
+  CACHE="/data/model_replay_cache" if TICI else '/tmp/model_replay_cache'
+  Path(CACHE).mkdir(parents=True, exist_ok=True)
+
+  LOG_CACHE = f"{CACHE}/rlog"
+  if cache and os.path.isfile(LOG_CACHE):
+    with open(LOG_CACHE, "rb") as f:
+      lr = pickle.load(f)
+  else:
+    lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT, "rlog.bz2")))
+    with open(LOG_CACHE, "wb") as f:
+      pickle.dump(lr, f)
+
+  videos = ["fcamera.hevc", "dcamera.hevc", "ecamera.hevc"]
+  if cache:
+    for v in videos:
+      if not os.path.isfile(f"{CACHE}/{v}"):
+        os.system(f"wget {get_url(TEST_ROUTE, SEGMENT, v)} -P {CACHE}")
+
+  cams = ["roadCameraState", "driverCameraState", "wideRoadCameraState"]
+  frs = {c : FrameReader(f"{CACHE}/{v}", readahead=True) for c,v in zip(cams, videos, strict=True)}
+
+  return lr,frs
+
 
 if __name__ == "__main__":
+  HARDWARE.set_power_save(False)
+
   update = "--update" in sys.argv or (os.getenv("GIT_BRANCH", "") == 'master')
   replay_dir = os.path.dirname(os.path.abspath(__file__))
 
-  # load logs
-  lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT, "rlog.bz2")))
-  frs = {
-    'roadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "fcamera.hevc"), readahead=True),
-    'driverCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "dcamera.hevc"), readahead=True),
-    'wideRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "ecamera.hevc"), readahead=True)
-  }
+  lr,frs = get_logs_and_frames("CI" in os.environ)
 
   log_msgs = []
   # run replays
