@@ -235,12 +235,14 @@ class TestUI:
     self.screenshot(name)
 
 def create_screenshots():
+  st = time.monotonic()
   if TEST_OUTPUT_DIR.exists():
     shutil.rmtree(TEST_OUTPUT_DIR)
 
   SCREENSHOTS_DIR.mkdir(parents=True)
 
   route = Route(TEST_ROUTE)
+  print("ROUTES", time.monotonic() - st)
 
   segnum = 2
   st = time.monotonic()
