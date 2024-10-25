@@ -84,7 +84,7 @@ jobs:
         run: >-
           sudo apt-get install -y imagemagick
 
-          scenes="homescreen settings_device settings_toggles offroad_alert update_available prime onroad onroad_disengaged onroad_override onroad_sidebar onroad_wide onroad_wide_sidebar onroad_alert_small onroad_alert_mid onroad_alert_full driver_camera body keyboard"
+          scenes="homescreen settings_device settings_toggles settings_developer offroad_alert update_available prime onroad onroad_disengaged onroad_override onroad_sidebar onroad_wide onroad_wide_sidebar onroad_alert_small onroad_alert_mid onroad_alert_full driver_camera body keyboard"
           A=($scenes)
 
           DIFF=""
