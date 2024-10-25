@@ -74,7 +74,8 @@ public:
   void init(SpectraMaster *m, int s, int a, int flags, int mmu_hdl = 0, int mmu_hdl2 = 0, int count=1) {
     size = s;
     alignment = a;
-    ptr = alloc_w_mmu_hdl(m->video0_fd, ALIGNED_SIZE(size, alignment)*count, (uint32_t*)&handle, alignment, flags, mmu_hdl, mmu_hdl2);
+    void *p = alloc_w_mmu_hdl(m->video0_fd, ALIGNED_SIZE(size, alignment)*count, (uint32_t*)&handle, alignment, flags, mmu_hdl, mmu_hdl2);
+    ptr = (unsigned char*)p;
     assert(ptr != NULL);
   };
 
@@ -82,7 +83,7 @@ public:
     return ALIGNED_SIZE(size, alignment);
   };
 
-  void *ptr;
+  unsigned char *ptr;
   int size, alignment, handle;
 };
 
@@ -139,6 +140,9 @@ public:
   int32_t link_handle = -1;
 
   SpectraBuf ife_cmd;
+  SpectraBuf ife_gamma_lut;
+  SpectraBuf ife_linearization_lut;
+  SpectraBuf ife_vignetting_lut;
 
   SpectraBuf bps_cmd;
   SpectraBuf bps_cdm_buffer;

@@ -37,9 +37,12 @@ OX03C10::OX03C10() {
   init_reg_array.assign(std::begin(init_array_ox03c10), std::end(init_array_ox03c10));
   probe_reg_addr = 0x300a;
   probe_expected_data = 0x5803;
+  bits_per_pixel = 12;
   mipi_format = CAM_FORMAT_MIPI_RAW_12;
   frame_data_type = 0x2c; // one is 0x2a, two are 0x2b
   mclk_frequency = 24000000; //Hz
+
+  readout_time_ns = 14697000;
 
   dc_gain_factor = 7.32;
   dc_gain_min_weight = 1;  // always on is fine
@@ -60,6 +63,24 @@ OX03C10::OX03C10() {
   min_ev = (exposure_time_min + VS_TIME_MIN_OX03C10) * sensor_analog_gains[analog_gain_min_idx];
   max_ev = exposure_time_max * dc_gain_factor * sensor_analog_gains[analog_gain_max_idx];
   target_grey_factor = 0.01;
+
+  black_level = 64;
+  color_correct_matrix = {
+    0x000000b6, 0x00000ff1, 0x00000fda,
+    0x00000fcc, 0x000000b9, 0x00000ffb,
+    0x00000fc2, 0x00000ff6, 0x000000c9,
+  };
+  for (int i = 0; i < 64; i++) {
+    float fx = i / 63.0;
+    fx = -0.507089*exp(-12.54124638*fx) + 0.9655*pow(fx, 0.5) - 0.472597*fx + 0.507089;
+    gamma_lut_rgb.push_back((uint32_t)(fx*1023.0 + 0.5));
+  }
+  for (int i = 0; i < 288; i++) {
+    linearization_lut.push_back(0xff);
+  }
+  for (int i = 0; i < 884*2; i++) {
+    vignetting_lut.push_back(0xff);
+  }
 }
 
 std::vector<i2c_random_wr_payload> OX03C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {
