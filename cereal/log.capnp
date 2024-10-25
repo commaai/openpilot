@@ -844,7 +844,6 @@ struct ControlsState @0x97ff69c53601abf1 {
   lateralPlanMonoTime @50 :UInt64;
 
   longControlState @30 :Car.CarControl.Actuators.LongControlState;
-  vTargetLead @3 :Float32;
   upAccelCmd @4 :Float32;
   uiAccelCmd @5 :Float32;
   ufAccelCmd @33 :Float32;
@@ -853,7 +852,6 @@ struct ControlsState @0x97ff69c53601abf1 {
   forceDecel @51 :Bool;
 
   lateralControlState :union {
-    indiState @52 :LateralINDIState;
     pidState @53 :LateralPIDState;
     angleState @58 :LateralAngleState;
     debugState @59 :LateralDebugState;
@@ -861,6 +859,7 @@ struct ControlsState @0x97ff69c53601abf1 {
 
     curvatureStateDEPRECATED @65 :LateralCurvatureState;
     lqrStateDEPRECATED @55 :LateralLQRState;
+    indiStateDEPRECATED @52 :LateralINDIState;
   }
 
   struct LateralINDIState {
@@ -994,6 +993,7 @@ struct ControlsState @0x97ff69c53601abf1 {
   startMonoTimeDEPRECATED @48 :UInt64;
   cumLagMsDEPRECATED @15 :Float32;
   aTargetDEPRECATED @35 :Float32;
+  vTargetLeadDEPRECATED @3 :Float32;
 }
 
 struct DrivingModelData {

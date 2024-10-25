@@ -13,8 +13,6 @@
 #include <QVBoxLayout>
 #include <QtConcurrent>
 
-#include "tools/cabana/streams/replaystream.h"
-
 const int MIN_VIDEO_HEIGHT = 100;
 const int THUMBNAIL_MARGIN = 3;
 
@@ -167,10 +165,7 @@ QWidget *VideoWidget::createCameraWidget() {
   QObject::connect(camera_tab, &QTabBar::currentChanged, [this](int index) {
     if (index != -1) cam_widget->setStreamType((VisionStreamType)camera_tab->tabData(index).toInt());
   });
-
-  auto replay = static_cast<ReplayStream*>(can)->getReplay();
-  QObject::connect(replay, &Replay::qLogLoaded, slider, &Slider::parseQLog, Qt::QueuedConnection);
-  QObject::connect(replay, &Replay::minMaxTimeChanged, this, &VideoWidget::timeRangeChanged, Qt::QueuedConnection);
+  QObject::connect(static_cast<ReplayStream*>(can), &ReplayStream::qLogLoaded, slider, &Slider::parseQLog, Qt::QueuedConnection);
   return w;
 }
 
@@ -248,11 +243,8 @@ Slider::Slider(QWidget *parent) : QSlider(Qt::Horizontal, parent) {
   setMouseTracking(true);
 }
 
-AlertInfo Slider::alertInfo(double seconds) {
-  uint64_t mono_time = can->toMonoTime(seconds);
-  auto alert_it = alerts.lower_bound(mono_time);
-  bool has_alert = (alert_it != alerts.end()) && ((alert_it->first - mono_time) <= 1e8);
-  return has_alert ? alert_it->second : AlertInfo{};
+std::optional<Timeline::Entry> Slider::alertInfo(double seconds) {
+  return getReplay()->findAlertAtTime(seconds);
 }
 
 QPixmap Slider::thumbnail(double seconds)  {
@@ -277,14 +269,6 @@ void Slider::parseQLog(std::shared_ptr<LogReader> qlog) {
         std::lock_guard lk(mutex);
         thumbnails[thumb.getTimestampEof()] = scaled;
       }
-    } else if (e.which == cereal::Event::Which::SELFDRIVE_STATE) {
-      capnp::FlatArrayMessageReader reader(e.data);
-      auto cs = reader.getRoot<cereal::Event>().getSelfdriveState();
-      if (cs.getAlertType().size() > 0 && cs.getAlertText1().size() > 0 &&
-          cs.getAlertSize() != cereal::SelfdriveState::AlertSize::NONE) {
-        std::lock_guard lk(mutex);
-        alerts.emplace(e.mono_time, AlertInfo{cs.getAlertStatus(), cs.getAlertText1().cStr(), cs.getAlertText2().cStr()});
-      }
     }
   });
   update();
@@ -306,8 +290,8 @@ void Slider::paintEvent(QPaintEvent *ev) {
 
   auto replay = getReplay();
   if (replay) {
-    for (auto [begin, end, type] : replay->getTimeline()) {
-      fillRange(begin, end, timeline_colors[(int)type]);
+    for (const auto &entry: *replay->getTimeline()) {
+      fillRange(entry.start_time, entry.end_time, timeline_colors[(int)entry.type]);
     }
 
     QColor empty_color = palette().color(QPalette::Window);
@@ -372,7 +356,7 @@ InfoLabel::InfoLabel(QWidget *parent) : QWidget(parent, Qt::WindowStaysOnTopHint
   setVisible(false);
 }
 
-void InfoLabel::showPixmap(const QPoint &pt, const QString &sec, const QPixmap &pm, const AlertInfo &alert) {
+void InfoLabel::showPixmap(const QPoint &pt, const QString &sec, const QPixmap &pm, const std::optional<Timeline::Entry> &alert) {
   second = sec;
   pixmap = pm;
   alert_info = alert;
@@ -381,10 +365,10 @@ void InfoLabel::showPixmap(const QPoint &pt, const QString &sec, const QPixmap &
   update();
 }
 
-void InfoLabel::showAlert(const AlertInfo &alert) {
+void InfoLabel::showAlert(const std::optional<Timeline::Entry> &alert) {
   alert_info = alert;
   pixmap = {};
-  setVisible(!alert_info.text1.isEmpty());
+  setVisible(alert_info.has_value());
   update();
 }
 
@@ -396,18 +380,11 @@ void InfoLabel::paintEvent(QPaintEvent *event) {
     p.drawRect(rect());
     p.drawText(rect().adjusted(0, 0, 0, -THUMBNAIL_MARGIN), second, Qt::AlignHCenter | Qt::AlignBottom);
   }
-  if (alert_info.text1.size() > 0) {
-    QColor color = timeline_colors[(int)TimelineType::AlertInfo];
-    if (alert_info.status == cereal::SelfdriveState::AlertStatus::USER_PROMPT) {
-      color = timeline_colors[(int)TimelineType::AlertWarning];
-    } else if (alert_info.status == cereal::SelfdriveState::AlertStatus::CRITICAL) {
-      color = timeline_colors[(int)TimelineType::AlertCritical];
-    }
+  if (alert_info) {
+    QColor color = timeline_colors[int(alert_info->type)];
     color.setAlphaF(0.5);
-    QString text = alert_info.text1;
-    if (!alert_info.text2.isEmpty()) {
-      text += "\n" + alert_info.text2;
-    }
+    QString text = QString::fromStdString(alert_info->text1);
+    if (!alert_info->text2.empty()) text += "\n" + QString::fromStdString(alert_info->text2);
 
     if (!pixmap.isNull()) {
       QFont font;

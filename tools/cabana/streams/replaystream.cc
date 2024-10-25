@@ -53,6 +53,10 @@ bool ReplayStream::loadRoute(const QString &route, const QString &data_dir, uint
                           {}, nullptr, replay_flags, data_dir.toStdString(), this));
   replay->setSegmentCacheLimit(settings.max_cached_minutes);
   replay->installEventFilter(event_filter, this);
+
+  // Forward replay callbacks to corresponding Qt signals.
+  replay->onQLogLoaded = [this](std::shared_ptr<LogReader> qlog) { emit qLogLoaded(qlog); };
+
   QObject::connect(replay.get(), &Replay::seeking, this, &AbstractStream::seeking);
   QObject::connect(replay.get(), &Replay::seekedTo, this, &AbstractStream::seekedTo);
   QObject::connect(replay.get(), &Replay::segmentsMerged, this, &ReplayStream::mergeSegments);

@@ -1,10 +1,8 @@
 #include "tools/replay/route.h"
 
-#include <QDir>
 #include <QEventLoop>
 #include <QJsonArray>
 #include <QJsonDocument>
-#include <QtConcurrent>
 #include <array>
 #include <filesystem>
 #include <regex>
@@ -53,7 +51,11 @@ bool Route::load() {
     rInfo("invalid route format");
     return false;
   }
-  date_time_ = QDateTime::fromString(route_.timestamp.c_str(), "yyyy-MM-dd--HH-mm-ss");
+
+  struct tm tm_time = {0};
+  strptime(route_.timestamp.c_str(), "%Y-%m-%d--%H-%M-%S", &tm_time);
+  date_time_ = mktime(&tm_time);
+
   bool ret = data_dir_.empty() ? loadFromServer() : loadFromLocal();
   if (ret) {
     if (route_.begin_segment == -1) route_.begin_segment = segments_.rbegin()->first;
@@ -151,8 +153,9 @@ void Route::addFileToSegment(int n, const std::string &file) {
 
 // class Segment
 
-Segment::Segment(int n, const SegmentFile &files, uint32_t flags, const std::vector<bool> &filters)
-    : seg_num(n), flags(flags), filters_(filters) {
+Segment::Segment(int n, const SegmentFile &files, uint32_t flags, const std::vector<bool> &filters,
+                 std::function<void(int, bool)> callback)
+    : seg_num(n), flags(flags), filters_(filters), onLoadFinished_(callback) {
   // [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
   const std::array file_list = {
       (flags & REPLAY_FLAG_QCAMERA) || files.road_cam.empty() ? files.qcamera : files.road_cam,
@@ -163,16 +166,20 @@ Segment::Segment(int n, const SegmentFile &files, uint32_t flags, const std::vec
   for (int i = 0; i < file_list.size(); ++i) {
     if (!file_list[i].empty() && (!(flags & REPLAY_FLAG_NO_VIPC) || i >= MAX_CAMERAS)) {
       ++loading_;
-      synchronizer_.addFuture(QtConcurrent::run(this, &Segment::loadFile, i, file_list[i]));
+      threads_.emplace_back(&Segment::loadFile, this, i, file_list[i]);
     }
   }
 }
 
 Segment::~Segment() {
-  disconnect();
+  {
+    std::lock_guard lock(mutex_);
+    onLoadFinished_ = nullptr;  // Prevent callback after destruction
+  }
   abort_ = true;
-  synchronizer_.setCancelOnWait(true);
-  synchronizer_.waitForFinished();
+  for (auto &thread : threads_) {
+    if (thread.joinable()) thread.join();
+  }
 }
 
 void Segment::loadFile(int id, const std::string file) {
@@ -192,6 +199,9 @@ void Segment::loadFile(int id, const std::string file) {
   }
 
   if (--loading_ == 0) {
-    emit loadFinished(!abort_);
+    std::lock_guard lock(mutex_);
+    if (onLoadFinished_) {
+      onLoadFinished_(seg_num, !abort_);
+    }
   }
 }

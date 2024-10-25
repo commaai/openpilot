@@ -98,6 +98,8 @@ AR0231::AR0231() {
   frame_data_type = 0x12;  // Changing stats to 0x2C doesn't work, so change pixels to 0x12 instead
   mclk_frequency = 19200000; //Hz
 
+  readout_time_ns = 22850000;
+
   dc_gain_factor = 2.5;
   dc_gain_min_weight = 0;
   dc_gain_max_weight = 1;
@@ -124,6 +126,18 @@ AR0231::AR0231() {
     0x00000fbc, 0x000000bb, 0x00000009,
     0x00000fb6, 0x00000fe0, 0x000000ea,
   };
+  for (int i = 0; i < 64; i++) {
+    float fx = i / 63.0;
+    const float gamma_k = 0.75;
+    const float gamma_b = 0.125;
+    const float mp = 0.01; // ideally midpoint should be adaptive
+    const float rk = 9 - 100*mp;
+    // poly approximation for s curve
+    fx = (fx > mp) ?
+      ((rk * (fx-mp) * (1-(gamma_k*mp+gamma_b)) * (1+1/(rk*(1-mp))) / (1+rk*(fx-mp))) + gamma_k*mp + gamma_b) :
+      ((rk * (fx-mp) * (gamma_k*mp+gamma_b) * (1+1/(rk*mp)) / (1-rk*(fx-mp))) + gamma_k*mp + gamma_b);
+    gamma_lut_rgb.push_back((uint32_t)(fx*1023.0 + 0.5));
+  }
 }
 
 void AR0231::processRegisters(uint8_t *cur_buf, cereal::FrameData::Builder &framed) const {
