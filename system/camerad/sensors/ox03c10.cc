@@ -42,6 +42,8 @@ OX03C10::OX03C10() {
   frame_data_type = 0x2c; // one is 0x2a, two are 0x2b
   mclk_frequency = 24000000; //Hz
 
+  readout_time_ns = 14697000;
+
   dc_gain_factor = 7.32;
   dc_gain_min_weight = 1;  // always on is fine
   dc_gain_max_weight = 1;
@@ -75,6 +77,9 @@ OX03C10::OX03C10() {
   }
   for (int i = 0; i < 288; i++) {
     linearization_lut.push_back(0xff);
+  }
+  for (int i = 0; i < 884*2; i++) {
+    vignetting_lut.push_back(0xff);
   }
 }
 

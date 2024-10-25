@@ -14,7 +14,6 @@
 #include <map>
 #include <mutex>
 #include <numeric>
-#include <sstream>
 #include <utility>
 #include <zstd.h>
 
@@ -402,15 +401,6 @@ std::vector<std::string> split(std::string_view source, char delimiter) {
   }
   fields.emplace_back(source.substr(last));
   return fields;
-}
-
-std::string join(const std::vector<std::string> &elements, char separator) {
-  std::ostringstream oss;
-  for (size_t i = 0; i < elements.size(); ++i) {
-    if (i != 0) oss << separator;
-    oss << elements[i];
-  }
-  return oss.str();
 }
 
 std::string extractFileName(const std::string &file) {

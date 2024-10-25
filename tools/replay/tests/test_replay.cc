@@ -72,9 +72,9 @@ TEST_CASE("LogReader") {
 }
 
 void read_segment(int n, const SegmentFile &segment_file, uint32_t flags) {
-  QEventLoop loop;
-  Segment segment(n, segment_file, flags);
-  QObject::connect(&segment, &Segment::loadFinished, [&]() {
+  std::mutex mutex;
+  std::condition_variable cv;
+  Segment segment(n, segment_file, flags, {}, [&](int, bool) {
     REQUIRE(segment.isLoaded() == true);
     REQUIRE(segment.log != nullptr);
     REQUIRE(segment.frames[RoadCam] != nullptr);
@@ -105,10 +105,11 @@ void read_segment(int n, const SegmentFile &segment_file, uint32_t flags) {
         REQUIRE(fr->get(i, &buf));
       }
     }
-
-    loop.quit();
+    cv.notify_one();
   });
-  loop.exec();
+
+  std::unique_lock lock(mutex);
+  cv.wait(lock);
 }
 
 std::string download_demo_route() {

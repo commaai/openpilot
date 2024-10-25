@@ -114,6 +114,7 @@ bool CameraBuf::acquire(int expo_time) {
     cur_frame_data.processing_time = (millis_since_boot() - start_time) / 1000.0;
   } else {
     cur_yuv_buf = vipc_server->get_buffer(stream_type, cur_buf_idx);
+    cur_frame_data.processing_time = (double)(cur_frame_data.timestamp_end_of_isp - cur_frame_data.timestamp_eof)*1e-6;
   }
 
   VisionIpcBufExtra extra = {

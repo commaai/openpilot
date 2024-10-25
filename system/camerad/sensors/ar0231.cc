@@ -98,6 +98,8 @@ AR0231::AR0231() {
   frame_data_type = 0x12;  // Changing stats to 0x2C doesn't work, so change pixels to 0x12 instead
   mclk_frequency = 19200000; //Hz
 
+  readout_time_ns = 22850000;
+
   dc_gain_factor = 2.5;
   dc_gain_min_weight = 0;
   dc_gain_max_weight = 1;

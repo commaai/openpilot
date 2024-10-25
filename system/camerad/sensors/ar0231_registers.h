@@ -6,6 +6,8 @@ const struct i2c_random_wr_payload stop_reg_array_ar0231[] = {{0x301A, 0x918}};
 const struct i2c_random_wr_payload init_array_ar0231[] = {
   {0x301A, 0x0018}, // RESET_REGISTER
 
+  // **NOTE**: if this is changed, readout_time_ns must be updated in the Sensor config
+
   // CLOCK Settings
   // input clock is 19.2 / 2 * 0x37 = 528 MHz
   // pixclk is 528 / 6 = 88 MHz
