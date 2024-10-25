@@ -6,24 +6,6 @@
 #include "selfdrive/ui/qt/util.h"
 
 DriverViewWindow::DriverViewWindow(QWidget* parent) : CameraWidget("camerad", VISION_STREAM_DRIVER, parent) {
-  QObject::connect(this, &CameraWidget::clicked, this, &DriverViewWindow::done);
-  QObject::connect(device(), &Device::interactiveTimeout, this, [this]() {
-    if (isVisible()) {
-      emit done();
-    }
-  });
-}
-
-void DriverViewWindow::showEvent(QShowEvent* event) {
-  params.putBool("IsDriverViewEnabled", true);
-  device()->resetInteractiveTimeout(60);
-  CameraWidget::showEvent(event);
-}
-
-void DriverViewWindow::hideEvent(QHideEvent* event) {
-  params.putBool("IsDriverViewEnabled", false);
-  stopVipcThread();
-  CameraWidget::hideEvent(event);
 }
 
 void DriverViewWindow::paintGL() {
@@ -79,4 +61,21 @@ mat4 DriverViewWindow::calcFrameMatrix() {
     0.0,  0.0, 1.0, 0.0,
     0.0,  0.0, 0.0, 1.0,
   }};
+}
+
+DriverViewDialog::DriverViewDialog(QWidget *parent) : DialogBase(parent) {
+  Params().putBool("IsDriverViewEnabled", true);
+  device()->resetInteractiveTimeout(60);
+
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(0, 0, 0, 0);
+  auto camera = new DriverViewWindow(this);
+  main_layout->addWidget(camera);
+  QObject::connect(camera, &DriverViewWindow::clicked, this, &DialogBase::accept);
+  QObject::connect(device(), &Device::interactiveTimeout, this, &DialogBase::accept);
+}
+
+void DriverViewDialog::done(int r) {
+  Params().putBool("IsDriverViewEnabled", false);
+  QDialog::done(r);
 }
