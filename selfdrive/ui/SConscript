@@ -92,7 +92,6 @@ if GetOption('extras') and arch != "Darwin":
     ("openpilot", release),
     ("openpilot_test", f"{release}-staging"),
     ("openpilot_nightly", "nightly"),
-    ("openpilot_nightly_dev", "nightly-dev"),
     ("openpilot_internal", "master"),
   ]
 
