@@ -230,12 +230,17 @@ if __name__ == "__main__":
             ignore.append(f'modelV2.roadEdges.{i}.{field}')
       tolerance = .3 if PC else None
       results: Any = {TEST_ROUTE: {}}
+      st = time.monotonic()
       log_paths: Any = {TEST_ROUTE: {"models": {'ref': log_fn, 'new': log_fn}}}
       results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
+      print("Compare Logs: ", time.monotonic() - st)
       diff_short, diff_long, failed = format_diff(results, log_paths, 'master')
+      print("Format Diff: ", time.monotonic() - st)
 
       if "CI" in os.environ:
+        st = time.monotonic()
         comment_replay_report(log_msgs, cmp_log, log_msgs)
+        print("Comment Replay Report: ", time.monotonic() - st)
         failed = False
         print(diff_long)
       print('-------------\n'*5)
