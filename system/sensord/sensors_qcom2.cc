@@ -39,7 +39,7 @@ void interrupt_loop(std::vector<std::tuple<Sensor *, std::string>> sensors) {
     }
   }
 
-  uint64_t offset = 0;
+  uint64_t offset = nanos_since_epoch() - nanos_since_boot();
   struct pollfd fd_list[1] = {0};
   fd_list[0].fd = fd;
   fd_list[0].events = POLLIN | POLLPRI;

@@ -40,7 +40,13 @@ def setup_settings_device(click, pm: PubMaster):
 
 def setup_settings_toggles(click, pm: PubMaster):
   setup_settings_device(click, pm)
-  click(278, 760)
+  click(278, 650)
+  time.sleep(UI_DELAY)
+
+def setup_settings_developer(click, pm: PubMaster):
+  setup_settings_device(click, pm)
+  click(278, 960)
+  time.sleep(UI_DELAY)
 
 def setup_onroad(click, pm: PubMaster):
   st = time.monotonic()
@@ -177,6 +183,7 @@ CASES = {
   "pair_device": setup_pair_device,
   "settings_device": setup_settings_device,
   "settings_toggles": setup_settings_toggles,
+  "settings_developer": setup_settings_developer,
   "onroad": setup_onroad,
   "onroad_disengaged": setup_onroad_disengaged,
   "onroad_override": setup_onroad_override,
