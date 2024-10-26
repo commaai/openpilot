@@ -29,7 +29,7 @@ SEND_EXTRA_INPUTS = bool(int(os.getenv("SEND_EXTRA_INPUTS", "0")))
 
 DATA_TOKEN = os.getenv("CI_ARTIFACTS_TOKEN","")
 API_TOKEN = os.getenv("GITHUB_COMMENTS_TOKEN","")
-MODEL_REPLAY_BUCKET="model_replay_master"
+MODEL_REPLAY_BUCKET="model_replay_master_tmp"
 GITHUB = GithubUtils(API_TOKEN, DATA_TOKEN)
 
 
