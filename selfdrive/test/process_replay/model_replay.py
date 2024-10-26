@@ -127,7 +127,8 @@ def trim_logs_to_max_frames(logs, max_frames, frs_types, include_all_types):
 
 
 def model_replay(lr, frs):
-  logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"roadCameraState", "wideRoadCameraState", "driverCameraState"}, {"roadEncodeIdx", "wideRoadEncodeIdx", "carParams", "driverEncodeIdx", "carParams"})
+  logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"roadCameraState", "wideRoadCameraState", "driverCameraState"},
+                                                 {"roadEncodeIdx", "wideRoadEncodeIdx", "carParams", "driverEncodeIdx"})
 
   if not SEND_EXTRA_INPUTS:
     logs = [msg for msg in logs if msg.which() != 'liveCalibration']
