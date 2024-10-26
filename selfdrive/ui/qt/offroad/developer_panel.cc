@@ -3,37 +3,33 @@
 #include "selfdrive/ui/qt/offroad/settings.h"
 #include "selfdrive/ui/qt/offroad/developer_panel.h"
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
+#include "selfdrive/ui/qt/widgets/controls.h"
 
 DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   // SSH keys
   addItem(new SshToggle());
-  sshControlButton = new SshControl();
-  addItem(sshControlButton);
+  addItem(new SshControl());
 
-  joystickDebugModeButton = new ButtonControl(tr("Joystick Debug Mode"), tr("JOYSTICK"));
-  connect(joystickDebugModeButton, &ButtonControl::clicked, [=]() {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to openpilot in JoystickDebugMode?"), tr("Joystick"), this)) {
-      params.putBool("JoystickDebugMode", true);
-    }
+  joystickToggle = new ParamControl("JoystickDebugMode", tr("Joystick Debug Mode"), "", "");
+  QObject::connect(joystickToggle, &ParamControl::toggleFlipped, [=](bool state) {
+    params.putBool("LongitudinalManeuverMode", false);
+    longManeuverToggle->refresh();
   });
-  addItem(joystickDebugModeButton);
+  addItem(joystickToggle);
 
-  LongitudinalManeuverModeButton = new ButtonControl(tr("Longitudinal Maneuver Mode"), tr("MANEUVER"));
-  connect(LongitudinalManeuverModeButton, &ButtonControl::clicked, [=]() {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to openpilot in LongitudinalManeuverMode?"), tr("Maneuver"), this)) {
-      params.putBool("LongitudinalManeuverMode", true);
-    }
+  longManeuverToggle = new ParamControl("LongitudinalManeuverMode", tr("Longitudinal Maneuver Mode"), "", "");
+  QObject::connect(longManeuverToggle, &ParamControl::toggleFlipped, [=](bool state) {
+    params.putBool("JoystickDebugMode", false);
+    joystickToggle->refresh();
   });
-  addItem(LongitudinalManeuverModeButton);
+  addItem(longManeuverToggle);
 
   // Joystick and longitudinal maneuvers should be hidden on release branches
-  // also the buttons should be not available to push in onroad state
+  // also the toggles should be not available to change in onroad state
   const bool is_release = params.getBool("IsReleaseBranch");
   QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
-    for (auto btn : findChildren<ButtonControl *>()) {
-      if (btn != sshControlButton) {
-        btn->setVisible(!is_release);
-      }
+    for (auto btn : findChildren<ParamControl *>()) {
+      btn->setVisible(!is_release);
       btn->setEnabled(offroad);
     }
   });
