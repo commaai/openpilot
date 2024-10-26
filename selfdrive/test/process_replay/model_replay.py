@@ -165,7 +165,7 @@ def get_logs_and_frames(cache=False):
         os.system(f"wget {get_url(TEST_ROUTE, SEGMENT, v)} -P {CACHE}")
 
   cams = ["roadCameraState", "driverCameraState", "wideRoadCameraState"]
-  frs = {c : FrameReader(get_url(TEST_ROUTE, SEGMENT, v), readahead=True) for c,v in zip(cams, videos, strict=True)}
+  frs = {c : FrameReader(f"{CACHE}/{v}", readahead=True) for c,v in zip(cams, videos, strict=True)}
 
   return lr,frs
 
