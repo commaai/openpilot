@@ -1,6 +1,5 @@
 #include <QDebug>
 
-#include "selfdrive/ui/qt/offroad/settings.h"
 #include "selfdrive/ui/qt/offroad/developer_panel.h"
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
