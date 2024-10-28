@@ -20,9 +20,9 @@ from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.test.process_replay.migration import migrate, migrate_controlsState, migrate_carState
 from openpilot.tools.lib.logreader import LogReader
-#from openpilot.tools.lib.framereader import FrameReader
+from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.route import Route
-from openpilot.tools.lib.cache import DEFAULT_CACHE_DIR
+#from openpilot.tools.lib.cache import DEFAULT_CACHE_DIR
 
 UI_DELAY = 0.1 # may be slower on CI?
 TEST_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
@@ -282,7 +282,7 @@ def create_screenshots():
 
   driver_img = FrameReader(route.dcamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
   STREAMS.append((VisionStreamType.VISION_STREAM_DRIVER, cam.dcam, driver_img.flatten().tobytes()))
-  with open(f'/tmp/comma_download_cache/ui_frames', 'wb') as f:
+  with open('/tmp/comma_download_cache/ui_frames', 'wb') as f:
     pickle.dump([road_img, wide_road_img, driver_img], f)
   print("ALL FRAMEREADER", time.monotonic() - st)
   quit()
