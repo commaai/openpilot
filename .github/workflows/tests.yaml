@@ -171,7 +171,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .ci_cache/comma_download_cache
-          key: ui_screenshots_test_
+          key: ui_screenshots_test_${{ hashFiles('.github/workflows/tests.yaml', 'selfdrive/ui/tests/test_ui/run.py') }}
       - name: Build openpilot
         run: ${{ env.RUN }} "scons -j$(nproc)"
       - name: Create Test Report

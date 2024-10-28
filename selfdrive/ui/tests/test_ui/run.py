@@ -20,7 +20,7 @@ from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.test.process_replay.migration import migrate, migrate_controlsState, migrate_carState
 from openpilot.tools.lib.logreader import LogReader
-#from openpilot.tools.lib.framereader import FrameReader
+from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.route import Route
 #from openpilot.tools.lib.cache import DEFAULT_CACHE_DIR
 
@@ -51,12 +51,10 @@ def setup_settings_developer(click, pm: PubMaster):
   time.sleep(UI_DELAY)
 
 def setup_onroad(click, pm: PubMaster):
-  st = time.monotonic()
   vipc_server = VisionIpcServer("camerad")
   for stream_type, cam, _ in STREAMS:
     vipc_server.create_buffers(stream_type, 5, cam.width, cam.height)
   vipc_server.start_listener()
-  print("CREATING VIPC: ", time.monotonic() - st)
 
   uidebug_received_cnt = 0
   packet_id = 0
@@ -66,7 +64,6 @@ def setup_onroad(click, pm: PubMaster):
   check_uidebug = DATA['deviceState'].deviceState.started and not DATA['carParams'].carParams.notCar
 
   # Loop until 20 'uiDebug' messages are received
-  st = time.monotonic()
   while uidebug_received_cnt <= 20:
     for service, data in DATA.items():
       if data:
@@ -84,8 +81,6 @@ def setup_onroad(click, pm: PubMaster):
 
     packet_id += 1
     time.sleep(0.05)
-  print("PID:", packet_id)
-  print("UIDEBUG_WAITING:", time.monotonic() - st)
 
 def setup_onroad_disengaged(click, pm: PubMaster):
   DATA['selfdriveState'].selfdriveState.enabled = False
@@ -136,7 +131,6 @@ def setup_driver_camera(click, pm: PubMaster):
   DATA['deviceState'].deviceState.started = True
 
 def setup_onroad_alert(click, pm: PubMaster, text1, text2, size, status=log.SelfdriveState.AlertStatus.normal):
-  print(f'setup onroad alert, size: {size}')
   state = DATA['selfdriveState']
   origin_state_bytes = state.to_bytes()
   cs = state.selfdriveState
@@ -244,47 +238,47 @@ class TestUI:
     self.screenshot(name)
 
 def create_screenshots():
-  st = time.monotonic()
   if TEST_OUTPUT_DIR.exists():
     shutil.rmtree(TEST_OUTPUT_DIR)
 
   SCREENSHOTS_DIR.mkdir(parents=True)
 
   route = Route(TEST_ROUTE)
-  print("ROUTES", time.monotonic() - st)
 
   segnum = 2
-  st = time.monotonic()
   lr = LogReader(route.qlog_paths()[segnum])
-  print("GETTING LOG", time.monotonic() - st)
   DATA['carParams'] = next((event.as_builder() for event in lr if event.which() == 'carParams'), None)
-  print("IT LOG", time.monotonic() - st)
   for event in migrate(lr, [migrate_controlsState, migrate_carState]):
     if event.which() in DATA:
       DATA[event.which()] = event.as_builder()
 
     if all(DATA.values()):
       break
-  print("MIGRATE LOG", time.monotonic() - st)
 
   cam = DEVICE_CAMERAS[("tici", "ar0231")]
   st = time.monotonic()
-  with open('/tmp/comma_download_cache/ui_frames', 'rb') as f:
-    frames = pickle.load(f)
-    road_img = frames[0]
-    wide_road_img = frames[1]
-    driver_img = frames[2]
-  #road_img = FrameReader(route.camera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
+
+
+  print("DEFAULT_CACHE: ", os.getenv("CACHE_ROOT", os.path.expanduser("~/.commacache")))
+
+  if os.path.isfile('/tmp/comma_download_cache/ui_frames'):
+    with open('/tmp/comma_download_cache/ui_frames', 'rb') as f:
+      frames = pickle.load(f)
+      road_img = frames[0]
+      wide_road_img = frames[1]
+      driver_img = frames[2]
+  else:
+    with open('/tmp/comma_download_cache/ui_frames', 'wb') as f:
+      road_img = FrameReader(route.camera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
+      wide_road_img = FrameReader(route.ecamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
+      driver_img = FrameReader(route.dcamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
+      pickle.dump([road_img, wide_road_img, driver_img], f)
+
   STREAMS.append((VisionStreamType.VISION_STREAM_ROAD, cam.fcam, road_img.flatten().tobytes()))
-
-  #wide_road_img = FrameReader(route.ecamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
   STREAMS.append((VisionStreamType.VISION_STREAM_WIDE_ROAD, cam.ecam, wide_road_img.flatten().tobytes()))
-
-  #driver_img = FrameReader(route.dcamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
   STREAMS.append((VisionStreamType.VISION_STREAM_DRIVER, cam.dcam, driver_img.flatten().tobytes()))
-  #with open('/tmp/comma_download_cache/ui_frames', 'wb') as f:
-    #pickle.dump([road_img, wide_road_img, driver_img], f)
-  print("ALL FRAMEREADER", time.monotonic() - st)
+
+  print("All FrameReaders: ", time.monotonic() - st)
 
   t = TestUI()
 
