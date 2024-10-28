@@ -171,7 +171,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: .ci_cache/comma_download_cache
-          key: ui_screenshots_test
+          key: ui_screenshots_test_
       - name: Build openpilot
         run: ${{ env.RUN }} "scons -j$(nproc)"
       - name: Create Test Report
