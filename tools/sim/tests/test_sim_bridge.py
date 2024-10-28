@@ -86,6 +86,7 @@ class TestSimBridgeBase:
   def teardown_method(self):
     print("Test shutting down. CommIssues are acceptable")
     for p in reversed(self.processes):
+      print(p)
       p.terminate()
 
     for p in reversed(self.processes):
