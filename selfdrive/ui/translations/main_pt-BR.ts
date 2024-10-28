@@ -117,11 +117,11 @@
     <name>DeveloperPanel</name>
     <message>
         <source>Joystick Debug Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Modo Joystick Debug</translation>
     </message>
     <message>
         <source>Longitudinal Maneuver Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Modo Longitudinal Maneuver</translation>
     </message>
 </context>
 <context>
@@ -615,7 +615,7 @@ Isso pode levar até um minuto.</translation>
     </message>
     <message>
         <source>Developer</source>
-        <translation type="unfinished"></translation>
+        <translation>Desenvdor</translation>
     </message>
 </context>
 <context>
