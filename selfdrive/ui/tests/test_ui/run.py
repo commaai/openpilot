@@ -22,7 +22,7 @@ from openpilot.selfdrive.test.process_replay.migration import migrate, migrate_c
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.route import Route
-#from openpilot.tools.lib.cache import DEFAULT_CACHE_DIR
+from openpilot.tools.lib.cache import DEFAULT_CACHE_DIR
 
 UI_DELAY = 0.1 # may be slower on CI?
 TEST_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
@@ -258,17 +258,15 @@ def create_screenshots():
   cam = DEVICE_CAMERAS[("tici", "ar0231")]
   st = time.monotonic()
 
-
-  print("DEFAULT_CACHE: ", os.getenv("CACHE_ROOT", os.path.expanduser("~/.commacache")))
-
-  if os.path.isfile('/tmp/comma_download_cache/ui_frames'):
-    with open('/tmp/comma_download_cache/ui_frames', 'rb') as f:
+  frames_cache = f'{DEFAULT_CACHE_DIR}/ui_frames'
+  if os.path.isfile(frames_cache):
+    with open(frames_cache, 'rb') as f:
       frames = pickle.load(f)
       road_img = frames[0]
       wide_road_img = frames[1]
       driver_img = frames[2]
   else:
-    with open('/tmp/comma_download_cache/ui_frames', 'wb') as f:
+    with open(frames_cache, 'wb') as f:
       road_img = FrameReader(route.camera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
       wide_road_img = FrameReader(route.ecamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
       driver_img = FrameReader(route.dcamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
