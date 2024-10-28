@@ -6,6 +6,7 @@ import sys
 import os
 import pywinctl
 import pyautogui
+import pickle
 import time
 
 from cereal import log
@@ -21,6 +22,7 @@ from openpilot.selfdrive.test.process_replay.migration import migrate, migrate_c
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.route import Route
+from openpilot.tools.lib.cache import DEFAULT_CACHE_DIR
 
 UI_DELAY = 0.1 # may be slower on CI?
 TEST_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
@@ -268,7 +270,6 @@ def create_screenshots():
   cam = DEVICE_CAMERAS[("tici", "ar0231")]
   st = time.monotonic()
   road_img = FrameReader(route.camera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
-  print("ROAD FRAMEREADER", time.monotonic() - st)
   STREAMS.append((VisionStreamType.VISION_STREAM_ROAD, cam.fcam, road_img.flatten().tobytes()))
 
   wide_road_img = FrameReader(route.ecamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
@@ -276,7 +277,10 @@ def create_screenshots():
 
   driver_img = FrameReader(route.dcamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
   STREAMS.append((VisionStreamType.VISION_STREAM_DRIVER, cam.dcam, driver_img.flatten().tobytes()))
+  with open(f'{DEFAULT_CACHE_DIR}/ui_frames', 'wb') as f:
+    pickle.dump([road_img, wide_road_img, driver_img], f)
   print("ALL FRAMEREADER", time.monotonic() - st)
+  return
 
   t = TestUI()
 
