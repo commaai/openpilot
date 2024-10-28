@@ -20,7 +20,7 @@ from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.test.process_replay.migration import migrate, migrate_controlsState, migrate_carState
 from openpilot.tools.lib.logreader import LogReader
-from openpilot.tools.lib.framereader import FrameReader
+#from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.cache import DEFAULT_CACHE_DIR
 
