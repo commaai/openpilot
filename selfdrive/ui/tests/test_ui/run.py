@@ -269,22 +269,23 @@ def create_screenshots():
 
   cam = DEVICE_CAMERAS[("tici", "ar0231")]
   st = time.monotonic()
-  with open(f'{DEFAULT_CACHE_DIR}/ui_frames', 'rb') as f:
-    frames = pickle.load(f)
-    road_img = frames[0]
-    wide_road_img = frames[1]
-    driver_img = frames[2]
-  #road_img = FrameReader(route.camera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
+  #with open(f'{DEFAULT_CACHE_DIR}/ui_frames', 'rb') as f:
+    #frames = pickle.load(f)
+    #road_img = frames[0]
+    #wide_road_img = frames[1]
+    #driver_img = frames[2]
+  road_img = FrameReader(route.camera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
   STREAMS.append((VisionStreamType.VISION_STREAM_ROAD, cam.fcam, road_img.flatten().tobytes()))
 
-  #wide_road_img = FrameReader(route.ecamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
+  wide_road_img = FrameReader(route.ecamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
   STREAMS.append((VisionStreamType.VISION_STREAM_WIDE_ROAD, cam.ecam, wide_road_img.flatten().tobytes()))
 
-  #driver_img = FrameReader(route.dcamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
+  driver_img = FrameReader(route.dcamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
   STREAMS.append((VisionStreamType.VISION_STREAM_DRIVER, cam.dcam, driver_img.flatten().tobytes()))
-  #with open(f'{DEFAULT_CACHE_DIR}/ui_frames', 'wb') as f:
-    #pickle.dump([road_img, wide_road_img, driver_img], f)
+  with open(f'/tmp/comma_download_cache/ui_frames', 'wb') as f:
+    pickle.dump([road_img, wide_road_img, driver_img], f)
   print("ALL FRAMEREADER", time.monotonic() - st)
+  quit()
 
   t = TestUI()
 
