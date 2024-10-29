@@ -89,7 +89,4 @@ class TestSimBridgeBase:
       p.terminate()
 
     for p in reversed(self.processes):
-      if isinstance(p, subprocess.Popen):
-        p.wait(15)
-      else:
-        p.join(15)
+      p.kill()
