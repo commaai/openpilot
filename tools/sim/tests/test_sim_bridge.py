@@ -92,7 +92,7 @@ class TestSimBridgeBase:
     for p in reversed(self.processes):
       st = time.monotonic()
       if isinstance(p, subprocess.Popen):
-        p.wait(15)
+        p.wait(1)
       else:
-        p.join(15)
+        p.join(1)
       print(f"KILLED {p} in : {time.monotonic() - st}")
