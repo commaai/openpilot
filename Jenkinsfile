@@ -178,6 +178,7 @@ node {
     if (env.BRANCH_NAME == 'master-ci') {
       deviceStage("build nightly", "tici-needs-can", [], [
         step("build nightly", "RELEASE_BRANCH=nightly $SOURCE_DIR/release/build_release.sh"),
+        step("build nightly-dev", "PANDA_DEBUG_BUILD=1 RELEASE_BRANCH=nightly-dev $SOURCE_DIR/release/build_release.sh"),
       ])
     }
 
