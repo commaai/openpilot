@@ -33,8 +33,6 @@ MODEL_PATHS = {
 
 METADATA_PATH = Path(__file__).parent / 'models/supercombo_metadata.pkl'
 
-# test
-# more diff
 
 class FrameMeta:
   frame_id: int = 0
