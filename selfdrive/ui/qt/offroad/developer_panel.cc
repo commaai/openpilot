@@ -23,13 +23,23 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   addItem(longManeuverToggle);
 
+  alphaLongToggle = new ParamControl("ExperimentalLongitudinalEnabled", tr("openpilot Longitudinal Control (Alpha)"), "", "");
+  // QObject::connect(alphaLongToggle, &ParamControl::toggleFlipped, [=](bool state) {
+  //   params.putBool("JoystickDebugMode", false);
+  //   joystickToggle->refresh();
+  // });
+  addItem(alphaLongToggle);
+
   // Joystick and longitudinal maneuvers should be hidden on release branches
   // also the toggles should be not available to change in onroad state
-  const bool is_release = params.getBool("IsReleaseBranch");
+  // const bool is_release = params.getBool("IsReleaseBranch");
+  const bool is_release = true;
   QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
     for (auto btn : findChildren<ParamControl *>()) {
-      btn->setVisible(!is_release);
-      btn->setEnabled(offroad);
+      if (btn != alphaLongToggle) {
+        btn->setVisible(!is_release);
+        btn->setEnabled(offroad);
+      }
     }
   });
 
