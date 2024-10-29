@@ -105,7 +105,7 @@ class MetaDriveWorld(World):
       if x_dist >= dist_threshold or y_dist >= dist_threshold: # position not the same during staying still, > threshold is considered moving
         self.distance_moved += x_dist + y_dist
 
-      time_check_threshold = 30
+      time_check_threshold = 15
       current_time = time.monotonic()
       since_last_check = current_time - self.last_check_timestamp
       if since_last_check >= time_check_threshold:
