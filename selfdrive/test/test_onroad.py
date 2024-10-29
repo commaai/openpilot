@@ -26,6 +26,8 @@ from openpilot.system.hardware.hw import Paths
 from openpilot.system.loggerd.uploader import LOG_COMPRESSION_LEVEL
 from openpilot.tools.lib.logreader import LogReader
 
+TEST_DURATION = 25
+
 """
 CPU usage budget
 * each process is entitled to at least 8%
@@ -153,8 +155,8 @@ class TestOnroad:
           cls.segments = sorted(segs, key=lambda s: int(str(s).rsplit('--')[-1]))
           time.sleep(0.5)
 
-        # generate logs for 25 seconds
-        time.sleep(25)
+        # generate logs
+        time.sleep(TEST_DURATION)
 
     finally:
       cls.gpu_procs = {psutil.Process(int(f.name)).name() for f in pathlib.Path('/sys/devices/virtual/kgsl/kgsl/proc/').iterdir() if f.is_dir()}
@@ -196,7 +198,7 @@ class TestOnroad:
         continue
 
       with subtests.test(service=s):
-        assert len(msgs) >= math.floor(SERVICE_LIST[s].frequency*20)
+        assert len(msgs) >= math.floor(SERVICE_LIST[s].frequency*TEST_DURATION)
 
   def test_cloudlog_size(self):
     msgs = [m for m in self.lr if m.which() == 'logMessage']
@@ -210,6 +212,7 @@ class TestOnroad:
 
   def test_log_sizes(self):
     for f, sz in self.log_sizes.items():
+      print(f.name, sz)
       if f.name == "qcamera.ts":
         assert 0.90 < sz < 2.6
       elif f.name == "qlog":
