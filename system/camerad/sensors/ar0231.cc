@@ -138,10 +138,21 @@ AR0231::AR0231() {
       ((rk * (fx-mp) * (gamma_k*mp+gamma_b) * (1+1/(rk*mp)) / (1-rk*(fx-mp))) + gamma_k*mp + gamma_b);
     gamma_lut_rgb.push_back((uint32_t)(fx*1023.0 + 0.5));
   }
-  for (int i = 0; i < 288; i++) {
-    float fx = i / 287.0;
-    linearization_lut.push_back((uint32_t)(fx*4095.0 + 0.5));
+  linearization_lut = {
+    0x02000000, 0x02000000, 0x02000000, 0x02000000,
+    0x020007ff, 0x020007ff, 0x020007ff, 0x020007ff,
+    0x02000bff, 0x02000bff, 0x02000bff, 0x02000bff,
+    0x020017ff, 0x020017ff, 0x020017ff, 0x020017ff,
+    0x020006ff, 0x020006ff, 0x020006ff, 0x020006ff,
+    0x02001bff, 0x02001bff, 0x02001bff, 0x02001bff,
+    0x020023ff, 0x020023ff, 0x020023ff, 0x020023ff,
+    0x00003fff, 0x00003fff, 0x00003fff, 0x00003fff,
+    0x00003fff, 0x00003fff, 0x00003fff, 0x00003fff,
+  };
+  for (int i = 0; i < 252; i++) {
+    linearization_lut.push_back(0x0);
   }
+  linearization_pts = {0x07ff0bff, 0x17ff06ff, 0x1bff23ff, 0x3fff3fff};
 }
 
 void AR0231::processRegisters(uint8_t *cur_buf, cereal::FrameData::Builder &framed) const {
