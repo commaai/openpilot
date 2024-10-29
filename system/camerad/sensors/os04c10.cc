@@ -72,10 +72,21 @@ OS04C10::OS04C10() {
     float fx = i / 63.0;
     gamma_lut_rgb.push_back((uint32_t)(pow(fx, 0.7)*1023.0 + 0.5));
   }
-  for (int i = 0; i < 288; i++) {
-    float fx = i / 287.0;
-    linearization_lut.push_back((uint32_t)(fx*4095.0 + 0.5));
+  linearization_lut = {
+    0x02000000, 0x02000000, 0x02000000, 0x02000000,
+    0x020007ff, 0x020007ff, 0x020007ff, 0x020007ff,
+    0x02000bff, 0x02000bff, 0x02000bff, 0x02000bff,
+    0x020017ff, 0x020017ff, 0x020017ff, 0x020017ff,
+    0x020006ff, 0x020006ff, 0x020006ff, 0x020006ff,
+    0x02001bff, 0x02001bff, 0x02001bff, 0x02001bff,
+    0x020023ff, 0x020023ff, 0x020023ff, 0x020023ff,
+    0x00003fff, 0x00003fff, 0x00003fff, 0x00003fff,
+    0x00003fff, 0x00003fff, 0x00003fff, 0x00003fff,
+  };
+  for (int i = 0; i < 252; i++) {
+    linearization_lut.push_back(0x0);
   }
+  linearization_pts = {0x07ff0bff, 0x17ff06ff, 0x1bff23ff, 0x3fff3fff};
 }
 
 std::vector<i2c_random_wr_payload> OS04C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {
