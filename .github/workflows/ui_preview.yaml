@@ -29,7 +29,7 @@ jobs:
       actions: read
     steps:
       - name: Waiting for ui generation to start
-        run: sleep 30
+        run: sleep 60
 
       - name: Waiting for ui generation to end
         uses: lewagon/wait-on-check-action@v1.3.4
@@ -38,7 +38,7 @@ jobs:
           check-name: ${{ env.UI_JOB_NAME }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           allowed-conclusions: success
-          wait-interval: 20
+          wait-interval: 10
 
       - name: Getting workflow run ID
         id: get_run_id
