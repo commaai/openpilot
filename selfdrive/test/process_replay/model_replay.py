@@ -60,7 +60,7 @@ def generate_report(proposed, master, tmp, commit):
                     ], "modelV2")
 
   return [plot(map(v[0], get_event(proposed, event)), \
-               map(v[0], get_event(master, event)), f"{v[1]}_{commit}", tmp) \
+               map(v[0], get_event(master, event)), f"{v[1]}_{commit[:7]}", tmp) \
                for v,event in [*ModelV2_Plots]]
 
 def create_table(title, files, link, open_table=False):
