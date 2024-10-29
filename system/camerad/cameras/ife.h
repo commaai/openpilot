@@ -34,7 +34,7 @@ int build_update(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t> &patch
   });
 
   dst += write_cont(dst, 0x40, {
-    0x00000c04, // (1<<8) to enable vignetting correction
+    0x00000c06, // (1<<8) to enable vignetting correction
   });
 
   dst += write_cont(dst, 0x48, {
@@ -67,7 +67,7 @@ int build_update(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t> &patch
 
   // black level scale + offset
   dst += write_cont(dst, 0x6b0, {
-    (((uint32_t)(1 << s->bits_per_pixel) - 1) << 0xf) | (s->black_level << 0),
+    ((uint32_t)(1 << 11) << 0xf) | (s->black_level << 0),
     0x0,
     0x0,
   });
