@@ -135,6 +135,14 @@
         <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
         <translation type="unfinished">En este automóvil, openpilot se configura de manera predeterminada con el Autocrucero Adaptativo (ACC) incorporado en el automóvil en lugar del control longitudinal de openpilot. Habilita esta opción para cambiar al control longitudinal de openpilot. Se recomienda activar el modo experimental al habilitar el control longitudinal de openpilot (aún en fase experimental).</translation>
     </message>
+    <message>
+        <source>openpilot longitudinal control may come in a future update.</source>
+        <translation>El control longitudinal de openpilot podrá llegar en futuras actualizaciones.</translation>
+    </message>
+    <message>
+        <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
+        <translation>Se puede probar una versión experimental del control longitudinal openpilot, junto con el modo Experimental, en ramas no liberadas.</translation>
+    </message>
 </context>
 <context>
     <name>DevicePanel</name>
