@@ -84,12 +84,8 @@ class TestSimBridgeBase:
     assert len(failure_states) == 0, f"Simulator fails to finish a loop. Failure states: {failure_states}"
 
   def teardown_method(self):
-    print("Test shutting down. CommIssues are acceptable")
     for p in reversed(self.processes):
-      print(p)
       p.terminate()
 
     for p in reversed(self.processes):
-      st = time.monotonic()
       p.kill()
-      print(f"KILLED {p} in : {time.monotonic() - st}")
