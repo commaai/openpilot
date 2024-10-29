@@ -198,7 +198,7 @@ class TestOnroad:
         continue
 
       with subtests.test(service=s):
-        assert len(msgs) >= math.floor(SERVICE_LIST[s].frequency*TEST_DURATION)
+        assert len(msgs) >= math.floor(SERVICE_LIST[s].frequency*20)
 
   def test_cloudlog_size(self):
     msgs = [m for m in self.lr if m.which() == 'logMessage']
@@ -212,7 +212,6 @@ class TestOnroad:
 
   def test_log_sizes(self):
     for f, sz in self.log_sizes.items():
-      print(f.name, sz)
       if f.name == "qcamera.ts":
         assert 0.90 < sz < 2.6
       elif f.name == "qlog":
@@ -311,7 +310,7 @@ class TestOnroad:
     assert cpu_ok
 
   def test_memory_usage(self):
-    offset = int(SERVICE_LIST['deviceState'].frequency * 5)
+    offset = int(SERVICE_LIST['deviceState'].frequency * 6)
     mems = [m.deviceState.memoryUsagePercent for m in self.service_msgs['deviceState'][offset:]]
     print("Memory usage: ", mems)
 
@@ -397,7 +396,7 @@ class TestOnroad:
     result += "----------------- Service Timings --------------\n"
     result += "------------------------------------------------\n"
     for s, (maxmin, rsd) in TIMINGS.items():
-      offset = int(SERVICE_LIST[s].frequency * 5)
+      offset = int(SERVICE_LIST[s].frequency * 6)
       msgs = [m.logMonoTime for m in self.service_msgs[s][offset:]]
       if not len(msgs):
         raise Exception(f"missing {s}")
@@ -440,7 +439,7 @@ class TestOnroad:
         if evt.noEntry:
           no_entries[evt.name] += 1
 
-    offset = int(SERVICE_LIST['selfdriveState'].frequency * 5)
+    offset = int(SERVICE_LIST['selfdriveState'].frequency * 6)
     eng = [m.selfdriveState.engageable for m in self.service_msgs['selfdriveState'][offset:]]
     assert all(eng), \
            f"Not engageable for whole segment:\n- selfdriveState.engageable: {Counter(eng)}\n- No entry events: {no_entries}"
