@@ -64,7 +64,7 @@ OX03C10::OX03C10() {
   max_ev = exposure_time_max * dc_gain_factor * sensor_analog_gains[analog_gain_max_idx];
   target_grey_factor = 0.01;
 
-  black_level = 64;
+  black_level = 0;
   color_correct_matrix = {
     0x000000b6, 0x00000ff1, 0x00000fda,
     0x00000fcc, 0x000000b9, 0x00000ffb,
@@ -75,9 +75,21 @@ OX03C10::OX03C10() {
     fx = -0.507089*exp(-12.54124638*fx) + 0.9655*pow(fx, 0.5) - 0.472597*fx + 0.507089;
     gamma_lut_rgb.push_back((uint32_t)(fx*1023.0 + 0.5));
   }
-  for (int i = 0; i < 288; i++) {
-    linearization_lut.push_back(0xff);
+  linearization_lut = {
+    0x00200000, 0x00200000, 0x00200000, 0x00200000,
+    0x00404080, 0x00404080, 0x00404080, 0x00404080,
+    0x00804100, 0x00804100, 0x00804100, 0x00804100,
+    0x006b8402, 0x006b8402, 0x006b8402, 0x006b8402,
+    0x00b8c070, 0x00b8c070, 0x00b8c070, 0x00b8c070,
+    0x06044804, 0x06044804, 0x06044804, 0x06044804,
+    0x100ba015, 0x100ba015, 0x100ba015, 0x100ba015,
+    0x00003fff, 0x00003fff, 0x00003fff, 0x00003fff,
+    0x00003fff, 0x00003fff, 0x00003fff, 0x00003fff,
+  };
+  for (int i = 0; i < 252; i++) {
+    linearization_lut.push_back(0x0);
   }
+  linearization_pts = {0x07ff0bff, 0x17ff06ff, 0x1bff23ff, 0x27ff3fff};
   for (int i = 0; i < 884*2; i++) {
     vignetting_lut.push_back(0xff);
   }
