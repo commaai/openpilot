@@ -28,12 +28,10 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
     .arg(tr("WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB)."))
     .arg(tr("On this car, openpilot defaults to the car's built-in ACC instead of openpilot's longitudinal control. "
             "Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.")),
-    "../assets/offroad/icon_speed_limit.png");
-  // QObject::connect(alphaLongToggle, &ParamControl::toggleFlipped, [=](bool state) {
-  //   params.putBool("JoystickDebugMode", false);
-  //   joystickToggle->refresh();
-  // });
+    "../assets/offroad/icon_speed_limit.png"
+    );
   addItem(alphaLongToggle);
+  alphaLongToggle->setConfirmation(true, false);
 
   // Joystick and longitudinal maneuvers should be hidden on release branches
   // also the toggles should be not available to change in onroad state
