@@ -11,6 +11,8 @@ from openpilot.common.realtime import Ratekeeper
 from openpilot.common.retry import retry
 from openpilot.common.swaglog import cloudlog
 
+# diff
+
 from openpilot.system import micd
 
 SAMPLE_RATE = 48000
