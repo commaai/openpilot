@@ -222,7 +222,7 @@ class TestUI:
       print(f"failed to find ui window, assuming that it's in the top left (for Xvfb) {e}")
       self.ui = namedtuple("bb", ["left", "top", "width", "height"])(0,0,2160,1080)
 
-  def screenshot(self):
+  def screenshot(self, name):
     im = pyautogui.screenshot(SCREENSHOTS_DIR / f"{name}.png", region=(self.ui.left, self.ui.top, self.ui.width, self.ui.height))
     assert im.width == 2160
     assert im.height == 1080
@@ -234,11 +234,8 @@ class TestUI:
   @with_processes(["ui"])
   def test_ui(self, name, setup_case):
     self.setup()
-
     setup_case(self.click, self.pm)
-
-    im = self.screenshot()
-    plt.imsave(SCREENSHOTS_DIR / f"{name}.png", im)
+    self.screenshot(name)
 
 def create_screenshots():
   if TEST_OUTPUT_DIR.exists():
