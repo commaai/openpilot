@@ -50,7 +50,7 @@ def get_event(logs, event):
 def zl(array, fill):
   return zip_longest(array, [], fillvalue=fill)
 
-def generate_report(proposed, master, tmp):
+def generate_report(proposed, master, tmp, commit):
   ModelV2_Plots = zl([
                      (lambda x: x.velocity.x[0], "velocity.x"),
                      (lambda x: x.action.desiredCurvature, "desiredCurvature"),
@@ -60,7 +60,7 @@ def generate_report(proposed, master, tmp):
                     ], "modelV2")
 
   return [plot(map(v[0], get_event(proposed, event)), \
-               map(v[0], get_event(master, event)), v[1], tmp) \
+               map(v[0], get_event(master, event)), f"{v[1]}_{commit[:7]}", tmp) \
                for v,event in [*ModelV2_Plots]]
 
 def create_table(title, files, link, open_table=False):
@@ -88,11 +88,11 @@ def comment_replay_report(proposed, master, full_logs):
       print("No PR associated with this branch. Skipping report.")
       return
 
-    files = generate_report(proposed, master, tmp)
+    commit = get_commit()
+    files = generate_report(proposed, master, tmp, commit)
 
     GITHUB.upload_files(DATA_BUCKET, [(x[0], tmp + '/' + x[0]) for x in files])
 
-    commit = get_commit()
     log_name = get_log_fn(TEST_ROUTE, commit)
     save_log(log_name, full_logs)
     GITHUB.upload_file(DATA_BUCKET, os.path.basename(log_name), log_name)

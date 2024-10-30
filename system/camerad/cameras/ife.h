@@ -34,7 +34,7 @@ int build_update(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t> &patch
   });
 
   dst += write_cont(dst, 0x40, {
-    0x00000c04, // (1<<8) to enable vignetting correction
+    0x00000c06, // (1<<8) to enable vignetting correction
   });
 
   dst += write_cont(dst, 0x48, {
@@ -67,7 +67,7 @@ int build_update(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t> &patch
 
   // black level scale + offset
   dst += write_cont(dst, 0x6b0, {
-    (((uint32_t)(1 << s->bits_per_pixel) - 1) << 0xf) | (s->black_level << 0),
+    ((uint32_t)(1 << 11) << 0xf) | (s->black_level << 0),
     0x0,
     0x0,
   });
@@ -105,39 +105,11 @@ int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t
   // linearization
   dst += write_cont(dst, 0x4dc, {
     0x00000000,
-    0x04050b84,
-    0x13031a82,
-    0x22022981,
-    0x3100387f,
-    0x04010b80,
-    0x13001a80,
-    0x2200297f,
-    0x30ff387f,
-    0x04050b84,
-    0x13031a82,
-    0x22022981,
-    0x3100387f,
-    0x04010b80,
-    0x13001a80,
-    0x2200297f,
-    0x30ff387f,
-    0x04050b84,
-    0x13031a82,
-    0x22022981,
-    0x3100387f,
-    0x04010b80,
-    0x13001a80,
-    0x2200297f,
-    0x30ff387f,
-    0x04050b84,
-    0x13031a82,
-    0x22022981,
-    0x3100387f,
-    0x04010b80,
-    0x13001a80,
-    0x2200297f,
-    0x30ff387f,
   });
+  dst += write_cont(dst, 0x4e0, s->linearization_pts);
+  dst += write_cont(dst, 0x4f0, s->linearization_pts);
+  dst += write_cont(dst, 0x500, s->linearization_pts);
+  dst += write_cont(dst, 0x510, s->linearization_pts);
   // TODO: this is DMI64 in the dump, does that matter?
   dst += write_dmi(dst, &addr, 288, 0xc24, 9);
   patches.push_back(addr - (uint64_t)start);

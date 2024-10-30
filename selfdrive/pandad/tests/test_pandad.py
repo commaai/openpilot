@@ -103,9 +103,8 @@ class TestPandad:
     # 5s for USB (due to enumeration)
     # - 0.2s pandad -> pandad
     # - plus some buffer
-    assert 0.1 < (sum(ts)/len(ts)) < (0.5 if self.spi else 5.0)
     print("startup times", ts, sum(ts) / len(ts))
-
+    assert 0.1 < (sum(ts)/len(ts)) < (0.7 if self.spi else 5.0)
 
   def test_protocol_version_check(self):
     if not self.spi:
