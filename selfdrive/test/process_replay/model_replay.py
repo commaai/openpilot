@@ -5,11 +5,14 @@ from collections import defaultdict
 from typing import Any
 import tempfile
 from itertools import zip_longest
+from pathlib import Path
+import time
+import pickle
 
 import matplotlib.pyplot as plt
 
 from openpilot.common.git import get_commit
-from openpilot.system.hardware import PC
+from openpilot.system.hardware import PC, HARDWARE
 from openpilot.tools.lib.openpilotci import get_url
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.process_replay import get_process_config, replay_process
@@ -26,7 +29,7 @@ SEND_EXTRA_INPUTS = bool(int(os.getenv("SEND_EXTRA_INPUTS", "0")))
 
 DATA_TOKEN = os.getenv("CI_ARTIFACTS_TOKEN","")
 API_TOKEN = os.getenv("GITHUB_COMMENTS_TOKEN","")
-MODEL_REPLAY_BUCKET="model_replay_master"
+MODEL_REPLAY_BUCKET="model_replay_master_tmp"
 GITHUB = GithubUtils(API_TOKEN, DATA_TOKEN)
 
 
@@ -124,45 +127,63 @@ def trim_logs_to_max_frames(logs, max_frames, frs_types, include_all_types):
 
 
 def model_replay(lr, frs):
-  # modeld is using frame pairs
-  modeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"roadCameraState", "wideRoadCameraState"}, {"roadEncodeIdx", "wideRoadEncodeIdx", "carParams"})
-  dmodeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"driverCameraState"}, {"driverEncodeIdx", "carParams"})
+  logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"roadCameraState", "wideRoadCameraState", "driverCameraState"},
+                                                 {"roadEncodeIdx", "wideRoadEncodeIdx", "carParams", "driverEncodeIdx"})
 
   if not SEND_EXTRA_INPUTS:
-    modeld_logs = [msg for msg in modeld_logs if msg.which() != 'liveCalibration']
-    dmodeld_logs = [msg for msg in dmodeld_logs if msg.which() != 'liveCalibration']
+    logs = [msg for msg in logs if msg.which() != 'liveCalibration']
 
   # initial setup
   for s in ('liveCalibration', 'deviceState'):
     msg = next(msg for msg in lr if msg.which() == s).as_builder()
     msg.logMonoTime = lr[0].logMonoTime
-    modeld_logs.insert(1, msg.as_reader())
-    dmodeld_logs.insert(1, msg.as_reader())
+    logs.insert(1, msg.as_reader())
 
   modeld = get_process_config("modeld")
   dmonitoringmodeld = get_process_config("dmonitoringmodeld")
 
-  modeld_msgs = replay_process(modeld, modeld_logs, frs)
-  dmonitoringmodeld_msgs = replay_process(dmonitoringmodeld, dmodeld_logs, frs)
-  return modeld_msgs + dmonitoringmodeld_msgs
+  return replay_process([modeld, dmonitoringmodeld], logs, frs)
+
+def get_logs_and_frames(cache=False):
+  TICI = os.path.isfile('/TICI')
+  CACHE="/data/model_replay_cache" if TICI else '/tmp/model_replay_cache'
+  Path(CACHE).mkdir(parents=True, exist_ok=True)
+
+  LOG_CACHE = f"{CACHE}/rlog"
+  if cache and os.path.isfile(LOG_CACHE):
+    with open(LOG_CACHE, "rb") as f:
+      lr = pickle.load(f)
+  else:
+    lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT, "rlog.bz2")))
+    with open(LOG_CACHE, "wb") as f:
+      pickle.dump(lr, f)
+
+  videos = ["fcamera.hevc", "dcamera.hevc", "ecamera.hevc"]
+  if cache:
+    for v in videos:
+      if not os.path.isfile(f"{CACHE}/{v}"):
+        os.system(f"wget {get_url(TEST_ROUTE, SEGMENT, v)} -P {CACHE}")
+
+  cams = ["roadCameraState", "driverCameraState", "wideRoadCameraState"]
+  frs = {c : FrameReader(f"{CACHE}/{v}", readahead=True) for c,v in zip(cams, videos, strict=True)}
+
+  return lr,frs
 
 
 if __name__ == "__main__":
+  HARDWARE.set_power_save(False)
+
   update = "--update" in sys.argv or (os.getenv("GIT_BRANCH", "") == 'master')
   replay_dir = os.path.dirname(os.path.abspath(__file__))
 
-  # load logs
-  lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT, "rlog.bz2")))
-  frs = {
-    'roadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "fcamera.hevc"), readahead=True),
-    'driverCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "dcamera.hevc"), readahead=True),
-    'wideRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "ecamera.hevc"), readahead=True)
-  }
+  lr,frs = get_logs_and_frames("CI" in os.environ)
 
   log_msgs = []
   # run replays
   if not NO_MODEL:
+    st = time.monotonic()
     log_msgs += model_replay(lr, frs)
+    print("MODEL_REPLAY: ", time.monotonic() - st)
 
   # get diff
   failed = False
@@ -174,10 +195,8 @@ if __name__ == "__main__":
 
       # logs are ordered based on type: modelV2, drivingModelData, driverStateV2
       if not NO_MODEL:
-        model_start_index = next(i for i, m in enumerate(all_logs) if m.which() in ("modelV2", "drivingModelData", "cameraOdometry"))
-        cmp_log += all_logs[model_start_index:model_start_index + MAX_FRAMES*3]
-        dmon_start_index = next(i for i, m in enumerate(all_logs) if m.which() == "driverStateV2")
-        cmp_log += all_logs[dmon_start_index:dmon_start_index + MAX_FRAMES]
+        start_index = next(i for i, m in enumerate(all_logs) if m.which() in ("modelV2", "drivingModelData", "cameraOdometry", "driverStateV2"))
+        cmp_log += all_logs[start_index:start_index + MAX_FRAMES*4]
 
       ignore = [
         'logMonoTime',
@@ -211,12 +230,17 @@ if __name__ == "__main__":
             ignore.append(f'modelV2.roadEdges.{i}.{field}')
       tolerance = .3 if PC else None
       results: Any = {TEST_ROUTE: {}}
+      st = time.monotonic()
       log_paths: Any = {TEST_ROUTE: {"models": {'ref': log_fn, 'new': log_fn}}}
       results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
+      print("Compare Logs: ", time.monotonic() - st)
       diff_short, diff_long, failed = format_diff(results, log_paths, 'master')
+      print("Format Diff: ", time.monotonic() - st)
 
       if "CI" in os.environ:
+        st = time.monotonic()
         comment_replay_report(log_msgs, cmp_log, log_msgs)
+        print("Comment Replay Report: ", time.monotonic() - st)
         failed = False
         print(diff_long)
       print('-------------\n'*5)
