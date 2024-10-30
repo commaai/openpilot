@@ -133,7 +133,7 @@ class Amplifier:
       except OSError:
         backoff += 0.1
         time.sleep(backoff)
-        print(f"Failed to set amp config, {tries - i - 1} retries left, {backoff}")
+        print(f"Failed to set amp config, {tries - i - 1} retries left")
     return False
 
   def set_global_shutdown(self, amp_disabled: bool) -> bool:
