@@ -150,7 +150,7 @@ jobs:
       run: tools/op.sh setup
     - name: Static analysis
       timeout-minutes: 1
-      run: tools/op.sh lint
+      run: ${{ env.RUN }} "tools/op.sh lint"
 
   unit_tests:
     name: unit tests
