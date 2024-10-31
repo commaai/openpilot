@@ -48,6 +48,7 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
     - name: Check submodules
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
+      timeout-minutes: 3
       run: release/check-submodules.sh
     - name: Build openpilot and run checks
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
