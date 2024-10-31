@@ -70,11 +70,12 @@ OX03C10::OX03C10() {
     0x00000fcc, 0x000000b9, 0x00000ffb,
     0x00000fc2, 0x00000ff6, 0x000000c9,
   };
-  for (int i = 0; i < 64; i++) {
-    float fx = i / 63.0;
+  for (int i = 0; i < 65; i++) {
+    float fx = i / 64.0;
     fx = -0.507089*exp(-12.54124638*fx) + 0.9655*pow(fx, 0.5) - 0.472597*fx + 0.507089;
     gamma_lut_rgb.push_back((uint32_t)(fx*1023.0 + 0.5));
   }
+  prepare_gamma_lut();
   linearization_lut = {
     0x00200000, 0x00200000, 0x00200000, 0x00200000,
     0x00404080, 0x00404080, 0x00404080, 0x00404080,

@@ -68,10 +68,11 @@ OS04C10::OS04C10() {
     0x00000fa7, 0x000000d9, 0x00001000,
     0x00000fca, 0x00000fef, 0x000000c7,
   };
-  for (int i = 0; i < 64; i++) {
-    float fx = i / 63.0;
+  for (int i = 0; i < 65; i++) {
+    float fx = i / 64.0;
     gamma_lut_rgb.push_back((uint32_t)(pow(fx, 0.7)*1023.0 + 0.5));
   }
+  prepare_gamma_lut();
   linearization_lut = {
     0x02000000, 0x02000000, 0x02000000, 0x02000000,
     0x020007ff, 0x020007ff, 0x020007ff, 0x020007ff,
