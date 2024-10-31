@@ -67,7 +67,7 @@ int build_update(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t> &patch
 
   // black level scale + offset
   dst += write_cont(dst, 0x6b0, {
-    ((uint32_t)(1 << 11) << 0xf) | (s->black_level << 0),
+    ((uint32_t)(1 << 11) << 0xf) | (s->black_level << (14 - s->bits_per_pixel)),
     0x0,
     0x0,
   });
