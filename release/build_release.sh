@@ -50,7 +50,7 @@ git commit -a -m "openpilot v$VERSION release"
 export PYTHONPATH="$BUILD_DIR"
 scons -j$(nproc) --minimal
 
-if [ -z "PANDA_DEBUG_BUILD" ]; then
+if [ -z "$PANDA_DEBUG_BUILD" ]; then
   # release panda fw
   CERT=/data/pandaextra/certs/release RELEASE=1 scons -j$(nproc) panda/
 else
