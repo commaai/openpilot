@@ -64,7 +64,7 @@ def fill_lane_line_meta(builder, lane_lines, lane_line_probs):
   builder.rightProb = lane_line_probs[2]
 
 def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._DynamicStructBuilder,
-                   net_output_data: dict[str, np.ndarray], v_ego: float, delay: float, 
+                   net_output_data: dict[str, np.ndarray], v_ego: float, delay: float,
                    publish_state: PublishState, vipc_frame_id: int, vipc_frame_id_extra: int,
                    frame_id: int, frame_drop: float, timestamp_eof: int, model_execution_time: float,
                    valid: bool) -> None:
