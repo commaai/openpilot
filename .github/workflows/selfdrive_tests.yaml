@@ -146,11 +146,12 @@ jobs:
       PYTHONWARNINGS: default
     steps:
     - uses: actions/checkout@v4
-    - name: Setup
-      run: tools/op.sh setup
+      with:
+        submodules: true
+    - uses: ./.github/workflows/setup-with-retry
     - name: Static analysis
       timeout-minutes: 1
-      run: tools/op.sh lint
+      run: ${{ env.RUN }} "scripts/lint/lint.sh"
 
   unit_tests:
     name: unit tests
