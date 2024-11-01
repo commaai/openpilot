@@ -432,7 +432,7 @@ class GOPFrameReader(BaseFrameReader):
     self.readahead = readahead
     self.readbehind = readbehind
     self.frame_cache = LRU(64)
-    self.fake = np.empty((3493536,), dtype=np.uint8)
+    #self.fake = np.empty((3493536,), dtype=np.uint8)
 
     if self.readahead:
       self.cache_lock = threading.RLock()
@@ -499,7 +499,7 @@ class GOPFrameReader(BaseFrameReader):
       return self.frame_cache[(num, pix_fmt)]
 
   def get(self, num, count=1, pix_fmt="yuv420p"):
-    return [self.fake]
+    #return [self.fake]
     assert self.frame_count is not None
 
     if num + count > self.frame_count:
