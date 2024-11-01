@@ -2,8 +2,6 @@
 import bz2
 from functools import cache, partial
 import multiprocessing
-from multiprocessing.managers import Value
-
 import capnp
 import enum
 import os
