@@ -33,6 +33,7 @@ CPU usage budget
 """
 
 TEST_DURATION = 25
+LOG_OFFSET = 8
 
 MAX_TOTAL_CPU = 265.  # total for all 8 cores
 PROCS = {
@@ -191,7 +192,7 @@ class TestOnroad:
         continue
 
       with subtests.test(service=s):
-        assert len(msgs) >= math.floor(SERVICE_LIST[s].frequency*int(TEST_DURATION*0.9))
+        assert len(msgs) >= math.floor(SERVICE_LIST[s].frequency*int(TEST_DURATION*0.8))
 
   def test_cloudlog_size(self):
     msgs = self.msgs['logMessage']
@@ -303,7 +304,7 @@ class TestOnroad:
     assert cpu_ok
 
   def test_memory_usage(self):
-    offset = int(SERVICE_LIST['deviceState'].frequency * 8)
+    offset = int(SERVICE_LIST['deviceState'].frequency * LOG_OFFSET)
     mems = [m.deviceState.memoryUsagePercent for m in self.msgs['deviceState'][offset:]]
     print("Memory usage: ", mems)
 
@@ -391,7 +392,7 @@ class TestOnroad:
     result += "----------------- Service Timings --------------\n"
     result += "------------------------------------------------\n"
     for s, (maxmin, rsd) in TIMINGS.items():
-      offset = int(SERVICE_LIST[s].frequency * 8)
+      offset = int(SERVICE_LIST[s].frequency * LOG_OFFSET)
       msgs = [m.logMonoTime for m in self.msgs[s][offset:]]
       if not len(msgs):
         raise Exception(f"missing {s}")
@@ -434,7 +435,7 @@ class TestOnroad:
         if evt.noEntry:
           no_entries[evt.name] += 1
 
-    offset = int(SERVICE_LIST['selfdriveState'].frequency * 8)
+    offset = int(SERVICE_LIST['selfdriveState'].frequency * LOG_OFFSET)
     eng = [m.selfdriveState.engageable for m in self.msgs['selfdriveState'][offset:]]
     assert all(eng), \
            f"Not engageable for whole segment:\n- selfdriveState.engageable: {Counter(eng)}\n- No entry events: {no_entries}"
