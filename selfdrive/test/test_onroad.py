@@ -206,6 +206,7 @@ class TestOnroad:
 
   def test_log_sizes(self):
     for f, sz in self.log_sizes.items():
+      print(f.name, sz)
       if f.name == "qcamera.ts":
         assert 0.90 < sz < 2.6
       elif f.name == "qlog":
