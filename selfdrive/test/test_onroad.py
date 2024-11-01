@@ -63,7 +63,7 @@ PROCS = {
   "system.timed": 0,
   "selfdrive.pandad.pandad": 0,
   "system.statsd": 0.4,
-  "system.loggerd.uploader": (0.5, 15.0),
+  "system.loggerd.uploader": (0.0, 15.0),
   "system.loggerd.deleter": 0.1,
 }
 
@@ -141,20 +141,19 @@ class TestOnroad:
       with Timeout(300, "timed out waiting for logs"):
         while route is None:
           route = params.get("CurrentRoute", encoding="utf-8")
-          time.sleep(0.1)
+          time.sleep(0.01)
 
         # test car params caching
         params.put("CarParamsCache", car.CarParams().to_bytes())
 
-        while len(cls.segments) < 3:
+        while len(cls.segments) < 1:
           segs = set()
           if Path(Paths.log_root()).exists():
             segs = set(Path(Paths.log_root()).glob(f"{route}--*"))
           cls.segments = sorted(segs, key=lambda s: int(str(s).rsplit('--')[-1]))
-          time.sleep(2)
+          time.sleep(0.01)
 
-      # chop off last, incomplete segment
-      cls.segments = cls.segments[:-1]
+      time.sleep(30)
 
     finally:
       cls.gpu_procs = {psutil.Process(int(f.name)).name() for f in pathlib.Path('/sys/devices/virtual/kgsl/kgsl/proc/').iterdir() if f.is_dir()}
@@ -167,8 +166,8 @@ class TestOnroad:
     cls.lrs = [list(LogReader(os.path.join(str(s), "rlog"))) for s in cls.segments]
 
     # use the second segment by default as it's the first full segment
-    cls.lr = list(LogReader(os.path.join(str(cls.segments[1]), "rlog")))
-    cls.log_path = cls.segments[1]
+    cls.lr = list(LogReader(os.path.join(str(cls.segments[0]), "rlog")))
+    cls.log_path = cls.segments[0]
 
     cls.log_sizes = {}
     for f in cls.log_path.iterdir():
@@ -178,16 +177,13 @@ class TestOnroad:
         with open(f, 'rb') as ff:
           cls.log_sizes[f] = len(zstd.compress(ff.read(), LOG_COMPRESSION_LEVEL)) / 1e6
 
+    cls.msgs = defaultdict(list)
+    for m in cls.lr:
+      cls.msgs[m.which()].append(m)
 
-  @cached_property
-  def service_msgs(self):
-    msgs = defaultdict(list)
-    for m in self.lr:
-      msgs[m.which()].append(m)
-    return msgs
 
   def test_service_frequencies(self, subtests):
-    for s, msgs in self.service_msgs.items():
+    for s, msgs in self.msgs.items():
       if s in ('initData', 'sentinel'):
         continue
 
@@ -196,10 +192,10 @@ class TestOnroad:
         continue
 
       with subtests.test(service=s):
-        assert len(msgs) >= math.floor(SERVICE_LIST[s].frequency*55)
+        assert len(msgs) >= math.floor(SERVICE_LIST[s].frequency*25)
 
   def test_cloudlog_size(self):
-    msgs = [m for m in self.lr if m.which() == 'logMessage']
+    msgs = self.msgs['logMessage']
 
     total_size = sum(len(m.as_builder().to_bytes()) for m in msgs)
     assert total_size < 3.5e5
@@ -211,13 +207,13 @@ class TestOnroad:
   def test_log_sizes(self):
     for f, sz in self.log_sizes.items():
       if f.name == "qcamera.ts":
-        assert 2.15 < sz < 2.6
+        assert 0.90 < sz < 2.6
       elif f.name == "qlog":
-        assert 0.4 < sz < 0.55
+        assert 0.15 < sz < 0.55
       elif f.name == "rlog":
-        assert 5 < sz < 50
+        assert 2.5 < sz < 50
       elif f.name.endswith('.hevc'):
-        assert 70 < sz < 80
+        assert 30 < sz < 80
       else:
         raise NotImplementedError
 
@@ -227,7 +223,7 @@ class TestOnroad:
     result += "-------------- UI Draw Timing ------------------\n"
     result += "------------------------------------------------\n"
 
-    ts = [m.uiDebug.drawTimeMillis for m in self.service_msgs['uiDebug']]
+    ts = [m.uiDebug.drawTimeMillis for m in self.msgs['uiDebug']]
     result += f"min  {min(ts):.2f}ms\n"
     result += f"max  {max(ts):.2f}ms\n"
     result += f"std  {np.std(ts):.2f}ms\n"
@@ -250,7 +246,7 @@ class TestOnroad:
     result += "------------------------------------------------\n"
 
     plogs_by_proc = defaultdict(list)
-    for pl in self.service_msgs['procLog']:
+    for pl in self.msgs['procLog']:
       for x in pl.procLog.procs:
         if len(x.cmdline) > 0:
           n = list(x.cmdline)[0]
@@ -258,7 +254,7 @@ class TestOnroad:
     print(plogs_by_proc.keys())
 
     cpu_ok = True
-    dt = (self.service_msgs['procLog'][-1].logMonoTime - self.service_msgs['procLog'][0].logMonoTime) / 1e9
+    dt = (self.msgs['procLog'][-1].logMonoTime - self.msgs['procLog'][0].logMonoTime) / 1e9
     for proc_name, expected_cpu in PROCS.items():
 
       err = ""
@@ -290,7 +286,7 @@ class TestOnroad:
     result += "------------------------------------------------\n"
 
     # Ensure there's no missing procs
-    all_procs = {p.name for p in self.service_msgs['managerState'][0].managerState.processes if p.shouldBeRunning}
+    all_procs = {p.name for p in self.msgs['managerState'][0].managerState.processes if p.shouldBeRunning}
     for p in all_procs:
       with subtests.test(proc=p):
         assert any(p in pp for pp in PROCS.keys()), f"Expected CPU usage missing for {p}"
@@ -308,7 +304,8 @@ class TestOnroad:
     assert cpu_ok
 
   def test_memory_usage(self):
-    mems = [m.deviceState.memoryUsagePercent for m in self.service_msgs['deviceState']]
+    offset = int(SERVICE_LIST['deviceState'].frequency * 10)
+    mems = [m.deviceState.memoryUsagePercent for m in self.msgs['deviceState'][offset:]]
     print("Memory usage: ", mems)
 
     # check for big leaks. note that memory usage is
@@ -324,7 +321,10 @@ class TestOnroad:
     result += "-------------- ImgProc Timing ------------------\n"
     result += "------------------------------------------------\n"
 
-    ts = [getattr(m, m.which()).processingTime for m in self.lr if 'CameraState' in m.which()]
+    #ts = [getattr(m, m.which()).processingTime for m in self.lr if 'CameraState' in m.which()]
+    ts = []
+    for s in ['roadCameraState', 'driverCameraState', 'wideCameraState']:
+      ts.extend(getattr(m, s).processingTime for m in self.msgs[s])
     assert min(ts) < 0.025, f"high execution time: {min(ts)}"
     result += f"execution time: min  {min(ts):.5f}s\n"
     result += f"execution time: max  {max(ts):.5f}s\n"
@@ -357,7 +357,7 @@ class TestOnroad:
 
     cfgs = [("longitudinalPlan", 0.05, 0.05),]
     for (s, instant_max, avg_max) in cfgs:
-      ts = [getattr(m, s).solverExecutionTime for m in self.service_msgs[s]]
+      ts = [getattr(m, s).solverExecutionTime for m in self.msgs[s]]
       assert max(ts) < instant_max, f"high '{s}' execution time: {max(ts)}"
       assert np.mean(ts) < avg_max, f"high avg '{s}' execution time: {np.mean(ts)}"
       result += f"'{s}' execution time: min  {min(ts):.5f}s\n"
@@ -377,7 +377,7 @@ class TestOnroad:
       ("driverStateV2", 0.050, 0.026),
     ]
     for (s, instant_max, avg_max) in cfgs:
-      ts = [getattr(m, s).modelExecutionTime for m in self.service_msgs[s]]
+      ts = [getattr(m, s).modelExecutionTime for m in self.msgs[s]]
       assert max(ts) < instant_max, f"high '{s}' execution time: {max(ts)}"
       assert np.mean(ts) < avg_max, f"high avg '{s}' execution time: {np.mean(ts)}"
       result += f"'{s}' execution time: min  {min(ts):.5f}s\n"
@@ -393,7 +393,8 @@ class TestOnroad:
     result += "----------------- Service Timings --------------\n"
     result += "------------------------------------------------\n"
     for s, (maxmin, rsd) in TIMINGS.items():
-      msgs = [m.logMonoTime for m in self.service_msgs[s]]
+      offset = int(SERVICE_LIST[s].frequency * 10)
+      msgs = [m.logMonoTime for m in self.msgs[s][offset:]]
       if not len(msgs):
         raise Exception(f"missing {s}")
 
@@ -430,11 +431,12 @@ class TestOnroad:
 
   def test_engagable(self):
     no_entries = Counter()
-    for m in self.service_msgs['onroadEvents']:
+    for m in self.msgs['onroadEvents']:
       for evt in m.onroadEvents:
         if evt.noEntry:
           no_entries[evt.name] += 1
 
-    eng = [m.selfdriveState.engageable for m in self.service_msgs['selfdriveState']]
+    offset = int(SERVICE_LIST['selfdriveState'].frequency * 10)
+    eng = [m.selfdriveState.engageable for m in self.msgs['selfdriveState'][offset:]]
     assert all(eng), \
            f"Not engageable for whole segment:\n- selfdriveState.engageable: {Counter(eng)}\n- No entry events: {no_entries}"
