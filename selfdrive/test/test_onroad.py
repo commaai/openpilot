@@ -320,7 +320,6 @@ class TestOnroad:
     result += "-------------- ImgProc Timing ------------------\n"
     result += "------------------------------------------------\n"
 
-    #ts = [getattr(m, m.which()).processingTime for m in self.lr if 'CameraState' in m.which()]
     ts = []
     for s in ['roadCameraState', 'driverCameraState', 'wideCameraState']:
       ts.extend(getattr(m, s).processingTime for m in self.msgs[s])
