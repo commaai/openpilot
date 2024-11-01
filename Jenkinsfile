@@ -243,7 +243,7 @@ node {
       'replay': {
         deviceStage("model-replay", "tici-replay", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py", [diffPaths: ["selfdrive/modeld/"]]),
-          step("model replay", "selfdrive/test/process_replay/model_replay.py --update", [timeout: 600, diffPaths: ["selfdrive/modeld/"]]),
+          step("model replay", "selfdrive/test/process_replay/model_replay.py", [timeout: 600, diffPaths: ["selfdrive/modeld/"]]),
         ])
       },
       'tizi': {
