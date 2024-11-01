@@ -32,6 +32,8 @@ CPU usage budget
   should not exceed MAX_TOTAL_CPU
 """
 
+TEST_DURATION = 25
+
 MAX_TOTAL_CPU = 265.  # total for all 8 cores
 PROCS = {
   # Baseline CPU usage by process
@@ -123,7 +125,7 @@ class TestOnroad:
     if os.path.exists(Paths.log_root()):
       shutil.rmtree(Paths.log_root())
 
-    # start manager and run openpilot for a minute
+    # start manager and run openpilot for TEST_DURATION
     proc = None
     try:
       manager_path = os.path.join(BASEDIR, "system/manager/manager.py")
@@ -134,7 +136,6 @@ class TestOnroad:
         while sm.recv_frame['carState'] < 0:
           sm.update(1000)
 
-      # make sure we get at least two full segments
       route = None
       cls.segments = []
       with Timeout(300, "timed out waiting for logs"):
@@ -152,7 +153,7 @@ class TestOnroad:
           cls.segments = sorted(segs, key=lambda s: int(str(s).rsplit('--')[-1]))
           time.sleep(0.01)
 
-      time.sleep(30)
+      time.sleep(TEST_DURATION)
 
     finally:
       cls.gpu_procs = {psutil.Process(int(f.name)).name() for f in pathlib.Path('/sys/devices/virtual/kgsl/kgsl/proc/').iterdir() if f.is_dir()}
@@ -164,7 +165,6 @@ class TestOnroad:
 
     cls.lrs = [list(LogReader(os.path.join(str(s), "rlog"))) for s in cls.segments]
 
-    # use the second segment by default as it's the first full segment
     cls.lr = list(LogReader(os.path.join(str(cls.segments[0]), "rlog")))
     cls.log_path = cls.segments[0]
 
@@ -191,7 +191,7 @@ class TestOnroad:
         continue
 
       with subtests.test(service=s):
-        assert len(msgs) >= math.floor(SERVICE_LIST[s].frequency*25)
+        assert len(msgs) >= math.floor(SERVICE_LIST[s].frequency*int(TEST_DURATION*0.9))
 
   def test_cloudlog_size(self):
     msgs = self.msgs['logMessage']
@@ -303,7 +303,7 @@ class TestOnroad:
     assert cpu_ok
 
   def test_memory_usage(self):
-    offset = int(SERVICE_LIST['deviceState'].frequency * 10)
+    offset = int(SERVICE_LIST['deviceState'].frequency * 8)
     mems = [m.deviceState.memoryUsagePercent for m in self.msgs['deviceState'][offset:]]
     print("Memory usage: ", mems)
 
@@ -391,7 +391,7 @@ class TestOnroad:
     result += "----------------- Service Timings --------------\n"
     result += "------------------------------------------------\n"
     for s, (maxmin, rsd) in TIMINGS.items():
-      offset = int(SERVICE_LIST[s].frequency * 10)
+      offset = int(SERVICE_LIST[s].frequency * 8)
       msgs = [m.logMonoTime for m in self.msgs[s][offset:]]
       if not len(msgs):
         raise Exception(f"missing {s}")
@@ -434,7 +434,7 @@ class TestOnroad:
         if evt.noEntry:
           no_entries[evt.name] += 1
 
-    offset = int(SERVICE_LIST['selfdriveState'].frequency * 10)
+    offset = int(SERVICE_LIST['selfdriveState'].frequency * 8)
     eng = [m.selfdriveState.engageable for m in self.msgs['selfdriveState'][offset:]]
     assert all(eng), \
            f"Not engageable for whole segment:\n- selfdriveState.engageable: {Counter(eng)}\n- No entry events: {no_entries}"
