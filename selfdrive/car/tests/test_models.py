@@ -113,10 +113,8 @@ class TestCarModelBase(unittest.TestCase):
           (SafetyModel.elm327, SafetyModel.noOutput):
           cls.car_safety_mode_frame = len(can_msgs)
 
-    if len(can_msgs) > int(50 / DT_CTRL):
-      return car_fw, can_msgs, experimental_long
-
-    raise Exception("no can data found")
+    assert len(can_msgs) > int(50 / DT_CTRL), "no can data found"
+    return car_fw, can_msgs, experimental_long
 
   @classmethod
   def get_testing_data(cls):
@@ -130,7 +128,7 @@ class TestCarModelBase(unittest.TestCase):
       try:
         lr = LogReader(segment_range)
         return cls.get_testing_data_from_logreader(lr)
-      except LogsUnavailable:
+      except (LogsUnavailable, AssertionError):
         pass
 
     raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded and public?")
