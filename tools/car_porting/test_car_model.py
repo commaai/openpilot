@@ -5,7 +5,7 @@ import unittest # noqa: TID251
 
 from opendbc.car.tests.routes import CarTestRoute
 from openpilot.selfdrive.car.tests.test_models import TestCarModel
-from openpilot.tools.lib.route import SegmentName
+from openpilot.tools.lib.route import SegmentRange
 
 
 def create_test_models_suite(routes: list[CarTestRoute], ci=False) -> unittest.TestSuite:
@@ -29,10 +29,9 @@ if __name__ == "__main__":
     parser.print_help()
     sys.exit()
 
-  route_or_segment_name = SegmentName(args.route_or_segment_name.strip(), allow_route_name=True)
-  segment_num = route_or_segment_name.segment_num if route_or_segment_name.segment_num != -1 else None
+  sr = SegmentRange(args.route_or_segment_name)
 
-  test_route = CarTestRoute(route_or_segment_name.route_name.canonical_name, args.car, segment=segment_num)
-  test_suite = create_test_models_suite([test_route], ci=args.ci)
+  test_routes = [CarTestRoute(sr.route_name, args.car, segment=seg_idx) for seg_idx in sr.seg_idxs]
+  test_suite = create_test_models_suite(test_routes, ci=args.ci)
 
   unittest.TextTestRunner().run(test_suite)
