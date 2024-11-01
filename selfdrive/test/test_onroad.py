@@ -10,7 +10,6 @@ import time
 import numpy as np
 import zstandard as zstd
 from collections import Counter, defaultdict
-from functools import cached_property
 from pathlib import Path
 
 from cereal import car, log
