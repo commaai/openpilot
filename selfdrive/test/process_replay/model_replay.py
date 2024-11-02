@@ -9,6 +9,7 @@ from pathlib import Path
 import time
 import pickle
 import numpy as np
+import gc
 
 import matplotlib.pyplot as plt
 
@@ -171,6 +172,8 @@ def get_logs_and_frames(cache=False):
     f = v.get(0, 401, pix_fmt="nv12")
     np.save(f'{CACHE}/pregen_{k}_0', f[1:201])
     np.save(f'{CACHE}/pregen_{k}_1', f[201:])
+    del f
+    gc.collect()
 
   frs = {c : NumpyFrameReader(f"{CACHE}/pregen_{c}") for c,v in zip(cams, videos, strict=True)}
 
