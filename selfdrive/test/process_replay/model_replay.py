@@ -170,11 +170,13 @@ def get_logs_and_frames(cache=False):
   frs = {c : FrameReader(f"{CACHE}/{v}", readahead=True) for c,v in zip(cams, videos, strict=True)}
   for k,v in frs.items():
     f = v.get(0, 401, pix_fmt="nv12")
-    np.save(f'{CACHE}/pregen_{k}_0', f[1:201])
-    np.save(f'{CACHE}/pregen_{k}_1', f[201:])
+    np.save(f'{CACHE}/pregen_{k}_0', f[1:101])
+    np.save(f'{CACHE}/pregen_{k}_1', f[101:201])
+    np.save(f'{CACHE}/pregen_{k}_2', f[201:301])
+    np.save(f'{CACHE}/pregen_{k}_3', f[301:])
     del f
     gc.collect()
-  time.sleep(10)
+  time.sleep(5)
 
   frs = {c : NumpyFrameReader(f"{CACHE}/pregen_{c}") for c,v in zip(cams, videos, strict=True)}
 

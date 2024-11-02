@@ -551,9 +551,9 @@ class NumpyFrameReader:
 
   def get(self, num, count=1, pix_fmt="yuv420p"):
     num -= 1
-    q = num // 200
+    q = num // 100
     if q != self.pos:
       #print('SWITCH', q, num, self.name)
       self.pos = q
       self.frames = np.load(f'{self.name}_{self.pos}.npy')
-    return [self.frames[num % 200]]
+    return [self.frames[num % 100]]
