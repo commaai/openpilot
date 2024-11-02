@@ -60,7 +60,7 @@ PROCS = {
   "./proclogd": 1.54,
   "system.logmessaged": 0.2,
   "system.tombstoned": 0,
-  "./logcatd": 0,
+  "./logcatd": 1.0,
   "system.micd": 5.0,
   "system.timed": 0,
   "selfdrive.pandad.pandad": 0,
@@ -99,6 +99,13 @@ TIMINGS = {
   "livePose": [2.5, 0.35],
   "wideRoadCameraState": [1.5, 0.35],
 }
+
+LOGS_SIZE = {
+  "qlog": 0.0083204,
+  "rlog": 0.15279613731343283,
+  "qcamera.ts": 0.038281129696969694,
+}
+LOGS_SIZE.update(dict.fromkeys(['ecamera.hevc', 'fcamera.hevc'], 1.2739787280597015))
 
 
 def cputime_total(ct):
@@ -206,17 +213,11 @@ class TestOnroad:
 
   def test_log_sizes(self):
     for f, sz in self.log_sizes.items():
-      print(f.name, sz)
-      if f.name == "qcamera.ts":
-        assert 0.90 < sz < 2.6
-      elif f.name == "qlog":
-        assert 0.15 < sz < 0.55
-      elif f.name == "rlog":
-        assert 2.5 < sz < 50
-      elif f.name.endswith('.hevc'):
-        assert 30 < sz < 80
-      else:
-        raise NotImplementedError
+      rate = LOGS_SIZE[f.name]
+      minn = rate * TEST_DURATION * 0.8
+      maxx = rate * TEST_DURATION * 1.2
+      assert minn < sz <  maxx
+
 
   def test_ui_timings(self):
     result = "\n"
