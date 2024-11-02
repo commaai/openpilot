@@ -24,7 +24,7 @@ from openpilot.tools.lib.github_utils import GithubUtils
 
 TEST_ROUTE = "2f4452b03ccb98f0|2022-12-03--13-45-30"
 SEGMENT = 6
-MAX_FRAMES = 400 if PC else 400
+MAX_FRAMES = 400 if PC else 350
 
 NO_MODEL = "NO_MODEL" in os.environ
 SEND_EXTRA_INPUTS = bool(int(os.getenv("SEND_EXTRA_INPUTS", "0")))
@@ -167,16 +167,16 @@ def get_logs_and_frames(cache=False):
         os.system(f"wget {get_url(TEST_ROUTE, SEGMENT, v)} -P {CACHE}")
 
   cams = ["roadCameraState", "driverCameraState", "wideRoadCameraState"]
-  frs = {c : FrameReader(f"{CACHE}/{v}", readahead=True) for c,v in zip(cams, videos, strict=True)}
-  for k,v in frs.items():
-    f = v.get(0, 401, pix_fmt="nv12")
-    np.save(f'{CACHE}/pregen_{k}_0', f[1:101])
-    np.save(f'{CACHE}/pregen_{k}_1', f[101:201])
-    np.save(f'{CACHE}/pregen_{k}_2', f[201:301])
-    np.save(f'{CACHE}/pregen_{k}_3', f[301:])
-    del f
-    gc.collect()
-  time.sleep(5)
+  #frs = {c : FrameReader(f"{CACHE}/{v}", readahead=True) for c,v in zip(cams, videos, strict=True)}
+  #for k,v in frs.items():
+    #f = v.get(0, 401, pix_fmt="nv12")
+    #np.save(f'{CACHE}/pregen_{k}_0', f[1:101])
+    #np.save(f'{CACHE}/pregen_{k}_1', f[101:201])
+    #np.save(f'{CACHE}/pregen_{k}_2', f[201:301])
+    #np.save(f'{CACHE}/pregen_{k}_3', f[301:])
+    #del f
+    #gc.collect()
+  #time.sleep(5)
 
   frs = {c : NumpyFrameReader(f"{CACHE}/pregen_{c}") for c,v in zip(cams, videos, strict=True)}
 

@@ -553,7 +553,6 @@ class NumpyFrameReader:
     num -= 1
     q = num // 100
     if q != self.pos:
-      #print('SWITCH', q, num, self.name)
       self.pos = q
       self.frames = np.load(f'{self.name}_{self.pos}.npy')
     return [self.frames[num % 100]]
