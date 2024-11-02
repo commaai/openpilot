@@ -1,18 +1,18 @@
 [submodule "panda"]
   path = panda
-  url = ../../commaai/panda.git
+  url = https://github.com/sunnyhaibin/panda.git
 [submodule "opendbc"]
   path = opendbc_repo
-  url = ../../commaai/opendbc.git
+  url = https://github.com/sunnypilot/opendbc.git
 [submodule "msgq"]
   path = msgq_repo
-  url = ../../commaai/msgq.git
+  url = https://github.com/sunnypilot/msgq.git
 [submodule "rednose_repo"]
   path = rednose_repo
-  url = ../../commaai/rednose.git
+  url = https://github.com/commaai/rednose.git
 [submodule "teleoprtc_repo"]
   path = teleoprtc_repo
-  url = ../../commaai/teleoprtc
+  url = https://github.com/commaai/teleoprtc
 [submodule "tinygrad"]
   path = tinygrad_repo
-  url = https://github.com/commaai/tinygrad.git
+  url = https://github.com/tinygrad/tinygrad.git
