@@ -218,7 +218,6 @@ class TestOnroad:
       maxx = rate * TEST_DURATION * 1.2
       assert minn < sz <  maxx
 
-
   def test_ui_timings(self):
     result = "\n"
     result += "------------------------------------------------\n"
