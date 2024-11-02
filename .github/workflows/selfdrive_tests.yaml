@@ -41,7 +41,12 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - run: git lfs pull
+    - name: Getting LFS files
+      uses: nick-fields/retry@7152eba30c6575329ac0576536151aca5a72780e
+      with:
+        timeout_minutes: 2
+        max_attempts: 3
+        command: git lfs pull
     - name: Build devel
       timeout-minutes: 1
       run: TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
