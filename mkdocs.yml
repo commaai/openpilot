@@ -20,6 +20,7 @@ nav:
     - Connect to a comma 3/3X: how-to/connect-to-comma.md
     #- Replay a drive: how-to/replay-a-drive.md
   - Concepts:
+    - Glossary: concepts/glossary.md
     - Logs: concepts/logs.md
     - Safety: concepts/safety.md
   - Car Porting:
