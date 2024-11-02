@@ -49,7 +49,7 @@ class _LogFileReader:
       _, ext = os.path.splitext(urllib.parse.urlparse(fn).path)
       if ext not in ('', '.bz2', '.zst'):
         # old rlogs weren't compressed
-        raise Exception(f"unknown extension {ext}")
+        raise ValueError(f"unknown extension {ext}")
 
       with FileReader(fn) as f:
         dat = f.read()
@@ -99,6 +99,10 @@ Source = Callable[[SegmentRange, ReadMode], list[LogPath]]
 InternalUnavailableException = Exception("Internal source not available")
 
 
+class LogsUnavailable(Exception):
+  pass
+
+
 @cache
 def default_valid_file(fn: LogPath) -> bool:
   return fn is not None and file_exists(fn)
@@ -128,7 +132,7 @@ def apply_strategy(mode: ReadMode, rlog_paths: list[LogPath], qlog_paths: list[L
     return auto_strategy(rlog_paths, qlog_paths, False, valid_file)
   elif mode == ReadMode.AUTO_INTERACTIVE:
     return auto_strategy(rlog_paths, qlog_paths, True, valid_file)
-  raise Exception(f"invalid mode: {mode}")
+  raise ValueError(f"invalid mode: {mode}")
 
 
 def comma_api_source(sr: SegmentRange, mode: ReadMode) -> list[LogPath]:
@@ -224,8 +228,8 @@ def auto_source(sr: SegmentRange, mode=ReadMode.RLOG, sources: list[Source] = No
     except Exception as e:
       exceptions[source.__name__] = e
 
-  raise Exception("auto_source could not find any valid source, exceptions for sources:\n  - " +
-                  "\n  - ".join([f"{k}: {repr(v)}" for k, v in exceptions.items()]))
+  raise LogsUnavailable("auto_source could not find any valid source, exceptions for sources:\n  - " +
+                        "\n  - ".join([f"{k}: {repr(v)}" for k, v in exceptions.items()]))
 
 
 def parse_indirect(identifier: str) -> str:
