@@ -1,11 +1,11 @@
 # openpilot glossary
 
-* **issue**: It is to escalate a situation to a more formal level. Before opening a new issue, it is extremely important to search among the already open issues to see if your situation is already known. If so, add your case to the related issue to increase its frequency; remember that repetitive demands receive a higher priority for resource allocation to achieve a solution.
-* **route**: Remember, without proof, nothing you say is true. Soo route is a file that contains the history of a driving session. It records data such as the route taken, speed, GPS position, and driving assistance events. This data is used for analysis and system improvement.
-* **routeID**: It is the identifier of your route obtained from comma connect and looks like this: `a0e5673b89222047/00000070--604b06efd9`
-* **onroad**: It is the state the openpilot enters when ignition is detected, and the camera feed starts to display on the screen.
-* **offroad**: It is the state the openpilot stays when the ignition NOT is detected, and the main page stays to display on the screen.
-* **segment**: Routes are split into one minute chunks called segments. Example of what the third minute of the route above would look like.`a0e5673b89222047/00000070--604b06efd9/2`
-* **bookmark**: When reporting an issue, always include the routeID and specify the exact segment where the situation occurred (remember, it’s like finding a needle in a haystack, and you’ll likely locate it more easily than someone else). To make things easier, there’s a flag in the lower corner of the left sidebar in onroad mode; if you press it immediately after the relevant event, it will help you find the moment in comma connect, as a yellow marker will appear on the route timeline.
-* **panda**: It is the component that "speaks CAN" the same "electronical language" that majority of the vehicle's use to control the car. IT CAN BE EMBEDDED INTERNALLY IN DEVICES LIKE THE COMMA 2/3/3X, or external, as in the case of EONs, computers and anothers unnoficial development devices.
-* **comma 3X**: A device whose purpose is to run the openpilot software and comes with an internal panda CAN-FD capable embedded. It is worth noting that the maintenance of the open-source software 'openpilot' always main targets the current official device sold by comma.ai.
+* **issue**:  To formally report a situation. Before opening a new issue, check if one already exists for your problem. If so, add your case to it to increase priority and visibility.
+* **route**: A file recording a driving session’s data, including the path, speed, GPS position, and driving assistance events. This information aids in analysis and system improvement.
+* **routeID**:  The unique identifier for your route in comma connect (e.g.,`a0e5673b89222047/00000070--604b06efd9`).
+* **segment**: Routes are divided into one-minute segments. For example, the third minute of the route mentioned above is:`a0e5673b89222047/00000070--604b06efd9/2`.
+* **onroad**: The state openpilot enters when ignition is detected, displaying the camera feed on the screen.
+* **offroad**:  The state openpilot stays in when no ignition is detected, showing the main page on the screen.
+* **bookmark**: When reporting an issue, include the routeID and the segment where the problem occurred. To mark events, use the flag in the lower left sidebar in onroad mode; this will add a yellow marker in comma connect for easy reference.
+* **panda**: A component that communicates using CAN, the standard electronic language for vehicle control. It can be embedded internally in devices like comma 2/3/3X or used externally on development devices like EONs.
+* **comma 3X**: A device for running openpilot software, equipped with an internal Panda CAN-FD. Maintenance for openpilot software primarily targets this official device sold by comma.ai.
