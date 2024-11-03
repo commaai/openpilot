@@ -22,7 +22,7 @@ from openpilot.selfdrive.selfdrived.selfdrived import SelfdriveD
 from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
-from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.logreader import LogReader, LogsUnavailable
 from openpilot.tools.lib.route import SegmentName
 
 from panda.tests.libpanda import libpanda_py
@@ -93,7 +93,7 @@ class TestCarModelBase(unittest.TestCase):
         car_fw = msg.carParams.carFw
         if msg.carParams.openpilotLongitudinalControl:
           experimental_long = True
-        if cls.platform is None and not cls.test_route_on_bucket:
+        if cls.platform is None:
           live_fingerprint = msg.carParams.carFingerprint
           cls.platform = MIGRATION.get(live_fingerprint, live_fingerprint)
 
@@ -113,10 +113,8 @@ class TestCarModelBase(unittest.TestCase):
           (SafetyModel.elm327, SafetyModel.noOutput):
           cls.car_safety_mode_frame = len(can_msgs)
 
-    if len(can_msgs) > int(50 / DT_CTRL):
-      return car_fw, can_msgs, experimental_long
-
-    raise Exception("no can data found")
+    assert len(can_msgs) > int(50 / DT_CTRL), "no can data found"
+    return car_fw, can_msgs, experimental_long
 
   @classmethod
   def get_testing_data(cls):
@@ -130,7 +128,7 @@ class TestCarModelBase(unittest.TestCase):
       try:
         lr = LogReader(segment_range)
         return cls.get_testing_data_from_logreader(lr)
-      except Exception:
+      except (LogsUnavailable, AssertionError):
         pass
 
     raise Exception(f"Route: {repr(cls.test_route.route)} with segments: {test_segs} not found or no CAN msgs found. Is it uploaded and public?")
