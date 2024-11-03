@@ -100,12 +100,12 @@ TIMINGS = {
   "wideRoadCameraState": [1.5, 0.35],
 }
 
-LOGS_SIZE = {
-  "qlog": 0.0083204,
-  "rlog": 0.15279613731343283,
-  "qcamera.ts": 0.038281129696969694,
+LOGS_SIZE_RATE = {
+  "qlog": 0.0083,
+  "rlog": 0.1528,
+  "qcamera.ts": 0.03828,
 }
-LOGS_SIZE.update(dict.fromkeys(['ecamera.hevc', 'fcamera.hevc'], 1.2739787280597015))
+LOGS_SIZE_RATE.update(dict.fromkeys(['ecamera.hevc', 'fcamera.hevc'], 1.2740))
 
 
 def cputime_total(ct):
@@ -213,7 +213,7 @@ class TestOnroad:
 
   def test_log_sizes(self):
     for f, sz in self.log_sizes.items():
-      rate = LOGS_SIZE[f.name]
+      rate = LOGS_SIZE_RATE[f.name]
       minn = rate * TEST_DURATION * 0.8
       maxx = rate * TEST_DURATION * 1.2
       assert minn < sz <  maxx
