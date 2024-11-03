@@ -66,7 +66,7 @@ fi
 ln -snf ${env.TEST_DIR} /data/pythonpath
 
 cd ${env.TEST_DIR} || true
-${cmd}
+time ${cmd}
 END"""
 
     sh script: ssh_cmd, label: step_label
@@ -198,7 +198,7 @@ node {
           //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
           step("build openpilot", "cd system/manager && ./build.py"),
           step("check dirty", "release/check-dirty.sh"),
-          step("onroad tests", "pytest selfdrive/test/test_onroad.py -s"),
+          step("onroad tests", "pytest selfdrive/test/test_onroad.py -s", [timeout: 60]),
           //["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
         ])
       },
