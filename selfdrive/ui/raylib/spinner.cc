@@ -19,8 +19,8 @@ int main(int argc, char *argv[]) {
   std::cin.sync_with_stdio(false);
   std::cin.tie(nullptr);
 
-  Texture2D commaTexture = LoadTextureResized("../assets/img_spinner_comma.png", kTextureSize);
-  Texture2D spinnerTexture = LoadTextureResized("../assets/img_spinner_track.png", kTextureSize);
+  Texture2D commaTexture = LoadTextureResized("../../assets/img_spinner_comma.png", kTextureSize);
+  Texture2D spinnerTexture = LoadTextureResized("../../assets/img_spinner_track.png", kTextureSize);
 
   float rotation = 0.0f;
   std::string userInput;

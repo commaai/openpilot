@@ -9,14 +9,14 @@
 #include "system/hardware/hw.h"
 
 constexpr std::array<const char *, static_cast<int>(FontWeight::Count)> FONT_FILE_PATHS = {
-    "../assets/fonts/Inter-Black.ttf",
-    "../assets/fonts/Inter-Bold.ttf",
-    "../assets/fonts/Inter-ExtraBold.ttf",
-    "../assets/fonts/Inter-ExtraLight.ttf",
-    "../assets/fonts/Inter-Medium.ttf",
-    "../assets/fonts/Inter-Regular.ttf",
-    "../assets/fonts/Inter-SemiBold.ttf",
-    "../assets/fonts/Inter-Thin.ttf",
+    "../../assets/fonts/Inter-Black.ttf",
+    "../../assets/fonts/Inter-Bold.ttf",
+    "../../assets/fonts/Inter-ExtraBold.ttf",
+    "../../assets/fonts/Inter-ExtraLight.ttf",
+    "../../assets/fonts/Inter-Medium.ttf",
+    "../../assets/fonts/Inter-Regular.ttf",
+    "../../assets/fonts/Inter-SemiBold.ttf",
+    "../../assets/fonts/Inter-Thin.ttf",
 };
 
 struct FontManager {
