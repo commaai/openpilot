@@ -60,8 +60,8 @@ public:
   inline int segmentCacheLimit() const { return segment_cache_limit; }
   inline void setSegmentCacheLimit(int n) { segment_cache_limit = std::max(MIN_SEGMENTS_CACHE, n); }
   inline bool hasFlag(REPLAY_FLAGS flag) const { return flags_ & flag; }
-  inline void addFlag(REPLAY_FLAGS flag) { flags_ |= flag; }
-  inline void removeFlag(REPLAY_FLAGS flag) { flags_ &= ~flag; }
+  void setLoop(bool loop) { loop ? flags_ &= ~REPLAY_FLAG_NO_LOOP : flags_ |= REPLAY_FLAG_NO_LOOP; }
+  bool loop() const { return !(flags_ & REPLAY_FLAG_NO_LOOP); }
   inline const Route* route() const { return route_.get(); }
   inline double currentSeconds() const { return double(cur_mono_time_ - route_start_ts_) / 1e9; }
   inline std::time_t routeDateTime() const { return route_date_time_; }
