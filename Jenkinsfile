@@ -178,12 +178,12 @@ node {
       parallel (
         'nightly': {
           deviceStage("build nightly", "tici-needs-can", [], [
-            step("build nightly", "RELEASE_BRANCH=nightly $SOURCE_DIR/release/build_release.sh"),
+            step("build nightly", "BUILD_DIR=/data/openpilot_release RELEASE_BRANCH=nightly $SOURCE_DIR/release/build_release.sh"),
           ])
         },
         'nightly-dev': {
           deviceStage("build nightly-dev", "tici-needs-can", [], [
-            step("build nightly-dev", "PANDA_DEBUG_BUILD=1 RELEASE_BRANCH=nightly-dev $SOURCE_DIR/release/build_release.sh"),
+            step("build nightly-dev", "BUILD_DIR=/data/openpilot_release PANDA_DEBUG_BUILD=1 RELEASE_BRANCH=nightly-dev $SOURCE_DIR/release/build_release.sh"),
           ])
         },
       )
@@ -193,7 +193,7 @@ node {
     parallel (
       // tici tests
       'onroad tests': {
-        deviceStage("onroad", "tici-needs-can", [], [
+        deviceStage("onroad", "tici-needs-can", ["UNSAFE=1"], [
           // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
           //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
           step("build openpilot", "cd system/manager && ./build.py"),

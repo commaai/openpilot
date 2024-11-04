@@ -8,7 +8,7 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
 
 cd $DIR
 
-BUILD_DIR=/data/openpilot
+BUILD_DIR="${BUILD_DIR:-/data/openpilot}"
 SOURCE_DIR="$(git rev-parse --show-toplevel)"
 
 if [ -z "$RELEASE_BRANCH" ]; then
