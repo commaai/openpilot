@@ -3,11 +3,10 @@ import capnp
 import pathlib
 import shutil
 import sys
-import jinja2
-import matplotlib.pyplot as plt
-import numpy as np
 import os
 import pywinctl
+import pyautogui
+import pickle
 import time
 
 from cereal import log
@@ -19,12 +18,13 @@ from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.common.transformations.camera import CameraConfig, DEVICE_CAMERAS
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.selfdrive.test.helpers import with_processes
-from openpilot.selfdrive.test.process_replay.migration import migrate_controlsState
+from openpilot.selfdrive.test.process_replay.migration import migrate, migrate_controlsState, migrate_carState
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.route import Route
+from openpilot.tools.lib.cache import DEFAULT_CACHE_DIR
 
-UI_DELAY = 0.5 # may be slower on CI?
+UI_DELAY = 0.1 # may be slower on CI?
 TEST_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 
 STREAMS: list[tuple[VisionStreamType, CameraConfig, bytes]] = []
@@ -42,13 +42,18 @@ def setup_settings_device(click, pm: PubMaster):
 
 def setup_settings_toggles(click, pm: PubMaster):
   setup_settings_device(click, pm)
-  click(278, 760)
+  click(278, 650)
+  time.sleep(UI_DELAY)
+
+def setup_settings_developer(click, pm: PubMaster):
+  setup_settings_device(click, pm)
+  click(278, 960)
   time.sleep(UI_DELAY)
 
 def setup_onroad(click, pm: PubMaster):
   vipc_server = VisionIpcServer("camerad")
   for stream_type, cam, _ in STREAMS:
-    vipc_server.create_buffers(stream_type, 5, False, cam.width, cam.height)
+    vipc_server.create_buffers(stream_type, 5, cam.width, cam.height)
   vipc_server.start_listener()
 
   uidebug_received_cnt = 0
@@ -175,6 +180,7 @@ CASES = {
   "pair_device": setup_pair_device,
   "settings_device": setup_settings_device,
   "settings_toggles": setup_settings_toggles,
+  "settings_developer": setup_settings_developer,
   "onroad": setup_onroad,
   "onroad_disengaged": setup_onroad_disengaged,
   "onroad_override": setup_onroad_override,
@@ -216,41 +222,20 @@ class TestUI:
       print(f"failed to find ui window, assuming that it's in the top left (for Xvfb) {e}")
       self.ui = namedtuple("bb", ["left", "top", "width", "height"])(0,0,2160,1080)
 
-  def screenshot(self):
-    import pyautogui
-    im = pyautogui.screenshot(region=(self.ui.left, self.ui.top, self.ui.width, self.ui.height))
+  def screenshot(self, name):
+    im = pyautogui.screenshot(SCREENSHOTS_DIR / f"{name}.png", region=(self.ui.left, self.ui.top, self.ui.width, self.ui.height))
     assert im.width == 2160
     assert im.height == 1080
-    img = np.array(im)
-    im.close()
-    return img
 
   def click(self, x, y, *args, **kwargs):
-    import pyautogui
     pyautogui.click(self.ui.left + x, self.ui.top + y, *args, **kwargs)
     time.sleep(UI_DELAY) # give enough time for the UI to react
 
   @with_processes(["ui"])
   def test_ui(self, name, setup_case):
     self.setup()
-
     setup_case(self.click, self.pm)
-
-    im = self.screenshot()
-    plt.imsave(SCREENSHOTS_DIR / f"{name}.png", im)
-
-
-def create_html_report():
-  OUTPUT_FILE = TEST_OUTPUT_DIR / "index.html"
-
-  with open(TEST_DIR / "template.html") as f:
-    template = jinja2.Template(f.read())
-
-  cases = {f.stem: (str(f.relative_to(TEST_OUTPUT_DIR)), "reference.png") for f in SCREENSHOTS_DIR.glob("*.png")}
-  cases = dict(sorted(cases.items()))
-
-  with open(OUTPUT_FILE, "w") as f:
-    f.write(template.render(cases=cases))
+    self.screenshot(name)
 
 def create_screenshots():
   if TEST_OUTPUT_DIR.exists():
@@ -263,7 +248,7 @@ def create_screenshots():
   segnum = 2
   lr = LogReader(route.qlog_paths()[segnum])
   DATA['carParams'] = next((event.as_builder() for event in lr if event.which() == 'carParams'), None)
-  for event in migrate_controlsState(lr):
+  for event in migrate(lr, [migrate_controlsState, migrate_carState]):
     if event.which() in DATA:
       DATA[event.which()] = event.as_builder()
 
@@ -271,13 +256,23 @@ def create_screenshots():
       break
 
   cam = DEVICE_CAMERAS[("tici", "ar0231")]
-  road_img = FrameReader(route.camera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
+
+  frames_cache = f'{DEFAULT_CACHE_DIR}/ui_frames'
+  if os.path.isfile(frames_cache):
+    with open(frames_cache, 'rb') as f:
+      frames = pickle.load(f)
+      road_img = frames[0]
+      wide_road_img = frames[1]
+      driver_img = frames[2]
+  else:
+    with open(frames_cache, 'wb') as f:
+      road_img = FrameReader(route.camera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
+      wide_road_img = FrameReader(route.ecamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
+      driver_img = FrameReader(route.dcamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
+      pickle.dump([road_img, wide_road_img, driver_img], f)
+
   STREAMS.append((VisionStreamType.VISION_STREAM_ROAD, cam.fcam, road_img.flatten().tobytes()))
-
-  wide_road_img = FrameReader(route.ecamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
   STREAMS.append((VisionStreamType.VISION_STREAM_WIDE_ROAD, cam.ecam, wide_road_img.flatten().tobytes()))
-
-  driver_img = FrameReader(route.dcamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
   STREAMS.append((VisionStreamType.VISION_STREAM_DRIVER, cam.dcam, driver_img.flatten().tobytes()))
 
   t = TestUI()
@@ -296,6 +291,3 @@ def create_screenshots():
 if __name__ == "__main__":
   print("creating test screenshots")
   create_screenshots()
-
-  print("creating html report")
-  create_html_report()

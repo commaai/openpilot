@@ -49,10 +49,14 @@ void ReplayStream::mergeSegments() {
 }
 
 bool ReplayStream::loadRoute(const QString &route, const QString &data_dir, uint32_t replay_flags) {
-  replay.reset(new Replay(route, {"can", "roadEncodeIdx", "driverEncodeIdx", "wideRoadEncodeIdx", "carParams"},
-                          {}, nullptr, replay_flags, data_dir, this));
+  replay.reset(new Replay(route.toStdString(), {"can", "roadEncodeIdx", "driverEncodeIdx", "wideRoadEncodeIdx", "carParams"},
+                          {}, nullptr, replay_flags, data_dir.toStdString(), this));
   replay->setSegmentCacheLimit(settings.max_cached_minutes);
   replay->installEventFilter(event_filter, this);
+
+  // Forward replay callbacks to corresponding Qt signals.
+  replay->onQLogLoaded = [this](std::shared_ptr<LogReader> qlog) { emit qLogLoaded(qlog); };
+
   QObject::connect(replay.get(), &Replay::seeking, this, &AbstractStream::seeking);
   QObject::connect(replay.get(), &Replay::seekedTo, this, &AbstractStream::seekedTo);
   QObject::connect(replay.get(), &Replay::segmentsMerged, this, &ReplayStream::mergeSegments);
@@ -153,7 +157,7 @@ AbstractStream *OpenReplayWidget::open() {
     route = route.mid(idx + 1);
   }
 
-  bool is_valid_format = Route::parseRoute(route).str.size() > 0;
+  bool is_valid_format = Route::parseRoute(route.toStdString()).str.size() > 0;
   if (!is_valid_format) {
     QMessageBox::warning(nullptr, tr("Warning"), tr("Invalid route format: '%1'").arg(route));
   } else {

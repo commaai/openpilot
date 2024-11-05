@@ -52,7 +52,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           run_id: ${{ steps.get_run_id.outputs.run_id }}
           search_artifacts: true
-          name: report-${{ env.REPORT_NAME }}
+          name: report-1-${{ env.REPORT_NAME }}
           path: ${{ github.workspace }}/pr_ui
 
       - name: Getting master ui
@@ -84,12 +84,11 @@ jobs:
         run: >-
           sudo apt-get install -y imagemagick
 
-          scenes="homescreen settings_device settings_toggles offroad_alert update_available prime onroad onroad_disengaged onroad_override onroad_sidebar onroad_wide onroad_wide_sidebar onroad_alert_small onroad_alert_mid onroad_alert_full driver_camera body keyboard"
+          scenes="homescreen settings_device settings_toggles settings_developer offroad_alert update_available prime onroad onroad_disengaged onroad_override onroad_sidebar onroad_wide onroad_wide_sidebar onroad_alert_small onroad_alert_mid onroad_alert_full driver_camera body keyboard"
           A=($scenes)
 
           DIFF=""
-          TABLE="<details>"
-          TABLE="${TABLE}<summary>All Screenshots</summary>"
+          TABLE="<details><summary>All Screenshots</summary>"
           TABLE="${TABLE}<table>"
 
           for ((i=0; i<${#A[*]}; i=i+1));
@@ -98,11 +97,11 @@ jobs:
             if ! compare -fuzz 2% -highlight-color DeepSkyBlue1 -lowlight-color Black -compose Src ${{ github.workspace }}/master_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png; then
               convert ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png -transparent black mask.png
               composite mask.png ${{ github.workspace }}/master_ui/${A[$i]}.png composite_diff.png
-              convert -delay 20 ${{ github.workspace }}/master_ui/${A[$i]}.png composite_diff.png -loop 0 ${{ github.workspace }}/pr_ui/${A[$i]}_diff.gif
+              convert -delay 100 ${{ github.workspace }}/master_ui/${A[$i]}.png composite_diff.png -loop 0 ${{ github.workspace }}/pr_ui/${A[$i]}_diff.gif
 
               mv ${{ github.workspace }}/master_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}_master_ref.png
 
-              DIFF="${DIFF}<details>"
+              DIFF="${DIFF}<details open>"
               DIFF="${DIFF}<summary>${A[$i]} : \$\${\\color{red}\\text{DIFFERENT}}\$\$</summary>"
               DIFF="${DIFF}<table>"
 
@@ -132,8 +131,7 @@ jobs:
             fi
           done
 
-          TABLE="${TABLE}</table>"
-          TABLE="${TABLE}</details>"
+          TABLE="${TABLE}</table></details>"
 
           echo "DIFF=$DIFF$TABLE" >> "$GITHUB_OUTPUT"
 

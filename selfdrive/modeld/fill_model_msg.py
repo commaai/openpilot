@@ -48,6 +48,12 @@ def fill_xyz_poly(builder, degree, x, y, z):
   builder.yCoefficients = coeffs[:, 1].tolist()
   builder.zCoefficients = coeffs[:, 2].tolist()
 
+def fill_lane_line_meta(builder, lane_lines, lane_line_probs):
+  builder.leftY = lane_lines[1].y[0]
+  builder.leftProb = lane_line_probs[1]
+  builder.rightY = lane_lines[2].y[0]
+  builder.rightProb = lane_line_probs[2]
+
 def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._DynamicStructBuilder,
                    net_output_data: dict[str, np.ndarray], publish_state: PublishState,
                    vipc_frame_id: int, vipc_frame_id_extra: int, frame_id: int, frame_drop: float,
@@ -87,6 +93,13 @@ def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._D
   orientation_rate = modelV2.orientationRate
   fill_xyzt(orientation_rate, ModelConstants.T_IDXS, *net_output_data['plan'][0,:,Plan.ORIENTATION_RATE].T)
 
+  # temporal pose
+  temporal_pose = modelV2.temporalPose
+  temporal_pose.trans = net_output_data['plan'][0,0,Plan.VELOCITY].tolist()
+  temporal_pose.transStd = net_output_data['plan_stds'][0,0,Plan.VELOCITY].tolist()
+  temporal_pose.rot = net_output_data['plan'][0,0,Plan.ORIENTATION_RATE].tolist()
+  temporal_pose.rotStd = net_output_data['plan_stds'][0,0,Plan.ORIENTATION_RATE].tolist()
+
   # poly path
   poly_path = driving_model_data.path
   fill_xyz_poly(poly_path, ModelConstants.POLY_PATH_DEGREE, *net_output_data['plan'][0,:,Plan.POSITION].T)
@@ -123,10 +136,7 @@ def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._D
   modelV2.laneLineProbs = net_output_data['lane_lines_prob'][0,1::2].tolist()
 
   lane_line_meta = driving_model_data.laneLineMeta
-  lane_line_meta.leftY = modelV2.laneLines[1].y[0]
-  lane_line_meta.leftProb = modelV2.laneLineProbs[1]
-  lane_line_meta.rightY = modelV2.laneLines[2].y[0]
-  lane_line_meta.rightProb = modelV2.laneLineProbs[2]
+  fill_lane_line_meta(lane_line_meta, modelV2.laneLines, modelV2.laneLineProbs)
 
   # road edges
   modelV2.init('roadEdges', 2)

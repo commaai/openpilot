@@ -13,11 +13,9 @@ const int YUV_BUFFER_COUNT = 20;
 typedef struct FrameMetadata {
   uint32_t frame_id;
   uint32_t request_id;
-
-  // Timestamps
   uint64_t timestamp_sof;
   uint64_t timestamp_eof;
-
+  uint64_t timestamp_end_of_isp;
   float processing_time;
 } FrameMetadata;
 
@@ -27,19 +25,21 @@ class ImgProc;
 
 class CameraBuf {
 private:
-  VisionIpcServer *vipc_server;
   ImgProc *imgproc = nullptr;
-  VisionStreamType stream_type;
   int cur_buf_idx;
   SafeQueue<int> safe_queue;
   int frame_buf_count;
+  bool is_raw;
 
 public:
+  VisionIpcServer *vipc_server;
+  VisionStreamType stream_type;
+
   FrameMetadata cur_frame_data;
   VisionBuf *cur_yuv_buf;
   VisionBuf *cur_camera_buf;
-  std::unique_ptr<VisionBuf[]> camera_bufs;
-  std::unique_ptr<FrameMetadata[]> camera_bufs_metadata;
+  std::unique_ptr<VisionBuf[]> camera_bufs_raw;
+  std::unique_ptr<FrameMetadata[]> frame_metadata;
   int out_img_width, out_img_height;
 
   CameraBuf() = default;

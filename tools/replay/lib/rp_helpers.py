@@ -8,7 +8,8 @@ rerunColorPalette = [(96, "red", (255, 0, 0)),
                      (230, "vibrantpink", (255, 36, 170)),
                      (240, "orange", (255, 146, 0)),
                      (255, "white", (255, 255, 255)),
-                     (110, "carColor", (255,0,127))]
+                     (110, "carColor", (255,0,127)),
+                     (0, "background", (0, 0, 0))]
 
 
 class UIParams:
@@ -68,7 +69,7 @@ def plot_lead(rs, lid_overlay):
     lid_overlay[px_left:px_right, py] = rerunColorPalette[0][0]
 
 
-def maybe_update_radar_points(lt, lid_overlay):
+def update_radar_points(lt, lid_overlay):
   ar_pts = []
   if lt is not None:
     ar_pts = {}

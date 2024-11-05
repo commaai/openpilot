@@ -35,11 +35,11 @@ cdef class ModelFrame:
   def prepare(self, VisionBuf buf, float[:] projection, CLMem output):
     cdef mat3 cprojection
     memcpy(cprojection.v, &projection[0], 9*sizeof(float))
-    cdef float * data
+    cdef unsigned char * data
     if output is None:
       data = self.frame.prepare(buf.buf.buf_cl, buf.width, buf.height, buf.stride, buf.uv_offset, cprojection, NULL)
     else:
       data = self.frame.prepare(buf.buf.buf_cl, buf.width, buf.height, buf.stride, buf.uv_offset, cprojection, output.mem)
     if not data:
       return None
-    return np.asarray(<cnp.float32_t[:self.frame.buf_size]> data)
+    return np.asarray(<cnp.uint8_t[:self.frame.buf_size]> data)

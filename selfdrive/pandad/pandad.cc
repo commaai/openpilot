@@ -306,6 +306,16 @@ void send_peripheral_state(Panda *panda, PubMaster *pm) {
     LOGW("reading hwmon took %lfms", read_time);
   }
 
+  // fall back to panda's voltage and current measurement
+  if (ps.getVoltage() == 0 && ps.getCurrent() == 0) {
+    auto health_opt = panda->get_state();
+    if (health_opt) {
+      health_t health = *health_opt;
+      ps.setVoltage(health.voltage_pkt);
+      ps.setCurrent(health.current_pkt);
+    }
+  }
+
   uint16_t fan_speed_rpm = panda->get_fan_speed();
   ps.setFanSpeedRpm(fan_speed_rpm);
 

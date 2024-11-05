@@ -448,6 +448,7 @@ void WifiManager::tetheringActivated(QDBusPendingCallWatcher *call) {
     });
   }
   call->deleteLater();
+  tethering_on = true;
 }
 
 void WifiManager::setTetheringEnabled(bool enabled) {
@@ -465,6 +466,7 @@ void WifiManager::setTetheringEnabled(bool enabled) {
 
   } else {
     deactivateConnectionBySsid(tethering_ssid);
+    tethering_on = false;
   }
 }
 

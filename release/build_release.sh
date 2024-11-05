@@ -50,8 +50,13 @@ git commit -a -m "openpilot v$VERSION release"
 export PYTHONPATH="$BUILD_DIR"
 scons -j$(nproc) --minimal
 
-# release panda fw
-CERT=/data/pandaextra/certs/release RELEASE=1 scons -j$(nproc) panda/
+if [ -z "$PANDA_DEBUG_BUILD" ]; then
+  # release panda fw
+  CERT=/data/pandaextra/certs/release RELEASE=1 scons -j$(nproc) panda/
+else
+  # build with ALLOW_DEBUG=1 to enable features like experimental longitudinal
+  scons -j$(nproc) panda/
+fi
 
 # Ensure no submodules in release
 if test "$(git submodule--helper list | wc -l)" -gt "0"; then

@@ -255,14 +255,15 @@ ChartView *ChartsWidget::findChart(const MessageId &id, const cabana::Signal *si
   return nullptr;
 }
 
-ChartView *ChartsWidget::createChart() {
+ChartView *ChartsWidget::createChart(int pos) {
   auto chart = new ChartView(can->timeRange().value_or(display_range), this);
   chart->setFixedHeight(settings.chart_height);
   chart->setMinimumWidth(CHART_MIN_WIDTH);
   chart->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
   QObject::connect(chart, &ChartView::axisYLabelWidthChanged, align_timer, qOverload<>(&QTimer::start));
-  charts.push_front(chart);
-  currentCharts().push_front(chart);
+  pos = std::clamp(pos, 0, charts.size());
+  charts.insert(pos, chart);
+  currentCharts().insert(pos, chart);
   updateLayout(true);
   updateToolBar();
   return chart;
@@ -281,8 +282,9 @@ void ChartsWidget::showChart(const MessageId &id, const cabana::Signal *sig, boo
 
 void ChartsWidget::splitChart(ChartView *src_chart) {
   if (src_chart->sigs.size() > 1) {
+    int pos = charts.indexOf(src_chart) + 1;
     for (auto it = src_chart->sigs.begin() + 1; it != src_chart->sigs.end(); /**/) {
-      auto c = createChart();
+      auto c = createChart(pos);
       src_chart->chart()->removeSeries(it->series);
 
       // Restore to the original color
@@ -434,7 +436,9 @@ void ChartsWidget::alignCharts() {
 }
 
 bool ChartsWidget::eventFilter(QObject *o, QEvent *e) {
-  if (value_tip_visible_ && e->type() == QEvent::MouseMove) {
+  if (!value_tip_visible_) return false;
+
+  if (e->type() == QEvent::MouseMove) {
     bool on_tip = qobject_cast<TipLabel *>(o) != nullptr;
     auto global_pos = static_cast<QMouseEvent *>(e)->globalPos();
 
@@ -449,6 +453,11 @@ bool ChartsWidget::eventFilter(QObject *o, QEvent *e) {
     }
 
     showValueTip(-1);
+  } else if (e->type() == QEvent::Wheel) {
+    if (auto tip = qobject_cast<TipLabel *>(o)) {
+      // Forward the event to the parent widget
+      QCoreApplication::sendEvent(tip->parentWidget(), e);
+    }
   }
   return false;
 }

@@ -21,6 +21,8 @@ A_CRUISE_MIN = -1.2
 A_CRUISE_MAX_VALS = [1.6, 1.2, 0.8, 0.6]
 A_CRUISE_MAX_BP = [0., 10.0, 25., 40.]
 CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
+ALLOW_THROTTLE_THRESHOLD = 0.5
+MIN_ALLOW_THROTTLE_SPEED = 2.5
 
 # Lookup table for turns
 _A_TOTAL_MAX_V = [1.7, 3.2]
@@ -29,6 +31,9 @@ _A_TOTAL_MAX_BP = [20., 40.]
 
 def get_max_accel(v_ego):
   return interp(v_ego, A_CRUISE_MAX_BP, A_CRUISE_MAX_VALS)
+
+def get_coast_accel(pitch):
+  return np.sin(pitch) * -5.65 - 0.3  # fitted from data using xx/projects/allow_throttle/compute_coast_accel.py
 
 
 def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
@@ -51,7 +56,10 @@ def get_accel_from_plan(CP, speeds, accels):
     a_target_now = interp(DT_MDL, CONTROL_N_T_IDX, accels)
 
     v_target = interp(CP.longitudinalActuatorDelay + DT_MDL, CONTROL_N_T_IDX, speeds)
-    a_target = 2 * (v_target - v_target_now) / CP.longitudinalActuatorDelay - a_target_now
+    if v_target != v_target_now:
+      a_target = 2 * (v_target - v_target_now) / CP.longitudinalActuatorDelay - a_target_now
+    else:
+      a_target = a_target_now
 
     v_target_1sec = interp(CP.longitudinalActuatorDelay + DT_MDL + 1.0, CONTROL_N_T_IDX, speeds)
   else:
@@ -69,6 +77,7 @@ class LongitudinalPlanner:
     self.mpc = LongitudinalMpc(dt=dt)
     self.fcw = False
     self.dt = dt
+    self.allow_throttle = True
 
     self.a_desired = init_a
     self.v_desired_filter = FirstOrderFilter(init_v, 2.0, self.dt)
@@ -93,10 +102,19 @@ class LongitudinalPlanner:
       v = np.zeros(len(T_IDXS_MPC))
       a = np.zeros(len(T_IDXS_MPC))
       j = np.zeros(len(T_IDXS_MPC))
-    return x, v, a, j
+    if len(model_msg.meta.disengagePredictions.gasPressProbs) > 1:
+      throttle_prob = model_msg.meta.disengagePredictions.gasPressProbs[1]
+    else:
+      throttle_prob = 1.0
+    return x, v, a, j, throttle_prob
 
   def update(self, sm):
     self.mpc.mode = 'blended' if sm['selfdriveState'].experimentalMode else 'acc'
+
+    if len(sm['carControl'].orientationNED) == 3:
+      accel_coast = get_coast_accel(sm['carControl'].orientationNED[1])
+    else:
+      accel_coast = ACCEL_MAX
 
     v_ego = sm['carState'].vEgo
     v_cruise_kph = min(sm['carState'].vCruise, V_CRUISE_MAX)
@@ -116,7 +134,8 @@ class LongitudinalPlanner:
 
     if self.mpc.mode == 'acc':
       accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
-      accel_limits_turns = limit_accel_in_turns(v_ego, sm['carState'].steeringAngleDeg, accel_limits, self.CP)
+      steer_angle_without_offset = sm['carState'].steeringAngleDeg - sm['liveParameters'].angleOffsetDeg
+      accel_limits_turns = limit_accel_in_turns(v_ego, steer_angle_without_offset, accel_limits, self.CP)
     else:
       accel_limits = [ACCEL_MIN, ACCEL_MAX]
       accel_limits_turns = [ACCEL_MIN, ACCEL_MAX]
@@ -130,6 +149,14 @@ class LongitudinalPlanner:
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
     # Compute model v_ego error
     self.v_model_error = get_speed_error(sm['modelV2'], v_ego)
+    x, v, a, j, throttle_prob = self.parse_model(sm['modelV2'], self.v_model_error)
+    # Don't clip at low speeds since throttle_prob doesn't account for creep
+    self.allow_throttle = throttle_prob > ALLOW_THROTTLE_THRESHOLD or v_ego <= MIN_ALLOW_THROTTLE_SPEED
+
+    if not self.allow_throttle:
+      clipped_accel_coast = max(accel_coast, accel_limits_turns[0])
+      clipped_accel_coast_interp = interp(v_ego, [MIN_ALLOW_THROTTLE_SPEED, MIN_ALLOW_THROTTLE_SPEED*2], [accel_limits_turns[1], clipped_accel_coast])
+      accel_limits_turns[1] = min(accel_limits_turns[1], clipped_accel_coast_interp)
 
     if force_slow_decel:
       v_cruise = 0.0
@@ -140,7 +167,6 @@ class LongitudinalPlanner:
     self.mpc.set_weights(prev_accel_constraint, personality=sm['selfdriveState'].personality)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
-    x, v, a, j = self.parse_model(sm['modelV2'], self.v_model_error)
     self.mpc.update(sm['radarState'], v_cruise, x, v, a, j, personality=sm['selfdriveState'].personality)
 
     self.v_desired_trajectory = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC, self.mpc.v_solution)
@@ -179,6 +205,6 @@ class LongitudinalPlanner:
     longitudinalPlan.aTarget = a_target
     longitudinalPlan.shouldStop = should_stop
     longitudinalPlan.allowBrake = True
-    longitudinalPlan.allowThrottle = True
+    longitudinalPlan.allowThrottle = self.allow_throttle
 
     pm.send('longitudinalPlan', plan_send)

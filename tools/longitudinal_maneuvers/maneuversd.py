@@ -85,6 +85,12 @@ class Maneuver:
 
 MANEUVERS = [
   Maneuver(
+    "come to stop",
+    [Action(-0.5, 12)],
+    repeat=2,
+    initial_speed=5.,
+  ),
+  Maneuver(
    "start from stop",
    [
      Action(-2.5, 4),
@@ -176,6 +182,8 @@ def main():
     longitudinalPlan.allowBrake = True
     longitudinalPlan.allowThrottle = True
     longitudinalPlan.hasLead = True
+
+    longitudinalPlan.speeds = [0.2]  # triggers carControl.cruiseControl.resume in controlsd
 
     pm.send('longitudinalPlan', plan_send)
 
