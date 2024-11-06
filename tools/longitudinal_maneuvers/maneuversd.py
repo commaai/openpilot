@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-import numpy as np
 from dataclasses import dataclass
 
 from cereal import messaging, car
 from opendbc.car.common.conversions import Conversions as CV
+from openpilot.common.numpy_fast import interp
 from openpilot.common.realtime import DT_MDL
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
@@ -44,10 +44,10 @@ class Maneuver:
     if not self._active:
       return min(max(self.initial_speed - v_ego, -2.), 2.)
 
-    self._action_frames += 1
-
     action = self.actions[self._action_index]
-    action_accel = np.interp(self._action_frames * DT_MDL, action.time_bp, action.accel_bp)
+    action_accel = interp(self._action_frames * DT_MDL, action.time_bp, action.accel_bp)
+
+    self._action_frames += 1
 
     # reached duration of action
     if self._action_frames > (action.time_bp[-1] / DT_MDL):
@@ -65,7 +65,7 @@ class Maneuver:
       else:
         self._finished = True
 
-    return float(action_accel)
+    return action_accel
 
   @property
   def finished(self):
@@ -79,47 +79,47 @@ class Maneuver:
 MANEUVERS = [
   Maneuver(
     "come to stop",
-    [Action(-0.5, 12)],
+    [Action([-0.5], [12])],
     repeat=2,
     initial_speed=5.,
   ),
   Maneuver(
     "start from stop",
-    [Action(1.5, 5)],
+    [Action([1.5], [5])],
     repeat=2,
     initial_speed=0.,
   ),
   Maneuver(
     "creep: alternate between +1m/s^2 and -1m/s^2",
     [
-      Action(1, 3), Action(-1, 3),
-      Action(1, 3), Action(-1, 3),
-      Action(1, 3), Action(-1, 3),
+      Action([1], [3]), Action([-1], [3]),
+      Action([1], [3]), Action([-1], [3]),
+      Action([1], [3]), Action([-1], [3]),
     ],
     repeat=2,
     initial_speed=0.,
   ),
   Maneuver(
     "brake step response: -1m/s^2 from 20mph",
-    [Action(-1, 3)],
+    [Action([-1], [3])],
     repeat=2,
     initial_speed=20. * CV.MPH_TO_MS,
   ),
   Maneuver(
     "brake step response: -4m/s^2 from 20mph",
-    [Action(-4, 3)],
+    [Action([-4], [3])],
     repeat=2,
     initial_speed=20. * CV.MPH_TO_MS,
   ),
   Maneuver(
     "gas step response: +1m/s^2 from 20mph",
-    [Action(1, 3)],
+    [Action([1], [3])],
     repeat=2,
     initial_speed=20. * CV.MPH_TO_MS,
   ),
   Maneuver(
     "gas step response: +4m/s^2 from 20mph",
-    [Action(4, 3)],
+    [Action([4], [3])],
     repeat=2,
     initial_speed=20. * CV.MPH_TO_MS,
   ),
