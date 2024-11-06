@@ -348,6 +348,7 @@ jobs:
       - uses: ./.github/workflows/setup
       - name: Build openpilot
         run: |
+          chmod +x .venv/bin/python
           source .venv/bin/activate
           scons -j$(nproc)
       - name: Driving test
