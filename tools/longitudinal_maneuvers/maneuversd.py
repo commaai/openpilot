@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
+import numpy as np
 from dataclasses import dataclass
 
 from cereal import messaging, car
 from opendbc.car.common.conversions import Conversions as CV
-from openpilot.common.numpy_fast import interp
 from openpilot.common.realtime import DT_MDL
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
@@ -45,7 +45,7 @@ class Maneuver:
       return min(max(self.initial_speed - v_ego, -2.), 2.)
 
     action = self.actions[self._action_index]
-    action_accel = interp(self._action_frames * DT_MDL, action.time_bp, action.accel_bp)
+    action_accel = np.interp(self._action_frames * DT_MDL, action.time_bp, action.accel_bp)
 
     self._action_frames += 1
 
@@ -65,7 +65,7 @@ class Maneuver:
       else:
         self._finished = True
 
-    return action_accel
+    return float(action_accel)
 
   @property
   def finished(self):
