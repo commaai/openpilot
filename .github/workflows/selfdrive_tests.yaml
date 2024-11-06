@@ -158,8 +158,6 @@ jobs:
       - uses: ./.github/workflows/setup
       - name: Build openpilot
         run: |
-          chmod -R u+x .venv/bin
-          source .venv/bin/activate
           scons -u -j$(nproc)
       - name: Run unit tests
         timeout-minutes: 15
