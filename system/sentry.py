@@ -63,8 +63,6 @@ def init(project: SentryProject) -> bool:
                   max_value_length=8192,
                   environment=env)
 
-  build_metadata = get_build_metadata()
-
   sentry_sdk.set_user({"id": dongle_id})
   sentry_sdk.set_tag("dirty", build_metadata.openpilot.is_dirty)
   sentry_sdk.set_tag("origin", build_metadata.openpilot.git_origin)

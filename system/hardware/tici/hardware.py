@@ -467,8 +467,9 @@ class Tici(HardwareBase):
     cmds = []
     if manufacturer == 'Cavli Inc.':
       cmds += [
-        # use sim slot
-        'AT^SIMSWAP=1',
+        'AT^SIMSWAP=1',     # use SIM slot, instead of internal eSIM
+        'AT$QCSIMSLEEP=0',  # disable SIM sleep
+        'AT$QCSIMCFG=SimPowerSave,0',  # more sleep disable
 
         # ethernet config
         'AT$QCPCFG=usbNet,0',

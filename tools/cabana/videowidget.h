@@ -1,6 +1,5 @@
 #pragma once
 
-#include <map>
 #include <memory>
 #include <optional>
 #include <set>
@@ -18,17 +17,6 @@
 #include "tools/replay/logreader.h"
 #include "tools/cabana/streams/replaystream.h"
 
-class InfoLabel : public QWidget {
-public:
-  InfoLabel(QWidget *parent);
-  void showPixmap(const QPoint &pt, const QString &sec, const QPixmap &pm, const std::optional<Timeline::Entry> &alert);
-  void showAlert(const std::optional<Timeline::Entry> &alert);
-  void paintEvent(QPaintEvent *event) override;
-  QPixmap pixmap;
-  QString second;
-  std::optional<Timeline::Entry> alert_info;
-};
-
 class Slider : public QSlider {
   Q_OBJECT
 
@@ -36,40 +24,30 @@ public:
   Slider(QWidget *parent);
   double currentSecond() const { return value() / factor; }
   void setCurrentSecond(double sec) { setValue(sec * factor); }
-  void setTimeRange(double min, double max);
-  std::optional<Timeline::Entry> alertInfo(double sec);
-  QPixmap thumbnail(double sec);
-  void parseQLog(std::shared_ptr<LogReader> qlog);
-
-  const double factor = 1000.0;
-
-private:
+  void setTimeRange(double min, double max) { setRange(min * factor, max * factor); }
   void mousePressEvent(QMouseEvent *e) override;
-  void mouseMoveEvent(QMouseEvent *e) override;
-  bool event(QEvent *event) override;
   void paintEvent(QPaintEvent *ev) override;
-
-  QMap<uint64_t, QPixmap> thumbnails;
-  InfoLabel *thumbnail_label;
+  const double factor = 1000.0;
 };
 
 class StreamCameraView : public CameraWidget {
   Q_OBJECT
-  Q_PROPERTY(float overlayOpacity READ overlayOpacity WRITE setOverlayOpacity)
 
 public:
   StreamCameraView(std::string stream_name, VisionStreamType stream_type, QWidget *parent = nullptr);
   void paintGL() override;
   void showPausedOverlay() { fade_animation->start(); }
-  float overlayOpacity() const { return overlay_opacity; }
-  void setOverlayOpacity(float opacity) {
-    overlay_opacity = opacity;
-    update();
-  }
+  void parseQLog(std::shared_ptr<LogReader> qlog);
 
 private:
-  float overlay_opacity;
+  QPixmap generateThumbnail(QPixmap thumbnail, double seconds);
+  void drawAlert(QPainter &p, const QRect &rect, const Timeline::Entry &alert);
+  void drawThumbnail(QPainter &p);
+  bool eventFilter(QObject *obj, QEvent *event) override;
+
   QPropertyAnimation *fade_animation;
+  QMap<uint64_t, QPixmap> thumbnails;
+  std::optional<QPoint> thumbnail_pt_;
 };
 
 class VideoWidget : public QFrame {
@@ -96,7 +74,6 @@ protected:
   ToolButton *loop_btn = nullptr;
   QToolButton *speed_btn = nullptr;
   ToolButton *skip_to_end_btn = nullptr;
-  InfoLabel *alert_label = nullptr;
   Slider *slider = nullptr;
   QTabBar *camera_tab = nullptr;
 };

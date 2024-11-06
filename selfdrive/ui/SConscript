@@ -92,7 +92,7 @@ if GetOption('extras') and arch != "Darwin":
     ("openpilot", release),
     ("openpilot_test", f"{release}-staging"),
     ("openpilot_nightly", "nightly"),
-    ("openpilot_internal", "master"),
+    ("openpilot_internal", "nightly-dev"),
   ]
 
   cont = senv.Command(f"installer/continue_openpilot.o", f"installer/continue_openpilot.sh",
@@ -110,3 +110,5 @@ if GetOption('extras') and arch != "Darwin":
 # build watch3
 if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):
   qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'msgq', 'visionipc'])
+
+SConscript(['raylib/SConscript'])

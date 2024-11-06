@@ -51,7 +51,7 @@ MainWindow::MainWindow(AbstractStream *stream, const QString &dbc_file) : QMainW
     emit static_main_win->updateProgressBar(cur, total, success);
   });
   qInstallMessageHandler([](QtMsgType type, const QMessageLogContext &context, const QString &msg) {
-    if (type == QtDebugMsg) std::cout << msg.toStdString() << std::endl;
+    if (type == QtDebugMsg) return;
     emit static_main_win->showMessage(msg, 2000);
   });
   installMessageHandler([](ReplyMsgType type, const std::string msg) { qInfo() << msg.c_str(); });
