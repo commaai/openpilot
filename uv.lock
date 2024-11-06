@@ -4736,7 +4736,7 @@ wheels = [
 
 [[package]]
 name = "rerun-sdk"
-version = "0.19.0"
+version = "0.19.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
@@ -4746,11 +4746,11 @@ dependencies = [
     { name = "typing-extensions" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c4/59/cfea9527a2f56652c9f2e54151c8a0d2b572b7f1255ca9bc6ea8ad2fd7ce/rerun_sdk-0.19.0-cp38-abi3-macosx_10_12_x86_64.whl", hash = "sha256:49a48d6d5d7de662ef3e83dc262e65705fa719726f6bc6deefad27c4b6d34e98", size = 37415314 },
-    { url = "https://files.pythonhosted.org/packages/d9/16/0d7099d537bf2f73988ac93f5075d4fd717e96c25697b3ea16af8bcc2cda/rerun_sdk-0.19.0-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:c8012b4e517a911a782472dc97ebbdc6ed4261b44bfdd0e0a0c64496f17ddc91", size = 35743438 },
-    { url = "https://files.pythonhosted.org/packages/cf/35/eaabd19deaa2bbb121df3a6949206f02ad6cff122d8ad6ba0fcdeeb972c6/rerun_sdk-0.19.0-cp38-abi3-manylinux_2_31_aarch64.whl", hash = "sha256:65bb8ddf9611827c31d5502f9d1ee997c1facbbdf5dce9a268f0aa6bcaea5439", size = 39794278 },
-    { url = "https://files.pythonhosted.org/packages/8b/2c/1e06376a531431855c4ea12865aba0d83a1a1d0537a544191d09d3b44eea/rerun_sdk-0.19.0-cp38-abi3-manylinux_2_31_x86_64.whl", hash = "sha256:6a49fde1c9d0691166402707ec3b317bf0d82fb1b4412b98e02ccbf499d9b92d", size = 41301646 },
-    { url = "https://files.pythonhosted.org/packages/b2/57/948b518f3db30b8dd27d1dc0280acc6510289a79675dcb523ccfcced39d6/rerun_sdk-0.19.0-cp38-abi3-win_amd64.whl", hash = "sha256:da304927485cb4e6afe25ea8ed84c0cb7e63f3ba8ce2c72a1034ae1ffc69a6c0", size = 33573220 },
+    { url = "https://files.pythonhosted.org/packages/48/b0/2f91b886fd701e3ded8e3013852e833519f2e640b857e1b0c0883c7a7d37/rerun_sdk-0.19.1-cp38-abi3-macosx_10_12_x86_64.whl", hash = "sha256:a61be3afea5ac856809bdff7234a21de308f149f92d5f4d4c532dcd5698de1c4", size = 37403183 },
+    { url = "https://files.pythonhosted.org/packages/4e/96/6e75b675d20ee584f3f3664aead70bc1736b958091c14b2a5a06f4f31881/rerun_sdk-0.19.1-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:56bb01adf13308725b1534b93be21ad6234ecfa98db13227dc281a3cb8b41922", size = 35748606 },
+    { url = "https://files.pythonhosted.org/packages/ed/e6/086f38552edeaebd227a47711f67be2cee9f07483694278daab0f87321f1/rerun_sdk-0.19.1-cp38-abi3-manylinux_2_31_aarch64.whl", hash = "sha256:caa7bef1e63bb1c95d0cf52812cf16855b80c7b1d0137b6c2ba9e5031c35c095", size = 39801474 },
+    { url = "https://files.pythonhosted.org/packages/e4/91/631883fdacd12630b0a37d42a6e8c87785b9c8cfba68aed21aa6e7c73723/rerun_sdk-0.19.1-cp38-abi3-manylinux_2_31_x86_64.whl", hash = "sha256:7a638d2009c5248ce61feadf283d1b10e98241e04a5834c8d27169a4401ed5b1", size = 41311782 },
+    { url = "https://files.pythonhosted.org/packages/c7/46/5f0ab6fd81e4e109915a886f572648e47b1d159c4c5369c81c4b57089c55/rerun_sdk-0.19.1-cp38-abi3-win_amd64.whl", hash = "sha256:5d7950ed35cfa0ecaad302dbc2413354654dd0d5cd44e73cb55d05fa1ed0004d", size = 33581988 },
 ]
 
 [[package]]
@@ -5009,14 +5009,14 @@ wheels = [
 
 [[package]]
 name = "tqdm"
-version = "4.66.6"
+version = "4.67.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorama", marker = "platform_system == 'Windows'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e9/34/bef135b27fe1864993a5284ad001157ee9b5538e859ac90f5b0e8cc8c9ec/tqdm-4.66.6.tar.gz", hash = "sha256:4bdd694238bef1485ce839d67967ab50af8f9272aab687c0d7702a01da0be090", size = 169533 }
+sdist = { url = "https://files.pythonhosted.org/packages/e8/4f/0153c21dc5779a49a0598c445b1978126b1344bab9ee71e53e44877e14e0/tqdm-4.67.0.tar.gz", hash = "sha256:fe5a6f95e6fe0b9755e9469b77b9c3cf850048224ecaa8293d7d2d31f97d869a", size = 169739 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/41/73/02342de9c2d20922115f787e101527b831c0cffd2105c946c4a4826bcfd4/tqdm-4.66.6-py3-none-any.whl", hash = "sha256:223e8b5359c2efc4b30555531f09e9f2f3589bcd7fdd389271191031b49b7a63", size = 78326 },
+    { url = "https://files.pythonhosted.org/packages/2b/78/57043611a16c655c8350b4c01b8d6abfb38cc2acb475238b62c2146186d7/tqdm-4.67.0-py3-none-any.whl", hash = "sha256:0cd8af9d56911acab92182e88d763100d4788bdf421d251616040cc4d44863be", size = 78590 },
 ]
 
 [[package]]
