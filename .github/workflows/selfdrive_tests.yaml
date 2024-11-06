@@ -163,6 +163,7 @@ jobs:
       - name: Run unit tests
         timeout-minutes: 15
         run: |
+          chmod -R +x .venv/bin
           source .venv/bin/activate
           source selfdrive/test/setup_xvfb.sh && \
           $PYTEST --timeout 60 -m 'not slow' && \
