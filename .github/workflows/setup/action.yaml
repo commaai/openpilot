@@ -24,7 +24,7 @@ runs:
 
     - shell: bash
       run: |
-        ./tools/ubuntu_setup.sh
+        sudo ./tools/ubuntu_setup.sh
         sudo apt install x11-xserver-utils
 
     - shell: bash
