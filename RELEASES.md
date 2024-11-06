@@ -6,7 +6,7 @@ Version 0.9.8 (2024-XX-XX)
 * New driving monitoring model
   * Reduced false positives related to passengers
 * Added toggle to enable driver monitoring even when openpilot is not engaged
-* Enable longitudinal control for Ford Q3 vehicles
+* Enable openpilot longitudinal control for Ford Q3 vehicles
 * New Toyota TSS2 longitudinal tune
 
 Version 0.9.7 (2024-06-13)
