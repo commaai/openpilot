@@ -118,23 +118,6 @@ jobs:
       - name: Building openpilot
         run: . .venv/bin/activate && scons -j$(nproc)
 
-  docker_push_multiarch:
-    name: docker push multiarch tag
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
-    needs: [build]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: false
-      - name: Setup docker
-        run: |
-          $DOCKER_LOGIN
-      - name: Merge x64 and arm64 tags
-        run: |
-          export PUSH_IMAGE=true
-          scripts/retry.sh selfdrive/test/docker_tag_multiarch.sh base x86_64 aarch64
-
   static_analysis:
     name: static analysis
     runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
@@ -161,8 +144,6 @@ jobs:
         with:
           submodules: true
       - uses: ./.github/workflows/setup
-        with:
-          docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
       - name: Build openpilot
         timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
         run: |
