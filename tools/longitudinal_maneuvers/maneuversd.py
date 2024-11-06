@@ -11,14 +11,11 @@ from openpilot.common.swaglog import cloudlog
 
 @dataclass
 class Action:
-  accel_bp: float | list[float]  # m/s^2
-  time_bp: float | list[float]   # seconds
+  accel_bp: list[float]  # m/s^2
+  time_bp: list[float]   # seconds
 
   def __post_init__(self):
-    if isinstance(self.accel_bp, list):
-      assert len(self.accel_bp) == len(self.time_bp)
-    else:
-      assert isinstance(self.accel_bp, (int, float)) and isinstance(self.time_bp, (int, float))
+    assert len(self.accel_bp) == len(self.time_bp)
 
 
 @dataclass
@@ -47,17 +44,13 @@ class Maneuver:
     if not self._active:
       return min(max(self.initial_speed - v_ego, -2.), 2.)
 
-    action = self.actions[self._action_index]
-
     self._action_frames += 1
 
-    action_accel = action.accel_bp
-    if isinstance(action.accel_bp, list):
-      action_accel = np.interp(self._action_frames * DT_MDL, action.time_bp, action.accel_bp)
+    action = self.actions[self._action_index]
+    action_accel = np.interp(self._action_frames * DT_MDL, action.time_bp, action.accel_bp)
 
     # reached duration of action
-    last_bp = action.time_bp[-1] if isinstance(action.time_bp, list) else action.time_bp
-    if self._action_frames > (last_bp / DT_MDL):
+    if self._action_frames > (action.time_bp[-1] / DT_MDL):
       # next action
       if self._action_index < len(self.actions) - 1:
         self._action_index += 1
