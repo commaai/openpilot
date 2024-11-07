@@ -30,6 +30,10 @@ runs:
         sudo add-apt-repository ppa:apt-fast/stable
         sudo apt-get update
         sudo apt-get -y install apt-fast
+        export _MAXNUM=100
+        export _APTFAST_CONF=/etc/apt-fast.conf
+        echo "_MAXNUM=16" | sudo tee -a $_APTFAST_CONF
+        echo "_DOWNLOADER='aria2c'" | sudo tee -a $_APTFAST_CONF  # aria2c for optimized downloads
         sudo apt-fast install -y --no-install-recommends \
         ca-certificates \
         clang \
