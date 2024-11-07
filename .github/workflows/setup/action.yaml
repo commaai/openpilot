@@ -40,6 +40,7 @@ runs:
       if: steps.cache-apt.outputs.cache-hit != 'true'
       shell: bash
       run: |
+        chmod +x .github/workflows/setup/run.sh
         ./.github/workflows/setup/run.sh
 
     - name: Verify Installation
