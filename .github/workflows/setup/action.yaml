@@ -27,4 +27,5 @@ runs:
 
     - shell: bash
       run: |
+          chmod +x .github/workflows/setup/run.sh
           ./.github/workflows/setup/run.sh
