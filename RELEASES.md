@@ -4,8 +4,9 @@ Version 0.9.8 (2024-XX-XX)
   * Trained in brand new ML simulator
   * Model now gates applying positive accel in Chill mode
 * New driving monitoring model
-  * Reduced false positives related to passengers 
+  * Reduced false positives related to passengers
 * Added toggle to enable driver monitoring even when openpilot is not engaged
+* Enable openpilot longitudinal control for Ford Q3 vehicles
 * New Toyota TSS2 longitudinal tune
 
 Version 0.9.7 (2024-06-13)
