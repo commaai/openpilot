@@ -23,7 +23,7 @@ ALL_ECUS |= {ecu for config in FW_QUERY_CONFIGS.values() for ecu in config.extra
 
 ALL_REQUESTS = {tuple(r.request) for config in FW_QUERY_CONFIGS.values() for r in config.requests}
 
-MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '50'))
+MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '60'))
 
 
 class TestCarInterfaces:
