@@ -24,28 +24,12 @@ runs:
         restore-keys: |
           scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}
-    # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
-    - id: normalize-file-permissions
-      shell: bash
-      name: Normalize file permissions to ensure a consistent docker build cache
-      run: |
-        find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
-        find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
 
     - shell: bash
       run: |
-        sudo apt-get install -y axel
         sudo add-apt-repository ppa:apt-fast/stable
         sudo apt-get update
-        sudo apt-get install -y apt-fast
-
-        echo "MIRRORS=('http://mirrors.ubuntu.com/ubuntu, http://de.archive.ubuntu.com/ubuntu')" | sudo tee -a /etc/apt-fast.conf
-        echo "_MAXNUM=16" | sudo tee -a /etc/apt-fast.conf
-
-        sudo apt-get clean
-
-        sudo apt-get install -y aria2
-
+        sudo apt-get -y install apt-fast
         sudo apt-fast install -y --no-install-recommends \
         ca-certificates \
         clang \
@@ -87,7 +71,7 @@ runs:
         portaudio19-dev \
         qttools5-dev-tools \
         libqt5svg5-dev \
-        libqt5serialbus5-dev \
+        libqt5serialbus5-dev  \
         libqt5x11extras5-dev \
         libqt5opengl5-dev \
         x11-xserver-utils \
@@ -98,9 +82,6 @@ runs:
         qtchooser \
         qt5-qmake \
         qtbase5-dev-tools
-
-        sudo apt-get autoremove -y
-        sudo apt-get autoclean
 
     - shell: bash
       run: |
