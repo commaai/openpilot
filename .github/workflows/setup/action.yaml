@@ -42,12 +42,3 @@ runs:
       run: |
         chmod +x .github/workflows/setup/run.sh
         ./.github/workflows/setup/run.sh
-
-    - name: Verify Installation
-      shell: bash
-      run: |
-        # Optional: Verify specific commands are available
-        gcc --version
-        clang --version
-        git --version
-        ffmpeg -version
