@@ -12,6 +12,7 @@ def internal_source_available(url=DATA_ENDPOINT):
     hostname = urlparse(url).hostname
     port = urlparse(url).port or 80
     with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
+      s.settimeout(0.5)
       s.connect((hostname, port))
     return True
   except (socket.gaierror, ConnectionRefusedError):
