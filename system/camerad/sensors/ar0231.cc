@@ -154,6 +154,9 @@ AR0231::AR0231() {
     linearization_lut.push_back(0x0);
   }
   linearization_pts = {0x07ff0bff, 0x17ff06ff, 0x1bff23ff, 0x3fff3fff};
+  for (int i = 0; i < 884*2; i++) {
+    vignetting_lut.push_back(0xff);
+  }
 }
 
 void AR0231::processRegisters(uint8_t *cur_buf, cereal::FrameData::Builder &framed) const {
