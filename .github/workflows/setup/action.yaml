@@ -34,10 +34,19 @@ runs:
 
     - shell: bash
       run: |
+        sudo apt-get install -y axel
         sudo add-apt-repository ppa:apt-fast/stable
         sudo apt-get update
-        sudo apt-get -y install apt-fast
-        sudo apt-get install -y --no-install-recommends \
+        sudo apt-get install -y apt-fast
+
+        echo "MIRRORS=('http://mirrors.ubuntu.com/ubuntu, http://de.archive.ubuntu.com/ubuntu')" | sudo tee -a /etc/apt-fast.conf
+        echo "_MAXNUM=16" | sudo tee -a /etc/apt-fast.conf
+
+        sudo apt-get clean
+
+        sudo apt-get install -y aria2
+
+        sudo apt-fast install -y --no-install-recommends \
         ca-certificates \
         clang \
         cppcheck \
@@ -78,7 +87,7 @@ runs:
         portaudio19-dev \
         qttools5-dev-tools \
         libqt5svg5-dev \
-        libqt5serialbus5-dev  \
+        libqt5serialbus5-dev \
         libqt5x11extras5-dev \
         libqt5opengl5-dev \
         x11-xserver-utils \
@@ -89,6 +98,9 @@ runs:
         qtchooser \
         qt5-qmake \
         qtbase5-dev-tools
+
+        sudo apt-get autoremove -y
+        sudo apt-get autoclean
 
     - shell: bash
       run: |
