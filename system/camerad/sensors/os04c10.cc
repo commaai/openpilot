@@ -70,7 +70,7 @@ OS04C10::OS04C10() {
   };
   for (int i = 0; i < 65; i++) {
     float fx = i / 64.0;
-    gamma_lut_rgb.push_back((uint32_t)(pow(fx, 0.7)*1023.0 + 0.5));
+    gamma_lut_rgb.push_back((uint32_t)((10*fx)/(1+9*fx)*1023.0 + 0.5));
   }
   prepare_gamma_lut();
   linearization_lut = {
