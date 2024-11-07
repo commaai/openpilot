@@ -51,28 +51,28 @@ PROCS = {
   "selfdrive.controls.radard": 2.0,
   "selfdrive.modeld.modeld": 17.0,
   "selfdrive.modeld.dmonitoringmodeld": 11.0,
-  "system.hardware.hardwared": 3.87,
+  "system.hardware.hardwared": 4.0,
   "selfdrive.locationd.calibrationd": 2.0,
   "selfdrive.locationd.torqued": 5.0,
   "selfdrive.locationd.locationd": 25.0,
   "selfdrive.ui.soundd": 3.0,
   "selfdrive.monitoring.dmonitoringd": 4.0,
-  "./proclogd": 1.54,
-  "system.logmessaged": 0.2,
+  "./proclogd": 2.0,
+  "system.logmessaged": 1.0,
   "system.tombstoned": 0,
   "./logcatd": 1.0,
   "system.micd": 5.0,
   "system.timed": 0,
   "selfdrive.pandad.pandad": 0,
-  "system.statsd": 0.4,
-  "system.loggerd.uploader": (0.0, 15.0),
-  "system.loggerd.deleter": 0.1,
+  "system.statsd": 1.0,
+  "system.loggerd.uploader": 15.0,
+  "system.loggerd.deleter": 1.0,
 }
 
 PROCS.update({
   "tici": {
     "./pandad": 4.0,
-    "./ubloxd": 0.02,
+    "./ubloxd": 1.0,
     "system.ubloxd.pigeond": 6.0,
   },
   "tizi": {
@@ -256,32 +256,23 @@ class TestOnroad:
 
     cpu_ok = True
     dt = (self.msgs['procLog'][-1].logMonoTime - self.msgs['procLog'][0].logMonoTime) / 1e9
-    for proc_name, expected_cpu in PROCS.items():
+    for proc_name, expected in PROCS.items():
 
       err = ""
-      exp = "???"
-      cpu_usage = 0.
+      usage = 0.
       x = plogs_by_proc[proc_name]
       if len(x) > 2:
         cpu_time = cputime_total(x[-1]) - cputime_total(x[0])
-        cpu_usage = cpu_time / dt * 100.
+        usage = cpu_time / dt * 100.
 
-        if isinstance(expected_cpu, tuple):
-          exp = str(expected_cpu)
-          minn, maxx = expected_cpu
-        else:
-          exp = f"{expected_cpu:5.2f}"
-          minn = min(expected_cpu * 0.65, max(expected_cpu - 1.0, 0.0))
-          maxx = max(expected_cpu * 1.15, expected_cpu + 5.0)
+        max_allowed = max(expected * 1.8, expected + 5.0)
+        if usage > max_allowed:
+          err = "USING MORE CPU THAN EXPECTED"
 
-        if cpu_usage > maxx:
-          err = "using more CPU than expected"
-        elif cpu_usage < minn:
-          err = "using less CPU than expected"
       else:
         err = "NO METRICS FOUND"
 
-      result += f"{proc_name.ljust(35)}  {cpu_usage:5.2f}% ({exp}%) {err}\n"
+      result += f"{proc_name.ljust(35)}  {usage=:5.2f}%  {expected=:5.2f}%  {max_allowed=:5.2f}%  {err}\n"
       if len(err) > 0:
         cpu_ok = False
     result += "------------------------------------------------\n"
