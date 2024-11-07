@@ -99,7 +99,7 @@ class TestDeleter(UploaderTestCase):
 
     self.start_thread()
     start_time = time.monotonic()
-    while f_path.exists() and time.monotonic() - start_time < 2:
+    while f_path.exists() and time.monotonic() - start_time < 1:
       time.sleep(0.01)
     self.join_thread()
 
@@ -110,7 +110,7 @@ class TestDeleter(UploaderTestCase):
 
     self.start_thread()
     start_time = time.monotonic()
-    while f_path.exists() and time.monotonic() - start_time < 2:
+    while f_path.exists() and time.monotonic() - start_time < 1:
       time.sleep(0.01)
     self.join_thread()
 
