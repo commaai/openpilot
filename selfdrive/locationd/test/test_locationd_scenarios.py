@@ -73,7 +73,7 @@ def run_scenarios(scenario, logs):
   return get_select_fields_data(logs), get_select_fields_data(replayed_logs)
 
 
-#@pytest.mark.xdist_group("test_locationd_scenarios")
+@pytest.mark.xdist_group("test_locationd_scenarios")
 @pytest.mark.shared_download_cache
 class TestLocationdScenarios:
   """
