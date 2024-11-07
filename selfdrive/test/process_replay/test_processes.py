@@ -56,7 +56,7 @@ segments = [
   ("NISSAN", "regen58464878D07|2024-08-30--03-15-31--0"),
   ("VOLKSWAGEN", "regenED976DEB757|2024-08-30--03-18-02--0"),
   ("MAZDA", "regenACF84CCF482|2024-08-30--03-21-55--0"),
-  ("FORD", "regen6ECC59A6307|2024-08-30--03-25-42--0"),
+  ("FORD", "regen756F8230C21|2024-11-07--00-08-24--0"),
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
