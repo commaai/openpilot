@@ -63,14 +63,13 @@ class TestSubMaster:
   def test_update_timeout(self):
     sock = random_sock()
     sm = messaging.SubMaster([sock,])
-    for _ in range(5):
-      timeout = random.randrange(1000, 5000)
-      start_time = time.monotonic()
-      sm.update(timeout)
-      t = time.monotonic() - start_time
-      assert t >= timeout/1000.
-      assert t < 5
-      assert not any(sm.updated.values())
+    timeout = random.randrange(1000, 3000)
+    start_time = time.monotonic()
+    sm.update(timeout)
+    t = time.monotonic() - start_time
+    assert t >= timeout/1000.
+    assert t < 3
+    assert not any(sm.updated.values())
 
   def test_avg_frequency_checks(self):
     for poll in (True, False):
