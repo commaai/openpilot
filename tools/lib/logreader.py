@@ -10,6 +10,7 @@ import sys
 import tqdm
 import urllib.parse
 import warnings
+import time
 import zstandard as zstd
 
 from collections.abc import Callable, Iterable, Iterator
@@ -54,11 +55,13 @@ class _LogFileReader:
       with FileReader(fn) as f:
         dat = f.read()
 
+    st = time.monotonic()
     if ext == ".bz2" or dat.startswith(b'BZh9'):
       dat = bz2.decompress(dat)
     elif ext == ".zst" or dat.startswith(b'\x28\xB5\x2F\xFD'):
       # https://github.com/facebook/zstd/blob/dev/doc/zstd_compression_format.md#zstandard-frames
       dat = zstd.decompress(dat)
+    print('DECOMPRESSION TIME:', time.monotonic() - st)
 
     ents = capnp_log.Event.read_multiple_bytes(dat)
 
