@@ -275,7 +275,7 @@ class TestOnroad:
         error = "❌ NO METRICS FOUND ❌"
         cpu_ok = False
 
-      rows.append([proc_name, usage, expected, max_allowed, error])
+      rows.append([proc_name, usage, expected, max_allowed, error or "✅"])
     print(tabulate(rows, header, tablefmt="simple_grid", stralign="center", numalign="center", floatfmt=".2f"))
 
     # Ensure there's no missing procs
@@ -382,7 +382,7 @@ class TestOnroad:
     print("----------------- Service Timings --------------")
     print("------------------------------------------------")
 
-    header = ['service', 'mean', 'max', 'min', 'relative standard deviation', 'test result']
+    header = ['service', 'mean', 'max', 'min', 'rsd', 'test result']
     rows = []
     for s, (maxmin, rsd) in TIMINGS.items():
       offset = int(SERVICE_LIST[s].frequency * LOG_OFFSET)
@@ -395,12 +395,12 @@ class TestOnroad:
 
       errors = []
       if not np.allclose(np.mean(ts), dt, rtol=0.03, atol=0):
-        errors.append("❌ failed mean timing check ❌")
+        errors.append("❌ FAILED MEAN TIMING CHECK ❌")
       if not np.allclose([np.max(ts), np.min(ts)], dt, rtol=maxmin, atol=0):
-        errors.append("❌ failed max/min timing check ❌")
+        errors.append("❌ FAILED MAX/MIN TIMING CHECK ❌")
       if (np.std(ts)/dt) > rsd:
-        errors.append("❌ failed RSD timing check ❌")
-      passed = bool(errors)
+        errors.append("❌ FAILED RSD TIMING CHECK ❌")
+      passed = not errors
       rows.append([s, *(np.array([np.mean(ts), np.max(ts), np.min(ts)])*1e3), np.std(ts)/dt, "\n".join(errors) or "✅"])
 
     print(tabulate(rows, header, tablefmt="simple_grid", stralign="center", numalign="center", floatfmt=".2f"))
