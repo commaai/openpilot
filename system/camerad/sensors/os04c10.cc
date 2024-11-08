@@ -22,6 +22,7 @@ const uint32_t os04c10_analog_gains_reg[] = {
 
 OS04C10::OS04C10() {
   image_sensor = cereal::FrameData::ImageSensor::OS04C10;
+  bayer_pattern = CAM_ISP_PATTERN_BAYER_BGBGBG;
   pixel_size_mm = 0.004;
   data_word = false;
 
