@@ -69,7 +69,8 @@ class ModelState:
 
   def __init__(self, cl_ctx):
     assert ctypes.sizeof(DMonitoringModelResult) == OUTPUT_SIZE * ctypes.sizeof(ctypes.c_float)
-    self.numpy_inputs = {'calib': np.zeros((1, CALIB_LEN), dtype=np.float32)}
+    self.numpy_inputs = {'calib': np.zeros((1, CALIB_LEN), dtype=np.float32),
+                         'input_img': np.zeros((1,MODEL_HEIGHT * MODEL_WIDTH), dtype=np.uint8)}
     self.img = None
 
 
@@ -80,17 +81,13 @@ class ModelState:
     self.numpy_inputs['calib'][0,:] = calib
 
     t1 = time.perf_counter()
-    assert False, f'buf.stride: {buf.stride}, buf.width: {buf.width}, buf.height: {buf.height}'
-    # TODO use opencl buffer
-    #if TICI:
-    #  if self.img is None:
-    #    input_img_cl = cl_from_visionbuf(buf)
-    #    self.img =  qcom_tensor_from_opencl_address(input_img_cl.mem_address, (1, buf.height * 3 // 2, buf.width), dtypes.uint8)
-    #else:
-    self.img = Tensor(buf.data).reshape((1,buf.height * 3 // 2,buf.width))
+    # TODO use opencl buffer directly to make tensor
+    v_offset = buf.height - MODEL_HEIGHT
+    h_offset = (buf.width - MODEL_WIDTH) // 2
+    buf_data = buf.data.reshape(-1, buf.stride)
+    self.numpy_inputs['input_img'][:] = buf_data[v_offset:v_offset+MODEL_HEIGHT, h_offset:h_offset+MODEL_WIDTH].reshape((1, -1))
 
     tensor_inputs = {k: Tensor(v) for k,v in self.numpy_inputs.items()}
-    tensor_inputs['input_img'] = self.img
     output = self.model_run(**tensor_inputs)['outputs'].numpy().flatten()
 
     t2 = time.perf_counter()
