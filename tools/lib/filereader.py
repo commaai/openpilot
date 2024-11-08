@@ -35,7 +35,6 @@ def file_exists(fn):
 
 def FileReader(fn, debug=False):
   fn = resolve_name(fn)
-  print('FILE PATH:', fn)
   if fn.startswith(("http://", "https://")):
     return URLFile(fn, debug=debug)
   return open(fn, "rb")
