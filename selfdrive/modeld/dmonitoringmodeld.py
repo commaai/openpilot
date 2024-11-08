@@ -24,7 +24,7 @@ from openpilot.common.realtime import set_realtime_priority
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext, cl_from_visionbuf
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid
 from tinygrad.tensor import Tensor
-from tinygrad.helpers import to_mv, mv_address
+from tinygrad.helpers import to_mv
 from tinygrad.dtype import dtypes
 
 CALIB_LEN = 3
@@ -70,9 +70,7 @@ class ModelState:
   def __init__(self, cl_ctx):
     assert ctypes.sizeof(DMonitoringModelResult) == OUTPUT_SIZE * ctypes.sizeof(ctypes.c_float)
     self.numpy_inputs = {'calib': np.zeros((1, CALIB_LEN), dtype=np.float32)}
-    #TODO this only works on some backends, verified on CLANG
-    self.tensor_inputs = {k: Tensor.from_blob(mv_address(v), v.shape, dtype=dtypes.float) for k, v in self.numpy_inputs.items()}
-    self.tensor_inputs['input_img'] = None
+    self.img = None
 
 
     with open(MODEL_PKL_PATH, "rb") as f:
@@ -83,16 +81,17 @@ class ModelState:
 
     t1 = time.perf_counter()
     if TICI:
-      if self.tensor_inputs['input_img'] is None:
+      if self.img is None:
         input_img_cl = cl_from_visionbuf(buf)
         cl_buf_desc_ptr = to_mv(input_img_cl.mem_address, 8).cast('Q')[0]
         rawbuf_ptr = to_mv(cl_buf_desc_ptr, 0x100).cast('Q')[20] # offset 0xA0 is a raw gpu pointer.
-        self.tensor_inputs['input_img'] = Tensor.from_blob(rawbuf_ptr, (1, buf.height * 3 // 2, buf.width), dtype=dtypes.uint8, device='QCOM')
+        self.img = Tensor.from_blob(rawbuf_ptr, (1, buf.height * 3 // 2, buf.width), dtype=dtypes.uint8, device='QCOM')
     else:
-      self.tensor_inputs = {k: Tensor(v) for k,v in self.numpy_inputs.items()}
-      self.tensor_inputs['input_img'] = Tensor(buf.data).reshape((1,buf.height * 3 // 2,buf.width))
+      self.img = Tensor(buf.data).reshape((1,buf.height * 3 // 2,buf.width))
 
-    output = self.model_run(**self.tensor_inputs)['outputs'].numpy().flatten()
+    tensor_inputs = {k: Tensor(v) for k,v in self.numpy_inputs.items()}
+    tensor_inputs['input_img'] = self.img
+    output = self.model_run(**tensor_inputs)['outputs'].numpy().flatten()
 
     t2 = time.perf_counter()
     return output, t2 - t1
