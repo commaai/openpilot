@@ -58,10 +58,18 @@ def generate_report(proposed, master, tmp, commit):
                      (lambda x: x.laneLines[1].y[0], "laneLines.y"),
                      (lambda x: x.meta.disengagePredictions.gasPressProbs[1], "gasPressProbs")
                     ], "modelV2")
+  DriverStateV2_Plots = zl([
+                     (lambda x: x.wheelOnRightProb, "wheelOnRightProb"),
+                     (lambda x: x.leftDriverData.faceProb, "leftDriverData.faceProb"),
+                     (lambda x: x.leftDriverData.faceOrientation[0], "leftDriverData.faceOrientation0"),
+                     (lambda x: x.leftDriverData.leftBlinkProb, "leftDriverData.leftBlinkProb"),
+                     (lambda x: x.leftDriverData.notReadyProb[0], "leftDriverData.notReadyProb0"),
+                     (lambda x: x.rightDriverData.faceProb, "rightDriverData.faceProb"),
+                    ], "driverStateV2")
 
   return [plot(map(v[0], get_event(proposed, event)), \
                map(v[0], get_event(master, event)), f"{v[1]}_{commit[:7]}", tmp) \
-               for v,event in [*ModelV2_Plots]]
+               for v,event in ([*ModelV2_Plots] + [*DriverStateV2_Plots])]
 
 def create_table(title, files, link, open_table=False):
   if not files:
