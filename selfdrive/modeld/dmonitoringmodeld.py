@@ -80,12 +80,13 @@ class ModelState:
     self.numpy_inputs['calib'][0,:] = calib
 
     t1 = time.perf_counter()
-    if TICI:
-      if self.img is None:
-        input_img_cl = cl_from_visionbuf(buf)
-        self.img =  qcom_tensor_from_opencl_address(input_img_cl.mem_address, (1, buf.height * 3 // 2, buf.width), dtypes.uint8)
-    else:
-      self.img = Tensor(buf.data).reshape((1,buf.height * 3 // 2,buf.width))
+    # TODO use opencl buffer
+    #if TICI:
+    #  if self.img is None:
+    #    input_img_cl = cl_from_visionbuf(buf)
+    #    self.img =  qcom_tensor_from_opencl_address(input_img_cl.mem_address, (1, buf.height * 3 // 2, buf.width), dtypes.uint8)
+    #else:
+    self.img = Tensor(buf.data).reshape((1,buf.height * 3 // 2,buf.width))
 
     tensor_inputs = {k: Tensor(v) for k,v in self.numpy_inputs.items()}
     tensor_inputs['input_img'] = self.img
