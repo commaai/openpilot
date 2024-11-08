@@ -382,7 +382,7 @@ class TestOnroad:
     print("----------------- Service Timings --------------")
     print("------------------------------------------------")
 
-    header = ['service', 'mean', 'max', 'min', 'rsd', 'test result']
+    header = ['service', 'max', 'min', 'mean', 'expected mean', 'rsd', 'expected rsd', 'test result']
     rows = []
     for s, (maxmin, rsd) in TIMINGS.items():
       offset = int(SERVICE_LIST[s].frequency * LOG_OFFSET)
@@ -401,7 +401,7 @@ class TestOnroad:
       if (np.std(ts)/dt) > rsd:
         errors.append("❌ FAILED RSD TIMING CHECK ❌")
       passed = not errors
-      rows.append([s, *(np.array([np.mean(ts), np.max(ts), np.min(ts)])*1e3), np.std(ts)/dt, "\n".join(errors) or "✅"])
+      rows.append([s, *(np.array([np.max(ts), np.min(ts), np.mean(ts), dt])*1e3), np.std(ts)/dt, rsd, "\n".join(errors) or "✅"])
 
     print(tabulate(rows, header, tablefmt="simple_grid", stralign="center", numalign="center", floatfmt=".2f"))
     assert passed
