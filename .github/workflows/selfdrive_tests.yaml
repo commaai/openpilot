@@ -111,6 +111,11 @@ jobs:
       uses: namespacelabs/nscloud-cache-action@v1
       with:
         path: |
+          /opt/homebrew/Cellar/ffmpeg
+          /opt/homebrew/Cellar/gcc
+          /opt/homebrew/Cellar/gcc@13
+          /opt/homebrew/Cellar/llvm
+          /opt/homebrew/Cellar/llvm@15
           /opt/homebrew/Library/Taps/homebrew
           ~/Library/Caches/Homebrew
     - name: Install dependencies
