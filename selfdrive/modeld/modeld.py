@@ -29,7 +29,7 @@ from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
-from openpilot.selfdrive.modeld.runners.tinygrad_helpers import tinygrad_tensor_from_opencl_address
+from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
 
 from tinygrad.tensor import Tensor
 from tinygrad.dtype import dtypes
@@ -114,8 +114,8 @@ class ModelState:
     if TICI:
       # The imgs tensors are backed by opencl memory, only need init once
       if 'input_imgs' not in self.img_inputs:
-        self.img_inputs['input_imgs'] = tinygrad_tensor_from_opencl_address(input_imgs_cl.mem_address, IMG_INPUT_SHAPE, dtype=dtypes.uint8)
-        self.img_inputs['big_input_imgs'] = tinygrad_tensor_from_opencl_address(big_input_imgs_cl.mem_address, IMG_INPUT_SHAPE, dtype=dtypes.uint8)
+        self.img_inputs['input_imgs'] = qcom_tensor_from_opencl_address(input_imgs_cl.mem_address, IMG_INPUT_SHAPE, dtype=dtypes.uint8)
+        self.img_inputs['big_input_imgs'] = qcom_tensor_from_opencl_address(big_input_imgs_cl.mem_address, IMG_INPUT_SHAPE, dtype=dtypes.uint8)
     else:
       self.img_inputs['input_imgs'] = Tensor(self.frame.buffer_from_cl(input_imgs_cl)).reshape(IMG_INPUT_SHAPE)
       self.img_inputs['big_input_imgs'] = Tensor(self.wide_frame.buffer_from_cl(big_input_imgs_cl)).reshape(IMG_INPUT_SHAPE)

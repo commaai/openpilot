@@ -23,7 +23,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.common.realtime import set_realtime_priority
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext, cl_from_visionbuf
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid
-from openpilot.selfdrive.modeld.runners.tinygrad_helpers import tinygrad_tensor_from_opencl_address
+from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
 from tinygrad.tensor import Tensor
 from tinygrad.dtype import dtypes
 
@@ -83,7 +83,7 @@ class ModelState:
     if TICI:
       if self.img is None:
         input_img_cl = cl_from_visionbuf(buf)
-        self.img =  qcom_tensor_from_opencl_address(, input_img_cl.mem_address, (1, buf.height * 3 // 2, buf.width), dtypes.uint8)
+        self.img =  qcom_tensor_from_opencl_address(input_img_cl.mem_address, (1, buf.height * 3 // 2, buf.width), dtypes.uint8)
     else:
       self.img = Tensor(buf.data).reshape((1,buf.height * 3 // 2,buf.width))
 
