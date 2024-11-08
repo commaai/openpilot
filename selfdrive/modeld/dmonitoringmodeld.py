@@ -21,7 +21,7 @@ from cereal.messaging import PubMaster, SubMaster
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.realtime import set_realtime_priority
-from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext, cl_from_visionbuf
+from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext #, cl_from_visionbuf
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid
 #from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
 from tinygrad.tensor import Tensor
