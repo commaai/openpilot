@@ -102,18 +102,18 @@ jobs:
 
   build_mac:
     name: build macOS
-    runs-on: macos-latest
+    runs-on: namespace-profile-macos-8x14
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - uses: actions/cache@v4
+    - name: setup homebrew cache
+      uses: namespacelabs/nscloud-cache-action@v1
       with:
         path: |
           /opt/homebrew
           /opt/homebrew/Cellar
           ~/Library/Caches/Homebrew
-        key: brew_install
     - run: git lfs pull
     - name: Install dependencies
       run: ./tools/mac_setup.sh
