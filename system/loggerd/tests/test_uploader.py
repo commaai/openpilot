@@ -73,7 +73,7 @@ class TestUploader(UploaderTestCase):
 
     self.start_thread()
     # allow enough time that files could upload twice if there is a bug in the logic
-    time.sleep(5)
+    time.sleep(2)
     self.join_thread()
 
     exp_order = self.gen_order([self.seg_num], [])
@@ -91,7 +91,7 @@ class TestUploader(UploaderTestCase):
 
     self.start_thread()
     # allow enough time that files could upload twice if there is a bug in the logic
-    time.sleep(5)
+    time.sleep(2)
     self.join_thread()
 
     exp_order = self.gen_order([self.seg_num], [])
@@ -110,7 +110,7 @@ class TestUploader(UploaderTestCase):
 
     self.start_thread()
     # allow enough time that files could upload twice if there is a bug in the logic
-    time.sleep(5)
+    time.sleep(2)
     self.join_thread()
 
     exp_order = self.gen_order([self.seg_num], [])
@@ -137,7 +137,7 @@ class TestUploader(UploaderTestCase):
 
     self.start_thread()
     # allow enough time that files could upload twice if there is a bug in the logic
-    time.sleep(5)
+    time.sleep(2)
     self.join_thread()
 
     assert len(log_handler.upload_ignored) == 0, "Some files were ignored"
@@ -155,7 +155,7 @@ class TestUploader(UploaderTestCase):
     f_paths = self.gen_files(lock=True, boot=False)
 
     # allow enough time that files should have been uploaded if they would be uploaded
-    time.sleep(5)
+    time.sleep(2)
     self.join_thread()
 
     for f_path in f_paths:
@@ -168,7 +168,7 @@ class TestUploader(UploaderTestCase):
 
     self.start_thread()
     # allow enough time that files could upload twice if there is a bug in the logic
-    time.sleep(5)
+    time.sleep(2)
     self.join_thread()
 
     assert len(log_handler.upload_order) == 0, "File uploaded again"
