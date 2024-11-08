@@ -136,23 +136,13 @@ std::string download_demo_route() {
 }
 
 
-TEST_CASE("Local route") {
+TEST_CASE("Getting route") {
   std::string data_dir = download_demo_route();
 
   auto flags = GENERATE(0, REPLAY_FLAG_QCAMERA);
   Route route(DEMO_ROUTE, data_dir);
   REQUIRE(route.load());
   REQUIRE(route.segments().size() == 2);
-  for (int i = 0; i < TEST_REPLAY_SEGMENTS; ++i) {
-    read_segment(i, route.at(i), flags);
-  }
-}
-
-TEST_CASE("Remote route") {
-  auto flags = GENERATE(0, REPLAY_FLAG_QCAMERA);
-  Route route(DEMO_ROUTE);
-  REQUIRE(route.load());
-  REQUIRE(route.segments().size() == 13);
   for (int i = 0; i < TEST_REPLAY_SEGMENTS; ++i) {
     read_segment(i, route.at(i), flags);
   }

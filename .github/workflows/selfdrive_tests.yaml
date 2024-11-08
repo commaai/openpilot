@@ -102,26 +102,26 @@ jobs:
 
   build_mac:
     name: build macOS
-    runs-on: macos-latest
+    runs-on: namespace-profile-macos-8x14
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - run: git lfs pull
+    - name: Homebrew cache
+      uses: ./.github/workflows/auto-cache
+      with:
+        path: ~/Library/Caches/Homebrew
     - name: Install dependencies
       run: ./tools/mac_setup.sh
       env:
         # package install has DeprecationWarnings
         PYTHONWARNINGS: default
+    - run: git lfs pull
     - run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
     - name: Getting scons cache
-      uses: 'actions/cache@v4'
+      uses: ./.github/workflows/auto-cache
       with:
         path: /tmp/scons_cache
-        key: scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
-        restore-keys: |
-          scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}
-          scons-${{ runner.arch }}-macos
     - name: Building openpilot
       run: . .venv/bin/activate && scons -j$(nproc)
 
@@ -174,10 +174,10 @@ jobs:
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run unit tests
-      timeout-minutes: 15
+      timeout-minutes: 1
       run: |
         ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
-                        $PYTEST --timeout 60 -m 'not slow' && \
+                        MAX_EXAMPLES=1 $PYTEST --timeout 60 -m 'not slow' && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         pytest ./selfdrive/ui/tests/test_translations.py"

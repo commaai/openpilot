@@ -11,6 +11,7 @@ import numpy as np
 import zstandard as zstd
 from collections import Counter, defaultdict
 from pathlib import Path
+from tabulate import tabulate
 
 from cereal import car, log
 import cereal.messaging as messaging
@@ -241,10 +242,9 @@ class TestOnroad:
     assert len(veryslow) < 5, f"Too many slow frame draw times: {veryslow}"
 
   def test_cpu_usage(self, subtests):
-    result = "\n"
-    result += "------------------------------------------------\n"
-    result += "------------------ CPU Usage -------------------\n"
-    result += "------------------------------------------------\n"
+    print("\n------------------------------------------------")
+    print("------------------ CPU Usage -------------------")
+    print("------------------------------------------------")
 
     plogs_by_proc = defaultdict(list)
     for pl in self.msgs['procLog']:
@@ -252,13 +252,14 @@ class TestOnroad:
         if len(x.cmdline) > 0:
           n = list(x.cmdline)[0]
           plogs_by_proc[n].append(x)
-    print(plogs_by_proc.keys())
 
     cpu_ok = True
     dt = (self.msgs['procLog'][-1].logMonoTime - self.msgs['procLog'][0].logMonoTime) / 1e9
+    header = ['process', 'usage', 'expected', 'max allowed', 'test result']
+    rows = []
     for proc_name, expected in PROCS.items():
 
-      err = ""
+      error = ""
       usage = 0.
       x = plogs_by_proc[proc_name]
       if len(x) > 2:
@@ -267,15 +268,15 @@ class TestOnroad:
 
         max_allowed = max(expected * 1.8, expected + 5.0)
         if usage > max_allowed:
-          err = "USING MORE CPU THAN EXPECTED"
+          error = "❌ USING MORE CPU THAN EXPECTED ❌"
+          cpu_ok = False
 
       else:
-        err = "NO METRICS FOUND"
-
-      result += f"{proc_name.ljust(35)}  {usage=:5.2f}%  {expected=:5.2f}%  {max_allowed=:5.2f}%  {err}\n"
-      if len(err) > 0:
+        error = "❌ NO METRICS FOUND ❌"
         cpu_ok = False
-    result += "------------------------------------------------\n"
+
+      rows.append([proc_name, usage, expected, max_allowed, error or "✅"])
+    print(tabulate(rows, header, tablefmt="simple_grid", stralign="center", numalign="center", floatfmt=".2f"))
 
     # Ensure there's no missing procs
     all_procs = {p.name for p in self.msgs['managerState'][0].managerState.processes if p.shouldBeRunning}
@@ -287,11 +288,9 @@ class TestOnroad:
     procs_tot = sum([(max(x) if isinstance(x, tuple) else x) for x in PROCS.values()])
     with subtests.test(name="total CPU"):
       assert procs_tot < MAX_TOTAL_CPU, "Total CPU budget exceeded"
-    result +=  "------------------------------------------------\n"
-    result += f"Total allocated CPU usage is {procs_tot}%, budget is {MAX_TOTAL_CPU}%, {MAX_TOTAL_CPU-procs_tot:.1f}% left\n"
-    result +=  "------------------------------------------------\n"
-
-    print(result)
+    print("------------------------------------------------")
+    print(f"Total allocated CPU usage is {procs_tot}%, budget is {MAX_TOTAL_CPU}%, {MAX_TOTAL_CPU-procs_tot:.1f}% left")
+    print("------------------------------------------------")
 
     assert cpu_ok
 
@@ -379,10 +378,12 @@ class TestOnroad:
 
   def test_timings(self):
     passed = True
-    result = "\n"
-    result += "------------------------------------------------\n"
-    result += "----------------- Service Timings --------------\n"
-    result += "------------------------------------------------\n"
+    print("\n------------------------------------------------")
+    print("----------------- Service Timings --------------")
+    print("------------------------------------------------")
+
+    header = ['service', 'max', 'min', 'mean', 'expected mean', 'rsd', 'max allowed rsd', 'test result']
+    rows = []
     for s, (maxmin, rsd) in TIMINGS.items():
       offset = int(SERVICE_LIST[s].frequency * LOG_OFFSET)
       msgs = [m.logMonoTime for m in self.msgs[s][offset:]]
@@ -392,21 +393,17 @@ class TestOnroad:
       ts = np.diff(msgs) / 1e9
       dt = 1 / SERVICE_LIST[s].frequency
 
-      try:
-        np.testing.assert_allclose(np.mean(ts), dt, rtol=0.03, err_msg=f"{s} - failed mean timing check")
-        np.testing.assert_allclose([np.max(ts), np.min(ts)], dt, rtol=maxmin, err_msg=f"{s} - failed max/min timing check")
-      except Exception as e:
-        result += str(e) + "\n"
-        passed = False
+      errors = []
+      if not np.allclose(np.mean(ts), dt, rtol=0.03, atol=0):
+        errors.append("❌ FAILED MEAN TIMING CHECK ❌")
+      if not np.allclose([np.max(ts), np.min(ts)], dt, rtol=maxmin, atol=0):
+        errors.append("❌ FAILED MAX/MIN TIMING CHECK ❌")
+      if (np.std(ts)/dt) > rsd:
+        errors.append("❌ FAILED RSD TIMING CHECK ❌")
+      passed = not errors
+      rows.append([s, *(np.array([np.max(ts), np.min(ts), np.mean(ts), dt])*1e3), np.std(ts)/dt, rsd, "\n".join(errors) or "✅"])
 
-      if np.std(ts) / dt > rsd:
-        result += f"{s} - failed RSD timing check\n"
-        passed = False
-
-      result += f"{s.ljust(40)}: {np.array([np.mean(ts), np.max(ts), np.min(ts)])*1e3}\n"
-      result += f"{''.ljust(40)}  {np.max(np.absolute([np.max(ts)/dt, np.min(ts)/dt]))} {np.std(ts)/dt}\n"
-    result += "="*67
-    print(result)
+    print(tabulate(rows, header, tablefmt="simple_grid", stralign="center", numalign="center", floatfmt=".2f"))
     assert passed
 
   @release_only
