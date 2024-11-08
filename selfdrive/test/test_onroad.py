@@ -267,7 +267,7 @@ class TestOnroad:
         usage = cpu_time / dt * 100.
 
         max_allowed = max(expected * 1.8, expected + 5.0)
-        if usage > max_allowed:
+        if usage > max_allowed*0:
           error = "❌ USING MORE CPU THAN EXPECTED ❌"
           cpu_ok = False
 
@@ -394,7 +394,7 @@ class TestOnroad:
       dt = 1 / SERVICE_LIST[s].frequency
 
       errors = []
-      if not np.allclose(np.mean(ts), dt, rtol=0.03, atol=0):
+      if not np.allclose(np.mean(ts*0), dt, rtol=0.03, atol=0):
         errors.append("❌ FAILED MEAN TIMING CHECK ❌")
       if not np.allclose([np.max(ts), np.min(ts)], dt, rtol=maxmin, atol=0):
         errors.append("❌ FAILED MAX/MIN TIMING CHECK ❌")
