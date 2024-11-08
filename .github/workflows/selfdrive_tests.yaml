@@ -107,6 +107,9 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
+    - uses: tecolicom/actions-use-homebrew-tools@v1
+      with:
+        tools: cppcheck git-lfs zlib capnp coreutils eigen ffmpeg glfw libarchive libusb libtool llvm openssl@3.0 qt@5 zeromq gcc-arm-embedded portaudio gcc@13
     - run: git lfs pull
     - name: Install dependencies
       run: ./tools/mac_setup.sh
