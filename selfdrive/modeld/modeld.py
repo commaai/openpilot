@@ -77,8 +77,7 @@ class ModelState:
       'prev_desired_curv': np.zeros((1,(ModelConstants.HISTORY_BUFFER_LEN+1), ModelConstants.PREV_DESIRED_CURV_LEN), dtype=np.float32),
       'features_buffer': np.zeros((1, ModelConstants.HISTORY_BUFFER_LEN,  ModelConstants.FEATURE_LEN), dtype=np.float32),
     }
-    #TODO this only works on some backends, verified on CLANG
-    self.tensor_inputs = {k: Tensor.from_blob(mv_address(v), v.shape, dtype=dtypes.float) for k, v in self.numpy_inputs.items()} # type: ignore
+    self.img_inputs = {} # type: ignore
 
     with open(METADATA_PATH, 'rb') as f:
       model_metadata = pickle.load(f)
@@ -115,22 +114,24 @@ class ModelState:
 
     if TICI:
       # The imgs tensors are backed by opencl memory, only need init once
-      if 'input_imgs' not in self.tensor_inputs:
+      if 'input_imgs' not in self.img_inputs:
         cl_buf_desc_ptr = to_mv(input_imgs_cl.mem_address, 8).cast('Q')[0]
         big_cl_buf_desc_ptr = to_mv(big_input_imgs_cl.mem_address, 8).cast('Q')[0]
         rawbuf_ptr = to_mv(cl_buf_desc_ptr, 0x100).cast('Q')[20] # offset 0xA0 is a raw gpu pointer.
         big_rawbuf_ptr = to_mv(big_cl_buf_desc_ptr, 0x100).cast('Q')[20] # offset 0xA0 is a raw gpu pointer.
-        self.tensor_inputs['input_imgs'] = Tensor.from_blob(rawbuf_ptr, IMG_INPUT_SHAPE, dtype=dtypes.uint8, device='QCOM')
-        self.tensor_inputs['big_input_imgs'] = Tensor.from_blob(big_rawbuf_ptr, IMG_INPUT_SHAPE, dtype=dtypes.uint8, device='QCOM')
+        self.img_inputs['input_imgs'] = Tensor.from_blob(rawbuf_ptr, IMG_INPUT_SHAPE, dtype=dtypes.uint8, device='QCOM')
+        self.img_inputs['big_input_imgs'] = Tensor.from_blob(big_rawbuf_ptr, IMG_INPUT_SHAPE, dtype=dtypes.uint8, device='QCOM')
+        # TODO To keep consistent timings need to skip first run, should be handled in init
+        return None
     else:
-      self.tensor_inputs = {k: Tensor(v) for k,v in self.numpy_inputs.items()}
-      self.tensor_inputs['input_imgs'] = Tensor(self.frame.buffer_from_cl(input_imgs_cl)).reshape(IMG_INPUT_SHAPE)
-      self.tensor_inputs['big_input_imgs'] = Tensor(self.wide_frame.buffer_from_cl(big_input_imgs_cl)).reshape(IMG_INPUT_SHAPE)
+      self.img_inputs['input_imgs'] = Tensor(self.frame.buffer_from_cl(input_imgs_cl)).reshape(IMG_INPUT_SHAPE)
+      self.img_inputs['big_input_imgs'] = Tensor(self.wide_frame.buffer_from_cl(big_input_imgs_cl)).reshape(IMG_INPUT_SHAPE)
 
+    tensor_inputs = {**self.img_inputs, **{k: Tensor(v) for k,v in self.numpy_inputs.items()}}
     if prepare_only:
       return None
 
-    self.output = self.model_run(**self.tensor_inputs)['outputs'].numpy().flatten()
+    self.output = self.model_run(**tensor_inputs)['outputs'].numpy().flatten()
     outputs = self.parser.parse_outputs(self.slice_outputs(self.output))
 
     self.full_features_20Hz[:-1] = self.full_features_20Hz[1:]
