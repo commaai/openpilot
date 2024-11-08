@@ -29,12 +29,10 @@ from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
+from openpilot.selfdrive.modeld.runners.tinygrad_helpers import tinygrad_tensor_from_opencl_address
 
 from tinygrad.tensor import Tensor
 from tinygrad.dtype import dtypes
-from tinygrad.helpers import to_mv
-Tensor.manual_seed(1337)
-Tensor.no_grad = True
 
 PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
@@ -43,6 +41,7 @@ MODEL_PATH = Path(__file__).parent / 'models/supercombo.onnx'
 MODEL_PKL_PATH = Path(__file__).parent / 'models/supercombo_tinygrad.pkl'
 METADATA_PATH = Path(__file__).parent / 'models/supercombo_metadata.pkl'
 
+# TODO: should not hardcoded
 IMG_INPUT_SHAPE = (1, 12, 128, 256)
 
 class FrameMeta:
@@ -115,14 +114,8 @@ class ModelState:
     if TICI:
       # The imgs tensors are backed by opencl memory, only need init once
       if 'input_imgs' not in self.img_inputs:
-        cl_buf_desc_ptr = to_mv(input_imgs_cl.mem_address, 8).cast('Q')[0]
-        big_cl_buf_desc_ptr = to_mv(big_input_imgs_cl.mem_address, 8).cast('Q')[0]
-        rawbuf_ptr = to_mv(cl_buf_desc_ptr, 0x100).cast('Q')[20] # offset 0xA0 is a raw gpu pointer.
-        big_rawbuf_ptr = to_mv(big_cl_buf_desc_ptr, 0x100).cast('Q')[20] # offset 0xA0 is a raw gpu pointer.
-        self.img_inputs['input_imgs'] = Tensor.from_blob(rawbuf_ptr, IMG_INPUT_SHAPE, dtype=dtypes.uint8, device='QCOM')
-        self.img_inputs['big_input_imgs'] = Tensor.from_blob(big_rawbuf_ptr, IMG_INPUT_SHAPE, dtype=dtypes.uint8, device='QCOM')
-        # TODO To keep consistent timings need to skip first run, should be handled in init
-        return None
+        self.img_inputs['input_imgs'] = tinygrad_tensor_from_opencl_address(input_imgs_cl.mem_address, IMG_INPUT_SHAPE, dtype=dtypes.uint8)
+        self.img_inputs['big_input_imgs'] = tinygrad_tensor_from_opencl_address(big_input_imgs_cl.mem_address, IMG_INPUT_SHAPE, dtype=dtypes.uint8)
     else:
       self.img_inputs['input_imgs'] = Tensor(self.frame.buffer_from_cl(input_imgs_cl)).reshape(IMG_INPUT_SHAPE)
       self.img_inputs['big_input_imgs'] = Tensor(self.wide_frame.buffer_from_cl(big_input_imgs_cl)).reshape(IMG_INPUT_SHAPE)
