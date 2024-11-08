@@ -114,7 +114,6 @@ jobs:
           /opt/homebrew
           /opt/homebrew/Cellar
           ~/Library/Caches/Homebrew
-    - run: git lfs pull
     - name: Install dependencies
       run: ./tools/mac_setup.sh
       env:
