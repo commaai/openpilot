@@ -252,7 +252,6 @@ class TestOnroad:
         if len(x.cmdline) > 0:
           n = list(x.cmdline)[0]
           plogs_by_proc[n].append(x)
-    print(plogs_by_proc.keys())
 
     cpu_ok = True
     dt = (self.msgs['procLog'][-1].logMonoTime - self.msgs['procLog'][0].logMonoTime) / 1e9
@@ -260,7 +259,7 @@ class TestOnroad:
     rows = []
     for proc_name, expected in PROCS.items():
 
-      err = "✅"
+      error = ""
       usage = 0.
       x = plogs_by_proc[proc_name]
       if len(x) > 2:
@@ -269,14 +268,14 @@ class TestOnroad:
 
         max_allowed = max(expected * 1.8, expected + 5.0)
         if usage > max_allowed:
-          err = "❌ USING MORE CPU THAN EXPECTED ❌"
+          error = "❌ USING MORE CPU THAN EXPECTED ❌"
           cpu_ok = False
 
       else:
-        err = "❌ NO METRICS FOUND ❌"
+        error = "❌ NO METRICS FOUND ❌"
         cpu_ok = False
 
-      rows.append([proc_name, usage, expected, max_allowed, err])
+      rows.append([proc_name, usage, expected, max_allowed, error])
     print(tabulate(rows, header, tablefmt="simple_grid", stralign="center", numalign="center", floatfmt=".2f"))
 
     # Ensure there's no missing procs
@@ -379,10 +378,12 @@ class TestOnroad:
 
   def test_timings(self):
     passed = True
-    result = "\n"
-    result += "------------------------------------------------\n"
-    result += "----------------- Service Timings --------------\n"
-    result += "------------------------------------------------\n"
+    print("\n------------------------------------------------")
+    print("----------------- Service Timings --------------")
+    print("------------------------------------------------")
+
+    header = ['service', 'mean', 'max', 'min', 'relative standard deviation', 'test result']
+    rows = []
     for s, (maxmin, rsd) in TIMINGS.items():
       offset = int(SERVICE_LIST[s].frequency * LOG_OFFSET)
       msgs = [m.logMonoTime for m in self.msgs[s][offset:]]
@@ -392,21 +393,17 @@ class TestOnroad:
       ts = np.diff(msgs) / 1e9
       dt = 1 / SERVICE_LIST[s].frequency
 
-      try:
-        np.testing.assert_allclose(np.mean(ts), dt, rtol=0.03, err_msg=f"{s} - failed mean timing check")
-        np.testing.assert_allclose([np.max(ts), np.min(ts)], dt, rtol=maxmin, err_msg=f"{s} - failed max/min timing check")
-      except Exception as e:
-        result += str(e) + "\n"
-        passed = False
+      errors = []
+      if not np.allclose(np.mean(ts), dt, rtol=0.03, atol=0):
+        errors.append("❌ failed mean timing check ❌")
+      if not np.allclose([np.max(ts), np.min(ts)], dt, rtol=maxmin, atol=0):
+        errors.append("❌ failed max/min timing check ❌")
+      if (np.std(ts)/dt) > rsd:
+        errors.append("❌ failed RSD timing check ❌")
+      passed = bool(errors)
+      rows.append([s, *(np.array([np.mean(ts), np.max(ts), np.min(ts)])*1e3), np.std(ts)/dt, "\n".join(errors) or "✅"])
 
-      if np.std(ts) / dt > rsd:
-        result += f"{s} - failed RSD timing check\n"
-        passed = False
-
-      result += f"{s.ljust(40)}: {np.array([np.mean(ts), np.max(ts), np.min(ts)])*1e3}\n"
-      result += f"{''.ljust(40)}  {np.max(np.absolute([np.max(ts)/dt, np.min(ts)/dt]))} {np.std(ts)/dt}\n"
-    result += "="*67
-    print(result)
+    print(tabulate(rows, header, tablefmt="simple_grid", stralign="center", numalign="center", floatfmt=".2f"))
     assert passed
 
   @release_only
