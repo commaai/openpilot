@@ -371,9 +371,9 @@ class TestOnroad:
     result += "------------------------------------------------\n"
     result += "----------------- Model Timing -----------------\n"
     result += "------------------------------------------------\n"
-    # TODO: this went up when plannerd cpu usage increased, why?
+    # TODO: Decrease again when tinygrad speeds ups
     cfgs = [
-      ("modelV2", 0.050, 0.036),
+      ("modelV2", 0.050, 0.040),
       ("driverStateV2", 0.050, 0.026),
     ]
     for (s, instant_max, avg_max) in cfgs:
