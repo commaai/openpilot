@@ -111,6 +111,7 @@ jobs:
       uses: namespacelabs/nscloud-cache-action@v1
       with:
         path: |
+          /opt/homebrew/Library/Taps/homebrew
           ~/Library/Caches/Homebrew
     - name: Install dependencies
       run: ./tools/mac_setup.sh
