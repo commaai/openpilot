@@ -108,7 +108,7 @@ jobs:
       with:
         submodules: true
     - name: Homebrew cache
-      uses: ./.github/workflows/auto-cache
+      uses: namespacelabs/nscloud-cache-action@v1
       with:
         path: |
           /opt/homebrew/Library/Taps/homebrew
@@ -121,7 +121,7 @@ jobs:
     - run: git lfs pull
     - run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
     - name: Getting scons cache
-      uses: ./.github/workflows/auto-cache
+      uses: namespacelabs/nscloud-cache-action@v1
       with:
         path: /tmp/scons_cache
     - name: Building openpilot
