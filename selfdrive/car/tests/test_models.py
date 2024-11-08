@@ -4,6 +4,7 @@ import pytest
 import random
 import unittest # noqa: TID251
 from collections import defaultdict, Counter
+from functools import partial
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
 from parameterized import parameterized_class
@@ -22,7 +23,7 @@ from openpilot.selfdrive.selfdrived.selfdrived import SelfdriveD
 from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
-from openpilot.tools.lib.logreader import LogReader, LogsUnavailable
+from openpilot.tools.lib.logreader import LogReader, LogsUnavailable, openpilotci_source_zst, openpilotci_source, auto_source
 from openpilot.tools.lib.route import SegmentName
 
 from panda.tests.libpanda import libpanda_py
@@ -126,7 +127,8 @@ class TestCarModelBase(unittest.TestCase):
       segment_range = f"{cls.test_route.route}/{seg}"
 
       try:
-        lr = LogReader(segment_range)
+        source = partial(auto_source, sources=[openpilotci_source_zst, openpilotci_source])
+        lr = LogReader(segment_range, source=source)
         return cls.get_testing_data_from_logreader(lr)
       except (LogsUnavailable, AssertionError):
         pass
