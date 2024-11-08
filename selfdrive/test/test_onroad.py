@@ -382,7 +382,7 @@ class TestOnroad:
     print("----------------- Service Timings --------------")
     print("------------------------------------------------")
 
-    header = ['service', 'max', 'min', 'mean', 'expected mean', 'rsd', 'expected rsd', 'test result']
+    header = ['service', 'max', 'min', 'mean', 'expected mean', 'rsd', 'max allowed rsd', 'test result']
     rows = []
     for s, (maxmin, rsd) in TIMINGS.items():
       offset = int(SERVICE_LIST[s].frequency * LOG_OFFSET)
