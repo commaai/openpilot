@@ -56,20 +56,27 @@ class PIDController:
     self.f = feedforward * self.k_f
     self.d = error_rate * self.k_d
 
-    if override:
+    # Check if integral this step brings us out of bounds. If so, unwind
+    i = self.i + error * self.k_i * self.i_rate
+    _control = self.p + i + self.d + self.f
+    if override:# or control > self.pos_limit or control < self.neg_limit:
       self.i -= self.i_unwind_rate * float(np.sign(self.i))
     else:
-      i = self.i + error * self.k_i * self.i_rate
-      control = self.p + i + self.d + self.f
+      _control = self.p + i + self.d + self.f
 
       # Update when changing i will move the control away from the limits
       # or when i will move towards the sign of the error
-      if ((error >= 0 and (control <= self.pos_limit or i < 0.0)) or
-          (error <= 0 and (control >= self.neg_limit or i > 0.0))) and \
+      if ((error >= 0 and (_control <= self.pos_limit or i < 0.0)) or
+          (error <= 0 and (_control >= self.neg_limit or i > 0.0))) and \
          not freeze_integrator:
         self.i = i
 
+    _control = self.p + self.i + self.d + self.f
+    _control = clip(_control, self.neg_limit, self.pos_limit)
+    self.i = clip(self.i, self.neg_limit - _control, self.pos_limit - _control)
+
     control = self.p + self.i + self.d + self.f
+    print('control', control)
 
     self.control = clip(control, self.neg_limit, self.pos_limit)
     return self.control
