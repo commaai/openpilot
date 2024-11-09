@@ -62,10 +62,10 @@ class PIDController:
       if not freeze_integrator:
         self.i = self.i + error * self.k_i * self.i_rate
 
-      # Clip i to prevent exceeding control limits
-      control_no_i = self.p + self.d + self.f
-      control_no_i = clip(control_no_i, self.neg_limit, self.pos_limit)
-      self.i = clip(self.i, self.neg_limit - control_no_i, self.pos_limit - control_no_i)
+        # Clip i to prevent exceeding control limits
+        control_no_i = self.p + self.d + self.f
+        control_no_i = clip(control_no_i, self.neg_limit, self.pos_limit)
+        self.i = clip(self.i, self.neg_limit - control_no_i, self.pos_limit - control_no_i)
 
     control = self.p + self.i + self.d + self.f
 
