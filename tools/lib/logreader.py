@@ -40,7 +40,7 @@ def save_log(dest, log_msgs, compress=True):
 
 
 class _LogFileReader:
-  def __init__(self, fn, canonicalize=True, only_union_types=False, sort_by_time=False, dat=None):
+  def __init__(self, fn, canonicalize=True, only_union_types=False, sort_by_time=False, dat=None, cache=False):
     self.data_version = None
     self._only_union_types = only_union_types
 
@@ -51,7 +51,7 @@ class _LogFileReader:
         # old rlogs weren't compressed
         raise ValueError(f"unknown extension {ext}")
 
-      with FileReader(fn) as f:
+      with FileReader(fn, cache=cache) as f:
         dat = f.read()
 
     if ext == ".bz2" or dat.startswith(b'BZh9'):
@@ -266,10 +266,11 @@ class LogReader:
     return identifiers
 
   def __init__(self, identifier: str | list[str], default_mode: ReadMode = ReadMode.RLOG,
-               source: Source = auto_source, sort_by_time=False, only_union_types=False):
+               source: Source = auto_source, sort_by_time=False, only_union_types=False, cache=False):
     self.default_mode = default_mode
     self.source = source
     self.identifier = identifier
+    self.cache = cache
     if isinstance(identifier, str):
       self.identifier = [identifier]
 
@@ -281,7 +282,7 @@ class LogReader:
 
   def _get_lr(self, i):
     if i not in self.__lrs:
-      self.__lrs[i] = _LogFileReader(self.logreader_identifiers[i], sort_by_time=self.sort_by_time, only_union_types=self.only_union_types)
+      self.__lrs[i] = _LogFileReader(self.logreader_identifiers[i], sort_by_time=self.sort_by_time, only_union_types=self.only_union_types, cache=self.cache)
     return self.__lrs[i]
 
   def __iter__(self):
