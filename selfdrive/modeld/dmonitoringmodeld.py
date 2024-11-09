@@ -139,7 +139,6 @@ def main():
   pm = PubMaster(["driverStateV2"])
 
   calib = np.zeros(CALIB_LEN, dtype=np.float32)
-  # last = 0
 
   while True:
     buf = vipc_client.recv()
@@ -155,8 +154,6 @@ def main():
     t2 = time.perf_counter()
 
     pm.send("driverStateV2", get_driverstate_packet(model_output, vipc_client.frame_id, vipc_client.timestamp_sof, t2 - t1, gpu_execution_time))
-    # print("dmonitoring process: %.2fms, from last %.2fms\n" % (t2 - t1, t1 - last))
-    # last = t1
 
 
 if __name__ == "__main__":
