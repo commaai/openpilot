@@ -108,7 +108,6 @@ class URLFile:
         with atomic_write_in_dir(full_path, mode="wb") as new_cached_file:
           new_cached_file.write(data)
       else:
-        print('CACHE HIT!', full_path)
         with open(full_path, "rb") as cached_file:
           data = cached_file.read()
 
