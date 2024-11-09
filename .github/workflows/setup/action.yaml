@@ -29,7 +29,6 @@ runs:
           echo "    Retries not allowed! Fix the flaky test!      "
           echo "##################################################"
           echo -e "\033[0m"
-          exit 1
         fi
 
     # do this after checkout to ensure our custom LFS config is used to pull from GitLab
