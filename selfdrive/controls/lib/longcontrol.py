@@ -60,8 +60,6 @@ class LongControl:
     """Update longitudinal control. This updates the state machine and runs a PID loop"""
     self.pid.neg_limit = accel_limits[0]
     self.pid.pos_limit = accel_limits[1]
-    print("a_target: ", a_target)
-    print("accel_limits: ", accel_limits)
 
     self.long_control_state = long_control_state_trans(self.CP, active, self.long_control_state, CS.vEgo,
                                                        should_stop, CS.brakePressed,
@@ -87,5 +85,4 @@ class LongControl:
                                      feedforward=a_target)
 
     self.last_output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
-    print(output_accel, output_accel, self.last_output_accel)
     return self.last_output_accel
