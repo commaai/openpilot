@@ -33,8 +33,8 @@ def file_exists(fn):
   return os.path.exists(fn)
 
 
-def FileReader(fn, debug=False, cache=False):
+def FileReader(fn, debug=False):
   fn = resolve_name(fn)
   if fn.startswith(("http://", "https://")):
-    return URLFile(fn, debug=debug, cache=cache)
+    return URLFile(fn, debug=debug)
   return open(fn, "rb")
