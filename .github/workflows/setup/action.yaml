@@ -27,18 +27,8 @@ runs:
           scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}
 
-    - name: Set up Cache for APT Packages
-      id: cache-apt
-      uses: actions/cache@v3
-      with:
-        path: /var/cache/apt/archives
-        key: ${{ runner.os }}-apt-${{ hashFiles('apt-packages.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-apt-
-
     - name: Cache Installed APT Packages
       if: steps.cache-apt.outputs.cache-hit != 'true'
       shell: bash
       run: |
-        chmod +x .github/workflows/setup/run.sh
-        ./.github/workflows/setup/run.sh
+        ./tools/ubuntu_setup.sh
