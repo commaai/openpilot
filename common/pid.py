@@ -59,6 +59,7 @@ class PIDController:
     # Check if integral this step brings us out of bounds. If so, unwind
     i = self.i + error * self.k_i * self.i_rate
     _control = self.p + i + self.d + self.f
+
     if override:# or control > self.pos_limit or control < self.neg_limit:
       self.i -= self.i_unwind_rate * float(np.sign(self.i))
     else:
@@ -66,6 +67,16 @@ class PIDController:
 
       # Update when changing i will move the control away from the limits
       # or when i will move towards the sign of the error
+
+      # if error >= 0:
+      #   if not (_control <= self.pos_limit) and i < 0.0:
+      #     raise Exception
+      # elif error <= 0:
+      #   if not (_control >= self.neg_limit) and i > 0.0:
+      #     raise Exception
+
+      if self.neg_limit <= _control <= self.pos_limit:
+
       if ((error >= 0 and (_control <= self.pos_limit or i < 0.0)) or
           (error <= 0 and (_control >= self.neg_limit or i > 0.0))) and \
          not freeze_integrator:
