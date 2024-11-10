@@ -380,11 +380,13 @@ jobs:
         run: >
           pwd
           ls -lf
-          source .venv/bin/activate
-          PYTHONWARNINGS=ignore &&
-          source selfdrive/test/setup_xvfb.sh &&
-          CACHE_ROOT=/tmp/comma_download_cache python3 selfdrive/ui/tests/test_ui/run.py &&
+          mkdir -p /tmp/comma_download_cache/ui_frames && \
+          source .venv/bin/activate && \
+          PYTHONWARNINGS=ignore && \
+          source selfdrive/test/setup_xvfb.sh && \
+          CACHE_ROOT=/tmp/comma_download_cache python3 selfdrive/ui/tests/test_ui/run.py && \
           chmod -R 777 /tmp/comma_download_cache
+
       - name: Upload Test Report
         uses: actions/upload-artifact@v4
         with:
