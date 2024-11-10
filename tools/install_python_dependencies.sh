@@ -24,7 +24,7 @@ function update_uv() {
 if ! command -v "uv" > /dev/null 2>&1; then
   echo "installing uv..."
   curl -LsSf https://astral.sh/uv/install.sh | sh
-  UV_BIN="$HOME/.local/bin/env"
+  UV_BIN="~/.local/bin/env"
   ADD_PATH_CMD=". \"$UV_BIN\""
   eval "$ADD_PATH_CMD"
 fi
