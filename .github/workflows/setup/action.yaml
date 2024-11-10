@@ -32,4 +32,4 @@ runs:
       shell: bash
       run: |
         ./tools/ubuntu_setup.sh
-        sudo apt install x11-xserver-utils xvfb
+        sudo apt install x11-xserver-utils xvfb gnome-screenshot
