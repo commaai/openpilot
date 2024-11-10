@@ -70,7 +70,7 @@ runs:
         rm -rf /tmp/opencl-driver-intel
     
         # Configure Python environment
-        tools/install_python_dependencies.sh
+        ./tools/install_python_dependencies.sh
         mkdir -p /home/batman/.venv && cp -r /tmp/.venv/* /home/batman/.venv
         sudo rm -rf /tmp/*
         sudo rm -rf /home/batman/.cache
