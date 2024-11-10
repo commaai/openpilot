@@ -28,12 +28,11 @@ runs:
           scons-${{ runner.arch }}
 
     - name: Cache Installed APT Packages
-      if: steps.cache-apt.outputs.cache-hit != 'true'
       shell: bash
       run: |
         # Ensure scripts and directories are executable and accessible
         sudo chmod +x tools/install_ubuntu_dependencies.sh tools/install_python_dependencies.sh
-    
+        
         # Install essential dependencies
         ./tools/install_ubuntu_dependencies.sh
         sudo apt-get update && sudo apt-get install -y --no-install-recommends sudo tzdata locales ssh pulseaudio xvfb x11-xserver-utils gnome-screenshot
@@ -44,11 +43,11 @@ runs:
         sudo ln -fs /usr/share/zoneinfo/UTC /etc/localtime
         sudo dpkg-reconfigure -f noninteractive tzdata
     
-        # Create and configure user without specifying a UID
-        sudo useradd -m -s /bin/bash batman
+        # Create and configure user
+        sudo useradd -m -s /bin/bash
         sudo usermod -aG sudo batman
         echo '%sudo ALL=(ALL) NOPASSWD:ALL' | sudo tee -a /etc/sudoers
-
+    
         # Install Intel OpenCL and TBB libraries
         mkdir -p /tmp/opencl-driver-intel && cd /tmp/opencl-driver-intel
         wget https://github.com/intel/llvm/releases/download/2024-WW14/oclcpuexp-2024.17.3.0.09_rel.tar.gz
@@ -61,7 +60,8 @@ runs:
         sudo ln -s /opt/intel/oneapi-tbb-2021.12.0/lib/intel64/gcc4.8/libtbb.so /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64
         sudo ln -s /opt/intel/oneapi-tbb-2021.12.0/lib/intel64/gcc4.8/libtbbmalloc.so /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64
     
-        # Configure OpenCL ICD
+        # Ensure OpenCL vendors directory exists, then configure OpenCL ICD
+        sudo mkdir -p /etc/OpenCL/vendors
         echo /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64/libintelocl.so | sudo tee /etc/OpenCL/vendors/intel_expcpu.icd
         echo /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64 | sudo tee /etc/ld.so.conf.d/libintelopenclexp.conf
         sudo ldconfig
@@ -77,3 +77,4 @@ runs:
         
         # Git safe directory setup
         sudo git config --global --add safe.directory /tmp/openpilot
+    
