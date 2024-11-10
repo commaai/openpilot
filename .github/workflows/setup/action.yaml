@@ -44,7 +44,7 @@ runs:
         sudo dpkg-reconfigure -f noninteractive tzdata
     
         # Create and configure user
-        sudo useradd -m -s /bin/bash
+        sudo useradd -m -s /bin/bash batman
         sudo usermod -aG sudo batman
         echo '%sudo ALL=(ALL) NOPASSWD:ALL' | sudo tee -a /etc/sudoers
     
