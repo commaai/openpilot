@@ -44,11 +44,11 @@ runs:
         sudo ln -fs /usr/share/zoneinfo/UTC /etc/localtime
         sudo dpkg-reconfigure -f noninteractive tzdata
     
-        # Create and configure user
-        sudo useradd -m -s /bin/bash -u 1001 batman
+        # Create and configure user without specifying a UID
+        sudo useradd -m -s /bin/bash batman
         sudo usermod -aG sudo batman
         echo '%sudo ALL=(ALL) NOPASSWD:ALL' | sudo tee -a /etc/sudoers
-    
+
         # Install Intel OpenCL and TBB libraries
         mkdir -p /tmp/opencl-driver-intel && cd /tmp/opencl-driver-intel
         wget https://github.com/intel/llvm/releases/download/2024-WW14/oclcpuexp-2024.17.3.0.09_rel.tar.gz
