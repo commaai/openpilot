@@ -11,6 +11,9 @@ On the comma three, the serial console is exposed through a UART-to-USB chip, an
 
 On the comma 3X, the serial console is accessible through the [panda](https://github.com/commaai/panda) using the `panda/tests/som_debug.sh` script.
 
+  * Username: `comma`
+  * Password: `comma`
+
 ## SSH
 
 In order to SSH into your device, you'll need a GitHub account with SSH keys. See this [GitHub article](https://docs.github.com/en/github/authenticating-to-github/connecting-to-github-with-ssh) for getting your account setup with SSH keys.

@@ -148,8 +148,7 @@ def hw_state_thread(end_event, hw_queue):
         except queue.Full:
           pass
 
-        # TODO: remove this once the config is in AGNOS
-        if not modem_configured and len(HARDWARE.get_sim_info().get('sim_id', '')) > 0:
+        if not modem_configured and HARDWARE.get_modem_version() is not None:
           cloudlog.warning("configuring modem")
           HARDWARE.configure_modem()
           modem_configured = True
@@ -316,7 +315,7 @@ def hardware_thread(end_event, hw_queue) -> None:
     set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", show_alert, extra_text=extra_text)
 
     # TODO: this should move to TICI.initialize_hardware, but we currently can't import params there
-    if TICI:
+    if TICI and HARDWARE.get_device_type() == "tici":
       if not os.path.isfile("/persist/comma/living-in-the-moment"):
         if not Path("/data/media").is_mount():
           set_offroad_alert_if_changed("Offroad_StorageMissing", True)

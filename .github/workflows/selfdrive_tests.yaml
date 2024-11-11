@@ -41,7 +41,12 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - run: git lfs pull
+    - name: Getting LFS files
+      uses: nick-fields/retry@7152eba30c6575329ac0576536151aca5a72780e
+      with:
+        timeout_minutes: 2
+        max_attempts: 3
+        command: git lfs pull
     - name: Build devel
       timeout-minutes: 1
       run: TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
@@ -97,26 +102,26 @@ jobs:
 
   build_mac:
     name: build macOS
-    runs-on: macos-latest
+    runs-on: namespace-profile-macos-8x14
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - run: git lfs pull
+    - name: Homebrew cache
+      uses: ./.github/workflows/auto-cache
+      with:
+        path: ~/Library/Caches/Homebrew
     - name: Install dependencies
       run: ./tools/mac_setup.sh
       env:
         # package install has DeprecationWarnings
         PYTHONWARNINGS: default
+    - run: git lfs pull
     - run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
     - name: Getting scons cache
-      uses: 'actions/cache@v4'
+      uses: ./.github/workflows/auto-cache
       with:
         path: /tmp/scons_cache
-        key: scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
-        restore-keys: |
-          scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}
-          scons-${{ runner.arch }}-macos
     - name: Building openpilot
       run: . .venv/bin/activate && scons -j$(nproc)
 
@@ -169,10 +174,10 @@ jobs:
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run unit tests
-      timeout-minutes: 15
+      timeout-minutes: 1
       run: |
         ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
-                        $PYTEST --timeout 60 -m 'not slow' && \
+                        MAX_EXAMPLES=1 $PYTEST --timeout 60 -m 'not slow' && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         pytest ./selfdrive/ui/tests/test_translations.py"
@@ -246,7 +251,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        job: [0, 1]
+        job: [0, 1, 2, 3]
     steps:
     - uses: actions/checkout@v4
       with:
@@ -261,12 +266,12 @@ jobs:
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Test car models
-      timeout-minutes: 20
+      timeout-minutes: 2
       run: |
-        ${{ env.RUN }} "$PYTEST selfdrive/car/tests/test_models.py && \
+        ${{ env.RUN }} "FILEREADER_CACHE=1 MAX_EXAMPLES=1 $PYTEST selfdrive/car/tests/test_models.py && \
                         chmod -R 777 /tmp/comma_download_cache"
       env:
-        NUM_JOBS: 2
+        NUM_JOBS: 4
         JOB_ID: ${{ matrix.job }}
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v4

@@ -52,11 +52,7 @@ float3 color_correct(float3 rgb) {
 }
 
 float3 apply_gamma(float3 rgb, int expo_time) {
-  return powr(rgb, 0.7);
-/*float s = log2((float)expo_time);
-  if (s < 6) {s = fmin(12.0 - s, 9.0);}
-  // log function adaptive to number of bits
-  return clamp(log(1 + rgb*(PV_MAX16 - BLACK_LVL)) * (0.48*s*s - 12.92*s + 115.0) - (1.08*s*s - 29.2*s + 260.0), 0.0, 255.0) / 255.0;*/
+  return (10 * rgb) / (1 + 9 * rgb);
 }
 
 #endif

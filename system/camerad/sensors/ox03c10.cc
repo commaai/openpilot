@@ -25,6 +25,7 @@ const uint32_t VS_TIME_MAX_OX03C10 = 34;  // vs < 35
 
 OX03C10::OX03C10() {
   image_sensor = cereal::FrameData::ImageSensor::OX03C10;
+  bayer_pattern = CAM_ISP_PATTERN_BAYER_GRGRGR;
   pixel_size_mm = 0.003;
   data_word = false;
   frame_width = 1928;
@@ -80,9 +81,9 @@ OX03C10::OX03C10() {
     0x00200000, 0x00200000, 0x00200000, 0x00200000,
     0x00404080, 0x00404080, 0x00404080, 0x00404080,
     0x00804100, 0x00804100, 0x00804100, 0x00804100,
-    0x006b8402, 0x006b8402, 0x006b8402, 0x006b8402,
-    0x00b8c070, 0x00b8c070, 0x00b8c070, 0x00b8c070,
-    0x06044804, 0x06044804, 0x06044804, 0x06044804,
+    0x02014402, 0x02014402, 0x02014402, 0x02014402,
+    0x0402c804, 0x0402c804, 0x0402c804, 0x0402c804,
+    0x0805d00a, 0x0805d00a, 0x0805d00a, 0x0805d00a,
     0x100ba015, 0x100ba015, 0x100ba015, 0x100ba015,
     0x00003fff, 0x00003fff, 0x00003fff, 0x00003fff,
     0x00003fff, 0x00003fff, 0x00003fff, 0x00003fff,
@@ -90,7 +91,7 @@ OX03C10::OX03C10() {
   for (int i = 0; i < 252; i++) {
     linearization_lut.push_back(0x0);
   }
-  linearization_pts = {0x07ff0bff, 0x17ff06ff, 0x1bff23ff, 0x27ff3fff};
+  linearization_pts = {0x07ff0bff, 0x17ff1bff, 0x1fff23ff, 0x27ff3fff};
   for (int i = 0; i < 884*2; i++) {
     vignetting_lut.push_back(0xff);
   }

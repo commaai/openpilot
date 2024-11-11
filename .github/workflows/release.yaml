@@ -1,7 +1,7 @@
 name: release
 on:
   schedule:
-    - cron: '0 10 * * *'
+    - cron: '0 9 * * *'
   workflow_dispatch:
 
 jobs:

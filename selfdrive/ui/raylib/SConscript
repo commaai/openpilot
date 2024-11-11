@@ -1,0 +1,17 @@
+Import('env', 'arch', 'common')
+
+raylib_env = env.Clone()
+raylib_util_lib = env.Library("raylib_util_lib", ['util.cc'], LIBS='raylib')
+linked_libs = ['raylib', raylib_util_lib, common]
+raylib_env['LIBPATH'] += [f'#third_party/raylib/{arch}/']
+
+mac_frameworks = []
+if arch == "Darwin":
+  mac_frameworks += ['OpenCL', 'CoreVideo', 'Cocoa', 'GLUT', 'CoreFoundation', 'OpenGL', 'IOKit']
+elif arch == 'larch64':
+  linked_libs += []
+else:
+  linked_libs += ['OpenCL', 'dl', 'pthread']
+
+if arch != 'aarch64':
+  raylib_env.Program("_spinner", ["spinner.cc"], LIBS=linked_libs, FRAMEWORKS=mac_frameworks)
