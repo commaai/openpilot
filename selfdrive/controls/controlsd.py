@@ -209,7 +209,6 @@ class Controls:
       self.update()
       CC, lac_log = self.state_control()
       self.publish(CC, lac_log)
-      rk.keep_time()
 
 def main():
   config_realtime_process(4, Priority.CTRL_HIGH)
