@@ -6,7 +6,7 @@ from cereal import car, log
 import cereal.messaging as messaging
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.params import Params
-from openpilot.common.realtime import config_realtime_process, Priority
+from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper
 from openpilot.common.swaglog import cloudlog
 
 from opendbc.car.car_helpers import get_car_interface
@@ -204,10 +204,12 @@ class Controls:
     self.pm.send('carControl', cc_send)
 
   def run(self):
+    rk = Ratekeeper(100, print_delay_threshold=None)
     while True:
       self.update()
       CC, lac_log = self.state_control()
       self.publish(CC, lac_log)
+      rk.monitor_time()
 
 def main():
   config_realtime_process(4, Priority.CTRL_HIGH)
