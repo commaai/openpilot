@@ -126,8 +126,6 @@ def report(platform, route, _description, CP, ID, maneuvers):
       builder.append(f"<img src='data:image/webp;base64,{base64.b64encode(buffer.getvalue()).decode()}' style='width:100%; max-width:800px;'>\n")
       builder.append("</details>\n")
 
-      plt.close()
-
   summary = ["<h2>Summary</h2>\n"]
   cols = ['maneuver', 'crossed', 'runs', 'mean', 'min', 'max']
   table = []
