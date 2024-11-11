@@ -14,10 +14,10 @@ runs:
     - id: date
       shell: bash
       run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
-      
+
     - shell: bash
       run: echo "$CACHE_COMMIT_DATE"
-      
+
     - id: scons-cache
       uses: ./.github/workflows/auto-cache
       with:
@@ -30,52 +30,57 @@ runs:
     - name: Cache Installed APT Packages
       shell: bash
       run: |
-        # Ensure scripts and directories are executable and accessible
-        sudo chmod +x tools/install_ubuntu_dependencies.sh tools/install_python_dependencies.sh
-        
-        # Install essential dependencies
-        ./tools/install_ubuntu_dependencies.sh
-        sudo apt-get update && sudo apt-get install -y --no-install-recommends sudo tzdata locales ssh pulseaudio xvfb x11-xserver-utils gnome-screenshot
-        sudo apt-get update && sudo apt-get install -y --no-install-recommends apt-utils alien unzip tar curl xz-utils dbus gcc-arm-none-eabi tmux vim libx11-6 wget
-    
-        # Configure locale and timezone
-        sudo sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && sudo locale-gen
-        sudo ln -fs /usr/share/zoneinfo/UTC /etc/localtime
-        sudo dpkg-reconfigure -f noninteractive tzdata
-    
-        # Create and configure user
-        sudo useradd -m -s /bin/bash batman
-        sudo usermod -aG sudo batman
-        echo '%sudo ALL=(ALL) NOPASSWD:ALL' | sudo tee -a /etc/sudoers
-    
-        # Install Intel OpenCL and TBB libraries
-        mkdir -p /tmp/opencl-driver-intel && cd /tmp/opencl-driver-intel
-        wget https://github.com/intel/llvm/releases/download/2024-WW14/oclcpuexp-2024.17.3.0.09_rel.tar.gz
-        wget https://github.com/oneapi-src/oneTBB/releases/download/v2021.12.0/oneapi-tbb-2021.12.0-lin.tgz
-    
-        # Extract and configure libraries
-        mkdir -p /opt/intel/oclcpuexp_2024.17.3.0.09_rel
-        tar -zxvf oclcpuexp-2024.17.3.0.09_rel.tar.gz -C /opt/intel/oclcpuexp_2024.17.3.0.09_rel
-        tar -zxvf oneapi-tbb-2021.12.0-lin.tgz -C /opt/intel
-        sudo ln -s /opt/intel/oneapi-tbb-2021.12.0/lib/intel64/gcc4.8/libtbb.so /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64
-        sudo ln -s /opt/intel/oneapi-tbb-2021.12.0/lib/intel64/gcc4.8/libtbbmalloc.so /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64
-    
-        # Ensure OpenCL vendors directory exists, then configure OpenCL ICD
-        sudo mkdir -p /etc/OpenCL/vendors
-        echo /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64/libintelocl.so | sudo tee /etc/OpenCL/vendors/intel_expcpu.icd
-        echo /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64 | sudo tee /etc/ld.so.conf.d/libintelopenclexp.conf
-        sudo ldconfig
-    
-        # Final cleanup
-        rm -rf /tmp/opencl-driver-intel
-    
-        # Configure Python environment
-        pwd
-        ./tools/install_python_dependencies.sh
-        mkdir -p /home/batman/.venv && cp -r /tmp/.venv/* /home/batman/.venv
-        sudo rm -rf /tmp/*
-        sudo rm -rf /home/batman/.cache
-        
-        # Git safe directory setup
-        sudo git config --global --add safe.directory /tmp/openpilot
-    
+        # Step 1: Install necessary dependencies
+        apt-get update && \
+            apt-get install -y --no-install-recommends \
+                sudo tzdata locales ssh pulseaudio xvfb x11-xserver-utils gnome-screenshot && \
+            rm -rf /var/lib/apt/lists/*
+
+        # Step 2: Configure locale
+        sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
+            locale-gen
+
+        # Step 3: Add a new user "batman" with sudo privileges
+        useradd -m -s /bin/bash -u 1001 batman && \
+            usermod -aG sudo batman && \
+            echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+        # Step 4: Install additional packages
+        apt-get update && \
+            apt-get install -y --no-install-recommends \
+                apt-utils alien unzip tar curl xz-utils dbus gcc-arm-none-eabi tmux vim libx11-6 wget && \
+            rm -rf /var/lib/apt/lists/*
+
+        # Step 5: Install Intel OpenCL and oneTBB libraries
+        mkdir -p /tmp/opencl-driver-intel && cd /tmp/opencl-driver-intel && \
+            wget https://github.com/intel/llvm/releases/download/2024-WW14/oclcpuexp-2024.17.3.0.09_rel.tar.gz && \
+            wget https://github.com/oneapi-src/oneTBB/releases/download/v2021.12.0/oneapi-tbb-2021.12.0-lin.tgz && \
+            mkdir -p /opt/intel/oclcpuexp_2024.17.3.0.09_rel && \
+            cd /opt/intel/oclcpuexp_2024.17.3.0.09_rel && \
+            tar -zxvf /tmp/opencl-driver-intel/oclcpuexp-2024.17.3.0.09_rel.tar.gz && \
+            mkdir -p /etc/OpenCL/vendors && \
+            echo /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64/libintelocl.so > /etc/OpenCL/vendors/intel_expcpu.icd && \
+            cd /opt/intel && \
+            tar -zxvf /tmp/opencl-driver-intel/oneapi-tbb-2021.12.0-lin.tgz && \
+            ln -s /opt/intel/oneapi-tbb-2021.12.0/lib/intel64/gcc4.8/libtbb.so /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64 && \
+            ln -s /opt/intel/oneapi-tbb-2021.12.0/lib/intel64/gcc4.8/libtbbmalloc.so /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64 && \
+            ln -s /opt/intel/oneapi-tbb-2021.12.0/lib/intel64/gcc4.8/libtbb.so.12 /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64 && \
+            ln -s /opt/intel/oneapi-tbb-2021.12.0/lib/intel64/gcc4.8/libtbbmalloc.so.2 /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64 && \
+            mkdir -p /etc/ld.so.conf.d && \
+            echo /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64 > /etc/ld.so.conf.d/libintelopenclexp.conf && \
+            ldconfig -f /etc/ld.so.conf.d/libintelopenclexp.conf && \
+            rm -rf /tmp/opencl-driver-intel
+
+        # Step 6: Generate dbus UUID
+        dbus-uuidgen > /etc/machine-id
+
+        # Step 7: Copy configuration files (assuming `pyproject.toml` and `uv.lock` are available in /tmp/)
+        cp /tmp/pyproject.toml /tmp/uv.lock /tmp/
+
+        # Step 8: Run Python dependency installation script
+        cd /tmp && \
+            /tmp/tools/install_python_dependencies.sh && \
+            mkdir -p /home/batman/.venv && \
+            cp -r /tmp/.venv/* /home/batman/.venv && \
+            rm -rf /tmp/* && \
+            rm -rf /home/batman/.cache
