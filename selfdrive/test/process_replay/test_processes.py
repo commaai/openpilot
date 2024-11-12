@@ -7,6 +7,7 @@ from collections import defaultdict
 from tqdm import tqdm
 from typing import Any
 
+from opendbc.car.car_helpers import interface_names
 from openpilot.common.git import get_commit
 from openpilot.tools.lib.openpilotci import get_url, upload_file
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
@@ -169,6 +170,11 @@ if __name__ == "__main__":
 
   print(f"***** testing against commit {ref_commit} *****")
 
+  # check to make sure all car brands are tested
+  if full_test:
+    untested = (set(interface_names) - set(excluded_interfaces)) - {c.lower() for c in tested_cars}
+    assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
+
   log_paths: defaultdict[str, dict[str, dict[str, str]]] = defaultdict(lambda: defaultdict(dict))
   with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as pool:
     if not args.upload_only:
@@ -187,7 +193,7 @@ if __name__ == "__main__":
         if cfg.proc_name not in tested_procs:
           continue
 
-        if cfg.proc_name != 'card' and car_brand not in ['HONDA', 'TOYOTA', 'HYUNDAI']:
+        if cfg.proc_name != 'card' and car_brand not in ['HYUNDAI', 'TOYOTA', 'HONDA', 'CHRYSLER', 'RAM', 'SUBARU']:
           continue
 
         cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.zst")
