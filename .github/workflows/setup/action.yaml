@@ -59,6 +59,8 @@ runs:
         sudo dbus-uuidgen | sudo tee /etc/machine-id > /dev/null
         echo '%sudo ALL=(ALL) NOPASSWD:ALL' | sudo tee -a /etc/sudoers
         pwd
+        ls -lf
+        cd ..
         ./tools/install_python_dependencies.sh
         sudo mkdir -p /home/batman/.venv
         cp -r /tmp/.venv/* /home/batman/.venv
