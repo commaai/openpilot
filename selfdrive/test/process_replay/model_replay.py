@@ -132,27 +132,22 @@ def trim_logs_to_max_frames(logs, max_frames, frs_types, include_all_types):
 
 
 def model_replay(lr, frs):
-  # modeld is using frame pairs
-  modeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"roadCameraState", "wideRoadCameraState"}, {"roadEncodeIdx", "wideRoadEncodeIdx", "carParams"})
-  dmodeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"driverCameraState"}, {"driverEncodeIdx", "carParams"})
+  logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"roadCameraState", "wideRoadCameraState", "driverCameraState"},
+                                                 {"roadEncodeIdx", "wideRoadEncodeIdx", "driverEncodeIdx", "carParams"})
 
   if not SEND_EXTRA_INPUTS:
-    modeld_logs = [msg for msg in modeld_logs if msg.which() != 'liveCalibration']
-    dmodeld_logs = [msg for msg in dmodeld_logs if msg.which() != 'liveCalibration']
+    logs = [msg for msg in logs if msg.which() != 'liveCalibration']
 
   # initial setup
   for s in ('liveCalibration', 'deviceState'):
     msg = next(msg for msg in lr if msg.which() == s).as_builder()
     msg.logMonoTime = lr[0].logMonoTime
-    modeld_logs.insert(1, msg.as_reader())
-    dmodeld_logs.insert(1, msg.as_reader())
+    logs.insert(1, msg.as_reader())
 
   modeld = get_process_config("modeld")
   dmonitoringmodeld = get_process_config("dmonitoringmodeld")
 
-  modeld_msgs = replay_process(modeld, modeld_logs, frs)
-  dmonitoringmodeld_msgs = replay_process(dmonitoringmodeld, dmodeld_logs, frs)
-  return modeld_msgs + dmonitoringmodeld_msgs
+  return replay_process([modeld, dmonitoringmodeld], logs, frs)
 
 
 if __name__ == "__main__":
@@ -182,10 +177,8 @@ if __name__ == "__main__":
 
       # logs are ordered based on type: modelV2, drivingModelData, driverStateV2
       if not NO_MODEL:
-        model_start_index = next(i for i, m in enumerate(all_logs) if m.which() in ("modelV2", "drivingModelData", "cameraOdometry"))
-        cmp_log += all_logs[model_start_index:model_start_index + MAX_FRAMES*3]
-        dmon_start_index = next(i for i, m in enumerate(all_logs) if m.which() == "driverStateV2")
-        cmp_log += all_logs[dmon_start_index:dmon_start_index + MAX_FRAMES]
+        start_index = next(i for i, m in enumerate(all_logs) if m.which() in ("modelV2", "drivingModelData", "cameraOdometry", "driverStateV2"))
+        cmp_log += all_logs[start_index:start_index + MAX_FRAMES*4]
 
       ignore = [
         'logMonoTime',
