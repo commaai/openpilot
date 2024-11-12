@@ -56,5 +56,5 @@ runs:
         echo /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64 | sudo tee /etc/ld.so.conf.d/libintelopenclexp.conf
         sudo ldconfig -f /etc/ld.so.conf.d/libintelopenclexp.conf
         cd / && sudo rm -rf /tmp/opencl-driver-intel
-        sudo dbus-uuidgen > /etc/machine-id
+        sudo dbus-uuidgen | sudo tee /etc/machine-id > /dev/null
         echo '%sudo ALL=(ALL) NOPASSWD:ALL' | sudo tee -a /etc/sudoers
