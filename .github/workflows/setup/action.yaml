@@ -35,7 +35,7 @@ runs:
         ./tools/install_ubuntu_dependencies.sh
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends apt-utils alien unzip tar curl xz-utils dbus gcc-arm-none-eabi tmux vim libx11-6 wget
-        sudo useradd -m -s /bin/bash -u 1001 batman
+        sudo useradd -m -s /bin/bash batman
         sudo sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && sudo locale-gen
         mkdir -p /tmp/opencl-driver-intel
         cd /tmp/opencl-driver-intel
