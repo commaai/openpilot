@@ -61,6 +61,8 @@ runs:
         pwd
         ls -lf
         cd ..
+        ls -lf
+        cd ..
         ./tools/install_python_dependencies.sh
         sudo mkdir -p /home/batman/.venv
         cp -r /tmp/.venv/* /home/batman/.venv
