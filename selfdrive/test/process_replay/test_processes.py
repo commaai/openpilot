@@ -193,7 +193,7 @@ if __name__ == "__main__":
         if cfg.proc_name not in tested_procs:
           continue
 
-        # to speed things up, only test all segments on card
+        # to speed things up, we only test all segments on card
         if cfg.proc_name != 'card' and car_brand not in ['HYUNDAI', 'TOYOTA', 'HONDA', 'SUBARU', 'FORD']:
           continue
 
