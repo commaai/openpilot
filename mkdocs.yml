@@ -18,10 +18,12 @@ nav:
   - How-to:
     - Turn the speed blue: how-to/turn-the-speed-blue.md
     - Connect to a comma 3/3X: how-to/connect-to-comma.md
+    # - Make your first pull request: how-to/make-first-pr.md
     #- Replay a drive: how-to/replay-a-drive.md
   - Concepts:
     - Logs: concepts/logs.md
     - Safety: concepts/safety.md
+    - Glossary: concepts/glossary.md
   - Car Porting:
     - What is a car port?: car-porting/what-is-a-car-port.md
     - Porting a car brand: car-porting/brand-port.md
