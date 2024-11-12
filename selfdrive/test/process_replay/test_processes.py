@@ -193,7 +193,7 @@ if __name__ == "__main__":
         if cfg.proc_name not in tested_procs:
           continue
 
-        if cfg.proc_name != 'card' and car_brand not in ['HYUNDAI', 'TOYOTA', 'HONDA', 'CHRYSLER', 'RAM', 'SUBARU']:
+        if cfg.proc_name != 'card' and car_brand not in ['HYUNDAI', 'TOYOTA', 'HONDA', 'RAM', 'SUBARU', 'VOLKSWAGEN', 'FORD']:
           continue
 
         cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.zst")
