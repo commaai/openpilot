@@ -161,11 +161,6 @@ if __name__ == "__main__":
 
   print(f"***** testing against commit {ref_commit} *****")
 
-  # check to make sure all car brands are tested
-  if full_test:
-    untested = (set(interface_names) - set(excluded_interfaces)) - {c.lower() for c in tested_cars}
-    #assert len(untested) == 0, f"Cars missing routes: {str(untested)}"
-
   log_paths: defaultdict[str, dict[str, dict[str, str]]] = defaultdict(lambda: defaultdict(dict))
   with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as pool:
     if not args.upload_only:
