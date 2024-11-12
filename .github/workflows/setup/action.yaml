@@ -58,3 +58,10 @@ runs:
         cd / && sudo rm -rf /tmp/opencl-driver-intel
         sudo dbus-uuidgen | sudo tee /etc/machine-id > /dev/null
         echo '%sudo ALL=(ALL) NOPASSWD:ALL' | sudo tee -a /etc/sudoers
+        pwd
+        ./tools/install_python_dependencies.sh
+        sudo mkdir -p /home/batman/.venv
+        cp -r /tmp/.venv/* /home/batman/.venv
+        rm -rf /tmp/*
+        rm -rf /home/batman/.cache
+         sudo git config --global --add safe.directory
