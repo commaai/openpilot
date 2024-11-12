@@ -1,7 +1,7 @@
 import numpy as np
 
 from openpilot.common.transformations.orientation import rot_from_euler
-from openpilot.common.transformations.camera import get_view_frame_from_calib_frame, view_frame_from_device_frame
+from openpilot.common.transformations.camera import get_view_frame_from_calib_frame, view_frame_from_device_frame, _ar_ox_fisheye
 
 # segnet
 SEGNET_SIZE = (512, 384)
@@ -38,6 +38,13 @@ sbigmodel_intrinsics = np.array([
   [sbigmodel_fl,  0.0,  0.5 * SBIGMODEL_INPUT_SIZE[0]],
   [0.0,  sbigmodel_fl,      0.5 * (256 + MEDMODEL_CY)],
   [0.0,  0.0,                                     1.0]])
+
+DM_INPUT_SIZE = (1440, 960)
+dmonitoringmodel_fl = _ar_ox_fisheye.focal_length
+dmonitoringmodel_intrinsics = np.array([
+  [dmonitoringmodel_fl,  0.0, DM_INPUT_SIZE[0]/2],
+  [0.0, dmonitoringmodel_fl, DM_INPUT_SIZE[1]/2 - (_ar_ox_fisheye.height - DM_INPUT_SIZE[1])/2],
+  [0.0,  0.0, 1.0]])
 
 bigmodel_frame_from_calib_frame = np.dot(bigmodel_intrinsics,
   get_view_frame_from_calib_frame(0, 0, 0, 0))

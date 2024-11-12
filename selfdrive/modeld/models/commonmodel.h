@@ -37,3 +37,21 @@ private:
   cl_buffer_region region;
   std::unique_ptr<uint8_t[]> input_frames;
 };
+
+class MonitoringModelFrame {
+public:
+  MonitoringModelFrame(cl_device_id device_id, cl_context context);
+  ~MonitoringModelFrame();
+  cl_mem* prepare(cl_mem yuv_cl, int width, int height, int frame_stride, int frame_uv_offset, const mat3& transform);
+  uint8_t* buffer_from_cl(cl_mem *in_frame);
+
+  const int MODEL_WIDTH = 1440;
+  const int MODEL_HEIGHT = 960;
+  const int MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT;
+
+private:
+  Transform transform;
+  cl_command_queue q;
+  cl_mem y_cl, u_cl, v_cl, input_frame_cl;
+  std::unique_ptr<uint8_t[]> input_frame;
+};
