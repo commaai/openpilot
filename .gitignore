@@ -103,3 +103,6 @@ Pipfile
 # Ignore all local history of files
 .history
 .ionide
+
+# Generated DBC files
+*_generated.dbc
