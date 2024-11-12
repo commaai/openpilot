@@ -392,3 +392,6 @@ if Dir('#tools/cabana/').exists() and GetOption('extras'):
 external_sconscript = GetOption('external_sconscript')
 if external_sconscript:
   SConscript([external_sconscript])
+
+# Build opendbc
+SConscript(['opendbc_repo/opendbc/dbc/SConscript'])
