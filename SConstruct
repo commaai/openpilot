@@ -394,4 +394,4 @@ if external_sconscript:
   SConscript([external_sconscript])
 
 # Build opendbc
-SConscript(['opendbc_repo/opendbc/dbc/SConscript'])
+SConscript(['opendbc/dbc/SConscript'])
