@@ -115,8 +115,8 @@ if [ ! -d "$SOURCE_DIR" ]; then
 fi
 
 if [ ! -z "$UNSAFE" ]; then
-  echo "doing unsafe checkout"
-  unsafe_checkout
+  echo "trying unsafe checkout"
+  unsafe_checkout || safe_checkout
 else
   echo "doing safe checkout"
   safe_checkout
