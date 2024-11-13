@@ -205,7 +205,7 @@ node {
       'HW + Unit Tests': {
         deviceStage("tici-hardware", "tici-common", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py"),
-          step("test pandad", "pytest selfdrive/pandad/tests/test_pandad.py", [diffPaths: ["panda/", "selfdrive/pandad/"]]),
+          step("test pandad", "pytest selfdrive/pandad/tests/test_pandad.py", [diffPaths: ["panda", "selfdrive/pandad/"]]),
           step("test power draw", "pytest -s system/hardware/tici/tests/test_power_draw.py"),
           step("test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py"),
           step("test pigeond", "pytest system/ubloxd/tests/test_pigeond.py"),
@@ -242,7 +242,7 @@ node {
       },
       'replay': {
         deviceStage("model-replay", "tici-replay", ["UNSAFE=1"], [
-          step("build", "cd system/manager && ./build.py", [diffPaths: ["selfdrive/modeld/", "tinygrad_repo/", "selfdrive/test/process_replay/model_replay.py"]]),
+          step("build", "cd system/manager && ./build.py", [diffPaths: ["selfdrive/modeld/", "tinygrad_repo", "selfdrive/test/process_replay/model_replay.py"]]),
           step("model replay", "selfdrive/test/process_replay/model_replay.py", [diffPaths: ["selfdrive/modeld/"]]),
         ])
       },
@@ -251,7 +251,7 @@ node {
           step("build openpilot", "cd system/manager && ./build.py"),
           step("test pandad loopback", "SINGLE_PANDA=1 pytest selfdrive/pandad/tests/test_pandad_loopback.py"),
           step("test pandad spi", "pytest selfdrive/pandad/tests/test_pandad_spi.py"),
-          step("test pandad", "pytest selfdrive/pandad/tests/test_pandad.py", [diffPaths: ["panda/", "selfdrive/pandad/"]]),
+          step("test pandad", "pytest selfdrive/pandad/tests/test_pandad.py", [diffPaths: ["panda", "selfdrive/pandad/"]]),
           step("test amp", "pytest system/hardware/tici/tests/test_amplifier.py"),
           step("test qcomgpsd", "pytest system/qcomgpsd/tests/test_qcomgpsd.py"),
         ])
