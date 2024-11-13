@@ -31,7 +31,6 @@ class TestTranslations:
       return f.read()
 
   def test_missing_translation_files(self):
-    raise Exception
     assert os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{self.file}.ts")), \
                     f"{self.name} has no XML translation file, run selfdrive/ui/update_translations.py"
 
