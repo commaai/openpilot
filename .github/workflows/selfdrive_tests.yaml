@@ -179,8 +179,7 @@ jobs:
         ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
                         MAX_EXAMPLES=1 $PYTEST --timeout 60 -m 'not slow' && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
-                        QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
-                        pytest ./selfdrive/ui/tests/test_translations.py"
+                        QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v4
       with:
