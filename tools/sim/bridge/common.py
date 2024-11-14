@@ -47,7 +47,7 @@ class SimulatorBridge(ABC):
     self.dual_camera = dual_camera
     self.high_quality = high_quality
 
-    self._exit_event = threading.Event()
+    self._exit_event: threading.Event | None = None
     self._threads = []
     self._keep_alive = True
     self.started = Value('i', False)
@@ -75,7 +75,9 @@ class SimulatorBridge(ABC):
 
   def close(self, reason):
     self.started.value = False
-    self._exit_event.set()
+
+    if self._exit_event is not None:
+      self._exit_event.set()
 
     if self.world is not None:
       self.world.close(reason)
@@ -101,6 +103,8 @@ Ignition: {self.simulator_state.ignition} Engaged: {self.simulator_state.is_enga
 
     self.simulated_car = SimulatedCar()
     self.simulated_sensors = SimulatedSensors(self.dual_camera)
+
+    self._exit_event = threading.Event()
 
     self.simulated_car_thread = threading.Thread(target=rk_loop, args=(functools.partial(self.simulated_car.update, self.simulator_state),
                                                                         100, self._exit_event))
