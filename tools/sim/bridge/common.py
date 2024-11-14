@@ -52,7 +52,6 @@ class SimulatorBridge(ABC):
     self._keep_alive = True
     self.started = Value('i', False)
     signal.signal(signal.SIGTERM, self._on_shutdown)
-    self._exit = threading.Event()
     self.simulator_state = SimulatorState()
 
     self.world: World | None = None
