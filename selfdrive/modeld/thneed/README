@@ -1,0 +1,8 @@
+thneed is an SNPE accelerator. I know SNPE is already an accelerator, but sometimes things need to go even faster..
+
+It runs on the local device, and caches a single model run. Then it replays it, but fast.
+
+thneed slices through abstraction layers like a fish.
+
+You need a thneed.
+
