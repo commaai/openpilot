@@ -1,4 +1,5 @@
 import copy
+import os
 from hypothesis import given, HealthCheck, Phase, settings
 import hypothesis.strategies as st
 from parameterized import parameterized
@@ -21,7 +22,8 @@ class TestFuzzProcesses:
   # TODO: make this faster and increase examples
   @parameterized.expand(TEST_CASES)
   @given(st.data())
-  @settings(phases=[Phase.generate, Phase.target], max_examples=MAX_EXAMPLES, deadline=1000, suppress_health_check=[HealthCheck.too_slow, HealthCheck.data_too_large])
+  @settings(phases=[Phase.generate, Phase.target], max_examples=MAX_EXAMPLES, deadline=1000,
+            suppress_health_check=[HealthCheck.too_slow, HealthCheck.data_too_large])
   def test_fuzz_process(self, proc_name, cfg, data):
     msgs = FuzzyGenerator.get_random_event_msg(data.draw, events=cfg.pubs, real_floats=True)
     lr = [log.Event.new_message(**m).as_reader() for m in msgs]
