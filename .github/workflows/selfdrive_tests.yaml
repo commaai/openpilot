@@ -173,12 +173,19 @@ jobs:
     - name: Build openpilot
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: ${{ env.RUN }} "scons -j$(nproc)"
+    - name: Setup cache
+      uses: ./.github/workflows/auto-cache
+      with:
+        path: .ci_cache/comma_download_cache
+        key: unit_tests_${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}
     - name: Run unit tests
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 1 || 20 }}
       run: |
-        ${{ env.RUN }} "MAX_EXAMPLES=1 $PYTEST --timeout 60 -m 'not slow' && \
+        ${{ env.RUN }} "$PYTEST --collect-only -m 'not slow' &> /dev/null && \
+                        MAX_EXAMPLES=1 $PYTEST -m 'not slow' && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
-                        QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations"
+                        QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
+                        chmod -R 777 /tmp/comma_download_cache"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v4
       with:
