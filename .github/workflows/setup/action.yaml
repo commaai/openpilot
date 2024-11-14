@@ -35,6 +35,7 @@ runs:
         ./tools/install_ubuntu_dependencies.sh
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends apt-utils alien unzip tar curl xz-utils dbus gcc-arm-none-eabi tmux vim libx11-6 wget
+        ./tools/install_python_dependencies.sh
         sudo sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && sudo locale-gen
         mkdir -p /tmp/opencl-driver-intel
         cd /tmp/opencl-driver-intel
@@ -63,5 +64,4 @@ runs:
         cd ..
         pwd
         ls -lf
-        ./tools/install_python_dependencies.sh
-        sudo git config --global --add safe.directory
+        sudo git config --global --add safe.directory /tmp/openpilot
