@@ -35,7 +35,6 @@ runs:
         ./tools/install_ubuntu_dependencies.sh
         sudo apt-get update
         sudo apt-get install -y --no-install-recommends apt-utils alien unzip tar curl xz-utils dbus gcc-arm-none-eabi tmux vim libx11-6 wget
-        sudo useradd -m -s /bin/bash batman
         sudo sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && sudo locale-gen
         mkdir -p /tmp/opencl-driver-intel
         cd /tmp/opencl-driver-intel
@@ -46,7 +45,9 @@ runs:
         sudo tar -zxvf /tmp/opencl-driver-intel/oclcpuexp-2024.17.3.0.09_rel.tar.gz
         sudo mkdir -p /etc/OpenCL/vendors
         echo /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64/libintelocl.so | sudo tee /etc/OpenCL/vendors/intel_expcpu.icd
+        pwd
         cd /opt/intel
+        pwd
         sudo tar -zxvf /tmp/opencl-driver-intel/oneapi-tbb-2021.12.0-lin.tgz
         sudo ln -s /opt/intel/oneapi-tbb-2021.12.0/lib/intel64/gcc4.8/libtbb.so /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64
         sudo ln -s /opt/intel/oneapi-tbb-2021.12.0/lib/intel64/gcc4.8/libtbbmalloc.so /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64
