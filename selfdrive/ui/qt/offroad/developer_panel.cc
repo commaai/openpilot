@@ -25,35 +25,27 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   addItem(longManeuverToggle);
 
   // Joystick and longitudinal maneuvers should be hidden on release branches
-  const bool is_release = params.getBool("IsReleaseBranch");
-  for (auto btn : findChildren<ParamControl *>()) {
-    btn->setVisible(!is_release);
-  }
+  is_release = params.getBool("IsReleaseBranch");
 
   // Toggles should be not available to change in onroad state
-  QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
-    for (auto btn : findChildren<ParamControl *>()) {
-      btn->setEnabled(offroad);
-    }
-  });
+  QObject::connect(uiState(), &UIState::offroadTransition, this, &DeveloperPanel::updateToggles);
 }
 
-void DeveloperPanel::updateToggles() {
+void DeveloperPanel::updateToggles(bool offroad) {
+  for (auto btn : findChildren<ParamControl *>()) {
+    btn->setVisible(!is_release);
+    btn->setEnabled(offroad);
+  }
+
   auto cp_bytes = params.get("CarParamsPersistent");
   if (!cp_bytes.empty()) {
     AlignedBuffer aligned_buf;
     capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
     cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
 
-    // longManeuverToggle should not be toggable if the car don't have longitudinal control
-    if (hasLongitudinalControl(CP)) {
-      longManeuverToggle->setEnabled(true);
-    }
+    // longManeuverToggle should not be toggleable if the car don't have longitudinal control
+    longManeuverToggle->setEnabled(hasLongitudinalControl(CP) && offroad);
   } else {
     longManeuverToggle->setEnabled(false);
   }
-}
-
-void DeveloperPanel::showEvent(QShowEvent *event) {
-  updateToggles();
 }
