@@ -61,3 +61,8 @@ runs:
         echo '%sudo ALL=(ALL) NOPASSWD:ALL' | sudo tee -a /etc/sudoers
         sudo git config --global --add safe.directory /tmp/openpilot
         pwd
+        ls -lf
+        cd tmp
+        pwd
+        cd ..
+        ls-lf
