@@ -31,10 +31,10 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   QObject::connect(uiState(), &UIState::offroadTransition, this, &DeveloperPanel::updateToggles);
 }
 
-void DeveloperPanel::updateToggles(bool offroad) {
+void DeveloperPanel::updateToggles(bool _offroad) {
   for (auto btn : findChildren<ParamControl *>()) {
     btn->setVisible(!is_release);
-    btn->setEnabled(offroad);
+    btn->setEnabled(_offroad);
   }
 
   // longManeuverToggle should not be toggleable if the car don't have longitudinal control
@@ -43,8 +43,14 @@ void DeveloperPanel::updateToggles(bool offroad) {
     AlignedBuffer aligned_buf;
     capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
     cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
-    longManeuverToggle->setEnabled(hasLongitudinalControl(CP) && offroad);
+    longManeuverToggle->setEnabled(hasLongitudinalControl(CP) && _offroad);
   } else {
     longManeuverToggle->setEnabled(false);
   }
+
+  offroad = _offroad;
+}
+
+void DeveloperPanel::showEvent(QShowEvent *event) {
+  updateToggles(offroad);
 }
