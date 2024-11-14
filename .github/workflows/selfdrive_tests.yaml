@@ -179,6 +179,11 @@ jobs:
       with:
         path: .ci_cache/comma_download_cache
         key: unit_test
+    - name: Breakpoint if tests failed
+      uses: namespacelabs/breakpoint-action@v0
+      with:
+        duration: 30m
+        authorized-users: maxime-desroches
     - name: Run unit tests
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 5 || 20 }}
       run: |
