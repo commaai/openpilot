@@ -27,7 +27,7 @@ env:
 
   RUN: docker run --shm-size 2G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e CI=1 -e PYTHONWARNINGS=error -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/bash -c
 
-  PYTEST: pytest --continue-on-collection-errors --cov --cov-report=xml --cov-append --durations=0 --durations-min=3 --hypothesis-seed 0 -n logical
+  PYTEST: pytest --continue-on-collection-errors --cov --cov-report=xml --cov-append --durations=0 --durations-min=5 --hypothesis-seed 0 -n logical
 
 jobs:
   build_release:
@@ -173,17 +173,16 @@ jobs:
     - name: Build openpilot
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: ${{ env.RUN }} "scons -j$(nproc)"
-    - name: Cache test routes
-      id: dependency-cache
+    - name: Setup cache
       uses: ./.github/workflows/auto-cache
       with:
         path: .ci_cache/comma_download_cache
-        key: unit_test
+        key: unit_tests_${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}
     - name: Run unit tests
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 1 || 20 }}
       run: |
-        ${{ env.RUN }} "MAX_EXAMPLES=1 $PYTEST --collect-only --timeout 60 -m 'not slow' &> /dev/null && \
-                        MAX_EXAMPLES=1 $PYTEST --timeout 60 -m 'not slow' && \
+        ${{ env.RUN }} "$PYTEST --collect-only -m 'not slow' &> /dev/null && \
+                        MAX_EXAMPLES=1 $PYTEST -m 'not slow' && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         chmod -R 777 /tmp/comma_download_cache"
