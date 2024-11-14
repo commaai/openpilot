@@ -1,6 +1,7 @@
 #include "tools/replay/timeline.h"
 
 #include <array>
+#include <algorithm>
 
 #include "cereal/gen/cpp/log.capnp.h"
 
