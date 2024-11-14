@@ -37,13 +37,12 @@ void DeveloperPanel::updateToggles(bool offroad) {
     btn->setEnabled(offroad);
   }
 
+  // longManeuverToggle should not be toggleable if the car don't have longitudinal control
   auto cp_bytes = params.get("CarParamsPersistent");
   if (!cp_bytes.empty()) {
     AlignedBuffer aligned_buf;
     capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
     cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
-
-    // longManeuverToggle should not be toggleable if the car don't have longitudinal control
     longManeuverToggle->setEnabled(hasLongitudinalControl(CP) && offroad);
   } else {
     longManeuverToggle->setEnabled(false);
