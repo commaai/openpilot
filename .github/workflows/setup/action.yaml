@@ -62,8 +62,7 @@ runs:
         sudo git config --global --add safe.directory /tmp/openpilot
         pwd
         cd ..
-        pwd
         cd ..
-        pwd
+        cd tmp
         ls -lf
 
