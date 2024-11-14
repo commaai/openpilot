@@ -59,5 +59,9 @@ runs:
         sudo dbus-uuidgen | sudo tee /etc/machine-id > /dev/null
         echo '%sudo ALL=(ALL) NOPASSWD:ALL' | sudo tee -a /etc/sudoers
         pwd
+        cd ..
+        cd ..
+        pwd
+        ls -lf
         ./tools/install_python_dependencies.sh
         sudo git config --global --add safe.directory
