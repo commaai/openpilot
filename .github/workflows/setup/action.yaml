@@ -63,7 +63,7 @@ runs:
         pwd
         cd ..
         pwd
-        ls -lf
-        cd tmp
+        cd ..
         pwd
-        ls-lf
+        ls -lf
+
