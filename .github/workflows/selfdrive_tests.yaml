@@ -29,7 +29,7 @@ jobs:
       ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-latest' }}
     env:
-      STRIPPED_DIR: /tmp/releasepilot
+      STRIPPED_DIR: /.ci_cache/releasepilot
     steps:
       - uses: actions/checkout@v4
         with:
@@ -103,7 +103,7 @@ jobs:
       - name: Getting scons cache
         uses: "actions/cache@v4"
         with:
-          path: /tmp/scons_cache
+          path: /.ci_cache/scons_cache
           key: scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
           restore-keys: |
             scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}
@@ -204,7 +204,7 @@ jobs:
         run: |
           source .venv/bin/activate
           coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
-          chmod -R 777 /tmp/comma_download_cache && \
+          chmod -R 777 .ci_cache/comma_download_cache && \
           coverage combine && \
           coverage xml
       - name: Print diff
@@ -227,7 +227,7 @@ jobs:
         timeout-minutes: 4
         run: |
           ${{ env.RUN }} "ONNXCPU=1 $PYTEST selfdrive/test/process_replay/test_regen.py && \
-                          chmod -R 777 /tmp/comma_download_cache"
+                          chmod -R 777 /.ci_cache/comma_download_cache"
       - name: "Upload coverage to Codecov"
         uses: codecov/codecov-action@v4
         with:
@@ -264,7 +264,7 @@ jobs:
         run: |
           source .venv/bin/activate
           $PYTEST selfdrive/car/tests/test_models.py && \
-          chmod -R 777 /home/runner/work/openpilot/openpilot/.ci_cache/comma_download_cache
+          chmod -R 777 .ci_cache/comma_download_cache
         env:
           NUM_JOBS: 2
           JOB_ID: ${{ matrix.job }}
@@ -290,7 +290,7 @@ jobs:
       - name: Get base car info
         run: |
           source .venv/bin/activate
-          scons -j$(nproc) && python3 selfdrive/debug/dump_car_docs.py --path /.ci_cache//openpilot_cache/base_car_docs
+          scons -j$(nproc) && python3 selfdrive/debug/dump_car_docs.py --path .ci_cache//openpilot_cache/base_car_docs
           sudo chown -R $USER:$USER ${{ github.workspace }}
       - uses: actions/checkout@v4
         with:
@@ -303,7 +303,7 @@ jobs:
           cd current
           source .venv/bin/activate
           scons -j$(nproc)
-          output=$(python3 selfdrive/debug/print_docs_diff.py --path /.ci_cache/openpilot_cache/base_car_docs)
+          output=$(python3 selfdrive/debug/print_docs_diff.py --path .ci_cache/openpilot_cache/base_car_docs)
           output="${output//$'\n'/'%0A'}"
           echo "::set-output name=diff::$output"
       - name: Find comment
@@ -383,8 +383,8 @@ jobs:
           source .venv/bin/activate
           PYTHONWARNINGS=ignore &&
           source selfdrive/test/setup_xvfb.sh &&
-          CACHE_ROOT=/.ci_cache/comma_download_cache python3 selfdrive/ui/tests/test_ui/run.py &&
-          chmod -R 777 /.ci_cache/comma_download_cache
+          CACHE_ROOT=.ci_cache/comma_download_cache python3 selfdrive/ui/tests/test_ui/run.py &&
+          chmod -R 777 .ci_cache/comma_download_cache
 
       - name: Upload Test Report
         uses: actions/upload-artifact@v4
