@@ -60,9 +60,6 @@ runs:
         sudo dbus-uuidgen | sudo tee /etc/machine-id > /dev/null
         echo '%sudo ALL=(ALL) NOPASSWD:ALL' | sudo tee -a /etc/sudoers
         sudo git config --global --add safe.directory /tmp/openpilot
-        pwd
-        cd ..
-        cd ..
-        cd tmp
-        ls -lf
+        sudo find / -name "comma_download_cache"
+
 
