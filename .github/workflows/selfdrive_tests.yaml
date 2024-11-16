@@ -207,7 +207,6 @@ jobs:
           cd .ci_cache
           pwd 
           ls -lf
-          chmod -R 777 comma_download_cache 
           coverage combine
           coverage xml
       - name: Print diff
