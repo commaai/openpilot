@@ -206,7 +206,7 @@ jobs:
           ls -lf
           source .venv/bin/activate
           coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
-          chmod -R 777 .ci_cache/comma_download_cache && \
+          chmod -R 777 /home/runner/work/openpilot/openpilot/.ci_cache/comma_download_cache && \
           coverage combine && \
           coverage xml
       - name: Print diff
@@ -229,7 +229,7 @@ jobs:
         timeout-minutes: 4
         run: |
           ${{ env.RUN }} "ONNXCPU=1 $PYTEST selfdrive/test/process_replay/test_regen.py && \
-                          chmod -R 777 /.ci_cache/comma_download_cache"
+                          chmod -R 777 /home/runner/work/openpilot/openpilot/.ci_cache/comma_download_cache"
       - name: "Upload coverage to Codecov"
         uses: codecov/codecov-action@v4
         with:
