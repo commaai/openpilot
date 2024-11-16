@@ -3,6 +3,10 @@ import requests
 from http import HTTPMethod
 from multiprocessing import Pool
 
+def upload_file_process(args):
+  github, bucket, path, file_name = args
+  github.upload_file(bucket, path, file_name)
+
 class GithubUtils:
   def __init__(self, api_token, data_token, owner='commaai', api_repo='openpilot', data_repo='ci-artifacts'):
     self.OWNER = owner
@@ -51,13 +55,8 @@ class GithubUtils:
 
   def upload_files(self, bucket, files):
     self.create_bucket(bucket)
-
-    def upload_file_process(args):
-      bucket, path, file_name = args
-      self.upload_file(bucket, path, file_name)
-
     with Pool() as pool:
-      tasks = [(bucket, path, file_name) for file_name, path in files]
+      tasks = [(self, bucket, path, file_name) for file_name, path in files]
       pool.map(upload_file_process, tasks)
 
   def create_bucket(self, bucket):
