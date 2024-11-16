@@ -203,10 +203,8 @@ jobs:
         timeout-minutes: 30
         run: |
           source .venv/bin/activate
-          coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) 
-          cd .ci_cache
-          pwd 
-          ls -lf
+          coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc)
+          chmod -R 777 .ci_cache/comma_download_cache
           coverage combine
           coverage xml
       - name: Print diff
