@@ -2,9 +2,12 @@ import base64
 import requests
 from http import HTTPMethod
 from multiprocessing import Pool
+import time
+import random
 
 def upload_file_process(args):
   github, bucket, path, file_name = args
+  time.sleep(random.random())
   github.upload_file(bucket, path, file_name)
 
 class GithubUtils:
