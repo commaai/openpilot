@@ -62,7 +62,7 @@ bool ReplayStream::loadRoute(const QString &route, const QString &data_dir, uint
   QObject::connect(replay.get(), &Replay::segmentsMerged, this, &ReplayStream::mergeSegments);
   bool success = replay->load();
   if (!success) {
-    if (replay->lastRouteError() == RouteLoadError::AccessDenied) {
+    if (replay->lastRouteError() == RouteLoadError::Unauthorized) {
       auto auth_content = util::read_file(util::getenv("HOME") + "/.comma/auth.json");
       QString message;
       if (auth_content.empty()) {

@@ -121,6 +121,7 @@ def report(platform, route, _description, CP, ID, maneuvers):
 
       buffer = io.BytesIO()
       fig.savefig(buffer, format='webp')
+      plt.close(fig)
       buffer.seek(0)
       builder.append(f"<img src='data:image/webp;base64,{base64.b64encode(buffer.getvalue()).decode()}' style='width:100%; max-width:800px;'>\n")
       builder.append("</details>\n")

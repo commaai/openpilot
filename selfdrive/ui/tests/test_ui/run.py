@@ -45,6 +45,11 @@ def setup_settings_toggles(click, pm: PubMaster):
   click(278, 650)
   time.sleep(UI_DELAY)
 
+def setup_settings_software(click, pm: PubMaster):
+  setup_settings_device(click, pm)
+  click(278, 800)
+  time.sleep(UI_DELAY)
+
 def setup_settings_developer(click, pm: PubMaster):
   setup_settings_device(click, pm)
   click(278, 960)
@@ -117,11 +122,8 @@ def setup_body(click, pm: PubMaster):
 
 def setup_keyboard(click, pm: PubMaster):
   setup_settings_device(click, pm)
-  click(250, 575)
-  click(2020, 218)
-  click(1830, 80)
-  click(2035, 808)
-  click(90, 480)
+  click(250, 965)
+  click(1930, 228)
 
 def setup_driver_camera(click, pm: PubMaster):
   setup_settings_device(click, pm)
@@ -180,6 +182,7 @@ CASES = {
   "pair_device": setup_pair_device,
   "settings_device": setup_settings_device,
   "settings_toggles": setup_settings_toggles,
+  "settings_software": setup_settings_software,
   "settings_developer": setup_settings_developer,
   "onroad": setup_onroad,
   "onroad_disengaged": setup_onroad_disengaged,

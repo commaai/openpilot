@@ -117,11 +117,11 @@
     <name>DeveloperPanel</name>
     <message>
         <source>Joystick Debug Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>조이스틱 디버그 모드</translation>
     </message>
     <message>
         <source>Longitudinal Maneuver Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>롱컨 기동 모드</translation>
     </message>
 </context>
 <context>
@@ -611,7 +611,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Developer</source>
-        <translation type="unfinished"></translation>
+        <translation>개발자</translation>
     </message>
 </context>
 <context>

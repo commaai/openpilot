@@ -400,7 +400,7 @@ class TestOnroad:
         errors.append("❌ FAILED MAX/MIN TIMING CHECK ❌")
       if (np.std(ts)/dt) > rsd:
         errors.append("❌ FAILED RSD TIMING CHECK ❌")
-      passed = not errors
+      passed = not errors and passed
       rows.append([s, *(np.array([np.max(ts), np.min(ts), np.mean(ts), dt])*1e3), np.std(ts)/dt, rsd, "\n".join(errors) or "✅"])
 
     print(tabulate(rows, header, tablefmt="simple_grid", stralign="center", numalign="center", floatfmt=".2f"))
