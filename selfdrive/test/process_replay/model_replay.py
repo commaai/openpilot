@@ -33,7 +33,7 @@ GITHUB = GithubUtils(API_TOKEN, DATA_TOKEN)
 
 
 def get_log_fn(test_route, ref="master"):
-  return f"{test_route}_model_tici_{ref}.bz2"
+  return f"{test_route}_model_tici_{ref}.zst"
 
 def plot(proposed, master, title, tmp):
   proposed = list(proposed)
@@ -188,7 +188,7 @@ if __name__ == "__main__":
   replay_dir = os.path.dirname(os.path.abspath(__file__))
 
   # load logs
-  lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT, "rlog.bz2")))
+  lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT, "rlog.zst")))
   frs = get_frames(cache)
 
   log_msgs = []
