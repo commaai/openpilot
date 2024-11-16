@@ -99,20 +99,28 @@ def comment_replay_report(proposed, master, full_logs):
       return
 
     commit = get_commit()
+    st = time.monotonic()
     files = generate_report(proposed, master, tmp, commit)
+    print('GENERATING REPORT:', time.monotonic() - st)
 
+    st = time.monotonic()
     GITHUB.upload_files(DATA_BUCKET, [(x[0], tmp + '/' + x[0]) for x in files])
+    print('UPLOADING SCREENSHOTS:', time.monotonic() - st)
 
+    st = time.monotonic()
     log_name = get_log_fn(TEST_ROUTE, commit)
     save_log(log_name, full_logs)
     GITHUB.upload_file(DATA_BUCKET, os.path.basename(log_name), log_name)
+    print('UPLOADING NEW LOGS:', time.monotonic() - st)
 
+    st = time.monotonic()
     diff_files = [x for x in files if not x[1]]
     link = GITHUB.get_bucket_link(DATA_BUCKET)
     diff_plots = create_table("Model Replay Differences", diff_files, link, open_table=True)
     all_plots = create_table("All Model Replay Plots", files, link)
     comment = f"ref for commit {commit}: {link}/{log_name}" + diff_plots + all_plots
     GITHUB.comment_on_pr(comment, PR_BRANCH)
+    print('COMMENTING ON PR:', time.monotonic() - st)
 
 def trim_logs_to_max_frames(logs, max_frames, frs_types, include_all_types):
   all_msgs = []
