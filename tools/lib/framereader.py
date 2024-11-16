@@ -535,3 +535,24 @@ def FrameIterator(fn, pix_fmt, **kwargs):
   else:
     for i in range(fr.frame_count):
       yield fr.get(i, pix_fmt=pix_fmt)[0]
+
+class NumpyFrameReader:
+  def __init__(self, name, size):
+    self.name = name
+    self.pos = -1
+    self.frames = None
+    self.w = 1928
+    self.h = 1208
+    self.size = size
+
+  def close(self):
+    pass
+
+  def get(self, num, count=1, pix_fmt="nv12"):
+    num -= 1
+    q = num // self.size
+    if q != self.pos:
+      del self.frames
+      self.pos = q
+      self.frames = np.load(f'{self.name}_{self.pos}.npy')
+    return [self.frames[num % self.size]]

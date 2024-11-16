@@ -5,21 +5,23 @@ from collections import defaultdict
 from typing import Any
 import tempfile
 from itertools import zip_longest
+import time
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 from openpilot.common.git import get_commit
 from openpilot.system.hardware import PC
 from openpilot.tools.lib.openpilotci import get_url
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.process_replay import get_process_config, replay_process
-from openpilot.tools.lib.framereader import FrameReader
+from openpilot.tools.lib.framereader import FrameReader, NumpyFrameReader
 from openpilot.tools.lib.logreader import LogReader, save_log
 from openpilot.tools.lib.github_utils import GithubUtils
 
 TEST_ROUTE = "2f4452b03ccb98f0|2022-12-03--13-45-30"
 SEGMENT = 6
-MAX_FRAMES = 100 if PC else 600
+MAX_FRAMES = 400 if PC else 400
 
 NO_MODEL = "NO_MODEL" in os.environ
 SEND_EXTRA_INPUTS = bool(int(os.getenv("SEND_EXTRA_INPUTS", "0")))
@@ -151,6 +153,8 @@ def model_replay(lr, frs):
   dmonitoringmodeld = get_process_config("dmonitoringmodeld")
 
   modeld_msgs = replay_process(modeld, modeld_logs, frs)
+  del frs['roadCameraState'].frames
+  del frs['wideRoadCameraState'].frames
   dmonitoringmodeld_msgs = replay_process(dmonitoringmodeld, dmodeld_logs, frs)
   return modeld_msgs + dmonitoringmodeld_msgs
 
@@ -161,16 +165,41 @@ if __name__ == "__main__":
 
   # load logs
   lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT, "rlog.bz2")))
-  frs = {
-    'roadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "fcamera.hevc"), readahead=True),
-    'driverCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "dcamera.hevc"), readahead=True),
-    'wideRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "ecamera.hevc"), readahead=True)
-  }
+
+  if not False:
+    frames_cache = '/tmp/model_replay_cache'
+    if not os.path.isdir(frames_cache):
+      os.mkdir(frames_cache)
+      frs = {
+        'roadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "fcamera.hevc"), readahead=True),
+        'driverCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "dcamera.hevc"), readahead=True),
+        'wideRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "ecamera.hevc"), readahead=True)
+      }
+      for k in frs.keys():
+        print('Caching', k)
+        f = frs[k].get(0, 401, pix_fmt="nv12")
+        np.save(f'{frames_cache}/{k}_0', f[1:201])
+        np.save(f'{frames_cache}/{k}_1', f[201:401])
+
+    frs = {
+      'roadCameraState': NumpyFrameReader(f'{frames_cache}/roadCameraState', 200),
+      'driverCameraState': NumpyFrameReader(f'{frames_cache}/driverCameraState', 200),
+      'wideRoadCameraState': NumpyFrameReader(f'{frames_cache}/wideRoadCameraState', 200)
+    }
+
+  else:
+    frs = {
+      'roadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "fcamera.hevc"), readahead=True),
+      'driverCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "dcamera.hevc"), readahead=True),
+      'wideRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "ecamera.hevc"), readahead=True)
+    }
 
   log_msgs = []
   # run replays
   if not NO_MODEL:
+    st = time.monotonic()
     log_msgs += model_replay(lr, frs)
+    print('Model Replay:', time.monotonic() - st)
 
   # get diff
   failed = False
