@@ -167,7 +167,7 @@ if __name__ == "__main__":
   lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT, "rlog.bz2")))
 
   if not False:
-    frames_cache = '/tmp/model_replay_cache'
+    frames_cache = '/data/model_replay_cache'
     if not os.path.isdir(frames_cache):
       os.mkdir(frames_cache)
       frs = {
