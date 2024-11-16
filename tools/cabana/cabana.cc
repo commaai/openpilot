@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
       qWarning() << e.what();
       return 0;
     }
-  } else if (cmd_parser.isSet("socketcan")) {
+  } else if (SocketCanStream::available() && cmd_parser.isSet("socketcan")) {
     stream = new SocketCanStream(&app, {.device = cmd_parser.value("socketcan")});
   } else {
     uint32_t replay_flags = REPLAY_FLAG_NONE;
