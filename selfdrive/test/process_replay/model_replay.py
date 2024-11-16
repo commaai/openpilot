@@ -160,7 +160,9 @@ def model_replay(lr, frs):
   return modeld_msgs + dmonitoringmodeld_msgs
 
 
-def get_frames(cache):
+def get_frames():
+  force_cache = "--force-cache" in sys.argv
+  cache = "--cache" in sys.argv or not PC or force_cache
   videos = ('fcamera.hevc', 'dcamera.hevc', 'ecamera.hevc')
   cams = ('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
 
@@ -170,7 +172,7 @@ def get_frames(cache):
 
     os.makedirs(frames_cache, exist_ok=True)
     for v in videos:
-      if not all(os.path.isfile(f'{frames_cache}/{TEST_ROUTE}_{v}_{i}.npy') for i in range(MAX_FRAMES//frame_count)):
+      if not all(os.path.isfile(f'{frames_cache}/{TEST_ROUTE}_{v}_{i}.npy') for i in range(MAX_FRAMES//frame_count)) or force_cache:
         f = FrameReader(get_url(TEST_ROUTE, SEGMENT, v)).get(0, MAX_FRAMES + 1, pix_fmt="nv12")
         print(f'Caching {v}...')
         for i in range(MAX_FRAMES//frame_count):
@@ -184,19 +186,22 @@ def get_frames(cache):
 
 if __name__ == "__main__":
   update = "--update" in sys.argv or (os.getenv("GIT_BRANCH", "") == 'master')
-  cache = "--cache" in sys.argv or not PC
   replay_dir = os.path.dirname(os.path.abspath(__file__))
 
   # load logs
+  st = time.monotonic()
   lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT, "rlog.zst")))
-  frs = get_frames(cache)
+  print('RLOG:', time.monotonic() - st)
+  st = time.monotonic()
+  frs = get_frames()
+  print('HVEC:', time.monotonic() - st)
 
   log_msgs = []
   # run replays
   if not NO_MODEL:
     st = time.monotonic()
     log_msgs += model_replay(lr, frs)
-    print('Model Replay:', time.monotonic() - st)
+    print('MODEL REPLAY:', time.monotonic() - st)
 
   # get diff
   failed = False
@@ -250,7 +255,9 @@ if __name__ == "__main__":
       diff_short, diff_long, failed = format_diff(results, log_paths, 'master')
 
       if "CI" in os.environ:
+        st = time.monotonic()
         comment_replay_report(log_msgs, cmp_log, log_msgs)
+        print('REPORT:', time.monotonic() - st)
         failed = False
         print(diff_long)
       print('-------------\n'*5)
