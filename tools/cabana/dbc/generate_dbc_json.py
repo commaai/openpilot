@@ -2,12 +2,13 @@
 import argparse
 import json
 
+from opendbc.car import Bus
 from opendbc.car.fingerprints import MIGRATION
 from opendbc.car.values import PLATFORMS
 
 
 def generate_dbc_json() -> str:
-  dbc_map = {platform.name: platform.config.dbc_dict['pt'] for platform in PLATFORMS.values() if platform != "MOCK"}
+  dbc_map = {platform.name: platform.config.dbc_dict[Bus.pt] for platform in PLATFORMS.values() if platform != "MOCK"}
 
   for m in MIGRATION:
     if MIGRATION[m] in dbc_map:
