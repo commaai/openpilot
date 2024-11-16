@@ -180,6 +180,7 @@ if __name__ == "__main__":
         f = frs[k].get(0, 401, pix_fmt="nv12")
         np.save(f'{frames_cache}/{k}_0', f[1:201])
         np.save(f'{frames_cache}/{k}_1', f[201:401])
+        del f
 
     frs = {
       'roadCameraState': NumpyFrameReader(f'{frames_cache}/roadCameraState', 200),
