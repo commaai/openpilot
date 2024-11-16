@@ -1,14 +1,6 @@
 import base64
 import requests
 from http import HTTPMethod
-from multiprocessing import Pool
-import time
-import random
-
-def upload_file_process(args):
-  github, bucket, path, file_name = args
-  time.sleep(random.random())
-  github.upload_file(bucket, path, file_name)
 
 class GithubUtils:
   def __init__(self, api_token, data_token, owner='commaai', api_repo='openpilot', data_repo='ci-artifacts'):
@@ -58,9 +50,8 @@ class GithubUtils:
 
   def upload_files(self, bucket, files):
     self.create_bucket(bucket)
-    with Pool() as pool:
-      tasks = [(self, bucket, path, file_name) for file_name, path in files]
-      pool.map(upload_file_process, tasks)
+    for file_name,path in files:
+      self.upload_file(bucket, path, file_name)
 
   def create_bucket(self, bucket):
     if self.get_bucket_sha(bucket):
