@@ -21,7 +21,7 @@ from openpilot.tools.lib.github_utils import GithubUtils
 
 TEST_ROUTE = "2f4452b03ccb98f0|2022-12-03--13-45-30"
 SEGMENT = 6
-MAX_FRAMES = 400 if PC else 400
+MAX_FRAMES = 100 if PC else 400
 
 NO_MODEL = "NO_MODEL" in os.environ
 SEND_EXTRA_INPUTS = bool(int(os.getenv("SEND_EXTRA_INPUTS", "0")))
@@ -169,25 +169,25 @@ def model_replay(lr, frs):
 
 
 def get_frames():
-  force_cache = "--force-cache" in sys.argv
-  cache = "--cache" in sys.argv or not PC or force_cache
+  regen_cache = "--regen-cache" in sys.argv
+  cache = "--cache" in sys.argv or not PC or regen_cache
   videos = ('fcamera.hevc', 'dcamera.hevc', 'ecamera.hevc')
   cams = ('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
 
   if cache:
     frames_cache = '/tmp/model_replay_cache' if PC else '/data/model_replay_cache'
-    frame_count = 200
-
     os.makedirs(frames_cache, exist_ok=True)
+
+    cache_size = 200
     for v in videos:
-      if not all(os.path.isfile(f'{frames_cache}/{TEST_ROUTE}_{v}_{i}.npy') for i in range(MAX_FRAMES//frame_count)) or force_cache:
+      if not all(os.path.isfile(f'{frames_cache}/{TEST_ROUTE}_{v}_{i}.npy') for i in range(MAX_FRAMES//cache_size)) or regen_cache:
         f = FrameReader(get_url(TEST_ROUTE, SEGMENT, v)).get(0, MAX_FRAMES + 1, pix_fmt="nv12")
         print(f'Caching {v}...')
-        for i in range(MAX_FRAMES//frame_count):
-          np.save(f'{frames_cache}/{TEST_ROUTE}_{v}_{i}', f[(i * frame_count) + 1:((i + 1) * frame_count) + 1])
+        for i in range(MAX_FRAMES//cache_size):
+          np.save(f'{frames_cache}/{TEST_ROUTE}_{v}_{i}', f[(i * cache_size) + 1:((i + 1) * cache_size) + 1])
         del f
 
-    return {c : NumpyFrameReader(f"{frames_cache}/{TEST_ROUTE}_{v}", frame_count) for c,v in zip(cams, videos, strict=True)}
+    return {c : NumpyFrameReader(f"{frames_cache}/{TEST_ROUTE}_{v}", 1928, 1208, cache_size) for c,v in zip(cams, videos, strict=True)}
   else:
     return {c : FrameReader(get_url(TEST_ROUTE, SEGMENT, v), readahead=True) for c,v in zip(cams, videos, strict=True)}
 
