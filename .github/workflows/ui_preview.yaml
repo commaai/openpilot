@@ -8,6 +8,7 @@ on:
     types: [assigned, opened, synchronize, reopened, edited]
     branches:
       - 'master'
+      - 'master-new'
     paths:
       - 'selfdrive/ui/**'
   workflow_dispatch:
