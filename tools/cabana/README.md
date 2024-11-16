@@ -68,7 +68,7 @@ cd /data/openpilot/cereal/messaging/
 Then Run Cabana with the device's IP address:
 
 ```shell
-cabana --stream <ipaddress>
+cabana --stream --zmq <ipaddress>
 ```
 
 Replace &lt;ipaddress&gt; with your comma device's IP address.

@@ -114,6 +114,17 @@
     </message>
 </context>
 <context>
+    <name>DeveloperPanel</name>
+    <message>
+        <source>Joystick Debug Mode</source>
+        <translation>조이스틱 디버그 모드</translation>
+    </message>
+    <message>
+        <source>Longitudinal Maneuver Mode</source>
+        <translation>롱컨 기동 모드</translation>
+    </message>
+</context>
+<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -597,6 +608,10 @@ This may take up to a minute.</source>
     <message>
         <source>Software</source>
         <translation>소프트웨어</translation>
+    </message>
+    <message>
+        <source>Developer</source>
+        <translation>개발자</translation>
     </message>
 </context>
 <context>

@@ -390,6 +390,26 @@ std::string sha256(const std::string &str) {
   return util::hexdump(hash, SHA256_DIGEST_LENGTH);
 }
 
+std::vector<std::string> split(std::string_view source, char delimiter) {
+  std::vector<std::string> fields;
+  size_t last = 0;
+  for (size_t i = 0; i < source.length(); ++i) {
+    if (source[i] == delimiter) {
+      fields.emplace_back(source.substr(last, i - last));
+      last = i + 1;
+    }
+  }
+  fields.emplace_back(source.substr(last));
+  return fields;
+}
+
+std::string extractFileName(const std::string &file) {
+  size_t queryPos = file.find_first_of("?");
+  std::string path = (queryPos != std::string::npos) ? file.substr(0, queryPos) : file;
+  size_t lastSlash = path.find_last_of("/\\");
+  return (lastSlash != std::string::npos) ? path.substr(lastSlash + 1) : path;
+}
+
 // MonotonicBuffer
 
 void *MonotonicBuffer::allocate(size_t bytes, size_t alignment) {

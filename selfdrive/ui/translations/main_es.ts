@@ -114,6 +114,17 @@
     </message>
 </context>
 <context>
+    <name>DeveloperPanel</name>
+    <message>
+        <source>Joystick Debug Mode</source>
+        <translation>Modo de depuración de joystick</translation>
+    </message>
+    <message>
+        <source>Longitudinal Maneuver Mode</source>
+        <translation>Modo de maniobra longitudinal</translation>
+    </message>
+</context>
+<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -601,6 +612,10 @@ Esto puede tardar un minuto.</translation>
     <message>
         <source>Software</source>
         <translation>Software</translation>
+    </message>
+    <message>
+        <source>Developer</source>
+        <translation>Desarrollador</translation>
     </message>
 </context>
 <context>

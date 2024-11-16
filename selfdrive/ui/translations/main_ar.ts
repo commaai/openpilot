@@ -114,6 +114,17 @@
     </message>
 </context>
 <context>
+    <name>DeveloperPanel</name>
+    <message>
+        <source>Joystick Debug Mode</source>
+        <translation>وضع تصحيح أخطاء عصا التحكم</translation>
+    </message>
+    <message>
+        <source>Longitudinal Maneuver Mode</source>
+        <translation>وضع المناورة الطولية</translation>
+    </message>
+</context>
+<context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
@@ -424,11 +435,11 @@
     </message>
     <message>
         <source>Waiting to start</source>
-        <translation type="unfinished"></translation>
+        <translation>في انتظار البدء</translation>
     </message>
     <message>
         <source>System Unresponsive</source>
-        <translation type="unfinished"></translation>
+        <translation>النظام لا يستجيب</translation>
     </message>
 </context>
 <context>
@@ -617,6 +628,10 @@ This may take up to a minute.</source>
     <message>
         <source>Software</source>
         <translation>البرنامج</translation>
+    </message>
+    <message>
+        <source>Developer</source>
+        <translation>المطور</translation>
     </message>
 </context>
 <context>

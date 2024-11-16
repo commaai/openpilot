@@ -5,8 +5,10 @@
 class Sensor {
 public:
   int gpio_fd = -1;
+  bool enabled = false;
   uint64_t start_ts = 0;
   uint64_t init_delay = 500e6; // default dealy 500ms
+
   virtual ~Sensor() {}
   virtual int init() = 0;
   virtual bool get_event(MessageBuilder &msg, uint64_t ts = 0) = 0;

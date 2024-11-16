@@ -6,7 +6,6 @@
 #include <optional>
 #include <set>
 #include <string>
-#include <tuple>
 #include <vector>
 #include <utility>
 
@@ -14,8 +13,9 @@
 
 #include "tools/replay/camera.h"
 #include "tools/replay/route.h"
+#include "tools/replay/timeline.h"
 
-const QString DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19";
+#define DEMO_ROUTE "a2a0ccea32023010|2023-07-27--13-01-19"
 
 // one segment uses about 100M of memory
 constexpr int MIN_SEGMENTS_CACHE = 5;
@@ -32,25 +32,15 @@ enum REPLAY_FLAGS {
   REPLAY_FLAG_ALL_SERVICES = 0x0800,
 };
 
-enum class FindFlag {
-  nextEngagement,
-  nextDisEngagement,
-  nextUserFlag,
-  nextInfo,
-  nextWarning,
-  nextCritical
-};
-
-enum class TimelineType { None, Engaged, AlertInfo, AlertWarning, AlertCritical, UserFlag };
 typedef bool (*replayEventFilter)(const Event *, void *);
-Q_DECLARE_METATYPE(std::shared_ptr<LogReader>);
+typedef std::map<int, std::unique_ptr<Segment>> SegmentMap;
 
 class Replay : public QObject {
   Q_OBJECT
 
 public:
-  Replay(QString route, QStringList allow, QStringList block, SubMaster *sm = nullptr,
-         uint32_t flags = REPLAY_FLAG_NONE, QString data_dir = "", QObject *parent = 0);
+  Replay(const std::string &route, std::vector<std::string> allow, std::vector<std::string> block, SubMaster *sm = nullptr,
+         uint32_t flags = REPLAY_FLAG_NONE, const std::string &data_dir = "", QObject *parent = 0);
   ~Replay();
   bool load();
   RouteLoadError lastRouteError() const { return route_->lastError(); }
@@ -70,54 +60,51 @@ public:
   inline int segmentCacheLimit() const { return segment_cache_limit; }
   inline void setSegmentCacheLimit(int n) { segment_cache_limit = std::max(MIN_SEGMENTS_CACHE, n); }
   inline bool hasFlag(REPLAY_FLAGS flag) const { return flags_ & flag; }
-  inline void addFlag(REPLAY_FLAGS flag) { flags_ |= flag; }
-  inline void removeFlag(REPLAY_FLAGS flag) { flags_ &= ~flag; }
+  void setLoop(bool loop) { loop ? flags_ &= ~REPLAY_FLAG_NO_LOOP : flags_ |= REPLAY_FLAG_NO_LOOP; }
+  bool loop() const { return !(flags_ & REPLAY_FLAG_NO_LOOP); }
   inline const Route* route() const { return route_.get(); }
   inline double currentSeconds() const { return double(cur_mono_time_ - route_start_ts_) / 1e9; }
-  inline QDateTime routeDateTime() const { return route_date_time_; }
-  inline QDateTime currentDateTime() const { return route_date_time_.addSecs(currentSeconds()); }
+  inline std::time_t routeDateTime() const { return route_date_time_; }
   inline uint64_t routeStartNanos() const { return route_start_ts_; }
   inline double toSeconds(uint64_t mono_time) const { return (mono_time - route_start_ts_) / 1e9; }
   inline double minSeconds() const { return !segments_.empty() ? segments_.begin()->first * 60 : 0; }
   inline double maxSeconds() const { return max_seconds_; }
   inline void setSpeed(float speed) { speed_ = speed; }
   inline float getSpeed() const { return speed_; }
-  inline const std::vector<Event> *events() const { return &events_; }
-  inline const std::map<int, std::unique_ptr<Segment>> &segments() const { return segments_; }
+  inline const SegmentMap &segments() const { return segments_; }
   inline const std::string &carFingerprint() const { return car_fingerprint_; }
-  inline const std::vector<std::tuple<double, double, TimelineType>> getTimeline() {
-    std::lock_guard lk(timeline_lock);
-    return timeline_;
-  }
+  inline const std::shared_ptr<std::vector<Timeline::Entry>> getTimeline() const { return timeline_.get(); }
+  inline const std::optional<Timeline::Entry> findAlertAtTime(double sec) const { return timeline_.findAlertAtTime(sec); }
+
+  // Event callback functions
+  std::function<void(std::shared_ptr<LogReader>)> onQLogLoaded = nullptr;
+
 
 signals:
   void streamStarted();
   void segmentsMerged();
   void seeking(double sec);
   void seekedTo(double sec);
-  void qLogLoaded(std::shared_ptr<LogReader> qlog);
   void minMaxTimeChanged(double min_sec, double max_sec);
 
-protected slots:
-  void segmentLoadFinished(bool success);
-
 protected:
-  typedef std::map<int, std::unique_ptr<Segment>> SegmentMap;
   std::optional<uint64_t> find(FindFlag flag);
   void pauseStreamThread();
   void startStream(const Segment *cur_segment);
   void streamThread();
   void updateSegmentsCache();
   void loadSegmentInRange(SegmentMap::iterator begin, SegmentMap::iterator cur, SegmentMap::iterator end);
+  void segmentLoadFinished(int seg_num, bool success);
   void mergeSegments(const SegmentMap::iterator &begin, const SegmentMap::iterator &end);
   void updateEvents(const std::function<bool()>& update_events_function);
   std::vector<Event>::const_iterator publishEvents(std::vector<Event>::const_iterator first,
                                                    std::vector<Event>::const_iterator last);
   void publishMessage(const Event *e);
   void publishFrame(const Event *e);
-  void buildTimeline();
   void checkSeekProgress();
   inline bool isSegmentMerged(int n) const { return merged_segments_.count(n) > 0; }
+
+  Timeline timeline_;
 
   pthread_t stream_thread_id = 0;
   QThread *stream_thread_ = nullptr;
@@ -131,7 +118,7 @@ protected:
   std::atomic<bool> exit_ = false;
   std::atomic<bool> paused_ = false;
   bool events_ready_ = false;
-  QDateTime route_date_time_;
+  std::time_t route_date_time_;
   uint64_t route_start_ts_ = 0;
   std::atomic<uint64_t> cur_mono_time_ = 0;
   std::atomic<double> max_seconds_ = 0;
@@ -147,9 +134,6 @@ protected:
   std::unique_ptr<CameraServer> camera_server_;
   std::atomic<uint32_t> flags_ = REPLAY_FLAG_NONE;
 
-  std::mutex timeline_lock;
-  QFuture<void> timeline_future;
-  std::vector<std::tuple<double, double, TimelineType>> timeline_;
   std::string car_fingerprint_;
   std::atomic<float> speed_ = 1.0;
   replayEventFilter event_filter = nullptr;

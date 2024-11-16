@@ -22,13 +22,14 @@ const uint32_t os04c10_analog_gains_reg[] = {
 
 OS04C10::OS04C10() {
   image_sensor = cereal::FrameData::ImageSensor::OS04C10;
+  bayer_pattern = CAM_ISP_PATTERN_BAYER_BGBGBG;
   pixel_size_mm = 0.004;
   data_word = false;
 
-  hdr_offset = 64 * 2 + 8; // stagger
+  // hdr_offset = 64 * 2 + 8; // stagger
   frame_width = 1344;
-  frame_height = 760 * 2 + hdr_offset;
-  frame_stride = (frame_width * 10 / 8); // no alignment
+  frame_height = 760; //760 * 2 + hdr_offset;
+  frame_stride = (frame_width * 12 / 8); // no alignment
 
   extra_height = 0;
   frame_offset = 0;
@@ -37,8 +38,9 @@ OS04C10::OS04C10() {
   init_reg_array.assign(std::begin(init_array_os04c10), std::end(init_array_os04c10));
   probe_reg_addr = 0x300a;
   probe_expected_data = 0x5304;
-  mipi_format = CAM_FORMAT_MIPI_RAW_10;
-  frame_data_type = 0x2b;
+  bits_per_pixel = 12;
+  mipi_format = CAM_FORMAT_MIPI_RAW_12;
+  frame_data_type = 0x2c;
   mclk_frequency = 24000000; // Hz
 
   dc_gain_factor = 1;
@@ -60,6 +62,36 @@ OS04C10::OS04C10() {
   min_ev = (exposure_time_min) * sensor_analog_gains[analog_gain_min_idx];
   max_ev = exposure_time_max * dc_gain_factor * sensor_analog_gains[analog_gain_max_idx];
   target_grey_factor = 0.01;
+
+  black_level = 64;
+  color_correct_matrix = {
+    0x000000c2, 0x00000fe0, 0x00000fde,
+    0x00000fa7, 0x000000d9, 0x00001000,
+    0x00000fca, 0x00000fef, 0x000000c7,
+  };
+  for (int i = 0; i < 65; i++) {
+    float fx = i / 64.0;
+    gamma_lut_rgb.push_back((uint32_t)((10*fx)/(1+9*fx)*1023.0 + 0.5));
+  }
+  prepare_gamma_lut();
+  linearization_lut = {
+    0x02000000, 0x02000000, 0x02000000, 0x02000000,
+    0x020007ff, 0x020007ff, 0x020007ff, 0x020007ff,
+    0x02000bff, 0x02000bff, 0x02000bff, 0x02000bff,
+    0x020017ff, 0x020017ff, 0x020017ff, 0x020017ff,
+    0x02001bff, 0x02001bff, 0x02001bff, 0x02001bff,
+    0x020023ff, 0x020023ff, 0x020023ff, 0x020023ff,
+    0x00003fff, 0x00003fff, 0x00003fff, 0x00003fff,
+    0x00003fff, 0x00003fff, 0x00003fff, 0x00003fff,
+    0x00003fff, 0x00003fff, 0x00003fff, 0x00003fff,
+  };
+  for (int i = 0; i < 252; i++) {
+    linearization_lut.push_back(0x0);
+  }
+  linearization_pts = {0x07ff0bff, 0x17ff1bff, 0x23ff3fff, 0x3fff3fff};
+  for (int i = 0; i < 884*2; i++) {
+    vignetting_lut.push_back(0xff);
+  }
 }
 
 std::vector<i2c_random_wr_payload> OS04C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {

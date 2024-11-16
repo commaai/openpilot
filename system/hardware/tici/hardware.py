@@ -123,12 +123,6 @@ class Tici(HardwareBase):
   def get_device_type(self):
     return get_device_type()
 
-  def get_sound_card_online(self):
-    if os.path.isfile('/proc/asound/card0/state'):
-      with open('/proc/asound/card0/state') as f:
-        return f.read().strip() == 'ONLINE'
-    return False
-
   def reboot(self, reason=None):
     subprocess.check_output(["sudo", "reboot"])
 
@@ -473,8 +467,9 @@ class Tici(HardwareBase):
     cmds = []
     if manufacturer == 'Cavli Inc.':
       cmds += [
-        # use sim slot
-        'AT^SIMSWAP=1',
+        'AT^SIMSWAP=1',     # use SIM slot, instead of internal eSIM
+        'AT$QCSIMSLEEP=0',  # disable SIM sleep
+        'AT$QCSIMCFG=SimPowerSave,0',  # more sleep disable
 
         # ethernet config
         'AT$QCPCFG=usbNet,0',

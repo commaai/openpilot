@@ -14,7 +14,6 @@ N_RUNS = 10
 
 class CarModelTestCase(TestCarModelBase):
   test_route = CarTestRoute(DEMO_ROUTE, None)
-  ci = False
 
 
 if __name__ == '__main__':

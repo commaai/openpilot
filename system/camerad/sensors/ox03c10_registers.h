@@ -31,6 +31,7 @@ const struct i2c_random_wr_payload init_array_ox03c10[] = {
   // delay launch group 2
   {0x3208, 0xa2},*/
 
+  // **NOTE**: if this is changed, readout_time_ns must be updated in the Sensor config
   // PLL setup
   {0x0301, 0xc8}, // pll1_divs, pll1_predivp, pll1_divpix
   {0x0303, 0x01}, // pll1_prediv

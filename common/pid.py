@@ -59,15 +59,13 @@ class PIDController:
     if override:
       self.i -= self.i_unwind_rate * float(np.sign(self.i))
     else:
-      i = self.i + error * self.k_i * self.i_rate
-      control = self.p + i + self.d + self.f
+      if not freeze_integrator:
+        self.i = self.i + error * self.k_i * self.i_rate
 
-      # Update when changing i will move the control away from the limits
-      # or when i will move towards the sign of the error
-      if ((error >= 0 and (control <= self.pos_limit or i < 0.0)) or
-          (error <= 0 and (control >= self.neg_limit or i > 0.0))) and \
-         not freeze_integrator:
-        self.i = i
+        # Clip i to prevent exceeding control limits
+        control_no_i = self.p + self.d + self.f
+        control_no_i = clip(control_no_i, self.neg_limit, self.pos_limit)
+        self.i = clip(self.i, self.neg_limit - control_no_i, self.pos_limit - control_no_i)
 
     control = self.p + self.i + self.d + self.f
 

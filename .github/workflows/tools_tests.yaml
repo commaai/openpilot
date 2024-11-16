@@ -25,24 +25,6 @@ env:
 
 
 jobs:
-  simulator_driving:
-    name: simulator driving
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    - uses: ./.github/workflows/setup-with-retry
-    - name: Build openpilot
-      run: |
-        ${{ env.RUN }} "scons -j$(nproc)"
-    - name: Run bridge test
-      run: |
-        ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
-                        source selfdrive/test/setup_vsound.sh && \
-                        CI=1 pytest tools/sim/tests/test_metadrive_bridge.py"
-
   devcontainer:
     name: devcontainer
     runs-on: ubuntu-latest

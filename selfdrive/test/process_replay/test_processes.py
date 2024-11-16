@@ -42,7 +42,7 @@ source_segments = [
 segments = [
   ("BODY", "regenA67A128BCD8|2024-08-30--02-36-22--0"),
   ("HYUNDAI", "regen9CBD921E93E|2024-08-30--02-38-51--0"),
-  ("HYUNDAI2", "regen12E0C4EA1A7|2024-08-30--02-42-40--0"),
+  ("HYUNDAI2", "regen306779F6870|2024-10-03--04-03-23--0"),
   ("TOYOTA", "regen1CA7A48E6F7|2024-08-30--02-45-08--0"),
   ("TOYOTA2", "regen6E484EDAB96|2024-08-30--02-47-37--0"),
   ("TOYOTA3", "regen4CE950B0267|2024-08-30--02-51-30--0"),
@@ -56,7 +56,7 @@ segments = [
   ("NISSAN", "regen58464878D07|2024-08-30--03-15-31--0"),
   ("VOLKSWAGEN", "regenED976DEB757|2024-08-30--03-18-02--0"),
   ("MAZDA", "regenACF84CCF482|2024-08-30--03-21-55--0"),
-  ("FORD", "regen6ECC59A6307|2024-08-30--03-25-42--0"),
+  ("FORD", "regen756F8230C21|2024-11-07--00-08-24--0"),
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
@@ -135,7 +135,7 @@ if __name__ == "__main__":
   parser.add_argument("--blacklist-cars", type=str, nargs="*", default=[],
                       help="Blacklist given cars from the test (e.g. HONDA)")
   parser.add_argument("--ignore-fields", type=str, nargs="*", default=[],
-                      help="Extra fields or msgs to ignore (e.g. carState.events)")
+                      help="Extra fields or msgs to ignore (e.g. driverMonitoringState.events)")
   parser.add_argument("--ignore-msgs", type=str, nargs="*", default=[],
                       help="Msgs to ignore (e.g. carEvents)")
   parser.add_argument("--update-refs", action="store_true",
@@ -191,6 +191,10 @@ if __name__ == "__main__":
 
       for cfg in CONFIGS:
         if cfg.proc_name not in tested_procs:
+          continue
+
+        # to speed things up, we only test all segments on card
+        if cfg.proc_name != 'card' and car_brand not in ('HYUNDAI', 'TOYOTA', 'HONDA', 'SUBARU', 'FORD'):
           continue
 
         cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.zst")
