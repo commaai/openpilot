@@ -153,47 +153,43 @@ def model_replay(lr, frs):
   dmonitoringmodeld = get_process_config("dmonitoringmodeld")
 
   modeld_msgs = replay_process(modeld, modeld_logs, frs)
-  del frs['roadCameraState'].frames
-  del frs['wideRoadCameraState'].frames
+  if isinstance(frs['roadCameraState'], NumpyFrameReader):
+    del frs['roadCameraState'].frames
+    del frs['wideRoadCameraState'].frames
   dmonitoringmodeld_msgs = replay_process(dmonitoringmodeld, dmodeld_logs, frs)
   return modeld_msgs + dmonitoringmodeld_msgs
 
 
+def get_frames(cache):
+  videos = ('fcamera.hevc', 'dcamera.hevc', 'ecamera.hevc')
+  cams = ('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
+
+  if cache:
+    frames_cache = '/tmp/model_replay_cache' if PC else '/data/model_replay_cache'
+    frame_count = 200
+
+    os.makedirs(frames_cache, exist_ok=True)
+    for v in videos:
+      if not all(os.path.isfile(f'{frames_cache}/{TEST_ROUTE}_{v}_{i}.npy') for i in range(MAX_FRAMES//frame_count)):
+        f = FrameReader(get_url(TEST_ROUTE, SEGMENT, v)).get(0, MAX_FRAMES + 1, pix_fmt="nv12")
+        print(f'Caching {v}...')
+        for i in range(MAX_FRAMES//frame_count):
+          np.save(f'{frames_cache}/{TEST_ROUTE}_{v}_{i}', f[(i * frame_count) + 1:((i + 1) * frame_count) + 1])
+        del f
+
+    return {c : NumpyFrameReader(f"{frames_cache}/{TEST_ROUTE}_{v}", frame_count) for c,v in zip(cams, videos, strict=True)}
+  else:
+    return {c : FrameReader(get_url(TEST_ROUTE, SEGMENT, v), readahead=True) for c,v in zip(cams, videos, strict=True)}
+
+
 if __name__ == "__main__":
   update = "--update" in sys.argv or (os.getenv("GIT_BRANCH", "") == 'master')
+  cache = "--cache" in sys.argv or not PC
   replay_dir = os.path.dirname(os.path.abspath(__file__))
 
   # load logs
   lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT, "rlog.bz2")))
-
-  if not False:
-    frames_cache = '/data/model_replay_cache'
-    if not os.path.isdir(frames_cache):
-      os.mkdir(frames_cache)
-      frs = {
-        'roadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "fcamera.hevc"), readahead=True),
-        'driverCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "dcamera.hevc"), readahead=True),
-        'wideRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "ecamera.hevc"), readahead=True)
-      }
-      for k in frs.keys():
-        print('Caching', k)
-        f = frs[k].get(0, 401, pix_fmt="nv12")
-        np.save(f'{frames_cache}/{k}_0', f[1:201])
-        np.save(f'{frames_cache}/{k}_1', f[201:401])
-        del f
-
-    frs = {
-      'roadCameraState': NumpyFrameReader(f'{frames_cache}/roadCameraState', 200),
-      'driverCameraState': NumpyFrameReader(f'{frames_cache}/driverCameraState', 200),
-      'wideRoadCameraState': NumpyFrameReader(f'{frames_cache}/wideRoadCameraState', 200)
-    }
-
-  else:
-    frs = {
-      'roadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "fcamera.hevc"), readahead=True),
-      'driverCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "dcamera.hevc"), readahead=True),
-      'wideRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "ecamera.hevc"), readahead=True)
-    }
+  frs = get_frames(cache)
 
   log_msgs = []
   # run replays
