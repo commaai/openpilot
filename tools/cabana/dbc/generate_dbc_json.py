@@ -8,7 +8,15 @@ from opendbc.car.values import PLATFORMS
 
 
 def generate_dbc_json() -> str:
-  dbc_map = {platform.name: platform.config.dbc_dict[Bus.pt] for platform in PLATFORMS.values() if platform != "MOCK"}
+  dbc_map = {}
+  for platform in PLATFORMS.values():
+    if platform != "MOCK":
+      if Bus.pt in platform.config.dbc_dict:
+        dbc_map[platform.name] = platform.config.dbc_dict[Bus.pt]
+      elif Bus.main in platform.config.dbc_dict:
+        dbc_map[platform.name] = platform.config.dbc_dict[Bus.main]
+      elif Bus.party in platform.config.dbc_dict:
+        dbc_map[platform.name] = platform.config.dbc_dict[Bus.party]
 
   for m in MIGRATION:
     if MIGRATION[m] in dbc_map:
