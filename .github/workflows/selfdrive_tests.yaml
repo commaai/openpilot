@@ -204,9 +204,10 @@ jobs:
         run: |
           source .venv/bin/activate
           coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) 
+          cd .ci_cache
           pwd 
           ls -lf
-          chmod -R 777 .ci_cache/comma_download_cache 
+          chmod -R 777 comma_download_cache 
           coverage combine
           coverage xml
       - name: Print diff
