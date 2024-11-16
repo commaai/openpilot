@@ -15,7 +15,7 @@ env:
 
 jobs:
   setup:
-    if: github.repository == 'commaai/openpilot'
+    if: github.repository == 'sunnypilot/sunnypilot'
     runs-on: ubuntu-latest
     outputs:
       ci_runs: ${{ steps.ci_runs_setup.outputs.matrix }}
@@ -31,7 +31,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{fromJSON(needs.setup.outputs.ci_runs)}}
-    uses: commaai/openpilot/.github/workflows/ci_weekly_run.yaml@master
+    uses: sunnypilot/sunnypilot/.github/workflows/ci_weekly_run.yaml@master
     with:
       run_number: ${{ matrix.run_number }}
 

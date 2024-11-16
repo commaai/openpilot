@@ -12,7 +12,7 @@ jobs:
   build_prebuilt:
     name: build prebuilt
     runs-on: ubuntu-latest
-    if: github.repository == 'commaai/openpilot'
+    if: github.repository == 'sunnypilot/sunnypilot'
     env:
       PUSH_IMAGE: true
     permissions:

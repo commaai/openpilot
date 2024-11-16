@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - master-new
   pull_request:
   workflow_dispatch:
   workflow_call:
@@ -31,6 +32,7 @@ env:
 
 jobs:
   build_release:
+    if: github.repository == 'commaai/openpilot' # build_release blocked for the time being to only comma as we may have a different process.
     name: build release
     runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
                    ((github.event_name != 'pull_request') ||
@@ -52,7 +54,7 @@ jobs:
       run: TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
     - uses: ./.github/workflows/setup-with-retry
     - name: Check submodules
-      if: github.repository == 'commaai/openpilot'
+      if: github.repository == 'sunnypilot/sunnypilot'
       timeout-minutes: 3
       run: release/check-submodules.sh
     - name: Build openpilot and run checks
@@ -101,8 +103,11 @@ jobs:
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 15 || 30) }} # allow more time when we missed the scons cache
 
   build_mac:
+    if: github.repository == 'commaai/openpilot' # Blocking macos builds as well since they have a 10x miltiplier for GH action minutes, waaaay too much!
     name: build macOS
-    runs-on: namespace-profile-macos-8x14
+    runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
+                   ((github.event_name != 'pull_request') ||
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-macos-8x14' || 'macos-latest' }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -111,6 +116,7 @@ jobs:
       uses: ./.github/workflows/auto-cache
       with:
         path: ~/Library/Caches/Homebrew
+        key: build_macos_${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}
     - name: Install dependencies
       run: ./tools/mac_setup.sh
       env:
@@ -122,6 +128,7 @@ jobs:
       uses: ./.github/workflows/auto-cache
       with:
         path: /tmp/scons_cache
+        key: build_macos_${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}
     - name: Building openpilot
       run: . .venv/bin/activate && scons -j$(nproc)
 

@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - master
+      - master-new
   pull_request_target:
     types: [assigned, opened, synchronize, reopened, edited]
     branches:
@@ -19,7 +20,7 @@ env:
 
 jobs:
   preview:
-    if: github.repository == 'commaai/openpilot'
+    if: github.repository == 'sunnypilot/sunnypilot'
     name: preview
     runs-on: ubuntu-latest
     timeout-minutes: 20

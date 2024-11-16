@@ -34,13 +34,13 @@ jobs:
 
     # Push to docs.comma.ai
     - uses: actions/checkout@v4
-      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
+      if: github.ref == 'refs/heads/master' && github.repository == 'sunnypilot/sunnypilot'
       with:
         path: openpilot-docs
         ssh-key: ${{ secrets.OPENPILOT_DOCS_KEY }}
-        repository: commaai/openpilot-docs
+        repository: sunnypilot/sunnypilot-docs
     - name: Push
-      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
+      if: github.ref == 'refs/heads/master' && github.repository == 'sunnypilot/sunnypilot'
       run: |
         set -x
 

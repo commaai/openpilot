@@ -13,7 +13,7 @@ jobs:
   badges:
     name: create badges
     runs-on: ubuntu-latest
-    if: github.repository == 'commaai/openpilot'
+    if: github.repository == 'sunnypilot/sunnypilot'
     permissions:
       contents: write
     steps:
@@ -29,7 +29,7 @@ jobs:
 
         git checkout --orphan badges
         git rm -rf --cached .
-        git config user.email "badge-researcher@comma.ai"
+        git config user.email "badge-researcher@sunnypilot.ai"
         git config user.name "Badge Researcher"
 
         git add translation_badge.svg

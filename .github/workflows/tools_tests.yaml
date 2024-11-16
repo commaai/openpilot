@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - master-new
   pull_request:
   workflow_call:
     inputs:
