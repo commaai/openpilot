@@ -60,13 +60,13 @@ jobs:
       - name: Getting master ui
         uses: actions/checkout@v4
         with:
-          repository: commaai/ci-artifacts
+          repository: sunnypilot/ci-artifacts
           ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
           path: ${{ github.workspace }}/master_ui
           ref: openpilot_master_ui
 
       - name: Saving new master ui
-        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+        if: (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/master-new') && github.event_name == 'push'
         working-directory: ${{ github.workspace }}/master_ui
         run: |
           git checkout --orphan=new_master_ui
@@ -108,13 +108,13 @@ jobs:
               DIFF="${DIFF}<table>"
 
               DIFF="${DIFF}<tr>"
-              DIFF="${DIFF}  <td> master <img src=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/${A[$i]}_master_ref.png\"> </td>"
-              DIFF="${DIFF}  <td> proposed <img src=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/${A[$i]}.png\"> </td>"
+              DIFF="${DIFF}  <td> master <img src=\"https://raw.githubusercontent.com/sunnypilot/ci-artifacts/${{ env.BRANCH_NAME }}/${A[$i]}_master_ref.png\"> </td>"
+              DIFF="${DIFF}  <td> proposed <img src=\"https://raw.githubusercontent.com/sunnypilot/ci-artifacts/${{ env.BRANCH_NAME }}/${A[$i]}.png\"> </td>"
               DIFF="${DIFF}</tr>"
 
               DIFF="${DIFF}<tr>"
-              DIFF="${DIFF}  <td> diff <img src=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/${A[$i]}_diff.png\"> </td>"
-              DIFF="${DIFF}  <td> composite diff <img src=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/${A[$i]}_diff.gif\"> </td>"
+              DIFF="${DIFF}  <td> diff <img src=\"https://raw.githubusercontent.com/sunnypilot/ci-artifacts/${{ env.BRANCH_NAME }}/${A[$i]}_diff.png\"> </td>"
+              DIFF="${DIFF}  <td> composite diff <img src=\"https://raw.githubusercontent.com/sunnypilot/ci-artifacts/${{ env.BRANCH_NAME }}/${A[$i]}_diff.gif\"> </td>"
               DIFF="${DIFF}</tr>"
 
               DIFF="${DIFF}</table>"
@@ -127,7 +127,7 @@ jobs:
             if [[ $INDEX -eq 0 ]]; then
               TABLE="${TABLE}<tr>"
             fi
-            TABLE="${TABLE}  <td> <img src=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/${A[$i]}.png\"> </td>"
+            TABLE="${TABLE}  <td> <img src=\"https://raw.githubusercontent.com/sunnypilot/ci-artifacts/${{ env.BRANCH_NAME }}/${A[$i]}.png\"> </td>"
             if [[ $INDEX -eq 1 || $(($i + 1)) -eq ${#A[*]} ]]; then
               TABLE="${TABLE}</tr>"
             fi
