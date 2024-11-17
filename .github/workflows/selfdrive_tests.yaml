@@ -52,7 +52,7 @@ jobs:
       run: TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
     - uses: ./.github/workflows/setup-with-retry
     - name: Check submodules
-      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
+      if: github.repository == 'commaai/openpilot'
       timeout-minutes: 3
       run: release/check-submodules.sh
     - name: Build openpilot and run checks
@@ -173,12 +173,19 @@ jobs:
     - name: Build openpilot
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: ${{ env.RUN }} "scons -j$(nproc)"
+    - name: Setup cache
+      uses: ./.github/workflows/auto-cache
+      with:
+        path: .ci_cache/comma_download_cache
+        key: unit_tests_${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}
     - name: Run unit tests
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 1 || 20 }}
       run: |
-        ${{ env.RUN }} "MAX_EXAMPLES=1 $PYTEST --timeout 60 -m 'not slow' && \
+        ${{ env.RUN }} "$PYTEST --collect-only -m 'not slow' &> /dev/null && \
+                        MAX_EXAMPLES=1 $PYTEST -m 'not slow' && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
-                        QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations"
+                        QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
+                        chmod -R 777 /tmp/comma_download_cache"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v4
       with:
@@ -266,7 +273,7 @@ jobs:
     - name: Test car models
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 1 || 20 }}
       run: |
-        ${{ env.RUN }} "FILEREADER_CACHE=1 MAX_EXAMPLES=1 $PYTEST selfdrive/car/tests/test_models.py && \
+        ${{ env.RUN }} "MAX_EXAMPLES=1 $PYTEST selfdrive/car/tests/test_models.py && \
                         chmod -R 777 /tmp/comma_download_cache"
       env:
         NUM_JOBS: 4

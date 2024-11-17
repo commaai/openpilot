@@ -36,7 +36,7 @@ CPU usage budget
 TEST_DURATION = 25
 LOG_OFFSET = 8
 
-MAX_TOTAL_CPU = 275.  # total for all 8 cores
+MAX_TOTAL_CPU = 265.  # total for all 8 cores
 PROCS = {
   # Baseline CPU usage by process
   "selfdrive.controls.controlsd": 16.0,
@@ -50,8 +50,8 @@ PROCS = {
   "selfdrive.locationd.paramsd": 9.0,
   "./sensord": 7.0,
   "selfdrive.controls.radard": 2.0,
-  "selfdrive.modeld.modeld": 22.0,
-  "selfdrive.modeld.dmonitoringmodeld": 21.0,
+  "selfdrive.modeld.modeld": 17.0,
+  "selfdrive.modeld.dmonitoringmodeld": 11.0,
   "system.hardware.hardwared": 4.0,
   "selfdrive.locationd.calibrationd": 2.0,
   "selfdrive.locationd.torqued": 5.0,
@@ -361,15 +361,13 @@ class TestOnroad:
     result += "------------------------------------------------\n"
     result += "----------------- Model Timing -----------------\n"
     result += "------------------------------------------------\n"
-    # TODO: Decrease again when tinygrad speeds ups
+    # TODO: this went up when plannerd cpu usage increased, why?
     cfgs = [
-      ("modelV2", 0.050, 0.040),
+      ("modelV2", 0.050, 0.036),
       ("driverStateV2", 0.050, 0.026),
     ]
     for (s, instant_max, avg_max) in cfgs:
       ts = [getattr(m, s).modelExecutionTime for m in self.msgs[s]]
-      # TODO some tinygrad init happens in first iteration
-      ts = ts[1:]
       assert max(ts) < instant_max, f"high '{s}' execution time: {max(ts)}"
       assert np.mean(ts) < avg_max, f"high avg '{s}' execution time: {np.mean(ts)}"
       result += f"'{s}' execution time: min  {min(ts):.5f}s\n"
@@ -402,7 +400,7 @@ class TestOnroad:
         errors.append("❌ FAILED MAX/MIN TIMING CHECK ❌")
       if (np.std(ts)/dt) > rsd:
         errors.append("❌ FAILED RSD TIMING CHECK ❌")
-      passed = not errors
+      passed = not errors and passed
       rows.append([s, *(np.array([np.max(ts), np.min(ts), np.mean(ts), dt])*1e3), np.std(ts)/dt, rsd, "\n".join(errors) or "✅"])
 
     print(tabulate(rows, header, tablefmt="simple_grid", stralign="center", numalign="center", floatfmt=".2f"))
