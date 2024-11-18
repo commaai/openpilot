@@ -102,7 +102,7 @@ jobs:
 
   build_mac:
     name: build macOS
-    runs-on: namespace-profile-macos-8x14
+    runs-on: ${{ github.repository == 'commaai/openpilot' && 'namespace-profile-macos-8x14' || 'macos-latest' }}
     steps:
     - uses: actions/checkout@v4
       with:
