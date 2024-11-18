@@ -3,8 +3,6 @@ import pytest
 import signal
 import time
 
-from parameterized import parameterized
-
 from cereal import car
 from openpilot.common.params import Params
 import openpilot.system.manager.manager as manager
