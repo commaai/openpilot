@@ -145,8 +145,12 @@ jobs:
   static_analysis:
     name: static analysis
     runs-on:
-      - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
-      - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'nscloud-cache-allow-commit-from-master' || '' }}
+      - ${{ ((github.repository == 'commaai/openpilot') &&
+                   ((github.event_name != 'pull_request') ||
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
+      - ${{ ((github.repository == 'commaai/openpilot') &&
+                   ((github.event_name != 'pull_request') ||
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'nscloud-cache-allow-commit-from-master' || '' }}
     env:
       PYTHONWARNINGS: default
     steps:
@@ -160,9 +164,13 @@ jobs:
 
   unit_tests:
     name: unit tests
-    runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
+    runs-on:
+      - ${{ ((github.repository == 'commaai/openpilot') &&
                    ((github.event_name != 'pull_request') ||
-                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16 nscloud-cache-allow-commit-from-master' || 'ubuntu-latest' }}
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
+      - ${{ ((github.repository == 'commaai/openpilot') &&
+                   ((github.event_name != 'pull_request') ||
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'nscloud-cache-allow-commit-from-master' || '' }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -195,9 +203,13 @@ jobs:
 
   process_replay:
     name: process replay
-    runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
+    runs-on:
+      - ${{ ((github.repository == 'commaai/openpilot') &&
                    ((github.event_name != 'pull_request') ||
-                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16 nscloud-cache-allow-commit-from-master' || 'ubuntu-latest' }}
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
+      - ${{ ((github.repository == 'commaai/openpilot') &&
+                   ((github.event_name != 'pull_request') ||
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'nscloud-cache-allow-commit-from-master' || '' }}
     steps:
     - uses: actions/checkout@v4
       with:
