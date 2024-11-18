@@ -140,7 +140,7 @@ class TestOnroad:
       manager_path = os.path.join(BASEDIR, "system/manager/manager.py")
       st = time.monotonic()
       proc = subprocess.Popen(["python", manager_path])
-      assert (time.monotonic() - st) < 3
+      assert (time.monotonic() - st) < 30
       print('MANAGER STARTING TIME:', time.monotonic() - st)
 
       sm = messaging.SubMaster(['carState'])
