@@ -13,7 +13,7 @@ if [[ "$CI" ]]; then
 fi
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
-  export BLOCK="${BLOCK},logcatd,proclogd" # no systemd, no /proc
+  export BLOCK="${BLOCK},logcatd,proclogd"  # TODO no systemd, no /proc on macOS
 fi
 
 python3 -c "from openpilot.selfdrive.test.helpers import set_params_enabled; set_params_enabled()"
