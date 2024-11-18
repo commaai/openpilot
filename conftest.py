@@ -3,6 +3,7 @@ import gc
 import os
 import pytest
 import random
+import sys
 
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.system.manager import manager
@@ -53,13 +54,16 @@ def openpilot_function_fixture(request):
 
   with clean_env():
     # setup a clean environment for each test
-    with OpenpilotPrefix(shared_download_cache=request.node.get_closest_marker("shared_download_cache") is not None) as prefix:
-      prefix = os.environ["OPENPILOT_PREFIX"]
+    if sys.platform != 'darwin':
+      with OpenpilotPrefix(shared_download_cache=request.node.get_closest_marker("shared_download_cache") is not None) as prefix:
+        prefix = os.environ["OPENPILOT_PREFIX"]
 
+        yield
+
+        # ensure the test doesn't change the prefix
+        assert "OPENPILOT_PREFIX" in os.environ and prefix == os.environ["OPENPILOT_PREFIX"]
+    else:
       yield
-
-      # ensure the test doesn't change the prefix
-      assert "OPENPILOT_PREFIX" in os.environ and prefix == os.environ["OPENPILOT_PREFIX"]
 
     # cleanup any started processes
     manager.manager_cleanup()
