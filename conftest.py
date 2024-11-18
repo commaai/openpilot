@@ -54,7 +54,7 @@ def openpilot_function_fixture(request):
 
   with clean_env():
     # setup a clean environment for each test
-    if sys.platform != 'darwin':
+    if sys.platform != 'darwin':  # TODO no tempfs on macOS
       with OpenpilotPrefix(shared_download_cache=request.node.get_closest_marker("shared_download_cache") is not None) as prefix:
         prefix = os.environ["OPENPILOT_PREFIX"]
 
