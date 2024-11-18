@@ -65,7 +65,6 @@ class ModelState:
       'traffic_convention': np.zeros(ModelConstants.TRAFFIC_CONVENTION_LEN, dtype=np.float32),
       'lateral_control_params': np.zeros(ModelConstants.LATERAL_CONTROL_PARAMS_LEN, dtype=np.float32),
       'prev_desired_curv': np.zeros(ModelConstants.PREV_DESIRED_CURV_LEN * (ModelConstants.HISTORY_BUFFER_LEN+1), dtype=np.float32),
-      'features_buffer': np.zeros(ModelConstants.HISTORY_BUFFER_LEN * ModelConstants.FEATURE_LEN, dtype=np.float32),
     }
 
     with open(METADATA_PATH, 'rb') as f:
@@ -118,7 +117,7 @@ class ModelState:
     self.prev_desired_curv_20hz[-1] = outputs['desired_curvature'][0, :]
 
     idxs = np.arange(-4,-100,-4)[::-1]
-    self.inputs['features_buffer'][:] = self.full_features_20Hz[idxs].flatten()
+    #self.inputs['features_buffer'][:] = self.full_features_20Hz[idxs].flatten()
     # TODO model only uses last value now, once that changes we need to input strided action history buffer
     self.inputs['prev_desired_curv'][-ModelConstants.PREV_DESIRED_CURV_LEN:] = 0. * self.prev_desired_curv_20hz[-4, :]
     return outputs
