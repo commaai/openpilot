@@ -138,7 +138,9 @@ class TestOnroad:
     proc = None
     try:
       manager_path = os.path.join(BASEDIR, "system/manager/manager.py")
+      st = time.monotonic()
       proc = subprocess.Popen(["python", manager_path])
+      print('MANAGER STARTING TIME:', time.monotonic() - st)
 
       sm = messaging.SubMaster(['carState'])
       with Timeout(150, "controls didn't start"):

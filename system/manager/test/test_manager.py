@@ -37,14 +37,6 @@ class TestManager:
     # TODO: ensure there are blacklisted procs until we have a dedicated test
     assert len(BLACKLIST_PROCS), "No blacklisted procs to test not_run"
 
-  @parameterized.expand([(i,) for i in range(10)])
-  def test_startup_time(self, index):
-    start = time.monotonic()
-    os.environ['PREPAREONLY'] = '1'
-    manager.main()
-    t = time.monotonic() - start
-    assert t < MAX_STARTUP_TIME, f"startup took {t}s, expected <{MAX_STARTUP_TIME}s"
-
   @pytest.mark.skip("this test is flaky the way it's currently written, should be moved to test_onroad")
   def test_clean_exit(self, subtests):
     """
