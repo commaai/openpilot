@@ -32,9 +32,13 @@ env:
 jobs:
   build_release:
     name: build release
-    runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
+    runs-on:
+      - ${{ ((github.repository == 'commaai/openpilot') &&
                    ((github.event_name != 'pull_request') ||
-                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16 nscloud-cache-allow-commit-from-master' || 'ubuntu-latest' }}
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
+      - ${{ ((github.repository == 'commaai/openpilot') &&
+                   ((github.event_name != 'pull_request') ||
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'nscloud-cache-allow-commit-from-master' || '' }}
     env:
       STRIPPED_DIR: /tmp/releasepilot
     steps:
@@ -102,7 +106,9 @@ jobs:
 
   build_mac:
     name: build macOS
-    runs-on: ${{ github.repository == 'commaai/openpilot' && 'namespace-profile-macos-8x14 nscloud-cache-allow-commit-from-master' || 'macos-latest' }}
+    runs-on:
+      - ${{ github.repository == 'commaai/openpilot' && 'namespace-profile-macos-8x14' || 'macos-latest' }}
+      - ${{ github.repository == 'commaai/openpilot' && 'nscloud-cache-allow-commit-from-master' || '' }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -262,9 +268,13 @@ jobs:
 
   test_cars:
     name: cars
-    runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
+    runs-on:
+      - ${{ ((github.repository == 'commaai/openpilot') &&
                    ((github.event_name != 'pull_request') ||
-                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16 nscloud-cache-allow-commit-from-master' || 'ubuntu-latest' }}
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
+      - ${{ ((github.repository == 'commaai/openpilot') &&
+                   ((github.event_name != 'pull_request') ||
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'nscloud-cache-allow-commit-from-master' || '' }}
     strategy:
       fail-fast: false
       matrix:
@@ -354,9 +364,13 @@ jobs:
 
   simulator_driving:
     name: simulator driving
-    runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
+    runs-on:
+      - ${{ ((github.repository == 'commaai/openpilot') &&
                    ((github.event_name != 'pull_request') ||
-                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16 nscloud-cache-allow-commit-from-master' || 'ubuntu-24.04' }}
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
+      - ${{ ((github.repository == 'commaai/openpilot') &&
+                   ((github.event_name != 'pull_request') ||
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'nscloud-cache-allow-commit-from-master' || '' }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -375,9 +389,13 @@ jobs:
   create_ui_report:
     # This job name needs to be the same as UI_JOB_NAME in ui_preview.yaml
     name: Create UI Report
-    runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
+    runs-on:
+      - ${{ ((github.repository == 'commaai/openpilot') &&
                    ((github.event_name != 'pull_request') ||
-                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16 nscloud-cache-allow-commit-from-master' || 'ubuntu-24.04' }}
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
+      - ${{ ((github.repository == 'commaai/openpilot') &&
+                   ((github.event_name != 'pull_request') ||
+                    (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'nscloud-cache-allow-commit-from-master' || '' }}
     steps:
       - uses: actions/checkout@v4
         with:
