@@ -5,8 +5,6 @@ import time
 import datetime
 import subprocess
 
-# test
-
 import cereal.messaging as messaging
 from openpilot.system.qcomgpsd.qcomgpsd import at_cmd, wait_for_modem
 from openpilot.system.manager.process_config import managed_processes
