@@ -980,7 +980,7 @@ wheels = [
 [[package]]
 name = "metadrive-simulator"
 version = "0.4.2.3"
-source = { url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal/metadrive_simulator-0.4.2.3-py3-none-any.whl" }
+source = { url = "https://github.com/JakobSpahn/metadrive/releases/download/MetaDrive-minimal-v2/metadrive_simulator-0.4.2.3-py3-none-any.whl" }
 dependencies = [
     { name = "filelock" },
     { name = "gymnasium" },
@@ -1000,7 +1000,7 @@ dependencies = [
     { name = "yapf" },
 ]
 wheels = [
-    { url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal/metadrive_simulator-0.4.2.3-py3-none-any.whl", hash = "sha256:6242d4e37e6c592d5eb1cadf497637540d3b754b89813a88c50a93c7fc88b02d" },
+    { url = "https://github.com/JakobSpahn/metadrive/releases/download/MetaDrive-minimal-v2/metadrive_simulator-0.4.2.3-py3-none-any.whl", hash = "sha256:481c91a2df43bdb66886cedf30860ba5fdb73ea6f2707f7ca5335b9a09e3e04b" },
 ]
 
 [package.metadata]
@@ -1405,7 +1405,7 @@ requires-dist = [
     { name = "libusb1" },
     { name = "lru-dict", marker = "extra == 'dev'" },
     { name = "matplotlib", marker = "extra == 'dev'" },
-    { name = "metadrive-simulator", marker = "platform_machine != 'aarch64' and extra == 'tools'", url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal/metadrive_simulator-0.4.2.3-py3-none-any.whl" },
+    { name = "metadrive-simulator", marker = "platform_machine != 'aarch64' and extra == 'tools'", url = "https://github.com/JakobSpahn/metadrive/releases/download/MetaDrive-minimal-v2/metadrive_simulator-0.4.2.3-py3-none-any.whl" },
     { name = "mkdocs", marker = "extra == 'docs'" },
     { name = "mypy", marker = "extra == 'testing'" },
     { name = "natsort", marker = "extra == 'docs'" },
