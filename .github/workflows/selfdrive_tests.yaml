@@ -168,14 +168,8 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
-    - name: Setup cache
-      id: dependency-cache
-      uses: actions/cache@v4
-      with:
-        path: .ci_cache/comma_download_cache
-        key: unit_tests_${{ runner.os }}
     - name: Run unit tests
-      timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.dependency-cache.outputs.cache-hit == 'true') && 1 || 20 }}
+      timeout-minutes: ${{ contains(runner.name, 'nsc') && 1 || 20 }}
       run: |
         ${{ env.RUN }} "$PYTEST --collect-only -m 'not slow' &> /dev/null && \
                         MAX_EXAMPLES=1 $PYTEST -m 'not slow' && \
@@ -268,7 +262,6 @@ jobs:
       timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.routes-cache.outputs.cache-hit == 'true') && 1 || 20 }}
       run: |
         ${{ env.RUN }} "echo ${{ steps.routes-cache.outputs.cache-hit }} && \
-                        sleep 31
                         MAX_EXAMPLES=1 $PYTEST selfdrive/car/tests/test_models.py && \
                         chmod -R 777 /tmp/comma_download_cache"
       env:
