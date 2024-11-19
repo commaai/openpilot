@@ -264,9 +264,9 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
     - name: Cache test routes
       id: routes-cache
-      uses: namespacelabs/nscloud-cache-action@v1
+      uses: ./.github/workflows/auto-cache
       with:
-        path: .ci_cache/cNOPomma_download_cache
+        path: .ci_cache/NOP_comma_download_cache
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Test car models
