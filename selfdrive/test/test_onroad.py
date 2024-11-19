@@ -138,6 +138,7 @@ class TestOnroad:
     proc = None
     try:
       manager_path = os.path.join(BASEDIR, "system/manager/manager.py")
+      cls.manager_st = time.monotonic()
       proc = subprocess.Popen(["python", manager_path])
 
       sm = messaging.SubMaster(['carState'])
@@ -201,6 +202,10 @@ class TestOnroad:
 
       with subtests.test(service=s):
         assert len(msgs) >= math.floor(SERVICE_LIST[s].frequency*int(TEST_DURATION*0.8))
+
+  def test_manager_starting_time(self):
+    st = self.msgs['managerState'][0].logMonoTime / 1e9
+    assert (st - self.manager_st) < 10, f"manager.py took {st - self.manager_st}s to publish the first 'managerState' msg"
 
   def test_cloudlog_size(self):
     msgs = self.msgs['logMessage']
