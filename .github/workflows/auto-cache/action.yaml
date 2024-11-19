@@ -17,7 +17,9 @@ inputs:
 outputs:
   cache-hit:
     description: 'cache hit occured'
-    value: ${{ contains(runner.name, 'nsc') && steps.ns-cache.outputs.cache-hit || steps.ga-cache.outputs.cache-hit }}
+    value: ${{ (contains(runner.name, 'nsc') && steps.ns-cache.outputs.cache-hit) ||
+               (!contains(runner.name, 'nsc') && inputs.save != 'false' && steps.gha-cache.outputs.cache-hit) ||
+               (!contains(runner.name, 'nsc') && inputs.save == 'false' && steps.gha-cache-ro.outputs.cache-hit) }}
 
 runs:
   using: "composite"
@@ -30,7 +32,7 @@ runs:
         path: ${{ inputs.path }}
 
     - name: setup github cache
-      id: ga-cache
+      id: gha-cache
       if: ${{ !contains(runner.name, 'nsc') && inputs.save != 'false' }}
       uses: 'actions/cache@v4'
       with:
@@ -39,6 +41,7 @@ runs:
         restore-keys: ${{ inputs.restore-keys }}
 
     - name: setup github cache
+      id: gha-cache-ro
       if: ${{ !contains(runner.name, 'nsc') && inputs.save == 'false' }}
       uses: 'actions/cache/restore@v4'
       with:
