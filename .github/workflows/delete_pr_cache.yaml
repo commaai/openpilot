@@ -1,0 +1,22 @@
+name: cache deleter
+on:
+  pull_request_target:
+    types:
+      - closed
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Cleanup
+        run: |
+          keys=$(gh cache list --ref $BRANCH --limit 100 --json id --jq '.[].id')
+          set +e
+          for key in $keys
+          do
+            gh cache delete $key
+          done
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          BRANCH: refs/pull/${{ github.event.pull_request.number }}/merge
