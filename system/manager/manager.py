@@ -4,7 +4,6 @@ import os
 import signal
 import sys
 import traceback
-import time
 
 from cereal import log
 import cereal.messaging as messaging
@@ -178,8 +177,6 @@ def main() -> None:
   manager_init()
   if os.getenv("PREPAREONLY") is not None:
     return
-
-  time.sleep(3)
 
   # SystemExit on sigterm
   signal.signal(signal.SIGTERM, lambda signum, frame: sys.exit(1))
