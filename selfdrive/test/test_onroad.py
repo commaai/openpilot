@@ -203,7 +203,6 @@ class TestOnroad:
       with subtests.test(service=s):
         assert len(msgs) >= math.floor(SERVICE_LIST[s].frequency*int(TEST_DURATION*0.8))
 
-
   def test_manager_starting_time(self):
     st = self.msgs['managerState'][0].logMonoTime / 1e9
     assert (st - self.manager_st) < 6
