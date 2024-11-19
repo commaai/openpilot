@@ -209,7 +209,7 @@ node {
           step("test power draw", "pytest -s system/hardware/tici/tests/test_power_draw.py"),
           step("test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py"),
           step("test pigeond", "pytest system/ubloxd/tests/test_pigeond.py"),
-          step("test manager", "pytest -rx -rP system/manager/test/test_manager.py"),
+          step("test manager", "pytest system/manager/test/test_manager.py"),
         ])
       },
       'loopback': {

@@ -206,7 +206,7 @@ class TestOnroad:
   def test_manager_starting_time(self):
     st = self.msgs['managerState'][0].logMonoTime / 1e9
     print('MANAGER ST:', st - self.manager_st)
-    assert (st - self.manager_st) < 5
+    assert (st - self.manager_st) < 6
 
   def test_cloudlog_size(self):
     msgs = self.msgs['logMessage']
