@@ -43,10 +43,11 @@ brew "llvm"
 brew "openssl@3.0"
 brew "qt@5"
 brew "zeromq"
-cask "https://raw.githubusercontent.com/Homebrew/homebrew-cask/0d591515ad2a153113e0316d31fe06915fb07ac0/Casks/g/gcc-arm-embedded.rb"
 brew "portaudio"
 brew "gcc@13"
 EOS
+
+curl -L "https://raw.githubusercontent.com/Homebrew/homebrew-cask/0d591515ad2a153113e0316d31fe06915fb07ac0/Casks/g/gcc-arm-embedded.rb" > gcc-arm-embedded.rb && brew install gcc-arm-embedded.rb
 
 echo "[ ] finished brew install t=$SECONDS"
 
