@@ -95,10 +95,8 @@ jobs:
         echo "TARGET_ARCHITECTURE=${{ matrix.arch }}" >> "$GITHUB_ENV"
         $DOCKER_LOGIN
     - uses: ./.github/workflows/setup-with-retry
-      with:
-        docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
     - uses: ./.github/workflows/compile-openpilot
-      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 15 || 30) }} # allow more time when we missed the scons cache
+      timeout-minutes: 30
 
   build_mac:
     name: build macOS
@@ -168,16 +166,8 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
-      with:
-        docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
     - name: Build openpilot
-      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: ${{ env.RUN }} "scons -j$(nproc)"
-    - name: Setup cache
-      uses: ./.github/workflows/auto-cache
-      with:
-        path: .ci_cache/comma_download_cache
-        key: unit_tests_${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}
     - name: Run unit tests
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 1 || 20 }}
       run: |
@@ -203,19 +193,17 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
-      with:
-        docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
     - name: Cache test routes
       id: dependency-cache
       uses: actions/cache@v4
       with:
         path: .ci_cache/comma_download_cache
-        key: proc-replay-${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/ref_commit', 'selfdrive/test/process_replay/test_regen.py') }}
+        key: proc-replay-${{ hashFiles('selfdrive/test/process_replay/ref_commit', 'selfdrive/test/process_replay/test_processes.py') }}
     - name: Build openpilot
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run replay
-      timeout-minutes: ${{ contains(runner.name, 'nsc') && 1 || 20 }}
+      timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.dependency-cache.outputs.cache-hit == 'true') && 1 || 20 }}
       run: |
         ${{ env.RUN }} "coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
                         chmod -R 777 /tmp/comma_download_cache && \
@@ -263,15 +251,15 @@ jobs:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
     - name: Cache test routes
-      id: dependency-cache
-      uses: ./.github/workflows/auto-cache
+      id: routes-cache
+      uses: actions/cache@v4
       with:
         path: .ci_cache/comma_download_cache
         key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'selfdrive/car/tests/routes.py') }}-${{ matrix.job }}
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Test car models
-      timeout-minutes: ${{ contains(runner.name, 'nsc') && 1 || 20 }}
+      timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.routes-cache.outputs.cache-hit == 'true') && 1 || 20 }}
       run: |
         ${{ env.RUN }} "MAX_EXAMPLES=1 $PYTEST selfdrive/car/tests/test_models.py && \
                         chmod -R 777 /tmp/comma_download_cache"
