@@ -173,7 +173,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: .ci_cache/comma_download_cache
-        key: unit_tests
+        key: unit_tests_${{ runner.os }}
     - name: Run unit tests
       timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.dependency-cache.outputs.cache-hit == 'true') && 1 || 20 }}
       run: |
@@ -268,6 +268,7 @@ jobs:
       timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.routes-cache.outputs.cache-hit == 'true') && 1 || 20 }}
       run: |
         ${{ env.RUN }} "echo ${{ steps.routes-cache.outputs.cache-hit }} && \
+                        sleep 30
                         MAX_EXAMPLES=1 $PYTEST selfdrive/car/tests/test_models.py && \
                         chmod -R 777 /tmp/comma_download_cache"
       env:
