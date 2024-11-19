@@ -43,13 +43,10 @@ brew "llvm"
 brew "openssl@3.0"
 brew "qt@5"
 brew "zeromq"
+cask "gcc-arm-embedded"
 brew "portaudio"
 brew "gcc@13"
 EOS
-
-# TODO: revert back to using 'cask "gcc-arm-embedded"' when ARM fixes https://developer.arm.com/downloads/-/arm-gnu-toolchain-downloads for 13.3
-curl -L "https://raw.githubusercontent.com/Homebrew/homebrew-cask/0d591515ad2a153113e0316d31fe06915fb07ac0/Casks/g/gcc-arm-embedded.rb" > gcc-arm-embedded.rb && brew install --cask gcc-arm-embedded.rb
-rm -f gcc-arm-embedded.rb
 
 echo "[ ] finished brew install t=$SECONDS"
 
