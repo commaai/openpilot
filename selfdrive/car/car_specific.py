@@ -149,7 +149,8 @@ class CarSpecificEvents:
       # To avoid re-engaging when openpilot cancels, check user engagement intention via buttons
       # Main button also can trigger an engagement on these cars
       self.cruise_buttons.append(any(ev.type in HYUNDAI_ENABLE_BUTTONS for ev in CS.buttonEvents))
-      # Stock long: only allow cancel if the CANCEL button is pressed
+      # TODO: implement with proper solution to identify PAUSE/RESUME vs CANCEL button across different models
+      # Stock long: only allow cancel for rising edge
       # OP long: allow cancel for both rising and falling edge
       self.cancel_button.append(any(ev.type == ButtonType.cancel and ev.pressed if self.CP.pcmCruise else True for ev in CS.buttonEvents))
       events = self.create_common_events(CS, CS_prev, pcm_enable=self.CP.pcmCruise, allow_enable=any(self.cruise_buttons),
