@@ -16,7 +16,7 @@ inputs:
     required: false
 outputs:
   cache-hit:
-    description: 'cache hit occured'
+    description: 'cache hit occurred'
     value: ${{ (contains(runner.name, 'nsc') && steps.ns-cache.outputs.cache-hit) ||
                (!contains(runner.name, 'nsc') && inputs.save != 'false' && steps.gha-cache.outputs.cache-hit) ||
                (!contains(runner.name, 'nsc') && inputs.save == 'false' && steps.gha-cache-ro.outputs.cache-hit) }}
