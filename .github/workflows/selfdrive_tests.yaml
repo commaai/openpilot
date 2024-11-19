@@ -268,7 +268,7 @@ jobs:
       timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.routes-cache.outputs.cache-hit == 'true') && 1 || 20 }}
       run: |
         ${{ env.RUN }} "echo ${{ steps.routes-cache.outputs.cache-hit }} && \
-                        sleep 30
+                        sleep 31
                         MAX_EXAMPLES=1 $PYTEST selfdrive/car/tests/test_models.py && \
                         chmod -R 777 /tmp/comma_download_cache"
       env:
