@@ -14,17 +14,25 @@ inputs:
     description: 'whether to save the cache'
     default: 'false'
     required: false
+outputs:
+  cache-hit:
+    description: 'cache hit occurred'
+    value: ${{ (contains(runner.name, 'nsc') && steps.ns-cache.outputs.cache-hit) ||
+               (!contains(runner.name, 'nsc') && inputs.save != 'false' && steps.gha-cache.outputs.cache-hit) ||
+               (!contains(runner.name, 'nsc') && inputs.save == 'false' && steps.gha-cache-ro.outputs.cache-hit) }}
 
 runs:
   using: "composite"
   steps:
     - name: setup namespace cache
+      id: ns-cache
       if: ${{ contains(runner.name, 'nsc') }}
       uses: namespacelabs/nscloud-cache-action@v1
       with:
         path: ${{ inputs.path }}
 
     - name: setup github cache
+      id: gha-cache
       if: ${{ !contains(runner.name, 'nsc') && inputs.save != 'false' }}
       uses: 'actions/cache@v4'
       with:
@@ -33,6 +41,7 @@ runs:
         restore-keys: ${{ inputs.restore-keys }}
 
     - name: setup github cache
+      id: gha-cache-ro
       if: ${{ !contains(runner.name, 'nsc') && inputs.save == 'false' }}
       uses: 'actions/cache/restore@v4'
       with:
