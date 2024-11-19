@@ -170,11 +170,6 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
       with:
         docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
-    - name: Breakpoint to check the build results
-      uses: namespacelabs/breakpoint-action@v0
-      with:
-        duration: 30m
-        authorized-users: maxime-desroches
     - name: Build openpilot
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: ${{ env.RUN }} "scons -j$(nproc)"
@@ -183,6 +178,11 @@ jobs:
       with:
         path: .ci_cache/comma_download_cache
         key: unit_tests_${{ hashFiles('.github/workflows/selfdrive_tests.yaml') }}
+    - name: Breakpoint to check the build results
+      uses: namespacelabs/breakpoint-action@v0
+      with:
+        duration: 30m
+        authorized-users: maxime-desroches
     - name: Run unit tests
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 1 || 20 }}
       run: |
