@@ -266,7 +266,7 @@ jobs:
       id: routes-cache
       uses: ./.github/workflows/auto-cache
       with:
-        path: .ci_cache/NOP_comma_download_cache
+        path: .ci_cache/comma_download_cache
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Test car models
