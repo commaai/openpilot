@@ -52,7 +52,7 @@ OS04C10::OS04C10() {
   exposure_time_max = 2352;
   analog_gain_min_idx = 0x0;
   analog_gain_rec_idx = 0x0;  // 1x
-  analog_gain_max_idx = 0x36;
+  analog_gain_max_idx = 0x28;
   analog_gain_cost_delta = -1;
   analog_gain_cost_low = 0.4;
   analog_gain_cost_high = 6.4;
@@ -63,7 +63,7 @@ OS04C10::OS04C10() {
   max_ev = exposure_time_max * dc_gain_factor * sensor_analog_gains[analog_gain_max_idx];
   target_grey_factor = 0.01;
 
-  black_level = 64;
+  black_level = 48;
   color_correct_matrix = {
     0x000000c2, 0x00000fe0, 0x00000fde,
     0x00000fa7, 0x000000d9, 0x00001000,
