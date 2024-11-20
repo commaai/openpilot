@@ -27,7 +27,7 @@ class TestRawgpsd:
     os.system("sudo systemctl restart ModemManager lte")
 
   def setup_method(self):
-    at_cmd("AT+QGPSDEL=0")
+    os.environ['GPS_COLD_START'] = '1'
     self.sm = messaging.SubMaster(['qcomGnss', 'gpsLocation', 'gnssMeasurements'])
 
   def teardown_method(self):
