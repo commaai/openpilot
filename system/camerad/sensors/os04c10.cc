@@ -43,6 +43,7 @@ OS04C10::OS04C10() {
   frame_data_type = 0x2c;
   mclk_frequency = 24000000; // Hz
 
+  ev_scale = 150.0;
   dc_gain_factor = 1;
   dc_gain_min_weight = 1;  // always on is fine
   dc_gain_max_weight = 1;
@@ -59,7 +60,7 @@ OS04C10::OS04C10() {
   for (int i = 0; i <= analog_gain_max_idx; i++) {
     sensor_analog_gains[i] = sensor_analog_gains_OS04C10[i];
   }
-  min_ev = (exposure_time_min) * sensor_analog_gains[analog_gain_min_idx];
+  min_ev = exposure_time_min * sensor_analog_gains[analog_gain_min_idx];
   max_ev = exposure_time_max * dc_gain_factor * sensor_analog_gains[analog_gain_max_idx];
   target_grey_factor = 0.01;
 
