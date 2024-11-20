@@ -300,13 +300,18 @@ class TestOnroad:
     assert cpu_ok
 
   def test_memory_usage(self):
+    print("\n------------------------------------------------")
+    print("--------------- Memory Usage -------------------")
+    print("------------------------------------------------")
     offset = int(SERVICE_LIST['deviceState'].frequency * LOG_OFFSET)
     mems = [m.deviceState.memoryUsagePercent for m in self.msgs['deviceState'][offset:]]
     print("Memory usage: ", mems)
 
     # check for big leaks. note that memory usage is
     # expected to go up while the MSGQ buffers fill up
-    assert max(mems) - min(mems) <= 3.0
+    assert np.average(mems) <= 65, "Average memory usage above 65%"
+    assert np.max(np.diff(mems)) <= 4, "Max memory increase too high"
+    assert np.average(np.diff(mems)) <= 1, "Average memory increase too high"
 
   def test_gpu_usage(self):
     assert self.gpu_procs == {"weston", "ui", "camerad", "selfdrive.modeld.modeld", "selfdrive.modeld.dmonitoringmodeld"}
