@@ -14,5 +14,9 @@ private:
   ParamControl* longManeuverToggle;
   ParamControl* alphaLongToggle;
 
-  void updateToggles();
+  bool is_release;
+  bool offroad;
+
+private slots:
+  void updateToggles(bool _offroad);
 };

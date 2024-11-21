@@ -145,6 +145,10 @@ void Panda::set_can_speed_kbps(uint16_t bus, uint16_t speed) {
   handle->control_write(0xde, bus, (speed * 10));
 }
 
+void Panda::set_can_fd_auto(uint16_t bus, bool enabled) {
+  handle->control_write(0xe8, bus, enabled);
+}
+
 void Panda::set_data_speed_kbps(uint16_t bus, uint16_t speed) {
   handle->control_write(0xf9, bus, (speed * 10));
 }

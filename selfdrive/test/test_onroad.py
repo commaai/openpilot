@@ -36,7 +36,7 @@ CPU usage budget
 TEST_DURATION = 25
 LOG_OFFSET = 8
 
-MAX_TOTAL_CPU = 275.  # total for all 8 cores
+MAX_TOTAL_CPU = 265.  # total for all 8 cores
 PROCS = {
   # Baseline CPU usage by process
   "selfdrive.controls.controlsd": 16.0,
@@ -50,8 +50,8 @@ PROCS = {
   "selfdrive.locationd.paramsd": 9.0,
   "./sensord": 7.0,
   "selfdrive.controls.radard": 2.0,
-  "selfdrive.modeld.modeld": 22.0,
-  "selfdrive.modeld.dmonitoringmodeld": 21.0,
+  "selfdrive.modeld.modeld": 17.0,
+  "selfdrive.modeld.dmonitoringmodeld": 11.0,
   "system.hardware.hardwared": 4.0,
   "selfdrive.locationd.calibrationd": 2.0,
   "selfdrive.locationd.torqued": 5.0,
@@ -72,7 +72,7 @@ PROCS = {
 
 PROCS.update({
   "tici": {
-    "./pandad": 4.0,
+    "./pandad": 5.0,
     "./ubloxd": 1.0,
     "system.ubloxd.pigeond": 6.0,
   },
@@ -138,6 +138,7 @@ class TestOnroad:
     proc = None
     try:
       manager_path = os.path.join(BASEDIR, "system/manager/manager.py")
+      cls.manager_st = time.monotonic()
       proc = subprocess.Popen(["python", manager_path])
 
       sm = messaging.SubMaster(['carState'])
@@ -201,6 +202,10 @@ class TestOnroad:
 
       with subtests.test(service=s):
         assert len(msgs) >= math.floor(SERVICE_LIST[s].frequency*int(TEST_DURATION*0.8))
+
+  def test_manager_starting_time(self):
+    st = self.msgs['managerState'][0].logMonoTime / 1e9
+    assert (st - self.manager_st) < 10, f"manager.py took {st - self.manager_st}s to publish the first 'managerState' msg"
 
   def test_cloudlog_size(self):
     msgs = self.msgs['logMessage']
@@ -295,13 +300,18 @@ class TestOnroad:
     assert cpu_ok
 
   def test_memory_usage(self):
+    print("\n------------------------------------------------")
+    print("--------------- Memory Usage -------------------")
+    print("------------------------------------------------")
     offset = int(SERVICE_LIST['deviceState'].frequency * LOG_OFFSET)
     mems = [m.deviceState.memoryUsagePercent for m in self.msgs['deviceState'][offset:]]
     print("Memory usage: ", mems)
 
     # check for big leaks. note that memory usage is
     # expected to go up while the MSGQ buffers fill up
-    assert max(mems) - min(mems) <= 3.0
+    assert np.average(mems) <= 65, "Average memory usage above 65%"
+    assert np.max(np.diff(mems)) <= 4, "Max memory increase too high"
+    assert np.average(np.diff(mems)) <= 1, "Average memory increase too high"
 
   def test_gpu_usage(self):
     assert self.gpu_procs == {"weston", "ui", "camerad", "selfdrive.modeld.modeld", "selfdrive.modeld.dmonitoringmodeld"}
@@ -361,15 +371,13 @@ class TestOnroad:
     result += "------------------------------------------------\n"
     result += "----------------- Model Timing -----------------\n"
     result += "------------------------------------------------\n"
-    # TODO: Decrease again when tinygrad speeds ups
+    # TODO: this went up when plannerd cpu usage increased, why?
     cfgs = [
-      ("modelV2", 0.050, 0.040),
+      ("modelV2", 0.050, 0.036),
       ("driverStateV2", 0.050, 0.026),
     ]
     for (s, instant_max, avg_max) in cfgs:
       ts = [getattr(m, s).modelExecutionTime for m in self.msgs[s]]
-      # TODO some tinygrad init happens in first iteration
-      ts = ts[1:]
       assert max(ts) < instant_max, f"high '{s}' execution time: {max(ts)}"
       assert np.mean(ts) < avg_max, f"high avg '{s}' execution time: {np.mean(ts)}"
       result += f"'{s}' execution time: min  {min(ts):.5f}s\n"
@@ -402,7 +410,7 @@ class TestOnroad:
         errors.append("❌ FAILED MAX/MIN TIMING CHECK ❌")
       if (np.std(ts)/dt) > rsd:
         errors.append("❌ FAILED RSD TIMING CHECK ❌")
-      passed = not errors
+      passed = not errors and passed
       rows.append([s, *(np.array([np.max(ts), np.min(ts), np.mean(ts), dt])*1e3), np.std(ts)/dt, rsd, "\n".join(errors) or "✅"])
 
     print(tabulate(rows, header, tablefmt="simple_grid", stralign="center", numalign="center", floatfmt=".2f"))

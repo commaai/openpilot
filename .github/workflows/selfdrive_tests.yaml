@@ -52,7 +52,7 @@ jobs:
       run: TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
     - uses: ./.github/workflows/setup-with-retry
     - name: Check submodules
-      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
+      if: github.repository == 'commaai/openpilot'
       timeout-minutes: 3
       run: release/check-submodules.sh
     - name: Build openpilot and run checks
@@ -95,14 +95,12 @@ jobs:
         echo "TARGET_ARCHITECTURE=${{ matrix.arch }}" >> "$GITHUB_ENV"
         $DOCKER_LOGIN
     - uses: ./.github/workflows/setup-with-retry
-      with:
-        docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
     - uses: ./.github/workflows/compile-openpilot
-      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 15 || 30) }} # allow more time when we missed the scons cache
+      timeout-minutes: 30
 
   build_mac:
     name: build macOS
-    runs-on: namespace-profile-macos-8x14
+    runs-on: ${{ github.repository == 'commaai/openpilot' && 'namespace-profile-macos-8x14' || 'macos-latest' }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -168,18 +166,16 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
-      with:
-        docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
     - name: Build openpilot
-      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run unit tests
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 1 || 20 }}
       run: |
-        ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
-                        MAX_EXAMPLES=1 $PYTEST --timeout 60 -m 'not slow' && \
+        ${{ env.RUN }} "$PYTEST --collect-only -m 'not slow' &> /dev/null && \
+                        MAX_EXAMPLES=1 $PYTEST -m 'not slow' && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
-                        QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations"
+                        QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
+                        chmod -R 777 /tmp/comma_download_cache"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v4
       with:
@@ -197,19 +193,17 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
-      with:
-        docker_hub_pat: ${{ secrets.DOCKER_HUB_PAT }}
     - name: Cache test routes
       id: dependency-cache
       uses: actions/cache@v4
       with:
         path: .ci_cache/comma_download_cache
-        key: proc-replay-${{ hashFiles('.github/workflows/selfdrive_tests.yaml', 'selfdrive/test/process_replay/ref_commit', 'selfdrive/test/process_replay/test_regen.py') }}
+        key: proc-replay-${{ hashFiles('selfdrive/test/process_replay/ref_commit', 'selfdrive/test/process_replay/test_processes.py') }}
     - name: Build openpilot
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run replay
-      timeout-minutes: ${{ contains(runner.name, 'nsc') && 1 || 20 }}
+      timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.dependency-cache.outputs.cache-hit == 'true') && 1 || 20 }}
       run: |
         ${{ env.RUN }} "coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
                         chmod -R 777 /tmp/comma_download_cache && \
@@ -257,17 +251,17 @@ jobs:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
     - name: Cache test routes
-      id: dependency-cache
-      uses: ./.github/workflows/auto-cache
+      id: routes-cache
+      uses: actions/cache@v4
       with:
         path: .ci_cache/comma_download_cache
         key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'selfdrive/car/tests/routes.py') }}-${{ matrix.job }}
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Test car models
-      timeout-minutes: ${{ contains(runner.name, 'nsc') && 2 || 20 }}
+      timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.routes-cache.outputs.cache-hit == 'true') && 1 || 20 }}
       run: |
-        ${{ env.RUN }} "FILEREADER_CACHE=1 MAX_EXAMPLES=1 $PYTEST selfdrive/car/tests/test_models.py && \
+        ${{ env.RUN }} "MAX_EXAMPLES=1 $PYTEST selfdrive/car/tests/test_models.py && \
                         chmod -R 777 /tmp/comma_download_cache"
       env:
         NUM_JOBS: 4

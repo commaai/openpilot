@@ -3,6 +3,7 @@
 #include "selfdrive/ui/qt/offroad/developer_panel.h"
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
+#include "common/util.h"
 
 DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   // SSH keys
@@ -25,26 +26,25 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
 
   alphaLongToggle = new ParamControl("ExperimentalLongitudinalEnabled", tr("openpilot Longitudinal Control (Alpha)"), "", "../assets/offroad/icon_speed_limit.png");
   QObject::connect(alphaLongToggle, &ParamControl::toggleFlipped, [=](bool state) {
-    updateToggles();
+    updateToggles(offroad);
   });
   addItem(alphaLongToggle);
   alphaLongToggle->setConfirmation(true, false);
 
   // Joystick and longitudinal maneuvers should be hidden on release branches
-  // also the toggles should be not available to change in onroad state
-  const bool is_release = params.getBool("IsReleaseBranch");
-  QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
-    for (auto btn : findChildren<ParamControl *>()) {
-      if (btn != alphaLongToggle) {
-        btn->setVisible(!is_release);
-      }
-      btn->setEnabled(offroad);
-    }
-  });
+  is_release = params.getBool("IsReleaseBranch");
+
+  // Toggles should be not available to change in onroad state
+  QObject::connect(uiState(), &UIState::offroadTransition, this, &DeveloperPanel::updateToggles);
 }
 
-void DeveloperPanel::updateToggles() {
-  const bool is_release = params.getBool("IsReleaseBranch");
+void DeveloperPanel::updateToggles(bool _offroad) {
+  for (auto btn : findChildren<ParamControl *>()) {
+    btn->setVisible(!is_release);
+    btn->setEnabled(_offroad);
+  }
+
+  // longManeuverToggle should not be toggleable if the car don't have longitudinal control
   auto cp_bytes = params.get("CarParamsPersistent");
   if (!cp_bytes.empty()) {
     AlignedBuffer aligned_buf;
@@ -73,14 +73,16 @@ void DeveloperPanel::updateToggles() {
     if (CP.getOpenpilotLongitudinalControl()) {
       alphaLongToggle->setVisible(false);
     }
-
     alphaLongToggle->refresh();
+    longManeuverToggle->setEnabled(hasLongitudinalControl(CP) && _offroad);
   } else {
     alphaLongToggle->setDescription("<b>" + tr("openpilot longitudinal control may come in a future update.") + "</b>");
-    alphaLongToggle->setEnabled(false);
+    longManeuverToggle->setEnabled(false);
   }
+
+  offroad = _offroad;
 }
 
 void DeveloperPanel::showEvent(QShowEvent *event) {
-  updateToggles();
+  updateToggles(offroad);
 }
