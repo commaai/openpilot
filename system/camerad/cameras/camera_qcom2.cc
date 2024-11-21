@@ -140,14 +140,14 @@ void CameraState::set_camera_exposure(float grey_frac) {
   // Therefore we use the target EV from 3 frames ago, the grey fraction that was just measured was the result of that control action.
   // TODO: Lower latency to 2 frames, by using the histogram outputted by the sensor we can do AE before the debayering is complete
 
-  const float cur_ev_ = cur_ev[camera.buf.cur_frame_data.frame_id % 3];
   const auto &sensor = camera.sensor;
+  const float cur_ev_ = cur_ev[camera.buf.cur_frame_data.frame_id % 3] * sensor->ev_scale;
 
   // Scale target grey between 0.1 and 0.4 depending on lighting conditions
   float new_target_grey = std::clamp(0.4 - 0.3 * log2(1.0 + sensor->target_grey_factor*cur_ev_) / log2(6000.0), 0.1, 0.4);
   float target_grey = (1.0 - k_grey) * target_grey_fraction + k_grey * new_target_grey;
 
-  float desired_ev = std::clamp(cur_ev_ * target_grey / grey_frac, sensor->min_ev, sensor->max_ev);
+  float desired_ev = std::clamp(cur_ev_ / sensor->ev_scale * target_grey / grey_frac, sensor->min_ev, sensor->max_ev);
   float k = (1.0 - k_ev) / 3.0;
   desired_ev = (k * cur_ev[0]) + (k * cur_ev[1]) + (k * cur_ev[2]) + (k_ev * desired_ev);
 
