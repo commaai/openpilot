@@ -107,9 +107,6 @@ class HardwareBase(ABC):
   def get_modem_version(self):
     return None
 
-  def get_modem_nv(self):
-    return None
-
   @abstractmethod
   def get_modem_temperatures(self):
     pass
