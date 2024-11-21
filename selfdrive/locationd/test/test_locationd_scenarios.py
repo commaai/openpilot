@@ -25,6 +25,7 @@ class Scenario(Enum):
   GYRO_SPIKE_MIDWAY = 'gyro_spike_midway'
   ACCEL_OFF = 'accel_off'
   ACCEL_SPIKE_MIDWAY = 'accel_spike_midway'
+  SENSOR_TIMING_SPIKE_MIDWAY = 'timing_spikes'
 
 
 def get_select_fields_data(logs):
@@ -66,6 +67,14 @@ def run_scenarios(scenario, logs):
     accel = [x for x in logs if x.which() in 'accelerometer']
     temp = accel[len(accel) // 2].as_builder()
     temp.accelerometer.acceleration.v[0] += 10.0
+    accel[len(accel) // 2] = temp.as_reader()
+    logs = sorted(non_accel + accel, key=lambda x: x.logMonoTime)
+
+  elif scenario == Scenario.SENSOR_TIMING_SPIKE_MIDWAY:
+    non_accel = [x for x in logs if x.which() not in 'accelerometer']
+    accel = [x for x in logs if x.which() in 'accelerometer']
+    temp = accel[len(accel) // 2].as_builder()
+    temp.accelerometer.timestamp -= int(0.150 * 1e9)
     accel[len(accel) // 2] = temp.as_reader()
     logs = sorted(non_accel + accel, key=lambda x: x.logMonoTime)
 
@@ -146,3 +155,12 @@ class TestLocationdScenarios:
     orig_data, replayed_data = run_scenarios(Scenario.ACCEL_SPIKE_MIDWAY, self.logs)
     assert np.allclose(orig_data['yaw_rate'], replayed_data['yaw_rate'], atol=np.radians(0.35))
     assert np.allclose(orig_data['roll'], replayed_data['roll'], atol=np.radians(0.55))
+
+  def test_timing_spikes(self):
+    """
+    Test: timing of 150ms off for the single accelerometer message in the middle of the segment
+    Expected Result: the message is ignored, and inputsOK is False for that time
+    """
+    orig_data, replayed_data = run_scenarios(Scenario.SENSOR_TIMING_SPIKE_MIDWAY, self.logs)
+    assert np.all(replayed_data['inputs_flag'] == orig_data['inputs_flag'])
+    assert np.all(replayed_data['sensors_flag'] == orig_data['sensors_flag'])
