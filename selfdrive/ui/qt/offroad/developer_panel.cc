@@ -1,12 +1,10 @@
 #include <QDebug>
-
 #include "selfdrive/ui/qt/offroad/developer_panel.h"
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "common/util.h"
 
 DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
-  // SSH keys
   addItem(new SshToggle());
   addItem(new SshControl());
 
@@ -24,10 +22,18 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   addItem(longManeuverToggle);
 
-  // Joystick and longitudinal maneuvers should be hidden on release branches
+  adbToggle = new ParamControl("EnableADB", tr("Enable ADB"), "", "");
+  QObject::connect(adbToggle, &ParamControl::toggleFlipped, [=](bool state) {
+    if (state) {
+      util::run_shell_command("setprop service.adb.tcp.port 5555 && start adbd");
+    } else {
+      util::run_shell_command("stop adbd && setprop service.adb.tcp.port -1");
+    }
+  });
+  addItem(adbToggle);
+
   is_release = params.getBool("IsReleaseBranch");
 
-  // Toggles should be not available to change in onroad state
   QObject::connect(uiState(), &UIState::offroadTransition, this, &DeveloperPanel::updateToggles);
 }
 
@@ -37,7 +43,8 @@ void DeveloperPanel::updateToggles(bool _offroad) {
     btn->setEnabled(_offroad);
   }
 
-  // longManeuverToggle should not be toggleable if the car don't have longitudinal control
+  adbToggle->setEnabled(_offroad);
+
   auto cp_bytes = params.get("CarParamsPersistent");
   if (!cp_bytes.empty()) {
     AlignedBuffer aligned_buf;
@@ -49,8 +56,4 @@ void DeveloperPanel::updateToggles(bool _offroad) {
   }
 
   offroad = _offroad;
-}
-
-void DeveloperPanel::showEvent(QShowEvent *event) {
-  updateToggles(offroad);
 }
