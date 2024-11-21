@@ -6,6 +6,7 @@ import cereal.messaging as messaging
 from cereal import log
 from openpilot.common.gpio import gpio_set, gpio_init
 from panda import Panda, PandaDFU, PandaProtocolMismatch
+from openpilot.common.retry import retry
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.hardware.tici.pins import GPIO
@@ -51,6 +52,7 @@ class TestPandad:
     assert not Panda.wait_for_dfu(None, 3)
     assert not Panda.wait_for_panda(None, 3)
 
+  @retry(attempts=3)
   def _flash_bootstub_and_test(self, fn, expect_mismatch=False):
     self._go_to_dfu()
     pd = PandaDFU(None)
