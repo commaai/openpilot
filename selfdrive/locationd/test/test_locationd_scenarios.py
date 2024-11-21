@@ -17,6 +17,7 @@ SELECT_COMPARE_FIELDS = {
   'sensors_flag': ['sensorsOK'],
 }
 JUNK_IDX = 100
+CONSISTENT_SPIKES_COUNT = 10
 
 
 class Scenario(Enum):
@@ -26,6 +27,7 @@ class Scenario(Enum):
   ACCEL_OFF = 'accel_off'
   ACCEL_SPIKE_MIDWAY = 'accel_spike_midway'
   SENSOR_TIMING_SPIKE_MIDWAY = 'timing_spikes'
+  SENSOR_TIMING_CONSISTENT_SPIKES = 'timing_consistent_spikes'
 
 
 def get_select_fields_data(logs):
@@ -76,6 +78,16 @@ def run_scenarios(scenario, logs):
     temp = accel[len(accel) // 2].as_builder()
     temp.accelerometer.timestamp -= int(0.150 * 1e9)
     accel[len(accel) // 2] = temp.as_reader()
+    logs = sorted(non_accel + accel, key=lambda x: x.logMonoTime)
+
+  elif scenario == Scenario.SENSOR_TIMING_CONSISTENT_SPIKES:
+    non_accel = [x for x in logs if x.which() not in 'accelerometer']
+    accel = [x for x in logs if x.which() in 'accelerometer']
+    temps = accel[len(accel) // 2:len(accel) // 2 + CONSISTENT_SPIKES_COUNT]
+    for i, temp in enumerate(temps):
+      temp = temp.as_builder()
+      temp.accelerometer.timestamp -= int(0.150 * 1e9)
+      accel[len(accel) // 2 + i] = temp.as_reader()
     logs = sorted(non_accel + accel, key=lambda x: x.logMonoTime)
 
   replayed_logs = replay_process_with_name(name='locationd', lr=logs)
@@ -156,7 +168,7 @@ class TestLocationdScenarios:
     assert np.allclose(orig_data['yaw_rate'], replayed_data['yaw_rate'], atol=np.radians(0.35))
     assert np.allclose(orig_data['roll'], replayed_data['roll'], atol=np.radians(0.55))
 
-  def test_timing_spikes(self):
+  def test_single_timing_spike(self):
     """
     Test: timing of 150ms off for the single accelerometer message in the middle of the segment
     Expected Result: the message is ignored, and inputsOK is False for that time
@@ -164,3 +176,11 @@ class TestLocationdScenarios:
     orig_data, replayed_data = run_scenarios(Scenario.SENSOR_TIMING_SPIKE_MIDWAY, self.logs)
     assert np.all(replayed_data['inputs_flag'] == orig_data['inputs_flag'])
     assert np.all(replayed_data['sensors_flag'] == orig_data['sensors_flag'])
+
+  def test_consistent_timing_spikes(self):
+    """
+    Test: consistent timing spikes for N accelerometer messages in the middle of the segment
+    Expected Result: inputsOK becomes False after N of bad measurements
+    """
+    _, replayed_data = run_scenarios(Scenario.SENSOR_TIMING_CONSISTENT_SPIKES, self.logs)
+    assert np.any(replayed_data['inputs_flag'][499:] == 0.0)
