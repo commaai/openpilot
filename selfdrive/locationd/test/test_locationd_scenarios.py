@@ -46,6 +46,17 @@ def get_select_fields_data(logs):
   return data
 
 
+def modify_logs_midway(logs, which, count, fn):
+  non_which = [x for x in logs if x.which() != which]
+  which = [x for x in logs if x.which() == which]
+  temps = which[len(which) // 2:len(which) // 2 + count]
+  for i, temp in enumerate(temps):
+    temp = temp.as_builder()
+    fn(temp)
+    which[len(which) // 2 + i] = temp.as_reader()
+  return sorted(non_which + which, key=lambda x: x.logMonoTime)
+
+
 def run_scenarios(scenario, logs):
   if scenario == Scenario.BASE:
     pass
@@ -54,41 +65,23 @@ def run_scenarios(scenario, logs):
     logs = sorted([x for x in logs if x.which() != 'gyroscope'], key=lambda x: x.logMonoTime)
 
   elif scenario == Scenario.GYRO_SPIKE_MIDWAY:
-    non_gyro = [x for x in logs if x.which() not in 'gyroscope']
-    gyro = [x for x in logs if x.which() in 'gyroscope']
-    temp = gyro[len(gyro) // 2].as_builder()
-    temp.gyroscope.gyroUncalibrated.v[0] += 3.0
-    gyro[len(gyro) // 2] = temp.as_reader()
-    logs = sorted(non_gyro + gyro, key=lambda x: x.logMonoTime)
+    def gyro_spike(msg):
+      msg.gyroscope.gyroUncalibrated.v[0] += 3.0
+    logs = modify_logs_midway(logs, 'gyroscope', 1, gyro_spike)
 
   elif scenario == Scenario.ACCEL_OFF:
     logs = sorted([x for x in logs if x.which() != 'accelerometer'], key=lambda x: x.logMonoTime)
 
   elif scenario == Scenario.ACCEL_SPIKE_MIDWAY:
-    non_accel = [x for x in logs if x.which() not in 'accelerometer']
-    accel = [x for x in logs if x.which() in 'accelerometer']
-    temp = accel[len(accel) // 2].as_builder()
-    temp.accelerometer.acceleration.v[0] += 10.0
-    accel[len(accel) // 2] = temp.as_reader()
-    logs = sorted(non_accel + accel, key=lambda x: x.logMonoTime)
+    def acc_spike(msg):
+      msg.accelerometer.acceleration.v[0] += 10.0
+    logs = modify_logs_midway(logs, 'accelerometer', 1, acc_spike)
 
-  elif scenario == Scenario.SENSOR_TIMING_SPIKE_MIDWAY:
-    non_accel = [x for x in logs if x.which() not in 'accelerometer']
-    accel = [x for x in logs if x.which() in 'accelerometer']
-    temp = accel[len(accel) // 2].as_builder()
-    temp.accelerometer.timestamp -= int(0.150 * 1e9)
-    accel[len(accel) // 2] = temp.as_reader()
-    logs = sorted(non_accel + accel, key=lambda x: x.logMonoTime)
-
-  elif scenario == Scenario.SENSOR_TIMING_CONSISTENT_SPIKES:
-    non_accel = [x for x in logs if x.which() not in 'accelerometer']
-    accel = [x for x in logs if x.which() in 'accelerometer']
-    temps = accel[len(accel) // 2:len(accel) // 2 + CONSISTENT_SPIKES_COUNT]
-    for i, temp in enumerate(temps):
-      temp = temp.as_builder()
-      temp.accelerometer.timestamp -= int(0.150 * 1e9)
-      accel[len(accel) // 2 + i] = temp.as_reader()
-    logs = sorted(non_accel + accel, key=lambda x: x.logMonoTime)
+  elif scenario == Scenario.SENSOR_TIMING_SPIKE_MIDWAY or scenario == Scenario.SENSOR_TIMING_CONSISTENT_SPIKES:
+    def timing_spike(msg):
+      msg.accelerometer.timestamp -= int(0.150 * 1e9)
+    count = 1 if scenario == Scenario.SENSOR_TIMING_SPIKE_MIDWAY else CONSISTENT_SPIKES_COUNT
+    logs = modify_logs_midway(logs, 'accelerometer', count, timing_spike)
 
   replayed_logs = replay_process_with_name(name='locationd', lr=logs)
   return get_select_fields_data(logs), get_select_fields_data(replayed_logs)
