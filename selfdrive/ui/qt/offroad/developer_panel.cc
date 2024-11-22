@@ -1,13 +1,9 @@
-#include <cstdlib>
 #include <QDebug>
+#include <QProcess>
 #include "selfdrive/ui/qt/offroad/developer_panel.h"
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "common/util.h"
-
-void runShellCommand(const std::string &command) {
-  std::system(command.c_str());
-}
 
 DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   addItem(new SshToggle());
@@ -27,12 +23,14 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   addItem(longManeuverToggle);
 
-  adbToggle = new ParamControl("EnableADB", tr("Enable ADB"), "", "");
+  adbToggle = new ParamControl("AdbOverTcp", tr("ADB over TCP"), tr("Enable ADB over TCP on port 5555"), "");
   QObject::connect(adbToggle, &ParamControl::toggleFlipped, [=](bool state) {
-    if (state) {
-      runShellCommand("setprop service.adb.tcp.port 5555 && start adbd");
-    } else {
-      runShellCommand("stop adbd && setprop service.adb.tcp.port -1");
+    QString command = state
+                      ? "setprop service.adb.tcp.port 5555 && sudo systemctl start adbd"
+                      : "sudo systemctl stop adbd";
+    int exitCode = QProcess::execute("sh", {"-c", command});
+    if (exitCode != 0) {
+      qWarning() << "Failed to execute ADB command: " << command;
     }
   });
   addItem(adbToggle);
@@ -48,8 +46,6 @@ void DeveloperPanel::updateToggles(bool _offroad) {
     btn->setEnabled(_offroad);
   }
 
-  adbToggle->setEnabled(_offroad);
-
   auto cp_bytes = params.get("CarParamsPersistent");
   if (!cp_bytes.empty()) {
     AlignedBuffer aligned_buf;
@@ -60,5 +56,11 @@ void DeveloperPanel::updateToggles(bool _offroad) {
     longManeuverToggle->setEnabled(false);
   }
 
+  adbToggle->setEnabled(_offroad);
+
   offroad = _offroad;
-}s
+}
+
+void DeveloperPanel::showEvent(QShowEvent *event) {
+  updateToggles(offroad);
+}
