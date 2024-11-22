@@ -341,7 +341,9 @@ void StreamCameraView::drawThumbnail(QPainter &p) {
 
     p.drawPixmap(x, y, thumb);
     p.setPen(QPen(palette().color(QPalette::BrightText), 2));
-    p.drawText(x, y, thumb.width(), thumb.height() - THUMBNAIL_MARGIN, Qt::AlignHCenter | Qt::AlignBottom, QString::number(seconds));
+    p.setFont(QFont(font().family(), 10));
+    p.drawText(x, y, thumb.width(), thumb.height() - THUMBNAIL_MARGIN,
+               Qt::AlignHCenter | Qt::AlignBottom, QString::number(seconds, 'f', 3));
   }
 }
 

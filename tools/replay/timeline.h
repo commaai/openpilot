@@ -27,7 +27,7 @@ public:
                   std::function<void(std::shared_ptr<LogReader>)> callback);
   std::optional<uint64_t> find(double cur_ts, FindFlag flag) const;
   std::optional<Entry> findAlertAtTime(double target_time) const;
-  const std::shared_ptr<std::vector<Entry>> get() const { return timeline_entries_; }
+  const std::shared_ptr<std::vector<Entry>> getEntries() const { return timeline_entries_; }
 
 private:
  void buildTimeline(const Route &route, uint64_t route_start_ts, bool local_cache,
