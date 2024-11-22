@@ -43,6 +43,7 @@ public:
   float dc_gain_on_grey;
   float dc_gain_off_grey;
 
+  float ev_scale = 1.0;
   float sensor_analog_gains[ANALOG_GAIN_MAX_CNT];
   int analog_gain_min_idx;
   int analog_gain_max_idx;
