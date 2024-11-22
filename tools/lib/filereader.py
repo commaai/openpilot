@@ -7,6 +7,7 @@ from openpilot.tools.lib.url_file import URLFile
 DATA_ENDPOINT = os.getenv("DATA_ENDPOINT", "http://data-raw.comma.internal/")
 LOCAL_IPS = ["10.", "192.168.", *[f"172.{i}" for i in range(16, 32)]]
 
+
 def internal_source_available(url=DATA_ENDPOINT):
   try:
     hostname = urlparse(url).hostname
