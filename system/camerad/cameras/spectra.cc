@@ -818,16 +818,16 @@ void SpectraCamera::configISP() {
     .usage_type = 0x0,
 
     .left_start = 0,
-    .left_stop = sensor->frame_width - 1,
-    .left_width = sensor->frame_width,
+    .left_stop = sensor->frame_width*2 - 1,
+    .left_width = sensor->frame_width*2,
 
     .right_start = 0,
-    .right_stop = sensor->frame_width - 1,
-    .right_width = sensor->frame_width,
+    .right_stop = sensor->frame_width*2 - 1,
+    .right_width = sensor->frame_width*2,
 
     .line_start = sensor->frame_offset,
-    .line_stop = sensor->frame_height + sensor->frame_offset - 1,
-    .height = sensor->frame_height + sensor->frame_offset,
+    .line_stop = sensor->frame_height*2 + sensor->frame_offset - 1,
+    .height = sensor->frame_height*2 + sensor->frame_offset,
 
     .pixel_clk = 0x0,
     .batch_size = 0x0,
@@ -907,8 +907,8 @@ void SpectraCamera::configICP() {
     .num_out_res = 1,
     .in_res = (struct cam_icp_res_info){
       .format = 0x9,  // RAW MIPI
-      .width = sensor->frame_width,
-      .height = sensor->frame_height,
+      .width = sensor->frame_width*2,
+      .height = sensor->frame_height*2,
       .fps = 20,
     },
     .out_res[0] = (struct cam_icp_res_info){
