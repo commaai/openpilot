@@ -182,5 +182,6 @@ class TestLocationdScenarios:
     Test: consistent timing spikes for N accelerometer messages in the middle of the segment
     Expected Result: inputsOK becomes False after N of bad measurements
     """
-    _, replayed_data = run_scenarios(Scenario.SENSOR_TIMING_CONSISTENT_SPIKES, self.logs)
-    assert np.any(replayed_data['inputs_flag'][499:] == 0.0)
+    orig_data, replayed_data = run_scenarios(Scenario.SENSOR_TIMING_CONSISTENT_SPIKES, self.logs)
+    assert np.sum(replayed_data['inputs_flag'][499:699] == 0.0) / 200 >= 0.9 # 90% of the time inputsOK is False (~10 seconds of invalid flag)
+    assert np.all(replayed_data['inputs_flag'][699:] == orig_data['inputs_flag'][699:]) # recovery after
