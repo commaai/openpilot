@@ -23,8 +23,10 @@ MIN_STD_SANITY_CHECK = 1e-5  # m or rad
 MAX_FILTER_REWIND_TIME = 0.8  # s
 MAX_SENSOR_TIME_DIFF = 0.1  # s
 YAWRATE_CROSS_ERR_CHECK_FACTOR = 30
-INPUT_INVALID_THRESHOLD = 0.5
-INPUT_INVALID_DECAY = 0.9993  # ~10 secs to resume after a bad input
+INPUT_INVALID_THRESHOLD = 0.5  # 0 bad inputs ignored
+TIMING_INVALID_THRESHOLD = 2.5  # 2 bad timings ignored
+INPUT_INVALID_DECAY = 0.9993  # ~10 secs to resume after exceeding allowed bad inputs by one
+TIMING_INVALID_DECAY = 0.9986  # ~5 secs to resume after exceeding allowed bad timings by one
 POSENET_STD_INITIAL_VALUE = 10.0
 POSENET_STD_HIST_HALF = 20
 
@@ -266,7 +268,7 @@ def main():
 
   filter_initialized = False
   critcal_services = ["accelerometer", "gyroscope", "liveCalibration", "cameraOdometry"]
-  observation_timing_invalid = False
+  observation_timing_invalid = defaultdict(int)
   observation_input_invalid = defaultdict(int)
 
   initial_pose = params.get("LocationFilterInitialState")
@@ -282,8 +284,6 @@ def main():
     acc_msgs, gyro_msgs = (messaging.drain_sock(sock) for sock in sensor_sockets)
 
     if filter_initialized:
-      observation_timing_invalid = False
-
       msgs = []
       for msg in acc_msgs + gyro_msgs:
         t, valid, which, data = msg.logMonoTime, msg.valid, msg.which(), getattr(msg, msg.which())
@@ -299,17 +299,19 @@ def main():
           t = log_mono_time * 1e-9
           res = estimator.handle_log(t, which, msg)
           if res == HandleLogResult.TIMING_INVALID:
-            observation_timing_invalid = True
+            observation_timing_invalid[which] += 1
           elif res == HandleLogResult.INPUT_INVALID:
             observation_input_invalid[which] += 1
           else:
             observation_input_invalid[which] *= INPUT_INVALID_DECAY
+            observation_timing_invalid[which] *= TIMING_INVALID_DECAY
     else:
       filter_initialized = sm.all_checks() and sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
 
     if sm.updated["cameraOdometry"]:
       critical_service_inputs_valid = all(observation_input_invalid[s] < INPUT_INVALID_THRESHOLD for s in critcal_services)
-      inputs_valid = sm.all_valid() and critical_service_inputs_valid and not observation_timing_invalid
+      critical_service_timing_valid = all(observation_timing_invalid[s] < TIMING_INVALID_THRESHOLD for s in critcal_services)
+      inputs_valid = sm.all_valid() and critical_service_inputs_valid and critical_service_timing_valid
       sensors_valid = sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
 
       msg = estimator.get_msg(sensors_valid, inputs_valid, filter_initialized)
