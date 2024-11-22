@@ -1,8 +1,13 @@
+#include <cstdlib>
 #include <QDebug>
 #include "selfdrive/ui/qt/offroad/developer_panel.h"
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "common/util.h"
+
+void runShellCommand(const std::string &command) {
+  std::system(command.c_str());
+}
 
 DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   addItem(new SshToggle());
@@ -25,9 +30,9 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   adbToggle = new ParamControl("EnableADB", tr("Enable ADB"), "", "");
   QObject::connect(adbToggle, &ParamControl::toggleFlipped, [=](bool state) {
     if (state) {
-      util::run_shell_command("setprop service.adb.tcp.port 5555 && start adbd");
+      runShellCommand("setprop service.adb.tcp.port 5555 && start adbd");
     } else {
-      util::run_shell_command("stop adbd && setprop service.adb.tcp.port -1");
+      runShellCommand("stop adbd && setprop service.adb.tcp.port -1");
     }
   });
   addItem(adbToggle);
@@ -56,4 +61,4 @@ void DeveloperPanel::updateToggles(bool _offroad) {
   }
 
   offroad = _offroad;
-}
+}s
