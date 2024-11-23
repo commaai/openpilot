@@ -26,7 +26,7 @@ YAWRATE_CROSS_ERR_CHECK_FACTOR = 30
 INPUT_INVALID_THRESHOLD = 0.5  # 0 bad inputs ignored
 TIMING_INVALID_THRESHOLD = 2.5  # 2 bad timings ignored
 INPUT_INVALID_DECAY = 0.9993  # ~10 secs to resume after exceeding allowed bad inputs by one
-TIMING_INVALID_DECAY = 0.9986  # ~5 secs to resume after exceeding allowed bad timings by one
+TIMING_INVALID_DECAY = 0.9986  # ~2 secs to resume after exceeding allowed bad timings by one
 POSENET_STD_INITIAL_VALUE = 10.0
 POSENET_STD_HIST_HALF = 20
 
