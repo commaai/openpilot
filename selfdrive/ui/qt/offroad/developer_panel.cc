@@ -27,7 +27,7 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   adbToggle = new ParamControl("Adb", tr("Android Debug Bridge"), tr("Enable ADB"), "");
   QObject::connect(adbToggle, &ParamControl::toggleFlipped, [=](bool state) {
     if (state) {
-      QProcess::startDetached("sh", {"-c", "./selfdrive/debug/adb.sh"});
+      QProcess::startDetached("sh", {"-c", "setprop service.adb.tcp.port 5555 && sudo systemctl start adbd"});
     } else {
       QProcess::startDetached("sh", {"-c", "sudo systemctl stop adbd"});
     }
