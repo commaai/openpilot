@@ -24,9 +24,9 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   addItem(longManeuverToggle);
 
-  adbToggle = new ParamControl("AdbOverUsb", tr("ADB over USB"), tr("Enable ADB over USB"), "");
+  adbToggle = new ParamControl("AdbOverUsb", tr("Android Debug Bridge"), tr("Enable ADB"), "");
   QObject::connect(adbToggle, &ParamControl::toggleFlipped, [=](bool state) {
-    int ret_code = std::system("/selfdrive/debug/adb.sh");
+    int ret_code = std::system("./selfdrive/debug/adb.sh");
     if (ret_code != 0) {
       qWarning() << "Failed to execute /selfdrive/debug/adb.sh, return code:" << ret_code;
     } else {
