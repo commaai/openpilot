@@ -89,6 +89,7 @@ private:
 
 std::unordered_map<std::string, uint32_t> keys = {
     {"AccessToken", CLEAR_ON_MANAGER_START | DONT_LOG},
+    {"Adb", PERSISTENT},
     {"AlwaysOnDM", PERSISTENT},
     {"ApiCache_Device", PERSISTENT},
     {"AssistNowToken", PERSISTENT},
@@ -117,7 +118,6 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"DoReboot", CLEAR_ON_MANAGER_START},
     {"DoShutdown", CLEAR_ON_MANAGER_START},
     {"DoUninstall", CLEAR_ON_MANAGER_START},
-    {"EnableADB", PERSISTENT},
     {"ExperimentalLongitudinalEnabled", PERSISTENT | DEVELOPMENT_ONLY},
     {"ExperimentalMode", PERSISTENT},
     {"ExperimentalModeConfirmed", PERSISTENT},
