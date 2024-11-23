@@ -1,5 +1,6 @@
 #include <QDebug>
 #include <QProcess>
+#include <cstdlib>
 #include "selfdrive/ui/qt/offroad/developer_panel.h"
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
@@ -23,14 +24,13 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   addItem(longManeuverToggle);
 
-  adbToggle = new ParamControl("AdbOverTcp", tr("ADB over TCP"), tr("Enable ADB over TCP on port 5555"), "");
+  adbToggle = new ParamControl("AdbOverUsb", tr("ADB over USB"), tr("Enable ADB over USB"), "");
   QObject::connect(adbToggle, &ParamControl::toggleFlipped, [=](bool state) {
-    QString command = state
-                      ? "setprop service.adb.tcp.port 5555 && sudo systemctl start adbd"
-                      : "sudo systemctl stop adbd";
-    int exitCode = QProcess::execute("sh", {"-c", command});
-    if (exitCode != 0) {
-      qWarning() << "Failed to execute ADB command: " << command;
+    int ret_code = std::system("/selfdrive/debug/adb.sh");
+    if (ret_code != 0) {
+      qWarning() << "Failed to execute /selfdrive/debug/adb.sh, return code:" << ret_code;
+    } else {
+      qDebug() << "ADB script executed successfully.";
     }
   });
   addItem(adbToggle);
