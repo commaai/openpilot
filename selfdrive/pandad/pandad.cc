@@ -67,6 +67,10 @@ Panda *connect(std::string serial="", uint32_t index=0) {
   }
   //panda->enable_deepsleep();
 
+  for (int i = 0; i < PANDA_BUS_CNT; i++) {
+    panda->set_can_fd_auto(i, true);
+  }
+
   if (!panda->up_to_date() && !getenv("BOARDD_SKIP_FW_CHECK")) {
     throw std::runtime_error("Panda firmware out of date. Run pandad.py to update.");
   }
