@@ -24,13 +24,12 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   addItem(longManeuverToggle);
 
-  adbToggle = new ParamControl("AdbOverUsb", tr("Android Debug Bridge"), tr("Enable ADB"), "");
+  adbToggle = new ParamControl("Adb", tr("Android Debug Bridge"), tr("Enable ADB"), "");
   QObject::connect(adbToggle, &ParamControl::toggleFlipped, [=](bool state) {
-    int ret_code = std::system("./selfdrive/debug/adb.sh");
-    if (ret_code != 0) {
-      qWarning() << "Failed to execute /selfdrive/debug/adb.sh, return code:" << ret_code;
+    if (state) {
+      QProcess::startDetached("sh", {"-c", "./selfdrive/debug/adb.sh"});
     } else {
-      qDebug() << "ADB script executed successfully.";
+      QProcess::startDetached("sh", {"-c", "sudo systemctl stop adbd"});
     }
   });
   addItem(adbToggle);
