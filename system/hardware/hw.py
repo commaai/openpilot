@@ -61,5 +61,5 @@ class Paths:
   @staticmethod
   def shm_path() -> str:
     if PC and platform.system() == "Darwin":
-      return f"/tmp"  # This is not really shared memory on macOS, but it's the closest we can get
+      return "/tmp"  # This is not really shared memory on macOS, but it's the closest we can get
     return "/dev/shm"

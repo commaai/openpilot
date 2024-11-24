@@ -5,7 +5,6 @@ import copy
 import json
 import heapq
 import signal
-import platform
 from collections import Counter, OrderedDict
 from dataclasses import dataclass, field
 from typing import Any
@@ -781,7 +780,7 @@ def generate_params_config(lr=None, CP=None, fingerprint=None, custom_params=Non
 
 def generate_environ_config(CP=None, fingerprint=None, log_dir=None) -> dict[str, Any]:
   environ_dict = {}
-  environ_dict["PARAMS_ROOT"] = f"${Paths.shm_path()}/params"
+  environ_dict["PARAMS_ROOT"] = f"{Paths.shm_path()}/params"
   if log_dir is not None:
     environ_dict["LOG_ROOT"] = log_dir
 
