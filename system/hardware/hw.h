@@ -47,4 +47,8 @@ namespace Path {
     }
     return "/tmp/comma_download_cache" + Path::openpilot_prefix() + "/";
   }
+
+ inline std::string shm_path() {
+   return #ifdef __APPLE__ ? "/tmp" : "/dev/shm";
+ }
 }  // namespace Path
