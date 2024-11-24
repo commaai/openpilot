@@ -12,6 +12,7 @@ from typing import Any
 from collections.abc import Callable, Iterable
 from tqdm import tqdm
 import capnp
+from openpilot.system.hardware.hw import Paths
 
 import cereal.messaging as messaging
 from cereal import car
@@ -780,8 +781,7 @@ def generate_params_config(lr=None, CP=None, fingerprint=None, custom_params=Non
 
 def generate_environ_config(CP=None, fingerprint=None, log_dir=None) -> dict[str, Any]:
   environ_dict = {}
-  if platform.system() != "Darwin":
-    environ_dict["PARAMS_ROOT"] = "/dev/shm/params"
+  environ_dict["PARAMS_ROOT"] = f"${Paths.shm_path()}/params"
   if log_dir is not None:
     environ_dict["LOG_ROOT"] = log_dir
 

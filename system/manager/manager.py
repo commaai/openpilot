@@ -17,7 +17,7 @@ from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.athena.registration import register, UNREGISTERED_DONGLE_ID
 from openpilot.common.swaglog import cloudlog, add_file_handler
 from openpilot.system.version import get_build_metadata, terms_version, training_version
-
+from openpilot.system.hardware.hw import Paths
 
 
 def manager_init() -> None:
@@ -52,11 +52,11 @@ def manager_init() -> None:
 
   # Create folders needed for msgq
   try:
-    os.mkdir("/dev/shm")
+    os.mkdir(Paths.shm_path())
   except FileExistsError:
     pass
   except PermissionError:
-    print("WARNING: failed to make /dev/shm")
+    print(f"WARNING: failed to make {Paths.shm_path()}")
 
   # set version params
   params.put("Version", build_metadata.openpilot.version)
