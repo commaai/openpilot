@@ -2,6 +2,7 @@
 
 #include <QDateTime>
 #include <QDialogButtonBox>
+#include <QTabWidget>
 #include <QFormLayout>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -44,10 +45,25 @@ public:
 RoutesDialog::RoutesDialog(QWidget *parent) : QDialog(parent), route_requester_(new OneShotHttpRequest(this)) {
   setWindowTitle(tr("Remote routes"));
 
+  auto all_routes_widget = new QWidget;
+  auto all_routes_layout = new QVBoxLayout;
+  all_routes_layout->addWidget(period_selector_ = new QComboBox(this));
+  all_routes_layout->addWidget(route_list_ = new RouteListWidget(all_routes_widget));
+  all_routes_widget->setLayout(all_routes_layout);
+
+  auto preserved_routes_widget = new QWidget;
+  auto preserved_layout = new QVBoxLayout;
+  preserved_layout->addWidget(preserved_route_list_ = new RouteListWidget(all_routes_widget));
+  preserved_routes_widget->setLayout(preserved_layout);
+
+  routes_type_selector_ = new QTabWidget(this);
+  routes_type_selector_->addTab(all_routes_widget, tr("&All"));
+  routes_type_selector_->addTab(preserved_routes_widget, tr("&Preserved"));
+
   QFormLayout *layout = new QFormLayout(this);
   layout->addRow(tr("Device"), device_list_ = new QComboBox(this));
-  layout->addRow(tr("Duration"), period_selector_ = new QComboBox(this));
-  layout->addRow(route_list_ = new RouteListWidget(this));
+  layout->addRow(routes_type_selector_);
+
   auto button_box = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
   layout->addRow(button_box);
 
@@ -62,7 +78,9 @@ RoutesDialog::RoutesDialog(QWidget *parent) : QDialog(parent), route_requester_(
   QObject::connect(route_requester_, &HttpRequest::requestDone, this, &RoutesDialog::parseRouteList);
   connect(device_list_, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &RoutesDialog::fetchRoutes);
   connect(period_selector_, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &RoutesDialog::fetchRoutes);
+  connect(routes_type_selector_, QOverload<int>::of(&QTabWidget::currentChanged), this, &RoutesDialog::fetchRoutes);
   connect(route_list_, &QListWidget::itemDoubleClicked, this, &QDialog::accept);
+  connect(preserved_route_list_, &QListWidget::itemDoubleClicked, this, &QDialog::accept);
   QObject::connect(button_box, &QDialogButtonBox::accepted, this, &QDialog::accept);
   QObject::connect(button_box, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
@@ -92,8 +110,10 @@ void RoutesDialog::fetchRoutes() {
   if (device_list_->currentIndex() == -1 || device_list_->currentData().isNull())
     return;
 
-  route_list_->clear();
-  route_list_->setEmptyText(tr("Loading..."));
+  currentRoutesList()->clear();
+  currentRoutesList()->setEmptyText(tr("Loading..."));
+
+  QObject::connect(http, &HttpRequest::requestDone, this, &RoutesDialog::parseRouteList);
 
   // Construct URL with selected device and date range
   auto dongle_id = device_list_->currentData().toString();
@@ -103,29 +123,68 @@ void RoutesDialog::fetchRoutes() {
                     .arg(current.addDays(-(period_selector_->currentData().toInt())).toMSecsSinceEpoch())
                     .arg(current.toMSecsSinceEpoch());
   route_requester_->sendRequest(url);
+  if(isPreservedTabSelected()) {
+    QString url = QString("%1/v1/devices/%2/routes/preserved")
+                      .arg(CommaApi::BASE_URL)
+                      .arg(dongle_id);
+    http->sendRequest(url);
+  } else {
+    QDateTime current = QDateTime::currentDateTime();
+    QString url = QString("%1/v1/devices/%2/routes_segments?start=%3&end=%4")
+                      .arg(CommaApi::BASE_URL)
+                      .arg(dongle_id)
+                      .arg(current.addDays(-(period_selector_->currentData().toInt())).toMSecsSinceEpoch())
+                      .arg(current.toMSecsSinceEpoch());
+    route_requester_->sendRequest(url);
+  }
 }
 
 void RoutesDialog::parseRouteList(const QString &json, bool success, QNetworkReply::NetworkError err) {
   if (success) {
     for (const QJsonValue &route : QJsonDocument::fromJson(json.toUtf8()).array()) {
-      uint64_t start_time = route["start_time_utc_millis"].toDouble();
-      uint64_t end_time = route["end_time_utc_millis"].toDouble();
-      auto datetime = QDateTime::fromMSecsSinceEpoch(start_time);
-      auto item = new QListWidgetItem(QString("%1    %2min").arg(datetime.toString()).arg((end_time - start_time) / (1000 * 60)));
-      item->setData(Qt::UserRole, route["fullname"].toString());
-      route_list_->addItem(item);
+      if(isPreservedTabSelected()) {
+        QString start_time = route["start_time"].toString();
+        QString end_time = route["end_time"].toString();
+
+        auto datetime = QDateTime::fromString(start_time, Qt::ISODateWithMs);
+        auto edatetime = QDateTime::fromString(end_time, Qt::ISODateWithMs);
+        auto item = new QListWidgetItem(QString("%1    %2min").arg(datetime.toString()).arg(datetime.msecsTo(edatetime) / (1000 * 60)));
+        item->setData(Qt::UserRole, route["fullname"].toString());
+        currentRoutesList()->addItem(item);
+      } else {
+        uint64_t start_time = route["start_time_utc_millis"].toDouble();
+        uint64_t end_time = route["end_time_utc_millis"].toDouble();
+        auto datetime = QDateTime::fromMSecsSinceEpoch(start_time);
+        auto item = new QListWidgetItem(QString("%1    %2min").arg(datetime.toString()).arg((end_time - start_time) / (1000 * 60)));
+        item->setData(Qt::UserRole, route["fullname"].toString());
+        currentRoutesList()->addItem(item);
+      }
     }
     // Select first route if available
-    if (route_list_->count() > 0) route_list_->setCurrentRow(0);
+    if (currentRoutesList()->count() > 0) currentRoutesList()->setCurrentRow(0);
   } else {
     QMessageBox::warning(this, tr("Error"), tr("Failed to fetch routes. Check your network connection."));
     reject();
   }
-  route_list_->setEmptyText(tr("No items"));
+  currentRoutesList()->setEmptyText(tr("No items"));
   sender()->deleteLater();
 }
 
-QString RoutesDialog::route() {
-  auto current_item = route_list_->currentItem();
-  return current_item ? current_item->data(Qt::UserRole).toString() : "";
+void RoutesDialog::accept() {
+  if (auto current_item = currentRoutesList()->currentItem()) {
+    route_ = current_item->data(Qt::UserRole).toString();
+  }
+  QDialog::accept();
+}
+
+RouteListWidget* RoutesDialog::currentRoutesList() {
+  if(routes_type_selector_->currentIndex() == 1) {
+    return preserved_route_list_;
+  }
+
+  return route_list_;
+}
+
+bool RoutesDialog::isPreservedTabSelected() {
+  return routes_type_selector_->currentIndex() == 1;
 }
