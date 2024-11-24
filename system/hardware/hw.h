@@ -49,6 +49,10 @@ namespace Path {
   }
 
  inline std::string shm_path() {
-   return #ifdef __APPLE__ ? "/tmp" : "/dev/shm";
+    #ifdef __APPLE__
+     return"/tmp"
+    #else
+     return "/dev/shm";
+    #endif
  }
 }  // namespace Path
