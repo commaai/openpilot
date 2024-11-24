@@ -142,23 +142,25 @@ void RoutesDialog::fetchRoutes() {
 void RoutesDialog::parseRouteList(const QString &json, bool success, QNetworkReply::NetworkError err) {
   if (success) {
     for (const QJsonValue &route : QJsonDocument::fromJson(json.toUtf8()).array()) {
+      uint64_t to;
+      QDateTime from;
+
       if(isPreservedTabSelected()) {
         QString start_time = route["start_time"].toString();
         QString end_time = route["end_time"].toString();
 
-        auto datetime = QDateTime::fromString(start_time, Qt::ISODateWithMs);
-        auto edatetime = QDateTime::fromString(end_time, Qt::ISODateWithMs);
-        auto item = new QListWidgetItem(QString("%1    %2min").arg(datetime.toString()).arg(datetime.msecsTo(edatetime) / (1000 * 60)));
-        item->setData(Qt::UserRole, route["fullname"].toString());
-        currentRoutesList()->addItem(item);
+        from = QDateTime::fromString(start_time, Qt::ISODateWithMs);
+        to = QDateTime::fromString(end_time, Qt::ISODateWithMs).msecsTo(to);
       } else {
         uint64_t start_time = route["start_time_utc_millis"].toDouble();
         uint64_t end_time = route["end_time_utc_millis"].toDouble();
-        auto datetime = QDateTime::fromMSecsSinceEpoch(start_time);
-        auto item = new QListWidgetItem(QString("%1    %2min").arg(datetime.toString()).arg((end_time - start_time) / (1000 * 60)));
-        item->setData(Qt::UserRole, route["fullname"].toString());
-        currentRoutesList()->addItem(item);
+        from = QDateTime::fromMSecsSinceEpoch(start_time);
+        to = (end_time - start_time);
       }
+
+      QListWidgetItem *item = new QListWidgetItem(QString("%1    %2min").arg(from.toString()).arg(to / (1000 * 60)));
+      item->setData(Qt::UserRole, route["fullname"].toString());
+      currentRoutesList()->addItem(item);
     }
     // Select first route if available
     if (currentRoutesList()->count() > 0) currentRoutesList()->setCurrentRow(0);
