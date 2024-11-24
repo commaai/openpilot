@@ -50,7 +50,7 @@ namespace Path {
 
  inline std::string shm_path() {
     #ifdef __APPLE__
-     return"/tmp"
+     return"/tmp";
     #else
      return "/dev/shm";
     #endif
