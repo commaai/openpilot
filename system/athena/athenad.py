@@ -101,9 +101,6 @@ upload_queue: Queue[UploadItem] = queue.Queue()
 low_priority_send_queue: Queue[str] = queue.Queue()
 log_recv_queue: Queue[str] = queue.Queue()
 
-cancelled_uploads: set[str] = set()
-cancelled_uploads_lock = threading.Lock()
-
 cur_upload_items: dict[int, UploadItem | None] = {}
 cur_upload_items_lock = threading.Lock()
 
@@ -134,10 +131,7 @@ class UploadQueueCache:
   def cache(upload_queue: Queue[UploadItem]) -> None:
     try:
       with upload_queue.mutex:
-        queue: list[UploadItem | None] = list(upload_queue.queue)
-
-      with cancelled_uploads_lock:
-        items = [asdict(i) for i in queue if i is not None and (i.id not in cancelled_uploads)]
+        items = [asdict(item) for item in upload_queue.queue]
 
       Params().put("AthenadUploadQueue", json.dumps(items))
     except Exception:
@@ -195,9 +189,7 @@ def jsonrpc_handler(end_event: threading.Event) -> None:
 
 
 def retry_upload(tid: int, end_event: threading.Event, increase_count: bool = True) -> None:
-  with cur_upload_items_lock:
-    item = cur_upload_items[tid]
-
+  item = cur_upload_items[tid]
   if item is not None and item.retry_count < MAX_RETRY_COUNT:
     new_retry_count = item.retry_count + 1 if increase_count else item.retry_count
 
@@ -244,11 +236,6 @@ def upload_handler(end_event: threading.Event) -> None:
       with cur_upload_items_lock:
         cur_upload_items[tid] = None
         cur_upload_items[tid] = item = replace(upload_queue.get(timeout=1), current=True)
-
-      with cancelled_uploads_lock:
-        if item.id in cancelled_uploads:
-          cancelled_uploads.remove(item.id)
-          continue
 
       # Remove item if too old
       age = datetime.now() - datetime.fromtimestamp(item.created_at / 1000)
@@ -433,8 +420,7 @@ def listUploadQueue() -> list[UploadItemDict]:
   with cur_upload_items_lock:
     items += list(cur_upload_items.values())
 
-  with cancelled_uploads_lock:
-    return [asdict(i) for i in items if (i is not None) and (i.id not in cancelled_uploads)]
+  return [asdict(item) for item in items]
 
 
 @dispatcher.add_method
@@ -443,16 +429,13 @@ def cancelUpload(upload_id: str | list[str]) -> dict[str, int | str]:
     upload_id = [upload_id]
 
   with upload_queue.mutex:
-    uploading_ids = {item.id for item in list(upload_queue.queue)}
+    remaining_items = [item for item in upload_queue.queue if item.id not in upload_id]
+    if len(remaining_items) == len(upload_queue.queue):
+      return {"success": 0, "error": "not found"}
 
-  cancelled_ids = uploading_ids.intersection(upload_id)
-  if len(cancelled_ids) == 0:
-    return {"success": 0, "error": "not found"}
-
-  with cancelled_uploads_lock:
-    cancelled_uploads.update(cancelled_ids)
-
-  return {"success": 1}
+    upload_queue.queue.clear()
+    upload_queue.queue.extend(remaining_items)
+    return {"success": 1}
 
 @dispatcher.add_method
 def setRouteViewed(route: str) -> dict[str, int | str]:
