@@ -20,14 +20,14 @@ jobs:
     name: build docs
     runs-on: ubuntu-latest
     steps:
+    - uses: commaai/timeout@v1
+
     - uses: actions/checkout@v4
-      timeout-minutes: 1
       with:
         submodules: true
 
     # Build
     - name: Build docs
-      timeout-minutes: 1
       run: |
         # TODO: can we install just the "docs" dependency group without the normal deps?
         pip install mkdocs
@@ -35,14 +35,12 @@ jobs:
 
     # Push to docs.comma.ai
     - uses: actions/checkout@v4
-      timeout-minutes: 1
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       with:
         path: openpilot-docs
         ssh-key: ${{ secrets.OPENPILOT_DOCS_KEY }}
         repository: commaai/openpilot-docs
     - name: Push
-      timeout-minutes: 1
       if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
       run: |
         set -x
