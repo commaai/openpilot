@@ -9,14 +9,13 @@ import os
 import capnp
 import time
 
-from typing import Optional, List, Union, Dict, Deque
-from collections import deque
+from typing import Optional, List, Union, Dict
 
 from cereal import log
 from cereal.services import SERVICE_LIST
 
 NO_TRAVERSAL_LIMIT = 2**64-1
-
+EMA_SMOOTHING_FACTOR = 0.2
 
 def reset_context():
   msgq.context = Context()
@@ -93,6 +92,9 @@ def recv_one_retry(sock: SubSocket) -> capnp.lib.capnp._DynamicStructReader:
 
 
 class FrequencyTracker:
+  """
+    Tracks frequency using Exponential Moving Average (EMA) to smooth frequency measurements.
+  """
   def __init__(self, service_freq: float, update_freq: float, is_poll: bool):
     freq = max(min(service_freq, update_freq), 1.)
     if is_poll:
@@ -108,40 +110,25 @@ class FrequencyTracker:
 
     self.min_freq = min_freq * 0.8
     self.max_freq = max_freq * 1.2
-    self.recv_dts: Deque[float] = deque(maxlen=int(10 * freq))
-    self.recv_dts_sum = 0.0
-    self.recent_recv_dts: Deque[float] = deque(maxlen=int(freq))
-    self.recent_recv_dts_sum = 0.0
-    self.prev_time = 0.0
+
+    self.freq = None
+    self.prev_time = None
 
   def record_recv_time(self, cur_time: float) -> None:
-    # TODO: Handle case where cur_time is less than prev_time
-    if self.prev_time > 1e-5:
+    if self.prev_time is not None:
       dt = cur_time - self.prev_time
-
-      if len(self.recv_dts) == self.recv_dts.maxlen:
-        self.recv_dts_sum -= self.recv_dts[0]
-      self.recv_dts.append(dt)
-      self.recv_dts_sum += dt
-
-      if len(self.recent_recv_dts) == self.recent_recv_dts.maxlen:
-        self.recent_recv_dts_sum -= self.recent_recv_dts[0]
-      self.recent_recv_dts.append(dt)
-      self.recent_recv_dts_sum += dt
+      if dt > 1e-6:
+        freq = 1.0 / dt
+        if self.freq is None:
+          self.freq = freq
+        else:
+          self.freq = (EMA_SMOOTHING_FACTOR * freq) + ((1 - EMA_SMOOTHING_FACTOR) * self.freq)
 
     self.prev_time = cur_time
 
   @property
   def valid(self) -> bool:
-    if not self.recv_dts:
-      return False
-
-    avg_freq = len(self.recv_dts) / self.recv_dts_sum
-    if self.min_freq <= avg_freq <= self.max_freq:
-      return True
-
-    avg_freq_recent = len(self.recent_recv_dts) / self.recent_recv_dts_sum
-    return self.min_freq <= avg_freq_recent <= self.max_freq
+    return self.freq is not None and self.min_freq <= self.freq <= self.max_freq
 
 
 class SubMaster:
