@@ -149,7 +149,7 @@ void RoutesDialog::parseRouteList(const QString &json, bool success, QNetworkRep
         QString end_time = route["end_time"].toString();
 
         from = QDateTime::fromString(start_time, Qt::ISODateWithMs);
-        to = QDateTime::fromString(end_time, Qt::ISODateWithMs).msecsTo(to);
+        to = QDateTime::fromString(end_time, Qt::ISODateWithMs).msecsTo(from);
       } else {
         uint64_t start_time = route["start_time_utc_millis"].toDouble();
         uint64_t end_time = route["end_time_utc_millis"].toDouble();
