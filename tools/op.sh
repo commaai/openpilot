@@ -312,6 +312,23 @@ function op_sim() {
   op_run_command exec tools/sim/launch_openpilot.sh
 }
 
+function op_switch() {
+  op_before_cmd
+
+  if [ -z "$1" ]; then
+    echo "specify a branch"
+    exit 1
+  fi
+
+  git fetch origin $1
+  git checkout -f $1
+  git reset --hard origin/$1
+  git clean -df
+  git submodule update --init --recursive
+  git submodule foreach git reset --hard
+  git submodule foreach git clean -df
+}
+
 function op_default() {
   echo "An openpilot helper"
   echo ""
@@ -333,6 +350,7 @@ function op_default() {
   echo -e "  ${BOLD}setup${NC}        Install openpilot dependencies"
   echo -e "  ${BOLD}build${NC}        Run the openpilot build system in the current working directory"
   echo -e "  ${BOLD}install${NC}      Install the 'op' tool system wide"
+  echo -e "  ${BOLD}switch${NC}       Switch to a different git branch with a clean slate (nukes any changes)."
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Tooling]:${NC}"
   echo -e "  ${BOLD}juggle${NC}       Run PlotJuggler"
@@ -388,6 +406,7 @@ function _op() {
     replay )        shift 1; op_replay "$@" ;;
     sim )           shift 1; op_sim "$@" ;;
     install )       shift 1; op_install "$@" ;;
+    switch )       shift 1; op_switch "$@" ;;
     post-commit )   shift 1; op_install_post_commit "$@" ;;
     * ) op_default "$@" ;;
   esac
