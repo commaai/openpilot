@@ -452,7 +452,24 @@ class Tici(HardwareBase):
       manufacturer = None
 
     cmds = []
-    if manufacturer == 'Cavli Inc.':
+
+    if self.get_device_type() in ("tici", "tizi"):
+      # clear out old blue prime initial APN
+      os.system('mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn="')
+
+      cmds += [
+        # configure modem as data-centric
+        'AT+QNVW=5280,0,"0102000000000000"',
+        'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
+        'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
+      ]
+      if self.get_device_type() == "tizi":
+        # SIM hot swap, not routed on tici
+        cmds += [
+          'AT+QSIMDET=1,0',
+          'AT+QSIMSTAT=1',
+        ]
+    else:
       cmds += [
         'AT^SIMSWAP=1',     # use SIM slot, instead of internal eSIM
         'AT$QCSIMSLEEP=0',  # disable SIM sleep
@@ -462,22 +479,7 @@ class Tici(HardwareBase):
         'AT$QCPCFG=usbNet,0',
         'AT$QCNETDEVCTL=3,1',
       ]
-    elif self.get_device_type() in ("tici", "tizi"):
-      cmds += [
-        # configure modem as data-centric
-        'AT+QNVW=5280,0,"0102000000000000"',
-        'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
-        'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
-      ]
-      if self.get_device_type() == "tizi":
-        cmds += [
-          # SIM hot swap
-          'AT+QSIMDET=1,0',
-          'AT+QSIMSTAT=1',
-        ]
 
-      # clear out old blue prime initial APN
-      os.system('mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn="')
     for cmd in cmds:
       try:
         modem.Command(cmd, math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
