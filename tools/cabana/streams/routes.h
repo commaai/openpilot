@@ -5,7 +5,6 @@
 #include <QTabWidget>
 #include <QVBoxLayout>
 
-
 #include "selfdrive/ui/qt/api.h"
 
 class RouteListWidget;
@@ -22,7 +21,6 @@ protected:
   void parseRouteList(const QString &json, bool success, QNetworkReply::NetworkError err);
   void fetchRoutes();
   bool isPreservedTabSelected();
-
   RouteListWidget* currentRoutesList();
 
   QTabWidget *routes_type_selector_;
