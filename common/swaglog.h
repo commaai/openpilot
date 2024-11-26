@@ -15,24 +15,10 @@
 #define SWAG_LOG_CHECK_FMT(a, b)
 #endif
 
-void cloudlog_e(int levelnum, const char* filename, int lineno, const char* func,
-                const char* fmt, ...) SWAG_LOG_CHECK_FMT(5, 6);
+void cloudlog_e(int levelnum, bool timestamp, const char* filename, int lineno, const char* func,
+                const char* fmt, ...) SWAG_LOG_CHECK_FMT(6, 7);
 
-void cloudlog_te(int levelnum, const char* filename, int lineno, const char* func,
-                 const char* fmt, ...) SWAG_LOG_CHECK_FMT(5, 6);
-
-void cloudlog_te(int levelnum, const char* filename, int lineno, const char* func,
-                 uint32_t frame_id, const char* fmt, ...) SWAG_LOG_CHECK_FMT(6, 7);
-
-
-#define cloudlog(lvl, fmt, ...) cloudlog_e(lvl, __FILE__, __LINE__, \
-                                           __func__, \
-                                           fmt, ## __VA_ARGS__)
-
-#define cloudlog_t(lvl, ...) cloudlog_te(lvl, __FILE__, __LINE__, \
-                                          __func__, \
-                                          __VA_ARGS__)
-
+#define cloudlog(lvl, fmt, ...) cloudlog_e(lvl, false, __FILE__, __LINE__,  __func__, fmt, ##__VA_ARGS__)
 
 #define cloudlog_rl(burst, millis, lvl, fmt, ...)   \
 {                                                   \
@@ -64,7 +50,7 @@ void cloudlog_te(int levelnum, const char* filename, int lineno, const char* fun
 }
 
 
-#define LOGT(...) cloudlog_t(CLOUDLOG_DEBUG, __VA_ARGS__)
+#define LOGT(fmt, ...) cloudlog_e(CLOUDLOG_DEBUG, true, __FILE__, __LINE__,  __func__, fmt, __VA_ARGS__)
 #define LOGD(fmt, ...) cloudlog(CLOUDLOG_DEBUG, fmt, ## __VA_ARGS__)
 #define LOG(fmt, ...) cloudlog(CLOUDLOG_INFO, fmt, ## __VA_ARGS__)
 #define LOGW(fmt, ...) cloudlog(CLOUDLOG_WARNING, fmt, ## __VA_ARGS__)

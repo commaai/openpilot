@@ -139,7 +139,7 @@ void swagLogMessageHandler(QtMsgType type, const QMessageLogContext &context, co
   if (context.function != nullptr) function = context.function;
 
   auto bts = msg.toUtf8();
-  cloudlog_e(levels[type], file.c_str(), context.line, function.c_str(), "%s", bts.constData());
+  cloudlog_e(levels[type], false, file.c_str(), context.line, function.c_str(), "%s", bts.constData());
 }
 
 
