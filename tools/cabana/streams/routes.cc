@@ -45,19 +45,13 @@ RoutesDialog::RoutesDialog(QWidget *parent) : QDialog(parent), route_requester_(
   setWindowTitle(tr("Remote routes"));
 
   auto all_routes_widget = new QWidget;
-  auto all_routes_layout = new QVBoxLayout;
+  auto all_routes_layout = new QVBoxLayout(all_routes_widget);
   all_routes_layout->addWidget(period_selector_ = new QComboBox(this));
-  all_routes_layout->addWidget(route_list_ = new RouteListWidget(all_routes_widget));
-  all_routes_widget->setLayout(all_routes_layout);
-
-  auto preserved_routes_widget = new QWidget;
-  auto preserved_layout = new QVBoxLayout;
-  preserved_layout->addWidget(preserved_route_list_ = new RouteListWidget(all_routes_widget));
-  preserved_routes_widget->setLayout(preserved_layout);
+  all_routes_layout->addWidget(route_list_ = new RouteListWidget());
 
   routes_type_selector_ = new QTabWidget(this);
   routes_type_selector_->addTab(all_routes_widget, tr("&All"));
-  routes_type_selector_->addTab(preserved_routes_widget, tr("&Preserved"));
+  routes_type_selector_->addTab(preserved_route_list_ = new RouteListWidget, tr("&Preserved"));
 
   QFormLayout *layout = new QFormLayout(this);
   layout->addRow(tr("Device"), device_list_ = new QComboBox(this));
@@ -141,23 +135,24 @@ void RoutesDialog::fetchRoutes() {
 void RoutesDialog::parseRouteList(const QString &json, bool success, QNetworkReply::NetworkError err) {
   if (success) {
     for (const QJsonValue &route : QJsonDocument::fromJson(json.toUtf8()).array()) {
-      uint64_t to;
-      QDateTime from;
+      QString label = QString("%1    %2min");
 
       if(isPreservedTabSelected()) {
         QString start_time = route["start_time"].toString();
         QString end_time = route["end_time"].toString();
 
-        from = QDateTime::fromString(start_time, Qt::ISODateWithMs);
-        to = QDateTime::fromString(end_time, Qt::ISODateWithMs).msecsTo(from);
+        QDateTime from = QDateTime::fromString(start_time, Qt::ISODateWithMs);
+        QDateTime to = QDateTime::fromString(end_time, Qt::ISODateWithMs);
+
+        label = label.arg(from.toString()).arg(from.msecsTo(to) / (1000 * 60));
       } else {
         uint64_t start_time = route["start_time_utc_millis"].toDouble();
         uint64_t end_time = route["end_time_utc_millis"].toDouble();
-        from = QDateTime::fromMSecsSinceEpoch(start_time);
-        to = (end_time - start_time);
+
+        label = label.arg(QDateTime::fromMSecsSinceEpoch(start_time).toString()).arg((end_time - start_time) / (1000 * 60));
       }
 
-      QListWidgetItem *item = new QListWidgetItem(QString("%1    %2min").arg(from.toString()).arg(to / (1000 * 60)));
+      QListWidgetItem *item = new QListWidgetItem(label);
       item->setData(Qt::UserRole, route["fullname"].toString());
       currentRoutesList()->addItem(item);
     }
