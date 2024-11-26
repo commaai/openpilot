@@ -132,11 +132,11 @@ void RoutesDialog::parseRouteList(const QString &json, bool success, QNetworkRep
       QDateTime from, to;
 
       if(isPreservedTabSelected()) {
-        from = QDateTime::fromMSecsSinceEpoch(route["start_time_utc_millis"].toDouble());
-        to = QDateTime::fromMSecsSinceEpoch(route["end_time_utc_millis"].toDouble());
-      } else {
         from = QDateTime::fromString(route["start_time"].toString(), Qt::ISODateWithMs);
         to = QDateTime::fromString(route["end_time"].toString(), Qt::ISODateWithMs);
+      } else {
+        from = QDateTime::fromMSecsSinceEpoch(route["start_time_utc_millis"].toDouble());
+        to = QDateTime::fromMSecsSinceEpoch(route["end_time_utc_millis"].toDouble());
       }
 
       QListWidgetItem *item = new QListWidgetItem(QString("%1    %2min").arg(from.toString()).arg(from.secsTo(to) / 60));
