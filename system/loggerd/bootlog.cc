@@ -27,7 +27,7 @@ static kj::Array<capnp::word> build_boot_log() {
 
   // Gather output of commands
   std::vector<std::string> bootlog_commands = {
-    "[ -x \"$(command -v journalctl)\" ] && journalctl",
+    "[ -x \"$(command -v journalctl)\" ] && journalctl -o short-monotonic",
   };
 
   if (Hardware::TICI()) {

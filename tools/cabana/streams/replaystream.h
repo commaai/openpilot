@@ -22,7 +22,7 @@ public:
   bool eventFilter(const Event *event);
   void seekTo(double ts) override { replay->seekTo(std::max(double(0), ts), false); }
   bool liveStreaming() const override { return false; }
-  inline QString routeName() const override { return QString::fromStdString(replay->route()->name()); }
+  inline QString routeName() const override { return QString::fromStdString(replay->route().name()); }
   inline QString carFingerprint() const override { return replay->carFingerprint().c_str(); }
   double minSeconds() const override { return replay->minSeconds(); }
   double maxSeconds() const { return replay->maxSeconds(); }
@@ -32,6 +32,7 @@ public:
   inline float getSpeed() const { return replay->getSpeed(); }
   inline Replay *getReplay() const { return replay.get(); }
   inline bool isPaused() const override { return replay->isPaused(); }
+  void resumeStream() override { return replay->resumeStream(); }
   void pause(bool pause) override;
 
 signals:
