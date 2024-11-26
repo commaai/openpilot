@@ -71,7 +71,7 @@ RoutesDialog::RoutesDialog(QWidget *parent) : QDialog(parent), route_requester_(
   QObject::connect(route_requester_, &HttpRequest::requestDone, this, &RoutesDialog::parseRouteList);
   connect(device_list_, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &RoutesDialog::fetchRoutes);
   connect(period_selector_, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &RoutesDialog::fetchRoutes);
-  connect(routes_type_selector_, QOverload<int>::of(&QTabWidget::currentChanged), this, &RoutesDialog::fetchRoutes);
+  connect(routes_type_selector_, &QTabWidget::currentChanged, this, &RoutesDialog::fetchRoutes);
   connect(route_list_, &QListWidget::itemDoubleClicked, this, &QDialog::accept);
   connect(preserved_route_list_, &QListWidget::itemDoubleClicked, this, &QDialog::accept);
   QObject::connect(button_box, &QDialogButtonBox::accepted, this, &QDialog::accept);
