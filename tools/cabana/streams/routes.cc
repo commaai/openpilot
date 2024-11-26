@@ -106,30 +106,24 @@ void RoutesDialog::fetchRoutes() {
   currentRoutesList()->clear();
   currentRoutesList()->setEmptyText(tr("Loading..."));
 
-  QObject::connect(http, &HttpRequest::requestDone, this, &RoutesDialog::parseRouteList);
-
   // Construct URL with selected device and date range
   auto dongle_id = device_list_->currentData().toString();
-  QDateTime current = QDateTime::currentDateTime();
-  QString url = QString("%1/v1/devices/%2/routes_segments?start=%3&end=%4")
-                    .arg(CommaApi::BASE_URL).arg(dongle_id)
-                    .arg(current.addDays(-(period_selector_->currentData().toInt())).toMSecsSinceEpoch())
-                    .arg(current.toMSecsSinceEpoch());
-  route_requester_->sendRequest(url);
-  if(isPreservedTabSelected()) {
-    QString url = QString("%1/v1/devices/%2/routes/preserved")
+  QString url = QString("%1/v1/devices/%2")
                       .arg(CommaApi::BASE_URL)
                       .arg(dongle_id);
-    http->sendRequest(url);
+
+  if(isPreservedTabSelected()) {
+    url += "/routes/preserved";
   } else {
     QDateTime current = QDateTime::currentDateTime();
-    QString url = QString("%1/v1/devices/%2/routes_segments?start=%3&end=%4")
-                      .arg(CommaApi::BASE_URL)
-                      .arg(dongle_id)
-                      .arg(current.addDays(-(period_selector_->currentData().toInt())).toMSecsSinceEpoch())
-                      .arg(current.toMSecsSinceEpoch());
-    route_requester_->sendRequest(url);
+    url += QString("/routes_segments?start=%2&end=%3")
+      .arg(current.addDays(-(period_selector_->currentData().toInt())).toMSecsSinceEpoch())
+      .arg(current.toMSecsSinceEpoch());
   }
+
+  HttpRequest *http = new HttpRequest(this, !Hardware::PC());
+  QObject::connect(http, &HttpRequest::requestDone, this, &RoutesDialog::parseRouteList);
+  route_requester_->sendRequest(url);
 }
 
 void RoutesDialog::parseRouteList(const QString &json, bool success, QNetworkReply::NetworkError err) {
