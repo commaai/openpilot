@@ -302,6 +302,9 @@ def main():
         if valid:
           t = log_mono_time * 1e-9
           res = estimator.handle_log(t, which, msg)
+          if which not in critcal_services:
+            continue
+
           if res == HandleLogResult.TIMING_INVALID:
             observation_timing_invalid[which] += 1
           elif res == HandleLogResult.INPUT_INVALID:
