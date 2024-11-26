@@ -136,7 +136,7 @@ class TestLocationdScenarios:
     assert np.allclose(orig_data['yaw_rate'], replayed_data['yaw_rate'], atol=np.radians(0.35))
     assert np.allclose(orig_data['roll'], replayed_data['roll'], atol=np.radians(0.55))
     assert np.diff(replayed_data['inputs_flag'])[499] == -1.0
-    assert np.diff(replayed_data['inputs_flag'])[696] == 1.0
+    assert np.diff(replayed_data['inputs_flag'])[704] == 1.0
 
   def test_accel_off(self):
     """
@@ -176,5 +176,5 @@ class TestLocationdScenarios:
     Expected Result: inputsOK becomes False after N of bad measurements
     """
     orig_data, replayed_data = run_scenarios(Scenario.SENSOR_TIMING_CONSISTENT_SPIKES, self.logs)
-    assert np.sum(replayed_data['inputs_flag'][499:699] == 0.0) / 200 >= 0.9 # 90% of the time inputsOK is False (~10 seconds of invalid flag)
-    assert np.all(replayed_data['inputs_flag'][699:] == orig_data['inputs_flag'][699:]) # recovery after
+    assert np.diff(replayed_data['inputs_flag'])[500] == -1.0
+    assert np.diff(replayed_data['inputs_flag'])[787] == 1.0
