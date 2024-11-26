@@ -26,8 +26,8 @@ MAX_SENSOR_TIME_DIFF = 0.1  # s
 YAWRATE_CROSS_ERR_CHECK_FACTOR = 30
 INPUT_INVALID_THRESHOLD = 0.5  # 0 bad inputs ignored
 TIMING_INVALID_THRESHOLD = 2.5  # 2 bad timings ignored
-INPUT_INVALID_DECAY = 0.9993  # ~10 secs to resume after exceeding allowed bad inputs by one
-TIMING_INVALID_DECAY = 0.9990  # ~2 secs to resume after exceeding allowed bad timings by one
+INPUT_INVALID_DECAY = 0.9993  # ~10 secs to resume after exceeding allowed bad inputs by one (at 100hz)
+TIMING_INVALID_DECAY = 0.9990  # ~2 secs to resume after exceeding allowed bad timings by one (at 100hz)
 POSENET_STD_INITIAL_VALUE = 10.0
 POSENET_STD_HIST_HALF = 20
 
