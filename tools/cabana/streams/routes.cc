@@ -173,14 +173,10 @@ void RoutesDialog::accept() {
   QDialog::accept();
 }
 
-RouteListWidget* RoutesDialog::currentRoutesList() {
-  if(routes_type_selector_->currentIndex() == 1) {
-    return preserved_route_list_;
-  }
-
-  return route_list_;
-}
-
 bool RoutesDialog::isPreservedTabSelected() {
   return routes_type_selector_->currentIndex() == 1;
+}
+
+RouteListWidget* RoutesDialog::currentRoutesList() {
+  return isPreservedTabSelected() ? preserved_route_list_ : route_list_;
 }
