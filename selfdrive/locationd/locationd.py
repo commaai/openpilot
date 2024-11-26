@@ -272,8 +272,8 @@ def main():
   observation_timing_invalid = defaultdict(int)
   observation_input_invalid = defaultdict(int)
 
-  input_invalid_decay = {s: INPUT_INVALID_DECAY ** (100. / SERVICE_LIST[which].frequency) for s in critcal_services}
-  timing_invalid_decay = {s: TIMING_INVALID_DECAY ** (100. / SERVICE_LIST[which].frequency) for s in critcal_services}
+  input_invalid_decay = {s: INPUT_INVALID_DECAY ** (100. / SERVICE_LIST[s].frequency) for s in critcal_services}
+  timing_invalid_decay = {s: TIMING_INVALID_DECAY ** (100. / SERVICE_LIST[s].frequency) for s in critcal_services}
 
   initial_pose = params.get("LocationFilterInitialState")
   if initial_pose is not None:
