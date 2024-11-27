@@ -19,8 +19,9 @@ jobs:
   docs:
     name: build docs
     runs-on: ubuntu-latest
-    timeout-minutes: 1
     steps:
+    - uses: commaai/timeout@v1
+
     - uses: actions/checkout@v4
       with:
         submodules: true

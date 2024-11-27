@@ -126,9 +126,8 @@ const CanData &AbstractStream::lastMessage(const MessageId &id) const {
   return it != last_msgs.end() ? it->second : empty_data;
 }
 
-// it is thread safe to update data in updateLastMsgsTo.
-// updateLastMsgsTo is always called in UI thread.
 void AbstractStream::updateLastMsgsTo(double sec) {
+  std::lock_guard lk(mutex_);
   current_sec_ = sec;
   uint64_t last_ts = toMonoTime(sec);
   std::unordered_map<MessageId, CanData> msgs;
@@ -160,7 +159,10 @@ void AbstractStream::updateLastMsgsTo(double sec) {
                     std::any_of(messages_.cbegin(), messages_.cend(),
                                 [this](const auto &m) { return !last_msgs.count(m.first); });
   last_msgs = messages_;
+  mutex_.unlock();
+
   emit msgsReceived(nullptr, id_changed);
+  resumeStream();
 }
 
 const CanEvent *AbstractStream::newEvent(uint64_t mono_time, const cereal::CanData::Reader &c) {
