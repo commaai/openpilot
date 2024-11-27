@@ -394,7 +394,7 @@ class TestCarModelBase(unittest.TestCase):
       for msg in filter(lambda m: m.src in range(64), can.can):
         to_send = libpanda_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
         ret = self.safety.safety_rx_hook(to_send)
-        self.assertEqual(1, ret, f"safety rx failed ({ret=}): {to_send}")
+        self.assertEqual(1, ret, f"safety rx failed ({ret=}): {(msg.address, msg.src % 4)}")
 
       # Skip first frame so CS_prev is properly initialized
       if idx == 0:
