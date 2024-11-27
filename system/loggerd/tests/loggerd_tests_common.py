@@ -33,6 +33,12 @@ class MockResponse:
     self.text = text
     self.status_code = status_code
 
+  def __enter__(self):
+    return self
+
+  def __exit__(self, exc_type, exc_value, traceback):
+    pass
+
 class MockApi:
   def __init__(self, dongle_id):
     pass

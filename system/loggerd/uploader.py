@@ -46,6 +46,12 @@ class FakeResponse:
     self.status_code = 200
     self.request = FakeRequest()
 
+  def __enter__(self):
+    return self
+
+  def __exit__(self, exc_type, exc_value, traceback):
+    pass
+
 
 def get_directory_sort(d: str) -> list[str]:
   # ensure old format is sorted sooner
