@@ -309,13 +309,16 @@ def getMessage(service: str, timeout: int = 1000) -> dict:
     raise Exception("invalid service")
 
   socket = messaging.sub_sock(service, timeout=timeout)
-  ret = messaging.recv_one(socket)
+  try:
+    ret = messaging.recv_one(socket)
 
-  if ret is None:
-    raise TimeoutError
+    if ret is None:
+      raise TimeoutError
 
-  # this is because capnp._DynamicStructReader doesn't have typing information
-  return cast(dict, ret.to_dict())
+    # this is because capnp._DynamicStructReader doesn't have typing information
+    return cast(dict, ret.to_dict())
+  finally:
+    del socket
 
 
 @dispatcher.add_method
