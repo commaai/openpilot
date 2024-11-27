@@ -148,14 +148,14 @@ class Uploader:
     return None
 
   def do_upload(self, key: str, fn: str):
-    url_resp = self.api.get("v1.4/" + self.dongle_id + "/upload_url/", timeout=10, path=key, access_token=self.api.get_token())
-    if url_resp.status_code == 412:
-      return url_resp
+    with self.api.get("v1.4/" + self.dongle_id + "/upload_url/", timeout=10, path=key, access_token=self.api.get_token()) as url_resp:
+      if url_resp.status_code == 412:
+        return url_resp
 
-    url_resp_json = json.loads(url_resp.text)
-    url = url_resp_json['url']
-    headers = url_resp_json['headers']
-    cloudlog.debug("upload_url v1.4 %s %s", url, str(headers))
+      url_resp_json = json.loads(url_resp.text)
+      url = url_resp_json['url']
+      headers = url_resp_json['headers']
+      cloudlog.debug("upload_url v1.4 %s %s", url, str(headers))
 
     if fake_upload:
       return FakeResponse()
