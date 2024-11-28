@@ -54,3 +54,20 @@ runs:
     # build our docker image
     - shell: bash
       run: eval ${{ env.BUILD }}
+
+    # restore Python dependencies cache
+    - name: Restore Python dependencies cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    # save Python dependencies cache
+    - name: Save Python dependencies cache
+      if: always()
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
