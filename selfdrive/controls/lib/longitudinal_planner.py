@@ -202,8 +202,9 @@ class LongitudinalPlanner:
     a_target, should_stop = get_accel_from_plan(longitudinalPlan.speeds, longitudinalPlan.accels,
                                                 action_t=action_t, vEgoStopping=self.CP.vEgoStopping)
     if self.mode == 'blended':
-      a_target_e2e, should_stop_e2e = get_accel_from_plan(longitudinalPlan.speeds, longitudinalPlan.accels,
-                                                action_t=action_t, vEgoStopping=self.CP.vEgoStopping)
+      a_target_e2e, should_stop_e2e = get_accel_from_plan(list(sm['modelV2'].velocity.x)[:CONTROL_N],
+                                                          list(sm['modelV2'].acceleration.x)[:CONTROL_N],
+                                                          action_t=action_t, vEgoStopping=self.CP.vEgoStopping)
       a_target = min(a_target, a_target_e2e)
       should_stop = should_stop or should_stop_e2e
     longitudinalPlan.aTarget = a_target
