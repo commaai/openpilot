@@ -2,7 +2,7 @@
 #include <cmath>
 #include <iostream>
 
-#include "selfdrive/ui/raylib/util.h"
+#include "system/ui/raylib/util.h"
 #include "third_party/raylib/include/raylib.h"
 
 constexpr int kProgressBarWidth = 1000;
