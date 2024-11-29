@@ -122,35 +122,51 @@ void RoutesDialog::fetchRoutes() {
   }
 
   HttpRequest *http = new HttpRequest(this, !Hardware::PC());
-  QObject::connect(http, &HttpRequest::requestDone, this, &RoutesDialog::parseRouteList);
+  QObject::connect(
+    http,
+    &HttpRequest::requestDone,
+    this,
+    isPreservedTabSelected() ?  &RoutesDialog::parsePreservedRouteList : &RoutesDialog::parseRouteList
+  );
   route_requester_->sendRequest(url);
+}
+
+void RoutesDialog::onFinish(RouteListWidget *list, bool success, const QDateTime &from, const QDateTime &to, QJsonValue fullName) {
+  if (success) {
+    QListWidgetItem *item = new QListWidgetItem(QString("%1    %2min").arg(from.toString()).arg(from.secsTo(to) / 60));
+    item->setData(Qt::UserRole, fullName.toString());
+    list->addItem(item);
+
+    // Select first route if available
+    if (list->count() > 0) list->setCurrentRow(0);
+  } else {
+    QMessageBox::warning(this, tr("Error"), tr("Failed to fetch routes. Check your network connection."));
+    reject();
+  }
+  list->setEmptyText(tr("No items"));
+  sender()->deleteLater();
+}
+
+void RoutesDialog::parsePreservedRouteList(const QString &json, bool success, QNetworkReply::NetworkError err) {
+  if (success) {
+    for (const QJsonValue &route : QJsonDocument::fromJson(json.toUtf8()).array()) {
+      QDateTime from = QDateTime::fromString(route["start_time"].toString(), Qt::ISODateWithMs);
+      QDateTime to = QDateTime::fromString(route["end_time"].toString(), Qt::ISODateWithMs);
+
+      onFinish(preserved_route_list_, success, from, to, route["fullname"]);
+    }
+  }
 }
 
 void RoutesDialog::parseRouteList(const QString &json, bool success, QNetworkReply::NetworkError err) {
   if (success) {
     for (const QJsonValue &route : QJsonDocument::fromJson(json.toUtf8()).array()) {
-      QDateTime from, to;
+      QDateTime from = QDateTime::fromMSecsSinceEpoch(route["start_time_utc_millis"].toDouble());
+      QDateTime to = QDateTime::fromMSecsSinceEpoch(route["end_time_utc_millis"].toDouble());
 
-      if(isPreservedTabSelected()) {
-        from = QDateTime::fromString(route["start_time"].toString(), Qt::ISODateWithMs);
-        to = QDateTime::fromString(route["end_time"].toString(), Qt::ISODateWithMs);
-      } else {
-        from = QDateTime::fromMSecsSinceEpoch(route["start_time_utc_millis"].toDouble());
-        to = QDateTime::fromMSecsSinceEpoch(route["end_time_utc_millis"].toDouble());
-      }
-
-      QListWidgetItem *item = new QListWidgetItem(QString("%1    %2min").arg(from.toString()).arg(from.secsTo(to) / 60));
-      item->setData(Qt::UserRole, route["fullname"].toString());
-      currentRoutesList()->addItem(item);
+      onFinish(route_list_, success, from, to, route["fullname"]);
     }
-    // Select first route if available
-    if (currentRoutesList()->count() > 0) currentRoutesList()->setCurrentRow(0);
-  } else {
-    QMessageBox::warning(this, tr("Error"), tr("Failed to fetch routes. Check your network connection."));
-    reject();
   }
-  currentRoutesList()->setEmptyText(tr("No items"));
-  sender()->deleteLater();
 }
 
 void RoutesDialog::accept() {
