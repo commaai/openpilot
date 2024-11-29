@@ -3,14 +3,16 @@ import capnp
 import numpy as np
 from cereal import log
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan, Meta
+from openpilot.controls.lib.drive_helpers import MIN_SPEED
 
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
 ConfidenceClass = log.ModelDataV2.ConfidenceClass
 
 def curv_from_psis(psi_target, psi_rate, vego, delay):
-  curv_from_psi = psi_target / ((vego + 1e-3) * delay)  # epsilon to prevent divide-by-zero
-  return 2*curv_from_psi - psi_rate / (1e-3 + vego)
+  vego = np.clip(vego, MIN_SPEED, np.inf)
+  curv_from_psi = psi_target / (vego * delay)  # epsilon to prevent divide-by-zero
+  return 2*curv_from_psi - psi_rate / vego
 
 def get_curvature_from_plan(plan, vego, delay):
   psi_target = np.interp(delay, ModelConstants.T_IDXS, plan[:, Plan.T_FROM_CURRENT_EULER][:, 2])
