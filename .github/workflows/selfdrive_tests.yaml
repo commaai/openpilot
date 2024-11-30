@@ -379,3 +379,43 @@ jobs:
         with:
           name: report-${{ inputs.run_number || '1' }}-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'master' || github.event.number }}
           path: selfdrive/ui/tests/test_ui/report_1/screenshots
+
+  parallel_setup_with_retry:
+    name: Parallel setup-with-retry
+    runs-on: ubuntu-latest
+    steps:
+    - name: Run setup-with-retry in parallel
+      run: |
+        jobs:
+          setup1:
+            runs-on: ubuntu-latest
+            steps:
+              - uses: ./.github/workflows/setup-with-retry
+          setup2:
+            runs-on: ubuntu-latest
+            steps:
+              - uses: ./.github/workflows/setup-with-retry
+          setup3:
+            runs-on: ubuntu-latest
+            steps:
+              - uses: ./.github/workflows/setup-with-retry
+
+  parallel_build_openpilot:
+    name: Parallel build openpilot
+    runs-on: ubuntu-latest
+    steps:
+    - name: Build openpilot in parallel
+      run: |
+        jobs:
+          build1:
+            runs-on: ubuntu-latest
+            steps:
+              - uses: ./.github/workflows/compile-openpilot
+          build2:
+            runs-on: ubuntu-latest
+            steps:
+              - uses: ./.github/workflows/compile-openpilot
+          build3:
+            runs-on: ubuntu-latest
+            steps:
+              - uses: ./.github/workflows/compile-openpilot

@@ -19,3 +19,33 @@ runs:
       with:
         path: .ci_cache/scons_cache
         key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+    - name: Run setup-with-retry in parallel
+      run: |
+        jobs:
+          setup1:
+            runs-on: ubuntu-latest
+            steps:
+              - uses: ./.github/workflows/setup-with-retry
+          setup2:
+            runs-on: ubuntu-latest
+            steps:
+              - uses: ./.github/workflows/setup-with-retry
+          setup3:
+            runs-on: ubuntu-latest
+            steps:
+              - uses: ./.github/workflows/setup-with-retry
+    - name: Build openpilot in parallel
+      run: |
+        jobs:
+          build1:
+            runs-on: ubuntu-latest
+            steps:
+              - uses: ./.github/workflows/compile-openpilot
+          build2:
+            runs-on: ubuntu-latest
+            steps:
+              - uses: ./.github/workflows/compile-openpilot
+          build3:
+            runs-on: ubuntu-latest
+            steps:
+              - uses: ./.github/workflows/compile-openpilot

@@ -51,23 +51,24 @@ runs:
       run: |
         find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
         find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
+
+    # set up containerd using ghaction-setup-containerd
+    - name: Set up containerd
+      uses: crazy-max/ghaction-setup-containerd@v1
+      with:
+        containerd-version: '1.5.5'
+
+    # use lazy loading of compatible eStargz Docker image "pages"
+    - name: Use lazy loading with eStargz
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y fuse-overlayfs
+        sudo mkdir -p /etc/containerd
+        echo "version = 2" | sudo tee /etc/containerd/config.toml
+        echo "[plugins.\"io.containerd.grpc.v1.cri\".containerd.runtimes.runc.options]" | sudo tee -a /etc/containerd/config.toml
+        echo "  SystemdCgroup = true" | sudo tee -a /etc/containerd/config.toml
+        sudo systemctl restart containerd
+
     # build our docker image
     - shell: bash
       run: eval ${{ env.BUILD }}
-
-    # restore Python dependencies cache
-    - name: Restore Python dependencies cache
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
-
-    # save Python dependencies cache
-    - name: Save Python dependencies cache
-      if: always()
-      uses: actions/cache@v4
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
