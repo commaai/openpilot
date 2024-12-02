@@ -201,7 +201,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
     }
   };
 
-  const static QString NA =  QStringLiteral("N/A");
+  const static QString NA = QStringLiteral("N/A");
   const auto &item = items_[index.row()];
   if (role == Qt::DisplayRole) {
     switch (index.column()) {
@@ -217,8 +217,6 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
     return QVariant::fromValue((void*)(&can->lastMessage(item.id).colors));
   } else if (role == BytesRole && index.column() == Column::DATA && item.id.source != INVALID_SOURCE) {
     return QVariant::fromValue((void*)(&can->lastMessage(item.id).dat));
-  } else if (role == Qt::ForegroundRole && !isMessageActive(item.id)) {
-    return QApplication::palette().color(QPalette::Disabled, QPalette::Text);
   } else if (role == Qt::ToolTipRole && index.column() == Column::NAME) {
     auto msg = dbc()->msg(item.id);
     auto tooltip = item.name;
@@ -379,7 +377,17 @@ void MessageListModel::sort(int column, Qt::SortOrder order) {
 // MessageView
 
 void MessageView::drawRow(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
-  QTreeView::drawRow(painter, option, index);
+   const auto &item = ((MessageListModel*)model())->items_[index.row()];
+  if (!isMessageActive(item.id)) {
+    QStyleOptionViewItem custom_option = option;
+    custom_option.palette.setBrush(QPalette::Text, custom_option.palette.color(QPalette::Disabled, QPalette::Text));
+    auto color = QApplication::palette().color(QPalette::HighlightedText);
+    color.setAlpha(100);
+    custom_option.palette.setBrush(QPalette::HighlightedText, color);
+    QTreeView::drawRow(painter, custom_option, index);
+  } else {
+    QTreeView::drawRow(painter, option, index);
+  }
 
   QPen oldPen = painter->pen();
   const int gridHint = style()->styleHint(QStyle::SH_Table_GridLineColor, &option, this);
