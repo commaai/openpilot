@@ -12,7 +12,7 @@
 #include "system/camerad/cameras/camera_common.h"
 #include "system/camerad/sensors/sensor.h"
 
-#define FRAME_BUF_COUNT 4
+#define MAX_IFE_BUFS 20
 
 const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 
@@ -116,6 +116,7 @@ public:
 
   // *** state ***
 
+  int ife_buf_depth = -1;
   bool open = false;
   bool enabled = true;
   CameraConfig cc;
@@ -151,11 +152,11 @@ public:
   SpectraBuf bps_iq;
   SpectraBuf bps_striping;
 
-  int buf_handle_yuv[FRAME_BUF_COUNT] = {};
-  int buf_handle_raw[FRAME_BUF_COUNT] = {};
-  int sync_objs[FRAME_BUF_COUNT] = {};
-  int sync_objs_bps_out[FRAME_BUF_COUNT] = {};
-  uint64_t request_ids[FRAME_BUF_COUNT] = {};
+  int buf_handle_yuv[MAX_IFE_BUFS] = {};
+  int buf_handle_raw[MAX_IFE_BUFS] = {};
+  int sync_objs[MAX_IFE_BUFS] = {};
+  int sync_objs_bps_out[MAX_IFE_BUFS] = {};
+  uint64_t request_ids[MAX_IFE_BUFS] = {};
   uint64_t request_id_last = 0;
   uint64_t frame_id_last = 0;
   uint64_t idx_offset = 0;
