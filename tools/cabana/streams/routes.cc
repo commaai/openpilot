@@ -9,7 +9,19 @@
 #include <QMessageBox>
 #include <QPainter>
 
-#include "system/hardware/hw.h"
+class OneShotHttpRequest : public HttpRequest {
+public:
+  OneShotHttpRequest(QObject *parent) : HttpRequest(parent, false) {}
+  void send(const QString &url) {
+    if (reply) {
+      reply->disconnect();
+      reply->abort();
+      reply->deleteLater();
+      reply = nullptr;
+    }
+    sendRequest(url);
+  }
+};
 
 // The RouteListWidget class extends QListWidget to display a custom message when empty
 class RouteListWidget : public QListWidget {
@@ -29,7 +41,7 @@ public:
   QString empty_text_ = tr("No items");
 };
 
-RoutesDialog::RoutesDialog(QWidget *parent) : QDialog(parent) {
+RoutesDialog::RoutesDialog(QWidget *parent) : QDialog(parent), route_requester_(new OneShotHttpRequest(this)) {
   setWindowTitle(tr("Remote routes"));
 
   QFormLayout *layout = new QFormLayout(this);
@@ -47,6 +59,7 @@ RoutesDialog::RoutesDialog(QWidget *parent) : QDialog(parent) {
   period_selector_->addItem(tr("Last 6 months"), 180);
 
   // Connect signals and slots
+  QObject::connect(route_requester_, &HttpRequest::requestDone, this, &RoutesDialog::parseRouteList);
   connect(device_list_, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &RoutesDialog::fetchRoutes);
   connect(period_selector_, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &RoutesDialog::fetchRoutes);
   connect(route_list_, &QListWidget::itemDoubleClicked, this, &QDialog::accept);
@@ -54,7 +67,7 @@ RoutesDialog::RoutesDialog(QWidget *parent) : QDialog(parent) {
   QObject::connect(button_box, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
   // Send request to fetch devices
-  HttpRequest *http = new HttpRequest(this, !Hardware::PC());
+  HttpRequest *http = new HttpRequest(this, false);
   QObject::connect(http, &HttpRequest::requestDone, this, &RoutesDialog::parseDeviceList);
   http->sendRequest(CommaApi::BASE_URL + "/v1/me/devices/");
 }
@@ -82,9 +95,6 @@ void RoutesDialog::fetchRoutes() {
   route_list_->clear();
   route_list_->setEmptyText(tr("Loading..."));
 
-  HttpRequest *http = new HttpRequest(this, !Hardware::PC());
-  QObject::connect(http, &HttpRequest::requestDone, this, &RoutesDialog::parseRouteList);
-
   // Construct URL with selected device and date range
   auto dongle_id = device_list_->currentData().toString();
   QDateTime current = QDateTime::currentDateTime();
@@ -92,7 +102,7 @@ void RoutesDialog::fetchRoutes() {
                     .arg(CommaApi::BASE_URL).arg(dongle_id)
                     .arg(current.addDays(-(period_selector_->currentData().toInt())).toMSecsSinceEpoch())
                     .arg(current.toMSecsSinceEpoch());
-  http->sendRequest(url);
+  route_requester_->sendRequest(url);
 }
 
 void RoutesDialog::parseRouteList(const QString &json, bool success, QNetworkReply::NetworkError err) {
@@ -115,9 +125,7 @@ void RoutesDialog::parseRouteList(const QString &json, bool success, QNetworkRep
   sender()->deleteLater();
 }
 
-void RoutesDialog::accept() {
-  if (auto current_item = route_list_->currentItem()) {
-    route_ = current_item->data(Qt::UserRole).toString();
-  }
-  QDialog::accept();
+QString RoutesDialog::route() {
+  auto current_item = route_list_->currentItem();
+  return current_item ? current_item->data(Qt::UserRole).toString() : "";
 }
