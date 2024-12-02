@@ -322,7 +322,7 @@ function op_switch() {
   fi
 
   if [ -z "$1" ]; then
-    echo "Must specify a branch"
+    echo -e "${BOLD}${UNDERLINE}Usage:${NC} op switch [REMOTE] <BRANCH>"
     return 1
   fi
   BRANCH="$1"
