@@ -357,7 +357,7 @@ function op_default() {
   echo -e "  ${BOLD}setup${NC}        Install openpilot dependencies"
   echo -e "  ${BOLD}build${NC}        Run the openpilot build system in the current working directory"
   echo -e "  ${BOLD}install${NC}      Install the 'op' tool system wide"
-  echo -e "  ${BOLD}switch${NC}       Switch to a different git branch with a clean slate (nukes any changes)."
+  echo -e "  ${BOLD}switch${NC}       Switch to a different git branch with a clean slate (nukes any changes)"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Tooling]:${NC}"
   echo -e "  ${BOLD}juggle${NC}       Run PlotJuggler"
