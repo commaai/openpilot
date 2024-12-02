@@ -362,11 +362,11 @@ std::string decompressZST(const std::byte *in, size_t in_size, std::atomic<bool>
   return {};
 }
 
-void precise_nano_sleep(int64_t nanoseconds, std::atomic<bool> &should_exit) {
+void precise_nano_sleep(int64_t nanoseconds, std::atomic<bool> &interrupt_requested) {
   struct timespec req, rem;
   req.tv_sec = nanoseconds / 1000000000;
   req.tv_nsec = nanoseconds % 1000000000;
-  while (!should_exit) {
+  while (!interrupt_requested) {
 #ifdef __APPLE__
     int ret = nanosleep(&req, &rem);
     if (ret == 0 || errno != EINTR)

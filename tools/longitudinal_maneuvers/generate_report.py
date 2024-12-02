@@ -5,6 +5,7 @@ import io
 import os
 import math
 import pprint
+import webbrowser
 from collections import defaultdict
 from pathlib import Path
 import matplotlib.pyplot as plt
@@ -143,7 +144,8 @@ def report(platform, route, _description, CP, ID, maneuvers):
   with open(output_fn, "w") as f:
     f.write(''.join(builder))
 
-  print(f"\nReport written to {output_fn}\n")
+  print(f"\nOpening report: {output_fn}\n")
+  webbrowser.open_new_tab(str(output_fn))
 
 
 if __name__ == '__main__':

@@ -309,13 +309,16 @@ def getMessage(service: str, timeout: int = 1000) -> dict:
     raise Exception("invalid service")
 
   socket = messaging.sub_sock(service, timeout=timeout)
-  ret = messaging.recv_one(socket)
+  try:
+    ret = messaging.recv_one(socket)
 
-  if ret is None:
-    raise TimeoutError
+    if ret is None:
+      raise TimeoutError
 
-  # this is because capnp._DynamicStructReader doesn't have typing information
-  return cast(dict, ret.to_dict())
+    # this is because capnp._DynamicStructReader doesn't have typing information
+    return cast(dict, ret.to_dict())
+  finally:
+    del socket
 
 
 @dispatcher.add_method
@@ -626,8 +629,9 @@ def log_handler(end_event: threading.Event) -> None:
 
 def stat_handler(end_event: threading.Event) -> None:
   STATS_DIR = Paths.stats_root()
+  last_scan = 0.0
+
   while not end_event.is_set():
-    last_scan = 0.
     curr_scan = time.monotonic()
     try:
       if curr_scan - last_scan > 10:
@@ -801,6 +805,8 @@ def main(exit_event: threading.Event = None):
       cur_upload_items.clear()
 
       handle_long_poll(ws, exit_event)
+
+      ws.close()
     except (KeyboardInterrupt, SystemExit):
       break
     except (ConnectionError, TimeoutError, WebSocketException):

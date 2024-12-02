@@ -159,7 +159,7 @@ void Route::addFileToSegment(int n, const std::string &file) {
 
 Segment::Segment(int n, const SegmentFile &files, uint32_t flags, const std::vector<bool> &filters,
                  std::function<void(int, bool)> callback)
-    : seg_num(n), flags(flags), filters_(filters), onLoadFinished_(callback) {
+    : seg_num(n), flags(flags), filters_(filters), on_load_finished_(callback) {
   // [RoadCam, DriverCam, WideRoadCam, log]. fallback to qcamera/qlog
   const std::array file_list = {
       (flags & REPLAY_FLAG_QCAMERA) || files.road_cam.empty() ? files.qcamera : files.road_cam,
@@ -178,7 +178,7 @@ Segment::Segment(int n, const SegmentFile &files, uint32_t flags, const std::vec
 Segment::~Segment() {
   {
     std::lock_guard lock(mutex_);
-    onLoadFinished_ = nullptr;  // Prevent callback after destruction
+    on_load_finished_ = nullptr;  // Prevent callback after destruction
   }
   abort_ = true;
   for (auto &thread : threads_) {
@@ -204,8 +204,14 @@ void Segment::loadFile(int id, const std::string file) {
 
   if (--loading_ == 0) {
     std::lock_guard lock(mutex_);
-    if (onLoadFinished_) {
-      onLoadFinished_(seg_num, !abort_);
+    load_state_ = !abort_ ? LoadState::Loaded : LoadState::Failed;
+    if (on_load_finished_) {
+      on_load_finished_(seg_num, !abort_);
     }
   }
+}
+
+Segment::LoadState Segment::getState() {
+  std::scoped_lock lock(mutex_);
+  return load_state_;
 }
