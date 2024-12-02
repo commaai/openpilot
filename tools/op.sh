@@ -315,14 +315,21 @@ function op_sim() {
 function op_switch() {
   op_before_cmd
 
-  if [ -z "$1" ]; then
-    echo "specify a branch"
-    exit 1
+  REMOTE="origin"
+  if [ "$#" -gt 1 ]; then
+    REMOTE="$1"
+    shift
   fi
 
-  git fetch origin $1
-  git checkout -f $1
-  git reset --hard origin/$1
+  if [ -z "$1" ]; then
+    echo "Must specify a branch"
+    return 1
+  fi
+  BRANCH="$1"
+
+  git fetch "$REMOTE" "$BRANCH":"$BRANCH"
+  git checkout -f --recurse-submodules "$BRANCH"
+  git reset --hard "$BRANCH"
   git clean -df
   git submodule update --init --recursive
   git submodule foreach git reset --hard
@@ -406,7 +413,7 @@ function _op() {
     replay )        shift 1; op_replay "$@" ;;
     sim )           shift 1; op_sim "$@" ;;
     install )       shift 1; op_install "$@" ;;
-    switch )       shift 1; op_switch "$@" ;;
+    switch )        shift 1; op_switch "$@" ;;
     post-commit )   shift 1; op_install_post_commit "$@" ;;
     * ) op_default "$@" ;;
   esac
