@@ -121,9 +121,8 @@ void RoutesDialog::fetchRoutes() {
       .arg(current.toMSecsSinceEpoch());
   }
 
-  HttpRequest *http = new HttpRequest(this, !Hardware::PC());
   QObject::connect(
-    http,
+    route_requester_,
     &HttpRequest::requestDone,
     this,
     isPreservedTabSelected() ?  &RoutesDialog::parsePreservedRouteList : &RoutesDialog::parseRouteList
@@ -169,11 +168,9 @@ void RoutesDialog::parseRouteList(const QString &json, bool success, QNetworkRep
   }
 }
 
-void RoutesDialog::accept() {
-  if (auto current_item = currentRoutesList()->currentItem()) {
-    route_ = current_item->data(Qt::UserRole).toString();
-  }
-  QDialog::accept();
+QString RoutesDialog::route() {
+  auto current_item = route_list_->currentItem();
+  return current_item ? current_item->data(Qt::UserRole).toString() : "";
 }
 
 bool RoutesDialog::isPreservedTabSelected() {

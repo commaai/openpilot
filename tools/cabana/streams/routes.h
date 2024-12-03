@@ -17,7 +17,6 @@ public:
   QString route();
 
 protected:
-  void accept() override;
   void onFinish(RouteListWidget *list, bool success, const QDateTime &from, const QDateTime &to, QJsonValue fullName);
   void parseDeviceList(const QString &json, bool success, QNetworkReply::NetworkError err);
   void parseRouteList(const QString &json, bool success, QNetworkReply::NetworkError err);
