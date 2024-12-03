@@ -41,7 +41,7 @@ public:
   QString empty_text_ = tr("No items");
 };
 
-RoutesDialog::RoutesDialog(QWidget *parent) : QDialog(parent), route_requester_(new OneShotHttpRequest(this)) {
+RoutesDialog::RoutesDialog(QWidget *parent) : QDialog(parent) {
   setWindowTitle(tr("Remote routes"));
 
   auto all_routes_widget = new QWidget;
@@ -111,6 +111,7 @@ void RoutesDialog::fetchRoutes() {
                       .arg(CommaApi::BASE_URL)
                       .arg(dongle_id);
 
+  route_requester_ = new OneShotHttpRequest(this);
   QObject::connect(
     route_requester_,
     &HttpRequest::requestDone,
