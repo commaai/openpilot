@@ -68,7 +68,6 @@ RoutesDialog::RoutesDialog(QWidget *parent) : QDialog(parent), route_requester_(
   period_selector_->addItem(tr("Last 6 months"), 180);
 
   // Connect signals and slots
-  QObject::connect(route_requester_, &HttpRequest::requestDone, this, &RoutesDialog::parseRouteList);
   connect(device_list_, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &RoutesDialog::fetchRoutes);
   connect(period_selector_, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &RoutesDialog::fetchRoutes);
   connect(routes_type_selector_, &QTabWidget::currentChanged, this, &RoutesDialog::fetchRoutes);
@@ -112,6 +111,14 @@ void RoutesDialog::fetchRoutes() {
                       .arg(CommaApi::BASE_URL)
                       .arg(dongle_id);
 
+  QObject::connect(
+    route_requester_,
+    &HttpRequest::requestDone,
+    this,
+    isPreservedTabSelected() ?  &RoutesDialog::parsePreservedRouteList : &RoutesDialog::parseRouteList,
+    Qt::UniqueConnection
+  );
+
   if(isPreservedTabSelected()) {
     url += "/routes/preserved";
   } else {
@@ -121,12 +128,6 @@ void RoutesDialog::fetchRoutes() {
       .arg(current.toMSecsSinceEpoch());
   }
 
-  QObject::connect(
-    route_requester_,
-    &HttpRequest::requestDone,
-    this,
-    isPreservedTabSelected() ?  &RoutesDialog::parsePreservedRouteList : &RoutesDialog::parseRouteList
-  );
   route_requester_->sendRequest(url);
 }
 
