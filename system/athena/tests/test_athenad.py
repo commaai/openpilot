@@ -240,7 +240,7 @@ class TestAthenadMethods:
   @with_upload_handler
   def test_upload_handler_retry(self, mocker, host, status, retry):
     mock_put = mocker.patch('requests.put')
-    mock_put.return_value.status_code = status
+    mock_put.return_value.__enter__.return_value.status_code = status
     fn = self._create_file('qlog.zst')
     item = athenad.UploadItem(path=fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
 
