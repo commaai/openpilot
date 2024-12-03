@@ -4,7 +4,7 @@ from cython.operator cimport dereference as deref, preincrement as preinc
 from libcpp.vector cimport vector
 from libcpp.string cimport string
 from libcpp cimport bool
-from libc.stdint cimport uint8_t, uint32_t, uint64_t
+from libc.stdint cimport uint8_t, uint32_t, uint64_t, uintptr_t
 
 cdef extern from "panda.h":
   cdef struct can_frame:
@@ -41,16 +41,21 @@ def can_list_to_can_capnp(can_msgs, msgtype='can', valid=True):
   can_list_to_can_capnp_cpp(can_list, out, msgtype == 'sendcan', valid)
   return out
 
-def can_capnp_to_list(strings, msgtype='can'):
-  cdef vector[CanData] data
-  can_capnp_to_can_list_cpp(strings, data, msgtype == 'sendcan')
 
-  result = []
-  cdef CanData *d
-  cdef vector[CanData].iterator it = data.begin()
-  while it != data.end():
-    d = &deref(it)
-    frames = [(f.address, (<char *>&f.dat[0])[:f.dat.size()], f.src) for f in d.frames]
-    result.append((d.nanos, frames))
-    preinc(it)
+cdef class ParsedCanData:
+  cdef vector[CanData] *data
+
+  def __cinit__(self):
+    self.data = new vector[CanData]()
+
+  def __dealloc__(self):
+    del self.data
+
+  def get_data_pointer(self):
+    return <uintptr_t> self.data
+
+
+def can_capnp_to_list(strings, msgtype='can'):
+  cdef ParsedCanData result = ParsedCanData()
+  can_capnp_to_can_list_cpp(strings, result.data[0], msgtype == 'sendcan')
   return result
