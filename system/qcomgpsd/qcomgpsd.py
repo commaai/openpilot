@@ -273,7 +273,7 @@ def main() -> NoReturn:
 
     (pending_msgs, log_outer_length), inner_log_packet = unpack_from('<BH', payload), payload[calcsize('<BH'):]
     if pending_msgs > 0:
-      cloudlog.debug("have %d pending messages" % pending_msgs)
+      cloudlog.debug(f"have {pending_msgs} pending messages")
     assert log_outer_length == len(inner_log_packet)
 
     (log_inner_length, log_type, log_time), log_payload = unpack_from('<HHQ', inner_log_packet), inner_log_packet[calcsize('<HHQ'):]
@@ -283,7 +283,7 @@ def main() -> NoReturn:
       continue
 
     if DEBUG:
-      print("%.4f: got log: %x len %d" % (time.time(), log_type, len(log_payload)))
+      print(f"{time.time():.4f}: got log: {log_type} len {len(log_payload)}")
 
     if log_type == LOG_GNSS_OEMDRE_MEASUREMENT_REPORT:
       msg = messaging.new_message('qcomGnss', valid=True)

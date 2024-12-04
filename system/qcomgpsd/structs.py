@@ -322,7 +322,7 @@ def parse_struct(ss):
       cnt = int(nam.split("[")[1].split("]")[0])
       st += st[-1]*(cnt-1)
       for i in range(cnt):
-        nams.append("%s[%d]" % (nam.split("[")[0], i))
+        nams.append(f'{nam.split("[")[0]}[{i}]')
     else:
       nams.append(nam)
   return st, nams
