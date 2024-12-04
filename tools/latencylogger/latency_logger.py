@@ -168,9 +168,9 @@ def print_timestamps(timestamps, durations, start_times, relative):
       print("  "+service)
       events = timestamps[frame_id][service]
       for event, time in sorted(events, key = lambda x: x[1]):
-        print("    "+'%-53s%-53s' %(event, str((time-t0)/1e6)))
+        print("    "+f'{event:<53s}{str((time-t0)/1e6):<53s}')
       for event, time in durations[frame_id][service]:
-        print("    "+'%-53s%-53s' %(event, str(time*1000)))
+        print("    "+f'{event:<53s}{str(time*1000):<53s}')
 
 def graph_timestamps(timestamps, start_times, end_times, relative, offset_services=False, title=""):
   plt.rcParams.update({'font.size': 18})

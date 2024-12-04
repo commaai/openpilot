@@ -22,7 +22,7 @@ def get_fingerprint(lr):
           msgs[c.address] = len(c.dat)
 
   # show CAN fingerprint
-  fingerprint = ', '.join("%d: %d" % v for v in sorted(msgs.items()))
+  fingerprint = ', '.join(f"{v[0]}: {v[1]}" for v in sorted(msgs.items()))
   print(f"\nfound {len(msgs)} messages. CAN fingerprint:\n")
   print(fingerprint)
 

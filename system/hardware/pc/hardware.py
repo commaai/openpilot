@@ -21,7 +21,7 @@ class Pc(HardwareBase):
     print("uninstall")
 
   def get_imei(self, slot):
-    return "%015d" % random.randint(0, 1 << 32)
+    return f"{random.randint(0, 1 << 32):015d}"
 
   def get_serial(self):
     return "cccccccc"

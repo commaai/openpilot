@@ -242,6 +242,7 @@ exclude = [
   "cereal",
   "panda",
   "opendbc",
+  "opendbc_repo",
   "rednose_repo",
   "tinygrad_repo",
   "teleoprtc",
