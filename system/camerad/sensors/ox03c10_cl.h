@@ -29,7 +29,7 @@ float ox_lut_func(int x) {
 float4 normalize_pv(int4 parsed, float vignette_factor) {
   // PWL
   float4 pv = {ox_lut_func(parsed.s0), ox_lut_func(parsed.s1), ox_lut_func(parsed.s2), ox_lut_func(parsed.s3)};
-  return clamp(pv*vignette_factor*256.0, 0.0, 1.0);
+  return clamp(pv*vignette_factor, 0.0, 1.0);
 }
 
 float3 color_correct(float3 rgb) {
@@ -40,7 +40,7 @@ float3 color_correct(float3 rgb) {
 }
 
 float3 apply_gamma(float3 rgb, int expo_time) {
-  return -0.507089*exp(-12.54124638*rgb) + 0.9655*powr(rgb, 0.5) - 0.472597*rgb + 0.507089;
+  return (2000 * rgb) / (1 + 1999 * rgb);
 }
 
 #endif
