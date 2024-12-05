@@ -14,23 +14,24 @@ Development is coordinated through [Discord](https://discord.comma.ai) and GitHu
 ## What contributions are we looking for?
 
 **openpilot's priorities are [safety](SAFETY.md), stability, quality, and features, in that order.**
-openpilot is part of comma's mission to *solve self-driving cars while delivering shippable intermediaries*, and all development is towards that goal. 
+openpilot is part of comma's mission to *solve self-driving cars while delivering shippable intermediaries*, and all development is towards that goal.
 
 ### What gets merged?
 
 The probability of a pull request being merged is a function of its value to the project and the effort it will take us to get it merged.
 If a PR offers *some* value but will take lots of time to get merged, it will be closed.
-Simple, well-tested bug fixes are the easiest to merge, and new features are the hardest to get merged. 
+Simple, well-tested bug fixes are the easiest to merge, and new features are the hardest to get merged.
 
 All of these are examples of good PRs:
-* typo fix: https://github.com/commaai/openpilot/pull/30678
-* removing unused code: https://github.com/commaai/openpilot/pull/30573
-* simple car model port: https://github.com/commaai/openpilot/pull/30245
-* car brand port: https://github.com/commaai/openpilot/pull/23331
+
+* typo fix: [#30678](https://github.com/commaai/openpilot/pull/30678)
+* removing unused code: [#30573](https://github.com/commaai/openpilot/pull/30573)
+* simple car model port: [#30245](https://github.com/commaai/openpilot/pull/30245)
+* car brand port: [#23331](https://github.com/commaai/openpilot/pull/23331)
 
 ### What doesn't get merged?
 
-* **style changes**: code is art, and it's up to the author to make it beautiful 
+* **style changes**: code is art, and it's up to the author to make it beautiful
 * **500+ line PRs**: clean it up, break it up into smaller PRs, or both
 * **PRs without a clear goal**: every PR must have a singular and clear goal
 * **UI design**: we do not have a good review process for this yet

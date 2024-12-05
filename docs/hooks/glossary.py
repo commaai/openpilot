@@ -12,15 +12,15 @@ def generate_anchor_id(name):
 def format_markdown_term(name, definition):
   anchor_id = generate_anchor_id(name)
   markdown = f"* [**{name.replace('_', ' ').title()}**](#{anchor_id})"
-  if "abbreviation" in definition and definition["abbreviation"]:
+  if definition.get("abbreviation"):
     markdown += f" *({definition['abbreviation']})*"
-  if "description" in definition and definition["description"]:
+  if definition.get("description"):
     markdown += f": {definition['description']}\n"
   return markdown
 
-def glossary_markdown(glossary):
+def glossary_markdown(vocabulary):
   markdown = ""
-  for category, terms in glossary.items():
+  for category, terms in vocabulary.items():
     markdown += f"## {category.replace('_', ' ').title()}\n\n"
     for name, definition in terms.items():
       markdown += format_markdown_term(name, definition)
@@ -43,11 +43,22 @@ def format_tooltip_html(term_key, definition, html):
     flags=re.IGNORECASE,
   )
 
-def tooltip_html(glossary, html):
-  for category, terms in glossary.items():
+
+def tooltip_html(vocabulary, html):
+  for _category, terms in vocabulary.items():
     for term_key, definition in terms.items():
-      if "description" in definition and definition["description"]:
-        html = format_tooltip_html(term_key, definition, html)
+      if definition.get("description"):
+        pattern = (
+          rf"(?<!\w)"
+          rf"{re.escape(term_key.replace('_', ' ').title())}"
+          rf"(?![^<]*<\/a>)(?!\([^)]*\))"  # check it's not a link
+        )
+        html = re.sub(
+          pattern,
+          lambda match: format_tooltip_html(term_key, definition, match.group(0)),
+          html,
+          flags=re.IGNORECASE,
+        )
   return html
 
 # Page Hooks
