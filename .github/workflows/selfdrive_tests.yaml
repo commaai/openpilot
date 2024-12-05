@@ -178,10 +178,10 @@ jobs:
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 1 || 20 }}
       run: |
         ${{ env.RUN }} "time $PYTEST --collect-only -m 'not slow' &> /dev/null && \
-                        time MAX_EXAMPLES=1 $PYTEST -m 'not slow' -v && \
+                        time CACHE_ROOT=/tmp/comma_download_cache MAX_EXAMPLES=1 $PYTEST -m 'not slow' -v && \
                         time ./selfdrive/ui/tests/create_test_translations.sh && \
                         time QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
-                        time chmod -R 777 /tmp/comma_download_cache"
+                        chmod -R 777 /tmp/comma_download_cache"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v4
       with:
