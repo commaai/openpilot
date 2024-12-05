@@ -43,6 +43,7 @@ def apply_a_weighting(measurements: np.ndarray) -> np.ndarray:
 
 class Mic:
   def __init__(self):
+    self.rk = Ratekeeper(RATE)
     self.pm = messaging.PubMaster(['microphone'])
 
     self.measurements = np.empty(0)
@@ -59,6 +60,7 @@ class Mic:
     msg.microphone.soundPressureWeightedDb = float(self.sound_pressure_level_weighted)
 
     self.pm.send('microphone', msg)
+    self.rk.keep_time()
 
   def callback(self, indata, frames, time, status):
     """
@@ -92,11 +94,8 @@ class Mic:
 
     with self.get_stream(sd) as stream:
       cloudlog.info(f"micd stream started: {stream.samplerate=} {stream.channels=} {stream.dtype=} {stream.device=}, {stream.blocksize=}")
-
-      self.rk = Ratekeeper(RATE)
       while True:
         self.update()
-        self.rk.keep_time()
 
 
 def main():
