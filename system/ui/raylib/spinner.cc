@@ -2,7 +2,7 @@
 #include <cmath>
 #include <iostream>
 
-#include "selfdrive/ui/raylib/util.h"
+#include "system/ui/raylib/util.h"
 #include "third_party/raylib/include/raylib.h"
 
 constexpr int kProgressBarWidth = 1000;
@@ -19,8 +19,8 @@ int main(int argc, char *argv[]) {
   std::cin.sync_with_stdio(false);
   std::cin.tie(nullptr);
 
-  Texture2D commaTexture = LoadTextureResized("../../assets/img_spinner_comma.png", kTextureSize);
-  Texture2D spinnerTexture = LoadTextureResized("../../assets/img_spinner_track.png", kTextureSize);
+  Texture2D commaTexture = LoadTextureResized("../../selfdrive/assets/img_spinner_comma.png", kTextureSize);
+  Texture2D spinnerTexture = LoadTextureResized("../../selfdrive/assets/img_spinner_track.png", kTextureSize);
 
   float rotation = 0.0f;
   std::string userInput;

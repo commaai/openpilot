@@ -83,6 +83,8 @@ def read_thermal(thermal_config):
   dat.deviceState.gpuTempC = [read_tz(z) / thermal_config.gpu[1] for z in thermal_config.gpu[0]]
   dat.deviceState.memoryTempC = read_tz(thermal_config.mem[0]) / thermal_config.mem[1]
   dat.deviceState.pmicTempC = [read_tz(z) / thermal_config.pmic[1] for z in thermal_config.pmic[0]]
+  dat.deviceState.intakeTempC = read_tz(thermal_config.intake[0]) / thermal_config.intake[1]
+  dat.deviceState.exhaustTempC = read_tz(thermal_config.exhaust[0]) / thermal_config.exhaust[1]
   return dat
 
 

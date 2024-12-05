@@ -8,7 +8,7 @@
 #include "common/util.h"
 
 
-const int YUV_BUFFER_COUNT = 20;
+const int VIPC_BUFFER_COUNT = 18;
 
 typedef struct FrameMetadata {
   uint32_t frame_id;
