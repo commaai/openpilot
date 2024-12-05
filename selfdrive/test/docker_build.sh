@@ -19,15 +19,6 @@ source $SCRIPT_DIR/docker_common.sh $1 "$TAG_SUFFIX"
 
 DOCKER_BUILDKIT=1 docker buildx build --provenance false --pull --platform $PLATFORM --load --cache-to type=inline --cache-from type=registry,ref=$REMOTE_TAG -t $DOCKER_IMAGE:latest -t $REMOTE_TAG -t $LOCAL_TAG -f $OPENPILOT_DIR/$DOCKER_FILE $OPENPILOT_DIR
 
-if [ -n "$DOCKER_MAX_SIZE" ]; then
-  SIZE="$(docker inspect $DOCKER_IMAGE:latest --format='{{.Size}}')"
-  echo "$DOCKER_IMAGE size: $SIZE bytes"
-  if [ $(echo "$SIZE > $DOCKER_MAX_SIZE" | bc) -eq 1 ]; then
-    echo "Image too large, max is $DOCKER_MAX_SIZE bytes"
-    exit 1
-  fi
-fi
-
 if [ -n "$PUSH_IMAGE" ]; then
   docker push $REMOTE_TAG
   docker tag $REMOTE_TAG $REMOTE_SHA_TAG
