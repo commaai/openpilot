@@ -29,3 +29,16 @@
   visibility: visible;
   pointer-events: auto; /* Allow interaction when visible */
 }
+
+.tooltip-content .tooltip-glossary-link {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #007bff;
+  text-decoration: none;
+}
+
+.tooltip-content .tooltip-glossary-link:hover {
+  color: #0056b3;
+  text-decoration: underline;
+}

@@ -6,50 +6,55 @@ with open("docs/glossary.toml", "rb") as f:
 
 glossary = glossary_data.get("glossary", {})
 
+def generate_anchor_id(name):
+  return name.replace(" ", "-").replace("_", "-").lower()
+
+def format_markdown_term(name, definition):
+  anchor_id = generate_anchor_id(name)
+  markdown = f"* [**{name.replace('_', ' ').title()}**](#{anchor_id})"
+  if "abbreviation" in definition and definition["abbreviation"]:
+    markdown += f" *({definition['abbreviation']})*"
+  if "description" in definition and definition["description"]:
+    markdown += f": {definition['description']}\n"
+  return markdown
+
 def glossary_markdown(glossary):
-  markdown_string = ""
-
-  # Iterate over each category and terms
+  markdown = ""
   for category, terms in glossary.items():
-    markdown_string += f"## {category.replace('_', ' ').title()}\n"
-
+    markdown += f"## {category.replace('_', ' ').title()}\n\n"
     for name, definition in terms.items():
-      markdown_string += f"* **{name.replace('_', ' ').title()}**"
-      if "abbreviation" in definition and definition["abbreviation"]:
-        markdown_string += f" *({definition['abbreviation']})*"
-      if "description" in definition and definition["description"]:
-        markdown_string += f": {definition['description']}\n"
+      markdown += format_markdown_term(name, definition)
+  return markdown
 
-  return markdown_string
-
+def format_tooltip_html(term_key, definition, html):
+  display_term = term_key.replace("_", " ").title()
+  clean_description = re.sub(r"\[(.+)]\(.+\)", r"\1", definition["description"])
+  glossary_link = (
+    f"<a href='/concepts/glossary#{term_key}' class='tooltip-glossary-link' title='View in glossary'>Glossary🔗</a>"
+  )
+  return re.sub(
+    re.escape(display_term),
+    lambda match: (
+      f"<span data-tooltip>{match.group(0)}"
+      f"<span class='tooltip-content'>{clean_description} {glossary_link}</span>"
+      f"</span>"
+    ),
+    html,
+    flags=re.IGNORECASE,
+  )
 
 def tooltip_html(glossary, html):
   for category, terms in glossary.items():
-    for term, definition in terms.items():
+    for term_key, definition in terms.items():
       if "description" in definition and definition["description"]:
-        # Removes Markdown link formatting, but keeps the link text
-        clean_description = re.sub(r"\[(.+)]\(.+\)", r"\1", definition["description"])
-
-        # Embed a tooltip-content element
-        html = re.sub(
-          re.escape(term),
-          lambda match, descr=clean_description: (
-            f"<span data-tooltip>{match.group(0)}"
-            f"<span class='tooltip-content'>{descr}</span>"
-            f"</span>"
-          ),
-          html,
-          flags=re.IGNORECASE,
-        )
+        html = format_tooltip_html(term_key, definition, html)
   return html
 
+# Page Hooks
 def on_page_markdown(markdown, **kwargs):
   return markdown.replace("{{GLOSSARY_DEFINITIONS}}", glossary_markdown(glossary))
 
-
 def on_page_content(html, **kwargs):
-  # Don't add tooltips to the glossary page
   if kwargs.get("page").title == "Glossary":
     return html
-  else:
-    return tooltip_html(glossary, html)
+  return tooltip_html(glossary, html)
