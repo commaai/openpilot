@@ -177,7 +177,8 @@ jobs:
     - name: Run unit tests
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 1 || 20 }}
       run: |
-        ${{ env.RUN }} "time CACHE_ROOT=/tmp/comma_download_cache MAX_EXAMPLES=1 $PYTEST -m 'not slow' && \
+        ${{ env.RUN }} "$PYTEST --collect-only -m 'not slow' &> /dev/null && \
+                        time CACHE_ROOT=/tmp/comma_download_cache MAX_EXAMPLES=1 $PYTEST -m 'not slow' && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         chmod -R 777 /tmp/comma_download_cache"
@@ -189,6 +190,11 @@ jobs:
         name: ${{ github.job }}
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+    - name: debug shell
+      uses: namespacelabs/breakpoint-action@v0
+      with:
+        duration: 30m
+        authorized-users: maxime-desroches
 
   process_replay:
     name: process replay
