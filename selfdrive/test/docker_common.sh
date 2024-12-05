@@ -1,6 +1,7 @@
 if [ "$1" = "base" ]; then
   export DOCKER_IMAGE=openpilot-base
   export DOCKER_FILE=Dockerfile.openpilot_base
+  export DOCKER_MAX_SIZE="7.1*10^9"
 elif [ "$1" = "prebuilt" ]; then
   export DOCKER_IMAGE=openpilot-prebuilt
   export DOCKER_FILE=Dockerfile.openpilot
