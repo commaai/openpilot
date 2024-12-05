@@ -331,7 +331,6 @@ class Tici(HardwareBase):
                               [f"cpu{i}-gold-usr" for i in range(4)], 1000),
                          gpu=(("gpu0-usr", "gpu1-usr"), 1000),
                          mem=("ddr-usr", 1000),
-                         bat=(None, 1),
                          pmic=(("pm8998_tz", "pm8005_tz"), 1000),
                          intake=intake,
                          exhaust=exhaust)
