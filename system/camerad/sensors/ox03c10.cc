@@ -45,7 +45,7 @@ OX03C10::OX03C10() {
 
   readout_time_ns = 14697000;
 
-  ev_scale = 0.5;
+  ev_scale = 4.55;
   dc_gain_factor = 7.32;
   dc_gain_min_weight = 1;  // always on is fine
   dc_gain_max_weight = 1;
