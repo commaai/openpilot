@@ -8,11 +8,26 @@ inputs:
   sleep_time:
     description: 'Time to sleep between retries'
     required: false
-    default: 30
+    default: 5
 
 runs:
   using: "composite"
   steps:
+    - name: Set up containerd
+      uses: crazy-max/ghaction-setup-containerd@v1
+      with:
+        containerd-version: '1.5.5'
+
+    - name: Use lazy loading with eStargz
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y fuse-overlayfs
+        sudo mkdir -p /etc/containerd
+        echo "version = 2" | sudo tee /etc/containerd/config.toml
+        echo "[plugins.\"io.containerd.grpc.v1.cri\".containerd.runtimes.runc.options]" | sudo tee -a /etc/containerd/config.toml
+        echo "  SystemdCgroup = true" | sudo tee -a /etc/containerd/config.toml
+        sudo systemctl restart containerd
+
     - id: setup1
       uses: ./.github/workflows/setup
       continue-on-error: true
