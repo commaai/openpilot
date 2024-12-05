@@ -183,7 +183,7 @@ jobs:
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         chmod -R 777 /tmp/comma_download_cache"
         echo "real?"
-        sudo chmod -R 777 .ci_cache/comma_download_cache
+        sudo chmod -R 777 .ci_cache/*
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v4
       with:
