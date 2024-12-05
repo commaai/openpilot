@@ -172,15 +172,15 @@ jobs:
       uses: actions/cache@v4
       with:
         path: .ci_cache/comma_download_cache
-        key: unit_tests-${{ hashFiles('selfdrive/car/tests/routes.py') }}
+        key: unit_tests_${{ hashFiles('selfdrive/locationd/tests/test_locationd.py', 'selfdrive/locationd/tests/test_calibrationd.py') }}
     - name: Run unit tests
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 1 || 20 }}
       run: |
-        ${{ env.RUN }} "$PYTEST --collect-only -m 'not slow' &> /dev/null && \
-                        MAX_EXAMPLES=1 $PYTEST -m 'not slow' -vv && \
+        ${{ env.RUN }} "time $PYTEST --collect-only -m 'not slow' &> /dev/null && \
+                        time MAX_EXAMPLES=1 $PYTEST -m 'not slow' -vv && \
                         time ./selfdrive/ui/tests/create_test_translations.sh && \
                         time QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
-                        chmod -R 777 /tmp/comma_download_cache"
+                        time chmod -R 777 /tmp/comma_download_cache"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v4
       with:
