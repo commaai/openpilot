@@ -261,7 +261,7 @@ jobs:
     - name: debug
       uses: namespacelabs/breakpoint-action@v0
       with:
-        duration: 30m
+        duration: 31m
         authorized-users: maxime-desroches
     - name: Test car models
       timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.routes-cache.outputs.cache-hit == 'true') && 1 || 20 }}
