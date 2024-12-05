@@ -52,7 +52,7 @@ OX03C10::OX03C10() {
   dc_gain_on_grey = 0.9;
   dc_gain_off_grey = 1.0;
   exposure_time_min = 2;  // 1x
-  exposure_time_max = 2016;
+  exposure_time_max = 1270;
   analog_gain_min_idx = 0x0;
   analog_gain_rec_idx = 0x0;  // 1x
   analog_gain_max_idx = 0x36;
@@ -114,6 +114,9 @@ std::vector<i2c_random_wr_payload> OX03C10::getExposureRegisters(int exposure_ti
     {0x35c2, vs_time&0xFF},
 
     {0x3508, real_gain>>8}, {0x3509, real_gain&0xFF},
+    {0x3588, real_gain>>8}, {0x3589, real_gain&0xFF},
+    {0x3548, real_gain>>8}, {0x3549, real_gain&0xFF},
+    {0x35c8, real_gain>>8}, {0x35c9, real_gain&0xFF},
   };
 }
 
