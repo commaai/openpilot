@@ -143,8 +143,8 @@ jobs:
   static_analysis:
     name: static analysis
     runs-on:
-      - namespace-profile-amd64-8x16
-      - namespace-experiments:docker.builds.local-cache=separate
+      - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
+      - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-experiments:docker.builds.local-cache=separate' || '' }}
     env:
       PYTHONWARNINGS: default
     steps:
@@ -159,8 +159,8 @@ jobs:
   unit_tests:
     name: unit tests
     runs-on:
-      - namespace-profile-amd64-8x16
-      - namespace-experiments:docker.builds.local-cache=separate
+      - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
+      - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-experiments:docker.builds.local-cache=separate' || '' }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -186,8 +186,8 @@ jobs:
   process_replay:
     name: process replay
     runs-on:
-      - namespace-profile-amd64-8x16
-      - namespace-experiments:docker.builds.local-cache=separate
+      - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
+      - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-experiments:docker.builds.local-cache=separate' || '' }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -239,9 +239,8 @@ jobs:
   test_cars:
     name: cars
     runs-on:
-      - namespace-profile-amd64-8x16
-      - namespace-experiments:docker.builds.local-cache=separate
-
+      - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
+      - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-experiments:docker.builds.local-cache=separate' || '' }}
     strategy:
       fail-fast: false
       matrix:
@@ -332,8 +331,8 @@ jobs:
   simulator_driving:
     name: simulator driving
     runs-on:
-      - namespace-profile-amd64-8x16
-      - namespace-experiments:docker.builds.local-cache=separate
+      - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
+      - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-experiments:docker.builds.local-cache=separate' || '' }}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -353,8 +352,8 @@ jobs:
     # This job name needs to be the same as UI_JOB_NAME in ui_preview.yaml
     name: Create UI Report
     runs-on:
-      - namespace-profile-amd64-8x16
-      - namespace-experiments:docker.builds.local-cache=separate
+      - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
+      - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-experiments:docker.builds.local-cache=separate' || '' }}
     steps:
       - uses: actions/checkout@v4
         with:
