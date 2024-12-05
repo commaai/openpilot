@@ -1,5 +1,6 @@
 #include "tools/cabana/streams/abstractstream.h"
 
+#include <limits>
 #include <utility>
 
 #include <QApplication>
@@ -228,11 +229,10 @@ double calc_freq(const MessageId &msg_id, double current_sec) {
   auto last = std::upper_bound(first, events.end(), current_mono_time, CompareCanEvent());
 
   int count = std::distance(first, last);
-  if (count > 1) {
-    double duration = ((*std::prev(last))->mono_time - (*first)->mono_time) / 1e9;
-    return count / duration;
-  }
-  return 0;
+  if (count <= 1) return 0.0;
+
+  double duration = ((*std::prev(last))->mono_time - (*first)->mono_time) / 1e9;
+  return duration > std::numeric_limits<double>::epsilon() ? (count - 1) / duration : 0.0;
 }
 
 }  // namespace

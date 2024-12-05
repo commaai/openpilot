@@ -13,7 +13,7 @@ public:
     if (prefix.empty()) {
       prefix = util::random_string(15);
     }
-    msgq_path = "/dev/shm/" + prefix;
+    msgq_path = Path::shm_path() + "/" + prefix;
     bool ret = util::create_directories(msgq_path, 0777);
     assert(ret);
     setenv("OPENPILOT_PREFIX", prefix.c_str(), 1);

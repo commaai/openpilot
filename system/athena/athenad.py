@@ -258,13 +258,13 @@ def upload_handler(end_event: threading.Event) -> None:
           sz = -1
 
         cloudlog.event("athena.upload_handler.upload_start", fn=fn, sz=sz, network_type=network_type, metered=metered, retry_count=item.retry_count)
-        response = _do_upload(item, partial(cb, sm, item, tid, end_event))
 
-        if response.status_code not in (200, 201, 401, 403, 412):
-          cloudlog.event("athena.upload_handler.retry", status_code=response.status_code, fn=fn, sz=sz, network_type=network_type, metered=metered)
-          retry_upload(tid, end_event)
-        else:
-          cloudlog.event("athena.upload_handler.success", fn=fn, sz=sz, network_type=network_type, metered=metered)
+        with _do_upload(item, partial(cb, sm, item, tid, end_event)) as response:
+          if response.status_code not in (200, 201, 401, 403, 412):
+            cloudlog.event("athena.upload_handler.retry", status_code=response.status_code, fn=fn, sz=sz, network_type=network_type, metered=metered)
+            retry_upload(tid, end_event)
+          else:
+            cloudlog.event("athena.upload_handler.success", fn=fn, sz=sz, network_type=network_type, metered=metered)
 
         UploadQueueCache.cache(upload_queue)
       except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.SSLError):
@@ -309,13 +309,16 @@ def getMessage(service: str, timeout: int = 1000) -> dict:
     raise Exception("invalid service")
 
   socket = messaging.sub_sock(service, timeout=timeout)
-  ret = messaging.recv_one(socket)
+  try:
+    ret = messaging.recv_one(socket)
 
-  if ret is None:
-    raise TimeoutError
+    if ret is None:
+      raise TimeoutError
 
-  # this is because capnp._DynamicStructReader doesn't have typing information
-  return cast(dict, ret.to_dict())
+    # this is because capnp._DynamicStructReader doesn't have typing information
+    return cast(dict, ret.to_dict())
+  finally:
+    del socket
 
 
 @dispatcher.add_method
@@ -626,8 +629,9 @@ def log_handler(end_event: threading.Event) -> None:
 
 def stat_handler(end_event: threading.Event) -> None:
   STATS_DIR = Paths.stats_root()
+  last_scan = 0.0
+
   while not end_event.is_set():
-    last_scan = 0.
     curr_scan = time.monotonic()
     try:
       if curr_scan - last_scan > 10:

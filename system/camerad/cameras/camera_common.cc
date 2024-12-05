@@ -65,16 +65,19 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, SpectraCamera *
   const SensorInfo *sensor = cam->sensor.get();
 
   is_raw = cam->is_raw;
-  camera_bufs_raw = std::make_unique<VisionBuf[]>(frame_buf_count);
   frame_metadata = std::make_unique<FrameMetadata[]>(frame_buf_count);
 
-  // RAW + final frames from ISP
-  const int raw_frame_size = (sensor->frame_height + sensor->extra_height) * sensor->frame_stride;
-  for (int i = 0; i < frame_buf_count; i++) {
-    camera_bufs_raw[i].allocate(raw_frame_size);
-    camera_bufs_raw[i].init_cl(device_id, context);
+  // RAW frames from ISP
+  if (is_raw) {
+    camera_bufs_raw = std::make_unique<VisionBuf[]>(frame_buf_count);
+
+    const int raw_frame_size = (sensor->frame_height + sensor->extra_height) * sensor->frame_stride;
+    for (int i = 0; i < frame_buf_count; i++) {
+      camera_bufs_raw[i].allocate(raw_frame_size);
+      camera_bufs_raw[i].init_cl(device_id, context);
+    }
+    LOGD("allocated %d CL buffers", frame_buf_count);
   }
-  LOGD("allocated %d CL buffers", frame_buf_count);
 
   out_img_width = sensor->frame_width;
   out_img_height = sensor->hdr_offset > 0 ? (sensor->frame_height - sensor->hdr_offset) / 2 : sensor->frame_height;
@@ -83,8 +86,8 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, SpectraCamera *
   // TODO: VENUS_BUFFER_SIZE should give the size, but it's too small. dependent on encoder settings?
   size_t nv12_size = (out_img_width <= 1344 ? 2900 : 2346)*cam->stride;
 
-  vipc_server->create_buffers_with_sizes(stream_type, YUV_BUFFER_COUNT, out_img_width, out_img_height, nv12_size, cam->stride, cam->uv_offset);
-  LOGD("created %d YUV vipc buffers with size %dx%d", YUV_BUFFER_COUNT, cam->stride, cam->y_height);
+  vipc_server->create_buffers_with_sizes(stream_type, VIPC_BUFFER_COUNT, out_img_width, out_img_height, nv12_size, cam->stride, cam->uv_offset);
+  LOGD("created %d YUV vipc buffers with size %dx%d", VIPC_BUFFER_COUNT, cam->stride, cam->y_height);
 
   imgproc = new ImgProc(device_id, context, this, sensor, cam->cc.camera_num, cam->stride, cam->uv_offset);
 }

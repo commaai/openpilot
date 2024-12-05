@@ -133,8 +133,8 @@ def wheel_poll_thread(q: 'Queue[str]') -> NoReturn:
     button_name_list.append(btn_name)
     button_states[btn_name] = 0
 
-  print('%d axes found: %s' % (num_axes, ', '.join(axis_name_list)))
-  print('%d buttons found: %s' % (num_buttons, ', '.join(button_name_list)))
+  print(f'{num_axes} axes found: {", ".join(axis_name_list)}')
+  print(f'{num_buttons} buttons found: {", ".join(button_name_list)}')
 
   # Enable FF
   import evdev

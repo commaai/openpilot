@@ -1,4 +1,4 @@
-#include "selfdrive/ui/raylib/util.h"
+#include "system/ui/raylib/util.h"
 
 #include <array>
 
@@ -23,7 +23,6 @@ struct FontManager {
   FontManager() {
     for (int i = 0; i < fonts.size(); ++i) {
       fonts[i] = LoadFontEx(FONT_FILE_PATHS[i], 120, nullptr, 250);
-      SetTextureFilter(fonts[i].texture, TEXTURE_FILTER_TRILINEAR);
     }
   }
 
@@ -43,7 +42,6 @@ Texture2D LoadTextureResized(const char *fileName, int size) {
   Image img = LoadImage(fileName);
   ImageResize(&img, size, size);
   Texture2D texture = LoadTextureFromImage(img);
-  SetTextureFilter(texture, TEXTURE_FILTER_TRILINEAR);
   return texture;
 }
 
@@ -51,6 +49,6 @@ void initApp(const char *title, int fps) {
   Hardware::set_display_power(true);
   Hardware::set_brightness(65);
   // SetTraceLogLevel(LOG_NONE);
-  InitWindow(0, 0, title);
+  InitWindow(2160, 1080, title);
   SetTargetFPS(fps);
 }
