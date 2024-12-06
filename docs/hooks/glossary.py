@@ -34,11 +34,16 @@ def format_tooltip_html(term_key, definition, html):
   )
   return re.sub(
     re.escape(display_term),
-    lambda match: (
-      f"<span data-tooltip>{match.group(0)}"
-      f"<span class='tooltip-content'>{clean_description} {glossary_link}</span>"
-      f"</span>"
-    ),
+    lambda
+      match: f"<span data-tooltip>{match.group(0)}<span class='tooltip-content'>{clean_description} {glossary_link}</span></span>",
+    html,
+    flags=re.IGNORECASE,
+  )
+
+def apply_tooltip(_term_key, _definition, pattern, html):
+  return re.sub(
+  pattern,
+    lambda match: format_tooltip_html(_term_key, _definition, match.group(0)),
     html,
     flags=re.IGNORECASE,
   )
@@ -48,17 +53,8 @@ def tooltip_html(vocabulary, html):
   for _category, terms in vocabulary.items():
     for term_key, definition in terms.items():
       if definition.get("description"):
-        pattern = (
-          rf"(?<!\w)"
-          rf"{re.escape(term_key.replace('_', ' ').title())}"
-          rf"(?![^<]*<\/a>)(?!\([^)]*\))"  # check it's not a link
-        )
-        html = re.sub(
-          pattern,
-          lambda match: format_tooltip_html(term_key, definition, match.group(0)),
-          html,
-          flags=re.IGNORECASE,
-        )
+        pattern = rf"(?<!\w){re.escape(term_key.replace('_', ' ').title())}(?![^<]*<\/a>)(?!\([^)]*\))"
+        html = apply_tooltip(term_key, definition, pattern, html)
   return html
 
 # Page Hooks
