@@ -168,34 +168,20 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
-    - name: caching tests
-      id: tests-cache
-      uses: actions/cache@v4
-      with:
-        path: .ci_cache/comma_download_cache
-        key: u_test_seg_test_${{ hashFiles('selfdrive/ui/tests/test_ui/run.py') }}
     - name: Run unit tests
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 1 || 20 }}
       run: |
         ${{ env.RUN }} "$PYTEST --collect-only -m 'not slow' &> /dev/null && \
-                        time CACHE_ROOT=/tmp/comma_download_cache MAX_EXAMPLES=1 $PYTEST -m 'not slow' && \
+                        MAX_EXAMPLES=1 $PYTEST -m 'not slow' && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         chmod -R 777 /tmp/comma_download_cache"
-        echo "real?"
-        sudo chown -R runner:runner .ci_cache
-        sudo chmod -R 777 .ci_cache
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v4
       with:
         name: ${{ github.job }}
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-    - name: debug shell
-      uses: namespacelabs/breakpoint-action@v0
-      with:
-        duration: 30m
-        authorized-users: maxime-desroches
 
   process_replay:
     name: process replay
