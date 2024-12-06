@@ -1,7 +1,7 @@
 #if SENSOR_ID == 2
 
 #define BIT_DEPTH 12
-#define BLACK_LVL 64
+#define BLACK_LVL 0
 #define PWL_MAX 3530 // 17-bit cutoff
 #define VIGNETTE_RSZ 1.0f
 
