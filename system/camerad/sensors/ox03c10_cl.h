@@ -44,7 +44,7 @@ float3 color_correct(float3 rgb) {
 }
 
 float3 apply_gamma(float3 rgb, int expo_time) {
-  return (10000 * rgb) / (1 + 9999 * rgb);
+  return (2400 * rgb) / (1 + 2399 * rgb);
 }
 
 #endif
