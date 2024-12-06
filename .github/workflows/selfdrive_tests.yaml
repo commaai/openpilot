@@ -141,6 +141,7 @@ jobs:
         scripts/retry.sh selfdrive/test/docker_tag_multiarch.sh base x86_64 aarch64
 
   static_analysis:
+
     name: static analysis
     runs-on:
       - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
