@@ -135,7 +135,6 @@ jobs:
     - name: Setup docker
       run: |
         $DOCKER_LOGIN
-
     - name: Merge x64 and arm64 tags
       run: |
         export PUSH_IMAGE=true
