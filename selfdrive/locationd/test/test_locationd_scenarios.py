@@ -1,4 +1,3 @@
-import pytest
 import numpy as np
 from collections import defaultdict
 from enum import Enum
@@ -87,8 +86,6 @@ def run_scenarios(scenario, logs):
   return get_select_fields_data(logs), get_select_fields_data(replayed_logs)
 
 
-@pytest.mark.xdist_group("test_locationd_scenarios")
-@pytest.mark.shared_download_cache
 class TestLocationdScenarios:
   """
   Test locationd with different scenarios. In all these scenarios, we expect the following:
