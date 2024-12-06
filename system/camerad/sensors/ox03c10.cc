@@ -115,7 +115,7 @@ std::vector<i2c_random_wr_payload> OX03C10::getExposureRegisters(int exposure_ti
 
     {0x3508, real_gain>>8}, {0x3509, real_gain&0xFF},
     {0x3588, real_gain>>8}, {0x3589, real_gain&0xFF},
-    {0x3548, real_gain>>8}, {0x3549, real_gain&0xFF},
+    // {0x3548, real_gain>>8}, {0x3549, real_gain&0xFF},
     {0x35c8, real_gain>>8}, {0x35c9, real_gain&0xFF},
   };
 }
