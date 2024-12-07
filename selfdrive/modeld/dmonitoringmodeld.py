@@ -71,7 +71,7 @@ class ModelState:
     assert ctypes.sizeof(DMonitoringModelResult) == OUTPUT_SIZE * ctypes.sizeof(ctypes.c_float)
     self.numpy_inputs = {'calib': np.zeros((1, CALIB_LEN), dtype=np.float32),
                          'input_img': np.zeros((1,MODEL_HEIGHT * MODEL_WIDTH), dtype=np.uint8)}
-    self.img = None
+    self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
 
 
     with open(MODEL_PKL_PATH, "rb") as f:
@@ -87,8 +87,7 @@ class ModelState:
     buf_data = buf.data.reshape(-1, buf.stride)
     self.numpy_inputs['input_img'][:] = buf_data[v_offset:v_offset+MODEL_HEIGHT, h_offset:h_offset+MODEL_WIDTH].reshape((1, -1))
 
-    tensor_inputs = {k: Tensor(v) for k,v in self.numpy_inputs.items()}
-    output = self.model_run(**tensor_inputs)['outputs'].numpy().flatten()
+    output = self.model_run(**self.tensor_inputs).numpy().flatten()
 
     t2 = time.perf_counter()
     return output, t2 - t1
