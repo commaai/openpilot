@@ -3,7 +3,6 @@
 #include <iostream>
 
 #include "system/ui/raylib/util.h"
-#include "third_party/raylib/include/raylib.h"
 
 constexpr int kProgressBarWidth = 1000;
 constexpr int kProgressBarHeight = 20;
@@ -27,7 +26,7 @@ int main(int argc, char *argv[]) {
 
   while (!WindowShouldClose()) {
     BeginDrawing();
-    ClearBackground(BLACK);
+    ClearBackground(RAYLIB_BLACK);
 
     rotation = fmod(rotation + kRotationRate, 360.0f);
     Vector2 center = {GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f};
@@ -37,8 +36,8 @@ int main(int argc, char *argv[]) {
     // Draw rotating spinner and static comma logo
     DrawTexturePro(spinnerTexture, {0, 0, (float)kTextureSize, (float)kTextureSize},
                    {center.x, center.y, (float)kTextureSize, (float)kTextureSize},
-                   spinnerOrigin, rotation, WHITE);
-    DrawTextureV(commaTexture, commaPosition, WHITE);
+                   spinnerOrigin, rotation, RAYLIB_WHITE);
+    DrawTextureV(commaTexture, commaPosition, RAYLIB_WHITE);
 
     // Check for user input
     if (std::cin.rdbuf()->in_avail() > 0) {
@@ -50,14 +49,14 @@ int main(int argc, char *argv[]) {
       float yPos = GetScreenHeight() - kMargin - kProgressBarHeight;
       if (std::all_of(userInput.begin(), userInput.end(), ::isdigit)) {
         Rectangle bar = {center.x - kProgressBarWidth / 2.0f, yPos, kProgressBarWidth, kProgressBarHeight};
-        DrawRectangleRounded(bar, 0.5f, 10, GRAY);
+        DrawRectangleRounded(bar, 0.5f, 10, RAYLIB_GRAY);
 
         int progress = std::clamp(std::stoi(userInput), 0, 100);
         bar.width *= progress / 100.0f;
-        DrawRectangleRounded(bar, 0.5f, 10, RAYWHITE);
+        DrawRectangleRounded(bar, 0.5f, 10, RAYLIB_RAYWHITE);
       } else {
         Vector2 textSize = MeasureTextEx(getFont(), userInput.c_str(), kFontSize, 1.0);
-        DrawTextEx(getFont(), userInput.c_str(), {center.x - textSize.x / 2, yPos}, kFontSize, 1.0, WHITE);
+        DrawTextEx(getFont(), userInput.c_str(), {center.x - textSize.x / 2, yPos}, kFontSize, 1.0, RAYLIB_WHITE);
       }
     }
 
