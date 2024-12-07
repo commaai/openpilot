@@ -35,18 +35,19 @@ class ThermalConfig:
   gpu: list[ThermalZone]
   pmic: list[ThermalZone]
   memory: ThermalZone
-  intake: ThermalZone = None
-  exhaust: ThermalZone = None
-  case: ThermalZone = None
+  intake: ThermalZone | None = None
+  exhaust: ThermalZone | None = None
+  case: ThermalZone | None = None
 
   def get_msg(self):
     ret = {}
     for f in fields(ThermalConfig):
       v = getattr(self, f.name)
-      if isinstance(v, list):
-        ret[f.name + "TempC"] = [x.read() for x in v]
-      else:
-        ret[f.name + "TempC"] = v.read()
+      if v is not None:
+        if isinstance(v, list):
+          ret[f.name + "TempC"] = [x.read() for x in v]
+        else:
+          ret[f.name + "TempC"] = v.read()
     return ret
 
 class HardwareBase(ABC):
