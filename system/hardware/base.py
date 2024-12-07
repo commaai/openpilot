@@ -3,7 +3,7 @@ from collections import namedtuple
 
 from cereal import log
 
-ThermalConfig = namedtuple('ThermalConfig', ['cpu', 'gpu', 'mem', 'bat', 'pmic'])
+ThermalConfig = namedtuple('ThermalConfig', ['cpu', 'gpu', 'mem', 'pmic', 'intake', 'exhaust'])
 NetworkType = log.DeviceState.NetworkType
 
 

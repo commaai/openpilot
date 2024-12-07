@@ -323,12 +323,17 @@ class Tici(HardwareBase):
     os.system("sudo poweroff")
 
   def get_thermal_config(self):
-    return ThermalConfig(cpu=(["cpu%d-silver-usr" % i for i in range(4)] +
-                              ["cpu%d-gold-usr" % i for i in range(4)], 1000),
+    intake, exhaust = (None, 1), (None, 1)
+    if self.get_device_type() == "mici":
+      intake = ("intake", 1000)
+      exhaust = ("exhaust", 1000)
+    return ThermalConfig(cpu=([f"cpu{i}-silver-usr" for i in range(4)] +
+                              [f"cpu{i}-gold-usr" for i in range(4)], 1000),
                          gpu=(("gpu0-usr", "gpu1-usr"), 1000),
                          mem=("ddr-usr", 1000),
-                         bat=(None, 1),
-                         pmic=(("pm8998_tz", "pm8005_tz"), 1000))
+                         pmic=(("pm8998_tz", "pm8005_tz"), 1000),
+                         intake=intake,
+                         exhaust=exhaust)
 
   def set_screen_brightness(self, percentage):
     try:
