@@ -17,7 +17,7 @@ FRAME_DELTA_TOLERANCE = {log.FrameData.ImageSensor.ar0231: 1.0,
 
 CAMERAS = ('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
 
-@retry(attempts=3)
+@retry(attempts=3, delay=5.0)
 def setup_camerad(cls):
   # run camerad and record logs
   managed_processes['camerad'].start()
