@@ -230,13 +230,13 @@ def hardware_thread(end_event, hw_queue) -> None:
     # this subset is only used for offroad
     temp_sources = [
       msg.deviceState.memoryTempC,
-      max(msg.deviceState.cpuTempC),
-      max(msg.deviceState.gpuTempC),
+      max(msg.deviceState.cpuTempC, default=0.),
+      max(msg.deviceState.gpuTempC, default=0.),
     ]
     offroad_comp_temp = offroad_temp_filter.update(max(temp_sources))
 
     # this drives the thermal status while onroad
-    temp_sources.append(max(msg.deviceState.pmicTempC))
+    temp_sources.append(max(msg.deviceState.pmicTempC, default=0.))
     all_comp_temp = all_temp_filter.update(max(temp_sources))
     msg.deviceState.maxTempC = all_comp_temp
 
