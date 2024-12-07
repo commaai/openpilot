@@ -139,6 +139,7 @@ class UploadQueueCache:
 
 def handle_long_poll(ws: WebSocket, exit_event: threading.Event | None) -> None:
   end_event = threading.Event()
+  dispatcher["startLocalProxy"] = partial(startLocalProxy, end_event)
 
   threads = [
     threading.Thread(target=ws_manage, args=(ws, end_event), name='ws_manage'),
@@ -168,7 +169,6 @@ def handle_long_poll(ws: WebSocket, exit_event: threading.Event | None) -> None:
 
 
 def jsonrpc_handler(end_event: threading.Event) -> None:
-  dispatcher["startLocalProxy"] = partial(startLocalProxy, end_event)
   while not end_event.is_set():
     try:
       data = recv_queue.get(timeout=1)
