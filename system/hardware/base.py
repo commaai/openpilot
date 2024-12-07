@@ -31,10 +31,10 @@ class ThermalZone:
 
 @dataclass
 class ThermalConfig:
-  cpu: list[ThermalZone]
-  gpu: list[ThermalZone]
-  pmic: list[ThermalZone]
-  memory: ThermalZone
+  cpu: list[ThermalZone] | None = None
+  gpu: list[ThermalZone] | None = None
+  pmic: list[ThermalZone] | None = None
+  memory: ThermalZone | None = None
   intake: ThermalZone | None = None
   exhaust: ThermalZone | None = None
   case: ThermalZone | None = None
@@ -127,9 +127,8 @@ class HardwareBase(ABC):
   def shutdown(self):
     pass
 
-  @abstractmethod
   def get_thermal_config(self):
-    pass
+    return ThermalConfig()
 
   @abstractmethod
   def set_screen_brightness(self, percentage):
