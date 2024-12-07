@@ -101,22 +101,17 @@ OX03C10::OX03C10() {
 std::vector<i2c_random_wr_payload> OX03C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {
  // t_HCG&t_LCG + t_VS on LPD, t_SPD on SPD
   uint32_t hcg_time = exposure_time;
-  uint32_t lcg_time = hcg_time;
   uint32_t spd_time = (exposure_time_max + VS_TIME_MAX_OX03C10) * 12 / 50; // 12ms
-  uint32_t vs_time = std::min(std::max((uint32_t)exposure_time / 40, VS_TIME_MIN_OX03C10), VS_TIME_MAX_OX03C10);
+  uint32_t vs_time = VS_TIME_MAX_OX03C10;
 
   uint32_t real_gain = ox03c10_analog_gains_reg[new_exp_g];
 
   return {
     {0x3501, hcg_time>>8}, {0x3502, hcg_time&0xFF},
-    {0x3581, lcg_time>>8}, {0x3582, lcg_time&0xFF},
     {0x3541, spd_time>>8}, {0x3542, spd_time&0xFF},
     {0x35c2, vs_time&0xFF},
 
     {0x3508, real_gain>>8}, {0x3509, real_gain&0xFF},
-    {0x3588, real_gain>>8}, {0x3589, real_gain&0xFF},
-    // {0x3548, real_gain>>8}, {0x3549, real_gain&0xFF},
-    {0x35c8, real_gain>>8}, {0x35c9, real_gain&0xFF},
   };
 }
 
