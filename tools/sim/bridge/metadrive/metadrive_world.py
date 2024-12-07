@@ -3,6 +3,7 @@ import functools
 import multiprocessing
 import numpy as np
 import time
+import csv
 
 from multiprocessing import Pipe, Array
 
@@ -57,6 +58,22 @@ class MetaDriveWorld(World):
     self.vc = [0.0,0.0]
     self.reset_time = 0
     self.should_reset = False
+    self.file = open("/tmp/metadrive_log.csv", "w")
+    self.writer = csv.writer(self.file)
+    self.writer.writerow([
+      "time",
+      "velocity_x",
+      "velocity_y",
+      "velocity_z",
+      "bearing",
+      "steering_angle",
+      "longitude",
+      "latitude",
+      "altitude"
+      ])
+
+  def __del__(self):
+    self.file.close()
 
   def apply_controls(self, steer_angle, throttle_out, brake_out):
     if (time.monotonic() - self.reset_time) > 2:
@@ -90,6 +107,17 @@ class MetaDriveWorld(World):
       state.steering_angle = md_vehicle.steering_angle
       state.gps.from_xy(curr_pos)
       state.valid = True
+      self.writer.writerow([
+        time.monotonic(),
+        state.velocity[0],
+        state.velocity[1],
+        state.velocity[2],
+        state.bearing,
+        state.steering_angle,
+        state.gps.longitude,
+        state.gps.latitude,
+        state.gps.altitude
+        ])
 
       is_engaged = state.is_engaged
       if is_engaged and self.first_engage is None:

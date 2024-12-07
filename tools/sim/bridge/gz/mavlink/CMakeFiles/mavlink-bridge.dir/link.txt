@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/mavlink-bridge.dir/mavlink-bridge.cpp.o -o mavlink-bridge  /usr/lib/libmavsdk.so.2.12.10 

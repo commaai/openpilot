@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import math
+import csv
 from typing import SupportsFloat
 
 from cereal import car, log
@@ -46,6 +47,10 @@ class Controls:
     self.pose_calibrator = PoseCalibrator()
     self.calibrated_pose: Pose|None = None
 
+    self.dumpfile = open("/tmp/openpilot.log", "w", newline='')
+    self.csv_writer = csv.writer(self.dumpfile, delimiter=',', lineterminator='\n')
+    self.csv_writer.writerow(["accel", "a_target", "should_stop", "curvature", "steer", "steer_angle"])
+
     self.LoC = LongControl(self.CP)
     self.VM = VehicleModel(self.CP)
     self.LaC: LatControl
@@ -55,6 +60,9 @@ class Controls:
       self.LaC = LatControlPID(self.CP, self.CI)
     elif self.CP.lateralTuning.which() == 'torque':
       self.LaC = LatControlTorque(self.CP, self.CI)
+
+  def __del__(self):
+    self.dumpfile.close()
 
   def update(self):
     self.sm.update(15)
@@ -114,6 +122,7 @@ class Controls:
     actuators.steer, actuators.steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
                                                                             self.steer_limited, self.desired_curvature,
                                                                             self.calibrated_pose) # TODO what if not available
+    self.csv_writer.writerow([actuators.accel, long_plan.aTarget, long_plan.shouldStop, actuators.curvature, actuators.steer, actuators.steeringAngleDeg])
 
     # Ensure no NaNs/Infs
     for p in ACTUATOR_FIELDS:
