@@ -487,14 +487,16 @@ class Tici(HardwareBase):
         'AT$QCNETDEVCTL=3,1',
       ]
     else:
-      cmds += [
-        # SIM sleep disable
-        'AT$QCSIMSLEEP=0',
-        'AT$QCSIMCFG=SimPowerSave,0',
+      # this modem gets upset with too many AT commands
+      if sim_id is None or len(sim_id) == 0:
+        cmds += [
+          # SIM sleep disable
+          'AT$QCSIMSLEEP=0',
+          'AT$QCSIMCFG=SimPowerSave,0',
 
-        # ethernet config
-        'AT$QCPCFG=usbNet,1',
-      ]
+          # ethernet config
+          'AT$QCPCFG=usbNet,1',
+        ]
 
     for cmd in cmds:
       try:
@@ -593,3 +595,4 @@ if __name__ == "__main__":
   t.configure_modem()
   t.initialize_hardware()
   t.set_power_save(False)
+  print(t.get_sim_info())
