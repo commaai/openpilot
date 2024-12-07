@@ -264,11 +264,11 @@ int SpectraCamera::clear_req_queue() {
 }
 
 void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_context ctx) {
-  if (!enabled) return;
-
   if (!openSensor()) {
     return;
   }
+
+  if (!enabled) return;
 
   // size is driven by all the HW that handles frames,
   // the video encoder has certain alignment requirements in this case

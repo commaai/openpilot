@@ -78,7 +78,6 @@ class TestAthenadMethods:
 
     athenad.upload_queue = queue.Queue()
     athenad.cur_upload_items.clear()
-    athenad.cancelled_uploads.clear()
 
     for i in os.listdir(Paths.log_root()):
       p = os.path.join(Paths.log_root(), i)
@@ -240,7 +239,7 @@ class TestAthenadMethods:
   @with_upload_handler
   def test_upload_handler_retry(self, mocker, host, status, retry):
     mock_put = mocker.patch('requests.put')
-    mock_put.return_value.status_code = status
+    mock_put.return_value.__enter__.return_value.status_code = status
     fn = self._create_file('qlog.zst')
     item = athenad.UploadItem(path=fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
 
@@ -282,13 +281,10 @@ class TestAthenadMethods:
     athenad.upload_queue.put_nowait(item)
     dispatcher["cancelUpload"](item.id)
 
-    assert item.id in athenad.cancelled_uploads
-
     self._wait_for_upload()
     time.sleep(0.1)
 
     assert athenad.upload_queue.qsize() == 0
-    assert len(athenad.cancelled_uploads) == 0
 
   @with_upload_handler
   def test_cancel_expiry(self):
@@ -331,7 +327,7 @@ class TestAthenadMethods:
     assert items[0] == asdict(item)
     assert not items[0]['current']
 
-    athenad.cancelled_uploads.add(item.id)
+    dispatcher["cancelUpload"](item.id)
     items = dispatcher["listUploadQueue"]()
     assert len(items) == 0
 
@@ -343,7 +339,7 @@ class TestAthenadMethods:
     athenad.upload_queue.put_nowait(item2)
 
     # Ensure canceled items are not persisted
-    athenad.cancelled_uploads.add(item2.id)
+    dispatcher["cancelUpload"](item2.id)
 
     # serialize item
     athenad.UploadQueueCache.cache(athenad.upload_queue)
