@@ -59,6 +59,35 @@ def can_comm_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket
   return can_recv, can_send
 
 
+class ParameterUpdater:
+  def __init__(self):
+    self.params = Params()
+    self.mutex = threading.Lock()
+    self.is_metric = False
+    self.experimental_mode = False
+
+    self._update()  # Initial update
+    self.stop_event = threading.Event()
+    self.update_thread = threading.Thread(target=self._update_periodically)
+    self.update_thread.start()
+
+  def stop(self):
+    self.stop_event.set()
+    self.update_thread.join()
+
+  def _update(self):
+    is_metric = self.params.get_bool("IsMetric")
+    experimental_mode = self.params.get_bool("ExperimentalMode")
+    with self.mutex:
+      self.is_metric = is_metric
+      self.experimental_mode = experimental_mode
+
+  def _update_periodically(self):
+    while not self.stop_event.is_set():
+      self._update()
+      time.sleep(0.1)
+
+
 class Car:
   CI: CarInterfaceBase
   RI: RadarInterfaceBase
@@ -149,8 +178,8 @@ class Car:
     self.mock_carstate = MockCarState()
     self.v_cruise_helper = VCruiseHelper(self.CP)
 
-    self.is_metric = self.params.get_bool("IsMetric")
-    self.experimental_mode = self.params.get_bool("ExperimentalMode")
+    self.is_metric = False
+    self.experimental_mode = False
 
     # card is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
@@ -250,23 +279,18 @@ class Car:
 
     self.initialized_prev = initialized
 
-  def params_thread(self, evt):
-    while not evt.is_set():
-      self.is_metric = self.params.get_bool("IsMetric")
-      self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
-      time.sleep(0.1)
-
   def card_thread(self):
-    e = threading.Event()
-    t = threading.Thread(target=self.params_thread, args=(e, ))
+    parameter_updater = ParameterUpdater()
     try:
-      t.start()
       while True:
+        with parameter_updater.mutex:
+          self.is_metric = parameter_updater.is_metric
+          self.experimental_mode = parameter_updater.experimental_mode
+
         self.step()
         self.rk.monitor_time()
     finally:
-      e.set()
-      t.join()
+      parameter_updater.stop()
 
 
 def main():
