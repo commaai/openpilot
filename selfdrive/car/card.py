@@ -8,6 +8,7 @@ from cereal import car, log
 
 from panda import ALTERNATIVE_EXPERIENCE
 
+from openpilot.common.parameter_updater import ParameterUpdater
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper
 from openpilot.common.swaglog import cloudlog, ForwardingHandler
@@ -20,7 +21,6 @@ from opendbc.car.interfaces import CarInterfaceBase, RadarInterfaceBase
 from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
 from openpilot.selfdrive.car.cruise import VCruiseHelper
 from openpilot.selfdrive.car.car_specific import MockCarState
-from openpilot.selfdrive.car.parameter_updater import ParameterUpdater
 
 REPLAY = "REPLAY" in os.environ
 
@@ -254,9 +254,8 @@ class Car:
     parameter_updater = ParameterUpdater()
     try:
       while True:
-        with parameter_updater.mutex:
-          self.is_metric = parameter_updater.is_metric
-          self.experimental_mode = parameter_updater.experimental_mode
+        self.is_metric = parameter_updater.get_param_value('is_metric')
+        self.experimental_mode = parameter_updater.get_param_value('experimental_mode')
 
         self.step()
         self.rk.monitor_time()
