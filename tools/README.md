@@ -4,7 +4,7 @@
 
 openpilot is developed and tested on **Ubuntu 24.04**, which is the primary development target aside from the [supported embedded hardware](https://github.com/commaai/openpilot#running-on-a-dedicated-device-in-a-car).
 
-Most of openpilot should work natively on macOS. On Windows you can use WSL. Running natively on any other system is not recommended and will require modifications.
+Most of openpilot should work natively on macOS. On Windows you can use WSL for a nearly native Ubuntu experience. Running natively on any other system is not currently recommended and will likely require modifications.
 
 ## Native setup on Ubuntu 24.04
 
