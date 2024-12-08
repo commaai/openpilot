@@ -5,6 +5,7 @@ from libcpp.string cimport string
 
 from .runmodel cimport USE_CPU_RUNTIME, USE_GPU_RUNTIME, USE_DSP_RUNTIME
 from selfdrive.modeld.models.commonmodel_pyx cimport CLMem
+import numpy as np
 
 class Runtime:
   CPU = USE_CPU_RUNTIME
@@ -21,11 +22,12 @@ cdef class RunModel:
     else:
       self.model.addInput(name, NULL, 0)
 
-  def setInputBuffer(self, string name, float[:] buffer):
-    if buffer is not None:
-      self.model.setInputBuffer(name, &buffer[0], len(buffer))
-    else:
-      self.model.setInputBuffer(name, NULL, 0)
+  def setInputBuffer(self, string name, unsigned char[:] input_buffer):
+    cdef int num_floats = len(input_buffer) // sizeof(float)
+    cdef float* float_ptr = <float*> &input_buffer[0]
+    cdef float[:] float_buffer_view = <float[:num_floats]> float_ptr
+    if float_buffer_view is not None:
+      self.model.setInputBuffer(name, &float_buffer_view[0], num_floats)
 
   def getCLBuffer(self, string name):
     cdef void * cl_buf = self.model.getCLBuffer(name)
