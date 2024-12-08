@@ -88,29 +88,6 @@
     </message>
 </context>
 <context>
-    <name>AnnotatedCameraWidget</name>
-    <message>
-        <source>km/h</source>
-        <translation>กม./ชม.</translation>
-    </message>
-    <message>
-        <source>mph</source>
-        <translation>ไมล์/ชม.</translation>
-    </message>
-    <message>
-        <source>MAX</source>
-        <translation>สูงสุด</translation>
-    </message>
-    <message>
-        <source>SPEED</source>
-        <translation>ความเร็ว</translation>
-    </message>
-    <message>
-        <source>LIMIT</source>
-        <translation>จำกัด</translation>
-    </message>
-</context>
-<context>
     <name>ConfirmationDialog</name>
     <message>
         <source>Ok</source>
@@ -137,30 +114,14 @@
     </message>
 </context>
 <context>
-    <name>DestinationWidget</name>
+    <name>DeveloperPanel</name>
     <message>
-        <source>Home</source>
-        <translation>บ้าน</translation>
+        <source>Joystick Debug Mode</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Work</source>
-        <translation>ที่ทำงาน</translation>
-    </message>
-    <message>
-        <source>No destination set</source>
-        <translation>ยังไม่ได้เลือกจุดหมาย</translation>
-    </message>
-    <message>
-        <source>home</source>
-        <translation>บ้าน</translation>
-    </message>
-    <message>
-        <source>work</source>
-        <translation>ที่ทำงาน</translation>
-    </message>
-    <message>
-        <source>No %1 location set</source>
-        <translation>ยังไม่ได้เลือกตำแหน่ง%1</translation>
+        <source>Longitudinal Maneuver Mode</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -325,6 +286,21 @@
     </message>
 </context>
 <context>
+    <name>HudRenderer</name>
+    <message>
+        <source>km/h</source>
+        <translation>กม./ชม.</translation>
+    </message>
+    <message>
+        <source>mph</source>
+        <translation>ไมล์/ชม.</translation>
+    </message>
+    <message>
+        <source>MAX</source>
+        <translation>สูงสุด</translation>
+    </message>
+</context>
+<context>
     <name>InputDialog</name>
     <message>
         <source>Cancel</source>
@@ -342,47 +318,6 @@
     <message>
         <source>Installing...</source>
         <translation>กำลังติดตั้ง...</translation>
-    </message>
-</context>
-<context>
-    <name>MapETA</name>
-    <message>
-        <source>eta</source>
-        <translation>eta</translation>
-    </message>
-    <message>
-        <source>min</source>
-        <translation>นาที</translation>
-    </message>
-    <message>
-        <source>hr</source>
-        <translation>ชม.</translation>
-    </message>
-</context>
-<context>
-    <name>MapSettings</name>
-    <message>
-        <source>NAVIGATION</source>
-        <translation>การนำทาง</translation>
-    </message>
-    <message>
-        <source>Manage at connect.comma.ai</source>
-        <translation>จัดการได้ที่ connect.comma.ai</translation>
-    </message>
-</context>
-<context>
-    <name>MapWindow</name>
-    <message>
-        <source>Map Loading</source>
-        <translation>กำลังโหลดแผนที่</translation>
-    </message>
-    <message>
-        <source>Waiting for GPS</source>
-        <translation>กำลังรอสัญญาณ GPS</translation>
-    </message>
-    <message>
-        <source>Waiting for route</source>
-        <translation>กำลังรอเส้นทาง</translation>
     </message>
 </context>
 <context>
@@ -460,10 +395,6 @@
         <translation>openpilot ไม่สามารถระบุรถยนต์ของคุณได้ ระบบอาจไม่รองรับรถยนต์ของคุณหรือไม่รู้จัก ECU กรุณาส่ง pull request เพื่อเพิ่มรุ่นของเฟิร์มแวร์ให้กับรถยนต์ที่เหมาะสม หากต้องการความช่วยเหลือให้เข้าร่วม discord.comma.ai</translation>
     </message>
     <message>
-        <source>openpilot was unable to identify your car. Check integrity of cables and ensure all connections are secure, particularly that the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.</source>
-        <translation>openpilot ไม่สามารถระบุรถยนต์ของคุณได้ กรุณาตรวจสอบสายเคเบิ้ลและจุดเชื่อมต่อทั้งหมดว่าแน่นหนา โดยเฉพาะ comma power ว่าได้ดันเข้าไปยังพอร์ต OBD II ของรถยนต์จนสุด หากต้องการความช่วยเหลือให้เข้าร่วม discord.comma.ai</translation>
-    </message>
-    <message>
         <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
         <translation>openpilot ตรวจพบการเปลี่ยนแปลงของตำแหน่งที่ติดตั้ง กรุณาตรวจสอบว่าได้เลื่อนอุปกรณ์เข้ากับจุดติดตั้งจนสุดแล้ว และจุดติดตั้งได้ยึดติดกับกระจกหน้าอย่างแน่นหนา</translation>
     </message>
@@ -490,20 +421,20 @@
         <translation>openpilot ไม่สามารถใช้งานได้</translation>
     </message>
     <message>
-        <source>Waiting for controls to start</source>
-        <translation>กำลังรอให้ controls เริ่มทำงาน</translation>
-    </message>
-    <message>
         <source>TAKE CONTROL IMMEDIATELY</source>
         <translation>เข้าควบคุมรถเดี๋ยวนี้</translation>
     </message>
     <message>
-        <source>Controls Unresponsive</source>
-        <translation>Controls ไม่ตอบสนอง</translation>
-    </message>
-    <message>
         <source>Reboot Device</source>
         <translation>รีบูตอุปกรณ์</translation>
+    </message>
+    <message>
+        <source>Waiting to start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>System Unresponsive</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -563,8 +494,8 @@
         <translation>จัดเก็บข้อมูลการขับขี่นาน 1 ปี</translation>
     </message>
     <message>
-        <source>Turn-by-turn navigation</source>
-        <translation>การนำทางแบบเลี้ยวต่อเลี้ยว</translation>
+        <source>Remote snapshots</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -609,22 +540,6 @@
         <translation>
             <numerusform>%n วันที่แล้ว</numerusform>
         </translation>
-    </message>
-    <message>
-        <source>km</source>
-        <translation>กม.</translation>
-    </message>
-    <message>
-        <source>m</source>
-        <translation>ม.</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation>ไมล์</translation>
-    </message>
-    <message>
-        <source>ft</source>
-        <translation>ฟุต</translation>
     </message>
     <message>
         <source>now</source>
@@ -693,6 +608,10 @@ This may take up to a minute.</source>
     <message>
         <source>Software</source>
         <translation>ซอฟต์แวร์</translation>
+    </message>
+    <message>
+        <source>Developer</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -850,14 +769,6 @@ This may take up to a minute.</source>
     <message>
         <source>PANDA</source>
         <translation>PANDA</translation>
-    </message>
-    <message>
-        <source>GPS</source>
-        <translation>จีพีเอส</translation>
-    </message>
-    <message>
-        <source>SEARCH</source>
-        <translation>ค้นหา</translation>
     </message>
     <message>
         <source>--</source>
@@ -1069,22 +980,6 @@ This may take up to a minute.</source>
     <message>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
         <translation>เมื่อเปิดใช้งาน การกดแป้นคันเร่งจะเป็นการยกเลิกระบบช่วยขับโดย openpilot</translation>
-    </message>
-    <message>
-        <source>Show ETA in 24h Format</source>
-        <translation>แสดงเวลา ETA ในรูปแบบ 24 ชั่วโมง</translation>
-    </message>
-    <message>
-        <source>Use 24h format instead of am/pm</source>
-        <translation>ใช้รูปแบบเวลา 24 ชั่วโมง แทน am/pm</translation>
-    </message>
-    <message>
-        <source>Show Map on Left Side of UI</source>
-        <translation>แสดงแผนที่ที่ด้านซ้ายของหน้าจอ</translation>
-    </message>
-    <message>
-        <source>Show map on left side when in split screen view.</source>
-        <translation>แสดงแผนที่ด้านซ้ายของหน้าจอเมื่ออยู่ในโหมดแบ่งหน้าจอ</translation>
     </message>
     <message>
         <source>Experimental Mode</source>

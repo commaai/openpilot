@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import base64
-import bz2
 import hashlib
 import io
 import json
@@ -15,6 +14,7 @@ import sys
 import tempfile
 import threading
 import time
+import zstandard as zstd
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from functools import partial
@@ -35,6 +35,7 @@ from openpilot.common.file_helpers import CallbackReader
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
 from openpilot.system.hardware import HARDWARE, PC
+from openpilot.system.loggerd.uploader import LOG_COMPRESSION_LEVEL
 from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_build_metadata
@@ -43,7 +44,7 @@ from openpilot.system.hardware.hw import Paths
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
 HANDLER_THREADS = int(os.getenv('HANDLER_THREADS', "4"))
-LOCAL_PORT_WHITELIST = {8022}
+LOCAL_PORT_WHITELIST = {22, }  # SSH
 
 LOG_ATTR_NAME = 'user.upload'
 LOG_ATTR_VALUE_MAX_UNIX_TIME = int.to_bytes(2147483647, 4, sys.byteorder)
@@ -98,13 +99,13 @@ send_queue: Queue[str] = queue.Queue()
 upload_queue: Queue[UploadItem] = queue.Queue()
 low_priority_send_queue: Queue[str] = queue.Queue()
 log_recv_queue: Queue[str] = queue.Queue()
-cancelled_uploads: set[str] = set()
 
 cur_upload_items: dict[int, UploadItem | None] = {}
+cur_upload_items_lock = threading.Lock()
 
 
-def strip_bz2_extension(fn: str) -> str:
-  if fn.endswith('.bz2'):
+def strip_zst_extension(fn: str) -> str:
+  if fn.endswith('.zst'):
     return fn[:-4]
   return fn
 
@@ -128,8 +129,9 @@ class UploadQueueCache:
   @staticmethod
   def cache(upload_queue: Queue[UploadItem]) -> None:
     try:
-      queue: list[UploadItem | None] = list(upload_queue.queue)
-      items = [asdict(i) for i in queue if i is not None and (i.id not in cancelled_uploads)]
+      with upload_queue.mutex:
+        items = [asdict(item) for item in upload_queue.queue]
+
       Params().put("AthenadUploadQueue", json.dumps(items))
     except Exception:
       cloudlog.exception("athena.UploadQueueCache.cache.exception")
@@ -199,7 +201,8 @@ def retry_upload(tid: int, end_event: threading.Event, increase_count: bool = Tr
     upload_queue.put_nowait(item)
     UploadQueueCache.cache(upload_queue)
 
-    cur_upload_items[tid] = None
+    with cur_upload_items_lock:
+      cur_upload_items[tid] = None
 
     for _ in range(RETRY_DELAY):
       time.sleep(1)
@@ -218,7 +221,8 @@ def cb(sm, item, tid, end_event: threading.Event, sz: int, cur: int) -> None:
   if end_event.is_set():
     raise AbortTransferException
 
-  cur_upload_items[tid] = replace(item, progress=cur / sz if sz else 1)
+  with cur_upload_items_lock:
+    cur_upload_items[tid] = replace(item, progress=cur / sz if sz else 1)
 
 
 def upload_handler(end_event: threading.Event) -> None:
@@ -226,14 +230,10 @@ def upload_handler(end_event: threading.Event) -> None:
   tid = threading.get_ident()
 
   while not end_event.is_set():
-    cur_upload_items[tid] = None
-
     try:
-      cur_upload_items[tid] = item = replace(upload_queue.get(timeout=1), current=True)
-
-      if item.id in cancelled_uploads:
-        cancelled_uploads.remove(item.id)
-        continue
+      with cur_upload_items_lock:
+        cur_upload_items[tid] = None
+        cur_upload_items[tid] = item = replace(upload_queue.get(timeout=1), current=True)
 
       # Remove item if too old
       age = datetime.now() - datetime.fromtimestamp(item.created_at / 1000)
@@ -257,13 +257,13 @@ def upload_handler(end_event: threading.Event) -> None:
           sz = -1
 
         cloudlog.event("athena.upload_handler.upload_start", fn=fn, sz=sz, network_type=network_type, metered=metered, retry_count=item.retry_count)
-        response = _do_upload(item, partial(cb, sm, item, tid, end_event))
 
-        if response.status_code not in (200, 201, 401, 403, 412):
-          cloudlog.event("athena.upload_handler.retry", status_code=response.status_code, fn=fn, sz=sz, network_type=network_type, metered=metered)
-          retry_upload(tid, end_event)
-        else:
-          cloudlog.event("athena.upload_handler.success", fn=fn, sz=sz, network_type=network_type, metered=metered)
+        with _do_upload(item, partial(cb, sm, item, tid, end_event)) as response:
+          if response.status_code not in (200, 201, 401, 403, 412):
+            cloudlog.event("athena.upload_handler.retry", status_code=response.status_code, fn=fn, sz=sz, network_type=network_type, metered=metered)
+            retry_upload(tid, end_event)
+          else:
+            cloudlog.event("athena.upload_handler.success", fn=fn, sz=sz, network_type=network_type, metered=metered)
 
         UploadQueueCache.cache(upload_queue)
       except (requests.exceptions.Timeout, requests.exceptions.ConnectionError, requests.exceptions.SSLError):
@@ -283,16 +283,16 @@ def _do_upload(upload_item: UploadItem, callback: Callable = None) -> requests.R
   path = upload_item.path
   compress = False
 
-  # If file does not exist, but does exist without the .bz2 extension we will compress on the fly
-  if not os.path.exists(path) and os.path.exists(strip_bz2_extension(path)):
-    path = strip_bz2_extension(path)
+  # If file does not exist, but does exist without the .zst extension we will compress on the fly
+  if not os.path.exists(path) and os.path.exists(strip_zst_extension(path)):
+    path = strip_zst_extension(path)
     compress = True
 
   with open(path, "rb") as f:
     content = f.read()
     if compress:
       cloudlog.event("athena.upload_handler.compress", fn=path, fn_orig=upload_item.path)
-      content = bz2.compress(content)
+      content = zstd.compress(content, LOG_COMPRESSION_LEVEL)
 
   with io.BytesIO(content) as data:
     return requests.put(upload_item.url,
@@ -308,13 +308,16 @@ def getMessage(service: str, timeout: int = 1000) -> dict:
     raise Exception("invalid service")
 
   socket = messaging.sub_sock(service, timeout=timeout)
-  ret = messaging.recv_one(socket)
+  try:
+    ret = messaging.recv_one(socket)
 
-  if ret is None:
-    raise TimeoutError
+    if ret is None:
+      raise TimeoutError
 
-  # this is because capnp._DynamicStructReader doesn't have typing information
-  return cast(dict, ret.to_dict())
+    # this is because capnp._DynamicStructReader doesn't have typing information
+    return cast(dict, ret.to_dict())
+  finally:
+    del socket
 
 
 @dispatcher.add_method
@@ -326,19 +329,6 @@ def getVersion() -> dict[str, str]:
     "branch": build_metadata.channel,
     "commit": build_metadata.openpilot.git_commit,
   }
-
-
-@dispatcher.add_method
-def setNavDestination(latitude: int = 0, longitude: int = 0, place_name: str = None, place_details: str = None) -> dict[str, int]:
-  destination = {
-    "latitude": latitude,
-    "longitude": longitude,
-    "place_name": place_name,
-    "place_details": place_details,
-  }
-  Params().put("NavDestination", json.dumps(destination))
-
-  return {"success": 1}
 
 
 def scan_dir(path: str, prefix: str) -> list[str]:
@@ -388,7 +378,7 @@ def uploadFilesToUrls(files_data: list[UploadFileDict]) -> UploadFilesToUrlRespo
       continue
 
     path = os.path.join(Paths.log_root(), file.fn)
-    if not os.path.exists(path) and not os.path.exists(strip_bz2_extension(path)):
+    if not os.path.exists(path) and not os.path.exists(strip_zst_extension(path)):
       failed.append(file.fn)
       continue
 
@@ -414,6 +404,7 @@ def uploadFilesToUrls(files_data: list[UploadFileDict]) -> UploadFilesToUrlRespo
 
   resp: UploadFilesToUrlResponse = {"enqueued": len(items), "items": items}
   if failed:
+    cloudlog.event("athena.uploadFilesToUrls.failed", failed=failed, error=True)
     resp["failed"] = failed
 
   return resp
@@ -421,8 +412,13 @@ def uploadFilesToUrls(files_data: list[UploadFileDict]) -> UploadFilesToUrlRespo
 
 @dispatcher.add_method
 def listUploadQueue() -> list[UploadItemDict]:
-  items = list(upload_queue.queue) + list(cur_upload_items.values())
-  return [asdict(i) for i in items if (i is not None) and (i.id not in cancelled_uploads)]
+  with upload_queue.mutex:
+    items = list(upload_queue.queue)
+
+  with cur_upload_items_lock:
+    items += list(cur_upload_items.values())
+
+  return [asdict(item) for item in items]
 
 
 @dispatcher.add_method
@@ -430,13 +426,14 @@ def cancelUpload(upload_id: str | list[str]) -> dict[str, int | str]:
   if not isinstance(upload_id, list):
     upload_id = [upload_id]
 
-  uploading_ids = {item.id for item in list(upload_queue.queue)}
-  cancelled_ids = uploading_ids.intersection(upload_id)
-  if len(cancelled_ids) == 0:
-    return {"success": 0, "error": "not found"}
+  with upload_queue.mutex:
+    remaining_items = [item for item in upload_queue.queue if item.id not in upload_id]
+    if len(remaining_items) == len(upload_queue.queue):
+      return {"success": 0, "error": "not found"}
 
-  cancelled_uploads.update(cancelled_ids)
-  return {"success": 1}
+    upload_queue.queue.clear()
+    upload_queue.queue.extend(remaining_items)
+    return {"success": 1}
 
 @dispatcher.add_method
 def setRouteViewed(route: str) -> dict[str, int | str]:
@@ -456,6 +453,10 @@ def setRouteViewed(route: str) -> dict[str, int | str]:
 
 def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local_port: int) -> dict[str, int]:
   try:
+    # migration, can be removed once 0.9.8 is out for a while
+    if local_port == 8022:
+      local_port = 22
+
     if local_port not in LOCAL_PORT_WHITELIST:
       raise Exception("Requested local port not whitelisted")
 
@@ -633,8 +634,9 @@ def log_handler(end_event: threading.Event) -> None:
 
 def stat_handler(end_event: threading.Event) -> None:
   STATS_DIR = Paths.stats_root()
+  last_scan = 0.0
+
   while not end_event.is_set():
-    last_scan = 0.
     curr_scan = time.monotonic()
     try:
       if curr_scan - last_scan > 10:
@@ -808,6 +810,8 @@ def main(exit_event: threading.Event = None):
       cur_upload_items.clear()
 
       handle_long_poll(ws, exit_event)
+
+      ws.close()
     except (KeyboardInterrupt, SystemExit):
       break
     except (ConnectionError, TimeoutError, WebSocketException):

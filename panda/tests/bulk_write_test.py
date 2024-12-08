@@ -16,7 +16,7 @@ NUM_MESSAGES_PER_BUS = 10000
 def flood_tx(panda):
   print('Sending!')
   msg = b"\xaa" * 4
-  packet = [[0xaa, None, msg, 0], [0xaa, None, msg, 1], [0xaa, None, msg, 2]] * NUM_MESSAGES_PER_BUS
+  packet = [[0xaa, msg, 0], [0xaa, msg, 1], [0xaa, msg, 2]] * NUM_MESSAGES_PER_BUS
   panda.can_send_many(packet, timeout=10000)
   print(f"Done sending {3*NUM_MESSAGES_PER_BUS} messages!")
 

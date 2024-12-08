@@ -25,7 +25,10 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "parameterized>=0.8",
-  "pre-commit"
+  "pre-commit",
+  "pytest",
+  "pytest-asyncio",
+  "pytest-xdist"
 ]
 
 [project.urls]
@@ -41,3 +44,9 @@ target-version="py38"
 select = ["E", "F", "W", "PIE", "C4", "ISC", "RUF008", "RUF100", "A", "B", "TID251"]
 ignore = ["W292", "E741", "E402", "C408", "ISC003", "B027", "B024"]
 flake8-implicit-str-concat.allow-multiline=false
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"unittest".msg = "Use pytest"
+
+[tool.pytest.ini_options]
+addopts = "--durations=10 -n auto"

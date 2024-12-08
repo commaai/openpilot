@@ -11,7 +11,7 @@
 const QString BACKSPACE_KEY = "⌫";
 const QString ENTER_KEY = "→";
 
-const QMap<QString, int> KEY_STRETCH = {{"  ", 5}, {ENTER_KEY, 2}};
+const QMap<QString, int> KEY_STRETCH = {{"  ", 3}, {ENTER_KEY, 2}};
 
 const QStringList CONTROL_BUTTONS = {"↑", "↓", "ABC", "#+=", "123", BACKSPACE_KEY, ENTER_KEY};
 
@@ -107,7 +107,7 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
     {"q", "w", "e", "r", "t", "y", "u", "i", "o", "p"},
     {"a", "s", "d", "f", "g", "h", "j", "k", "l"},
     {"↑", "z", "x", "c", "v", "b", "n", "m", BACKSPACE_KEY},
-    {"123", "  ", ".", ENTER_KEY},
+    {"123", "/", "-", "  ", ".", ENTER_KEY},
   };
   main_layout->addWidget(new KeyboardLayout(this, lowercase));
 

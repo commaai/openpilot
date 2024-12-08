@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "system/camerad/sensors/sensor.h"
 
 namespace {
@@ -23,6 +25,7 @@ const uint32_t VS_TIME_MAX_OX03C10 = 34;  // vs < 35
 
 OX03C10::OX03C10() {
   image_sensor = cereal::FrameData::ImageSensor::OX03C10;
+  bayer_pattern = CAM_ISP_PATTERN_BAYER_GRGRGR;
   pixel_size_mm = 0.003;
   data_word = false;
   frame_width = 1928;
@@ -35,9 +38,12 @@ OX03C10::OX03C10() {
   init_reg_array.assign(std::begin(init_array_ox03c10), std::end(init_array_ox03c10));
   probe_reg_addr = 0x300a;
   probe_expected_data = 0x5803;
+  bits_per_pixel = 12;
   mipi_format = CAM_FORMAT_MIPI_RAW_12;
   frame_data_type = 0x2c; // one is 0x2a, two are 0x2b
   mclk_frequency = 24000000; //Hz
+
+  readout_time_ns = 14697000;
 
   dc_gain_factor = 7.32;
   dc_gain_min_weight = 1;  // always on is fine
@@ -58,6 +64,37 @@ OX03C10::OX03C10() {
   min_ev = (exposure_time_min + VS_TIME_MIN_OX03C10) * sensor_analog_gains[analog_gain_min_idx];
   max_ev = exposure_time_max * dc_gain_factor * sensor_analog_gains[analog_gain_max_idx];
   target_grey_factor = 0.01;
+
+  black_level = 0;
+  color_correct_matrix = {
+    0x000000b6, 0x00000ff1, 0x00000fda,
+    0x00000fcc, 0x000000b9, 0x00000ffb,
+    0x00000fc2, 0x00000ff6, 0x000000c9,
+  };
+  for (int i = 0; i < 65; i++) {
+    float fx = i / 64.0;
+    fx = -0.507089*exp(-12.54124638*fx) + 0.9655*pow(fx, 0.5) - 0.472597*fx + 0.507089;
+    gamma_lut_rgb.push_back((uint32_t)(fx*1023.0 + 0.5));
+  }
+  prepare_gamma_lut();
+  linearization_lut = {
+    0x00200000, 0x00200000, 0x00200000, 0x00200000,
+    0x00404080, 0x00404080, 0x00404080, 0x00404080,
+    0x00804100, 0x00804100, 0x00804100, 0x00804100,
+    0x02014402, 0x02014402, 0x02014402, 0x02014402,
+    0x0402c804, 0x0402c804, 0x0402c804, 0x0402c804,
+    0x0805d00a, 0x0805d00a, 0x0805d00a, 0x0805d00a,
+    0x100ba015, 0x100ba015, 0x100ba015, 0x100ba015,
+    0x00003fff, 0x00003fff, 0x00003fff, 0x00003fff,
+    0x00003fff, 0x00003fff, 0x00003fff, 0x00003fff,
+  };
+  for (int i = 0; i < 252; i++) {
+    linearization_lut.push_back(0x0);
+  }
+  linearization_pts = {0x07ff0bff, 0x17ff1bff, 0x1fff23ff, 0x27ff3fff};
+  for (int i = 0; i < 884*2; i++) {
+    vignetting_lut.push_back(0xff);
+  }
 }
 
 std::vector<i2c_random_wr_payload> OX03C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {

@@ -22,7 +22,7 @@ from tinygrad.ops import LoadOps, Device, ScheduleItem
 from tinygrad.features.image import fix_schedule_for_images
 Device.DEFAULT = "GPU"
 
-def get_schedule(onnx_data) -> Tuple[List[ScheduleItem], List[ScheduleItem]]:
+def get_schedule(onnx_data, supercombo_dtypes=False) -> Tuple[List[ScheduleItem], List[ScheduleItem]]:
   Tensor.no_grad = True
   Tensor.training = False
 
@@ -30,9 +30,16 @@ def get_schedule(onnx_data) -> Tuple[List[ScheduleItem], List[ScheduleItem]]:
   onnx_model = onnx.load(io.BytesIO(onnx_data))
   run_onnx = get_run_onnx(onnx_model)
   input_shapes = {inp.name:tuple(x.dim_value for x in inp.type.tensor_type.shape.dim) for inp in onnx_model.graph.input}
+  input_types_onnx = {inp.name:onnx.helper.tensor_dtype_to_np_dtype(inp.type.tensor_type.elem_type) for inp in onnx_model.graph.input}
 
   # run the model
-  inputs = {k:Tensor.empty(*shp) for k,shp in input_shapes.items()}
+  input_types = {k:getattr(dtypes, input_types_onnx[k].name)for k in input_types_onnx.keys()}
+  print(input_types)
+  if supercombo_dtypes:
+    input_types = {k:dtypes.float32 if 'img' not in k else dtypes.uint8 for k in input_types.keys()}
+  print(input_types)
+
+  inputs = {k:Tensor.empty(*shp, dtype=input_types[k]) for k,shp in input_shapes.items()}
   ret: Tensor = next(iter(run_onnx(inputs).values())).cast(dtypes.float32).contiguous()
   schedule = ret.lazydata.schedule()
 
@@ -129,13 +136,16 @@ def thneed_test_onnx(onnx_data, output_fn):
     print("thneed self-test passed!")
 
 if __name__ == "__main__":
-  onnx_data = fetch(sys.argv[1] if len(sys.argv) > 1 else OPENPILOT_MODEL)
+  onnx_fn = sys.argv[1] if len(sys.argv) > 1 else OPENPILOT_MODEL
+  onnx_data = fetch(onnx_fn)
 
   # quick test for ONNX issues
   #thneed_test_onnx(onnx_data, None)
   #exit(0)
 
-  schedule, schedule_independent, inputs = get_schedule(onnx_data)
+  # this is a hack due to supercombo being converted with f16 inputs but it uses f32 at runtime
+  supercombo = 'supercombo'
+  schedule, schedule_independent, inputs = get_schedule(onnx_data, supercombo_dtypes=supercombo)
   schedule, schedule_input = partition(schedule, lambda x: x.ast.op not in LoadOps)
   print(f"{len(schedule_input)} inputs")
 

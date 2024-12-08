@@ -9,10 +9,6 @@
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/prime.h"
 
-#ifdef ENABLE_MAPS
-#include "selfdrive/ui/qt/maps/map_settings.h"
-#endif
-
 // HomeWindow: the container for the offroad and onroad UIs
 
 HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
@@ -32,17 +28,11 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
   slayout->addWidget(home);
 
   onroad = new OnroadWindow(this);
-  QObject::connect(onroad, &OnroadWindow::mapPanelRequested, this, [=] { sidebar->hide(); });
   slayout->addWidget(onroad);
 
   body = new BodyWindow(this);
   slayout->addWidget(body);
 
-  driver_view = new DriverViewWindow(this);
-  connect(driver_view, &DriverViewWindow::done, [=] {
-    showDriverView(false);
-  });
-  slayout->addWidget(driver_view);
   setAttribute(Qt::WA_NoSystemBackground);
   QObject::connect(uiState(), &UIState::uiUpdate, this, &HomeWindow::updateState);
   QObject::connect(uiState(), &UIState::offroadTransition, this, &HomeWindow::offroadTransition);
@@ -51,10 +41,6 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 
 void HomeWindow::showSidebar(bool show) {
   sidebar->setVisible(show);
-}
-
-void HomeWindow::showMapPanel(bool show) {
-  onroad->showMapPanel(show);
 }
 
 void HomeWindow::updateState(const UIState &s) {
@@ -77,20 +63,10 @@ void HomeWindow::offroadTransition(bool offroad) {
   }
 }
 
-void HomeWindow::showDriverView(bool show) {
-  if (show) {
-    emit closeSettings();
-    slayout->setCurrentWidget(driver_view);
-  } else {
-    slayout->setCurrentWidget(home);
-  }
-  sidebar->setVisible(show == false);
-}
-
 void HomeWindow::mousePressEvent(QMouseEvent* e) {
   // Handle sidebar collapsing
   if ((onroad->isVisible() || body->isVisible()) && (!sidebar->isVisible() || e->x() > sidebar->width())) {
-    sidebar->setVisible(!sidebar->isVisible() && !onroad->isMapVisible());
+    sidebar->setVisible(!sidebar->isVisible());
   }
 }
 
@@ -145,19 +121,23 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     home_layout->setContentsMargins(0, 0, 0, 0);
     home_layout->setSpacing(30);
 
-    // left: MapSettings/PrimeAdWidget
+    // left: PrimeAdWidget
     QStackedWidget *left_widget = new QStackedWidget(this);
-#ifdef ENABLE_MAPS
-    left_widget->addWidget(new MapSettings);
-#else
-    left_widget->addWidget(new QWidget);
-#endif
+    QVBoxLayout *left_prime_layout = new QVBoxLayout();
+    left_prime_layout->setContentsMargins(0, 0, 0, 0);
+    QWidget *prime_user = new PrimeUserWidget();
+    prime_user->setStyleSheet(R"(
+    border-radius: 10px;
+    background-color: #333333;
+    )");
+    left_prime_layout->addWidget(prime_user);
+    left_prime_layout->addStretch();
+    left_widget->addWidget(new LayoutWidget(left_prime_layout));
     left_widget->addWidget(new PrimeAdWidget);
     left_widget->setStyleSheet("border-radius: 10px;");
 
-    left_widget->setCurrentIndex(uiState()->hasPrime() ? 0 : 1);
-    connect(uiState(), &UIState::primeChanged, [=](bool prime) {
-      left_widget->setCurrentIndex(prime ? 0 : 1);
+    connect(uiState()->prime_state, &PrimeState::changed, [left_widget]() {
+      left_widget->setCurrentIndex(uiState()->prime_state->isSubscribed() ? 0 : 1);
     });
 
     home_layout->addWidget(left_widget, 1);

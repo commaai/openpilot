@@ -7,8 +7,8 @@
 #include "msgq/visionipc/visionipc.h"
 #include "msgq/visionipc/visionipc_client.h"
 #include "msgq/visionipc/visionipc_server.h"
-#include "logger/logger.h"
-#include "logger/logger.h"
+#include "msgq/logger/logger.h"
+#include "msgq/logger/logger.h"
 
 static int connect_to_vipc_server(const std::string &name, bool blocking) {
   const std::string ipc_path = get_ipc_path(name);
@@ -63,11 +63,7 @@ bool VisionIpcClient::connect(bool blocking){
     buffers[i] = bufs[i];
     buffers[i].fd = fds[i];
     buffers[i].import();
-    if (buffers[i].rgb) {
-      buffers[i].init_rgb(buffers[i].width, buffers[i].height, buffers[i].stride);
-    } else {
-      buffers[i].init_yuv(buffers[i].width, buffers[i].height, buffers[i].stride, buffers[i].uv_offset);
-    }
+    buffers[i].init_yuv(buffers[i].width, buffers[i].height, buffers[i].stride, buffers[i].uv_offset);
 
     if (device_id) buffers[i].init_cl(device_id, ctx);
   }

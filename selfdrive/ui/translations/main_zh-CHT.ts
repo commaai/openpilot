@@ -88,29 +88,6 @@
     </message>
 </context>
 <context>
-    <name>AnnotatedCameraWidget</name>
-    <message>
-        <source>km/h</source>
-        <translation>km/h</translation>
-    </message>
-    <message>
-        <source>mph</source>
-        <translation>mph</translation>
-    </message>
-    <message>
-        <source>MAX</source>
-        <translation>最高</translation>
-    </message>
-    <message>
-        <source>SPEED</source>
-        <translation>速度</translation>
-    </message>
-    <message>
-        <source>LIMIT</source>
-        <translation>速限</translation>
-    </message>
-</context>
-<context>
     <name>ConfirmationDialog</name>
     <message>
         <source>Ok</source>
@@ -137,30 +114,14 @@
     </message>
 </context>
 <context>
-    <name>DestinationWidget</name>
+    <name>DeveloperPanel</name>
     <message>
-        <source>Home</source>
-        <translation>住家</translation>
+        <source>Joystick Debug Mode</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Work</source>
-        <translation>工作</translation>
-    </message>
-    <message>
-        <source>No destination set</source>
-        <translation>尚未設定目的地</translation>
-    </message>
-    <message>
-        <source>No %1 location set</source>
-        <translation>尚未設定 %1 的位置</translation>
-    </message>
-    <message>
-        <source>home</source>
-        <translation>住家</translation>
-    </message>
-    <message>
-        <source>work</source>
-        <translation>工作</translation>
+        <source>Longitudinal Maneuver Mode</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -325,6 +286,21 @@
     </message>
 </context>
 <context>
+    <name>HudRenderer</name>
+    <message>
+        <source>km/h</source>
+        <translation>km/h</translation>
+    </message>
+    <message>
+        <source>mph</source>
+        <translation>mph</translation>
+    </message>
+    <message>
+        <source>MAX</source>
+        <translation>最高</translation>
+    </message>
+</context>
+<context>
     <name>InputDialog</name>
     <message>
         <source>Cancel</source>
@@ -342,47 +318,6 @@
     <message>
         <source>Installing...</source>
         <translation>安裝中…</translation>
-    </message>
-</context>
-<context>
-    <name>MapETA</name>
-    <message>
-        <source>eta</source>
-        <translation>抵達</translation>
-    </message>
-    <message>
-        <source>min</source>
-        <translation>分鐘</translation>
-    </message>
-    <message>
-        <source>hr</source>
-        <translation>小時</translation>
-    </message>
-</context>
-<context>
-    <name>MapSettings</name>
-    <message>
-        <source>NAVIGATION</source>
-        <translation>導航</translation>
-    </message>
-    <message>
-        <source>Manage at connect.comma.ai</source>
-        <translation>請在 connect.comma.ai 上管理</translation>
-    </message>
-</context>
-<context>
-    <name>MapWindow</name>
-    <message>
-        <source>Map Loading</source>
-        <translation>地圖載入中</translation>
-    </message>
-    <message>
-        <source>Waiting for GPS</source>
-        <translation>等待 GPS</translation>
-    </message>
-    <message>
-        <source>Waiting for route</source>
-        <translation>等待路線</translation>
     </message>
 </context>
 <context>
@@ -456,10 +391,6 @@
         <translation>openpilot 無法識別您的車輛。您的車輛可能未被支援，或是其電控單元 (ECU) 未被識別。請提交一個 Pull Request 為您的車輛添加正確的韌體版本。需要幫助嗎？請加入 discord.comma.ai 。</translation>
     </message>
     <message>
-        <source>openpilot was unable to identify your car. Check integrity of cables and ensure all connections are secure, particularly that the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.</source>
-        <translation>openpilot 無法識別您的車輛。請檢查線路是否正確的安裝並確保所有的連接都牢固，特別是確保 comma power 完全插入車輛的 OBD-II 介面。需要幫助嗎？請加入 discord.comma.ai 。</translation>
-    </message>
-    <message>
         <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
         <translation>openpilot 偵測到裝置的安裝位置發生變化。請確保裝置完全安裝在支架上，並確保支架牢固地固定在擋風玻璃上。</translation>
     </message>
@@ -490,20 +421,20 @@
         <translation>無法使用 openpilot</translation>
     </message>
     <message>
-        <source>Waiting for controls to start</source>
-        <translation>等待操控服務開始</translation>
-    </message>
-    <message>
         <source>TAKE CONTROL IMMEDIATELY</source>
         <translation>立即接管</translation>
     </message>
     <message>
-        <source>Controls Unresponsive</source>
-        <translation>操控服務沒有反應</translation>
-    </message>
-    <message>
         <source>Reboot Device</source>
         <translation>請重新啟裝置</translation>
+    </message>
+    <message>
+        <source>Waiting to start</source>
+        <translation>等待開始</translation>
+    </message>
+    <message>
+        <source>System Unresponsive</source>
+        <translation>系統無回應</translation>
     </message>
 </context>
 <context>
@@ -559,12 +490,12 @@
         <translation>24/7 LTE 連線</translation>
     </message>
     <message>
-        <source>Turn-by-turn navigation</source>
-        <translation>導航功能</translation>
-    </message>
-    <message>
         <source>1 year of drive storage</source>
         <translation>一年的行駛記錄儲存空間</translation>
+    </message>
+    <message>
+        <source>Remote snapshots</source>
+        <translation>遠端快照</translation>
     </message>
 </context>
 <context>
@@ -609,22 +540,6 @@
         <translation>
             <numerusform>%n 天前</numerusform>
         </translation>
-    </message>
-    <message>
-        <source>km</source>
-        <translation>km</translation>
-    </message>
-    <message>
-        <source>m</source>
-        <translation>m</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation>mi</translation>
-    </message>
-    <message>
-        <source>ft</source>
-        <translation>ft</translation>
     </message>
     <message>
         <source>now</source>
@@ -693,6 +608,10 @@ This may take up to a minute.</source>
     <message>
         <source>Software</source>
         <translation>軟體</translation>
+    </message>
+    <message>
+        <source>Developer</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -849,14 +768,6 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>PANDA</source>
-        <translation>車輛通訊</translation>
-    </message>
-    <message>
-        <source>GPS</source>
-        <translation>GPS</translation>
-    </message>
-    <message>
-        <source>SEARCH</source>
         <translation>車輛通訊</translation>
     </message>
     <message>
@@ -1069,22 +980,6 @@ This may take up to a minute.</source>
     <message>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
         <translation>啟用後，踩踏油門將會取消 openpilot 控制。</translation>
-    </message>
-    <message>
-        <source>Show ETA in 24h Format</source>
-        <translation>預計到達時間單位改用 24 小時制</translation>
-    </message>
-    <message>
-        <source>Use 24h format instead of am/pm</source>
-        <translation>使用 24 小時制。(預設值為 12 小時制)</translation>
-    </message>
-    <message>
-        <source>Show Map on Left Side of UI</source>
-        <translation>將地圖顯示在畫面的左側</translation>
-    </message>
-    <message>
-        <source>Show map on left side when in split screen view.</source>
-        <translation>進入分割畫面後，地圖將會顯示在畫面的左側。</translation>
     </message>
     <message>
         <source>Experimental Mode</source>
