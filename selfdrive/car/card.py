@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import time
-import threading
 
 import cereal.messaging as messaging
 
@@ -9,6 +8,7 @@ from cereal import car, log
 
 from panda import ALTERNATIVE_EXPERIENCE
 
+from openpilot.common.parameter_updater import ParameterUpdater
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper
 from openpilot.common.swaglog import cloudlog, ForwardingHandler
@@ -149,8 +149,8 @@ class Car:
     self.mock_carstate = MockCarState()
     self.v_cruise_helper = VCruiseHelper(self.CP)
 
-    self.is_metric = self.params.get_bool("IsMetric")
-    self.experimental_mode = self.params.get_bool("ExperimentalMode")
+    self.is_metric = False
+    self.experimental_mode = False
 
     # card is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
@@ -250,23 +250,25 @@ class Car:
 
     self.initialized_prev = initialized
 
-  def params_thread(self, evt):
-    while not evt.is_set():
-      self.is_metric = self.params.get_bool("IsMetric")
-      self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
-      time.sleep(0.1)
+  def read_parameters(self, parameter_updater: ParameterUpdater) -> None:
+    self.is_metric = parameter_updater.get_param_value('is_metric')
+    self.experimental_mode = parameter_updater.get_param_value('experimental_mode')
 
   def card_thread(self):
-    e = threading.Event()
-    t = threading.Thread(target=self.params_thread, args=(e, ))
+    params_to_update = {
+      'IsMetric': 'bool',
+      'ExperimentalMode': 'bool',
+    }
+    parameter_updater = ParameterUpdater(params_to_update)
+    parameter_updater.start()
+
     try:
-      t.start()
       while True:
+        self.read_parameters(parameter_updater)
         self.step()
         self.rk.monitor_time()
     finally:
-      e.set()
-      t.join()
+      parameter_updater.stop()
 
 
 def main():
