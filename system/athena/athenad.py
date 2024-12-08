@@ -54,6 +54,7 @@ RETRY_DELAY = 10  # seconds
 MAX_RETRY_COUNT = 30  # Try for at most 5 minutes if upload fails immediately
 MAX_AGE = 31 * 24 * 3600  # seconds
 WS_FRAME_SIZE = 4096
+DEVICE_STATE_UPDATE_INTERVAL = 1.0  # in seconds
 
 NetworkType = log.DeviceState.NetworkType
 
@@ -213,10 +214,11 @@ def retry_upload(tid: int, end_event: threading.Event, increase_count: bool = Tr
 def cb(sm, item, tid, end_event: threading.Event, sz: int, cur: int) -> None:
   # Abort transfer if connection changed to metered after starting upload
   # or if athenad is shutting down to re-connect the websocket
-  sm.update(0)
-  metered = sm['deviceState'].networkMetered
-  if metered and (not item.allow_cellular):
-    raise AbortTransferException
+  if not item.allow_cellular:
+    if (time.monotonic() - sm.recv_time['deviceState']) > DEVICE_STATE_UPDATE_INTERVAL:
+      sm.update(0)
+      if sm['deviceState'].networkMetered:
+        raise AbortTransferException
 
   if end_event.is_set():
     raise AbortTransferException
