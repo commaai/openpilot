@@ -5,7 +5,7 @@ from openpilot.common.params import Params
 
 
 class ParameterUpdater:
-  def __init__(self, params_to_update: dict[str, str]):
+  def __init__(self, params_to_update: dict[str, str], update_interval: float = 0.1):
     """
     params_to_update: A dictionary where keys are parameter names, and values are their types ('bool' or 'str').
     Example: {"IsMetric": "bool", "LongitudinalPersonality": "str"}
@@ -13,6 +13,7 @@ class ParameterUpdater:
     self.params = Params()
     self.params_to_update = params_to_update
     self.param_values = {param: None for param in params_to_update}
+    self.update_interval = update_interval
 
     self._update()  # Initial update
 
@@ -50,4 +51,4 @@ class ParameterUpdater:
   def _update_periodically(self):
     while not self.stop_event.is_set():
       self._update()
-      time.sleep(0.1)
+      time.sleep(self.update_interval)
