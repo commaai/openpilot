@@ -250,13 +250,21 @@ class Car:
 
     self.initialized_prev = initialized
 
+  def read_parameters(self, parameter_updater: ParameterUpdater) -> None:
+    self.is_metric = parameter_updater.get_param_value('is_metric')
+    self.experimental_mode = parameter_updater.get_param_value('experimental_mode')
+
   def card_thread(self):
-    parameter_updater = ParameterUpdater()
+    params_to_update = {
+      'IsMetric': 'bool',
+      'ExperimentalMode': 'bool',
+    }
+    parameter_updater = ParameterUpdater(params_to_update)
+    parameter_updater.start()
+
     try:
       while True:
-        self.is_metric = parameter_updater.get_param_value('is_metric')
-        self.experimental_mode = parameter_updater.get_param_value('experimental_mode')
-
+        self.read_parameters(parameter_updater)
         self.step()
         self.rk.monitor_time()
     finally:
