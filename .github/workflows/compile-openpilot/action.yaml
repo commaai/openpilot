@@ -15,7 +15,7 @@ runs:
                           scons -j$(nproc) --cache-populate"
     - name: Save scons cache
       uses: actions/cache/save@v4
-      if: github.ref == 'refs/heads/master'
+      if: (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/master-new')
       with:
         path: .ci_cache/scons_cache
         key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
