@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import time
-import threading
 
 import cereal.messaging as messaging
 
@@ -21,6 +20,7 @@ from opendbc.car.interfaces import CarInterfaceBase, RadarInterfaceBase
 from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
 from openpilot.selfdrive.car.cruise import VCruiseHelper
 from openpilot.selfdrive.car.car_specific import MockCarState
+from openpilot.selfdrive.car.parameter_updater import ParameterUpdater
 
 REPLAY = "REPLAY" in os.environ
 
@@ -57,35 +57,6 @@ def can_comm_callbacks(logcan: messaging.SubSocket, sendcan: messaging.PubSocket
     sendcan.send(can_list_to_can_capnp(msgs, msgtype='sendcan'))
 
   return can_recv, can_send
-
-
-class ParameterUpdater:
-  def __init__(self):
-    self.params = Params()
-    self.mutex = threading.Lock()
-    self.is_metric = False
-    self.experimental_mode = False
-
-    self._update()  # Initial update
-    self.stop_event = threading.Event()
-    self.update_thread = threading.Thread(target=self._update_periodically)
-    self.update_thread.start()
-
-  def stop(self):
-    self.stop_event.set()
-    self.update_thread.join()
-
-  def _update(self):
-    is_metric = self.params.get_bool("IsMetric")
-    experimental_mode = self.params.get_bool("ExperimentalMode")
-    with self.mutex:
-      self.is_metric = is_metric
-      self.experimental_mode = experimental_mode
-
-  def _update_periodically(self):
-    while not self.stop_event.is_set():
-      self._update()
-      time.sleep(0.1)
 
 
 class Car:
