@@ -733,11 +733,16 @@ def ws_recv(ws: WebSocket, end_event: threading.Event) -> None:
 
 def ws_send(ws: WebSocket, end_event: threading.Event) -> None:
   while not end_event.is_set():
+    data = None
+    queue_source = None
     try:
       try:
         data = send_queue.get_nowait()
+        queue_source = send_queue
       except queue.Empty:
         data = low_priority_send_queue.get(timeout=1)
+        queue_source = low_priority_send_queue
+
       for i in range(0, len(data), WS_FRAME_SIZE):
         frame = data[i:i+WS_FRAME_SIZE]
         last = i + WS_FRAME_SIZE >= len(data)
@@ -747,6 +752,11 @@ def ws_send(ws: WebSocket, end_event: threading.Event) -> None:
       pass
     except Exception:
       cloudlog.exception("athenad.ws_send.exception")
+      if data is not None and queue_source is not None:
+        try:
+          queue_source.put_nowait(data)
+        except Exception:
+          cloudlog.exception("athenad.ws_send.requeue_failed")
       end_event.set()
 
 
