@@ -327,7 +327,7 @@ function op_switch() {
   fi
   BRANCH="$1"
 
-  git fetch "$REMOTE" "$BRANCH":"$BRANCH"
+  git fetch "$REMOTE" "$BRANCH"
   git checkout -f --recurse-submodules "$BRANCH"
   git reset --hard "$BRANCH"
   git clean -df
