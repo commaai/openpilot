@@ -10,7 +10,7 @@ from pathlib import Path
 
 from cereal import log
 from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
-from openpilot.system.hardware.base import HardwareBase, ThermalConfig
+from openpilot.system.hardware.base import HardwareBase, ThermalConfig, ThermalZone
 from openpilot.system.hardware.tici import iwlist
 from openpilot.system.hardware.tici.pins import GPIO
 from openpilot.system.hardware.tici.amplifier import Amplifier
@@ -323,17 +323,19 @@ class Tici(HardwareBase):
     os.system("sudo poweroff")
 
   def get_thermal_config(self):
-    intake, exhaust = (None, 1), (None, 1)
+    intake, exhaust, case = None, None, None
     if self.get_device_type() == "mici":
-      intake = ("intake", 1000)
-      exhaust = ("exhaust", 1000)
-    return ThermalConfig(cpu=([f"cpu{i}-silver-usr" for i in range(4)] +
-                              [f"cpu{i}-gold-usr" for i in range(4)], 1000),
-                         gpu=(("gpu0-usr", "gpu1-usr"), 1000),
-                         mem=("ddr-usr", 1000),
-                         pmic=(("pm8998_tz", "pm8005_tz"), 1000),
+      case = ThermalZone("case")
+      intake = ThermalZone("intake")
+      exhaust = ThermalZone("exhaust")
+    return ThermalConfig(cpu=[ThermalZone(f"cpu{i}-silver-usr") for i in range(4)] +
+                             [ThermalZone(f"cpu{i}-gold-usr") for i in range(4)],
+                         gpu=[ThermalZone("gpu0-usr"), ThermalZone("gpu1-usr")],
+                         memory=ThermalZone("ddr-usr"),
+                         pmic=[ThermalZone("pm8998_tz"), ThermalZone("pm8005_tz")],
                          intake=intake,
-                         exhaust=exhaust)
+                         exhaust=exhaust,
+                         case=case)
 
   def set_screen_brightness(self, percentage):
     try:
@@ -485,14 +487,16 @@ class Tici(HardwareBase):
         'AT$QCNETDEVCTL=3,1',
       ]
     else:
-      cmds += [
-        # SIM sleep disable
-        'AT$QCSIMSLEEP=0',
-        'AT$QCSIMCFG=SimPowerSave,0',
+      # this modem gets upset with too many AT commands
+      if sim_id is None or len(sim_id) == 0:
+        cmds += [
+          # SIM sleep disable
+          'AT$QCSIMSLEEP=0',
+          'AT$QCSIMCFG=SimPowerSave,0',
 
-        # ethernet config
-        'AT$QCPCFG=usbNet,1',
-      ]
+          # ethernet config
+          'AT$QCPCFG=usbNet,1',
+        ]
 
     for cmd in cmds:
       try:
@@ -591,3 +595,4 @@ if __name__ == "__main__":
   t.configure_modem()
   t.initialize_hardware()
   t.set_power_save(False)
+  print(t.get_sim_info())
