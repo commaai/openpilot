@@ -11,6 +11,7 @@ Version 0.9.8 (2024-XX-XX)
 * Added toggle to enable driver monitoring even when openpilot is not engaged
 * Enable openpilot longitudinal control for Ford Q3 vehicles
 * New Toyota TSS2 longitudinal tune
+* Genesis G70 2024 support thanks to sunnyhaibin!
 
 Version 0.9.7 (2024-06-13)
 ========================
