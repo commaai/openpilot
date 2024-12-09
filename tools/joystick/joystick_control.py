@@ -23,20 +23,22 @@ class Keyboard:
     self.axes_values = {'gb': 0., 'steer': 0.}
     self.axes_order = ['gb', 'steer']
     self.cancel = False
+    self.lock = threading.Lock()
 
   def update(self):
     key = self.kb.getch().lower()
     self.cancel = False
-    if key == 'r':
-      self.axes_values = {ax: 0. for ax in self.axes_values}
-    elif key == 'c':
-      self.cancel = True
-    elif key in self.axes_map:
-      axis = self.axes_map[key]
-      incr = self.axis_increment if key in ['w', 'a'] else -self.axis_increment
-      self.axes_values[axis] = clip(self.axes_values[axis] + incr, -1, 1)
-    else:
-      return False
+    with self.lock:
+      if key == 'r':
+        self.axes_values = {ax: 0. for ax in self.axes_values}
+      elif key == 'c':
+        self.cancel = True
+      elif key in self.axes_map:
+        axis = self.axes_map[key]
+        incr = self.axis_increment if key in ['w', 'a'] else -self.axis_increment
+        self.axes_values[axis] = clip(self.axes_values[axis] + incr, -1, 1)
+      else:
+        return False
     return True
 
 
@@ -60,12 +62,14 @@ class Joystick:
     self.axes_values = {accel_axis: 0., steer_axis: 0.}
     self.axes_order = [accel_axis, steer_axis]
     self.cancel = False
+    self.lock = threading.Lock()
 
   def update(self):
     try:
       joystick_event = get_gamepad()[0]
     except (OSError, UnpluggedError):
-      self.axes_values = {ax: 0. for ax in self.axes_values}
+      with self.lock:
+        self.axes_values = {ax: 0. for ax in self.axes_values}
       return False
 
     event = (joystick_event.code, joystick_event.state)
@@ -74,26 +78,26 @@ class Joystick:
     if event[0] in self.flip_map:
       event = (self.flip_map[event[0]], -event[1])
 
-    if event[0] == self.cancel_button:
-      if event[1] == 1:
-        self.cancel = True
-      elif event[1] == 0:   # state 0 is falling edge
-        self.cancel = False
-    elif event[0] in self.axes_values:
-      self.max_axis_value[event[0]] = max(event[1], self.max_axis_value[event[0]])
-      self.min_axis_value[event[0]] = min(event[1], self.min_axis_value[event[0]])
+    with self.lock:
+      if event[0] == self.cancel_button:
+        if event[1] == 1:
+          self.cancel = True
+        elif event[1] == 0:   # state 0 is falling edge
+          self.cancel = False
+      elif event[0] in self.axes_values:
+        self.max_axis_value[event[0]] = max(event[1], self.max_axis_value[event[0]])
+        self.min_axis_value[event[0]] = min(event[1], self.min_axis_value[event[0]])
 
-      norm = -interp(event[1], [self.min_axis_value[event[0]], self.max_axis_value[event[0]]], [-1., 1.])
-      norm = norm if abs(norm) > 0.03 else 0.  # center can be noisy, deadzone of 3%
-      self.axes_values[event[0]] = EXPO * norm ** 3 + (1 - EXPO) * norm  # less action near center for fine control
-    else:
-      return False
+        norm = -interp(event[1], [self.min_axis_value[event[0]], self.max_axis_value[event[0]]], [-1., 1.])
+        norm = norm if abs(norm) > 0.03 else 0.  # center can be noisy, deadzone of 3%
+        self.axes_values[event[0]] = EXPO * norm ** 3 + (1 - EXPO) * norm  # less action near center for fine control
+      else:
+        return False
     return True
 
 
 def send_thread(joystick):
   pm = messaging.PubMaster(['testJoystick'])
-
   rk = Ratekeeper(100, print_delay_threshold=None)
 
   while True:
@@ -102,7 +106,9 @@ def send_thread(joystick):
 
     joystick_msg = messaging.new_message('testJoystick')
     joystick_msg.valid = True
-    joystick_msg.testJoystick.axes = [joystick.axes_values[ax] for ax in joystick.axes_order]
+
+    with joystick.lock:
+      joystick_msg.testJoystick.axes = [joystick.axes_values[ax] for ax in joystick.axes_order]
 
     pm.send('testJoystick', joystick_msg)
 
