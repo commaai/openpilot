@@ -1,12 +1,14 @@
 import time
 import numpy as np
+import pytest
 
-from openpilot.selfdrive.test.helpers import with_processes, phone_only
+from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.system.camerad.snapshot.snapshot import get_snapshots
 
 TEST_TIME = 45
 REPEAT = 5
 
+@pytest.mark.tici
 class TestCamerad:
   @classmethod
   def setup_class(cls):
@@ -28,7 +30,6 @@ class TestCamerad:
     print([i_median, i_mean])
     return med_ex[0] < i_median < med_ex[1] and mean_ex[0] < i_mean < mean_ex[1]
 
-  @phone_only
   @with_processes(['camerad'])
   def test_camera_operation(self):
     passed = 0

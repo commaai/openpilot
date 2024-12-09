@@ -8,6 +8,7 @@ from typing import cast
 
 from cereal.services import SERVICE_LIST
 from openpilot.tools.lib.logreader import LogReader, ReadMode
+from openpilot.selfdrive.test.process_replay.migration import migrate_all
 
 if __name__ == "__main__":
   cnt_events: Counter = Counter()
@@ -20,7 +21,7 @@ if __name__ == "__main__":
   start_time = math.inf
   end_time = -math.inf
   ignition_off = None
-  for msg in LogReader(sys.argv[1], ReadMode.QLOG):
+  for msg in migrate_all(LogReader(sys.argv[1], ReadMode.QLOG)):
     t = (msg.logMonoTime - start_time) / 1e9
     end_time = max(end_time, msg.logMonoTime)
     start_time = min(start_time, msg.logMonoTime)

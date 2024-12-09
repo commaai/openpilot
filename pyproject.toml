@@ -101,7 +101,6 @@ dev = [
   "azure-identity",
   "azure-storage-blob",
   "dictdiffer",
-  "flaky",
   "lru-dict",
   "matplotlib",
   "parameterized >=0.8, <0.9",
