@@ -18,7 +18,7 @@ void Timeline::initialize(const Route &route, uint64_t route_start_ts, bool loca
 }
 
 std::optional<uint64_t> Timeline::find(double cur_ts, FindFlag flag) const {
-  for (const auto &entry : *get()) {
+  for (const auto &entry : *getEntries()) {
     if (entry.type == TimelineType::Engaged) {
       if (flag == FindFlag::nextEngagement && entry.start_time > cur_ts) {
         return entry.start_time;
@@ -38,7 +38,7 @@ std::optional<uint64_t> Timeline::find(double cur_ts, FindFlag flag) const {
 }
 
 std::optional<Timeline::Entry> Timeline::findAlertAtTime(double target_time) const {
-  for (const auto &entry : *get()) {
+  for (const auto &entry : *getEntries()) {
     if (entry.start_time > target_time) break;
     if (entry.end_time >= target_time && entry.type >= TimelineType::AlertInfo) {
       return entry;
@@ -72,8 +72,9 @@ void Timeline::buildTimeline(const Route &route, uint64_t route_start_ts, bool l
     }
 
     // Sort and finalize the timeline entries
-    std::sort(staging_entries_.begin(), staging_entries_.end(), [](auto &a, auto &b) { return a.start_time < b.start_time; });
-    timeline_entries_ = std::make_shared<std::vector<Entry>>(staging_entries_);
+    auto entries = std::make_shared<std::vector<Entry>>(staging_entries_);
+    std::sort(entries->begin(), entries->end(), [](auto &a, auto &b) { return a.start_time < b.start_time; });
+    timeline_entries_ = entries;
 
     callback(log);  // Notify the callback once the log is processed
   }

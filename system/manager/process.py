@@ -16,8 +16,9 @@ import openpilot.system.sentry as sentry
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
+from openpilot.system.hardware.hw import Paths
 
-WATCHDOG_FN = "/dev/shm/wd_"
+WATCHDOG_FN = f"{Paths.shm_path()}/wd_"
 ENABLE_WATCHDOG = os.getenv("NO_WATCHDOG") is None
 
 

@@ -108,7 +108,7 @@ protected:
   void mergeEvents(const std::vector<const CanEvent *> &events);
   const CanEvent *newEvent(uint64_t mono_time, const cereal::CanData::Reader &c);
   void updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size);
-
+  virtual void resumeStream() {}
   std::vector<const CanEvent *> all_events_;
   double current_sec_ = 0;
   std::optional<std::pair<double, double>> time_range_;

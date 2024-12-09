@@ -39,4 +39,4 @@ output_json_file = 'tools/cabana/dbc/car_fingerprint_to_dbc.json'
 generate_dbc = cabana_env.Command('#' + output_json_file,
                                   ['dbc/generate_dbc_json.py'],
                                   "python3 tools/cabana/dbc/generate_dbc_json.py --out " + output_json_file)
-cabana_env.Depends(generate_dbc, ["#common", "#selfdrive/pandad", '#opendbc', "#cereal", "#msgq_repo", Glob("#opendbc/*.dbc")])
+cabana_env.Depends(generate_dbc, ["#common", "#selfdrive/pandad", '#opendbc_repo', "#cereal", "#msgq_repo"])

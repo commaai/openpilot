@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ctime>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -64,10 +65,12 @@ protected:
 
 class Segment {
 public:
+  enum class LoadState {Loading, Loaded, Failed};
+
   Segment(int n, const SegmentFile &files, uint32_t flags, const std::vector<bool> &filters,
           std::function<void(int, bool)> callback);
   ~Segment();
-  inline bool isLoaded() const { return !loading_ && !abort_; }
+  LoadState getState();
 
   const int seg_num = 0;
   std::unique_ptr<LogReader> log;
@@ -80,7 +83,8 @@ protected:
   std::atomic<int> loading_ = 0;
   std::mutex mutex_;
   std::vector<std::thread> threads_;
-  std::function<void(int, bool)> onLoadFinished_ = nullptr;
+  std::function<void(int, bool)> on_load_finished_ = nullptr;
   uint32_t flags;
   std::vector<bool> filters_;
+  LoadState load_state_  = LoadState::Loading;
 };

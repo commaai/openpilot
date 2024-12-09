@@ -1,0 +1,23 @@
+import subprocess
+
+Import('env', 'arch', 'common')
+
+renv = env.Clone()
+
+UBUNTU_FOCAL = int(subprocess.check_output('[ -f /etc/os-release ] && . /etc/os-release && [ "$ID" = "ubuntu" ] && [ "$VERSION_ID" = "20.04" ] && echo 1 || echo 0', shell=True, encoding='utf-8').rstrip())
+
+if not UBUNTU_FOCAL:
+  rayutil = env.Library("rayutil", ['raylib/util.cc'], LIBS='raylib')
+  linked_libs = ['raylib', rayutil, common]
+  renv['LIBPATH'] += [f'#third_party/raylib/{arch}/']
+
+  mac_frameworks = []
+  if arch == "Darwin":
+    mac_frameworks += ['OpenCL', 'CoreVideo', 'Cocoa', 'GLUT', 'CoreFoundation', 'OpenGL', 'IOKit']
+  elif arch == 'larch64':
+    linked_libs += ['GLESv2', 'GL', 'EGL', 'wayland-client', 'wayland-egl']
+  else:
+    linked_libs += ['OpenCL', 'dl', 'pthread']
+
+  if arch != 'aarch64':
+    renv.Program("spinner", ["raylib/spinner.cc"], LIBS=linked_libs, FRAMEWORKS=mac_frameworks)
