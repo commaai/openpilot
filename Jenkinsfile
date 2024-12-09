@@ -80,10 +80,8 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
     }
 
     if (isReplay()) {
-      error("REPLAYING TESTS IS NOT ALLOWED. FIX THEM INSTEAD")
-      return false
+      error("REPLAYING TESTS IS NOT ALLOWED. FIX THEM INSTEAD.")
     }
-    return
 
     def extra = extra_env.collect { "export ${it}" }.join('\n');
     def branch = env.BRANCH_NAME ?: 'master';
