@@ -5,6 +5,7 @@ import time
 import uuid
 
 from openpilot.common.params import Params, ParamKeyType, UnknownKeyName
+from openpilot.common.parameter_updater import ParameterUpdater
 
 class TestParams:
   def setup_method(self):
@@ -99,6 +100,18 @@ class TestParams:
     threading.Thread(target=_delayed_writer).start()
     assert q.get("CarParams") is None
     assert q.get("CarParams", True) == b"1"
+
+  def test_parameter_updater(self):
+    parameter_updater = ParameterUpdater(["DongleId", "CarParams", "IsMetric"])
+    parameter_updater.start()
+    Params().put("DongleId", "cb38263377b873ee")
+    Params().put("CarParams", "123")
+    Params().put_bool("IsMetric", True)
+    time.sleep(0.2)
+    assert parameter_updater.get("DongleId") == b'cb38263377b873ee'
+    assert parameter_updater.get_bool("IsMetric") is True
+    assert parameter_updater.get_int("CarParams") == 123
+    parameter_updater.stop()
 
   def test_params_all_keys(self):
     keys = Params().all_keys()

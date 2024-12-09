@@ -22,7 +22,7 @@ class ParameterUpdater:
       return self.param_values[param]
 
   def get_bool(self, param: str) -> bool:
-    return self.get(param) == '1'
+    return self.get(param) == b'1'
 
   def get_int(self, param: str, def_val: int = 0) -> int:
     value = self.get(param)
