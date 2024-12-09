@@ -149,8 +149,7 @@ class Car:
     self.mock_carstate = MockCarState()
     self.v_cruise_helper = VCruiseHelper(self.CP)
 
-    self.is_metric = False
-    self.experimental_mode = False
+    self.parameter_updater = ParameterUpdater(['IsMetric', 'ExperimentalMode'])
 
     # card is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
@@ -181,7 +180,7 @@ class Car:
       self.can_log_mono_time = messaging.log_from_bytes(can_strs[0]).logMonoTime
 
     # TODO: mirror the carState.cruiseState struct?
-    self.v_cruise_helper.update_v_cruise(CS, self.sm['carControl'].enabled, self.is_metric)
+    self.v_cruise_helper.update_v_cruise(CS, self.sm['carControl'].enabled, self.parameter_updater.get_bool('IsMetric'))
     CS.vCruise = float(self.v_cruise_helper.v_cruise_kph)
     CS.vCruiseCluster = float(self.v_cruise_helper.v_cruise_cluster_kph)
 
@@ -239,7 +238,7 @@ class Car:
     CS, RD = self.state_update()
 
     if self.sm['carControl'].enabled and not self.CC_prev.enabled:
-      self.v_cruise_helper.initialize_v_cruise(CS, self.experimental_mode)
+      self.v_cruise_helper.initialize_v_cruise(CS, self.parameter_updater.get_bool('ExperimentalMode'))
 
     self.state_publish(CS, RD)
 
@@ -250,25 +249,14 @@ class Car:
 
     self.initialized_prev = initialized
 
-  def read_parameters(self, parameter_updater: ParameterUpdater) -> None:
-    self.is_metric = parameter_updater.get_param_value('is_metric')
-    self.experimental_mode = parameter_updater.get_param_value('experimental_mode')
-
   def card_thread(self):
-    params_to_update = {
-      'IsMetric': 'bool',
-      'ExperimentalMode': 'bool',
-    }
-    parameter_updater = ParameterUpdater(params_to_update)
-    parameter_updater.start()
-
     try:
+      self.parameter_updater.start()
       while True:
-        self.read_parameters(parameter_updater)
         self.step()
         self.rk.monitor_time()
     finally:
-      parameter_updater.stop()
+      self.parameter_updater.stop()
 
 
 def main():

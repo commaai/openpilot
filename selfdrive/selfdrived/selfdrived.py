@@ -82,8 +82,7 @@ class SelfdriveD:
                                   ignore_alive=ignore, ignore_avg_freq=ignore+['radarState',],
                                   ignore_valid=ignore, frequency=int(1/DT_CTRL))
 
-    # read params
-    self.is_metric = False
+    self.parameter_updater = ParameterUpdater(['IsMetric', 'ExperimentalMode', 'LongitudinalPersonality'])
     self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
 
     car_recognized = self.CP.carName != 'mock'
@@ -109,7 +108,6 @@ class SelfdriveD:
     self.events_prev = []
     self.logged_comm_issue = None
     self.not_running_prev = None
-    self.experimental_mode = False
     self.personality = log.LongitudinalPersonality.standard
     self.recalibrating_seen = False
     self.state_machine = StateMachine()
@@ -416,7 +414,7 @@ class SelfdriveD:
       clear_event_types.add(ET.NO_ENTRY)
 
     pers = LONGITUDINAL_PERSONALITY_MAP[self.personality]
-    alerts = self.events.create_alerts(self.state_machine.current_alert_types, [self.CP, CS, self.sm, self.is_metric,
+    alerts = self.events.create_alerts(self.state_machine.current_alert_types, [self.CP, CS, self.sm, self.parameter_updater.get_bool("IsMetric"),
                                                                                 self.state_machine.soft_disable_timer, pers])
     self.AM.add_many(self.sm.frame, alerts)
     self.AM.process_alerts(self.sm.frame, clear_event_types)
@@ -430,7 +428,7 @@ class SelfdriveD:
     ss.active = self.active
     ss.state = self.state_machine.state
     ss.engageable = not self.events.contains(ET.NO_ENTRY)
-    ss.experimentalMode = self.experimental_mode
+    ss.experimentalMode = self.parameter_updater.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
     ss.personality = self.personality
 
     ss.alertText1 = self.AM.current_alert.alert_text_1
@@ -461,30 +459,15 @@ class SelfdriveD:
 
     self.CS_prev = CS
 
-  def read_parameters(self, parameter_updater: ParameterUpdater) -> None:
-    self.is_metric = parameter_updater.get_param_value("IsMetric")
-    self.experimental_mode = parameter_updater.get_param_value("ExperimentalMode") and self.CP.openpilotLongitudinalControl
-    try:
-      self.personality = int(parameter_updater.get_param_value('LongitudinalPersonality'))
-    except (ValueError, TypeError):
-      self.personality = log.LongitudinalPersonality.standard
-
   def run(self):
-    params_to_update = {
-      'IsMetric': 'bool',
-      'ExperimentalMode': 'bool',
-      'LongitudinalPersonality': 'str'
-    }
-    parameter_updater = ParameterUpdater(params_to_update)
-    parameter_updater.start()
-
     try:
+      self.parameter_updater.start()
       while True:
-        self.read_parameters(parameter_updater)
+        self.personality = self.parameter_updater.get_int('LongitudinalPersonality', log.LongitudinalPersonality.standard)
         self.step()
         self.rk.monitor_time()
     finally:
-      parameter_updater.stop()
+      self.parameter_updater.stop()
 
 
 def main():
