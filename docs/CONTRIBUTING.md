@@ -1,6 +1,8 @@
 # How to contribute
 
-Our software is open source so you can solve your own problems without needing help from others. And if you solve a problem and are so kind, you can upstream it for the rest of the world to use. Check out our [post about externalization](https://blog.comma.ai/a-2020-theme-externalization/). Development activity is coordinated through our GitHub Issues, [GitHub Discussions](https://github.com/commaai/openpilot/discussions), and [Discord](https://discord.comma.ai).
+Our software is open source so you can solve your own problems without needing help from others. And if you solve a problem and are so kind, you can upstream it for the rest of the world to use. Check out our [post about externalization](https://blog.comma.ai/a-2020-theme-externalization/).
+
+Development is coordinated through [Discord](https://discord.comma.ai) and GitHub.
 
 ### Getting Started
 
@@ -11,7 +13,8 @@ Our software is open source so you can solve your own problems without needing h
 
 ## What contributions are we looking for?
 
-**openpilot's priorities are [safety](SAFETY.md), stability, quality, and features, in that order.** openpilot is part of comma's mission to *solve self-driving cars while delivering shippable intermediaries*, and **all** development is towards that goal. 
+**openpilot's priorities are [safety](SAFETY.md), stability, quality, and features, in that order.**
+openpilot is part of comma's mission to *solve self-driving cars while delivering shippable intermediaries*, and all development is towards that goal. 
 
 ### What gets merged?
 
@@ -27,24 +30,21 @@ All of these are examples of good PRs:
 
 ### What doesn't get merged?
 
-* **arbitrary style changes**: code is art, and it's up to the author to make it beautiful
+* **style changes**: code is art, and it's up to the author to make it beautiful 
 * **500+ line PRs**: clean it up, break it up into smaller PRs, or both
 * **PRs without a clear goal**: every PR must have a singular and clear goal
-* **UI design changes**: we do not have a good review process for this yet
+* **UI design**: we do not have a good review process for this yet
 * **New features**: We believe openpilot is mostly feature-complete, and the rest is a matter of refinement and fixing bugs. As a result of this, most feature PRs will be immediately closed, however the beauty of open source is that forks can and do offer features that upstream openpilot doesn't.
+* **Negative expected value**: This a class of PRs that makes an improvement, but the risk or validation costs more than the improvement. The risk can be mitigated by first getting a failing test merged.
 
 ### First contribution
 
-Check out any [good first issue](https://github.com/commaai/openpilot/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) to get started.
-
-### What do I need to contribute?
-
-A lot of openpilot work requires only a PC, and some requires a comma device.
-Most car-related contributions require access to that car, plus a comma device installed in the car.
+[Projects / openpilot bounties](https://github.com/orgs/commaai/projects/26/views/1?pane=info) is the best place to get started and goes in-depth on what's expected when working on a bounty.
+There's lot of bounties that don't require a comma 3/3X or a car.
 
 ## Pull Requests
 
-Pull requests should be against the master branch. If you're unsure about a contribution, feel free to open a discussion, issue, or draft PR to discuss the problem you're trying to solve.
+Pull requests should be against the master branch.
 
 A good pull request has all of the following:
 * a clearly stated purpose

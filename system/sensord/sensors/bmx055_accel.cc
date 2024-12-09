@@ -10,12 +10,15 @@ BMX055_Accel::BMX055_Accel(I2CBus *bus) : I2CSensor(bus) {}
 
 int BMX055_Accel::init() {
   int ret = verify_chip_id(BMX055_ACCEL_I2C_REG_ID, {BMX055_ACCEL_CHIP_ID});
-  if (ret == -1) return -1;
+  if (ret == -1) {
+    goto fail;
+  }
 
   ret = set_register(BMX055_ACCEL_I2C_REG_PMU, BMX055_ACCEL_NORMAL_MODE);
   if (ret < 0) {
     goto fail;
   }
+
   // bmx055 accel has a 1.3ms wakeup time from deep suspend mode
   util::sleep_for(10);
 
@@ -36,11 +39,15 @@ int BMX055_Accel::init() {
     goto fail;
   }
 
+  enabled = true;
+
 fail:
   return ret;
 }
 
 int BMX055_Accel::shutdown()  {
+  if (!enabled) return 0;
+
   // enter deep suspend mode (lowest power mode)
   int ret = set_register(BMX055_ACCEL_I2C_REG_PMU, BMX055_ACCEL_DEEP_SUSPEND);
   if (ret < 0) {

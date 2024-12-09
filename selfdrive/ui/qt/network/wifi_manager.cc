@@ -2,10 +2,6 @@
 
 #include <utility>
 
-#include "selfdrive/ui/ui.h"
-#include "selfdrive/ui/qt/widgets/prime.h"
-
-#include "common/params.h"
 #include "common/swaglog.h"
 #include "selfdrive/ui/qt/util.h"
 
@@ -445,9 +441,6 @@ void WifiManager::addTetheringConnection() {
 }
 
 void WifiManager::tetheringActivated(QDBusPendingCallWatcher *call) {
-  int prime_type = uiState()->primeType();
-  int ipv4_forward = (prime_type == PrimeType::NONE || prime_type == PrimeType::LITE);
-
   if (!ipv4_forward) {
     QTimer::singleShot(5000, this, [=] {
       qWarning() << "net.ipv4.ip_forward = 0";
@@ -455,6 +448,7 @@ void WifiManager::tetheringActivated(QDBusPendingCallWatcher *call) {
     });
   }
   call->deleteLater();
+  tethering_on = true;
 }
 
 void WifiManager::setTetheringEnabled(bool enabled) {
@@ -472,6 +466,7 @@ void WifiManager::setTetheringEnabled(bool enabled) {
 
   } else {
     deactivateConnectionBySsid(tethering_ssid);
+    tethering_on = false;
   }
 }
 

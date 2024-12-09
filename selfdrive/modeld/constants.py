@@ -15,7 +15,8 @@ class ModelConstants:
   # model inputs constants
   MODEL_FREQ = 20
   FEATURE_LEN = 512
-  HISTORY_BUFFER_LEN = 99
+  FULL_HISTORY_BUFFER_LEN = 99
+  HISTORY_BUFFER_LEN = 24
   DESIRE_LEN = 8
   TRAFFIC_CONVENTION_LEN = 2
   LAT_PLANNER_STATE_LEN = 4
@@ -59,6 +60,8 @@ class ModelConstants:
   RYG_GREEN = 0.01165
   RYG_YELLOW = 0.06157
 
+  POLY_PATH_DEGREE = 4
+
 # model outputs slices
 class Plan:
   POSITION = slice(0, 3)
@@ -70,13 +73,14 @@ class Plan:
 class Meta:
   ENGAGED = slice(0, 1)
   # next 2, 4, 6, 8, 10 seconds
-  GAS_DISENGAGE = slice(1, 36, 7)
-  BRAKE_DISENGAGE = slice(2, 36, 7)
-  STEER_OVERRIDE = slice(3, 36, 7)
-  HARD_BRAKE_3 = slice(4, 36, 7)
-  HARD_BRAKE_4 = slice(5, 36, 7)
-  HARD_BRAKE_5 = slice(6, 36, 7)
-  GAS_PRESS = slice(7, 36, 7)
+  GAS_DISENGAGE = slice(1, 31, 6)
+  BRAKE_DISENGAGE = slice(2, 31, 6)
+  STEER_OVERRIDE = slice(3, 31, 6)
+  HARD_BRAKE_3 = slice(4, 31, 6)
+  HARD_BRAKE_4 = slice(5, 31, 6)
+  HARD_BRAKE_5 = slice(6, 31, 6)
   # next 0, 2, 4, 6, 8, 10 seconds
-  LEFT_BLINKER = slice(36, 48, 2)
-  RIGHT_BLINKER = slice(37, 48, 2)
+  GAS_PRESS = slice(31, 55, 4)
+  BRAKE_PRESS = slice(32, 55, 4)
+  LEFT_BLINKER = slice(33, 55, 4)
+  RIGHT_BLINKER = slice(34, 55, 4)

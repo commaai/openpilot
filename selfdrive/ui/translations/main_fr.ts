@@ -88,29 +88,6 @@
     </message>
 </context>
 <context>
-    <name>AnnotatedCameraWidget</name>
-    <message>
-        <source>km/h</source>
-        <translation>km/h</translation>
-    </message>
-    <message>
-        <source>mph</source>
-        <translation>mi/h</translation>
-    </message>
-    <message>
-        <source>MAX</source>
-        <translation>MAX</translation>
-    </message>
-    <message>
-        <source>SPEED</source>
-        <translation>VITESSE</translation>
-    </message>
-    <message>
-        <source>LIMIT</source>
-        <translation>LIMITE</translation>
-    </message>
-</context>
-<context>
     <name>ConfirmationDialog</name>
     <message>
         <source>Ok</source>
@@ -137,30 +114,14 @@
     </message>
 </context>
 <context>
-    <name>DestinationWidget</name>
+    <name>DeveloperPanel</name>
     <message>
-        <source>Home</source>
-        <translation>Domicile</translation>
+        <source>Joystick Debug Mode</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Work</source>
-        <translation>Travail</translation>
-    </message>
-    <message>
-        <source>No destination set</source>
-        <translation>Aucune destination définie</translation>
-    </message>
-    <message>
-        <source>home</source>
-        <translation>domicile</translation>
-    </message>
-    <message>
-        <source>work</source>
-        <translation>travail</translation>
-    </message>
-    <message>
-        <source>No %1 location set</source>
-        <translation>Aucun lieu %1 défini</translation>
+        <source>Longitudinal Maneuver Mode</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -325,6 +286,21 @@
     </message>
 </context>
 <context>
+    <name>HudRenderer</name>
+    <message>
+        <source>km/h</source>
+        <translation>km/h</translation>
+    </message>
+    <message>
+        <source>mph</source>
+        <translation>mi/h</translation>
+    </message>
+    <message>
+        <source>MAX</source>
+        <translation>MAX</translation>
+    </message>
+</context>
+<context>
     <name>InputDialog</name>
     <message>
         <source>Cancel</source>
@@ -343,47 +319,6 @@
     <message>
         <source>Installing...</source>
         <translation>Installation...</translation>
-    </message>
-</context>
-<context>
-    <name>MapETA</name>
-    <message>
-        <source>eta</source>
-        <translation>eta</translation>
-    </message>
-    <message>
-        <source>min</source>
-        <translation>min</translation>
-    </message>
-    <message>
-        <source>hr</source>
-        <translation>h</translation>
-    </message>
-</context>
-<context>
-    <name>MapSettings</name>
-    <message>
-        <source>NAVIGATION</source>
-        <translation>NAVIGATION</translation>
-    </message>
-    <message>
-        <source>Manage at connect.comma.ai</source>
-        <translation>Gérer sur connect.comma.ai</translation>
-    </message>
-</context>
-<context>
-    <name>MapWindow</name>
-    <message>
-        <source>Map Loading</source>
-        <translation>Chargement de la carte</translation>
-    </message>
-    <message>
-        <source>Waiting for GPS</source>
-        <translation>En attente du GPS</translation>
-    </message>
-    <message>
-        <source>Waiting for route</source>
-        <translation>En attente d&apos;un trajet</translation>
     </message>
 </context>
 <context>
@@ -461,10 +396,6 @@
         <translation>openpilot n&apos;a pas pu identifier votre voiture. Votre voiture n&apos;est pas supportée ou ses ECUs ne sont pas reconnues. Veuillez soumettre un pull request pour ajouter les versions de firmware au véhicule approprié. Besoin d&apos;aide ? Rejoignez discord.comma.ai.</translation>
     </message>
     <message>
-        <source>openpilot was unable to identify your car. Check integrity of cables and ensure all connections are secure, particularly that the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.</source>
-        <translation>openpilot n&apos;a pas pu identifier votre voiture. Vérifiez l&apos;intégrité des câbles et assurez-vous que toutes les connexions sont correctes, en particulier l&apos;alimentation du comma est totalement insérée dans le port OBD-II du véhicule. Besoin d&apos;aide ? Rejoignez discord.comma.ai.</translation>
-    </message>
-    <message>
         <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
         <translation>openpilot a détecté un changement dans la position de montage de l&apos;appareil. Assurez-vous que l&apos;appareil est totalement inséré dans le support et que le support est fermement fixé au pare-brise.</translation>
     </message>
@@ -491,19 +422,19 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Waiting for controls to start</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>TAKE CONTROL IMMEDIATELY</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Controls Unresponsive</source>
+        <source>Reboot Device</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Reboot Device</source>
+        <source>Waiting to start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>System Unresponsive</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -564,8 +495,8 @@
         <translation>1 an de stockage de trajets</translation>
     </message>
     <message>
-        <source>Turn-by-turn navigation</source>
-        <translation>Navigation étape par étape</translation>
+        <source>Remote snapshots</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -613,22 +544,6 @@
             <numerusform>il y a %n jour</numerusform>
             <numerusform>il y a %n jours</numerusform>
         </translation>
-    </message>
-    <message>
-        <source>km</source>
-        <translation>km</translation>
-    </message>
-    <message>
-        <source>m</source>
-        <translation>m</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation>mi</translation>
-    </message>
-    <message>
-        <source>ft</source>
-        <translation>ft</translation>
     </message>
     <message>
         <source>now</source>
@@ -697,6 +612,10 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     <message>
         <source>Software</source>
         <translation>Logiciel</translation>
+    </message>
+    <message>
+        <source>Developer</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -854,14 +773,6 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     <message>
         <source>PANDA</source>
         <translation>PANDA</translation>
-    </message>
-    <message>
-        <source>GPS</source>
-        <translation>GPS</translation>
-    </message>
-    <message>
-        <source>SEARCH</source>
-        <translation>RECHERCHE</translation>
     </message>
     <message>
         <source>--</source>
@@ -1089,22 +1000,6 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     <message>
         <source>Display speed in km/h instead of mph.</source>
         <translation>Afficher la vitesse en km/h au lieu de mph.</translation>
-    </message>
-    <message>
-        <source>Show ETA in 24h Format</source>
-        <translation>Afficher l&apos;heure d&apos;arrivée en format 24h</translation>
-    </message>
-    <message>
-        <source>Use 24h format instead of am/pm</source>
-        <translation>Utiliser le format 24h plutôt que am/pm</translation>
-    </message>
-    <message>
-        <source>Show Map on Left Side of UI</source>
-        <translation>Afficher la carte à gauche de l&apos;interface</translation>
-    </message>
-    <message>
-        <source>Show map on left side when in split screen view.</source>
-        <translation>Afficher la carte à gauche en mode écran scindé.</translation>
     </message>
     <message>
         <source>Aggressive</source>

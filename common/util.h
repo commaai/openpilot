@@ -37,6 +37,8 @@ const double MS_TO_MPH = MS_TO_KPH * KM_TO_MILE;
 const double METER_TO_MILE = KM_TO_MILE / 1000.0;
 const double METER_TO_FOOT = 3.28084;
 
+#define ALIGNED_SIZE(x, align) (((x) + (align)-1) & ~((align)-1))
+
 namespace util {
 
 void set_thread_name(const char* name);

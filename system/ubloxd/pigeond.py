@@ -6,9 +6,10 @@ import serial
 import struct
 import requests
 import urllib.parse
-from datetime import datetime
+from datetime import datetime, UTC
 
 from cereal import messaging
+from openpilot.common.time import system_time_valid
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import TICI
@@ -196,8 +197,8 @@ def initialize_pigeon(pigeon: TTYPigeon) -> bool:
         cloudlog.error(f"failed to restore almanac backup, status: {restore_status}")
 
       # sending time to ublox
-      t_now = datetime.utcnow()
-      if t_now >= datetime(2021, 6, 1):
+      if system_time_valid():
+        t_now = datetime.now(UTC).replace(tzinfo=None)
         cloudlog.warning("Sending current time to ublox")
 
         # UBX-MGA-INI-TIME_UTC

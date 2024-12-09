@@ -1,44 +1,8 @@
-const SteeringLimits NISSAN_STEERING_LIMITS = {
-  .angle_deg_to_can = 100,
-  .angle_rate_up_lookup = {
-    {0., 5., 15.},
-    {5., .8, .15}
-  },
-  .angle_rate_down_lookup = {
-    {0., 5., 15.},
-    {5., 3.5, .4}
-  },
-};
+#pragma once
 
-const CanMsg NISSAN_TX_MSGS[] = {
-  {0x169, 0, 8},  // LKAS
-  {0x2b1, 0, 8},  // PROPILOT_HUD
-  {0x4cc, 0, 8},  // PROPILOT_HUD_INFO_MSG
-  {0x20b, 2, 6},  // CRUISE_THROTTLE (X-Trail)
-  {0x20b, 1, 6},  // CRUISE_THROTTLE (Altima)
-  {0x280, 2, 8}   // CANCEL_MSG (Leaf)
-};
+#include "safety_declarations.h"
 
-// Signals duplicated below due to the fact that these messages can come in on either CAN bus, depending on car model.
-RxCheck nissan_rx_checks[] = {
-  {.msg = {{0x2, 0, 5, .frequency = 100U},
-           {0x2, 1, 5, .frequency = 100U}, { 0 }}},  // STEER_ANGLE_SENSOR
-  {.msg = {{0x285, 0, 8, .frequency = 50U},
-           {0x285, 1, 8, .frequency = 50U}, { 0 }}}, // WHEEL_SPEEDS_REAR
-  {.msg = {{0x30f, 2, 3, .frequency = 10U},
-           {0x30f, 1, 3, .frequency = 10U}, { 0 }}}, // CRUISE_STATE
-  {.msg = {{0x15c, 0, 8, .frequency = 50U},
-           {0x15c, 1, 8, .frequency = 50U},
-           {0x239, 0, 8, .frequency = 50U}}}, // GAS_PEDAL
-  {.msg = {{0x454, 0, 8, .frequency = 10U},
-           {0x454, 1, 8, .frequency = 10U},
-           {0x1cc, 0, 4, .frequency = 100U}}}, // DOORS_LIGHTS / BRAKE
-};
-
-// EPS Location. false = V-CAN, true = C-CAN
-const int NISSAN_PARAM_ALT_EPS_BUS = 1;
-
-bool nissan_alt_eps = false;
+static bool nissan_alt_eps = false;
 
 static void nissan_rx_hook(const CANPacket_t *to_push) {
   int bus = GET_BUS(to_push);
@@ -94,6 +58,18 @@ static void nissan_rx_hook(const CANPacket_t *to_push) {
 
 
 static bool nissan_tx_hook(const CANPacket_t *to_send) {
+  const SteeringLimits NISSAN_STEERING_LIMITS = {
+    .angle_deg_to_can = 100,
+    .angle_rate_up_lookup = {
+      {0., 5., 15.},
+      {5., .8, .15}
+    },
+    .angle_rate_down_lookup = {
+      {0., 5., 15.},
+      {5., 3.5, .4}
+    },
+  };
+
   bool tx = true;
   int addr = GET_ADDR(to_send);
   bool violation = false;
@@ -147,6 +123,34 @@ static int nissan_fwd_hook(int bus_num, int addr) {
 }
 
 static safety_config nissan_init(uint16_t param) {
+  static const CanMsg NISSAN_TX_MSGS[] = {
+    {0x169, 0, 8},  // LKAS
+    {0x2b1, 0, 8},  // PROPILOT_HUD
+    {0x4cc, 0, 8},  // PROPILOT_HUD_INFO_MSG
+    {0x20b, 2, 6},  // CRUISE_THROTTLE (X-Trail)
+    {0x20b, 1, 6},  // CRUISE_THROTTLE (Altima)
+    {0x280, 2, 8}   // CANCEL_MSG (Leaf)
+  };
+
+  // Signals duplicated below due to the fact that these messages can come in on either CAN bus, depending on car model.
+  static RxCheck nissan_rx_checks[] = {
+    {.msg = {{0x2, 0, 5, .frequency = 100U},
+             {0x2, 1, 5, .frequency = 100U}, { 0 }}},  // STEER_ANGLE_SENSOR
+    {.msg = {{0x285, 0, 8, .frequency = 50U},
+             {0x285, 1, 8, .frequency = 50U}, { 0 }}}, // WHEEL_SPEEDS_REAR
+    {.msg = {{0x30f, 2, 3, .frequency = 10U},
+             {0x30f, 1, 3, .frequency = 10U}, { 0 }}}, // CRUISE_STATE
+    {.msg = {{0x15c, 0, 8, .frequency = 50U},
+             {0x15c, 1, 8, .frequency = 50U},
+             {0x239, 0, 8, .frequency = 50U}}}, // GAS_PEDAL
+    {.msg = {{0x454, 0, 8, .frequency = 10U},
+             {0x454, 1, 8, .frequency = 10U},
+             {0x1cc, 0, 4, .frequency = 100U}}}, // DOORS_LIGHTS / BRAKE
+  };
+
+  // EPS Location. false = V-CAN, true = C-CAN
+  const int NISSAN_PARAM_ALT_EPS_BUS = 1;
+
   nissan_alt_eps = GET_FLAG(param, NISSAN_PARAM_ALT_EPS_BUS);
   return BUILD_SAFETY_CFG(nissan_rx_checks, NISSAN_TX_MSGS);
 }

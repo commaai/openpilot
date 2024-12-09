@@ -69,13 +69,13 @@ def run_test_w_pandas(pandas, sleep_duration):
       assert cans_echo[0][0] == at
       assert cans_loop[0][0] == at
 
-      assert cans_echo[0][2] == st
-      assert cans_loop[0][2] == st
+      assert cans_echo[0][1] == st
+      assert cans_loop[0][1] == st
 
-      assert cans_echo[0][3] == 0x80 | bus
-      if cans_loop[0][3] != bus:
-        print("EXPECTED %d GOT %d" % (bus, cans_loop[0][3]))
-      assert cans_loop[0][3] == bus
+      assert cans_echo[0][2] == 0x80 | bus
+      if cans_loop[0][2] != bus:
+        print("EXPECTED %d GOT %d" % (bus, cans_loop[0][2]))
+      assert cans_loop[0][2] == bus
 
       print("CAN pass", bus, ho)
       time.sleep(sleep_duration)

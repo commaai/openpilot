@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
   if args.addr != "127.0.0.1":
     os.environ["ZMQ"] = "1"
-    messaging.context = messaging.Context()
+    messaging.reset_context()
 
   poller = messaging.Poller()
   messaging.sub_sock('can', poller, addr=args.addr)

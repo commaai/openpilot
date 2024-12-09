@@ -21,6 +21,7 @@ class Plant:
     if not Plant.messaging_initialized:
       Plant.radar = messaging.pub_sock('radarState')
       Plant.controls_state = messaging.pub_sock('controlsState')
+      Plant.selfdrive_state = messaging.pub_sock('selfdriveState')
       Plant.car_state = messaging.pub_sock('carState')
       Plant.plan = messaging.sub_sock('longitudinalPlan')
       Plant.messaging_initialized = True
@@ -47,8 +48,8 @@ class Plant:
     time.sleep(0.1)
     self.sm = messaging.SubMaster(['longitudinalPlan'])
 
-    from openpilot.selfdrive.car.honda.values import CAR
-    from openpilot.selfdrive.car.honda.interface import CarInterface
+    from opendbc.car.honda.values import CAR
+    from opendbc.car.honda.interface import CarInterface
 
     self.planner = LongitudinalPlanner(CarInterface.get_non_essential_params(CAR.HONDA_CIVIC), init_v=self.speed)
 
@@ -56,12 +57,15 @@ class Plant:
   def current_time(self):
     return float(self.rk.frame) / self.rate
 
-  def step(self, v_lead=0.0, prob=1.0, v_cruise=50.):
+  def step(self, v_lead=0.0, prob_lead=1.0, v_cruise=50., pitch=0.0, prob_throttle=1.0):
     # ******** publish a fake model going straight and fake calibration ********
     # note that this is worst case for MPC, since model will delay long mpc by one time step
     radar = messaging.new_message('radarState')
     control = messaging.new_message('controlsState')
+    ss = messaging.new_message('selfdriveState')
     car_state = messaging.new_message('carState')
+    lp = messaging.new_message('liveParameters')
+    car_control = messaging.new_message('carControl')
     model = messaging.new_message('modelV2')
     a_lead = (v_lead - self.v_lead_prev)/self.ts
     self.v_lead_prev = v_lead
@@ -71,14 +75,14 @@ class Plant:
       v_rel = v_lead - self.speed
       if self.only_radar:
         status = True
-      elif prob > .5:
+      elif prob_lead > .5:
         status = True
       else:
         status = False
     else:
       d_rel = 200.
       v_rel = 0.
-      prob = 0.0
+      prob_lead = 0.0
       status = False
 
     lead = log.RadarState.LeadData.new_message()
@@ -92,7 +96,7 @@ class Plant:
     # TODO use real radard logic for this
     lead.aLeadTau = float(_LEAD_ACCEL_TAU)
     lead.status = status
-    lead.modelProb = float(prob)
+    lead.modelProb = float(prob_lead)
     if not self.only_lead2:
       radar.radarState.leadOne = lead
     radar.radarState.leadTwo = lead
@@ -105,23 +109,29 @@ class Plant:
     model.modelV2.position = position
     velocity = log.XYZTData.new_message()
     velocity.x = [float(x) for x in (self.speed + 0.5) * np.ones_like(ModelConstants.T_IDXS)]
+    velocity.x[0] = float(self.speed) # always start at current speed
     model.modelV2.velocity = velocity
     acceleration = log.XYZTData.new_message()
     acceleration.x = [float(x) for x in np.zeros_like(ModelConstants.T_IDXS)]
     model.modelV2.acceleration = acceleration
+    model.modelV2.meta.disengagePredictions.gasPressProbs = [float(prob_throttle) for _ in range(6)]
 
     control.controlsState.longControlState = LongCtrlState.pid if self.enabled else LongCtrlState.off
-    control.controlsState.vCruise = float(v_cruise * 3.6)
-    control.controlsState.experimentalMode = self.e2e
-    control.controlsState.personality = self.personality
+    ss.selfdriveState.experimentalMode = self.e2e
+    ss.selfdriveState.personality = self.personality
     control.controlsState.forceDecel = self.force_decel
     car_state.carState.vEgo = float(self.speed)
     car_state.carState.standstill = self.speed < 0.01
+    car_state.carState.vCruise = float(v_cruise * 3.6)
+    car_control.carControl.orientationNED = [0., float(pitch), 0.]
 
     # ******** get controlsState messages for plotting ***
     sm = {'radarState': radar.radarState,
           'carState': car_state.carState,
+          'carControl': car_control.carControl,
           'controlsState': control.controlsState,
+          'selfdriveState': ss.selfdriveState,
+          'liveParameters': lp.liveParameters,
           'modelV2': model.modelV2}
     self.planner.update(sm)
     self.speed = self.planner.v_desired_filter.x

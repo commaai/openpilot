@@ -5,28 +5,7 @@
 
 #include "selfdrive/ui/qt/util.h"
 
-const int FACE_IMG_SIZE = 130;
-
-DriverViewWindow::DriverViewWindow(QWidget* parent) : CameraWidget("camerad", VISION_STREAM_DRIVER, true, parent) {
-  face_img = loadPixmap("../assets/img_driver_face_static.png", {FACE_IMG_SIZE, FACE_IMG_SIZE});
-  QObject::connect(this, &CameraWidget::clicked, this, &DriverViewWindow::done);
-  QObject::connect(device(), &Device::interactiveTimeout, this, [this]() {
-    if (isVisible()) {
-      emit done();
-    }
-  });
-}
-
-void DriverViewWindow::showEvent(QShowEvent* event) {
-  params.putBool("IsDriverViewEnabled", true);
-  device()->resetInteractiveTimeout(60);
-  CameraWidget::showEvent(event);
-}
-
-void DriverViewWindow::hideEvent(QHideEvent* event) {
-  params.putBool("IsDriverViewEnabled", false);
-  stopVipcThread();
-  CameraWidget::hideEvent(event);
+DriverViewWindow::DriverViewWindow(QWidget* parent) : CameraWidget("camerad", VISION_STREAM_DRIVER, parent) {
 }
 
 void DriverViewWindow::paintGL() {
@@ -68,10 +47,35 @@ void DriverViewWindow::paintGL() {
     p.drawRoundedRect(fbox_x - box_size / 2, fbox_y - box_size / 2, box_size, box_size, 35.0, 35.0);
   }
 
-  // icon
-  const int img_offset = 60;
-  const int img_x = is_rhd ? rect().right() - FACE_IMG_SIZE - img_offset : rect().left() + img_offset;
-  const int img_y = rect().bottom() - FACE_IMG_SIZE - img_offset;
-  p.setOpacity(face_detected ? 1.0 : 0.2);
-  p.drawPixmap(img_x, img_y, face_img);
+  driver_monitor.updateState(*uiState());
+  driver_monitor.draw(p, rect());
+}
+
+mat4 DriverViewWindow::calcFrameMatrix() {
+  const float driver_view_ratio = 2.0;
+  const float yscale = stream_height * driver_view_ratio / stream_width;
+  const float xscale = yscale * glHeight() / glWidth() * stream_width / stream_height;
+  return mat4{{
+    xscale,  0.0, 0.0, 0.0,
+    0.0,  yscale, 0.0, 0.0,
+    0.0,  0.0, 1.0, 0.0,
+    0.0,  0.0, 0.0, 1.0,
+  }};
+}
+
+DriverViewDialog::DriverViewDialog(QWidget *parent) : DialogBase(parent) {
+  Params().putBool("IsDriverViewEnabled", true);
+  device()->resetInteractiveTimeout(60);
+
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(0, 0, 0, 0);
+  auto camera = new DriverViewWindow(this);
+  main_layout->addWidget(camera);
+  QObject::connect(camera, &DriverViewWindow::clicked, this, &DialogBase::accept);
+  QObject::connect(device(), &Device::interactiveTimeout, this, &DialogBase::accept);
+}
+
+void DriverViewDialog::done(int r) {
+  Params().putBool("IsDriverViewEnabled", false);
+  QDialog::done(r);
 }
