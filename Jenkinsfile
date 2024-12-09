@@ -130,8 +130,7 @@ def hasPathChanged(String gitDiff, List<String> paths) {
 
 def isReplay() {
   def replayClass = "org.jenkinsci.plugins.workflow.cps.replay.ReplayCause"
-  def isReplay = currentBuild.rawBuild.getCauses().any{ cause -> cause.toString().contains(replayClass) }
-  println "IS REPLAY: ${isReplay}"
+  return currentBuild.rawBuild.getCauses().any{ cause -> cause.toString().contains(replayClass) }
 }
 
 def setupCredentials() {
