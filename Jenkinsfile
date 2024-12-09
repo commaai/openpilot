@@ -78,6 +78,8 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
     if (currentBuild.result != null) {
         return
     }
+    isReplay();
+    return
 
     def extra = extra_env.collect { "export ${it}" }.join('\n');
     def branch = env.BRANCH_NAME ?: 'master';
@@ -98,8 +100,6 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
             def args = item[2]
             def diffPaths = args.diffPaths ?: []
             def cmdTimeout = args.timeout ?: 9999
-            isReplay();
-            return
 
             if (branch != "master" && diffPaths && !hasPathChanged(gitDiff, diffPaths)) {
               println "Skipping ${name}: no changes in ${diffPaths}."
@@ -125,7 +125,6 @@ def hasPathChanged(String gitDiff, List<String> paths) {
   return false
 }
 
-@NonCPS
 def isReplay() {
   def replayClass = "org.jenkinsci.plugins.workflow.cps.replay.ReplayCause"
   def isReplay = currentBuild.rawBuild.getCauses().any{ cause -> cause.toString().contains(replayClass) }
