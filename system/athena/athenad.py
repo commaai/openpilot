@@ -15,6 +15,7 @@ import tempfile
 import threading
 import time
 import zstandard as zstd
+from contextlib import closing
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from functools import partial
@@ -798,20 +799,17 @@ def main(exit_event: threading.Event = None):
         conn_start = time.monotonic()
 
       cloudlog.event("athenad.main.connecting_ws", ws_uri=ws_uri, retries=conn_retries)
-      ws = create_connection(ws_uri,
-                             cookie="jwt=" + api.get_token(),
-                             enable_multithread=True,
-                             timeout=30.0)
-      cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri, retries=conn_retries,
-                     duration=time.monotonic() - conn_start)
-      conn_start = None
 
-      conn_retries = 0
-      cur_upload_items.clear()
+      cookie = f"jwt={api.get_token()}"
+      with closing(create_connection(ws_uri, cookie=cookie, enable_multithread=True, timeout=30.0)) as ws:
+        cloudlog.event("athenad.main.connected_ws", ws_uri=ws_uri, retries=conn_retries,
+                       duration=time.monotonic() - conn_start)
+        conn_start = None
+        conn_retries = 0
+        cur_upload_items.clear()
 
-      handle_long_poll(ws, exit_event)
+        handle_long_poll(ws, exit_event)
 
-      ws.close()
     except (KeyboardInterrupt, SystemExit):
       break
     except (ConnectionError, TimeoutError, WebSocketException):
