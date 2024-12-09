@@ -80,7 +80,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
     }
 
     if (isReplay()) {
-      printf "\e[31mREPLAYING TESTS IS NOT ALLOWED. FIX THEM INSTEAD\e[0m\n"
+      println "REPLAYING TESTS IS NOT ALLOWED. FIX THEM INSTEAD"
       return false
     }
 
