@@ -79,6 +79,10 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
         return
     }
 
+    if (isReplay()) {
+      error("REPLAYING TESTS IS NOT ALLOWED. FIX THEM INSTEAD.")
+    }
+
     def extra = extra_env.collect { "export ${it}" }.join('\n');
     def branch = env.BRANCH_NAME ?: 'master';
     def gitDiff = sh returnStdout: true, script: 'curl -s -H "Authorization: Bearer ${GITHUB_COMMENTS_TOKEN}" https://api.github.com/repos/commaai/openpilot/compare/master...${GIT_BRANCH} | jq .files[].filename || echo "/"', label: 'Getting changes'
@@ -121,6 +125,11 @@ def hasPathChanged(String gitDiff, List<String> paths) {
     }
   }
   return false
+}
+
+def isReplay() {
+  def replayClass = "org.jenkinsci.plugins.workflow.cps.replay.ReplayCause"
+  return currentBuild.rawBuild.getCauses().any{ cause -> cause.toString().contains(replayClass) }
 }
 
 def setupCredentials() {
