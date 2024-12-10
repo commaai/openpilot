@@ -199,11 +199,12 @@ def retry_upload(tid: int, end_event: threading.Event, increase_count: bool = Tr
       progress=0,
       current=False
     )
-    upload_queue.put_nowait(item)
-    UploadQueueCache.cache(upload_queue)
 
     with cur_upload_items_lock:
+      upload_queue.put_nowait(item)
       cur_upload_items[tid] = None
+
+    UploadQueueCache.cache(upload_queue)
 
     for _ in range(RETRY_DELAY):
       time.sleep(1)
@@ -414,11 +415,8 @@ def uploadFilesToUrls(files_data: list[UploadFileDict]) -> UploadFilesToUrlRespo
 
 @dispatcher.add_method
 def listUploadQueue() -> list[UploadItemDict]:
-  with upload_queue.mutex:
-    items = list(upload_queue.queue)
-
-  with cur_upload_items_lock:
-    items += list(cur_upload_items.values())
+  with cur_upload_items_lock, upload_queue.mutex:
+    items = list(upload_queue.queue) + [item for item in cur_upload_items.values() if item is not None]
 
   return [asdict(item) for item in items]
 
