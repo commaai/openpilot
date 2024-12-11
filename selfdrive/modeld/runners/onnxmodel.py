@@ -49,7 +49,7 @@ def create_ort_session(path, fp16_to_fp32):
     provider = 'OpenVINOExecutionProvider'
   elif 'CUDAExecutionProvider' in ort.get_available_providers() and 'ONNXCPU' not in os.environ:
     options.intra_op_num_threads = 2
-    provider = ('CUDAExecutionProvider', {'cudnn_conv_algo_search': 'DEFAULT'})
+    provider = ('CUDAExecutionProvider', {'cudnn_conv_algo_search': 'EXHAUSTIVE'})
   else:
     options.intra_op_num_threads = 2
     options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
