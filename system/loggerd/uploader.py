@@ -13,6 +13,7 @@ from collections.abc import Iterator
 
 from cereal import log
 import cereal.messaging as messaging
+from common.cached_dir import CachedDir
 from openpilot.common.api import Api
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
@@ -57,7 +58,7 @@ def listdir_by_creation(d: str) -> list[str]:
     return []
 
   try:
-    paths = [f for f in os.listdir(d) if os.path.isdir(os.path.join(d, f))]
+    paths = [f for f in CachedDir.listdir(d) if os.path.isdir(os.path.join(d, f))]
     paths = sorted(paths, key=get_directory_sort)
     return paths
   except OSError:
@@ -96,7 +97,7 @@ class Uploader:
     for logdir in listdir_by_creation(self.root):
       path = os.path.join(self.root, logdir)
       try:
-        names = os.listdir(path)
+        names = CachedDir.listdir(path)
       except OSError:
         continue
 

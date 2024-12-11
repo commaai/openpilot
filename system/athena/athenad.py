@@ -30,6 +30,7 @@ from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutExce
 import cereal.messaging as messaging
 from cereal import log
 from cereal.services import SERVICE_LIST
+from common.cached_dir import CachedDir
 from openpilot.common.api import Api
 from openpilot.common.file_helpers import CallbackReader
 from openpilot.common.params import Params
@@ -554,7 +555,7 @@ def get_logs_to_send_sorted() -> list[str]:
   # TODO: scan once then use inotify to detect file creation/deletion
   curr_time = int(time.time())
   logs = []
-  for log_entry in os.listdir(Paths.swaglog_root()):
+  for log_entry in CachedDir.listdir(Paths.swaglog_root()):
     log_path = os.path.join(Paths.swaglog_root(), log_entry)
     time_sent = 0
     try:
@@ -640,7 +641,7 @@ def stat_handler(end_event: threading.Event) -> None:
     curr_scan = time.monotonic()
     try:
       if curr_scan - last_scan > 10:
-        stat_filenames = list(filter(lambda name: not name.startswith(tempfile.gettempprefix()), os.listdir(STATS_DIR)))
+        stat_filenames = list(filter(lambda name: not name.startswith(tempfile.gettempprefix()), CachedDir.listdir(STATS_DIR)))
         if len(stat_filenames) > 0:
           stat_path = os.path.join(STATS_DIR, stat_filenames[0])
           with open(stat_path) as f:
