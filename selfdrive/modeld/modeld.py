@@ -3,10 +3,9 @@ import os
 from openpilot.system.hardware import TICI
 ## TODO this is hack
 if TICI:
-  GPU_BACKEND = 'QCOM'
+  os.environ['QCOM'] = '1'
 else:
-  GPU_BACKEND = 'GPU'
-os.environ[GPU_BACKEND] = '1'
+  import onnxruntime as ort
 import time
 import pickle
 import numpy as np
@@ -30,6 +29,11 @@ from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
 from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
+
+
+
+
+
 
 from tinygrad.tensor import Tensor
 from tinygrad.dtype import dtypes
@@ -86,8 +90,12 @@ class ModelState:
     self.output = np.zeros(net_output_size, dtype=np.float32)
     self.parser = Parser()
 
-    with open(MODEL_PKL_PATH, "rb") as f:
-      self.model_run = pickle.load(f)
+    if TICI:
+      with open(MODEL_PKL_PATH, "rb") as f:
+        self.model_run = pickle.load(f)
+    else:
+      self.ort_session = ort.InferenceSession(MODEL_PATH)
+
 
   def slice_outputs(self, model_outputs: np.ndarray) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in self.output_slices.items()}
@@ -117,13 +125,18 @@ class ModelState:
         self.tensor_inputs['input_imgs'] = qcom_tensor_from_opencl_address(input_imgs_cl.mem_address, IMG_INPUT_SHAPE, dtype=dtypes.uint8)
         self.tensor_inputs['big_input_imgs'] = qcom_tensor_from_opencl_address(big_input_imgs_cl.mem_address, IMG_INPUT_SHAPE, dtype=dtypes.uint8)
     else:
-      self.tensor_inputs['input_imgs'] = Tensor(self.frame.buffer_from_cl(input_imgs_cl)).reshape(IMG_INPUT_SHAPE)
-      self.tensor_inputs['big_input_imgs'] = Tensor(self.wide_frame.buffer_from_cl(big_input_imgs_cl)).reshape(IMG_INPUT_SHAPE)
+      self.numpy_inputs['input_imgs'] = self.frame.buffer_from_cl(input_imgs_cl).reshape(IMG_INPUT_SHAPE)
+      self.numpy_inputs['big_input_imgs'] = self.wide_frame.buffer_from_cl(big_input_imgs_cl).reshape(IMG_INPUT_SHAPE)
 
     if prepare_only:
       return None
 
-    self.output = self.model_run(**self.tensor_inputs).numpy().flatten()
+    if TICI:
+      self.output = self.model_run(**self.tensor_inputs).numpy().flatten()
+    else:
+      inputs = {k: v.astype(np.float16 if v.dtype == np.float32 else np.uint8) for k,v in self.numpy_inputs.items()}
+      self.output = self.ort_session.run(None, inputs)[0].flatten().astype(dtype=np.float32)
+
     outputs = self.parser.parse_outputs(self.slice_outputs(self.output))
 
     self.full_features_20Hz[:-1] = self.full_features_20Hz[1:]

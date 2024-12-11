@@ -3,10 +3,9 @@ import os
 from openpilot.system.hardware import TICI
 ## TODO this is hack
 if TICI:
-  GPU_BACKEND = 'QCOM'
+  os.environ['QCOM'] = '1'
 else:
-  GPU_BACKEND = 'GPU'
-os.environ[GPU_BACKEND] = '1'
+  import onnxruntime as ort
 import gc
 import math
 import time
@@ -35,6 +34,7 @@ OUTPUT_SIZE = 84 + FEATURE_LEN
 
 PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
+MODEL_PATH = Path(__file__).parent / 'models/dmonitoring_model.onnx'
 MODEL_PKL_PATH = Path(__file__).parent / 'models/dmonitoring_model_tinygrad.pkl'
 
 class DriverStateResult(ctypes.Structure):
@@ -74,8 +74,11 @@ class ModelState:
     self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
 
 
-    with open(MODEL_PKL_PATH, "rb") as f:
-      self.model_run = pickle.load(f)
+    if TICI:
+      with open(MODEL_PKL_PATH, "rb") as f:
+        self.model_run = pickle.load(f)
+    else:
+      self.ort_session = ort.InferenceSession(MODEL_PATH)
 
   def run(self, buf:VisionBuf, calib:np.ndarray) -> tuple[np.ndarray, float]:
     self.numpy_inputs['calib'][0,:] = calib
@@ -87,7 +90,12 @@ class ModelState:
     buf_data = buf.data.reshape(-1, buf.stride)
     self.numpy_inputs['input_img'][:] = buf_data[v_offset:v_offset+MODEL_HEIGHT, h_offset:h_offset+MODEL_WIDTH].reshape((1, -1))
 
-    output = self.model_run(**self.tensor_inputs).numpy().flatten()
+    if TICI:
+      output = self.model_run(**self.tensor_inputs).numpy().flatten()
+    else:
+      inputs = {k: v.astype(np.float16 if v.dtype == np.float32 else np.uint8) for k,v in self.numpy_inputs.items()}
+      output = self.ort_session.run(None, self.numpy_inputs)[0].flatten().astype(dtype=np.float32)
+    
 
     t2 = time.perf_counter()
     return output, t2 - t1

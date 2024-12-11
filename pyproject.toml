@@ -41,9 +41,9 @@ dependencies = [
   "spidev; platform_system == 'Linux'",
 
   # modeld
-  "llvmlite",
   "onnx >= 1.14.0",
-
+  "onnxruntime >=1.16.3; platform_system == 'Linux' and platform_machine == 'aarch64'",
+  "onnxruntime-gpu >=1.16.3; platform_system == 'Linux' and platform_machine == 'x86_64'",
 
   # logging
   "pyzmq",
