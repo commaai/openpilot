@@ -95,7 +95,7 @@ class ModelState:
         self.model_run = pickle.load(f)
     else:
       options = ort.SessionOptions()
-      options.intra_op_num_threads = 2
+      options.intra_op_num_threads = 4
       options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
       options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
       self.ort_session = ort.InferenceSession(MODEL_PATH,  options, providers=['CPUExecutionProvider'])
@@ -109,6 +109,7 @@ class ModelState:
   def run(self, buf: VisionBuf, wbuf: VisionBuf, transform: np.ndarray, transform_wide: np.ndarray,
                 inputs: dict[str, np.ndarray], prepare_only: bool) -> dict[str, np.ndarray] | None:
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
+    print('He')
     inputs['desire'][0] = 0
     new_desire = np.where(inputs['desire'] - self.prev_desire > .99, inputs['desire'], 0)
     self.prev_desire[:] = inputs['desire']
