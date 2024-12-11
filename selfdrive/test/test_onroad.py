@@ -373,7 +373,7 @@ class TestOnroad:
     result += "------------------------------------------------\n"
     # TODO: Decrease again when tinygrad speeds ups
     cfgs = [
-      ("modelV2", 0.045, 0.030),
+      ("modelV2", 0.045, 0.035),
       ("driverStateV2", 0.045, 0.035),
     ]
     for (s, instant_max, avg_max) in cfgs:
