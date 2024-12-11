@@ -93,7 +93,6 @@ class ModelState:
     if TICI:
       output = self.model_run(**self.tensor_inputs).numpy().flatten()
     else:
-      inputs = {k: v.astype(np.float16 if v.dtype == np.float32 else np.uint8) for k,v in self.numpy_inputs.items()}
       output = self.ort_session.run(None, self.numpy_inputs)[0].flatten().astype(dtype=np.float32)
     
 
