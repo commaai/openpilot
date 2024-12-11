@@ -89,9 +89,6 @@ class ModelState:
         self.model_run = pickle.load(f)
     else:
       options = ort.SessionOptions()
-      #options.intra_op_num_threads = 4
-      #options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
-      options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
       self.ort_session = ort.InferenceSession(MODEL_PATH,  options, providers=['CPUExecutionProvider'])
 
   def slice_outputs(self, model_outputs: np.ndarray) -> dict[str, np.ndarray]:

@@ -92,9 +92,6 @@ class ModelState:
       output = self.model_run(**self.tensor_inputs).numpy().flatten()
     else:
       options = ort.SessionOptions()
-      options.intra_op_num_threads = 2
-      options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
-      options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
       self.ort_session = ort.InferenceSession(MODEL_PATH,  options, providers=['CPUExecutionProvider'])
 
     t2 = time.perf_counter()
