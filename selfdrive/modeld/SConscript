@@ -56,7 +56,7 @@ pythonpath_string = 'PYTHONPATH="${PYTHONPATH}:' + env.Dir("#tinygrad_repo").abs
 if arch == 'larch64':
   device_string = 'QCOM=1'
 elif arch == 'Darwin' or arch == 'aarch64':
-  device_string = 'CLANG=1 IMAGE=0'
+  device_string = 'LLVM=1 IMAGE=0'
 else:
   device_string = 'GPU=1'
 
