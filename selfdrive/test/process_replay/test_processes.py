@@ -16,6 +16,8 @@ from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, PROC
 from openpilot.tools.lib.filereader import FileReader
 from openpilot.tools.lib.logreader import LogReader, save_log
 
+IS_AZURE_TOKEN_DEFINED = os.getenv("AZURE_TOKEN")
+
 source_segments = [
   ("BODY", "937ccb7243511b65|2022-05-24--16-03-09--1"),        # COMMA.COMMA_BODY
   ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.HYUNDAI_SONATA
@@ -67,6 +69,28 @@ REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
 EXCLUDED_PROCS = {"modeld", "dmonitoringmodeld"}
 
 
+def preserve_only_specified_files_from_ref_commit(*commits_to_keep):
+  """Keep only files in fakedata that contain any of the specified commit hashes."""
+  removed = 0
+  for f in os.listdir(FAKEDATA):
+    if not any(commit in f for commit in commits_to_keep):
+      os.remove(os.path.join(FAKEDATA, f))
+      removed += 1
+  if removed > 0:
+    print(f"Removed {removed} old files from {FAKEDATA}")
+
+
+def handle_output_file(cur_log_fn, local):
+  """Handle the output file based on whether we're using remote or local storage."""
+  assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
+
+  if local:
+    os.system(f"git add '{os.path.realpath(cur_log_fn)}'")
+  else:
+    upload_file(cur_log_fn, os.path.basename(cur_log_fn))
+    os.remove(cur_log_fn)
+
+
 def run_test_process(data):
   segment, cfg, args, cur_log_fn, ref_log_path, lr_dat = data
   res = None
@@ -77,10 +101,9 @@ def run_test_process(data):
     save_log(cur_log_fn, log_msgs)
 
   if args.update_refs or args.upload_only:
-    print(f'Uploading: {os.path.basename(cur_log_fn)}')
-    assert os.path.exists(cur_log_fn), f"Cannot find log to upload: {cur_log_fn}"
-    upload_file(cur_log_fn, os.path.basename(cur_log_fn))
-    os.remove(cur_log_fn)
+    print(f'Processing: {os.path.basename(cur_log_fn)}')
+    handle_output_file(cur_log_fn, args.local)
+
   return (segment, cfg.proc_name, res)
 
 
@@ -119,6 +142,27 @@ def test_process(cfg, lr, segment, ref_log_path, new_log_path, ignore_fields=Non
     return str(e), log_msgs
 
 
+def finalize_git_updates(cur_commit, ref_commit_fn):
+  """Finalize git updates and create commit."""
+  try:
+    # Add all new files first
+    os.system(f"git add {os.path.realpath(ref_commit_fn)}")
+    os.system(f"git add {os.path.realpath(FAKEDATA)}/*.zst")
+
+    # Clean up old files - keep only new ref files since they're becoming the reference
+    preserve_only_specified_files_from_ref_commit(cur_commit)
+
+    # Add the deletions to git
+    os.system(f"git add -u {os.path.realpath(FAKEDATA)}")
+
+    # Create the commit
+    commit_msg = f"test_processes: update ref logs to {cur_commit[:7]}"
+    os.system(f'git commit -m "{commit_msg}"')
+    print("Successfully committed reference log updates")
+  except Exception as e:
+    print(f"Failed to commit changes: {e}")
+
+
 if __name__ == "__main__":
   all_cars = {car for car, _ in segments}
   all_procs = {cfg.proc_name for cfg in CONFIGS if cfg.proc_name not in EXCLUDED_PROCS}
@@ -142,6 +186,8 @@ if __name__ == "__main__":
                       help="Updates reference logs using current commit")
   parser.add_argument("--upload-only", action="store_true",
                       help="Skips testing processes and uploads logs from previous test run")
+  parser.add_argument("--local", action="store_true",
+                      help="Use  local git/ storage instead of remote (Azure for Comma)")
   parser.add_argument("-j", "--jobs", type=int, default=max(cpu_count - 2, 1),
                       help="Max amount of parallel jobs")
   args = parser.parse_args()
@@ -167,6 +213,16 @@ if __name__ == "__main__":
   cur_commit = get_commit()
   if not cur_commit:
     raise Exception("Couldn't get current commit")
+
+  # Could be set as default in args, but wanted to be more explicit on the flow.
+  if upload and not args.local and not IS_AZURE_TOKEN_DEFINED:
+    print("***** Warning: local/git run was used by default since AZURE_TOKEN was NOT found on the env variables! *****")
+    args.local = True
+
+  # Clean up old files before starting
+  if upload and args.local:
+    print("***** Cleaning up old fakedata for local/git tracked refs *****")
+    preserve_only_specified_files_from_ref_commit(cur_commit, ref_commit)
 
   print(f"***** testing against commit {ref_commit} *****")
 
@@ -233,5 +289,9 @@ if __name__ == "__main__":
     with open(REF_COMMIT_FN, "w") as f:
       f.write(cur_commit)
     print(f"\n\nUpdated reference logs for commit: {cur_commit}")
+
+    # Only do git operations if we're in local mode
+    if upload and args.local:
+      finalize_git_updates(cur_commit, REF_COMMIT_FN)
 
   sys.exit(int(failed))
