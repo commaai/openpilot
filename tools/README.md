@@ -24,16 +24,9 @@ git clone --recurse-submodules https://github.com/commaai/openpilot.git
 
 **2. Run the setup script**
 
-Ubuntu 24.04:
 ``` bash
 cd openpilot
-tools/ubuntu_setup.sh
-```
-
-macOS:
-``` bash
-cd openpilot
-tools/mac_setup.sh
+tools/op.sh setup
 ```
 
 **3. Git LFS**
