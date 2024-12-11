@@ -25,9 +25,10 @@ class Camerad:
 
     self.cameras = []
     for c in CAMERAS:
+      print(f"opening {c.msg_name} at {c.cam_id}")
       cam = Camera(c.msg_name, c.stream_type, c.cam_id)
       self.cameras.append(cam)
-      self.vipc_server.create_buffers(c.stream_type, 20, False, cam.W, cam.H)
+      self.vipc_server.create_buffers(c.stream_type, 20, cam.W, cam.H)
 
     self.vipc_server.start_listener()
 
