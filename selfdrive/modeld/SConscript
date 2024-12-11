@@ -52,13 +52,21 @@ lenv.Command(fn + "_metadata.pkl", [fn + ".onnx"] + tinygrad_files, cmd)
 
 # Compile tinygrad model
 # TODO this is all super hacky
+import subprocess
+
+try:
+  subprocess.check_output('nvidia-smi')
+  nvid = True
+except Exception: # this command not being found can raise quite a few different errors depending on the configuration
+  nvid = False
+
 pythonpath_string = 'PYTHONPATH="${PYTHONPATH}:' + env.Dir("#tinygrad_repo").abspath + '"'
 if arch == 'larch64':
   device_string = 'QCOM=1'
-elif arch == 'Darwin' or arch == 'aarch64':
-  device_string = 'LLVM=1 IMAGE=0'
-else:
+elif nvid:
   device_string = 'GPU=1'
+else:
+  device_string = 'CLANG=1 IMAGE=0'
 
 for model_name in ['supercombo', 'dmonitoring_model']:
   fn = File(f"models/{model_name}").abspath
