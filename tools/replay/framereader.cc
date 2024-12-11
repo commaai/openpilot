@@ -178,6 +178,7 @@ bool VideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
       }
     }
     avio_seek(reader->input_ctx->pb, reader->packets_info[from_idx].pos, SEEK_SET);
+    avcodec_flush_buffers(decoder_ctx);
   }
   reader->prev_idx = idx;
 
