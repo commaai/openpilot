@@ -28,10 +28,8 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   QObject::connect(adbToggle, &ParamControl::toggleFlipped, [=](bool state) {
     if (state) {
       QProcess::startDetached("sh", {"-c", "setprop service.adb.tcp.port 5555 && sudo systemctl start adbd"});
-      util::run_shell_command("setprop service.adb.tcp.port 5555 && start adbd");
     } else {
       QProcess::startDetached("sh", {"-c", "sudo systemctl stop adbd"});
-      util::run_shell_command("stop adbd && setprop service.adb.tcp.port 5555");
     }
   });
   addItem(adbToggle);
