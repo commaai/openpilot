@@ -12,8 +12,8 @@ from openpilot.common.realtime import Ratekeeper
 DUAL_CAM = os.getenv("DUAL_CAMERA")
 CameraType = namedtuple("CameraType", ["msg_name", "stream_type", "cam_id"])
 CAMERAS = [
-  CameraType("roadCameraState", VisionStreamType.VISION_STREAM_ROAD, os.getenv("CAMERA_ROAD_ID", "0")),
-  CameraType("driverCameraState", VisionStreamType.VISION_STREAM_DRIVER, os.getenv("CAMERA_DRIVER_ID", "1")),
+  CameraType("roadCameraState", VisionStreamType.VISION_STREAM_ROAD, os.getenv("CAMERA_ROAD_ID", "/dev/video0")),
+  CameraType("driverCameraState", VisionStreamType.VISION_STREAM_DRIVER, os.getenv("CAMERA_DRIVER_ID", "/dev/video1")),
 ]
 if DUAL_CAM:
   CAMERAS.append(CameraType("wideRoadCameraState", VisionStreamType.VISION_STREAM_WIDE_ROAD, DUAL_CAM))
