@@ -552,7 +552,6 @@ def takeSnapshot() -> str | dict[str, str] | None:
 
 
 def get_logs_to_send_sorted() -> list[str]:
-  # TODO: scan once then use inotify to detect file creation/deletion
   curr_time = int(time.time())
   logs = []
   for log_entry in CachedDir.listdir(Paths.swaglog_root()):
