@@ -215,12 +215,12 @@ if __name__ == "__main__":
     raise Exception("Couldn't get current commit")
 
   # Could be set as default in args, but wanted to be more explicit on the flow.
-  if not args.local and not IS_AZURE_TOKEN_DEFINED:
+  if upload and not args.local and not IS_AZURE_TOKEN_DEFINED:
     print("***** Warning: local/git run was used by default since AZURE_TOKEN was NOT found on the env variables! *****")
     args.local = True
 
   # Clean up old files before starting
-  if args.local:
+  if upload and args.local:
     print("***** Cleaning up old fakedata for local/git tracked refs *****")
     preserve_only_specified_files_from_ref_commit(cur_commit, ref_commit)
 
@@ -291,7 +291,7 @@ if __name__ == "__main__":
     print(f"\n\nUpdated reference logs for commit: {cur_commit}")
 
     # Only do git operations if we're in local mode
-    if args.local:
+    if upload and args.local:
       finalize_git_updates(cur_commit, REF_COMMIT_FN)
 
   sys.exit(int(failed))
