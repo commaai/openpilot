@@ -216,12 +216,12 @@ if __name__ == "__main__":
 
   # Could be set as default in args, but wanted to be more explicit on the flow.
   if not args.local and not IS_AZURE_TOKEN_DEFINED:
-    print(f"***** Warning: local/git run was used by default since AZURE_TOKEN was NOT found on the env variables! *****")
+    print("***** Warning: local/git run was used by default since AZURE_TOKEN was NOT found on the env variables! *****")
     args.local = True
 
   # Clean up old files before starting
   if args.local:
-    print(f"***** Cleaning up old fakedata for local/git tracked refs *****")
+    print("***** Cleaning up old fakedata for local/git tracked refs *****")
     preserve_only_specified_files_from_ref_commit(cur_commit, ref_commit)
 
   print(f"***** testing against commit {ref_commit} *****")
