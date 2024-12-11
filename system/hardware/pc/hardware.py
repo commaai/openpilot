@@ -1,7 +1,7 @@
 import random
 
 from cereal import log
-from openpilot.system.hardware.base import HardwareBase, ThermalConfig
+from openpilot.system.hardware.base import HardwareBase
 
 NetworkType = log.DeviceState.NetworkType
 NetworkStrength = log.DeviceState.NetworkStrength
@@ -52,9 +52,6 @@ class Pc(HardwareBase):
 
   def shutdown(self):
     print("SHUTDOWN!")
-
-  def get_thermal_config(self):
-    return ThermalConfig(cpu=((None,), 1), gpu=((None,), 1), mem=(None, 1), pmic=((None,), 1), intake=(None, 1), exhaust=(None, 1))
 
   def set_screen_brightness(self, percentage):
     pass

@@ -14,7 +14,7 @@ from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.pandad import can_list_to_can_capnp
 from openpilot.system.hardware import TICI
-from openpilot.selfdrive.test.helpers import phone_only, with_processes
+from openpilot.selfdrive.test.helpers import with_processes
 
 
 @retry(attempts=3)
@@ -72,7 +72,6 @@ class TestBoarddLoopback:
     os.environ['STARTED'] = '1'
     os.environ['BOARDD_LOOPBACK'] = '1'
 
-  @phone_only
   @with_processes(['pandad'])
   def test_loopback(self):
     num_pandas = 2 if TICI and "SINGLE_PANDA" not in os.environ else 1
