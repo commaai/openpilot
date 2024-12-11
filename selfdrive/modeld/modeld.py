@@ -3,6 +3,8 @@ import os
 from openpilot.system.hardware import TICI
 ## TODO this is hack
 if TICI:
+  from tinygrad.tensor import Tensor
+  from tinygrad.dtype import dtypes
   os.environ['QCOM'] = '1'
 else:
   import onnxruntime as ort
@@ -29,14 +31,6 @@ from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
 from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
-
-
-
-
-
-
-from tinygrad.tensor import Tensor
-from tinygrad.dtype import dtypes
 
 PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
@@ -221,7 +215,7 @@ def main(demo=False):
   cloudlog.info("modeld got CarParams: %s", CP.carName)
 
   # TODO this needs more thought, use .2s extra for now to estimate other delays
-  steer_delay =  .2
+  steer_delay = CP.steerActuatorDelay + .2
 
   DH = DesireHelper()
 
