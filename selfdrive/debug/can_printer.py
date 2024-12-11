@@ -28,7 +28,7 @@ def can_printer(bus, max_msg, addr, ascii_decode):
         x = binascii.hexlify(msgs[_addr][-1]).decode('ascii')
         freq = len(msgs[_addr]) / (time.monotonic() - start)
         if max_msg is None or _addr < max_msg:
-          dd += "%04X(%4d)(%6d)(%3dHz) %s %s\n" % (_addr, _addr, len(msgs[_addr]), freq, x.ljust(20), a)
+          dd += f"{_addr:04X}({_addr:4d})({len(msgs[_addr]):6d})({freq:3}dHz) {x.ljust(20)} {a}\n"
       print(dd)
       lp = time.monotonic()
 

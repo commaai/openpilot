@@ -1,5 +1,7 @@
 #include "tools/replay/seg_mgr.h"
 
+#include <algorithm>
+
 SegmentManager::~SegmentManager() {
   {
     std::unique_lock lock(mutex_);

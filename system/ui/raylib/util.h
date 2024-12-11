@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "third_party/raylib/include/raylib.h"
+#include "system/ui/raylib/raylib.h"
 
 enum class FontWeight {
   Normal,

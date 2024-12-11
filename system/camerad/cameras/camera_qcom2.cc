@@ -69,9 +69,9 @@ public:
 };
 
 void CameraState::init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx) {
-  if (!camera.enabled) return;
-
   camera.camera_open(v, device_id, ctx);
+
+  if (!camera.enabled) return;
 
   fl_pix = camera.cc.focal_len / camera.sensor->pixel_size_mm;
   set_exposure_rect();
