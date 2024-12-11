@@ -2,6 +2,7 @@ import os
 
 dir_cache: dict[str, 'CachedDir'] = {}
 
+
 class CachedDir:
   def __init__(self, path: str, listing: list[str], mtime: float):
     self.path = path

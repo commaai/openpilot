@@ -13,8 +13,8 @@ from collections.abc import Iterator
 
 from cereal import log
 import cereal.messaging as messaging
-from common.cached_dir import CachedDir
 from openpilot.common.api import Api
+from openpilot.common.cached_dir import CachedDir
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
 from openpilot.system.hardware.hw import Paths
