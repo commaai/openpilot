@@ -51,12 +51,12 @@ int do_sync_control(int fd, uint32_t id, void *handle, uint32_t size) {
   };
   int ret = HANDLE_EINTR(ioctl(fd, CAM_PRIVATE_IOCTL_CMD, &arg));
 
-  int32_t ioctl_result = (int32_t)arg.result;
+  int32_t ioctl_result = static_cast<int32_t>(arg.result);
   if (ret < 0) {
     LOGE("CAM_SYNC error: id %u - errno %d - ret %d - ioctl_result %d", id, errno, ret, ioctl_result);
     return ret;
   }
-  if (ioctl_result < 0) {
+  if (ioctl_result != 0) {
     LOGE("CAM_SYNC error: id %u - errno %d - ret %d - ioctl_result %d", id, errno, ret, ioctl_result);
     return ioctl_result;
   }
@@ -675,18 +675,21 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
   uint64_t request_id = request_ids[i];
 
   if (sync_objs[i]) {
-    // wait
+    // SOF has come in, wait until readout is complete
     struct cam_sync_wait sync_wait = {0};
     sync_wait.sync_obj = sync_objs[i];
-    sync_wait.timeout_ms = 50; // max dt tolerance, typical should be 23
+    sync_wait.timeout_ms = 100;
     ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
     if (ret != 0) {
-      LOGE("failed to wait for sync: %d %d", ret, sync_wait.sync_obj);
       // TODO: handle frame drop cleanly
+      // when this happens, it messes up future frames
+      LOGE("failed to wait for sync: %d %d", ret, sync_wait.sync_obj);
     }
     buf.frame_metadata[i].timestamp_end_of_isp = (uint64_t)nanos_since_boot();
     buf.frame_metadata[i].timestamp_eof = buf.frame_metadata[i].timestamp_sof + sensor->readout_time_ns;
-    if (dp) buf.queue(i);
+    if (dp) {
+      buf.queue(i);
+    }
 
     // destroy old output fence
     for (auto so : {sync_objs, sync_objs_bps_out}) {
