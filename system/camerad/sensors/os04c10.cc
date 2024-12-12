@@ -30,7 +30,7 @@ OS04C10::OS04C10() {
   frame_width = 2688;
   frame_height = 1520; // * 2 + hdr_offset;
   frame_stride = (frame_width * 12 / 8); // no alignment
-  out_scale = 2
+  out_scale = 2;
 
   extra_height = 0;
   frame_offset = 0;
