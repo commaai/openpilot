@@ -45,13 +45,14 @@ OX03C10::OX03C10() {
 
   readout_time_ns = 14697000;
 
+  ev_scale = 6.67;
   dc_gain_factor = 7.32;
   dc_gain_min_weight = 1;  // always on is fine
   dc_gain_max_weight = 1;
   dc_gain_on_grey = 0.9;
   dc_gain_off_grey = 1.0;
   exposure_time_min = 2;  // 1x
-  exposure_time_max = 2016;
+  exposure_time_max = 1270;
   analog_gain_min_idx = 0x0;
   analog_gain_rec_idx = 0x0;  // 1x
   analog_gain_max_idx = 0x36;
@@ -100,15 +101,13 @@ OX03C10::OX03C10() {
 std::vector<i2c_random_wr_payload> OX03C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {
  // t_HCG&t_LCG + t_VS on LPD, t_SPD on SPD
   uint32_t hcg_time = exposure_time;
-  uint32_t lcg_time = hcg_time;
-  uint32_t spd_time = std::min(std::max((uint32_t)exposure_time, (exposure_time_max + VS_TIME_MAX_OX03C10) / 3), exposure_time_max + VS_TIME_MAX_OX03C10);
-  uint32_t vs_time = std::min(std::max((uint32_t)exposure_time / 40, VS_TIME_MIN_OX03C10), VS_TIME_MAX_OX03C10);
+  uint32_t spd_time = (exposure_time_max + VS_TIME_MAX_OX03C10) * 12 / 50; // 12ms
+  uint32_t vs_time = VS_TIME_MAX_OX03C10;
 
   uint32_t real_gain = ox03c10_analog_gains_reg[new_exp_g];
 
   return {
     {0x3501, hcg_time>>8}, {0x3502, hcg_time&0xFF},
-    {0x3581, lcg_time>>8}, {0x3582, lcg_time&0xFF},
     {0x3541, spd_time>>8}, {0x3542, spd_time&0xFF},
     {0x35c2, vs_time&0xFF},
 
