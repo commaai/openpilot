@@ -76,7 +76,11 @@ class ModelState:
       with open(MODEL_PKL_PATH, "rb") as f:
         self.model_run = pickle.load(f)
     else:
-      self.ort_session = ort.InferenceSession(MODEL_PATH)
+      options = ort.SessionOptions()
+      options.intra_op_num_threads = 4
+      options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
+      options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
+      self.ort_session = ort.InferenceSession(MODEL_PATH,  options, providers=['CPUExecutionProvider'])
 
   def run(self, buf:VisionBuf, calib:np.ndarray) -> tuple[np.ndarray, float]:
     self.numpy_inputs['calib'][0,:] = calib
@@ -91,8 +95,7 @@ class ModelState:
     if TICI:
       output = self.model_run(**self.tensor_inputs).numpy().flatten()
     else:
-      options = ort.SessionOptions()
-      self.ort_session = ort.InferenceSession(MODEL_PATH,  options, providers=['CPUExecutionProvider'])
+      output = self.ort_session.run(None, self.numpy_inputs)[0].flatten().astype(dtype=np.float32)
 
     t2 = time.perf_counter()
     return output, t2 - t1

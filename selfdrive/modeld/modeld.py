@@ -74,7 +74,6 @@ class ModelState:
       'prev_desired_curv': np.zeros((1,(ModelConstants.HISTORY_BUFFER_LEN+1), ModelConstants.PREV_DESIRED_CURV_LEN), dtype=np.float32),
       'features_buffer': np.zeros((1, ModelConstants.HISTORY_BUFFER_LEN,  ModelConstants.FEATURE_LEN), dtype=np.float32),
     }
-    self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
 
     with open(METADATA_PATH, 'rb') as f:
       model_metadata = pickle.load(f)
@@ -85,10 +84,14 @@ class ModelState:
     self.parser = Parser()
 
     if TICI:
+      self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
       with open(MODEL_PKL_PATH, "rb") as f:
         self.model_run = pickle.load(f)
     else:
       options = ort.SessionOptions()
+      options.intra_op_num_threads = 4
+      options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
+      options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
       self.ort_session = ort.InferenceSession(MODEL_PATH,  options, providers=['CPUExecutionProvider'])
 
   def slice_outputs(self, model_outputs: np.ndarray) -> dict[str, np.ndarray]:
