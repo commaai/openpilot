@@ -24,7 +24,7 @@ sudo apt install pocl-opencl-icd
 USE_WEBCAM=1 system/manager/manager.py
 ```
 - Start the car, then the UI should show the road webcam's view (TODO: should it!? This needs fixing then)
-- Adjust and secure the webcams (you can run tools/webcam/front_mount_helper.py to help mount the driver camera) (TODO: restore this file)
+- Adjust and secure the webcams.
 - Finish calibration and engage!
 
 ## Specify Cameras
