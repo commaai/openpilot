@@ -55,6 +55,7 @@ MAX_RETRY_COUNT = 30  # Try for at most 5 minutes if upload fails immediately
 MAX_AGE = 31 * 24 * 3600  # seconds
 WS_FRAME_SIZE = 4096
 DEVICE_STATE_UPDATE_INTERVAL = 1.0  # in seconds
+PROGRESS_UPDATE_THRESHOLD = 0.01  # 1% threshold
 
 NetworkType = log.DeviceState.NetworkType
 
@@ -212,7 +213,7 @@ def retry_upload(tid: int, end_event: threading.Event, increase_count: bool = Tr
         break
 
 
-def cb(sm, item, tid, end_event: threading.Event, sz: int, cur: int) -> None:
+def cb(sm, item, end_event: threading.Event, sz: int, cur: int) -> None:
   # Abort transfer if connection changed to metered after starting upload
   # or if athenad is shutting down to re-connect the websocket
   if not item.allow_cellular:
@@ -224,8 +225,10 @@ def cb(sm, item, tid, end_event: threading.Event, sz: int, cur: int) -> None:
   if end_event.is_set():
     raise AbortTransferException
 
-  with cur_upload_items_lock:
-    cur_upload_items[tid] = replace(item, progress=cur / sz if sz else 1)
+  new_progress = cur / sz if sz else 1
+  if abs(new_progress - item.progress) >= PROGRESS_UPDATE_THRESHOLD:
+    with cur_upload_items_lock:
+      item.progress = new_progress
 
 
 def upload_handler(end_event: threading.Event) -> None:
@@ -261,7 +264,7 @@ def upload_handler(end_event: threading.Event) -> None:
 
         cloudlog.event("athena.upload_handler.upload_start", fn=fn, sz=sz, network_type=network_type, metered=metered, retry_count=item.retry_count)
 
-        with _do_upload(item, partial(cb, sm, item, tid, end_event)) as response:
+        with _do_upload(item, partial(cb, sm, item, end_event)) as response:
           if response.status_code not in (200, 201, 401, 403, 412):
             cloudlog.event("athena.upload_handler.retry", status_code=response.status_code, fn=fn, sz=sz, network_type=network_type, metered=metered)
             retry_upload(tid, end_event)
