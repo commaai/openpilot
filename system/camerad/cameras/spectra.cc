@@ -272,16 +272,16 @@ void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_c
 
   // size is driven by all the HW that handles frames,
   // the video encoder has certain alignment requirements in this case
-  stride = VENUS_Y_STRIDE(COLOR_FMT_NV12, sensor->frame_width);
-  y_height = VENUS_Y_SCANLINES(COLOR_FMT_NV12, sensor->frame_height);
-  uv_height = VENUS_UV_SCANLINES(COLOR_FMT_NV12, sensor->frame_height);
+  stride = VENUS_Y_STRIDE(COLOR_FMT_NV12, sensor->frame_width / sensor->out_scale);
+  y_height = VENUS_Y_SCANLINES(COLOR_FMT_NV12, sensor->frame_height / sensor->out_scale);
+  uv_height = VENUS_UV_SCANLINES(COLOR_FMT_NV12, sensor->frame_height / sensor->out_scale);
   uv_offset = stride*y_height;
   yuv_size = uv_offset + stride*uv_height;
   if (!is_raw) {
     uv_offset = ALIGNED_SIZE(uv_offset, 0x1000);
     yuv_size = uv_offset + ALIGNED_SIZE(stride*uv_height, 0x1000);
   }
-  assert(stride == VENUS_UV_STRIDE(COLOR_FMT_NV12, sensor->frame_width));
+  assert(stride == VENUS_UV_STRIDE(COLOR_FMT_NV12, sensor->frame_width / sensor->out_scale));
   assert(y_height/2 == uv_height);
 
   open = true;
@@ -617,14 +617,14 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
       io_cfg[0].mem_handle[0] = buf_handle_yuv[idx];
       io_cfg[0].mem_handle[1] = buf_handle_yuv[idx];
       io_cfg[0].planes[0] = (struct cam_plane_cfg){
-        .width = sensor->frame_width,
-        .height = sensor->frame_height,
+        .width = sensor->frame_width / sensor->out_scale,
+        .height = sensor->frame_height / sensor->out_scale,
         .plane_stride = stride,
         .slice_height = y_height,
       };
       io_cfg[0].planes[1] = (struct cam_plane_cfg){
-        .width = sensor->frame_width,
-        .height = sensor->frame_height/2,
+        .width = sensor->frame_width / sensor->out_scale,
+        .height = sensor->frame_height / sensor->out_scale / 2,
         .plane_stride = stride,
         .slice_height = uv_height,
       };
@@ -822,16 +822,16 @@ void SpectraCamera::configISP() {
     .usage_type = 0x0,
 
     .left_start = 0,
-    .left_stop = sensor->frame_width*2 - 1,
-    .left_width = sensor->frame_width*2,
+    .left_stop = sensor->frame_width - 1,
+    .left_width = sensor->frame_width,
 
     .right_start = 0,
-    .right_stop = sensor->frame_width*2 - 1,
-    .right_width = sensor->frame_width*2,
+    .right_stop = sensor->frame_width - 1,
+    .right_width = sensor->frame_width,
 
     .line_start = sensor->frame_offset,
-    .line_stop = sensor->frame_height*2 + sensor->frame_offset - 1,
-    .height = sensor->frame_height*2 + sensor->frame_offset,
+    .line_stop = sensor->frame_height + sensor->frame_offset - 1,
+    .height = sensor->frame_height + sensor->frame_offset,
 
     .pixel_clk = 0x0,
     .batch_size = 0x0,
@@ -844,8 +844,8 @@ void SpectraCamera::configISP() {
     .data[0] = (struct cam_isp_out_port_info){
       .res_type = CAM_ISP_IFE_OUT_RES_FULL,
       .format = CAM_FORMAT_NV12,
-      .width = sensor->frame_width,
-      .height = sensor->frame_height + sensor->extra_height,
+      .width = sensor->frame_width / sensor->out_scale,
+      .height = sensor->frame_height / sensor->out_scale + sensor->extra_height,
       .comp_grp_id = 0x0, .split_point = 0x0, .secure_mode = 0x0,
     },
   };
@@ -911,14 +911,14 @@ void SpectraCamera::configICP() {
     .num_out_res = 1,
     .in_res = (struct cam_icp_res_info){
       .format = 0x9,  // RAW MIPI
-      .width = sensor->frame_width*2,
-      .height = sensor->frame_height*2,
+      .width = sensor->frame_width,
+      .height = sensor->frame_height,
       .fps = 20,
     },
     .out_res[0] = (struct cam_icp_res_info){
       .format = 0x3,  // YUV420NV12
-      .width = sensor->frame_width,
-      .height = sensor->frame_height,
+      .width = sensor->frame_width / sensor->out_scale,
+      .height = sensor->frame_height / sensor->out_scale,
       .fps = 20,
     },
   };

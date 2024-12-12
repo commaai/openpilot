@@ -23,13 +23,14 @@ const uint32_t os04c10_analog_gains_reg[] = {
 OS04C10::OS04C10() {
   image_sensor = cereal::FrameData::ImageSensor::OS04C10;
   bayer_pattern = CAM_ISP_PATTERN_BAYER_BGBGBG;
-  pixel_size_mm = 0.004;
+  pixel_size_mm = 0.002;
   data_word = false;
 
   // hdr_offset = 64 * 2 + 8; // stagger
-  frame_width = 1344;
-  frame_height = 760; //760 * 2 + hdr_offset;
+  frame_width = 2688;
+  frame_height = 1520; // * 2 + hdr_offset;
   frame_stride = (frame_width * 12 / 8); // no alignment
+  out_scale = 2
 
   extra_height = 0;
   frame_offset = 0;
