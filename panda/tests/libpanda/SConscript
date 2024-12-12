@@ -21,6 +21,18 @@ env = Environment(
 if system == "Darwin":
   env.PrependENVPath('PATH', '/opt/homebrew/bin')
 
+if GetOption('mutation'):
+  env['CC'] = 'clang-17'
+  flags = [
+    '-fprofile-instr-generate',
+    '-fcoverage-mapping',
+    '-fpass-plugin=/usr/lib/mull-ir-frontend-17',
+    '-g',
+    '-grecord-command-line',
+  ]
+  env['CFLAGS'] += flags
+  env['LINKFLAGS'] += flags
+
 if GetOption('ubsan'):
   flags = [
     "-fsanitize=undefined",

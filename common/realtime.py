@@ -48,13 +48,13 @@ class Ratekeeper:
   def __init__(self, rate: float, print_delay_threshold: float | None = 0.0) -> None:
     """Rate in Hz for ratekeeping. print_delay_threshold must be nonnegative."""
     self._interval = 1. / rate
-    self._next_frame_time = time.monotonic() + self._interval
     self._print_delay_threshold = print_delay_threshold
     self._frame = 0
     self._remaining = 0.0
     self._process_name = getproctitle()
     self._dts = deque([self._interval], maxlen=100)
-    self._last_monitor_time = time.monotonic()
+    self._last_monitor_time = -1.
+    self._next_frame_time = -1.
 
   @property
   def frame(self) -> int:
@@ -79,6 +79,10 @@ class Ratekeeper:
 
   # Monitors the cumulative lag, but does not enforce a rate
   def monitor_time(self) -> bool:
+    if self._last_monitor_time < 0:
+      self._next_frame_time = time.monotonic() + self._interval
+      self._last_monitor_time = time.monotonic()
+
     prev = self._last_monitor_time
     self._last_monitor_time = time.monotonic()
     self._dts.append(self._last_monitor_time - prev)

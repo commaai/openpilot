@@ -40,7 +40,7 @@ kj::Array<capnp::word> logger_build_init_data() {
   init.setOsVersion(util::read_file("/VERSION"));
 
   // log params
-  auto params = Params(util::getenv("PARAMS_COPY_PATH", ""));
+  Params params(util::getenv("PARAMS_COPY_PATH", ""));
   std::map<std::string, std::string> params_map = params.readAll();
 
   init.setGitCommit(params_map["GitCommit"]);

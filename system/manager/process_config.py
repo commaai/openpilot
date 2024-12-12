@@ -1,4 +1,5 @@
 import os
+import operator
 
 from cereal import car
 from openpilot.common.params import Params
@@ -16,30 +17,48 @@ def notcar(started: bool, params: Params, CP: car.CarParams) -> bool:
 def iscar(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started and not CP.notCar
 
-def logging(started, params, CP: car.CarParams) -> bool:
+def logging(started: bool, params: Params, CP: car.CarParams) -> bool:
   run = (not CP.notCar) or not params.get_bool("DisableLogging")
   return started and run
 
 def ublox_available() -> bool:
   return os.path.exists('/dev/ttyHS0') and not os.path.exists('/persist/comma/use-quectel-gps')
 
-def ublox(started, params, CP: car.CarParams) -> bool:
+def ublox(started: bool, params: Params, CP: car.CarParams) -> bool:
   use_ublox = ublox_available()
   if use_ublox != params.get_bool("UbloxAvailable"):
     params.put_bool("UbloxAvailable", use_ublox)
   return started and use_ublox
 
-def qcomgps(started, params, CP: car.CarParams) -> bool:
+def joystick(started: bool, params: Params, CP: car.CarParams) -> bool:
+  return started and params.get_bool("JoystickDebugMode")
+
+def not_joystick(started: bool, params: Params, CP: car.CarParams) -> bool:
+  return started and not params.get_bool("JoystickDebugMode")
+
+def long_maneuver(started: bool, params: Params, CP: car.CarParams) -> bool:
+  return started and params.get_bool("LongitudinalManeuverMode")
+
+def not_long_maneuver(started: bool, params: Params, CP: car.CarParams) -> bool:
+  return started and not params.get_bool("LongitudinalManeuverMode")
+
+def qcomgps(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started and not ublox_available()
 
-def always_run(started, params, CP: car.CarParams) -> bool:
+def always_run(started: bool, params: Params, CP: car.CarParams) -> bool:
   return True
 
-def only_onroad(started: bool, params, CP: car.CarParams) -> bool:
+def only_onroad(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started
 
-def only_offroad(started, params, CP: car.CarParams) -> bool:
+def only_offroad(started: bool, params: Params, CP: car.CarParams) -> bool:
   return not started
+
+def or_(*fns):
+  return lambda *args: operator.or_(*(fn(*args) for fn in fns))
+
+def and_(*fns):
+  return lambda *args: operator.and_(*(fn(*args) for fn in fns))
 
 procs = [
   DaemonProcess("manage_athenad", "system.athena.manage_athenad", "AthenadPid"),
@@ -51,7 +70,7 @@ procs = [
   PythonProcess("micd", "system.micd", iscar),
   PythonProcess("timed", "system.timed", always_run, enabled=not PC),
 
-  PythonProcess("dmonitoringmodeld", "selfdrive.modeld.dmonitoringmodeld", driverview, enabled=(not PC or WEBCAM)),
+  NativeProcess("dmonitoringmodeld", "selfdrive/modeld", ["./dmonitoringmodeld"], driverview, enabled=(not PC or WEBCAM)),
   NativeProcess("encoderd", "system/loggerd", ["./encoderd"], only_onroad),
   NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], notcar),
   NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging),
@@ -59,22 +78,23 @@ procs = [
   NativeProcess("sensord", "system/sensord", ["./sensord"], only_onroad, enabled=not PC),
   NativeProcess("ui", "selfdrive/ui", ["./ui"], always_run, watchdog_max_dt=(5 if not PC else None)),
   PythonProcess("soundd", "selfdrive.ui.soundd", only_onroad),
-  NativeProcess("locationd", "selfdrive/locationd", ["./locationd"], only_onroad),
+  PythonProcess("locationd", "selfdrive.locationd.locationd", only_onroad),
   NativeProcess("pandad", "selfdrive/pandad", ["./pandad"], always_run, enabled=False),
   PythonProcess("calibrationd", "selfdrive.locationd.calibrationd", only_onroad),
   PythonProcess("torqued", "selfdrive.locationd.torqued", only_onroad),
-  PythonProcess("controlsd", "selfdrive.controls.controlsd", only_onroad),
+  PythonProcess("controlsd", "selfdrive.controls.controlsd", and_(not_joystick, iscar)),
+  PythonProcess("joystickd", "tools.joystick.joystickd", or_(joystick, notcar)),
+  PythonProcess("selfdrived", "selfdrive.selfdrived.selfdrived", only_onroad),
   PythonProcess("card", "selfdrive.car.card", only_onroad),
   PythonProcess("deleter", "system.loggerd.deleter", always_run),
   PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", driverview, enabled=(not PC or WEBCAM)),
   PythonProcess("qcomgpsd", "system.qcomgpsd.qcomgpsd", qcomgps, enabled=TICI),
-  #PythonProcess("ugpsd", "system.ugpsd", only_onroad, enabled=TICI),
-  PythonProcess("navd", "selfdrive.navd.navd", only_onroad),
   PythonProcess("pandad", "selfdrive.pandad.pandad", always_run),
   PythonProcess("paramsd", "selfdrive.locationd.paramsd", only_onroad),
   NativeProcess("ubloxd", "system/ubloxd", ["./ubloxd"], ublox, enabled=TICI),
   PythonProcess("pigeond", "system.ubloxd.pigeond", ublox, enabled=TICI),
-  PythonProcess("plannerd", "selfdrive.controls.plannerd", only_onroad),
+  PythonProcess("plannerd", "selfdrive.controls.plannerd", not_long_maneuver),
+  PythonProcess("maneuversd", "tools.longitudinal_maneuvers.maneuversd", long_maneuver),
   PythonProcess("radard", "selfdrive.controls.radard", only_onroad),
   PythonProcess("hardwared", "system.hardware.hardwared", always_run),
   PythonProcess("tombstoned", "system.tombstoned", always_run, enabled=not PC),
@@ -86,6 +106,7 @@ procs = [
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar),
   PythonProcess("webrtcd", "system.webrtc.webrtcd", notcar),
   PythonProcess("webjoystick", "tools.bodyteleop.web", notcar),
+  PythonProcess("joystick", "tools.joystick.joystick_control", and_(joystick, iscar)),
 ]
 
 managed_processes = {p.name: p for p in procs}

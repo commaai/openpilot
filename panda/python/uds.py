@@ -301,7 +301,7 @@ def get_dtc_status_names(status):
   return result
 
 class CanClient():
-  def __init__(self, can_send: Callable[[int, bytes, int], None], can_recv: Callable[[], list[tuple[int, int, bytes, int]]],
+  def __init__(self, can_send: Callable[[int, bytes, int], None], can_recv: Callable[[], list[tuple[int, bytes, int]]],
                tx_addr: int, rx_addr: int, bus: int, sub_addr: int | None = None, debug: bool = False):
     self.tx = can_send
     self.rx = can_recv
@@ -339,7 +339,7 @@ class CanClient():
           print(f"CAN-RX: drain - {len(msgs)}")
         self.rx_buff.clear()
       else:
-        for rx_addr, _, rx_data, rx_bus in msgs or []:
+        for rx_addr, rx_data, rx_bus in msgs or []:
           if self._recv_filter(rx_bus, rx_addr) and len(rx_data) > 0:
             rx_data = bytes(rx_data)  # convert bytearray to bytes
 
@@ -820,7 +820,7 @@ class UdsClient():
     data += struct.pack('!I', memory_size)[4 - memory_size_bytes:]
 
     data += data_record
-    self._uds_request(SERVICE_TYPE.WRITE_MEMORY_BY_ADDRESS, subfunction=0x00, data=data)
+    self._uds_request(SERVICE_TYPE.WRITE_MEMORY_BY_ADDRESS, subfunction=None, data=data)
 
   def clear_diagnostic_information(self, dtc_group_type: DTC_GROUP_TYPE):
     data = struct.pack('!I', dtc_group_type)[1:]  # 3 bytes

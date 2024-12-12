@@ -16,7 +16,7 @@ from openpilot.common.dict_helpers import strip_deprecated_keys
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_HW
-from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
+from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.system.hardware import HARDWARE, TICI, AGNOS
 from openpilot.system.loggerd.config import get_available_percent
 from openpilot.system.statsd import statlog
@@ -51,39 +51,6 @@ OFFROAD_DANGER_TEMP = 75
 
 prev_offroad_states: dict[str, tuple[bool, str | None]] = {}
 
-tz_by_type: dict[str, int] | None = None
-def populate_tz_by_type():
-  global tz_by_type
-  tz_by_type = {}
-  for n in os.listdir("/sys/devices/virtual/thermal"):
-    if not n.startswith("thermal_zone"):
-      continue
-    with open(os.path.join("/sys/devices/virtual/thermal", n, "type")) as f:
-      tz_by_type[f.read().strip()] = int(n.removeprefix("thermal_zone"))
-
-def read_tz(x):
-  if x is None:
-    return 0
-
-  if isinstance(x, str):
-    if tz_by_type is None:
-      populate_tz_by_type()
-    x = tz_by_type[x]
-
-  try:
-    with open(f"/sys/devices/virtual/thermal/thermal_zone{x}/temp") as f:
-      return int(f.read())
-  except FileNotFoundError:
-    return 0
-
-
-def read_thermal(thermal_config):
-  dat = messaging.new_message('deviceState', valid=True)
-  dat.deviceState.cpuTempC = [read_tz(z) / thermal_config.cpu[1] for z in thermal_config.cpu[0]]
-  dat.deviceState.gpuTempC = [read_tz(z) / thermal_config.gpu[1] for z in thermal_config.gpu[0]]
-  dat.deviceState.memoryTempC = read_tz(thermal_config.mem[0]) / thermal_config.mem[1]
-  dat.deviceState.pmicTempC = [read_tz(z) / thermal_config.pmic[1] for z in thermal_config.pmic[0]]
-  return dat
 
 
 def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_text: str | None=None):
@@ -99,7 +66,6 @@ def hw_state_thread(end_event, hw_queue):
   prev_hw_state = None
 
   modem_version = None
-  modem_nv = None
   modem_configured = False
   modem_restarted = False
   modem_missing_count = 0
@@ -114,12 +80,11 @@ def hw_state_thread(end_event, hw_queue):
           modem_temps = prev_hw_state.modem_temps
 
         # Log modem version once
-        if AGNOS and ((modem_version is None) or (modem_nv is None)):
+        if AGNOS and (modem_version is None):
           modem_version = HARDWARE.get_modem_version()
-          modem_nv = HARDWARE.get_modem_nv()
 
-          if (modem_version is not None) and (modem_nv is not None):
-            cloudlog.event("modem version", version=modem_version, nv=modem_nv)
+          if modem_version is not None:
+            cloudlog.event("modem version", version=modem_version)
           else:
             if not modem_restarted:
               # TODO: we may be able to remove this with a MM update
@@ -148,8 +113,7 @@ def hw_state_thread(end_event, hw_queue):
         except queue.Full:
           pass
 
-        # TODO: remove this once the config is in AGNOS
-        if not modem_configured and len(HARDWARE.get_sim_info().get('sim_id', '')) > 0:
+        if not modem_configured and HARDWARE.get_modem_version() is not None:
           cloudlog.warning("configuring modem")
           HARDWARE.configure_modem()
           modem_configured = True
@@ -164,7 +128,7 @@ def hw_state_thread(end_event, hw_queue):
 
 def hardware_thread(end_event, hw_queue) -> None:
   pm = messaging.PubMaster(['deviceState'])
-  sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "controlsState", "pandaStates"], poll="pandaStates")
+  sm = messaging.SubMaster(["peripheralState", "gpsLocationExternal", "selfdriveState", "pandaStates"], poll="pandaStates")
 
   count = 0
 
@@ -230,12 +194,13 @@ def hardware_thread(end_event, hw_queue) -> None:
         onroad_conditions["ignition"] = False
         cloudlog.error("panda timed out onroad")
 
-    # Run at 2Hz, plus rising edge of ignition
-    ign_edge = started_ts is None and onroad_conditions["ignition"]
+    # Run at 2Hz, plus either edge of ignition
+    ign_edge = (started_ts is not None) != onroad_conditions["ignition"]
     if (sm.frame % round(SERVICE_LIST['pandaStates'].frequency * DT_HW) != 0) and not ign_edge:
       continue
 
-    msg = read_thermal(thermal_config)
+    msg = messaging.new_message('deviceState', valid=True)
+    msg.deviceState = thermal_config.get_msg()
     msg.deviceState.deviceType = HARDWARE.get_device_type()
 
     try:
@@ -265,13 +230,13 @@ def hardware_thread(end_event, hw_queue) -> None:
     # this subset is only used for offroad
     temp_sources = [
       msg.deviceState.memoryTempC,
-      max(msg.deviceState.cpuTempC),
-      max(msg.deviceState.gpuTempC),
+      max(msg.deviceState.cpuTempC, default=0.),
+      max(msg.deviceState.gpuTempC, default=0.),
     ]
     offroad_comp_temp = offroad_temp_filter.update(max(temp_sources))
 
     # this drives the thermal status while onroad
-    temp_sources.append(max(msg.deviceState.pmicTempC))
+    temp_sources.append(max(msg.deviceState.pmicTempC, default=0.))
     all_comp_temp = all_temp_filter.update(max(temp_sources))
     msg.deviceState.maxTempC = all_comp_temp
 
@@ -316,7 +281,7 @@ def hardware_thread(end_event, hw_queue) -> None:
     set_offroad_alert_if_changed("Offroad_TemperatureTooHigh", show_alert, extra_text=extra_text)
 
     # TODO: this should move to TICI.initialize_hardware, but we currently can't import params there
-    if TICI:
+    if TICI and HARDWARE.get_device_type() == "tici":
       if not os.path.isfile("/persist/comma/living-in-the-moment"):
         if not Path("/data/media").is_mount():
           set_offroad_alert_if_changed("Offroad_StorageMissing", True)
@@ -341,8 +306,8 @@ def hardware_thread(end_event, hw_queue) -> None:
       engaged_prev = False
       HARDWARE.set_power_save(not should_start)
 
-    if sm.updated['controlsState']:
-      engaged = sm['controlsState'].enabled
+    if sm.updated['selfdriveState']:
+      engaged = sm['selfdriveState'].enabled
       if engaged != engaged_prev:
         params.put_bool("IsEngaged", engaged)
         engaged_prev = engaged

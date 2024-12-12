@@ -1,31 +1,20 @@
-Import('env', 'envCython', 'arch', 'common', 'msgq')
-
-import shutil
+Import('env', 'common', 'msgq')
 
 cereal_dir = Dir('.')
 gen_dir = Dir('gen')
-other_dir = Dir('#msgq')
 
 # Build cereal
 schema_files = ['log.capnp', 'car.capnp', 'legacy.capnp', 'custom.capnp']
-env.Command(["gen/c/include/c++.capnp.h"], [], "mkdir -p " + gen_dir.path + "/c/include && touch $TARGETS")
 env.Command([f'gen/cpp/{s}.c++' for s in schema_files] + [f'gen/cpp/{s}.h' for s in schema_files],
             schema_files,
             f"capnpc --src-prefix={cereal_dir.path} $SOURCES -o c++:{gen_dir.path}/cpp/")
 
-# TODO: remove non shared cereal and messaging
-cereal_objects = env.SharedObject([f'gen/cpp/{s}.c++' for s in schema_files])
-
-cereal = env.Library('cereal', cereal_objects)
-env.SharedLibrary('cereal_shared', cereal_objects)
+cereal = env.Library('cereal', [f'gen/cpp/{s}.c++' for s in schema_files])
 
 # Build messaging
-
 services_h = env.Command(['services.h'], ['services.py'], 'python3 ' + cereal_dir.path + '/services.py > $TARGET')
-env.Program('messaging/bridge', ['messaging/bridge.cc'], LIBS=[msgq, 'zmq', common])
+env.Program('messaging/bridge', ['messaging/bridge.cc', 'messaging/msgq_to_zmq.cc'], LIBS=[msgq, common, 'pthread'])
 
-
-socketmaster = env.SharedObject(['messaging/socketmaster.cc'])
-socketmaster = env.Library('socketmaster', socketmaster)
+socketmaster = env.Library('socketmaster', ['messaging/socketmaster.cc'])
 
 Export('cereal', 'socketmaster')

@@ -1,110 +1,116 @@
 from __future__ import annotations
-import os
-os.environ['PYOPENCL_NO_CACHE'] = '1'
-import pathlib
-import numpy as np
-import pyopencl as cl  # type: ignore
-from typing import Optional, List, Tuple
-from tinygrad.helpers import DEBUG, getenv, prod, ImageDType, OSX, fromimport, diskcache
-from tinygrad.ops import Compiled
-from tinygrad.renderer.opencl import OpenCLRenderer
-from tinygrad.runtime.lib import RawBufferCopyInOut, LRUAllocator, RawBufferTransfer
-from tinygrad.codegen.kernel import LinearizerOptions
+from typing import Tuple, Optional, List, cast
+import ctypes, functools, hashlib
+from tinygrad.runtime.autogen import opencl as cl
+from tinygrad.helpers import init_c_var, to_char_p_p, from_mv, OSX, DEBUG, getenv, mv_address
+from tinygrad.renderer.cstyle import OpenCLRenderer, IntelRenderer
+from tinygrad.device import BufferSpec, LRUAllocator, Compiled, Compiler, CompileError
 
-OSX_TIMING_RATIO = (125/3) if OSX else 1.0   # see test/external/external_osx_profiling.py to determine this ratio. it's in like GPU clocks or something
+# see test/external/external_osx_profiling.py to determine this ratio. it's in like GPU clocks or something
+OSX_TIMING_RATIO = (125/3) if OSX else 1.0
 
-# TODO: if you fork and exit the child process after creating anything with cl on AMD, it hangs on e.wait()
-ROCM_LLVM_PATH = pathlib.Path("/opt/rocm/llvm/bin")
-#ROCM_LLVM_PATH = pathlib.Path(__file__).parents[3] / "extra/rocm/build/llvm-project/bin"
-if DEBUG >= 5:
-  early_exec = fromimport("extra.helpers", "enable_early_exec")()
+cl_errors = {attr: k for k in dir(cl) if k.startswith("CL_") and isinstance(attr:=getattr(cl, k), int) and attr <= 0}
+def check(status):
+  if status != 0: raise RuntimeError(f"OpenCL Error {status}: {cl_errors.get(status, 'Unknown error')}")
+def checked(ret, status): return (check(status.value), ret)[1]
 
-class CLAllocator(LRUAllocator):
-  def _do_alloc(self, size, dtype, device, **kwargs):
-    if isinstance(dtype, ImageDType):
-      # NOTE: the memory is a bit off here due to padding, it's buf.row_pitch * buf.height * 4 * dtype.itemsize
-      assert size == prod(dtype.shape), f"image size mismatch {size} != {dtype.shape}"
-      fmt = cl.ImageFormat(cl.channel_order.RGBA, {2: cl.channel_type.HALF_FLOAT, 4: cl.channel_type.FLOAT}[dtype.itemsize])
-      buf = cl.Image(CL.cl_ctxs[int(device)], cl.mem_flags.READ_WRITE, fmt, shape=(dtype.shape[1], dtype.shape[0]))
-    else:
-      buf = cl.Buffer(CL.cl_ctxs[int(device)], cl.mem_flags.READ_WRITE, size * dtype.itemsize)
-    setattr(buf, 'device', int(device)) # device is tracked on the underlying buffer
-    return buf
-
-class _CL:
-  def __init__(self):
-    cl_platforms = cl.get_platforms()
-    platform_devices: List[List[cl.Device]] = [y for y in ([x.get_devices(device_type=cl.device_type.GPU) for x in cl_platforms] + [x.get_devices(device_type=cl.device_type.CPU) for x in cl_platforms]) if y]
-    self.devices = [device for device in platform_devices[getenv('CL_PLATFORM', 0)] if device.name not in getenv('CL_EXCLUDE', "").split(",")]
-    self.cl_platform = self.devices[0].platform
-  def post_init(self, device=None):
-    self.cl_ctxs: List[cl.Context] = [cl.Context(devices=[x]) for x in self.devices] if device is None else [cl.Context(devices=[self.devices[device]])]
-    if DEBUG >= 1: print(f"using devices: {[ctx.devices[0].hashable_model_and_version_identifier for ctx in self.cl_ctxs]}")
-    self.cl_queue: List[cl.CommandQueue] = [cl.CommandQueue(ctx, device=ctx.devices[0], properties=cl.command_queue_properties.PROFILING_ENABLE) for ctx in self.cl_ctxs]
-    self.cl_allocator = CLAllocator(CL.cl_ctxs[0].devices[0].get_info(cl.device_info.GLOBAL_MEM_SIZE))
-  def synchronize(self):
-    for q in self.cl_queue: q.finish()
-CL = _CL()
-if not getenv("DELAYED_RUNTIME_INIT", False): CL.post_init()
-
-class CLBuffer(RawBufferCopyInOut, RawBufferTransfer):
-  def __init__(self, size, dtype, device='0'): super().__init__(size, dtype, allocator=CL.cl_allocator, **{'device': device})
-  def _copyin(self, x:np.ndarray):
-    assert not self.dtype.name.startswith("image"), f"can't copyin images {self.dtype}"
-    self.event = cl.enqueue_copy(CL.cl_queue[self._buf.device], self._buf, np.require(x, requirements=['C', 'A']), is_blocking=False)
-  def _copyout(self, x:np.ndarray):
-    assert not self.dtype.name.startswith("image"), f"can't copyout images {self.dtype}"
-    CL.cl_allocator.ensure_has_free_space(self.size, self.dtype, self._device)
-    buf = cl.Buffer(CL.cl_ctxs[self._buf.device], cl.mem_flags.WRITE_ONLY | cl.mem_flags.USE_HOST_PTR, 0, hostbuf=x.data)
-    mapped, event = cl.enqueue_map_buffer(CL.cl_queue[self._buf.device], buf, cl.map_flags.WRITE, 0, self.size, dtype=self.dtype.np, is_blocking=False)
-    with mapped.base: cl.enqueue_copy(CL.cl_queue[self._buf.device], mapped, self._buf, is_blocking=True, wait_for=[event] + ([self.event] if hasattr(self, "event") else []))
-  def _transfer(self, x):
-    if "gfx" in CL.cl_ctxs[x._buf.device].devices[0].name:
-      cl.enqueue_copy_buffer_p2p_amd(CL.cl_platform, CL.cl_queue[x._buf.device], x._buf, self._buf, x.size * x.dtype.itemsize).wait()
-    else: raise NotImplementedError("p2p transfer between devices not implemented on non-amd")
-
-@diskcache
-def compile_gpu(prg:str) -> bytes:
-  clprg = cl.Program(CL.cl_ctxs[0], prg)
-  clprg.build()
-  return clprg.get_info(cl.program_info.BINARIES)[0]
+class CLCompiler(Compiler):
+  def __init__(self, dev:CLDevice, compile_key:str):
+    self.dev = dev
+    super().__init__(f"compile_cl_{compile_key}")
+  def compile(self, src:str) -> bytes:
+    program = checked(cl.clCreateProgramWithSource(self.dev.context, 1, to_char_p_p([src.encode()]), None, status := ctypes.c_int32()), status)
+    build_status: int = cl.clBuildProgram(program, 1, self.dev.device_id, None, cl.clBuildProgram.argtypes[4](), None)
+    if build_status != 0:
+      cl.clGetProgramBuildInfo(program, self.dev.device_id, cl.CL_PROGRAM_BUILD_LOG, 0, None, log_size := ctypes.c_size_t())
+      cl.clGetProgramBuildInfo(program, self.dev.device_id, cl.CL_PROGRAM_BUILD_LOG, log_size.value, mstr := ctypes.create_string_buffer(log_size.value), None)  # noqa: E501
+      raise CompileError(f"OpenCL Compile Error\n\n{mstr.value.decode()}")
+    check(cl.clGetProgramInfo(program, cl.CL_PROGRAM_BINARY_SIZES, ctypes.sizeof(ctypes.c_size_t), binary_sizes := (ctypes.c_size_t * 1)(), None))
+    check(cl.clGetProgramInfo(program, cl.CL_PROGRAM_BINARIES, ctypes.sizeof(ctypes.c_void_p), (ctypes.c_void_p * 1)(ctypes.addressof(binary := ctypes.create_string_buffer(binary_sizes[0]))), None))  # noqa: E501
+    check(cl.clReleaseProgram(program))
+    return bytes(binary)
 
 class CLProgram:
-  def __init__(self, name:str, prg:bytes, argdtypes=None, options=None):
-    self.name, self.clprograms = name, [cl.Program(ctx, ctx.devices, [prg]*len(ctx.devices)) for ctx in CL.cl_ctxs]  # type: ignore
-    self._clprgs = [clprogram.build(options=options) for clprogram in self.clprograms]
-    self.clprgs = [clprg.__getattr__(name) for clprg in self._clprgs]
-    if DEBUG >= 5 and not OSX:
-      if 'Adreno' in CL.cl_ctxs[0].devices[0].name:
-        fromimport('disassemblers.adreno', 'disasm')(prg)
-      elif CL.cl_ctxs[0].devices[0].name.startswith('gfx'):
-        asm = early_exec(([ROCM_LLVM_PATH / "llvm-objdump", '-d', '-'], prg))
-        print('\n'.join([x for x in asm.decode('utf-8').split("\n") if 's_code_end' not in x]))
-      else:
-        # print the PTX for NVIDIA. TODO: probably broken for everything else
-        print(prg.decode('utf-8'))
-    if argdtypes is not None: self.set_argdtypes(argdtypes)
+  def __init__(self, device:CLDevice, name:str, lib:bytes):
+    self.dev, self.name, self.lib = device, name, lib
+    self.program = checked(cl.clCreateProgramWithBinary(device.context, 1, device.device_id, (ctypes.c_size_t * 1)(len(lib)),
+                                                        to_char_p_p([lib], ctypes.c_ubyte), binary_status := ctypes.c_int32(),
+                                                        errcode_ret := ctypes.c_int32()), errcode_ret)
+    check(binary_status.value)
+    check(cl.clBuildProgram(self.program, 1, device.device_id, None, cl.clBuildProgram.argtypes[4](), None)) # NOTE: OSX requires this
+    self.kernel = checked(cl.clCreateKernel(self.program, name.encode(), status := ctypes.c_int32()), status)
 
-  def set_argdtypes(self, argdtypes): self.argdtypes, _ = argdtypes, [clprg.set_scalar_arg_dtypes(argdtypes) for clprg in self.clprgs]
+  def __del__(self):
+    if hasattr(self, 'kernel'): check(cl.clReleaseKernel(self.kernel))
+    if hasattr(self, 'program'): check(cl.clReleaseProgram(self.program))
 
-  @staticmethod
-  def max_work_group_size(): return CL.cl_ctxs[0].devices[0].max_work_group_size
-
-  def __call__(self, *bufs, global_size:Tuple[int,int,int], local_size:Optional[Tuple[int,int,int]]=None, wait=False) -> Optional[float]:
-    if not hasattr(self, 'argdtypes'): self.set_argdtypes(tuple(None if x.__class__ is CLBuffer else np.int32 for x in bufs))
-    cl_bufs, wait_for = [], []
-    for x in bufs:
-      if x.__class__ is CLBuffer:
-        cl_bufs.append(x._buf)
-        if hasattr(x, "event"): wait_for.append(x.event)
-      else: cl_bufs.append(x)
-    e = self.clprgs[cl_bufs[0].device](CL.cl_queue[cl_bufs[0].device], [int(g*l) for g,l in zip(global_size, local_size)] if local_size is not None else global_size, local_size, *cl_bufs, wait_for=wait_for)
+  def __call__(self, *bufs:Tuple[ctypes._CData, BufferSpec], global_size:Tuple[int,int,int]=(1,1,1), local_size:Optional[Tuple[int,int,int]]=None, vals:Tuple[int, ...]=(), wait=False) -> Optional[float]:  # noqa: E501
+    for i,(b,_) in enumerate(bufs): cl.clSetKernelArg(self.kernel, i, ctypes.sizeof(b), ctypes.byref(b))
+    for i,v in enumerate(vals,start=len(bufs)): cl.clSetKernelArg(self.kernel, i, 4, ctypes.byref(ctypes.c_int32(v)))
+    if local_size is not None: global_size = cast(Tuple[int,int,int], tuple(int(g*l) for g,l in zip(global_size, local_size)))
+    event = cl.cl_event() if wait else None
+    check(cl.clEnqueueNDRangeKernel(self.dev.queue, self.kernel, len(global_size), None, (ctypes.c_size_t * len(global_size))(*global_size), (ctypes.c_size_t * len(local_size))(*local_size) if local_size else None, 0, None, event))  # noqa: E501
     if wait:
-      e.wait()
-      try:
-        return ((e.profile.end - e.profile.start) * OSX_TIMING_RATIO) * 1e-9
-      except cl.RuntimeError:   # no profiling info available
-        return None
+      assert event is not None
+      check(cl.clWaitForEvents(1, event))
+      check(cl.clGetEventProfilingInfo(event, cl.CL_PROFILING_COMMAND_START, 8, ctypes.byref(start := ctypes.c_uint64()), None))
+      check(cl.clGetEventProfilingInfo(event, cl.CL_PROFILING_COMMAND_END, 8, ctypes.byref(end := ctypes.c_uint64()), None))
+      return float(end.value-start.value) * OSX_TIMING_RATIO * 1e-9
     return None
 
-GPUBuffer = Compiled(CLBuffer, LinearizerOptions(), OpenCLRenderer, compile_gpu, CLProgram, CL.synchronize)
+class CLAllocator(LRUAllocator):
+  def __init__(self, dev:CLDevice):
+    self.dev = dev
+    super().__init__()
+  def _alloc(self, size:int, options:BufferSpec) -> Tuple[ctypes._CData, BufferSpec]:
+    if options.image is not None:
+      return (checked(cl.clCreateImage2D(self.dev.context, cl.CL_MEM_READ_WRITE,
+                                        cl.cl_image_format(cl.CL_RGBA, {2: cl.CL_HALF_FLOAT, 4: cl.CL_FLOAT}[options.image.itemsize]),
+                                        options.image.shape[1], options.image.shape[0], 0, None, status := ctypes.c_int32()), status), options)
+    return (checked(cl.clCreateBuffer(self.dev.context, cl.CL_MEM_READ_WRITE, size, None, status := ctypes.c_int32()), status), options)
+  def _free(self, opaque:Tuple[ctypes._CData, BufferSpec], options:BufferSpec): check(cl.clReleaseMemObject(opaque[0]))
+  def _copyin(self, dest:Tuple[ctypes._CData, BufferSpec], src:memoryview):
+    if dest[1].image is not None:
+      check(cl.clEnqueueWriteImage(self.dev.queue, dest[0], False, (ctypes.c_size_t * 3)(0,0,0),
+                                   (ctypes.c_size_t * 3)(dest[1].image.shape[1],dest[1].image.shape[0],1), 0, 0, from_mv(src), 0, None, None))
+    else:
+      if mv_address(src) % 16: src = memoryview(bytearray(src))
+      check(cl.clEnqueueWriteBuffer(self.dev.queue, dest[0], False, 0, len(src)*src.itemsize, from_mv(src), 0, None, None))
+    self.dev.pending_copyin.append(src)    # NOTE: these can't be freed until the GPU actually executes this command
+  def _copyout(self, dest:memoryview, src:Tuple[ctypes._CData, BufferSpec]):
+    if src[1].image is not None:
+      check(cl.clEnqueueReadImage(self.dev.queue, src[0], False, (ctypes.c_size_t * 3)(0,0,0),
+                                  (ctypes.c_size_t * 3)(src[1].image.shape[1],src[1].image.shape[0],1), 0, 0, from_mv(dest), 0, None, None))
+    else:
+      check(cl.clEnqueueReadBuffer(self.dev.queue, src[0], False, 0, len(dest)*dest.itemsize, from_mv(dest), 0, None, None))
+    self.dev.synchronize()
+
+class CLDevice(Compiled):
+  device_ids = None                 # this is global and only initted once
+  def __init__(self, device:str=""):
+    if CLDevice.device_ids is None:
+      check(cl.clGetPlatformIDs(0, None, num_platforms := ctypes.c_uint32()))
+      check(cl.clGetPlatformIDs(num_platforms.value, platform_ids := (cl.cl_platform_id * num_platforms.value)(), None))
+      for device_type in [cl.CL_DEVICE_TYPE_GPU, cl.CL_DEVICE_TYPE_DEFAULT]:
+        err = cl.clGetDeviceIDs(platform_ids[0], device_type, 0, None, num_devices := ctypes.c_uint32())
+        if err == 0 and num_devices.value != 0: break
+      if DEBUG >= 1: print(f"CLDevice: got {num_platforms.value} platforms and {num_devices.value} devices")
+      CLDevice.device_ids = init_c_var((cl.cl_device_id * num_devices.value)(), lambda x: check(cl.clGetDeviceIDs(platform_ids[0], device_type, num_devices, x, None)))  # noqa: E501
+
+    self.device_id = CLDevice.device_ids[0 if ":" not in device else int(device.split(":")[1])]
+    self.device_name = (cl.clGetDeviceInfo(self.device_id, cl.CL_DEVICE_NAME, 256, buf := ctypes.create_string_buffer(256), None), buf.value.decode())[1]  # noqa: E501
+    self.driver_version = (cl.clGetDeviceInfo(self.device_id, cl.CL_DRIVER_VERSION, 256, buf := ctypes.create_string_buffer(256), None), buf.value.decode())[1]  # noqa: E501
+    if DEBUG >= 1: print(f"CLDevice: opening {self.device_name} with version {self.driver_version}")
+    self.context = checked(cl.clCreateContext(None, 1, self.device_id, cl.clCreateContext.argtypes[3](), None, status := ctypes.c_int32()), status)
+    self.queue = checked(cl.clCreateCommandQueue(self.context, self.device_id, cl.CL_QUEUE_PROFILING_ENABLE, status), status)
+    self.pending_copyin: List[memoryview] = []
+    self.device_exts = (cl.clGetDeviceInfo(self.device_id, cl.CL_DEVICE_EXTENSIONS, 4096, ctypes.byref(buf := ctypes.create_string_buffer(4096)), ctypes.byref(total := ctypes.c_size_t())), ctypes.string_at(buf, size=total.value).decode())[1]  # noqa: E501
+
+    compile_key = hashlib.md5(self.device_name.encode() + self.driver_version.encode()).hexdigest()
+    renderer = IntelRenderer() if "cl_intel_subgroup_matrix_multiply_accumulate" in self.device_exts and getenv("INTEL") else OpenCLRenderer()
+    super().__init__(device, CLAllocator(self), renderer, CLCompiler(self, f"compile_cl_{compile_key}"), functools.partial(CLProgram, self))
+  def synchronize(self):
+    check(cl.clFinish(self.queue))
+    self.pending_copyin.clear()
+
+GPUDevice = CLDevice # for legacy reasons

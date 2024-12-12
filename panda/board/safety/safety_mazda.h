@@ -1,3 +1,7 @@
+#pragma once
+
+#include "safety_declarations.h"
+
 // CAN msgs we care about
 #define MAZDA_LKAS          0x243
 #define MAZDA_LKAS_HUD      0x440
@@ -9,29 +13,7 @@
 
 // CAN bus numbers
 #define MAZDA_MAIN 0
-#define MAZDA_AUX  1
 #define MAZDA_CAM  2
-
-const SteeringLimits MAZDA_STEERING_LIMITS = {
-  .max_steer = 800,
-  .max_rate_up = 10,
-  .max_rate_down = 25,
-  .max_rt_delta = 300,
-  .max_rt_interval = 250000,
-  .driver_torque_factor = 1,
-  .driver_torque_allowance = 15,
-  .type = TorqueDriverLimited,
-};
-
-const CanMsg MAZDA_TX_MSGS[] = {{MAZDA_LKAS, 0, 8}, {MAZDA_CRZ_BTNS, 0, 8}, {MAZDA_LKAS_HUD, 0, 8}};
-
-RxCheck mazda_rx_checks[] = {
-  {.msg = {{MAZDA_CRZ_CTRL,     0, 8, .frequency = 50U}, { 0 }, { 0 }}},
-  {.msg = {{MAZDA_CRZ_BTNS,     0, 8, .frequency = 10U}, { 0 }, { 0 }}},
-  {.msg = {{MAZDA_STEER_TORQUE, 0, 8, .frequency = 83U}, { 0 }, { 0 }}},
-  {.msg = {{MAZDA_ENGINE_DATA,  0, 8, .frequency = 100U}, { 0 }, { 0 }}},
-  {.msg = {{MAZDA_PEDALS,       0, 8, .frequency = 50U}, { 0 }, { 0 }}},
-};
 
 // track msgs coming from OP so that we know what CAM msgs to drop and what to forward
 static void mazda_rx_hook(const CANPacket_t *to_push) {
@@ -69,6 +51,17 @@ static void mazda_rx_hook(const CANPacket_t *to_push) {
 }
 
 static bool mazda_tx_hook(const CANPacket_t *to_send) {
+  const SteeringLimits MAZDA_STEERING_LIMITS = {
+    .max_steer = 800,
+    .max_rate_up = 10,
+    .max_rate_down = 25,
+    .max_rt_delta = 300,
+    .max_rt_interval = 250000,
+    .driver_torque_factor = 1,
+    .driver_torque_allowance = 15,
+    .type = TorqueDriverLimited,
+  };
+
   bool tx = true;
   int bus = GET_BUS(to_send);
   // Check if msg is sent on the main BUS
@@ -116,6 +109,16 @@ static int mazda_fwd_hook(int bus, int addr) {
 }
 
 static safety_config mazda_init(uint16_t param) {
+  static const CanMsg MAZDA_TX_MSGS[] = {{MAZDA_LKAS, 0, 8}, {MAZDA_CRZ_BTNS, 0, 8}, {MAZDA_LKAS_HUD, 0, 8}};
+
+  static RxCheck mazda_rx_checks[] = {
+    {.msg = {{MAZDA_CRZ_CTRL,     0, 8, .frequency = 50U}, { 0 }, { 0 }}},
+    {.msg = {{MAZDA_CRZ_BTNS,     0, 8, .frequency = 10U}, { 0 }, { 0 }}},
+    {.msg = {{MAZDA_STEER_TORQUE, 0, 8, .frequency = 83U}, { 0 }, { 0 }}},
+    {.msg = {{MAZDA_ENGINE_DATA,  0, 8, .frequency = 100U}, { 0 }, { 0 }}},
+    {.msg = {{MAZDA_PEDALS,       0, 8, .frequency = 50U}, { 0 }, { 0 }}},
+  };
+
   UNUSED(param);
   return BUILD_SAFETY_CFG(mazda_rx_checks, MAZDA_TX_MSGS);
 }

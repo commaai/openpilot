@@ -61,7 +61,7 @@ class TestEncoder:
     time.sleep(1.0)
     managed_processes['camerad'].start()
 
-    num_segments = int(os.getenv("SEGMENTS", random.randint(10, 15)))
+    num_segments = int(os.getenv("SEGMENTS", random.randint(2, 8)))
 
     # wait for loggerd to make the dir for first segment
     route_prefix_path = None

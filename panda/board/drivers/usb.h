@@ -1,361 +1,21 @@
-// IRQs: OTG_FS
-
-typedef union {
-  uint16_t w;
-  struct BW {
-    uint8_t msb;
-    uint8_t lsb;
-  }
-  bw;
-}
-uint16_t_uint8_t;
-
-typedef union _USB_Setup {
-  uint32_t d8[2];
-  struct _SetupPkt_Struc
-  {
-    uint8_t           bmRequestType;
-    uint8_t           bRequest;
-    uint16_t_uint8_t  wValue;
-    uint16_t_uint8_t  wIndex;
-    uint16_t_uint8_t  wLength;
-  } b;
-}
-USB_Setup_TypeDef;
+#include "usb_declarations.h"
 
 bool usb_enumerated = false;
-uint16_t usb_last_frame_num = 0U;
 
-void usb_init(void);
-void refresh_can_tx_slots_available(void);
-
-// **** supporting defines ****
-
-#define  USB_REQ_GET_STATUS                             0x00
-#define  USB_REQ_CLEAR_FEATURE                          0x01
-#define  USB_REQ_SET_FEATURE                            0x03
-#define  USB_REQ_SET_ADDRESS                            0x05
-#define  USB_REQ_GET_DESCRIPTOR                         0x06
-#define  USB_REQ_SET_DESCRIPTOR                         0x07
-#define  USB_REQ_GET_CONFIGURATION                      0x08
-#define  USB_REQ_SET_CONFIGURATION                      0x09
-#define  USB_REQ_GET_INTERFACE                          0x0A
-#define  USB_REQ_SET_INTERFACE                          0x0B
-#define  USB_REQ_SYNCH_FRAME                            0x0C
-
-#define  USB_DESC_TYPE_DEVICE                           0x01
-#define  USB_DESC_TYPE_CONFIGURATION                    0x02
-#define  USB_DESC_TYPE_STRING                           0x03
-#define  USB_DESC_TYPE_INTERFACE                        0x04
-#define  USB_DESC_TYPE_ENDPOINT                         0x05
-#define  USB_DESC_TYPE_DEVICE_QUALIFIER                 0x06
-#define  USB_DESC_TYPE_OTHER_SPEED_CONFIGURATION        0x07
-#define  USB_DESC_TYPE_BINARY_OBJECT_STORE              0x0f
-
-// offsets for configuration strings
-#define  STRING_OFFSET_LANGID                           0x00
-#define  STRING_OFFSET_IMANUFACTURER                    0x01
-#define  STRING_OFFSET_IPRODUCT                         0x02
-#define  STRING_OFFSET_ISERIAL                          0x03
-#define  STRING_OFFSET_ICONFIGURATION                   0x04
-#define  STRING_OFFSET_IINTERFACE                       0x05
-
-// WebUSB requests
-#define  WEBUSB_REQ_GET_URL                             0x02
-
-// WebUSB types
-#define  WEBUSB_DESC_TYPE_URL                           0x03
-#define  WEBUSB_URL_SCHEME_HTTPS                        0x01
-#define  WEBUSB_URL_SCHEME_HTTP                         0x00
-
-// WinUSB requests
-#define  WINUSB_REQ_GET_COMPATID_DESCRIPTOR             0x04
-#define  WINUSB_REQ_GET_EXT_PROPS_OS                    0x05
-#define  WINUSB_REQ_GET_DESCRIPTOR                      0x07
-
-#define STS_GOUT_NAK                           1
-#define STS_DATA_UPDT                          2
-#define STS_XFER_COMP                          3
-#define STS_SETUP_COMP                         4
-#define STS_SETUP_UPDT                         6
-
-uint8_t response[USBPACKET_MAX_SIZE];
-
-// for the repeating interfaces
-#define DSCR_INTERFACE_LEN 9
-#define DSCR_ENDPOINT_LEN 7
-#define DSCR_CONFIG_LEN 9
-#define DSCR_DEVICE_LEN 18
-
-// endpoint types
-#define ENDPOINT_TYPE_CONTROL 0
-#define ENDPOINT_TYPE_ISO 1
-#define ENDPOINT_TYPE_BULK 2
-#define ENDPOINT_TYPE_INT 3
-
-// These are arbitrary values used in bRequest
-#define  MS_VENDOR_CODE 0x20
-#define  WEBUSB_VENDOR_CODE 0x30
-
-// BOS constants
-#define BINARY_OBJECT_STORE_DESCRIPTOR_LENGTH   0x05
-#define BINARY_OBJECT_STORE_DESCRIPTOR          0x0F
-#define WINUSB_PLATFORM_DESCRIPTOR_LENGTH       0x9E
-
-// Convert machine byte order to USB byte order
-#define TOUSBORDER(num)\
-  ((num) & 0xFFU), (((uint16_t)(num) >> 8) & 0xFFU)
-
-// take in string length and return the first 2 bytes of a string descriptor
-#define STRING_DESCRIPTOR_HEADER(size)\
-  (((((size) * 2) + 2) & 0xFF) | 0x0300)
-
-uint8_t device_desc[] = {
-  DSCR_DEVICE_LEN, USB_DESC_TYPE_DEVICE, //Length, Type
-  0x10, 0x02, // bcdUSB max version of USB supported (2.1)
-  0xFF, 0xFF, 0xFF, 0x40, // Class, Subclass, Protocol, Max Packet Size
-  TOUSBORDER(USB_VID), // idVendor
-  TOUSBORDER(USB_PID), // idProduct
-  0x00, 0x00, // bcdDevice
-  0x01, 0x02, // Manufacturer, Product
-  0x03, 0x01 // Serial Number, Num Configurations
-};
-
-uint8_t device_qualifier[] = {
-  0x0a, USB_DESC_TYPE_DEVICE_QUALIFIER, //Length, Type
-  0x10, 0x02, // bcdUSB max version of USB supported (2.1)
-  0xFF, 0xFF, 0xFF, 0x40, // bDeviceClass, bDeviceSubClass, bDeviceProtocol, bMaxPacketSize0
-  0x01, 0x00 // bNumConfigurations, bReserved
-};
-
-#define ENDPOINT_RCV 0x80
-#define ENDPOINT_SND 0x00
-
-uint8_t configuration_desc[] = {
-  DSCR_CONFIG_LEN, USB_DESC_TYPE_CONFIGURATION, // Length, Type,
-  TOUSBORDER(0x0045U), // Total Len (uint16)
-  0x01, 0x01, STRING_OFFSET_ICONFIGURATION, // Num Interface, Config Value, Configuration
-  0xc0, 0x32, // Attributes, Max Power
-  // interface 0 ALT 0
-  DSCR_INTERFACE_LEN, USB_DESC_TYPE_INTERFACE, // Length, Type
-  0x00, 0x00, 0x03, // Index, Alt Index idx, Endpoint count
-  0XFF, 0xFF, 0xFF, // Class, Subclass, Protocol
-  0x00, // Interface
-    // endpoint 1, read CAN
-    DSCR_ENDPOINT_LEN, USB_DESC_TYPE_ENDPOINT, // Length, Type
-    ENDPOINT_RCV | 1, ENDPOINT_TYPE_BULK, // Endpoint Num/Direction, Type
-    TOUSBORDER(0x0040U), // Max Packet (0x0040)
-    0x00, // Polling Interval (NA)
-    // endpoint 2, send serial
-    DSCR_ENDPOINT_LEN, USB_DESC_TYPE_ENDPOINT, // Length, Type
-    ENDPOINT_SND | 2, ENDPOINT_TYPE_BULK, // Endpoint Num/Direction, Type
-    TOUSBORDER(0x0040U), // Max Packet (0x0040)
-    0x00, // Polling Interval
-    // endpoint 3, send CAN
-    DSCR_ENDPOINT_LEN, USB_DESC_TYPE_ENDPOINT, // Length, Type
-    ENDPOINT_SND | 3, ENDPOINT_TYPE_BULK, // Endpoint Num/Direction, Type
-    TOUSBORDER(0x0040U), // Max Packet (0x0040)
-    0x00, // Polling Interval
-  // interface 0 ALT 1
-  DSCR_INTERFACE_LEN, USB_DESC_TYPE_INTERFACE, // Length, Type
-  0x00, 0x01, 0x03, // Index, Alt Index idx, Endpoint count
-  0XFF, 0xFF, 0xFF, // Class, Subclass, Protocol
-  0x00, // Interface
-    // endpoint 1, read CAN
-    DSCR_ENDPOINT_LEN, USB_DESC_TYPE_ENDPOINT, // Length, Type
-    ENDPOINT_RCV | 1, ENDPOINT_TYPE_INT, // Endpoint Num/Direction, Type
-    TOUSBORDER(0x0040U), // Max Packet (0x0040)
-    0x05, // Polling Interval (5 frames)
-    // endpoint 2, send serial
-    DSCR_ENDPOINT_LEN, USB_DESC_TYPE_ENDPOINT, // Length, Type
-    ENDPOINT_SND | 2, ENDPOINT_TYPE_BULK, // Endpoint Num/Direction, Type
-    TOUSBORDER(0x0040U), // Max Packet (0x0040)
-    0x00, // Polling Interval
-    // endpoint 3, send CAN
-    DSCR_ENDPOINT_LEN, USB_DESC_TYPE_ENDPOINT, // Length, Type
-    ENDPOINT_SND | 3, ENDPOINT_TYPE_BULK, // Endpoint Num/Direction, Type
-    TOUSBORDER(0x0040U), // Max Packet (0x0040)
-    0x00, // Polling Interval
-};
-
-// STRING_DESCRIPTOR_HEADER is for uint16 string descriptors
-// it takes in a string length, which is bytes/2 because unicode
-uint16_t string_language_desc[] = {
-  STRING_DESCRIPTOR_HEADER(1),
-  0x0409 // american english
-};
-
-// these strings are all uint16's so that we don't need to spam ,0 after every character
-uint16_t string_manufacturer_desc[] = {
-  STRING_DESCRIPTOR_HEADER(8),
-  'c', 'o', 'm', 'm', 'a', '.', 'a', 'i'
-};
-
-uint16_t string_product_desc[] = {
-  STRING_DESCRIPTOR_HEADER(5),
-  'p', 'a', 'n', 'd', 'a'
-};
-
-// default serial number when we're not a panda
-uint16_t string_serial_desc[] = {
-  STRING_DESCRIPTOR_HEADER(4),
-  'n', 'o', 'n', 'e'
-};
-
-// a string containing the default configuration index
-uint16_t string_configuration_desc[] = {
-  STRING_DESCRIPTOR_HEADER(2),
-  '0', '1' // "01"
-};
-
-// WCID (auto install WinUSB driver)
-// https://github.com/pbatard/libwdi/wiki/WCID-Devices
-// https://docs.microsoft.com/en-us/windows-hardware/drivers/usbcon/winusb-installation#automatic-installation-of--winusb-without-an-inf-file
-// WinUSB 1.0 descriptors, this is mostly used by Windows XP
-uint8_t string_238_desc[] = {
-  0x12, USB_DESC_TYPE_STRING, // bLength, bDescriptorType
-  'M',0, 'S',0, 'F',0, 'T',0, '1',0, '0',0, '0',0, // qwSignature (MSFT100)
-  MS_VENDOR_CODE, 0x00 // bMS_VendorCode, bPad
-};
-uint8_t winusb_ext_compatid_os_desc[] = {
-  0x28, 0x00, 0x00, 0x00, // dwLength
-  0x00, 0x01, // bcdVersion
-  0x04, 0x00, // wIndex
-  0x01, // bCount
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Reserved
-  0x00, // bFirstInterfaceNumber
-  0x00, // Reserved
-  'W', 'I', 'N', 'U', 'S', 'B', 0x00, 0x00, // compatible ID (WINUSB)
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // subcompatible ID (none)
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00 // Reserved
-};
-uint8_t winusb_ext_prop_os_desc[] = {
-  0x8e, 0x00, 0x00, 0x00, // dwLength
-  0x00, 0x01, // bcdVersion
-  0x05, 0x00, // wIndex
-  0x01, 0x00, // wCount
-  // first property
-  0x84, 0x00, 0x00, 0x00, // dwSize
-  0x01, 0x00, 0x00, 0x00, // dwPropertyDataType
-  0x28, 0x00, // wPropertyNameLength
-  'D',0, 'e',0, 'v',0, 'i',0, 'c',0, 'e',0, 'I',0, 'n',0, 't',0, 'e',0, 'r',0, 'f',0, 'a',0, 'c',0, 'e',0, 'G',0, 'U',0, 'I',0, 'D',0, 0, 0, // bPropertyName (DeviceInterfaceGUID)
-  0x4e, 0x00, 0x00, 0x00, // dwPropertyDataLength
-  '{',0, 'c',0, 'c',0, 'e',0, '5',0, '2',0, '9',0, '1',0, 'c',0, '-',0, 'a',0, '6',0, '9',0, 'f',0, '-',0, '4',0 ,'9',0 ,'9',0 ,'5',0 ,'-',0, 'a',0, '4',0, 'c',0, '2',0, '-',0, '2',0, 'a',0, 'e',0, '5',0, '7',0, 'a',0, '5',0, '1',0, 'a',0, 'd',0, 'e',0, '9',0, '}',0, 0, 0, // bPropertyData ({CCE5291C-A69F-4995-A4C2-2AE57A51ADE9})
-};
-
-/*
-Binary Object Store descriptor used to expose WebUSB (and more WinUSB) metadata
-comments are from the wicg spec
-References used:
-  https://wicg.github.io/webusb/#webusb-platform-capability-descriptor
-  https://github.com/sowbug/weblight/blob/192ad7a0e903542e2aa28c607d98254a12a6399d/firmware/webusb.c
-  https://os.mbed.com/users/larsgk/code/USBDevice_WebUSB/file/1d8a6665d607/WebUSBDevice/
-
-*/
-uint8_t binary_object_store_desc[] = {
-  // BOS header
-  BINARY_OBJECT_STORE_DESCRIPTOR_LENGTH, // bLength, this is only the length of the header
-  BINARY_OBJECT_STORE_DESCRIPTOR, // bDescriptorType
-  0x39, 0x00, // wTotalLength (LSB, MSB)
-  0x02, // bNumDeviceCaps (WebUSB + WinUSB)
-
-  // -------------------------------------------------
-  // WebUSB descriptor
-  // header
-    0x18, // bLength, Size of this descriptor. Must be set to 24.
-    0x10, // bDescriptorType, DEVICE CAPABILITY descriptor
-    0x05, // bDevCapabilityType, PLATFORM capability
-    0x00, // bReserved, This field is reserved and shall be set to zero.
-
-  // PlatformCapabilityUUID, Must be set to {3408b638-09a9-47a0-8bfd-a0768815b665}.
-    0x38, 0xB6, 0x08, 0x34,
-    0xA9, 0x09, 0xA0, 0x47,
-    0x8B, 0xFD, 0xA0, 0x76,
-    0x88, 0x15, 0xB6, 0x65,
-  // </PlatformCapabilityUUID>
-
-  0x00, 0x01, // bcdVersion, Protocol version supported. Must be set to 0x0100.
-  WEBUSB_VENDOR_CODE, // bVendorCode, bRequest value used for issuing WebUSB requests.
-  // there used to be a concept of "allowed origins", but it was removed from the spec
-  // it was intended to be a security feature, but then the entire security model relies on domain ownership
-  // https://github.com/WICG/webusb/issues/49
-  // other implementations use various other indexed to leverate this no-longer-valid feature. we wont.
-  // the spec says we *must* reply to index 0x03 with the url, so we'll hint that that's the right index
-  0x03, // iLandingPage, URL descriptor index of the device’s landing page.
-
-  // -------------------------------------------------
-  // WinUSB descriptor
-  // header
-    0x1C, // Descriptor size (28 bytes)
-    0x10, // Descriptor type (Device Capability)
-    0x05, // Capability type (Platform)
-    0x00, // Reserved
-
-  // MS OS 2.0 Platform Capability ID (D8DD60DF-4589-4CC7-9CD2-659D9E648A9F)
-  // Indicates the device supports the Microsoft OS 2.0 descriptor
-    0xDF, 0x60, 0xDD, 0xD8,
-    0x89, 0x45, 0xC7, 0x4C,
-    0x9C, 0xD2, 0x65, 0x9D,
-    0x9E, 0x64, 0x8A, 0x9F,
-
-  0x00, 0x00, 0x03, 0x06, // Windows version, currently set to 8.1 (0x06030000)
-
-  WINUSB_PLATFORM_DESCRIPTOR_LENGTH, 0x00, // MS OS 2.0 descriptor size (word)
-  MS_VENDOR_CODE, 0x00 // vendor code, no alternate enumeration
-};
-
-// WinUSB 2.0 descriptor. This is what modern systems use
-// https://github.com/sowbug/weblight/blob/192ad7a0e903542e2aa28c607d98254a12a6399d/firmware/webusb.c
-// http://janaxelson.com/files/ms_os_20_descriptors.c
-// https://books.google.com/books?id=pkefBgAAQBAJ&pg=PA353&lpg=PA353
-uint8_t winusb_20_desc[WINUSB_PLATFORM_DESCRIPTOR_LENGTH] = {
-  // Microsoft OS 2.0 descriptor set header (table 10)
-  0x0A, 0x00, // Descriptor size (10 bytes)
-  0x00, 0x00, // MS OS 2.0 descriptor set header
-
-  0x00, 0x00, 0x03, 0x06, // Windows version (8.1) (0x06030000)
-  WINUSB_PLATFORM_DESCRIPTOR_LENGTH, 0x00, // Total size of MS OS 2.0 descriptor set
-
-  // Microsoft OS 2.0 compatible ID descriptor
-    0x14, 0x00, // Descriptor size (20 bytes)
-    0x03, 0x00, // MS OS 2.0 compatible ID descriptor
-    'W', 'I', 'N', 'U', 'S', 'B', 0x00, 0x00, // compatible ID (WINUSB)
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,     // Sub-compatible ID
-
-  // Registry property descriptor
-  0x80, 0x00, // Descriptor size (130 bytes)
-  0x04, 0x00, // Registry Property descriptor
-  0x01, 0x00, // Strings are null-terminated Unicode
-  0x28, 0x00, // Size of Property Name (40 bytes) "DeviceInterfaceGUID"
-
-  // bPropertyName (DeviceInterfaceGUID)
-    'D', 0x00, 'e', 0x00, 'v', 0x00, 'i', 0x00, 'c', 0x00, 'e', 0x00, 'I', 0x00, 'n', 0x00,
-    't', 0x00, 'e', 0x00, 'r', 0x00, 'f', 0x00, 'a', 0x00, 'c', 0x00, 'e', 0x00, 'G', 0x00,
-    'U', 0x00, 'I', 0x00, 'D', 0x00, 0x00, 0x00,
-
-  0x4E, 0x00, // Size of Property Data (78 bytes)
-
-  // Vendor-defined property data: {CCE5291C-A69F-4995-A4C2-2AE57A51ADE9}
-    '{', 0x00, 'c', 0x00, 'c', 0x00, 'e', 0x00, '5', 0x00, '2', 0x00, '9', 0x00, '1', 0x00, // 16
-    'c', 0x00, '-', 0x00, 'a', 0x00, '6', 0x00, '9', 0x00, 'f', 0x00, '-', 0x00, '4', 0x00, // 32
-    '9', 0x00, '9', 0x00, '5', 0x00, '-', 0x00, 'a', 0x00, '4', 0x00, 'c', 0x00, '2', 0x00, // 48
-    '-', 0x00, '2', 0x00, 'a', 0x00, 'e', 0x00, '5', 0x00, '7', 0x00, 'a', 0x00, '5', 0x00, // 64
-    '1', 0x00, 'a', 0x00, 'd', 0x00, 'e', 0x00, '9', 0x00, '}', 0x00, 0x00, 0x00 // 78 bytes
-};
+static uint8_t response[USBPACKET_MAX_SIZE];
 
 // current packet
-USB_Setup_TypeDef setup;
-uint8_t usbdata[0x100] __attribute__((aligned(4)));
-uint8_t* ep0_txdata = NULL;
-uint16_t ep0_txlen = 0;
-bool outep3_processing = false;
+static USB_Setup_TypeDef setup;
+static uint8_t* ep0_txdata = NULL;
+static uint16_t ep0_txlen = 0;
+static bool outep3_processing = false;
 
 // Store the current interface alt setting.
-int current_int0_alt_setting = 0;
+static int current_int0_alt_setting = 0;
 
 // packet read and write
 
-void *USB_ReadPacket(void *dest, uint16_t len) {
+static void *USB_ReadPacket(void *dest, uint16_t len) {
   uint32_t *dest_copy = (uint32_t *)dest;
   uint32_t count32b = ((uint32_t)len + 3U) / 4U;
 
@@ -366,7 +26,7 @@ void *USB_ReadPacket(void *dest, uint16_t len) {
   return ((void *)dest_copy);
 }
 
-void USB_WritePacket(const void *src, uint16_t len, uint32_t ep) {
+static void USB_WritePacket(const void *src, uint16_t len, uint32_t ep) {
   #ifdef DEBUG_USB
   print("writing ");
   hexdump(src, len);
@@ -393,7 +53,7 @@ void USB_WritePacket(const void *src, uint16_t len, uint32_t ep) {
 
 // IN EP 0 TX FIFO has a max size of 127 bytes (much smaller than the rest)
 // so use TX FIFO empty interrupt to send larger amounts of data
-void USB_WritePacket_EP0(uint8_t *src, uint16_t len) {
+static void USB_WritePacket_EP0(uint8_t *src, uint16_t len) {
   #ifdef DEBUG_USB
   print("writing ");
   hexdump(src, len);
@@ -411,7 +71,7 @@ void USB_WritePacket_EP0(uint8_t *src, uint16_t len) {
   }
 }
 
-void usb_reset(void) {
+static void usb_reset(void) {
   // unmask endpoint interrupts, so many sets
   USBx_DEVICE->DAINT = 0xFFFFFFFFU;
   USBx_DEVICE->DAINTMSK = 0xFFFFFFFFU;
@@ -454,7 +114,7 @@ void usb_reset(void) {
   USBx_OUTEP(0U)->DOEPTSIZ = USB_OTG_DOEPTSIZ_STUPCNT | (USB_OTG_DOEPTSIZ_PKTCNT & (1UL << 19)) | (3U << 3);
 }
 
-char to_hex_char(uint8_t a) {
+static char to_hex_char(uint8_t a) {
   char ret;
   if (a < 10U) {
     ret = '0' + a;
@@ -465,12 +125,238 @@ char to_hex_char(uint8_t a) {
 }
 
 void usb_tick(void) {
+  static uint16_t usb_last_frame_num = 0U;
   uint16_t current_frame_num = (USBx_DEVICE->DSTS & USB_OTG_DSTS_FNSOF_Msk) >> USB_OTG_DSTS_FNSOF_Pos;
   usb_enumerated = (current_frame_num != usb_last_frame_num);
   usb_last_frame_num = current_frame_num;
 }
 
-void usb_setup(void) {
+static void usb_setup(void) {
+  static uint8_t device_desc[] = {
+    DSCR_DEVICE_LEN, USB_DESC_TYPE_DEVICE, //Length, Type
+    0x10, 0x02, // bcdUSB max version of USB supported (2.1)
+    0xFF, 0xFF, 0xFF, 0x40, // Class, Subclass, Protocol, Max Packet Size
+    TOUSBORDER(USB_VID), // idVendor
+    TOUSBORDER(USB_PID), // idProduct
+    0x00, 0x00, // bcdDevice
+    0x01, 0x02, // Manufacturer, Product
+    0x03, 0x01 // Serial Number, Num Configurations
+  };
+
+  static uint8_t device_qualifier[] = {
+    0x0a, USB_DESC_TYPE_DEVICE_QUALIFIER, //Length, Type
+    0x10, 0x02, // bcdUSB max version of USB supported (2.1)
+    0xFF, 0xFF, 0xFF, 0x40, // bDeviceClass, bDeviceSubClass, bDeviceProtocol, bMaxPacketSize0
+    0x01, 0x00 // bNumConfigurations, bReserved
+  };
+
+  static uint8_t configuration_desc[] = {
+    DSCR_CONFIG_LEN, USB_DESC_TYPE_CONFIGURATION, // Length, Type,
+    TOUSBORDER(0x0045U), // Total Len (uint16)
+    0x01, 0x01, STRING_OFFSET_ICONFIGURATION, // Num Interface, Config Value, Configuration
+    0xc0, 0x32, // Attributes, Max Power
+    // interface 0 ALT 0
+    DSCR_INTERFACE_LEN, USB_DESC_TYPE_INTERFACE, // Length, Type
+    0x00, 0x00, 0x03, // Index, Alt Index idx, Endpoint count
+    0XFF, 0xFF, 0xFF, // Class, Subclass, Protocol
+    0x00, // Interface
+      // endpoint 1, read CAN
+      DSCR_ENDPOINT_LEN, USB_DESC_TYPE_ENDPOINT, // Length, Type
+      ENDPOINT_RCV | 1, ENDPOINT_TYPE_BULK, // Endpoint Num/Direction, Type
+      TOUSBORDER(0x0040U), // Max Packet (0x0040)
+      0x00, // Polling Interval (NA)
+      // endpoint 2, send serial
+      DSCR_ENDPOINT_LEN, USB_DESC_TYPE_ENDPOINT, // Length, Type
+      ENDPOINT_SND | 2, ENDPOINT_TYPE_BULK, // Endpoint Num/Direction, Type
+      TOUSBORDER(0x0040U), // Max Packet (0x0040)
+      0x00, // Polling Interval
+      // endpoint 3, send CAN
+      DSCR_ENDPOINT_LEN, USB_DESC_TYPE_ENDPOINT, // Length, Type
+      ENDPOINT_SND | 3, ENDPOINT_TYPE_BULK, // Endpoint Num/Direction, Type
+      TOUSBORDER(0x0040U), // Max Packet (0x0040)
+      0x00, // Polling Interval
+    // interface 0 ALT 1
+    DSCR_INTERFACE_LEN, USB_DESC_TYPE_INTERFACE, // Length, Type
+    0x00, 0x01, 0x03, // Index, Alt Index idx, Endpoint count
+    0XFF, 0xFF, 0xFF, // Class, Subclass, Protocol
+    0x00, // Interface
+      // endpoint 1, read CAN
+      DSCR_ENDPOINT_LEN, USB_DESC_TYPE_ENDPOINT, // Length, Type
+      ENDPOINT_RCV | 1, ENDPOINT_TYPE_INT, // Endpoint Num/Direction, Type
+      TOUSBORDER(0x0040U), // Max Packet (0x0040)
+      0x05, // Polling Interval (5 frames)
+      // endpoint 2, send serial
+      DSCR_ENDPOINT_LEN, USB_DESC_TYPE_ENDPOINT, // Length, Type
+      ENDPOINT_SND | 2, ENDPOINT_TYPE_BULK, // Endpoint Num/Direction, Type
+      TOUSBORDER(0x0040U), // Max Packet (0x0040)
+      0x00, // Polling Interval
+      // endpoint 3, send CAN
+      DSCR_ENDPOINT_LEN, USB_DESC_TYPE_ENDPOINT, // Length, Type
+      ENDPOINT_SND | 3, ENDPOINT_TYPE_BULK, // Endpoint Num/Direction, Type
+      TOUSBORDER(0x0040U), // Max Packet (0x0040)
+      0x00, // Polling Interval
+  };
+
+  // STRING_DESCRIPTOR_HEADER is for uint16 string descriptors
+  // it takes in a string length, which is bytes/2 because unicode
+  static uint16_t string_language_desc[] = {
+    STRING_DESCRIPTOR_HEADER(1),
+    0x0409 // american english
+  };
+
+  // these strings are all uint16's so that we don't need to spam ,0 after every character
+  static uint16_t string_manufacturer_desc[] = {
+    STRING_DESCRIPTOR_HEADER(8),
+    'c', 'o', 'm', 'm', 'a', '.', 'a', 'i'
+  };
+
+  static uint16_t string_product_desc[] = {
+    STRING_DESCRIPTOR_HEADER(5),
+    'p', 'a', 'n', 'd', 'a'
+  };
+
+  // a string containing the default configuration index
+  static uint16_t string_configuration_desc[] = {
+    STRING_DESCRIPTOR_HEADER(2),
+    '0', '1' // "01"
+  };
+
+  // WCID (auto install WinUSB driver)
+  // https://github.com/pbatard/libwdi/wiki/WCID-Devices
+  // https://docs.microsoft.com/en-us/windows-hardware/drivers/usbcon/winusb-installation#automatic-installation-of--winusb-without-an-inf-file
+  // WinUSB 1.0 descriptors, this is mostly used by Windows XP
+  static uint8_t string_238_desc[] = {
+    0x12, USB_DESC_TYPE_STRING, // bLength, bDescriptorType
+    'M',0, 'S',0, 'F',0, 'T',0, '1',0, '0',0, '0',0, // qwSignature (MSFT100)
+    MS_VENDOR_CODE, 0x00 // bMS_VendorCode, bPad
+  };
+
+  static uint8_t winusb_ext_compatid_os_desc[] = {
+    0x28, 0x00, 0x00, 0x00, // dwLength
+    0x00, 0x01, // bcdVersion
+    0x04, 0x00, // wIndex
+    0x01, // bCount
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // Reserved
+    0x00, // bFirstInterfaceNumber
+    0x00, // Reserved
+    'W', 'I', 'N', 'U', 'S', 'B', 0x00, 0x00, // compatible ID (WINUSB)
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // subcompatible ID (none)
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00 // Reserved
+  };
+
+  static uint8_t winusb_ext_prop_os_desc[] = {
+    0x8e, 0x00, 0x00, 0x00, // dwLength
+    0x00, 0x01, // bcdVersion
+    0x05, 0x00, // wIndex
+    0x01, 0x00, // wCount
+    // first property
+    0x84, 0x00, 0x00, 0x00, // dwSize
+    0x01, 0x00, 0x00, 0x00, // dwPropertyDataType
+    0x28, 0x00, // wPropertyNameLength
+    'D',0, 'e',0, 'v',0, 'i',0, 'c',0, 'e',0, 'I',0, 'n',0, 't',0, 'e',0, 'r',0, 'f',0, 'a',0, 'c',0, 'e',0, 'G',0, 'U',0, 'I',0, 'D',0, 0, 0, // bPropertyName (DeviceInterfaceGUID)
+    0x4e, 0x00, 0x00, 0x00, // dwPropertyDataLength
+    '{',0, 'c',0, 'c',0, 'e',0, '5',0, '2',0, '9',0, '1',0, 'c',0, '-',0, 'a',0, '6',0, '9',0, 'f',0, '-',0, '4',0 ,'9',0 ,'9',0 ,'5',0 ,'-',0, 'a',0, '4',0, 'c',0, '2',0, '-',0, '2',0, 'a',0, 'e',0, '5',0, '7',0, 'a',0, '5',0, '1',0, 'a',0, 'd',0, 'e',0, '9',0, '}',0, 0, 0, // bPropertyData ({CCE5291C-A69F-4995-A4C2-2AE57A51ADE9})
+  };
+
+  /*
+  Binary Object Store descriptor used to expose WebUSB (and more WinUSB) metadata
+  comments are from the wicg spec
+  References used:
+    https://wicg.github.io/webusb/#webusb-platform-capability-descriptor
+    https://github.com/sowbug/weblight/blob/192ad7a0e903542e2aa28c607d98254a12a6399d/firmware/webusb.c
+    https://os.mbed.com/users/larsgk/code/USBDevice_WebUSB/file/1d8a6665d607/WebUSBDevice/
+  */
+  static uint8_t binary_object_store_desc[] = {
+    // BOS header
+    BINARY_OBJECT_STORE_DESCRIPTOR_LENGTH, // bLength, this is only the length of the header
+    BINARY_OBJECT_STORE_DESCRIPTOR, // bDescriptorType
+    0x39, 0x00, // wTotalLength (LSB, MSB)
+    0x02, // bNumDeviceCaps (WebUSB + WinUSB)
+
+    // -------------------------------------------------
+    // WebUSB descriptor
+    // header
+      0x18, // bLength, Size of this descriptor. Must be set to 24.
+      0x10, // bDescriptorType, DEVICE CAPABILITY descriptor
+      0x05, // bDevCapabilityType, PLATFORM capability
+      0x00, // bReserved, This field is reserved and shall be set to zero.
+
+    // PlatformCapabilityUUID, Must be set to {3408b638-09a9-47a0-8bfd-a0768815b665}.
+      0x38, 0xB6, 0x08, 0x34,
+      0xA9, 0x09, 0xA0, 0x47,
+      0x8B, 0xFD, 0xA0, 0x76,
+      0x88, 0x15, 0xB6, 0x65,
+    // </PlatformCapabilityUUID>
+
+    0x00, 0x01, // bcdVersion, Protocol version supported. Must be set to 0x0100.
+    WEBUSB_VENDOR_CODE, // bVendorCode, bRequest value used for issuing WebUSB requests.
+    // there used to be a concept of "allowed origins", but it was removed from the spec
+    // it was intended to be a security feature, but then the entire security model relies on domain ownership
+    // https://github.com/WICG/webusb/issues/49
+    // other implementations use various other indexed to leverate this no-longer-valid feature. we wont.
+    // the spec says we *must* reply to index 0x03 with the url, so we'll hint that that's the right index
+    0x03, // iLandingPage, URL descriptor index of the device’s landing page.
+
+    // -------------------------------------------------
+    // WinUSB descriptor
+    // header
+      0x1C, // Descriptor size (28 bytes)
+      0x10, // Descriptor type (Device Capability)
+      0x05, // Capability type (Platform)
+      0x00, // Reserved
+
+    // MS OS 2.0 Platform Capability ID (D8DD60DF-4589-4CC7-9CD2-659D9E648A9F)
+    // Indicates the device supports the Microsoft OS 2.0 descriptor
+      0xDF, 0x60, 0xDD, 0xD8,
+      0x89, 0x45, 0xC7, 0x4C,
+      0x9C, 0xD2, 0x65, 0x9D,
+      0x9E, 0x64, 0x8A, 0x9F,
+
+    0x00, 0x00, 0x03, 0x06, // Windows version, currently set to 8.1 (0x06030000)
+
+    WINUSB_PLATFORM_DESCRIPTOR_LENGTH, 0x00, // MS OS 2.0 descriptor size (word)
+    MS_VENDOR_CODE, 0x00 // vendor code, no alternate enumeration
+  };
+
+  // WinUSB 2.0 descriptor. This is what modern systems use
+  // https://github.com/sowbug/weblight/blob/192ad7a0e903542e2aa28c607d98254a12a6399d/firmware/webusb.c
+  // http://janaxelson.com/files/ms_os_20_descriptors.c
+  // https://books.google.com/books?id=pkefBgAAQBAJ&pg=PA353&lpg=PA353
+  static uint8_t winusb_20_desc[WINUSB_PLATFORM_DESCRIPTOR_LENGTH] = {
+    // Microsoft OS 2.0 descriptor set header (table 10)
+    0x0A, 0x00, // Descriptor size (10 bytes)
+    0x00, 0x00, // MS OS 2.0 descriptor set header
+
+    0x00, 0x00, 0x03, 0x06, // Windows version (8.1) (0x06030000)
+    WINUSB_PLATFORM_DESCRIPTOR_LENGTH, 0x00, // Total size of MS OS 2.0 descriptor set
+
+    // Microsoft OS 2.0 compatible ID descriptor
+      0x14, 0x00, // Descriptor size (20 bytes)
+      0x03, 0x00, // MS OS 2.0 compatible ID descriptor
+      'W', 'I', 'N', 'U', 'S', 'B', 0x00, 0x00, // compatible ID (WINUSB)
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,     // Sub-compatible ID
+
+    // Registry property descriptor
+    0x80, 0x00, // Descriptor size (130 bytes)
+    0x04, 0x00, // Registry Property descriptor
+    0x01, 0x00, // Strings are null-terminated Unicode
+    0x28, 0x00, // Size of Property Name (40 bytes) "DeviceInterfaceGUID"
+
+    // bPropertyName (DeviceInterfaceGUID)
+      'D', 0x00, 'e', 0x00, 'v', 0x00, 'i', 0x00, 'c', 0x00, 'e', 0x00, 'I', 0x00, 'n', 0x00,
+      't', 0x00, 'e', 0x00, 'r', 0x00, 'f', 0x00, 'a', 0x00, 'c', 0x00, 'e', 0x00, 'G', 0x00,
+      'U', 0x00, 'I', 0x00, 'D', 0x00, 0x00, 0x00,
+
+    0x4E, 0x00, // Size of Property Data (78 bytes)
+
+    // Vendor-defined property data: {CCE5291C-A69F-4995-A4C2-2AE57A51ADE9}
+      '{', 0x00, 'c', 0x00, 'c', 0x00, 'e', 0x00, '5', 0x00, '2', 0x00, '9', 0x00, '1', 0x00, // 16
+      'c', 0x00, '-', 0x00, 'a', 0x00, '6', 0x00, '9', 0x00, 'f', 0x00, '-', 0x00, '4', 0x00, // 32
+      '9', 0x00, '9', 0x00, '5', 0x00, '-', 0x00, 'a', 0x00, '4', 0x00, 'c', 0x00, '2', 0x00, // 48
+      '-', 0x00, '2', 0x00, 'a', 0x00, 'e', 0x00, '5', 0x00, '7', 0x00, 'a', 0x00, '5', 0x00, // 64
+      '1', 0x00, 'a', 0x00, 'd', 0x00, 'e', 0x00, '9', 0x00, '}', 0x00, 0x00, 0x00 // 78 bytes
+  };
+
   int resp_len;
   ControlPacket_t control_req;
 
@@ -639,7 +525,7 @@ void usb_setup(void) {
 
 void usb_irqhandler(void) {
   //USBx->GINTMSK = 0;
-
+  static uint8_t usbdata[0x100] __attribute__((aligned(4)));
   unsigned int gintsts = USBx->GINTSTS;
   unsigned int gotgint = USBx->GOTGINT;
   unsigned int daint = USBx_DEVICE->DAINT;
@@ -913,12 +799,4 @@ void can_tx_comms_resume_usb(void) {
     USBx_OUTEP(3U)->DOEPCTL |= USB_OTG_DOEPCTL_EPENA | USB_OTG_DOEPCTL_CNAK;
   }
   EXIT_CRITICAL();
-}
-
-void usb_soft_disconnect(bool enable) {
-  if (enable) {
-    USBx_DEVICE->DCTL |= USB_OTG_DCTL_SDIS;
-  } else {
-    USBx_DEVICE->DCTL &= ~USB_OTG_DCTL_SDIS;
-  }
 }

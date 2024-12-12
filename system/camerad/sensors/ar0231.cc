@@ -1,8 +1,7 @@
 #include <cassert>
+#include <cmath>
 
 #include "common/swaglog.h"
-#include "system/camerad/cameras/camera_common.h"
-#include "system/camerad/cameras/camera_qcom2.h"
 #include "system/camerad/sensors/sensor.h"
 
 namespace {
@@ -17,7 +16,7 @@ const float sensor_analog_gains_AR0231[] = {
     5.0 / 4.0, 6.0 / 4.0, 6.0 / 3.0, 7.0 / 3.0,  // 8, 9, 10, 11
     7.0 / 2.0, 8.0 / 2.0, 8.0 / 1.0};            // 12, 13, 14, 15 = bypass
 
-std::map<uint16_t, std::pair<int, int>> ar0231_build_register_lut(CameraState *c, uint8_t *data) {
+std::map<uint16_t, std::pair<int, int>> ar0231_build_register_lut(const AR0231 *s, uint8_t *data) {
   // This function builds a lookup table from register address, to a pair of indices in the
   // buffer where to read this address. The buffer contains padding bytes,
   // as well as markers to indicate the type of the next byte.
@@ -33,7 +32,7 @@ std::map<uint16_t, std::pair<int, int>> ar0231_build_register_lut(CameraState *c
 
   std::map<uint16_t, std::pair<int, int>> registers;
   for (int register_row = 0; register_row < 2; register_row++) {
-    uint8_t *registers_raw = data + c->ci->frame_stride * register_row;
+    uint8_t *registers_raw = data + s->frame_stride * register_row;
     assert(registers_raw[0] == 0x0a);  // Start of line
 
     int value_tag_count = 0;
@@ -58,7 +57,7 @@ std::map<uint16_t, std::pair<int, int>> ar0231_build_register_lut(CameraState *c
           cur_addr += 2;
           first_val_idx = val_idx;
         } else {
-          registers[cur_addr] = std::make_pair(first_val_idx + c->ci->frame_stride * register_row, val_idx + c->ci->frame_stride * register_row);
+          registers[cur_addr] = std::make_pair(first_val_idx + s->frame_stride * register_row, val_idx + s->frame_stride * register_row);
         }
 
         value_tag_count++;
@@ -79,6 +78,7 @@ float ar0231_parse_temp_sensor(uint16_t calib1, uint16_t calib2, uint16_t data_r
 
 AR0231::AR0231() {
   image_sensor = cereal::FrameData::ImageSensor::AR0231;
+  bayer_pattern = CAM_ISP_PATTERN_BAYER_GRGRGR;
   pixel_size_mm = 0.003;
   data_word = true;
   frame_width = 1928;
@@ -94,9 +94,12 @@ AR0231::AR0231() {
   init_reg_array.assign(std::begin(init_array_ar0231), std::end(init_array_ar0231));
   probe_reg_addr = 0x3000;
   probe_expected_data = 0x354;
+  bits_per_pixel = 12;
   mipi_format = CAM_FORMAT_MIPI_RAW_12;
   frame_data_type = 0x12;  // Changing stats to 0x2C doesn't work, so change pixels to 0x12 instead
   mclk_frequency = 19200000; //Hz
+
+  readout_time_ns = 22850000;
 
   dc_gain_factor = 2.5;
   dc_gain_min_weight = 0;
@@ -117,11 +120,49 @@ AR0231::AR0231() {
   min_ev = exposure_time_min * sensor_analog_gains[analog_gain_min_idx];
   max_ev = exposure_time_max * dc_gain_factor * sensor_analog_gains[analog_gain_max_idx];
   target_grey_factor = 1.0;
+
+  black_level = 168;
+  color_correct_matrix = {
+    0x000000af, 0x00000ff9, 0x00000fd8,
+    0x00000fbc, 0x000000bb, 0x00000009,
+    0x00000fb6, 0x00000fe0, 0x000000ea,
+  };
+  for (int i = 0; i < 65; i++) {
+    float fx = i / 64.0;
+    const float gamma_k = 0.75;
+    const float gamma_b = 0.125;
+    const float mp = 0.01; // ideally midpoint should be adaptive
+    const float rk = 9 - 100*mp;
+    // poly approximation for s curve
+    fx = (fx > mp) ?
+      ((rk * (fx-mp) * (1-(gamma_k*mp+gamma_b)) * (1+1/(rk*(1-mp))) / (1+rk*(fx-mp))) + gamma_k*mp + gamma_b) :
+      ((rk * (fx-mp) * (gamma_k*mp+gamma_b) * (1+1/(rk*mp)) / (1-rk*(fx-mp))) + gamma_k*mp + gamma_b);
+    gamma_lut_rgb.push_back((uint32_t)(fx*1023.0 + 0.5));
+  }
+  prepare_gamma_lut();
+  linearization_lut = {
+    0x02000000, 0x02000000, 0x02000000, 0x02000000,
+    0x020007ff, 0x020007ff, 0x020007ff, 0x020007ff,
+    0x02000bff, 0x02000bff, 0x02000bff, 0x02000bff,
+    0x020017ff, 0x020017ff, 0x020017ff, 0x020017ff,
+    0x02001bff, 0x02001bff, 0x02001bff, 0x02001bff,
+    0x020023ff, 0x020023ff, 0x020023ff, 0x020023ff,
+    0x00003fff, 0x00003fff, 0x00003fff, 0x00003fff,
+    0x00003fff, 0x00003fff, 0x00003fff, 0x00003fff,
+    0x00003fff, 0x00003fff, 0x00003fff, 0x00003fff,
+  };
+  for (int i = 0; i < 252; i++) {
+    linearization_lut.push_back(0x0);
+  }
+  linearization_pts = {0x07ff0bff, 0x17ff1bff, 0x23ff3fff, 0x3fff3fff};
+  for (int i = 0; i < 884*2; i++) {
+    vignetting_lut.push_back(0xff);
+  }
 }
 
-void AR0231::processRegisters(CameraState *c, cereal::FrameData::Builder &framed) const {
+void AR0231::processRegisters(uint8_t *cur_buf, cereal::FrameData::Builder &framed) const {
   const uint8_t expected_preamble[] = {0x0a, 0xaa, 0x55, 0x20, 0xa5, 0x55};
-  uint8_t *data = (uint8_t *)c->buf.cur_camera_buf->addr + c->ci->registers_offset;
+  uint8_t *data = cur_buf + registers_offset;
 
   if (memcmp(data, expected_preamble, std::size(expected_preamble)) != 0) {
     LOGE("unexpected register data found");
@@ -129,7 +170,7 @@ void AR0231::processRegisters(CameraState *c, cereal::FrameData::Builder &framed
   }
 
   if (ar0231_register_lut.empty()) {
-    ar0231_register_lut = ar0231_build_register_lut(c, data);
+    ar0231_register_lut = ar0231_build_register_lut(this, data);
   }
   std::map<uint16_t, uint16_t> registers;
   for (uint16_t addr : {0x2000, 0x2002, 0x20b0, 0x20b2, 0x30c6, 0x30c8, 0x30ca, 0x30cc}) {
