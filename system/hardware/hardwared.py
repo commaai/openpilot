@@ -5,6 +5,7 @@ import queue
 import threading
 import time
 from collections import OrderedDict, namedtuple
+import random
 from pathlib import Path
 
 import psutil
@@ -59,6 +60,23 @@ def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_tex
   prev_offroad_states[offroad_alert] = (show_alert, extra_text)
   set_offroad_alert(offroad_alert, show_alert, extra_text)
 
+def touch_thread(end_event):
+  pm = messaging.PubMaster(['touch'])
+
+  event_frame = []
+
+  while not end_event.is_set():
+    event = log.Touch.new_message()
+    event.type = random.randint(2, 10)
+    event.code = 2
+    event.value = 3
+    event_frame.append(event)
+
+    if len(event_frame) > 3:
+      msg = messaging.new_message('touch', len(event_frame))
+      msg.touch = event_frame
+      pm.send('touch', msg)
+      event_frame = []
 
 def hw_state_thread(end_event, hw_queue):
   """Handles non critical hardware state, and sends over queue"""
@@ -418,6 +436,7 @@ def main():
   threads = [
     threading.Thread(target=hw_state_thread, args=(end_event, hw_queue)),
     threading.Thread(target=hardware_thread, args=(end_event, hw_queue)),
+    threading.Thread(target=touch_thread, args=(end_event,)),
   ]
 
   for t in threads:
