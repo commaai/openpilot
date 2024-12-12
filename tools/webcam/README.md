@@ -1,7 +1,7 @@
-# Run openpilot with webcam on PC
+# Run openpilot with webcam on PC (TODO: test these steps on a fresh Ubuntu install to verify)
 
 What's needed:
-- Ubuntu 24.04
+- Ubuntu 24.04 (note, [WSL2 is not yet supported](http://TODO:INSERT_ISSUE_URL))
 - GPU (recommended)
 - Two USB webcams, at least 720p and 78 degrees FOV (e.g. Logitech C920/C615)
 - [Car harness](https://comma.ai/shop/products/comma-car-harness) with black panda to connect to your car
@@ -9,29 +9,27 @@ What's needed:
 That's it!
 
 ## Setup openpilot
+- Follow [this readme](https://github.com/commaai/openpilot/tree/master/tools) to install and build the requirements
+- Install OpenCL Driver
 ```
-cd ~
-git clone https://github.com/commaai/openpilot.git
-```
-- Follow [this readme](https://github.com/commaai/openpilot/tree/master/tools) to install the requirements
-- Install [OpenCL Driver](https://registrationcenter-download.intel.com/akdlm/irc_nas/vcp/15532/l_opencl_p_18.1.0.015.tgz)
-
-## Build openpilot for webcam
-```
-cd ~/openpilot
-USE_WEBCAM=1 scons -j$(nproc)
+sudo apt install pocl-opencl-icd
 ```
 
 ## Connect the hardware
 - Connect the road facing camera first, then the driver facing camera
-- (default indexes are 1 and 2; can be modified in system/camerad/cameras/camera_webcam.cc)
 - Connect your computer to panda
 
 ## GO
 ```
-cd ~/openpilot/system/manager
-NOSENSOR=1 USE_WEBCAM=1 ./manager.py
+USE_WEBCAM=1 system/manager/manager.py
 ```
-- Start the car, then the UI should show the road webcam's view
-- Adjust and secure the webcams (you can run tools/webcam/front_mount_helper.py to help mount the driver camera)
+- Start the car, then the UI should show the road webcam's view (TODO: should it!? This needs fixing then)
+- Adjust and secure the webcams (you can run tools/webcam/front_mount_helper.py to help mount the driver camera) (TODO: restore this file)
 - Finish calibration and engage!
+
+## Specify Cameras
+
+To specify individual cameras, use the `ROAD_CAM`, `DRIVER_CAM`, and optional `WIDE_CAM` environment variables (ie. `DRIVER_CAM=2` uses `/dev/video2` for the driver-facing camera):
+```
+ROAD_CAM=4 DRIVER_CAM=2 system/manager/manager.py
+```
