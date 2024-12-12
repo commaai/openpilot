@@ -73,7 +73,7 @@ void CameraState::init(VisionIpcServer *v, cl_device_id device_id, cl_context ct
 
   if (!camera.enabled) return;
 
-  fl_pix = camera.cc.focal_len / camera.sensor->pixel_size_mm;
+  fl_pix = camera.cc.focal_len / camera.sensor->pixel_size_mm / camera.sensor->out_scale;
   set_exposure_rect();
 
   dc_gain_weight = camera.sensor->dc_gain_min_weight;
