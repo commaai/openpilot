@@ -753,21 +753,26 @@ def ws_send(ws: WebSocket, end_event: threading.Event) -> None:
 def ws_manage(ws: WebSocket, end_event: threading.Event) -> None:
   params = Params()
   onroad_prev = None
-  sock = ws.sock
 
   while True:
     onroad = params.get_bool("IsOnroad")
     if onroad != onroad_prev:
       onroad_prev = onroad
 
-      if sock is not None:
-        # While not sending data, onroad, we can expect to time out in 7 + (7 * 2) = 21s
-        #                         offroad, we can expect to time out in 30 + (10 * 3) = 60s
-        # FIXME: TCP_USER_TIMEOUT is effectively 2x for some reason (32s), so it's mostly unused
-        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_USER_TIMEOUT, 16000 if onroad else 0)
-        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 7 if onroad else 30)
-        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 7 if onroad else 10)
-        sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 2 if onroad else 3)
+      # TODO: WebSocket may set ws.sock to None when a WebSocketConnectionClosedException occurs.
+      # Need to implement a more robust approach to avoid race conditions where the socket could be closed while
+      # trying to set socket options.
+      if ws.sock is not None:
+        try:
+          # While not sending data, onroad, we can expect to time out in 7 + (7 * 2) = 21s
+          #                         offroad, we can expect to time out in 30 + (10 * 3) = 60s
+          # FIXME: TCP_USER_TIMEOUT is effectively 2x for some reason (32s), so it's mostly unused
+          ws.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_USER_TIMEOUT, 16000 if onroad else 0)
+          ws.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPIDLE, 7 if onroad else 30)
+          ws.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 7 if onroad else 10)
+          ws.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 2 if onroad else 3)
+        except OSError as e:
+          cloudlog.exception(f"athenad.ws_manage: error setting socket options: {e}")
 
     if end_event.wait(5):
       break
