@@ -1,7 +1,7 @@
 # Run openpilot with webcam on PC (TODO: test these steps on a fresh Ubuntu install to verify)
 
 What's needed:
-- Ubuntu 24.04 (note, [WSL2 is not yet supported](http://TODO:INSERT_ISSUE_URL))
+- Ubuntu 24.04 ([WSL2 is not yet supported](https://github.com/commaai/openpilot/issues/34216))
 - GPU (recommended)
 - Two USB webcams, at least 720p and 78 degrees FOV (e.g. Logitech C920/C615)
 - [Car harness](https://comma.ai/shop/products/comma-car-harness) with black panda to connect to your car
