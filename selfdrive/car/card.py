@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import time
-import threading
 
 import cereal.messaging as messaging
 
@@ -9,6 +8,7 @@ from cereal import car, log
 
 from panda import ALTERNATIVE_EXPERIENCE
 
+from openpilot.common.parameter_updater import ParameterUpdater
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper
 from openpilot.common.swaglog import cloudlog, ForwardingHandler
@@ -149,8 +149,7 @@ class Car:
     self.mock_carstate = MockCarState()
     self.v_cruise_helper = VCruiseHelper(self.CP)
 
-    self.is_metric = self.params.get_bool("IsMetric")
-    self.experimental_mode = self.params.get_bool("ExperimentalMode")
+    self.parameter_updater = ParameterUpdater(['IsMetric', 'ExperimentalMode'])
 
     # card is driven by can recv, expected at 100Hz
     self.rk = Ratekeeper(100, print_delay_threshold=None)
@@ -181,7 +180,7 @@ class Car:
       self.can_log_mono_time = messaging.log_from_bytes(can_strs[0]).logMonoTime
 
     # TODO: mirror the carState.cruiseState struct?
-    self.v_cruise_helper.update_v_cruise(CS, self.sm['carControl'].enabled, self.is_metric)
+    self.v_cruise_helper.update_v_cruise(CS, self.sm['carControl'].enabled, self.parameter_updater.get_bool('IsMetric'))
     CS.vCruise = float(self.v_cruise_helper.v_cruise_kph)
     CS.vCruiseCluster = float(self.v_cruise_helper.v_cruise_cluster_kph)
 
@@ -239,7 +238,7 @@ class Car:
     CS, RD = self.state_update()
 
     if self.sm['carControl'].enabled and not self.CC_prev.enabled:
-      self.v_cruise_helper.initialize_v_cruise(CS, self.experimental_mode)
+      self.v_cruise_helper.initialize_v_cruise(CS, self.parameter_updater.get_bool('ExperimentalMode'))
 
     self.state_publish(CS, RD)
 
@@ -250,23 +249,14 @@ class Car:
 
     self.initialized_prev = initialized
 
-  def params_thread(self, evt):
-    while not evt.is_set():
-      self.is_metric = self.params.get_bool("IsMetric")
-      self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
-      time.sleep(0.1)
-
   def card_thread(self):
-    e = threading.Event()
-    t = threading.Thread(target=self.params_thread, args=(e, ))
     try:
-      t.start()
+      self.parameter_updater.start()
       while True:
         self.step()
         self.rk.monitor_time()
     finally:
-      e.set()
-      t.join()
+      self.parameter_updater.stop()
 
 
 def main():

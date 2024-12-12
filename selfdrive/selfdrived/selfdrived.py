@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 import os
-import time
-import threading
 
 import cereal.messaging as messaging
 
@@ -10,6 +8,7 @@ from msgq.visionipc import VisionIpcClient, VisionStreamType
 from panda import ALTERNATIVE_EXPERIENCE
 
 
+from openpilot.common.parameter_updater import ParameterUpdater
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper, DT_CTRL
 from openpilot.common.swaglog import cloudlog
@@ -83,8 +82,7 @@ class SelfdriveD:
                                   ignore_alive=ignore, ignore_avg_freq=ignore+['radarState',],
                                   ignore_valid=ignore, frequency=int(1/DT_CTRL))
 
-    # read params
-    self.is_metric = self.params.get_bool("IsMetric")
+    self.parameter_updater = ParameterUpdater(['IsMetric', 'ExperimentalMode', 'LongitudinalPersonality'])
     self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
 
     car_recognized = self.CP.carName != 'mock'
@@ -110,8 +108,7 @@ class SelfdriveD:
     self.events_prev = []
     self.logged_comm_issue = None
     self.not_running_prev = None
-    self.experimental_mode = False
-    self.personality = self.read_personality_param()
+    self.personality = log.LongitudinalPersonality.standard
     self.recalibrating_seen = False
     self.state_machine = StateMachine()
     self.rk = Ratekeeper(100, print_delay_threshold=None)
@@ -417,7 +414,7 @@ class SelfdriveD:
       clear_event_types.add(ET.NO_ENTRY)
 
     pers = LONGITUDINAL_PERSONALITY_MAP[self.personality]
-    alerts = self.events.create_alerts(self.state_machine.current_alert_types, [self.CP, CS, self.sm, self.is_metric,
+    alerts = self.events.create_alerts(self.state_machine.current_alert_types, [self.CP, CS, self.sm, self.parameter_updater.get_bool("IsMetric"),
                                                                                 self.state_machine.soft_disable_timer, pers])
     self.AM.add_many(self.sm.frame, alerts)
     self.AM.process_alerts(self.sm.frame, clear_event_types)
@@ -431,7 +428,7 @@ class SelfdriveD:
     ss.active = self.active
     ss.state = self.state_machine.state
     ss.engageable = not self.events.contains(ET.NO_ENTRY)
-    ss.experimentalMode = self.experimental_mode
+    ss.experimentalMode = self.parameter_updater.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
     ss.personality = self.personality
 
     ss.alertText1 = self.AM.current_alert.alert_text_1
@@ -462,30 +459,15 @@ class SelfdriveD:
 
     self.CS_prev = CS
 
-  def read_personality_param(self):
-    try:
-      return int(self.params.get('LongitudinalPersonality'))
-    except (ValueError, TypeError):
-      return log.LongitudinalPersonality.standard
-
-  def params_thread(self, evt):
-    while not evt.is_set():
-      self.is_metric = self.params.get_bool("IsMetric")
-      self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
-      self.personality = self.read_personality_param()
-      time.sleep(0.1)
-
   def run(self):
-    e = threading.Event()
-    t = threading.Thread(target=self.params_thread, args=(e, ))
     try:
-      t.start()
+      self.parameter_updater.start()
       while True:
+        self.personality = self.parameter_updater.get_int('LongitudinalPersonality', log.LongitudinalPersonality.standard)
         self.step()
         self.rk.monitor_time()
     finally:
-      e.set()
-      t.join()
+      self.parameter_updater.stop()
 
 
 def main():
