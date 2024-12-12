@@ -652,10 +652,10 @@ name = "gymnasium"
 version = "1.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cloudpickle" },
-    { name = "farama-notifications" },
-    { name = "numpy" },
-    { name = "typing-extensions" },
+    { name = "cloudpickle", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
+    { name = "farama-notifications", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
+    { name = "numpy", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
+    { name = "typing-extensions", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/4e/12/1047b8fdbfcdce74022048d916e844ad7e6e1114d81d26a7aed657e3a76d/gymnasium-1.0.0.tar.gz", hash = "sha256:9d2b66f30c1b34fe3c2ce7fae65ecf365d0e9982d2b3d860235e773328a3b403", size = 821389 }
 wheels = [
@@ -962,22 +962,22 @@ name = "metadrive-simulator"
 version = "0.4.2.3"
 source = { url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal/metadrive_simulator-0.4.2.3-py3-none-any.whl" }
 dependencies = [
-    { name = "filelock" },
-    { name = "gymnasium" },
-    { name = "lxml" },
-    { name = "matplotlib" },
-    { name = "numpy" },
-    { name = "opencv-python-headless" },
-    { name = "panda3d" },
-    { name = "panda3d-gltf" },
-    { name = "pillow" },
-    { name = "progressbar" },
-    { name = "psutil" },
-    { name = "pygments" },
-    { name = "requests" },
-    { name = "shapely" },
-    { name = "tqdm" },
-    { name = "yapf" },
+    { name = "filelock", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
+    { name = "gymnasium", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
+    { name = "lxml", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
+    { name = "matplotlib", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
+    { name = "numpy", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
+    { name = "opencv-python-headless", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
+    { name = "panda3d", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
+    { name = "panda3d-gltf", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
+    { name = "pillow", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
+    { name = "progressbar", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
+    { name = "psutil", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
+    { name = "pygments", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
+    { name = "requests", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
+    { name = "shapely", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
+    { name = "tqdm", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
+    { name = "yapf", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
 ]
 wheels = [
     { url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal/metadrive_simulator-0.4.2.3-py3-none-any.whl", hash = "sha256:6242d4e37e6c592d5eb1cadf497637540d3b754b89813a88c50a93c7fc88b02d" },
@@ -1234,27 +1234,16 @@ dependencies = [
     { name = "sympy" },
 ]
 wheels = [
+    { url = "https://files.pythonhosted.org/packages/95/8d/2634e2959b34aa8a0037989f4229e9abcfa484e9c228f99633b3241768a6/onnxruntime-1.20.1-cp311-cp311-macosx_13_0_universal2.whl", hash = "sha256:06bfbf02ca9ab5f28946e0f912a562a5f005301d0c419283dc57b3ed7969bb7b", size = 30998725 },
     { url = "https://files.pythonhosted.org/packages/a5/da/c44bf9bd66cd6d9018a921f053f28d819445c4d84b4dd4777271b0fe52a2/onnxruntime-1.20.1-cp311-cp311-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:f6243e34d74423bdd1edf0ae9596dd61023b260f546ee17d701723915f06a9f7", size = 11955227 },
     { url = "https://files.pythonhosted.org/packages/11/ac/4120dfb74c8e45cce1c664fc7f7ce010edd587ba67ac41489f7432eb9381/onnxruntime-1.20.1-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:5eec64c0269dcdb8d9a9a53dc4d64f87b9e0c19801d9321246a53b7eb5a7d1bc", size = 13331703 },
+    { url = "https://files.pythonhosted.org/packages/12/f1/cefacac137f7bb7bfba57c50c478150fcd3c54aca72762ac2c05ce0532c1/onnxruntime-1.20.1-cp311-cp311-win32.whl", hash = "sha256:a19bc6e8c70e2485a1725b3d517a2319603acc14c1f1a017dda0afe6d4665b41", size = 9813977 },
+    { url = "https://files.pythonhosted.org/packages/2c/2d/2d4d202c0bcfb3a4cc2b171abb9328672d7f91d7af9ea52572722c6d8d96/onnxruntime-1.20.1-cp311-cp311-win_amd64.whl", hash = "sha256:8508887eb1c5f9537a4071768723ec7c30c28eb2518a00d0adcd32c89dea3221", size = 11329895 },
+    { url = "https://files.pythonhosted.org/packages/e5/39/9335e0874f68f7d27103cbffc0e235e32e26759202df6085716375c078bb/onnxruntime-1.20.1-cp312-cp312-macosx_13_0_universal2.whl", hash = "sha256:22b0655e2bf4f2161d52706e31f517a0e54939dc393e92577df51808a7edc8c9", size = 31007580 },
     { url = "https://files.pythonhosted.org/packages/c5/9d/a42a84e10f1744dd27c6f2f9280cc3fb98f869dd19b7cd042e391ee2ab61/onnxruntime-1.20.1-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:f1f56e898815963d6dc4ee1c35fc6c36506466eff6d16f3cb9848cea4e8c8172", size = 11952833 },
     { url = "https://files.pythonhosted.org/packages/47/42/2f71f5680834688a9c81becbe5c5bb996fd33eaed5c66ae0606c3b1d6a02/onnxruntime-1.20.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:bb71a814f66517a65628c9e4a2bb530a6edd2cd5d87ffa0af0f6f773a027d99e", size = 13333903 },
-]
-
-[[package]]
-name = "onnxruntime-gpu"
-version = "1.20.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "coloredlogs" },
-    { name = "flatbuffers" },
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "protobuf" },
-    { name = "sympy" },
-]
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e0/a5/5c2287d61f359c7342e9d59d1e3dd728a982dea85f846c7af305a801c3ca/onnxruntime_gpu-1.20.1-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:1795e8bc6f9a1488a4d51d242edc4232a5ae60ec44ab4d4b0a7c65b3d17fcbff", size = 291519550 },
-    { url = "https://files.pythonhosted.org/packages/91/a8/6984a2fb070be372a866108e3e85c9eb6e8f0378a8567a66967d80befb75/onnxruntime_gpu-1.20.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:1951f96cd534c6151721e552606d0d792ea6a4c3e57e2f10eed17cca8105e953", size = 291510989 },
+    { url = "https://files.pythonhosted.org/packages/c8/f1/aabfdf91d013320aa2fc46cf43c88ca0182860ff15df872b4552254a9680/onnxruntime-1.20.1-cp312-cp312-win32.whl", hash = "sha256:bd386cc9ee5f686ee8a75ba74037750aca55183085bf1941da8efcfe12d5b120", size = 9814562 },
+    { url = "https://files.pythonhosted.org/packages/dd/80/76979e0b744307d488c79e41051117634b956612cc731f1028eb17ee7294/onnxruntime-1.20.1-cp312-cp312-win_amd64.whl", hash = "sha256:19c2d843eb074f385e8bbb753a40df780511061a63f9def1b216bf53860223fb", size = 11331482 },
 ]
 
 [[package]]
@@ -1262,7 +1251,7 @@ name = "opencv-python-headless"
 version = "4.10.0.84"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy" },
+    { name = "numpy", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/2f/7e/d20f68a5f1487adf19d74378d349932a386b1ece3be9be9915e5986db468/opencv-python-headless-4.10.0.84.tar.gz", hash = "sha256:f2017c6101d7c2ef8d7bc3b414c37ff7f54d64413a1847d89970b6b7069b4e1a", size = 95117755 }
 wheels = [
@@ -1291,8 +1280,7 @@ dependencies = [
     { name = "libusb1" },
     { name = "numpy" },
     { name = "onnx" },
-    { name = "onnxruntime", marker = "platform_machine == 'aarch64' and platform_system == 'Linux'" },
-    { name = "onnxruntime-gpu", marker = "platform_machine == 'x86_64' and platform_system == 'Linux'" },
+    { name = "onnxruntime" },
     { name = "psutil" },
     { name = "pyaudio" },
     { name = "pycapnp" },
@@ -1390,8 +1378,7 @@ requires-dist = [
     { name = "natsort", marker = "extra == 'docs'" },
     { name = "numpy", specifier = "<2.0.0" },
     { name = "onnx", specifier = ">=1.14.0" },
-    { name = "onnxruntime", marker = "platform_machine == 'aarch64' and platform_system == 'Linux'", specifier = ">=1.16.3" },
-    { name = "onnxruntime-gpu", marker = "platform_machine == 'x86_64' and platform_system == 'Linux'", specifier = ">=1.16.3" },
+    { name = "onnxruntime", specifier = ">=1.16.3" },
     { name = "parameterized", marker = "extra == 'dev'", specifier = ">=0.8,<0.9" },
     { name = "pre-commit-hooks", marker = "extra == 'testing'" },
     { name = "psutil" },
@@ -1469,8 +1456,8 @@ name = "panda3d-gltf"
 version = "0.13"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "panda3d" },
-    { name = "panda3d-simplepbr" },
+    { name = "panda3d", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
+    { name = "panda3d-simplepbr", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/07/7f/9f18fc3fa843a080acb891af6bcc12262e7bdf1d194a530f7042bebfc81f/panda3d-gltf-0.13.tar.gz", hash = "sha256:d06d373bdd91cf530909b669f43080e599463bbf6d3ef00c3558bad6c6b19675", size = 25573 }
 wheels = [
@@ -1482,8 +1469,8 @@ name = "panda3d-simplepbr"
 version = "0.12.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "panda3d" },
-    { name = "typing-extensions" },
+    { name = "panda3d", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
+    { name = "typing-extensions", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/b1/af/505608eef09d7f9b822e69dc7631cd14102650b8fe1b6f60d9562d2788d9/panda3d-simplepbr-0.12.0.tar.gz", hash = "sha256:c71d490afeeb3a90455dcfde1d30c41f321a38742a97d18834e5c31016331ed5", size = 1929980 }
 wheels = [
@@ -4354,9 +4341,9 @@ name = "pyopencl"
 version = "2024.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy" },
-    { name = "platformdirs" },
-    { name = "pytools" },
+    { name = "numpy", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
+    { name = "platformdirs", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
+    { name = "pytools", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ec/28/4679ea08b84532a67fd2d270c8f87aec64dab9ab99e618927b6a26ea063e/pyopencl-2024.3.tar.gz", hash = "sha256:d5d08de9b0a6d85695caba1769aceae4e7661f06951c507bd1ce8fb7a89e2413", size = 422604 }
 wheels = [
@@ -4410,7 +4397,7 @@ name = "pyqt5"
 version = "5.15.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyqt5-sip" },
+    { name = "pyqt5-sip", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/28/6c/640e3f5c734c296a7193079a86842a789edb7988dca39eab44579088a1d1/PyQt5-5.15.2.tar.gz", hash = "sha256:372b08dc9321d1201e4690182697c5e7ffb2e0770e6b4a45519025134b12e4fc", size = 3265445 }
 wheels = [
@@ -4628,9 +4615,9 @@ name = "pytools"
 version = "2024.1.10"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "platformdirs" },
-    { name = "siphash24" },
-    { name = "typing-extensions" },
+    { name = "platformdirs", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
+    { name = "siphash24", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
+    { name = "typing-extensions", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ee/0f/56e109c0307f831b5d598ad73976aaaa84b4d0e98da29a642e797eaa940c/pytools-2024.1.10.tar.gz", hash = "sha256:9af6f4b045212c49be32bb31fe19606c478ee4b09631886d05a32459f4ce0a12", size = 81741 }
 wheels = [
@@ -4819,6 +4806,7 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/86/29/88c2567bc893c84d88b4c48027367c3562ae69121d568e8a3f3a8d363f4d/ruamel.yaml.clib-0.2.12-cp311-cp311-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:811ea1594b8a0fb466172c384267a4e5e367298af6b228931f273b111f17ef52", size = 703012 },
     { url = "https://files.pythonhosted.org/packages/11/46/879763c619b5470820f0cd6ca97d134771e502776bc2b844d2adb6e37753/ruamel.yaml.clib-0.2.12-cp311-cp311-musllinux_1_1_i686.whl", hash = "sha256:cf12567a7b565cbf65d438dec6cfbe2917d3c1bdddfce84a9930b7d35ea59642", size = 704352 },
     { url = "https://files.pythonhosted.org/packages/02/80/ece7e6034256a4186bbe50dee28cd032d816974941a6abf6a9d65e4228a7/ruamel.yaml.clib-0.2.12-cp311-cp311-musllinux_1_1_x86_64.whl", hash = "sha256:7dd5adc8b930b12c8fc5b99e2d535a09889941aa0d0bd06f4749e9a9397c71d2", size = 737344 },
+    { url = "https://files.pythonhosted.org/packages/f0/ca/e4106ac7e80efbabdf4bf91d3d32fc424e41418458251712f5672eada9ce/ruamel.yaml.clib-0.2.12-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:1492a6051dab8d912fc2adeef0e8c72216b24d57bd896ea607cb90bb0c4981d3", size = 714498 },
     { url = "https://files.pythonhosted.org/packages/67/58/b1f60a1d591b771298ffa0428237afb092c7f29ae23bad93420b1eb10703/ruamel.yaml.clib-0.2.12-cp311-cp311-win32.whl", hash = "sha256:bd0a08f0bab19093c54e18a14a10b4322e1eacc5217056f3c063bd2f59853ce4", size = 100205 },
     { url = "https://files.pythonhosted.org/packages/b4/4f/b52f634c9548a9291a70dfce26ca7ebce388235c93588a1068028ea23fcc/ruamel.yaml.clib-0.2.12-cp311-cp311-win_amd64.whl", hash = "sha256:a274fb2cb086c7a3dea4322ec27f4cb5cc4b6298adb583ab0e211a4682f241eb", size = 118185 },
     { url = "https://files.pythonhosted.org/packages/48/41/e7a405afbdc26af961678474a55373e1b323605a4f5e2ddd4a80ea80f628/ruamel.yaml.clib-0.2.12-cp312-cp312-macosx_14_0_arm64.whl", hash = "sha256:20b0f8dc160ba83b6dcc0e256846e1a02d044e13f7ea74a3d1d56ede4e48c632", size = 133433 },
@@ -4827,6 +4815,7 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/52/a9/d39f3c5ada0a3bb2870d7db41901125dbe2434fa4f12ca8c5b83a42d7c53/ruamel.yaml.clib-0.2.12-cp312-cp312-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:749c16fcc4a2b09f28843cda5a193e0283e47454b63ec4b81eaa2242f50e4ccd", size = 706497 },
     { url = "https://files.pythonhosted.org/packages/b0/fa/097e38135dadd9ac25aecf2a54be17ddf6e4c23e43d538492a90ab3d71c6/ruamel.yaml.clib-0.2.12-cp312-cp312-musllinux_1_1_i686.whl", hash = "sha256:bf165fef1f223beae7333275156ab2022cffe255dcc51c27f066b4370da81e31", size = 698042 },
     { url = "https://files.pythonhosted.org/packages/ec/d5/a659ca6f503b9379b930f13bc6b130c9f176469b73b9834296822a83a132/ruamel.yaml.clib-0.2.12-cp312-cp312-musllinux_1_1_x86_64.whl", hash = "sha256:32621c177bbf782ca5a18ba4d7af0f1082a3f6e517ac2a18b3974d4edf349680", size = 745831 },
+    { url = "https://files.pythonhosted.org/packages/db/5d/36619b61ffa2429eeaefaab4f3374666adf36ad8ac6330d855848d7d36fd/ruamel.yaml.clib-0.2.12-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:b82a7c94a498853aa0b272fd5bc67f29008da798d4f93a2f9f289feb8426a58d", size = 715692 },
     { url = "https://files.pythonhosted.org/packages/b1/82/85cb92f15a4231c89b95dfe08b09eb6adca929ef7df7e17ab59902b6f589/ruamel.yaml.clib-0.2.12-cp312-cp312-win32.whl", hash = "sha256:e8c4ebfcfd57177b572e2040777b8abc537cdef58a2120e830124946aa9b42c5", size = 98777 },
     { url = "https://files.pythonhosted.org/packages/d7/8f/c3654f6f1ddb75daf3922c3d8fc6005b1ab56671ad56ffb874d908bfa668/ruamel.yaml.clib-0.2.12-cp312-cp312-win_amd64.whl", hash = "sha256:0467c5965282c62203273b838ae77c0d29d7638c8a4e3a1c8bdd3602c10904e4", size = 115523 },
 ]
@@ -4933,7 +4922,7 @@ name = "shapely"
 version = "2.0.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy" },
+    { name = "numpy", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/4a/89/0d20bac88016be35ff7d3c0c2ae64b477908f1b1dfa540c5d69ac7af07fe/shapely-2.0.6.tar.gz", hash = "sha256:997f6159b1484059ec239cacaa53467fd8b5564dabe186cd84ac2944663b0bf6", size = 282361 }
 wheels = [
@@ -5158,7 +5147,7 @@ name = "yapf"
 version = "0.43.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "platformdirs" },
+    { name = "platformdirs", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/23/97/b6f296d1e9cc1ec25c7604178b48532fa5901f721bcf1b8d8148b13e5588/yapf-0.43.0.tar.gz", hash = "sha256:00d3aa24bfedff9420b2e0d5d9f5ab6d9d4268e72afbf59bb3fa542781d5218e", size = 254907 }
 wheels = [
