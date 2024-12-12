@@ -64,7 +64,7 @@ void DeveloperPanel::updateToggles(bool _offroad) {
     } else {
       if (is_release) {
         params.remove("ExperimentalLongitudinalEnabled");
-        alphaLongToggle->setEnabled(false);
+        alphaLongToggle->setVisible(false);
         alphaLongToggle->setDescription("<b>" + tr("An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.") + "</b>");
       }
     }
