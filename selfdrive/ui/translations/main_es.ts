@@ -125,7 +125,7 @@
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
-        <translation type="unfinished">Control longitudinal de openpilot (fase experimental)</translation>
+        <translation>Control longitudinal de openpilot (fase experimental)</translation>
     </message>
     <message>
         <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
