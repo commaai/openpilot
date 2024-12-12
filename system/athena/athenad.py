@@ -375,6 +375,8 @@ def uploadFilesToUrls(files_data: list[UploadFileDict]) -> UploadFilesToUrlRespo
 
   items: list[UploadItemDict] = []
   failed: list[str] = []
+  existing_urls = {item['url'].split('?')[0] for item in listUploadQueue()}
+
   for file in files:
     if len(file.fn) == 0 or file.fn[0] == '/' or '..' in file.fn or len(file.url) == 0:
       failed.append(file.fn)
@@ -387,7 +389,7 @@ def uploadFilesToUrls(files_data: list[UploadFileDict]) -> UploadFilesToUrlRespo
 
     # Skip item if already in queue
     url = file.url.split('?')[0]
-    if any(url == item['url'].split('?')[0] for item in listUploadQueue()):
+    if url in existing_urls:
       continue
 
     item = UploadItem(
