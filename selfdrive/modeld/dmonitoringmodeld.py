@@ -5,7 +5,7 @@ from openpilot.system.hardware import TICI
 if TICI:
   os.environ['QCOM'] = '1'
 else:
-  import onnxruntime as ort
+  from openpilot.selfdrive.modeld.runners.ort_helpers import make_onnx_cpu_runner
 import gc
 import math
 import time
@@ -76,11 +76,7 @@ class ModelState:
       with open(MODEL_PKL_PATH, "rb") as f:
         self.model_run = pickle.load(f)
     else:
-      options = ort.SessionOptions()
-      options.intra_op_num_threads = 4
-      options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
-      options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
-      self.ort_session = ort.InferenceSession(MODEL_PATH,  options, providers=['CPUExecutionProvider'])
+      self.onnx_cpu_runner = make_onnx_cpu_runner(MODEL_PATH)
 
   def run(self, buf:VisionBuf, calib:np.ndarray) -> tuple[np.ndarray, float]:
     self.numpy_inputs['calib'][0,:] = calib
@@ -95,7 +91,7 @@ class ModelState:
     if TICI:
       output = self.model_run(**self.tensor_inputs).numpy().flatten()
     else:
-      output = self.ort_session.run(None, self.numpy_inputs)[0].flatten().astype(dtype=np.float32)
+      output = self.onnx_cpu_runner.run(None, self.numpy_inputs)[0].flatten()
 
     t2 = time.perf_counter()
     return output, t2 - t1

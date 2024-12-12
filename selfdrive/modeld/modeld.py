@@ -5,9 +5,10 @@ from openpilot.system.hardware import TICI
 if TICI:
   from tinygrad.tensor import Tensor
   from tinygrad.dtype import dtypes
+  from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
   os.environ['QCOM'] = '1'
 else:
-  import onnxruntime as ort
+  from openpilot.selfdrive.modeld.runners.ort_helpers import make_onnx_cpu_runner
 import time
 import pickle
 import numpy as np
@@ -30,7 +31,7 @@ from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
-from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
+
 
 PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
@@ -88,11 +89,7 @@ class ModelState:
       with open(MODEL_PKL_PATH, "rb") as f:
         self.model_run = pickle.load(f)
     else:
-      options = ort.SessionOptions()
-      options.intra_op_num_threads = 4
-      options.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
-      options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
-      self.ort_session = ort.InferenceSession(MODEL_PATH,  options, providers=['CPUExecutionProvider'])
+      self.onnx_cpu_runner = make_onnx_cpu_runner(MODEL_PATH)
 
   def slice_outputs(self, model_outputs: np.ndarray) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in self.output_slices.items()}
@@ -103,7 +100,6 @@ class ModelState:
   def run(self, buf: VisionBuf, wbuf: VisionBuf, transform: np.ndarray, transform_wide: np.ndarray,
                 inputs: dict[str, np.ndarray], prepare_only: bool) -> dict[str, np.ndarray] | None:
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
-    print('He')
     inputs['desire'][0] = 0
     new_desire = np.where(inputs['desire'] - self.prev_desire > .99, inputs['desire'], 0)
     self.prev_desire[:] = inputs['desire']
@@ -132,8 +128,7 @@ class ModelState:
     if TICI:
       self.output = self.model_run(**self.tensor_inputs).numpy().flatten()
     else:
-      inputs = {k: v.astype(np.float16 if v.dtype == np.float32 else np.uint8) for k,v in self.numpy_inputs.items()}
-      self.output = self.ort_session.run(None, inputs)[0].flatten().astype(dtype=np.float32)
+      self.output = self.onnx_cpu_runner.run(None, self.numpy_inputs)[0].flatten()
 
     outputs = self.parser.parse_outputs(self.slice_outputs(self.output))
 
@@ -317,7 +312,6 @@ def main(demo=False):
       pm.send('modelV2', modelv2_send)
       pm.send('drivingModelData', drivingdata_send)
       pm.send('cameraOdometry', posenet_send)
-
     last_vipc_frame_id = meta_main.frame_id
 
 
