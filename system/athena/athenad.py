@@ -55,6 +55,7 @@ MAX_RETRY_COUNT = 30  # Try for at most 5 minutes if upload fails immediately
 MAX_AGE = 31 * 24 * 3600  # seconds
 WS_FRAME_SIZE = 4096
 DEVICE_STATE_UPDATE_INTERVAL = 1.0  # in seconds
+PROGRESS_UPDATE_THRESHOLD = 0.01  # 1% threshold
 
 NetworkType = log.DeviceState.NetworkType
 
@@ -224,8 +225,10 @@ def cb(sm, item, tid, end_event: threading.Event, sz: int, cur: int) -> None:
   if end_event.is_set():
     raise AbortTransferException
 
-  with cur_upload_items_lock:
-    cur_upload_items[tid] = replace(item, progress=cur / sz if sz else 1)
+  new_progress = cur / sz if sz else 1
+  if abs(new_progress - item.progress) >= PROGRESS_UPDATE_THRESHOLD:
+    with cur_upload_items_lock:
+      cur_upload_items[tid] = item = replace(item, progress=new_progress)
 
 
 def upload_handler(end_event: threading.Event) -> None:
