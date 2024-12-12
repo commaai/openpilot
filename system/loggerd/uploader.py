@@ -46,6 +46,12 @@ class FakeResponse:
     self.status_code = 200
     self.request = FakeRequest()
 
+  def __enter__(self):
+    return self
+
+  def __exit__(self, exc_type, exc_value, traceback):
+    pass
+
 
 def get_directory_sort(d: str) -> list[str]:
   # ensure old format is sorted sooner
@@ -142,14 +148,14 @@ class Uploader:
     return None
 
   def do_upload(self, key: str, fn: str):
-    url_resp = self.api.get("v1.4/" + self.dongle_id + "/upload_url/", timeout=10, path=key, access_token=self.api.get_token())
-    if url_resp.status_code == 412:
-      return url_resp
+    with self.api.get("v1.4/" + self.dongle_id + "/upload_url/", timeout=10, path=key, access_token=self.api.get_token()) as url_resp:
+      if url_resp.status_code == 412:
+        return url_resp
 
-    url_resp_json = json.loads(url_resp.text)
-    url = url_resp_json['url']
-    headers = url_resp_json['headers']
-    cloudlog.debug("upload_url v1.4 %s %s", url, str(headers))
+      url_resp_json = json.loads(url_resp.text)
+      url = url_resp_json['url']
+      headers = url_resp_json['headers']
+      cloudlog.debug("upload_url v1.4 %s %s", url, str(headers))
 
     if fake_upload:
       return FakeResponse()
@@ -171,6 +177,7 @@ class Uploader:
 
     cloudlog.event("upload_start", key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)
 
+    success = False
     if sz == 0:
       # tag files of 0 size as uploaded
       success = True
@@ -178,29 +185,26 @@ class Uploader:
       cloudlog.event("uploader_too_large", key=key, fn=fn, sz=sz)
       success = True
     else:
-      start_time = time.monotonic()
-
-      stat = None
-      last_exc = None
       try:
-        stat = self.do_upload(key, fn)
+        start_time = time.monotonic()
+        with self.do_upload(key, fn) as stat:
+          if stat is not None and stat.status_code in (200, 201, 401, 403, 412):
+            self.last_filename = fn
+            if stat.status_code == 412:
+              cloudlog.event("upload_ignored", key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)
+            else:
+              dt = time.monotonic() - start_time
+              content_length = int(stat.request.headers.get("Content-Length", 0))
+              speed = (content_length / 1e6) / dt
+              cloudlog.event("upload_success", key=key, fn=fn, sz=sz, content_length=content_length,
+                             network_type=network_type, metered=metered, speed=speed)
+            success = True
+          else:
+            cloudlog.event("upload_failed", stat=stat, key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)
+
       except Exception as e:
         last_exc = (e, traceback.format_exc())
-
-      if stat is not None and stat.status_code in (200, 201, 401, 403, 412):
-        self.last_filename = fn
-        dt = time.monotonic() - start_time
-        if stat.status_code == 412:
-          cloudlog.event("upload_ignored", key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)
-        else:
-          content_length = int(stat.request.headers.get("Content-Length", 0))
-          speed = (content_length / 1e6) / dt
-          cloudlog.event("upload_success", key=key, fn=fn, sz=sz, content_length=content_length,
-                         network_type=network_type, metered=metered, speed=speed)
-        success = True
-      else:
-        success = False
-        cloudlog.event("upload_failed", stat=stat, exc=last_exc, key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)
+        cloudlog.event("upload_exception", exc=last_exc, key=key, fn=fn, sz=sz, network_type=network_type, metered=metered)
 
     if success:
       # tag file as uploaded
