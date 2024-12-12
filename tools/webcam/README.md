@@ -1,4 +1,4 @@
-# Run openpilot with webcam on PC (TODO: test these steps on a fresh Ubuntu install to verify)
+# Run openpilot with webcam on PC
 
 What's needed:
 - Ubuntu 24.04 ([WSL2 is not yet supported](https://github.com/commaai/openpilot/issues/34216))
