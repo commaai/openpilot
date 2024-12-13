@@ -82,7 +82,7 @@ def touch_thread(end_event):
         touch.value = value
         event_frame.append(touch)
       else: # end of frame, push new log
-        msg = messaging.new_message('touch', len(event_frame))
+        msg = messaging.new_message('touch', len(event_frame), valid=True)
         msg.touch = event_frame
         pm.send('touch', msg)
         event_frame = []
