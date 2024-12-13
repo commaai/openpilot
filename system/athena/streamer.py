@@ -280,7 +280,7 @@ class Streamer:
     Runs until end_event is set.
     """
     self.camera = NativeProcess("camerad", "system/camerad", ["./camerad"], True)
-    self.encoder = NativeProcess("encoderd", "system/loggerd", ["./encoderd"], True)
+    self.encoder = NativeProcess("encoderd", "system/loggerd", ["./encoderd", "--stream"], True)
     logger.info("Native processes for camera and encoder initialized.")
 
     stop_states = ['failed', 'closed']
