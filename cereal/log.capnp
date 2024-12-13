@@ -2441,9 +2441,11 @@ struct Microphone {
 }
 
 struct Touch {
-  type @0 :UInt8;
-  code @1 :UInt8;
-  value @2 :Int32;
+  sec @0 :Int64;
+  usec @1 :Int64;
+  type @2 :UInt8;
+  code @3 :Int32;
+  value @4 :Int32;
 }
 
 struct Event {

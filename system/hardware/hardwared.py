@@ -2,6 +2,7 @@
 import os
 import json
 import queue
+import struct
 import threading
 import time
 from collections import OrderedDict, namedtuple
@@ -61,22 +62,35 @@ def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_tex
   set_offroad_alert(offroad_alert, show_alert, extra_text)
 
 def touch_thread(end_event):
-  pm = messaging.PubMaster(['touch'])
+  pm = messaging.PubMaster(["touch"])
 
+  event_format = "llHHi"
+  event_size = struct.calcsize(event_format)
+
+  event_file = open("/dev/input/event2", "rb")
+  event = event_file.read(event_size)
   event_frame = []
 
   while not end_event.is_set():
-    event = log.Touch.new_message()
-    event.type = random.randint(2, 10)
-    event.code = 2
-    event.value = 3
-    event_frame.append(event)
+    if event:
+      (sec, usec, type, code, value) = struct.unpack(event_format, event)
+      if type != 0 or code != 0 or value != 0:
+        touch = log.Touch.new_message()
+        touch.sec = sec
+        touch.usec = usec
+        touch.type = type
+        touch.code = code
+        touch.value = value
+        event_frame.append(touch)
+      else: # end of frame, push new log
+        msg = messaging.new_message('touch', len(event_frame))
+        msg.touch = event_frame
+        pm.send('touch', msg)
+        event_frame = []
 
-    if len(event_frame) > 3:
-      msg = messaging.new_message('touch', len(event_frame))
-      msg.touch = event_frame
-      pm.send('touch', msg)
-      event_frame = []
+    event = event_file.read(event_size)
+
+  event_file.close()
 
 def hw_state_thread(end_event, hw_queue):
   """Handles non critical hardware state, and sends over queue"""
