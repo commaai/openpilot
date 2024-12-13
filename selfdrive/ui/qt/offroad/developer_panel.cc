@@ -65,8 +65,8 @@ void DeveloperPanel::updateToggles(bool _offroad) {
 
     // if is a release branch or if the car already have long control the alphaLongToggle should not be visible
     if (is_release || CP.getOpenpilotLongitudinalControl()) {
-        params.remove("ExperimentalLongitudinalEnabled");
-        alphaLongToggle->setVisible(false);
+      params.remove("ExperimentalLongitudinalEnabled");
+      alphaLongToggle->setVisible(false);
     }
 
     alphaLongToggle->refresh();
