@@ -73,7 +73,7 @@ def touch_thread(end_event):
   while not end_event.is_set():
     if event:
       (sec, usec, etype, code, value) = struct.unpack(event_format, event)
-      if type != 0 or code != 0 or value != 0:
+      if etype != 0 or code != 0 or value != 0:
         touch = log.Touch.new_message()
         touch.sec = sec
         touch.usec = usec
