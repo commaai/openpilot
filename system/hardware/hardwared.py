@@ -6,7 +6,6 @@ import struct
 import threading
 import time
 from collections import OrderedDict, namedtuple
-import random
 from pathlib import Path
 
 import psutil
@@ -73,12 +72,12 @@ def touch_thread(end_event):
 
   while not end_event.is_set():
     if event:
-      (sec, usec, type, code, value) = struct.unpack(event_format, event)
+      (sec, usec, etype, code, value) = struct.unpack(event_format, event)
       if type != 0 or code != 0 or value != 0:
         touch = log.Touch.new_message()
         touch.sec = sec
         touch.usec = usec
-        touch.type = type
+        touch.type = etype
         touch.code = code
         touch.value = value
         event_frame.append(touch)
