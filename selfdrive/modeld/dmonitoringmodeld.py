@@ -163,8 +163,8 @@ def main():
       continue
 
     if model_transform is None:
-      from_intr = _os_fisheye.intrinsics if buf.width <= 1344 else _ar_ox_fisheye.intrinsics
-      model_transform = np.linalg.inv(np.dot(dmonitoringmodel_intrinsics, np.linalg.inv(from_intr))).astype(np.float32)
+      cam = _os_fisheye if buf.width == _os_fisheye.width else _ar_ox_fisheye
+      model_transform = np.linalg.inv(np.dot(dmonitoringmodel_intrinsics, np.linalg.inv(cam.intrinsics))).astype(np.float32)
 
     sm.update(0)
     if sm.updated["liveCalibration"]:
