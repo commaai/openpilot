@@ -23,13 +23,10 @@ ReplayStream::ReplayStream(QObject *parent) : AbstractStream(parent) {
   });
 }
 
-static bool event_filter(const Event *e, void *opaque) {
-  return ((ReplayStream *)opaque)->eventFilter(e);
-}
-
 void ReplayStream::mergeSegments() {
-  for (auto &[n, seg] : replay->segments()) {
-    if (seg && seg->isLoaded() && !processed_segments.count(n)) {
+  auto event_data = replay->getEventData();
+  for (const auto &[n, seg] : event_data->segments) {
+    if (!processed_segments.count(n)) {
       processed_segments.insert(n);
 
       std::vector<const CanEvent *> new_events;
@@ -50,19 +47,19 @@ void ReplayStream::mergeSegments() {
 
 bool ReplayStream::loadRoute(const QString &route, const QString &data_dir, uint32_t replay_flags) {
   replay.reset(new Replay(route.toStdString(), {"can", "roadEncodeIdx", "driverEncodeIdx", "wideRoadEncodeIdx", "carParams"},
-                          {}, nullptr, replay_flags, data_dir.toStdString(), this));
+                          {}, nullptr, replay_flags, data_dir.toStdString()));
   replay->setSegmentCacheLimit(settings.max_cached_minutes);
-  replay->installEventFilter(event_filter, this);
+  replay->installEventFilter([this](const Event *event) { return eventFilter(event); });
 
   // Forward replay callbacks to corresponding Qt signals.
+  replay->onSeeking = [this](double sec) { emit seeking(sec); };
+  replay->onSeekedTo = [this](double sec) { emit seekedTo(sec); };
   replay->onQLogLoaded = [this](std::shared_ptr<LogReader> qlog) { emit qLogLoaded(qlog); };
+  replay->onSegmentsMerged = [this]() { QMetaObject::invokeMethod(this, &ReplayStream::mergeSegments, Qt::QueuedConnection); };
 
-  QObject::connect(replay.get(), &Replay::seeking, this, &AbstractStream::seeking);
-  QObject::connect(replay.get(), &Replay::seekedTo, this, &AbstractStream::seekedTo);
-  QObject::connect(replay.get(), &Replay::segmentsMerged, this, &ReplayStream::mergeSegments);
   bool success = replay->load();
   if (!success) {
-    if (replay->lastRouteError() == RouteLoadError::AccessDenied) {
+    if (replay->lastRouteError() == RouteLoadError::Unauthorized) {
       auto auth_content = util::read_file(util::getenv("HOME") + "/.comma/auth.json");
       QString message;
       if (auth_content.empty()) {

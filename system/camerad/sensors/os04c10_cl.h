@@ -4,9 +4,9 @@
 
 #define BIT_DEPTH 12
 #define PV_MAX10 1023
-#define PV_MAX12 4096
+#define PV_MAX12 4095
 #define PV_MAX16 65536 // gamma curve is calibrated to 16bit
-#define BLACK_LVL 64
+#define BLACK_LVL 48
 #define VIGNETTE_RSZ 2.2545f
 
 float combine_dual_pvs(float lv, float sv, int expo_time) {

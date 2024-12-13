@@ -71,7 +71,7 @@ void interrupt_loop(std::vector<std::tuple<Sensor *, std::string>> sensors) {
 
     uint64_t cur_offset = nanos_since_epoch() - nanos_since_boot();
     uint64_t diff = cur_offset > offset ? cur_offset - offset : offset - cur_offset;
-    if (diff > 1*1e6) { // 1ms
+    if (diff > 10*1e6) { // 10ms
       LOGW("time jumped: %lu %lu", cur_offset, offset);
       offset = cur_offset;
 

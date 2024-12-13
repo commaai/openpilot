@@ -3,10 +3,12 @@ import os
 from openpilot.system.hardware import TICI
 ## TODO this is hack
 if TICI:
-  GPU_BACKEND = 'QCOM'
+  from tinygrad.tensor import Tensor
+  from tinygrad.dtype import dtypes
+  from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
+  os.environ['QCOM'] = '1'
 else:
-  GPU_BACKEND = 'GPU'
-os.environ[GPU_BACKEND] = '1'
+  from openpilot.selfdrive.modeld.runners.ort_helpers import make_onnx_cpu_runner
 import time
 import pickle
 import numpy as np
@@ -29,10 +31,7 @@ from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import ModelFrame, CLContext
-from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
 
-from tinygrad.tensor import Tensor
-from tinygrad.dtype import dtypes
 
 PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
@@ -76,7 +75,6 @@ class ModelState:
       'prev_desired_curv': np.zeros((1,(ModelConstants.HISTORY_BUFFER_LEN+1), ModelConstants.PREV_DESIRED_CURV_LEN), dtype=np.float32),
       'features_buffer': np.zeros((1, ModelConstants.HISTORY_BUFFER_LEN,  ModelConstants.FEATURE_LEN), dtype=np.float32),
     }
-    self.img_inputs = {} # type: ignore
 
     with open(METADATA_PATH, 'rb') as f:
       model_metadata = pickle.load(f)
@@ -86,8 +84,12 @@ class ModelState:
     self.output = np.zeros(net_output_size, dtype=np.float32)
     self.parser = Parser()
 
-    with open(MODEL_PKL_PATH, "rb") as f:
-      self.model_run = pickle.load(f)
+    if TICI:
+      self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
+      with open(MODEL_PKL_PATH, "rb") as f:
+        self.model_run = pickle.load(f)
+    else:
+      self.onnx_cpu_runner = make_onnx_cpu_runner(MODEL_PATH)
 
   def slice_outputs(self, model_outputs: np.ndarray) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in self.output_slices.items()}
@@ -113,18 +115,21 @@ class ModelState:
 
     if TICI:
       # The imgs tensors are backed by opencl memory, only need init once
-      if 'input_imgs' not in self.img_inputs:
-        self.img_inputs['input_imgs'] = qcom_tensor_from_opencl_address(input_imgs_cl.mem_address, IMG_INPUT_SHAPE, dtype=dtypes.uint8)
-        self.img_inputs['big_input_imgs'] = qcom_tensor_from_opencl_address(big_input_imgs_cl.mem_address, IMG_INPUT_SHAPE, dtype=dtypes.uint8)
+      if 'input_imgs' not in self.tensor_inputs:
+        self.tensor_inputs['input_imgs'] = qcom_tensor_from_opencl_address(input_imgs_cl.mem_address, IMG_INPUT_SHAPE, dtype=dtypes.uint8)
+        self.tensor_inputs['big_input_imgs'] = qcom_tensor_from_opencl_address(big_input_imgs_cl.mem_address, IMG_INPUT_SHAPE, dtype=dtypes.uint8)
     else:
-      self.img_inputs['input_imgs'] = Tensor(self.frame.buffer_from_cl(input_imgs_cl)).reshape(IMG_INPUT_SHAPE)
-      self.img_inputs['big_input_imgs'] = Tensor(self.wide_frame.buffer_from_cl(big_input_imgs_cl)).reshape(IMG_INPUT_SHAPE)
+      self.numpy_inputs['input_imgs'] = self.frame.buffer_from_cl(input_imgs_cl).reshape(IMG_INPUT_SHAPE)
+      self.numpy_inputs['big_input_imgs'] = self.wide_frame.buffer_from_cl(big_input_imgs_cl).reshape(IMG_INPUT_SHAPE)
 
-    tensor_inputs = {**self.img_inputs, **{k: Tensor(v) for k,v in self.numpy_inputs.items()}}
     if prepare_only:
       return None
 
-    self.output = self.model_run(**tensor_inputs)['outputs'].numpy().flatten()
+    if TICI:
+      self.output = self.model_run(**self.tensor_inputs).numpy().flatten()
+    else:
+      self.output = self.onnx_cpu_runner.run(None, self.numpy_inputs)[0].flatten()
+
     outputs = self.parser.parse_outputs(self.slice_outputs(self.output))
 
     self.full_features_20Hz[:-1] = self.full_features_20Hz[1:]
@@ -205,7 +210,7 @@ def main(demo=False):
   cloudlog.info("modeld got CarParams: %s", CP.carName)
 
   # TODO this needs more thought, use .2s extra for now to estimate other delays
-  steer_delay =  .2
+  steer_delay = CP.steerActuatorDelay + .2
 
   DH = DesireHelper()
 
@@ -307,7 +312,6 @@ def main(demo=False):
       pm.send('modelV2', modelv2_send)
       pm.send('drivingModelData', drivingdata_send)
       pm.send('cameraOdometry', posenet_send)
-
     last_vipc_frame_id = meta_main.frame_id
 
 

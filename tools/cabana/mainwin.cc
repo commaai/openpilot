@@ -558,7 +558,9 @@ void MainWindow::closeEvent(QCloseEvent *event) {
   if (can && !can->liveStreaming()) {
     settings.video_splitter_state = video_splitter->saveState();
   }
-  settings.message_header_state = messages_widget->saveHeaderState();
+  if (messages_widget) {
+    settings.message_header_state = messages_widget->saveHeaderState();
+  }
 
   QWidget::closeEvent(event);
 }

@@ -124,6 +124,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     // left: PrimeAdWidget
     QStackedWidget *left_widget = new QStackedWidget(this);
     QVBoxLayout *left_prime_layout = new QVBoxLayout();
+    left_prime_layout->setContentsMargins(0, 0, 0, 0);
     QWidget *prime_user = new PrimeUserWidget();
     prime_user->setStyleSheet(R"(
     border-radius: 10px;
