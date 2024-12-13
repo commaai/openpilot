@@ -76,7 +76,7 @@ int build_update(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t> &patch
 }
 
 
-int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t> &patches, int out_width, int out_height) {
+int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t> &patches, uint32_t out_width, uint32_t out_height) {
   uint8_t *start = dst;
 
   // start with the every frame config
