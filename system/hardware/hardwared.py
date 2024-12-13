@@ -65,31 +65,27 @@ def touch_thread(end_event):
 
   event_format = "llHHi"
   event_size = struct.calcsize(event_format)
-
-  event_file = open("/dev/input/event2", "rb")
-  event = event_file.read(event_size)
   event_frame = []
 
-  while not end_event.is_set():
-    if event:
-      (sec, usec, etype, code, value) = struct.unpack(event_format, event)
-      if etype != 0 or code != 0 or value != 0:
-        touch = log.Touch.new_message()
-        touch.sec = sec
-        touch.usec = usec
-        touch.type = etype
-        touch.code = code
-        touch.value = value
-        event_frame.append(touch)
-      else: # end of frame, push new log
-        msg = messaging.new_message('touch', len(event_frame), valid=True)
-        msg.touch = event_frame
-        pm.send('touch', msg)
-        event_frame = []
+  with open("/dev/input/by-path/platform-894000.i2c-event", "rb") as event_file:
+    while not end_event.is_set():
+      event = event_file.read(event_size)
+      if event:
+        (sec, usec, etype, code, value) = struct.unpack(event_format, event)
+        if etype != 0 or code != 0 or value != 0:
+          touch = log.Touch.new_message()
+          touch.sec = sec
+          touch.usec = usec
+          touch.type = etype
+          touch.code = code
+          touch.value = value
+          event_frame.append(touch)
+        else: # end of frame, push new log
+          msg = messaging.new_message('touch', len(event_frame), valid=True)
+          msg.touch = event_frame
+          pm.send('touch', msg)
+          event_frame = []
 
-    event = event_file.read(event_size)
-
-  event_file.close()
 
 def hw_state_thread(end_event, hw_queue):
   """Handles non critical hardware state, and sends over queue"""
