@@ -449,8 +449,10 @@ def main():
   threads = [
     threading.Thread(target=hw_state_thread, args=(end_event, hw_queue)),
     threading.Thread(target=hardware_thread, args=(end_event, hw_queue)),
-    threading.Thread(target=touch_thread, args=(end_event,)),
   ]
+
+  if TICI:
+    threads.append(threading.Thread(target=touch_thread, args=(end_event,)))
 
   for t in threads:
     t.start()
