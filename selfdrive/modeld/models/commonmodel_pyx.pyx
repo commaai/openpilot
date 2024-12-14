@@ -52,7 +52,7 @@ cdef class DrivingModelFrame:
     data2 = self.frame.buffer_from_cl(in_frames.mem)
     return np.asarray(<cnp.uint8_t[:self.frame.buf_size]> data2)
 
-cdef class MonitoringModelFrame(ModelFrame):
+cdef class MonitoringModelFrame:
   cdef cppMonitoringModelFrame * dmframe
 
   def __cinit__(self, CLContext context):

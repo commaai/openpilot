@@ -1,12 +1,11 @@
 #include "selfdrive/modeld/models/commonmodel.h"
 
-#include <cassert>
 #include <cmath>
 #include <cstring>
 
 #include "common/clutil.h"
 
-DrivingModelFrame::DrivingModelFrame(cl_device_id device_id, cl_context context) {
+DrivingModelFrame::DrivingModelFrame(cl_device_id device_id, cl_context context) : ModelFrame(device_id, context) {
   input_frames = std::make_unique<uint8_t[]>(buf_size);
   input_frames_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, buf_size, NULL, &err));
   img_buffer_20hz_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, 5*frame_size_bytes, NULL, &err));
@@ -14,9 +13,7 @@ DrivingModelFrame::DrivingModelFrame(cl_device_id device_id, cl_context context)
   region.size = frame_size_bytes;
   last_img_cl = CL_CHECK_ERR(clCreateSubBuffer(img_buffer_20hz_cl, CL_MEM_READ_WRITE, CL_BUFFER_CREATE_TYPE_REGION, &region, &err));
 
-  init_transform(device_id, context);
   loadyuv_init(&loadyuv, context, device_id, MODEL_WIDTH, MODEL_HEIGHT);
-  q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
 }
 
 cl_mem* DrivingModelFrame::prepare(cl_mem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3& projection) {
@@ -50,12 +47,9 @@ DrivingModelFrame::~DrivingModelFrame() {
 }
 
 
-MonitoringModelFrame::MonitoringModelFrame(cl_device_id device_id, cl_context context) {
+MonitoringModelFrame::MonitoringModelFrame(cl_device_id device_id, cl_context context) : ModelFrame(device_id, context) {
   input_frame = std::make_unique<uint8_t[]>(MODEL_FRAME_SIZE);
   input_frame_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, MODEL_FRAME_SIZE, NULL, &err));
-
-  init_transform(device_id, context);
-  q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
 }
 
 cl_mem* MonitoringModelFrame::prepare(cl_mem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3& projection) {

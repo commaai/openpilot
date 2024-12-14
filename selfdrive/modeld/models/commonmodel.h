@@ -2,6 +2,7 @@
 
 #include <cfloat>
 #include <cstdlib>
+#include <cassert>
 
 #include <memory>
 
@@ -18,7 +19,10 @@
 
 class ModelFrame {
 public:
-  ModelFrame(cl_device_id device_id, cl_context context);
+  ModelFrame(cl_device_id device_id, cl_context context) {
+    init_transform(device_id, context);
+    q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
+  }
   virtual ~ModelFrame() {}
   virtual cl_mem* prepare(cl_mem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3& projection) { return NULL; }
   virtual uint8_t* buffer_from_cl(cl_mem *in_frames) { return NULL; }
@@ -27,7 +31,7 @@ public:
   int MODEL_HEIGHT;
   int MODEL_FRAME_SIZE;
 
-private:
+protected:
   cl_mem y_cl, u_cl, v_cl;
   Transform transform;
   cl_command_queue q;
@@ -60,9 +64,9 @@ public:
   cl_mem* prepare(cl_mem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3& projection);
   uint8_t* buffer_from_cl(cl_mem *in_frames);
 
-  MODEL_WIDTH = 512;
-  MODEL_HEIGHT = 256;
-  MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT * 3 / 2;
+  const int MODEL_WIDTH = 512;
+  const int MODEL_HEIGHT = 256;
+  const int MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT * 3 / 2;
   const int buf_size = MODEL_FRAME_SIZE * 2;
   const size_t frame_size_bytes = MODEL_FRAME_SIZE * sizeof(uint8_t);
 
@@ -80,9 +84,9 @@ public:
   cl_mem* prepare(cl_mem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3& projection);
   uint8_t* buffer_from_cl(cl_mem *in_frames);
 
-  MODEL_WIDTH = 1440;
-  MODEL_HEIGHT = 960;
-  MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT;
+  const int MODEL_WIDTH = 1440;
+  const int MODEL_HEIGHT = 960;
+  const int MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT;
 
 private:
   cl_mem input_frame_cl;
