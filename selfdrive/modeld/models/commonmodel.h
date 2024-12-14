@@ -24,16 +24,22 @@ public:
   }
   virtual ~ModelFrame() {}
   virtual cl_mem* prepare(cl_mem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3& projection) { return NULL; }
-  virtual uint8_t* buffer_from_cl(cl_mem *in_frames) { return NULL; }
+  uint8_t* buffer_from_cl(cl_mem *in_frames, int buffer_size) {
+    CL_CHECK(clEnqueueReadBuffer(q, *in_frames, CL_TRUE, 0, buffer_size, input_frames.get(), 0, nullptr, nullptr));
+    clFinish(q);
+    return &input_frames[0];
+  }
 
   int MODEL_WIDTH;
   int MODEL_HEIGHT;
   int MODEL_FRAME_SIZE;
+  int buf_size;
 
 protected:
   cl_mem y_cl, u_cl, v_cl;
   Transform transform;
   cl_command_queue q;
+  std::unique_ptr<uint8_t[]> input_frames;
 
   void init_transform(cl_device_id device_id, cl_context context, int model_width, int model_height) {
     y_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, model_width * model_height, NULL, &err));
@@ -61,7 +67,6 @@ public:
   DrivingModelFrame(cl_device_id device_id, cl_context context);
   ~DrivingModelFrame();
   cl_mem* prepare(cl_mem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3& projection);
-  uint8_t* buffer_from_cl(cl_mem *in_frames);
 
   const int MODEL_WIDTH = 512;
   const int MODEL_HEIGHT = 256;
@@ -73,7 +78,6 @@ private:
   LoadYUVState loadyuv;
   cl_mem img_buffer_20hz_cl, last_img_cl, input_frames_cl;
   cl_buffer_region region;
-  std::unique_ptr<uint8_t[]> input_frames;
 };
 
 class MonitoringModelFrame : public ModelFrame {
@@ -81,13 +85,12 @@ public:
   MonitoringModelFrame(cl_device_id device_id, cl_context context);
   ~MonitoringModelFrame();
   cl_mem* prepare(cl_mem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3& projection);
-  uint8_t* buffer_from_cl(cl_mem *in_frames);
 
   const int MODEL_WIDTH = 1440;
   const int MODEL_HEIGHT = 960;
   const int MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT;
+  const int buf_size = MODEL_FRAME_SIZE;
 
 private:
   cl_mem input_frame_cl;
-  std::unique_ptr<uint8_t[]> input_frame;
 };

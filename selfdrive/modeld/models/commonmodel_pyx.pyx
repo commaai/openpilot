@@ -9,7 +9,7 @@ from libc.stdint cimport uintptr_t
 from msgq.visionipc.visionipc cimport cl_mem
 from msgq.visionipc.visionipc_pyx cimport VisionBuf, CLContext as BaseCLContext
 from .commonmodel cimport CL_DEVICE_TYPE_DEFAULT, cl_get_device_id, cl_create_context
-from .commonmodel cimport mat3, DrivingModelFrame as cppDrivingModelFrame, MonitoringModelFrame as cppMonitoringModelFrame
+from .commonmodel cimport mat3, ModelFrame as cppModelFrame, DrivingModelFrame as cppDrivingModelFrame, MonitoringModelFrame as cppMonitoringModelFrame
 
 
 cdef class CLContext(BaseCLContext):
@@ -31,11 +31,9 @@ cdef class CLMem:
 def cl_from_visionbuf(VisionBuf buf):
   return CLMem.create(<void*>&buf.buf.buf_cl)
 
-cdef class DrivingModelFrame:
-  cdef cppDrivingModelFrame * frame
 
-  def __cinit__(self, CLContext context):
-    self.frame = new cppDrivingModelFrame(context.device_id, context.context)
+cdef class ModelFrame:
+  cdef cppModelFrame * frame
 
   def __dealloc__(self):
     del self.frame
@@ -49,20 +47,20 @@ cdef class DrivingModelFrame:
 
   def buffer_from_cl(self, CLMem in_frames):
     cdef unsigned char * data2
-    data2 = self.frame.buffer_from_cl(in_frames.mem)
-    return np.asarray(<cnp.uint8_t[:self.frame.buf_size]> data2)
+    data2 = self.frame.buffer_from_cl(in_frames.mem, self._frame.buf_size)
+    return np.asarray(<cnp.uint8_t[:self._frame.buf_size]> data2)
 
-cdef class MonitoringModelFrame:
-  cdef cppMonitoringModelFrame * dmframe
+
+cdef class DrivingModelFrame(ModelFrame):
+  cdef cppDrivingModelFrame * _frame
 
   def __cinit__(self, CLContext context):
-    self.dmframe = new cppMonitoringModelFrame(context.device_id, context.context)
+    self._frame = new cppDrivingModelFrame(context.device_id, context.context)
+    self.frame = <cppModelFrame*>(self._frame)
 
-  def __dealloc__(self):
-    del self.dmframe
+cdef class MonitoringModelFrame(ModelFrame):
+  cdef cppMonitoringModelFrame * _frame
 
-  def prepare(self, VisionBuf buf, float[:] projection):
-    cdef mat3 cprojection
-    memcpy(cprojection.v, &projection[0], 9*sizeof(float))
-    cdef cl_mem * data = self.dmframe.prepare(buf.buf.buf_cl, buf.width, buf.height, buf.stride, buf.uv_offset, cprojection)
-    return CLMem.create(data)
+  def __cinit__(self, CLContext context):
+    self._frame = new cppMonitoringModelFrame(context.device_id, context.context)
+    self.frame = <cppModelFrame*>(self._frame)
