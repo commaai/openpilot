@@ -31,6 +31,7 @@ cdef class CLMem:
 def cl_from_visionbuf(VisionBuf buf):
   return CLMem.create(<void*>&buf.buf.buf_cl)
 
+
 cdef class ModelFrame:
   cdef cppModelFrame * frame
   cdef int buf_size
@@ -47,5 +48,23 @@ cdef class ModelFrame:
 
   def buffer_from_cl(self, CLMem in_frames):
     cdef unsigned char * data2
-    data2 = self.frame.buffer_from_cl(in_frames.mem)
-    return np.asarray(<cnp.uint8_t[:self.frame.buf_size]> data2)
+    data2 = self.frame.buffer_from_cl(in_frames.mem, self.buf_size)
+    return np.asarray(<cnp.uint8_t[:self.buf_size]> data2)
+
+
+cdef class DrivingModelFrame(ModelFrame):
+  cdef cppDrivingModelFrame * _frame
+
+  def __cinit__(self, CLContext context):
+    self._frame = new cppDrivingModelFrame(context.device_id, context.context)
+    self.frame = <cppModelFrame*>(self._frame)
+    self.buf_size = self._frame.buf_size
+
+cdef class MonitoringModelFrame(ModelFrame):
+  cdef cppMonitoringModelFrame * _frame
+
+  def __cinit__(self, CLContext context):
+    self._frame = new cppMonitoringModelFrame(context.device_id, context.context)
+    self.frame = <cppModelFrame*>(self._frame)
+    self.buf_size = self._frame.buf_size
+

@@ -3,6 +3,9 @@ import os
 from openpilot.system.hardware import TICI
 ## TODO this is hack
 if TICI:
+  from tinygrad.tensor import Tensor
+  from tinygrad.dtype import dtypes
+  from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
   os.environ['QCOM'] = '1'
 else:
   from openpilot.selfdrive.modeld.runners.ort_helpers import make_onnx_cpu_runner
@@ -20,10 +23,12 @@ from cereal.messaging import PubMaster, SubMaster
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.realtime import set_realtime_priority
-from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext
+from openpilot.common.transformations.model import dmonitoringmodel_intrinsics, DM_INPUT_SIZE
+from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
+from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext, MonitoringModelFrame
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid
-from tinygrad.tensor import Tensor
 
+MODEL_WIDTH, MODEL_HEIGHT = DM_INPUT_SIZE
 CALIB_LEN = 3
 FEATURE_LEN = 512
 OUTPUT_SIZE = 84 + FEATURE_LEN
@@ -65,26 +70,31 @@ class ModelState:
 
   def __init__(self, cl_ctx):
     assert ctypes.sizeof(DMonitoringModelResult) == OUTPUT_SIZE * ctypes.sizeof(ctypes.c_float)
-    self.numpy_inputs = {'calib': np.zeros((1, CALIB_LEN), dtype=np.float32),
-                         'input_img': np.zeros((1,MODEL_HEIGHT * MODEL_WIDTH), dtype=np.uint8)}
-    self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
 
+    self.frame = MonitoringModelFrame(cl_ctx)
+    self.numpy_inputs = {
+      'calib': np.zeros((1, CALIB_LEN), dtype=np.float32),
+    }
 
     if TICI:
+      self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
       with open(MODEL_PKL_PATH, "rb") as f:
         self.model_run = pickle.load(f)
     else:
       self.onnx_cpu_runner = make_onnx_cpu_runner(MODEL_PATH)
 
-  def run(self, buf:VisionBuf, calib:np.ndarray) -> tuple[np.ndarray, float]:
+  def run(self, buf:VisionBuf, calib:np.ndarray, transform:np.ndarray) -> tuple[np.ndarray, float]:
     self.numpy_inputs['calib'][0,:] = calib
 
     t1 = time.perf_counter()
-    # TODO use opencl buffer directly to make tensor
-    v_offset = buf.height - MODEL_HEIGHT
-    h_offset = (buf.width - MODEL_WIDTH) // 2
-    buf_data = buf.data.reshape(-1, buf.stride)
-    self.numpy_inputs['input_img'][:] = buf_data[v_offset:v_offset+MODEL_HEIGHT, h_offset:h_offset+MODEL_WIDTH].reshape((1, -1))
+
+    input_img_cl = self.frame.prepare(buf, transform.flatten())
+    if TICI:
+      # The imgs tensors are backed by opencl memory, only need init once
+      if 'input_img' not in self.tensor_inputs:
+        self.tensor_inputs['input_img'] = qcom_tensor_from_opencl_address(input_img_cl.mem_address, (1, MODEL_WIDTH*MODEL_HEIGHT), dtype=dtypes.uint8)
+    else:
+      self.numpy_inputs['input_img'] = self.frame.buffer_from_cl(input_img_cl).reshape((1, MODEL_WIDTH*MODEL_HEIGHT))
 
     if TICI:
       output = self.model_run(**self.tensor_inputs).numpy().flatten()
