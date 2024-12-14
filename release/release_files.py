@@ -54,7 +54,7 @@ whitelist = [
   "tools/joystick/",
   "tools/longitudinal_maneuvers/",
 
-  "tinygrad_repo/examples/openpilot/compile3.py",
+  "tinygrad_repo/openpilot/compile2.py",
   "tinygrad_repo/extra/onnx.py",
   "tinygrad_repo/extra/onnx_ops.py",
   "tinygrad_repo/extra/thneed.py",
