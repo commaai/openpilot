@@ -1,22 +1,10 @@
-import os
 import re
 import tomllib
-from typing import Any
 
 def load_glossary(file_path="docs/glossary.toml"):
-  if not os.path.exists(file_path):
-    return {}
   with open(file_path, "rb") as f:
     glossary_data = tomllib.load(f)
   return glossary_data.get("glossary", {})
-
-glossary: dict[str, Any] | None = None
-
-def get_glossary():
-  global glossary
-  if glossary is None:
-    glossary = load_glossary()
-  return glossary
 
 def generate_anchor_id(name):
   return name.replace(" ", "-").replace("_", "-").lower()
@@ -47,7 +35,7 @@ def format_tooltip_html(term_key, definition, html):
   return re.sub(
     re.escape(display_term),
     lambda
-      match: f"<span data-tooltip>{match.group(0)}<span class='tooltip-content'>{clean_description} {glossary_link}</span></span>",
+    match: f"<span data-tooltip>{match.group(0)}<span class='tooltip-content'>{clean_description} {glossary_link}</span></span>",
     html,
     flags=re.IGNORECASE,
   )
@@ -70,11 +58,11 @@ def tooltip_html(vocabulary, html):
 
 # Page Hooks
 def on_page_markdown(markdown, **kwargs):
-  vocabulary = get_glossary()
-  return markdown.replace("{{GLOSSARY_DEFINITIONS}}", glossary_markdown(vocabulary))
+  glossary = load_glossary()
+  return markdown.replace("{{GLOSSARY_DEFINITIONS}}", glossary_markdown(glossary))
 
 def on_page_content(html, **kwargs):
   if kwargs.get("page").title == "Glossary":
     return html
-  vocabulary = get_glossary()
-  return tooltip_html(vocabulary, html)
+  glossary = load_glossary()
+  return tooltip_html(glossary, html)
