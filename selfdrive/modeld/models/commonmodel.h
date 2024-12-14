@@ -20,7 +20,6 @@
 class ModelFrame {
 public:
   ModelFrame(cl_device_id device_id, cl_context context) {
-    init_transform(device_id, context);
     q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
   }
   virtual ~ModelFrame() {}
@@ -36,10 +35,10 @@ protected:
   Transform transform;
   cl_command_queue q;
 
-  void init_transform(cl_device_id device_id, cl_context context) {
-    y_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, MODEL_WIDTH * MODEL_HEIGHT, NULL, &err));
-    u_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, (MODEL_WIDTH / 2) * (MODEL_HEIGHT / 2), NULL, &err));
-    v_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, (MODEL_WIDTH / 2) * (MODEL_HEIGHT / 2), NULL, &err));
+  void init_transform(cl_device_id device_id, cl_context context, int model_width, int model_height) {
+    y_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, model_width * model_height, NULL, &err));
+    u_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, (model_width / 2) * (model_height / 2), NULL, &err));
+    v_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, (model_width / 2) * (model_height / 2), NULL, &err));
     transform_init(&transform, context, device_id);
   }
 
@@ -50,10 +49,10 @@ protected:
     CL_CHECK(clReleaseMemObject(y_cl));
   }
 
-  void run_transform(cl_mem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3& projection) {
+  void run_transform(cl_mem yuv_cl, int model_width, int model_height, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3& projection) {
     transform_queue(&transform, q,
         yuv_cl, frame_width, frame_height, frame_stride, frame_uv_offset,
-        y_cl, u_cl, v_cl, MODEL_WIDTH, MODEL_HEIGHT, projection);
+        y_cl, u_cl, v_cl, model_width, model_height, projection);
   }
 };
 

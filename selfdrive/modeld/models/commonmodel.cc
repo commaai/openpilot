@@ -14,10 +14,11 @@ DrivingModelFrame::DrivingModelFrame(cl_device_id device_id, cl_context context)
   last_img_cl = CL_CHECK_ERR(clCreateSubBuffer(img_buffer_20hz_cl, CL_MEM_READ_WRITE, CL_BUFFER_CREATE_TYPE_REGION, &region, &err));
 
   loadyuv_init(&loadyuv, context, device_id, MODEL_WIDTH, MODEL_HEIGHT);
+  init_transform(device_id, context, MODEL_WIDTH, MODEL_HEIGHT);
 }
 
 cl_mem* DrivingModelFrame::prepare(cl_mem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3& projection) {
-  run_transform(yuv_cl, frame_width, frame_height, frame_stride, frame_uv_offset, projection);
+  run_transform(yuv_cl, MODEL_WIDTH, MODEL_HEIGHT, frame_width, frame_height, frame_stride, frame_uv_offset, projection);
 
   for (int i = 0; i < 4; i++) {
     CL_CHECK(clEnqueueCopyBuffer(q, img_buffer_20hz_cl, img_buffer_20hz_cl, (i+1)*frame_size_bytes, i*frame_size_bytes, frame_size_bytes, 0, nullptr, nullptr));
@@ -50,10 +51,12 @@ DrivingModelFrame::~DrivingModelFrame() {
 MonitoringModelFrame::MonitoringModelFrame(cl_device_id device_id, cl_context context) : ModelFrame(device_id, context) {
   input_frame = std::make_unique<uint8_t[]>(MODEL_FRAME_SIZE);
   input_frame_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, MODEL_FRAME_SIZE, NULL, &err));
+
+  init_transform(device_id, context, MODEL_WIDTH, MODEL_HEIGHT);
 }
 
 cl_mem* MonitoringModelFrame::prepare(cl_mem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3& projection) {
-  run_transform(yuv_cl, frame_width, frame_height, frame_stride, frame_uv_offset, projection);
+  run_transform(yuv_cl, MODEL_WIDTH, MODEL_HEIGHT, frame_width, frame_height, frame_stride, frame_uv_offset, projection);
   clFinish(q);
   return &y_cl;
 }
