@@ -75,9 +75,9 @@ class ModelState:
     self.numpy_inputs = {
       'calib': np.zeros((1, CALIB_LEN), dtype=np.float32),
     }
-    self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
 
     if TICI:
+      self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
       with open(MODEL_PKL_PATH, "rb") as f:
         self.model_run = pickle.load(f)
     else:
