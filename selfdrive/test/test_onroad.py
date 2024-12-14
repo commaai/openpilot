@@ -377,9 +377,9 @@ class TestOnroad:
       ("driverStateV2", 0.050, 0.026),
     ]
     for (s, instant_max, avg_max) in cfgs:
+      ts = [getattr(m, s).modelExecutionTime for m in self.msgs[s]]
       # TODO some init can happen in first iteration
       ts = ts[1:]
-      ts = [getattr(m, s).modelExecutionTime for m in self.msgs[s]]
       assert max(ts) < instant_max, f"high '{s}' execution time: {max(ts)}"
       assert np.mean(ts) < avg_max, f"high avg '{s}' execution time: {np.mean(ts)}"
       result += f"'{s}' execution time: min  {min(ts):.5f}s\n"
