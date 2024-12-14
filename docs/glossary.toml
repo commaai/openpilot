@@ -2,7 +2,7 @@
 
   [glossary.openpilot_terms]
   big_model = { description = "A new paradigm in model development that takes a bigger input frame. Full frame is 1164x874, little model is a 512x256 crop, big model is a 1024x512 crop, 4x bigger than little. Make box bigger, drive better. Useful for signs and lights.", abbreviation = "" }
-  driving_model = { description = "The resulting neural network after Comma trains on driving data on their supercomputer. This file lives on the device, and processes inputs to give outputs relevant to driving. Usually takes the form of an ONNX file, or a THNEED file after compilation on device. This file does not change or get trained on device, only processes inputs and outputs. See <a href='https://github.com/commaai/openpilot/wiki/Driving-Models'target='_blank'>the list of driving models</a> for names and details of models over time.", abbreviation = "model" }
+  driving_model = { description = "<a href='https://github.com/commaai/openpilot/wiki/Driving-Models' target='_blank'>Driving Models</a>.", abbreviation = "model" }
   end_to_end = { description = "End to end means the model reacts like a human would. It assesses the whole picture and acts accordingly. Unlike other approaches where things must be labeled by hand, end to end learns all the nuances of driving. A model is basically trained on what human drivers would do in a certain situation and attempts to reproduce that behavior.", abbreviation = "e2e" }
   longitudinal = { description = "Refers to gas and brake control.", abbreviation = "long" }
   lateral = { description = "Refers to steering control.", abbreviation = "lat" }
@@ -12,31 +12,33 @@
   offroad = { description = "openpilot's system state while ignition is off.", abbreviation = "" }
   route = { description = "A route is a recording of an onroad session.", abbreviation = "" }
   segment = { description = "Routes are split into one minute chunks called segments.", abbreviation = "" }
-  comma_connect = { description = "The web viewer for all your routes; check it out at <a href='https://connect.comma.ai'target='_blank'>connect.comma.ai</a>", abbreviation = "" }
+  comma_connect = { description = "The web viewer for all your routes; check it out at <a href='https://connect.comma.ai' target='_blank'>connect.comma.ai</a>", abbreviation = "" }
   panda = { description = "This is the secondary processor on the device that implements the functional safety and directly talks to the car over CAN. See the <a href='https://github.com/commaai/panda' target='_blank'>panda repo</a>.", abbreviation = "" }
-  comma_3x = { description = "The latest hardware by comma.ai for running openpilot. More info at <a href='https://comma.ai/shop'target='_blank'>comma.ai/shop</a>.", abbreviation = "" }
+  comma_3x = { description = "The latest hardware by comma.ai for running openpilot. More info at <a href='https://comma.ai/shop' target='_blank'>comma.ai/shop</a>.", abbreviation = "" }
 
   [glossary.driver_assistance_terms]
-  adaptive_cruise_control = { description = "A cruise control system that automatically adjusts the vehicle speed to maintain a safe distance from vehicles ahead.", abbreviation = "ACC" }
-  advanced_driver_assistance_systems = { description = "Electronic systems that aid the driver.", abbreviation = "ADAS" }
-  lane_centering = { description = "A system designed to keep a car centered in the lane, relieving the driver of the task of steering.", abbreviation = "(A)LC" }
-  collision_avoidance_system = { description = "A system designed to prevent or reduce the severity of a collision.", abbreviation = "AEB, CMS, FCW(S), FCA, PCS" }
-  driver_monitoring_system = { description = "A system that uses infrared sensors and/or cameras to monitor driver attentiveness.", abbreviation = "DM(S), DAM" }
+  adaptive_cruise_control = { description = "<a href='https://en.wikipedia.org/wiki/Adaptive_cruise_control' target='_blank'>Adaptive cruise control</a>", abbreviation = "ACC" }
+  advanced_driver_assistance_systems = { description = "<a href='https://en.wikipedia.org/wiki/Advanced_driver_assistance_systems' target='_blank'>Advanced driver-assistance systems</a>", abbreviation = "ADAS" }
+  forward_collision_warning = { description = "<a href='https://en.wikipedia.org/wiki/Collision_avoidance_system#Forward_collision_warning' target='_blank'>Forward Collision Warning</a>", abbreviation = "FCW" }
+  lane_departure_warning = { description = "<a href='https://en.wikipedia.org/wiki/Lane_departure_warning_system' target='_blank'>Lane Departure Warning</a>", abbreviation = "LDW" }
+  lane_centering = { description = "<a href='https://en.wikipedia.org/wiki/Lane_centering' target='_blank'>Lane centering</a>", abbreviation = "(A)LC" }
+  collision_avoidance_system = { description = "<a href='https://en.wikipedia.org/wiki/Collision_avoidance_system' target='_blank'>Collision avoidance system</a>", abbreviation = "AEB, CMS, FCW(S), FCA, PCS" }
+  driver_monitoring_system = { description = "<a href='https://en.wikipedia.org/wiki/Driver_drowsiness_detection' target='_blank'>Driver monitoring system</a>", abbreviation = "DM(S), DAM" }
   dynamic_range_cruise_control = { description = "A cruise control system that automatically adjusts the vehicle speed to maintain a safe distance from vehicles ahead.", abbreviation = "DRCC" }
   hugging = { description = "An undesired behavior where the vehicle drives too closely to one side of the lane.", abbreviation = "" }
-  lane_keep_assist_system = { description = "Lane keep assist is what comes with most cars sold today. It will assist the driver if they go over a lane line, but will not keep the car centered in the lane.", abbreviation = "LKA(S)" }
-  lane_departure_warning_system = { description = "Lane departure warning will beep when a car goes over a lane line.", abbreviation = "LDW(S), LDA" }
+  lane_keep_assist_system = { description = "<a href='https://en.wikipedia.org/wiki/Lane_keeping_assist' target='_blank'>Lane keep assist</a>", abbreviation = "LKA(S)" }
+  lane_departure_warning_system = { description = "<a href='https://en.wikipedia.org/wiki/Lane_departure_warning_system' target='_blank'>Lane departure warning</a>", abbreviation = "LDW(S), LDA" }
   pedestrian_crash_avoidance_mitigation = { description = "A system that uses computer and artificial intelligence technology to recognize pedestrians and bicycles in an automobile's path to take action for safety.", abbreviation = "PCAM" }
   ping_pong = { description = "An undesired behavior where the vehicle sways from one side of the lane to the other repeatedly. The desired behavior is to stay in the center of the lane.", abbreviation = "" }
   wobble = { description = "Similar to ping pong, but where the vehicle drives mostly centered in the lane but sways slightly from side to side. Primarily due to improper tuning of the steering control system, influence from wind, or poor lane/path perception due to rain, dirt, and/or debris on the vehicles windshield.", abbreviation = "" }
-  traffic_sign_recognition = { description = "A system by which a vehicle is able to recognize the traffic signs put on the road e.g. \"speed limit\" or \"children\" or \"turn ahead\".", abbreviation = "TSR" }
+  traffic_sign_recognition = { description = "<a href='https://en.wikipedia.org/wiki/Traffic_sign_recognition' target='_blank'>Traffic sign recognition</a>", abbreviation = "TSR" }
   stop_and_go = { description = "The ability for the car to be brought to a standstill and then resume driving without needing to disengage or reengage openpilot.", abbreviation = "SnG" }
   vision_only_adaptive_cruise_control = { description = "The exclusive use of cameras instead of radar to provide adaptive cruise control functions.", abbreviation = "VOACC" }
 
   [glossary.automotive_terms]
-  controller_area_network = { description = "A message-based protocol that provides a standardized way for ECUs to communicate with each other.", abbreviation = "CAN, CAN bus" }
-  can_fd = { description = "A newer version of CAN that supports higher data rates and longer messages. A red panda is required to interface with CAN-FD vehicles.", abbreviation = "" }
-  electronic_control_unit = { description = "Any embedded system in automotive electronics that controls one or more of the electrical systems or subsystems in a vehicle.", abbreviation = "ECU" }
-  electric_power_steering = { description = "Uses an electric motor to assist the driver of a vehicle. Sensors detect the position and torque of the steering column, and a computer module applies assistive torque via the motor, which connects to either the steering gear or steering column.", abbreviation = "EPS" }
-  onboard_diagnostics_connector = { description = "OBD systems give the vehicle owner or repair technician access to the status of the various vehicle sub-systems. The comma power v2 uses this port to provide constant power to the comma two as well as access the diagnostic bus for FW query.", abbreviation = "OBD-II, OBD-II port" }
-  full_self_driving = { description = "A term often used to describe systems designed to automate the entire driving process, potentially eliminating the need for human intervention. In the context of openpilot, this represents the goal of achieving a high level of autonomy where the system handles navigation, decision-making, and vehicle control across various environments.", abbreviation = "FSD" }
+  controller_area_network = { description = "<a href='https://en.wikipedia.org/wiki/CAN_bus' target='_blank'>Controller Area Network</a>", abbreviation = "CAN, CAN bus" }
+  can_fd = { description = "<a href='https://en.wikipedia.org/wiki/CAN_FD' target='_blank'>CAN FD</a>", abbreviation = "" }
+  electronic_control_unit = { description = "<a href='https://en.wikipedia.org/wiki/Electronic_control_unit' target='_blank'>Electronic Control Unit</a>", abbreviation = "ECU" }
+  electric_power_steering = { description = "<a href='https://en.wikipedia.org/wiki/Power_steering#Electric_power_steering' target='_blank'>Electric power steering</a>", abbreviation = "EPS" }
+  onboard_diagnostics_connector = { description = "<a href='https://en.wikipedia.org/wiki/On-board_diagnostics' target='_blank'>Onboard diagnostics</a>", abbreviation = "OBD-II, OBD-II port" }
+  full_self_driving = { description = "<a href='https://en.wikipedia.org/wiki/Self-driving_car' target='_blank'>Full self-driving</a>", abbreviation = "FSD" }
