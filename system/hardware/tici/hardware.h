@@ -4,6 +4,7 @@
 #include <fstream>
 #include <map>
 #include <string>
+#include <algorithm>  // for std::clamp
 
 #include "common/params.h"
 #include "common/util.h"
@@ -65,6 +66,28 @@ public:
     if (bl_power_control.is_open()) {
       bl_power_control << (on ? "0" : "4") << "\n";
       bl_power_control.close();
+    }
+  }
+
+  static void set_ir_power(int percent) {
+    auto device = get_device_type();
+    if (device == cereal::InitData::DeviceType::TICI ||
+        device == cereal::InitData::DeviceType::TIZI) {
+      return;
+    }
+
+    percent = std::clamp(percent, 0, 100);
+
+    std::ofstream torch_brightness("/sys/class/leds/led:torch_2/brightness");
+    if (torch_brightness.is_open()) {
+      torch_brightness << percent << "\n";
+      torch_brightness.close();
+    }
+
+    std::ofstream switch_brightness("/sys/class/leds/led:switch_2/brightness");
+    if (switch_brightness.is_open()) {
+      switch_brightness << percent << "\n";
+      switch_brightness.close();
     }
   }
 
