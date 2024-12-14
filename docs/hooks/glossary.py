@@ -1,6 +1,7 @@
 import os
 import re
 import tomllib
+from typing import Dict, Optional, Any
 
 def load_glossary(file_path="docs/glossary.toml"):
   if not os.path.exists(file_path):
@@ -9,7 +10,7 @@ def load_glossary(file_path="docs/glossary.toml"):
     glossary_data = tomllib.load(f)
   return glossary_data.get("glossary", {})
 
-glossary = None
+glossary: Optional[Dict[str, Any]] = None
 
 def get_glossary():
   global glossary
