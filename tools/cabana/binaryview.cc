@@ -292,6 +292,13 @@ void BinaryViewModel::updateItem(int row, int col, uint8_t val, const QColor &co
   }
 }
 
+// TODO:
+// 1. Track how long each bit stays in a state and how frequently it flips over time.
+// 2. Detect instability through frequent bit flips and highlight stable bits to indicate steady signals.
+// 3. Measure the intensity and rate of bit changes, adjusting heatmap visuals based on transition speed.
+// 4. Track message sequence and timestamps to understand how patterns evolve.
+// 5. Identify time-based or periodic bit state changes to spot recurring patterns.
+// 6. Support multiple time windows for short-term and long-term analysis, helping to observe changes in different time frames.
 void BinaryViewModel::updateState() {
   const auto &last_msg = can->lastMessage(msg_id);
   const auto &binary = last_msg.dat;
