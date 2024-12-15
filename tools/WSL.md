@@ -6,7 +6,7 @@
 
 ### Webcam support
 
-[Issues](https://github.com/commaai/openpilot/issues/34216) have been reported with developers attempting to run Openpilot with webcam support.  Successfully achieving openpilot webcam support in WSL2 will likely involve 3rd party Windows USB sharing software (ie. [usbipd](https://github.com/dorssel/usbipd-win)) and [rebuilding the Kernel](https://www.youtube.com/watch?v=t_YnACEPmrM).
+[Issues](https://github.com/commaai/openpilot/issues/34216) have been reported with developers attempting to run Openpilot with webcam support.  Successfully achieving openpilot webcam support in WSL2 will likely involve [attaching USB devices to WSL](https://learn.microsoft.com/en-us/windows/wsl/connect-usb) and [rebuilding the Kernel](https://www.youtube.com/watch?v=t_YnACEPmrM).
 
 ### GUI Issues
 
@@ -18,7 +18,7 @@ Because of WSL2's virtual IP address configuration, interprocess communication w
 
 ### OpenCL support
 
-Bro, I STILL haven't figured this one out!
+Bro, I STILL haven't figured this one out! `sudo apt install pocl-opencl-icd`?
 
 ## WSL Setup Instructions
 
