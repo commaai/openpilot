@@ -27,20 +27,20 @@ public:
                   std::function<void(std::shared_ptr<LogReader>)> callback);
   std::optional<uint64_t> find(double cur_ts, FindFlag flag) const;
   std::optional<Entry> findAlertAtTime(double target_time) const;
-  const std::shared_ptr<std::vector<Entry>> getEntries() const { return timeline_entries_; }
+  const std::shared_ptr<std::vector<Entry>> getEntries() const { return std::atomic_load(&timeline_entries_); }
 
 private:
- void buildTimeline(const Route &route, uint64_t route_start_ts, bool local_cache,
-                    std::function<void(std::shared_ptr<LogReader>)> callback);
- void updateEngagementStatus(const cereal::SelfdriveState::Reader &cs, std::optional<size_t> &idx, double seconds);
- void updateAlertStatus(const cereal::SelfdriveState::Reader &cs, std::optional<size_t> &idx, double seconds);
+  void buildTimeline(const Route &route, uint64_t route_start_ts, bool local_cache,
+                     std::function<void(std::shared_ptr<LogReader>)> callback);
+  void updateEngagementStatus(const cereal::SelfdriveState::Reader &cs, std::optional<size_t> &idx, double seconds);
+  void updateAlertStatus(const cereal::SelfdriveState::Reader &cs, std::optional<size_t> &idx, double seconds);
 
- std::thread thread_;
- std::atomic<bool> should_exit_ = false;
+  std::thread thread_;
+  std::atomic<bool> should_exit_ = false;
 
- // Temporarily holds entries before they are sorted and finalized
- std::vector<Entry> staging_entries_;
+  // Temporarily holds entries before they are sorted and finalized
+  std::vector<Entry> staging_entries_;
 
- // Final sorted timeline entries
- std::shared_ptr<std::vector<Entry>> timeline_entries_;
+  // Final sorted timeline entries
+  std::shared_ptr<std::vector<Entry>> timeline_entries_;
 };
