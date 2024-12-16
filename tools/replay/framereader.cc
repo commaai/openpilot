@@ -177,10 +177,14 @@ bool VideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
         break;
       }
     }
+
     auto pos = reader->packets_info[from_idx].pos;
-    if (avformat_seek_file(reader->input_ctx, 0, pos, pos, pos, AVSEEK_FLAG_BYTE) >= 0) {
-      avcodec_flush_buffers(decoder_ctx);
+    int ret = avformat_seek_file(reader->input_ctx, 0, pos, pos, pos, AVSEEK_FLAG_BYTE);
+    if (ret < 0) {
+      rError("Failed to seek to byte position %lld: %d", pos, AVERROR(ret));
+      return false;
     }
+    avcodec_flush_buffers(decoder_ctx);
   }
   reader->prev_idx = idx;
 
