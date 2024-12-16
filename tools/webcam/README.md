@@ -1,7 +1,7 @@
 # Run openpilot with webcam on PC
 
 What's needed:
-- Ubuntu 24.04 ([WSL2 is notsupported](https://github.com/commaai/openpilot/issues/34216))
+- Ubuntu 24.04 ([WSL2 is not supported](https://github.com/commaai/openpilot/issues/34216))
 - GPU (recommended)
 - Two USB webcams, at least 720p and 78 degrees FOV (e.g. Logitech C920/C615)
 - [Car harness](https://comma.ai/shop/products/comma-car-harness) with black panda to connect to your car
@@ -9,11 +9,7 @@ What's needed:
 That's it!
 
 ## Setup openpilot
-- Follow [this readme](https://github.com/commaai/openpilot/tree/master/tools) to install and build the requirements
-- Install OpenCL Driver
-```
-sudo apt install pocl-opencl-icd
-```
+- Follow [this readme](master/tools) to install and build the requirements
 
 ## Connect the hardware
 - Connect the road facing camera first, then the driver facing camera
@@ -29,7 +25,7 @@ USE_WEBCAM=1 system/manager/manager.py
 
 ## Specify Cameras
 
-To specify individual cameras, use the `ROAD_CAM`, `DRIVER_CAM`, and optional `WIDE_CAM` environment variables (ie. `DRIVER_CAM=2` uses `/dev/video2` for the driver-facing camera):
+Use the `ROAD_CAM`, `DRIVER_CAM`, and optional `WIDE_CAM` environment variables to specify which camera is which (ie. `DRIVER_CAM=2` uses `/dev/video2` for the driver-facing camera):
 ```
 ROAD_CAM=4 DRIVER_CAM=2 system/manager/manager.py
 ```
