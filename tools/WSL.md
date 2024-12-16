@@ -6,10 +6,11 @@
 - [Ubunt 24.04 installer from Microsoft Store](https://apps.microsoft.com/detail/9NZ3KLHXDJP5?hl=en-us&gl=CA&ocid=pdpshare)
 - [CUDA drivers](https://developer.nvidia.com/cuda-downloads?target_os=Linux&target_arch=x86_64&Distribution=WSL-Ubuntu&target_version=2.0&target_type=deb_network)
 - [CUDNN drivers](https://developer.nvidia.com/cudnn-downloads?target_os=Linux&target_arch=x86_64&Distribution=Ubuntu&target_version=24.04&target_type=deb_local)
+- [Openpilot Install](README.md)
 
 ## Known Issues
 
-[Windows Subsystem for Linux 2 (WSL2)](https://docs.microsoft.com/en-us/windows/wsl/about) should provide a similar experience to native Ubuntu apart from some known issues enumarted here:
+[Windows Subsystem for Linux 2 (WSL2)](https://docs.microsoft.com/en-us/windows/wsl/about) should provide a similar experience to native Ubuntu apart from some known issues listed here:
 
 ### Webcam support
 
