@@ -26,5 +26,5 @@ Because of WSL2's virtual IP address configuration, interprocess communication w
 
 ### GUI Fuzzy Diagonal lines
 
-Developers have reported instances of [fuzzy diagonal lines](WSL-ui-jank.png) appearing in UI apps.  The cause is currently unknown but it has been found that power cycling one's PC fixes it.
-![](WSL-ui-jank.png)
+Developers have reported instances of [fuzzy diagonal lines](https://github.com/user-attachments/assets/692f2fe2-9299-44a6-a1da-3def83b73af2) appearing in UI apps.  The cause is currently unknown but it has been found that power cycling one's PC fixes it.
+![](https://github.com/user-attachments/assets/692f2fe2-9299-44a6-a1da-3def83b73af2)
