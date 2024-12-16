@@ -72,7 +72,7 @@ def touch_thread(end_event):
 
   with open("/dev/input/by-path/platform-894000.i2c-event", "rb") as event_file:
     fcntl.fcntl(event_file, fcntl.F_SETFL, os.O_NONBLOCK)
-    while True:
+    while not end_event.is_set():
       if (count % int(1. / DT_HW)) == 0:
         while not end_event.is_set():
           event = event_file.read(event_size)
