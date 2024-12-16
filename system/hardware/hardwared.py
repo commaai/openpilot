@@ -73,7 +73,7 @@ def touch_thread(end_event):
   with open("/dev/input/by-path/platform-894000.i2c-event", "rb") as event_file:
     fcntl.fcntl(event_file, fcntl.F_SETFL, os.O_NONBLOCK)
     while not end_event.is_set():
-      if (count % int(10. / DT_HW)) == 0:
+      if (count % int(1. / DT_HW)) == 0:
         event = event_file.read(event_size)
         if event:
           (sec, usec, etype, code, value) = struct.unpack(event_format, event)
@@ -92,6 +92,7 @@ def touch_thread(end_event):
             event_frame = []
       count += 1
       time.sleep(DT_HW)
+  print("XXXXXXXXXXX DONE WITH LOOP")
 
 
 def hw_state_thread(end_event, hw_queue):
@@ -466,6 +467,7 @@ def main():
       if not all(t.is_alive() for t in threads):
         break
   finally:
+    print("XXXXXXXXXXXXXXXXXXXXX - EVENT_SET!!!!")
     end_event.set()
 
   for t in threads:
