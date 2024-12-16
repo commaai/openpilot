@@ -9,7 +9,7 @@ What's needed:
 That's it!
 
 ## Setup openpilot
-- Follow [this readme](master/tools) to install and build the requirements
+- Follow [this readme](../tools) to install and build the requirements
 
 ## Connect the hardware
 - Connect the road facing camera first, then the driver facing camera
