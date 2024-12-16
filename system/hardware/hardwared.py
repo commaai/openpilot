@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import fcntl
 import os
 import json
 import queue
@@ -71,7 +70,7 @@ def touch_thread(end_event):
   event_frame = []
 
   with open("/dev/input/by-path/platform-894000.i2c-event", "rb") as event_file:
-    fcntl.fcntl(event_file, fcntl.F_SETFL, os.O_NONBLOCK)
+    os.set_blocking(event_file, False)
     while not end_event.is_set():
       if (count % int(1. / DT_HW)) == 0:
         event = event_file.read(event_size)
@@ -92,7 +91,6 @@ def touch_thread(end_event):
             event_frame = []
       count += 1
       time.sleep(DT_HW)
-  print("XXXXXXXXXXX DONE WITH LOOP")
 
 
 def hw_state_thread(end_event, hw_queue):
@@ -467,7 +465,6 @@ def main():
       if not all(t.is_alive() for t in threads):
         break
   finally:
-    print("XXXXXXXXXXXXXXXXXXXXX - EVENT_SET!!!!")
     end_event.set()
 
   for t in threads:
