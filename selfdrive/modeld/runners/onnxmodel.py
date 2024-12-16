@@ -1,4 +1,5 @@
 import os
+import onnx
 import sys
 import numpy as np
 from typing import Any
@@ -28,7 +29,7 @@ def create_ort_session(path, fp16_to_fp32):
     options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
     provider = 'CPUExecutionProvider'
 
-  model_data = convert_fp16_to_fp32(path) if fp16_to_fp32 else path
+  model_data = convert_fp16_to_fp32(onnx.load(path)) if fp16_to_fp32 else path
   print("Onnx selected provider: ", [provider], file=sys.stderr)
   ort_session = ort.InferenceSession(model_data, options, providers=[provider])
   print("Onnx using ", ort_session.get_providers(), file=sys.stderr)
