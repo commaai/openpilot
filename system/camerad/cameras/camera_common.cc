@@ -93,8 +93,10 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, SpectraCamera *
 }
 
 CameraBuf::~CameraBuf() {
-  for (int i = 0; i < frame_buf_count; i++) {
-    camera_bufs_raw[i].free();
+  if (camera_bufs_raw != nullptr) {
+    for (int i = 0; i < frame_buf_count; i++) {
+      camera_bufs_raw[i].free();
+    }
   }
   if (imgproc) delete imgproc;
 }
