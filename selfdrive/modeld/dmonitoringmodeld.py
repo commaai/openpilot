@@ -13,13 +13,12 @@ from cereal.messaging import PubMaster, SubMaster
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.realtime import set_realtime_priority
-from openpilot.common.transformations.model import dmonitoringmodel_intrinsics, DM_INPUT_SIZE
+from openpilot.common.transformations.model import dmonitoringmodel_intrinsics
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext, MonitoringModelFrame
 from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid
 
-MODEL_WIDTH, MODEL_HEIGHT = DM_INPUT_SIZE
 CALIB_LEN = 3
 FEATURE_LEN = 512
 OUTPUT_SIZE = 84 + FEATURE_LEN
@@ -76,7 +75,7 @@ class ModelState:
   def run(self, buf:VisionBuf, calib:np.ndarray, transform:np.ndarray) -> tuple[np.ndarray, float]:
     self.inputs['calib'][:] = calib
 
-    self.model.setInputBuffer("input_img", self.frame.prepare(buf, transform.flatten(), self.model.getCLBuffer("input_img")))
+    self.model.setInputBuffer("input_img", self.frame.prepare(buf, transform.flatten(), self.model.getCLBuffer("input_img")).view(np.float32))
 
     t1 = time.perf_counter()
     self.model.execute()
