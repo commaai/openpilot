@@ -70,7 +70,7 @@ def touch_thread(end_event):
   event_frame = []
 
   with open("/dev/input/by-path/platform-894000.i2c-event", "rb") as event_file:
-    os.set_blocking(event_file, False)
+    os.set_blocking(event_file.fileno(), False)
     while not end_event.is_set():
       if (count % int(1. / DT_HW)) == 0:
         event = event_file.read(event_size)
