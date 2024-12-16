@@ -143,7 +143,6 @@ bool AbstractStream::isMessageActive(const MessageId &id) const {
 }
 
 void AbstractStream::updateLastMsgsTo(double sec) {
-  std::lock_guard lk(mutex_);
   current_sec_ = sec;
   uint64_t last_ts = toMonoTime(sec);
   std::unordered_map<MessageId, CanData> msgs;
@@ -175,10 +174,17 @@ void AbstractStream::updateLastMsgsTo(double sec) {
                     std::any_of(messages_.cbegin(), messages_.cend(),
                                 [this](const auto &m) { return !last_msgs.count(m.first); });
   last_msgs = messages_;
-  mutex_.unlock();
-
   emit msgsReceived(nullptr, id_changed);
-  resumeStream();
+
+  std::lock_guard lk(mutex_);
+  seek_finished_ = true;
+  seek_finished_cv_.notify_one();
+}
+
+void AbstractStream::waitForSeekFinshed() {
+  std::unique_lock lock(mutex_);
+  seek_finished_cv_.wait(lock, [this]() { return seek_finished_; });
+  seek_finished_ = false;
 }
 
 const CanEvent *AbstractStream::newEvent(uint64_t mono_time, const cereal::CanData::Reader &c) {
