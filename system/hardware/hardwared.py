@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import fcntl
 import os
 import json
 import queue
@@ -68,8 +69,8 @@ def touch_thread(end_event):
   event_frame = []
 
   with open("/dev/input/by-path/platform-894000.i2c-event", "rb") as event_file:
+    fcntl.fcntl(event_file, fcntl.F_SETFL, os.O_NONBLOCK)
     while not end_event.is_set():
-      print('loop')
       event = event_file.read(event_size)
       if event:
         (sec, usec, etype, code, value) = struct.unpack(event_format, event)
