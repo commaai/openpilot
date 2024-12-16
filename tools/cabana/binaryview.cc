@@ -318,7 +318,7 @@ void BinaryViewModel::updateState() {
 
   const double max_alpha = 255.0;
   const double min_alpha_with_signal = 25.0;  // Base alpha for small flip counts
-  const double min_alpha_no_signal = 10.0;    // Base alpha for small flip counts for no singal bits
+  const double min_alpha_no_signal = 10.0;    // Base alpha for small flip counts for no signal bits
   const double log_factor = 1.0 + 0.2;        // Factor for logarithmic scaling
   const double log_scaler = max_alpha / log2(log_factor * max_bit_flip_count);
 
