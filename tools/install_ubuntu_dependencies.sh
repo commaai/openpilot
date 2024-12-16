@@ -42,6 +42,8 @@ function install_ubuntu_common_requirements() {
     libbz2-dev \
     libeigen3-dev \
     libffi-dev \
+    libfreeimage-dev \
+    libfreeimage3 \
     libglew-dev \
     libgles2-mesa-dev \
     libglfw3-dev \
@@ -58,7 +60,9 @@ function install_ubuntu_common_requirements() {
     opencl-headers \
     ocl-icd-libopencl1 \
     ocl-icd-opencl-dev \
+    pocl-opencl-icd \
     portaudio19-dev \
+    pulseaudio \
     qttools5-dev-tools \
     libqt5svg5-dev \
     libqt5serialbus5-dev  \
