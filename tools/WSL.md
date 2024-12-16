@@ -23,3 +23,8 @@ If you are running WSL and any GUIs are failing (segfaulting or other strange is
 ### IPC outside WSL2
 
 Because of WSL2's virtual IP address configuration, interprocess communication with processes running on a remote host will have issues communicating with processes running in WSL2.  For this reason, tools like [Camera stream](tools/camerastream) are not supported for WSL developers.
+
+### GUI Fuzzy Diagonal lines
+
+Developers have reported instances of [fuzzy diagonal lines](WSL-ui-jank.png) appearing in UI apps.  The cause is currently unknown but it has been found that power cycling one's PC fixes it.
+![](WSL-ui-jank.png)
