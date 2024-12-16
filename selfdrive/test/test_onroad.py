@@ -168,10 +168,12 @@ class TestOnroad:
     finally:
       cls.gpu_procs = {psutil.Process(int(f.name)).name() for f in pathlib.Path('/sys/devices/virtual/kgsl/kgsl/proc/').iterdir() if f.is_dir()}
 
+      tst = time.monotonic()
       if proc is not None:
         proc.terminate()
         if proc.wait(60) is None:
           proc.kill()
+      print('KILLING TIMING:', time.monotonic() - tst)
 
     cls.lrs = [list(LogReader(os.path.join(str(s), "rlog"))) for s in cls.segments]
 

@@ -468,10 +468,8 @@ def main():
   finally:
     end_event.set()
 
-  st = time.monotonic()
   for t in threads:
     t.join()
-  print("JOINING HARDWARED: ", time.monotonic() - st)
 
 
 if __name__ == "__main__":
