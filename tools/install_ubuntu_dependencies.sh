@@ -23,7 +23,6 @@ function install_ubuntu_common_requirements() {
   $SUDO apt-get install -y --no-install-recommends \
     ca-certificates \
     clang \
-    cppcheck \
     build-essential \
     gcc-arm-none-eabi \
     liblzma-dev \
