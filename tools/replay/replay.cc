@@ -126,10 +126,10 @@ void Replay::seekTo(double seconds, bool relative) {
 void Replay::checkSeekProgress(double seeked_to_sec) {
   if (seeked_to_sec >= 0) {
     if (onSeekedTo) {
-      onSeekedTo(seeked_to_sec);
-    } else {
-      interruptStream([]() { return true; });
+      onSeekedTo(seeked_to_sec);  // Notify the seek completion event
     }
+    // Interrupt the stream to apply the final seek changes
+    interruptStream([]() { return true; });
   }
 }
 

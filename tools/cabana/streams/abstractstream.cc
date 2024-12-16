@@ -163,7 +163,6 @@ void AbstractStream::updateLastMsgsTo(double sec) {
   mutex_.unlock();
 
   emit msgsReceived(nullptr, id_changed);
-  resumeStream();
 }
 
 const CanEvent *AbstractStream::newEvent(uint64_t mono_time, const cereal::CanData::Reader &c) {

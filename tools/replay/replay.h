@@ -57,7 +57,6 @@ public:
   inline const std::optional<Timeline::Entry> findAlertAtTime(double sec) const { return timeline_.findAlertAtTime(sec); }
   const std::shared_ptr<SegmentManager::EventData> getEventData() const { return event_data_; }
   void installEventFilter(std::function<bool(const Event *)> filter) { event_filter_ = filter; }
-  void resumeStream() { interruptStream([]() { return true; }); }
 
   // Event callback functions
   std::function<void()> onSegmentsMerged = nullptr;
