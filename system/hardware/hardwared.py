@@ -74,25 +74,23 @@ def touch_thread(end_event):
     fcntl.fcntl(event_file, fcntl.F_SETFL, os.O_NONBLOCK)
     while not end_event.is_set():
       if (count % int(1. / DT_HW)) == 0:
-        while not end_event.is_set():
-          event = event_file.read(event_size)
-          if event:
-            (sec, usec, etype, code, value) = struct.unpack(event_format, event)
-            if etype != 0 or code != 0 or value != 0:
-              touch = log.Touch.new_message()
-              touch.sec = sec
-              touch.usec = usec
-              touch.type = etype
-              touch.code = code
-              touch.value = value
-              event_frame.append(touch)
-            else: # end of frame, push new log
-              msg = messaging.new_message('touch', len(event_frame), valid=True)
-              msg.touch = event_frame
-              pm.send('touch', msg)
-              event_frame = []
-          else:
-            break
+        event = event_file.read(event_size)
+        if event:
+          (sec, usec, etype, code, value) = struct.unpack(event_format, event)
+          if etype != 0 or code != 0 or value != 0:
+            touch = log.Touch.new_message()
+            touch.sec = sec
+            touch.usec = usec
+            touch.type = etype
+            touch.code = code
+            touch.value = value
+            event_frame.append(touch)
+          else: # end of frame, push new log
+            msg = messaging.new_message('touch', len(event_frame), valid=True)
+            msg.touch = event_frame
+            pm.send('touch', msg)
+            event_frame = []
+        continue
       count += 1
       time.sleep(DT_HW)
 
