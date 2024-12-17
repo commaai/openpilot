@@ -65,10 +65,6 @@ WifiManager::WifiManager(QObject *parent) : QObject(parent) {
   timer.callOnTimeout(this, &WifiManager::requestScan);
 
   initConnections();
-
-  if (!isKnownConnection(tethering_ssid)) {
-    addTetheringConnection();
-  }
 }
 
 void WifiManager::setup() {
@@ -333,6 +329,10 @@ void WifiManager::initConnections() {
     } else if (settings.value("connection").value("id") == "lte") {
       lteConnectionPath = path;
     }
+  }
+
+  if (!isKnownConnection(tethering_ssid)) {
+    addTetheringConnection();
   }
 }
 
