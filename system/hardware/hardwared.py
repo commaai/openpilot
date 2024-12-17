@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import fcntl
 import os
 import json
 import queue
@@ -61,6 +62,8 @@ def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_tex
   set_offroad_alert(offroad_alert, show_alert, extra_text)
 
 def touch_thread(end_event):
+  count = 0
+
   pm = messaging.PubMaster(["touch"])
 
   event_format = "llHHi"
@@ -68,23 +71,29 @@ def touch_thread(end_event):
   event_frame = []
 
   with open("/dev/input/by-path/platform-894000.i2c-event", "rb") as event_file:
+    fcntl.fcntl(event_file, fcntl.F_SETFL, os.O_NONBLOCK)
     while not end_event.is_set():
-      event = event_file.read(event_size)
-      if event:
-        (sec, usec, etype, code, value) = struct.unpack(event_format, event)
-        if etype != 0 or code != 0 or value != 0:
-          touch = log.Touch.new_message()
-          touch.sec = sec
-          touch.usec = usec
-          touch.type = etype
-          touch.code = code
-          touch.value = value
-          event_frame.append(touch)
-        else: # end of frame, push new log
-          msg = messaging.new_message('touch', len(event_frame), valid=True)
-          msg.touch = event_frame
-          pm.send('touch', msg)
-          event_frame = []
+      if (count % int(1. / DT_HW)) == 0:
+        event = event_file.read(event_size)
+        if event:
+          (sec, usec, etype, code, value) = struct.unpack(event_format, event)
+          if etype != 0 or code != 0 or value != 0:
+            touch = log.Touch.new_message()
+            touch.sec = sec
+            touch.usec = usec
+            touch.type = etype
+            touch.code = code
+            touch.value = value
+            event_frame.append(touch)
+          else: # end of frame, push new log
+            msg = messaging.new_message('touch', len(event_frame), valid=True)
+            msg.touch = event_frame
+            pm.send('touch', msg)
+            event_frame = []
+          continue
+
+      count += 1
+      time.sleep(DT_HW)
 
 
 def hw_state_thread(end_event, hw_queue):
