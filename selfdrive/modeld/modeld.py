@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import os
 from openpilot.system.hardware import TICI
-## TODO this is hack
+
+#
 if TICI:
   from tinygrad.tensor import Tensor
   from tinygrad.dtype import dtypes
@@ -40,9 +41,6 @@ MODEL_PATH = Path(__file__).parent / 'models/supercombo.onnx'
 MODEL_PKL_PATH = Path(__file__).parent / 'models/supercombo_tinygrad.pkl'
 METADATA_PATH = Path(__file__).parent / 'models/supercombo_metadata.pkl'
 
-# TODO: should not hardcoded
-IMG_INPUT_SHAPE = (1, 12, 128, 256)
-
 class FrameMeta:
   frame_id: int = 0
   timestamp_sof: int = 0
@@ -53,15 +51,13 @@ class FrameMeta:
       self.frame_id, self.timestamp_sof, self.timestamp_eof = vipc.frame_id, vipc.timestamp_sof, vipc.timestamp_eof
 
 class ModelState:
-  frame: DrivingModelFrame
-  wide_frame: DrivingModelFrame
+  frames: dict[str, DrivingModelFrame]
   inputs: dict[str, np.ndarray]
   output: np.ndarray
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
 
   def __init__(self, context: CLContext):
-    self.frame = DrivingModelFrame(context)
-    self.wide_frame = DrivingModelFrame(context)
+    self.frames = {'input_imgs': DrivingModelFrame(context), 'big_input_imgs': DrivingModelFrame(context)}
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
     self.full_features_20Hz = np.zeros((ModelConstants.FULL_HISTORY_BUFFER_LEN, ModelConstants.FEATURE_LEN), dtype=np.float32)
     self.desire_20Hz =  np.zeros((ModelConstants.FULL_HISTORY_BUFFER_LEN + 1, ModelConstants.DESIRE_LEN), dtype=np.float32)
@@ -75,6 +71,7 @@ class ModelState:
 
     with open(METADATA_PATH, 'rb') as f:
       model_metadata = pickle.load(f)
+    self.input_shapes =  model_metadata['input_shapes']
 
     self.output_slices = model_metadata['output_slices']
     net_output_size = model_metadata['output_shapes']['outputs'][1]
@@ -106,17 +103,17 @@ class ModelState:
     self.numpy_inputs['desire'][:] = self.desire_20Hz.reshape((1,25,4,-1)).max(axis=2)
 
     self.numpy_inputs['traffic_convention'][:] = inputs['traffic_convention']
-    input_imgs_cl = self.frame.prepare(buf, transform.flatten())
-    big_input_imgs_cl = self.wide_frame.prepare(wbuf, transform_wide.flatten())
+    imgs_cl = {'input_imgs': self.frames['input_imgs'].prepare(buf, transform.flatten()), 
+               'big_input_imgs': self.frames['big_input_imgs'].prepare(wbuf, transform_wide.flatten())}
 
     if TICI:
       # The imgs tensors are backed by opencl memory, only need init once
-      if 'input_imgs' not in self.tensor_inputs:
-        self.tensor_inputs['input_imgs'] = qcom_tensor_from_opencl_address(input_imgs_cl.mem_address, IMG_INPUT_SHAPE, dtype=dtypes.uint8)
-        self.tensor_inputs['big_input_imgs'] = qcom_tensor_from_opencl_address(big_input_imgs_cl.mem_address, IMG_INPUT_SHAPE, dtype=dtypes.uint8)
+      for key in imgs_cl:
+        if key not in self.tensor_inputs:
+          self.tensor_inputs[key] = qcom_tensor_from_opencl_address(imgs_cl[key].mem_address, self.input_shapes[key], dtype=dtypes.uint8)
     else:
-      self.numpy_inputs['input_imgs'] = self.frame.buffer_from_cl(input_imgs_cl).reshape(IMG_INPUT_SHAPE)
-      self.numpy_inputs['big_input_imgs'] = self.wide_frame.buffer_from_cl(big_input_imgs_cl).reshape(IMG_INPUT_SHAPE)
+      for key in imgs_cl:
+        self.numpy_inputs[key] = self.frames[key].buffer_from_cl(imgs_cl[key]).reshape(self.input_shapes[key])
 
     if prepare_only:
       return None

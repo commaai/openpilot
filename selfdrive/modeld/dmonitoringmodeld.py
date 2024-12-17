@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 from openpilot.system.hardware import TICI
-## TODO this is hack
 if TICI:
   from tinygrad.tensor import Tensor
   from tinygrad.dtype import dtypes
