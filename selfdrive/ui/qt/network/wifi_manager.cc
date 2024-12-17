@@ -403,9 +403,13 @@ void WifiManager::updateGsmSettings(bool roaming, QString apn, bool metered) {
     }
 
     if (changes) {
-      call(lteConnectionPath.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "UpdateUnsaved", QVariant::fromValue(settings));  // update is temporary
-      deactivateConnection(lteConnectionPath);
-      activateModemConnection(lteConnectionPath);
+      QDBusPendingCall pending_call = asyncCall(lteConnectionPath.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "UpdateUnsaved", QVariant::fromValue(settings));  // update is temporary
+      QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(pending_call);
+      QObject::connect(watcher, &QDBusPendingCallWatcher::finished, this, [this, watcher]() {
+        deactivateConnection(lteConnectionPath);
+        activateModemConnection(lteConnectionPath);
+        watcher->deleteLater();
+      });
     }
   }
 }
