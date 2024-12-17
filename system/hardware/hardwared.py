@@ -90,7 +90,7 @@ def touch_thread(end_event):
             msg.touch = event_frame
             pm.send('touch', msg)
             event_frame = []
-        continue
+          continue
       count += 1
       time.sleep(DT_HW)
 
