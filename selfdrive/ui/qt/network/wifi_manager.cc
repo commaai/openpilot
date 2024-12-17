@@ -65,6 +65,10 @@ WifiManager::WifiManager(QObject *parent) : QObject(parent) {
   timer.callOnTimeout(this, &WifiManager::requestScan);
 
   initConnections();
+
+  if (!isKnownConnection(tethering_ssid)) {
+    addTetheringConnection();
+  }
 }
 
 void WifiManager::setup() {
@@ -434,10 +438,7 @@ void WifiManager::addTetheringConnection() {
   connection["ipv4"]["route-metric"] = 1100;
   connection["ipv6"]["method"] = "ignore";
 
-  auto path = call<QDBusObjectPath>(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "AddConnection", QVariant::fromValue(connection));
-  if (!path.path().isEmpty()) {
-    knownConnections[path] = tethering_ssid;
-  }
+  asyncCall<QDBusObjectPath>(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "AddConnection", QVariant::fromValue(connection));
 }
 
 void WifiManager::tetheringActivated(QDBusPendingCallWatcher *call) {
@@ -453,10 +454,6 @@ void WifiManager::tetheringActivated(QDBusPendingCallWatcher *call) {
 
 void WifiManager::setTetheringEnabled(bool enabled) {
   if (enabled) {
-    if (!isKnownConnection(tethering_ssid)) {
-      addTetheringConnection();
-    }
-
     auto pending_call = activateWifiConnection(tethering_ssid);
 
     if (pending_call) {
@@ -478,9 +475,6 @@ bool WifiManager::isTetheringEnabled() {
 }
 
 QString WifiManager::getTetheringPassword() {
-  if (!isKnownConnection(tethering_ssid)) {
-    addTetheringConnection();
-  }
   const QDBusObjectPath &path = getConnectionPath(tethering_ssid);
   if (!path.path().isEmpty()) {
     QDBusReply<QMap<QString, QVariantMap>> response = call(path.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "GetSecrets", "802-11-wireless-security");
