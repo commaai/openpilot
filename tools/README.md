@@ -6,7 +6,7 @@ openpilot is developed and tested on **Ubuntu 24.04**, which is the primary deve
 
 Most of openpilot should work natively on macOS. On Windows you can use WSL for a nearly native Ubuntu experience. Running natively on any other system is not currently recommended and will likely require modifications.
 
-## Native setup on Ubuntu 24.04
+## Native setup on Ubuntu 24.04 and macOS
 
 **1. Clone openpilot**
 
@@ -26,7 +26,7 @@ git clone --recurse-submodules https://github.com/commaai/openpilot.git
 
 ``` bash
 cd openpilot
-tools/ubuntu_setup.sh
+tools/op.sh setup
 ```
 
 **3. Git LFS**

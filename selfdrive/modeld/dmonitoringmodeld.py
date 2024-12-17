@@ -13,13 +13,13 @@ from cereal.messaging import PubMaster, SubMaster
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.realtime import set_realtime_priority
+from openpilot.common.transformations.model import dmonitoringmodel_intrinsics
+from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
+from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext, MonitoringModelFrame
 from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
-from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid
 
 CALIB_LEN = 3
-MODEL_WIDTH = 1440
-MODEL_HEIGHT = 960
 FEATURE_LEN = 512
 OUTPUT_SIZE = 84 + FEATURE_LEN
 
@@ -62,25 +62,21 @@ class ModelState:
 
   def __init__(self, cl_ctx):
     assert ctypes.sizeof(DMonitoringModelResult) == OUTPUT_SIZE * ctypes.sizeof(ctypes.c_float)
+
+    self.frame = MonitoringModelFrame(cl_ctx)
     self.output = np.zeros(OUTPUT_SIZE, dtype=np.float32)
     self.inputs = {
-      'input_img': np.zeros(MODEL_HEIGHT * MODEL_WIDTH, dtype=np.uint8),
       'calib': np.zeros(CALIB_LEN, dtype=np.float32)}
 
     self.model = ModelRunner(MODEL_PATHS, self.output, Runtime.GPU, False, cl_ctx)
     self.model.addInput("input_img", None)
     self.model.addInput("calib", self.inputs['calib'])
 
-  def run(self, buf:VisionBuf, calib:np.ndarray) -> tuple[np.ndarray, float]:
+  def run(self, buf:VisionBuf, calib:np.ndarray, transform:np.ndarray) -> tuple[np.ndarray, float]:
     self.inputs['calib'][:] = calib
 
-    v_offset = buf.height - MODEL_HEIGHT
-    h_offset = (buf.width - MODEL_WIDTH) // 2
-    buf_data = buf.data.reshape(-1, buf.stride)
-    input_data = self.inputs['input_img'].reshape(MODEL_HEIGHT, MODEL_WIDTH)
-    input_data[:] = buf_data[v_offset:v_offset+MODEL_HEIGHT, h_offset:h_offset+MODEL_WIDTH]
+    self.model.setInputBuffer("input_img", self.frame.prepare(buf, transform.flatten(), None).view(np.float32))
 
-    self.model.setInputBuffer("input_img", self.inputs['input_img'].view(np.float32))
     t1 = time.perf_counter()
     self.model.execute()
     t2 = time.perf_counter()
@@ -137,18 +133,23 @@ def main():
   pm = PubMaster(["driverStateV2"])
 
   calib = np.zeros(CALIB_LEN, dtype=np.float32)
+  model_transform = None
 
   while True:
     buf = vipc_client.recv()
     if buf is None:
       continue
 
+    if model_transform is None:
+      cam = _os_fisheye if buf.width == _os_fisheye.width else _ar_ox_fisheye
+      model_transform = np.linalg.inv(np.dot(dmonitoringmodel_intrinsics, np.linalg.inv(cam.intrinsics))).astype(np.float32)
+
     sm.update(0)
     if sm.updated["liveCalibration"]:
       calib[:] = np.array(sm["liveCalibration"].rpyCalib)
 
     t1 = time.perf_counter()
-    model_output, gpu_execution_time = model.run(buf, calib)
+    model_output, gpu_execution_time = model.run(buf, calib, model_transform)
     t2 = time.perf_counter()
 
     pm.send("driverStateV2", get_driverstate_packet(model_output, vipc_client.frame_id, vipc_client.timestamp_sof, t2 - t1, gpu_execution_time))

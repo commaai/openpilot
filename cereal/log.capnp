@@ -2440,6 +2440,14 @@ struct Microphone {
   filteredSoundPressureWeightedDb @2 :Float32;
 }
 
+struct Touch {
+  sec @0 :Int64;
+  usec @1 :Int64;
+  type @2 :UInt8;
+  code @3 :Int32;
+  value @4 :Int32;
+}
+
 struct Event {
   logMonoTime @0 :UInt64;  # nanoseconds
   valid @67 :Bool = true;
@@ -2519,6 +2527,9 @@ struct Event {
     deviceState @6 :DeviceState;
     logMessage @18 :Text;
     errorLogMessage @85 :Text;
+
+    # touch frame
+    touch @135 :List(Touch);
 
     # navigation
     navInstruction @82 :NavInstruction;
