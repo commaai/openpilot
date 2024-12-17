@@ -50,7 +50,7 @@ cdef class ModelFrame:
     if not data:
       return None
 
-    return np.asarray(<cnp.uint8_t[:self.frame.buf_size]> data)
+    return np.asarray(<cnp.uint8_t[:self.buf_size]> data)
     # return CLMem.create(data)
 
   # def buffer_from_cl(self, CLMem in_frames):
