@@ -102,11 +102,15 @@ def manager_init() -> None:
 def manager_cleanup() -> None:
   # send signals to kill all procs
   for p in managed_processes.values():
+    print('kill non-blocking: ', p.name())
     p.stop(block=False)
+    print('kill non-blocking done: ', p.name())
 
   # ensure all are killed
   for p in managed_processes.values():
+    print('kill blocking: ', p.name())
     p.stop(block=True)
+    print('kill blocking done: ', p.name())
 
   cloudlog.info("everything is dead")
 
