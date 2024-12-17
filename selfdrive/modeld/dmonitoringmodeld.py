@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
 import os
+from openpilot.system.hardware import TICI
+## TODO this is hack
+if TICI:
+  os.environ['QCOM'] = '1'
+else:
+  from openpilot.selfdrive.modeld.runners.ort_helpers import make_onnx_cpu_runner
 import gc
 import math
 import time
+import pickle
 import ctypes
 import numpy as np
 from pathlib import Path
@@ -13,11 +20,9 @@ from cereal.messaging import PubMaster, SubMaster
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.realtime import set_realtime_priority
-from openpilot.common.transformations.model import dmonitoringmodel_intrinsics
-from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
-from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext, MonitoringModelFrame
-from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
+from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid
+from tinygrad.tensor import Tensor
 
 CALIB_LEN = 3
 FEATURE_LEN = 512
@@ -25,9 +30,8 @@ OUTPUT_SIZE = 84 + FEATURE_LEN
 
 PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
-MODEL_PATHS = {
-  ModelRunner.THNEED: Path(__file__).parent / 'models/dmonitoring_model.thneed',
-  ModelRunner.ONNX: Path(__file__).parent / 'models/dmonitoring_model.onnx'}
+MODEL_PATH = Path(__file__).parent / 'models/dmonitoring_model.onnx'
+MODEL_PKL_PATH = Path(__file__).parent / 'models/dmonitoring_model_tinygrad.pkl'
 
 class DriverStateResult(ctypes.Structure):
   _fields_ = [
@@ -58,29 +62,37 @@ class DMonitoringModelResult(ctypes.Structure):
 class ModelState:
   inputs: dict[str, np.ndarray]
   output: np.ndarray
-  model: ModelRunner
 
   def __init__(self, cl_ctx):
     assert ctypes.sizeof(DMonitoringModelResult) == OUTPUT_SIZE * ctypes.sizeof(ctypes.c_float)
+    self.numpy_inputs = {'calib': np.zeros((1, CALIB_LEN), dtype=np.float32),
+                         'input_img': np.zeros((1,MODEL_HEIGHT * MODEL_WIDTH), dtype=np.uint8)}
+    self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
 
-    self.frame = MonitoringModelFrame(cl_ctx)
-    self.output = np.zeros(OUTPUT_SIZE, dtype=np.float32)
-    self.inputs = {
-      'calib': np.zeros(CALIB_LEN, dtype=np.float32)}
 
-    self.model = ModelRunner(MODEL_PATHS, self.output, Runtime.GPU, False, cl_ctx)
-    self.model.addInput("input_img", None)
-    self.model.addInput("calib", self.inputs['calib'])
+    if TICI:
+      with open(MODEL_PKL_PATH, "rb") as f:
+        self.model_run = pickle.load(f)
+    else:
+      self.onnx_cpu_runner = make_onnx_cpu_runner(MODEL_PATH)
 
-  def run(self, buf:VisionBuf, calib:np.ndarray, transform:np.ndarray) -> tuple[np.ndarray, float]:
-    self.inputs['calib'][:] = calib
-
-    self.model.setInputBuffer("input_img", self.frame.prepare(buf, transform.flatten(), None).view(np.float32))
+  def run(self, buf:VisionBuf, calib:np.ndarray) -> tuple[np.ndarray, float]:
+    self.numpy_inputs['calib'][0,:] = calib
 
     t1 = time.perf_counter()
-    self.model.execute()
+    # TODO use opencl buffer directly to make tensor
+    v_offset = buf.height - MODEL_HEIGHT
+    h_offset = (buf.width - MODEL_WIDTH) // 2
+    buf_data = buf.data.reshape(-1, buf.stride)
+    self.numpy_inputs['input_img'][:] = buf_data[v_offset:v_offset+MODEL_HEIGHT, h_offset:h_offset+MODEL_WIDTH].reshape((1, -1))
+
+    if TICI:
+      output = self.model_run(**self.tensor_inputs).numpy().flatten()
+    else:
+      output = self.onnx_cpu_runner.run(None, self.numpy_inputs)[0].flatten()
+
     t2 = time.perf_counter()
-    return self.output, t2 - t1
+    return output, t2 - t1
 
 
 def fill_driver_state(msg, ds_result: DriverStateResult):

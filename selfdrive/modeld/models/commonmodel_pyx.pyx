@@ -31,7 +31,6 @@ cdef class CLMem:
 def cl_from_visionbuf(VisionBuf buf):
   return CLMem.create(<void*>&buf.buf.buf_cl)
 
-
 cdef class ModelFrame:
   cdef cppModelFrame * frame
   cdef int buf_size
@@ -39,38 +38,14 @@ cdef class ModelFrame:
   def __dealloc__(self):
     del self.frame
 
-  def prepare(self, VisionBuf buf, float[:] projection, CLMem output):
+  def prepare(self, VisionBuf buf, float[:] projection):
     cdef mat3 cprojection
     memcpy(cprojection.v, &projection[0], 9*sizeof(float))
-    cdef unsigned char * data
-    if output is None:
-      data = self.frame.prepare(buf.buf.buf_cl, buf.width, buf.height, buf.stride, buf.uv_offset, cprojection, NULL)
-    else:
-      data = self.frame.prepare(buf.buf.buf_cl, buf.width, buf.height, buf.stride, buf.uv_offset, cprojection, output.mem)
-    if not data:
-      return None
+    cdef cl_mem * data
+    data = self.frame.prepare(buf.buf.buf_cl, buf.width, buf.height, buf.stride, buf.uv_offset, cprojection)
+    return CLMem.create(data)
 
-    return np.asarray(<cnp.uint8_t[:self.buf_size]> data)
-    # return CLMem.create(data)
-
-  # def buffer_from_cl(self, CLMem in_frames):
-  #   cdef unsigned char * data2
-  #   data2 = self.frame.buffer_from_cl(in_frames.mem, self.buf_size)
-  #   return np.asarray(<cnp.uint8_t[:self.buf_size]> data2)
-
-
-cdef class DrivingModelFrame(ModelFrame):
-  cdef cppDrivingModelFrame * _frame
-
-  def __cinit__(self, CLContext context):
-    self._frame = new cppDrivingModelFrame(context.device_id, context.context)
-    self.frame = <cppModelFrame*>(self._frame)
-    self.buf_size = self._frame.buf_size
-
-cdef class MonitoringModelFrame(ModelFrame):
-  cdef cppMonitoringModelFrame * _frame
-
-  def __cinit__(self, CLContext context):
-    self._frame = new cppMonitoringModelFrame(context.device_id, context.context)
-    self.frame = <cppModelFrame*>(self._frame)
-    self.buf_size = self._frame.buf_size
+  def buffer_from_cl(self, CLMem in_frames):
+    cdef unsigned char * data2
+    data2 = self.frame.buffer_from_cl(in_frames.mem)
+    return np.asarray(<cnp.uint8_t[:self.frame.buf_size]> data2)

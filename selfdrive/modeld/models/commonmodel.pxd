@@ -14,13 +14,6 @@ cdef extern from "common/clutil.h":
 cdef extern from "selfdrive/modeld/models/commonmodel.h":
   cppclass ModelFrame:
     int buf_size
-    # unsigned char * buffer_from_cl(cl_mem*, int);
-    unsigned char * prepare(cl_mem, int, int, int, int, mat3, cl_mem*)
-
-  cppclass DrivingModelFrame:
-    int buf_size
-    DrivingModelFrame(cl_device_id, cl_context)
-
-  cppclass MonitoringModelFrame:
-    int buf_size
-    MonitoringModelFrame(cl_device_id, cl_context)
+    ModelFrame(cl_device_id, cl_context)
+    cl_mem * prepare(cl_mem, int, int, int, int, mat3)
+    unsigned char * buffer_from_cl(cl_mem*);
