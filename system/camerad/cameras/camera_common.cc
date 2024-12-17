@@ -89,12 +89,14 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, SpectraCamera *
   vipc_server->create_buffers_with_sizes(stream_type, VIPC_BUFFER_COUNT, out_img_width, out_img_height, nv12_size, cam->stride, cam->uv_offset);
   LOGD("created %d YUV vipc buffers with size %dx%d", VIPC_BUFFER_COUNT, cam->stride, cam->y_height);
 
-  imgproc = new ImgProc(device_id, context, this, sensor, cam->cc.camera_num, cam->stride, cam->uv_offset);
+  if (is_raw) imgproc = new ImgProc(device_id, context, this, sensor, cam->cc.camera_num, cam->stride, cam->uv_offset);
 }
 
 CameraBuf::~CameraBuf() {
-  for (int i = 0; i < frame_buf_count; i++) {
-    camera_bufs_raw[i].free();
+  if (camera_bufs_raw != nullptr) {
+    for (int i = 0; i < frame_buf_count; i++) {
+      camera_bufs_raw[i].free();
+    }
   }
   if (imgproc) delete imgproc;
 }
