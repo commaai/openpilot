@@ -91,6 +91,7 @@ def touch_thread(end_event):
             pm.send('touch', msg)
             event_frame = []
           continue
+
       count += 1
       time.sleep(DT_HW)
 
