@@ -1,10 +1,13 @@
 #if SENSOR_ID == 2
 
 #define BIT_DEPTH 12
-#define BLACK_LVL 64
+#define BLACK_LVL 0
+#define PWL_MAX 4095
 #define VIGNETTE_RSZ 1.0f
 
-float ox_lut_func(int x) {
+float ox_lut_func(int x_0) {
+  int x = clamp(x_0 - BLACK_LVL, 0, PWL_MAX);
+  float ret;
   if (x < 512) {
     return x * 5.94873e-8;
   } else if (512 <= x && x < 768) {
@@ -29,18 +32,18 @@ float ox_lut_func(int x) {
 float4 normalize_pv(int4 parsed, float vignette_factor) {
   // PWL
   float4 pv = {ox_lut_func(parsed.s0), ox_lut_func(parsed.s1), ox_lut_func(parsed.s2), ox_lut_func(parsed.s3)};
-  return clamp(pv*vignette_factor*256.0, 0.0, 1.0);
+  return clamp(pv*vignette_factor, 0.0, 1.0);
 }
 
 float3 color_correct(float3 rgb) {
-  float3 corrected = rgb.x * (float3)(1.5664815, -0.29808738, -0.03973474);
-  corrected += rgb.y * (float3)(-0.48672447, 1.41914433, -0.40295248);
-  corrected += rgb.z * (float3)(-0.07975703, -0.12105695, 1.44268722);
+  float3 corrected = clamp(rgb.x * (float3)(1.5664815, -0.29808738, -0.03973474), 0.0, 1.0);
+  corrected += clamp(rgb.y * (float3)(-0.48672447, 1.41914433, -0.40295248), 0.0, 1.0);
+  corrected += clamp(rgb.z * (float3)(-0.07975703, -0.12105695, 1.44268722), 0.0, 1.0);
   return corrected;
 }
 
 float3 apply_gamma(float3 rgb, int expo_time) {
-  return -0.507089*exp(-12.54124638*rgb) + 0.9655*powr(rgb, 0.5) - 0.472597*rgb + 0.507089;
+  return (10000 * rgb) / (1 + 9999 * rgb);
 }
 
 #endif
