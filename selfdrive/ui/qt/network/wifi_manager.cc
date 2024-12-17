@@ -434,10 +434,16 @@ void WifiManager::addTetheringConnection() {
   connection["ipv4"]["route-metric"] = 1100;
   connection["ipv6"]["method"] = "ignore";
 
-  auto path = call<QDBusObjectPath>(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "AddConnection", QVariant::fromValue(connection));
-  if (!path.path().isEmpty()) {
-    knownConnections[path] = tethering_ssid;
-  }
+  QDBusPendingCall pending_call = asyncCall(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "AddConnection", QVariant::fromValue(connection));
+  QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(pending_call);
+  QObject::connect(watcher, &QDBusPendingCallWatcher::finished, this, [this, watcher]() {
+    if (const QDBusReply<QDBusObjectPath> reply = *watcher; reply.isValid()) {
+      knownConnections[reply.value()] = tethering_ssid;
+    } else {
+      qWarning() << "addTetheringConnection failed:" << reply.error().message();
+    }
+    watcher->deleteLater();
+  });
 }
 
 void WifiManager::tetheringActivated(QDBusPendingCallWatcher *call) {
