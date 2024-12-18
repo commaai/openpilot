@@ -7,7 +7,7 @@
 #define PV_MAX12 4095
 #define PV_MAX16 65536 // gamma curve is calibrated to 16bit
 #define BLACK_LVL 48
-#define VIGNETTE_RSZ 2.2545f
+#define VIGNETTE_RSZ 1.0f
 
 float combine_dual_pvs(float lv, float sv, int expo_time) {
   float svc = fmax(sv * expo_time, (float)(64 * (PV_MAX10 - BLACK_LVL)));

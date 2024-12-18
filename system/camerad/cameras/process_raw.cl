@@ -19,14 +19,14 @@
 #endif
 
 float get_vignetting_s(float r) {
-  if (r < 62500) {
-    return (1.0f + 0.0000008f*r);
-  } else if (r < 490000) {
-    return (0.9625f + 0.0000014f*r);
-  } else if (r < 1102500) {
-    return (1.26434f + 0.0000000000016f*r*r);
+  if (r < 100000) {
+    return 1.0f + 0.0000013f * r;
+  } else if (r < 250000) {
+    return 1.02f + 0.0000011f * r;
+  } else if (r < 400000) {
+    return 0.92f + 0.0000015f * r;
   } else {
-    return (0.53503625f + 0.0000000000022f*r*r);
+    return 0.44f + 0.0000027f * r;
   }
 }
 
