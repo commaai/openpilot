@@ -1,0 +1,15 @@
+# https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
+[tool.ruff]
+line-length = 160
+target-version="py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "PIE", "C4", "ISC", "RUF100", "A"]
+ignore = ["W292", "E741", "E402", "C408", "ISC003"]
+flake8-implicit-str-concat.allow-multiline=false
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"pytest.main".msg = "pytest.main requires special handling that is easy to mess up!"
+
+[tool.pytest.ini_options]
+addopts = "-n auto --ignore-glob='*.sh'"

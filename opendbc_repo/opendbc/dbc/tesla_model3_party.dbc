@@ -1,0 +1,339 @@
+VERSION ""
+
+
+NS_ : 
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BO_TX_BU_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BU_: CH DIPF DIPR ETH FC HVI HVS PARTY SDCV VEH VIRT
+
+
+BO_ 905 DAS_status2: 8 PARTY
+ SG_ DAS_status2Checksum : 56|8@1+ (1,0) [0|255] ""  aps
+ SG_ DAS_status2Counter : 52|4@1+ (1,0) [0|15] ""  aps
+ SG_ DAS_longCollisionWarning : 48|4@1+ (1,0) [0|15] ""  aps
+ SG_ DAS_ppOffsetDesiredRamp : 40|8@1+ (0.01,-1.28) [-1.28|1.27] "m"  aps
+ SG_ DAS_driverInteractionLevel : 38|2@1+ (1,0) [0|2] ""  aps
+ SG_ DAS_robState : 36|2@1+ (1,0) [0|3] ""  aps
+ SG_ DAS_radarTelemetry : 34|2@1+ (1,0) [0|2] ""  aps
+ SG_ DAS_lssState : 31|3@1+ (1,0) [0|7] ""  aps
+ SG_ DAS_ACC_report : 26|5@1+ (1,0) [0|24] ""  aps
+ SG_ DAS_pmmCameraFaultReason : 24|2@1+ (1,0) [0|2] ""  aps
+ SG_ DAS_pmmSysFaultReason : 21|3@1+ (1,0) [0|7] ""  aps
+ SG_ DAS_pmmRadarFaultReason : 19|2@1+ (1,0) [0|2] ""  aps
+ SG_ DAS_pmmUltrasonicsFaultReason : 16|3@1+ (1,0) [0|4] ""  aps
+ SG_ DAS_activationFailureStatus : 14|2@1+ (1,0) [0|2] ""  aps
+ SG_ DAS_pmmLoggingRequest : 13|1@1+ (1,0) [0|1] ""  aps
+ SG_ DAS_pmmObstacleSeverity : 10|3@1+ (1,0) [0|7] ""  aps
+ SG_ DAS_accSpeedLimit : 0|10@1+ (0.4,0) [0|204.6] "mph"  aps
+
+BO_ 264 DI_torque: 8 PARTY
+ SG_ DI_axleSpeed : 40|16@1- (0.1,0.0) [-2750|2750] "RPM"  epas3s
+ SG_ DI_torqueActual : 27|13@1- (2,0) [-7500|7500] "Nm"  X
+ SG_ DI_torqueCommand : 12|13@1- (2,0) [-7500|7500] "Nm"  X
+ SG_ DI_torqueCounter : 8|4@1+ (1,0) [0|15] ""  epas3s
+ SG_ DI_torqueChecksum : 0|8@1+ (1,0) [0|255] ""  epas3s
+
+BO_ 585 SCCM_leftStalk: 3 PARTY
+ SG_ SCCM_leftStalkReserved1 : 19|5@1+ (1,0) [0|31] ""  X
+ SG_ SCCM_turnIndicatorStalkStatus : 16|3@1+ (1,0) [0|5] ""  park
+ SG_ SCCM_washWipeButtonStatus : 14|2@1+ (1,0) [0|3] ""  X
+ SG_ SCCM_highBeamStalkStatus : 12|2@1+ (1,0) [0|3] ""  X
+ SG_ SCCM_leftStalkCounter : 8|4@1+ (1,0) [0|15] ""  X
+ SG_ SCCM_leftStalkCrc : 0|8@1+ (1,0) [0|255] ""  X
+
+BO_ 280 DI_systemStatus: 8 PARTY
+ SG_ DI_trackModeState : 48|2@1+ (1,0) [0|2] ""  X
+ SG_ DI_keepAliveRequest : 47|1@1+ (1,0) [0|1] ""  X
+ SG_ DI_proximity : 46|1@1+ (1,0) [0|1] ""  X
+ SG_ DI_epbRequest : 44|2@1+ (1,0) [0|2] ""  X
+ SG_ DI_tractionControlMode : 40|3@1+ (1,0) [0|5] ""  X
+ SG_ DI_accelPedalPos : 32|8@1+ (0.4,0) [0|100] "%"  X
+ SG_ DI_immobilizerState : 27|3@1+ (1,0) [0|6] ""  X
+ SG_ DI_regenLight : 26|1@1+ (1,0) [0|1] ""  X
+ SG_ DI_gear : 21|3@1+ (1,0) [0|7] ""  park
+ SG_ DI_brakePedalState : 19|2@1+ (1,0) [0|2] ""  X
+ SG_ DI_systemState : 16|3@1+ (1,0) [0|5] ""  X
+ SG_ DI_systemStatusCounter : 8|4@1+ (1,0) [0|15] ""  X
+ SG_ DI_systemStatusChecksum : 0|8@1+ (1,0) [0|255] ""  X
+
+BO_ 697 DAS_control: 8 PARTY
+ SG_ DAS_controlChecksum : 56|8@1+ (1,0) [0|255] ""  aps
+ SG_ DAS_controlCounter : 53|3@1+ (1,0) [0|7] ""  aps
+ SG_ DAS_accelMax : 44|9@1+ (0.04,-15) [-15|5.44] "m/s^2"  aps
+ SG_ DAS_accelMin : 35|9@1+ (0.04,-15) [-15|5.44] "m/s^2"  aps
+ SG_ DAS_jerkMax : 27|8@1+ (0.034,0) [0|8.67] "m/s^3"  aps
+ SG_ DAS_jerkMin : 18|9@1+ (0.018,-9.1) [-9.1|0.097999999999999] "m/s^3"  aps
+ SG_ DAS_aebEvent : 16|2@1+ (1,0) [0|3] ""  aps
+ SG_ DAS_accState : 12|4@1+ (1,0) [0|15] ""  aps
+ SG_ DAS_setSpeed : 0|12@1+ (0.1,0) [0|409.4] "kph"  aps
+
+BO_ 341 ESP_B: 8 PARTY
+ SG_ ESP_wheelRotationChecksum : 56|8@1+ (1,0) [0|255] ""  app
+ SG_ ESP_wheelRotationCounter : 52|4@1+ (1,0) [0|15] ""  app
+ SG_ ESP_vehicleSpeed : 42|10@1+ (0.5,0) [0|511] "kph"  app
+ SG_ ESP_vehicleStandstillSts : 41|1@1+ (1,0) [0|1] ""  park
+ SG_ ESP_wheelSpeedsQF : 40|1@1+ (1,0) [0|1] ""  epas3s
+ SG_ ESP_WheelRotationFrL : 38|2@1+ (1,0) [0|3] ""  aps
+ SG_ ESP_WheelRotationFrR : 36|2@1+ (1,0) [0|3] ""  aps
+ SG_ ESP_WheelRotationReL : 34|2@1+ (1,0) [0|3] ""  aps
+ SG_ ESP_WheelRotationReR : 32|2@1+ (1,0) [0|3] ""  aps
+ SG_ ESP_wheelPulseCountReR : 24|8@1+ (1,0) [0|254] "1"  das
+ SG_ ESP_wheelPulseCountReL : 16|8@1+ (1,0) [0|254] "1"  das
+ SG_ ESP_wheelPulseCountFrR : 8|8@1+ (1,0) [0|254] "1"  app
+ SG_ ESP_wheelPulseCountFrL : 0|8@1+ (1,0) [0|254] "1"  app
+
+BO_ 969 APS_status: 4 PARTY
+ SG_ APS_statusCounter : 22|4@1+ (1,0) [0|15] ""  X
+ SG_ APS_apbGpioState : 20|2@1+ (1,0) [0|3] ""  gtw
+ SG_ APS_apbStatusMonitorState : 16|3@1+ (1,0) [0|7] ""  gtw
+ SG_ APS_switchState : 15|1@1+ (1,0) [0|1] ""  X
+ SG_ APS_eacInternalState : 12|3@1+ (1,0) [0|7] ""  gtw
+ SG_ APS_appGpioState : 10|2@1+ (1,0) [0|3] ""  gtw
+ SG_ APS_canMaster : 8|2@1+ (1,0) [0|3] ""  gtw
+ SG_ APS_vehBehaviorState : 4|3@1+ (1,0) [0|7] ""  gtw
+ SG_ APS_appStatusMonitorState : 0|3@1+ (1,0) [0|7] ""  gtw
+
+BO_ 925 IBST_status: 5 PARTY
+ SG_ IBST_sInputRodDriver : 21|12@1+ (0.015625,-5) [-5|47] "mm"  gtw
+ SG_ IBST_internalState : 18|3@1+ (1,0) [0|6] ""  gtw
+ SG_ IBST_driverBrakeApply : 16|2@1+ (1,0) [0|3] ""  gtw
+ SG_ IBST_iBoosterStatus : 12|3@1+ (1,0) [0|6] ""  gtw
+ SG_ IBST_statusCounter : 8|4@1+ (1,0) [0|15] ""  X
+ SG_ IBST_statusChecksum : 0|8@1+ (1,0) [0|255] ""  X
+
+BO_ 880 EPAS3S_sysStatus: 8 PARTY
+ SG_ EPAS3S_sysStatusChecksum : 63|8@0+ (1,0) [0|255] ""  park
+ SG_ EPAS3S_sysStatusCounter : 51|4@0+ (1,0) [0|15] ""  gtw
+ SG_ EPAS3S_eacStatus : 55|3@0+ (1,0) [0|7] ""  das
+ SG_ EPAS3S_internalSAS : 37|14@0+ (0.1,-819.2) [-819.2|819] "deg"  das
+ SG_ EPAS3S_handsOnLevel : 39|2@0+ (1,0) [0|3] ""  das
+ SG_ EPAS3S_torsionBarTorque : 19|12@0+ (0.01,-20.5) [-20.5|20.45] "Nm"  das
+ SG_ EPAS3S_eacErrorCode : 23|4@0+ (1,0) [0|15] ""  das
+ SG_ EPAS3S_steeringRackForce : 1|10@0+ (50,-25575) [-25575|25575] "N"  gtw
+ SG_ EPAS3S_steeringFault : 2|1@0+ (1,0) [0|1] ""  das
+ SG_ EPAS3S_steeringReduced : 3|1@0+ (1,0) [0|1] ""  das
+ SG_ EPAS3S_internalSASQF : 4|1@0+ (1,0) [0|1] ""  gtw
+ SG_ EPAS3S_currentTuneMode : 7|3@0+ (1,0) [0|5] ""  gtw
+
+BO_ 637 APS_eacMonitor: 3 PARTY
+ SG_ APS_eacAllow : 0|2@1+ (1,0) [0|0] "" X
+ SG_ APS_eacMonitorChecksum : 16|8@1+ (1,0) [0|0] "" X
+ SG_ APS_eacMonitorCounter : 8|4@1+ (1,0) [0|0] "" X
+
+BO_ 599 DI_speed: 8 PARTY
+ SG_ DI_uiSpeedUnits : 32|1@1+ (1,0) [0|1] ""  das
+ SG_ DI_uiSpeed : 24|8@1+ (1,0) [0|254] ""  das
+ SG_ DI_vehicleSpeed : 12|12@1+ (0.08,-40) [-40|285] "kph"  park
+ SG_ DI_speedCounter : 8|4@1+ (1,0) [0|15] ""  park
+ SG_ DI_speedChecksum : 0|8@1+ (1,0) [0|255] ""  park
+
+BO_ 1160 DAS_steeringControl: 4 PARTY
+ SG_ DAS_steeringControlChecksum : 31|8@0+ (1,0) [0|255] ""  aps
+ SG_ DAS_steeringControlCounter : 19|4@0+ (1,0) [0|15] ""  aps
+ SG_ DAS_steeringControlType : 23|2@0+ (1,0) [0|3] ""  aps
+ SG_ DAS_steeringAngleRequest : 6|15@0+ (0.1,-1638.35) [-1638.35|1638.35] "deg"  aps
+ SG_ DAS_steeringHapticRequest : 7|1@0+ (1,0) [0|1] ""  aps
+
+BO_ 297 SCCM_steeringAngleSensor: 8 PARTY
+ SG_ SCCM_steeringAngleSensorReservd3 : 56|8@1+ (1,0) [0|255] ""  X
+ SG_ SCCM_steeringAngleSensorReservd2 : 48|8@1+ (1,0) [0|255] ""  X
+ SG_ SCCM_steeringAngleSensorReservd1 : 46|2@1+ (1,0) [0|3] ""  X
+ SG_ SCCM_steeringAngleSpeed : 32|14@1+ (0.5,-4096) [-4096|4095.5] "deg/s"  park
+ SG_ SCCM_steeringAngleValidity : 30|2@1+ (1,0) [0|3] ""  park
+ SG_ SCCM_steeringAngle : 16|14@1+ (0.1,-819.2) [-819.2|819] "deg"  epas3s
+ SG_ SCCM_steeringAngleSensorStatus : 14|2@1+ (1,0) [0|3] ""  epas3s
+ SG_ SCCM_supplierID : 12|2@1+ (1,0) [0|3] ""  park
+ SG_ SCCM_steeringAngleCounter : 8|4@1+ (1,0) [0|15] ""  epas3s
+ SG_ SCCM_steeringAngleCrc : 0|8@1+ (1,0) [0|255] ""  epas3s
+
+BO_ 646 DI_state: 7 ETH
+ SG_ DI_summonInPanic : 48|1@1+ (1,0) [0|0] ""  X
+ SG_ DI_rollPreventionState : 45|3@1+ (1,0) [0|0] ""  X
+ SG_ DI_vehicleHoldState : 42|3@1+ (1,0) [0|0] ""  X
+ SG_ DI_pmmStatus : 40|2@1+ (1,0) [0|0] ""  X
+ SG_ DI_aebState : 37|3@1+ (1,0) [0|0] ""  X
+ SG_ DI_autopilotRequest : 36|1@1+ (1,0) [0|0] ""  X
+ SG_ DI_parkBrakeState : 32|4@1+ (1,0) [0|0] ""  X
+ SG_ DI_autoparkState : 25|4@1+ (1,0) [0|0] ""  X
+ SG_ DI_speedUnits : 24|1@1+ (1,0) [0|0] ""  X
+ SG_ DI_digitalSpeed : 15|9@1+ (0.5,0) [0|0] "speed"  X
+ SG_ DI_cruiseState : 12|3@1+ (1,0) [0|0] ""  X
+ SG_ DI_locStatusCounter : 8|4@1+ (1,0) [0|0] ""  X
+ SG_ DI_locStatusChecksum : 0|8@1+ (1,0) [0|0] ""  X
+
+BO_ 785 UI_warning: 7 XXX
+ SG_ buckleStatus : 13|1@0+ (1,0) [0|1] "" XXX
+ SG_ leftBlinkerOn : 22|1@0+ (1,0) [0|1] "" XXX
+ SG_ rightBlinkerOn : 23|1@0+ (1,0) [0|1] "" XXX
+ SG_ anyDoorOpen : 28|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 923 DAS_status: 8 PARTY
+ SG_ DAS_statusChecksum : 56|8@1+ (1,0) [0|255] ""  aps
+ SG_ DAS_statusCounter : 52|4@1+ (1,0) [0|15] ""  aps
+ SG_ DAS_summonAvailable : 51|1@1+ (1,0) [0|1] ""  aps
+ SG_ DAS_autoLaneChangeState : 46|5@1+ (1,0) [0|31] ""  aps
+ SG_ DAS_autopilotHandsOnState : 42|4@1+ (1,0) [0|15] ""  aps
+ SG_ DAS_fleetSpeedState : 40|2@1+ (1,0) [0|3] ""  aps
+ SG_ DAS_laneDepartureWarning : 37|3@1+ (1,0) [0|5] ""  aps
+ SG_ DAS_csaState : 35|2@1+ (1,0) [0|3] ""  aps
+ SG_ DAS_sideCollisionInhibit : 34|1@1+ (1,0) [0|1] ""  aps
+ SG_ DAS_sideCollisionWarning : 32|2@1+ (1,0) [0|3] ""  aps
+ SG_ DAS_sideCollisionAvoid : 30|2@1+ (1,0) [0|3] ""  aps
+ SG_ DAS_summonRvsLeashReached : 29|1@1+ (1,0) [0|1] ""  aps
+ SG_ DAS_summonFwdLeashReached : 28|1@1+ (1,0) [0|1] ""  aps
+ SG_ DAS_autoparkWaitingForBrake : 26|1@1+ (1,0) [0|1] ""  gtw
+ SG_ DAS_autoParked : 25|1@1+ (1,0) [0|1] ""  aps
+ SG_ DAS_autoparkReady : 24|1@1+ (1,0) [0|1] ""  aps
+ SG_ DAS_forwardCollisionWarning : 22|2@1+ (1,0) [0|3] ""  aps
+ SG_ DAS_heaterState : 21|1@1+ (1,0) [0|1] ""  gtw
+ SG_ DAS_visionOnlySpeedLimit : 16|5@1+ (5,0) [0|150] "kph/mph"  aps
+ SG_ DAS_summonClearedGate : 15|1@1+ (1,0) [0|1] ""  aps
+ SG_ DAS_summonObstacle : 14|1@1+ (1,0) [0|1] ""  aps
+ SG_ DAS_suppressSpeedWarning : 13|1@1+ (1,0) [0|1] ""  aps
+ SG_ DAS_fusedSpeedLimit : 8|5@1+ (5,0) [0|150] "kph/mph"  aps
+ SG_ DAS_blindSpotRearRight : 6|2@1+ (1,0) [0|3] ""  aps
+ SG_ DAS_blindSpotRearLeft : 4|2@1+ (1,0) [0|3] ""  aps
+ SG_ DAS_autopilotState : 0|4@1+ (1,0) [0|15] ""  aps
+
+
+
+
+
+
+
+
+VAL_ 905 DAS_longCollisionWarning 7 "FCM_LONG_COLLISION_WARNING_VEHICLE_CUTIN" 0 "FCM_LONG_COLLISION_WARNING_NONE" 4 "FCM_LONG_COLLISION_WARNING_STOPSIGN_STOPLINE" 9 "FCM_LONG_COLLISION_WARNING_VEHICLE_MCVL2" 15 "FCM_LONG_COLLISION_WARNING_SNA" 8 "FCM_LONG_COLLISION_WARNING_VEHICLE_MCVL" 5 "FCM_LONG_COLLISION_WARNING_TFL_STOPLINE" 2 "FCM_LONG_COLLISION_WARNING_PEDESTRIAN" 12 "FCM_LONG_COLLISION_WARNING_VEHICLE_CIPV2" 6 "FCM_LONG_COLLISION_WARNING_VEHICLE_CIPV" 10 "FCM_LONG_COLLISION_WARNING_VEHICLE_MCVR" 3 "FCM_LONG_COLLISION_WARNING_IPSO" 1 "FCM_LONG_COLLISION_WARNING_VEHICLE_UNKNOWN" 11 "FCM_LONG_COLLISION_WARNING_VEHICLE_MCVR2" ;
+VAL_ 905 DAS_ppOffsetDesiredRamp 128 "PP_NO_OFFSET" ;
+VAL_ 905 DAS_driverInteractionLevel 0 "DRIVER_INTERACTING" 1 "DRIVER_NOT_INTERACTING" 2 "CONTINUED_DRIVER_NOT_INTERACTING" ;
+VAL_ 905 DAS_robState 0 "ROB_STATE_INHIBITED" 2 "ROB_STATE_ACTIVE" 3 "ROB_STATE_MAPLESS" 1 "ROB_STATE_MEASURE" ;
+VAL_ 905 DAS_radarTelemetry 0 "RADAR_TELEMETRY_IDLE" 1 "RADAR_TELEMETRY_NORMAL" 2 "RADAR_TELEMETRY_URGENT" ;
+VAL_ 905 DAS_lssState 7 "LSS_STATE_OFF" 1 "LSS_STATE_LDW" 4 "LSS_STATE_MONITOR" 2 "LSS_STATE_LKA" 3 "LSS_STATE_ELK" 0 "LSS_STATE_FAULT" 5 "LSS_STATE_BLINDSPOT" 6 "LSS_STATE_ABORT" ;
+VAL_ 905 DAS_ACC_report 12 "ACC_REPORT_LC_EXTERNAL_STATE_ABORTING" 17 "ACC_REPORT_TARGET_MCP" 11 "ACC_REPORT_LC_HANDS_ON_REQD_STRUCK_OUT" 19 "ACC_REPORT_MCVLR_DPP" 1 "ACC_REPORT_TARGET_CIPV" 15 "ACC_REPORT_RADAR_OBJ_ONE" 16 "ACC_REPORT_RADAR_OBJ_TWO" 14 "ACC_REPORT_LC_EXTERNAL_STATE_ACTIVE_RESTRICTED" 4 "ACC_REPORT_TARGET_MCVR" 20 "ACC_REPORT_MCVLR_IN_PATH" 10 "ACC_REPORT_CSA" 5 "ACC_REPORT_TARGET_CUTIN" 9 "ACC_REPORT_TARGET_TYPE_FAULT" 7 "ACC_REPORT_TARGET_TYPE_TRAFFIC_LIGHT" 6 "ACC_REPORT_TARGET_TYPE_STOP_SIGN" 24 "ACC_REPORT_BEHAVIOR_REPORT" 18 "ACC_REPORT_FLEET_SPEEDS" 2 "ACC_REPORT_TARGET_IN_FRONT_OF_CIPV" 23 "ACC_REPORT_CAMERA_ONLY" 3 "ACC_REPORT_TARGET_MCVL" 22 "ACC_REPORT_RADAR_OBJ_FIVE" 0 "ACC_REPORT_TARGET_NONE" 8 "ACC_REPORT_TARGET_TYPE_IPSO" 21 "ACC_REPORT_CIPV_CUTTING_OUT" 13 "ACC_REPORT_LC_EXTERNAL_STATE_ABORTED" ;
+VAL_ 905 DAS_pmmCameraFaultReason 1 "PMM_CAMERA_BLOCKED_FRONT" 2 "PMM_CAMERA_INVALID_MIA" 0 "PMM_CAMERA_NO_FAULT" ;
+VAL_ 905 DAS_pmmSysFaultReason 4 "PMM_FAULT_STEERING_ANGLE_RATE" 6 "PMM_FAULT_ROAD_TYPE" 5 "PMM_FAULT_DISABLED_BY_USER" 0 "PMM_FAULT_NONE" 1 "PMM_FAULT_DAS_DISABLED" 3 "PMM_FAULT_DI_FAULT" 2 "PMM_FAULT_SPEED" 7 "PMM_FAULT_BRAKE_PEDAL_INHIBIT" ;
+VAL_ 905 DAS_pmmRadarFaultReason 2 "PMM_RADAR_INVALID_MIA" 1 "PMM_RADAR_BLOCKED_FRONT" 0 "PMM_RADAR_NO_FAULT" ;
+VAL_ 905 DAS_pmmUltrasonicsFaultReason 2 "PMM_ULTRASONICS_BLOCKED_REAR" 0 "PMM_ULTRASONICS_NO_FAULT" 1 "PMM_ULTRASONICS_BLOCKED_FRONT" 3 "PMM_ULTRASONICS_BLOCKED_BOTH" 4 "PMM_ULTRASONICS_INVALID_MIA" ;
+VAL_ 905 DAS_activationFailureStatus 0 "LC_ACTIVATION_IDLE" 2 "LC_ACTIVATION_FAILED_2" 1 "LC_ACTIVATION_FAILED_1" ;
+VAL_ 905 DAS_pmmLoggingRequest 0 "FALSE" 1 "TRUE" ;
+VAL_ 905 DAS_pmmObstacleSeverity 5 "PMM_CRASH_FRONT" 0 "PMM_NONE" 2 "PMM_IMMINENT_FRONT" 4 "PMM_CRASH_REAR" 1 "PMM_IMMINENT_REAR" 6 "PMM_ACCEL_LIMIT" 7 "PMM_SNA" 3 "PMM_BRAKE_REQUEST" ;
+VAL_ 905 DAS_accSpeedLimit 1023 "SNA" 0 "NONE" ;
+VAL_ 264 DI_axleSpeed -32768 "SNA" ;
+VAL_ 264 DI_torqueActual -4096 "SNA" ;
+VAL_ 264 DI_torqueCommand -4096 "SNA" ;
+VAL_ 585 SCCM_turnIndicatorStalkStatus 3 "DOWN_1" 5 "SNA" 0 "IDLE" 1 "UP_1" 4 "DOWN_2" 2 "UP_2" ;
+VAL_ 585 SCCM_washWipeButtonStatus 3 "SNA" 0 "NOT_PRESSED" 2 "2ND_DETENT" 1 "1ST_DETENT" ;
+VAL_ 585 SCCM_highBeamStalkStatus 3 "SNA" 0 "IDLE" 1 "PULL" 2 "PUSH" ;
+VAL_ 280 DI_trackModeState 0 "TRACK_MODE_UNAVAILABLE" 1 "TRACK_MODE_AVAILABLE" 2 "TRACK_MODE_ON" ;
+VAL_ 280 DI_keepAliveRequest 1 "KEEP_ALIVE" 0 "NO_REQUEST" ;
+VAL_ 280 DI_epbRequest 0 "DI_EPBREQUEST_NO_REQUEST" 1 "DI_EPBREQUEST_PARK" 2 "DI_EPBREQUEST_UNPARK" ;
+VAL_ 280 DI_tractionControlMode 0 "TC_NORMAL" 1 "TC_SLIP_START" 4 "TC_ROLLS_MODE" 2 "TC_DEV_MODE_1" 5 "TC_DYNO_MODE" 3 "TC_DEV_MODE_2" ;
+VAL_ 280 DI_accelPedalPos 255 "SNA" ;
+VAL_ 280 DI_immobilizerState 2 "DI_IMM_STATE_AUTHENTICATING" 0 "DI_IMM_STATE_INIT_SNA" 3 "DI_IMM_STATE_DISARMED" 4 "DI_IMM_STATE_IDLE" 6 "DI_IMM_STATE_FAULT" 1 "DI_IMM_STATE_REQUEST" 5 "DI_IMM_STATE_RESET" ;
+VAL_ 280 DI_gear 1 "DI_GEAR_P" 0 "DI_GEAR_INVALID" 7 "DI_GEAR_SNA" 2 "DI_GEAR_R" 3 "DI_GEAR_N" 4 "DI_GEAR_D" ;
+VAL_ 280 DI_brakePedalState 2 "INVALID" 0 "OFF" 1 "ON" ;
+VAL_ 280 DI_systemState 5 "DI_SYS_ENABLE" 1 "DI_SYS_IDLE" 2 "DI_SYS_STANDBY" 0 "DI_SYS_UNAVAILABLE" 3 "DI_SYS_FAULT" 4 "DI_SYS_ABORT" ;
+VAL_ 697 DAS_accelMax 511 "SNA" ;
+VAL_ 697 DAS_accelMin 511 "SNA" ;
+VAL_ 697 DAS_jerkMax 255 "SNA" ;
+VAL_ 697 DAS_jerkMin 511 "SNA" ;
+VAL_ 697 DAS_aebEvent 2 "AEB_FAULT" 0 "AEB_NOT_ACTIVE" 3 "AEB_SNA" 1 "AEB_ACTIVE" ;
+VAL_ 697 DAS_accState 4 "ACC_ON" 9 "APC_PAUSE" 14 "ACC_CANCEL_OUT_OF_CALIBRATION" 10 "APC_UNPARK_COMPLETE" 6 "APC_FORWARD" 3 "ACC_HOLD" 2 "ACC_CANCEL_RADAR_BLIND" 7 "APC_COMPLETE" 1 "ACC_CANCEL_CAMERA_BLIND" 8 "APC_ABORT" 13 "ACC_CANCEL_GENERIC_SILENT" 5 "APC_BACKWARD" 11 "APC_SELFPARK_START" 0 "ACC_CANCEL_GENERIC" 12 "ACC_CANCEL_PATH_NOT_CLEAR" 15 "FAULT_SNA" ;
+VAL_ 697 DAS_setSpeed 4095 "SNA" ;
+VAL_ 341 ESP_vehicleSpeed 1023 "ESP_VEHICLE_SPEED_SNA" ;
+VAL_ 341 ESP_vehicleStandstillSts 1 "STANDSTILL" 0 "NOT_STANDSTILL" ;
+VAL_ 341 ESP_wheelSpeedsQF 0 "ONE_OR_MORE_WSS_INVALID" 1 "ALL_WSS_VALID" ;
+VAL_ 341 ESP_WheelRotationFrL 1 "WR_BACKWARD" 0 "WR_FORWARD" 3 "WR_NOT_DEFINABLE" 2 "WR_STANDSTILL" ;
+VAL_ 341 ESP_WheelRotationFrR 1 "WR_BACKWARD" 0 "WR_FORWARD" 3 "WR_NOT_DEFINABLE" 2 "WR_STANDSTILL" ;
+VAL_ 341 ESP_WheelRotationReL 1 "WR_BACKWARD" 0 "WR_FORWARD" 3 "WR_NOT_DEFINABLE" 2 "WR_STANDSTILL" ;
+VAL_ 341 ESP_WheelRotationReR 1 "WR_BACKWARD" 0 "WR_FORWARD" 3 "WR_NOT_DEFINABLE" 2 "WR_STANDSTILL" ;
+VAL_ 341 ESP_wheelPulseCountReR 255 "SNA" ;
+VAL_ 341 ESP_wheelPulseCountReL 255 "SNA" ;
+VAL_ 341 ESP_wheelPulseCountFrR 255 "SNA" ;
+VAL_ 341 ESP_wheelPulseCountFrL 255 "SNA" ;
+VAL_ 969 APS_apbGpioState 0 "AP_GPIO_STATE_PWR_DOWN_REBOOT" 3 "AP_GPIO_STATE_HEALTHY" 1 "AP_GPIO_STATE_DISABLED" 2 "AP_GPIO_STATE_CRITICAL" ;
+VAL_ 969 APS_apbStatusMonitorState 1 "STATUS_MONITOR_STATE_PWR_OFF" 2 "STATUS_MONITOR_STATE_INIT" 7 "STATUS_MONITOR_NUM_STATES" 0 "STATUS_MONITOR_STATE_UNKNOWN" 4 "STATUS_MONITOR_STATE_CRITICAL" 6 "STATUS_MONITOR_STATE_RECOVERY" 5 "STATUS_MONITOR_STATE_SHUTTING_DOWN" 3 "STATUS_MONITOR_STATE_NOMINAL" ;
+VAL_ 969 APS_eacInternalState 1 "APS_EAC_STATE_MOMENTARY" 3 "APS_EAC_STATE_AUTOPARK" 5 "APS_EAC_STATE_OVERRIDE" 4 "APS_EAC_STATE_INHIBIT" 0 "APS_EAC_STATE_INIT" 2 "APS_EAC_STATE_CONTINUOUS" 7 "APS_EAC_NUM_STATES" 6 "APS_EAC_STATE_LSS" ;
+VAL_ 969 APS_appGpioState 0 "AP_GPIO_STATE_PWR_DOWN_REBOOT" 3 "AP_GPIO_STATE_HEALTHY" 1 "AP_GPIO_STATE_DISABLED" 2 "AP_GPIO_STATE_CRITICAL" ;
+VAL_ 969 APS_canMaster 0 "CAN_MASTER_APS" 2 "CAN_MASTER_APB" 3 "CAN_MASTER_SNA" 1 "CAN_MASTER_APP" ;
+VAL_ 969 APS_vehBehaviorState 0 "VEH_BEHAVIOR_STATE_UNKNOWN" 3 "VEH_BEHAVIOR_STATE_APS_BRIDGE_APP" 1 "VEH_BEHAVIOR_STATE_APS_AVAILABLE" 5 "VEH_BEHAVIOR_STATE_APS_FAIL_SAFE" 7 "VEH_BEHAVIOR_NUM_STATES" 2 "VEH_BEHAVIOR_STATE_APS_CONTROL" 6 "VEH_BEHAVIOR_STATE_APS_OVERRIDE" 4 "VEH_BEHAVIOR_STATE_APS_BRIDGE_APB" ;
+VAL_ 969 APS_appStatusMonitorState 1 "STATUS_MONITOR_STATE_PWR_OFF" 2 "STATUS_MONITOR_STATE_INIT" 7 "STATUS_MONITOR_NUM_STATES" 0 "STATUS_MONITOR_STATE_UNKNOWN" 4 "STATUS_MONITOR_STATE_CRITICAL" 6 "STATUS_MONITOR_STATE_RECOVERY" 5 "STATUS_MONITOR_STATE_SHUTTING_DOWN" 3 "STATUS_MONITOR_STATE_NOMINAL" ;
+VAL_ 925 IBST_internalState 5 "TRANSITION_TO_IDLE" 0 "NO_MODE_ACTIVE" 4 "DIAGNOSTIC" 6 "POST_DRIVE_CHECK" 1 "PRE_DRIVE_CHECK" 3 "EXTERNAL_BRAKE_REQUEST" 2 "LOCAL_BRAKE_REQUEST" ;
+VAL_ 925 IBST_driverBrakeApply 1 "BRAKES_NOT_APPLIED" 2 "DRIVER_APPLYING_BRAKES" 3 "FAULT" 0 "NOT_INIT_OR_OFF" ;
+VAL_ 925 IBST_iBoosterStatus 6 "IBOOSTER_ACTUATION" 4 "IBOOSTER_ACTIVE_GOOD_CHECK" 2 "IBOOSTER_FAILURE" 5 "IBOOSTER_READY" 3 "IBOOSTER_DIAGNOSTIC" 0 "IBOOSTER_OFF" 1 "IBOOSTER_INIT" ;
+VAL_ 880 EPAS3S_eacStatus 7 "SNA" 2 "EAC_ACTIVE" 4 "LANE_KEEP_ASSIST" 3 "EAC_FAULT" 1 "EAC_AVAILABLE" 5 "EMERGENCY_LANE_KEEP" 0 "EAC_INHIBITED" ;
+VAL_ 880 EPAS3S_handsOnLevel 1 "LEVEL_1" 0 "LEVEL_0" 3 "LEVEL_3" 2 "LEVEL_2" ;
+VAL_ 880 EPAS3S_torsionBarTorque 4095 "SNA" 4094 "UNDEFINABLE_DATA" ;
+VAL_ 880 EPAS3S_eacErrorCode 15 "SNA" 11 "EAC_ERROR_HIGH_TORSION_SAFETY" 4 "EAC_ERROR_TMP_FAULT" 2 "EAC_ERROR_MAX_SPEED" 7 "EAC_ERROR_HIGH_ANGLE_RATE_REQ" 0 "EAC_ERROR_IDLE" 10 "EAC_ERROR_HIGH_MMOT_SAFETY" 6 "EAC_ERROR_HIGH_ANGLE_REQ" 8 "EAC_ERROR_HIGH_ANGLE_SAFETY" 5 "EAR_ERROR_MAX_STEER_DELTA" 13 "EAC_ERROR_PINION_VEL_DIFF" 1 "EAC_ERROR_MIN_SPEED" 14 "EAC_EXTERNAL_MONITOR_INHIBIT" 12 "EAC_ERROR_LOW_ASSIST" 9 "EAC_ERROR_HIGH_ANGLE_RATE_SAFETY" 3 "EAC_ERROR_HANDS_ON" ;
+VAL_ 880 EPAS3S_steeringRackForce 1023 "SNA" 1022 "NOT_IN_SPEC" ;
+VAL_ 880 EPAS3S_steeringFault 0 "NO_FAULT" 1 "FAULT" ;
+VAL_ 880 EPAS3S_steeringReduced 0 "NORMAL_ASSIST" 1 "REDUCED_ASSIST" ;
+VAL_ 880 EPAS3S_internalSASQF 1 "IN_SPEC" 0 "UNDEFINABLE_ACCURACY" ;
+VAL_ 880 EPAS3S_currentTuneMode 3 "STEERING_TUNE_RWD_COMFORT" 1 "STEERING_TUNE_DM_STANDARD" 5 "STEERING_TUNE_RWD_SPORT" 0 "STEERING_TUNE_DM_COMFORT" 4 "STEERING_TUNE_RWD_STANDARD" 2 "STEERING_TUNE_DM_SPORT" ;
+VAL_ 599 DI_uiSpeedUnits 0 "DI_SPEED_MPH" 1 "DI_SPEED_KPH" ;
+VAL_ 599 DI_uiSpeed 255 "DI_UI_SPEED_SNA" ;
+VAL_ 599 DI_vehicleSpeed 4095 "SNA" ;
+VAL_ 637 APS_eacAllow 0 "INHIBIT" 1 "ALLOW" 2 "RESERVED" 3 "SNA";
+VAL_ 1160 DAS_steeringControlType 2 "LANE_KEEP_ASSIST" 0 "NONE" 1 "ANGLE_CONTROL" 3 "EMERGENCY_LANE_KEEP" ;
+VAL_ 1160 DAS_steeringAngleRequest 16384 "ZERO_ANGLE" ;
+VAL_ 297 SCCM_steeringAngleValidity 3 "SNA" 2 "INIT" 0 "INVALID" 1 "VALID" ;
+VAL_ 297 SCCM_steeringAngleSensorStatus 0 "OK" 1 "INIT" 2 "ERROR" 3 "ERROR_INIT" ;
+VAL_ 646 DI_rollPreventionState 0 "UNAVAILABLE" 1 "STANDBY" 2 "READY" 3 "BUILD" 4 "HOLD" 5 "PARK" 6 "FAULT" 7 "INIT" ;
+VAL_ 646 DI_vehicleHoldState 0 "UNAVAILABLE" 1 "STANDBY" 2 "BLEND_IN" 3 "STANDSTILL" 4 "BLEND_OUT" 5 "PARK" 6 "FAULT" 7 "INIT" ;
+VAL_ 646 DI_pmmStatus 0 "INACTIVE" 1 "ACTIVE" 2 "LOGGING_ACTIVE" 3 "SNA" ;
+VAL_ 646 DI_aebState 0 "UNAVAILABLE" 1 "STANDBY" 2 "ENABLED" 3 "STANDSTILL" 4 "FAULT" 7 "SNA" ;
+VAL_ 646 DI_autopilotRequest 0 "IDLE" 1 "ACTIVATE" ;
+VAL_ 646 DI_parkBrakeState 0 "UNAVAILABLE" 1 "RELEASED" 2 "REQUESTED" 3 "APPLIED" 4 "FAULTED" 5 "PANIC_EPB" 6 "PANIC_SKID" 7 "RELEASING" 15 "SNA" ;
+VAL_ 646 DI_autoparkState 0 "UNAVAILABLE" 1 "STANDBY" 2 "STARTED" 3 "ACTIVE" 4 "COMPLETE" 5 "PAUSED" 6 "ABORTED" 7 "RESUMED" 8 "UNPARK_COMPLETE" 9 "SELFPARK_STARTED" 15 "SNA" ;
+VAL_ 646 DI_speedUnits 0 "MPH" 1 "KPH" ;
+VAL_ 646 DI_cruiseState 0 "UNAVAILABLE" 1 "STANDBY" 2 "ENABLED" 3 "STANDSTILL" 4 "OVERRIDE" 5 "FAULT" 6 "PRE_FAULT" 7 "PRE_CANCEL" ;
+VAL_ 785 buckleStatus 1 "LATCHED" 0 "UNLATCHED" ;
+VAL_ 785 anyDoorOpen 1 "OPEN" 0 "CLOSED" ;
+VAL_ 923 DAS_autoLaneChangeState 5 "ALC_UNAVAILABLE_VEHICLE_SPEED" 17 "ALC_ABORT_POOR_VIEW_RANGE" 23 "ALC_BLOCKED_VEH_TTC_AND_USS_L" 0 "ALC_UNAVAILABLE_DISABLED" 26 "ALC_BLOCKED_LANE_TYPE_L" 29 "ALC_ABORT_TIMEOUT" 9 "ALC_IN_PROGRESS_L" 4 "ALC_UNAVAILABLE_EXITING_HIGHWAY" 22 "ALC_BLOCKED_VEH_TTC_L" 12 "ALC_WAITING_FOR_SIDE_OBST_TO_PASS_R" 18 "ALC_ABORT_LC_HEALTH_BAD" 28 "ALC_WAITING_HANDS_ON" 8 "ALC_AVAILABLE_BOTH" 11 "ALC_WAITING_FOR_SIDE_OBST_TO_PASS_L" 3 "ALC_UNAVAILABLE_TP_FOLLOW" 2 "ALC_UNAVAILABLE_SONICS_INVALID" 21 "ALC_UNAVAILABLE_SOLID_LANE_LINE" 24 "ALC_BLOCKED_VEH_TTC_R" 1 "ALC_UNAVAILABLE_NO_LANES" 25 "ALC_BLOCKED_VEH_TTC_AND_USS_R" 30 "ALC_ABORT_MISSION_PLAN_INVALID" 27 "ALC_BLOCKED_LANE_TYPE_R" 19 "ALC_ABORT_BLINKER_TURNED_OFF" 31 "ALC_SNA" 13 "ALC_WAITING_FOR_FWD_OBST_TO_PASS_L" 16 "ALC_ABORT_SIDE_OBSTACLE_PRESENT_R" 6 "ALC_AVAILABLE_ONLY_L" 20 "ALC_ABORT_OTHER_REASON" 15 "ALC_ABORT_SIDE_OBSTACLE_PRESENT_L" 7 "ALC_AVAILABLE_ONLY_R" 14 "ALC_WAITING_FOR_FWD_OBST_TO_PASS_R" 10 "ALC_IN_PROGRESS_R" ;
+VAL_ 923 DAS_autopilotHandsOnState 8 "LC_HANDS_ON_SUSPENDED" 15 "LC_HANDS_ON_SNA" 7 "LC_HANDS_ON_REQD_STRUCK_OUT" 3 "LC_HANDS_ON_REQD_VISUAL" 4 "LC_HANDS_ON_REQD_CHIME_1" 6 "LC_HANDS_ON_REQD_SLOWING" 1 "LC_HANDS_ON_REQD_DETECTED" 2 "LC_HANDS_ON_REQD_NOT_DETECTED" 5 "LC_HANDS_ON_REQD_CHIME_2" 0 "LC_HANDS_ON_NOT_REQD" ;
+VAL_ 923 DAS_fleetSpeedState 0 "FLEETSPEED_UNAVAILABLE" 1 "FLEETSPEED_AVAILABLE" 2 "FLEETSPEED_ACTIVE" 3 "FLEETSPEED_HOLD" ;
+VAL_ 923 DAS_laneDepartureWarning 5 "SNA" 0 "NONE" 2 "RIGHT_WARNING" 4 "RIGHT_WARNING_SEVERE" 3 "LEFT_WARNING_SEVERE" 1 "LEFT_WARNING" ;
+VAL_ 923 DAS_csaState 1 "CSA_EXTERNAL_STATE_AVAILABLE" 3 "CSA_EXTERNAL_STATE_HOLD" 2 "CSA_EXTERNAL_STATE_ENABLE" 0 "CSA_EXTERNAL_STATE_UNAVAILABLE" ;
+VAL_ 923 DAS_sideCollisionInhibit 0 "NO_INHIBIT" 1 "INHIBIT" ;
+VAL_ 923 DAS_sideCollisionWarning 0 "NONE" 2 "WARN_RIGHT" 1 "WARN_LEFT" 3 "WARN_LEFT_RIGHT" ;
+VAL_ 923 DAS_sideCollisionAvoid 3 "SNA" 0 "NONE" 1 "AVOID_LEFT" 2 "AVOID_RIGHT" ;
+VAL_ 923 DAS_autoparkReady 0 "AUTOPARK_UNAVAILABLE" 1 "AUTOPARK_READY" ;
+VAL_ 923 DAS_forwardCollisionWarning 3 "SNA" 0 "NONE" 1 "FORWARD_COLLISION_WARNING" ;
+VAL_ 923 DAS_heaterState 0 "HEATER_OFF_SNA" 1 "HEATER_ON" ;
+VAL_ 923 DAS_visionOnlySpeedLimit 31 "NONE" 0 "UNKNOWN_SNA" ;
+VAL_ 923 DAS_suppressSpeedWarning 1 "Suppress_Speed_Warning" 0 "Do_Not_Suppress" ;
+VAL_ 923 DAS_fusedSpeedLimit 31 "NONE" 0 "UNKNOWN_SNA" ;
+VAL_ 923 DAS_blindSpotRearRight 3 "SNA" 0 "NO_WARNING" 1 "WARNING_LEVEL_1" 2 "WARNING_LEVEL_2" ;
+VAL_ 923 DAS_blindSpotRearLeft 3 "SNA" 0 "NO_WARNING" 1 "WARNING_LEVEL_1" 2 "WARNING_LEVEL_2" ;
+VAL_ 923 DAS_autopilotState 15 "SNA" 8 "ABORTING" 3 "ACTIVE_NOMINAL" 0 "DISABLED" 4 "ACTIVE_RESTRICTED" 5 "ACTIVE_NAV" 14 "FAULT" 1 "UNAVAILABLE" 9 "ABORTED" 2 "AVAILABLE" ;
+
+
+

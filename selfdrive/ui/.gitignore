@@ -1,0 +1,17 @@
+moc_*
+*.moc
+
+translations/main_test_en.*
+
+_text
+_spinner
+
+ui
+mui
+watch3
+installer/installers/*
+qt/setup/setup
+qt/setup/reset
+qt/setup/wifi
+qt/setup/updater
+translations/alerts_generated.h
