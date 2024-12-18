@@ -8,28 +8,20 @@ on:
 
 jobs:
   update-cars:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/commaai/openpilot-base:latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-      - name: Install system dependencies
+      - name: Build opendbc
         run: |
-          sudo apt-get update
-          sudo apt-get install -y portaudio19-dev
-      - name: Install Python dependencies
-        run: |
-          python -m venv venv
-          source venv/bin/activate
-          python -m pip install jinja2==3.1.4 natsort==8.4.0 libusb1 pycapnp
+          scons -j$(nproc) --minimal opendbc_repo
       - name: Update CARS.md
         run: |
-          source venv/bin/activate
           PYTHONPATH=. python selfdrive/car/docs.py
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
