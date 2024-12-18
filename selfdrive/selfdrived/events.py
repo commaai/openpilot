@@ -632,10 +632,14 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.USER_DISABLE: EngagementAlert(AudibleAlert.disengage),
     ET.NO_ENTRY: NoEntryAlert("Cancel Pressed"),
   },
-
+ #Changing this allow brakehold active to resume OP w/ Standstill still showing?
   EventName.brakeHold: {
-    ET.USER_DISABLE: EngagementAlert(AudibleAlert.disengage),
-    ET.NO_ENTRY: NoEntryAlert("Brake Hold Active"),
+    ET.ENABLE: EngagementAlert(AudibleAlert.engage),
+    ET.WARNING: Alert (
+      "Press Resume to Exit Standstill",
+      "",
+      AlertStatus.userPrompt, AlertSize.small,
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, .2),
   },
 
   EventName.parkBrake: {
