@@ -9,17 +9,18 @@ on:
 jobs:
   update-cars:
     runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/commaai/openpilot-base:latest
     permissions:
       contents: write
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
       - name: Install Python dependencies
         run: |
-          python3 -m pip install --upgrade pip jinja2==3.1.4 natsort==8.4.0 numpy pycapnp
+          python -m pip install --upgrade pip jinja2==3.1.4 natsort==8.4.0 numpy pycapnp
       - name: Build opendbc
         run: |
           scons -j$(nproc) --minimal opendbc_repo
