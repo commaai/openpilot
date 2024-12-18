@@ -18,9 +18,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install Python dependencies
+      - name: Install system dependencies
         run: |
-          pip install .
+          sudo apt-get update
+          sudo apt-get install -y portaudio19-dev
+      - name: Install minimal Python dependencies
+        run: |
+          pip install jinja2 natsort numpy pycapnp scons
       - name: Build opendbc
         run: |
           scons -j$(nproc) --minimal opendbc_repo
