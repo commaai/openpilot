@@ -15,10 +15,8 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
     - run: |
+        python -m pip install jinja2==3.1.4 natsort==8.4.0
         PYTHONPATH=. python selfdrive/car/docs.py
     - uses: stefanzweifel/git-auto-commit-action@v5
       with:
