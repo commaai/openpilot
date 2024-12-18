@@ -42,7 +42,7 @@ class TestAlerts:
 
     for name, e in events.items():
       if not name.endswith("DEPRECATED"):
-        fail_msg = "%s @%d not in EVENTS" % (name, e)
+        fail_msg = f"{name} @{e} not in EVENTS"
         assert e in EVENTS.keys(), fail_msg
 
   # ensure alert text doesn't exceed allowed width

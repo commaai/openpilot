@@ -4,6 +4,7 @@
 #include <fstream>
 #include <map>
 #include <string>
+#include <algorithm>  // for std::clamp
 
 #include "common/params.h"
 #include "common/util.h"
@@ -25,7 +26,13 @@ public:
   }
 
   static cereal::InitData::DeviceType get_device_type() {
-    return (get_name() == "tizi") ? cereal::InitData::DeviceType::TIZI : (get_name() == "mici" ? cereal::InitData::DeviceType::MICI : cereal::InitData::DeviceType::TICI);
+    static const std::map<std::string, cereal::InitData::DeviceType> device_map = {
+      {"tici", cereal::InitData::DeviceType::TICI},
+      {"tizi", cereal::InitData::DeviceType::TIZI},
+      {"mici", cereal::InitData::DeviceType::MICI}
+    };
+    auto it = device_map.find(get_name());
+    return it != device_map.end() ? it->second : cereal::InitData::DeviceType::UNKNOWN;
   }
 
   static int get_voltage() { return std::atoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input").c_str()); }
@@ -65,6 +72,28 @@ public:
     if (bl_power_control.is_open()) {
       bl_power_control << (on ? "0" : "4") << "\n";
       bl_power_control.close();
+    }
+  }
+
+  static void set_ir_power(int percent) {
+    auto device = get_device_type();
+    if (device == cereal::InitData::DeviceType::TICI ||
+        device == cereal::InitData::DeviceType::TIZI) {
+      return;
+    }
+
+    percent = std::clamp(percent, 0, 100);
+
+    std::ofstream torch_brightness("/sys/class/leds/led:torch_2/brightness");
+    if (torch_brightness.is_open()) {
+      torch_brightness << percent << "\n";
+      torch_brightness.close();
+    }
+
+    std::ofstream switch_brightness("/sys/class/leds/led:switch_2/brightness");
+    if (switch_brightness.is_open()) {
+      switch_brightness << percent << "\n";
+      switch_brightness.close();
     }
   }
 

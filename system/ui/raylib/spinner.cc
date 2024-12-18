@@ -2,8 +2,7 @@
 #include <cmath>
 #include <iostream>
 
-#include "selfdrive/ui/raylib/util.h"
-#include "third_party/raylib/include/raylib.h"
+#include "system/ui/raylib/util.h"
 
 constexpr int kProgressBarWidth = 1000;
 constexpr int kProgressBarHeight = 20;
@@ -19,15 +18,15 @@ int main(int argc, char *argv[]) {
   std::cin.sync_with_stdio(false);
   std::cin.tie(nullptr);
 
-  Texture2D commaTexture = LoadTextureResized("../../assets/img_spinner_comma.png", kTextureSize);
-  Texture2D spinnerTexture = LoadTextureResized("../../assets/img_spinner_track.png", kTextureSize);
+  Texture2D commaTexture = LoadTextureResized("../../selfdrive/assets/img_spinner_comma.png", kTextureSize);
+  Texture2D spinnerTexture = LoadTextureResized("../../selfdrive/assets/img_spinner_track.png", kTextureSize);
 
   float rotation = 0.0f;
   std::string userInput;
 
   while (!WindowShouldClose()) {
     BeginDrawing();
-    ClearBackground(BLACK);
+    ClearBackground(RAYLIB_BLACK);
 
     rotation = fmod(rotation + kRotationRate, 360.0f);
     Vector2 center = {GetScreenWidth() / 2.0f, GetScreenHeight() / 2.0f};
@@ -37,8 +36,8 @@ int main(int argc, char *argv[]) {
     // Draw rotating spinner and static comma logo
     DrawTexturePro(spinnerTexture, {0, 0, (float)kTextureSize, (float)kTextureSize},
                    {center.x, center.y, (float)kTextureSize, (float)kTextureSize},
-                   spinnerOrigin, rotation, WHITE);
-    DrawTextureV(commaTexture, commaPosition, WHITE);
+                   spinnerOrigin, rotation, RAYLIB_WHITE);
+    DrawTextureV(commaTexture, commaPosition, RAYLIB_WHITE);
 
     // Check for user input
     if (std::cin.rdbuf()->in_avail() > 0) {
@@ -50,14 +49,14 @@ int main(int argc, char *argv[]) {
       float yPos = GetScreenHeight() - kMargin - kProgressBarHeight;
       if (std::all_of(userInput.begin(), userInput.end(), ::isdigit)) {
         Rectangle bar = {center.x - kProgressBarWidth / 2.0f, yPos, kProgressBarWidth, kProgressBarHeight};
-        DrawRectangleRounded(bar, 0.5f, 10, GRAY);
+        DrawRectangleRounded(bar, 0.5f, 10, RAYLIB_GRAY);
 
         int progress = std::clamp(std::stoi(userInput), 0, 100);
         bar.width *= progress / 100.0f;
-        DrawRectangleRounded(bar, 0.5f, 10, RAYWHITE);
+        DrawRectangleRounded(bar, 0.5f, 10, RAYLIB_RAYWHITE);
       } else {
         Vector2 textSize = MeasureTextEx(getFont(), userInput.c_str(), kFontSize, 1.0);
-        DrawTextEx(getFont(), userInput.c_str(), {center.x - textSize.x / 2, yPos}, kFontSize, 1.0, WHITE);
+        DrawTextEx(getFont(), userInput.c_str(), {center.x - textSize.x / 2, yPos}, kFontSize, 1.0, RAYLIB_WHITE);
       }
     }
 

@@ -17,5 +17,5 @@ class TestServices:
 
   def test_generated_header(self):
     with tempfile.NamedTemporaryFile(suffix=".h") as f:
-      ret = os.system(f"python3 {services.__file__} > {f.name} && clang++ {f.name}")
+      ret = os.system(f"python3 {services.__file__} > {f.name} && clang++ {f.name} -std=c++11")
       assert ret == 0, "generated services header is not valid C"

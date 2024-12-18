@@ -36,7 +36,7 @@ PandaUsbHandle::PandaUsbHandle(std::string serial) : PandaCommsHandle(serial) {
   for (size_t i = 0; i < num_devices; ++i) {
     libusb_device_descriptor desc;
     libusb_get_device_descriptor(dev_list[i], &desc);
-    if (desc.idVendor == 0xbbaa && desc.idProduct == 0xddcc) {
+    if (desc.idVendor == 0x3801 && desc.idProduct == 0xddcc) {
       int ret = libusb_open(dev_list[i], &dev_handle);
       if (dev_handle == NULL || ret < 0) { goto fail; }
 
@@ -110,7 +110,7 @@ std::vector<std::string> PandaUsbHandle::list() {
     libusb_device *device = dev_list[i];
     libusb_device_descriptor desc;
     libusb_get_device_descriptor(device, &desc);
-    if (desc.idVendor == 0xbbaa && desc.idProduct == 0xddcc) {
+    if (desc.idVendor == 0x3801 && desc.idProduct == 0xddcc) {
       libusb_device_handle *handle = NULL;
       int ret = libusb_open(device, &handle);
       if (ret < 0) { goto finish; }

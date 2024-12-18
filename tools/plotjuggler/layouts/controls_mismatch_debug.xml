@@ -8,7 +8,7 @@
       <plot style="Lines" flip_x="false" mode="TimeSeries" flip_y="false">
        <range top="1.025000" bottom="-0.025000" left="0.018309" right="59.674401"/>
        <limitY/>
-       <curve color="#1f77b4" name="/controlsState/enabled"/>
+       <curve color="#1f77b4" name="/carControl/enabled"/>
        <curve color="#d62728" name="/pandaStates/0/controlsAllowed"/>
       </plot>
      </DockArea>

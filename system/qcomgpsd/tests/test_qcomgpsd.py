@@ -16,6 +16,7 @@ GOOD_SIGNAL = bool(int(os.getenv("GOOD_SIGNAL", '0')))
 class TestRawgpsd:
   @classmethod
   def setup_class(cls):
+    os.environ['GPS_COLD_START'] = '1'
     os.system("sudo systemctl start systemd-resolved")
     os.system("sudo systemctl restart ModemManager lte")
     wait_for_modem()
@@ -27,7 +28,6 @@ class TestRawgpsd:
     os.system("sudo systemctl restart ModemManager lte")
 
   def setup_method(self):
-    at_cmd("AT+QGPSDEL=0")
     self.sm = messaging.SubMaster(['qcomGnss', 'gpsLocation', 'gnssMeasurements'])
 
   def teardown_method(self):

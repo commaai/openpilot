@@ -153,7 +153,8 @@ class CarSpecificEvents:
       # Stock long: only allow cancel for rising edge
       # OP long: allow cancel for both rising and falling edge
       self.cancel_button.append(any(ev.type == ButtonType.cancel and ev.pressed if self.CP.pcmCruise else True for ev in CS.buttonEvents))
-      events = self.create_common_events(CS, CS_prev, pcm_enable=self.CP.pcmCruise, allow_enable=any(self.cruise_buttons),
+      events = self.create_common_events(CS, CS_prev, extra_gears=(GearShifter.sport, GearShifter.manumatic),
+                                         pcm_enable=self.CP.pcmCruise, allow_enable=any(self.cruise_buttons),
                                          allow_cancel=any(self.cancel_button))
 
       # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)

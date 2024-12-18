@@ -486,6 +486,9 @@ struct DeviceState @0xa4d8b5af2aa492eb {
   nvmeTempC @35 :List(Float32);
   modemTempC @36 :List(Float32);
   pmicTempC @39 :List(Float32);
+  intakeTempC @46 :Float32;
+  exhaustTempC @47 :Float32;
+  caseTempC @48 :Float32;
   maxTempC @44 :Float32;  # max of other temps, used to control fan
   thermalZones @38 :List(ThermalZone);
   thermalStatus @14 :ThermalStatus;
@@ -2437,6 +2440,14 @@ struct Microphone {
   filteredSoundPressureWeightedDb @2 :Float32;
 }
 
+struct Touch {
+  sec @0 :Int64;
+  usec @1 :Int64;
+  type @2 :UInt8;
+  code @3 :Int32;
+  value @4 :Int32;
+}
+
 struct Event {
   logMonoTime @0 :UInt64;  # nanoseconds
   valid @67 :Bool = true;
@@ -2516,6 +2527,9 @@ struct Event {
     deviceState @6 :DeviceState;
     logMessage @18 :Text;
     errorLogMessage @85 :Text;
+
+    # touch frame
+    touch @135 :List(Touch);
 
     # navigation
     navInstruction @82 :NavInstruction;

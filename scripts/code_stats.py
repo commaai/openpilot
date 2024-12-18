@@ -37,7 +37,7 @@ for f in sorted(pyf):
   lns = len(src.split("\n"))
   tree = ast.parse(src)
   Analyzer().visit(tree)
-  print("%5d %s %s" % (lns, f, xbit))
+  print(f"{lns:5d} {f} {xbit}")
   if 'test' in f:
     testlns += lns
   elif f.startswith(('tools/', 'scripts/', 'selfdrive/debug')):
@@ -47,8 +47,8 @@ for f in sorted(pyf):
   else:
     tlns += lns
 
-print("%d lines of openpilot python" % tlns)
-print("%d lines of car ports" % carlns)
-print("%d lines of tools/scripts/debug" % scriptlns)
-print("%d lines of tests" % testlns)
+print(f"{tlns} lines of openpilot python")
+print(f"{carlns} lines of car ports")
+print(f"{scriptlns} lines of tools/scripts/debug")
+print(f"{testlns} lines of tests")
 #print(sorted(list(imps)))

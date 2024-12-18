@@ -22,6 +22,7 @@ _services: dict[str, tuple] = {
   "temperatureSensor2": (True, 2., 200),
   "gpsNMEA": (True, 9.),
   "deviceState": (True, 2., 1),
+  "touch": (True, 20., 1),
   "can": (True, 100., 2053),  # decimation gives ~3 msgs in a full segment
   "controlsState": (True, 100., 10),
   "selfdriveState": (True, 100., 10),
