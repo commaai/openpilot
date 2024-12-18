@@ -18,13 +18,19 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install minimal dependencies
+      - name: Install system dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-dev libusb-1.0-0-dev
+          sudo apt-get install -y portaudio19-dev
+      - name: Install Python dependencies
+        run: |
+          python -m venv venv
+          source venv/bin/activate
           python -m pip install jinja2==3.1.4 natsort==8.4.0 libusb1 pycapnp
       - name: Update CARS.md
-        run: PYTHONPATH=. python selfdrive/car/docs.py
+        run: |
+          source venv/bin/activate
+          PYTHONPATH=. python selfdrive/car/docs.py
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: 'docs: Scheduled auto-update CARS.md'
