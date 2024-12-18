@@ -67,6 +67,9 @@ cdef class DrivingModelFrame(ModelFrame):
     self.frame = <cppModelFrame*>(self._frame)
     self.buf_size = self._frame.buf_size
 
+  def __dealloc__(self):
+    del self._frame
+
 cdef class MonitoringModelFrame(ModelFrame):
   cdef cppMonitoringModelFrame * _frame
 
@@ -74,3 +77,6 @@ cdef class MonitoringModelFrame(ModelFrame):
     self._frame = new cppMonitoringModelFrame(context.device_id, context.context)
     self.frame = <cppModelFrame*>(self._frame)
     self.buf_size = self._frame.buf_size
+
+  def __dealloc__(self):
+    del self._frame
