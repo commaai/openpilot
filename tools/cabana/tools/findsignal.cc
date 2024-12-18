@@ -225,7 +225,7 @@ void FindSignalDlg::setInitialSignals() {
   model->initial_signals.clear();
 
   for (const auto &[id, m] : can->lastMessages()) {
-    if (buses.isEmpty() || buses.contains(id.source) && (addresses.isEmpty() || addresses.contains(id.address))) {
+    if ((buses.isEmpty() || buses.contains(id.source)) && (addresses.isEmpty() || addresses.contains(id.address))) {
       const auto &events = can->events(id);
       auto e = std::lower_bound(events.cbegin(), events.cend(), first_time, CompareCanEvent());
       if (e != events.cend()) {
