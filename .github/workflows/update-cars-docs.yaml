@@ -19,7 +19,7 @@ jobs:
           submodules: true
       - name: Install Python dependencies
         run: |
-          python -m pip install jinja2==3.1.4 natsort==8.4.0 numpy pycapnp
+          python3 -m pip install --upgrade pip jinja2==3.1.4 natsort==8.4.0 numpy pycapnp
       - name: Build opendbc
         run: |
           scons -j$(nproc) --minimal opendbc_repo
