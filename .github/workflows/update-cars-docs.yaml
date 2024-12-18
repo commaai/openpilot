@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: '3.11'
       - run: |
-          python -m pip install jinja2==3.1.4 natsort==8.4.0
+          python -m pip install jinja2==3.1.4 natsort==8.4.0 libusb1 panda
           PYTHONPATH=. python selfdrive/car/docs.py
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
