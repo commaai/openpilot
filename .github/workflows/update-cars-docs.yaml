@@ -19,8 +19,7 @@ jobs:
       with:
         python-version: '3.11'
     - run: |
-        pip install -e .
-        python selfdrive/car/docs.py
+        PYTHONPATH=. python selfdrive/car/docs.py
     - uses: stefanzweifel/git-auto-commit-action@v5
       with:
         commit_message: 'docs: Scheduled auto-update CARS.md'
