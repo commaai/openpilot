@@ -31,5 +31,5 @@ USE_WEBCAM=1 system/manager/manager.py
 
 Use the `ROAD_CAM`, `DRIVER_CAM`, and optional `WIDE_CAM` environment variables to specify which camera is which (ie. `DRIVER_CAM=2` uses `/dev/video2` for the driver-facing camera):
 ```
-ROAD_CAM=4 DRIVER_CAM=2 system/manager/manager.py
+USE_WEBCAM=1 ROAD_CAM=4 WIDE_CAM=6 system/manager/manager.py
 ```
