@@ -40,7 +40,7 @@ public:
   VisionBuf *cur_camera_buf;
   std::unique_ptr<VisionBuf[]> camera_bufs_raw;
   std::unique_ptr<FrameMetadata[]> frame_metadata;
-  int out_img_width, out_img_height;
+  uint32_t out_img_width, out_img_height;
 
   CameraBuf() = default;
   ~CameraBuf();
