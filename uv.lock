@@ -1,12 +1,12 @@
 version = 1
-requires-python = ">=3.11, <=3.12"
+requires-python = ">=3.11, <3.13"
 resolution-markers = [
     "python_full_version < '3.12' and platform_system == 'Darwin'",
     "python_full_version < '3.12' and platform_machine == 'aarch64' and platform_system == 'Linux'",
-    "(python_full_version < '3.12' and platform_machine != 'aarch64' and platform_system != 'Darwin') or (python_full_version < '3.12' and platform_system != 'Darwin' and platform_system != 'Linux')",
+    "(python_full_version < '3.12' and platform_machine != 'aarch64' and platform_system == 'Linux') or (python_full_version < '3.12' and platform_system != 'Darwin' and platform_system != 'Linux')",
     "python_full_version >= '3.12' and platform_system == 'Darwin'",
     "python_full_version >= '3.12' and platform_machine == 'aarch64' and platform_system == 'Linux'",
-    "(python_full_version >= '3.12' and platform_machine != 'aarch64' and platform_system != 'Darwin') or (python_full_version >= '3.12' and platform_system != 'Darwin' and platform_system != 'Linux')",
+    "(python_full_version >= '3.12' and platform_machine != 'aarch64' and platform_system == 'Linux') or (python_full_version >= '3.12' and platform_system != 'Darwin' and platform_system != 'Linux')",
 ]
 
 [[package]]
@@ -501,7 +501,7 @@ name = "ewmhlib"
 version = "0.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "python-xlib", marker = "sys_platform == 'linux'" },
+    { name = "python-xlib", marker = "platform_system != 'Darwin' and sys_platform == 'linux'" },
     { name = "typing-extensions" },
 ]
 wheels = [
@@ -667,7 +667,7 @@ name = "humanfriendly"
 version = "10.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyreadline3", marker = "sys_platform == 'win32'" },
+    { name = "pyreadline3", marker = "(platform_machine != 'aarch64' and platform_system == 'Linux' and sys_platform == 'win32') or (platform_system != 'Darwin' and platform_system != 'Linux' and sys_platform == 'win32')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/cc/3f/2c29224acb2e2df4d2046e4c73ee2662023c58ff5b113c4c1adac0886c43/humanfriendly-10.0.tar.gz", hash = "sha256:6b0b831ce8f15f7300721aa49829fc4e83921a9a301cc7f606be6686a2288ddc", size = 360702 }
 wheels = [
@@ -1825,10 +1825,10 @@ name = "pymonctl"
 version = "0.92"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ewmhlib", marker = "sys_platform == 'linux'" },
-    { name = "pyobjc", marker = "sys_platform == 'darwin'" },
-    { name = "python-xlib", marker = "sys_platform == 'linux'" },
-    { name = "pywin32", marker = "sys_platform == 'win32'" },
+    { name = "ewmhlib", marker = "platform_system != 'Darwin' and sys_platform == 'linux'" },
+    { name = "pyobjc", marker = "(platform_machine != 'aarch64' and sys_platform == 'darwin') or (platform_system != 'Linux' and sys_platform == 'darwin')" },
+    { name = "python-xlib", marker = "platform_system != 'Darwin' and sys_platform == 'linux'" },
+    { name = "pywin32", marker = "(platform_machine != 'aarch64' and platform_system == 'Linux' and sys_platform == 'win32') or (platform_system != 'Darwin' and platform_system != 'Linux' and sys_platform == 'win32')" },
     { name = "typing-extensions" },
 ]
 wheels = [
@@ -4459,7 +4459,7 @@ name = "pytest"
 version = "8.3.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "colorama", marker = "sys_platform == 'win32'" },
+    { name = "colorama", marker = "(platform_machine != 'aarch64' and platform_system == 'Linux' and sys_platform == 'win32') or (platform_system != 'Darwin' and platform_system != 'Linux' and sys_platform == 'win32')" },
     { name = "iniconfig" },
     { name = "packaging" },
     { name = "pluggy" },
@@ -4648,10 +4648,10 @@ name = "pywinbox"
 version = "0.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ewmhlib", marker = "sys_platform == 'linux'" },
-    { name = "pyobjc", marker = "sys_platform == 'darwin'" },
-    { name = "python-xlib", marker = "sys_platform == 'linux'" },
-    { name = "pywin32", marker = "sys_platform == 'win32'" },
+    { name = "ewmhlib", marker = "platform_system != 'Darwin' and sys_platform == 'linux'" },
+    { name = "pyobjc", marker = "(platform_machine != 'aarch64' and sys_platform == 'darwin') or (platform_system != 'Linux' and sys_platform == 'darwin')" },
+    { name = "python-xlib", marker = "platform_system != 'Darwin' and sys_platform == 'linux'" },
+    { name = "pywin32", marker = "(platform_machine != 'aarch64' and platform_system == 'Linux' and sys_platform == 'win32') or (platform_system != 'Darwin' and platform_system != 'Linux' and sys_platform == 'win32')" },
     { name = "typing-extensions" },
 ]
 wheels = [
@@ -4663,11 +4663,11 @@ name = "pywinctl"
 version = "0.4.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ewmhlib", marker = "sys_platform == 'linux'" },
+    { name = "ewmhlib", marker = "platform_system != 'Darwin' and sys_platform == 'linux'" },
     { name = "pymonctl" },
-    { name = "pyobjc", marker = "sys_platform == 'darwin'" },
-    { name = "python-xlib", marker = "sys_platform == 'linux'" },
-    { name = "pywin32", marker = "sys_platform == 'win32'" },
+    { name = "pyobjc", marker = "(platform_machine != 'aarch64' and sys_platform == 'darwin') or (platform_system != 'Linux' and sys_platform == 'darwin')" },
+    { name = "python-xlib", marker = "platform_system != 'Darwin' and sys_platform == 'linux'" },
+    { name = "pywin32", marker = "(platform_machine != 'aarch64' and platform_system == 'Linux' and sys_platform == 'win32') or (platform_system != 'Darwin' and platform_system != 'Linux' and sys_platform == 'win32')" },
     { name = "pywinbox" },
     { name = "typing-extensions" },
 ]
