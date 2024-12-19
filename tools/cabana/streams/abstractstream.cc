@@ -39,7 +39,7 @@ void AbstractStream::updateMasks() {
     const int size = std::min(mask.size(), m.last_changes.size());
     for (int i = 0; i < size; ++i) {
       for (int j = 0; j < 8; ++j) {
-        if (((mask[i] >> (7 - j)) & 1) != 0) m.last_changes[i].bit_change_counts[j] = 0;
+        if (((mask[i] >> (7 - j)) & 1) != 0) m.bit_flip_counts[i][j] = 0;
       }
     }
   }
@@ -59,8 +59,11 @@ size_t AbstractStream::suppressHighlighted() {
       if (dt < 2.0) {
         last_change.suppressed = true;
       }
-      last_change.bit_change_counts.fill(0);
       cnt += last_change.suppressed;
+    }
+
+    for (auto &row_bit_flips : m.bit_flip_counts) {
+      row_bit_flips.fill(0);
     }
   }
   return cnt;
@@ -251,6 +254,7 @@ void CanData::compute(const MessageId &msg_id, const uint8_t *can_data, const in
     dat.resize(size);
     colors.assign(size, QColor(0, 0, 0, 0));
     last_changes.resize(size);
+    bit_flip_counts.resize(size);
     std::for_each(last_changes.begin(), last_changes.end(), [current_sec](auto &c) { c.ts = current_sec; });
   } else {
     constexpr int periodic_threshold = 10;
@@ -282,10 +286,11 @@ void CanData::compute(const MessageId &msg_id, const uint8_t *can_data, const in
         }
 
         // Track bit level changes
+        auto &row_bit_flips = bit_flip_counts[i];
         const uint8_t diff = (cur ^ last);
         for (int bit = 0; bit < 8; bit++) {
           if (diff & (1u << bit)) {
-            ++last_change.bit_change_counts[7 - bit];
+            ++row_bit_flips[7 - bit];
           }
         }
 
