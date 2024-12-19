@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
 import os
+from openpilot.system.hardware import TICI
+
+#
+if TICI:
+  from tinygrad.tensor import Tensor
+  from tinygrad.dtype import dtypes
+  from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
+  os.environ['QCOM'] = '1'
+else:
+  from openpilot.selfdrive.modeld.runners.ort_helpers import make_onnx_cpu_runner
 import time
 import pickle
 import numpy as np
@@ -18,21 +28,18 @@ from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.system import sentry
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
-from openpilot.selfdrive.modeld.runners import ModelRunner, Runtime
 from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import DrivingModelFrame, CLContext
 
+
 PROCESS_NAME = "selfdrive.modeld.modeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
-MODEL_PATHS = {
-  ModelRunner.THNEED: Path(__file__).parent / 'models/supercombo.thneed',
-  ModelRunner.ONNX: Path(__file__).parent / 'models/supercombo.onnx'}
-
+MODEL_PATH = Path(__file__).parent / 'models/supercombo.onnx'
+MODEL_PKL_PATH = Path(__file__).parent / 'models/supercombo_tinygrad.pkl'
 METADATA_PATH = Path(__file__).parent / 'models/supercombo_metadata.pkl'
-
 
 class FrameMeta:
   frame_id: int = 0
@@ -44,40 +51,39 @@ class FrameMeta:
       self.frame_id, self.timestamp_sof, self.timestamp_eof = vipc.frame_id, vipc.timestamp_sof, vipc.timestamp_eof
 
 class ModelState:
-  frame: DrivingModelFrame
-  wide_frame: DrivingModelFrame
+  frames: dict[str, DrivingModelFrame]
   inputs: dict[str, np.ndarray]
   output: np.ndarray
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
-  model: ModelRunner
 
   def __init__(self, context: CLContext):
-    self.frame = DrivingModelFrame(context)
-    self.wide_frame = DrivingModelFrame(context)
+    self.frames = {'input_imgs': DrivingModelFrame(context), 'big_input_imgs': DrivingModelFrame(context)}
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
     self.full_features_20Hz = np.zeros((ModelConstants.FULL_HISTORY_BUFFER_LEN, ModelConstants.FEATURE_LEN), dtype=np.float32)
     self.desire_20Hz =  np.zeros((ModelConstants.FULL_HISTORY_BUFFER_LEN + 1, ModelConstants.DESIRE_LEN), dtype=np.float32)
 
     # img buffers are managed in openCL transform code
-    self.inputs = {
-      'desire': np.zeros(ModelConstants.DESIRE_LEN * (ModelConstants.HISTORY_BUFFER_LEN+1), dtype=np.float32),
-      'traffic_convention': np.zeros(ModelConstants.TRAFFIC_CONVENTION_LEN, dtype=np.float32),
-      'features_buffer': np.zeros(ModelConstants.HISTORY_BUFFER_LEN * ModelConstants.FEATURE_LEN, dtype=np.float32),
+    self.numpy_inputs = {
+      'desire': np.zeros((1, (ModelConstants.HISTORY_BUFFER_LEN+1), ModelConstants.DESIRE_LEN), dtype=np.float32),
+      'traffic_convention': np.zeros((1, ModelConstants.TRAFFIC_CONVENTION_LEN), dtype=np.float32),
+      'features_buffer': np.zeros((1, ModelConstants.HISTORY_BUFFER_LEN,  ModelConstants.FEATURE_LEN), dtype=np.float32),
     }
 
     with open(METADATA_PATH, 'rb') as f:
       model_metadata = pickle.load(f)
+    self.input_shapes =  model_metadata['input_shapes']
 
     self.output_slices = model_metadata['output_slices']
     net_output_size = model_metadata['output_shapes']['outputs'][1]
     self.output = np.zeros(net_output_size, dtype=np.float32)
     self.parser = Parser()
 
-    self.model = ModelRunner(MODEL_PATHS, self.output, Runtime.GPU, False, context)
-    self.model.addInput("input_imgs", None)
-    self.model.addInput("big_input_imgs", None)
-    for k,v in self.inputs.items():
-      self.model.addInput(k, v)
+    if TICI:
+      self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
+      with open(MODEL_PKL_PATH, "rb") as f:
+        self.model_run = pickle.load(f)
+    else:
+      self.onnx_cpu_runner = make_onnx_cpu_runner(MODEL_PATH)
 
   def slice_outputs(self, model_outputs: np.ndarray) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in self.output_slices.items()}
@@ -94,24 +100,36 @@ class ModelState:
 
     self.desire_20Hz[:-1] = self.desire_20Hz[1:]
     self.desire_20Hz[-1] = new_desire
-    self.inputs['desire'][:] = self.desire_20Hz.reshape((25,4,-1)).max(axis=1).flatten()
+    self.numpy_inputs['desire'][:] = self.desire_20Hz.reshape((1,25,4,-1)).max(axis=2)
 
-    self.inputs['traffic_convention'][:] = inputs['traffic_convention']
+    self.numpy_inputs['traffic_convention'][:] = inputs['traffic_convention']
+    imgs_cl = {'input_imgs': self.frames['input_imgs'].prepare(buf, transform.flatten()),
+               'big_input_imgs': self.frames['big_input_imgs'].prepare(wbuf, transform_wide.flatten())}
 
-    self.model.setInputBuffer("input_imgs", self.frame.prepare(buf, transform.flatten(), self.model.getCLBuffer("input_imgs")))
-    self.model.setInputBuffer("big_input_imgs", self.wide_frame.prepare(wbuf, transform_wide.flatten(), self.model.getCLBuffer("big_input_imgs")))
+    if TICI:
+      # The imgs tensors are backed by opencl memory, only need init once
+      for key in imgs_cl:
+        if key not in self.tensor_inputs:
+          self.tensor_inputs[key] = qcom_tensor_from_opencl_address(imgs_cl[key].mem_address, self.input_shapes[key], dtype=dtypes.uint8)
+    else:
+      for key in imgs_cl:
+        self.numpy_inputs[key] = self.frames[key].buffer_from_cl(imgs_cl[key]).reshape(self.input_shapes[key])
 
     if prepare_only:
       return None
 
-    self.model.execute()
+    if TICI:
+      self.output = self.model_run(**self.tensor_inputs).numpy().flatten()
+    else:
+      self.output = self.onnx_cpu_runner.run(None, self.numpy_inputs)[0].flatten()
+
     outputs = self.parser.parse_outputs(self.slice_outputs(self.output))
 
     self.full_features_20Hz[:-1] = self.full_features_20Hz[1:]
     self.full_features_20Hz[-1] = outputs['hidden_state'][0, :]
 
     idxs = np.arange(-4,-100,-4)[::-1]
-    self.inputs['features_buffer'][:] = self.full_features_20Hz[idxs].flatten()
+    self.numpy_inputs['features_buffer'][:] = self.full_features_20Hz[idxs]
     return outputs
 
 
@@ -281,7 +299,6 @@ def main(demo=False):
       pm.send('modelV2', modelv2_send)
       pm.send('drivingModelData', drivingdata_send)
       pm.send('cameraOdometry', posenet_send)
-
     last_vipc_frame_id = meta_main.frame_id
 
 

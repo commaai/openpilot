@@ -1,6 +1,6 @@
 [project]
 name = "openpilot"
-requires-python = ">= 3.11, <= 3.12"
+requires-python = ">= 3.11, < 3.13"
 license = {text = "MIT License"}
 version = "0.1.0"
 description = "an open source driver assistance system"
@@ -42,8 +42,7 @@ dependencies = [
 
   # modeld
   "onnx >= 1.14.0",
-  "onnxruntime >=1.16.3; platform_system == 'Linux' and platform_machine == 'aarch64'",
-  "onnxruntime-gpu >=1.16.3; platform_system == 'Linux' and platform_machine == 'x86_64'",
+  "onnxruntime >=1.16.3",
 
   # logging
   "pyzmq",

@@ -36,7 +36,7 @@ CPU usage budget
 TEST_DURATION = 25
 LOG_OFFSET = 8
 
-MAX_TOTAL_CPU = 265.  # total for all 8 cores
+MAX_TOTAL_CPU = 275.  # total for all 8 cores
 PROCS = {
   # Baseline CPU usage by process
   "selfdrive.controls.controlsd": 16.0,
@@ -50,8 +50,8 @@ PROCS = {
   "selfdrive.locationd.paramsd": 9.0,
   "./sensord": 7.0,
   "selfdrive.controls.radard": 2.0,
-  "selfdrive.modeld.modeld": 17.0,
-  "selfdrive.modeld.dmonitoringmodeld": 11.0,
+  "selfdrive.modeld.modeld": 22.0,
+  "selfdrive.modeld.dmonitoringmodeld": 21.0,
   "system.hardware.hardwared": 4.0,
   "selfdrive.locationd.calibrationd": 2.0,
   "selfdrive.locationd.torqued": 5.0,
@@ -371,10 +371,9 @@ class TestOnroad:
     result += "------------------------------------------------\n"
     result += "----------------- Model Timing -----------------\n"
     result += "------------------------------------------------\n"
-    # TODO: this went up when plannerd cpu usage increased, why?
     cfgs = [
-      ("modelV2", 0.050, 0.036),
-      ("driverStateV2", 0.050, 0.026),
+      ("modelV2", 0.045, 0.035),
+      ("driverStateV2", 0.045, 0.035),
     ]
     for (s, instant_max, avg_max) in cfgs:
       ts = [getattr(m, s).modelExecutionTime for m in self.msgs[s]]

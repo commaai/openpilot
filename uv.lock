@@ -1,5 +1,5 @@
 version = 1
-requires-python = ">=3.11, <=3.12"
+requires-python = ">=3.11, <3.13"
 resolution-markers = [
     "python_full_version < '3.12' and platform_system == 'Darwin'",
     "python_full_version < '3.12' and platform_machine == 'aarch64' and platform_system == 'Linux'",
@@ -666,6 +666,9 @@ wheels = [
 name = "humanfriendly"
 version = "10.0"
 source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyreadline3", marker = "(platform_machine != 'aarch64' and platform_system == 'Linux' and sys_platform == 'win32') or (platform_system != 'Darwin' and platform_system != 'Linux' and sys_platform == 'win32')" },
+]
 sdist = { url = "https://files.pythonhosted.org/packages/cc/3f/2c29224acb2e2df4d2046e4c73ee2662023c58ff5b113c4c1adac0886c43/humanfriendly-10.0.tar.gz", hash = "sha256:6b0b831ce8f15f7300721aa49829fc4e83921a9a301cc7f606be6686a2288ddc", size = 360702 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/f0/0f/310fb31e39e2d734ccaa2c0fb981ee41f7bd5056ce9bc29b2248bd569169/humanfriendly-10.0-py2.py3-none-any.whl", hash = "sha256:1697e1a8a8f550fd43c2865cd84542fc175a61dcb779b6fee18cf6b6ccba1477", size = 86794 },
@@ -1231,27 +1234,16 @@ dependencies = [
     { name = "sympy" },
 ]
 wheels = [
+    { url = "https://files.pythonhosted.org/packages/95/8d/2634e2959b34aa8a0037989f4229e9abcfa484e9c228f99633b3241768a6/onnxruntime-1.20.1-cp311-cp311-macosx_13_0_universal2.whl", hash = "sha256:06bfbf02ca9ab5f28946e0f912a562a5f005301d0c419283dc57b3ed7969bb7b", size = 30998725 },
     { url = "https://files.pythonhosted.org/packages/a5/da/c44bf9bd66cd6d9018a921f053f28d819445c4d84b4dd4777271b0fe52a2/onnxruntime-1.20.1-cp311-cp311-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:f6243e34d74423bdd1edf0ae9596dd61023b260f546ee17d701723915f06a9f7", size = 11955227 },
     { url = "https://files.pythonhosted.org/packages/11/ac/4120dfb74c8e45cce1c664fc7f7ce010edd587ba67ac41489f7432eb9381/onnxruntime-1.20.1-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:5eec64c0269dcdb8d9a9a53dc4d64f87b9e0c19801d9321246a53b7eb5a7d1bc", size = 13331703 },
+    { url = "https://files.pythonhosted.org/packages/12/f1/cefacac137f7bb7bfba57c50c478150fcd3c54aca72762ac2c05ce0532c1/onnxruntime-1.20.1-cp311-cp311-win32.whl", hash = "sha256:a19bc6e8c70e2485a1725b3d517a2319603acc14c1f1a017dda0afe6d4665b41", size = 9813977 },
+    { url = "https://files.pythonhosted.org/packages/2c/2d/2d4d202c0bcfb3a4cc2b171abb9328672d7f91d7af9ea52572722c6d8d96/onnxruntime-1.20.1-cp311-cp311-win_amd64.whl", hash = "sha256:8508887eb1c5f9537a4071768723ec7c30c28eb2518a00d0adcd32c89dea3221", size = 11329895 },
+    { url = "https://files.pythonhosted.org/packages/e5/39/9335e0874f68f7d27103cbffc0e235e32e26759202df6085716375c078bb/onnxruntime-1.20.1-cp312-cp312-macosx_13_0_universal2.whl", hash = "sha256:22b0655e2bf4f2161d52706e31f517a0e54939dc393e92577df51808a7edc8c9", size = 31007580 },
     { url = "https://files.pythonhosted.org/packages/c5/9d/a42a84e10f1744dd27c6f2f9280cc3fb98f869dd19b7cd042e391ee2ab61/onnxruntime-1.20.1-cp312-cp312-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:f1f56e898815963d6dc4ee1c35fc6c36506466eff6d16f3cb9848cea4e8c8172", size = 11952833 },
     { url = "https://files.pythonhosted.org/packages/47/42/2f71f5680834688a9c81becbe5c5bb996fd33eaed5c66ae0606c3b1d6a02/onnxruntime-1.20.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:bb71a814f66517a65628c9e4a2bb530a6edd2cd5d87ffa0af0f6f773a027d99e", size = 13333903 },
-]
-
-[[package]]
-name = "onnxruntime-gpu"
-version = "1.20.1"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "coloredlogs" },
-    { name = "flatbuffers" },
-    { name = "numpy" },
-    { name = "packaging" },
-    { name = "protobuf" },
-    { name = "sympy" },
-]
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e0/a5/5c2287d61f359c7342e9d59d1e3dd728a982dea85f846c7af305a801c3ca/onnxruntime_gpu-1.20.1-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:1795e8bc6f9a1488a4d51d242edc4232a5ae60ec44ab4d4b0a7c65b3d17fcbff", size = 291519550 },
-    { url = "https://files.pythonhosted.org/packages/91/a8/6984a2fb070be372a866108e3e85c9eb6e8f0378a8567a66967d80befb75/onnxruntime_gpu-1.20.1-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:1951f96cd534c6151721e552606d0d792ea6a4c3e57e2f10eed17cca8105e953", size = 291510989 },
+    { url = "https://files.pythonhosted.org/packages/c8/f1/aabfdf91d013320aa2fc46cf43c88ca0182860ff15df872b4552254a9680/onnxruntime-1.20.1-cp312-cp312-win32.whl", hash = "sha256:bd386cc9ee5f686ee8a75ba74037750aca55183085bf1941da8efcfe12d5b120", size = 9814562 },
+    { url = "https://files.pythonhosted.org/packages/dd/80/76979e0b744307d488c79e41051117634b956612cc731f1028eb17ee7294/onnxruntime-1.20.1-cp312-cp312-win_amd64.whl", hash = "sha256:19c2d843eb074f385e8bbb753a40df780511061a63f9def1b216bf53860223fb", size = 11331482 },
 ]
 
 [[package]]
@@ -1288,8 +1280,7 @@ dependencies = [
     { name = "libusb1" },
     { name = "numpy" },
     { name = "onnx" },
-    { name = "onnxruntime", marker = "platform_machine == 'aarch64' and platform_system == 'Linux'" },
-    { name = "onnxruntime-gpu", marker = "platform_machine == 'x86_64' and platform_system == 'Linux'" },
+    { name = "onnxruntime" },
     { name = "psutil" },
     { name = "pyaudio" },
     { name = "pycapnp" },
@@ -1387,8 +1378,7 @@ requires-dist = [
     { name = "natsort", marker = "extra == 'docs'" },
     { name = "numpy", specifier = "<2.0.0" },
     { name = "onnx", specifier = ">=1.14.0" },
-    { name = "onnxruntime", marker = "platform_machine == 'aarch64' and platform_system == 'Linux'", specifier = ">=1.16.3" },
-    { name = "onnxruntime-gpu", marker = "platform_machine == 'x86_64' and platform_system == 'Linux'", specifier = ">=1.16.3" },
+    { name = "onnxruntime", specifier = ">=1.16.3" },
     { name = "parameterized", marker = "extra == 'dev'", specifier = ">=0.8,<0.9" },
     { name = "pre-commit-hooks", marker = "extra == 'testing'" },
     { name = "psutil" },
@@ -4429,6 +4419,15 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/45/eb/fa72094f2ca861941d38a4df49d0a34bd024972cd458f516ef3c65d128e3/PyQt5_sip-12.16.1-cp312-cp312-manylinux_2_5_x86_64.manylinux1_x86_64.whl", hash = "sha256:633cba509a98bd626def951bb948d4e736635acbd0b7fabd7be55a3a096a8a0b", size = 281640 },
     { url = "https://files.pythonhosted.org/packages/12/a5/9439567dbf513bfc0fd71a5bb3797fae649338715749e89571ad86b4b3e3/PyQt5_sip-12.16.1-cp312-cp312-win32.whl", hash = "sha256:2b35ff92caa569e540675ffcd79ffbf3e7092cccf7166f89e2a8b388db80aa1c", size = 49428 },
     { url = "https://files.pythonhosted.org/packages/a7/33/d91e003b85ff7ab227d0fff236d48c18ada2f0cd49d5e35cb514867ba609/PyQt5_sip-12.16.1-cp312-cp312-win_amd64.whl", hash = "sha256:a0f83f554727f43dfe92afbf3a8c51e83bb8b78c5f160b635d4359fad681cebe", size = 57957 },
+]
+
+[[package]]
+name = "pyreadline3"
+version = "3.5.4"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/0f/49/4cea918a08f02817aabae639e3d0ac046fef9f9180518a3ad394e22da148/pyreadline3-3.5.4.tar.gz", hash = "sha256:8d57d53039a1c75adba8e50dd3d992b28143480816187ea5efbd5c78e6c885b7", size = 99839 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5a/dc/491b7661614ab97483abf2056be1deee4dc2490ecbf7bff9ab5cdbac86e1/pyreadline3-3.5.4-py3-none-any.whl", hash = "sha256:eaf8e6cc3c49bcccf145fc6067ba8643d1df34d604a1ec0eccbf7a18e6d3fae6", size = 83178 },
 ]
 
 [[package]]
