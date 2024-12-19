@@ -310,9 +310,9 @@ void BinaryViewModel::updateState() {
 
   // Find the maximum bit flip count across the message
   uint32_t max_bit_flip_count = 1;  // Default to 1 to avoid division by zero
-  for (const auto &changes : last_msg.last_changes) {
-    for (uint32_t flip_count : changes.bit_change_counts) {
-      max_bit_flip_count = std::max(max_bit_flip_count, flip_count);
+  for (const auto &row : last_msg.bit_flip_counts) {
+    for (auto count : row) {
+      max_bit_flip_count = std::max(max_bit_flip_count, count);
     }
   }
 
@@ -328,7 +328,7 @@ void BinaryViewModel::updateState() {
       int bit_val = (binary[i] >> (7 - j)) & 1;
 
       double alpha = item.sigs.empty() ? 0 : min_alpha_with_signal;
-      uint32_t flip_count = last_msg.last_changes[i].bit_change_counts[j];
+      uint32_t flip_count = last_msg.bit_flip_counts[i][j];
       if (flip_count > 0) {
         double normalized_alpha = log2(1.0 + flip_count * log_factor) * log_scaler;
         double min_alpha = item.sigs.empty() ? min_alpha_no_signal : min_alpha_with_signal;
