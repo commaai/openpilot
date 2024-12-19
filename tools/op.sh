@@ -155,7 +155,7 @@ function op_check_python() {
     LB=$(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9,]' | cut -d ',' -f1)
     UB=$(echo $REQUIRED_PYTHON_VERSION | tr -d -c '[0-9,]' | cut -d ',' -f2)
     VERSION=$(echo $INSTALLED_PYTHON_VERSION | grep -o '[0-9]\+\.[0-9]\+' | tr -d -c '[0-9]')
-    if [[ $VERSION -ge LB && $VERSION -le UB ]]; then
+    if [[ $VERSION -ge LB && $VERSION -lt UB ]]; then
       echo -e " ↳ [${GREEN}✔${NC}] $INSTALLED_PYTHON_VERSION detected."
     else
       echo -e " ↳ [${RED}✗${NC}] You need a python version satisfying $(echo $REQUIRED_PYTHON_VERSION | cut -d '=' -f2-) to continue!"
@@ -328,7 +328,8 @@ function op_switch() {
   BRANCH="$1"
 
   git fetch "$REMOTE" "$BRANCH"
-  git checkout -f --recurse-submodules --track "$REMOTE"/"$BRANCH"
+  git checkout -f FETCH_HEAD
+  git checkout -B "$BRANCH" --track "$REMOTE"/"$BRANCH"
   git reset --hard "${REMOTE}/${BRANCH}"
   git clean -df
   git submodule update --init --recursive
