@@ -1,0 +1,72 @@
+name: Sync comma's LFS
+
+env:
+  LFS_URL: 'https://gitlab.com/sunnypilot/public/sunnypilot-new-lfs.git/info/lfs'
+  LFS_PUSH_URL: 'ssh://git@gitlab.com/sunnypilot/public/sunnypilot-new-lfs.git'
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Runs at 00:00 UTC every day
+  push:
+    branches:
+      - 'master-new'
+  pull_request:
+    branches:
+      - 'master-new'
+  workflow_dispatch:  # enables manual triggering
+    inputs:
+      upstream_branch:
+        default: 'master'
+        type: string
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    # Skip if PR is in draft mode
+    if: github.event_name != 'pull_request' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          repository: 'commaai/openpilot'
+          ref: ${{ inputs.upstream_branch }}
+      
+      - name: LFS Fetch
+        run: |
+          git lfs fetch
+
+      - name: Set up Git
+        run: |
+          git config --global user.name 'GitHub Action'
+          git config --global user.email 'action@github.com'
+
+      - name: Set up SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add GitLab public keys
+        run: |
+          ssh-keyscan -H gitlab.com >> ~/.ssh/known_hosts
+      
+      - name: Ensure branch
+        run: |
+          if git symbolic-ref -q HEAD >/dev/null; then
+              echo "Already on a branch, proceeding with push"
+            else
+              echo "Detached HEAD state detected, creating temporary branch"
+            git checkout -b temp_branch
+          fi
+
+      - name: Update LFS Config
+        run: |
+          echo '[lfs]' > .lfsconfig
+          echo '    url = ${{ env.LFS_URL }}' >> .lfsconfig
+          echo '    pushurl = ${{ env.LFS_PUSH_URL }}' >> .lfsconfig
+          echo '    locksverify = false' >> .lfsconfig
+
+      - name: Push LFS
+        id: sync-and-commit
+        run: |
+          git lfs ls-files -l
+          git lfs push --all origin
