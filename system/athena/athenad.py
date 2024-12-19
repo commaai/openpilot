@@ -722,9 +722,11 @@ def ws_recv(ws: WebSocket, end_event: threading.Event) -> None:
       ns_since_last_ping = int(time.monotonic() * 1e9) - last_ping
       if ns_since_last_ping > RECONNECT_TIMEOUT_S * 1e9:
         cloudlog.exception("athenad.ws_recv.timeout")
+        ws.abort()
         end_event.set()
     except Exception:
       cloudlog.exception("athenad.ws_recv.exception")
+      ws.abort()
       end_event.set()
 
 
@@ -744,6 +746,7 @@ def ws_send(ws: WebSocket, end_event: threading.Event) -> None:
       pass
     except Exception:
       cloudlog.exception("athenad.ws_send.exception")
+      ws.abort()
       end_event.set()
 
 
