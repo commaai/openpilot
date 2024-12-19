@@ -248,6 +248,7 @@ std::tuple<int, int, bool> BinaryView::getSelection(QModelIndex index) {
 
 void BinaryViewModel::refresh() {
   beginResetModel();
+  bit_flipper = {};
   items.clear();
   if (auto dbc_msg = dbc()->msg(msg_id)) {
     row_count = dbc_msg->size;
@@ -308,6 +309,7 @@ void BinaryViewModel::updateState() {
     endInsertRows();
   }
 
+
   // Find the maximum bit flip count across the message
   uint32_t max_bit_flip_count = 1;  // Default to 1 to avoid division by zero
   for (const auto &changes : last_msg.last_changes) {
@@ -340,6 +342,37 @@ void BinaryViewModel::updateState() {
       updateItem(i, j, bit_val, color);
     }
     updateItem(i, 8, binary[i], last_msg.colors[i]);
+  }
+}
+
+void BinaryViewModel::updateBitFlipper() {
+  auto time_range = can->timeRange();
+  if (bit_flipper.time_range == time_range && !bit_flipper.bit_flip_counts.empty()) return;
+
+  const auto *msg = dbc()->msg(msg_id);
+  bit_flipper.time_range = time_range;
+  bit_flipper.bit_flip_counts.clear();
+  bit_flipper.bit_flip_counts.resize(msg->size);
+  std::vector<uint8_t> prev_values(msg->size, 0);
+
+  const auto &events = can->events(msg_id);
+  auto first = time_range ? std::lower_bound(events.begin(), events.end(), can->toMonoTime(time_range->first), CompareCanEvent()) : events.begin();
+  auto last = time_range ? std::upper_bound(events.begin(), events.end(), can->toMonoTime(time_range->second), CompareCanEvent()) : events.end();
+
+  for (auto it = first; it != last; ++it) {
+    const CanEvent *event = *it;
+    int size = std::min<int>(msg->size, event->size);
+    for (int i = 0; i < size; ++i) {
+      auto cur = event->dat[i];
+      const uint8_t diff = cur ^ prev_values[i];
+      auto &bit_flips = bit_flipper.bit_flip_counts[i];
+      for (int bit = 0; bit < 8; ++bit) {
+        if (diff & (1u << bit)) {
+          ++bit_flips[7 - bit];
+        }
+      }
+      prev_values[i] = cur;
+    }
   }
 }
 

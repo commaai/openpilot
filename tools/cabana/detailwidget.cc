@@ -90,8 +90,11 @@ void DetailWidget::createToolBar() {
   toolbar->addWidget(remove_btn = new ToolButton("x-lg", tr("Remove Message")));
   layout()->addWidget(toolbar);
 
-  QObject::connect(edit_btn, &QToolButton::clicked, this, &DetailWidget::editMsg);
-  QObject::connect(remove_btn, &QToolButton::clicked, this, &DetailWidget::removeMsg);
+  connect(edit_btn, &QToolButton::clicked, this, &DetailWidget::editMsg);
+  connect(remove_btn, &QToolButton::clicked, this, &DetailWidget::removeMsg);
+  connect(radio_group, qOverload<QAbstractButton *>(&QButtonGroup::buttonClicked), [this, heatmap_live](QAbstractButton *btn) {
+    binary_view->setHeatmapLiveMode(btn == heatmap_live);
+  });
 }
 
 void DetailWidget::showTabBarContextMenu(const QPoint &pt) {

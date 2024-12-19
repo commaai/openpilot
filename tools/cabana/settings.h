@@ -25,6 +25,7 @@ public:
   ~Settings();
 
   bool absolute_time = false;
+  bool heatmap_live = true;
   int fps = 10;
   int max_cached_minutes = 30;
   int chart_height = 200;

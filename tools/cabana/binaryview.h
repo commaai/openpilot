@@ -50,6 +50,13 @@ public:
   };
   std::vector<Item> items;
 
+  void updateBitFlipper();
+  struct BitFlipper {
+    std::optional<std::pair<double, double>> time_range;
+    std::vector<std::array<uint32_t, 8>> bit_flip_counts;
+  } bit_flipper;
+
+  bool heatmap_live_mode = true;
   MessageId msg_id;
   int row_count = 0;
   const int column_count = 9;
@@ -65,6 +72,7 @@ public:
   QSet<const cabana::Signal*> getOverlappingSignals() const;
   inline void updateState() { model->updateState(); }
   QSize minimumSizeHint() const override;
+  void setHeatmapLiveMode(bool live) { model->heatmap_live_mode = live; }
 
 signals:
   void signalClicked(const cabana::Signal *sig);
