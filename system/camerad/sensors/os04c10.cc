@@ -23,13 +23,14 @@ const uint32_t os04c10_analog_gains_reg[] = {
 OS04C10::OS04C10() {
   image_sensor = cereal::FrameData::ImageSensor::OS04C10;
   bayer_pattern = CAM_ISP_PATTERN_BAYER_BGBGBG;
-  pixel_size_mm = 0.004;
+  pixel_size_mm = 0.002;
   data_word = false;
 
   // hdr_offset = 64 * 2 + 8; // stagger
-  frame_width = 1344;
-  frame_height = 760; //760 * 2 + hdr_offset;
+  frame_width = 2688;
+  frame_height = 1520; // * 2 + hdr_offset;
   frame_stride = (frame_width * 12 / 8); // no alignment
+  out_scale = 2;
 
   extra_height = 0;
   frame_offset = 0;
@@ -50,7 +51,7 @@ OS04C10::OS04C10() {
   dc_gain_on_grey = 0.9;
   dc_gain_off_grey = 1.0;
   exposure_time_min = 2;
-  exposure_time_max = 1684;
+  exposure_time_max = 2352;
   analog_gain_min_idx = 0x0;
   analog_gain_rec_idx = 0x0;  // 1x
   analog_gain_max_idx = 0x28;
