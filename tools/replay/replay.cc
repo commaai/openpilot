@@ -89,7 +89,7 @@ void Replay::interruptStream(const std::function<bool()> &update_fn) {
     interrupt_requested_ = true;
     std::unique_lock lock(stream_lock_);
     events_ready_ = update_fn();
-    interrupt_requested_ = user_paused_;
+    interrupt_requested_ = user_paused_ && !pause_after_next_frame_;
   }
   stream_cv_.notify_one();
 }
@@ -116,6 +116,9 @@ void Replay::seekTo(double seconds, bool relative) {
       seeked_to_sec = *seeking_to_;
       seeking_to_.reset();
     }
+
+    // if paused, resume for exactly one frame to update
+    pause_after_next_frame_ = user_paused_;
     return false;
   });
 
@@ -144,6 +147,7 @@ void Replay::pause(bool pause) {
     interruptStream([=]() {
       rWarning("%s at %.2f s", pause ? "paused..." : "resuming", currentSeconds());
       user_paused_ = pause;
+      pause_after_next_frame_ = false;
       return !pause;
     });
   }
@@ -305,6 +309,7 @@ std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::con
   uint64_t evt_start_ts = cur_mono_time_;
   uint64_t loop_start_ts = nanos_since_boot();
   double prev_replay_speed = speed_;
+  uint64_t first_mono_time = first->mono_time;
 
   for (; !interrupt_requested_ && first != last; ++first) {
     const Event &evt = *first;
@@ -342,6 +347,12 @@ std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::con
         camera_server_->waitForSent();
       }
       publishFrame(&evt);
+    }
+
+    const auto T_ONE_FRAME = 0.050;
+    if (pause_after_next_frame_ && abs(toSeconds(evt.mono_time) - toSeconds(first_mono_time)) > T_ONE_FRAME) {
+      pause_after_next_frame_ = false;
+      interrupt_requested_ = true;
     }
   }
 
