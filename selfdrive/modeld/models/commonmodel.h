@@ -23,14 +23,12 @@ public:
     q = CL_CHECK_ERR(clCreateCommandQueue(context, device_id, 0, &err));
   }
   virtual ~ModelFrame() {}
-  virtual uint8_t* prepare(cl_mem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3& projection, cl_mem* output) { return NULL; }
-  /*
+  virtual cl_mem* prepare(cl_mem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3& projection) { return NULL; }
   uint8_t* buffer_from_cl(cl_mem *in_frames, int buffer_size) {
     CL_CHECK(clEnqueueReadBuffer(q, *in_frames, CL_TRUE, 0, buffer_size, input_frames.get(), 0, nullptr, nullptr));
     clFinish(q);
     return &input_frames[0];
   }
-  */
 
   int MODEL_WIDTH;
   int MODEL_HEIGHT;
@@ -68,7 +66,7 @@ class DrivingModelFrame : public ModelFrame {
 public:
   DrivingModelFrame(cl_device_id device_id, cl_context context);
   ~DrivingModelFrame();
-  uint8_t* prepare(cl_mem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3& projection, cl_mem* output);
+  cl_mem* prepare(cl_mem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3& projection);
 
   const int MODEL_WIDTH = 512;
   const int MODEL_HEIGHT = 256;
@@ -78,7 +76,7 @@ public:
 
 private:
   LoadYUVState loadyuv;
-  cl_mem img_buffer_20hz_cl, last_img_cl;//, input_frames_cl;
+  cl_mem img_buffer_20hz_cl, last_img_cl, input_frames_cl;
   cl_buffer_region region;
 };
 
@@ -86,7 +84,7 @@ class MonitoringModelFrame : public ModelFrame {
 public:
   MonitoringModelFrame(cl_device_id device_id, cl_context context);
   ~MonitoringModelFrame();
-  uint8_t* prepare(cl_mem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3& projection, cl_mem* output);
+  cl_mem* prepare(cl_mem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3& projection);
 
   const int MODEL_WIDTH = 1440;
   const int MODEL_HEIGHT = 960;
@@ -94,5 +92,5 @@ public:
   const int buf_size = MODEL_FRAME_SIZE;
 
 private:
-  // cl_mem input_frame_cl;
+  cl_mem input_frame_cl;
 };

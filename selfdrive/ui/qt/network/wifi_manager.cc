@@ -203,7 +203,7 @@ void WifiManager::connect(const Network &n, const bool is_hidden, const QString 
   connection["ipv4"]["dns-priority"] = 600;
   connection["ipv6"]["method"] = "ignore";
 
-  call(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "AddConnection", QVariant::fromValue(connection));
+  asyncCall(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "AddConnection", QVariant::fromValue(connection));
 }
 
 void WifiManager::deactivateConnectionBySsid(const QString &ssid) {
@@ -330,6 +330,10 @@ void WifiManager::initConnections() {
       lteConnectionPath = path;
     }
   }
+
+  if (!isKnownConnection(tethering_ssid)) {
+    addTetheringConnection();
+  }
 }
 
 std::optional<QDBusPendingCall> WifiManager::activateWifiConnection(const QString &ssid) {
@@ -399,9 +403,13 @@ void WifiManager::updateGsmSettings(bool roaming, QString apn, bool metered) {
     }
 
     if (changes) {
-      call(lteConnectionPath.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "UpdateUnsaved", QVariant::fromValue(settings));  // update is temporary
-      deactivateConnection(lteConnectionPath);
-      activateModemConnection(lteConnectionPath);
+      QDBusPendingCall pending_call = asyncCall(lteConnectionPath.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "UpdateUnsaved", QVariant::fromValue(settings));  // update is temporary
+      QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(pending_call);
+      QObject::connect(watcher, &QDBusPendingCallWatcher::finished, this, [this, watcher]() {
+        deactivateConnection(lteConnectionPath);
+        activateModemConnection(lteConnectionPath);
+        watcher->deleteLater();
+      });
     }
   }
 }
@@ -434,10 +442,7 @@ void WifiManager::addTetheringConnection() {
   connection["ipv4"]["route-metric"] = 1100;
   connection["ipv6"]["method"] = "ignore";
 
-  auto path = call<QDBusObjectPath>(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "AddConnection", QVariant::fromValue(connection));
-  if (!path.path().isEmpty()) {
-    knownConnections[path] = tethering_ssid;
-  }
+  asyncCall(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "AddConnection", QVariant::fromValue(connection));
 }
 
 void WifiManager::tetheringActivated(QDBusPendingCallWatcher *call) {
@@ -453,10 +458,6 @@ void WifiManager::tetheringActivated(QDBusPendingCallWatcher *call) {
 
 void WifiManager::setTetheringEnabled(bool enabled) {
   if (enabled) {
-    if (!isKnownConnection(tethering_ssid)) {
-      addTetheringConnection();
-    }
-
     auto pending_call = activateWifiConnection(tethering_ssid);
 
     if (pending_call) {
@@ -478,9 +479,6 @@ bool WifiManager::isTetheringEnabled() {
 }
 
 QString WifiManager::getTetheringPassword() {
-  if (!isKnownConnection(tethering_ssid)) {
-    addTetheringConnection();
-  }
   const QDBusObjectPath &path = getConnectionPath(tethering_ssid);
   if (!path.path().isEmpty()) {
     QDBusReply<QMap<QString, QVariantMap>> response = call(path.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "GetSecrets", "802-11-wireless-security");

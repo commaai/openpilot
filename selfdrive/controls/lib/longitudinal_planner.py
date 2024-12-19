@@ -50,24 +50,20 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   return [a_target[0], min(a_target[1], a_x_allowed)]
 
 
-def get_accel_from_plan(CP, speeds, accels):
+def get_accel_from_plan(speeds, accels, action_t=DT_MDL, vEgoStopping=0.05):
   if len(speeds) == CONTROL_N:
-    v_target_now = interp(DT_MDL, CONTROL_N_T_IDX, speeds)
-    a_target_now = interp(DT_MDL, CONTROL_N_T_IDX, accels)
+    v_now = speeds[0]
+    a_now = accels[0]
 
-    v_target = interp(CP.longitudinalActuatorDelay + DT_MDL, CONTROL_N_T_IDX, speeds)
-    if v_target != v_target_now:
-      a_target = 2 * (v_target - v_target_now) / CP.longitudinalActuatorDelay - a_target_now
-    else:
-      a_target = a_target_now
-
-    v_target_1sec = interp(CP.longitudinalActuatorDelay + DT_MDL + 1.0, CONTROL_N_T_IDX, speeds)
+    v_target = interp(action_t, CONTROL_N_T_IDX, speeds)
+    a_target = 2 * (v_target - v_now) / (action_t) - a_now
+    v_target_1sec = interp(action_t + 1.0, CONTROL_N_T_IDX, speeds)
   else:
     v_target = 0.0
     v_target_1sec = 0.0
     a_target = 0.0
-  should_stop = (v_target < CP.vEgoStopping and
-                 v_target_1sec < CP.vEgoStopping)
+  should_stop = (v_target < vEgoStopping and
+                 v_target_1sec < vEgoStopping)
   return a_target, should_stop
 
 
@@ -201,7 +197,9 @@ class LongitudinalPlanner:
     longitudinalPlan.longitudinalPlanSource = self.mpc.source
     longitudinalPlan.fcw = self.fcw
 
-    a_target, should_stop = get_accel_from_plan(self.CP, longitudinalPlan.speeds, longitudinalPlan.accels)
+    action_t =  self.CP.longitudinalActuatorDelay + DT_MDL
+    a_target, should_stop = get_accel_from_plan(longitudinalPlan.speeds, longitudinalPlan.accels,
+                                                action_t=action_t, vEgoStopping=self.CP.vEgoStopping)
     longitudinalPlan.aTarget = a_target
     longitudinalPlan.shouldStop = should_stop
     longitudinalPlan.allowBrake = True
