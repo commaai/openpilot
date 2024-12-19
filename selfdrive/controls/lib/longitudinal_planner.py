@@ -197,8 +197,8 @@ class LongitudinalPlanner:
     longitudinalPlan.longitudinalPlanSource = self.mpc.source
     longitudinalPlan.fcw = self.fcw
 
-    t_action =  self.CP.longitudinalActuatorDelay + DT_MDL
-    a_target, should_stop = get_accel_from_plan(longitudinalPlan.speeds, longitudinalPlan.accels, t_action=t_action, vEgoStopping=self.CP.vEgoStopping)
+    action_t =  self.CP.longitudinalActuatorDelay + DT_MDL
+    a_target, should_stop = get_accel_from_plan(longitudinalPlan.speeds, longitudinalPlan.accels, action_t=action_t, vEgoStopping=self.CP.vEgoStopping)
     longitudinalPlan.aTarget = a_target
     longitudinalPlan.shouldStop = should_stop
     longitudinalPlan.allowBrake = True
