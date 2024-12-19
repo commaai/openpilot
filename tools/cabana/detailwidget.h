@@ -36,6 +36,7 @@ public:
   void refresh();
 
 private:
+  void createToolBar();
   void showTabBarContextMenu(const QPoint &pt);
   void editMsg();
   void removeMsg();

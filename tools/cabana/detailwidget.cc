@@ -1,7 +1,10 @@
 #include "tools/cabana/detailwidget.h"
 
+
+#include <QButtonGroup>
 #include <QFormLayout>
 #include <QMenu>
+#include <QRadioButton>
 #include <QToolBar>
 
 #include "tools/cabana/commands.h"
@@ -20,19 +23,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   tabbar->setContextMenuPolicy(Qt::CustomContextMenu);
   main_layout->addWidget(tabbar);
 
-  // message title
-  QToolBar *toolbar = new QToolBar(this);
-  toolbar->addWidget(name_label = new ElidedLabel(this));
-  name_label->setStyleSheet("QLabel{font-weight:bold;}");
-  // Add a stretchable space to push the next action to the right
-  QWidget *spacer = new QWidget();
-  spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  toolbar->addWidget(spacer);
-  toolbar->addWidget(new QLabel(tr("heatmap:"), this));
-  auto edit_btn = new ToolButton("pencil", tr("Edit Message"));
-  toolbar->addWidget(edit_btn);
-  toolbar->addWidget(remove_btn = new ToolButton("x-lg", tr("Remove Message")));
-  main_layout->addWidget(toolbar);
+  createToolBar();
 
   // warning
   warning_widget = new QWidget(this);
@@ -58,8 +49,6 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   tab_widget->addTab(history_log = new LogsWidget(this), utils::icon("stopwatch"), "&Logs");
   main_layout->addWidget(tab_widget);
 
-  QObject::connect(edit_btn, &QToolButton::clicked, this, &DetailWidget::editMsg);
-  QObject::connect(remove_btn, &QToolButton::clicked, this, &DetailWidget::removeMsg);
   QObject::connect(binary_view, &BinaryView::signalHovered, signal_view, &SignalView::signalHovered);
   QObject::connect(binary_view, &BinaryView::signalClicked, [this](const cabana::Signal *s) { signal_view->selectSignal(s, true); });
   QObject::connect(binary_view, &BinaryView::editSignal, signal_view->model, &SignalModel::saveSignal);
@@ -78,6 +67,31 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   });
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, tabbar, &QTabBar::removeTab);
   QObject::connect(charts, &ChartsWidget::seriesChanged, signal_view, &SignalView::updateChartState);
+}
+
+void DetailWidget::createToolBar() {
+  QToolBar *toolbar = new QToolBar(this);
+  toolbar->addWidget(name_label = new ElidedLabel(this));
+  name_label->setStyleSheet("QLabel{font-weight:bold;}");
+  // Add a stretchable space to push the next action to the right
+  QWidget *spacer = new QWidget();
+  spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+  toolbar->addWidget(spacer);
+  toolbar->addWidget(new QLabel(tr("heatmap:"), this));
+  QRadioButton *heatmap_live = new QRadioButton(tr("live"), this);
+  QRadioButton *heatmap_all = new QRadioButton(tr("all"), this);
+  QButtonGroup *radio_group = new QButtonGroup(this);
+  radio_group->addButton(heatmap_live);
+  radio_group->addButton(heatmap_all);
+  toolbar->addWidget(heatmap_live);
+  toolbar->addWidget(heatmap_all);
+  auto edit_btn = new ToolButton("pencil", tr("Edit Message"));
+  toolbar->addWidget(edit_btn);
+  toolbar->addWidget(remove_btn = new ToolButton("x-lg", tr("Remove Message")));
+  layout()->addWidget(toolbar);
+
+  QObject::connect(edit_btn, &QToolButton::clicked, this, &DetailWidget::editMsg);
+  QObject::connect(remove_btn, &QToolButton::clicked, this, &DetailWidget::removeMsg);
 }
 
 void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
