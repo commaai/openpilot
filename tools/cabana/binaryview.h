@@ -50,7 +50,7 @@ public:
   };
   std::vector<Item> items;
 
-  const std::vector<std::array<uint32_t, 8>> &updateBitFlipper();
+  const std::vector<std::array<uint32_t, 8>> &updateBitFlipper(size_t msg_size);
   struct BitFlipper {
     std::optional<std::pair<double, double>> time_range;
     std::vector<std::array<uint32_t, 8>> bit_flip_counts;

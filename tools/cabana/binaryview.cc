@@ -309,7 +309,7 @@ void BinaryViewModel::updateState() {
     endInsertRows();
   }
 
-  auto &bit_flips = heatmap_live_mode ? last_msg.bit_flip_counts : updateBitFlipper();
+  auto &bit_flips = heatmap_live_mode ? last_msg.bit_flip_counts : updateBitFlipper(binary.size());
   // Find the maximum bit flip count across the message
   uint32_t max_bit_flip_count = 1;  // Default to 1 to avoid division by zero
   for (const auto &row : bit_flips) {
@@ -345,18 +345,17 @@ void BinaryViewModel::updateState() {
   }
 }
 
-const std::vector<std::array<uint32_t, 8>> &BinaryViewModel::updateBitFlipper() {
+const std::vector<std::array<uint32_t, 8>> &BinaryViewModel::updateBitFlipper(size_t msg_size) {
   // Return cached results if time range and data are unchanged
   auto time_range = can->timeRange();
   if (bit_flipper.time_range == time_range && !bit_flipper.bit_flip_counts.empty())
     return bit_flipper.bit_flip_counts;
 
   // Update time range and clear bit flip counts
-  const auto *msg = dbc()->msg(msg_id);
   bit_flipper.time_range = time_range;
   bit_flipper.bit_flip_counts.clear();
-  bit_flipper.bit_flip_counts.resize(msg->size);
-  std::vector<uint8_t> prev_values(msg->size, 0);
+  bit_flipper.bit_flip_counts.resize(msg_size);
+  std::vector<uint8_t> prev_values(msg_size, 0);
 
   // Get events within the specified time range
   const auto &events = can->events(msg_id);
@@ -368,7 +367,8 @@ const std::vector<std::array<uint32_t, 8>> &BinaryViewModel::updateBitFlipper() 
   // Iterate over events and calculate bit flips
   for (auto it = first; it != last; ++it) {
     const CanEvent *event = *it;
-    for (int i = 0; i < event->size; ++i) {
+    int size = std::min<int>(msg_size, event->size);
+    for (int i = 0; i < size; ++i) {
       const uint8_t diff = event->dat[i] ^ prev_values[i];
       if (diff) {
         auto &bit_flips = bit_flipper.bit_flip_counts[i];
