@@ -1,8 +1,9 @@
 #if SENSOR_ID == 2
 
+#define VIGNETTE_PROFILE_8DT0MM
+
 #define BIT_DEPTH 12
 #define BLACK_LVL 64
-#define VIGNETTE_RSZ 1.0f
 
 float ox_lut_func(int x) {
   if (x < 512) {

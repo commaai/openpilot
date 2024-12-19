@@ -38,11 +38,17 @@ if __name__ == '__main__':
           if fingers[current_slot][1] != -1:
             touch_points.append(fingers[current_slot].copy())
 
+  if not touch_points:
+    print(f'No touch events found for {route}')
+    quit()
+
   unique_points, counts = np.unique(touch_points, axis=0, return_counts=True)
 
   plt.figure(figsize=(10, 3))
   plt.scatter(unique_points[:, 0], unique_points[:, 1], c=counts, s=counts * 20, edgecolors='red')
   plt.colorbar()
   plt.title(f'Touches for {route}')
+  plt.xlim(0, w)
+  plt.ylim(0, h)
   plt.grid(True)
   plt.show()
