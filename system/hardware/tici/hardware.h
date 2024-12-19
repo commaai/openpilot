@@ -82,7 +82,7 @@ public:
       return;
     }
 
-    int value = util::map_val(std::clamp(percent, 0, 100), 0, 100, 0, 255)
+    int value = util::map_val(std::clamp(percent, 0, 100), 0, 100, 0, 255);
 
     std::ofstream torch_brightness("/sys/class/leds/led:torch_2/brightness");
     if (torch_brightness.is_open()) {
