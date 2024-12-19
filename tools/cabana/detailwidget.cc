@@ -79,6 +79,7 @@ void DetailWidget::createToolBar() {
   toolbar->addWidget(spacer);
   toolbar->addWidget(new QLabel(tr("heatmap:"), this));
   QRadioButton *heatmap_live = new QRadioButton(tr("live"), this);
+  heatmap_live->setChecked(true);
   QRadioButton *heatmap_all = new QRadioButton(tr("all"), this);
   QButtonGroup *radio_group = new QButtonGroup(this);
   radio_group->addButton(heatmap_live);

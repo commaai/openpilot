@@ -309,12 +309,12 @@ void BinaryViewModel::updateState() {
     endInsertRows();
   }
 
-
+  auto &bit_flips = heatmap_live_mode ? last_msg.bit_flip_counts : updateBitFlipper();
   // Find the maximum bit flip count across the message
   uint32_t max_bit_flip_count = 1;  // Default to 1 to avoid division by zero
-  for (const auto &changes : last_msg.last_changes) {
-    for (uint32_t flip_count : changes.bit_change_counts) {
-      max_bit_flip_count = std::max(max_bit_flip_count, flip_count);
+  for (const auto &row : bit_flips) {
+    for (uint32_t count : row) {
+      max_bit_flip_count = std::max(max_bit_flip_count, count);
     }
   }
 
@@ -330,7 +330,7 @@ void BinaryViewModel::updateState() {
       int bit_val = (binary[i] >> (7 - j)) & 1;
 
       double alpha = item.sigs.empty() ? 0 : min_alpha_with_signal;
-      uint32_t flip_count = last_msg.last_changes[i].bit_change_counts[j];
+      uint32_t flip_count = bit_flips[i][j];
       if (flip_count > 0) {
         double normalized_alpha = log2(1.0 + flip_count * log_factor) * log_scaler;
         double min_alpha = item.sigs.empty() ? min_alpha_no_signal : min_alpha_with_signal;
@@ -345,9 +345,10 @@ void BinaryViewModel::updateState() {
   }
 }
 
-void BinaryViewModel::updateBitFlipper() {
+const std::vector<std::array<uint32_t, 8>> &BinaryViewModel::updateBitFlipper() {
   auto time_range = can->timeRange();
-  if (bit_flipper.time_range == time_range && !bit_flipper.bit_flip_counts.empty()) return;
+  if (bit_flipper.time_range == time_range && !bit_flipper.bit_flip_counts.empty())
+    return bit_flipper.bit_flip_counts;
 
   const auto *msg = dbc()->msg(msg_id);
   bit_flipper.time_range = time_range;
@@ -374,6 +375,8 @@ void BinaryViewModel::updateBitFlipper() {
       prev_values[i] = cur;
     }
   }
+
+  return bit_flipper.bit_flip_counts;
 }
 
 QVariant BinaryViewModel::headerData(int section, Qt::Orientation orientation, int role) const {
