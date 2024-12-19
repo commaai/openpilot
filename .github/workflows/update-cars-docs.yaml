@@ -17,11 +17,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - name: Configure Git
-        run: |
+      -  run: |
           git config --global --add safe.directory '*'
-      - name: Update CARS.md
-        run: |
           scons -j$(nproc) --minimal opendbc_repo
           PYTHONPATH=. python selfdrive/car/docs.py
       - uses: stefanzweifel/git-auto-commit-action@v5
