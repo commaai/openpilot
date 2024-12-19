@@ -959,8 +959,8 @@ wheels = [
 
 [[package]]
 name = "metadrive-simulator"
-version = "0.4.2.3"
-source = { url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-devel/metadrive_simulator-0.4.2.3-py3-none-any.whl" }
+version = "0.4.2.4"
+source = { url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl" }
 dependencies = [
     { name = "filelock", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
     { name = "gymnasium", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
@@ -980,7 +980,7 @@ dependencies = [
     { name = "yapf", marker = "platform_machine != 'aarch64' or platform_system != 'Linux'" },
 ]
 wheels = [
-    { url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-devel/metadrive_simulator-0.4.2.3-py3-none-any.whl", hash = "sha256:a94166ee886180b81a059371cf91ace9a04c410d26f2e43d88d0b06fbb422266" },
+    { url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl", hash = "sha256:fbf0ea9be67e65cd45d38ff930e3d49f705dd76c9ddbd1e1482e3f87b61efcef" },
 ]
 
 [package.metadata]
@@ -1372,7 +1372,7 @@ requires-dist = [
     { name = "libusb1" },
     { name = "lru-dict", marker = "extra == 'dev'" },
     { name = "matplotlib", marker = "extra == 'dev'" },
-    { name = "metadrive-simulator", marker = "platform_machine != 'aarch64' and extra == 'tools'", url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-devel/metadrive_simulator-0.4.2.3-py3-none-any.whl" },
+    { name = "metadrive-simulator", marker = "platform_machine != 'aarch64' and extra == 'tools'", url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl" },
     { name = "mkdocs", marker = "extra == 'docs'" },
     { name = "mypy", marker = "extra == 'testing'" },
     { name = "natsort", marker = "extra == 'docs'" },
