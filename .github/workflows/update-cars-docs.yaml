@@ -4,7 +4,6 @@ on:
   schedule:
     - cron: "0 8 * * *"  # Run at 12am PST (8am UTC)
   workflow_dispatch:
-  pull_request:
 
 jobs:
   update-cars:
