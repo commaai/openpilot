@@ -8,7 +8,7 @@ on:
 
 jobs:
   update-cars:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     container:
       image: ghcr.io/commaai/openpilot-base:latest
     permissions:
