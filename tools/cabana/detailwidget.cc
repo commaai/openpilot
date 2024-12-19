@@ -107,7 +107,7 @@ void DetailWidget::createToolBar() {
   connect(radio_group, qOverload<QAbstractButton *>(&QButtonGroup::buttonClicked), [this, heatmap_live](QAbstractButton *btn) {
     binary_view->setHeatmapLiveMode(btn == heatmap_live);
   });
-  connect(can, &AbstractStream::timeRangeChanged, this, [heatmap_all](std::optional<std::pair<double, double>> &range) {
+  connect(can, &AbstractStream::timeRangeChanged, this, [heatmap_all](const std::optional<std::pair<double, double>> &range) {
     auto text = range ? QString("%1 - %2").arg(range->first, 0, 'f', 3).arg(range->second, 0, 'f', 3) : "all";
     heatmap_all->setText(text);
   });

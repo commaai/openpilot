@@ -346,33 +346,35 @@ void BinaryViewModel::updateState() {
 }
 
 const std::vector<std::array<uint32_t, 8>> &BinaryViewModel::updateBitFlipper() {
+  // Return cached results if time range and data are unchanged
   auto time_range = can->timeRange();
   if (bit_flipper.time_range == time_range && !bit_flipper.bit_flip_counts.empty())
     return bit_flipper.bit_flip_counts;
 
+  // Update time range and clear bit flip counts
   const auto *msg = dbc()->msg(msg_id);
   bit_flipper.time_range = time_range;
   bit_flipper.bit_flip_counts.clear();
   bit_flipper.bit_flip_counts.resize(msg->size);
   std::vector<uint8_t> prev_values(msg->size, 0);
 
+  // Get events within the specified time range
   const auto &events = can->events(msg_id);
-  auto first = time_range ? std::lower_bound(events.begin(), events.end(), can->toMonoTime(time_range->first), CompareCanEvent()) : events.begin();
-  auto last = time_range ? std::upper_bound(events.begin(), events.end(), can->toMonoTime(time_range->second), CompareCanEvent()) : events.end();
+  auto first = time_range ? std::lower_bound(events.begin(), events.end(), can->toMonoTime(time_range->first), CompareCanEvent())
+                          : events.begin();
+  auto last = time_range ? std::upper_bound(events.begin(), events.end(), can->toMonoTime(time_range->second), CompareCanEvent())
+                         : events.end();
 
+  // Iterate over events and calculate bit flips
   for (auto it = first; it != last; ++it) {
     const CanEvent *event = *it;
-    int size = std::min<int>(msg->size, event->size);
-    for (int i = 0; i < size; ++i) {
-      auto cur = event->dat[i];
-      const uint8_t diff = cur ^ prev_values[i];
+    for (int i = 0; i < event->size; ++i) {
+      const uint8_t diff = event->dat[i] ^ prev_values[i];
       auto &bit_flips = bit_flipper.bit_flip_counts[i];
       for (int bit = 0; bit < 8; ++bit) {
-        if (diff & (1u << bit)) {
-          ++bit_flips[7 - bit];
-        }
+        if (diff & (1u << bit)) ++bit_flips[7 - bit];
       }
-      prev_values[i] = cur;
+      prev_values[i] = event->dat[i];
     }
   }
 
