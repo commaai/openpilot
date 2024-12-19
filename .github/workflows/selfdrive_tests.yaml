@@ -349,7 +349,7 @@ jobs:
         run: >
             ${{ env.RUN }} "PYTHONWARNINGS=ignore &&
                             sudo apt-get update &&
-                            sudo apt-get install python3-tk python3-dev &&
+                            sudo apt-get install -y python3-tk python3-dev &&
                             source selfdrive/test/setup_xvfb.sh &&
                             CACHE_ROOT=/tmp/comma_download_cache python3 selfdrive/ui/tests/test_ui/run.py &&
                             chmod -R 777 /tmp/comma_download_cache"
