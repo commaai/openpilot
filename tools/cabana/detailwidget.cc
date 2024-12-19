@@ -2,7 +2,7 @@
 
 #include <QFormLayout>
 #include <QMenu>
-#include <QSpacerItem>
+#include <QToolBar>
 
 #include "tools/cabana/commands.h"
 #include "tools/cabana/mainwin.h"
@@ -21,18 +21,18 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   main_layout->addWidget(tabbar);
 
   // message title
-  QHBoxLayout *title_layout = new QHBoxLayout();
-  title_layout->setContentsMargins(3, 6, 3, 0);
-  auto spacer = new QSpacerItem(0, 1);
-  title_layout->addItem(spacer);
-  title_layout->addWidget(name_label = new ElidedLabel(this), 1);
+  QToolBar *toolbar = new QToolBar(this);
+  toolbar->addWidget(name_label = new ElidedLabel(this));
   name_label->setStyleSheet("QLabel{font-weight:bold;}");
-  name_label->setAlignment(Qt::AlignCenter);
+  // Add a stretchable space to push the next action to the right
+  QWidget *spacer = new QWidget();
+  spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+  toolbar->addWidget(spacer);
+  toolbar->addWidget(new QLabel(tr("heatmap:"), this));
   auto edit_btn = new ToolButton("pencil", tr("Edit Message"));
-  title_layout->addWidget(edit_btn);
-  title_layout->addWidget(remove_btn = new ToolButton("x-lg", tr("Remove Message")));
-  spacer->changeSize(edit_btn->sizeHint().width() * 2 + 9, 1);
-  main_layout->addLayout(title_layout);
+  toolbar->addWidget(edit_btn);
+  toolbar->addWidget(remove_btn = new ToolButton("x-lg", tr("Remove Message")));
+  main_layout->addWidget(toolbar);
 
   // warning
   warning_widget = new QWidget(this);
