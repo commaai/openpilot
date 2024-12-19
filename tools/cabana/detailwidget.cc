@@ -71,30 +71,45 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
 
 void DetailWidget::createToolBar() {
   QToolBar *toolbar = new QToolBar(this);
+
+  // Name label with bold styling
   toolbar->addWidget(name_label = new ElidedLabel(this));
   name_label->setStyleSheet("QLabel{font-weight:bold;}");
+
   // Add a stretchable space to push the next action to the right
   QWidget *spacer = new QWidget();
   spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   toolbar->addWidget(spacer);
+
+// Heatmap label and radio buttons
   toolbar->addWidget(new QLabel(tr("heatmap:"), this));
-  QRadioButton *heatmap_live = new QRadioButton(tr("live"), this);
+
+  auto *heatmap_live = new QRadioButton(tr("live"), this);
+  auto *heatmap_all = new QRadioButton(tr("all"), this);
   heatmap_live->setChecked(true);
-  QRadioButton *heatmap_all = new QRadioButton(tr("all"), this);
-  QButtonGroup *radio_group = new QButtonGroup(this);
+
+  auto *radio_group = new QButtonGroup(this);
   radio_group->addButton(heatmap_live);
   radio_group->addButton(heatmap_all);
+
   toolbar->addWidget(heatmap_live);
   toolbar->addWidget(heatmap_all);
-  auto edit_btn = new ToolButton("pencil", tr("Edit Message"));
+
+  // Edit and remove buttons
+  auto *edit_btn = new ToolButton("pencil", tr("Edit Message"));
   toolbar->addWidget(edit_btn);
   toolbar->addWidget(remove_btn = new ToolButton("x-lg", tr("Remove Message")));
+
   layout()->addWidget(toolbar);
 
   connect(edit_btn, &QToolButton::clicked, this, &DetailWidget::editMsg);
   connect(remove_btn, &QToolButton::clicked, this, &DetailWidget::removeMsg);
   connect(radio_group, qOverload<QAbstractButton *>(&QButtonGroup::buttonClicked), [this, heatmap_live](QAbstractButton *btn) {
     binary_view->setHeatmapLiveMode(btn == heatmap_live);
+  });
+  connect(can, &AbstractStream::timeRangeChanged, this, [heatmap_all](std::optional<std::pair<double, double>> &range) {
+    auto text = range ? QString("%1 - %2").arg(range->first, 0, 'f', 3).arg(range->second, 0, 'f', 3) : "all";
+    heatmap_all->setText(text);
   });
 }
 
