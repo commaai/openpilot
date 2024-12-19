@@ -370,11 +370,13 @@ const std::vector<std::array<uint32_t, 8>> &BinaryViewModel::updateBitFlipper() 
     const CanEvent *event = *it;
     for (int i = 0; i < event->size; ++i) {
       const uint8_t diff = event->dat[i] ^ prev_values[i];
-      auto &bit_flips = bit_flipper.bit_flip_counts[i];
-      for (int bit = 0; bit < 8; ++bit) {
-        if (diff & (1u << bit)) ++bit_flips[7 - bit];
+      if (diff) {
+        auto &bit_flips = bit_flipper.bit_flip_counts[i];
+        for (int bit = 0; bit < 8; ++bit) {
+          if (diff & (1u << bit)) ++bit_flips[7 - bit];
+        }
+        prev_values[i] = event->dat[i];
       }
-      prev_values[i] = event->dat[i];
     }
   }
 
