@@ -1,0 +1,266 @@
+[project]
+name = "openpilot"
+requires-python = ">= 3.11, < 3.13"
+license = {text = "MIT License"}
+version = "0.1.0"
+description = "an open source driver assistance system"
+authors = [
+  {name ="Vehicle Researcher", email="user@comma.ai"}
+]
+
+dependencies = [
+  # multiple users
+  "sounddevice",  # micd + soundd
+  "pyserial",     # pigeond + qcomgpsd
+  "requests",     # many one-off uses
+  "sympy",        # rednose + friends
+  "crcmod",       # cars + qcomgpsd
+  "tqdm",         # cars (fw_versions.py) on start + many one-off uses
+
+  # hardwared
+  "smbus2", # configuring amp
+
+  # core
+  "cffi",
+  "scons",
+  "pycapnp",
+  "Cython",
+  "setuptools",
+  "numpy < 2.0.0",
+
+  # body / webrtcd
+  "aiohttp",
+  "aiortc",
+  # aiortc does not put an upper bound on pyopenssl and is now incompatible
+  # with the latest release
+  "pyopenssl < 24.3.0",
+  "pyaudio",
+
+  # panda
+  "libusb1",
+  "spidev; platform_system == 'Linux'",
+
+  # modeld
+  "onnx >= 1.14.0",
+  "onnxruntime >=1.16.3",
+
+  # logging
+  "pyzmq",
+  "sentry-sdk",
+
+  # athena
+  "PyJWT",
+  "json-rpc",
+  "websocket_client",
+
+  # acados deps
+  "casadi >=3.6.6",  # 3.12 fixed in 3.6.6
+  "future-fstrings",
+
+  # joystickd
+  "inputs",
+
+  # these should be removed
+  "psutil",
+  "pycryptodome", # used in updated/casync, panda, body, and a test
+  "setproctitle",
+
+  # logreader
+  "zstandard",
+]
+
+[project.optional-dependencies]
+docs = [
+  "Jinja2",
+  "natsort",
+  "mkdocs",
+]
+
+testing = [
+  "coverage",
+  "hypothesis ==6.47.*",
+  "mypy",
+  "pytest",
+  "pytest-cov",
+  "pytest-cpp",
+  "pytest-subtests",
+  "pytest-xdist",
+  "pytest-timeout",
+  "pytest-randomly",
+  "pytest-asyncio",
+  "pytest-mock",
+  "pytest-repeat",
+  "ruff",
+  "codespell",
+  "pre-commit-hooks",
+]
+
+dev = [
+  "av",
+  "azure-identity",
+  "azure-storage-blob",
+  "dictdiffer",
+  "lru-dict",
+  "matplotlib",
+  "parameterized >=0.8, <0.9",
+  #"pprofile",
+  "pyautogui",
+  "pyopencl; platform_machine != 'aarch64'", # broken on arm64
+  "pytools < 2024.1.11; platform_machine != 'aarch64'", # pyopencl use a broken version
+  "pywinctl",
+  "pyprof2calltree",
+  "tabulate",
+  "types-requests",
+  "types-tabulate",
+
+  # this is only pinned since 5.15.11 is broken
+  "pyqt5 ==5.15.2; platform_machine == 'x86_64'", # no aarch64 wheels for macOS/linux
+]
+
+tools = [
+  "metadrive-simulator @ https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal/metadrive_simulator-0.4.2.3-py3-none-any.whl ; (platform_machine != 'aarch64')",
+  "rerun-sdk >= 0.18",
+]
+
+[project.urls]
+Homepage = "https://comma.ai"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = [ "." ]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "--ignore=openpilot/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ --ignore=msgq/  -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
+cpp_files = "test_*"
+cpp_harness = "selfdrive/test/cpp_harness.py"
+python_files = "test_*.py"
+asyncio_default_fixture_loop_scope = "function"
+#timeout = "30"  # you get this long by default
+markers = [
+  "slow: tests that take awhile to run and can be skipped with -m 'not slow'",
+  "tici: tests that are only meant to run on the C3/C3X",
+]
+testpaths = [
+  "common",
+  "selfdrive",
+  "system/updated",
+  "system/athena",
+  "system/camerad",
+  "system/hardware",
+  "system/loggerd",
+  "system/proclogd",
+  "system/tests",
+  "system/ubloxd",
+  "system/webrtc",
+  "tools/lib/tests",
+  "tools/replay",
+  "tools/cabana",
+  "cereal/messaging/tests",
+]
+
+[tool.codespell]
+quiet-level = 3
+# if you've got a short variable name that's getting flagged, add it here
+ignore-words-list = "bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup,bumb,nd,sie,preints,whit,indexIn,ws,uint,grey,deque,stdio,amin,BA,LITE,atEnd,UIs,errorString,arange,FocusIn,od,tim,relA,hist,copyable,jupyter,thead"
+builtin = "clear,rare,informal,code,names,en-GB_to_en-US"
+skip = "./third_party/*, ./tinygrad/*, ./tinygrad_repo/*, ./msgq/*, ./panda/*, ./opendbc/*, ./opendbc_repo/*, ./rednose/*, ./rednose_repo/*, ./teleoprtc/*, ./teleoprtc_repo/*, *.ts, uv.lock, *.onnx, ./cereal/gen/*, */c_generated_code/*"
+
+[tool.mypy]
+python_version = "3.11"
+plugins = [
+  "numpy.typing.mypy_plugin",
+]
+exclude = [
+  "cereal/",
+  "msgq/",
+  "msgq_repo/",
+  "opendbc/",
+  "opendbc_repo/",
+  "panda/",
+  "rednose/",
+  "rednose_repo/",
+  "tinygrad/",
+  "tinygrad_repo/",
+  "teleoprtc/",
+  "teleoprtc_repo/",
+  "third_party/",
+]
+
+# third-party packages
+ignore_missing_imports=true
+
+# helpful warnings
+warn_redundant_casts=true
+warn_unreachable=true
+warn_unused_ignores=true
+
+# restrict dynamic typing
+warn_return_any=true
+
+# allow implicit optionals for default args
+implicit_optional = true
+
+local_partial_types=true
+explicit_package_bases=true
+disable_error_code = "annotation-unchecked"
+
+# https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
+[tool.ruff]
+indent-width = 2
+lint.select = [
+  "E", "F", "W", "PIE", "C4", "ISC", "A", "B",
+  "NPY", # numpy
+  "UP",  # pyupgrade
+  "TRY302", "TRY400", "TRY401", # try/excepts
+  "RUF008", "RUF100",
+  "TID251",
+  "PLR1704",
+]
+lint.ignore = [
+  "E741",
+  "E402",
+  "C408",
+  "ISC003",
+  "B027",
+  "B024",
+  "NPY002",  # new numpy random syntax is worse
+  "UP038",   # (x, y) -> x|y for isinstance
+]
+line-length = 160
+target-version ="py311"
+exclude = [
+  "body",
+  "cereal",
+  "panda",
+  "opendbc",
+  "opendbc_repo",
+  "rednose_repo",
+  "tinygrad_repo",
+  "teleoprtc",
+  "teleoprtc_repo",
+  "third_party",
+  "*.ipynb",
+]
+lint.flake8-implicit-str-concat.allow-multiline = false
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"selfdrive".msg = "Use openpilot.selfdrive"
+"common".msg = "Use openpilot.common"
+"system".msg = "Use openpilot.system"
+"third_party".msg = "Use openpilot.third_party"
+"tools".msg = "Use openpilot.tools"
+"pytest.main".msg = "pytest.main requires special handling that is easy to mess up!"
+"unittest".msg = "Use pytest"
+
+[tool.coverage.run]
+concurrency = ["multiprocessing", "thread"]
+
+[tool.ruff.format]
+quote-style = "preserve"
