@@ -17,7 +17,8 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      -  run: |
+      - name: "Generate Car Docs"
+        run: |
           git config --global --add safe.directory '*'
           scons -j$(nproc) --minimal opendbc_repo
           PYTHONPATH=. python selfdrive/car/docs.py
