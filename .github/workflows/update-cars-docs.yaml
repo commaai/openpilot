@@ -1,0 +1,27 @@
+name: Update CARS.md
+
+on:
+  schedule:
+    - cron: "0 8 * * *"  # Run at 12am PST (8am UTC)
+  workflow_dispatch:
+
+jobs:
+  update-cars:
+    runs-on: ubuntu-24.04
+    container:
+      image: ghcr.io/commaai/openpilot-base:latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Generate Car Docs
+        run: |
+          git config --global --add safe.directory '*'
+          scons -j$(nproc) --minimal opendbc_repo
+          PYTHONPATH=. python selfdrive/car/docs.py
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'docs: Scheduled auto-update CARS.md'
+          file_pattern: 'docs/CARS.md'
