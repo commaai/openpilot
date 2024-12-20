@@ -69,7 +69,11 @@ public:
   void setMessage(const MessageId &message_id);
   void highlight(const cabana::Signal *sig);
   QSet<const cabana::Signal*> getOverlappingSignals() const;
-  inline void updateState() { model->updateState(); }
+  void updateState() { model->updateState(); }
+  void paintEvent(QPaintEvent *event) override {
+    is_message_active = can->isMessageActive(model->msg_id);
+    QTableView::paintEvent(event);
+  }
   QSize minimumSizeHint() const override;
   void setHeatmapLiveMode(bool live) { model->heatmap_live_mode = live; updateState(); }
 
@@ -93,6 +97,7 @@ private:
   QModelIndex anchor_index;
   BinaryViewModel *model;
   BinaryItemDelegate *delegate;
+  bool is_message_active = false;
   const cabana::Signal *resize_sig = nullptr;
   const cabana::Signal *hovered_sig = nullptr;
   friend class BinaryItemDelegate;

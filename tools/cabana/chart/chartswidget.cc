@@ -63,7 +63,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
 
   range_lb_action = toolbar->addWidget(range_lb = new QLabel(this));
   range_slider = new LogSlider(1000, Qt::Horizontal, this);
-  range_slider->setFixedWidth(150);
+  range_slider->setFixedWidth(150 * qApp->devicePixelRatio());
   range_slider->setToolTip(tr("Set the chart range"));
   range_slider->setRange(1, settings.max_cached_minutes * 60);
   range_slider->setSingleStep(1);
@@ -256,7 +256,9 @@ void ChartsWidget::settingChanged() {
       c->setTheme(theme);
     }
   }
-  range_slider->setRange(1, settings.max_cached_minutes * 60);
+  if (range_slider->maximum() != settings.max_cached_minutes * 60) {
+    range_slider->setRange(1, settings.max_cached_minutes * 60);
+  }
   for (auto c : charts) {
     c->setFixedHeight(settings.chart_height);
     c->setSeriesType((SeriesType)settings.chart_series_type);
@@ -395,7 +397,7 @@ void ChartsWidget::doAutoScroll() {
 }
 
 QSize ChartsWidget::minimumSizeHint() const {
-  return QSize(CHART_MIN_WIDTH * 1.5, QWidget::minimumSizeHint().height());
+  return QSize(CHART_MIN_WIDTH * 1.5 * qApp->devicePixelRatio(), QWidget::minimumSizeHint().height());
 }
 
 void ChartsWidget::newChart() {

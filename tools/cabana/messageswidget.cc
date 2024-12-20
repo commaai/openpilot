@@ -13,21 +13,6 @@
 
 #include "tools/cabana/commands.h"
 
-static bool isMessageActive(const MessageId &id) {
-  if (id.source == INVALID_SOURCE) {
-    return false;
-  }
-  // Check if the message is active based on time difference and frequency
-  const auto &m = can->lastMessage(id);
-  float delta = can->currentSec() - m.ts;
-
-  if (m.freq < std::numeric_limits<double>::epsilon()) {
-    return delta < 1.5;
-  }
-
-  return delta < (5.0 / m.freq) + (1.0 / settings.fps);
-}
-
 MessagesWidget::MessagesWidget(QWidget *parent) : menu(new QMenu(this)), QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
@@ -335,7 +320,7 @@ bool MessageListModel::filterAndSort() {
   std::vector<Item> items;
   items.reserve(all_messages.size());
   for (const auto &id : all_messages) {
-    if (show_inactive_messages || isMessageActive(id)) {
+    if (show_inactive_messages || can->isMessageActive(id)) {
       auto msg = dbc()->msg(id);
       Item item = {.id = id,
                   .name = msg ? msg->name : UNTITLED,
@@ -378,7 +363,7 @@ void MessageListModel::sort(int column, Qt::SortOrder order) {
 
 void MessageView::drawRow(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
    const auto &item = ((MessageListModel*)model())->items_[index.row()];
-  if (!isMessageActive(item.id)) {
+  if (!can->isMessageActive(item.id)) {
     QStyleOptionViewItem custom_option = option;
     custom_option.palette.setBrush(QPalette::Text, custom_option.palette.color(QPalette::Disabled, QPalette::Text));
     auto color = QApplication::palette().color(QPalette::HighlightedText);
