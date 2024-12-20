@@ -61,7 +61,14 @@ size_t AbstractStream::suppressHighlighted() {
       }
       cnt += last_change.suppressed;
     }
+<<<<<<< HEAD
     for (auto &flip_counts : m.bit_flip_counts) flip_counts.fill(0);
+=======
+
+    for (auto &row_bit_flips : m.bit_flip_counts) {
+      row_bit_flips.fill(0);
+    }
+>>>>>>> master
   }
   return cnt;
 }
@@ -283,10 +290,12 @@ void CanData::compute(const MessageId &msg_id, const uint8_t *can_data, const in
         }
 
         // Track bit level changes
-        auto &bit_flips = bit_flip_counts[i];
+        auto &row_bit_flips = bit_flip_counts[i];
         const uint8_t diff = (cur ^ last);
         for (int bit = 0; bit < 8; bit++) {
-          if (diff & (1u << bit)) ++bit_flips[7 - bit];
+          if (diff & (1u << bit)) {
+            ++row_bit_flips[7 - bit];
+          }
         }
 
         last_change.ts = ts;
