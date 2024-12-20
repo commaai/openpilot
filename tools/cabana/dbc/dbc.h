@@ -10,6 +10,7 @@
 
 const QString UNTITLED = "untitled";
 const QString DEFAULT_NODE_NAME = "XXX";
+constexpr int CAN_MAX_DATA_BYTES = 64;
 
 struct MessageId {
   uint8_t source = 0;
