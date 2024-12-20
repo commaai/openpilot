@@ -7,6 +7,7 @@
 #include <QLabel>
 #include <QScrollArea>
 #include <QTimer>
+#include <QToolBar>
 #include <QUndoCommand>
 #include <QUndoStack>
 
@@ -88,6 +89,7 @@ private:
   bool is_docked = true;
   ToolButton *dock_btn;
 
+  QToolBar *toolbar;
   QAction *undo_zoom_action;
   QAction *redo_zoom_action;
   QAction *reset_zoom_action;

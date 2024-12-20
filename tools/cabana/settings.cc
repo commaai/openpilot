@@ -89,10 +89,6 @@ SettingsDlg::SettingsDlg(QWidget *parent) : QDialog(parent) {
 
   groupbox = new QGroupBox("Chart");
   form_layout = new QFormLayout(groupbox);
-  form_layout->addRow(tr("Default Series Type"), chart_series_type = new QComboBox(this));
-  chart_series_type->addItems({tr("Line"), tr("Step Line"), tr("Scatter")});
-  chart_series_type->setCurrentIndex(settings.chart_series_type);
-
   form_layout->addRow(tr("Chart Height"), chart_height = new QSpinBox(this));
   chart_height->setRange(100, 500);
   chart_height->setSingleStep(10);
@@ -132,7 +128,6 @@ void SettingsDlg::save() {
   }
   settings.fps = fps->value();
   settings.max_cached_minutes = cached_minutes->value();
-  settings.chart_series_type = chart_series_type->currentIndex();
   settings.chart_height = chart_height->value();
   settings.log_livestream = log_livestream->isChecked();
   settings.log_path = log_path->text();
