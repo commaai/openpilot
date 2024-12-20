@@ -82,17 +82,17 @@ public:
       return;
     }
 
-    percent = std::clamp(percent, 0, 100);
+    int value = util::map_val(std::clamp(percent, 0, 100), 0, 100, 0, 255);
 
     std::ofstream torch_brightness("/sys/class/leds/led:torch_2/brightness");
     if (torch_brightness.is_open()) {
-      torch_brightness << percent << "\n";
+      torch_brightness << value << "\n";
       torch_brightness.close();
     }
 
     std::ofstream switch_brightness("/sys/class/leds/led:switch_2/brightness");
     if (switch_brightness.is_open()) {
-      switch_brightness << percent << "\n";
+      switch_brightness << value << "\n";
       switch_brightness.close();
     }
   }
