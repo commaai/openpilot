@@ -36,6 +36,7 @@ public:
   void refresh();
 
 private:
+  void createToolBar();
   void showTabBarContextMenu(const QPoint &pt);
   void editMsg();
   void removeMsg();
@@ -47,7 +48,7 @@ private:
   QWidget *warning_widget;
   TabBar *tabbar;
   QTabWidget *tab_widget;
-  QToolButton *remove_btn;
+  QAction *action_remove_msg;
   LogsWidget *history_log;
   BinaryView *binary_view;
   SignalView *signal_view;

@@ -248,6 +248,7 @@ std::tuple<int, int, bool> BinaryView::getSelection(QModelIndex index) {
 
 void BinaryViewModel::refresh() {
   beginResetModel();
+  bit_flip_tracker = {};
   items.clear();
   if (auto dbc_msg = dbc()->msg(msg_id)) {
     row_count = dbc_msg->size;
@@ -292,11 +293,6 @@ void BinaryViewModel::updateItem(int row, int col, uint8_t val, const QColor &co
   }
 }
 
-// TODO:
-// 1. Detect instability through frequent bit flips and highlight stable bits to indicate steady signals.
-// 2. Track message sequence and timestamps to understand how patterns evolve.
-// 3. Identify time-based or periodic bit state changes to spot recurring patterns.
-// 4. Support multiple time windows for short-term and long-term analysis, helping to observe changes in different time frames.
 void BinaryViewModel::updateState() {
   const auto &last_msg = can->lastMessage(msg_id);
   const auto &binary = last_msg.dat;
@@ -308,10 +304,11 @@ void BinaryViewModel::updateState() {
     endInsertRows();
   }
 
+  auto &bit_flips = heatmap_live_mode ? last_msg.bit_flip_counts : getBitFlipChanges(binary.size());
   // Find the maximum bit flip count across the message
   uint32_t max_bit_flip_count = 1;  // Default to 1 to avoid division by zero
-  for (const auto &row : last_msg.bit_flip_counts) {
-    for (auto count : row) {
+  for (const auto &row : bit_flips) {
+    for (uint32_t count : row) {
       max_bit_flip_count = std::max(max_bit_flip_count, count);
     }
   }
@@ -328,7 +325,7 @@ void BinaryViewModel::updateState() {
       int bit_val = (binary[i] >> (7 - j)) & 1;
 
       double alpha = item.sigs.empty() ? 0 : min_alpha_with_signal;
-      uint32_t flip_count = last_msg.bit_flip_counts[i][j];
+      uint32_t flip_count = bit_flips[i][j];
       if (flip_count > 0) {
         double normalized_alpha = log2(1.0 + flip_count * log_factor) * log_scaler;
         double min_alpha = item.sigs.empty() ? min_alpha_no_signal : min_alpha_with_signal;
@@ -341,6 +338,38 @@ void BinaryViewModel::updateState() {
     }
     updateItem(i, 8, binary[i], last_msg.colors[i]);
   }
+}
+
+const std::vector<std::array<uint32_t, 8>> &BinaryViewModel::getBitFlipChanges(size_t msg_size) {
+  // Return cached results if time range and data are unchanged
+  auto time_range = can->timeRange();
+  if (bit_flip_tracker.time_range == time_range && !bit_flip_tracker.flip_counts.empty())
+    return bit_flip_tracker.flip_counts;
+
+  bit_flip_tracker.time_range = time_range;
+  bit_flip_tracker.flip_counts.assign(msg_size, std::array<uint32_t, 8>{});
+
+  // Iterate over events within the specified time range and calculate bit flips
+  auto [first, last] = can->eventsInRange(msg_id, time_range);
+  if (std::distance(first, last) <= 1) return bit_flip_tracker.flip_counts;
+
+  std::vector<uint8_t> prev_values((*first)->dat, (*first)->dat + (*first)->size);
+  for (auto it = std::next(first); it != last; ++it) {
+    const CanEvent *event = *it;
+    int size = std::min<int>(msg_size, event->size);
+    for (int i = 0; i < size; ++i) {
+      const uint8_t diff = event->dat[i] ^ prev_values[i];
+      if (!diff) continue;
+
+      auto &bit_flips = bit_flip_tracker.flip_counts[i];
+      for (int bit = 0; bit < 8; ++bit) {
+        if (diff & (1u << bit)) ++bit_flips[7 - bit];
+      }
+      prev_values[i] = event->dat[i];
+    }
+  }
+
+  return bit_flip_tracker.flip_counts;
 }
 
 QVariant BinaryViewModel::headerData(int section, Qt::Orientation orientation, int role) const {

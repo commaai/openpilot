@@ -39,6 +39,12 @@ public:
   Qt::ItemFlags flags(const QModelIndex &index) const override {
     return (index.column() == column_count - 1) ? Qt::ItemIsEnabled : Qt::ItemIsEnabled | Qt::ItemIsSelectable;
   }
+  const std::vector<std::array<uint32_t, 8>> &getBitFlipChanges(size_t msg_size);
+
+  struct BitFlipTracker {
+    std::optional<std::pair<double, double>> time_range;
+    std::vector<std::array<uint32_t, 8>> flip_counts;
+  } bit_flip_tracker;
 
   struct Item {
     QColor bg_color = QColor(102, 86, 169, 255);
@@ -49,7 +55,7 @@ public:
     bool valid = false;
   };
   std::vector<Item> items;
-
+  bool heatmap_live_mode = true;
   MessageId msg_id;
   int row_count = 0;
   const int column_count = 9;
@@ -65,6 +71,7 @@ public:
   QSet<const cabana::Signal*> getOverlappingSignals() const;
   inline void updateState() { model->updateState(); }
   QSize minimumSizeHint() const override;
+  void setHeatmapLiveMode(bool live) { model->heatmap_live_mode = live; updateState(); }
 
 signals:
   void signalClicked(const cabana::Signal *sig);

@@ -61,10 +61,7 @@ size_t AbstractStream::suppressHighlighted() {
       }
       cnt += last_change.suppressed;
     }
-
-    for (auto &row_bit_flips : m.bit_flip_counts) {
-      row_bit_flips.fill(0);
-    }
+    for (auto &flip_counts : m.bit_flip_counts) flip_counts.fill(0);
   }
   return cnt;
 }
@@ -203,6 +200,15 @@ void AbstractStream::mergeEvents(const std::vector<const CanEvent *> &events) {
   }
 }
 
+std::pair<CanEventIter, CanEventIter> AbstractStream::eventsInRange(const MessageId &id, std::optional<std::pair<double, double>> time_range) const {
+  const auto &events = can->events(id);
+  if (!time_range) return {events.begin(), events.end()};
+
+  auto first = std::lower_bound(events.begin(), events.end(), can->toMonoTime(time_range->first), CompareCanEvent());
+  auto last = std::upper_bound(events.begin(), events.end(), can->toMonoTime(time_range->second), CompareCanEvent());
+  return {first, last};
+}
+
 namespace {
 
 enum Color { GREYISH_BLUE, CYAN, RED};
@@ -222,15 +228,7 @@ inline QColor blend(const QColor &a, const QColor &b) {
 
 // Calculate the frequency from the past one minute data
 double calc_freq(const MessageId &msg_id, double current_sec) {
-  const auto &events = can->events(msg_id);
-  if (events.empty()) return 0.0;
-
-  auto current_mono_time = can->toMonoTime(current_sec);
-  auto start_mono_time = can->toMonoTime(current_sec - 59);
-
-  auto first = std::lower_bound(events.begin(), events.end(), start_mono_time, CompareCanEvent());
-  auto last = std::upper_bound(first, events.end(), current_mono_time, CompareCanEvent());
-
+  auto [first, last] = can->eventsInRange(msg_id, std::make_pair(current_sec - 59, current_sec));
   int count = std::distance(first, last);
   if (count <= 1) return 0.0;
 
@@ -251,7 +249,7 @@ void CanData::compute(const MessageId &msg_id, const uint8_t *can_data, const in
   }
 
   if (dat.size() != size) {
-    dat.resize(size);
+    dat.assign(can_data, can_data + size);
     colors.assign(size, QColor(0, 0, 0, 0));
     last_changes.resize(size);
     bit_flip_counts.resize(size);
