@@ -34,7 +34,6 @@ struct CanData {
     int same_delta_counter = 0;
     bool suppressed = false;
   };
-  std::vector<std::array<uint32_t, 8>> bit_flip_counts;
   std::vector<ByteLastChange> last_changes;
   std::vector<std::array<uint32_t, 8>> bit_flip_counts;
   double last_freq_update_ts = 0;
