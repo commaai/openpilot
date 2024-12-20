@@ -33,7 +33,8 @@ VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   auto main_layout = new QVBoxLayout(this);
   if (!can->liveStreaming())
     main_layout->addWidget(createCameraWidget());
-  main_layout->addLayout(createPlaybackController());
+
+  createPlaybackController();
 
   setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Maximum);
   QObject::connect(can, &AbstractStream::paused, this, &VideoWidget::updatePlayBtnState);
@@ -65,15 +66,19 @@ VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
           timeline_colors[(int)TimelineType::AlertCritical].name()));
 }
 
-QHBoxLayout *VideoWidget::createPlaybackController() {
-  QHBoxLayout *layout = new QHBoxLayout();
-  layout->addWidget(seek_backward_btn = new ToolButton("rewind", tr("Seek backward")));
-  layout->addWidget(play_btn = new ToolButton("play", tr("Play")));
-  layout->addWidget(seek_forward_btn = new ToolButton("fast-forward", tr("Seek forward")));
+void VideoWidget::createPlaybackController() {
+  QToolBar *toolbar = new QToolBar(this);
+  layout()->addWidget(toolbar);
+
+  int icon_size = style()->pixelMetric(QStyle::PM_SmallIconSize);
+  toolbar->setIconSize({icon_size, icon_size});
+
+  toolbar->addAction(utils::icon("rewind"), tr("Seek backward"), []() { can->seekTo(can->currentSec() - 1); });
+  play_action = toolbar->addAction(utils::icon("play"), tr("Play"), []() { can->pause(!can->isPaused()); });
+  toolbar->addAction(utils::icon("fast-forward"), tr("Seek forward"), []() { can->seekTo(can->currentSec() + 1); });
 
   if (can->liveStreaming()) {
-    layout->addWidget(skip_to_end_btn = new ToolButton("skip-end", tr("Skip to the end"), this));
-    QObject::connect(skip_to_end_btn, &QToolButton::clicked, [this]() {
+    skip_to_end_action = toolbar->addAction(utils::icon("skip-end"), tr("Skip to the end"), this, [this]() {
       // set speed to 1.0
       speed_btn->menu()->actions()[7]->setChecked(true);
       can->pause(false);
@@ -81,53 +86,53 @@ QHBoxLayout *VideoWidget::createPlaybackController() {
     });
   }
 
-  layout->addWidget(time_btn = new QToolButton);
-  time_btn->setToolTip(settings.absolute_time ? tr("Elapsed time") : tr("Absolute time"));
-  time_btn->setAutoRaise(true);
-  layout->addStretch(0);
+  time_btn = toolbar->addAction("", this, [this]() {
+    settings.absolute_time = !settings.absolute_time;
+    time_btn->setToolTip(settings.absolute_time ? tr("Elapsed time") : tr("Absolute time"));
+    updateState();
+  });
+
+  QWidget *spacer = new QWidget();
+  spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+  toolbar->addWidget(spacer);
 
   if (!can->liveStreaming()) {
-    layout->addWidget(loop_btn = new ToolButton("repeat", tr("Loop playback")));
-    QObject::connect(loop_btn, &QToolButton::clicked, this, &VideoWidget::loopPlaybackClicked);
+    toolbar->addAction(utils::icon("repeat"), tr("Loop playback"), this, &VideoWidget::loopPlaybackClicked);
   }
 
-  // speed selector
-  layout->addWidget(speed_btn = new QToolButton(this));
-  speed_btn->setAutoRaise(true);
+  createSpeedDropdown(toolbar);
+}
+
+void VideoWidget::createSpeedDropdown(QToolBar *toolbar) {
+  toolbar->addWidget(speed_btn = new QToolButton(this));
   speed_btn->setMenu(new QMenu(speed_btn));
   speed_btn->setPopupMode(QToolButton::InstantPopup);
   QActionGroup *speed_group = new QActionGroup(this);
   speed_group->setExclusive(true);
 
-  int max_width = 0;
   QFont font = speed_btn->font();
   font.setBold(true);
   speed_btn->setFont(font);
+
   QFontMetrics fm(font);
+  int max_width = 0;
   for (float speed : {0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.8, 1., 2., 3., 5.}) {
     QString name = QString("%1x").arg(speed);
     max_width = std::max(max_width, fm.width(name) + fm.horizontalAdvance(QLatin1Char(' ')) * 2);
 
     QAction *act = new QAction(name, speed_group);
     act->setCheckable(true);
-    QObject::connect(act, &QAction::toggled, [this, speed]() {
-      can->setSpeed(speed);
-      speed_btn->setText(QString("%1x  ").arg(speed));
-    });
     speed_btn->menu()->addAction(act);
-    if (speed == 1.0)act->setChecked(true);
+
+    QObject::connect(act, &QAction::toggled, [this, speed](bool checked) {
+      if (checked) {
+        can->setSpeed(speed);
+        speed_btn->setText(QString("%1x  ").arg(speed));
+      }
+    });
+    act->setChecked(speed == 1.0);
   }
   speed_btn->setMinimumWidth(max_width + style()->pixelMetric(QStyle::PM_MenuButtonIndicator));
-
-  QObject::connect(play_btn, &QToolButton::clicked, []() { can->pause(!can->isPaused()); });
-  QObject::connect(seek_backward_btn, &QToolButton::clicked, []() { can->seekTo(can->currentSec() - 1); });
-  QObject::connect(seek_forward_btn, &QToolButton::clicked, []() { can->seekTo(can->currentSec() + 1); });
-  QObject::connect(time_btn, &QToolButton::clicked, [this]() {
-    settings.absolute_time = !settings.absolute_time;
-    time_btn->setToolTip(settings.absolute_time ? tr("Elapsed time") : tr("Absolute time"));
-    updateState();
-  });
-  return layout;
 }
 
 QWidget *VideoWidget::createCameraWidget() {
@@ -180,13 +185,13 @@ void VideoWidget::vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams
 void VideoWidget::loopPlaybackClicked() {
   bool is_looping = getReplay()->loop();
   getReplay()->setLoop(!is_looping);
-  loop_btn->setIcon(!is_looping ? "repeat" : "repeat-1");
+  qobject_cast<QAction*>(sender())->setIcon(utils::icon(!is_looping ? "repeat" : "repeat-1"));
 }
 
 void VideoWidget::timeRangeChanged() {
   const auto time_range = can->timeRange();
   if (can->liveStreaming()) {
-    skip_to_end_btn->setEnabled(!time_range.has_value());
+    skip_to_end_action->setEnabled(!time_range.has_value());
     return;
   }
   time_range ? slider->setTimeRange(time_range->first, time_range->second)
@@ -216,8 +221,8 @@ void VideoWidget::updateState() {
 }
 
 void VideoWidget::updatePlayBtnState() {
-  play_btn->setIcon(can->isPaused() ? "play" : "pause");
-  play_btn->setToolTip(can->isPaused() ? tr("Play") : tr("Pause"));
+  play_action->setIcon(utils::icon(can->isPaused() ? "play" : "pause"));
+  play_action->setToolTip(can->isPaused() ? tr("Play") : tr("Pause"));
 }
 
 // Slider

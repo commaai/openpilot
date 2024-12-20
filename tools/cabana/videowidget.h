@@ -6,10 +6,10 @@
 #include <string>
 #include <utility>
 
-#include <QHBoxLayout>
 #include <QFrame>
 #include <QPropertyAnimation>
 #include <QSlider>
+#include <QToolBar>
 #include <QTabBar>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
@@ -62,18 +62,16 @@ protected:
   void updateState();
   void updatePlayBtnState();
   QWidget *createCameraWidget();
-  QHBoxLayout *createPlaybackController();
+  void createPlaybackController();
+  void createSpeedDropdown(QToolBar *toolbar);
   void loopPlaybackClicked();
   void vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams);
 
   StreamCameraView *cam_widget;
-  QToolButton *time_btn = nullptr;
-  ToolButton *seek_backward_btn = nullptr;
-  ToolButton *play_btn = nullptr;
-  ToolButton *seek_forward_btn = nullptr;
-  ToolButton *loop_btn = nullptr;
+  QAction *time_btn = nullptr;
+  QAction *play_action = nullptr;
   QToolButton *speed_btn = nullptr;
-  ToolButton *skip_to_end_btn = nullptr;
+  QAction *skip_to_end_action = nullptr;
   Slider *slider = nullptr;
   QTabBar *camera_tab = nullptr;
 };
