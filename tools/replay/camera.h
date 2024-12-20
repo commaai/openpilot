@@ -18,6 +18,7 @@ public:
   ~CameraServer();
   void pushFrame(CameraType type, FrameReader* fr, const Event *event);
   void waitForSent();
+  void clearQueue();
 
 protected:
   struct Camera {

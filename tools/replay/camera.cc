@@ -27,15 +27,9 @@ CameraServer::CameraServer(std::pair<int, int> camera_size[MAX_CAMERAS]) {
 }
 
 CameraServer::~CameraServer() {
+  clearQueue();
   for (auto &cam : cameras_) {
     if (cam.thread.joinable()) {
-      // Clear the queue
-      std::pair<FrameReader*, const Event *> item;
-      while (cam.queue.try_pop(item)) {
-        --publishing_;
-      }
-
-      // Signal termination and join the thread
       cam.queue.push({});
       cam.thread.join();
     }
@@ -83,8 +77,10 @@ void CameraServer::cameraThread(Camera &cam) {
       rError("camera[%d] failed to get frame: %lu", cam.type, segment_id);
     }
 
-    // Prefetch the next frame
-    getFrame(cam, fr, segment_id + 1, frame_id + 1);
+    // If the frame queue is empty, prefetch the next frame in the sequence
+    if (cam.queue.empty()) {
+      getFrame(cam, fr, segment_id + 1, frame_id + 1);
+    }
 
     --publishing_;
   }
@@ -121,5 +117,14 @@ void CameraServer::pushFrame(CameraType type, FrameReader *fr, const Event *even
 void CameraServer::waitForSent() {
   while (publishing_ > 0) {
     std::this_thread::yield();
+  }
+}
+
+void CameraServer::clearQueue() {
+  for (auto &cam : cameras_) {
+    std::pair<FrameReader *, const Event *> item;
+    while (cam.queue.try_pop(item)) {
+      --publishing_;
+    }
   }
 }

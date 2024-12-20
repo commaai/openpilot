@@ -76,6 +76,7 @@ private:
                                                    std::vector<Event>::const_iterator last);
   void publishMessage(const Event *e);
   void publishFrame(const Event *e);
+  void publishFrame(double seconds);
   void checkSeekProgress(double seeked_to_sec);
 
   std::unique_ptr<SegmentManager> seg_mgr_;

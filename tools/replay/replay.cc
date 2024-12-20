@@ -125,6 +125,10 @@ void Replay::seekTo(double seconds, bool relative) {
 
 void Replay::checkSeekProgress(double seeked_to_sec) {
   if (seeked_to_sec >= 0) {
+    if (camera_server_) {
+      camera_server_->clearQueue();
+      if (user_paused_) publishFrame(seeked_to_sec);
+    }
     if (onSeekedTo) {
       onSeekedTo(seeked_to_sec);
     } else {
@@ -242,6 +246,18 @@ void Replay::publishMessage(const Event *e) {
   }
 }
 
+void Replay::publishFrame(double seconds) {
+  const auto &events = event_data_->events;
+  uint64_t mono_time = route_start_ts_ + seconds * 1e9;
+  auto it = std::lower_bound(events.begin(), events.end(), Event(cereal::Event::Which::INIT_DATA, mono_time, {}));
+  if (it == events.end()) return;
+
+  it = std::find_if(it, events.end(), [](const Event &e) { return e.which == cereal::Event::ROAD_ENCODE_IDX && e.eidx_segnum >= 0; });
+  if (it != events.end()) {
+    publishFrame(&*it);
+  }
+}
+
 void Replay::publishFrame(const Event *e) {
   CameraType cam;
   switch (e->which) {
@@ -309,7 +325,6 @@ std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::con
   for (; !interrupt_requested_ && first != last; ++first) {
     const Event &evt = *first;
     int segment = toSeconds(evt.mono_time) / 60;
-
     if (current_segment_ != segment) {
       current_segment_ = segment;
       seg_mgr_->setCurrentSegment(current_segment_);
