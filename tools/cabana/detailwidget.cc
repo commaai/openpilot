@@ -1,7 +1,5 @@
 #include "tools/cabana/detailwidget.h"
 
-
-#include <QButtonGroup>
 #include <QFormLayout>
 #include <QMenu>
 #include <QRadioButton>
@@ -72,25 +70,18 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
 void DetailWidget::createToolBar() {
   QToolBar *toolbar = new QToolBar(this);
 
-  // Name label with bold styling
   toolbar->addWidget(name_label = new ElidedLabel(this));
   name_label->setStyleSheet("QLabel{font-weight:bold;}");
 
-  // Add a stretchable space to push the next action to the right
   QWidget *spacer = new QWidget();
   spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
   toolbar->addWidget(spacer);
 
 // Heatmap label and radio buttons
   toolbar->addWidget(new QLabel(tr("heatmap:"), this));
-
   auto *heatmap_live = new QRadioButton(tr("live"), this);
   auto *heatmap_all = new QRadioButton(tr("all"), this);
   heatmap_live->setChecked(true);
-
-  auto *radio_group = new QButtonGroup(this);
-  radio_group->addButton(heatmap_live);
-  radio_group->addButton(heatmap_all);
 
   toolbar->addWidget(heatmap_live);
   toolbar->addWidget(heatmap_all);
