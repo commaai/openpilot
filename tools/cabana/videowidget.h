@@ -68,8 +68,8 @@ protected:
   void vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams);
 
   StreamCameraView *cam_widget;
-  QAction *time_btn = nullptr;
-  QAction *play_action = nullptr;
+  QAction *time_display_action = nullptr;
+  QAction *play_toggle_action = nullptr;
   QToolButton *speed_btn = nullptr;
   QAction *skip_to_end_action = nullptr;
   Slider *slider = nullptr;

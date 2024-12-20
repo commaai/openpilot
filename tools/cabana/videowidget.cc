@@ -76,7 +76,7 @@ void VideoWidget::createPlaybackController() {
   toolbar->setIconSize({icon_size, icon_size});
 
   toolbar->addAction(utils::icon("rewind"), tr("Seek backward"), []() { can->seekTo(can->currentSec() - 1); });
-  play_action = toolbar->addAction(utils::icon("play"), tr("Play"), []() { can->pause(!can->isPaused()); });
+  play_toggle_action = toolbar->addAction(utils::icon("play"), tr("Play"), []() { can->pause(!can->isPaused()); });
   toolbar->addAction(utils::icon("fast-forward"), tr("Seek forward"), []() { can->seekTo(can->currentSec() + 1); });
 
   if (can->liveStreaming()) {
@@ -88,9 +88,9 @@ void VideoWidget::createPlaybackController() {
     });
   }
 
-  time_btn = toolbar->addAction("", this, [this]() {
+  time_display_action = toolbar->addAction("", this, [this]() {
     settings.absolute_time = !settings.absolute_time;
-    time_btn->setToolTip(settings.absolute_time ? tr("Elapsed time") : tr("Absolute time"));
+    time_display_action->setToolTip(settings.absolute_time ? tr("Elapsed time") : tr("Absolute time"));
     updateState();
   });
 
@@ -215,16 +215,16 @@ void VideoWidget::updateState() {
     if (camera_tab->count() == 0) {  //  No streams available
       cam_widget->update();          // Manually refresh to show alert events
     }
-    time_btn->setText(QString("%1 / %2").arg(formatTime(can->currentSec(), true),
+    time_display_action->setText(QString("%1 / %2").arg(formatTime(can->currentSec(), true),
                                              formatTime(slider->maximum() / slider->factor)));
   } else {
-    time_btn->setText(formatTime(can->currentSec(), true));
+    time_display_action->setText(formatTime(can->currentSec(), true));
   }
 }
 
 void VideoWidget::updatePlayBtnState() {
-  play_action->setIcon(utils::icon(can->isPaused() ? "play" : "pause"));
-  play_action->setToolTip(can->isPaused() ? tr("Play") : tr("Pause"));
+  play_toggle_action->setIcon(utils::icon(can->isPaused() ? "play" : "pause"));
+  play_toggle_action->setToolTip(can->isPaused() ? tr("Play") : tr("Pause"));
 }
 
 // Slider
