@@ -83,6 +83,7 @@ class LongitudinalPlanner:
     self.a_desired_trajectory = np.zeros(CONTROL_N)
     self.j_desired_trajectory = np.zeros(CONTROL_N)
     self.solverExecutionTime = 0.0
+    self.mode = 'acc'
 
   @staticmethod
   def parse_model(model_msg, model_error):
@@ -105,7 +106,7 @@ class LongitudinalPlanner:
     return x, v, a, j, throttle_prob
 
   def update(self, sm):
-    self.mpc.mode = 'blended' if sm['selfdriveState'].experimentalMode else 'acc'
+    self.mode = 'blended' if sm['selfdriveState'].experimentalMode else 'acc'
 
     if len(sm['carControl'].orientationNED) == 3:
       accel_coast = get_coast_accel(sm['carControl'].orientationNED[1])
@@ -128,7 +129,7 @@ class LongitudinalPlanner:
     # No change cost when user is controlling the speed, or when standstill
     prev_accel_constraint = not (reset_state or sm['carState'].standstill)
 
-    if self.mpc.mode == 'acc':
+    if self.mode == 'acc':
       accel_limits = [A_CRUISE_MIN, get_max_accel(v_ego)]
       steer_angle_without_offset = sm['carState'].steeringAngleDeg - sm['liveParameters'].angleOffsetDeg
       accel_limits_turns = limit_accel_in_turns(v_ego, steer_angle_without_offset, accel_limits, self.CP)
@@ -200,6 +201,12 @@ class LongitudinalPlanner:
     action_t =  self.CP.longitudinalActuatorDelay + DT_MDL
     a_target, should_stop = get_accel_from_plan(longitudinalPlan.speeds, longitudinalPlan.accels,
                                                 action_t=action_t, vEgoStopping=self.CP.vEgoStopping)
+    if self.mode == 'blended':
+      a_target_e2e, should_stop_e2e = get_accel_from_plan(list(sm['modelV2'].velocity.x)[:CONTROL_N],
+                                                          list(sm['modelV2'].acceleration.x)[:CONTROL_N],
+                                                          action_t=action_t, vEgoStopping=self.CP.vEgoStopping)
+      a_target = min(a_target, a_target_e2e)
+      should_stop = should_stop or should_stop_e2e
     longitudinalPlan.aTarget = a_target
     longitudinalPlan.shouldStop = should_stop
     longitudinalPlan.allowBrake = True
