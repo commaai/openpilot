@@ -31,6 +31,8 @@ static Replay *getReplay() {
 VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
   setFrameStyle(QFrame::StyledPanel | QFrame::Plain);
   auto main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(0, 0, 0, 0);
+  main_layout->setSpacing(0);
   if (!can->liveStreaming())
     main_layout->addWidget(createCameraWidget());
 
@@ -233,8 +235,12 @@ Slider::Slider(QWidget *parent) : QSlider(Qt::Horizontal, parent) {
 
 void Slider::paintEvent(QPaintEvent *ev) {
   QPainter p(this);
-  QRect r = rect().adjusted(0, 4, 0, -4);
+
+  QStyleOptionSlider opt;
+  initStyleOption(&opt);
+  QRect r = style()->subControlRect(QStyle::CC_Slider, &opt, QStyle::SC_SliderGroove, this);
   p.fillRect(r, timeline_colors[(int)TimelineType::None]);
+
   double min = minimum() / factor;
   double max = maximum() / factor;
 
@@ -259,8 +265,6 @@ void Slider::paintEvent(QPaintEvent *ev) {
     }
   }
 
-  QStyleOptionSlider opt;
-  opt.initFrom(this);
   opt.minimum = minimum();
   opt.maximum = maximum();
   opt.subControls = QStyle::SC_SliderHandle;
