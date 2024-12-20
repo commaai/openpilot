@@ -8,7 +8,6 @@
 #include <QMetaType>
 #include <QString>
 
-
 const QString UNTITLED = "untitled";
 const QString DEFAULT_NODE_NAME = "XXX";
 
@@ -17,7 +16,7 @@ struct MessageId {
   uint32_t address = 0;
 
   QString toString() const {
-    return QString("%1:%2").arg(source).arg(address, 1, 16);
+    return QString("%1:%2").arg(source).arg(QString::number(address, 16).toUpper());
   }
 
   bool operator==(const MessageId &other) const {
