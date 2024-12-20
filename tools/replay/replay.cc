@@ -247,6 +247,7 @@ void Replay::publishMessage(const Event *e) {
 }
 
 void Replay::publishFrame(double seconds) {
+  // TODO: Extend to support pushing frames from the wide road camera and driver camera if available
   const auto &events = event_data_->events;
   uint64_t mono_time = route_start_ts_ + seconds * 1e9;
   auto it = std::lower_bound(events.begin(), events.end(), Event(cereal::Event::Which::INIT_DATA, mono_time, {}));
