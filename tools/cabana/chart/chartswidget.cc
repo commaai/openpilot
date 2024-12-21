@@ -44,8 +44,8 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
       chart_type_action->setText("Type: " + type_text);
       settingChanged();
     });
-    if (i == settings.chart_series_type) chart_type_action->setText("Type: " + type_text);
   }
+  chart_type_action->setText("Type: " + types[settings.chart_series_type]);
   chart_type_action->setMenu(chart_type_menu);
   qobject_cast<QToolButton *>(toolbar->widgetForAction(chart_type_action))->setPopupMode(QToolButton::InstantPopup);
 

@@ -112,29 +112,24 @@ void VideoWidget::createSpeedDropdown(QToolBar *toolbar) {
   QActionGroup *speed_group = new QActionGroup(this);
   speed_group->setExclusive(true);
 
+  for (float speed : {0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.8, 1., 2., 3., 5.}) {
+    auto act = speed_btn->menu()->addAction(QString("%1x").arg(speed), this, [this, speed]() {
+      can->setSpeed(speed);
+      speed_btn->setText(QString("%1x  ").arg(speed));
+    });
+
+    speed_group->addAction(act);
+    act->setCheckable(true);
+    if (speed == 1.0) {
+      act->setChecked(true);
+      act->trigger();
+    }
+  }
+
   QFont font = speed_btn->font();
   font.setBold(true);
   speed_btn->setFont(font);
-
-  QFontMetrics fm(font);
-  int max_width = 0;
-  for (float speed : {0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 0.8, 1., 2., 3., 5.}) {
-    QString name = QString("%1x").arg(speed);
-    max_width = std::max(max_width, fm.width(name) + fm.horizontalAdvance(QLatin1Char(' ')) * 2);
-
-    QAction *act = new QAction(name, speed_group);
-    act->setCheckable(true);
-    speed_btn->menu()->addAction(act);
-
-    QObject::connect(act, &QAction::toggled, [this, speed](bool checked) {
-      if (checked) {
-        can->setSpeed(speed);
-        speed_btn->setText(QString("%1x  ").arg(speed));
-      }
-    });
-    act->setChecked(speed == 1.0);
-  }
-  speed_btn->setMinimumWidth(max_width + style()->pixelMetric(QStyle::PM_MenuButtonIndicator));
+  speed_btn->setMinimumWidth(speed_btn->fontMetrics().width("0.05x  ") + style()->pixelMetric(QStyle::PM_MenuButtonIndicator));
 }
 
 QWidget *VideoWidget::createCameraWidget() {
