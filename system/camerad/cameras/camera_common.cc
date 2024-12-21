@@ -64,7 +64,8 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, SpectraCamera *
 
   const SensorInfo *sensor = cam->sensor.get();
 
-  is_raw = cam->is_raw;
+  //is_raw = cam->is_raw;
+  is_raw = false;
   frame_metadata = std::make_unique<FrameMetadata[]>(frame_buf_count);
 
   // RAW frames from ISP
