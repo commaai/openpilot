@@ -23,7 +23,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
   main_layout->setSpacing(0);
 
   // toolbar
-  QToolBar *toolbar = new QToolBar(tr("Charts"), this);
+  toolbar = new QToolBar(tr("Charts"), this);
   int icon_size = style()->pixelMetric(QStyle::PM_SmallIconSize);
   toolbar->setIconSize({icon_size, icon_size});
 
@@ -34,6 +34,21 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
   toolbar->addWidget(title_label = new QLabel());
   title_label->setContentsMargins(0, 0, style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing), 0);
 
+  auto chart_type_action = toolbar->addAction("");
+  QMenu *chart_type_menu = new QMenu(this);
+  auto types = std::array{tr("Line"), tr("Step"), tr("Scatter")};
+  for (int i = 0; i < types.size(); ++i) {
+    QString type_text = types[i];
+    chart_type_menu->addAction(type_text, this, [=]() {
+      settings.chart_series_type = i;
+      chart_type_action->setText("Type: " + type_text);
+      settingChanged();
+    });
+  }
+  chart_type_action->setText("Type: " + types[settings.chart_series_type]);
+  chart_type_action->setMenu(chart_type_menu);
+  qobject_cast<QToolButton *>(toolbar->widgetForAction(chart_type_action))->setPopupMode(QToolButton::InstantPopup);
+
   QMenu *menu = new QMenu(this);
   for (int i = 0; i < MAX_COLUMN_COUNT; ++i) {
     menu->addAction(tr("%1").arg(i + 1), [=]() { setColumnCount(i + 1); });
@@ -42,13 +57,13 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
   columns_action->setMenu(menu);
   qobject_cast<QToolButton*>(toolbar->widgetForAction(columns_action))->setPopupMode(QToolButton::InstantPopup);
 
-  QLabel *stretch_label = new QLabel(this);
-  stretch_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  toolbar->addWidget(stretch_label);
+  QWidget *spacer = new QWidget(this);
+  spacer->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
+  toolbar->addWidget(spacer);
 
   range_lb_action = toolbar->addWidget(range_lb = new QLabel(this));
   range_slider = new LogSlider(1000, Qt::Horizontal, this);
-  range_slider->setMaximumWidth(200);
+  range_slider->setFixedWidth(150 * qApp->devicePixelRatio());
   range_slider->setToolTip(tr("Set the chart range"));
   range_slider->setRange(1, settings.max_cached_minutes * 60);
   range_slider->setSingleStep(1);
@@ -121,10 +136,12 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
   setIsDocked(true);
   newTab();
   qApp->installEventFilter(this);
-
   setWhatsThis(tr(R"(
-    <b>Chart view</b><br />
-    <!-- TODO: add descprition here -->
+    <b>Chart View</b><br />
+    <b>Click</b>: Click to seek to a corresponding time.<br />
+    <b>Drag</b>: Zoom into the chart.<br />
+    <b>Shift + Drag</b>: Scrub through the chart to view values.<br />
+    <b>Right Mouse</b>: Open the context menu.<br />
   )"));
 }
 
@@ -219,7 +236,7 @@ void ChartsWidget::setIsDocked(bool docked) {
 
 void ChartsWidget::updateToolBar() {
   title_label->setText(tr("Charts: %1").arg(charts.size()));
-  columns_action->setText(tr("Column: %1").arg(column_count));
+  columns_action->setText(tr("Columns: %1").arg(column_count));
   range_lb->setText(utils::formatSeconds(max_chart_range));
 
   bool is_zoomed = can->timeRange().has_value();
@@ -241,7 +258,9 @@ void ChartsWidget::settingChanged() {
       c->setTheme(theme);
     }
   }
-  range_slider->setRange(1, settings.max_cached_minutes * 60);
+  if (range_slider->maximum() != settings.max_cached_minutes * 60) {
+    range_slider->setRange(1, settings.max_cached_minutes * 60);
+  }
   for (auto c : charts) {
     c->setFixedHeight(settings.chart_height);
     c->setSeriesType((SeriesType)settings.chart_series_type);
@@ -380,7 +399,7 @@ void ChartsWidget::doAutoScroll() {
 }
 
 QSize ChartsWidget::minimumSizeHint() const {
-  return QSize(CHART_MIN_WIDTH, QWidget::minimumSizeHint().height());
+  return QSize(CHART_MIN_WIDTH * 1.5 * qApp->devicePixelRatio(), QWidget::minimumSizeHint().height());
 }
 
 void ChartsWidget::newChart() {

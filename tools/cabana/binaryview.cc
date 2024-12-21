@@ -437,7 +437,7 @@ void BinaryItemDelegate::paint(QPainter *painter, const QStyleOptionViewItem &op
       painter->fillRect(option.rect, item->bg_color);
     }
     auto color_role = item->sigs.contains(bin_view->hovered_sig) ? QPalette::BrightText : QPalette::Text;
-    painter->setPen(option.palette.color(color_role));
+    painter->setPen(option.palette.color(bin_view->is_message_active ? QPalette::Normal : QPalette::Disabled, color_role));
   }
 
   if (item->sigs.size() > 1) {

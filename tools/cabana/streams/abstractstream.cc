@@ -127,6 +127,21 @@ const CanData &AbstractStream::lastMessage(const MessageId &id) const {
   return it != last_msgs.end() ? it->second : empty_data;
 }
 
+bool AbstractStream::isMessageActive(const MessageId &id) const {
+  if (id.source == INVALID_SOURCE) {
+    return false;
+  }
+  // Check if the message is active based on time difference and frequency
+  const auto &m = lastMessage(id);
+  float delta = currentSec() - m.ts;
+
+  if (m.freq < std::numeric_limits<double>::epsilon()) {
+    return delta < 1.5;
+  }
+
+  return delta < (5.0 / m.freq) + (1.0 / settings.fps);
+}
+
 void AbstractStream::updateLastMsgsTo(double sec) {
   std::lock_guard lk(mutex_);
   current_sec_ = sec;
