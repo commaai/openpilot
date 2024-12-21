@@ -85,7 +85,6 @@ private:
   std::thread stream_thread_;
   std::mutex stream_lock_;
   bool user_paused_ = false;
-  bool pause_after_next_frame_ = false;
   std::condition_variable stream_cv_;
   int current_segment_ = 0;
   std::optional<double> seeking_to_;

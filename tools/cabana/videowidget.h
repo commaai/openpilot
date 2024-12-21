@@ -1,7 +1,6 @@
 #pragma once
 
 #include <memory>
-#include <optional>
 #include <set>
 #include <string>
 #include <utility>
@@ -28,6 +27,7 @@ public:
   void mousePressEvent(QMouseEvent *e) override;
   void paintEvent(QPaintEvent *ev) override;
   const double factor = 1000.0;
+  double thumbnail_dispaly_time = -1;
 };
 
 class StreamCameraView : public CameraWidget {
@@ -43,11 +43,14 @@ private:
   QPixmap generateThumbnail(QPixmap thumbnail, double seconds);
   void drawAlert(QPainter &p, const QRect &rect, const Timeline::Entry &alert);
   void drawThumbnail(QPainter &p);
-  bool eventFilter(QObject *obj, QEvent *event) override;
+  void drawScrubThumbnail(QPainter &p);
+  void drawTime(QPainter &p, const QRect &rect, double seconds);
 
   QPropertyAnimation *fade_animation;
+  QMap<uint64_t, QPixmap> big_thumbnails;
   QMap<uint64_t, QPixmap> thumbnails;
-  std::optional<QPoint> thumbnail_pt_;
+  double thumbnail_dispaly_time = -1;
+  friend class VideoWidget;
 };
 
 class VideoWidget : public QFrame {
@@ -55,8 +58,10 @@ class VideoWidget : public QFrame {
 
 public:
   VideoWidget(QWidget *parnet = nullptr);
+  void showThumbnail(double seconds);
 
 protected:
+  bool eventFilter(QObject *obj, QEvent *event) override;
   QString formatTime(double sec, bool include_milliseconds = false);
   void timeRangeChanged();
   void updateState();
