@@ -317,6 +317,7 @@ void StreamCameraView::parseQLog(std::shared_ptr<LogReader> qlog) {
         QPixmap generated_thumb = generateThumbnail(thumb, can->toSeconds(thumb_data.getTimestampEof()));
         std::lock_guard lock(mutex);
         thumbnails[thumb_data.getTimestampEof()] = generated_thumb;
+        big_thumbnails[thumb_data.getTimestampEof()] = thumb;
       }
     }
   });
@@ -331,7 +332,17 @@ void StreamCameraView::paintGL() {
     drawAlert(p, rect(), *alert);
   }
 
-  drawThumbnail(p);
+  if (can->isPaused()) {
+    auto it = big_thumbnails.lowerBound(can->toMonoTime(thumbnail_dispaly_time));
+    if (it != big_thumbnails.end()) {
+      QPixmap scaled_thumb = it.value().scaled(rect().size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+      int x = (rect().width() - scaled_thumb.width()) / 2;
+      int y = (rect().height() - scaled_thumb.height()) / 2;
+      p.drawPixmap(x, y, scaled_thumb);
+    }
+  } else {
+    drawThumbnail(p);
+  }
 
   if (can->isPaused()) {
     p.setPen(QColor(200, 200, 200, static_cast<int>(255 * fade_animation->currentValue().toFloat())));

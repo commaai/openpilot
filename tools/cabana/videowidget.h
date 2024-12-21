@@ -45,6 +45,7 @@ private:
   void drawThumbnail(QPainter &p);
 
   QPropertyAnimation *fade_animation;
+  QMap<uint64_t, QPixmap> big_thumbnails;
   QMap<uint64_t, QPixmap> thumbnails;
   double thumbnail_dispaly_time = -1;
   friend class VideoWidget;
