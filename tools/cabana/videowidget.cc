@@ -150,7 +150,6 @@ QWidget *VideoWidget::createCameraWidget() {
 
   QObject::connect(slider, &QSlider::sliderReleased, [this]() { can->seekTo(slider->currentSecond()); });
   QObject::connect(can, &AbstractStream::paused, cam_widget, [c = cam_widget]() { c->showPausedOverlay(); });
-  QObject::connect(can, &AbstractStream::resume, cam_widget, [c = cam_widget]() { c->update(); });
   QObject::connect(can, &AbstractStream::eventsMerged, this, [this]() { slider->update(); });
   QObject::connect(cam_widget, &CameraWidget::clicked, []() { can->pause(!can->isPaused()); });
   QObject::connect(cam_widget, &CameraWidget::vipcAvailableStreamsUpdated, this, &VideoWidget::vipcAvailableStreamsUpdated);
@@ -227,10 +226,10 @@ void VideoWidget::showThumbnail(double seconds) {
   slider->update();
 }
 
-bool VideoWidget::eventFilter(QObject *, QEvent *event) {
+bool VideoWidget::eventFilter(QObject *obj, QEvent *event) {
   if (event->type() == QEvent::MouseMove) {
     auto [min_sec, max_sec] = can->timeRange().value_or(std::make_pair(can->minSeconds(), can->maxSeconds()));
-    showThumbnail(min_sec + (((QMouseEvent *)event)->pos().x() * (max_sec - min_sec) / width()));
+    showThumbnail(min_sec + static_cast<QMouseEvent *>(event)->pos().x() * (max_sec - min_sec) / slider->width());
   } else if (event->type() == QEvent::Leave) {
     showThumbnail(-1);
   }
