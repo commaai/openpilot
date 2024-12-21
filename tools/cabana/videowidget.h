@@ -43,6 +43,8 @@ private:
   QPixmap generateThumbnail(QPixmap thumbnail, double seconds);
   void drawAlert(QPainter &p, const QRect &rect, const Timeline::Entry &alert);
   void drawThumbnail(QPainter &p);
+  void drawScrubThumbnail(QPainter &p);
+  void drawTime(QPainter &p, const QRect &rect, double seconds);
 
   QPropertyAnimation *fade_animation;
   QMap<uint64_t, QPixmap> big_thumbnails;

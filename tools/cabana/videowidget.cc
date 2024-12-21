@@ -327,25 +327,12 @@ void StreamCameraView::paintGL() {
   CameraWidget::paintGL();
 
   QPainter p(this);
-  double display_time = can->currentSec();
-
+  bool scrubbing = false;
   if (thumbnail_dispaly_time >= 0) {
-    if (can->isPaused()) {
-      display_time = thumbnail_dispaly_time;
-      p.fillRect(rect(), Qt::black);
-      auto it = big_thumbnails.lowerBound(can->toMonoTime(thumbnail_dispaly_time));
-      if (it != big_thumbnails.end()) {
-        QPixmap scaled_thumb = it.value().scaled(rect().size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-        int x = (rect().width() - scaled_thumb.width()) / 2;
-        int y = (rect().height() - scaled_thumb.height()) / 2;
-        p.drawPixmap(x, y, scaled_thumb);
-      }
-    } else {
-      drawThumbnail(p);
-    }
+    scrubbing = can->isPaused();
+    scrubbing ? drawScrubThumbnail(p) : drawThumbnail(p);
   }
-
-  if (auto alert = getReplay()->findAlertAtTime(display_time)) {
+  if (auto alert = getReplay()->findAlertAtTime(scrubbing ? thumbnail_dispaly_time : can->currentSec())) {
     drawAlert(p, rect(), *alert);
   }
 
@@ -368,9 +355,19 @@ QPixmap StreamCameraView::generateThumbnail(QPixmap thumb, double seconds) {
   return scaled;
 }
 
-void StreamCameraView::drawThumbnail(QPainter &p) {
-  if (thumbnail_dispaly_time < 0) return;
+void StreamCameraView::drawScrubThumbnail(QPainter &p) {
+  p.fillRect(rect(), Qt::black);
+  auto it = big_thumbnails.lowerBound(can->toMonoTime(thumbnail_dispaly_time));
+  if (it != big_thumbnails.end()) {
+    QPixmap scaled_thumb = it.value().scaled(rect().size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+    int x = (rect().width() - scaled_thumb.width()) / 2;
+    int y = (rect().height() - scaled_thumb.height()) / 2;
+    p.drawPixmap(x, y, scaled_thumb);
+    drawTime(p, QRect{x, y, scaled_thumb.width(), scaled_thumb.height()}, thumbnail_dispaly_time);
+  }
+}
 
+void StreamCameraView::drawThumbnail(QPainter &p) {
   auto it = thumbnails.lowerBound(can->toMonoTime(thumbnail_dispaly_time));
   if (it != thumbnails.end()) {
     const QPixmap &thumb = it.value();
@@ -380,11 +377,14 @@ void StreamCameraView::drawThumbnail(QPainter &p) {
     int y = height() - thumb.height() - THUMBNAIL_MARGIN;
 
     p.drawPixmap(x, y, thumb);
-    p.setPen(QPen(palette().color(QPalette::BrightText), 2));
-    p.setFont(QFont(font().family(), 10));
-    p.drawText(x, y, thumb.width(), thumb.height() - THUMBNAIL_MARGIN,
-               Qt::AlignHCenter | Qt::AlignBottom, QString::number(thumbnail_dispaly_time, 'f', 3));
+    drawTime(p, QRect{x, y, thumb.width(), thumb.height()}, thumbnail_dispaly_time);
   }
+}
+
+void StreamCameraView::drawTime(QPainter &p, const QRect &rect, double seconds) {
+  p.setPen(palette().color(QPalette::BrightText));
+  p.setFont(QFont(font().family(), 10));
+  p.drawText(rect.adjusted(0, 0, 0, -THUMBNAIL_MARGIN), Qt::AlignHCenter | Qt::AlignBottom, QString::number(seconds, 'f', 3));
 }
 
 void StreamCameraView::drawAlert(QPainter &p, const QRect &rect, const Timeline::Entry &alert) {
