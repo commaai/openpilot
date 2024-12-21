@@ -328,20 +328,26 @@ void StreamCameraView::paintGL() {
   CameraWidget::paintGL();
 
   QPainter p(this);
-  if (auto alert = getReplay()->findAlertAtTime(can->currentSec())) {
-    drawAlert(p, rect(), *alert);
+  double display_time = can->currentSec();
+
+  if (thumbnail_dispaly_time >= 0) {
+    if (can->isPaused()) {
+      display_time = thumbnail_dispaly_time;
+      p.fillRect(rect(), Qt::black);
+      auto it = big_thumbnails.lowerBound(can->toMonoTime(thumbnail_dispaly_time));
+      if (it != big_thumbnails.end()) {
+        QPixmap scaled_thumb = it.value().scaled(rect().size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
+        int x = (rect().width() - scaled_thumb.width()) / 2;
+        int y = (rect().height() - scaled_thumb.height()) / 2;
+        p.drawPixmap(x, y, scaled_thumb);
+      }
+    } else {
+      drawThumbnail(p);
+    }
   }
 
-  if (can->isPaused()) {
-    auto it = big_thumbnails.lowerBound(can->toMonoTime(thumbnail_dispaly_time));
-    if (it != big_thumbnails.end()) {
-      QPixmap scaled_thumb = it.value().scaled(rect().size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-      int x = (rect().width() - scaled_thumb.width()) / 2;
-      int y = (rect().height() - scaled_thumb.height()) / 2;
-      p.drawPixmap(x, y, scaled_thumb);
-    }
-  } else {
-    drawThumbnail(p);
+  if (auto alert = getReplay()->findAlertAtTime(display_time)) {
+    drawAlert(p, rect(), *alert);
   }
 
   if (can->isPaused()) {
