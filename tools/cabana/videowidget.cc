@@ -360,10 +360,9 @@ void StreamCameraView::drawScrubThumbnail(QPainter &p) {
   auto it = big_thumbnails.lowerBound(can->toMonoTime(thumbnail_dispaly_time));
   if (it != big_thumbnails.end()) {
     QPixmap scaled_thumb = it.value().scaled(rect().size(), Qt::KeepAspectRatio, Qt::SmoothTransformation);
-    int x = (rect().width() - scaled_thumb.width()) / 2;
-    int y = (rect().height() - scaled_thumb.height()) / 2;
-    p.drawPixmap(x, y, scaled_thumb);
-    drawTime(p, QRect{x, y, scaled_thumb.width(), scaled_thumb.height()}, thumbnail_dispaly_time);
+    QRect thumb_rect(rect().center() - scaled_thumb.rect().center(), scaled_thumb.size());
+    p.drawPixmap(thumb_rect.topLeft(), scaled_thumb);
+    drawTime(p, thumb_rect, thumbnail_dispaly_time);
   }
 }
 
