@@ -191,6 +191,7 @@ void MainWindow::createDockWidgets() {
   video_splitter->handle(1)->setEnabled(!can->liveStreaming());
   video_dock->setWidget(video_splitter);
   QObject::connect(charts_widget, &ChartsWidget::toggleChartsDocking, this, &MainWindow::toggleChartsDocking);
+  QObject::connect(charts_widget, &ChartsWidget::showTip, video_widget, &VideoWidget::showThumbnail);
 }
 
 void MainWindow::createStatusBar() {

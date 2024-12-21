@@ -193,6 +193,7 @@ QRect ChartsWidget::chartVisibleRect(ChartView *chart) {
 }
 
 void ChartsWidget::showValueTip(double sec) {
+  emit showTip(sec);
   if (sec < 0 && !value_tip_visible_) return;
 
   value_tip_visible_ = sec >= 0;
@@ -548,20 +549,14 @@ void ChartsContainer::dropEvent(QDropEvent *event) {
 
 void ChartsContainer::paintEvent(QPaintEvent *ev) {
   if (!drop_indictor_pos.isNull() && !childAt(drop_indictor_pos)) {
-    QRect r;
+    QRect r = geometry();
+    r.setHeight(CHART_SPACING);
     if (auto insert_after = getDropAfter(drop_indictor_pos)) {
-      QRect area = insert_after->geometry();
-      r = QRect(area.left(), area.bottom() + 1, area.width(), CHART_SPACING);
-    } else {
-      r = geometry();
-      r.setHeight(CHART_SPACING);
+      r.moveTop(insert_after->geometry().bottom());
     }
 
     QPainter p(this);
-    p.setPen(QPen(palette().highlight(), 2));
-    p.drawLine(r.topLeft() + QPoint(1, 0), r.bottomLeft() + QPoint(1, 0));
-    p.drawLine(r.topLeft() + QPoint(0, r.height() / 2), r.topRight() + QPoint(0, r.height() / 2));
-    p.drawLine(r.topRight(), r.bottomRight());
+    p.fillRect(r, palette().highlight());
   }
 }
 

@@ -53,6 +53,7 @@ public slots:
 signals:
   void toggleChartsDocking();
   void seriesChanged();
+  void showTip(double seconds);
 
 private:
   QSize minimumSizeHint() const override;
