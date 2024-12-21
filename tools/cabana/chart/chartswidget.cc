@@ -136,10 +136,12 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
   setIsDocked(true);
   newTab();
   qApp->installEventFilter(this);
-
   setWhatsThis(tr(R"(
-    <b>Chart view</b><br />
-    <!-- TODO: add descprition here -->
+    <b>Chart View</b><br />
+    <b>Click</b>: Click to seek to a corresponding time.<br />
+    <b>Drag</b>: Zoom into the chart.<br />
+    <b>Shift + Drag</b>: Scrub through the chart to view values.<br />
+    <b>Right Mouse</b>: Open the context menu.<br />
   )"));
 }
 
