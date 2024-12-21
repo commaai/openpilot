@@ -32,6 +32,7 @@ blacklist = [
 
   ".git/",
   ".github/",
+  ".devcontainer/",
   "Darwin/",
   ".vscode",
 
@@ -46,6 +47,43 @@ blacklist = [
   ".git$",
   ".gitmodules",
 ]
+
+# Sunnypilot blacklist
+sunnypilot_blacklist = [
+  "system/loggerd/sunnylink_uploader.py",  # Temporarily, until we are ready to roll it out widely
+  "system/manager/gitlab_runner.sh",
+  ".idea/",
+  ".run/",
+  ".*__pycache__/.*",
+  ".*\\.pyc",
+  "teleoprtc/*",
+  "third_party/snpe/x86_64/*",
+  "body/board/canloader.py",
+  "body/board/flash_base.sh",
+  "body/board/flash_knee.sh",
+  "body/board/recover.sh",
+  ".*/test/",
+  ".*/tests/",
+  ".*tinygrad_repo/tinygrad/renderer/",
+  "README.md",
+  ".*internal/",
+  "docs/.*",
+  ".sconsign.dblite",
+  "release/ci/scons_cache/",
+  ".gitlab-ci.yml",
+  ".clang-tidy",
+  ".dockerignore",
+  ".editorconfig",
+  ".python-version",
+  "SECURITY.md",
+  "codecov.yml",
+  "conftest.py",
+  "poetry.lock",
+  ".venv/",
+]
+
+# Merge the blacklists
+blacklist += sunnypilot_blacklist
 
 # gets you through the blacklist
 whitelist = [
@@ -119,7 +157,44 @@ whitelist = [
   "opendbc_repo/dbc/toyota_tss2_adas.dbc",
   "opendbc_repo/dbc/vw_golf_mk4.dbc",
   "opendbc_repo/dbc/vw_mqb_2010.dbc",
+  "opendbc_repo/dbc/tesla_can.dbc",
+  "opendbc_repo/dbc/tesla_radar_bosch_generated.dbc",
+  "opendbc_repo/dbc/tesla_radar_continental_generated.dbc",
+  "opendbc_repo/dbc/tesla_powertrain.dbc",
 ]
+
+# Sunnypilot whitelist
+sunnypilot_whitelist = [
+  "^README.md",
+  ".*selfdrive/test/fuzzy_generation.py",
+  ".*selfdrive/test/helpers.py",
+  ".*selfdrive/test/__init__.py",
+  ".*selfdrive/test/setup_device_ci.sh",
+  ".*selfdrive/test/test_time_to_onroad.py",
+  ".*selfdrive/test/test_onroad.py",
+  ".*system/manager/test/test_manager.py",
+  ".*system/manager/test/__init__.py",
+  ".*system/qcomgpsd/tests/test_qcomgpsd.py",
+  ".*system/updated/casync/tests/test_casync.py",
+  ".*system/updated/tests/test_git.py",
+  ".*system/updated/tests/test_base.py",
+  ".*selfdrive/ui/tests/test_translations.py",
+  ".*selfdrive/car/tests/__init__.py",
+  ".*selfdrive/car/tests/test_car_interfaces.py",
+  ".*selfdrive/navd/tests/test_navd.py",
+  ".*selfdrive/navd/tests/test_map_renderer.py",
+  ".*selfdrive/boardd/tests/test_boardd_loopback.py",
+  ".*INTEGRATION.md",
+  ".*HOW-TOS.md",
+  ".*CARS.md",
+  ".*LIMITATIONS.md",
+  ".*CONTRIBUTING.md",
+  ".*sunnyhaibin0850_qrcode_paypal.me.png",
+  "opendbc/.*.dbc",
+]
+
+# Merge the whitelists
+whitelist += sunnypilot_whitelist
 
 
 if __name__ == "__main__":
