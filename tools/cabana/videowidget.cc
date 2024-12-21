@@ -158,7 +158,7 @@ QWidget *VideoWidget::createCameraWidget() {
     if (index != -1) cam_widget->setStreamType((VisionStreamType)camera_tab->tabData(index).toInt());
   });
   QObject::connect(static_cast<ReplayStream*>(can), &ReplayStream::qLogLoaded, cam_widget, &StreamCameraView::parseQLog, Qt::QueuedConnection);
-  slider->installEventFilter(cam_widget);
+  slider->installEventFilter(this);
   return w;
 }
 
@@ -220,8 +220,24 @@ void VideoWidget::updatePlayBtnState() {
   play_btn->setToolTip(can->isPaused() ? tr("Play") : tr("Pause"));
 }
 
-// Slider
+void VideoWidget::showThumbnail(double seconds) {
+  cam_widget->thumbnail_dispaly_time = seconds;
+  slider->thumbnail_dispaly_time = seconds;
+  cam_widget->update();
+  slider->update();
+}
 
+bool VideoWidget::eventFilter(QObject *, QEvent *event) {
+  if (event->type() == QEvent::MouseMove) {
+    auto [min_sec, max_sec] = can->timeRange().value_or(std::make_pair(can->minSeconds(), can->maxSeconds()));
+    showThumbnail(min_sec + (((QMouseEvent *)event)->pos().x() * (max_sec - min_sec) / width()));
+  } else if (event->type() == QEvent::Leave) {
+    showThumbnail(-1);
+  }
+  return false;
+}
+
+// Slider
 Slider::Slider(QWidget *parent) : QSlider(Qt::Horizontal, parent) {
   setMouseTracking(true);
 }
@@ -261,6 +277,14 @@ void Slider::paintEvent(QPaintEvent *ev) {
   opt.subControls = QStyle::SC_SliderHandle;
   opt.sliderPosition = value();
   style()->drawComplexControl(QStyle::CC_Slider, &opt, &p);
+
+  if (thumbnail_dispaly_time >= 0) {
+    int left = (thumbnail_dispaly_time - min) * width() / (max - min) - 1;
+    QRect rc(left, rect().top() + 1, 2, rect().height() - 2);
+    p.setBrush(palette().highlight());
+    p.setPen(Qt::NoPen);
+    p.drawRoundedRect(rc, 1.5, 1.5);
+  }
 }
 
 void Slider::mousePressEvent(QMouseEvent *e) {
@@ -272,7 +296,6 @@ void Slider::mousePressEvent(QMouseEvent *e) {
 }
 
 // StreamCameraView
-
 StreamCameraView::StreamCameraView(std::string stream_name, VisionStreamType stream_type, QWidget *parent)
     : CameraWidget(stream_name, stream_type, parent) {
   fade_animation = new QPropertyAnimation(this, "overlayOpacity");
@@ -307,9 +330,9 @@ void StreamCameraView::paintGL() {
   if (auto alert = getReplay()->findAlertAtTime(can->currentSec())) {
     drawAlert(p, rect(), *alert);
   }
-  if (thumbnail_pt_) {
-    drawThumbnail(p);
-  }
+
+  drawThumbnail(p);
+
   if (can->isPaused()) {
     p.setPen(QColor(200, 200, 200, static_cast<int>(255 * fade_animation->currentValue().toFloat())));
     p.setFont(QFont(font().family(), 16, QFont::Bold));
@@ -330,13 +353,13 @@ QPixmap StreamCameraView::generateThumbnail(QPixmap thumb, double seconds) {
 }
 
 void StreamCameraView::drawThumbnail(QPainter &p) {
-  int pos = std::clamp(thumbnail_pt_->x(), 0, width());
-  auto [min_sec, max_sec] = can->timeRange().value_or(std::make_pair(can->minSeconds(), can->maxSeconds()));
-  double seconds = min_sec + pos * (max_sec - min_sec) / width();
+  if (thumbnail_dispaly_time < 0) return;
 
-  auto it = thumbnails.lowerBound(can->toMonoTime(seconds));
+  auto it = thumbnails.lowerBound(can->toMonoTime(thumbnail_dispaly_time));
   if (it != thumbnails.end()) {
     const QPixmap &thumb = it.value();
+    auto [min_sec, max_sec] = can->timeRange().value_or(std::make_pair(can->minSeconds(), can->maxSeconds()));
+    int pos = (thumbnail_dispaly_time - min_sec) * width() / (max_sec - min_sec);
     int x = std::clamp(pos - thumb.width() / 2, THUMBNAIL_MARGIN, width() - thumb.width() - THUMBNAIL_MARGIN + 1);
     int y = height() - thumb.height() - THUMBNAIL_MARGIN;
 
@@ -344,7 +367,7 @@ void StreamCameraView::drawThumbnail(QPainter &p) {
     p.setPen(QPen(palette().color(QPalette::BrightText), 2));
     p.setFont(QFont(font().family(), 10));
     p.drawText(x, y, thumb.width(), thumb.height() - THUMBNAIL_MARGIN,
-               Qt::AlignHCenter | Qt::AlignBottom, QString::number(seconds, 'f', 3));
+               Qt::AlignHCenter | Qt::AlignBottom, QString::number(thumbnail_dispaly_time, 'f', 3));
   }
 }
 
@@ -359,15 +382,4 @@ void StreamCameraView::drawAlert(QPainter &p, const QRect &rect, const Timeline:
   QRect r = p.fontMetrics().boundingRect(text_rect, Qt::AlignTop | Qt::AlignHCenter | Qt::TextWordWrap, text);
   p.fillRect(text_rect.left(), r.top(), text_rect.width(), r.height(), color);
   p.drawText(text_rect, Qt::AlignTop | Qt::AlignHCenter | Qt::TextWordWrap, text);
-}
-
-bool StreamCameraView::eventFilter(QObject *, QEvent *event) {
-  if (event->type() == QEvent::MouseMove) {
-    thumbnail_pt_ = static_cast<QMouseEvent *>(event)->pos();
-    update();
-  } else if (event->type() == QEvent::Leave) {
-    thumbnail_pt_ = std::nullopt;
-    update();
-  }
-  return false;
 }
