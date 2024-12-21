@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -111,7 +112,7 @@ protected:
   void mergeEvents(const std::vector<const CanEvent *> &events);
   const CanEvent *newEvent(uint64_t mono_time, const cereal::CanData::Reader &c);
   void updateEvent(const MessageId &id, double sec, const uint8_t *data, uint8_t size);
-  virtual void resumeStream() {}
+  void waitForSeekFinshed();
   std::vector<const CanEvent *> all_events_;
   double current_sec_ = 0;
   std::optional<std::pair<double, double>> time_range_;
@@ -127,6 +128,8 @@ private:
 
   // Members accessed in multiple threads. (mutex protected)
   std::mutex mutex_;
+  std::condition_variable seek_finished_cv_;
+  bool seek_finished_ = false;
   std::set<MessageId> new_msgs_;
   std::unordered_map<MessageId, CanData> messages_;
   std::unordered_map<MessageId, std::vector<uint8_t>> masks_;

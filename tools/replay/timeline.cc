@@ -1,7 +1,7 @@
 #include "tools/replay/timeline.h"
 
-#include <array>
 #include <algorithm>
+#include <array>
 
 #include "cereal/gen/cpp/log.capnp.h"
 
@@ -74,7 +74,7 @@ void Timeline::buildTimeline(const Route &route, uint64_t route_start_ts, bool l
     // Sort and finalize the timeline entries
     auto entries = std::make_shared<std::vector<Entry>>(staging_entries_);
     std::sort(entries->begin(), entries->end(), [](auto &a, auto &b) { return a.start_time < b.start_time; });
-    timeline_entries_ = entries;
+    std::atomic_store(&timeline_entries_, std::move(entries));
 
     callback(log);  // Notify the callback once the log is processed
   }

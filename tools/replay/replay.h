@@ -55,9 +55,8 @@ public:
   inline const std::string &carFingerprint() const { return car_fingerprint_; }
   inline const std::shared_ptr<std::vector<Timeline::Entry>> getTimeline() const { return timeline_.getEntries(); }
   inline const std::optional<Timeline::Entry> findAlertAtTime(double sec) const { return timeline_.findAlertAtTime(sec); }
-  const std::shared_ptr<SegmentManager::EventData> getEventData() const { return event_data_; }
+  const std::shared_ptr<SegmentManager::EventData> getEventData() const { return seg_mgr_->getEventData(); }
   void installEventFilter(std::function<bool(const Event *)> filter) { event_filter_ = filter; }
-  void resumeStream() { interruptStream([]() { return true; }); }
 
   // Event callback functions
   std::function<void()> onSegmentsMerged = nullptr;
@@ -68,7 +67,7 @@ public:
 private:
   void setupServices(const std::vector<std::string> &allow, const std::vector<std::string> &block);
   void setupSegmentManager(bool has_filters);
-  void startStream();
+  void startStream(const std::shared_ptr<Segment> segment);
   void streamThread();
   void handleSegmentMerge();
   void interruptStream(const std::function<bool()>& update_fn);
@@ -76,7 +75,7 @@ private:
                                                    std::vector<Event>::const_iterator last);
   void publishMessage(const Event *e);
   void publishFrame(const Event *e);
-  void checkSeekProgress(double seeked_to_sec);
+  void checkSeekProgress();
 
   std::unique_ptr<SegmentManager> seg_mgr_;
   Timeline timeline_;
@@ -86,8 +85,8 @@ private:
   std::mutex stream_lock_;
   bool user_paused_ = false;
   std::condition_variable stream_cv_;
-  int current_segment_ = 0;
-  std::optional<double> seeking_to_;
+  std::atomic<int> current_segment_ = 0;
+  std::atomic<double> seeking_to_ = -1.0;
   std::atomic<bool> exit_ = false;
   std::atomic<bool> interrupt_requested_ = false;
   bool events_ready_ = false;
