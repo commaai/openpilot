@@ -382,7 +382,7 @@ QWidget *SignalItemDelegate::createEditor(QWidget *parent, const QStyleOptionVie
   } else if (item->type == SignalModel::Item::Size) {
     QSpinBox *spin = new QSpinBox(parent);
     spin->setFrame(false);
-    spin->setRange(1, 64);
+    spin->setRange(1, CAN_MAX_DATA_BYTES);
     return spin;
   } else if (item->type == SignalModel::Item::SignalType) {
     QComboBox *c = new QComboBox(parent);

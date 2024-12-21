@@ -82,6 +82,7 @@ public:
   inline double toSeconds(uint64_t mono_time) const { return std::max(0.0, (mono_time - beginMonoTime()) / 1e9); }
 
   inline const std::unordered_map<MessageId, CanData> &lastMessages() const { return last_msgs; }
+  bool isMessageActive(const MessageId &id) const;
   inline const MessageEventsMap &eventsMap() const { return events_; }
   inline const std::vector<const CanEvent *> &allEvents() const { return all_events_; }
   const CanData &lastMessage(const MessageId &id) const;

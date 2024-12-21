@@ -163,3 +163,4 @@ private:
 
 int num_decimals(double num);
 QString signalToolTip(const cabana::Signal *sig);
+inline QString toHexString(int value) { return QString("0x%1").arg(QString::number(value, 16).toUpper(), 2, '0'); }

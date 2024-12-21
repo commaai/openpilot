@@ -8,16 +8,16 @@
 #include <QMetaType>
 #include <QString>
 
-
 const QString UNTITLED = "untitled";
 const QString DEFAULT_NODE_NAME = "XXX";
+constexpr int CAN_MAX_DATA_BYTES = 64;
 
 struct MessageId {
   uint8_t source = 0;
   uint32_t address = 0;
 
   QString toString() const {
-    return QString("%1:%2").arg(source).arg(address, 1, 16);
+    return QString("%1:%2").arg(source).arg(QString::number(address, 16).toUpper());
   }
 
   bool operator==(const MessageId &other) const {
