@@ -14,6 +14,10 @@ on:
         required: true
         default: 'master'
         type: string
+      custom_name:
+        description: 'Custom name for the model'
+        required: false
+        type: string
 
 jobs:
   build_model:
@@ -32,11 +36,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{env.SCONS_CACHE_DIR}}
-          key: scons-${{ runner.os }}-${{ runner.arch }}-${{ github.ref_name }}-model-${{ github.head_ref }}-${{ github.sha }}
+          key: scons-${{ runner.os }}-${{ runner.arch }}-${{ github.head_ref || github.ref_name }}-model-${{ github.sha }}
           restore-keys: |
-            scons-${{ runner.os }}-${{ runner.arch }}-${{ github.ref_name }}-model-${{ github.head_ref }}
-            scons-${{ runner.os }}-${{ runner.arch }}-${{ github.ref_name }}-model
-            scons-${{ runner.os }}-${{ runner.arch }}-${{ github.ref_name }}
+            scons-${{ runner.os }}-${{ runner.arch }}-${{ github.head_ref || github.ref_name }}-model-${{ github.sha }}
+            scons-${{ runner.os }}-${{ runner.arch }}-${{ github.head_ref || github.ref_name }}-model
+            scons-${{ runner.os }}-${{ runner.arch }}-${{ github.head_ref || github.ref_name }}
             scons-${{ runner.os }}-${{ runner.arch }}-master-new
             scons-${{ runner.os }}-${{ runner.arch }}-master
             scons-${{ runner.os }}-${{ runner.arch }}
@@ -78,5 +82,5 @@ jobs:
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: model-${{ github.event.inputs.upstream_branch }}-${{ github.run_number }}
+          name: model-${{ github.event.inputs.custom_name || github.event.inputs.upstream_branch }}-${{ github.run_number }}
           path: ${{ env.OUTPUT_DIR }}

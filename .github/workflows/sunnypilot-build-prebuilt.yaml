@@ -191,6 +191,7 @@ jobs:
     concurrency:
       group: publish-${{ github.head_ref || github.ref_name }}
       cancel-in-progress: true
+    if: ${{ github.event_name != 'pull_request' || github.event_name == 'pull_request' && github.event.pull_request.draft }} 
     needs: build
     runs-on: ubuntu-24.04
     environment: ${{ contains(fromJSON(vars.AUTO_DEPLOY_PREBUILT_BRANCHES), github.head_ref || github.ref_name) && 'auto-deploy' || 'feature-branch' }}
@@ -237,6 +238,7 @@ jobs:
   notify:
     needs: [ build, publish ]
     runs-on: ubuntu-24.04
+    if: success()
     steps:
       - uses: actions/checkout@v4
       - name: Setup Alpine Linux environment
