@@ -222,6 +222,8 @@ void VideoWidget::updatePlayBtnState() {
 }
 
 void VideoWidget::showThumbnail(double seconds) {
+  if (can->liveStreaming()) return;
+
   cam_widget->thumbnail_dispaly_time = seconds;
   slider->thumbnail_dispaly_time = seconds;
   cam_widget->update();
