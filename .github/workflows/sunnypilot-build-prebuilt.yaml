@@ -72,14 +72,14 @@ jobs:
             echo "BRANCH_TYPE=master" >> $GITHUB_ENV
             echo "NEW_BRANCH=${{ env.STAGING_TARGET_BRANCH }}" >> $GITHUB_ENV
             echo "EXTRA_VERSION_IDENTIFIER=staging" >> $GITHUB_ENV
-            echo "VERSION=$(cat common/version.h | grep COMMA_VERSION | sed -e 's/[^0-9|.]//g')" >> $GITHUB_ENV
+            echo "VERSION=$(cat common/version.h | grep COMMA_VERSION | sed -e 's/[^0-9|.]//g')-staging" >> $GITHUB_ENV
           
           elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
             # Tag configuration
             echo "BRANCH_TYPE=tag" >> $GITHUB_ENV
             echo "NEW_BRANCH=${{ env.RELEASE_TARGET_BRANCH }}" >> $GITHUB_ENV
             echo "EXTRA_VERSION_IDENTIFIER=release" >> $GITHUB_ENV
-            echo "VERSION=$(cat common/version.h | grep COMMA_VERSION | sed -e 's/[^0-9|.]//g')" >> $GITHUB_ENV
+            echo "VERSION=$(cat common/version.h | grep COMMA_VERSION | sed -e 's/[^0-9|.]//g')-release" >> $GITHUB_ENV
           
           else
             # Feature branch configuration
