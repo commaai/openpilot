@@ -95,7 +95,6 @@ jobs:
       timeout-minutes: 30
 
   build_mac:
-    if: github.repository == 'commaai/openpilot' # Blocking macos builds as well since they have a 10x miltiplier for GH action minutes, waaaay too much!
     name: build macOS
     runs-on: ${{ ((github.repository == 'commaai/openpilot') &&
                    ((github.event_name != 'pull_request') ||
