@@ -1,7 +1,7 @@
 name: Build Model from Upstream
 
 env:
-  BUILD_DIR: "/data/github/openpilot"
+  BUILD_DIR: "/data/openpilot"
   OUTPUT_DIR: ${{ github.workspace }}/output
   SCONS_CACHE_DIR: ${{ github.workspace }}/release/ci/scons_cache
   UPSTREAM_REPO: "commaai/openpilot"

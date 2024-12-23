@@ -51,7 +51,6 @@ blacklist = [
 # Sunnypilot blacklist
 sunnypilot_blacklist = [
   "system/loggerd/sunnylink_uploader.py",  # Temporarily, until we are ready to roll it out widely
-  "system/manager/gitlab_runner.sh",
   ".idea/",
   ".run/",
   ".*__pycache__/.*",

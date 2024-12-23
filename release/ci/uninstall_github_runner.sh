@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
+# Determine BASE_DIR based on mount point
+if mountpoint -q /data/media; then
+    GITHUB_BASE_DIR="/data/media/0/github"
+else
+    GITHUB_BASE_DIR="/data/github"
+fi
+
 # Define directories and user
-GITHUB_BASE_DIR="/data/github"
 BIN_DIR="$GITHUB_BASE_DIR/bin"
 BUILDS_DIR="$GITHUB_BASE_DIR/builds"
 OPENPILOT_DIR="$GITHUB_BASE_DIR/openpilot"
