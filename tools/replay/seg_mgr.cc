@@ -105,7 +105,7 @@ bool SegmentManager::mergeSegments(const SegmentMap::iterator &begin, const Segm
     merged_event_data->segments[n] = segments_.at(n);
   }
 
-  event_data_ = merged_event_data;
+  std::atomic_store(&event_data_, std::move(merged_event_data));
   merged_segments_ = segments_to_merge;
 
   return true;

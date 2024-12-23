@@ -13,7 +13,7 @@ from openpilot.common.gps import get_gps_location_service
 
 def set_time(new_time):
   diff = datetime.datetime.now() - new_time
-  if diff < datetime.timedelta(seconds=10):
+  if abs(diff) < datetime.timedelta(seconds=10):
     cloudlog.debug(f"Time diff too small: {diff}")
     return
 

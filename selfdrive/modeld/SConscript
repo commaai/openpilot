@@ -33,8 +33,7 @@ snpe_rpath = lenvCython['RPATH'] + [snpe_rpath_qcom if arch == "larch64" else sn
 cython_libs = envCython["LIBS"] + libs
 commonmodel_lib = lenv.Library('commonmodel', common_src)
 lenvCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LIBS=[commonmodel_lib, *cython_libs], FRAMEWORKS=frameworks)
-
-tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "/**", recursive=True, root_dir=env.Dir("#").abspath)]
+tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "/**", recursive=True, root_dir=env.Dir("#").abspath) if 'pycache' not in x]
 
 # Get model metadata
 fn = File("models/supercombo").abspath
@@ -42,8 +41,6 @@ cmd = f'python3 {Dir("#selfdrive/modeld").abspath}/get_model_metadata.py {fn}.on
 lenv.Command(fn + "_metadata.pkl", [fn + ".onnx"] + tinygrad_files, cmd)
 
 # Compile tinygrad model
-# TODO this is all super hacky
-
 pythonpath_string = 'PYTHONPATH="${PYTHONPATH}:' + env.Dir("#tinygrad_repo").abspath + '"'
 if arch == 'larch64':
   device_string = 'QCOM=1'

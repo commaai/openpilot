@@ -377,7 +377,7 @@ class TestOnroad:
     ]
     for (s, instant_max, avg_max) in cfgs:
       ts = [getattr(m, s).modelExecutionTime for m in self.msgs[s]]
-      # TODO some tinygrad init happens in first iteration
+      # TODO some init can happen in first iteration
       ts = ts[1:]
       assert max(ts) < instant_max, f"high '{s}' execution time: {max(ts)}"
       assert np.mean(ts) < avg_max, f"high avg '{s}' execution time: {np.mean(ts)}"
