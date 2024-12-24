@@ -17,5 +17,6 @@ enum class FontWeight {
 };
 
 void initApp(const char *title, int fps);
-const Font& getFont(FontWeight weight = FontWeight::Normal);
+const Font& getFont(FontWeight weight = FontWeight::Regular);
 Texture2D LoadTextureResized(const char *fileName, int size);
+void DrawTextBoxed(const char *text, Rectangle rec, float fontSize, float spacing, bool wordWrap, Color tint);
