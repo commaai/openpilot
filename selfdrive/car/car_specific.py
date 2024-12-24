@@ -40,6 +40,7 @@ class CarSpecificEvents:
     self.silent_steer_warning = True
 
     self.cruise_buttons: deque = deque([], maxlen=HYUNDAI_PREV_BUTTON_SAMPLES)
+    self.cancel_button: deque = deque([], maxlen=HYUNDAI_PREV_BUTTON_SAMPLES)
 
   def update(self, CS: car.CarState, CS_prev: car.CarState, CC: car.CarControl):
     if self.CP.carName in ('body', 'mock'):
@@ -148,8 +149,13 @@ class CarSpecificEvents:
       # To avoid re-engaging when openpilot cancels, check user engagement intention via buttons
       # Main button also can trigger an engagement on these cars
       self.cruise_buttons.append(any(ev.type in HYUNDAI_ENABLE_BUTTONS for ev in CS.buttonEvents))
+      # TODO: implement with proper solution to identify PAUSE/RESUME vs CANCEL button across different models
+      # Stock long: only allow cancel for rising edge
+      # OP long: allow cancel for both rising and falling edge
+      self.cancel_button.append(any(ev.type == ButtonType.cancel and ev.pressed if self.CP.pcmCruise else True for ev in CS.buttonEvents))
       events = self.create_common_events(CS, CS_prev, extra_gears=(GearShifter.sport, GearShifter.manumatic),
-                                         pcm_enable=self.CP.pcmCruise, allow_enable=any(self.cruise_buttons))
+                                         pcm_enable=self.CP.pcmCruise, allow_enable=any(self.cruise_buttons),
+                                         allow_cancel=any(self.cancel_button))
 
       # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
       if CS.vEgo < (self.CP.minSteerSpeed + 2.) and self.CP.minSteerSpeed > 10.:
@@ -165,7 +171,8 @@ class CarSpecificEvents:
     return events
 
   def create_common_events(self, CS: structs.CarState, CS_prev: car.CarState, extra_gears=None, pcm_enable=True,
-                           allow_enable=True, enable_buttons=(ButtonType.accelCruise, ButtonType.decelCruise)):
+                           allow_enable=True, enable_buttons=(ButtonType.accelCruise, ButtonType.decelCruise),
+                           allow_cancel=True):
     events = Events()
 
     if CS.doorOpen:
@@ -216,7 +223,8 @@ class CarSpecificEvents:
       if not self.CP.pcmCruise and (b.type in enable_buttons and not b.pressed):
         events.add(EventName.buttonEnable)
       # Disable on rising and falling edge of cancel for both stock and OP long
-      if b.type == ButtonType.cancel:
+      # Disable can optionally be blocked by the car interface
+      if b.type == ButtonType.cancel and allow_cancel:
         events.add(EventName.buttonCancel)
 
     # Handle permanent and temporary steering faults
