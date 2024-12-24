@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CLionExternalBuildManager">
+    <target id="a62f99e8-5ec4-434c-8122-49efed5af108" name="uv Scons Build Debug" defaultType="TOOL">
+      <configuration id="b93ec964-16e5-4962-a12e-3ed360ce8f02" name="uv Scons Build Debug">
+        <build type="TOOL">
+          <tool actionId="Tool_External Tools_uv Scons Build Debug" />
+        </build>
+        <clean type="TOOL">
+          <tool actionId="Tool_External Tools_uv Scons Clean" />
+        </clean>
+      </configuration>
+    </target>
+    <target id="edd8ad9d-183b-467c-a355-0d9a0ecab026" name="uv Scons Build Release" defaultType="TOOL">
+      <configuration id="09523339-5ce3-4223-ab9e-904f38ad7752" name="uv Scons Build Release">
+        <build type="TOOL">
+          <tool actionId="Tool_External Tools_uv Scons Build Release" />
+        </build>
+        <clean type="TOOL">
+          <tool actionId="Tool_External Tools_uv Scons Clean" />
+        </clean>
+      </configuration>
+    </target>
+  </component>
+</project>

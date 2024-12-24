@@ -1,0 +1,10 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Build Release" type="CLionExternalRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" WORKING_DIR="file://$ProjectFileDir$/selfdrive/ui" PASS_PARENT_ENVS_2="true" PROJECT_NAME="sunnypilot" TARGET_NAME="uv Scons Build Release" CONFIG_NAME="uv Scons Build Release" RUN_PATH="ui">
+    <envs>
+      <env name="QT_DBL_CLICK_DIST" value="150" />
+    </envs>
+    <method v="2">
+      <option name="CLION.EXTERNAL.BUILD" enabled="true" />
+    </method>
+  </configuration>
+</component>

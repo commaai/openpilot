@@ -103,3 +103,8 @@ Pipfile
 # Ignore all local history of files
 .history
 .ionide
+
+### JetBrains ###
+!.idea/customTargets.xml
+!.idea/tools/*
+!.run/*
