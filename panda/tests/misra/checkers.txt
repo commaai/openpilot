@@ -146,6 +146,7 @@ Yes  CheckOther::clarifyCalculation
 Yes  CheckOther::clarifyStatement
 Yes  CheckOther::invalidPointerCast
 Yes  CheckOther::redundantBitwiseOperationInSwitch
+Yes  CheckOther::suspiciousFloatingPointCast
 No   CheckOther::warningOldStylePointerCast                    require:style,c++
 No   CheckPostfixOperator::postfixOperator                     require:performance
 Yes  CheckSizeof::checkSizeofForArrayParameter
@@ -222,11 +223,32 @@ Not available, Cppcheck Premium is not used
 
 Misra C 2012
 ------------
+No   Misra C 2012: Dir 1.1
+No   Misra C 2012: Dir 2.1
+No   Misra C 2012: Dir 3.1
+No   Misra C 2012: Dir 4.1
+No   Misra C 2012: Dir 4.2
+No   Misra C 2012: Dir 4.3
+No   Misra C 2012: Dir 4.4
+No   Misra C 2012: Dir 4.5
+No   Misra C 2012: Dir 4.6    amendment:3
+No   Misra C 2012: Dir 4.7
+No   Misra C 2012: Dir 4.8
+No   Misra C 2012: Dir 4.9    amendment:3
+No   Misra C 2012: Dir 4.10
+No   Misra C 2012: Dir 4.11   amendment:3
+No   Misra C 2012: Dir 4.12
+No   Misra C 2012: Dir 4.13
+No   Misra C 2012: Dir 4.14   amendment:2
+No   Misra C 2012: Dir 4.15   amendment:3
+No   Misra C 2012: Dir 5.1    amendment:4
+No   Misra C 2012: Dir 5.2    amendment:4
+No   Misra C 2012: Dir 5.3    amendment:4
 Yes  Misra C 2012: 1.1
 Yes  Misra C 2012: 1.2
 Yes  Misra C 2012: 1.3
-Yes  Misra C 2012: 1.4     amendment:2
-No   Misra C 2012: 1.5     amendment:3 require:premium
+Yes  Misra C 2012: 1.4        amendment:2
+No   Misra C 2012: 1.5        amendment:3 require:premium
 Yes  Misra C 2012: 2.1
 Yes  Misra C 2012: 2.2
 Yes  Misra C 2012: 2.3
@@ -303,8 +325,8 @@ Yes  Misra C 2012: 12.1
 Yes  Misra C 2012: 12.2
 Yes  Misra C 2012: 12.3
 Yes  Misra C 2012: 12.4
-Yes  Misra C 2012: 12.5    amendment:1
-No   Misra C 2012: 12.6    amendment:4 require:premium
+Yes  Misra C 2012: 12.5       amendment:1
+No   Misra C 2012: 12.6       amendment:4 require:premium
 Yes  Misra C 2012: 13.1
 No   Misra C 2012: 13.2
 Yes  Misra C 2012: 13.3
@@ -380,48 +402,48 @@ Yes  Misra C 2012: 21.9
 Yes  Misra C 2012: 21.10
 Yes  Misra C 2012: 21.11
 Yes  Misra C 2012: 21.12
-Yes  Misra C 2012: 21.13   amendment:1
-Yes  Misra C 2012: 21.14   amendment:1
-Yes  Misra C 2012: 21.15   amendment:1
-Yes  Misra C 2012: 21.16   amendment:1
-Yes  Misra C 2012: 21.17   amendment:1
-Yes  Misra C 2012: 21.18   amendment:1
-Yes  Misra C 2012: 21.19   amendment:1
-Yes  Misra C 2012: 21.20   amendment:1
-Yes  Misra C 2012: 21.21   amendment:3
-No   Misra C 2012: 21.22   amendment:3 require:premium
-No   Misra C 2012: 21.23   amendment:3 require:premium
-No   Misra C 2012: 21.24   amendment:3 require:premium
-No   Misra C 2012: 21.25   amendment:4 require:premium
-No   Misra C 2012: 21.26   amendment:4 require:premium
+Yes  Misra C 2012: 21.13      amendment:1
+Yes  Misra C 2012: 21.14      amendment:1
+Yes  Misra C 2012: 21.15      amendment:1
+Yes  Misra C 2012: 21.16      amendment:1
+Yes  Misra C 2012: 21.17      amendment:1
+Yes  Misra C 2012: 21.18      amendment:1
+Yes  Misra C 2012: 21.19      amendment:1
+Yes  Misra C 2012: 21.20      amendment:1
+Yes  Misra C 2012: 21.21      amendment:3
+No   Misra C 2012: 21.22      amendment:3 require:premium
+No   Misra C 2012: 21.23      amendment:3 require:premium
+No   Misra C 2012: 21.24      amendment:3 require:premium
+No   Misra C 2012: 21.25      amendment:4 require:premium
+No   Misra C 2012: 21.26      amendment:4 require:premium
 Yes  Misra C 2012: 22.1
 Yes  Misra C 2012: 22.2
 Yes  Misra C 2012: 22.3
 Yes  Misra C 2012: 22.4
 Yes  Misra C 2012: 22.5
 Yes  Misra C 2012: 22.6
-Yes  Misra C 2012: 22.7    amendment:1
-Yes  Misra C 2012: 22.8    amendment:1
-Yes  Misra C 2012: 22.9    amendment:1
-Yes  Misra C 2012: 22.10   amendment:1
-No   Misra C 2012: 22.11   amendment:4 require:premium
-No   Misra C 2012: 22.12   amendment:4 require:premium
-No   Misra C 2012: 22.13   amendment:4 require:premium
-No   Misra C 2012: 22.14   amendment:4 require:premium
-No   Misra C 2012: 22.15   amendment:4 require:premium
-No   Misra C 2012: 22.16   amendment:4 require:premium
-No   Misra C 2012: 22.17   amendment:4 require:premium
-No   Misra C 2012: 22.18   amendment:4 require:premium
-No   Misra C 2012: 22.19   amendment:4 require:premium
-No   Misra C 2012: 22.20   amendment:4 require:premium
-No   Misra C 2012: 23.1    amendment:3 require:premium
-No   Misra C 2012: 23.2    amendment:3 require:premium
-No   Misra C 2012: 23.3    amendment:3 require:premium
-No   Misra C 2012: 23.4    amendment:3 require:premium
-No   Misra C 2012: 23.5    amendment:3 require:premium
-No   Misra C 2012: 23.6    amendment:3 require:premium
-No   Misra C 2012: 23.7    amendment:3 require:premium
-No   Misra C 2012: 23.8    amendment:3 require:premium
+Yes  Misra C 2012: 22.7       amendment:1
+Yes  Misra C 2012: 22.8       amendment:1
+Yes  Misra C 2012: 22.9       amendment:1
+Yes  Misra C 2012: 22.10      amendment:1
+No   Misra C 2012: 22.11      amendment:4 require:premium
+No   Misra C 2012: 22.12      amendment:4 require:premium
+No   Misra C 2012: 22.13      amendment:4 require:premium
+No   Misra C 2012: 22.14      amendment:4 require:premium
+No   Misra C 2012: 22.15      amendment:4 require:premium
+No   Misra C 2012: 22.16      amendment:4 require:premium
+No   Misra C 2012: 22.17      amendment:4 require:premium
+No   Misra C 2012: 22.18      amendment:4 require:premium
+No   Misra C 2012: 22.19      amendment:4 require:premium
+No   Misra C 2012: 22.20      amendment:4 require:premium
+No   Misra C 2012: 23.1       amendment:3 require:premium
+No   Misra C 2012: 23.2       amendment:3 require:premium
+No   Misra C 2012: 23.3       amendment:3 require:premium
+No   Misra C 2012: 23.4       amendment:3 require:premium
+No   Misra C 2012: 23.5       amendment:3 require:premium
+No   Misra C 2012: 23.6       amendment:3 require:premium
+No   Misra C 2012: 23.7       amendment:3 require:premium
+No   Misra C 2012: 23.8       amendment:3 require:premium
 
 
 Misra C++ 2008
@@ -579,6 +601,7 @@ Yes  CheckOther::clarifyCalculation
 Yes  CheckOther::clarifyStatement
 Yes  CheckOther::invalidPointerCast
 Yes  CheckOther::redundantBitwiseOperationInSwitch
+Yes  CheckOther::suspiciousFloatingPointCast
 No   CheckOther::warningOldStylePointerCast                    require:style,c++
 No   CheckPostfixOperator::postfixOperator                     require:performance
 Yes  CheckSizeof::checkSizeofForArrayParameter
@@ -655,11 +678,32 @@ Not available, Cppcheck Premium is not used
 
 Misra C 2012
 ------------
+No   Misra C 2012: Dir 1.1
+No   Misra C 2012: Dir 2.1
+No   Misra C 2012: Dir 3.1
+No   Misra C 2012: Dir 4.1
+No   Misra C 2012: Dir 4.2
+No   Misra C 2012: Dir 4.3
+No   Misra C 2012: Dir 4.4
+No   Misra C 2012: Dir 4.5
+No   Misra C 2012: Dir 4.6    amendment:3
+No   Misra C 2012: Dir 4.7
+No   Misra C 2012: Dir 4.8
+No   Misra C 2012: Dir 4.9    amendment:3
+No   Misra C 2012: Dir 4.10
+No   Misra C 2012: Dir 4.11   amendment:3
+No   Misra C 2012: Dir 4.12
+No   Misra C 2012: Dir 4.13
+No   Misra C 2012: Dir 4.14   amendment:2
+No   Misra C 2012: Dir 4.15   amendment:3
+No   Misra C 2012: Dir 5.1    amendment:4
+No   Misra C 2012: Dir 5.2    amendment:4
+No   Misra C 2012: Dir 5.3    amendment:4
 Yes  Misra C 2012: 1.1
 Yes  Misra C 2012: 1.2
 Yes  Misra C 2012: 1.3
-Yes  Misra C 2012: 1.4     amendment:2
-No   Misra C 2012: 1.5     amendment:3 require:premium
+Yes  Misra C 2012: 1.4        amendment:2
+No   Misra C 2012: 1.5        amendment:3 require:premium
 Yes  Misra C 2012: 2.1
 Yes  Misra C 2012: 2.2
 Yes  Misra C 2012: 2.3
@@ -736,8 +780,8 @@ Yes  Misra C 2012: 12.1
 Yes  Misra C 2012: 12.2
 Yes  Misra C 2012: 12.3
 Yes  Misra C 2012: 12.4
-Yes  Misra C 2012: 12.5    amendment:1
-No   Misra C 2012: 12.6    amendment:4 require:premium
+Yes  Misra C 2012: 12.5       amendment:1
+No   Misra C 2012: 12.6       amendment:4 require:premium
 Yes  Misra C 2012: 13.1
 No   Misra C 2012: 13.2
 Yes  Misra C 2012: 13.3
@@ -813,48 +857,48 @@ Yes  Misra C 2012: 21.9
 Yes  Misra C 2012: 21.10
 Yes  Misra C 2012: 21.11
 Yes  Misra C 2012: 21.12
-Yes  Misra C 2012: 21.13   amendment:1
-Yes  Misra C 2012: 21.14   amendment:1
-Yes  Misra C 2012: 21.15   amendment:1
-Yes  Misra C 2012: 21.16   amendment:1
-Yes  Misra C 2012: 21.17   amendment:1
-Yes  Misra C 2012: 21.18   amendment:1
-Yes  Misra C 2012: 21.19   amendment:1
-Yes  Misra C 2012: 21.20   amendment:1
-Yes  Misra C 2012: 21.21   amendment:3
-No   Misra C 2012: 21.22   amendment:3 require:premium
-No   Misra C 2012: 21.23   amendment:3 require:premium
-No   Misra C 2012: 21.24   amendment:3 require:premium
-No   Misra C 2012: 21.25   amendment:4 require:premium
-No   Misra C 2012: 21.26   amendment:4 require:premium
+Yes  Misra C 2012: 21.13      amendment:1
+Yes  Misra C 2012: 21.14      amendment:1
+Yes  Misra C 2012: 21.15      amendment:1
+Yes  Misra C 2012: 21.16      amendment:1
+Yes  Misra C 2012: 21.17      amendment:1
+Yes  Misra C 2012: 21.18      amendment:1
+Yes  Misra C 2012: 21.19      amendment:1
+Yes  Misra C 2012: 21.20      amendment:1
+Yes  Misra C 2012: 21.21      amendment:3
+No   Misra C 2012: 21.22      amendment:3 require:premium
+No   Misra C 2012: 21.23      amendment:3 require:premium
+No   Misra C 2012: 21.24      amendment:3 require:premium
+No   Misra C 2012: 21.25      amendment:4 require:premium
+No   Misra C 2012: 21.26      amendment:4 require:premium
 Yes  Misra C 2012: 22.1
 Yes  Misra C 2012: 22.2
 Yes  Misra C 2012: 22.3
 Yes  Misra C 2012: 22.4
 Yes  Misra C 2012: 22.5
 Yes  Misra C 2012: 22.6
-Yes  Misra C 2012: 22.7    amendment:1
-Yes  Misra C 2012: 22.8    amendment:1
-Yes  Misra C 2012: 22.9    amendment:1
-Yes  Misra C 2012: 22.10   amendment:1
-No   Misra C 2012: 22.11   amendment:4 require:premium
-No   Misra C 2012: 22.12   amendment:4 require:premium
-No   Misra C 2012: 22.13   amendment:4 require:premium
-No   Misra C 2012: 22.14   amendment:4 require:premium
-No   Misra C 2012: 22.15   amendment:4 require:premium
-No   Misra C 2012: 22.16   amendment:4 require:premium
-No   Misra C 2012: 22.17   amendment:4 require:premium
-No   Misra C 2012: 22.18   amendment:4 require:premium
-No   Misra C 2012: 22.19   amendment:4 require:premium
-No   Misra C 2012: 22.20   amendment:4 require:premium
-No   Misra C 2012: 23.1    amendment:3 require:premium
-No   Misra C 2012: 23.2    amendment:3 require:premium
-No   Misra C 2012: 23.3    amendment:3 require:premium
-No   Misra C 2012: 23.4    amendment:3 require:premium
-No   Misra C 2012: 23.5    amendment:3 require:premium
-No   Misra C 2012: 23.6    amendment:3 require:premium
-No   Misra C 2012: 23.7    amendment:3 require:premium
-No   Misra C 2012: 23.8    amendment:3 require:premium
+Yes  Misra C 2012: 22.7       amendment:1
+Yes  Misra C 2012: 22.8       amendment:1
+Yes  Misra C 2012: 22.9       amendment:1
+Yes  Misra C 2012: 22.10      amendment:1
+No   Misra C 2012: 22.11      amendment:4 require:premium
+No   Misra C 2012: 22.12      amendment:4 require:premium
+No   Misra C 2012: 22.13      amendment:4 require:premium
+No   Misra C 2012: 22.14      amendment:4 require:premium
+No   Misra C 2012: 22.15      amendment:4 require:premium
+No   Misra C 2012: 22.16      amendment:4 require:premium
+No   Misra C 2012: 22.17      amendment:4 require:premium
+No   Misra C 2012: 22.18      amendment:4 require:premium
+No   Misra C 2012: 22.19      amendment:4 require:premium
+No   Misra C 2012: 22.20      amendment:4 require:premium
+No   Misra C 2012: 23.1       amendment:3 require:premium
+No   Misra C 2012: 23.2       amendment:3 require:premium
+No   Misra C 2012: 23.3       amendment:3 require:premium
+No   Misra C 2012: 23.4       amendment:3 require:premium
+No   Misra C 2012: 23.5       amendment:3 require:premium
+No   Misra C 2012: 23.6       amendment:3 require:premium
+No   Misra C 2012: 23.7       amendment:3 require:premium
+No   Misra C 2012: 23.8       amendment:3 require:premium
 
 
 Misra C++ 2008

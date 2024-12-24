@@ -1,5 +1,5 @@
 Import('env', 'messaging', 'common')
-libs = [messaging, 'pthread', 'common', 'zmq', 'json11']
+libs = [messaging, 'pthread', common]
 env.Program('proclogd', ['main.cc', 'proclog.cc'], LIBS=libs)
 
 if GetOption('extras'):

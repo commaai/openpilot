@@ -23,7 +23,7 @@ Safety modes optionally support `controls_allowed`, which allows or blocks a sub
 
 ## Code Rigor
 
-The panda firmware is written for its use in conjuction with [openpilot](https://github.com/commaai/openpilot). The panda firmware, through its safety model, provides and enforces the
+The panda firmware is written for its use in conjunction with [openpilot](https://github.com/commaai/openpilot). The panda firmware, through its safety model, provides and enforces the
 [openpilot safety](https://github.com/commaai/openpilot/blob/master/docs/SAFETY.md). Due to its critical function, it's important that the application code rigor within the `board` folder is held to high standards.
 
 These are the [CI regression tests](https://github.com/commaai/panda/actions) we have in place:
@@ -49,7 +49,7 @@ In addition, we run the [ruff linter](https://github.com/astral-sh/ruff) and [my
 Setup dependencies:
 ```bash
 # Ubuntu
-sudo apt-get install dfu-util gcc-arm-none-eabi python3-pip libffi-dev git
+sudo apt-get install dfu-util gcc-arm-none-eabi python3-pip libffi-dev git clang-17
 
 # macOS
 brew install --cask gcc-arm-embedded
@@ -62,7 +62,7 @@ git clone https://github.com/commaai/panda.git
 cd panda
 
 # install dependencies
-pip install -r requirements.txt
+pip install -e .[dev]
 
 # install panda
 python setup.py install
@@ -84,8 +84,8 @@ And to send one on bus 0:
 Note that you may have to setup [udev rules](https://github.com/commaai/panda/tree/master/drivers/linux) for Linux, such as
 ``` bash
 sudo tee /etc/udev/rules.d/11-panda.rules <<EOF
-SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddcc", MODE="0666"
-SUBSYSTEM=="usb", ATTRS{idVendor}=="bbaa", ATTRS{idProduct}=="ddee", MODE="0666"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddcc", MODE="0666"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="3801", ATTRS{idProduct}=="ddee", MODE="0666"
 EOF
 sudo udevadm control --reload-rules && sudo udevadm trigger
 ```
@@ -97,7 +97,7 @@ The panda jungle uses different udev rules. See [the repo](https://github.com/co
 As a universal car interface, it should support every reasonable software interface.
 
 - [Python library](https://github.com/commaai/panda/tree/master/python)
-- [C++ library](https://github.com/commaai/openpilot/tree/master/selfdrive/boardd)
+- [C++ library](https://github.com/commaai/openpilot/tree/master/selfdrive/pandad)
 - [socketcan in kernel](https://github.com/commaai/panda/tree/master/drivers/linux) (alpha)
 
 ## Licensing

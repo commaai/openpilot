@@ -88,29 +88,6 @@
     </message>
 </context>
 <context>
-    <name>AnnotatedCameraWidget</name>
-    <message>
-        <source>km/h</source>
-        <translation>km/h</translation>
-    </message>
-    <message>
-        <source>mph</source>
-        <translation>mph</translation>
-    </message>
-    <message>
-        <source>MAX</source>
-        <translation>MAX</translation>
-    </message>
-    <message>
-        <source>SPEED</source>
-        <translation>SPEED</translation>
-    </message>
-    <message>
-        <source>LIMIT</source>
-        <translation>LIMIT</translation>
-    </message>
-</context>
-<context>
     <name>ConfirmationDialog</name>
     <message>
         <source>Ok</source>
@@ -137,30 +114,14 @@
     </message>
 </context>
 <context>
-    <name>DestinationWidget</name>
+    <name>DeveloperPanel</name>
     <message>
-        <source>Home</source>
-        <translation>집</translation>
+        <source>Joystick Debug Mode</source>
+        <translation>조이스틱 디버그 모드</translation>
     </message>
     <message>
-        <source>Work</source>
-        <translation>회사</translation>
-    </message>
-    <message>
-        <source>No destination set</source>
-        <translation>목적지가 설정되지 않았습니다</translation>
-    </message>
-    <message>
-        <source>No %1 location set</source>
-        <translation>%1 위치가 설정되지 않았습니다</translation>
-    </message>
-    <message>
-        <source>home</source>
-        <translation>집</translation>
-    </message>
-    <message>
-        <source>work</source>
-        <translation>회사</translation>
+        <source>Longitudinal Maneuver Mode</source>
+        <translation>롱컨 기동 모드</translation>
     </message>
 </context>
 <context>
@@ -325,6 +286,21 @@
     </message>
 </context>
 <context>
+    <name>HudRenderer</name>
+    <message>
+        <source>km/h</source>
+        <translation>km/h</translation>
+    </message>
+    <message>
+        <source>mph</source>
+        <translation>mph</translation>
+    </message>
+    <message>
+        <source>MAX</source>
+        <translation>MAX</translation>
+    </message>
+</context>
+<context>
     <name>InputDialog</name>
     <message>
         <source>Cancel</source>
@@ -342,47 +318,6 @@
     <message>
         <source>Installing...</source>
         <translation>설치 중...</translation>
-    </message>
-</context>
-<context>
-    <name>MapETA</name>
-    <message>
-        <source>eta</source>
-        <translation>도착</translation>
-    </message>
-    <message>
-        <source>min</source>
-        <translation>분</translation>
-    </message>
-    <message>
-        <source>hr</source>
-        <translation>시간</translation>
-    </message>
-</context>
-<context>
-    <name>MapSettings</name>
-    <message>
-        <source>NAVIGATION</source>
-        <translation>내비게이션</translation>
-    </message>
-    <message>
-        <source>Manage at connect.comma.ai</source>
-        <translation>connect.comma.ai에서 관리하세요</translation>
-    </message>
-</context>
-<context>
-    <name>MapWindow</name>
-    <message>
-        <source>Map Loading</source>
-        <translation>지도 로딩 중</translation>
-    </message>
-    <message>
-        <source>Waiting for GPS</source>
-        <translation>GPS 수신 중</translation>
-    </message>
-    <message>
-        <source>Waiting for route</source>
-        <translation>경로를 기다리는 중</translation>
     </message>
 </context>
 <context>
@@ -456,10 +391,6 @@
         <translation>openpilot이 차량을 식별할 수 없었습니다. 지원되지 않는 차량이거나 ECU가 인식되지 않습니다. 해당 차량에 맞는 펌웨어 버전을 추가하려면 PR을 제출하세요. 도움이 필요하시면 discord.comma.ai에 가입하세요.</translation>
     </message>
     <message>
-        <source>openpilot was unable to identify your car. Check integrity of cables and ensure all connections are secure, particularly that the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.</source>
-        <translation>openpilot이 차량을 식별할 수 없었습니다. 케이블의 무결성을 점검하고 모든 연결부, 특히 comma power가 차량의 OBD-II 포트에 제대로 삽입되었는지 확인하세요. 도움이 필요하시면 discord.comma.ai에 가입하세요.</translation>
-    </message>
-    <message>
         <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
         <translation>openpilot 장치의 장착 위치가 변경되었습니다. 장치가 마운트에 완전히 장착되고 마운트가 앞유리에 단단히 고정되었는지 확인하세요. </translation>
     </message>
@@ -490,20 +421,20 @@
         <translation>오픈파일럿을 사용할수없습니다</translation>
     </message>
     <message>
-        <source>Waiting for controls to start</source>
-        <translation>프로세스가 준비중입니다</translation>
-    </message>
-    <message>
         <source>TAKE CONTROL IMMEDIATELY</source>
         <translation>핸들을 잡아주세요</translation>
     </message>
     <message>
-        <source>Controls Unresponsive</source>
-        <translation>프로세스가 응답하지않습니다</translation>
-    </message>
-    <message>
         <source>Reboot Device</source>
         <translation>장치를 재부팅하세요</translation>
+    </message>
+    <message>
+        <source>Waiting to start</source>
+        <translation>시작을 기다리는중</translation>
+    </message>
+    <message>
+        <source>System Unresponsive</source>
+        <translation>시스템이 응답하지않습니다</translation>
     </message>
 </context>
 <context>
@@ -559,12 +490,12 @@
         <translation>항상 LTE 연결</translation>
     </message>
     <message>
-        <source>Turn-by-turn navigation</source>
-        <translation>내비게이션 경로안내</translation>
-    </message>
-    <message>
         <source>1 year of drive storage</source>
         <translation>1년간 드라이브 로그 저장</translation>
+    </message>
+    <message>
+        <source>Remote snapshots</source>
+        <translation>원격 스냅샷</translation>
     </message>
 </context>
 <context>
@@ -609,22 +540,6 @@
         <translation>
             <numerusform>%n 일 전</numerusform>
         </translation>
-    </message>
-    <message>
-        <source>km</source>
-        <translation>km</translation>
-    </message>
-    <message>
-        <source>m</source>
-        <translation>m</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation>mi</translation>
-    </message>
-    <message>
-        <source>ft</source>
-        <translation>ft</translation>
     </message>
     <message>
         <source>now</source>
@@ -693,6 +608,10 @@ This may take up to a minute.</source>
     <message>
         <source>Software</source>
         <translation>소프트웨어</translation>
+    </message>
+    <message>
+        <source>Developer</source>
+        <translation>개발자</translation>
     </message>
 </context>
 <context>
@@ -850,14 +769,6 @@ This may take up to a minute.</source>
     <message>
         <source>PANDA</source>
         <translation>PANDA</translation>
-    </message>
-    <message>
-        <source>GPS</source>
-        <translation>GPS</translation>
-    </message>
-    <message>
-        <source>SEARCH</source>
-        <translation>검색중</translation>
     </message>
     <message>
         <source>--</source>
@@ -1071,22 +982,6 @@ This may take up to a minute.</source>
         <translation>활성화된 경우 가속 페달을 밟으면 openpilot이 해제됩니다.</translation>
     </message>
     <message>
-        <source>Show ETA in 24h Format</source>
-        <translation>24시간 형식으로 도착 예정 시간 표시</translation>
-    </message>
-    <message>
-        <source>Use 24h format instead of am/pm</source>
-        <translation>오전/오후 대신 24시간 형식 사용</translation>
-    </message>
-    <message>
-        <source>Show Map on Left Side of UI</source>
-        <translation>UI 왼쪽에 지도 표시</translation>
-    </message>
-    <message>
-        <source>Show map on left side when in split screen view.</source>
-        <translation>분할 화면 보기에서 지도를 왼쪽에 표시합니다.</translation>
-    </message>
-    <message>
         <source>Experimental Mode</source>
         <translation>실험 모드</translation>
     </message>
@@ -1156,15 +1051,15 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
-        <translation type="unfinished"></translation>
+        <translation>운전 시각화는 일부 회전을 더 잘 보여주기 위해 저속에서 도로를 향한 광각 카메라로 전환됩니다. 실험 모드 로고도 우측 상단에 표시됩니다.</translation>
     </message>
     <message>
         <source>Always-On Driver Monitoring</source>
-        <translation type="unfinished"></translation>
+        <translation>상시 운전자 모니터링</translation>
     </message>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Openpilot이 활성화되지 않은 경우에도 드라이버 모니터링을 활성화합니다.</translation>
     </message>
 </context>
 <context>

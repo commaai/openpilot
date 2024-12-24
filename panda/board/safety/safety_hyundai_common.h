@@ -1,14 +1,13 @@
-#ifndef SAFETY_HYUNDAI_COMMON_H
-#define SAFETY_HYUNDAI_COMMON_H
+#pragma once
 
-const int HYUNDAI_PARAM_EV_GAS = 1;
-const int HYUNDAI_PARAM_HYBRID_GAS = 2;
-const int HYUNDAI_PARAM_LONGITUDINAL = 4;
-const int HYUNDAI_PARAM_CAMERA_SCC = 8;
-const int HYUNDAI_PARAM_CANFD_HDA2 = 16;
-const int HYUNDAI_PARAM_ALT_LIMITS = 64; // TODO: shift this down with the rest of the common flags
+#include "safety_declarations.h"
 
-const uint8_t HYUNDAI_PREV_BUTTON_SAMPLES = 8;  // roughly 160 ms
+extern uint16_t hyundai_canfd_crc_lut[256];
+uint16_t hyundai_canfd_crc_lut[256];
+
+static const uint8_t HYUNDAI_PREV_BUTTON_SAMPLES = 8;  // roughly 160 ms
+                                                       //
+extern const uint32_t HYUNDAI_STANDSTILL_THRSLD;
 const uint32_t HYUNDAI_STANDSTILL_THRSLD = 12;  // 0.375 kph
 
 enum {
@@ -19,17 +18,33 @@ enum {
 };
 
 // common state
+extern bool hyundai_ev_gas_signal;
 bool hyundai_ev_gas_signal = false;
-bool hyundai_hybrid_gas_signal = false;
-bool hyundai_longitudinal = false;
-bool hyundai_camera_scc = false;
-bool hyundai_canfd_hda2 = false;
-bool hyundai_alt_limits = false;
-uint8_t hyundai_last_button_interaction;  // button messages since the user pressed an enable button
 
-uint16_t hyundai_canfd_crc_lut[256];
+extern bool hyundai_hybrid_gas_signal;
+bool hyundai_hybrid_gas_signal = false;
+
+extern bool hyundai_longitudinal;
+bool hyundai_longitudinal = false;
+
+extern bool hyundai_camera_scc;
+bool hyundai_camera_scc = false;
+
+extern bool hyundai_canfd_hda2;
+bool hyundai_canfd_hda2 = false;
+
+extern bool hyundai_alt_limits;
+bool hyundai_alt_limits = false;
+
+static uint8_t hyundai_last_button_interaction;  // button messages since the user pressed an enable button
 
 void hyundai_common_init(uint16_t param) {
+  const int HYUNDAI_PARAM_EV_GAS = 1;
+  const int HYUNDAI_PARAM_HYBRID_GAS = 2;
+  const int HYUNDAI_PARAM_CAMERA_SCC = 8;
+  const int HYUNDAI_PARAM_CANFD_HDA2 = 16;
+  const int HYUNDAI_PARAM_ALT_LIMITS = 64; // TODO: shift this down with the rest of the common flags
+
   hyundai_ev_gas_signal = GET_FLAG(param, HYUNDAI_PARAM_EV_GAS);
   hyundai_hybrid_gas_signal = !hyundai_ev_gas_signal && GET_FLAG(param, HYUNDAI_PARAM_HYBRID_GAS);
   hyundai_camera_scc = GET_FLAG(param, HYUNDAI_PARAM_CAMERA_SCC);
@@ -39,6 +54,7 @@ void hyundai_common_init(uint16_t param) {
   hyundai_last_button_interaction = HYUNDAI_PREV_BUTTON_SAMPLES;
 
 #ifdef ALLOW_DEBUG
+  const int HYUNDAI_PARAM_LONGITUDINAL = 4;
   hyundai_longitudinal = GET_FLAG(param, HYUNDAI_PARAM_LONGITUDINAL);
 #else
   hyundai_longitudinal = false;
@@ -110,5 +126,3 @@ uint32_t hyundai_common_canfd_compute_checksum(const CANPacket_t *to_push) {
 
   return crc;
 }
-
-#endif

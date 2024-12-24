@@ -19,6 +19,17 @@
 #endif
 
 float get_vignetting_s(float r) {
+#if defined(VIGNETTE_PROFILE_4DT6MM)
+  if (r < 100000) {
+    return 1.0f + 0.0000013f*r;
+  } else if (r < 250000) {
+    return 1.02f + 0.0000011f*r;
+  } else if (r < 400000) {
+    return 0.92f + 0.0000015f*r;
+  } else {
+    return 0.44f + 0.0000027f*r;
+  }
+#elif defined(VIGNETTE_PROFILE_8DT0MM)
   if (r < 62500) {
     return (1.0f + 0.0000008f*r);
   } else if (r < 490000) {
@@ -28,6 +39,9 @@ float get_vignetting_s(float r) {
   } else {
     return (0.53503625f + 0.0000000000022f*r*r);
   }
+#else
+  return 1.0f;
+#endif
 }
 
 int4 parse_12bit(uchar8 pvs) {
@@ -65,7 +79,7 @@ __kernel void process_raw(const __global uchar * in, __global uchar * out, int e
   #if VIGNETTING
     int gx = (gid_x*2 - RGB_WIDTH/2);
     int gy = (gid_y*2 - RGB_HEIGHT/2);
-    const float vignette_factor = get_vignetting_s((gx*gx + gy*gy) / VIGNETTE_RSZ);
+    const float vignette_factor = get_vignetting_s(gx*gx + gy*gy);
   #else
     const float vignette_factor = 1.0;
   #endif

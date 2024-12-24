@@ -7,15 +7,14 @@ from collections import defaultdict
 from tqdm import tqdm
 from typing import Any
 
+from opendbc.car.car_helpers import interface_names
 from openpilot.common.git import get_commit
-from openpilot.selfdrive.car.car_helpers import interface_names
 from openpilot.tools.lib.openpilotci import get_url, upload_file
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, PROC_REPLAY_DIR, FAKEDATA, replay_process, \
-                                                                   check_openpilot_enabled, check_most_messages_valid
+                                                                   check_most_messages_valid
 from openpilot.tools.lib.filereader import FileReader
-from openpilot.tools.lib.logreader import LogReader
-from openpilot.tools.lib.helpers import save_log
+from openpilot.tools.lib.logreader import LogReader, save_log
 
 source_segments = [
   ("BODY", "937ccb7243511b65|2022-05-24--16-03-09--1"),        # COMMA.COMMA_BODY
@@ -37,28 +36,27 @@ source_segments = [
   ("FORD", "54827bf84c38b14f|2023-01-26--21-59-07--4"),        # FORD.FORD_BRONCO_SPORT_MK1
 
   # Enable when port is tested and dashcamOnly is no longer set
-  #("TESLA", "bb50caf5f0945ab1|2021-06-19--17-20-18--3"),      # TESLA.TESLA_AP2_MODELS
   #("VOLKSWAGEN2", "3cfdec54aa035f3f|2022-07-19--23-45-10--2"),  # VOLKSWAGEN.VOLKSWAGEN_PASSAT_NMS
 ]
 
 segments = [
-  ("BODY", "regen29FD9FF7760|2024-05-21--06-58-51--0"),
-  ("HYUNDAI", "regen0B1B76A1C27|2024-05-21--06-57-53--0"),
-  ("HYUNDAI2", "regen3BB55FA5E20|2024-05-21--06-59-03--0"),
-  ("TOYOTA", "regenF6FB954C1E2|2024-05-21--06-57-53--0"),
-  ("TOYOTA2", "regen0AC637CE7BA|2024-05-21--06-57-54--0"),
-  ("TOYOTA3", "regenC7BE3FAE496|2024-05-21--06-59-01--0"),
-  ("HONDA", "regen58E9F8B695A|2024-05-21--06-57-55--0"),
-  ("HONDA2", "regen8695608EB15|2024-05-21--06-57-55--0"),
-  ("CHRYSLER", "regenB0F8C25C902|2024-05-21--06-59-47--0"),
-  ("RAM", "regenB3B2C7A105B|2024-05-21--07-00-47--0"),
-  ("SUBARU", "regen860FD736DCC|2024-05-21--07-00-50--0"),
-  ("GM", "regen8CB3048DEB9|2024-05-21--06-59-49--0"),
-  ("GM2", "regen379D446541D|2024-05-21--07-00-51--0"),
-  ("NISSAN", "regen24871108F80|2024-05-21--07-00-38--0"),
-  ("VOLKSWAGEN", "regenF390392F275|2024-05-21--07-00-52--0"),
-  ("MAZDA", "regenE5A36020581|2024-05-21--07-01-51--0"),
-  ("FORD", "regenDC288ED0D78|2024-05-21--07-02-18--0"),
+  ("BODY", "regenA67A128BCD8|2024-08-30--02-36-22--0"),
+  ("HYUNDAI", "regen9CBD921E93E|2024-08-30--02-38-51--0"),
+  ("HYUNDAI2", "regen306779F6870|2024-10-03--04-03-23--0"),
+  ("TOYOTA", "regen1CA7A48E6F7|2024-08-30--02-45-08--0"),
+  ("TOYOTA2", "regen6E484EDAB96|2024-08-30--02-47-37--0"),
+  ("TOYOTA3", "regen4CE950B0267|2024-08-30--02-51-30--0"),
+  ("HONDA", "regenC8F0D6ADC5C|2024-08-30--02-54-01--0"),
+  ("HONDA2", "regen4B38A7428CD|2024-08-30--02-56-31--0"),
+  ("CHRYSLER", "regenF3DBBA9E8DF|2024-08-30--02-59-03--0"),
+  ("RAM", "regenDB02684E00A|2024-08-30--03-02-54--0"),
+  ("SUBARU", "regenAA1FF48CF1F|2024-08-30--03-06-45--0"),
+  ("GM", "regen720F2BA4CF6|2024-08-30--03-09-15--0"),
+  ("GM2", "regen9ADBECBCD1C|2024-08-30--03-13-04--0"),
+  ("NISSAN", "regen58464878D07|2024-08-30--03-15-31--0"),
+  ("VOLKSWAGEN", "regenED976DEB757|2024-08-30--03-18-02--0"),
+  ("MAZDA", "regenACF84CCF482|2024-08-30--03-21-55--0"),
+  ("FORD", "regen756F8230C21|2024-11-07--00-08-24--0"),
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
@@ -88,7 +86,7 @@ def run_test_process(data):
 
 def get_log_data(segment):
   r, n = segment.rsplit("--", 1)
-  with FileReader(get_url(r, n)) as f:
+  with FileReader(get_url(r, n, "rlog.zst")) as f:
     return (segment, f.read())
 
 
@@ -105,14 +103,11 @@ def test_process(cfg, lr, segment, ref_log_path, new_log_path, ignore_fields=Non
   except Exception as e:
     raise Exception("failed on segment: " + segment) from e
 
-  # check to make sure openpilot is engaged in the route
-  if cfg.proc_name == "controlsd":
-    if not check_openpilot_enabled(log_msgs):
-      return f"Route did not enable at all or for long enough: {new_log_path}", log_msgs
   if not check_most_messages_valid(log_msgs):
     return f"Route did not have enough valid messages: {new_log_path}", log_msgs
 
-  if cfg.proc_name != 'ubloxd' or segment != 'regen3BB55FA5E20|2024-05-21--06-59-03--0':
+  # skip this check if the segment is using qcom gps
+  if cfg.proc_name != 'ubloxd' or any(m.which() in cfg.pubs for m in lr):
     seen_msgs = {m.which() for m in log_msgs}
     expected_msgs = set(cfg.subs)
     if seen_msgs != expected_msgs:
@@ -140,7 +135,7 @@ if __name__ == "__main__":
   parser.add_argument("--blacklist-cars", type=str, nargs="*", default=[],
                       help="Blacklist given cars from the test (e.g. HONDA)")
   parser.add_argument("--ignore-fields", type=str, nargs="*", default=[],
-                      help="Extra fields or msgs to ignore (e.g. carState.events)")
+                      help="Extra fields or msgs to ignore (e.g. driverMonitoringState.events)")
   parser.add_argument("--ignore-msgs", type=str, nargs="*", default=[],
                       help="Msgs to ignore (e.g. carEvents)")
   parser.add_argument("--update-refs", action="store_true",
@@ -198,11 +193,15 @@ if __name__ == "__main__":
         if cfg.proc_name not in tested_procs:
           continue
 
-        cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.bz2")
+        # to speed things up, we only test all segments on card
+        if cfg.proc_name != 'card' and car_brand not in ('HYUNDAI', 'TOYOTA', 'HONDA', 'SUBARU', 'FORD'):
+          continue
+
+        cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.zst")
         if args.update_refs:  # reference logs will not exist if routes were just regenerated
-          ref_log_path = get_url(*segment.rsplit("--", 1))
+          ref_log_path = get_url(*segment.rsplit("--", 1,), "rlog.zst")
         else:
-          ref_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{ref_commit}.bz2")
+          ref_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{ref_commit}.zst")
           ref_log_path = ref_log_fn if os.path.exists(ref_log_fn) else BASE_URL + os.path.basename(ref_log_fn)
 
         dat = None if args.upload_only else log_data[segment]

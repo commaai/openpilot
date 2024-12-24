@@ -1,0 +1,230 @@
+VERSION ""
+
+
+NS_ :
+    NS_DESC_
+    CM_
+    BA_DEF_
+    BA_
+    VAL_
+    CAT_DEF_
+    CAT_
+    FILTER
+    BA_DEF_DEF_
+    EV_DATA_
+    ENVVAR_DATA_
+    SGTYPE_
+    SGTYPE_VAL_
+    BA_DEF_SGTYPE_
+    BA_SGTYPE_
+    SIG_TYPE_REF_
+    VAL_TABLE_
+    SIG_GROUP_
+    SIG_VALTYPE_
+    SIGTYPE_VALTYPE_
+    BO_TX_BU_
+    BA_DEF_REL_
+    BA_REL_
+    BA_DEF_DEF_REL_
+    BU_SG_REL_
+    BU_EV_REL_
+    BU_BO_REL_
+    SG_MUL_VAL_
+
+BS_:
+
+BU_: XXX BCM CEM FSM PSCM SAS
+
+BO_ 16 SAS0: 8 SAS
+ SG_ Counter0 : 3|8@0+ (1,0) [0|511] "" XXX
+ SG_ RateOfChangeOrTorque : 39|16@0+ (1,-32768) [0|65535] "" XXX
+ SG_ NEW_SIGNAL_1 : 22|15@0+ (1,0) [0|65535] "" XXX
+ SG_ SteeringDirection : 6|1@0+ (1,0) [0|1] "" XXX
+ SG_ SteeringAngle : 53|14@0+ (0.0445,0) [0|65535] "degrees" XXX
+
+BO_ 32 AccPedal: 8 XXX
+ SG_ AccPedal : 17|10@0+ (0.1,0) [0|1023] "%" XXX
+
+BO_ 81 FSM0: 8 FSM
+ SG_ ACCStatus : 18|3@0+ (1,0) [0|7] "" XXX
+
+BO_ 277 NEW_MSG_7: 8 XXX
+ SG_ NEW_SIGNAL_1 : 39|16@0+ (1,0) [0|65535] "" XXX
+
+BO_ 295 CCButtons: 8 CEM
+ SG_ ACCMinusBtn : 48|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACCSetBtn : 63|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACCOnOffBtn : 59|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACCResumeBtn : 61|1@0+ (1,0) [0|1] "" XXX
+ SG_ TimeGapDecreaseBtnInv : 34|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACCOnOffBtnInv : 43|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACCResumeBtnInv : 45|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACCSetBtnInv : 47|1@0+ (1,0) [0|1] "" XXX
+ SG_ TimeGapIncreaseBtn : 49|1@0+ (1,0) [0|1] "" XXX
+ SG_ TimeGapDecreaseBtn : 50|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACCMinusBtnInv : 32|1@0+ (1,0) [0|1] "" XXX
+ SG_ TimeGapIncreaseBtnInv : 33|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 298 NEW_MSG_5: 8 XXX
+ SG_ EngineRpm : 52|13@0+ (1,0) [0|8000] "" XXX
+
+BO_ 336 NEW_MSG_8: 8 XXX
+
+BO_ 328 VehicleSpeed1: 8 XXX
+ SG_ VehicleSpeed : 55|16@0+ (0.01,0) [0|65535] "" XXX
+
+BO_ 465 NEW_MSG_4: 8 XXX
+ SG_ NEW_SIGNAL_1 : 55|16@0+ (1,0) [0|4095] "" XXX
+
+BO_ 544 wheelspeed1: 8 BCM
+ SG_ WhlSpdRR : 39|16@0+ (0.01,-327.68) [0|65535] "" XXX
+ SG_ WhlSpdLR : 55|16@0+ (0.01,-327.68) [0|65535] "" XXX
+
+BO_ 565 wheelspeed0: 8 BCM
+ SG_ WhlSpdLF : 55|16@0+ (0.01,-327.68) [0|65535] "" XXX
+ SG_ WhlSpdRF : 39|16@0+ (0.01,-327.68) [0|65535] "" XXX
+
+BO_ 582 PSCM1: 8 PSCM
+ SG_ byte4 : 39|4@0+ (1,0) [0|15] "" XXX
+ SG_ LKATorque : 35|12@0+ (1,-2000) [0|65535] "" XXX
+ SG_ SteeringAngleServo : 23|16@0+ (0.0447,-1468) [0|65535] "deg" XXX
+ SG_ SteeringWheelRateOfChange : 15|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte7 : 63|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte0 : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ LKAActive : 55|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 608 FSM1: 8 FSM
+ SG_ ACC_Tracking : 7|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 609 fromWhere: 8 XXX
+ SG_ SteeringAngle : 21|14@0+ (0.1,-1021) [0|65535] "deg" XXX
+
+BO_ 610 FSM2: 8 FSM
+ SG_ TrqLim : 23|8@0+ (1,-128) [0|255] "" PSCM
+ SG_ Checksum : 55|8@0+ (1,0) [0|255] "" PSCM
+ SG_ LKAAngleReq : 29|14@0+ (0.04,-327.68) [0|16383] "" PSCM
+ SG_ SET_X_02 : 31|2@0+ (1,0) [0|3] "" XXX
+ SG_ SET_X_10 : 47|6@0+ (1,0) [0|63] "" XXX
+ SG_ SET_X_A4 : 63|8@0+ (1,0) [0|255] "" XXX
+ SG_ SET_X_22 : 15|8@0+ (1,0) [0|255] "" XXX
+ SG_ LKASteerDirection : 41|2@0+ (1,0) [0|3] "" PSCM
+
+BO_ 624 FSM3: 8 FSM
+ SG_ ACC_SOMETHING : 15|8@0+ (1,0) [0|255] "" XXX
+ SG_ ACC_Some : 17|10@0+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_3 : 47|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 648 BrakePedal: 8 XXX
+ SG_ Counter : 0|3@1+ (1,0) [0|7] "" XXX
+ SG_ BrakePedal : 24|8@1+ (1,4) [0|255] "" XXX
+
+BO_ 794 FSM4: 8 FSM
+ SG_ NEW_SIGNAL_1 : 47|16@0+ (1,-46090) [0|16383] "" XXX
+ SG_ NEW_SIGNAL_2 : 32|4@1+ (1,0) [0|15] "" XXX
+
+BO_ 819 PSCM0: 8 PSCM
+
+BO_ 923 NEW_MSG_1: 8 XXX
+ SG_ NEW_SIGNAL_1 : 15|16@0+ (1,0) [0|65535] "" XXX
+
+BO_ 1021 FSM5: 8 FSM
+
+BO_ 1039 MiscCarInfo: 8 XXX
+ SG_ TurnSignal : 33|2@0+ (1,0) [0|3] "" XXX
+
+BO_ 1279 PSCM3: 8 PSCM
+
+BO_ 1830 diagCEMReq: 8 XXX
+ SG_ byte0 : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte1 : 15|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte2 : 23|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte3 : 31|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte4 : 39|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte5 : 47|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte6 : 55|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte7 : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 1838 diagCEMResp: 8 XXX
+ SG_ byte03 : 7|32@0+ (1,0) [0|4294967295] "" XXX
+ SG_ byte47 : 39|32@0+ (1,0) [0|4294967295] "" XXX
+
+BO_ 1840 diagPSCMReq: 8 XXX
+ SG_ byte0 : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte1 : 15|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte2 : 23|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte3 : 31|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte4 : 39|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte5 : 47|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte6 : 55|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte7 : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 1848 diagPSCMResp: 8 XXX
+ SG_ byte03 : 7|32@0+ (1,0) [0|4294967295] "" XXX
+ SG_ byte47 : 39|32@0+ (1,0) [0|4294967295] "" XXX
+
+BO_ 1892 diagFSMReq: 8 XXX
+ SG_ byte0 : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte1 : 15|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte2 : 23|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte3 : 31|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte4 : 39|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte5 : 47|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte6 : 55|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte7 : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 1900 diagFSMResp: 8 XXX
+ SG_ byte03 : 7|32@0+ (1,0) [0|4294967295] "" XXX
+ SG_ byte47 : 39|32@0+ (1,0) [0|4294967295] "" XXX
+
+BO_ 1939 diagCVMReq: 8 XXX
+ SG_ byte0 : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte1 : 15|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte2 : 23|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte3 : 31|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte4 : 39|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte5 : 47|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte6 : 55|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte7 : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 1947 diagCVMResp: 8 XXX
+ SG_ byte03 : 7|32@0+ (1,0) [0|4294967295] "" XXX
+ SG_ byte47 : 39|32@0+ (1,0) [0|4294967295] "" XXX
+
+BO_ 2015 diagGlobalReq: 8 XXX
+ SG_ byte0 : 7|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte1 : 15|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte2 : 23|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte3 : 31|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte4 : 39|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte5 : 47|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte6 : 55|8@0+ (1,0) [0|255] "" XXX
+ SG_ byte7 : 63|8@0+ (1,0) [0|255] "" XXX
+
+
+
+
+CM_ SG_ 16 RateOfChangeOrTorque "Rate of change? Torque?";
+CM_ SG_ 16 SteeringDirection "0 = CCW, 1=CW (turning left or right of center)";
+CM_ SG_ 298 EngineRpm "Might be engine rpm. But behaves abit weird.";
+CM_ SG_ 582 byte4 "High nibble";
+CM_ SG_ 582 SteeringWheelRateOfChange "Some rate of change for steering wheel? Torque?";
+CM_ SG_ 582 byte0 "0=CCW, 1=CW, bit 2,";
+CM_ SG_ 582 LKAActive "Bit 1, 1 When LKA Active, Bit 3, 1 When denying?";
+CM_ SG_ 81 ACCStatus "0=Acc Unavailable, 1=???, 2=Acc Ready, 3,4=???, 6= Acc Active, 7=Acc active tracking object (probably) ";
+CM_ SG_ 608 ACC_Tracking "Seems to track distance, or speed of vehicle in front.";
+CM_ SG_ 610 SET_X_22 "0x20 Heartbeat, VEgo <58kph = 0x03, VEgo >65kph = 0x04, 0x05";
+CM_ SG_ 624 ACC_SOMETHING "Might be some acc speed, moved abit after activating acc";
+CM_ SG_ 624 ACC_Some "Jumps to life after activating ACC, 0 when not active";
+CM_ SG_ 295 ACCMinusBtn "ACC Minus (-) button pressed";
+CM_ SG_ 295 ACCSetBtn "Acc Set button (+) pressed";
+CM_ SG_ 295 ACCOnOffBtn "Cruise control on/off button pressed";
+CM_ SG_ 295 ACCResumeBtn "ACC Resume button pressed";
+CM_ SG_ 295 TimeGapDecreaseBtnInv "Active zero when button pressed.";
+CM_ SG_ 295 ACCOnOffBtnInv "Active zero when button pressed.";
+CM_ SG_ 295 ACCResumeBtnInv "Active zero when button pressed.";
+CM_ SG_ 295 ACCSetBtnInv "Active zero when button pressed.";
+CM_ SG_ 295 TimeGapIncreaseBtn "Increase the time gap on ACC";
+CM_ SG_ 295 TimeGapDecreaseBtn "Decrease the time gap on ACC";
+CM_ SG_ 295 ACCMinusBtnInv "Active zero when button pressed.";
+CM_ SG_ 295 TimeGapIncreaseBtnInv "Active zero when button pressed.";
+CM_ SG_ 1039 TurnSignal "0 = Nothing, 1= Left, 3=Right";

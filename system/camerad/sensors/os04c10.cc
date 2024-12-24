@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "system/camerad/sensors/sensor.h"
 
 namespace {
@@ -20,13 +22,14 @@ const uint32_t os04c10_analog_gains_reg[] = {
 
 OS04C10::OS04C10() {
   image_sensor = cereal::FrameData::ImageSensor::OS04C10;
-  pixel_size_mm = 0.002;
+  bayer_pattern = CAM_ISP_PATTERN_BAYER_BGBGBG;
+  pixel_size_mm = 0.004;
   data_word = false;
 
-  hdr_offset = 64 * 2 + 8; // stagger
-  frame_width = 2688;
-  frame_height = 1520 * 2 + hdr_offset;
-  frame_stride = (frame_width * 10 / 8); // no alignment
+  // hdr_offset = 64 * 2 + 8; // stagger
+  frame_width = 1344;
+  frame_height = 760; //760 * 2 + hdr_offset;
+  frame_stride = (frame_width * 12 / 8); // no alignment
 
   extra_height = 0;
   frame_offset = 0;
@@ -35,29 +38,61 @@ OS04C10::OS04C10() {
   init_reg_array.assign(std::begin(init_array_os04c10), std::end(init_array_os04c10));
   probe_reg_addr = 0x300a;
   probe_expected_data = 0x5304;
-  mipi_format = CAM_FORMAT_MIPI_RAW_10;
-  frame_data_type = 0x2b;
+  bits_per_pixel = 12;
+  mipi_format = CAM_FORMAT_MIPI_RAW_12;
+  frame_data_type = 0x2c;
   mclk_frequency = 24000000; // Hz
 
+  ev_scale = 150.0;
   dc_gain_factor = 1;
   dc_gain_min_weight = 1;  // always on is fine
   dc_gain_max_weight = 1;
   dc_gain_on_grey = 0.9;
   dc_gain_off_grey = 1.0;
   exposure_time_min = 2;
-  exposure_time_max = 2400;
+  exposure_time_max = 1684;
   analog_gain_min_idx = 0x0;
   analog_gain_rec_idx = 0x0;  // 1x
-  analog_gain_max_idx = 0x36;
+  analog_gain_max_idx = 0x28;
   analog_gain_cost_delta = -1;
   analog_gain_cost_low = 0.4;
   analog_gain_cost_high = 6.4;
   for (int i = 0; i <= analog_gain_max_idx; i++) {
     sensor_analog_gains[i] = sensor_analog_gains_OS04C10[i];
   }
-  min_ev = (exposure_time_min) * sensor_analog_gains[analog_gain_min_idx];
+  min_ev = exposure_time_min * sensor_analog_gains[analog_gain_min_idx];
   max_ev = exposure_time_max * dc_gain_factor * sensor_analog_gains[analog_gain_max_idx];
   target_grey_factor = 0.01;
+
+  black_level = 48;
+  color_correct_matrix = {
+    0x000000c2, 0x00000fe0, 0x00000fde,
+    0x00000fa7, 0x000000d9, 0x00001000,
+    0x00000fca, 0x00000fef, 0x000000c7,
+  };
+  for (int i = 0; i < 65; i++) {
+    float fx = i / 64.0;
+    gamma_lut_rgb.push_back((uint32_t)((10*fx)/(1+9*fx)*1023.0 + 0.5));
+  }
+  prepare_gamma_lut();
+  linearization_lut = {
+    0x02000000, 0x02000000, 0x02000000, 0x02000000,
+    0x020007ff, 0x020007ff, 0x020007ff, 0x020007ff,
+    0x02000bff, 0x02000bff, 0x02000bff, 0x02000bff,
+    0x020017ff, 0x020017ff, 0x020017ff, 0x020017ff,
+    0x02001bff, 0x02001bff, 0x02001bff, 0x02001bff,
+    0x020023ff, 0x020023ff, 0x020023ff, 0x020023ff,
+    0x00003fff, 0x00003fff, 0x00003fff, 0x00003fff,
+    0x00003fff, 0x00003fff, 0x00003fff, 0x00003fff,
+    0x00003fff, 0x00003fff, 0x00003fff, 0x00003fff,
+  };
+  for (int i = 0; i < 252; i++) {
+    linearization_lut.push_back(0x0);
+  }
+  linearization_pts = {0x07ff0bff, 0x17ff1bff, 0x23ff3fff, 0x3fff3fff};
+  for (int i = 0; i < 884*2; i++) {
+    vignetting_lut.push_back(0xff);
+  }
 }
 
 std::vector<i2c_random_wr_payload> OS04C10::getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const {

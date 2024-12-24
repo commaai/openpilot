@@ -31,7 +31,7 @@ def main() -> NoReturn:
 
       if len(record) > 2*1024*1024:
         print("WARNING: log too big to publish", len(record))
-        print(print(record[:100]))
+        print(record[:100])
         continue
 
       # then we publish them

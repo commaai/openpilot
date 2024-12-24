@@ -1,93 +1,128 @@
-import subprocess, time, re, hashlib, tempfile
-from pathlib import Path
-from typing import Optional, Tuple
-import numpy as np
-from pycuda.compiler import compile as cuda_compile # type: ignore
-from tinygrad.helpers import DEBUG, getenv, colored, diskcache
-from tinygrad.ops import Compiled
-from tinygrad.runtime.lib import RawBufferCopyInOut, RawMallocBuffer, LRUAllocator
-from tinygrad.codegen.kernel import LinearizerOptions
-from tinygrad.renderer.cuda import CUDARenderer
+from __future__ import annotations
+import ctypes, ctypes.util, functools
+from typing import Tuple, Optional, List
+from tinygrad.helpers import DEBUG, getenv, from_mv, init_c_var, init_c_struct_t
+from tinygrad.device import Compiled, BufferSpec, LRUAllocator
+from tinygrad.renderer.cstyle import CUDARenderer
+from tinygrad.renderer.ptx import PTXRenderer
+from tinygrad.runtime.autogen import cuda
+from tinygrad.runtime.support.compiler_cuda import cuda_disassemble, pretty_ptx, CUDACompiler, PTXCompiler, PTX
+if getenv("IOCTL"): import extra.nv_gpu_driver.nv_ioctl  # noqa: F401  # pylint: disable=unused-import
 
-def pretty_ptx(s):
-  # all expressions match `<valid_before><expr><valid_after>` and replace it with `<valid_before>color(<expr>)<valid_after>`
-  s = re.sub(r'([!@<\[\s,\+\-;\n])((?:[_%$][\w%\$_]+(?:\.[xyz])?\:?)|(?:buf\d+))([<>\]\s,\+\-;\n\)])', lambda m:m[1]+colored(m[2], "blue")+m[3], s, flags=re.M) # identifiers
-  s = re.sub(r'(.)((?:b|s|u|f)(?:8|16|32|64)|pred)([\.\s])', lambda m:m[1]+colored(m[2], "green")+m[3], s, flags=re.M) # types
-  s = re.sub(r'^(\s*)([\w]+)(.*?;$)', lambda m:m[1]+colored(m[2], "yellow")+m[3], s, flags=re.M) # instructions
-  s = re.sub(r'([<>\[\]\s,\+\-;])((?:0[fF][0-9a-fA-F]{8})|(?:[0-9]+)|(?:0[xX][0-9a-fA-F]+))([<>\[\]\s,\+\-;])', lambda m:m[1]+colored(m[2], "yellow")+m[3], s, flags=re.M) # numbers
-  s = re.sub(r'(\.)(param|reg|global)', lambda m:m[1]+colored(m[2], "magenta"), s, flags=re.M) # space
-  s = re.sub(r'(\.)(version|target|address_size|visible|entry)', lambda m:m[1]+colored(m[2], "magenta"), s, flags=re.M) # derivatives
-  return s
-def arch(): return "sm_" + "".join([str(x) for x in pycuda.driver.Context.get_device().compute_capability()])
+def check(status):
+  if status != 0: raise RuntimeError(f"CUDA Error {status}, {ctypes.string_at(init_c_var(ctypes.POINTER(ctypes.c_char)(), lambda x: cuda.cuGetErrorString(status, ctypes.byref(x)))).decode()}")  # noqa: E501
 
-if getenv("CUDACPU", 0) == 1:
-  import ctypes, ctypes.util
-  lib = ctypes.CDLL(ctypes.util.find_library("gpuocelot"))
-  lib.ptx_run.argtypes = [ctypes.c_char_p, ctypes.c_int, ctypes.POINTER(ctypes.c_void_p), ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int, ctypes.c_int]
-  class cuda:
-    class module:
-      def __init__(self, src): self.src = src
-      def get_function(self, _): return self
-      def __call__(self, *args, block, grid, shared): lib.ptx_run(self.src, len(args), (ctypes.c_void_p * len(args))(*[ctypes.cast(x, ctypes.c_void_p) for x in args]), *block, *grid, shared)
-    module_from_buffer = lambda src: cuda.module(src) # pylint: disable=unnecessary-lambda # noqa: E731
-    class Event:
-      def __init__(self): pass
-      def record(self): self.start = time.perf_counter()
-      def time_till(self, other): return other.start - self.start
-      def synchronize(self): pass
-    class Context:
-      synchronize = lambda:0 # noqa: E731
-    CompileError = Exception
-  class context:
-    class device:
-      compute_capability = lambda: (3,5) # pylint: disable=unnecessary-lambda # noqa: E731
-    get_device = lambda: context.device # pylint: disable=unnecessary-lambda # noqa: E731
-  import pycuda.driver # type: ignore
-  pycuda.driver.Context = context
-  RawCUDABuffer = RawMallocBuffer
-else:
-  import pycuda.autoprimaryctx # type: ignore # pylint: disable=unused-import # noqa: F401
-  import pycuda.driver as cuda # type: ignore
-  class CUDAAllocator(LRUAllocator):
-    def _do_alloc(self, size, dtype, device, **kwargs): return cuda.mem_alloc(size * dtype.itemsize) # type: ignore
-    def _cached_bufkey(self, size, dtype, device): return (device, size*dtype.itemsize) # Buffers of the same length could be reused, no matter what dtype.
-  CUDAAlloc = CUDAAllocator(pycuda.driver.Context.get_device().total_memory())
-  class RawCUDABuffer(RawBufferCopyInOut): # type: ignore
-    def __init__(self, size, dtype): super().__init__(size, dtype, allocator=CUDAAlloc)
-    def _copyin(self, x:np.ndarray, stream:Optional[cuda.Stream]=None): cuda.memcpy_htod_async(self._buf, x.ravel(), stream) # type: ignore
-    def _copyout(self, x:np.ndarray): cuda.memcpy_dtoh(x, self._buf) # type: ignore
+def encode_args(args, vals) -> Tuple[ctypes.Structure, ctypes.Array]:
+  c_args = init_c_struct_t(tuple([(f'f{i}', cuda.CUdeviceptr_v2) for i in range(len(args))] +
+                                 [(f'v{i}', ctypes.c_int) for i in range(len(vals))]))(*args, *vals)
+  vargs = (ctypes.c_void_p * 5)(ctypes.c_void_p(1), ctypes.cast(ctypes.byref(c_args), ctypes.c_void_p), ctypes.c_void_p(2),
+                                ctypes.cast(ctypes.pointer(ctypes.c_size_t(ctypes.sizeof(c_args))), ctypes.c_void_p), ctypes.c_void_p(0))
+  return c_args, vargs
 
-@diskcache
-def compile_cuda(prg) -> bytes: return cuda_compile(prg, target="ptx", no_extern_c=True, options=['-Wno-deprecated-gpu-targets'])
+def cu_time_execution(cb, enable=False) -> Optional[float]:
+  if not enable: return cb()
+  evs = [init_c_var(cuda.CUevent(), lambda x: cuda.cuEventCreate(ctypes.byref(x), 0)) for _ in range(2)]
+  cuda.cuEventRecord(evs[0], None)
+  cb()
+  cuda.cuEventRecord(evs[1], None)
+  check(cuda.cuEventSynchronize(evs[1]))
+  cuda.cuEventElapsedTime(ctypes.byref(ret := ctypes.c_float()), evs[0], evs[1])
+  for ev in evs: cuda.cuEventDestroy_v2(ev)
+  return ret.value * 1e-3
 
 class CUDAProgram:
-  def __init__(self, name:str, _prg:bytes):
-    prg = _prg.decode('utf-8')
-    if DEBUG >= 5: print(pretty_ptx(prg))
-    if DEBUG >= 6:
-      try:
-        fn = (Path(tempfile.gettempdir()) / f"tinycuda_{hashlib.md5(prg.encode('utf-8')).hexdigest()}").as_posix()
-        with open(fn + ".ptx", "wb") as f: f.write(prg.encode('utf-8'))
-        subprocess.run(["ptxas", f"-arch={arch()}", "-o", fn, fn+".ptx"], check=True)
-        print(subprocess.check_output(['nvdisasm', fn]).decode('utf-8'))
-      except Exception as e: print("failed to generate SASS", str(e))
-    # TODO: name is wrong, so we get it from the ptx using hacks
-    self.prg = cuda.module_from_buffer(prg.encode('utf-8')).get_function(prg.split(".visible .entry ")[1].split("(")[0])
+  def __init__(self, dev:CUDADevice, name:str, lib:bytes, smem:int=0):
+    self.dev, self.name, self.lib, self.smem = dev, name, lib, smem
+    if DEBUG >= 5: print("\n".join([f"{i+1:>3} {line}" for i, line in enumerate(pretty_ptx(lib.decode('utf-8')).split("\n"))]))
+    if DEBUG >= 6: cuda_disassemble(lib, dev.arch)
 
-  def __call__(self, *args, global_size:Tuple[int,int,int], local_size:Tuple[int,int,int], shared:int=0, wait=False):
-    if wait:
-      start, end = cuda.Event(), cuda.Event()
-      start.record()
-    self.prg(*[x._buf if isinstance(x, RawCUDABuffer) else np.int32(x) if (isinstance(x, int) and not getenv("CUDACPU")) else x for x in args], block=tuple(local_size), grid=tuple(global_size), shared=shared)
-    if wait:
-      end.record()
-      end.synchronize()
-      return start.time_till(end)*1e-3
+    check(cuda.cuCtxSetCurrent(self.dev.context))
+    self.module = cuda.CUmodule()
+    status = cuda.cuModuleLoadData(ctypes.byref(self.module), lib)
+    if status != 0:
+      del self.module
+      cuda_disassemble(lib, dev.arch)
+      raise RuntimeError(f"module load failed with status code {status}: {cuda.cudaError_enum__enumvalues[status]}")
+    check(cuda.cuModuleGetFunction(ctypes.byref(prg := cuda.CUfunction()), self.module, name.encode("utf-8")))
+    self.prg = prg
+    if self.smem > 0: check(cuda.cuFuncSetAttribute(self.prg, cuda.CU_FUNC_ATTRIBUTE_MAX_DYNAMIC_SHARED_SIZE_BYTES, self.smem))
 
-if getenv("TRITON") == 1:
-  from tinygrad.renderer.triton import uops_to_triton
-  CUDABuffer = Compiled(RawCUDABuffer, LinearizerOptions(supports_float4=False, supports_float4_alu=False, global_max = [65535, 65535, 2147483647], local_max = [64, 1024, 1024], has_shared=False),
-                        uops_to_triton, lambda x: x.encode('utf-8'), CUDAProgram, cuda.Context.synchronize)
-else:
-  CUDABuffer = Compiled(RawCUDABuffer, LinearizerOptions(supports_float4=False if getenv("PTX") else True, supports_float4_alu=False, global_max = [65535, 65535, 2147483647], local_max = [64, 1024, 1024]),
-                        CUDARenderer, compile_cuda, CUDAProgram, cuda.Context.synchronize)
+  def __del__(self):
+    if hasattr(self, 'module'): check(cuda.cuModuleUnload(self.module))
+
+  def __call__(self, *args, global_size:Tuple[int,int,int]=(1,1,1), local_size:Tuple[int,int,int]=(1,1,1), vals:Tuple[int, ...]=(), wait=False):
+    check(cuda.cuCtxSetCurrent(self.dev.context))
+    if not hasattr(self, "vargs"):
+      self.c_args, self.vargs = encode_args(args, vals)
+    else:
+      for i in range(len(args)): self.c_args.__setattr__(f'f{i}', args[i])
+      for i in range(len(vals)): self.c_args.__setattr__(f'v{i}', vals[i])
+    return cu_time_execution(lambda: check(cuda.cuLaunchKernel(self.prg, *global_size, *local_size, self.smem, None, None, self.vargs)), enable=wait)
+
+class CUDAAllocator(LRUAllocator):
+  def __init__(self, device:CUDADevice):
+    self.device = device
+    super().__init__()
+  def _alloc(self, size, options:BufferSpec):
+    check(cuda.cuCtxSetCurrent(self.device.context))
+    if options.host: return init_c_var(ctypes.c_void_p(), lambda x: check(cuda.cuMemHostAlloc(ctypes.byref(x), size, 0x01)))
+    return init_c_var(cuda.CUdeviceptr(), lambda x: check(cuda.cuMemAlloc_v2(ctypes.byref(x), size)))
+  def _free(self, opaque, options:BufferSpec):
+    if options.host: check(cuda.cuMemFreeHost(opaque))
+    else: check(cuda.cuMemFree_v2(opaque))
+  def _copyin(self, dest, src:memoryview):
+    check(cuda.cuCtxSetCurrent(self.device.context))
+    host_mem = self.alloc(len(src), BufferSpec(host=True))
+    self.device.pending_copyin.append((host_mem, len(src), BufferSpec(host=True)))
+    ctypes.memmove(host_mem, from_mv(src), len(src))
+    check(cuda.cuMemcpyHtoDAsync_v2(dest, host_mem, len(src), None))
+  def _copyout(self, dest:memoryview, src):
+    CUDADevice.synchronize_system()
+    check(cuda.cuCtxSetCurrent(self.device.context))
+    check(cuda.cuMemcpyDtoH_v2(from_mv(dest), src, len(dest)))
+  def _transfer(self, dest, src, sz:int, src_dev, dest_dev):
+    check(cuda.cuCtxSetCurrent(src_dev.context))
+    check(cuda.cuEventCreate(ctypes.byref(sync_event := cuda.CUevent()), 0))
+    check(cuda.cuMemcpyDtoDAsync_v2(dest, src, sz, None))
+    check(cuda.cuEventRecord(sync_event, None))
+    check(cuda.cuCtxSetCurrent(dest_dev.context))
+    check(cuda.cuStreamWaitEvent(None, sync_event, 0)) # sync the default stream on the dest dev
+  def _offset(self, buf, size:int, offset:int): return cuda.CUdeviceptr_v2(buf.value + offset)
+
+class CUDADevice(Compiled):
+  devices: List[CUDADevice] = []
+  peer_access = False
+
+  def __init__(self, device:str):
+    device_id = int(device.split(":")[1]) if ":" in device else 0
+    check(cuda.cuInit(0))
+    self.cu_device = init_c_var(cuda.CUdevice(), lambda x: check(cuda.cuDeviceGet(ctypes.byref(x), device_id)))
+    self.context = init_c_var(cuda.CUcontext(), lambda x: check(cuda.cuCtxCreate_v2(ctypes.byref(x), 0, self.cu_device)))
+    check(cuda.cuDeviceComputeCapability(ctypes.byref(major := ctypes.c_int()), ctypes.byref(minor := ctypes.c_int()), device_id))
+
+    for dev in CUDADevice.devices:
+      check(cuda.cuDeviceCanAccessPeer(ctypes.byref(val := ctypes.c_int()), self.cu_device, dev.cu_device))
+      if val.value != 1: continue
+      check(cuda.cuCtxSetCurrent(dev.context))
+      check(cuda.cuCtxEnablePeerAccess(self.context, 0))
+      check(cuda.cuCtxSetCurrent(self.context))
+      check(cuda.cuCtxEnablePeerAccess(dev.context, 0))
+      CUDADevice.peer_access = True
+
+    self.arch = f"sm_{major.value}{minor.value}"
+    self.pending_copyin: List[Tuple[int, int, Optional[BufferSpec]]] = []
+    CUDADevice.devices.append(self)
+
+    from tinygrad.runtime.graph.cuda import CUDAGraph
+    super().__init__(device, CUDAAllocator(self), PTXRenderer(self.arch) if PTX else CUDARenderer(self.arch),
+                     PTXCompiler(self.arch) if PTX else CUDACompiler(self.arch), functools.partial(CUDAProgram, self), graph=CUDAGraph)
+
+  def synchronize(self):
+    check(cuda.cuCtxSetCurrent(self.context))
+    check(cuda.cuCtxSynchronize())
+    for opaque,sz,options in self.pending_copyin: self.allocator.free(opaque, sz, options)
+    self.pending_copyin.clear()
+
+  @staticmethod
+  def synchronize_system():
+    for d in CUDADevice.devices: d.synchronize()

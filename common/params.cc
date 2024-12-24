@@ -24,8 +24,8 @@ int fsync_dir(const std::string &path) {
   int result = -1;
   int fd = HANDLE_EINTR(open(path.c_str(), O_RDONLY, 0755));
   if (fd >= 0) {
-    result = fsync(fd);
-    close(fd);
+    result = HANDLE_EINTR(fsync(fd));
+    HANDLE_EINTR(close(fd));
   }
   return result;
 }
@@ -91,7 +91,6 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"AccessToken", CLEAR_ON_MANAGER_START | DONT_LOG},
     {"AlwaysOnDM", PERSISTENT},
     {"ApiCache_Device", PERSISTENT},
-    {"ApiCache_NavDestinations", PERSISTENT},
     {"AssistNowToken", PERSISTENT},
     {"AthenadPid", PERSISTENT},
     {"AthenadUploadQueue", PERSISTENT},
@@ -105,7 +104,6 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"CarParamsCache", CLEAR_ON_MANAGER_START},
     {"CarParamsPersistent", PERSISTENT},
     {"CarParamsPrevRoute", PERSISTENT},
-    {"CarVin", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"CompletedTrainingVersion", PERSISTENT},
     {"ControlsReady", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"CurrentBootlog", PERSISTENT},
@@ -114,7 +112,6 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"DisablePowerDown", PERSISTENT},
     {"DisableUpdates", PERSISTENT},
     {"DisengageOnAccelerator", PERSISTENT},
-    {"DmModelInitialized", CLEAR_ON_ONROAD_TRANSITION},
     {"DongleId", PERSISTENT},
     {"DoReboot", CLEAR_ON_MANAGER_START},
     {"DoShutdown", CLEAR_ON_MANAGER_START},
@@ -159,12 +156,9 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"LastUpdateTime", PERSISTENT},
     {"LiveParameters", PERSISTENT},
     {"LiveTorqueParameters", PERSISTENT | DONT_LOG},
+    {"LocationFilterInitialState", PERSISTENT},
+    {"LongitudinalManeuverMode", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
     {"LongitudinalPersonality", PERSISTENT},
-    {"NavDestination", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
-    {"NavDestinationWaypoints", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
-    {"NavPastDestinations", PERSISTENT},
-    {"NavSettingLeftSide", PERSISTENT},
-    {"NavSettingTime24h", PERSISTENT},
     {"NetworkMetered", PERSISTENT},
     {"ObdMultiplexingChanged", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"ObdMultiplexingEnabled", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
@@ -187,12 +181,11 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"PrimeType", PERSISTENT},
     {"RecordFront", PERSISTENT},
     {"RecordFrontLock", PERSISTENT},  // for the internal fleet
-    {"ReplayControlsState", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
+    {"SecOCKey", PERSISTENT | DONT_LOG},
     {"RouteCount", PERSISTENT},
     {"SnoozeUpdate", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
     {"SshEnabled", PERSISTENT},
     {"TermsVersion", PERSISTENT},
-    {"Timezone", PERSISTENT},
     {"TrainingVersion", PERSISTENT},
     {"UbloxAvailable", PERSISTENT},
     {"UpdateAvailable", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},

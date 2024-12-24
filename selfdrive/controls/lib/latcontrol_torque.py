@@ -1,10 +1,10 @@
 import math
 
 from cereal import log
+from opendbc.car.interfaces import LatControlInputs
 from openpilot.common.numpy_fast import interp
-from openpilot.selfdrive.car.interfaces import LatControlInputs
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl
-from openpilot.selfdrive.controls.lib.pid import PIDController
+from openpilot.common.pid import PIDController
 from openpilot.selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 
 # At higher speeds (25+mph) we can assume:
@@ -25,7 +25,7 @@ LOW_SPEED_Y = [15, 13, 10, 5]
 class LatControlTorque(LatControl):
   def __init__(self, CP, CI):
     super().__init__(CP, CI)
-    self.torque_params = CP.lateralTuning.torque
+    self.torque_params = CP.lateralTuning.torque.as_builder()
     self.pid = PIDController(self.torque_params.kp, self.torque_params.ki,
                              k_f=self.torque_params.kf, pos_limit=self.steer_max, neg_limit=-self.steer_max)
     self.torque_from_lateral_accel = CI.torque_from_lateral_accel()
@@ -37,7 +37,7 @@ class LatControlTorque(LatControl):
     self.torque_params.latAccelOffset = latAccelOffset
     self.torque_params.friction = friction
 
-  def update(self, active, CS, VM, params, steer_limited, desired_curvature, llk):
+  def update(self, active, CS, VM, params, steer_limited, desired_curvature, calibrated_pose):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
     if not active:
       output_torque = 0.0
@@ -49,8 +49,9 @@ class LatControlTorque(LatControl):
         actual_curvature = actual_curvature_vm
         curvature_deadzone = abs(VM.calc_curvature(math.radians(self.steering_angle_deadzone_deg), CS.vEgo, 0.0))
       else:
-        actual_curvature_llk = llk.angularVelocityCalibrated.value[2] / CS.vEgo
-        actual_curvature = interp(CS.vEgo, [2.0, 5.0], [actual_curvature_vm, actual_curvature_llk])
+        assert calibrated_pose is not None
+        actual_curvature_pose = calibrated_pose.angular_velocity.yaw / CS.vEgo
+        actual_curvature = interp(CS.vEgo, [2.0, 5.0], [actual_curvature_vm, actual_curvature_pose])
         curvature_deadzone = 0.0
       desired_lateral_accel = desired_curvature * CS.vEgo ** 2
 

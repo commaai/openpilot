@@ -156,10 +156,7 @@ int main(void) {
   print("\n\n\n************************ MAIN START ************************\n");
 
   // check for non-supported board types
-  if (hw_type == HW_TYPE_UNKNOWN) {
-    print("Unsupported board type\n");
-    while (1) { /* hang */ }
-  }
+  assert_fatal(hw_type != HW_TYPE_UNKNOWN, "Unsupported board type\n");
 
   print("Config:\n");
   print("  Board type: 0x"); puth(hw_type); print("\n");
