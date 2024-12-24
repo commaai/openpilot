@@ -21,3 +21,4 @@ if not UBUNTU_FOCAL:
 
   if arch != 'aarch64':
     renv.Program("spinner", ["raylib/spinner.cc"], LIBS=linked_libs, FRAMEWORKS=mac_frameworks)
+    renv.Program("text", ["raylib/text.cc"], LIBS=linked_libs, FRAMEWORKS=mac_frameworks)
