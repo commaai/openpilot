@@ -292,10 +292,15 @@ void BinaryViewModel::updateItem(int row, int col, uint8_t val, const QColor &co
   }
 }
 
+// TODO:
+// 1. Detect instability through frequent bit flips and highlight stable bits to indicate steady signals.
+// 2. Track message sequence and timestamps to understand how patterns evolve.
+// 3. Identify time-based or periodic bit state changes to spot recurring patterns.
+// 4. Support multiple time windows for short-term and long-term analysis, helping to observe changes in different time frames.
 void BinaryViewModel::updateState() {
   const auto &last_msg = can->lastMessage(msg_id);
   const auto &binary = last_msg.dat;
-  // data size may changed.
+  // Handle size changes in binary data
   if (binary.size() > row_count) {
     beginInsertRows({}, row_count, binary.size() - 1);
     row_count = binary.size();
@@ -303,21 +308,36 @@ void BinaryViewModel::updateState() {
     endInsertRows();
   }
 
-  const double max_f = 255.0;
-  const double factor = 0.25;
-  const double scaler = max_f / log2(1.0 + factor);
-  for (int i = 0; i < binary.size(); ++i) {
+  // Find the maximum bit flip count across the message
+  uint32_t max_bit_flip_count = 1;  // Default to 1 to avoid division by zero
+  for (const auto &row : last_msg.bit_flip_counts) {
+    for (auto count : row) {
+      max_bit_flip_count = std::max(max_bit_flip_count, count);
+    }
+  }
+
+  const double max_alpha = 255.0;
+  const double min_alpha_with_signal = 25.0;  // Base alpha for small flip counts
+  const double min_alpha_no_signal = 10.0;    // Base alpha for small flip counts for no signal bits
+  const double log_factor = 1.0 + 0.2;        // Factor for logarithmic scaling
+  const double log_scaler = max_alpha / log2(log_factor * max_bit_flip_count);
+
+  for (size_t i = 0; i < binary.size(); ++i) {
     for (int j = 0; j < 8; ++j) {
       auto &item = items[i * column_count + j];
-      int val = ((binary[i] >> (7 - j)) & 1) != 0 ? 1 : 0;
-      // Bit update frequency based highlighting
-      double offset = !item.sigs.empty() ? 50 : 0;
-      auto n = last_msg.last_changes[i].bit_change_counts[j];
-      double min_f = n == 0 ? offset : offset + 25;
-      double alpha = std::clamp(offset + log2(1.0 + factor * (double)n / (double)last_msg.count) * scaler, min_f, max_f);
+      int bit_val = (binary[i] >> (7 - j)) & 1;
+
+      double alpha = item.sigs.empty() ? 0 : min_alpha_with_signal;
+      uint32_t flip_count = last_msg.bit_flip_counts[i][j];
+      if (flip_count > 0) {
+        double normalized_alpha = log2(1.0 + flip_count * log_factor) * log_scaler;
+        double min_alpha = item.sigs.empty() ? min_alpha_no_signal : min_alpha_with_signal;
+        alpha = std::clamp(normalized_alpha, min_alpha, max_alpha);
+      }
+
       auto color = item.bg_color;
       color.setAlpha(alpha);
-      updateItem(i, j, val, color);
+      updateItem(i, j, bit_val, color);
     }
     updateItem(i, 8, binary[i], last_msg.colors[i]);
   }
