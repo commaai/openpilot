@@ -2,15 +2,13 @@
 
 ## System Requirements
 
-openpilot is developed and tested on **Ubuntu 24.04**, which is the primary development target aside from the [supported embedded hardware](https://github.com/commaai/openpilot#running-on-a-dedicated-device-in-a-car).
+openpilot is developed and tested on **Ubuntu 24.04** with [modern hardware](https://github.com/commaai/openpilot/wiki/Requirements#hardware), which is the primary development target aside from the [supported embedded hardware](https://comma.ai/shop/comma-3x).
 
-Most of openpilot should work natively on macOS. On Windows you can use WSL2 for a nearly native Ubuntu experience [with some exceptions](WSL.md). Running natively on any other system is not currently recommended and will likely require modifications.
+Most of openpilot should work natively on macOS. On Windows you can use WSL2 for a nearly native Ubuntu experience [with some exceptions](https://github.com/commaai/openpilot/wiki/WSL). Running natively on any other system is not currently recommended and will likely require modifications.
 
 ## Native setup on Ubuntu 24.04 and macOS
 
 **1. Clone openpilot**
-
-NOTE: This repository uses Git LFS for large files. Ensure you have [Git LFS](https://git-lfs.com/) installed and set up before cloning or working with it.
 
 Either do a partial clone for faster download:
 ``` bash
@@ -29,12 +27,6 @@ cd openpilot
 tools/op.sh setup
 ```
 
-**3. Git LFS**
-
-``` bash
-git lfs pull
-```
-
 **4. Activate a python shell**
 
 Activate a shell with the Python dependencies installed:
@@ -49,7 +41,7 @@ scons -u -j$(nproc)
 ```
 
 ## CTF
-Learn about the openpilot ecosystem and tools by playing our [CTF](/tools/CTF.md).
+Learn about the openpilot ecosystem and tools by playing our [CTF](/tools/CTF.md) and [reading the wiki](https://github.com/commaai/openpilot/wiki/Introduction-to-openpilot).
 
 ## Directory Structure
 
