@@ -32,8 +32,6 @@ class TestRegistration:
   def test_valid_cache(self, mocker):
     # if all params are written, return the cached dongle id.
     # should work with a dongle ID on either /persist/ or normal params
-    self.params.put("IMEI", "imei")
-    self.params.put("HardwareSerial", "serial")
     self._generate_keys()
 
     dongle = "DONGLE_ID_123"
