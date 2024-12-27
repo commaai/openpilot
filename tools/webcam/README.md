@@ -10,10 +10,6 @@ That's it!
 
 ## Setup openpilot
 - Follow [this readme](../README.md) to install and build the requirements
-- Install OpenCL Driver
-```
-sudo apt install pocl-opencl-icd
-```
 
 ## Connect the hardware
 - Connect the road facing camera first, then the driver facing camera
