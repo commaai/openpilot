@@ -1,0 +1,31 @@
+- we should probably extend pthread_mutexattr_t with a field to create a
+  single linked list of all instances.  This requires changing the
+  pthread_mutexattr_* functions.
+
+
+- a new attribute for mutexes: number of times we spin before calling
+sys_futex
+
+- for adaptive mutexes: when releasing, determine whether somebody spins.
+If yes, for a short time release lock.  If someone else locks no wakeup
+syscall needed.
+
+
+
+- test with threaded process terminating and semadj (?) being applied
+  only after all threads are gone
+
+
+
+- semaphore changes:
+
+  - sem_post should only wake one thread and only when the state of
+    the semaphore changed from 0 to 1
+
+    this also requires that sem_wait and sem_timedwait don't drop the
+    post if they get canceled.
+
+  - possibly add counter field.  This requires reviving the
+    differences between old and new semaphore functions.  The old ones
+    stay as they are now.  The new ones can use an additional field
+    which is the counter for the number of waiters

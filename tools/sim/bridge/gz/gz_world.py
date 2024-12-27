@@ -6,14 +6,13 @@ import threading
 import math
 import csv
 import time
+import json
 from time import sleep
 from multiprocessing import Pipe, Array
 from openpilot.tools.sim.lib.common import SimulatorState, World, GPSState
 from openpilot.tools.sim.bridge.common import QueueMessage, QueueMessageType
-from openpilot.tools.sim.bridge.gz.msgs import Report, RequestType, Request
 from openpilot.tools.sim.lib.common import vec3
 from openpilot.tools.sim.lib.camerad import W, H
-from openpilot.tools.sim.bridge.gz.msgs import GPSPos
 from PIL import Image
 from numpy import asarray
 import numpy as np
@@ -77,7 +76,7 @@ class GZWorld(World):
     while not self.exit_event.is_set():
       client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
       client.connect(("host.docker.internal", 8069))
-      serialized = pickle.dumps(Request(RequestType.GET_REPORT))
+      serialized = json.dumps({"intention": "GET_REPORT"}).encode("utf-8")
       client.send(len(serialized).to_bytes(4, "little"))
       client.sendall(serialized)
       inlen = client.recv(4)
@@ -102,7 +101,11 @@ class GZWorld(World):
     print(f"steer_angle: {steer_angle}, throttle_out: {throttle_out}, brake_out: {brake_out}")
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect(("host.docker.internal", 8069))
-    serialized = pickle.dumps(Request(RequestType.IN_COMMAND, [steer_angle, throttle_out, brake_out]))
+    serialized = json.dumps({"intention": "IN_COMMAND", "data": {
+        "steer_angle": steer_angle,
+        "throttle_out": throttle_out,
+        "brake_out": brake_out
+      }}).encode("utf-8")
     client.send(len(serialized).to_bytes(4, "little"))
     client.sendall(serialized)
     ilen = client.recv(4)

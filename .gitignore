@@ -103,3 +103,11 @@ Pipfile
 # Ignore all local history of files
 .history
 .ionide
+tools/sim/bridge/gz/mavlink/CMakeFiles
+tools/sim/bridge/gz/mavlink/Makefile
+tools/sim/bridge/gz/mavlink/cmake_install.cmake
+tools/sim/bridge/gz/mavlink/CMakeCache.txt
+tools/sim/bridge/gz/mavlink/CMakeCache.txt
+tools/sim/bridge/gz/mavlink/Makefile
+tools/sim/bridge/gz/mavlink/cmake_install.cmake
+Session.vim
