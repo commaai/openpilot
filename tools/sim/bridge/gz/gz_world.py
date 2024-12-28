@@ -51,7 +51,7 @@ class GZWorld(World):
     self.velocity = vec3(0,0,0)
     self.bearing = 0
     self.steering = 0
-    self.gps = GPSPos(0,0,0)
+    self.gps = [0,0,0]
     self.vc = [0.0,0.0]
     self.reset_time = 0
     self.should_reset = False

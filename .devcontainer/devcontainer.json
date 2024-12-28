@@ -24,7 +24,7 @@
     "--shm-size=1G",
     "--add-host=host.docker.internal:host-gateway", // required to use host.docker.internal on linux
     "--publish=0.0.0.0:8070-8079:8070-8079",  // body ZMQ services
-    "--publish=0.0.0.0:8069:8069"  // ROS communication server
+//    "--publish=8069:8069"  // ROS communication server
   ],
   "features": {
     "ghcr.io/devcontainers/features/common-utils:2": {

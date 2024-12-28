@@ -17,6 +17,7 @@
 
 #include <mavsdk/mavsdk.h>
 #include <mavsdk/plugins/action/action.h>
+#include <mavsdk/plugins/camera/camera.h>
 #include <mavsdk/plugins/offboard/offboard.h>
 #include <mavsdk/plugins/telemetry/telemetry.h>
 
@@ -24,6 +25,11 @@ using namespace mavsdk;
 using std::chrono::milliseconds;
 using std::chrono::seconds;
 using std::this_thread::sleep_for;
+
+void on_image(const gz::msgs::Image &_msg) {
+    std::cout << "Received image with width " << _msg.width() << " and height "
+                        << _msg.height() << std::endl;
+}
 
 void usage(const std::string &bin_name) {
   std::cerr
@@ -137,6 +143,46 @@ int main(int argc, char **argv) {
   }
   std::cout << "System is ready\n";
 
+  gz::transport::Node node;
+  if (!node.Subscribe("/camera", &on_image)) {
+    std::cerr << "Error subscribing to the camera topic" << std::endl;
+    return -1;
+  }
+
+  auto tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
+  if (tcp_socket < 0) {
+    std::cerr << "Failed to create socket: " << strerror(errno) << '\n';
+    return errno;
+  }
+  sockaddr_in server_addr{.sin_family = AF_INET,
+                          .sin_port = htons(8069),
+                          .sin_addr =
+                              {
+                                  .s_addr = INADDR_ANY,
+                              },
+                          .sin_zero = {0, 0, 0, 0, 0, 0, 0, 0}};
+  if (bind(tcp_socket, reinterpret_cast<sockaddr *>(&server_addr),
+           sizeof(server_addr)) < 0) {
+    std::cerr << "Failed to bind socket: " << strerror(errno) << '\n';
+    return errno;
+  };
+  if (listen(tcp_socket, 10) < 0) {
+    std::cerr << "Failed to listen on socket: " << strerror(errno) << '\n';
+    return errno;
+  }
+  std::flush(std::cout);
+  std::cout << "Waiting for connection...\n";
+  sockaddr_in client_addr{};
+  socklen_t client_addr_len = sizeof(client_addr);
+  int client_socket_fd = accept(
+      tcp_socket, reinterpret_cast<sockaddr *>(&client_addr), &client_addr_len);
+  if (client_socket_fd < 0) {
+    std::cerr << "Failed to accept connection: " << strerror(errno) << '\n';
+    return errno;
+  }
+  std::cout << "Accepted connection from " << client_addr.sin_addr.s_addr
+            << '\n';
+
   const auto arm_result = action.arm();
   if (arm_result != Action::Result::Success) {
     std::cerr << "Arming failed: " << arm_result << '\n';
@@ -165,38 +211,6 @@ int main(int argc, char **argv) {
     std::cerr << "Takeoff timed out.\n";
     return 1;
   }
-
-  auto tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
-  if (tcp_socket < 0) {
-    std::cerr << "Failed to create socket: " << strerror(errno) << '\n';
-    return errno;
-  }
-  sockaddr_in server_addr{.sin_family = AF_INET,
-                          .sin_port = htons(8096),
-                          .sin_addr = {
-                              .s_addr = INADDR_ANY,
-                          },
-                          .sin_zero = {0, 0, 0, 0, 0, 0, 0, 0}};
-  if (bind(tcp_socket, reinterpret_cast<sockaddr *>(&server_addr),
-           sizeof(server_addr)) < 0) {
-    std::cerr << "Failed to bind socket: " << strerror(errno) << '\n';
-    return errno;
-  };
-  if (listen(tcp_socket, 10) < 0) {
-    std::cerr << "Failed to listen on socket: " << strerror(errno) << '\n';
-    return errno;
-  }
-  std::flush(std::cout);
-  std::cout << "Waiting for connection...\n";
-  sockaddr_in client_addr{};
-  socklen_t client_addr_len = sizeof(client_addr);
-  int client_socket_fd = accept(tcp_socket, reinterpret_cast<sockaddr *>(&client_addr),
-                              &client_addr_len);
-  if (client_socket_fd < 0) {
-    std::cerr << "Failed to accept connection: " << strerror(errno) << '\n';
-    return errno;
-  }
-  std::cout << "Accepted connection from " << client_addr.sin_addr.s_addr << '\n';
 
   //  using body co-ordinates
   if (!offb_ctrl_body(offboard)) {

@@ -10,7 +10,6 @@ RUN cd /tmp && \
     dpkg -i virtualgl.deb
 
 RUN usermod -aG video batman
-COPY pulse-client.conf /etc/pulse/client.conf
 
 USER batman
 
