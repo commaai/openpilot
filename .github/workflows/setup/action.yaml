@@ -51,6 +51,36 @@ runs:
       run: |
         find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
         find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
+    - id: docker-cache-restore
+      uses: ./.github/workflows/auto-cache
+      with:
+        path: .ci_cache/docker
+        key: docker-${{ hashFiles('Dockerfile.openpilot_base', 'tools/install_ubuntu_dependencies.sh', 'tools/install_python_dependencies.sh', 'uv.lock', '.github/workflows/setup/action.yaml', 'selfdrive/test/docker_build.sh') }}
+        restore-keys: docker-${{ hashFiles('Dockerfile.openpilot_base', 'tools/install_ubuntu_dependencies.sh', 'tools/install_python_dependencies.sh', 'uv.lock', '.github/workflows/setup/action.yaml', 'selfdrive/test/docker_build.sh') }}
+
+    - shell: bash
+      if: steps.docker-cache-restore.outputs.cache-hit == 'true'
+      run: |
+        sudo setfacl --restore=.ci_cache/docker/permissions
+        sudo rm -rf /var/lib/docker
+        sudo mv .ci_cache/docker /var/lib/
+        sudo systemctl restart docker
     # build our docker image
     - shell: bash
-      run: eval ${{ env.BUILD }}
+      if: steps.docker-cache-restore.outputs.cache-hit != 'true'
+      run: |
+        eval ${{ env.BUILD }}
+        docker builder prune -a --force
+        sudo systemctl stop docker
+        sudo rm -rf /var/lib/docker/volumes
+        sudo cp -R /var/lib/docker .ci_cache/
+        sudo getfacl -R .ci_cache/docker > .ci_cache/docker/permissions
+        sudo chmod -R 777 .ci_cache/docker
+    - id: docker-cache-save
+      if: steps.docker-cache-restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      env:
+        ZSTD_NBTHREADS: 0
+      with:
+        path: .ci_cache/docker
+        key: docker-${{ hashFiles('Dockerfile.openpilot_base', 'tools/install_ubuntu_dependencies.sh', 'tools/install_python_dependencies.sh', 'uv.lock', '.github/workflows/setup/action.yaml', 'selfdrive/test/docker_build.sh') }}
