@@ -64,9 +64,9 @@ class TinygradRunner(ModelRunner):
         self.inputs[key] = qcom_tensor_from_opencl_address(imgs_cl[key].mem_address, self.input_shapes[key], dtype=dtypes.uint8)
 
     # Update numpy inputs
-    for k, v in numpy_inputs.items():
-      if k not in self.inputs:
-        self.inputs[k] = Tensor(v, device='NPY').realize()
+    for key, value in numpy_inputs.items():
+      if key not in imgs_cl:
+        self.inputs[key] = Tensor(value, device='NPY').realize()
 
     return self.inputs
 
