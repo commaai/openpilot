@@ -55,8 +55,8 @@ runs:
       uses: ./.github/workflows/auto-cache
       with:
         path: .ci_cache/docker
-        key: docker-${{ hashFiles('Dockerfile.openpilot_base', 'tools/install_ubuntu_dependencies.sh', 'tools/install_python_dependencies.sh', 'uv.lock', '.github/workflows/setup/action.yaml', 'selfdrive/test/docker_*') }}
-        restore-keys: docker-${{ hashFiles('Dockerfile.openpilot_base', 'tools/install_ubuntu_dependencies.sh', 'tools/install_python_dependencies.sh', 'uv.lock', '.github/workflows/setup/action.yaml', 'selfdrive/test/docker_*') }}
+        restore-keys: docker-${{ hashFiles('Dockerfile.openpilot_base', 'tools/install_ubuntu_dependencies.sh', 'tools/install_python_dependencies.sh', 'uv.lock', '.github/workflows/setup/action.yaml') }}
+        key: docker-${{ hashFiles('Dockerfile.openpilot_base', 'tools/install_ubuntu_dependencies.sh', 'tools/install_python_dependencies.sh', 'uv.lock', '.github/workflows/setup/action.yaml') }}
 
     - shell: bash
       if: steps.docker-cache-restore.outputs.cache-hit == 'true'
@@ -83,4 +83,4 @@ runs:
         ZSTD_NBTHREADS: 0
       with:
         path: .ci_cache/docker
-        key: docker-${{ hashFiles('Dockerfile.openpilot_base', 'tools/install_ubuntu_dependencies.sh', 'tools/install_python_dependencies.sh', 'uv.lock', '.github/workflows/setup/action.yaml', 'selfdrive/test/docker_*') }}
+        key: docker-${{ hashFiles('Dockerfile.openpilot_base', 'tools/install_ubuntu_dependencies.sh', 'tools/install_python_dependencies.sh', 'uv.lock', '.github/workflows/setup/action.yaml') }}
