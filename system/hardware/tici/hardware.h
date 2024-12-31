@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdlib>
+#include <cassert>
 #include <fstream>
 #include <map>
 #include <string>
@@ -22,7 +23,7 @@ public:
 
   static std::string get_name() {
     std::string model = util::read_file("/sys/firmware/devicetree/base/model");
-    return model.substr(std::string("comma ").size());
+    return util::strip(model.substr(std::string("comma ").size()));
   }
 
   static cereal::InitData::DeviceType get_device_type() {
@@ -32,7 +33,8 @@ public:
       {"mici", cereal::InitData::DeviceType::MICI}
     };
     auto it = device_map.find(get_name());
-    return it != device_map.end() ? it->second : cereal::InitData::DeviceType::UNKNOWN;
+    assert(it != device_map.end());
+    return it->second;
   }
 
   static int get_voltage() { return std::atoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input").c_str()); }
