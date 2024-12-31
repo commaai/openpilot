@@ -99,6 +99,7 @@ class ModelState:
     self.prev_desire[:] = inputs['desire']
 
     self.numpy_inputs['desire'][:-1] = self.numpy_inputs['desire'][1:]
+    self.numpy_inputs['desire'][-1] = new_desire
 
     self.numpy_inputs['traffic_convention'][:] = inputs['traffic_convention']
     self.numpy_inputs['lateral_control_params'][:] = inputs['lateral_control_params']
