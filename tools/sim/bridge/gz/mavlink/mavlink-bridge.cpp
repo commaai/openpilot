@@ -7,10 +7,13 @@
 #include <cerrno>
 #include <chrono>
 #include <cmath>
+#include <cstdint>
 #include <future>
 #include <iostream>
 #include <thread>
+#include <unistd.h>
 
+#include "mavlink-bridge.hpp"
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <sys/socket.h>
@@ -26,9 +29,76 @@ using std::chrono::milliseconds;
 using std::chrono::seconds;
 using std::this_thread::sleep_for;
 
-void on_image(const gz::msgs::Image &_msg) {
-    std::cout << "Received image with width " << _msg.width() << " and height "
-                        << _msg.height() << std::endl;
+MavlinkBridge::MavlinkBridge()
+    : mavsdk_(Mavsdk::Configuration{Mavsdk::ComponentType::GroundStation}) {}
+
+bool MavlinkBridge::connect(const std::string uri) {
+  ConnectionResult connection_result = mavsdk_.add_any_connection(uri);
+  if (connection_result != ConnectionResult::Success) {
+    return false;
+  }
+  this->system_ = mavsdk_.first_autopilot(3.0);
+  if (!this->system_) {
+    return false;
+  }
+  this->action_ = Action{this->system_.value()};
+  this->offboard_ = Offboard{this->system_.value()};
+  this->telemetry_ = Telemetry{this->system_.value()};
+  while (!this->telemetry_.health_all_ok()) {
+    sleep_for(seconds(1));
+  }
+  return true;
+}
+
+bool MavlinkBridge::sub_camera(const std::string topic) {
+  return this->node_.Subscribe(topic,
+                               std::bind(&MavlinkBridge::on_image, this));
+}
+
+void MavlinkBridge::on_image(const gz::msgs::Image &_msg) {
+  this->last_frame = gz::msgs::Image(_msg);
+}
+
+void MavlinkBridge::run_tcp_server(const uint16_t port) {
+  int tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
+  if (tcp_socket < 0) {
+    throw std::runtime_error("Failed to create TCP socket");
+  }
+  sockaddr_in server_addr{.sin_family = AF_INET,
+                          .sin_port = htons(port),
+                          .sin_addr =
+                              {
+                                  .s_addr = INADDR_ANY,
+                              },
+                          .sin_zero = {0, 0, 0, 0, 0, 0, 0, 0}};
+  if (bind(tcp_socket, reinterpret_cast<sockaddr *>(&server_addr),
+           sizeof(server_addr)) < 0) {
+    throw std::runtime_error("Failed to bind TCP socket");
+  };
+  if (listen(tcp_socket, 10) < 0) {
+    throw std::runtime_error("Failed to listen on TCP socket");
+  }
+  while (true){
+      sockaddr_in client_addr{};
+      socklen_t client_addr_len = sizeof(client_addr);
+      int client_socket_fd = accept(
+              tcp_socket, reinterpret_cast<sockaddr *>(&client_addr), &client_addr_len);
+      if (client_socket_fd < 0) {
+          throw std::runtime_error("Failed to accept TCP connection");
+      }
+      uint8_t buf[1024];
+      recv(client_socket_fd, buf, sizeof(uint8_t), MSG_WAITALL);
+      if (buf[0] == 0x01) {
+          auto msg = MavlinkBridge::encode_image(this->last_frame);
+          send(client_socket_fd, msg.data(), msg.size(), 0);
+          shutdown(client_socket_fd, SHUT_RDWR);
+          close(client_socket_fd);
+      }
+  }
+}
+
+std::vector<uint8_t> MavlinkBridge::encode_image(const gz::msgs::Image &_msg) {
+
 }
 
 void usage(const std::string &bin_name) {
