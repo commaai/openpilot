@@ -98,8 +98,8 @@ class ModelState:
     new_desire = np.where(inputs['desire'] - self.prev_desire > .99, inputs['desire'], 0)
     self.prev_desire[:] = inputs['desire']
 
-    self.numpy_inputs['desire'][:-1] = self.numpy_inputs['desire'][1:]
-    self.numpy_inputs['desire'][-1] = new_desire
+    self.numpy_inputs['desire'][0,:-1] = self.numpy_inputs['desire'][0,1:]
+    self.numpy_inputs['desire'][0,-1] = new_desire
 
     self.numpy_inputs['traffic_convention'][:] = inputs['traffic_convention']
     self.numpy_inputs['lateral_control_params'][:] = inputs['lateral_control_params']
@@ -125,12 +125,13 @@ class ModelState:
 
     outputs = self.parser.parse_outputs(self.slice_outputs(self.output))
 
-    self.numpy_inputs['features_buffer'][:-1] = self.numpy_inputs['features_buffer'][1:]
-    self.numpy_inputs['features_buffer'][-1] = outputs['hidden_state'][0, :]
+    self.numpy_inputs['features_buffer'][0,:-1] = self.numpy_inputs['features_buffer'][0,1:]
+    self.numpy_inputs['features_buffer'][0,-1] = outputs['hidden_state'][0, :]
 
 
-    # TODO model only uses last value now, once that changes we need to input strided action history buffer
-    self.numpy_inputs['prev_desired_curv'][-ModelConstants.PREV_DESIRED_CURV_LEN:] = 0.
+    # TODO model only uses last value now
+    self.numpy_inputs['prev_desired_curv'][0,:-1] = self.numpy_inputs['prev_desired_curv'][0,1:]
+    self.numpy_inputs['prev_desired_curv'][0,-1,:] = outputs['desired_curvature'][0, :]
     return outputs
 
 
