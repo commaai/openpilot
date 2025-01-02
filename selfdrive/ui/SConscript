@@ -61,6 +61,10 @@ qt_env.Command(assets, [assets_src, translations_assets_src], f"rcc $SOURCES -o 
 qt_env.Depends(assets, Glob('#selfdrive/assets/*', exclude=[assets, assets_src, translations_assets_src, "#selfdrive/assets/assets.o"]) + [lrelease])
 asset_obj = qt_env.Object("assets", assets)
 
+# build notouch
+# qt_env.Program("_notouch", ["notouch.cc"] + [asset_obj] + ["qt/onroad.cc"], LIBS=qt_libs)
+qt_env.Program("_notouch", ["notouch.cc"] + [asset_obj], LIBS=qt_libs)
+
 # build main UI
 qt_env.Program("ui", qt_src + [asset_obj], LIBS=qt_libs)
 if GetOption('extras'):
