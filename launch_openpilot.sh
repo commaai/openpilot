@@ -11,7 +11,7 @@ echo "Building" | ./selfdrive/ui/spinner &
 spinner_pid=$!
 
 # build
-scons selfdrive/ui/_notouch selfdrive/ui/_ui -j8
+scons selfdrive/ui/_notouch selfdrive/ui/ui -j8
 kill -9 $spinner_pid
 
 # launch ui and let user set up ssh
@@ -29,7 +29,7 @@ kill -9 $spinner_pid
 # build again after update
 echo "Building" | ./selfdrive/ui/spinner &
 spinner_pid=$!
-scons selfdrive/ui/_notouch selfdrive/ui/_ui -j8
+scons selfdrive/ui/_notouch selfdrive/ui/ui -j8
 kill -9 $spinner_pid
 
 echo "Installing dependencies" | ./selfdrive/ui/spinner &
