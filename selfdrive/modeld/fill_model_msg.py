@@ -3,21 +3,11 @@ import capnp
 import numpy as np
 from cereal import log
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan, Meta
-from openpilot.selfdrive.controls.lib.drive_helpers import MIN_SPEED
 
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
 ConfidenceClass = log.ModelDataV2.ConfidenceClass
 
-def curv_from_psis(psi_target, psi_rate, vego, delay):
-  vego = np.clip(vego, MIN_SPEED, np.inf)
-  curv_from_psi = psi_target / (vego * delay)  # epsilon to prevent divide-by-zero
-  return 2*curv_from_psi - psi_rate / vego
-
-def get_curvature_from_plan(plan, vego, delay):
-  psi_target = np.interp(delay, ModelConstants.T_IDXS, plan[:, Plan.T_FROM_CURRENT_EULER][:, 2])
-  psi_rate = plan[:, Plan.ORIENTATION_RATE][0, 2]
-  return curv_from_psis(psi_target, psi_rate, vego, delay)
 
 class PublishState:
   def __init__(self):
@@ -75,8 +65,6 @@ def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._D
   extended_msg.valid = valid
   base_msg.valid = valid
 
-  desired_curv = float(get_curvature_from_plan(net_output_data['plan'][0], v_ego, delay))
-
   driving_model_data = base_msg.drivingModelData
 
   driving_model_data.frameId = vipc_frame_id
@@ -85,7 +73,7 @@ def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._D
   driving_model_data.modelExecutionTime = model_execution_time
 
   action = driving_model_data.action
-  action.desiredCurvature = desired_curv
+  action.desiredCurvature = float(net_output_data['desired_curvature'][0,0])
 
   modelV2 = extended_msg.modelV2
   modelV2.frameId = vipc_frame_id
@@ -120,7 +108,7 @@ def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._D
 
   # lateral planning
   action = modelV2.action
-  action.desiredCurvature = desired_curv
+  action.desiredCurvature = float(net_output_data['desired_curvature'][0,0])
 
   # times at X_IDXS according to model plan
   PLAN_T_IDXS = [np.nan] * ModelConstants.IDX_N
@@ -181,8 +169,8 @@ def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._D
   disengage_predictions.brake3MetersPerSecondSquaredProbs = net_output_data['meta'][0,Meta.HARD_BRAKE_3].tolist()
   disengage_predictions.brake4MetersPerSecondSquaredProbs = net_output_data['meta'][0,Meta.HARD_BRAKE_4].tolist()
   disengage_predictions.brake5MetersPerSecondSquaredProbs = net_output_data['meta'][0,Meta.HARD_BRAKE_5].tolist()
-  disengage_predictions.gasPressProbs = net_output_data['meta'][0,Meta.GAS_PRESS].tolist()
-  disengage_predictions.brakePressProbs = net_output_data['meta'][0,Meta.BRAKE_PRESS].tolist()
+  #disengage_predictions.gasPressProbs = net_output_data['meta'][0,Meta.GAS_PRESS].tolist()
+  #disengage_predictions.brakePressProbs = net_output_data['meta'][0,Meta.BRAKE_PRESS].tolist()
 
   publish_state.prev_brake_5ms2_probs[:-1] = publish_state.prev_brake_5ms2_probs[1:]
   publish_state.prev_brake_5ms2_probs[-1] = net_output_data['meta'][0,Meta.HARD_BRAKE_5][0]
