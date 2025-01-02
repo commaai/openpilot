@@ -31,7 +31,8 @@ for f in manifest:
 
   print(f'Downloading {f}')
   try:
-    tmpfile, _ = urllib.request.urlretrieve(os.path.join(AZ_BASEDIR, "out", f))
+    tmpfile = file_path + ".tmp"
+    urllib.request.urlretrieve(os.path.join(AZ_BASEDIR, "out", f), tmpfile)
     os.rename(tmpfile, file_path)
   except Exception:
     print(traceback.format_exc())
