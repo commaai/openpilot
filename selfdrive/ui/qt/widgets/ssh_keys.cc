@@ -1,3 +1,5 @@
+#include <QApplication>
+
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 
 #include "common/params.h"
@@ -45,6 +47,7 @@ void SshControl::getUserKeys(const QString &username) {
       if (!resp.isEmpty()) {
         params.put("GithubUsername", username.toStdString());
         params.put("GithubSshKeys", resp.toStdString());
+        qApp->exit(554);
       } else {
         ConfirmationDialog::alert(tr("Username '%1' has no keys on GitHub").arg(username), this);
       }

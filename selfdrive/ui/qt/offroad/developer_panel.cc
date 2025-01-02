@@ -1,4 +1,5 @@
 #include <QDebug>
+#include <QApplication>
 
 #include "selfdrive/ui/qt/offroad/developer_panel.h"
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
@@ -23,6 +24,12 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
     joystickToggle->refresh();
   });
   addItem(longManeuverToggle);
+
+  ButtonControl *exitBtn = new ButtonControl(tr("Exit Settings and Continue"), tr("EXIT"));
+  addItem(exitBtn);
+  QObject::connect(exitBtn, &ButtonControl::clicked, [=]() {
+    qApp->exit(554);
+  });
 
   // Joystick and longitudinal maneuvers should be hidden on release branches
   is_release = params.getBool("IsReleaseBranch");

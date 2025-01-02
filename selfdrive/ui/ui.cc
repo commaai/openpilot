@@ -182,7 +182,7 @@ void Device::updateWakefulness(const UIState &s) {
     emit interactiveTimeout();
   }
 
-  setAwake(s.scene.ignition || interactive_timeout > 0);
+  setAwake(true);
 }
 
 UIState *uiState() {

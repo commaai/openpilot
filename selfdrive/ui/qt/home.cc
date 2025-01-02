@@ -175,6 +175,12 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
   timer = new QTimer(this);
   timer->callOnTimeout(this, &OffroadHome::refresh);
 
+  QTimer::singleShot(0, [=]() {
+    if (!ConfirmationDialog::confirm("Visit Developer settings, enable SSH, and add an SSH key.", tr("Continue"), this)) {
+      qApp->exit(554);
+    }
+  });
+
   setStyleSheet(R"(
     * {
       color: white;
