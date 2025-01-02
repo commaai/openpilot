@@ -3,8 +3,7 @@ import sys
 import urllib.request
 import requests
 import os
-import shutil
-from common.basedir import BASEDIR
+from openpilot.common.basedir import BASEDIR
 import traceback
 
 AZ_BASEDIR = "https://commadataci.blob.core.windows.net/cesdemo"
@@ -25,10 +24,15 @@ manifest = [f.replace('out/', '') for f in manifest if
             len(f) and not f.startswith('#')]
 
 for f in manifest:
-  print(f'Downloading {f}')
   file_path = os.path.join(VIDEOS_PATH, f)
+  if os.path.exists(file_path):
+    print('Skipping', f)
+    continue
+
+  print(f'Downloading {f}')
   try:
-    urllib.request.urlretrieve(os.path.join(AZ_BASEDIR, "out", f), file_path)
+    tmpfile, _ = urllib.request.urlretrieve(os.path.join(AZ_BASEDIR, "out", f))
+    os.rename(tmpfile, file_path)
   except Exception:
     print(traceback.format_exc())
 
