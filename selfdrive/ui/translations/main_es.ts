@@ -123,6 +123,14 @@
         <source>Longitudinal Maneuver Mode</source>
         <translation>Modo de maniobra longitudinal</translation>
     </message>
+    <message>
+        <source>ADB over TCP</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable ADB over TCP on port 5555</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DevicePanel</name>
