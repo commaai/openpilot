@@ -42,17 +42,22 @@ def setup_settings_device(click, pm: PubMaster):
 
 def setup_settings_toggles(click, pm: PubMaster):
   setup_settings_device(click, pm)
-  click(278, 650)
+  click(278, 586)
   time.sleep(UI_DELAY)
 
 def setup_settings_software(click, pm: PubMaster):
   setup_settings_device(click, pm)
-  click(278, 800)
+  click(278, 716)
+  time.sleep(UI_DELAY)
+
+def setup_settings_sunnypilot(click, pm: PubMaster):
+  setup_settings_device(click, pm)
+  click(278, 846)
   time.sleep(UI_DELAY)
 
 def setup_settings_developer(click, pm: PubMaster):
   setup_settings_device(click, pm)
-  click(278, 960)
+  click(278, 976)
   time.sleep(UI_DELAY)
 
 def setup_onroad(click, pm: PubMaster):
@@ -183,6 +188,7 @@ CASES = {
   "settings_device": setup_settings_device,
   "settings_toggles": setup_settings_toggles,
   "settings_software": setup_settings_software,
+  "settings_sunnypilot": setup_settings_sunnypilot,
   "settings_developer": setup_settings_developer,
   "onroad": setup_onroad,
   "onroad_disengaged": setup_onroad_disengaged,

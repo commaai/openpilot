@@ -11,6 +11,8 @@
 #include "selfdrive/ui/sunnypilot/qt/widgets/scrollview.h"
 #include "selfdrive/ui/qt/offroad/developer_panel.h"
 
+#include "selfdrive/ui/sunnypilot/qt/offroad/settings/sunnypilot_panel.h"
+
 TogglesPanelSP::TogglesPanelSP(SettingsWindow *parent) : TogglesPanel(parent) {
   QObject::connect(uiStateSP(), &UIStateSP::uiUpdate, this, &TogglesPanelSP::updateState);
 }
@@ -68,6 +70,7 @@ SettingsWindowSP::SettingsWindowSP(QWidget *parent) : SettingsWindow(parent) {
     PanelInfo("   " + tr("Network"), networking, "../assets/offroad/icon_network.png"),
     PanelInfo("   " + tr("Toggles"), toggles, "../../sunnypilot/selfdrive/assets/offroad/icon_toggle.png"),
     PanelInfo("   " + tr("Software"), new SoftwarePanel(this), "../../sunnypilot/selfdrive/assets/offroad/icon_software.png"),
+    PanelInfo("   " + tr("sunnypilot"), new SunnypilotPanel(this), "../assets/images/button_home.png"),
     PanelInfo("   " + tr("Developer"), new DeveloperPanel(this), "../assets/offroad/icon_shell.png"),
   };
 
