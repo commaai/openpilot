@@ -100,7 +100,9 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   }
 
   // Toggles with confirmation dialogs
+#ifndef SUNNYPILOT
   toggles["ExperimentalMode"]->setActiveIcon("../assets/img_experimental.svg");
+#endif
   toggles["ExperimentalMode"]->setConfirmation(true, true);
   toggles["ExperimentalLongitudinalEnabled"]->setConfirmation(true, false);
 
@@ -354,6 +356,7 @@ void SettingsWindow::setCurrentPanel(int index, const QString &param) {
 }
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
+  RETURN_IF_SUNNYPILOT
 
   // setup two main layouts
   sidebar_widget = new QWidget;

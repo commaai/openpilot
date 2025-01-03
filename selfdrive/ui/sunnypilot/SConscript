@@ -1,0 +1,19 @@
+widgets_src = [
+  "sunnypilot/qt/widgets/toggle.cc",
+  "sunnypilot/qt/widgets/controls.cc",
+  "sunnypilot/qt/widgets/scrollview.cc",
+]
+
+qt_src = [
+  "sunnypilot/ui.cc",
+  "sunnypilot/qt/sidebar.cc",
+  "sunnypilot/qt/window.cc",
+  "sunnypilot/qt/home.cc",
+  "sunnypilot/qt/offroad/settings/settings.cc",
+  "sunnypilot/qt/onroad/onroad_home.cc",
+]
+
+sp_widgets_src = widgets_src
+sp_qt_src = qt_src
+
+Export('sp_widgets_src', 'sp_qt_src')

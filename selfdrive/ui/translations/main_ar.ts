@@ -481,6 +481,17 @@
     </message>
 </context>
 <context>
+    <name>ParamControlSP</name>
+    <message>
+        <source>Enable</source>
+        <translation>تمكين</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>إلغاء</translation>
+    </message>
+</context>
+<context>
     <name>PrimeAdWidget</name>
     <message>
         <source>Upgrade Now</source>
@@ -640,6 +651,37 @@ This may take up to a minute.</source>
     <message>
         <source>Developer</source>
         <translation>المطور</translation>
+    </message>
+</context>
+<context>
+    <name>SettingsWindowSP</name>
+    <message>
+        <source>×</source>
+        <translation>×</translation>
+    </message>
+    <message>
+        <source>Device</source>
+        <translation>الجهاز</translation>
+    </message>
+    <message>
+        <source>Network</source>
+        <translation>الشبكة</translation>
+    </message>
+    <message>
+        <source>Toggles</source>
+        <translation>المثبتتات</translation>
+    </message>
+    <message>
+        <source>Software</source>
+        <translation>البرنامج</translation>
+    </message>
+    <message>
+        <source>Developer</source>
+        <translation>المطور</translation>
+    </message>
+    <message>
+        <source>sunnypilot</source>
+        <translation>sunnypilot</translation>
     </message>
 </context>
 <context>

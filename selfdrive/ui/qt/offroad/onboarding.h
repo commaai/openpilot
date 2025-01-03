@@ -71,6 +71,7 @@ public slots:
 private:
   void showEvent(QShowEvent *event) override;
 
+protected:
   QPushButton *accept_btn;
 
 signals:
@@ -97,10 +98,10 @@ class OnboardingWindow : public QStackedWidget {
 public:
   explicit OnboardingWindow(QWidget *parent = 0);
   inline void showTrainingGuide() { setCurrentIndex(1); }
-  inline bool completed() const { return accepted_terms && training_done; }
+  virtual inline bool completed() const { return accepted_terms && training_done; }
 
-private:
-  void updateActiveScreen();
+protected:
+  virtual void updateActiveScreen();
 
   Params params;
   bool accepted_terms = false, training_done = false;
