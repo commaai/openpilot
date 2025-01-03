@@ -23,6 +23,9 @@ function agnos_init {
   fi
 }
 
+if [ -z "$AGNOS_VERSION" ]; then
+  export AGNOS_VERSION="10.1"
+fi
 if [ -z "$BASEDIR" ]; then
   BASEDIR="/data/openpilot"
 fi
