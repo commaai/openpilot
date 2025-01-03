@@ -3,10 +3,7 @@
 #include <QPainter>
 #include <QStyleOption>
 
-#include "selfdrive/ui/qt/util.h"
-
 AbstractControl::AbstractControl(const QString &title, const QString &desc, const QString &icon, QWidget *parent) : QFrame(parent) {
-  RETURN_IF_SUNNYPILOT
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setMargin(0);
 

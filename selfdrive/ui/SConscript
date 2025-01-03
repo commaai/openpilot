@@ -12,12 +12,6 @@ if arch == "Darwin":
   del base_libs[base_libs.index('OpenCL')]
   qt_env['FRAMEWORKS'] += ['OpenCL']
 
-sp_widgets_src = []
-sp_qt_src = []
-if not GetOption('stock_ui'):
-  SConscript(['../../sunnypilot/selfdrive/ui/SConscript'])
-  Import('sp_widgets_src', 'sp_qt_src')
-
 # FIXME: remove this once we're on 5.15 (24.04)
 qt_env['CXXFLAGS'] += ["-Wno-deprecated-declarations"]
 
@@ -26,7 +20,7 @@ widgets_src = ["qt/widgets/input.cc", "qt/widgets/wifi.cc", "qt/prime_state.cc",
                "qt/widgets/ssh_keys.cc", "qt/widgets/toggle.cc", "qt/widgets/controls.cc",
                "qt/widgets/offroad_alerts.cc", "qt/widgets/prime.cc", "qt/widgets/keyboard.cc",
                "qt/widgets/scrollview.cc", "qt/widgets/cameraview.cc", "#third_party/qrcode/QrCode.cc",
-               "qt/request_repeater.cc", "qt/qt_window.cc", "qt/network/networking.cc", "qt/network/wifi_manager.cc"] + sp_widgets_src
+               "qt/request_repeater.cc", "qt/qt_window.cc", "qt/network/networking.cc", "qt/network/wifi_manager.cc"]
 
 widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
 Export('widgets')
@@ -37,7 +31,7 @@ qt_src = ["main.cc", "ui.cc", "qt/sidebar.cc", "qt/body.cc",
           "qt/offroad/software_settings.cc", "qt/offroad/developer_panel.cc", "qt/offroad/onboarding.cc",
           "qt/offroad/driverview.cc", "qt/offroad/experimental_mode.cc",
           "qt/onroad/onroad_home.cc", "qt/onroad/annotated_camera.cc", "qt/onroad/model.cc",
-          "qt/onroad/buttons.cc", "qt/onroad/alerts.cc", "qt/onroad/driver_monitoring.cc", "qt/onroad/hud.cc"] + sp_qt_src
+          "qt/onroad/buttons.cc", "qt/onroad/alerts.cc", "qt/onroad/driver_monitoring.cc", "qt/onroad/hud.cc"]
 
 # build translation files
 with open(File("translations/languages.json").abspath) as f:

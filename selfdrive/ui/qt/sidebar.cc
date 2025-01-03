@@ -110,10 +110,6 @@ void Sidebar::updateState(const UIState &s) {
 
 void Sidebar::paintEvent(QPaintEvent *event) {
   QPainter p(this);
-  paintSidebar(p);
-}
-
-void Sidebar::paintSidebar(QPainter &p) {
   p.setPen(Qt::NoPen);
   p.setRenderHint(QPainter::Antialiasing);
 

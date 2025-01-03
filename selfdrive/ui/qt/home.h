@@ -9,22 +9,11 @@
 
 #include "common/params.h"
 #include "selfdrive/ui/qt/body.h"
-#include "selfdrive/ui/qt/widgets/offroad_alerts.h"
-#include "selfdrive/ui/ui.h"
-
-#ifdef SUNNYPILOT
-#include "../../sunnypilot/selfdrive/ui/qt/widgets/controls.h"
-#include "../../sunnypilot/selfdrive/ui/qt/onroad/onroad_home.h"
-#include "../../sunnypilot/selfdrive/ui/qt/sidebar.h"
-#define OnroadWindow OnroadWindowSP
-#define LayoutWidget LayoutWidgetSP
-#define Sidebar SidebarSP
-#define ElidedLabel ElidedLabelSP
-#else
-#include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/onroad/onroad_home.h"
 #include "selfdrive/ui/qt/sidebar.h"
-#endif
+#include "selfdrive/ui/qt/widgets/controls.h"
+#include "selfdrive/ui/qt/widgets/offroad_alerts.h"
+#include "selfdrive/ui/ui.h"
 
 class OffroadHome : public QFrame {
   Q_OBJECT
@@ -69,12 +58,13 @@ protected:
   void mousePressEvent(QMouseEvent* e) override;
   void mouseDoubleClickEvent(QMouseEvent* e) override;
 
+private:
   Sidebar *sidebar;
   OffroadHome *home;
   OnroadWindow *onroad;
   BodyWindow *body;
   QStackedLayout *slayout;
 
-protected slots:
-  virtual void updateState(const UIState &s);
+private slots:
+  void updateState(const UIState &s);
 };

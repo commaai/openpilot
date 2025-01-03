@@ -4,20 +4,16 @@
 
 #include "system/hardware/hw.h"
 
-// We have this constructor so that we can provide custom implementations of the windows. By default (stock_ui) would receive them as nullptr, so they'll be instantiated with stock. Otherwise they'd be SP instances
-MainWindow::MainWindow(QWidget *parent, HomeWindow *hw, SettingsWindow *sw, OnboardingWindow *ow) :
-    QWidget(parent),
-    homeWindow(hw ? hw : new HomeWindow(this)),
-    settingsWindow(sw ? sw : new SettingsWindow(this)),
-    onboardingWindow(ow ? ow : new OnboardingWindow(this)) {
-
+MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
   main_layout = new QStackedLayout(this);
   main_layout->setMargin(0);
 
+  homeWindow = new HomeWindow(this);
   main_layout->addWidget(homeWindow);
   QObject::connect(homeWindow, &HomeWindow::openSettings, this, &MainWindow::openSettings);
   QObject::connect(homeWindow, &HomeWindow::closeSettings, this, &MainWindow::closeSettings);
 
+  settingsWindow = new SettingsWindow(this);
   main_layout->addWidget(settingsWindow);
   QObject::connect(settingsWindow, &SettingsWindow::closeSettings, this, &MainWindow::closeSettings);
   QObject::connect(settingsWindow, &SettingsWindow::reviewTrainingGuide, [=]() {
@@ -25,6 +21,7 @@ MainWindow::MainWindow(QWidget *parent, HomeWindow *hw, SettingsWindow *sw, Onbo
     main_layout->setCurrentWidget(onboardingWindow);
   });
 
+  onboardingWindow = new OnboardingWindow(this);
   main_layout->addWidget(onboardingWindow);
   QObject::connect(onboardingWindow, &OnboardingWindow::onboardingDone, [=]() {
     main_layout->setCurrentWidget(homeWindow);

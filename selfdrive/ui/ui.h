@@ -67,7 +67,7 @@ class UIState : public QObject {
 
 public:
   UIState(QObject* parent = 0);
-  virtual void updateStatus();
+  void updateStatus();
   inline bool engaged() const {
     return scene.started && (*sm)["selfdriveState"].getSelfdriveState().getEnabled();
   }
@@ -82,19 +82,15 @@ signals:
   void uiUpdate(const UIState &s);
   void offroadTransition(bool offroad);
 
-protected slots:
-  virtual void update();
-
-protected:
-  QTimer *timer;
+private slots:
+  void update();
 
 private:
+  QTimer *timer;
   bool started_prev = false;
 };
 
-#ifndef SUNNYPILOT
 UIState *uiState();
-#endif
 
 // device management class
 class Device : public QObject {
@@ -107,7 +103,7 @@ public:
     offroad_brightness = std::clamp(brightness, 0, 100);
   }
 
-protected:
+private:
   bool awake = false;
   int interactive_timeout = 0;
   bool ignition_on = false;
@@ -130,10 +126,5 @@ public slots:
   void update(const UIState &s);
 };
 
-#ifndef SUNNYPILOT
 Device *device();
-#endif
-
 void ui_update_params(UIState *s);
-void update_state(UIState *s);
-void update_sockets(UIState *s);

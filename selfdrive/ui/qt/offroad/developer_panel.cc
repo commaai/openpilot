@@ -2,13 +2,8 @@
 
 #include "selfdrive/ui/qt/offroad/developer_panel.h"
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
-#include "common/util.h"
-
-#ifdef SUNNYPILOT
-#include "../../sunnypilot/selfdrive/ui/qt/widgets/controls.h"
-#else
 #include "selfdrive/ui/qt/widgets/controls.h"
-#endif
+#include "common/util.h"
 
 DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   // SSH keys

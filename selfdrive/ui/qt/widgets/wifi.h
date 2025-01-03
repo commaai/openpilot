@@ -4,12 +4,7 @@
 #include <QStackedLayout>
 #include <QWidget>
 
-#ifdef SUNNYPILOT
-#include "../../sunnypilot/selfdrive/ui/ui.h"
-#define UIState UIStateSP
-#else
 #include "selfdrive/ui/ui.h"
-#endif
 
 class WiFiPromptWidget : public QFrame {
   Q_OBJECT

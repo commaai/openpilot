@@ -5,13 +5,8 @@
 #include <QFrame>
 #include <QMap>
 
-#include "selfdrive/ui/qt/network/networking.h"
-
-#ifdef SUNNYPILOT
-#include "../../sunnypilot/selfdrive/ui/ui.h"
-#else
 #include "selfdrive/ui/ui.h"
-#endif
+#include "selfdrive/ui/qt/network/networking.h"
 
 typedef QPair<QPair<QString, QString>, QColor> ItemStatus;
 Q_DECLARE_METATYPE(ItemStatus);
@@ -40,7 +35,6 @@ protected:
   void mousePressEvent(QMouseEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override;
   void drawMetric(QPainter &p, const QPair<QString, QString> &label, QColor c, int y);
-  virtual void paintSidebar(QPainter &p);
 
   QPixmap home_img, flag_img, settings_img;
   bool onroad, flag_pressed, settings_pressed;

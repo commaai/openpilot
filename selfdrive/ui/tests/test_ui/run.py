@@ -160,7 +160,7 @@ def setup_offroad_alert(click, pm: PubMaster):
 
   # Toggle between settings and home to refresh the offroad alert widget
   setup_settings_device(click, pm)
-  click(100, 100)
+  click(240, 216)
 
 def setup_update_available(click, pm: PubMaster):
   Params().put_bool("UpdateAvailable", True)
@@ -170,7 +170,7 @@ def setup_update_available(click, pm: PubMaster):
   Params().put("UpdaterNewReleaseNotes", release_notes + "\n")
 
   setup_settings_device(click, pm)
-  click(100, 100)
+  click(240, 216)
 
 def setup_pair_device(click, pm: PubMaster):
   click(1950, 435)

@@ -13,12 +13,6 @@
 #include "cereal/gen/cpp/car.capnp.h"
 #include "common/params.h"
 
-#ifdef SUNNYPILOT
-#define RETURN_IF_SUNNYPILOT return;
-#else
-#define RETURN_IF_SUNNYPILOT  // Do nothing
-#endif
-
 QString getVersion();
 QString getBrand();
 QString getUserAgent();

@@ -23,12 +23,7 @@
 #endif
 
 #include "msgq/visionipc/visionipc_client.h"
-
-#ifdef SUNNYPILOT
-#include "../../sunnypilot/selfdrive/ui/ui.h"
-#else
 #include "selfdrive/ui/ui.h"
-#endif
 
 const int FRAME_BUFFER_SIZE = 5;
 
