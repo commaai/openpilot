@@ -37,8 +37,15 @@ MainWindowNoTouch::MainWindowNoTouch(QWidget *parent) : QWidget(parent) {
   QDir videos_path = QDir(VIDEOS_PATH);
   videos_path.setNameFilters(filters);
   QString content_name;
-  while ((content_name = MultiOptionDialog::getSelection(tr("Select content"), videos_path.entryList(), "", this)).isEmpty()) {
+  QStringList videos = videos_path.entryList();
+  QStringList entries = videos;
+  entries.prepend("Random");
+  while ((content_name = MultiOptionDialog::getSelection(tr("Select content"), entries, "", this)).isEmpty()) {
     qDebug() << "No content selected!";
+  }
+
+  if (content_name == "Random") {
+    content_name = videos.at(QRandomGenerator::global()->bounded(videos.size()));
   }
 
   content_name = VIDEOS_PATH + "/" + content_name;
