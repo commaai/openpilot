@@ -27,6 +27,7 @@ if [ -z "$BASEDIR" ]; then
   BASEDIR="/data/openpilot"
 fi
 export PYTHONPATH="/data/openpilot"
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 
 # hardware specific init
 if [ -f /AGNOS ]; then
