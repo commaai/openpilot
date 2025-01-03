@@ -3,7 +3,11 @@
 #include <QPainter>
 #include <QPolygonF>
 
+#ifdef SUNNYPILOT
+#include "../../sunnypilot/selfdrive/ui/ui.h"
+#else
 #include "selfdrive/ui/ui.h"
+#endif
 
 class ModelRenderer {
 public:

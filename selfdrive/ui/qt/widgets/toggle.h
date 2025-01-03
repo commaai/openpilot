@@ -23,14 +23,13 @@ public:
     update();
   }
   bool getEnabled();
-  void setEnabled(bool value);
+  virtual void setEnabled(bool value);
 
 protected:
   void paintEvent(QPaintEvent*) override;
   void mouseReleaseEvent(QMouseEvent*) override;
   void enterEvent(QEvent*) override;
 
-private:
   QColor circleColor;
   QColor green;
   bool enabled = true;

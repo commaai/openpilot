@@ -9,16 +9,17 @@
 #include "common/swaglog.h"
 #include "common/util.h"
 #include "common/watchdog.h"
+#include "qt/util.h"
 #include "system/hardware/hw.h"
 
 #define BACKLIGHT_DT 0.05
 #define BACKLIGHT_TS 10.00
 
-static void update_sockets(UIState *s) {
+void update_sockets(UIState *s) {
   s->sm->update(0);
 }
 
-static void update_state(UIState *s) {
+void update_state(UIState *s) {
   SubMaster &sm = *(s->sm);
   UIScene &scene = s->scene;
 
@@ -98,6 +99,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   prime_state = new PrimeState(this);
   language = QString::fromStdString(Params().get("LanguageSetting"));
 
+  RETURN_IF_SUNNYPILOT
   // update timer
   timer = new QTimer(this);
   QObject::connect(timer, &QTimer::timeout, this, &UIState::update);
@@ -105,6 +107,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
 }
 
 void UIState::update() {
+  RETURN_IF_SUNNYPILOT
   update_sockets(this);
   update_state(this);
   updateStatus();
@@ -118,8 +121,9 @@ void UIState::update() {
 Device::Device(QObject *parent) : brightness_filter(BACKLIGHT_OFFROAD, BACKLIGHT_TS, BACKLIGHT_DT), QObject(parent) {
   setAwake(true);
   resetInteractiveTimeout();
-
+#ifndef SUNNYPILOT
   QObject::connect(uiState(), &UIState::uiUpdate, this, &Device::update);
+#endif
 }
 
 void Device::update(const UIState &s) {
@@ -185,6 +189,7 @@ void Device::updateWakefulness(const UIState &s) {
   setAwake(s.scene.ignition || interactive_timeout > 0);
 }
 
+#ifndef SUNNYPILOT
 UIState *uiState() {
   static UIState ui_state;
   return &ui_state;
@@ -194,3 +199,4 @@ Device *device() {
   static Device _device;
   return &_device;
 }
+#endif

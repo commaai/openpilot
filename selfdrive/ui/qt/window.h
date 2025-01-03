@@ -11,15 +11,18 @@ class MainWindow : public QWidget {
   Q_OBJECT
 
 public:
-  explicit MainWindow(QWidget *parent = 0);
+  explicit MainWindow(QWidget *parent = 0) : MainWindow(parent, nullptr, nullptr, nullptr) {}
+
+protected:
+  explicit MainWindow(QWidget *parent, HomeWindow *hw = nullptr, SettingsWindow *sw = nullptr, OnboardingWindow *ow = nullptr);
+  HomeWindow *homeWindow;
+  SettingsWindow *settingsWindow;
+  OnboardingWindow *onboardingWindow;
+  virtual void closeSettings();
 
 private:
   bool eventFilter(QObject *obj, QEvent *event) override;
   void openSettings(int index = 0, const QString &param = "");
-  void closeSettings();
 
   QStackedLayout *main_layout;
-  HomeWindow *homeWindow;
-  SettingsWindow *settingsWindow;
-  OnboardingWindow *onboardingWindow;
 };

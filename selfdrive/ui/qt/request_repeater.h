@@ -2,7 +2,12 @@
 
 #include "common/util.h"
 #include "selfdrive/ui/qt/api.h"
+
+#ifdef SUNNYPILOT
+#include "../../sunnypilot/selfdrive/ui/ui.h"
+#else
 #include "selfdrive/ui/ui.h"
+#endif
 
 class RequestRepeater : public HttpRequest {
 public:

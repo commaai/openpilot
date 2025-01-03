@@ -10,9 +10,21 @@
 #include <QStackedWidget>
 #include <QWidget>
 
-#include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/util.h"
+
+#ifdef SUNNYPILOT
+#include "../../sunnypilot/selfdrive/ui/ui.h"
+#include "../../sunnypilot/selfdrive/ui/qt/widgets/controls.h"
+#define ListWidget ListWidgetSP
+#define ParamControl ParamControlSP
+#define ButtonControl ButtonControlSP
+#define ButtonParamControl ButtonParamControlSP
+#define ToggleControl ToggleControlSP
+#define LabelControl LabelControlSP
+#else
+#include "selfdrive/ui/ui.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
+#endif
 
 // ********** settings window + top-level panels **********
 class SettingsWindow : public QFrame {
@@ -30,7 +42,7 @@ signals:
   void reviewTrainingGuide();
   void expandToggleDescription(const QString &param);
 
-private:
+protected:
   QPushButton *sidebar_alert_widget;
   QWidget *sidebar_widget;
   QButtonGroup *nav_btns;
@@ -45,12 +57,12 @@ public:
 signals:
   void reviewTrainingGuide();
 
-private slots:
+protected slots:
   void poweroff();
   void reboot();
   void updateCalibDescription();
 
-private:
+protected:
   Params params;
   ButtonControl *pair_device;
 };
@@ -64,15 +76,15 @@ public:
 public slots:
   void expandToggleDescription(const QString &param);
 
-private slots:
-  void updateState(const UIState &s);
+protected slots:
+  virtual void updateState(const UIState &s);
 
-private:
+protected:
   Params params;
   std::map<std::string, ParamControl*> toggles;
   ButtonParamControl *long_personality_setting;
 
-  void updateToggles();
+  virtual void updateToggles();
 };
 
 class SoftwarePanel : public ListWidget {
@@ -80,7 +92,7 @@ class SoftwarePanel : public ListWidget {
 public:
   explicit SoftwarePanel(QWidget* parent = nullptr);
 
-private:
+protected:
   void showEvent(QShowEvent *event) override;
   void updateLabels();
   void checkForUpdates();

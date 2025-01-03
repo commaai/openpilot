@@ -8,8 +8,14 @@
 
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/util.h"
+
+#ifdef SUNNYPILOT
+#include "../../sunnypilot/selfdrive/ui/qt/widgets/controls.h"
+#include "../../sunnypilot/selfdrive/ui/qt/widgets/scrollview.h"
+#else
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/widgets/scrollview.h"
+#endif
 
 static const int ICON_WIDTH = 49;
 

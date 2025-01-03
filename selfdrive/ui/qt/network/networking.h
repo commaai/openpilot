@@ -8,6 +8,17 @@
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 #include "selfdrive/ui/qt/widgets/toggle.h"
 
+#ifdef SUNNYPILOT
+#include "../../sunnypilot/selfdrive/ui/qt/widgets/controls.h"
+#define ButtonControl ButtonControlSP
+#define ElidedLabel ElidedLabelSP
+#define LabelControl LabelControlSP
+#define ListWidget ListWidgetSP
+#define ToggleControl ToggleControlSP
+#else
+#include "selfdrive/ui/qt/widgets/controls.h"
+#endif
+
 class WifiItem : public QWidget {
   Q_OBJECT
 public:
