@@ -10,6 +10,7 @@ qt_src = [
   "sunnypilot/qt/window.cc",
   "sunnypilot/qt/home.cc",
   "sunnypilot/qt/offroad/settings/settings.cc",
+  "sunnypilot/qt/offroad/settings/software_panel.cc",
   "sunnypilot/qt/offroad/settings/sunnypilot_panel.cc",
   "sunnypilot/qt/onroad/onroad_home.cc",
 ]

@@ -11,7 +11,53 @@ $Cxx.namespace("cereal");
 struct CustomReserved0 @0x81c2f05a394cf4af {
 }
 
-struct CustomReserved1 @0xaedffd8f31e7b55d {
+struct ModelManagerSP @0xaedffd8f31e7b55d {
+  activeBundle @0 :ModelBundle;
+  selectedBundle @1 :ModelBundle;
+  availableBundles @2 :List(ModelBundle);
+
+  struct DownloadUri {
+    uri @0 :Text;
+    sha256 @1 :Text;
+  }
+
+  enum Type {
+    drive @0;
+    navigation @1;
+    metadata @2;
+  }
+
+  struct Model {
+    fullName @0 :Text;
+    fileName @1 :Text;
+    downloadUri @2 :DownloadUri;
+    downloadProgress @3 :DownloadProgress;
+    type @4 :Type;
+  }
+
+  enum DownloadStatus {
+    notDownloading @0;
+    downloading @1;
+    downloaded @2;
+    cached @3;
+    failed @4;
+  }
+
+  struct DownloadProgress {
+    status @0 :DownloadStatus;
+    progress @1 :Float32;
+    eta @2 :UInt32;
+  }
+
+  struct ModelBundle {
+    index @0 :UInt32;
+    internalName @1 :Text;
+    displayName @2 :Text;
+    models @3 :List(Model);
+    status @4 :DownloadStatus;
+    generation @5 :UInt32;
+    environment @6 :Text;
+  }
 }
 
 struct CustomReserved2 @0xf35cc4560bbf6ec2 {

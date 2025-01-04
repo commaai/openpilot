@@ -94,7 +94,7 @@ public:
 
 protected:
   void showEvent(QShowEvent *event) override;
-  void updateLabels();
+  virtual void updateLabels();
   void checkForUpdates();
 
   bool is_onroad = false;

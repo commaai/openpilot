@@ -114,6 +114,11 @@ procs = [
   PythonProcess("joystick", "tools.joystick.joystick_control", and_(joystick, iscar)),
 ]
 
+# sunnypilot
+procs += [
+  PythonProcess("models_manager", "sunnypilot.models.manager", only_offroad),
+]
+
 if os.path.exists("./github_runner.sh"):
   procs += [NativeProcess("github_runner_start", "system/manager", ["./github_runner.sh", "start"], and_(only_offroad, use_github_runner), sigkill=False)]
 
