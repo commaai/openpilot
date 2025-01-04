@@ -472,9 +472,8 @@ class CAR(Platforms):
     KIA_STINGER.specs,
   )
   KIA_CEED = HyundaiPlatformConfig(
-    [HyundaiCarDocs("Kia Ceed 2019", car_parts=CarParts.common([CarHarness.hyundai_e]))],
-    CarSpecs(mass=1450, wheelbase=2.65, steerRatio=13.75, tireStiffnessFactor=0.5),
-    flags=HyundaiFlags.LEGACY,
+    [HyundaiCarDocs("Kia Ceed SW 2023", car_parts=CarParts.common([CarHarness.hyundai_g]))],
+    CarSpecs(mass=1836, wheelbase=2.70, steerRatio=13.0, tireStiffnessFactor=1.0),
   )
   KIA_EV6 = HyundaiCanFDPlatformConfig(
     [
