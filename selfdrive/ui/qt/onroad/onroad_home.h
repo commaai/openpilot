@@ -1,10 +1,13 @@
 #pragma once
 
 #include "selfdrive/ui/qt/onroad/alerts.h"
-#include "selfdrive/ui/qt/onroad/annotated_camera.h"
 
 #ifdef SUNNYPILOT
+#include "selfdrive/ui/sunnypilot/qt/onroad/annotated_camera.h"
 #define UIState UIStateSP
+#define AnnotatedCameraWidget AnnotatedCameraWidgetSP
+#else
+#include "selfdrive/ui/qt/onroad/annotated_camera.h"
 #endif
 
 class OnroadWindow : public QWidget {
