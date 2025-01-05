@@ -24,14 +24,14 @@ options:
 
 Examples using route name to observe accelerometer and qcamera:
 
-`./run.sh --qcam "a2a0ccea32023010/2023-07-27--13-01-19"`
+`./run.py --qcam "a2a0ccea32023010/2023-07-27--13-01-19"`
 
 Examples using segment range (more on [SegmentRange](https://github.com/commaai/openpilot/tree/master/tools/lib)):
 
-`./run.sh --qcam "a2a0ccea32023010/2023-07-27--13-01-19/2:4"`
+`./run.py --qcam "a2a0ccea32023010/2023-07-27--13-01-19/2:4"`
 
 ## Cautions:
 - Showing hevc videos (`--fcam`, `--ecam`, and `--dcam`)  are expensive, and it's recommended to use `--qcam` for optimized performance. If possible, limiting your route to a few segments using `SegmentRange` will speed up logging and reduce memory usage
 
 ## Demo
-`./run.sh --qcam --demo`
+`./run.py --qcam --demo`
