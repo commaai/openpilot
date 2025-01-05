@@ -103,7 +103,6 @@ dev = [
   "lru-dict",
   "matplotlib",
   "parameterized >=0.8, <0.9",
-  #"pprofile",
   "pyautogui",
   "pyopencl; platform_machine != 'aarch64'", # broken on arm64
   "pytools < 2024.1.11; platform_machine != 'aarch64'", # pyopencl use a broken version
@@ -112,9 +111,6 @@ dev = [
   "tabulate",
   "types-requests",
   "types-tabulate",
-
-  # this is only pinned since 5.15.11 is broken
-  "pyqt5 ==5.15.2; platform_machine == 'x86_64'", # no aarch64 wheels for macOS/linux
 ]
 
 tools = [
