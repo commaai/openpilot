@@ -15,6 +15,8 @@
 
 class SidebarSP : public Sidebar {
   Q_OBJECT
+  Q_PROPERTY(ItemStatus sunnylinkStatus MEMBER sunnylink_status NOTIFY valueChanged);
+  Q_PROPERTY(QString sidebarTemp MEMBER sidebar_temp_str NOTIFY valueChanged);
 
 public slots:
   void updateState(const UIStateSP &s);
@@ -23,5 +25,15 @@ public:
   explicit SidebarSP(QWidget *parent = 0);
 
 private:
-  void paintSidebar(QPainter &p) override;
+  void drawSidebar(QPainter &p) override;
+
+  Params params;
+  QString sidebar_temp = "0";
+  QString sidebar_temp_str = "0";
+
+protected:
+  const QColor progress_color = QColor(3, 132, 252);
+  const QColor disabled_color = QColor(128, 128, 128);
+
+  ItemStatus sunnylink_status;
 };

@@ -4,6 +4,10 @@ widgets_src = [
   "sunnypilot/qt/widgets/scrollview.cc",
 ]
 
+qt_util = [
+  "sunnypilot/qt/util.cc",
+]
+
 qt_src = [
   "sunnypilot/ui.cc",
   "sunnypilot/qt/sidebar.cc",
@@ -11,6 +15,7 @@ qt_src = [
   "sunnypilot/qt/home.cc",
   "sunnypilot/qt/offroad/settings/settings.cc",
   "sunnypilot/qt/offroad/settings/software_panel.cc",
+  "sunnypilot/qt/offroad/settings/sunnylink_panel.cc",
   "sunnypilot/qt/offroad/settings/sunnypilot_panel.cc",
   "sunnypilot/qt/onroad/onroad_home.cc",
 ]
@@ -21,5 +26,6 @@ sunnypilot_panel_qt_src = [
 
 sp_widgets_src = widgets_src
 sp_qt_src = qt_src + sunnypilot_panel_qt_src
+sp_qt_util = qt_util
 
-Export('sp_widgets_src', 'sp_qt_src')
+Export('sp_widgets_src', 'sp_qt_src', "sp_qt_util")

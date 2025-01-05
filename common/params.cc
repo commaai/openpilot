@@ -201,18 +201,24 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"UpdaterLastFetchTime", PERSISTENT},
     {"Version", PERSISTENT},
 
-    // sunnypilot params
+    // --- sunnypilot params --- //
     {"EnableGithubRunner", PERSISTENT | BACKUP},
-    {"EnableSunnylinkUploader", PERSISTENT | BACKUP},
-    {"LastSunnylinkPingTime", CLEAR_ON_MANAGER_START},
+
+    // MADS params
     {"Mads", PERSISTENT | BACKUP},
     {"MadsMainCruiseAllowed", PERSISTENT | BACKUP},
     {"MadsPauseLateralOnBrake", PERSISTENT | BACKUP},
     {"MadsUnifiedEngagementMode", PERSISTENT | BACKUP},
+
+    // Model Manager params
     {"ModelManager_ActiveBundle", PERSISTENT},
     {"ModelManager_DownloadIndex", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION | CLEAR_ON_ONROAD_TRANSITION},
     {"ModelManager_LastSyncTime", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
     {"ModelManager_ModelsCache", PERSISTENT | BACKUP},
+
+    // sunnylink params
+    {"EnableSunnylinkUploader", PERSISTENT | BACKUP},
+    {"LastSunnylinkPingTime", CLEAR_ON_MANAGER_START},
     {"SunnylinkDongleId", PERSISTENT},
     {"SunnylinkdPid", PERSISTENT},
     {"SunnylinkEnabled", PERSISTENT},

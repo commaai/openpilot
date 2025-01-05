@@ -42,17 +42,17 @@ def setup_settings_device(click, pm: PubMaster):
 
 def setup_settings_toggles(click, pm: PubMaster):
   setup_settings_device(click, pm)
-  click(278, 586)
+  click(278, 640)
   time.sleep(UI_DELAY)
 
 def setup_settings_software(click, pm: PubMaster):
   setup_settings_device(click, pm)
-  click(278, 716)
+  click(278, 750)
   time.sleep(UI_DELAY)
 
 def setup_settings_developer(click, pm: PubMaster):
   setup_settings_device(click, pm)
-  click(278, 976)
+  click(278, 970)
   time.sleep(UI_DELAY)
 
 def setup_onroad(click, pm: PubMaster):
@@ -176,16 +176,23 @@ def setup_pair_device(click, pm: PubMaster):
   click(1950, 435)
   click(1800, 900)
 
+def setup_settings_sunnylink(click, pm: PubMaster):
+  Params().put_bool("SunnylinkEnabled", True)
+
+  setup_settings_device(click, pm)
+  click(278, 530)
+  time.sleep(UI_DELAY)
+
 def setup_settings_sunnypilot(click, pm: PubMaster):
   setup_settings_device(click, pm)
-  click(278, 846)
+  click(278, 860)
   time.sleep(UI_DELAY)
 
 def setup_settings_sunnypilot_mads(click, pm: PubMaster):
   Params().put_bool("Mads", True)
 
   setup_settings_device(click, pm)
-  click(278, 846)
+  click(278, 860)
   click(970, 455)
   time.sleep(UI_DELAY)
 
@@ -214,6 +221,7 @@ CASES = {
 }
 
 CASES.update({
+  "settings_sunnylink": setup_settings_sunnylink,
   "settings_sunnypilot": setup_settings_sunnypilot,
   "settings_sunnypilot_mads": setup_settings_sunnypilot_mads,
 })
@@ -302,6 +310,7 @@ def create_screenshots():
     with OpenpilotPrefix():
       params = Params()
       params.put("DongleId", "123456789012345")
+      params.put("SunnylinkDongleId", "123456789012345")
       if name == 'prime':
         params.put('PrimeType', '1')
       elif name == 'pair_device':

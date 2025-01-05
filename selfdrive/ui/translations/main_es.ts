@@ -709,6 +709,10 @@ Esto puede tardar un minuto.</translation>
         <source>sunnypilot</source>
         <translation>sunnypilot</translation>
     </message>
+    <message>
+        <source>sunnylink</source>
+        <translation>sunnylink</translation>
+    </message>
 </context>
 <context>
     <name>Setup</name>
@@ -893,6 +897,33 @@ Esto puede tardar un minuto.</translation>
     <message>
         <source>5G</source>
         <translation>5G</translation>
+    </message>
+</context>
+<context>
+    <name>SidebarSP</name>
+    <message>
+        <source>DISABLED</source>
+        <translation>DESHABILITADO</translation>
+    </message>
+    <message>
+        <source>OFFLINE</source>
+        <translation type="unfinished">OFFLINE</translation>
+    </message>
+    <message>
+        <source>REGIST...</source>
+        <translation>REGIST...</translation>
+    </message>
+    <message>
+        <source>ONLINE</source>
+        <translation>EN LÍNEA</translation>
+    </message>
+    <message>
+        <source>ERROR</source>
+        <translation>ERROR</translation>
+    </message>
+    <message>
+        <source>SUNNYLINK</source>
+        <translation>SUNNYLINK</translation>
     </message>
 </context>
 <context>
@@ -1089,6 +1120,33 @@ Esto puede tardar un minuto.</translation>
     <message>
         <source>Enable SSH</source>
         <translation>Habilitar SSH</translation>
+    </message>
+</context>
+<context>
+    <name>SunnylinkPanel</name>
+    <message>
+        <source>This is the master switch, it will allow you to cutoff any sunnylink requests should you want to do that.</source>
+        <translation>Este es el interruptor principal; te permitirá desactivar completamente cualquier connectividad de sunnylink si así lo deseas.</translation>
+    </message>
+    <message>
+        <source>Enable sunnylink</source>
+        <translation>Habilitar sunnylink</translation>
+    </message>
+    <message>
+        <source>N/A</source>
+        <translation type="unfinished">N/A</translation>
+    </message>
+    <message>
+        <source>🎉Welcome back! We&apos;re excited to see you&apos;ve enabled sunnylink again! 🚀</source>
+        <translation>🎉¡Bienvenido de vuelta! Nos alegra que hayas reactivado sunnylink. 🚀</translation>
+    </message>
+    <message>
+        <source>Device ID</source>
+        <translation>ID del dispositivo</translation>
+    </message>
+    <message>
+        <source>👋Not going to lie, it&apos;s sad to see you disabled sunnylink 😢, but we&apos;ll be here when you&apos;re ready to come back 🎉.</source>
+        <translation>👋No te mentiremos, nos entristece que hayas desactivado sunnylink 😢. Estaremos aquí cuando estes listo para volver 🎉.</translation>
     </message>
 </context>
 <context>
