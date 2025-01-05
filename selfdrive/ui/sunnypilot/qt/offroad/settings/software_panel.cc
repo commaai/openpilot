@@ -83,8 +83,6 @@ void SoftwarePanelSP::handleBundleDownloadProgress() {
   if (bundle.getStatus() == cereal::ModelManagerSP::DownloadStatus::DOWNLOADING) {
     currentModelLblBtn->showDescription();
   }
-
-  currentModelLblBtn->setEnabled(!is_onroad && !isDownloading());
 }
 
 /**
@@ -128,7 +126,6 @@ void SoftwarePanelSP::handleCurrentModelLblBtnClicked() {
     bundleNames.append(index_to_bundle[index]);
   }
 
-  currentModelLblBtn->setEnabled(!is_onroad);
   currentModelLblBtn->setValue(GetActiveModelName());
 
   const QString selectedBundleName = MultiOptionDialog::getSelection(
@@ -161,6 +158,7 @@ void SoftwarePanelSP::updateLabels() {
   }
 
   handleBundleDownloadProgress();
+  currentModelLblBtn->setEnabled(!is_onroad && !isDownloading());
   currentModelLblBtn->setValue(GetActiveModelName());
   SoftwarePanel::updateLabels();
 }

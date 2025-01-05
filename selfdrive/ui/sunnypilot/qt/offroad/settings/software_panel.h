@@ -24,7 +24,7 @@ private:
     const SubMaster &sm = *(uiStateSP()->sm);
     const auto model_manager = sm["modelManagerSP"].getModelManagerSP();
 
-    if (!model_manager.hasSelectedBundle()) {
+    if (!model_manager.hasSelectedBundle() || !sm.updated("modelManagerSP")) {
       return false;
     }
 
