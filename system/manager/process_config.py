@@ -5,6 +5,7 @@ from cereal import car
 from openpilot.common.params import Params
 from openpilot.system.hardware import PC, TICI
 from openpilot.system.manager.process import PythonProcess, NativeProcess, DaemonProcess
+from sunnypilot.sunnylink.utils import sunnylink_need_register, sunnylink_ready, use_sunnylink_uploader
 
 WEBCAM = os.getenv("USE_WEBCAM") is not None
 
@@ -56,6 +57,18 @@ def only_offroad(started: bool, params: Params, CP: car.CarParams) -> bool:
 
 def use_github_runner(started, params, CP: car.CarParams) -> bool:
   return not PC and params.get_bool("EnableGithubRunner") and not params.get_bool("NetworkMetered")
+
+def sunnylink_ready_shim(started, params, CP: car.CarParams) -> bool:
+  """Shim for sunnylink_ready to match the process manager signature."""
+  return sunnylink_ready(params)
+
+def sunnylink_need_register_shim(started, params, CP: car.CarParams) -> bool:
+  """Shim for sunnylink_need_register to match the process manager signature."""
+  return sunnylink_need_register(params)
+
+def use_sunnylink_uploader_shim(started, params, CP: car.CarParams) -> bool:
+  """Shim for use_sunnylink_uploader to match the process manager signature."""
+  return use_sunnylink_uploader(params)
 
 def or_(*fns):
   return lambda *args: operator.or_(*(fn(*args) for fn in fns))
@@ -112,6 +125,10 @@ procs = [
   PythonProcess("webrtcd", "system.webrtc.webrtcd", notcar),
   PythonProcess("webjoystick", "tools.bodyteleop.web", notcar),
   PythonProcess("joystick", "tools.joystick.joystick_control", and_(joystick, iscar)),
+
+  # sunnylink <3
+  DaemonProcess("manage_sunnylinkd", "sunnypilot.sunnylink.athena.manage_sunnylinkd", "SunnylinkdPid"),
+  PythonProcess("sunnylink_registration_manager", "sunnypilot.sunnylink.registration_manager", sunnylink_need_register_shim),
 ]
 
 # sunnypilot
@@ -121,5 +138,8 @@ procs += [
 
 if os.path.exists("./github_runner.sh"):
   procs += [NativeProcess("github_runner_start", "system/manager", ["./github_runner.sh", "start"], and_(only_offroad, use_github_runner), sigkill=False)]
+
+if os.path.exists("../sunnypilot/sunnylink/uploader.py"):
+  procs += [PythonProcess("sunnylink_uploader", "sunnypilot.sunnylink.uploader", use_sunnylink_uploader_shim)]
 
 managed_processes = {p.name: p for p in procs}
