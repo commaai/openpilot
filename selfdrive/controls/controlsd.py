@@ -19,6 +19,7 @@ from openpilot.selfdrive.controls.lib.longcontrol import LongControl
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 from openpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose
 
+from opendbc.sunnypilot import SunnypilotParamFlags
 
 State = log.SelfdriveState.OpenpilotState
 LaneChangeState = log.LaneChangeState
@@ -56,6 +57,9 @@ class Controls:
     elif self.CP.lateralTuning.which() == 'torque':
       self.LaC = LatControlTorque(self.CP, self.CI)
 
+    data_services = list(self.sm.data.keys()) + ['selfdriveStateSP']
+    self.sm = messaging.SubMaster(data_services, poll='selfdriveState')
+
   def update(self):
     self.sm.update(15)
     if self.sm.updated["liveCalibration"]:
@@ -88,7 +92,16 @@ class Controls:
 
     # Check which actuators can be enabled
     standstill = abs(CS.vEgo) <= max(self.CP.minSteerSpeed, MIN_LATERAL_CONTROL_SPEED) or CS.standstill
-    CC.latActive = self.sm['selfdriveState'].active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and not standstill
+
+    ss_sp = self.sm['selfdriveStateSP']
+    CC.madsEnabled = ss_sp.mads.enabled
+    if ss_sp.mads.available:
+      CC.sunnypilotParams |= SunnypilotParamFlags.ENABLE_MADS.value
+      _lat_active = ss_sp.mads.active
+    else:
+      _lat_active = self.sm['selfdriveState'].active
+
+    CC.latActive = _lat_active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and not standstill
     CC.longActive = CC.enabled and not any(e.overrideLongitudinal for e in self.sm['onroadEvents']) and self.CP.openpilotLongitudinalControl
 
     actuators = CC.actuators

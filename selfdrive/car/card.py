@@ -22,6 +22,8 @@ from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
 from openpilot.selfdrive.car.cruise import VCruiseHelper
 from openpilot.selfdrive.car.car_specific import MockCarState
 
+from openpilot.sunnypilot.mads.mads import MadsParams
+
 REPLAY = "REPLAY" in os.environ
 
 EventName = log.OnroadEvent.EventName
@@ -112,6 +114,10 @@ class Car:
     self.CP.alternativeExperience = 0
     if not disengage_on_accelerator:
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
+
+    # mads
+    MadsParams().set_alternative_experience(self.CP)
+    MadsParams().set_car_specific_params(self.CP)
 
     openpilot_enabled_toggle = self.params.get_bool("OpenpilotEnabledToggle")
 

@@ -23,6 +23,8 @@ from openpilot.selfdrive.controls.lib.latcontrol import MIN_LATERAL_CONTROL_SPEE
 
 from openpilot.system.version import get_build_metadata
 
+from openpilot.sunnypilot.mads.mads import ModularAssistiveDrivingSystem
+
 REPLAY = "REPLAY" in os.environ
 SIMULATION = "SIMULATION" in os.environ
 TESTING_CLOSET = "TESTING_CLOSET" in os.environ
@@ -130,6 +132,10 @@ class SelfdriveD:
       set_offroad_alert("Offroad_CarUnrecognized", True)
     elif self.CP.passive:
       self.events.add(EventName.dashcamMode, static=True)
+
+    self.mads = ModularAssistiveDrivingSystem(self)
+    sock_services = list(self.pm.sock.keys()) + ['selfdriveStateSP']
+    self.pm = messaging.PubMaster(sock_services)
 
   def update_events(self, CS):
     """Compute onroadEvents from carState"""
@@ -451,11 +457,25 @@ class SelfdriveD:
       self.pm.send('onroadEvents', ce_send)
     self.events_prev = self.events.names.copy()
 
+    # selfdriveStateSP
+    ss_sp_msg = messaging.new_message('selfdriveStateSP')
+    ss_sp_msg.valid = True
+    ss_sp = ss_sp_msg.selfdriveStateSP
+    mads = ss_sp.mads
+    mads.state = self.mads.state_machine.state
+    mads.enabled = self.mads.enabled
+    mads.active = self.mads.active
+    mads.available = self.mads.enabled_toggle
+
+    self.pm.send('selfdriveStateSP', ss_sp_msg)
+
   def step(self):
     CS = self.data_sample()
     self.update_events(CS)
     if not self.CP.passive and self.initialized:
       self.enabled, self.active = self.state_machine.update(self.events)
+    if not self.CP.notCar:
+      self.mads.update(CS, self.sm)
     self.update_alerts(CS)
 
     self.publish_selfdriveState(CS)
@@ -473,6 +493,8 @@ class SelfdriveD:
       self.is_metric = self.params.get_bool("IsMetric")
       self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
       self.personality = self.read_personality_param()
+
+      self.mads.read_params()
       time.sleep(0.1)
 
   def run(self):

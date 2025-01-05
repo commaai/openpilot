@@ -41,6 +41,8 @@
 #define CUTOFF_IL 400
 #define SATURATE_IL 1000
 
+#define ALT_EXP_DISENGAGE_LATERAL_ON_BRAKE 2048
+
 ExitHandler do_exit;
 
 bool check_all_connected(const std::vector<Panda *> &pandas) {
@@ -51,6 +53,18 @@ bool check_all_connected(const std::vector<Panda *> &pandas) {
     }
   }
   return true;
+}
+
+bool process_mads_heartbeat(SubMaster *sm) {
+  const int &alt_exp = (*sm)["carParams"].getCarParams().getAlternativeExperience();
+  const bool disengage_lateral_on_brake = (alt_exp & ALT_EXP_DISENGAGE_LATERAL_ON_BRAKE) != 0;
+
+  const auto &mads = (*sm)["selfdriveStateSP"].getSelfdriveStateSP().getMads();
+  const bool heartbeat_type = disengage_lateral_on_brake ? mads.getActive() : mads.getEnabled();
+
+  const bool engaged = sm->allAliveAndValid({"selfdriveStateSP"}) && heartbeat_type;
+
+  return engaged;
 }
 
 Panda *connect(std::string serial="", uint32_t index=0) {
@@ -144,6 +158,7 @@ void fill_panda_state(cereal::PandaState::Builder &ps, cereal::PandaState::Panda
   ps.setIgnitionLine(health.ignition_line_pkt);
   ps.setIgnitionCan(health.ignition_can_pkt);
   ps.setControlsAllowed(health.controls_allowed_pkt);
+  ps.setControlsAllowedLat(health.controls_allowed_lat_pkt);
   ps.setTxBufferOverflow(health.tx_buffer_overflow_pkt);
   ps.setRxBufferOverflow(health.rx_buffer_overflow_pkt);
   ps.setPandaType(hw_type);
@@ -327,7 +342,7 @@ void send_peripheral_state(Panda *panda, PubMaster *pm) {
 }
 
 void process_panda_state(std::vector<Panda *> &pandas, PubMaster *pm, bool spoofing_started) {
-  static SubMaster sm({"selfdriveState"});
+  static SubMaster sm({"selfdriveState", "selfdriveStateSP", "carParams"});
 
   std::vector<std::string> connected_serials;
   for (Panda *p : pandas) {
@@ -366,8 +381,9 @@ void process_panda_state(std::vector<Panda *> &pandas, PubMaster *pm, bool spoof
 
     sm.update(0);
     const bool engaged = sm.allAliveAndValid({"selfdriveState"}) && sm["selfdriveState"].getSelfdriveState().getEnabled();
+    const bool engaged_mads = process_mads_heartbeat(&sm);
     for (const auto &panda : pandas) {
-      panda->send_heartbeat(engaged);
+      panda->send_heartbeat(engaged, engaged_mads);
     }
   }
 }

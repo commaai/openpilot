@@ -137,8 +137,8 @@ void Panda::enable_deepsleep() {
   handle->control_write(0xfb, 0, 0);
 }
 
-void Panda::send_heartbeat(bool engaged) {
-  handle->control_write(0xf3, engaged, 0);
+void Panda::send_heartbeat(bool engaged, bool engaged_mads) {
+  handle->control_write(0xf3, engaged, engaged_mads);
 }
 
 void Panda::set_can_speed_kbps(uint16_t bus, uint16_t speed) {

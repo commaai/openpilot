@@ -15,7 +15,11 @@ qt_src = [
   "sunnypilot/qt/onroad/onroad_home.cc",
 ]
 
+sunnypilot_panel_qt_src = [
+  "sunnypilot/qt/offroad/settings/sunnypilot/mads_settings.cc",
+]
+
 sp_widgets_src = widgets_src
-sp_qt_src = qt_src
+sp_qt_src = qt_src + sunnypilot_panel_qt_src
 
 Export('sp_widgets_src', 'sp_qt_src')

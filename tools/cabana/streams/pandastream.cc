@@ -72,7 +72,7 @@ void PandaStream::streamThread() {
 
     handleEvent(capnp::messageToFlatArray(msg));
 
-    panda->send_heartbeat(false);
+    panda->send_heartbeat(false, false);
   }
 }
 

@@ -163,6 +163,7 @@ testpaths = [
   "tools/replay",
   "tools/cabana",
   "cereal/messaging/tests",
+  "sunnypilot",
 ]
 
 [tool.codespell]
