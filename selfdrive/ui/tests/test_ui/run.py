@@ -186,7 +186,7 @@ def setup_settings_sunnypilot_mads(click, pm: PubMaster):
 
   setup_settings_device(click, pm)
   click(278, 846)
-  click(970, 250)
+  click(970, 455)
   time.sleep(UI_DELAY)
 
 CASES = {

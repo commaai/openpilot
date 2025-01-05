@@ -49,7 +49,6 @@ SunnypilotPanel::SunnypilotPanel(SettingsWindowSP *parent) : QFrame(parent) {
 
   sunnypilotScroller = new ScrollViewSP(list, this);
   vlayout->addWidget(sunnypilotScroller);
-  vlayout->addStretch(1);
 
   main_layout->addWidget(sunnypilotScreen);
   main_layout->addWidget(madsWidget);
