@@ -507,9 +507,9 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     // stream of IFE register writes
     if (!is_raw) {
       if (init) {
-        buf_desc[0].length = build_initial_config((unsigned char*)ife_cmd.ptr + buf_desc[0].offset, sensor.get(), patches);
+        buf_desc[0].length = build_initial_config((unsigned char*)ife_cmd.ptr + buf_desc[0].offset, sensor.get(), patches, cc.camera_num);
       } else {
-        buf_desc[0].length = build_update((unsigned char*)ife_cmd.ptr + buf_desc[0].offset, sensor.get(), patches);
+        buf_desc[0].length = build_update((unsigned char*)ife_cmd.ptr + buf_desc[0].offset, sensor.get(), patches, cc.camera_num);
       }
     }
 
@@ -892,7 +892,9 @@ void SpectraCamera::configISP() {
     ife_vignetting_lut.init(m, sensor->vignetting_lut.size(), 0x20,
                             CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
                             m->device_iommu, m->cdm_iommu, 2);
-    memcpy(ife_vignetting_lut.ptr, sensor->vignetting_lut.data(), ife_vignetting_lut.size*2);
+    for (int i = 0; i < 2; i++) {
+      memcpy(ife_vignetting_lut.ptr + ife_vignetting_lut.size*i, sensor->vignetting_lut.data(), ife_vignetting_lut.size);
+    }
   }
 
   config_ife(0, 1, true);
