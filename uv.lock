@@ -498,7 +498,7 @@ version = "0.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "python-xlib", marker = "sys_platform == 'linux'" },
-    { name = "typing-extensions", marker = "sys_platform != 'darwin'" },
+    { name = "typing-extensions" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2f/3a/46ca34abf0725a754bc44ef474ad34aedcc3ea23b052d97b18b76715a6a9/EWMHlib-0.2-py3-none-any.whl", hash = "sha256:f5b07d8cfd4c7734462ee744c32d490f2f3233fa7ab354240069344208d2f6f5", size = 46657 },
@@ -648,10 +648,10 @@ name = "gymnasium"
 version = "1.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cloudpickle", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "farama-notifications", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "numpy", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "typing-extensions", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "cloudpickle" },
+    { name = "farama-notifications" },
+    { name = "numpy" },
+    { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/4e/12/1047b8fdbfcdce74022048d916e844ad7e6e1114d81d26a7aed657e3a76d/gymnasium-1.0.0.tar.gz", hash = "sha256:9d2b66f30c1b34fe3c2ce7fae65ecf365d0e9982d2b3d860235e773328a3b403", size = 821389 }
 wheels = [
@@ -956,22 +956,22 @@ name = "metadrive-simulator"
 version = "0.4.2.4"
 source = { url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl" }
 dependencies = [
-    { name = "filelock", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "gymnasium", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "lxml", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "matplotlib", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "numpy", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "opencv-python-headless", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "panda3d", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "panda3d-gltf", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "pillow", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "progressbar", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "psutil", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "pygments", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "requests", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "shapely", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "tqdm", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "yapf", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "filelock" },
+    { name = "gymnasium" },
+    { name = "lxml" },
+    { name = "matplotlib" },
+    { name = "numpy" },
+    { name = "opencv-python-headless" },
+    { name = "panda3d" },
+    { name = "panda3d-gltf" },
+    { name = "pillow" },
+    { name = "progressbar" },
+    { name = "psutil" },
+    { name = "pygments" },
+    { name = "requests" },
+    { name = "shapely" },
+    { name = "tqdm" },
+    { name = "yapf" },
 ]
 wheels = [
     { url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl", hash = "sha256:fbf0ea9be67e65cd45d38ff930e3d49f705dd76c9ddbd1e1482e3f87b61efcef" },
@@ -1130,25 +1130,27 @@ wheels = [
 
 [[package]]
 name = "mypy"
-version = "1.14.0"
+version = "1.14.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mypy-extensions" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/8c/7b/08046ef9330735f536a09a2e31b00f42bccdb2795dcd979636ba43bb2d63/mypy-1.14.0.tar.gz", hash = "sha256:822dbd184d4a9804df5a7d5335a68cf7662930e70b8c1bc976645d1509f9a9d6", size = 3215684 }
+sdist = { url = "https://files.pythonhosted.org/packages/b9/eb/2c92d8ea1e684440f54fa49ac5d9a5f19967b7b472a281f419e69a8d228e/mypy-1.14.1.tar.gz", hash = "sha256:7ec88144fe9b510e8475ec2f5f251992690fcf89ccb4500b214b4226abcd32d6", size = 3216051 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/34/c1/b9dd3e955953aec1c728992545b7877c9f6fa742a623ce4c200da0f62540/mypy-1.14.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:6e73c8a154eed31db3445fe28f63ad2d97b674b911c00191416cf7f6459fd49a", size = 11121032 },
-    { url = "https://files.pythonhosted.org/packages/ee/96/c52d5d516819ab95bf41f4a1ada828a3decc302f8c152ff4fc5feb0e4529/mypy-1.14.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:273e70fcb2e38c5405a188425aa60b984ffdcef65d6c746ea5813024b68c73dc", size = 10286294 },
-    { url = "https://files.pythonhosted.org/packages/69/2c/3dbe51877a24daa467f8d8631f9ffd1aabbf0f6d9367a01c44a59df81fe0/mypy-1.14.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:1daca283d732943731a6a9f20fdbcaa927f160bc51602b1d4ef880a6fb252015", size = 12746528 },
-    { url = "https://files.pythonhosted.org/packages/a1/a8/eb20cde4ba9c4c3e20d958918a7c5d92210f4d1a0200c27de9a641f70996/mypy-1.14.0-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:7e68047bedb04c1c25bba9901ea46ff60d5eaac2d71b1f2161f33107e2b368eb", size = 12883489 },
-    { url = "https://files.pythonhosted.org/packages/91/17/a1fc6c70f31d52c99299320cf81c3cb2c6b91ec7269414e0718a6d138e34/mypy-1.14.0-cp311-cp311-win_amd64.whl", hash = "sha256:7a52f26b9c9b1664a60d87675f3bae00b5c7f2806e0c2800545a32c325920bcc", size = 9780113 },
-    { url = "https://files.pythonhosted.org/packages/fe/d8/0e72175ee0253217f5c44524f5e95251c02e95ba9749fb87b0e2074d203a/mypy-1.14.0-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:d5326ab70a6db8e856d59ad4cb72741124950cbbf32e7b70e30166ba7bbf61dd", size = 11269011 },
-    { url = "https://files.pythonhosted.org/packages/e9/6d/4ea13839dabe5db588dc6a1b766da16f420d33cf118a7b7172cdf6c7fcb2/mypy-1.14.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:bf4ec4980bec1e0e24e5075f449d014011527ae0055884c7e3abc6a99cd2c7f1", size = 10253076 },
-    { url = "https://files.pythonhosted.org/packages/3e/38/7db2c5d0f4d290e998f7a52b2e2616c7bbad96b8e04278ab09d11978a29e/mypy-1.14.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:390dfb898239c25289495500f12fa73aa7f24a4c6d90ccdc165762462b998d63", size = 12862786 },
-    { url = "https://files.pythonhosted.org/packages/bf/4b/62d59c801b34141040989949c2b5c157d0408b45357335d3ec5b2845b0f6/mypy-1.14.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:7e026d55ddcd76e29e87865c08cbe2d0104e2b3153a523c529de584759379d3d", size = 12971568 },
-    { url = "https://files.pythonhosted.org/packages/f1/9c/e0f281b32d70c87b9e4d2939e302b1ff77ada4d7b0f2fb32890c144bc1d6/mypy-1.14.0-cp312-cp312-win_amd64.whl", hash = "sha256:585ed36031d0b3ee362e5107ef449a8b5dfd4e9c90ccbe36414ee405ee6b32ba", size = 9879477 },
-    { url = "https://files.pythonhosted.org/packages/39/32/0214608af400cdf8f5102144bb8af10d880675c65ed0b58f7e0e77175d50/mypy-1.14.0-py3-none-any.whl", hash = "sha256:2238d7f93fc4027ed1efc944507683df3ba406445a2b6c96e79666a045aadfab", size = 2752803 },
+    { url = "https://files.pythonhosted.org/packages/da/11/a9422850fd506edbcdc7f6090682ecceaf1f87b9dd847f9df79942da8506/mypy-1.14.1-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:f995e511de847791c3b11ed90084a7a0aafdc074ab88c5a9711622fe4751138c", size = 11120432 },
+    { url = "https://files.pythonhosted.org/packages/b6/9e/47e450fd39078d9c02d620545b2cb37993a8a8bdf7db3652ace2f80521ca/mypy-1.14.1-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:d64169ec3b8461311f8ce2fd2eb5d33e2d0f2c7b49116259c51d0d96edee48d1", size = 10279515 },
+    { url = "https://files.pythonhosted.org/packages/01/b5/6c8d33bd0f851a7692a8bfe4ee75eb82b6983a3cf39e5e32a5d2a723f0c1/mypy-1.14.1-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:ba24549de7b89b6381b91fbc068d798192b1b5201987070319889e93038967a8", size = 12025791 },
+    { url = "https://files.pythonhosted.org/packages/f0/4c/e10e2c46ea37cab5c471d0ddaaa9a434dc1d28650078ac1b56c2d7b9b2e4/mypy-1.14.1-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:183cf0a45457d28ff9d758730cd0210419ac27d4d3f285beda038c9083363b1f", size = 12749203 },
+    { url = "https://files.pythonhosted.org/packages/88/55/beacb0c69beab2153a0f57671ec07861d27d735a0faff135a494cd4f5020/mypy-1.14.1-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:f2a0ecc86378f45347f586e4163d1769dd81c5a223d577fe351f26b179e148b1", size = 12885900 },
+    { url = "https://files.pythonhosted.org/packages/a2/75/8c93ff7f315c4d086a2dfcde02f713004357d70a163eddb6c56a6a5eff40/mypy-1.14.1-cp311-cp311-win_amd64.whl", hash = "sha256:ad3301ebebec9e8ee7135d8e3109ca76c23752bac1e717bc84cd3836b4bf3eae", size = 9777869 },
+    { url = "https://files.pythonhosted.org/packages/43/1b/b38c079609bb4627905b74fc6a49849835acf68547ac33d8ceb707de5f52/mypy-1.14.1-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:30ff5ef8519bbc2e18b3b54521ec319513a26f1bba19a7582e7b1f58a6e69f14", size = 11266668 },
+    { url = "https://files.pythonhosted.org/packages/6b/75/2ed0d2964c1ffc9971c729f7a544e9cd34b2cdabbe2d11afd148d7838aa2/mypy-1.14.1-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:cb9f255c18052343c70234907e2e532bc7e55a62565d64536dbc7706a20b78b9", size = 10254060 },
+    { url = "https://files.pythonhosted.org/packages/a1/5f/7b8051552d4da3c51bbe8fcafffd76a6823779101a2b198d80886cd8f08e/mypy-1.14.1-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:8b4e3413e0bddea671012b063e27591b953d653209e7a4fa5e48759cda77ca11", size = 11933167 },
+    { url = "https://files.pythonhosted.org/packages/04/90/f53971d3ac39d8b68bbaab9a4c6c58c8caa4d5fd3d587d16f5927eeeabe1/mypy-1.14.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:553c293b1fbdebb6c3c4030589dab9fafb6dfa768995a453d8a5d3b23784af2e", size = 12864341 },
+    { url = "https://files.pythonhosted.org/packages/03/d2/8bc0aeaaf2e88c977db41583559319f1821c069e943ada2701e86d0430b7/mypy-1.14.1-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:fad79bfe3b65fe6a1efaed97b445c3d37f7be9fdc348bdb2d7cac75579607c89", size = 12972991 },
+    { url = "https://files.pythonhosted.org/packages/6f/17/07815114b903b49b0f2cf7499f1c130e5aa459411596668267535fe9243c/mypy-1.14.1-cp312-cp312-win_amd64.whl", hash = "sha256:8fa2220e54d2946e94ab6dbb3ba0a992795bd68b16dc852db33028df2b00191b", size = 9879016 },
+    { url = "https://files.pythonhosted.org/packages/a0/b5/32dd67b69a16d088e533962e5044e51004176a9952419de0370cdaead0f8/mypy-1.14.1-py3-none-any.whl", hash = "sha256:b66a60cc4073aeb8ae00057f9c1f64d49e90f918fbcef9a977eb121da8b8f1d1", size = 2752905 },
 ]
 
 [[package]]
@@ -1245,7 +1247,7 @@ name = "opencv-python-headless"
 version = "4.10.0.84"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "numpy" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/2f/7e/d20f68a5f1487adf19d74378d349932a386b1ece3be9be9915e5986db468/opencv-python-headless-4.10.0.84.tar.gz", hash = "sha256:f2017c6101d7c2ef8d7bc3b414c37ff7f54d64413a1847d89970b6b7069b4e1a", size = 95117755 }
 wheels = [
@@ -1448,8 +1450,8 @@ name = "panda3d-gltf"
 version = "0.13"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "panda3d", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "panda3d-simplepbr", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "panda3d" },
+    { name = "panda3d-simplepbr" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/07/7f/9f18fc3fa843a080acb891af6bcc12262e7bdf1d194a530f7042bebfc81f/panda3d-gltf-0.13.tar.gz", hash = "sha256:d06d373bdd91cf530909b669f43080e599463bbf6d3ef00c3558bad6c6b19675", size = 25573 }
 wheels = [
@@ -1461,8 +1463,8 @@ name = "panda3d-simplepbr"
 version = "0.12.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "panda3d", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "typing-extensions", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "panda3d" },
+    { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/b1/af/505608eef09d7f9b822e69dc7631cd14102650b8fe1b6f60d9562d2788d9/panda3d-simplepbr-0.12.0.tar.gz", hash = "sha256:c71d490afeeb3a90455dcfde1d30c41f321a38742a97d18834e5c31016331ed5", size = 1929980 }
 wheels = [
@@ -1489,32 +1491,32 @@ wheels = [
 
 [[package]]
 name = "pillow"
-version = "11.0.0"
+version = "11.1.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a5/26/0d95c04c868f6bdb0c447e3ee2de5564411845e36a858cfd63766bc7b563/pillow-11.0.0.tar.gz", hash = "sha256:72bacbaf24ac003fea9bff9837d1eedb6088758d41e100c1552930151f677739", size = 46737780 }
+sdist = { url = "https://files.pythonhosted.org/packages/f3/af/c097e544e7bd278333db77933e535098c259609c4eb3b85381109602fb5b/pillow-11.1.0.tar.gz", hash = "sha256:368da70808b36d73b4b390a8ffac11069f8a5c85f29eff1f1b01bcf3ef5b2a20", size = 46742715 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f0/eb/f7e21b113dd48a9c97d364e0915b3988c6a0b6207652f5a92372871b7aa4/pillow-11.0.0-cp311-cp311-macosx_10_10_x86_64.whl", hash = "sha256:1c1d72714f429a521d8d2d018badc42414c3077eb187a59579f28e4270b4b0fc", size = 3154705 },
-    { url = "https://files.pythonhosted.org/packages/25/b3/2b54a1d541accebe6bd8b1358b34ceb2c509f51cb7dcda8687362490da5b/pillow-11.0.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:499c3a1b0d6fc8213519e193796eb1a86a1be4b1877d678b30f83fd979811d1a", size = 2979222 },
-    { url = "https://files.pythonhosted.org/packages/20/12/1a41eddad8265c5c19dda8fb6c269ce15ee25e0b9f8f26286e6202df6693/pillow-11.0.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:c8b2351c85d855293a299038e1f89db92a2f35e8d2f783489c6f0b2b5f3fe8a3", size = 4190220 },
-    { url = "https://files.pythonhosted.org/packages/a9/9b/8a8c4d07d77447b7457164b861d18f5a31ae6418ef5c07f6f878fa09039a/pillow-11.0.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:6f4dba50cfa56f910241eb7f883c20f1e7b1d8f7d91c750cd0b318bad443f4d5", size = 4291399 },
-    { url = "https://files.pythonhosted.org/packages/fc/e4/130c5fab4a54d3991129800dd2801feeb4b118d7630148cd67f0e6269d4c/pillow-11.0.0-cp311-cp311-manylinux_2_28_aarch64.whl", hash = "sha256:5ddbfd761ee00c12ee1be86c9c0683ecf5bb14c9772ddbd782085779a63dd55b", size = 4202709 },
-    { url = "https://files.pythonhosted.org/packages/39/63/b3fc299528d7df1f678b0666002b37affe6b8751225c3d9c12cf530e73ed/pillow-11.0.0-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:45c566eb10b8967d71bf1ab8e4a525e5a93519e29ea071459ce517f6b903d7fa", size = 4372556 },
-    { url = "https://files.pythonhosted.org/packages/c6/a6/694122c55b855b586c26c694937d36bb8d3b09c735ff41b2f315c6e66a10/pillow-11.0.0-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:b4fd7bd29610a83a8c9b564d457cf5bd92b4e11e79a4ee4716a63c959699b306", size = 4287187 },
-    { url = "https://files.pythonhosted.org/packages/ba/a9/f9d763e2671a8acd53d29b1e284ca298bc10a595527f6be30233cdb9659d/pillow-11.0.0-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:cb929ca942d0ec4fac404cbf520ee6cac37bf35be479b970c4ffadf2b6a1cad9", size = 4418468 },
-    { url = "https://files.pythonhosted.org/packages/6e/0e/b5cbad2621377f11313a94aeb44ca55a9639adabcaaa073597a1925f8c26/pillow-11.0.0-cp311-cp311-win32.whl", hash = "sha256:006bcdd307cc47ba43e924099a038cbf9591062e6c50e570819743f5607404f5", size = 2249249 },
-    { url = "https://files.pythonhosted.org/packages/dc/83/1470c220a4ff06cd75fc609068f6605e567ea51df70557555c2ab6516b2c/pillow-11.0.0-cp311-cp311-win_amd64.whl", hash = "sha256:52a2d8323a465f84faaba5236567d212c3668f2ab53e1c74c15583cf507a0291", size = 2566769 },
-    { url = "https://files.pythonhosted.org/packages/52/98/def78c3a23acee2bcdb2e52005fb2810ed54305602ec1bfcfab2bda6f49f/pillow-11.0.0-cp311-cp311-win_arm64.whl", hash = "sha256:16095692a253047fe3ec028e951fa4221a1f3ed3d80c397e83541a3037ff67c9", size = 2254611 },
-    { url = "https://files.pythonhosted.org/packages/1c/a3/26e606ff0b2daaf120543e537311fa3ae2eb6bf061490e4fea51771540be/pillow-11.0.0-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:d2c0a187a92a1cb5ef2c8ed5412dd8d4334272617f532d4ad4de31e0495bd923", size = 3147642 },
-    { url = "https://files.pythonhosted.org/packages/4f/d5/1caabedd8863526a6cfa44ee7a833bd97f945dc1d56824d6d76e11731939/pillow-11.0.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:084a07ef0821cfe4858fe86652fffac8e187b6ae677e9906e192aafcc1b69903", size = 2978999 },
-    { url = "https://files.pythonhosted.org/packages/d9/ff/5a45000826a1aa1ac6874b3ec5a856474821a1b59d838c4f6ce2ee518fe9/pillow-11.0.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:8069c5179902dcdce0be9bfc8235347fdbac249d23bd90514b7a47a72d9fecf4", size = 4196794 },
-    { url = "https://files.pythonhosted.org/packages/9d/21/84c9f287d17180f26263b5f5c8fb201de0f88b1afddf8a2597a5c9fe787f/pillow-11.0.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f02541ef64077f22bf4924f225c0fd1248c168f86e4b7abdedd87d6ebaceab0f", size = 4300762 },
-    { url = "https://files.pythonhosted.org/packages/84/39/63fb87cd07cc541438b448b1fed467c4d687ad18aa786a7f8e67b255d1aa/pillow-11.0.0-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:fcb4621042ac4b7865c179bb972ed0da0218a076dc1820ffc48b1d74c1e37fe9", size = 4210468 },
-    { url = "https://files.pythonhosted.org/packages/7f/42/6e0f2c2d5c60f499aa29be14f860dd4539de322cd8fb84ee01553493fb4d/pillow-11.0.0-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:00177a63030d612148e659b55ba99527803288cea7c75fb05766ab7981a8c1b7", size = 4381824 },
-    { url = "https://files.pythonhosted.org/packages/31/69/1ef0fb9d2f8d2d114db982b78ca4eeb9db9a29f7477821e160b8c1253f67/pillow-11.0.0-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:8853a3bf12afddfdf15f57c4b02d7ded92c7a75a5d7331d19f4f9572a89c17e6", size = 4296436 },
-    { url = "https://files.pythonhosted.org/packages/44/ea/dad2818c675c44f6012289a7c4f46068c548768bc6c7f4e8c4ae5bbbc811/pillow-11.0.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:3107c66e43bda25359d5ef446f59c497de2b5ed4c7fdba0894f8d6cf3822dafc", size = 4429714 },
-    { url = "https://files.pythonhosted.org/packages/af/3a/da80224a6eb15bba7a0dcb2346e2b686bb9bf98378c0b4353cd88e62b171/pillow-11.0.0-cp312-cp312-win32.whl", hash = "sha256:86510e3f5eca0ab87429dd77fafc04693195eec7fd6a137c389c3eeb4cfb77c6", size = 2249631 },
-    { url = "https://files.pythonhosted.org/packages/57/97/73f756c338c1d86bb802ee88c3cab015ad7ce4b838f8a24f16b676b1ac7c/pillow-11.0.0-cp312-cp312-win_amd64.whl", hash = "sha256:8ec4a89295cd6cd4d1058a5e6aec6bf51e0eaaf9714774e1bfac7cfc9051db47", size = 2567533 },
-    { url = "https://files.pythonhosted.org/packages/0b/30/2b61876e2722374558b871dfbfcbe4e406626d63f4f6ed92e9c8e24cac37/pillow-11.0.0-cp312-cp312-win_arm64.whl", hash = "sha256:27a7860107500d813fcd203b4ea19b04babe79448268403172782754870dac25", size = 2254890 },
+    { url = "https://files.pythonhosted.org/packages/dd/d6/2000bfd8d5414fb70cbbe52c8332f2283ff30ed66a9cde42716c8ecbe22c/pillow-11.1.0-cp311-cp311-macosx_10_10_x86_64.whl", hash = "sha256:e06695e0326d05b06833b40b7ef477e475d0b1ba3a6d27da1bb48c23209bf457", size = 3229968 },
+    { url = "https://files.pythonhosted.org/packages/d9/45/3fe487010dd9ce0a06adf9b8ff4f273cc0a44536e234b0fad3532a42c15b/pillow-11.1.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:96f82000e12f23e4f29346e42702b6ed9a2f2fea34a740dd5ffffcc8c539eb35", size = 3101806 },
+    { url = "https://files.pythonhosted.org/packages/e3/72/776b3629c47d9d5f1c160113158a7a7ad177688d3a1159cd3b62ded5a33a/pillow-11.1.0-cp311-cp311-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a3cd561ded2cf2bbae44d4605837221b987c216cff94f49dfeed63488bb228d2", size = 4322283 },
+    { url = "https://files.pythonhosted.org/packages/e4/c2/e25199e7e4e71d64eeb869f5b72c7ddec70e0a87926398785ab944d92375/pillow-11.1.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:f189805c8be5ca5add39e6f899e6ce2ed824e65fb45f3c28cb2841911da19070", size = 4402945 },
+    { url = "https://files.pythonhosted.org/packages/c1/ed/51d6136c9d5911f78632b1b86c45241c712c5a80ed7fa7f9120a5dff1eba/pillow-11.1.0-cp311-cp311-manylinux_2_28_aarch64.whl", hash = "sha256:dd0052e9db3474df30433f83a71b9b23bd9e4ef1de13d92df21a52c0303b8ab6", size = 4361228 },
+    { url = "https://files.pythonhosted.org/packages/48/a4/fbfe9d5581d7b111b28f1d8c2762dee92e9821bb209af9fa83c940e507a0/pillow-11.1.0-cp311-cp311-manylinux_2_28_x86_64.whl", hash = "sha256:837060a8599b8f5d402e97197d4924f05a2e0d68756998345c829c33186217b1", size = 4484021 },
+    { url = "https://files.pythonhosted.org/packages/39/db/0b3c1a5018117f3c1d4df671fb8e47d08937f27519e8614bbe86153b65a5/pillow-11.1.0-cp311-cp311-musllinux_1_2_aarch64.whl", hash = "sha256:aa8dd43daa836b9a8128dbe7d923423e5ad86f50a7a14dc688194b7be5c0dea2", size = 4287449 },
+    { url = "https://files.pythonhosted.org/packages/d9/58/bc128da7fea8c89fc85e09f773c4901e95b5936000e6f303222490c052f3/pillow-11.1.0-cp311-cp311-musllinux_1_2_x86_64.whl", hash = "sha256:0a2f91f8a8b367e7a57c6e91cd25af510168091fb89ec5146003e424e1558a96", size = 4419972 },
+    { url = "https://files.pythonhosted.org/packages/5f/bb/58f34379bde9fe197f51841c5bbe8830c28bbb6d3801f16a83b8f2ad37df/pillow-11.1.0-cp311-cp311-win32.whl", hash = "sha256:c12fc111ef090845de2bb15009372175d76ac99969bdf31e2ce9b42e4b8cd88f", size = 2291201 },
+    { url = "https://files.pythonhosted.org/packages/3a/c6/fce9255272bcf0c39e15abd2f8fd8429a954cf344469eaceb9d0d1366913/pillow-11.1.0-cp311-cp311-win_amd64.whl", hash = "sha256:fbd43429d0d7ed6533b25fc993861b8fd512c42d04514a0dd6337fb3ccf22761", size = 2625686 },
+    { url = "https://files.pythonhosted.org/packages/c8/52/8ba066d569d932365509054859f74f2a9abee273edcef5cd75e4bc3e831e/pillow-11.1.0-cp311-cp311-win_arm64.whl", hash = "sha256:f7955ecf5609dee9442cbface754f2c6e541d9e6eda87fad7f7a989b0bdb9d71", size = 2375194 },
+    { url = "https://files.pythonhosted.org/packages/95/20/9ce6ed62c91c073fcaa23d216e68289e19d95fb8188b9fb7a63d36771db8/pillow-11.1.0-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:2062ffb1d36544d42fcaa277b069c88b01bb7298f4efa06731a7fd6cc290b81a", size = 3226818 },
+    { url = "https://files.pythonhosted.org/packages/b9/d8/f6004d98579a2596c098d1e30d10b248798cceff82d2b77aa914875bfea1/pillow-11.1.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:a85b653980faad27e88b141348707ceeef8a1186f75ecc600c395dcac19f385b", size = 3101662 },
+    { url = "https://files.pythonhosted.org/packages/08/d9/892e705f90051c7a2574d9f24579c9e100c828700d78a63239676f960b74/pillow-11.1.0-cp312-cp312-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:9409c080586d1f683df3f184f20e36fb647f2e0bc3988094d4fd8c9f4eb1b3b3", size = 4329317 },
+    { url = "https://files.pythonhosted.org/packages/8c/aa/7f29711f26680eab0bcd3ecdd6d23ed6bce180d82e3f6380fb7ae35fcf3b/pillow-11.1.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7fdadc077553621911f27ce206ffcbec7d3f8d7b50e0da39f10997e8e2bb7f6a", size = 4412999 },
+    { url = "https://files.pythonhosted.org/packages/c8/c4/8f0fe3b9e0f7196f6d0bbb151f9fba323d72a41da068610c4c960b16632a/pillow-11.1.0-cp312-cp312-manylinux_2_28_aarch64.whl", hash = "sha256:93a18841d09bcdd774dcdc308e4537e1f867b3dec059c131fde0327899734aa1", size = 4368819 },
+    { url = "https://files.pythonhosted.org/packages/38/0d/84200ed6a871ce386ddc82904bfadc0c6b28b0c0ec78176871a4679e40b3/pillow-11.1.0-cp312-cp312-manylinux_2_28_x86_64.whl", hash = "sha256:9aa9aeddeed452b2f616ff5507459e7bab436916ccb10961c4a382cd3e03f47f", size = 4496081 },
+    { url = "https://files.pythonhosted.org/packages/84/9c/9bcd66f714d7e25b64118e3952d52841a4babc6d97b6d28e2261c52045d4/pillow-11.1.0-cp312-cp312-musllinux_1_2_aarch64.whl", hash = "sha256:3cdcdb0b896e981678eee140d882b70092dac83ac1cdf6b3a60e2216a73f2b91", size = 4296513 },
+    { url = "https://files.pythonhosted.org/packages/db/61/ada2a226e22da011b45f7104c95ebda1b63dcbb0c378ad0f7c2a710f8fd2/pillow-11.1.0-cp312-cp312-musllinux_1_2_x86_64.whl", hash = "sha256:36ba10b9cb413e7c7dfa3e189aba252deee0602c86c309799da5a74009ac7a1c", size = 4431298 },
+    { url = "https://files.pythonhosted.org/packages/e7/c4/fc6e86750523f367923522014b821c11ebc5ad402e659d8c9d09b3c9d70c/pillow-11.1.0-cp312-cp312-win32.whl", hash = "sha256:cfd5cd998c2e36a862d0e27b2df63237e67273f2fc78f47445b14e73a810e7e6", size = 2291630 },
+    { url = "https://files.pythonhosted.org/packages/08/5c/2104299949b9d504baf3f4d35f73dbd14ef31bbd1ddc2c1b66a5b7dfda44/pillow-11.1.0-cp312-cp312-win_amd64.whl", hash = "sha256:a697cd8ba0383bba3d2d3ada02b34ed268cb548b369943cd349007730c92bddf", size = 2626369 },
+    { url = "https://files.pythonhosted.org/packages/37/f3/9b18362206b244167c958984b57c7f70a0289bfb59a530dd8af5f699b910/pillow-11.1.0-cp312-cp312-win_arm64.whl", hash = "sha256:4dd43a78897793f60766563969442020e90eb7847463eca901e41ba186a7d4a5", size = 2375240 },
 ]
 
 [[package]]
@@ -1773,11 +1775,11 @@ sdist = { url = "https://files.pythonhosted.org/packages/e1/70/c7a4f46dbf06048c6
 
 [[package]]
 name = "pygments"
-version = "2.18.0"
+version = "2.19.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/8e/62/8336eff65bcbc8e4cb5d05b55faf041285951b6e80f33e2bff2024788f31/pygments-2.18.0.tar.gz", hash = "sha256:786ff802f32e91311bff3889f6e9a86e81505fe99f2735bb6d60ae0c5004f199", size = 4891905 }
+sdist = { url = "https://files.pythonhosted.org/packages/d3/c0/9c9832e5be227c40e1ce774d493065f83a91d6430baa7e372094e9683a45/pygments-2.19.0.tar.gz", hash = "sha256:afc4146269910d4bdfabcd27c24923137a74d562a23a320a41a55ad303e19783", size = 4967733 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f7/3f/01c8b82017c199075f8f788d0d906b9ffbbc5a47dc9918a945e13d5a2bda/pygments-2.18.0-py3-none-any.whl", hash = "sha256:b8e6aca0523f3ab76fee51799c488e38782ac06eafcf95e7ba832985c8e7b13a", size = 1205513 },
+    { url = "https://files.pythonhosted.org/packages/20/dc/fde3e7ac4d279a331676829af4afafd113b34272393d73f610e8f0329221/pygments-2.19.0-py3-none-any.whl", hash = "sha256:4755e6e64d22161d5b61432c0600c923c5927214e7c956e31c23923c89251a9b", size = 1225305 },
 ]
 
 [[package]]
@@ -1838,159 +1840,159 @@ name = "pyobjc"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-accessibility", marker = "platform_release >= '20.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-accounts", marker = "platform_release >= '12.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-addressbook", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-adservices", marker = "platform_release >= '20.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-adsupport", marker = "platform_release >= '18.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-applescriptkit", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-applescriptobjc", marker = "platform_release >= '10.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-applicationservices", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-apptrackingtransparency", marker = "platform_release >= '20.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-audiovideobridging", marker = "platform_release >= '12.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-authenticationservices", marker = "platform_release >= '19.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-automaticassessmentconfiguration", marker = "platform_release >= '19.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-automator", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-avfoundation", marker = "platform_release >= '11.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-avkit", marker = "platform_release >= '13.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-avrouting", marker = "platform_release >= '22.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-backgroundassets", marker = "platform_release >= '22.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-browserenginekit", marker = "platform_release >= '23.4' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-businesschat", marker = "platform_release >= '18.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-calendarstore", marker = "platform_release >= '9.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-callkit", marker = "platform_release >= '20.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cfnetwork", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cinematic", marker = "platform_release >= '23.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-classkit", marker = "platform_release >= '20.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cloudkit", marker = "platform_release >= '14.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-collaboration", marker = "platform_release >= '9.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-colorsync", marker = "platform_release >= '17.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-contacts", marker = "platform_release >= '15.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-contactsui", marker = "platform_release >= '15.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-coreaudio", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-coreaudiokit", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-corebluetooth", marker = "platform_release >= '14.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-coredata", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-corehaptics", marker = "platform_release >= '19.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-corelocation", marker = "platform_release >= '10.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-coremedia", marker = "platform_release >= '11.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-coremediaio", marker = "platform_release >= '11.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-coremidi", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-coreml", marker = "platform_release >= '17.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-coremotion", marker = "platform_release >= '19.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-coreservices", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-corespotlight", marker = "platform_release >= '17.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-coretext", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-corewlan", marker = "platform_release >= '10.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cryptotokenkit", marker = "platform_release >= '14.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-datadetection", marker = "platform_release >= '21.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-devicecheck", marker = "platform_release >= '19.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-dictionaryservices", marker = "platform_release >= '9.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-discrecording", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-discrecordingui", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-diskarbitration", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-dvdplayback", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-eventkit", marker = "platform_release >= '12.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-exceptionhandling", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-executionpolicy", marker = "platform_release >= '19.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-extensionkit", marker = "platform_release >= '22.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-externalaccessory", marker = "platform_release >= '17.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-fileprovider", marker = "platform_release >= '19.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-fileproviderui", marker = "platform_release >= '19.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-findersync", marker = "platform_release >= '14.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-fsevents", marker = "platform_release >= '9.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-gamecenter", marker = "platform_release >= '12.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-gamecontroller", marker = "platform_release >= '13.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-gamekit", marker = "platform_release >= '12.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-gameplaykit", marker = "platform_release >= '15.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-healthkit", marker = "platform_release >= '22.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-imagecapturecore", marker = "platform_release >= '10.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-inputmethodkit", marker = "platform_release >= '9.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-installerplugins", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-instantmessage", marker = "platform_release >= '9.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-intents", marker = "platform_release >= '16.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-intentsui", marker = "platform_release >= '21.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-iobluetooth", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-iobluetoothui", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-iosurface", marker = "platform_release >= '10.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-ituneslibrary", marker = "platform_release >= '10.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-kernelmanagement", marker = "platform_release >= '20.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-latentsemanticmapping", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-launchservices", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-libdispatch", marker = "platform_release >= '12.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-libxpc", marker = "platform_release >= '12.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-linkpresentation", marker = "platform_release >= '19.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-localauthentication", marker = "platform_release >= '14.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-localauthenticationembeddedui", marker = "platform_release >= '21.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-mailkit", marker = "platform_release >= '21.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-mapkit", marker = "platform_release >= '13.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-mediaaccessibility", marker = "platform_release >= '13.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-medialibrary", marker = "platform_release >= '13.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-mediaplayer", marker = "platform_release >= '16.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-mediatoolbox", marker = "platform_release >= '13.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-metal", marker = "platform_release >= '15.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-metalfx", marker = "platform_release >= '22.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-metalkit", marker = "platform_release >= '15.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-metalperformanceshaders", marker = "platform_release >= '17.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-metalperformanceshadersgraph", marker = "platform_release >= '20.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-metrickit", marker = "platform_release >= '21.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-mlcompute", marker = "platform_release >= '20.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-modelio", marker = "platform_release >= '15.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-multipeerconnectivity", marker = "platform_release >= '14.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-naturallanguage", marker = "platform_release >= '18.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-netfs", marker = "platform_release >= '10.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-network", marker = "platform_release >= '18.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-networkextension", marker = "platform_release >= '15.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-notificationcenter", marker = "platform_release >= '14.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-opendirectory", marker = "platform_release >= '10.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-osakit", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-oslog", marker = "platform_release >= '19.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-passkit", marker = "platform_release >= '20.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-pencilkit", marker = "platform_release >= '19.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-phase", marker = "platform_release >= '21.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-photos", marker = "platform_release >= '15.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-photosui", marker = "platform_release >= '15.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-preferencepanes", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-pushkit", marker = "platform_release >= '19.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-quicklookthumbnailing", marker = "platform_release >= '19.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-replaykit", marker = "platform_release >= '20.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-safariservices", marker = "platform_release >= '16.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-safetykit", marker = "platform_release >= '22.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-scenekit", marker = "platform_release >= '11.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-screencapturekit", marker = "platform_release >= '21.4' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-screensaver", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-screentime", marker = "platform_release >= '20.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-scriptingbridge", marker = "platform_release >= '9.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-searchkit", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-security", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-securityfoundation", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-securityinterface", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-sensitivecontentanalysis", marker = "platform_release >= '23.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-servicemanagement", marker = "platform_release >= '10.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-sharedwithyou", marker = "platform_release >= '22.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-sharedwithyoucore", marker = "platform_release >= '22.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-shazamkit", marker = "platform_release >= '21.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-social", marker = "platform_release >= '12.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-soundanalysis", marker = "platform_release >= '19.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-speech", marker = "platform_release >= '19.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-spritekit", marker = "platform_release >= '13.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-storekit", marker = "platform_release >= '11.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-symbols", marker = "platform_release >= '23.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-syncservices", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-systemconfiguration", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-systemextensions", marker = "platform_release >= '19.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-threadnetwork", marker = "platform_release >= '22.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-uniformtypeidentifiers", marker = "platform_release >= '20.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-usernotifications", marker = "platform_release >= '18.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-usernotificationsui", marker = "platform_release >= '20.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-videosubscriberaccount", marker = "platform_release >= '18.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-videotoolbox", marker = "platform_release >= '12.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-virtualization", marker = "platform_release >= '20.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-vision", marker = "platform_release >= '17.0' and sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-webkit", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-accessibility", marker = "platform_release >= '20.0'" },
+    { name = "pyobjc-framework-accounts", marker = "platform_release >= '12.0'" },
+    { name = "pyobjc-framework-addressbook" },
+    { name = "pyobjc-framework-adservices", marker = "platform_release >= '20.0'" },
+    { name = "pyobjc-framework-adsupport", marker = "platform_release >= '18.0'" },
+    { name = "pyobjc-framework-applescriptkit" },
+    { name = "pyobjc-framework-applescriptobjc", marker = "platform_release >= '10.0'" },
+    { name = "pyobjc-framework-applicationservices" },
+    { name = "pyobjc-framework-apptrackingtransparency", marker = "platform_release >= '20.0'" },
+    { name = "pyobjc-framework-audiovideobridging", marker = "platform_release >= '12.0'" },
+    { name = "pyobjc-framework-authenticationservices", marker = "platform_release >= '19.0'" },
+    { name = "pyobjc-framework-automaticassessmentconfiguration", marker = "platform_release >= '19.0'" },
+    { name = "pyobjc-framework-automator" },
+    { name = "pyobjc-framework-avfoundation", marker = "platform_release >= '11.0'" },
+    { name = "pyobjc-framework-avkit", marker = "platform_release >= '13.0'" },
+    { name = "pyobjc-framework-avrouting", marker = "platform_release >= '22.0'" },
+    { name = "pyobjc-framework-backgroundassets", marker = "platform_release >= '22.0'" },
+    { name = "pyobjc-framework-browserenginekit", marker = "platform_release >= '23.4'" },
+    { name = "pyobjc-framework-businesschat", marker = "platform_release >= '18.0'" },
+    { name = "pyobjc-framework-calendarstore", marker = "platform_release >= '9.0'" },
+    { name = "pyobjc-framework-callkit", marker = "platform_release >= '20.0'" },
+    { name = "pyobjc-framework-cfnetwork" },
+    { name = "pyobjc-framework-cinematic", marker = "platform_release >= '23.0'" },
+    { name = "pyobjc-framework-classkit", marker = "platform_release >= '20.0'" },
+    { name = "pyobjc-framework-cloudkit", marker = "platform_release >= '14.0'" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-collaboration", marker = "platform_release >= '9.0'" },
+    { name = "pyobjc-framework-colorsync", marker = "platform_release >= '17.0'" },
+    { name = "pyobjc-framework-contacts", marker = "platform_release >= '15.0'" },
+    { name = "pyobjc-framework-contactsui", marker = "platform_release >= '15.0'" },
+    { name = "pyobjc-framework-coreaudio" },
+    { name = "pyobjc-framework-coreaudiokit" },
+    { name = "pyobjc-framework-corebluetooth", marker = "platform_release >= '14.0'" },
+    { name = "pyobjc-framework-coredata" },
+    { name = "pyobjc-framework-corehaptics", marker = "platform_release >= '19.0'" },
+    { name = "pyobjc-framework-corelocation", marker = "platform_release >= '10.0'" },
+    { name = "pyobjc-framework-coremedia", marker = "platform_release >= '11.0'" },
+    { name = "pyobjc-framework-coremediaio", marker = "platform_release >= '11.0'" },
+    { name = "pyobjc-framework-coremidi" },
+    { name = "pyobjc-framework-coreml", marker = "platform_release >= '17.0'" },
+    { name = "pyobjc-framework-coremotion", marker = "platform_release >= '19.0'" },
+    { name = "pyobjc-framework-coreservices" },
+    { name = "pyobjc-framework-corespotlight", marker = "platform_release >= '17.0'" },
+    { name = "pyobjc-framework-coretext" },
+    { name = "pyobjc-framework-corewlan", marker = "platform_release >= '10.0'" },
+    { name = "pyobjc-framework-cryptotokenkit", marker = "platform_release >= '14.0'" },
+    { name = "pyobjc-framework-datadetection", marker = "platform_release >= '21.0'" },
+    { name = "pyobjc-framework-devicecheck", marker = "platform_release >= '19.0'" },
+    { name = "pyobjc-framework-dictionaryservices", marker = "platform_release >= '9.0'" },
+    { name = "pyobjc-framework-discrecording" },
+    { name = "pyobjc-framework-discrecordingui" },
+    { name = "pyobjc-framework-diskarbitration" },
+    { name = "pyobjc-framework-dvdplayback" },
+    { name = "pyobjc-framework-eventkit", marker = "platform_release >= '12.0'" },
+    { name = "pyobjc-framework-exceptionhandling" },
+    { name = "pyobjc-framework-executionpolicy", marker = "platform_release >= '19.0'" },
+    { name = "pyobjc-framework-extensionkit", marker = "platform_release >= '22.0'" },
+    { name = "pyobjc-framework-externalaccessory", marker = "platform_release >= '17.0'" },
+    { name = "pyobjc-framework-fileprovider", marker = "platform_release >= '19.0'" },
+    { name = "pyobjc-framework-fileproviderui", marker = "platform_release >= '19.0'" },
+    { name = "pyobjc-framework-findersync", marker = "platform_release >= '14.0'" },
+    { name = "pyobjc-framework-fsevents", marker = "platform_release >= '9.0'" },
+    { name = "pyobjc-framework-gamecenter", marker = "platform_release >= '12.0'" },
+    { name = "pyobjc-framework-gamecontroller", marker = "platform_release >= '13.0'" },
+    { name = "pyobjc-framework-gamekit", marker = "platform_release >= '12.0'" },
+    { name = "pyobjc-framework-gameplaykit", marker = "platform_release >= '15.0'" },
+    { name = "pyobjc-framework-healthkit", marker = "platform_release >= '22.0'" },
+    { name = "pyobjc-framework-imagecapturecore", marker = "platform_release >= '10.0'" },
+    { name = "pyobjc-framework-inputmethodkit", marker = "platform_release >= '9.0'" },
+    { name = "pyobjc-framework-installerplugins" },
+    { name = "pyobjc-framework-instantmessage", marker = "platform_release >= '9.0'" },
+    { name = "pyobjc-framework-intents", marker = "platform_release >= '16.0'" },
+    { name = "pyobjc-framework-intentsui", marker = "platform_release >= '21.0'" },
+    { name = "pyobjc-framework-iobluetooth" },
+    { name = "pyobjc-framework-iobluetoothui" },
+    { name = "pyobjc-framework-iosurface", marker = "platform_release >= '10.0'" },
+    { name = "pyobjc-framework-ituneslibrary", marker = "platform_release >= '10.0'" },
+    { name = "pyobjc-framework-kernelmanagement", marker = "platform_release >= '20.0'" },
+    { name = "pyobjc-framework-latentsemanticmapping" },
+    { name = "pyobjc-framework-launchservices" },
+    { name = "pyobjc-framework-libdispatch", marker = "platform_release >= '12.0'" },
+    { name = "pyobjc-framework-libxpc", marker = "platform_release >= '12.0'" },
+    { name = "pyobjc-framework-linkpresentation", marker = "platform_release >= '19.0'" },
+    { name = "pyobjc-framework-localauthentication", marker = "platform_release >= '14.0'" },
+    { name = "pyobjc-framework-localauthenticationembeddedui", marker = "platform_release >= '21.0'" },
+    { name = "pyobjc-framework-mailkit", marker = "platform_release >= '21.0'" },
+    { name = "pyobjc-framework-mapkit", marker = "platform_release >= '13.0'" },
+    { name = "pyobjc-framework-mediaaccessibility", marker = "platform_release >= '13.0'" },
+    { name = "pyobjc-framework-medialibrary", marker = "platform_release >= '13.0'" },
+    { name = "pyobjc-framework-mediaplayer", marker = "platform_release >= '16.0'" },
+    { name = "pyobjc-framework-mediatoolbox", marker = "platform_release >= '13.0'" },
+    { name = "pyobjc-framework-metal", marker = "platform_release >= '15.0'" },
+    { name = "pyobjc-framework-metalfx", marker = "platform_release >= '22.0'" },
+    { name = "pyobjc-framework-metalkit", marker = "platform_release >= '15.0'" },
+    { name = "pyobjc-framework-metalperformanceshaders", marker = "platform_release >= '17.0'" },
+    { name = "pyobjc-framework-metalperformanceshadersgraph", marker = "platform_release >= '20.0'" },
+    { name = "pyobjc-framework-metrickit", marker = "platform_release >= '21.0'" },
+    { name = "pyobjc-framework-mlcompute", marker = "platform_release >= '20.0'" },
+    { name = "pyobjc-framework-modelio", marker = "platform_release >= '15.0'" },
+    { name = "pyobjc-framework-multipeerconnectivity", marker = "platform_release >= '14.0'" },
+    { name = "pyobjc-framework-naturallanguage", marker = "platform_release >= '18.0'" },
+    { name = "pyobjc-framework-netfs", marker = "platform_release >= '10.0'" },
+    { name = "pyobjc-framework-network", marker = "platform_release >= '18.0'" },
+    { name = "pyobjc-framework-networkextension", marker = "platform_release >= '15.0'" },
+    { name = "pyobjc-framework-notificationcenter", marker = "platform_release >= '14.0'" },
+    { name = "pyobjc-framework-opendirectory", marker = "platform_release >= '10.0'" },
+    { name = "pyobjc-framework-osakit" },
+    { name = "pyobjc-framework-oslog", marker = "platform_release >= '19.0'" },
+    { name = "pyobjc-framework-passkit", marker = "platform_release >= '20.0'" },
+    { name = "pyobjc-framework-pencilkit", marker = "platform_release >= '19.0'" },
+    { name = "pyobjc-framework-phase", marker = "platform_release >= '21.0'" },
+    { name = "pyobjc-framework-photos", marker = "platform_release >= '15.0'" },
+    { name = "pyobjc-framework-photosui", marker = "platform_release >= '15.0'" },
+    { name = "pyobjc-framework-preferencepanes" },
+    { name = "pyobjc-framework-pushkit", marker = "platform_release >= '19.0'" },
+    { name = "pyobjc-framework-quartz" },
+    { name = "pyobjc-framework-quicklookthumbnailing", marker = "platform_release >= '19.0'" },
+    { name = "pyobjc-framework-replaykit", marker = "platform_release >= '20.0'" },
+    { name = "pyobjc-framework-safariservices", marker = "platform_release >= '16.0'" },
+    { name = "pyobjc-framework-safetykit", marker = "platform_release >= '22.0'" },
+    { name = "pyobjc-framework-scenekit", marker = "platform_release >= '11.0'" },
+    { name = "pyobjc-framework-screencapturekit", marker = "platform_release >= '21.4'" },
+    { name = "pyobjc-framework-screensaver" },
+    { name = "pyobjc-framework-screentime", marker = "platform_release >= '20.0'" },
+    { name = "pyobjc-framework-scriptingbridge", marker = "platform_release >= '9.0'" },
+    { name = "pyobjc-framework-searchkit" },
+    { name = "pyobjc-framework-security" },
+    { name = "pyobjc-framework-securityfoundation" },
+    { name = "pyobjc-framework-securityinterface" },
+    { name = "pyobjc-framework-sensitivecontentanalysis", marker = "platform_release >= '23.0'" },
+    { name = "pyobjc-framework-servicemanagement", marker = "platform_release >= '10.0'" },
+    { name = "pyobjc-framework-sharedwithyou", marker = "platform_release >= '22.0'" },
+    { name = "pyobjc-framework-sharedwithyoucore", marker = "platform_release >= '22.0'" },
+    { name = "pyobjc-framework-shazamkit", marker = "platform_release >= '21.0'" },
+    { name = "pyobjc-framework-social", marker = "platform_release >= '12.0'" },
+    { name = "pyobjc-framework-soundanalysis", marker = "platform_release >= '19.0'" },
+    { name = "pyobjc-framework-speech", marker = "platform_release >= '19.0'" },
+    { name = "pyobjc-framework-spritekit", marker = "platform_release >= '13.0'" },
+    { name = "pyobjc-framework-storekit", marker = "platform_release >= '11.0'" },
+    { name = "pyobjc-framework-symbols", marker = "platform_release >= '23.0'" },
+    { name = "pyobjc-framework-syncservices" },
+    { name = "pyobjc-framework-systemconfiguration" },
+    { name = "pyobjc-framework-systemextensions", marker = "platform_release >= '19.0'" },
+    { name = "pyobjc-framework-threadnetwork", marker = "platform_release >= '22.0'" },
+    { name = "pyobjc-framework-uniformtypeidentifiers", marker = "platform_release >= '20.0'" },
+    { name = "pyobjc-framework-usernotifications", marker = "platform_release >= '18.0'" },
+    { name = "pyobjc-framework-usernotificationsui", marker = "platform_release >= '20.0'" },
+    { name = "pyobjc-framework-videosubscriberaccount", marker = "platform_release >= '18.0'" },
+    { name = "pyobjc-framework-videotoolbox", marker = "platform_release >= '12.0'" },
+    { name = "pyobjc-framework-virtualization", marker = "platform_release >= '20.0'" },
+    { name = "pyobjc-framework-vision", marker = "platform_release >= '17.0'" },
+    { name = "pyobjc-framework-webkit" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/c8/89/982c55c5f4fc9ae1f22fb92b4dc003424df1d43da67f305d0a62ee00f6ac/pyobjc-10.3.2.tar.gz", hash = "sha256:1f35f3f8fc48028f2fdca48f55ac72073fe8980b9fa11a94b86ad69f50c9bd75", size = 10976 }
 wheels = [
@@ -2012,9 +2014,9 @@ name = "pyobjc-framework-accessibility"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-quartz" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/3e/08/e87e90c8de6851589bd8c02ca64eac2dbe1cf51b62fd06a3cb2e52cddb91/pyobjc_framework_accessibility-10.3.2.tar.gz", hash = "sha256:2a7f29d7fae54db6e447d746d29f1c720b48b4d41cf3ed927a58949917c2b7ed", size = 29704 }
 wheels = [
@@ -2029,8 +2031,8 @@ name = "pyobjc-framework-accounts"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/41/99/587ce238d38c7ebe52c3f9ecc7a50b47ce51e6ace833e6b82435558fc086/pyobjc_framework_accounts-10.3.2.tar.gz", hash = "sha256:50460f185206d57755ddf942f216177ff10b3cda48e6969ed88e57aad1f354d6", size = 16498 }
 wheels = [
@@ -2043,8 +2045,8 @@ name = "pyobjc-framework-addressbook"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/bc/8a/613db5bbbce90439322a8c2a40274af2780f65e9996604e00061690badbf/pyobjc_framework_addressbook-10.3.2.tar.gz", hash = "sha256:d5c9677aa64e8116b31a1d3f39f0bf2d1681f7cb93dbdc21db314c9dd8ac82f7", size = 85044 }
 wheels = [
@@ -2059,8 +2061,8 @@ name = "pyobjc-framework-adservices"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/d2/49/b3fccd144e3357762278c40a669dfa53a6fdf6ced47217156f7112228dfc/pyobjc_framework_adservices-10.3.2.tar.gz", hash = "sha256:217c25adad25365a65ae9bbdd7e110b3b4597bcb78d9a914b00067a2135906df", size = 12169 }
 wheels = [
@@ -2073,8 +2075,8 @@ name = "pyobjc-framework-adsupport"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/77/dd/bdeecdde652e82bfe7d75fddc2e70682433d564bafc5fc851c5e2c558443/pyobjc_framework_adsupport-10.3.2.tar.gz", hash = "sha256:71cac2c9a4dd764fefc7b257483338f73d9783038d52028b97446ea83ad37c87", size = 12307 }
 wheels = [
@@ -2087,8 +2089,8 @@ name = "pyobjc-framework-applescriptkit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/1a/78/5abe58d1698dfacc0e5ab719aa2cd93879230e45b9387bcc3b0bb91040d3/pyobjc_framework_applescriptkit-10.3.2.tar.gz", hash = "sha256:a4d74fc6b28d1ff7d39b60c9e0c2d5d1baf575ade6e6d1ea06ed077facec47db", size = 12102 }
 wheels = [
@@ -2101,8 +2103,8 @@ name = "pyobjc-framework-applescriptobjc"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/f0/8b/d720f671b21a07a8d1815c54ce4e8f313f73ea645a82faa8331a2a05d9c2/pyobjc_framework_applescriptobjc-10.3.2.tar.gz", hash = "sha256:6af16cab0fe4e2d50775e67501bcecae1c5acdba7ed560eba38e5f8e3c8ac38c", size = 12166 }
 wheels = [
@@ -2115,10 +2117,10 @@ name = "pyobjc-framework-applicationservices"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-coretext", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-coretext" },
+    { name = "pyobjc-framework-quartz" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/78/a0/32cd02c3e5f0f740f86064a078278c180d3058c857b8425a5128866e3931/pyobjc_framework_applicationservices-10.3.2.tar.gz", hash = "sha256:2116c3854ac07c022268eebc7cb40ccba30727df78442e57e0280b5193c8183c", size = 183088 }
 wheels = [
@@ -2131,8 +2133,8 @@ name = "pyobjc-framework-apptrackingtransparency"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/a2/9f/bd8bb6d37c96060ea265d65e2dd9b6bf30801f6ffd922db7635165ac0968/pyobjc_framework_apptrackingtransparency-10.3.2.tar.gz", hash = "sha256:b1a0c19321f103d7f9c146b921d260083bb536a4d28b9d4337ca2ea4f88318a1", size = 12863 }
 wheels = [
@@ -2145,8 +2147,8 @@ name = "pyobjc-framework-audiovideobridging"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/a1/ea/67984a0d4065cbf6982d4e18581fa2b8a0023c37ee5bf436ccebb6c8f552/pyobjc_framework_audiovideobridging-10.3.2.tar.gz", hash = "sha256:72b1c8a07fb5ab4f988c9172e5ddf44f1fd15214aa5dc2f80852c6152e13b2b8", size = 59579 }
 wheels = [
@@ -2159,8 +2161,8 @@ name = "pyobjc-framework-authenticationservices"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/dd/16/ca8a01b9ff6bb50fd35465b1a31785575096b4aa079ccbc90cbd40cf7db1/pyobjc_framework_authenticationservices-10.3.2.tar.gz", hash = "sha256:ff990cb7bc2ac9599082f162e38e4db3bf7504c71948c09ec5fb625f4c2e05e1", size = 86841 }
 wheels = [
@@ -2175,8 +2177,8 @@ name = "pyobjc-framework-automaticassessmentconfiguration"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/6b/dd/53aeb33bdd6c137af18e487d7f3e023d5dc36eaa049775ffb7a9d21721b2/pyobjc_framework_automaticassessmentconfiguration-10.3.2.tar.gz", hash = "sha256:cbb1313e5ad4162664a92225a9e4a685a92d03a81e81664acbc51857ec415292", size = 22841 }
 wheels = [
@@ -2191,8 +2193,8 @@ name = "pyobjc-framework-automator"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/32/16/3796b8abb209e8ff41a19064b88f53e48b886bcd004f6b05afc4f23ada70/pyobjc_framework_automator-10.3.2.tar.gz", hash = "sha256:ee7ec981275e5dbdd2e4d83d4d4be3c3efdcaadf0a9917d935328363dd49085f", size = 195443 }
 wheels = [
@@ -2207,11 +2209,11 @@ name = "pyobjc-framework-avfoundation"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-coreaudio", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-coremedia", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-coreaudio" },
+    { name = "pyobjc-framework-coremedia" },
+    { name = "pyobjc-framework-quartz" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/db/8d/8a78df7d0ccbf7e8f7a80692f7891895b323334bde2781a6018452c92eb1/pyobjc_framework_avfoundation-10.3.2.tar.gz", hash = "sha256:e4baa1cb8d63c2b366f90341dee54a646004ad02d4b01119c79904cb869e7a6a", size = 695532 }
 wheels = [
@@ -2226,9 +2228,9 @@ name = "pyobjc-framework-avkit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-quartz" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/5e/a9/ee16b75e0a509ab19e1a911c09bddef11b3e426cc7c8294006c583529172/pyobjc_framework_avkit-10.3.2.tar.gz", hash = "sha256:b4c63941aafc7f83790ec6039b3384a19ada304c98c889a2d6ad66ad843fb41d", size = 39355 }
 wheels = [
@@ -2243,8 +2245,8 @@ name = "pyobjc-framework-avrouting"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/09/89/b45d19ddc5c780fa7e6736cb782bc9b01a1c6ec8690326904020339dd39b/pyobjc_framework_avrouting-10.3.2.tar.gz", hash = "sha256:0c36464e80c77e0d44483c68880ea2d239084c378d200f02e0688967c3de4f55", size = 19018 }
 wheels = [
@@ -2259,8 +2261,8 @@ name = "pyobjc-framework-backgroundassets"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/3f/15/38a5d93d6e03abcfe6833df574fd5087c4bfeccb49dff450a771e2221e08/pyobjc_framework_backgroundassets-10.3.2.tar.gz", hash = "sha256:17436f7eb08d407603e2e633272a7d51023d40b6f81dd577ad34b9db16fdcb6d", size = 22162 }
 wheels = [
@@ -2275,11 +2277,11 @@ name = "pyobjc-framework-browserenginekit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-coreaudio", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-coremedia", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-coreaudio" },
+    { name = "pyobjc-framework-coremedia" },
+    { name = "pyobjc-framework-quartz" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/5f/ab/d09654cb647e5c1c751bd9c819d79a31dfe4072cc79eae28e66f58c05688/pyobjc_framework_browserenginekit-10.3.2.tar.gz", hash = "sha256:5c4d50f2358376c36a3d2721b8d5c259f77e9e62f48503030c2312b8b6b58943", size = 21390 }
 wheels = [
@@ -2294,8 +2296,8 @@ name = "pyobjc-framework-businesschat"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/e4/ea/e2df6cda4ef666165c97e513cd48f9a4bfc92f8f5137a4df6adf77591448/pyobjc_framework_businesschat-10.3.2.tar.gz", hash = "sha256:a598f401d5f391f0c78aa62a58d0a7f9908fa86abffb884138795f36105800ea", size = 12402 }
 wheels = [
@@ -2308,8 +2310,8 @@ name = "pyobjc-framework-calendarstore"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/26/ef/032c20f2cd77d1e860f757f47b14fad657735d094f8dcd5dbad96b136376/pyobjc_framework_calendarstore-10.3.2.tar.gz", hash = "sha256:0fbc2133045c18228efc11f8442979381f6060fc18f7e8e25b0395b2d6106c29", size = 63247 }
 wheels = [
@@ -2322,8 +2324,8 @@ name = "pyobjc-framework-callkit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/11/69/365d23487489b14a4a9c19de4447b9974bf71c321f487bb8e2cb465b7961/pyobjc_framework_callkit-10.3.2.tar.gz", hash = "sha256:8d67962c8e385d31ee66ad68e9c15760ba2cad709ce0305efa5f142247e5026a", size = 32282 }
 wheels = [
@@ -2336,8 +2338,8 @@ name = "pyobjc-framework-cfnetwork"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/b4/f7/628d3733d72268e2210b7c66196e53ed1516b814dad6660e179aa8023e6e/pyobjc_framework_cfnetwork-10.3.2.tar.gz", hash = "sha256:1fa3953b3b240a57bc4b3bf72043a3addadf2d9a473aeaf9fdb09df442fdd7e0", size = 67213 }
 wheels = [
@@ -2352,11 +2354,11 @@ name = "pyobjc-framework-cinematic"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-avfoundation", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-coremedia", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-metal", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-avfoundation" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-coremedia" },
+    { name = "pyobjc-framework-metal" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/5e/e0/31644814a4f4d51c379c350de0db093b2e5ff7adf98f3b320f499b37916d/pyobjc_framework_cinematic-10.3.2.tar.gz", hash = "sha256:8a249b79905a13cc6234ca9167734bc30bbf9672a65630a69faae4415ed8a87b", size = 19667 }
 wheels = [
@@ -2369,8 +2371,8 @@ name = "pyobjc-framework-classkit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/15/e2/b3ace38d1aab8e576349a18dc618b7f397ed37a8d68c01b508b134fcdf6e/pyobjc_framework_classkit-10.3.2.tar.gz", hash = "sha256:afc44c16791e27331b73be3269c3c794f3502515ddd916c0b3bfe2fa060854e6", size = 32863 }
 wheels = [
@@ -2385,11 +2387,11 @@ name = "pyobjc-framework-cloudkit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-accounts", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-coredata", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-corelocation", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-accounts" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-coredata" },
+    { name = "pyobjc-framework-corelocation" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/8b/70/daa2a428e1d8c39e55e3480c0bc9c8b39f882b544c88cad3a105e217f6ae/pyobjc_framework_cloudkit-10.3.2.tar.gz", hash = "sha256:ba05c8edb7f73ada94f9d2f8fbeae7302e53b56b2abb956012b84ba7faea141d", size = 99236 }
 wheels = [
@@ -2402,7 +2404,7 @@ name = "pyobjc-framework-cocoa"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/39/41/4f09a5e9a6769b4dafb293ea597ed693cc0def0e07867ad0a42664f530b6/pyobjc_framework_cocoa-10.3.2.tar.gz", hash = "sha256:673968e5435845bef969bfe374f31a1a6dc660c98608d2b84d5cae6eafa5c39d", size = 4942530 }
 wheels = [
@@ -2415,8 +2417,8 @@ name = "pyobjc-framework-collaboration"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/7b/d8/5f17469cee1fe7c10c971cc425a57cc820dff14cbd2fb35d26e2a4f62d7e/pyobjc_framework_collaboration-10.3.2.tar.gz", hash = "sha256:0d4ee33154ea1d6ac7b9338b2bb1a9bcb5f5e9e3ffc390195643d60576606b74", size = 16157 }
 wheels = [
@@ -2429,8 +2431,8 @@ name = "pyobjc-framework-colorsync"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/da/a2/3b6a7409e238ea577bb250bd5164be9c235ca1ba9629c21b8f29b70659d0/pyobjc_framework_colorsync-10.3.2.tar.gz", hash = "sha256:d4a8bcb7a3c13b6ac4ac25498e53b738104d49fadc97278f553268fb2ad7f487", size = 32297 }
 wheels = [
@@ -2443,8 +2445,8 @@ name = "pyobjc-framework-contacts"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/d5/94/14eb1abc06a88d1621eeb39784a9a1346f417c8584d37d767875c50bf54f/pyobjc_framework_contacts-10.3.2.tar.gz", hash = "sha256:f912a1bbd3cee3d8af740e02abc083828604265394871c2c166bc9c1de3130ce", size = 68818 }
 wheels = [
@@ -2459,9 +2461,9 @@ name = "pyobjc-framework-contactsui"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-contacts", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-contacts" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/4c/90/014388a37e3a1e2ec9a4d8e4336a6d5bb9e805c1087a3d3f38fc1b655be4/pyobjc_framework_contactsui-10.3.2.tar.gz", hash = "sha256:c004d225f17cbbb5c8b627275cf6a6f91a05aa956ab62d08e0fd3276fae80558", size = 18259 }
 wheels = [
@@ -2476,8 +2478,8 @@ name = "pyobjc-framework-coreaudio"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/1b/54/0fcdab30ac31a594d699d909aa94c841fd94e173774f36e8c19e18536991/pyobjc_framework_coreaudio-10.3.2.tar.gz", hash = "sha256:c53e3247144b4f316cd588dd684a5f4edc6eebf9ca6beba488711b890bf0ff5f", size = 125996 }
 wheels = [
@@ -2490,9 +2492,9 @@ name = "pyobjc-framework-coreaudiokit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-coreaudio", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-coreaudio" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/19/52/e03a7a497102acb95018e653c4c03c7fdc6a01ee4bcaf403234d7b37c87d/pyobjc_framework_coreaudiokit-10.3.2.tar.gz", hash = "sha256:a41b0ab17d413bae5b6d673e6c97cfec0d80cb423f590cc4cd3970887ad22f49", size = 20079 }
 wheels = [
@@ -2507,8 +2509,8 @@ name = "pyobjc-framework-corebluetooth"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/13/ca/35d205c3e153e7bc59a417560a45e27a2410439e6f78390f97c1a996c922/pyobjc_framework_corebluetooth-10.3.2.tar.gz", hash = "sha256:c0a077bc3a2466271efa382c1e024630bc43cc6f9ab8f3f97431ad08b1ad52bb", size = 50622 }
 wheels = [
@@ -2523,8 +2525,8 @@ name = "pyobjc-framework-coredata"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/bc/dc/8b5d84afead6a72d42fd227af7de8dcd5aad3738179737e91cba8bdd529f/pyobjc_framework_coredata-10.3.2.tar.gz", hash = "sha256:e6da6cb3b5ec7bc1ff4fc71bf933e8a0d9ecd1d1c4028b7f2a2a24b1e2089078", size = 230246 }
 wheels = [
@@ -2539,8 +2541,8 @@ name = "pyobjc-framework-corehaptics"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/9c/47/9f1dc2645fe5d25560f6d16c12a91997f66038d798b7926fbd3598bef3af/pyobjc_framework_corehaptics-10.3.2.tar.gz", hash = "sha256:dcd595bfa0b02212377be6426457eef76dd0a343dc73416a81ba001adbb0d2aa", size = 37194 }
 wheels = [
@@ -2553,8 +2555,8 @@ name = "pyobjc-framework-corelocation"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/25/a6/14450410f233a8e8d3ed1e48702a0b405f402bd3efa77b8bd62c424ca0fc/pyobjc_framework_corelocation-10.3.2.tar.gz", hash = "sha256:3fc543ff9b5a347bece0668e9c4d73cc94bf47624a723fad0d568d360567583f", size = 89656 }
 wheels = [
@@ -2569,8 +2571,8 @@ name = "pyobjc-framework-coremedia"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/fc/99/01b557daec18114166ae5fb602437477a60325e08dd9cfa5aac9d1c5174c/pyobjc_framework_coremedia-10.3.2.tar.gz", hash = "sha256:cf69753c12cd193df5ff25eb8f6da857c9aa93e73b8e497ddd77a3f48d1b171c", size = 181120 }
 wheels = [
@@ -2583,8 +2585,8 @@ name = "pyobjc-framework-coremediaio"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/1a/ec/f32539575a5a2cf24c2328f49317b07aff2aa993abbaf44777bcd8e271f1/pyobjc_framework_coremediaio-10.3.2.tar.gz", hash = "sha256:a648ff9ecb49c37353f912801f86d3985df74fd27e880d22c4eb3d7bc8a66db2", size = 88994 }
 wheels = [
@@ -2599,8 +2601,8 @@ name = "pyobjc-framework-coremidi"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/e9/27/8b01da065b8fc166f91dcae96e38ed4c723743e714aba8e8c51f2f26330e/pyobjc_framework_coremidi-10.3.2.tar.gz", hash = "sha256:53f37f70abeaf67d90d03997517cb5085fcb29d41aa809f3c2b0809571f5258f", size = 78823 }
 wheels = [
@@ -2615,8 +2617,8 @@ name = "pyobjc-framework-coreml"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/be/7c/476d4459ce4d44d622365f721620f56fff7cebf50ade3560ae452244adaf/pyobjc_framework_coreml-10.3.2.tar.gz", hash = "sha256:f2e6eabe41fa34e964b707ba7a1269d5e049d5a7ac5574f35c4faa0647f385ba", size = 67101 }
 wheels = [
@@ -2631,8 +2633,8 @@ name = "pyobjc-framework-coremotion"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/4e/f8/829dbf6ac3caad858cd68ba6a12f53ee3eeaef15c4107b34bcc0a1886f98/pyobjc_framework_coremotion-10.3.2.tar.gz", hash = "sha256:7bf2b3ae72e665035d57875a1c179fa4bef89021403ee44ddffacea04e9eb70d", size = 54848 }
 wheels = [
@@ -2645,9 +2647,9 @@ name = "pyobjc-framework-coreservices"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-fsevents", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-fsevents" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0a/d2/2f5c63ad1b4f7c7c45c4da45cbeb3b13328d21794f5cec2b2018e42c177f/pyobjc_framework_coreservices-10.3.2.tar.gz", hash = "sha256:ee3cf8379839efe4300bbd33dca204ebe873e2671160fff856569976d45c68a8", size = 860352 }
 wheels = [
@@ -2662,8 +2664,8 @@ name = "pyobjc-framework-corespotlight"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/3d/a5/d34b1be8a07cb0940792b964407a8744b4081204200349557a0dba5b93dc/pyobjc_framework_corespotlight-10.3.2.tar.gz", hash = "sha256:0ae1656bc3e8ece5278d690d1155b025271564fcdfe33f5b780a15f4a10c3e03", size = 69762 }
 wheels = [
@@ -2678,9 +2680,9 @@ name = "pyobjc-framework-coretext"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-quartz" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/24/8e/bb442edfeeada13d2c96796bd36e3dcc0b91ac5c1a6774c21c12b7498770/pyobjc_framework_coretext-10.3.2.tar.gz", hash = "sha256:b1184146c628ba59c21c59eaa8e12256118daf8823deb7fb12013ecdfbc7f578", size = 233780 }
 wheels = [
@@ -2693,8 +2695,8 @@ name = "pyobjc-framework-corewlan"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/c5/4d/132d46a120db80d9bc30ab24f7dae22f67a484eaaef47c0bb7f8ee9ed2ee/pyobjc_framework_corewlan-10.3.2.tar.gz", hash = "sha256:cb166e835e92332d34597c42d54886baf329363559c7bb017f15ce68a685508c", size = 58109 }
 wheels = [
@@ -2709,8 +2711,8 @@ name = "pyobjc-framework-cryptotokenkit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ad/72/e771d7856e50da7650618fe46452b5fbd3b0bd7e2827356776d467aa2276/pyobjc_framework_cryptotokenkit-10.3.2.tar.gz", hash = "sha256:996a81a96af6928c5157f8a6f2d2bba8fe68c3948119f2d59918e00fc46f48d0", size = 48947 }
 wheels = [
@@ -2725,8 +2727,8 @@ name = "pyobjc-framework-datadetection"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/49/1b/ce373fd11d2696f5dc25462d5e1f91afca6ee322d6576fb4a7131e077358/pyobjc_framework_datadetection-10.3.2.tar.gz", hash = "sha256:4e68c6f53042e2dd90a047d6a443227bf481aa9e3cf7aad1b2f164ff1b19dd0f", size = 13002 }
 wheels = [
@@ -2739,8 +2741,8 @@ name = "pyobjc-framework-devicecheck"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/23/b0/afcc4f467fc26674c01570ee5623a5b1ba904181ba71c710b646880c1fb9/pyobjc_framework_devicecheck-10.3.2.tar.gz", hash = "sha256:028fbec7a0efad0a5952063d9382017f0d860d31d768db2097e71754b93c9922", size = 13455 }
 wheels = [
@@ -2753,8 +2755,8 @@ name = "pyobjc-framework-dictionaryservices"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-coreservices", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-coreservices" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/9b/4f/f4669fc0429415ea3f01b01ffb4a3ed41c91cae4fcdcc453874b7d2c16de/pyobjc_framework_dictionaryservices-10.3.2.tar.gz", hash = "sha256:d74effe983246e2d8ea53aba0ea47cdfe5d3687d110d13e235279c92cb9aeaf5", size = 10430 }
 wheels = [
@@ -2767,8 +2769,8 @@ name = "pyobjc-framework-discrecording"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/2f/e8/546a077194be0e9f8b99dfd62923e7cf29eaaed97ec355533861c00d6813/pyobjc_framework_discrecording-10.3.2.tar.gz", hash = "sha256:996df211530867edbd82dac9b82209da8686f6814c7ee58411131f965f5fea79", size = 101951 }
 wheels = [
@@ -2783,9 +2785,9 @@ name = "pyobjc-framework-discrecordingui"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-discrecording", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-discrecording" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/3a/cd/c44a59e6b6e893ef6117e3621f6d5faec326a98a6ebcaf70047a9f54a584/pyobjc_framework_discrecordingui-10.3.2.tar.gz", hash = "sha256:9cf1f1256c1c6dd4fc7debaff7e415949b43e86dd77be5ddc644822566cb3423", size = 18521 }
 wheels = [
@@ -2798,8 +2800,8 @@ name = "pyobjc-framework-diskarbitration"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/2d/c3/fbb59379378f679473375d7a3532986c7fc06f192ce0855d0a6e02de8dec/pyobjc_framework_diskarbitration-10.3.2.tar.gz", hash = "sha256:5e3a4a35b209bd9b983ae6248275784f913318d689b368f7ef584c87b7157336", size = 19001 }
 wheels = [
@@ -2812,8 +2814,8 @@ name = "pyobjc-framework-dvdplayback"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/d9/63/52a3b4c53494cd1ad993b9ceba026cd2f226f45f6c634b429e22b43efaf9/pyobjc_framework_dvdplayback-10.3.2.tar.gz", hash = "sha256:1df1a41cd777559edc585bf097e3ed20a898e3a33f6b2627b6d321fc060ff97c", size = 53372 }
 wheels = [
@@ -2826,8 +2828,8 @@ name = "pyobjc-framework-eventkit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/95/34/ae6a87901b93a020dc0b982b5704096fbcfba50840db4666d3a263cd86de/pyobjc_framework_eventkit-10.3.2.tar.gz", hash = "sha256:a31581cde80f03fc40ca8980d160570bcc747fec035311029fb4cddf9b35993a", size = 64364 }
 wheels = [
@@ -2840,8 +2842,8 @@ name = "pyobjc-framework-exceptionhandling"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/44/9d/161094a7d8f39b943db22e11db8b7874b151550b0645668f7b6a33b6d8f2/pyobjc_framework_exceptionhandling-10.3.2.tar.gz", hash = "sha256:e49e05db37d15816699585ca9a0f5fccf37bec3f32cf3446f7595b7475678b90", size = 17521 }
 wheels = [
@@ -2854,8 +2856,8 @@ name = "pyobjc-framework-executionpolicy"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/71/d8/bb30e70540f1f12b748f3c1c69539d750bcdb0493fbafb2ea5a37052c0fd/pyobjc_framework_executionpolicy-10.3.2.tar.gz", hash = "sha256:736b469e395fef859c1b506ab520e22cdd8937d71026901435fa7b2fcf08b8a4", size = 13158 }
 wheels = [
@@ -2868,8 +2870,8 @@ name = "pyobjc-framework-extensionkit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/47/be/25e45cccd58fc61525d1f92684bed8d274a186706f2222144eb6b268c387/pyobjc_framework_extensionkit-10.3.2.tar.gz", hash = "sha256:626ba65aba8ce021c53eb52a3482d1fcb26d54e94d8ffb9b7376d444309e5bb3", size = 18034 }
 wheels = [
@@ -2884,8 +2886,8 @@ name = "pyobjc-framework-externalaccessory"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/21/96/6c4dcab9a457bcbd38401e6d081867f46a07e0fcadfc6cbd05d9a9ffac97/pyobjc_framework_externalaccessory-10.3.2.tar.gz", hash = "sha256:abd334e5da791409378fed7e09b0f488a7e55eb5740d279f0c7f85984c74add4", size = 21090 }
 wheels = [
@@ -2900,8 +2902,8 @@ name = "pyobjc-framework-fileprovider"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/5f/14/b7ccfbce5457b5d86d61b0dcf0fb6a56c5421ddc0a6e17b4b16d0402d621/pyobjc_framework_fileprovider-10.3.2.tar.gz", hash = "sha256:b671131fa42d4e58f661362ef32e996de2f9a09a1ca20218983d7334efc39242", size = 63933 }
 wheels = [
@@ -2914,8 +2916,8 @@ name = "pyobjc-framework-fileproviderui"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-fileprovider", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-fileprovider" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/23/30/e2b049d329cce54157faa5a5f6f4b3ae3cffe39cd600e3df254320ad2611/pyobjc_framework_fileproviderui-10.3.2.tar.gz", hash = "sha256:0a62ebbf3ae3b9f73f4a36c511f3c143d2cdb657030366c04e7bec1ad27066ce", size = 12868 }
 wheels = [
@@ -2928,8 +2930,8 @@ name = "pyobjc-framework-findersync"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/92/27/d505d5a508bacb971eb4ec4196372f9a9f286ce319bff1d24296feeadd58/pyobjc_framework_findersync-10.3.2.tar.gz", hash = "sha256:a5ab6ac34ea2c9184111b33b5248009f8a86a994c6d813e2bfd00cc20863046e", size = 14563 }
 wheels = [
@@ -2942,8 +2944,8 @@ name = "pyobjc-framework-fsevents"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/97/70/a37b1b8397bb3e23a8c15c78209f998d0294311a70b81104a5f22cbe9b26/pyobjc_framework_fsevents-10.3.2.tar.gz", hash = "sha256:fb215032d65aa39eb5af1b6481f605e71afa77f881b37ba804af77bf24d2fde3", size = 27720 }
 wheels = [
@@ -2958,8 +2960,8 @@ name = "pyobjc-framework-gamecenter"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/61/e2/aa9d68a95afae2740b2b5af02bf4cdde11788c6e294cc2fdbcaed86723bb/pyobjc_framework_gamecenter-10.3.2.tar.gz", hash = "sha256:f641026c98c11e0c6d81cea0abdf1b113499e61327da63dc783c94f7ec4c460a", size = 30461 }
 wheels = [
@@ -2974,8 +2976,8 @@ name = "pyobjc-framework-gamecontroller"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/47/e8/909649206c4781bebe19f20d76287c473418b39ff501c161586ad37e16d2/pyobjc_framework_gamecontroller-10.3.2.tar.gz", hash = "sha256:57225d1a760315bc3f11828780076dc1b12a470b52bde2b7a20f45d6556e5e4a", size = 94410 }
 wheels = [
@@ -2990,9 +2992,9 @@ name = "pyobjc-framework-gamekit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-quartz" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/b1/ca/a3229141293e5128e5968428d34c5d2071e7eaf111b1d648dddb1b6d10e8/pyobjc_framework_gamekit-10.3.2.tar.gz", hash = "sha256:a1df3c59cdae5693a29d81057853b053871196197b56bce05d98dc84b233e0e4", size = 137941 }
 wheels = [
@@ -3007,9 +3009,9 @@ name = "pyobjc-framework-gameplaykit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-spritekit", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-spritekit" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/64/0b/e0f9e58ff69017b9b2bd17ef682672f63013670bb2c01b310fd74c2eb0ba/pyobjc_framework_gameplaykit-10.3.2.tar.gz", hash = "sha256:399a7ab7b47203f4506f98b6c121e6faa5bf7e77c154af6e6e486359f201a818", size = 56131 }
 wheels = [
@@ -3024,8 +3026,8 @@ name = "pyobjc-framework-healthkit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/e3/76/0bec0e66cd86756dfe28be0cd66f2b4a43fac0a83f46a9c067c738018c10/pyobjc_framework_healthkit-10.3.2.tar.gz", hash = "sha256:01a575de6fdeb38e98f8e04c720c5e1edc4e90ed3ef3b36e991dd18f8b37e83a", size = 114164 }
 wheels = [
@@ -3040,8 +3042,8 @@ name = "pyobjc-framework-imagecapturecore"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/76/6b/f0fdad6e56b28723a1136ae282ef2252b483d15aeebb8ae8deb1e062e0c8/pyobjc_framework_imagecapturecore-10.3.2.tar.gz", hash = "sha256:ed62f815a124e2a7560356b370ccf36eb422d211fe187ef720eb7651a9a16469", size = 82245 }
 wheels = [
@@ -3056,8 +3058,8 @@ name = "pyobjc-framework-inputmethodkit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/da/de/fca23e845f47ff685b9ce2a67f59d9a78eba1617a3718014810be8326ec8/pyobjc_framework_inputmethodkit-10.3.2.tar.gz", hash = "sha256:e722e6658df548183435013c450191d9157f2f97e7b96b9c1d180eb8da8138ec", size = 24867 }
 wheels = [
@@ -3072,8 +3074,8 @@ name = "pyobjc-framework-installerplugins"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0c/f4/dda750337702cee8cca7ca36eb8d4b5464f6dbd5210b9a21620f6cf54117/pyobjc_framework_installerplugins-10.3.2.tar.gz", hash = "sha256:f271955cb92531a4f8be254572e92d3837a34dfa3b0dd582fa37673b788eb70c", size = 26832 }
 wheels = [
@@ -3086,9 +3088,9 @@ name = "pyobjc-framework-instantmessage"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-quartz" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/df/79/d2d1b92734c3225c67341908e07dea47217260ed1c00456999826731d57e/pyobjc_framework_instantmessage-10.3.2.tar.gz", hash = "sha256:cc32e911c0d7574a48a0b2b1e298e979ea1396ddfac71cc3cef63d5ef8affd9e", size = 33093 }
 wheels = [
@@ -3101,8 +3103,8 @@ name = "pyobjc-framework-intents"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/6b/fb/5e69eb244560faaf7ff992b0ee8645467f16af4377d16a92246d76ae863c/pyobjc_framework_intents-10.3.2.tar.gz", hash = "sha256:24c080176487bb957ea06599e62eaa8f728d690362a2cc6efd1335abb30c1f1c", size = 362250 }
 wheels = [
@@ -3117,8 +3119,8 @@ name = "pyobjc-framework-intentsui"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-intents", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-intents" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/d6/96/460efe35ca330ef828a364ea0b8ba5efd1eedc3f2ec3d029fd955716a99d/pyobjc_framework_intentsui-10.3.2.tar.gz", hash = "sha256:e2192a7d1858b1a510b5acefe44f9ff8df89a2c7b65868366bb15befb76804dc", size = 19163 }
 wheels = [
@@ -3131,8 +3133,8 @@ name = "pyobjc-framework-iobluetooth"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/7e/91/c57034bf6ccfbc7716141dd9e0d863a46e595322257085e1a69f310086ec/pyobjc_framework_iobluetooth-10.3.2.tar.gz", hash = "sha256:aa8e054cec1066513c4c130ff5d08a1ac020b62ae23fab1d94cbf29ca69e3374", size = 226443 }
 wheels = [
@@ -3147,8 +3149,8 @@ name = "pyobjc-framework-iobluetoothui"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-iobluetooth", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-iobluetooth" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/50/ab/f171f336c7ed09f8e3ff1f8a74cac297046fa7feade6cc32a2848d99cbd5/pyobjc_framework_iobluetoothui-10.3.2.tar.gz", hash = "sha256:00093d69bf0eded017848908b96055648e61de115a270b9c61c06ab77c612c62", size = 19545 }
 wheels = [
@@ -3161,8 +3163,8 @@ name = "pyobjc-framework-iosurface"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/97/93/4d67e85a15a23158e52ea7360731f228f151f4472797306944c4592be627/pyobjc_framework_iosurface-10.3.2.tar.gz", hash = "sha256:f308cc99c91ec4f7e3c3472a7a8396d842536881472beeff34f32e85dd0772d7", size = 19661 }
 wheels = [
@@ -3175,8 +3177,8 @@ name = "pyobjc-framework-ituneslibrary"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/12/49/7fd55a0b5f9772f73e7aff273b9dab999843559b2bdd4b2683cc90137938/pyobjc_framework_ituneslibrary-10.3.2.tar.gz", hash = "sha256:a8b8fb857ae428677e30c90c24264c69070c9eaae90c58ec40dddc5cac6c2069", size = 40393 }
 wheels = [
@@ -3189,8 +3191,8 @@ name = "pyobjc-framework-kernelmanagement"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/f7/1a/7ecb8bc2bc0bba690bb85279fbee52162f810816e92b54ec60b96efd5ebb/pyobjc_framework_kernelmanagement-10.3.2.tar.gz", hash = "sha256:c4220bc64bddccdbb57c1040c16f6e04d4eccc1c48df86c66e255236698b5b1a", size = 12262 }
 wheels = [
@@ -3203,8 +3205,8 @@ name = "pyobjc-framework-latentsemanticmapping"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/f0/a4/34ff1d3358ab11d98a81a306d478a8530014af18f125f172de00d150055c/pyobjc_framework_latentsemanticmapping-10.3.2.tar.gz", hash = "sha256:477e25832c19e269c969dd25e3c9a7659b237b80ab130f1e4b7f0b98fda9f0a8", size = 16958 }
 wheels = [
@@ -3217,8 +3219,8 @@ name = "pyobjc-framework-launchservices"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-coreservices", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-coreservices" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/fd/21/1d36e3d7461b0521270b06717443c4bec4aaac7cddd17b36427608b6adbe/pyobjc_framework_launchservices-10.3.2.tar.gz", hash = "sha256:8aabb555e93702f43d2d6c5f85c9efa5d1f03b1caeec75a8359ab72f84fb6299", size = 20337 }
 wheels = [
@@ -3231,8 +3233,8 @@ name = "pyobjc-framework-libdispatch"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/4d/12/a908f3f94952c8c9e3d6e6bd425613a79692e7d400557ede047992439edc/pyobjc_framework_libdispatch-10.3.2.tar.gz", hash = "sha256:e9f4311fbf8df602852557a98d2a64f37a9d363acf4d75634120251bbc7b7304", size = 45132 }
 wheels = [
@@ -3245,8 +3247,8 @@ name = "pyobjc-framework-libxpc"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/5c/fa/0776ec3eef69bb343cd5e3072d87814448fdde98b6a8d1f41ca044b7737c/pyobjc_framework_libxpc-10.3.2.tar.gz", hash = "sha256:c22b7c7de66152643a50b3c10a5899ae44c99b5d6bda7d76c0f7efda0c6ea831", size = 40167 }
 wheels = [
@@ -3259,9 +3261,9 @@ name = "pyobjc-framework-linkpresentation"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-quartz" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/4d/24/fb62451a1c4846a69a5914e755cab2b35940f631d87c903e32eea4d4a2d1/pyobjc_framework_linkpresentation-10.3.2.tar.gz", hash = "sha256:345761452e2e441fc21c1898a4e14dba26315d2f46a66a876153d46c823f39e6", size = 14524 }
 wheels = [
@@ -3274,9 +3276,9 @@ name = "pyobjc-framework-localauthentication"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-security", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-security" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/90/e0/642b80c3320c654fc57497fe78e423a9c010fe49d6142da807bb774f4365/pyobjc_framework_localauthentication-10.3.2.tar.gz", hash = "sha256:20774489eaa5f5f91f089d801b84e51018e3eaf972e01743997678ad4b65e62c", size = 26544 }
 wheels = [
@@ -3289,9 +3291,9 @@ name = "pyobjc-framework-localauthenticationembeddedui"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-localauthentication", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-localauthentication" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/bb/6b/7e340412752aab504fe1bf51b5bf2063a99dda2f7a28e8f171103be2291c/pyobjc_framework_localauthenticationembeddedui-10.3.2.tar.gz", hash = "sha256:5c4c01c6ccbc042b66d06147f24b6aea8f3f41bfbaefd26f2b441da6a5ee1303", size = 13657 }
 wheels = [
@@ -3304,8 +3306,8 @@ name = "pyobjc-framework-mailkit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/be/e3/b394d68e0b8db1f9b6b055bc8751433ee09afd3a2d9fe080091bc359fd88/pyobjc_framework_mailkit-10.3.2.tar.gz", hash = "sha256:56bc122e7681ffff1811f596ce665f5d95df7619650710d9385bad9763965406", size = 26357 }
 wheels = [
@@ -3318,10 +3320,10 @@ name = "pyobjc-framework-mapkit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-corelocation", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-corelocation" },
+    { name = "pyobjc-framework-quartz" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/00/a9/7b736ad9922c96183930db3a526dab59ff9e3eab5cd6c652ffed093ce6cb/pyobjc_framework_mapkit-10.3.2.tar.gz", hash = "sha256:7c3e04c4e6f2c85a489c95a8a69c319b135438d3aa38bd43d16bab1d0934978c", size = 135878 }
 wheels = [
@@ -3336,8 +3338,8 @@ name = "pyobjc-framework-mediaaccessibility"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/d8/ba/1c5df04734fea28cb24b855fe176a80ebcfe55c8541a31c68b45701573be/pyobjc_framework_mediaaccessibility-10.3.2.tar.gz", hash = "sha256:b709ecc94cb2b04e7ab1d4ba5d0654c6fd24fb5c0b977d0a531d258178e409ed", size = 17011 }
 wheels = [
@@ -3350,9 +3352,9 @@ name = "pyobjc-framework-medialibrary"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-quartz" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/81/98/34bf44d4d2ffe1dbd2641dba92f0ab8f34b172ff07b1e427e15dc7b87fd1/pyobjc_framework_medialibrary-10.3.2.tar.gz", hash = "sha256:b9070f65f93f6b892918021e4655cc1c68ab6757d8554e28bedbc1dceba92276", size = 17990 }
 wheels = [
@@ -3365,8 +3367,8 @@ name = "pyobjc-framework-mediaplayer"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-avfoundation", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-avfoundation" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/25/e2/d06d712043f5dfe7db4aa69c5fbc922a8e30c8bf6c18070cd819b362c552/pyobjc_framework_mediaplayer-10.3.2.tar.gz", hash = "sha256:b57558c771ec922381333bf05bf642e1420785806c97b10d660bc6eb0740bab4", size = 77668 }
 wheels = [
@@ -3379,8 +3381,8 @@ name = "pyobjc-framework-mediatoolbox"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/30/87/73808a57088e6760d0c9b1be893e1f54947f54094330cfa982fff3613bc0/pyobjc_framework_mediatoolbox-10.3.2.tar.gz", hash = "sha256:0545b375b268594c3e0a63973d6efcce0310b39b316bd0b41fe5d60b3fa0e33d", size = 21849 }
 wheels = [
@@ -3395,8 +3397,8 @@ name = "pyobjc-framework-metal"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ef/12/a7695cab9ee18c2500ada306b283fc80f6628cb5fc396ee19fcc470bf186/pyobjc_framework_metal-10.3.2.tar.gz", hash = "sha256:59246982eab788b955f6d45dfb8c80e8f97bd1b56e1d678c90e91ad4a9376e35", size = 300113 }
 wheels = [
@@ -3411,8 +3413,8 @@ name = "pyobjc-framework-metalfx"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-metal", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-metal" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/cd/7e/409a363fba2ae9582d64771e64f5465908a08d8632f07d1ca64e7ecdd2dc/pyobjc_framework_metalfx-10.3.2.tar.gz", hash = "sha256:02e83be7f013a416af42605120431b01c4a02fe2c80f898b7e45f90c30300a19", size = 21954 }
 wheels = [
@@ -3427,9 +3429,9 @@ name = "pyobjc-framework-metalkit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-metal", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-metal" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/64/f0/73fbc89e07f98e66666f7e7bf95dff809e270fc7e04ad9e89f67840e402c/pyobjc_framework_metalkit-10.3.2.tar.gz", hash = "sha256:309042ce797def3c2b20db41f471e939c9860e810c717a88665e5fdf140a478b", size = 38634 }
 wheels = [
@@ -3444,8 +3446,8 @@ name = "pyobjc-framework-metalperformanceshaders"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-metal", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-metal" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/7a/d2/4f38e3c4f673dcf13d2e79e68e2e33382174c36416e423a1da30a9dc0cb9/pyobjc_framework_metalperformanceshaders-10.3.2.tar.gz", hash = "sha256:e224a9ab8fb9218bb4d7acf8dad946631f89ee0b8f800264ed57443e5df0982f", size = 215765 }
 wheels = [
@@ -3460,8 +3462,8 @@ name = "pyobjc-framework-metalperformanceshadersgraph"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-metalperformanceshaders", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-metalperformanceshaders" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/66/a2/7b0d61e70af9eeae2f428e3d5b8acaf4b5011d6cf07d23e539534510fe4f/pyobjc_framework_metalperformanceshadersgraph-10.3.2.tar.gz", hash = "sha256:d83a4f1343c823674d2dc2730a0f0bd6231ad54409cf467c6bd5fe4a9791c22e", size = 81917 }
 wheels = [
@@ -3474,8 +3476,8 @@ name = "pyobjc-framework-metrickit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/67/e9/7bb34b031109e3cde9e8b59af4e1b66a59868ec57f40c3c84140ba281704/pyobjc_framework_metrickit-10.3.2.tar.gz", hash = "sha256:5a3b6f9a9db09a6521ab54610fd8f6a8644622ff248992e8608cfbe721efedca", size = 32121 }
 wheels = [
@@ -3488,8 +3490,8 @@ name = "pyobjc-framework-mlcompute"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/6a/83/d1af0d51ce57e96adb86c43507ec7fa6f6d3cb0ac92c4c881e04c88ec149/pyobjc_framework_mlcompute-10.3.2.tar.gz", hash = "sha256:be84c8ff600d2dde5abd9b5d27e4607a14361c6fef404803ad4681f6ecac5569", size = 68700 }
 wheels = [
@@ -3502,9 +3504,9 @@ name = "pyobjc-framework-modelio"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-quartz" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/44/9c/93d1bf803924372e31547c1faef512c457f11ecb61ae6554d903cb1acf48/pyobjc_framework_modelio-10.3.2.tar.gz", hash = "sha256:ab0b2ed488e7ba4e4d2862cbc8629d309832bdfcdde3b0c32f87dd2d9e7134bf", size = 93453 }
 wheels = [
@@ -3519,8 +3521,8 @@ name = "pyobjc-framework-multipeerconnectivity"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/dd/e9/f511850e84be7d8645e70934da5f80faa7bd688cd244a1dfbc76ef464870/pyobjc_framework_multipeerconnectivity-10.3.2.tar.gz", hash = "sha256:12f04aca1142ef91ac8292f76ab7fcb3c93eefcb1a1333073dd011cad97cab8a", size = 23803 }
 wheels = [
@@ -3535,8 +3537,8 @@ name = "pyobjc-framework-naturallanguage"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/6b/f8/a7a3d00c1eb5bc8c1d7efd24e655e2f5100322d6adf4c5f12d77018bcc9f/pyobjc_framework_naturallanguage-10.3.2.tar.gz", hash = "sha256:a3a81148b24b744ce5c4289074279cfe4947a79ca9de4d88aa1dbdc44182dede", size = 39472 }
 wheels = [
@@ -3549,8 +3551,8 @@ name = "pyobjc-framework-netfs"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/e7/32/c6614fa0255968b8eea59c76da292b6c65f9caf8929d5f524b8155c6e006/pyobjc_framework_netfs-10.3.2.tar.gz", hash = "sha256:931239d3a0171d09b089f229bc58add8098c0d45a37f8f0ef45059ec0d4e69d6", size = 15546 }
 wheels = [
@@ -3563,8 +3565,8 @@ name = "pyobjc-framework-network"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/bf/52/6a1309a9b5766053ce5b2c7fed21751fc1bd9c8dedaf84d3fc6b2753bc98/pyobjc_framework_network-10.3.2.tar.gz", hash = "sha256:351a0eda913c84e3b7c0ffe0f1d4679b2bc21118ccc0e59fd4943326b23ba4e3", size = 104316 }
 wheels = [
@@ -3579,8 +3581,8 @@ name = "pyobjc-framework-networkextension"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/bf/91/132fc6782b988b67c6e65d569c5a83c8cf567ef38d6d69016ef7acc902b7/pyobjc_framework_networkextension-10.3.2.tar.gz", hash = "sha256:d79ebd6fa4489e61e95e96e868352c9cef20c48ccb1d90680300c814b659529b", size = 131032 }
 wheels = [
@@ -3595,8 +3597,8 @@ name = "pyobjc-framework-notificationcenter"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/35/ec/befdaf13ca4a9056a3760fbb95ae581b0484dc2b5749be30326c9ea2a799/pyobjc_framework_notificationcenter-10.3.2.tar.gz", hash = "sha256:d0dc85e4da0f0e139e032279893db4827595f8f11830080e294f63f57e984c1f", size = 21367 }
 wheels = [
@@ -3611,8 +3613,8 @@ name = "pyobjc-framework-opendirectory"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/8f/cf/5e0c2c3b1c29f3869c17149a69d3142b93343161af135c2a822404c8a61a/pyobjc_framework_opendirectory-10.3.2.tar.gz", hash = "sha256:d506f66c888284e50edb766222d9e3311d9a3ec51b561df1994c498233730f62", size = 159962 }
 wheels = [
@@ -3625,8 +3627,8 @@ name = "pyobjc-framework-osakit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/19/5a/11674938bd217abdfc5ccbd23ebfc0bd21f003cf2609cf545503efdd9214/pyobjc_framework_osakit-10.3.2.tar.gz", hash = "sha256:2a718d4bf08d1b09d41eca1131604ee87929b991506d56951e992e2112a0b4e7", size = 18610 }
 wheels = [
@@ -3639,10 +3641,10 @@ name = "pyobjc-framework-oslog"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-coremedia", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-coremedia" },
+    { name = "pyobjc-framework-quartz" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/92/1b/1a404937e72478a6698ac935b7dc0e754b76459a913c6dd26a042a12ebcd/pyobjc_framework_oslog-10.3.2.tar.gz", hash = "sha256:3f9680b737130579e1317e8bb25d6eb044a1a9569b9dbe33c056654a0d40efbd", size = 22643 }
 wheels = [
@@ -3657,8 +3659,8 @@ name = "pyobjc-framework-passkit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/83/4d/c89c17233d3e3510c7d609384f71fe7b70432f15d16e31ae61deda8c03cc/pyobjc_framework_passkit-10.3.2.tar.gz", hash = "sha256:e85d94062cab45b99dc7123f8de048720730439b66d3b0386eabddb8856aaf12", size = 95237 }
 wheels = [
@@ -3673,8 +3675,8 @@ name = "pyobjc-framework-pencilkit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/48/83/630fc7219b046446705771406d9ae6ec027878478e7d8699892786aaec21/pyobjc_framework_pencilkit-10.3.2.tar.gz", hash = "sha256:2390317a7de5f68fb9594f9eccbe55183ee5f40a7efc59c827c5fc2d4abce508", size = 19159 }
 wheels = [
@@ -3687,8 +3689,8 @@ name = "pyobjc-framework-phase"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-avfoundation", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-avfoundation" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/67/ff/088a94515efb4c9be86bc45ce1024a924f71a7a836462a9177da42447c0a/pyobjc_framework_phase-10.3.2.tar.gz", hash = "sha256:87a0f4d2e6b9db186fda3e700cfc52bc15a9d38f53f5cb3335be93c75d7cccf2", size = 44249 }
 wheels = [
@@ -3701,8 +3703,8 @@ name = "pyobjc-framework-photos"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ce/29/43357f5a2a57972bd4cdd4bbc5a914cee4e4eb1f9a9ba6b0aaed2f6308e3/pyobjc_framework_photos-10.3.2.tar.gz", hash = "sha256:4aa7180a45ef0b5245a277980c2be32195d6b512d66f8abbfdad480466e06434", size = 74548 }
 wheels = [
@@ -3717,8 +3719,8 @@ name = "pyobjc-framework-photosui"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/6a/78/c30494b5207d1ece728541ec21632317a054a6bfb8aecdac770c79d8ab72/pyobjc_framework_photosui-10.3.2.tar.gz", hash = "sha256:0cafb53b9c6014c524ee230d3278cf224e44c885e1166524db9160f8c928e6ba", size = 39302 }
 wheels = [
@@ -3733,8 +3735,8 @@ name = "pyobjc-framework-preferencepanes"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/49/63/d76bc32761d619cadb93fe37054c5f4f7d7e805b68e565170d5412452253/pyobjc_framework_preferencepanes-10.3.2.tar.gz", hash = "sha256:e1cee875450f43700cdfc47d6e9f636b82df31420a0bc29b213670a773225cd6", size = 25669 }
 wheels = [
@@ -3747,8 +3749,8 @@ name = "pyobjc-framework-pushkit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/b4/41/8e9e021c0168e7c8460038bd3f3289232b1b9429c002bc981dbb8bba2a68/pyobjc_framework_pushkit-10.3.2.tar.gz", hash = "sha256:852e8a19424b8a83973f7c3f1ada325871ec2645071abf519712ead972dd0395", size = 19530 }
 wheels = [
@@ -3763,8 +3765,8 @@ name = "pyobjc-framework-quartz"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/eb/bd/d78c845a6f0640975e837d1d0f04d6bbd95bb88b77dcee22482144ac5ad0/pyobjc_framework_quartz-10.3.2.tar.gz", hash = "sha256:193e7752c93e2d1304f914e3a8c069f4b66de237376c5285ba7c72e9ee0e3b15", size = 3776754 }
 wheels = [
@@ -3777,9 +3779,9 @@ name = "pyobjc-framework-quicklookthumbnailing"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-quartz" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/a9/12/d8dc4cb3be565df9e245bf8b234a07a74aa7d0966e643e17a3ed2a645bc3/pyobjc_framework_quicklookthumbnailing-10.3.2.tar.gz", hash = "sha256:f6d35495fdad885ae928a074eb9b45d2f426cf161a557510db3fc1f872a76ad1", size = 15877 }
 wheels = [
@@ -3792,8 +3794,8 @@ name = "pyobjc-framework-replaykit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ef/b1/b8539b171c6a335378928e077d5a8f05e97d43d459c4f1578cd7ed82ac83/pyobjc_framework_replaykit-10.3.2.tar.gz", hash = "sha256:05c15651ad4051037e7647b04e0304b288fa4663ab182d5848958a33a3b6c136", size = 23771 }
 wheels = [
@@ -3808,8 +3810,8 @@ name = "pyobjc-framework-safariservices"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/af/ae/b9a7063c6ecce49efe37298b0d80a00aeb51c7777898a574d78791181046/pyobjc_framework_safariservices-10.3.2.tar.gz", hash = "sha256:3601d177ac3900c681a1dd77a3dab28341c40705572006f3fe7834c9890bb708", size = 29867 }
 wheels = [
@@ -3824,9 +3826,9 @@ name = "pyobjc-framework-safetykit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-quartz" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/70/b3/b5fa5d14cc95c52a67b3e676a8badc671057bd3b483dcd2dd37b37bc9c2b/pyobjc_framework_safetykit-10.3.2.tar.gz", hash = "sha256:d6902abba592532ae7c4864d16df9cb88dab2451e9fcecaa48b5e01948dd84fd", size = 19392 }
 wheels = [
@@ -3841,9 +3843,9 @@ name = "pyobjc-framework-scenekit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-quartz" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/dc/60/9140bd2f59c00c05a549cad6f6ef303d1ea12bf39ac70cfd9c244ed775a9/pyobjc_framework_scenekit-10.3.2.tar.gz", hash = "sha256:451b02c3b58f78adeb06239f9e4d2ac8545277056e5945eca3592b04c5f3ed67", size = 155651 }
 wheels = [
@@ -3858,9 +3860,9 @@ name = "pyobjc-framework-screencapturekit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-coremedia", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-coremedia" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/a5/f6/0f9a509f86d5b876ebdbcf4b96a01a824ecdaf4f3e8ff9516f7e7c13abc9/pyobjc_framework_screencapturekit-10.3.2.tar.gz", hash = "sha256:948d6663243e141acfc4ea1499f4690e5ec51d9cad9db843d5450548a2a7028f", size = 35192 }
 wheels = [
@@ -3873,8 +3875,8 @@ name = "pyobjc-framework-screensaver"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/e3/7f/b4472750bc0f66b6b43ae462e2bfccc113fa135780ab9b4e43e648f19a51/pyobjc_framework_screensaver-10.3.2.tar.gz", hash = "sha256:2e0bc1406848607931123b87a59235712c40d362247be6c0c0746b26a4bd8e5f", size = 22469 }
 wheels = [
@@ -3889,8 +3891,8 @@ name = "pyobjc-framework-screentime"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/02/50/6189139ea6736443f8b9f3ff6b776b62070b967965c4292d60e121884fed/pyobjc_framework_screentime-10.3.2.tar.gz", hash = "sha256:1f57188ea57d71204a65e1f342ed34128704bcee3ff7d8566f503d87b779e902", size = 13688 }
 wheels = [
@@ -3903,8 +3905,8 @@ name = "pyobjc-framework-scriptingbridge"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ed/0c/fff6cf7279cb78e8bd09a9a605d06f6e53a7d7d6b8a5c80f66477010d68b/pyobjc_framework_scriptingbridge-10.3.2.tar.gz", hash = "sha256:07655aff60a238fcf25918bd62fda007aef6076a92c47ea543dd71028e812a8c", size = 21176 }
 wheels = [
@@ -3919,8 +3921,8 @@ name = "pyobjc-framework-searchkit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-coreservices", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-coreservices" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/9c/6a/586d7534ef7dd9277297d25ef96e96da5ee701cdaad1d4039c3f9219c1ae/pyobjc_framework_searchkit-10.3.2.tar.gz", hash = "sha256:1acaf21339e6583e901535f82271578b43ec44797b9b1293a3b7692deca3d704", size = 30823 }
 wheels = [
@@ -3933,8 +3935,8 @@ name = "pyobjc-framework-security"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/fc/08/bbbfa295aef75986d7204ba3d856b26779d9eb2d0efbdcce2ddcb468d9b9/pyobjc_framework_security-10.3.2.tar.gz", hash = "sha256:8e018ad36a5ba4ebf1da45cc3ca2a658906ed1e3f9ffdde8f743c813a233d735", size = 252834 }
 wheels = [
@@ -3947,9 +3949,9 @@ name = "pyobjc-framework-securityfoundation"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-security", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-security" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/1c/3f/0b46d29ef0075c27f48288da2daaca83cf3707a922a0fd9051e111045a42/pyobjc_framework_securityfoundation-10.3.2.tar.gz", hash = "sha256:738e8034f7c7a91f37e6e5b0bc94d9d74ad8016c96508994fdc4d76915d76fc4", size = 12907 }
 wheels = [
@@ -3962,9 +3964,9 @@ name = "pyobjc-framework-securityinterface"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-security", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-security" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/3c/ea/1dfdf32ab13daa11f99d33ce62cc99076a6162dd4175442675f01711dbd2/pyobjc_framework_securityinterface-10.3.2.tar.gz", hash = "sha256:9d90589f165b2c4fb8c252179f5c0003c8ee6df22d0ead2b8f77e07ff4733dfe", size = 32274 }
 wheels = [
@@ -3979,9 +3981,9 @@ name = "pyobjc-framework-sensitivecontentanalysis"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-quartz" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/2d/c0/b23985c0a71168317a15c3b440cf02b3f546d8248b3d82cb9f13b4fe2b5e/pyobjc_framework_sensitivecontentanalysis-10.3.2.tar.gz", hash = "sha256:561c0b19144648a0dab19da1896cbdfbf484f3cb752e95aa42e27ff7c5da923b", size = 12323 }
 wheels = [
@@ -3994,8 +3996,8 @@ name = "pyobjc-framework-servicemanagement"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/47/d1/06333ad3eb0fd5f7f2f34d9f3c48f81c1732aa66f7d97c63899c7832fbc3/pyobjc_framework_servicemanagement-10.3.2.tar.gz", hash = "sha256:60415ce7ce789062a1bb066a1e698325cc110fcab94324368f1697cb171387e5", size = 16076 }
 wheels = [
@@ -4008,8 +4010,8 @@ name = "pyobjc-framework-sharedwithyou"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-sharedwithyoucore", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-sharedwithyoucore" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/21/21/4b28cac56c3637a942c8ad70490fc48586fbfbc503088594b0110325b116/pyobjc_framework_sharedwithyou-10.3.2.tar.gz", hash = "sha256:2a2717f85b7a8db33ef04dc90dfdfcb9f6891740112bdcd739a7d5ff37185107", size = 28260 }
 wheels = [
@@ -4024,8 +4026,8 @@ name = "pyobjc-framework-sharedwithyoucore"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/6e/8a/62a767e8e37faf7720ef0e9a0743bf6d0b5f0776813ab5a4d0fe7c4d5507/pyobjc_framework_sharedwithyoucore-10.3.2.tar.gz", hash = "sha256:8c877f0e4590da6c687cecabfd15ca5cab3ca82cf70c7d228473e02e0e796225", size = 24687 }
 wheels = [
@@ -4040,8 +4042,8 @@ name = "pyobjc-framework-shazamkit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/c2/f3/8626b1f52c3c7665cb8f84966db045877456b9d9c55d9faa686cc773590b/pyobjc_framework_shazamkit-10.3.2.tar.gz", hash = "sha256:6158120a2d25b74a88c1ddc9d5f70df30ad4cd9c19b4f9db95434cc5fbb99f70", size = 23291 }
 wheels = [
@@ -4054,8 +4056,8 @@ name = "pyobjc-framework-social"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/75/6f/83f92ac162fbb14fef97f100da2ad35ed2ed5bff2cb864e59b34ab5608c8/pyobjc_framework_social-10.3.2.tar.gz", hash = "sha256:8d55fe68ea1dff205c6b10fd57b0ab8e8ff1b0801ae61fd358a1c97b1a88f733", size = 14063 }
 wheels = [
@@ -4068,8 +4070,8 @@ name = "pyobjc-framework-soundanalysis"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/20/99/52fead19bfc957466758e76f540c3bced518958f64cc73c6f34b6b21e856/pyobjc_framework_soundanalysis-10.3.2.tar.gz", hash = "sha256:3e5326c40b62238d448da9d52c78b22a659a1ec00eeed4358f58d5dc6758b2aa", size = 15900 }
 wheels = [
@@ -4082,8 +4084,8 @@ name = "pyobjc-framework-speech"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/a9/3a/c9f92ab6b648b1ea346d2c8aac78e8a82fd56c9e8c1fa0c369c09ce535b7/pyobjc_framework_speech-10.3.2.tar.gz", hash = "sha256:86e825076ce65b5dbdf3ce0b37ab1d251beff3e97773114d3933012d6d771fd8", size = 30314 }
 wheels = [
@@ -4098,9 +4100,9 @@ name = "pyobjc-framework-spritekit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-quartz" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/7d/11/aefc94b7d2d8a3e43f51bf448d7dea48fca8c637439b2708e203fe16e4c3/pyobjc_framework_spritekit-10.3.2.tar.gz", hash = "sha256:cd28510d2158455ab9f0109655ecbebbdaff98daf3fb6af19e2f472a91496270", size = 95884 }
 wheels = [
@@ -4113,8 +4115,8 @@ name = "pyobjc-framework-storekit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/24/eb/cf77c88a0a957b142869b184600ca0a43b8a944fd257429e64a9a04b1abe/pyobjc_framework_storekit-10.3.2.tar.gz", hash = "sha256:8112857047363c200708ba4472e644d1d465a134edcd5edd4b0da6ab4bcff143", size = 64015 }
 wheels = [
@@ -4129,8 +4131,8 @@ name = "pyobjc-framework-symbols"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/e4/bc/80ed504beaeddebaeca4fd1237315987971af99ade2f6e755f4663b8dbeb/pyobjc_framework_symbols-10.3.2.tar.gz", hash = "sha256:b6293ac919513f8f91e2f4d847bca3b67a10e3a9e636bd2a6a05d7d2b43bb3ad", size = 12118 }
 wheels = [
@@ -4143,9 +4145,9 @@ name = "pyobjc-framework-syncservices"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-coredata", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-coredata" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ef/49/2a72d27312a7b41f814f0dec33d6b27972a4842e509d2db39200a189ac63/pyobjc_framework_syncservices-10.3.2.tar.gz", hash = "sha256:4ccd394746027b788907af2846dd1ab3505f340f0bf24400191017e5d0e6300e", size = 49889 }
 wheels = [
@@ -4160,8 +4162,8 @@ name = "pyobjc-framework-systemconfiguration"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/bc/df/28b0da49f01b3f6b0b26d9ae530d4ad5d225e67c812469204552c8bc4c34/pyobjc_framework_systemconfiguration-10.3.2.tar.gz", hash = "sha256:6d98d26da42501abceb9b374ba8e31b01a96af87a77cd578ea1b691f8152bc86", size = 124533 }
 wheels = [
@@ -4176,8 +4178,8 @@ name = "pyobjc-framework-systemextensions"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/d5/45/df446df16f431d2c8c1733f5076b75eb3119ac21371dbe9c900542488099/pyobjc_framework_systemextensions-10.3.2.tar.gz", hash = "sha256:8e513fbc750cce3af0a77fab08c05c9cc2ba0d64116490bd1f7b0f9fe8ba6972", size = 20236 }
 wheels = [
@@ -4192,8 +4194,8 @@ name = "pyobjc-framework-threadnetwork"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/91/85/821d14d8118329be7106e2d656fd8466ceb20d6d90e4341ac8e7b43dc970/pyobjc_framework_threadnetwork-10.3.2.tar.gz", hash = "sha256:1d8b73000c077da1dafc4c4298acda6df8ec615a4bf94ffc2f9f3ef8c209dc45", size = 12976 }
 wheels = [
@@ -4206,8 +4208,8 @@ name = "pyobjc-framework-uniformtypeidentifiers"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/40/2b/665cebe17818d7cf6bb5edf38319bcb3dd2915e1eb6c9e65db8c7fb045a0/pyobjc_framework_uniformtypeidentifiers-10.3.2.tar.gz", hash = "sha256:59e8b11d78d89a24f7fb944853b93705ca48febf1ae42be57d16100e38703f69", size = 18820 }
 wheels = [
@@ -4220,8 +4222,8 @@ name = "pyobjc-framework-usernotifications"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/39/87/2cf1c42e4686fe407b1043ae6fce7484da9a05d5f930ef4807aeb7f62233/pyobjc_framework_usernotifications-10.3.2.tar.gz", hash = "sha256:84743b40d950959b92bc15265278d4e4de45bf84fc3a45d8636f38476d7201c1", size = 46431 }
 wheels = [
@@ -4236,9 +4238,9 @@ name = "pyobjc-framework-usernotificationsui"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-usernotifications", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-usernotifications" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/cc/14/c028e54d93df12c4b84376bb1f343bbcf338dea8f21bd724c32de8841efe/pyobjc_framework_usernotificationsui-10.3.2.tar.gz", hash = "sha256:9e21f207dcb4305b2dd80ed5329515867aee0caf8f40157911f8b4c6674e4b60", size = 13611 }
 wheels = [
@@ -4251,8 +4253,8 @@ name = "pyobjc-framework-videosubscriberaccount"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/6d/05/6a25c1ef8189288ae7267cacf444031083840c9bd7fc0f8d9c6e61de34d6/pyobjc_framework_videosubscriberaccount-10.3.2.tar.gz", hash = "sha256:6072e55242c150bfc09417679813966482570fcfd0f0dd740c241ef5589f546a", size = 24126 }
 wheels = [
@@ -4265,10 +4267,10 @@ name = "pyobjc-framework-videotoolbox"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-coremedia", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-coremedia" },
+    { name = "pyobjc-framework-quartz" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/8c/19/06a028ffdb254cf621795158f7da56c6c0f201d53b40709095a5f60fe55d/pyobjc_framework_videotoolbox-10.3.2.tar.gz", hash = "sha256:8ddfa3d25d53d03d00847f63cfcc7c033aab54d9fc1fdd0d18ff60af17aa2b14", size = 66599 }
 wheels = [
@@ -4283,8 +4285,8 @@ name = "pyobjc-framework-virtualization"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/71/5d/df555942df3bcd7df6a6ed0830b5b4a0024f4fda00ee7cefaf61afc19e05/pyobjc_framework_virtualization-10.3.2.tar.gz", hash = "sha256:6b8cd5b69dd5197b96d6b907c9224ea4d05ef3bebad552cfebf331ed98c2d4eb", size = 61977 }
 wheels = [
@@ -4299,10 +4301,10 @@ name = "pyobjc-framework-vision"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-coreml", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-quartz", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-framework-coreml" },
+    { name = "pyobjc-framework-quartz" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/a9/f9/f9063b8cdbb2210b51beadffabb7021d55a20b3e9693219c53e98d067c10/pyobjc_framework_vision-10.3.2.tar.gz", hash = "sha256:5cfea4a750657e2c8e7c8b0c26c7aac2578ba09ab8f66ffa0e2ee632410cacf3", size = 108990 }
 wheels = [
@@ -4317,8 +4319,8 @@ name = "pyobjc-framework-webkit"
 version = "10.3.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core", marker = "sys_platform == 'darwin'" },
-    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin'" },
+    { name = "pyobjc-core" },
+    { name = "pyobjc-framework-cocoa" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ef/98/89187c121e130e11ce6c7ed86a2de10cb6d6c8994eb77ab2b81a060d1916/pyobjc_framework_webkit-10.3.2.tar.gz", hash = "sha256:b60d097a87867c252286855158cc35d991e2273f162f40f8e38e95153894bbbf", size = 611469 }
 wheels = [
@@ -4333,9 +4335,9 @@ name = "pyopencl"
 version = "2024.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "platformdirs", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "pytools", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "numpy" },
+    { name = "platformdirs" },
+    { name = "pytools" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ec/28/4679ea08b84532a67fd2d270c8f87aec64dab9ab99e618927b6a26ea063e/pyopencl-2024.3.tar.gz", hash = "sha256:d5d08de9b0a6d85695caba1769aceae4e7661f06951c507bd1ce8fb7a89e2413", size = 422604 }
 wheels = [
@@ -4365,11 +4367,11 @@ wheels = [
 
 [[package]]
 name = "pyparsing"
-version = "3.2.0"
+version = "3.2.1"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/8c/d5/e5aeee5387091148a19e1145f63606619cb5f20b83fccb63efae6474e7b2/pyparsing-3.2.0.tar.gz", hash = "sha256:cbf74e27246d595d9a74b186b810f6fbb86726dbf3b9532efb343f6d7294fe9c", size = 920984 }
+sdist = { url = "https://files.pythonhosted.org/packages/8b/1a/3544f4f299a47911c2ab3710f534e52fea62a633c96806995da5d25be4b2/pyparsing-3.2.1.tar.gz", hash = "sha256:61980854fd66de3a90028d679a954d5f2623e83144b5afe5ee86f43d762e5f0a", size = 1067694 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/be/ec/2eb3cd785efd67806c46c13a17339708ddc346cbb684eade7a6e6f79536a/pyparsing-3.2.0-py3-none-any.whl", hash = "sha256:93d9577b88da0bbea8cc8334ee8b918ed014968fd2ec383e868fb8afb1ccef84", size = 106921 },
+    { url = "https://files.pythonhosted.org/packages/1c/a7/c8a2d361bf89c0d9577c934ebb7421b25dc84bf3a8e3ac0a40aed9acc547/pyparsing-3.2.1-py3-none-any.whl", hash = "sha256:506ff4f4386c4cec0590ec19e6302d3aedb992fdc02c761e90416f158dacf8e1", size = 107716 },
 ]
 
 [[package]]
@@ -4434,14 +4436,14 @@ wheels = [
 
 [[package]]
 name = "pytest-asyncio"
-version = "0.25.0"
+version = "0.25.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pytest" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/94/18/82fcb4ee47d66d99f6cd1efc0b11b2a25029f303c599a5afda7c1bca4254/pytest_asyncio-0.25.0.tar.gz", hash = "sha256:8c0610303c9e0442a5db8604505fc0f545456ba1528824842b37b4a626cbf609", size = 53298 }
+sdist = { url = "https://files.pythonhosted.org/packages/4b/04/0477a4bdd176ad678d148c075f43620b3f7a060ff61c7da48500b1fa8a75/pytest_asyncio-0.25.1.tar.gz", hash = "sha256:79be8a72384b0c917677e00daa711e07db15259f4d23203c59012bcd989d4aee", size = 53760 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/88/56/2ee0cab25c11d4e38738a2a98c645a8f002e2ecf7b5ed774c70d53b92bb1/pytest_asyncio-0.25.0-py3-none-any.whl", hash = "sha256:db5432d18eac6b7e28b46dcd9b69921b55c3b1086e85febfe04e70b18d9e81b3", size = 19245 },
+    { url = "https://files.pythonhosted.org/packages/81/fb/efc7226b384befd98d0e00d8c4390ad57f33c8fde00094b85c5e07897def/pytest_asyncio-0.25.1-py3-none-any.whl", hash = "sha256:c84878849ec63ff2ca509423616e071ef9cd8cc93c053aa33b5b8fb70a990671", size = 19357 },
 ]
 
 [[package]]
@@ -4560,7 +4562,7 @@ name = "python-xlib"
 version = "0.33"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "six", marker = "sys_platform != 'darwin'" },
+    { name = "six" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/86/f5/8c0653e5bb54e0cbdfe27bf32d41f27bc4e12faa8742778c17f2a71be2c0/python-xlib-0.33.tar.gz", hash = "sha256:55af7906a2c75ce6cb280a584776080602444f75815a7aff4d287bb2d7018b32", size = 269068 }
 wheels = [
@@ -4578,9 +4580,9 @@ name = "pytools"
 version = "2024.1.10"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "platformdirs", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "siphash24", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "typing-extensions", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "platformdirs" },
+    { name = "siphash24" },
+    { name = "typing-extensions" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ee/0f/56e109c0307f831b5d598ad73976aaaa84b4d0e98da29a642e797eaa940c/pytools-2024.1.10.tar.gz", hash = "sha256:9af6f4b045212c49be32bb31fe19606c478ee4b09631886d05a32459f4ce0a12", size = 81741 }
 wheels = [
@@ -4747,14 +4749,14 @@ wheels = [
 
 [[package]]
 name = "ruamel-yaml"
-version = "0.18.6"
+version = "0.18.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "ruamel-yaml-clib", marker = "platform_python_implementation == 'CPython'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/29/81/4dfc17eb6ebb1aac314a3eb863c1325b907863a1b8b1382cdffcb6ac0ed9/ruamel.yaml-0.18.6.tar.gz", hash = "sha256:8b27e6a217e786c6fbe5634d8f3f11bc63e0f80f6a5890f28863d9c45aac311b", size = 143362 }
+sdist = { url = "https://files.pythonhosted.org/packages/37/8f/135c0b5292c36adf8b6ebd1f4747be709b67cfce23f6f16a4776131111a6/ruamel.yaml-0.18.9.tar.gz", hash = "sha256:59d0f8b10c658bd55ecd107e334d4117d766a2b9cc8f5176afcdadcff6f84a5e", size = 143739 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/73/67/8ece580cc363331d9a53055130f86b096bf16e38156e33b1d3014fffda6b/ruamel.yaml-0.18.6-py3-none-any.whl", hash = "sha256:57b53ba33def16c4f3d807c0ccbc00f8a6081827e81ba2491691b76882d0c636", size = 117761 },
+    { url = "https://files.pythonhosted.org/packages/9d/9c/a4f8d531861f7e00025672844ecfda1a653dc9147f91df5ac9f7aa09dc35/ruamel.yaml-0.18.9-py3-none-any.whl", hash = "sha256:c17d2a7ccf7fd2dd4b6d699111c37e94f12277a1db71e847ad7f3d19b8e3e9f4", size = 117578 },
 ]
 
 [[package]]
@@ -4794,27 +4796,27 @@ wheels = [
 
 [[package]]
 name = "ruff"
-version = "0.8.4"
+version = "0.8.6"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/34/37/9c02181ef38d55b77d97c68b78e705fd14c0de0e5d085202bb2b52ce5be9/ruff-0.8.4.tar.gz", hash = "sha256:0d5f89f254836799af1615798caa5f80b7f935d7a670fad66c5007928e57ace8", size = 3402103 }
+sdist = { url = "https://files.pythonhosted.org/packages/da/00/089db7890ea3be5709e3ece6e46408d6f1e876026ec3fd081ee585fef209/ruff-0.8.6.tar.gz", hash = "sha256:dcad24b81b62650b0eb8814f576fc65cfee8674772a6e24c9b747911801eeaa5", size = 3473116 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/05/67/f480bf2f2723b2e49af38ed2be75ccdb2798fca7d56279b585c8f553aaab/ruff-0.8.4-py3-none-linux_armv6l.whl", hash = "sha256:58072f0c06080276804c6a4e21a9045a706584a958e644353603d36ca1eb8a60", size = 10546415 },
-    { url = "https://files.pythonhosted.org/packages/eb/7a/5aba20312c73f1ce61814e520d1920edf68ca3b9c507bd84d8546a8ecaa8/ruff-0.8.4-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:ffb60904651c00a1e0b8df594591770018a0f04587f7deeb3838344fe3adabac", size = 10346113 },
-    { url = "https://files.pythonhosted.org/packages/76/f4/c41de22b3728486f0aa95383a44c42657b2db4062f3234ca36fc8cf52d8b/ruff-0.8.4-py3-none-macosx_11_0_arm64.whl", hash = "sha256:6ddf5d654ac0d44389f6bf05cee4caeefc3132a64b58ea46738111d687352296", size = 9943564 },
-    { url = "https://files.pythonhosted.org/packages/0e/f0/afa0d2191af495ac82d4cbbfd7a94e3df6f62a04ca412033e073b871fc6d/ruff-0.8.4-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:e248b1f0fa2749edd3350a2a342b67b43a2627434c059a063418e3d375cfe643", size = 10805522 },
-    { url = "https://files.pythonhosted.org/packages/12/57/5d1e9a0fd0c228e663894e8e3a8e7063e5ee90f8e8e60cf2085f362bfa1a/ruff-0.8.4-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:bf197b98ed86e417412ee3b6c893f44c8864f816451441483253d5ff22c0e81e", size = 10306763 },
-    { url = "https://files.pythonhosted.org/packages/04/df/f069fdb02e408be8aac6853583572a2873f87f866fe8515de65873caf6b8/ruff-0.8.4-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:c41319b85faa3aadd4d30cb1cffdd9ac6b89704ff79f7664b853785b48eccdf3", size = 11359574 },
-    { url = "https://files.pythonhosted.org/packages/d3/04/37c27494cd02e4a8315680debfc6dfabcb97e597c07cce0044db1f9dfbe2/ruff-0.8.4-py3-none-manylinux_2_17_ppc64.manylinux2014_ppc64.whl", hash = "sha256:9f8402b7c4f96463f135e936d9ab77b65711fcd5d72e5d67597b543bbb43cf3f", size = 12094851 },
-    { url = "https://files.pythonhosted.org/packages/81/b1/c5d7fb68506cab9832d208d03ea4668da9a9887a4a392f4f328b1bf734ad/ruff-0.8.4-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:e4e56b3baa9c23d324ead112a4fdf20db9a3f8f29eeabff1355114dd96014604", size = 11655539 },
-    { url = "https://files.pythonhosted.org/packages/ef/38/8f8f2c8898dc8a7a49bc340cf6f00226917f0f5cb489e37075bcb2ce3671/ruff-0.8.4-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:736272574e97157f7edbbb43b1d046125fce9e7d8d583d5d65d0c9bf2c15addf", size = 12912805 },
-    { url = "https://files.pythonhosted.org/packages/06/dd/fa6660c279f4eb320788876d0cff4ea18d9af7d9ed7216d7bd66877468d0/ruff-0.8.4-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e5fe710ab6061592521f902fca7ebcb9fabd27bc7c57c764298b1c1f15fff720", size = 11205976 },
-    { url = "https://files.pythonhosted.org/packages/a8/d7/de94cc89833b5de455750686c17c9e10f4e1ab7ccdc5521b8fe911d1477e/ruff-0.8.4-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:13e9ec6d6b55f6da412d59953d65d66e760d583dd3c1c72bf1f26435b5bfdbae", size = 10792039 },
-    { url = "https://files.pythonhosted.org/packages/6d/15/3e4906559248bdbb74854af684314608297a05b996062c9d72e0ef7c7097/ruff-0.8.4-py3-none-musllinux_1_2_armv7l.whl", hash = "sha256:97d9aefef725348ad77d6db98b726cfdb075a40b936c7984088804dfd38268a7", size = 10400088 },
-    { url = "https://files.pythonhosted.org/packages/a2/21/9ed4c0e8133cb4a87a18d470f534ad1a8a66d7bec493bcb8bda2d1a5d5be/ruff-0.8.4-py3-none-musllinux_1_2_i686.whl", hash = "sha256:ab78e33325a6f5374e04c2ab924a3367d69a0da36f8c9cb6b894a62017506111", size = 10900814 },
-    { url = "https://files.pythonhosted.org/packages/0d/5d/122a65a18955bd9da2616b69bc839351f8baf23b2805b543aa2f0aed72b5/ruff-0.8.4-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:8ef06f66f4a05c3ddbc9121a8b0cecccd92c5bf3dd43b5472ffe40b8ca10f0f8", size = 11268828 },
-    { url = "https://files.pythonhosted.org/packages/43/a9/1676ee9106995381e3d34bccac5bb28df70194167337ed4854c20f27c7ba/ruff-0.8.4-py3-none-win32.whl", hash = "sha256:552fb6d861320958ca5e15f28b20a3d071aa83b93caee33a87b471f99a6c0835", size = 8805621 },
-    { url = "https://files.pythonhosted.org/packages/10/98/ed6b56a30ee76771c193ff7ceeaf1d2acc98d33a1a27b8479cbdb5c17a23/ruff-0.8.4-py3-none-win_amd64.whl", hash = "sha256:f21a1143776f8656d7f364bd264a9d60f01b7f52243fbe90e7670c0dfe0cf65d", size = 9660086 },
-    { url = "https://files.pythonhosted.org/packages/13/9f/026e18ca7d7766783d779dae5e9c656746c6ede36ef73c6d934aaf4a6dec/ruff-0.8.4-py3-none-win_arm64.whl", hash = "sha256:9183dd615d8df50defa8b1d9a074053891ba39025cf5ae88e8bcb52edcc4bf08", size = 9074500 },
+    { url = "https://files.pythonhosted.org/packages/d7/28/aa07903694637c2fa394a9f4fe93cf861ad8b09f1282fa650ef07ff9fe97/ruff-0.8.6-py3-none-linux_armv6l.whl", hash = "sha256:defed167955d42c68b407e8f2e6f56ba52520e790aba4ca707a9c88619e580e3", size = 10628735 },
+    { url = "https://files.pythonhosted.org/packages/2b/43/827bb1448f1fcb0fb42e9c6edf8fb067ca8244923bf0ddf12b7bf949065c/ruff-0.8.6-py3-none-macosx_10_12_x86_64.whl", hash = "sha256:54799ca3d67ae5e0b7a7ac234baa657a9c1784b48ec954a094da7c206e0365b1", size = 10386758 },
+    { url = "https://files.pythonhosted.org/packages/df/93/fc852a81c3cd315b14676db3b8327d2bb2d7508649ad60bfdb966d60738d/ruff-0.8.6-py3-none-macosx_11_0_arm64.whl", hash = "sha256:e88b8f6d901477c41559ba540beeb5a671e14cd29ebd5683903572f4b40a9807", size = 10007808 },
+    { url = "https://files.pythonhosted.org/packages/94/e9/e0ed4af1794335fb280c4fac180f2bf40f6a3b859cae93a5a3ada27325ae/ruff-0.8.6-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:0509e8da430228236a18a677fcdb0c1f102dd26d5520f71f79b094963322ed25", size = 10861031 },
+    { url = "https://files.pythonhosted.org/packages/82/68/da0db02f5ecb2ce912c2bef2aa9fcb8915c31e9bc363969cfaaddbc4c1c2/ruff-0.8.6-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:91a7ddb221779871cf226100e677b5ea38c2d54e9e2c8ed847450ebbdf99b32d", size = 10388246 },
+    { url = "https://files.pythonhosted.org/packages/ac/1d/b85383db181639019b50eb277c2ee48f9f5168f4f7c287376f2b6e2a6dc2/ruff-0.8.6-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:248b1fb3f739d01d528cc50b35ee9c4812aa58cc5935998e776bf8ed5b251e75", size = 11424693 },
+    { url = "https://files.pythonhosted.org/packages/ac/b7/30bc78a37648d31bfc7ba7105b108cb9091cd925f249aa533038ebc5a96f/ruff-0.8.6-py3-none-manylinux_2_17_ppc64.manylinux2014_ppc64.whl", hash = "sha256:bc3c083c50390cf69e7e1b5a5a7303898966be973664ec0c4a4acea82c1d4315", size = 12141921 },
+    { url = "https://files.pythonhosted.org/packages/60/b3/ee0a14cf6a1fbd6965b601c88d5625d250b97caf0534181e151504498f86/ruff-0.8.6-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:52d587092ab8df308635762386f45f4638badb0866355b2b86760f6d3c076188", size = 11692419 },
+    { url = "https://files.pythonhosted.org/packages/ef/d6/c597062b2931ba3e3861e80bd2b147ca12b3370afc3889af46f29209037f/ruff-0.8.6-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:61323159cf21bc3897674e5adb27cd9e7700bab6b84de40d7be28c3d46dc67cf", size = 12981648 },
+    { url = "https://files.pythonhosted.org/packages/68/84/21f578c2a4144917985f1f4011171aeff94ab18dfa5303ac632da2f9af36/ruff-0.8.6-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:7ae4478b1471fc0c44ed52a6fb787e641a2ac58b1c1f91763bafbc2faddc5117", size = 11251801 },
+    { url = "https://files.pythonhosted.org/packages/6c/aa/1ac02537c8edeb13e0955b5db86b5c050a1dcba54f6d49ab567decaa59c1/ruff-0.8.6-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:0c000a471d519b3e6cfc9c6680025d923b4ca140ce3e4612d1a2ef58e11f11fe", size = 10849857 },
+    { url = "https://files.pythonhosted.org/packages/eb/00/020cb222252d833956cb3b07e0e40c9d4b984fbb2dc3923075c8f944497d/ruff-0.8.6-py3-none-musllinux_1_2_armv7l.whl", hash = "sha256:9257aa841e9e8d9b727423086f0fa9a86b6b420fbf4bf9e1465d1250ce8e4d8d", size = 10470852 },
+    { url = "https://files.pythonhosted.org/packages/00/56/e6d6578202a0141cd52299fe5acb38b2d873565f4670c7a5373b637cf58d/ruff-0.8.6-py3-none-musllinux_1_2_i686.whl", hash = "sha256:45a56f61b24682f6f6709636949ae8cc82ae229d8d773b4c76c09ec83964a95a", size = 10972997 },
+    { url = "https://files.pythonhosted.org/packages/be/31/dd0db1f4796bda30dea7592f106f3a67a8f00bcd3a50df889fbac58e2786/ruff-0.8.6-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:496dd38a53aa173481a7d8866bcd6451bd934d06976a2505028a50583e001b76", size = 11317760 },
+    { url = "https://files.pythonhosted.org/packages/d4/70/cfcb693dc294e034c6fed837fa2ec98b27cc97a26db5d049345364f504bf/ruff-0.8.6-py3-none-win32.whl", hash = "sha256:e169ea1b9eae61c99b257dc83b9ee6c76f89042752cb2d83486a7d6e48e8f764", size = 8799729 },
+    { url = "https://files.pythonhosted.org/packages/60/22/ae6bcaa0edc83af42751bd193138bfb7598b2990939d3e40494d6c00698c/ruff-0.8.6-py3-none-win_amd64.whl", hash = "sha256:f1d70bef3d16fdc897ee290d7d20da3cbe4e26349f62e8a0274e7a3f4ce7a905", size = 9673857 },
+    { url = "https://files.pythonhosted.org/packages/91/f8/3765e053acd07baa055c96b2065c7fab91f911b3c076dfea71006666f5b0/ruff-0.8.6-py3-none-win_arm64.whl", hash = "sha256:7d7fc2377a04b6e04ffe588caad613d0c460eb2ecba4c0ccbbfe2bc973cbc162", size = 9149556 },
 ]
 
 [[package]]
@@ -4873,11 +4875,11 @@ wheels = [
 
 [[package]]
 name = "setuptools"
-version = "75.6.0"
+version = "75.7.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/43/54/292f26c208734e9a7f067aea4a7e282c080750c4546559b58e2e45413ca0/setuptools-75.6.0.tar.gz", hash = "sha256:8199222558df7c86216af4f84c30e9b34a61d8ba19366cc914424cdbd28252f6", size = 1337429 }
+sdist = { url = "https://files.pythonhosted.org/packages/ac/57/e6f0bde5a2c333a32fbcce201f906c1fd0b3a7144138712a5e9d9598c5ec/setuptools-75.7.0.tar.gz", hash = "sha256:886ff7b16cd342f1d1defc16fc98c9ce3fde69e087a4e1983d7ab634e5f41f4f", size = 1338616 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/55/21/47d163f615df1d30c094f6c8bbb353619274edccf0327b185cc2493c2c33/setuptools-75.6.0-py3-none-any.whl", hash = "sha256:ce74b49e8f7110f9bf04883b730f4765b774ef3ef28f722cce7c273d253aaf7d", size = 1224032 },
+    { url = "https://files.pythonhosted.org/packages/4e/6e/abdfaaf5c294c553e7a81cf5d801fbb4f53f5c5b6646de651f92a2667547/setuptools-75.7.0-py3-none-any.whl", hash = "sha256:84fb203f278ebcf5cd08f97d3fb96d3fbed4b629d500b29ad60d11e00769b183", size = 1224467 },
 ]
 
 [[package]]
@@ -4885,7 +4887,7 @@ name = "shapely"
 version = "2.0.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "numpy" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/4a/89/0d20bac88016be35ff7d3c0c2ae64b477908f1b1dfa540c5d69ac7af07fe/shapely-2.0.6.tar.gz", hash = "sha256:997f6159b1484059ec239cacaa53467fd8b5564dabe186cd84ac2944663b0bf6", size = 282361 }
 wheels = [
@@ -5110,7 +5112,7 @@ name = "yapf"
 version = "0.43.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "platformdirs", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "platformdirs" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/23/97/b6f296d1e9cc1ec25c7604178b48532fa5901f721bcf1b8d8148b13e5588/yapf-0.43.0.tar.gz", hash = "sha256:00d3aa24bfedff9420b2e0d5d9f5ab6d9d4268e72afbf59bb3fa542781d5218e", size = 254907 }
 wheels = [
