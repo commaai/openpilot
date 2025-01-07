@@ -26,27 +26,27 @@ def has_preserve_xattr(d: str) -> bool:
   return getxattr(os.path.join(Paths.log_root(), d), PRESERVE_ATTR_NAME) == PRESERVE_ATTR_VALUE
 
 
-# def get_preserved_segments(dirs_by_creation: list[str]) -> list[str]:
-#   # skip deleting most recent N preserved segments (and their prior segment)
-#   preserved = []
-#   for n, d in enumerate(filter(has_preserve_xattr, reversed(dirs_by_creation))):
-#     if n == PRESERVE_COUNT:
-#       break
-#     date_str, _, seg_str = d.rpartition("--")
+def get_preserved_segments(dirs_by_creation: list[str]) -> list[str]:
+  # skip deleting most recent N preserved segments (and their prior segment)
+  preserved = []
+  for n, d in enumerate(filter(has_preserve_xattr, reversed(dirs_by_creation))):
+    if n == PRESERVE_COUNT:
+      break
+    date_str, _, seg_str = d.rpartition("--")
 
-#     # ignore non-segment directories
-#     if not date_str:
-#       continue
-#     try:
-#       seg_num = int(seg_str)
-#     except ValueError:
-#       continue
+    # ignore non-segment directories
+    if not date_str:
+      continue
+    try:
+      seg_num = int(seg_str)
+    except ValueError:
+      continue
 
-#     # preserve segment and two prior
-#     for _seg_num in range(max(0, seg_num - 2), seg_num + 1):
-#       preserved.append(f"{date_str}--{_seg_num}")
+    # preserve segment and two prior
+    for _seg_num in range(max(0, seg_num - 2), seg_num + 1):
+      preserved.append(f"{date_str}--{_seg_num}")
 
-#   return preserved
+  return preserved
 
 
 def deleter_thread(exit_event: threading.Event):
@@ -59,11 +59,10 @@ def deleter_thread(exit_event: threading.Event):
 
     # get all directories in root, oldest first
     dirs = listdir_by_creation(Paths.log_root())
+    preserved_segments = get_preserved_segments(dirs)
 
     priority_map = dict()
     deletion_candidates = []
-
-    preserved_count = 0
 
     # iterate from newest to oldest to identify routes to preserve
     for d in reversed(dirs):
@@ -74,10 +73,8 @@ def deleter_thread(exit_event: threading.Event):
 
       if d in DELETE_LAST:
         priority = Priority.CRITICAL
-      elif preserved_count < PRESERVE_COUNT and has_preserve_xattr(d):
-        # TODO: preserve prior segment
+      elif d in preserved_segments:
         priority = Priority.PRESERVED
-        preserved_count += 1
       else:
         priority = 0
 
