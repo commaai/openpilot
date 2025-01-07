@@ -26,10 +26,6 @@ for pathdef, fn in {'TRANSFORM': 'transforms/transform.cl', 'LOADYUV': 'transfor
     xenv['CXXFLAGS'].append(f'-D{pathdef}_PATH=\\"{File(fn).abspath}\\"')
 
 # Compile cython
-snpe_rpath_qcom = "/data/pythonpath/third_party/snpe/larch64"
-snpe_rpath_pc = f"{Dir('#').abspath}/third_party/snpe/x86_64-linux-clang"
-snpe_rpath = lenvCython['RPATH'] + [snpe_rpath_qcom if arch == "larch64" else snpe_rpath_pc]
-
 cython_libs = envCython["LIBS"] + libs
 commonmodel_lib = lenv.Library('commonmodel', common_src)
 lenvCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LIBS=[commonmodel_lib, *cython_libs], FRAMEWORKS=frameworks)

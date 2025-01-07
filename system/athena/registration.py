@@ -33,20 +33,17 @@ def register(show_spinner=False) -> str | None:
   """
   params = Params()
 
-  IMEI = params.get("IMEI", encoding='utf8')
-  HardwareSerial = params.get("HardwareSerial", encoding='utf8')
   dongle_id: str | None = params.get("DongleId", encoding='utf8')
   if dongle_id is None and Path(Paths.persist_root()+"/comma/dongle_id").is_file():
     # not all devices will have this; added early in comma 3X production (2/28/24)
     with open(Paths.persist_root()+"/comma/dongle_id") as f:
       dongle_id = f.read().strip()
 
-  needs_registration = None in (IMEI, HardwareSerial, dongle_id)
   pubkey = Path(Paths.persist_root()+"/comma/id_rsa.pub")
   if not pubkey.is_file():
     dongle_id = UNREGISTERED_DONGLE_ID
     cloudlog.warning(f"missing public key: {pubkey}")
-  elif needs_registration:
+  elif dongle_id is None:
     if show_spinner:
       spinner = Spinner()
       spinner.update("registering device")
@@ -70,9 +67,6 @@ def register(show_spinner=False) -> str | None:
 
       if time.monotonic() - start_time > 60 and show_spinner:
         spinner.update(f"registering device - serial: {serial}, IMEI: ({imei1}, {imei2})")
-
-    params.put("IMEI", imei1)
-    params.put("HardwareSerial", serial)
 
     backoff = 0
     start_time = time.monotonic()

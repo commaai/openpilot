@@ -10,8 +10,11 @@ cd "$ROOT"
 
 # updating uv on macOS results in 403 sometimes
 function update_uv() {
-  for i in $(seq 1 5);
-  do
+  if ! uv self update --help >/dev/null 2>&1; then
+    return 0
+  fi
+
+  for i in $(seq 1 5); do
     if uv self update; then
       return 0
     else

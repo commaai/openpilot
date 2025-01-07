@@ -255,6 +255,29 @@ bool ends_with(const std::string& s, const std::string& suffix) {
          strcmp(s.c_str() + (s.size() - suffix.size()), suffix.c_str()) == 0;
 }
 
+std::string strip(const std::string &str) {
+  auto should_trim = [](unsigned char ch) {
+    // trim whitespace or a null character
+    return std::isspace(ch) || ch == '\0';
+  };
+
+  size_t start = 0;
+  while (start < str.size() && should_trim(static_cast<unsigned char>(str[start]))) {
+    start++;
+  }
+
+  if (start == str.size()) {
+    return "";
+  }
+
+  size_t end = str.size() - 1;
+  while (end > 0 && should_trim(static_cast<unsigned char>(str[end]))) {
+    end--;
+  }
+
+  return str.substr(start, end - start + 1);
+}
+
 std::string check_output(const std::string& command) {
   char buffer[128];
   std::string result;
